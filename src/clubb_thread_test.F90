@@ -16,9 +16,9 @@ program clubb_thread_test
 
   use clubb_driver, only: run_clubb ! Procedure(s)
   
-  use error_code, only: clubb_no_error ! Variable(s)
-
-  use error_code, only: fatal_error ! Procedure(s)
+  use error_code, only: &
+        err_code,                    & ! Error Indicator
+        clubb_no_error                 ! Constant
 
   use parameter_indices, only: nparams ! Variable(s)
 
@@ -53,7 +53,7 @@ program clubb_thread_test
     params  ! Array of the model constants
 
   ! Internal variables
-  integer, dimension(ncases) :: err_code
+  integer, dimension(ncases) :: err_code_saves
 
   integer :: iter, iunit
 
@@ -66,11 +66,11 @@ program clubb_thread_test
 #endif
 
   ! Initialize status of run 
-  err_code = clubb_no_error
+  err_code_saves = clubb_no_error
 
   ! Run the model in parallel
 !$omp parallel do default(shared), private(iter, params, iunit), &
-!$omp   shared(err_code)
+!$omp   shared(err_code_saves)
   do iter = 1, ncases
 #ifdef _OPENMP
     iunit = omp_get_thread_num() + 10
@@ -80,12 +80,15 @@ program clubb_thread_test
     ! Read in model parameter values
     call read_parameters( iunit, namelist_filename(iter), params )
     ! Run the model
-    call run_clubb( params, namelist_filename(iter), l_stdout, err_code(iter) )
+    call run_clubb( params, namelist_filename(iter), l_stdout )
+
+    err_code_saves(iter) = err_code
+
   end do ! 1 .. ncases
 !$omp end parallel do
 
   do iter = 1, ncases
-    if ( fatal_error( err_code(iter) ) ) then
+    if ( any( err_code_saves(:) /= clubb_no_error ) ) then
       write(fstderr,*) "Simulation ", iter, " failed (multi-threaded)"
     end if
   end do

@@ -15,7 +15,7 @@ module surface_varnce_module
   subroutine calc_surface_varnce( upwp_sfc, vpwp_sfc, wpthlp_sfc, wprtp_sfc, & 
                              um_sfc, vm_sfc, Lscale_up_sfc, wpsclrp_sfc, & 
                              wp2_sfc, up2_sfc, vp2_sfc, & 
-                             thlp2_sfc, rtp2_sfc, rtpthlp_sfc, err_code, & 
+                             thlp2_sfc, rtp2_sfc, rtpthlp_sfc, & 
                              sclrp2_sfc, & 
                              sclrprtp_sfc,  & 
                              sclrpthlp_sfc )
@@ -51,10 +51,10 @@ module surface_varnce_module
     use numerical_check, only: & 
         surface_varnce_check ! Procedure
 
-    use error_code, only:  & 
-        clubb_var_equals_NaN,  & ! Variable(s)
-        clubb_at_least_debug_level, &
-        clubb_no_error  ! Constant
+    use error_code, only: &
+        clubb_at_least_debug_level,  & ! Procedure
+        err_code,                    & ! Error Indicator
+        clubb_no_error                 ! Constant
 
     use array_index, only: &
         iisclr_rt, & ! Index for a scalar emulating rt
@@ -117,9 +117,6 @@ module surface_varnce_module
       rtp2_sfc,    & ! Surface variance of rt, <rt'^2>|_sfc          [(kg/kg)^2]
       rtpthlp_sfc    ! Surface covariance of rt and theta-l          [kg K/kg]
 
-    integer, intent(out) :: & 
-      err_code    ! Error code
-
     real( kind = core_rknd ), intent(out), dimension(sclr_dim) ::  & 
       sclrp2_sfc,    & ! Surface variance of passive scalar            [units^2]
       sclrprtp_sfc,  & ! Surface covariance of pssv scalar and rt  [units kg/kg]
@@ -146,7 +143,7 @@ module surface_varnce_module
     integer :: i ! Loop index
 
 
-    err_code = clubb_no_error
+    !!err_code = clubb_no_error
 
     if ( l_andre_1978 ) then
 
@@ -416,12 +413,11 @@ module surface_varnce_module
 
        call surface_varnce_check( wp2_sfc, up2_sfc, vp2_sfc,  & 
                                   thlp2_sfc, rtp2_sfc, rtpthlp_sfc, & 
-                                  sclrp2_sfc, sclrprtp_sfc, sclrpthlp_sfc, &
-                                  err_code )
+                                  sclrp2_sfc, sclrprtp_sfc, sclrpthlp_sfc )
 
 !       Error reporting
 !       Joshua Fasching February 2008
-       if ( err_code == clubb_var_equals_NaN ) then
+       if ( err_code /= clubb_no_error ) then
 
           write(fstderr,*) "Error in calc_surface_varnce"
           write(fstderr,*) "Intent(in)"
@@ -450,7 +446,7 @@ module surface_varnce_module
              write(fstderr,*) "sclrpthlp_sfc = ", sclrpthlp_sfc
           endif
 
-       endif ! err_code == clubb_var_equals_NaN
+       endif ! err_code == clubb_fatal_error
 
     endif ! clubb_at_least_debug_level ( 2 )
 

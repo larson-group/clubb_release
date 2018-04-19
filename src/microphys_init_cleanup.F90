@@ -172,7 +172,8 @@ module microphys_init_cleanup
     use text_writer, only: &
         write_text   ! Used to write microphysics settings to setup.txt file
 
-    use error_code, only: clubb_at_least_debug_level ! Function
+    use error_code, only: &
+        clubb_at_least_debug_level   ! Procedure
 
     use gfdl_activation, only: nooc, sul_concen, & ! Variables
         low_concen, high_concen, &

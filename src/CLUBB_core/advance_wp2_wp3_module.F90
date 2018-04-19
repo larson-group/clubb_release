@@ -48,7 +48,7 @@ module advance_wp2_wp3_module
                               invrs_rho_ds_zt, radf, thv_ds_zm,        & ! In
                               thv_ds_zt, mixt_frac, Cx_fnc_Richardson, & ! In
                               new_pdf_implct_coefs_terms,              & ! In
-                              wp2, wp3, wp3_zm, wp2_zt, err_code       ) ! Inout
+                              wp2, wp3, wp3_zm, wp2_zt )                 ! Inout
 
     ! Description:
     ! Advance w'^2 and w'^3 one timestep.
@@ -117,12 +117,11 @@ module advance_wp2_wp3_module
     use clubb_precision, only:  & 
         core_rknd ! Variable(s)
 
-    use error_code, only:  & 
-        fatal_error,  & ! Procedure(s)
-        clubb_at_least_debug_level
-
     use error_code, only: &
-        clubb_var_out_of_range ! Constant(s)
+        clubb_at_least_debug_level,  & ! Procedure
+        err_code,                    & ! Error Indicator
+        clubb_no_error,              & ! Constant
+        clubb_fatal_error
 
     use model_flags, only: &
         l_damp_wp2_using_em, &  ! Logical(s)
@@ -184,8 +183,6 @@ module advance_wp2_wp3_module
     real( kind = core_rknd ), dimension(gr%nz), intent(inout) ::  &
       wp2_zt  ! w'^2 interpolated to thermodyamic levels  [m^2/s^2]
 
-    integer, intent(inout) :: err_code ! Diagnostic
-
     ! Local Variables
     real( kind = core_rknd ), dimension(gr%nz) ::  & 
       tauw3t  ! Currently just tau_zt                           [s]
@@ -203,9 +200,6 @@ module advance_wp2_wp3_module
       C16_fnc        ! C_16 parameter                               [-]
 
     integer :: k ! Array indices
-
-    integer :: wp2_wp3_err_code ! Error code from solving for wp2/wp3
-
 
     !-----------------------------------------------------------------------
 
@@ -273,17 +267,17 @@ module advance_wp2_wp3_module
     ! Set C16_fnc based on Richardson_num
     C16_fnc = Cx_fnc_Richardson
 
-    if ( clubb_at_least_debug_level( 2 ) ) then
+    if ( clubb_at_least_debug_level( 0 ) ) then
       ! Assertion check for C11_Skw_fnc
       if ( any( C11_Skw_fnc(:) > one ) .or. any( C11_Skw_fnc(:) < 0._core_rknd ) ) then
         write(fstderr,*) "The C11_Skw_fnc is outside the valid range for this variable"
-        err_code = clubb_var_out_of_range
+        err_code = clubb_fatal_error
         return
       end if
 
       if ( any( C16_fnc(:) > one ) .or. any( C16_fnc(:) < 0._core_rknd ) ) then
         write(fstderr,*) "The C16_fnc is outside the valid range for this variable"
-        err_code = clubb_var_out_of_range
+        err_code = clubb_fatal_error
         return
       end if
     end if
@@ -320,8 +314,7 @@ module advance_wp2_wp3_module
                      rho_ds_zt, invrs_rho_ds_zm,            & ! Intent(in)
                      invrs_rho_ds_zt, radf, thv_ds_zm,      & ! Intent(in)
                      thv_ds_zt, new_pdf_implct_coefs_terms, & ! Intent(in)
-                     wp2, wp3, wp3_zm, wp2_zt,              & ! Intent(inout)
-                     wp2_wp3_err_code                       ) ! Intent(inout)
+                     wp2, wp3, wp3_zm, wp2_zt )               ! Intent(inout)
 
     ! When selected, apply sponge damping after wp2 and wp3 have been advanced.
     if ( wp2_sponge_damp_settings%l_sponge_damping ) then
@@ -355,9 +348,8 @@ module advance_wp2_wp3_module
 
 !       Error output
 !       Joshua Fasching Feb 2008
-    if ( fatal_error( wp2_wp3_err_code ) ) then  
-     
-      if ( clubb_at_least_debug_level( 0 ) ) then
+    if (  err_code  /= clubb_no_error ) then  
+
         write(fstderr,*) "Errors in advance_wp2_wp3"
 
         write(fstderr,*) "Intent(in)"
@@ -390,9 +382,6 @@ module advance_wp2_wp3_module
         write(fstderr,*) "wp2 = ", wp2
         write(fstderr,*) "wp3 = ", wp3
 
-      end if
-
-      err_code = wp2_wp3_err_code
     end if ! fatal error
 
     return
@@ -409,8 +398,7 @@ module advance_wp2_wp3_module
                          rho_ds_zt, invrs_rho_ds_zm,            & ! Intent(in)
                          invrs_rho_ds_zt, radf, thv_ds_zm,      & ! Intent(in)
                          thv_ds_zt, new_pdf_implct_coefs_terms, & ! Intent(in)
-                         wp2, wp3, wp3_zm, wp2_zt,              & ! Intent(i/o)
-                         err_code                               ) ! Intent(i/o)
+                         wp2, wp3, wp3_zm, wp2_zt )               ! Intent(i/o)
 
     ! Description:
     ! Decompose, and back substitute the matrix for wp2/wp3
@@ -431,7 +419,13 @@ module advance_wp2_wp3_module
         w_tol_sqd,      & ! Variables(s)
         one,            &
         zero,           &
-        zero_threshold
+        zero_threshold, &
+        fstderr
+
+    use error_code, only: &
+        clubb_at_least_debug_level,  & ! Procedure
+        err_code,                    & ! Error Indicator
+        clubb_no_error                 ! Constants
 
     use model_flags, only:  & 
         l_tke_aniso,  & ! Variable(s)
@@ -583,8 +577,6 @@ module advance_wp2_wp3_module
     real( kind = core_rknd ), dimension(gr%nz), intent(inout) ::  &
       wp2_zt  ! w'^2 interpolated to thermodyamic levels          [m^2/s^2]
 
-    integer, intent(inout) :: err_code ! Have any errors occured?
-
     ! Local Variables
     real( kind = core_rknd ), dimension(5,2*gr%nz) ::  & 
       lhs ! Implicit contributions to wp2/wp3 (band diag. matrix)
@@ -680,7 +672,7 @@ module advance_wp2_wp3_module
                         rho_ds_zt, invrs_rho_ds_zm, &
                         invrs_rho_ds_zt, l_crank_nich_diff, nrhs, &
                         rhs, &
-                        solut, wp3_pr3_lhs, err_code )
+                        solut, wp3_pr3_lhs )
 
     else
 
@@ -696,19 +688,29 @@ module advance_wp2_wp3_module
        ! Solve the system with LAPACK
        if ( l_stats_samp .and. iwp23_matrix_condt_num > 0 ) then
 
-          ! Perform LU decomp and solve system (LAPACK with diagnostics)
-          ! Note that this can change the answer slightly
-          call band_solvex( "wp2_wp3", 2, 2, 2*gr%nz, nrhs, & 
-                            lhs, rhs, solut, rcond, err_code )
+            ! Perform LU decomp and solve system (LAPACK with diagnostics)
+            ! Note that this can change the answer slightly
+            call band_solvex( "wp2_wp3", 2, 2, 2*gr%nz, nrhs, & 
+                              lhs, rhs, solut, rcond )
+
+            if ( err_code /= clubb_no_error ) then
+                write(fstderr,*) "in wp23_solve calling band_solvex for wp2_wp3"
+                return
+            end if
 
           ! Est. of the condition number of the w'^2/w^3 LHS matrix
           call stat_update_var_pt( iwp23_matrix_condt_num, 1, one / rcond, stats_sfc )
 
        else
 
-          ! Perform LU decomp and solve system (LAPACK)
-          call band_solve( "wp2_wp3", 2, 2, 2*gr%nz, nrhs, & 
-                           lhs, rhs, solut, err_code )
+            ! Perform LU decomp and solve system (LAPACK)
+            call band_solve( "wp2_wp3", 2, 2, 2*gr%nz, nrhs, & 
+                           lhs, rhs, solut )
+
+            if ( err_code /= clubb_no_error ) then
+                write(fstderr,*) "in wp23_solve calling band_solve for wp2_wp3"
+                return
+            end if
 
        endif
 
@@ -912,7 +914,7 @@ module advance_wp2_wp3_module
                          rho_ds_zt, invrs_rho_ds_zm, &
                          invrs_rho_ds_zt, l_crank_nich_diff, nrhs, &
                          rhs, &
-                         solut, wp3_pr3_lhs, err_code )
+                         solut, wp3_pr3_lhs )
     ! Description:
     ! Perform all GMRES-specific matrix generation and solving for the
     ! wp2/wp3 matrices.
@@ -928,8 +930,6 @@ module advance_wp2_wp3_module
         core_rknd ! Variable(s)
 
 #ifdef MKL
-    use error_code, only: &
-      fatal_error ! Procedure(s)
 
     use stats_variables, only:  & 
         iwp23_matrix_condt_num, & ! Variable(s)
@@ -963,6 +963,12 @@ module advance_wp2_wp3_module
         gmres_idx_wp2wp3, &
         gmres_temp_intlc, &
         gmres_tempsize_intlc
+    
+    use error_code, only: &
+        clubb_at_least_debug_level,  & ! Procedure
+        err_code,                    & ! Error Indicator
+        clubb_no_error                 ! Constant
+
 #endif /* MKL */
 
     implicit none
@@ -1015,8 +1021,6 @@ module advance_wp2_wp3_module
     real( kind = core_rknd ), dimension(gr%nz,5), intent(out) :: &
       wp3_pr3_lhs ! w'^3 pressure term 3 (pr3) lhs contribution
 
-    integer, intent(out) :: err_code ! Have any errors occured?
-
 #ifdef MKL
     ! Local variables
     real( kind = core_rknd ), dimension(5,2*gr%nz) :: &
@@ -1054,7 +1058,12 @@ module advance_wp2_wp3_module
         lhs_cache = lhs
         rhs_cache = rhs
         call band_solve( "wp2_wp3", 2, 2, 2*gr%nz, nrhs, &
-                         lhs, rhs, solut, err_code )
+                         lhs, rhs, solut )
+
+        if ( err_code /= clubb_no_error ) then
+            write(fstderr,*) "in wp23_solve calling band_solve for wp2_wp3"
+            return
+        end if
 
         ! Use gmres_cache_wp2wp3_soln to set cache this solution for GMRES
         call gmres_cache_soln( gr%nz * 2, gmres_idx_wp2wp3, solut )
@@ -1068,11 +1077,13 @@ module advance_wp2_wp3_module
                       gmres_prev_soln(:,gmres_idx_wp2wp3), &
                       gmres_prev_precond_a(:,gmres_idx_wp2wp3), rhs, &
                       gmres_temp_intlc, &
-                      solut, err_code )
+                      solut )
+
     ! Fall back to LAPACK if GMRES returned any errors
-    if ( fatal_error( err_code ) ) then
+    if ( err_code /= clubb_no_error ) then
       write(fstderr,*) "Errors encountered in GMRES solve."
       write(fstderr,*) "Falling back to LAPACK solver."
+      err_code = clubb_no_error
 
       ! Generate the LHS in LAPACK format
       call wp23_lhs( dt, wp2, wm_zm, wm_zt, a1, a1_zt, a3, a3_zt,  &
@@ -1090,7 +1101,12 @@ module advance_wp2_wp3_module
         ! Perform LU decomp and solve system (LAPACK with diagnostics)
         ! Note that this can change the answer slightly
         call band_solvex( "wp2_wp3", 2, 2, 2*gr%nz, nrhs, & 
-                          lhs, rhs, solut, rcond, err_code )
+                          lhs, rhs, solut, rcond )
+
+        if ( err_code /= clubb_no_error ) then
+            write(fstderr,*) "in wp23_solve calling band_solvex for wp2_wp3"
+            return
+        end if
 
         ! Est. of the condition number of the w'^2/w^3 LHS matrix
         call stat_update_var_pt( iwp23_matrix_condt_num, 1, one / rcond, stats_sfc )
@@ -1098,7 +1114,13 @@ module advance_wp2_wp3_module
       else
         ! Perform LU decomp and solve system (LAPACK)
         call band_solve( "wp2_wp3", 2, 2, 2*gr%nz, nrhs, & 
-                         lhs, rhs, solut, err_code )
+                         lhs, rhs, solut )
+
+        if ( err_code /= clubb_no_error ) then
+            write(fstderr,*) "in wp23_solve calling band_solve for wp2_wp3"
+            return
+        end if
+
       end if
 
     end if ! fatal_error
@@ -1129,8 +1151,6 @@ module advance_wp2_wp3_module
     solut(1:gr%nz) = wm_zm
     solut(1:gr%nz) = wp2
     solut(1:gr%nz) = wp3_on_wp2
-    err_code = int( dt )
-    err_code = nrhs
     wp3_pr3_lhs = -9999._core_rknd
 
 #endif /* MKL */

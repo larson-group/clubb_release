@@ -41,7 +41,7 @@ module advance_microphys_module
                                 hydromet_vel_covar_zt_expc, &              ! In
                                 hydromet, hydromet_vel_zt, hydrometp2, &   ! Inout
                                 K_hm, Ncm, Nc_in_cloud, rvm_mc, thlm_mc, & ! Inout
-                                wphydrometp, wpNcp, err_code )             ! Out
+                                wphydrometp, wpNcp )                       ! Out
 
     ! Description:
     ! Advance mean precipitating hydrometeors and mean cloud droplet
@@ -81,10 +81,10 @@ module advance_microphys_module
         time_precision, & ! Variable(s)
         core_rknd
 
-    use error_code, only:  & 
-        fatal_error,                & ! Procedure(s)
-        clubb_at_least_debug_level, &
-        clubb_no_error                ! Constant(s)
+    use error_code, only: &
+        clubb_at_least_debug_level, & ! Procedure
+        err_code,                   & ! Error Indicator
+        clubb_no_error                ! Constant
 
     use array_index, only:  & 
         hydromet_list, & ! Names of the hydrometeor species
@@ -180,9 +180,6 @@ module advance_microphys_module
     real( kind = core_rknd ), dimension(gr%nz), intent(out) :: &
       wpNcp          ! Covariance < w'N_c' > (momentum levels)   [(m/s)(num/kg)]
 
-    integer, intent(out) :: &
-      err_code  ! Exit code (used to check for errors)
-
     ! Local Variables
     real( kind = core_rknd ), dimension(gr%nz,hydromet_dim) :: &
       hydromet_vel    ! Mean hydrometeor sedimentation velocity, <V_xx> [m/s]
@@ -208,12 +205,6 @@ module advance_microphys_module
     integer :: &
       cloud_top_level    ! Vertical level index of cloud top    [-]
 
-    integer, dimension(hydromet_dim) :: &
-      err_code_hydromet    ! Exit code (used to check for errors) for hydromet
-
-    integer :: &
-      err_code_Ncm    ! Exit code (used to check for errors) for Ncm
-
     logical, parameter :: &
       l_use_non_local_diff_fac = .false. ! Use a non-local factor for
                                          ! eddy-diffusivity applied to
@@ -230,9 +221,6 @@ module advance_microphys_module
        wphydrometp = zero
     endif
     wpNcp = zero
-
-    ! Initialize intent(out) variables -- the error code.
-    err_code = clubb_no_error  ! Initialize to the value for no errors
 
     ! Return if there is delay between the model start time and start of the
     ! microphysics
@@ -345,10 +333,17 @@ module advance_microphys_module
                                  hydromet, hydromet_vel_zt, &
                                  hydrometp2, rvm_mc, thlm_mc, &
                                  wphydrometp, hydromet_vel, &
-                                 hydromet_vel_covar, hydromet_vel_covar_zt, &
-                                 err_code_hydromet )
+                                 hydromet_vel_covar, hydromet_vel_covar_zt )
 
     endif ! hydromet_dim > 0
+
+
+    if ( clubb_at_least_debug_level( 0 ) ) then
+        if (  err_code /= clubb_no_error ) then
+            write(fstderr,*) "calling advance_hydrometeor"
+            return
+        endif !  err_code /= clubb_no_error 
+    end if
 
     !-----------------------------------------------------------------------
     ! When mean cloud droplet concentration, Ncm, is predicted, apply
@@ -363,7 +358,19 @@ module advance_microphys_module
        call advance_Ncm( dt, wm_zt, cloud_frac, K_Nc, rcm, rho_ds_zm, &
                          rho_ds_zt, invrs_rho_ds_zt, Ncm_mc, &
                          Ncm, Nc_in_cloud, &
-                         wpNcp, err_code_Ncm )
+                         wpNcp )
+        
+        if ( clubb_at_least_debug_level( 0 ) ) then
+
+            if (  err_code  /= clubb_no_error ) then
+
+                write(fstderr,*) "in advance_Ncm"
+                write(fstderr,*) "Ncm = ", Ncm
+                return
+
+            endif !  err_code  /= clubb_no_error
+
+        end if
 
     else
 
@@ -451,50 +458,10 @@ module advance_microphys_module
 
     call stats_accumulate_hydromet( hydromet, rho_ds_zt )
 
-    ! Perform error checking.
-    do i = 1, hydromet_dim, 1
-
-       if ( fatal_error( err_code_hydromet(i) ) ) then
-
-          if ( clubb_at_least_debug_level(0) ) then
-
-             write(fstderr,*) "Error in hydrometeor field " &
-                              // trim( hydromet_list(i) )
-
-             write(fstderr,*) trim( hydromet_list(i) ) // " = ", hydromet(:,i)
-
-          endif ! clubb_at_least_debug_level(1)
-
-          err_code = err_code_hydromet(i)
-
-       endif ! fatal_error( err_code_hydromet(i) )
-
-    enddo ! i = 1, hydromet_dim, 1
-
-
-    if ( l_predict_Nc ) then
-
-       if ( fatal_error( err_code_Ncm ) ) then
-
-          if ( clubb_at_least_debug_level(0) ) then
-
-             write(fstderr,*) "Error in Ncm"
-
-             write(fstderr,*) "Ncm = ", Ncm
-
-          endif ! clubb_at_least_debug_level(1)
-
-          err_code = err_code_Ncm
-
-       endif ! fatal_error( err_code_Ncm )
-
-    endif ! l_predict_Nc
-
 !       Error Report
 !       Joshua Fasching Feb 2008
 
-    if ( fatal_error( err_code ) .and.  &
-         clubb_at_least_debug_level( 0 ) ) then
+    if ( clubb_at_least_debug_level( 0 ) .and. err_code /= clubb_no_error ) then
 
        write(fstderr,*) "Error in advance_microphys"
 
@@ -551,8 +518,7 @@ module advance_microphys_module
                                   hydromet, hydromet_vel_zt, &
                                   hydrometp2, rvm_mc, thlm_mc, &
                                   wphydrometp, hydromet_vel, &
-                                  hydromet_vel_covar, hydromet_vel_covar_zt, &
-                                  err_code_hydromet )
+                                  hydromet_vel_covar, hydromet_vel_covar_zt )
 
     ! Description:
     !   Advance each hydrometeor (precipitating hydrometeor) one model time step.
@@ -588,9 +554,10 @@ module advance_microphys_module
         l_hydromet_sed,    & ! Variable(s)
         l_upwind_diff_sed
 
-    use error_code, only:  & 
-        clubb_at_least_debug_level, & ! Procedure(s)
-        clubb_no_error
+    use error_code, only: &
+        clubb_at_least_debug_level, & ! Procedure
+        err_code,                   & ! Error Indicator
+        clubb_no_error                ! Constant
 
     use clubb_precision, only:  & 
         core_rknd ! Variable(s)
@@ -664,9 +631,6 @@ module advance_microphys_module
       hydromet_vel_covar,    & ! Covariance of V_hm & h_m (m-levs)  [units(m/s)]
       hydromet_vel_covar_zt    ! Covariance of V_hm & h_m (t-levs)  [units(m/s)]
 
-    integer, dimension(hydromet_dim), intent(out) :: &
-      err_code_hydromet    ! Exit code (used to check for errors) for hydromet
-
     ! Local Variables
     real( kind = core_rknd ), dimension(3,gr%nz) :: & 
       lhs    ! Left hand side array
@@ -692,10 +656,6 @@ module advance_microphys_module
     ! Stat indices
     integer :: ixrm_hf, ixrm_wvhf, ixrm_cl, &
                ixrm_bt, ixrm_mc
-
-
-    ! Initialize error code
-    err_code_hydromet = clubb_no_error
 
     ! Loop over each type of precipitating hydrometeor and advance one model
     ! time step.
@@ -812,7 +772,18 @@ module advance_microphys_module
        !!!!! Advance hydrometeor one time step.
        call microphys_solve( trim( hydromet_list(i) ), l_hydromet_sed(i), &
                              cloud_frac, &
-                             lhs, rhs, hydromet(:,i), err_code_hydromet(i) )
+                             lhs, rhs, hydromet(:,i) )
+
+       if ( clubb_at_least_debug_level( 0 ) ) then 
+           if (  err_code /= clubb_no_error ) then
+
+                write(fstderr,*) "Error in hydrometeor field " &
+                                  // trim( hydromet_list(i) )
+
+                write(fstderr,*) trim( hydromet_list(i) ) // " = ", hydromet(:,i)
+     
+           endif !  err_code /= clubb_no_error 
+        end if
 
     enddo ! i = 1, hydromet_dim, 1
 
@@ -966,7 +937,7 @@ module advance_microphys_module
   subroutine advance_Ncm( dt, wm_zt, cloud_frac, K_Nc, rcm, rho_ds_zm, &
                           rho_ds_zt, invrs_rho_ds_zt, Ncm_mc, &
                           Ncm, Nc_in_cloud, &
-                          wpNcp, err_code_Ncm )
+                          wpNcp )
 
     ! Description:
     ! Advance cloud droplet concentration (Ncm) one model time step.
@@ -999,9 +970,10 @@ module advance_microphys_module
     use parameters_microphys, only: &
         l_in_cloud_Nc_diff  ! Use in cloud values of Nc for diffusion
 
-    use error_code, only:  & 
-        clubb_at_least_debug_level, & ! Procedure(s)
-        clubb_no_error
+    use error_code, only: &
+        clubb_at_least_debug_level, & ! Procedure
+        err_code,                   & ! Error Indicator
+        clubb_no_error                ! Constant
 
     use clubb_precision, only:  & 
         core_rknd ! Variable(s)
@@ -1051,9 +1023,6 @@ module advance_microphys_module
     real( kind = core_rknd ), dimension(gr%nz), intent(out) :: &
       wpNcp    ! Covariance < w'N_c' > (momentum levels)    [(m/s)(num/kg)]
 
-    integer, intent(out) :: &
-      err_code_Ncm    ! Exit code (used to check for errors) for Ncm
-
     ! Local Variables
     real( kind = core_rknd ), dimension(gr%nz) :: &
       Ncm_vel_covar_zt_impc, & ! Imp. comp. <V_Nc'N_c'> t-levs [m/s]
@@ -1080,10 +1049,6 @@ module advance_microphys_module
       l_Ncm_sed = .false. ! Flag to sediment Ncm with sedimentation vel. Ncm_vel
 
     integer :: k    ! Loop index
-
-
-    ! Initialize error code
-    err_code_Ncm = clubb_no_error
 
     ! The mean sedimentation velocity of cloud droplet concentration, < V_Nc >,
     ! and the covariance of N_c sedimentation velocity with N_c, < V_Nc'Nc' >,
@@ -1166,7 +1131,7 @@ module advance_microphys_module
 
        call microphys_solve( "Ncm", l_Ncm_sed, &
                              cloud_frac, &
-                             lhs, rhs, Nc_in_cloud, err_code_Ncm )
+                             lhs, rhs, Nc_in_cloud )
 
        Ncm = Nc_in_cloud * max( cloud_frac, cloud_frac_min )
 
@@ -1174,7 +1139,7 @@ module advance_microphys_module
 
        call microphys_solve( "Ncm", l_Ncm_sed, &
                              cloud_frac, &
-                             lhs, rhs, Ncm, err_code_Ncm )
+                             lhs, rhs, Ncm )
 
        Nc_in_cloud = Ncm / max( cloud_frac, cloud_frac_min )
 
@@ -1295,7 +1260,7 @@ module advance_microphys_module
   !=============================================================================
   subroutine microphys_solve( solve_type, l_sed, &
                               cloud_frac, &
-                              lhs, rhs, hmm, err_code )
+                              lhs, rhs, hmm )
 
     ! Description:
     ! Solve the tridiagonal system for hydrometeor variable.
@@ -1313,11 +1278,13 @@ module advance_microphys_module
     use clubb_precision, only:  & 
         core_rknd    ! Variable(s)
 
+    use error_code, only: &
+        clubb_at_least_debug_level,  & ! Procedure
+        err_code,                    & ! Error Indicator
+        clubb_no_error                 ! Constant
+
     use lapack_wrap, only:  & 
         tridag_solve    ! Procedure(s)
-
-    use error_code, only: &
-        clubb_no_error ! Constant
 
     use parameters_microphys, only: &
         l_in_cloud_Nc_diff  ! Use in cloud values of Nc for diffusion
@@ -1396,9 +1363,6 @@ module advance_microphys_module
     real( kind = core_rknd ), intent(inout), dimension(gr%nz) :: & 
       hmm    ! Mean value of hydrometeor (thermodynamic levels)    [units vary]
 
-    ! Output Variables
-    integer, intent(out) :: err_code
-
     ! Local Variables
     integer :: k, km1, kp1  ! Array indices
 
@@ -1407,9 +1371,6 @@ module advance_microphys_module
       ihmm_ta,  & ! Turbulent advection budget stats toggle
       ihmm_sd,  & ! Mean sedimentation budget stats toggle
       ihmm_ts     ! Turbulent sedimentation budget stats toggle
-
-
-    err_code = clubb_no_error  ! Initialize to the value for no errors
 
     ! Initializing ihmm_ma, ihmm_ta, ihmm_sd, ihmm_ts, and in order to avoid
     ! compiler warnings.
@@ -1474,7 +1435,7 @@ module advance_microphys_module
     ! Solve system using tridag_solve. This uses LAPACK sgtsv,
     ! which relies on Gaussian elimination to decompose the matrix.
     call tridag_solve( solve_type, gr%nz, 1, lhs(1,:), lhs(2,:), lhs(3,:), & 
-                       rhs, hmm, err_code )
+                       rhs, hmm )
 
 
     ! Statistics

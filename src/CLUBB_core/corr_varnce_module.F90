@@ -20,6 +20,11 @@ module corr_varnce_module
       iiPDF_Ng, &
       iiPDF_Ncn
 
+  use error_code, only: &
+        clubb_at_least_debug_level, &   ! Procedure
+        clubb_fatal_error, &            ! Constant
+        err_code                        ! Error indicator
+
   implicit none
 
   type hmp2_ip_on_hmm2_ip_ratios_type
@@ -570,10 +575,6 @@ module corr_varnce_module
       fstderr, &  ! Constant(s)
       zero
 
-    use error_code, only: &
-      clubb_debug, & ! Procedure(s)
-      clubb_at_least_debug_level
-
     implicit none
 
     ! External
@@ -608,9 +609,11 @@ module corr_varnce_module
                                      corr_array_n_below ) ! Out
 
     else ! Read in default correlation matrices
-
-       call clubb_debug( 1, "Warning: "//trim( input_file_cloud )//" was not found! " // &
-                        "The default correlation arrays will be used." )
+        
+        if ( clubb_at_least_debug_level( 1 ) ) then
+            write(fstderr,*) "Warning: "//trim( input_file_cloud )//" was not found! " // &
+                             "The default correlation arrays will be used." 
+        end if
 
        call init_default_corr_arrays( )
 
@@ -687,7 +690,7 @@ module corr_varnce_module
 
   !-----------------------------------------------------------------------------
   subroutine assert_corr_symmetric( corr_array_n, & ! intent(in)
-                                    pdf_dim) ! intent(in)
+                                    pdf_dim)        ! intent(in)
 
     ! Description:
     !   Asserts that corr_matrix(i,j) == corr_matrix(j,i) for all indeces
@@ -712,32 +715,31 @@ module corr_varnce_module
     ! tolerance used for real precision testing
     real( kind = core_rknd ), parameter :: tol = 1.0e-6_core_rknd
 
-    integer :: n_row, n_col !indeces
-
-    logical :: l_error !error found between the two arrays
+    integer :: n_row, n_col ! Indices
 
     !----- Begin Code -----
-
-    l_error = .false.
 
     !Do the check
     do n_col = 1, pdf_dim
       do n_row = 1, pdf_dim
-        if (abs(corr_array_n(n_col, n_row) - corr_array_n(n_row, n_col)) > tol) then
-          l_error = .true.
+
+        if ( abs(corr_array_n(n_col, n_row) - corr_array_n(n_row, n_col)) > tol ) then
+            err_code = clubb_fatal_error
+            write(fstderr,*) "in subroutine assert_corr_symmetric: ", &
+                             "Correlation array is non symmetric."
+            write(fstderr,*) corr_array_n
+            return
         end if
-        if (n_col == n_row .and. abs(corr_array_n(n_col, n_row)-one) > eps) then
-          l_error = .true.
+
+        if ( n_col == n_row .and. abs(corr_array_n(n_col, n_row)-one) > eps ) then
+            err_code = clubb_fatal_error
+            write(fstderr,*) "in subroutine assert_corr_symmetric: ", &
+                             "Correlation array is formatted incorrectly."
+            write(fstderr,*) corr_array_n
+            return
         end if
       end do
     end do
-
-    !Report if any errors are found
-    if (l_error) then
-      write(fstderr,*) "Error: Correlation array is non symmetric or formatted incorrectly."
-      write(fstderr,*) corr_array_n
-      stop
-    end if
 
   end subroutine assert_corr_symmetric
 

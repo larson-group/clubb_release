@@ -188,13 +188,12 @@ module morrison_microphys_module
 
     use clubb_precision, only: &
         core_rknd   ! Variable(s)
-        
 
     use variables_prognostic_module, only: &
         rho_ds_zt
 
     use error_code, only: &
-        clubb_at_least_debug_level
+        clubb_at_least_debug_level   ! Procedure
 
     use fill_holes, only: &
         vertical_integral

@@ -38,10 +38,7 @@ module estimate_scm_microphys_module
       hydromet_dim ! Variable
 
     use parameters_microphys, only: &
-      l_var_covar_src   
-
-    use error_code, only: &
-      clubb_at_least_debug_level ! Procedure
+      l_var_covar_src
 
     use clubb_precision, only: &
       core_rknd

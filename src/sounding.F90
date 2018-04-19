@@ -55,7 +55,7 @@ module sounding
     !           ,iisclr_CO2
 
     use error_code, only: &
-      clubb_at_least_debug_level ! Function
+      clubb_at_least_debug_level  ! Procedure
 
     use input_names, only: &
       z_name, & ! Variables

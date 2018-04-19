@@ -346,8 +346,7 @@ module parameters_tunable
   !=============================================================================
   subroutine setup_parameters & 
             ( deltaz, params, nzmax, &
-              grid_type, momentum_heights, thermodynamic_heights, &
-              err_code )
+              grid_type, momentum_heights, thermodynamic_heights )
 
     ! Description:
     ! Subroutine to setup model parameters
@@ -365,12 +364,12 @@ module parameters_tunable
     use model_flags, only: &
         l_clip_semi_implicit  ! Variable(s)
 
-    use error_code, only:  & 
-        clubb_var_out_of_bounds,  & ! Variable(s)
-        clubb_no_error
-
     use clubb_precision, only: &
         core_rknd ! Variable(s)
+
+    use error_code, only: &
+        err_code,                    & ! Error Indicator
+        clubb_fatal_error              ! Constant
 
     implicit none
 
@@ -413,10 +412,6 @@ module parameters_tunable
       momentum_heights,      & ! Momentum level altitudes (input)      [m]
       thermodynamic_heights    ! Thermodynamic level altitudes (input) [m]
 
-    ! Output Variables
-    integer, intent(out) ::  &
-      err_code ! Error condition
-
     !-------------------- Begin code --------------------
 
     call unpack_parameters & 
@@ -449,17 +444,12 @@ module parameters_tunable
            ( nzmax, grid_type, deltaz,  & ! Intent(in)
              momentum_heights, thermodynamic_heights )   ! Intent(in)
 
-    ! Sanity check
-    ! Initialize err_code to clubb_no_error.  Only overwrite it if a variable
-    ! out-of-bounds error is found.
-    err_code = clubb_no_error
-
     if ( beta < zero .or. beta > three ) then
 
        ! Constraints on beta
        write(fstderr,*) "beta = ", beta
        write(fstderr,*) "beta cannot be < 0 or > 3"
-       err_code = clubb_var_out_of_bounds
+       err_code = clubb_fatal_error
 
     endif ! beta < 0 or beta > 3
 
@@ -469,7 +459,7 @@ module parameters_tunable
        write(fstderr,*) "slope_coef_spread_DG_means_w = ", &
                         slope_coef_spread_DG_means_w
        write(fstderr,*) "slope_coef_spread_DG_means_w cannot be <= 0"
-       err_code = clubb_var_out_of_bounds
+       err_code = clubb_fatal_error
 
     endif ! slope_coef_spread_DG_means_w <= 0
 
@@ -479,7 +469,7 @@ module parameters_tunable
        write(fstderr,*) "pdf_component_stdev_factor_w = ", &
                         pdf_component_stdev_factor_w
        write(fstderr,*) "pdf_component_stdev_factor_w cannot be <= 0"
-       err_code = clubb_var_out_of_bounds
+       err_code = clubb_fatal_error
 
     endif ! pdf_component_stdev_factor_w <= 0
 
@@ -489,7 +479,7 @@ module parameters_tunable
        ! Constraint on coef_spread_DG_means_rt
        write(fstderr,*) "coef_spread_DG_means_rt = ", coef_spread_DG_means_rt
        write(fstderr,*) "coef_spread_DG_means_rt cannot be < 0 or >= 1"
-       err_code = clubb_var_out_of_bounds
+       err_code = clubb_fatal_error
 
     endif ! coef_spread_DG_means_rt < 0 or coef_spread_DG_means_rt >= 1
 
@@ -499,7 +489,7 @@ module parameters_tunable
        ! Constraint on coef_spread_DG_means_thl
        write(fstderr,*) "coef_spread_DG_means_thl = ", coef_spread_DG_means_thl
        write(fstderr,*) "coef_spread_DG_means_thl cannot be < 0 or >= 1"
-       err_code = clubb_var_out_of_bounds
+       err_code = clubb_fatal_error
 
     endif ! coef_spread_DG_means_thl < 0 or coef_spread_DG_means_thl >= 1
 
@@ -508,7 +498,7 @@ module parameters_tunable
        ! Constraints on omicron
        write(fstderr,*) "omicron = ", omicron
        write(fstderr,*) "omicron cannot be <= 0 or > 1"
-       err_code = clubb_var_out_of_bounds
+       err_code = clubb_fatal_error
 
     endif ! omicron <= 0 or omicron > 1
 
@@ -517,7 +507,7 @@ module parameters_tunable
        ! Constraints on zeta_vrnce_rat
        write(fstderr,*) "zeta_vrnce_rat = ", zeta_vrnce_rat
        write(fstderr,*) "zeta_vrnce_rat cannot be <= -1"
-       err_code = clubb_var_out_of_bounds
+       err_code = clubb_fatal_error
 
     endif ! zeta_vrnce_rat <= -1
 
@@ -527,7 +517,7 @@ module parameters_tunable
        ! Constraints on upsilon_precip_frac_rat
        write(fstderr,*) "upsilon_precip_frac_rat = ", upsilon_precip_frac_rat
        write(fstderr,*) "upsilon_precip_frac_rat cannot be < 0 or > 1"
-       err_code = clubb_var_out_of_bounds
+       err_code = clubb_fatal_error
 
     endif ! upsilon_precip_frac_rat < 0 or upsilon_precip_frac_rat > 1
 
@@ -536,7 +526,7 @@ module parameters_tunable
        ! Constraints on entrainment rate, mu.
        write(fstderr,*) "mu = ", mu
        write(fstderr,*) "mu cannot be < 0"
-       err_code = clubb_var_out_of_bounds
+       err_code = clubb_fatal_error
 
     endif ! mu < 0.0
 
@@ -545,7 +535,7 @@ module parameters_tunable
        ! Constraints on mixing length
        write(fstderr,*) "lmin = ", lmin
        write(fstderr,*) "lmin is < 4.0_core_rknd"
-       err_code = clubb_var_out_of_bounds
+       err_code = clubb_fatal_error
 
     endif ! lmin < 4.0
 
@@ -560,7 +550,7 @@ module parameters_tunable
           write(fstderr,*) "C6thl = ", C6thl
           write(fstderr,*) "C6rt and C6thl must be equal when" &
                            // " l_clip_semi_implicit is turned off (default)."
-          err_code = clubb_var_out_of_bounds
+          err_code = clubb_fatal_error
        endif ! C6rt /= C6thl
 
        if ( C6rtb /= C6thlb ) then
@@ -568,7 +558,7 @@ module parameters_tunable
           write(fstderr,*) "C6thlb = ", C6thlb
           write(fstderr,*) "C6rtb and C6thlb must be equal when" &
                            // " l_clip_semi_implicit is turned off (default)."
-          err_code = clubb_var_out_of_bounds
+          err_code = clubb_fatal_error
        endif ! C6rtb /= C6thlb
 
        if ( C6rtc /= C6thlc ) then
@@ -576,7 +566,7 @@ module parameters_tunable
           write(fstderr,*) "C6thlc = ", C6thlc
           write(fstderr,*) "C6rtc and C6thlc must be equal when" &
                            // " l_clip_semi_implicit is turned off (default)."
-          err_code = clubb_var_out_of_bounds
+          err_code = clubb_fatal_error
        endif ! C6rtc /= C6thlc
 
        if ( C6rt_Lscale0 /= C6thl_Lscale0 ) then
@@ -585,7 +575,7 @@ module parameters_tunable
           write(fstderr,*) "C6rt_Lscale0 and C6thl_Lscale0 must be equal" &
                            // " when l_clip_semi_implicit is turned off" &
                            // " (default)."
-          err_code = clubb_var_out_of_bounds
+          err_code = clubb_fatal_error
        endif ! C6rt_Lscale0 /= C6thl_Lscale0
 
     endif ! .not. l_clip_semi_implicit

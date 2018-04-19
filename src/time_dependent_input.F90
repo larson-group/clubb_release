@@ -491,9 +491,6 @@ module time_dependent_input
     !
     !---------------------------------------------------------------------------------
 
-    use error_code, only: &
-      clubb_debug ! Procedure(s)
-
     use constants_clubb, only: &
       grav, & ! Variable(s)
       sec_per_hr, &

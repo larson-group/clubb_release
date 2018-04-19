@@ -146,7 +146,7 @@ module advance_clubb_core_module
                sclrm_trsport_only,  &  ! h1g, 2010-06-16            ! intent(inout)
 #endif
                sclrp2, sclrprtp, sclrpthlp, &                       ! intent(inout)
-               wpsclrp, edsclrm, err_code, &                        ! intent(inout)
+               wpsclrp, edsclrm, &                                  ! intent(inout)
                rcm, cloud_frac, &                                   ! intent(inout)
                wpthvp, wp2thvp, rtpthvp, thlpthvp, &                ! intent(inout)
                sclrpthvp, &                                         ! intent(inout)
@@ -338,10 +338,10 @@ module advance_clubb_core_module
     use clubb_precision, only:  & 
         core_rknd ! Variable(s)
 
-    use error_code, only :  & 
-      clubb_at_least_debug_level, & ! Procedure(s)
-      report_error, &
-      fatal_error
+    use error_code, only: &
+        clubb_at_least_debug_level,  & ! Procedure
+        err_code,                    & ! Error Indicator
+        clubb_no_error                 ! Constant
 
     use Skx_module, only: &
         Skx_func,           & ! Procedure(s)
@@ -615,10 +615,6 @@ module advance_clubb_core_module
       Km_zm_denom_term, &   ! term in denominator of Km_zm [-]
       Km_zm_numerator_term  ! term in numerator of Km_zm [-]
 
-    !!! Output Variable
-    ! Diagnostic, for if some calculation goes amiss.
-    integer, intent(inout) :: err_code
-
 #ifdef GFDL
     ! hlg, 2010-06-16
     real( kind = core_rknd ), intent(inOUT), dimension(gr%nz, min(1,sclr_dim) , 2) :: & 
@@ -629,11 +625,11 @@ module advance_clubb_core_module
 #endif
 
     !!! Local Variables
-    integer :: i, k, &
+    integer :: i, k 
+
 #ifdef CLUBB_CAM
-      ixind, &
+    integer ::  ixind
 #endif
-      err_code_surface
 
     real( kind = core_rknd ), dimension(gr%nz) :: &
       gamma_Skw_fnc, & ! Gamma as a function of skewness          [-]
@@ -788,8 +784,7 @@ module advance_clubb_core_module
              "beginning of ",        & ! intent(in)
              wpsclrp_sfc, wpedsclrp_sfc,                        & ! intent(in)
              sclrm, wpsclrp, sclrp2, sclrprtp, sclrpthlp,       & ! intent(in)
-             sclrm_forcing, edsclrm, edsclrm_forcing,           & ! intent(in)
-             err_code )                                           ! intent(inout)
+             sclrm_forcing, edsclrm, edsclrm_forcing )            ! intent(in)
     end if
     !-----------------------------------------------------------------------
 
@@ -925,8 +920,7 @@ module advance_clubb_core_module
                                 wpsclrprtp, wpsclrpthlp,       & ! Intent(out)
                                 pdf_params, pdf_params_frz,    & ! Intent(out)
                                 pdf_params_zm,                 & ! Intent(out)
-                                new_pdf_implct_coefs_terms,    & ! Intent(out)
-                                err_code                       ) ! Intent(i/o)
+                                new_pdf_implct_coefs_terms )     ! Intent(out)
 
     endif ! ipdf_call_placement == ipdf_pre_advance_fields
           ! or ipdf_call_placement == ipdf_pre_post_advance_fields
@@ -1074,13 +1068,11 @@ module advance_clubb_core_module
          call compute_mixing_length( thvm, thlm_pert_1,                            & !intent(in)
                               rtm_pert_1, em, Lscale_max, p_in_Pa,                 & !intent(in)
                               exner, thv_ds_zt, mu_pert_1, l_implemented,          & !intent(in)
-                              err_code,                                            & !intent(inout)
                               Lscale_pert_1, Lscale_up, Lscale_down )                !intent(out)
 
          call compute_mixing_length( thvm, thlm_pert_2,                            & !intent(in)
                               rtm_pert_2, em, Lscale_max, p_in_Pa,                 & !intent(in)
                               exner, thv_ds_zt, mu_pert_2, l_implemented,          & !intent(in)
-                              err_code,                                            & !intent(inout)
                               Lscale_pert_2, Lscale_up, Lscale_down )                !intent(out)
 
       else if ( l_avg_Lscale .and. l_Lscale_plume_centered ) then
@@ -1142,13 +1134,11 @@ module advance_clubb_core_module
         call compute_mixing_length( thvm, thlm_pert_pos_rt,                    & !intent(in)
                            rtm_pert_pos_rt, em, Lscale_max, p_in_Pa,           & !intent(in)
                            exner, thv_ds_zt, mu_pert_pos_rt, l_implemented,    & !intent(in)
-                           err_code,                                           & !intent(inout)
                            Lscale_pert_1, Lscale_up, Lscale_down )               !intent(out)
 
         call compute_mixing_length( thvm, thlm_pert_neg_rt,                    & !intent(in)
                            rtm_pert_neg_rt, em, Lscale_max, p_in_Pa,           & !intent(in)
                            exner, thv_ds_zt, mu_pert_neg_rt, l_implemented,    & !intent(in)
-                           err_code,                                           & !intent(inout)
                            Lscale_pert_2, Lscale_up, Lscale_down )               !intent(out)
       else
         Lscale_pert_1 = unused_var ! Undefined
@@ -1172,7 +1162,6 @@ module advance_clubb_core_module
       call compute_mixing_length( thvm, thlm,                           & !intent(in)
                            rtm, em, Lscale_max, p_in_Pa,                & !intent(in)
                            exner, thv_ds_zt, newmu, l_implemented,      & !intent(in)
-                           err_code,                                    & !intent(inout)
                            Lscale, Lscale_up, Lscale_down )               !intent(out)
 
       if ( l_avg_Lscale ) then
@@ -1274,17 +1263,14 @@ module advance_clubb_core_module
 
         ! Diagnose surface variances based on surface fluxes.
         call calc_surface_varnce( upwp_sfc, vpwp_sfc, wpthlp_sfc, wprtp_sfc, &      ! intent(in)
-                             um(2), vm(2), Lscale_up(2), wpsclrp_sfc,   &      ! intent(in)
-                             wp2(1), up2(1), vp2(1),                    &      ! intent(out)
-                             thlp2(1), rtp2(1), rtpthlp(1), err_code_surface,& ! intent(out)
-                             sclrp2(1,1:sclr_dim),                      &      ! intent(out)
-                             sclrprtp(1,1:sclr_dim),                    &      ! intent(out) 
-                             sclrpthlp(1,1:sclr_dim) )                         ! intent(out)
+                             um(2), vm(2), Lscale_up(2), wpsclrp_sfc,        &      ! intent(in)
+                             wp2(1), up2(1), vp2(1),                         &      ! intent(out)
+                             thlp2(1), rtp2(1), rtpthlp(1),                  &      ! intent(out)
+                             sclrp2(1,1:sclr_dim),                           &      ! intent(out)
+                             sclrprtp(1,1:sclr_dim),                         &      ! intent(out) 
+                             sclrpthlp(1,1:sclr_dim) )                              ! intent(out)
 
-        if ( fatal_error( err_code_surface ) ) then
-          call report_error( err_code_surface ) ! intent(in)
-          err_code = err_code_surface
-        end if
+        if ( err_code /= clubb_no_error ) return
 
         ! Update surface stats
         if ( l_stats_samp ) then
@@ -1413,8 +1399,9 @@ module advance_clubb_core_module
                             p_in_Pa, thvm, Cx_fnc_Richardson,                & ! intent(in)
                             new_pdf_implct_coefs_terms,                      & ! intent(in)
                             rtm, wprtp, thlm, wpthlp,                        & ! intent(inout)
-                            err_code,                                        & ! intent(inout)
                             sclrm, wpsclrp )                                   ! intent(inout)
+
+      if ( err_code /= clubb_no_error ) return
 
       ! Vince Larson clipped rcm in order to prevent rvm < 0.  5 Apr 2008.
       ! This code won't work unless rtm >= 0 !!!
@@ -1426,8 +1413,7 @@ module advance_clubb_core_module
 #ifdef GFDL
       call advance_sclrm_Nd_diffusion_OG( dt, &  ! h1g, 2012-06-16     ! intent(in)
                                           sclrm, sclrm_trsport_only, & ! intent(inout)
-                                          Kh_zm,  cloud_frac,        & ! intent(in)
-                                          err_code )                   ! intent(out)
+                                          Kh_zm,  cloud_frac )         ! intent(in)
 #endif
 
       !----------------------------------------------------------------
@@ -1458,7 +1444,6 @@ module advance_clubb_core_module
                              sclrm, wpsclrp,                        & ! intent(in)
                              wpsclrp2, wpsclrprtp, wpsclrpthlp,     & ! intent(in)
                              rtp2, thlp2, rtpthlp, up2, vp2,        & ! intent(inout)
-                             err_code,                              & ! intent(inout)
                              sclrp2, sclrprtp, sclrpthlp            ) ! intent(inout)
 
       !----------------------------------------------------------------
@@ -1493,7 +1478,7 @@ module advance_clubb_core_module
              invrs_rho_ds_zt, radf, thv_ds_zm,                   & ! intent(in)
              thv_ds_zt, pdf_params%mixt_frac, Cx_fnc_Richardson, & ! intent(in)
              new_pdf_implct_coefs_terms,                         & ! intent(in)
-             wp2, wp3, wp3_zm, wp2_zt, err_code                  ) ! intent(i/o)
+             wp2, wp3, wp3_zm, wp2_zt )                            ! intent(i/o)
 
       !----------------------------------------------------------------
       ! Covariance clipping for wprtp, wpthlp, wpsclrp, upwp, and vpwp
@@ -1594,13 +1579,12 @@ module advance_clubb_core_module
       endif      
 
       call advance_windm_edsclrm( dt, wm_zt, Km_zm, Kmh_zm, ug, vg, um_ref, vm_ref, & ! intent(in)
-                                  wp2, up2, vp2, um_forcing, vm_forcing,    & ! intent(in)
-                                  edsclrm_forcing,                          & ! intent(in)
-                                  rho_ds_zm, invrs_rho_ds_zt,               & ! intent(in)
-                                  fcor, l_implemented,                      & ! intent(in)
-                                  um, vm, edsclrm,                          & ! intent(inout)
-                                  upwp, vpwp, wpedsclrp,                    & ! intent(inout)
-                                  err_code )                                  ! intent(inout)
+                                  wp2, up2, vp2, um_forcing, vm_forcing,        & ! intent(in)
+                                  edsclrm_forcing,                              & ! intent(in)
+                                  rho_ds_zm, invrs_rho_ds_zt,                   & ! intent(in)
+                                  fcor, l_implemented,                          & ! intent(in)
+                                  um, vm, edsclrm,                              & ! intent(inout)
+                                  upwp, vpwp, wpedsclrp )                         ! intent(inout)
 
       if ( l_do_expldiff_rtm_thlm ) then
         call pvertinterp(gr%nz, p_in_Pa, 70000.0_core_rknd, thlm, thlm700)
@@ -1672,8 +1656,7 @@ module advance_clubb_core_module
                                 wpsclrprtp, wpsclrpthlp,       & ! Intent(out)
                                 pdf_params, pdf_params_frz,    & ! Intent(out)
                                 pdf_params_zm,                 & ! Intent(out)
-                                new_pdf_implct_coefs_terms,    & ! Intent(out)
-                                err_code                       ) ! Intent(i/o)
+                                new_pdf_implct_coefs_terms )     ! Intent(out)
 
     endif ! ipdf_call_placement == ipdf_post_advance_fields
           ! or ipdf_call_placement == ipdf_pre_post_advance_fields
@@ -1774,8 +1757,7 @@ module advance_clubb_core_module
                "end of ",                                  & ! intent(in)
                wpsclrp_sfc, wpedsclrp_sfc,                        & ! intent(in)
                sclrm, wpsclrp, sclrp2, sclrprtp, sclrpthlp,       & ! intent(in)
-               sclrm_forcing, edsclrm, edsclrm_forcing,           & ! intent(in)
-               err_code ) ! intent(inout)
+               sclrm_forcing, edsclrm, edsclrm_forcing )            ! intent(in)
       end if
 
       if ( l_stats .and. l_stats_samp ) then
@@ -1846,7 +1828,6 @@ module advance_clubb_core_module
     end subroutine advance_clubb_core
 
   !=============================================================================
-  !subroutine pdf_closure_driver( dt, hydromet_dim, rtm, wprtp,  & ! Intent(in)
   subroutine pdf_closure_driver( dt, hydromet_dim, wprtp,       & ! Intent(in)
                                  thlm, wpthlp, rtp2, rtp3,      & ! Intent(in)
                                  thlp2, thlp3, rtpthlp, wp2,    & ! Intent(in)
@@ -1880,8 +1861,7 @@ module advance_clubb_core_module
                                  wpsclrprtp, wpsclrpthlp,       & ! Intent(out)
                                  pdf_params, pdf_params_frz,    & ! Intent(out)
                                  pdf_params_zm,                 & ! Intent(out)
-                                 new_pdf_implct_coefs_terms,    & ! Intent(out)
-                                 err_code                       ) ! Intent(i/o)
+                                 new_pdf_implct_coefs_terms )     ! Intent(out)
 
     use grid_class, only: &
         gr,    & ! Variable(s)
@@ -1956,9 +1936,9 @@ module advance_clubb_core_module
         l_explicit_turbulent_adv_wp3
 
     use error_code, only: &
-        clubb_at_least_debug_level, & ! Procedure(s)
-        fatal_error, &
-        clubb_debug
+        clubb_at_least_debug_level,  & ! Procedure
+        err_code,                    & ! Error Indicator
+        clubb_no_error                 ! Constant
 
     use variables_diagnostic_module, only: &
         sigma_sqd_w_zt, & ! Variable(s)
@@ -2137,9 +2117,6 @@ module advance_clubb_core_module
 
     type(implicit_coefs_terms), dimension(gr%nz), intent(out) :: &
       new_pdf_implct_coefs_terms  ! New PDF: impl coefs; expl terms [units vary]
-
-    ! Diagnostic, for if some calculation goes amiss.
-    integer, intent(inout) :: err_code
 
     !!! Local Variables
     real( kind = core_rknd ), dimension(gr%nz) :: &
@@ -2335,8 +2312,7 @@ module advance_clubb_core_module
 
     logical :: l_spur_supersat   ! Spurious supersaturation?
 
-    integer :: i, k, err_code_pdf_closure
-
+    integer :: i, k
 
     ! Initialize Variables
     call init_pdf_params( gr%nz, pdf_params_zm )
@@ -2468,7 +2444,6 @@ module advance_clubb_core_module
           new_pdf_implct_coefs_terms(k),                              & ! intent(out)
           F_w(k), F_rt(k), F_thl(k), min_F_w(k), max_F_w(k),          & ! intent(out)
           min_F_rt(k), max_F_rt(k), min_F_thl(k), max_F_thl(k),       & ! intent(out)
-          err_code_pdf_closure,                                       & ! intent(out)
           wpsclrprtp(k,:), wpsclrp2(k,:), sclrpthvp_zt(k,:),          & ! intent(out)
           wpsclrpthlp(k,:), sclrprcp_zt(k,:), wp2sclrp(k,:),          & ! intent(out)
           rc_coef_zt(k)                                               ) ! intent(out)
@@ -2476,14 +2451,9 @@ module advance_clubb_core_module
       ! Subroutine may produce NaN values, and if so, exit
       ! gracefully.
       ! Joshua Fasching March 2008
-
-      if ( fatal_error( err_code_pdf_closure ) ) then
-
-        if ( clubb_at_least_debug_level( 0 ) ) then
+      if (  err_code /= clubb_no_error ) then
           write(fstderr,*) "At grid level = ",k
-        end if
-
-        err_code = err_code_pdf_closure
+          stop
       end if
 
     end do ! k = 1, gr%nz, 1
@@ -2632,7 +2602,6 @@ module advance_clubb_core_module
             new_pdf_implct_coefs_terms_zm(k),                                 & ! intent(out)
             F_w_zm, F_rt_zm, F_thl_zm, min_F_w_zm, max_F_w_zm,                & ! intent(out)
             min_F_rt_zm, max_F_rt_zm, min_F_thl_zm, max_F_thl_zm,             & ! intent(out)
-            err_code_pdf_closure,                                             & ! intent(out)
             wpsclrprtp_zm(k,:), wpsclrp2_zm(k,:), sclrpthvp(k,:),             & ! intent(out)
             wpsclrpthlp_zm(k,:), sclrprcp(k,:), wp2sclrp_zm(k,:),             & ! intent(out)
             rc_coef(k)                                                        ) ! intent(out)
@@ -2640,15 +2609,9 @@ module advance_clubb_core_module
         ! Subroutine may produce NaN values, and if so, exit
         ! gracefully.
         ! Joshua Fasching March 2008
-
-
-        if ( fatal_error( err_code_pdf_closure ) ) then
-
-          if ( clubb_at_least_debug_level( 0 ) ) then
+        if (  err_code /= clubb_no_error ) then
             write(fstderr,*) "At grid level = ",k
-          end if
-
-          err_code = err_code_pdf_closure
+            stop
         end if
 
       end do ! k = 1, gr%nz, 1
@@ -2808,7 +2771,6 @@ module advance_clubb_core_module
             new_pdf_implct_coefs_terms_frz(k),                                    & ! intent(out)
             F_w_frz, F_rt_frz, F_thl_frz, min_F_w_frz, max_F_w_frz,               & ! intent(out)
             min_F_rt_frz, max_F_rt_frz, min_F_thl_frz, max_F_thl_frz,             & ! intent(out)
-            err_code_pdf_closure,                                                 & ! intent(out)
             wpsclrprtp_frz(k,:), wpsclrp2_frz(k,:), sclrpthvp_zt_frz(k,:),        & ! intent(out)
             wpsclrpthlp_frz(k,:), sclrprcp_zt_frz(k,:), wp2sclrp_frz(k,:),        & ! intent(out)
             rc_coef_zt_frz(k)                                                     ) ! intent(out)
@@ -2816,13 +2778,9 @@ module advance_clubb_core_module
         ! Subroutine may produce NaN values, and if so, exit gracefully.
         ! Joshua Fasching March 2008
 
-        if ( fatal_error( err_code_pdf_closure ) ) then
-
-          if ( clubb_at_least_debug_level ( 0 ) )then
+        if (  err_code /= clubb_no_error ) then
             write(fstderr,*) "At grid level = ", k
-          end if
-
-          err_code = err_code_pdf_closure
+            stop
         end if
 
       end do !k=1, gr%nz, 1
@@ -2868,7 +2826,6 @@ module advance_clubb_core_module
               F_w_zm_frz, F_rt_zm_frz, F_thl_zm_frz, min_F_w_zm_frz,            & ! intent(out)
               max_F_w_zm_frz, min_F_rt_zm_frz, max_F_rt_zm_frz,                 & ! intent(out)
               min_F_thl_zm_frz, max_F_thl_zm_frz,                               & ! intent(out)
-              err_code_pdf_closure,                                             & ! intent(out)
               wpsclrprtp_zm_frz(k,:), wpsclrp2_zm_frz(k,:), sclrpthvp_frz(k,:), & ! intent(out)
               wpsclrpthlp_zm_frz(k,:), sclrprcp_frz(k,:), wp2sclrp_zm_frz(k,:), & ! intent(out)
               rc_coef_frz(k)                                                    ) ! intent(out)
@@ -2878,13 +2835,9 @@ module advance_clubb_core_module
           ! Joshua Fasching March 2008
 
 
-          if ( fatal_error( err_code_pdf_closure ) ) then
-
-            if ( clubb_at_least_debug_level( 0 ) ) then
+          if (  err_code  /= clubb_no_error ) then
               write(fstderr,*) "At grid level = ",k
-            end if
-
-            err_code = err_code_pdf_closure
+              stop
           end if
 
         end do ! k = 1, gr%nz, 1
@@ -2947,8 +2900,8 @@ module advance_clubb_core_module
           end if
         enddo
 
-        if ( l_spur_supersat ) then
-          call clubb_debug( 1, 'Warning: spurious supersaturation was removed after pdf_closure!' )
+        if ( clubb_at_least_debug_level( 1 ) .and. l_spur_supersat ) then
+          write(fstderr,*) 'Warning: spurious supersaturation was removed after pdf_closure!' 
         end if
 
       end if ! l_rcm_supersat_adj
@@ -2972,11 +2925,11 @@ module advance_clubb_core_module
                  l_implemented, grid_type, deltaz,        & ! intent(in)
                  zm_init, zm_top,                         & ! intent(in)
                  momentum_heights, thermodynamic_heights, & ! intent(in)
-                 sfc_elevation,                           & ! intent(in)
+                 sfc_elevation                            & ! intent(in)
 #ifdef GFDL
-                 cloud_frac_min,                          & ! intent(in)  h1g, 2010-06-16
+                 , cloud_frac_min                         & ! intent(in)  h1g, 2010-06-16
 #endif
-                 err_code )                                 ! intent(out)
+                )
 
       ! Description:
       !   Subroutine to set up the model for execution.
@@ -3007,8 +2960,10 @@ module advance_clubb_core_module
       use constants_clubb, only:  & 
           fstderr  ! Variable(s)
 
-      use error_code, only:  & 
-          clubb_no_error ! Constant(s)
+      use error_code, only: &
+          clubb_at_least_debug_level,  & ! Procedure
+          err_code,                    & ! Error Indicator
+          clubb_no_error                 ! Constant
 
       use model_flags, only: & 
           setup_model_flags, & ! Subroutine
@@ -3123,10 +3078,6 @@ module advance_clubb_core_module
       real( kind = core_rknd ), intent(in) :: & 
          cloud_frac_min         ! h1g, 2010-06-16 end mod
 #endif
-
-      ! Output variables
-      integer, intent(out) :: & 
-        err_code   ! Diagnostic for a problem with the setup
 
       ! Local variables
       integer :: begin_height, end_height
@@ -3280,8 +3231,7 @@ module advance_clubb_core_module
       call setup_parameters & 
            ( deltaz, params, gr%nz,                                & ! intent(in)
              grid_type, momentum_heights(begin_height:end_height), & ! intent(in)
-             thermodynamic_heights(begin_height:end_height),       & ! intent(in)
-             err_code )                                              ! intent(out)
+             thermodynamic_heights(begin_height:end_height) )        ! intent(in)
 
       ! Error Report
       ! Joshua Fasching February 2008
@@ -4049,11 +3999,11 @@ module advance_clubb_core_module
       use pdf_parameter_module, only: &
           pdf_parameter ! Derived data type
 
-      use error_code, only:  &
-          clubb_at_least_debug_level  ! Procedure
-
       use clubb_precision, only: &
           core_rknd ! Variable(s)
+
+      use error_code, only: &
+          clubb_at_least_debug_level  ! Procedure
 
       implicit none
 
@@ -4164,7 +4114,7 @@ module advance_clubb_core_module
 
         else
 
-          if ( clubb_at_least_debug_level( 1 ) ) then
+          if ( clubb_at_least_debug_level( 0 ) ) then
 
             write(fstderr,*)  &
                "Error: Should not arrive here in computation of cloud_cover"
@@ -4178,9 +4128,9 @@ module advance_clubb_core_module
             write(fstderr,*) "rcm(k+1) = ", rcm(k+1)
             write(fstderr,*) "rcm(k-1) = ", rcm(k-1)
 
-          end if
+            stop
 
-          return
+          end if
 
         end if ! rcm(k) < rc_tol
 
@@ -4212,8 +4162,8 @@ module advance_clubb_core_module
 
       use grid_class, only: gr ! Variable
 
-      use error_code, only :  & 
-        clubb_at_least_debug_level ! Procedure(s)
+      use error_code, only: &
+        clubb_at_least_debug_level  ! Procedure
 
       use constants_clubb, only: & 
         fstderr, & ! Variable(s)

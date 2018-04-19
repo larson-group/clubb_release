@@ -77,15 +77,15 @@ module latin_hypercube_driver_module
       zero, &
       one
 
-    use error_code, only: &
-      clubb_at_least_debug_level ! Procedure
-
     use clubb_precision, only: &
       core_rknd, &
       stat_rknd
 
     use parameters_silhs, only: &
       l_lh_importance_sampling
+
+    use error_code, only: &
+        clubb_at_least_debug_level  ! Procedure
 
     implicit none
 
@@ -492,9 +492,6 @@ module latin_hypercube_driver_module
       one,     &
       zero
 
-    use error_code, only: &
-      clubb_at_least_debug_level ! Procedure
-
     use grid_class, only: &
       gr             ! Variable
 
@@ -506,6 +503,9 @@ module latin_hypercube_driver_module
 
     use fill_holes, only: &
       vertical_avg  ! Procedure
+
+    use error_code, only: &
+        clubb_at_least_debug_level  ! Procedure
 
     implicit none
 

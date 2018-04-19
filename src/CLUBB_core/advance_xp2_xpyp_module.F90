@@ -59,7 +59,6 @@ module advance_xp2_xpyp_module
                                sclrm, wpsclrp,                        & ! In
                                wpsclrp2, wpsclrprtp, wpsclrpthlp,     & ! In
                                rtp2, thlp2, rtpthlp, up2, vp2,        & ! Inout
-                               err_code,                              & ! Inout
                                sclrp2, sclrprtp, sclrpthlp            ) ! Inout
 
     ! Description:
@@ -147,14 +146,11 @@ module advance_xp2_xpyp_module
         stat_end_update, &
         stat_modify
 
-    use error_code, only:  & 
-        clubb_no_error,  & ! Variable(s)
-        clubb_var_out_of_range, &
-        clubb_singular_matrix
-
-    use error_code, only:  & 
-        fatal_error,    & ! Procedure(s)
-        clubb_at_least_debug_level
+    use error_code, only: &
+        clubb_at_least_debug_level,  & ! Procedure
+        err_code,                    & ! Error Indicator
+        clubb_no_error,              & ! Constants
+        clubb_fatal_error
 
     use stats_variables, only: & 
         stats_zm,     & ! Variable(s)
@@ -239,9 +235,6 @@ module advance_xp2_xpyp_module
       up2,     & ! <u'^2>                        [m^2/s^2]
       vp2        ! <v'^2>                        [m^2/s^2]
 
-    ! Output variable for singular matrices
-    integer, intent(inout) :: err_code
-
     ! Passive scalar output
     real( kind = core_rknd ), intent(inout), dimension(gr%nz, sclr_dim) ::  & 
       sclrp2, sclrprtp, sclrpthlp
@@ -275,9 +268,6 @@ module advance_xp2_xpyp_module
     real( kind = core_rknd ), dimension(gr%nz,sclr_dim*3) ::  & 
       sclr_rhs,   & ! RHS vectors of tridiagonal system for the passive scalars
       sclr_solution ! Solution to tridiagonal system for the passive scalars
-
-    integer, dimension(5+1) :: & 
-      err_code_array ! Array containing the error codes for each variable
 
     ! Variables for the new PDF
     real ( kind = core_rknd ), dimension(gr%nz) :: &
@@ -333,11 +323,11 @@ module advance_xp2_xpyp_module
 
     !---------------------------- Begin Code ----------------------------------
 
-    if ( clubb_at_least_debug_level( 2 ) ) then
+    if ( clubb_at_least_debug_level( 0 ) ) then
       ! Assertion check for C5
       if ( C5 > one .or. C5 < zero ) then
         write(fstderr,*) "The C5 variable is outside the valid range"
-        err_code = clubb_var_out_of_range
+        err_code = clubb_fatal_error
         return
       end if
     end if
@@ -418,11 +408,6 @@ module advance_xp2_xpyp_module
     upwp_zt   = zm2zt( upwp )
     vpwp_zt   = zm2zt( vpwp )
 
-    ! Initialize tridiagonal solutions to valid
-
-    err_code_array(:) = clubb_no_error
-
-
     ! Define the Coefficent of Eddy Diffusivity for the variances
     ! and covariances.
     do k = 1, gr%nz, 1
@@ -463,8 +448,7 @@ module advance_xp2_xpyp_module
 
     ! Solve the tridiagonal system
     call xp2_xpyp_solve( xp2_xpyp_rtp2, 1, & ! Intent(in)
-                         rhs, lhs, rtp2, &   ! Intent(inout)
-                         err_code_array(1) ) ! Intent(out)
+                         rhs, lhs, rtp2 )    ! Intent(inout)
 
     if ( l_stats_samp ) then
       call xp2_xpyp_implicit_stats( xp2_xpyp_rtp2, rtp2 ) ! Intent(in)
@@ -493,8 +477,7 @@ module advance_xp2_xpyp_module
 
     ! Solve the tridiagonal system
     call xp2_xpyp_solve( xp2_xpyp_thlp2, 1, & ! Intent(in)
-                         rhs, lhs, thlp2, &   ! Intent(inout)
-                         err_code_array(2) )  ! Intent(out)
+                         rhs, lhs, thlp2 )    ! Intent(inout)
 
     if ( l_stats_samp ) then
       call xp2_xpyp_implicit_stats( xp2_xpyp_thlp2, thlp2 ) ! Intent(in)
@@ -524,8 +507,7 @@ module advance_xp2_xpyp_module
 
     ! Solve the tridiagonal system
     call xp2_xpyp_solve( xp2_xpyp_rtpthlp, 1, & ! Intent(in)
-                         rhs, lhs, rtpthlp, &   ! Intent(inout)
-                         err_code_array(3) )    ! Intent(out)
+                         rhs, lhs, rtpthlp )    ! Intent(inout)
 
     if ( l_stats_samp ) then
       call xp2_xpyp_implicit_stats( xp2_xpyp_rtpthlp, rtpthlp ) ! Intent(in)
@@ -565,7 +547,7 @@ module advance_xp2_xpyp_module
     ! Solve the tridiagonal system
     call xp2_xpyp_solve( xp2_xpyp_up2_vp2, 2,       & ! Intent(in)
                          uv_rhs, lhs,               & ! Intent(inout)
-                         uv_solution, err_code_array(4) )  ! Intent(out)
+                         uv_solution )                ! Intent(out)
 
     up2(1:gr%nz) = uv_solution(1:gr%nz,1)
     vp2(1:gr%nz) = uv_solution(1:gr%nz,2)
@@ -788,8 +770,7 @@ module advance_xp2_xpyp_module
       ! Solve the tridiagonal system
 
       call xp2_xpyp_solve( xp2_xpyp_scalars, 3*sclr_dim, &   ! Intent(in)
-                           sclr_rhs, lhs, sclr_solution, &  ! Intent(inout)
-                           err_code_array(6) )                   ! Intent(out)
+                           sclr_rhs, lhs, sclr_solution )    ! Intent(inout)
 
       sclrp2(:,1:sclr_dim) = sclr_solution(:,1:sclr_dim)
 
@@ -884,14 +865,7 @@ module advance_xp2_xpyp_module
 
     endif ! l_scalar_calc
 
-
-    ! Check for singular matrices and bad LAPACK arguments
-    if ( any( fatal_error( err_code_array ) ) ) then
-      err_code = clubb_singular_matrix
-    end if
-
-    if ( fatal_error( err_code ) .and.  & 
-         clubb_at_least_debug_level( 0 ) ) then
+    if ( err_code  /= clubb_no_error ) then
 
       write(fstderr,*) "Error in advance_xp2_xpyp"
 
@@ -1274,7 +1248,7 @@ module advance_xp2_xpyp_module
   end subroutine xp2_xpyp_lhs
 
   !=============================================================================
-  subroutine xp2_xpyp_solve( solve_type, nrhs, rhs, lhs, xapxbp, err_code )
+  subroutine xp2_xpyp_solve( solve_type, nrhs, rhs, lhs, xapxbp )
 
     ! Description:
     ! Solve a tridiagonal system
@@ -1304,9 +1278,6 @@ module advance_xp2_xpyp_module
         irtpthlp_matrix_condt_num, & 
         iup2_vp2_matrix_condt_num, & 
         l_stats_samp  ! Logical
-
-    use error_code, only: &
-        clubb_no_error ! Constant
 
     use clubb_precision, only: &
         core_rknd ! Variable(s)
@@ -1340,9 +1311,6 @@ module advance_xp2_xpyp_module
     real( kind = core_rknd ), dimension(gr%nz,nrhs), intent(out) ::  & 
       xapxbp ! Computed value of the variable(s) at <t+1> [units vary]
 
-    integer, intent(out) :: & 
-      err_code ! Returns an error code in the event of a singular matrix
-
     ! Local variables
     real( kind = core_rknd ) :: rcond  ! Est. of the reciprocal of the condition # on the matrix
 
@@ -1352,7 +1320,6 @@ module advance_xp2_xpyp_module
       solve_type_str ! solve_type in string format for debug output purposes
 
     ! --- Begin Code ---
-    err_code = clubb_no_error  ! Initialize to the value for no errors
 
     select case ( solve_type )
       !------------------------------------------------------------------------
@@ -1378,19 +1345,19 @@ module advance_xp2_xpyp_module
 
     if ( l_stats_samp .and. ixapxbp_matrix_condt_num > 0 ) then
       call tridag_solvex & 
-           ( solve_type_str, gr%nz, nrhs, &                                      ! Intent(in) 
+           ( solve_type_str, gr%nz, nrhs, &                                        ! Intent(in) 
              lhs(kp1_mdiag,:), lhs(k_mdiag,:), lhs(km1_mdiag,:), rhs(:,1:nrhs),  & ! Intent(inout)
-             xapxbp(:,1:nrhs), rcond, err_code )                                   ! Intent(out)
+             xapxbp(:,1:nrhs), rcond )                                             ! Intent(out)
 
       ! Est. of the condition number of the variance LHS matrix
       call stat_update_var_pt( ixapxbp_matrix_condt_num, 1, one / rcond, &  ! Intent(in)
-                               stats_sfc )                          ! Intent(inout)
+                               stats_sfc )                                  ! Intent(inout)
 
     else
       call tridag_solve & 
-           ( solve_type_str, gr%nz, nrhs, lhs(kp1_mdiag,:),  &    ! Intent(in)
+           ( solve_type_str, gr%nz, nrhs, lhs(kp1_mdiag,:),  &      ! Intent(in)
              lhs(k_mdiag,:), lhs(km1_mdiag,:), rhs(:,1:nrhs),  &    ! Intent(inout)
-             xapxbp(:,1:nrhs), err_code )                           ! Intent(out)
+             xapxbp(:,1:nrhs) )                                     ! Intent(out)
     end if
 
     return

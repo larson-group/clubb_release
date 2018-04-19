@@ -37,7 +37,7 @@ module advance_windm_edsclrm_module
                rho_ds_zm, invrs_rho_ds_zt, &
                fcor, l_implemented, &
                um, vm, edsclrm, &
-               upwp, vpwp, wpedsclrp, err_code )
+               upwp, vpwp, wpedsclrp )
 
     ! Description:
     ! Solves for both mean horizontal wind components, um and vm, and for the
@@ -90,12 +90,10 @@ module advance_windm_edsclrm_module
     use clip_explicit, only:  &
         clip_covar  ! Procedure(s)
 
-    use error_code, only:  & 
-        clubb_at_least_debug_level, & ! Procedure(s)
-        fatal_error
-
-    use error_code, only:  & 
-        clubb_no_error     ! Constant(s)
+    use error_code, only: &
+        clubb_at_least_debug_level,  & ! Procedure
+        err_code,                    & ! Error Indicator
+        clubb_no_error                 ! Constants
 
     use constants_clubb, only:  & 
         fstderr, &  ! Constant(s)
@@ -162,9 +160,6 @@ module advance_windm_edsclrm_module
     real( kind = core_rknd ), dimension(gr%nz,edsclr_dim), intent(inout) ::  &
       wpedsclrp      ! w'edsclr' (momentum levels)                   [units vary]
 
-    integer, intent(inout) :: &
-      err_code       ! clubb_singular_matrix when matrix is singular
-
     ! Local Variables
     real( kind = core_rknd ), dimension(gr%nz) ::  &
       um_tndcy,    & ! u wind component tendency                     [m/s^2]
@@ -190,19 +185,13 @@ module advance_windm_edsclrm_module
     logical :: &
       l_imp_sfc_momentum_flux  ! Flag for implicit momentum surface fluxes.
 
-    integer :: &
-      err_code_windm, err_code_edsclrm, & ! Error code for each LAPACK solve
-      nrhs ! Number of right hand side terms
+    integer :: nrhs  ! Number of right hand side terms
 
     integer :: i  ! Array index
 
     logical :: l_first_clip_ts, l_last_clip_ts ! flags for clip_covar
 
     !--------------------------- Begin Code ------------------------------------
-
-    ! Initialize to no errors
-    err_code_windm   = clubb_no_error
-    err_code_edsclrm = clubb_no_error
 
     dummy_nu = 0._core_rknd
 
@@ -283,7 +272,15 @@ module advance_windm_edsclrm_module
     nrhs = 2
     call windm_edsclrm_solve( nrhs, iwindm_matrix_condt_num, & ! in
                               lhs, rhs, &                      ! in/out
-                              solution, err_code_windm )       ! out
+                              solution )                       ! out
+
+    ! Check for singular matrices and bad LAPACK arguments
+    if ( clubb_at_least_debug_level( 0 ) ) then
+      if ( err_code  /= clubb_no_error ) then
+        write(fstderr,*) "Fatal error solving for um/vm"
+        return
+      end if
+    end if
 
     !----------------------------------------------------------------
     ! Update zonal (west-to-east) component of mean wind, um
@@ -489,7 +486,13 @@ module advance_windm_edsclrm_module
       ! Decompose and back substitute for all eddy-scalar variables
       call windm_edsclrm_solve( edsclr_dim, 0, &     ! in
                                 lhs, rhs, &          ! in/out
-                                solution, err_code_edsclrm ) ! out
+                                solution )           ! out
+
+      if ( clubb_at_least_debug_level( 0 ) ) then
+        if ( err_code  /= clubb_no_error ) then
+          write(fstderr,*) "Fatal error solving for eddsclrm"
+        end if
+      end if
 
       !----------------------------------------------------------------
       ! Update Eddy-diff. Passive Scalars
@@ -519,25 +522,9 @@ module advance_windm_edsclrm_module
 
     endif
 
-    ! Check for singular matrices and bad LAPACK arguments
-    if ( fatal_error( err_code_windm ) ) then
-      if ( clubb_at_least_debug_level( 0 ) ) then
-        write(fstderr,*) "Fatal error solving for um/vm"
-      end if
-      err_code = err_code_windm
-    end if
-
-    if ( fatal_error( err_code_edsclrm ) ) then
-      if ( clubb_at_least_debug_level( 0 ) ) then
-        write(fstderr,*) "Fatal error solving for eddsclrm"
-      end if
-      err_code = err_code_edsclrm
-    end if
-
     ! Error report
     ! Joshua Fasching February 2008
-    if ( ( fatal_error( err_code_windm ) .or. fatal_error( err_code_edsclrm ) ) .and. &
-         clubb_at_least_debug_level( 0 ) ) then
+    if ( err_code  /= clubb_no_error .and. clubb_at_least_debug_level( 0 ) ) then
 
       write(fstderr,*) "Error in advance_windm_edsclrm"
 
@@ -583,7 +570,7 @@ module advance_windm_edsclrm_module
 
   !=============================================================================
   subroutine windm_edsclrm_solve( nrhs, ixm_matrix_condt_num, &
-                                  lhs, rhs, solution, err_code )
+                                  lhs, rhs, solution )
 
     ! Note:  In the "Description" section of this subroutine, the variable
     !        "invrs_dzm" will be written as simply "dzm", and the variable
@@ -1123,9 +1110,6 @@ module advance_windm_edsclrm_module
     real( kind = core_rknd ), dimension(gr%nz,nrhs), intent(out) :: &
       solution ! Solution to the system of equations    [units vary]
 
-    integer, intent(out) :: & 
-      err_code ! clubb_singular_matrix when matrix is singular
-
     ! Local variables
     real( kind = core_rknd ) :: &
       rcond ! Estimate of the reciprocal of the condition number on the LHS matrix
@@ -1135,7 +1119,7 @@ module advance_windm_edsclrm_module
       call tridag_solvex & 
            ( "windm_edsclrm", gr%nz, nrhs, &                            ! Intent(in) 
              lhs(kp1_tdiag,:), lhs(k_tdiag,:), lhs(km1_tdiag,:), rhs, & ! Intent(inout)
-             solution, rcond, err_code )                                ! Intent(out)
+             solution, rcond )                                          ! Intent(out)
 
       ! Est. of the condition number of the variance LHS matrix
       call stat_update_var_pt( ixm_matrix_condt_num, 1, 1.0_core_rknd/rcond, &  ! Intent(in)
@@ -1144,7 +1128,7 @@ module advance_windm_edsclrm_module
 
       call tridag_solve( "windm_edsclrm", gr%nz, nrhs, &                             ! In
                          lhs(kp1_tdiag,:),  lhs(k_tdiag,:), lhs(km1_tdiag,:), rhs, & ! Inout
-                         solution, err_code )                                        ! Out
+                         solution )                                                  ! Out
     end if
 
     return

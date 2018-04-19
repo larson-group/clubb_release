@@ -138,9 +138,6 @@ module stats_clubb_utilities
       nvarmax_sfc, & ! Constant(s)
       stats_init_sfc ! Procedure(s)
 
-    use error_code, only: &
-      clubb_at_least_debug_level ! Function
-
     use constants_clubb, only: &
       fstdout, fstderr, var_length ! Constants
 
@@ -148,6 +145,9 @@ module stats_clubb_utilities
         hydromet_dim, &  ! Variable(s)
         sclr_dim, &
         edsclr_dim
+
+    use error_code, only: &
+        clubb_at_least_debug_level   ! Procedure
 
     implicit none
 
@@ -3150,7 +3150,7 @@ subroutine stats_check_num_samples( stats_grid, l_error )
     stats_tout
 
   use error_code, only: &
-    clubb_at_least_debug_level ! Procedure
+    clubb_at_least_debug_level   ! Procedure
 
   implicit none
 

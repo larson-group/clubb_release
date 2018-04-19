@@ -31,7 +31,7 @@ module mono_flux_limiter
                                              invrs_rho_ds_zm, invrs_rho_ds_zt, &
                                              xp2_threshold, l_implemented, &
                                              low_lev_effect, high_lev_effect, &
-                                             xm, xm_tol, wpxp, err_code )
+                                             xm, xm_tol, wpxp )
 
     ! Description:
     ! Limits the value of w'x' and corrects the value of xm when the xm turbulent
@@ -288,12 +288,13 @@ module mono_flux_limiter
         eps, &
         fstderr
 
+    use error_code, only: &
+        clubb_at_least_debug_level,  & ! Procedure
+        err_code,                    & ! Error Indicator
+        clubb_no_error                 ! Constant
+
     use clubb_precision, only:  & 
         core_rknd ! Variable(s)
-
-    use error_code, only:  &
-        fatal_error, &  ! Procedure(s)
-        clubb_no_error   ! Constant
         
     use fill_holes, only: &
         vertical_integral ! Procedure(s)
@@ -373,10 +374,6 @@ module mono_flux_limiter
       xm,  &      ! xm at current time step (thermodynamic levels)  [units vary]
       wpxp        ! w'x' (momentum levels)                          [units vary]
 
-    ! Output Variable
-    integer, intent(out) ::  &
-      err_code  ! Returns an error code in the event of a singular matrix
-
     ! Local Variables
     real( kind = core_rknd ), dimension(gr%nz) :: &
       xp2_zt,          &      ! x'^2 interpolated to thermodynamic levels  [units vary]
@@ -425,7 +422,7 @@ module mono_flux_limiter
       ixm_mfl
 
     !--- Begin Code ---
-    err_code = clubb_no_error  ! Initialize to the value for no errors
+    !!err_code = clubb_no_error  ! Initialize to the value for no errors
 
     ! Default Initialization required due to G95 compiler warning
     max_xp2 = 0.0_core_rknd
@@ -711,10 +708,10 @@ module mono_flux_limiter
 
           ! Solve the tridiagonal matrix equation.
           call mfl_xm_solve( solve_type, lhs_mfl_xm, rhs_mfl_xm,  &
-                             xm, err_code )
+                             xm )
 
           ! Check for errors
-          if ( fatal_error( err_code ) ) return
+          if (  err_code  /= clubb_no_error ) return
 
        else  ! l_mfl_xm_imp_adj = .false.
 
@@ -1024,7 +1021,7 @@ module mono_flux_limiter
 
   !=============================================================================
   subroutine mfl_xm_solve( solve_type, lhs, rhs,  &
-                           xm, err_code )
+                           xm )
 
     ! Description:
     ! This subroutine is part of the process of re-solving for xm at timestep
@@ -1044,12 +1041,13 @@ module mono_flux_limiter
     use lapack_wrap, only:  & 
         tridag_solve  ! Procedure(s)
 
-    use error_code, only:  &
-        fatal_error, &  ! Procedure(s)
-        clubb_no_error   ! Constant
-
     use clubb_precision, only: &
         core_rknd
+
+    use error_code, only: &
+        clubb_at_least_debug_level,  & ! Procedure
+        err_code,                    & ! Error Indicator
+        clubb_no_error                 ! Constant
 
     implicit none
 
@@ -1073,16 +1071,13 @@ module mono_flux_limiter
     real( kind = core_rknd ), dimension(gr%nz), intent(inout) :: &
       xm   ! Value of variable being solved for at timestep (t+1)   [units vary]
 
-    integer, intent(out) ::  &
-      err_code  ! Returns an error code in the event of a singular matrix
-
     ! Local variable
     character(len=10) :: &
       solve_type_str ! solve_type as a string for debug output purposes
 
     !-----------------------------------------------------------------------
 
-    err_code = clubb_no_error  ! Initialize to the value for no errors
+    !!err_code = clubb_no_error  ! Initialize to the value for no errors
 
     select case( solve_type )
     case ( mono_flux_rtm )
@@ -1096,11 +1091,11 @@ module mono_flux_limiter
     ! Solve for xm at timestep index (t+1) using the tridiagonal solver.
     call tridag_solve & 
          ( solve_type_str, gr%nz, 1, lhs(kp1_tdiag,:),  &  ! Intent(in)
-           lhs(k_tdiag,:), lhs(km1_tdiag,:), rhs,  &         ! Intent(inout)
-           xm, err_code )                                    ! Intent(out)
+           lhs(k_tdiag,:), lhs(km1_tdiag,:), rhs,  &       ! Intent(inout)
+           xm )                                            ! Intent(out)
 
     ! Check for errors
-    if ( fatal_error( err_code ) ) return
+    if (  err_code  /= clubb_no_error ) return
 
     ! Boundary condition on xm
     xm(1) = xm(2)

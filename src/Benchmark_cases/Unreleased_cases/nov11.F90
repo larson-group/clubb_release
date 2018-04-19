@@ -129,7 +129,7 @@ module nov11
 !
 !    use interpolation, only: lin_interpolate_on_grid ! Procedure(s)
 !
-!    use error_code, only: clubb_at_least_debug_level ! Procedure(s)
+!    use error_code, only: clubb_at_least_debug_level  ! Procedure
 !
 !    use array_index, only:  & 
 !        iisclr_thl, iisclr_rt, iiedsclr_thl, iiedsclr_rt ! Variable(s)

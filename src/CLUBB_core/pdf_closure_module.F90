@@ -60,7 +60,6 @@ module pdf_closure_module
                           new_pdf_implct_coefs_terms,               &
                           F_w, F_rt, F_thl, min_F_w, max_F_w,       &
                           min_F_rt, max_F_rt, min_F_thl, max_F_thl, &
-                          err_code,                                 &
                           wpsclrprtp, wpsclrp2, sclrpthvp,          &
                           wpsclrpthlp, sclrprcp, wp2sclrp,          &
                           rc_coef                                   )
@@ -150,13 +149,6 @@ module pdf_closure_module
         sat_mixrat_liq, & ! Procedure(s)
         sat_mixrat_ice
 
-    use error_code, only: & 
-        clubb_no_error ! Constant(s)
-
-    use error_code, only:  & 
-        clubb_at_least_debug_level, & ! Procedure(s)
-        fatal_error
-
     use stats_variables, only: &
         iwp4,       & ! Variables
         ircp2,      &
@@ -166,6 +158,11 @@ module pdf_closure_module
 
     use clubb_precision, only: &
         core_rknd ! Variable(s)
+
+    use error_code, only: &
+        clubb_at_least_debug_level,  & ! Procedure
+        err_code,                    & ! Error Indicator
+        clubb_no_error                 ! Constant
 
     implicit none
 
@@ -263,9 +260,6 @@ module pdf_closure_module
       max_F_rt,  & ! Maximum allowable value of parameter F_rt     [-]
       min_F_thl, & ! Minimum allowable value of parameter F_thl    [-]
       max_F_thl    ! Maximum allowable value of parameter F_thl    [-]
-
-    integer, intent(out) :: & 
-      err_code       ! Are the outputs usable numbers?
 
     ! Output (passive scalar variables)
 
@@ -414,7 +408,7 @@ module pdf_closure_module
       l_scalar_calc = .false.
     end if
 
-    err_code = clubb_no_error ! Initialize to the value for no errors
+    !!err_code = clubb_no_error ! Initialize to the value for no errors
 
     ! Initialize to default values to prevent a runtime error
     if ( ( iiPDF_type /= iiPDF_ADG1 ) .and. ( iiPDF_type /= iiPDF_ADG2 ) ) then
@@ -1065,13 +1059,12 @@ module pdf_closure_module
              rtprcp, thlprcp, rcp2, wprtpthlp, & 
              crt_1, crt_2, cthl_1, cthl_2, pdf_params, &
              sclrpthvp, sclrprcp, wpsclrp2, & 
-             wpsclrprtp, wpsclrpthlp, wp2sclrp, &
-             err_code )
+             wpsclrprtp, wpsclrpthlp, wp2sclrp )
 
       ! Error Reporting
       ! Joshua Fasching February 2008
 
-      if ( fatal_error( err_code ) ) then
+      if (  err_code  /= clubb_no_error ) then
 
         write(fstderr,*) "Error in pdf_closure_new"
 
@@ -1786,10 +1779,9 @@ module pdf_closure_module
     
     use clubb_precision, only: &
         core_rknd        ! Precision
-      
+
     use error_code, only: &
-        clubb_at_least_debug_level ! Function to check whether clubb is in
-                                   !  at least the specified debug level 
+        clubb_at_least_debug_level  ! Procedure
       
     implicit none
     

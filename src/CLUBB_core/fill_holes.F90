@@ -514,7 +514,7 @@ module fill_holes
         core_rknd ! Variable(s)
 
     use error_code, only: &
-        clubb_at_least_debug_level  ! Procedure(s)
+        clubb_at_least_debug_level  ! Procedure
 
     implicit none
 
@@ -567,7 +567,7 @@ module fill_holes
     if ( abs(total_mass) < eps ) then
 
        if ( clubb_at_least_debug_level(2) ) then
-          print *, "Warning: One level hole filling was not successful! total_mass ~= 0"
+          print *, "Warning: One-level hole filling was not successful! total_mass ~= 0"
        endif
 
        hm_one_lev_filled = hm_one_lev
@@ -585,7 +585,7 @@ module fill_holes
        if ( abs(total_hole) > total_mass ) then
 
           if ( clubb_at_least_debug_level(2) ) then
-             print *, "Warning: One level hole was not able to fill holes completely!" // &
+             print *, "Warning: One-level hole filling was not able to fill holes completely!" // &
                       " The holes were filled partially. |total_hole| > total_mass"
           endif
 
@@ -850,9 +850,6 @@ module fill_holes
         Nx2rx_hm_idx, & ! Procedure(s)
         mvr_hm_max
 
-    use error_code, only: &
-        clubb_at_least_debug_level ! Procedure(s)
-
     use stats_type_utilities, only: &
         stat_begin_update, & ! Subroutines
         stat_end_update
@@ -860,6 +857,9 @@ module fill_holes
     use stats_variables, only: &
         stats_zt, &  ! Variables
         l_stats_samp
+
+    use error_code, only: &
+        clubb_at_least_debug_level  ! Procedure
 
     implicit none
 

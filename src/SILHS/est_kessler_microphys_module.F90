@@ -267,9 +267,6 @@ module est_kessler_microphys_module
       zero, &
       one
 
-!   use error_code, only:  &
-!     clubb_at_least_debug_level  ! Procedure(s)
-
     use parameters_silhs, only: &
       l_lh_importance_sampling ! Variable(s)
 
@@ -479,9 +476,6 @@ module est_kessler_microphys_module
     use constants_clubb, only: &
       one, &       ! Constant(s)
       zero
-
-!   use error_code, only:  &
-!       clubb_at_least_debug_level  ! Procedure(s)
 
     implicit none
 

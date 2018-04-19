@@ -794,7 +794,7 @@ module diagnose_correlations_module
       one ! Variable(s)
 
     use error_code, only: &
-      clubb_at_least_debug_level  ! Procedure(s)
+        clubb_at_least_debug_level  ! Procedure
 
     implicit none
 

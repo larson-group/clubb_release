@@ -55,9 +55,6 @@ module silhs_importance_sample_module
     use hydromet_pdf_parameter_module, only: &
       hydromet_pdf_parameter ! Type
 
-    use error_code, only: &
-      clubb_at_least_debug_level  ! Procedure
-
     use parameters_silhs, only: &
       eight_cluster_allocation_opt, & ! Constant(s)
       four_cluster_allocation_opt, &
@@ -66,6 +63,9 @@ module silhs_importance_sample_module
       l_lh_limit_weights, &
       cluster_allocation_strategy, &
       l_lh_normalize_weights
+
+    use error_code, only: &
+        clubb_at_least_debug_level  ! Procedure
 
     implicit none
 
@@ -444,7 +444,7 @@ module silhs_importance_sample_module
       fstderr
 
     use error_code, only: &
-      clubb_at_least_debug_level  ! Procedure
+        clubb_at_least_debug_level  ! Procedure
 
     implicit none
 
@@ -795,7 +795,7 @@ module silhs_importance_sample_module
       core_rknd      ! Constant
 
     use error_code, only: &
-      clubb_at_least_debug_level ! Procedure
+        clubb_at_least_debug_level  ! Procedure
 
     implicit none
 
@@ -990,7 +990,7 @@ module silhs_importance_sample_module
       fstderr       ! Constant
 
     use error_code, only: &
-      clubb_at_least_debug_level ! Procedure
+        clubb_at_least_debug_level  ! Procedure
 
     implicit none
 

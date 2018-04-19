@@ -277,8 +277,8 @@ module grid_class
     use constants_clubb, only:  & 
         fstderr ! Variable(s)
 
-    use error_code, only:  &
-        clubb_at_least_debug_level ! Procedure(s)
+    use error_code, only: &
+        clubb_at_least_debug_level   ! Procedure
 
     use clubb_precision, only: &
         core_rknd ! Variable(s)

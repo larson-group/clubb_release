@@ -15,7 +15,6 @@ module mixing_length
   subroutine compute_mixing_length( thvm, thlm, &
                              rtm, em, Lscale_max, p_in_Pa, &
                              exner, thv_ds, mu, l_implemented, &
-                             err_code, &
                              Lscale, Lscale_up, Lscale_down )
     ! Description:
     ! Larson's 5th moist, nonlocal length scale
@@ -54,15 +53,13 @@ module mixing_length
     use numerical_check, only:  & 
         length_check ! Procedure(s)
 
-    use error_code, only:  & 
-        clubb_at_least_debug_level, & ! Procedure(s)
-        fatal_error
-
-    use error_code, only:  & 
-        clubb_no_error ! Constant
-
     use clubb_precision, only: &
         core_rknd ! Variable(s)
+
+    use error_code, only: &
+        clubb_at_least_debug_level,  & ! Procedure
+        err_code,                    & ! Error Indicator
+        clubb_no_error                 ! Constant
 
     implicit none
 
@@ -94,10 +91,6 @@ module mixing_length
     logical, intent(in) :: &
       l_implemented ! Flag for CLUBB being implemented in a larger model
 
-    ! Output Variables
-    integer, intent(inout) :: & 
-      err_code
-
     real( kind = core_rknd ), dimension(gr%nz), intent(out) ::  & 
       Lscale,    & ! Mixing length      [m]
       Lscale_up, & ! Mixing length up   [m]
@@ -105,8 +98,7 @@ module mixing_length
 
     ! Local Variables
 
-    integer :: i, j, &
-      err_code_Lscale
+    integer :: i, j
 
     real( kind = core_rknd ) :: tke_i, CAPE_incr
 
@@ -136,11 +128,9 @@ module mixing_length
 
     ! ---- Begin Code ----
 
-    err_code_Lscale = clubb_no_error
-
     !---------- Mixing length computation ----------------------------------
 
-    if( clubb_at_least_debug_level(0) .and. abs(mu) < eps ) then
+    if( abs(mu) < eps ) then
         write(fstderr,*) "Entrainment rate mu cannot be 0"
         stop "Fatal error in subroutine compute_mixing_length"
     end if
@@ -726,40 +716,31 @@ module mixing_length
     !Lscale = min( Lscale, 1e5 )
     Lscale = min( Lscale, Lscale_max )
 
-    if( clubb_at_least_debug_level( 0 ) ) then
 
-      ! Ensure that the output from this subroutine is valid.
-      call length_check( Lscale, Lscale_up, Lscale_down, err_code_Lscale )
-      ! Joshua Fasching January 2008
+    ! Error reporting - Joshua Fasching January 2008
+    ! Ensure that the output from this subroutine is valid.
+    call length_check( Lscale, Lscale_up, Lscale_down )
 
-      ! Error Reporting
-      ! Joshua Fasching February 2008
+    if ( err_code /= clubb_no_error ) then
 
-      if ( fatal_error( err_code_Lscale ) ) then
+      write(fstderr,*) "Errors in compute_mixing_length subroutine"
 
-        write(fstderr,*) "Errors in length subroutine"
+      write(fstderr,*) "Intent(in)"
 
-        write(fstderr,*) "Intent(in)"
+      write(fstderr,*) "thvm = ", thvm
+      write(fstderr,*) "thlm = ", thlm
+      write(fstderr,*) "rtm = ", rtm
+      write(fstderr,*) "em = ", em
+      write(fstderr,*) "exner = ", exner
+      write(fstderr,*) "p_in_Pa = ", p_in_Pa
+      write(fstderr,*) "thv_ds = ", thv_ds
 
-        write(fstderr,*) "thvm = ", thvm
-        write(fstderr,*) "thlm = ", thlm
-        write(fstderr,*) "rtm = ", rtm
-        write(fstderr,*) "em = ", em
-        write(fstderr,*) "exner = ", exner
-        write(fstderr,*) "p_in_Pa = ", p_in_Pa
-        write(fstderr,*) "thv_ds = ", thv_ds
+      write(fstderr,*) "Intent(out)"
 
-        write(fstderr,*) "Intent(out)"
-
-        write(fstderr,*) "Lscale = ", Lscale
-        write(fstderr,*) "Lscale_up = ", Lscale_up
-
-        ! Overwrite the last error code with this new fatal error
-        err_code = err_code_Lscale
-
-      endif ! Fatal error
-
-    endif ! clubb_debug_level
+      write(fstderr,*) "Lscale = ", Lscale
+      write(fstderr,*) "Lscale_up = ", Lscale_up
+ 
+    endif ! Fatal error
 
     return
 

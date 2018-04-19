@@ -31,7 +31,7 @@ module clubb_driver
   !-----------------------------------------------------------------------
   subroutine run_clubb & 
              ( params, runfile, l_stdout, &
-               err_code, model_flags_array )
+               model_flags_array )
     ! Description:
     !   Subprogram to integrate the partial differential equations for pdf
     !   closure.
@@ -97,15 +97,11 @@ module clubb_driver
       rt_tol, thl_tol, w_tol, w_tol_sqd, eps
 
     use error_code, only: &
-      clubb_var_out_of_bounds,  & !------------------------------------------ Constants
-      clubb_no_error, &
-      clubb_var_equals_NaN
-
-    use error_code, only: &
-      fatal_error,  & !------------------------------------------------------ Procedure(s)
-      clubb_at_least_debug_level, &
-      set_clubb_debug_level, &
-      report_error
+        clubb_at_least_debug_level,  & ! ------------------------------------ Procedures
+        set_clubb_debug_level,       &
+        err_code,                    & ! ------------------------------------ Error Indicator
+        clubb_no_error,              & ! ------------------------------------ Constants
+        clubb_fatal_error
 
     use clubb_precision, only: time_precision, core_rknd !------------------- Constants
 
@@ -306,10 +302,6 @@ module clubb_driver
     logical, optional, dimension(:), intent(in) :: &
       model_flags_array ! Array containing model flags (for the clubb_tuner only)
 
-    ! Output Variables
-    integer, intent(inout) :: &
-      err_code ! An error code is returned indicating the status of the run. See error_code.F90
-
     ! Local Variables
     ! Internal Timing Variables
     integer :: & 
@@ -373,8 +365,7 @@ module clubb_driver
 
     integer :: &
       itime, j, & ! Local Loop Variables
-      iinit,    & ! initial iteration
-      err_code_forcings
+      iinit       ! initial iteration
 
     integer ::  & 
       iunit,           & ! File unit used for I/O
@@ -469,9 +460,6 @@ module clubb_driver
 
     real( kind = core_rknd ), dimension(:,:), allocatable :: &
       lh_sample_point_weights ! Weights for cloud weighted sampling
-
-    integer :: &
-      err_code_microphys
 
     logical :: l_silhs_out    ! Whether to output SILHS files
 
@@ -646,7 +634,7 @@ module clubb_driver
         "iisclr_CO2 = ", iisclr_CO2, "iisclr_rt = ", iisclr_rt,  & 
         "iisclr_thl = ", iisclr_thl, "sclr_dim = ", sclr_dim
 
-      err_code = clubb_var_out_of_bounds
+      err_code = clubb_fatal_error
       return
 
     else if ( max( iiedsclr_CO2, iiedsclr_rt, iiedsclr_thl ) > edsclr_dim ) then
@@ -654,7 +642,7 @@ module clubb_driver
         "iiedsclr_CO2 = ", iiedsclr_CO2, "iiedsclr_rt = ", iiedsclr_rt,  & 
         "iiedsclr_thl = ", iiedsclr_thl, "edsclr_dim = ", edsclr_dim
 
-      err_code = clubb_var_out_of_bounds
+      err_code = clubb_fatal_error
       return
 
     end if
@@ -950,8 +938,7 @@ module clubb_driver
            l_input_fields,                                    & ! Intent(in)
            l_implemented, grid_type, deltaz, zm_init, zm_top, & ! Intent(in)
            momentum_heights, thermodynamic_heights,           & ! Intent(in)
-           sfc_elevation,                                     & ! Intent(in)
-           err_code )                                           ! Intent(out)
+           sfc_elevation )                                      ! Intent(in)
 
     ! Allocate a correctly-sized array for radf and zero it
     allocate( radf(gr%nz) )
@@ -966,7 +953,7 @@ module clubb_driver
     rtphmp_zt(:,:)  = 0._core_rknd
     thlphmp_zt(:,:) = 0._core_rknd
 
-    if ( fatal_error( err_code ) ) then
+    if (  err_code  /= clubb_no_error ) then
       ! At this point, input fields haven't been set up, so don't clean them up.
       call cleanup_clubb( l_input_fields=.false. )
       return
@@ -1088,9 +1075,9 @@ module clubb_driver
              rtm_ref, thlm_ref,                                 & ! Intent(inout) 
              um_ref, vm_ref,                                    & ! Intent(inout)
              Ncm, Nc_in_cloud, Nccnm,                           & ! Intent(inout)
-             sclrm, edsclrm, err_code )                           ! Intent(out)
+             sclrm, edsclrm )                           ! Intent(out)
 
-      if ( fatal_error( err_code ) ) then
+      if (  err_code  /= clubb_no_error ) then
         ! At this point, input fields haven't been set up, so don't clean them up.
         call cleanup_clubb( l_input_fields=.false. )
         return
@@ -1120,9 +1107,9 @@ module clubb_driver
              rtm_ref, thlm_ref,                                  & ! Intent(inout) 
              um_ref, vm_ref,                                     & ! Intent(inout)
              Ncm, Nc_in_cloud, Nccnm,                            & ! Intent(inout)
-             sclrm, edsclrm, err_code )                            ! Intent(out)
+             sclrm, edsclrm )                            ! Intent(out)
 
-      if ( fatal_error( err_code ) ) then
+      if (  err_code  /= clubb_no_error ) then
         ! At this point, input fields haven't been set up, so don't clean them up.
         call cleanup_clubb( l_input_fields=.false. )
         return
@@ -1253,7 +1240,7 @@ module clubb_driver
     if ( l_silhs_rad .and. l_calc_thlp2_rad ) then
 
       write(fstderr,*) "The options l_silhs_rad and l_calc_thlp2_rad are incompatible."
-      err_code = clubb_var_out_of_bounds
+      err_code = clubb_fatal_error
       call cleanup_clubb( l_input_fields )
       return
 
@@ -1318,11 +1305,10 @@ module clubb_driver
       end if
 
       ! Check for NaN values in the model arrays
-      if ( clubb_at_least_debug_level( 0 ) ) then
-        if ( invalid_model_arrays( ) ) then
-          err_code = clubb_var_equals_NaN
-          write(fstderr,*) "Fatal error: a CLUBB variable is NaN in main time stepping loop."
-        end if
+      if ( invalid_model_arrays( ) ) then
+        err_code = clubb_fatal_error
+        write(fstderr,*) "Fatal error: a CLUBB variable is NaN in main time stepping loop."
+        stop
       end if
 
       ! Calculate radiation only once in a while
@@ -1333,16 +1319,11 @@ module clubb_driver
                                         
       
       ! Set large-scale tendencies and subsidence profiles
-      err_code_forcings = clubb_no_error
-      call prescribe_forcings( dt_main, &  ! Intent(in)
-                                   err_code_forcings ) ! Intent(inout)
+      call prescribe_forcings( dt_main )  ! Intent(in)
 
-      if ( fatal_error( err_code_forcings ) ) then
-        if ( clubb_at_least_debug_level( 0 ) ) then
+      if ( err_code  /= clubb_no_error ) then
           write(fstderr,*) "Fatal error in prescribe_forcings:"
-          call report_error( err_code_forcings )
-        end if
-        err_code = err_code_forcings
+          stop
       end if
 
       ! Add microphysical tendencies to rtm_forcing
@@ -1407,13 +1388,15 @@ module clubb_driver
              thlm, rtm, wprtp, wpthlp, &                          ! Intent(inout)
              wp2, wp3, rtp2, rtp3, thlp2, thlp3, rtpthlp, &       ! Intent(inout)
              sclrm, sclrp2, sclrprtp, sclrpthlp, &                ! Intent(inout)
-             wpsclrp, edsclrm, err_code, &                        ! Intent(inout)
+             wpsclrp, edsclrm, &                                  ! Intent(inout)
              rcm, cloud_frac, &                                   ! Intent(inout)
              wpthvp, wp2thvp, rtpthvp, thlpthvp, &                ! Intent(inout)
              sclrpthvp, &                                         ! Intent(inout)
              pdf_params, pdf_params_zm, &                         ! Intent(inout)
              wprcp, ice_supersat_frac, &                          ! Intent(out)
              rcm_in_layer, cloud_cover )                          ! Intent(out)
+
+      if ( err_code /= clubb_no_error ) return
 
       ! Measure time in advance_clubb_core
       call cpu_time(time_stop)
@@ -1538,7 +1521,7 @@ module clubb_driver
                               hydromet_vel_covar_zt_expc, &              ! In
                               hydromet, hydromet_vel_zt, hydrometp2, &   ! Inout
                               K_hm, Ncm, Nc_in_cloud, rvm_mc, thlm_mc, & ! Inout
-                              wphydrometp, wpNcp, err_code_microphys )   ! Out
+                              wphydrometp, wpNcp )   ! Out
 
       ! Measure time in calc_microphys_scheme_tendcies
       call cpu_time(time_stop)
@@ -1546,12 +1529,9 @@ module clubb_driver
       call cpu_time(time_start) ! initialize timer for the end part of the main loop
       
       
-      if ( fatal_error( err_code_microphys ) ) then
-         if ( clubb_at_least_debug_level( 0 ) ) then
-             write(fstderr,*) "Fatal error in advance_microphys:"
-             call report_error( err_code_microphys )
-         endif
-         err_code = err_code_microphys
+      if ( err_code /= clubb_no_error ) then
+        write(fstderr,*) "Fatal error in advance_microphys:"
+        stop   
       endif
 
       if ( l_stats_samp ) then
@@ -1585,7 +1565,6 @@ module clubb_driver
                  time_current, time_initial, rho, rho_zm, &                        !In
                  p_in_Pa, exner, cloud_frac, ice_supersat_frac, X_nl_all_levs, &   !In
                  lh_clipped_vars, lh_sample_point_weights, hydromet, &             !In
-                 err_code, &                                                       !inout
                  radht, Frad, Frad_SW_up, Frad_LW_up, Frad_SW_down, Frad_LW_down ) !out
 
         else
@@ -1593,7 +1572,6 @@ module clubb_driver
           call advance_clubb_radiation &
                ( time_current, time_initial, rho, rho_zm, p_in_Pa, &               ! Intent(in)
                  exner, cloud_frac, ice_supersat_frac, thlm, rtm, rcm, hydromet, & ! Intent(in)
-                 err_code, &                                                       ! Intent(inout)
                  radht, Frad, Frad_SW_up, Frad_LW_up, &                            ! Intent(out)
                  Frad_SW_down, Frad_LW_down )                                      ! Intent(out)
 
@@ -1627,7 +1605,7 @@ module clubb_driver
       call cpu_time(time_stop)
       time_loop_end = time_loop_end + time_stop - time_start
       
-      if ( fatal_error( err_code ) ) exit
+      if ( err_code /= clubb_no_error ) exit
 
     end do ! itime=1, ifinal
     
@@ -1699,7 +1677,7 @@ module clubb_driver
                rtm_ref, thlm_ref, &
                um_ref, vm_ref, &
                Ncm, Nc_in_cloud, Nccnm, &
-               sclrm, edsclrm, err_code )
+               sclrm, edsclrm )
     ! Description:
     !   Execute the necessary steps for the initialization of the
     !   CLUBB model run.
@@ -1743,9 +1721,6 @@ module clubb_driver
       determine_extended_atmos_bounds !-------------------------------- Procedure(s)
 
     use mpace_a, only: mpace_a_init !---------------------------------- Procedure(s)
-
-    use error_code, only: &
-      clubb_no_error !------------------------------------------------- Variable(s)
 
     ! Joshua Fasching
     ! March 2008
@@ -1842,9 +1817,6 @@ module clubb_driver
     real( kind = core_rknd ), dimension(gr%nz,edsclr_dim), intent(out) ::  & 
       edsclrm    ! Eddy diffusivity passive scalar [units vary]
 
-    integer, intent(out) :: &
-      err_code ! Indicates an error condition
-
     ! Local Variables
 
     real( kind = core_rknd ), dimension(gr%nz) ::  & 
@@ -1864,8 +1836,6 @@ module clubb_driver
     integer :: k ! Loop index
 
     !---- Begin code ----
-
-    err_code = clubb_no_error
 
     ! Read sounding information
     call read_sounding( iunit, runtype, p_sfc, zm_init, &        ! Intent(in) 
@@ -3673,7 +3643,7 @@ module clubb_driver
   end subroutine restart_clubb
 
   !----------------------------------------------------------------------
-  subroutine prescribe_forcings( dt, err_code )
+  subroutine prescribe_forcings( dt )
 
     ! Description:
     !   Calculate tendency and surface variables
@@ -3830,10 +3800,6 @@ module clubb_driver
     real(kind=core_rknd), intent(in) :: & 
       dt         ! Model timestep         [s]
 
-    ! Input/Output Variables
-    integer, intent(inout) :: & 
-      err_code
-
     ! Local Variables
     real( kind = core_rknd ) :: &
       wpthep  ! w'theta_e'                [m K/s]
@@ -3908,7 +3874,6 @@ module clubb_driver
       case ( "atex" ) ! ATEX case
         call atex_tndcy( time_current, time_initial, &   ! Intent(in)
                          rtm, &                          ! Intent(in)
-                         err_code, &                     ! Intent(inout)
                          wm_zt, wm_zm, &                 ! Intent(out)
                          thlm_forcing, rtm_forcing, &    ! Intent(out)
                          sclrm_forcing, edsclrm_forcing )! Intent(out)
@@ -4284,7 +4249,6 @@ module clubb_driver
   subroutine advance_clubb_radiation &
              ( time_current, time_initial, rho, rho_zm, p_in_Pa, &
                exner, cloud_frac, ice_supersat_frac, thlm, rtm, rcm, hydromet, &
-               err_code, &
                radht, Frad, Frad_SW_up, Frad_LW_up, &
                Frad_SW_down, Frad_LW_down )
 ! Description:
@@ -4312,8 +4276,11 @@ module clubb_driver
     use simple_rad_module, only: &
       simple_rad, simple_rad_bomex, simple_rad_lba, sunray_sw_wrap
 
-    use error_code, only: & 
-      clubb_at_least_debug_level !-------------------------------------- Procedure(s)
+    use error_code, only: &
+        clubb_at_least_debug_level,  & !-------------------------------- Procedure
+        err_code,                    & !-------------------------------- Error Indicator
+        clubb_no_error,              & !-------------------------------- Constants
+        clubb_fatal_error
 
     use parameters_model, only: hydromet_dim !-------------------------- Variable(s)
 
@@ -4328,10 +4295,6 @@ module clubb_driver
 #ifdef radoffline
     use bugsrad_driver, only: compute_bugsrad_radiation !--------------- Procedure(s)
 #endif
-
-    use error_code, only: clubb_no_error, clubb_var_equals_NaN
-
-    use error_code, only: report_error, fatal_error
 
     use variables_radiation_module, only: &
       radht_LW, radht_SW, Frad_SW, Frad_LW
@@ -4379,8 +4342,6 @@ module clubb_driver
     real( kind = core_rknd ), dimension(gr%nz), intent(out) :: &
       radht ! Radiative heating rate                                         [K/s]
 
-    integer, intent(inout) :: err_code ! Error code
-
     ! Output Variables
     real( kind = core_rknd ), dimension(gr%nz), intent(out) :: &
       Frad,         & ! Total radiative flux                   [W/m^2]
@@ -4398,7 +4359,7 @@ module clubb_driver
 
     real( kind = dp ) :: amu0 ! Cosine of the solar zenith angle [-]
 
-    integer :: i, err_code_radiation
+    integer :: i
 
     ! ---- Begin Code ----
 
@@ -4410,8 +4371,6 @@ module clubb_driver
     Frad_LW_down = 0._core_rknd
 
     radht = 0._core_rknd ! Initialize the radiative heating rate to 0.
-
-    err_code_radiation = clubb_no_error
 
     ! If l_fix_cos_solar_zen is not set in the model.in, calculate amu0
     ! Otherwise, it was defined in cos_solar_zen_list file
@@ -4468,47 +4427,47 @@ module clubb_driver
 
         if ( is_nan_2d( thlm ) ) then
           write(fstderr,*) "thlm before BUGSrad is NaN"
-          err_code_radiation = clubb_var_equals_NaN
+          err_code = clubb_fatal_error
         end if
 
         if ( is_nan_2d( rcm ) ) then
           write(fstderr,*) "rcm before BUGSrad is NaN"
-          err_code_radiation = clubb_var_equals_NaN
+          err_code = clubb_fatal_error
         end if
 
         if ( is_nan_2d( rtm ) ) then
           write(fstderr,*) "rtm before BUGSrad is NaN"
-          err_code_radiation = clubb_var_equals_NaN
+          err_code = clubb_fatal_error
         end if
 
         if ( is_nan_2d( rsm ) ) then
           write(fstderr,*) "rsm before BUGSrad is NaN"
-          err_code_radiation = clubb_var_equals_NaN
+          err_code = clubb_fatal_error
         end if
 
         if ( is_nan_2d( rim ) ) then
           write(fstderr,*) "rim before BUGSrad is NaN"
-          err_code_radiation = clubb_var_equals_NaN
+          err_code = clubb_fatal_error
         end if
 
         if ( is_nan_2d( cloud_frac ) ) then
           write(fstderr,*) "cloud_frac before BUGSrad is NaN"
-          err_code_radiation = clubb_var_equals_NaN
+          err_code = clubb_fatal_error
         end if
 
         if ( is_nan_2d( p_in_Pa ) ) then
           write(fstderr,*) "p_in_Pa before BUGSrad is NaN"
-          err_code_radiation = clubb_var_equals_NaN
+          err_code = clubb_fatal_error
         end if
 
         if ( is_nan_2d( exner ) ) then
           write(fstderr,*) "exner before BUGSrad is NaN"
-          err_code_radiation = clubb_var_equals_NaN
+          err_code = clubb_fatal_error
         end if
 
         if ( is_nan_2d( rho_zm ) ) then
           write(fstderr,*) "rho_zm before BUGSrad is NaN"
-          err_code_radiation = clubb_var_equals_NaN
+          err_code = clubb_fatal_error
         end if
 
         ! Check for impossible negative values
@@ -4534,12 +4493,12 @@ module clubb_driver
 
         if ( is_nan_2d( Frad ) ) then
           write(fstderr,*) "Frad after BUGSrad is NaN"
-          err_code_radiation = clubb_var_equals_NaN
+          err_code = clubb_fatal_error
         end if
 
         if ( is_nan_2d( radht ) ) then
           write(fstderr,*) "radht after BUGSrad is NaN"
-          err_code_radiation = clubb_var_equals_NaN
+          err_code = clubb_fatal_error
         end if
 
       end if  ! clubb_at_least_debug_level( 2 )
@@ -4573,7 +4532,6 @@ module clubb_driver
       end if
 
       call simple_rad( rho, rho_zm, rtm, rcm, exner, & ! In
-                       err_code_radiation, &           ! Inout
                        Frad_LW, radht_LW )             ! Out
 
 
@@ -4602,13 +4560,9 @@ module clubb_driver
 
     end select ! Radiation scheme
 
-    if ( fatal_error( err_code_radiation ) ) then
-      if ( clubb_at_least_debug_level( 0 ) ) then
+    if (  err_code  /= clubb_no_error ) then
         write(fstderr,*) "Fatal error in advance_clubb_radiation:"
-        call report_error( err_code_radiation )
-      end if
-
-      err_code = err_code_radiation ! Overwrite with new fatal error
+        stop
     end if
 
     return
@@ -4769,7 +4723,6 @@ module clubb_driver
                time_initial, rho, rho_zm, p_in_Pa, exner, &
                cloud_frac, ice_supersat_frac, X_nl_all_levs, &
                lh_clipped_vars, lh_sample_point_weights, hydromet, &
-               err_code, &
                radht, Frad, Frad_SW_up, Frad_LW_up, Frad_SW_down, Frad_LW_down )
 
   ! Description:
@@ -4785,10 +4738,9 @@ module clubb_driver
       core_rknd
 
     use error_code, only: &
-      clubb_no_error, & !---------------------------------------- Constant
-      fatal_error, &    !---------------------------------------- Function(s)
-      clubb_at_least_debug_level, &
-      report_error !--------------------------------------------- Subroutine
+        clubb_at_least_debug_level,  & ! Procedure
+        err_code,                    & ! Error Indicator
+        clubb_no_error                 ! Constant
 
     use latin_hypercube_driver_module, only: &
       copy_X_nl_into_hydromet_all_pts, &   !--------------------- Procedure
@@ -4830,10 +4782,6 @@ module clubb_driver
     real( kind = core_rknd ), dimension(nz,hydromet_dim), intent(in) :: &
       hydromet             ! Hydrometeor mean fields
 
-    ! Input/Output Variables
-    integer, intent(inout) :: &
-      err_code
-
     ! Output Variables
     real( kind = core_rknd ), dimension(nz), intent(out) :: &
       radht,        & ! Radiative heating rate                         [K/s]
@@ -4861,13 +4809,11 @@ module clubb_driver
 
     integer :: isample, k ! Looping variates
 
-    integer, dimension(lh_num_samples) :: &
-      err_code_samp
   !-----------------------------------------------------------------------
 
     !----- Begin Code -----
 
-    err_code_samp(:) = clubb_no_error
+    !err_code = clubb_no_error
 
     call copy_X_nl_into_hydromet_all_pts &
          ( nz, pdf_dim, lh_num_samples, &                 ! Intent(in)
@@ -4883,7 +4829,6 @@ module clubb_driver
              exner, cloud_frac, ice_supersat_frac, lh_clipped_vars(:,isample)%thl, & ! Intent(in)
              lh_clipped_vars(:,isample)%rt, lh_clipped_vars(:,isample)%rc, &         ! Intent(in)
              hydromet_all_pts(:,isample,:), &                                        ! Intent(in)
-             err_code_samp(isample), &                                               ! Intent(inout)
              radht_samples(:,isample), Frad_samples(:,isample), &                    ! Intent(out)
              Frad_SW_up_samples(:,isample), Frad_LW_up_samples(:,isample), &         ! Intent(out)
              Frad_SW_down_samples(:,isample), Frad_LW_down_samples(:,isample) )      ! Intent(out)
@@ -4907,21 +4852,10 @@ module clubb_driver
 
     end forall
 
-    ! Check for errors
-    do isample=1, lh_num_samples
-      if ( fatal_error( err_code_samp(isample) ) ) then
-
-        if ( clubb_at_least_debug_level( 0 ) ) then
-
-          write(fstderr,*) "Fatal error in silhs_radiation_driver:"
-          call report_error( err_code_samp(isample) )
-
-        end if ! clubb_at_least_debug_level( 1 )
-
-        err_code = err_code_samp(isample)
-
-      end if ! fatal_error( err_code_samp(isample)
-    end do ! isample=1, lh_num_samples
+    if ( err_code /= clubb_no_error ) then
+      write(fstderr,*) "Fatal error in silhs_radiation_driver:"
+      stop
+    end if
 
     return
   end subroutine silhs_radiation_driver

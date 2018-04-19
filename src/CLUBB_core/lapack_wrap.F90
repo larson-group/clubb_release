@@ -14,12 +14,6 @@ module lapack_wrap
   use constants_clubb, only:  & 
     fstderr ! Variable(s)
 
-  use error_code, only:  & 
-    clubb_singular_matrix,  & ! Variable(s)
-    clubb_bad_lapack_arg, & 
-    clubb_var_equals_NaN, &
-    clubb_no_error
-
   use clubb_precision, only: &
     core_rknd, & ! Variable(s)
     dp
@@ -47,7 +41,7 @@ module lapack_wrap
 !-----------------------------------------------------------------------
   subroutine tridag_solvex( solve_type, ndim, nrhs, &
                             supd, diag, subd, rhs, &
-                            solution, rcond, err_code )
+                            solution, rcond )
 
 ! Description:
 !   Solves a tridiagonal system of equations (expert routine).
@@ -60,11 +54,15 @@ module lapack_wrap
 !   More expensive than the simple routine, but tridiagonal
 !   decomposition is still relatively cheap.
 !-----------------------------------------------------------------------
-    use error_code, only: &
-      clubb_at_least_debug_level ! Logical function
 
     use clubb_precision, only: &
       core_rknd ! Variable(s)
+
+    use error_code, only: &
+      clubb_at_least_debug_level,  & ! Procedure  
+      err_code,                    & ! Error Indicator
+      clubb_fatal_error,           & ! Constants
+      clubb_no_error
 
     implicit none
 
@@ -96,9 +94,6 @@ module lapack_wrap
     ! precision, and info == ndim+1.  If rcond == 0, then the LHS matrix
     ! is singular.  This condition is indicated by a return code of info > 0.
     real( kind = core_rknd ), intent(out) :: rcond
-
-    integer, intent(out) ::  & 
-      err_code ! Used to determine when a decomp. failed
 
     ! Output variables
     real( kind = core_rknd ), intent(out), dimension(ndim,nrhs) ::  & 
@@ -172,14 +167,14 @@ module lapack_wrap
     case( :-1 )
       write(fstderr,*) trim( solve_type )// & 
         "illegal value in argument", -info
-      err_code = clubb_bad_lapack_arg
+      err_code = clubb_fatal_error
 
     case( 0 )
       ! Success!
       if ( lapack_isnan( ndim, nrhs, solution ) ) then
-        err_code = clubb_var_equals_NaN 
+        err_code = clubb_fatal_error 
       else
-        err_code = clubb_no_error
+        !!err_code = clubb_no_error
       end if
 
     case( 1: )
@@ -188,11 +183,11 @@ module lapack_wrap
           " Warning: matrix is singular to working precision."
         write(fstderr,'(a,e12.5)')  & 
           "Estimate of the reciprocal of the condition number: ", rcond
-        err_code = clubb_no_error
+        !!err_code = clubb_no_error
       else
         write(fstderr,*) solve_type// & 
           " singular matrix."
-        err_code = clubb_singular_matrix
+        err_code = clubb_fatal_error
       end if
 
     end select
@@ -204,7 +199,7 @@ module lapack_wrap
   subroutine tridag_solve & 
              ( solve_type, ndim, nrhs, &
                supd, diag, subd, rhs, &
-               solution, err_code )
+               solution )
 
 ! Description:
 !   Solves a tridiagonal system of equations (simple routine)
@@ -216,6 +211,11 @@ module lapack_wrap
 
     use clubb_precision, only: &
       core_rknd ! Variable(s)
+
+    use error_code, only: &
+      err_code,                    & ! Error Indicator
+      clubb_fatal_error,           & ! Constants
+      clubb_no_error 
 
     implicit none
 
@@ -245,10 +245,6 @@ module lapack_wrap
     ! Output variables
     real( kind = core_rknd ), intent(out), dimension(ndim,nrhs) ::  & 
       solution ! Solution
-
-
-    integer, intent(out) ::  & 
-      err_code ! Used to determine when a decomp. failed
 
     ! Local Variables
 
@@ -292,23 +288,23 @@ module lapack_wrap
     case( :-1 )
       write(fstderr,*) trim( solve_type )// & 
         " illegal value in argument", -info
-      err_code = clubb_bad_lapack_arg
+      err_code = clubb_fatal_error
 
       solution = -999._core_rknd
 
     case( 0 )
       ! Success!
       if ( lapack_isnan( ndim, nrhs, rhs ) ) then
-        err_code = clubb_var_equals_NaN 
+        err_code = clubb_fatal_error 
       else
-        err_code = clubb_no_error
+        !!err_code = clubb_no_error
       end if
 
       solution = rhs
 
     case( 1: )
       write(fstderr,*) trim( solve_type )//" singular matrix."
-      err_code = clubb_singular_matrix
+      err_code = clubb_fatal_error
 
       solution = -999._core_rknd
 
@@ -319,7 +315,7 @@ module lapack_wrap
 
 !-----------------------------------------------------------------------
   subroutine band_solvex( solve_type, nsup, nsub, ndim, nrhs,  & 
-                          lhs, rhs, solution, rcond, err_code )
+                          lhs, rhs, solution, rcond )
 ! Description:
 !   Restructure and then solve a band diagonal system, with
 !   diagnostic output
@@ -336,11 +332,15 @@ module lapack_wrap
 !   refinement of the solutions, which results in a slightly different answer
 !   than the simple driver does. -dschanen 24 Sep 2008
 !-----------------------------------------------------------------------
-    use error_code, only: &
-      clubb_at_least_debug_level ! Logical function
 
     use clubb_precision, only: &
       core_rknd ! Variable(s)
+
+    use error_code, only: &
+      clubb_at_least_debug_level,  & ! Procedure  
+      err_code,                    & ! Error Indicator
+      clubb_fatal_error,           & ! Constants
+      clubb_no_error 
 
     implicit none
 
@@ -373,8 +373,6 @@ module lapack_wrap
     ! after equilibration (if done).
     real( kind = core_rknd ), intent(out) ::  & 
       rcond
-
-    integer, intent(out) :: err_code ! Valid calculation?
 
     ! Local Variables
 
@@ -461,9 +459,12 @@ module lapack_wrap
                    rcond, ferr, berr, work, iwork, info )
 
     else
-      stop "band_solvex: Cannot resolve the precision of real datatype"
-      ! One implication of this is that CLUBB cannot be used with quad
-      ! precision variables without a quad precision band diagonal solver
+
+      if ( clubb_at_least_debug_level( 0 ) ) then
+          write(fstderr,*) "in band_solvex: only single/double precision supported"
+          stop
+      end if
+
     end if
 
 ! %% debug
@@ -503,16 +504,16 @@ module lapack_wrap
     select case( info )
 
     case( :-1 )
-      write(fstderr,*) trim( solve_type )// & 
-        " illegal value for argument", -info
-      err_code = clubb_bad_lapack_arg
+      write(fstderr,*) "in band_solvex for ", trim( solve_type ), &
+        ": illegal value for argument", -info
+      err_code = clubb_fatal_error
 
     case( 0 )
       ! Success!
       if ( lapack_isnan( ndim, nrhs, solution ) ) then
-        err_code = clubb_var_equals_NaN 
+        err_code = clubb_fatal_error 
       else
-        err_code = clubb_no_error
+        !!err_code = clubb_no_error
       end if
 
     case( 1: )
@@ -522,11 +523,11 @@ module lapack_wrap
         write(fstderr,'(a,e12.5)')  & 
           "Estimate of the reciprocal of the"// & 
           " condition number: ", rcond
-        err_code = clubb_no_error
+        !!err_code = clubb_no_error
       else
-        write(fstderr,*) trim( solve_type )// & 
-          " band solver: singular matrix"
-        err_code = clubb_singular_matrix
+        write(fstderr,*) "in band_solvex for", trim( solve_type ), &
+          ": singular matrix, solution not computed"
+        err_code = clubb_fatal_error
       end if
 
     end select
@@ -536,7 +537,7 @@ module lapack_wrap
 
 !-----------------------------------------------------------------------
   subroutine band_solve( solve_type, nsup, nsub, ndim, nrhs,  & 
-                          lhs, rhs, solution, err_code )
+                          lhs, rhs, solution )
 ! Description:
 !   Restructure and then solve a band diagonal system
 
@@ -547,6 +548,11 @@ module lapack_wrap
 
     use clubb_precision, only: &
       core_rknd ! Variable(s)
+
+    use error_code, only: &
+      err_code,                    & ! Error Indicator
+      clubb_fatal_error,           & ! Constants
+      clubb_no_error 
 
     implicit none
 
@@ -575,8 +581,6 @@ module lapack_wrap
 
     ! Output Variables
     real( kind = core_rknd ), dimension(ndim,nrhs), intent(out) :: solution
-
-    integer, intent(out) :: err_code ! Valid calculation?
 
     ! Local Variables
 
@@ -671,28 +675,23 @@ module lapack_wrap
     select case( info )
 
     case( :-1 )
-      write(fstderr,*) trim( solve_type )// & 
-        " illegal value for argument ", -info
-      err_code = clubb_bad_lapack_arg
-
-      solution = -999._core_rknd
-
+      write(fstderr,*) "in band_solve for ", trim( solve_type ), &
+        ": illegal value for argument", -info
+      err_code = clubb_fatal_error
     case( 0 )
       ! Success!
       if ( lapack_isnan( ndim, nrhs, rhs ) ) then
-        err_code = clubb_var_equals_NaN 
+        err_code = clubb_fatal_error 
       else
-        err_code = clubb_no_error
+        !!err_code = clubb_no_error
       end if
 
       solution = rhs
 
     case( 1: )
-      write(fstderr,*) trim( solve_type )//" band solver: singular matrix"
-      err_code = clubb_singular_matrix
-
-      solution = -999._core_rknd
-
+      write(fstderr,*) "in band_solve for ", trim( solve_type ), &
+                       ": singular matrix, solution not computed"
+      err_code = clubb_fatal_error
     end select
 
     return

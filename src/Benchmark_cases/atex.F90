@@ -17,7 +17,6 @@ module atex
   !======================================================================
   subroutine atex_tndcy( time, time_initial, &
                          rtm, &
-                         err_code, &
                          wm_zt, wm_zm, & 
                          thlm_forcing, rtm_forcing, & 
                          sclrm_forcing, edsclrm_forcing )
@@ -42,7 +41,9 @@ module atex
 
   use clubb_precision, only: time_precision, core_rknd ! Variable(s)
 
-  use error_code, only: clubb_rtm_level_not_found ! Variable(s)
+  use error_code, only: &
+        clubb_fatal_error, &            ! Constant
+        err_code                        ! Error indicator
 
   use array_index, only: iisclr_rt, iisclr_thl, iiedsclr_rt, iiedsclr_thl ! Variable(s)
    
@@ -55,9 +56,6 @@ module atex
 
   real( kind = core_rknd ), intent(in), dimension(gr%nz) :: & 
     rtm      ! Total water mixing ratio        [kg/kg]
-
-  ! Input/output
-  integer, intent(inout) :: err_code ! Diagnostic 
 
   ! Output Variables
   real( kind = core_rknd ), intent(out), dimension(gr%nz) :: & 
@@ -99,7 +97,7 @@ module atex
        write(fstderr,*) "Subroutine: atex_tndcy. File: atex.F"
        write(fstderr,*) "i = ", i
        write(fstderr,*) "rtm(i) = ",rtm(i)
-       err_code = clubb_rtm_level_not_found
+       err_code = clubb_fatal_error
        return
      end if
      z_inversion = gr%zt(i-1)

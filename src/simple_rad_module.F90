@@ -178,7 +178,7 @@ module simple_rad_module
 
 !-------------------------------------------------------------------------------
   subroutine simple_rad( rho, rho_zm, rtm, rcm, exner,  & 
-                         err_code, Frad_LW, radht_LW )
+                         Frad_LW, radht_LW )
 ! Description:
 !   A simplified radiation driver
 ! References:
@@ -191,7 +191,10 @@ module simple_rad_module
 
     use constants_clubb, only: fstderr, Cp, eps ! Variable(s)
 
-    use error_code, only: clubb_rtm_level_not_found ! Variable(s)
+    use error_code, only: &
+        clubb_at_least_debug_level,  & ! Procedure
+        err_code,                    & ! Error Indicator
+        clubb_fatal_error                 ! Constant
 
     use stats_type_utilities, only: stat_update_var_pt ! Procedure(s)
 
@@ -227,9 +230,7 @@ module simple_rad_module
       rtm,    & ! Total water mixing ratio       [kg/kg]
       rcm,    & ! Cloud water mixing ratio       [kg/kg]
       exner     ! Exner function.                [-]
-
-    integer, intent(inout) :: err_code
-
+    
     ! Output Variables
     real( kind = core_rknd ), intent(out), dimension(gr%nz) ::  & 
       Frad_LW,         & ! Radiative flux                 [W/m^2]
@@ -268,15 +269,18 @@ module simple_rad_module
       do while ( k <= gr%nz .and. rtm(k) > 8.0e-3_core_rknd )
         k = k + 1
       end do
-      if ( k == gr%nz+1 .or. k == 2 ) then
-        write(fstderr,*) "Identification of 8.0 g/kg level failed"
-        write(fstderr,*) "Subroutine: simple_rad. " & 
-          // "File: simple_rad_module.F90"
-        write(fstderr,*) "k = ", k
-        write(fstderr,*) "rtm(k) = ", rtm(k)
-        err_code = clubb_rtm_level_not_found
-        return
-      end if
+    
+    if ( clubb_at_least_debug_level( 0 ) ) then
+        if ( k == gr%nz+1 .or. k == 2 ) then
+            write(fstderr,*) "Identification of 8.0 g/kg level failed"
+            write(fstderr,*) "Subroutine: simple_rad. " & 
+              // "File: simple_rad_module.F90"
+            write(fstderr,*) "k = ", k
+            write(fstderr,*) "rtm(k) = ", rtm(k)
+            err_code = clubb_fatal_error
+            return
+        end if
+    end if
 
       z_i = lin_interpolate_two_points( 8.0e-3_core_rknd, rtm(k), rtm(k-1), gr%zt(k), gr%zt(k-1) )
 

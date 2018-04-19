@@ -35,9 +35,10 @@ program jacobian
       fname_zt,  & ! Variable(s) 
       fname_zm
 
-  use error_code, only:  & 
-      clubb_no_error,  & ! Variable(s)
-      fatal_error ! Procedure(s)
+  use error_code, only: &
+        clubb_at_least_debug_level,  & ! Procedure
+        err_code,                    & ! Error Indicator
+        clubb_no_error                 ! Constant
 
   use parameters_model, only: &
     PosInf ! Variable(s)
@@ -113,8 +114,7 @@ program jacobian
     nzt, &        ! Thermo grid levels
     nzm, &        ! Momentum grid levels
     alloc_stat, & ! Det. whether array allocation worked
-    i, j, k, &    ! loop variables
-    err_code      ! Determines whether a run went unstable
+    i, j, k       ! loop variables
 
   real( kind = core_rknd ) ::  & 
     delta_factor, & ! Factor that tunable parameters are multiplied by
@@ -137,7 +137,7 @@ program jacobian
 
   times(1:10) = 0
 
-  err_code = clubb_no_error
+  !err_code = clubb_no_error
 
   allocate( clubb_params%value( nparams ),  & 
             clubb_params%name( nparams ), & 
@@ -172,11 +172,12 @@ program jacobian
   end do
 
   call run_clubb  & 
-       ( clubb_params%value(:), 'jacobian.in', .false., err_code )
+       ( clubb_params%value(:), 'jacobian.in', .false. )
 
-  if ( fatal_error(err_code) ) then
-    stop "The initial set of parameters caused a fatal error."
-
+  if ( clubb_at_least_debug_level( 0 ) ) then
+    if ( err_code /= clubb_no_error ) then
+      stop "The initial set of parameters caused a fatal error."
+    end if
   end if
 
   ! Obtain number of vertical levels from the generated GrADS files
@@ -267,12 +268,12 @@ program jacobian
     clubb_params%value(i) = clubb_params%value(i) * delta_factor
 
     call run_clubb & 
-      ( clubb_params%value(:), 'jacobian.in', .false., err_code )
+      ( clubb_params%value(:), 'jacobian.in', .false. )
 
     ! Print a period so the user knows something is happening
     write(unit=fstdout, fmt='(a1)', advance='no') "."
 
-    if ( fatal_error( err_code ) ) then
+    if (  err_code  /= clubb_no_error ) then
 
       ! Pos. Infinity bit pattern
       jmatrix(i,:) = real(PosInf, kind = core_rknd)

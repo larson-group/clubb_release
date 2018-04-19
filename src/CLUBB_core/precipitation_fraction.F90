@@ -52,9 +52,6 @@ module precipitation_fraction
         l_frozen_hm,  &
         hydromet_tol
 
-    use error_code, only : &
-        clubb_at_least_debug_level ! Procedure(s)
-
     use stats_variables, only: &
         stats_sfc,        & ! Variable(s)
         iprecip_frac_tol
@@ -64,6 +61,9 @@ module precipitation_fraction
 
     use clubb_precision, only: &
         core_rknd  ! Variable(s)
+
+    use error_code, only: &
+        clubb_at_least_debug_level   ! Procedure
 
     implicit none
 

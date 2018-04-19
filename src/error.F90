@@ -54,11 +54,6 @@ module error
   integer, public :: &
     ndim ! Number of variables, e.g. rcm, to be tuned. Dimension of the init simplex
 
-  ! 'err_code' is an important integer used by the min_diff to
-  ! determine whether CLUBB has become numerically unstable
-  integer, public ::  & 
-    err_code
-
   ! inv_count is a modular counter [1-3] used to determine
   ! which file to output to if l_stdout_on_invalid is true.
   integer, private ::  & 
@@ -175,7 +170,10 @@ module error
 !-----------------------------------------------------------------------
     use constants_clubb, only: fstdout, fstderr ! Variable(s)
 
-    use error_code, only: fatal_error ! Procedure(s)
+    use error_code, only: &
+        clubb_at_least_debug_level,  & ! Procedure
+        err_code,                    & ! Error Indicator
+        clubb_no_error                 ! Constant
 
     use text_writer, only: write_text ! Subroutine(s)
 
@@ -552,9 +550,11 @@ module error
     ! invalid values for variations on the initial vector, but that
     ! algorithm relies on the initial vector being valid.
 
-    if ( fatal_error( err_code ) ) then
-      write(fstderr,*) "Initial variable values must be valid."
-      stop
+    if ( clubb_at_least_debug_level( 0 ) ) then
+        if (  err_code  /= clubb_no_error ) then
+          write(fstderr,*) "Initial variable values must be valid."
+          stop
+        end if
     end if
 
     ! Save initial error
@@ -603,16 +603,17 @@ module error
 
     use clubb_driver, only: run_clubb ! Procedure(s)
 
+    use error_code, only: &
+        clubb_at_least_debug_level,  & ! Procedure
+        err_code,                    & ! Error Indicator
+        clubb_no_error                 ! Constant
+
     use stat_file_utils, only: &
       stat_file_num_vertical_levels, & ! Procedure(s)
       stat_file_vertical_levels, &
       stat_file_average_interval
 
     use parameters_tunable, only: params_list ! Variable(s)
-
-    use error_code, only: clubb_no_error ! Variable(s)
-
-    use error_code, only: fatal_error ! Procedure(s)
 
     use numerical_check, only: is_nan_2d ! Procedure(s)
 
@@ -801,19 +802,17 @@ module error
 
       if ( allocated( model_flags_array ) ) then
         call run_clubb &
-             ( params_local, run_file(c_run), l_stdout, run_stat(c_run), &
+             ( params_local, run_file(c_run), l_stdout, &
                model_flags_array(iter,:) )
       else
         call run_clubb & 
-             ( params_local, run_file(c_run), l_stdout, run_stat(c_run) )
+             ( params_local, run_file(c_run), l_stdout )
       end if
+
+      run_stat(c_run) = err_code
 
     end do ! 1..c_run
 !$omp end parallel do
-
-    do c_run = 1, c_total, 1
-      if ( err_code < run_stat(c_run) ) err_code = run_stat(c_run)
-    end do
 
     !-----------------------------------------------------------------------
 
@@ -822,7 +821,7 @@ module error
 
     ! If it has, it returns higher value than those previous to
     ! Amoeba (the downhill simplex)
-    if ( fatal_error( err_code ) ) then
+    if ( any( run_stat(:) /= clubb_no_error ) ) then
       write(fstderr,*) "Warning: the parameter set has caused CLUBB to crash"
       min_les_clubb_diff = real(2._core_rknd * maxval( cost_fnc_vector )  & 
                        - minval( cost_fnc_vector ))

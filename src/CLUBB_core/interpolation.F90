@@ -285,12 +285,12 @@ module interpolation
     use clubb_precision, only: &
       core_rknd                  ! Variable(s)
 
-    use error_code, only: &
-      clubb_at_least_debug_level ! Procedure(s)
-
     use constants_clubb, only: &
       fstderr                    ! Variable(s)
     
+    use error_code, only: &
+      clubb_at_least_debug_level ! Error indicator
+
     implicit none
 
     ! Input Variables
@@ -590,14 +590,13 @@ module interpolation
 ! Author: Michael Falk for COAMPS.
 !-------------------------------------------------------------------------------
 
-    use error_code, only: & 
-      clubb_debug, & ! Procedure(s)
-      clubb_at_least_debug_level
-
     use constants_clubb, only: fstderr ! Constant
 
     use clubb_precision, only: &
       core_rknd ! Variable(s)
+
+    use error_code, only: &
+      clubb_at_least_debug_level ! Error indicator
 
     implicit none
 
@@ -630,7 +629,7 @@ module interpolation
 !
 !-------------------------------------------------------------------------------
 
-     if ( clubb_at_least_debug_level( 2 ) ) then
+     if ( clubb_at_least_debug_level( 0 ) ) then
        do i=2,nparam
          if ( xlist(i) <= xlist(i-1) ) then
            write(fstderr,*) "xlist must be sorted for lin_interpolate_on_grid."
@@ -645,9 +644,11 @@ module interpolation
 !
 !-------------------------------------------------------------------------------
 
-    if ( (xvalue < xlist(1)) .or. (xvalue > xlist(nparam)) ) then
-      write(fstderr,*) "lin_interpolate_on_grid: Value out of range"
-      stop
+    if ( clubb_at_least_debug_level( 0 ) ) then
+        if ( (xvalue < xlist(1)) .or. (xvalue > xlist(nparam)) ) then
+          write(fstderr,*) "lin_interpolate_on_grid: Value out of range"
+          stop
+        end if
     end if
 
 !-------------------------------------------------------------------------------
@@ -667,9 +668,9 @@ module interpolation
       end if
     end do
 
-    if ( topbound == -1 .or. bottombound == -1 ) then
-      call clubb_debug( 1, "Sanity check failed! xlist is not properly sorted" )
-      call clubb_debug( 1, "in lin_interpolate_on_grid.")
+    if ( clubb_at_least_debug_level( 1 ) .and. (topbound == -1 .or. bottombound == -1) ) then
+      write(fstderr,*) "Sanity check failed! xlist is not properly sorted" 
+      write(fstderr,*) "in lin_interpolate_on_grid."
     end if
 
     tvalue =  & 

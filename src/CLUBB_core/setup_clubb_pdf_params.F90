@@ -154,8 +154,8 @@ module setup_clubb_pdf_params
         hmp2_ip_on_hmm2_ip,    & ! Variable(s)
         Ncnp2_on_Ncnm2
 
-    use error_code, only : &
-        clubb_at_least_debug_level   ! Procedure(s)
+    use error_code, only: &
+        clubb_at_least_debug_level  ! Procedure
 
     implicit none
 
@@ -305,27 +305,23 @@ module setup_clubb_pdf_params
 
     ! Assertion check
     ! Check that all hydrometeors are positive otherwise exit the program
-    if ( clubb_at_least_debug_level( 2 ) ) then
+    if ( clubb_at_least_debug_level( 0 ) ) then
        do i = 1, hydromet_dim
           if ( any( hydromet(:,i) < zero_threshold ) ) then
              hydromet_name = hydromet_list(i)
              do k = 1, nz
                 if ( hydromet(k,i) < zero_threshold ) then
-
                    ! Write error message
-                   write(fstderr,*) trim( hydromet_name )//" = ", &
+                   write(fstderr,*) " at beginning of setup_pdf_parameters: ", &
+                                    trim( hydromet_name )//" = ", &
                                     hydromet(k,i), " < ", zero_threshold, &
-                                    " at beginning of setup_pdf_parameters" &
-                                    //" at k = ", k
-
+                                    " at k = ", k
                    ! Exit program
-                   stop "Exiting..."
-
+                   stop "A hydrometeor value is negative."
                 endif ! hydromet(k,i) < 0
              enddo ! k = 1, nz
           endif ! hydromet(:,i) < 0
        enddo ! i = 1, hydromet_dim
-
     endif !clubb_at_least_debug_level( 2 )
 
     ! Setup some of the PDF parameters
@@ -691,11 +687,11 @@ module setup_clubb_pdf_params
     corr_cholesky_mtx_2(:,:,1) = zero
     call init_hydromet_pdf_params( hydromet_pdf_params(1) )
 
-    if (clubb_at_least_debug_level( 2 )) then
-       do k = 2, nz
-          call assert_corr_symmetric( corr_array_1_n(:,:,k), pdf_dim)
-          call assert_corr_symmetric( corr_array_2_n(:,:,k), pdf_dim)
-       enddo
+    if ( clubb_at_least_debug_level( 2 ) ) then
+        do k = 2, nz
+            call assert_corr_symmetric( corr_array_1_n(:,:,k), pdf_dim)
+            call assert_corr_symmetric( corr_array_2_n(:,:,k), pdf_dim)
+        enddo
     endif
 
 

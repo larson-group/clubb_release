@@ -58,7 +58,7 @@ contains
       core_rknd
       
     use error_code, only: &
-      clubb_at_least_debug_level ! Procedure
+        clubb_at_least_debug_level  ! Procedure
 
     use estimate_scm_microphys_module, only: &
       est_single_column_tndcy
