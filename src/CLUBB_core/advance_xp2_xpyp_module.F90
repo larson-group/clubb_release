@@ -865,7 +865,7 @@ module advance_xp2_xpyp_module
 
     endif ! l_scalar_calc
 
-    if ( err_code  /= clubb_no_error ) then
+    if ( err_code /= clubb_no_error ) then
 
       write(fstderr,*) "Error in advance_xp2_xpyp"
 

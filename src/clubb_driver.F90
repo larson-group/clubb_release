@@ -953,7 +953,7 @@ module clubb_driver
     rtphmp_zt(:,:)  = 0._core_rknd
     thlphmp_zt(:,:) = 0._core_rknd
 
-    if (  err_code  /= clubb_no_error ) then
+    if ( err_code /= clubb_no_error ) then
       ! At this point, input fields haven't been set up, so don't clean them up.
       call cleanup_clubb( l_input_fields=.false. )
       return
@@ -1077,7 +1077,7 @@ module clubb_driver
              Ncm, Nc_in_cloud, Nccnm,                           & ! Intent(inout)
              sclrm, edsclrm )                           ! Intent(out)
 
-      if (  err_code  /= clubb_no_error ) then
+      if ( err_code /= clubb_no_error ) then
         ! At this point, input fields haven't been set up, so don't clean them up.
         call cleanup_clubb( l_input_fields=.false. )
         return
@@ -1109,7 +1109,7 @@ module clubb_driver
              Ncm, Nc_in_cloud, Nccnm,                            & ! Intent(inout)
              sclrm, edsclrm )                            ! Intent(out)
 
-      if (  err_code  /= clubb_no_error ) then
+      if ( err_code /= clubb_no_error ) then
         ! At this point, input fields haven't been set up, so don't clean them up.
         call cleanup_clubb( l_input_fields=.false. )
         return
@@ -1321,7 +1321,7 @@ module clubb_driver
       ! Set large-scale tendencies and subsidence profiles
       call prescribe_forcings( dt_main )  ! Intent(in)
 
-      if ( err_code  /= clubb_no_error ) then
+      if ( err_code /= clubb_no_error ) then
           write(fstderr,*) "Fatal error in prescribe_forcings:"
           stop
       end if
@@ -4560,7 +4560,7 @@ module clubb_driver
 
     end select ! Radiation scheme
 
-    if (  err_code  /= clubb_no_error ) then
+    if ( err_code /= clubb_no_error ) then
         write(fstderr,*) "Fatal error in advance_clubb_radiation:"
         stop
     end if
@@ -4812,8 +4812,6 @@ module clubb_driver
   !-----------------------------------------------------------------------
 
     !----- Begin Code -----
-
-    !err_code = clubb_no_error
 
     call copy_X_nl_into_hydromet_all_pts &
          ( nz, pdf_dim, lh_num_samples, &                 ! Intent(in)

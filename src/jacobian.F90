@@ -137,8 +137,6 @@ program jacobian
 
   times(1:10) = 0
 
-  !err_code = clubb_no_error
-
   allocate( clubb_params%value( nparams ),  & 
             clubb_params%name( nparams ), & 
             stat=alloc_stat )
@@ -273,7 +271,7 @@ program jacobian
     ! Print a period so the user knows something is happening
     write(unit=fstdout, fmt='(a1)', advance='no') "."
 
-    if (  err_code  /= clubb_no_error ) then
+    if ( err_code /= clubb_no_error ) then
 
       ! Pos. Infinity bit pattern
       jmatrix(i,:) = real(PosInf, kind = core_rknd)

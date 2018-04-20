@@ -486,7 +486,7 @@ module advance_xm_wpxp_module
                             solution )           ! Intent(out)
       endif
 
-      if (  err_code  /= clubb_no_error ) then
+      if ( err_code /= clubb_no_error ) then
           write(fstderr,'(a)') "Mean total water & total water flux LU decomp. failed"
           return
       end if
@@ -500,7 +500,7 @@ module advance_xm_wpxp_module
              l_implemented, solution(:,1), &        ! Intent(in)
              rtm, rt_tol_mfl, wprtp )               ! Intent(inout)
 
-      if (  err_code  /= clubb_no_error ) then
+      if ( err_code /= clubb_no_error ) then
           write(fstderr,'(a)') "rtm monotonic flux limiter:  tridag failed"
           return
       end if
@@ -548,7 +548,7 @@ module advance_xm_wpxp_module
                             solution )           ! Intent(out)
       endif
 
-      if (  err_code /= clubb_no_error ) then
+      if ( err_code /= clubb_no_error ) then
           write(fstderr,'(a)') "Liquid pot. temp & thetal flux LU decomp. failed"
           return
       end if
@@ -562,7 +562,7 @@ module advance_xm_wpxp_module
              l_implemented, solution(:,1),  &        ! Intent(in)
              thlm, thl_tol_mfl, wpthlp )             ! Intent(inout)
 
-      if (  err_code  /= clubb_no_error ) then
+      if ( err_code /= clubb_no_error ) then
           write(fstderr,'(a)') "thlm monotonic flux limiter:  tridag failed" 
           return
       end if
@@ -617,7 +617,7 @@ module advance_xm_wpxp_module
                             lhs, rhs, &          ! Intent(inout)
                             solution )           ! Intent(out)
 
-        if ( err_code  /= clubb_no_error ) then
+        if ( err_code /= clubb_no_error ) then
             write(fstderr,*) "Passive scalar # ", i, " LU decomp. failed."
             return
         end if
@@ -632,7 +632,7 @@ module advance_xm_wpxp_module
                l_implemented, solution(:,1),  &         ! Intent(in)
                sclrm(:,i), sclr_tol(i), wpsclrp(:,i) )  ! Intent(inout)
 
-       if ( err_code  /= clubb_no_error ) then
+       if ( err_code /= clubb_no_error ) then
            write(fstderr,*) "sclrm # ", i, "monotonic flux limiter: tridag failed"
            return
        end if
@@ -719,7 +719,7 @@ module advance_xm_wpxp_module
              l_implemented, solution(:,1),  &       ! Intent(in)
              rtm, rt_tol_mfl, wprtp )               ! Intent(inout)
 
-      if ( err_code  /= clubb_no_error ) then
+      if ( err_code /= clubb_no_error ) then
           write(fstderr,*) "rtm monotonic flux limiter:  tridag failed"
           return
       end if
@@ -2286,7 +2286,6 @@ module advance_xm_wpxp_module
       iwpxp_sicl
 
     ! ----- Begin code ------
-    !!err_code = clubb_no_error  ! Initialize to the value for no errors
 
     select case ( solve_type )
     case ( xm_wpxp_rtm ) ! rtm/wprtp budget terms

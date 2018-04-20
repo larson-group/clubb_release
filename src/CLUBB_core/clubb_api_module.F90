@@ -517,7 +517,7 @@ contains
                sclrm_trsport_only,  &  ! h1g, 2010-06-16    ! intent(inout)
 #endif
     sclrp2, sclrprtp, sclrpthlp, &                          ! intent(inout)
-    wpsclrp, edsclrm, &                                     ! intent(inout)
+    wpsclrp, edsclrm, err_code_api, &                       ! intent(inout)
     rcm, cloud_frac, &                                      ! intent(inout)
     wpthvp, wp2thvp, rtpthvp, thlpthvp, &                   ! intent(inout)
     sclrpthvp, &                                            ! intent(inout)
@@ -697,6 +697,9 @@ contains
       thlprcp_out
 #endif
 
+    !!! Output Variable 
+    integer, intent(inout) :: err_code_api ! Diagnostic, for if some calculation goes amiss.
+
 #ifdef GFDL
     ! hlg, 2010-06-16
     real( kind = core_rknd ), intent(inOUT), dimension(gr%nz, min(1,sclr_dim) , 2) :: &
@@ -745,6 +748,9 @@ contains
 #endif
       wprcp, ice_supersat_frac, &                             ! intent(out)
       rcm_in_layer, cloud_cover )                             ! intent(out)
+
+    err_code_api = err_code
+
   end subroutine advance_clubb_core_api
 
   !================================================================================================
@@ -763,11 +769,11 @@ contains
 #endif
     l_implemented, grid_type, deltaz, zm_init, zm_top,  & ! intent(in)
     momentum_heights, thermodynamic_heights,            & ! intent(in)
-    sfc_elevation                                       & ! intent(in)
+    sfc_elevation,                                      & ! intent(in)
 #ifdef GFDL
-    , cloud_frac_min ,                                  & ! intent(in)  h1g, 2010-06-16
+    cloud_frac_min ,                                    & ! intent(in)  h1g, 2010-06-16
 #endif
-    )
+    err_code_api )                                        ! intent(out) 
 
     use advance_clubb_core_module, only : setup_clubb_core
 
@@ -864,6 +870,10 @@ contains
          cloud_frac_min         ! h1g, 2010-06-16 end mod
 #endif
 
+    ! Output variables 
+    integer, intent(out) :: & 
+    err_code_api   ! Diagnostic for a problem with the setup 
+
     call setup_clubb_core &
       ( nzmax, T0_in, ts_nudge_in,                          & ! intent(in)
       hydromet_dim_in, sclr_dim_in,                         & ! intent(in)
@@ -881,6 +891,8 @@ contains
       , cloud_frac_min ,                                    & ! intent(in)  h1g, 2010-06-16
 #endif
       )
+
+    err_code_api = err_code
 
   end subroutine setup_clubb_core_api
 
@@ -1353,7 +1365,8 @@ contains
 
   subroutine setup_parameters_api( &
     deltaz, params, nzmax, &
-    grid_type, momentum_heights, thermodynamic_heights )
+    grid_type, momentum_heights, thermodynamic_heights, &
+    err_code_api )
 
     use parameters_tunable, only: &
       setup_parameters
@@ -1397,9 +1410,15 @@ contains
       momentum_heights,      & ! Momentum level altitudes (input)      [m]
       thermodynamic_heights    ! Thermodynamic level altitudes (input) [m]
 
+    ! Output Variables 
+    integer, intent(out) ::  & 	 	      
+      err_code_api ! Error condition 
+
     call setup_parameters( &
       deltaz, params, nzmax, &
       grid_type, momentum_heights, thermodynamic_heights )
+
+    err_code_api = err_code
 
   end subroutine setup_parameters_api
 

@@ -339,7 +339,7 @@ module advance_microphys_module
 
 
     if ( clubb_at_least_debug_level( 0 ) ) then
-        if (  err_code /= clubb_no_error ) then
+        if ( err_code /= clubb_no_error ) then
             write(fstderr,*) "calling advance_hydrometeor"
             return
         endif !  err_code /= clubb_no_error 
@@ -362,7 +362,7 @@ module advance_microphys_module
         
         if ( clubb_at_least_debug_level( 0 ) ) then
 
-            if (  err_code  /= clubb_no_error ) then
+            if ( err_code /= clubb_no_error ) then
 
                 write(fstderr,*) "in advance_Ncm"
                 write(fstderr,*) "Ncm = ", Ncm
@@ -775,7 +775,7 @@ module advance_microphys_module
                              lhs, rhs, hydromet(:,i) )
 
        if ( clubb_at_least_debug_level( 0 ) ) then 
-           if (  err_code /= clubb_no_error ) then
+           if ( err_code /= clubb_no_error ) then
 
                 write(fstderr,*) "Error in hydrometeor field " &
                                   // trim( hydromet_list(i) )

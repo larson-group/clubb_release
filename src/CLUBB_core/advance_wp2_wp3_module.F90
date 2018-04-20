@@ -348,7 +348,7 @@ module advance_wp2_wp3_module
 
 !       Error output
 !       Joshua Fasching Feb 2008
-    if (  err_code  /= clubb_no_error ) then  
+    if ( err_code /= clubb_no_error ) then  
 
         write(fstderr,*) "Errors in advance_wp2_wp3"
 

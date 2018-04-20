@@ -173,8 +173,6 @@ module lapack_wrap
       ! Success!
       if ( lapack_isnan( ndim, nrhs, solution ) ) then
         err_code = clubb_fatal_error 
-      else
-        !!err_code = clubb_no_error
       end if
 
     case( 1: )
@@ -183,7 +181,6 @@ module lapack_wrap
           " Warning: matrix is singular to working precision."
         write(fstderr,'(a,e12.5)')  & 
           "Estimate of the reciprocal of the condition number: ", rcond
-        !!err_code = clubb_no_error
       else
         write(fstderr,*) solve_type// & 
           " singular matrix."
@@ -296,8 +293,6 @@ module lapack_wrap
       ! Success!
       if ( lapack_isnan( ndim, nrhs, rhs ) ) then
         err_code = clubb_fatal_error 
-      else
-        !!err_code = clubb_no_error
       end if
 
       solution = rhs
@@ -512,8 +507,6 @@ module lapack_wrap
       ! Success!
       if ( lapack_isnan( ndim, nrhs, solution ) ) then
         err_code = clubb_fatal_error 
-      else
-        !!err_code = clubb_no_error
       end if
 
     case( 1: )
@@ -523,7 +516,6 @@ module lapack_wrap
         write(fstderr,'(a,e12.5)')  & 
           "Estimate of the reciprocal of the"// & 
           " condition number: ", rcond
-        !!err_code = clubb_no_error
       else
         write(fstderr,*) "in band_solvex for", trim( solve_type ), &
           ": singular matrix, solution not computed"
@@ -682,8 +674,6 @@ module lapack_wrap
       ! Success!
       if ( lapack_isnan( ndim, nrhs, rhs ) ) then
         err_code = clubb_fatal_error 
-      else
-        !!err_code = clubb_no_error
       end if
 
       solution = rhs

@@ -551,7 +551,7 @@ module error
     ! algorithm relies on the initial vector being valid.
 
     if ( clubb_at_least_debug_level( 0 ) ) then
-        if (  err_code  /= clubb_no_error ) then
+        if ( err_code /= clubb_no_error ) then
           write(fstderr,*) "Initial variable values must be valid."
           stop
         end if

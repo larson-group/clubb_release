@@ -142,9 +142,6 @@ module surface_varnce_module
 
     integer :: i ! Loop index
 
-
-    !!err_code = clubb_no_error
-
     if ( l_andre_1978 ) then
 
        ! Calculate <u>^2 and <v>^2.

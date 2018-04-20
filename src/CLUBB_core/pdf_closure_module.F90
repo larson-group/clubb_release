@@ -408,8 +408,6 @@ module pdf_closure_module
       l_scalar_calc = .false.
     end if
 
-    !!err_code = clubb_no_error ! Initialize to the value for no errors
-
     ! Initialize to default values to prevent a runtime error
     if ( ( iiPDF_type /= iiPDF_ADG1 ) .and. ( iiPDF_type /= iiPDF_ADG2 ) ) then
        alpha_thl = one_half
@@ -1064,7 +1062,7 @@ module pdf_closure_module
       ! Error Reporting
       ! Joshua Fasching February 2008
 
-      if (  err_code  /= clubb_no_error ) then
+      if ( err_code /= clubb_no_error ) then
 
         write(fstderr,*) "Error in pdf_closure_new"
 

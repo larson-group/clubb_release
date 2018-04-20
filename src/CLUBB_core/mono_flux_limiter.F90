@@ -422,7 +422,6 @@ module mono_flux_limiter
       ixm_mfl
 
     !--- Begin Code ---
-    !!err_code = clubb_no_error  ! Initialize to the value for no errors
 
     ! Default Initialization required due to G95 compiler warning
     max_xp2 = 0.0_core_rknd
@@ -711,7 +710,7 @@ module mono_flux_limiter
                              xm )
 
           ! Check for errors
-          if (  err_code  /= clubb_no_error ) return
+          if ( err_code /= clubb_no_error ) return
 
        else  ! l_mfl_xm_imp_adj = .false.
 
@@ -1077,8 +1076,6 @@ module mono_flux_limiter
 
     !-----------------------------------------------------------------------
 
-    !!err_code = clubb_no_error  ! Initialize to the value for no errors
-
     select case( solve_type )
     case ( mono_flux_rtm )
       solve_type_str = "rtm"
@@ -1095,7 +1092,7 @@ module mono_flux_limiter
            xm )                                            ! Intent(out)
 
     ! Check for errors
-    if (  err_code  /= clubb_no_error ) return
+    if ( err_code /= clubb_no_error ) return
 
     ! Boundary condition on xm
     xm(1) = xm(2)

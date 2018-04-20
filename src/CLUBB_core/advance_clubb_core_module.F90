@@ -2451,7 +2451,7 @@ module advance_clubb_core_module
       ! Subroutine may produce NaN values, and if so, exit
       ! gracefully.
       ! Joshua Fasching March 2008
-      if (  err_code /= clubb_no_error ) then
+      if ( err_code /= clubb_no_error ) then
           write(fstderr,*) "At grid level = ",k
           stop
       end if
@@ -2609,7 +2609,7 @@ module advance_clubb_core_module
         ! Subroutine may produce NaN values, and if so, exit
         ! gracefully.
         ! Joshua Fasching March 2008
-        if (  err_code /= clubb_no_error ) then
+        if ( err_code /= clubb_no_error ) then
             write(fstderr,*) "At grid level = ",k
             stop
         end if
@@ -2778,7 +2778,7 @@ module advance_clubb_core_module
         ! Subroutine may produce NaN values, and if so, exit gracefully.
         ! Joshua Fasching March 2008
 
-        if (  err_code /= clubb_no_error ) then
+        if ( err_code /= clubb_no_error ) then
             write(fstderr,*) "At grid level = ", k
             stop
         end if
@@ -2835,7 +2835,7 @@ module advance_clubb_core_module
           ! Joshua Fasching March 2008
 
 
-          if (  err_code  /= clubb_no_error ) then
+          if ( err_code /= clubb_no_error ) then
               write(fstderr,*) "At grid level = ",k
               stop
           end if

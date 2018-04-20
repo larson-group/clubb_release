@@ -276,7 +276,7 @@ module advance_windm_edsclrm_module
 
     ! Check for singular matrices and bad LAPACK arguments
     if ( clubb_at_least_debug_level( 0 ) ) then
-      if ( err_code  /= clubb_no_error ) then
+      if ( err_code /= clubb_no_error ) then
         write(fstderr,*) "Fatal error solving for um/vm"
         return
       end if
@@ -489,7 +489,7 @@ module advance_windm_edsclrm_module
                                 solution )           ! out
 
       if ( clubb_at_least_debug_level( 0 ) ) then
-        if ( err_code  /= clubb_no_error ) then
+        if ( err_code /= clubb_no_error ) then
           write(fstderr,*) "Fatal error solving for eddsclrm"
         end if
       end if
@@ -524,7 +524,7 @@ module advance_windm_edsclrm_module
 
     ! Error report
     ! Joshua Fasching February 2008
-    if ( err_code  /= clubb_no_error .and. clubb_at_least_debug_level( 0 ) ) then
+    if ( err_code /= clubb_no_error .and. clubb_at_least_debug_level( 0 ) ) then
 
       write(fstderr,*) "Error in advance_windm_edsclrm"
 
