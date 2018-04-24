@@ -1,18 +1,19 @@
 &statsnl
 vars_zt =
-'thlm', 'rtm', 'cloud_frac', 'rcm', 'wp3','thlp3','rtp3',
+'thlm', 'rtm', 'cloud_frac', 'rcm', 'wp3', 'thlp3', 'rtp3',
+'wp2rtp', 'wp2thlp', 'wprtp2', 'wpthlp2', 'wprtpthlp', 'wp2rcp',
 'um', 'vm', 'wm_zt', 'rrm', 'Nrm',
 'Ncm', 'Nc_in_cloud', 'rgm', 'rim', 'Nim',
 'rsm', 'Nsm','Lscale', 'radht',
-'corr_w_chi_1_ca', 'corr_w_chi_2_ca', 'corr_w_hm_i', 'corr_w_Ncn_i',
-'corr_chi_eta_1_ca', 'corr_chi_eta_2_ca', 'corr_chi_hm_i', 'corr_chi_Ncn_i',
+'corr_w_chi_1', 'corr_w_chi_2', 'corr_w_hm_i', 'corr_w_Ncn_i',
+'corr_chi_eta_1', 'corr_chi_eta_2', 'corr_chi_hm_i', 'corr_chi_Ncn_i',
 'corr_hmx_hmy_i', 'precip_frac', 'ice_supersat_frac',
 ''
 
 vars_zm =
 'wp2', 'rtp2', 'thlp2', 'rtpthlp', 'wprtp', 'wpthlp', 'tau_zm',
-'upwp', 'vpwp', 'up2', 'vp2', 'wpthvp', 'wprcp', 'rc_coef', 'thlprcp', 'rtprcp',
-'wphydrometp',
+'upwp', 'vpwp', 'up2', 'vp2', 'rcp2', 'wp4',
+'wpthvp', 'wprcp', 'rc_coef', 'thlprcp', 'rtprcp', 'wphydrometp',
 ''
 
 vars_sfc =

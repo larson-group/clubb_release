@@ -227,8 +227,8 @@
        ]},
        {'plotTitle' => 'Correlation of w and \chi', 'axisLabel' => 'corr\_w\_chi\_i [-]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => 'rico_zt.ctl', 'type' => 'auto', 'name' => 'PDF comp. 1 {0}', 'expression' => 'corr_w_chi_1_ca', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'rico_zt.ctl', 'type' => 'auto', 'name' => 'PDF comp. 2 {0}', 'expression' => 'corr_w_chi_2_ca', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+          {'filename' => 'rico_zt.ctl', 'type' => 'auto', 'name' => 'PDF comp. 1 {0}', 'expression' => 'corr_w_chi_1', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'rico_zt.ctl', 'type' => 'auto', 'name' => 'PDF comp. 2 {0}', 'expression' => 'corr_w_chi_2', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
        {'plotTitle' => 'Correlation (in-precip) of w and r_r', 'axisLabel' => 'corr\_w\_rr\_i [-]', 'type' => 'profile', 'lines' =>
        [
@@ -247,8 +247,8 @@
        ]},
        {'plotTitle' => 'Correlation of \chi and \eta', 'axisLabel' => 'corr\_chi\_eta\_i [-]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => 'rico_zt.ctl', 'type' => 'auto', 'name' => 'PDF comp. 1 {0}', 'expression' => 'corr_chi_eta_1_ca', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'rico_zt.ctl', 'type' => 'auto', 'name' => 'PDF comp. 2 {0}', 'expression' => 'corr_chi_eta_2_ca', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+          {'filename' => 'rico_zt.ctl', 'type' => 'auto', 'name' => 'PDF comp. 1 {0}', 'expression' => 'corr_chi_eta_1', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'rico_zt.ctl', 'type' => 'auto', 'name' => 'PDF comp. 2 {0}', 'expression' => 'corr_chi_eta_2', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
        {'plotTitle' => 'Correlation (in-precip) of \chi and r_r', 'axisLabel' => 'corr\_chi\_rr\_i [-]', 'type' => 'profile', 'lines' =>
        [
