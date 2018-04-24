@@ -4423,7 +4423,7 @@ module clubb_driver
       ! NaN checks added to detect possible errors with BUGSrad
       ! Joshua Fasching November 2007
 
-      if ( clubb_at_least_debug_level( 2 ) ) then
+      if ( clubb_at_least_debug_level( 0 ) ) then
 
         if ( is_nan_2d( thlm ) ) then
           write(fstderr,*) "thlm before BUGSrad is NaN"
@@ -4489,7 +4489,7 @@ module clubb_driver
              Frad_SW_up, Frad_LW_up,                  &   ! Intent(out)
              Frad_SW_down, Frad_LW_down )                 ! Intent(out)
 
-      if ( clubb_at_least_debug_level( 2 ) ) then
+      if ( clubb_at_least_debug_level( 0 ) ) then
 
         if ( is_nan_2d( Frad ) ) then
           write(fstderr,*) "Frad after BUGSrad is NaN"

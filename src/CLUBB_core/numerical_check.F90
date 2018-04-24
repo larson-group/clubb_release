@@ -910,8 +910,6 @@ module numerical_check
 
         write(fstderr,*) varname, " < 0 in ", operation,  & 
                          " at k = ", k
-        err_code = clubb_fatal_error
-
       end if
 
     end do ! 1..n
