@@ -110,15 +110,15 @@
        {'plotTitle' => 'Contribution of Cloud Water Flux to wpthvp', 'axisLabel' => 'rc\_coef * wprcp   [K m/s]', 'type' => 'profile', 'lines' =>
        [
           {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/SAM6.6/CLOUD_FEEDBACK_s11_p2K/p2k_s11_96x96x320_50m_DRZ_N100_ref.nc', 'type' => 'les', 'name' => 'SAM-LES', 'expression' => '((QCFLUX) ./ (RHO * 2.5104e+6)) .* (2.5e6 ./ (1004.67*((PRES / 1000).^(287.04/1004.67))) - 1.61*THETAV)', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
-          {'filename' => 'cloud_feedback_s11_p2k_zm.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'rc_coef .* wprcp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+          {'filename' => 'cloud_feedback_s11_p2k_zm.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'rc_coef_zm .* wprcp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
        {'plotTitle' => 'Cloud water contribution to thlpthvp', 'axisLabel' => 'rc\_coef * thlprcp   [K^2]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => 'cloud_feedback_s11_p2k_zm.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'rc_coef .* thlprcp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+          {'filename' => 'cloud_feedback_s11_p2k_zm.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'rc_coef_zm .* thlprcp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
        {'plotTitle' => 'Cloud water contribution to rtpthvp', 'axisLabel' => 'rc\_coef * rtprcp   [K kg/kg]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => 'cloud_feedback_s11_p2k_zm.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'rc_coef .* rtprcp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+          {'filename' => 'cloud_feedback_s11_p2k_zm.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'rc_coef_zm .* rtprcp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
        {'plotTitle' => 'Mixing Length', 'axisLabel' => 'Lscale [m]', 'type' => 'profile', 'lines' =>
        [

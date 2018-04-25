@@ -589,7 +589,7 @@ module advance_clubb_core_module
 
     ! Eric Raut declared this variable solely for output to disk
     real( kind = core_rknd ), dimension(gr%nz) :: &
-      rc_coef             ! Coefficient of X' R_l' in Eq. (34)        [-]
+      rc_coef_zm          ! Coefficient of X' R_l' in Eq. (34)        [-]
 
 #if defined(CLUBB_CAM) || defined(GFDL)
     real( kind = core_rknd ), intent(out), dimension(gr%nz) :: &
@@ -907,7 +907,7 @@ module advance_clubb_core_module
                                 sigma_sqd_w, wpthvp, wp2thvp,  & ! Intent(out)
                                 rtpthvp, thlpthvp,             & ! Intent(out)
                                 rcm_in_layer, cloud_cover,     & ! Intent(out)
-                                rcp2_zt, thlprcp, rc_coef,     & ! Intent(out)
+                                rcp2_zt, thlprcp, rc_coef_zm,  & ! Intent(out)
                                 rtm_frz, thlm_frz, sclrpthvp,  & ! Intent(out)
                                 wp4, wp2rtp, wprtp2, wp2thlp,  & ! Intent(out)
                                 wpthlp2, wprtpthlp, wp2rcp,    & ! Intent(out)
@@ -1643,7 +1643,7 @@ module advance_clubb_core_module
                                 sigma_sqd_w, wpthvp, wp2thvp,  & ! Intent(out)
                                 rtpthvp, thlpthvp,             & ! Intent(out)
                                 rcm_in_layer, cloud_cover,     & ! Intent(out)
-                                rcp2_zt, thlprcp, rc_coef,     & ! Intent(out)
+                                rcp2_zt, thlprcp, rc_coef_zm,  & ! Intent(out)
                                 rtm_frz, thlm_frz, sclrpthvp,  & ! Intent(out)
                                 wp4, wp2rtp, wprtp2, wp2thlp,  & ! Intent(out)
                                 wpthlp2, wprtpthlp, wp2rcp,    & ! Intent(out)
@@ -1735,7 +1735,7 @@ module advance_clubb_core_module
              wpthvp, wp2thvp, rtpthvp, thlpthvp,                    & ! intent(in)
              p_in_Pa, exner, rho, rho_zm,                           & ! intent(in)
              rho_ds_zm, rho_ds_zt, thv_ds_zm,                       & ! intent(in)
-             thv_ds_zt, wm_zt, wm_zm, rcm, wprcp, rc_coef,          & ! intent(in)
+             thv_ds_zt, wm_zt, wm_zm, rcm, wprcp, rc_coef_zm,       & ! intent(in)
              rcm_zm, rtm_zm, thlm_zm, cloud_frac, ice_supersat_frac,& ! intent(in)
              cloud_frac_zm, ice_supersat_frac_zm, rcm_in_layer,     & ! intent(in)
              cloud_cover, rcm_supersat_adj, sigma_sqd_w,            & ! intent(in)
@@ -1848,7 +1848,7 @@ module advance_clubb_core_module
                                  sigma_sqd_w, wpthvp, wp2thvp,  & ! Intent(out)
                                  rtpthvp, thlpthvp,             & ! Intent(out)
                                  rcm_in_layer, cloud_cover,     & ! Intent(out)
-                                 rcp2_zt, thlprcp, rc_coef,     & ! Intent(out)
+                                 rcp2_zt, thlprcp, rc_coef_zm,  & ! Intent(out)
                                  rtm_frz, thlm_frz, sclrpthvp,  & ! Intent(out)
                                  wp4, wp2rtp, wprtp2, wp2thlp,  & ! Intent(out)
                                  wpthlp2, wprtpthlp, wp2rcp,    & ! Intent(out)
@@ -2069,7 +2069,7 @@ module advance_clubb_core_module
       cloud_cover,       & ! cloud cover                            [-]
       rcp2_zt,           & ! r_c'^2 (on thermo. grid)               [kg^2/kg^2]
       thlprcp,           & ! < th_l' r_c' > (momentum levels)       [K kg/kg]
-      rc_coef,           & ! Coefficient of X' R_l' in Eq. (34)     [-]
+      rc_coef_zm,        & ! Coefficient of X' R_l' in Eq. (34)     [-]
       rtm_frz,           & ! rtm adjusted to include hydrometeors   [kg/kg] 
       thlm_frz             ! thlm adjusted to include hydrometeors  [K]
 
@@ -2163,7 +2163,7 @@ module advance_clubb_core_module
       wprcp_zt,    & ! w' r_c' (on thermo. grid)        [(m kg)/(s kg)] 
       rtprcp_zt,   & ! r_t' r_c' (on thermo. grid)      [(kg^2)/(kg^2)] 
       thlprcp_zt,  & ! th_l' r_c' (on thermo. grid)     [(K kg)/kg] 
-      rc_coef_zt     ! X'R_l' coef. (on thermo. grid)   [-]
+      rc_coef        ! X'R_l' coef. (on thermo. grid)   [-]
 
     real( kind = core_rknd ), dimension(gr%nz, sclr_dim) :: &       
       sclrpthvp_zt, & ! sclr'th_v' (on thermo. grid) 
@@ -2244,7 +2244,7 @@ module advance_clubb_core_module
       rtprcp_zt_frz, &
       thlprcp_zt_frz, &
       rcp2_zt_frz, &
-      rc_coef_zt_frz, &
+      rc_coef_frz, &
       wp4_frz, &
       wprtp2_zm_frz, &
       wp2rtp_zm_frz, &
@@ -2261,7 +2261,7 @@ module advance_clubb_core_module
       rcp2_frz, &
       rtm_zm_frz, &
       thlm_zm_frz, &
-      rc_coef_frz
+      rc_coef_zm_frz
 
     real( kind = core_rknd ) :: &
       F_w_frz,          &
@@ -2446,7 +2446,7 @@ module advance_clubb_core_module
           min_F_rt(k), max_F_rt(k), min_F_thl(k), max_F_thl(k),       & ! intent(out)
           wpsclrprtp(k,:), wpsclrp2(k,:), sclrpthvp_zt(k,:),          & ! intent(out)
           wpsclrpthlp(k,:), sclrprcp_zt(k,:), wp2sclrp(k,:),          & ! intent(out)
-          rc_coef_zt(k)                                               ) ! intent(out)
+          rc_coef(k)                                                  ) ! intent(out)
 
       ! Subroutine may produce NaN values, and if so, exit
       ! gracefully.
@@ -2604,7 +2604,7 @@ module advance_clubb_core_module
             min_F_rt_zm, max_F_rt_zm, min_F_thl_zm, max_F_thl_zm,             & ! intent(out)
             wpsclrprtp_zm(k,:), wpsclrp2_zm(k,:), sclrpthvp(k,:),             & ! intent(out)
             wpsclrpthlp_zm(k,:), sclrprcp(k,:), wp2sclrp_zm(k,:),             & ! intent(out)
-            rc_coef(k)                                                        ) ! intent(out)
+            rc_coef_zm(k)                                                     ) ! intent(out)
 
         ! Subroutine may produce NaN values, and if so, exit
         ! gracefully.
@@ -2644,20 +2644,20 @@ module advance_clubb_core_module
       endif
 #endif
 
-      wpthvp          = zt2zm( wpthvp_zt )
-      wpthvp(gr%nz)   = 0.0_core_rknd
-      thlpthvp        = zt2zm( thlpthvp_zt )
-      thlpthvp(gr%nz) = 0.0_core_rknd
-      rtpthvp         = zt2zm( rtpthvp_zt )
-      rtpthvp(gr%nz)  = 0.0_core_rknd
-      wprcp           = zt2zm( wprcp_zt )
-      wprcp(gr%nz)    = 0.0_core_rknd
-      rc_coef         = zt2zm( rc_coef_zt )
-      rc_coef(gr%nz)  = 0.0_core_rknd
-      rtprcp          = zt2zm( rtprcp_zt )
-      rtprcp(gr%nz)   = 0.0_core_rknd
-      thlprcp         = zt2zm( thlprcp_zt )
-      thlprcp(gr%nz)  = 0.0_core_rknd
+      wpthvp            = zt2zm( wpthvp_zt )
+      wpthvp(gr%nz)     = 0.0_core_rknd
+      thlpthvp          = zt2zm( thlpthvp_zt )
+      thlpthvp(gr%nz)   = 0.0_core_rknd
+      rtpthvp           = zt2zm( rtpthvp_zt )
+      rtpthvp(gr%nz)    = 0.0_core_rknd
+      wprcp             = zt2zm( wprcp_zt )
+      wprcp(gr%nz)      = 0.0_core_rknd
+      rc_coef_zm        = zt2zm( rc_coef )
+      rc_coef_zm(gr%nz) = 0.0_core_rknd
+      rtprcp            = zt2zm( rtprcp_zt )
+      rtprcp(gr%nz)     = 0.0_core_rknd
+      thlprcp           = zt2zm( thlprcp_zt )
+      thlprcp(gr%nz)    = 0.0_core_rknd
 
       ! Initialize variables to avoid uninitialized variables.
       cloud_frac_zm   = 0.0_core_rknd
@@ -2773,7 +2773,7 @@ module advance_clubb_core_module
             min_F_rt_frz, max_F_rt_frz, min_F_thl_frz, max_F_thl_frz,             & ! intent(out)
             wpsclrprtp_frz(k,:), wpsclrp2_frz(k,:), sclrpthvp_zt_frz(k,:),        & ! intent(out)
             wpsclrpthlp_frz(k,:), sclrprcp_zt_frz(k,:), wp2sclrp_frz(k,:),        & ! intent(out)
-            rc_coef_zt_frz(k)                                                     ) ! intent(out)
+            rc_coef_frz(k)                                                        ) ! intent(out)
 
         ! Subroutine may produce NaN values, and if so, exit gracefully.
         ! Joshua Fasching March 2008
@@ -2828,7 +2828,7 @@ module advance_clubb_core_module
               min_F_thl_zm_frz, max_F_thl_zm_frz,                               & ! intent(out)
               wpsclrprtp_zm_frz(k,:), wpsclrp2_zm_frz(k,:), sclrpthvp_frz(k,:), & ! intent(out)
               wpsclrpthlp_zm_frz(k,:), sclrprcp_frz(k,:), wp2sclrp_zm_frz(k,:), & ! intent(out)
-              rc_coef_frz(k)                                                    ) ! intent(out)
+              rc_coef_zm_frz(k)                                                 ) ! intent(out)
 
           ! Subroutine may produce NaN values, and if so, exit
           ! gracefully.

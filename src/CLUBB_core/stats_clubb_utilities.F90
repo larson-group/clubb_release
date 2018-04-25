@@ -1716,7 +1716,7 @@ module stats_clubb_utilities
                      wpthvp, wp2thvp, rtpthvp, thlpthvp, &
                      p_in_Pa, exner, rho, rho_zm, &
                      rho_ds_zm, rho_ds_zt, thv_ds_zm, &
-                     thv_ds_zt, wm_zt, wm_zm, rcm, wprcp, rc_coef, &
+                     thv_ds_zt, wm_zt, wm_zm, rcm, wprcp, rc_coef_zm, &
                      rcm_zm, rtm_zm, thlm_zm, cloud_frac, ice_supersat_frac, &
                      cloud_frac_zm, ice_supersat_frac_zm, rcm_in_layer, &
                      cloud_cover, rcm_supersat_adj, sigma_sqd_w, &
@@ -1865,7 +1865,7 @@ module stats_clubb_utilities
         itau_zm, &
         iKh_zm, &
         iwprcp, &
-        irc_coef, &
+        irc_coef_zm, &
         ithlprcp, &
         irtprcp, &
         ircp2, &
@@ -2069,7 +2069,7 @@ module stats_clubb_utilities
       thlm_zm,              & ! Liquid potential temperature on m levs.  [K]
       rcm,                  & ! Cloud water mixing ratio (t levs.)       [kg/kg]
       wprcp,                & ! < w' r_c' > (momentum levels)            [m/s kg/kg]
-      rc_coef,              & ! Coefficient of X' R_l' in Eq. (34)       [-]
+      rc_coef_zm,           & ! Coefficient of X' R_l' in Eq. (34)       [-]
       cloud_frac,           & ! Cloud fraction (thermodynamic levels)    [-]
       ice_supersat_frac,    & ! Ice cloud fracion (thermodynamic levels) [-]
       cloud_frac_zm,        & ! Cloud fraction on zm levels              [-]
@@ -2283,7 +2283,7 @@ module stats_clubb_utilities
       call stat_update_var( itau_zm, tau_zm, stats_zm )
       call stat_update_var( iKh_zm, Kh_zm, stats_zm )
       call stat_update_var( iwprcp, wprcp, stats_zm )
-      call stat_update_var( irc_coef, rc_coef, stats_zm )
+      call stat_update_var( irc_coef_zm, rc_coef_zm, stats_zm )
       call stat_update_var( ithlprcp, thlprcp, stats_zm )
       call stat_update_var( irtprcp, rtprcp, stats_zm )
       call stat_update_var( ircp2, rcp2, stats_zm )

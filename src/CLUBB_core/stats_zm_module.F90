@@ -49,7 +49,7 @@ module stats_zm_module
         iKh_zm, & 
         iK_hm, & 
         iwprcp, & 
-        irc_coef, &
+        irc_coef_zm, &
         ithlprcp, & 
         irtprcp, & 
         ircp2,   &
@@ -644,9 +644,9 @@ module stats_zm_module
              l_silhs=.false., grid_kind=stats_zm )
         k = k + 1
       
-      case ('rc_coef')
-        irc_coef = k
-        call stat_assign( var_index=irc_coef, var_name="rc_coef", &
+      case ('rc_coef_zm')
+        irc_coef_zm = k
+        call stat_assign( var_index=irc_coef_zm, var_name="rc_coef_zm", &
              var_description="Coefficient of X' R_l' in Eq. (34)", var_units="[-]", &
              l_silhs=.false., grid_kind=stats_zm )
         k = k + 1
