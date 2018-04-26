@@ -146,43 +146,45 @@
        [
           {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/JULY_2017/RICO_256x256x100_drizzle/RICO_256x256x100_drizzle.nc', 'type' => 'les', 'name' => 'SAM-LES', 'expression' => 'WPRTPTHLP', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
           {'filename' => 'rico_silhs_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'wprtpthlp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
-       ]},       
-       {'plotTitle' => 'wprcp', 'axisLabel' => 'wprcp [m/s kg/kg]', 'type' => 'profile', 'lines' =>
-       [
-          {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/JULY_2017/RICO_256x256x100_drizzle/RICO_256x256x100_drizzle.nc', 'type' => 'les', 'name' => 'SAM-LES', 'expression' => 'WPRCP', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
-          {'filename' => 'rico_silhs_zm.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'wprcp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
-       ]},       
-       {'plotTitle' => 'wp2rcp', 'axisLabel' => 'wp2rcp [m^2/s^2 kg/kg]', 'type' => 'profile', 'lines' =>
-       [
-          {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/JULY_2017/RICO_256x256x100_drizzle/RICO_256x256x100_drizzle.nc', 'type' => 'les', 'name' => 'SAM-LES', 'expression' => 'WP2RCP', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
-          {'filename' => 'rico_silhs_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'wp2rcp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
-       ]},       
-       {'plotTitle' => 'thlprcp', 'axisLabel' => 'thlprcp [K kg/kg]', 'type' => 'profile', 'lines' =>
-       [
-          {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/JULY_2017/RICO_256x256x100_drizzle/RICO_256x256x100_drizzle.nc', 'type' => 'les', 'name' => 'SAM-LES', 'expression' => 'THLPRCP', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
-          {'filename' => 'rico_silhs_zm.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'thlprcp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
-       ]},
-       {'plotTitle' => 'rtprcp', 'axisLabel' => 'rtprcp [kg^2/kg^2]', 'type' => 'profile', 'lines' =>
-       [
-          {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/JULY_2017/RICO_256x256x100_drizzle/RICO_256x256x100_drizzle.nc', 'type' => 'les', 'name' => 'SAM-LES', 'expression' => 'RTPRCP', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
-          {'filename' => 'rico_silhs_zm.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'rtprcp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
        {'plotTitle' => 'Buoyancy flux ', 'axisLabel' => 'wpthvp [K m/s]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/JULY_2017/RICO_256x256x100_drizzle/RICO_256x256x100_drizzle.nc', 'type' => 'les', 'name' => 'SAM-LES', 'expression' => 'TVFLUX ./ (RHO * 1004)', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
+          {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/JULY_2017/RICO_256x256x100_drizzle/RICO_256x256x100_drizzle.nc', 'type' => 'les', 'name' => 'SAM-LES', 'expression' => 'WPTHVP', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
           {'filename' => 'rico_silhs_zm.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'wpthvp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
        {'plotTitle' => 'Contribution of Cloud Water Flux to wpthvp', 'axisLabel' => 'rc\_coef * wprcp   [K m/s]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/JULY_2017/RICO_256x256x100_drizzle/RICO_256x256x100_drizzle.nc', 'type' => 'les', 'name' => 'SAM-LES', 'expression' => '((QCFLUX) ./ (RHO * 2.5104e+6)) .* (2.5e6 ./ (1004.67*((PRES / 1000).^(287.04/1004.67))) - 1.61*THETAV)', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
+          {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/JULY_2017/RICO_256x256x100_drizzle/RICO_256x256x100_drizzle.nc', 'type' => 'les', 'name' => 'SAM-LES', 'expression' => 'WPRCP .* (2.5e6 ./ (1004.67*((PRES / 1000).^(287.04/1004.67))) - 1.61*THETAV)', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
           {'filename' => 'rico_silhs_zm.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'rc_coef_zm .* wprcp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'wp2thvp', 'axisLabel' => 'wp2thvp [m^2/s^2 K]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/JULY_2017/RICO_256x256x100_drizzle/RICO_256x256x100_drizzle.nc', 'type' => 'les', 'name' => 'SAM-LES', 'expression' => 'WP2THVP', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
+          {'filename' => 'rico_silhs_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'wp2thvp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},       
+       {'plotTitle' => 'Cloud water contribution to wp2thvp', 'axisLabel' => 'rc\_coef * wp2rcp   [m^2/s^2 K]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/JULY_2017/RICO_256x256x100_drizzle/RICO_256x256x100_drizzle.nc', 'type' => 'les', 'name' => 'SAM-LES', 'expression' => 'WP2RCP .* (2.5e6 ./ (1004.67*((PRES / 1000).^(287.04/1004.67))) - 1.61*THETAV)', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
+          {'filename' => 'rico_silhs_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'rc_coef .* wp2rcp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'thlpthvp', 'axisLabel' => 'thlpthvp [K^2]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/JULY_2017/RICO_256x256x100_drizzle/RICO_256x256x100_drizzle.nc', 'type' => 'les', 'name' => 'SAM-LES', 'expression' => 'THLPTHVP', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
+          {'filename' => 'rico_silhs_zm.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'thlpthvp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
        {'plotTitle' => 'Cloud water contribution to thlpthvp', 'axisLabel' => 'rc\_coef * thlprcp   [K^2]', 'type' => 'profile', 'lines' =>
        [
+          {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/JULY_2017/RICO_256x256x100_drizzle/RICO_256x256x100_drizzle.nc', 'type' => 'les', 'name' => 'SAM-LES', 'expression' => 'THLPRCP .* (2.5e6 ./ (1004.67*((PRES / 1000).^(287.04/1004.67))) - 1.61*THETAV)', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
           {'filename' => 'rico_silhs_zm.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'rc_coef_zm .* thlprcp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
-       {'plotTitle' => 'Cloud water contribution to rtpthvp', 'axisLabel' => 'rc\_coef * rtprcp   [K kg/kg]', 'type' => 'profile', 'lines' =>
+       {'plotTitle' => 'rtpthvp', 'axisLabel' => 'rtpthvp [kg/kg K]', 'type' => 'profile', 'lines' =>
        [
+          {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/JULY_2017/RICO_256x256x100_drizzle/RICO_256x256x100_drizzle.nc', 'type' => 'les', 'name' => 'SAM-LES', 'expression' => 'RTPTHVP', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
+          {'filename' => 'rico__silhs_zm.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'rtpthvp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Cloud water contribution to rtpthvp', 'axisLabel' => 'rc\_coef * rtprcp   [kg/kg K]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/JULY_2017/RICO_256x256x100_drizzle/RICO_256x256x100_drizzle.nc', 'type' => 'les', 'name' => 'SAM-LES', 'expression' => 'RTPRCP .* (2.5e6 ./ (1004.67*((PRES / 1000).^(287.04/1004.67))) - 1.61*THETAV)', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
           {'filename' => 'rico_silhs_zm.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'rc_coef_zm .* rtprcp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
        {'plotTitle' => 'Mixing Length', 'axisLabel' => 'Lscale [m]', 'type' => 'profile', 'lines' =>

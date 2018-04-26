@@ -1,7 +1,8 @@
 &statsnl
 vars_zt =
 'thlm', 'rtm', 'cloud_frac', 'rcm', 'wp3', 'thlp3', 'rtp3',
-'wp2rtp', 'wp2thlp', 'wprtp2', 'wpthlp2', 'wprtpthlp', 'wp2rcp', 'rc_coef',
+'wp2rtp', 'wp2thlp', 'wprtp2', 'wpthlp2', 'wprtpthlp',
+'wp2thvp', 'wp2rcp', 'rc_coef',
 'um', 'vm', 'wm_zt', 'rrm', 'Nrm',
 'Ncm', 'Nc_in_cloud', 'rgm', 'rim', 'Nim',
 'rsm', 'Nsm','Lscale', 'radht',
@@ -12,8 +13,8 @@ vars_zt =
 
 vars_zm =
 'wp2', 'rtp2', 'thlp2', 'rtpthlp', 'wprtp', 'wpthlp', 'tau_zm',
-'upwp', 'vpwp', 'up2', 'vp2', 'rcp2', 'wp4',
-'wpthvp', 'wprcp', 'rc_coef_zm', 'thlprcp', 'rtprcp', 'wphydrometp',
+'upwp', 'vpwp', 'up2', 'vp2', 'rcp2', 'wp4', 'wpthvp', 'wprcp', 'rc_coef_zm',
+'thlpthvp', 'thlprcp', 'rtpthvp', 'rtprcp', 'wphydrometp',
 ''
 
 vars_sfc =
