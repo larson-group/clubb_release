@@ -774,18 +774,22 @@ module advance_clubb_core_module
     !----------------------------------------------------------------
     if ( clubb_at_least_debug_level( 2 ) ) then
       call parameterization_check & 
-           ( thlm_forcing, rtm_forcing, um_forcing, vm_forcing, & ! intent(in)
-             wm_zm, wm_zt, p_in_Pa, rho_zm, rho, exner,         & ! intent(in)
-             rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm,             & ! intent(in)
-             invrs_rho_ds_zt, thv_ds_zm, thv_ds_zt,             & ! intent(in)
-             wpthlp_sfc, wprtp_sfc, upwp_sfc, vpwp_sfc,         & ! intent(in)
-             um, upwp, vm, vpwp, up2, vp2,                      & ! intent(in)
-             rtm, wprtp, thlm, wpthlp,                          & ! intent(in)
-             wp2, wp3, rtp2, thlp2, rtpthlp,                    & ! intent(in)
-             "beginning of ",        & ! intent(in)
-             wpsclrp_sfc, wpedsclrp_sfc,                        & ! intent(in)
-             sclrm, wpsclrp, sclrp2, sclrprtp, sclrpthlp,       & ! intent(in)
-             sclrm_forcing, edsclrm, edsclrm_forcing )            ! intent(in)
+           ( thlm_forcing(2:gr%nz), rtm_forcing(2:gr%nz), um_forcing(2:gr%nz),  & ! intent(in)
+             vm_forcing(2:gr%nz), wm_zm, wm_zt(2:gr%nz), p_in_Pa(2:gr%nz),      & ! intent(in)
+             rho_zm, rho(2:gr%nz), exner(2:gr%nz), rho_ds_zm,                   & ! intent(in)
+             rho_ds_zt(2:gr%nz), invrs_rho_ds_zm, invrs_rho_ds_zt(2:gr%nz),     & ! intent(in)
+             thv_ds_zm, thv_ds_zt(2:gr%nz), wpthlp_sfc, wprtp_sfc, upwp_sfc,    & ! intent(in)
+             vpwp_sfc, um(2:gr%nz), upwp, vm(2:gr%nz), vpwp, up2, vp2,          & ! intent(in)
+             rtm(2:gr%nz), wprtp, thlm(2:gr%nz), wpthlp, wp2, wp3(2:gr%nz),     & ! intent(in)
+             rtp2, thlp2, rtpthlp,                                              & ! intent(in)
+             "beginning of ",                                                   & ! intent(in)
+             wpsclrp_sfc, wpedsclrp_sfc, sclrm, wpsclrp, sclrp2,                & ! intent(in)
+             sclrprtp, sclrpthlp, sclrm_forcing, edsclrm, edsclrm_forcing )       ! intent(in)
+
+        if ( clubb_at_least_debug_level( 0 ) ) then
+          if ( err_code /= clubb_no_error ) return
+        end if
+
     end if
     !-----------------------------------------------------------------------
 
@@ -1271,7 +1275,12 @@ module advance_clubb_core_module
                              sclrprtp(1,1:sclr_dim),                         &      ! intent(out) 
                              sclrpthlp(1,1:sclr_dim) )                              ! intent(out)
 
-        if ( err_code /= clubb_no_error ) return
+        if ( clubb_at_least_debug_level( 0 ) ) then
+          if ( err_code /= clubb_no_error ) then
+            write(fstderr,*) "Error calling calc_surface_varnce"
+            return
+          end if
+        end if
 
         ! Update surface stats
         if ( l_stats_samp ) then
@@ -1402,7 +1411,12 @@ module advance_clubb_core_module
                             rtm, wprtp, thlm, wpthlp,                        & ! intent(inout)
                             sclrm, wpsclrp )                                   ! intent(inout)
 
-      if ( err_code /= clubb_no_error ) return
+      if ( clubb_at_least_debug_level( 0 ) ) then
+          if ( err_code /= clubb_no_error ) then
+            write(fstderr,*) "Error calling advance_xm_wpxp"
+            return
+          end if
+      end if
 
       ! Vince Larson clipped rcm in order to prevent rvm < 0.  5 Apr 2008.
       ! This code won't work unless rtm >= 0 !!!
@@ -1447,6 +1461,13 @@ module advance_clubb_core_module
                              rtp2, thlp2, rtpthlp, up2, vp2,        & ! intent(inout)
                              sclrp2, sclrprtp, sclrpthlp            ) ! intent(inout)
 
+      if ( clubb_at_least_debug_level( 0 ) ) then
+          if ( err_code /= clubb_no_error ) then
+            write(fstderr,*) "Error calling advance_xp2_xpyp"
+            return
+          end if
+      end if
+
       !----------------------------------------------------------------
       ! Covariance clipping for wprtp, wpthlp, wpsclrp, upwp, and vpwp
       ! after subroutine advance_xp2_xpyp updated xp2.
@@ -1480,6 +1501,13 @@ module advance_clubb_core_module
              thv_ds_zt, pdf_params%mixt_frac, Cx_fnc_Richardson, & ! intent(in)
              new_pdf_implct_coefs_terms,                         & ! intent(in)
              wp2, wp3, wp3_zm, wp2_zt )                            ! intent(i/o)
+
+      if ( clubb_at_least_debug_level( 0 ) ) then
+          if ( err_code /= clubb_no_error ) then
+            write(fstderr,*) "Error calling advance_wp2_wp3"
+            return
+          end if
+      end if
 
       !----------------------------------------------------------------
       ! Covariance clipping for wprtp, wpthlp, wpsclrp, upwp, and vpwp
@@ -1747,18 +1775,22 @@ module advance_clubb_core_module
 
       if ( clubb_at_least_debug_level( 2 ) ) then
         call parameterization_check & 
-             ( thlm_forcing, rtm_forcing, um_forcing, vm_forcing, & ! intent(in)
-               wm_zm, wm_zt, p_in_Pa, rho_zm, rho, exner,         & ! intent(in)
-               rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm,             & ! intent(in)
-               invrs_rho_ds_zt, thv_ds_zm, thv_ds_zt,             & ! intent(in)
-               wpthlp_sfc, wprtp_sfc, upwp_sfc, vpwp_sfc,         & ! intent(in)
-               um, upwp, vm, vpwp, up2, vp2,                      & ! intent(in)
-               rtm, wprtp, thlm, wpthlp,                          & ! intent(in)
-               wp2, wp3, rtp2, thlp2, rtpthlp,                    & ! intent(in)
-               "end of ",                                  & ! intent(in)
-               wpsclrp_sfc, wpedsclrp_sfc,                        & ! intent(in)
-               sclrm, wpsclrp, sclrp2, sclrprtp, sclrpthlp,       & ! intent(in)
-               sclrm_forcing, edsclrm, edsclrm_forcing )            ! intent(in)
+           ( thlm_forcing(2:gr%nz), rtm_forcing(2:gr%nz), um_forcing(2:gr%nz),  & ! intent(in)
+             vm_forcing(2:gr%nz), wm_zm, wm_zt(2:gr%nz), p_in_Pa(2:gr%nz),      & ! intent(in)
+             rho_zm, rho(2:gr%nz), exner(2:gr%nz), rho_ds_zm,                   & ! intent(in)
+             rho_ds_zt(2:gr%nz), invrs_rho_ds_zm, invrs_rho_ds_zt(2:gr%nz),     & ! intent(in)
+             thv_ds_zm, thv_ds_zt(2:gr%nz), wpthlp_sfc, wprtp_sfc, upwp_sfc,    & ! intent(in)
+             vpwp_sfc, um(2:gr%nz), upwp, vm(2:gr%nz), vpwp, up2, vp2,          & ! intent(in)
+             rtm(2:gr%nz), wprtp, thlm(2:gr%nz), wpthlp, wp2, wp3(2:gr%nz),     & ! intent(in)
+             rtp2, thlp2, rtpthlp,                                              & ! intent(in)
+             "end of ",                                                         & ! intent(in)
+             wpsclrp_sfc, wpedsclrp_sfc, sclrm, wpsclrp, sclrp2,                & ! intent(in)
+             sclrprtp, sclrpthlp, sclrm_forcing, edsclrm, edsclrm_forcing )       ! intent(in)
+
+        if ( clubb_at_least_debug_level( 0 ) ) then
+          if ( err_code /= clubb_no_error ) return
+        end if
+
       end if
 
       if ( l_stats .and. l_stats_samp ) then
@@ -2452,9 +2484,11 @@ module advance_clubb_core_module
       ! Subroutine may produce NaN values, and if so, exit
       ! gracefully.
       ! Joshua Fasching March 2008
-      if ( err_code /= clubb_no_error ) then
-          write(fstderr,*) "At grid level = ",k
-          stop
+      if ( clubb_at_least_debug_level( 0 ) ) then
+          if ( err_code /= clubb_no_error ) then
+              write(fstderr,*) "At grid level = ",k
+              stop
+          end if
       end if
 
     end do ! k = 1, gr%nz, 1
@@ -2610,9 +2644,11 @@ module advance_clubb_core_module
         ! Subroutine may produce NaN values, and if so, exit
         ! gracefully.
         ! Joshua Fasching March 2008
-        if ( err_code /= clubb_no_error ) then
-            write(fstderr,*) "At grid level = ",k
-            stop
+        if ( clubb_at_least_debug_level( 0 ) ) then
+            if ( err_code /= clubb_no_error ) then
+                write(fstderr,*) "At grid level = ",k
+                stop
+            end if
         end if
 
       end do ! k = 1, gr%nz, 1
@@ -2778,10 +2814,11 @@ module advance_clubb_core_module
 
         ! Subroutine may produce NaN values, and if so, exit gracefully.
         ! Joshua Fasching March 2008
-
-        if ( err_code /= clubb_no_error ) then
-            write(fstderr,*) "At grid level = ", k
-            stop
+        if ( clubb_at_least_debug_level( 0 ) ) then
+            if ( err_code /= clubb_no_error ) then
+                write(fstderr,*) "At grid level = ", k
+                stop
+            end if
         end if
 
       end do !k=1, gr%nz, 1
@@ -2834,11 +2871,11 @@ module advance_clubb_core_module
           ! Subroutine may produce NaN values, and if so, exit
           ! gracefully.
           ! Joshua Fasching March 2008
-
-
-          if ( err_code /= clubb_no_error ) then
-              write(fstderr,*) "At grid level = ",k
-              stop
+          if ( clubb_at_least_debug_level( 0 ) ) then
+            if ( err_code /= clubb_no_error ) then
+                write(fstderr,*) "At grid level = ",k
+                stop
+            end if
           end if
 
         end do ! k = 1, gr%nz, 1
@@ -3236,25 +3273,27 @@ module advance_clubb_core_module
 
       ! Error Report
       ! Joshua Fasching February 2008
-      if ( err_code /= clubb_no_error ) then
+      if ( clubb_at_least_debug_level( 0 ) ) then
+          if ( err_code /= clubb_no_error ) then
 
-        write(fstderr,*) "Error in setup_clubb_core"
+            write(fstderr,*) "Error in setup_clubb_core"
 
-        write(fstderr,*) "Intent(in)"
+            write(fstderr,*) "Intent(in)"
 
-        write(fstderr,*) "deltaz = ", deltaz
-        write(fstderr,*) "zm_init = ", zm_init
-        write(fstderr,*) "zm_top = ", zm_top
-        write(fstderr,*) "momentum_heights = ", momentum_heights
-        write(fstderr,*) "thermodynamic_heights = ",  & 
-          thermodynamic_heights
-        write(fstderr,*) "T0_in = ", T0_in
-        write(fstderr,*) "ts_nudge_in = ", ts_nudge_in
-        write(fstderr,*) "params = ", params
+            write(fstderr,*) "deltaz = ", deltaz
+            write(fstderr,*) "zm_init = ", zm_init
+            write(fstderr,*) "zm_top = ", zm_top
+            write(fstderr,*) "momentum_heights = ", momentum_heights
+            write(fstderr,*) "thermodynamic_heights = ",  & 
+              thermodynamic_heights
+            write(fstderr,*) "T0_in = ", T0_in
+            write(fstderr,*) "ts_nudge_in = ", ts_nudge_in
+            write(fstderr,*) "params = ", params
 
-        return
+            return
 
-      end if
+          end if
+        end if
 
 #ifdef GFDL
 ! setup  prognostic_variables

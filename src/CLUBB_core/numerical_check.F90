@@ -269,18 +269,18 @@ module numerical_check
 
 !-------------------------------------------------------------------------------
   subroutine parameterization_check & 
-             ( thlm_forcing, rtm_forcing, um_forcing, vm_forcing, &
-               wm_zm, wm_zt, p_in_Pa, rho_zm, rho, exner, &
-               rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm, &
-               invrs_rho_ds_zt, thv_ds_zm, thv_ds_zt, &
-               wpthlp_sfc, wprtp_sfc, upwp_sfc, vpwp_sfc, &
-               um, upwp, vm, vpwp, up2, vp2, &
-               rtm, wprtp, thlm, wpthlp, &
-               wp2, wp3, rtp2, thlp2, rtpthlp, &
-               prefix, &
-               wpsclrp_sfc, wpedsclrp_sfc, & 
-               sclrm, wpsclrp, sclrp2, sclrprtp, sclrpthlp, &
-               sclrm_forcing, edsclrm, edsclrm_forcing )
+             ( thlm_forcing, rtm_forcing, um_forcing,                       & ! intent(in)
+               vm_forcing, wm_zm, wm_zt, p_in_Pa,                           & ! intent(in)
+               rho_zm, rho, exner, rho_ds_zm,                               & ! intent(in)
+               rho_ds_zt, invrs_rho_ds_zm, invrs_rho_ds_zt,                 & ! intent(in)
+               thv_ds_zm, thv_ds_zt, wpthlp_sfc, wprtp_sfc, upwp_sfc,       & ! intent(in)
+               vpwp_sfc, um, upwp, vm, vpwp, up2, vp2,                      & ! intent(in)
+               rtm, wprtp, thlm, wpthlp, wp2, wp3,                          & ! intent(in)
+               rtp2, thlp2, rtpthlp,                                        & ! intent(in)
+               prefix,                                                      & ! intent(in)
+               wpsclrp_sfc, wpedsclrp_sfc, sclrm, wpsclrp, sclrp2,          & ! intent(in)
+               sclrprtp, sclrpthlp, sclrm_forcing, edsclrm, edsclrm_forcing ) ! intent(in)
+
 !
 ! Description:
 !   This subroutine determines what input variables may have NaN values.
@@ -414,13 +414,13 @@ module numerical_check
 
     do i = 1, sclr_dim
 
-      call check_nan( sclrm_forcing(:,i),"sclrm_forcing",  & 
+      call check_nan( sclrm_forcing(2:,i),"sclrm_forcing",  & 
                       prefix//proc_name )
 
       call check_nan( wpsclrp_sfc(i),"wpsclrp_sfc",  & 
                       prefix//proc_name )
 
-      call check_nan( sclrm(:,i),"sclrm", prefix//proc_name )
+      call check_nan( sclrm(2:,i),"sclrm", prefix//proc_name )
       call check_nan( wpsclrp(:,i),"wpsclrp", prefix//proc_name )
       call check_nan( sclrp2(:,i),"sclrp2", prefix//proc_name )
       call check_nan( sclrprtp(:,i),"sclrprtp", prefix//proc_name )
@@ -431,12 +431,12 @@ module numerical_check
 
     do i = 1, edsclr_dim
 
-      call check_nan( edsclrm_forcing(:,i),"edsclrm_forcing", prefix//proc_name )
+      call check_nan( edsclrm_forcing(2:,i),"edsclrm_forcing", prefix//proc_name )
 
       call check_nan( wpedsclrp_sfc(i),"wpedsclrp_sfc",  & 
                       prefix//proc_name )
 
-      call check_nan( edsclrm(:,i),"edsclrm", prefix//proc_name )
+      call check_nan( edsclrm(2:,i),"edsclrm", prefix//proc_name )
 
     enddo
 
@@ -910,6 +910,8 @@ module numerical_check
 
         write(fstderr,*) varname, " < 0 in ", operation,  & 
                          " at k = ", k
+        err_code = clubb_fatal_error
+
       end if
 
     end do ! 1..n

@@ -359,24 +359,22 @@ module gmres_wrap
 !      print *, "========================================================"
 !      print *, "********************************************************"
     end do
-    !if (err_code == 0) then
 
-      ! Get the answer, convert it to single-precision
-      call dfgmres_get( numeqns, dbl_soln, dbl_rhs, rci_req, &
-                        ipar, dpar, temp, iters )
+    ! Get the answer, convert it to single-precision
+    call dfgmres_get( numeqns, dbl_soln, dbl_rhs, rci_req, &
+                    ipar, dpar, temp, iters )
 
-      !print *, "Total iterations for GMRES:",iters
+    !print *, "Total iterations for GMRES:",iters
 
-      !do i=1,numeqns,1
-      !  print *, "double value of soln, idx",i,"=",dbl_soln(i)
-      !end do
+    !do i=1,numeqns,1
+    !  print *, "double value of soln, idx",i,"=",dbl_soln(i)
+    !end do
 
-      ! Store our solution as the previous solution for use in the next
-      ! simulation timestep.
-      prev_soln = dbl_soln
+    ! Store our solution as the previous solution for use in the next
+    ! simulation timestep.
+    prev_soln = dbl_soln
 
-      solution = real(dbl_soln)
-    !end if
+    solution = real(dbl_soln)
     
   end subroutine gmres_solve
 

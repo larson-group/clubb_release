@@ -354,6 +354,7 @@ module advance_wp2_wp3_module
 
         write(fstderr,*) "Intent(in)"
 
+        write(fstderr,*) "gr%zt = ", gr%zt
         write(fstderr,*) "dt = ", dt
         write(fstderr,*) "sfc_elevation = ", sfc_elevation
         write(fstderr,*) "sigma_sqd_w = ", sigma_sqd_w

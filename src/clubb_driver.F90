@@ -4474,7 +4474,7 @@ module clubb_driver
         call rad_check( thlm, rcm, rtm, rim, &               ! Intent(in)
                         cloud_frac, p_in_Pa, exner, rho_zm ) ! Intent(in)
 
-      end if  ! clubb_at_least_debug_level( 2 )
+      end if  ! clubb_at_least_debug_level( 0 )
 
       call compute_bugsrad_radiation &
            ( gr%zm, gr%nz, lin_int_buffer,            &   ! Intent(in)
