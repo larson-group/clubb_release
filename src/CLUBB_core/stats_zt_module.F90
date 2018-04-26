@@ -70,7 +70,8 @@ module stats_zt_module
         iKh_zt, & 
         iwp2thvp, & 
         iwp2rcp, & 
-        iwprtpthlp, & 
+        iwprtpthlp, &
+        irc_coef, &
         isigma_sqd_w_zt, &
         iSkw_zt, &
         iSkthl_zt, &
@@ -1353,6 +1354,13 @@ module stats_zt_module
         call stat_assign( var_index=iwprtpthlp, var_name="wprtpthlp", &
              var_description="w'rt'thl' [(m kg K)/(s kg)]", var_units="(m kg K)/(s kg)", &
              l_silhs=.false., grid_kind=stats_zt )
+        k = k + 1
+
+      case ('rc_coef')
+        irc_coef = k
+        call stat_assign( var_index=irc_coef, var_name="rc_coef", &
+             var_description="Coefficient of X'r_c' [K/(kg/kg)]", &
+             var_units="K/(kg/kg)", l_silhs=.false., grid_kind=stats_zt )
         k = k + 1
 
       case ('sigma_sqd_w_zt')

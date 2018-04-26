@@ -354,7 +354,8 @@ module pdf_closure_module
 
     ! Thermodynamic quantity
 
-    real( kind = core_rknd ), intent(out) :: rc_coef
+    real( kind = core_rknd ), intent(out) :: &
+      rc_coef    ! Coefficient on X'r_c' in X'th_v' equation    [K/(kg/kg)]
 
     real( kind = core_rknd ) :: &
       wp2rxp,  & ! Sum total < w'^2 r_x' > for all hm species x [(m/s)^2(kg/kg)]

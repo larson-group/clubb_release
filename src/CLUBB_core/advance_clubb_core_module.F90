@@ -589,7 +589,8 @@ module advance_clubb_core_module
 
     ! Eric Raut declared this variable solely for output to disk
     real( kind = core_rknd ), dimension(gr%nz) :: &
-      rc_coef_zm          ! Coefficient of X' R_l' in Eq. (34)        [-]
+      rc_coef,    & ! Coefficient of X'r_c' in Eq. (34) (t-levs.)   [K/(kg/kg)]
+      rc_coef_zm    ! Coefficient of X'r_c' in Eq. (34) on m-levs.  [K/(kg/kg)]
 
 #if defined(CLUBB_CAM) || defined(GFDL)
     real( kind = core_rknd ), intent(out), dimension(gr%nz) :: &
@@ -905,7 +906,7 @@ module advance_clubb_core_module
                                 rcm, cloud_frac,               & ! Intent(out)
                                 ice_supersat_frac, wprcp,      & ! Intent(out)
                                 sigma_sqd_w, wpthvp, wp2thvp,  & ! Intent(out)
-                                rtpthvp, thlpthvp,             & ! Intent(out)
+                                rtpthvp, thlpthvp, rc_coef,    & ! Intent(out)
                                 rcm_in_layer, cloud_cover,     & ! Intent(out)
                                 rcp2_zt, thlprcp, rc_coef_zm,  & ! Intent(out)
                                 rtm_frz, thlm_frz, sclrpthvp,  & ! Intent(out)
@@ -1641,7 +1642,7 @@ module advance_clubb_core_module
                                 rcm, cloud_frac,               & ! Intent(out)
                                 ice_supersat_frac, wprcp,      & ! Intent(out)
                                 sigma_sqd_w, wpthvp, wp2thvp,  & ! Intent(out)
-                                rtpthvp, thlpthvp,             & ! Intent(out)
+                                rtpthvp, thlpthvp, rc_coef,    & ! Intent(out)
                                 rcm_in_layer, cloud_cover,     & ! Intent(out)
                                 rcp2_zt, thlprcp, rc_coef_zm,  & ! Intent(out)
                                 rtm_frz, thlm_frz, sclrpthvp,  & ! Intent(out)
@@ -1734,8 +1735,8 @@ module advance_clubb_core_module
              wp2, wp3, rtp2, rtp3, thlp2, thlp3, rtpthlp,           & ! intent(in)
              wpthvp, wp2thvp, rtpthvp, thlpthvp,                    & ! intent(in)
              p_in_Pa, exner, rho, rho_zm,                           & ! intent(in)
-             rho_ds_zm, rho_ds_zt, thv_ds_zm,                       & ! intent(in)
-             thv_ds_zt, wm_zt, wm_zm, rcm, wprcp, rc_coef_zm,       & ! intent(in)
+             rho_ds_zm, rho_ds_zt, thv_ds_zm, thv_ds_zt,            & ! intent(in)
+             wm_zt, wm_zm, rcm, wprcp, rc_coef, rc_coef_zm,         & ! intent(in)
              rcm_zm, rtm_zm, thlm_zm, cloud_frac, ice_supersat_frac,& ! intent(in)
              cloud_frac_zm, ice_supersat_frac_zm, rcm_in_layer,     & ! intent(in)
              cloud_cover, rcm_supersat_adj, sigma_sqd_w,            & ! intent(in)
@@ -1846,7 +1847,7 @@ module advance_clubb_core_module
                                  rcm, cloud_frac,               & ! Intent(out)
                                  ice_supersat_frac, wprcp,      & ! Intent(out)
                                  sigma_sqd_w, wpthvp, wp2thvp,  & ! Intent(out)
-                                 rtpthvp, thlpthvp,             & ! Intent(out)
+                                 rtpthvp, thlpthvp, rc_coef,    & ! Intent(out)
                                  rcm_in_layer, cloud_cover,     & ! Intent(out)
                                  rcp2_zt, thlprcp, rc_coef_zm,  & ! Intent(out)
                                  rtm_frz, thlm_frz, sclrpthvp,  & ! Intent(out)
@@ -2059,17 +2060,18 @@ module advance_clubb_core_module
       rcm,               & ! mean r_c (thermodynamic levels)        [kg/kg]
       cloud_frac,        & ! cloud fraction (thermodynamic levels)  [-]
       ice_supersat_frac, & ! ice supersat. frac. (thermo. levels)   [-]
-      wprcp,             & ! < w'r_c' > (momentum levels)           [m/s kg/kg)]
+      wprcp,             & ! < w'r_c' > (momentum levels)           [m/s kg/kg]
       sigma_sqd_w,       & ! PDF width parameter (momentum levels)  [-]
       wpthvp,            & ! < w' th_v' > (momentum levels)         [kg/kg K]
       wp2thvp,           & ! < w'^2 th_v' > (thermodynamic levels)  [m^2/s^2 K]
       rtpthvp,           & ! < r_t' th_v' > (momentum levels)       [kg/kg K]
       thlpthvp,          & ! < th_l' th_v' > (momentum levels)      [K^2]
+      rc_coef,           & ! Coefficient of X'r_c' (thermo. levs.)  [K/(kg/kg)]
       rcm_in_layer,      & ! rcm in cloud layer                     [kg/kg]
       cloud_cover,       & ! cloud cover                            [-]
       rcp2_zt,           & ! r_c'^2 (on thermo. grid)               [kg^2/kg^2]
       thlprcp,           & ! < th_l' r_c' > (momentum levels)       [K kg/kg]
-      rc_coef_zm,        & ! Coefficient of X' R_l' in Eq. (34)     [-]
+      rc_coef_zm,        & ! Coefficient of X'r_c' on m-levs.       [K/(kg/kg)]
       rtm_frz,           & ! rtm adjusted to include hydrometeors   [kg/kg] 
       thlm_frz             ! thlm adjusted to include hydrometeors  [K]
 
@@ -2162,8 +2164,7 @@ module advance_clubb_core_module
       thlpthvp_zt, & ! th_l' th_v' (on thermo. grid)    [K^2]
       wprcp_zt,    & ! w' r_c' (on thermo. grid)        [(m kg)/(s kg)] 
       rtprcp_zt,   & ! r_t' r_c' (on thermo. grid)      [(kg^2)/(kg^2)] 
-      thlprcp_zt,  & ! th_l' r_c' (on thermo. grid)     [(K kg)/kg] 
-      rc_coef        ! X'R_l' coef. (on thermo. grid)   [-]
+      thlprcp_zt     ! th_l' r_c' (on thermo. grid)     [(K kg)/kg] 
 
     real( kind = core_rknd ), dimension(gr%nz, sclr_dim) :: &       
       sclrpthvp_zt, & ! sclr'th_v' (on thermo. grid) 

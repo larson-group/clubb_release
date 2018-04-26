@@ -647,8 +647,8 @@ module stats_zm_module
       case ('rc_coef_zm')
         irc_coef_zm = k
         call stat_assign( var_index=irc_coef_zm, var_name="rc_coef_zm", &
-             var_description="Coefficient of X' R_l' in Eq. (34)", var_units="[-]", &
-             l_silhs=.false., grid_kind=stats_zm )
+             var_description="Coefficient of X'r_c' [K/(kg/kg)]", &
+             var_units="K/(kg/kg)", l_silhs=.false., grid_kind=stats_zm )
         k = k + 1
 
       case ('thlprcp')

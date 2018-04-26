@@ -109,12 +109,14 @@ module stats_variables
      iKh_zt = 0, & 
      iwp2thvp = 0, & 
      iwp2rcp = 0, & 
-     iwprtpthlp = 0, & 
+     iwprtpthlp = 0, &
+     irc_coef = 0, &
      isigma_sqd_w_zt = 0, & 
      irho = 0
 !$omp threadprivate( iLscale_up, iLscale_down, &
 !$omp   iLscale_pert_1, iLscale_pert_2, &
-!$omp   itau_zt, iKh_zt, iwp2thvp, iwp2rcp, iwprtpthlp, isigma_sqd_w_zt, irho )
+!$omp   itau_zt, iKh_zt, iwp2thvp, iwp2rcp, iwprtpthlp, irc_coef, &
+!$omp   isigma_sqd_w_zt, irho )
 
   integer, dimension(:), allocatable, public :: & 
      ihm_1, &
