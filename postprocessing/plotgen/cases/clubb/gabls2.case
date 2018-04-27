@@ -148,6 +148,41 @@
           {'filename' => '/home/matlabuser/plotgen/HOC_20051217/gabls2_zm.ctl', 'type' => 'dec17', 'name' => 'HOC 12/17/2005', 'expression' => 'vp2', 'lineWidth' => '5', 'lineType' => '-.', 'lineColor' => '[ 0.63, 0.00, 0.79 ]'},
           {'filename' => 'gabls2_zm.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'vp2', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
+       {'plotTitle' => 'Variance of r_c', 'axisLabel' => 'rcp2 [kg^2/kg^2]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => '/home/matlabuser/plotgen/LES_files/gabls2_coamps_sm.ctl', 'type' => 'les', 'name' => 'COAMPS-LES', 'expression' => 'qcp2', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
+          {'filename' => 'gabls2_zm.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'rcp2', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'wp4', 'axisLabel' => 'wp4 [m^4/s^4]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => '/home/matlabuser/plotgen/LES_files/gabls2_coamps_sw.ctl', 'type' => 'les', 'name' => 'COAMPS-LES', 'expression' => 'wp4', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
+          {'filename' => 'gabls2_zm.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'wp4', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'wp2thlp', 'axisLabel' => 'wp2thlp [m^2/s^2 K]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => '/home/matlabuser/plotgen/LES_files/gabls2_coamps_sm.ctl', 'type' => 'les', 'name' => 'COAMPS-LES', 'expression' => 'wp2thlp', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
+          {'filename' => 'gabls2_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'wp2thlp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'wp2rtp', 'axisLabel' => 'wp2rtp [m^2/s^2 kg/kg]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => '/home/matlabuser/plotgen/LES_files/gabls2_coamps_sm.ctl', 'type' => 'les', 'name' => 'COAMPS-LES', 'expression' => 'wp2qtp', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
+          {'filename' => 'gabls2_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'wp2rtp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'wpthlp2', 'axisLabel' => 'wpthlp2 [m/s K^2]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => '/home/matlabuser/plotgen/LES_files/gabls2_coamps_sm.ctl', 'type' => 'les', 'name' => 'COAMPS-LES', 'expression' => 'wpthlp2', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
+          {'filename' => 'gabls2_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'wpthlp2', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'wprtp2', 'axisLabel' => 'wprtp2 [m/s kg^2/kg^2]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => '/home/matlabuser/plotgen/LES_files/gabls2_coamps_sm.ctl', 'type' => 'les', 'name' => 'COAMPS-LES', 'expression' => 'wpqtp2', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
+          {'filename' => 'gabls2_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'wprtp2', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'wprtpthlp', 'axisLabel' => 'wprtpthlp [m/s kg/kg K]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => '/home/matlabuser/plotgen/LES_files/gabls2_coamps_sm.ctl', 'type' => 'les', 'name' => 'COAMPS-LES', 'expression' => 'wpqtpthlp', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
+          {'filename' => 'gabls2_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'wprtpthlp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},       
        {'plotTitle' => 'Buoyancy flux ', 'axisLabel' => 'wpthvp [K m/s]', 'type' => 'profile', 'lines' =>
        [
           {'filename' => '/home/matlabuser/plotgen/LES_files/gabls2_coamps_sm.ctl', 'type' => 'les', 'name' => 'COAMPS-LES', 'expression' => 'wpthvp', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
@@ -155,17 +190,38 @@
        ]},
        {'plotTitle' => 'Contribution of Cloud Water Flux to wpthvp', 'axisLabel' => 'rc\_coef * wprcp   [K m/s]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => '/home/matlabuser/plotgen/LES_files/gabls2_coamps_sm.ctl', 'type' => 'les', 'name' => 'COAMPS-LES', 'expression' => 'wpqcp .* (2.5e6 ./ (1004.67*ex0) - 1.61*thvm)', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
+          {'filename' => '/home/matlabuser/plotgen/LES_files/gabls2_coamps_sm.ctl', 'type' => 'les', 'name' => 'COAMPS-LES', 'expression' => 'wpqcp .* (2.5e6 ./ (1004.67*ex0) - 1.61*thvm)', 'lineWidth' => '5', 'lineType' => '-', 'lineColor'
+ => '[ 0.00, 0.00, 0.00 ]'},
           {'filename' => 'gabls2_zm.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'rc_coef_zm .* wprcp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'wp2thvp', 'axisLabel' => 'wp2thvp [m^2/s^2 K]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => '/home/matlabuser/plotgen/LES_files/gabls2_coamps_sm.ctl', 'type' => 'les', 'name' => 'COAMPS-LES', 'expression' => 'wp2thvp', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
+          {'filename' => 'gabls2_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'wp2thvp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},       
+       {'plotTitle' => 'Cloud water contribution to wp2thvp', 'axisLabel' => 'rc\_coef * wp2rcp   [m^2/s^2 K]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => '/home/matlabuser/plotgen/LES_files/gabls2_coamps_sm.ctl', 'type' => 'les', 'name' => 'COAMPS-LES', 'expression' => 'wp2qcp .* (2.5e6 ./ (1004.67*ex0) - 1.61*thvm)', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
+          {'filename' => 'gabls2_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'rc_coef .* wp2rcp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'thlpthvp', 'axisLabel' => 'thlpthvp [K^2]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => '/home/matlabuser/plotgen/LES_files/gabls2_coamps_sm.ctl', 'type' => 'les', 'name' => 'COAMPS-LES', 'expression' => 'thlpthvp', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
+          {'filename' => 'gabls2_zm.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'thlpthvp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
        {'plotTitle' => 'Cloud water contribution to thlpthvp', 'axisLabel' => 'rc\_coef * thlprcp   [K^2]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => '/home/matlabuser/plotgen/LES_files/gabls2_coamps_sm.ctl', 'type' => 'les', 'name' => 'COAMPS-LES', 'expression' => '(2.5e6 ./ (1004.67*ex0) - 1.61*thvm).*thlpqcp', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
+          {'filename' => '/home/matlabuser/plotgen/LES_files/gabls2_coamps_sm.ctl', 'type' => 'les', 'name' => 'COAMPS-LES', 'expression' => 'thlpqcp .* (2.5e6 ./ (1004.67*ex0) - 1.61*thvm)', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
           {'filename' => 'gabls2_zm.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'rc_coef_zm .* thlprcp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
-       {'plotTitle' => 'Cloud water contribution to rtpthvp', 'axisLabel' => 'rc\_coef * rtprcp   [K kg/kg]', 'type' => 'profile', 'lines' =>
+       {'plotTitle' => 'rtpthvp', 'axisLabel' => 'rtpthvp [kg/kg K]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => '/home/matlabuser/plotgen/LES_files/gabls2_coamps_sm.ctl', 'type' => 'les', 'name' => 'COAMPS-LES', 'expression' => '(2.5e6 ./ (1004.67*ex0) - 1.61*thvm).*qtpqcp', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
+          {'filename' => '/home/matlabuser/plotgen/LES_files/gabls2_coamps_sm.ctl', 'type' => 'les', 'name' => 'COAMPS-LES', 'expression' => 'qtpthvp', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
+          {'filename' => 'gabls2_zm.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'rtpthvp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Cloud water contribution to rtpthvp', 'axisLabel' => 'rc\_coef * rtprcp   [kg/kg K]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => '/home/matlabuser/plotgen/LES_files/gabls2_coamps_sm.ctl', 'type' => 'les', 'name' => 'COAMPS-LES', 'expression' => 'qtpqcp .* (2.5e6 ./ (1004.67*ex0) - 1.61*thvm)', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
           {'filename' => 'gabls2_zm.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'rc_coef_zm .* rtprcp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
        {'plotTitle' => 'Mixing Length', 'axisLabel' => 'Lscale [m]', 'type' => 'profile', 'lines' =>
