@@ -443,26 +443,26 @@ module numerical_check
 !---------------------------------------------------------------------
 
 
-    call check_negative( rtm, gr%nz ,"rtm", prefix//proc_name )
-    call check_negative( p_in_Pa, gr%nz ,"p_in_Pa", prefix//proc_name )
-    call check_negative( rho, gr%nz ,"rho", prefix//proc_name )
-    call check_negative( rho_zm, gr%nz ,"rho_zm", prefix//proc_name )
-    call check_negative( exner, gr%nz ,"exner", prefix//proc_name )
-    call check_negative( rho_ds_zm, gr%nz ,"rho_ds_zm", prefix//proc_name )
-    call check_negative( rho_ds_zt, gr%nz ,"rho_ds_zt", prefix//proc_name )
-    call check_negative( invrs_rho_ds_zm, gr%nz ,"invrs_rho_ds_zm", &
+    call check_negative( rtm ,"rtm", prefix//proc_name )
+    call check_negative( p_in_Pa,"p_in_Pa", prefix//proc_name )
+    call check_negative( rho, "rho", prefix//proc_name )
+    call check_negative( rho_zm, "rho_zm", prefix//proc_name )
+    call check_negative( exner, "exner", prefix//proc_name )
+    call check_negative( rho_ds_zm, "rho_ds_zm", prefix//proc_name )
+    call check_negative( rho_ds_zt, "rho_ds_zt", prefix//proc_name )
+    call check_negative( invrs_rho_ds_zm, "invrs_rho_ds_zm", &
                          prefix//proc_name )
-    call check_negative( invrs_rho_ds_zt, gr%nz ,"invrs_rho_ds_zt", &
+    call check_negative( invrs_rho_ds_zt,"invrs_rho_ds_zt", &
                          prefix//proc_name )
-    call check_negative( thv_ds_zm, gr%nz ,"thv_ds_zm", prefix//proc_name )
-    call check_negative( thv_ds_zt, gr%nz ,"thv_ds_zt", prefix//proc_name )
-    call check_negative( up2, gr%nz ,"up2", prefix//proc_name )
-    call check_negative( vp2, gr%nz ,"vp2", prefix//proc_name )
-    call check_negative( wp2, gr%nz ,"wp2", prefix//proc_name )
-    call check_negative( rtm, gr%nz ,"rtm", prefix//proc_name )
-    call check_negative( thlm, gr%nz ,"thlm", prefix//proc_name )
-    call check_negative( rtp2, gr%nz ,"rtp2", prefix//proc_name )
-    call check_negative( thlp2, gr%nz ,"thlp2", prefix//proc_name )
+    call check_negative( thv_ds_zm, "thv_ds_zm", prefix//proc_name )
+    call check_negative( thv_ds_zt, "thv_ds_zt", prefix//proc_name )
+    call check_negative( up2, "up2", prefix//proc_name )
+    call check_negative( vp2, "vp2", prefix//proc_name )
+    call check_negative( wp2, "wp2", prefix//proc_name )
+    call check_negative( rtm, "rtm", prefix//proc_name )
+    call check_negative( thlm, "thlm", prefix//proc_name )
+    call check_negative( rtp2, "rtp2", prefix//proc_name )
+    call check_negative( thlp2, "thlp2", prefix//proc_name )
 
     return
   end subroutine parameterization_check
@@ -572,15 +572,15 @@ module numerical_check
 
     rvm = rtm - rcm
 
-    call check_negative( thlm, gr%nz ,"thlm", proc_name )
-    call check_negative( rcm, gr%nz ,"rcm", proc_name )
-    call check_negative( rtm, gr%nz ,"rtm", proc_name )
-    call check_negative( rvm, gr%nz ,"rvm", proc_name )
-    call check_negative( rim, gr%nz ,"rim", proc_name )
-    call check_negative( cloud_frac, gr%nz ,"cloud_frac", proc_name )
-    call check_negative( p_in_Pa, gr%nz ,"p_in_Pa", proc_name )
-    call check_negative( exner, gr%nz ,"exner", proc_name )
-    call check_negative( rho_zm, gr%nz ,"rho_zm", proc_name )
+    call check_negative( thlm, "thlm", proc_name )
+    call check_negative( rcm, "rcm", proc_name )
+    call check_negative( rtm, "rtm", proc_name )
+    call check_negative( rvm, "rvm", proc_name )
+    call check_negative( rim, "rim", proc_name )
+    call check_negative( cloud_frac,"cloud_frac", proc_name )
+    call check_negative( p_in_Pa, "p_in_Pa", proc_name )
+    call check_negative( exner, "exner", proc_name )
+    call check_negative( rho_zm, "rho_zm", proc_name )
 
     return
 
@@ -870,7 +870,7 @@ module numerical_check
 
 !------------------------------------------------------------------------
   subroutine check_negative_index & 
-            ( var, ndim, varname, operation )
+            ( var, varname, operation )
 !
 ! Description:
 !   Checks for negative values in the var array and reports
@@ -892,10 +892,7 @@ module numerical_check
     ! External
     intrinsic :: any, present
 
-    ! Input Variables
-    integer, intent(in) :: ndim
-
-    real( kind = core_rknd ), intent(in), dimension(ndim) :: var
+    real( kind = core_rknd ), intent(in), dimension(:) :: var
 
     character(len=*), intent(in)::  & 
     varname,     & ! Varible being examined
@@ -904,7 +901,7 @@ module numerical_check
     ! Local Variable
     integer :: k ! Loop iterator
 
-    do k=1,ndim,1
+    do k=1,size(var)
 
       if ( var(k) < 0.0_core_rknd )  then
 
