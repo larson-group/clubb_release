@@ -774,13 +774,13 @@ module advance_clubb_core_module
     !----------------------------------------------------------------
     if ( clubb_at_least_debug_level( 2 ) ) then
       call parameterization_check & 
-           ( thlm_forcing(2:gr%nz), rtm_forcing(2:gr%nz), um_forcing(2:gr%nz),  & ! intent(in)
-             vm_forcing(2:gr%nz), wm_zm, wm_zt(2:gr%nz), p_in_Pa(2:gr%nz),      & ! intent(in)
-             rho_zm, rho(2:gr%nz), exner(2:gr%nz), rho_ds_zm,                   & ! intent(in)
-             rho_ds_zt(2:gr%nz), invrs_rho_ds_zm, invrs_rho_ds_zt(2:gr%nz),     & ! intent(in)
-             thv_ds_zm, thv_ds_zt(2:gr%nz), wpthlp_sfc, wprtp_sfc, upwp_sfc,    & ! intent(in)
-             vpwp_sfc, um(2:gr%nz), upwp, vm(2:gr%nz), vpwp, up2, vp2,          & ! intent(in)
-             rtm(2:gr%nz), wprtp, thlm(2:gr%nz), wpthlp, wp2, wp3(2:gr%nz),     & ! intent(in)
+           ( thlm_forcing, rtm_forcing, um_forcing,                             & ! intent(in)
+             vm_forcing, wm_zm, wm_zt, p_in_Pa,                                 & ! intent(in)
+             rho_zm, rho, exner, rho_ds_zm,                                     & ! intent(in)
+             rho_ds_zt, invrs_rho_ds_zm, invrs_rho_ds_zt,                       & ! intent(in)
+             thv_ds_zm, thv_ds_zt, wpthlp_sfc, wprtp_sfc, upwp_sfc,             & ! intent(in)
+             vpwp_sfc, um, upwp, vm, vpwp, up2, vp2,                            & ! intent(in)
+             rtm, wprtp, thlm, wpthlp, wp2, wp3,                                & ! intent(in)
              rtp2, thlp2, rtpthlp,                                              & ! intent(in)
              "beginning of ",                                                   & ! intent(in)
              wpsclrp_sfc, wpedsclrp_sfc, sclrm, wpsclrp, sclrp2,                & ! intent(in)
@@ -1774,16 +1774,18 @@ module advance_clubb_core_module
 
 
       if ( clubb_at_least_debug_level( 2 ) ) then
+        rtm(5) = -1
+
         call parameterization_check & 
-           ( thlm_forcing(2:gr%nz), rtm_forcing(2:gr%nz), um_forcing(2:gr%nz),  & ! intent(in)
-             vm_forcing(2:gr%nz), wm_zm, wm_zt(2:gr%nz), p_in_Pa(2:gr%nz),      & ! intent(in)
-             rho_zm, rho(2:gr%nz), exner(2:gr%nz), rho_ds_zm,                   & ! intent(in)
-             rho_ds_zt(2:gr%nz), invrs_rho_ds_zm, invrs_rho_ds_zt(2:gr%nz),     & ! intent(in)
-             thv_ds_zm, thv_ds_zt(2:gr%nz), wpthlp_sfc, wprtp_sfc, upwp_sfc,    & ! intent(in)
-             vpwp_sfc, um(2:gr%nz), upwp, vm(2:gr%nz), vpwp, up2, vp2,          & ! intent(in)
-             rtm(2:gr%nz), wprtp, thlm(2:gr%nz), wpthlp, wp2, wp3(2:gr%nz),     & ! intent(in)
+           ( thlm_forcing, rtm_forcing, um_forcing,                             & ! intent(in)
+             vm_forcing, wm_zm, wm_zt, p_in_Pa,                                 & ! intent(in)
+             rho_zm, rho, exner, rho_ds_zm,                                     & ! intent(in)
+             rho_ds_zt, invrs_rho_ds_zm, invrs_rho_ds_zt,                       & ! intent(in)
+             thv_ds_zm, thv_ds_zt, wpthlp_sfc, wprtp_sfc, upwp_sfc,             & ! intent(in)
+             vpwp_sfc, um, upwp, vm, vpwp, up2, vp2,                            & ! intent(in)
+             rtm, wprtp, thlm, wpthlp, wp2, wp3,                                & ! intent(in)
              rtp2, thlp2, rtpthlp,                                              & ! intent(in)
-             "end of ",                                                         & ! intent(in)
+             "beginning of ",                                                   & ! intent(in)
              wpsclrp_sfc, wpedsclrp_sfc, sclrm, wpsclrp, sclrp2,                & ! intent(in)
              sclrprtp, sclrpthlp, sclrm_forcing, edsclrm, edsclrm_forcing )       ! intent(in)
 
