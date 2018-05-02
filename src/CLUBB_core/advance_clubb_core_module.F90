@@ -1774,8 +1774,6 @@ module advance_clubb_core_module
 
 
       if ( clubb_at_least_debug_level( 2 ) ) then
-        rtm(5) = -1
-
         call parameterization_check & 
            ( thlm_forcing, rtm_forcing, um_forcing,                             & ! intent(in)
              vm_forcing, wm_zm, wm_zt, p_in_Pa,                                 & ! intent(in)
