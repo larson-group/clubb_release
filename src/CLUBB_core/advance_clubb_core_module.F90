@@ -1785,7 +1785,7 @@ module advance_clubb_core_module
              vpwp_sfc, um, upwp, vm, vpwp, up2, vp2,                            & ! intent(in)
              rtm, wprtp, thlm, wpthlp, wp2, wp3,                                & ! intent(in)
              rtp2, thlp2, rtpthlp,                                              & ! intent(in)
-             "beginning of ",                                                   & ! intent(in)
+            "end of ",                                                          & ! intent(in)
              wpsclrp_sfc, wpedsclrp_sfc, sclrm, wpsclrp, sclrp2,                & ! intent(in)
              sclrprtp, sclrpthlp, sclrm_forcing, edsclrm, edsclrm_forcing )       ! intent(in)
 
