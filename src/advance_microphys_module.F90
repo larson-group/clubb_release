@@ -84,7 +84,7 @@ module advance_microphys_module
     use error_code, only: &
         clubb_at_least_debug_level, & ! Procedure
         err_code,                   & ! Error Indicator
-        clubb_no_error                ! Constant
+        clubb_fatal_error             ! Constant
 
     use array_index, only:  & 
         hydromet_list, & ! Names of the hydrometeor species
@@ -339,10 +339,10 @@ module advance_microphys_module
 
 
     if ( clubb_at_least_debug_level( 0 ) ) then
-        if ( err_code /= clubb_no_error ) then
+        if ( err_code == clubb_fatal_error ) then
             write(fstderr,*) "calling advance_hydrometeor"
             return
-        endif !  err_code /= clubb_no_error 
+        endif !  err_code == clubb_fatal_error 
     end if
 
     !-----------------------------------------------------------------------
@@ -362,13 +362,13 @@ module advance_microphys_module
         
         if ( clubb_at_least_debug_level( 0 ) ) then
 
-            if ( err_code /= clubb_no_error ) then
+            if ( err_code == clubb_fatal_error ) then
 
                 write(fstderr,*) "in advance_Ncm"
                 write(fstderr,*) "Ncm = ", Ncm
                 return
 
-            endif !  err_code  /= clubb_no_error
+            endif
 
         end if
 
@@ -461,7 +461,7 @@ module advance_microphys_module
 !       Error Report
 !       Joshua Fasching Feb 2008
 
-    if ( clubb_at_least_debug_level( 0 ) .and. err_code /= clubb_no_error ) then
+    if ( clubb_at_least_debug_level( 0 ) .and. err_code == clubb_fatal_error ) then
 
        write(fstderr,*) "Error in advance_microphys"
 
@@ -557,7 +557,7 @@ module advance_microphys_module
     use error_code, only: &
         clubb_at_least_debug_level, & ! Procedure
         err_code,                   & ! Error Indicator
-        clubb_no_error                ! Constant
+        clubb_fatal_error             ! Constant
 
     use clubb_precision, only:  & 
         core_rknd ! Variable(s)
@@ -775,14 +775,14 @@ module advance_microphys_module
                              lhs, rhs, hydromet(:,i) )
 
        if ( clubb_at_least_debug_level( 0 ) ) then 
-           if ( err_code /= clubb_no_error ) then
+           if ( err_code == clubb_fatal_error ) then
 
                 write(fstderr,*) "Error in hydrometeor field " &
                                   // trim( hydromet_list(i) )
 
                 write(fstderr,*) trim( hydromet_list(i) ) // " = ", hydromet(:,i)
      
-           endif !  err_code /= clubb_no_error 
+           endif !  err_code == clubb_fatal_error 
         end if
 
     enddo ! i = 1, hydromet_dim, 1
@@ -973,7 +973,7 @@ module advance_microphys_module
     use error_code, only: &
         clubb_at_least_debug_level, & ! Procedure
         err_code,                   & ! Error Indicator
-        clubb_no_error                ! Constant
+        clubb_fatal_error             ! Constant
 
     use clubb_precision, only:  & 
         core_rknd ! Variable(s)
@@ -1281,7 +1281,7 @@ module advance_microphys_module
     use error_code, only: &
         clubb_at_least_debug_level,  & ! Procedure
         err_code,                    & ! Error Indicator
-        clubb_no_error                 ! Constant
+        clubb_fatal_error              ! Constant
 
     use lapack_wrap, only:  & 
         tridag_solve    ! Procedure(s)

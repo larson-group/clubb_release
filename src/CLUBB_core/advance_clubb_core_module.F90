@@ -341,7 +341,7 @@ module advance_clubb_core_module
     use error_code, only: &
         clubb_at_least_debug_level,  & ! Procedure
         err_code,                    & ! Error Indicator
-        clubb_no_error                 ! Constant
+        clubb_fatal_error              ! Constant
 
     use Skx_module, only: &
         Skx_func,           & ! Procedure(s)
@@ -787,7 +787,7 @@ module advance_clubb_core_module
              sclrprtp, sclrpthlp, sclrm_forcing, edsclrm, edsclrm_forcing )       ! intent(in)
 
         if ( clubb_at_least_debug_level( 0 ) ) then
-          if ( err_code /= clubb_no_error ) return
+          if ( err_code == clubb_fatal_error ) return
         end if
 
     end if
@@ -1276,7 +1276,7 @@ module advance_clubb_core_module
                              sclrpthlp(1,1:sclr_dim) )                              ! intent(out)
 
         if ( clubb_at_least_debug_level( 0 ) ) then
-          if ( err_code /= clubb_no_error ) then
+          if ( err_code == clubb_fatal_error ) then
             write(fstderr,*) "Error calling calc_surface_varnce"
             return
           end if
@@ -1412,7 +1412,7 @@ module advance_clubb_core_module
                             sclrm, wpsclrp )                                   ! intent(inout)
 
       if ( clubb_at_least_debug_level( 0 ) ) then
-          if ( err_code /= clubb_no_error ) then
+          if ( err_code == clubb_fatal_error ) then
             write(fstderr,*) "Error calling advance_xm_wpxp"
             return
           end if
@@ -1462,7 +1462,7 @@ module advance_clubb_core_module
                              sclrp2, sclrprtp, sclrpthlp            ) ! intent(inout)
 
       if ( clubb_at_least_debug_level( 0 ) ) then
-          if ( err_code /= clubb_no_error ) then
+          if ( err_code == clubb_fatal_error ) then
             write(fstderr,*) "Error calling advance_xp2_xpyp"
             return
           end if
@@ -1503,7 +1503,7 @@ module advance_clubb_core_module
              wp2, wp3, wp3_zm, wp2_zt )                            ! intent(i/o)
 
       if ( clubb_at_least_debug_level( 0 ) ) then
-          if ( err_code /= clubb_no_error ) then
+          if ( err_code == clubb_fatal_error ) then
             write(fstderr,*) "Error calling advance_wp2_wp3"
             return
           end if
@@ -1788,7 +1788,7 @@ module advance_clubb_core_module
              sclrprtp, sclrpthlp, sclrm_forcing, edsclrm, edsclrm_forcing )       ! intent(in)
 
         if ( clubb_at_least_debug_level( 0 ) ) then
-          if ( err_code /= clubb_no_error ) return
+          if ( err_code == clubb_fatal_error ) return
         end if
 
       end if
@@ -1971,7 +1971,7 @@ module advance_clubb_core_module
     use error_code, only: &
         clubb_at_least_debug_level,  & ! Procedure
         err_code,                    & ! Error Indicator
-        clubb_no_error                 ! Constant
+        clubb_fatal_error              ! Constant
 
     use variables_diagnostic_module, only: &
         sigma_sqd_w_zt, & ! Variable(s)
@@ -2485,7 +2485,7 @@ module advance_clubb_core_module
       ! gracefully.
       ! Joshua Fasching March 2008
       if ( clubb_at_least_debug_level( 0 ) ) then
-          if ( err_code /= clubb_no_error ) then
+          if ( err_code == clubb_fatal_error ) then
               write(fstderr,*) "At grid level = ",k
               stop
           end if
@@ -2645,7 +2645,7 @@ module advance_clubb_core_module
         ! gracefully.
         ! Joshua Fasching March 2008
         if ( clubb_at_least_debug_level( 0 ) ) then
-            if ( err_code /= clubb_no_error ) then
+            if ( err_code == clubb_fatal_error ) then
                 write(fstderr,*) "At grid level = ",k
                 stop
             end if
@@ -2815,7 +2815,7 @@ module advance_clubb_core_module
         ! Subroutine may produce NaN values, and if so, exit gracefully.
         ! Joshua Fasching March 2008
         if ( clubb_at_least_debug_level( 0 ) ) then
-            if ( err_code /= clubb_no_error ) then
+            if ( err_code == clubb_fatal_error ) then
                 write(fstderr,*) "At grid level = ", k
                 stop
             end if
@@ -2872,7 +2872,7 @@ module advance_clubb_core_module
           ! gracefully.
           ! Joshua Fasching March 2008
           if ( clubb_at_least_debug_level( 0 ) ) then
-            if ( err_code /= clubb_no_error ) then
+            if ( err_code == clubb_fatal_error ) then
                 write(fstderr,*) "At grid level = ",k
                 stop
             end if
@@ -3001,7 +3001,7 @@ module advance_clubb_core_module
       use error_code, only: &
           clubb_at_least_debug_level,  & ! Procedure
           err_code,                    & ! Error Indicator
-          clubb_no_error                 ! Constant
+          clubb_fatal_error              ! Constant
 
       use model_flags, only: & 
           setup_model_flags, & ! Subroutine
@@ -3274,7 +3274,7 @@ module advance_clubb_core_module
       ! Error Report
       ! Joshua Fasching February 2008
       if ( clubb_at_least_debug_level( 0 ) ) then
-          if ( err_code /= clubb_no_error ) then
+          if ( err_code == clubb_fatal_error ) then
 
             write(fstderr,*) "Error in setup_clubb_core"
 

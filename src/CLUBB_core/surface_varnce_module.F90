@@ -54,7 +54,7 @@ module surface_varnce_module
     use error_code, only: &
         clubb_at_least_debug_level,  & ! Procedure
         err_code,                    & ! Error Indicator
-        clubb_no_error                 ! Constant
+        clubb_fatal_error              ! Constant
 
     use array_index, only: &
         iisclr_rt, & ! Index for a scalar emulating rt
@@ -414,7 +414,7 @@ module surface_varnce_module
 
 !       Error reporting
 !       Joshua Fasching February 2008
-       if ( err_code /= clubb_no_error ) then
+       if ( err_code == clubb_fatal_error ) then
 
           write(fstderr,*) "Error in calc_surface_varnce"
           write(fstderr,*) "Intent(in)"

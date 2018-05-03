@@ -18,7 +18,8 @@ program clubb_thread_test
   
   use error_code, only: &
         err_code,                    & ! Error Indicator
-        clubb_no_error                 ! Constant
+        clubb_no_error,              & ! Constant
+        clubb_fatal_error
 
   use parameter_indices, only: nparams ! Variable(s)
 
@@ -88,7 +89,7 @@ program clubb_thread_test
 !$omp end parallel do
 
   do iter = 1, ncases
-    if ( any( err_code_saves(:) /= clubb_no_error ) ) then
+    if ( any( err_code_saves(:) == clubb_fatal_error ) ) then
       write(fstderr,*) "Simulation ", iter, " failed (multi-threaded)"
     end if
   end do

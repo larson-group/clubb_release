@@ -486,7 +486,7 @@ module advance_xm_wpxp_module
                             solution )           ! Intent(out)
       endif
 
-      if ( err_code /= clubb_no_error ) then
+      if ( err_code == clubb_fatal_error ) then
           write(fstderr,'(a)') "Mean total water & total water flux LU decomp. failed"
           return
       end if
@@ -500,7 +500,7 @@ module advance_xm_wpxp_module
              l_implemented, solution(:,1), &        ! Intent(in)
              rtm, rt_tol_mfl, wprtp )               ! Intent(inout)
 
-      if ( err_code /= clubb_no_error ) then
+      if ( err_code == clubb_fatal_error ) then
           write(fstderr,'(a)') "rtm monotonic flux limiter:  tridag failed"
           return
       end if
@@ -548,7 +548,7 @@ module advance_xm_wpxp_module
                             solution )           ! Intent(out)
       endif
 
-      if ( err_code /= clubb_no_error ) then
+      if ( err_code == clubb_fatal_error ) then
           write(fstderr,'(a)') "Liquid pot. temp & thetal flux LU decomp. failed"
           return
       end if
@@ -562,7 +562,7 @@ module advance_xm_wpxp_module
              l_implemented, solution(:,1),  &        ! Intent(in)
              thlm, thl_tol_mfl, wpthlp )             ! Intent(inout)
 
-      if ( err_code /= clubb_no_error ) then
+      if ( err_code == clubb_fatal_error ) then
           write(fstderr,'(a)') "thlm monotonic flux limiter:  tridag failed" 
           return
       end if
@@ -617,7 +617,7 @@ module advance_xm_wpxp_module
                             lhs, rhs, &          ! Intent(inout)
                             solution )           ! Intent(out)
 
-        if ( err_code /= clubb_no_error ) then
+        if ( err_code == clubb_fatal_error ) then
             write(fstderr,*) "Passive scalar # ", i, " LU decomp. failed."
             return
         end if
@@ -632,7 +632,7 @@ module advance_xm_wpxp_module
                l_implemented, solution(:,1),  &         ! Intent(in)
                sclrm(:,i), sclr_tol(i), wpsclrp(:,i) )  ! Intent(inout)
 
-       if ( err_code /= clubb_no_error ) then
+       if ( err_code == clubb_fatal_error ) then
            write(fstderr,*) "sclrm # ", i, "monotonic flux limiter: tridag failed"
            return
        end if
@@ -705,7 +705,7 @@ module advance_xm_wpxp_module
                             solution )           ! Intent(out)
       endif
 
-      if ( err_code /= clubb_no_error ) then
+      if ( err_code == clubb_fatal_error ) then
           write(fstderr,*) "xm_wpxp matrix LU decomp. failed"
           return
       end if
@@ -719,7 +719,7 @@ module advance_xm_wpxp_module
              l_implemented, solution(:,1),  &       ! Intent(in)
              rtm, rt_tol_mfl, wprtp )               ! Intent(inout)
 
-      if ( err_code /= clubb_no_error ) then
+      if ( err_code == clubb_fatal_error ) then
           write(fstderr,*) "rtm monotonic flux limiter:  tridag failed"
           return
       end if
@@ -733,7 +733,7 @@ module advance_xm_wpxp_module
              l_implemented, solution(:,2),  &       ! Intent(in)
              thlm, thl_tol_mfl, wpthlp )            ! Intent(inout)
 
-      if ( err_code /= clubb_no_error ) then
+      if ( err_code == clubb_fatal_error ) then
           write(fstderr,'(a)') "thlm monotonic flux limiter:  tridag failed"
           return
       end if
@@ -758,7 +758,7 @@ module advance_xm_wpxp_module
                l_implemented, solution(:,2+i),  &       ! Intent(in)
                sclrm(:,i), sclr_tol(i), wpsclrp(:,i) )  ! Intent(inout)
 
-        if ( err_code /= clubb_no_error ) then
+        if ( err_code == clubb_fatal_error ) then
             write(fstderr,*) "sclrm # ", i, "monotonic flux limiter: tridag failed"
             return
         end if
@@ -772,7 +772,7 @@ module advance_xm_wpxp_module
 
     ! Error Report
     ! Joshua Fasching Feb 2008
-    if ( err_code /= clubb_no_error ) then
+    if ( err_code == clubb_fatal_error ) then
 
       write(fstderr,*) "Error in advance_xm_wpxp"
 
@@ -2126,8 +2126,7 @@ module advance_xm_wpxp_module
 
     use error_code, only: &
         clubb_at_least_debug_level,  & ! Procedure
-        err_code,                    & ! Error Indicator
-        clubb_no_error                 ! Constant
+        err_code                       ! Error Indicator
 
     use stats_type_utilities, only: & 
         stat_begin_update,  & ! Procedure(s)

@@ -348,7 +348,7 @@ module advance_wp2_wp3_module
 
 !       Error output
 !       Joshua Fasching Feb 2008
-    if ( err_code /= clubb_no_error ) then  
+    if ( err_code == clubb_fatal_error ) then  
 
         write(fstderr,*) "Errors in advance_wp2_wp3"
 
@@ -426,7 +426,7 @@ module advance_wp2_wp3_module
     use error_code, only: &
         clubb_at_least_debug_level,  & ! Procedure
         err_code,                    & ! Error Indicator
-        clubb_no_error                 ! Constants
+        clubb_fatal_error              ! Constants
 
     use model_flags, only:  & 
         l_tke_aniso,  & ! Variable(s)
@@ -694,7 +694,7 @@ module advance_wp2_wp3_module
             call band_solvex( "wp2_wp3", 2, 2, 2*gr%nz, nrhs, & 
                               lhs, rhs, solut, rcond )
 
-            if ( err_code /= clubb_no_error ) then
+            if ( err_code == clubb_fatal_error ) then
                 write(fstderr,*) "in wp23_solve calling band_solvex for wp2_wp3"
                 return
             end if
@@ -708,7 +708,7 @@ module advance_wp2_wp3_module
             call band_solve( "wp2_wp3", 2, 2, 2*gr%nz, nrhs, & 
                            lhs, rhs, solut )
 
-            if ( err_code /= clubb_no_error ) then
+            if ( err_code == clubb_fatal_error ) then
                 write(fstderr,*) "in wp23_solve calling band_solve for wp2_wp3"
                 return
             end if
@@ -1061,7 +1061,7 @@ module advance_wp2_wp3_module
         call band_solve( "wp2_wp3", 2, 2, 2*gr%nz, nrhs, &
                          lhs, rhs, solut )
 
-        if ( err_code /= clubb_no_error ) then
+        if ( err_code == clubb_fatal_error ) then
             write(fstderr,*) "in wp23_solve calling band_solve for wp2_wp3"
             return
         end if
@@ -1081,7 +1081,7 @@ module advance_wp2_wp3_module
                       solut )
 
     ! Fall back to LAPACK if GMRES returned any errors
-    if ( err_code /= clubb_no_error ) then
+    if ( err_code == clubb_fatal_error ) then
       write(fstderr,*) "Errors encountered in GMRES solve."
       write(fstderr,*) "Falling back to LAPACK solver."
       err_code = clubb_no_error
@@ -1104,7 +1104,7 @@ module advance_wp2_wp3_module
         call band_solvex( "wp2_wp3", 2, 2, 2*gr%nz, nrhs, & 
                           lhs, rhs, solut, rcond )
 
-        if ( err_code /= clubb_no_error ) then
+        if ( err_code == clubb_fatal_error ) then
             write(fstderr,*) "in wp23_solve calling band_solvex for wp2_wp3"
             return
         end if
@@ -1117,7 +1117,7 @@ module advance_wp2_wp3_module
         call band_solve( "wp2_wp3", 2, 2, 2*gr%nz, nrhs, & 
                          lhs, rhs, solut )
 
-        if ( err_code /= clubb_no_error ) then
+        if ( err_code == clubb_fatal_error ) then
             write(fstderr,*) "in wp23_solve calling band_solve for wp2_wp3"
             return
         end if

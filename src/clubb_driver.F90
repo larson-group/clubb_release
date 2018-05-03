@@ -953,7 +953,7 @@ module clubb_driver
     rtphmp_zt(:,:)  = 0._core_rknd
     thlphmp_zt(:,:) = 0._core_rknd
 
-    if ( err_code /= clubb_no_error ) then
+    if ( err_code == clubb_fatal_error ) then
       ! At this point, input fields haven't been set up, so don't clean them up.
       call cleanup_clubb( l_input_fields=.false. )
       return
@@ -1077,7 +1077,7 @@ module clubb_driver
              Ncm, Nc_in_cloud, Nccnm,                           & ! Intent(inout)
              sclrm, edsclrm )                           ! Intent(out)
 
-      if ( err_code /= clubb_no_error ) then
+      if ( err_code == clubb_fatal_error ) then
         ! At this point, input fields haven't been set up, so don't clean them up.
         call cleanup_clubb( l_input_fields=.false. )
         return
@@ -1109,7 +1109,7 @@ module clubb_driver
              Ncm, Nc_in_cloud, Nccnm,                            & ! Intent(inout)
              sclrm, edsclrm )                            ! Intent(out)
 
-      if ( err_code /= clubb_no_error ) then
+      if ( err_code == clubb_fatal_error ) then
         ! At this point, input fields haven't been set up, so don't clean them up.
         call cleanup_clubb( l_input_fields=.false. )
         return
@@ -1321,7 +1321,7 @@ module clubb_driver
       ! Set large-scale tendencies and subsidence profiles
       call prescribe_forcings( dt_main )  ! Intent(in)
 
-      if ( err_code /= clubb_no_error ) then
+      if ( err_code == clubb_fatal_error ) then
           write(fstderr,*) "Fatal error in prescribe_forcings:"
           stop
       end if
@@ -1396,7 +1396,7 @@ module clubb_driver
              wprcp, ice_supersat_frac, &                          ! Intent(out)
              rcm_in_layer, cloud_cover )                          ! Intent(out)
 
-      if ( err_code /= clubb_no_error ) return
+      if ( err_code == clubb_fatal_error ) return
 
       ! Measure time in advance_clubb_core
       call cpu_time(time_stop)
@@ -1529,7 +1529,7 @@ module clubb_driver
       call cpu_time(time_start) ! initialize timer for the end part of the main loop
       
       
-      if ( err_code /= clubb_no_error ) then
+      if ( err_code == clubb_fatal_error ) then
         write(fstderr,*) "Fatal error in advance_microphys:"
         stop   
       endif
@@ -1605,7 +1605,7 @@ module clubb_driver
       call cpu_time(time_stop)
       time_loop_end = time_loop_end + time_stop - time_start
       
-      if ( err_code /= clubb_no_error ) exit
+      if ( err_code == clubb_fatal_error ) exit
 
     end do ! itime=1, ifinal
     
@@ -4560,7 +4560,7 @@ module clubb_driver
 
     end select ! Radiation scheme
 
-    if ( err_code /= clubb_no_error ) then
+    if ( err_code == clubb_fatal_error ) then
         write(fstderr,*) "Fatal error in advance_clubb_radiation:"
         stop
     end if
@@ -4740,7 +4740,7 @@ module clubb_driver
     use error_code, only: &
         clubb_at_least_debug_level,  & ! Procedure
         err_code,                    & ! Error Indicator
-        clubb_no_error                 ! Constant
+        clubb_fatal_error              ! Constant
 
     use latin_hypercube_driver_module, only: &
       copy_X_nl_into_hydromet_all_pts, &   !--------------------- Procedure
@@ -4850,7 +4850,7 @@ module clubb_driver
 
     end forall
 
-    if ( err_code /= clubb_no_error ) then
+    if ( err_code == clubb_fatal_error ) then
       write(fstderr,*) "Fatal error in silhs_radiation_driver:"
       stop
     end if

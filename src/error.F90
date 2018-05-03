@@ -173,7 +173,7 @@ module error
     use error_code, only: &
         clubb_at_least_debug_level,  & ! Procedure
         err_code,                    & ! Error Indicator
-        clubb_no_error                 ! Constant
+        clubb_fatal_error              ! Constant
 
     use text_writer, only: write_text ! Subroutine(s)
 
@@ -551,7 +551,7 @@ module error
     ! algorithm relies on the initial vector being valid.
 
     if ( clubb_at_least_debug_level( 0 ) ) then
-        if ( err_code /= clubb_no_error ) then
+        if ( err_code == clubb_fatal_error ) then
           write(fstderr,*) "Initial variable values must be valid."
           stop
         end if
@@ -606,7 +606,8 @@ module error
     use error_code, only: &
         clubb_at_least_debug_level,  & ! Procedure
         err_code,                    & ! Error Indicator
-        clubb_no_error                 ! Constant
+        clubb_no_error,              & ! Constant
+        clubb_fatal_error
 
     use stat_file_utils, only: &
       stat_file_num_vertical_levels, & ! Procedure(s)
@@ -821,7 +822,7 @@ module error
 
     ! If it has, it returns higher value than those previous to
     ! Amoeba (the downhill simplex)
-    if ( any( run_stat(:) /= clubb_no_error ) ) then
+    if ( any( run_stat(:) == clubb_fatal_error ) ) then
       write(fstderr,*) "Warning: the parameter set has caused CLUBB to crash"
       min_les_clubb_diff = real(2._core_rknd * maxval( cost_fnc_vector )  & 
                        - minval( cost_fnc_vector ))

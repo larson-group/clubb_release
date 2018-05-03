@@ -291,7 +291,7 @@ module mono_flux_limiter
     use error_code, only: &
         clubb_at_least_debug_level,  & ! Procedure
         err_code,                    & ! Error Indicator
-        clubb_no_error                 ! Constant
+        clubb_fatal_error              ! Constant
 
     use clubb_precision, only:  & 
         core_rknd ! Variable(s)
@@ -710,7 +710,7 @@ module mono_flux_limiter
                              xm )
 
           ! Check for errors
-          if ( err_code /= clubb_no_error ) return
+          if ( err_code == clubb_fatal_error ) return
 
        else  ! l_mfl_xm_imp_adj = .false.
 
@@ -1046,7 +1046,7 @@ module mono_flux_limiter
     use error_code, only: &
         clubb_at_least_debug_level,  & ! Procedure
         err_code,                    & ! Error Indicator
-        clubb_no_error                 ! Constant
+        clubb_fatal_error              ! Constant
 
     implicit none
 
@@ -1092,7 +1092,7 @@ module mono_flux_limiter
            xm )                                            ! Intent(out)
 
     ! Check for errors
-    if ( err_code /= clubb_no_error ) return
+    if ( err_code == clubb_fatal_error ) return
 
     ! Boundary condition on xm
     xm(1) = xm(2)

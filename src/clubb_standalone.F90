@@ -11,7 +11,8 @@ program clubb_standalone
   use clubb_driver, only: run_clubb ! Procedure(s)
   
   use error_code, only: &
-        clubb_no_error, &               ! Constant
+        clubb_no_error, &               ! Constants
+        clubb_fatal_error, &
         err_code                        ! Error indicator
 
   use parameter_indices, only: nparams ! Variable(s)
@@ -57,8 +58,8 @@ program clubb_standalone
   ! Run the model
   call run_clubb( params, namelist_filename, l_stdout )
 
-  if ( err_code /= clubb_no_error ) then
-    stop "Model wasn't valid, check your parameters and timestep"
+  if ( err_code == clubb_fatal_error ) then
+    stop "Fatal error in clubb, check your parameter values and timestep"
   else
     write(fstderr,*) "Program exited normally"
     call exit(success_code)

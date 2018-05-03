@@ -59,7 +59,7 @@ module mixing_length
     use error_code, only: &
         clubb_at_least_debug_level,  & ! Procedure
         err_code,                    & ! Error Indicator
-        clubb_no_error                 ! Constant
+        clubb_fatal_error              ! Constant
 
     implicit none
 
@@ -721,7 +721,7 @@ module mixing_length
     ! Ensure that the output from this subroutine is valid.
     call length_check( Lscale, Lscale_up, Lscale_down )
 
-    if ( err_code /= clubb_no_error ) then
+    if ( err_code == clubb_fatal_error ) then
 
       write(fstderr,*) "Errors in compute_mixing_length subroutine"
 

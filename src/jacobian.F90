@@ -38,7 +38,7 @@ program jacobian
   use error_code, only: &
         clubb_at_least_debug_level,  & ! Procedure
         err_code,                    & ! Error Indicator
-        clubb_no_error                 ! Constant
+        clubb_fatal_error              ! Constant
 
   use parameters_model, only: &
     PosInf ! Variable(s)
@@ -173,7 +173,7 @@ program jacobian
        ( clubb_params%value(:), 'jacobian.in', .false. )
 
   if ( clubb_at_least_debug_level( 0 ) ) then
-    if ( err_code /= clubb_no_error ) then
+    if ( err_code == clubb_fatal_error ) then
       stop "The initial set of parameters caused a fatal error."
     end if
   end if
@@ -271,7 +271,7 @@ program jacobian
     ! Print a period so the user knows something is happening
     write(unit=fstdout, fmt='(a1)', advance='no') "."
 
-    if ( err_code /= clubb_no_error ) then
+    if ( err_code == clubb_fatal_error ) then
 
       ! Pos. Infinity bit pattern
       jmatrix(i,:) = real(PosInf, kind = core_rknd)
