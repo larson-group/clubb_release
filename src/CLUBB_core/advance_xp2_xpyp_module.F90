@@ -149,8 +149,7 @@ module advance_xp2_xpyp_module
     use error_code, only: &
         clubb_at_least_debug_level,  & ! Procedure
         err_code,                    & ! Error Indicator
-        clubb_no_error,              & ! Constants
-        clubb_fatal_error
+        clubb_fatal_error              ! Constants
 
     use stats_variables, only: & 
         stats_zm,     & ! Variable(s)

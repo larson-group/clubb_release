@@ -61,8 +61,7 @@ module lapack_wrap
     use error_code, only: &
       clubb_at_least_debug_level,  & ! Procedure  
       err_code,                    & ! Error Indicator
-      clubb_fatal_error,           & ! Constants
-      clubb_no_error
+      clubb_fatal_error              ! Constants
 
     implicit none
 
@@ -211,8 +210,7 @@ module lapack_wrap
 
     use error_code, only: &
       err_code,                    & ! Error Indicator
-      clubb_fatal_error,           & ! Constants
-      clubb_no_error 
+      clubb_fatal_error              ! Constants
 
     implicit none
 
@@ -334,8 +332,7 @@ module lapack_wrap
     use error_code, only: &
       clubb_at_least_debug_level,  & ! Procedure  
       err_code,                    & ! Error Indicator
-      clubb_fatal_error,           & ! Constants
-      clubb_no_error 
+      clubb_fatal_error              ! Constants
 
     implicit none
 
@@ -543,8 +540,7 @@ module lapack_wrap
 
     use error_code, only: &
       err_code,                    & ! Error Indicator
-      clubb_fatal_error,           & ! Constants
-      clubb_no_error 
+      clubb_fatal_error              ! Constants
 
     implicit none
 

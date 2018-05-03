@@ -62,8 +62,7 @@ module coamps_microphys_driver_module
         iNsm
 
     use error_code, only: &
-        clubb_at_least_debug_level, & ! Procedure
-        clubb_no_error                ! Constant
+        clubb_at_least_debug_level  ! Procedure
 
     use parameters_microphys, only: l_graupel, l_ice_microphys ! Variable(s)
 

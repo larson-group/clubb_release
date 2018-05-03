@@ -100,8 +100,7 @@ module clubb_driver
         clubb_at_least_debug_level,  & ! ------------------------------------ Procedures
         set_clubb_debug_level,       &
         err_code,                    & ! ------------------------------------ Error Indicator
-        clubb_no_error,              & ! ------------------------------------ Constants
-        clubb_fatal_error
+        clubb_fatal_error              ! ------------------------------------ Constant
 
     use clubb_precision, only: time_precision, core_rknd !------------------- Constants
 
@@ -4279,8 +4278,7 @@ module clubb_driver
     use error_code, only: &
         clubb_at_least_debug_level,  & !-------------------------------- Procedure
         err_code,                    & !-------------------------------- Error Indicator
-        clubb_no_error,              & !-------------------------------- Constants
-        clubb_fatal_error
+        clubb_fatal_error              !-------------------------------- Constant
 
     use parameters_model, only: hydromet_dim !-------------------------- Variable(s)
 

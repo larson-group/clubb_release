@@ -135,8 +135,7 @@ module advance_xm_wpxp_module
     use error_code, only: &
         clubb_at_least_debug_level,  & ! Procedure
         err_code,                    & ! Error Indicator
-        clubb_no_error,              & ! Constants
-        clubb_fatal_error
+        clubb_fatal_error              ! Constants
 
     use stats_type_utilities, only: &
         stat_begin_update, & ! Procedure(s)
@@ -2125,8 +2124,7 @@ module advance_xm_wpxp_module
         fill_holes_vertical ! Procedure
 
     use error_code, only: &
-        clubb_at_least_debug_level,  & ! Procedure
-        err_code                       ! Error Indicator
+        clubb_at_least_debug_level  ! Procedure
 
     use stats_type_utilities, only: & 
         stat_begin_update,  & ! Procedure(s)

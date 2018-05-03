@@ -120,8 +120,7 @@ module advance_wp2_wp3_module
     use error_code, only: &
         clubb_at_least_debug_level,  & ! Procedure
         err_code,                    & ! Error Indicator
-        clubb_no_error,              & ! Constant
-        clubb_fatal_error
+        clubb_fatal_error              ! Constant
 
     use model_flags, only: &
         l_damp_wp2_using_em, &  ! Logical(s)

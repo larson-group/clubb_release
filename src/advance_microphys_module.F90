@@ -87,7 +87,6 @@ module advance_microphys_module
         clubb_fatal_error             ! Constant
 
     use array_index, only:  & 
-        hydromet_list, & ! Names of the hydrometeor species
         hydromet_tol,  & ! Tolerance values for hydrometeor species
         iirr,         & ! Variable(s)
         iiri,         &
@@ -971,9 +970,7 @@ module advance_microphys_module
         l_in_cloud_Nc_diff  ! Use in cloud values of Nc for diffusion
 
     use error_code, only: &
-        clubb_at_least_debug_level, & ! Procedure
-        err_code,                   & ! Error Indicator
-        clubb_fatal_error             ! Constant
+        clubb_at_least_debug_level   ! Procedure
 
     use clubb_precision, only:  & 
         core_rknd ! Variable(s)
@@ -1279,9 +1276,7 @@ module advance_microphys_module
         core_rknd    ! Variable(s)
 
     use error_code, only: &
-        clubb_at_least_debug_level,  & ! Procedure
-        err_code,                    & ! Error Indicator
-        clubb_fatal_error              ! Constant
+        clubb_at_least_debug_level   ! Procedure
 
     use lapack_wrap, only:  & 
         tridag_solve    ! Procedure(s)
