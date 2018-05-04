@@ -162,7 +162,7 @@ module pdf_closure_module
     use error_code, only: &
         clubb_at_least_debug_level,  & ! Procedure
         err_code,                    & ! Error Indicator
-        clubb_fatal_error              ! Constant
+        clubb_no_error                 ! Constant
 
     implicit none
 
@@ -356,6 +356,16 @@ module pdf_closure_module
 
     real( kind = core_rknd ), intent(out) :: &
       rc_coef    ! Coefficient on X'r_c' in X'th_v' equation    [K/(kg/kg)]
+
+    real( kind = core_rknd ) :: &
+      wprcp_contrib_comp_1,   & ! <w'rc'> contrib. (1st PDF comp.)  [m/s(kg/kg)]
+      wprcp_contrib_comp_2,   & ! <w'rc'> contrib. (2nd PDF comp.)  [m/s(kg/kg)]
+      wp2rcp_contrib_comp_1,  & ! <w'^2rc'> contrib. (1st comp) [m^2/s^2(kg/kg)]
+      wp2rcp_contrib_comp_2,  & ! <w'^2rc'> contrib. (2nd comp) [m^2/s^2(kg/kg)]
+      rtprcp_contrib_comp_1,  & ! <rt'rc'> contrib. (1st PDF comp.)  [kg^2/kg^2]
+      rtprcp_contrib_comp_2,  & ! <rt'rc'> contrib. (2nd PDF comp.)  [kg^2/kg^2]
+      thlprcp_contrib_comp_1, & ! <thl'rc'> contrib. (1st PDF comp.)  [K(kg/kg)]
+      thlprcp_contrib_comp_2    ! <thl'rc'> contrib. (2nd PDF comp.)  [K(kg/kg)]
 
     real( kind = core_rknd ) :: &
       wp2rxp,  & ! Sum total < w'^2 r_x' > for all hm species x [(m/s)^2(kg/kg)]
@@ -845,10 +855,20 @@ module pdf_closure_module
 #endif
 
     ! Calculate cloud_frac_1 and rc_1
-    call calc_cloud_frac_component(chi_1, stdev_chi_1, chi_at_liq_sat, cloud_frac_1, rc_1)
+    call calc_cloud_frac_component( chi_1, stdev_chi_1, chi_at_liq_sat, &
+                                    cloud_frac_1, rc_1 )
 
     ! Calculate cloud_frac_2 and rc_2
-    call calc_cloud_frac_component(chi_2, stdev_chi_2, chi_at_liq_sat, cloud_frac_2, rc_2)
+    call calc_cloud_frac_component( chi_2, stdev_chi_2, chi_at_liq_sat, &
+                                    cloud_frac_2, rc_2 )
+
+    ! Compute cloud fraction and mean cloud water mixing ratio.
+    ! Reference:
+    ! https://arxiv.org/pdf/1711.03675v1.pdf#nameddest=url:anl_int_cloud_terms
+    cloud_frac = calc_cloud_frac( cloud_frac_1, cloud_frac_2, mixt_frac )
+    rcm = mixt_frac * rc_1 + ( one - mixt_frac ) * rc_2
+
+    rcm = max( zero_threshold, rcm )
 
     if ( l_calc_ice_supersat_frac ) then
       ! We must compute chi_at_ice_sat1 and chi_at_ice_sat2
@@ -877,7 +897,7 @@ module pdf_closure_module
       ! Calculate ice supersaturation fraction in the 2nd PDF component.
       call calc_cloud_frac_component( chi_2, stdev_chi_2, chi_at_ice_sat2, &
                                       ice_supersat_frac_2, rc_2_ice )
-    end if
+    endif
 
     ! Compute moments that depend on theta_v
     !
@@ -895,11 +915,14 @@ module pdf_closure_module
     ! where thv_ds is used as a reference value to approximate theta_l.
     !
     ! Reference:
-    ! https://arxiv.org/pdf/1711.03675v1.pdf#nameddest=url:anl_int_buoy_terms 
+    ! https://arxiv.org/pdf/1711.03675v1.pdf#nameddest=url:anl_int_buoy_terms
 
 
-    rc_coef = Lv / (exner*Cp) - ep2 * thv_ds
+    ! Calculate rc_coef, which is the coefficient on <x'rc'> in the <x'thv'>
+    ! equation.
+    rc_coef = Lv / ( exner * Cp ) - ep2 * thv_ds
 
+    ! Calculate the precipitation loading term in the <x'thv'> equation.
     wp2rxp  = zero
     wprxp   = zero
     thlprxp = zero
@@ -915,30 +938,53 @@ module pdf_closure_module
        enddo ! hm_idx = 1, hydromet_dim, 1
     endif ! l_liq_ice_loading_test
 
-    wp2rcp = mixt_frac * ((w_1-wm)**2 + varnce_w_1)*rc_1 &
-               + (one-mixt_frac) * ((w_2-wm)**2 + varnce_w_2)*rc_2 & 
-             - wp2 * (mixt_frac*rc_1+(one-mixt_frac)*rc_2)
+    ! Calculate the contributions to <w'rc'>, <w'^2 rc'>, <rt'rc'>, and
+    ! <thl'rc'> from the 1st PDF component.
+    call calc_xprcp_component( wm, rtm, thlm, rcm,                & ! In
+                               w_1, rt_1, thl_1, varnce_w_1,      & ! In
+                               chi_1, stdev_chi_1, stdev_eta_1,   & ! In
+                               corr_w_chi_1, corr_chi_eta_1,      & ! In
+                               crt_1, cthl_1, rc_1, cloud_frac_1, & ! In
+                               wprcp_contrib_comp_1,              & ! Out
+                               wp2rcp_contrib_comp_1,             & ! Out
+                               rtprcp_contrib_comp_1,             & ! Out
+                               thlprcp_contrib_comp_1             ) ! Out
 
-    wp2thvp = wp2thlp + ep1*thv_ds*wp2rtp + rc_coef*wp2rcp - thv_ds * wp2rxp
+    ! Calculate the contributions to <w'rc'>, <w'^2 rc'>, <rt'rc'>, and
+    ! <thl'rc'> from the 2nd PDF component.
+    call calc_xprcp_component( wm, rtm, thlm, rcm,                & ! In
+                               w_2, rt_2, thl_2, varnce_w_2,      & ! In
+                               chi_2, stdev_chi_2, stdev_eta_2,   & ! In
+                               corr_w_chi_2, corr_chi_eta_2,      & ! In
+                               crt_2, cthl_2, rc_2, cloud_frac_2, & ! In
+                               wprcp_contrib_comp_2,              & ! Out
+                               wp2rcp_contrib_comp_2,             & ! Out
+                               rtprcp_contrib_comp_2,             & ! Out
+                               thlprcp_contrib_comp_2             ) ! Out
 
-    wprcp = mixt_frac * (w_1-wm)*rc_1 + (one-mixt_frac) * (w_2-wm)*rc_2
+    ! Calculate <w'rc'>, <w'^2 rc'>, <rt'rc'>, and <thl'rc'>.
+    wprcp = mixt_frac * wprcp_contrib_comp_1 &
+            + ( one - mixt_frac ) * wprcp_contrib_comp_2
 
-    wpthvp = wpthlp + ep1*thv_ds*wprtp + rc_coef*wprcp - thv_ds * wprxp
+    wp2rcp = mixt_frac * wp2rcp_contrib_comp_1 &
+             + ( one - mixt_frac ) * wp2rcp_contrib_comp_2
 
-    ! Account for subplume correlation in qt-thl
-    thlprcp  = mixt_frac * ( (thl_1-thlm)*rc_1 - (cthl_1*varnce_thl_1)*cloud_frac_1 ) & 
-             + (one-mixt_frac) * ( (thl_2-thlm)*rc_2 - (cthl_2*varnce_thl_2)*cloud_frac_2 ) & 
-             + mixt_frac*corr_rt_thl_1*crt_1*sqrt( varnce_rt_1*varnce_thl_1 )*cloud_frac_1 & 
-             + (one-mixt_frac)*corr_rt_thl_2*crt_2*sqrt( varnce_rt_2*varnce_thl_2 )*cloud_frac_2
-    thlpthvp = thlp2 + ep1*thv_ds*rtpthlp + rc_coef*thlprcp - thv_ds * thlprxp
+    rtprcp = mixt_frac * rtprcp_contrib_comp_1 & 
+             + ( one - mixt_frac ) * rtprcp_contrib_comp_2
 
-    ! Account for subplume correlation in qt-thl
-    rtprcp = mixt_frac * ( (rt_1-rtm)*rc_1 + (crt_1*varnce_rt_1)*cloud_frac_1 ) & 
-           + (one-mixt_frac) * ( (rt_2-rtm)*rc_2 + (crt_2*varnce_rt_2)*cloud_frac_2 ) & 
-           - mixt_frac*corr_rt_thl_1*cthl_1*sqrt( varnce_rt_1*varnce_thl_1 )*cloud_frac_1 & 
-           - (one-mixt_frac)*corr_rt_thl_2*cthl_2*sqrt( varnce_rt_2*varnce_thl_2 )*cloud_frac_2
+    thlprcp = mixt_frac * thlprcp_contrib_comp_1 &
+              + ( one - mixt_frac ) * thlprcp_contrib_comp_2
 
-    rtpthvp  = rtpthlp + ep1*thv_ds*rtp2 + rc_coef*rtprcp - thv_ds * rtprxp
+    ! Calculate <w'thv'>, <w'^2 thv'>, <rt'thv'>, and <thl'thv'>.
+    wpthvp = wpthlp + ep1 * thv_ds * wprtp + rc_coef * wprcp - thv_ds * wprxp
+
+    wp2thvp = wp2thlp + ep1 * thv_ds * wp2rtp + rc_coef * wp2rcp &
+              - thv_ds * wp2rxp
+
+    rtpthvp = rtpthlp + ep1 * thv_ds * rtp2 + rc_coef * rtprcp - thv_ds * rtprxp
+
+    thlpthvp = thlp2 + ep1 * thv_ds * rtpthlp + rc_coef * thlprcp &
+               - thv_ds * thlprxp
 
     ! Account for subplume correlation of scalar, theta_v.
     ! See Eqs. A13, A8 from Larson et al. (2002) ``Small-scale...''
@@ -961,14 +1007,6 @@ module pdf_closure_module
       end do ! i=1, sclr_dim
     end if ! l_scalar_calc
 
-    ! Compute mean cloud fraction and cloud water
-    ! Reference:
-    ! https://arxiv.org/pdf/1711.03675v1.pdf#nameddest=url:anl_int_cloud_terms
-    cloud_frac = calc_cloud_frac(cloud_frac_1, cloud_frac_2, mixt_frac)
-    rcm        = mixt_frac * rc_1         + (one-mixt_frac) * rc_2
-    
-    rcm = max( zero_threshold, rcm )
-    
     if (l_calc_ice_supersat_frac) then
       ! Compute ice cloud fraction, ice_supersat_frac
       ice_supersat_frac = calc_cloud_frac( ice_supersat_frac_1, &
@@ -1063,7 +1101,7 @@ module pdf_closure_module
       ! Error Reporting
       ! Joshua Fasching February 2008
 
-      if ( err_code == clubb_fatal_error ) then
+      if ( err_code /= clubb_no_error ) then
 
         write(fstderr,*) "Error in pdf_closure_new"
 
@@ -1824,6 +1862,468 @@ module pdf_closure_module
     return
     
   end function calc_cloud_frac
+
+  !=============================================================================
+  subroutine calc_xprcp_component( wm, rtm, thlm, rcm,                & ! In
+                                   w_i, rt_i, thl_i, varnce_w_i,      & ! In
+                                   chi_i, stdev_chi_i, stdev_eta_i,   & ! In
+                                   corr_w_chi_i, corr_chi_eta_i,      & ! In
+                                   crt_i, cthl_i, rc_i, cloud_frac_i, & ! In
+                                   wprcp_contrib_comp_i,              & ! Out
+                                   wp2rcp_contrib_comp_i,             & ! Out
+                                   rtprcp_contrib_comp_i,             & ! Out
+                                   thlprcp_contrib_comp_i             ) ! Out
+
+    ! Description:
+    ! Calculates the contribution to <w'rc'>, <w'^2 rc'>, <rt'rc'>, and
+    ! <thl'rc'> from the ith PDF component.
+    !
+    !
+    ! <w'rc'>
+    ! -------
+    !
+    ! The value of <w'rc'> is calculated by integrating over the PDF:
+    !
+    ! <w'rc'>
+    ! = INT(-inf:inf) INT(-inf:inf) INT(-inf:inf)
+    !   ( w - <w> ) ( rc - <rc> ) P(w,rt,thl) dthl drt dw;
+    !
+    ! where <w> is the overall mean of w, <rc> is the overall mean of rc, and
+    ! P(w,rt,thl) is a two-component trivariate normal distribution of w, rt,
+    ! and thl.  This equation is rewritten as:
+    !
+    ! <w'rc'>
+    ! = mixt_frac 
+    !   * INT(-inf:inf) INT(-inf:inf) INT(-inf:inf)
+    !     ( w - <w> ) ( rc - <rc> ) P_1(w,rt,thl) dthl drt dw
+    !   + ( 1 - mixt_frac )
+    !     * INT(-inf:inf) INT(-inf:inf) INT(-inf:inf)
+    !       ( w - <w> ) ( rc - <rc> ) P_2(w,rt,thl) dthl drt dw;
+    !
+    ! where mixt_frac is the mixture fraction, which is the weight of the 1st
+    ! PDF component, and where P_1(w,rt,thl) and P_2(w,rt,thl) are the equations
+    ! for the trivariate normal PDF of w, rt, and thl in the 1st and 2nd PDF
+    ! components, respectively.  The contribution from the ith PDF component is:
+    !
+    ! INT(-inf:inf) INT(-inf:inf) INT(-inf:inf)
+    ! ( w - <w> ) ( rc - <rc> ) P_i(w,rt,thl) dthl drt dw;
+    !
+    ! where P_i(w,rt,thl) is the trivariate normal PDF of w, rt, and thl in the
+    ! ith PDF component.  The PDF undergoes a PDF transformation in each PDF
+    ! component, which is a change of variables and a translation, stretching,
+    ! and rotation of the axes.  The PDF becomes a trivariate normal PDF that is
+    ! written in terms of w, chi, and eta coordinates.  Cloud water mixing
+    ! ratio, rc, is written in terms of extended liquid water mixing ratio, chi,
+    ! such that:
+    !
+    ! rc = chi H(chi);
+    !
+    ! where H(chi) is the Heaviside step function.  The contribution from the
+    ! ith PDF component to <w'rc'> can be written as:
+    !
+    ! INT(-inf:inf) INT(-inf:inf)
+    ! ( w - <w> ) ( chi H(chi) - <rc> ) P_i(w,chi) dchi dw;
+    !
+    ! where P_i(w,chi) is the bivariate normal PDF of w and chi in the ith PDF
+    ! component.  The solved equation for the <w'rc'> contribution from the ith
+    ! PDF component (wprcp_contrib_comp_i) is:
+    !
+    ! wprcp_contrib_comp_i
+    ! = INT(-inf:inf) INT(-inf:inf)
+    !   ( w - <w> ) ( chi H(chi) - <rc> ) P_i(w,chi) dchi dw
+    ! = ( mu_w_i - <w> )
+    !   * ( mu_chi_i * 1/2 * ( 1 + erf( mu_chi_i / ( sqrt(2) * sigma_chi_i ) ) )
+    !       + 1/sqrt(2*pi) * sigma_chi_i
+    !         * exp{ - mu_chi_i^2 / ( 2 * sigma_chi_i^2 ) } - <rc> )
+    !   + corr_w_chi_i * sigma_w_i * sigma_chi_i
+    !     * 1/2 * ( 1 + erf( mu_chi_i / ( sqrt(2) * sigma_chi_i ) ) );
+    !
+    ! where mu_w_i is the mean of w in the ith PDF component, mu_chi_i is the
+    ! mean of chi in the ith PDF component, sigma_w_i is the standard deviation
+    ! of w in the ith PDF component, sigma_chi_i is the standard deviation of
+    ! chi in the ith PDF component, and corr_w_chi_i is the correlation of w and
+    ! chi in the ith PDF component.
+    !
+    ! Special case:  sigma_chi_i = 0.
+    !
+    ! In the special case that sigma_chi_i = 0, chi, as well as rc, are constant
+    ! in the ith PDF component.  The equation becomes:
+    !
+    ! wprcp_contrib_comp_i
+    ! = | ( mu_w_i - <w> ) * ( mu_chi_i - <rc> ); when mu_chi_i > 0;
+    !   | ( mu_w_i - <w> ) * ( -<rc> ); when mu_chi_i <= 0.
+    !
+    !
+    ! <w'^2 rc'>
+    ! ----------
+    !
+    ! The value of <w'^2 rc'> is calculated by integrating over the PDF:
+    !
+    ! <w'^2 rc'>
+    ! = INT(-inf:inf) INT(-inf:inf) INT(-inf:inf)
+    !   ( w - <w> )^2 ( rc - <rc> ) P(w,rt,thl) dthl drt dw.
+    !
+    ! This equation is rewritten as:
+    !
+    ! <w'^2 rc'>
+    ! = mixt_frac 
+    !   * INT(-inf:inf) INT(-inf:inf) INT(-inf:inf)
+    !     ( w - <w> )^2 ( rc - <rc> ) P_1(w,rt,thl) dthl drt dw
+    !   + ( 1 - mixt_frac )
+    !     * INT(-inf:inf) INT(-inf:inf) INT(-inf:inf)
+    !       ( w - <w> )^2 ( rc - <rc> ) P_2(w,rt,thl) dthl drt dw.
+    !
+    ! The contribution from the ith PDF component is:
+    !
+    ! INT(-inf:inf) INT(-inf:inf) INT(-inf:inf)
+    ! ( w - <w> )^2 ( rc - <rc> ) P_i(w,rt,thl) dthl drt dw.
+    !
+    ! The PDF undergoes a PDF transformation in each PDF component, and becomes
+    ! a trivariate normal PDF that is written in terms of w, chi, and eta
+    ! coordinates.  The contribution from the ith PDF component to <w'^2 rc'>
+    ! can be written as:
+    !
+    ! INT(-inf:inf) INT(-inf:inf)
+    ! ( w - <w> )^2 ( chi H(chi) - <rc> ) P_i(w,chi) dchi dw.
+    !
+    ! The solved equation for the <w'^2 rc'> contribution from the ith PDF
+    ! component (wp2rcp_contrib_comp_i) is:
+    !
+    ! wp2rcp_contrib_comp_i
+    ! = INT(-inf:inf) INT(-inf:inf)
+    !   ( w - <w> )^2 ( chi H(chi) - <rc> ) P_i(w,chi) dchi dw
+    ! = ( ( mu_w_i - <w> )^2 + sigma_w_i^2 )
+    !   * ( mu_chi_i * 1/2 * ( 1 + erf( mu_chi_i / ( sqrt(2) * sigma_chi_i ) ) )
+    !       + 1/sqrt(2*pi) * sigma_chi_i
+    !         * exp{ - mu_chi_i^2 / ( 2 * sigma_chi_i^2 ) } - <rc> )
+    !   + ( mu_w_i - <w> ) * corr_w_chi_i * sigma_w_i * sigma_chi_i
+    !     * ( 1 + erf( mu_chi_i / ( sqrt(2) * sigma_chi_i ) ) )
+    !   + 1/sqrt(2*pi) * corr_w_chi_i^2 * sigma_w_i^2 * sigma_chi_i
+    !     * exp{ - mu_chi_i^2 / ( 2 * sigma_chi_i^2 ) }.
+    !
+    ! Special case:  sigma_chi_i = 0.
+    !
+    ! In the special case that sigma_chi_i = 0, chi, as well as rc, are constant
+    ! in the ith PDF component.  The equation becomes:
+    !
+    ! wp2rcp_contrib_comp_i
+    ! = | ( ( mu_w_i - <w> )^2 + sigma_w_i^2 ) * ( mu_chi_i - <rc> );
+    !   |     when mu_chi_i > 0;
+    !   | ( ( mu_w_i - <w> )^2 + sigma_w_i^2 ) * ( -<rc> );
+    !   |     when mu_chi_i <= 0.
+    !
+    !
+    ! <rt'rc'>
+    ! --------
+    !
+    ! The value of <rt'rc'> is calculated by integrating over the PDF:
+    !
+    ! <rt'rc'>
+    ! = INT(-inf:inf) INT(-inf:inf)
+    !   ( rt - <rt> ) ( rc - <rc> ) P(rt,thl) dthl drt;
+    !
+    ! where <rt> is the overall mean of rt, and where P(rt,thl) is a
+    ! two-component bivariate normal distribution of rt and thl.  This equation
+    ! is rewritten as:
+    !
+    ! <rt'rc'>
+    ! = mixt_frac 
+    !   * INT(-inf:inf) INT(-inf:inf)
+    !     ( rt - <rt> ) ( rc - <rc> ) P_1(rt,thl) dthl drt
+    !   + ( 1 - mixt_frac )
+    !     * INT(-inf:inf) INT(-inf:inf)
+    !       ( rt - <rt> ) ( rc - <rc> ) P_2(rt,thl) dthl drt;
+    !
+    ! where P_1(rt,thl) and P_2(rt,thl) are the equations for the bivariate
+    ! normal PDF of rt and thl in the 1st and 2nd PDF components, respectively.
+    ! The contribution from the ith PDF component is:
+    !
+    ! INT(-inf:inf) INT(-inf:inf)
+    ! ( rt - <rt> ) ( rc - <rc> ) P_i(rt,thl) dthl drt;
+    !
+    ! where P_i(rt,thl) is the bivariate normal PDF of rt and thl in the ith PDF
+    ! component.  The PDF undergoes a PDF transformation in each PDF component,
+    ! and becomes a bivariate normal PDF that is written in terms of chi and
+    ! eta coordinates.  Total water mixing ratio, rt, is rewritten in terms of
+    ! chi and eta by:
+    !
+    ! rt = mu_rt_i
+    !      + ( ( eta - mu_eta_i ) + ( chi - mu_chi_i ) ) / ( 2 * crt_i );
+    !
+    ! where mu_rt_i is the mean of rt in the ith PDF component, mu_eta_i is the
+    ! mean of eta in the ith PDF component, and crt_i is a coefficient on rt in
+    ! the chi/eta transformation equations.  The contribution from the ith PDF
+    ! component to <rt'rc'> can be written as:
+    !
+    ! INT(-inf:inf) INT(-inf:inf)
+    ! ( mu_rt_i - <rt> + ( eta - mu_eta_i ) / ( 2 * crt_i )
+    !   + ( chi - mu_chi_i ) / ( 2 * crt_i ) )
+    ! * ( chi H(chi) - <rc> ) P_i(chi,eta) deta dchi;
+    !
+    ! where P_i(chi,eta) is the bivariate normal PDF of chi and eta in the ith
+    ! PDF component.  The solved equation for the <rt'rc'> contribution from the
+    ! ith PDF component (rtprcp_contrib_comp_i) is:
+    !
+    ! rtprcp_contrib_comp_i
+    ! = INT(-inf:inf) INT(-inf:inf)
+    !   ( mu_rt_i - <rt> + ( eta - mu_eta_i ) / ( 2 * crt_i )
+    !     + ( chi - mu_chi_i ) / ( 2 * crt_i ) )
+    !   * ( chi H(chi) - <rc> ) P_i(chi,eta) deta dchi
+    ! = ( mu_rt_i - <rt> )
+    !   * ( mu_chi_i * 1/2 * ( 1 + erf( mu_chi_i / ( sqrt(2) * sigma_chi_i ) ) )
+    !       + 1/sqrt(2*pi) * sigma_chi_i
+    !         * exp{ - mu_chi_i^2 / ( 2 * sigma_chi_i^2 ) } - <rc> )
+    !   + ( corr_chi_eta_i * sigma_eta_i + sigma_chi_i ) / ( 2 * crt_i )
+    !     * sigma_chi_i
+    !     * 1/2 * ( 1 + erf( mu_chi_i / ( sqrt(2) * sigma_chi_i ) ) );
+    !
+    ! where sigma_eta_i is the standard deviation of eta in the ith PDF
+    ! component and corr_chi_eta_i is the correlation of chi and eta in the ith
+    ! PDF component.
+    !
+    ! Special case:  sigma_chi_i = 0.
+    !
+    ! In the special case that sigma_chi_i = 0, chi, as well as rc, are constant
+    ! in the ith PDF component.  The equation becomes:
+    !
+    ! rtprcp_contrib_comp_i
+    ! = | ( mu_rt_i - <rt> ) * ( mu_chi_i - <rc> ); when mu_chi_i > 0;
+    !   | ( mu_rt_i - <rt> ) * ( -<rc> ); when mu_chi_i <= 0.
+    !
+    !
+    ! <thl'rc'>
+    ! ---------
+    !
+    ! The value of <thl'rc'> is calculated by integrating over the PDF:
+    !
+    ! <thl'rc'>
+    ! = INT(-inf:inf) INT(-inf:inf)
+    !   ( thl - <thl> ) ( rc - <rc> ) P(rt,thl) dthl drt;
+    !
+    ! where <thl> is the overall mean of thl.  This equation is rewritten as:
+    !
+    ! <thl'rc'>
+    ! = mixt_frac 
+    !   * INT(-inf:inf) INT(-inf:inf)
+    !     ( thl - <thl> ) ( rc - <rc> ) P_1(rt,thl) dthl drt
+    !   + ( 1 - mixt_frac )
+    !     * INT(-inf:inf) INT(-inf:inf)
+    !       ( thl - <thl> ) ( rc - <rc> ) P_2(rt,thl) dthl drt.
+    !
+    ! The contribution from the ith PDF component is:
+    !
+    ! INT(-inf:inf) INT(-inf:inf)
+    ! ( thl - <thl> ) ( rc - <rc> ) P_i(rt,thl) dthl drt.
+    !
+    ! The PDF undergoes a PDF transformation in each PDF component, and becomes
+    ! a bivariate normal PDF that is written in terms of chi and eta
+    ! coordinates.  Liquid water potential temperature, thl, is rewritten in
+    ! terms of chi and eta by:
+    !
+    ! thl = mu_thl_i
+    !       + ( ( eta - mu_eta_i ) - ( chi - mu_chi_i ) ) / ( 2 * cthl_i );
+    !
+    ! where mu_thl_i is the mean of thl in the ith PDF component and cthl_i is a
+    ! coefficient on thl in the chi/eta transformation equations.  The
+    ! contribution from the ith PDF component to <thl'rc'> can be written as:
+    !
+    ! INT(-inf:inf) INT(-inf:inf)
+    ! ( mu_thl_i - <thl> + ( eta - mu_eta_i ) / ( 2 * cthl_i )
+    !   - ( chi - mu_chi_i ) / ( 2 * cthl_i ) )
+    ! * ( chi H(chi) - <rc> ) P_i(chi,eta) deta dchi.
+    !
+    ! The solved equation for the <thl'rc'> contribution from the ith PDF
+    ! component (thlprcp_contrib_comp_i) is:
+    !
+    ! thlprcp_contrib_comp_i
+    ! = INT(-inf:inf) INT(-inf:inf)
+    !   ( mu_thl_i - <thl> + ( eta - mu_eta_i ) / ( 2 * cthl_i )
+    !     - ( chi - mu_chi_i ) / ( 2 * cthl_i ) )
+    !   * ( chi H(chi) - <rc> ) P_i(chi,eta) deta dchi
+    ! = ( mu_thl_i - <thl> )
+    !   * ( mu_chi_i * 1/2 * ( 1 + erf( mu_chi_i / ( sqrt(2) * sigma_chi_i ) ) )
+    !       + 1/sqrt(2*pi) * sigma_chi_i
+    !         * exp{ - mu_chi_i^2 / ( 2 * sigma_chi_i^2 ) } - <rc> )
+    !   + ( corr_chi_eta_i * sigma_eta_i - sigma_chi_i ) / ( 2 * cthl_i )
+    !     * sigma_chi_i
+    !     * 1/2 * ( 1 + erf( mu_chi_i / ( sqrt(2) * sigma_chi_i ) ) ).
+    !
+    ! Special case:  sigma_chi_i = 0.
+    !
+    ! In the special case that sigma_chi_i = 0, chi, as well as rc, are constant
+    ! in the ith PDF component.  The equation becomes:
+    !
+    ! thlprcp_contrib_comp_i
+    ! = | ( mu_thl_i - <thl> ) * ( mu_chi_i - <rc> ); when mu_chi_i > 0;
+    !   | ( mu_thl_i - <thl> ) * ( -<rc> ); when mu_chi_i <= 0.
+    !
+    !
+    ! Use equations for PDF component cloud fraction cloud water mixing ratio
+    ! -----------------------------------------------------------------------
+    !
+    ! The equation for cloud fraction in the ith PDF component, fc_i, is:
+    !
+    ! fc_i = 1/2 * ( 1 + erf( mu_chi_i / ( sqrt(2) * sigma_chi_i ) ) ).
+    !
+    ! In the special case that sigma_chi_i = 0, the equation becomes:
+    !
+    ! fc_i = | 1; when mu_chi_i > 0;
+    !        | 0; when mu_chi_i <= 0.
+    !
+    ! The equation for mean cloud water mixing ratio in the ith PDF component,
+    ! rc_i, is:
+    !
+    ! rc_i
+    ! = mu_chi_i * 1/2 * ( 1 + erf( mu_chi_i / ( sqrt(2) * sigma_chi_i ) ) )
+    !   + 1/sqrt(2*pi) * sigma_chi_i
+    !     * exp{ - mu_chi_i^2 / ( 2 * sigma_chi_i^2 ) }
+    ! = mu_chi_i * fc_i
+    !   + 1/sqrt(2*pi) * sigma_chi_i
+    !     * exp{ - mu_chi_i^2 / ( 2 * sigma_chi_i^2 ) }.
+    !
+    ! In the special case that sigma_chi_i = 0, the equation becomes:
+    !
+    ! rc_i = | mu_chi_i; when mu_chi_i > 0;
+    !        | 0; when mu_chi_i <= 0.
+    !
+    ! The above equations can be substituted into the equations for
+    ! wprcp_contrib_comp_i, wp2rcp_contrib_comp_i, rtprcp_contrib_comp_i, and
+    ! thlprcp_contrib_comp_i.  The new equations are:
+    !
+    ! wprcp_contrib_comp_i
+    ! = ( mu_w_i - <w> ) * ( rc_i - <rc> )
+    !   + corr_w_chi_i * sigma_w_i * sigma_chi_i * fc_i;
+    !
+    ! wp2rcp_contrib_comp_i
+    ! = ( ( mu_w_i - <w> )^2 + sigma_w_i^2 ) * ( rc_i - <rc> )
+    !   + 2 * ( mu_w_i - <w> ) * corr_w_chi_i * sigma_w_i * sigma_chi_i * fc_i
+    !   + 1/sqrt(2*pi) * corr_w_chi_i^2 * sigma_w_i^2 * sigma_chi_i
+    !     * exp{ - mu_chi_i^2 / ( 2 * sigma_chi_i^2 ) };
+    !
+    ! rtprcp_contrib_comp_i
+    ! = ( mu_rt_i - <rt> ) * ( rc_i - <rc> )
+    !   + ( corr_chi_eta_i * sigma_eta_i + sigma_chi_i ) / ( 2 * crt_i )
+    !     * sigma_chi_i * fc_i; and
+    !
+    ! thlprcp_contrib_comp_i
+    ! = ( mu_thl_i - <thl> ) * ( rc_i - <rc> )
+    !   + ( corr_chi_eta_i * sigma_eta_i - sigma_chi_i ) / ( 2 * cthl_i )
+    !     * sigma_chi_i * fc_i.
+    !
+    ! While the above equations reduce to their listed versions in the special
+    ! case that sigma_chi_i = 0, those versions are faster to calculate.  When
+    ! mu_chi_i > 0, they are:
+    !
+    ! wprcp_contrib_comp_i = ( mu_w_i - <w> ) * ( mu_chi_i - <rc> );
+    ! wp2rcp_contrib_comp_i
+    ! = ( ( mu_w_i - <w> )^2 + sigma_w_i^2 ) * ( mu_chi_i - <rc> );
+    ! rtprcp_contrib_comp_i = ( mu_rt_i - <rt> ) * ( mu_chi_i - <rc> ); and
+    ! thlprcp_contrib_comp_i = ( mu_thl_i - <thl> ) * ( mu_chi_i - <rc> );
+    !
+    ! and when mu_chi_i <= 0, they are:
+    !
+    ! wprcp_contrib_comp_i = - ( mu_w_i - <w> ) * <rc>;
+    ! wp2rcp_contrib_comp_i = - ( ( mu_w_i - <w> )^2 + sigma_w_i^2 ) * <rc>;
+    ! rtprcp_contrib_comp_i = - ( mu_rt_i - <rt> ) * <rc>; and
+    ! thlprcp_contrib_comp_i = - ( mu_thl_i - <thl> ) * <rc>.
+
+    ! References:
+    !-----------------------------------------------------------------------
+
+    use constants_clubb, only: &
+        sqrt_2pi, & ! Variable(s)
+        two,      &
+        zero,     &
+        chi_tol
+
+    use clubb_precision, only: &
+        core_rknd    ! Variable(s)
+
+    implicit none
+
+    ! Input Variables
+    real( kind = core_rknd ), intent(in) :: &
+      wm,             & ! Mean of w (overall)                          [m/s]
+      rtm,            & ! Mean of rt (overall)                         [kg/kg]
+      thlm,           & ! Mean of thl (overall)                        [K]
+      rcm,            & ! Mean of rc (overall)                         [kg/kg]
+      w_i,            & ! Mean of w (ith PDF component)                [m/s]
+      rt_i,           & ! Mean of rt (ith PDF component)               [kg/kg]
+      thl_i,          & ! Mean of thl (ith PDF component)              [K]
+      varnce_w_i,     & ! Variance of w (ith PDF component)            [m^2/s^2]
+      chi_i,          & ! Mean of chi (ith PDF component)              [kg/kg]
+      stdev_chi_i,    & ! Standard deviation of chi (ith PDF comp.)    [kg/kg]
+      stdev_eta_i,    & ! Standard deviation of eta (ith PDF comp.)    [kg/kg]
+      corr_w_chi_i,   & ! Correlation of w and chi (ith PDF component) [-]
+      corr_chi_eta_i, & ! Correlation of chi and eta (ith PDF comp.)   [-]
+      crt_i,          & ! Coef. on rt in chi/eta eqns. (ith PDF comp.) [-]
+      cthl_i,         & ! Coef. on thl: chi/eta eqns. (ith PDF comp.)  [kg/kg/K]
+      rc_i,           & ! Mean of rc (ith PDF component)               [kg/kg]
+      cloud_frac_i      ! Cloud fraction (ith PDF component)           [-]
+
+    ! Output Variables
+    real( kind = core_rknd ), intent(out) :: &
+      wprcp_contrib_comp_i,   & ! <w'rc'> contrib. (ith PDF comp.)  [m/s(kg/kg)]
+      wp2rcp_contrib_comp_i,  & ! <w'^2rc'> contrib. (ith comp) [m^2/s^2(kg/kg)]
+      rtprcp_contrib_comp_i,  & ! <rt'rc'> contrib. (ith PDF comp.)  [kg^2/kg^2]
+      thlprcp_contrib_comp_i    ! <thl'rc'> contrib. (ith PDF comp.)  [K(kg/kg)]
+
+    ! Local Variable
+    real( kind = core_rknd ) :: &
+      sigma_w_i    ! Standard deviation of w (ith PDF component)       [m/s]
+
+
+    if ( stdev_chi_i > chi_tol ) then
+
+       ! The value of chi varies in the ith PDF component.
+
+       sigma_w_i = sqrt( varnce_w_i )
+
+       wprcp_contrib_comp_i &
+       = ( w_i - wm ) * ( rc_i - rcm ) &
+         + corr_w_chi_i * sigma_w_i * stdev_chi_i * cloud_frac_i
+
+       wp2rcp_contrib_comp_i &
+       = ( ( w_i - wm )**2 + varnce_w_i ) * ( rc_i - rcm ) &
+         + two * ( w_i - wm ) * corr_w_chi_i &
+           * sigma_w_i * stdev_chi_i * cloud_frac_i &
+         + corr_w_chi_i**2 * varnce_w_i * stdev_chi_i &
+           * exp( - chi_i**2 / ( two * stdev_chi_i**2 ) ) / sqrt_2pi
+
+       rtprcp_contrib_comp_i &
+       = ( rt_i - rtm ) * ( rc_i - rcm ) &
+         + ( corr_chi_eta_i * stdev_eta_i + stdev_chi_i ) / ( two * crt_i ) &
+           * stdev_chi_i * cloud_frac_i
+
+       thlprcp_contrib_comp_i &
+       = ( thl_i - thlm ) * ( rc_i - rcm ) &
+         + ( corr_chi_eta_i * stdev_eta_i - stdev_chi_i ) / ( two * cthl_i ) &
+           * stdev_chi_i * cloud_frac_i
+
+    else ! stdev_chi_i <= chi_tol
+
+       ! The value of chi is constant in the ith PDF component.
+       if ( chi_i > zero ) then
+          ! All cloud in the ith PDF component.
+          wprcp_contrib_comp_i = ( w_i - wm ) * ( chi_i - rcm )
+          wp2rcp_contrib_comp_i &
+          = ( ( w_i - wm )**2 + varnce_w_i ) * ( chi_i - rcm )
+          rtprcp_contrib_comp_i = ( rt_i - rtm ) * ( chi_i - rcm )
+          thlprcp_contrib_comp_i = ( thl_i - thlm ) * ( chi_i - rcm )
+       else ! chi_i <= 0
+          ! All clear air in the ith PDF component.
+          wprcp_contrib_comp_i = - ( w_i - wm ) * rcm
+          wp2rcp_contrib_comp_i = - ( ( w_i - wm )**2 + varnce_w_i ) * rcm
+          rtprcp_contrib_comp_i = - ( rt_i - rtm ) * rcm
+          thlprcp_contrib_comp_i = - ( thl_i - thlm ) * rcm
+       endif ! chi_i > 0
+
+    endif ! stdev_chi_i > chi_tol
+
+
+    return
+
+  end subroutine calc_xprcp_component
 
   !=============================================================================
   subroutine calc_vert_avg_cf_component &
