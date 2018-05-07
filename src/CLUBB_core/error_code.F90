@@ -27,7 +27,8 @@ module error_code
 
     public :: & 
         clubb_at_least_debug_level,  & 
-        set_clubb_debug_level
+        set_clubb_debug_level, &
+        initialize_error_headers
 
     private :: clubb_debug_level
 
@@ -36,7 +37,9 @@ module error_code
 
     integer, public :: err_code = 0;
 
-    !$omp threadprivate(clubb_debug_level,err_code)
+    character(len=35), public :: err_header
+
+    !$omp threadprivate(clubb_debug_level,err_code,err_header)
 
     ! Error Code Values
     integer, parameter, public :: & 
@@ -62,6 +65,23 @@ module error_code
         return
 
     end function clubb_at_least_debug_level
+
+
+    subroutine initialize_error_headers
+
+        implicit none
+
+#ifdef _OPENMP
+        integer :: omp_get_thread_num
+        write(err_header,'(A7,I7,A20)') "Thread ", omp_get_thread_num(), " -- CLUBB -- ERROR: "
+#else
+        integer :: getpid
+        write(err_header,'(A7,I7,A20)') "Process ", getpid(), " -- CLUBB -- ERROR: "
+#endif               
+        
+
+    end subroutine initialize_error_headers
+
 
 !-------------------------------------------------------------------------------
 !  Description:

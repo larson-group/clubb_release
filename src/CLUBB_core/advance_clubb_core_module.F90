@@ -2999,7 +2999,8 @@ module advance_clubb_core_module
           fstderr  ! Variable(s)
 
       use error_code, only: &
-          clubb_at_least_debug_level,  & ! Procedure
+          clubb_at_least_debug_level,  & ! Procedures
+          initialize_error_headers,    &  
           err_code,                    & ! Error Indicator
           clubb_fatal_error              ! Constant
 
@@ -3121,6 +3122,8 @@ module advance_clubb_core_module
       integer :: begin_height, end_height
 
       !----- Begin Code -----
+
+      call initialize_error_headers
 
       ! Sanity check for the saturation formula
       select case ( trim( saturation_formula ) )
