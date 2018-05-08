@@ -162,7 +162,7 @@ module pdf_closure_module
     use error_code, only: &
         clubb_at_least_debug_level,  & ! Procedure
         err_code,                    & ! Error Indicator
-        clubb_no_error                 ! Constant
+        clubb_fatal_error              ! Constant
 
     implicit none
 
@@ -1101,7 +1101,7 @@ module pdf_closure_module
       ! Error Reporting
       ! Joshua Fasching February 2008
 
-      if ( err_code /= clubb_no_error ) then
+      if ( err_code /= clubb_fatal_error ) then
 
         write(fstderr,*) "Error in pdf_closure_new"
 
