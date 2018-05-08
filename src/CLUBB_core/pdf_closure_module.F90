@@ -1101,7 +1101,7 @@ module pdf_closure_module
       ! Error Reporting
       ! Joshua Fasching February 2008
 
-      if ( err_code /= clubb_fatal_error ) then
+      if ( err_code == clubb_fatal_error ) then
 
         write(fstderr,*) "Error in pdf_closure_new"
 
