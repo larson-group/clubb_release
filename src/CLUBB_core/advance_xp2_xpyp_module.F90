@@ -864,57 +864,59 @@ module advance_xp2_xpyp_module
 
     endif ! l_scalar_calc
 
-    if ( err_code == clubb_fatal_error ) then
+    if ( clubb_at_least_debug_level( 0 ) ) then
+        if ( err_code == clubb_fatal_error ) then
 
-      write(fstderr,*) "Error in advance_xp2_xpyp"
+          write(fstderr,*) "Error in advance_xp2_xpyp"
 
-      write(fstderr,*) "Intent(in)"
+          write(fstderr,*) "Intent(in)"
 
-      write(fstderr,*) "tau_zm = ", tau_zm
-      write(fstderr,*) "wm_zm = ", wm_zm
-      write(fstderr,*) "rtm = ", rtm
-      write(fstderr,*) "wprtp = ", wprtp
-      write(fstderr,*) "thlm = ", thlm
-      write(fstderr,*) "wpthlp = ", wpthlp
-      write(fstderr,*) "wpthvp = ", wpthvp
-      write(fstderr,*) "um = ", um
-      write(fstderr,*) "vm = ", vm
-      write(fstderr,*) "wp2 = ", wp2
-      write(fstderr,*) "wp3 = ", wp3
-      write(fstderr,*) "upwp = ", upwp
-      write(fstderr,*) "vpwp = ", vpwp
-      write(fstderr,*) "sigma_sqd_w = ", sigma_sqd_w
-      write(fstderr,*) "Skw_zm = ", Skw_zm
-      write(fstderr,*) "Kh_zt = ", Kh_zt
-      write(fstderr,*) "rtp2_forcing = ", rtp2_forcing
-      write(fstderr,*) "thlp2_forcing = ", thlp2_forcing
-      write(fstderr,*) "rtpthlp_forcing = ", rtpthlp_forcing
-      write(fstderr,*) "rho_ds_zm = ", rho_ds_zm
-      write(fstderr,*) "rho_ds_zt = ", rho_ds_zt
-      write(fstderr,*) "invrs_rho_ds_zm = ", invrs_rho_ds_zm
-      write(fstderr,*) "thv_ds_zm = ", thv_ds_zm
-      write(fstderr,*) "wp2_zt = ", wp2_zt
+          write(fstderr,*) "tau_zm = ", tau_zm
+          write(fstderr,*) "wm_zm = ", wm_zm
+          write(fstderr,*) "rtm = ", rtm
+          write(fstderr,*) "wprtp = ", wprtp
+          write(fstderr,*) "thlm = ", thlm
+          write(fstderr,*) "wpthlp = ", wpthlp
+          write(fstderr,*) "wpthvp = ", wpthvp
+          write(fstderr,*) "um = ", um
+          write(fstderr,*) "vm = ", vm
+          write(fstderr,*) "wp2 = ", wp2
+          write(fstderr,*) "wp3 = ", wp3
+          write(fstderr,*) "upwp = ", upwp
+          write(fstderr,*) "vpwp = ", vpwp
+          write(fstderr,*) "sigma_sqd_w = ", sigma_sqd_w
+          write(fstderr,*) "Skw_zm = ", Skw_zm
+          write(fstderr,*) "Kh_zt = ", Kh_zt
+          write(fstderr,*) "rtp2_forcing = ", rtp2_forcing
+          write(fstderr,*) "thlp2_forcing = ", thlp2_forcing
+          write(fstderr,*) "rtpthlp_forcing = ", rtpthlp_forcing
+          write(fstderr,*) "rho_ds_zm = ", rho_ds_zm
+          write(fstderr,*) "rho_ds_zt = ", rho_ds_zt
+          write(fstderr,*) "invrs_rho_ds_zm = ", invrs_rho_ds_zm
+          write(fstderr,*) "thv_ds_zm = ", thv_ds_zm
+          write(fstderr,*) "wp2_zt = ", wp2_zt
 
-      do i = 1, sclr_dim
-        write(fstderr,*) "sclrm = ", i, sclrm(:,i)
-        write(fstderr,*) "wpsclrp = ", i, wpsclrp(:,i)
-      enddo
+          do i = 1, sclr_dim
+            write(fstderr,*) "sclrm = ", i, sclrm(:,i)
+            write(fstderr,*) "wpsclrp = ", i, wpsclrp(:,i)
+          enddo
 
-      write(fstderr,*) "Intent(In/Out)"
+          write(fstderr,*) "Intent(In/Out)"
 
-      write(fstderr,*) "rtp2 = ", rtp2
-      write(fstderr,*) "thlp2 = ", thlp2
-      write(fstderr,*) "rtpthlp = ", rtpthlp
-      write(fstderr,*) "up2 = ", up2
-      write(fstderr,*) "vp2 = ", vp2
+          write(fstderr,*) "rtp2 = ", rtp2
+          write(fstderr,*) "thlp2 = ", thlp2
+          write(fstderr,*) "rtpthlp = ", rtpthlp
+          write(fstderr,*) "up2 = ", up2
+          write(fstderr,*) "vp2 = ", vp2
 
-      do i = 1, sclr_dim
-        write(fstderr,*) "sclrp2 = ", i, sclrp2(:,i)
-        write(fstderr,*) "sclrprtp = ", i, sclrprtp(:,i)
-        write(fstderr,*) "sclrthlp = ", i, sclrpthlp(:,i)
-      enddo
+          do i = 1, sclr_dim
+            write(fstderr,*) "sclrp2 = ", i, sclrp2(:,i)
+            write(fstderr,*) "sclrprtp = ", i, sclrprtp(:,i)
+            write(fstderr,*) "sclrthlp = ", i, sclrpthlp(:,i)
+          enddo
 
-    endif
+        endif
+    end if
 
     return
   end subroutine advance_xp2_xpyp

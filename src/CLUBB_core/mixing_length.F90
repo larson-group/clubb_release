@@ -721,26 +721,29 @@ module mixing_length
     ! Ensure that the output from this subroutine is valid.
     call length_check( Lscale, Lscale_up, Lscale_down )
 
-    if ( err_code == clubb_fatal_error ) then
+    
+    if ( clubb_at_least_debug_level( 0 ) ) then
+        if ( err_code == clubb_fatal_error ) then
 
-      write(fstderr,*) "Errors in compute_mixing_length subroutine"
+          write(fstderr,*) "Errors in compute_mixing_length subroutine"
 
-      write(fstderr,*) "Intent(in)"
+          write(fstderr,*) "Intent(in)"
 
-      write(fstderr,*) "thvm = ", thvm
-      write(fstderr,*) "thlm = ", thlm
-      write(fstderr,*) "rtm = ", rtm
-      write(fstderr,*) "em = ", em
-      write(fstderr,*) "exner = ", exner
-      write(fstderr,*) "p_in_Pa = ", p_in_Pa
-      write(fstderr,*) "thv_ds = ", thv_ds
+          write(fstderr,*) "thvm = ", thvm
+          write(fstderr,*) "thlm = ", thlm
+          write(fstderr,*) "rtm = ", rtm
+          write(fstderr,*) "em = ", em
+          write(fstderr,*) "exner = ", exner
+          write(fstderr,*) "p_in_Pa = ", p_in_Pa
+          write(fstderr,*) "thv_ds = ", thv_ds
 
-      write(fstderr,*) "Intent(out)"
+          write(fstderr,*) "Intent(out)"
 
-      write(fstderr,*) "Lscale = ", Lscale
-      write(fstderr,*) "Lscale_up = ", Lscale_up
- 
-    endif ! Fatal error
+          write(fstderr,*) "Lscale = ", Lscale
+          write(fstderr,*) "Lscale_up = ", Lscale_up
+     
+        endif ! Fatal error
+    end if
 
     return
 

@@ -710,7 +710,9 @@ module mono_flux_limiter
                              xm )
 
           ! Check for errors
-          if ( err_code == clubb_fatal_error ) return
+          if ( clubb_at_least_debug_level( 0 ) ) then
+              if ( err_code == clubb_fatal_error ) return
+          end if
 
        else  ! l_mfl_xm_imp_adj = .false.
 
@@ -1092,7 +1094,9 @@ module mono_flux_limiter
            xm )                                            ! Intent(out)
 
     ! Check for errors
-    if ( err_code == clubb_fatal_error ) return
+    if ( clubb_at_least_debug_level( 0 ) ) then
+        if ( err_code == clubb_fatal_error ) return
+    end if
 
     ! Boundary condition on xm
     xm(1) = xm(2)

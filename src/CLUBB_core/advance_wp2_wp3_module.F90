@@ -345,44 +345,44 @@ module advance_wp2_wp3_module
 
     endif ! wp3_sponge_damp_settings%l_sponge_damping
 
-!       Error output
-!       Joshua Fasching Feb 2008
-    if ( err_code == clubb_fatal_error ) then  
+    if ( clubb_at_least_debug_level( 0 ) ) then
+        if ( err_code == clubb_fatal_error ) then  
 
-        write(fstderr,*) "Errors in advance_wp2_wp3"
+            write(fstderr,*) "Errors in advance_wp2_wp3"
 
-        write(fstderr,*) "Intent(in)"
+            write(fstderr,*) "Intent(in)"
 
-        write(fstderr,*) "gr%zt = ", gr%zt
-        write(fstderr,*) "dt = ", dt
-        write(fstderr,*) "sfc_elevation = ", sfc_elevation
-        write(fstderr,*) "sigma_sqd_w = ", sigma_sqd_w
-        write(fstderr,*) "wm_zm = ", wm_zm
-        write(fstderr,*) "wm_zt = ", wm_zt
-        write(fstderr,*) "wp4 = ", wp4
-        write(fstderr,*) "wpthvp = ", wpthvp
-        write(fstderr,*) "wp2thvp = ", wp2thvp
-        write(fstderr,*) "um = ", um
-        write(fstderr,*) "vm = ", vm
-        write(fstderr,*) "upwp = ", upwp
-        write(fstderr,*) "vpwp = ", vpwp
-        write(fstderr,*) "up2 = ", up2
-        write(fstderr,*) "vp2 = ", vp2
-        write(fstderr,*) "Kh_zm = ", Kh_zm
-        write(fstderr,*) "Kh_zt = ", Kh_zt
-        write(fstderr,*) "tau_zm = ", tau_zm
-        write(fstderr,*) "tau_zt = ", tau_zt
-        write(fstderr,*) "Skw_zm = ", Skw_zm
-        write(fstderr,*) "Skw_zt = ", Skw_zt
-        write(fstderr,*) "mixt_frac = ", mixt_frac
-        write(fstderr,*) "wp2zt = ", wp2_zt
+            write(fstderr,*) "gr%zt = ", gr%zt
+            write(fstderr,*) "dt = ", dt
+            write(fstderr,*) "sfc_elevation = ", sfc_elevation
+            write(fstderr,*) "sigma_sqd_w = ", sigma_sqd_w
+            write(fstderr,*) "wm_zm = ", wm_zm
+            write(fstderr,*) "wm_zt = ", wm_zt
+            write(fstderr,*) "wp4 = ", wp4
+            write(fstderr,*) "wpthvp = ", wpthvp
+            write(fstderr,*) "wp2thvp = ", wp2thvp
+            write(fstderr,*) "um = ", um
+            write(fstderr,*) "vm = ", vm
+            write(fstderr,*) "upwp = ", upwp
+            write(fstderr,*) "vpwp = ", vpwp
+            write(fstderr,*) "up2 = ", up2
+            write(fstderr,*) "vp2 = ", vp2
+            write(fstderr,*) "Kh_zm = ", Kh_zm
+            write(fstderr,*) "Kh_zt = ", Kh_zt
+            write(fstderr,*) "tau_zm = ", tau_zm
+            write(fstderr,*) "tau_zt = ", tau_zt
+            write(fstderr,*) "Skw_zm = ", Skw_zm
+            write(fstderr,*) "Skw_zt = ", Skw_zt
+            write(fstderr,*) "mixt_frac = ", mixt_frac
+            write(fstderr,*) "wp2zt = ", wp2_zt
 
-        write(fstderr,*) "Intent(in/out)"
+            write(fstderr,*) "Intent(in/out)"
 
-        write(fstderr,*) "wp2 = ", wp2
-        write(fstderr,*) "wp3 = ", wp3
+            write(fstderr,*) "wp2 = ", wp2
+            write(fstderr,*) "wp3 = ", wp3
 
-    end if ! fatal error
+        end if ! fatal error
+    end if
 
     return
 
@@ -692,10 +692,12 @@ module advance_wp2_wp3_module
             ! Note that this can change the answer slightly
             call band_solvex( "wp2_wp3", 2, 2, 2*gr%nz, nrhs, & 
                               lhs, rhs, solut, rcond )
-
-            if ( err_code == clubb_fatal_error ) then
-                write(fstderr,*) "in wp23_solve calling band_solvex for wp2_wp3"
-                return
+            
+            if ( clubb_at_least_debug_level( 0 ) ) then
+                if ( err_code == clubb_fatal_error ) then
+                    write(fstderr,*) "in wp23_solve calling band_solvex for wp2_wp3"
+                    return
+                end if
             end if
 
           ! Est. of the condition number of the w'^2/w^3 LHS matrix
@@ -707,9 +709,11 @@ module advance_wp2_wp3_module
             call band_solve( "wp2_wp3", 2, 2, 2*gr%nz, nrhs, & 
                            lhs, rhs, solut )
 
-            if ( err_code == clubb_fatal_error ) then
-                write(fstderr,*) "in wp23_solve calling band_solve for wp2_wp3"
-                return
+            if ( clubb_at_least_debug_level( 0 ) ) then
+                if ( err_code == clubb_fatal_error ) then
+                    write(fstderr,*) "in wp23_solve calling band_solve for wp2_wp3"
+                    return
+                end if
             end if
 
        endif
@@ -1059,10 +1063,11 @@ module advance_wp2_wp3_module
         rhs_cache = rhs
         call band_solve( "wp2_wp3", 2, 2, 2*gr%nz, nrhs, &
                          lhs, rhs, solut )
-
-        if ( err_code == clubb_fatal_error ) then
-            write(fstderr,*) "in wp23_solve calling band_solve for wp2_wp3"
-            return
+        if ( clubb_at_least_debug_level( 0 ) ) then
+            if ( err_code == clubb_fatal_error ) then
+                write(fstderr,*) "in wp23_solve calling band_solve for wp2_wp3"
+                return
+            end if
         end if
 
         ! Use gmres_cache_wp2wp3_soln to set cache this solution for GMRES
@@ -1102,10 +1107,12 @@ module advance_wp2_wp3_module
         ! Note that this can change the answer slightly
         call band_solvex( "wp2_wp3", 2, 2, 2*gr%nz, nrhs, & 
                           lhs, rhs, solut, rcond )
-
-        if ( err_code == clubb_fatal_error ) then
-            write(fstderr,*) "in wp23_solve calling band_solvex for wp2_wp3"
-            return
+        
+        if ( clubb_at_least_debug_level( 0 ) ) then
+            if ( err_code == clubb_fatal_error ) then
+                write(fstderr,*) "in wp23_solve calling band_solvex for wp2_wp3"
+                return
+            end if
         end if
 
         ! Est. of the condition number of the w'^2/w^3 LHS matrix
@@ -1116,9 +1123,11 @@ module advance_wp2_wp3_module
         call band_solve( "wp2_wp3", 2, 2, 2*gr%nz, nrhs, & 
                          lhs, rhs, solut )
 
-        if ( err_code == clubb_fatal_error ) then
-            write(fstderr,*) "in wp23_solve calling band_solve for wp2_wp3"
-            return
+        if ( clubb_at_least_debug_level( 0 ) ) then
+            if ( err_code == clubb_fatal_error ) then
+                write(fstderr,*) "in wp23_solve calling band_solve for wp2_wp3"
+                return
+            end if
         end if
 
       end if

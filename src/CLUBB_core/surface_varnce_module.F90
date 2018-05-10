@@ -412,8 +412,6 @@ module surface_varnce_module
                                   thlp2_sfc, rtp2_sfc, rtpthlp_sfc, & 
                                   sclrp2_sfc, sclrprtp_sfc, sclrpthlp_sfc )
 
-!       Error reporting
-!       Joshua Fasching February 2008
        if ( err_code == clubb_fatal_error ) then
 
           write(fstderr,*) "Error in calc_surface_varnce"

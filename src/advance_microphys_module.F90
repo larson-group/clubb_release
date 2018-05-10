@@ -457,51 +457,50 @@ module advance_microphys_module
 
     call stats_accumulate_hydromet( hydromet, rho_ds_zt )
 
-!       Error Report
-!       Joshua Fasching Feb 2008
+    if ( clubb_at_least_debug_level( 0 ) ) then
+        if ( err_code == clubb_fatal_error ) then
 
-    if ( clubb_at_least_debug_level( 0 ) .and. err_code == clubb_fatal_error ) then
+           write(fstderr,*) "Error in advance_microphys"
 
-       write(fstderr,*) "Error in advance_microphys"
+           write(fstderr,*) "Intent(in)"
 
-       write(fstderr,*) "Intent(in)"
+           write(fstderr,*) "wm_zt = ", wm_zt
+           write(fstderr,*) "exner = ", exner
+           write(fstderr,*) "rho = ", rho
+           write(fstderr,*) "rho_zm = ", rho_zm
+           write(fstderr,*) "cloud_frac = ", cloud_frac
+           write(fstderr,*) "Kh_zm = ", Kh_zm
+           write(fstderr,*) "rho_ds_zm = ", rho_ds_zm
+           write(fstderr,*) "rho_ds_zt = ", rho_ds_zt
+           write(fstderr,*) "invrs_rho_ds_zt = ", invrs_rho_ds_zt
 
-       write(fstderr,*) "wm_zt = ", wm_zt
-       write(fstderr,*) "exner = ", exner
-       write(fstderr,*) "rho = ", rho
-       write(fstderr,*) "rho_zm = ", rho_zm
-       write(fstderr,*) "cloud_frac = ", cloud_frac
-       write(fstderr,*) "Kh_zm = ", Kh_zm
-       write(fstderr,*) "rho_ds_zm = ", rho_ds_zm
-       write(fstderr,*) "rho_ds_zt = ", rho_ds_zt
-       write(fstderr,*) "invrs_rho_ds_zt = ", invrs_rho_ds_zt
+           write(fstderr,*) "hydromet_mc = ", hydromet_mc
 
-       write(fstderr,*) "hydromet_mc = ", hydromet_mc
+           write(fstderr,*) "Ncm_mc = ", Ncm_mc
 
-       write(fstderr,*) "Ncm_mc = ", Ncm_mc
+           write(fstderr,*) "hydromet_vel_covar_zt_impc = ", &
+                            hydromet_vel_covar_zt_impc
+           write(fstderr,*) "hydromet_vel_covar_zt_expc = ", &
+                            hydromet_vel_covar_zt_expc
 
-       write(fstderr,*) "hydromet_vel_covar_zt_impc = ", &
-                        hydromet_vel_covar_zt_impc
-       write(fstderr,*) "hydromet_vel_covar_zt_expc = ", &
-                        hydromet_vel_covar_zt_expc
+           write(fstderr,*) "Intent(inout)"
 
-       write(fstderr,*) "Intent(inout)"
+           write(fstderr,*) "hydromet = ", hydromet
+           write(fstderr,*) "hydromet_vel_zt = ", hydromet_vel_zt
 
-       write(fstderr,*) "hydromet = ", hydromet
-       write(fstderr,*) "hydromet_vel_zt = ", hydromet_vel_zt
+           write(fstderr,*) "Ncm = ", Ncm
+           write(fstderr,*) "Nc_in_cloud = ", Nc_in_cloud
 
-       write(fstderr,*) "Ncm = ", Ncm
-       write(fstderr,*) "Nc_in_cloud = ", Nc_in_cloud
+           write(fstderr,*) "rvm_mc = ", rvm_mc
+           write(fstderr,*) "thlm_mc = ", thlm_mc
 
-       write(fstderr,*) "rvm_mc = ", rvm_mc
-       write(fstderr,*) "thlm_mc = ", thlm_mc
+           write(fstderr,*) "Intent(out)" 
 
-       write(fstderr,*) "Intent(out)" 
+           write(fstderr,*) "wphydrometp = ", wphydrometp
 
-       write(fstderr,*) "wphydrometp = ", wphydrometp
+           write(fstderr,*) "wpNcp = ", wpNcp
 
-       write(fstderr,*) "wpNcp = ", wpNcp
-
+        end if
     endif
 
 

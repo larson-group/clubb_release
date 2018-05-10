@@ -521,48 +521,45 @@ module advance_windm_edsclrm_module
       ! variance of edsclr anywhere. -dschanen 7 Oct 2008
 
     endif
+    
+    if ( clubb_at_least_debug_level( 0 ) ) then
+        if ( err_code == clubb_fatal_error ) then
 
-    ! Error report
-    ! Joshua Fasching February 2008
-    if ( err_code == clubb_fatal_error .and. clubb_at_least_debug_level( 0 ) ) then
+          write(fstderr,*) "Error in advance_windm_edsclrm"
 
-      write(fstderr,*) "Error in advance_windm_edsclrm"
+          write(fstderr,*) "Intent(in)"
 
-      write(fstderr,*) "Intent(in)"
+          write(fstderr,*) "dt = ", dt
+          write(fstderr,*) "wm_zt = ", wm_zt
+          write(fstderr,*) "Km_zm = ", Km_zm
+          write(fstderr,*) "ug = ", ug
+          write(fstderr,*) "vg = ", vg
+          write(fstderr,*) "um_ref = ", um_ref
+          write(fstderr,*) "vm_ref = ", vm_ref
+          write(fstderr,*) "wp2 = ", wp2
+          write(fstderr,*) "up2 = ", up2
+          write(fstderr,*) "vp2 = ", vp2
+          write(fstderr,*) "um_forcing = ", um_forcing
+          write(fstderr,*) "vm_forcing = ", vm_forcing
+          do i = 1, edsclr_dim
+            write(fstderr,*) "edsclrm_forcing # = ", i, edsclrm_forcing
+          end do
+          write(fstderr,*) "fcor = ", fcor
+          write(fstderr,*) "l_implemented = ", l_implemented
 
-      write(fstderr,*) "dt = ", dt
-      write(fstderr,*) "wm_zt = ", wm_zt
-      write(fstderr,*) "Km_zm = ", Km_zm
-      write(fstderr,*) "ug = ", ug
-      write(fstderr,*) "vg = ", vg
-      write(fstderr,*) "um_ref = ", um_ref
-      write(fstderr,*) "vm_ref = ", vm_ref
-      write(fstderr,*) "wp2 = ", wp2
-      write(fstderr,*) "up2 = ", up2
-      write(fstderr,*) "vp2 = ", vp2
-      write(fstderr,*) "um_forcing = ", um_forcing
-      write(fstderr,*) "vm_forcing = ", vm_forcing
-      do i = 1, edsclr_dim
-        write(fstderr,*) "edsclrm_forcing # = ", i, edsclrm_forcing
-      end do
-      write(fstderr,*) "fcor = ", fcor
-      write(fstderr,*) "l_implemented = ", l_implemented
+          write(fstderr,*) "Intent(inout)"
 
-      write(fstderr,*) "Intent(inout)"
+          write(fstderr,*) "um = ", um
+          write(fstderr,*) "vm = ", vm
+          do i = 1, edsclr_dim
+            write(fstderr,*) "edsclrm # ", i, "=", edsclrm(:,i)
+          end do
+          write(fstderr,*) "upwp = ", upwp
+          write(fstderr,*) "vpwp = ", vpwp
+          write(fstderr,*) "wpedsclrp = ", wpedsclrp
 
-      write(fstderr,*) "um = ", um
-      write(fstderr,*) "vm = ", vm
-      do i = 1, edsclr_dim
-        write(fstderr,*) "edsclrm # ", i, "=", edsclrm(:,i)
-      end do
-      write(fstderr,*) "upwp = ", upwp
-      write(fstderr,*) "vpwp = ", vpwp
-      write(fstderr,*) "wpedsclrp = ", wpedsclrp
-
-      !write(fstderr,*) "Intent(out)"
-
-      return
-
+          return
+        end if
     end if
 
     return

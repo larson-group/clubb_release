@@ -3296,7 +3296,7 @@ module advance_clubb_core_module
             return
 
           end if
-        end if
+      end if
 
 #ifdef GFDL
 ! setup  prognostic_variables
