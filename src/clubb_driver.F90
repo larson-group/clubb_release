@@ -908,6 +908,8 @@ module clubb_driver
                             momentum_heights, &                 ! Intent(out)
                             thermodynamic_heights )             ! Intent(out)
 
+    if ( err_code == clubb_fatal_error ) stop 
+
     ! These numbers represent host model horizontal grid spacing
     ! which for a single column simulation is effectively infinite
     dummy_dx = 1.0e6_core_rknd ! known magic number
@@ -1431,6 +1433,8 @@ module clubb_driver
                                     corr_array_1_n, corr_array_2_n, &           ! Intent(out)
                                     corr_cholesky_mtx_1, corr_cholesky_mtx_2, & ! Intent(out)
                                     hydromet_pdf_params )                       ! Intent(out)
+
+         if ( err_code == clubb_fatal_error ) stop
 
          ! Calculate < rt'hm' >, < thl'hm' >, and < w'^2 hm' >.
          call hydrometeor_mixed_moments( gr%nz, pdf_dim, hydromet, &            ! Intent(in)

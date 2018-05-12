@@ -155,7 +155,9 @@ module setup_clubb_pdf_params
         Ncnp2_on_Ncnm2
 
     use error_code, only: &
-        clubb_at_least_debug_level  ! Procedure
+        clubb_at_least_debug_level, &   ! Procedure
+        err_code, &                     ! Error Indicator
+        clubb_fatal_error               ! Constant
 
     implicit none
 
@@ -316,8 +318,8 @@ module setup_clubb_pdf_params
                                     trim( hydromet_name )//" = ", &
                                     hydromet(k,i), " < ", zero_threshold, &
                                     " at k = ", k
-                   ! Exit program
-                   stop "A hydrometeor value is negative."
+                   err_code = clubb_fatal_error
+                   return
                 endif ! hydromet(k,i) < 0
              enddo ! k = 1, nz
           endif ! hydromet(:,i) < 0
@@ -383,6 +385,8 @@ module setup_clubb_pdf_params
                              mixt_frac, l_stats_samp, &                   ! In
                              precip_frac, precip_frac_1, precip_frac_2, & ! Out
                              precip_frac_tol )                            ! Out
+
+       if ( err_code == clubb_fatal_error ) return
 
     else
 

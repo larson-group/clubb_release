@@ -147,7 +147,9 @@ module stats_clubb_utilities
         edsclr_dim
 
     use error_code, only: &
-        clubb_at_least_debug_level   ! Procedure
+        clubb_at_least_debug_level, &   ! Procedure
+        err_code, &                     ! Error Indicator
+        clubb_fatal_error               ! Constant
 
     implicit none
 
@@ -300,7 +302,10 @@ module stats_clubb_utilities
       write(fstderr,*) "Maximum variables allowed for var_rad_zt = ", nvarmax_rad_zt
       write(fstderr,*) "Maximum variables allowed for var_rad_zm = ", nvarmax_rad_zm
       write(fstderr,*) "Maximum variables allowed for var_sfc = ", nvarmax_sfc
-      stop "stats_init: Error reading stats namelist."
+      write(fstderr,*) "stats_init: Error reading stats namelist."
+      err_code = clubb_fatal_error
+      close(unit=iunit)
+      return
     end if ! read_status /= 0
 
     close(unit=iunit)
@@ -390,7 +395,8 @@ module stats_clubb_utilities
     case default
       write(fstderr,*) "In module stats_clubb_utilities subroutine stats_init: "
       write(fstderr,*) "Invalid stats output format "//trim( stats_fmt )
-      stop "Fatal error"
+      err_code = clubb_fatal_error
+      return
 
     end select
 
@@ -692,7 +698,9 @@ module stats_clubb_utilities
                        "in the stats namelist, or change nvarmax_zt."
       write(fstderr,*) "nvarmax_zt = ", nvarmax_zt
       write(fstderr,*) "number of variables in vars_zt = ", ntot
-      stop "stats_init:  number of zt statistical variables exceeds limit"
+      write(fstderr,*) "stats_init:  number of zt statistical variables exceeds limit"
+      err_code = clubb_fatal_error
+      return
     end if
 
     stats_zt%num_output_fields = ntot
@@ -778,6 +786,8 @@ module stats_clubb_utilities
                         day, month, year, rlat, rlon, &  ! In
                         time_current, stats_tout, stats_zt%num_output_fields, &  ! In
                         stats_zt%file ) ! InOut
+
+      if ( err_code == clubb_fatal_error ) return
 #else
       stop "This CLUBB program was not compiled with netCDF support."
 #endif
@@ -825,7 +835,9 @@ module stats_clubb_utilities
                          "in the stats namelist, or change nvarmax_lh_zt."
         write(fstderr,*) "nvarmax_lh_zt = ", nvarmax_lh_zt
         write(fstderr,*) "number of variables in vars_lh_zt = ", ntot
-        stop "stats_init:  number of lh_zt statistical variables exceeds limit"
+        write(fstderr,*) "stats_init:  number of lh_zt statistical variables exceeds limit"
+        err_code = clubb_fatal_error
+        return
       end if
 
       stats_lh_zt%num_output_fields = ntot
@@ -867,6 +879,8 @@ module stats_clubb_utilities
                           stats_lh_zt%z, day, month, year, rlat, rlon, &  ! In
                           time_current, stats_tout, stats_lh_zt%num_output_fields, &  ! In
                           stats_lh_zt%file ) ! InOut
+
+        if ( err_code == clubb_fatal_error ) return
 #else
         stop "This CLUBB program was not compiled with netCDF support."
 #endif
@@ -889,7 +903,9 @@ module stats_clubb_utilities
                          "in the stats namelist, or change nvarmax_lh_sfc."
         write(fstderr,*) "nvarmax_lh_sfc = ", nvarmax_lh_sfc
         write(fstderr,*) "number of variables in vars_lh_sfc = ", ntot
-        stop "stats_init:  number of lh_sfc statistical variables exceeds limit"
+        write(fstderr,*) "stats_init:  number of lh_sfc statistical variables exceeds limit"
+        err_code = clubb_fatal_error
+        return
       end if
 
       stats_lh_sfc%num_output_fields = ntot
@@ -931,6 +947,8 @@ module stats_clubb_utilities
                           stats_lh_sfc%z, day, month, year, rlat, rlon, &  ! In
                           time_current, stats_tout, stats_lh_sfc%num_output_fields, &  ! In
                           stats_lh_sfc%file ) ! InOut
+
+        if ( err_code == clubb_fatal_error ) return
 #else
         stop "This CLUBB program was not compiled with netCDF support."
 #endif
@@ -1107,7 +1125,9 @@ module stats_clubb_utilities
                        "in the stats namelist, or change nvarmax_zm."
       write(fstderr,*) "nvarmax_zm = ", nvarmax_zm
       write(fstderr,*) "number of variables in vars_zm = ", ntot
-      stop "stats_init:  number of zm statistical variables exceeds limit"
+      write(fstderr,*) "stats_init:  number of zm statistical variables exceeds limit"
+      err_code = clubb_fatal_error
+      return
     end if
 
     stats_zm%num_output_fields = ntot
@@ -1188,6 +1208,7 @@ module stats_clubb_utilities
                         time_current, stats_tout, stats_zm%num_output_fields, &  ! In
                         stats_zm%file ) ! InOut
 
+      if ( err_code == clubb_fatal_error ) return
 #else
       stop "This CLUBB program was not compiled with netCDF support."
 #endif
@@ -1213,7 +1234,9 @@ module stats_clubb_utilities
                          "in the stats namelist, or change nvarmax_rad_zt."
         write(fstderr,*) "nvarmax_rad_zt = ", nvarmax_rad_zt
         write(fstderr,*) "number of variables in vars_rad_zt = ", ntot
-        stop "stats_init:  number of rad_zt statistical variables exceeds limit"
+        write(fstderr,*) "stats_init:  number of rad_zt statistical variables exceeds limit"
+        err_code = clubb_fatal_error
+        return
       end if
 
       stats_rad_zt%num_output_fields = ntot
@@ -1255,6 +1278,7 @@ module stats_clubb_utilities
                           time_current, stats_tout, & 
                           stats_rad_zt%num_output_fields, stats_rad_zt%file )
 
+        if ( err_code == clubb_fatal_error ) return
 #else
         stop "This CLUBB program was not compiled with netCDF support."
 #endif
@@ -1278,7 +1302,9 @@ module stats_clubb_utilities
                          "in the stats namelist, or change nvarmax_rad_zm."
         write(fstderr,*) "nvarmax_rad_zm = ", nvarmax_rad_zm
         write(fstderr,*) "number of variables in vars_rad_zm = ", ntot
-        stop "stats_init:  number of rad_zm statistical variables exceeds limit"
+        write(fstderr,*) "stats_init:  number of rad_zm statistical variables exceeds limit"
+        err_code = clubb_fatal_error
+        return
       end if
 
       stats_rad_zm%num_output_fields = ntot
@@ -1321,6 +1347,7 @@ module stats_clubb_utilities
                           time_current, stats_tout, & 
                           stats_rad_zm%num_output_fields, stats_rad_zm%file )
 
+        if ( err_code == clubb_fatal_error ) return
 #else
         stop "This CLUBB program was not compiled with netCDF support."
 #endif
@@ -1346,7 +1373,10 @@ module stats_clubb_utilities
                        "in the stats namelist, or change nvarmax_sfc."
       write(fstderr,*) "nvarmax_sfc = ", nvarmax_sfc
       write(fstderr,*) "number of variables in vars_sfc = ", ntot
-      stop "stats_init:  number of sfc statistical variables exceeds limit"
+      write(fstderr,*) "stats_init:  number of sfc statistical variables exceeds limit"
+      err_code = clubb_fatal_error
+      return
+
     end if
 
     stats_sfc%num_output_fields = ntot
@@ -1388,6 +1418,7 @@ module stats_clubb_utilities
                         time_current, stats_tout, stats_sfc%num_output_fields, &  ! In
                         stats_sfc%file ) ! InOut
 
+      if ( err_code == clubb_fatal_error ) return
 #else
       stop "This CLUBB program was not compiled with netCDF support."
 #endif
@@ -1399,7 +1430,8 @@ module stats_clubb_utilities
 
     if ( l_error ) then
       write(fstderr,*) 'stats_init:  errors found'
-      stop "Fatal error"
+      err_code = clubb_fatal_error
+      return
     endif
 
     return
@@ -1581,6 +1613,10 @@ module stats_clubb_utilities
         write_netcdf ! Procedure(s)
 #endif
 
+    use error_code, only : &
+        err_code, &         ! Error Indicator
+        clubb_fatal_error   ! Constant
+
     implicit none
 
     ! External
@@ -1611,12 +1647,14 @@ module stats_clubb_utilities
       call stats_check_num_samples( stats_rad_zm, l_error )
     end if
 
-    ! Stop the run if errors are found.
+    ! Return if errors are found.
     if ( l_error ) then
       write(fstderr,*) 'Possible statistical sampling error'
       write(fstderr,*) 'For details, set debug_level to a value of at ',  &
                        'least 1 in the appropriate model.in file.'
-      stop 'stats_end_timestep:  error(s) found'
+      write(fstderr,*) 'stats_end_timestep:  error(s) found'
+      err_code = clubb_fatal_error
+      return
     end if ! l_error
 
     ! Compute averages
@@ -1672,6 +1710,8 @@ module stats_clubb_utilities
           call write_netcdf( stats_rad_zm%file  )
         end if
         call write_netcdf( stats_sfc%file  )
+            
+        if ( err_code == clubb_fatal_error ) return
 #else
         stop "This program was not compiled with netCDF support"
 #endif /* NETCDF */

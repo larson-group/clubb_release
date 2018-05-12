@@ -112,7 +112,7 @@ module clubb_api_module
   use error_code, only: &
         clubb_at_least_debug_level,  & ! Procedure
         err_code,                    & ! Error Indicator
-        clubb_no_error                 ! Constant
+        clubb_fatal_error              ! Constant
 
   use grid_class, only : &
     gr
@@ -368,7 +368,6 @@ module clubb_api_module
     ! To Check For and Handle CLUBB's Errors:
     calculate_spurious_source_api, &
     clubb_at_least_debug_level_api, &
-    clubb_no_error, &
     fill_holes_driver_api, & ! OR
     fill_holes_vertical_api, &
     set_clubb_debug_level_api, &
@@ -1227,6 +1226,10 @@ contains
     thermodynamic_heights )
 
     use grid_class, only : setup_grid_heights
+    
+    use error_code, only : &
+        err_code, &             ! Error Indicator
+        clubb_fatal_error       ! Constant
 
     implicit none
 
@@ -1270,6 +1273,8 @@ contains
       l_implemented, grid_type,  &
       deltaz, zm_init, momentum_heights,  &
       thermodynamic_heights )
+
+    if ( err_code == clubb_fatal_error ) stop
 
   end subroutine setup_grid_heights_api
 
@@ -1546,6 +1551,10 @@ contains
     use advance_windm_edsclrm_module, only: &
       xpwp_fnc
 
+    use error_code, only : &
+        err_code, &         ! Error Indicator
+        clubb_fatal_error   ! Constant
+
     implicit none
 
     ! Input Variables
@@ -1602,7 +1611,7 @@ contains
       hydromet_pdf_params    ! Hydrometeor PDF parameters        [units vary]
 
     call setup_pdf_parameters( &
-      nz, pdf_dim, dt, &                      ! Intent(in)
+      nz, pdf_dim, dt, &                          ! Intent(in)
       Nc_in_cloud, rcm, cloud_frac, &             ! Intent(in)
       ice_supersat_frac, hydromet, wphydrometp, & ! Intent(in)
       corr_array_n_cloud, corr_array_n_below, &   ! Intent(in)
@@ -1613,6 +1622,8 @@ contains
       corr_array_1_n, corr_array_2_n, &           ! Intent(out)
       corr_cholesky_mtx_1, corr_cholesky_mtx_2, & ! Intent(out)
       hydromet_pdf_params )                       ! Intent(out)
+
+    if ( err_code == clubb_fatal_error ) stop
 
   end subroutine setup_pdf_parameters_api
 
@@ -1690,6 +1701,9 @@ contains
       nzmax, nlon, nlat, gzt, gzm, nnrad_zt, &
       grad_zt, nnrad_zm, grad_zm, day, month, year, &
       rlon, rlat, time_current, delt, l_silhs_out_in )
+
+    if ( err_code == clubb_fatal_error ) stop
+    
   end subroutine stats_init_api
 
   !================================================================================================
@@ -1728,6 +1742,8 @@ contains
     implicit none
 
     call stats_end_timestep
+
+    if ( err_code == clubb_fatal_error ) stop
 
   end subroutine stats_end_timestep_api
 

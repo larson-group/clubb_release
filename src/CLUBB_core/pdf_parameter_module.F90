@@ -220,6 +220,14 @@ module pdf_parameter_module
   end subroutine unpack_pdf_params
 
   real( kind = core_rknd ) function get_param_at_ind(pp_struct, ind)
+
+    use constants_clubb, only: &
+        fstderr             ! File I/O Constant
+
+    use error_code, only : &
+        err_code, &         ! Error Indicator 
+        clubb_fatal_error   ! Constant
+
     implicit none
     type (pdf_parameter), intent(in) :: pp_struct
     integer, intent(in) :: ind
@@ -320,7 +328,9 @@ module pdf_parameter_module
       CASE (47)
           get_param_at_ind = pp_struct%ice_supersat_frac_2
       CASE DEFAULT
-          stop "Invalid index in get_param_at_ind"
+          write(fstderr,*) "Invalid index in get_param_at_ind"
+          err_code = clubb_fatal_error
+          return
     END SELECT
 
     RETURN

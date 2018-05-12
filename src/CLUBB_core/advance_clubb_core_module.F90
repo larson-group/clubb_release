@@ -738,12 +738,14 @@ module advance_clubb_core_module
 
       if ( l_Lscale_plume_centered .and. .not. l_avg_Lscale ) then
         write(fstderr,*) "l_Lscale_plume_centered requires l_avg_Lscale"
-        stop "Fatal error in advance_clubb_core"
+        write(fstderr,*) "Fatal error in advance_clubb_core"
+        return
       end if
 
       if ( l_damp_wp2_using_em .and. (C1 /= C14 .or. l_stability_correct_tau_zm) ) then
         write(fstderr,*) "l_damp_wp2_using_em requires C1=C14 and l_stability_correct_tau_zm = F"
-        stop "Fatal error in advance_clubb_core"
+        write(fstderr,*) "Fatal error in advance_clubb_core"
+        return
       end if
 
     end if
@@ -2481,13 +2483,11 @@ module advance_clubb_core_module
           wpsclrpthlp(k,:), sclrprcp_zt(k,:), wp2sclrp(k,:),          & ! intent(out)
           rc_coef(k)                                                  ) ! intent(out)
 
-      ! Subroutine may produce NaN values, and if so, exit
-      ! gracefully.
-      ! Joshua Fasching March 2008
+      ! Subroutine may produce NaN values, and if so, return
       if ( clubb_at_least_debug_level( 0 ) ) then
           if ( err_code == clubb_fatal_error ) then
               write(fstderr,*) "At grid level = ",k
-              stop
+              return
           end if
       end if
 
@@ -2641,13 +2641,11 @@ module advance_clubb_core_module
             wpsclrpthlp_zm(k,:), sclrprcp(k,:), wp2sclrp_zm(k,:),             & ! intent(out)
             rc_coef_zm(k)                                                     ) ! intent(out)
 
-        ! Subroutine may produce NaN values, and if so, exit
-        ! gracefully.
-        ! Joshua Fasching March 2008
+        ! Subroutine may produce NaN values, and if so, return
         if ( clubb_at_least_debug_level( 0 ) ) then
             if ( err_code == clubb_fatal_error ) then
                 write(fstderr,*) "At grid level = ",k
-                stop
+                return
             end if
         end if
 
@@ -2812,12 +2810,11 @@ module advance_clubb_core_module
             wpsclrpthlp_frz(k,:), sclrprcp_zt_frz(k,:), wp2sclrp_frz(k,:),        & ! intent(out)
             rc_coef_frz(k)                                                        ) ! intent(out)
 
-        ! Subroutine may produce NaN values, and if so, exit gracefully.
-        ! Joshua Fasching March 2008
+        ! Subroutine may produce NaN values, and if so, return
         if ( clubb_at_least_debug_level( 0 ) ) then
             if ( err_code == clubb_fatal_error ) then
                 write(fstderr,*) "At grid level = ", k
-                stop
+                return
             end if
         end if
 
@@ -2868,13 +2865,11 @@ module advance_clubb_core_module
               wpsclrpthlp_zm_frz(k,:), sclrprcp_frz(k,:), wp2sclrp_zm_frz(k,:), & ! intent(out)
               rc_coef_zm_frz(k)                                                 ) ! intent(out)
 
-          ! Subroutine may produce NaN values, and if so, exit
-          ! gracefully.
-          ! Joshua Fasching March 2008
+          ! Subroutine may produce NaN values, and if so, return
           if ( clubb_at_least_debug_level( 0 ) ) then
             if ( err_code == clubb_fatal_error ) then
                 write(fstderr,*) "At grid level = ",k
-                stop
+                return
             end if
           end if
 
@@ -3142,7 +3137,8 @@ module advance_clubb_core_module
         write(fstderr,*) "Error in setup_clubb_core."
         write(fstderr,*) "Unknown approx. of saturation vapor pressure: "// &
           trim( saturation_formula )
-        stop
+        err_code = clubb_fatal_error
+        return
       end select
 
       ! Check for the type of two component normal (double Gaussian) PDF being
@@ -3151,7 +3147,8 @@ module advance_clubb_core_module
          write(fstderr,*) "Error in setup_clubb_core."
          write(fstderr,*) "Unknown type of double Gaussian PDF selected."
          write(fstderr,*) "iiPDF_type = ", iiPDF_type
-         stop
+         err_code = clubb_fatal_error
+         return
       endif ! iiPDF_type < iiPDF_ADG1 or iiPDF_type > iiPDF_lY93
 
       ! The ADG2 and 3D Luhar PDFs can only be used as part of input fields.
@@ -3162,7 +3159,8 @@ module advance_clubb_core_module
                              // " input fields (l_input_fields = .true.)."
             write(fstderr,*) "iiPDF_type = ", iiPDF_type
             write(fstderr,*) "l_input_fields = ", l_input_fields
-            stop
+            err_code = clubb_fatal_error
+            return
          endif ! .not. l_input_fields
       endif ! iiPDF_type == iiPDF_ADG2
 
@@ -3173,7 +3171,8 @@ module advance_clubb_core_module
                              // " input fields (l_input_fields = .true.)."
             write(fstderr,*) "iiPDF_type = ", iiPDF_type
             write(fstderr,*) "l_input_fields = ", l_input_fields
-            stop
+            err_code = clubb_fatal_error
+            return
          endif ! .not. l_input_fields
       endif ! iiPDF_type == iiPDF_3D_Luhar
 
@@ -3186,7 +3185,8 @@ module advance_clubb_core_module
                              // " input fields (l_input_fields = .true.)."
             write(fstderr,*) "iiPDF_type = ", iiPDF_type
             write(fstderr,*) "l_input_fields = ", l_input_fields
-            stop
+            err_code = clubb_fatal_error
+            return
          endif ! .not. l_input_fields
       endif ! iiPDF_type == iiPDF_new
 
@@ -3199,7 +3199,8 @@ module advance_clubb_core_module
                              // " input fields (l_input_fields = .true.)."
             write(fstderr,*) "iiPDF_type = ", iiPDF_type
             write(fstderr,*) "l_input_fields = ", l_input_fields
-            stop
+            err_code = clubb_fatal_error
+            return
          endif ! .not. l_input_fields
       endif ! iiPDF_type == iiPDF_TSDADG
 
@@ -3211,7 +3212,8 @@ module advance_clubb_core_module
                              // " input fields (l_input_fields = .true.)."
             write(fstderr,*) "iiPDF_type = ", iiPDF_type
             write(fstderr,*) "l_input_fields = ", l_input_fields
-            stop
+            err_code = clubb_fatal_error
+            return
          endif ! .not. l_input_fields
       endif ! iiPDF_type == iiPDF_LY93
 
@@ -3219,7 +3221,8 @@ module advance_clubb_core_module
       if ( ipdf_call_placement < ipdf_pre_advance_fields &
            .or. ipdf_call_placement > ipdf_pre_post_advance_fields ) then
          write(fstderr,*) "Invalid option selected for ipdf_call_placement"
-         stop
+         err_code = clubb_fatal_error
+         return
       endif
 
       ! When ipdf_call_placement = ipdf_post_advance_fields, additional
@@ -3232,7 +3235,8 @@ module advance_clubb_core_module
          if ( l_use_ice_latent ) then
             write(fstderr,*) "The l_use_ice_latent option is incompatible" &
                              // " with the ipdf_post_advance_fields option."
-            stop
+            err_code = clubb_fatal_error
+            return
          endif ! l_use_ice_latent
       endif ! ipdf_call_placement == ipdf_post_advance_fields
 
@@ -3241,6 +3245,27 @@ module advance_clubb_core_module
                        grid_type, deltaz, zm_init, zm_top,      & ! intent(in)
                        momentum_heights, thermodynamic_heights, & ! intent(in)
                        begin_height, end_height                 ) ! intent(out)
+
+      if ( clubb_at_least_debug_level( 0 ) ) then
+        if ( err_code == clubb_fatal_error ) then
+
+          write(fstderr,*) "Error in setup_clubb_core"
+
+          write(fstderr,*) "Intent(in)"
+
+          write(fstderr,*) "deltaz = ", deltaz
+          write(fstderr,*) "zm_init = ", zm_init
+          write(fstderr,*) "zm_top = ", zm_top
+          write(fstderr,*) "momentum_heights = ", momentum_heights
+          write(fstderr,*) "thermodynamic_heights = ",  & 
+              thermodynamic_heights
+          write(fstderr,*) "T0_in = ", T0_in
+          write(fstderr,*) "ts_nudge_in = ", ts_nudge_in
+          write(fstderr,*) "params = ", params
+          return
+
+        end if
+    end if
 
       ! Setup flags
 #ifdef GFDL
@@ -3274,8 +3299,6 @@ module advance_clubb_core_module
              grid_type, momentum_heights(begin_height:end_height), & ! intent(in)
              thermodynamic_heights(begin_height:end_height) )        ! intent(in)
 
-      ! Error Report
-      ! Joshua Fasching February 2008
       if ( clubb_at_least_debug_level( 0 ) ) then
           if ( err_code == clubb_fatal_error ) then
 
@@ -3824,7 +3847,8 @@ module advance_clubb_core_module
                          // "preserve cloud_frac_1 and cloud_frac_2 in a " &
                          // "manner consistent with the PDF as required " &
                          // "by other parts of CLUBB."
-        stop "Please refactor before continuing."
+        write(fstderr,*) "Please refactor before continuing."
+        return
         pdf_params%w_1          = trapezoid_zt( w_1_zt, w_1_zm )
         pdf_params%w_2          = trapezoid_zt( w_2_zt, w_2_zm )
         pdf_params%varnce_w_1   = trapezoid_zt( varnce_w_1_zt, varnce_w_1_zm )
@@ -4171,7 +4195,7 @@ module advance_clubb_core_module
             write(fstderr,*) "rcm(k+1) = ", rcm(k+1)
             write(fstderr,*) "rcm(k-1) = ", rcm(k-1)
 
-            stop
+            return
 
           end if
 
