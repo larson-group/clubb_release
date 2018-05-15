@@ -112,7 +112,8 @@ module clubb_api_module
   use error_code, only: &
         clubb_at_least_debug_level,  & ! Procedure
         err_code,                    & ! Error Indicator
-        clubb_fatal_error              ! Constant
+        clubb_no_error,              & ! Constants
+        clubb_fatal_error
 
   use grid_class, only : &
     gr
@@ -368,6 +369,7 @@ module clubb_api_module
     ! To Check For and Handle CLUBB's Errors:
     calculate_spurious_source_api, &
     clubb_at_least_debug_level_api, &
+    clubb_no_error, &
     fill_holes_driver_api, & ! OR
     fill_holes_vertical_api, &
     set_clubb_debug_level_api, &
