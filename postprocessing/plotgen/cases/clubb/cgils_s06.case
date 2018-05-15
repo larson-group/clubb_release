@@ -67,6 +67,11 @@
           {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/SAM6.6/CLOUD_FEEDBACK_s6/ctl_s6_96x96x128_100m_DRZ_N100_tqndg.nc', 'type' => 'les', 'name' => 'SAM-LES', 'expression' => 'TQ', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
           {'filename' => 'cgils_s6_zm.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'rtpthlp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
+       {'plotTitle' => 'Skewness of w', 'axisLabel' => 'Skw [-]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/SAM6.6/CLOUD_FEEDBACK_s6/ctl_s6_96x96x128_100m_DRZ_N100_tqndg.nc', 'type' => 'les', 'name' => 'SAM-LES', 'expression' => 'W3 ./ (W2 + 1.6e-3).^1.5', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
+          {'filename' => 'cgils_s6_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'Skw_zt', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
        {'plotTitle' => 'Vertical Wind Component, w (subsidence)', 'axisLabel' => 'wm [m/s]', 'type' => 'profile', 'lines' =>
        [
           {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/SAM6.6/CLOUD_FEEDBACK_s6/ctl_s6_96x96x128_100m_DRZ_N100_tqndg.nc', 'type' => 'les', 'name' => 'SAM-LES', 'expression' => 'WOBS', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
