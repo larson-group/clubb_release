@@ -84,10 +84,11 @@ module new_pdf_main
         max_mag_correlation
 
     use new_pdf, only: &
-        calc_setter_var_params,    & ! Procedure(s)
-        calc_coef_wp4_implicit,    &
-        calc_coef_wpxp2_implicit,  &
-        calc_coefs_wp2xp_semiimpl
+        calc_setter_var_params,     & ! Procedure(s)
+        calc_coef_wp4_implicit,     &
+        calc_coef_wpxp2_implicit,   &
+        calc_coefs_wp2xp_semiimpl,  &
+        calc_coefs_wpxpyp_semiimpl
 
     use parameters_tunable, only: &
         slope_coef_spread_DG_means_w, & ! Variable(s)
@@ -456,7 +457,8 @@ module new_pdf_main
     if ( .not. l_explicit_turbulent_adv_xpyp ) then
 
        ! Turbulent advection of <rt'^2> and <thl'^2> is being handled
-       ! implicitly.
+       ! implicitly.  Turbulent advection of <rt'thl'> is being handled
+       ! semi-implicitly.
 
        ! <w'rt'^2> = coef_wprtp2_implicit * <rt'^2>
        coef_wprtp2_implicit &
@@ -476,12 +478,28 @@ module new_pdf_main
                                    coef_sigma_thl_1_sqd, &
                                    coef_sigma_thl_2_sqd  )
 
+       ! <w'rt'thl'> = coef_wprtpthlp_implicit * <rt'thl'>
+       !               + term_wprtpthlp_explicit
+       call calc_coefs_wpxpyp_semiimpl( wp2, rtp2, thlp2, wprtp,       & ! In
+                                        wpthlp, sgn_wprtp, sgn_wpthlp, & ! In
+                                        mixt_frac, F_w, F_rt, F_thl,   & ! In
+                                        coef_sigma_w_1_sqd  ,          & ! In
+                                        coef_sigma_w_2_sqd,            & ! In
+                                        coef_sigma_rt_1_sqd,           & ! In
+                                        coef_sigma_rt_2_sqd,           & ! In
+                                        coef_sigma_thl_1_sqd,          & ! In
+                                        coef_sigma_thl_2_sqd,          & ! In
+                                        coef_wprtpthlp_implicit,       & ! Out
+                                        term_wprtpthlp_explicit        ) ! Out
+
     else ! l_explicit_turbulent_adv_xpyp
 
-       ! Turbulent advection of <rt'^2> and <thl'^2> is being handled
-       ! explicitly.
+       ! Turbulent advection of <rt'^2>, <thl'^2>, and <rt'thl'> is being
+       ! handled explicitly.
        coef_wprtp2_implicit = zero
        coef_wpthlp2_implicit = zero
+       coef_wprtpthlp_implicit = zero
+       term_wprtpthlp_explicit = zero
 
     endif ! .not. l_explicit_turbulent_adv_xpyp
 
@@ -520,9 +538,6 @@ module new_pdf_main
        term_wp2thlp_explicit = zero
 
     endif ! .not. l_explicit_turbulent_adv_wpxp
-
-    coef_wprtpthlp_implicit = zero
-    term_wprtpthlp_explicit = zero
 
     ! Pack the implicit coefficients and explicit terms into a single type
     ! variable for output.
