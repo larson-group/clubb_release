@@ -383,6 +383,16 @@ module stats_zt_module
         imin_F_thl, &
         imax_F_thl
 
+    use stats_variables, only: &
+        icoef_wprtp2_implicit, &
+        icoef_wpthlp2_implicit, &
+        icoef_wprtpthlp_implicit, &
+        iterm_wprtpthlp_explicit, &
+        icoef_wp2rtp_implicit, &
+        iterm_wp2rtp_explicit, &
+        icoef_wp2thlp_implicit, &
+        iterm_wp2thlp_explicit
+
     use stats_variables, only: & 
         iwp2_zt, & 
         ithlp2_zt, & 
@@ -3972,6 +3982,93 @@ module stats_zt_module
                           var_description="Maximum allowable value of the" &
                           // " parameter F_thl (new PDF)  [-]", &
                           var_units="-", l_silhs=.false., grid_kind=stats_zt )
+        k = k + 1
+
+      case ( 'coef_wprtp2_implicit' )
+        icoef_wprtp2_implicit = k
+        call stat_assign( var_index=icoef_wprtp2_implicit, &
+                          var_name="coef_wprtp2_implicit", &
+                          var_description="wprtp2 = coef_wprtp2_implicit" &
+                                          // " * rtp2 (new PDF) [m/s]", &
+                          var_units="m/s", l_silhs=.false., grid_kind=stats_zt )
+        k = k + 1
+
+      case ( 'coef_wpthlp2_implicit' )
+        icoef_wpthlp2_implicit = k
+        call stat_assign( var_index=icoef_wpthlp2_implicit, &
+                          var_name="coef_wpthlp2_implicit", &
+                          var_description="wpthlp2 = coef_wpthlp2_implicit" &
+                                          // " * thlp2 (new PDF) [m/s]", &
+                          var_units="m/s", l_silhs=.false., grid_kind=stats_zt )
+        k = k + 1
+
+      case ( 'coef_wprtpthlp_implicit' )
+        icoef_wprtpthlp_implicit = k
+        call stat_assign( var_index=icoef_wprtpthlp_implicit, &
+                          var_name="coef_wprtpthlp_implicit", &
+                          var_description="wprtpthlp" &
+                                          // " = coef_wprtpthlp_implicit" &
+                                          // " * rtpthlp" &
+                                          // " + term_wprtpthlp_explicit" &
+                                          // " (new PDF) [m/s]", &
+                          var_units="m/s", l_silhs=.false., grid_kind=stats_zt )
+        k = k + 1
+
+      case ( 'term_wprtpthlp_explicit' )
+        iterm_wprtpthlp_explicit = k
+        call stat_assign( var_index=iterm_wprtpthlp_explicit, &
+                          var_name="term_wprtpthlp_explicit", &
+                          var_description="wprtpthlp" &
+                                          // " = coef_wprtpthlp_implicit" &
+                                          // " * rtpthlp" &
+                                          // " + term_wprtpthlp_explicit" &
+                                          // " (new PDF) [m/s (kg/kg) K]", &
+                          var_units="m/s (kg/kg) K", l_silhs=.false., &
+                          grid_kind=stats_zt )
+        k = k + 1
+
+      case ( 'coef_wp2rtp_implicit' )
+        icoef_wp2rtp_implicit = k
+        call stat_assign( var_index=icoef_wp2rtp_implicit, &
+                          var_name="coef_wp2rtp_implicit", &
+                          var_description="wp2rtp = coef_wp2rtp_implicit" &
+                                          // " * wprtp + term_wp2rtp_explicit" &
+                                          // " (new PDF) [m/s]", &
+                          var_units="m/s", l_silhs=.false., grid_kind=stats_zt )
+        k = k + 1
+
+      case ( 'term_wp2rtp_explicit' )
+        iterm_wp2rtp_explicit = k
+        call stat_assign( var_index=iterm_wp2rtp_explicit, &
+                          var_name="term_wp2rtp_explicit", &
+                          var_description="wp2rtp = coef_wp2rtp_implicit" &
+                                          // " * wprtp + term_wp2rtp_explicit" &
+                                          // " (new PDF) [m^2/s^2 kg/kg]", &
+                          var_units="m^2/s^2 kg/kg", l_silhs=.false., &
+                          grid_kind=stats_zt )
+        k = k + 1
+
+      case ( 'coef_wp2thlp_implicit' )
+        icoef_wp2thlp_implicit = k
+        call stat_assign( var_index=icoef_wp2thlp_implicit, &
+                          var_name="coef_wp2thlp_implicit", &
+                          var_description="wp2thlp = coef_wp2thlp_implicit" &
+                                          // " * wpthlp" &
+                                          // " + term_wp2thlp_explicit" &
+                                          // " (new PDF) [m/s]", &
+                          var_units="m/s", l_silhs=.false., grid_kind=stats_zt )
+        k = k + 1
+
+      case ( 'term_wp2thlp_explicit' )
+        iterm_wp2thlp_explicit = k
+        call stat_assign( var_index=iterm_wp2thlp_explicit, &
+                          var_name="term_wp2thlp_explicit", &
+                          var_description="wp2thlp = coef_wp2thlp_implicit" &
+                                          // " * wpthlp" &
+                                          // " + term_wp2thlp_explicit" &
+                                          // " (new PDF) [m^2/s^2 K]", &
+                          var_units="m^2/s^2 K", l_silhs=.false., &
+                          grid_kind=stats_zt )
         k = k + 1
 
       case('wp2_zt')

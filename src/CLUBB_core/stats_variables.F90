@@ -665,6 +665,21 @@ module stats_variables
 !$omp  threadprivate( iF_w, iF_rt, iF_thl, imin_F_w, imax_F_w, imin_F_rt, &
 !$omp                 imax_F_rt, imin_F_thl, imax_F_thl )
 
+  integer, public :: &
+    icoef_wprtp2_implicit = 0, &
+    icoef_wpthlp2_implicit = 0, &
+    icoef_wprtpthlp_implicit = 0, &
+    iterm_wprtpthlp_explicit = 0, &
+    icoef_wp2rtp_implicit = 0, &
+    iterm_wp2rtp_explicit = 0, &
+    icoef_wp2thlp_implicit = 0, &
+    iterm_wp2thlp_explicit = 0
+
+!$omp  threadprivate( icoef_wprtp2_implicit, icoef_wpthlp2_implicit, &
+!$omp                 icoef_wprtpthlp_implicit, iterm_wprtpthlp_explicit, &
+!$omp                 icoef_wp2rtp_implicit, iterm_wp2rtp_explicit, &
+!$omp                 icoef_wp2thlp_implicit, iterm_wp2thlp_explicit )
+
   integer, public :: & 
     iwp2_zt = 0, & 
     ithlp2_zt = 0, & 
@@ -1023,6 +1038,11 @@ module stats_variables
 
 !$omp   threadprivate(igamma_Skw_fnc, iC6rt_Skw_fnc, iC6thl_Skw_fnc)
 !$omp   threadprivate(iC7_Skw_fnc, iC1_Skw_fnc)
+
+  integer, public :: &
+    icoef_wp4_implicit = 0
+
+!$omp   threadprivate( icoef_wp4_implicit )
 
   ! Covariance of w and cloud droplet concentration, < w'N_c' >
   integer, public :: &

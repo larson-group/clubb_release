@@ -147,11 +147,15 @@ module advance_xm_wpxp_module
         stats_zm, &
         irtm_matrix_condt_num, &  ! Variables
         ithlm_matrix_condt_num, &
-        irtm_sdmp, ithlm_sdmp, & 
-        l_stats_samp, &
+        irtm_sdmp, &
+        ithlm_sdmp, & 
         iC7_Skw_fnc, &
         iC6rt_Skw_fnc, &
         iC6thl_Skw_fnc, &
+        icoef_wp2rtp_implicit, &
+        iterm_wp2rtp_explicit, &
+        icoef_wp2thlp_implicit, &
+        iterm_wp2thlp_explicit, &
         l_stats_samp
 
     use sponge_layer_damping, only: &
@@ -440,6 +444,17 @@ module advance_xm_wpxp_module
          ! The code for the scalar variables will be set up later.
          coef_wp2sclrp_implicit = zero
          term_wp2sclrp_explicit = zero
+
+         if ( l_stats_samp ) then
+            call stat_update_var( icoef_wp2rtp_implicit, coef_wp2rtp_implicit, &
+                                  stats_zt )
+            call stat_update_var( iterm_wp2rtp_explicit, term_wp2rtp_explicit, &
+                                  stats_zt )
+            call stat_update_var( icoef_wp2thlp_implicit, &
+                                  coef_wp2thlp_implicit, stats_zt )
+            call stat_update_var( iterm_wp2thlp_explicit, &
+                                  term_wp2thlp_explicit, stats_zt )
+         endif
 
       endif ! iiPDF_type
 

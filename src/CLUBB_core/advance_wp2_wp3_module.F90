@@ -428,8 +428,9 @@ module advance_wp2_wp3_module
         clubb_fatal_error              ! Constants
 
     use model_flags, only:  & 
-        l_tke_aniso,  & ! Variable(s)
-        l_hole_fill,  &
+        l_tke_aniso,                  & ! Variable(s)
+        l_hole_fill,                  &
+        l_explicit_turbulent_adv_wp3, &
         l_gmres
 
     use clubb_precision, only:  & 
@@ -455,16 +456,18 @@ module advance_wp2_wp3_module
         implicit_coefs_terms    ! Variable Type
 
     use stats_type_utilities, only: & 
-        stat_begin_update,  & ! Procedure(s)
+        stat_begin_update, & ! Procedure(s)
+        stat_update_var, &
         stat_update_var_pt, &
-        stat_end_update,  &
+        stat_end_update, &
         stat_end_update_pt
 
     use stats_variables, only:  & 
-        stats_zm,         & ! Variable(s)
+        stats_zm, & ! Variable(s)
         stats_zt, & 
         stats_sfc, & 
-        l_stats_samp, & 
+        l_stats_samp, &
+        icoef_wp4_implicit, &
         iwp2_ta, & 
         iwp2_ma, & 
         iwp2_pd, & 
@@ -620,38 +623,49 @@ module advance_wp2_wp3_module
   !-----------------------------------------------------------------------
     !----- Begin Code -----
 
-    if ( iiPDF_type == iiPDF_new ) then
+    if ( .not. l_explicit_turbulent_adv_wp3 ) then
 
-       ! Unpack coef_wp4_implicit from new_pdf_implct_coefs_terms.
-       ! Since PDF parameters and the resulting implicit coefficients and
-       ! explicit terms are calculated on thermodynamic levels, the <w'^4>
-       ! implicit coefficient needs to be unpacked as coef_wp4_implicit_zt.
-       coef_wp4_implicit_zt = new_pdf_implct_coefs_terms%coef_wp4_implicit
+       if ( iiPDF_type == iiPDF_new ) then
 
-       ! The values of <w'^4> are located on momentum levels.  Interpolate
-       ! coef_wp4_implicit_zt to momentum levels as coef_wp4_implicit.  The
-       ! discretization diagram is found in the description section of function
-       ! wp3_term_ta_new_pdf_lhs below.  These values are always positive.
-       coef_wp4_implicit = max( zt2zm( coef_wp4_implicit_zt ), zero_threshold )
+          ! Unpack coef_wp4_implicit from new_pdf_implct_coefs_terms.
+          ! Since PDF parameters and the resulting implicit coefficients and
+          ! explicit terms are calculated on thermodynamic levels, the <w'^4>
+          ! implicit coefficient needs to be unpacked as coef_wp4_implicit_zt.
+          coef_wp4_implicit_zt = new_pdf_implct_coefs_terms%coef_wp4_implicit
 
-       ! Set the value of coef_wp4_implicit to 0 at the lower boundary and at
-       ! the upper boundary.  This sets the value of <w'^4> to 0 at the lower
-       ! and upper boundaries.
-       coef_wp4_implicit(1) = zero
-       coef_wp4_implicit(gr%nz) = zero
+          ! The values of <w'^4> are located on momentum levels.  Interpolate
+          ! coef_wp4_implicit_zt to momentum levels as coef_wp4_implicit.  The
+          ! discretization diagram is found in the description section of
+          ! function wp3_term_ta_new_pdf_lhs below.  These values are always
+          ! positive.
+          coef_wp4_implicit = max( zt2zm( coef_wp4_implicit_zt ), &
+                                   zero_threshold )
 
-    elseif ( iiPDF_type == iiPDF_ADG1 ) then
+          ! Set the value of coef_wp4_implicit to 0 at the lower boundary and at
+          ! the upper boundary.  This sets the value of <w'^4> to 0 at the lower
+          ! and upper boundaries.
+          coef_wp4_implicit(1) = zero
+          coef_wp4_implicit(gr%nz) = zero
 
-       ! Define a_1 and a_3 (both are located on momentum levels).
-       ! They are variables that are both functions of sigma_sqd_w (where
-       ! sigma_sqd_w is located on momentum levels).
-       a1 = one / ( one - sigma_sqd_w )
+          if ( l_stats_samp ) then
+             call stat_update_var( icoef_wp4_implicit, coef_wp4_implicit, &
+                                   stats_zm )
+          endif ! l_stats_samp
 
-       ! Interpolate a_1 from momentum levels to thermodynamic levels.  This
-       ! will be used for the w'^3 turbulent advection (ta) term.
-       a1_zt  = max( zm2zt( a1 ), zero_threshold )  ! Positive definite quantity
+       elseif ( iiPDF_type == iiPDF_ADG1 ) then
 
-    endif ! iiPDF_type
+          ! Define a_1 and a_3 (both are located on momentum levels).
+          ! They are variables that are both functions of sigma_sqd_w (where
+          ! sigma_sqd_w is located on momentum levels).
+          a1 = one / ( one - sigma_sqd_w )
+
+          ! Interpolate a_1 from momentum levels to thermodynamic levels.  This
+          ! will be used for the w'^3 turbulent advection (ta) term.
+          a1_zt = max( zm2zt( a1 ), zero_threshold )  ! Positive def. quantity
+
+       endif ! iiPDF_type
+
+    endif ! .not. l_explicit_turbulent_adv_wp3
 
     ! Compute the explicit portion of the w'^2 and w'^3 equations.
     ! Build the right-hand side vector.

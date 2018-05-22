@@ -93,7 +93,8 @@ module advance_xp2_xpyp_module
 
     use model_flags, only: & 
         l_hole_fill, &    ! logical constants
-        l_single_C2_Skw
+        l_single_C2_Skw, &
+        l_explicit_turbulent_adv_xpyp
 
     use parameters_tunable, only: &
         C2rt,     & ! Variable(s)
@@ -143,19 +144,25 @@ module advance_xp2_xpyp_module
       
     use stats_type_utilities, only: &
         stat_begin_update, & ! Procedure(s)
-        stat_end_update, &
-        stat_modify
+        stat_end_update,   &
+        stat_modify,       &
+        stat_update_var
 
     use error_code, only: &
         clubb_at_least_debug_level,  & ! Procedure
         err_code,                    & ! Error Indicator
         clubb_fatal_error              ! Constants
 
-    use stats_variables, only: & 
-        stats_zm,     & ! Variable(s)
-        irtp2_cl,     &
-        iup2_sdmp,    &
-        ivp2_sdmp,    &
+    use stats_variables, only: &
+        stats_zm,                 & ! Variable(s)
+        stats_zt,                 &
+        icoef_wprtp2_implicit,    &
+        icoef_wpthlp2_implicit,   &
+        icoef_wprtpthlp_implicit, &
+        iterm_wprtpthlp_explicit, &
+        irtp2_cl,                 &
+        iup2_sdmp,                &
+        ivp2_sdmp,                &
         l_stats_samp
 
     use array_index, only: &
@@ -360,7 +367,8 @@ module advance_xp2_xpyp_module
     end if
 
 
-    if ( iiPDF_type == iiPDF_new ) then
+    if ( iiPDF_type == iiPDF_new &
+         .and. ( .not. l_explicit_turbulent_adv_xpyp ) ) then
 
        ! Unpack the variables coef_wprtp2_implicit, coef_wpthlp2_implicit,
        ! coef_wprtpthlp_implicit, and term_wprtpthlp_explicit from
@@ -391,7 +399,18 @@ module advance_xp2_xpyp_module
        coef_wpsclrpxp_implicit = zero
        term_wpsclrpxp_explicit = zero
 
-    endif ! iiPDF_type
+       if ( l_stats_samp ) then
+          call stat_update_var( icoef_wprtp2_implicit, coef_wprtp2_implicit, &
+                                stats_zt )
+          call stat_update_var( icoef_wpthlp2_implicit, coef_wpthlp2_implicit, &
+                                stats_zt )
+          call stat_update_var( icoef_wprtpthlp_implicit, &
+                                coef_wprtpthlp_implicit, stats_zt )
+          call stat_update_var( iterm_wprtpthlp_explicit, &
+                                term_wprtpthlp_explicit, stats_zt )
+       endif ! l_stats_samp
+
+    endif ! iiPDF_type == iiPDF_new and ( not l_explicit_turbulent_adv_xpyp )
 
     ! Define a_1 (located on momentum levels).
     ! It is a variable that is a function of sigma_sqd_w (where sigma_sqd_w is

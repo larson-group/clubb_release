@@ -107,6 +107,9 @@ module stats_zm_module
         ivp2_cl, & 
         ivp2_sf
 
+    use stats_variables, only: &
+        icoef_wp4_implicit
+
     use stats_variables, only: & 
         iwpNcp
 
@@ -2035,6 +2038,15 @@ module stats_zm_module
         call stat_assign( var_index=iC1_Skw_fnc, var_name="C1_Skw_fnc", &
              var_description="C_1 parameter with Sk_w applied [-]", var_units="-", &
              l_silhs=.false., grid_kind=stats_zm )
+        k = k + 1
+
+      case ( 'coef_wp4_implicit' )
+        icoef_wp4_implicit = k
+        call stat_assign( var_index=icoef_wp4_implicit, &
+                          var_name="coef_wp4_implicit", &
+                          var_description="wp4 = coef_wp4_implicit * wp2^2" &
+                                          // " (new PDF) [-]", &
+                          var_units="-", l_silhs=.false., grid_kind=stats_zm )
         k = k + 1
 
       case ( 'brunt_vaisala_freq_sqd' )
