@@ -1483,7 +1483,7 @@ module new_pdf
 
     ! Return Variable
     real ( kind = core_rknd ) :: &
-      coef_wpxp2_implicit  ! Coef.: <w'x'^2> = coef_wpxp2_implicit * <x'^2>  [-]
+      coef_wpxp2_implicit ! Coef.: <w'x'^2> = coef_wpxp2_implicit * <x'^2> [m/s]
 
     ! Local Variable
     real ( kind = core_rknd ) :: &

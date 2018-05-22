@@ -26,8 +26,8 @@ module new_pdf_main
 
     real ( kind = core_rknd ) :: &
       coef_wp4_implicit,     & ! <w'^4> = coef_wp4_implicit * <w'^2>^2       [-]
-      coef_wprtp2_implicit,  & ! <w'rt'^2> = coef_wprtp2_implicit * <rt'^2>  [-]
-      coef_wpthlp2_implicit    ! <w'thl'^2> = coef_wpthlp2_implicit*<thl'^2> [-]
+      coef_wprtp2_implicit,  & ! <w'rt'^2> = coef_wprtp2_implicit*<rt'^2>  [m/s]
+      coef_wpthlp2_implicit    ! <w'thl'^2>=coef_wpthlp2_implicit*<thl'^2> [m/s]
 
     ! <w'^2 rt'> = coef_wp2rtp_implicit * <w'rt'> + term_wp2rtp_explicit
     real ( kind = core_rknd ) :: &
@@ -204,8 +204,8 @@ module new_pdf_main
 
     real ( kind = core_rknd ) :: &
       coef_wp4_implicit,     & ! <w'^4> = coef_wp4_implicit * <w'^2>^2       [-]
-      coef_wprtp2_implicit,  & ! <w'rt'^2> = coef_wprtp2_implicit * <rt'^2>  [-]
-      coef_wpthlp2_implicit    ! <w'thl'^2> = coef_wpthlp2_implicit*<thl'^2> [-]
+      coef_wprtp2_implicit,  & ! <w'rt'^2> = coef_wprtp2_implicit*<rt'^2>  [m/s]
+      coef_wpthlp2_implicit    ! <w'thl'^2>=coef_wpthlp2_implicit*<thl'^2> [m/s]
 
     ! <w'^2 rt'> = coef_wp2rtp_implicit * <w'rt'> + term_wp2rtp_explicit
     real ( kind = core_rknd ) :: &
