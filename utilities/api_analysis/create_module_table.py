@@ -79,6 +79,7 @@ table += "th {"
 table += "background-color: lightgrey;"
 table += "}</style>"
 table += '<body><p>'
+table += 'Date: ' now.strftime("%Y-%m-%d")
 table += 'This table shows which modules in CLUBB_standalone, CLUBB_core, SAM, WRF, and CAM are "use"ing modules in CLUBB_core, with the exception of the clubb_api_module and silhs_api_module. This allows us to ensure that CLUBB is only being called by the host models through the APIs.</p><p>'
 table += 'The leftmost column of the table is every module in the CLUBB_core folder. The 5 rightmost columns are true if the corresponding module is used in the host model. The 3 rightmost columns (SAM, WRF, and CAM) should all be false, otherwise the API Commitment Bitten Test will fail. The table also has a "number of users" column which is the number of "true"s on that row. The table can be sorted by clicking on the headers, and this column allows a user to see which subroutines are used most or least often.</p>'
 table += '<table class="sortable"><tr><th>Module Name</th>'
