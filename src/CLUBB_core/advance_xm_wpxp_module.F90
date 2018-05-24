@@ -314,7 +314,9 @@ module advance_xm_wpxp_module
     !---------------------------------------------------------------------------
 
     ! ----- Begin Code -----
-    if ( l_clip_semi_implicit ) then
+    if ( l_clip_semi_implicit &
+         .or. ( ( iiPDF_type == iiPDF_new ) &
+                .and. ( .not. l_explicit_turbulent_adv_wpxp ) ) ) then
       nrhs = 1
     else
       nrhs = 2+sclr_dim
