@@ -1398,6 +1398,7 @@ module advance_clubb_core_module
       !   the scalar grid means (rtm, thlm, sclrm) and 
       !   scalar turbulent fluxes (wprtp, wpthlp, and wpsclrp) 
       !   by one time step. 
+      ! advance_xm_wpxp_bad_wp2 ! Test error comment, DO NOT modify or move
       call advance_xm_wpxp( dt, sigma_sqd_w, wm_zm, wm_zt, wp2,              & ! intent(in)
                             Lscale, wp3_on_wp2, wp3_on_wp2_zt, Kh_zt, Kh_zm, & ! intent(in)
                             tau_C6_zm, Skw_zm, wp2rtp, rtpthvp, rtm_forcing, & ! intent(in)
@@ -1491,7 +1492,8 @@ module advance_clubb_core_module
       ! Advance the 2nd- and 3rd-order moments 
       !   of vertical velocity (wp2, wp3) by one timestep.
       !----------------------------------------------------------------
-
+    
+      ! advance_wp2_wp3_bad_wp2 ! Test error comment, DO NOT modify or move
       call advance_wp2_wp3 &
            ( dt, sfc_elevation, sigma_sqd_w, wm_zm,              & ! intent(in)
              wm_zt, a3_coef, a3_coef_zt, wp3_on_wp2, wp4,        & ! intent(in)

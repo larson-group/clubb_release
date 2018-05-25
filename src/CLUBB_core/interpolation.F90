@@ -333,12 +333,6 @@ module interpolation
 
     ! Ensure variable is within range of array and array has more than 1 element
     if ( var < array(1) .or. var > array(n) .or. n < 2 ) then
-        
-        if ( clubb_at_least_debug_level( 1 ) ) then
-            write(fstderr,*) "Variable is outside grid level range or ", &
-                            "only one grid level in array in function binary_search."
-        end if
-        
         i = -1
         return
     end if
@@ -371,7 +365,7 @@ module interpolation
     enddo 
 
     ! Code should not get to this point, but return -1 to be safe
-    if ( clubb_at_least_debug_level( 1 ) ) then
+    if ( clubb_at_least_debug_level( 0 ) ) then
         write(fstderr,*) "Logic error in function binary_search."
     end if
 

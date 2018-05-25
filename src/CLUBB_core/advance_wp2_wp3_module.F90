@@ -302,7 +302,6 @@ module advance_wp2_wp3_module
 
     enddo
 
-
     ! Solve semi-implicitly
     call wp23_solve( dt, sfc_elevation, sigma_sqd_w, wm_zm, & ! Intent(in)
                      wm_zt, a3, a3_zt, wp3_on_wp2, wp4,     & ! Intent(in)
@@ -352,34 +351,34 @@ module advance_wp2_wp3_module
 
             write(fstderr,*) "Intent(in)"
 
-            write(fstderr,*) "gr%zt = ", gr%zt
-            write(fstderr,*) "dt = ", dt
-            write(fstderr,*) "sfc_elevation = ", sfc_elevation
-            write(fstderr,*) "sigma_sqd_w = ", sigma_sqd_w
-            write(fstderr,*) "wm_zm = ", wm_zm
-            write(fstderr,*) "wm_zt = ", wm_zt
-            write(fstderr,*) "wp4 = ", wp4
-            write(fstderr,*) "wpthvp = ", wpthvp
-            write(fstderr,*) "wp2thvp = ", wp2thvp
-            write(fstderr,*) "um = ", um
-            write(fstderr,*) "vm = ", vm
-            write(fstderr,*) "upwp = ", upwp
-            write(fstderr,*) "vpwp = ", vpwp
-            write(fstderr,*) "up2 = ", up2
-            write(fstderr,*) "vp2 = ", vp2
-            write(fstderr,*) "Kh_zm = ", Kh_zm
-            write(fstderr,*) "Kh_zt = ", Kh_zt
-            write(fstderr,*) "tau_zm = ", tau_zm
-            write(fstderr,*) "tau_zt = ", tau_zt
-            write(fstderr,*) "Skw_zm = ", Skw_zm
-            write(fstderr,*) "Skw_zt = ", Skw_zt
-            write(fstderr,*) "mixt_frac = ", mixt_frac
-            write(fstderr,*) "wp2zt = ", wp2_zt
+            write(fstderr,*) "gr%zt = ", gr%zt, new_line('c')
+            write(fstderr,*) "dt = ", dt, new_line('c')
+            write(fstderr,*) "sfc_elevation = ", sfc_elevation, new_line('c')
+            write(fstderr,*) "sigma_sqd_w = ", sigma_sqd_w, new_line('c')
+            write(fstderr,*) "wm_zm = ", wm_zm, new_line('c')
+            write(fstderr,*) "wm_zt = ", wm_zt, new_line('c')
+            write(fstderr,*) "wp4 = ", wp4, new_line('c')
+            write(fstderr,*) "wpthvp = ", wpthvp, new_line('c')
+            write(fstderr,*) "wp2thvp = ", wp2thvp, new_line('c')
+            write(fstderr,*) "um = ", um, new_line('c')
+            write(fstderr,*) "vm = ", vm, new_line('c')
+            write(fstderr,*) "upwp = ", upwp, new_line('c')
+            write(fstderr,*) "vpwp = ", vpwp, new_line('c')
+            write(fstderr,*) "up2 = ", up2, new_line('c')
+            write(fstderr,*) "vp2 = ", vp2, new_line('c')
+            write(fstderr,*) "Kh_zm = ", Kh_zm, new_line('c')
+            write(fstderr,*) "Kh_zt = ", Kh_zt, new_line('c')
+            write(fstderr,*) "tau_zm = ", tau_zm, new_line('c')
+            write(fstderr,*) "tau_zt = ", tau_zt, new_line('c')
+            write(fstderr,*) "Skw_zm = ", Skw_zm, new_line('c')
+            write(fstderr,*) "Skw_zt = ", Skw_zt, new_line('c')
+            write(fstderr,*) "mixt_frac = ", mixt_frac, new_line('c')
+            write(fstderr,*) "wp2zt = ", wp2_zt, new_line('c')
 
             write(fstderr,*) "Intent(in/out)"
 
-            write(fstderr,*) "wp2 = ", wp2
-            write(fstderr,*) "wp3 = ", wp3
+            write(fstderr,*) "wp2 = ", wp2, new_line('c')
+            write(fstderr,*) "wp3 = ", wp3, new_line('c')
 
         end if ! fatal error
     end if

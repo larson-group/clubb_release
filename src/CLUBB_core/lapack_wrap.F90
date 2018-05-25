@@ -496,9 +496,11 @@ module lapack_wrap
     select case( info )
 
     case( :-1 )
-      write(fstderr,*) "in band_solvex for ", trim( solve_type ), &
-        ": illegal value for argument", -info
-      err_code = clubb_fatal_error
+        write(fstderr,*) "in band_solvex for ", trim( solve_type ), &
+            ": illegal value for argument", -info
+        write(fstderr,*) "lhs = ", lhs, new_line('c')
+        write(fstderr,*) "rhs = ", rhs, new_line('c')
+        err_code = clubb_fatal_error
 
     case( 0 )
       ! Success!
@@ -508,6 +510,7 @@ module lapack_wrap
 
     case( 1: )
       if ( info == ndim+1 ) then
+
         write(fstderr,*) trim( solve_type )// & 
           " Warning: matrix singular to working precision."
         write(fstderr,'(a,e12.5)')  & 
@@ -515,7 +518,9 @@ module lapack_wrap
           " condition number: ", rcond
       else
         write(fstderr,*) "in band_solvex for", trim( solve_type ), &
-          ": singular matrix, solution not computed"
+          ": singular matrix, solution not computed"    
+        write(fstderr,*) "lhs = ", lhs, new_line('c')
+        write(fstderr,*) "rhs = ", rhs, new_line('c')
         err_code = clubb_fatal_error
       end if
 
@@ -663,21 +668,25 @@ module lapack_wrap
     select case( info )
 
     case( :-1 )
-      write(fstderr,*) "in band_solve for ", trim( solve_type ), &
-        ": illegal value for argument", -info
-      err_code = clubb_fatal_error
+          write(fstderr,*) "in band_solve for ", trim( solve_type ), &
+            ": illegal value for argument", -info
+          write(fstderr,*) "lhs = ", lhs, new_line('c')
+          write(fstderr,*) "rhs = ", rhs, new_line('c')
+          err_code = clubb_fatal_error
     case( 0 )
-      ! Success!
-      if ( lapack_isnan( ndim, nrhs, rhs ) ) then
-        err_code = clubb_fatal_error 
-      end if
+          ! Success!
+          if ( lapack_isnan( ndim, nrhs, rhs ) ) then
+            err_code = clubb_fatal_error 
+          end if
 
-      solution = rhs
+          solution = rhs
 
     case( 1: )
-      write(fstderr,*) "in band_solve for ", trim( solve_type ), &
+        write(fstderr,*) "in band_solve for ", trim( solve_type ), &
                        ": singular matrix, solution not computed"
-      err_code = clubb_fatal_error
+        write(fstderr,*) "lhs = ", lhs, new_line('c')
+        write(fstderr,*) "rhs = ", rhs, new_line('c')
+        err_code = clubb_fatal_error
     end select
 
     return

@@ -2072,6 +2072,14 @@ module advance_xm_wpxp_module
     use clubb_precision, only: &
       core_rknd ! Variable(s)
 
+    use constants_clubb, only: &
+      fstderr     ! Constant(s)
+    
+    use error_code, only: &
+      clubb_at_least_debug_level,     & ! Procedure
+      err_code,                       & ! Error indicator
+      clubb_no_error                    ! Constant
+
     implicit none
 
     ! Input Variables
@@ -2102,6 +2110,12 @@ module advance_xm_wpxp_module
                        lhs, rhs, solution )
     end if
 
+    if ( clubb_at_least_debug_level( 0 ) ) then
+        if ( err_code /= clubb_no_error ) then
+            write(fstderr,*) "in xm_wpxp_solve"
+            return
+        end if
+    end if
 
     return
   end subroutine xm_wpxp_solve
