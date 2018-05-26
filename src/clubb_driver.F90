@@ -4062,7 +4062,7 @@ module clubb_driver
 
 #endif
 
-    case ( "fire", "generic", "failure_test" )  ! Generic setup, and GCSS FIRE
+    case ( "fire", "generic" )  ! Generic setup, and GCSS FIRE
       l_compute_momentum_flux = .true.
       l_set_sclr_sfc_rtm_thlm = .true.
       l_fixed_flux            = .true.

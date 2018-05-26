@@ -734,9 +734,68 @@ module advance_xm_wpxp_module
 
       if ( clubb_at_least_debug_level( 0 ) ) then
         if ( err_code == clubb_fatal_error ) then
-              write(fstderr,*) "xm_wpxp matrix LU decomp. failed"
-              return
+
+          write(fstderr,*) "xm_wpxp matrix LU decomp. failed"
+          write(fstderr,*) "Error in advance_xm_wpxp"
+
+          write(fstderr,*) "Intent(in)"
+
+          write(fstderr,*) "dt = ", dt, new_line('c')
+          write(fstderr,*) "sigma_sqd_w = ", sigma_sqd_w, new_line('c')
+          write(fstderr,*) "wm_zm = ", wm_zm, new_line('c')
+          write(fstderr,*) "wm_zt = ", wm_zt, new_line('c')
+          write(fstderr,*) "wp2 = ", wp2, new_line('c')
+          write(fstderr,*) "wp3_on_wp2 = ", wp3_on_wp2, new_line('c')
+          write(fstderr,*) "wp3_on_wp2_zt = ", wp3_on_wp2_zt, new_line('c')
+          write(fstderr,*) "Kh_zt = ", Kh_zt, new_line('c')
+          write(fstderr,*) "tau_C6_zm = ", tau_C6_zm, new_line('c')
+          write(fstderr,*) "Skw_zm = ", Skw_zm, new_line('c')
+          write(fstderr,*) "wp2rtp = ", wp2rtp, new_line('c')
+          write(fstderr,*) "rtpthvp = ", rtpthvp, new_line('c')
+          write(fstderr,*) "rtm_forcing = ", rtm_forcing, new_line('c')
+          write(fstderr,*) "wprtp_forcing = ", wprtp_forcing, new_line('c')
+          write(fstderr,*) "rtm_ref = ", rtm_ref, new_line('c')
+          write(fstderr,*) "wp2thlp = ", wp2thlp, new_line('c')
+          write(fstderr,*) "thlpthvp = ", thlpthvp, new_line('c')
+          write(fstderr,*) "thlm_forcing = ", thlm_forcing, new_line('c')
+          write(fstderr,*) "wpthlp_forcing = ", wpthlp_forcing, new_line('c')
+          write(fstderr,*) "thlm_ref = ", thlm_ref, new_line('c')
+          write(fstderr,*) "rho_ds_zm = ", rho_ds_zm, new_line('c')
+          write(fstderr,*) "rho_ds_zt = ", rho_ds_zt, new_line('c')
+          write(fstderr,*) "invrs_rho_ds_zm = ", invrs_rho_ds_zm, new_line('c')
+          write(fstderr,*) "invrs_rho_ds_zt = ", invrs_rho_ds_zt, new_line('c')
+          write(fstderr,*) "thv_ds_zm = ", thv_ds_zm, new_line('c')
+          write(fstderr,*) "rtp2 = ", rtp2, new_line('c')
+          write(fstderr,*) "thlp2 = ", thlp2, new_line('c')
+          write(fstderr,*) "w_1_zm = ", w_1_zm, new_line('c')
+          write(fstderr,*) "w_2_zm = ", w_2_zm, new_line('c')
+          write(fstderr,*) "varnce_w_1_zm = ", varnce_w_1_zm, new_line('c')
+          write(fstderr,*) "varnce_w_2_zm = ", varnce_w_2_zm, new_line('c')
+          write(fstderr,*) "mixt_frac_zm = ", mixt_frac_zm, new_line('c')
+          write(fstderr,*) "l_implemented = ", l_implemented, new_line('c')
+     
+          if ( sclr_dim > 0 )  then
+            write(fstderr,*) "sclrp2 = ", sclrp2, new_line('c')
+            write(fstderr,*) "wp2sclrp = ", wp2sclrp, new_line('c')
+            write(fstderr,*) "sclrpthvp = ", sclrpthvp, new_line('c')
+            write(fstderr,*) "sclrm_forcing = ", sclrm_forcing, new_line('c')
           end if
+        
+          write(fstderr,*) "Intent(inout)"
+     
+          write(fstderr,*) "rtm = ", rtm, new_line('c')
+          write(fstderr,*) "wprtp = ", wprtp, new_line('c')
+          write(fstderr,*) "thlm = ", thlm, new_line('c')
+          write(fstderr,*) "wpthlp =", wpthlp, new_line('c')
+
+          if ( sclr_dim > 0 )  then
+            write(fstderr,*) "sclrm = ", sclrm, new_line('c')
+            write(fstderr,*) "wpsclrp = ", wpsclrp, new_line('c')
+          end if
+
+          return
+
+        end if ! Fatal error and debug_level >= 1
       end if
 
       call xm_wpxp_clipping_and_stats &
@@ -803,69 +862,6 @@ module advance_xm_wpxp_module
 
     ! De-allocate memory
     deallocate( rhs, solution )
-
-    if ( clubb_at_least_debug_level( 0 ) ) then
-        if ( err_code == clubb_fatal_error ) then
-
-          write(fstderr,*) "Error in advance_xm_wpxp"
-
-          write(fstderr,*) "Intent(in)"
-
-          write(fstderr,*) "dt = ", dt
-          write(fstderr,*) "sigma_sqd_w = ", sigma_sqd_w
-          write(fstderr,*) "wm_zm = ", wm_zm
-          write(fstderr,*) "wm_zt = ", wm_zt
-          write(fstderr,*) "wp2 = ", wp2
-          write(fstderr,*) "wp3_on_wp2 = ", wp3_on_wp2
-          write(fstderr,*) "wp3_on_wp2_zt = ", wp3_on_wp2_zt
-          write(fstderr,*) "Kh_zt = ", Kh_zt
-          write(fstderr,*) "tau_C6_zm = ", tau_C6_zm
-          write(fstderr,*) "Skw_zm = ", Skw_zm
-          write(fstderr,*) "wp2rtp = ", wp2rtp
-          write(fstderr,*) "rtpthvp = ", rtpthvp
-          write(fstderr,*) "rtm_forcing = ", rtm_forcing
-          write(fstderr,*) "wprtp_forcing = ", wprtp_forcing
-          write(fstderr,*) "rtm_ref = ", rtm_ref
-          write(fstderr,*) "wp2thlp = ", wp2thlp
-          write(fstderr,*) "thlpthvp = ", thlpthvp
-          write(fstderr,*) "thlm_forcing = ", thlm_forcing
-          write(fstderr,*) "wpthlp_forcing = ", wpthlp_forcing
-          write(fstderr,*) "thlm_ref = ", thlm_ref
-          write(fstderr,*) "rho_ds_zm = ", rho_ds_zm
-          write(fstderr,*) "rho_ds_zt = ", rho_ds_zt
-          write(fstderr,*) "invrs_rho_ds_zm = ", invrs_rho_ds_zm
-          write(fstderr,*) "invrs_rho_ds_zt = ", invrs_rho_ds_zt
-          write(fstderr,*) "thv_ds_zm = ", thv_ds_zm
-          write(fstderr,*) "rtp2 = ", rtp2
-          write(fstderr,*) "thlp2 = ", thlp2
-          write(fstderr,*) "w_1_zm = ", w_1_zm
-          write(fstderr,*) "w_2_zm = ", w_2_zm
-          write(fstderr,*) "varnce_w_1_zm = ", varnce_w_1_zm
-          write(fstderr,*) "varnce_w_2_zm = ", varnce_w_2_zm
-          write(fstderr,*) "mixt_frac_zm = ", mixt_frac_zm
-          write(fstderr,*) "l_implemented = ", l_implemented
-     
-          if ( sclr_dim > 0 )  then
-            write(fstderr,*) "sclrp2 = ", sclrp2
-            write(fstderr,*) "wp2sclrp = ", wp2sclrp
-            write(fstderr,*) "sclrpthvp = ", sclrpthvp
-            write(fstderr,*) "sclrm_forcing = ", sclrm_forcing
-          end if
-        
-          write(fstderr,*) "Intent(inout)"
-     
-          write(fstderr,*) "rtm = ", rtm
-          write(fstderr,*) "wprtp = ", wprtp
-          write(fstderr,*) "thlm = ", thlm
-          write(fstderr,*) "wpthlp =", wpthlp
-
-          if ( sclr_dim > 0 )  then
-            write(fstderr,*) "sclrm = ", sclrm
-            write(fstderr,*) "wpsclrp = ", wpsclrp
-          end if
-
-        end if ! Fatal error and debug_level >= 1
-    end if
 
     if ( rtm_sponge_damp_settings%l_sponge_damping ) then
 
