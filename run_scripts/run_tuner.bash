@@ -60,6 +60,7 @@ if [ $RUN_TYPE = 'single' ] ; then # Single Case.
    # Select a run, comment out the rest.
    # The selected case will be used in the nightly tuning run
    # RUN_CASE=arm
+   # RUN_CASE=arm_97
    # RUN_CASE=atex
    # RUN_CASE=bomex
    # RUN_CASE=cgils_s6
