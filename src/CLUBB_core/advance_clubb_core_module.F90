@@ -783,7 +783,7 @@ module advance_clubb_core_module
              thv_ds_zm, thv_ds_zt, wpthlp_sfc, wprtp_sfc, upwp_sfc,             & ! intent(in)
              vpwp_sfc, um, upwp, vm, vpwp, up2, vp2,                            & ! intent(in)
              rtm, wprtp, thlm, wpthlp, wp2, wp3,                                & ! intent(in)
-             rtp2, thlp2, rtpthlp,                                              & ! intent(in)
+             rtp2, thlp2, rtpthlp, rcm,                                         & ! intent(in)
              "beginning of ",                                                   & ! intent(in)
              wpsclrp_sfc, wpedsclrp_sfc, sclrm, wpsclrp, sclrp2,                & ! intent(in)
              sclrprtp, sclrpthlp, sclrm_forcing, edsclrm, edsclrm_forcing )       ! intent(in)
@@ -1774,7 +1774,7 @@ module advance_clubb_core_module
              cloud_cover, rcm_supersat_adj, sigma_sqd_w,            & ! intent(in)
              pdf_params, pdf_params_zm, sclrm, sclrp2,              & ! intent(in)
              sclrprtp, sclrpthlp, sclrm_forcing, sclrpthvp,         & ! intent(in)
-             wpsclrp, edsclrm, edsclrm_forcing                  )     ! intent(in)
+             wpsclrp, edsclrm, edsclrm_forcing                      ) ! intent(in)
 
 
       if ( clubb_at_least_debug_level( 2 ) ) then
@@ -1786,10 +1786,10 @@ module advance_clubb_core_module
              thv_ds_zm, thv_ds_zt, wpthlp_sfc, wprtp_sfc, upwp_sfc,             & ! intent(in)
              vpwp_sfc, um, upwp, vm, vpwp, up2, vp2,                            & ! intent(in)
              rtm, wprtp, thlm, wpthlp, wp2, wp3,                                & ! intent(in)
-             rtp2, thlp2, rtpthlp,                                              & ! intent(in)
+             rtp2, thlp2, rtpthlp, rcm,                                         & ! intent(in)
             "end of ",                                                          & ! intent(in)
              wpsclrp_sfc, wpedsclrp_sfc, sclrm, wpsclrp, sclrp2,                & ! intent(in)
-             sclrprtp, sclrpthlp, sclrm_forcing, edsclrm, edsclrm_forcing )       ! intent(in)
+             sclrprtp, sclrpthlp, sclrm_forcing, edsclrm, edsclrm_forcing       ) ! intent(in)
 
         if ( clubb_at_least_debug_level( 0 ) ) then
           if ( err_code == clubb_fatal_error ) return

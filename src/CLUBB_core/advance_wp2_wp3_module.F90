@@ -347,7 +347,7 @@ module advance_wp2_wp3_module
     if ( clubb_at_least_debug_level( 0 ) ) then
         if ( err_code == clubb_fatal_error ) then  
 
-            write(fstderr,*) "Errors in advance_wp2_wp3"
+            write(fstderr,*) "Error in advance_wp2_wp3"
 
             write(fstderr,*) "Intent(in)"
 
@@ -373,10 +373,25 @@ module advance_wp2_wp3_module
             write(fstderr,*) "Skw_zm = ", Skw_zm, new_line('c')
             write(fstderr,*) "Skw_zt = ", Skw_zt, new_line('c')
             write(fstderr,*) "mixt_frac = ", mixt_frac, new_line('c')
-            write(fstderr,*) "wp2zt = ", wp2_zt, new_line('c')
+            write(fstderr,*) "a3 = ", a3, new_line('c')
+            write(fstderr,*) "a3_zt = ", a3_zt, new_line('c')
+            write(fstderr,*) "wp3_on_wp2 = ", wp3_on_wp2, new_line('c')
+            write(fstderr,*) "tau_C1_zm = ", tau_C1_zm, new_line('c')
+            write(fstderr,*) "rho_ds_zm = ", rho_ds_zm, new_line('c')
+            write(fstderr,*) "rho_ds_zt = ", rho_ds_zt, new_line('c')
+            write(fstderr,*) "invrs_rho_ds_zm = ", invrs_rho_ds_zm, new_line('c')
+            write(fstderr,*) "invrs_rho_ds_zt = ", invrs_rho_ds_zt, new_line('c')
+            write(fstderr,*) "radf = ", radf, new_line('c')
+            write(fstderr,*) "thv_ds_zm = ", thv_ds_zm, new_line('c')
+            write(fstderr,*) "thv_ds_zt = ", thv_ds_zt, new_line('c')
+            write(fstderr,*) "Cx_fnc_Richardson = ", Cx_fnc_Richardson, new_line('c')
+            write(fstderr,*) "new_pdf_implct_coefs_terms = ", new_pdf_implct_coefs_terms
+            write(fstderr,*) new_line('c')
 
             write(fstderr,*) "Intent(in/out)"
 
+            write(fstderr,*) "wp2_zt = ", wp2_zt, new_line('c')
+            write(fstderr,*) "wp3_zm = ", wp3_zm, new_line('c')
             write(fstderr,*) "wp2 = ", wp2, new_line('c')
             write(fstderr,*) "wp3 = ", wp3, new_line('c')
 

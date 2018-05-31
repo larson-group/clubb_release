@@ -740,6 +740,7 @@ module advance_xm_wpxp_module
 
           write(fstderr,*) "Intent(in)"
 
+          write(fstderr,*) "gr%zt = ", gr%zt, new_line('c')
           write(fstderr,*) "dt = ", dt, new_line('c')
           write(fstderr,*) "sigma_sqd_w = ", sigma_sqd_w, new_line('c')
           write(fstderr,*) "wm_zm = ", wm_zm, new_line('c')
@@ -773,6 +774,16 @@ module advance_xm_wpxp_module
           write(fstderr,*) "varnce_w_2_zm = ", varnce_w_2_zm, new_line('c')
           write(fstderr,*) "mixt_frac_zm = ", mixt_frac_zm, new_line('c')
           write(fstderr,*) "l_implemented = ", l_implemented, new_line('c')
+          write(fstderr,*) "Lscale = ", Lscale, new_line('c')
+          write(fstderr,*) "Kh_zm = ", Kh_zm, new_line('c')
+          write(fstderr,*) "em = ", em, new_line('c')
+          write(fstderr,*) "exner = ", exner, new_line('c')
+          write(fstderr,*) "rcm = ", rcm, new_line('c')
+          write(fstderr,*) "p_in_Pa = ", p_in_Pa, new_line('c')
+          write(fstderr,*) "thvm = ", thvm, new_line('c')
+          write(fstderr,*) "Cx_fnc_Richardson = ", Cx_fnc_Richardson, new_line('c')
+          write(fstderr,*) "new_pdf_implct_coefs_terms = ", new_pdf_implct_coefs_terms
+          write(fstderr,*) new_line('c')
      
           if ( sclr_dim > 0 )  then
             write(fstderr,*) "sclrp2 = ", sclrp2, new_line('c')

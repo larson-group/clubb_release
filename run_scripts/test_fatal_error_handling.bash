@@ -19,10 +19,13 @@
 #                           testVariable[1]="wp2"
 #
 #       This results in "! advance_wp2_wp3_bad_wp2" in the code being replaced
-#       with a line that sets "wp2" to NaN, then the error messages clubb
-#       produces are saved in a file named "advance_wp2_wp3_bad_wp2"
+#       with a line that sets "wp2" to NaN, then the error messages that clubb
+#       produces are saved in a file named "advance_wp2_wp3_bad_wp2" in run_scripts
 #
 #   Notes:
+#           THIS SCRIPT NEEDS TO BE RUN FROM WITHIN 'run_scripts' OR MODIFIED TO
+#           WORK IN A DIFFERENT DIRECTORY
+#
 #       To add error tests, simply add the lines that are explained in the example
 #       above, changing the test name to something unique andthe variable to the one
 #       that will be tested. Remeber to change the index as well. 

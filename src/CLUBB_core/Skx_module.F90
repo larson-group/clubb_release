@@ -93,9 +93,6 @@ module Skx_module
         one,          &
         w_tol_sqd
 
-    use parameters_tunable, only: &
-        Skw_denom_coef    ! Variable(s)
-
     use clubb_precision, only: &
         core_rknd ! Variable(s)
 
