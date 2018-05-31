@@ -713,7 +713,7 @@ module stats_clubb_utilities
 
     allocate( stats_zt%accum_field_values( stats_zt%ii, stats_zt%jj, &
       stats_zt%kk, stats_zt%num_output_fields ) )
-    allocate( stats_zt %accum_num_samples( stats_zt%ii, stats_zt%jj, &
+    allocate( stats_zt%accum_num_samples( stats_zt%ii, stats_zt%jj, &
       stats_zt%kk, stats_zt%num_output_fields ) )
     allocate( stats_zt%l_in_update( stats_zt%ii, stats_zt%jj, stats_zt%kk, &
       stats_zt%num_output_fields ) )
@@ -856,7 +856,7 @@ module stats_clubb_utilities
         stats_lh_zt%num_output_fields ) )
       call stats_zero( stats_lh_zt%ii, stats_lh_zt%jj, stats_lh_zt%kk, &
         stats_lh_zt%num_output_fields, &
-        stats_lh_zt%accum_field_values, stats_lh_zt %accum_num_samples, stats_lh_zt%l_in_update )
+        stats_lh_zt%accum_field_values, stats_lh_zt%accum_num_samples, stats_lh_zt%l_in_update )
 
       allocate( stats_lh_zt%file%var( stats_lh_zt%num_output_fields ) )
       allocate( stats_lh_zt%file%z( stats_lh_zt%kk ) )
@@ -918,14 +918,14 @@ module stats_clubb_utilities
 
       allocate( stats_lh_sfc%accum_field_values( stats_lh_sfc%ii, stats_lh_sfc%jj, &
         stats_lh_sfc%kk, stats_lh_sfc%num_output_fields ) )
-      allocate( stats_lh_sfc %accum_num_samples( stats_lh_sfc%ii, stats_lh_sfc%jj, &
+      allocate( stats_lh_sfc%accum_num_samples( stats_lh_sfc%ii, stats_lh_sfc%jj, &
         stats_lh_sfc%kk, stats_lh_sfc%num_output_fields ) )
       allocate( stats_lh_sfc%l_in_update( stats_lh_sfc%ii, stats_lh_sfc%jj, &
         stats_lh_sfc%kk, stats_lh_sfc%num_output_fields ) )
 
       call stats_zero( stats_lh_sfc%ii, stats_lh_sfc%jj, stats_lh_sfc%kk, &
           stats_lh_sfc%num_output_fields, stats_lh_sfc%accum_field_values, &
-          stats_lh_sfc %accum_num_samples, stats_lh_sfc%l_in_update )
+          stats_lh_sfc%accum_num_samples, stats_lh_sfc%l_in_update )
 
       allocate( stats_lh_sfc%file%var( stats_lh_sfc%num_output_fields ) )
       allocate( stats_lh_sfc%file%z( stats_lh_sfc%kk ) )
@@ -1140,13 +1140,13 @@ module stats_clubb_utilities
 
     allocate( stats_zm%accum_field_values( stats_zm%ii, stats_zm%jj, &
       stats_zm%kk, stats_zm%num_output_fields ) )
-    allocate( stats_zm %accum_num_samples( stats_zm%ii, stats_zm%jj, &
+    allocate( stats_zm%accum_num_samples( stats_zm%ii, stats_zm%jj, &
       stats_zm%kk, stats_zm%num_output_fields ) )
     allocate( stats_zm%l_in_update( stats_zm%ii, stats_zm%jj, stats_zm%kk, &
       stats_zm%num_output_fields ) )
 
     call stats_zero( stats_zm%ii, stats_zm%jj, stats_zm%kk, stats_zm%num_output_fields, &
-      stats_zm%accum_field_values, stats_zm %accum_num_samples, stats_zm%l_in_update )
+      stats_zm%accum_field_values, stats_zm%accum_num_samples, stats_zm%l_in_update )
 
     allocate( stats_zm%file%var( stats_zm%num_output_fields ) )
     allocate( stats_zm%file%z( stats_zm%kk ) )
@@ -2927,10 +2927,8 @@ module stats_clubb_utilities
         deallocate( stats_zt%z )
 
         deallocate( stats_zt%accum_field_values )
-
         deallocate( stats_zt%accum_num_samples )
         deallocate( stats_zt%l_in_update )
-
 
         deallocate( stats_zt%file%var )
         deallocate( stats_zt%file%z )
@@ -2971,10 +2969,8 @@ module stats_clubb_utilities
         deallocate( stats_lh_zt%z )
 
         deallocate( stats_lh_zt%accum_field_values )
-
         deallocate( stats_lh_zt%accum_num_samples )
         deallocate( stats_lh_zt%l_in_update )
-
 
         deallocate( stats_lh_zt%file%var )
         deallocate( stats_lh_zt%file%z )
@@ -2991,10 +2987,8 @@ module stats_clubb_utilities
         deallocate( stats_lh_sfc%z )
 
         deallocate( stats_lh_sfc%accum_field_values )
-
         deallocate( stats_lh_sfc%accum_num_samples )
         deallocate( stats_lh_sfc%l_in_update )
-
 
         deallocate( stats_lh_sfc%file%var )
         deallocate( stats_lh_sfc%file%z )
@@ -3014,6 +3008,7 @@ module stats_clubb_utilities
 
         deallocate( stats_zm%accum_field_values )
         deallocate( stats_zm%accum_num_samples )
+        deallocate( stats_zm%l_in_update )
 
         deallocate( stats_zm%file%var )
         deallocate( stats_zm%file%z )
@@ -3025,7 +3020,6 @@ module stats_clubb_utilities
         if ( allocated( stats_zm%file%rlon ) ) then
           deallocate( stats_zm%file%rlon )
         end if
-        deallocate( stats_zm%l_in_update )
 
         deallocate ( zmscr01 )
         deallocate ( zmscr02 )
@@ -3053,6 +3047,7 @@ module stats_clubb_utilities
 
           deallocate( stats_rad_zt%accum_field_values )
           deallocate( stats_rad_zt%accum_num_samples )
+          deallocate( stats_rad_zt%l_in_update )
 
           deallocate( stats_rad_zt%file%var )
           deallocate( stats_rad_zt%file%z )
@@ -3064,17 +3059,25 @@ module stats_clubb_utilities
           if ( allocated( stats_rad_zt%file%rlon ) ) then
             deallocate( stats_rad_zt%file%rlon )
           end if
-          deallocate( stats_rad_zt%l_in_update )
 
           ! De-allocate all stats_rad_zm variables
           deallocate( stats_rad_zm%z )
 
           deallocate( stats_rad_zm%accum_field_values )
           deallocate( stats_rad_zm%accum_num_samples )
+          deallocate( stats_rad_zm%l_in_update )
 
           deallocate( stats_rad_zm%file%var )
           deallocate( stats_rad_zm%file%z )
-          deallocate( stats_rad_zm%l_in_update )
+
+          ! Check if pointer is allocated to prevent crash in netcdf (ticket 765)
+          if ( allocated( stats_rad_zm%file%rlat ) ) then
+            deallocate( stats_rad_zm%file%rlat )
+          end if
+          if ( allocated( stats_rad_zm%file%rlon ) ) then
+            deallocate( stats_rad_zm%file%rlon )
+          end if
+
         end if
 
       end if ! l_output_rad_files
@@ -3084,7 +3087,7 @@ module stats_clubb_utilities
         deallocate( stats_sfc%z )
 
         deallocate( stats_sfc%accum_field_values )
-        deallocate( stats_sfc %accum_num_samples )
+        deallocate( stats_sfc%accum_num_samples )
         deallocate( stats_sfc%l_in_update )
 
         deallocate( stats_sfc%file%var )
@@ -3219,8 +3222,8 @@ subroutine stats_check_num_samples( stats_grid, l_error )
   do ivar = 1, stats_grid%num_output_fields
     do kvar = 1, stats_grid%kk
 
-      l_proper_sample = ( stats_grid %accum_num_samples(1,1,kvar,ivar) == 0 .or. &
-                          stats_grid %accum_num_samples(1,1,kvar,ivar) == &
+      l_proper_sample = ( stats_grid%accum_num_samples(1,1,kvar,ivar) == 0 .or. &
+                          stats_grid%accum_num_samples(1,1,kvar,ivar) == &
                             floor(stats_tout/stats_tsamp) )
 
       if ( .not. l_proper_sample ) then
@@ -3231,8 +3234,8 @@ subroutine stats_check_num_samples( stats_grid, l_error )
           write(fstderr,*) 'Possible sampling error for variable ',  &
                            trim(stats_grid%file%var(ivar)%name), ' in stats_grid ',  &
                            'at k = ', kvar,  &
-                           '; stats_grid %accum_num_samples(',kvar,',',ivar,') = ', &
-                            stats_grid %accum_num_samples(1,1,kvar,ivar)
+                           '; stats_grid%accum_num_samples(',kvar,',',ivar,') = ', &
+                            stats_grid%accum_num_samples(1,1,kvar,ivar)
         end if ! clubb_at_lest_debug_level 1
 
 
