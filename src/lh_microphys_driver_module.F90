@@ -133,7 +133,7 @@ contains
     ! As a test of SILHS, compute an estimate of Kessler microphysics
     if ( clubb_at_least_debug_level( 2 ) ) then
        call est_kessler_microphys &
-            ( nz, num_samples, pdf_dim, &                    ! Intent(in)
+            ( nz, num_samples, pdf_dim, &                        ! Intent(in)
               X_nl_all_levs, pdf_params, rcm, cloud_frac, &      ! Intent(in)
               X_mixt_comp_all_levs, lh_sample_point_weights, &   ! Intent(in)
               lh_AKm, AKm, AKstd, AKstd_cld, &                   ! Intent(out)
@@ -142,7 +142,7 @@ contains
 
     ! Call the latin hypercube microphysics driver for microphys_sub
     call est_single_column_tndcy &
-         ( dt, nz, num_samples, pdf_dim, &                         ! Intent(in)
+         ( dt, nz, num_samples, pdf_dim, &                             ! Intent(in)
            X_nl_all_levs, X_mixt_comp_all_levs, &                      ! Intent(in)
            lh_sample_point_weights, pdf_params, hydromet_pdf_params, & ! Intent(in)
            p_in_Pa, exner, rho, &                                      ! Intent(in)

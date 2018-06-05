@@ -876,22 +876,21 @@ module morrison_microphys_module
       hydromet_vel_zt(k,iirr) = real( morr_rain_vel_r4(k), kind = core_rknd )
     end do
     
-    if ( clubb_at_least_debug_level( 2 ) ) then
 
-       rsm_sd_morr_int = vertical_integral( (nz - 2 + 1), rho_ds_zt(2:nz), &
+    rsm_sd_morr_int = vertical_integral( (nz - 2 + 1), rho_ds_zt(2:nz), &
                             real( rsm_sten(2:nz), kind=core_rknd ), &
                             gr%invrs_dzt(2:nz) )
 
-       if ( rsm_sd_morr_int > maxval( real( rsm_sten(2:nz), &
+    call microphys_put_var( irsm_sd_morr_int, (/rsm_sd_morr_int/), microphys_stats_sfc )
+
+    if ( clubb_at_least_debug_level( 1 ) ) then
+        if ( rsm_sd_morr_int > maxval( real( rsm_sten(2:nz), &
                                                kind=core_rknd ) ) ) then
-          print *, "Warning: rsm_sd_morr was not conservative!" // &
+            print *, "Warning: rsm_sd_morr was not conservative!" // &
                    " rsm_sd_morr_verical_integr = ", rsm_sd_morr_int
-       endif
-
-       call microphys_put_var( irsm_sd_morr_int, (/rsm_sd_morr_int/), microphys_stats_sfc )
-
+        endif
     endif
-
+    
     call microphys_put_var( irrm_auto, rrm_auto, microphys_stats_zt )
     call microphys_put_var( irrm_accr, rrm_accr, microphys_stats_zt )
     call microphys_put_var( irrm_cond, rrm_evap, microphys_stats_zt )

@@ -566,7 +566,7 @@ module fill_holes
     ! There is no water substance at all to fill the hole
     if ( abs(total_mass) < eps ) then
 
-       if ( clubb_at_least_debug_level(2) ) then
+       if ( clubb_at_least_debug_level( 2 ) ) then
           print *, "Warning: One-level hole filling was not successful! total_mass ~= 0"
        endif
 
@@ -584,7 +584,7 @@ module fill_holes
        ! if there is not enough material, fill the holes partially with all the material available
        if ( abs(total_hole) > total_mass ) then
 
-          if ( clubb_at_least_debug_level(2) ) then
+          if ( clubb_at_least_debug_level( 2 ) ) then
              print *, "Warning: One-level hole filling was not able to fill holes completely!" // &
                       " The holes were filled partially. |total_hole| > total_mass"
           endif
@@ -950,11 +950,11 @@ module fill_holes
                                 ixrm_cl, ixrm_mc,            & ! Intent(inout)
                                 max_velocity )                 ! Intent(inout)
 
+      hydromet_name = hydromet_list(i)
+
       ! Print warning message if any hydrometeor species has a value < 0.
       if ( clubb_at_least_debug_level( 1 ) ) then
          if ( any( hydromet(:,i) < zero_threshold ) ) then
-
-            hydromet_name = hydromet_list(i)
 
             do k = 1, nz
                if ( hydromet(k,i) < zero_threshold ) then
@@ -963,6 +963,7 @@ module fill_holes
                                    " in fill_holes_driver at k= ", k
                endif ! hydromet(k,i) < 0
             enddo ! k = 1, nz
+
          endif ! hydromet(:,i) < 0       
       endif ! clubb_at_least_debug_level( 1 )
 

@@ -175,7 +175,7 @@ module sounding
 
     !---------------------------------------------------------------------------------------------
     ! Status Message
-    if( clubb_at_least_debug_level(1) ) then
+    if( clubb_at_least_debug_level( 1 ) ) then
       print *, "Path to sounding: ", trim( runtype )//'_sounding.in'
       print *, "File exists? ", l_sounding_exists
       print *, "Path to sclr_sounding: ", trim( runtype )//'_sclr_sounding.in'

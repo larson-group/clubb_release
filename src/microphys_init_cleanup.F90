@@ -498,7 +498,7 @@ module microphys_init_cleanup
 
        if ( l_write_to_file ) close(unit=iunit)
 
-    endif ! clubb_at_least_debug_level(1)
+    endif ! clubb_at_least_debug_level( 1 )
 
     ! Read in the name list for initialization, if it exists
     open(unit=iunit, file=namelist_file, status='old', action='read')
