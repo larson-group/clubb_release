@@ -921,11 +921,10 @@ module clubb_driver
 
     ! Setup radiation parameters
     call init_radiation( iunit, runfile, case_info_file )       ! Intent(in)
-#ifdef UNRELEASED_CODE /* Special case for LBA */
+
     if ( trim( rad_scheme ) == "lba" ) then
       call simple_rad_lba_init( iunit, trim( forcings_file_path ) )
     end if
-#endif
 
     ! Allocate & initialize variables,
     ! setup grid, setup constants, and setup flags
@@ -2035,6 +2034,18 @@ module clubb_driver
 
       em(:) = em_min
 
+      ! June 27 1997 ARM case
+    case ( "arm_97" )
+
+      em = 1.0_core_rknd
+      em(gr%nz) = em_min
+
+      ! twp_ice
+    case ( "twp_ice" )
+
+      em = 1.0_core_rknd
+      em(gr%nz) = em_min
+
 #ifdef UNRELEASED_CODE
       ! March 2000 ARM case
     case ( "arm_0003" )
@@ -2044,18 +2055,6 @@ module clubb_driver
 
       ! 3 year ARM case
     case ( "arm_3year" )
-
-      em = 1.0_core_rknd
-      em(gr%nz) = em_min
-
-      ! June 27 1997 ARM case
-    case ( "arm_97" )
-
-      em = 1.0_core_rknd
-      em(gr%nz) = em_min
-
-      ! twp_ice
-    case ( "twp_ice" )
 
       em = 1.0_core_rknd
       em(gr%nz) = em_min
@@ -2236,12 +2235,10 @@ module clubb_driver
 
       ! End of ajsmith4's addition
 
-#ifdef UNRELEASED_CODE
     case ( "lba" )
 
       em = 0.1_core_rknd
       em(gr%nz) = em_min
-#endif
 
       ! Michael Falk for mpace_a Arctic Stratus case.
     case ( "mpace_a" )
@@ -3743,13 +3740,12 @@ module clubb_driver
 
     use arm_3year, only: arm_3year_sfclyr !------------------ Procedure(s)
 
-    use arm_97, only: arm_97_sfclyr !------------------------ Procedure(s)
-
     use astex_a209, only: astex_a209_sfclyr !---------------- astex_a209_tndcy ! Procedure(s)
 #endif
 
     use atex, only: atex_tndcy, atex_sfclyr !---------------- Procedure(s)
 
+    use arm_97, only: arm_97_sfclyr !------------------------ Procedure(s)
 
     use bomex, only: bomex_tndcy, bomex_sfclyr !------------- Procedure(s)
 
@@ -3781,9 +3777,9 @@ module clubb_driver
 
     use jun25, only: jun25_altocu_read_t_dependent !--------- Procedure(s)
 
-    use lba, only: lba_tndcy, lba_sfclyr !------------------- Procedure(s)
-
 #endif
+    
+    use lba, only: lba_tndcy, lba_sfclyr !------------------- Procedure(s)
 
     use mpace_a, only: mpace_a_tndcy, mpace_a_sfclyr !------- Procedure(s)
 
@@ -3795,9 +3791,7 @@ module clubb_driver
 
     use rico, only: rico_tndcy, rico_sfclyr !---------------- Procedure(s)
 
-#ifdef UNRELEASED_CODE
     use twp_ice, only: twp_ice_sfclyr !---------------------- Procedure(s)
-#endif
 
     use wangara, only: wangara_tndcy, wangara_sfclyr !------- Procedure(s)
 
@@ -3921,11 +3915,9 @@ module clubb_driver
                            rtm_forcing, &                   ! Intent(out)
                            sclrm_forcing, edsclrm_forcing ) ! Intent(out)
 
-#ifdef UNRELEASED_CODE
       case ( "lba" )
         call lba_tndcy( thlm_forcing, rtm_forcing, &     ! Intent(out)
                         sclrm_forcing, edsclrm_forcing ) ! Intent(out)
-#endif
 
       case ( "mpace_a" ) ! mpace_a arctic stratus case
 
@@ -4109,7 +4101,7 @@ module clubb_driver
       call arm_3year_sfclyr( time_current, gr%zt(2), rho_zm(1), & ! Intent(in)
                               thlm(2), ubar,                    & ! Intent(in)
                               wpthlp_sfc, wprtp_sfc, ustar) ! Intent(out)
-    case ( "arm_97", "mc3e" )
+    case ( "mc3e" )
       l_compute_momentum_flux = .true.
       l_set_sclr_sfc_rtm_thlm = .true.
       call arm_97_sfclyr( time_current, gr%zt(2), rho_zm(1), &   ! Intent(in)
@@ -4117,6 +4109,14 @@ module clubb_driver
                           wpthlp_sfc, wprtp_sfc, ustar )         ! Intent(out)
 
 #endif
+
+    case ( "arm_97" )
+      l_compute_momentum_flux = .true.
+      l_set_sclr_sfc_rtm_thlm = .true.
+      call arm_97_sfclyr( time_current, gr%zt(2), rho_zm(1), &   ! Intent(in)
+                          thlm(2), ubar,                     &   ! Intent(in)
+                          wpthlp_sfc, wprtp_sfc, ustar )         ! Intent(out)
+
 
     case ( "atex" )
       l_compute_momentum_flux = .true.
@@ -4151,14 +4151,13 @@ module clubb_driver
                           gr%zt(2), p_sfc, &                         ! Intent(in)
                           ubar, thlm(2), rtm(2), exner(1), &         ! Intent(in)
                           wpthlp_sfc, wprtp_sfc, ustar, T_sfc )      ! Intent(out)
-#ifdef UNRELEASED_CODE
+
     case ( "lba" )
       l_compute_momentum_flux = .true.
       l_set_sclr_sfc_rtm_thlm = .true.
       call lba_sfclyr( time_current, time_initial, gr%zt(2), &  ! Intent(in)
                        rho_zm(1), thlm(2), ubar, &              ! Intent(in)
                        wpthlp_sfc, wprtp_sfc, ustar )           ! Intent(out)
-#endif
 
     case ( "mpace_a" )
       l_compute_momentum_flux = .true.
@@ -4171,15 +4170,12 @@ module clubb_driver
       call mpace_b_sfclyr( time_current, rho_zm(1), &      ! Intent(in)
                             wpthlp_sfc, wprtp_sfc, ustar ) ! Intent(out)
 
-#ifdef UNRELEASED_CODE
     case ( "twp_ice" )
       l_compute_momentum_flux = .true.
       l_set_sclr_sfc_rtm_thlm = .true.
       call twp_ice_sfclyr( time_current, gr%zt(2), exner(1), thlm(2), & ! Intent(in)
                             ubar, rtm(2), p_sfc,               &        ! Intent(in)
                             wpthlp_sfc, wprtp_sfc, ustar, T_sfc )       ! Intent(out)
-
-#endif
 
     case ( "wangara" )
       l_compute_momentum_flux = .true.

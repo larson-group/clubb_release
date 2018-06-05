@@ -1,4 +1,5 @@
 ../src/Benchmark_cases/arm.F90
+../src/Benchmark_cases/arm_97.F90
 ../src/Benchmark_cases/atex.F90
 ../src/Benchmark_cases/bomex.F90
 ../src/Benchmark_cases/cloud_sed_module.F90
@@ -8,12 +9,14 @@
 ../src/Benchmark_cases/fire.F90
 ../src/Benchmark_cases/gabls2.F90
 ../src/Benchmark_cases/gabls3.F90
+../src/Benchmark_cases/lba.F90
 ../src/Benchmark_cases/mpace_a.F90
 ../src/Benchmark_cases/mpace_b.F90
 ../src/Benchmark_cases/rad_lwsw_module.F90
 ../src/Benchmark_cases/rico.F90
 ../src/Benchmark_cases/spec_hum_to_mixing_ratio.F90
 ../src/Benchmark_cases/surface_flux.F90
+../src/Benchmark_cases/twp_ice.F90
 ../src/Benchmark_cases/wangara.F90
 ../src/advance_microphys_module.F90
 ../src/clubb_driver.F90
