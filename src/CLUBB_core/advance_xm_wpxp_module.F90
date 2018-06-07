@@ -126,7 +126,7 @@ module advance_xm_wpxp_module
         iiPDF_new,  & ! Variable(s)
         iiPDF_type
 
-    use new_pdf_main, only: &
+    use pdf_parameter_module, only: &
         implicit_coefs_terms    ! Variable Type
 
     use clubb_precision, only:  & 

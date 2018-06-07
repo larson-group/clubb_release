@@ -17,9 +17,11 @@ module pdf_parameter_module
 
   private ! Default scope
 
-  public :: pdf_parameter,   & ! Variable Type
-            init_pdf_params    ! Procedure(s)
+  public :: pdf_parameter,        & ! Variable Type(s)
+            implicit_coefs_terms, &
+            init_pdf_params         ! Procedure(s)
 
+  ! CLUBB's PDF parameters.
   type pdf_parameter
 
     real( kind = core_rknd ) :: &
@@ -74,6 +76,33 @@ module pdf_parameter_module
       ice_supersat_frac_2    ! Ice supersaturation fraction (2nd PDF comp.)  [-]
 
   end type pdf_parameter
+
+  ! The implicit coefficients, semi-implicit coefficients and terms, and
+  ! explicit terms for turbulent advection of turbulent fields are calculated
+  ! from the PDF and the resulting PDF parameters.
+  type implicit_coefs_terms
+
+    real ( kind = core_rknd ) :: &
+      coef_wp4_implicit,     & ! <w'^4> = coef_wp4_implicit * <w'^2>^2       [-]
+      coef_wprtp2_implicit,  & ! <w'rt'^2> = coef_wprtp2_implicit*<rt'^2>  [m/s]
+      coef_wpthlp2_implicit    ! <w'thl'^2>=coef_wpthlp2_implicit*<thl'^2> [m/s]
+
+    ! <w'^2 rt'> = coef_wp2rtp_implicit * <w'rt'> + term_wp2rtp_explicit
+    real ( kind = core_rknd ) :: &
+      coef_wp2rtp_implicit, & ! Coefficient that is multiplied by <w'rt'>  [m/s]
+      term_wp2rtp_explicit    ! Term that is on the RHS          [m^2/s^2 kg/kg]
+
+    ! <w'^2 thl'> = coef_wp2thlp_implicit * <w'thl'> + term_wp2thlp_explicit
+    real ( kind = core_rknd ) :: &
+      coef_wp2thlp_implicit, & ! Coef. that is multiplied by <w'thl'>      [m/s]
+      term_wp2thlp_explicit    ! Term that is on the RHS             [m^2/s^2 K]
+
+    ! <w'rt'thl'> = coef_wprtpthlp_implicit*<rt'thl'> + term_wprtpthlp_explicit
+    real ( kind = core_rknd ) :: &
+      coef_wprtpthlp_implicit, & ! Coef. that is multiplied by <rt'thl'>   [m/s]
+      term_wprtpthlp_explicit    ! Term that is on the RHS         [m/s(kg/kg)K]
+
+  end type implicit_coefs_terms
 
 ! The CLUBB_CAM preprocessor directives are being commented out because this
 ! code is now also used for WRF-CLUBB.

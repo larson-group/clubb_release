@@ -117,8 +117,7 @@ module pdf_parameter_tests
         calc_coef_wp4_implicit
 
     use new_pdf_main, only: &
-        new_pdf_driver,       & ! Procedure(s)
-        implicit_coefs_terms    ! Variable Type
+        new_pdf_driver    ! Procedure(s)
 
     use adg1_adg2_3d_luhar_pdf, only: &
         ADG1_w_closure,  & ! Procedure(s)
@@ -142,6 +141,9 @@ module pdf_parameter_tests
         iiPDF_TSDADG, &
         iiPDF_LY93,   &
         calc_wp4_pdf    ! Procedure(s)
+
+    use pdf_parameter_module, only: &
+        implicit_coefs_terms    ! Variable Type
 
     use model_flags, only: &
         l_gamma_Skw    ! Variable(s)

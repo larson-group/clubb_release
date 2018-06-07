@@ -10,41 +10,13 @@ module new_pdf_main
   ! References:
   !-------------------------------------------------------------------------
 
-  use clubb_precision, only: &
-      core_rknd    ! Variable(s)
-
   implicit none
 
-  public :: new_pdf_driver,       & ! Procedure(s)
-            implicit_coefs_terms    ! Variable Type
+  public :: new_pdf_driver    ! Procedure(s)
 
   private :: calc_responder_var,     & ! Procedure(s)
              calc_F_x_zeta_x_setter, &
              calc_F_x_responder
-
-  type implicit_coefs_terms
-
-    real ( kind = core_rknd ) :: &
-      coef_wp4_implicit,     & ! <w'^4> = coef_wp4_implicit * <w'^2>^2       [-]
-      coef_wprtp2_implicit,  & ! <w'rt'^2> = coef_wprtp2_implicit*<rt'^2>  [m/s]
-      coef_wpthlp2_implicit    ! <w'thl'^2>=coef_wpthlp2_implicit*<thl'^2> [m/s]
-
-    ! <w'^2 rt'> = coef_wp2rtp_implicit * <w'rt'> + term_wp2rtp_explicit
-    real ( kind = core_rknd ) :: &
-      coef_wp2rtp_implicit, & ! Coefficient that is multiplied by <w'rt'>  [m/s]
-      term_wp2rtp_explicit    ! Term that is on the RHS          [m^2/s^2 kg/kg]
-
-    ! <w'^2 thl'> = coef_wp2thlp_implicit * <w'thl'> + term_wp2thlp_explicit
-    real ( kind = core_rknd ) :: &
-      coef_wp2thlp_implicit, & ! Coef. that is multiplied by <w'thl'>      [m/s]
-      term_wp2thlp_explicit    ! Term that is on the RHS             [m^2/s^2 K]
-
-    ! <w'rt'thl'> = coef_wprtpthlp_implicit*<rt'thl'> + term_wprtpthlp_explicit
-    real ( kind = core_rknd ) :: &
-      coef_wprtpthlp_implicit, & ! Coef. that is multiplied by <rt'thl'>   [m/s]
-      term_wprtpthlp_explicit    ! Term that is on the RHS         [m/s(kg/kg)K]
-
-  end type implicit_coefs_terms
 
   private
 
@@ -89,6 +61,9 @@ module new_pdf_main
         calc_coef_wpxp2_implicit,   &
         calc_coefs_wp2xp_semiimpl,  &
         calc_coefs_wpxpyp_semiimpl
+
+    use pdf_parameter_module, only: &
+        implicit_coefs_terms    ! Variable Type
 
     use parameters_tunable, only: &
         slope_coef_spread_DG_means_w, & ! Variable(s)

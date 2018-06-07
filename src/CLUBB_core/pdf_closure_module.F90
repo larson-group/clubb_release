@@ -113,11 +113,11 @@ module pdf_closure_module
         Skw_denom_coef ! Variable(s)
 
     use pdf_parameter_module, only:  &
-        pdf_parameter  ! type
+        pdf_parameter,        & ! Variable Type
+        implicit_coefs_terms
 
     use new_pdf_main, only: &
-        new_pdf_driver,       & ! Procedure(s)
-        implicit_coefs_terms    ! Variable Type
+        new_pdf_driver    ! Procedure(s)
 
     use adg1_adg2_3d_luhar_pdf, only: &
         ADG1_pdf_driver,     & ! Procedure(s)

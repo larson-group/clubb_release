@@ -111,7 +111,7 @@ module advance_wp2_wp3_module
         w_tol_sqd, &
         eps
 
-    use new_pdf_main, only: &
+    use pdf_parameter_module, only: &
         implicit_coefs_terms    ! Variable Type
 
     use clubb_precision, only:  & 
@@ -466,7 +466,7 @@ module advance_wp2_wp3_module
         iiPDF_new,  &
         iiPDF_type
 
-    use new_pdf_main, only: &
+    use pdf_parameter_module, only: &
         implicit_coefs_terms    ! Variable Type
 
     use stats_type_utilities, only: & 

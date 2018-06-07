@@ -298,10 +298,8 @@ module advance_clubb_core_module
       wp3_on_wp2_zt
 
     use pdf_parameter_module, only: &
-        pdf_parameter ! Type
-
-    use new_pdf_main, only: &
-        implicit_coefs_terms    ! Variable Type
+        pdf_parameter,        & ! Variable Type
+        implicit_coefs_terms
 
 #ifdef GFDL
     use advance_sclrm_Nd_module, only: &  ! h1g, 2010-06-16 begin mod
@@ -1921,8 +1919,9 @@ module advance_clubb_core_module
         eps
 
     use pdf_parameter_module, only: &
-        pdf_parameter,   & ! Type
-        init_pdf_params    ! Procedure(s)
+        pdf_parameter,        & ! Variable Type
+        implicit_coefs_terms, & ! Variable Type
+        init_pdf_params         ! Procedure(s)
 
     use parameters_model, only: &
         sclr_dim,               & ! Variable(s)
@@ -1939,9 +1938,6 @@ module advance_clubb_core_module
     use pdf_closure_module, only: &
         pdf_closure,                & ! Procedure(s)
         calc_vert_avg_cf_component
-
-    use new_pdf_main, only: &
-        implicit_coefs_terms    ! Variable Type
 
     use Skx_module, only: &
         Skx_func    ! Procedure(s)
@@ -3446,27 +3442,27 @@ module advance_clubb_core_module
           fstderr  ! Constant(s)
 
       use stats_variables, only: &
-        iwprtp2, & ! Varibles
-        iwprtpthlp, &
-        iwpthlp2, &
-        iwprtp2, &
-        iwpsclrp2, &
-        iwpsclrprtp, &
-        iwpsclrpthlp, &
-        l_stats
+          iwprtp2, & ! Varibles
+          iwprtpthlp, &
+          iwpthlp2, &
+          iwprtp2, &
+          iwpsclrp2, &
+          iwpsclrprtp, &
+          iwpsclrpthlp, &
+          l_stats
 
       use grid_class, only: &
-        gr, & ! Variable
-        zt2zm ! Procedure
+          gr, & ! Variable
+          zt2zm ! Procedure
 
       use parameters_model, only: &
-        sclr_dim ! Number of passive scalar variables
+          sclr_dim ! Number of passive scalar variables
 
       use pdf_parameter_module, only: &
-        pdf_parameter ! Derived data type
+          pdf_parameter ! Derived data type
 
       use clubb_precision, only: &
-        core_rknd ! Variable(s)
+          core_rknd ! Variable(s)
 
       implicit none
 
