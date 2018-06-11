@@ -520,10 +520,6 @@ module clubb_driver
 !-----------------------------------------------------------------------
     ! Begin code
 
-    ! Set debug level
-    debug_level = 2
-    call set_clubb_debug_level( debug_level ) ! Intent(in)
-
     ! Initialize the model run
 
     ! Pick some default values for model_setting.  Some variables are initialized
@@ -578,6 +574,7 @@ module clubb_driver
     l_input_fields  = .false.
     restart_path_case = "none"
     time_restart  = 0._time_precision
+    debug_level   = 2
 
     l_rtm_nudge = .false.
     rtm_min = 0.0_core_rknd
@@ -648,6 +645,9 @@ module clubb_driver
       return
 
     end if
+
+    ! Set debug level
+    call set_clubb_debug_level( debug_level ) ! Intent(in)
 
     ! Printing Model Inputs
     if ( clubb_at_least_debug_level( 1 ) ) then
