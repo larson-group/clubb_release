@@ -67,7 +67,7 @@ module parameters_tunable
     C8      = 3.000000_core_rknd,    & ! Coef. #1 in C8 Skewness Equation    [-]
     C8b     = 0.000000_core_rknd,    & ! Coef. #2 in C8 Skewness Equation    [-]
     C10     = 3.300000_core_rknd,    & ! Currently Not Used in the Model     [-]
-    C11     = 0.80000_core_rknd,     & ! Low Skewness in C11 Skw. Function   [-]
+    C11     = 0.800000_core_rknd,    & ! Low Skewness in C11 Skw. Function   [-]
     C11b    = 0.350000_core_rknd,    & ! High Skewness in C11 Skw. Function  [-]
     C11c    = 0.500000_core_rknd,    & ! Degree of Slope of C11 Skw. Fnct.   [-]
     C12     = 1.000000_core_rknd,    & ! Constant in w'^3 Crank-Nich. diff.  [-]
@@ -579,6 +579,22 @@ module parameters_tunable
        endif ! C6rt_Lscale0 /= C6thl_Lscale0
 
     endif ! .not. l_clip_semi_implicit
+
+
+    if ( C7 > one .or. C7 < zero ) then
+        write(fstderr,*) "C7 = ", C7
+        write(fstderr,*) "C7 must satisfy 0.0 <= C7 <= 1.0"
+        err_code = clubb_fatal_error
+    end if
+
+
+
+
+    if ( C11 > one .or. C11 < zero ) then
+        write(fstderr,*) "C11 = ", C11
+        write(fstderr,*) "C11 must satisfy 0.0 <= C11 <= 1.0"
+        err_code = clubb_fatal_error
+    end if
 
 !    write(*,nml=clubb_params_nl) ! %% debug
 

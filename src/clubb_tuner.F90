@@ -67,29 +67,30 @@ program clubb_tuner
   ! Attempt to find the optimal parameter set
   do
     select case ( tune_type )
-    case ( iamoeba )
-      call amoeba_driver( )
+        case ( iamoeba )
+          call amoeba_driver( )
 
-    case ( iamebsa )
-      call amebsa_driver( )
+        case ( iamebsa )
+          call amebsa_driver( )
 
-    case ( iesa )
-      call enhanced_simann_driver( )
+        case ( iesa )
+          call enhanced_simann_driver( )
 
-    case ( iflags )
-      call logical_flags_driver( current_date, current_time )
-      stop "Program exited normally"
+        case ( iflags )
+          call logical_flags_driver( current_date, current_time )
+          stop "Program exited normally"
 
-    case( iploops )
-      call param_loops_driver( )
-      write(fstdout,*) "All parameter sets have been run"
+        case( iploops )
+          call param_loops_driver( )
+          write(fstdout,*) "All parameter sets have been run"
 
-    case default
-       stop "Unknown tuning type"
+        case default
+           stop "Unknown tuning type"
     end select
 
     ! Print to stdout if specified
     if ( l_results_stdout ) call write_results( fstdout )
+
 
     ! Save results in file if specified
     if ( l_save_tuning_run ) then
@@ -97,9 +98,12 @@ program clubb_tuner
       call write_results( file_unit )
     end if ! l_save_tuning_run
 
-    ! Query to see if we should exit the loop
+
+    ! Print completion message
     call write_text( "Run Complete.", l_save_tuning_run, file_unit )
 
+
+    ! Query to see if we should exit the loop
     if ( tune_type /= iploops ) then
        ! Prompt the user to re-run with new parameters.
        write(unit=fstdout,fmt='(A)', advance='no')  & 
@@ -111,18 +115,22 @@ program clubb_tuner
        user_response = "n"
     endif
 
+
     ! Save tuning results in file if specified
     if( l_save_tuning_run ) then
       write(file_unit,*) "Re-run with new parameters?(y/n) ", user_response
       close(unit=file_unit)
     end if ! l_save_tuning_run
 
+    
+    ! what does a continue without a line number do? apparently what it says, continue :o
     select case ( trim( user_response ) )
-    case ( "Yes", "yes", "y", "Y" )
-      continue
-    case default
-      exit
+        case ( "Yes", "yes", "y", "Y" )
+          continue
+        case default
+          exit
     end select
+
 
     ! Save tuning results in file if specified
     if ( tune_type == iamoeba .or. tune_type == iamebsa ) then
@@ -133,17 +141,25 @@ program clubb_tuner
       call write_text( "Current f_tol= ", f_tol, l_save_tuning_run, file_unit )
 
       write(fstdout,fmt='(A)', advance='no') "Enter new f_tol=   "
+
       read(*,*) f_tol
+
       ! Save tuning results in file if specified
       if ( l_save_tuning_run ) write(file_unit,*) "Enter new f_tol=   ", f_tol
+
       if ( l_save_tuning_run ) close(unit=file_unit)
+
     end if
+
+
     if ( tune_type == iesa .or. tune_type == iamebsa ) then
       write(fstdout,fmt='(A)', advance='no') "New annealing temp =   "
       read(*,*) anneal_temp
     end if
 
+
     call tuner_init( l_read_files=.false. )
+
 
   end do ! user_response /= 'y', 'Y' or 'yes'
 
@@ -361,6 +377,7 @@ program clubb_tuner
   param_vals_matrix(1,1:ndim) = pb(1:ndim)
   min_err = ybb
 
+
   return
 
 #else
@@ -412,11 +429,16 @@ subroutine enhanced_simann_driver
   xinit = param_vals_matrix(1,1:ndim)
 
   ! Set the minimum for the parameters.  Assume no parameter is < 0 for now
-  x0min(1:ndim) = 0._core_rknd 
+  x0min(1) = 0._core_rknd 
+  x0min(2) = 0.0_core_rknd
+  x0min(3) = 0.0_core_rknd
 
   ! Set the maximum for the parameters.  Assume parameters will be most 5 
   ! times the current value.
-  x0max(1:ndim) = 5._core_rknd * param_vals_matrix(1,1:ndim) 
+  !x0max(1:ndim) = 5_core_rknd * param_vals_matrix(1,1:ndim) 
+  x0max(1) = 5.000000000000000000_core_rknd
+  x0max(2) = 1._core_rknd
+  x0max(3) = 1._core_rknd
 
   rostep(1:ndim) = param_vals_spread(1:ndim)
 
