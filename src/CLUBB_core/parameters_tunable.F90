@@ -587,12 +587,21 @@ module parameters_tunable
         err_code = clubb_fatal_error
     end if
 
-
-
+    if ( C7b > one .or. C7b < zero ) then
+        write(fstderr,*) "C7b = ", C7b
+        write(fstderr,*) "C7b must satisfy 0.0 <= C7b <= 1.0"
+        err_code = clubb_fatal_error
+    end if
 
     if ( C11 > one .or. C11 < zero ) then
         write(fstderr,*) "C11 = ", C11
         write(fstderr,*) "C11 must satisfy 0.0 <= C11 <= 1.0"
+        err_code = clubb_fatal_error
+    end if
+
+    if ( C11b > one .or. C11b < zero ) then
+        write(fstderr,*) "C11b = ", C11b
+        write(fstderr,*) "C11b must satisfy 0.0 <= C11b <= 1.0"
         err_code = clubb_fatal_error
     end if
 
