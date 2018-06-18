@@ -486,8 +486,9 @@ module numerical_check
 
     ! Check the first levels for temperatures greater than 200K
     do k=1, min( 10, size(thlm) )
-        if ( thlm2T_in_K( thlm(k), exner(k), rcm(k) ) < 200. ) then
-            write(fstderr,*) "T_in_K < 200K at grid level k=", k
+        if ( thlm(k) < 190. ) then
+            write(fstderr,*) "Liquid water potential temperature (thlm) < 190K ", &
+                             "at grid level k = ", k
         end if
     end do 
 
