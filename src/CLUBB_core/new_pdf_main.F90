@@ -31,7 +31,7 @@ module new_pdf_main
                              sigma_w_2_sqd, sigma_rt_1_sqd,           & ! Out
                              sigma_rt_2_sqd, sigma_thl_1_sqd,         & ! Out
                              sigma_thl_2_sqd, mixt_frac,              & ! Out
-                             new_pdf_implct_coefs_terms,              & ! Out
+                             pdf_implicit_coefs_terms,                & ! Out
                              F_w, F_rt, F_thl, min_F_w, max_F_w,      & ! Out
                              min_F_rt, max_F_rt, min_F_thl, max_F_thl ) ! Out
                              
@@ -119,7 +119,7 @@ module new_pdf_main
       mixt_frac          ! Mixture fraction                     [-]
 
     type(implicit_coefs_terms), intent(out) :: &
-      new_pdf_implct_coefs_terms  ! Implicit coefs / explicit terms [units vary]
+      pdf_implicit_coefs_terms    ! Implicit coefs / explicit terms [units vary]
 
     ! Output only for recording statistics.
     real( kind = core_rknd ), intent(out) :: &
@@ -516,15 +516,15 @@ module new_pdf_main
 
     ! Pack the implicit coefficients and explicit terms into a single type
     ! variable for output.
-    new_pdf_implct_coefs_terms%coef_wp4_implicit = coef_wp4_implicit
-    new_pdf_implct_coefs_terms%coef_wprtp2_implicit = coef_wprtp2_implicit
-    new_pdf_implct_coefs_terms%coef_wpthlp2_implicit = coef_wpthlp2_implicit
-    new_pdf_implct_coefs_terms%coef_wp2rtp_implicit = coef_wp2rtp_implicit
-    new_pdf_implct_coefs_terms%term_wp2rtp_explicit = term_wp2rtp_explicit
-    new_pdf_implct_coefs_terms%coef_wp2thlp_implicit = coef_wp2thlp_implicit
-    new_pdf_implct_coefs_terms%term_wp2thlp_explicit = term_wp2thlp_explicit
-    new_pdf_implct_coefs_terms%coef_wprtpthlp_implicit = coef_wprtpthlp_implicit
-    new_pdf_implct_coefs_terms%term_wprtpthlp_explicit = term_wprtpthlp_explicit
+    pdf_implicit_coefs_terms%coef_wp4_implicit = coef_wp4_implicit
+    pdf_implicit_coefs_terms%coef_wprtp2_implicit = coef_wprtp2_implicit
+    pdf_implicit_coefs_terms%coef_wpthlp2_implicit = coef_wpthlp2_implicit
+    pdf_implicit_coefs_terms%coef_wp2rtp_implicit = coef_wp2rtp_implicit
+    pdf_implicit_coefs_terms%term_wp2rtp_explicit = term_wp2rtp_explicit
+    pdf_implicit_coefs_terms%coef_wp2thlp_implicit = coef_wp2thlp_implicit
+    pdf_implicit_coefs_terms%term_wp2thlp_explicit = term_wp2thlp_explicit
+    pdf_implicit_coefs_terms%coef_wprtpthlp_implicit = coef_wprtpthlp_implicit
+    pdf_implicit_coefs_terms%term_wprtpthlp_explicit = term_wprtpthlp_explicit
 
 
     return

@@ -54,7 +54,7 @@ module advance_xp2_xpyp_module
                                rtpthlp_forcing, rho_ds_zm, rho_ds_zt, & ! In
                                invrs_rho_ds_zm, thv_ds_zm,            & ! In
                                Lscale, wp3_on_wp2, wp3_on_wp2_zt,     & ! In
-                               new_pdf_implct_coefs_terms,            & ! In
+                               pdf_implicit_coefs_terms,              & ! In
                                l_iter, dt,                            & ! In
                                sclrm, wpsclrp,                        & ! In
                                wpsclrp2, wpsclrprtp, wpsclrpthlp,     & ! In
@@ -216,7 +216,7 @@ module advance_xp2_xpyp_module
       wp3_on_wp2_zt      ! Smoothed version of <w'^3>/<w'^2> zt  [m/s]
 
     type(implicit_coefs_terms), dimension(gr%nz), intent(in) :: &
-      new_pdf_implct_coefs_terms  ! New PDF: impl coefs; expl terms [units vary]
+      pdf_implicit_coefs_terms    ! Implicit coefs / explicit terms [units vary]
 
     logical, intent(in) :: l_iter ! Whether variances are prognostic
 
@@ -372,23 +372,23 @@ module advance_xp2_xpyp_module
 
        ! Unpack the variables coef_wprtp2_implicit, coef_wpthlp2_implicit,
        ! coef_wprtpthlp_implicit, and term_wprtpthlp_explicit from
-       ! new_pdf_implct_coefs_terms.  The PDF parameters and the resulting
+       ! pdf_implicit_coefs_terms.  The PDF parameters and the resulting
        ! implicit coefficients and explicit terms are calculated on
        ! thermodynamic levels.
 
        ! Implicit coefficient on <rt'^2> in <w'rt'^2> equation.
-       coef_wprtp2_implicit = new_pdf_implct_coefs_terms%coef_wprtp2_implicit
+       coef_wprtp2_implicit = pdf_implicit_coefs_terms%coef_wprtp2_implicit
 
        ! Implicit coefficient on <thl'^2> in <w'thl'^2> equation.
-       coef_wpthlp2_implicit = new_pdf_implct_coefs_terms%coef_wpthlp2_implicit
+       coef_wpthlp2_implicit = pdf_implicit_coefs_terms%coef_wpthlp2_implicit
 
        ! Implicit coefficient on <rt'thl'> in <w'rt'thl'> equation.
        coef_wprtpthlp_implicit &
-       = new_pdf_implct_coefs_terms%coef_wprtpthlp_implicit
+       = pdf_implicit_coefs_terms%coef_wprtpthlp_implicit
 
        ! Explicit (RHS) term in <w'rt'thl'> equation.
        term_wprtpthlp_explicit &
-       = new_pdf_implct_coefs_terms%term_wprtpthlp_explicit
+       = pdf_implicit_coefs_terms%term_wprtpthlp_explicit
 
        ! The following variables must always be set to 0.
        term_wprtp2_explicit = zero

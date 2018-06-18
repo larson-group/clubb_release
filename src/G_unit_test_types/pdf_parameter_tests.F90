@@ -252,7 +252,7 @@ module pdf_parameter_tests
       wp4_pdf_calc         ! <w'^4> calculated by PDF                  [m^4/s^4]
 
     type(implicit_coefs_terms) :: &
-      new_pdf_implct_coefs_terms  ! Implicit coefs / explicit terms [units vary]
+      pdf_implicit_coefs_terms    ! Implicit coefs / explicit terms [units vary]
 
     ! Tiny tolerance for acceptable numerical difference between two results.
     real( kind = core_rknd ), parameter :: &
@@ -972,7 +972,7 @@ module pdf_parameter_tests
                                sigma_w_2_sqd, sigma_rt_1_sqd,           & ! Out
                                sigma_rt_2_sqd, sigma_thl_1_sqd,         & ! Out
                                sigma_thl_2_sqd, mixt_frac,              & ! Out
-                               new_pdf_implct_coefs_terms,              & ! Out
+                               pdf_implicit_coefs_terms,                & ! Out
                                F_w, F_rt, F_thl, min_F_w, max_F_w,      & ! Out
                                min_F_rt, max_F_rt, min_F_thl, max_F_thl ) ! Out
 

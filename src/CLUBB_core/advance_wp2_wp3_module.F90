@@ -47,7 +47,7 @@ module advance_wp2_wp3_module
                               rho_ds_zt, invrs_rho_ds_zm,              & ! In
                               invrs_rho_ds_zt, radf, thv_ds_zm,        & ! In
                               thv_ds_zt, mixt_frac, Cx_fnc_Richardson, & ! In
-                              new_pdf_implct_coefs_terms,              & ! In
+                              pdf_implicit_coefs_terms,                & ! In
                               wp2, wp3, wp3_zm, wp2_zt )                 ! Inout
 
     ! Description:
@@ -171,7 +171,7 @@ module advance_wp2_wp3_module
       Cx_fnc_Richardson  ! Cx_fnc from Richardson_num                [-]
 
     type(implicit_coefs_terms), dimension(gr%nz), intent(in) :: &
-      new_pdf_implct_coefs_terms  ! New PDF: impl coefs; expl terms [units vary]
+      pdf_implicit_coefs_terms    ! Implicit coefs / explicit terms [units vary]
 
     ! Input/Output
     real( kind = core_rknd ), dimension(gr%nz), intent(inout) ::  & 
@@ -311,7 +311,7 @@ module advance_wp2_wp3_module
                      C11_Skw_fnc, C16_fnc, rho_ds_zm,       & ! Intent(in)
                      rho_ds_zt, invrs_rho_ds_zm,            & ! Intent(in)
                      invrs_rho_ds_zt, radf, thv_ds_zm,      & ! Intent(in)
-                     thv_ds_zt, new_pdf_implct_coefs_terms, & ! Intent(in)
+                     thv_ds_zt, pdf_implicit_coefs_terms,   & ! Intent(in)
                      wp2, wp3, wp3_zm, wp2_zt )               ! Intent(inout)
 
     ! When selected, apply sponge damping after wp2 and wp3 have been advanced.
@@ -385,7 +385,7 @@ module advance_wp2_wp3_module
             write(fstderr,*) "thv_ds_zm = ", thv_ds_zm, new_line('c')
             write(fstderr,*) "thv_ds_zt = ", thv_ds_zt, new_line('c')
             write(fstderr,*) "Cx_fnc_Richardson = ", Cx_fnc_Richardson, new_line('c')
-            write(fstderr,*) "new_pdf_implct_coefs_terms = ", new_pdf_implct_coefs_terms
+            write(fstderr,*) "pdf_implicit_coefs_terms = ", pdf_implicit_coefs_terms
             write(fstderr,*) new_line('c')
 
             write(fstderr,*) "Intent(in/out)"
@@ -411,7 +411,7 @@ module advance_wp2_wp3_module
                          C11_Skw_fnc, C16_fnc, rho_ds_zm,       & ! Intent(in)
                          rho_ds_zt, invrs_rho_ds_zm,            & ! Intent(in)
                          invrs_rho_ds_zt, radf, thv_ds_zm,      & ! Intent(in)
-                         thv_ds_zt, new_pdf_implct_coefs_terms, & ! Intent(in)
+                         thv_ds_zt, pdf_implicit_coefs_terms,   & ! Intent(in)
                          wp2, wp3, wp3_zm, wp2_zt )               ! Intent(i/o)
 
     ! Description:
@@ -583,7 +583,7 @@ module advance_wp2_wp3_module
       thv_ds_zt          ! Dry, base-state theta_v on thermo. levs.  [K]
 
     type(implicit_coefs_terms), dimension(gr%nz), intent(in) :: &
-      new_pdf_implct_coefs_terms  ! New PDF: impl coefs; expl terms [units vary]
+      pdf_implicit_coefs_terms    ! Implicit coefs / explicit terms [units vary]
 
     ! Input/Output Variables
     real( kind = core_rknd ), dimension(gr%nz), intent(inout) ::  & 
@@ -641,11 +641,11 @@ module advance_wp2_wp3_module
 
        if ( iiPDF_type == iiPDF_new ) then
 
-          ! Unpack coef_wp4_implicit from new_pdf_implct_coefs_terms.
+          ! Unpack coef_wp4_implicit from pdf_implicit_coefs_terms.
           ! Since PDF parameters and the resulting implicit coefficients and
           ! explicit terms are calculated on thermodynamic levels, the <w'^4>
           ! implicit coefficient needs to be unpacked as coef_wp4_implicit_zt.
-          coef_wp4_implicit_zt = new_pdf_implct_coefs_terms%coef_wp4_implicit
+          coef_wp4_implicit_zt = pdf_implicit_coefs_terms%coef_wp4_implicit
 
           ! The values of <w'^4> are located on momentum levels.  Interpolate
           ! coef_wp4_implicit_zt to momentum levels as coef_wp4_implicit.  The

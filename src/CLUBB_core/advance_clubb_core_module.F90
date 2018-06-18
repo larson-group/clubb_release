@@ -691,7 +691,7 @@ module advance_clubb_core_module
       pdf_params_frz
 
     type(implicit_coefs_terms), dimension(gr%nz) :: &
-      new_pdf_implct_coefs_terms  ! New PDF: impl coefs; expl terms [units vary]
+      pdf_implicit_coefs_terms    ! Implicit coefs / explicit terms [units vary]
 
     real( kind = core_rknd ), dimension(gr%nz)  :: &
       rtm_frz, &
@@ -925,7 +925,7 @@ module advance_clubb_core_module
                                 wpsclrprtp, wpsclrpthlp,       & ! Intent(out)
                                 pdf_params, pdf_params_frz,    & ! Intent(out)
                                 pdf_params_zm,                 & ! Intent(out)
-                                new_pdf_implct_coefs_terms )     ! Intent(out)
+                                pdf_implicit_coefs_terms )       ! Intent(out)
 
     endif ! ipdf_call_placement == ipdf_pre_advance_fields
           ! or ipdf_call_placement == ipdf_pre_post_advance_fields
@@ -1408,7 +1408,7 @@ module advance_clubb_core_module
                             mixt_frac_zm, l_implemented, em, wp2sclrp,       & ! intent(in)
                             sclrpthvp, sclrm_forcing, sclrp2, exner, rcm,    & ! intent(in)
                             p_in_Pa, thvm, Cx_fnc_Richardson,                & ! intent(in)
-                            new_pdf_implct_coefs_terms,                      & ! intent(in)
+                            pdf_implicit_coefs_terms,                        & ! intent(in)
                             rtm, wprtp, thlm, wpthlp,                        & ! intent(inout)
                             sclrm, wpsclrp )                                   ! intent(inout)
 
@@ -1455,7 +1455,7 @@ module advance_clubb_core_module
                              rtpthlp_forcing, rho_ds_zm, rho_ds_zt, & ! intent(in)
                              invrs_rho_ds_zm, thv_ds_zm,            & ! intent(in)
                              Lscale, wp3_on_wp2, wp3_on_wp2_zt,     & ! intent(in)
-                             new_pdf_implct_coefs_terms,            & ! intent(in)
+                             pdf_implicit_coefs_terms,              & ! intent(in)
                              l_iter_xp2_xpyp, dt,                   & ! intent(in)
                              sclrm, wpsclrp,                        & ! intent(in)
                              wpsclrp2, wpsclrprtp, wpsclrpthlp,     & ! intent(in)
@@ -1501,7 +1501,7 @@ module advance_clubb_core_module
              rho_ds_zt, invrs_rho_ds_zm,                         & ! intent(in)
              invrs_rho_ds_zt, radf, thv_ds_zm,                   & ! intent(in)
              thv_ds_zt, pdf_params%mixt_frac, Cx_fnc_Richardson, & ! intent(in)
-             new_pdf_implct_coefs_terms,                         & ! intent(in)
+             pdf_implicit_coefs_terms,                           & ! intent(in)
              wp2, wp3, wp3_zm, wp2_zt )                            ! intent(i/o)
 
       if ( clubb_at_least_debug_level( 0 ) ) then
@@ -1687,7 +1687,7 @@ module advance_clubb_core_module
                                 wpsclrprtp, wpsclrpthlp,       & ! Intent(out)
                                 pdf_params, pdf_params_frz,    & ! Intent(out)
                                 pdf_params_zm,                 & ! Intent(out)
-                                new_pdf_implct_coefs_terms )     ! Intent(out)
+                                pdf_implicit_coefs_terms )       ! Intent(out)
 
     endif ! ipdf_call_placement == ipdf_post_advance_fields
           ! or ipdf_call_placement == ipdf_pre_post_advance_fields
@@ -1896,7 +1896,7 @@ module advance_clubb_core_module
                                  wpsclrprtp, wpsclrpthlp,       & ! Intent(out)
                                  pdf_params, pdf_params_frz,    & ! Intent(out)
                                  pdf_params_zm,                 & ! Intent(out)
-                                 new_pdf_implct_coefs_terms )     ! Intent(out)
+                                 pdf_implicit_coefs_terms )       ! Intent(out)
 
     use grid_class, only: &
         gr,    & ! Variable(s)
@@ -2150,7 +2150,7 @@ module advance_clubb_core_module
       pdf_params_zm    ! PDF parameters   [units vary]
 
     type(implicit_coefs_terms), dimension(gr%nz), intent(out) :: &
-      new_pdf_implct_coefs_terms  ! New PDF: impl coefs; expl terms [units vary]
+      pdf_implicit_coefs_terms    ! Implicit coefs / explicit terms [units vary]
 
     !!! Local Variables
     real( kind = core_rknd ), dimension(gr%nz) :: &
@@ -2244,9 +2244,9 @@ module advance_clubb_core_module
       max_F_thl_zm
 
     type(implicit_coefs_terms), dimension(gr%nz) :: &
-      new_pdf_implct_coefs_terms_zm,   &
-      new_pdf_implct_coefs_terms_frz,  &
-      newpdf_implct_coefs_terms_zmfrz
+      pdf_implicit_coefs_terms_zm,     &
+      pdf_implicit_coefs_terms_frz,    &
+      pdf_implicit_coefs_terms_zm_frz
 
     ! The following variables are defined for use when l_use_ice_latent = .true.
     type(pdf_parameter), dimension(gr%nz) :: &
@@ -2474,7 +2474,7 @@ module advance_clubb_core_module
           rcm(k), wpthvp_zt(k), wp2thvp(k), rtpthvp_zt(k),            & ! intent(out)
           thlpthvp_zt(k), wprcp_zt(k), wp2rcp(k), rtprcp_zt(k),       & ! intent(out)
           thlprcp_zt(k), rcp2_zt(k), pdf_params(k),                   & ! intent(out)
-          new_pdf_implct_coefs_terms(k),                              & ! intent(out)
+          pdf_implicit_coefs_terms(k),                                & ! intent(out)
           F_w(k), F_rt(k), F_thl(k), min_F_w(k), max_F_w(k),          & ! intent(out)
           min_F_rt(k), max_F_rt(k), min_F_thl(k), max_F_thl(k),       & ! intent(out)
           wpsclrprtp(k,:), wpsclrp2(k,:), sclrpthvp_zt(k,:),          & ! intent(out)
@@ -2632,7 +2632,7 @@ module advance_clubb_core_module
             rcm_zm(k), wpthvp(k), wp2thvp_zm(k), rtpthvp(k),                  & ! intent(out)
             thlpthvp(k), wprcp(k), wp2rcp_zm(k), rtprcp(k),                   & ! intent(out)
             thlprcp(k), rcp2(k), pdf_params_zm(k),                            & ! intent(out)
-            new_pdf_implct_coefs_terms_zm(k),                                 & ! intent(out)
+            pdf_implicit_coefs_terms_zm(k),                                   & ! intent(out)
             F_w_zm, F_rt_zm, F_thl_zm, min_F_w_zm, max_F_w_zm,                & ! intent(out)
             min_F_rt_zm, max_F_rt_zm, min_F_thl_zm, max_F_thl_zm,             & ! intent(out)
             wpsclrprtp_zm(k,:), wpsclrp2_zm(k,:), sclrpthvp(k,:),             & ! intent(out)
@@ -2801,7 +2801,7 @@ module advance_clubb_core_module
             rcm_frz(k), wpthvp_zt_frz(k), wp2thvp_frz(k), rtpthvp_zt_frz(k),      & ! intent(out)
             thlpthvp_zt_frz(k), wprcp_zt_frz(k), wp2rcp_frz(k), rtprcp_zt_frz(k), & ! intent(out)
             thlprcp_zt_frz(k), rcp2_zt_frz(k), pdf_params_frz(k),                 & ! intent(out)
-            new_pdf_implct_coefs_terms_frz(k),                                    & ! intent(out)
+            pdf_implicit_coefs_terms_frz(k),                                      & ! intent(out)
             F_w_frz, F_rt_frz, F_thl_frz, min_F_w_frz, max_F_w_frz,               & ! intent(out)
             min_F_rt_frz, max_F_rt_frz, min_F_thl_frz, max_F_thl_frz,             & ! intent(out)
             wpsclrprtp_frz(k,:), wpsclrp2_frz(k,:), sclrpthvp_zt_frz(k,:),        & ! intent(out)
@@ -2855,7 +2855,7 @@ module advance_clubb_core_module
               rcm_zm_frz(k), wpthvp_frz(k), wp2thvp_zm_frz(k), rtpthvp_frz(k),  & ! intent(out)
               thlpthvp_frz(k), wprcp_frz(k), wp2rcp_zm_frz(k), rtprcp_frz(k),   & ! intent(out)
               thlprcp_frz(k), rcp2_frz(k), pdf_params_zm_frz(k),                & ! intent(out)
-              newpdf_implct_coefs_terms_zmfrz(k),                               & ! intent(out)
+              pdf_implicit_coefs_terms_zm_frz(k),                               & ! intent(out)
               F_w_zm_frz, F_rt_zm_frz, F_thl_zm_frz, min_F_w_zm_frz,            & ! intent(out)
               max_F_w_zm_frz, min_F_rt_zm_frz, max_F_rt_zm_frz,                 & ! intent(out)
               min_F_thl_zm_frz, max_F_thl_zm_frz,                               & ! intent(out)

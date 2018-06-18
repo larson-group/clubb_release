@@ -54,7 +54,7 @@ module advance_xm_wpxp_module
                               mixt_frac_zm, l_implemented, em, wp2sclrp, &
                               sclrpthvp, sclrm_forcing, sclrp2, exner, rcm, &
                               p_in_Pa, thvm, Cx_fnc_Richardson, &
-                              new_pdf_implct_coefs_terms, &
+                              pdf_implicit_coefs_terms, &
                               rtm, wprtp, thlm, wpthlp, &
                               sclrm, wpsclrp )
 
@@ -237,7 +237,7 @@ module advance_xm_wpxp_module
       Cx_fnc_Richardson  ! Cx_fnc computed from Richardson_num       [-]
 
     type(implicit_coefs_terms), dimension(gr%nz), intent(in) :: &
-      new_pdf_implct_coefs_terms  ! New PDF: impl coefs; expl terms [units vary]
+      pdf_implicit_coefs_terms    ! Implicit coefs / explicit terms [units vary]
 
     ! Input/Output Variables
     real( kind = core_rknd ), intent(inout), dimension(gr%nz) ::  & 
@@ -425,23 +425,23 @@ module advance_xm_wpxp_module
 
          ! Unpack the variables coef_wp2rtp_implicit, term_wp2rtp_explicit,
          ! coef_wp2thlp_implicit, and term_wp2thlp_explicit from
-         ! new_pdf_implct_coefs_terms.  The PDF parameters and the resulting
+         ! pdf_implicit_coefs_terms.  The PDF parameters and the resulting
          ! implicit coefficients and explicit terms are calculated on
          ! thermodynamic levels.
 
          ! Implicit coefficient on <w'rt'> in <w'^2 rt'> equation.
-         coef_wp2rtp_implicit = new_pdf_implct_coefs_terms%coef_wp2rtp_implicit
+         coef_wp2rtp_implicit = pdf_implicit_coefs_terms%coef_wp2rtp_implicit
 
          ! Explicit (RHS) term in <w'rt'> equation.
-         term_wp2rtp_explicit = new_pdf_implct_coefs_terms%term_wp2rtp_explicit
+         term_wp2rtp_explicit = pdf_implicit_coefs_terms%term_wp2rtp_explicit
 
          ! Implicit coefficient on <w'thl'> in <w'^2 thl'> equation.
          coef_wp2thlp_implicit &
-         = new_pdf_implct_coefs_terms%coef_wp2thlp_implicit
+         = pdf_implicit_coefs_terms%coef_wp2thlp_implicit
 
          ! Explicit (RHS) term in <w'thl'> equation.
          term_wp2thlp_explicit &
-         = new_pdf_implct_coefs_terms%term_wp2thlp_explicit
+         = pdf_implicit_coefs_terms%term_wp2thlp_explicit
 
          ! The code for the scalar variables will be set up later.
          coef_wp2sclrp_implicit = zero
@@ -782,7 +782,7 @@ module advance_xm_wpxp_module
           write(fstderr,*) "p_in_Pa = ", p_in_Pa, new_line('c')
           write(fstderr,*) "thvm = ", thvm, new_line('c')
           write(fstderr,*) "Cx_fnc_Richardson = ", Cx_fnc_Richardson, new_line('c')
-          write(fstderr,*) "new_pdf_implct_coefs_terms = ", new_pdf_implct_coefs_terms
+          write(fstderr,*) "pdf_implicit_coefs_terms = ", pdf_implicit_coefs_terms
           write(fstderr,*) new_line('c')
      
           if ( sclr_dim > 0 )  then
