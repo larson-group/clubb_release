@@ -98,13 +98,13 @@ cd $scriptPath
 run_serial
 
 mkdir $SERIAL
-mv ../output/*.??? $SERIAL
+mv ../output/*.* $SERIAL
 
 # Run in parallel mode
 run_parallel
 
 mkdir $PARALLEL
-mv ../output/*.??? $PARALLEL
+mv ../output/*.* $PARALLEL
 
 echo -n "Diffing the output... "
 for (( x=0;  x < "${#RUN_CASES[@]}"; x++ )); do
