@@ -11,6 +11,7 @@ module clip_explicit
             clip_covar, & 
             clip_covar_level, & 
             clip_variance, & 
+            clip_variance_level, & 
             clip_skewness, &
             clip_skewness_core
 
@@ -843,6 +844,100 @@ module clip_explicit
 
     return
   end subroutine clip_variance
+
+  !=============================================================================
+  subroutine clip_variance_level( solve_type, dt, threshold, level, &
+                                  xp2 )
+
+    ! Description:
+    ! Clipping the value of variance x'^2 based on a minimum threshold value.
+    ! The threshold value must be greater than or equal to 0.  This clipping is
+    ! done at a single vertical level.
+    !
+    ! The values of x'^2 are found on the momentum levels.
+    !
+    ! The following variances are found in the code:
+    !
+    ! r_t'^2, th_l'^2, u'^2, v'^2, sclr'^2, (computed in advance_xp2_xpyp);
+    ! w'^2 (computed in advance_wp2_wp3).
+
+    ! References:
+    ! None
+    !-----------------------------------------------------------------------
+
+    use clubb_precision, only: & 
+        core_rknd ! Variable(s)
+
+    use stats_type_utilities, only: & 
+        stat_begin_update_pt,  & ! Procedure(s)
+        stat_end_update_pt
+
+    use stats_variables, only: & 
+        stats_zm,  & ! Variable(s)
+        iwp2_cl, & 
+        irtp2_cl, & 
+        ithlp2_cl, & 
+        iup2_cl, & 
+        ivp2_cl, & 
+        l_stats_samp
+
+    implicit none
+
+    ! Input Variables
+    integer, intent(in) :: & 
+      solve_type  ! Variable being solved; used for STATS.
+
+    real( kind = core_rknd ), intent(in) :: & 
+      dt          ! Model timestep; used here for STATS     [s]
+
+    real( kind = core_rknd ), intent(in) :: & 
+      threshold   ! Minimum value of x'^2                   [{x units}^2]
+
+    integer, intent(in) :: &
+      level       ! Vertical level index
+
+    ! Output Variable
+    real( kind = core_rknd ), intent(inout) :: & 
+      xp2         ! Variance of x, x'^2 (momentum levels)   [{x units}^2]
+
+    integer :: & 
+      ixp2_cl
+
+    ! ---- Begin Code ----
+
+    select case ( solve_type )
+    case ( clip_wp2 )   ! wp2 clipping budget term
+      ixp2_cl = iwp2_cl
+    case ( clip_rtp2 )   ! rtp2 clipping budget term
+      ixp2_cl = irtp2_cl
+    case ( clip_thlp2 )   ! thlp2 clipping budget term
+      ixp2_cl = ithlp2_cl
+    case ( clip_up2 )   ! up2 clipping budget term
+      ixp2_cl = iup2_cl
+    case ( clip_vp2 )   ! vp2 clipping budget term
+      ixp2_cl = ivp2_cl
+    case default   ! scalars are involved
+      ixp2_cl = 0
+    end select
+
+
+    if ( l_stats_samp ) then
+       call stat_begin_update_pt( ixp2_cl, level, xp2 / dt, stats_zm )
+    endif
+
+    ! Limit the value of x'^2 at threshold.
+    if ( xp2 < threshold ) then
+       xp2 = threshold
+    endif
+
+    if ( l_stats_samp ) then
+       call stat_end_update_pt( ixp2_cl, level, xp2 / dt, stats_zm )
+    endif
+
+
+    return
+
+  end subroutine clip_variance_level
 
   !=============================================================================
   subroutine clip_skewness( dt, sfc_elevation, wp2_zt, wp3 )
