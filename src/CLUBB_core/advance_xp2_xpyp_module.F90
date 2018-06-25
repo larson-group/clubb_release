@@ -2053,6 +2053,21 @@ module advance_xp2_xpyp_module
       rhs     ! Explicit contributions to x variance/covariance terms
 
     ! Local Variables
+    real( kind = core_rknd ) :: &
+      turbulent_prod, & ! Turbulent production term  [{x_a units}*{x_b units}/s]
+      xp2_mc_limiter    ! Largest allowable (negative) mc effect
+
+    logical :: &
+      l_clip_large_neg_mc = .false.  ! Flag to clip excessively large mc values.
+
+    ! Fractional amount of xp2 that microphysics (mc) is allowed to deplete,
+    ! where 0 <= mc_xp2_deplete_frac <= 1.  When mc_xp2_deplete_frac has a value
+    ! of 0, microphysics is not allowed to deplete xp2 at all, and when
+    ! mc_xp2_deplete_frac has a value of 1, microphysics is allowed to deplete
+    ! xp2 down to the threshold value of x_tol^2.  This is used only when the
+    ! l_clip_large_neg_mc flag is enabled.
+    real( kind = core_rknd ), parameter :: &
+      mc_xp2_deplete_frac = 0.75_core_rknd
 
     ! Array indices
     integer :: k, kp1, km1, k_low, k_high
@@ -2220,10 +2235,11 @@ module advance_xp2_xpyp_module
       endif ! l_explicit_turbulent_adv_xpyp
 
       ! RHS turbulent production (tp) term.
-      rhs(k,1)  & 
-      = rhs(k,1)  & 
-      + term_tp( xam(kp1), xam(k), xbm(kp1), xbm(k), & 
+      turbulent_prod &
+      = term_tp( xam(kp1), xam(k), xbm(kp1), xbm(k), & 
                  wpxbp(k), wpxap(k), gr%invrs_dzm(k) )
+
+      rhs(k,1) = rhs(k,1) + turbulent_prod
 
       ! RHS dissipation term 1 (dp1)
       rhs(k,1) &
@@ -2247,7 +2263,29 @@ module advance_xp2_xpyp_module
 
       ! RHS <x'y'> forcing.
       ! Note: <x'y'> forcing includes the effects of microphysics on <x'y'>.
-      rhs(k,1) = rhs(k,1) + xapxbp_forcing(k)
+      if ( l_clip_large_neg_mc &
+           .and. ( solve_type == xp2_xpyp_rtp2 &
+                   .or. solve_type == xp2_xpyp_thlp2 ) ) then
+         ! Limit the variance-depleting effects of excessively large
+         ! microphysics terms on rtp2 and thlp2 in order to reduce oscillations.
+         if ( turbulent_prod >= zero ) then
+            ! Microphysics is allowed to deplete turbulent production and a
+            ! fraction of the variance, determined by mc_xp2_deplete_frac, down
+            ! to the threshold.
+            xp2_mc_limiter = - mc_xp2_deplete_frac &
+                               * ( xapxbp(k) - threshold ) / dt &
+                             - turbulent_prod
+         else ! turbulent_prod < 0
+            ! Microphysics is allowed to deplete a fraction of the variance,
+            ! determined by mc_xp2_deplete_frac, down to the threshold.
+            xp2_mc_limiter = - mc_xp2_deplete_frac &
+                               * ( xapxbp(k) - threshold ) / dt
+         endif
+         ! Note: the value of xp2_mc_limiter is always negative.
+         rhs(k,1) = rhs(k,1) + max( xapxbp_forcing(k), xp2_mc_limiter )
+      else
+         rhs(k,1) = rhs(k,1) + xapxbp_forcing(k)
+      endif ! l_clip_large_neg_mc
 
 
       if ( l_stats_samp ) then
@@ -2385,7 +2423,15 @@ module advance_xp2_xpyp_module
                                  stats_zm )                 ! Intent(inout)
 
         ! x'y' forcing term is completely explicit; call stat_update_var_pt.
-        call stat_update_var_pt( ixapxbp_f, k, xapxbp_forcing(k), stats_zm )
+        if ( l_clip_large_neg_mc &
+             .and. ( solve_type == xp2_xpyp_rtp2 &
+                     .or. solve_type == xp2_xpyp_thlp2 ) ) then
+           call stat_update_var_pt( ixapxbp_f, k, &
+                                    max( xapxbp_forcing(k), xp2_mc_limiter ), &
+                                    stats_zm )
+        else
+           call stat_update_var_pt( ixapxbp_f, k, xapxbp_forcing(k), stats_zm )
+        endif
 
       endif ! l_stats_samp
 
@@ -2423,8 +2469,6 @@ module advance_xp2_xpyp_module
     ! Description:
     ! Turbulent advection of <x'^2> and <x'y'>:  implicit portion of the code.
     !
-    ! This implicit discretization is specifically for the new PDF.
-    !
     ! The d<x'^2>/dt equation contains a turbulent advection term:
     !
     ! - (1/rho_ds) * d( rho_ds * <w'x'^2> )/dz;
@@ -2433,26 +2477,30 @@ module advance_xp2_xpyp_module
     !
     ! - (1/rho_ds) * d( rho_ds * <w'x'y'> )/dz.
     !
-    ! A substitution, which is specific to the new PDF, is made in order to
-    ! close the <x'^2> turbulent advection term, such that:
+    ! A substitution is made in order to close the <x'^2> turbulent advection
+    ! term, such that:
     !
-    ! <w'x'^2> = coef_wpxp2_implicit * <x'^2>.
+    ! <w'x'^2> = coef_wpxp2_implicit * <x'^2> + term_wpxp2_explicit.
     !
-    ! The calculation of coef_wpxp2_implicit is detailed in function
-    ! calc_coef_wpxp2_implicit, which is found in module new_pdf in new_pdf.F90.
+    ! For the new PDF, the calculation of coef_wpxp2_implicit is detailed in
+    ! function calc_coef_wpxp2_implicit, which is found in module new_pdf in
+    ! new_pdf.F90.  The value of term_wpxp2_explicit is 0, as the <x'^2>
+    ! turbulent advection term is entirely implicit.
     !
-    ! Another substitution, which is also specific to the new PDF, is made in
-    ! order to close the <x'y'> turbulent advection term, such that:
+    ! Another substitution is made in order to close the <x'y'> turbulent
+    ! advection term, such that:
     !
     ! <w'x'y'> = coef_wpxpyp_implicit * <x'y'> + term_wpxpyp_explicit.
     !
-    ! The calculation of both coef_wpxpyp_implicit and term_wpxpyp_explicit are
-    ! detailed in function calc_coefs_wpxpyp_semiimpl, which is found in module
-    ! new_pdf in new_pdf.F90.
+    ! For the new PDF, the calculation of both coef_wpxpyp_implicit and
+    ! term_wpxpyp_explicit are detailed in function calc_coefs_wpxpyp_semiimpl,
+    ! which is found in module new_pdf in new_pdf.F90.
     !
     ! The <x'^2> turbulent advection term is rewritten as:
     !
-    ! - (1/rho_ds) * d( rho_ds * coef_wpxp2_implicit * <x'^2> )/dz;
+    ! - (1/rho_ds)
+    !   * d( rho_ds * ( coef_wpxp2_implicit * <x'^2> + term_wpxp2_explicit ) )
+    !     /dz;
     !
     ! and the <x'y'> turbulent advection term is rewritten as:
     !
@@ -2462,15 +2510,20 @@ module advance_xp2_xpyp_module
     !
     ! The variables <x'^2> and <x'y'> are both evaluated at the (t+1) timestep,
     ! which allows the <x'^2> turbulent advection term to be expressed
-    ! implicitly as:
+    ! semi-implicitly as:
     !
     ! - (1/rho_ds) * d( rho_ds * coef_wpxp2_implicit * <x'^2>(t+1) )/dz;
+    ! - (1/rho_ds) * d( rho_ds * term_wpxp2_explicit )/dz;
     !
     ! and which allows the <x'y'> turbulent advection term to be expressed
     ! semi-implicitly as:
     !
     ! - (1/rho_ds) * d( rho_ds * coef_wpxpyp_implicit * <x'y'>(t+1) )/dz
     ! - (1/rho_ds) * d( rho_ds * term_wpxpyp_explicit )/dz.
+    !
+    ! The implicit portion of <x'^2> turbulent advection term is:
+    !
+    ! - (1/rho_ds) * d( rho_ds * coef_wpxp2_implicit * <x'^2>(t+1) )/dz.
     !
     ! The implicit portion of <x'y'> turbulent advection term is:
     !
@@ -2484,9 +2537,10 @@ module advance_xp2_xpyp_module
     ! used is from the next timestep, which is being advanced to in solving the
     ! d<x'^2>/dt or d<x'y'>/dt equation.
     !
-    ! The explicit portion of the <x'y'> turbulent advection term is discretized
-    ! in the same manner as the entirely explicit turbulent advection option.
-    ! It can use the same code, which is found in function term_ta_explicit_rhs.
+    ! The explicit portion of the <x'^2> and/or <x'y'> turbulent advection term
+    ! is discretized in the same manner as the entirely explicit turbulent
+    ! advection option.  It can use the same code, which is found in function
+    ! term_ta_explicit_rhs.
     !
     ! When x and y are the same variable, <x'y'> reduces to <x'^2> and <w'x'y'>
     ! reduces to <w'x'^2>.  The discretization and the code used in this
@@ -2494,6 +2548,8 @@ module advance_xp2_xpyp_module
     ! coef_wpxpyp_implicit, but also applies to <x'^2> and coef_wpxp2_implicit.
     !
     ! The implicit discretization of this term is as follows:
+    !
+    ! 1) Centered Discretization
     !
     ! The values of <x'y'> are found on the momentum levels, while the values of
     ! coef_wpxpyp_implicit are found on the thermodynamic levels, which is where
@@ -2523,6 +2579,9 @@ module advance_xp2_xpyp_module
     ! for momentum levels.
     !
     ! invrs_dzm(k) = 1 / ( zt(k+1) - zt(k) )
+    !
+    ! 2) "Upwind" Discretization.
+    !
 
     ! References:
     !-----------------------------------------------------------------------
