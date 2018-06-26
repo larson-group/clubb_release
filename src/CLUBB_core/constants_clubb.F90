@@ -397,7 +397,8 @@ module constants_clubb
   ! have.  Statistically, a correlation is not allowed to be less than -1 or
   ! greater than 1, so the maximum magnitude would be 1.
   real( kind = core_rknd ), parameter, public :: &
-    max_mag_correlation = 0.99_core_rknd
+    max_mag_correlation = 0.99_core_rknd, &      ! Most correlations use this
+    max_mag_correlation_flux = 0.99_core_rknd    ! Special for wprtp and wpthlp
 
   real( kind = core_rknd ), parameter, public :: &
     cloud_frac_min = 0.005_core_rknd ! Threshold for cloud fractions

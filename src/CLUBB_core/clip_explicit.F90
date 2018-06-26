@@ -452,7 +452,8 @@ module clip_explicit
         gr ! Variable(s)
 
     use constants_clubb, only: &
-        max_mag_correlation ! Constant(s)
+        max_mag_correlation,      & ! Constant(s)
+        max_mag_correlation_flux
 
     use clubb_precision, only: & 
         core_rknd ! Variable(s)
@@ -494,7 +495,10 @@ module clip_explicit
       xpyp_chnge  ! Net change in x'y' due to clipping [{x units}*{y units}]
 
 
-    ! Local Variable
+    ! Local Variables
+    real( kind = core_rknd ) ::  & 
+      max_mag_corr    ! Maximum magnitude of a correlation allowed
+
     integer :: k  ! Array index
 
     integer :: & 
@@ -522,6 +526,15 @@ module clip_explicit
       endif
     endif
 
+    ! When clipping for wprtp or wpthlp, use the special value for
+    ! max_mag_correlation_flux.  For all other correlations, use
+    ! max_mag_correlation.
+    if ( ( solve_type == clip_wprtp ) .or. ( solve_type == clip_wpthlp ) ) then
+       max_mag_corr = max_mag_correlation_flux
+    else ! All other covariances
+       max_mag_corr = max_mag_correlation
+    endif ! solve_type
+
     ! The value of x'y' at the surface (or lower boundary) is a set value that
     ! is either specified or determined elsewhere in a surface subroutine.  It
     ! is ensured elsewhere that the correlation between x and y at the surface
@@ -534,20 +547,20 @@ module clip_explicit
     do k = 2, gr%nz-1, 1
 
       ! Clipping for xpyp at an upper limit corresponding with a correlation
-      ! between x and y of max_mag_correlation.
-      if ( xpyp(k) >  max_mag_correlation * sqrt( xp2(k) * yp2(k) ) ) then
+      ! between x and y of max_mag_corr.
+      if ( xpyp(k) > max_mag_corr * sqrt( xp2(k) * yp2(k) ) ) then
 
-        xpyp_chnge(k) =  max_mag_correlation * sqrt( xp2(k) * yp2(k) ) - xpyp(k)
+        xpyp_chnge(k) = max_mag_corr * sqrt( xp2(k) * yp2(k) ) - xpyp(k)
 
-        xpyp(k) =  max_mag_correlation * sqrt( xp2(k) * yp2(k) )
+        xpyp(k) = max_mag_corr * sqrt( xp2(k) * yp2(k) )
 
-        ! Clipping for xpyp at a lower limit corresponding with a correlation
-        ! between x and y of -max_mag_correlation.
-      elseif ( xpyp(k) < -max_mag_correlation * sqrt( xp2(k) * yp2(k) ) ) then
+      ! Clipping for xpyp at a lower limit corresponding with a correlation
+      ! between x and y of -max_mag_corr.
+      elseif ( xpyp(k) < -max_mag_corr * sqrt( xp2(k) * yp2(k) ) ) then
 
-        xpyp_chnge(k) = -max_mag_correlation * sqrt( xp2(k) * yp2(k) ) - xpyp(k)
+        xpyp_chnge(k) = -max_mag_corr * sqrt( xp2(k) * yp2(k) ) - xpyp(k)
 
-        xpyp(k) = -max_mag_correlation * sqrt( xp2(k) * yp2(k) )
+        xpyp(k) = -max_mag_corr * sqrt( xp2(k) * yp2(k) )
 
       else
 
@@ -559,7 +572,7 @@ module clip_explicit
 
     ! Since there is no covariance clipping at the upper or lower boundaries,
     ! the change in x'y' due to covariance clipping at those levels is 0.
-    xpyp_chnge(1)       = 0.0_core_rknd
+    xpyp_chnge(1)     = 0.0_core_rknd
     xpyp_chnge(gr%nz) = 0.0_core_rknd
 
     if ( l_stats_samp ) then
@@ -620,7 +633,8 @@ module clip_explicit
     !-----------------------------------------------------------------------
 
     use constants_clubb, only: &
-        max_mag_correlation, & ! Constant(s)
+        max_mag_correlation,      & ! Constant(s)
+        max_mag_correlation_flux, &
         zero
 
     use clubb_precision, only: & 
@@ -664,7 +678,10 @@ module clip_explicit
       xpyp_chnge  ! Net change in <x'y'> due to clipping  [{x units}*{y units}]
 
 
-    ! Local Variable
+    ! Local Variables
+    real( kind = core_rknd ) ::  & 
+      max_mag_corr    ! Maximum magnitude of a correlation allowed
+
     integer :: & 
       ixpyp_cl    ! Statistics index
 
@@ -691,6 +708,15 @@ module clip_explicit
        endif
     endif
 
+    ! When clipping for wprtp or wpthlp, use the special value for
+    ! max_mag_correlation_flux.  For all other correlations, use
+    ! max_mag_correlation.
+    if ( ( solve_type == clip_wprtp ) .or. ( solve_type == clip_wpthlp ) ) then
+       max_mag_corr = max_mag_correlation_flux
+    else ! All other covariances
+       max_mag_corr = max_mag_correlation
+    endif ! solve_type
+
     ! The value of x'y' at the surface (or lower boundary) is a set value that
     ! is either specified or determined elsewhere in a surface subroutine.  It
     ! is ensured elsewhere that the correlation between x and y at the surface
@@ -702,20 +728,20 @@ module clip_explicit
     ! not be conserved, therefore it should never be added.
 
     ! Clipping for xpyp at an upper limit corresponding with a correlation
-    ! between x and y of max_mag_correlation.
-    if ( xpyp >  max_mag_correlation * sqrt( xp2 * yp2 ) ) then
+    ! between x and y of max_mag_corr.
+    if ( xpyp > max_mag_corr * sqrt( xp2 * yp2 ) ) then
 
-        xpyp_chnge =  max_mag_correlation * sqrt( xp2 * yp2 ) - xpyp
+        xpyp_chnge = max_mag_corr * sqrt( xp2 * yp2 ) - xpyp
 
-        xpyp =  max_mag_correlation * sqrt( xp2 * yp2 )
+        xpyp = max_mag_corr * sqrt( xp2 * yp2 )
 
     ! Clipping for xpyp at a lower limit corresponding with a correlation
-    ! between x and y of -max_mag_correlation.
-    elseif ( xpyp < -max_mag_correlation * sqrt( xp2 * yp2 ) ) then
+    ! between x and y of -max_mag_corr.
+    elseif ( xpyp < -max_mag_corr * sqrt( xp2 * yp2 ) ) then
 
-        xpyp_chnge = -max_mag_correlation * sqrt( xp2 * yp2 ) - xpyp
+        xpyp_chnge = -max_mag_corr * sqrt( xp2 * yp2 ) - xpyp
 
-        xpyp = -max_mag_correlation * sqrt( xp2 * yp2 )
+        xpyp = -max_mag_corr * sqrt( xp2 * yp2 )
 
     else
 

@@ -83,7 +83,7 @@ module advance_xp2_xpyp_module
         w_tol_sqd,  & ! Constant(s)
         rt_tol, & 
         thl_tol, &
-        max_mag_correlation, &
+        max_mag_correlation_flux, &
         fstderr, &
         one, &
         two_thirds, &
@@ -328,7 +328,7 @@ module advance_xp2_xpyp_module
 
     ! Flag to base the threshold minimum value of xp2 (rtp2 and thlp2) on
     ! keeping the overall correlation of w and x within the limits of
-    ! -max_mag_correlation to max_mag_correlation.
+    ! -max_mag_correlation_flux to max_mag_correlation_flux.
     logical :: &
       l_min_xp2_from_corr_wx = .false.
 
@@ -611,8 +611,9 @@ module advance_xp2_xpyp_module
     ! The value of rtp2 is not allowed to become smaller than the threshold
     ! value of rt_tol^2.  Additionally, that threshold value may be boosted at
     ! any grid level in order to keep the overall correlation of w and rt
-    ! between the values of -max_mag_correlation and max_mag_correlation by
-    ! boosting rtp2 rather than by limiting the magnitude of wprtp.
+    ! between the values of -max_mag_correlation_flux and
+    ! max_mag_correlation_flux by boosting rtp2 rather than by limiting the
+    ! magnitude of wprtp.
     if ( l_min_xp2_from_corr_wx ) then
 
        ! The overall correlation of w and rt is:
@@ -623,14 +624,15 @@ module advance_xp2_xpyp_module
        !
        ! corr_w_rt^2 = wprtp^2 / ( wp2 * rtp2 ).
        !
-       ! Using max_mag_correlation for the correlation and then solving for the
-       ! minimum of rtp2, the equation becomes:
+       ! Using max_mag_correlation_flux for the correlation and then solving for
+       ! the minimum of rtp2, the equation becomes:
        !
-       ! rtp2|_min = wprtp^2 / ( wp2 * max_mag_correlation^2 ).
+       ! rtp2|_min = wprtp^2 / ( wp2 * max_mag_correlation_flux^2 ).
        do k = 1, gr%nz, 1
 
-          threshold = max( rt_tol**2, &
-                           wprtp(k)**2 / ( wp2(k) * max_mag_correlation**2 ) )
+          threshold &
+          = max( rt_tol**2, &
+                 wprtp(k)**2 / ( wp2(k) * max_mag_correlation_flux**2 ) )
 
           call clip_variance_level( xp2_xpyp_rtp2, dt, threshold, k, & ! In
                                     rtp2(k) )                          ! In/out
@@ -683,8 +685,9 @@ module advance_xp2_xpyp_module
     ! The value of thlp2 is not allowed to become smaller than the threshold
     ! value of thl_tol^2.  Additionally, that threshold value may be boosted at
     ! any grid level in order to keep the overall correlation of w and theta-l
-    ! between the values of -max_mag_correlation and max_mag_correlation by
-    ! boosting thlp2 rather than by limiting the magnitude of wpthlp.
+    ! between the values of -max_mag_correlation_flux and
+    ! max_mag_correlation_flux by boosting thlp2 rather than by limiting the
+    ! magnitude of wpthlp.
     if ( l_min_xp2_from_corr_wx ) then
 
        ! The overall correlation of w and theta-l is:
@@ -695,14 +698,15 @@ module advance_xp2_xpyp_module
        !
        ! corr_w_thl^2 = wpthlp^2 / ( wp2 * thlp2 ).
        !
-       ! Using max_mag_correlation for the correlation and then solving for the
-       ! minimum of thlp2, the equation becomes:
+       ! Using max_mag_correlation_flux for the correlation and then solving for
+       ! the minimum of thlp2, the equation becomes:
        !
-       ! thlp2|_min = wpthlp^2 / ( wp2 * max_mag_correlation^2 ).
+       ! thlp2|_min = wpthlp^2 / ( wp2 * max_mag_correlation_flux^2 ).
        do k = 1, gr%nz, 1
 
-          threshold = max( thl_tol**2, &
-                           wpthlp(k)**2 / ( wp2(k) * max_mag_correlation**2 ) )
+          threshold &
+          = max( thl_tol**2, &
+                 wpthlp(k)**2 / ( wp2(k) * max_mag_correlation_flux**2 ) )
 
           call clip_variance_level( xp2_xpyp_thlp2, dt, threshold, k, & ! In
                                     thlp2(k) )                          ! In/out
