@@ -57,7 +57,8 @@ module tuner_tests
     public :: tuner_tests_driver
 
     private :: goldstein_price_test, rastrigin_test, himmelblau_test, &
-               schaffer_test
+               schaffer_test, eggholder_test, goldstein_price,       &
+               rastrigin, himmelblau, schaffer, eggholder
 
     private
 
@@ -83,42 +84,46 @@ module tuner_tests
         call init_random
 
         tuner_tests_driver = 0
+
+        print *, "Running tuner tests"
+        print *, "-------------------"
         
         if ( goldstein_price_test() < 0.9 ) then
             print *, "goldstein_price fail"
             tuner_tests_driver = 1
+        else 
+            print *, "goldstein_price pass"
         end if
 
         if ( rastrigin_test() < 0.9 ) then
             print *, "rastrigin fail"
             tuner_tests_driver = 1
+        else 
+            print *, "rastrigin pass"
         end if
 
         if ( himmelblau_test() < 0.95 ) then
-            print *, "himmelbalu fail"
+            print *, "himmelblau fail"
             tuner_tests_driver = 1
+        else 
+            print *, "himmelblau pass"
         end if
 
         if ( eggholder_test() < 0.8 ) then
             print *, "eggholder fail"
             tuner_tests_driver = 1
+        else 
+            print *, "eggholder pass"
         end if
 
         if ( schaffer_test() < 0.9 ) then
             print *, "schaffer fail"
             tuner_tests_driver = 1
+        else 
+            print *, "schaffer pass"
         end if
 
         if ( l_print_outs ) then
-            ! Ameoba produces pretty bad results, so it is in the printout section only
-            print *, "Amoeba Rastrigin ", rastrigin_vars, " vars"
-            print '(F6.2)', rastrigin_amoeba_test()*100.
-            print *,""
-
-            ! Amebsa also produces pretty bad results
-            print *, "Amoeba Rastrigin ", rastrigin_vars, " vars"
-            print '(F6.2)', rastrigin_amebsa_test()*100.
-            print *,""
 
             l_esa_siarry = .false.
 
@@ -532,175 +537,6 @@ module tuner_tests
                          / ( 1 + 0.001 * ( x(1)**2 + x(2)**2 ) )**2
 
     end function schaffer
-
-
-    !============================= Amoeba Rastrigin =============================
-    real( kind = core_rknd ) function rastrigin_amoeba_test()
-
-          use nr, only:  & 
-              amoeba     ! Procedure(s)
-
-        implicit none
-
-        real, dimension(1:rastrigin_vars+1, 1:rastrigin_vars) :: &
-            param_vals_matrix
-
-        real, dimension(1:rastrigin_vars+1) :: &
-            cost_fnc_vector
-
-        real :: rand, f_tol
-
-        integer :: &
-            pass_count, &
-            garbage_iter, &
-            i, j, k
-
-        f_tol = 1.e-10
-        garbage_iter = 0
-        pass_count = 0
-
-        do k = 1, samples
-
-            ! create starting array
-            do j = 1, rastrigin_vars+1
-
-                do i = 1, rastrigin_vars
-
-                    call random_number(rand)
-                    param_vals_matrix(j,i) = -5.12 + ( 10.24 * rand ) 
-
-                end do
-                
-                cost_fnc_vector(j) = rastrigin( param_vals_matrix(j,:) )
-
-            end do
-
-            call amoeba( param_vals_matrix,  & 
-                   cost_fnc_vector,  & 
-                   f_tol, rastrigin, garbage_iter)
-
-            ! if all x ~= 0 then global minimum found
-            if ( all( abs(param_vals_matrix(1,:)) < 0.1 )  ) then
-                pass_count = pass_count + 1
-            end if
-
-        end do
-
-        rastrigin_amoeba_test = real( pass_count, kind = core_rknd ) &
-                              / real( samples, kind = core_rknd )
-        return
-
-    end function rastrigin_amoeba_test
-
-
-
-
-
-
-    !============================= Amebsa Rastrigin =============================
-    real( kind = core_rknd ) function rastrigin_amebsa_test()
-
-          use nr, only:  & 
-              amebsa     ! Procedure(s)
-
-        implicit none
-        
-        integer, parameter :: anneal_iter = 100
-
-        real, dimension(1:rastrigin_vars+1, 1:rastrigin_vars) :: &
-            param_vals_matrix
-
-        real, dimension(1:rastrigin_vars+1) :: &
-            cost_fnc_vector
-
-        real :: rand, f_tol
-
-        integer :: &
-            pass_count, &
-            iter, &
-            i, j, k
-
-        integer ::  & 
-            iiter, jiter, & ! Loop variables
-            nit ! ???
-
-        real( kind = core_rknd ), dimension(rastrigin_vars) ::  & 
-            pb ! ???
-
-        real( kind = core_rknd ) ::  & 
-            ybb,   & ! ???
-            yb,    & ! ???
-            tmptr    ! ???
-
-        real, dimension(1:rastrigin_vars) :: &
-            pb_r4
-
-        real :: &
-            yb_r4
-
-        f_tol = 1.e-10
-        iter = 0
-        pass_count = 0
-
-        ybb   = 1.0e30_core_rknd
-        yb    = 1.0e30_core_rknd
-        nit   = 0
-        iiter = 0
-        tmptr = 100.
-
-        do k = 1, samples
-
-            ! create starting array
-            do j = 1, rastrigin_vars+1
-
-                do i = 1, rastrigin_vars
-
-                    call random_number(rand)
-                    param_vals_matrix(j,i) = -5.12 + ( 10.24 * rand ) 
-
-                end do
-                
-                cost_fnc_vector(j) = rastrigin( param_vals_matrix(j,:) )
-
-            end do
-
-            do jiter = 1, anneal_iter ! anneal_iter taken from /stat/ namelist
-
-                iter  = iiter
-                tmptr = tmptr * 0.8_core_rknd
-
-                pb_r4 = real(pb(1:rastrigin_vars))
-                yb_r4 = real(yb)
-
-                call amebsa & 
-                     ( param_vals_matrix,  & 
-                       cost_fnc_vector, & 
-                       pb_r4, yb_r4, real(f_tol), rastrigin, iter, real(tmptr) )
-
-                pb(1:rastrigin_vars) = real(pb_r4, kind = core_rknd)
-                yb = real(yb_r4, kind = core_rknd)
-
-                nit = nit + iiter - iter
-
-                if ( yb < ybb ) then
-                  ybb = yb
-                end if
-
-                if ( iter > 0 ) exit
-            end do
-
-            ! if all x ~= 0 then global minimum found
-            if ( all( abs(param_vals_matrix(1,:)) < 0.1 )  ) then
-                pass_count = pass_count + 1
-            end if
-
-        end do
-
-        rastrigin_amebsa_test = real( pass_count, kind = core_rknd ) &
-                              / real( samples, kind = core_rknd )
-        return
-
-    end function rastrigin_amebsa_test
             
 
     subroutine init_random

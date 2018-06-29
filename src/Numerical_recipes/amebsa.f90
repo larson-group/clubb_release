@@ -26,6 +26,7 @@ INTEGER(I4B), PARAMETER :: NMAX=200
 INTEGER(I4B) :: ihi,ndim
 REAL(SP)     :: yhi
 REAL(SP), DIMENSION(size(p,2)) :: psum
+REAL(SP), PARAMETER     :: TINY  = 1.0e-10
 call amebsa_private
 
 CONTAINS
@@ -49,13 +50,7 @@ CONTAINS
     yt(ihi) = ylo
     inhi    = imaxloc( yt(:) )
     ynhi    = yt(inhi)
-    
-    if ( abs( yhi )-abs( ylo ) < 1e-10) then
-        r_tol = 0.
-    else
-        r_tol    = 2.0_sp * abs( yhi - ylo ) / ( abs( yhi )+abs( ylo ) )
-    end if
-
+    r_tol    = 2.0_sp * abs( yhi - ylo ) / ( abs( yhi )+abs( ylo ) + TINY )
     if (r_tol < f_tol .or. iter < 0) then
       call swap( y(1), y(ilo) )
       call swap( p(1,:), p(ilo,:) )
