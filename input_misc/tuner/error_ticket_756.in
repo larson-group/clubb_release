@@ -1,14 +1,16 @@
 ! $Id: error_all.in 7366 2014-11-06 04:55:06Z bmg2@uwm.edu $
 &stats
-f_tol              = 1.0,
+f_tol              = 0.0001,
 l_results_stdout    = .true.,
 l_results_file      = .true.,
 l_stdout_on_invalid = .true.,
-t_variables       = "cloud_frac", "CLD", "rcm", "QC", "wp3", "W3" 
+t_variables       = "wp3", "wp3" 
 weight_var_nl     = 1.0,
 anneal_temp       = 100.,
 anneal_iter       = 100,
-tune_type         = 0
+tune_type = 2
+stp_adjst_center_in = 0.6
+stp_adjst_spread_in = 0.8
 /
 
 ! clubb_stats_file is the name of clubb stats file;  This should be the same as 
@@ -22,7 +24,7 @@ tune_type         = 0
 &cases
 !  GCSS ARM
 hoc_stats_file_nl(1)      = "../output/arm_zt.ctl"
-les_stats_file_nl(1)      = "../les_data/GCSSARM_96x96x110_67m_40m_1s.nc"
+les_stats_file_nl(1)      = "../les_data/arm_coamps_sm.ctl"
 run_file_nl(1)            = "arm_hoc.in"
 z_i_nl(1)                 = 2
 z_f_nl(1)                 = 109
@@ -31,52 +33,25 @@ weight_case_nl(1)         = 1.0
 
 !  RICO
 hoc_stats_file_nl(2)    = "../output/rico_zt.ctl"
-les_stats_file_nl(2)    = "../les_data/RICO_128x128x100_drizzle.nc"
+les_stats_file_nl(2)    = "../les_data/rico_coamps_sm.ctl"
 run_file_nl(2)          = "rico_hoc.in"
 z_i_nl(2)               = 2
 z_f_nl(2)               = 33
 timestep_intvls_nl(2,:) = 4201, 4320
 weight_case_nl(2)       = 1.0
 
-!  CGILS_S6
-hoc_stats_file_nl(3)    = "../output/cgils_s6_zt.ctl"
-les_stats_file_nl(3)    = "../les_data/ctl_s6_96x96x128_100m_DRZ_N100_tqndg.nc"
-run_file_nl(3)          = "cgils_s6_hoc.in"
-z_i_nl(3)               = 2
-z_f_nl(3)               = 40
-timestep_intvls_nl(3,:) = 432, 480
-weight_case_nl(3)       = 1.0
-
-!  CGILS_S11
-hoc_stats_file_nl(4)    = "../output/cgils_s11_zt.ctl"
-les_stats_file_nl(4)    = "../les_data/ctl_s11_96x96x320_50m_DRZ_N100_ref.nc"
-run_file_nl(4)          = "cgils_s11_hoc.in"
-z_i_nl(4)               = 2
-z_f_nl(4)               = 26
-timestep_intvls_nl(4,:) = 432, 480
-weight_case_nl(4)       = 1.0 
-
-!  CGILS_S12
-hoc_stats_file_nl(5)    = "../output/cgils_s12_zt.ctl"
-les_stats_file_nl(5)    = "../les_data/ctl_s12_96x96x192_25m_DRZ_N100_fixnudge.nc"
-run_file_nl(5)          = "cgils_s12_hoc.in"
-z_i_nl(5)               = 2
-z_f_nl(5)               = 18
-timestep_intvls_nl(5,:) = 432, 480
-weight_case_nl(5)       = 1.0
-
 !  DYCOMS2_RF02_ND
-hoc_stats_file_nl(6)    = "../output/dycoms2_rf02_nd_zt.ctl"
-les_stats_file_nl(6)    = "../les_data/DYCOMS_RF02_128x128x96_nodr_nosed.nc"
-run_file_nl(6)          = "dycoms2_rf02_nd_hoc.in"
-z_i_nl(6)               = 2
-z_f_nl(6)               = 37
-timestep_intvls_nl(6,:) = 301, 360
-weight_case_nl(6)       = 1.0                                                  
+hoc_stats_file_nl(3)    = "../output/dycoms2_rf02_nd_zt.ctl"
+les_stats_file_nl(3)    = "../les_data/dycoms2_rf02_nd_coamps_sm.ctl"
+run_file_nl(3)          = "dycoms2_rf02_nd_hoc.in"
+z_i_nl(3)               = 2
+z_f_nl(3)               = 37
+timestep_intvls_nl(3,:) = 301, 360
+weight_case_nl(3)       = 1.0                                                  
 /
 
-&initspread
-C1                           = 0.
+&initmax
+C1                           = 5.
 C1b                          = 0.
 C1c                          = 0.
 C2rt                         = 0.
@@ -93,14 +68,14 @@ C6rtc                        = 0.
 C6thl                        = 0.
 C6thlb                       = 0.
 C6thlc                       = 0.
-C7                           = 0.
+C7                           = 1.
 C7b                          = 0.
 C7c                          = 0.
-C8                           = 0.25
+C8                           = 0.
 C8b                          = 0.
 C10                          = 0.
-C11                          = 0.25
-C11b                         = 0.25
+C11                          = 1.
+C11b                         = 0.
 C11c                         = 0.
 C12                          = 0.
 C13                          = 0.

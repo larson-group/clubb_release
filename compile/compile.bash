@@ -295,7 +295,7 @@ $mkmf -t $bindir/mkmf_template -p $bindir/jacobian \
 
 $mkmf -t $bindir/mkmf_template -p $bindir/G_unit_tests \
   -m Make.G_unit_tests -c "${CPPDEFS}" -o "${WARNINGS}" -e $all_files_list \
-  $dir/file_list/G_unit_tests_files
+  $dir/file_list/G_unit_tests_files "$generated_lists_dir"/numerical_recipes_files
 
 $mkmf -t $bindir/mkmf_template -p $bindir/int2txt -m Make.int2txt \
   -o "${WARNINGS}" -e $all_files_list $dir/file_list/int2txt_files
