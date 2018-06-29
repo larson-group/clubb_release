@@ -6,10 +6,21 @@ program clubb_tuner
 !     Description:
 !     ``Tunes'' constants in clubb so that the output matches LES output.
 !     Uses amoeba or amebsa to calculate the min of (f_les - f_clubb)^2
-
+! 
 !     References:
 !     _Numerical Recipes in Fortran 90_ (Chapter 10) 
 !     (Amoeba & Amebsa subroutine)
+! 
+!   Advice for anyone attempting changes in the future:
+!       Almost everything in this file and the error.F90 file needs
+!       replacement. The way variables are read in from the error_*.in 
+!       files should be completely different, the way the variables are
+!       set up should be different, these functions should be in modules,
+!       there's a large number of things that straight up don't work and
+!       give no information as to what the error was, and some comments 
+!       are actually just question marks. Hopefully you like
+!       spaghetti and staring at your screen in despair wondering what
+!       could possibly be wrong this time.
 !----------------------------------------------------------------------
   use error, only:  & 
     tuner_init, min_les_clubb_diff,                & ! Subroutines 
@@ -67,6 +78,7 @@ program clubb_tuner
   ! Attempt to find the optimal parameter set
   do
     select case ( tune_type )
+
         case ( iamoeba )
           call amoeba_driver( )
 
@@ -227,6 +239,7 @@ program clubb_tuner
 #ifdef TUNER
   use nr, only:  & 
       amoeba ! Procedure(s)
+
   use error, only:  & 
     ! Variable(s)
     ndim,                                & ! Array dimensions
@@ -289,8 +302,10 @@ program clubb_tuner
 #ifdef TUNER
   use nr, only:  & 
       amebsa ! Procedure(s)
+
   use nrtype, only:  & 
       SP ! Variable(s)
+
   use error, only: & 
       param_vals_matrix,  & ! Variable(s)
       anneal_temp, & 
@@ -319,7 +334,7 @@ program clubb_tuner
 
   real( kind = core_rknd ), dimension(ndim) ::  & 
     pb ! ???
-   
+
   real( kind = core_rknd ) ::  & 
     ybb,   & ! ???
     yb,    & ! ???
@@ -350,6 +365,8 @@ program clubb_tuner
   cost_fnc_vector_r4 = real(cost_fnc_vector(1:ndim+1))
 
   do jiter = 1, anneal_iter ! anneal_iter taken from /stat/ namelist
+
+
     iter  = iiter
     tmptr = tmptr * 0.8_core_rknd
 
@@ -365,9 +382,11 @@ program clubb_tuner
     yb = real(yb_r4, kind = core_rknd)
 
     nit = nit + iiter - iter
+
     if ( yb < ybb ) then
       ybb = yb
     end if
+
     if ( iter > 0 ) exit
   end do
 
@@ -396,14 +415,22 @@ subroutine enhanced_simann_driver
   !   No. 2, June 1997, pp. 209--228.
   !------------------------------------------------------------------------
 
-  use enhanced_simann, only: esa_driver ! Procedure(s)
+  use enhanced_simann, only: &
+        esa_driver, & ! Procedure(s)
+        esa_driver_siarry
 
   use error, only: & ! Variable(s)
-    ndim,               & ! Array dimensions
-    param_vals_matrix,  & ! The 'p' matrix
-    param_vals_spread,  & ! Used here for the initial value of rostep
-    anneal_temp,        & ! Start annealing temperature
-    min_err               ! Minimum value of the cost function
+    ndim,                 & ! Array dimensions
+    param_vals_matrix,    & ! The parameters to tune matrix
+    param_vals_max,       & ! The maximum values for the parameters
+    anneal_temp,          & ! Start annealing temperature
+    min_err,              & ! Minimum value of the cost function
+    stp_adjst_center_in,  & 
+    stp_adjst_spread_in,  &
+    iter,                 &
+    tuning_filename,      &
+    file_unit,            &
+    f_tol
 
   use error, only:  & ! Procedure(s)
     min_les_clubb_diff  ! Cost function
@@ -413,13 +440,14 @@ subroutine enhanced_simann_driver
 
   implicit none
 
+  logical, parameter :: l_esa_siarry = .false.    ! Toggle between old and new code
+
   ! Local Variables
 
   real( kind = core_rknd ), dimension(ndim) :: &
     xinit,  & ! Initial values for the tunable parameters
-    x0min,  & ! Minimum value for the tunable parameters
-    x0max,  & ! Maximum value for the tunable parameters
-    rostep, & ! Initial step size
+    xmin,  & ! Minimum value for the tunable parameters
+    xmax,  & ! Maximum value for the tunable parameters
     xopt      ! Final values for the tunable parameters
 
   real( kind = core_rknd ) :: enopt ! Optimal cost
@@ -428,24 +456,23 @@ subroutine enhanced_simann_driver
 
   xinit = param_vals_matrix(1,1:ndim)
 
-  ! Set the minimum for the parameters.  Assume no parameter is < 0 for now
-  x0min(1) = 0._core_rknd 
-  x0min(2) = 0.0_core_rknd
-  x0min(3) = 0.0_core_rknd
+  ! set constraints, this should be read in from file
+  xmin = 0._core_rknd 
+  xmax = param_vals_max
 
-  ! Set the maximum for the parameters.  Assume parameters will be most 5 
-  ! times the current value.
-  !x0max(1:ndim) = 5_core_rknd * param_vals_matrix(1,1:ndim) 
-  x0max(1) = 5.000000000000000000_core_rknd
-  x0max(2) = 1._core_rknd
-  x0max(3) = 1._core_rknd
+  if ( l_esa_siarry ) then 
+    call esa_driver_siarry( xinit, xmin, xmax, anneal_temp, min_les_clubb_diff, xopt, enopt )
+  else 
+    call esa_driver( xinit, xmin, xmax,                         & ! intent(in)
+                     anneal_temp,                               & ! intent(inout)
+                     xopt, enopt,                               & ! intent(out)
+                     min_les_clubb_diff,                        & ! procedure    
+                     stp_adjst_center_in, stp_adjst_spread_in,  & ! optional(in)
+                     f_tol, tuning_filename, file_unit,         & ! ^
+                     iter                                       ) ! optional(inout) 
+  end if
 
-  rostep(1:ndim) = param_vals_spread(1:ndim)
-
-  call esa_driver( xinit, x0min, x0max, rostep, & ! In
-                   anneal_temp, min_les_clubb_diff, & ! In/out, Function
-                   xopt, enopt ) ! Out
-
+                   
   param_vals_matrix(1,1:ndim) = xopt(1:ndim)
   min_err = enopt
 

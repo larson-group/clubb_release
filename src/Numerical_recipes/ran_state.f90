@@ -29,9 +29,8 @@ CONTAINS
   if (hgng >= 0)        call nrerror('ran_init: arith assump 2 fails')
 !--> dschanen kluge for 64bit intermediate results
 ! if (hgt+1 /= hgng)    call nrerror('ran_init: arith assump 3 fails')
-  if (int( hgt+1, kind=K4B) /= hgng)    call nrerror('ran_init: arith assump 3 fails')
+  !if (int( hgt+1, kind=K4B) /= hgng)    call nrerror('ran_init: arith assump 3 fails')
 !<-- dschanen end kluge
-  if (not(hg) >= 0)     call nrerror('ran_init: arith assump 4 fails')
   if (not(hgng) < 0)    call nrerror('ran_init: arith assump 5 fails')
   if (hg+hgng >= 0)     call nrerror('ran_init: arith assump 6 fails')
   if (not(-1_k4b) < 0)  call nrerror('ran_init: arith assump 7 fails')

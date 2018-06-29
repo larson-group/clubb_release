@@ -148,6 +148,9 @@ program G_unit_tests
   use pdf_parameter_tests, only: &
       pdf_parameter_unit_tests  ! Procedure(s)
 
+  use tuner_tests, only: &
+      tuner_tests_driver        ! Procedure
+
   implicit none
 
   ! Local Constants
@@ -167,13 +170,14 @@ program G_unit_tests
     show_read_test_arrays = .true.,     & ! If true, the arrays used in
                                           !   read_corr_mtx_test will be shown
     l_mu_sigma_hm_tests = .true.,       & ! Flag for the hydromet mu/sigma tests
-    l_pdf_parameter_tests = .true.        ! Flag for the PDF parameter tests
+    l_pdf_parameter_tests = .true.,     & ! Flag for the PDF parameter tests
+    l_tuner_tests = .true.                ! Flag for the tuner tests
 
   ! Definition of namelist
   namelist /G_unit_namelist/ &
     l_KK_unit_tests, l_corr_cholesky_mtx_tests, l_hole_filling_tests, &
     l_Nc_Ncn_test, l_read_corr_mtx_test, l_silhs_category_test, &
-    l_mu_sigma_hm_tests, l_pdf_parameter_tests
+    l_mu_sigma_hm_tests, l_pdf_parameter_tests, l_tuner_tests
 
 
   ! Read namelist file
@@ -239,6 +243,12 @@ program G_unit_tests
         exit_code = 1
      endif
      if ( pdf_parameter_unit_tests( iiPDF_new ) /= 0 ) then
+        exit_code = 1
+     endif
+  endif
+
+  if ( l_tuner_tests ) then
+     if ( tuner_tests_driver( ) /= 0 ) then
         exit_code = 1
      endif
   endif

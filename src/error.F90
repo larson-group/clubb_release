@@ -29,7 +29,7 @@ module error
 !-----------------------------------------------------------------------
   use parameter_indices, only: nparams ! Variable(s)
 
-  use parameters_tunable, only: read_parameters, read_param_spread ! Procedure(s)
+  use parameters_tunable, only: read_parameters, read_param_max ! Procedure(s)
 
   use mt95, only: genrand_real ! Constant
 
@@ -63,8 +63,10 @@ module error
 
 
   real( kind = core_rknd ), public ::  & 
-    f_tol = 1e-5_core_rknd, &    ! The precision to tune for
-    anneal_temp = 100._core_rknd ! Initial temperature for the simulated annealing algorithm
+    f_tol = 1e-5_core_rknd,             & ! The precision to tune for
+    anneal_temp = 100._core_rknd,       & ! Initial temperature for the SA algorithm
+    stp_adjst_center_in = .5_core_rknd, &
+    stp_adjst_spread_in = 1._core_rknd
 
   integer, public :: & 
     anneal_iter = 0, &    ! Number of annealing iterations to perform
@@ -139,7 +141,7 @@ module error
     ! The remaining rows contain random perturbations of those parameter values.
 
   real( kind = core_rknd ), allocatable, dimension(:), public :: & 
-    param_vals_spread,  & ! Amount to vary each respec. constant by
+    param_vals_max,  & ! Amount to vary each respec. constant by
     cost_fnc_vector    ! cache of differences between the LES and CLUBB
 
   real(kind=genrand_real), allocatable, dimension(:), private ::  & 
@@ -269,7 +271,7 @@ module error
     namelist /stats/  & 
       f_tol, tune_type, anneal_temp, anneal_iter, & 
       l_results_stdout, l_results_file, l_stdout_on_invalid, &
-      t_variables, weight_var_nl
+      t_variables, weight_var_nl, stp_adjst_center_in, stp_adjst_spread_in
 
     namelist /cases/  & 
       les_stats_file_nl, hoc_stats_file_nl, & 
@@ -365,7 +367,7 @@ module error
 
       if ( tune_type /= iploops ) then
 
-         call read_param_spread( iunit, filename, params_index,  & 
+         call read_param_max( iunit, filename, params_index,  & 
                                  rtmp, ndim )
 
       else ! tune_type == iploops
@@ -379,6 +381,7 @@ module error
          params_index(2) = ipdf_component_stdev_factor_w
          params_index(3) = icoef_spread_DG_means_rt
          params_index(4) = icoef_spread_DG_means_thl
+
          ! Set to 0 (rtmp doesn't matter for parameter loops tuning).
          rtmp(1:nparams) = 0.0_core_rknd
 
@@ -432,18 +435,19 @@ module error
       if ( tune_type == iamoeba .or. tune_type == iamebsa ) then
         ! Numerical recipes simulated annealing or downhill simplex
         allocate( rand_vect(ndim), param_vals_matrix(ndim+1,ndim), & 
-                  param_vals_spread(ndim), cost_fnc_vector(ndim+1) )
+                  param_vals_max(ndim), cost_fnc_vector(ndim+1) )
 
       elseif ( tune_type == iploops ) then
 
         allocate( param_vals_matrix(num_runs,ndim), & 
-                  param_vals_spread(ndim), cost_fnc_vector(num_runs) )
+                  param_vals_max(ndim), cost_fnc_vector(num_runs) )
 
       else ! ESA algorithm or model flags
-        allocate( param_vals_matrix(1,ndim), param_vals_spread(ndim), cost_fnc_vector(1) )
+        allocate( param_vals_matrix(1,ndim), param_vals_max(ndim), cost_fnc_vector(1) )
       end if
-      ! Initialize the CLUBB parameter spread
-      param_vals_spread(1:ndim)  = rtmp(params_index(1:ndim))
+
+      ! Initialize the maximum values for the parameters
+      param_vals_max(1:ndim)  = rtmp(params_index(1:ndim))
 
       ! Copy tunable parameter values into the first row of the simplex
       param_vals_matrix(1,1:ndim) = params(params_index(1:ndim))
@@ -464,14 +468,9 @@ module error
         call genrand_real1( rand_vect(1:ndim) )
 
         do i = 2, ndim+1, 1
-          ! Vince Larson made entries of param_vals_matrix random  10 Feb 2005
-          ! param_vals_matrix(i,j) = param_vals_matrix(1,j)* &
-          !     (1.0_core_rknd+((real(i, kind = core_rknd)-1._core_rknd)/ &
-          !     real(ndim, kind = core_rknd)*0.5_core_rknd))
-          param_vals_matrix(i,j) = param_vals_matrix(1,j)* & 
-          ( (1.0_core_rknd - param_vals_spread(j))  & 
-           + real( rand_vect(i-1), kind = core_rknd )*param_vals_spread(j)*2._core_rknd )
-          ! End of Vince Larson's change
+            param_vals_matrix(i,j) = param_vals_matrix(1,j)* &
+               (1.0_core_rknd+((real(i, kind = core_rknd)-1._core_rknd)/ &
+               real(ndim, kind = core_rknd)*0.5_core_rknd))
         end do ! i..ndim+1
 
       end do ! j..ndim
@@ -737,22 +736,6 @@ module error
 
     end if
 
-    ! Do the same as above if the tuning run is being saved to a file
-    if( l_save_tuning_run .and. ( modulo( iter, 10 ) == 0 ) .and. iter /= 0 ) then
-      open(unit=file_unit, file=tuning_filename, action='write', position='append')
-
-      write(unit=file_unit,fmt='(A12,I10)') "Iteration: ", iter
-      write(unit=file_unit,fmt='(A12)') "Parameters: "
-
-      do i = 1, ndim, 1
-        j = params_index(i)
-        write(unit=file_unit,fmt='(A30,F27.20)') params_list(j)//" = ", & 
-          param_vals_vector(i)
-      end do      
-
-      close(unit=file_unit)
-    end if ! l_save_tuning_run .and. modulo(iter,10) == 0 .and. iter /= 0
-
     allocate( err_sums(c_total, v_total) )
 
     ! Initialize
@@ -942,7 +925,7 @@ module error
           timestep_intvls(c_run,:), hoc_v(i), clubb_grid_heights, 1, l_error )
 
         if ( l_error ) then
-          stop "The specified CLUBB variable was invalid"
+          stop "The specified CLUBB variable was invalid 1"
         end if
 
         ! The same variable, with npower = 2
@@ -952,7 +935,7 @@ module error
           timestep_intvls(c_run,:), hoc_v(i), clubb_grid_heights, 2, l_error )
 
         if ( l_error ) then
-          stop "The specified CLUBB variable was invalid"
+          stop "The specified CLUBB variable was invalid 2"
         end if
 
         !-----------------------------------------------------------------------
@@ -1029,11 +1012,14 @@ module error
     deallocate( err_sums )
 
     ! Save tuning results in file if specified
-    if( l_save_tuning_run ) open(unit=file_unit, file=tuning_filename, &
-      action='write', position='append')
-    call write_text( "Cost function= ", real(min_les_clubb_diff, kind = core_rknd), &
-      l_save_tuning_run, file_unit, '(a, f12.5)' )
-    if( l_save_tuning_run ) close(unit=file_unit)
+    if( l_save_tuning_run ) then
+
+        open(unit=file_unit, file=tuning_filename, action='write', position='append')
+        write(file_unit,*) "Iter ", int(iter), "  Cost = ", min_les_clubb_diff, &
+                                                 "  Params = ", param_vals_vector
+        close(unit=file_unit)
+
+    end if
 
     return
   end function min_les_clubb_diff
@@ -1210,15 +1196,15 @@ module error
     end do
     write(unit=iunit,fmt=*) "/"
 
-    write(unit=iunit,fmt=*) "&initspread"
-    ! Copy the spread into a vector of all possible CLUBB parameters
+    write(unit=iunit,fmt=*) "&initmax"
+    ! Copy the max values into a vector of all possible CLUBB parameters
     do i=1, nparams, 1
       ! If the variable isn't being changed, set it to zero
       params_local(i) = 0.0_core_rknd
       do j=1, ndim, 1
         if ( i == params_index(j) ) then
           ! Copy variable from param_vals_vector argument
-          params_local(i) = param_vals_spread(j)
+          params_local(i) = param_vals_max(j)
           exit
         else
           cycle

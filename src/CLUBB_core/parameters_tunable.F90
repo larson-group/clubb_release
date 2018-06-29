@@ -34,7 +34,7 @@ module parameters_tunable
   ! Default to private
   private
 
-  public :: setup_parameters, read_parameters, read_param_spread, &
+  public :: setup_parameters, read_parameters, read_param_max, &
             get_parameters, adj_low_res_nu, cleanup_nu
 
   ! NOTE: In CLUBB standalone, as well as some host models, the hardcoded
@@ -371,6 +371,9 @@ module parameters_tunable
         err_code,                    & ! Error Indicator
         clubb_fatal_error              ! Constant
 
+    use parameter_indices, only: &
+        izeta_vrnce_rat
+
     implicit none
 
 
@@ -412,7 +415,28 @@ module parameters_tunable
       momentum_heights,      & ! Momentum level altitudes (input)      [m]
       thermodynamic_heights    ! Thermodynamic level altitudes (input) [m]
 
+    integer :: k    ! loop variable
+
     !-------------------- Begin code --------------------
+
+    ! Ensure all variables are greater than 0, and zeta_vrnce_rat is greater than -1
+    do k = 1, nparams
+
+        if ( k /= izeta_vrnce_rat .and. params(k) < zero ) then
+
+            write(fstderr,*) params_list(k), " = ", params(k)
+            write(fstderr,*) params_list(k), " must satisfy 0.0 <= ", params_list(k)
+            err_code = clubb_fatal_error
+
+        else if ( params(k) < -one ) then
+
+            write(fstderr,*) "zeta_vrnce_rat = ", zeta_vrnce_rat
+            write(fstderr,*) "zeta_vrnce_rat must satisfy -1.0 <= zeta_vrnce_rat"
+            err_code = clubb_fatal_error
+
+        end if
+
+    end do
 
     call unpack_parameters & 
              ( params, & 
@@ -580,6 +604,12 @@ module parameters_tunable
 
     endif ! .not. l_clip_semi_implicit
 
+
+    if ( C1 < zero ) then
+        write(fstderr,*) "C1 = ", C1
+        write(fstderr,*) "C1 must satisfy 0.0 <= C1"
+        err_code = clubb_fatal_error
+    end if
 
     if ( C7 > one .or. C7 < zero ) then
         write(fstderr,*) "C7 = ", C7
@@ -910,8 +940,8 @@ module parameters_tunable
   end subroutine read_parameters
 
   !=============================================================================
-  subroutine read_param_spread & 
-           ( iunit, filename, nindex, param_spread, ndim )
+  subroutine read_param_max & 
+           ( iunit, filename, nindex, param_max, ndim )
 
     ! Description:
     ! Read a namelist containing the amount to vary model parameters.
@@ -935,11 +965,11 @@ module parameters_tunable
     ! Output variables
 
     ! An array of array indices (i.e. which elements of the array `params'
-    ! are contained within the simplex and the spread variable)
+    ! are contained within the simplex and the max variable)
     integer, intent(out), dimension(nparams) :: nindex
 
     real( kind = core_rknd ), intent(out), dimension(nparams) ::  & 
-      param_spread  ! Amount to vary the parameter in the initial simplex
+      param_max  ! Amount to vary the parameter in the initial simplex
 
     integer, intent(out) :: &
         ndim  ! Number of variables, e.g. rcm, to be tuned. Dimension of the init simplex
@@ -952,7 +982,7 @@ module parameters_tunable
 
     ! Amount to change each parameter for the initial simplex
     ! This MUST be changed to match the clubb_params_nl namelist if parameters are added!
-    namelist /initspread/  & 
+    namelist /initmax/  & 
       C1, C1b, C1c, C2, C2b, C2c,  & 
       C2rt, C2thl, C2rtthl, C4, C5, & 
       C6rt, C6rtb, C6rtc, C6thl, C6thlb, C6thlc, & 
@@ -975,7 +1005,7 @@ module parameters_tunable
     ! Read the namelist
     open(unit=iunit, file=filename, status='old', action='read')
 
-    read(unit=iunit, nml=initspread)
+    read(unit=iunit, nml=initmax)
 
     close(unit=iunit)
 
@@ -995,13 +1025,13 @@ module parameters_tunable
                lambda0_stability_coef, mult_coef, taumin, taumax, &
                Lscale_mu_coef, Lscale_pert_coef, alpha_corr, &
                Skw_denom_coef, c_K10, c_K10h, thlp2_rad_coef, &
-               thlp2_rad_cloud_frac_thresh, up2_vp2_factor, param_spread )
+               thlp2_rad_cloud_frac_thresh, up2_vp2_factor, param_max )
 
     l_error = .false.
 
     do i = 1, nparams
-      if ( param_spread(i) == init_value ) then
-        write(fstderr,*) "A spread parameter "//trim( params_list(i) )// &
+      if ( param_max(i) == init_value ) then
+        write(fstderr,*) "A max value for parameter "//trim( params_list(i) )// &
           " was missing from "//trim( filename )
         l_error = .true.
       end if
@@ -1016,7 +1046,7 @@ module parameters_tunable
     ! Determine how many variables are being changed
     do i = 1, nparams, 1
 
-      if ( param_spread(i) /= 0.0_core_rknd ) then
+      if ( param_max(i) /= 0.0_core_rknd ) then
         ndim = ndim + 1   ! Increase the total
         nindex(ndim) = i  ! Set the next array index
       endif
@@ -1025,7 +1055,7 @@ module parameters_tunable
 
     return
 
-  end subroutine read_param_spread
+  end subroutine read_param_max
 
   !=============================================================================
   subroutine pack_parameters &

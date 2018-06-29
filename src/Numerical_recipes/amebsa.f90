@@ -49,7 +49,13 @@ CONTAINS
     yt(ihi) = ylo
     inhi    = imaxloc( yt(:) )
     ynhi    = yt(inhi)
-    r_tol    = 2.0_sp * abs( yhi - ylo ) / ( abs( yhi )+abs( ylo ) )
+    
+    if ( abs( yhi )-abs( ylo ) < 1e-10) then
+        r_tol = 0.
+    else
+        r_tol    = 2.0_sp * abs( yhi - ylo ) / ( abs( yhi )+abs( ylo ) )
+    end if
+
     if (r_tol < f_tol .or. iter < 0) then
       call swap( y(1), y(ilo) )
       call swap( p(1,:), p(ilo,:) )
