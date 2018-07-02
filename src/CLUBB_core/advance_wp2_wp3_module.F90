@@ -4450,14 +4450,14 @@ module advance_wp2_wp3_module
     !
     ! Pressure term 1 is the term:
     !
-    ! - (C_8/tau_w3t) * ( C_8b * Sk_wt^4 + 1 ) * w'^3;
+    ! - (C_8/tau_w3t) * ( C_8b * Sk_wt^2 + 1 ) * w'^3;
     !
     ! where Sk_wt = w'^3 / (w'^2)^(3/2).
     !
     ! This term needs to be linearized, so function L(w'^3) is defined to be 
     ! equal to this term (pressure term 1), such that:
     !
-    ! L(w'^3) = - (C_8/tau_w3t) * ( C_8b * (w'^3)^5 / (w'^2)^6 + w'^3 ).
+    ! L(w'^3) = - (C_8/tau_w3t) * ( C_8b * (w'^3)^3 / (w'^2)^3 + w'^3 ).
     !
     ! A Taylor Series expansion (truncated after the first derivative term) of
     ! L(w'^3) around w'^3 = w'^3(t) is used to linearize pressure term 1.
@@ -4471,7 +4471,7 @@ module advance_wp2_wp3_module
     ! is broken down into implicit (LHS) and explicit (RHS) components.
     ! The implicit portion is:
     !
-    ! - (C_8/tau_w3t) * ( 5 * C_8b * Sk_wt^4 + 1 ) * w'^3(t+1).
+    ! - (C_8/tau_w3t) * ( 3 * C_8b * Sk_wt^2 + 1 ) * w'^3(t+1).
     !
     ! Note:  When the term is brought over to the left-hand side, the sign 
     !        is reversed and the leading "-" in front of the term is changed 
@@ -4489,8 +4489,8 @@ module advance_wp2_wp3_module
     !-----------------------------------------------------------------------
 
     use constants_clubb, only: &
-        five, & ! Variable(s)
-        one
+        one, & ! Variable(s)
+        three
 
     use clubb_precision, only: &
         core_rknd ! Variable(s)
@@ -4509,7 +4509,8 @@ module advance_wp2_wp3_module
 
     ! Thermodynamic main diagonal: [ x wp3(k,<t+1>) ]
     lhs & 
-    = + ( C8 / tauw3t ) * ( five * C8b * Skw_zt**4 + one )
+    = + ( C8 / tauw3t ) * ( three * C8b * Skw_zt**2 + one )
+    != + ( C8 / tauw3t ) * ( five * C8b * Skw_zt**4 + one )
 
     return
   end function wp3_term_pr1_lhs
@@ -4715,14 +4716,14 @@ module advance_wp2_wp3_module
     !
     ! Pressure term 1 is the term:
     !
-    ! - (C_8/tau_w3t) * ( C_8b * Sk_wt^4 + 1 ) * w'^3;
+    ! - (C_8/tau_w3t) * ( C_8b * Sk_wt^2 + 1 ) * w'^3;
     !
     ! where Sk_wt = w'^3 / (w'^2)^(3/2).
     !
     ! This term needs to be linearized, so function L(w'^3) is defined to be 
     ! equal to this term (pressure term 1), such that:
     !
-    ! L(w'^3) = - (C_8/tau_w3t) * ( C_8b * (w'^3)^5 / (w'^2)^6 + w'^3 ).
+    ! L(w'^3) = - (C_8/tau_w3t) * ( C_8b * (w'^3)^3 / (w'^2)^3 + w'^3 ).
     !
     ! A Taylor Series expansion (truncated after the first derivative term) of
     ! L(w'^3) around w'^3 = w'^3(t) is used to linearize pressure term 1.
@@ -4736,7 +4737,7 @@ module advance_wp2_wp3_module
     ! is broken down into implicit (LHS) and explicit (RHS) components.
     ! The explicit portion is:
     !
-    ! + (C_8/tau_w3t) * ( 4 * C_8b * Sk_wt^4 + 1 ) * w'^3(t).
+    ! + (C_8/tau_w3t) * ( 2 * C_8b * Sk_wt^2 + 1 ) * w'^3(t).
     !
     ! Timestep index (t) stands for the index of the current timestep, while
     ! timestep index (t+1) stands for the index of the next timestep, which is 
@@ -4750,7 +4751,7 @@ module advance_wp2_wp3_module
     !-----------------------------------------------------------------------
 
     use constants_clubb, only: &
-        four
+        two
 
     use clubb_precision, only: &
         core_rknd ! Variable(s)
@@ -4769,7 +4770,8 @@ module advance_wp2_wp3_module
     real( kind = core_rknd ) :: rhs
 
     rhs & 
-    = + ( C8 / tauw3t ) * ( four * C8b * Skw_zt**4 ) * wp3
+    = + ( C8 / tauw3t ) * ( two * C8b * Skw_zt**2 ) * wp3
+    != + ( C8 / tauw3t ) * ( four * C8b * Skw_zt**4 ) * wp3
 
     return
   end function wp3_term_pr1_rhs
