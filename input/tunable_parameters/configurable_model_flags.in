@@ -9,7 +9,8 @@ l_vert_avg_closure    = .false.,
 l_single_C2_Skw       = .false.,
 l_standard_term_ta    = .false.,
 l_use_cloud_cover     = .false.,
-l_rcm_supersat_adj    = .true.
+l_rcm_supersat_adj    = .true.,
+l_damp_wp3_Skw_squared = .true.
 /
 
 &configurable_silhs_flags_nl

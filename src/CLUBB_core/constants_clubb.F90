@@ -318,12 +318,6 @@ module constants_clubb
   real( kind = core_rknd ), parameter, public :: &
     w_tol_sqd = w_tol**2 ! [m^2/s^2]
 
-  real( kind = core_rknd ), parameter, public :: &
-    Skw_max_mag = 10.0_core_rknd  ! Max magnitude of skewness     [-]
-
-  real( kind = core_rknd ), parameter, public :: &
-    Skw_max_mag_sqd = Skw_max_mag**2 ! Max mag. of Skw squared [-]
-
   ! Set tolerances for Khairoutdinov and Kogan rain microphysics to insure
   ! against numerical errors.  The tolerance values for Nc, rr, and Nr insure
   ! against underflow errors in computing the PDF for l_kk_rain.  Basically,

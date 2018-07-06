@@ -4490,10 +4490,14 @@ module advance_wp2_wp3_module
 
     use constants_clubb, only: &
         one, & ! Variable(s)
-        three
+        three, &
+        five
 
     use clubb_precision, only: &
         core_rknd ! Variable(s)
+
+    use model_flags, only: &
+        l_damp_wp3_Skw_squared
 
     implicit none
 
@@ -4508,9 +4512,13 @@ module advance_wp2_wp3_module
     real( kind = core_rknd ) :: lhs
 
     ! Thermodynamic main diagonal: [ x wp3(k,<t+1>) ]
-    lhs & 
-    = + ( C8 / tauw3t ) * ( three * C8b * Skw_zt**2 + one )
-    != + ( C8 / tauw3t ) * ( five * C8b * Skw_zt**4 + one )
+    if ( l_damp_wp3_Skw_squared ) then 
+        lhs & 
+        = + ( C8 / tauw3t ) * ( three * C8b * Skw_zt**2 + one )
+    else
+        lhs & 
+        = + ( C8 / tauw3t ) * ( five * C8b * Skw_zt**4 + one )
+    end if
 
     return
   end function wp3_term_pr1_lhs
@@ -4751,10 +4759,14 @@ module advance_wp2_wp3_module
     !-----------------------------------------------------------------------
 
     use constants_clubb, only: &
-        two
+        two, &
+        four
 
     use clubb_precision, only: &
         core_rknd ! Variable(s)
+
+    use model_flags, only: &
+        l_damp_wp3_Skw_squared
 
     implicit none
 
@@ -4769,9 +4781,13 @@ module advance_wp2_wp3_module
     ! Return Variable
     real( kind = core_rknd ) :: rhs
 
-    rhs & 
-    = + ( C8 / tauw3t ) * ( two * C8b * Skw_zt**2 ) * wp3
-    != + ( C8 / tauw3t ) * ( four * C8b * Skw_zt**4 ) * wp3
+    if ( l_damp_wp3_Skw_squared ) then 
+        rhs & 
+        = + ( C8 / tauw3t ) * ( two * C8b * Skw_zt**2 ) * wp3
+    else 
+        rhs & 
+        = + ( C8 / tauw3t ) * ( four * C8b * Skw_zt**4 ) * wp3
+    end if
 
     return
   end function wp3_term_pr1_rhs

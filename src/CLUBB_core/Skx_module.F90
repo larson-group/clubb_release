@@ -25,14 +25,14 @@ module Skx_module
     !-----------------------------------------------------------------------
 
     use constants_clubb, only: &
-        three_halves, & ! 3/2
-        Skw_max_mag     ! Max magnitude of skewness
+        three_halves      ! 3/2
 
     use parameters_tunable, only: &
-        Skw_denom_coef    ! Variable(s)
+        Skw_denom_coef, & ! Variable(s)
+        Skw_max_mag       ! Max magnitude of skewness
 
     use clubb_precision, only: &
-        core_rknd    ! Variable(s)
+        core_rknd         ! Variable(s)
 
     implicit none
 

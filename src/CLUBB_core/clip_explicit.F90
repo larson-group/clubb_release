@@ -1062,8 +1062,8 @@ module clip_explicit
     use grid_class, only: & 
       gr ! Variable(s)
 
-    use constants_clubb, only: &
-      Skw_max_mag_sqd ! [-]
+    use parameters_tunable, only: &
+      Skw_max_mag ! [-]
 
     use clubb_precision, only: &
       core_rknd ! Variable(s)
@@ -1125,7 +1125,7 @@ module clip_explicit
       else                          ! Clip skewness consistently with a.
        !wp3_upper_lim(k) =  4.5_core_rknd * wp2_zt(k)**(3.0_core_rknd/2.0_core_rknd)
        !wp3_lower_lim(k) = -4.5_core_rknd * wp2_zt(k)**(3.0_core_rknd/2.0_core_rknd)
-        wp3_lim_sqd(k) = Skw_max_mag_sqd * wp2_zt_cubed(k) ! Skw_max_mag = 4.5_core_rknd^2
+        wp3_lim_sqd(k) = Skw_max_mag**2 * wp2_zt_cubed(k) ! Skw_max_mag = 4.5_core_rknd^2
       endif
     enddo
 
