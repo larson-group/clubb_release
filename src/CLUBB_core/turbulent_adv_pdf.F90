@@ -439,7 +439,7 @@ module turbulent_adv_pdf
   result( rhs )
 
     ! Description:
-    ! Turbulent advection of <w'x'>, <x'^2>, and <x'y'>:  implicit portion of
+    ! Turbulent advection of <w'x'>, <x'^2>, and <x'y'>:  explicit portion of
     ! the code.
     !
     ! 1) <w'x'>
@@ -591,6 +591,8 @@ module turbulent_adv_pdf
     ! as well as to <w'x'> and coef_wp2xp_implicit.
     !
     ! The explicit discretization of this term is as follows:
+    !
+    ! 1) Centered Discretization
     !
     ! The values of <x'y'> are found on the momentum levels, while the values of
     ! <w'x'y'> are found on the thermodynamic levels, which is where they were
