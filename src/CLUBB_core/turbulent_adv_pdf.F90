@@ -4,6 +4,15 @@
 module turbulent_adv_pdf
 
   ! Description:
+  ! Calculates the turbulent advection term in the predictive equation for a
+  ! variance or covariance where turbulent advection is calculated by
+  ! integrating over the PDF.  This includes the following predictive fields:
+  ! <w'thl'>, <w'rt'>, <rt'^2>, <thl'^2>, and <rt'thl'>, as well as passive
+  ! scalar fields <w'sclr'>, <sclr'^2>, <sclr'rt'>, and <sclr'thl'>.  CLUBB
+  ! does not produce a PDF for horizontal wind components u and v.  However, the
+  ! horizontal wind variances <u'^2> and <v'^2> still use this code, as well.
+
+  ! References:
   !-----------------------------------------------------------------------
 
   implicit none
@@ -432,10 +441,19 @@ module turbulent_adv_pdf
   end function xpyp_term_ta_pdf_lhs
 
   !=============================================================================
-  pure function xpyp_term_ta_pdf_rhs( wpxpypp1, wpxpyp, &
+  pure function xpyp_term_ta_pdf_rhs( term_wpxpyp_explicitp1, &
+                                      term_wpxpyp_explicit, &
                                       rho_ds_ztp1, rho_ds_zt, &
                                       invrs_rho_ds_zm, &
-                                      invrs_dzm ) &
+                                      invrs_dzm, &
+                                      l_upwind_xpyp_turbulent_adv, &
+                                      sgn_turbulent_vel,         &
+                                      term_wpxpyp_explicit_zmp1, &
+                                      term_wpxpyp_explicit_zm,   &
+                                      term_wpxpyp_explicit_zmm1, &
+                                      rho_ds_zmp1, rho_ds_zm, &
+                                      rho_ds_zmm1, invrs_dztp1, &
+                                      invrs_dzt ) &
   result( rhs )
 
     ! Description:
@@ -587,36 +605,93 @@ module turbulent_adv_pdf
     ! reduces to <w'x'^2>.  Likewise, when y is set equal to w, <x'y'> becomes
     ! <w'x'> and <w'x'y'> reduces to <w'^2 x'>.  The discretization and the code
     ! used in this function will be written generally in terms of <x'y'> and
-    ! coef_wpxpyp_implicit, but also applies to <x'^2> and coef_wpxp2_implicit,
-    ! as well as to <w'x'> and coef_wp2xp_implicit.
+    ! term_wpxpyp_explicit, but also applies to <x'^2> and term_wpxp2_explicit,
+    ! as well as to <w'x'> and term_wp2xp_explicit.
     !
     ! The explicit discretization of this term is as follows:
     !
     ! 1) Centered Discretization
     !
     ! The values of <x'y'> are found on the momentum levels, while the values of
-    ! <w'x'y'> are found on the thermodynamic levels, which is where they were
-    ! originally calculated by the PDF.  Additionally, the values of rho_ds_zt
-    ! are found on the thermodynamic levels, and the values of invrs_rho_ds_zm
-    ! are found on the momentum levels.  At the thermodynamic levels, the values
-    ! of <w'x'y'> are multiplied by rho_ds_zt.  Then, the derivative (d/dz) of
-    ! that expression is taken over the central momentum level, where it is
-    ! multiplied by -invrs_rho_ds_zm.  This yields the desired result.
+    ! term_wpxpyp_explicit are found on the thermodynamic levels, which is where
+    ! they were originally calculated by the PDF.  Additionally, the values of
+    ! rho_ds_zt are found on the thermodynamic levels, and the values of
+    ! invrs_rho_ds_zm are found on the momentum levels.  At the thermodynamic
+    ! levels, the values of term_wpxpyp_explicit are multiplied by rho_ds_zt.
+    ! Then, the derivative (d/dz) of that expression is taken over the central
+    ! momentum level, where it is multiplied by -invrs_rho_ds_zm.  This yields
+    ! the desired result.
     !
-    ! ---------wpxpypp1-------rho_ds_ztp1-------------------------------- t(k+1)
+    ! ---------term_wpxpyp_explicitp1-------rho_ds_ztp1------------------ t(k+1)
     !
-    ! =======xpyp=======d( rho_ds_zt * wpxpyp )/dz====invrs_rho_ds_zm==== m(k)
+    ! ==xpyp==d( rho_ds_zt * term_wpxpyp_explicit )/dz==invrs_rho_ds_zm== m(k)
     !
-    ! ---------wpxpyp---------rho_ds_zt---------------------------------- t(k)
+    ! ---------term_wpxpyp_explicit---------rho_ds_zt-------------------- t(k)
     !
     ! The vertical indices t(k+1), m(k), and t(k) correspond with altitudes
     ! zt(k+1), zm(k), and zt(k), respectively.  The letter "t" is used for
     ! thermodynamic levels and the letter "m" is used for momentum levels.
     !
     ! invrs_dzm(k) = 1 / ( zt(k+1) - zt(k) )
+    !
+    ! 2) "Upwind" Discretization.
+    !
+    ! The values of <x'y'> are found on the momentum levels.  The values of
+    ! term_wpxpyp_explicit are originally calculated by the PDF on the
+    ! thermodynamic levels.  They are interpolated to the intermediate momentum
+    ! levels as term_wpxpyp_explicit_zm.  Additionally, the values of rho_ds_zm
+    ! and the values of invrs_rho_ds_zm are found on the momentum levels.  The
+    ! sign of the turbulent velocity is found on the central momentum level.  At
+    ! the momentum levels, the values of term_wpxpyp_explicit_zm are multiplied
+    ! by rho_ds_zm.  Then, the derivative (d/dz) of that expression is taken.
+    ! When the sign of the turbulent velocity is positive, the "wind" is coming
+    ! from below, and the derivative involves the central momentum level and the
+    ! momentum level immediately below it.  When the sign of the turbulent
+    ! velocity is negative, the "wind" is coming from above, and the derivative
+    ! involves the central momentum level and the momenum level immediately
+    ! above it.  After the derivative is taken, it is multiplied by
+    ! -invrs_rho_ds_zm at the central momentum level.  This yields the desired
+    ! result.
+    !
+    ! The turbulent velocity for <x'y'> is <w'x'y'> / <x'y'>, which has units of
+    ! m/s.  The sign of the turbulent velocity is sgn( <w'x'y'> / <x'y'> ),
+    ! where:
+    !
+    ! sgn(x) = | 1; when x >= 0
+    !          | -1; when x < 0.
+    !
+    ! The sign of the turbulent velocity can also be rewritten as
+    ! sgn( <w'x'y'> ) / sgn( <x'y'> ).  When a variance (<x'^2>) is being solved
+    ! for, y = x, and sgn( <x'^2> ) is always 1.  The sign of the turbulent
+    ! velocity reduces to simply sgn( <w'x'^2> ).
+    !
+    ! ---------term_wpxpyp_explicitp2------------------------------------ t(k+2)
+    !
+    ! ========term_wpxpyp_explicit_zmp1(interp.)=====rho_ds_zmp1========= m(k+1)
+    !
+    ! ---------term_wpxpyp_explicitp1------------------------------------ t(k+1)
+    !
+    ! =xpyp===term_wpxpyp_explicit_zm(interp.)=rho_ds_zm=invrs_rho_ds_zm= m(k)
+    !
+    ! ---------term_wpxpyp_explicit-------------------------------------- t(k)
+    !
+    ! ========term_wpxpyp_explicit_zmm1(interp.)=====rho_ds_zmm1========= m(k-1)
+    !
+    ! ---------term_wpxpyp_explicitm1------------------------------------ t(k-1)
+    !
+    ! The vertical indices t(k+2), m(k+1), t(k+1), m(k), t(k), m(k-1), and
+    ! t(k-1) correspond with altitudes zt(k+2), zm(k+1), zt(k+1), zm(k), zt(k),
+    ! zm(k-1), and zt(k-1), respectively.  The letter "t" is used for
+    ! thermodynamic levels and the letter "m" is used for momentum levels.
+    !
+    ! invrs_dzt(k+1) = 1 / ( zm(k+1) - zm(k) ); and
+    ! invrs_dzt(k) = 1 / ( zm(k) - zm(k-1) ).
 
     ! References:
     !-----------------------------------------------------------------------
+
+    use constants_clubb, only: &
+        zero    ! Variable(s)
 
     use clubb_precision, only: &
         core_rknd ! Variable(s)
@@ -625,20 +700,62 @@ module turbulent_adv_pdf
 
     ! Input Variables
     real( kind = core_rknd ), intent(in) :: &
-      wpxpypp1,        & ! <w'x'y'>(k+1)                 [m/s(x units)(y units)]
-      wpxpyp,          & ! <w'x'y'>(k)                   [m/s(x units)(y units)]
-      rho_ds_ztp1,     & ! Dry, static density at thermo. level (k+1)   [kg/m^3]
-      rho_ds_zt,       & ! Dry, static density at thermo. level (k)     [kg/m^3]
-      invrs_rho_ds_zm, & ! Inv dry, static density @ momentum level (k) [m^3/kg]
-      invrs_dzm          ! Inverse of grid spacing (k)                  [1/m]
+      term_wpxpyp_explicitp1, & ! RHS: <w'x'y'> eq; t-lev(k+1) [m/s(x un)(y un)]
+      term_wpxpyp_explicit,   & ! RHS: <w'x'y'> eq; t-lev(k)   [m/s(x un)(y un)]
+      rho_ds_ztp1,            & ! Dry, static density at t-lev (k+1)    [kg/m^3]
+      rho_ds_zt,              & ! Dry, static density at t-lev (k)      [kg/m^3]
+      invrs_rho_ds_zm,        & ! Inv dry, static density at m-lev (k)  [m^3/kg]
+      invrs_dzm                 ! Inverse of grid spacing (k)              [1/m]
+
+    logical, intent(in) :: &
+      l_upwind_xpyp_turbulent_adv    ! Flag to use "upwind" discretization
+
+    real( kind = core_rknd ), intent(in) :: &
+      sgn_turbulent_vel,         & ! Sign of the turbulent velocity          [-]
+      term_wpxpyp_explicit_zmp1, & ! term_wpxpyp_expl. zm(k+1) [m/s(x un)(y un)]
+      term_wpxpyp_explicit_zm,   & ! term_wpxpyp_expl. zm(k)   [m/s(x un)(y un)]
+      term_wpxpyp_explicit_zmm1, & ! term_wpxpyp_expl. zm(k-1) [m/s(x un)(y un)]
+      rho_ds_zmp1,               & ! Dry, static density at m-lev (k+1) [kg/m^3]
+      rho_ds_zm,                 & ! Dry, static density at m-lev (k)   [kg/m^3]
+      rho_ds_zmm1,               & ! Dry, static density at m-lev (k-1) [kg/m^3]
+      invrs_dztp1,               & ! Inverse of grid spacing (k+1)         [1/m]
+      invrs_dzt                    ! Inverse of grid spacing (k)           [1/m]
 
     ! Return Variable
     real( kind = core_rknd ) :: rhs
 
 
-    rhs &
-    = - invrs_rho_ds_zm &
-        * invrs_dzm * ( rho_ds_ztp1 * wpxpypp1 - rho_ds_zt * wpxpyp )
+    if ( .not. l_upwind_xpyp_turbulent_adv ) then
+
+       ! Centered discretization.
+       rhs &
+       = - invrs_rho_ds_zm &
+           * invrs_dzm * ( rho_ds_ztp1 * term_wpxpyp_explicitp1 &
+                           - rho_ds_zt * term_wpxpyp_explicit )
+
+    else ! l_upwind_xpyp_turbulent_adv
+
+       ! "Upwind" discretization
+
+       if ( sgn_turbulent_vel > zero ) then
+
+          ! The "wind" is blowing upward.
+          rhs &
+          = - invrs_rho_ds_zm &
+              * invrs_dzt * ( rho_ds_zm * term_wpxpyp_explicit_zm &
+                              - rho_ds_zmm1 * term_wpxpyp_explicit_zmm1 )
+
+       else ! sgn_turbulent_vel < 0
+
+          ! The "wind" is blowing downward.
+          rhs &
+          = - invrs_rho_ds_zm &
+              * invrs_dztp1 * ( rho_ds_zmp1 * term_wpxpyp_explicit_zmp1 &
+                                - rho_ds_zm * term_wpxpyp_explicit_zm )
+
+       endif ! sgn_turbulent_vel
+
+    endif
 
 
     return
