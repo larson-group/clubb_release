@@ -805,7 +805,7 @@ module turbulent_adv_pdf
     implicit none
 
     ! Input Variables
-    real( kind = core_rknd ), dimension(gr%nz) :: &
+    real( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
       wpxpyp_zm, & ! <w'x'y'> interpolated to momentum levels  [m/s(x un)(y un)]
       xpyp         ! Predictive (co)variance <x'y'> (m-levs.)  [(x un)(y un)]
 
