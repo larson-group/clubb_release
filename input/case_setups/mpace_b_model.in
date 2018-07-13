@@ -151,6 +151,24 @@ l_ice_microphys = .true.
 l_graupel = .false.
 l_predict_Nc = .true.
 
+hmp2_ip_on_hmm2_ip_intrcpt%rr = 1.0
+hmp2_ip_on_hmm2_ip_intrcpt%Nr = 1.0
+hmp2_ip_on_hmm2_ip_intrcpt%ri = 1.0
+hmp2_ip_on_hmm2_ip_intrcpt%Ni = 1.0
+hmp2_ip_on_hmm2_ip_intrcpt%rs = 1.0
+hmp2_ip_on_hmm2_ip_intrcpt%Ns = 1.0
+hmp2_ip_on_hmm2_ip_intrcpt%rg = 1.0
+hmp2_ip_on_hmm2_ip_intrcpt%Ng = 1.0
+
+hmp2_ip_on_hmm2_ip_slope%rr = 0.0
+hmp2_ip_on_hmm2_ip_slope%Nr = 0.0
+hmp2_ip_on_hmm2_ip_slope%ri = 0.0
+hmp2_ip_on_hmm2_ip_slope%Ni = 0.0
+hmp2_ip_on_hmm2_ip_slope%rs = 0.0
+hmp2_ip_on_hmm2_ip_slope%Ns = 0.0
+hmp2_ip_on_hmm2_ip_slope%rg = 0.0
+hmp2_ip_on_hmm2_ip_slope%Ng = 0.0
+
 /
 
 &radiation_setting

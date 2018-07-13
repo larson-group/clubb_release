@@ -107,7 +107,8 @@ module clubb_api_module
       pdf_dim,        &
       hmp2_ip_on_hmm2_ip, &
       Ncnp2_on_Ncnm2,     &
-      hmp2_ip_on_hmm2_ip_ratios_type
+      hmp2_ip_on_hmm2_ip_slope_type,      & ! Types
+      hmp2_ip_on_hmm2_ip_intrcpt_type
 
   use error_code, only: &
         clubb_at_least_debug_level,  & ! Procedure
@@ -166,7 +167,7 @@ module clubb_api_module
     ilambda0_stability_coef, imult_coef, itaumin, itaumax, imu, &
     iLscale_mu_coef, iLscale_pert_coef, ialpha_corr, iSkw_denom_coef, &
     ic_K10, ic_K10h, ithlp2_rad_coef, ithlp2_rad_cloud_frac_thresh, &
-    iup2_vp2_factor
+    iup2_vp2_factor, iSkw_max_mag
 
   use pdf_parameter_module, only : &
 ! The CLUBB_CAM preprocessor directives are being commented out because this
@@ -276,7 +277,7 @@ module clubb_api_module
         ilambda0_stability_coef, imult_coef, itaumin, itaumax, imu, &
         iLscale_mu_coef, iLscale_pert_coef, ialpha_corr, iSkw_denom_coef, &
         ic_K10, ic_K10h, ithlp2_rad_coef, ithlp2_rad_cloud_frac_thresh, &
-        iup2_vp2_factor
+        iup2_vp2_factor, iSkw_max_mag
 
 
 
@@ -307,10 +308,10 @@ module clubb_api_module
 
   public &
     ! To Implement SILHS:
-    setup_pdf_indices_api, &
     setup_corr_varnce_array_api, &
     setup_pdf_parameters_api, &
     hydromet_pdf_parameter, &
+    init_pdf_hydromet_arrays, &
     ! generate_silhs_sample - SILHS API
     genrand_init_api, & ! if you are doing restarts)
     genrand_state, &
@@ -333,7 +334,8 @@ module clubb_api_module
     iiPDF_Ng,           &
     hmp2_ip_on_hmm2_ip, &
     Ncnp2_on_Ncnm2,     &
-    hmp2_ip_on_hmm2_ip_ratios_type
+    hmp2_ip_on_hmm2_ip_slope_type,      & ! Types
+    hmp2_ip_on_hmm2_ip_intrcpt_type
 
   public &
     ! To Interact With CLUBB's Grid:
@@ -1029,39 +1031,6 @@ contains
       input_file_cloud, input_file_below, iunit )
 
   end subroutine setup_corr_varnce_array_api
-
-  !================================================================================================
-  ! setup_pdf_indices - Sets up the iiPDF indices.
-  !================================================================================================
-
-  subroutine setup_pdf_indices_api( &
-    hydromet_dim, iirr, iiNr, &
-    iiri, iiNi, iirs, iiNs, &
-    iirg, iiNg )
-
-    use corr_varnce_module, only : setup_pdf_indices
-
-    implicit none
-
-    ! Input Variables
-    integer, intent(in) :: &
-      hydromet_dim    ! Total number of hydrometeor species.
-
-    integer, intent(in) :: &
-      iirr,    & ! Index of rain water mixing ratio
-      iiNr,       & ! Index of rain drop concentration
-      iiri,     & ! Index of ice mixing ratio
-      iiNi,       & ! Index of ice crystal concentration
-      iirs,    & ! Index of snow mixing ratio
-      iiNs,    & ! Index of snow flake concentration
-      iirg, & ! Index of graupel mixing ratio
-      iiNg    ! Index of graupel concentration
-
-    call setup_pdf_indices( &
-      hydromet_dim, iirr, iiNr, &
-      iiri, iiNi, iirs, iiNs, &
-      iirg, iiNg )
-  end subroutine setup_pdf_indices_api
 
   !================================================================================================
   ! set_clubb_debug_level - Controls the importance of error messages sent to the console.
@@ -2166,5 +2135,193 @@ contains
     return
   end function sat_mixrat_liq_api
 
+    
+  !================================================================================================
+  ! subroutine init_pdf_hydromet_arrays
+  ! 
+  ! DESCRIPTION: 
+  !     This subroutine intializes the hydromet arrays(iirr, iiNr, etc.) to the values specified by
+  !     the input arguements, this determines which hyrometeors are to be used by the microphysics
+  !     scheme. It also sets up the corresponding pdf and hydromet arrays, and calculates the 
+  !     subgrid variance ratio for each hydrometeor.
+  ! 
+  ! OPTIONAL FUNCTIONALITY:
+  !     The subgrid variance ratio for each hydrometeor is calculated based on the grid spacing 
+  !     defined by the host model. The calculation is a linear equation defined by a slope and
+  !     intercept, each of which may or may not be passed in to this subroutine. If the slope
+  !     and/or intercept are not passed in through the arguement list the default values, which 
+  !     are set in the corresponding type definitions, will be used. Otherwise the values
+  !     specified by the aruements will be used.
+  ! 
+  ! NOTES: 
+  !     'hmp2_ip_on_hmm2_ip_slope_in' is of type 'hmp2_ip_on_hmm2_ip_slope_type' and
+  !     'hmp2_ip_on_hmm2_ip_intrcpt_in' is of type 'hmp2_ip_on_hmm2_ip_intrcpt_in', both of which 
+  !     are deinfed in corr_vrnce_module.F90, and made public through this API.
+  ! 
+  !     If full control over the hydrometeor variance ratios is desired, pass in slopes that are
+  !     initialized to 0.0, this causes the ratios to no longer depend on the grid spacing. Then
+  !     pass in the intercepts set to the values of the desired ratios.
+  ! 
+  ! ARGUEMENTS:
+  !     host_dx (real) - Horizontal grid spacings
+  !     host_dy (real)
+  ! 
+  !     hydromet_dim (integer) - Number of enabled hydrometeors
+  ! 
+  !         Each of these is an index value corresponding to a hydrometeor,
+  !         used to index the hydrometeor arrays. Each index has to be unqiue
+  !         for each different hyrometeor that is enabled. Setting one of these
+  !         indices to -1 disables that hydrometeor
+  !     iirr_in (integer) - Index of rain water mixing ratio
+  !     iiri_in (integer) - Index of rain drop concentration
+  !     iirs_in (integer) - Index of ice mixing ratio
+  !     iirg_in (integer) - Index of ice crystal concentration
+  !     iiNr_in (integer) - Index of snow mixing ratio
+  !     iiNi_in (integer) - Index of snow flake concentration
+  !     iiNs_in (integer) - Index of graupel mixing ratio
+  !     iiNg_in (integer) - Index of graupel concentration
+  ! 
+  !     hmp2_ip_on_hmm2_ip_slope_in (hmp2_ip_on_hmm2_ip_slope_type) - Custom slope values
+  !     hmp2_ip_on_hmm2_ip_intrcpt_in (hmp2_ip_on_hmm2_ip_intrcpt_type) - Custom intercept values
+  ! 
+  !================================================================================================
+  subroutine init_pdf_hydromet_arrays( host_dx, host_dy, hydromet_dim,      & ! intent(in)
+                                       iirr_in, iiri_in, iirs_in, iirg_in,  & ! intent(in)
+                                       iiNr_in, iiNi_in, iiNs_in, iiNg_in,  & ! intent(in)
+                                       hmp2_ip_on_hmm2_ip_slope_in,         & ! optional(in)
+                                       hmp2_ip_on_hmm2_ip_intrcpt_in        ) ! optional(in)
 
+    use array_index, only: &
+        iirr, & ! Indicies for the hydromet arrays
+        iiNr, &
+        iirs, &
+        iiri, &
+        iirg, &
+        iiNs, & 
+        iiNi, &
+        iiNg
+
+    use corr_varnce_module, only: &
+        init_pdf_indices,                   & ! Procedures
+        init_hydromet_arrays,               &
+        hmp2_ip_on_hmm2_ip_slope_type,      & ! Types
+        hmp2_ip_on_hmm2_ip_intrcpt_type,    &
+        hmp2_ip_on_hmm2_ip                    ! Array of hydromet ratios
+
+    implicit none
+
+    ! Input Variables
+    integer, intent(in) :: &
+      hydromet_dim, & ! Total number of hydrometeor species.
+      iirr_in,      & ! Index of rain water mixing ratio
+      iiNr_in,      & ! Index of rain drop concentration
+      iiri_in,      & ! Index of ice mixing ratio
+      iiNi_in,      & ! Index of ice crystal concentration
+      iirs_in,      & ! Index of snow mixing ratio
+      iiNs_in,      & ! Index of snow flake concentration
+      iirg_in,      & ! Index of graupel mixing ratio
+      iiNg_in         ! Index of graupel concentration
+
+    real( kind = core_rknd ), intent(in) :: &
+      host_dx, host_dy  ! Horizontal grid spacing, defined by host model [m]
+
+
+    ! Optional Input Variables
+
+    ! Used to overwrite default values of slope and intercept
+    type( hmp2_ip_on_hmm2_ip_slope_type ), optional, intent(in) :: &
+        hmp2_ip_on_hmm2_ip_slope_in     ! Custom slopes to overwrite defaults [1/m]
+      
+    type( hmp2_ip_on_hmm2_ip_intrcpt_type ), optional, intent(in) :: &
+        hmp2_ip_on_hmm2_ip_intrcpt_in   ! Custom intercepts to overwrite defaults [-]
+
+
+    ! Local Variables
+
+    ! Slope and intercept are initialized with default values
+    type( hmp2_ip_on_hmm2_ip_slope_type ) :: &
+        hmp2_ip_on_hmm2_ip_slope        ! Slopes used to calculated hydromet variance [1/m]
+      
+    type( hmp2_ip_on_hmm2_ip_intrcpt_type ) :: &
+        hmp2_ip_on_hmm2_ip_intrcpt      ! Intercepts used to calculated hydromet variance [-]
+
+    !----------------------- Begin Code -----------------------------
+
+    ! If slope and intercept are present in call, then overwrite default values
+    if ( present( hmp2_ip_on_hmm2_ip_slope_in ) ) then
+        hmp2_ip_on_hmm2_ip_slope = hmp2_ip_on_hmm2_ip_slope_in
+    end if
+
+    if ( present( hmp2_ip_on_hmm2_ip_intrcpt_in ) ) then
+        hmp2_ip_on_hmm2_ip_intrcpt = hmp2_ip_on_hmm2_ip_intrcpt_in
+    end if
+
+    ! Initialize the hydromet indices
+    iirr = iirr_in
+    iiri = iiri_in
+    iirs = iirs_in
+    iirg = iirg_in
+    iiNr = iiNr_in
+    iiNi = iiNi_in
+    iiNs = iiNs_in
+    iiNg = iiNg_in
+
+    ! Calculate the subgrid variances of the hydrometeors
+    allocate( hmp2_ip_on_hmm2_ip(hydromet_dim) )
+
+    if ( iirr > 0 ) then
+       hmp2_ip_on_hmm2_ip(iirr) = hmp2_ip_on_hmm2_ip_intrcpt%rr + &
+                                  hmp2_ip_on_hmm2_ip_slope%rr * max( host_dx, host_dy )
+    endif
+
+    if ( iirs > 0 ) then
+       hmp2_ip_on_hmm2_ip(iirs) = hmp2_ip_on_hmm2_ip_intrcpt%rs + &
+                                  hmp2_ip_on_hmm2_ip_slope%rs * max( host_dx, host_dy )
+    endif
+
+    if ( iiri > 0 ) then
+       hmp2_ip_on_hmm2_ip(iiri) = hmp2_ip_on_hmm2_ip_intrcpt%ri + &
+                                  hmp2_ip_on_hmm2_ip_slope%ri * max( host_dx, host_dy )
+    endif
+
+    if ( iirg > 0 ) then
+       hmp2_ip_on_hmm2_ip(iirg) = hmp2_ip_on_hmm2_ip_intrcpt%rg + &
+                                  hmp2_ip_on_hmm2_ip_slope%rg * max( host_dx, host_dy )
+    endif
+
+    if ( iiNr > 0 ) then
+       hmp2_ip_on_hmm2_ip(iiNr) = hmp2_ip_on_hmm2_ip_intrcpt%Nr + &
+                                  hmp2_ip_on_hmm2_ip_slope%Nr * max( host_dx, host_dy )
+    endif
+
+    if ( iiNs > 0 ) then
+       hmp2_ip_on_hmm2_ip(iiNs) = hmp2_ip_on_hmm2_ip_intrcpt%Ns + &
+                                  hmp2_ip_on_hmm2_ip_slope%Ns * max( host_dx, host_dy )
+    endif
+
+    if ( iiNi > 0 ) then
+       hmp2_ip_on_hmm2_ip(iiNi) = hmp2_ip_on_hmm2_ip_intrcpt%Ni + &
+                                  hmp2_ip_on_hmm2_ip_slope%Ni * max( host_dx, host_dy )
+    endif
+
+    if ( iiNg > 0 ) then
+       hmp2_ip_on_hmm2_ip(iiNg) = hmp2_ip_on_hmm2_ip_intrcpt%Ng + &
+                                  hmp2_ip_on_hmm2_ip_slope%Ng * max( host_dx, host_dy )
+    endif
+
+    ! Hydromet arrays are Initialized based on the hydromet indices
+    call init_hydromet_arrays( hydromet_dim, iirr, iiNr,    & ! intent(in)
+                               iiri, iiNi, iirs, iiNs,      & ! intent(in)
+                               iirg, iiNg )                   ! intent(in)
+
+    
+    ! Initialize the PDF indices based on the hydromet indices
+    call init_pdf_indices( hydromet_dim,iirr, iiNr, & ! intent(in)
+                           iiri, iiNi, iirs, iiNs,  & ! intent(in)
+                           iirg, iiNg )               ! intent(in)
+
+    return
+
+  end subroutine init_pdf_hydromet_arrays
+    
 end module clubb_api_module

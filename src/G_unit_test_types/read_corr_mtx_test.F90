@@ -17,7 +17,7 @@ module read_corr_mtx_test
   ! Included Modules
   use corr_varnce_module, &
     only: read_correlation_matrix, & !Subroutine(s)
-      setup_pdf_indices, &
+      init_pdf_indices, &
       print_corr_matrix
 
   use clubb_precision, only: core_rknd
@@ -123,7 +123,7 @@ module read_corr_mtx_test
     /), shape(test_corr_array) )
 
     ! setup the system under test
-    call setup_pdf_indices(12, 5, 6, &
+    call init_pdf_indices(12, 5, 6, &
                            7, 8, 9, 10, &
                            11, 12)
 

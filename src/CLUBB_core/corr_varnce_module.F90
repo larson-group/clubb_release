@@ -29,24 +29,68 @@ module corr_varnce_module
 
   type hmp2_ip_on_hmm2_ip_ratios_type
 
-    ! In CLUBB standalone, these parameters can be set based on the value for a
-    ! given case in the CASE_model.in file.
-
     ! Prescribed parameters for hydrometeor values of <hm|_ip'^2> / <hm|_ip>^2,
-    ! where <hm|_ip> is the in-precip. mean of the hydrometeor and <hm|_ip'^2>
-    ! is the in-precip. variance of the hydrometeor.
-    ! They can be set based on values for a given case in the CASE_model.in file.
+    ! where  <hm|_ip'^2>  is the in-precip. variance of the hydrometeor and
+    !        <hm|_ip>     is the in-precip. mean of the hydrometeor
+    ! 
+    ! These values are dependent on the horizontal grid spacing of the run, and are calculated
+    ! using a slope and intercept corresponding to each hydrometer.
     real( kind = core_rknd ) :: &
-      rrp2_ip_on_rrm2_ip = 1.0_core_rknd, & ! Ratio <rr|_ip'^2> / <rr|_ip>^2 [-]
-      Nrp2_ip_on_Nrm2_ip = 1.0_core_rknd, & ! Ratio <Nr|_ip'^2> / <Nr|_ip>^2 [-]
-      rip2_ip_on_rim2_ip = 1.0_core_rknd, & ! Ratio <ri|_ip'^2> / <ri|_ip>^2 [-]
-      Nip2_ip_on_Nim2_ip = 1.0_core_rknd, & ! Ratio <Ni|_ip'^2> / <Ni|_ip>^2 [-]
-      rsp2_ip_on_rsm2_ip = 1.0_core_rknd, & ! Ratio <rs|_ip'^2> / <rs|_ip>^2 [-]
-      Nsp2_ip_on_Nsm2_ip = 1.0_core_rknd, & ! Ratio <Ns|_ip'^2> / <Ns|_ip>^2 [-]
-      rgp2_ip_on_rgm2_ip = 1.0_core_rknd, & ! Ratio <rg|_ip'^2> / <rg|_ip>^2 [-]
-      Ngp2_ip_on_Ngm2_ip = 1.0_core_rknd    ! Ratio <Ng|_ip'^2> / <Ng|_ip>^2 [-]
+      rr = 1.0_core_rknd, & ! For rain water mixing ratio [-]
+      Nr = 1.0_core_rknd, & ! For rain drop concentration [-]
+      ri = 1.0_core_rknd, & ! For ice mixing ratio        [-]
+      Ni = 1.0_core_rknd, & ! For ice concentration       [-]
+      rs = 1.0_core_rknd, & ! For snow mixing ratio       [-]
+      Ns = 1.0_core_rknd, & ! For snow concentration      [-]
+      rg = 1.0_core_rknd, & ! For graupel mixing ratio    [-]
+      Ng = 1.0_core_rknd    ! For graupel concentration   [-]
 
   end type hmp2_ip_on_hmm2_ip_ratios_type
+
+  ! These slopes and intercepts below are used to calculate the hmp2_ip_on_hmm2_ip_ratios_type
+  ! values that are defined above. This functionality is described by equations 8, 10, & 11
+  ! in ``Parameterization of the Spatial Variability of Rain for Large-Scale Models and 
+  ! Remote Sensing`` Lebo, et al, October 2015
+  ! https://journals.ametsoc.org/doi/pdf/10.1175/JAMC-D-15-0066.1
+  ! see clubb:ticket:830 for more detail
+  ! 
+  ! hmp2_ip_on_hmm2_ip(iirr) = hmp2_ip_on_hmm2_ip_intrcpt%rr + &
+  !                            hmp2_ip_on_hmm2_ip_slope%rr * max( host_dx, host_dy )
+  ! 
+  ! In Lebo et al. the suggested values were
+  !     slope = 2.12e-5 [1/m]
+  !     intercept = 0.54 [-]
+  ! 
+  ! In CLUBB standalone, these parameters can be set based on the value for a
+  ! given case in the CASE_model.in file.
+  type hmp2_ip_on_hmm2_ip_slope_type
+
+    real( kind = core_rknd ) :: &
+      rr = 2.12e-5_core_rknd, & ! For rain water mixing ratio [1/m]
+      Nr = 2.12e-5_core_rknd, & ! For rain drop concentration [1/m]
+      ri = 2.12e-5_core_rknd, & ! For ice mixing ratio        [1/m]
+      Ni = 2.12e-5_core_rknd, & ! For ice concentration       [1/m]
+      rs = 2.12e-5_core_rknd, & ! For snow mixing ratio       [1/m]
+      Ns = 2.12e-5_core_rknd, & ! For snow concentration      [1/m]
+      rg = 2.12e-5_core_rknd, & ! For graupel mixing ratio    [1/m]
+      Ng = 2.12e-5_core_rknd    ! For graupel concentration   [1/m]
+
+  end type hmp2_ip_on_hmm2_ip_slope_type
+
+  type hmp2_ip_on_hmm2_ip_intrcpt_type
+
+    real( kind = core_rknd ) :: &
+      rr = 0.54_core_rknd, & ! For rain water mixing ratio [-]
+      Nr = 0.54_core_rknd, & ! For rain drop concentration [-]
+      ri = 0.54_core_rknd, & ! For ice mixing ratio        [-]
+      Ni = 0.54_core_rknd, & ! For ice concentration       [-]
+      rs = 0.54_core_rknd, & ! For snow mixing ratio       [-]
+      Ns = 0.54_core_rknd, & ! For snow concentration      [-]
+      rg = 0.54_core_rknd, & ! For graupel mixing ratio    [-]
+      Ng = 0.54_core_rknd    ! For graupel concentration   [-]
+
+  end type hmp2_ip_on_hmm2_ip_intrcpt_type
+
 
   ! Prescribed parameter for <N_cn'^2> / <N_cn>^2.
   ! NOTE: In the case that l_const_Nc_in_cloud is true, Ncn is constant
@@ -79,13 +123,14 @@ module corr_varnce_module
       corr_array_n_below_def
 !$omp threadprivate( corr_array_n_cloud_def, corr_array_n_below_def )
 
-
   private
 
   public :: hmp2_ip_on_hmm2_ip_ratios_type, &
-            read_correlation_matrix, setup_pdf_indices, &
+            hmp2_ip_on_hmm2_ip_slope_type, &
+            hmp2_ip_on_hmm2_ip_intrcpt_type, &
+            read_correlation_matrix, init_pdf_indices, &
             setup_corr_varnce_array, cleanup_corr_matrix_arrays, &
-            assert_corr_symmetric, print_corr_matrix
+            assert_corr_symmetric, print_corr_matrix, init_hydromet_arrays
 
   private :: get_corr_var_index, def_corr_idx
 
@@ -450,43 +495,41 @@ module corr_varnce_module
 
   end function get_corr_var_index
 
-  !-----------------------------------------------------------------------
-  subroutine setup_pdf_indices( hydromet_dim, iirr, iiNr, &
-                                iiri, iiNi, iirs, iiNs, &
-                                iirg, iiNg )
+  !===============================================================================
+  subroutine init_pdf_indices( hydromet_dim, iirr, iiNr,    & ! intent(in)
+                               iiri, iiNi, iirs, iiNs,      & ! intent(in)
+                               iirg, iiNg                   ) ! intent(in)
 
-    ! Description:
-    !
-    ! Setup for the iiPDF indices. These indices are used to address chi(s), eta(t), w
-    ! and the hydrometeors in the mean/stdev/corr arrays
-    !
-    ! References:
-    !-----------------------------------------------------------------------
+  ! Description:
+  ! 
+  ! Setup for the iiPDF indices. These indices are used to address 
+  ! chi(s), eta(t), w and the hydrometeors in the mean/stdev/corr arrays
+  ! 
+  ! References:
+  !-------------------------------------------------------------------------------
+
+    
 
     implicit none
 
     ! Input Variables
     integer, intent(in) :: &
-      hydromet_dim    ! Total number of hydrometeor species.
-
-    integer, intent(in) :: &
-      iirr, & ! Index of rain water mixing ratio
-      iiNr, & ! Index of rain drop concentration
-      iiri, & ! Index of ice mixing ratio
-      iiNi, & ! Index of ice crystal concentration
-      iirs, & ! Index of snow mixing ratio
-      iiNs, & ! Index of snow flake concentration
-      iirg, & ! Index of graupel mixing ratio
-      iiNg    ! Index of graupel concentration
+      hydromet_dim, & ! Total number of hydrometeor species.
+      iirr,         & ! Index of rain water mixing ratio
+      iiNr,         & ! Index of rain drop concentration
+      iiri,         & ! Index of ice mixing ratio
+      iiNi,         & ! Index of ice crystal concentration
+      iirs,         & ! Index of snow mixing ratio
+      iiNs,         & ! Index of snow flake concentration
+      iirg,         & ! Index of graupel mixing ratio
+      iiNg            ! Index of graupel concentration
 
     ! Local Variables
     integer :: &
       pdf_count, & ! Count number of PDF variables
       i            ! Hydrometeor loop index
 
-  !-----------------------------------------------------------------------
-
-    !----- Begin Code -----
+  !--------------------- Begin Code --------------------------------
 
     iiPDF_chi = 1 ! Extended liquid water mixing ratio, chi
     iiPDF_eta = 2 ! 'eta' orthogonal to 'chi'
@@ -546,13 +589,130 @@ module corr_varnce_module
 
     endif ! hydromet_dim > 0
 
-    pdf_dim= pdf_count
+    pdf_dim = pdf_count
 
 
     return
 
-  end subroutine setup_pdf_indices
-  !-----------------------------------------------------------------------
+  end subroutine init_pdf_indices
+
+  !===============================================================================
+  subroutine init_hydromet_arrays( hydromet_dim, iirr, iiNr,    & ! intent(in)
+                                   iiri, iiNi, iirs, iiNs,      & ! intent(in)
+                                   iirg, iiNg                   ) ! intent(in)
+  ! Description:
+  ! 
+  ! Initialization for the hydromet arrays. How the arrays are initialized is
+  ! determined by how the hydromet indicies (iirr, iiNr, etc.) have been set,
+  ! which are determined by the microphysics scheme.
+  !-------------------------------------------------------------------------------
+
+    use constants_clubb, only: &
+        rr_tol, &   ! Constants, tolerances for each hydrometeor
+        ri_tol, &
+        rs_tol, &
+        rg_tol, &
+        Nr_tol, &
+        Ni_tol, &
+        Ns_tol, &
+        Ng_tol
+
+    use array_index, only: &
+        hydromet_list,  & ! Names of the hydrometeor species
+        hydromet_tol,   & ! List of tolerances for each enabled hydrometeor
+        l_frozen_hm,    & ! True means hydrometeor is frozen
+        l_mix_rat_hm      ! True means hydrometeor is a mixing ratio
+
+    implicit none
+
+    ! Input Variables
+    integer, intent(in) :: &
+      hydromet_dim, & ! Total number of hydrometeor species.
+      iirr,         & ! Index of rain water mixing ratio
+      iiNr,         & ! Index of rain drop concentration
+      iiri,         & ! Index of ice mixing ratio
+      iiNi,         & ! Index of ice crystal concentration
+      iirs,         & ! Index of snow mixing ratio
+      iiNs,         & ! Index of snow flake concentration
+      iirg,         & ! Index of graupel mixing ratio
+      iiNg            ! Index of graupel concentration
+    
+    !--------------------- Begin Code --------------------------------
+
+
+    ! Set up predictive precipitating hydrometeor arrays.
+    allocate( hydromet_list(hydromet_dim) )
+    allocate( hydromet_tol(hydromet_dim) )
+    allocate( l_mix_rat_hm(hydromet_dim) )
+    allocate( l_frozen_hm(hydromet_dim) )
+
+    if ( iirr > 0 ) then
+       ! The microphysics scheme predicts rain water mixing ratio, rr.
+       hydromet_list(iirr)      = "rrm"
+       l_mix_rat_hm(iirr)       = .true.
+       l_frozen_hm(iirr)        = .false.
+       hydromet_tol(iirr)       = rr_tol
+    endif
+
+    if ( iiri > 0 ) then
+       ! The microphysics scheme predicts ice mixing ratio, ri.
+       hydromet_list(iiri)      = "rim"
+       l_mix_rat_hm(iiri)       = .true.
+       l_frozen_hm(iiri)        = .true.
+       hydromet_tol(iiri)       = ri_tol
+    endif
+
+    if ( iirs > 0 ) then
+       ! The microphysics scheme predicts snow mixing ratio, rs.
+       hydromet_list(iirs)      = "rsm"
+       l_mix_rat_hm(iirs)       = .true.
+       l_frozen_hm(iirs)        = .true.
+       hydromet_tol(iirs)       = rs_tol
+    endif
+
+    if ( iirg > 0 ) then
+       ! The microphysics scheme predicts graupel mixing ratio, rg.
+       hydromet_list(iirg)      = "rgm"
+       l_mix_rat_hm(iirg)       = .true.
+       l_frozen_hm(iirg)        = .true.
+       hydromet_tol(iirg)       = rg_tol
+    endif
+
+    if ( iiNr > 0 ) then
+       ! The microphysics scheme predicts rain drop concentration, Nr.
+       hydromet_list(iiNr)      = "Nrm"
+       l_frozen_hm(iiNr)        = .false.
+       l_mix_rat_hm(iiNr)       = .false.
+       hydromet_tol(iiNr)       = Nr_tol
+    endif
+
+    if ( iiNi > 0 ) then
+       ! The microphysics scheme predicts ice concentration, Ni.
+       hydromet_list(iiNi)      = "Nim"
+       l_mix_rat_hm(iiNi)       = .false.
+       l_frozen_hm(iiNi)        = .true.
+       hydromet_tol(iiNi)       = Ni_tol
+    endif
+
+    if ( iiNs > 0 ) then
+       ! The microphysics scheme predicts snowflake concentration, Ns.
+       hydromet_list(iiNs)      = "Nsm"
+       l_mix_rat_hm(iiNs)       = .false.
+       l_frozen_hm(iiNs)        = .true.
+       hydromet_tol(iiNs)       = Ns_tol
+    endif
+
+    if ( iiNg > 0 ) then
+       ! The microphysics scheme predicts graupel concentration, Ng.
+       hydromet_list(iiNg)      = "Ngm"
+       l_mix_rat_hm(iiNg)       = .false.
+       l_frozen_hm(iiNg)        = .true.
+       hydromet_tol(iiNg)       = Ng_tol
+    endif
+
+    return
+
+  end subroutine init_hydromet_arrays
 
 !===============================================================================
   subroutine setup_corr_varnce_array( input_file_cloud, input_file_below, &
