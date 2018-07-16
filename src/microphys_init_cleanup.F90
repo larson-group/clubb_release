@@ -817,11 +817,11 @@ module microphys_init_cleanup
     end select
 
     ! Set up pdf indices, hydromet indicies, hydromet arrays, and hydromet variance ratios
-    call init_pdf_hydromet_arrays( host_dx, host_dy, hydromet_dim,  & ! intent(in)
-                                   iirr, iiri, iirs, iirg,          & ! intent(in)
-                                   iiNr, iiNi, iiNs, iiNg,          & ! intent(in)
-                                   hmp2_ip_on_hmm2_ip_slope,        & ! optional(in)
-                                   hmp2_ip_on_hmm2_ip_intrcpt       ) ! optional(in)
+    call init_pdf_hydromet_arrays_api( host_dx, host_dy, hydromet_dim,  & ! intent(in)
+                                       iirr, iiri, iirs, iirg,          & ! intent(in)
+                                       iiNr, iiNi, iiNs, iiNg,          & ! intent(in)
+                                       hmp2_ip_on_hmm2_ip_slope,        & ! optional(in)
+                                       hmp2_ip_on_hmm2_ip_intrcpt       ) ! optional(in)
 
     select case ( trim( lh_microphys_type ) )
     case ( "interactive" )

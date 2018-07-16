@@ -311,7 +311,7 @@ module clubb_api_module
     setup_corr_varnce_array_api, &
     setup_pdf_parameters_api, &
     hydromet_pdf_parameter, &
-    init_pdf_hydromet_arrays, &
+    init_pdf_hydromet_arrays_api, &
     ! generate_silhs_sample - SILHS API
     genrand_init_api, & ! if you are doing restarts)
     genrand_state, &
@@ -2137,7 +2137,7 @@ contains
 
     
   !================================================================================================
-  ! subroutine init_pdf_hydromet_arrays
+  ! subroutine init_pdf_hydromet_arrays_api
   ! 
   ! DESCRIPTION: 
   !     This subroutine intializes the hydromet arrays(iirr, iiNr, etc.) to the values specified by
@@ -2185,11 +2185,11 @@ contains
   !     hmp2_ip_on_hmm2_ip_intrcpt_in (hmp2_ip_on_hmm2_ip_intrcpt_type) - Custom intercept values
   ! 
   !================================================================================================
-  subroutine init_pdf_hydromet_arrays( host_dx, host_dy, hydromet_dim,      & ! intent(in)
-                                       iirr_in, iiri_in, iirs_in, iirg_in,  & ! intent(in)
-                                       iiNr_in, iiNi_in, iiNs_in, iiNg_in,  & ! intent(in)
-                                       hmp2_ip_on_hmm2_ip_slope_in,         & ! optional(in)
-                                       hmp2_ip_on_hmm2_ip_intrcpt_in        ) ! optional(in)
+  subroutine init_pdf_hydromet_arrays_api( host_dx, host_dy, hydromet_dim,      & ! intent(in)
+                                           iirr_in, iiri_in, iirs_in, iirg_in,  & ! intent(in)
+                                           iiNr_in, iiNi_in, iiNs_in, iiNg_in,  & ! intent(in)
+                                           hmp2_ip_on_hmm2_ip_slope_in,         & ! optional(in)
+                                           hmp2_ip_on_hmm2_ip_intrcpt_in        ) ! optional(in)
 
     use array_index, only: &
         iirr, & ! Indicies for the hydromet arrays
@@ -2322,6 +2322,6 @@ contains
 
     return
 
-  end subroutine init_pdf_hydromet_arrays
+  end subroutine init_pdf_hydromet_arrays_api
     
 end module clubb_api_module
