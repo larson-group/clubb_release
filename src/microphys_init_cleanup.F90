@@ -205,7 +205,7 @@ module microphys_init_cleanup
         l_fix_w_chi_eta_correlations  ! Use a fixed correlation for chi/eta(s/t Mellor) (SILHS)
 
     use clubb_api_module, only: &
-        init_pdf_hydromet_arrays
+        init_pdf_hydromet_arrays_api
 
     implicit none
 
