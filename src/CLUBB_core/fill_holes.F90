@@ -1180,6 +1180,148 @@ module fill_holes
 
   end subroutine fill_holes_driver
 
+  !=============================================================================
+  subroutine clip_hydromet_conc_mvr( hydromet_dim, hydromet, & ! Intent(in)
+                                     hydromet_clipped )        ! Intent(out)
+
+    ! Description:
+    ! Increases the value of a hydrometeor concentration when it is too small,
+    ! according to the hydrometeor mixing ratio (which remains unchanged) and
+    ! the maximum acceptable drop or particle mean volume radius for that
+    ! hydrometeor species.
+
+    ! References:
+    !-----------------------------------------------------------------------
+
+    use grid_class, only: &
+        gr    ! Variable(s)
+
+    use constants_clubb, only: &
+        pi,          & ! Variable(s)
+        four_thirds, &
+        one,         &
+        zero,        &
+        rho_lw,      &
+        rho_ice
+
+    use array_index, only: &
+        l_mix_rat_hm, & ! Variable(s)
+        l_frozen_hm
+
+    use index_mapping, only: &
+        Nx2rx_hm_idx, & ! Procedure(s)
+        mvr_hm_max
+
+    use clubb_precision, only: &
+        core_rknd    ! Variable(s)
+
+    implicit none
+
+    ! Input Variables
+    integer, intent(in) :: &
+      hydromet_dim    ! Number of hydrometeor fields
+
+    real( kind = core_rknd ), dimension(gr%nz,hydromet_dim), intent(in) :: &
+      hydromet    ! Mean of hydrometeor fields    [units vary]
+
+    ! Output Variable
+    real( kind = core_rknd ), dimension(gr%nz,hydromet_dim), intent(out) :: &
+      hydromet_clipped    ! Clipped mean of hydrometeor fields    [units vary]
+
+    ! Local Variables
+    real( kind = core_rknd ) :: &
+      Nxm_min_coef    ! Coefficient for min mean value of a concentration [1/kg]
+
+    integer :: &
+      k,   & ! Vertical grid index
+      idx    ! Hydrometeor species index
+
+
+    ! Clipping for hydrometeor concentrations.
+    do idx = 1, hydromet_dim
+
+       if ( .not. l_mix_rat_hm(idx) ) then
+
+          ! The field is a hydrometeor concentration.
+
+          if ( .not. l_frozen_hm(idx) ) then
+
+             ! Clipping for mean rain drop concentration, <Nr>.
+             !
+             ! When mean rain water mixing ratio, <rr>, is found at a grid
+             ! level, mean rain drop concentration must be at least a minimum
+             ! value so that average rain drop mean volume radius stays within
+             ! an upper bound.  Otherwise, mean rain drop concentration is 0.
+             ! This can also be applied to values at a sample point, rather than
+             ! a grid-box mean.
+
+             ! The minimum mean rain drop concentration is given by:
+             !
+             ! <Nr> = <rr> / ( (4/3) * pi * rho_lw * mvr_rain_max^3 );
+             !
+             ! where mvr_rain_max is the maximum acceptable average rain drop
+             ! mean volume radius.
+
+             Nxm_min_coef &
+             = one / ( four_thirds * pi * rho_lw * mvr_hm_max(idx)**3 )
+
+          else ! l_frozen_hm(idx)
+
+             ! Clipping for mean frozen hydrometeor concentration, <Nx>, where x
+             ! stands for any frozen hydrometeor species.
+             !
+             ! When mean frozen hydrometeor mixing ratio, <rx>, is found at a
+             ! grid level, mean frozen hydrometeor concentration must be at
+             ! least a minimum value so that average frozen hydrometeor mean
+             ! volume radius stays within an upper bound.  Otherwise, mean
+             ! frozen hydrometeor concentration is 0.  This can also be applied
+             ! to values at a sample point, rather than a grid-box mean.
+
+             ! The minimum mean frozen hydrometeor concentration is given by:
+             !
+             ! <Nx> = <rx> / ( (4/3) * pi * rho_ice * mvr_x_max^3 );
+             !
+             ! where mvr_x_max is the maximum acceptable average frozen
+             ! hydrometeor mean volume radius for frozen hydrometeor species, x.
+
+             Nxm_min_coef &
+             = one / ( four_thirds * pi * rho_ice * mvr_hm_max(idx)**3 )
+
+          endif ! .not. l_frozen_hm(idx)
+
+          ! Loop over vertical levels and increase hydrometeor concentrations
+          ! when necessary.
+          do k = 2, gr%nz, 1
+
+             if ( hydromet(k,Nx2rx_hm_idx(idx)) > zero ) then
+
+                ! Hydrometeor mixing ratio, <rx>, is found at the grid level.
+                hydromet_clipped(k,idx) &
+                = max( hydromet(k,idx), &
+                       Nxm_min_coef * hydromet(k,Nx2rx_hm_idx(idx)) )
+
+             else ! <rx> = 0
+
+                hydromet_clipped(k,idx) = zero
+
+             endif ! hydromet(k,Nx2rx_hm_idx(idx)) > 0
+
+          enddo ! k = 2, gr%nz, 1
+
+       else ! l_mix_rat_hm(idx)
+
+          ! The field is a hydrometeor mixing ratio.
+          hydromet_clipped(:,idx) = hydromet(:,idx)
+
+       endif ! .not. l_mix_rat_hm(idx)
+
+    enddo ! idx = 1, hydromet_dim, 1
+
+
+    return
+
+  end subroutine clip_hydromet_conc_mvr
+
   !-----------------------------------------------------------------------
   subroutine setup_stats_indices( ihm,                         & ! Intent(in)
                                   ixrm_bt, ixrm_hf, ixrm_wvhf, & ! Intent(inout)
