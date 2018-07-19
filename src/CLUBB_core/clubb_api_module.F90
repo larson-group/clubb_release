@@ -2185,7 +2185,7 @@ contains
   !     hmp2_ip_on_hmm2_ip_intrcpt_in (hmp2_ip_on_hmm2_ip_intrcpt_type) - Custom intercept values
   ! 
   !================================================================================================
-  subroutine init_pdf_hydromet_arrays_api( host_dx, host_dy, hydromet_dim,      & ! intent(in)
+  subroutine init_pdf_hydromet_arrays_api( host_dx, host_dy, hydromet_dim_in,   & ! intent(in)
                                            iirr_in, iiri_in, iirs_in, iirg_in,  & ! intent(in)
                                            iiNr_in, iiNi_in, iiNs_in, iiNg_in,  & ! intent(in)
                                            hmp2_ip_on_hmm2_ip_slope_in,         & ! optional(in)
@@ -2208,19 +2208,22 @@ contains
         hmp2_ip_on_hmm2_ip_intrcpt_type,    &
         hmp2_ip_on_hmm2_ip                    ! Array of hydromet ratios
 
+    use parameters_model, only: &
+        hydromet_dim
+
     implicit none
 
     ! Input Variables
     integer, intent(in) :: &
-      hydromet_dim, & ! Total number of hydrometeor species.
-      iirr_in,      & ! Index of rain water mixing ratio
-      iiNr_in,      & ! Index of rain drop concentration
-      iiri_in,      & ! Index of ice mixing ratio
-      iiNi_in,      & ! Index of ice crystal concentration
-      iirs_in,      & ! Index of snow mixing ratio
-      iiNs_in,      & ! Index of snow flake concentration
-      iirg_in,      & ! Index of graupel mixing ratio
-      iiNg_in         ! Index of graupel concentration
+      hydromet_dim_in,  & ! Total number of hydrometeor species.
+      iirr_in,          & ! Index of rain water mixing ratio
+      iiNr_in,          & ! Index of rain drop concentration
+      iiri_in,          & ! Index of ice mixing ratio
+      iiNi_in,          & ! Index of ice crystal concentration
+      iirs_in,          & ! Index of snow mixing ratio
+      iiNs_in,          & ! Index of snow flake concentration
+      iirg_in,          & ! Index of graupel mixing ratio
+      iiNg_in             ! Index of graupel concentration
 
     real( kind = core_rknd ), intent(in) :: &
       host_dx, host_dy  ! Horizontal grid spacing, defined by host model [m]
@@ -2256,7 +2259,9 @@ contains
         hmp2_ip_on_hmm2_ip_intrcpt = hmp2_ip_on_hmm2_ip_intrcpt_in
     end if
 
-    ! Initialize the hydromet indices
+
+    ! Initialize the hydromet indices and hydromet_dim
+    hydromet_dim = hydromet_dim_in
     iirr = iirr_in
     iiri = iiri_in
     iirs = iirs_in
