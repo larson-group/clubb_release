@@ -1,5 +1,5 @@
 README for Morrison et al (2005) microphysics.
-____________________________________________________________________________
+
 The two-moment, five-class bulk microphysical scheme of Morrison et al
 (2005) has been ported to SAM through the addition of an interface to
 the WRF implementation of Morrison's scheme.  Here, SAM directly
