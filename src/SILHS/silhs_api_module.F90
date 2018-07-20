@@ -304,10 +304,13 @@ contains
   ! clip_transform_silhs_output - Computes extra SILHS sample variables, such as rt and thl.
   !================================================================================================
 
-  subroutine clip_transform_silhs_output_api( nz, num_samples, pdf_dim, &        ! In
-                                              X_mixt_comp_all_levs, X_nl_all_levs, & ! In
-                                              pdf_params, l_use_Ncn_to_Nc, &         ! In
-                                              lh_clipped_vars )                      ! Out
+  subroutine clip_transform_silhs_output_api( nz, num_samples, &             ! In
+                                              pdf_dim, hydromet_dim, &       ! In
+                                              X_mixt_comp_all_levs, &        ! In
+                                              X_nl_all_levs_raw, &           ! In
+                                              pdf_params, l_use_Ncn_to_Nc, & ! In
+                                              lh_clipped_vars, &             ! Out
+                                              X_nl_all_levs )                ! Out
 
     use latin_hypercube_driver_module, only : clip_transform_silhs_output, lh_clipped_variables_type
 
@@ -323,15 +326,16 @@ contains
     logical, intent(in) :: l_use_Ncn_to_Nc
 
     integer, intent(in) :: &
-      nz,          &         ! Number of vertical levels
-      num_samples, &         ! Number of SILHS sample points
-      pdf_dim           ! Number of variates in X_nl_one_lev
+      nz,           & ! Number of vertical levels
+      num_samples,  & ! Number of SILHS sample points
+      pdf_dim,      & ! Number of variates in X_nl_one_lev
+      hydromet_dim    ! Number of hydrometeor species
 
     integer, dimension(nz,num_samples), intent(in) :: &
       X_mixt_comp_all_levs   ! Which component this sample is in (1 or 2)
 
-    real( kind = core_rknd ), dimension(nz,num_samples,pdf_dim) :: &
-      X_nl_all_levs          ! A SILHS sample
+    real( kind = core_rknd ), dimension(nz,num_samples,pdf_dim), intent(in) :: &
+      X_nl_all_levs_raw    ! Raw (unclipped) SILHS sample points    [units vary]
 
     type(pdf_parameter), dimension(nz), intent(in) :: &
       pdf_params             ! **The** PDF parameters!
@@ -340,10 +344,17 @@ contains
     type(lh_clipped_variables_type), dimension(nz,num_samples), intent(out) :: &
       lh_clipped_vars        ! SILHS clipped and transformed variables
 
-    call clip_transform_silhs_output( nz, num_samples, pdf_dim, &         ! In
-                                      X_mixt_comp_all_levs, X_nl_all_levs, &  ! In
-                                      pdf_params, l_use_Ncn_to_Nc, &          ! In
-                                      lh_clipped_vars )                       ! Out
+    real( kind = core_rknd ), dimension(nz,num_samples,pdf_dim), &
+    intent(out) :: &
+      X_nl_all_levs    ! Clipped values of SILHS sample points    [units vary]
+
+    call clip_transform_silhs_output( nz, num_samples, &             ! In
+                                      pdf_dim, hydromet_dim, &       ! In
+                                      X_mixt_comp_all_levs, &        ! In
+                                      X_nl_all_levs_raw, &           ! In
+                                      pdf_params, l_use_Ncn_to_Nc, & ! In
+                                      lh_clipped_vars, &             ! Out
+                                      X_nl_all_levs )                ! Out
 
   end subroutine clip_transform_silhs_output_api
 

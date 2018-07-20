@@ -698,10 +698,13 @@ module latin_hypercube_driver_module
 !-----------------------------------------------------------------------
 
 !-----------------------------------------------------------------------
-  subroutine clip_transform_silhs_output( nz, num_samples, pdf_dim, &         ! In
-                                          X_mixt_comp_all_levs, X_nl_all_levs, &  ! In
-                                          pdf_params, l_use_Ncn_to_Nc, &          ! In
-                                          lh_clipped_vars )                       ! Out
+  subroutine clip_transform_silhs_output( nz, num_samples, &             ! In
+                                          pdf_dim, hydromet_dim, &       ! In
+                                          X_mixt_comp_all_levs, &        ! In
+                                          X_nl_all_levs_raw, &           ! In
+                                          pdf_params, l_use_Ncn_to_Nc, & ! In
+                                          lh_clipped_vars, &             ! Out
+                                          X_nl_all_levs )                ! Out
 
   ! Description:
   !   Derives from the SILHS sampling structure X_nl_all_levs the variables
@@ -713,42 +716,49 @@ module latin_hypercube_driver_module
 
     ! Included Modules
     use clubb_precision, only: &
-      core_rknd
+        core_rknd
 
     use constants_clubb, only: &
-      zero, &   ! Constant(s)
-      rt_tol
+        zero, &   ! Constant(s)
+        rt_tol
 
     use pdf_parameter_module, only: &
-      pdf_parameter ! Type
+        pdf_parameter ! Type
+
+    use index_mapping, only: &
+        hydromet2pdf_idx    ! Procedure(s)
+
+    use fill_holes, only: &
+        clip_hydromet_conc_mvr    ! Procedure(s)
 
     use array_index, only: &
-      iiPDF_chi, &  ! Variable(s)
-      iiPDF_eta, &
-      iiPDF_Ncn
+        iiPDF_chi, &  ! Variable(s)
+        iiPDF_eta, &
+        iiPDF_Ncn
 
     use transform_to_pdf_module, only: &
-      chi_eta_2_rtthl ! Awesome procedure
+        chi_eta_2_rtthl ! Awesome procedure
 
     implicit none
 
     ! Input Variables
     logical, intent(in) :: &
-      l_use_Ncn_to_Nc        ! Whether to call Ncn_to_Nc (.true.) or not (.false.);
-                             ! Ncn_to_Nc might cause problems with the MG microphysics 
-                             ! since the changes made here (Nc-tendency) are not fed into 
-                             ! the microphysics
+      l_use_Ncn_to_Nc  ! Whether to call Ncn_to_Nc (.true.) or not (.false.);
+                       ! Ncn_to_Nc might cause problems with the MG microphysics
+                       ! since the changes made here (Nc-tendency) are not fed
+                       ! into the microphysics
 
     integer, intent(in) :: &
-      nz,          &         ! Number of vertical levels
-      num_samples, &         ! Number of SILHS sample points
-      pdf_dim           ! Number of variates in X_nl
+      nz,           & ! Number of vertical levels
+      num_samples,  & ! Number of SILHS sample points
+      pdf_dim,      & ! Number of variates in X_nl
+      hydromet_dim    ! Number of hydrometeor species
 
     integer, dimension(nz,num_samples), intent(in) :: &
       X_mixt_comp_all_levs   ! Which component this sample is in (1 or 2)
 
-    real( kind = core_rknd ), dimension(nz,num_samples,pdf_dim) :: &
-      X_nl_all_levs          ! A SILHS sample
+    real( kind = core_rknd ), dimension(nz,num_samples,pdf_dim), intent(in) :: &
+      X_nl_all_levs_raw    ! Raw (unclipped) SILHS sample points    [units vary]
 
     type(pdf_parameter), dimension(nz), intent(in) :: &
       pdf_params             ! **The** PDF parameters!
@@ -757,12 +767,21 @@ module latin_hypercube_driver_module
     type(lh_clipped_variables_type), dimension(nz,num_samples), intent(out) :: &
       lh_clipped_vars        ! SILHS clipped and transformed variables
 
+    real( kind = core_rknd ), dimension(nz,num_samples,pdf_dim), &
+    intent(out) :: &
+      X_nl_all_levs    ! Clipped values of SILHS sample points    [units vary]
+
+    ! Local Variables
     real( kind = core_rknd ), dimension(nz,num_samples) :: &
       lh_rt,   &             ! Total water mixing ratio            [kg/kg]
       lh_thl,  &             ! Liquid potential temperature        [K]
       lh_rc,   &             ! Cloud water mixing ratio            [kg/kg]
       lh_rv,   &             ! Vapor water mixing ratio            [kg/kg]
       lh_Nc                  ! Cloud droplet number concentration  [#/kg]
+
+    real( kind = core_rknd ), dimension(nz,hydromet_dim) :: &
+      hydromet_pts,         & ! Sample point column of hydrometeors    [un vary]
+      hydromet_pts_clipped    ! Clipped sample point column of hydromet   [un v]
 
     real( kind = core_rknd ) :: &
       rt_1,    &
@@ -779,21 +798,29 @@ module latin_hypercube_driver_module
       lh_eta
 
     integer :: &
-      isample, k
+      isample, k, hm_idx
 
     logical :: &
       l_rt_clipped, &
       l_rv_clipped
 
+    ! Flag to clip sample points of hydrometeor concentrations.
+    logical, parameter :: &
+      l_clip_hydromet_samples = .false.
+
   !-----------------------------------------------------------------------
+
+    ! Initialize X_nl_all_levs to X_nl_all_levs_raw.
+    X_nl_all_levs = X_nl_all_levs_raw
 
     l_rt_clipped = .false.
     l_rv_clipped = .false.
 
-    !----- Begin Code -----
+    ! Calculate (and clip) the SILHS sample point values of rt, thl, rc, rv,
+    ! and Nc.
 
     ! Loop over all thermodynamic levels above the model lower boundary.
-    do k=2, nz
+    do k = 2, nz
 
       ! Enter the PDF parameters!!
       rt_1   = pdf_params(k)%rt_1
@@ -807,7 +834,7 @@ module latin_hypercube_driver_module
       chi_1  = pdf_params(k)%chi_1
       chi_2  = pdf_params(k)%chi_2
 
-      do isample=1, num_samples
+      do isample = 1, num_samples
 
         lh_chi = X_nl_all_levs(k,isample,iiPDF_chi)
         lh_eta = X_nl_all_levs(k,isample,iiPDF_eta)
@@ -843,9 +870,9 @@ module latin_hypercube_driver_module
            lh_Nc(k,isample) = X_nl_all_levs(k,isample,iiPDF_Ncn)
         endif ! l_use_Ncn_to_Nc
 
-      end do ! isample=1, num_samples
+      end do ! isample = 1, num_samples
 
-    end do ! k=2, nz
+    end do ! k = 2, nz
 
     ! These parameters are not computed at the model lower level.
     lh_rt(1,:) = zero
@@ -861,8 +888,44 @@ module latin_hypercube_driver_module
     lh_clipped_vars(:,:)%rv  = lh_rv(:,:)
     lh_clipped_vars(:,:)%Nc  = lh_Nc(:,:)
 
+
+    ! Clip the SILHS sample point values of hydrometeor concentrations.
+    if ( l_clip_hydromet_samples ) then
+
+       ! Loop over all sample columns.
+       do isample = 1, num_samples, 1
+
+          ! Pack the SILHS hydrometeor sample points, which are stored in arrays
+          ! with the size pdf_dim, into arrays with the size hydromet_dim.
+          do hm_idx = 1, hydromet_dim, 1
+             hydromet_pts(:,hm_idx) &
+             = X_nl_all_levs(:,isample,hydromet2pdf_idx(hm_idx))
+          enddo ! hm_idx = 1, hydromet_dim, 1
+
+          ! Clip the hydrometeor concentration sample points based on
+          ! maintaining the value of the hydrometeor mixing ratio sample points
+          ! and satisfying the maximum allowable mean volume radius for that
+          ! hydrometeor species.
+          call clip_hydromet_conc_mvr( hydromet_dim, hydromet_pts, & ! In
+                                       hydromet_pts_clipped )        ! Out
+
+          ! Unpack the clipped SILHS hydrometeor sample points, which are stored
+          ! in arrays with the size hydromet_dim, back into arrays with the size
+          ! pdf_dim.
+          do hm_idx = 1, hydromet_dim, 1
+             X_nl_all_levs(:,isample,hydromet2pdf_idx(hm_idx)) &
+             = hydromet_pts_clipped(:,hm_idx)
+          enddo ! hm_idx = 1, hydromet_dim, 1
+
+       enddo ! isample = 1, num_samples, 1
+
+    endif ! l_clip_hydromet_samples
+
+
     return
+
   end subroutine clip_transform_silhs_output
+
 !-----------------------------------------------------------------------
 
 !-------------------------------------------------------------------------------
