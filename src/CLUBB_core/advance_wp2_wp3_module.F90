@@ -48,6 +48,7 @@ module advance_wp2_wp3_module
                               invrs_rho_ds_zt, radf, thv_ds_zm,        & ! In
                               thv_ds_zt, mixt_frac, Cx_fnc_Richardson, & ! In
                               pdf_implicit_coefs_terms,                & ! In
+                              wprtp, wpthlp, rtp2, thlp2,              & ! In
                               wp2, wp3, wp3_zm, wp2_zt )                 ! Inout
 
     ! Description:
@@ -168,6 +169,10 @@ module advance_wp2_wp3_module
       thv_ds_zm,       & ! Dry, base-state theta_v on momentum levs. [K]
       thv_ds_zt,       & ! Dry, base-state theta_v on thermo. levs.  [K]
       mixt_frac,       & ! Weight of 1st normal distribution         [-]
+      wprtp,           & ! Flux of total water mixing ratio          [m/s kg/kg]
+      wpthlp,          & ! Flux of liquid water potential temp.      [m/s K]
+      rtp2,            & ! Variance of rt (overall)                  [kg^2/kg^2]
+      thlp2,           & ! Variance of thl (overall)                 [K^2]
       Cx_fnc_Richardson  ! Cx_fnc from Richardson_num                [-]
 
     type(implicit_coefs_terms), dimension(gr%nz), intent(in) :: &
@@ -312,6 +317,7 @@ module advance_wp2_wp3_module
                      rho_ds_zt, invrs_rho_ds_zm,            & ! Intent(in)
                      invrs_rho_ds_zt, radf, thv_ds_zm,      & ! Intent(in)
                      thv_ds_zt, pdf_implicit_coefs_terms,   & ! Intent(in)
+                     wprtp, wpthlp, rtp2, thlp2,            & ! Intent(in)
                      wp2, wp3, wp3_zm, wp2_zt )               ! Intent(inout)
 
     ! When selected, apply sponge damping after wp2 and wp3 have been advanced.
@@ -412,6 +418,7 @@ module advance_wp2_wp3_module
                          rho_ds_zt, invrs_rho_ds_zm,            & ! Intent(in)
                          invrs_rho_ds_zt, radf, thv_ds_zm,      & ! Intent(in)
                          thv_ds_zt, pdf_implicit_coefs_terms,   & ! Intent(in)
+                         wprtp, wpthlp, rtp2, thlp2,            & ! Intent(in)
                          wp2, wp3, wp3_zm, wp2_zt )               ! Intent(i/o)
 
     ! Description:
@@ -430,10 +437,11 @@ module advance_wp2_wp3_module
         ddzt
 
     use constants_clubb, only: & 
-        w_tol_sqd,      & ! Variables(s)
-        one,            &
-        zero,           &
-        zero_threshold, &
+        w_tol_sqd,                & ! Variables(s)
+        max_mag_correlation_flux, &
+        one,                      &
+        zero,                     &
+        zero_threshold,           &
         fstderr
 
     use error_code, only: &
@@ -459,6 +467,7 @@ module advance_wp2_wp3_module
 
     use clip_explicit, only: &
         clip_variance, & ! Procedure(s)
+        clip_variance_level, &
         clip_skewness
 
     use pdf_closure_module, only: &
@@ -580,7 +589,11 @@ module advance_wp2_wp3_module
       invrs_rho_ds_zt, & ! Inv. dry, static density @ thermo. levs.  [m^3/kg]
       radf,            & ! Buoyancy production at CL top             [m^2/s^3]
       thv_ds_zm,       & ! Dry, base-state theta_v on momentum levs. [K]
-      thv_ds_zt          ! Dry, base-state theta_v on thermo. levs.  [K]
+      thv_ds_zt,       & ! Dry, base-state theta_v on thermo. levs.  [K]
+      wprtp,           & ! Flux of total water mixing ratio          [m/s kg/kg]
+      wpthlp,          & ! Flux of liquid water potential temp.      [m/s K]
+      rtp2,            & ! Variance of rt (overall)                  [kg^2/kg^2]
+      thlp2              ! Variance of thl (overall)                 [K^2]
 
     type(implicit_coefs_terms), dimension(gr%nz), intent(in) :: &
       pdf_implicit_coefs_terms    ! Implicit coefs / explicit terms [units vary]
@@ -622,6 +635,9 @@ module advance_wp2_wp3_module
     real( kind = core_rknd ), dimension(gr%nz,5) :: &
       wp3_pr3_lhs ! wp3_pr3 (implicit) contribution to lhs
 
+    real( kind = core_rknd ) :: &
+      threshold    ! Minimum value for wp2    [m^2/s^2]
+
     ! Array indices
     integer :: k, km1, kp1, k_wp2, k_wp3
 
@@ -633,6 +649,12 @@ module advance_wp2_wp3_module
     !        almost no effect on the boundary layer cases.  Brian; 1/4/2008.
 !    logical, parameter :: l_crank_nich_diff = .true.
     logical, parameter :: l_crank_nich_diff = .false.
+
+    ! Flag to base the threshold minimum value of wp2 on keeping the overall
+    ! correlation of w and x (w and rt, as well as w and theta-l) within the
+    ! limits of -max_mag_correlation_flux to max_mag_correlation_flux.
+    logical :: &
+      l_min_wp2_from_corr_wx = .false.
 
   !-----------------------------------------------------------------------
     !----- Begin Code -----
@@ -922,8 +944,56 @@ module advance_wp2_wp3_module
     endif
 
 
-    ! Clip w'^2 at a minimum threshold.
-    call clip_variance( clip_wp2, dt, w_tol_sqd, wp2 )
+    ! Clip <w'^2> at a minimum threshold.
+
+    ! The value of <w'^2> is not allowed to become smaller than the threshold
+    ! value of w_tol^2.  Additionally, that threshold value may be boosted at
+    ! any grid level in order to keep the overall correlation of w and rt or
+    ! the overall correlation of w and theta-l between the values of
+    ! -max_mag_correlation_flux and max_mag_correlation_flux by boosting <w'^2>
+    ! rather than by limiting the magnitude of <w'rt'> or <w'thl'>.
+    if ( l_min_wp2_from_corr_wx ) then
+
+       ! The overall correlation of w and rt is:
+       !
+       ! corr_w_rt = wprtp / ( sqrt( wp2 ) * sqrt( rtp2 ) );
+       !
+       ! and the overall correlation of w and thl is:
+       !
+       ! corr_w_thl = wpthlp / ( sqrt( wp2 ) * sqrt( thlp2 ) ).
+       !
+       ! Squaring both sides, the equations becomes:
+       !
+       ! corr_w_rt^2 = wprtp^2 / ( wp2 * rtp2 ); and
+       !
+       ! corr_w_thl^2 = wpthlp^2 / ( wp2 * thlp2 ).
+       !
+       ! Using max_mag_correlation_flux for the correlation and then solving for
+       ! the minimum of wp2, the equation becomes:
+       !
+       ! wp2|_min = max( wprtp^2 / ( rtp2 * max_mag_correlation_flux^2 ),
+       !                 wpthlp^2 / ( thlp2 * max_mag_correlation_flux^2 ) ).
+       do k = 1, gr%nz, 1
+
+          threshold &
+          = max( w_tol_sqd, &
+                 wprtp(k)**2 / ( rtp2(k) * max_mag_correlation_flux**2 ), &
+                 wpthlp(k)**2 / ( thlp2(k) * max_mag_correlation_flux**2 ) )
+
+          call clip_variance_level( clip_wp2, dt, threshold, k, & ! In
+                                    wp2(k) )                      ! In/out
+
+       enddo ! k = 1, gr%nz, 1
+
+    else
+
+       ! Consider only the minimum tolerance threshold value for wp2.
+       threshold = w_tol_sqd
+
+       call clip_variance( clip_wp2, dt, threshold, & ! Intent(in)
+                           wp2 )                      ! Intent(inout)
+
+    endif ! l_min_wp2_from_corr_wx
 
     ! Interpolate w'^2 from momentum levels to thermodynamic levels.
     ! This is used for the clipping of w'^3 according to the value

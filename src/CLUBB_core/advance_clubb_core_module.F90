@@ -1502,6 +1502,7 @@ module advance_clubb_core_module
              invrs_rho_ds_zt, radf, thv_ds_zm,                   & ! intent(in)
              thv_ds_zt, pdf_params%mixt_frac, Cx_fnc_Richardson, & ! intent(in)
              pdf_implicit_coefs_terms,                           & ! intent(in)
+             wprtp, wpthlp, rtp2, thlp2,                         & ! intent(in)
              wp2, wp3, wp3_zm, wp2_zt )                            ! intent(i/o)
 
       if ( clubb_at_least_debug_level( 0 ) ) then
