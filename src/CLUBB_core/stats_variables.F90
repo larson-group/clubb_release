@@ -667,7 +667,9 @@ module stats_variables
 
   integer, public :: &
     icoef_wprtp2_implicit = 0, &
+    iterm_wprtp2_explicit = 0, &
     icoef_wpthlp2_implicit = 0, &
+    iterm_wpthlp2_explicit = 0, &
     icoef_wprtpthlp_implicit = 0, &
     iterm_wprtpthlp_explicit = 0, &
     icoef_wp2rtp_implicit = 0, &
@@ -675,7 +677,8 @@ module stats_variables
     icoef_wp2thlp_implicit = 0, &
     iterm_wp2thlp_explicit = 0
 
-!$omp  threadprivate( icoef_wprtp2_implicit, icoef_wpthlp2_implicit, &
+!$omp  threadprivate( icoef_wprtp2_implicit, iterm_wprtp2_explicit, &
+!$omp                 icoef_wpthlp2_implicit, iterm_wpthlp2_explicit, &
 !$omp                 icoef_wprtpthlp_implicit, iterm_wprtpthlp_explicit, &
 !$omp                 icoef_wp2rtp_implicit, iterm_wp2rtp_explicit, &
 !$omp                 icoef_wp2thlp_implicit, iterm_wp2thlp_explicit )

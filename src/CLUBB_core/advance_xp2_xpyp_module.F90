@@ -160,7 +160,9 @@ module advance_xp2_xpyp_module
         stats_zm,                 & ! Variable(s)
         stats_zt,                 &
         icoef_wprtp2_implicit,    &
+        iterm_wprtp2_explicit,    &
         icoef_wpthlp2_implicit,   &
+        iterm_wpthlp2_explicit,   &
         icoef_wprtpthlp_implicit, &
         iterm_wprtpthlp_explicit, &
         irtp2_cl,                 &
@@ -685,7 +687,11 @@ module advance_xp2_xpyp_module
     if ( l_stats_samp ) then
        call stat_update_var( icoef_wprtp2_implicit, coef_wprtp2_implicit, &
                              stats_zt )
+       call stat_update_var( iterm_wprtp2_explicit, term_wprtp2_explicit, &
+                             stats_zt )
        call stat_update_var( icoef_wpthlp2_implicit, coef_wpthlp2_implicit, &
+                             stats_zt )
+       call stat_update_var( iterm_wpthlp2_explicit, term_wpthlp2_explicit, &
                              stats_zt )
        call stat_update_var( icoef_wprtpthlp_implicit, &
                              coef_wprtpthlp_implicit, stats_zt )
