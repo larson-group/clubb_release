@@ -371,6 +371,7 @@ module clubb_api_module
     ! To Check For and Handle CLUBB's Errors:
     calculate_spurious_source_api, &
     clubb_at_least_debug_level_api, &
+    clubb_fatal_error
     clubb_no_error, &
     fill_holes_driver_api, & ! OR
     fill_holes_vertical_api, &

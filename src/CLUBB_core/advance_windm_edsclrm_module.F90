@@ -5,6 +5,9 @@ module advance_windm_edsclrm_module
 
   implicit none
 
+  real :: total_time = 0
+  integer :: iterCount = 0
+
   private ! Set Default Scope
 
   public :: advance_windm_edsclrm, xpwp_fnc
@@ -1678,7 +1681,11 @@ module advance_windm_edsclrm_module
 
     integer :: ixm_ta
 
+    real :: start, finish
+
     ! --- Begin Code ---
+
+    call cpu_time( start )
 
     select case ( solve_type )
     case ( windm_edsclrm_um )
@@ -1839,6 +1846,14 @@ module advance_windm_edsclrm_module
 
     endif  ! l_stats_samp
 
+
+    call cpu_time( finish )
+
+    total_time = total_time + finish - start
+    iterCount = iterCount + 1
+
+    print *, "TOTAL TIME: ", total_time
+    print *, "AVERAGE TIME: ", total_time / real(iterCount)
 
     return
   end function windm_edsclrm_rhs
