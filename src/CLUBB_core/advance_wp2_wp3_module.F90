@@ -653,7 +653,7 @@ module advance_wp2_wp3_module
     ! Flag to base the threshold minimum value of wp2 on keeping the overall
     ! correlation of w and x (w and rt, as well as w and theta-l) within the
     ! limits of -max_mag_correlation_flux to max_mag_correlation_flux.
-    logical :: &
+    logical, parameter :: &
       l_min_wp2_from_corr_wx = .false.
 
   !-----------------------------------------------------------------------

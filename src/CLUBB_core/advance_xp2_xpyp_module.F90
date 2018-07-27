@@ -41,20 +41,20 @@ module advance_xp2_xpyp_module
   contains
 
   !=============================================================================
-  subroutine advance_xp2_xpyp( tau_zm, wm_zm, rtm, wprtp, thlm,       & ! In
-                               wpthlp, wpthvp, um, vm, wp2, wp2_zt,   & ! In
-                               wp3, upwp, vpwp, sigma_sqd_w, Skw_zm,  & ! In
-                               wprtp2, wpthlp2, wprtpthlp,            & ! In
-                               Kh_zt, rtp2_forcing, thlp2_forcing,    & ! In
-                               rtpthlp_forcing, rho_ds_zm, rho_ds_zt, & ! In
-                               invrs_rho_ds_zm, thv_ds_zm,            & ! In
-                               Lscale, wp3_on_wp2, wp3_on_wp2_zt,     & ! In
-                               pdf_implicit_coefs_terms,              & ! In
-                               l_iter, dt,                            & ! In
-                               sclrm, wpsclrp,                        & ! In
-                               wpsclrp2, wpsclrprtp, wpsclrpthlp,     & ! In
-                               rtp2, thlp2, rtpthlp, up2, vp2,        & ! Inout
-                               sclrp2, sclrprtp, sclrpthlp            ) ! Inout
+  subroutine advance_xp2_xpyp( tau_zm, wm_zm, rtm, wprtp, thlm,        & ! In
+                               wpthlp, wpthvp, um, vm, wp2, wp2_zt,    & ! In
+                               wp3, upwp, vpwp, sigma_sqd_w, Skw_zm,   & ! In
+                               wprtp2, wpthlp2, wprtpthlp,             & ! In
+                               Kh_zt, rtp2_forcing, thlp2_forcing,     & ! In
+                               rtpthlp_forcing, rho_ds_zm, rho_ds_zt,  & ! In
+                               invrs_rho_ds_zm, thv_ds_zm, cloud_frac, & ! In
+                               Lscale, wp3_on_wp2, wp3_on_wp2_zt,      & ! In
+                               pdf_implicit_coefs_terms,               & ! In
+                               l_iter, dt,                             & ! In
+                               sclrm, wpsclrp,                         & ! In
+                               wpsclrp2, wpsclrprtp, wpsclrpthlp,      & ! In
+                               rtp2, thlp2, rtpthlp, up2, vp2,         & ! Inout
+                               sclrp2, sclrprtp, sclrpthlp             ) ! Inout
 
     ! Description:
     ! Prognose scalar variances, scalar covariances, and horizontal turbulence components.
@@ -79,6 +79,7 @@ module advance_xp2_xpyp_module
         rt_tol, & 
         thl_tol, &
         max_mag_correlation_flux, &
+        cloud_frac_min, &
         fstderr, &
         one, &
         two_thirds, &
@@ -216,6 +217,7 @@ module advance_xp2_xpyp_module
       rho_ds_zt,       & ! Dry, static density on thermo. levels [kg/m^3]
       invrs_rho_ds_zm, & ! Inv. dry, static density @ mom. levs. [m^3/kg]
       thv_ds_zm,       & ! Dry, base-state theta_v on mom. levs. [K]
+      cloud_frac,      & ! Cloud fraction (thermodynamic levels) [-]
       Lscale,          & ! Mixing length                         [m]
       wp3_on_wp2,      & ! Smoothed version of <w'^3>/<w'^2> zm  [m/s]
       wp3_on_wp2_zt      ! Smoothed version of <w'^3>/<w'^2> zt  [m/s]
@@ -379,8 +381,18 @@ module advance_xp2_xpyp_module
     ! Flag to base the threshold minimum value of xp2 (rtp2 and thlp2) on
     ! keeping the overall correlation of w and x within the limits of
     ! -max_mag_correlation_flux to max_mag_correlation_flux.
-    logical :: &
+    logical, parameter :: &
       l_min_xp2_from_corr_wx = .false.
+
+    ! Flag to use cloud fraction to adjust the value of the turbulent
+    ! dissipation coefficient, C2.
+    logical, parameter :: &
+      l_C2_cloud_frac = .false.
+
+    ! Minimum value of cloud fraction to multiply C2 by to calculate the
+    ! adjusted value of C2.
+    real( kind = core_rknd ), parameter ::  & 
+      min_cloud_frac_mult = 0.10_core_rknd
 
     ! Loop indices
     integer :: i, k
@@ -397,22 +409,53 @@ module advance_xp2_xpyp_module
     end if
 
     if ( l_single_C2_Skw ) then
-      ! Use a single value of C2 for all equations.
-      C2rt_1d(1:gr%nz)  & 
-      = C2b + (C2-C2b) *exp( -one_half * (Skw_zm(1:gr%nz)/C2c)**2 )
 
-      C2thl_1d   = C2rt_1d
-      C2rtthl_1d = C2rt_1d
+       ! Use a single value of C2 for all equations.
+       C2rt_1d = C2b + ( C2 - C2b ) * exp( -one_half * ( Skw_zm / C2c )**2 )
 
-      C2sclr_1d  = C2rt_1d
-    else
-      ! Use 3 different values of C2 for rtp2, thlp2, rtpthlp.
-      C2rt_1d(1:gr%nz)    = C2rt
-      C2thl_1d(1:gr%nz)   = C2thl
-      C2rtthl_1d(1:gr%nz) = C2rtthl
+       if ( l_C2_cloud_frac ) then
+          do k = 1, gr%nz, 1
+             if ( cloud_frac(k) >= cloud_frac_min ) then
+                C2rt_1d(k) &
+                = C2rt_1d(k) * max( min_cloud_frac_mult, cloud_frac(k) )
+             endif ! cloud_frac(k) >= cloud_frac_min
+          enddo ! k = 1, gr%nz, 1
+       endif ! l_C2_cloud_frac
 
-      C2sclr_1d(1:gr%nz)  = C2rt  ! Use rt value for now
-    end if
+       C2thl_1d   = C2rt_1d
+       C2rtthl_1d = C2rt_1d
+
+       C2sclr_1d  = C2rt_1d
+
+    else ! .not. l_single_C2_Skw
+
+       ! Use 3 different values of C2 for rtp2, thlp2, rtpthlp.
+       if ( l_C2_cloud_frac ) then
+
+          do k = 1, gr%nz, 1
+             if ( cloud_frac(k) >= cloud_frac_min ) then
+                C2rt_1d(k) = C2rt * max( min_cloud_frac_mult, cloud_frac(k) )
+                C2thl_1d(k) = C2thl * max( min_cloud_frac_mult, cloud_frac(k) )
+                C2rtthl_1d(k) = C2rtthl &
+                                * max( min_cloud_frac_mult, cloud_frac(k) )
+             else ! cloud_frac(k) < cloud_frac_min
+                C2rt_1d(k)    = C2rt
+                C2thl_1d(k)   = C2thl
+                C2rtthl_1d(k) = C2rtthl
+             endif ! cloud_frac(k) >= cloud_frac_min
+          enddo ! k = 1, gr%nz, 1
+
+       else
+
+          C2rt_1d    = C2rt
+          C2thl_1d   = C2thl
+          C2rtthl_1d = C2rtthl
+
+       endif ! l_C2_cloud_frac
+
+       C2sclr_1d = C2rt  ! Use rt value for now
+
+    endif ! l_single_C2_Skw
 
     ! Combine C4 and C14 for simplicity
     C4_C14_1d(1:gr%nz) = ( two_thirds * C4 ) + ( one_third * C14 )
