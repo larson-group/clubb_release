@@ -92,7 +92,9 @@ module advance_xp2_xpyp_module
         l_hole_fill, &    ! logical constants
         l_single_C2_Skw, &
         l_explicit_turbulent_adv_xpyp, &
-        l_upwind_xpyp_ta
+        l_upwind_xpyp_ta, &
+        l_min_xp2_from_corr_wx, &
+        l_C2_cloud_frac
 
     use parameters_tunable, only: &
         C2rt,     & ! Variable(s)
@@ -377,17 +379,6 @@ module advance_xp2_xpyp_module
       sclrpthlp_forcing    ! <sclr'th_l'> forcing (momentum levels) [units vary]
 
     logical :: l_scalar_calc, l_first_clip_ts, l_last_clip_ts
-
-    ! Flag to base the threshold minimum value of xp2 (rtp2 and thlp2) on
-    ! keeping the overall correlation of w and x within the limits of
-    ! -max_mag_correlation_flux to max_mag_correlation_flux.
-    logical, parameter :: &
-      l_min_xp2_from_corr_wx = .false.
-
-    ! Flag to use cloud fraction to adjust the value of the turbulent
-    ! dissipation coefficient, C2.
-    logical, parameter :: &
-      l_C2_cloud_frac = .false.
 
     ! Minimum value of cloud fraction to multiply C2 by to calculate the
     ! adjusted value of C2.

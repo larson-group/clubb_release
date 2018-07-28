@@ -453,7 +453,8 @@ module advance_wp2_wp3_module
         l_tke_aniso,                  & ! Variable(s)
         l_hole_fill,                  &
         l_explicit_turbulent_adv_wp3, &
-        l_gmres
+        l_gmres,                      &
+        l_min_wp2_from_corr_wx
 
     use clubb_precision, only:  & 
         core_rknd ! Variable(s)
@@ -649,12 +650,6 @@ module advance_wp2_wp3_module
     !        almost no effect on the boundary layer cases.  Brian; 1/4/2008.
 !    logical, parameter :: l_crank_nich_diff = .true.
     logical, parameter :: l_crank_nich_diff = .false.
-
-    ! Flag to base the threshold minimum value of wp2 on keeping the overall
-    ! correlation of w and x (w and rt, as well as w and theta-l) within the
-    ! limits of -max_mag_correlation_flux to max_mag_correlation_flux.
-    logical, parameter :: &
-      l_min_wp2_from_corr_wx = .false.
 
   !-----------------------------------------------------------------------
     !----- Begin Code -----

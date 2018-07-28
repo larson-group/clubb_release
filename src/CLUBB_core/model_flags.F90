@@ -63,6 +63,26 @@ module model_flags
   logical, parameter, public :: &
     l_advance_xp3 = .false.
 
+  ! Flag to base the threshold minimum value of wp2 on keeping the overall
+  ! correlation of w and x (w and rt, as well as w and theta-l) within the
+  ! limits of -max_mag_correlation_flux to max_mag_correlation_flux.
+  logical, public :: &
+    l_min_wp2_from_corr_wx = .false.
+
+  ! Flag to base the threshold minimum value of xp2 (rtp2 and thlp2) on
+  ! keeping the overall correlation of w and x within the limits of
+  ! -max_mag_correlation_flux to max_mag_correlation_flux.
+  logical, public :: &
+    l_min_xp2_from_corr_wx = .false.
+
+  ! Flag to use cloud fraction to adjust the value of the turbulent dissipation
+  ! coefficient, C2.
+  logical, public :: &
+    l_C2_cloud_frac = .false.
+
+!$omp threadprivate( l_min_wp2_from_corr_wx, l_min_xp2_from_corr_wx, &
+!$omp                l_C2_cloud_frac )
+
   ! These flags determine whether or not we want CLUBB to do diffusion
   !   on thlm and rtm and if a stability correction is applied
   logical, public :: &
@@ -252,7 +272,9 @@ module model_flags
   namelist /configurable_clubb_flags_nl/ &
     l_upwind_wpxp_ta, l_upwind_xpyp_ta, l_upwind_xm_ma, l_quintic_poly_interp, &
     l_tke_aniso, l_vert_avg_closure, l_single_C2_Skw, l_standard_term_ta, &
-    l_use_cloud_cover, l_calc_thlp2_rad, l_rcm_supersat_adj, l_damp_wp3_Skw_squared
+    l_use_cloud_cover, l_calc_thlp2_rad, l_rcm_supersat_adj, &
+    l_damp_wp3_Skw_squared, l_min_wp2_from_corr_wx, l_min_xp2_from_corr_wx, &
+    l_C2_cloud_frac
 
   contains
 
