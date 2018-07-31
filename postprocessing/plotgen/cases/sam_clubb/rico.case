@@ -1,138 +1,183 @@
-# DYCOMS II RF02 SAM_CLUBB Case File
+# RICO SAM_CLUBB Case File
 
 %CASE = 
 (
     'name' => 'RICO',
     'enabled' => 'true',
     'type' => 'standard',
-    'headerText' => 'RICO Hours 70-72',
-    'startTime' => 4140.0,  # [minutes]
-    'endTime' => 4320.0,    # [minutes]
-    'startHeight' => 0.0,   # [m]
+    'headerText' => 'RICO Minutes 4201-4320',
+    'startTime' => 4201.0, # [minutes]
+    'endTime' => 4320.0,   # [minutes]
+    'startHeight' => 0.0,  # [m]
     'endHeight' => 4000.0, # [m]
     'plots' =>
     [
        {'plotTitle' => 'Liquid Water Potential Temperature, \theta_l', 'axisLabel' => 'thetal [K]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/RICO_256x256x100_drizzle/RICO_256x256x100_drizzle.nc', 'type' => 'les', 'name' => '3D SAM Standalone', 'expression' => '(THETAL + 2500.4.*(THETA./TABS).*(QI./1000))', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
-          {'filename' => 'RICO_256x256x100_drizzle.nc', 'type' => 'auto', 'name' => 'new LES', 'expression' => '(THETAL + 2500.4.*(THETA./TABS).*(QI./1000))', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/JULY_2017/RICO_256x256x100_drizzle/RICO_256x256x100_drizzle.nc', 'type' => 'les', 'name' => '3D SAM Standalone', 'expression' => 'THLM', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
+          {'filename' => 'RICO_256x256x100_drizzle.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'THLM', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
        ]},
-       {'plotTitle' => 'Total Water Mixing Ratio, r_t', 'axisLabel' => 'rtm / qt [kg/kg]', 'type' => 'profile', 'lines' =>
+       {'plotTitle' => 'Total Water Mixing Ratio, r_t', 'axisLabel' => 'rtm [kg/kg]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/RICO_256x256x100_drizzle/RICO_256x256x100_drizzle.nc', 'type' => 'les', 'name' => '3D SAM Standalone', 'expression' => '(QT-QI) / 1000', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
-          {'filename' => 'RICO_256x256x100_drizzle.nc', 'type' => 'auto', 'name' => 'new LES', 'expression' => '(QT-QI) / 1000', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/JULY_2017/RICO_256x256x100_drizzle/RICO_256x256x100_drizzle.nc', 'type' => 'les', 'name' => '3D SAM Standalone', 'expression' => 'RTM', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
+          {'filename' => 'RICO_256x256x100_drizzle.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'RTM', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
        ]},
-       {'plotTitle' => 'Turbulent Flux of \theta_l', 'axisLabel' => 'wpthlp / thflux(s) [K m/s]', 'type' => 'profile', 'lines' =>
+       {'plotTitle' => 'Turbulent Flux of \theta_l', 'axisLabel' => 'wpthlp [K m/s]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/RICO_256x256x100_drizzle/RICO_256x256x100_drizzle.nc', 'type' => 'les', 'name' => '3D SAM Standalone', 'expression' => '(TLFLUX) ./ (RHO * 1004)', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
-          {'filename' => 'RICO_256x256x100_drizzle.nc', 'type' => 'auto', 'name' => 'new LES', 'expression' => '((TLFLUX) ./ (RHO * 1004))', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/JULY_2017/RICO_256x256x100_drizzle/RICO_256x256x100_drizzle.nc', 'type' => 'les', 'name' => '3D SAM Standalone', 'expression' => 'WPTHLP', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
+          {'filename' => 'RICO_256x256x100_drizzle.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'WPTHLP', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
        ]},
-       {'plotTitle' => 'Turbulent Flux of r_t', 'axisLabel' => 'wprtp / qtflux(s) [(kg/kg) m/s]', 'type' => 'profile', 'lines' =>
+       {'plotTitle' => 'Turbulent Flux of r_t', 'axisLabel' => 'wprtp [(kg/kg) m/s]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/RICO_256x256x100_drizzle/RICO_256x256x100_drizzle.nc', 'type' => 'les', 'name' => '3D SAM Standalone', 'expression' => 'QTFLUX ./ (RHO * 2.5104e+6)', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
-          {'filename' => 'RICO_256x256x100_drizzle.nc', 'type' => 'auto', 'name' => 'new LES', 'expression' => 'QTFLUX ./ (RHO * 2.5104e+6)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/JULY_2017/RICO_256x256x100_drizzle/RICO_256x256x100_drizzle.nc', 'type' => 'les', 'name' => '3D SAM Standalone', 'expression' => 'WPRTP', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
+          {'filename' => 'RICO_256x256x100_drizzle.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'WPRTP', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
        ]},
-       {'plotTitle' => 'Cloud Fraction', 'axisLabel' => 'cf / cld [%]', 'type' => 'profile', 'lines' =>
+       {'plotTitle' => 'Cloud Fraction', 'axisLabel' => 'cloud\_frac [%]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/RICO_256x256x100_drizzle/RICO_256x256x100_drizzle.nc', 'type' => 'les', 'name' => '3D SAM Standalone', 'expression' => 'CLD * 100', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
-          {'filename' => 'RICO_256x256x100_drizzle.nc', 'type' => 'auto', 'name' => 'new LES', 'expression' => 'CLD * 100', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/JULY_2017/RICO_256x256x100_drizzle/RICO_256x256x100_drizzle.nc', 'type' => 'les', 'name' => '3D SAM Standalone', 'expression' => 'CLD * 100', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
+          {'filename' => 'RICO_256x256x100_drizzle.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'CLD * 100', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
        ]},
-       {'plotTitle' => 'Cloud Water Mixing Ratio, r_c', 'axisLabel' => 'rcm / qcl [kg/kg]', 'type' => 'profile', 'lines' =>
+       {'plotTitle' => 'Cloud Water Mixing Ratio, r_c', 'axisLabel' => 'rcm [kg/kg]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/RICO_256x256x100_drizzle/RICO_256x256x100_drizzle.nc', 'type' => 'les', 'name' => '3D SAM Standalone', 'expression' => 'QCL / 1000', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
-          {'filename' => 'RICO_256x256x100_drizzle.nc', 'type' => 'auto', 'name' => 'new LES', 'expression' => 'QCL / 1000', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/JULY_2017/RICO_256x256x100_drizzle/RICO_256x256x100_drizzle.nc', 'type' => 'les', 'name' => '3D SAM Standalone', 'expression' => 'QCL / 1000', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
+          {'filename' => 'RICO_256x256x100_drizzle.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'QCL / 1000', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
        ]},
-       {'plotTitle' => 'Variance of w', 'axisLabel' => 'wp2 / w2 [m^2/s^2]', 'type' => 'profile', 'lines' =>
+       {'plotTitle' => 'Variance of w', 'axisLabel' => 'wp2 [m^2/s^2]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/RICO_256x256x100_drizzle/RICO_256x256x100_drizzle.nc', 'type' => 'les', 'name' => '3D SAM Standalone', 'expression' => 'W2', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
-          {'filename' => 'RICO_256x256x100_drizzle.nc', 'type' => 'auto', 'name' => 'new LES', 'expression' => 'W2', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/JULY_2017/RICO_256x256x100_drizzle/RICO_256x256x100_drizzle.nc', 'type' => 'les', 'name' => '3D SAM Standalone', 'expression' => 'WP2', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
+          {'filename' => 'RICO_256x256x100_drizzle.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'WP2', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
        ]},
-       {'plotTitle' => 'Third-order Moment of w', 'axisLabel' => 'wp3 / w3 [m^3/s^3]', 'type' => 'profile', 'lines' =>
+       {'plotTitle' => 'Third-order Moment of w', 'axisLabel' => 'wp3 [m^3/s^3]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/RICO_256x256x100_drizzle/RICO_256x256x100_drizzle.nc', 'type' => 'les', 'name' => '3D SAM Standalone', 'expression' => 'W3', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
-          {'filename' => 'RICO_256x256x100_drizzle.nc', 'type' => 'auto', 'name' => 'new LES', 'expression' => 'W3', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/JULY_2017/RICO_256x256x100_drizzle/RICO_256x256x100_drizzle.nc', 'type' => 'les', 'name' => '3D SAM Standalone', 'expression' => 'WP3', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
+          {'filename' => 'RICO_256x256x100_drizzle.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'WP3', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
        ]},
-       {'plotTitle' => 'Variance of \theta_l', 'axisLabel' => 'thlp2 / tl2 [K^2]', 'type' => 'profile', 'lines' =>
+       {'plotTitle' => 'Variance of \theta_l', 'axisLabel' => 'thlp2 [K^2]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/RICO_256x256x100_drizzle/RICO_256x256x100_drizzle.nc', 'type' => 'les', 'name' => '3D SAM Standalone', 'expression' => 'TL2', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
-          {'filename' => 'RICO_256x256x100_drizzle.nc', 'type' => 'auto', 'name' => 'new LES', 'expression' => 'TL2', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/JULY_2017/RICO_256x256x100_drizzle/RICO_256x256x100_drizzle.nc', 'type' => 'les', 'name' => '3D SAM Standalone', 'expression' => 'THLP2', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
+          {'filename' => 'RICO_256x256x100_drizzle.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'THLP2', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
        ]},
-       {'plotTitle' => 'Variance of r_t', 'axisLabel' => 'rtp2 / qtp2 [(kg/kg)^2]', 'type' => 'profile', 'lines' =>
+       {'plotTitle' => 'Variance of r_t', 'axisLabel' => 'rtp2 [(kg/kg)^2]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/RICO_256x256x100_drizzle/RICO_256x256x100_drizzle.nc', 'type' => 'les', 'name' => '3D SAM Standalone', 'expression' => 'QT2 / 1e+6', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
-          {'filename' => 'RICO_256x256x100_drizzle.nc', 'type' => 'auto', 'name' => 'new LES', 'expression' => 'QT2 / 1e+6', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/JULY_2017/RICO_256x256x100_drizzle/RICO_256x256x100_drizzle.nc', 'type' => 'les', 'name' => '3D SAM Standalone', 'expression' => 'RTP2', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
+          {'filename' => 'RICO_256x256x100_drizzle.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'RTP2', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+       ]},
+       {'plotTitle' => 'Covariance of r_t & \theta_l', 'axisLabel' => 'rtpthlp [(kg/kg) K]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/JULY_2017/RICO_256x256x100_drizzle/RICO_256x256x100_drizzle.nc', 'type' => 'les', 'name' => '3D SAM Standalone', 'expression' => 'RTPTHLP', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
+          {'filename' => 'RICO_256x256x100_drizzle.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'RTPTHLP', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
        ]},
        {'plotTitle' => 'Vertical Wind Component, w (subsidence)', 'axisLabel' => 'wobs [m/s]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/RICO_256x256x100_drizzle/RICO_256x256x100_drizzle.nc', 'type' => 'les', 'name' => '3D SAM Standalone', 'expression' => 'WOBS', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
-          {'filename' => 'RICO_256x256x100_drizzle.nc', 'type' => 'auto', 'name' => 'new LES', 'expression' => 'WOBS', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/JULY_2017/RICO_256x256x100_drizzle/RICO_256x256x100_drizzle.nc', 'type' => 'les', 'name' => '3D SAM Standalone', 'expression' => 'WOBS', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
+          {'filename' => 'RICO_256x256x100_drizzle.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'WOBS', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
        ]},
-       {'plotTitle' => 'Zonal Wind Component, u', 'axisLabel' => 'um / u [m/s]', 'type' => 'profile', 'lines' =>
+       {'plotTitle' => 'Zonal Wind Component, u', 'axisLabel' => 'um [m/s]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/RICO_256x256x100_drizzle/RICO_256x256x100_drizzle.nc', 'type' => 'les', 'name' => '3D SAM Standalone', 'expression' => 'U', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
-          {'filename' => 'RICO_256x256x100_drizzle.nc', 'type' => 'auto', 'name' => 'new LES', 'expression' => 'U', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/JULY_2017/RICO_256x256x100_drizzle/RICO_256x256x100_drizzle.nc', 'type' => 'les', 'name' => '3D SAM Standalone', 'expression' => 'U', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
+          {'filename' => 'RICO_256x256x100_drizzle.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'U', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
        ]},
-       {'plotTitle' => 'Meridonal Wind Component, v', 'axisLabel' => 'vm / v [m/s]', 'type' => 'profile', 'lines' =>
+       {'plotTitle' => 'Meridonal Wind Component, v', 'axisLabel' => 'vm [m/s]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/RICO_256x256x100_drizzle/RICO_256x256x100_drizzle.nc', 'type' => 'les', 'name' => '3D SAM Standalone', 'expression' => 'V', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
-          {'filename' => 'RICO_256x256x100_drizzle.nc', 'type' => 'auto', 'name' => 'new LES', 'expression' => 'V', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/JULY_2017/RICO_256x256x100_drizzle/RICO_256x256x100_drizzle.nc', 'type' => 'les', 'name' => '3D SAM Standalone', 'expression' => 'V', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
+          {'filename' => 'RICO_256x256x100_drizzle.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'V', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
        ]},
-       {'plotTitle' => 'Covariance of u & w', 'axisLabel' => 'upwp / uw [m^2/s^2]', 'type' => 'profile', 'lines' =>
+       {'plotTitle' => 'Covariance of u & w', 'axisLabel' => 'upwp [m^2/s^2]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/RICO_256x256x100_drizzle/RICO_256x256x100_drizzle.nc', 'type' => 'les', 'name' => '3D SAM Standalone', 'expression' => 'UW', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
-          {'filename' => 'RICO_256x256x100_drizzle.nc', 'type' => 'auto', 'name' => 'new LES', 'expression' => 'UW', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/JULY_2017/RICO_256x256x100_drizzle/RICO_256x256x100_drizzle.nc', 'type' => 'les', 'name' => '3D SAM Standalone', 'expression' => 'UW', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
+          {'filename' => 'RICO_256x256x100_drizzle.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'UW', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
        ]},
-       {'plotTitle' => 'Covariance of v & w', 'axisLabel' => 'vpwp / vw [m^2/s^2]', 'type' => 'profile', 'lines' =>
+       {'plotTitle' => 'Covariance of v & w', 'axisLabel' => 'vpwp [m^2/s^2]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/RICO_256x256x100_drizzle/RICO_256x256x100_drizzle.nc', 'type' => 'les', 'name' => '3D SAM Standalone', 'expression' => 'VW', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
-          {'filename' => 'RICO_256x256x100_drizzle.nc', 'type' => 'auto', 'name' => 'new LES', 'expression' => 'VW', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/JULY_2017/RICO_256x256x100_drizzle/RICO_256x256x100_drizzle.nc', 'type' => 'les', 'name' => '3D SAM Standalone', 'expression' => 'VW', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
+          {'filename' => 'RICO_256x256x100_drizzle.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'VW', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
        ]},
-       {'plotTitle' => 'Variance of u wind', 'axisLabel' => 'up2 / u2 [m^2/s^2]', 'type' => 'profile', 'lines' =>
+       {'plotTitle' => 'Variance of u wind', 'axisLabel' => 'up2 [m^2/s^2]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/RICO_256x256x100_drizzle/RICO_256x256x100_drizzle.nc', 'type' => 'les', 'name' => '3D SAM Standalone', 'expression' => 'U2', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
-          {'filename' => 'RICO_256x256x100_drizzle.nc', 'type' => 'auto', 'name' => 'new LES', 'expression' => 'U2', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/JULY_2017/RICO_256x256x100_drizzle/RICO_256x256x100_drizzle.nc', 'type' => 'les', 'name' => '3D SAM Standalone', 'expression' => 'U2', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
+          {'filename' => 'RICO_256x256x100_drizzle.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'U2', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
        ]},
-       {'plotTitle' => 'Variance of v wind', 'axisLabel' => 'vp2 / v2 [m^2/s^2]', 'type' => 'profile', 'lines' =>
+       {'plotTitle' => 'Variance of v wind', 'axisLabel' => 'vp2 [m^2/s^2]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/RICO_256x256x100_drizzle/RICO_256x256x100_drizzle.nc', 'type' => 'les', 'name' => '3D SAM Standalone', 'expression' => 'V2', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
-          {'filename' => 'RICO_256x256x100_drizzle.nc', 'type' => 'auto', 'name' => 'new LES', 'expression' => 'V2', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/JULY_2017/RICO_256x256x100_drizzle/RICO_256x256x100_drizzle.nc', 'type' => 'les', 'name' => '3D SAM Standalone', 'expression' => 'V2', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
+          {'filename' => 'RICO_256x256x100_drizzle.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'V2', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
        ]},
-       {'plotTitle' => 'Rain Water Mixing Ratio, r_r', 'axisLabel' => 'qpl [kg/kg]', 'type' => 'profile', 'lines' =>
+       {'plotTitle' => 'wp4', 'axisLabel' => 'wp4 [m^4/s^4]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/RICO_256x256x100_drizzle/RICO_256x256x100_drizzle.nc', 'type' => 'les', 'name' => '3D SAM Standalone', 'expression' => 'QPL / 1000', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
-          {'filename' => 'RICO_256x256x100_drizzle.nc', 'type' => 'auto', 'name' => 'new LES', 'expression' => 'QPL / 1000', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/JULY_2017/RICO_256x256x100_drizzle/RICO_256x256x100_drizzle.nc', 'type' => 'les', 'name' => '3D SAM Standalone', 'expression' => 'WP4', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
+          {'filename' => 'RICO_256x256x100_drizzle.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'WP4', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+       ]},
+       {'plotTitle' => 'wp2rtp', 'axisLabel' => 'wp2rtp [m^2/s^2 (kg/kg)]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/JULY_2017/RICO_256x256x100_drizzle/RICO_256x256x100_drizzle.nc', 'type' => 'les', 'name' => '3D SAM Standalone', 'expression' => 'WP2RTP', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
+          {'filename' => 'RICO_256x256x100_drizzle.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'WP2RTP', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+       ]},
+       {'plotTitle' => 'wp2thlp', 'axisLabel' => 'wp2thlp [m^2/s^2 K]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/JULY_2017/RICO_256x256x100_drizzle/RICO_256x256x100_drizzle.nc', 'type' => 'les', 'name' => '3D SAM Standalone', 'expression' => 'WP2THLP', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
+          {'filename' => 'RICO_256x256x100_drizzle.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'WP2THLP', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+       ]},
+       {'plotTitle' => 'wprtp2', 'axisLabel' => 'wprtp2 [m/s (kg/kg)^2]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/JULY_2017/RICO_256x256x100_drizzle/RICO_256x256x100_drizzle.nc', 'type' => 'les', 'name' => '3D SAM Standalone', 'expression' => 'WPRTP2', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
+          {'filename' => 'RICO_256x256x100_drizzle.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'WPRTP2', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+       ]},
+       {'plotTitle' => 'wpthlp2', 'axisLabel' => 'wpthlp2 [m/s K^2]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/JULY_2017/RICO_256x256x100_drizzle/RICO_256x256x100_drizzle.nc', 'type' => 'les', 'name' => '3D SAM Standalone', 'expression' => 'WPTHLP2', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
+          {'filename' => 'RICO_256x256x100_drizzle.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'WPTHLP2', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+       ]},
+       {'plotTitle' => 'wprtpthlp', 'axisLabel' => 'wprtpthlp [m/s (kg/kg) K]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/JULY_2017/RICO_256x256x100_drizzle/RICO_256x256x100_drizzle.nc', 'type' => 'les', 'name' => '3D SAM Standalone', 'expression' => 'WPRTPTHLP', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
+          {'filename' => 'RICO_256x256x100_drizzle.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'WPRTPTHLP', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+       ]},
+       {'plotTitle' => 'Buoyancy flux', 'axisLabel' => 'wpthvp [m/s K]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/JULY_2017/RICO_256x256x100_drizzle/RICO_256x256x100_drizzle.nc', 'type' => 'les', 'name' => '3D SAM Standalone', 'expression' => 'WPTHVP', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
+          {'filename' => 'RICO_256x256x100_drizzle.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'WPTHVP', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+       ]},
+       {'plotTitle' => 'wp2thvp', 'axisLabel' => 'wp2thvp [m^2/s^2 K]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/JULY_2017/RICO_256x256x100_drizzle/RICO_256x256x100_drizzle.nc', 'type' => 'les', 'name' => '3D SAM Standalone', 'expression' => 'WP2THVP', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
+          {'filename' => 'RICO_256x256x100_drizzle.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'WP2THVP', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+       ]},
+       {'plotTitle' => 'rtpthvp', 'axisLabel' => 'rtpthvp [kg/kg K]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/JULY_2017/RICO_256x256x100_drizzle/RICO_256x256x100_drizzle.nc', 'type' => 'les', 'name' => '3D SAM Standalone', 'expression' => 'RTPTHVP', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
+          {'filename' => 'RICO_256x256x100_drizzle.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'RTPTHVP', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+       ]},
+       {'plotTitle' => 'thlpthvp', 'axisLabel' => 'thlpthvp [K^2]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/JULY_2017/RICO_256x256x100_drizzle/RICO_256x256x100_drizzle.nc', 'type' => 'les', 'name' => '3D SAM Standalone', 'expression' => 'THLPTHVP', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
+          {'filename' => 'RICO_256x256x100_drizzle.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'THLPTHVP', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+       ]},
+       {'plotTitle' => 'Rain Water Mixing Ratio, r_r', 'axisLabel' => 'rrm [kg/kg]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/JULY_2017/RICO_256x256x100_drizzle/RICO_256x256x100_drizzle.nc', 'type' => 'les', 'name' => '3D SAM Standalone', 'expression' => 'QPL / 1000', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
+          {'filename' => 'RICO_256x256x100_drizzle.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'QPL / 1000', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
        ]},
        {'plotTitle' => 'Rain Drop Concentration, N_r', 'axisLabel' => 'Nrm [num/kg]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/RICO_256x256x100_drizzle/RICO_256x256x100_drizzle.nc', 'type' => 'les', 'name' => '3D SAM Standalone', 'expression' => 'CONP ./ RHO', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
-          {'filename' => 'RICO_256x256x100_drizzle.nc', 'type' => 'auto', 'name' => 'new LES', 'expression' => 'CONP ./ RHO', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-       ]},
-       {'plotTitle' => 'Cloud Droplet Number Concentration, N_c', 'axisLabel' => 'Ncm [num/kg]', 'type' => 'profile', 'lines' =>
-       [
-          {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/RICO_256x256x100_drizzle/RICO_256x256x100_drizzle.nc', 'type' => 'les', 'name' => '3D SAM Standalone', 'expression' => '(NC * 1e+6) ./ RHO', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
-          {'filename' => 'RICO_256x256x100_drizzle.nc', 'type' => 'auto', 'name' => 'new LES', 'expression' => '(NC * 1e+6) ./ RHO', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-       ]},
-       {'plotTitle' => 'Buoyancy flux', 'axisLabel' => 'wpthvp / tlflux [K m/s]', 'type' => 'profile', 'lines' =>
-       [
-          {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/RICO_256x256x100_drizzle/RICO_256x256x100_drizzle.nc', 'type' => 'les', 'name' => '3D SAM Standalone', 'expression' => 'TVFLUX ./ (RHO * 1004)', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
-          {'filename' => 'RICO_256x256x100_drizzle.nc', 'type' => 'auto', 'name' => 'new LES', 'expression' => 'TVFLUX ./ (RHO * 1004)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/JULY_2017/RICO_256x256x100_drizzle/RICO_256x256x100_drizzle.nc', 'type' => 'les', 'name' => '3D SAM Standalone', 'expression' => '(CONP * 1e+6) ./ RHO', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
+          {'filename' => 'RICO_256x256x100_drizzle.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => '(CONP * 1e+6) ./ RHO', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
        ]},
        {'plotTitle' => 'Liquid Water Path', 'axisLabel' => 'lwp [kg/m^2]', 'type' => 'timeseries', 'startTime' => '1', 'lines' =>
        [
-          {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/RICO_256x256x100_drizzle/RICO_256x256x100_drizzle.nc', 'type' => 'les', 'name' => '3D SAM Standalone', 'expression' => 'CWP / 1000', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
-          {'filename' => 'RICO_256x256x100_drizzle.nc', 'type' => 'auto', 'name' => 'new LES', 'expression' => 'CWP / 1000', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/JULY_2017/RICO_256x256x100_drizzle/RICO_256x256x100_drizzle.nc', 'type' => 'les', 'name' => '3D SAM Standalone', 'expression' => 'CWP / 1000', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
+          {'filename' => 'RICO_256x256x100_drizzle.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'CWP / 1000', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
        ]},
 
-       {'plotTitle' => 'Surface rainfall rate', 'axisLabel' => 'rain\_rate\_sfc[mm/day]', 'type' => 'timeseries', 'startTime' => '1', 'lines' =>
+       {'plotTitle' => 'Surface rainfall rate', 'axisLabel' => 'rain\_rate\_sfc [mm/day]', 'type' => 'timeseries', 'startTime' => '1', 'lines' =>
        [
-          {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/RICO_256x256x100_drizzle/RICO_256x256x100_drizzle.nc', 'type' => 'les', 'name' => '3D SAM Standalone', 'expression' => 'PREC', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
-          {'filename' => 'RICO_256x256x100_drizzle.nc', 'type' => 'auto', 'name' => 'new LES', 'expression' => 'PREC', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/JULY_2017/RICO_256x256x100_drizzle/RICO_256x256x100_drizzle.nc', 'type' => 'les', 'name' => '3D SAM Standalone', 'expression' => 'PREC', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
+          {'filename' => 'RICO_256x256x100_drizzle.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'PREC', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
        ]},
     ],
 
     'nightlyOutput' =>
     {
-        'subText' => '** Uniform, coarse vertical grid spacing of 40 m. **',
+        'subText' => '',
         'subHtml' => ''
     },
     'additionalOutput' =>
