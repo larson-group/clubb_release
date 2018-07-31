@@ -46,8 +46,10 @@
           {'filename' => 'DYCOMS_RF02_128x128x96_dr_nosed.nc', 'type' => 'auto', 'name' => 'TWPREC', 'expression' => 'TWPREC', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'DYCOMS_RF02_128x128x96_dr_nosed.nc', 'type' => 'auto', 'name' => 'TWRAD', 'expression' => 'TWRAD', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'DYCOMS_RF02_128x128x96_dr_nosed.nc', 'type' => 'auto', 'name' => 'TWFORC', 'expression' => 'TWFORC', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'DYCOMS_RF02_128x128x96_dr_nosed.nc', 'type' => 'auto', 'name' => 'TWCLSD', 'expression' => 'TWCLSD', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'DYCOMS_RF02_128x128x96_dr_nosed.nc', 'type' => 'auto', 'name' => 'TWSDMP', 'expression' => 'TWSDMP', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'DYCOMS_RF02_128x128x96_dr_nosed.nc', 'type' => 'auto', 'name' => 'TWBT', 'expression' => 'TWBT', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'DYCOMS_RF02_128x128x96_dr_nosed.nc', 'type' => 'auto', 'name' => 'TW\_RES', 'expression' => 'TWBT - (TWGRAD + TWADV + TWDIFF + TWBUOY + TWPRES + TWPREC + TWRAD + TWFORC)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+          {'filename' => 'DYCOMS_RF02_128x128x96_dr_nosed.nc', 'type' => 'auto', 'name' => 'TW\_RES', 'expression' => 'TWBT - (TWGRAD + TWADV + TWDIFF + TWBUOY + TWPRES + TWPREC + TWRAD + TWFORC + TWCLSD + TWSDMP)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
 
        {'plotTitle' => 'THLW SAM 3D Benchmark Budgets', 'axisLabel' => 'THLW [(m K)/s^2]', 'type' => 'profile', 'lines' =>
@@ -59,8 +61,10 @@
           {'filename' => 'DYCOMS_RF02_128x128x96_dr_nosed.nc', 'type' => 'auto', 'name' => 'THLWPREC', 'expression' => 'THLWPREC', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'DYCOMS_RF02_128x128x96_dr_nosed.nc', 'type' => 'auto', 'name' => 'THLWRAD', 'expression' => 'THLWRAD', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'DYCOMS_RF02_128x128x96_dr_nosed.nc', 'type' => 'auto', 'name' => 'THLWFORC', 'expression' => 'THLWFORC', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'DYCOMS_RF02_128x128x96_dr_nosed.nc', 'type' => 'auto', 'name' => 'THLWCLSD', 'expression' => 'THLWCLSD', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'DYCOMS_RF02_128x128x96_dr_nosed.nc', 'type' => 'auto', 'name' => 'THLWSDMP', 'expression' => 'THLWSDMP', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'DYCOMS_RF02_128x128x96_dr_nosed.nc', 'type' => 'auto', 'name' => 'THLWBT', 'expression' => 'THLWBT', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'DYCOMS_RF02_128x128x96_dr_nosed.nc', 'type' => 'auto', 'name' => 'THLW\_RES', 'expression' => 'THLWBT - (THLWGRAD + THLWADV + THLWDIFF + THLWBUOY + THLWPRES + THLWPREC + THLWRAD + THLWFORC)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+          {'filename' => 'DYCOMS_RF02_128x128x96_dr_nosed.nc', 'type' => 'auto', 'name' => 'THLW\_RES', 'expression' => 'THLWBT - (THLWGRAD + THLWADV + THLWDIFF + THLWBUOY + THLWPRES + THLWPREC + THLWRAD + THLWFORC + THLWCLSD + THLWSDMP)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
 
        {'plotTitle' => 'QW SAM 3D Benchmark Budgets', 'axisLabel' => 'QW [(kg/kg)m/s^2]', 'type' => 'profile', 'lines' =>
@@ -71,8 +75,10 @@
 	  {'filename' => 'DYCOMS_RF02_128x128x96_dr_nosed.nc', 'type' => 'auto', 'name' => 'QWB+P', 'expression' => 'QWBUOY + QWPRES', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'DYCOMS_RF02_128x128x96_dr_nosed.nc', 'type' => 'auto', 'name' => 'QWPREC', 'expression' => 'QWPREC', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'DYCOMS_RF02_128x128x96_dr_nosed.nc', 'type' => 'auto', 'name' => 'QWFORC', 'expression' => 'QWFORC', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'DYCOMS_RF02_128x128x96_dr_nosed.nc', 'type' => 'auto', 'name' => 'QWCLSD', 'expression' => 'QWCLSD', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'DYCOMS_RF02_128x128x96_dr_nosed.nc', 'type' => 'auto', 'name' => 'QWSDMP', 'expression' => 'QWSDMP', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'DYCOMS_RF02_128x128x96_dr_nosed.nc', 'type' => 'auto', 'name' => 'QWBT', 'expression' => 'QWBT', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'DYCOMS_RF02_128x128x96_dr_nosed.nc', 'type' => 'auto', 'name' => 'QW\_RES', 'expression' => 'QWBT - (QWGRAD + QWADV + QWDIFF + QWBUOY + QWPRES + QWPREC + QWFORC)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+          {'filename' => 'DYCOMS_RF02_128x128x96_dr_nosed.nc', 'type' => 'auto', 'name' => 'QW\_RES', 'expression' => 'QWBT - (QWGRAD + QWADV + QWDIFF + QWBUOY + QWPRES + QWPREC + QWFORC + QWCLSD + QWSDMP)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
 
        {'plotTitle' => 'QTOGW SAM 3D Benchmark Budgets', 'axisLabel' => 'QTOGW [(kg/kg)m/s^2]', 'type' => 'profile', 'lines' =>
@@ -83,8 +89,10 @@
 	  {'filename' => 'DYCOMS_RF02_128x128x96_dr_nosed.nc', 'type' => 'auto', 'name' => 'QTOGWB+P', 'expression' => 'QTOGWBUOY + QTOGWPRES', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'DYCOMS_RF02_128x128x96_dr_nosed.nc', 'type' => 'auto', 'name' => 'QTOGWPREC', 'expression' => 'QTOGWPREC', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'DYCOMS_RF02_128x128x96_dr_nosed.nc', 'type' => 'auto', 'name' => 'QTOGWFORC', 'expression' => 'QTOGWFORC', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'DYCOMS_RF02_128x128x96_dr_nosed.nc', 'type' => 'auto', 'name' => 'QTOGWCLSD', 'expression' => 'QTOGWCLSD', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'DYCOMS_RF02_128x128x96_dr_nosed.nc', 'type' => 'auto', 'name' => 'QTOGWSDMP', 'expression' => 'QTOGWSDMP', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'DYCOMS_RF02_128x128x96_dr_nosed.nc', 'type' => 'auto', 'name' => 'QTOGWBT', 'expression' => 'QTOGWBT', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'DYCOMS_RF02_128x128x96_dr_nosed.nc', 'type' => 'auto', 'name' => 'QTOGW\_RES', 'expression' => 'QTOGWBT - (QTOGWGRAD + QTOGWADV + QTOGWDIFF + QTOGWBUOY + QTOGWPRES + QTOGWPREC + QTOGWFORC)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+          {'filename' => 'DYCOMS_RF02_128x128x96_dr_nosed.nc', 'type' => 'auto', 'name' => 'QTOGW\_RES', 'expression' => 'QTOGWBT - (QTOGWGRAD + QTOGWADV + QTOGWDIFF + QTOGWBUOY + QTOGWPRES + QTOGWPREC + QTOGWFORC + QTOGWCLSD + QTOGWSDMP)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
 
        {'plotTitle' => 'W2 SAM 3D Benchmark Budgets', 'axisLabel' => 'W2 [m^2/s^3]', 'type' => 'profile', 'lines' =>
@@ -94,7 +102,20 @@
           {'filename' => 'DYCOMS_RF02_128x128x96_dr_nosed.nc', 'type' => 'auto', 'name' => 'W2REDIS', 'expression' => 'W2REDIS', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'DYCOMS_RF02_128x128x96_dr_nosed.nc', 'type' => 'auto', 'name' => 'W2BUOY', 'expression' => 'W2BUOY', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'DYCOMS_RF02_128x128x96_dr_nosed.nc', 'type' => 'auto', 'name' => 'W2DIFF', 'expression' => 'W2DIFF', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'DYCOMS_RF02_128x128x96_dr_nosed.nc', 'type' => 'auto', 'name' => 'W2\_RES', 'expression' => '-1*(W2ADV + W2PRES + W2REDIS + W2BUOY + W2DIFF)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+          {'filename' => 'DYCOMS_RF02_128x128x96_dr_nosed.nc', 'type' => 'auto', 'name' => 'W2SDMP', 'expression' => 'W2SDMP', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'DYCOMS_RF02_128x128x96_dr_nosed.nc', 'type' => 'auto', 'name' => 'W2BT', 'expression' => 'W2BT', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'DYCOMS_RF02_128x128x96_dr_nosed.nc', 'type' => 'auto', 'name' => 'W2\_RES', 'expression' => 'W2BT - (W2ADV + W2PRES + W2REDIS + W2BUOY + W2DIFF + W2SDMP)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+
+       {'plotTitle' => 'W3 SAM 3D Benchmark Budgets', 'axisLabel' => 'W3 [m^3/s^4]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'DYCOMS_RF02_128x128x96_dr_nosed.nc', 'type' => 'auto', 'name' => 'W3ADV', 'expression' => 'W3ADV', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'DYCOMS_RF02_128x128x96_dr_nosed.nc', 'type' => 'auto', 'name' => 'W3PRES', 'expression' => 'W3PRES', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'DYCOMS_RF02_128x128x96_dr_nosed.nc', 'type' => 'auto', 'name' => 'W3REDIS', 'expression' => 'W3REDIS', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'DYCOMS_RF02_128x128x96_dr_nosed.nc', 'type' => 'auto', 'name' => 'W3BUOY', 'expression' => 'W3BUOY', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'DYCOMS_RF02_128x128x96_dr_nosed.nc', 'type' => 'auto', 'name' => 'W3DIFF', 'expression' => 'W3DIFF', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'DYCOMS_RF02_128x128x96_dr_nosed.nc', 'type' => 'auto', 'name' => 'W3BT', 'expression' => 'W3BT', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'DYCOMS_RF02_128x128x96_dr_nosed.nc', 'type' => 'auto', 'name' => 'W3\_RES', 'expression' => 'W3BT - (W3ADV + W3PRES + W3REDIS + W3BUOY + W3DIFF)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
 
        {'plotTitle' => 'T2 3D SAM Benchmark Budgets', 'axisLabel' => 'T2 [K^2/s]', 'type' => 'profile', 'lines' =>
@@ -106,8 +127,9 @@
           {'filename' => 'DYCOMS_RF02_128x128x96_dr_nosed.nc', 'type' => 'auto', 'name' => 'T2PREC', 'expression' => 'T2PREC', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'DYCOMS_RF02_128x128x96_dr_nosed.nc', 'type' => 'auto', 'name' => 'T2RAD', 'expression' => 'T2RAD', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'DYCOMS_RF02_128x128x96_dr_nosed.nc', 'type' => 'auto', 'name' => 'T2FORC', 'expression' => 'T2FORC', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'DYCOMS_RF02_128x128x96_dr_nosed.nc', 'type' => 'auto', 'name' => 'T2CLSD', 'expression' => 'T2CLSD', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'DYCOMS_RF02_128x128x96_dr_nosed.nc', 'type' => 'auto', 'name' => 'T2BT', 'expression' => 'T2BT', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'DYCOMS_RF02_128x128x96_dr_nosed.nc', 'type' => 'auto', 'name' => 'T2\_RES', 'expression' => 'T2BT - (T2ADVTR + T2GRAD + T2DISSIP + T2DIFTR + T2PREC + T2RAD + T2FORC)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+          {'filename' => 'DYCOMS_RF02_128x128x96_dr_nosed.nc', 'type' => 'auto', 'name' => 'T2\_RES', 'expression' => 'T2BT - (T2ADVTR + T2GRAD + T2DISSIP + T2DIFTR + T2PREC + T2RAD + T2FORC + T2CLSD)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
 
        {'plotTitle' => 'THL2 3D SAM Benchmark Budgets', 'axisLabel' => 'THL2 [K^2/s]', 'type' => 'profile', 'lines' =>
@@ -119,8 +141,9 @@
           {'filename' => 'DYCOMS_RF02_128x128x96_dr_nosed.nc', 'type' => 'auto', 'name' => 'THL2PREC', 'expression' => 'THL2PREC', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'DYCOMS_RF02_128x128x96_dr_nosed.nc', 'type' => 'auto', 'name' => 'THL2RAD', 'expression' => 'THL2RAD', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'DYCOMS_RF02_128x128x96_dr_nosed.nc', 'type' => 'auto', 'name' => 'THL2FORC', 'expression' => 'THL2FORC', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'DYCOMS_RF02_128x128x96_dr_nosed.nc', 'type' => 'auto', 'name' => 'THL2CLSD', 'expression' => 'THL2CLSD', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'DYCOMS_RF02_128x128x96_dr_nosed.nc', 'type' => 'auto', 'name' => 'THL2BT', 'expression' => 'THL2BT', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'DYCOMS_RF02_128x128x96_dr_nosed.nc', 'type' => 'auto', 'name' => 'THL2\_RES', 'expression' => 'THL2BT - (THL2ADVTR + THL2GRAD + THL2DISSIP + THL2DIFTR + THL2PREC + THL2RAD + THL2FORC)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+          {'filename' => 'DYCOMS_RF02_128x128x96_dr_nosed.nc', 'type' => 'auto', 'name' => 'THL2\_RES', 'expression' => 'THL2BT - (THL2ADVTR + THL2GRAD + THL2DISSIP + THL2DIFTR + THL2PREC + THL2RAD + THL2FORC + THL2CLSD)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
 
        {'plotTitle' => 'Q2 3D SAM Benchmark Budgets', 'axisLabel' => 'Q2 [(kg/kg)^2/s]', 'type' => 'profile', 'lines' =>
@@ -131,8 +154,9 @@
           {'filename' => 'DYCOMS_RF02_128x128x96_dr_nosed.nc', 'type' => 'auto', 'name' => 'Q2DIFTR', 'expression' => 'Q2DIFTR', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'DYCOMS_RF02_128x128x96_dr_nosed.nc', 'type' => 'auto', 'name' => 'Q2PREC', 'expression' => 'Q2PREC', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'DYCOMS_RF02_128x128x96_dr_nosed.nc', 'type' => 'auto', 'name' => 'Q2FORC', 'expression' => 'Q2FORC', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'DYCOMS_RF02_128x128x96_dr_nosed.nc', 'type' => 'auto', 'name' => 'Q2CLSD', 'expression' => 'Q2CLSD', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'DYCOMS_RF02_128x128x96_dr_nosed.nc', 'type' => 'auto', 'name' => 'Q2BT', 'expression' => 'Q2BT', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'DYCOMS_RF02_128x128x96_dr_nosed.nc', 'type' => 'auto', 'name' => 'Q2\_RES', 'expression' => 'Q2BT - (Q2ADVTR + Q2GRAD + Q2DISSIP + Q2DIFTR + Q2PREC + Q2FORC)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+          {'filename' => 'DYCOMS_RF02_128x128x96_dr_nosed.nc', 'type' => 'auto', 'name' => 'Q2\_RES', 'expression' => 'Q2BT - (Q2ADVTR + Q2GRAD + Q2DISSIP + Q2DIFTR + Q2PREC + Q2FORC + Q2CLSD)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
 
        {'plotTitle' => 'QTOG2 3D SAM Benchmark Budgets', 'axisLabel' => 'QTOG2 [(kg/kg)^2/s]', 'type' => 'profile', 'lines' =>
@@ -143,8 +167,9 @@
           {'filename' => 'DYCOMS_RF02_128x128x96_dr_nosed.nc', 'type' => 'auto', 'name' => 'QTOG2DIFTR', 'expression' => 'QTOG2DIFTR', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'DYCOMS_RF02_128x128x96_dr_nosed.nc', 'type' => 'auto', 'name' => 'QTOG2PREC', 'expression' => 'QTOG2PREC', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'DYCOMS_RF02_128x128x96_dr_nosed.nc', 'type' => 'auto', 'name' => 'QTOG2FORC', 'expression' => 'QTOG2FORC', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'DYCOMS_RF02_128x128x96_dr_nosed.nc', 'type' => 'auto', 'name' => 'QTOG2CLSD', 'expression' => 'QTOG2CLSD', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'DYCOMS_RF02_128x128x96_dr_nosed.nc', 'type' => 'auto', 'name' => 'QTOG2BT', 'expression' => 'QTOG2BT', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'DYCOMS_RF02_128x128x96_dr_nosed.nc', 'type' => 'auto', 'name' => 'QTOG2\_RES', 'expression' => 'QTOG2BT - (QTOG2ADVTR + QTOG2GRAD + QTOG2DISSIP + QTOG2DIFTR + QTOG2PREC + QTOG2FORC)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+          {'filename' => 'DYCOMS_RF02_128x128x96_dr_nosed.nc', 'type' => 'auto', 'name' => 'QTOG2\_RES', 'expression' => 'QTOG2BT - (QTOG2ADVTR + QTOG2GRAD + QTOG2DISSIP + QTOG2DIFTR + QTOG2PREC + QTOG2FORC + QTOG2CLSD)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
 
        {'plotTitle' => 'QTHL 3D SAM Benchmark Budgets', 'axisLabel' => 'QTHL [(kg/kg)K/s]', 'type' => 'profile', 'lines' =>
@@ -156,8 +181,9 @@
           {'filename' => 'DYCOMS_RF02_128x128x96_dr_nosed.nc', 'type' => 'auto', 'name' => 'QTHLPREC', 'expression' => 'QTHLPREC', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'DYCOMS_RF02_128x128x96_dr_nosed.nc', 'type' => 'auto', 'name' => 'QTHLRAD', 'expression' => 'QTHLRAD', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'DYCOMS_RF02_128x128x96_dr_nosed.nc', 'type' => 'auto', 'name' => 'QTHLFORC', 'expression' => 'QTHLFORC', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'DYCOMS_RF02_128x128x96_dr_nosed.nc', 'type' => 'auto', 'name' => 'QTHLCLSD', 'expression' => 'QTHLCLSD', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'DYCOMS_RF02_128x128x96_dr_nosed.nc', 'type' => 'auto', 'name' => 'QTHLBT', 'expression' => 'QTHLBT', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'DYCOMS_RF02_128x128x96_dr_nosed.nc', 'type' => 'auto', 'name' => 'QTHL\_RES', 'expression' => 'QTHLBT - (QTHLADV + QTHLGRAD + QTHLDISSIP + QTHLDIFTR + QTHLPREC + QTHLRAD + QTHLFORC)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+          {'filename' => 'DYCOMS_RF02_128x128x96_dr_nosed.nc', 'type' => 'auto', 'name' => 'QTHL\_RES', 'expression' => 'QTHLBT - (QTHLADV + QTHLGRAD + QTHLDISSIP + QTHLDIFTR + QTHLPREC + QTHLRAD + QTHLFORC + QTHLCLSD)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]}
     ],
     'nightlyOutput' =>
