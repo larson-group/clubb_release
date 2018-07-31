@@ -24,7 +24,8 @@ module diffusion
 
   private ! Default Scope
 
-  public :: diffusion_zt_lhs, & 
+  public :: diffusion_zt_lhs, &
+            diffusion_zt_lhs_inner, &
             diffusion_cloud_frac_zt_lhs, & 
             diffusion_zm_lhs
 
@@ -327,6 +328,86 @@ module diffusion
     endif
 
   end function diffusion_zt_lhs
+
+    !====================================================================================
+    subroutine diffusion_zt_lhs_inner( K_zm, nu,             & ! Intent(in)
+                                       invrs_dzm, invrs_dzt, & ! Intent(in)
+                                       lhs,                  & ! Intent(out)
+                                       from_level, to_level  ) ! Optional(in)
+    ! Description:
+    !   This subroutine is an optimized version of diffusion_zt_lhs. diffusion_zt_lhs
+    !   returns a length 3 array for any specified grid level. This subroutine returns
+    !   an array of length 3 arrays, one for every specified grid level that is NOT a 
+    !   boundary level (default 2 to gr%nz-1). 
+    ! 
+    ! Optional Arguements:
+    !   The optional arguements can be used to override the default indices. 
+    !   from_level - low index, default 2
+    !   to level   - high index, default gr%nz-1
+    ! 
+    ! Notes:
+    !   This subroutine exsists for performance concerns. It returns many lhs arrays at
+    !   once so that it can be properly vectorized, and it does not handle boundary 
+    !   levels in order to avoid if statments. See clubb:ticket:834 for detail.
+    ! 
+    !------------------------------------------------------------------------------------    
+
+        use grid_class, only: & 
+            gr ! Variable(s)
+
+        use clubb_precision, only: &
+            core_rknd ! Variable(s)
+
+        implicit none
+
+        !------------------- Input Variables -------------------
+        real( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
+          K_zm,         & ! Coef. of eddy diffusivity at momentum level (k)   [m^2/s]
+          invrs_dzt,    & ! Inverse of grid spacing over thermo. level (k)    [1/m]
+          invrs_dzm,    & ! Inverse of grid spacing over momentum level (k)   [1/m]
+          nu              ! Background constant coef. of eddy diffusivity     [m^2/s]
+
+        integer, optional, intent(in) :: &
+            from_level, & ! Starting level
+            to_level      ! Ending level
+
+        !------------------- Output Variables -------------------
+        real( kind = core_rknd ), dimension(3,gr%nz), intent(out) :: &
+            lhs           ! Eddy diffusion elements of the left hand side matrix
+
+        !---------------- Local Variables -------------------
+        integer :: &
+            level_low,  & ! Starting level
+            level_high, & ! Starting level
+            k             ! Loop variable for current grid level
+
+        !---------------- Begin Code -------------------
+        level_low = 2
+        level_high = gr%nz-1
+
+        if ( present( from_level ) ) then
+            level_low = max( from_level, 2 )
+        end if
+
+        if ( present( to_level ) ) then
+            level_high = min( to_level, gr%nz-1 )
+        end if
+
+        do k = level_low, level_high
+
+          ! Thermodynamic superdiagonal: [ x var_zt(k+1,<t+1>) ]
+          lhs(1,k) = - invrs_dzt(k) * ( K_zm(k) + nu(k) ) * invrs_dzm(k)
+
+          ! Thermodynamic main diagonal: [ x var_zt(k,<t+1>) ]
+          lhs(2,k) = + invrs_dzt(k) * ( ( K_zm(k) + nu(k) ) * invrs_dzm(k)   &
+                                    + ( K_zm(k-1) + nu(k) ) * invrs_dzm(k-1) )
+
+          ! Thermodynamic subdiagonal: [ x var_zt(k-1,<t+1>) ]
+          lhs(3,k) = - invrs_dzt(k) * ( K_zm(k-1) + nu(k) ) * invrs_dzm(k-1)
+
+        end do
+
+    end subroutine diffusion_zt_lhs_inner
 
   !=============================================================================
   pure function diffusion_cloud_frac_zt_lhs &
@@ -795,7 +876,5 @@ module diffusion
     endif
 
   end function diffusion_zm_lhs
-
-!===============================================================================
 
 end module diffusion
