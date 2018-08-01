@@ -3155,6 +3155,120 @@ module advance_microphys_module
   end function term_turb_sed_rhs
 
   !=============================================================================
+  function calculate_K_hm( wp2, Kh_zm, Skw_zm, Lscale, &
+                           hydromet, hydrometp2 ) &
+  result( K_hm )
+
+    ! Description:
+
+    !-----------------------------------------------------------------------
+
+    use grid_class, only: & 
+        gr,    & ! Variable(s)
+        zt2zm    ! Procedure(s)
+
+    use parameters_tunable, only: & 
+        c_K_hm,        & ! Variable(s) 
+        c_K_hmb,       &  
+        K_hm_min_coef
+
+    use parameters_model, only: & 
+        hydromet_dim   ! Variable(s)
+
+    use constants_clubb, only: & 
+        one, & ! Constant(s)
+        eps
+
+    use clubb_precision, only:  & 
+        core_rknd    ! Variable(s)
+
+    use array_index, only:  & 
+        hydromet_tol    ! Tolerance values for hydrometeor species
+
+    implicit none
+
+    ! Input Variables
+    real( kind = core_rknd ), dimension(gr%nz), intent(in) :: & 
+      wp2,    & ! Variance of vertical velocity (momentum levels) [m^2/s^2]
+      Kh_zm,  & ! Kh Eddy diffusivity on momentum grid            [m^2/s]
+      Skw_zm, & ! Skewness of w on momentum levels                [-]
+      Lscale    ! Length-scale                                    [m]
+
+    real( kind = core_rknd ), dimension(gr%nz,hydromet_dim), intent(inout) :: &
+      hydromet,   & ! Hydrometeor mean, <h_m> (thermo. levels)    [units]
+      hydrometp2    ! Variance of hydrometeor (overall) (m-levs.) [units^2]
+
+    ! Return Variable
+    real( kind = core_rknd ), dimension(gr%nz,hydromet_dim) :: &
+      K_hm    ! Hydrometeor eddy diffusivity on momentum grid     [m^2/s]
+
+    ! Local Variables
+
+    ! Turbulent advection for hydrometeors -- down-gradient approximation for
+    ! covariance <w'hm'> (for any hydrometeor, hm):
+    ! <w'hm'> = - K_hm * d<hm>/dz;
+    ! where the coefficient of diffusion, K_hm, is variable and depends on
+    ! multiple factors.
+    real( kind = core_rknd ), dimension(gr%nz, hydromet_dim) :: &
+      K_gamma ! Non-local factor of diffusion (t. adv.) for hydrometeors [m^2/s]
+
+    integer :: k, kp1, i    ! Loop indices
+
+    logical, parameter :: &
+      l_use_non_local_diff_fac = .false. ! Use a non-local factor for
+                                         ! eddy-diffusivity applied to
+                                         ! hydrometeors
+
+
+    ! Loop over all hydrometeors.
+    do i = 1, hydromet_dim, 1
+
+       ! Loop over all vertical levels for each hydrometeor.
+       do k = 1, gr%nz, 1
+
+          kp1 = min( k+1, gr%nz )
+
+          K_hm(k,i) &
+          = c_K_hm * Kh_zm(k) &
+            * ( sqrt( hydrometp2(k,i) ) &
+                / max( zt2zm( hydromet(:,i), k ), hydromet_tol(i) ) ) &
+            * ( one + abs( Skw_zm(k) ) ) 
+
+          if ( l_use_non_local_diff_fac ) then
+             K_gamma(k,i) &
+             = one &
+               - c_K_hmb &
+                 * ( ( zt2zm( Lscale(:), k ) &
+                       / max( zt2zm( hydromet(:,i), k ), hydromet_tol(i) ) ) &
+                     * ( gr%invrs_dzm(k) &
+                         * ( hydromet(kp1,i) - hydromet(k,i) ) ) )
+
+               K_hm(k,i) = K_hm(k,i) * max( K_gamma(k,i), K_hm_min_coef )
+          endif
+
+          if ( abs( gr%invrs_dzm(k) &
+                    * ( hydromet(kp1,i) - hydromet(k,i) ) ) > eps ) then
+
+             ! Ensure the abs( correlation ) between w and hydromet does not
+             ! have a value greater than one.
+             K_hm(k,i) &
+             = min( K_hm(k,i), &
+                    ( sqrt( wp2(k) ) * sqrt( hydrometp2(k,i) ) ) &
+                    / abs( gr%invrs_dzm(k) &
+                           * ( hydromet(kp1,i) - hydromet(k,i) ) ) )
+
+          endif ! | d<hm>/dz | > 0
+
+       enddo ! k = 1, gr%nz, 1
+
+    enddo ! i = 1, hydromet_dim, 1
+
+
+    return
+
+  end function calculate_K_hm
+
+  !=============================================================================
   function get_cloud_top_level( nz, rcm, hydromet ) &
   result( cloud_top_level )
 
