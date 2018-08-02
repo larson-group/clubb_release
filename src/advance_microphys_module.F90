@@ -11,10 +11,11 @@ module advance_microphys_module
 
   implicit none
 
-  ! Subroutines
   public :: advance_microphys,   &
-            get_cloud_top_level
+            get_cloud_top_level, &
+            calculate_K_hm
 
+  ! Subroutines
   private :: advance_hydrometeor, &
              advance_Ncm, &
              microphys_solve, &
@@ -63,14 +64,12 @@ module advance_microphys_module
         hydromet_dim   ! Integer
 
     use constants_clubb, only: & 
-        one,         & ! Constant(s)
-        zero,        &
+        zero,        & ! Constant(s)
         Lv,          &
         rho_lw,      & 
         fstderr,     &
         sec_per_day, &
-        mm_per_m,    &
-        eps
+        mm_per_m
 
     use parameters_microphys, only: &
         l_predict_Nc,          & ! Predict cloud droplet number conc (Morrison)
@@ -87,9 +86,8 @@ module advance_microphys_module
         clubb_fatal_error             ! Constant
 
     use array_index, only:  & 
-        hydromet_tol,  & ! Tolerance values for hydrometeor species
-        iirr,         & ! Variable(s)
-        iiri,         &
+        iirr, & ! Variable(s)
+        iiri, &
         iiNi
 
     use stats_variables, only: & 
@@ -193,13 +191,10 @@ module advance_microphys_module
     ! <w'Nc'> = - K_Nc & d<Nc>/dz;
     ! where the coefficients of diffusion, K_hm and K_Nc are variable and depend
     ! on multiple factors.
-    real( kind = core_rknd ), dimension(gr%nz, hydromet_dim) :: &
-      K_gamma ! Non-local factor of diffusion (t. adv.) for hydrometeors [m^2/s]
-
     real( kind = core_rknd ), dimension(gr%nz) :: &
       K_Nc    ! Coefficient of diffusion (turb. adv.) for Nc             [m^2/s]
 
-    integer :: k, kp1, i    ! Loop indices
+    integer :: k, i    ! Loop indices
 
     integer :: &
       cloud_top_level    ! Vertical level index of cloud top    [-]
@@ -244,39 +239,11 @@ module advance_microphys_module
 
        ! Solve for the value of K_hm, the coefficient of diffusion for
        ! hydrometeors.
+       K_hm = calculate_K_hm( wp2, Kh_zm, Skw_zm, Lscale, &
+                              hydromet, hydrometp2, &
+                              l_use_non_local_diff_fac )
+
        do i = 1, hydromet_dim, 1
-          do k = 1, gr%nz, 1
-
-             kp1 = min( k+1, gr%nz )
-
-             K_hm(k,i) &
-             = c_K_hm * Kh_zm(k) &
-               * ( sqrt( hydrometp2(k,i) ) &
-                   / max( zt2zm( hydromet(:,i), k ), hydromet_tol(i) ) ) &
-               * ( one + abs( Skw_zm(k) ) ) 
-
-             if ( l_use_non_local_diff_fac ) then
-               K_gamma(k,i) &
-               = one -  c_K_hmb * ( ( zt2zm( Lscale(:) , k ) &
-                 / max( zt2zm( hydromet(:,i), k ),hydromet_tol(i) ) )  &
-                 * ( gr%invrs_dzm(k) * ( hydromet(kp1,i)  - hydromet(k,i) ) ) ) 
-
-               K_hm(k,i) = K_hm(k,i) * max(K_gamma(k,i), K_hm_min_coef)
-             endif
-
-             if ( abs( gr%invrs_dzm(k) &
-                       * ( hydromet(kp1,i) - hydromet(k,i) ) ) > eps ) then
-                ! Ensure the abs( correlation ) between w and hydromet does not
-                ! have a value greater than one.
-                K_hm(k,i) &
-                = min( K_hm(k,i), &
-                       ( sqrt( wp2(k) ) * sqrt( hydrometp2(k,i) ) ) &
-                       / abs( gr%invrs_dzm(k) &
-                              * ( hydromet(kp1,i) - hydromet(k,i) ) ) )
-
-             endif ! | d<hm>/dz | > 0
-
-          enddo ! k = 1, gr%nz, 1
 
           ! Prevent the turbulent advection of hydrometeors to altitudes above
           ! cloud top.
@@ -3156,11 +3123,26 @@ module advance_microphys_module
 
   !=============================================================================
   function calculate_K_hm( wp2, Kh_zm, Skw_zm, Lscale, &
-                           hydromet, hydrometp2 ) &
+                           hydromet, hydrometp2, &
+                           l_use_non_local_diff_fac ) &
   result( K_hm )
 
     ! Description:
+    ! The predictive equation for a hydrometeor, hm, contains a turbulent
+    ! advection term:
+    !
+    ! - (1/rho_ds) * d( rho_ds * <w'hm'> )/dz.
+    !
+    ! The value of <w'hm'> can be calculated in many ways.  For simplicity, a
+    ! down-gradient approximation is used here, where:
+    !
+    ! <w'hm'> = -K_hm * d<hm>/dz.
+    !
+    ! The coefficient of diffusion, K_hm, is variable and depends on multiple
+    ! factors.  It optionally includes a non-local turbulent advection factor.
 
+    ! References:
+    ! CLUBB ticket 651 and CLUBB ticket 739.
     !-----------------------------------------------------------------------
 
     use grid_class, only: & 
@@ -3198,26 +3180,19 @@ module advance_microphys_module
       hydromet,   & ! Hydrometeor mean, <h_m> (thermo. levels)    [units]
       hydrometp2    ! Variance of hydrometeor (overall) (m-levs.) [units^2]
 
+    logical, intent(in) :: &
+      l_use_non_local_diff_fac    ! Flag to use a non-local factor for
+                                  ! eddy-diffusivity applied to hydrometeors.
+
     ! Return Variable
     real( kind = core_rknd ), dimension(gr%nz,hydromet_dim) :: &
       K_hm    ! Hydrometeor eddy diffusivity on momentum grid     [m^2/s]
 
     ! Local Variables
-
-    ! Turbulent advection for hydrometeors -- down-gradient approximation for
-    ! covariance <w'hm'> (for any hydrometeor, hm):
-    ! <w'hm'> = - K_hm * d<hm>/dz;
-    ! where the coefficient of diffusion, K_hm, is variable and depends on
-    ! multiple factors.
     real( kind = core_rknd ), dimension(gr%nz, hydromet_dim) :: &
       K_gamma ! Non-local factor of diffusion (t. adv.) for hydrometeors [m^2/s]
 
     integer :: k, kp1, i    ! Loop indices
-
-    logical, parameter :: &
-      l_use_non_local_diff_fac = .false. ! Use a non-local factor for
-                                         ! eddy-diffusivity applied to
-                                         ! hydrometeors
 
 
     ! Loop over all hydrometeors.
