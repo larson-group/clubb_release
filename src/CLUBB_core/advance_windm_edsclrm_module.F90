@@ -1688,7 +1688,7 @@ module advance_windm_edsclrm_module
     real( kind = core_rknd ), dimension(gr%nz) :: &
       K_zm              ! Coef. of eddy diffusivity at momentum level (k)   [m^2/s]
 
-    integer :: k, km1    ! Loop variable
+    integer :: k    ! Loop variable
 
     ! For use in Crank-Nicholson eddy diffusion.
     real( kind = core_rknd ), dimension(3,gr%nz) :: rhs_diff
@@ -1765,9 +1765,9 @@ module advance_windm_edsclrm_module
         end do
 
         ! Upper boundary
-        call stat_begin_update_pt( ixm_ta, k, &
-                                   rhs_diff(3,gr%nz) * xm(km1) &
-                                 + rhs_diff(2,gr%nz) * xm(k), stats_zt )
+        call stat_begin_update_pt( ixm_ta, gr%nz, &
+                                   rhs_diff(3,gr%nz) * xm(gr%nz-1) &
+                                 + rhs_diff(2,gr%nz) * xm(gr%nz), stats_zt )
 
 
         if ( .not. l_imp_sfc_momentum_flux ) then
