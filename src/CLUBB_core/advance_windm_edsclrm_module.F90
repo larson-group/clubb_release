@@ -1637,7 +1637,7 @@ module advance_windm_edsclrm_module
 
     use diffusion, only:  & 
         diffusion_zt_lhs, & ! Procedure(s)
-        diffusion_zt_lhs_inner
+        diffusion_zt_lhs_all
 
     use stats_variables, only: &
         ium_ta,  & ! Variable(s)
@@ -1713,6 +1713,12 @@ module advance_windm_edsclrm_module
     rhs(1:gr%nz) = 0.0_core_rknd                          ! Initialize the RHS vector to 0.0
     K_zm(1:gr%nz) = rho_ds_zm(1:gr%nz) * Km_zm(1:gr%nz)   ! Calculate coefs of eddy diffusivity
 
+    
+    ! RHS turbulent advection term, for grid level 3 - gr%nz
+    call diffusion_zt_lhs_all( K_zm(1:gr%nz), nu(1:gr%nz),                   & ! Intent(in)
+                               gr%invrs_dzm(1:gr%nz), gr%invrs_dzt(1:gr%nz), & ! Intent(in)
+                               rhs_diff(1:3,1:gr%nz),                        & ! Intent(out)
+                               from_level = 3, to_level = gr%nz              ) ! Optional(in)
 
     ! RHS turbulent advection term (solved as an eddy-diffusion term), for grid level 2
     ! lower boundary condition applied at this level, see notes above
@@ -1720,14 +1726,10 @@ module advance_windm_edsclrm_module
                                       gr%invrs_dzm(1), gr%invrs_dzm(2),  &
                                       gr%invrs_dzt(2), level = 1 )
 
-    ! RHS turbulent advection term, for grid level 3 - gr%nz-1
-    call diffusion_zt_lhs_inner( K_zm(1:gr%nz), nu(1:gr%nz),                   & ! Intent(in)
-                                 gr%invrs_dzm(1:gr%nz), gr%invrs_dzt(1:gr%nz), & ! Intent(in)
-                                 rhs_diff(1:3,1:gr%nz),                        & ! Intent(out)
-                                 from_level = 3, to_level = gr%nz-1            ) ! Optional(in)
+    ! For purposes of the matrix equation, rhs(1) is simply set to 0.
+    rhs(1) = 0.0_core_rknd
 
-
-    ! Finish rhs calculation, this is a highly vectorized loop
+    ! Non-boundary rhs calculation, this is a highly vectorized loop
     do k = 2, gr%nz-1
 
         rhs(k) = 0.5_core_rknd * invrs_rho_ds_zt(k) & 
@@ -1737,6 +1739,13 @@ module advance_windm_edsclrm_module
                  + xm_tndcy(k)                      & ! RHS forcings
                  + dt_recip * xm(k)                   ! RHS time tendency
     end do
+
+    ! Upper boundary calculation
+    rhs(gr%nz) = 0.5_core_rknd * invrs_rho_ds_zt(gr%nz) & 
+                 * ( - rhs_diff(3,gr%nz) * xm(gr%nz-1)  &
+                     - rhs_diff(2,gr%nz) * xm(gr%nz) )  &
+                 + xm_tndcy(gr%nz)                      & ! RHS forcings
+                 + dt_recip * xm(gr%nz)                   ! RHS time tendency
 
 
     if ( l_stats_samp .and. ixm_ta > 0 ) then
@@ -1754,93 +1763,29 @@ module advance_windm_edsclrm_module
                                      + rhs_diff(2,k) * xm(k)   &
                                      + rhs_diff(1,k) * xm(k+1), stats_zt )
         end do
-    endif
 
-    
-    ! Boundary Conditions
-
-    ! Lower Boundary
-
-    ! The lower boundary condition is a fixed-flux boundary condition, which
-    ! gets added into the time-tendency equation at level 2.
-    ! The value of xm(1) is located below the model surface and does not effect
-    ! the rest of the model.  Since xm can be either a horizontal wind component
-    ! or a generic eddy scalar quantity, the value of xm(1) is simply set to the
-    ! value of xm(2) after the equation matrix has been solved.  For purposes of
-    ! the matrix equation, rhs(1) is simply set to 0.
-
-    ! k = 1
-    rhs(1) = 0.0_core_rknd
-
-    ! k = 2; add generalized explicit surface flux.
-    if ( .not. l_imp_sfc_momentum_flux ) then
-
-      ! RHS generalized surface flux.
-      rhs(2)  = rhs(2)  + invrs_rho_ds_zt(2)  &
-                        * gr%invrs_dzt(2)  &
-                        * rho_ds_zm(1) * xpwp_sfc
-
-      if ( l_stats_samp ) then
-
-        ! Statistics:  explicit contributions for um or vm.
-
-        ! xm term ta is modified at level 2 to include the effects of the
-        ! surface flux.  In this case, this effects the explicit portion of
-        ! the term (after stat_begin_update_pt has already been called at
-        ! level 2); call stat_modify_pt.
-        if ( ixm_ta > 0 ) then
-            call stat_modify_pt( ixm_ta, 2,  &
-                                 + invrs_rho_ds_zt(2)  &
-                                 * gr%invrs_dzt(2)  &
-                                 * rho_ds_zm(1) * xpwp_sfc,  &
-                                 stats_zt )
-        endif
-
-      endif  ! l_stats_samp
-
-    endif ! l_imp_sfc_momentum_flux
-
-    ! Upper Boundary
-
-    ! A zero-flux boundary condition is used at the upper boundary, meaning that
-    ! xm is not allowed to exit the model through the upper boundary.  This
-    ! boundary condition is invoked by calling diffusion_zt_lhs at the uppermost
-    ! level.
-    k   = gr%nz
-    km1 = max( k-1, 1 )
-
-    ! RHS turbulent advection term (solved as an eddy-diffusion term) at the
-    ! upper boundary.
-    rhs_diff(1:3,gr%nz) = 0.5_core_rknd * invrs_rho_ds_zt(k)  &
-                          * diffusion_zt_lhs( K_zm(k), K_zm(km1), nu,  &
-                                              gr%invrs_dzm(km1), gr%invrs_dzm(k),  &
-                                              gr%invrs_dzt(k), k )
-
-    rhs(k) = rhs(k) &
-             - rhs_diff(3,gr%nz) * xm(km1) &
-             - rhs_diff(2,gr%nz) * xm(k)
-
-    ! RHS forcing term at the upper boundary.
-    rhs(k) = rhs(k) + xm_tndcy(k)
-
-    ! RHS time tendency term at the upper boundary.
-    rhs(k) = rhs(k) + dt_recip * xm(k)
-
-    if ( l_stats_samp ) then
-
-      ! Statistics:  explicit contributions for um or vm.
-
-      ! xm term ta has both implicit and explicit components; call
-      ! stat_begin_update_pt.  Since stat_begin_update_pt automatically
-      ! subtracts the value sent in, reverse the sign on right-hand side
-      ! turbulent advection component.
-      if ( ixm_ta > 0 ) then
+        ! Upper boundary
         call stat_begin_update_pt( ixm_ta, k, &
-               rhs_diff(3,gr%nz) * xm(km1) &
-             + rhs_diff(2,gr%nz) * xm(k), stats_zt )
-      endif
+                                   rhs_diff(3,gr%nz) * xm(km1) &
+                                 + rhs_diff(2,gr%nz) * xm(k), stats_zt )
 
-    endif  ! l_stats_samp
+
+        if ( .not. l_imp_sfc_momentum_flux ) then
+
+          ! RHS generalized surface flux.
+          rhs(2)  = rhs(2)  + invrs_rho_ds_zt(2)  &
+                            * gr%invrs_dzt(2)  &
+                            * rho_ds_zm(1) * xpwp_sfc
+
+            call stat_modify_pt( ixm_ta, 2,  &
+                               + invrs_rho_ds_zt(2)  &
+                               * gr%invrs_dzt(2)  &
+                               * rho_ds_zm(1) * xpwp_sfc,  &
+                                 stats_zt )
+
+        endif ! l_imp_sfc_momentum_flux
+
+    endif
 
     return
 

@@ -25,7 +25,7 @@ module diffusion
   private ! Default Scope
 
   public :: diffusion_zt_lhs, &
-            diffusion_zt_lhs_inner, &
+            diffusion_zt_lhs_all, &
             diffusion_cloud_frac_zt_lhs, & 
             diffusion_zm_lhs
 
@@ -330,10 +330,10 @@ module diffusion
   end function diffusion_zt_lhs
 
     !====================================================================================
-    subroutine diffusion_zt_lhs_inner( K_zm, nu,             & ! Intent(in)
-                                       invrs_dzm, invrs_dzt, & ! Intent(in)
-                                       lhs,                  & ! Intent(out)
-                                       from_level, to_level  ) ! Optional(in)
+    subroutine diffusion_zt_lhs_all( K_zm, nu,             & ! Intent(in)
+                                     invrs_dzm, invrs_dzt, & ! Intent(in)
+                                     lhs,                  & ! Intent(out)
+                                     from_level, to_level  ) ! Optional(in)
     ! Description:
     !   This subroutine is an optimized version of diffusion_zt_lhs. diffusion_zt_lhs
     !   returns a length 3 array for any specified grid level. This subroutine returns
@@ -382,17 +382,43 @@ module diffusion
             k             ! Loop variable for current grid level
 
         !---------------- Begin Code -------------------
-        level_low = 2
-        level_high = gr%nz-1
 
+        ! Default values for level range
+        level_low = 1
+        level_high = gr%nz
+
+        ! Overwrite default values if other values present
         if ( present( from_level ) ) then
-            level_low = max( from_level, 2 )
+            level_low = max( from_level, level_low )
         end if
 
         if ( present( to_level ) ) then
-            level_high = min( to_level, gr%nz-1 )
+            level_high = min( to_level, level_high )
         end if
 
+
+        ! Handle lower boundary level if applicable, otherwise zero out unused lower level(s)
+        if ( level_low == 1 ) then 
+            level_low = 2
+            lhs(1,1) = - invrs_dzt(1) * ( K_zm(1) + nu(1) ) * invrs_dzm(1)
+            lhs(2,1) = + invrs_dzt(1) * ( K_zm(1) + nu(1) ) * invrs_dzm(1)
+            lhs(3,1) = 0.0_core_rknd
+        else 
+            lhs(:,:level_low-1) = 0.0_core_rknd
+        end if
+
+        ! Handle upper boundary level if applicable, otherwise zero out unused upper level(s)
+        if ( level_high == gr%nz ) then
+            level_high = gr%nz-1
+            lhs(1,gr%nz) = 0.0_core_rknd
+            lhs(2,gr%nz) = + invrs_dzt(gr%nz) * ( K_zm(gr%nz-1) + nu(gr%nz) ) * invrs_dzm(gr%nz-1)
+            lhs(3,gr%nz) = - invrs_dzt(gr%nz) * ( K_zm(gr%nz-1) + nu(gr%nz) ) * invrs_dzm(gr%nz-1)
+        else
+            lhs(:,level_high+1:) = 0.0_core_rknd
+        end if
+        
+
+        ! Handle every other level
         do k = level_low, level_high
 
           ! Thermodynamic superdiagonal: [ x var_zt(k+1,<t+1>) ]
@@ -407,7 +433,8 @@ module diffusion
 
         end do
 
-    end subroutine diffusion_zt_lhs_inner
+
+    end subroutine diffusion_zt_lhs_all
 
   !=============================================================================
   pure function diffusion_cloud_frac_zt_lhs &
