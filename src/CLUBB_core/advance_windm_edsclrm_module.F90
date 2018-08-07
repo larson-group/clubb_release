@@ -1710,15 +1710,12 @@ module advance_windm_edsclrm_module
           ixm_ta = 0
     end select
    
-    rhs(1:gr%nz) = 0.0_core_rknd                          ! Initialize the RHS vector to 0.0
     K_zm(1:gr%nz) = rho_ds_zm(1:gr%nz) * Km_zm(1:gr%nz)   ! Calculate coefs of eddy diffusivity
-
     
     ! RHS turbulent advection term, for grid level 3 - gr%nz
     call diffusion_zt_lhs_all( K_zm(1:gr%nz), nu(1:gr%nz),                   & ! Intent(in)
                                gr%invrs_dzm(1:gr%nz), gr%invrs_dzt(1:gr%nz), & ! Intent(in)
-                               rhs_diff(1:3,1:gr%nz),                        & ! Intent(out)
-                               from_level = 3, to_level = gr%nz              ) ! Optional(in)
+                               rhs_diff(1:3,1:gr%nz)                         ) ! Intent(out)
 
     ! RHS turbulent advection term (solved as an eddy-diffusion term), for grid level 2
     ! lower boundary condition applied at this level, see notes above

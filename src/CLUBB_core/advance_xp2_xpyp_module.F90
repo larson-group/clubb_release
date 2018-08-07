@@ -1553,12 +1553,30 @@ module advance_xp2_xpyp_module
                            rho_ds_zt, rho_ds_zm, invrs_rho_ds_zm, Cn, nu, & ! In
                            lhs ) ! Out
 
-    ! Description:
-    ! Compute LHS tridiagonal matrix for a variance or covariance term
-
-    ! References:
-    ! None
-    !-----------------------------------------------------------------------
+  ! Description:
+  !     Compute LHS tridiagonal matrix for a variance or covariance term
+  ! 
+  ! Notes:
+  !     For LHS turbulent advection terms:
+  !         An "over-implicit" weighted time step is applied to this term.
+  !         The weight of the implicit portion of this term is controlled by
+  !         the factor gamma_over_implicit_ts (abbreviated "gamma" in the
+  !         expression below).  A factor is added to the right-hand side of
+  !         the equation in order to balance a weight that is not equal to 1,
+  !         such that:
+  !              -y(t) * [ gamma * X(t+1) + ( 1 - gamma ) * X(t) ] + RHS;
+  !         where X is the variable that is being solved for in a predictive
+  !         equation (<x'^2> or <x'y'> in this case), y(t) is the linearized
+  !         portion of the term that gets treated implicitly, and RHS is the
+  !         portion of the term that is always treated explicitly.  A weight
+  !         of greater than 1 can be applied to make the term more
+  !         numerically stable.
+  ! 
+  ! 
+  !   --- THIS SUBROUTINE HAS BEEN OPTIMIZED ---
+  !   Significant changes to this routine may adversely affect computational speed
+  !       - Gunther Huebler, Aug. 2018, clubb:ticket:834
+  !----------------------------------------------------------------------------------
 
     use grid_class, only: & 
         gr ! Variable(s)
@@ -1569,13 +1587,16 @@ module advance_xp2_xpyp_module
         zero
 
     use turbulent_adv_pdf, only: &
-        xpyp_term_ta_pdf_lhs    ! Procedure(s)
+        xpyp_term_ta_pdf_lhs_all, & ! Procedure(s)
+        xpyp_term_ta_pdf_lhs
 
     use mean_adv, only:  & 
-        term_ma_zm_lhs ! Procedure(s)
+        term_ma_zm_lhs_all, & ! Procedure(s)
+        term_ma_zm_lhs
 
     use diffusion, only:  & 
-        diffusion_zm_lhs ! Procedure(s)
+        diffusion_zm_lhs_all, & ! Procedure(s)
+        diffusion_zm_lhs
 
     use model_flags, only: &
         l_upwind_xpyp_ta    ! Variable(s)
@@ -1583,7 +1604,12 @@ module advance_xp2_xpyp_module
     use clubb_precision, only:  & 
         core_rknd ! Variable(s)
 
-    use stats_variables, only: & 
+    use advance_helper_module, only: &
+        set_boundary_conditions_lhs    ! Procedure(s)
+
+    
+    use stats_variables, only: &
+        l_stats_samp, &
         zmscr01, &
         zmscr02, &
         zmscr03, &
@@ -1594,7 +1620,6 @@ module advance_xp2_xpyp_module
         zmscr08, &
         zmscr09, &
         zmscr10, &
-        l_stats_samp, &
         irtp2_ma, &
         irtp2_ta, &
         irtp2_dp1, &
@@ -1614,18 +1639,9 @@ module advance_xp2_xpyp_module
         ivp2_ta, &
         ivp2_dp2
 
-    use advance_helper_module, only: &
-        set_boundary_conditions_lhs    ! Procedure(s)
-
     implicit none
 
-    ! Constant parameters
-    integer, parameter :: & 
-      kp1_mdiag = 1, & ! Momentum superdiagonal index.
-      k_mdiag   = 2, & ! Momentum main diagonal index.
-      km1_mdiag = 3    ! Momentum subdiagonal index.
-
-    ! Input Variables
+    !------------------- Input Variables -------------------
     real( kind = core_rknd ), intent(in) :: & 
       dt ! Timestep length                             [s]
 
@@ -1645,156 +1661,129 @@ module advance_xp2_xpyp_module
       Cn,                      & ! Coefficient C_n                           [-]
       nu                         ! Background const. coef. of eddy diff. [m^2/s]
 
-    ! Output Variables
+    !------------------- Output Variables -------------------
     real( kind = core_rknd ), dimension(3,gr%nz), intent(out) :: & 
-      lhs    ! Implicit contributions to the term
+      lhs         ! Implicit contributions to the term
 
-    ! Local Variables
+    !---------------- Local Variables -------------------
+    real( kind = core_rknd ), dimension(3,gr%nz) :: & 
+      lhs_diff, & ! Diffusion contributions to lhs, dissipation term 2
+      lhs_advm, & ! Mean advection contributions to lhs
+      lhs_turb    ! Turbulent advection contributions to lhs
+    
+    real( kind = core_rknd ), dimension(gr%nz) :: &
+      lhs_dp1   ! LHS dissipation term 1
 
     ! Array indices
-    integer :: k, kp1, km1, low_bound, high_bound
+    integer :: k, low_bound, high_bound
 
-    real( kind = core_rknd ), dimension(3) :: & 
-      tmp
+    !---------------- Begin Code -------------------
 
-    ! Initialize LHS matrix to 0.
-    lhs = zero
+    ! LHS dissipation term 1 (dp1). An "over-implicit" weighted time 
+    ! step is applied to this term (and to pressure term 1 for u'^2 and v'^2).
+    ! https://arxiv.org/pdf/1711.03675v1.pdf#nameddest=url:xp2_dp
+    do k = 2, gr%nz-1
+        lhs_dp1(k) = term_dp1_lhs( Cn(k), tau_zm(k) ) * gamma_over_implicit_ts
+    enddo ! k=2..gr%nz-1
 
-    ! Setup LHS of the tridiagonal system
-    do k = 2, gr%nz-1, 1
+    ! Calculate LHS eddy diffusion term: dissipation term 2 (dp2).
+    call diffusion_zm_lhs_all( Kw(:), nu(:),                     & ! Intent(in)
+                               gr%invrs_dzt(:), gr%invrs_dzm(:), & ! Intent(in)
+                               lhs_diff(:,:)                     ) ! Intent(out) 
 
-      km1 = max( k-1, 1 )
-      kp1 = min( k+1, gr%nz )
+    ! Calculate LHS mean advection (ma) term.
+    call term_ma_zm_lhs_all( wm_zm(:), gr%invrs_dzm(:), & ! Intent(in)
+                             lhs_advm(:,:)              ) ! Intent(out)
+                             
 
-      ! LHS mean advection (ma) term.
-      lhs(kp1_mdiag:km1_mdiag,k) & 
-      = lhs(kp1_mdiag:km1_mdiag,k) & 
-        + term_ma_zm_lhs( wm_zm(k), gr%invrs_dzm(k), k )
+    ! Calculate LHS turbulent advection (ta) terms
+    call xpyp_term_ta_pdf_lhs_all( coef_wpxpyp_implicit(:),             & ! Intent(in)
+                                   rho_ds_zt(:),                        & ! Intent(in)
+                                   invrs_rho_ds_zm(:),                  & ! Intent(in)
+                                   gr%invrs_dzm(:),                     & ! Intent(in)
+                                   l_upwind_xpyp_ta,                    & ! Intent(in)
+                                   sgn_turbulent_vel(:),                & ! Intent(in)
+                                   coef_wpxpyp_implicit_zm(:),          & ! Intent(in)
+                                   rho_ds_zm(:),                        & ! Intent(in)
+                                   gr%invrs_dzt(:),                     & ! Intent(in)
+                                   lhs_turb(:,:)                        ) ! Intent(out)
 
-      ! LHS turbulent advection (ta) term.
+    ! Combine all lhs terms into lhs, should be fully vectorized
+    do k = 2, gr%nz-1
 
-      ! Note:  An "over-implicit" weighted time step is applied to this term.
-      !        The weight of the implicit portion of this term is controlled by
-      !        the factor gamma_over_implicit_ts (abbreviated "gamma" in the
-      !        expression below).  A factor is added to the right-hand side of
-      !        the equation in order to balance a weight that is not equal to 1,
-      !        such that:
-      !             -y(t) * [ gamma * X(t+1) + ( 1 - gamma ) * X(t) ] + RHS;
-      !        where X is the variable that is being solved for in a predictive
-      !        equation (<x'^2> or <x'y'> in this case), y(t) is the linearized
-      !        portion of the term that gets treated implicitly, and RHS is the
-      !        portion of the term that is always treated explicitly.  A weight
-      !        of greater than 1 can be applied to make the term more
-      !        numerically stable.
-      lhs(kp1_mdiag:km1_mdiag,k) & 
-      = lhs(kp1_mdiag:km1_mdiag,k) &
-        + gamma_over_implicit_ts &
-          * xpyp_term_ta_pdf_lhs( coef_wpxpyp_implicit(kp1), &
-                                  coef_wpxpyp_implicit(k), &
-                                  rho_ds_zt(kp1), rho_ds_zt(k), &
-                                  invrs_rho_ds_zm(k), &
-                                  gr%invrs_dzm(k), k, &
-                                  l_upwind_xpyp_ta, &
-                                  sgn_turbulent_vel(k), &
-                                  coef_wpxpyp_implicit_zm(kp1), &
-                                  coef_wpxpyp_implicit_zm(k), &
-                                  coef_wpxpyp_implicit_zm(km1), &
-                                  rho_ds_zm(kp1), rho_ds_zm(k), &
-                                  rho_ds_zm(km1), gr%invrs_dzt(kp1), &
-                                  gr%invrs_dzt(k) )
+      lhs(1,k) = lhs_diff(1,k) + lhs_advm(1,k) + lhs_turb(1,k) * gamma_over_implicit_ts
 
-      ! LHS dissipation term 1 (dp1)
-      ! (combined with pressure term 1 (pr1) for u'^2 and v'^2).
-      ! Note:  An "over-implicit" weighted time step is applied to this term
-      !        (and to pressure term 1 for u'^2 and v'^2).
-      ! Reference:
-      ! https://arxiv.org/pdf/1711.03675v1.pdf#nameddest=url:xp2_dp
-      lhs(k_mdiag,k)  & 
-      = lhs(k_mdiag,k)  &
-        + gamma_over_implicit_ts  &
-          * term_dp1_lhs( Cn(k), tau_zm(k) )
+      lhs(2,k) = lhs_diff(2,k) + lhs_advm(2,k) + lhs_turb(2,k) * gamma_over_implicit_ts &
+                                               + lhs_dp1(k)
+        
+      lhs(3,k) = lhs_diff(3,k) + lhs_advm(3,k) + lhs_turb(3,k) * gamma_over_implicit_ts
 
-      ! LHS eddy diffusion term: dissipation term 2 (dp2).
-      lhs(kp1_mdiag:km1_mdiag,k)  & 
-      = lhs(kp1_mdiag:km1_mdiag,k)  & 
-      + diffusion_zm_lhs( Kw(k), Kw(kp1), nu, & 
-                          gr%invrs_dzt(kp1), gr%invrs_dzt(k), &
-                          gr%invrs_dzm(k), k )
+    enddo ! k=2..gr%nz-1
 
-      ! LHS time tendency.
-      if ( l_iter ) then
-        lhs(k_mdiag,k) = lhs(k_mdiag,k) + ( one / dt )
-      endif
 
-      if ( l_stats_samp ) then
+    ! LHS time tendency.
+    if ( l_iter ) then
+        do k = 2, gr%nz-1
+            lhs(2,k) = lhs(2,k) + ( one / dt )
+        end do
+    endif
+
+    if ( l_stats_samp ) then
 
         ! Statistics: implicit contributions for rtp2, thlp2,
         !             rtpthlp, up2, or vp2.
 
         if ( irtp2_dp1 + ithlp2_dp1 + irtpthlp_dp1  > 0 ) then
-          ! Note:  The statistical implicit contribution to term dp1
-          !        (as well as to term pr1) for up2 and vp2 is recorded
-          !        in xp2_xpyp_uv_rhs because up2 and vp2 use a special
-          !        dp1/pr1 combined term.
-          ! Note:  An "over-implicit" weighted time step is applied to this
-          !        term.  A weighting factor of greater than 1 may be used to
-          !        make the term more numerically stable (see note above for
-          !        LHS turbulent advection (ta) term).
-          tmp(1)  &
-          = gamma_over_implicit_ts  &
-          * term_dp1_lhs( Cn(k), tau_zm(k) )
-          zmscr01(k) = -tmp(1)
+
+            ! Note:  The statistical implicit contribution to term dp1
+            !        (as well as to term pr1) for up2 and vp2 is recorded
+            !        in xp2_xpyp_uv_rhs because up2 and vp2 use a special
+            !        dp1/pr1 combined term.
+            ! Note:  An "over-implicit" weighted time step is applied to this
+            !        term.  A weighting factor of greater than 1 may be used to
+            !        make the term more numerically stable (see note above for
+            !        LHS turbulent advection (ta) term).
+            do k = 2, gr%nz-1
+                zmscr01(k) = -lhs_dp1(k)
+            end do
+
         endif
 
-        if ( irtp2_dp2 + ithlp2_dp2 + irtpthlp_dp2 +  & 
-             iup2_dp2 + ivp2_dp2 > 0 ) then
-          tmp(1:3) & 
-          = diffusion_zm_lhs( Kw(k), Kw(kp1), nu, & 
-                              gr%invrs_dzt(kp1), gr%invrs_dzt(k), &
-                              gr%invrs_dzm(k), k )
-          zmscr02(k) = -tmp(3)
-          zmscr03(k) = -tmp(2)
-          zmscr04(k) = -tmp(1)
+        if ( irtp2_dp2 + ithlp2_dp2 + irtpthlp_dp2 + iup2_dp2 + ivp2_dp2 > 0 ) then
+
+            do k = 2, gr%nz-1
+                zmscr02(k) = -lhs_diff(3,k)
+                zmscr03(k) = -lhs_diff(2,k)
+                zmscr04(k) = -lhs_diff(1,k)
+            end do
+
         endif
 
-        if ( irtp2_ta + ithlp2_ta + irtpthlp_ta + & 
-             iup2_ta + ivp2_ta > 0 ) then
-          ! Note:  An "over-implicit" weighted time step is applied to this
-          !        term.  A weighting factor of greater than 1 may be used to
-          !        make the term more numerically stable (see note above for
-          !        LHS turbulent advection (ta) term).
-          tmp(1:3) &
-          = gamma_over_implicit_ts &
-            * xpyp_term_ta_pdf_lhs( coef_wpxpyp_implicit(kp1), &
-                                    coef_wpxpyp_implicit(k), &
-                                    rho_ds_zt(kp1), rho_ds_zt(k), &
-                                    invrs_rho_ds_zm(k), &
-                                    gr%invrs_dzm(k), k, &
-                                    l_upwind_xpyp_ta, &
-                                    sgn_turbulent_vel(k), &
-                                    coef_wpxpyp_implicit_zm(kp1), &
-                                    coef_wpxpyp_implicit_zm(k), &
-                                    coef_wpxpyp_implicit_zm(km1), &
-                                    rho_ds_zm(kp1), rho_ds_zm(k), &
-                                    rho_ds_zm(km1), gr%invrs_dzt(kp1), &
-                                    gr%invrs_dzt(k) )
-          zmscr05(k) = -tmp(3)
-          zmscr06(k) = -tmp(2)
-          zmscr07(k) = -tmp(1)
+        if ( irtp2_ta + ithlp2_ta + irtpthlp_ta + iup2_ta + ivp2_ta > 0 ) then
+
+            ! Note:  An "over-implicit" weighted time step is applied to this
+            !        term.  A weighting factor of greater than 1 may be used to
+            !        make the term more numerically stable (see note above for
+            !        LHS turbulent advection (ta) term).
+            do k = 2, gr%nz-1
+                zmscr05(k) = -gamma_over_implicit_ts * lhs_turb(3,k)
+                zmscr06(k) = -gamma_over_implicit_ts * lhs_turb(2,k)
+                zmscr07(k) = -gamma_over_implicit_ts * lhs_turb(1,k)
+            end do
+
         endif
 
-        if ( irtp2_ma + ithlp2_ma + irtpthlp_ma + & 
-             iup2_ma + ivp2_ma > 0 ) then
-          tmp(1:3) & 
-          = term_ma_zm_lhs( wm_zm(k), gr%invrs_dzm(k), k )
-          zmscr08(k) = -tmp(3)
-          zmscr09(k) = -tmp(2)
-          zmscr10(k) = -tmp(1)
+        if ( irtp2_ma + ithlp2_ma + irtpthlp_ma + iup2_ma + ivp2_ma > 0 ) then
+
+            do k = 2, gr%nz-1
+                zmscr08(k) = -lhs_advm(3,k)
+                zmscr09(k) = -lhs_advm(2,k)
+                zmscr10(k) = -lhs_advm(1,k)
+            end do
+
         endif
 
-      endif ! l_stats_samp
-
-    enddo ! k=2..gr%nz-1
+    end if
 
 
     ! Boundary Conditions
@@ -1806,7 +1795,7 @@ module advance_xp2_xpyp_module
     low_bound = 1
     high_bound = gr%nz
 
-    call set_boundary_conditions_lhs( k_mdiag, low_bound, high_bound, lhs )
+    call set_boundary_conditions_lhs( 2, low_bound, high_bound, lhs )
 
     return
 
@@ -2101,7 +2090,7 @@ module advance_xp2_xpyp_module
     return
   end subroutine xp2_xpyp_implicit_stats
 
-  !=============================================================================
+  !==================================================================================
   subroutine xp2_xpyp_uv_rhs( solve_type, dt, l_iter, & ! In
                               coef_wpxp2_implicit, coef_wpxp2_implicit_zm, &! In
                               term_wpxp2_explicit, term_wpxp2_explicit_zm, &! In
@@ -2112,9 +2101,30 @@ module advance_xp2_xpyp_module
                               thv_ds_zm, C4, C5, C14, & ! In
                               rhs ) ! Out
 
-    ! Description:
-    ! Explicit contributions to u'^2 or v'^2
-    !-----------------------------------------------------------------------
+  ! Description:
+  !     Explicit contributions to u'^2 or v'^2
+  ! 
+  ! Notes:
+  !    For LHS turbulent advection (ta) term:
+  !        An "over-implicit" weighted time step is applied to this term.
+  !        The weight of the implicit portion of this term is controlled by
+  !        the factor gamma_over_implicit_ts (abbreviated "gamma" in the
+  !        expression below).  A factor is added to the right-hand side of
+  !        the equation in order to balance a weight that is not equal to 1,
+  !        such that:
+  !             -y(t) * [ gamma * X(t+1) + ( 1 - gamma ) * X(t) ] + RHS;
+  !        where X is the variable that is being solved for in a predictive
+  !        equation (x'^2 or x'y' in this case), y(t) is the linearized
+  !        portion of the term that gets treated implicitly, and RHS is the
+  !        portion of the term that is always treated explicitly.  A weight
+  !        of greater than 1 can be applied to make the term more
+  !        numerically stable.
+  ! 
+  ! 
+  !   --- THIS SUBROUTINE HAS BEEN OPTIMIZED ---
+  !   Significant changes to this routine may adversely affect computational speed
+  !       - Gunther Huebler, Aug. 2018, clubb:ticket:834
+  !----------------------------------------------------------------------------------
 
     use grid_class, only: & 
         gr ! Variable(s)
@@ -2128,7 +2138,9 @@ module advance_xp2_xpyp_module
         zero
 
     use turbulent_adv_pdf, only: &
-        xpyp_term_ta_pdf_lhs, & ! Procedure(s)
+        xpyp_term_ta_pdf_lhs_all, & ! Procedure(s)
+        xpyp_term_ta_pdf_lhs,     &
+        xpyp_term_ta_pdf_rhs_all, &
         xpyp_term_ta_pdf_rhs
 
     use model_flags, only: &
@@ -2160,7 +2172,7 @@ module advance_xp2_xpyp_module
 
     implicit none
 
-    ! Input Variables
+    !------------------- Input Variables -------------------
     integer, intent(in) :: solve_type
 
     real( kind = core_rknd ), intent(in) :: & 
@@ -2197,14 +2209,14 @@ module advance_xp2_xpyp_module
       C5,  & ! Model parameter C_5                         [-]
       C14    ! Model parameter C_{14}                      [-]
 
-    ! Output Variable
-    real( kind = core_rknd ), dimension(gr%nz,1), intent(out) :: & 
+    !------------------- Output Variables -------------------
+    real( kind = core_rknd ), dimension(gr%nz), intent(out) :: & 
       rhs    ! Explicit contributions to x variance/covariance terms
 
-    ! Local Variables
+    !---------------- Local Variables -------------------
 
     ! Array indices
-    integer :: k, kp1, km1
+    integer :: k
 
     ! For "over-implicit" weighted time step.
     ! This vector holds output from the LHS (implicit) portion of a term at a
@@ -2213,7 +2225,9 @@ module advance_xp2_xpyp_module
     ! means that the LHS contribution is given extra weight (>1) in order to
     ! increase numerical stability.  A weighted factor must then be applied to
     ! the RHS in order to balance the weight.
-    real( kind = core_rknd ), dimension(3) :: lhs_fnc_output
+    real( kind = core_rknd ), dimension(3,gr%nz) :: lhs_turb
+
+    real( kind = core_rknd ), dimension(gr%nz) :: rhs_turb  ! Turbulent advection terms
 
     real( kind = core_rknd ) :: tmp
 
@@ -2247,252 +2261,143 @@ module advance_xp2_xpyp_module
       ixapxbp_pr2 = 0
     end select
 
+    
+    ! Calculate RHS turbulent advection (ta) terms.
+    call xpyp_term_ta_pdf_rhs_all( term_wpxp2_explicit(:),            & ! Intent(in)
+                                   rho_ds_zt(:),                      & ! Intent(in)
+                                   invrs_rho_ds_zm(:),                & ! Intent(in)
+                                   gr%invrs_dzm(:),                   & ! Intent(in)
+                                   l_upwind_xpyp_ta,                  & ! Intent(in)
+                                   sgn_turbulent_vel(:),              & ! Intent(in)
+                                   term_wpxp2_explicit_zm(:),         & ! Intent(in)
+                                   rho_ds_zm(:),                      & ! Intent(in)
+                                   gr%invrs_dzt(:),                   & ! Intent(in)
+                                   rhs_turb(:)                        ) ! Intent(out
 
-    ! Initialize RHS vector to 0.
-    rhs = zero
+    ! Calculate RHS contribution from "over-implicit" weighted time step
+    ! for LHS turbulent advection (ta) term. See notes above
+    call xpyp_term_ta_pdf_lhs_all( coef_wpxp2_implicit(:),              & ! Intent(in)
+                                   rho_ds_zt(:),                        & ! Intent(in)
+                                   invrs_rho_ds_zm(:),                  & ! Intent(in)
+                                   gr%invrs_dzm(:),                     & ! Intent(in)
+                                   l_upwind_xpyp_ta,                    & ! Intent(in)
+                                   sgn_turbulent_vel(:),                & ! Intent(in)
+                                   coef_wpxp2_implicit_zm(:),           & ! Intent(in)
+                                   rho_ds_zm(:),                        & ! Intent(in)
+                                   gr%invrs_dzt(:),                     & ! Intent(in)
+                                   lhs_turb(:,:)                        ) ! Intent(out)
 
-    do k = 2, gr%nz-1, 1
+    ! Finish RHS calc with vectorizable loop, functions are in source file and should
+    ! be inlined with an -O2 or above compiler optimization flag
+    do k = 2, gr%nz-1
 
-      km1 = max( k-1, 1 )
-      kp1 = min( k+1, gr%nz )
+        rhs(k) = rhs_turb(k) + ( one - gamma_over_implicit_ts ) &
+                             * ( - lhs_turb(1,k) * xap2(k+1) &
+                                 - lhs_turb(2,k) * xap2(k) &
+                                 - lhs_turb(3,k) * xap2(k-1) )
 
-      ! RHS turbulent advection (ta) term.
-      rhs(k,1) &
-      = rhs(k,1) &
-        + xpyp_term_ta_pdf_rhs( term_wpxp2_explicit(kp1), &
-                                term_wpxp2_explicit(k), &
-                                rho_ds_zt(kp1), rho_ds_zt(k), &
-                                invrs_rho_ds_zm(k), &
-                                gr%invrs_dzm(k), &
-                                l_upwind_xpyp_ta, &
-                                sgn_turbulent_vel(k), &
-                                term_wpxp2_explicit_zm(kp1), &
-                                term_wpxp2_explicit_zm(k), &
-                                term_wpxp2_explicit_zm(km1), &
-                                rho_ds_zm(kp1), rho_ds_zm(k), &
-                                rho_ds_zm(km1), gr%invrs_dzt(kp1), &
-                                gr%invrs_dzt(k) )
+        ! RHS turbulent production (tp) term.
+        ! https://arxiv.org/pdf/1711.03675v1.pdf#nameddest=url:up2_pr 
+        rhs(k) = rhs(k) + ( one - C5 ) * term_tp( xam(k+1), xam(k), xam(k+1), xam(k), & 
+                                                wpxap(k), wpxap(k), gr%invrs_dzm(k) )
 
-      ! RHS contribution from "over-implicit" weighted time step
-      ! for LHS turbulent advection (ta) term.
-      !
-      ! Note:  An "over-implicit" weighted time step is applied to this term.
-      !        The weight of the implicit portion of this term is controlled by
-      !        the factor gamma_over_implicit_ts (abbreviated "gamma" in the
-      !        expression below).  A factor is added to the right-hand side of
-      !        the equation in order to balance a weight that is not equal to 1,
-      !        such that:
-      !             -y(t) * [ gamma * X(t+1) + ( 1 - gamma ) * X(t) ] + RHS;
-      !        where X is the variable that is being solved for in a predictive
-      !        equation (x'^2 or x'y' in this case), y(t) is the linearized
-      !        portion of the term that gets treated implicitly, and RHS is the
-      !        portion of the term that is always treated explicitly.  A weight
-      !        of greater than 1 can be applied to make the term more
-      !        numerically stable.
-      lhs_fnc_output(1:3) &
-      = xpyp_term_ta_pdf_lhs( coef_wpxp2_implicit(kp1), &
-                              coef_wpxp2_implicit(k), &
-                              rho_ds_zt(kp1), rho_ds_zt(k), &
-                              invrs_rho_ds_zm(k), &
-                              gr%invrs_dzm(k), k, &
-                              l_upwind_xpyp_ta, &
-                              sgn_turbulent_vel(k), &
-                              coef_wpxp2_implicit_zm(kp1), &
-                              coef_wpxp2_implicit_zm(k), &
-                              coef_wpxp2_implicit_zm(km1), &
-                              rho_ds_zm(kp1), rho_ds_zm(k), &
-                              rho_ds_zm(km1), gr%invrs_dzt(kp1), &
-                              gr%invrs_dzt(k) )
+        ! RHS pressure term 1 (pr1) (and dissipation term 1 (dp1)).
+        rhs(k) = rhs(k) + term_pr1( C4, C14, xbp2(k), wp2(k), tau_zm(k) )
 
-      rhs(k,1) &
-      = rhs(k,1) &
-        + ( one - gamma_over_implicit_ts ) &
-          * ( - lhs_fnc_output(1) * xap2(kp1) &
-              - lhs_fnc_output(2) * xap2(k) &
-              - lhs_fnc_output(3) * xap2(km1) )
+        ! RHS contribution from "over-implicit" weighted time step
+        ! for LHS dissipation term 1 (dp1) and pressure term 1 (pr1).
+        rhs(k) = rhs(k) + ( one - gamma_over_implicit_ts ) &
+                        * ( - term_dp1_lhs( C4_C14_1d(k), tau_zm(k) ) * xap2(k) )
 
-      ! RHS turbulent production (tp) term.
-      ! Reference:
-      ! https://arxiv.org/pdf/1711.03675v1.pdf#nameddest=url:up2_pr 
-      rhs(k,1) &
-      = rhs(k,1) &
-      + ( one - C5 ) & 
-        * term_tp( xam(kp1), xam(k), xam(kp1), xam(k), & 
-                   wpxap(k), wpxap(k), gr%invrs_dzm(k) )
+        ! RHS pressure term 2 (pr2).
+        rhs(k) = rhs(k) + term_pr2( C5, thv_ds_zm(k), wpthvp(k), wpxap(k), wpxbp(k), &
+                                  xam, xbm, gr%invrs_dzm(k), k+1, k, &
+                                  Lscale(k+1), Lscale(k), wp2_zt(k+1), wp2_zt(k) )
+    enddo ! k=2..gr%nz-1
 
-      ! RHS pressure term 1 (pr1) (and dissipation term 1 (dp1)).
-      rhs(k,1) &
-      = rhs(k,1) &
-        + term_pr1( C4, C14, xbp2(k), wp2(k), tau_zm(k) )
 
-      ! RHS contribution from "over-implicit" weighted time step
-      ! for LHS dissipation term 1 (dp1) and pressure term 1 (pr1).
-      !
-      ! Note:  An "over-implicit" weighted time step is applied to these terms.
-      lhs_fnc_output(1) = term_dp1_lhs( C4_C14_1d(k), tau_zm(k) )
+    ! RHS time tendency.
+    if ( l_iter ) then
+        do k = 2, gr%nz-1
+            rhs(k) = rhs(k) + one/dt * xap2(k)
+        end do
+    endif
 
-      rhs(k,1) &
-      = rhs(k,1) &
-        + ( one - gamma_over_implicit_ts ) &
-          * ( - lhs_fnc_output(1) * xap2(k) )
 
-      ! RHS pressure term 2 (pr2).
-      rhs(k,1) &
-      = rhs(k,1) &
-        + term_pr2( C5, thv_ds_zm(k), wpthvp(k), wpxap(k), wpxbp(k), &
-                    xam, xbm, gr%invrs_dzm(k), kp1, k, &
-                    Lscale(kp1), Lscale(k), wp2_zt(kp1), wp2_zt(k) )
-
-      ! RHS time tendency.
-      if ( l_iter ) then
-         rhs(k,1) = rhs(k,1) + one/dt * xap2(k)
-      endif
-
-      if ( l_stats_samp ) then
+    if ( l_stats_samp ) then
 
         ! Statistics: explicit contributions for up2 or vp2.
 
         ! x'y' term ta has both implicit and explicit components; call
         ! stat_begin_update_pt.  Since stat_begin_update_pt automatically
         ! subtracts the value sent in, reverse the sign on term_ta_ADG1_rhs.
-        call stat_begin_update_pt( ixapxbp_ta, k, &    ! Intent(in)
-                 -xpyp_term_ta_pdf_rhs( term_wpxp2_explicit(kp1), & ! Intent(in)
-                                        term_wpxp2_explicit(k), &
-                                        rho_ds_zt(kp1), rho_ds_zt(k), &
-                                        invrs_rho_ds_zm(k), &
-                                        gr%invrs_dzm(k), &
-                                        l_upwind_xpyp_ta, &
-                                        sgn_turbulent_vel(k), &
-                                        term_wpxp2_explicit_zm(kp1), &
-                                        term_wpxp2_explicit_zm(k), &
-                                        term_wpxp2_explicit_zm(km1), &
-                                        rho_ds_zm(kp1), rho_ds_zm(k), &
-                                        rho_ds_zm(km1), gr%invrs_dzt(kp1), &
-                                        gr%invrs_dzt(k) ), &
-                                   stats_zm )          ! Intent(inout)
 
-        ! Note:  An "over-implicit" weighted time step is applied to this term.
-        !        A weighting factor of greater than 1 may be used to make the
-        !        term more numerically stable (see note above for RHS turbulent
-        !        advection (ta) term).
-        lhs_fnc_output(1:3) &
-        = xpyp_term_ta_pdf_lhs( coef_wpxp2_implicit(kp1), &
-                                coef_wpxp2_implicit(k), &
-                                rho_ds_zt(kp1), rho_ds_zt(k), &
-                                invrs_rho_ds_zm(k), &
-                                gr%invrs_dzm(k), k, &
-                                l_upwind_xpyp_ta, &
-                                sgn_turbulent_vel(k), &
-                                coef_wpxp2_implicit_zm(kp1), &
-                                coef_wpxp2_implicit_zm(k), &
-                                coef_wpxp2_implicit_zm(km1), &
-                                rho_ds_zm(kp1), rho_ds_zm(k), &
-                                rho_ds_zm(km1), gr%invrs_dzt(kp1), &
-                                gr%invrs_dzt(k) )
+        do k = 2, gr%nz-1
 
-        call stat_modify_pt( ixapxbp_ta, k,  &          ! Intent(in)
-                             + ( one - gamma_over_implicit_ts )  & ! Intent(in)
-                               * ( - lhs_fnc_output(1) * xap2(kp1) &
-                                   - lhs_fnc_output(2) * xap2(k) &
-                                   - lhs_fnc_output(3) * xap2(km1) ), &
-                             stats_zm )                 ! Intent(inout)
+            call stat_begin_update_pt( ixapxbp_ta, k, &    ! Intent(in)
+                                       -rhs_turb(k), &
+                                       stats_zm )          ! Intent(inout)
 
-        if ( ixapxbp_dp1 > 0 ) then
-          ! Note:  The function term_pr1 is the explicit component of a
-          !        semi-implicit solution to dp1 and pr1.
-          ! Record the statistical contribution of the implicit component of
-          ! term dp1 for up2 or vp2.  This will overwrite anything set
-          ! statistically in xp2_xpyp_lhs for this term.
-          ! Note:  To find the contribution of x'y' term dp1, substitute
-          !        (2/3)*C_4 for the C_n input to function term_dp1_lhs.
-          ! Note:  An "over-implicit" weighted time step is applied to this
-          !        term.  A weighting factor of greater than 1 may be used to
-          !        make the term more numerically stable (see note above for
-          !        RHS turbulent advection (ta) term).
-          tmp  &
-          = gamma_over_implicit_ts  &
-          * term_dp1_lhs( two_thirds*C4, tau_zm(k) )
-          zmscr01(k) = -tmp
-          ! Statistical contribution of the explicit component of term dp1 for
-          ! up2 or vp2.
-          ! x'y' term dp1 has both implicit and explicit components; call
-          ! stat_begin_update_pt.  Since stat_begin_update_pt automatically
-          ! subtracts the value sent in, reverse the sign on term_pr1.
-          ! Note:  To find the contribution of x'y' term dp1, substitute 0 for
-          !        the C_14 input to function term_pr1.
-          call stat_begin_update_pt( ixapxbp_dp1, k, & ! Intent(in)
-               -term_pr1( C4, zero, xbp2(k), wp2(k), tau_zm(k) ), & ! Intent(in)
-                                     stats_zm )        ! Intent(inout)
+            call stat_modify_pt( ixapxbp_ta, k,  &          ! Intent(in)
+                                 + ( one - gamma_over_implicit_ts )  & ! Intent(in)
+                                   * ( - lhs_turb(1,k) * xap2(k+1) &
+                                       - lhs_turb(2,k) * xap2(k) &
+                                       - lhs_turb(3,k) * xap2(k-1) ), &
+                                 stats_zm )                 ! Intent(inout)
 
-          ! Note:  An "over-implicit" weighted time step is applied to this
-          !        term.  A weighting factor of greater than 1 may be used to
-          !        make the term more numerically stable (see note above for
-          !        RHS turbulent advection (ta) term).
-          lhs_fnc_output(1)  &
-          = term_dp1_lhs( two_thirds*C4, tau_zm(k) )
-          call stat_modify_pt( ixapxbp_dp1, k, &        ! Intent(in)
-                + ( one - gamma_over_implicit_ts )  &   ! Intent(in)
-                * ( - lhs_fnc_output(1) * xap2(k) ),  & ! Intent(in)
-                                     stats_zm )         ! Intent(inout)
+            if ( ixapxbp_dp1 > 0 ) then
 
-        endif
+              tmp  &
+              = gamma_over_implicit_ts  &
+              * term_dp1_lhs( two_thirds*C4, tau_zm(k) )
+              zmscr01(k) = -tmp
+              call stat_begin_update_pt( ixapxbp_dp1, k, & ! Intent(in)
+                   -term_pr1( C4, zero, xbp2(k), wp2(k), tau_zm(k) ), & ! Intent(in)
+                                         stats_zm )        ! Intent(inout)
 
-        if ( ixapxbp_pr1 > 0 ) then
-          ! Note:  The function term_pr1 is the explicit component of a
-          !        semi-implicit solution to dp1 and pr1.
-          ! Statistical contribution of the implicit component of term pr1 for
-          ! up2 or vp2.
-          ! Note:  To find the contribution of x'y' term pr1, substitute
-          !        (1/3)*C_14 for the C_n input to function term_dp1_lhs.
-          ! Note:  An "over-implicit" weighted time step is applied to this
-          !        term.  A weighting factor of greater than 1 may be used to
-          !        make the term more numerically stable (see note above for
-          !        RHS turbulent advection (ta) term).
-          tmp  &
-          = gamma_over_implicit_ts  &
-          * term_dp1_lhs( one_third*C14, tau_zm(k) )
-          zmscr11(k) = -tmp
-          ! Statistical contribution of the explicit component of term pr1 for
-          ! up2 or vp2.
-          ! x'y' term pr1 has both implicit and explicit components; call
-          ! stat_begin_update_pt.  Since stat_begin_update_pt automatically
-          ! subtracts the value sent in, reverse the sign on term_pr1.
-          ! Note:  To find the contribution of x'y' term pr1, substitute 0 for
-          !        the C_4 input to function term_pr1.
-          call stat_begin_update_pt( ixapxbp_pr1, k, & ! Intent(in)  
-               -term_pr1( zero, C14, xbp2(k), wp2(k), tau_zm(k) ), &! Intent(in)
-                                     stats_zm )        ! Intent(inout)
+              lhs_turb(1,k)  &
+              = term_dp1_lhs( two_thirds*C4, tau_zm(k) )
+              call stat_modify_pt( ixapxbp_dp1, k, &        ! Intent(in)
+                    + ( one - gamma_over_implicit_ts )  &   ! Intent(in)
+                    * ( - lhs_turb(1,k) * xap2(k) ),  & ! Intent(in)
+                                         stats_zm )         ! Intent(inout)
 
-          ! Note:  An "over-implicit" weighted time step is applied to this
-          !        term.  A weighting factor of greater than 1 may be used to
-          !        make the term more numerically stable (see note above for
-          !        RHS turbulent advection (ta) term).
-          lhs_fnc_output(1)  &
-          = term_dp1_lhs( one_third*C14, tau_zm(k) )
-          call stat_modify_pt( ixapxbp_pr1, k, &        ! Intent(in)
-                + ( one - gamma_over_implicit_ts )  &   ! Intent(in)
-                * ( - lhs_fnc_output(1) * xap2(k) ),  & ! Intent(in)
-                                     stats_zm )         ! Intent(inout)
+            endif
 
-        endif
+            if ( ixapxbp_pr1 > 0 ) then
+              tmp  &
+              = gamma_over_implicit_ts  &
+              * term_dp1_lhs( one_third*C14, tau_zm(k) )
+              zmscr11(k) = -tmp
+              call stat_begin_update_pt( ixapxbp_pr1, k, & ! Intent(in)  
+                   -term_pr1( zero, C14, xbp2(k), wp2(k), tau_zm(k) ), &! Intent(in)
+                                         stats_zm )        ! Intent(inout)
 
-        ! x'y' term pr2 is completely explicit; call stat_update_var_pt.
-        call stat_update_var_pt( ixapxbp_pr2, k, & ! Intent(in)
-               term_pr2( C5, thv_ds_zm(k), wpthvp(k), wpxap(k), wpxbp(k), & ! In
-                         xam, xbm, gr%invrs_dzm(k), kp1, k, &  
-                         Lscale(kp1), Lscale(k), wp2_zt(kp1), wp2_zt(k) ), &
-               stats_zm )                          ! Intent(inout)
+              lhs_turb(1,k)  &
+              = term_dp1_lhs( one_third*C14, tau_zm(k) )
+              call stat_modify_pt( ixapxbp_pr1, k, &        ! Intent(in)
+                    + ( one - gamma_over_implicit_ts )  &   ! Intent(in)
+                    * ( - lhs_turb(1,k) * xap2(k) ),  & ! Intent(in)
+                                         stats_zm )         ! Intent(inout)
 
-        ! x'y' term tp is completely explicit; call stat_update_var_pt.
-        call stat_update_var_pt( ixapxbp_tp, k, & ! Intent(in) 
-              ( one - C5 ) &                      ! Intent(in)
-               * term_tp( xam(kp1), xam(k), xam(kp1), xam(k), &
-                          wpxap(k), wpxap(k), gr%invrs_dzm(k) ), & 
-                                 stats_zm )       ! Intent(inout)
+            endif
+
+            ! x'y' term pr2 is completely explicit; call stat_update_var_pt.
+            call stat_update_var_pt( ixapxbp_pr2, k, & ! Intent(in)
+                   term_pr2( C5, thv_ds_zm(k), wpthvp(k), wpxap(k), wpxbp(k), & ! In
+                             xam, xbm, gr%invrs_dzm(k), k+1, k, &  
+                             Lscale(k+1), Lscale(k), wp2_zt(k+1), wp2_zt(k) ), &
+                   stats_zm )                          ! Intent(inout)
+
+            ! x'y' term tp is completely explicit; call stat_update_var_pt.
+            call stat_update_var_pt( ixapxbp_tp, k, & ! Intent(in) 
+                  ( one - C5 ) &                      ! Intent(in)
+                   * term_tp( xam(k+1), xam(k), xam(k+1), xam(k), &
+                              wpxap(k), wpxap(k), gr%invrs_dzm(k) ), & 
+                                     stats_zm )       ! Intent(inout)
+        end do
 
       endif ! l_stats_samp
-
-    enddo ! k=2..gr%nz-1
 
 
     ! Boundary Conditions
@@ -2501,10 +2406,10 @@ module advance_xp2_xpyp_module
     ! set to their respective threshold minimum values at the top boundary.
     ! Fixed-point boundary conditions are used for the variances.
 
-    rhs(1,1) = xap2(1)
+    rhs(1) = xap2(1)
     ! The value of u'^2 or v'^2 at the upper boundary will be set to the
     ! threshold minimum value of w_tol_sqd.
-    rhs(gr%nz,1) = w_tol_sqd
+    rhs(gr%nz) = w_tol_sqd
 
     return
   end subroutine xp2_xpyp_uv_rhs
@@ -2519,10 +2424,30 @@ module advance_xp2_xpyp_module
                            Cn, tau_zm, threshold, & ! In
                            rhs ) ! Out
 
-    ! Description:
-    ! Explicit contributions to r_t'^2, th_l'^2, r_t'th_l', sclr'r_t',
-    ! sclr'th_l', or sclr'^2.
-    !-----------------------------------------------------------------------
+  ! Description:
+  !   Explicit contributions to r_t'^2, th_l'^2, r_t'th_l', sclr'r_t',
+  !   sclr'th_l', or sclr'^2.
+  ! 
+  !   Note:  
+  !     For LHS turbulent advection term:
+  !        An "over-implicit" weighted time step is applied to this term.
+  !        The weight of the implicit portion of this term is controlled by
+  !        the factor gamma_over_implicit_ts (abbreviated "gamma" in the
+  !        expression below).  A factor is added to the right-hand side of
+  !        the equation in order to balance a weight that is not equal to 1,
+  !        such that:
+  !             -y(t) * [ gamma * X(t+1) + ( 1 - gamma ) * X(t) ] + RHS;
+  !        where X is the variable that is being solved for in a predictive
+  !        equation (x'^2 or x'y' in this case), y(t) is the linearized
+  !        portion of the term that gets treated implicitly, and RHS is the
+  !        portion of the term that is always treated explicitly.  A weight
+  !        of greater than 1 can be applied to make the term more
+  !        numerically stable.
+  ! 
+  !   --- THIS SUBROUTINE HAS BEEN OPTIMIZED ---
+  !   Significant changes to this routine may adversely affect computational speed
+  !       - Gunther Huebler, Aug. 2018, clubb:ticket:834
+  !----------------------------------------------------------------------------------
 
     use grid_class, only: & 
         gr ! Variable(s)
@@ -2533,7 +2458,9 @@ module advance_xp2_xpyp_module
         zero
 
     use turbulent_adv_pdf, only: &
-        xpyp_term_ta_pdf_lhs, & ! Procedure(s)
+        xpyp_term_ta_pdf_lhs_all, & ! Procedure(s)
+        xpyp_term_ta_pdf_lhs,     &
+        xpyp_term_ta_pdf_rhs_all, &
         xpyp_term_ta_pdf_rhs
 
     use model_flags, only: &
@@ -2569,7 +2496,7 @@ module advance_xp2_xpyp_module
 
     implicit none
 
-    ! Input Variables
+    !------------------- Input Variables -------------------
     integer, intent(in) :: solve_type
 
     real( kind = core_rknd ), intent(in) :: & 
@@ -2600,14 +2527,17 @@ module advance_xp2_xpyp_module
       threshold    ! Smallest allowable mag. value for x_a'x_b'  [{x_am units}
                    !                                              *{x_bm units}]
 
-    ! Output Variable
-    real( kind = core_rknd ), dimension(gr%nz,1), intent(out) :: & 
+    !------------------- Output Variables -------------------
+    real( kind = core_rknd ), dimension(gr%nz), intent(out) :: & 
       rhs     ! Explicit contributions to x variance/covariance terms
 
-    ! Local Variables
+    !---------------- Local Variables -------------------
     real( kind = core_rknd ) :: &
       turbulent_prod, & ! Turbulent production term  [{x_a units}*{x_b units}/s]
       xp2_mc_limiter    ! Largest allowable (negative) mc effect
+
+    real( kind = core_rknd ), dimension(gr%nz) :: &
+      rhs_turb
 
     logical :: &
       l_clip_large_neg_mc = .false.  ! Flag to clip excessively large mc values.
@@ -2622,7 +2552,7 @@ module advance_xp2_xpyp_module
       mc_xp2_deplete_frac = 0.75_core_rknd
 
     ! Array indices
-    integer :: k, kp1, km1, k_low, k_high
+    integer :: k, k_low, k_high
 
     ! For "over-implicit" weighted time step.
     ! This vector holds output from the LHS (implicit) portion of a term at a
@@ -2631,7 +2561,7 @@ module advance_xp2_xpyp_module
     ! means that the LHS contribution is given extra weight (>1) in order to
     ! increase numerical stability.  A weighted factor must then be applied to
     ! the RHS in order to balance the weight.
-    real( kind = core_rknd ), dimension(3) :: lhs_fnc_output
+    real( kind = core_rknd ), dimension(3,gr%nz) :: lhs_turb
 
     integer :: & 
       ixapxbp_ta, & 
@@ -2674,229 +2604,179 @@ module advance_xp2_xpyp_module
       ixapxbp_f   = 0
     end select
 
+    ! Calculate RHS turbulent advection (ta) term
+    call xpyp_term_ta_pdf_rhs_all( term_wpxpyp_explicit(:),           & ! Intent(in)
+                                   rho_ds_zt(:),                      & ! Intent(in)
+                                   invrs_rho_ds_zm(:),                & ! Intent(in)
+                                   gr%invrs_dzm(:),                   & ! Intent(in)
+                                   l_upwind_xpyp_ta,                  & ! Intent(in)
+                                   sgn_turbulent_vel(:),              & ! Intent(in)
+                                   term_wpxpyp_explicit_zm(:),        & ! Intent(in)
+                                   rho_ds_zm(:),                      & ! Intent(in)
+                                   gr%invrs_dzt(:),                   & ! Intent(in)
+                                   rhs_turb(:)                        ) ! Intent(out
+    
+    ! RHS contribution from "over-implicit" weighted time step
+    ! for LHS turbulent advection (ta) term. See notes above
+    call xpyp_term_ta_pdf_lhs_all( coef_wpxpyp_implicit(:),             & ! Intent(in)
+                                   rho_ds_zt(:),                        & ! Intent(in)
+                                   invrs_rho_ds_zm(:),                  & ! Intent(in)
+                                   gr%invrs_dzm(:),                     & ! Intent(in)
+                                   l_upwind_xpyp_ta,                    & ! Intent(in)
+                                   sgn_turbulent_vel(:),                & ! Intent(in)
+                                   coef_wpxpyp_implicit_zm(:),          & ! Intent(in)
+                                   rho_ds_zm(:),                        & ! Intent(in)
+                                   gr%invrs_dzt(:),                     & ! Intent(in)
+                                   lhs_turb(:,:)                        ) ! Intent(out)
 
-    ! Initialize RHS vector to 0.
-    rhs = zero
+    ! Finish RHS calc with vectorizable loop, functions are in source file and should
+    ! be inlined with an -O2 or above compiler optimization flag
+    do k = 2, gr%nz-1
 
-    do k = 2, gr%nz-1, 1
-
-      km1 = max( k-1, 1 )
-      kp1 = min( k+1, gr%nz )
-
-      ! RHS turbulent advection (ta) term.
-      rhs(k,1) &
-      = rhs(k,1) &
-        + xpyp_term_ta_pdf_rhs( term_wpxpyp_explicit(kp1), &
-                                term_wpxpyp_explicit(k), &
-                                rho_ds_zt(kp1), rho_ds_zt(k), &
-                                invrs_rho_ds_zm(k), &
-                                gr%invrs_dzm(k), &
-                                l_upwind_xpyp_ta, &
-                                sgn_turbulent_vel(k), &
-                                term_wpxpyp_explicit_zm(kp1), &
-                                term_wpxpyp_explicit_zm(k), &
-                                term_wpxpyp_explicit_zm(km1), &
-                                rho_ds_zm(kp1), rho_ds_zm(k), &
-                                rho_ds_zm(km1), gr%invrs_dzt(kp1), &
-                                gr%invrs_dzt(k) )
-
-      ! RHS contribution from "over-implicit" weighted time step
-      ! for LHS turbulent advection (ta) term.
-      !
-      ! Note:  An "over-implicit" weighted time step is applied to this term.
-      !        The weight of the implicit portion of this term is controlled by
-      !        the factor gamma_over_implicit_ts (abbreviated "gamma" in the
-      !        expression below).  A factor is added to the right-hand side of
-      !        the equation in order to balance a weight that is not equal to 1,
-      !        such that:
-      !             -y(t) * [ gamma * X(t+1) + ( 1 - gamma ) * X(t) ] + RHS;
-      !        where X is the variable that is being solved for in a predictive
-      !        equation (x'^2 or x'y' in this case), y(t) is the linearized
-      !        portion of the term that gets treated implicitly, and RHS is the
-      !        portion of the term that is always treated explicitly.  A weight
-      !        of greater than 1 can be applied to make the term more
-      !        numerically stable.
-      lhs_fnc_output(1:3) &
-      = xpyp_term_ta_pdf_lhs( coef_wpxpyp_implicit(kp1), &
-                              coef_wpxpyp_implicit(k), &
-                              rho_ds_zt(kp1), rho_ds_zt(k), &
-                              invrs_rho_ds_zm(k), &
-                              gr%invrs_dzm(k), k, &
-                              l_upwind_xpyp_ta, &
-                              sgn_turbulent_vel(k), &
-                              coef_wpxpyp_implicit_zm(kp1), &
-                              coef_wpxpyp_implicit_zm(k), &
-                              coef_wpxpyp_implicit_zm(km1), &
-                              rho_ds_zm(kp1), rho_ds_zm(k), &
-                              rho_ds_zm(km1), gr%invrs_dzt(kp1), &
-                              gr%invrs_dzt(k) )
-
-      rhs(k,1) &
-      = rhs(k,1) &
-        + ( one - gamma_over_implicit_ts ) &
-          * ( - lhs_fnc_output(1) * xapxbp(kp1) &
-              - lhs_fnc_output(2) * xapxbp(k) &
-              - lhs_fnc_output(3) * xapxbp(km1) )
+      rhs(k) = rhs_turb(k) + ( one - gamma_over_implicit_ts ) &
+                           * ( - lhs_turb(1,k) * xapxbp(k+1) &
+                               - lhs_turb(2,k) * xapxbp(k) &
+                               - lhs_turb(3,k) * xapxbp(k-1) )
 
       ! RHS turbulent production (tp) term.
-      turbulent_prod &
-      = term_tp( xam(kp1), xam(k), xbm(kp1), xbm(k), & 
-                 wpxbp(k), wpxap(k), gr%invrs_dzm(k) )
-
-      rhs(k,1) = rhs(k,1) + turbulent_prod
+      rhs(k) = rhs(k) + term_tp( xam(k+1), xam(k), xbm(k+1), xbm(k), &
+                                 wpxbp(k), wpxap(k), gr%invrs_dzm(k) )
 
       ! RHS dissipation term 1 (dp1)
-      rhs(k,1) &
-      = rhs(k,1) + term_dp1_rhs( Cn(k), tau_zm(k), threshold )
+      rhs(k) = rhs(k) + term_dp1_rhs( Cn(k), tau_zm(k), threshold )
 
       ! RHS contribution from "over-implicit" weighted time step
       ! for LHS dissipation term 1 (dp1).
-      !
-      ! Note:  An "over-implicit" weighted time step is applied to this term.
-      lhs_fnc_output(1) = term_dp1_lhs( Cn(k), tau_zm(k) )
+      rhs(k) = rhs(k)  + ( one - gamma_over_implicit_ts ) &
+                       * ( - term_dp1_lhs( Cn(k), tau_zm(k) ) * xapxbp(k) )
+    end do
 
-      rhs(k,1)  &
-      = rhs(k,1)  &
-        + ( one - gamma_over_implicit_ts )  &
-          * ( - lhs_fnc_output(1) * xapxbp(k) )
+    ! RHS <x'y'> forcing.
+    ! Note: <x'y'> forcing includes the effects of microphysics on <x'y'>.
+    if ( l_clip_large_neg_mc &
+         .and. ( solve_type == xp2_xpyp_rtp2 .or. solve_type == xp2_xpyp_thlp2 ) ) then
 
-      ! RHS time tendency.
-      if ( l_iter ) then
-        rhs(k,1) = rhs(k,1) + one/dt * xapxbp(k)
-      endif
+        do k = 2, gr%nz-1
 
-      ! RHS <x'y'> forcing.
-      ! Note: <x'y'> forcing includes the effects of microphysics on <x'y'>.
-      if ( l_clip_large_neg_mc &
-           .and. ( solve_type == xp2_xpyp_rtp2 &
-                   .or. solve_type == xp2_xpyp_thlp2 ) ) then
-         ! Limit the variance-depleting effects of excessively large
-         ! microphysics terms on rtp2 and thlp2 in order to reduce oscillations.
-         if ( turbulent_prod >= zero ) then
-            ! Microphysics is allowed to deplete turbulent production and a
-            ! fraction of the variance, determined by mc_xp2_deplete_frac, down
-            ! to the threshold.
-            xp2_mc_limiter = - mc_xp2_deplete_frac &
+            turbulent_prod = term_tp( xam(k+1), xam(k), xbm(k+1), xbm(k), &
+                                      wpxbp(k), wpxap(k), gr%invrs_dzm(k) )
+
+            ! Limit the variance-depleting effects of excessively large
+            ! microphysics terms on rtp2 and thlp2 in order to reduce oscillations.
+            if ( turbulent_prod >= zero ) then
+
+                ! Microphysics is allowed to deplete turbulent production and a
+                ! fraction of the variance, determined by mc_xp2_deplete_frac, down
+                ! to the threshold.
+                xp2_mc_limiter = - mc_xp2_deplete_frac &
                                * ( xapxbp(k) - threshold ) / dt &
-                             - turbulent_prod
-         else ! turbulent_prod < 0
-            ! Microphysics is allowed to deplete a fraction of the variance,
-            ! determined by mc_xp2_deplete_frac, down to the threshold.
-            xp2_mc_limiter = - mc_xp2_deplete_frac &
+                               - turbulent_prod
+            else
+            
+                ! Microphysics is allowed to deplete a fraction of the variance,
+                ! determined by mc_xp2_deplete_frac, down to the threshold.
+                xp2_mc_limiter = - mc_xp2_deplete_frac &
                                * ( xapxbp(k) - threshold ) / dt
-         endif
-         ! Note: the value of xp2_mc_limiter is always negative.
-         rhs(k,1) = rhs(k,1) + max( xpyp_forcing(k), xp2_mc_limiter )
-      else
-         rhs(k,1) = rhs(k,1) + xpyp_forcing(k)
-      endif ! l_clip_large_neg_mc
+            endif
+
+            ! Note: the value of xp2_mc_limiter is always negative.
+            rhs(k) = rhs(k) + max( xpyp_forcing(k), xp2_mc_limiter )
+
+        end do
+
+    else
+
+        do k = 2, gr%nz-1
+            rhs(k) = rhs(k) + xpyp_forcing(k)
+        end do
+
+    endif 
+
+    
+    ! RHS time tendency.
+    if ( l_iter ) then
+        do k = 2, gr%nz-1, 1
+            rhs(k) = rhs(k) + one/dt * xapxbp(k)
+        end do
+    endif
 
 
-      if ( l_stats_samp ) then
+    if ( l_stats_samp ) then
 
-        ! Statistics: explicit contributions for rtp2, thlp2, or rtpthlp.
+        do k = 2, gr%nz-1
 
-        ! <x'y'> term ta has both implicit and explicit components; call
-        ! stat_begin_update_pt.  Since stat_begin_update_pt automatically
-        ! subtracts the value sent in, reverse the sign on term_ta_explicit_rhs.
-        call stat_begin_update_pt( ixapxbp_ta, k, & ! Intent(in)
-                 -xpyp_term_ta_pdf_rhs( term_wpxpyp_explicit(kp1), &! Intent(in)
-                                        term_wpxpyp_explicit(k), &
-                                        rho_ds_zt(kp1), rho_ds_zt(k), &
-                                        invrs_rho_ds_zm(k), &
-                                        gr%invrs_dzm(k), &
-                                        l_upwind_xpyp_ta, &
-                                        sgn_turbulent_vel(k), &
-                                        term_wpxpyp_explicit_zm(kp1), &
-                                        term_wpxpyp_explicit_zm(k), &
-                                        term_wpxpyp_explicit_zm(km1), &
-                                        rho_ds_zm(kp1), rho_ds_zm(k), &
-                                        rho_ds_zm(km1), gr%invrs_dzt(kp1), &
-                                        gr%invrs_dzt(k) ), &
-                                   stats_zm )       ! Intent(inout)
+            ! Statistics: explicit contributions for rtp2, thlp2, or rtpthlp.
 
-        ! Note:  An "over-implicit" weighted time step is applied to this term.
-        !        A weighting factor of greater than 1 may be used to make the
-        !        term more numerically stable (see note above for RHS turbulent
-        !        advection (ta) term).
-        lhs_fnc_output(1:3) &
-        = xpyp_term_ta_pdf_lhs( coef_wpxpyp_implicit(kp1), &
-                                coef_wpxpyp_implicit(k), &
-                                rho_ds_zt(kp1), rho_ds_zt(k), &
-                                invrs_rho_ds_zm(k), &
-                                gr%invrs_dzm(k), k, &
-                                l_upwind_xpyp_ta, &
-                                sgn_turbulent_vel(k), &
-                                coef_wpxpyp_implicit_zm(kp1), &
-                                coef_wpxpyp_implicit_zm(k), &
-                                coef_wpxpyp_implicit_zm(km1), &
-                                rho_ds_zm(kp1), rho_ds_zm(k), &
-                                rho_ds_zm(km1), gr%invrs_dzt(kp1), &
-                                gr%invrs_dzt(k) )
+            ! <x'y'> term ta has both implicit and explicit components; call
+            ! stat_begin_update_pt.  Since stat_begin_update_pt automatically
+            ! subtracts the value sent in, reverse the sign on term_ta_explicit_rhs.
+            call stat_begin_update_pt( ixapxbp_ta, k, & ! Intent(in)
+                                       -rhs_turb(k), &
+                                       stats_zm )       ! Intent(inout)
 
-        call stat_modify_pt( ixapxbp_ta, k, &             ! Intent(in)
-                             + ( one - gamma_over_implicit_ts ) & ! Intent(in)
-                               * ( - lhs_fnc_output(1) * xapxbp(kp1) &
-                                   - lhs_fnc_output(2) * xapxbp(k) &
-                                   - lhs_fnc_output(3) * xapxbp(km1) ), &
-                             stats_zm )                   ! Intent(inout)
+            call stat_modify_pt( ixapxbp_ta, k, &             ! Intent(in)
+                                 + ( one - gamma_over_implicit_ts ) & ! Intent(in)
+                                   * ( - lhs_turb(1,k) * xapxbp(k+1) &
+                                       - lhs_turb(2,k) * xapxbp(k) &
+                                       - lhs_turb(3,k) * xapxbp(k-1) ), &
+                                 stats_zm )                   ! Intent(inout)
 
-        ! x'y' term dp1 has both implicit and explicit components; call
-        ! stat_begin_update_pt.  Since stat_begin_update_pt automatically
-        ! subtracts the value sent in, reverse the sign on term_dp1_rhs.
-        call stat_begin_update_pt( ixapxbp_dp1, k, &           ! Intent(in)
-             -term_dp1_rhs( Cn(k), tau_zm(k), threshold ), &   ! Intent(in)
-                                   stats_zm )                  ! Intent(inout)
+            ! x'y' term dp1 has both implicit and explicit components; call
+            ! stat_begin_update_pt.  Since stat_begin_update_pt automatically
+            ! subtracts the value sent in, reverse the sign on term_dp1_rhs.
+            call stat_begin_update_pt( ixapxbp_dp1, k, &           ! Intent(in)
+                 -term_dp1_rhs( Cn(k), tau_zm(k), threshold ), &   ! Intent(in)
+                                       stats_zm )                  ! Intent(inout)
 
-        ! Note:  An "over-implicit" weighted time step is applied to this term.
-        !        A weighting factor of greater than 1 may be used to make the
-        !        term more numerically stable (see note above for RHS turbulent
-        !        advection (ta) term).
-        lhs_fnc_output(1)  &
-        = term_dp1_lhs( Cn(k), tau_zm(k) )
-        call stat_modify_pt( ixapxbp_dp1, k,  &         ! Intent(in)
-              + ( one - gamma_over_implicit_ts )  &     ! Intent(in)
-              * ( - lhs_fnc_output(1) * xapxbp(k) ),  & ! Intent(in)
-                                   stats_zm )                 ! Intent(inout)
+            ! Note:  An "over-implicit" weighted time step is applied to this term.
+            !        A weighting factor of greater than 1 may be used to make the
+            !        term more numerically stable (see note above for RHS turbulent
+            !        advection (ta) term).
+            lhs_turb(1,k)  &
+            = term_dp1_lhs( Cn(k), tau_zm(k) )
+            call stat_modify_pt( ixapxbp_dp1, k,  &         ! Intent(in)
+                  + ( one - gamma_over_implicit_ts )  &     ! Intent(in)
+                  * ( - lhs_turb(1,k) * xapxbp(k) ),  & ! Intent(in)
+                                       stats_zm )                 ! Intent(inout)
 
-        ! rtp2/thlp2 case (1 turbulent production term)
-        ! x'y' term tp is completely explicit; call stat_update_var_pt.
-        call stat_update_var_pt( ixapxbp_tp, k, &             ! Intent(in)
-              term_tp( xam(kp1), xam(k), xbm(kp1), xbm(k), &  ! Intent(in)
-                       wpxbp(k), wpxap(k), gr%invrs_dzm(k) ), & 
-                                 stats_zm )                         ! Intent(inout)
+            ! rtp2/thlp2 case (1 turbulent production term)
+            ! x'y' term tp is completely explicit; call stat_update_var_pt.
+            call stat_update_var_pt( ixapxbp_tp, k, &             ! Intent(in)
+                  term_tp( xam(k+1), xam(k), xbm(k+1), xbm(k), &  ! Intent(in)
+                           wpxbp(k), wpxap(k), gr%invrs_dzm(k) ), & 
+                                     stats_zm )                         ! Intent(inout)
 
-        ! rtpthlp case (2 turbulent production terms)
-        ! x'y' term tp1 is completely explicit; call stat_update_var_pt.
-        ! Note:  To find the contribution of x'y' term tp1, substitute 0 for all
-        !        the xam inputs and the wpxbp input to function term_tp.
-        call stat_update_var_pt( ixapxbp_tp1, k, &    ! Intent(in)
-              term_tp( zero, zero, xbm(kp1), xbm(k), &  ! Intent(in)
-                       zero, wpxap(k), gr%invrs_dzm(k) ), &
-                                 stats_zm )                 ! Intent(inout)
+            ! rtpthlp case (2 turbulent production terms)
+            ! x'y' term tp1 is completely explicit; call stat_update_var_pt.
+            ! Note:  To find the contribution of x'y' term tp1, substitute 0 for all
+            !        the xam inputs and the wpxbp input to function term_tp.
+            call stat_update_var_pt( ixapxbp_tp1, k, &    ! Intent(in)
+                  term_tp( zero, zero, xbm(k+1), xbm(k), &  ! Intent(in)
+                           zero, wpxap(k), gr%invrs_dzm(k) ), &
+                                     stats_zm )                 ! Intent(inout)
 
-        ! x'y' term tp2 is completely explicit; call stat_update_var_pt.
-        ! Note:  To find the contribution of x'y' term tp2, substitute 0 for all
-        !        the xbm inputs and the wpxap input to function term_tp.
-        call stat_update_var_pt( ixapxbp_tp2, k, &    ! Intent(in)
-              term_tp( xam(kp1), xam(k), zero, zero, &  ! Intent(in)
-                       wpxbp(k), zero, gr%invrs_dzm(k) ), &
-                                 stats_zm )                 ! Intent(inout)
+            ! x'y' term tp2 is completely explicit; call stat_update_var_pt.
+            ! Note:  To find the contribution of x'y' term tp2, substitute 0 for all
+            !        the xbm inputs and the wpxap input to function term_tp.
+            call stat_update_var_pt( ixapxbp_tp2, k, &    ! Intent(in)
+                  term_tp( xam(k+1), xam(k), zero, zero, &  ! Intent(in)
+                           wpxbp(k), zero, gr%invrs_dzm(k) ), &
+                                     stats_zm )                 ! Intent(inout)
 
-        ! x'y' forcing term is completely explicit; call stat_update_var_pt.
-        if ( l_clip_large_neg_mc &
-             .and. ( solve_type == xp2_xpyp_rtp2 &
-                     .or. solve_type == xp2_xpyp_thlp2 ) ) then
-           call stat_update_var_pt( ixapxbp_f, k, &
-                                    max( xpyp_forcing(k), xp2_mc_limiter ), &
-                                    stats_zm )
-        else
-           call stat_update_var_pt( ixapxbp_f, k, xpyp_forcing(k), stats_zm )
-        endif
+            ! x'y' forcing term is completely explicit; call stat_update_var_pt.
+            if ( l_clip_large_neg_mc &
+                 .and. ( solve_type == xp2_xpyp_rtp2 &
+                         .or. solve_type == xp2_xpyp_thlp2 ) ) then
+               call stat_update_var_pt( ixapxbp_f, k, &
+                                        max( xpyp_forcing(k), xp2_mc_limiter ), &
+                                        stats_zm )
+            else
+               call stat_update_var_pt( ixapxbp_f, k, xpyp_forcing(k), stats_zm )
+            endif
+   
+        enddo ! k=2..gr%nz-1
 
-      endif ! l_stats_samp
-
-    enddo ! k=2..gr%nz-1
+    endif ! l_stats_samp
 
 
     ! Boundary Conditions
@@ -2912,9 +2792,7 @@ module advance_xp2_xpyp_module
 
     ! The value of the field at the upper boundary will be set to it's threshold
     ! minimum value, as contained in the variable 'threshold'.
-    call set_boundary_conditions_rhs( &
-            xapxbp(1), k_low, threshold, k_high, &
-            rhs(:,1) )
+    call set_boundary_conditions_rhs( xapxbp(1), k_low, threshold, k_high, rhs(:) )
 
     return
   end subroutine xp2_xpyp_rhs

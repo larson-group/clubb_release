@@ -257,7 +257,7 @@ module stats_clubb_utilities
     l_error = .false.
 
     ! Set stats_variables variables with inputs from calling subroutine
-    l_stats = l_stats_in
+    l_stats = .false.
 
     stats_tsamp = stats_tsamp_in
     stats_tsamp = stats_tsamp_in

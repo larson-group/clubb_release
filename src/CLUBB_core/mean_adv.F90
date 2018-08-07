@@ -22,7 +22,8 @@ module mean_adv
   private ! Default scope
 
   public :: term_ma_zt_lhs, & 
-            term_ma_zm_lhs
+            term_ma_zm_lhs, &
+            term_ma_zm_lhs_all
 
   contains
 
@@ -554,6 +555,67 @@ module mean_adv
 
   end function term_ma_zm_lhs
 
-!===============================================================================
+    !=============================================================================================
+    pure subroutine term_ma_zm_lhs_all( wm_zm, invrs_dzm,     & ! Intent(in)
+                                        lhs_advm              ) ! Intent(out)
+    ! Description:
+    !   This subroutine is an optimized version of term_ma_zm_lhs. term_ma_zm_lhs
+    !   returns a single 3 dimensional array for any specified grid level. This subroutine returns
+    !   an array of 3 dimensional arrays, one for every grid level not including boundary values.
+    ! 
+    ! Notes:
+    !   This subroutine exists for performance concerns. It returns all lhs arrays at once
+    !   so that it can be properly vectorized, see clubb:ticket:834 for detail.
+    !   
+    !   THIS SUBROUTINE DOES NOT HANDLE BOUNDARY CONDITIONS AND SETS THEM TO 0
+    !---------------------------------------------------------------------------------------------
+
+        use grid_class, only: & 
+            gr ! Variable(s)
+
+        use clubb_precision, only: &
+            core_rknd ! Variable(s)
+
+        implicit none
+
+        !------------------- Input Variables -------------------
+        real( kind = core_rknd ), dimension(gr%nz), intent(in) :: & 
+          wm_zm,     & ! wm_zm(k)                        [m/s]
+          invrs_dzm    ! Inverse of grid spacing (k)     [1/m]
+
+        !------------------- Output Variables -------------------
+        real( kind = core_rknd ), dimension(3,gr%nz), intent(out) :: &
+            lhs_advm
+
+        !---------------- Local Variables -------------------
+        integer :: &
+            k             ! Loop variable for current grid level
+
+        !---------------- Begin Code -------------------
+
+        ! Set lower boundary array to 0
+        lhs_advm(:,1) = 0.0_core_rknd
+
+        ! Most of the interior model; normal conditions.
+        do k = 2, gr%nz-1
+
+           ! Momentum superdiagonal: [ x var_zm(k+1,<t+1>) ]
+           lhs_advm(1,k) = + wm_zm(k) * invrs_dzm(k) * gr%weights_zm2zt(1,k+1)
+
+           ! Momentum main diagonal: [ x var_zm(k,<t+1>) ]
+           lhs_advm(2,k) = + wm_zm(k) * invrs_dzm(k) * ( gr%weights_zm2zt(2,k+1) & 
+                                                        - gr%weights_zm2zt(1,k) )
+
+           ! Momentum subdiagonal: [ x var_zm(k-1,<t+1>) ]
+           lhs_advm(3,k) = - wm_zm(k) * invrs_dzm(k) * gr%weights_zm2zt(2,k)
+
+        end do
+
+        ! Set upper boundary array to 0
+        lhs_advm(:,gr%nz) = 0.0_core_rknd
+
+        return
+
+    end subroutine term_ma_zm_lhs_all
 
 end module mean_adv
