@@ -1723,6 +1723,7 @@ module advance_windm_edsclrm_module
                                       gr%invrs_dzm(1), gr%invrs_dzm(2),  &
                                       gr%invrs_dzt(2), level = 1 )
 
+
     ! For purposes of the matrix equation, rhs(1) is simply set to 0.
     rhs(1) = 0.0_core_rknd
 
@@ -1756,33 +1757,36 @@ module advance_windm_edsclrm_module
         do k = 2, gr%nz-1
 
             call stat_begin_update_pt( ixm_ta, k, &
-                                       rhs_diff(3,k) * xm(k-1) &
-                                     + rhs_diff(2,k) * xm(k)   &
-                                     + rhs_diff(1,k) * xm(k+1), stats_zt )
+                                       0.5_core_rknd * invrs_rho_ds_zt(k) &
+                                     * ( rhs_diff(3,k) * xm(k-1) &
+                                     +   rhs_diff(2,k) * xm(k)   &
+                                     +   rhs_diff(1,k) * xm(k+1) ), stats_zt )
         end do
 
         ! Upper boundary
         call stat_begin_update_pt( ixm_ta, gr%nz, &
-                                   rhs_diff(3,gr%nz) * xm(gr%nz-1) &
-                                 + rhs_diff(2,gr%nz) * xm(gr%nz), stats_zt )
+                                   0.5_core_rknd * invrs_rho_ds_zt(gr%nz) &
+                                 * ( rhs_diff(3,gr%nz) * xm(gr%nz-1) &
+                                 +   rhs_diff(2,gr%nz) * xm(gr%nz) ), stats_zt )
+    endif
 
+    if ( .not. l_imp_sfc_momentum_flux ) then
 
-        if ( .not. l_imp_sfc_momentum_flux ) then
+        ! RHS generalized surface flux.
+        rhs(2) = rhs(2) + invrs_rho_ds_zt(2)  &
+                        * gr%invrs_dzt(2)  &
+                        * rho_ds_zm(1) * xpwp_sfc
 
-          ! RHS generalized surface flux.
-          rhs(2)  = rhs(2)  + invrs_rho_ds_zt(2)  &
-                            * gr%invrs_dzt(2)  &
-                            * rho_ds_zm(1) * xpwp_sfc
+        if ( l_stats_samp .and. ixm_ta > 0 ) then
 
             call stat_modify_pt( ixm_ta, 2,  &
                                + invrs_rho_ds_zt(2)  &
                                * gr%invrs_dzt(2)  &
                                * rho_ds_zm(1) * xpwp_sfc,  &
                                  stats_zt )
+        end if
 
-        endif ! l_imp_sfc_momentum_flux
-
-    endif
+    endif ! l_imp_sfc_momentum_flux
 
     return
 
