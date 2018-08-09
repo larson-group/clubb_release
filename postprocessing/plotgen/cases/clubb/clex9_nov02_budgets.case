@@ -90,7 +90,8 @@
           {'filename' => 'clex9_nov02_zm.ctl', 'type' => 'auto', 'name' => 'wp2\_cl', 'expression' => 'wp2_cl', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'clex9_nov02_zm.ctl', 'type' => 'auto', 'name' => 'wp2\_pd', 'expression' => 'wp2_pd', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'clex9_nov02_zm.ctl', 'type' => 'auto', 'name' => 'wp2\_sf', 'expression' => 'wp2_sf', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'clex9_nov02_zm.ctl', 'type' => 'auto', 'name' => 'wp2\_residual', 'expression' => 'wp2_bt - (wp2_ma + wp2_ta + wp2_ac + wp2_bp + wp2_pr1 + wp2_pr2 + wp2_pr3 + wp2_dp1 + wp2_dp2 + wp2_cl + wp2_pd + wp2_sf)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+          {'filename' => 'clex9_nov02_zm.ctl', 'type' => 'auto', 'name' => 'wp2\_splat', 'expression' => 'wp2_splat', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'clex9_nov02_zm.ctl', 'type' => 'auto', 'name' => 'wp2\_residual', 'expression' => 'wp2_bt - (wp2_ma + wp2_ta + wp2_ac + wp2_bp + wp2_pr1 + wp2_pr2 + wp2_pr3 + wp2_dp1 + wp2_dp2 + wp2_cl + wp2_pd + wp2_sf + wp2_splat)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
 
        {'plotTitle' => 'wp3 budgets', 'axisLabel' => '[m^{3} s^{-4}]', 'type' => 'profile', 'lines' =>

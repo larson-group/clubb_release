@@ -44,41 +44,42 @@ module parameters_tunable
 
   ! Model constant parameters
   real( kind = core_rknd ), public :: & 
-    C1      = 1.000000_core_rknd,    & ! Low Skewness in C1 Skw. Function    [-]
-    C1b     = 1.000000_core_rknd,    & ! High Skewness in C1 Skw. Function   [-]
-    C1c     = 1.000000_core_rknd,    & ! Degree of Slope of C1 Skw. Function [-]
-    C2      = 1.300000_core_rknd,    & ! Low Skewness in C2 Skw. Function    [-]
-    C2rt    = 1.000000_core_rknd,    & ! C2 coef. for the rtp2_dp1 term      [-]
-    C2thl   = 1.000000_core_rknd,    & ! C2 coef. for the thlp2_dp1 term     [-]
-    C2rtthl = 2.000000_core_rknd,    & ! C2 coef. for the rtpthlp_dp1 term   [-]
-    C2b     = 1.300000_core_rknd,    & ! High Skewness in C2 Skw. Function   [-]
-    C2c     = 5.000000_core_rknd,    & ! Degree of Slope of C2 Skw. Function [-]
-    C4      = 5.200000_core_rknd,    & ! Used only when l_tke_aniso is true  [-]
-    C5      = 0.300000_core_rknd,    & ! Coef. in pressure terms: w'^2 eqn   [-]
-    C6rt    = 4.000000_core_rknd,    & ! Low Skewness in C6rt Skw. Function  [-]
-    C6rtb   = 6.000000_core_rknd,    & ! High Skewness in C6rt Skw. Function [-]
-    C6rtc   = 1.000000_core_rknd,    & ! Degree of Slope of C6rt Skw. Fnct.  [-]
-    C6thl   = 4.000000_core_rknd,    & ! Low Skewness in C6thl Skw. Function [-]
-    C6thlb  = 6.000000_core_rknd,    & ! High Skewness in C6thl Skw. Fnct.   [-]
-    C6thlc  = 1.000000_core_rknd,    & ! Degree of Slope of C6thl Skw. Fnct. [-]
-    C7      = 0.500000_core_rknd,    & ! Low Skewness in C7 Skw. Function    [-]
-    C7b     = 0.800000_core_rknd,    & ! High Skewness in C7 Skw. Function   [-]
-    C7c     = 0.500000_core_rknd,    & ! Degree of Slope of C7 Skw. Function [-]
-    C8      = 3.000000_core_rknd,    & ! Coef. #1 in C8 Skewness Equation    [-]
-    C8b     = 0.020000_core_rknd,    & ! Coef. #2 in C8 Skewness Equation    [-]
-    C10     = 3.300000_core_rknd,    & ! Currently Not Used in the Model     [-]
-    C11     = 0.500000_core_rknd,    & ! Low Skewness in C11 Skw. Function   [-]
-    C11b    = 0.500000_core_rknd,    & ! High Skewness in C11 Skw. Function  [-]
-    C11c    = 0.500000_core_rknd,    & ! Degree of Slope of C11 Skw. Fnct.   [-]
-    C12     = 1.000000_core_rknd,    & ! Constant in w'^3 Crank-Nich. diff.  [-]
-    C13     = 0.100000_core_rknd,    & ! Not currently used in model         [-]
-    C14     = 1.000000_core_rknd,    & ! Constant for u'^2 and v'^2 terms    [-]
-    C15     = 0.4_core_rknd            ! Coefficient for the wp3_bp2 term    [-]
+    C1          = 1.000000_core_rknd,    & ! Low Skewness in C1 Skw. Function    [-]
+    C1b         = 1.000000_core_rknd,    & ! High Skewness in C1 Skw. Function   [-]
+    C1c         = 1.000000_core_rknd,    & ! Degree of Slope of C1 Skw. Function [-]
+    C2          = 1.300000_core_rknd,    & ! Low Skewness in C2 Skw. Function    [-]
+    C2rt        = 1.000000_core_rknd,    & ! C2 coef. for the rtp2_dp1 term      [-]
+    C2thl       = 1.000000_core_rknd,    & ! C2 coef. for the thlp2_dp1 term     [-]
+    C2rtthl     = 2.000000_core_rknd,    & ! C2 coef. for the rtpthlp_dp1 term   [-]
+    C2b         = 1.300000_core_rknd,    & ! High Skewness in C2 Skw. Function   [-]
+    C2c         = 5.000000_core_rknd,    & ! Degree of Slope of C2 Skw. Function [-]
+    C4          = 5.200000_core_rknd,    & ! Used only when l_tke_aniso is true  [-]
+    C5          = 0.300000_core_rknd,    & ! Coef. in pressure terms: w'^2 eqn   [-]
+    C6rt        = 4.000000_core_rknd,    & ! Low Skewness in C6rt Skw. Function  [-]
+    C6rtb       = 6.000000_core_rknd,    & ! High Skewness in C6rt Skw. Function [-]
+    C6rtc       = 1.000000_core_rknd,    & ! Degree of Slope of C6rt Skw. Fnct.  [-]
+    C6thl       = 4.000000_core_rknd,    & ! Low Skewness in C6thl Skw. Function [-]
+    C6thlb      = 6.000000_core_rknd,    & ! High Skewness in C6thl Skw. Fnct.   [-]
+    C6thlc      = 1.000000_core_rknd,    & ! Degree of Slope of C6thl Skw. Fnct. [-]
+    C7          = 0.500000_core_rknd,    & ! Low Skewness in C7 Skw. Function    [-]
+    C7b         = 0.800000_core_rknd,    & ! High Skewness in C7 Skw. Function   [-]
+    C7c         = 0.500000_core_rknd,    & ! Degree of Slope of C7 Skw. Function [-]
+    C8          = 3.000000_core_rknd,    & ! Coef. #1 in C8 Skewness Equation    [-]
+    C8b         = 0.020000_core_rknd,    & ! Coef. #2 in C8 Skewness Equation    [-]
+    C10         = 3.300000_core_rknd,    & ! Currently Not Used in the Model     [-]
+    C11         = 0.500000_core_rknd,    & ! Low Skewness in C11 Skw. Function   [-]
+    C11b        = 0.500000_core_rknd,    & ! High Skewness in C11 Skw. Function  [-]
+    C11c        = 0.500000_core_rknd,    & ! Degree of Slope of C11 Skw. Fnct.   [-]
+    C12         = 1.000000_core_rknd,    & ! Constant in w'^3 Crank-Nich. diff.  [-]
+    C13         = 0.100000_core_rknd,    & ! Not currently used in model         [-]
+    C14         = 1.000000_core_rknd,    & ! Constant for u'^2 and v'^2 terms    [-]
+    C15         = 0.4_core_rknd,         & ! Coefficient for the wp3_bp2 term    [-]
+    C_wp2_splat = 0.0_core_rknd            ! Coefficient for gustiness near ground [-]
 !$omp threadprivate(C1, C1b, C1c, C2, C2b, C2c, &
 !$omp   C2rt, C2thl, C2rtthl, C4, C5, C6rt, C6rtb, C6rtc, &
 !$omp   C6thl, C6thlb, C6thlc, &
 !$omp   C7, C7b, C7c, C8, C8b, C10, C11, C11b, C11c, C12, &
-!$omp   C13, C14, C15)
+!$omp   C13, C14, C15, C_wp2_splat)
 
   real( kind = core_rknd ), public ::    &
     C6rt_Lscale0  = 14.0_core_rknd,      & ! Damp C6rt as a fnct. of Lscale  [-]
@@ -281,7 +282,8 @@ module parameters_tunable
     C2rt, C2thl, C2rtthl, C4, C5, & 
     C6rt, C6rtb, C6rtc, C6thl, C6thlb, C6thlc, & 
     C7, C7b, C7c, C8, C8b, C10, C11, C11b, C11c, & 
-    C12, C13, C14, C15, C6rt_Lscale0, C6thl_Lscale0, &
+    C12, C13, C14, C15, C_wp2_splat, & 
+    C6rt_Lscale0, C6thl_Lscale0, &
     C7_Lscale0, wpxp_L_thresh, c_K, c_K1, nu1, c_K2, nu2, & 
     c_K6, nu6, c_K8, nu8, c_K9, nu9, nu10, &
     c_K_hm, c_K_hmb, K_hm_min_coef, nu_hm, &
@@ -320,6 +322,7 @@ module parameters_tunable
        "C11b                        ", "C11c                        ", &
        "C12                         ", "C13                         ", &
        "C14                         ", "C15                         ", &
+       "C_wp2_splat                 ",  &
        "C6rt_Lscale0                ", "C6thl_Lscale0               ", &
        "C7_Lscale0                  ", "wpxp_L_thresh               ", &
        "c_K                         ", "c_K1                        ", &
@@ -450,7 +453,7 @@ module parameters_tunable
                C1, C1b, C1c, C2, C2b, C2c, C2rt, C2thl, C2rtthl, &
                C4, C5, C6rt, C6rtb, C6rtc, C6thl, C6thlb, C6thlc, &
                C7, C7b, C7c, C8, C8b, C10, &
-               C11, C11b, C11c, C12, C13, C14, C15, &
+               C11, C11b, C11c, C12, C13, C14, C15, C_wp2_splat, &
                C6rt_Lscale0, C6thl_Lscale0, C7_Lscale0, wpxp_L_thresh, &
                c_K, c_K1, nu1, c_K2, nu2, c_K6, nu6, c_K8, nu8, &
                c_K9, nu9, nu10, c_K_hm, c_K_hmb, K_hm_min_coef, nu_hm, &
@@ -917,7 +920,7 @@ module parameters_tunable
              ( C1, C1b, C1c, C2, C2b, C2c, C2rt, C2thl, C2rtthl, &
                C4, C5, C6rt, C6rtb, C6rtc, C6thl, C6thlb, C6thlc, &
                C7, C7b, C7c, C8, C8b, C10, &
-               C11, C11b, C11c, C12, C13, C14, C15, &
+               C11, C11b, C11c, C12, C13, C14, C15, C_wp2_splat, &
                C6rt_Lscale0, C6thl_Lscale0, C7_Lscale0, wpxp_L_thresh, &
                c_K, c_K1, nu1, c_K2, nu2, c_K6, nu6, c_K8, nu8, &
                c_K9, nu9, nu10, c_K_hm, c_K_hmb, K_hm_min_coef, nu_hm, &
@@ -994,7 +997,8 @@ module parameters_tunable
       C2rt, C2thl, C2rtthl, C4, C5, & 
       C6rt, C6rtb, C6rtc, C6thl, C6thlb, C6thlc, & 
       C7, C7b, C7c, C8, C8b, C10, C11, C11b, C11c, & 
-      C12, C13, C14, C15, C6rt_Lscale0, C6thl_Lscale0, &
+      C12, C13, C14, C15, C_wp2_splat, &
+      C6rt_Lscale0, C6thl_Lscale0, &
       C7_Lscale0, wpxp_L_thresh, c_K, c_K1, nu1, c_K2, nu2, & 
       c_K6, nu6, c_K8, nu8, c_K9, nu9, nu10, &
       c_K_hm, c_K_hmb, K_hm_min_coef, nu_hm, &
@@ -1021,7 +1025,7 @@ module parameters_tunable
              ( C1, C1b, C1c, C2, C2b, C2c, C2rt, C2thl, C2rtthl, &
                C4, C5, C6rt, C6rtb, C6rtc, C6thl, C6thlb, C6thlc, &
                C7, C7b, C7c, C8, C8b, C10, &
-               C11, C11b, C11c, C12, C13, C14, C15, &
+               C11, C11b, C11c, C12, C13, C14, C15, C_wp2_splat, &
                C6rt_Lscale0, C6thl_Lscale0, C7_Lscale0, wpxp_L_thresh, &
                c_K, c_K1, nu1, c_K2, nu2, c_K6, nu6, c_K8, nu8, &
                c_K9, nu9, nu10, c_K_hm, c_K_hmb, K_hm_min_coef, nu_hm, &
@@ -1069,7 +1073,7 @@ module parameters_tunable
              ( C1, C1b, C1c, C2, C2b, C2c, C2rt, C2thl, C2rtthl, &
                C4, C5, C6rt, C6rtb, C6rtc, C6thl, C6thlb, C6thlc, &
                C7, C7b, C7c, C8, C8b, C10, &
-               C11, C11b, C11c, C12, C13, C14, C15, &
+               C11, C11b, C11c, C12, C13, C14, C15, C_wp2_splat, &
                C6rt_Lscale0, C6thl_Lscale0, C7_Lscale0, wpxp_L_thresh, &
                c_K, c_K1, nu1, c_K2, nu2, c_K6, nu6, c_K8, nu8, &
                c_K9, nu9, nu10, c_K_hm, c_K_hmb, K_hm_min_coef, nu_hm, &
@@ -1121,7 +1125,8 @@ module parameters_tunable
       iC12, & 
       iC13, & 
       iC14, &
-      iC15
+      iC15, &
+      iC_wp2_splat
 
     use parameter_indices, only: &
       iC6rt_Lscale0, &
@@ -1182,7 +1187,7 @@ module parameters_tunable
       C1, C1b, C1c, C2, C2b, C2c, C2rt, C2thl, C2rtthl, & 
       C4, C5, C6rt, C6rtb, C6rtc, C6thl, C6thlb, C6thlc, & 
       C7, C7b, C7c, C8, C8b, C10, & 
-      C11, C11b, C11c, C12, C13, C14, C15, & 
+      C11, C11b, C11c, C12, C13, C14, C15, C_wp2_splat, & 
       C6rt_Lscale0, C6thl_Lscale0, C7_Lscale0, wpxp_L_thresh, &
       c_K, c_K1, nu1, c_K2, nu2, c_K6, nu6, c_K8, nu8,  & 
       c_K9, nu9, nu10, c_K_hm, c_K_hmb, K_hm_min_coef, nu_hm, &
@@ -1227,6 +1232,8 @@ module parameters_tunable
     params(iC13)     = C13
     params(iC14)     = C14
     params(iC15)     = C15
+    params(iC_wp2_splat)     = C_wp2_splat
+
 
     params(iC6rt_Lscale0)       = C6rt_Lscale0
     params(iC6thl_Lscale0)      = C6thl_Lscale0
@@ -1295,7 +1302,7 @@ module parameters_tunable
                C1, C1b, C1c, C2, C2b, C2c, C2rt, C2thl, C2rtthl, &
                C4, C5, C6rt, C6rtb, C6rtc, C6thl, C6thlb, C6thlc, &
                C7, C7b, C7c, C8, C8b, C10, &
-               C11, C11b, C11c, C12, C13, C14, C15, &
+               C11, C11b, C11c, C12, C13, C14, C15, C_wp2_splat, &
                C6rt_Lscale0, C6thl_Lscale0, C7_Lscale0, wpxp_L_thresh, &
                c_K, c_K1, nu1, c_K2, nu2, c_K6, nu6, c_K8, nu8, &
                c_K9, nu9, nu10, c_K_hm, c_K_hmb, K_hm_min_coef, nu_hm, &
@@ -1347,7 +1354,8 @@ module parameters_tunable
       iC12, & 
       iC13, & 
       iC14, &
-      iC15
+      iC15, &
+      iC_wp2_splat
 
     use parameter_indices, only: &
       iC6rt_Lscale0, &
@@ -1411,7 +1419,7 @@ module parameters_tunable
       C1, C1b, C1c, C2, C2b, C2c, C2rt, C2thl, C2rtthl, & 
       C4, C5, C6rt, C6rtb, C6rtc, C6thl, C6thlb, C6thlc, & 
       C7, C7b, C7c, C8, C8b, C10, & 
-      C11, C11b, C11c, C12, C13, C14, C15, & 
+      C11, C11b, C11c, C12, C13, C14, C15, C_wp2_splat, & 
       C6rt_Lscale0, C6thl_Lscale0, C7_Lscale0, wpxp_L_thresh, &
       c_K, c_K1, nu1, c_K2, nu2, c_K6, nu6, c_K8, nu8,  & 
       c_K9, nu9, nu10, c_K_hm, c_K_hmb, K_hm_min_coef, nu_hm, &
@@ -1453,6 +1461,7 @@ module parameters_tunable
     C13     = params(iC13)
     C14     = params(iC14)
     C15     = params(iC15)
+    C_wp2_splat     = params(iC_wp2_splat)
 
     C6rt_Lscale0       = params(iC6rt_Lscale0)
     C6thl_Lscale0      = params(iC6thl_Lscale0)
@@ -1535,7 +1544,7 @@ module parameters_tunable
              ( C1, C1b, C1c, C2, C2b, C2c, C2rt, C2thl, C2rtthl, &
                C4, C5, C6rt, C6rtb, C6rtc, C6thl, C6thlb, C6thlc, &
                C7, C7b, C7c, C8, C8b, C10, &
-               C11, C11b, C11c, C12, C13, C14, C15, &
+               C11, C11b, C11c, C12, C13, C14, C15, C_wp2_splat, &
                C6rt_Lscale0, C6thl_Lscale0, C7_Lscale0, wpxp_L_thresh, &
                c_K, c_K1, nu1, c_K2, nu2, c_K6, nu6, c_K8, nu8, &
                c_K9, nu9, nu10, c_K_hm, c_K_hmb, K_hm_min_coef, nu_hm, &
@@ -1596,6 +1605,7 @@ module parameters_tunable
     C13                          = init_value
     C14                          = init_value
     C15                          = init_value
+    C_wp2_splat                  = init_value 
     C6rt_Lscale0                 = init_value
     C6thl_Lscale0                = init_value
     C7_Lscale0                   = init_value

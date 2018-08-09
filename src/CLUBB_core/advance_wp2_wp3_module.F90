@@ -47,6 +47,7 @@ module advance_wp2_wp3_module
                               rho_ds_zt, invrs_rho_ds_zm,              & ! In
                               invrs_rho_ds_zt, radf, thv_ds_zm,        & ! In
                               thv_ds_zt, mixt_frac, Cx_fnc_Richardson, & ! In
+                              wp2_splat,                               & ! intent(in)
                               pdf_implicit_coefs_terms,                & ! In
                               wprtp, wpthlp, rtp2, thlp2,              & ! In
                               wp2, wp3, wp3_zm, wp2_zt )                 ! Inout
@@ -139,41 +140,42 @@ module advance_wp2_wp3_module
       sfc_elevation      ! Elevation of ground level                 [m AMSL]
 
     real( kind = core_rknd ), intent(in), dimension(gr%nz) ::  & 
-      sigma_sqd_w,     & ! sigma_sqd_w (momentum levels)             [-]
-      wm_zm,           & ! w wind component on momentum levels       [m/s]
-      wm_zt,           & ! w wind component on thermodynamic levels  [m/s]
-      a3,              & ! a_3 (momentum levels); See eqn. 25 in `Equations for CLUBB' [-]
-      a3_zt,           & ! a_3 interpolated to thermodynamic levels  [-]
-      wp3_on_wp2,      & ! Smoothed version of wp3 / wp2             [m/s]
-      wp4,             & ! w'^4 (momentum levels)                    [m^4/s^4]
-      wpthvp,          & ! w'th_v' (momentum levels)                 [K m/s]
-      wp2thvp,         & ! w'^2th_v' (thermodynamic levels)          [K m^2/s^2]
-      um,              & ! u wind component (thermodynamic levels)   [m/s]
-      vm,              & ! v wind component (thermodynamic levels)   [m/s]
-      upwp,            & ! u'w' (momentum levels)                    [m^2/s^2]
-      vpwp,            & ! v'w' (momentum levels)                    [m^2/s^2]
-      up2,             & ! u'^2 (momentum levels)                    [m^2/s^2]
-      vp2,             & ! v'^2 (momentum levels)                    [m^2/s^2]
-      Kh_zm,           & ! Eddy diffusivity on momentum levels       [m^2/s]
-      Kh_zt,           & ! Eddy diffusivity on thermodynamic levels  [m^2/s]
-      tau_zm,          & ! Time-scale tau on momentum levels         [s]
-      tau_zt,          & ! Time-scale tau on thermodynamic levels    [s]
-      tau_C1_zm,       & ! Tau values used for the C1 (dp1) term in wp2 [s]
-      Skw_zm,          & ! Skewness of w on momentum levels          [-]
-      Skw_zt,          & ! Skewness of w on thermodynamic levels     [-]
-      rho_ds_zm,       & ! Dry, static density on momentum levels    [kg/m^3]
-      rho_ds_zt,       & ! Dry, static density on thermo. levels     [kg/m^3]
-      invrs_rho_ds_zm, & ! Inv. dry, static density @ momentum levs. [m^3/kg]
-      invrs_rho_ds_zt, & ! Inv. dry, static density @ thermo. levs.  [m^3/kg]
-      radf,            & ! Buoyancy production at the CL top         [m^2/s^3]
-      thv_ds_zm,       & ! Dry, base-state theta_v on momentum levs. [K]
-      thv_ds_zt,       & ! Dry, base-state theta_v on thermo. levs.  [K]
-      mixt_frac,       & ! Weight of 1st normal distribution         [-]
-      wprtp,           & ! Flux of total water mixing ratio          [m/s kg/kg]
-      wpthlp,          & ! Flux of liquid water potential temp.      [m/s K]
-      rtp2,            & ! Variance of rt (overall)                  [kg^2/kg^2]
-      thlp2,           & ! Variance of thl (overall)                 [K^2]
-      Cx_fnc_Richardson  ! Cx_fnc from Richardson_num                [-]
+      sigma_sqd_w,       & ! sigma_sqd_w (momentum levels)             [-]
+      wm_zm,             & ! w wind component on momentum levels       [m/s]
+      wm_zt,             & ! w wind component on thermodynamic levels  [m/s]
+      a3,                & ! a_3 (momentum levels); See eqn. 25 in `Equations for CLUBB' [-]
+      a3_zt,             & ! a_3 interpolated to thermodynamic levels  [-]
+      wp3_on_wp2,        & ! Smoothed version of wp3 / wp2             [m/s]
+      wp4,               & ! w'^4 (momentum levels)                    [m^4/s^4]
+      wpthvp,            & ! w'th_v' (momentum levels)                 [K m/s]
+      wp2thvp,           & ! w'^2th_v' (thermodynamic levels)          [K m^2/s^2]
+      um,                & ! u wind component (thermodynamic levels)   [m/s]
+      vm,                & ! v wind component (thermodynamic levels)   [m/s]
+      upwp,              & ! u'w' (momentum levels)                    [m^2/s^2]
+      vpwp,              & ! v'w' (momentum levels)                    [m^2/s^2]
+      up2,               & ! u'^2 (momentum levels)                    [m^2/s^2]
+      vp2,               & ! v'^2 (momentum levels)                    [m^2/s^2]
+      Kh_zm,             & ! Eddy diffusivity on momentum levels       [m^2/s]
+      Kh_zt,             & ! Eddy diffusivity on thermodynamic levels  [m^2/s]
+      tau_zm,            & ! Time-scale tau on momentum levels         [s]
+      tau_zt,            & ! Time-scale tau on thermodynamic levels    [s]
+      tau_C1_zm,         & ! Tau values used for the C1 (dp1) term in wp2 [s]
+      Skw_zm,            & ! Skewness of w on momentum levels          [-]
+      Skw_zt,            & ! Skewness of w on thermodynamic levels     [-]
+      rho_ds_zm,         & ! Dry, static density on momentum levels    [kg/m^3]
+      rho_ds_zt,         & ! Dry, static density on thermo. levels     [kg/m^3]
+      invrs_rho_ds_zm,   & ! Inv. dry, static density @ momentum levs. [m^3/kg]
+      invrs_rho_ds_zt,   & ! Inv. dry, static density @ thermo. levs.  [m^3/kg]
+      radf,              & ! Buoyancy production at the CL top         [m^2/s^3]
+      thv_ds_zm,         & ! Dry, base-state theta_v on momentum levs. [K]
+      thv_ds_zt,         & ! Dry, base-state theta_v on thermo. levs.  [K]
+      mixt_frac,         & ! Weight of 1st normal distribution         [-]
+      wprtp,             & ! Flux of total water mixing ratio          [m/s kg/kg]
+      wpthlp,            & ! Flux of liquid water potential temp.      [m/s K]
+      rtp2,              & ! Variance of rt (overall)                  [kg^2/kg^2]
+      thlp2,             & ! Variance of thl (overall)                 [K^2]
+      Cx_fnc_Richardson, &  ! Cx_fnc from Richardson_num                [-]
+      wp2_splat             ! Tendency of <w'2> due to vertical compression of eddies [m^2/s^3]
 
     type(implicit_coefs_terms), dimension(gr%nz), intent(in) :: &
       pdf_implicit_coefs_terms    ! Implicit coefs / explicit terms [units vary]
@@ -315,8 +317,10 @@ module advance_wp2_wp3_module
                      tau_zm, tauw3t, tau_C1_zm, C1_Skw_fnc, & ! Intent(in)
                      C11_Skw_fnc, C16_fnc, rho_ds_zm,       & ! Intent(in)
                      rho_ds_zt, invrs_rho_ds_zm,            & ! Intent(in)
-                     invrs_rho_ds_zt, radf, thv_ds_zm,      & ! Intent(in)
-                     thv_ds_zt, pdf_implicit_coefs_terms,   & ! Intent(in)
+                     invrs_rho_ds_zt, radf,                 & ! Intent(in)
+                     thv_ds_zm, thv_ds_zt,                  & ! Intent(in)
+                     wp2_splat,                             & ! Intent(in)
+                     pdf_implicit_coefs_terms,              & ! Intent(in)
                      wprtp, wpthlp, rtp2, thlp2,            & ! Intent(in)
                      wp2, wp3, wp3_zm, wp2_zt )               ! Intent(inout)
 
@@ -416,10 +420,12 @@ module advance_wp2_wp3_module
                          tau1m, tauw3t, tau_C1_zm, C1_Skw_fnc,  & ! Intent(in)
                          C11_Skw_fnc, C16_fnc, rho_ds_zm,       & ! Intent(in)
                          rho_ds_zt, invrs_rho_ds_zm,            & ! Intent(in)
-                         invrs_rho_ds_zt, radf, thv_ds_zm,      & ! Intent(in)
-                         thv_ds_zt, pdf_implicit_coefs_terms,   & ! Intent(in)
+                         invrs_rho_ds_zt, radf,                 & ! Intent(in)
+                         thv_ds_zm, thv_ds_zt,                  & ! Intent(in)
+                         wp2_splat,                             & ! Intent(in)
+                         pdf_implicit_coefs_terms,              & ! Intent(in)
                          wprtp, wpthlp, rtp2, thlp2,            & ! Intent(in)
-                         wp2, wp3, wp3_zm, wp2_zt )               ! Intent(i/o)
+                         wp2, wp3, wp3_zm, wp2_zt )               ! Intent(inout)
 
     ! Description:
     ! Decompose, and back substitute the matrix for wp2/wp3
@@ -594,7 +600,8 @@ module advance_wp2_wp3_module
       wprtp,           & ! Flux of total water mixing ratio          [m/s kg/kg]
       wpthlp,          & ! Flux of liquid water potential temp.      [m/s K]
       rtp2,            & ! Variance of rt (overall)                  [kg^2/kg^2]
-      thlp2              ! Variance of thl (overall)                 [K^2]
+      thlp2,           & ! Variance of thl (overall)                 [K^2]
+      wp2_splat          ! Tendency of <w'2> due to vertical compression of eddies  [m^2/s^3]
 
     type(implicit_coefs_terms), dimension(gr%nz), intent(in) :: &
       pdf_implicit_coefs_terms    ! Implicit coefs / explicit terms [units vary]
@@ -700,13 +707,14 @@ module advance_wp2_wp3_module
 
     ! Compute the explicit portion of the w'^2 and w'^3 equations.
     ! Build the right-hand side vector.
-    call wp23_rhs( dt, wp2, wp3, a1, a1_zt, a3, a3_zt, wp3_on_wp2, &
-                   coef_wp4_implicit, wp4, wpthvp, wp2thvp, um, vm, & 
-                   upwp, vpwp, up2, vp2, Kw1, Kw8, Kh_zt,  & 
-                   Skw_zt, tau1m, tauw3t, tau_C1_zm, C1_Skw_fnc, &
-                   C11_Skw_fnc, C16_fnc, rho_ds_zm, invrs_rho_ds_zt, radf, &
-                   thv_ds_zm, thv_ds_zt, l_crank_nich_diff, &
-                   rhs )
+    call wp23_rhs( dt, wp2, wp3, a1, a1_zt, a3, a3_zt, wp3_on_wp2, &           ! intent(in)
+                   coef_wp4_implicit, wp4, wpthvp, wp2thvp, um, vm, &          ! intent(in)
+                   upwp, vpwp, up2, vp2, Kw1, Kw8, Kh_zt,  &                   ! intent(in)
+                   Skw_zt, tau1m, tauw3t, tau_C1_zm, C1_Skw_fnc, &             ! intent(in)
+                   C11_Skw_fnc, C16_fnc, rho_ds_zm, invrs_rho_ds_zt, radf, &   ! intent(in)
+                   thv_ds_zm, thv_ds_zt, wp2_splat, &                          ! intent(in)
+                   l_crank_nich_diff, &                                        ! intent(in)
+                   rhs )                                                       ! intent(out)
 
     if (l_gmres) then
 
@@ -2703,7 +2711,8 @@ module advance_wp2_wp3_module
                        upwp, vpwp, up2, vp2, Kw1, Kw8, Kh_zt, & 
                        Skw_zt, tau1m, tauw3t, tau_C1_zm, C1_Skw_fnc, &
                        C11_Skw_fnc, C16_fnc, rho_ds_zm, invrs_rho_ds_zt, radf, &
-                       thv_ds_zm, thv_ds_zt, l_crank_nich_diff, &
+                       thv_ds_zm, thv_ds_zt, wp2_splat, & 
+                       l_crank_nich_diff, &
                        rhs )
 
     ! Description:
@@ -2756,9 +2765,10 @@ module advance_wp2_wp3_module
 
     use stats_variables, only:  & 
         l_stats_samp, iwp2_dp1, iwp2_dp2, stats_zm, iwp2_bp,   & ! Variable(s)
-        iwp2_pr1, iwp2_pr2, iwp2_pr3, iwp3_ta, stats_zt, & 
+        iwp2_pr1, iwp2_pr2, iwp2_pr3, iwp2_splat, &
+        iwp3_ta, stats_zt, & 
         iwp3_tp, iwp3_bp1, iwp3_pr2, iwp3_pr1, iwp3_dp1, iwp3_bp2, iwp3_pr3
-
+        
     use stats_type_utilities, only:  &
         stat_update_var_pt,  & ! Procedure(s)
         stat_begin_update_pt,  &
@@ -2827,7 +2837,8 @@ module advance_wp2_wp3_module
       invrs_rho_ds_zt,   & ! Inv. dry, static density @ thermo. levs.  [m^3/kg]
       radf,              & ! Buoyancy production at the CL top         [m^2/s^3]
       thv_ds_zm,         & ! Dry, base-state theta_v on momentum levs. [K]
-      thv_ds_zt            ! Dry, base-state theta_v on thermo. levs.  [K]
+      thv_ds_zt,         & ! Dry, base-state theta_v on thermo. levs.  [K]
+      wp2_splat            ! Tendency of <w'^2> due to vertical compression of eddies [m^2/s^3]
 
     logical, intent(in) :: & 
       l_crank_nich_diff   ! Turns on/off Crank-Nicholson diffusion.
@@ -2948,9 +2959,9 @@ module advance_wp2_wp3_module
                        - rhs_diff(1) * wp2(kp1)
       endif
 
-      ! RHS pressure term 1 (pr1).
       if ( l_tke_aniso ) then
 
+        ! RHS pressure term 1 (pr1)
         rhs(k_wp2) & 
         = rhs(k_wp2) & 
         + wp2_term_pr1_rhs( C4, up2(k), vp2(k), tau1m(k) )
@@ -2968,6 +2979,9 @@ module advance_wp2_wp3_module
         = rhs(k_wp2)  &
         + ( one - gamma_over_implicit_ts )  &
         * ( - lhs_fnc_output(1) * wp2(k) )
+
+        ! Effect of vertical compression of eddies
+        rhs(k_wp2) = rhs(k_wp2) + wp2_splat(k)
 
       endif
 
@@ -2993,6 +3007,9 @@ module advance_wp2_wp3_module
         !        C_5 input to function wp2_terms_bp_pr2_rhs.
         call stat_update_var_pt( iwp2_bp, k, & 
           wp2_terms_bp_pr2_rhs( 0.0_core_rknd, thv_ds_zm(k), wpthvp(k) ), stats_zm )
+
+        ! Include effect of vertical compression of eddies in wp2 budget
+        call stat_update_var_pt( iwp2_splat, k, wp2_splat(k), stats_zm )
 
         ! w'^2 term pr1 has both implicit and explicit components; call
         ! stat_begin_update_pt.  Since stat_begin_update_pt automatically

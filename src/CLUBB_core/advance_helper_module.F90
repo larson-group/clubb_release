@@ -14,7 +14,8 @@ module advance_helper_module
     set_boundary_conditions_rhs, &
     calc_stability_correction,   &
     calc_brunt_vaisala_freq_sqd, &
-    compute_Cx_fnc_Richardson
+    compute_Cx_fnc_Richardson, &
+    term_splat
 
   private ! Set Default Scope
 
@@ -602,5 +603,55 @@ module advance_helper_module
 
     return
   end function Lscale_width_vert_avg
+
+ !============================================================================
+  subroutine term_splat( C_wp2_splat, nz, wp2, wp2_zt, tau_zm, wp2_splat )
+
+
+  ! Description:
+  !   This subroutine computes the (negative) tendency of wp2 due
+  !   to "splatting" of eddies, e.g., near the ground or a Sc inversion.
+  !   term_splat is intended to be added to the right-hand side of 
+  !   the wp2 equation, and -0.5*term_splat is intended to be added to each 
+  !   of the up2 and vp2 equations.  The functional form of term splat is
+  !
+  !   term_splat = - w'2 * (turbulent time scale) * ( d/dz( sqrt(w'2) ) )^2
+
+    ! Included Modules
+    use grid_class, only: &
+      ddzt   ! Procedure(s)
+
+    use clubb_precision, only: & 
+      core_rknd 
+
+    implicit none 
+
+    ! Input Variables
+    integer, intent(in) :: & 
+      nz          ! Number of vertical levels                    [-]
+
+    real( kind = core_rknd ), intent(in) :: & 
+      C_wp2_splat          ! Tuning parameter                    [-]
+
+    real( kind = core_rknd ), dimension(nz), intent(in) :: & 
+      wp2,     &  ! Variance of vertical velocity on the momentum grid [m^2/s^2]
+      wp2_zt,  &  ! Variance of vertical velocity on the thermodynamic grid [m^2/s^2]
+      tau_zm     ! Turbulent time scale on the momentum grid               [s]
+
+    ! Output Variable
+    real( kind = core_rknd ), dimension(nz), intent(out) :: & 
+      wp2_splat     ! Tendency of <w'^2> due to splatting of eddies (on zm grid) [m^2/s^3]
+
+    ! Local Variable
+    real( kind = core_rknd ), dimension(nz) :: & 
+      d_sqrt_wp2_dz    ! d/dz( sqrt( w'2 ) )                 [1/s]
+
+    ! ---- Begin Code ----
+
+    d_sqrt_wp2_dz = ddzt( sqrt( wp2_zt ) )
+    wp2_splat = - C_wp2_splat * wp2 * tau_zm * d_sqrt_wp2_dz**2
+    !wp2_splat = - C_wp2_splat * wp2 * 900.0_core_rknd * d_sqrt_wp2_dz**2
+
+  end subroutine term_splat
 
 end module advance_helper_module

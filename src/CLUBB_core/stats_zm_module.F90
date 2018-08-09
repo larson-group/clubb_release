@@ -94,6 +94,7 @@ module stats_zm_module
         iup2_pd, &
         iup2_cl, & 
         iup2_sf, &
+        iup2_splat, &
         ivp2_bt, & 
         ivp2_ta, & 
         ivp2_tp, & 
@@ -105,7 +106,8 @@ module stats_zm_module
         ivp2_sdmp, & 
         ivp2_pd, & 
         ivp2_cl, & 
-        ivp2_sf
+        ivp2_sf, &
+        ivp2_splat
 
     use stats_variables, only: &
         icoef_wp4_implicit
@@ -142,7 +144,8 @@ module stats_zm_module
         iwp2_sdmp, & 
         iwp2_pd, &
         iwp2_cl, & 
-        iwp2_sf
+        iwp2_sf, &
+        iwp2_splat
 
     use stats_variables, only: & 
         iwprtp_bt, & 
@@ -1228,6 +1231,15 @@ module stats_zm_module
              
         k = k + 1
 
+      case ('wp2_splat')
+        iwp2_splat = k
+
+        call stat_assign( var_index=iwp2_splat, var_name="wp2_splat", &
+             var_description="wp2 budget: wp2 splatting [m^2/s^3]", &
+             var_units="m^2/s^3", l_silhs=.false., grid_kind=stats_zm )
+
+        k = k + 1
+
       case ('wprtp_bt')
         iwprtp_bt = k
         call stat_assign( var_index=iwprtp_bt, var_name="wprtp_bt", &
@@ -1782,6 +1794,13 @@ module stats_zm_module
              l_silhs=.false., grid_kind=stats_zm )
         k = k + 1
 
+      case ('up2_splat')
+        iup2_splat = k
+        call stat_assign( var_index=iup2_splat, var_name="up2_splat", &
+             var_description="up2 budget: up2 splatting [m^2/s^3]", var_units="m^2/s^3", &
+             l_silhs=.false., grid_kind=stats_zm )
+        k = k + 1
+
       case ('vp2_bt')
         ivp2_bt = k
         call stat_assign( var_index=ivp2_bt, var_name="vp2_bt", &
@@ -1863,6 +1882,13 @@ module stats_zm_module
         ivp2_sf = k
         call stat_assign( var_index=ivp2_sf, var_name="vp2_sf", &
              var_description="vp2 budget: vp2 surface variance [m^2/s^3]", var_units="m^2/s^3", &
+             l_silhs=.false., grid_kind=stats_zm )
+        k = k + 1
+
+      case ('vp2_splat')
+        ivp2_splat = k
+        call stat_assign( var_index=ivp2_splat, var_name="vp2_splat", &
+             var_description="vp2 budget: vp2 splatting [m^2/s^3]", var_units="m^2/s^3", &
              l_silhs=.false., grid_kind=stats_zm )
         k = k + 1
 

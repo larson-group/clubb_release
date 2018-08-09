@@ -53,8 +53,9 @@ module advance_xp2_xpyp_module
                                l_iter, dt,                             & ! In
                                sclrm, wpsclrp,                         & ! In
                                wpsclrp2, wpsclrprtp, wpsclrpthlp,      & ! In
+                               wp2_splat,                              & ! In
                                rtp2, thlp2, rtpthlp, up2, vp2,         & ! Inout
-                               sclrp2, sclrprtp, sclrpthlp             ) ! Inout
+                               sclrp2, sclrprtp, sclrpthlp)              ! Inout
 
     ! Description:
     ! Prognose scalar variances, scalar covariances, and horizontal turbulence components.
@@ -239,6 +240,9 @@ module advance_xp2_xpyp_module
       wpsclrp2,    & ! <w'sclr'^2> (thermodynamic levels) [m/s{sclr units}^2]
       wpsclrprtp,  & ! <w'sclr'r_t'> (thermo. levels)     [m/s{sclr units)kg/kg]
       wpsclrpthlp    ! <w'sclr'th_l'> (thermo. levels)    [m/s{sclr units}K]
+
+    real( kind = core_rknd ), dimension(gr%nz), intent(in) :: & 
+      wp2_splat    ! Gustiness tendency for wp2 equation
 
     ! Input/Output variables
     ! An attribute of (inout) is also needed to import the value of the variances
@@ -905,7 +909,7 @@ module advance_xp2_xpyp_module
                           Lscale, C4_C14_1d, tau_zm,  & ! In
                           um, vm, upwp, vpwp, up2, vp2, & ! In
                           rho_ds_zt, rho_ds_zm, invrs_rho_ds_zm, & ! In
-                          thv_ds_zm, C4, C5, C14, & ! In
+                          thv_ds_zm, C4, C5, C14, wp2_splat, & ! In
                           uv_rhs(:,1) ) ! Out
 
     ! Explicit contributions to vp2
@@ -917,7 +921,7 @@ module advance_xp2_xpyp_module
                           Lscale, C4_C14_1d, tau_zm,  & ! In
                           vm, um, vpwp, upwp, vp2, up2, & ! In
                           rho_ds_zt, rho_ds_zm, invrs_rho_ds_zm, & ! In
-                          thv_ds_zm, C4, C5, C14, & ! In
+                          thv_ds_zm, C4, C5, C14, wp2_splat, & ! In
                           uv_rhs(:,2) ) ! Out
 
     ! Solve the tridiagonal system
@@ -2098,7 +2102,7 @@ module advance_xp2_xpyp_module
                               Lscale, C4_C14_1d, tau_zm,  & ! In
                               xam, xbm, wpxap, wpxbp, xap2, xbp2, & ! In
                               rho_ds_zt, rho_ds_zm, invrs_rho_ds_zm, & ! In
-                              thv_ds_zm, C4, C5, C14, & ! In
+                              thv_ds_zm, C4, C5, C14, wp2_splat, & ! In
                               rhs ) ! Out
 
   ! Description:
@@ -2160,11 +2164,13 @@ module advance_xp2_xpyp_module
         ivp2_dp1, & 
         ivp2_pr1, & 
         ivp2_pr2, & 
+        ivp2_splat, & 
         iup2_ta, & 
         iup2_tp, & 
         iup2_dp1, & 
         iup2_pr1, & 
         iup2_pr2, & 
+        iup2_splat, & 
         stats_zm, & 
         zmscr01, & 
         zmscr11, & 
@@ -2202,7 +2208,8 @@ module advance_xp2_xpyp_module
       rho_ds_zt,              & ! Dry, static density on thermo. levs. [kg/m^3]
       rho_ds_zm,              & ! Dry, static density on m-levs.       [kg/m^3]
       invrs_rho_ds_zm,        & ! Inv. dry, static density on m-levs.  [m^3/kg]
-      thv_ds_zm                 ! Dry, base-state theta_v on momentum levs. [K]
+      thv_ds_zm,              & ! Dry, base-state theta_v on momentum levs. [K]
+      wp2_splat    ! Tendency of <w'^2> due to splatting of eddies  [m^2/s^3]
 
     real( kind = core_rknd ), intent(in) :: & 
       C4,  & ! Model parameter C_4                         [-]
@@ -2236,7 +2243,8 @@ module advance_xp2_xpyp_module
       ixapxbp_tp, & 
       ixapxbp_dp1, & 
       ixapxbp_pr1, & 
-      ixapxbp_pr2
+      ixapxbp_pr2, &
+      ixapxbp_splat
 
     !----------------------------- Begin Code ----------------------------------
 
@@ -2247,18 +2255,21 @@ module advance_xp2_xpyp_module
       ixapxbp_dp1 = ivp2_dp1
       ixapxbp_pr1 = ivp2_pr1
       ixapxbp_pr2 = ivp2_pr2
+      ixapxbp_splat = ivp2_splat
     case ( xp2_xpyp_up2 )
       ixapxbp_ta  = iup2_ta
       ixapxbp_tp  = iup2_tp
       ixapxbp_dp1 = iup2_dp1
       ixapxbp_pr1 = iup2_pr1
       ixapxbp_pr2 = iup2_pr2
+      ixapxbp_splat = iup2_splat
     case default ! No budgets for passive scalars
       ixapxbp_ta  = 0
       ixapxbp_tp  = 0
       ixapxbp_dp1 = 0
       ixapxbp_pr1 = 0
       ixapxbp_pr2 = 0
+      ixapxbp_splat = 0
     end select
 
     
@@ -2287,11 +2298,15 @@ module advance_xp2_xpyp_module
                                    gr%invrs_dzt(:),                     & ! Intent(in)
                                    lhs_turb(:,:)                        ) ! Intent(out)
 
+    ! Vertical compression of eddies causes gustiness (increase in up2 and vp2)
+    ! Add half the contribution to up2 and half to vp2
+    rhs(2:gr%nz-1) = rhs_turb(2:gr%nz-1) - 0.5_core_rknd*wp2_splat(2:gr%nz-1)
+
     ! Finish RHS calc with vectorizable loop, functions are in source file and should
     ! be inlined with an -O2 or above compiler optimization flag
-    do k = 2, gr%nz-1
+    do k = 2, gr%nz-1, 1
 
-        rhs(k) = rhs_turb(k) + ( one - gamma_over_implicit_ts ) &
+        rhs(k) = rhs(k) + ( one - gamma_over_implicit_ts ) &
                              * ( - lhs_turb(1,k) * xap2(k+1) &
                                  - lhs_turb(2,k) * xap2(k) &
                                  - lhs_turb(3,k) * xap2(k-1) )
@@ -2395,6 +2410,12 @@ module advance_xp2_xpyp_module
                    * term_tp( xam(k+1), xam(k), xam(k+1), xam(k), &
                               wpxap(k), wpxap(k), gr%invrs_dzm(k) ), & 
                                      stats_zm )       ! Intent(inout)
+
+            ! Vertical compression of eddies.
+            call stat_update_var_pt( ixapxbp_splat, k, & ! Intent(in) 
+                         -0.5_core_rknd * wp2_splat(k),  & ! Intent(in)
+                                     stats_zm )       ! Intent(inout)
+
         end do
 
       endif ! l_stats_samp

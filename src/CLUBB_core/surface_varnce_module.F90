@@ -14,6 +14,7 @@ module surface_varnce_module
   !=============================================================================
   subroutine calc_surface_varnce( upwp_sfc, vpwp_sfc, wpthlp_sfc, wprtp_sfc, & 
                              um_sfc, vm_sfc, Lscale_up_sfc, wpsclrp_sfc, & 
+                             wp2_splat_sfc, tau_zm_sfc, &
                              wp2_sfc, up2_sfc, vp2_sfc, & 
                              thlp2_sfc, rtp2_sfc, rtpthlp_sfc, & 
                              sclrp2_sfc, & 
@@ -41,6 +42,7 @@ module surface_varnce_module
         one_third,  &
         one_fourth, &
         zero,       &
+        ten,        &
         grav,       &
         eps,        &
         fstderr
@@ -103,7 +105,9 @@ module surface_varnce_module
       wprtp_sfc,     & ! Surface moisture flux, <w'rt'>|_sfc    [kg/kg m/s]
       um_sfc,        & ! Surface u wind component, <u>          [m/s]
       vm_sfc,        & ! Surface v wind component, <v>          [m/s]
-      Lscale_up_sfc    ! Upward component of Lscale at surface  [m] 
+      Lscale_up_sfc, & ! Upward component of Lscale at surface  [m] 
+      wp2_splat_sfc, & ! Tendency of <w'^2> due to splatting of eddies at zm(1) [m^2/s^3]
+      tau_zm_sfc       ! Turbulent dissipation time at level zm(1)  [s]
 
     real( kind = core_rknd ), intent(in), dimension(sclr_dim) ::  & 
       wpsclrp_sfc    ! Passive scalar flux, <w'sclr'>|_sfc   [units m/s]
@@ -242,6 +246,13 @@ module surface_varnce_module
 
        endif
 
+       ! Add effect of vertical compression of eddies on horizontal gustiness.
+       ! The effect has not been added to wp2_sfc, and so the effect is not
+       !   conservative with respect to TKE at the sfc level.
+       ! "ten" is a surface-specific tuning factor.
+       usp2_sfc = usp2_sfc - 0.5_core_rknd * ten * tau_zm_sfc * wp2_splat_sfc 
+       vsp2_sfc = vsp2_sfc - 0.5_core_rknd * ten * tau_zm_sfc * wp2_splat_sfc
+
        ! Variance of u, <u'^2>, at the surface can be found from <u_s'^2>,
        ! <v_s'^2>, and mean winds (at the surface) <u> and <v>, such that:
        !    <u'^2>|_sfc = <u_s'^2> * [ <u>^2 / ( <u>^2 + <v>^2 ) ]
@@ -332,6 +343,13 @@ module surface_varnce_module
        wp2_sfc = a_const * uf**2
        up2_sfc = up2_vp2_factor * a_const * uf**2  ! From Andre, et al. 1978
        vp2_sfc = up2_vp2_factor * a_const * uf**2  ! "  "
+
+       ! Add effect of vertical compression of eddies on horizontal gustiness.
+       ! The effect has not been added to wp2_sfc, and so the effect is not
+       !   conservative with respect to TKE at the sfc level.
+       ! "ten" is a surface-specific tuning factor.
+       up2_sfc = up2_sfc - 0.5_core_rknd * ten * tau_zm_sfc * wp2_splat_sfc
+       vp2_sfc = vp2_sfc - 0.5_core_rknd * ten * tau_zm_sfc * wp2_splat_sfc
 
        ! Vince Larson changed to make correlations between [-1,1]  31 Jan 2008
 !        thlp2_sfc   = 0.1 * a * ( wpthlp_sfc / uf )**2

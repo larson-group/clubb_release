@@ -1090,12 +1090,13 @@ module stats_variables
      iwp2_sdmp = 0, &
      iwp2_pd = 0, & 
      iwp2_cl = 0, &
-     iwp2_sf = 0
+     iwp2_sf = 0, &
+     iwp2_splat
 
 !$omp   threadprivate(iwp2_bt, iwp2_ma, iwp2_ta, iwp2_ac, iwp2_bp)
 !$omp   threadprivate(iwp2_pr1, iwp2_pr2, iwp2_pr3)
 !$omp   threadprivate(iwp2_dp1, iwp2_dp2)
-!$omp   threadprivate(iwp2_sdmp, iwp2_pd, iwp2_cl, iwp2_sf)
+!$omp   threadprivate(iwp2_sdmp, iwp2_pd, iwp2_cl, iwp2_sf, iwp2_splat)
 
   integer, public :: & 
      iwprtp_bt = 0,      & 
@@ -1216,6 +1217,7 @@ module stats_variables
     iup2_pd = 0, & 
     iup2_cl = 0, &
     iup2_sf = 0, &
+    iup2_splat = 0, &
     ivp2_bt = 0, & 
     ivp2_ta = 0, & 
     ivp2_tp = 0, & 
@@ -1227,14 +1229,15 @@ module stats_variables
     ivp2_sdmp = 0, & 
     ivp2_pd = 0, & 
     ivp2_cl = 0, &
-    ivp2_sf = 0
+    ivp2_sf = 0, &
+    ivp2_splat = 0
 
 !$omp   threadprivate(iup2_bt, iup2_ta, iup2_tp, iup2_ma, iup2_dp1)
 !$omp   threadprivate(iup2_dp2, iup2_pr1, iup2_pr2)
-!$omp   threadprivate(iup2_sdmp, iup2_pd, iup2_cl, iup2_sf)
+!$omp   threadprivate(iup2_sdmp, iup2_pd, iup2_cl, iup2_sf, iup2_splat)
 !$omp   threadprivate(ivp2_bt, ivp2_ta, ivp2_tp, ivp2_ma, ivp2_dp1)
 !$omp   threadprivate(ivp2_dp2, ivp2_pr1, ivp2_pr2)
-!$omp   threadprivate(ivp2_sdmp, ivp2_pd, ivp2_cl, ivp2_sf)
+!$omp   threadprivate(ivp2_sdmp, ivp2_pd, ivp2_cl, ivp2_sf, ivp2_splat)
 
 !       Passive scalars.  Note that floating point roundoff may make
 !       mathematically equivalent variables different values.

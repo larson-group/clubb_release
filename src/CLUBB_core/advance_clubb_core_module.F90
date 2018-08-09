@@ -207,7 +207,8 @@ module advance_clubb_core_module
       c_K10, &
       c_K10h, &
       C1, C14, &
-      C5, C4
+      C5, C4, &
+      C_wp2_splat
 
     use parameters_model, only: &
         sclr_dim, & ! Variable(s)
@@ -418,7 +419,8 @@ module advance_clubb_core_module
 
     use advance_helper_module, only: &
       calc_stability_correction, & ! Procedure(s)
-      compute_Cx_fnc_Richardson
+      compute_Cx_fnc_Richardson, &
+      term_splat
 
     use interpolation, only: &
       pvertinterp
@@ -585,11 +587,6 @@ module advance_clubb_core_module
       wprcp,            & ! w'r_c' (momentum levels)                  [(kg/kg) m/s]
       ice_supersat_frac   ! ice cloud fraction (thermodynamic levels) [-]
 
-    ! Eric Raut declared this variable solely for output to disk
-    real( kind = core_rknd ), dimension(gr%nz) :: &
-      rc_coef,    & ! Coefficient of X'r_c' in Eq. (34) (t-levs.)   [K/(kg/kg)]
-      rc_coef_zm    ! Coefficient of X'r_c' in Eq. (34) on m-levs.  [K/(kg/kg)]
-
 #if defined(CLUBB_CAM) || defined(GFDL)
     real( kind = core_rknd ), intent(out), dimension(gr%nz) :: &
       khzt, &       ! eddy diffusivity on thermo levels
@@ -602,6 +599,28 @@ module advance_clubb_core_module
       thlprcp_out
 #endif
 
+
+#ifdef GFDL
+    ! hlg, 2010-06-16
+    real( kind = core_rknd ), intent(inout), dimension(gr%nz, min(1,sclr_dim) , 2) :: & 
+      RH_crit  ! critical relative humidity for droplet and ice nucleation
+! ---> h1g, 2012-06-14
+    logical, intent(in)                 ::  do_liquid_only_in_clubb
+! <--- h1g, 2012-06-14
+#endif
+
+    ! Local Variables
+    integer :: i, k 
+
+#ifdef CLUBB_CAM
+    integer ::  ixind
+#endif
+
+    ! Eric Raut declared this variable solely for output to disk
+    real( kind = core_rknd ), dimension(gr%nz) :: &
+      rc_coef,    & ! Coefficient of X'r_c' in Eq. (34) (t-levs.)   [K/(kg/kg)]
+      rc_coef_zm    ! Coefficient of X'r_c' in Eq. (34) on m-levs.  [K/(kg/kg)]
+
     real( kind = core_rknd ), dimension(gr%nz) :: &
       Km_zm, & ! Eddy diffusivity for momentum on zm grid levels [m^2/s] 
       Kmh_zm   ! Eddy diffusivity for thermodynamic variables [m^2/s]
@@ -613,22 +632,6 @@ module advance_clubb_core_module
       tau_factor, &         ! factor that includes tau_zm in expression for Km_zm [s]
       Km_zm_denom_term, &   ! term in denominator of Km_zm [-]
       Km_zm_numerator_term  ! term in numerator of Km_zm [-]
-
-#ifdef GFDL
-    ! hlg, 2010-06-16
-    real( kind = core_rknd ), intent(inOUT), dimension(gr%nz, min(1,sclr_dim) , 2) :: & 
-      RH_crit  ! critical relative humidity for droplet and ice nucleation
-! ---> h1g, 2012-06-14
-    logical, intent(in)                 ::  do_liquid_only_in_clubb
-! <--- h1g, 2012-06-14
-#endif
-
-    !!! Local Variables
-    integer :: i, k 
-
-#ifdef CLUBB_CAM
-    integer ::  ixind
-#endif
 
     real( kind = core_rknd ), dimension(gr%nz) :: &
       gamma_Skw_fnc, & ! Gamma as a function of skewness          [-]
@@ -720,6 +723,9 @@ module advance_clubb_core_module
     ! pdf_closure_driver.
     logical :: l_samp_stats_in_pdf_call
 
+   real( kind = core_rknd ), dimension(gr%nz) :: &
+     wp2_splat    ! Tendency of <w'2> due to eddies compressing  [m^2/s^3]
+    
     ! Variables associated with upgradient momentum contributions due to cumuli
     !real( kind = core_rknd ), dimension(gr%nz) :: &
     !  Km_Skw_factor ! Factor, with value < 1, that reduces eddy diffusivity, 
@@ -1234,6 +1240,10 @@ module advance_clubb_core_module
       khzm(:) = Kh_zm(:)
 #endif
 
+      ! Vertical compression of eddies causes gustiness (increase in up2 and vp2)
+      call term_splat( C_wp2_splat, gr%nz, wp2, wp2_zt, tau_zm, & ! Intent(in)
+                       wp2_splat )                                ! Intent(out)
+
       !----------------------------------------------------------------
       ! Set Surface variances
       !----------------------------------------------------------------
@@ -1269,6 +1279,7 @@ module advance_clubb_core_module
         ! Diagnose surface variances based on surface fluxes.
         call calc_surface_varnce( upwp_sfc, vpwp_sfc, wpthlp_sfc, wprtp_sfc, &      ! intent(in)
                              um(2), vm(2), Lscale_up(2), wpsclrp_sfc,        &      ! intent(in)
+                             wp2_splat(1), tau_zm(1),                        &      ! intent(in)
                              wp2(1), up2(1), vp2(1),                         &      ! intent(out)
                              thlp2(1), rtp2(1), rtpthlp(1),                  &      ! intent(out)
                              sclrp2(1,1:sclr_dim),                           &      ! intent(out)
@@ -1459,8 +1470,9 @@ module advance_clubb_core_module
                              l_iter_xp2_xpyp, dt,                    & ! intent(in)
                              sclrm, wpsclrp,                         & ! intent(in)
                              wpsclrp2, wpsclrprtp, wpsclrpthlp,      & ! intent(in)
+                             wp2_splat,                              & ! intent(in)
                              rtp2, thlp2, rtpthlp, up2, vp2,         & ! intent(inout)
-                             sclrp2, sclrprtp, sclrpthlp             ) ! intent(inout)
+                             sclrp2, sclrprtp, sclrpthlp)              ! intent(inout)
 
       if ( clubb_at_least_debug_level( 0 ) ) then
           if ( err_code == clubb_fatal_error ) then
@@ -1501,9 +1513,10 @@ module advance_clubb_core_module
              rho_ds_zt, invrs_rho_ds_zm,                         & ! intent(in)
              invrs_rho_ds_zt, radf, thv_ds_zm,                   & ! intent(in)
              thv_ds_zt, pdf_params%mixt_frac, Cx_fnc_Richardson, & ! intent(in)
+             wp2_splat,                                          & ! intent(in)
              pdf_implicit_coefs_terms,                           & ! intent(in)
              wprtp, wpthlp, rtp2, thlp2,                         & ! intent(in)
-             wp2, wp3, wp3_zm, wp2_zt )                            ! intent(i/o)
+             wp2, wp3, wp3_zm, wp2_zt )                            ! intent(inout)
 
       if ( clubb_at_least_debug_level( 0 ) ) then
           if ( err_code == clubb_fatal_error ) then

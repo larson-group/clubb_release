@@ -26,7 +26,7 @@ module parameter_indices
   private ! Default Scope
 
   integer, parameter, public ::  & 
-    nparams = 77 ! Total tunable parameters
+    nparams = 78 ! Total tunable parameters
 
 !***************************************************************
 !                    ***** IMPORTANT *****
@@ -66,60 +66,61 @@ module parameter_indices
     iC12              = 27, & 
     iC13              = 28, & 
     iC14              = 29, &
-    iC15              = 30
+    iC15              = 30, &
+    iC_wp2_splat      = 31
 
   integer, parameter, public :: &
-    iC6rt_Lscale0     = 31, &
-    iC6thl_Lscale0    = 32, &
-    iC7_Lscale0       = 33, &
-    iwpxp_L_thresh    = 34
+    iC6rt_Lscale0     = 32, &
+    iC6thl_Lscale0    = 33, &
+    iC7_Lscale0       = 34, &
+    iwpxp_L_thresh    = 35
 
   integer, parameter, public :: & 
-    ic_K              = 35, & 
-    ic_K1             = 36, & 
-    inu1              = 37, & 
-    ic_K2             = 38, & 
-    inu2              = 39, & 
-    ic_K6             = 40, & 
-    inu6              = 41, & 
-    ic_K8             = 42, & 
-    inu8              = 43, & 
-    ic_K9             = 44, & 
-    inu9              = 45, & 
-    inu10             = 46, &
-    ic_K_hm           = 47, & 
-    ic_K_hmb          = 48, & 
-    iK_hm_min_coef    = 49, & 
-    inu_hm            = 50 
+    ic_K              = 36, & 
+    ic_K1             = 37, & 
+    inu1              = 38, & 
+    ic_K2             = 39, & 
+    inu2              = 40, & 
+    ic_K6             = 41, & 
+    inu6              = 42, & 
+    ic_K8             = 43, & 
+    inu8              = 44, & 
+    ic_K9             = 45, & 
+    inu9              = 46, & 
+    inu10             = 47, &
+    ic_K_hm           = 48, & 
+    ic_K_hmb          = 49, & 
+    iK_hm_min_coef    = 50, & 
+    inu_hm            = 51 
 
   integer, parameter, public :: &
-    islope_coef_spread_DG_means_w = 51, &
-    ipdf_component_stdev_factor_w = 52, &
-    icoef_spread_DG_means_rt      = 53, &
-    icoef_spread_DG_means_thl     = 54, &
-    igamma_coef                   = 55, & 
-    igamma_coefb                  = 56, & 
-    igamma_coefc                  = 57, & 
-    imu                           = 58, & 
-    ibeta                         = 59, & 
-    ilmin_coef                    = 60, &
-    iomicron                      = 61, &
-    izeta_vrnce_rat               = 62, &
-    iupsilon_precip_frac_rat      = 63, &
-    ilambda0_stability_coef       = 64, &
-    imult_coef                    = 65, &
-    itaumin                       = 66, &
-    itaumax                       = 67, &
-    iLscale_mu_coef               = 68, &
-    iLscale_pert_coef             = 69, &
-    ialpha_corr                   = 70, &
-    iSkw_denom_coef               = 71, &
-    ic_K10                        = 72, &
-    ic_K10h                       = 73, &
-    ithlp2_rad_coef               = 74, &
-    ithlp2_rad_cloud_frac_thresh  = 75, &
-    iup2_vp2_factor               = 76, &
-    iSkw_max_mag                  = 77
+    islope_coef_spread_DG_means_w = 52, &
+    ipdf_component_stdev_factor_w = 53, &
+    icoef_spread_DG_means_rt      = 54, &
+    icoef_spread_DG_means_thl     = 55, &
+    igamma_coef                   = 56, & 
+    igamma_coefb                  = 57, & 
+    igamma_coefc                  = 58, & 
+    imu                           = 59, & 
+    ibeta                         = 60, & 
+    ilmin_coef                    = 61, &
+    iomicron                      = 62, &
+    izeta_vrnce_rat               = 63, &
+    iupsilon_precip_frac_rat      = 64, &
+    ilambda0_stability_coef       = 65, &
+    imult_coef                    = 66, &
+    itaumin                       = 67, &
+    itaumax                       = 68, &
+    iLscale_mu_coef               = 69, &
+    iLscale_pert_coef             = 70, &
+    ialpha_corr                   = 71, &
+    iSkw_denom_coef               = 72, &
+    ic_K10                        = 73, &
+    ic_K10h                       = 74, &
+    ithlp2_rad_coef               = 75, &
+    ithlp2_rad_cloud_frac_thresh  = 76, &
+    iup2_vp2_factor               = 77, &
+    iSkw_max_mag                  = 78
 
 
 end module parameter_indices
