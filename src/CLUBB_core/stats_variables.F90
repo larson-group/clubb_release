@@ -393,11 +393,12 @@ module stats_variables
      iwp3_pr3 = 0, &
      iwp3_dp1 = 0, &
      iwp3_sdmp = 0, &
-     iwp3_cl  = 0
+     iwp3_cl  = 0, &
+     iwp3_splat = 0
 
 !$omp   threadprivate(iwp3_bt, iwp3_ma, iwp3_ta, iwp3_tp, iwp3_ac, iwp3_bp1)
 !$omp   threadprivate(iwp3_bp2, iwp3_pr1, iwp3_pr2, iwp3_pr3, iwp3_dp1)
-!$omp   threadprivate(iwp3_sdmp, iwp3_cl)
+!$omp   threadprivate(iwp3_sdmp, iwp3_cl, iwp3_splat)
 
   integer, public :: &
     irtp3_bt  = 0, &
@@ -1091,7 +1092,7 @@ module stats_variables
      iwp2_pd = 0, & 
      iwp2_cl = 0, &
      iwp2_sf = 0, &
-     iwp2_splat
+     iwp2_splat = 0
 
 !$omp   threadprivate(iwp2_bt, iwp2_ma, iwp2_ta, iwp2_ac, iwp2_bp)
 !$omp   threadprivate(iwp2_pr1, iwp2_pr2, iwp2_pr3)

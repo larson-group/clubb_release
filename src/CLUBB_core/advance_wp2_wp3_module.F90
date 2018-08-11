@@ -47,7 +47,7 @@ module advance_wp2_wp3_module
                               rho_ds_zt, invrs_rho_ds_zm,              & ! In
                               invrs_rho_ds_zt, radf, thv_ds_zm,        & ! In
                               thv_ds_zt, mixt_frac, Cx_fnc_Richardson, & ! In
-                              wp2_splat,                               & ! intent(in)
+                              wp2_splat, wp3_splat,                    & ! intent(in)
                               pdf_implicit_coefs_terms,                & ! In
                               wprtp, wpthlp, rtp2, thlp2,              & ! In
                               wp2, wp3, wp3_zm, wp2_zt )                 ! Inout
@@ -174,8 +174,9 @@ module advance_wp2_wp3_module
       wpthlp,            & ! Flux of liquid water potential temp.      [m/s K]
       rtp2,              & ! Variance of rt (overall)                  [kg^2/kg^2]
       thlp2,             & ! Variance of thl (overall)                 [K^2]
-      Cx_fnc_Richardson, &  ! Cx_fnc from Richardson_num                [-]
-      wp2_splat             ! Tendency of <w'2> due to vertical compression of eddies [m^2/s^3]
+      Cx_fnc_Richardson, & ! Cx_fnc from Richardson_num                [-]
+      wp2_splat,         & ! Tendency of <w'2> due to vertical compression of eddies [m^2/s^3]
+      wp3_splat            ! Tendency of <w'3> due to vertical compression of eddies [m^3/s^4]
 
     type(implicit_coefs_terms), dimension(gr%nz), intent(in) :: &
       pdf_implicit_coefs_terms    ! Implicit coefs / explicit terms [units vary]
@@ -319,7 +320,7 @@ module advance_wp2_wp3_module
                      rho_ds_zt, invrs_rho_ds_zm,            & ! Intent(in)
                      invrs_rho_ds_zt, radf,                 & ! Intent(in)
                      thv_ds_zm, thv_ds_zt,                  & ! Intent(in)
-                     wp2_splat,                             & ! Intent(in)
+                     wp2_splat, wp3_splat,                  & ! Intent(in)
                      pdf_implicit_coefs_terms,              & ! Intent(in)
                      wprtp, wpthlp, rtp2, thlp2,            & ! Intent(in)
                      wp2, wp3, wp3_zm, wp2_zt )               ! Intent(inout)
@@ -422,7 +423,7 @@ module advance_wp2_wp3_module
                          rho_ds_zt, invrs_rho_ds_zm,            & ! Intent(in)
                          invrs_rho_ds_zt, radf,                 & ! Intent(in)
                          thv_ds_zm, thv_ds_zt,                  & ! Intent(in)
-                         wp2_splat,                             & ! Intent(in)
+                         wp2_splat, wp3_splat,                  & ! Intent(in)
                          pdf_implicit_coefs_terms,              & ! Intent(in)
                          wprtp, wpthlp, rtp2, thlp2,            & ! Intent(in)
                          wp2, wp3, wp3_zm, wp2_zt )               ! Intent(inout)
@@ -601,7 +602,8 @@ module advance_wp2_wp3_module
       wpthlp,          & ! Flux of liquid water potential temp.      [m/s K]
       rtp2,            & ! Variance of rt (overall)                  [kg^2/kg^2]
       thlp2,           & ! Variance of thl (overall)                 [K^2]
-      wp2_splat          ! Tendency of <w'2> due to vertical compression of eddies  [m^2/s^3]
+      wp2_splat,       & ! Tendency of <w'2> due to vertical compression of eddies  [m^2/s^3]
+      wp3_splat          ! Tendency of <w'3> due to vertical compression of eddies  [m^3/s^4]
 
     type(implicit_coefs_terms), dimension(gr%nz), intent(in) :: &
       pdf_implicit_coefs_terms    ! Implicit coefs / explicit terms [units vary]
@@ -712,7 +714,7 @@ module advance_wp2_wp3_module
                    upwp, vpwp, up2, vp2, Kw1, Kw8, Kh_zt,  &                   ! intent(in)
                    Skw_zt, tau1m, tauw3t, tau_C1_zm, C1_Skw_fnc, &             ! intent(in)
                    C11_Skw_fnc, C16_fnc, rho_ds_zm, invrs_rho_ds_zt, radf, &   ! intent(in)
-                   thv_ds_zm, thv_ds_zt, wp2_splat, &                          ! intent(in)
+                   thv_ds_zm, thv_ds_zt, wp2_splat, wp3_splat, &               ! intent(in)
                    l_crank_nich_diff, &                                        ! intent(in)
                    rhs )                                                       ! intent(out)
 
@@ -2711,7 +2713,7 @@ module advance_wp2_wp3_module
                        upwp, vpwp, up2, vp2, Kw1, Kw8, Kh_zt, & 
                        Skw_zt, tau1m, tauw3t, tau_C1_zm, C1_Skw_fnc, &
                        C11_Skw_fnc, C16_fnc, rho_ds_zm, invrs_rho_ds_zt, radf, &
-                       thv_ds_zm, thv_ds_zt, wp2_splat, & 
+                       thv_ds_zm, thv_ds_zt, wp2_splat, wp3_splat, & 
                        l_crank_nich_diff, &
                        rhs )
 
@@ -2765,7 +2767,7 @@ module advance_wp2_wp3_module
 
     use stats_variables, only:  & 
         l_stats_samp, iwp2_dp1, iwp2_dp2, stats_zm, iwp2_bp,   & ! Variable(s)
-        iwp2_pr1, iwp2_pr2, iwp2_pr3, iwp2_splat, &
+        iwp2_pr1, iwp2_pr2, iwp2_pr3, iwp2_splat, iwp3_splat, &
         iwp3_ta, stats_zt, & 
         iwp3_tp, iwp3_bp1, iwp3_pr2, iwp3_pr1, iwp3_dp1, iwp3_bp2, iwp3_pr3
         
@@ -2838,7 +2840,8 @@ module advance_wp2_wp3_module
       radf,              & ! Buoyancy production at the CL top         [m^2/s^3]
       thv_ds_zm,         & ! Dry, base-state theta_v on momentum levs. [K]
       thv_ds_zt,         & ! Dry, base-state theta_v on thermo. levs.  [K]
-      wp2_splat            ! Tendency of <w'^2> due to vertical compression of eddies [m^2/s^3]
+      wp2_splat,         & ! Tendency of <w'^2> due to vertical compression of eddies [m^2/s^3]
+      wp3_splat            ! Tendency of <w'^3> due to vertical compression of eddies [m^3/s^4]
 
     logical, intent(in) :: & 
       l_crank_nich_diff   ! Turns on/off Crank-Nicholson diffusion.
@@ -2903,7 +2906,7 @@ module advance_wp2_wp3_module
       k_wp2 = 2*k
 
 
-      !!!!!***** w'^2 *****!!!!!
+      !!!!!***** Set up eqn for 2nd moment of vertical velocity, <w'^2> *****!!!!!
 
       ! w'^2: Right-hand side (explicit w'^2 portion of the code).
 
@@ -3063,7 +3066,7 @@ module advance_wp2_wp3_module
 
 
 
-      !!!!!***** w'^3 *****!!!!!
+      !!!!!***** Set up eqn for 3rd moment of vertical velocity, <w'^3> *****!!!!!
 
       ! w'^3: Right-hand side (explicit w'^3 portion of the code).
 
@@ -3183,6 +3186,11 @@ module advance_wp2_wp3_module
       rhs(k_wp3) & 
       = rhs(k_wp3) & 
       + wp3_terms_bp1_pr2_rhs( C11_Skw_fnc(k), thv_ds_zt(k), wp2thvp(k) )
+
+      ! RHS term for vertical compression of eddies (w'^3 splat)
+      rhs(k_wp3) &
+      = rhs(k_wp3) & 
+      + wp3_splat(k) 
 
       ! RHS pressure term 1 (pr1).
       rhs(k_wp3) & 
@@ -3338,6 +3346,9 @@ module advance_wp2_wp3_module
         call stat_modify_pt( iwp3_pr1, k,  &
                              + ( one - gamma_over_implicit_ts )  &
                              * ( - lhs_fnc_output(1) * wp3(k) ), stats_zt )
+
+        ! Include effect of vertical compression of eddies in wp2 budget
+        call stat_update_var_pt( iwp3_splat, k, wp3_splat(k), stats_zt )
 
         ! w'^3 term dp1 has both implicit and explicit components (if the
         ! Crank-Nicholson scheme is selected); call stat_begin_update_pt.  

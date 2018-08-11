@@ -420,7 +420,7 @@ module advance_clubb_core_module
     use advance_helper_module, only: &
       calc_stability_correction, & ! Procedure(s)
       compute_Cx_fnc_Richardson, &
-      term_splat
+      term_wp2_splat, term_wp3_splat
 
     use interpolation, only: &
       pvertinterp
@@ -724,7 +724,8 @@ module advance_clubb_core_module
     logical :: l_samp_stats_in_pdf_call
 
    real( kind = core_rknd ), dimension(gr%nz) :: &
-     wp2_splat    ! Tendency of <w'2> due to eddies compressing  [m^2/s^3]
+     wp2_splat, &   ! Tendency of <w'2> due to eddies compressing  [m^2/s^3]
+     wp3_splat      ! Tendency of <w'3> due to eddies compressing  [m^3/s^4]
     
     ! Variables associated with upgradient momentum contributions due to cumuli
     !real( kind = core_rknd ), dimension(gr%nz) :: &
@@ -1241,8 +1242,11 @@ module advance_clubb_core_module
 #endif
 
       ! Vertical compression of eddies causes gustiness (increase in up2 and vp2)
-      call term_splat( C_wp2_splat, gr%nz, wp2, wp2_zt, tau_zm, & ! Intent(in)
-                       wp2_splat )                                ! Intent(out)
+      call term_wp2_splat( C_wp2_splat, gr%nz, wp2, wp2_zt, tau_zm, & ! Intent(in)
+                           wp2_splat )                                ! Intent(out)
+      ! Vertical compression of eddies also diminishes w'3
+      call term_wp3_splat( C_wp2_splat, gr%nz, wp2, wp3, tau_zt, & ! Intent(in)
+                           wp3_splat )                             ! Intent(out)
 
       !----------------------------------------------------------------
       ! Set Surface variances
@@ -1513,7 +1517,7 @@ module advance_clubb_core_module
              rho_ds_zt, invrs_rho_ds_zm,                         & ! intent(in)
              invrs_rho_ds_zt, radf, thv_ds_zm,                   & ! intent(in)
              thv_ds_zt, pdf_params%mixt_frac, Cx_fnc_Richardson, & ! intent(in)
-             wp2_splat,                                          & ! intent(in)
+             wp2_splat, wp3_splat,                               & ! intent(in)
              pdf_implicit_coefs_terms,                           & ! intent(in)
              wprtp, wpthlp, rtp2, thlp2,                         & ! intent(in)
              wp2, wp3, wp3_zm, wp2_zt )                            ! intent(inout)

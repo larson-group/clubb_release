@@ -645,8 +645,11 @@ module parameters_tunable
         err_code = clubb_fatal_error
     end if
 
-    !write(*,nml=clubb_params_nl) ! %% debug
-
+    if ( C_wp2_splat < zero ) then
+        write(fstderr,*) "C_wp2_splat = ", C_wp2_splat
+        write(fstderr,*) "C_wp2_splat must satisfy C_wp2_splat >= 0"
+        err_code = clubb_fatal_error
+    end if
 
     return
 

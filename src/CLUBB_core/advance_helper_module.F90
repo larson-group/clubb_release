@@ -15,7 +15,7 @@ module advance_helper_module
     calc_stability_correction,   &
     calc_brunt_vaisala_freq_sqd, &
     compute_Cx_fnc_Richardson, &
-    term_splat
+    term_wp2_splat, term_wp3_splat
 
   private ! Set Default Scope
 
@@ -605,7 +605,8 @@ module advance_helper_module
   end function Lscale_width_vert_avg
 
  !============================================================================
-  subroutine term_splat( C_wp2_splat, nz, wp2, wp2_zt, tau_zm, wp2_splat )
+  subroutine term_wp2_splat( C_wp2_splat, nz, wp2, wp2_zt, tau_zm, &
+                             wp2_splat )
 
 
   ! Description:
@@ -615,7 +616,7 @@ module advance_helper_module
   !   the wp2 equation, and -0.5*term_splat is intended to be added to each 
   !   of the up2 and vp2 equations.  The functional form of term splat is
   !
-  !   term_splat = - w'2 * (turbulent time scale) * ( d/dz( sqrt(w'2) ) )^2
+  !   term_splat \propto - w'2 * (turbulent time scale) * ( d/dz( sqrt(w'2) ) )^2
 
     ! Included Modules
     use grid_class, only: &
@@ -652,6 +653,62 @@ module advance_helper_module
     wp2_splat = - C_wp2_splat * wp2 * tau_zm * d_sqrt_wp2_dz**2
     !wp2_splat = - C_wp2_splat * wp2 * 900.0_core_rknd * d_sqrt_wp2_dz**2
 
-  end subroutine term_splat
+  end subroutine term_wp2_splat
+
+  !============================================================================
+  subroutine term_wp3_splat( C_wp2_splat, nz, wp2, wp3, tau_zt, &
+                             wp3_splat )
+
+  ! Description:
+  !   This subroutine computes the damping of wp3 due
+  !   to "splatting" of eddies, e.g., as they approach the ground or a Sc inversion.
+  !   term_wp3_splat is intended to be added to the right-hand side of 
+  !   the wp3 equation.  The functional form of wp3_splat is
+  !
+  !   wp3_splat \propto - w'3 * (turbulent time scale) * ( d/dz( sqrt(w'2) ) )^2
+  !
+  !   If the coefficient on wp3_splat is at least 1.5 times greater than the 
+  !   coefficient on wp2_splat, then skewness will be damped, promoting
+  !   more stratiform layers.
+
+    ! Included Modules
+    use grid_class, only: &
+      ddzm   ! Procedure(s)
+
+    use clubb_precision, only: & 
+      core_rknd 
+
+    use constants_clubb, only: &
+      three  ! Constant(s)
+
+    implicit none 
+
+    ! Input Variables
+    integer, intent(in) :: & 
+      nz          ! Number of vertical levels                    [-]
+
+    real( kind = core_rknd ), intent(in) :: & 
+      C_wp2_splat          ! Tuning parameter                    [-]
+
+    real( kind = core_rknd ), dimension(nz), intent(in) :: & 
+      wp2,     &  ! Variance of vertical velocity on the momentum grid [m^2/s^2]
+      wp3,     &  ! Third moment of vertical velocity on the momentum grid [m^3/s^3]
+      tau_zt      ! Turbulent time scale on the thermal grid               [s]
+
+    ! Output Variable
+    real( kind = core_rknd ), dimension(nz), intent(out) :: & 
+      wp3_splat     ! Tendency of <w'^3> due to splatting of eddies (on zt grid) [m^3/s^4]
+
+    ! Local Variable
+    real( kind = core_rknd ), dimension(nz) :: & 
+      d_sqrt_wp2_dz    ! d/dz( sqrt( w'2 ) )                 [1/s]
+
+    ! ---- Begin Code ----
+
+    d_sqrt_wp2_dz = ddzm( sqrt( wp2 ) )
+    wp3_splat = - three * C_wp2_splat * wp3 * tau_zt * d_sqrt_wp2_dz**2
+    !wp3_splat = - three * C_wp2_splat * wp3 * 900._core_rknd * d_sqrt_wp2_dz**2
+
+  end subroutine term_wp3_splat
 
 end module advance_helper_module

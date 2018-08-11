@@ -10,7 +10,7 @@ module stats_zt_module
   public :: stats_init_zt
 
   ! Constant parameters
-  integer, parameter, public :: nvarmax_zt = 777 ! Maximum variables allowed
+  integer, parameter, public :: nvarmax_zt = 800 ! Maximum variables allowed
 
   contains
 
@@ -217,7 +217,8 @@ module stats_zt_module
         iwp3_pr3, &
         iwp3_dp1, &
         iwp3_sdmp, &
-        iwp3_cl
+        iwp3_cl, &
+        iwp3_splat
 
     use stats_variables, only: &
         irtp3_bt, &
@@ -1838,6 +1839,13 @@ module stats_zt_module
         call stat_assign( var_index=iwp3_cl, var_name="wp3_cl", &
              var_description="wp3 budget: wp3 clipping term [m^{3} s^{-4}]", &
              var_units="m^{3} s^{-4}", l_silhs=.false., grid_kind=stats_zt )
+        k = k + 1
+
+      case ('wp3_splat')
+        iwp3_splat = k
+        call stat_assign( var_index=iwp3_splat, var_name="wp3_splat", &
+             var_description="wp3 budget: wp3 splatting term [m^3 s^-4]", &
+             var_units="m^3 s^-4", l_silhs=.false., grid_kind=stats_zt )
         k = k + 1
 
       case ('rtp3_bt')
