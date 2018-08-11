@@ -22,6 +22,7 @@ module mean_adv
   private ! Default scope
 
   public :: term_ma_zt_lhs, & 
+            term_ma_zt_lhs_all, &
             term_ma_zm_lhs, &
             term_ma_zm_lhs_all
 
@@ -394,6 +395,147 @@ module mean_adv
     return
 
   end function term_ma_zt_lhs
+
+
+
+    !=============================================================================================
+    pure subroutine term_ma_zt_lhs_all( wm_zt, invrs_dzt, invrs_dzm, & ! Intent(in)
+                                        lhs_advm                     ) ! Intent(out)
+    ! Description:
+    !   This subroutine is an optimized version of term_ma_zt_lhs. term_ma_zt_lhs
+    !   returns a single 3 dimensional array for any specified grid level. This subroutine returns
+    !   an array of 3 dimensional arrays, one for every grid level not including boundary values.
+    ! 
+    ! Notes:
+    !   This subroutine exists for performance concerns. It returns all lhs arrays at once
+    !   so that it can be properly vectorized, see clubb:ticket:834 for detail.
+    !   
+    !---------------------------------------------------------------------------------------------
+
+        use grid_class, only: & 
+            gr ! Variable(s)
+
+        use clubb_precision, only: &
+            core_rknd ! Variable(s)
+
+        use model_flags, only: &
+            l_upwind_xm_ma ! Variable(s)
+
+        implicit none
+
+        !------------------- Input Variables -------------------
+        real( kind = core_rknd ), dimension(gr%nz), intent(in) :: & 
+          wm_zt,     & ! wm_zt(k)                        [m/s]
+          invrs_dzt, & ! Inverse of grid spacing (k)     [1/m]
+          invrs_dzm
+
+        !------------------- Output Variables -------------------
+        real( kind = core_rknd ), dimension(3,gr%nz), intent(out) :: &
+            lhs_advm
+
+        !---------------- Local Variables -------------------
+        integer :: &
+            k             ! Loop variable for current grid level
+
+        logical, parameter ::  &
+            l_ub_const_deriv = .true.  ! Flag to use the "one-sided" upper boundary.
+
+        !---------------- Begin Code -------------------
+
+        ! Set lower boundary array to 0
+        lhs_advm(:,1) = 0.0_core_rknd
+
+
+        
+        if( .not. l_upwind_xm_ma ) then  ! Use "centered" differencing
+
+
+            ! Most of the interior model; normal conditions.
+            do k = 2, gr%nz-1
+
+                lhs_advm(1,k) = + wm_zt(k) * invrs_dzt(k) * gr%weights_zt2zm(1,k)
+
+                lhs_advm(2,k) = + wm_zt(k) * invrs_dzt(k) * (   gr%weights_zt2zm(2,k) & 
+                                                              - gr%weights_zt2zm(1,k-1)   )
+
+                lhs_advm(3,k) = - wm_zt(k) * invrs_dzt(k) * gr%weights_zt2zm(2,k-1)
+
+            end do
+
+            ! Upper Boundary
+            if ( l_ub_const_deriv ) then
+
+                lhs_advm(1,gr%nz) = 0.0_core_rknd
+
+                lhs_advm(2,gr%nz) = + wm_zt(k) * invrs_dzt(k) * (   gr%weights_zt2zm(1,k) &
+                                                                  - gr%weights_zt2zm(1,k-1)   )
+
+                lhs_advm(3,gr%nz) = + wm_zt(k) * invrs_dzt(k) * (   gr%weights_zt2zm(2,k) &
+                                                                  - gr%weights_zt2zm(2,k-1)   )
+
+            else
+
+                lhs_advm(1,gr%nz) = 0.0_core_rknd
+
+                lhs_advm(2,gr%nz) = + wm_zt(k) * invrs_dzt(k) * ( 1.0_core_rknd - gr%weights_zt2zm(1,k-1) )
+
+                lhs_advm(3,gr%nz) = - wm_zt(k) * invrs_dzt(k) * gr%weights_zt2zm(2,k-1)
+
+            endif ! l_ub_const_deriv
+
+
+        else ! l_upwind_xm_ma == .true.; use "upwind" differencing
+
+            do k = 2, gr%nz-1
+
+                if ( wm_zt(k) >= 0.0_core_rknd ) then  ! Mean wind is in upward direction
+
+                    lhs_advm(1,k) = 0.0_core_rknd
+
+                    lhs_advm(2,k) = + wm_zt(k) * invrs_dzm(k-1)
+
+                    lhs_advm(3,k) = - wm_zt(k) * invrs_dzm(k-1)
+
+
+                else  ! wm_zt < 0; Mean wind is in downward direction
+
+                    lhs_advm(1,k) = + wm_zt(k) * invrs_dzm(k)
+
+                    lhs_advm(2,k) = - wm_zt(k) * invrs_dzm(k)
+
+                    lhs_advm(3,k) = 0.0_core_rknd
+
+                endif ! wm_zt > 0
+
+            end do
+
+            ! Upper Boundary
+            if ( wm_zt(k) >= 0.0_core_rknd ) then  ! Mean wind is in upward direction
+
+                    lhs_advm(1,gr%nz) = 0.0_core_rknd
+
+                    lhs_advm(2,gr%nz) = + wm_zt(k) * invrs_dzm(k-1)
+
+                    lhs_advm(3,gr%nz) = - wm_zt(k) * invrs_dzm(k-1)
+
+
+            else  ! wm_zt < 0; Mean wind is in downward direction
+
+                    lhs_advm(1,gr%nz) = 0.0_core_rknd
+
+                    lhs_advm(2,gr%nz) = 0.0_core_rknd
+
+                    lhs_advm(3,gr%nz) = 0.0_core_rknd
+
+            endif ! wm_zt > 0
+
+        endif ! l_upwind_xm_ma
+
+        return
+
+    end subroutine term_ma_zt_lhs_all
+
+
 
   !=============================================================================
   pure function term_ma_zm_lhs( wm_zm, invrs_dzm, level ) & 
