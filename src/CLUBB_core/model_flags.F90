@@ -56,6 +56,16 @@ module model_flags
     ! equations.
     l_explicit_turbulent_adv_xpyp = .false.
 
+  ! Flag to predict <u'w'> and <v'w'> along with <u> and <v> alongside the
+  ! advancement of <rt>, <w'rt'>, <thl>, <wpthlp>, <sclr>, and <w'sclr'> in
+  ! subroutine advance_xm_wpxp.  Otherwise, <u'w'> and <v'w'> are still
+  ! approximated by eddy diffusivity when <u> and <v> are advanced in
+  ! subroutine advance_windm_edsclrm.
+  logical, public :: &
+    l_predict_upwp_vpwp = .false.
+
+!$omp threadprivate( l_predict_upwp_vpwp )
+
   ! Flag to advance xp3 using a simplified version of the d(xp3)/dt predictive
   ! equation or calculate it using a steady-state approximation.  When the flag
   ! is turned off, the Larson and Golaz (2005) ansatz to calculate xp3 after
@@ -274,7 +284,7 @@ module model_flags
     l_tke_aniso, l_vert_avg_closure, l_single_C2_Skw, l_standard_term_ta, &
     l_use_cloud_cover, l_calc_thlp2_rad, l_rcm_supersat_adj, &
     l_damp_wp3_Skw_squared, l_min_wp2_from_corr_wx, l_min_xp2_from_corr_wx, &
-    l_C2_cloud_frac
+    l_C2_cloud_frac, l_predict_upwp_vpwp
 
   contains
 
