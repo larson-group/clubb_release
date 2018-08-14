@@ -76,12 +76,12 @@ module numerical_check
 
 !---------------------------------------------------------------------------
   subroutine pdf_closure_check( wp4, wprtp2, wp2rtp, wpthlp2, & 
-                          wp2thlp, cloud_frac, rcm, wpthvp, wp2thvp, & 
-                          rtpthvp, thlpthvp, wprcp, wp2rcp, & 
-                          rtprcp, thlprcp, rcp2, wprtpthlp, & 
-                          crt_1, crt_2, cthl_1, cthl_2, pdf_params, &
-                          sclrpthvp, sclrprcp, wpsclrp2, & 
-                          wpsclrprtp, wpsclrpthlp, wp2sclrp )
+                                wp2thlp, cloud_frac, rcm, wpthvp, wp2thvp, & 
+                                rtpthvp, thlpthvp, wprcp, wp2rcp, & 
+                                rtprcp, thlprcp, rcp2, wprtpthlp, & 
+                                crt_1, crt_2, cthl_1, cthl_2, pdf_params, &
+                                sclrpthvp, sclrprcp, wpsclrp2, & 
+                                wpsclrprtp, wpsclrpthlp, wp2sclrp )
 
 ! Description: This subroutine determines if any of the output
 !   variables for the pdf_closure subroutine carry values that
@@ -90,21 +90,24 @@ module numerical_check
 ! Joshua Fasching February 2008
 !---------------------------------------------------------------------------
 
+    use grid_class, only: &
+        gr    ! Variable type(s)
+
     use parameters_model, only: & 
-      sclr_dim ! Variable
+        sclr_dim ! Variable
 
     use pdf_parameter_module, only:  &
-      pdf_parameter  ! type
+        pdf_parameter  ! type
 
     use stats_variables, only: &
-      iwp4,       & ! Variables
-      ircp2,      &
-      iwprtp2,    &
-      iwprtpthlp, &
-      iwpthlp2
+        iwp4,       & ! Variables
+        ircp2,      &
+        iwprtp2,    &
+        iwprtpthlp, &
+        iwpthlp2
 
     use clubb_precision, only: &
-      core_rknd ! Variable(s)
+        core_rknd ! Variable(s)
 
     implicit none
 
@@ -113,7 +116,7 @@ module numerical_check
       "pdf_closure"
 
     ! Input Variables
-    real( kind = core_rknd ), intent(in) :: & 
+    real( kind = core_rknd ), dimension(gr%nz), intent(in) :: & 
       wp4,             & ! w'^4                  [m^4/s^4]
       wprtp2,          & ! w' r_t'               [(m kg)/(s kg)]
       wp2rtp,          & ! w'^2 r_t'             [(m^2 kg)/(s^2 kg)]
@@ -134,17 +137,19 @@ module numerical_check
       crt_1, crt_2,  & 
       cthl_1, cthl_2
 
-    type(pdf_parameter), intent(in) ::  & 
+    type(pdf_parameter), dimension(gr%nz), intent(in) ::  & 
       pdf_params        ! PDF parameters          [units vary]
 
     ! Input (Optional passive scalar variables)
-    real( kind = core_rknd ), dimension(sclr_dim), intent(in) ::  & 
+    real( kind = core_rknd ), dimension(gr%nz,sclr_dim), intent(in) ::  & 
       sclrpthvp,  & 
       sclrprcp,  & 
       wpsclrp2, & 
       wpsclrprtp, & 
       wpsclrpthlp, & 
       wp2sclrp
+
+    integer :: i    ! Scalar loop index
 
 !-------------------------------------------------------------------------------
 
@@ -250,19 +255,21 @@ module numerical_check
                     "pdf_params%ice_supersat_frac_2", proc_name )
 
     if ( sclr_dim > 0 ) then
-      call check_nan( sclrpthvp,"sclrpthvp", & 
-                      proc_name )
-      call check_nan( sclrprcp, "sclrprcp", & 
-                      proc_name )
-      call check_nan( wpsclrprtp, "wpsclrprtp",  & 
-                      proc_name )
-      call check_nan( wpsclrp2, "wpsclrp2",  & 
-                      proc_name )
-      call check_nan( wpsclrpthlp, "wpsclrtlp",  & 
-                      proc_name )
-      call check_nan( wp2sclrp, "wp2sclrp",  & 
-                      proc_name )
-    end if
+       do i = 1, sclr_dim, 1
+          call check_nan( sclrpthvp(:,i),"sclrpthvp", & 
+                          proc_name )
+          call check_nan( sclrprcp(:,i), "sclrprcp", & 
+                          proc_name )
+          call check_nan( wpsclrprtp(:,i), "wpsclrprtp", & 
+                          proc_name )
+          call check_nan( wpsclrp2(:,i), "wpsclrp2", & 
+                          proc_name )
+          call check_nan( wpsclrpthlp(:,i), "wpsclrtlp", & 
+                          proc_name )
+          call check_nan( wp2sclrp(:,i), "wp2sclrp", & 
+                          proc_name )
+       enddo ! i = 1, sclr_dim, 1
+    endif
 
     return
   end subroutine pdf_closure_check

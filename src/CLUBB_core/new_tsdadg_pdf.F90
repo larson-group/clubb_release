@@ -38,6 +38,9 @@ module new_tsdadg_pdf
     ! References:
     !-----------------------------------------------------------------------
 
+    use grid_class, only: &
+        gr    ! Variable type(s)
+
     use constants_clubb, only: &
         one,     & ! Variable(s)
         zero,    &
@@ -49,7 +52,7 @@ module new_tsdadg_pdf
     implicit none
 
     ! Input Variables
-    real( kind = core_rknd ), intent(in) :: &
+    real( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
       wm,     & ! Mean of w (overall)                [m/s]
       rtm,    & ! Mean of rt (overall)               [kg/kg]
       thlm,   & ! Mean of thl (overall)              [K]
@@ -63,7 +66,7 @@ module new_tsdadg_pdf
       wpthlp    ! Covariance of w and thl (overall)  [(m/s)K]
 
     ! Output Variables
-    real( kind = core_rknd ), intent(out) :: &
+    real( kind = core_rknd ), dimension(gr%nz), intent(out) :: &
       mu_w_1,          & ! Mean of w (1st PDF component)        [m/s]
       mu_w_2,          & ! Mean of w (2nd PDF component)        [m/s]
       mu_rt_1,         & ! Mean of rt (1st PDF component)       [kg/kg]
@@ -79,7 +82,7 @@ module new_tsdadg_pdf
       mixt_frac          ! Mixture fraction                     [-]
 
     ! Local Variables
-    real( kind = core_rknd ) :: &
+    real( kind = core_rknd ), dimension(gr%nz) :: &
       big_L_w_1,   & ! Parameter for the 1st PDF comp. mean of w            [-]
       big_L_w_2,   & ! Parameter for the 2nd PDF comp. mean of w (setter)   [-]
       big_L_rt_1,  & ! Parameter for the 1st PDF comp. mean of rt           [-]
@@ -95,14 +98,12 @@ module new_tsdadg_pdf
       small_l_thl_1, & ! Param. for the 1st PDF comp. mean of thl          [-]
       small_l_thl_2    ! Param. for the 2nd PDF comp. mean of thl (setter) [-]
 
-    real( kind = core_rknd ) :: &
-      sgn_wprtp,  & ! Sign of the covariance of w and rt (overall)     [-]
-      sgn_wpthlp    ! Sign of the covariance of w and thl (overall)    [-]
+    real( kind = core_rknd ), dimension(gr%nz) :: &
+      sgn_wprtp,  & ! Sign of the covariance of w and rt (overall)         [-]
+      sgn_wpthlp, & ! Sign of the covariance of w and thl (overall)        [-]
+      sgn_wp2       ! Sign of the variance of w (overall); always positive [-]
 
-    real( kind = core_rknd ), parameter :: &
-      sgn_wp2 = one   ! Sign of the variance of w (overall); always positive [-]
-
-    real( kind = core_rknd ) :: &
+    real( kind = core_rknd ), dimension(gr%nz) :: &
       coef_sigma_w_1_sqd,   & ! sigma_w_1^2 = coef_sigma_w_1_sqd * <w'^2>    [-]
       coef_sigma_w_2_sqd,   & ! sigma_w_2^2 = coef_sigma_w_2_sqd * <w'^2>    [-]
       coef_sigma_rt_1_sqd,  & ! sigma_rt_1^2 = coef_sigma_rt_1_sqd * <rt'^2> [-]
@@ -110,20 +111,25 @@ module new_tsdadg_pdf
       coef_sigma_thl_1_sqd, & ! sigma_thl_1^2=coef_sigma_thl_1_sqd*<thl'^2>  [-]
       coef_sigma_thl_2_sqd    ! sigma_thl_2^2=coef_sigma_thl_2_sqd*<thl'^2>  [-]
 
+    integer :: k    ! Vertical level loop index
+
 
     ! Calculate sgn( <w'rt'> ).
-    if ( wprtp >= zero ) then
+    where ( wprtp >= zero )
        sgn_wprtp = one
-    else ! wprtp < 0
+    elsewhere ! wprtp < 0
        sgn_wprtp = -one
-    endif ! wprtp >= 0
+    endwhere ! wprtp >= 0
 
     ! Calculate sgn( <w'thl'> ).
-    if ( wpthlp >= zero ) then
+    where ( wpthlp >= zero )
        sgn_wpthlp = one
-    else ! wpthlp < 0
+    elsewhere ! wpthlp < 0
        sgn_wpthlp = -one
-    endif ! wpthlp >= 0
+    endwhere ! wpthlp >= 0
+
+    ! The sign of the variance of w is always positive.
+    sgn_wp2 = one
 
     small_l_w_1 = 0.75_core_rknd
     small_l_w_2 = 0.5_core_rknd
@@ -132,155 +138,183 @@ module new_tsdadg_pdf
     small_l_thl_1 = 0.75_core_rknd
     small_l_thl_2 = 0.5_core_rknd
 
-    call calc_L_x_Skx_fnc( Skw, sgn_wp2,             & ! In
-                           small_l_w_1, small_l_w_2, & ! In
-                           big_L_w_1, big_L_w_2      ) ! Out
+    do k = 1, gr%nz, 1
 
-    call calc_L_x_Skx_fnc( Skrt, sgn_wprtp,            & ! In
-                           small_l_rt_1, small_l_rt_2, & ! In
-                           big_L_rt_1, big_L_rt_2      ) ! Out
+       call calc_L_x_Skx_fnc( Skw(k), sgn_wp2(k),        & ! In
+                              small_l_w_1, small_l_w_2,  & ! In
+                              big_L_w_1(k), big_L_w_2(k) ) ! Out
 
-    call calc_L_x_Skx_fnc( Skthl, sgn_wpthlp,            & ! In
-                           small_l_thl_1, small_l_thl_2, & ! In
-                           big_L_thl_1, big_L_thl_2      ) ! Out
+       call calc_L_x_Skx_fnc( Skrt(k), sgn_wprtp(k),       & ! In
+                              small_l_rt_1, small_l_rt_2,  & ! In
+                              big_L_rt_1(k), big_L_rt_2(k) ) ! Out
 
-
-    ! The variable with the greatest magnitude of skewness will be the setter
-    ! variable and the other variables will be responder variables.
-    if ( abs( Skw ) >= abs( Skrt ) .and. abs( Skw ) >= abs( Skthl ) ) then
-
-       ! The variable w has the greatest magnitude of skewness.
-
-       call calc_setter_parameters( wm, wp2, Skw, sgn_wp2,         & ! In
-                                    big_L_w_1, big_L_w_2,          & ! In
-                                    mu_w_1, mu_w_2, sigma_w_1_sqd, & ! Out
-                                    sigma_w_2_sqd, mixt_frac,      & ! Out
-                                    coef_sigma_w_1_sqd,            & ! Out
-                                    coef_sigma_w_2_sqd             ) ! Out
-
-       call calc_respnder_parameters( rtm, rtp2, Skrt, sgn_wprtp,     & ! In
-                                      mixt_frac, big_L_rt_1,          & ! In
-                                      mu_rt_1, mu_rt_2,               & ! Out
-                                      sigma_rt_1_sqd, sigma_rt_2_sqd, & ! Out
-                                      coef_sigma_rt_1_sqd,            & ! Out
-                                      coef_sigma_rt_2_sqd             ) ! Out
-
-       call calc_respnder_parameters( thlm, thlp2, Skthl, sgn_wpthlp,   & ! In
-                                      mixt_frac, big_L_thl_1,           & ! In
-                                      mu_thl_1, mu_thl_2,               & ! Out
-                                      sigma_thl_1_sqd, sigma_thl_2_sqd, & ! Out
-                                      coef_sigma_thl_1_sqd,             & ! Out
-                                      coef_sigma_thl_2_sqd              ) ! Out
+       call calc_L_x_Skx_fnc( Skthl(k), sgn_wpthlp(k),       & ! In
+                              small_l_thl_1, small_l_thl_2,  & ! In
+                              big_L_thl_1(k), big_L_thl_2(k) ) ! Out
 
 
-    elseif ( abs( Skrt ) > abs( Skw ) .and. abs( Skrt ) >= abs( Skthl ) ) then
+       ! The variable with the greatest magnitude of skewness will be the setter
+       ! variable and the other variables will be responder variables.
+       if ( abs( Skw(k) ) >= abs( Skrt(k) ) &
+            .and. abs( Skw(k) ) >= abs( Skthl(k) ) ) then
 
-       ! The variable rt has the greatest magnitude of skewness.
+          ! The variable w has the greatest magnitude of skewness.
 
-       call calc_setter_parameters( rtm, rtp2, Skrt, sgn_wprtp,       & ! In
-                                    big_L_rt_1, big_L_rt_2,           & ! In
-                                    mu_rt_1, mu_rt_2, sigma_rt_1_sqd, & ! Out
-                                    sigma_rt_2_sqd, mixt_frac,        & ! Out
-                                    coef_sigma_rt_1_sqd,              & ! Out
-                                    coef_sigma_rt_2_sqd               ) ! Out
+          call calc_setter_parameters( wm(k), wp2(k),                  & ! In
+                                       Skw(k), sgn_wp2(k),             & ! In
+                                       big_L_w_1(k), big_L_w_2(k),     & ! In
+                                       mu_w_1(k), mu_w_2(k),           & ! Out
+                                       sigma_w_1_sqd(k),               & ! Out
+                                       sigma_w_2_sqd(k), mixt_frac(k), & ! Out
+                                       coef_sigma_w_1_sqd(k),          & ! Out
+                                       coef_sigma_w_2_sqd(k)           ) ! Out
 
-       call calc_respnder_parameters( wm, wp2, Skw, sgn_wp2,        & ! In
-                                      mixt_frac, big_L_w_1,         & ! In
-                                      mu_w_1, mu_w_2,               & ! Out
-                                      sigma_w_1_sqd, sigma_w_2_sqd, & ! Out
-                                      coef_sigma_w_1_sqd,           & ! Out
-                                      coef_sigma_w_2_sqd            ) ! Out
+          call calc_respnder_parameters( rtm(k), rtp2(k),             & ! In
+                                         Skrt(k), sgn_wprtp(k),       & ! In
+                                         mixt_frac(k), big_L_rt_1(k), & ! In
+                                         mu_rt_1(k), mu_rt_2(k),      & ! Out
+                                         sigma_rt_1_sqd(k),           & ! Out
+                                         sigma_rt_2_sqd(k),           & ! Out
+                                         coef_sigma_rt_1_sqd(k),      & ! Out
+                                         coef_sigma_rt_2_sqd(k)       ) ! Out
 
-       call calc_respnder_parameters( thlm, thlp2, Skthl, sgn_wpthlp,   & ! In
-                                      mixt_frac, big_L_thl_1,           & ! In
-                                      mu_thl_1, mu_thl_2,               & ! Out
-                                      sigma_thl_1_sqd, sigma_thl_2_sqd, & ! Out
-                                      coef_sigma_thl_1_sqd,             & ! Out
-                                      coef_sigma_thl_2_sqd              ) ! Out
-
-
-    else ! abs( Skthl ) > abs( Skw ) .and. abs( Skthl ) > abs( Skrt )
-
-       ! The variable thl has the greatest magnitude of skewness.
-
-       call calc_setter_parameters( thlm, thlp2, Skthl, sgn_wpthlp,      & ! In
-                                    big_L_thl_1, big_L_thl_2,            & ! In
-                                    mu_thl_1, mu_thl_2, sigma_thl_1_sqd, & ! Out
-                                    sigma_thl_2_sqd, mixt_frac,          & ! Out
-                                    coef_sigma_thl_1_sqd,                & ! Out
-                                    coef_sigma_thl_2_sqd                 ) ! Out
-
-       call calc_respnder_parameters( wm, wp2, Skw, sgn_wp2,        & ! In
-                                      mixt_frac, big_L_w_1,         & ! In
-                                      mu_w_1, mu_w_2,               & ! Out
-                                      sigma_w_1_sqd, sigma_w_2_sqd, & ! Out
-                                      coef_sigma_w_1_sqd,           & ! Out
-                                      coef_sigma_w_2_sqd            ) ! Out
-
-       call calc_respnder_parameters( rtm, rtp2, Skrt, sgn_wprtp,     & ! In
-                                      mixt_frac, big_L_rt_1,          & ! In
-                                      mu_rt_1, mu_rt_2,               & ! Out
-                                      sigma_rt_1_sqd, sigma_rt_2_sqd, & ! Out
-                                      coef_sigma_rt_1_sqd,            & ! Out
-                                      coef_sigma_rt_2_sqd             ) ! Out
+          call calc_respnder_parameters( thlm(k), thlp2(k),            & ! In
+                                         Skthl(k), sgn_wpthlp(k),      & ! In
+                                         mixt_frac(k), big_L_thl_1(k), & ! In
+                                         mu_thl_1(k), mu_thl_2(k),     & ! Out
+                                         sigma_thl_1_sqd(k),           & ! Out
+                                         sigma_thl_2_sqd(k),           & ! Out
+                                         coef_sigma_thl_1_sqd(k),      & ! Out
+                                         coef_sigma_thl_2_sqd(k)       ) ! Out
 
 
-    endif ! Find variable with the greatest magnitude of skewness.
+       elseif ( abs( Skrt(k) ) > abs( Skw(k) ) &
+                .and. abs( Skrt(k) ) >= abs( Skthl(k) ) ) then
+
+          ! The variable rt has the greatest magnitude of skewness.
+
+          call calc_setter_parameters( rtm(k), rtp2(k),                 & ! In
+                                       Skrt(k), sgn_wprtp(k),           & ! In
+                                       big_L_rt_1(k), big_L_rt_2(k),    & ! In
+                                       mu_rt_1(k), mu_rt_2(k),          & ! Out
+                                       sigma_rt_1_sqd(k),               & ! Out
+                                       sigma_rt_2_sqd(k), mixt_frac(k), & ! Out
+                                       coef_sigma_rt_1_sqd(k),          & ! Out
+                                       coef_sigma_rt_2_sqd(k)           ) ! Out
+
+          call calc_respnder_parameters( wm(k), wp2(k),              & ! In
+                                         Skw(k), sgn_wp2(k),         & ! In
+                                         mixt_frac(k), big_L_w_1(k), & ! In
+                                         mu_w_1(k), mu_w_2(k),       & ! Out
+                                         sigma_w_1_sqd(k),           & ! Out
+                                         sigma_w_2_sqd(k),           & ! Out
+                                         coef_sigma_w_1_sqd(k),      & ! Out
+                                         coef_sigma_w_2_sqd(k)       ) ! Out
+
+          call calc_respnder_parameters( thlm(k), thlp2(k),            & ! In
+                                         Skthl(k), sgn_wpthlp(k),      & ! In
+                                         mixt_frac(k), big_L_thl_1(k), & ! In
+                                         mu_thl_1(k), mu_thl_2(k),     & ! Out
+                                         sigma_thl_1_sqd(k),           & ! Out
+                                         sigma_thl_2_sqd(k),           & ! Out
+                                         coef_sigma_thl_1_sqd(k),      & ! Out
+                                         coef_sigma_thl_2_sqd(k)       ) ! Out
 
 
-    if ( sigma_w_1_sqd < zero ) then
-       write(fstderr,*) "WARNING:  New TSDADG PDF.  The variance of w in " &
-                        // "the 1st PDF component is negative and is being " &
-                        // "clipped to 0."
-       write(fstderr,*) "sigma_w_1^2 (before clipping) = ", sigma_w_1_sqd
-       sigma_w_1_sqd = zero
-       coef_sigma_w_1_sqd = zero
-    endif ! sigma_w_1_sqd < 0
+       else ! abs( Skthl ) > abs( Skw ) .and. abs( Skthl ) > abs( Skrt )
 
-    if ( sigma_w_2_sqd < zero ) then
-       write(fstderr,*) "WARNING:  New TSDADG PDF.  The variance of w in " &
-                        // "the 2nd PDF component is negative and is being " &
-                        // "clipped to 0."
-       write(fstderr,*) "sigma_w_2^2 (before clipping) = ", sigma_w_2_sqd
-       sigma_w_2_sqd = zero
-       coef_sigma_w_2_sqd = zero
-    endif ! sigma_w_2_sqd < 0
+          ! The variable thl has the greatest magnitude of skewness.
 
-    if ( sigma_rt_1_sqd < zero ) then
-       write(fstderr,*) "WARNING:  New TSDADG PDF.  The variance of rt in " &
-                        // "the 1st PDF component is negative and is being " &
-                        // "clipped to 0."
-       write(fstderr,*) "sigma_rt_1^2 (before clipping) = ", sigma_rt_1_sqd
-       sigma_rt_1_sqd = zero
-       coef_sigma_rt_1_sqd = zero
-    endif ! sigma_rt_1_sqd < 0
+          call calc_setter_parameters( thlm(k), thlp2(k),                & ! In
+                                       Skthl(k), sgn_wpthlp(k),          & ! In
+                                       big_L_thl_1(k), big_L_thl_2(k),   & ! In
+                                       mu_thl_1(k), mu_thl_2(k),         & ! Out
+                                       sigma_thl_1_sqd(k),               & ! Out
+                                       sigma_thl_2_sqd(k), mixt_frac(k), & ! Out
+                                       coef_sigma_thl_1_sqd(k),          & ! Out
+                                       coef_sigma_thl_2_sqd(k)           ) ! Out
 
-    if ( sigma_rt_2_sqd < zero ) then
-       write(fstderr,*) "WARNING:  New TSDADG PDF.  The variance of rt in " &
-                        // "the 2nd PDF component is negative and is being " &
-                        // "clipped to 0."
-       write(fstderr,*) "sigma_rt_2^2 (before clipping) = ", sigma_rt_2_sqd
-       sigma_rt_2_sqd = zero
-       coef_sigma_rt_2_sqd = zero
-    endif ! sigma_rt_2_sqd < 0
+          call calc_respnder_parameters( wm(k), wp2(k),              & ! In
+                                         Skw(k), sgn_wp2(k),         & ! In
+                                         mixt_frac(k), big_L_w_1(k), & ! In
+                                         mu_w_1(k), mu_w_2(k),       & ! Out
+                                         sigma_w_1_sqd(k),           & ! Out
+                                         sigma_w_2_sqd(k),           & ! Out
+                                         coef_sigma_w_1_sqd(k),      & ! Out
+                                         coef_sigma_w_2_sqd(k)       ) ! Out
 
-    if ( sigma_thl_1_sqd < zero ) then
-       write(fstderr,*) "WARNING:  New TSDADG PDF.  The variance of thl in " &
-                        // "the 1st PDF component is negative and is being " &
-                        // "clipped to 0."
-       write(fstderr,*) "sigma_thl_1^2 (before clipping) = ", sigma_thl_1_sqd
-       sigma_thl_1_sqd = zero
-       coef_sigma_thl_1_sqd = zero
-    endif ! sigma_thl_1_sqd < 0
+          call calc_respnder_parameters( rtm(k), rtp2(k),             & ! In
+                                         Skrt(k), sgn_wprtp(k),       & ! In
+                                         mixt_frac(k), big_L_rt_1(k), & ! In
+                                         mu_rt_1(k), mu_rt_2(k),      & ! Out
+                                         sigma_rt_1_sqd(k),           & ! Out
+                                         sigma_rt_2_sqd(k),           & ! Out
+                                         coef_sigma_rt_1_sqd(k),      & ! Out
+                                         coef_sigma_rt_2_sqd(k)       ) ! Out
 
-    if ( sigma_thl_2_sqd < zero ) then
-       write(fstderr,*) "WARNING:  New TSDADG PDF.  The variance of thl in " &
-                        // "the 2nd PDF component is negative and is being " &
-                        // "clipped to 0."
-       write(fstderr,*) "sigma_thl_2^2 (before clipping) = ", sigma_thl_2_sqd
-       sigma_thl_2_sqd = zero
-       coef_sigma_thl_2_sqd = zero
-    endif ! sigma_thl_2_sqd < 0
+
+       endif ! Find variable with the greatest magnitude of skewness.
+
+
+       if ( sigma_w_1_sqd(k) < zero ) then
+          write(fstderr,*) "WARNING:  New TSDADG PDF.  The variance of w in " &
+                           // "the 1st PDF component is negative and is " &
+                           // "being clipped to 0."
+          write(fstderr,*) "sigma_w_1^2 (before clipping) = ", sigma_w_1_sqd(k)
+          sigma_w_1_sqd(k) = zero
+          coef_sigma_w_1_sqd(k) = zero
+       endif ! sigma_w_1_sqd < 0
+
+       if ( sigma_w_2_sqd(k) < zero ) then
+          write(fstderr,*) "WARNING:  New TSDADG PDF.  The variance of w in " &
+                           // "the 2nd PDF component is negative and is " &
+                           // "being clipped to 0."
+          write(fstderr,*) "sigma_w_2^2 (before clipping) = ", sigma_w_2_sqd(k)
+          sigma_w_2_sqd(k) = zero
+          coef_sigma_w_2_sqd(k) = zero
+       endif ! sigma_w_2_sqd < 0
+
+       if ( sigma_rt_1_sqd(k) < zero ) then
+          write(fstderr,*) "WARNING:  New TSDADG PDF.  The variance of rt in " &
+                           // "the 1st PDF component is negative and is " &
+                           // "being clipped to 0."
+          write(fstderr,*) "sigma_rt_1^2 (before clipping) = ", &
+                           sigma_rt_1_sqd(k)
+          sigma_rt_1_sqd(k) = zero
+          coef_sigma_rt_1_sqd(k) = zero
+       endif ! sigma_rt_1_sqd < 0
+
+       if ( sigma_rt_2_sqd(k) < zero ) then
+          write(fstderr,*) "WARNING:  New TSDADG PDF.  The variance of rt in " &
+                           // "the 2nd PDF component is negative and is " &
+                           // "being clipped to 0."
+          write(fstderr,*) "sigma_rt_2^2 (before clipping) = ", &
+                           sigma_rt_2_sqd(k)
+          sigma_rt_2_sqd(k) = zero
+          coef_sigma_rt_2_sqd(k) = zero
+       endif ! sigma_rt_2_sqd < 0
+
+       if ( sigma_thl_1_sqd(k) < zero ) then
+          write(fstderr,*) "WARNING:  New TSDADG PDF.  The variance of thl " &
+                           // "in the 1st PDF component is negative and is " &
+                           // "being clipped to 0."
+          write(fstderr,*) "sigma_thl_1^2 (before clipping) = ", &
+                           sigma_thl_1_sqd(k)
+          sigma_thl_1_sqd(k) = zero
+          coef_sigma_thl_1_sqd(k) = zero
+       endif ! sigma_thl_1_sqd < 0
+
+       if ( sigma_thl_2_sqd(k) < zero ) then
+          write(fstderr,*) "WARNING:  New TSDADG PDF.  The variance of thl " &
+                           // "in the 2nd PDF component is negative and is " &
+                           // "being clipped to 0."
+          write(fstderr,*) "sigma_thl_2^2 (before clipping) = ", &
+                           sigma_thl_2_sqd(k)
+          sigma_thl_2_sqd(k) = zero
+          coef_sigma_thl_2_sqd(k) = zero
+       endif ! sigma_thl_2_sqd < 0
+
+    enddo ! k = 1, gr%nz, 1
 
 
     return

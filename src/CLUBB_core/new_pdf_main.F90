@@ -40,11 +40,13 @@ module new_pdf_main
     ! Selects which variable is used to set the mixture fraction for the PDF
     ! ("the setter") and which variables are handled after that mixture fraction
     ! has been set ("the responders").  Traditionally, w has been used to set
-    ! the PDF.  However, here, the variable with the greatest magnitude of
-    ! skewness is used to set the PDF.
+    ! the PDF.
 
     ! References:
     !-----------------------------------------------------------------------
+
+    use grid_class, only: &
+        gr    ! Variable type(s)
 
     use constants_clubb, only: &
         four,                & ! Variable(s)
@@ -82,7 +84,7 @@ module new_pdf_main
     implicit none
 
     ! Input Variables
-    real( kind = core_rknd ), intent(in) :: &
+    real( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
       wm,      & ! Mean of w (overall)                 [m/s]
       rtm,     & ! Mean of rt (overall)                [kg/kg]
       thlm,    & ! Mean of thl (overall)               [K]
@@ -98,12 +100,12 @@ module new_pdf_main
     ! These variables are input/output because their values may be clipped.
     ! Otherwise, as long as it is not necessary to clip them, their values
     ! will stay the same.
-    real( kind = core_rknd ), intent(inout) :: &
+    real( kind = core_rknd ), dimension(gr%nz), intent(inout) :: &
       Skrt,  & ! Skewness of rt (overall)            [-]
       Skthl    ! Skewness of thl (overall)           [-]
 
     ! Output Variables
-    real( kind = core_rknd ), intent(out) :: &
+    real( kind = core_rknd ), dimension(gr%nz), intent(out) :: &
       mu_w_1,          & ! Mean of w (1st PDF component)        [m/s]
       mu_w_2,          & ! Mean of w (2nd PDF component)        [m/s]
       mu_rt_1,         & ! Mean of rt (1st PDF component)       [kg/kg]
@@ -118,16 +120,16 @@ module new_pdf_main
       sigma_thl_2_sqd, & ! Variance of thl (2nd PDF component)  [K^2]
       mixt_frac          ! Mixture fraction                     [-]
 
-    type(implicit_coefs_terms), intent(out) :: &
+    type(implicit_coefs_terms), dimension(gr%nz), intent(out) :: &
       pdf_implicit_coefs_terms    ! Implicit coefs / explicit terms [units vary]
 
     ! Output only for recording statistics.
-    real( kind = core_rknd ), intent(out) :: &
+    real( kind = core_rknd ), dimension(gr%nz), intent(out) :: &
       F_w,   & ! Parameter for the spread of the PDF component means of w    [-]
       F_rt,  & ! Parameter for the spread of the PDF component means of rt   [-]
       F_thl    ! Parameter for the spread of the PDF component means of thl  [-]
 
-    real( kind = core_rknd ), intent(out) :: &
+    real( kind = core_rknd ), dimension(gr%nz), intent(out) :: &
       min_F_w,   & ! Minimum allowable value of parameter F_w      [-]
       max_F_w,   & ! Maximum allowable value of parameter F_w      [-]
       min_F_rt,  & ! Minimum allowable value of parameter F_rt     [-]
@@ -136,20 +138,14 @@ module new_pdf_main
       max_F_thl    ! Maximum allowable value of parameter F_thl    [-]
 
     ! Local Variables
-    real( kind = core_rknd ) :: &
+    real( kind = core_rknd ), dimension(gr%nz) :: &
       sigma_w_1,   & ! Standard deviation of w (1st PDF component)      [m/s]
       sigma_w_2,   & ! Standard deviation of w (2nd PDF component)      [m/s]
-      sigma_rt_1,  & ! Standard deviation of rt (1st PDF component)     [kg/kg]
-      sigma_rt_2,  & ! Standard deviation of rt (2nd PDF component)     [kg/kg]
-      sigma_thl_1, & ! Standard deviation of thl (1st PDF component)    [K]
-      sigma_thl_2, & ! Standard deviation of thl (2nd PDF component)    [K]
       sgn_wprtp,   & ! Sign of the covariance of w and rt (overall)     [-]
-      sgn_wpthlp     ! Sign of the covariance of w and thl (overall)    [-]
+      sgn_wpthlp,  & ! Sign of the covariance of w and thl (overall)    [-]
+      sgn_wp2        ! Sign of the variance of w (overall); always pos. [-]
 
-    real( kind = core_rknd ), parameter :: &
-      sgn_wp2 = one   ! Sign of the variance of w (overall); always positive [-]
-
-    real( kind = core_rknd ) :: &
+    real( kind = core_rknd ), dimension(gr%nz) :: &
       coef_sigma_w_1_sqd,   & ! sigma_w_1^2 = coef_sigma_w_1_sqd * <w'^2>    [-]
       coef_sigma_w_2_sqd,   & ! sigma_w_2^2 = coef_sigma_w_2_sqd * <w'^2>    [-]
       coef_sigma_rt_1_sqd,  & ! sigma_rt_1^2 = coef_sigma_rt_1_sqd * <rt'^2> [-]
@@ -157,259 +153,130 @@ module new_pdf_main
       coef_sigma_thl_1_sqd, & ! sigma_thl_1^2=coef_sigma_thl_1_sqd*<thl'^2>  [-]
       coef_sigma_thl_2_sqd    ! sigma_thl_2^2=coef_sigma_thl_2_sqd*<thl'^2>  [-]
 
-    real( kind = core_rknd ) :: &
+    real( kind = core_rknd ), dimension(gr%nz) :: &
       max_Skx2_pos_Skx_sgn_wpxp, & ! Maximum Skx^2 when Skx*sgn(<w'x'>) >= 0 [-]
       max_Skx2_neg_Skx_sgn_wpxp    ! Maximum Skx^2 when Skx*sgn(<w'x'>) < 0  [-]
 
-    ! The zeta_x parameter is only used when a variable is the setter variable.
-    real( kind = core_rknd ) :: &
-      zeta_w,   & ! Parameter for the PDF component variances of w           [-]
-      zeta_rt,  & ! Parameter for the PDF component variances of rt          [-]
-      zeta_thl    ! Parameter for the PDF component variances of thl         [-]
+    real( kind = core_rknd ), dimension(gr%nz) :: &
+      zeta_w    ! Parameter for the PDF component variances of w           [-]
 
     real ( kind = core_rknd ) :: &
       lambda_w    ! Param. that increases or decreases Skw dependence  [-]
 
-    real ( kind = core_rknd ) :: &
+    real ( kind = core_rknd ), dimension(gr%nz) :: &
       exp_factor_rt,   & ! Factor of the form 1 - exp{} that reduces F_rt   [-]
+      exp_factor_thl,  & ! Don't reduce F_thl by exp_factor_thl        [-]
       adj_corr_rt_thl    ! Adjusted (overall) correlation of rt and theta-l [-]
 
-    real ( kind = core_rknd ), parameter :: &
-      exp_factor_thl = one    ! Don't reduce F_thl by exp_factor_thl        [-]
-
-    real ( kind = core_rknd ) :: &
+    real ( kind = core_rknd ), dimension(gr%nz) :: &
       coef_wp4_implicit,     & ! <w'^4> = coef_wp4_implicit * <w'^2>^2       [-]
       coef_wprtp2_implicit,  & ! <w'rt'^2> = coef_wprtp2_implicit*<rt'^2>  [m/s]
       coef_wpthlp2_implicit    ! <w'thl'^2>=coef_wpthlp2_implicit*<thl'^2> [m/s]
 
     ! <w'^2 rt'> = coef_wp2rtp_implicit * <w'rt'> + term_wp2rtp_explicit
-    real ( kind = core_rknd ) :: &
+    real ( kind = core_rknd ), dimension(gr%nz) :: &
       coef_wp2rtp_implicit, & ! Coefficient that is multiplied by <w'rt'>  [m/s]
       term_wp2rtp_explicit    ! Term that is on the RHS          [m^2/s^2 kg/kg]
 
     ! <w'^2 thl'> = coef_wp2thlp_implicit * <w'thl'> + term_wp2thlp_explicit
-    real ( kind = core_rknd ) :: &
+    real ( kind = core_rknd ), dimension(gr%nz) :: &
       coef_wp2thlp_implicit, & ! Coef. that is multiplied by <w'thl'>      [m/s]
       term_wp2thlp_explicit    ! Term that is on the RHS             [m^2/s^2 K]
 
     ! <w'rt'thl'> = coef_wprtpthlp_implicit*<rt'thl'> + term_wprtpthlp_explicit
-    real ( kind = core_rknd ) :: &
+    real ( kind = core_rknd ), dimension(gr%nz) :: &
       coef_wprtpthlp_implicit, & ! Coef. that is multiplied by <rt'thl'>   [m/s]
       term_wprtpthlp_explicit    ! Term that is on the RHS         [m/s(kg/kg)K]
 
-    real ( kind = core_rknd ) :: &
-      Skw_dummy
-
-    logical, parameter :: &
-      l_use_w_setter_var = .true. ! Flag to always use w as the setter variable
-
 
     ! Calculate sgn( <w'rt'> ).
-    if ( wprtp >= zero ) then
+    where ( wprtp >= zero )
        sgn_wprtp = one
-    else ! wprtp < 0
+    elsewhere ! wprtp < 0
        sgn_wprtp = -one
-    endif ! wprtp >= 0
+    endwhere ! wprtp >= 0
 
     ! Calculate sgn( <w'thl'> ).
-    if ( wpthlp >= zero ) then
+    where ( wpthlp >= zero )
        sgn_wpthlp = one
-    else ! wpthlp < 0
+    elsewhere ! wpthlp < 0
        sgn_wpthlp = -one
-    endif ! wpthlp >= 0
+    endwhere ! wpthlp >= 0
+
+    ! Sign of the variance of w (overall), which is always positive.
+    sgn_wp2 = one
 
     lambda_w = 0.5_core_rknd
 
     ! Calculate the adjusted (overall) correlation of rt and theta-l, and the
     ! value of exp_factor_rt.
-    if ( rtp2 >= rt_tol**2 .and. thlp2 >= thl_tol**2 ) then
+    where ( rtp2 >= rt_tol**2 .and. thlp2 >= thl_tol**2 )
        adj_corr_rt_thl = rtpthlp / sqrt( rtp2 * thlp2 ) * sgn_wprtp * sgn_wpthlp
        adj_corr_rt_thl = min( max( adj_corr_rt_thl, -max_mag_correlation ), &
                               max_mag_correlation )
        exp_factor_rt = one &
                        - exp( -0.2_core_rknd * ( adj_corr_rt_thl + one )**5 )
-    else ! <rt'^2> < rt_tol^2 or <thl'^2> < thl_tol^2
+    elsewhere ! <rt'^2> < rt_tol^2 or <thl'^2> < thl_tol^2
        adj_corr_rt_thl = zero  ! adj_corr_rt_thl is undefined in this scenario.
        exp_factor_rt = one     ! Set exp_factor_rt to 1.
-    endif ! <rt'^2> >= rt_tol^2 and <thl'^2> >= thl_tol^2
+    endwhere ! <rt'^2> >= rt_tol^2 and <thl'^2> >= thl_tol^2
+
+    ! The value of F_thl is not reduced by exp_factor_thl.
+    exp_factor_thl = one
 
 
-    ! The variable with the greatest magnitude of skewness will be the setter
-    ! variable and the other variables will be responder variables.  When the
-    ! l_use_w_setter_var flag is enabled, w will always be the setter variable.
-    if ( ( abs( Skw ) >= abs( Skrt ) .and. abs( Skw ) >= abs( Skthl ) ) &
-         .or. l_use_w_setter_var ) then
+    ! Vertical velocity, w, will always be the setter variable.
+    call calc_F_x_zeta_x_setter( Skw,                          & ! In
+                                 slope_coef_spread_DG_means_w, & ! In
+                                 pdf_component_stdev_factor_w, & ! In
+                                 lambda_w,                     & ! In
+                                 F_w, zeta_w,                  & ! Out
+                                 min_F_w, max_F_w              ) ! Out
 
-       ! The variable w has the greatest magnitude of skewness or the
-       ! l_use_w_setter_var flag is enabled.
+    ! Calculate the PDF parameters, including mixture fraction, for the
+    ! setter variable, w.
+    call calc_setter_var_params( wm, wp2, Skw, sgn_wp2,     & ! In
+                                 F_w, zeta_w,               & ! In
+                                 mu_w_1, mu_w_2, sigma_w_1, & ! Out
+                                 sigma_w_2, mixt_frac,      & ! Out
+                                 coef_sigma_w_1_sqd,        & ! Out
+                                 coef_sigma_w_2_sqd         ) ! Out
 
-       call calc_F_x_zeta_x_setter( Skw,                          & ! In
-                                    slope_coef_spread_DG_means_w, & ! In
-                                    pdf_component_stdev_factor_w, & ! In
-                                    lambda_w,                     & ! In
-                                    F_w, zeta_w,                  & ! Out
-                                    min_F_w, max_F_w              ) ! Out
+    sigma_w_1_sqd = sigma_w_1**2
+    sigma_w_2_sqd = sigma_w_2**2
 
-       ! Calculate the PDF parameters, including mixture fraction, for the
-       ! setter variable, w.
-       call calc_setter_var_params( wm, wp2, Skw, sgn_wp2,     & ! In
-                                    F_w, zeta_w,               & ! In
-                                    mu_w_1, mu_w_2, sigma_w_1, & ! Out
-                                    sigma_w_2, mixt_frac,      & ! Out
-                                    coef_sigma_w_1_sqd,        & ! Out
-                                    coef_sigma_w_2_sqd         ) ! Out
+    ! Calculate the upper limit on the magnitude of skewness for responding
+    ! variables.
+    max_Skx2_pos_Skx_sgn_wpxp = four * ( one - mixt_frac )**2 &
+                                / ( mixt_frac * ( two - mixt_frac ) )
 
-       sigma_w_1_sqd = sigma_w_1**2
-       sigma_w_2_sqd = sigma_w_2**2
+    max_Skx2_neg_Skx_sgn_wpxp = four * mixt_frac**2 / ( one - mixt_frac**2 )
 
-       ! Calculate the upper limit on the magnitude of skewness for responding
-       ! variables.
-       max_Skx2_pos_Skx_sgn_wpxp = four * ( one - mixt_frac )**2 &
-                                   / ( mixt_frac * ( two - mixt_frac ) )
+    ! Calculate the PDF parameters for responder variable rt.
+    call calc_responder_var( rtm, rtp2, sgn_wprtp, mixt_frac, & ! In
+                             coef_spread_DG_means_rt,         & ! In
+                             exp_factor_rt,                   & ! In
+                             max_Skx2_pos_Skx_sgn_wpxp,       & ! In
+                             max_Skx2_neg_Skx_sgn_wpxp,       & ! In
+                             Skrt,                            & ! In/Out
+                             mu_rt_1, mu_rt_2,                & ! Out
+                             sigma_rt_1_sqd, sigma_rt_2_sqd,  & ! Out
+                             coef_sigma_rt_1_sqd,             & ! Out
+                             coef_sigma_rt_2_sqd,             & ! Out
+                             F_rt, min_F_rt, max_F_rt         ) ! Out
 
-       max_Skx2_neg_Skx_sgn_wpxp = four * mixt_frac**2 / ( one - mixt_frac**2 )
-
-       ! Calculate the PDF parameters for responder variable rt.
-       call calc_responder_var( rtm, rtp2, sgn_wprtp, mixt_frac, & ! In
-                                coef_spread_DG_means_rt,         & ! In
-                                exp_factor_rt,                   & ! In
-                                max_Skx2_pos_Skx_sgn_wpxp,       & ! In
-                                max_Skx2_neg_Skx_sgn_wpxp,       & ! In
-                                Skrt,                            & ! In/Out
-                                mu_rt_1, mu_rt_2,                & ! Out
-                                sigma_rt_1_sqd, sigma_rt_2_sqd,  & ! Out
-                                coef_sigma_rt_1_sqd,             & ! Out
-                                coef_sigma_rt_2_sqd,             & ! Out
-                                F_rt, min_F_rt, max_F_rt         ) ! Out
-
-       ! Calculate the PDF parameters for responder variable thl.
-       call calc_responder_var( thlm, thlp2, sgn_wpthlp, mixt_frac, & ! In
-                                coef_spread_DG_means_thl,           & ! In
-                                exp_factor_thl,                     & ! In
-                                max_Skx2_pos_Skx_sgn_wpxp,          & ! In
-                                max_Skx2_neg_Skx_sgn_wpxp,          & ! In
-                                Skthl,                              & ! In/Out
-                                mu_thl_1, mu_thl_2,                 & ! Out
-                                sigma_thl_1_sqd, sigma_thl_2_sqd,   & ! Out
-                                coef_sigma_thl_1_sqd,               & ! Out
-                                coef_sigma_thl_2_sqd,               & ! Out
-                                F_thl, min_F_thl, max_F_thl         ) ! Out
-
-    elseif ( abs( Skrt ) > abs( Skw ) .and. abs( Skrt ) >= abs( Skthl ) ) then
-
-       ! The variable rt has the greatest magnitude of skewness.
-
-       call calc_F_x_zeta_x_setter( Skrt,              & ! In
-                                    0.75_core_rknd,    & ! In
-                                    1.0_core_rknd,     & ! In 
-                                    0.1_core_rknd,     & ! In
-                                    F_rt, zeta_rt,     & ! Out
-                                    min_F_rt, max_F_rt ) ! Out
-
-       ! Calculate the PDF parameters, including mixture fraction, for the
-       ! setter variable, rt.
-       call calc_setter_var_params( rtm, rtp2, Skrt, sgn_wprtp,   & ! In
-                                    F_rt, zeta_rt,                & ! In
-                                    mu_rt_1, mu_rt_2, sigma_rt_1, & ! Out
-                                    sigma_rt_2, mixt_frac,        & ! Out
-                                    coef_sigma_rt_1_sqd,          & ! Out
-                                    coef_sigma_rt_2_sqd           ) ! Out
-
-       sigma_rt_1_sqd = sigma_rt_1**2
-       sigma_rt_2_sqd = sigma_rt_2**2
-
-       ! Calculate the upper limit on the magnitude of skewness for responding
-       ! variables.
-       max_Skx2_pos_Skx_sgn_wpxp = four * ( one - mixt_frac )**2 &
-                                   / ( mixt_frac * ( two - mixt_frac ) )
-
-       max_Skx2_neg_Skx_sgn_wpxp = four * mixt_frac**2 / ( one - mixt_frac**2 )
-
-       Skw_dummy = Skw
-
-       ! Calculate the PDF parameters for responder variable w.
-       call calc_responder_var( wm, wp2, sgn_wp2, mixt_frac,  & ! In
-                                0.1_core_rknd, one,           & ! In
-                                max_Skx2_pos_Skx_sgn_wpxp,    & ! In
-                                max_Skx2_neg_Skx_sgn_wpxp,    & ! In
-                                Skw_dummy,                    & ! In/Out
-                                mu_w_1, mu_w_2,               & ! Out
-                                sigma_w_1_sqd, sigma_w_2_sqd, & ! Out
-                                coef_sigma_w_1_sqd,           & ! Out
-                                coef_sigma_w_2_sqd,           & ! Out
-                                F_w, min_F_w, max_F_w         ) ! Out
-
-       ! Calculate the PDF parameters for responder variable thl.
-       call calc_responder_var( thlm, thlp2, sgn_wpthlp, mixt_frac, & ! In
-                                coef_spread_DG_means_thl,           & ! In
-                                exp_factor_thl,                     & ! In
-                                max_Skx2_pos_Skx_sgn_wpxp,          & ! In
-                                max_Skx2_neg_Skx_sgn_wpxp,          & ! In
-                                Skthl,                              & ! In/Out
-                                mu_thl_1, mu_thl_2,                 & ! Out
-                                sigma_thl_1_sqd, sigma_thl_2_sqd,   & ! Out
-                                coef_sigma_thl_1_sqd,               & ! Out
-                                coef_sigma_thl_2_sqd,               & ! Out
-                                F_thl, min_F_thl, max_F_thl         ) ! Out
-
-    else ! abs( Skthl ) > abs( Skw ) .and. abs( Skthl ) > abs( Skrt )
-
-       ! The variable thl has the greatest magnitude of skewness.
-
-       call calc_F_x_zeta_x_setter( Skthl,               & ! In
-                                    0.75_core_rknd,      & ! In
-                                    1.0_core_rknd,       & ! In
-                                    0.1_core_rknd,       & ! In
-                                    F_thl, zeta_thl,     & ! Out
-                                    min_F_thl, max_F_thl ) ! Out
-
-       ! Calculate the PDF parameters, including mixture fraction, for the
-       ! setter variable, thl.
-       call calc_setter_var_params( thlm, thlp2, Skthl, sgn_wpthlp,  & ! In
-                                    F_thl, zeta_thl,                 & ! In
-                                    mu_thl_1, mu_thl_2, sigma_thl_1, & ! Out
-                                    sigma_thl_2, mixt_frac,          & ! Out
-                                    coef_sigma_thl_1_sqd,            & ! Out
-                                    coef_sigma_thl_2_sqd             ) ! Out
-
-       sigma_thl_1_sqd = sigma_thl_1**2
-       sigma_thl_2_sqd = sigma_thl_2**2
-
-       ! Calculate the upper limit on the magnitude of skewness for responding
-       ! variables.
-       max_Skx2_pos_Skx_sgn_wpxp = four * ( one - mixt_frac )**2 &
-                                   / ( mixt_frac * ( two - mixt_frac ) )
-
-       max_Skx2_neg_Skx_sgn_wpxp = four * mixt_frac**2 / ( one - mixt_frac**2 )
-
-       Skw_dummy = Skw
-
-       ! Calculate the PDF parameters for responder variable w.
-       call calc_responder_var( wm, wp2, sgn_wp2, mixt_frac,  & ! In
-                                0.1_core_rknd, one,           & ! In
-                                max_Skx2_pos_Skx_sgn_wpxp,    & ! In
-                                max_Skx2_neg_Skx_sgn_wpxp,    & ! In
-                                Skw_dummy,                    & ! In/Out
-                                mu_w_1, mu_w_2,               & ! Out
-                                sigma_w_1_sqd, sigma_w_2_sqd, & ! Out
-                                coef_sigma_w_1_sqd,           & ! Out
-                                coef_sigma_w_2_sqd,           & ! Out
-                                F_w, min_F_w, max_F_w         ) ! Out
-
-       ! Calculate the PDF parameters for responder variable rt.
-       call calc_responder_var( rtm, rtp2, sgn_wprtp, mixt_frac, & ! In
-                                coef_spread_DG_means_rt,         & ! In
-                                exp_factor_rt,                   & ! In
-                                max_Skx2_pos_Skx_sgn_wpxp,       & ! In
-                                max_Skx2_neg_Skx_sgn_wpxp,       & ! In
-                                Skrt,                            & ! In/Out
-                                mu_rt_1, mu_rt_2,                & ! Out
-                                sigma_rt_1_sqd, sigma_rt_2_sqd,  & ! Out
-                                coef_sigma_rt_1_sqd,             & ! Out
-                                coef_sigma_rt_2_sqd,             & ! Out
-                                F_rt, min_F_rt, max_F_rt         ) ! Out
-
-    endif ! Find variable with the greatest magnitude of skewness.
+    ! Calculate the PDF parameters for responder variable thl.
+    call calc_responder_var( thlm, thlp2, sgn_wpthlp, mixt_frac, & ! In
+                             coef_spread_DG_means_thl,           & ! In
+                             exp_factor_thl,                     & ! In
+                             max_Skx2_pos_Skx_sgn_wpxp,          & ! In
+                             max_Skx2_neg_Skx_sgn_wpxp,          & ! In
+                             Skthl,                              & ! In/Out
+                             mu_thl_1, mu_thl_2,                 & ! Out
+                             sigma_thl_1_sqd, sigma_thl_2_sqd,   & ! Out
+                             coef_sigma_thl_1_sqd,               & ! Out
+                             coef_sigma_thl_2_sqd,               & ! Out
+                             F_thl, min_F_thl, max_F_thl         ) ! Out
 
 
     if ( .not. l_explicit_turbulent_adv_wp3 ) then
@@ -554,6 +421,9 @@ module new_pdf_main
     ! References:
     !-----------------------------------------------------------------------
 
+    use grid_class, only: &
+        gr    ! Variable type(s)
+
     use constants_clubb, only: &
         zero    ! Variable(s)
 
@@ -567,58 +437,60 @@ module new_pdf_main
     implicit none
 
     ! Input Variables
-    real( kind = core_rknd ), intent(in) :: &
-      xm,                     & ! Mean of x (overall)               [units vary]
-      xp2,                    & ! Variance of x (overall)       [(units vary)^2]
-      sgn_wpxp,               & ! Sign of the covariance of w and x          [-]
-      mixt_frac,              & ! Mixture fraction                           [-]
-      coef_spread_DG_means_x, & ! Coef.: spread betw. PDF comp. means of x   [-]
-      exp_factor_x              ! Factor of the form 1 - exp{}; reduces F_x  [-]
+    real( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
+      xm,           & ! Mean of x (overall)                       [units vary]
+      xp2,          & ! Variance of x (overall)               [(units vary)^2]
+      sgn_wpxp,     & ! Sign of the covariance of w and x                  [-]
+      mixt_frac,    & ! Mixture fraction                                   [-]
+      exp_factor_x    ! Factor of the form 1 - exp{}; reduces F_x          [-]
 
     real( kind = core_rknd ), intent(in) :: &
+      coef_spread_DG_means_x    ! Coef.: spread betw. PDF comp. means of x   [-]
+
+    real( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
       max_Skx2_pos_Skx_sgn_wpxp, & ! Maximum Skx^2 when Skx*sgn(<w'x'>) >= 0 [-]
       max_Skx2_neg_Skx_sgn_wpxp    ! Maximum Skx^2 when Skx*sgn(<w'x'>) < 0  [-]
 
     ! Input/Output Variable
-    real( kind = core_rknd ), intent(inout) :: &
+    real( kind = core_rknd ), dimension(gr%nz), intent(inout) :: &
       Skx    ! Skewness of x (overall)              [-]
 
     ! Output Variables
-    real( kind = core_rknd ), intent(out) :: &
+    real( kind = core_rknd ), dimension(gr%nz), intent(out) :: &
       mu_x_1,        & ! Mean of x (1st PDF component)        [units vary]
       mu_x_2,        & ! Mean of x (2nd PDF component)        [units vary]
       sigma_x_1_sqd, & ! Variance of x (1st PDF component)    [(units vary)^2]
       sigma_x_2_sqd    ! Variance of x (2nd PDF component)    [(units vary)^2]
 
-    real( kind = core_rknd ), intent(out) :: &
+    real( kind = core_rknd ), dimension(gr%nz), intent(out) :: &
       coef_sigma_x_1_sqd, & ! sigma_x_1^2 = coef_sigma_x_1_sqd * <x'^2>    [-]
       coef_sigma_x_2_sqd    ! sigma_x_2^2 = coef_sigma_x_2_sqd * <x'^2>    [-]
 
     ! Output only for recording statistics.
-    real( kind = core_rknd ), intent(out) :: &
+    real( kind = core_rknd ), dimension(gr%nz), intent(out) :: &
       F_x,     & ! Param. for the spread betw. the PDF component means of x  [-]
       min_F_x, & ! Minimum allowable value of parameter F_x                  [-]
       max_F_x    ! Maximum allowable value of parameter F_x                  [-]
 
 
     ! Calculate the upper limit of the magnitude of Skx.
-    if ( Skx * sgn_wpxp >= zero ) then
-       if ( Skx**2 >= max_Skx2_pos_Skx_sgn_wpxp ) then
-          if ( Skx >= zero ) then
+    where ( Skx * sgn_wpxp >= zero )
+       where ( Skx**2 >= max_Skx2_pos_Skx_sgn_wpxp )
+          where ( Skx >= zero )
              Skx = sqrt( 0.99_core_rknd * max_Skx2_pos_Skx_sgn_wpxp )
-          else
+          elsewhere
              Skx = -sqrt( 0.99_core_rknd * max_Skx2_pos_Skx_sgn_wpxp )
-          endif
-       endif ! Skx^2 >= max_Skx2_pos_Skx_sgn_wpxp
-    else ! Skx * sgn( <w'x'> ) < 0
-       if ( Skx**2 >= max_Skx2_neg_Skx_sgn_wpxp ) then
-          if ( Skx >= zero ) then
+          endwhere
+       endwhere ! Skx^2 >= max_Skx2_pos_Skx_sgn_wpxp
+    elsewhere ! Skx * sgn( <w'x'> ) < 0
+       where ( Skx**2 >= max_Skx2_neg_Skx_sgn_wpxp )
+          where ( Skx >= zero )
              Skx = sqrt( 0.99_core_rknd * max_Skx2_neg_Skx_sgn_wpxp )
-          else
+          elsewhere
              Skx = -sqrt( 0.99_core_rknd * max_Skx2_neg_Skx_sgn_wpxp )
-          endif
-       endif ! Skx^2 >= max_Skx2_neg_Skx_sgn_wpxp
-    endif ! Skx * sgn( <w'x'> ) >= 0
+          endwhere
+       endwhere ! Skx^2 >= max_Skx2_neg_Skx_sgn_wpxp
+    endwhere ! Skx * sgn( <w'x'> ) >= 0
 
     call calc_limits_F_x_responder( mixt_frac, Skx, sgn_wpxp,  & ! In
                                     max_Skx2_pos_Skx_sgn_wpxp, & ! In
@@ -702,6 +574,9 @@ module new_pdf_main
     ! References:
     !-----------------------------------------------------------------------
 
+    use grid_class, only: &
+        gr    ! Variable type(s)
+
     use constants_clubb, only: &
         one,  & ! Variable(s)
         zero
@@ -712,30 +587,32 @@ module new_pdf_main
     implicit none
 
     ! Input Variables
+    real( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
+      Skx    ! Skewness of x (overall)              [-]
+
     real( kind = core_rknd ), intent(in) :: &
-      Skx,                          & ! Skewness of x (overall)              [-]
       slope_coef_spread_DG_means_x, & ! Slope coef: spread PDF comp. means x [-]
       pdf_component_stdev_factor_x, & ! Param.: PDF comp. standard devs.; x  [-]
       lambda                          ! Param. for Skx dependence            [-]
 
     ! Output Variables
-    real( kind = core_rknd ), intent(out) :: &
+    real( kind = core_rknd ), dimension(gr%nz), intent(out) :: &
       F_x,     & ! Parameter for the spread of the PDF component means of x  [-]
       zeta_x,  & ! Parameter for the PDF component variances of x            [-]
       min_F_x, & ! Minimum allowable value of parameter F_x                  [-]
       max_F_x    ! Maximum allowable value of parameter F_x                  [-]
 
     ! Local Variable
-    real( kind = core_rknd ) :: &
+    real( kind = core_rknd ), dimension(gr%nz) :: &
       exp_Skx_interp_factor    ! Function to interp. between min. and max.   [-]
 
 
     ! Set min_F_x to 0 and max_F_x to 1 for the setter variable.
-    if ( abs( Skx ) > zero ) then
+    where ( abs( Skx ) > zero )
        min_F_x = 1.0e-3_core_rknd
-    else
+    elsewhere
        min_F_x = zero
-    endif
+    endwhere
     max_F_x = one
 
     ! F_x must have a value between min_F_x and max_F_x.
@@ -844,6 +721,9 @@ module new_pdf_main
     ! References:
     !-----------------------------------------------------------------------
 
+    use grid_class, only: &
+        gr    ! Variable type(s)
+
     use constants_clubb, only: &
         one    ! Variable(s)
 
@@ -854,13 +734,15 @@ module new_pdf_main
 
     ! Input Variables
     real( kind = core_rknd ), intent(in) :: &
-      coef_spread_DG_means_x, & ! Coef.: spread betw. PDF comp. means of x   [-]
-      exp_factor_x,           & ! Factor of the form 1 - exp{}; reduces F_x  [-]
-      min_F_x,                & ! Minimum allowable value of parameter F_x   [-]
-      max_F_x                   ! Maximum allowable value of parameter F_x   [-]
+      coef_spread_DG_means_x    ! Coef.: spread betw. PDF comp. means of x   [-]
+
+    real( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
+      exp_factor_x, & ! Factor of the form 1 - exp{}; reduces F_x  [-]
+      min_F_x,      & ! Minimum allowable value of parameter F_x   [-]
+      max_F_x         ! Maximum allowable value of parameter F_x   [-]
 
     ! Return Variable
-    real( kind = core_rknd ) :: &
+    real( kind = core_rknd ), dimension(gr%nz) :: &
       F_x    ! Parameter for the spread between the PDF component means of x [-]
 
 

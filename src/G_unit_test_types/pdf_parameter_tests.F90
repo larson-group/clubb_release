@@ -159,6 +159,9 @@ module pdf_parameter_tests
     use mu_sigma_hm_tests, only: &
         produce_seed    ! Procedure(s)
 
+    use grid_class, only: &
+        gr    ! Variable type(s)
+
     use clubb_precision, only: &
         core_rknd    ! Variable(s)
 
@@ -173,7 +176,10 @@ module pdf_parameter_tests
       pdf_parameter_unit_tests  ! Returns pass or fail
 
     ! Local Variables
-    real( kind = core_rknd ) :: &
+    integer, parameter :: &
+      nz = 1
+
+    real( kind = core_rknd ), dimension(nz) :: &
       wm,      & ! Mean of w (overall)                 [m/s]
       rtm,     & ! Mean of rt (overall)                [kg/kg]
       thlm,    & ! Mean of thl (overall)               [K]
@@ -190,13 +196,13 @@ module pdf_parameter_tests
       wpthlp,  & ! Covariance of w and thl (overall)   [(m/s)K]
       rtpthlp    ! Covariance of rt and thl (overall)  [(kg/kg)K]
 
-    real( kind = core_rknd ) :: &
+    real( kind = core_rknd ), dimension(nz) :: &
       F_w,    & ! Parameter for the spread of the PDF component means of w   [-]
       zeta_w, & ! Parameter for the PDF component variances of w             [-]
       F_rt,   & ! Parameter for the spread of the PDF component means of rt  [-]
       F_thl     ! Parameter for the spread of the PDF component means of thl [-]
 
-    real( kind = core_rknd ) :: &
+    real( kind = core_rknd ), dimension(nz) :: &
       min_F_w,   & ! Minimum allowable value of parameter F_w      [-]
       max_F_w,   & ! Maximum allowable value of parameter F_w      [-]
       min_F_rt,  & ! Minimum allowable value of parameter F_rt     [-]
@@ -204,10 +210,10 @@ module pdf_parameter_tests
       min_F_thl, & ! Minimum allowable value of parameter F_thl    [-]
       max_F_thl    ! Maximum allowable value of parameter F_thl    [-]
 
-    real( kind = core_rknd ), parameter :: &
-      sgn_wp2 = one   ! Sign of the variance of w (overall); always positive [-]
+    real( kind = core_rknd ), dimension(nz) :: &
+      sgn_wp2     ! Sign of the variance of w (overall); always positive [-]
 
-    real( kind = core_rknd ) :: &
+    real( kind = core_rknd ), dimension(nz) :: &
       mu_w_1,          & ! Mean of w (1st PDF component)             [m/s]
       mu_w_2,          & ! Mean of w (2nd PDF component)             [m/s]
       mu_rt_1,         & ! Mean of rt (1st PDF component)            [kg/kg]
@@ -228,11 +234,11 @@ module pdf_parameter_tests
       sigma_thl_2_sqd, & ! Variance of thl (2nd PDF component)       [K^2]
       mixt_frac          ! Mixture fraction                          [-]
 
-    real( kind = core_rknd ) :: &
+    real( kind = core_rknd ), dimension(nz) :: &
       coef_sigma_w_1_sqd, & ! sigma_w_1^2 = coef_sigma_w_1_sqd * <w'^2>      [-]
       coef_sigma_w_2_sqd    ! sigma_w_2^2 = coef_sigma_w_2_sqd * <w'^2>      [-]
 
-    real( kind = core_rknd ) :: &
+    real( kind = core_rknd ), dimension(nz) :: &
       recalc_wm,    & ! Recalculation of <w> using PDF parameters          [m/s]
       recalc_wp2,   & ! Recalculation of <w'^2> using PDF parameters   [m^2/s^2]
       recalc_wp3,   & ! Recalculation of <w'^3> using PDF parameters   [m^3/s^3]
@@ -246,19 +252,19 @@ module pdf_parameter_tests
       recalc_thlp3, & ! Recalculation of <thl'^3> using PDF parameters     [K^3]
       recalc_Skthl    ! Recalculation of Skthl using PDF parameters          [-]
 
-    real( kind = core_rknd ) :: &
+    real( kind = core_rknd ), dimension(nz) :: &
       coef_wp4_implicit, & ! <w'^4> = coef_wp4_implicit * <w'^2>^2           [-]
       wp4_implicit_calc, & ! <w'^4> calculated by coef_wp4_implicit eq [m^4/s^4]
       wp4_pdf_calc         ! <w'^4> calculated by PDF                  [m^4/s^4]
 
-    type(implicit_coefs_terms) :: &
+    type(implicit_coefs_terms), dimension(nz) :: &
       pdf_implicit_coefs_terms    ! Implicit coefs / explicit terms [units vary]
 
     ! Tiny tolerance for acceptable numerical difference between two results.
     real( kind = core_rknd ), parameter :: &
       tol = 1.0e-8_core_rknd
 
-    logical :: &
+    logical, dimension(nz) :: &
       l_pass_test_1,  & ! Flag for passing test 1
       l_pass_test_2,  & ! Flag for passing test 2
       l_pass_test_3,  & ! Flag for passing test 3
@@ -281,7 +287,13 @@ module pdf_parameter_tests
       l_pass_test_20    ! Flag for passing test 20
 
     integer :: &
+      total_num_failed_sets    ! Records total number of failed parameter sets
+
+    integer, dimension(nz) :: &
       num_failed_sets    ! Records the number of failed parameter sets
+
+    logical, dimension(nz) :: &
+      l_failed_sets    ! Flag recording when there are failed sets
 
     integer :: &
       seed_size    ! The size of the random seed array expected by the system
@@ -316,15 +328,17 @@ module pdf_parameter_tests
       iter_zeta_w        ! Loop index for value of zeta_w
 
     ! Variables for ADG1
+    real( kind = core_rknd ), dimension(nz) :: &
+      sqrt_wp2,      & ! Square root of w (ADG1)                         [m/s]
+      w_1_n,         & ! Normalized mean of w (1st PDF comp.) (ADG1)     [-]
+      w_2_n,         & ! Normalized mean of w (2nd PDF comp.) (ADG1)     [-]
+      alpha_thl,     & ! Factor relating to normalized variance for th_l [-]
+      alpha_rt,      & ! Factor relating to normalized variance for r_t  [-]
+      gamma_Skw_fnc, & ! Skewness function for tunable parameter gamma   [-]
+      sigma_sqd_w      ! Width of individual w plumes (ADG1)             [-]
+
     real( kind = core_rknd ) :: &
-      sqrt_wp2,          & ! Square root of w (ADG1)                       [m/s]
-      mixt_frac_max_mag, & ! Maximum magnitude of mixture fraction (ADG1)    [-]
-      w_1_n,             & ! Normalized mean of w (1st PDF comp.) (ADG1)     [-]
-      w_2_n,             & ! Normalized mean of w (2nd PDF comp.) (ADG1)     [-]
-      alpha_thl,         & ! Factor relating to normalized variance for th_l [-]
-      alpha_rt,          & ! Factor relating to normalized variance for r_t  [-]
-      gamma_Skw_fnc,     & ! Skewness function for tunable parameter gamma   [-]
-      sigma_sqd_w          ! Width of individual w plumes (ADG1)             [-]
+      mixt_frac_max_mag    ! Maximum magnitude of mixture fraction (ADG1)    [-]
 
     integer, parameter :: &
       num_sigma_sqd_w = 11  ! Number of diff. values of sigma_sqd_w used (ADG1)
@@ -333,7 +347,7 @@ module pdf_parameter_tests
       iter_sigma_sqd_w    ! Loop index for value of sigma_sqd_w (ADG1)
 
     ! Variables for TSDADG
-    real( kind = core_rknd ) :: &
+    real( kind = core_rknd ), dimension(nz) :: &
       big_L_w_1, & ! Parameter for the spread of the 1st PDF comp. mean of w [-]
       big_L_w_2    ! Parameter for the spread of the 2nd PDF comp. mean of w [-]
 
@@ -350,7 +364,7 @@ module pdf_parameter_tests
       iter_small_l_w_2    ! Loop index for value of small_l_w_2
 
     ! Scalar variables
-    real( kind = core_rknd ), dimension(sclr_dim) :: &
+    real( kind = core_rknd ), dimension(nz,sclr_dim) :: &
       sclrm,            & ! Mean of passive scalar (overall)        [units vary]
       sclrp2,           & ! Variance of pass. scalar (overall)  [(units vary)^2]
       wpsclrp,          & ! Covariance of w and pass. scalar  [m/s (units vary)]
@@ -362,6 +376,8 @@ module pdf_parameter_tests
 
     logical, parameter :: &
       l_scalar_calc = .false. ! Flag to perform calculations for passive scalars
+
+    integer :: idx    ! Loop index
 
 
     write(fstdout,*) ""
@@ -395,6 +411,15 @@ module pdf_parameter_tests
 
     ! Initialize number of failed parameter sets.
     num_failed_sets = 0
+    l_failed_sets = .false.
+    total_num_failed_sets = 0
+
+    ! The sign of the variance of vertical velocity is always positive.
+    sgn_wp2 = one
+
+    ! Set gr%nz to nz.  This is for use within PDF subroutines that input and
+    ! output variable arrays of size gr%nz.
+    gr%nz = nz
 
     ! Perform unit tests.
     do iter_param_sets = 1, num_param_sets, 1
@@ -607,11 +632,11 @@ module pdf_parameter_tests
           wpthlp = ( two * rand11 - one ) * sqrt( wp2 ) * sqrt( thlp2 )
        endif ! iter_param_sets == index
 
-       if ( sign( one, wprtp ) * sign( one, wpthlp ) < zero ) then
+       where ( sign( one, wprtp ) * sign( one, wpthlp ) < zero )
           rtpthlp = -0.9_core_rknd * sqrt( rtp2 ) * sqrt( thlp2 )
-       else
+       elsewhere
           rtpthlp = 0.9_core_rknd * sqrt( rtp2 ) * sqrt( thlp2 )
-       endif
+       endwhere
 
        ! Print PDF parameters
        write(fstdout,*) "wm = ", wm
@@ -651,14 +676,14 @@ module pdf_parameter_tests
 
              ! Set the value of F_w.
              if ( iter_F_w == 1 ) then
-                if ( abs( Skw ) > zero ) then
+                where ( abs( Skw ) > zero )
                    ! The value of F_w needs to be greater than 0 when
                    ! | Skw | > 0 in order for the PDF to be valid.
                    F_w = 1.0e-5_core_rknd
-                else ! Skw = 0
+                elsewhere ! Skw = 0
                    ! F_w can have a value of 0 when Skw = 0.
                    F_w = zero
-                endif ! | Skw | > 0
+                endwhere ! | Skw | > 0
              else ! iter_F_w > 1
                 ! F_w ranges from 0 to 1.
                 F_w = 0.1_core_rknd * real( iter_F_w - 1, kind = core_rknd )
@@ -707,7 +732,7 @@ module pdf_parameter_tests
 
                 ! Perform the tests for the "setter" variable, which is the
                 ! variable that is used to set the mixture fraction.
-                call setter_var_tests( wm, wp2, wp3, Skw,            & ! In
+                call setter_var_tests( nz, wm, wp2, wp3, Skw,        & ! In
                                        mu_w_1, mu_w_2, sigma_w_1,    & ! In
                                        sigma_w_2, mixt_frac, tol,    & ! In
                                        sigma_w_1_sqd, sigma_w_2_sqd, & ! In
@@ -735,35 +760,53 @@ module pdf_parameter_tests
                 !    | ( <w'^4>|_pdf - <w'^4>|_impl ) / <w'^4>|_pdf |  <=  tol;
                 ! which can be rewritten as:
                 !    | <w'^4>|_pdf - <w'^4>|_impl |  <=  <w'^4>|_pdf * tol.
-                if ( abs( wp4_pdf_calc - wp4_implicit_calc ) &
-                     <= max( wp4_pdf_calc, w_tol**4 ) * tol ) then
+                where ( abs( wp4_pdf_calc - wp4_implicit_calc ) &
+                        <= max( wp4_pdf_calc, w_tol**4 ) * tol )
                    l_pass_test_7 = .true.
-                else
+                elsewhere
                    l_pass_test_7 = .false.
-                   write(fstderr,*) "Test 7 failed"
-                   write(fstderr,*) "wp4 pdf = ", wp4_pdf_calc
-                   write(fstderr,*) "wp4 implicit calc = ", wp4_implicit_calc
-                   write(fstderr,*) ""
+                endwhere
+
+                if ( any( .not. l_pass_test_7 ) ) then
+                   do idx = 1, nz, 1
+                      if ( .not. l_pass_test_7(idx) ) then
+                         write(fstderr,*) "Test 7 failed"
+                         !write(fstderr,*) "index = ", idx
+                         write(fstderr,*) "wp4 pdf = ", wp4_pdf_calc(idx)
+                         write(fstderr,*) "wp4 implicit calc = ", &
+                                          wp4_implicit_calc(idx)
+                         write(fstderr,*) ""
+                      endif ! .not. l_pass_test_7(idx)
+                   enddo ! idx = 1, nz, 1
                 endif
 
-                if ( l_pass_test_1 .and. l_pass_test_2 .and. l_pass_test_3 &
-                     .and. l_pass_test_4 .and. l_pass_test_5 &
-                     .and. l_pass_test_6 .and. l_pass_test_7 ) then
+                where ( l_pass_test_1 .and. l_pass_test_2 .and. l_pass_test_3 &
+                        .and. l_pass_test_4 .and. l_pass_test_5 &
+                        .and. l_pass_test_6 .and. l_pass_test_7 )
                    ! All tests pass
                    num_failed_sets = num_failed_sets
-                else
+                   l_failed_sets = .false.
+                elsewhere
                    ! At least one test failed
                    num_failed_sets = num_failed_sets + 1
-                   write(fstderr,*) "At least one test or check for the " &
-                                    // "setting variable PDF failed for the " &
-                                    // "following parameter set:  "
-                   write(fstderr,*) "PDF parameter set index = ", &
-                                    iter_param_sets
-                   write(fstderr,*) "F_w = ", F_w
-                   write(fstderr,*) "zeta_w = ", zeta_w
-                   write(fstderr,*) ""
-                endif
+                   l_failed_sets = .true.
+                endwhere
 
+                if ( any( l_failed_sets ) ) then
+                   do idx = 1, nz, 1
+                      if ( l_failed_sets(idx) ) then
+                         write(fstderr,*) "At least one test or check for " &
+                                          // "the setting variable PDF " &
+                                          // "failed for the following " &
+                                          // "parameter set:  "
+                         write(fstderr,*) "PDF parameter set index = ", &
+                                          iter_param_sets
+                         write(fstderr,*) "F_w = ", F_w(idx)
+                         write(fstderr,*) "zeta_w = ", zeta_w(idx)
+                         write(fstderr,*) ""
+                      endif ! l_failed_sets(idx)
+                   enddo ! idx = 1, nz, 1
+                endif
 
              enddo ! iter_zeta_w = 1, num_zeta_w, 1
 
@@ -785,14 +828,14 @@ module pdf_parameter_tests
 
              ! Set the value of sigma_sqd_w.
              if ( iter_sigma_sqd_w == num_sigma_sqd_w ) then
-                if ( abs( Skw ) > zero ) then
+                where ( abs( Skw ) > zero )
                    ! The value of sigma_sqd_w needs to be less than than 1 when
                    ! | Skw | > 0 in order for the PDF to be valid.
                    sigma_sqd_w = 0.99_core_rknd
-                else ! Skw = 0
+                elsewhere ! Skw = 0
                    ! sigma_sqd_w can have a value of 0 when Skw = 0.
                    sigma_sqd_w = one
-                endif ! | Skw | > 0
+                endwhere ! | Skw | > 0
              else ! iter_sigma_sqd_w > 1
                 ! sigma_sqd_w ranges from 0 to 1.
                 sigma_sqd_w = 0.1_core_rknd * real( iter_sigma_sqd_w - 1, &
@@ -812,7 +855,7 @@ module pdf_parameter_tests
              ! Perform the tests for the "setter" variable, which is the
              ! variable that is used to set the mixture fraction.  This is
              ! always w for ADG1.
-             call setter_var_tests( wm, wp2, wp3, Skw,            & ! In
+             call setter_var_tests( nz, wm, wp2, wp3, Skw,        & ! In
                                     mu_w_1, mu_w_2, sigma_w_1,    & ! In
                                     sigma_w_2, mixt_frac, tol,    & ! In
                                     sigma_w_1_sqd, sigma_w_2_sqd, & ! In
@@ -822,20 +865,30 @@ module pdf_parameter_tests
                                     l_check_mu_w_1_gte_mu_w_2     ) ! Out
 
 
-             if ( l_pass_test_1 .and. l_pass_test_2 .and. l_pass_test_3 &
-                  .and. l_pass_test_4 .and. l_pass_test_5 &
-                  .and. l_pass_test_6 ) then
+             where ( l_pass_test_1 .and. l_pass_test_2 .and. l_pass_test_3 &
+                     .and. l_pass_test_4 .and. l_pass_test_5 &
+                     .and. l_pass_test_6 )
                 ! All tests pass
                 num_failed_sets = num_failed_sets
-             else
+                l_failed_sets = .false.
+             elsewhere
                 ! At least one test failed
                 num_failed_sets = num_failed_sets + 1
-                write(fstderr,*) "At least one test or check for the " &
-                                 // "setting variable PDF failed for the " &
-                                 // "following parameter set:  "
-                write(fstderr,*) "PDF parameter set index = ", iter_param_sets
-                write(fstderr,*) "sigma_sqd_w = ", sigma_sqd_w
-                write(fstderr,*) ""
+                l_failed_sets = .true.
+             endwhere
+
+             if ( any( l_failed_sets ) ) then
+                do idx = 1, nz, 1
+                   if ( l_failed_sets(idx) ) then
+                      write(fstderr,*) "At least one test or check for the " &
+                                       // "setting variable PDF failed for " &
+                                       // "the following parameter set:  "
+                      write(fstderr,*) "PDF parameter set index = ", &
+                                       iter_param_sets
+                      write(fstderr,*) "sigma_sqd_w = ", sigma_sqd_w(idx)
+                      write(fstderr,*) ""
+                   endif ! l_failed_sets(idx)
+                enddo ! idx = 1, nz, 1
              endif
 
           enddo ! iter_sigma_sqd_w = 1, num_sigma_sqd_w, 1
@@ -855,16 +908,24 @@ module pdf_parameter_tests
                                                        kind = core_rknd ), &
                                  5.0e-3_core_rknd )
 
-              call calc_L_x_Skx_fnc( Skw, sgn_wp2,             & ! In
-                                     small_l_w_1, small_l_w_2, & ! In
-                                     big_L_w_1, big_L_w_2      ) ! Out
+              do idx = 1, nz, 1
 
-              call calc_setter_parameters( wm, wp2, Skw, sgn_wp2,         &! In
-                                           big_L_w_1, big_L_w_2,          &! In
-                                           mu_w_1, mu_w_2, sigma_w_1_sqd, &! Out
-                                           sigma_w_2_sqd, mixt_frac,      &! Out
-                                           coef_sigma_w_1_sqd,            &! Out
-                                           coef_sigma_w_2_sqd             )! Out
+                 call calc_L_x_Skx_fnc( Skw(idx), sgn_wp2(idx),        & ! In
+                                        small_l_w_1, small_l_w_2,      & ! In
+                                        big_L_w_1(idx), big_L_w_2(idx) ) ! Out
+
+                 call calc_setter_parameters( wm(idx), wp2(idx),        & ! In
+                                              Skw(idx), sgn_wp2(idx),   & ! In
+                                              big_L_w_1(idx),           & ! In
+                                              big_L_w_2(idx),           & ! In
+                                              mu_w_1(idx), mu_w_2(idx), & ! Out
+                                              sigma_w_1_sqd(idx),       & ! Out
+                                              sigma_w_2_sqd(idx),       & ! Out
+                                              mixt_frac(idx),           & ! Out
+                                              coef_sigma_w_1_sqd(idx),  & ! Out
+                                              coef_sigma_w_2_sqd(idx)   ) ! Out
+
+              enddo ! idx = 1, nz, 1
 
               sigma_w_1 = sqrt( max( sigma_w_1_sqd, zero ) )
               sigma_w_2 = sqrt( max( sigma_w_2_sqd, zero ) )
@@ -873,7 +934,7 @@ module pdf_parameter_tests
 
               ! Perform the tests for the "setter" variable, which is the
               ! variable that is used to set the mixture fraction.
-              call setter_var_tests( wm, wp2, wp3, Skw,            & ! In
+              call setter_var_tests( nz, wm, wp2, wp3, Skw,        & ! In
                                      mu_w_1, mu_w_2, sigma_w_1,    & ! In
                                      sigma_w_2, mixt_frac, tol,    & ! In
                                      sigma_w_1_sqd, sigma_w_2_sqd, & ! In
@@ -883,23 +944,33 @@ module pdf_parameter_tests
                                      l_check_mu_w_1_gte_mu_w_2     ) ! Out
 
 
-              if ( l_pass_test_1 .and. l_pass_test_2 .and. l_pass_test_3 &
+              where ( l_pass_test_1 .and. l_pass_test_2 .and. l_pass_test_3 &
                    .and. l_pass_test_4 .and. l_pass_test_5 &
-                   .and. l_pass_test_6 ) then
+                   .and. l_pass_test_6 )
                  ! All tests pass
                  num_failed_sets = num_failed_sets
-              else
+                 l_failed_sets = .false.
+              elsewhere
                  ! At least one test failed
                  num_failed_sets = num_failed_sets + 1
-                 write(fstderr,*) "At least one test or check for the " &
-                                  // "setting variable PDF failed for the " &
-                                  // "following parameter set:  "
-                 write(fstderr,*) "PDF parameter set index = ", iter_param_sets
-                 write(fstderr,*) "l_w_1 = ", small_l_w_1
-                 write(fstderr,*) "l_w_2 = ", small_l_w_2
-                 write(fstderr,*) "L_w_1 = ", big_L_w_1
-                 write(fstderr,*) "L_w_2 = ", big_L_w_2
-                 write(fstderr,*) ""
+                 l_failed_sets = .true.
+              endwhere
+
+              if ( any( l_failed_sets ) ) then
+                 do idx = 1, nz, 1
+                    if ( l_failed_sets(idx) ) then
+                       write(fstderr,*) "At least one test or check for the " &
+                                        // "setting variable PDF failed for " &
+                                        // "the following parameter set:  "
+                         write(fstderr,*) "PDF parameter set index = ", &
+                                          iter_param_sets
+                         write(fstderr,*) "l_w_1 = ", small_l_w_1
+                         write(fstderr,*) "l_w_2 = ", small_l_w_2
+                         write(fstderr,*) "L_w_1 = ", big_L_w_1(idx)
+                         write(fstderr,*) "L_w_2 = ", big_L_w_2(idx)
+                         write(fstderr,*) ""
+                    endif ! l_failed_sets(idx)
+                 enddo ! idx = 1, nz, 1
               endif
 
             enddo ! iter_small_l_w_2 = 1, num_small_l_w_2, 1
@@ -925,7 +996,7 @@ module pdf_parameter_tests
 
           ! Perform the tests for the "setter" variable, which is the variable
           ! that is used to set the mixture fraction.
-          call setter_var_tests( wm, wp2, wp3, Skw,            & ! In
+          call setter_var_tests( nz, wm, wp2, wp3, Skw,        & ! In
                                  mu_w_1, mu_w_2, sigma_w_1,    & ! In
                                  sigma_w_2, mixt_frac, tol,    & ! In
                                  sigma_w_1_sqd, sigma_w_2_sqd, & ! In
@@ -937,18 +1008,28 @@ module pdf_parameter_tests
 
           ! Note:  l_pass_test_6 -- LY93 doesn't necessarily make
           !        mu_w_1 >= mu_w_2, so that test is thrown out.
-          if ( l_pass_test_1 .and. l_pass_test_2 .and. l_pass_test_3 &
-               .and. l_pass_test_4 .and. l_pass_test_5 ) then
+          where ( l_pass_test_1 .and. l_pass_test_2 .and. l_pass_test_3 &
+                  .and. l_pass_test_4 .and. l_pass_test_5 )
              ! All tests pass
              num_failed_sets = num_failed_sets
-          else
+             l_failed_sets = .false.
+          elsewhere
              ! At least one test failed
              num_failed_sets = num_failed_sets + 1
-             write(fstderr,*) "At least one test or check for the " &
-                              // "setting variable PDF failed for the " &
-                              // "following parameter set:  "
-             write(fstderr,*) "PDF parameter set index = ", iter_param_sets
-             write(fstderr,*) ""
+             l_failed_sets = .true.
+          endwhere
+
+          if ( any( l_failed_sets ) ) then
+             do idx = 1, nz, 1
+                if ( l_failed_sets(idx) ) then
+                   write(fstderr,*) "At least one test or check for the " &
+                                    // "setting variable PDF failed for the " &
+                                    // "following parameter set:  "
+                   write(fstderr,*) "PDF parameter set index = ", &
+                                    iter_param_sets
+                   write(fstderr,*) ""
+                endif ! l_failed_sets(idx)
+             enddo ! idx = 1, nz, 1
           endif
 
        endif ! test_PDF_type
@@ -1042,38 +1123,46 @@ module pdf_parameter_tests
 
        ! Recalculate the values of <wm>, <w'^2>, <w'^3>, and Skw using the
        ! PDF parameters that are output from the subroutine.
-       call recalc_single_var( wm, mu_w_1, mu_w_2, sigma_w_1, & ! In
-                               sigma_w_2, mixt_frac,          & ! In
-                               recalc_wm, recalc_wp2,         & ! Out
-                               recalc_wp3, recalc_Skw         ) ! Out
+       call recalc_single_var( nz, wm, mu_w_1, mu_w_2, sigma_w_1, & ! In
+                               sigma_w_2, mixt_frac,              & ! In
+                               recalc_wm, recalc_wp2,             & ! Out
+                               recalc_wp3, recalc_Skw             ) ! Out
 
        ! Recalculate the values of <rtm>, <rt'^2>, <rt'^3>, and Skrt using the
        ! PDF parameters that are output from the subroutine.
-       call recalc_single_var( rtm, mu_rt_1, mu_rt_2, sigma_rt_1, & ! In
-                               sigma_rt_2, mixt_frac,             & ! In
-                               recalc_rtm, recalc_rtp2,           & ! Out
-                               recalc_rtp3, recalc_Skrt           ) ! Out
+       call recalc_single_var( nz, rtm, mu_rt_1, mu_rt_2, sigma_rt_1, & ! In
+                               sigma_rt_2, mixt_frac,                 & ! In
+                               recalc_rtm, recalc_rtp2,               & ! Out
+                               recalc_rtp3, recalc_Skrt               ) ! Out
 
        ! Recalculate the values of <thlm>, <thl'^2>, <thl'^3>, and Skthl using
        ! the PDF parameters that are output from the subroutine.
-       call recalc_single_var( thlm, mu_thl_1, mu_thl_2, sigma_thl_1, & ! In
-                               sigma_thl_2, mixt_frac,                & ! In
-                               recalc_thlm, recalc_thlp2,             & ! Out
-                               recalc_thlp3, recalc_Skthl             ) ! Out
+       call recalc_single_var( nz, thlm, mu_thl_1, mu_thl_2, sigma_thl_1, & ! In
+                               sigma_thl_2, mixt_frac,                    & ! In
+                               recalc_thlm, recalc_thlp2,                & ! Out
+                               recalc_thlp3, recalc_Skthl                ) ! Out
 
        ! Test 8
        ! Compare the original wm to its recalculated value.
        !    | ( <w>|_recalc - <w> ) / <w> |  <=  tol;
        ! which can be rewritten as:
        !    | <w>|_recalc - <w> |  <=  | <w> | * tol.
-       if ( abs( recalc_wm - wm ) <= max( abs( wm ), w_tol ) * tol ) then
+       where ( abs( recalc_wm - wm ) <= max( abs( wm ), w_tol ) * tol )
           l_pass_test_8 = .true.
-       else
+       elsewhere
           l_pass_test_8 = .false.
-          write(fstderr,*) "Test 8 failed"
-          write(fstderr,*) "wm = ", wm
-          write(fstderr,*) "recalc_wm = ", recalc_wm
-          write(fstderr,*) ""
+       endwhere
+
+       if ( any( .not. l_pass_test_8 ) ) then
+          do idx = 1, nz, 1
+             if ( .not. l_pass_test_8(idx) ) then
+                write(fstderr,*) "Test 8 failed"
+                !write(fstderr,*) "index = ", idx
+                write(fstderr,*) "wm = ", wm(idx)
+                write(fstderr,*) "recalc_wm = ", recalc_wm(idx)
+                write(fstderr,*) ""
+             endif ! .not. l_pass_test_8(idx)
+          enddo ! idx = 1, nz, 1
        endif
 
        ! Test 9
@@ -1083,14 +1172,22 @@ module pdf_parameter_tests
        !    | <w'^2>|_recalc - <w'^2> |  <=  | <w'^2> | * tol;
        ! and since <w'^2> is always positive:
        !    | <w'^2>|_recalc - <w'^2> |  <=  <w'^2> * tol.
-       if ( abs( recalc_wp2 - wp2 ) <= max( wp2, w_tol_sqd ) * tol ) then
+       where ( abs( recalc_wp2 - wp2 ) <= max( wp2, w_tol_sqd ) * tol )
           l_pass_test_9 = .true.
-       else
+       elsewhere
           l_pass_test_9 = .false.
-          write(fstderr,*) "Test 9 failed"
-          write(fstderr,*) "wp2 = ", wp2
-          write(fstderr,*) "recalc_wp2 = ", recalc_wp2
-          write(fstderr,*) ""
+       endwhere
+
+       if ( any( .not. l_pass_test_9 ) ) then
+          do idx = 1, nz, 1
+             if ( .not. l_pass_test_9(idx) ) then
+                write(fstderr,*) "Test 9 failed"
+                !write(fstderr,*) "index = ", idx
+                write(fstderr,*) "wp2 = ", wp2(idx)
+                write(fstderr,*) "recalc_wp2 = ", recalc_wp2(idx)
+                write(fstderr,*) ""
+             endif ! .not. l_pass_test_9(idx)
+          enddo ! idx = 1, nz, 1
        endif
 
        ! Test 10
@@ -1098,14 +1195,22 @@ module pdf_parameter_tests
        !    | ( <w'^3>|_recalc - <w'^3> ) / <w'^3> |  <=  tol;
        ! which can be rewritten as:
        !    | <w'^3>|_recalc - <w'^3> |  <=  | <w'^3> | * tol.
-       if ( abs( recalc_wp3 - wp3 ) <= max( abs( wp3 ), w_tol**3 ) * tol ) then
+       where ( abs( recalc_wp3 - wp3 ) <= max( abs( wp3 ), w_tol**3 ) * tol )
           l_pass_test_10 = .true.
-       else
+       elsewhere
           l_pass_test_10 = .false.
-          write(fstderr,*) "Test 10 failed"
-          write(fstderr,*) "wp3 = ", wp3
-          write(fstderr,*) "recalc_wp3 = ", recalc_wp3
-          write(fstderr,*) ""
+       endwhere
+
+       if ( any( .not. l_pass_test_10 ) ) then
+          do idx = 1, nz, 1
+             if ( .not. l_pass_test_10(idx) ) then
+                write(fstderr,*) "Test 10 failed"
+                !write(fstderr,*) "index = ", idx
+                write(fstderr,*) "wp3 = ", wp3(idx)
+                write(fstderr,*) "recalc_wp3 = ", recalc_wp3(idx)
+                write(fstderr,*) ""
+             endif ! .not. l_pass_test_10(idx)
+          enddo ! idx = 1, nz, 1
        endif
 
        ! Test 11
@@ -1113,15 +1218,23 @@ module pdf_parameter_tests
        !    | ( Skw|_recalc - Skw ) / Skw |  <=  tol;
        ! which can be rewritten as:
        !    | Skw|_recalc - Skw |  <=  | Skw | * tol.
-       if ( abs( recalc_Skw - Skw ) &
-            <= max( abs( Skw ), 1.0e-3_core_rknd ) * tol ) then
+       where ( abs( recalc_Skw - Skw ) &
+               <= max( abs( Skw ), 1.0e-3_core_rknd ) * tol )
           l_pass_test_11 = .true.
-       else
+       elsewhere
           l_pass_test_11 = .false.
-          write(fstderr,*) "Test 11 failed"
-          write(fstderr,*) "Skw = ", Skw
-          write(fstderr,*) "recalc_Skw = ", recalc_Skw
-          write(fstderr,*) ""
+       endwhere
+
+       if ( any( .not. l_pass_test_11 ) ) then
+          do idx = 1, nz, 1
+             if ( .not. l_pass_test_11(idx) ) then
+                write(fstderr,*) "Test 11 failed"
+                !write(fstderr,*) "index = ", idx
+                write(fstderr,*) "Skw = ", Skw(idx)
+                write(fstderr,*) "recalc_Skw = ", recalc_Skw(idx)
+                write(fstderr,*) ""
+             endif ! .not. l_pass_test_11(idx)
+          enddo ! idx = 1, nz, 1
        endif
 
        ! Test 12
@@ -1129,14 +1242,22 @@ module pdf_parameter_tests
        !    | ( <rt>|_recalc - <rt> ) / <rt> |  <=  tol;
        ! which can be rewritten as:
        !    | <rt>|_recalc - <rt> |  <=  | <rt> | * tol.
-       if ( abs( recalc_rtm - rtm ) <= max( abs( rtm ), rt_tol ) * tol ) then
+       where ( abs( recalc_rtm - rtm ) <= max( abs( rtm ), rt_tol ) * tol )
           l_pass_test_12 = .true.
-       else
+       elsewhere
           l_pass_test_12 = .false.
-          write(fstderr,*) "Test 12 failed"
-          write(fstderr,*) "rtm = ", rtm
-          write(fstderr,*) "recalc_rtm = ", recalc_rtm
-          write(fstderr,*) ""
+       endwhere
+
+       if ( any( .not. l_pass_test_12 ) ) then
+          do idx = 1, nz, 1
+             if ( .not. l_pass_test_12(idx) ) then
+                write(fstderr,*) "Test 12 failed"
+                !write(fstderr,*) "index = ", idx
+                write(fstderr,*) "rtm = ", rtm(idx)
+                write(fstderr,*) "recalc_rtm = ", recalc_rtm(idx)
+                write(fstderr,*) ""
+             endif ! .not. l_pass_test_12(idx)
+          enddo ! idx = 1, nz, 1
        endif
 
        ! Test 13
@@ -1146,14 +1267,22 @@ module pdf_parameter_tests
        !    | <rt'^2>|_recalc - <rt'^2> |  <=  | <rt'^2> | * tol;
        ! and since <rt'^2> is always positive:
        !    | <rt'^2>|_recalc - <rt'^2> |  <=  <rt'^2> * tol.
-       if ( abs( recalc_rtp2 - rtp2 ) <= max( rtp2, rt_tol**2 ) * tol ) then
+       where ( abs( recalc_rtp2 - rtp2 ) <= max( rtp2, rt_tol**2 ) * tol )
           l_pass_test_13 = .true.
-       else
+       elsewhere
           l_pass_test_13 = .false.
-          write(fstderr,*) "Test 13 failed"
-          write(fstderr,*) "rtp2 = ", rtp2
-          write(fstderr,*) "recalc_rtp2 = ", recalc_rtp2
-          write(fstderr,*) ""
+       endwhere
+
+       if ( any( .not. l_pass_test_13 ) ) then
+          do idx = 1, nz, 1
+             if ( .not. l_pass_test_13(idx) ) then
+                write(fstderr,*) "Test 13 failed"
+                !write(fstderr,*) "index = ", idx
+                write(fstderr,*) "rtp2 = ", rtp2(idx)
+                write(fstderr,*) "recalc_rtp2 = ", recalc_rtp2(idx)
+                write(fstderr,*) ""
+             endif ! .not. l_pass_test_13(idx)
+          enddo ! idx = 1, nz, 1
        endif
 
        if ( ( test_PDF_type == iiPDF_new ) &
@@ -1164,15 +1293,23 @@ module pdf_parameter_tests
           !    | ( <rt'^3>|_recalc - <rt'^3> ) / <rt'^3> |  <=  tol;
           ! which can be rewritten as:
           !    | <rt'^3>|_recalc - <rt'^3> |  <=  | <rt'^3> | * tol.
-          if ( abs( recalc_rtp3 - rtp3 ) &
-               <= max( abs( rtp3 ), 1.0e-15_core_rknd ) * tol ) then
+          where ( abs( recalc_rtp3 - rtp3 ) &
+                  <= max( abs( rtp3 ), 1.0e-15_core_rknd ) * tol )
              l_pass_test_14 = .true.
-          else
+          elsewhere
              l_pass_test_14 = .false.
-             write(fstderr,*) "Test 14 failed"
-             write(fstderr,*) "rtp3 = ", rtp3
-             write(fstderr,*) "recalc_rtp3 = ", recalc_rtp3
-             write(fstderr,*) ""
+          endwhere
+
+          if ( any( .not. l_pass_test_14 ) ) then
+             do idx = 1, nz, 1
+                if ( .not. l_pass_test_14(idx) ) then
+                   write(fstderr,*) "Test 14 failed"
+                   !write(fstderr,*) "index = ", idx
+                   write(fstderr,*) "rtp3 = ", rtp3(idx)
+                   write(fstderr,*) "recalc_rtp3 = ", recalc_rtp3(idx)
+                   write(fstderr,*) ""
+                endif ! .not. l_pass_test_14(idx)
+             enddo ! idx = 1, nz, 1
           endif
 
           ! Test 15
@@ -1180,15 +1317,23 @@ module pdf_parameter_tests
           !    | ( Skrt|_recalc - Skrt ) / Skrt |  <=  tol;
           ! which can be rewritten as:
           !    | Skrt|_recalc - Skrt |  <=  | Skrt | * tol.
-          if ( abs( recalc_Skrt - Skrt ) &
-               <= max( abs( Skrt ), 1.0e-3_core_rknd ) * tol ) then
+          where ( abs( recalc_Skrt - Skrt ) &
+                  <= max( abs( Skrt ), 1.0e-3_core_rknd ) * tol )
              l_pass_test_15 = .true.
-          else
+          elsewhere
              l_pass_test_15 = .false.
-             write(fstderr,*) "Test 15 failed"
-             write(fstderr,*) "Skrt = ", Skrt
-             write(fstderr,*) "recalc_Skrt = ", recalc_Skrt
-             write(fstderr,*) ""
+          endwhere
+
+          if ( any( .not. l_pass_test_15 ) ) then
+             do idx = 1, nz, 1
+                if ( .not. l_pass_test_15(idx) ) then
+                   write(fstderr,*) "Test 15 failed"
+                   !write(fstderr,*) "index = ", idx
+                   write(fstderr,*) "Skrt = ", Skrt(idx)
+                   write(fstderr,*) "recalc_Skrt = ", recalc_Skrt(idx)
+                   write(fstderr,*) ""
+                   endif ! .not. l_pass_test_15(idx)
+             enddo ! idx = 1, nz, 1
           endif
 
        else
@@ -1205,15 +1350,23 @@ module pdf_parameter_tests
        !    | ( <thl>|_recalc - <thl> ) / <thl> |  <=  tol;
        ! which can be rewritten as:
        !    | <thl>|_recalc - <thl> |  <=  | <thl> | * tol.
-       if ( abs( recalc_thlm - thlm ) &
-            <= max( abs( thlm ), thl_tol ) * tol ) then
+       where ( abs( recalc_thlm - thlm ) &
+               <= max( abs( thlm ), thl_tol ) * tol )
           l_pass_test_16 = .true.
-       else
+       elsewhere
           l_pass_test_16 = .false.
-          write(fstderr,*) "Test 16 failed"
-          write(fstderr,*) "thlm = ", thlm
-          write(fstderr,*) "recalc_thlm = ", recalc_thlm
-          write(fstderr,*) ""
+       endwhere
+
+       if ( any( .not. l_pass_test_16 ) ) then
+          do idx = 1, nz, 1
+             if ( .not. l_pass_test_16(idx) ) then
+                write(fstderr,*) "Test 16 failed"
+                !write(fstderr,*) "index = ", idx
+                write(fstderr,*) "thlm = ", thlm(idx)
+                write(fstderr,*) "recalc_thlm = ", recalc_thlm(idx)
+                write(fstderr,*) ""
+             endif ! .not. l_pass_test_16(idx)
+          enddo ! idx = 1, nz, 1
        endif
 
        ! Test 17
@@ -1223,14 +1376,22 @@ module pdf_parameter_tests
        !    | <thl'^2>|_recalc - <thl'^2> |  <=  | <thl'^2> | * tol;
        ! and since <thl'^2> is always positive:
        !    | <thl'^2>|_recalc - <thl'^2> |  <=  <thl'^2> * tol.
-       if ( abs( recalc_thlp2 - thlp2 ) <= max( thlp2, thl_tol**2 ) * tol ) then
+       where ( abs( recalc_thlp2 - thlp2 ) <= max( thlp2, thl_tol**2 ) * tol )
           l_pass_test_17 = .true.
-       else
+       elsewhere
           l_pass_test_17 = .false.
-          write(fstderr,*) "Test 17 failed"
-          write(fstderr,*) "thlp2 = ", thlp2
-          write(fstderr,*) "recalc_thlp2 = ", recalc_thlp2
-          write(fstderr,*) ""
+       endwhere
+
+       if ( any( .not. l_pass_test_17 ) ) then
+          do idx = 1, nz, 1
+             if ( .not. l_pass_test_17(idx) ) then
+                write(fstderr,*) "Test 17 failed"
+                !write(fstderr,*) "index = ", idx
+                write(fstderr,*) "thlp2 = ", thlp2(idx)
+                write(fstderr,*) "recalc_thlp2 = ", recalc_thlp2(idx)
+                write(fstderr,*) ""
+             endif ! .not. l_pass_test_17(idx)
+          enddo ! idx = 1, nz, 1
        endif
 
        if ( ( test_PDF_type == iiPDF_new ) &
@@ -1241,15 +1402,23 @@ module pdf_parameter_tests
           !    | ( <thl'^3>|_recalc - <thl'^3> ) / <thl'^3> |  <=  tol;
           ! which can be rewritten as:
           !    | <thl'^3>|_recalc - <thl'^3> |  <=  | <thl'^3> | * tol.
-          if ( abs( recalc_thlp3 - thlp3 ) &
-               <= max( abs( thlp3 ), thl_tol**3 ) * tol ) then
+          where ( abs( recalc_thlp3 - thlp3 ) &
+                  <= max( abs( thlp3 ), thl_tol**3 ) * tol )
              l_pass_test_18 = .true.
-          else
+          elsewhere
              l_pass_test_18 = .false.
-             write(fstderr,*) "Test 18 failed"
-             write(fstderr,*) "thlp3 = ", thlp3
-             write(fstderr,*) "recalc_thlp3 = ", recalc_thlp3
-             write(fstderr,*) ""
+          endwhere
+
+          if ( any( .not. l_pass_test_18 ) ) then
+             do idx = 1, nz, 1
+                if ( .not. l_pass_test_18(idx) ) then
+                   write(fstderr,*) "Test 18 failed"
+                   !write(fstderr,*) "index = ", idx
+                   write(fstderr,*) "thlp3 = ", thlp3(idx)
+                   write(fstderr,*) "recalc_thlp3 = ", recalc_thlp3(idx)
+                   write(fstderr,*) ""
+                endif ! .not. l_pass_test_18(idx)
+             enddo ! idx = 1, nz, 1
           endif
 
           ! Test 19
@@ -1257,15 +1426,23 @@ module pdf_parameter_tests
           !    | ( Skthl|_recalc - Skthl ) / Skthl |  <=  tol;
           ! which can be rewritten as:
           !    | Skthl|_recalc - Skthl |  <=  | Skthl | * tol.
-          if ( abs( recalc_Skthl - Skthl ) &
-               <= max( abs( Skthl ), 1.0e-3_core_rknd ) * tol ) then
+          where ( abs( recalc_Skthl - Skthl ) &
+                  <= max( abs( Skthl ), 1.0e-3_core_rknd ) * tol )
              l_pass_test_19 = .true.
-          else
+          elsewhere
              l_pass_test_19 = .false.
-             write(fstderr,*) "Test 19 failed"
-             write(fstderr,*) "Skthl = ", Skthl
-             write(fstderr,*) "recalc_Skthl = ", recalc_Skthl
-             write(fstderr,*) ""
+          endwhere
+
+          if ( any( .not. l_pass_test_19 ) ) then
+             do idx = 1, nz, 1
+                if ( .not. l_pass_test_19(idx) ) then
+                   write(fstderr,*) "Test 19 failed"
+                   !write(fstderr,*) "index = ", idx
+                   write(fstderr,*) "Skthl = ", Skthl(idx)
+                   write(fstderr,*) "recalc_Skthl = ", recalc_Skthl(idx)
+                   write(fstderr,*) ""
+                endif ! .not. l_pass_test_19(idx)
+             enddo ! idx = 1, nz, 1
           endif
 
        else
@@ -1281,61 +1458,79 @@ module pdf_parameter_tests
        ! Check that sigma_w_1, sigma_w_2, sigma_rt_1, sigma_rt_2, sigma_thl_1,
        ! and sigma_thl_2 have a value of at least zero, and that mixture
        ! fraction has a value between 0 and 1.
-       if ( ( sigma_w_1 >= zero ) .and. ( sigma_w_2 >= zero ) &
-            .and. ( sigma_rt_1 >= zero ) .and. ( sigma_rt_2 >= zero ) &
-            .and. ( sigma_thl_1 >= zero ) .and. ( sigma_thl_2 >= zero ) &
-            .and. ( mixt_frac > zero ) .and. ( mixt_frac < one ) ) then
+       where ( ( sigma_w_1 >= zero ) .and. ( sigma_w_2 >= zero ) &
+               .and. ( sigma_rt_1 >= zero ) .and. ( sigma_rt_2 >= zero ) &
+               .and. ( sigma_thl_1 >= zero ) .and. ( sigma_thl_2 >= zero ) &
+               .and. ( mixt_frac > zero ) .and. ( mixt_frac < one ) )
           l_pass_test_20 = .true.
-       else
+       elsewhere
           l_pass_test_20 = .false.
-          write(fstderr,*) "Test 20 failed"
-          write(fstderr,*) "sigma_w_1 = ", sigma_w_1
-          write(fstderr,*) "sigma_w_2 = ", sigma_w_2
-          write(fstderr,*) "sigma_rt_1 = ", sigma_rt_1
-          write(fstderr,*) "sigma_rt_2 = ", sigma_rt_2
-          write(fstderr,*) "sigma_thl_1 = ", sigma_thl_1
-          write(fstderr,*) "sigma_thl_2 = ", sigma_thl_2
-          write(fstderr,*) "mixt_frac = ", mixt_frac
-          write(fstderr,*) ""
+       endwhere
+
+       if ( any( .not. l_pass_test_20 ) ) then
+          do idx = 1, nz, 1
+             if ( .not. l_pass_test_20(idx) ) then
+                write(fstderr,*) "Test 20 failed"
+                !write(fstderr,*) "index = ", idx
+                write(fstderr,*) "sigma_w_1 = ", sigma_w_1(idx)
+                write(fstderr,*) "sigma_w_2 = ", sigma_w_2(idx)
+                write(fstderr,*) "sigma_rt_1 = ", sigma_rt_1(idx)
+                write(fstderr,*) "sigma_rt_2 = ", sigma_rt_2(idx)
+                write(fstderr,*) "sigma_thl_1 = ", sigma_thl_1(idx)
+                write(fstderr,*) "sigma_thl_2 = ", sigma_thl_2(idx)
+                write(fstderr,*) "mixt_frac = ", mixt_frac(idx)
+                write(fstderr,*) ""
+             endif ! .not. l_pass_test_20(idx)
+          enddo ! idx = 1, nz, 1
        endif
 
-
-       if ( l_pass_test_8 .and. l_pass_test_9 &
-            .and. l_pass_test_10 .and. l_pass_test_11 &
-            .and. l_pass_test_12 .and. l_pass_test_13 &
-            .and. l_pass_test_14 .and. l_pass_test_15 &
-            .and. l_pass_test_16 .and. l_pass_test_17 &
-            .and. l_pass_test_18 .and. l_pass_test_19 &
-            .and. l_pass_test_20 ) then
+       where ( l_pass_test_8 .and. l_pass_test_9 &
+               .and. l_pass_test_10 .and. l_pass_test_11 &
+               .and. l_pass_test_12 .and. l_pass_test_13 &
+               .and. l_pass_test_14 .and. l_pass_test_15 &
+               .and. l_pass_test_16 .and. l_pass_test_17 &
+               .and. l_pass_test_18 .and. l_pass_test_19 &
+               .and. l_pass_test_20 )
 
           ! All tests pass
           num_failed_sets = num_failed_sets
+          l_failed_sets = .false.
 
-       else
+       elsewhere
 
           ! At least one test failed
           num_failed_sets = num_failed_sets + 1
-          write(fstderr,*) "At least one test or check for the full PDF "&
-                           // "failed for the following parameter set:  "
-          write(fstderr,*) "PDF parameter set index = ", iter_param_sets
-          write(fstderr,*) ""
+          l_failed_sets = .true.
 
+       endwhere
+
+       if ( any( l_failed_sets ) ) then
+          do idx = 1, nz, 1
+             if ( l_failed_sets(idx) ) then
+                write(fstderr,*) "At least one test or check for the full PDF "&
+                                 // "failed for the following parameter set:  "
+                write(fstderr,*) "PDF parameter set index = ", iter_param_sets
+                write(fstderr,*) ""
+             endif ! l_failed_sets(idx)
+          enddo ! idx = 1, nz, 1
        endif
 
     enddo ! iter_param_sets = 1, num_param_sets, 1
 
 
+    total_num_failed_sets = sum( num_failed_sets )
+
     ! Print results and return exit code.
-    if ( num_failed_sets == 0 ) then
+    if ( total_num_failed_sets == 0 ) then
        write(fstdout,'(1x,A)') "Success!"
        write(fstdout,*) ""
        pdf_parameter_unit_tests = 0 ! Exit Code = 0, Success!
-    else ! num_failed_sets > 0
-       write(fstdout,'(1x,A,I4,A)') "There were ", num_failed_sets, &
+    else ! total_num_failed_sets > 0
+       write(fstdout,'(1x,A,I4,A)') "There were ", total_num_failed_sets, &
                                     " failed parameter sets."
        write(fstdout,*) ""
        pdf_parameter_unit_tests = 1 ! Exit Code = 1, Fail
-    endif ! num_failed_sets = 0
+    endif ! total_num_failed_sets = 0
 
 
     return
@@ -1343,7 +1538,7 @@ module pdf_parameter_tests
   end function pdf_parameter_unit_tests
 
   !=============================================================================
-  subroutine setter_var_tests( wm, wp2, wp3, Skw,            & ! In
+  subroutine setter_var_tests( nz, wm, wp2, wp3, Skw,        & ! In
                                mu_w_1, mu_w_2, sigma_w_1,    & ! In
                                sigma_w_2, mixt_frac, tol,    & ! In
                                sigma_w_1_sqd, sigma_w_2_sqd, & ! In
@@ -1373,7 +1568,10 @@ module pdf_parameter_tests
     implicit none
 
     ! Input Variables
-    real( kind = core_rknd ), intent(in) :: &
+    integer, intent(in) :: &
+      nz
+
+    real( kind = core_rknd ), dimension(nz), intent(in) :: &
       wm,            & ! Mean of w (overall)                           [m/s]
       wp2,           & ! Variance of w (overall)                       [m^2/s^2]
       wp3,           & ! <w'^3>                                        [m^3/s^3]
@@ -1383,15 +1581,17 @@ module pdf_parameter_tests
       sigma_w_1,     & ! Standard deviation of w (1st PDF component)   [m/s]
       sigma_w_2,     & ! Standard deviation of w (2nd PDF component)   [m/s]
       mixt_frac,     & ! Mixture fraction                              [-]
-      tol,           & ! Tolerance for acceptable numerical difference [-]
       sigma_w_1_sqd, & ! Variance of w (1st PDF component)             [m^2/s^2]
       sigma_w_2_sqd    ! Variance of w (2nd PDF component)             [m^2/s^2]
+
+    real( kind = core_rknd ), intent(in) :: &
+      tol    ! Tolerance for acceptable numerical difference    [-]
 
     logical, intent(in) :: &
       l_check_mu_w_1_gte_mu_w_2    ! Flag to check whether mu_w_1 >= mu_w_2
 
     ! Output Variables
-    logical, intent(out) :: &
+    logical, dimension(nz), intent(out) :: &
       l_pass_test_1, & ! Flag for passing test 1
       l_pass_test_2, & ! Flag for passing test 2
       l_pass_test_3, & ! Flag for passing test 3
@@ -1400,33 +1600,43 @@ module pdf_parameter_tests
       l_pass_test_6    ! Flag for passing test 6
 
     ! Local Variables
-    real( kind = core_rknd ) :: &
+    real( kind = core_rknd ), dimension(nz) :: &
       recalc_wm,  & ! Recalculation of <w> using PDF parameters          [m/s]
       recalc_wp2, & ! Recalculation of <w'^2> using PDF parameters   [m^2/s^2]
       recalc_wp3, & ! Recalculation of <w'^3> using PDF parameters   [m^3/s^3]
       recalc_Skw    ! Recalculation of Skw using PDF parameters            [-]
 
+    integer :: idx    ! Loop index
+
 
     ! Recalculate the values of <wm>, <w'^2>, <w'^3>, and Skw using the PDF
     ! parameters that are output from the subroutine.
-    call recalc_single_var( wm, mu_w_1, mu_w_2, sigma_w_1, & ! In
-                            sigma_w_2, mixt_frac,          & ! In
-                            recalc_wm, recalc_wp2,         & ! Out
-                            recalc_wp3, recalc_Skw         ) ! Out
+    call recalc_single_var( nz, wm, mu_w_1, mu_w_2, sigma_w_1, & ! In
+                            sigma_w_2, mixt_frac,              & ! In
+                            recalc_wm, recalc_wp2,             & ! Out
+                            recalc_wp3, recalc_Skw             ) ! Out
 
     ! Test 1
     ! Compare the original wm to its recalculated value.
     !    | ( <w>|_recalc - <w> ) / <w> |  <=  tol;
     ! which can be rewritten as:
     !    | <w>|_recalc - <w> |  <=  | <w> | * tol.
-    if ( abs( recalc_wm - wm ) <= max( abs( wm ), w_tol ) * tol ) then
+    where ( abs( recalc_wm - wm ) <= max( abs( wm ), w_tol ) * tol )
        l_pass_test_1 = .true.
-    else
+    elsewhere
        l_pass_test_1 = .false.
-       write(fstderr,*) "Test 1 failed"
-       write(fstderr,*) "wm = ", wm
-       write(fstderr,*) "recalc_wm = ", recalc_wm
-       write(fstderr,*) ""
+    endwhere
+
+    if ( any( .not. l_pass_test_1 ) ) then
+       do idx = 1, nz, 1
+          if ( .not. l_pass_test_1(idx) ) then
+             write(fstderr,*) "Test 1 failed"
+             !write(fstderr,*) "index = ", idx
+             write(fstderr,*) "wm = ", wm(idx)
+             write(fstderr,*) "recalc_wm = ", recalc_wm(idx)
+             write(fstderr,*) ""
+          endif ! .not. l_pass_test_1(idx)
+       enddo ! idx = 1, nz, 1
     endif
 
     ! Test 2
@@ -1436,14 +1646,22 @@ module pdf_parameter_tests
     !    | <w'^2>|_recalc - <w'^2> |  <=  | <w'^2> | * tol;
     ! and since <w'^2> is always positive:
     !    | <w'^2>|_recalc - <w'^2> |  <=  <w'^2> * tol.
-    if ( abs( recalc_wp2 - wp2 ) <= max( wp2, w_tol_sqd ) * tol ) then
+    where ( abs( recalc_wp2 - wp2 ) <= max( wp2, w_tol_sqd ) * tol )
        l_pass_test_2 = .true.
-    else
+    elsewhere
        l_pass_test_2 = .false.
-       write(fstderr,*) "Test 2 failed"
-       write(fstderr,*) "wp2 = ", wp2
-       write(fstderr,*) "recalc_wp2 = ", recalc_wp2
-       write(fstderr,*) ""
+    endwhere
+
+    if ( any( .not. l_pass_test_2 ) ) then
+       do idx = 1, nz, 1
+          if ( .not. l_pass_test_2(idx) ) then
+             write(fstderr,*) "Test 2 failed"
+             !write(fstderr,*) "index = ", idx
+             write(fstderr,*) "wp2 = ", wp2(idx)
+             write(fstderr,*) "recalc_wp2 = ", recalc_wp2(idx)
+             write(fstderr,*) ""
+          endif ! .not. l_pass_test_2(idx)
+       enddo ! idx = 1, nz, 1
     endif
 
     ! Test 3
@@ -1451,14 +1669,22 @@ module pdf_parameter_tests
     !    | ( <w'^3>|_recalc - <w'^3> ) / <w'^3> |  <=  tol;
     ! which can be rewritten as:
     !    | <w'^3>|_recalc - <w'^3> |  <=  | <w'^3> | * tol.
-    if ( abs( recalc_wp3 - wp3 ) <= max( abs( wp3 ), w_tol**3 ) * tol ) then
+    where ( abs( recalc_wp3 - wp3 ) <= max( abs( wp3 ), w_tol**3 ) * tol )
        l_pass_test_3 = .true.
-    else
+    elsewhere
        l_pass_test_3 = .false.
-       write(fstderr,*) "Test 3 failed"
-       write(fstderr,*) "wp3 = ", wp3
-       write(fstderr,*) "recalc_wp3 = ", recalc_wp3
-       write(fstderr,*) ""
+    endwhere
+
+    if ( any( .not. l_pass_test_3 ) ) then
+       do idx = 1, nz, 1
+          if ( .not. l_pass_test_3(idx) ) then
+             write(fstderr,*) "Test 3 failed"
+             !write(fstderr,*) "index = ", idx
+             write(fstderr,*) "wp3 = ", wp3(idx)
+             write(fstderr,*) "recalc_wp3 = ", recalc_wp3(idx)
+             write(fstderr,*) ""
+          endif ! .not. l_pass_test_3(idx)
+       enddo ! idx = 1, nz, 1
     endif
 
     ! Test 4
@@ -1466,46 +1692,74 @@ module pdf_parameter_tests
     !    | ( Skw|_recalc - Skw ) / Skw |  <=  tol;
     ! which can be rewritten as:
     !    | Skw|_recalc - Skw |  <=  | Skw | * tol.
-    if ( abs( recalc_Skw - Skw ) &
-         <= max( abs( Skw ), 1.0e-3_core_rknd ) * tol ) then
+    where ( abs( recalc_Skw - Skw ) &
+            <= max( abs( Skw ), 1.0e-3_core_rknd ) * tol )
        l_pass_test_4 = .true.
-    else
+    elsewhere
        l_pass_test_4 = .false.
-       write(fstderr,*) "Test 4 failed"
-       write(fstderr,*) "Skw = ", Skw
-       write(fstderr,*) "recalc_Skw = ", recalc_Skw
-       write(fstderr,*) ""
+    endwhere
+
+    if ( any( .not. l_pass_test_4 ) ) then
+       do idx = 1, nz, 1
+          if ( .not. l_pass_test_4(idx) ) then
+             write(fstderr,*) "Test 4 failed"
+             !write(fstderr,*) "index = ", idx
+             write(fstderr,*) "Skw = ", Skw(idx)
+             write(fstderr,*) "recalc_Skw = ", recalc_Skw(idx)
+             write(fstderr,*) ""
+          endif ! .not. l_pass_test_4(idx)
+       enddo ! idx = 1, nz, 1
     endif
 
     ! Test 5
     ! Check that sigma_w_1^2 and sigma_w_2^2 have a value of at least zero, and
     ! that mixture fraction has a value between 0 and 1.
-    if ( ( sigma_w_1_sqd >= zero ) .and. ( sigma_w_2_sqd >= zero ) &
-         .and. ( mixt_frac > zero ) .and. ( mixt_frac < one ) ) then
+    where ( ( sigma_w_1_sqd >= zero ) .and. ( sigma_w_2_sqd >= zero ) &
+            .and. ( mixt_frac > zero ) .and. ( mixt_frac < one ) )
        l_pass_test_5 = .true.
-    else
+    elsewhere
        l_pass_test_5 = .false.
-       write(fstderr,*) "Test 5 failed"
-       write(fstderr,*) "sigma_w_1^2 = ", sigma_w_1_sqd
-       write(fstderr,*) "sigma_w_2^2 = ", sigma_w_2_sqd
-       write(fstderr,*) "mixt_frac = ", mixt_frac
-       write(fstderr,*) ""
+    endwhere
+
+    if ( any( .not. l_pass_test_5 ) ) then
+       do idx = 1, nz, 1
+          if ( .not. l_pass_test_5(idx) ) then
+             write(fstderr,*) "Test 5 failed"
+             !write(fstderr,*) "index = ", idx
+             write(fstderr,*) "sigma_w_1^2 = ", sigma_w_1_sqd(idx)
+             write(fstderr,*) "sigma_w_2^2 = ", sigma_w_2_sqd(idx)
+             write(fstderr,*) "mixt_frac = ", mixt_frac(idx)
+             write(fstderr,*) ""
+          endif ! .not. l_pass_test_5(idx)
+       enddo ! idx = 1, nz, 1
     endif
 
     if ( l_check_mu_w_1_gte_mu_w_2 ) then
+
        ! Test 6
        ! Check that mu_w_1 >= mu_w_2
-       if ( mu_w_1 >= mu_w_2 ) then
+       where ( mu_w_1 >= mu_w_2 )
           l_pass_test_6 = .true.
-       else
+       elsewhere
           l_pass_test_6 = .false.
-          write(fstderr,*) "Test 6 failed"
-          write(fstderr,*) "mu_w_1 = ", mu_w_1
-          write(fstderr,*) "mu_w_2 = ", mu_w_2
-          write(fstderr,*) ""
+       endwhere
+
+       if ( any( .not. l_pass_test_6 ) ) then
+          do idx = 1, nz, 1
+             if ( .not. l_pass_test_6(idx) ) then
+                write(fstderr,*) "Test 6 failed"
+                !write(fstderr,*) "index = ", idx
+                write(fstderr,*) "mu_w_1 = ", mu_w_1(idx)
+                write(fstderr,*) "mu_w_2 = ", mu_w_2(idx)
+                write(fstderr,*) ""
+             endif ! .not. l_pass_test_6(idx)
+          enddo ! idx = 1, nz, 1
        endif
+
     else
+
        l_pass_test_6 = .true.
+
     endif
 
 
@@ -1514,10 +1768,10 @@ module pdf_parameter_tests
   end subroutine setter_var_tests
 
   !=============================================================================
-  subroutine recalc_single_var( xm, mu_x_1, mu_x_2, sigma_x_1, & ! In
-                                sigma_x_2, mixt_frac,          & ! In
-                                recalc_xm, recalc_xp2,         & ! Out
-                                recalc_xp3, recalc_Skx         ) ! Out
+  subroutine recalc_single_var( nz, xm, mu_x_1, mu_x_2, sigma_x_1, & ! In
+                                sigma_x_2, mixt_frac,              & ! In
+                                recalc_xm, recalc_xp2,             & ! Out
+                                recalc_xp3, recalc_Skx             ) ! Out
 
     use constants_clubb, only: &
         three, & ! Variable(s)
@@ -1528,7 +1782,10 @@ module pdf_parameter_tests
 
     implicit none
 
-    real( kind = core_rknd ), intent(in) :: &
+    integer, intent(in) :: &
+      nz
+
+    real( kind = core_rknd ), dimension(nz), intent(in) :: &
       xm,        & ! Mean of x (overall)                  [units vary]
       mu_x_1,    & ! Mean of x (1st PDF component)        [units vary]
       mu_x_2,    & ! Mean of x (2nd PDF component)        [units vary]
@@ -1536,7 +1793,7 @@ module pdf_parameter_tests
       sigma_x_2, & ! Variance of x (2nd PDF component)    [units vary]
       mixt_frac    ! Mixture fraction                     [-]
 
-    real( kind = core_rknd ), intent(out) :: &
+    real( kind = core_rknd ), dimension(nz), intent(out) :: &
       recalc_xm,  & ! Recalculation of <x> using PDF parameters    [units vary]
       recalc_xp2, & ! Recalculation of <x'^2> using PDF parameters [(un vary)^2]
       recalc_xp3, & ! Recalculation of <x'^3> using PDF parameters [(un vary)^3]

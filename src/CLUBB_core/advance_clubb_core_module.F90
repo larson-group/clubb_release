@@ -2252,7 +2252,7 @@ module advance_clubb_core_module
       min_F_thl, & ! Minimum allowable value of parameter F_thl    [-]
       max_F_thl    ! Maximum allowable value of parameter F_thl    [-]
 
-    real( kind = core_rknd ) :: &
+    real( kind = core_rknd ), dimension(gr%nz) :: &
       F_w_zm,       &
       F_rt_zm,      &
       F_thl_zm,     &
@@ -2316,7 +2316,7 @@ module advance_clubb_core_module
       thlm_zm_frz, &
       rc_coef_zm_frz
 
-    real( kind = core_rknd ) :: &
+    real( kind = core_rknd ), dimension(gr%nz) :: &
       F_w_frz,          &
       F_rt_frz,         &
       F_thl_frz,        &
@@ -2473,43 +2473,39 @@ module advance_clubb_core_module
     enddo ! i = 1, hydromet_dim, 1
 
 
-    do k = 1, gr%nz, 1
-
-      call pdf_closure & 
-        ( hydromet_dim, p_in_Pa(k), exner(k), thv_ds_zt(k), wm_zt(k), & ! intent(in)
-          wp2_zt(k), wp3(k), sigma_sqd_w_zt(k),                       & ! intent(in)
-          Skw_zt(k), Skthl_zt(k), Skrt_zt(k), rtm(k), rtp2_zt(k),     & ! intent(in)
-          zm2zt( wprtp, k ), thlm(k), thlp2_zt(k),                    & ! intent(in)
-          zm2zt( wpthlp, k ), rtpthlp_zt(k), sclrm(k,:),              & ! intent(in)
-          wpsclrp_zt(k,:), sclrp2_zt(k,:), sclrprtp_zt(k,:),          & ! intent(in)
-          sclrpthlp_zt(k,:), k,                                       & ! intent(in)
+    call pdf_closure & 
+         ( hydromet_dim, p_in_Pa, exner, thv_ds_zt, wm_zt, & ! intent(in)
+           wp2_zt, wp3, sigma_sqd_w_zt,                    & ! intent(in)
+           Skw_zt, Skthl_zt, Skrt_zt, rtm, rtp2_zt,        & ! intent(in)
+           zm2zt( wprtp ), thlm, thlp2_zt,                 & ! intent(in)
+           zm2zt( wpthlp ), rtpthlp_zt, sclrm,             & ! intent(in)
+           wpsclrp_zt, sclrp2_zt, sclrprtp_zt,             & ! intent(in)
+           sclrpthlp_zt,                                   & ! intent(in)
 #ifdef GFDL
-          RH_crit(k, : , :),   do_liquid_only_in_clubb,               & ! intent(in)
+           RH_crit, do_liquid_only_in_clubb,               & ! intent(in)
 #endif
-          wphydrometp_zt(k,:), wp2hmp(k,:),                           & ! intent(in)
-          rtphmp_zt(k,:), thlphmp_zt(k,:),                            & ! intent(in)
-          wp4_zt(k), wprtp2(k), wp2rtp(k),                            & ! intent(out)
-          wpthlp2(k), wp2thlp(k), wprtpthlp(k),                       & ! intent(out)
-          cloud_frac(k), ice_supersat_frac(k),                        & ! intent(out)
-          rcm(k), wpthvp_zt(k), wp2thvp(k), rtpthvp_zt(k),            & ! intent(out)
-          thlpthvp_zt(k), wprcp_zt(k), wp2rcp(k), rtprcp_zt(k),       & ! intent(out)
-          thlprcp_zt(k), rcp2_zt(k), pdf_params(k),                   & ! intent(out)
-          pdf_implicit_coefs_terms(k),                                & ! intent(out)
-          F_w(k), F_rt(k), F_thl(k), min_F_w(k), max_F_w(k),          & ! intent(out)
-          min_F_rt(k), max_F_rt(k), min_F_thl(k), max_F_thl(k),       & ! intent(out)
-          wpsclrprtp(k,:), wpsclrp2(k,:), sclrpthvp_zt(k,:),          & ! intent(out)
-          wpsclrpthlp(k,:), sclrprcp_zt(k,:), wp2sclrp(k,:),          & ! intent(out)
-          rc_coef(k)                                                  ) ! intent(out)
+           wphydrometp_zt, wp2hmp,                         & ! intent(in)
+           rtphmp_zt, thlphmp_zt,                          & ! intent(in)
+           wp4_zt, wprtp2, wp2rtp,                         & ! intent(out)
+           wpthlp2, wp2thlp, wprtpthlp,                    & ! intent(out)
+           cloud_frac, ice_supersat_frac,                  & ! intent(out)
+           rcm, wpthvp_zt, wp2thvp, rtpthvp_zt,            & ! intent(out)
+           thlpthvp_zt, wprcp_zt, wp2rcp, rtprcp_zt,       & ! intent(out)
+           thlprcp_zt, rcp2_zt, pdf_params,                & ! intent(out)
+           pdf_implicit_coefs_terms,                       & ! intent(out)
+           F_w, F_rt, F_thl, min_F_w, max_F_w,             & ! intent(out)
+           min_F_rt, max_F_rt, min_F_thl, max_F_thl,       & ! intent(out)
+           wpsclrprtp, wpsclrp2, sclrpthvp_zt,             & ! intent(out)
+           wpsclrpthlp, sclrprcp_zt, wp2sclrp,             & ! intent(out)
+           rc_coef                                         ) ! intent(out)
 
-      ! Subroutine may produce NaN values, and if so, return
-      if ( clubb_at_least_debug_level( 0 ) ) then
-          if ( err_code == clubb_fatal_error ) then
-              write(fstderr,*) "At grid level = ",k
-              return
-          end if
-      end if
-
-    end do ! k = 1, gr%nz, 1
+    ! Subroutine may produce NaN values, and if so, return
+    if ( clubb_at_least_debug_level( 0 ) ) then
+       if ( err_code == clubb_fatal_error ) then
+          write(fstderr,*) "After pdf_closure"
+          return
+       endif
+    endif
 
     ! Stats output
     if ( l_stats_samp .and. l_samp_stats_in_pdf_call ) then
@@ -2591,6 +2587,7 @@ module advance_clubb_core_module
 
 
     if ( l_call_pdf_closure_twice ) then
+
       ! Call pdf_closure a second time on momentum levels, to
       ! output (rather than interpolate) the variables which
       ! belong on the momentum levels.
@@ -2631,43 +2628,40 @@ module advance_clubb_core_module
       enddo ! i = 1, hydromet_dim, 1
 
       ! Call pdf_closure to output the variables which belong on the momentum grid.
-      do k = 1, gr%nz, 1
 
-        call pdf_closure & 
-          ( hydromet_dim, p_in_Pa_zm(k), exner_zm(k), thv_ds_zm(k), wm_zm(k), & ! intent(in)
-            wp2(k), wp3_zm(k), sigma_sqd_w(k),                                & ! intent(in)
-            Skw_zm(k), Skthl_zm(k), Skrt_zm(k), rtm_zm(k), rtp2(k),           & ! intent(in)
-            wprtp(k),  thlm_zm(k), thlp2(k),                                  & ! intent(in)
-            wpthlp(k), rtpthlp(k), sclrm_zm(k,:),                             & ! intent(in)
-            wpsclrp(k,:), sclrp2(k,:), sclrprtp(k,:),                         & ! intent(in)
-            sclrpthlp(k,:), k,                                                & ! intent(in)
+      call pdf_closure & 
+           ( hydromet_dim, p_in_Pa_zm, exner_zm, thv_ds_zm, wm_zm, & ! intent(in)
+             wp2, wp3_zm, sigma_sqd_w,                             & ! intent(in)
+             Skw_zm, Skthl_zm, Skrt_zm, rtm_zm, rtp2,              & ! intent(in)
+             wprtp, thlm_zm, thlp2,                                & ! intent(in)
+             wpthlp, rtpthlp, sclrm_zm,                            & ! intent(in)
+             wpsclrp, sclrp2, sclrprtp,                            & ! intent(in)
+             sclrpthlp,                                            & ! intent(in)
 #ifdef GFDL
-            RH_crit(k, : , :),  do_liquid_only_in_clubb,                      & ! intent(in)
+             RH_crit,  do_liquid_only_in_clubb,                    & ! intent(in)
 #endif
-            wphydrometp(k,:), wp2hmp_zm(k,:),                                 & ! intent(in)
-            rtphmp(k,:), thlphmp(k,:),                                        & ! intent(in)
-            wp4(k), wprtp2_zm(k), wp2rtp_zm(k),                               & ! intent(out)
-            wpthlp2_zm(k), wp2thlp_zm(k), wprtpthlp_zm(k),                    & ! intent(out)
-            cloud_frac_zm(k), ice_supersat_frac_zm(k),                        & ! intent(out) 
-            rcm_zm(k), wpthvp(k), wp2thvp_zm(k), rtpthvp(k),                  & ! intent(out)
-            thlpthvp(k), wprcp(k), wp2rcp_zm(k), rtprcp(k),                   & ! intent(out)
-            thlprcp(k), rcp2(k), pdf_params_zm(k),                            & ! intent(out)
-            pdf_implicit_coefs_terms_zm(k),                                   & ! intent(out)
-            F_w_zm, F_rt_zm, F_thl_zm, min_F_w_zm, max_F_w_zm,                & ! intent(out)
-            min_F_rt_zm, max_F_rt_zm, min_F_thl_zm, max_F_thl_zm,             & ! intent(out)
-            wpsclrprtp_zm(k,:), wpsclrp2_zm(k,:), sclrpthvp(k,:),             & ! intent(out)
-            wpsclrpthlp_zm(k,:), sclrprcp(k,:), wp2sclrp_zm(k,:),             & ! intent(out)
-            rc_coef_zm(k)                                                     ) ! intent(out)
+             wphydrometp, wp2hmp_zm,                               & ! intent(in)
+             rtphmp, thlphmp,                                      & ! intent(in)
+             wp4, wprtp2_zm, wp2rtp_zm,                            & ! intent(out)
+             wpthlp2_zm, wp2thlp_zm, wprtpthlp_zm,                 & ! intent(out)
+             cloud_frac_zm, ice_supersat_frac_zm,                  & ! intent(out) 
+             rcm_zm, wpthvp, wp2thvp_zm, rtpthvp,                  & ! intent(out)
+             thlpthvp, wprcp, wp2rcp_zm, rtprcp,                   & ! intent(out)
+             thlprcp, rcp2, pdf_params_zm,                         & ! intent(out)
+             pdf_implicit_coefs_terms_zm,                          & ! intent(out)
+             F_w_zm, F_rt_zm, F_thl_zm, min_F_w_zm, max_F_w_zm,    & ! intent(out)
+             min_F_rt_zm, max_F_rt_zm, min_F_thl_zm, max_F_thl_zm, & ! intent(out)
+             wpsclrprtp_zm, wpsclrp2_zm, sclrpthvp,                & ! intent(out)
+             wpsclrpthlp_zm, sclrprcp, wp2sclrp_zm,                & ! intent(out)
+             rc_coef_zm                                            ) ! intent(out)
 
-        ! Subroutine may produce NaN values, and if so, return
-        if ( clubb_at_least_debug_level( 0 ) ) then
-            if ( err_code == clubb_fatal_error ) then
-                write(fstderr,*) "At grid level = ",k
-                return
-            end if
-        end if
-
-      end do ! k = 1, gr%nz, 1
+      ! Subroutine may produce NaN values, and if so, return
+      if ( clubb_at_least_debug_level( 0 ) ) then
+         if ( err_code == clubb_fatal_error ) then
+            write(fstderr,*) "After pdf_closure"
+            return
+         endif
+      endif
 
     else ! l_call_pdf_closure_twice is false
 
@@ -2800,43 +2794,39 @@ module advance_clubb_core_module
       rtm_frz = rtm + rrm + rfrzm
 
 
-      do k = 1, gr%nz, 1
-
-        call pdf_closure & 
-          ( hydromet_dim, p_in_Pa(k), exner(k), thv_ds_zt(k), wm_zt(k),           & ! intent(in)
-            wp2_zt(k), wp3(k), sigma_sqd_w_zt(k),                                 & ! intent(in)
-            Skw_zt(k), Skthl_zt(k), Skrt_zt(k), rtm_frz(k), rtp2_zt(k),               & ! intent(in)
-            zm2zt( wprtp, k ), thlm_frz(k), thlp2_zt(k),                          & ! intent(in)
-            zm2zt( wpthlp, k ), rtpthlp_zt(k), sclrm(k,:),                        & ! intent(in)
-            wpsclrp_zt(k,:), sclrp2_zt(k,:), sclrprtp_zt(k,:),                    & ! intent(in)
-            sclrpthlp_zt(k,:), k,                                                 & ! intent(in)
+      call pdf_closure & 
+           ( hydromet_dim, p_in_Pa, exner, thv_ds_zt, wm_zt,           & ! intent(in)
+             wp2_zt, wp3, sigma_sqd_w_zt,                              & ! intent(in)
+             Skw_zt, Skthl_zt, Skrt_zt, rtm_frz, rtp2_zt,              & ! intent(in)
+             zm2zt( wprtp ), thlm_frz, thlp2_zt,                       & ! intent(in)
+             zm2zt( wpthlp ), rtpthlp_zt, sclrm,                       & ! intent(in)
+             wpsclrp_zt, sclrp2_zt, sclrprtp_zt,                       & ! intent(in)
+             sclrpthlp_zt,                                             & ! intent(in)
 #ifdef GFDL
-            RH_crit(k, : , :),   do_liquid_only_in_clubb,                         & ! intent(in)
+             RH_crit, do_liquid_only_in_clubb,                         & ! intent(in)
 #endif
-            wphydrometp_zt(k,:), wp2hmp(k,:),                                     & ! intent(in)
-            rtphmp_zt(k,:), thlphmp_zt(k,:),                                      & ! intent(in)
-            wp4_zt_frz(k), wprtp2_frz(k), wp2rtp_frz(k),                          & ! intent(out)
-            wpthlp2_frz(k), wp2thlp_frz(k), wprtpthlp_frz(k),                     & ! intent(out)
-            cloud_frac_frz(k), ice_supersat_frac_frz(k),                          & ! intent(out)
-            rcm_frz(k), wpthvp_zt_frz(k), wp2thvp_frz(k), rtpthvp_zt_frz(k),      & ! intent(out)
-            thlpthvp_zt_frz(k), wprcp_zt_frz(k), wp2rcp_frz(k), rtprcp_zt_frz(k), & ! intent(out)
-            thlprcp_zt_frz(k), rcp2_zt_frz(k), pdf_params_frz(k),                 & ! intent(out)
-            pdf_implicit_coefs_terms_frz(k),                                      & ! intent(out)
-            F_w_frz, F_rt_frz, F_thl_frz, min_F_w_frz, max_F_w_frz,               & ! intent(out)
-            min_F_rt_frz, max_F_rt_frz, min_F_thl_frz, max_F_thl_frz,             & ! intent(out)
-            wpsclrprtp_frz(k,:), wpsclrp2_frz(k,:), sclrpthvp_zt_frz(k,:),        & ! intent(out)
-            wpsclrpthlp_frz(k,:), sclrprcp_zt_frz(k,:), wp2sclrp_frz(k,:),        & ! intent(out)
-            rc_coef_frz(k)                                                        ) ! intent(out)
+             wphydrometp_zt, wp2hmp,                                   & ! intent(in)
+             rtphmp_zt, thlphmp_zt,                                    & ! intent(in)
+             wp4_zt_frz, wprtp2_frz, wp2rtp_frz,                       & ! intent(out)
+             wpthlp2_frz, wp2thlp_frz, wprtpthlp_frz,                  & ! intent(out)
+             cloud_frac_frz, ice_supersat_frac_frz,                    & ! intent(out)
+             rcm_frz, wpthvp_zt_frz, wp2thvp_frz, rtpthvp_zt_frz,      & ! intent(out)
+             thlpthvp_zt_frz, wprcp_zt_frz, wp2rcp_frz, rtprcp_zt_frz, & ! intent(out)
+             thlprcp_zt_frz, rcp2_zt_frz, pdf_params_frz,              & ! intent(out)
+             pdf_implicit_coefs_terms_frz,                             & ! intent(out)
+             F_w_frz, F_rt_frz, F_thl_frz, min_F_w_frz, max_F_w_frz,   & ! intent(out)
+             min_F_rt_frz, max_F_rt_frz, min_F_thl_frz, max_F_thl_frz, & ! intent(out)
+             wpsclrprtp_frz, wpsclrp2_frz, sclrpthvp_zt_frz,           & ! intent(out)
+             wpsclrpthlp_frz, sclrprcp_zt_frz, wp2sclrp_frz,           & ! intent(out)
+             rc_coef_frz                                               ) ! intent(out)
 
-        ! Subroutine may produce NaN values, and if so, return
-        if ( clubb_at_least_debug_level( 0 ) ) then
-            if ( err_code == clubb_fatal_error ) then
-                write(fstderr,*) "At grid level = ", k
-                return
-            end if
-        end if
-
-      end do !k=1, gr%nz, 1
+      ! Subroutine may produce NaN values, and if so, return
+      if ( clubb_at_least_debug_level( 0 ) ) then
+         if ( err_code == clubb_fatal_error ) then
+            write(fstderr,*) "After pdf_closure"
+            return
+         endif
+      endif
 
 
       if( l_rtm_nudge ) then
@@ -2855,43 +2845,41 @@ module advance_clubb_core_module
 
       if ( l_call_pdf_closure_twice ) then
         ! Call pdf_closure again to output the variables which belong on the momentum grid.
-        do k=1, gr%nz, 1
-          call pdf_closure & 
-            ( hydromet_dim, p_in_Pa_zm(k), exner_zm(k), thv_ds_zm(k), wm_zm(k), & ! intent(in)
-              wp2(k), wp3_zm(k), sigma_sqd_w(k),                                & ! intent(in)
-              Skw_zm(k), Skthl_zm(k), Skrt_zm(k), rtm_zm_frz(k), rtp2(k),       & ! intent(in)
-              wprtp(k),  thlm_zm_frz(k), thlp2(k),                              & ! intent(in)
-              wpthlp(k), rtpthlp(k), sclrm_zm(k,:),                             & ! intent(in)
-              wpsclrp(k,:), sclrp2(k,:), sclrprtp(k,:),                         & ! intent(in)
-              sclrpthlp(k,:), k,                                                & ! intent(in)
+        call pdf_closure & 
+             ( hydromet_dim, p_in_Pa_zm, exner_zm, thv_ds_zm, wm_zm,  & ! intent(in)
+               wp2, wp3_zm, sigma_sqd_w,                              & ! intent(in)
+               Skw_zm, Skthl_zm, Skrt_zm, rtm_zm_frz, rtp2,           & ! intent(in)
+               wprtp, thlm_zm_frz, thlp2,                             & ! intent(in)
+               wpthlp, rtpthlp, sclrm_zm,                             & ! intent(in)
+               wpsclrp, sclrp2, sclrprtp,                             & ! intent(in)
+               sclrpthlp,                                             & ! intent(in)
 #ifdef GFDL
-              RH_crit(k, : , :),  do_liquid_only_in_clubb,                      & ! intent(in)
+               RH_crit, do_liquid_only_in_clubb,                      & ! intent(in)
 #endif
-              wphydrometp(k,:), wp2hmp_zm(k,:),                                 & ! intent(in)
-              rtphmp(k,:), thlphmp(k,:),                                        & ! intent(in)
-              wp4_frz(k), wprtp2_zm_frz(k), wp2rtp_zm_frz(k),                   & ! intent(out)
-              wpthlp2_zm_frz(k), wp2thlp_zm_frz(k), wprtpthlp_zm_frz(k),        & ! intent(out)
-              cloud_frac_zm_frz(k), ice_supersat_frac_zm_frz(k),                & ! intent(out) 
-              rcm_zm_frz(k), wpthvp_frz(k), wp2thvp_zm_frz(k), rtpthvp_frz(k),  & ! intent(out)
-              thlpthvp_frz(k), wprcp_frz(k), wp2rcp_zm_frz(k), rtprcp_frz(k),   & ! intent(out)
-              thlprcp_frz(k), rcp2_frz(k), pdf_params_zm_frz(k),                & ! intent(out)
-              pdf_implicit_coefs_terms_zm_frz(k),                               & ! intent(out)
-              F_w_zm_frz, F_rt_zm_frz, F_thl_zm_frz, min_F_w_zm_frz,            & ! intent(out)
-              max_F_w_zm_frz, min_F_rt_zm_frz, max_F_rt_zm_frz,                 & ! intent(out)
-              min_F_thl_zm_frz, max_F_thl_zm_frz,                               & ! intent(out)
-              wpsclrprtp_zm_frz(k,:), wpsclrp2_zm_frz(k,:), sclrpthvp_frz(k,:), & ! intent(out)
-              wpsclrpthlp_zm_frz(k,:), sclrprcp_frz(k,:), wp2sclrp_zm_frz(k,:), & ! intent(out)
-              rc_coef_zm_frz(k)                                                 ) ! intent(out)
+               wphydrometp, wp2hmp_zm,                                & ! intent(in)
+               rtphmp, thlphmp,                                       & ! intent(in)
+               wp4_frz, wprtp2_zm_frz, wp2rtp_zm_frz,                 & ! intent(out)
+               wpthlp2_zm_frz, wp2thlp_zm_frz, wprtpthlp_zm_frz,      & ! intent(out)
+               cloud_frac_zm_frz, ice_supersat_frac_zm_frz,           & ! intent(out) 
+               rcm_zm_frz, wpthvp_frz, wp2thvp_zm_frz, rtpthvp_frz,   & ! intent(out)
+               thlpthvp_frz, wprcp_frz, wp2rcp_zm_frz, rtprcp_frz,    & ! intent(out)
+               thlprcp_frz, rcp2_frz, pdf_params_zm_frz,              & ! intent(out)
+               pdf_implicit_coefs_terms_zm_frz,                       & ! intent(out)
+               F_w_zm_frz, F_rt_zm_frz, F_thl_zm_frz, min_F_w_zm_frz, & ! intent(out)
+               max_F_w_zm_frz, min_F_rt_zm_frz, max_F_rt_zm_frz,      & ! intent(out)
+               min_F_thl_zm_frz, max_F_thl_zm_frz,                    & ! intent(out)
+               wpsclrprtp_zm_frz, wpsclrp2_zm_frz, sclrpthvp_frz,     & ! intent(out)
+               wpsclrpthlp_zm_frz, sclrprcp_frz, wp2sclrp_zm_frz,     & ! intent(out)
+               rc_coef_zm_frz                                         ) ! intent(out)
 
-          ! Subroutine may produce NaN values, and if so, return
-          if ( clubb_at_least_debug_level( 0 ) ) then
-            if ( err_code == clubb_fatal_error ) then
-                write(fstderr,*) "At grid level = ",k
-                return
-            end if
-          end if
+        ! Subroutine may produce NaN values, and if so, return
+        if ( clubb_at_least_debug_level( 0 ) ) then
+           if ( err_code == clubb_fatal_error ) then
+              write(fstderr,*) "After pdf_closure"
+              return
+           endif
+        endif
 
-        end do ! k = 1, gr%nz, 1
       else ! l_call_pdf_closure_twice is false
 
         wpthvp_frz            = zt2zm( wpthvp_zt_frz )

@@ -38,13 +38,16 @@ module LY93_pdf
     ! Cloudiness.  J. Atmos. Sci., 50, 9, 1228--1237.
     !-----------------------------------------------------------------------
 
+    use grid_class, only: &
+        gr    ! Type(s)
+
     use clubb_precision, only: &
         core_rknd    ! Variable(s)
 
     implicit none
 
     ! Input Variables
-    real( kind = core_rknd), intent(in) :: &
+    real( kind = core_rknd), dimension(gr%nz), intent(in) :: &
       wm,    & ! Mean of w (overall)                      [m/s]
       wp2,   & ! Variance of w (overall)                  [m^2/s^2]
       Skw,   & ! Skewness of w (overall)                  [-]
@@ -56,7 +59,7 @@ module LY93_pdf
       Skthl    ! Skewness of thl (overall)                [-]
 
     ! Output Variables
-    real( kind = core_rknd), intent(out) :: &
+    real( kind = core_rknd), dimension(gr%nz), intent(out) :: &
       mu_w_1,          & ! Mean of w (1st PDF component)          [m/s]
       mu_w_2,          & ! Mean of w (2nd PDF component)          [m/s]
       mu_rt_1,         & ! Mean of rt (1st PDF component)         [kg/kg]
@@ -72,7 +75,7 @@ module LY93_pdf
       mixt_frac          ! Mixture fraction                       [-]
 
     ! Local Variables
-    real( kind = core_rknd) :: &
+    real( kind = core_rknd), dimension(gr%nz) :: &
       Sk_max    ! Maximum of magnitudes of skewness        [-]
 
 
@@ -114,6 +117,9 @@ module LY93_pdf
     ! Partial Cloudiness.  J. Atmos. Sci., 50, 9, 1228--1237.
     !-----------------------------------------------------------------------
 
+    use grid_class, only: &
+        gr    ! Type(s)
+
     use constants_clubb, only: &
         one,           & ! Constant(s)
         three_fourths, &
@@ -126,11 +132,11 @@ module LY93_pdf
     implicit none
 
     ! Input Variable
-    real( kind = core_rknd), intent(in) :: &
+    real( kind = core_rknd), dimension(gr%nz), intent(in) :: &
       Sk_max    ! Maximum of magnitudes of skewness        [-]
 
     ! Return Variable
-    real( kind = core_rknd) :: &
+    real( kind = core_rknd), dimension(gr%nz) :: &
       mixt_frac    ! Mixture fraction                      [-]
 
     ! Local Variables
@@ -143,37 +149,44 @@ module LY93_pdf
     real( kind = core_rknd) :: &
       LY_mixt_frac_tol = 1.0e-4_core_rknd
 
+    integer :: k    ! Vertical level index
 
-    if ( Sk_max > 0.84_core_rknd ) then
 
-       mixt_frac_low = one_half
-       mixt_frac_high = one
+    do k = 1, gr%nz, 1
 
-       do ! solve iteratively for mixture fraction
+       if ( Sk_max(k) > 0.84_core_rknd ) then
 
-          mixt_frac = one_half * ( mixt_frac_low + mixt_frac_high )
+          mixt_frac_low = one_half
+          mixt_frac_high = one
 
-          expr_equal_zero = mixt_frac**6 - Sk_max**2 * ( one - mixt_frac )
+          do ! solve iteratively for mixture fraction
 
-          if ( abs( expr_equal_zero ) < LY_mixt_frac_tol ) then
-             ! Mixture fraction has been solved for within the specificed
-             ! tolerance.
-             exit
-          else
-             if ( expr_equal_zero > zero ) then
-                mixt_frac_high = mixt_frac
-             else ! expr_equal_zero < 0
-                mixt_frac_low = mixt_frac
-             endif 
-          endif
+             mixt_frac(k) = one_half * ( mixt_frac_low + mixt_frac_high )
 
-       enddo ! solve iteratively for mixture fraction
+             expr_equal_zero &
+             = mixt_frac(k)**6 - Sk_max(k)**2 * ( one - mixt_frac(k) )
 
-    else ! Sk_max <= 0.84
+             if ( abs( expr_equal_zero ) < LY_mixt_frac_tol ) then
+                ! Mixture fraction has been solved for within the specificed
+                ! tolerance.
+                exit
+             else
+                if ( expr_equal_zero > zero ) then
+                   mixt_frac_high = mixt_frac(k)
+                else ! expr_equal_zero < 0
+                   mixt_frac_low = mixt_frac(k)
+                endif 
+             endif
 
-       mixt_frac = three_fourths
+          enddo ! solve iteratively for mixture fraction
 
-    endif
+       else ! Sk_max <= 0.84
+
+          mixt_frac(k) = three_fourths
+
+       endif
+
+    enddo ! k = 1, gr%nz, 1
 
 
     return
@@ -195,6 +208,9 @@ module LY93_pdf
     ! Cloudiness.  J. Atmos. Sci., 50, 9, 1228--1237.
     !-----------------------------------------------------------------------
 
+    use grid_class, only: &
+        gr    ! Type(s)
+
     use constants_clubb, only: &
         three,     & ! Constant(s)
         one,       &
@@ -207,31 +223,31 @@ module LY93_pdf
     implicit none
 
     ! Input Variables
-    real( kind = core_rknd), intent(in) :: &
+    real( kind = core_rknd), dimension(gr%nz), intent(in) :: &
       xm,        & ! Mean of x (overall)        [units vary]
       xp2,       & ! Variance of x (overall)    [(units vary)^2]
       Skx,       & ! Skewness of x (overall)    [-]
       mixt_frac    ! Mixture fraction           [-]
 
     ! Output Variables
-    real( kind = core_rknd), intent(out) :: &
+    real( kind = core_rknd), dimension(gr%nz), intent(out) :: &
       mu_x_1,        & ! Mean of x (1st PDF component)        [units vary]
       mu_x_2,        & ! Mean of x (2nd PDF component)        [units vary]
       sigma_x_1_sqd, & ! Variance of x (1st PDF component)    [(units vary)^2]
       sigma_x_2_sqd    ! Variance of x (2nd PDF component)    [(units vary)^2]
 
     ! Local Variables
-    real( kind = core_rknd) :: &
+    real( kind = core_rknd), dimension(gr%nz) :: &
        sgn_Skx, & ! Sign of Skx                                   [-]
        B_x        ! Spread of the PDF component means function    [units vary]
 
 
     ! Find the sign of Skx
-    if ( Skx >= zero ) then
+    where ( Skx >= zero )
        sgn_Skx = one
-    else ! Skx < 0
+    elsewhere ! Skx < 0
        sgn_Skx = -one
-    endif
+    endwhere
 
     ! Calculate B_x, the LY function for the spread of the PDF component means.
     B_x = sgn_Skx * sqrt( xp2 ) &
