@@ -316,6 +316,7 @@ module stats_zt_module
         ivm_f, & 
         ivm_sdmp, &
         ivm_ndg, &
+        ivm_mfl, &
         ium_bt, & 
         ium_ma, & 
         ium_gf, & 
@@ -323,7 +324,8 @@ module stats_zt_module
         ium_ta, &
         ium_f, &
         ium_sdmp, &
-        ium_ndg
+        ium_ndg, &
+        ium_mfl
 
     use stats_variables, only: & 
         imixt_frac, & ! Variable(s) 
@@ -3485,6 +3487,14 @@ module stats_zt_module
              l_silhs=.false., grid_kind=stats_zt )
         k = k + 1
 
+      case ('vm_mfl')
+        ivm_mfl = k
+        call stat_assign( var_index=ivm_mfl, var_name="vm_mfl", &
+             var_description="vm budget: vm monotonic flux limiter " &
+                             // "[m s^{-2}]", var_units="m s^{-2}", &
+             l_silhs=.false., grid_kind=stats_zt )
+        k = k + 1
+
       case ('um_bt')
         ium_bt = k
 
@@ -3540,6 +3550,14 @@ module stats_zt_module
         ium_ndg = k
         call stat_assign( var_index=ium_ndg, var_name="um_ndg", &
              var_description="um budget: um nudging [m s^{-2}]", var_units="m s^{-2}", &
+             l_silhs=.false., grid_kind=stats_zt )
+        k = k + 1
+
+      case ('um_mfl')
+        ium_mfl = k
+        call stat_assign( var_index=ium_mfl, var_name="um_mfl", &
+             var_description="um budget: um monotonic flux limiter " &
+                             // "[m s^{-2}]", var_units="m s^{-2}", &
              l_silhs=.false., grid_kind=stats_zt )
         k = k + 1
 

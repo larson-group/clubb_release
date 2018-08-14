@@ -226,7 +226,8 @@ module advance_clubb_core_module
       l_use_ice_latent, &
       l_gamma_Skw, &
       l_damp_wp2_using_em, &
-      l_advance_xp3
+      l_advance_xp3, &
+      l_predict_upwp_vpwp
 
     use grid_class, only: & 
       gr,  & ! Variable(s)
@@ -268,6 +269,7 @@ module advance_clubb_core_module
       ug, &
       um_ref, &
       vm_ref
+
     use variables_diagnostic_module, only: &
       wp2_zt, & 
       thlp2_zt, & 
@@ -1495,8 +1497,13 @@ module advance_clubb_core_module
       wprtp_cl_num   = 2 ! Second instance of w'r_t' clipping.
       wpthlp_cl_num  = 2 ! Second instance of w'th_l' clipping.
       wpsclrp_cl_num = 2 ! Second instance of w'sclr' clipping.
-      upwp_cl_num    = 1 ! First instance of u'w' clipping.
-      vpwp_cl_num    = 1 ! First instance of v'w' clipping.
+      if ( l_predict_upwp_vpwp ) then
+         upwp_cl_num = 2 ! Second instance of u'w' clipping.
+         vpwp_cl_num = 2 ! Second instance of v'w' clipping.
+      else
+         upwp_cl_num = 1 ! First instance of u'w' clipping.
+         vpwp_cl_num = 1 ! First instance of v'w' clipping.
+      endif ! l_predict_upwp_vpwp
 
       call clip_covars_denom( dt, rtp2, thlp2, up2, vp2, wp2,           & ! intent(in)
                               sclrp2, wprtp_cl_num, wpthlp_cl_num,      & ! intent(in)
@@ -1539,8 +1546,13 @@ module advance_clubb_core_module
       wprtp_cl_num   = 3 ! Third instance of w'r_t' clipping.
       wpthlp_cl_num  = 3 ! Third instance of w'th_l' clipping.
       wpsclrp_cl_num = 3 ! Third instance of w'sclr' clipping.
-      upwp_cl_num    = 2 ! Second instance of u'w' clipping.
-      vpwp_cl_num    = 2 ! Second instance of v'w' clipping.
+      if ( l_predict_upwp_vpwp ) then
+         upwp_cl_num = 3 ! Third instance of u'w' clipping.
+         vpwp_cl_num = 3 ! Third instance of v'w' clipping.
+      else
+         upwp_cl_num = 2 ! Second instance of u'w' clipping.
+         vpwp_cl_num = 2 ! Second instance of v'w' clipping.
+      endif ! l_predict_upwp_vpwp
 
       call clip_covars_denom( dt, rtp2, thlp2, up2, vp2, wp2,           & ! intent(in)
                               sclrp2, wprtp_cl_num, wpthlp_cl_num,      & ! intent(in)
@@ -3007,7 +3019,9 @@ module advance_clubb_core_module
 
       use model_flags, only: & 
           setup_model_flags, & ! Subroutine
-          l_use_ice_latent     ! Variable(s)
+          l_use_ice_latent, & ! Variable(s)
+          l_predict_upwp_vpwp, &
+          l_explicit_turbulent_adv_wpxp
 
       use pdf_closure_module, only: &
           iiPDF_ADG1,     & ! Variable(s)
@@ -3245,6 +3259,36 @@ module advance_clubb_core_module
             return
          endif ! l_use_ice_latent
       endif ! ipdf_call_placement == ipdf_post_advance_fields
+
+      ! The l_predict_upwp_vpwp flag requires that the ADG1 PDF is used
+      ! implicitly in subroutine advance_xm_wpxp.
+      if ( l_predict_upwp_vpwp ) then
+
+         ! When l_predict_upwp_vpwp is enabled, the
+         ! l_explicit_turbulent_adv_wpxp flag must be turned off.
+         ! Otherwise, explicit turbulent advection would require PDF parameters
+         ! for u and v to be calculated in PDF closure.  These would be needed
+         ! to calculate integrated fields such as wp2up, etc.
+         if ( l_explicit_turbulent_adv_wpxp ) then
+            write(fstderr,*) "The l_explicit_turbulent_adv_wpxp option" &
+                             // " is not currently set up for use with the" &
+                             // " l_predict_upwp_vpwp code."
+            err_code = clubb_fatal_error
+            return
+         endif ! l_explicit_turbulent_adv_wpxp
+
+         ! When l_predict_upwp_vpwp is enabled, the PDF type must be set to
+         ! the ADG1 PDF.  The other PDFs are not currently set up to calculate
+         ! variables needed for implicit or semi-implicit turbulent advection,
+         ! such as coef_wp2up_implicit, etc.
+         if ( iiPDF_type /= iiPDF_ADG1 ) then
+            write(fstderr,*) "Currently, only the ADG1 PDF is set up for use" &
+                             // " with the l_predict_upwp_vpwp code."
+            err_code = clubb_fatal_error
+            return
+         endif ! iiPDF_type /= iiPDF_ADG1
+
+      endif ! l_predict_upwp_vpwp
 
       ! Setup grid
       call setup_grid( nzmax, sfc_elevation, l_implemented,     & ! intent(in)
