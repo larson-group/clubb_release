@@ -13,7 +13,8 @@ l_rcm_supersat_adj      = .true.,
 l_damp_wp3_Skw_squared  = .true.,
 l_min_wp2_from_corr_wx  = .true.,
 l_min_xp2_from_corr_wx  = .true.,
-l_C2_cloud_frac         = .false.
+l_C2_cloud_frac         = .false.,
+l_predict_upwp_vpwp     = .true.
 /
 
 &configurable_silhs_flags_nl

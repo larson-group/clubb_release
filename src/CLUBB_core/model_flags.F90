@@ -62,7 +62,7 @@ module model_flags
   ! approximated by eddy diffusivity when <u> and <v> are advanced in
   ! subroutine advance_windm_edsclrm.
   logical, public :: &
-    l_predict_upwp_vpwp = .false.
+    l_predict_upwp_vpwp = .true.
 
 !$omp threadprivate( l_predict_upwp_vpwp )
 
