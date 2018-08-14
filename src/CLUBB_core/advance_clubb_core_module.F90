@@ -1424,8 +1424,10 @@ module advance_clubb_core_module
                             sclrpthvp, sclrm_forcing, sclrp2, exner, rcm,    & ! intent(in)
                             p_in_Pa, thvm, Cx_fnc_Richardson,                & ! intent(in)
                             pdf_implicit_coefs_terms,                        & ! intent(in)
+                            um_forcing, vm_forcing, ug, vg, wpthvp,          & ! intent(in)
+                            fcor, um_ref, vm_ref, up2, vp2,                  & ! intent(in)
                             rtm, wprtp, thlm, wpthlp,                        & ! intent(inout)
-                            sclrm, wpsclrp )                                   ! intent(inout)
+                            sclrm, wpsclrp, um, upwp, vm, vpwp )               ! intent(inout)
 
       if ( clubb_at_least_debug_level( 0 ) ) then
           if ( err_code == clubb_fatal_error ) then
