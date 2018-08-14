@@ -20,7 +20,9 @@ module mono_flux_limiter
   ! and xm_wpxp_rtm given in advance_xm_wpxp_module!
   integer, parameter, private :: &
     mono_flux_thlm = 1, & ! Named constant for thlm mono_flux calls
-    mono_flux_rtm = 2     ! Named constant for rtm mono_flux calls
+    mono_flux_rtm = 2,  & ! Named constant for rtm mono_flux calls
+    mono_flux_um = 4,   & ! Named constant for um mono_flux calls
+    mono_flux_vm = 5      ! Named constant for vm mono_flux calls
 
   contains
 
@@ -436,6 +438,14 @@ module mono_flux_limiter
        iwpxp_mfl = iwpthlp_mfl
        ixm_mfl   = ithlm_mfl
        max_xp2   = 5.0_core_rknd
+    case ( mono_flux_um )  ! um/upwp
+       iwpxp_mfl = 0
+       ixm_mfl   = 0
+       max_xp2   = 10.0_core_rknd
+    case ( mono_flux_vm )  ! vm/vpwp
+       iwpxp_mfl = 0
+       ixm_mfl   = 0
+       max_xp2   = 10.0_core_rknd
     case default    ! passive scalars are involved
        iwpxp_mfl = 0
        ixm_mfl   = 0
@@ -517,10 +527,19 @@ module mono_flux_limiter
                           + dt*m_adv_term
 
        ! Find the minimum usuable value of variable x at each vertical level.
-       ! Since variable x must be one of theta_l, r_t, or a scalar, all of
-       ! which are positive definite quantities, the value must be >= 0.
-       min_x_allowable_lev(k)  &
-       = max( xm_without_ta(k) - max_dev, zero_threshold )
+       if ( solve_type /= mono_flux_um .and. solve_type /= mono_flux_vm ) then
+
+          ! Since variable x must be one of theta_l, r_t, or a scalar, all of
+          ! which are positive definite quantities, the value must be >= 0.
+          min_x_allowable_lev(k) &
+          = max( xm_without_ta(k) - max_dev, zero_threshold )
+
+       else ! solve_type == mono_flux_um .or. solve_type == mono_flux_vm
+
+          ! Variable x must be one of u or v.
+          min_x_allowable_lev(k) = xm_without_ta(k) - max_dev
+
+       endif ! solve_type /= mono_flux_um .and. solve_type /= mono_flux_vm
 
        ! Find the maximum usuable value of variable x at each vertical level.
        max_x_allowable_lev(k) = xm_without_ta(k) + max_dev
