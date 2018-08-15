@@ -1,3 +1,5 @@
+# To use this script, edit caseName, ztVariable, sfcVariable, and dirRoot. Then type
+# /usr/bin/python timestep_convergence_test.py
 
 import pdb
 
@@ -12,7 +14,8 @@ def main():
 
     # Set directory to the location of this script
     # Typically the script is run from the CLUBB postprocessing directory
-    os.chdir(os.path.dirname(sys.argv[0]))
+    #os.chdir(os.path.dirname(sys.argv[0]))  # used to work with Canopy
+    os.chdir(os.path.dirname(os.path.realpath(__file__))) # works with /usr/bin/python
 
     #data = Dataset('../output/bomex/bomex_300_sfc.nc', "r")
     #pdb.set_trace() 
@@ -52,6 +55,7 @@ def main():
     ztRmseArray = computeRmseArray(ztVariableArray, numFiles)
 
     convergenceExponent = np.polyfit( np.log(timestepArrayMinus1), np.log(ztRmseArray), 1 )[0]
+    convergenceExponent = np.array([convergenceExponent])
 
     print listOfZtFilenames
 
