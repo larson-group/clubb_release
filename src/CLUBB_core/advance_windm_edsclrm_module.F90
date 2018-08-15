@@ -1402,20 +1402,29 @@ module advance_windm_edsclrm_module
     return
   end subroutine compute_uv_tndcy
 
-!===============================================================================
+!======================================================================================
   subroutine windm_edsclrm_lhs( dt, nu, wm_zt, Km_zm, wind_speed, u_star_sqd,  &
                                 rho_ds_zm, invrs_rho_ds_zt,  &
                                 l_implemented, l_imp_sfc_momentum_flux,  &
                                 lhs )
-
     ! Description:
     ! Calculate the implicit portion of the horizontal wind or eddy-scalar
     ! time-tendency equation.  See the description in subroutine
     ! windm_edsclrm_solve for more details.
-
-    ! References:
-    ! None
-    !-----------------------------------------------------------------------
+    ! 
+    ! Notes: 
+    !   Lower Boundary:
+    !       The lower boundary condition is a fixed-flux boundary condition, which
+    !       gets added into the time-tendency equation at level 2.
+    !       The value of xm(1) is located below the model surface and does not effect
+    !       the rest of the model.  Since xm can be either a horizontal wind component
+    !       or a generic eddy scalar quantity, the value of xm(1) is simply set to the
+    !       value of xm(2) after the equation matrix has been solved.
+    !
+    !   --- THIS SUBROUTINE HAS BEEN OPTIMIZED ---
+    !   Simple changes to this procedure may adversely affect computational speed
+    !       - Gunther Huebler, Aug. 2018, clubb:ticket:834
+    !----------------------------------------------------------------------------------
 
     use grid_class, only:  & 
         gr  ! Variable(s)
@@ -1424,10 +1433,12 @@ module advance_windm_edsclrm_module
         core_rknd ! Variable(s)
 
     use diffusion, only:  & 
-        diffusion_zt_lhs ! Procedure(s)
+        diffusion_zt_lhs,   & ! Procedure(s)
+        diffusion_zt_lhs_all
 
     use mean_adv, only: & 
-        term_ma_zt_lhs  ! Procedures
+        term_ma_zt_lhs,     & ! Procedures
+        term_ma_zt_lhs_all
 
     use stats_variables, only: &
         ium_ma,  & ! Variable(s)
@@ -1443,12 +1454,6 @@ module advance_windm_edsclrm_module
         l_stats_samp
 
     implicit none
-
-    ! Constant parameters
-    integer, parameter :: & 
-      kp1_tdiag = 1,    & ! Thermodynamic superdiagonal index.
-      k_tdiag   = 2,    & ! Thermodynamic main diagonal index.
-      km1_tdiag = 3       ! Thermodynamic subdiagonal index.
 
     ! Input Variables
     real( kind = core_rknd ), intent(in) :: & 
@@ -1476,123 +1481,106 @@ module advance_windm_edsclrm_module
       lhs           ! Implicit contributions to xm (tridiagonal matrix)
 
     ! Local Variables
-    integer :: k, km1  ! Array indices
-    integer :: diff_k_in
 
-    real( kind = core_rknd ), dimension(3) :: tmp
+    ! Loop variable
+    integer :: k  
+    
+    real( kind = core_rknd ) :: &
+        invrs_dt    ! Inverse of dt, 1/dt, used for computational efficiency
+
+    real( kind = core_rknd ), dimension(gr%nz) :: &
+        K_zm        ! Coefs of eddy diffusivity 
+
+    real( kind = core_rknd ), dimension(3,gr%nz) :: &
+        lhs_diff, & ! LHS diffustion terms
+        lhs_ma_zt   ! LHS mean advection terms
+    
 
     ! --- Begin Code ---
 
-    ! Initialize the LHS array to zero.
-    lhs = 0.0_core_rknd
+    ! Calculate coefs of eddy diffusivity and inverse of dt
+    K_zm(:) = rho_ds_zm(:) * Km_zm(:)
+    invrs_dt = 1.0_core_rknd / dt
 
-    do k = 2, gr%nz, 1
+    ! Calculate diffusion terms
+    call diffusion_zt_lhs_all( K_zm(:), nu(:),  &
+                               gr%invrs_dzm(:), gr%invrs_dzt(:), &
+                               lhs_diff(:,:) )
 
-      ! Define index
-      km1 = max( k-1, 1 )
+    ! The lower boundary condition needs to be applied here at level 2.
+    lhs_diff(:,2) = diffusion_zt_lhs( K_zm(2), K_zm(1), nu,  &
+                                      gr%invrs_dzm(1), gr%invrs_dzm(2),  &
+                                      gr%invrs_dzt(2), 1 )
 
-      ! LHS mean advection term.
-      if ( .not. l_implemented ) then
+    ! Set lower boundary, see notes 
+    lhs(1,1) = 0.0_core_rknd
+    lhs(2,1) = 1.0_core_rknd
+    lhs(3,1) = 0.0_core_rknd
 
-        lhs(kp1_tdiag:km1_tdiag,k)  &
-        = lhs(kp1_tdiag:km1_tdiag,k)  &
-        + term_ma_zt_lhs( wm_zt(k), gr%invrs_dzt(k), k, gr%invrs_dzm(k), gr%invrs_dzm(km1) )
+    ! Add terms to lhs
+    do k = 2, gr%nz
 
-      else
-        ! The host model is assumed to apply the advection term to the mean elsewhere in this case.
-        lhs(kp1_tdiag:km1_tdiag,k)  &
-        = lhs(kp1_tdiag:km1_tdiag,k) + 0.0_core_rknd
+        lhs(1,k) = 0.5_core_rknd * invrs_rho_ds_zt(k) * lhs_diff(1,k)
 
-      endif
+        lhs(2,k) = 0.5_core_rknd * invrs_rho_ds_zt(k) * lhs_diff(2,k)
+        
+        ! LHS time tendency.
+        lhs(2,k) = lhs(2,k) + invrs_dt
 
-      ! LHS turbulent advection term (solved as an eddy-diffusion term).
-      if ( k == 2 ) then
-        ! The lower boundary condition needs to be applied here at level 2.
-        ! The lower boundary condition is a "fixed flux" boundary condition.
-        ! The coding is the same as for a zero-flux boundary condition, but with
-        ! an extra term added on the right-hand side at the boundary level.  For
-        ! the rest of the model code, a zero-flux boundary condition is applied
-        ! at level 1, and thus subroutine diffusion_zt_lhs is set-up to do that.
-        ! In order to apply the same boundary condition code here at level 2, an
-        ! adjuster needs to be used to tell diffusion_zt_lhs to use the code at
-        ! level 2 that it normally uses at level 1.
-        diff_k_in = 1
-      else
-        diff_k_in = k
-      endif
-      lhs(kp1_tdiag:km1_tdiag,k)  &
-      = lhs(kp1_tdiag:km1_tdiag,k)  &
-      + 0.5_core_rknd * invrs_rho_ds_zt(k)  &
-      * diffusion_zt_lhs( rho_ds_zm(k) * Km_zm(k),  &
-                          rho_ds_zm(km1) * Km_zm(km1), nu,  &
-                          gr%invrs_dzm(km1), gr%invrs_dzm(k),  &
-                          gr%invrs_dzt(k), diff_k_in )
+        lhs(3,k) = 0.5_core_rknd * invrs_rho_ds_zt(k) * lhs_diff(3,k)
 
-      ! LHS time tendency.
-      lhs(k_tdiag,k)  &
-      = lhs(k_tdiag,k) + 1.0_core_rknd / dt
-
-      if ( l_stats_samp ) then
-
-        ! Statistics:  implicit contributions for um or vm.
-        ! Note: we don't track these budgets for the eddy scalar variables
-
-        if ( ium_ma + ivm_ma > 0 ) then
-          if ( .not. l_implemented ) then
-            tmp(1:3) &
-            = term_ma_zt_lhs( wm_zt(k), gr%invrs_dzt(k), k, gr%invrs_dzm(k), gr%invrs_dzm(km1) )
-            ztscr01(k) = -tmp(3)
-            ztscr02(k) = -tmp(2)
-            ztscr03(k) = -tmp(1)
-          else
-            ztscr01(k) = 0.0_core_rknd
-            ztscr02(k) = 0.0_core_rknd
-            ztscr03(k) = 0.0_core_rknd
-          endif
-        endif
-
-        if ( ium_ta + ivm_ta > 0 ) then
-          tmp(1:3)  &
-          = 0.5_core_rknd * invrs_rho_ds_zt(k)  &
-          * diffusion_zt_lhs( rho_ds_zm(k) * Km_zm(k),  &
-                              rho_ds_zm(km1) * Km_zm(km1), nu,  &
-                              gr%invrs_dzm(km1), gr%invrs_dzm(k),  &
-                              gr%invrs_dzt(k), diff_k_in )
-          ztscr04(k) = -tmp(3)
-          ztscr05(k) = -tmp(2)
-          ztscr06(k) = -tmp(1)
-        endif
-
-      endif  ! l_stats_samp
 
     enddo ! k = 2 .. gr%nz
 
 
-    ! Boundary Conditions
+    ! LHS mean advection term.
+    if ( .not. l_implemented ) then
 
-    ! Lower Boundary
+        call term_ma_zt_lhs_all( wm_zt(:), gr%invrs_dzt(:), gr%invrs_dzm(:), &
+                                 lhs_ma_zt(:,:) )
 
-    ! The lower boundary condition is a fixed-flux boundary condition, which
-    ! gets added into the time-tendency equation at level 2.
-    ! The value of xm(1) is located below the model surface and does not effect
-    ! the rest of the model.  Since xm can be either a horizontal wind component
-    ! or a generic eddy scalar quantity, the value of xm(1) is simply set to the
-    ! value of xm(2) after the equation matrix has been solved.
+        do k = 2, gr%nz-1
+            lhs(1:3,k) = lhs(1:3,k) + lhs_ma_zt(:,k)
+        end do
 
-    ! k = 1
-    lhs(k_tdiag,1) = 1.0_core_rknd
+    endif
 
-    ! k = 2; add implicit momentum surface flux.
     if ( l_imp_sfc_momentum_flux ) then
 
       ! LHS momentum surface flux.
-      lhs(k_tdiag,2)  &
-      = lhs(k_tdiag,2)  &
-      + invrs_rho_ds_zt(2)  &
-        * gr%invrs_dzt(2)  &
-          * rho_ds_zm(1) * ( u_star_sqd / wind_speed(2) )
+      lhs(2,2) = lhs(2,2) + invrs_rho_ds_zt(2) * gr%invrs_dzt(2) * rho_ds_zm(1) * ( u_star_sqd / wind_speed(2) )
 
-      if ( l_stats_samp ) then
+    endif ! l_imp_sfc_momentum_flux
+
+
+    if ( l_stats_samp ) then
+
+        do k = 2, gr%nz
+ 
+            ! Statistics:  implicit contributions for um or vm.
+            ! Note: we don't track these budgets for the eddy scalar variables
+
+            if ( ium_ma + ivm_ma > 0 ) then
+              if ( .not. l_implemented ) then
+                ztscr01(k) = - lhs_ma_zt(3,k)
+                ztscr02(k) = - lhs_ma_zt(2,k)
+                ztscr03(k) = - lhs_ma_zt(1,k)
+              else
+                ztscr01(k) = 0.0_core_rknd
+                ztscr02(k) = 0.0_core_rknd
+                ztscr03(k) = 0.0_core_rknd
+              endif
+            endif
+
+            if ( ium_ta + ivm_ta > 0 ) then
+              ztscr04(k) = - 0.5_core_rknd * invrs_rho_ds_zt(k) * lhs_diff(3,k)
+              ztscr05(k) = - 0.5_core_rknd * invrs_rho_ds_zt(k) * lhs_diff(2,k)
+              ztscr06(k) = - 0.5_core_rknd * invrs_rho_ds_zt(k) * lhs_diff(1,k)
+            endif
+
+        end do
+
+        if ( l_imp_sfc_momentum_flux ) then
 
         ! Statistics:  implicit contributions for um or vm.
 
@@ -1602,17 +1590,12 @@ module advance_windm_edsclrm_module
         ! turbulent advection term, has already been called at level 2).
         ! Modify zmscr05 accordingly.
         if ( ium_ta + ivm_ta > 0 ) then
-          ztscr05(2)  &
-          = ztscr05(2)  &
-          - invrs_rho_ds_zt(2)  &
-            * gr%invrs_dzt(2)  &
-              * rho_ds_zm(1) * ( u_star_sqd / wind_speed(2) )
+          ztscr05(2) = ztscr05(2) - invrs_rho_ds_zt(2) * gr%invrs_dzt(2) * rho_ds_zm(1) * ( u_star_sqd / wind_speed(2) )
         endif
 
-      endif ! l_stats_samp
+      endif ! l_imp_sfc_momentum_flux
 
-    endif ! l_imp_sfc_momentum_flux
-
+    endif  ! l_stats_samp
 
     return
   end subroutine windm_edsclrm_lhs
@@ -1642,7 +1625,7 @@ module advance_windm_edsclrm_module
     !   level 2 that it normally uses at level 1.
     ! 
     !   --- THIS SUBROUTINE HAS BEEN OPTIMIZED ---
-    !   Significant changes to this routine may adversely affect computational speed
+    !   Simple changes to this procedure may adversely affect computational speed
     !       - Gunther Huebler, Aug. 2018, clubb:ticket:834
     !----------------------------------------------------------------------------------
 
@@ -1705,15 +1688,15 @@ module advance_windm_edsclrm_module
     integer :: k    ! Loop variable
 
     ! For use in Crank-Nicholson eddy diffusion.
-    real( kind = core_rknd ), dimension(3,gr%nz) :: rhs_diff
+    real( kind = core_rknd ), dimension(3,gr%nz) :: lhs_diff
 
-    real( kind = core_rknd ) :: dt_recip
+    real( kind = core_rknd ) :: invrs_dt
 
     integer :: ixm_ta
 
     !------------------- Begin Code -------------------
 
-    dt_recip = 1.0_core_rknd / dt   ! Precalculate 1.0/dt to avoid redoing the divide
+    invrs_dt = 1.0_core_rknd / dt   ! Precalculate 1.0/dt to avoid redoing the divide
 
     select case ( solve_type )
         case ( windm_edsclrm_um )
@@ -1729,11 +1712,11 @@ module advance_windm_edsclrm_module
     ! RHS turbulent advection term, for grid level 3 - gr%nz
     call diffusion_zt_lhs_all( K_zm(1:gr%nz), nu(1:gr%nz),                   & ! Intent(in)
                                gr%invrs_dzm(1:gr%nz), gr%invrs_dzt(1:gr%nz), & ! Intent(in)
-                               rhs_diff(1:3,1:gr%nz)                         ) ! Intent(out)
+                               lhs_diff(1:3,1:gr%nz)                         ) ! Intent(out)
 
     ! RHS turbulent advection term (solved as an eddy-diffusion term), for grid level 2
     ! lower boundary condition applied at this level, see notes above
-    rhs_diff(:,2) = diffusion_zt_lhs( K_zm(2), K_zm(1), nu,              &
+    lhs_diff(:,2) = diffusion_zt_lhs( K_zm(2), K_zm(1), nu,              &
                                       gr%invrs_dzm(1), gr%invrs_dzm(2),  &
                                       gr%invrs_dzt(2), level = 1 )
 
@@ -1745,19 +1728,19 @@ module advance_windm_edsclrm_module
     do k = 2, gr%nz-1
 
         rhs(k) = 0.5_core_rknd * invrs_rho_ds_zt(k) & 
-                 * ( - rhs_diff(3,k) * xm(k-1)      &
-                     - rhs_diff(2,k) * xm(k)        &
-                     - rhs_diff(1,k) * xm(k+1) )    &
+                 * ( - lhs_diff(3,k) * xm(k-1)      &
+                     - lhs_diff(2,k) * xm(k)        &
+                     - lhs_diff(1,k) * xm(k+1) )    &
                  + xm_tndcy(k)                      & ! RHS forcings
-                 + dt_recip * xm(k)                   ! RHS time tendency
+                 + invrs_dt * xm(k)                   ! RHS time tendency
     end do
 
     ! Upper boundary calculation
     rhs(gr%nz) = 0.5_core_rknd * invrs_rho_ds_zt(gr%nz) & 
-                 * ( - rhs_diff(3,gr%nz) * xm(gr%nz-1)  &
-                     - rhs_diff(2,gr%nz) * xm(gr%nz) )  &
+                 * ( - lhs_diff(3,gr%nz) * xm(gr%nz-1)  &
+                     - lhs_diff(2,gr%nz) * xm(gr%nz) )  &
                  + xm_tndcy(gr%nz)                      & ! RHS forcings
-                 + dt_recip * xm(gr%nz)                   ! RHS time tendency
+                 + invrs_dt * xm(gr%nz)                   ! RHS time tendency
 
 
     if ( l_stats_samp .and. ixm_ta > 0 ) then
@@ -1772,16 +1755,16 @@ module advance_windm_edsclrm_module
 
             call stat_begin_update_pt( ixm_ta, k, &
                                        0.5_core_rknd * invrs_rho_ds_zt(k) &
-                                     * ( rhs_diff(3,k) * xm(k-1) &
-                                     +   rhs_diff(2,k) * xm(k)   &
-                                     +   rhs_diff(1,k) * xm(k+1) ), stats_zt )
+                                     * ( lhs_diff(3,k) * xm(k-1) &
+                                     +   lhs_diff(2,k) * xm(k)   &
+                                     +   lhs_diff(1,k) * xm(k+1) ), stats_zt )
         end do
 
         ! Upper boundary
         call stat_begin_update_pt( ixm_ta, gr%nz, &
                                    0.5_core_rknd * invrs_rho_ds_zt(gr%nz) &
-                                 * ( rhs_diff(3,gr%nz) * xm(gr%nz-1) &
-                                 +   rhs_diff(2,gr%nz) * xm(gr%nz) ), stats_zt )
+                                 * ( lhs_diff(3,gr%nz) * xm(gr%nz-1) &
+                                 +   lhs_diff(2,gr%nz) * xm(gr%nz) ), stats_zt )
     endif
 
     if ( .not. l_imp_sfc_momentum_flux ) then
