@@ -1749,14 +1749,14 @@ module advance_xm_wpxp_module
       lhs_pr1,    & ! Pressure term 1 for w'x'
       lhs_ac_pr2    ! Accumulation of w'x' and w'x' pressure term 2
     
-    real( kind = core_rknd ) :: dt_recip    ! Reciprocal of dt, used for computational efficiency
+    real( kind = core_rknd ) :: invrs_dt    ! Reciprocal of dt, used for computational efficiency
 
 
     !------------------- Begin Code -------------------
 
 
     ! Initializations/precalculations
-    dt_recip    = 1.0_core_rknd / dt
+    invrs_dt    = 1.0_core_rknd / dt
     constant_nu = 0.1_core_rknd
     lhs         = 0.0_core_rknd
 
@@ -1883,7 +1883,7 @@ module advance_xm_wpxp_module
 
         lhs(2,k_xm) = lhs(2,k_xm) + lhs_ta_xm(1,k)
 
-        lhs(3,k_xm) = lhs(3,k_xm) + dt_recip
+        lhs(3,k_xm) = lhs(3,k_xm) + invrs_dt
 
         lhs(4,k_xm) = lhs(4,k_xm) + lhs_ta_xm(2,k)
 
@@ -1918,7 +1918,7 @@ module advance_xm_wpxp_module
     if ( l_iter ) then
         do k = 2, gr%nz-1
             k_wpxp = 2*k 
-            lhs(3,k_wpxp) = lhs(3,k_wpxp) + dt_recip
+            lhs(3,k_wpxp) = lhs(3,k_wpxp) + invrs_dt
         end do
     endif
 
@@ -1931,8 +1931,8 @@ module advance_xm_wpxp_module
         do k = 2, gr%nz-1
             k_wpxp = 2*k 
             lhs(3,k_wpxp) = lhs(3,k_wpxp) + clip_semi_imp_lhs( dt, wpxp(k),  & 
-                                                               l_upper_thresh, wpxp_upper_lim(k),  & 
-                                                               l_lower_thresh, wpxp_lower_lim(k) )
+                                               l_upper_thresh, wpxp_upper_lim(k),  & 
+                                               l_lower_thresh, wpxp_lower_lim(k) )
         end do
     endif
 

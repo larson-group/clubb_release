@@ -400,7 +400,7 @@ module mean_adv
 
     !=============================================================================================
     pure subroutine term_ma_zt_lhs_all( wm_zt, invrs_dzt, invrs_dzm, & ! Intent(in)
-                                        lhs_advm                     ) ! Intent(out)
+                                        lhs_ma                     ) ! Intent(out)
     ! Description:
     !   This subroutine is an optimized version of term_ma_zt_lhs. term_ma_zt_lhs
     !   returns a single 3 dimensional array for any specified grid level. This subroutine returns
@@ -431,7 +431,7 @@ module mean_adv
 
         !------------------- Output Variables -------------------
         real( kind = core_rknd ), dimension(3,gr%nz), intent(out) :: &
-            lhs_advm
+            lhs_ma
 
         !---------------- Local Variables -------------------
         integer :: &
@@ -443,7 +443,7 @@ module mean_adv
         !---------------- Begin Code -------------------
 
         ! Set lower boundary array to 0
-        lhs_advm(:,1) = 0.0_core_rknd
+        lhs_ma(:,1) = 0.0_core_rknd
 
 
         
@@ -453,33 +453,34 @@ module mean_adv
             ! Most of the interior model; normal conditions.
             do k = 2, gr%nz-1
 
-                lhs_advm(1,k) = + wm_zt(k) * invrs_dzt(k) * gr%weights_zt2zm(1,k)
+                lhs_ma(1,k) = + wm_zt(k) * invrs_dzt(k) * gr%weights_zt2zm(1,k)
 
-                lhs_advm(2,k) = + wm_zt(k) * invrs_dzt(k) * (   gr%weights_zt2zm(2,k) & 
+                lhs_ma(2,k) = + wm_zt(k) * invrs_dzt(k) * (   gr%weights_zt2zm(2,k) & 
                                                               - gr%weights_zt2zm(1,k-1)   )
 
-                lhs_advm(3,k) = - wm_zt(k) * invrs_dzt(k) * gr%weights_zt2zm(2,k-1)
+                lhs_ma(3,k) = - wm_zt(k) * invrs_dzt(k) * gr%weights_zt2zm(2,k-1)
 
             end do
 
             ! Upper Boundary
             if ( l_ub_const_deriv ) then
 
-                lhs_advm(1,gr%nz) = 0.0_core_rknd
+                lhs_ma(1,gr%nz) = 0.0_core_rknd
 
-                lhs_advm(2,gr%nz) = + wm_zt(k) * invrs_dzt(k) * (   gr%weights_zt2zm(1,k) &
+                lhs_ma(2,gr%nz) = + wm_zt(k) * invrs_dzt(k) * (   gr%weights_zt2zm(1,k) &
                                                                   - gr%weights_zt2zm(1,k-1)   )
 
-                lhs_advm(3,gr%nz) = + wm_zt(k) * invrs_dzt(k) * (   gr%weights_zt2zm(2,k) &
+                lhs_ma(3,gr%nz) = + wm_zt(k) * invrs_dzt(k) * (   gr%weights_zt2zm(2,k) &
                                                                   - gr%weights_zt2zm(2,k-1)   )
 
             else
 
-                lhs_advm(1,gr%nz) = 0.0_core_rknd
+                lhs_ma(1,gr%nz) = 0.0_core_rknd
 
-                lhs_advm(2,gr%nz) = + wm_zt(k) * invrs_dzt(k) * ( 1.0_core_rknd - gr%weights_zt2zm(1,k-1) )
+                lhs_ma(2,gr%nz) = + wm_zt(k) * invrs_dzt(k) &
+                                  * ( 1.0_core_rknd - gr%weights_zt2zm(1,k-1) )
 
-                lhs_advm(3,gr%nz) = - wm_zt(k) * invrs_dzt(k) * gr%weights_zt2zm(2,k-1)
+                lhs_ma(3,gr%nz) = - wm_zt(k) * invrs_dzt(k) * gr%weights_zt2zm(2,k-1)
 
             endif ! l_ub_const_deriv
 
@@ -490,20 +491,20 @@ module mean_adv
 
                 if ( wm_zt(k) >= 0.0_core_rknd ) then  ! Mean wind is in upward direction
 
-                    lhs_advm(1,k) = 0.0_core_rknd
+                    lhs_ma(1,k) = 0.0_core_rknd
 
-                    lhs_advm(2,k) = + wm_zt(k) * invrs_dzm(k-1)
+                    lhs_ma(2,k) = + wm_zt(k) * invrs_dzm(k-1)
 
-                    lhs_advm(3,k) = - wm_zt(k) * invrs_dzm(k-1)
+                    lhs_ma(3,k) = - wm_zt(k) * invrs_dzm(k-1)
 
 
                 else  ! wm_zt < 0; Mean wind is in downward direction
 
-                    lhs_advm(1,k) = + wm_zt(k) * invrs_dzm(k)
+                    lhs_ma(1,k) = + wm_zt(k) * invrs_dzm(k)
 
-                    lhs_advm(2,k) = - wm_zt(k) * invrs_dzm(k)
+                    lhs_ma(2,k) = - wm_zt(k) * invrs_dzm(k)
 
-                    lhs_advm(3,k) = 0.0_core_rknd
+                    lhs_ma(3,k) = 0.0_core_rknd
 
                 endif ! wm_zt > 0
 
@@ -512,20 +513,20 @@ module mean_adv
             ! Upper Boundary
             if ( wm_zt(k) >= 0.0_core_rknd ) then  ! Mean wind is in upward direction
 
-                    lhs_advm(1,gr%nz) = 0.0_core_rknd
+                    lhs_ma(1,gr%nz) = 0.0_core_rknd
 
-                    lhs_advm(2,gr%nz) = + wm_zt(k) * invrs_dzm(k-1)
+                    lhs_ma(2,gr%nz) = + wm_zt(k) * invrs_dzm(k-1)
 
-                    lhs_advm(3,gr%nz) = - wm_zt(k) * invrs_dzm(k-1)
+                    lhs_ma(3,gr%nz) = - wm_zt(k) * invrs_dzm(k-1)
 
 
             else  ! wm_zt < 0; Mean wind is in downward direction
 
-                    lhs_advm(1,gr%nz) = 0.0_core_rknd
+                    lhs_ma(1,gr%nz) = 0.0_core_rknd
 
-                    lhs_advm(2,gr%nz) = 0.0_core_rknd
+                    lhs_ma(2,gr%nz) = 0.0_core_rknd
 
-                    lhs_advm(3,gr%nz) = 0.0_core_rknd
+                    lhs_ma(3,gr%nz) = 0.0_core_rknd
 
             endif ! wm_zt > 0
 
@@ -699,7 +700,7 @@ module mean_adv
 
     !=============================================================================================
     pure subroutine term_ma_zm_lhs_all( wm_zm, invrs_dzm,     & ! Intent(in)
-                                        lhs_advm              ) ! Intent(out)
+                                        lhs_ma              ) ! Intent(out)
     ! Description:
     !   This subroutine is an optimized version of term_ma_zm_lhs. term_ma_zm_lhs
     !   returns a single 3 dimensional array for any specified grid level. This subroutine returns
@@ -727,7 +728,7 @@ module mean_adv
 
         !------------------- Output Variables -------------------
         real( kind = core_rknd ), dimension(3,gr%nz), intent(out) :: &
-            lhs_advm
+            lhs_ma
 
         !---------------- Local Variables -------------------
         integer :: &
@@ -736,25 +737,25 @@ module mean_adv
         !---------------- Begin Code -------------------
 
         ! Set lower boundary array to 0
-        lhs_advm(:,1) = 0.0_core_rknd
+        lhs_ma(:,1) = 0.0_core_rknd
 
         ! Most of the interior model; normal conditions.
         do k = 2, gr%nz-1
 
            ! Momentum superdiagonal: [ x var_zm(k+1,<t+1>) ]
-           lhs_advm(1,k) = + wm_zm(k) * invrs_dzm(k) * gr%weights_zm2zt(1,k+1)
+           lhs_ma(1,k) = + wm_zm(k) * invrs_dzm(k) * gr%weights_zm2zt(1,k+1)
 
            ! Momentum main diagonal: [ x var_zm(k,<t+1>) ]
-           lhs_advm(2,k) = + wm_zm(k) * invrs_dzm(k) * ( gr%weights_zm2zt(2,k+1) & 
+           lhs_ma(2,k) = + wm_zm(k) * invrs_dzm(k) * ( gr%weights_zm2zt(2,k+1) & 
                                                         - gr%weights_zm2zt(1,k) )
 
            ! Momentum subdiagonal: [ x var_zm(k-1,<t+1>) ]
-           lhs_advm(3,k) = - wm_zm(k) * invrs_dzm(k) * gr%weights_zm2zt(2,k)
+           lhs_ma(3,k) = - wm_zm(k) * invrs_dzm(k) * gr%weights_zm2zt(2,k)
 
         end do
 
         ! Set upper boundary array to 0
-        lhs_advm(:,gr%nz) = 0.0_core_rknd
+        lhs_ma(:,gr%nz) = 0.0_core_rknd
 
         return
 

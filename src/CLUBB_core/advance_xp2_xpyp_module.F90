@@ -1672,8 +1672,8 @@ module advance_xp2_xpyp_module
     !---------------- Local Variables -------------------
     real( kind = core_rknd ), dimension(3,gr%nz) :: & 
       lhs_diff, & ! Diffusion contributions to lhs, dissipation term 2
-      lhs_advm, & ! Mean advection contributions to lhs
-      lhs_turb    ! Turbulent advection contributions to lhs
+      lhs_ma, & ! Mean advection contributions to lhs
+      lhs_ta    ! Turbulent advection contributions to lhs
     
     real( kind = core_rknd ), dimension(gr%nz) :: &
       lhs_dp1   ! LHS dissipation term 1
@@ -1697,7 +1697,7 @@ module advance_xp2_xpyp_module
 
     ! Calculate LHS mean advection (ma) term.
     call term_ma_zm_lhs_all( wm_zm(:), gr%invrs_dzm(:), & ! Intent(in)
-                             lhs_advm(:,:)              ) ! Intent(out)
+                             lhs_ma(:,:)              ) ! Intent(out)
                              
 
     ! Calculate LHS turbulent advection (ta) terms
@@ -1710,17 +1710,17 @@ module advance_xp2_xpyp_module
                                    coef_wpxpyp_implicit_zm(:),          & ! Intent(in)
                                    rho_ds_zm(:),                        & ! Intent(in)
                                    gr%invrs_dzt(:),                     & ! Intent(in)
-                                   lhs_turb(:,:)                        ) ! Intent(out)
+                                   lhs_ta(:,:)                        ) ! Intent(out)
 
     ! Combine all lhs terms into lhs, should be fully vectorized
     do k = 2, gr%nz-1
 
-      lhs(1,k) = lhs_diff(1,k) + lhs_advm(1,k) + lhs_turb(1,k) * gamma_over_implicit_ts
+      lhs(1,k) = lhs_diff(1,k) + lhs_ma(1,k) + lhs_ta(1,k) * gamma_over_implicit_ts
 
-      lhs(2,k) = lhs_diff(2,k) + lhs_advm(2,k) + lhs_turb(2,k) * gamma_over_implicit_ts &
+      lhs(2,k) = lhs_diff(2,k) + lhs_ma(2,k) + lhs_ta(2,k) * gamma_over_implicit_ts &
                                                + lhs_dp1(k)
         
-      lhs(3,k) = lhs_diff(3,k) + lhs_advm(3,k) + lhs_turb(3,k) * gamma_over_implicit_ts
+      lhs(3,k) = lhs_diff(3,k) + lhs_ma(3,k) + lhs_ta(3,k) * gamma_over_implicit_ts
 
     enddo ! k=2..gr%nz-1
 
@@ -1770,9 +1770,9 @@ module advance_xp2_xpyp_module
             !        make the term more numerically stable (see note above for
             !        LHS turbulent advection (ta) term).
             do k = 2, gr%nz-1
-                zmscr05(k) = -gamma_over_implicit_ts * lhs_turb(3,k)
-                zmscr06(k) = -gamma_over_implicit_ts * lhs_turb(2,k)
-                zmscr07(k) = -gamma_over_implicit_ts * lhs_turb(1,k)
+                zmscr05(k) = -gamma_over_implicit_ts * lhs_ta(3,k)
+                zmscr06(k) = -gamma_over_implicit_ts * lhs_ta(2,k)
+                zmscr07(k) = -gamma_over_implicit_ts * lhs_ta(1,k)
             end do
 
         endif
@@ -1780,9 +1780,9 @@ module advance_xp2_xpyp_module
         if ( irtp2_ma + ithlp2_ma + irtpthlp_ma + iup2_ma + ivp2_ma > 0 ) then
 
             do k = 2, gr%nz-1
-                zmscr08(k) = -lhs_advm(3,k)
-                zmscr09(k) = -lhs_advm(2,k)
-                zmscr10(k) = -lhs_advm(1,k)
+                zmscr08(k) = -lhs_ma(3,k)
+                zmscr09(k) = -lhs_ma(2,k)
+                zmscr10(k) = -lhs_ma(1,k)
             end do
 
         endif
@@ -2232,9 +2232,9 @@ module advance_xp2_xpyp_module
     ! means that the LHS contribution is given extra weight (>1) in order to
     ! increase numerical stability.  A weighted factor must then be applied to
     ! the RHS in order to balance the weight.
-    real( kind = core_rknd ), dimension(3,gr%nz) :: lhs_turb
+    real( kind = core_rknd ), dimension(3,gr%nz) :: lhs_ta
 
-    real( kind = core_rknd ), dimension(gr%nz) :: rhs_turb  ! Turbulent advection terms
+    real( kind = core_rknd ), dimension(gr%nz) :: rhs_ta  ! Turbulent advection terms
 
     real( kind = core_rknd ) :: tmp
 
@@ -2283,7 +2283,7 @@ module advance_xp2_xpyp_module
                                    term_wpxp2_explicit_zm(:),         & ! Intent(in)
                                    rho_ds_zm(:),                      & ! Intent(in)
                                    gr%invrs_dzt(:),                   & ! Intent(in)
-                                   rhs_turb(:)                        ) ! Intent(out
+                                   rhs_ta(:)                        ) ! Intent(out
 
     ! Calculate RHS contribution from "over-implicit" weighted time step
     ! for LHS turbulent advection (ta) term. See notes above
@@ -2296,20 +2296,20 @@ module advance_xp2_xpyp_module
                                    coef_wpxp2_implicit_zm(:),           & ! Intent(in)
                                    rho_ds_zm(:),                        & ! Intent(in)
                                    gr%invrs_dzt(:),                     & ! Intent(in)
-                                   lhs_turb(:,:)                        ) ! Intent(out)
+                                   lhs_ta(:,:)                        ) ! Intent(out)
 
     ! Vertical compression of eddies causes gustiness (increase in up2 and vp2)
     ! Add half the contribution to up2 and half to vp2
-    rhs(2:gr%nz-1) = rhs_turb(2:gr%nz-1) - 0.5_core_rknd*wp2_splat(2:gr%nz-1)
+    rhs(2:gr%nz-1) = rhs_ta(2:gr%nz-1) - 0.5_core_rknd*wp2_splat(2:gr%nz-1)
 
     ! Finish RHS calc with vectorizable loop, functions are in source file and should
     ! be inlined with an -O2 or above compiler optimization flag
     do k = 2, gr%nz-1, 1
 
         rhs(k) = rhs(k) + ( one - gamma_over_implicit_ts ) &
-                             * ( - lhs_turb(1,k) * xap2(k+1) &
-                                 - lhs_turb(2,k) * xap2(k) &
-                                 - lhs_turb(3,k) * xap2(k-1) )
+                             * ( - lhs_ta(1,k) * xap2(k+1) &
+                                 - lhs_ta(2,k) * xap2(k) &
+                                 - lhs_ta(3,k) * xap2(k-1) )
 
         ! RHS turbulent production (tp) term.
         ! https://arxiv.org/pdf/1711.03675v1.pdf#nameddest=url:up2_pr 
@@ -2350,14 +2350,14 @@ module advance_xp2_xpyp_module
         do k = 2, gr%nz-1
 
             call stat_begin_update_pt( ixapxbp_ta, k, &    ! Intent(in)
-                                       -rhs_turb(k), &
+                                       -rhs_ta(k), &
                                        stats_zm )          ! Intent(inout)
 
             call stat_modify_pt( ixapxbp_ta, k,  &          ! Intent(in)
                                  + ( one - gamma_over_implicit_ts )  & ! Intent(in)
-                                   * ( - lhs_turb(1,k) * xap2(k+1) &
-                                       - lhs_turb(2,k) * xap2(k) &
-                                       - lhs_turb(3,k) * xap2(k-1) ), &
+                                   * ( - lhs_ta(1,k) * xap2(k+1) &
+                                       - lhs_ta(2,k) * xap2(k) &
+                                       - lhs_ta(3,k) * xap2(k-1) ), &
                                  stats_zm )                 ! Intent(inout)
 
             if ( ixapxbp_dp1 > 0 ) then
@@ -2370,11 +2370,11 @@ module advance_xp2_xpyp_module
                    -term_pr1( C4, zero, xbp2(k), wp2(k), tau_zm(k) ), & ! Intent(in)
                                          stats_zm )        ! Intent(inout)
 
-              lhs_turb(1,k)  &
+              lhs_ta(1,k)  &
               = term_dp1_lhs( two_thirds*C4, tau_zm(k) )
               call stat_modify_pt( ixapxbp_dp1, k, &        ! Intent(in)
                     + ( one - gamma_over_implicit_ts )  &   ! Intent(in)
-                    * ( - lhs_turb(1,k) * xap2(k) ),  & ! Intent(in)
+                    * ( - lhs_ta(1,k) * xap2(k) ),  & ! Intent(in)
                                          stats_zm )         ! Intent(inout)
 
             endif
@@ -2388,11 +2388,11 @@ module advance_xp2_xpyp_module
                    -term_pr1( zero, C14, xbp2(k), wp2(k), tau_zm(k) ), &! Intent(in)
                                          stats_zm )        ! Intent(inout)
 
-              lhs_turb(1,k)  &
+              lhs_ta(1,k)  &
               = term_dp1_lhs( one_third*C14, tau_zm(k) )
               call stat_modify_pt( ixapxbp_pr1, k, &        ! Intent(in)
                     + ( one - gamma_over_implicit_ts )  &   ! Intent(in)
-                    * ( - lhs_turb(1,k) * xap2(k) ),  & ! Intent(in)
+                    * ( - lhs_ta(1,k) * xap2(k) ),  & ! Intent(in)
                                          stats_zm )         ! Intent(inout)
 
             endif
@@ -2558,7 +2558,7 @@ module advance_xp2_xpyp_module
       xp2_mc_limiter    ! Largest allowable (negative) mc effect
 
     real( kind = core_rknd ), dimension(gr%nz) :: &
-      rhs_turb
+      rhs_ta
 
     logical :: &
       l_clip_large_neg_mc = .false.  ! Flag to clip excessively large mc values.
@@ -2582,7 +2582,7 @@ module advance_xp2_xpyp_module
     ! means that the LHS contribution is given extra weight (>1) in order to
     ! increase numerical stability.  A weighted factor must then be applied to
     ! the RHS in order to balance the weight.
-    real( kind = core_rknd ), dimension(3,gr%nz) :: lhs_turb
+    real( kind = core_rknd ), dimension(3,gr%nz) :: lhs_ta
 
     integer :: & 
       ixapxbp_ta, & 
@@ -2635,7 +2635,7 @@ module advance_xp2_xpyp_module
                                    term_wpxpyp_explicit_zm(:),        & ! Intent(in)
                                    rho_ds_zm(:),                      & ! Intent(in)
                                    gr%invrs_dzt(:),                   & ! Intent(in)
-                                   rhs_turb(:)                        ) ! Intent(out
+                                   rhs_ta(:)                        ) ! Intent(out
     
     ! RHS contribution from "over-implicit" weighted time step
     ! for LHS turbulent advection (ta) term. See notes above
@@ -2648,16 +2648,16 @@ module advance_xp2_xpyp_module
                                    coef_wpxpyp_implicit_zm(:),          & ! Intent(in)
                                    rho_ds_zm(:),                        & ! Intent(in)
                                    gr%invrs_dzt(:),                     & ! Intent(in)
-                                   lhs_turb(:,:)                        ) ! Intent(out)
+                                   lhs_ta(:,:)                        ) ! Intent(out)
 
     ! Finish RHS calc with vectorizable loop, functions are in source file and should
     ! be inlined with an -O2 or above compiler optimization flag
     do k = 2, gr%nz-1
 
-      rhs(k) = rhs_turb(k) + ( one - gamma_over_implicit_ts ) &
-                           * ( - lhs_turb(1,k) * xapxbp(k+1) &
-                               - lhs_turb(2,k) * xapxbp(k) &
-                               - lhs_turb(3,k) * xapxbp(k-1) )
+      rhs(k) = rhs_ta(k) + ( one - gamma_over_implicit_ts ) &
+                           * ( - lhs_ta(1,k) * xapxbp(k+1) &
+                               - lhs_ta(2,k) * xapxbp(k) &
+                               - lhs_ta(3,k) * xapxbp(k-1) )
 
       ! RHS turbulent production (tp) term.
       rhs(k) = rhs(k) + term_tp( xam(k+1), xam(k), xbm(k+1), xbm(k), &
@@ -2732,14 +2732,14 @@ module advance_xp2_xpyp_module
             ! stat_begin_update_pt.  Since stat_begin_update_pt automatically
             ! subtracts the value sent in, reverse the sign on term_ta_explicit_rhs.
             call stat_begin_update_pt( ixapxbp_ta, k, & ! Intent(in)
-                                       -rhs_turb(k), &
+                                       -rhs_ta(k), &
                                        stats_zm )       ! Intent(inout)
 
             call stat_modify_pt( ixapxbp_ta, k, &             ! Intent(in)
                                  + ( one - gamma_over_implicit_ts ) & ! Intent(in)
-                                   * ( - lhs_turb(1,k) * xapxbp(k+1) &
-                                       - lhs_turb(2,k) * xapxbp(k) &
-                                       - lhs_turb(3,k) * xapxbp(k-1) ), &
+                                   * ( - lhs_ta(1,k) * xapxbp(k+1) &
+                                       - lhs_ta(2,k) * xapxbp(k) &
+                                       - lhs_ta(3,k) * xapxbp(k-1) ), &
                                  stats_zm )                   ! Intent(inout)
 
             ! x'y' term dp1 has both implicit and explicit components; call
@@ -2753,11 +2753,11 @@ module advance_xp2_xpyp_module
             !        A weighting factor of greater than 1 may be used to make the
             !        term more numerically stable (see note above for RHS turbulent
             !        advection (ta) term).
-            lhs_turb(1,k)  &
+            lhs_ta(1,k)  &
             = term_dp1_lhs( Cn(k), tau_zm(k) )
             call stat_modify_pt( ixapxbp_dp1, k,  &         ! Intent(in)
                   + ( one - gamma_over_implicit_ts )  &     ! Intent(in)
-                  * ( - lhs_turb(1,k) * xapxbp(k) ),  & ! Intent(in)
+                  * ( - lhs_ta(1,k) * xapxbp(k) ),  & ! Intent(in)
                                        stats_zm )                 ! Intent(inout)
 
             ! rtp2/thlp2 case (1 turbulent production term)

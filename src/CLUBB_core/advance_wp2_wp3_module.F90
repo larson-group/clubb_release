@@ -1766,11 +1766,20 @@ module advance_wp2_wp3_module
 
             k_wp3 = 2*k - 1
 
-            wp3_pr3_lhs(k,1) = - gamma_over_implicit_ts * C16_fnc(k) * wp3_term_ta_lhs_result(1,k)
-            wp3_pr3_lhs(k,2) = - gamma_over_implicit_ts * C16_fnc(k) * ( wp3_term_ta_lhs_result(2,k) + lhs_tp_wp3(1,k) )
-            wp3_pr3_lhs(k,3) = - gamma_over_implicit_ts * C16_fnc(k) * wp3_term_ta_lhs_result(3,k)
-            wp3_pr3_lhs(k,4) = - gamma_over_implicit_ts * C16_fnc(k) * ( wp3_term_ta_lhs_result(4,k) + lhs_tp_wp3(2,k) )
-            wp3_pr3_lhs(k,5) = - gamma_over_implicit_ts * C16_fnc(k) * wp3_term_ta_lhs_result(5,k)
+            wp3_pr3_lhs(k,1) = - gamma_over_implicit_ts * C16_fnc(k) &
+                               * wp3_term_ta_lhs_result(1,k)
+
+            wp3_pr3_lhs(k,2) = - gamma_over_implicit_ts * C16_fnc(k) &
+                               * ( wp3_term_ta_lhs_result(2,k) + lhs_tp_wp3(1,k) )
+
+            wp3_pr3_lhs(k,3) = - gamma_over_implicit_ts * C16_fnc(k) &
+                               * wp3_term_ta_lhs_result(3,k)
+
+            wp3_pr3_lhs(k,4) = - gamma_over_implicit_ts * C16_fnc(k) &
+                               * ( wp3_term_ta_lhs_result(4,k) + lhs_tp_wp3(2,k) )
+
+            wp3_pr3_lhs(k,5) = - gamma_over_implicit_ts * C16_fnc(k) &
+                               * wp3_term_ta_lhs_result(5,k)
 
             lhs(:,k_wp3) = lhs(:,k_wp3) + wp3_pr3_lhs(k,:)
 
@@ -1817,7 +1826,8 @@ module advance_wp2_wp3_module
             ! Note:  To find the contribution of w'^2 term ac, substitute 0 for the
             !        C_5 input to function wp2_terms_ac_pr2_lhs.
             if ( iwp2_ac > 0 ) then
-                zmscr10(k) = - wp2_terms_ac_pr2_lhs( 0.0_core_rknd, wm_zt(k+1), wm_zt(k), gr%invrs_dzm(k)  )
+                zmscr10(k) = - wp2_terms_ac_pr2_lhs( 0.0_core_rknd, wm_zt(k+1), &
+                                                     wm_zt(k), gr%invrs_dzm(k)  )
             endif
 
             ! Note:  To find the contribution of w'^2 term pr2, add 1 to the
@@ -1867,13 +1877,15 @@ module advance_wp2_wp3_module
             ! Note:  To find the contribution of w'^3 term ac, substitute 0 for the
             !        C_ll skewness function input to function wp3_terms_ac_pr2_lhs.
             if ( iwp3_ac > 0 ) then
-                ztscr15(k) = - wp3_terms_ac_pr2_lhs( 0.0_core_rknd, wm_zm(k), wm_zm(k-1), gr%invrs_dzt(k) )
+                ztscr15(k) = - wp3_terms_ac_pr2_lhs( 0.0_core_rknd, wm_zm(k), &
+                                                     wm_zm(k-1), gr%invrs_dzt(k) )
             endif
 
             ! Note:  To find the contribution of w'^3 term pr2, add 1 to the
             !        C_ll skewness function input to function wp3_terms_ac_pr2_lhs.
             if ( iwp3_pr2 > 0 ) then
-                ztscr16(k) = - wp3_terms_ac_pr2_lhs( (one+C11_Skw_fnc(k)), wm_zm(k), wm_zm(k-1), gr%invrs_dzt(k) )
+                ztscr16(k) = - wp3_terms_ac_pr2_lhs( (one+C11_Skw_fnc(k)), wm_zm(k), &
+                                                     wm_zm(k-1), gr%invrs_dzt(k) )
             endif
 
             ! Note:  An "over-implicit" weighted time step is applied to this term.
@@ -2944,7 +2956,8 @@ module advance_wp2_wp3_module
 
             rhs(k_wp2) = rhs(k_wp2) + rhs_pr1_wp2(k)
 
-            rhs(k_wp2) = rhs(k_wp2) + ( one - gamma_over_implicit_ts ) * ( - lhs_pr1_wp2(k) * wp2(k) )
+            rhs(k_wp2) = rhs(k_wp2) + ( one - gamma_over_implicit_ts ) &
+                                    * ( - lhs_pr1_wp2(k) * wp2(k) )
 
             ! Effect of vertical compression of eddies
             rhs(k_wp2) = rhs(k_wp2) + wp2_splat(k)
@@ -3646,7 +3659,8 @@ module advance_wp2_wp3_module
         do k = 2, gr%nz-1
 
             ! Momentum main diagonal: [ x wp2(k,<t+1>) ]
-            lhs_ac_pr2_wp2(k) = + ( 1.0_core_rknd - C5 ) * 2.0_core_rknd * invrs_dzm(k) * ( wm_zt(k+1) - wm_zt(k) )
+            lhs_ac_pr2_wp2(k) = + ( 1.0_core_rknd - C5 ) * 2.0_core_rknd &
+                                * invrs_dzm(k) * ( wm_zt(k+1) - wm_zt(k) )
 
         end do
 
@@ -4551,10 +4565,12 @@ module advance_wp2_wp3_module
         do k = 2, gr%nz-1
 
             ! Momentum superdiagonal: [ x wp2(k,<t+1>) ]
-            lhs_ta_wp3(1,k) = + invrs_rho_ds_zt(k) * invrs_dzt(k) * rho_ds_zm(k) * coef_wp4_implicit(k) * wp2(k)
+            lhs_ta_wp3(1,k) = + invrs_rho_ds_zt(k) * invrs_dzt(k) * rho_ds_zm(k) &
+                              * coef_wp4_implicit(k) * wp2(k)
 
             ! Momentum subdiagonal: [ x wp2(k-1,<t+1>) ]
-            lhs_ta_wp3(2,k) = - invrs_rho_ds_zt(k) * invrs_dzt(k) * rho_ds_zm(k-1) * coef_wp4_implicit(k-1) * wp2(k-1)
+            lhs_ta_wp3(2,k) = - invrs_rho_ds_zt(k) * invrs_dzt(k) * rho_ds_zm(k-1) &
+                              * coef_wp4_implicit(k-1) * wp2(k-1)
 
         end do
 
@@ -5097,12 +5113,12 @@ module advance_wp2_wp3_module
         do k = 2, gr%nz-1
 
             ! Momentum superdiagonal: [ x wp2(k,<t+1>) ]
-            lhs_tp_wp3(1,k) = - three * invrs_rho_ds_zt(k) * invrs_dzt(k) * rho_ds_zm(k) * wp2(k) &
-                              + three_halves * invrs_dzt(k) * wp2(k)
+            lhs_tp_wp3(1,k) = - three * invrs_rho_ds_zt(k) * invrs_dzt(k) &
+                              * rho_ds_zm(k) * wp2(k) + three_halves * invrs_dzt(k) * wp2(k)
 
             ! Momentum subdiagonal: [ x wp2(k-1,<t+1>) ]
-            lhs_tp_wp3(2,k) = + three * invrs_rho_ds_zt(k) * invrs_dzt(k) * rho_ds_zm(k-1) * wp2(k-1) &
-                              - three_halves * invrs_dzt(k) * wp2(k-1)
+            lhs_tp_wp3(2,k) = + three * invrs_rho_ds_zt(k) * invrs_dzt(k) &
+                              * rho_ds_zm(k-1) * wp2(k-1) - three_halves * invrs_dzt(k) * wp2(k-1)
 
         end do
 
@@ -5240,7 +5256,8 @@ module advance_wp2_wp3_module
         do k = 2, gr%nz-1
 
             ! Thermodynamic main diagonal: [ x wp3(k,<t+1>) ]
-            lhs_ac_pr2_wp3(k) = + ( one - C11_Skw_fnc(k) ) * three * invrs_dzt(k) * ( wm_zm(k) - wm_zm(k-1) )
+            lhs_ac_pr2_wp3(k) = + ( one - C11_Skw_fnc(k) ) * three &
+                                * invrs_dzt(k) * ( wm_zm(k) - wm_zm(k-1) )
 
         end do
 
@@ -5529,7 +5546,8 @@ module advance_wp2_wp3_module
 
         ! Calculate non-boundary values
         do k = 2, gr%nz
-            rhs_ta_wp3(k) = - invrs_rho_ds_zt(k) * invrs_dzt(k) * ( rho_ds_zm(k) * wp4(k) - rho_ds_zm(k-1) * wp4(k-1) )
+            rhs_ta_wp3(k) = - invrs_rho_ds_zt(k) * invrs_dzt(k) &
+                            * ( rho_ds_zm(k) * wp4(k) - rho_ds_zm(k-1) * wp4(k-1) )
         end do
 
         ! Set upper boundary to 0
@@ -5633,7 +5651,8 @@ module advance_wp2_wp3_module
 
         ! Calculate non-boundary values
         do k = 2, gr%nz-1
-            rhs_bp1_pr2_wp3(k) = + ( one - C11_Skw_fnc(k) ) * three * ( grav / thv_ds_zt(k) ) * wp2thvp(k)
+            rhs_bp1_pr2_wp3(k) = + ( one - C11_Skw_fnc(k) ) * three &
+                                 * ( grav / thv_ds_zt(k) ) * wp2thvp(k)
         end do
 
         ! Set upper boundary to 0

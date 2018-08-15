@@ -1548,7 +1548,8 @@ module advance_windm_edsclrm_module
     if ( l_imp_sfc_momentum_flux ) then
 
       ! LHS momentum surface flux.
-      lhs(2,2) = lhs(2,2) + invrs_rho_ds_zt(2) * gr%invrs_dzt(2) * rho_ds_zm(1) * ( u_star_sqd / wind_speed(2) )
+      lhs(2,2) = lhs(2,2) + invrs_rho_ds_zt(2) * gr%invrs_dzt(2) &
+                          * rho_ds_zm(1) * ( u_star_sqd / wind_speed(2) )
 
     endif ! l_imp_sfc_momentum_flux
 
@@ -1590,7 +1591,8 @@ module advance_windm_edsclrm_module
         ! turbulent advection term, has already been called at level 2).
         ! Modify zmscr05 accordingly.
         if ( ium_ta + ivm_ta > 0 ) then
-          ztscr05(2) = ztscr05(2) - invrs_rho_ds_zt(2) * gr%invrs_dzt(2) * rho_ds_zm(1) * ( u_star_sqd / wind_speed(2) )
+          ztscr05(2) = ztscr05(2) - invrs_rho_ds_zt(2) * gr%invrs_dzt(2) &
+                                  * rho_ds_zm(1) * ( u_star_sqd / wind_speed(2) )
         endif
 
       endif ! l_imp_sfc_momentum_flux
