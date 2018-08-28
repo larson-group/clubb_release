@@ -77,13 +77,13 @@ module model_flags
   ! correlation of w and x (w and rt, as well as w and theta-l) within the
   ! limits of -max_mag_correlation_flux to max_mag_correlation_flux.
   logical, public :: &
-    l_min_wp2_from_corr_wx = .false.
+    l_min_wp2_from_corr_wx = .true.
 
   ! Flag to base the threshold minimum value of xp2 (rtp2 and thlp2) on
   ! keeping the overall correlation of w and x within the limits of
   ! -max_mag_correlation_flux to max_mag_correlation_flux.
   logical, public :: &
-    l_min_xp2_from_corr_wx = .false.
+    l_min_xp2_from_corr_wx = .true.
 
   ! Flag to use cloud fraction to adjust the value of the turbulent dissipation
   ! coefficient, C2.
