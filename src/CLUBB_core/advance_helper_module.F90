@@ -477,8 +477,6 @@ module advance_helper_module
       call stat_update_var( iRichardson_num, Richardson_num, stats_zm )
     end if
 
-    print *, Cx_fnc_Richardson
-
   end subroutine compute_Cx_fnc_Richardson
   !----------------------------------------------------------------------
 
