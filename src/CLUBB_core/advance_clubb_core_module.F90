@@ -1406,8 +1406,9 @@ module advance_clubb_core_module
 
       end if ! l_stability_correction
 
-      Cx_fnc_Richardson = compute_Cx_Fnc_Richardson( thlm, um, vm, em, Lscale, exner, rtm, &
-                                                     rcm, p_in_Pa, thvm, rho_ds_zm )
+      call compute_Cx_Fnc_Richardson( thlm, um, vm, em, Lscale, exner, rtm, &
+                                      rcm, p_in_Pa, thvm, rho_ds_zm, &
+                                      Cx_fnc_Richardson )
 
       ! Advance the prognostic equations for 
       !   the scalar grid means (rtm, thlm, sclrm) and 
