@@ -138,55 +138,61 @@ module pdf_parameter_module
     type(pdf_parameter), dimension(nz), intent(out) :: &
       pdf_params    ! PDF parameters            [units vary]
 
+    integer :: k
+
 
     ! Initialize all PDF parameters in variable type pdf_parameter.
-    pdf_params(:)%w_1 = zero
-    pdf_params(:)%w_2 = zero
-    pdf_params(:)%varnce_w_1 = zero
-    pdf_params(:)%varnce_w_2 = zero
-    pdf_params(:)%rt_1 = zero
-    pdf_params(:)%rt_2 = zero
-    pdf_params(:)%varnce_rt_1 = zero
-    pdf_params(:)%varnce_rt_2 = zero
-    pdf_params(:)%thl_1 = zero
-    pdf_params(:)%thl_2 = zero
-    pdf_params(:)%varnce_thl_1 = zero
-    pdf_params(:)%varnce_thl_2 = zero
-    pdf_params(:)%corr_w_rt_1 = zero
-    pdf_params(:)%corr_w_rt_2 = zero
-    pdf_params(:)%corr_w_thl_1 = zero
-    pdf_params(:)%corr_w_thl_2 = zero
-    pdf_params(:)%corr_rt_thl_1 = zero
-    pdf_params(:)%corr_rt_thl_2 = zero
-    pdf_params(:)%alpha_thl = zero
-    pdf_params(:)%alpha_rt = zero
-    pdf_params(:)%crt_1 = zero
-    pdf_params(:)%crt_2 = zero
-    pdf_params(:)%cthl_1 = zero
-    pdf_params(:)%cthl_2 = zero
-    pdf_params(:)%chi_1 = zero
-    pdf_params(:)%chi_2 = zero
-    pdf_params(:)%stdev_chi_1 = zero
-    pdf_params(:)%stdev_chi_2 = zero
-    pdf_params(:)%stdev_eta_1 = zero
-    pdf_params(:)%stdev_eta_2 = zero
-    pdf_params(:)%covar_chi_eta_1 = zero
-    pdf_params(:)%covar_chi_eta_2 = zero
-    pdf_params(:)%corr_w_chi_1 = zero 
-    pdf_params(:)%corr_w_chi_2 = zero 
-    pdf_params(:)%corr_w_eta_1 = zero 
-    pdf_params(:)%corr_w_eta_2 = zero 
-    pdf_params(:)%corr_chi_eta_1 = zero 
-    pdf_params(:)%corr_chi_eta_2 = zero 
-    pdf_params(:)%rsatl_1 = zero
-    pdf_params(:)%rsatl_2 = zero
-    pdf_params(:)%rc_1 = zero
-    pdf_params(:)%rc_2 = zero
-    pdf_params(:)%cloud_frac_1 = zero
-    pdf_params(:)%cloud_frac_2 = zero
-    pdf_params(:)%mixt_frac = zero
-    pdf_params(:)%ice_supersat_frac_1 = zero
-    pdf_params(:)%ice_supersat_frac_2 = zero
+    do k = 1, nz
+
+        pdf_params(k)%w_1 = zero
+        pdf_params(k)%w_2 = zero
+        pdf_params(k)%varnce_w_1 = zero
+        pdf_params(k)%varnce_w_2 = zero
+        pdf_params(k)%rt_1 = zero
+        pdf_params(k)%rt_2 = zero
+        pdf_params(k)%varnce_rt_1 = zero
+        pdf_params(k)%varnce_rt_2 = zero
+        pdf_params(k)%thl_1 = zero
+        pdf_params(k)%thl_2 = zero
+        pdf_params(k)%varnce_thl_1 = zero
+        pdf_params(k)%varnce_thl_2 = zero
+        pdf_params(k)%corr_w_rt_1 = zero
+        pdf_params(k)%corr_w_rt_2 = zero
+        pdf_params(k)%corr_w_thl_1 = zero
+        pdf_params(k)%corr_w_thl_2 = zero
+        pdf_params(k)%corr_rt_thl_1 = zero
+        pdf_params(k)%corr_rt_thl_2 = zero
+        pdf_params(k)%alpha_thl = zero
+        pdf_params(k)%alpha_rt = zero
+        pdf_params(k)%crt_1 = zero
+        pdf_params(k)%crt_2 = zero
+        pdf_params(k)%cthl_1 = zero
+        pdf_params(k)%cthl_2 = zero
+        pdf_params(k)%chi_1 = zero
+        pdf_params(k)%chi_2 = zero
+        pdf_params(k)%stdev_chi_1 = zero
+        pdf_params(k)%stdev_chi_2 = zero
+        pdf_params(k)%stdev_eta_1 = zero
+        pdf_params(k)%stdev_eta_2 = zero
+        pdf_params(k)%covar_chi_eta_1 = zero
+        pdf_params(k)%covar_chi_eta_2 = zero
+        pdf_params(k)%corr_w_chi_1 = zero 
+        pdf_params(k)%corr_w_chi_2 = zero 
+        pdf_params(k)%corr_w_eta_1 = zero 
+        pdf_params(k)%corr_w_eta_2 = zero 
+        pdf_params(k)%corr_chi_eta_1 = zero 
+        pdf_params(k)%corr_chi_eta_2 = zero 
+        pdf_params(k)%rsatl_1 = zero
+        pdf_params(k)%rsatl_2 = zero
+        pdf_params(k)%rc_1 = zero
+        pdf_params(k)%rc_2 = zero
+        pdf_params(k)%cloud_frac_1 = zero
+        pdf_params(k)%cloud_frac_2 = zero
+        pdf_params(k)%mixt_frac = zero
+        pdf_params(k)%ice_supersat_frac_1 = zero
+        pdf_params(k)%ice_supersat_frac_2 = zero
+
+    end do
 
 
     return

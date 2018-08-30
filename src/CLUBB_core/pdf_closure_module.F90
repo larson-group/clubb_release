@@ -433,24 +433,30 @@ module pdf_closure_module
 
     ! Initialize to 0 to prevent a runtime error
     if ( iiPDF_type /= iiPDF_new ) then
-       pdf_implicit_coefs_terms%coef_wp4_implicit = zero
-       pdf_implicit_coefs_terms%coef_wprtp2_implicit = zero
-       pdf_implicit_coefs_terms%coef_wpthlp2_implicit = zero
-       pdf_implicit_coefs_terms%coef_wp2rtp_implicit = zero
-       pdf_implicit_coefs_terms%term_wp2rtp_explicit = zero
-       pdf_implicit_coefs_terms%coef_wp2thlp_implicit = zero
-       pdf_implicit_coefs_terms%term_wp2thlp_explicit = zero
-       pdf_implicit_coefs_terms%coef_wprtpthlp_implicit = zero
-       pdf_implicit_coefs_terms%term_wprtpthlp_explicit = zero
-       F_w = zero
-       F_rt = zero
-       F_thl = zero
-       min_F_w = zero
-       max_F_w = zero
-       min_F_rt = zero
-       max_F_rt = zero
-       min_F_thl = zero
-       max_F_thl = zero
+
+       do i = 1, gr%nz
+
+           pdf_implicit_coefs_terms(i)%coef_wp4_implicit = zero
+           pdf_implicit_coefs_terms(i)%coef_wprtp2_implicit = zero
+           pdf_implicit_coefs_terms(i)%coef_wpthlp2_implicit = zero
+           pdf_implicit_coefs_terms(i)%coef_wp2rtp_implicit = zero
+           pdf_implicit_coefs_terms(i)%term_wp2rtp_explicit = zero
+           pdf_implicit_coefs_terms(i)%coef_wp2thlp_implicit = zero
+           pdf_implicit_coefs_terms(i)%term_wp2thlp_explicit = zero
+           pdf_implicit_coefs_terms(i)%coef_wprtpthlp_implicit = zero
+           pdf_implicit_coefs_terms(i)%term_wprtpthlp_explicit = zero
+           F_w(i) = zero
+           F_rt(i) = zero
+           F_thl(i) = zero
+           min_F_w(i) = zero
+           max_F_w(i) = zero
+           min_F_rt(i) = zero
+           max_F_rt(i) = zero
+           min_F_thl(i) = zero
+           max_F_thl(i) = zero
+
+        end do
+
     endif ! iiPDF_type /= iiPDF_new
 
     ! This allows for skewness to be clipped locally without passing the updated
@@ -1054,56 +1060,60 @@ module pdf_closure_module
 
 
     ! Save PDF parameters
-    pdf_params%w_1             = w_1
-    pdf_params%w_2             = w_2
-    pdf_params%varnce_w_1      = varnce_w_1
-    pdf_params%varnce_w_2      = varnce_w_2
-    pdf_params%rt_1            = rt_1
-    pdf_params%rt_2            = rt_2
-    pdf_params%varnce_rt_1     = varnce_rt_1
-    pdf_params%varnce_rt_2     = varnce_rt_2
-    pdf_params%thl_1           = thl_1
-    pdf_params%thl_2           = thl_2
-    pdf_params%varnce_thl_1    = varnce_thl_1
-    pdf_params%varnce_thl_2    = varnce_thl_2
-    pdf_params%corr_w_rt_1     = corr_w_rt_1
-    pdf_params%corr_w_rt_2     = corr_w_rt_2
-    pdf_params%corr_w_thl_1    = corr_w_thl_1
-    pdf_params%corr_w_thl_2    = corr_w_thl_2
-    pdf_params%corr_rt_thl_1   = corr_rt_thl_1
-    pdf_params%corr_rt_thl_2   = corr_rt_thl_2
-    pdf_params%alpha_thl       = alpha_thl
-    pdf_params%alpha_rt        = alpha_rt
-    pdf_params%crt_1           = crt_1
-    pdf_params%crt_2           = crt_2
-    pdf_params%cthl_1          = cthl_1
-    pdf_params%cthl_2          = cthl_2
-    pdf_params%chi_1           = chi_1
-    pdf_params%chi_2           = chi_2
-    pdf_params%stdev_chi_1     = stdev_chi_1
-    pdf_params%stdev_chi_2     = stdev_chi_2
-    pdf_params%stdev_eta_1     = stdev_eta_1
-    pdf_params%stdev_eta_2     = stdev_eta_2
-    pdf_params%covar_chi_eta_1 = covar_chi_eta_1
-    pdf_params%covar_chi_eta_2 = covar_chi_eta_2
-    pdf_params%corr_w_chi_1    = corr_w_chi_1
-    pdf_params%corr_w_chi_2    = corr_w_chi_2
-    pdf_params%corr_w_eta_1    = corr_w_eta_1
-    pdf_params%corr_w_eta_2    = corr_w_eta_2
-    pdf_params%corr_chi_eta_1  = corr_chi_eta_1
-    pdf_params%corr_chi_eta_2  = corr_chi_eta_2
-    pdf_params%rsatl_1         = rsatl_1
-    pdf_params%rsatl_2         = rsatl_2
-    pdf_params%rc_1            = rc_1
-    pdf_params%rc_2            = rc_2
-    pdf_params%cloud_frac_1    = cloud_frac_1
-    pdf_params%cloud_frac_2    = cloud_frac_2
-    pdf_params%mixt_frac       = mixt_frac
+    do i = 1, gr%nz
 
-    pdf_params%ice_supersat_frac_1 = ice_supersat_frac_1
-    pdf_params%ice_supersat_frac_2 = ice_supersat_frac_2
+        pdf_params(i)%w_1             = w_1(i)
+        pdf_params(i)%w_2             = w_2(i)
+        pdf_params(i)%varnce_w_1      = varnce_w_1(i)
+        pdf_params(i)%varnce_w_2      = varnce_w_2(i)
+        pdf_params(i)%rt_1            = rt_1(i)
+        pdf_params(i)%rt_2            = rt_2(i)
+        pdf_params(i)%varnce_rt_1     = varnce_rt_1(i)
+        pdf_params(i)%varnce_rt_2     = varnce_rt_2(i)
+        pdf_params(i)%thl_1           = thl_1(i)
+        pdf_params(i)%thl_2           = thl_2(i)
+        pdf_params(i)%varnce_thl_1    = varnce_thl_1(i)
+        pdf_params(i)%varnce_thl_2    = varnce_thl_2(i)
+        pdf_params(i)%corr_w_rt_1     = corr_w_rt_1(i)
+        pdf_params(i)%corr_w_rt_2     = corr_w_rt_2(i)
+        pdf_params(i)%corr_w_thl_1    = corr_w_thl_1(i)
+        pdf_params(i)%corr_w_thl_2    = corr_w_thl_2(i)
+        pdf_params(i)%corr_rt_thl_1   = corr_rt_thl_1(i)
+        pdf_params(i)%corr_rt_thl_2   = corr_rt_thl_2(i)
+        pdf_params(i)%alpha_thl       = alpha_thl(i)
+        pdf_params(i)%alpha_rt        = alpha_rt(i)
+        pdf_params(i)%crt_1           = crt_1(i)
+        pdf_params(i)%crt_2           = crt_2(i)
+        pdf_params(i)%cthl_1          = cthl_1(i)
+        pdf_params(i)%cthl_2          = cthl_2(i)
+        pdf_params(i)%chi_1           = chi_1(i)
+        pdf_params(i)%chi_2           = chi_2(i)
+        pdf_params(i)%stdev_chi_1     = stdev_chi_1(i)
+        pdf_params(i)%stdev_chi_2     = stdev_chi_2(i)
+        pdf_params(i)%stdev_eta_1     = stdev_eta_1(i)
+        pdf_params(i)%stdev_eta_2     = stdev_eta_2(i)
+        pdf_params(i)%covar_chi_eta_1 = covar_chi_eta_1(i)
+        pdf_params(i)%covar_chi_eta_2 = covar_chi_eta_2(i)
+        pdf_params(i)%corr_w_chi_1    = corr_w_chi_1(i)
+        pdf_params(i)%corr_w_chi_2    = corr_w_chi_2(i)
+        pdf_params(i)%corr_w_eta_1    = corr_w_eta_1(i)
+        pdf_params(i)%corr_w_eta_2    = corr_w_eta_2(i)
+        pdf_params(i)%corr_chi_eta_1  = corr_chi_eta_1(i)
+        pdf_params(i)%corr_chi_eta_2  = corr_chi_eta_2(i)
+        pdf_params(i)%rsatl_1         = rsatl_1(i)
+        pdf_params(i)%rsatl_2         = rsatl_2(i)
+        pdf_params(i)%rc_1            = rc_1(i)
+        pdf_params(i)%rc_2            = rc_2(i)
+        pdf_params(i)%cloud_frac_1    = cloud_frac_1(i)
+        pdf_params(i)%cloud_frac_2    = cloud_frac_2(i)
+        pdf_params(i)%mixt_frac       = mixt_frac(i)
 
-    if ( clubb_at_least_debug_level( 0 ) ) then
+        pdf_params(i)%ice_supersat_frac_1 = ice_supersat_frac_1(i)
+        pdf_params(i)%ice_supersat_frac_2 = ice_supersat_frac_2(i)
+
+    end do
+
+    if ( clubb_at_least_debug_level( 2 ) ) then
 
       call pdf_closure_check & 
            ( wp4, wprtp2, wp2rtp, wpthlp2, & 
