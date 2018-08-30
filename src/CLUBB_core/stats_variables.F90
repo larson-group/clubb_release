@@ -1148,6 +1148,44 @@ module stats_variables
 !$omp   threadprivate(iwpthlp_pr3, iwpthlp_dp1, iwpthlp_mfl, iwpthlp_cl)
 !$omp   threadprivate(iwpthlp_sicl, iwpthlp_forcing, iwpthlp_mc)
 
+  integer, public :: & 
+     iupwp_bt = 0,  &
+     iupwp_ma = 0,  &
+     iupwp_ta = 0,  &
+     iupwp_tp = 0,  &
+     iupwp_ac = 0,  &
+     iupwp_bp = 0,  &
+     iupwp_pr1 = 0, &
+     iupwp_pr2 = 0, &
+     iupwp_pr3 = 0, &
+     iupwp_pr4 = 0, &
+     iupwp_dp1 = 0, &
+     iupwp_mfl = 0, &
+     iupwp_cl = 0
+
+!$omp   threadprivate(iupwp_bt, iupwp_ma, iupwp_ta, iupwp_tp, iupwp_ac)
+!$omp   threadprivate(iupwp_bp, iupwp_pr1, iupwp_pr2, iupwp_pr3, iupwp_pr4)
+!$omp   threadprivate(iupwp_dp1, iupwp_mfl, iupwp_cl)
+
+  integer, public :: & 
+     ivpwp_bt = 0,  &
+     ivpwp_ma = 0,  &
+     ivpwp_ta = 0,  &
+     ivpwp_tp = 0,  &
+     ivpwp_ac = 0,  &
+     ivpwp_bp = 0,  &
+     ivpwp_pr1 = 0, &
+     ivpwp_pr2 = 0, &
+     ivpwp_pr3 = 0, &
+     ivpwp_pr4 = 0, &
+     ivpwp_dp1 = 0, &
+     ivpwp_mfl = 0, &
+     ivpwp_cl = 0
+
+!$omp   threadprivate(ivpwp_bt, ivpwp_ma, ivpwp_ta, ivpwp_tp, ivpwp_ac)
+!$omp   threadprivate(ivpwp_bp, ivpwp_pr1, ivpwp_pr2, ivpwp_pr3, ivpwp_pr4)
+!$omp   threadprivate(ivpwp_dp1, ivpwp_mfl, ivpwp_cl)
+
 !    Dr. Golaz's new variance budget terms
 !    qt was changed to rt to avoid confusion
 

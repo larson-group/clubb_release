@@ -217,17 +217,17 @@ module advance_clubb_core_module
         sclr_tol
 
     use model_flags, only: & 
-      l_tke_aniso, &  ! Variable(s)
-      l_call_pdf_closure_twice, &
-      l_host_applies_sfc_fluxes, &
-      l_stability_correct_tau_zm, &
-      l_do_expldiff_rtm_thlm, &
-      l_Lscale_plume_centered, &
-      l_use_ice_latent, &
-      l_gamma_Skw, &
-      l_damp_wp2_using_em, &
-      l_advance_xp3, &
-      l_predict_upwp_vpwp
+        l_tke_aniso, &  ! Variable(s)
+        l_call_pdf_closure_twice, &
+        l_host_applies_sfc_fluxes, &
+        l_stability_correct_tau_zm, &
+        l_do_expldiff_rtm_thlm, &
+        l_Lscale_plume_centered, &
+        l_use_ice_latent, &
+        l_gamma_Skw, &
+        l_damp_wp2_using_em, &
+        l_advance_xp3, &
+        l_predict_upwp_vpwp
 
     use grid_class, only: & 
       gr,  & ! Variable(s)
@@ -352,60 +352,62 @@ module advance_clubb_core_module
       clip_covars_denom ! Procedure(s)
 
     use T_in_K_module, only: &
-      ! Read values from namelist
-      thlm2T_in_K ! Procedure
+        ! Read values from namelist
+        thlm2T_in_K ! Procedure
 
     use sigma_sqd_w_module, only: &
         compute_sigma_sqd_w    ! Procedure(s)
 
     use stats_clubb_utilities, only: & 
-      stats_accumulate ! Procedure
+        stats_accumulate ! Procedure
 
     use stats_type_utilities, only:   & 
-      stat_update_var_pt,   & ! Procedure(s)
-      stat_update_var,      & 
-      stat_begin_update,    &
-      stat_begin_update_pt, &
-      stat_end_update,      &
-      stat_end_update_pt
+        stat_update_var_pt,   & ! Procedure(s)
+        stat_update_var,      & 
+        stat_begin_update,    &
+        stat_begin_update_pt, &
+        stat_end_update,      &
+        stat_end_update_pt
 
     use stats_variables, only: &
-      irtp2_bt,      & ! Variable(s)
-      ithlp2_bt,     & 
-      irtpthlp_bt,   & 
-      iwp2_bt,       & 
-      iwp3_bt,       & 
-      ivp2_bt,       & 
-      iup2_bt,       & 
-      iwprtp_bt,     &
-      iwpthlp_bt,    &
-      irtm_bt,       &
-      ithlm_bt,      &
-      ivm_bt,        &
-      ium_bt,        &
-      irvm,          &
-      irel_humidity, &
-      iwpthlp_zt
+        irtp2_bt,      & ! Variable(s)
+        ithlp2_bt,     & 
+        irtpthlp_bt,   & 
+        iwp2_bt,       & 
+        iwp3_bt,       & 
+        ivp2_bt,       & 
+        iup2_bt,       & 
+        iwprtp_bt,     &
+        iwpthlp_bt,    &
+        iupwp_bt,      &
+        ivpwp_bt,      &
+        irtm_bt,       &
+        ithlm_bt,      &
+        ivm_bt,        &
+        ium_bt,        &
+        irvm,          &
+        irel_humidity, &
+        iwpthlp_zt
 
     use stats_variables, only: &
-      iwprtp_zt,     &
-      iup2_zt,       &
-      ivp2_zt,       &
-      iupwp_zt,      &
-      ivpwp_zt,      &
-      ithlp2_sf,     &
-      irtp2_sf,      &
-      irtpthlp_sf,   &
-      iup2_sf,       &
-      ivp2_sf,       &
-      iwp2_sf,       &
-      l_stats_samp,  &
-      l_stats,       &
-      stats_zt,      &
-      stats_zm,      &
-      stats_sfc,     &
-      irtm_spur_src, &
-      ithlm_spur_src
+        iwprtp_zt,     &
+        iup2_zt,       &
+        ivp2_zt,       &
+        iupwp_zt,      &
+        ivpwp_zt,      &
+        ithlp2_sf,     &
+        irtp2_sf,      &
+        irtpthlp_sf,   &
+        iup2_sf,       &
+        ivp2_sf,       &
+        iwp2_sf,       &
+        l_stats_samp,  &
+        l_stats,       &
+        stats_zt,      &
+        stats_zm,      &
+        stats_sfc,     &
+        irtm_spur_src, &
+        ithlm_spur_src
 
     use stats_variables, only: &
       irfrzm, & ! Variable(s)
@@ -810,35 +812,41 @@ module advance_clubb_core_module
     ! Set up budget stats variables.
     if ( l_stats_samp ) then
 
-      call stat_begin_update( iwp2_bt, wp2 / dt, &                  ! intent(in)
-                              stats_zm )                                  ! intent(inout)
-      call stat_begin_update( ivp2_bt, vp2 / dt, &                  ! intent(in)
-                              stats_zm )                                  ! intent(inout)
-      call stat_begin_update( iup2_bt, up2 / dt,  &                 ! intent(in)
-                              stats_zm )                                  ! intent(inout)
-      call stat_begin_update( iwprtp_bt, wprtp / dt, &              ! intent(in)
-                              stats_zm )                                  ! intent(inout)
-      call stat_begin_update( iwpthlp_bt, wpthlp / dt,  &           ! intent(in)
-                              stats_zm )                                  ! intent(inout)
-      call stat_begin_update( irtp2_bt, rtp2 / dt, &                ! intent(in)
-                              stats_zm )                                  ! intent(inout)
-      call stat_begin_update( ithlp2_bt, thlp2 / dt, &              ! intent(in)
-                              stats_zm )                                  ! intent(inout)
-      call stat_begin_update( irtpthlp_bt, rtpthlp / dt, &          ! intent(in)
-                              stats_zm )                                  ! intent(inout)
+       call stat_begin_update( iwp2_bt, wp2 / dt, & ! intent(in)
+                               stats_zm )           ! intent(inout)
+       call stat_begin_update( ivp2_bt, vp2 / dt, & ! intent(in)
+                               stats_zm )           ! intent(inout)
+       call stat_begin_update( iup2_bt, up2 / dt, & ! intent(in)
+                               stats_zm )           ! intent(inout)
+       call stat_begin_update( iwprtp_bt, wprtp / dt, & ! intent(in)
+                               stats_zm )               ! intent(inout)
+       call stat_begin_update( iwpthlp_bt, wpthlp / dt, & ! intent(in)
+                               stats_zm )                 ! intent(inout)
+       if ( l_predict_upwp_vpwp ) then
+          call stat_begin_update( iupwp_bt, upwp / dt, & ! intent(in)
+                                  stats_zm )             ! intent(inout)
+          call stat_begin_update( ivpwp_bt, vpwp / dt, & ! intent(in)
+                                  stats_zm )             ! intent(inout)
+       endif ! l_predict_upwp_vpwp
+       call stat_begin_update( irtp2_bt, rtp2 / dt, & ! intent(in)
+                               stats_zm )             ! intent(inout)
+       call stat_begin_update( ithlp2_bt, thlp2 / dt, & ! intent(in)
+                               stats_zm )               ! intent(inout)
+       call stat_begin_update( irtpthlp_bt, rtpthlp / dt, & ! intent(in)
+                               stats_zm )                   ! intent(inout)
 
-      call stat_begin_update( irtm_bt, rtm / dt, &                  ! intent(in)
-                              stats_zt )                                  ! intent(inout)
-      call stat_begin_update( ithlm_bt, thlm / dt, &                ! intent(in)
-                              stats_zt )                                  ! intent(inout)
-      call stat_begin_update( ium_bt, um / dt, &                    ! intent(in)
-                              stats_zt )                                  ! intent(inout)
-      call stat_begin_update( ivm_bt, vm / dt, &                    ! intent(in)
-                              stats_zt )                                  ! intent(inout)
-      call stat_begin_update( iwp3_bt, wp3 / dt, &                  ! intent(in)
-                              stats_zt )                                  ! intent(inout)
+       call stat_begin_update( irtm_bt, rtm / dt, & ! intent(in)
+                               stats_zt )           ! intent(inout)
+       call stat_begin_update( ithlm_bt, thlm / dt, & ! intent(in)
+                               stats_zt )             ! intent(inout)
+       call stat_begin_update( ium_bt, um / dt, & ! intent(in)
+                               stats_zt )         ! intent(inout)
+       call stat_begin_update( ivm_bt, vm / dt, & ! intent(in)
+                               stats_zt )         ! intent(inout)
+       call stat_begin_update( iwp3_bt, wp3 / dt, & ! intent(in)
+                               stats_zt )           ! intent(inout)
 
-    end if
+    endif
 
     ! SET SURFACE VALUES OF FLUXES (BROUGHT IN)
     ! We only do this for host models that do not apply the flux
@@ -1737,35 +1745,41 @@ module advance_clubb_core_module
 
       if ( l_stats_samp ) then
 
-        call stat_end_update( iwp2_bt, wp2 / dt, &                ! intent(in)
-                              stats_zm )                                ! intent(inout)
-        call stat_end_update( ivp2_bt, vp2 / dt,&                 ! intent(in)
-                              stats_zm )                                ! intent(inout)
-        call stat_end_update( iup2_bt, up2 / dt, &                ! intent(in)
-                              stats_zm )                                ! intent(inout)
-        call stat_end_update( iwprtp_bt, wprtp / dt, &            ! intent(in)
-                              stats_zm )                                ! intent(inout)
-        call stat_end_update( iwpthlp_bt, wpthlp / dt, &          ! intent(in)
-                              stats_zm )                                ! intent(inout)
-        call stat_end_update( irtp2_bt, rtp2 / dt, &              ! intent(in)
-                              stats_zm )                                ! intent(inout)
-        call stat_end_update( ithlp2_bt, thlp2 / dt, &            ! intent(in) 
-                              stats_zm )                                ! intent(inout)
-        call stat_end_update( irtpthlp_bt, rtpthlp / dt, &        ! intent(in)
-                              stats_zm )                                ! intent(inout)
+         call stat_end_update( iwp2_bt, wp2 / dt, & ! intent(in)
+                               stats_zm )           ! intent(inout)
+         call stat_end_update( ivp2_bt, vp2 / dt, & ! intent(in)
+                               stats_zm )           ! intent(inout)
+         call stat_end_update( iup2_bt, up2 / dt, & ! intent(in)
+                               stats_zm )           ! intent(inout)
+         call stat_end_update( iwprtp_bt, wprtp / dt, & ! intent(in)
+                               stats_zm )               ! intent(inout)
+         call stat_end_update( iwpthlp_bt, wpthlp / dt, & ! intent(in)
+                               stats_zm )                 ! intent(inout)
+         if ( l_predict_upwp_vpwp ) then
+            call stat_end_update( iupwp_bt, upwp / dt, & ! intent(in)
+                                  stats_zm )             ! intent(inout)
+            call stat_end_update( ivpwp_bt, vpwp / dt, & ! intent(in)
+                                  stats_zm )             ! intent(inout)
+         endif ! l_predict_upwp_vpwp
+         call stat_end_update( irtp2_bt, rtp2 / dt, & ! intent(in)
+                               stats_zm )             ! intent(inout)
+         call stat_end_update( ithlp2_bt, thlp2 / dt, & ! intent(in) 
+                               stats_zm )               ! intent(inout)
+         call stat_end_update( irtpthlp_bt, rtpthlp / dt, & ! intent(in)
+                               stats_zm )                   ! intent(inout)
 
-        call stat_end_update( irtm_bt, rtm / dt, &                ! intent(in)
-                              stats_zt )                                ! intent(inout)
-        call stat_end_update( ithlm_bt, thlm / dt, &              ! intent(in)
-                              stats_zt )                                ! intent(inout)
-        call stat_end_update( ium_bt, um / dt, &                  ! intent(in)
-                              stats_zt )                                ! intent(inout)
-        call stat_end_update( ivm_bt, vm / dt, &                  ! intent(in)
-                              stats_zt )                                ! intent(inout)
-        call stat_end_update( iwp3_bt, wp3 / dt, &                ! intent(in)
-                              stats_zt )                                ! intent(inout)
+         call stat_end_update( irtm_bt, rtm / dt, & ! intent(in)
+                               stats_zt )           ! intent(inout)
+         call stat_end_update( ithlm_bt, thlm / dt, & ! intent(in)
+                               stats_zt )             ! intent(inout)
+         call stat_end_update( ium_bt, um / dt, & ! intent(in)
+                               stats_zt )         ! intent(inout)
+         call stat_end_update( ivm_bt, vm / dt, & ! intent(in)
+                               stats_zt )         ! intent(inout)
+         call stat_end_update( iwp3_bt, wp3 / dt, & ! intent(in)
+                               stats_zt )           ! intent(inout)
 
-      end if ! l_stats_samp
+      endif ! l_stats_samp
 
 
       if ( iwpthlp_zt > 0 ) then

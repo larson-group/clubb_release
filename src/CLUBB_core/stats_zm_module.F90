@@ -182,6 +182,34 @@ module stats_zm_module
         iwpthlp_forcing, &
         iwpthlp_mc
 
+    use stats_variables, only: &
+        iupwp_bt,  &
+        iupwp_ma,  &
+        iupwp_ta,  &
+        iupwp_tp,  &
+        iupwp_ac,  &
+        iupwp_bp,  &
+        iupwp_pr1, &
+        iupwp_pr2, &
+        iupwp_pr3, &
+        iupwp_pr4, &
+        iupwp_dp1, &
+        iupwp_mfl, &
+        iupwp_cl,  &
+        ivpwp_bt,  &
+        ivpwp_ma,  &
+        ivpwp_ta,  &
+        ivpwp_tp,  &
+        ivpwp_ac,  &
+        ivpwp_bp,  &
+        ivpwp_pr1, &
+        ivpwp_pr2, &
+        ivpwp_pr3, &
+        ivpwp_pr4, &
+        ivpwp_dp1, &
+        ivpwp_mfl, &
+        ivpwp_cl
+
     use stats_variables, only: & 
         irtp2_bt, & 
         irtp2_ma, & 
@@ -1481,6 +1509,188 @@ module stats_zm_module
         call stat_assign( var_index=iwpthlp_mc, var_name="wpthlp_mc", &
              var_description="Microphysics tendency for wpthlp (not in budget) [(m K)/s^2]", &
              var_units="(m K)/s^2", l_silhs=.false., grid_kind=stats_zm )
+        k = k + 1
+
+      case ('upwp_bt')
+        iupwp_bt = k
+        call stat_assign( var_index=iupwp_bt, var_name="upwp_bt", &
+             var_description="upwp budget: upwp time tendency [m^2/s^3]", &
+             var_units="m^2/s^3", l_silhs=.false., grid_kind=stats_zm )
+        k = k + 1
+
+      case ('upwp_ma')
+        iupwp_ma = k
+        call stat_assign( var_index=iupwp_ma, var_name="upwp_ma", &
+             var_description="upwp budget: upwp mean advection [m^2/s^3]", &
+             var_units="m^2/s^3", l_silhs=.false., grid_kind=stats_zm )
+        k = k + 1
+
+      case ('upwp_ta')
+        iupwp_ta = k
+        call stat_assign( var_index=iupwp_ta, var_name="upwp_ta", &
+             var_description="upwp budget: upwp turbulent advection [m^2/s^3]", &
+             var_units="m^2/s^3", l_silhs=.false., grid_kind=stats_zm )
+        k = k + 1
+
+      case ('upwp_tp')
+        iupwp_tp = k
+        call stat_assign( var_index=iupwp_tp, var_name="upwp_tp", &
+             var_description="upwp budget: upwp turbulent production [m^2/s^3]", &
+             var_units="m^2/s^3", l_silhs=.false., grid_kind=stats_zm )
+        k = k + 1
+
+      case ('upwp_ac')
+        iupwp_ac = k
+        call stat_assign( var_index=iupwp_ac, var_name="upwp_ac", &
+             var_description="upwp budget: upwp accumulation term [m^2/s^3]", &
+             var_units="m^2/s^3", l_silhs=.false., grid_kind=stats_zm )
+        k = k + 1
+
+      case ('upwp_bp')
+        iupwp_bp = k
+        call stat_assign( var_index=iupwp_bp, var_name="upwp_bp", &
+             var_description="upwp budget: upwp buoyancy production [m^2/s^3]", &
+             var_units="m^2/s^3", l_silhs=.false., grid_kind=stats_zm )
+        k = k + 1
+
+      case ('upwp_pr1')
+        iupwp_pr1 = k
+        call stat_assign( var_index=iupwp_pr1, var_name="upwp_pr1", &
+             var_description="upwp budget: upwp pressure term 1 [m^2/s^3]", &
+             var_units="m^2/s^3", l_silhs=.false., grid_kind=stats_zm )
+        k = k + 1
+
+      case ('upwp_pr2')
+        iupwp_pr2 = k
+        call stat_assign( var_index=iupwp_pr2, var_name="upwp_pr2", &
+             var_description="upwp budget: upwp pressure term 2 [m^2/s^3]", &
+             var_units="m^2/s^3", l_silhs=.false., grid_kind=stats_zm )
+        k = k + 1
+
+      case ('upwp_pr3')
+        iupwp_pr3 = k
+        call stat_assign( var_index=iupwp_pr3, var_name="upwp_pr3", &
+             var_description="upwp budget: upwp pressure term 3 [m^2/s^3]", &
+             var_units="m^2/s^3", l_silhs=.false., grid_kind=stats_zm )
+        k = k + 1
+
+      case ('upwp_pr4')
+        iupwp_pr4 = k
+        call stat_assign( var_index=iupwp_pr4, var_name="upwp_pr4", &
+             var_description="upwp budget: upwp pressure term 4 [m^2/s^3]", &
+             var_units="m^2/s^3", l_silhs=.false., grid_kind=stats_zm )
+        k = k + 1
+
+      case ('upwp_dp1')
+        iupwp_dp1 = k
+        call stat_assign( var_index=iupwp_dp1, var_name="upwp_dp1", &
+             var_description="upwp budget: upwp dissipation term 1 [m^2/s^3]", &
+             var_units="m^2/s^3", l_silhs=.false., grid_kind=stats_zm )
+        k = k + 1
+
+      case ('upwp_mfl')
+        iupwp_mfl = k
+        call stat_assign( var_index=iupwp_mfl, var_name="upwp_mfl", &
+             var_description="upwp budget: upwp monotonic flux limiter [m^2/s^3]", &
+             var_units="m^2/s^3", l_silhs=.false., grid_kind=stats_zm )
+        k = k + 1
+
+      case ('upwp_cl')
+        iupwp_cl = k
+        call stat_assign( var_index=iupwp_cl, var_name="upwp_cl", &
+             var_description="upwp budget: upwp clipping term [m^2/s^3]", &
+             var_units="m^2/s^3", l_silhs=.false., grid_kind=stats_zm )
+        k = k + 1
+
+      case ('vpwp_bt')
+        ivpwp_bt = k
+        call stat_assign( var_index=ivpwp_bt, var_name="vpwp_bt", &
+             var_description="vpwp budget: vpwp time tendency [m^2/s^3]", &
+             var_units="m^2/s^3", l_silhs=.false., grid_kind=stats_zm )
+        k = k + 1
+
+      case ('vpwp_ma')
+        ivpwp_ma = k
+        call stat_assign( var_index=ivpwp_ma, var_name="vpwp_ma", &
+             var_description="vpwp budget: vpwp mean advection [m^2/s^3]", &
+             var_units="m^2/s^3", l_silhs=.false., grid_kind=stats_zm )
+        k = k + 1
+
+      case ('vpwp_ta')
+        ivpwp_ta = k
+        call stat_assign( var_index=ivpwp_ta, var_name="vpwp_ta", &
+             var_description="vpwp budget: vpwp turbulent advection [m^2/s^3]", &
+             var_units="m^2/s^3", l_silhs=.false., grid_kind=stats_zm )
+        k = k + 1
+
+      case ('vpwp_tp')
+        ivpwp_tp = k
+        call stat_assign( var_index=ivpwp_tp, var_name="vpwp_tp", &
+             var_description="vpwp budget: vpwp turbulent production [m^2/s^3]", &
+             var_units="m^2/s^3", l_silhs=.false., grid_kind=stats_zm )
+        k = k + 1
+
+      case ('vpwp_ac')
+        ivpwp_ac = k
+        call stat_assign( var_index=ivpwp_ac, var_name="vpwp_ac", &
+             var_description="vpwp budget: vpwp accumulation term [m^2/s^3]", &
+             var_units="m^2/s^3", l_silhs=.false., grid_kind=stats_zm )
+        k = k + 1
+
+      case ('vpwp_bp')
+        ivpwp_bp = k
+        call stat_assign( var_index=ivpwp_bp, var_name="vpwp_bp", &
+             var_description="vpwp budget: vpwp buoyancy production [m^2/s^3]", &
+             var_units="m^2/s^3", l_silhs=.false., grid_kind=stats_zm )
+        k = k + 1
+
+      case ('vpwp_pr1')
+        ivpwp_pr1 = k
+        call stat_assign( var_index=ivpwp_pr1, var_name="vpwp_pr1", &
+             var_description="vpwp budget: vpwp pressure term 1 [m^2/s^3]", &
+             var_units="m^2/s^3", l_silhs=.false., grid_kind=stats_zm )
+        k = k + 1
+
+      case ('vpwp_pr2')
+        ivpwp_pr2 = k
+        call stat_assign( var_index=ivpwp_pr2, var_name="vpwp_pr2", &
+             var_description="vpwp budget: vpwp pressure term 2 [m^2/s^3]", &
+             var_units="m^2/s^3", l_silhs=.false., grid_kind=stats_zm )
+        k = k + 1
+
+      case ('vpwp_pr3')
+        ivpwp_pr3 = k
+        call stat_assign( var_index=ivpwp_pr3, var_name="vpwp_pr3", &
+             var_description="vpwp budget: vpwp pressure term 3 [m^2/s^3]", &
+             var_units="m^2/s^3", l_silhs=.false., grid_kind=stats_zm )
+        k = k + 1
+
+      case ('vpwp_pr4')
+        ivpwp_pr4 = k
+        call stat_assign( var_index=ivpwp_pr4, var_name="vpwp_pr4", &
+             var_description="vpwp budget: vpwp pressure term 4 [m^2/s^3]", &
+             var_units="m^2/s^3", l_silhs=.false., grid_kind=stats_zm )
+        k = k + 1
+
+      case ('vpwp_dp1')
+        ivpwp_dp1 = k
+        call stat_assign( var_index=ivpwp_dp1, var_name="vpwp_dp1", &
+             var_description="vpwp budget: vpwp dissipation term 1 [m^2/s^3]", &
+             var_units="m^2/s^3", l_silhs=.false., grid_kind=stats_zm )
+        k = k + 1
+
+      case ('vpwp_mfl')
+        ivpwp_mfl = k
+        call stat_assign( var_index=ivpwp_mfl, var_name="vpwp_mfl", &
+             var_description="vpwp budget: vpwp monotonic flux limiter [m^2/s^3]", &
+             var_units="m^2/s^3", l_silhs=.false., grid_kind=stats_zm )
+        k = k + 1
+
+      case ('vpwp_cl')
+        ivpwp_cl = k
+        call stat_assign( var_index=ivpwp_cl, var_name="vpwp_cl", &
+             var_description="vpwp budget: vpwp clipping term [m^2/s^3]", &
+             var_units="m^2/s^3", l_silhs=.false., grid_kind=stats_zm )
         k = k + 1
 
         ! Variance budgets

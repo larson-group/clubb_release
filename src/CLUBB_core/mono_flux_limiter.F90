@@ -307,13 +307,15 @@ module mono_flux_limiter
         stat_update_var
 
     use stats_variables, only:  &
-        stats_zm,  & ! Variable(s)
-        stats_zt,  &
-        iwprtp_mfl,  &
-        irtm_mfl,  &
-        iwpthlp_mfl,  &
-        ithlm_mfl,  &
+        stats_zm, & ! Variable(s)
+        stats_zt, &
+        iwprtp_mfl, &
+        irtm_mfl, &
+        iwpthlp_mfl, &
+        ithlm_mfl, &
+        iupwp_mfl, &
         ium_mfl, &
+        ivpwp_mfl, &
         ivm_mfl, &
         ithlm_old, &
         ithlm_without_ta, &
@@ -441,11 +443,11 @@ module mono_flux_limiter
        ixm_mfl   = ithlm_mfl
        max_xp2   = 5.0_core_rknd
     case ( mono_flux_um )  ! um/upwp
-       iwpxp_mfl = 0
+       iwpxp_mfl = iupwp_mfl
        ixm_mfl   = ium_mfl
        max_xp2   = 10.0_core_rknd
     case ( mono_flux_vm )  ! vm/vpwp
-       iwpxp_mfl = 0
+       iwpxp_mfl = ivpwp_mfl
        ixm_mfl   = ivm_mfl
        max_xp2   = 10.0_core_rknd
     case default    ! passive scalars are involved
