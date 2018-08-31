@@ -1343,10 +1343,8 @@ module grid_class
     ! momentum level, k, between two successive thermodynamic levels using
     ! linear interpolation.
     forall( k = 1 : gr%nz-1 : 1 )
-       linear_interpolated_azm(k) &
-       = linear_interp_factor( gr%weights_zt2zm(1, k), azt(k+1), azt(k) )
+        linear_interpolated_azm(k) = gr%weights_zt2zm(1, k) * ( azt(k+1) - azt(k) ) + azt(k)
     end forall ! k = 1 : gr%nz-1 : 1
-
 
     return
 
@@ -1776,11 +1774,9 @@ module grid_class
     ! Interpolate the value of a momentum-level variable to the central
     ! thermodynamic level, k, between two successive momentum levels using
     ! linear interpolation.
-    forall( k = gr%nz : 2 : -1 )
-       linear_interpolated_azt(k) &
-       = linear_interp_factor( gr%weights_zm2zt(1, k), azm(k), azm(k-1) )
+    forall( k = 2 : gr%nz : 1 )
+        linear_interpolated_azt(k) = gr%weights_zm2zt(1, k) * ( azm(k) - azm(k-1) ) + azm(k-1)
     end forall ! k = gr%nz : 2 : -1
-
 
     return
 
