@@ -544,6 +544,7 @@ module lapack_wrap
       core_rknd ! Variable(s)
 
     use error_code, only: &
+      clubb_at_least_debug_level, &
       err_code,                    & ! Error Indicator
       clubb_fatal_error              ! Constants
 
@@ -595,49 +596,131 @@ module lapack_wrap
       offset, & ! Loop iterator
       imain  ! Main diagonal of the matrix
 
-    ! Copy LHS into Decomposition scratch space
-    lulhs = 0.0_core_rknd
-    lulhs(nsub+1:2*nsub+nsup+1, 1:ndim) = lhs(1:nsub+nsup+1, 1:ndim)
+    integer :: i, j
 
-!-----------------------------------------------------------------------
-!       Reorder LU Matrix to use LAPACK band matrix format
-
-!       Shift example for lulhs matrix (note the extra bands):
-
-!       [    +        +        +        +        +        +     ]
-!       [    +        +        +        +        +        +     ]
-!       [    *        *     lhs(1,1) lhs(1,2) lhs(1,3) lhs(1,4) ] (2)=>
-!       [    *     lhs(2,1) lhs(2,2) lhs(2,3) lhs(2,4) lhs(2,5) ] (1)=>
-!       [ lhs(3,1) lhs(3,2) lhs(3,3) lhs(3,4) lhs(3,5) lhs(3,6) ]
-! <=(1) [ lhs(4,2) lhs(4,3) lhs(4,4) lhs(4,5) lhs(4,6)    *     ]
-! <=(2) [ lhs(5,3) lhs(5,4) lhs(5,5) lhs(5,6)    *        *     ]
-!       [    +        +        +        +        +        +     ]
-!       [    +        +        +        +        +        +     ]
-
-!       The '*' indicates unreferenced elements.
-!       The '+' indicates an element overwritten during decomposition.
-!       For additional bands above and below the main diagonal, the
-!       shifts to the left or right increases by the distance from the
-!       main diagonal of the matrix.
-!-----------------------------------------------------------------------
+    !-----------------------------------------------------------------------
+    !       Reorder LU Matrix to use LAPACK band matrix format
+    ! 
+    !       Shift example for lulhs matrix given a 5x5 lhs matrix
+    !           
+    !                       
+    !  lulhs =  
+    !                            Columns
+    !         1  2       3          4          5         6           7
+    ! Rows       
+    ! 1     [ 0  0       0          0      lhs(3,1)   lhs(4,2)   lhs(5,3) ]
+    ! 2     [ 0  0       0      lhs(2,1)   lhs(3,2)   lhs(4,3)   lhs(5,4) ]
+    ! 3     [ 0  0   lhs(1,1)   lhs(2,2)   lhs(3,3)   lhs(4,4)   lhs(5,5) ]
+    ! 4     [ 0  0   lhs(1,2)   lhs(2,3)   lhs(3,4)   lhs(4,5)       0    ]
+    ! 5     [ 0  0   lhs(1,3)   lhs(2,4)   lhs(3,5)       0          0    ]
+    !                       
+    !         all       lhs        lhs        lhs        lhs        lhs  
+    !        set to   shifted     shifted      no      shifted    shifted
+    !          0       down 2      down 1    shift      up 1        up 2
+    ! 
+    !   The first nsup columns of lulhs are always set to 0, the rest of the columns are set to shifted 
+    !   columns of lhs. This can be thought of as taking lhs, never touching the middle column, but
+    !   shifting the columns that are n columns to the left of the middle down by n rows, and then
+    !   shifting the columns that are n columns to the right of the middle up by n rows, finally 
+    !   adding nsup columns of zeros onto the left of the array. This results in lulhs.
+    !-----------------------------------------------------------------------
 
     ! Reorder lulhs, omitting the additional 2*nsub bands
     ! that are used for the LU decomposition of the matrix.
 
     imain = nsub + nsup + 1
 
-    ! For the offset, (+) is left, and (-) is right
+    
+    ! The first nsup rows of lulhs will contain 0s that are end-shifted lhs values. This needs
+    ! to be handled differently so the algorithm to access lhs will not try to use out of bound
+    ! values.
+    !             ...   nsup     nsup+1    ...       imain   ... 
+    !                        \ /                 \ /
+    !                always   |  begins with nsup | all lhs values
+    !                   0       0s, and decreases  
+    !                           by one 0 each row 
+    ! 
+    !              ...  nsup     nsup+1    ...       imain   ... 
+    ! lulhs(:,1) =  0     0       0         0         lhs    lhs
+    ! lulhs(:,2) =  0     0       0        lhs        lhs    lhs
+    ! 
+    ! Since the first nsup rows are the first rows in lulhs, we're going to access them first to
+    ! avoid out of order memory accesses.
+    do i = 1, nsup
 
-    ! Sub diagonals
-    do offset = 1, nsub, 1
-      lulhs(imain+offset, 1:ndim) & 
-      = eoshift( lulhs(imain+offset, 1:ndim), offset )
+        ! Add 0s to first nsup columns, and decreasing number of end-shift affected columns
+        do j = 1, imain-i
+            lulhs(j,i) = 0.0_core_rknd
+        end do
+
+        ! Copy lhs values into appropriate lulhs spots
+        do j = imain-i+1, imain+nsub
+            lulhs(j,i) = lhs(j-nsub,i+j-imain)
+        end do
+
     end do
 
-    ! Super diagonals
-    do offset = 1, nsup, 1
-      lulhs(imain-offset, 1:ndim) & 
-      = eoshift( lulhs(imain-offset, 1:ndim), -offset )
+    ! After the first nsup rows are dealt with, the offset lhs values can be copied into lulhs
+    ! until the last nsup rows are reached. This is because the last nsup rows also contain
+    ! end-shifted values, set to 0 in the next loop.
+    ! 
+    !                      ...  nsup     nsup+1    ...  
+    !                                \ /   
+    !                       always    |    all lhs values                
+    ! 
+    !                      ...  nsup     nsup+1    ...    
+    ! lulhs(:,nsup+1)    =  0     0       lhs      lhs    
+    ! lulhs(:,ndim-nsub) =  0     0       lhs      lhs    
+    ! 
+    ! For all values not affected by end-shifting
+    do i = nsup+1, ndim-nsub
+
+        ! Set first nsup columns to 0
+        do j = 1, nsub
+            lulhs(j,i) = 0.0_core_rknd
+        end do
+
+        ! Copy lhs values into appropriate lulhs spots
+        do j = imain-nsub, imain+nsub
+            lulhs(j,i) = lhs(j-nsub, i+j-imain)
+        end do
+
+    end do
+
+
+    ! The last nsup rows of lulhs will contain 0s that are end-shifted lhs values. This needs
+    ! to be handled differently so the algorithm to access lhs will not try to use out of bound
+    ! values.
+    !             
+    ! 
+    !                        ...  nsup     nsup+1    ...      imain+1    ...    
+    ! lulhs(:,ndim-nsub+1) =  0     0       lhs      lhs        lhs       0  
+    ! lulhs(:,ndim)        =  0     0       lhs      lhs         0        0
+    !
+    !                                   |                   |   starts with one 0, then
+    !                          always   |   all lhs values  |  then increases to nsup 0s
+    !                                   |                   |       towards ndim
+    !                                  / \                 / \
+    !                        ...  nsup     nsup+1    ...          ndim-nsub+1 ... ndim
+    ! 
+    ! Finish the lulhs setup by accessing the last values last, keeping memory access ordered
+    do i = ndim-nsub+1, ndim
+    
+        ! Set first nsup columns to 0
+        do j = 1, nsub
+            lulhs(j,i) = 0.0_core_rknd
+        end do
+
+        ! Copy lhs values into appropriate lulhs spots
+        do j = imain-nsup, imain-(i-ndim)
+            lulhs(j,i) = lhs(j-nsub, i+j-imain)
+        end do
+
+        ! Set increasing number of end-shift affected columns to 0
+        do j = imain-(i-ndim)+1, imain+nsub
+            lulhs(j,i) = 0.0_core_rknd
+        end do
+        
     end do
 
 !-----------------------------------------------------------------------
@@ -675,8 +758,10 @@ module lapack_wrap
           err_code = clubb_fatal_error
     case( 0 )
           ! Success!
-          if ( lapack_isnan( ndim, nrhs, rhs ) ) then
-            err_code = clubb_fatal_error 
+          if ( clubb_at_least_debug_level( 1 ) ) then
+              if ( lapack_isnan( ndim, nrhs, rhs ) ) then
+                err_code = clubb_fatal_error 
+              end if
           end if
 
           solution = rhs
