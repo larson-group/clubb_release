@@ -73,15 +73,6 @@ module clip_explicit
     use clubb_precision, only: & 
         core_rknd ! Variable(s)
 
-    use stats_type_utilities, only: &
-       stat_modify ! Procedure(s)
-
-    use stats_variables, only: & 
-        iwprtp_bt, &  ! Variable(s)
-        iwpthlp_bt, &
-        stats_zm, &
-        l_stats_samp
-
     implicit none
 
     ! Input Variables
@@ -152,23 +143,6 @@ module clip_explicit
     ! The third instance of w'r_t' clipping takes place after
     ! w'^2 is updated in advance_wp2_wp3.
 
-    ! Include effect of clipping in wprtp time tendency budget term.
-    if ( l_stats_samp ) then
-    
-      ! if wprtp_cl_num == 1 do nothing since
-      ! iwprtp_bt stat_begin_update is called outside of this method
-      
-      if ( wprtp_cl_num == 2 ) then
-        ! wprtp total time tendency (effect of clipping)
-        call stat_modify( iwprtp_bt,  -wprtp / dt,  & ! intent(in)
-                          stats_zm )                               ! intent(inout)
-      elseif ( wprtp_cl_num == 3 ) then
-        ! wprtp total time tendency (effect of clipping)
-        call stat_modify( iwprtp_bt, -wprtp / dt,  & ! intent(in)
-                          stats_zm )                               ! intent(inout)
-      endif
-    endif
-
     ! Used within subroutine clip_covar.
     if ( wprtp_cl_num == 1 ) then
       l_first_clip_ts = .true.
@@ -185,21 +159,6 @@ module clip_explicit
     call clip_covar( clip_wprtp, l_first_clip_ts,   & ! intent(in) 
                      l_last_clip_ts, dt, wp2, rtp2, & ! intent(in)
                      wprtp, wprtp_chnge )             ! intent(inout)
-
-    if ( l_stats_samp ) then
-      if ( wprtp_cl_num == 1 ) then
-        ! wprtp total time tendency (effect of clipping)
-        call stat_modify( iwprtp_bt,  wprtp / dt,  & ! intent(in)
-                          stats_zm )                              ! intent(inout)
-      elseif ( wprtp_cl_num == 2 ) then
-        ! wprtp total time tendency (effect of clipping)
-        call stat_modify( iwprtp_bt, wprtp / dt,  & ! intent(in)
-                          stats_zm )                              ! intent(inout)
-      ! if wprtp_cl_num == 3 do nothing since
-      ! iwprtp_bt stat_end_update is called outside of this method
-      
-      endif
-    endif
 
 
     !!! Clipping for w'th_l'
@@ -221,23 +180,6 @@ module clip_explicit
     ! The third instance of w'th_l' clipping takes place after
     ! w'^2 is updated in advance_wp2_wp3.
 
-    ! Include effect of clipping in wpthlp time tendency budget term.
-    if ( l_stats_samp ) then
-    
-      ! if wpthlp_cl_num == 1 do nothing since
-      ! iwpthlp_bt stat_begin_update is called outside of this method
-      
-      if ( wpthlp_cl_num == 2 ) then
-        ! wpthlp total time tendency (effect of clipping)
-        call stat_modify( iwpthlp_bt, -wpthlp / dt,  & ! intent(in)
-                          stats_zm )                                 ! intent(inout)
-      elseif ( wpthlp_cl_num == 3 ) then
-        ! wpthlp total time tendency (effect of clipping)
-        call stat_modify( iwpthlp_bt, -wpthlp / dt,  & ! intent(in)
-                          stats_zm )                                 ! intent(inout)
-      endif
-    endif
-
     ! Used within subroutine clip_covar.
     if ( wpthlp_cl_num == 1 ) then
       l_first_clip_ts = .true.
@@ -254,23 +196,6 @@ module clip_explicit
     call clip_covar( clip_wpthlp, l_first_clip_ts,   & ! intent(in)
                      l_last_clip_ts, dt, wp2, thlp2, & ! intent(in)
                      wpthlp, wpthlp_chnge )            ! intent(inout)
-
-
-    if ( l_stats_samp ) then
-      if ( wpthlp_cl_num == 1 ) then
-        ! wpthlp total time tendency (effect of clipping)
-        call stat_modify( iwpthlp_bt, wpthlp / dt,  & ! intent(in)
-                          stats_zm )                                ! intent(inout)
-      elseif ( wpthlp_cl_num == 2 ) then
-        ! wpthlp total time tendency (effect of clipping)
-        call stat_modify( iwpthlp_bt, wpthlp / dt,  & ! intent(in)
-                          stats_zm )                                ! intent(inout)
-                          
-      ! if wpthlp_cl_num == 3 do nothing since
-      ! iwpthlp_bt stat_end_update is called outside of this method
-      
-      endif
-    endif
 
 
     !!! Clipping for w'sclr'
@@ -455,6 +380,9 @@ module clip_explicit
         max_mag_correlation,      & ! Constant(s)
         max_mag_correlation_flux
 
+    use model_flags, only: &
+        l_predict_upwp_vpwp ! Variable(s)
+
     use clubb_precision, only: & 
         core_rknd ! Variable(s)
 
@@ -465,9 +393,11 @@ module clip_explicit
 
     use stats_variables, only: & 
         stats_zm,  & ! Variable(s)
-        iwprtp_cl, & 
-        iwpthlp_cl, & 
-        irtpthlp_cl, & 
+        iwprtp_cl, &
+        iwpthlp_cl, &
+        irtpthlp_cl, &
+        iupwp_cl, &
+        ivpwp_cl, &
         l_stats_samp
 
     implicit none
@@ -513,6 +443,18 @@ module clip_explicit
       ixpyp_cl = iwpthlp_cl
     case ( clip_rtpthlp )   ! rtpthlp clipping budget term
       ixpyp_cl = irtpthlp_cl
+    case ( clip_upwp )   ! upwp clipping budget term
+      if ( l_predict_upwp_vpwp ) then
+        ixpyp_cl = iupwp_cl
+      else
+        ixpyp_cl = 0
+      endif ! l_predict_upwp_vpwp
+    case ( clip_vpwp )   ! vpwp clipping budget term
+      if ( l_predict_upwp_vpwp ) then
+        ixpyp_cl = ivpwp_cl
+      else
+        ixpyp_cl = 0
+      endif ! l_predict_upwp_vpwp
     case default   ! scalars (or upwp/vpwp) are involved
       ixpyp_cl = 0
     end select
@@ -637,6 +579,9 @@ module clip_explicit
         max_mag_correlation_flux, &
         zero
 
+    use model_flags, only: &
+        l_predict_upwp_vpwp ! Variable(s)
+
     use clubb_precision, only: & 
         core_rknd ! Variable(s)
 
@@ -647,9 +592,11 @@ module clip_explicit
 
     use stats_variables, only: & 
         stats_zm,  & ! Variable(s)
-        iwprtp_cl, & 
-        iwpthlp_cl, & 
-        irtpthlp_cl, & 
+        iwprtp_cl, &
+        iwpthlp_cl, &
+        irtpthlp_cl, &
+        iupwp_cl, &
+        ivpwp_cl, &
         l_stats_samp
 
     implicit none
@@ -693,6 +640,18 @@ module clip_explicit
       ixpyp_cl = iwpthlp_cl
     case ( clip_rtpthlp )   ! rtpthlp clipping budget term
       ixpyp_cl = irtpthlp_cl
+    case ( clip_upwp )   ! upwp clipping budget term
+      if ( l_predict_upwp_vpwp ) then
+        ixpyp_cl = iupwp_cl
+      else
+        ixpyp_cl = 0
+      endif ! l_predict_upwp_vpwp
+    case ( clip_vpwp )   ! vpwp clipping budget term
+      if ( l_predict_upwp_vpwp ) then
+        ixpyp_cl = ivpwp_cl
+      else
+        ixpyp_cl = 0
+      endif ! l_predict_upwp_vpwp
     case default   ! scalars (or upwp/vpwp) are involved
       ixpyp_cl = 0
     end select

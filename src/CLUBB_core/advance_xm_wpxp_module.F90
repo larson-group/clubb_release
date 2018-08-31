@@ -177,6 +177,8 @@ module advance_xm_wpxp_module
         ivm_cf, &
         ium_f, &
         ivm_f, &
+        iupwp_pr4, &
+        ivpwp_pr4, &
         iC7_Skw_fnc, &
         iC6rt_Skw_fnc, &
         iC6thl_Skw_fnc, &
@@ -1184,6 +1186,13 @@ module advance_xm_wpxp_module
          upwp_forcing = C7_Skw_fnc * wp2 * ddzt( um )
          vpwp_forcing = C7_Skw_fnc * wp2 * ddzt( vm )
 
+         if ( l_stats_samp ) then
+            call stat_update_var( iupwp_pr4, C7_Skw_fnc * wp2 * ddzt( um ), &
+                                  stats_zm )
+            call stat_update_var( ivpwp_pr4, C7_Skw_fnc * wp2 * ddzt( vm ), &
+                                  stats_zm )
+         endif ! l_stats_samp
+
          ! Use a crude approximation for buoyancy terms <u'thv'> and <v'thv'>.
          upthvp = upwp * wpthvp / max( wp2, w_tol_sqd )
          vpthvp = vpwp * wpthvp / max( wp2, w_tol_sqd )
@@ -2133,6 +2142,14 @@ module advance_xm_wpxp_module
         iwpthlp_ta, &
         iwpthlp_pr1, &
         iwpthlp_forcing, &
+        iupwp_bp, & 
+        iupwp_pr3, &
+        iupwp_ta, &
+        iupwp_pr1, &
+        ivpwp_bp, & 
+        ivpwp_pr3, &
+        ivpwp_ta, &
+        ivpwp_pr1, &
         l_stats_samp
 
     use advance_helper_module, only: &
@@ -2332,6 +2349,22 @@ module advance_xm_wpxp_module
               iwpxp_sicl = iwpthlp_sicl
               iwpxp_ta   = iwpthlp_ta
               iwpxp_pr1  = iwpthlp_pr1
+            case ( xm_wpxp_um )  ! um/upwp budget terms
+              ixm_f      = 0
+              iwpxp_bp   = iupwp_bp
+              iwpxp_pr3  = iupwp_pr3
+              iwpxp_f    = 0
+              iwpxp_sicl = 0
+              iwpxp_ta   = iupwp_ta
+              iwpxp_pr1  = iupwp_pr1
+            case ( xm_wpxp_vm )  ! vm/vpwp budget terms
+              ixm_f      = 0
+              iwpxp_bp   = ivpwp_bp
+              iwpxp_pr3  = ivpwp_pr3
+              iwpxp_f    = 0
+              iwpxp_sicl = 0
+              iwpxp_ta   = ivpwp_ta
+              iwpxp_pr1  = ivpwp_pr1
             case default    ! this includes the sclrm case
               ixm_f      = 0
               iwpxp_bp   = 0
@@ -2571,7 +2604,6 @@ module advance_xm_wpxp_module
         irtm_matrix_condt_num, & 
         irtm_pd, & 
         irtm_cl,  & 
-        iwprtp_bt, & 
         iwprtp_ma, & 
         iwprtp_ta, & 
         iwprtp_tp, & 
@@ -2587,7 +2619,6 @@ module advance_xm_wpxp_module
         ithlm_ma, & 
         ithlm_cl, & 
         ithlm_matrix_condt_num, & 
-        iwpthlp_bt, & 
         iwpthlp_ma, & 
         iwpthlp_ta, & 
         iwpthlp_tp, & 
@@ -2596,10 +2627,24 @@ module advance_xm_wpxp_module
         iwpthlp_pr2, & 
         iwpthlp_dp1, & 
         iwpthlp_sicl, &
-        ium_ma, & 
-        ium_ta, & 
-        ivm_ma, & 
-        ivm_ta
+        ium_ma, &
+        ium_ta, &
+        iupwp_ma, &
+        iupwp_ta, &
+        iupwp_tp, &
+        iupwp_ac, &
+        iupwp_pr1, &
+        iupwp_pr2, &
+        iupwp_dp1, &
+        ivm_ma, &
+        ivm_ta, &
+        ivpwp_ma, &
+        ivpwp_ta, &
+        ivpwp_tp, &
+        ivpwp_ac, &
+        ivpwp_pr1, &
+        ivpwp_pr2, &
+        ivpwp_dp1
 
     use stats_variables, only: & 
         l_stats_samp, & 
@@ -2703,7 +2748,6 @@ module advance_xm_wpxp_module
       ixm_matrix_condt_num, & 
       ixm_pd, & 
       ixm_cl, & 
-      iwpxp_bt, & 
       iwpxp_ma, & 
       iwpxp_ta, & 
       iwpxp_tp, & 
@@ -2723,7 +2767,6 @@ module advance_xm_wpxp_module
       ixm_ma     = irtm_ma
       ixm_pd     = irtm_pd
       ixm_cl     = irtm_cl
-      iwpxp_bt   = iwprtp_bt
       iwpxp_ma   = iwprtp_ma
       iwpxp_ta   = iwprtp_ta
       iwpxp_tp   = iwprtp_tp
@@ -2742,7 +2785,6 @@ module advance_xm_wpxp_module
       ixm_ma     = ithlm_ma
       ixm_pd     = 0
       ixm_cl     = ithlm_cl
-      iwpxp_bt   = iwpthlp_bt
       iwpxp_ma   = iwpthlp_ma
       iwpxp_ta   = iwpthlp_ta
       iwpxp_tp   = iwpthlp_tp
@@ -2761,14 +2803,13 @@ module advance_xm_wpxp_module
       ixm_ma     = ium_ma
       ixm_pd     = 0
       ixm_cl     = 0
-      iwpxp_bt   = 0
-      iwpxp_ma   = 0
-      iwpxp_ta   = 0
-      iwpxp_tp   = 0
-      iwpxp_ac   = 0
-      iwpxp_pr1  = 0
-      iwpxp_pr2  = 0
-      iwpxp_dp1  = 0
+      iwpxp_ma   = iupwp_ma
+      iwpxp_ta   = iupwp_ta
+      iwpxp_tp   = iupwp_tp
+      iwpxp_ac   = iupwp_ac
+      iwpxp_pr1  = iupwp_pr1
+      iwpxp_pr2  = iupwp_pr2
+      iwpxp_dp1  = iupwp_dp1
       iwpxp_pd   = 0
       iwpxp_sicl = 0
 
@@ -2780,14 +2821,13 @@ module advance_xm_wpxp_module
       ixm_ma     = ivm_ma
       ixm_pd     = 0
       ixm_cl     = 0
-      iwpxp_bt   = 0
-      iwpxp_ma   = 0
-      iwpxp_ta   = 0
-      iwpxp_tp   = 0
-      iwpxp_ac   = 0
-      iwpxp_pr1  = 0
-      iwpxp_pr2  = 0
-      iwpxp_dp1  = 0
+      iwpxp_ma   = ivpwp_ma
+      iwpxp_ta   = ivpwp_ta
+      iwpxp_tp   = ivpwp_tp
+      iwpxp_ac   = ivpwp_ac
+      iwpxp_pr1  = ivpwp_pr1
+      iwpxp_pr2  = ivpwp_pr2
+      iwpxp_dp1  = ivpwp_dp1
       iwpxp_pd   = 0
       iwpxp_sicl = 0
 
@@ -2799,7 +2839,6 @@ module advance_xm_wpxp_module
       ixm_ma     = 0
       ixm_pd     = 0
       ixm_cl     = 0
-      iwpxp_bt   = 0
       iwpxp_ma   = 0
       iwpxp_ta   = 0
       iwpxp_tp   = 0
@@ -3084,13 +3123,6 @@ module advance_xm_wpxp_module
                                   xm )
     endif
 
-    if ( l_stats_samp ) then
-
-      ! wpxp time tendency
-      call stat_modify( iwpxp_bt, wpxp / dt, stats_zm )
-      ! Brian Griffin; July 5, 2008.
-
-    endif
 
     return
   end subroutine xm_wpxp_clipping_and_stats
