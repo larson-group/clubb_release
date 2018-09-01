@@ -544,7 +544,7 @@ module latin_hypercube_driver_module
         km1 = max( k-1, 1 )
         Lscale_vert_avg(k) = vertical_avg &
                              ( (kp1-km1+1), rho_ds_zt(km1:kp1), &
-                               Lscale(km1:kp1), gr%invrs_dzt(km1:kp1) )
+                               Lscale(km1:kp1), gr%dzt(km1:kp1) )
       end do
     else
         Lscale_vert_avg = Lscale 
@@ -1883,7 +1883,7 @@ module latin_hypercube_driver_module
           xtmp &
           = vertical_integral &
                ( (gr%nz - 2 + 1), rho_ds_zt(2:gr%nz), &
-                 lh_rcm(2:gr%nz), gr%invrs_dzt(2:gr%nz) )
+                 lh_rcm(2:gr%nz), gr%dzt(2:gr%nz) )
 
           call stat_update_var_pt( ilh_lwp, 1, xtmp, stats_lh_sfc )
         end if
@@ -1914,7 +1914,7 @@ module latin_hypercube_driver_module
           xtmp &
           = vertical_integral &
                ( (gr%nz - 2 + 1), rho_ds_zt(2:gr%nz), &
-                 lh_rvm(2:gr%nz), gr%invrs_dzt(2:gr%nz) )
+                 lh_rvm(2:gr%nz), gr%dzt(2:gr%nz) )
 
           call stat_update_var_pt( ilh_vwp, 1, xtmp, stats_lh_sfc )
         end if

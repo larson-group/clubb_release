@@ -879,7 +879,7 @@ module morrison_microphys_module
 
     rsm_sd_morr_int = vertical_integral( (nz - 2 + 1), rho_ds_zt(2:nz), &
                             real( rsm_sten(2:nz), kind=core_rknd ), &
-                            gr%invrs_dzt(2:nz) )
+                            gr%dzt(2:nz) )
 
     call microphys_put_var( irsm_sd_morr_int, (/rsm_sd_morr_int/), microphys_stats_sfc )
 

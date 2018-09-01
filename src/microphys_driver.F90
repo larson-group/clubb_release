@@ -545,7 +545,7 @@ module microphys_driver
 
       rvm = rtm - rcm
       call mg_microphys_driver &
-           ( dt, gr%nz, l_stats_samp, gr%invrs_dzt, thlm, p_in_Pa, exner, &
+           ( dt, gr%nz, l_stats_samp, gr%dzt, thlm, p_in_Pa, exner, &
              rho, cloud_frac, rcm, Ncm_microphys, rvm, Nccnm, pdf_params, hydromet, &
              hydromet_mc, hydromet_vel_zt, rcm_mc, rvm_mc, thlm_mc )
 

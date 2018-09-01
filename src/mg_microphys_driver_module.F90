@@ -10,7 +10,7 @@ module mg_microphys_driver_module
   contains
 !-------------------------------------------------------------------------------
   subroutine mg_microphys_driver &
-             ( dt, nz, l_stats_samp, invrs_dzt, thlm, p_in_Pa, exner, &
+             ( dt, nz, l_stats_samp, dzt, thlm, p_in_Pa, exner, &
                rho, cloud_frac, rcm, Ncm, rvm, Nccnm, pdf_params, hydromet, &
                hydromet_mc, hydromet_vel, rcm_mc, rvm_mc, thlm_mc )
 ! Description:
@@ -134,7 +134,7 @@ module mg_microphys_driver_module
       l_stats_samp  ! Whether to accumulate statistics [T/F]
 
     real( kind = core_rknd ), dimension(nz), intent(in) :: &
-      invrs_dzt,  & ! Inverse of the grid spacing        [1/m]
+      dzt,        & ! Inverse of the grid spacing        [1/m]
       thlm,       & ! Liquid potential temperature       [K]
       p_in_Pa,    & ! Pressure                           [Pa]
       exner,      & ! Exner function                     [-]
@@ -661,7 +661,7 @@ module mg_microphys_driver_module
 
         xtmp = vertical_integral &
                ( (nz - 2 + 1), rho(2:nz), &
-                 rrm(2:nz), invrs_dzt(2:nz) )
+                 rrm(2:nz), dzt(2:nz) )
 
         call stat_update_var_pt( irwp, 1, xtmp, stats_sfc )
 
@@ -672,7 +672,7 @@ module mg_microphys_driver_module
 
         xtmp = vertical_integral &
                ( (nz - 2 + 1), rho(2:nz), &
-                 rsm(2:nz), invrs_dzt(2:nz) )
+                 rsm(2:nz), dzt(2:nz) )
 
         call stat_update_var_pt( iswp, 1, xtmp, stats_sfc )
 

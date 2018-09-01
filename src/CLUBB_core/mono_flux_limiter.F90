@@ -784,7 +784,7 @@ module mono_flux_limiter
           xm_vert_integral &
           = vertical_integral  &
               ( ((gr%nz - 1) - 2 + 1), rho_ds_zt(2:gr%nz - 1), &
-                xm(2:gr%nz - 1), gr%invrs_dzt(2:gr%nz - 1) )
+                xm(2:gr%nz - 1), gr%dzt(2:gr%nz - 1) )
 
           !Check to ensure the vertical integral is not zero to avoid a divide
           !by zero error

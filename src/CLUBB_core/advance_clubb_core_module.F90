@@ -772,11 +772,11 @@ module advance_clubb_core_module
         ! so that spurious source can be calculated
         rtm_integral_before  &
         = vertical_integral( (gr%nz - 2 + 1), rho_ds_zt(2:gr%nz), &
-                             rtm(2:gr%nz), gr%invrs_dzt(2:gr%nz) )
+                             rtm(2:gr%nz), gr%dzt(2:gr%nz) )
 
         thlm_integral_before  &
         = vertical_integral( (gr%nz - 2 + 1), rho_ds_zt(2:gr%nz), &
-                             thlm(2:gr%nz), gr%invrs_dzt(2:gr%nz) )
+                             thlm(2:gr%nz), gr%dzt(2:gr%nz) )
       end if
     end if
 
@@ -1858,11 +1858,11 @@ module advance_clubb_core_module
 
           rtm_integral_after  &
           = vertical_integral( (gr%nz - 2 + 1), rho_ds_zt(2:gr%nz), &
-                               rtm(2:gr%nz), gr%invrs_dzt(2:gr%nz) )
+                               rtm(2:gr%nz), gr%dzt(2:gr%nz) )
 
           rtm_integral_forcing  &
           = vertical_integral( (gr%nz - 2 + 1), rho_ds_zt(2:gr%nz), &
-                               rtm_forcing(2:gr%nz), gr%invrs_dzt(2:gr%nz) )
+                               rtm_forcing(2:gr%nz), gr%dzt(2:gr%nz) )
 
           rtm_spur_src  &
           = calculate_spurious_source( rtm_integral_after, &
@@ -1882,11 +1882,11 @@ module advance_clubb_core_module
 
           thlm_integral_after  &
           = vertical_integral( (gr%nz - 2 + 1), rho_ds_zt(2:gr%nz), &
-                               thlm(2:gr%nz), gr%invrs_dzt(2:gr%nz) )
+                               thlm(2:gr%nz), gr%dzt(2:gr%nz) )
 
           thlm_integral_forcing  &
           = vertical_integral( (gr%nz - 2 + 1), rho_ds_zt(2:gr%nz), &
-                               thlm_forcing(2:gr%nz), gr%invrs_dzt(2:gr%nz) )
+                               thlm_forcing(2:gr%nz), gr%dzt(2:gr%nz) )
 
           thlm_spur_src  &
           = calculate_spurious_source( thlm_integral_after, &

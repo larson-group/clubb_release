@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id$
+! $Id: fill_holes.F90 8738 2018-07-19 19:58:53Z bmg2@uwm.edu $
 !===============================================================================
 module fill_holes
 
@@ -117,14 +117,14 @@ module fill_holes
           if ( field_grid == "zt" ) then
             call fill_holes_multiplicative &
                     ( begin_idx, end_idx, threshold, &
-                      rho_ds(begin_idx:end_idx), gr%invrs_dzt(begin_idx:end_idx), &
+                      rho_ds(begin_idx:end_idx), gr%dzt(begin_idx:end_idx), &
                       field(begin_idx:end_idx) )
                       
           ! 'field' is on the zm (momentum level) grid
           elseif ( field_grid == "zm" )  then
             call fill_holes_multiplicative &
                     ( begin_idx, end_idx, threshold, &
-                      rho_ds_zm(begin_idx:end_idx), gr%invrs_dzm(begin_idx:end_idx), &
+                      rho_ds_zm(begin_idx:end_idx), gr%dzm(begin_idx:end_idx), &
                       field(begin_idx:end_idx) )
           endif
 
@@ -145,14 +145,14 @@ module fill_holes
         if ( field_grid == "zt" ) then
           call fill_holes_multiplicative &
                  ( 2, upper_hf_level, threshold, &
-                   rho_ds(2:upper_hf_level), gr%invrs_dzt(2:upper_hf_level), &
+                   rho_ds(2:upper_hf_level), gr%dzt(2:upper_hf_level), &
                    field(2:upper_hf_level) )
                    
         ! 'field' is on the zm (momentum level) grid
         elseif ( field_grid == "zm" )  then
             call fill_holes_multiplicative &
                  ( 2, upper_hf_level, threshold, &
-                   rho_ds_zm(2:upper_hf_level), gr%invrs_dzm(2:upper_hf_level), &
+                   rho_ds_zm(2:upper_hf_level), gr%dzm(2:upper_hf_level), &
                    field(2:upper_hf_level) )
         endif
 
@@ -167,7 +167,7 @@ module fill_holes
   !=============================================================================
   subroutine fill_holes_multiplicative &
                  ( begin_idx, end_idx, threshold, &
-                   rho, invrs_dz, &
+                   rho, dz, &
                    field )
 
     ! Description:
@@ -205,7 +205,7 @@ module fill_holes
 
     real( kind = core_rknd ), dimension(end_idx-begin_idx+1), intent(in) ::  & 
       rho,     &  ! Dry, static density on either thermodynamic or momentum levels   [kg/m^3]
-      invrs_dz    ! Reciprocal of thermodynamic or momentum level thickness depending on whether
+      dz          ! Reciprocal of thermodynamic or momentum level thickness depending on whether
                   ! we're on zt or zm grid.
 
     ! Input/Output variable
@@ -228,7 +228,7 @@ module fill_holes
 
     ! Compute the field's vertical average, which we must conserve.
     field_avg = vertical_avg( (end_idx-begin_idx+1), rho, &
-                                  field, invrs_dz )
+                                  field, dz )
 
     ! Clip small or negative values from field.
     if ( field_avg >= threshold ) then
@@ -243,7 +243,7 @@ module fill_holes
     ! Compute the clipped field's vertical integral.
     ! clipped_total_mass >= original_total_mass
     field_clipped_avg = vertical_avg( (end_idx-begin_idx+1), rho, &
-                                      field_clipped, invrs_dz )
+                                      field_clipped, dz )
 
     ! If the difference between the field_clipped_avg and the threshold is so
     ! small that it falls within numerical round-off, return to the parent
@@ -262,14 +262,12 @@ module fill_holes
     field = mass_fraction * ( field_clipped - threshold )  & 
                  + threshold
 
-
     return
 
   end subroutine fill_holes_multiplicative
 
   !=============================================================================
-  function vertical_avg( total_idx, rho_ds, &
-                             field, invrs_dz )
+  function vertical_avg( total_idx, rho_ds, field, dz )
 
     ! Description:
     ! Computes the density-weighted vertical average of a field.
@@ -378,7 +376,7 @@ module fill_holes
     real( kind = core_rknd ), dimension(total_idx), intent(in) ::  &
       rho_ds, & ! Dry, static density on either thermodynamic or momentum levels    [kg/m^3]
       field,  & ! The field (e.g. wp2) to be vertically averaged                    [Units vary]
-      invrs_dz  ! Reciprocal of thermodynamic or momentum level thickness           [1/m]
+      dz  ! Reciprocal of thermodynamic or momentum level thickness           [1/m]
                 ! depending on whether we're on zt or zm grid.
     ! Note:  The rho_ds and field points need to be arranged from
     !        lowest to highest in altitude, with rho_ds(1) and
@@ -393,40 +391,24 @@ module fill_holes
       numer_integral, & ! Integral in the numerator (see description)
       denom_integral    ! Integral in the denominator (see description)
       
-    real( kind = core_rknd ), dimension(total_idx) :: &
-      denom_field       ! When computing the vertical integral in the denominator
-                        ! there is no field variable, so create a "dummy" variable
-                        ! with value of 1 to pass as an argument
+
+    integer :: k
 
     !-----------------------------------------------------------------------
     
-    ! Fill array with 1's (see variable description)
-    denom_field = 1.0_core_rknd
+    ! Initialize variable
+    numer_integral = 0.0_core_rknd
+    denom_integral = 0.0_core_rknd
 
-    ! Initializing vertical_avg to avoid a compiler warning.
-    vertical_avg = 0.0_core_rknd
-    
-     
-    ! Compute the numerator integral.
-    ! Multiply the variable 'field' at level k by rho_ds at level k and by
-    ! the level thickness at level k.  Then, sum over all vertical levels.
-    ! Note:  The level thickness at level k is the distance between either
-    !        momentum level k and momentum level k-1, or
-    !        thermodynamic level k+1 and thermodynamic level k, depending
-    !        on which field grid is being analyzed. Thus, 1.0/invrs_dz(k)
-    !        is the level thickness for level k.
-    ! Note:  The values of 'field' and rho_ds are passed into this function
-    !        so that field(1) and rho_ds(1) are actually 'field' and rho_ds
-    !        at the level k = 1.
-       
-    numer_integral = vertical_integral( total_idx, rho_ds(1:total_idx), &
-                                            field(1:total_idx), invrs_dz(1:total_idx) )
-    
-    ! Compute the denominator integral.
+    ! Compute the numerator and denominator integral.
     ! Multiply rho_ds at level k by the level thickness
     ! at level k.  Then, sum over all vertical levels.
-    denom_integral = vertical_integral( total_idx, rho_ds(1:total_idx), &
-                                            denom_field(1:total_idx), invrs_dz(1:total_idx) )
+    do k=1, total_idx
+
+        numer_integral = numer_integral + rho_ds(k) * dz(k) * field(k)
+        denom_integral = denom_integral + rho_ds(k) * dz(k)
+
+    end do
 
     ! Find the vertical average of 'field'.
     vertical_avg = numer_integral / denom_integral
@@ -436,10 +418,10 @@ module fill_holes
 
   !=============================================================================
   pure function vertical_integral( total_idx, rho_ds, &
-                                       field, invrs_dz )
+                                       field, dz )
 
     ! Description:
-    ! Computes the vertical integral. rho_ds, field, and invrs_dz must all be
+    ! Computes the vertical integral. rho_ds, field, and dz must all be
     ! of size total_idx and should all start at the same index.
     ! 
     
@@ -459,7 +441,7 @@ module fill_holes
     real( kind = core_rknd ), dimension(total_idx), intent(in) ::  &
       rho_ds,  & ! Dry, static density                   [kg/m^3]
       field,   & ! The field to be vertically averaged   [Units vary]
-      invrs_dz   ! Level thickness                       [1/m]
+      dz         ! Level thickness                       [1/m]
     ! Note:  The rho_ds and field points need to be arranged from
     !        lowest to highest in altitude, with rho_ds(1) and
     !        field(1) actually their respective values at level k = begin_idx.
@@ -484,7 +466,9 @@ module fill_holes
     ! Note:  The values of the field and rho_ds are passed into this function
     !        so that field(1) and rho_ds(1) are actually the field and rho_ds
     !        at level k_start.
-    vertical_integral = sum( field * rho_ds / invrs_dz )
+    vertical_integral = sum( field * rho_ds * dz )
+
+    !print *, vertical_integral
 
     return
   end function vertical_integral

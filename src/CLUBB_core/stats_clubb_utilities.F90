@@ -2422,7 +2422,7 @@ module stats_clubb_utilities
         xtmp &
         = vertical_integral &
                ( (gr%nz - 2 + 1), rho_ds_zt(2:gr%nz), &
-                 rcm(2:gr%nz), gr%invrs_dzt(2:gr%nz) )
+                 rcm(2:gr%nz), gr%dzt(2:gr%nz) )
 
         call stat_update_var_pt( ilwp, 1, xtmp, stats_sfc )
 
@@ -2434,7 +2434,7 @@ module stats_clubb_utilities
         xtmp &
         = vertical_integral &
                ( (gr%nz - 2 + 1), rho_ds_zt(2:gr%nz), &
-                 ( rtm(2:gr%nz) - rcm(2:gr%nz) ), gr%invrs_dzt(2:gr%nz) )
+                 ( rtm(2:gr%nz) - rcm(2:gr%nz) ), gr%dzt(2:gr%nz) )
 
         call stat_update_var_pt( ivwp, 1, xtmp, stats_sfc )
 
@@ -2451,25 +2451,25 @@ module stats_clubb_utilities
       ! Vertical average of thlm.
       call stat_update_var_pt( ithlm_vert_avg, 1,  &
            vertical_avg( (gr%nz-2+1), rho_ds_zt(2:gr%nz), &
-                         thlm(2:gr%nz), gr%invrs_dzt(2:gr%nz) ), &
+                         thlm(2:gr%nz), gr%dzt(2:gr%nz) ), &
                                stats_sfc )
 
       ! Vertical average of rtm.
       call stat_update_var_pt( irtm_vert_avg, 1,  &
            vertical_avg( (gr%nz-2+1), rho_ds_zt(2:gr%nz), &
-                         rtm(2:gr%nz), gr%invrs_dzt(2:gr%nz) ), &
+                         rtm(2:gr%nz), gr%dzt(2:gr%nz) ), &
                                stats_sfc )
 
       ! Vertical average of um.
       call stat_update_var_pt( ium_vert_avg, 1,  &
            vertical_avg( (gr%nz-2+1), rho_ds_zt(2:gr%nz), &
-                         um(2:gr%nz), gr%invrs_dzt(2:gr%nz) ), &
+                         um(2:gr%nz), gr%dzt(2:gr%nz) ), &
                                stats_sfc )
 
       ! Vertical average of vm.
       call stat_update_var_pt( ivm_vert_avg, 1,  &
            vertical_avg( (gr%nz-2+1), rho_ds_zt(2:gr%nz), &
-                         vm(2:gr%nz), gr%invrs_dzt(2:gr%nz) ), &
+                         vm(2:gr%nz), gr%dzt(2:gr%nz) ), &
                                stats_sfc )
 
       ! Vertical average of momentum level variables.
@@ -2481,31 +2481,31 @@ module stats_clubb_utilities
       ! Vertical average of wp2.
       call stat_update_var_pt( iwp2_vert_avg, 1,  &
            vertical_avg( (gr%nz-1+1), rho_ds_zm(1:gr%nz), &
-                         wp2(1:gr%nz), gr%invrs_dzm(1:gr%nz) ), &
+                         wp2(1:gr%nz), gr%dzm(1:gr%nz) ), &
                                stats_sfc )
 
       ! Vertical average of up2.
       call stat_update_var_pt( iup2_vert_avg, 1,  &
            vertical_avg( (gr%nz-1+1), rho_ds_zm(1:gr%nz), &
-                         up2(1:gr%nz), gr%invrs_dzm(1:gr%nz) ), &
+                         up2(1:gr%nz), gr%dzm(1:gr%nz) ), &
                                stats_sfc )
 
       ! Vertical average of vp2.
       call stat_update_var_pt( ivp2_vert_avg, 1,  &
            vertical_avg( (gr%nz-1+1), rho_ds_zm(1:gr%nz), &
-                         vp2(1:gr%nz), gr%invrs_dzm(1:gr%nz) ), &
+                         vp2(1:gr%nz), gr%dzm(1:gr%nz) ), &
                                stats_sfc )
 
       ! Vertical average of rtp2.
       call stat_update_var_pt( irtp2_vert_avg, 1,  &
            vertical_avg( (gr%nz-1+1), rho_ds_zm(1:gr%nz), &
-                         rtp2(1:gr%nz), gr%invrs_dzm(1:gr%nz) ), &
+                         rtp2(1:gr%nz), gr%dzm(1:gr%nz) ), &
                                stats_sfc )
 
       ! Vertical average of thlp2.
       call stat_update_var_pt( ithlp2_vert_avg, 1,  &
            vertical_avg( (gr%nz-1+1), rho_ds_zm(1:gr%nz), &
-                         thlp2(1:gr%nz), gr%invrs_dzm(1:gr%nz) ), &
+                         thlp2(1:gr%nz), gr%dzm(1:gr%nz) ), &
                                stats_sfc )
 
 
@@ -2616,7 +2616,7 @@ module stats_clubb_utilities
         xtmp &
         = vertical_integral &
                ( (gr%nz - 2 + 1), rho_ds_zt(2:gr%nz), &
-                 hydromet(2:gr%nz,iirs), gr%invrs_dzt(2:gr%nz) )
+                 hydromet(2:gr%nz,iirs), gr%dzt(2:gr%nz) )
 
         call stat_update_var_pt( iswp, 1, xtmp, stats_sfc )
 
@@ -2628,7 +2628,7 @@ module stats_clubb_utilities
         xtmp &
         = vertical_integral &
                ( (gr%nz - 2 + 1), rho_ds_zt(2:gr%nz), &
-                 hydromet(2:gr%nz,iiri), gr%invrs_dzt(2:gr%nz) )
+                 hydromet(2:gr%nz,iiri), gr%dzt(2:gr%nz) )
 
         call stat_update_var_pt( iiwp, 1, xtmp, stats_sfc )
 
@@ -2640,7 +2640,7 @@ module stats_clubb_utilities
         xtmp &
         = vertical_integral &
                ( (gr%nz - 2 + 1), rho_ds_zt(2:gr%nz), &
-                 hydromet(2:gr%nz,iirr), gr%invrs_dzt(2:gr%nz) )
+                 hydromet(2:gr%nz,iirr), gr%dzt(2:gr%nz) )
 
         call stat_update_var_pt( irwp, 1, xtmp, stats_sfc )
 

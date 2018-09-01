@@ -1164,7 +1164,7 @@ contains
 
   function vertical_integral_api( &
     total_idx, rho_ds, &
-    field, invrs_dz )
+    field, dz )
 
     use fill_holes, only : vertical_integral
 
@@ -1177,7 +1177,7 @@ contains
     real( kind = core_rknd ), dimension(total_idx), intent(in) ::  &
       rho_ds,  & ! Dry, static density                   [kg/m^3]
       field,   & ! The field to be vertically averaged   [Units vary]
-      invrs_dz   ! Level thickness                       [1/m]
+      dz         ! Level thickness                       [1/m]
     ! Note:  The rho_ds and field points need to be arranged from
     !        lowest to highest in altitude, with rho_ds(1) and
     !        field(1) actually their respective values at level k = begin_idx.
@@ -1187,7 +1187,7 @@ contains
 
     vertical_integral_api = vertical_integral( &
       total_idx, rho_ds, &
-      field, invrs_dz )
+      field, dz )
   end function vertical_integral_api
 
   !================================================================================================
