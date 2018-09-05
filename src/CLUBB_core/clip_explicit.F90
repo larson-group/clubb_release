@@ -427,7 +427,8 @@ module clip_explicit
 
     ! Local Variables
     real( kind = core_rknd ) ::  & 
-      max_mag_corr    ! Maximum magnitude of a correlation allowed
+      max_mag_corr, &    ! Maximum magnitude of a correlation allowed
+      xpyp_bound
 
     integer :: k  ! Array index
 
@@ -488,27 +489,27 @@ module clip_explicit
     ! not be conserved, therefore it should never be added.
     do k = 2, gr%nz-1, 1
 
+      xpyp_bound = max_mag_corr * sqrt( xp2(k) * yp2(k) )
+
       ! Clipping for xpyp at an upper limit corresponding with a correlation
       ! between x and y of max_mag_corr.
-      if ( xpyp(k) > max_mag_corr * sqrt( xp2(k) * yp2(k) ) ) then
+      if ( xpyp(k) > xpyp_bound ) then
 
-        xpyp_chnge(k) = max_mag_corr * sqrt( xp2(k) * yp2(k) ) - xpyp(k)
-
-        xpyp(k) = max_mag_corr * sqrt( xp2(k) * yp2(k) )
+        xpyp_chnge(k) = xpyp_bound - xpyp(k)
+        xpyp(k) = xpyp_bound 
 
       ! Clipping for xpyp at a lower limit corresponding with a correlation
       ! between x and y of -max_mag_corr.
-      elseif ( xpyp(k) < -max_mag_corr * sqrt( xp2(k) * yp2(k) ) ) then
+      else if ( xpyp(k) < -xpyp_bound ) then
 
-        xpyp_chnge(k) = -max_mag_corr * sqrt( xp2(k) * yp2(k) ) - xpyp(k)
-
-        xpyp(k) = -max_mag_corr * sqrt( xp2(k) * yp2(k) )
+        xpyp_chnge(k) = -xpyp_bound - xpyp(k)
+        xpyp(k) = -xpyp_bound 
 
       else
 
         xpyp_chnge(k) = 0.0_core_rknd
 
-      endif
+      end if
 
     enddo ! k = 2..gr%nz
 
@@ -524,7 +525,6 @@ module clip_explicit
         call stat_modify( ixpyp_cl, xpyp / dt, stats_zm )
       endif
     endif
-
 
     return
   end subroutine clip_covar
