@@ -45,6 +45,10 @@ module surface_varnce_module
         ten,        &
         grav,       &
         eps,        &
+        w_tol_sqd,  &
+        thl_tol,    &
+        rt_tol,     &
+        max_mag_correlation_flux, &
         fstderr
 
     use parameters_model, only: & 
@@ -130,14 +134,18 @@ module surface_varnce_module
     real( kind = core_rknd ) :: &
       ustar2, & ! Square of surface friction velocity, u*       [m^2/s^2]
       wstar,  & ! Convective velocity, w*                       [m/s]
-      uf        ! Surface friction vel., u*, in older version   [m/s]
+      uf,     & ! Surface friction vel., u*, in older version   [m/s]
+      min_wp2_sfc_val ! Minimum value of wp2_sfc that guarantees  [m^2/s^2]
+                      ! correlation of (w,rt) and (w,thl) is within (-1,1)
+      
 
     ! Variables for Andre et al., 1978 parameterization.
     real( kind = core_rknd ) :: &
       um_sfc_sqd, & ! Surface value of <u>^2                           [m^2/s^2]
       vm_sfc_sqd, & ! Surface value of <v>^2                           [m^2/s^2]
       usp2_sfc,   & ! u_s (vector oriented w/ mean sfc. wind) variance [m^2/s^2]
-      vsp2_sfc      ! v_s (vector perpen. to mean sfc. wind) variance  [m^2/s^2]
+      vsp2_sfc,   & ! v_s (vector perpen. to mean sfc. wind) variance  [m^2/s^2]
+      wp2_splat_sfc_correction ! Reduction in wp2_sfc due to splatting [m^2/s^2]
 
     real( kind = core_rknd ) :: &
       ustar, & ! Surface friction velocity, u*                             [m/s]
@@ -215,6 +223,9 @@ module surface_varnce_module
           wp2_sfc     = 1.75_core_rknd * ustar**2
 
        endif
+       
+       thlp2_sfc = max( thl_tol**2, thlp2_sfc )
+       rtp2_sfc = max( rt_tol**2, rtp2_sfc )
 
        ! Calculate wstar following Andre et al., 1978, p. 1866.
        ! w* = ( ( 1 / T0 ) * g * <w'thl'>|_sfc * z_i )^(1/3);
@@ -247,11 +258,22 @@ module surface_varnce_module
        endif
 
        ! Add effect of vertical compression of eddies on horizontal gustiness.
-       ! The effect has not been added to wp2_sfc, and so the effect is not
-       !   conservative with respect to TKE at the sfc level.
-       ! "ten" is a surface-specific tuning factor.
-       usp2_sfc = usp2_sfc - 0.5_core_rknd * ten * tau_zm_sfc * wp2_splat_sfc 
-       vsp2_sfc = vsp2_sfc - 0.5_core_rknd * ten * tau_zm_sfc * wp2_splat_sfc
+       ! First, ensure that wp2_sfc does not make the correlation of (w,thl) or (w,rt) outside (-1,1)
+       ! Perhaps in the future we should also ensure that the correlations of (w,u) and (w,v) are not outside (-1,1)
+       min_wp2_sfc_val &
+       = max( w_tol_sqd, &
+              wprtp_sfc**2 / ( rtp2_sfc * max_mag_correlation_flux**2 ), &
+              wpthlp_sfc**2 / ( thlp2_sfc * max_mag_correlation_flux**2 ) )
+       if ( wp2_sfc + tau_zm_sfc * wp2_splat_sfc < min_wp2_sfc_val ) then 
+                            ! splatting correction drives wp2_sfc to overly small value
+         wp2_splat_sfc_correction = -wp2_sfc + min_wp2_sfc_val
+         wp2_sfc = min_wp2_sfc_val
+       else
+         wp2_splat_sfc_correction = tau_zm_sfc * wp2_splat_sfc
+         wp2_sfc = wp2_sfc + wp2_splat_sfc_correction
+       end if
+       usp2_sfc = usp2_sfc - 0.5_core_rknd * wp2_splat_sfc_correction
+       vsp2_sfc = vsp2_sfc - 0.5_core_rknd * wp2_splat_sfc_correction
 
        ! Variance of u, <u'^2>, at the surface can be found from <u_s'^2>,
        ! <v_s'^2>, and mean winds (at the surface) <u> and <v>, such that:
@@ -344,30 +366,38 @@ module surface_varnce_module
        up2_sfc = up2_vp2_factor * a_const * uf**2  ! From Andre, et al. 1978
        vp2_sfc = up2_vp2_factor * a_const * uf**2  ! "  "
 
-       ! Add effect of vertical compression of eddies on horizontal gustiness.
-       ! The effect has not been added to wp2_sfc, and so the effect is not
-       !   conservative with respect to TKE at the sfc level.
-       ! "ten" is a surface-specific tuning factor.
-       up2_sfc = up2_sfc - 0.5_core_rknd * ten * tau_zm_sfc * wp2_splat_sfc
-       vp2_sfc = vp2_sfc - 0.5_core_rknd * ten * tau_zm_sfc * wp2_splat_sfc
-
-       ! Vince Larson changed to make correlations between [-1,1]  31 Jan 2008
-!        thlp2_sfc   = 0.1 * a * ( wpthlp_sfc / uf )**2
-!        rtp2_sfc    = 0.4 * a * ( wprtp_sfc / uf )**2
-!        rtpthlp_sfc = a * ( wpthlp_sfc / uf ) * ( wprtp_sfc / uf )
        ! Notes:  1) With "a" having a value of 1.8, the surface correlations of
        !            both w & rt and w & thl have a value of about 0.878.
        !         2) The surface correlation of rt & thl is 0.5.
        ! Brian Griffin; February 2, 2008.
 
        thlp2_sfc = 0.4_core_rknd * a_const * ( wpthlp_sfc / uf )**2
+       thlp2_sfc = max( thl_tol**2, thlp2_sfc )
 
        rtp2_sfc = 0.4_core_rknd * a_const * ( wprtp_sfc / uf )**2
+       rtp2_sfc = max( rt_tol**2, rtp2_sfc )
 
        rtpthlp_sfc = 0.2_core_rknd * a_const &
                      * ( wpthlp_sfc / uf ) * ( wprtp_sfc / uf )
 
-       ! End Vince Larson's change.
+       ! Add effect of vertical compression of eddies on horizontal gustiness.
+       ! First, ensure that wp2_sfc does not make the correlation of (w,thl) or (w,rt) outside (-1,1)
+       ! Perhaps in the future we should also ensure that the correlations of (w,u) and (w,v) are not outside (-1,1)
+       min_wp2_sfc_val &
+       = max( w_tol_sqd, &
+              wprtp_sfc**2 / ( rtp2_sfc * max_mag_correlation_flux**2 ), &
+              wpthlp_sfc**2 / ( thlp2_sfc * max_mag_correlation_flux**2 ) )
+
+       if ( wp2_sfc + tau_zm_sfc * wp2_splat_sfc < min_wp2_sfc_val ) then 
+                           ! splatting correction drives wp2_sfc to overly small values
+         wp2_splat_sfc_correction = -wp2_sfc + min_wp2_sfc_val
+         wp2_sfc = min_wp2_sfc_val
+       else
+         wp2_splat_sfc_correction = tau_zm_sfc * wp2_splat_sfc
+         wp2_sfc = wp2_sfc + wp2_splat_sfc_correction
+       end if
+       up2_sfc = up2_sfc - 0.5_core_rknd * wp2_splat_sfc_correction
+       vp2_sfc = vp2_sfc - 0.5_core_rknd * wp2_splat_sfc_correction
 
        ! Passive scalars
        if ( sclr_dim > 0 ) then
