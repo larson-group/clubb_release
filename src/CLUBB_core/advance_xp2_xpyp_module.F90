@@ -172,6 +172,8 @@ module advance_xp2_xpyp_module
         irtp2_cl,                 &
         iup2_sdmp,                &
         ivp2_sdmp,                &
+        iup2_cl,                  &
+        ivp2_cl,                  &
         l_stats_samp
 
     use array_index, only: &
@@ -1080,20 +1082,50 @@ module advance_xp2_xpyp_module
 
     ! Clipping for u'^2
 
-    !threshold = zero_threshold
+    ! Clip negative values of up2
     threshold = w_tol_sqd
-
     call clip_variance( xp2_xpyp_up2, dt, threshold, & ! Intent(in)
                         up2 )                          ! Intent(inout)
 
+    ! Clip excessively large values of up2
+    if ( l_stats_samp ) then
+      ! Store previous value in order to calculate clipping
+      call stat_modify( iup2_cl, -up2 / dt, &   ! Intent(in)
+                              stats_zm )             ! Intent(inout)
+    endif
+
+    where (up2 > 1000._core_rknd)
+      up2 = 1000._core_rknd
+    end where
+
+    if ( l_stats_samp ) then
+      ! Store final value in order to calculate clipping
+      call stat_modify( iup2_cl, up2 / dt, &   ! Intent(in)
+                              stats_zm )             ! Intent(inout)
+    endif
 
     ! Clipping for v'^2
 
-    !threshold = zero_threshold
+    ! Clip negative values of vp2
     threshold = w_tol_sqd
-
     call clip_variance( xp2_xpyp_vp2, dt, threshold, & ! Intent(in)
                         vp2 )                          ! Intent(inout)
+
+    if ( l_stats_samp ) then
+      ! Store previous value in order to calculate clipping
+      call stat_modify( ivp2_cl, -vp2 / dt, &   ! Intent(in)
+                              stats_zm )             ! Intent(inout)
+    endif
+
+    where (vp2 > 1000._core_rknd)
+      vp2 = 1000._core_rknd
+    end where
+
+    if ( l_stats_samp ) then
+      ! Store final value in order to calculate clipping
+      call stat_modify( ivp2_cl, vp2 / dt, &   ! Intent(in)
+                              stats_zm )             ! Intent(inout)
+    endif
 
     ! When selected, apply sponge damping after up2 and vp2 have been advanced.
     if ( up2_vp2_sponge_damp_settings%l_sponge_damping ) then
