@@ -232,13 +232,14 @@ sub fileThread
 		warn "$file\n";
 		warn $horizontal;
 	}
-		
+	
+        # This is no longer necessary because CLUBB is in a git repo.	
 	# Check for missing $ Id $ tags
-	if( ! &idCheck( $verbose, $file, @input ) )
-	{
-		warn "$file\n";
-		warn $horizontal;
-	}
+	#if( ! &idCheck( $verbose, $file, @input ) )
+	#{
+	#	warn "$file\n";
+	#	warn $horizontal;
+	#}
 
 	# Check for use of forbidden keywords
 	if( ! &forbiddenCheck( $verbose, @input ) )

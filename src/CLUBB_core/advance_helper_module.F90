@@ -461,7 +461,8 @@ module advance_helper_module
     end if
 
     ! Cx_fnc_Richardson is interpolated based on the value of Richardson_num
-    Cx_fnc_Richardson = linear_interp_factor( (Richardson_num-Richardson_num_min) * invrs_min_max_diff , Cx_max, Cx_min )
+    Cx_fnc_Richardson = linear_interp_factor( &
+                        (Richardson_num-Richardson_num_min) * invrs_min_max_diff , Cx_max, Cx_min )
 
     if ( l_Cx_fnc_Richardson_vert_avg ) then
       Cx_fnc_Richardson = Lscale_width_vert_avg( Cx_fnc_Richardson, Lscale_zm, rho_ds_zm, &
@@ -648,7 +649,7 @@ module advance_helper_module
   end function Lscale_width_vert_avg
 
  !============================================================================
-  subroutine term_wp2_splat( C_wp2_splat, nz, wp2, wp2_zt, tau_zm, &
+  subroutine term_wp2_splat( C_wp2_splat, nz, dt, wp2, wp2_zt, tau_zm, &
                              wp2_splat )
 
 
@@ -668,6 +669,9 @@ module advance_helper_module
     use clubb_precision, only: & 
       core_rknd 
 
+    use constants_clubb, only: &
+      five  ! Constant(s)
+
     implicit none 
 
     ! Input Variables
@@ -675,7 +679,8 @@ module advance_helper_module
       nz          ! Number of vertical levels                    [-]
 
     real( kind = core_rknd ), intent(in) :: & 
-      C_wp2_splat          ! Tuning parameter                    [-]
+      C_wp2_splat, &          ! Tuning parameter                    [-]
+      dt                      ! CLUBB computational time step       [s]
 
     real( kind = core_rknd ), dimension(nz), intent(in) :: & 
       wp2,     &  ! Variance of vertical velocity on the momentum grid [m^2/s^2]
@@ -693,13 +698,17 @@ module advance_helper_module
     ! ---- Begin Code ----
 
     d_sqrt_wp2_dz = ddzt( sqrt( wp2_zt ) )
-    wp2_splat = - C_wp2_splat * wp2 * tau_zm * d_sqrt_wp2_dz**2
+    ! The splatting term is clipped so that the incremental change doesn't exceed 5 times the
+    !   value of wp2 itself.  This prevents spikes in wp2 from being propagated to up2 and vp2.
+    !   However, it does introduce undesired dependence on the time step.
+    !   Someday we may wish to treat this term using a semi-implicit discretization.
+    wp2_splat = - wp2 * min( five/dt, C_wp2_splat * tau_zm * d_sqrt_wp2_dz**2 )
     !wp2_splat = - C_wp2_splat * wp2 * 900.0_core_rknd * d_sqrt_wp2_dz**2
 
   end subroutine term_wp2_splat
 
   !============================================================================
-  subroutine term_wp3_splat( C_wp2_splat, nz, wp2, wp3, tau_zt, &
+  subroutine term_wp3_splat( C_wp2_splat, nz, dt, wp2, wp3, tau_zt, &
                              wp3_splat )
 
   ! Description:
@@ -722,7 +731,8 @@ module advance_helper_module
       core_rknd 
 
     use constants_clubb, only: &
-      three  ! Constant(s)
+      three, &  ! Constant(s)
+      five
 
     implicit none 
 
@@ -731,7 +741,8 @@ module advance_helper_module
       nz          ! Number of vertical levels                    [-]
 
     real( kind = core_rknd ), intent(in) :: & 
-      C_wp2_splat          ! Tuning parameter                    [-]
+      C_wp2_splat, &          ! Tuning parameter                    [-]
+      dt                      ! CLUBB computational time step       [s]
 
     real( kind = core_rknd ), dimension(nz), intent(in) :: & 
       wp2,     &  ! Variance of vertical velocity on the momentum grid [m^2/s^2]
@@ -749,7 +760,11 @@ module advance_helper_module
     ! ---- Begin Code ----
 
     d_sqrt_wp2_dz = ddzm( sqrt( wp2 ) )
-    wp3_splat = - three * C_wp2_splat * wp3 * tau_zt * d_sqrt_wp2_dz**2
+    ! The splatting term is clipped so that the incremental change doesn't exceed 5 times the
+    !   value of wp2 itself.  This prevents spikes in wp2 from being propagated to up2 and vp2.
+    !   However, it does introduce undesired dependence on the time step.
+    !   Someday we may wish to treat this term using a semi-implicit discretization.
+    wp3_splat = - wp3 * min( five/dt, three * C_wp2_splat * tau_zt * d_sqrt_wp2_dz**2 )
     !wp3_splat = - three * C_wp2_splat * wp3 * 900._core_rknd * d_sqrt_wp2_dz**2
 
   end subroutine term_wp3_splat

@@ -618,7 +618,8 @@ module lapack_wrap
     !        set to   shifted     shifted      no      shifted    shifted
     !          0       down 2      down 1    shift      up 1        up 2
     ! 
-    !   The first nsup columns of lulhs are always set to 0, the rest of the columns are set to shifted 
+    !   The first nsup columns of lulhs are always set to 0; 
+    !   the rest of the columns are set to shifted 
     !   columns of lhs. This can be thought of as taking lhs, never touching the middle column, but
     !   shifting the columns that are n columns to the left of the middle down by n rows, and then
     !   shifting the columns that are n columns to the right of the middle up by n rows, finally 

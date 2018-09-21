@@ -258,8 +258,10 @@ module surface_varnce_module
        endif
 
        ! Add effect of vertical compression of eddies on horizontal gustiness.
-       ! First, ensure that wp2_sfc does not make the correlation of (w,thl) or (w,rt) outside (-1,1)
-       ! Perhaps in the future we should also ensure that the correlations of (w,u) and (w,v) are not outside (-1,1)
+       ! First, ensure that wp2_sfc does not make the correlation 
+       !   of (w,thl) or (w,rt) outside (-1,1).
+       ! Perhaps in the future we should also ensure that the correlations 
+       !   of (w,u) and (w,v) are not outside (-1,1).
        min_wp2_sfc_val &
        = max( w_tol_sqd, &
               wprtp_sfc**2 / ( rtp2_sfc * max_mag_correlation_flux**2 ), &
@@ -381,8 +383,10 @@ module surface_varnce_module
                      * ( wpthlp_sfc / uf ) * ( wprtp_sfc / uf )
 
        ! Add effect of vertical compression of eddies on horizontal gustiness.
-       ! First, ensure that wp2_sfc does not make the correlation of (w,thl) or (w,rt) outside (-1,1)
-       ! Perhaps in the future we should also ensure that the correlations of (w,u) and (w,v) are not outside (-1,1)
+       ! First, ensure that wp2_sfc does not make the correlation 
+       !   of (w,thl) or (w,rt) outside (-1,1).
+       ! Perhaps in the future we should also ensure that the correlations 
+       !   of (w,u) and (w,v) are not outside (-1,1).
        min_wp2_sfc_val &
        = max( w_tol_sqd, &
               wprtp_sfc**2 / ( rtp2_sfc * max_mag_correlation_flux**2 ), &

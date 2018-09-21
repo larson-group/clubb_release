@@ -1252,10 +1252,10 @@ module advance_clubb_core_module
 #endif
 
       ! Vertical compression of eddies causes gustiness (increase in up2 and vp2)
-      call term_wp2_splat( C_wp2_splat, gr%nz, wp2, wp2_zt, tau_zm, & ! Intent(in)
+      call term_wp2_splat( C_wp2_splat, gr%nz, dt, wp2, wp2_zt, tau_zm, & ! Intent(in)
                            wp2_splat )                                ! Intent(out)
       ! Vertical compression of eddies also diminishes w'3
-      call term_wp3_splat( C_wp2_splat, gr%nz, wp2, wp3, tau_zt, & ! Intent(in)
+      call term_wp3_splat( C_wp2_splat, gr%nz, dt, wp2, wp3, tau_zt, & ! Intent(in)
                            wp3_splat )                             ! Intent(out)
 
       !----------------------------------------------------------------
