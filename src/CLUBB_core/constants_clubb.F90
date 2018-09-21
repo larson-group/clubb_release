@@ -384,6 +384,9 @@ module constants_clubb
   real( kind = core_rknd ), parameter, public ::  & 
     eps = 1.0e-10_core_rknd ! Small value to prevent a divide by zero
 
+  real( kind = core_rknd ), parameter, public :: &
+    max_num_stdevs = 5.0_core_rknd ! Range of standard deviations for statistical significance
+
   real( kind = core_rknd ), parameter, public ::  &
     zero_threshold = 0.0_core_rknd ! Defining a threshold on a physical quantity to be 0.
 

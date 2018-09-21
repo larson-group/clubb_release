@@ -23,6 +23,13 @@ module pdf_closure_module
     iiPDF_TSDADG = 5,   & ! new TSDADG PDF
     iiPDF_LY93 = 6        ! Lewellen and Yoh (1993)
 
+  ! Enumerations used for pdf_description
+  integer, parameter, public :: &
+    no_cloud = 1, &
+    all_cloud = 2, &
+    partly_cloudy = 3, &
+    delta_at_sat = 4
+
   ! The selected two component normal PDF for w, rt, and theta-l.
   integer, parameter, public :: &
     iiPDF_type = iiPDF_ADG1
@@ -105,6 +112,8 @@ module pdf_closure_module
         fstderr,        &
         zero_threshold, &
         chi_tol, &
+        eta_tol, &
+        max_mag_correlation, &
         eps, &
         w_tol
 
@@ -403,6 +412,9 @@ module pdf_closure_module
 
     integer :: k, i, hm_idx   ! Indices
 
+    integer, dimension(gr%nz,2) :: &
+      pdf_description   ! Discription of chi_1 and chi_2 PDF (all_cloud, no_cloud, etc)
+
 #ifdef GFDL
     real ( kind = core_rknd ), parameter :: t1_combined = 273.16, &
                                             t2_combined = 268.16, &
@@ -434,26 +446,26 @@ module pdf_closure_module
     ! Initialize to 0 to prevent a runtime error
     if ( iiPDF_type /= iiPDF_new ) then
 
-       do i = 1, gr%nz
+       do k = 1, gr%nz
 
-           pdf_implicit_coefs_terms(i)%coef_wp4_implicit = zero
-           pdf_implicit_coefs_terms(i)%coef_wprtp2_implicit = zero
-           pdf_implicit_coefs_terms(i)%coef_wpthlp2_implicit = zero
-           pdf_implicit_coefs_terms(i)%coef_wp2rtp_implicit = zero
-           pdf_implicit_coefs_terms(i)%term_wp2rtp_explicit = zero
-           pdf_implicit_coefs_terms(i)%coef_wp2thlp_implicit = zero
-           pdf_implicit_coefs_terms(i)%term_wp2thlp_explicit = zero
-           pdf_implicit_coefs_terms(i)%coef_wprtpthlp_implicit = zero
-           pdf_implicit_coefs_terms(i)%term_wprtpthlp_explicit = zero
-           F_w(i) = zero
-           F_rt(i) = zero
-           F_thl(i) = zero
-           min_F_w(i) = zero
-           max_F_w(i) = zero
-           min_F_rt(i) = zero
-           max_F_rt(i) = zero
-           min_F_thl(i) = zero
-           max_F_thl(i) = zero
+           pdf_implicit_coefs_terms(k)%coef_wp4_implicit = zero
+           pdf_implicit_coefs_terms(k)%coef_wprtp2_implicit = zero
+           pdf_implicit_coefs_terms(k)%coef_wpthlp2_implicit = zero
+           pdf_implicit_coefs_terms(k)%coef_wp2rtp_implicit = zero
+           pdf_implicit_coefs_terms(k)%term_wp2rtp_explicit = zero
+           pdf_implicit_coefs_terms(k)%coef_wp2thlp_implicit = zero
+           pdf_implicit_coefs_terms(k)%term_wp2thlp_explicit = zero
+           pdf_implicit_coefs_terms(k)%coef_wprtpthlp_implicit = zero
+           pdf_implicit_coefs_terms(k)%term_wprtpthlp_explicit = zero
+           F_w(k) = zero
+           F_rt(k) = zero
+           F_thl(k) = zero
+           min_F_w(k) = zero
+           max_F_w(k) = zero
+           min_F_rt(k) = zero
+           max_F_rt(k) = zero
+           min_F_thl(k) = zero
+           max_F_thl(k) = zero
 
         end do
 
@@ -808,7 +820,7 @@ module pdf_closure_module
     where ( stdev_chi_2 <= chi_tol )
        ! Treat chi as a delta function in this component.
        stdev_chi_2 = zero
-    endwhere
+    end where
 
     ! Standard deviation of eta for each component.
     stdev_eta_1 = sqrt( max( crt_1**2 * varnce_rt_1 &
@@ -823,6 +835,17 @@ module pdf_closure_module
                              + cthl_2**2 * varnce_thl_2, &
                              zero_threshold )  )
 
+    ! We need to introduce a threshold value for the variance of chi
+    where ( stdev_eta_1 <= eta_tol )
+       ! Treat eta as a delta function in this component.
+       stdev_eta_1 = zero
+    end where
+
+    where ( stdev_eta_2 <= eta_tol )
+       ! Treat eta as a delta function in this component.
+       stdev_eta_2 = zero
+    end where
+
     ! Covariance of chi and eta for each component.
     covar_chi_eta_1 = crt_1**2 * varnce_rt_1 - cthl_1**2 * varnce_thl_1
 
@@ -833,13 +856,16 @@ module pdf_closure_module
        corr_chi_eta_1 = covar_chi_eta_1 / ( stdev_chi_1 * stdev_eta_1 )
     elsewhere
        corr_chi_eta_1 = zero
-    endwhere
+    end where
 
     where ( stdev_chi_2 * stdev_eta_2 > zero )
        corr_chi_eta_2 = covar_chi_eta_2 / ( stdev_chi_2 * stdev_eta_2 )
     elsewhere
        corr_chi_eta_2 = zero
-    endwhere
+    end where
+
+    corr_chi_eta_1 = min( max_mag_correlation, max( -max_mag_correlation, corr_chi_eta_1 ) )
+    corr_chi_eta_2 = min( max_mag_correlation, max( -max_mag_correlation, corr_chi_eta_2 ) )
 
     ! Correlation of w and chi for each component.
     corr_w_chi_1 &
@@ -874,11 +900,13 @@ module pdf_closure_module
 
     ! Calculate cloud_frac_1 and rc_1
     call calc_cloud_frac_component( chi_1, stdev_chi_1, chi_at_liq_sat, &
-                                    cloud_frac_1, rc_1 )
+                                    cloud_frac_1, rc_1, &
+                                    pdf_description(:,1) )
 
     ! Calculate cloud_frac_2 and rc_2
     call calc_cloud_frac_component( chi_2, stdev_chi_2, chi_at_liq_sat, &
-                                    cloud_frac_2, rc_2 )
+                                    cloud_frac_2, rc_2, &
+                                    pdf_description(:,2) )
 
     ! Compute cloud fraction and mean cloud water mixing ratio.
     ! Reference:
@@ -966,6 +994,7 @@ module pdf_closure_module
                                chi_1, stdev_chi_1, stdev_eta_1,   & ! In
                                corr_w_chi_1, corr_chi_eta_1,      & ! In
                                crt_1, cthl_1, rc_1, cloud_frac_1, & ! In
+                               pdf_description(:,1),              & ! In
                                wprcp_contrib_comp_1,              & ! Out
                                wp2rcp_contrib_comp_1,             & ! Out
                                rtprcp_contrib_comp_1,             & ! Out
@@ -978,6 +1007,7 @@ module pdf_closure_module
                                chi_2, stdev_chi_2, stdev_eta_2,   & ! In
                                corr_w_chi_2, corr_chi_eta_2,      & ! In
                                crt_2, cthl_2, rc_2, cloud_frac_2, & ! In
+                               pdf_description(:,2),              & ! In
                                wprcp_contrib_comp_2,              & ! Out
                                wp2rcp_contrib_comp_2,             & ! Out
                                rtprcp_contrib_comp_2,             & ! Out
@@ -1060,56 +1090,56 @@ module pdf_closure_module
 
 
     ! Save PDF parameters
-    do i = 1, gr%nz
+    do k = 1, gr%nz
 
-        pdf_params(i)%w_1             = w_1(i)
-        pdf_params(i)%w_2             = w_2(i)
-        pdf_params(i)%varnce_w_1      = varnce_w_1(i)
-        pdf_params(i)%varnce_w_2      = varnce_w_2(i)
-        pdf_params(i)%rt_1            = rt_1(i)
-        pdf_params(i)%rt_2            = rt_2(i)
-        pdf_params(i)%varnce_rt_1     = varnce_rt_1(i)
-        pdf_params(i)%varnce_rt_2     = varnce_rt_2(i)
-        pdf_params(i)%thl_1           = thl_1(i)
-        pdf_params(i)%thl_2           = thl_2(i)
-        pdf_params(i)%varnce_thl_1    = varnce_thl_1(i)
-        pdf_params(i)%varnce_thl_2    = varnce_thl_2(i)
-        pdf_params(i)%corr_w_rt_1     = corr_w_rt_1(i)
-        pdf_params(i)%corr_w_rt_2     = corr_w_rt_2(i)
-        pdf_params(i)%corr_w_thl_1    = corr_w_thl_1(i)
-        pdf_params(i)%corr_w_thl_2    = corr_w_thl_2(i)
-        pdf_params(i)%corr_rt_thl_1   = corr_rt_thl_1(i)
-        pdf_params(i)%corr_rt_thl_2   = corr_rt_thl_2(i)
-        pdf_params(i)%alpha_thl       = alpha_thl(i)
-        pdf_params(i)%alpha_rt        = alpha_rt(i)
-        pdf_params(i)%crt_1           = crt_1(i)
-        pdf_params(i)%crt_2           = crt_2(i)
-        pdf_params(i)%cthl_1          = cthl_1(i)
-        pdf_params(i)%cthl_2          = cthl_2(i)
-        pdf_params(i)%chi_1           = chi_1(i)
-        pdf_params(i)%chi_2           = chi_2(i)
-        pdf_params(i)%stdev_chi_1     = stdev_chi_1(i)
-        pdf_params(i)%stdev_chi_2     = stdev_chi_2(i)
-        pdf_params(i)%stdev_eta_1     = stdev_eta_1(i)
-        pdf_params(i)%stdev_eta_2     = stdev_eta_2(i)
-        pdf_params(i)%covar_chi_eta_1 = covar_chi_eta_1(i)
-        pdf_params(i)%covar_chi_eta_2 = covar_chi_eta_2(i)
-        pdf_params(i)%corr_w_chi_1    = corr_w_chi_1(i)
-        pdf_params(i)%corr_w_chi_2    = corr_w_chi_2(i)
-        pdf_params(i)%corr_w_eta_1    = corr_w_eta_1(i)
-        pdf_params(i)%corr_w_eta_2    = corr_w_eta_2(i)
-        pdf_params(i)%corr_chi_eta_1  = corr_chi_eta_1(i)
-        pdf_params(i)%corr_chi_eta_2  = corr_chi_eta_2(i)
-        pdf_params(i)%rsatl_1         = rsatl_1(i)
-        pdf_params(i)%rsatl_2         = rsatl_2(i)
-        pdf_params(i)%rc_1            = rc_1(i)
-        pdf_params(i)%rc_2            = rc_2(i)
-        pdf_params(i)%cloud_frac_1    = cloud_frac_1(i)
-        pdf_params(i)%cloud_frac_2    = cloud_frac_2(i)
-        pdf_params(i)%mixt_frac       = mixt_frac(i)
+        pdf_params(k)%w_1             = w_1(k)
+        pdf_params(k)%w_2             = w_2(k)
+        pdf_params(k)%varnce_w_1      = varnce_w_1(k)
+        pdf_params(k)%varnce_w_2      = varnce_w_2(k)
+        pdf_params(k)%rt_1            = rt_1(k)
+        pdf_params(k)%rt_2            = rt_2(k)
+        pdf_params(k)%varnce_rt_1     = varnce_rt_1(k)
+        pdf_params(k)%varnce_rt_2     = varnce_rt_2(k)
+        pdf_params(k)%thl_1           = thl_1(k)
+        pdf_params(k)%thl_2           = thl_2(k)
+        pdf_params(k)%varnce_thl_1    = varnce_thl_1(k)
+        pdf_params(k)%varnce_thl_2    = varnce_thl_2(k)
+        pdf_params(k)%corr_w_rt_1     = corr_w_rt_1(k)
+        pdf_params(k)%corr_w_rt_2     = corr_w_rt_2(k)
+        pdf_params(k)%corr_w_thl_1    = corr_w_thl_1(k)
+        pdf_params(k)%corr_w_thl_2    = corr_w_thl_2(k)
+        pdf_params(k)%corr_rt_thl_1   = corr_rt_thl_1(k)
+        pdf_params(k)%corr_rt_thl_2   = corr_rt_thl_2(k)
+        pdf_params(k)%alpha_thl       = alpha_thl(k)
+        pdf_params(k)%alpha_rt        = alpha_rt(k)
+        pdf_params(k)%crt_1           = crt_1(k)
+        pdf_params(k)%crt_2           = crt_2(k)
+        pdf_params(k)%cthl_1          = cthl_1(k)
+        pdf_params(k)%cthl_2          = cthl_2(k)
+        pdf_params(k)%chi_1           = chi_1(k)
+        pdf_params(k)%chi_2           = chi_2(k)
+        pdf_params(k)%stdev_chi_1     = stdev_chi_1(k)
+        pdf_params(k)%stdev_chi_2     = stdev_chi_2(k)
+        pdf_params(k)%stdev_eta_1     = stdev_eta_1(k)
+        pdf_params(k)%stdev_eta_2     = stdev_eta_2(k)
+        pdf_params(k)%covar_chi_eta_1 = covar_chi_eta_1(k)
+        pdf_params(k)%covar_chi_eta_2 = covar_chi_eta_2(k)
+        pdf_params(k)%corr_w_chi_1    = corr_w_chi_1(k)
+        pdf_params(k)%corr_w_chi_2    = corr_w_chi_2(k)
+        pdf_params(k)%corr_w_eta_1    = corr_w_eta_1(k)
+        pdf_params(k)%corr_w_eta_2    = corr_w_eta_2(k)
+        pdf_params(k)%corr_chi_eta_1  = corr_chi_eta_1(k)
+        pdf_params(k)%corr_chi_eta_2  = corr_chi_eta_2(k)
+        pdf_params(k)%rsatl_1         = rsatl_1(k)
+        pdf_params(k)%rsatl_2         = rsatl_2(k)
+        pdf_params(k)%rc_1            = rc_1(k)
+        pdf_params(k)%rc_2            = rc_2(k)
+        pdf_params(k)%cloud_frac_1    = cloud_frac_1(k)
+        pdf_params(k)%cloud_frac_2    = cloud_frac_2(k)
+        pdf_params(k)%mixt_frac       = mixt_frac(k)
 
-        pdf_params(i)%ice_supersat_frac_1 = ice_supersat_frac_1(i)
-        pdf_params(i)%ice_supersat_frac_2 = ice_supersat_frac_2(i)
+        pdf_params(k)%ice_supersat_frac_1 = ice_supersat_frac_1(k)
+        pdf_params(k)%ice_supersat_frac_2 = ice_supersat_frac_2(k)
 
     end do
 
@@ -1753,8 +1783,8 @@ module pdf_closure_module
   !=============================================================================
   subroutine calc_cloud_frac_component( mean_chi_i, stdev_chi_i, &
                                         chi_at_sat, &
-                                        cloud_frac_i, rc_i )
-
+                                        cloud_frac_i, rc_i, &
+                                        pdf_description_out )
     ! Description:
     ! Calculates the PDF component cloud water mixing ratio, rc_i, and cloud
     ! fraction, cloud_frac_i, for the ith PDF component.
@@ -1813,12 +1843,14 @@ module pdf_closure_module
         gr    ! Variable type(s)
 
     use constants_clubb, only: &
-        chi_tol,  & ! Tolerance for pdf parameter chi       [kg/kg]
-        sqrt_2pi, & ! sqrt(2*pi)
-        sqrt_2,   & ! sqrt(2)
-        one,      & ! 1
-        one_half, & ! 1/2
-        zero        ! 0
+        chi_tol,        & ! Tolerance for pdf parameter chi       [kg/kg]
+        sqrt_2pi,       & ! sqrt(2*pi)
+        sqrt_2,         & ! sqrt(2)
+        one,            & ! 1
+        one_half,       & ! 1/2
+        zero,           & ! 0
+        max_num_stdevs, &
+        eps
 
     use clubb_precision, only: &
         core_rknd     ! Precision
@@ -1839,33 +1871,68 @@ module pdf_closure_module
     ! Local Variables
     real( kind = core_rknd), dimension(gr%nz) :: zeta_i
 
+    integer, dimension(gr%nz), optional, intent(out) :: &
+        pdf_description_out
+
+    integer, dimension(gr%nz) :: &
+        pdf_description_i
+
     !----- Begin Code -----
-    where ( stdev_chi_i > chi_tol )
 
-       ! The value of chi varies in the ith PDF component.
+    ! Changing these conditionals may result in inconsistencies with the conditional
+    ! statements located in calc_xprcp_component
 
-       zeta_i = ( mean_chi_i - chi_at_sat ) / stdev_chi_i
+    where ( abs( mean_chi_i - chi_at_sat ) <= eps .and. stdev_chi_i <= chi_tol ) 
 
-       cloud_frac_i = one_half * ( one + erf( zeta_i / sqrt_2 )  )
+        ! The mean of chi is at saturation and does not vary in the ith PDF component
 
-       rc_i = ( mean_chi_i - chi_at_sat ) * cloud_frac_i &
-              + stdev_chi_i * exp( - one_half * zeta_i**2 ) / ( sqrt_2pi )
+        pdf_description_i = delta_at_sat
 
-    elsewhere ! stdev_chi_i <= chi_tol
+        cloud_frac_i = zero
+        rc_i         = zero
 
-       ! The value of chi does not vary in the ith PDF component.
-       where ( ( mean_chi_i - chi_at_sat ) < zero )
-          ! All clear air in the ith PDF component.
-          cloud_frac_i = zero
-          rc_i         = zero
-       elsewhere ! mean_chi_i >= 0
-          ! All cloud in the ith PDF component.
-          cloud_frac_i = one
-          rc_i         = mean_chi_i - chi_at_sat
-       endwhere ! mean_chi_i < 0
+    elsewhere ( mean_chi_i - chi_at_sat > max_num_stdevs * stdev_chi_i )
 
-    endwhere ! stdev_chi_i > chi_tol
+        ! The mean of chi is multiple standard deviations above the saturation point.
+        ! Thus, all cloud in the ith PDF component.
 
+        pdf_description_i = all_cloud
+
+        cloud_frac_i = one
+        rc_i         = mean_chi_i - chi_at_sat
+
+
+    elsewhere ( mean_chi_i - chi_at_sat < - max_num_stdevs * stdev_chi_i )
+
+        ! The mean of chi is multiple standard deviations below the saturation point.
+        ! Thus, all clear air in the ith PDF component.
+
+        pdf_description_i = no_cloud
+
+        cloud_frac_i = zero
+        rc_i         = zero
+    
+    elsewhere
+
+        ! The mean of chi is within max_num_stdevs of the saturation point.
+        ! Thus, layer is partly cloudy, requires calculation.
+
+        
+        pdf_description_i = partly_cloudy
+
+        zeta_i = ( mean_chi_i - chi_at_sat ) / stdev_chi_i
+
+        cloud_frac_i = one_half * ( one + erf( zeta_i / sqrt_2 )  )
+
+        rc_i = ( mean_chi_i - chi_at_sat ) * cloud_frac_i &
+               + stdev_chi_i * exp( - one_half * zeta_i**2 ) / ( sqrt_2pi )
+
+    end where
+
+    if ( present( pdf_description_out ) ) then
+        pdf_description_out = pdf_description_i
+    end if
+        
 
     return
     
@@ -1948,6 +2015,7 @@ module pdf_closure_module
                                    chi_i, stdev_chi_i, stdev_eta_i,   & ! In
                                    corr_w_chi_i, corr_chi_eta_i,      & ! In
                                    crt_i, cthl_i, rc_i, cloud_frac_i, & ! In
+                                   pdf_description_i,                 & ! In
                                    wprcp_contrib_comp_i,              & ! Out
                                    wp2rcp_contrib_comp_i,             & ! Out
                                    rtprcp_contrib_comp_i,             & ! Out
@@ -2313,10 +2381,11 @@ module pdf_closure_module
         gr    ! Variable type(s)
 
     use constants_clubb, only: &
-        sqrt_2pi, & ! Variable(s)
-        two,      &
-        zero,     &
-        chi_tol
+        sqrt_2pi,       & ! Variable(s)
+        two,            &
+        zero,           &
+        chi_tol,        &
+        cloud_frac_min
 
     use clubb_precision, only: &
         core_rknd    ! Variable(s)
@@ -2354,53 +2423,58 @@ module pdf_closure_module
     real( kind = core_rknd ), dimension(gr%nz) :: &
       sigma_w_i    ! Standard deviation of w (ith PDF component)       [m/s]
 
+    integer, dimension(gr%nz), intent(in) :: &
+      pdf_description_i
 
-    where ( stdev_chi_i > chi_tol )
+    ! ---------------------- Begin Code ------------------
+    
+    ! Changing these conditionals may result in inconsistencies with the conditional
+    ! statements located in calc_cloud_frac_component
 
-       ! The value of chi varies in the ith PDF component.
+    where ( pdf_description_i == no_cloud .or. pdf_description_i == delta_at_sat )
 
-       sigma_w_i = sqrt( varnce_w_i )
+        ! All clear air (cloud_frac = 0), meaning that the mean of chi is a large 
+        ! number of standard deviations below the saturation point or that the mean 
+        ! is on the saturation point and does not vary in the ith PDF component 
+        wprcp_contrib_comp_i = - ( w_i - wm ) * rcm
+        wp2rcp_contrib_comp_i = - ( ( w_i - wm )**2 + varnce_w_i ) * rcm
+        rtprcp_contrib_comp_i = - ( rt_i - rtm ) * rcm
+        thlprcp_contrib_comp_i = - ( thl_i - thlm ) * rcm
 
-       wprcp_contrib_comp_i &
-       = ( w_i - wm ) * ( rc_i - rcm ) &
-         + corr_w_chi_i * sigma_w_i * stdev_chi_i * cloud_frac_i
+    elsewhere ( pdf_description_i == all_cloud .and. stdev_chi_i <= chi_tol )
 
-       wp2rcp_contrib_comp_i &
-       = ( ( w_i - wm )**2 + varnce_w_i ) * ( rc_i - rcm ) &
-         + two * ( w_i - wm ) * corr_w_chi_i &
-           * sigma_w_i * stdev_chi_i * cloud_frac_i &
-         + corr_w_chi_i**2 * varnce_w_i * stdev_chi_i &
-           * exp( - chi_i**2 / ( two * stdev_chi_i**2 ) ) / sqrt_2pi
+        ! All cloud (cloud_frac = 1) and the mean of chi does 
+        ! not vary (stdev_chi < chi_tol) in the ith PDF component
+        wprcp_contrib_comp_i = ( w_i - wm ) * ( chi_i - rcm )
+        wp2rcp_contrib_comp_i = ( ( w_i - wm )**2 + varnce_w_i ) * ( chi_i - rcm )
+        rtprcp_contrib_comp_i = ( rt_i - rtm ) * ( chi_i - rcm )
+        thlprcp_contrib_comp_i = ( thl_i - thlm ) * ( chi_i - rcm )
 
-       rtprcp_contrib_comp_i &
-       = ( rt_i - rtm ) * ( rc_i - rcm ) &
-         + ( corr_chi_eta_i * stdev_eta_i + stdev_chi_i ) / ( two * crt_i ) &
-           * stdev_chi_i * cloud_frac_i
+    elsewhere
 
-       thlprcp_contrib_comp_i &
-       = ( thl_i - thlm ) * ( rc_i - rcm ) &
-         + ( corr_chi_eta_i * stdev_eta_i - stdev_chi_i ) / ( two * cthl_i ) &
-           * stdev_chi_i * cloud_frac_i
+        ! Chi varies significantly in the ith PDF component (stdev_chi > chi_tol)
+        ! and there is some cloud (0 < cloud_frac <= 1)
 
-    elsewhere ! stdev_chi_i <= chi_tol
+        sigma_w_i = sqrt( varnce_w_i )
 
-       ! The value of chi is constant in the ith PDF component.
-       where ( chi_i > zero )
-          ! All cloud in the ith PDF component.
-          wprcp_contrib_comp_i = ( w_i - wm ) * ( chi_i - rcm )
-          wp2rcp_contrib_comp_i &
-          = ( ( w_i - wm )**2 + varnce_w_i ) * ( chi_i - rcm )
-          rtprcp_contrib_comp_i = ( rt_i - rtm ) * ( chi_i - rcm )
-          thlprcp_contrib_comp_i = ( thl_i - thlm ) * ( chi_i - rcm )
-       elsewhere ! chi_i <= 0
-          ! All clear air in the ith PDF component.
-          wprcp_contrib_comp_i = - ( w_i - wm ) * rcm
-          wp2rcp_contrib_comp_i = - ( ( w_i - wm )**2 + varnce_w_i ) * rcm
-          rtprcp_contrib_comp_i = - ( rt_i - rtm ) * rcm
-          thlprcp_contrib_comp_i = - ( thl_i - thlm ) * rcm
-       endwhere ! chi_i > 0
+        wprcp_contrib_comp_i = ( w_i - wm ) * ( rc_i - rcm ) &
+                               + corr_w_chi_i * sigma_w_i * stdev_chi_i * cloud_frac_i
 
-    endwhere ! stdev_chi_i > chi_tol
+        wp2rcp_contrib_comp_i = ( ( w_i - wm )**2 + varnce_w_i ) * ( rc_i - rcm ) &
+                                + two * ( w_i - wm ) * corr_w_chi_i &
+                                  * sigma_w_i * stdev_chi_i * cloud_frac_i &
+                                + corr_w_chi_i**2 * varnce_w_i * stdev_chi_i &
+                                  * exp( - chi_i**2 / ( two * stdev_chi_i**2 ) ) / sqrt_2pi
+
+        rtprcp_contrib_comp_i = ( rt_i - rtm ) * ( rc_i - rcm ) &
+                                + ( corr_chi_eta_i * stdev_eta_i + stdev_chi_i ) &
+                                  / ( two * crt_i ) * stdev_chi_i * cloud_frac_i
+
+        thlprcp_contrib_comp_i = ( thl_i - thlm ) * ( rc_i - rcm ) &
+                                 + ( corr_chi_eta_i * stdev_eta_i - stdev_chi_i ) &
+                                   / ( two * cthl_i ) * stdev_chi_i * cloud_frac_i
+
+    end where
 
 
     return
