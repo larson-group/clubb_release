@@ -132,7 +132,7 @@ module advance_clubb_core_module
                p_in_Pa, rho_zm, rho, exner, &                       ! intent(in)
                rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm, &             ! intent(in)
                invrs_rho_ds_zt, thv_ds_zm, thv_ds_zt, hydromet, &   ! intent(in)
-               rfrzm, radf, &
+               rfrzm, radf, &                                       ! intent(in)
 #ifdef CLUBBND_CAM
                varmu, &                                             ! intent(in)
 #endif
@@ -141,7 +141,7 @@ module advance_clubb_core_module
                um, vm, upwp, vpwp, up2, vp2, &                      ! intent(inout)
                thlm, rtm, wprtp, wpthlp, &                          ! intent(inout)
                wp2, wp3, rtp2, rtp3, thlp2, thlp3, rtpthlp, &       ! intent(inout)
-               sclrm,   &
+               sclrm,   &                                           ! intent(inout)
 #ifdef GFDL
                sclrm_trsport_only,  &  ! h1g, 2010-06-16            ! intent(inout)
 #endif
@@ -447,48 +447,49 @@ module advance_clubb_core_module
 
     !!! Input Variables
     logical, intent(in) ::  & 
-      l_implemented ! Is this part of a larger host model (T/F) ?
+      l_implemented ! True if CLUBB is being run within a large-scale host model, 
+                    !   rather than a standalone single-column model.
 
     real( kind = core_rknd ), intent(in) ::  & 
       dt  ! Current timestep duration    [s]
 
     real( kind = core_rknd ), intent(in) ::  & 
       fcor,  &          ! Coriolis forcing             [s^-1]
-      sfc_elevation     ! Elevation of ground level    [m AMSL]
+      sfc_elevation     ! Elevation of ground level    [m above MSL]
 
     integer, intent(in) :: &
-      hydromet_dim      ! Total number of hydrometeors          [#]
+      hydromet_dim      ! Total number of hydrometeor species        [#]
 
     ! Input Variables
     real( kind = core_rknd ), intent(in), dimension(gr%nz) ::  & 
-      thlm_forcing,    & ! theta_l forcing (thermodynamic levels)    [K/s]
-      rtm_forcing,     & ! r_t forcing (thermodynamic levels)        [(kg/kg)/s]
-      um_forcing,      & ! u wind forcing (thermodynamic levels)     [m/s/s]
-      vm_forcing,      & ! v wind forcing (thermodynamic levels)     [m/s/s]
-      wprtp_forcing,   & ! <w'r_t'> forcing (momentum levels)    [m*K/s^2]
-      wpthlp_forcing,  & ! <w'th_l'> forcing (momentum levels)   [m*(kg/kg)/s^2]
-      rtp2_forcing,    & ! <r_t'^2> forcing (momentum levels)    [(kg/kg)^2/s]
-      thlp2_forcing,   & ! <th_l'^2> forcing (momentum levels)   [K^2/s]
-      rtpthlp_forcing, & ! <r_t'th_l'> forcing (momentum levels) [K*(kg/kg)/s]
-      wm_zm,           & ! w mean wind component on momentum levels  [m/s]
-      wm_zt,           & ! w mean wind component on thermo. levels   [m/s]
+      thlm_forcing,    & ! liquid potential temp. forcing (thermodynamic levels)    [K/s]
+      rtm_forcing,     & ! total water forcing (thermodynamic levels)        [(kg/kg)/s]
+      um_forcing,      & ! eastward wind forcing (thermodynamic levels)     [m/s/s]
+      vm_forcing,      & ! northward wind forcing (thermodynamic levels)     [m/s/s]
+      wprtp_forcing,   & ! total water turbulent flux forcing (momentum levels)    [m*K/s^2]
+      wpthlp_forcing,  & ! liq pot temp turb flux forcing (momentum levels)   [m*(kg/kg)/s^2]
+      rtp2_forcing,    & ! total water variance forcing (momentum levels)    [(kg/kg)^2/s]
+      thlp2_forcing,   & ! liq pot temp variance forcing (momentum levels)   [K^2/s]
+      rtpthlp_forcing, & ! <r_t'th_l'> covariance forcing (momentum levels) [K*(kg/kg)/s]
+      wm_zm,           & ! vertical mean wind component on momentum levels  [m/s]
+      wm_zt,           & ! vertical mean wind component on thermo. levels   [m/s]
       p_in_Pa,         & ! Air pressure (thermodynamic levels)       [Pa]
       rho_zm,          & ! Air density on momentum levels            [kg/m^3]
       rho,             & ! Air density on thermodynamic levels       [kg/m^3]
       exner,           & ! Exner function (thermodynamic levels)     [-]
       rho_ds_zm,       & ! Dry, static density on momentum levels    [kg/m^3]
       rho_ds_zt,       & ! Dry, static density on thermo. levels     [kg/m^3]
-      invrs_rho_ds_zm, & ! Inv. dry, static density @ momentum levs. [m^3/kg]
-      invrs_rho_ds_zt, & ! Inv. dry, static density @ thermo. levs.  [m^3/kg]
+      invrs_rho_ds_zm, & ! Inverse dry, static density on momentum levs. [m^3/kg]
+      invrs_rho_ds_zt, & ! Inverse dry, static density on thermo levs.  [m^3/kg]
       thv_ds_zm,       & ! Dry, base-state theta_v on momentum levs. [K]
-      thv_ds_zt,       & ! Dry, base-state theta_v on thermo. levs.  [K]
+      thv_ds_zt,       & ! Dry, base-state theta_v on thermo levs.  [K]
       rfrzm              ! Total ice-phase water mixing ratio        [kg/kg]
 
     real( kind = core_rknd ), dimension(gr%nz,hydromet_dim), intent(in) :: &
-      hydromet           ! Collection of hydrometeors                [units vary]
+      hydromet           ! Array of hydrometeors                [units vary]
 
     real( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
-      radf          ! Buoyancy production at the CL top due to LW radiative cooling [m^2/s^3]
+      radf          ! Buoyancy production at cloud top due to longwave radiative cooling [m^2/s^3]
 
 #ifdef CLUBBND_CAM
     real( kind = core_rknd ), intent(in) :: &
@@ -497,9 +498,9 @@ module advance_clubb_core_module
 
     real( kind = core_rknd ), dimension(gr%nz, hydromet_dim), intent(in) :: &
       wphydrometp, & ! Covariance of w and a hydrometeor      [(m/s) <hm units>]
-      wp2hmp,      & ! Third-order moment:  < w'^2 hm' >    [(m/s)^2 <hm units>]
-      rtphmp_zt,   & ! Covariance of rt and hm (on t-levs.) [(kg/kg) <hm units>]
-      thlphmp_zt     ! Covariance of thl and hm (on t-levs.)      [K <hm units>]
+      wp2hmp,      & ! Third-order moment:  < w'^2 hm' > (hm = hydrometeor) [(m/s)^2 <hm units>]
+      rtphmp_zt,   & ! Covariance of rt and hm (on thermo levs.) [(kg/kg) <hm units>]
+      thlphmp_zt     ! Covariance of thl and hm (on thermo levs.)      [K <hm units>]
 
     real( kind = core_rknd ), intent(in) ::  &
       wpthlp_sfc,   & ! w' theta_l' at surface   [(m K)/s]
@@ -512,38 +513,38 @@ module advance_clubb_core_module
       sclrm_forcing    ! Passive scalar forcing         [{units vary}/s]
 
     real( kind = core_rknd ), intent(in),  dimension(sclr_dim) ::  &
-      wpsclrp_sfc      ! Scalar flux at surface         [{units vary} m/s]
+      wpsclrp_sfc      ! Passive scalar flux at surface         [{units vary} m/s]
 
     ! Eddy passive scalar variables
     real( kind = core_rknd ), intent(in), dimension(gr%nz,edsclr_dim) :: &
-      edsclrm_forcing  ! Eddy passive scalar forcing    [{units vary}/s]
+      edsclrm_forcing  ! Eddy-diffusion passive scalar forcing    [{units vary}/s]
 
     real( kind = core_rknd ), intent(in),  dimension(edsclr_dim) ::  &
-      wpedsclrp_sfc    ! Eddy-Scalar flux at surface    [{units vary} m/s]
+      wpedsclrp_sfc    ! Eddy-diffusion passive scalar flux at surface    [{units vary} m/s]
 
     ! Host model horizontal grid spacing, if part of host model.
     real( kind = core_rknd ), intent(in) :: & 
-      host_dx,  & ! East-West horizontal grid spacing     [m]
-      host_dy     ! North-South horizontal grid spacing   [m]
+      host_dx,  & ! East-west horizontal grid spacing     [m]
+      host_dy     ! North-south horizontal grid spacing   [m]
 
     !!! Input/Output Variables
     ! These are prognostic or are planned to be in the future
     real( kind = core_rknd ), intent(inout), dimension(gr%nz) ::  &
-      um,      & ! u mean wind component (thermodynamic levels)   [m/s]
+      um,      & ! eastward grid-mean wind component (thermodynamic levels)   [m/s]
       upwp,    & ! u'w' (momentum levels)                         [m^2/s^2]
-      vm,      & ! v mean wind component (thermodynamic levels)   [m/s]
+      vm,      & ! northward grid-mean wind component (thermodynamic levels)   [m/s]
       vpwp,    & ! v'w' (momentum levels)                         [m^2/s^2]
       up2,     & ! u'^2 (momentum levels)                         [m^2/s^2]
       vp2,     & ! v'^2 (momentum levels)                         [m^2/s^2]
       rtm,     & ! total water mixing ratio, r_t (thermo. levels) [kg/kg]
       wprtp,   & ! w' r_t' (momentum levels)                      [(kg/kg) m/s]
       thlm,    & ! liq. water pot. temp., th_l (thermo. levels)   [K]
-      wpthlp,  & ! w' th_l' (momentum levels)                     [(m/s) K]
+      wpthlp,  & ! w'th_l' (momentum levels)                      [(m/s) K]
       rtp2,    & ! r_t'^2 (momentum levels)                       [(kg/kg)^2]
       rtp3,    & ! r_t'^3 (thermodynamic levels)                  [(kg/kg)^3]
       thlp2,   & ! th_l'^2 (momentum levels)                      [K^2]
       thlp3,   & ! th_l'^3 (thermodynamic levels)                 [K^3]
-      rtpthlp, & ! r_t' th_l' (momentum levels)                   [(kg/kg) K]
+      rtpthlp, & ! r_t'th_l' (momentum levels)                    [(kg/kg) K]
       wp2,     & ! w'^2 (momentum levels)                         [m^2/s^2]
       wp3        ! w'^3 (thermodynamic levels)                    [m^3/s^3]
 
@@ -567,8 +568,8 @@ module advance_clubb_core_module
       sclrpthvp    ! < sclr' th_v' > (momentum levels)   [units vary]
 
     type(pdf_parameter), dimension(gr%nz), intent(inout) :: &
-      pdf_params,    & ! PDF parameters (thermodynamic levels)    [units vary]
-      pdf_params_zm    ! PDF parameters on momentum levels        [units vary]
+      pdf_params,    & ! Fortran structure of PDF parameters on thermodynamic levels    [units vary]
+      pdf_params_zm    ! Fortran structure of PDF parameters on momentum levels        [units vary]
 
 #ifdef GFDL
     real( kind = core_rknd ), intent(inout), dimension(gr%nz,sclr_dim) :: &  ! h1g, 2010-06-16
@@ -577,13 +578,13 @@ module advance_clubb_core_module
 
     ! Eddy passive scalar variable
     real( kind = core_rknd ), intent(inout), dimension(gr%nz,edsclr_dim) :: & 
-      edsclrm   ! Eddy passive scalar mean (thermo. levels)   [units vary]
+      edsclrm   ! Eddy passive scalar grid-mean (thermo. levels)   [units vary]
 
     ! Variables that need to be output for use in other parts of the CLUBB
     ! code, such as microphysics (rcm, pdf_params), forcings (rcm), and/or
     ! BUGSrad (cloud_cover).
     real( kind = core_rknd ), intent(out), dimension(gr%nz) ::  & 
-      rcm_in_layer, & ! rcm in cloud layer                              [kg/kg]
+      rcm_in_layer, & ! rcm within cloud layer                          [kg/kg]
       cloud_cover     ! cloud cover                                     [-]
 
     ! Variables that need to be output for use in host models
@@ -600,7 +601,7 @@ module advance_clubb_core_module
 #ifdef CLUBB_CAM
     real( kind = core_rknd), intent(out), dimension(gr%nz) :: &
       qclvar, &     ! cloud water variance
-      thlprcp_out
+      thlprcp_out   ! thl'rc'
 #endif
 
 
