@@ -39,14 +39,14 @@ module latin_hypercube_driver_module
 
 !-------------------------------------------------------------------------------
   subroutine generate_silhs_sample &
-             ( iter, pdf_dim, num_samples, sequence_length, nz, & ! In
-               l_calc_weights_all_levs_itime, &
-               pdf_params, delta_zm, rcm, Lscale, & ! In
-               rho_ds_zt, mu1, mu2, sigma1, sigma2, & ! In
-               corr_cholesky_mtx_1, corr_cholesky_mtx_2, & ! In
-               hydromet_pdf_params, & ! In
-               X_nl_all_levs, X_mixt_comp_all_levs, & ! Out
-               lh_sample_point_weights ) ! Out
+             ( iter, pdf_dim, num_samples, sequence_length, nz, & ! intent(in)
+               l_calc_weights_all_levs_itime, &                   ! intent(in)
+               pdf_params, delta_zm, rcm, Lscale, &               ! intent(in)
+               rho_ds_zt, mu1, mu2, sigma1, sigma2, &             ! intent(in)
+               corr_cholesky_mtx_1, corr_cholesky_mtx_2, &        ! intent(in)
+               hydromet_pdf_params, &                             ! intent(in)
+               X_nl_all_levs, X_mixt_comp_all_levs, &             ! intent(out)
+               lh_sample_point_weights )                          ! intent(out)
 
 ! Description:
 !   Generate sample points of moisture, temperature, et cetera for the purpose
@@ -103,17 +103,17 @@ module latin_hypercube_driver_module
 
     ! Input Variables
     integer, intent(in) :: &
-      iter,            & ! Model iteration number
-      pdf_dim,     & ! Number of variables to sample
+      iter,            & ! Model iteration (time step) number
+      pdf_dim,         & ! Number of variables to sample
       num_samples,     & ! Number of samples per variable
-      sequence_length, & ! nt_repeat/num_samples; number of timesteps before sequence repeats.
+      sequence_length, & ! nt_repeat/num_samples; number of timesteps before sequence repeats
       nz                 ! Number of vertical model levels
 
     type(pdf_parameter), dimension(nz), intent(in) :: &
       pdf_params ! PDF parameters       [units vary]
 
     real( kind = core_rknd ), dimension(nz), intent(in) :: &
-      delta_zm, &  ! Difference in moment. altitudes    [m]
+      delta_zm, &  ! Difference in momentum altitudes    [m]
       rcm          ! Liquid water mixing ratio          [kg/kg]
 
     real( kind = core_rknd ), dimension(nz), intent(in) :: &
@@ -134,7 +134,7 @@ module latin_hypercube_driver_module
       X_mixt_comp_all_levs ! Which mixture component we're in
 
     real( kind = core_rknd ), intent(out), dimension(nz,num_samples) :: &
-      lh_sample_point_weights
+      lh_sample_point_weights ! Weight of each sample point
 
     ! More Input Variables!
     real( kind = core_rknd ), dimension(pdf_dim,pdf_dim,nz), intent(in) :: &
@@ -148,7 +148,7 @@ module latin_hypercube_driver_module
       sigma2    ! Stdevs of the hydrometeors, 2nd comp. (chi, eta, w, <hydrometeors>) [units vary]
 
     type(hydromet_pdf_parameter), dimension(nz), intent(in) :: &
-      hydromet_pdf_params
+      hydromet_pdf_params ! Hydrometeor PDF parameters  [units vary]
 
     ! Local variables
     real( kind = core_rknd ), dimension(nz,num_samples,(pdf_dim+d_uniform_extra)) :: &
