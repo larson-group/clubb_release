@@ -1,0 +1,408 @@
+/*----------------------------------------------------------------------------
+	main.css
+
+	this css-file contains all definitions, that are independend from the
+	colorschemes.
+
+	(c) Schlund + Partner AG
+
+
+	----------------------------------------------------------------------
+	Modified and extended by Barti Bartman for the Sports-Template
+
+	This CSS-File uses the original "Tanteks Box Modell Hack"
+	http://www.tantek.com/CSS/Examples/boxmodelhack.html
+
+	NOTE:
+	Older W3C CSS validators return errors when the voice-family property
+	is used in a 'screen' style sheet. This is an error in the W3C CSS
+	validator itself. The validator should report a warning, not an error,
+	when properties which are unsupported by a particular medium are used,
+	and this has been reported to the W3C:
+
+ ----------------------------------------------------------------------------*/
+
+
+/*----------------------------------------------------------------------------
+ styles for specific classes and ids
+----------------------------------------------------------------------------*/
+
+
+/*-- global container ------------------------------------------------------*/
+
+#container {
+	position: relative;
+	text-align: left;
+	width: 726px;
+	background: white;
+	margin: 0;
+	padding: 3px 0 0;
+}
+
+/*--- main navigation ------------------------------------------------------*/
+
+#main_nav_container {
+	padding: 0;
+	margin-left: 3px;
+	margin-bottom: 3px;
+	height: 25px;
+}
+
+#main_nav_list {
+	list-style-type: none;
+	width: 721px;
+	padding: 0;
+	margin: 0;
+}
+
+#main_nav_list li {
+	margin: 0;
+	text-align: center;
+	padding: 0;
+	float: left;
+}
+
+/*--- main navigation items ------------------------------------------------*/
+
+#main_nav_list a {
+	margin: 0;
+	height: 25px;
+	text-transform: uppercase;
+	line-height: 25px;
+	text-align: center;
+	text-decoration: none;
+	padding: 1px 10px 0 10px;
+	float: left;
+}
+
+#main_nav_list a:hover {
+	background: transparent;
+	text-decoration: none;
+}
+
+/*--- header ---------------------------------------------------------------*/
+
+#header	{
+	position: relative;
+	clear: both;
+	padding: 0;
+	width: 720px;
+	height: 150px;
+	margin: 0 0 8px 3px;
+}
+
+/*--- key visual -----------------------------------------------------------*/
+
+#key_visual {
+	width: 720px;
+	height: 150px;
+	margin: 0;
+	padding: 0;
+}
+
+/*--- logo -----------------------------------------------------------------*/
+
+#logo {
+	width: 34px;
+	height: 34px;
+	position: absolute;
+	top: 100px;
+	left: 400px;
+	z-index: 3;
+}
+
+/*--- caption (as text or background image) --------------------------------*/
+
+#text_caption {
+	position: absolute;
+	top: 100px;
+	left: 450px;
+	z-index: 4;
+	width: 270px;
+	height: 40px;
+	text-align: left;
+}
+
+/*-- main container: contains all between header and footer ----------------*/
+
+#main_container {
+	width: 720px;
+	margin: 0 10px 0 0;
+	padding 0;
+}
+
+#main_container ul {
+	font-size: 12px;
+	margin-bottom: 6px;
+}
+
+#main_container ol {
+	font-size: 12px;
+	margin-bottom: 6px;
+}
+/*--- the main container is devided in sub containers ----------------------*/
+
+/*-- right column container alias --*/
+
+#sub_container2 {
+	width: 520px;
+	float: right;
+	margin: 0;
+	padding: 0;
+}
+
+#left_column_container {
+	float: left;
+	width: 170px;
+	height: 300px;
+	margin: 0;
+	padding: 0;
+}
+
+/*--- container for the subnavigation --------------------------------------*/
+
+.sub_nav_container {
+	margin: 3px 0 0 12px;
+	padding: 0;
+}
+
+/*--- subnavigation --------------------------------------------------------*/
+
+
+.sub_nav_list {
+	list-style-type: none;
+	border: 0;
+	padding: 0;
+	margin: 0;
+	voice-family: "\"}\"";
+	voice-family: inherit;
+	width: 158px;  /* IE5 darf das hier nicht lesen */
+}
+
+.sub_nav_list li {
+	display: inline;
+	padding: 0;
+	margin: 0;
+}
+
+/*--- subnavigation items --------------------------------------------------*/
+
+.sub_nav_list a {
+	text-decoration: none;
+	text-transform: uppercase;
+	text-align: left;
+	line-height: 23px;
+	vertical-align: bottom; /* fuer IE5 */
+	width: 158px; /* fuer IE5 */
+	padding: 0 0 0 18px;  /* extra fuer IE5 */
+	display: block;
+	margin: 0 0 1px 0;
+	voice-family: "\"}\"";
+	voice-family: inherit;
+	width: 145px; /* fuer alle ausser IE5 */
+	padding-left: 13px;  /* fuer nicht IE 5 â€“ schiebt rechte Kante im IE5.2 MacOsX mit */
+}
+
+.sub_nav_list a:hover {
+	vertical-align: bottom; /* fuer IE5 */
+}
+
+/*--- content --------------------------------------------------------------*/
+
+#content_container {
+	overflow: hidden;
+	width: 520px;
+	line-height: 1.4;
+	padding: 0;
+	margin: 0;
+}
+
+
+#content_container table {
+	width: 518px;
+	border: 0;
+	border-collapse: collapse;
+	margin:  0 0 20px 0;
+	line-height: 1.0;
+}
+
+#content_container th {
+	font-size:  12px;
+	font-weight: normal;
+	text-align: left;
+	padding: 4px 0 4px 8px;
+}
+
+#content_container td {
+	font-family: Arial, sans-serif;
+	font-size:  12px;
+	text-align: left;
+	padding: 4px 0 4px 8px;
+}
+
+#content_container tr.odd {
+}
+
+#content_container tr.even {
+}
+
+/*--- footer ---------------------------------------------------------------*/
+
+#footer {
+	padding: 25px 0 25px 0;
+	clear: both;
+	margin: 25px 0 0 0;
+	font-size: 9px;
+}
+
+#footer_text {
+	padding: 0;
+	font-family: Arial, sans-serif;
+	margin: 0 12px 0 186px;
+}
+
+
+
+/*----------------------------------------------------------------------------
+  default-styles for html-elements
+----------------------------------------------------------------------------*/
+
+/*--- body -----------------------------------------------------------------*/
+
+body#main_body {
+	margin: 0;
+	padding: 0;
+	font-family: Trebuchet MS,Tahoma,Verdana,Arial,sans-serif;
+	font-size: 16px;
+	text-align: left;
+}
+
+/*--- paragraph ------------------------------------------------------------*/
+
+#content_container p {
+	margin: 0 0 20px 0;
+	padding: 0;
+	font-size: 10px;
+	line-height: 1.4;
+}
+
+/*--- headings -------------------------------------------------------------*/
+
+#content_container h1 {
+	font-family: Trebuchet MS,Tahoma,Verdana,Arial,sans-serif;
+	font-size: 24px;
+}
+
+#content_container h2 {
+	font-family: Trebuchet MS,Tahoma,Verdana,Arial,sans-serif;
+	font-size: 20px;
+}
+
+#content_container h3 {
+	font-family: Trebuchet MS,Tahoma,Verdana,Arial,sans-serif;
+	font-size: 16px;
+}
+
+/*--- links ----------------------------------------------------------------*/
+
+#content_container a:link{
+	text-decoration: none;
+}
+
+#content_container a:visited {
+	text-decoration: none;
+}
+
+#content_container a:hover {
+	text-decoration : underline;
+}
+
+#content_container a:active {
+	text-decoration : underline;
+}
+
+/*--- tables ---------------------------------------------------------------*/
+
+#content_container table {
+}
+
+#content_container th {
+}
+
+#content_container td {
+}
+
+/*--- forms ----------------------------------------------------------------*/
+
+#content_container form {
+	margin: 0;
+	padding: 10px 0 10px 0;
+	text-align: center;
+}
+
+#content_container fieldset {
+	padding: 15px;
+	border-style: solid;
+	border-width: 1px;
+}
+
+/*
+#content_container input {
+        font-family: Arial, sans-serif;
+        font-size: 12px;
+        color: #333;
+        width: 40%;
+        margin: 0;
+        border-style: solid;
+        border-width: 1px;
+        padding: 2px;
+}
+*/
+
+#content_container textarea {
+	font-family: Arial, sans-serif;
+	font-size: 12px;
+	color: #333;
+	border-style: solid;
+	border-width: 1px;
+	padding: 1px;
+}
+
+/*
+#content_container button {
+        font-family: Arial, non-serif;
+        font-size: 12px;
+        margin: 10px 0 0 77px;
+        border-style: solid;
+        border-width: 1px;
+}
+*/
+
+/*box hack IE5 & 6*/
+html>body button {
+	padding: 2px 4px 2px 4px;	
+}
+
+#content_container label { 
+}
+
+#content_container select { 
+}
+
+#content_container option { 
+}
+
+/*--- lists ----------------------------------------------------------------*/
+
+#content_container ul {
+}
+
+#content_container ol {
+}
+
+#content_container li {
+	/* font-size: 12px; margin-bottom: 5px; */
+}
+
+/*--------------------------------------------------------------------------*/
+
