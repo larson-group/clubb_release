@@ -16,15 +16,6 @@
 <body id="main_body">
   <div id="_wfx_document">
     <div id="container">
-      <div id="main_nav_container">
-        <ul id="main_nav_list">
-          <!--<li>
-            <a class="main_nav_active_item" href="../index.html">
-              <span class="main_nav_active_item_text">Home</span>
-            </a>
-          </li>-->
-        </ul>
-      </div>
       <div id="header">
         <div id="key_visual">&nbsp;</div>
         <div id="logo">&nbsp;</div>
@@ -35,6 +26,11 @@
         <div id="left_column_container">
           <div class="sub_nav_container">
             <ul class="sub_nav_list">
+	      <li>
+                <a class="sub_nav_item" href="https://www.larson-group.com/">
+                  <span class="sub_nav_item_text">Larson-group.com</span>
+                </a>
+              </li>
               <li>
                 <a class="sub_nav_item" href="index.html">
                   <span class="sub_nav_item_text">CLUBB Home</span>
@@ -85,13 +81,10 @@
                 <a href="#svndload">How do I check out CLUBB?</a>
               </li>
               <li>
-                <a href="#svnlinks">Where can I get more information on Subversion?</a>
+                <a href="#svnlinks">Where can I get more information on Git?</a>
               </li>
               <li>
-                <a href="#howtocontrib">How do I contribute bug fixes or new code to CLUBB?</a>
-              </li>
-              <li>
-                <a href="#unsubscribe">How do I unsubscribe from the CLUBB email list?</a>
+                <a href="#howtocontrib">How do I contribute to CLUBB?</a>
               </li>
               <li>
                 <a href="#findhelp">How can I find help with a question regarding CLUBB?</a>
@@ -108,34 +101,30 @@
               to CLUBB. </p>
             <a name="svndload"></a>
             <h4> How do I check out CLUBB? </h4>
-            <P>Once you register for a CLUBB account on this website, you can use this command to check out the latest version
+            <P>Once you sign up for CLUBB with a GitHub account, you can use this command to check out the latest version
               of the CLUBB source code (from a Linux shell):</P>
             <div style="height:40px background-color=#657383 layer-background-color=#657383 overflow-x=auto overflow-y=hidden">
-              <P style="white-space: nowrap">svn co http://carson.math.uwm.edu/repos/clubb_repos/trunk clubb --username EMAIL</P>
+              <P style="white-space: nowrap">git clone https://github.com/larson-group/clubb_release.git</P>
             </div>
-            <p>Where EMAIL is your email address used to login to this website.</p>
             <a name="svnlinks">
-              <h4> Where can I get more information on Subversion? </h4>
+              <h4> Where can I get more information on Git? </h4>
             </a>
             <ul>
               <li>
-                <a href="http://www.image.ucar.edu/~thoar/svn_primer.html">SVN Primer</a>
+                <a href="https://www2.cisl.ucar.edu/user-support/training/library/using-git-centralized-and-distributed-version-control-workflows">Using Git</a>
               </li>
               <li>
-                <a href="http://svnbook.red-bean.com/">SVN Book</a>
+                <a href="https://education.github.com/git-cheat-sheet-education.pdf">Git cheat sheet</a>
               </li>
             </ul>
             <a name="howtocontrib"></a>
             <h4> How do I contribute to CLUBB? </h4>
             <p>The easiest way is to create a patch file. This is done by:
               <br />
-              <br />svn diff FILE > patch_file
+              <br />git diff FILE > patch_file
               <br />
               <br />Email Vincent Larson and his colleagues (clubb@larson-group.com) the patch files that you would like to see
               as part of the main branch of CLUBB, and we will consider including them. </p>
-            <a name="unsubscribe"></a>
-            <h4> How do I unsubscribe from the CLUBB email list? </h4>
-            <p> Please unsubscribe using the webpage in the Members Area entitled "Mailing List." </p>
             <a name="findhelp"></a>
             <h4> How can I find help with a question regarding CLUBB? </h4>
             <p>Please email your question to clubb@larson-group.com. The email will go to Vincent Larson and his colleagues
