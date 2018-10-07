@@ -975,6 +975,7 @@ module advance_clubb_core_module
 
        ! Smooth in the vertical using interpolation
        sigma_sqd_w = zt2zm( zm2zt( sigma_sqd_w ) )
+       sigma_sqd_w = max( zero_threshold, sigma_sqd_w ) ! Pos. def. quantity
 
     endif ! ipdf_call_placement == ipdf_post_advance_fields
 
@@ -2464,6 +2465,7 @@ module advance_clubb_core_module
 
     ! Smooth in the vertical using interpolation
     sigma_sqd_w = zt2zm( zm2zt( sigma_sqd_w ) )
+    sigma_sqd_w = max( zero_threshold, sigma_sqd_w ) ! Pos. def. quantity
 
     ! Interpolate the the stats_zt grid
     sigma_sqd_w_zt = max( zm2zt( sigma_sqd_w ), zero_threshold )  ! Pos. def. quantity
