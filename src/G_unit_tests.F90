@@ -1,5 +1,5 @@
 !---------------------------------------------------------------------------
-! $Id$
+! $Id: G_unit_tests.F90 8785 2018-08-17 02:50:31Z huebler@uwm.edu $
 !===============================================================================
 program G_unit_tests
 
@@ -148,6 +148,9 @@ program G_unit_tests
   use pdf_parameter_tests, only: &
       pdf_parameter_unit_tests  ! Procedure(s)
 
+  use spurious_source_test, only: &
+      spurious_source_unit_test  ! Procedure(s)
+
   !use tuner_tests, only: &
   !    tuner_tests_driver        ! Procedure
 
@@ -171,13 +174,15 @@ program G_unit_tests
                                           !   read_corr_mtx_test will be shown
     l_mu_sigma_hm_tests = .true.,       & ! Flag for the hydromet mu/sigma tests
     l_pdf_parameter_tests = .true.,     & ! Flag for the PDF parameter tests
+    l_spurious_source_test = .true.,    & ! Flag for the spurious source test
     l_tuner_tests = .true.                ! Flag for the tuner tests
 
   ! Definition of namelist
   namelist /G_unit_namelist/ &
     l_KK_unit_tests, l_corr_cholesky_mtx_tests, l_hole_filling_tests, &
     l_Nc_Ncn_test, l_read_corr_mtx_test, l_silhs_category_test, &
-    l_mu_sigma_hm_tests, l_pdf_parameter_tests, l_tuner_tests
+    l_mu_sigma_hm_tests, l_pdf_parameter_tests, l_spurious_source_test, &
+    l_tuner_tests
 
 
   ! Read namelist file
@@ -243,6 +248,12 @@ program G_unit_tests
         exit_code = 1
      endif
      if ( pdf_parameter_unit_tests( iiPDF_new ) /= 0 ) then
+        exit_code = 1
+     endif
+  endif
+
+  if ( l_spurious_source_test ) then
+     if ( spurious_source_unit_test( ) /= 0 ) then
         exit_code = 1
      endif
   endif
