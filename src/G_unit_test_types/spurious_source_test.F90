@@ -611,11 +611,11 @@ module spurious_source_test
        ! advance_xm_wpxp so that spurious source can be calculated.
        rtm_integral_before &
        = vertical_integral( gr%nz-1, rho_ds_zt(2:gr%nz), &
-                            rtm(2:gr%nz), gr%invrs_dzt(2:gr%nz) )
+                            rtm(2:gr%nz), gr%dzt(2:gr%nz) )
 
        thlm_integral_before &
        = vertical_integral( gr%nz-1, rho_ds_zt(2:gr%nz), &
-                            thlm(2:gr%nz), gr%invrs_dzt(2:gr%nz) )
+                            thlm(2:gr%nz), gr%dzt(2:gr%nz) )
 
        call advance_xm_wpxp( dt, sigma_sqd_w, wm_zm, wm_zt, wp2, &
                              Lscale, wp3_on_wp2, wp3_on_wp2_zt, Kh_zt, Kh_zm, &
@@ -641,11 +641,11 @@ module spurious_source_test
 
        rtm_integral_after &
        = vertical_integral( gr%nz-1, rho_ds_zt(2:gr%nz), &
-                            rtm(2:gr%nz), gr%invrs_dzt(2:gr%nz) )
+                            rtm(2:gr%nz), gr%dzt(2:gr%nz) )
 
        rtm_integral_forcing &
        = vertical_integral( gr%nz-1, rho_ds_zt(2:gr%nz), &
-                            rtm_forcing(2:gr%nz), gr%invrs_dzt(2:gr%nz) )
+                            rtm_forcing(2:gr%nz), gr%dzt(2:gr%nz) )
 
        rtm_spur_src &
        = calculate_spurious_source( rtm_integral_after, &
@@ -687,11 +687,11 @@ module spurious_source_test
 
        thlm_integral_after &
        = vertical_integral( gr%nz-1, rho_ds_zt(2:gr%nz), &
-                            thlm(2:gr%nz), gr%invrs_dzt(2:gr%nz) )
+                            thlm(2:gr%nz), gr%dzt(2:gr%nz) )
 
        thlm_integral_forcing &
        = vertical_integral( gr%nz-1, rho_ds_zt(2:gr%nz), &
-                            thlm_forcing(2:gr%nz), gr%invrs_dzt(2:gr%nz) )
+                            thlm_forcing(2:gr%nz), gr%dzt(2:gr%nz) )
 
        thlm_spur_src &
        = calculate_spurious_source( thlm_integral_after, &
