@@ -227,7 +227,8 @@ module advance_clubb_core_module
         l_gamma_Skw, &
         l_damp_wp2_using_em, &
         l_advance_xp3, &
-        l_predict_upwp_vpwp
+        l_predict_upwp_vpwp, &
+        l_diag_Lscale_from_tau
 
     use grid_class, only: & 
       gr,  & ! Variable(s)
@@ -424,6 +425,7 @@ module advance_clubb_core_module
     use advance_helper_module, only: &
       calc_stability_correction, & ! Procedure(s)
       compute_Cx_fnc_Richardson, &
+      calc_brunt_vaisala_freq_sqd, & 
       term_wp2_splat, term_wp3_splat
 
     use interpolation, only: &
@@ -444,6 +446,9 @@ module advance_clubb_core_module
 
     logical, parameter :: &
       l_iter_xp2_xpyp = .true. ! Set to true when rtp2/thlp2/rtpthlp, et cetera are prognostic
+
+    real( kind = core_rknd ), parameter :: &
+      tau_const = 900._core_rknd
 
     !!! Input Variables
     logical, intent(in) ::  & 
@@ -718,7 +723,8 @@ module advance_clubb_core_module
        tau_N2_zm,            & ! Tau with a static stability correction applied to it [s]
        tau_C6_zm,            & ! Tau values used for the C6 (pr1) term in wpxp [s]
        tau_C1_zm,            & ! Tau values used for the C1 (dp1) term in wp2 [s]
-       Cx_fnc_Richardson       ! Cx_fnc computed from Richardson_num          [-]
+       Cx_fnc_Richardson,    & ! Cx_fnc computed from Richardson_num          [-]
+       brunt_vaisala_freq_sqd  ! Buoyancy frequency squared, N^2              [s^-2}
 
     real( kind = core_rknd ) :: Lscale_max
 
@@ -1040,9 +1046,13 @@ module advance_clubb_core_module
         em = 0.5_core_rknd * ( wp2 + vp2 + up2 )
       end if
 
+      sqrt_em_zt = SQRT( MAX( em_min, zm2zt( em ) ) )
+
       !----------------------------------------------------------------
       ! Compute mixing length
       !----------------------------------------------------------------
+
+      if ( .not. l_diag_Lscale_from_tau ) then ! compute Lscale 1st, using buoyant parcel calc
 
       if ( l_avg_Lscale .and. .not. l_Lscale_plume_centered ) then
 
@@ -1207,16 +1217,6 @@ module advance_clubb_core_module
       !----------------------------------------------------------------
       ! Dissipation time
       !----------------------------------------------------------------
-! Vince Larson replaced the cutoff of em_min by w_tol**2.  7 Jul 2007
-!     This is to prevent tau from being too large (producing little damping)
-!     in stably stratified layers with little turbulence.
-!       sqrt_em_zt = SQRT( MAX( em_min, zm2zt( em ) ) )
-!       tau_zt = MIN( Lscale / sqrt_em_zt, taumax )
-!       tau_zm &
-!       = MIN( ( zt2zm( Lscale ) / SQRT( MAX( em_min, em ) ) ), taumax )
-!   Addition by Brian:  Model constant em_min is now set to (3/2)*w_tol_sqd.
-!                       Thus, em_min can replace w_tol_sqd here.
-      sqrt_em_zt = SQRT( MAX( em_min, zm2zt( em ) ) )
 
       ! Calculate CLUBB's turbulent eddy-turnover time scale as 
       !   CLUBB's length scale divided by a velocity scale.
@@ -1224,6 +1224,24 @@ module advance_clubb_core_module
       tau_zm = MIN( ( MAX( zt2zm( Lscale ), zero_threshold )  & 
                      / SQRT( MAX( em_min, em ) ) ), taumax )
 ! End Vince Larson's replacement.
+
+
+      else ! l_diag_Lscale_from_tau = .true., diagnose simple tau and Lscale.
+
+        call calc_brunt_vaisala_freq_sqd( thlm, exner, rtm, rcm, p_in_Pa, thvm, & ! intent(in)
+                                          brunt_vaisala_freq_sqd )   ! intent(out)
+
+        tau_zt = tau_const / &
+                     ( one + 0.1_core_rknd * tau_const * & 
+                             sqrt( max( zero_threshold, brunt_vaisala_freq_sqd ) ) )
+        tau_zm = max( zero_threshold, zt2zm( tau_zt ) )
+
+!       tau_zt = tau_const
+!       tau_zm = tau_const
+
+        Lscale = tau_zt * sqrt_em_zt
+
+      end if ! l_diag_Lscale_from_tau
 
       ! Modification to damp noise in stable region
 ! Vince Larson commented out because it may prevent turbulence from
