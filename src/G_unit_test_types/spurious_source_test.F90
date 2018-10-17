@@ -259,8 +259,10 @@ module spurious_source_test
        Kh_zm_snd,             &
        tau_C6_zm_snd,         &
        rtpthvp_snd,           &
+       rtm_forcing_snd,       &
        wprtp_forcing_snd,     &
        thlpthvp_snd,          &
+       thlm_forcing_snd,      &
        wpthlp_forcing_snd,    &
        rho_ds_zm_snd,         &
        rtp2_snd,              &
@@ -281,7 +283,7 @@ module spurious_source_test
       density_weighted_height    ! Integrated density * height over the domain
 
     integer, parameter :: &
-      num_iter = 3    ! Number of different configurations to loop over.
+      num_iter = 5    ! Number of different configurations to loop over.
 
     integer :: &
       num_errors    ! Number of failed parameter sets
@@ -336,11 +338,15 @@ module spurious_source_test
        tau_C6_zm_snd = (/ 500.0_core_rknd, 900.0_core_rknd, 900.0_core_rknd, &
                           500.0_core_rknd /)
        rtpthvp_snd = (/ zero, -4.0e-5_core_rknd, -3.0e-5_core_rknd, zero /)
-       wprtp_forcing_snd = (/ 0.0_core_rknd, -1.0e-5_core_rknd, &
-                              -1.5e-5_core_rknd, 0.0_core_rknd /)
+       rtm_forcing_snd = (/ 0.0_core_rknd, -2.0e-8_core_rknd, &
+                            -2.5e-8_core_rknd, 0.0_core_rknd /)
+       wprtp_forcing_snd = (/ 0.0_core_rknd, -1.0e-7_core_rknd, &
+                              -1.5e-7_core_rknd, 0.0_core_rknd /)
        thlpthvp_snd = (/ zero, 0.1_core_rknd, 0.1_core_rknd, zero /)
-       wpthlp_forcing_snd = (/ 0.0_core_rknd, 0.02_core_rknd, &
-                               0.01_core_rknd, 0.0_core_rknd /)
+       thlm_forcing_snd = (/ 0.0_core_rknd, -3.0e-5_core_rknd, &
+                             -2.0e-5_core_rknd, 0.0_core_rknd /)
+       wpthlp_forcing_snd = (/ 0.0_core_rknd, 5.0e-4_core_rknd, &
+                               3.5e-4_core_rknd, 0.0_core_rknd /)
        rho_ds_zm_snd = (/ 1.0_core_rknd, 0.92_core_rknd, 0.84_core_rknd, &
                           0.76_core_rknd /)
        rtp2_snd = (/ zero, 2.5e-7_core_rknd, 2.5e-7_core_rknd, zero /)
@@ -372,15 +378,17 @@ module spurious_source_test
           Kh_zm_snd = 2.0_core_rknd * rand1 * Kh_zm_snd
           tau_C6_zm_snd = 2.0_core_rknd * rand1 * tau_C6_zm_snd
           rtpthvp_snd = 2.0_core_rknd * rand1 * rtpthvp_snd
-          wprtp_forcing_snd = rand1 * wprtp_forcing_snd
+          rtm_forcing_snd = 2.0_core_rknd * rand1 * rtm_forcing_snd
+          wprtp_forcing_snd = 2.0_core_rknd * rand1 * wprtp_forcing_snd
           thlpthvp_snd = 2.0_core_rknd * rand1 * thlpthvp_snd
-          wpthlp_forcing_snd = rand1 * wpthlp_forcing_snd
-          rtp2_snd = rand1 * rtp2_snd
-          thlp2_snd = rand1 * thlp2_snd
-          Lscale_snd = rand1 * Lscale_snd
-          wp2rtp_snd = rand1 * wp2rtp_snd
-          wp2thlp_snd = rand1 * wp2thlp_snd
-          rcm_snd = rand1 * rcm_snd
+          thlm_forcing_snd = 2.0_core_rknd * rand1 * thlm_forcing_snd
+          wpthlp_forcing_snd = 2.0_core_rknd * rand1 * wpthlp_forcing_snd
+          rtp2_snd = 2.0_core_rknd * rand1 * rtp2_snd
+          thlp2_snd = 2.0_core_rknd * rand1 * thlp2_snd
+          Lscale_snd = 2.0_core_rknd * rand1 * Lscale_snd
+          wp2rtp_snd = 2.0_core_rknd * rand1 * wp2rtp_snd
+          wp2thlp_snd = 2.0_core_rknd * rand1 * wp2thlp_snd
+          rcm_snd = 2.0_core_rknd * rand1 * rcm_snd
           rtm_snd = 2.0_core_rknd * rand1 * rtm_snd
           thlm_snd = thlm_snd + 10.0_core_rknd * ( rand1 - one_half )
           wprtp_snd = 2.0_core_rknd * rand1 * wprtp_snd
@@ -502,6 +510,16 @@ module spurious_source_test
              = lin_interpolate_two_points( gr%zt(k), z_snd(i), z_snd(i-1), &
                                            p_in_Pa_snd(i), p_in_Pa_snd(i-1) )
 
+             rtm_forcing(k) &
+             = lin_interpolate_two_points( gr%zt(k), z_snd(i), z_snd(i-1), &
+                                           rtm_forcing_snd(i), &
+                                           rtm_forcing_snd(i-1) )
+
+             thlm_forcing(k) &
+             = lin_interpolate_two_points( gr%zt(k), z_snd(i), z_snd(i-1), &
+                                           thlm_forcing_snd(i), &
+                                           thlm_forcing_snd(i-1) )
+
              rtm(k) &
              = lin_interpolate_two_points( gr%zt(k), z_snd(i), z_snd(i-1), &
                                            rtm_snd(i), rtm_snd(i-1) )
@@ -558,8 +576,6 @@ module spurious_source_test
        invrs_rho_ds_zm = one / rho_ds_zm
        invrs_rho_ds_zt = one / rho_ds_zt
 
-       rtm_forcing = zero
-       thlm_forcing = zero
        rtm_ref = zero
        thlm_ref = zero
 
