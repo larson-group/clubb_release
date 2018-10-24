@@ -14,7 +14,8 @@ l_damp_wp3_Skw_squared      = .false.,
 l_min_wp2_from_corr_wx      = .false.,
 l_min_xp2_from_corr_wx      = .false.,
 l_C2_cloud_frac             = .false.,
-l_predict_upwp_vpwp         = .false.
+l_predict_upwp_vpwp         = .false.,
+l_diag_Lscale_from_tau      = .false.
 /
 
 &configurable_silhs_flags_nl
