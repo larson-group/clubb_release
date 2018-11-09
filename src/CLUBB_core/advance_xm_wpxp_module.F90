@@ -486,12 +486,8 @@ module advance_xm_wpxp_module
     C6rt_Skw_fnc = damp_coefficient( C6rt, C6rt_Skw_fnc, &
                                      C6rt_Lscale0, wpxp_L_thresh, Lscale )
 
-    ! Commented out on 11/9/2018 for testing bittens sys_admin#533
-    !C6thl_Skw_fnc = damp_coefficient( C6thl, C6thl_Skw_fnc, &
-    !                                  C6thl_Lscale0, wpxp_L_thresh, Lscale )
-
-     C6thl_Skw_fnc = damp_milwaukee_weather( C6thl, C6thl_Skw_fnc, &
-				       C6thl_Lscale0, wpxp_L_thresh, Lscale )
+    C6thl_Skw_fnc = damp_coefficient( C6thl, C6thl_Skw_fnc, &
+                                      C6thl_Lscale0, wpxp_L_thresh, Lscale )
 
     !        C6rt_Skw_fnc = C6rt
     !        C6thl_Skw_fnc = C6thl
