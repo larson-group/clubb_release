@@ -20,6 +20,7 @@ module transform_to_pdf_module
                corr_Cholesky_mtx_1, & ! In
                corr_Cholesky_mtx_2, & ! In
                X_u_one_lev, X_mixt_comp_one_lev, & ! In
+               cloud_frac_1, cloud_frac_2, & ! In
                l_in_precip_one_lev, & ! In
                X_nl_one_lev ) ! Out
 ! Description:
@@ -74,6 +75,10 @@ module transform_to_pdf_module
     integer, intent(in) :: &
       X_mixt_comp_one_lev ! Whether we're in the 1st or 2nd mixture component
 
+    real( kind = core_rknd ), intent(in) :: &
+      cloud_frac_1, & ! Cloud fraction (1st PDF component)    [-]
+      cloud_frac_2    ! Cloud fraction (2nd PDF component)    [-]
+
     logical, intent(in) :: &
       l_in_precip_one_lev ! Whether we are in precipitation (T/F)
 
@@ -96,6 +101,10 @@ module transform_to_pdf_module
       l_Sigma1_scaling, l_Sigma2_scaling ! Whether we're scaling Sigma1 or Sigma2
 
     integer :: i !, ivar1, ivar2
+
+    ! Flag to clip sample point values of chi in extreme situations.
+    logical, parameter :: &
+      l_clip_extreme_chi_sample_pts = .true.
 
     ! ---- Begin Code ----
 
@@ -158,6 +167,65 @@ module transform_to_pdf_module
                                   X_nl_one_lev ) ! Intent(inout)
 
     end if
+
+    ! Clip extreme sample point values of chi, when necessary.
+    ! The values of PDF component cloud fraction have been clipped within PDF
+    ! closure under extreme conditions.  This code forces the sample point
+    ! values of chi to be saturated or unsaturated to match the condition
+    ! enforced by the clipping of PDF component cloud fraction.
+    if ( l_clip_extreme_chi_sample_pts ) then
+
+       if ( X_mixt_comp_one_lev == 1 ) then
+
+          ! The sample is from the 1st PDF component.
+
+          if ( cloud_frac_1 < epsilon( cloud_frac_1 ) ) then
+
+             ! Cloud fraction in the 1st PDF component is 0.
+             ! All sample point values of chi must be <= 0.
+             if ( X_nl_one_lev(iiPDF_chi) > zero ) then
+                ! Clip the sample point value of chi back to 0.
+                X_nl_one_lev(iiPDF_chi) = zero
+             endif ! X_nl_one_lev(iiPDF_chi) > zero
+
+          elseif ( cloud_frac_1 > ( one - epsilon( cloud_frac_1 ) ) ) then
+
+             ! Cloud fraction in the 1st PDF component is 1.
+             ! All sample point values of chi must be > 0.
+             if ( X_nl_one_lev(iiPDF_chi) <= zero ) then
+                ! Clip the sample point value of chi to epsilon.
+                X_nl_one_lev(iiPDF_chi) = epsilon( zero )
+             endif ! X_nl_one_lev(iiPDF_chi) <= zero
+
+          endif ! cloud_frac_1
+
+       elseif ( X_mixt_comp_one_lev == 2 ) then
+
+          ! The sample is from the 2nd PDF component.
+
+          if ( cloud_frac_2 < epsilon( cloud_frac_2 ) ) then
+
+             ! Cloud fraction in the 2nd PDF component is 0.
+             ! All sample point values of chi must be <= 0.
+             if ( X_nl_one_lev(iiPDF_chi) > zero ) then
+                ! Clip the sample point value of chi back to 0.
+                X_nl_one_lev(iiPDF_chi) = zero
+             endif ! X_nl_one_lev(iiPDF_chi) > zero
+
+          elseif ( cloud_frac_2 > ( one - epsilon( cloud_frac_2 ) ) ) then
+
+             ! Cloud fraction in the 2nd PDF component is 1.
+             ! All sample point values of chi must be > 0.
+             if ( X_nl_one_lev(iiPDF_chi) <= zero ) then
+                ! Clip the sample point value of chi to epsilon.
+                X_nl_one_lev(iiPDF_chi) = epsilon( zero )
+             endif ! X_nl_one_lev(iiPDF_chi) <= zero
+
+          endif ! cloud_frac_2
+
+       endif ! X_mixt_comp_one_lev
+
+    endif ! l_clip_extreme_chi_sample_pts
 
 
     return

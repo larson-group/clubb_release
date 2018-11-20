@@ -268,6 +268,7 @@ module latin_hypercube_driver_module
                corr_cholesky_mtx_1(:,:,k), & ! In
                corr_cholesky_mtx_2(:,:,k), & ! In
                X_u_all_levs(k,sample,:), X_mixt_comp_all_levs(k,sample), & ! In
+               pdf_params(k)%cloud_frac_1, pdf_params(k)%cloud_frac_2, & ! In
                l_in_precip(k,sample), & ! In
                X_nl_all_levs(k,sample,:) ) ! Out
       end do ! sample = 1, num_samples, 1
