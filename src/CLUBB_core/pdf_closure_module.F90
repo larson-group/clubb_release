@@ -1879,12 +1879,17 @@ module pdf_closure_module
 
     !----- Begin Code -----
 
-    ! Changing these conditionals may result in inconsistencies with the conditional
-    ! statements located in calc_xprcp_component
+    ! Changing these conditionals may result in inconsistencies with the
+    ! conditional statements located in subroutine calc_xprcp_component.
 
     where ( abs( mean_chi_i - chi_at_sat ) <= eps .and. stdev_chi_i <= chi_tol ) 
 
-        ! The mean of chi is at saturation and does not vary in the ith PDF component
+        ! The mean of chi is at saturation and does not vary in the ith PDF
+        ! component.
+        !
+        ! Note:  a change in these conditions also requires a corresponding
+        !        change in subroutine assert_consistent_cf_component in
+        !        latin_hypercube_driver_module.F90.
 
         pdf_description_i = delta_at_sat
 
@@ -1893,8 +1898,8 @@ module pdf_closure_module
 
     elsewhere ( mean_chi_i - chi_at_sat > max_num_stdevs * stdev_chi_i )
 
-        ! The mean of chi is multiple standard deviations above the saturation point.
-        ! Thus, all cloud in the ith PDF component.
+        ! The mean of chi is multiple standard deviations above the saturation
+        ! point.  Thus, all cloud in the ith PDF component.
 
         pdf_description_i = all_cloud
 
@@ -1904,8 +1909,8 @@ module pdf_closure_module
 
     elsewhere ( mean_chi_i - chi_at_sat < - max_num_stdevs * stdev_chi_i )
 
-        ! The mean of chi is multiple standard deviations below the saturation point.
-        ! Thus, all clear air in the ith PDF component.
+        ! The mean of chi is multiple standard deviations below the saturation
+        ! point.  Thus, all clear air in the ith PDF component.
 
         pdf_description_i = no_cloud
 
@@ -1916,7 +1921,6 @@ module pdf_closure_module
 
         ! The mean of chi is within max_num_stdevs of the saturation point.
         ! Thus, layer is partly cloudy, requires calculation.
-
         
         pdf_description_i = partly_cloudy
 

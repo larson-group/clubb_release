@@ -1068,6 +1068,13 @@ module latin_hypercube_driver_module
     ! pdf_closure now sets cloud_frac_i to 0 when the special condition is met
     ! that both | mu_chi_i | <= eps and sigma_chi_i <= chi_tol.  This check
     ! should be omitted under such conditions.
+    ! 
+    ! Note:  The conditions on | mu_chi_i | and sigma_chi_i need to match the
+    !        conditions given in subroutine calc_cloud_frac_component in
+    !        pdf_closure_module.F90 (a chi_at_sat of 0 can be used).  If those
+    !        conditions are changed in that subroutine, they need to change here
+    !        too.  Someday, a better solution might be to pass the value of
+    !        pdf_description_i out of that part of the code and into this check.
     if ( abs( mu_chi_i ) <= eps .and. sigma_chi_i <= chi_tol ) then
        ! Return without performing this check.
        return
