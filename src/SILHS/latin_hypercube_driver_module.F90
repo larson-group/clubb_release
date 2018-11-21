@@ -1018,18 +1018,20 @@ module latin_hypercube_driver_module
 
     ! Included Modules
     use clubb_precision, only: &
-      core_rknd        ! Constant(s)
+        core_rknd        ! Constant(s)
 
     use constants_clubb, only: &
-      fstderr, &       ! Constant(s)
-      zero, &
-      one
+        fstderr, & ! Constant(s)
+        zero,    &
+        one,     &
+        chi_tol, &
+        eps
 
     use pdf_parameter_module, only: &
-      pdf_parameter    ! Type
+        pdf_parameter    ! Type
 
     use transform_to_pdf_module, only: &
-      ltqnorm          ! Procedure
+        ltqnorm          ! Procedure
 
     implicit none
 
@@ -1061,6 +1063,15 @@ module latin_hypercube_driver_module
 
     !----- Begin Code -----
     l_error = .false.
+
+    ! The calculation of PDF component cloud fraction (cloud_frac_i) in
+    ! pdf_closure now sets cloud_frac_i to 0 when the special condition is met
+    ! that both | mu_chi_i | <= eps and sigma_chi_i <= chi_tol.  This check
+    ! should be omitted under such conditions.
+    if ( abs( mu_chi_i ) <= eps .and. sigma_chi_i <= chi_tol ) then
+       ! Return without performing this check.
+       return
+    endif
 
     ! Check left end of box.
     one_minus_ltqnorm_arg = cloud_frac_i - box_half_width
