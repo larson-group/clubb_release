@@ -74,6 +74,8 @@ cd $scriptPath
 # Note that we use `"$@"' to let each command-line parameter expand to a 
 # separate word. The quotes around `$@' are essential!
 # We need TEMP as the `eval set --' would nuke the return value of getopt.
+# This also expects gnu-getopt as opposed to BSD getopt. 
+# Make sure you have gnu-getopt installed and it is before BSD getopt in your PATH.
 TEMP=`getopt -o c:mh --long mkl_lapack,config:,help -n 'compile.bash' -- "$@"`
 
 if [ $? != 0 ] ; then echo "Run with -h for help." >&2 ; exit 1 ; fi
@@ -85,15 +87,17 @@ while true ; do
 	case "$1" in
 		-c|--config) # Set the compiler options folder
         
-            # Set new config file to the one specfied in the argument list
-            CONFIG=$2
+           	 	# Set new config file to the one specfied in the argument list
+           	 	CONFIG=$2
 
 			shift 2 ;;
-		-m|--mkl_lapack) # Specifiy lapack version, -
+		-m|--mkl_lapack) # Specifiy lapack version
+
 			l_use_mkl_lapack=true
 
 			shift;;
-        -h|--help) # Print the help message
+        	-h|--help) # Print the help message
+
 			echo -e "Usage: compile.bash [-c FILE] [-m] [-h]"
 			echo -e "\t-c FILE, --config FILE\t  Path to config flags file"
 			echo -e "\t-m, --mkl_lapack\t  Flag to use MKL Lapack routines"
