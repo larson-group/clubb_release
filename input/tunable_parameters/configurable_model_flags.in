@@ -1,4 +1,3 @@
-!$Id$
 &configurable_clubb_flags_nl
 l_upwind_wpxp_ta        = .false.,
 l_upwind_xpyp_ta        = .true.,
