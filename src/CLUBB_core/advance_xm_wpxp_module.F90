@@ -31,7 +31,8 @@ module advance_xm_wpxp_module
              wpxp_terms_bp_pr3_rhs, &
              wpxp_terms_bp_pr3_rhs_all, &
              xm_correction_wpxp_cl, &
-             damp_coefficient
+             damp_coefficient, &
+             diagnose_upxp
 
   ! Parameter Constants
   integer, parameter, private :: & 
@@ -179,6 +180,10 @@ module advance_xm_wpxp_module
         ivm_f, &
         iupwp_pr4, &
         ivpwp_pr4, &
+        iupthlp, &
+        iuprtp,  &
+        ivpthlp, &
+        ivprtp,  &
         iC7_Skw_fnc, &
         iC6rt_Skw_fnc, &
         iC6thl_Skw_fnc, &
@@ -387,12 +392,16 @@ module advance_xm_wpxp_module
       sgn_t_vel_vpwp    ! Sign of the turbulent velocity for <v'w'>       [-]
 
     real( kind = core_rknd ), dimension(gr%nz) :: & 
-      um_tndcy,     & ! <u> forcing term + coriolis (t-levs)     [m/s^2]
-      vm_tndcy,     & ! <v> forcing term + coriolis (t-levs)     [m/s^2]
-      upwp_forcing, & ! <u'w'> extra RHS pressure term (m-levs)  [m^2/s^3]
-      vpwp_forcing, & ! <v'w'> extra RHS pressure term (m-levs)  [m^2/s^3]
-      upthvp,       & ! <u'thv'> (momentum levels)               [m/s K]
-      vpthvp          ! <v'thv'> (momentum levels)               [m/s K]
+      um_tndcy,     & ! <u> forcing term + coriolis (thermo levs)        [m/s^2]
+      vm_tndcy,     & ! <v> forcing term + coriolis (thermo levs)        [m/s^2]
+      upwp_forcing, & ! <u'w'> extra RHS pressure term (mom levs)        [m^2/s^3]
+      vpwp_forcing, & ! <v'w'> extra RHS pressure term (mom levs)        [m^2/s^3]
+      upthvp,       & ! <u'thv'> (momentum levels)                       [m/s K]
+      vpthvp,       & ! <v'thv'> (momentum levels)                       [m/s K]
+      upthlp,       & ! eastward horz turb flux of theta_l (mom levs)    [m/s K]
+      vpthlp,       & ! northward horz turb flux of theta_l (mom levs)   [m/s K]
+      uprtp,        & ! eastward horz turb flux of tot water (mom levs)  [m/s kg/kg]
+      vprtp           ! northward horz turb flux of tot water (mom levs) [m/s kg/kg]
 
     ! Variables used as part of the monotonic turbulent advection scheme.
     ! Find the lowermost and uppermost grid levels that can have an effect
@@ -410,7 +419,8 @@ module advance_xm_wpxp_module
       wpxp_upper_lim, & ! Keeps correlations from becoming greater than 1.
       wpxp_lower_lim    ! Keeps correlations from becoming less than -1.
 
-    real( kind = core_rknd ), dimension(gr%nz) :: dummy_1d ! Unreferenced array
+    real( kind = core_rknd ), dimension(gr%nz) :: &
+      zeros_vector  ! Array of zeros, of the size of a vertical profile [-]
 
     real( kind = core_rknd ), allocatable, dimension(:,:) :: & 
       rhs,     &! Right-hand sides of band diag. matrix. (LAPACK)
@@ -447,7 +457,7 @@ module advance_xm_wpxp_module
 
     ! This is initialized solely for the purpose of avoiding a compiler
     ! warning about uninitialized variables.
-    dummy_1d = zero
+    zeros_vector = zero
 
     ! Compute C6 and C7 as a function of Skw
     ! The if...then is just here to save compute time
@@ -1026,12 +1036,12 @@ module advance_xm_wpxp_module
       ! used, l_explicit_turbulent_adv_wpxp is enabled.
 
       ! Create the lhs once
-      call xm_wpxp_lhs( l_iter, dt, Kh_zm, dummy_1d, wm_zm, wm_zt, wp2, & ! In
+      call xm_wpxp_lhs( l_iter, dt, Kh_zm, zeros_vector, wm_zm, wm_zt, wp2, & ! In
                         coef_wp2rtp_implicit, coef_wp2rtp_implicit_zm, & ! In
                         sgn_t_vel_wprtp, Kw6, tau_C6_zm, C7_Skw_fnc, & ! In
                         C6rt_Skw_fnc, rho_ds_zm, rho_ds_zt, & ! In
                         invrs_rho_ds_zm, invrs_rho_ds_zt, & ! In
-                        dummy_1d, dummy_1d, &! In
+                        zeros_vector, zeros_vector, &! In
                         l_implemented, em, Lscale, thlm, exner, & ! In
                         rtm, rcm, p_in_Pa, thvm, & ! In
                         lhs ) ! Out
@@ -1194,14 +1204,32 @@ module advance_xm_wpxp_module
                                   stats_zm )
          endif ! l_stats_samp
 
+         call diagnose_upxp( upwp, thlm, wpthlp, um, &               ! Intent(in)
+                             C6thl_Skw_fnc, tau_C6_zm, C7_Skw_fnc, & ! Intent(in)
+                             upthlp )                                ! Intent(out)
+         call diagnose_upxp( upwp, rtm, wprtp, um, &                ! Intent(in)
+                             C6rt_Skw_fnc, tau_C6_zm, C7_Skw_fnc, & ! Intent(in)
+                             uprtp )                                ! Intent(out)
+         call diagnose_upxp( vpwp, thlm, wpthlp, vm, &               ! Intent(in)
+                             C6thl_Skw_fnc, tau_C6_zm, C7_Skw_fnc, & ! Intent(in)
+                             vpthlp )                                ! Intent(out)
+         call diagnose_upxp( vpwp, rtm, wprtp, vm, &                ! Intent(in)
+                             C6rt_Skw_fnc, tau_C6_zm, C7_Skw_fnc, & ! Intent(in)
+                             vprtp )                                ! Intent(out)
+
+         if ( l_stats_samp ) then
+            call stat_update_var( iupthlp, upthlp, stats_zm )
+            call stat_update_var( iuprtp,  uprtp,  stats_zm )
+            call stat_update_var( ivpthlp, vpthlp, stats_zm )
+            call stat_update_var( ivprtp,  vprtp,  stats_zm )
+         endif ! l_stats_samp
+
          ! Use a crude approximation for buoyancy terms <u'thv'> and <v'thv'>.
          !upthvp = upwp * wpthvp / max( wp2, w_tol_sqd )
          !vpthvp = vpwp * wpthvp / max( wp2, w_tol_sqd )
-         upthvp = - 0.3_core_rknd * tau_C6_zm *    (    upwp * ddzt( thlm ) + wpthlp * ddzt( um ) &
-                  + 200.0_core_rknd * ( upwp * ddzt( rtm )  +  wprtp * ddzt( um ) ) ) &
+         upthvp = 0.3_core_rknd * ( upthlp + 200.0_core_rknd * uprtp ) &
                   + 200._core_rknd * sign( one, upwp) * sqrt( up2 * rcm**2 )
-         vpthvp = - 0.3_core_rknd * tau_C6_zm *    (    vpwp * ddzt( thlm ) + wpthlp * ddzt( vm ) &
-                  + 200.0_core_rknd * ( vpwp * ddzt( rtm )  +  wprtp * ddzt( vm ) ) ) &
+         vpthvp = 0.3_core_rknd * ( vpthlp + 200.0_core_rknd * vprtp ) &
                   + 200._core_rknd * sign( one, vpwp ) * sqrt( vp2 * rcm**2 )
 
          call xm_wpxp_rhs( xm_wpxp_um, l_iter, dt, um, upwp, & ! In
@@ -3971,5 +3999,53 @@ module advance_xm_wpxp_module
 
   end function damp_coefficient
   !-----------------------------------------------------------------------
+
+  !=====================================================================================
+  pure subroutine diagnose_upxp( ypwp, xm, wpxp, ym, &
+                                 C6x_Skw_fnc, tau_C6_zm, C7_Skw_fnc, &
+                                 ypxp )
+    ! Description:
+    !   Diagnose turbulent horizontal flux of a conserved scalar.
+    !
+    ! References:
+    !   Eqn. 7 of Andre et al. (1978)
+    !   Eqn. 4 of Bougeault et al. (1981)
+    !   github issue #841
+    !
+    !-------------------------------------------------------------------------------------
+
+    use clubb_precision, only: &
+        core_rknd ! Variable(s)
+
+    use constants_clubb, only: & ! Constants(s)
+        one     ! 1.0_core_rknd
+
+    use grid_class, only:  &
+        gr, & ! Variable
+        ddzt  ! Procedure
+
+    implicit none
+
+    ! Input Variables
+    real( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
+      ypwp,        & ! momentum flux component, either upwp or vpwp  [m^2/s^2]
+      xm,          & ! grid-mean conserved thermodynamic variable, either thlm or rtm [varies]
+      wpxp,        & ! vertical scalar flux, either wpthlp or wprtp [varies]
+      ym,          & ! grid-mean velocity component, either um or vm [m/s]
+      C6x_Skw_fnc, & ! C_6 pressure parameter with effects of Sk_w incorporated (k)  [-]
+      tau_C6_zm,   & ! Time-scale tau on momentum levels applied to C6 term [s]
+      C7_Skw_fnc     ! C_7 pressure parameter with effects of Sk_w incorporated (k)  [-]
+
+    ! Return Variable
+    real( kind = core_rknd ), dimension(gr%nz), intent(out) :: &
+        ypxp        ! horizontal flux of a conserved scalar, either upthlp, uprtp, vpthlp, or vprtp
+
+    ypxp = ( tau_C6_zm / C6x_Skw_fnc ) * &
+              ( - ypwp * ddzt( xm ) - (one - C7_Skw_fnc ) * ( wpxp * ddzt( ym ) ) )
+
+    return
+
+  end subroutine diagnose_upxp
+
 
 end module advance_xm_wpxp_module
