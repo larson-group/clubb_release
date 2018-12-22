@@ -826,8 +826,8 @@ simulation at the restart time.
 2.  Create a subdirectory in the <CLUBB BASE DIRECTORY> called "restart" and 
     move the GrADS output files to that subdirectory.
 
-3.  Edit the following three variables at the end of the flag section of 
-    the model file:
+3.  Edit the following three variables at the end of the &model_setting section of 
+    the model.in file:
 
     l_restart = .true.
     restart_path_case = restart/<CASE NAME>
