@@ -947,17 +947,16 @@ subroutine mmicro_pcond ( sub_column,           &
       corr_rrNr_2_n,   & ! Correlation of ln rr and ln Nr (2nd PDF comp.) ip [-]
       KK_auto_coef,    & ! KK autoconversion coefficient             [(kg/kg)/s]
       KK_accr_coef,    & ! KK accretion coefficient                  [(kg/kg)/s]
-      mixt_frac,       & ! Mixture fraction                                  [-]
       precip_frac_tol    ! Minimum precip. frac. when hydromet. are present  [-]
 
-    real ( kind = core_rknd ), dimension(hydromet_dim) :: &
+    real ( kind = core_rknd ), dimension( pver, hydromet_dim ) :: &
       hydromet,       &
       hydrometp2_zt,  &
       hm1,            &
       hm2,            &
       wphydrometp_zt
 
-    real ( kind = core_rknd ), dimension( pdf_dim) :: &
+    real ( kind = core_rknd ), dimension( pdf_dim, pver ) :: &
       mu_x_1,             &
       mu_x_2,             &
       sigma_x_1,          &
@@ -976,6 +975,11 @@ subroutine mmicro_pcond ( sub_column,           &
       corr_array_2, &
       corr_array_1_n, &
       corr_array_2_n
+
+    real ( kind = core_rknd ), dimension( pver ) :: &
+      mixt_frac,   & ! Mixture fraction                                  [-]
+      Ncnm_in,     &
+      ones_vector
 
    !----
 !cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
@@ -1807,30 +1811,36 @@ subroutine mmicro_pcond ( sub_column,           &
 
               else
 
-                 mixt_frac = pdf_params(k)%mixt_frac
+                 mixt_frac = pdf_params%mixt_frac
 
                  precip_frac_tol = 0.005_core_rknd
 
-                 hydromet(1) = real( qric(i,k) * cldmax(i,k), kind = core_rknd )
-                 hydromet(2) = real( nric(i,k) * cldmax(i,k), kind = core_rknd )
+                 hydromet(k,1) &
+                 = real( qric(i,k) * cldmax(i,k), kind = core_rknd )
+                 hydromet(k,2) &
+                 = real( nric(i,k) * cldmax(i,k), kind = core_rknd )
 
-                 hydrometp2_zt(1) = hydromet(1)**2
-                 hydrometp2_zt(2) = hydromet(2)**2
+                 hydrometp2_zt(k,1) = hydromet(k,1)**2
+                 hydrometp2_zt(k,2) = hydromet(k,2)**2
 
-                 wphydrometp_zt(1) = zero
-                 wphydrometp_zt(2) = zero
+                 wphydrometp_zt(k,1) = zero
+                 wphydrometp_zt(k,2) = zero
 
-                 call compute_mean_stdev( hydromet, hydrometp2_zt,            & ! Intent(in)
-                                          real( nc(i,k), kind = core_rknd ),  & ! Intent(in)
-                                          mixt_frac, one,                     & ! Intent(in)
-                                          one, one,                           & ! Intent(in)
-                                          precip_frac_tol,                    & ! Intent(in)
+                 Ncnm_in(k) = real( nc(i,k), kind = core_rknd )
+
+                 ones_vector = one
+
+                 call compute_mean_stdev( 1, hydromet(k,:),               & ! Intent(in)
+                                          hydrometp2_zt(k,:), Ncnm_in(k), & ! Intent(in)
+                                          mixt_frac(k), ones_vector,      & ! Intent(in)
+                                          ones_vector, ones_vector,       & ! Intent(in)
+                                          precip_frac_tol,                & ! Intent(in)
                                           pdf_params(k), pdf_dim,         & ! Intent(in)
-                                          mu_x_1, mu_x_2,                     & ! Intent(out)
-                                          sigma_x_1, sigma_x_2,               & ! Intent(out)
-                                          hm1, hm2,                           & ! Intent(out)
-                                          sigma2_on_mu2_ip_1,                 & ! Intent(out)
-                                          sigma2_on_mu2_ip_2                  ) ! Intent(out)
+                                          mu_x_1, mu_x_2,                 & ! Intent(out)
+                                          sigma_x_1, sigma_x_2,           & ! Intent(out)
+                                          hm1, hm2,                       & ! Intent(out)
+                                          sigma2_on_mu2_ip_1,             & ! Intent(out)
+                                          sigma2_on_mu2_ip_2              ) ! Intent(out)
 
                  call norm_transform_mean_stdev( hm1, hm2, &
                                                  real(nc(i,k),kind=core_rknd), &
@@ -1846,7 +1856,7 @@ subroutine mmicro_pcond ( sub_column,           &
                                       real( qc(i,k), kind = core_rknd ), & ! Intent(in)
                                       real( lcldm(i,k), kind = core_rknd ), & ! Intent(in)
                                       real( lcldm(i,k), kind = core_rknd ), & ! Intent(in)
-                                      mixt_frac, & ! Intent(in)
+                                      mixt_frac(k), & ! Intent(in)
                                       one, one, & ! Intent(in)
                                       zero, wphydrometp_zt, & ! Intent(in)
                                       mu_x_1, mu_x_2, sigma_x_1, sigma_x_2, & ! Intent(in)
@@ -1881,10 +1891,10 @@ subroutine mmicro_pcond ( sub_column,           &
                  sigma_Ncn_1_n = sigma_x_1_n(iiPDF_Ncn)
                  sigma_Ncn_2_n = sigma_x_2_n(iiPDF_Ncn)
 
-                 mu_Ncn_1    = mu_x_1(iiPDF_Ncn)
-                 mu_Ncn_2    = mu_x_2(iiPDF_Ncn)
-                 sigma_Ncn_1 = sigma_x_1(iiPDF_Ncn)
-                 sigma_Ncn_2 = sigma_x_2(iiPDF_Ncn)
+                 mu_Ncn_1    = mu_x_1(iiPDF_Ncn,k)
+                 mu_Ncn_2    = mu_x_2(iiPDF_Ncn,k)
+                 sigma_Ncn_1 = sigma_x_1(iiPDF_Ncn,k)
+                 sigma_Ncn_2 = sigma_x_2(iiPDF_Ncn,k)
 
                  ! Unpack corr_array_1 into correlations (1st PDF component).
                  corr_chi_eta_1   = corr_array_1_n(iiPDF_eta, iiPDF_chi)
@@ -1927,7 +1937,7 @@ subroutine mmicro_pcond ( sub_column,           &
                                         mu_Ncn_1_n, mu_Ncn_2_n, sigma_chi_1, &
                                         sigma_chi_2, sigma_Ncn_1, sigma_Ncn_2, &
                                         sigma_Ncn_1_n, sigma_Ncn_2_n, corr_chi_Ncn_1_n, &
-                                        corr_chi_Ncn_2_n, KK_auto_coef, mixt_frac ), &
+                                        corr_chi_Ncn_2_n, KK_auto_coef, mixt_frac(k) ), &
                           kind = r8 ) / lcldm(i,k)
                  nprc(k) = prc(k)/cons22
                  nprc1(k) = prc(k)/(qcic(i,k)/ncic(i,k))
@@ -2355,31 +2365,36 @@ subroutine mmicro_pcond ( sub_column,           &
                  ! The level-mean rain water mixing ratio is found by
                  ! multiplying in-precip rain water mixing ratio (qric) by
                  ! the precipitation fraction (cldmax).
-
-                 mixt_frac = pdf_params(k)%mixt_frac
+                 mixt_frac = pdf_params%mixt_frac
 
                  precip_frac_tol = 0.005_core_rknd
 
-                 hydromet(1) = real( qric(i,k) * cldmax(i,k), kind = core_rknd )
-                 hydromet(2) = real( nric(i,k) * cldmax(i,k), kind = core_rknd )
+                 hydromet(k,1) &
+                 = real( qric(i,k) * cldmax(i,k), kind = core_rknd )
+                 hydromet(k,2) &
+                 = real( nric(i,k) * cldmax(i,k), kind = core_rknd )
 
-                 hydrometp2_zt(1) = hydromet(1)**2
-                 hydrometp2_zt(2) = hydromet(2)**2
+                 hydrometp2_zt(k,1) = hydromet(k,1)**2
+                 hydrometp2_zt(k,2) = hydromet(k,2)**2
 
-                 wphydrometp_zt(1) = zero
-                 wphydrometp_zt(2) = zero
+                 wphydrometp_zt(k,1) = zero
+                 wphydrometp_zt(k,2) = zero
 
-                 call compute_mean_stdev( hydromet, hydrometp2_zt,            & ! Intent(in)
-                                          real( nc(i,k), kind = core_rknd ),  & ! Intent(in)
-                                          mixt_frac, one,                     & ! Intent(in)
-                                          one, one,                           & ! Intent(in)
-                                          precip_frac_tol,                    & ! Intent(in)
+                 Ncnm_in(k) = real( nc(i,k), kind = core_rknd )
+
+                 ones_vector = one
+
+                 call compute_mean_stdev( 1, hydromet(k,:),               & ! Intent(in)
+                                          hydrometp2_zt(k,:), Ncnm_in(k), & ! Intent(in)
+                                          mixt_frac(k), ones_vector,      & ! Intent(in)
+                                          ones_vector, ones_vector,       & ! Intent(in)
+                                          precip_frac_tol,                & ! Intent(in)
                                           pdf_params(k), pdf_dim,         & ! Intent(in)
-                                          mu_x_1, mu_x_2,                     & ! Intent(out)
-                                          sigma_x_1, sigma_x_2,               & ! Intent(out)
-                                          hm1, hm2,                           & ! Intent(out)
-                                          sigma2_on_mu2_ip_1,                 & ! Intent(out)
-                                          sigma2_on_mu2_ip_2                  ) ! Intent(out)
+                                          mu_x_1, mu_x_2,                 & ! Intent(out)
+                                          sigma_x_1, sigma_x_2,           & ! Intent(out)
+                                          hm1, hm2,                       & ! Intent(out)
+                                          sigma2_on_mu2_ip_1,             & ! Intent(out)
+                                          sigma2_on_mu2_ip_2              ) ! Intent(out)
 
                  call norm_transform_mean_stdev( hm1, hm2, &
                                                  real(nc(i,k),kind=core_rknd), &
@@ -2395,7 +2410,7 @@ subroutine mmicro_pcond ( sub_column,           &
                                       real( qc(i,k), kind = core_rknd ), & ! Intent(in)
                                       real( lcldm(i,k), kind = core_rknd ), & ! Intent(in)
                                       real( lcldm(i,k), kind = core_rknd ), & ! Intent(in)
-                                      mixt_frac, & ! Intent(in)
+                                      mixt_frac(k), & ! Intent(in)
                                       one, one, & ! Intent(in)
                                       zero, wphydrometp_zt, & ! Intent(in)
                                       mu_x_1, mu_x_2, sigma_x_1, sigma_x_2, & ! Intent(in)
@@ -2430,10 +2445,10 @@ subroutine mmicro_pcond ( sub_column,           &
                  sigma_Ncn_1_n = sigma_x_1_n(iiPDF_Ncn)
                  sigma_Ncn_2_n = sigma_x_2_n(iiPDF_Ncn)
 
-                 mu_Ncn_1    = mu_x_1(iiPDF_Ncn)
-                 mu_Ncn_2    = mu_x_2(iiPDF_Ncn)
-                 sigma_Ncn_1 = sigma_x_1(iiPDF_Ncn)
-                 sigma_Ncn_2 = sigma_x_2(iiPDF_Ncn)
+                 mu_Ncn_1    = mu_x_1(iiPDF_Ncn,k)
+                 mu_Ncn_2    = mu_x_2(iiPDF_Ncn,k)
+                 sigma_Ncn_1 = sigma_x_1(iiPDF_Ncn,k)
+                 sigma_Ncn_2 = sigma_x_2(iiPDF_Ncn,k)
 
                  ! Unpack corr_array_1 into correlations (1st PDF component).
                  corr_chi_eta_1   = corr_array_1_n(iiPDF_eta, iiPDF_chi)
@@ -2485,7 +2500,7 @@ subroutine mmicro_pcond ( sub_column,           &
                                         mu_rr_1_n, mu_rr_2_n, sigma_chi_1, &
                                         sigma_chi_2, sigma_rr_1, sigma_rr_2, &
                                         sigma_rr_1_n, sigma_rr_2_n, corr_chi_rr_1_n, &
-                                        corr_chi_rr_2_n, KK_accr_coef, mixt_frac, &
+                                        corr_chi_rr_2_n, KK_accr_coef, mixt_frac(k), &
                                         one, one ), &
                           kind = r8 ) / lcldm(i,k)
                  npra(k) = pra(k)/(qcic(i,k)/ncic(i,k))
