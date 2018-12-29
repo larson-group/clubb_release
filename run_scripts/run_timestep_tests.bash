@@ -5,7 +5,7 @@
 # Script to test CLUBB by running all cases at various time step
 # lengths.  This script calls:
 #
-# ./run_standalone_all.bash --timestep_test {time step length}
+# ./run_scm_all.bash --timestep_test {time step length}
 #
 # multiple times, using a different time step length each time.
 #
@@ -31,6 +31,13 @@ TEST_TIMESTEP[6]=3600.0  # 60 minute (one hour) time step.
 for (( x=0; x < "${#TEST_TIMESTEP[@]}"; x++ )); do
     echo -e "\nRunning all cases at a(n) "${TEST_TIMESTEP[$x]}" second time step."
    ./run_scm_all.bash --timestep_test ${TEST_TIMESTEP[$x]}
+   # Move all output files from a given timestep to their own directory.
+   # This code assumes that this script is being run from the run_scripts directory
+   #   and that the output directory is empty before this script is run.
+   #outputDir="../output/timestep_${TEST_TIMESTEP[$x]}s"
+   #mkdir $outputDir
+   #outputFiles="../output/*.*"
+   #mv $outputFiles "$outputDir"
 done
 
 cd $restoreDir
