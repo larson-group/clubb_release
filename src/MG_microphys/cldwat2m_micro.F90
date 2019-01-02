@@ -977,9 +977,12 @@ subroutine mmicro_pcond ( sub_column,           &
       corr_array_2_n
 
     real ( kind = core_rknd ), dimension( pver ) :: &
-      mixt_frac,   & ! Mixture fraction                                  [-]
-      Ncnm_in,     &
-      ones_vector
+      mixt_frac,    & ! Mixture fraction                                  [-]
+      Ncnm_in,      &
+      rc_in,        &
+      lcldm_in,     &
+      ones_vector,  &
+      zeros_vector
 
    !----
 !cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
@@ -1827,8 +1830,11 @@ subroutine mmicro_pcond ( sub_column,           &
                  wphydrometp_zt(k,2) = zero
 
                  Ncnm_in(k) = real( nc(i,k), kind = core_rknd )
+                 rc_in(k) = real( qc(i,k), kind = core_rknd )
+                 lcldm_in(k) = real( lcldm(i,k), kind = core_rknd )
 
                  ones_vector = one
+                 zeros_vector = zero
 
                  call compute_mean_stdev( 1, hydromet(k,:),               & ! Intent(in)
                                           hydrometp2_zt(k,:), Ncnm_in(k), & ! Intent(in)
@@ -1842,9 +1848,8 @@ subroutine mmicro_pcond ( sub_column,           &
                                           sigma2_on_mu2_ip_1,             & ! Intent(out)
                                           sigma2_on_mu2_ip_2              ) ! Intent(out)
 
-                 call norm_transform_mean_stdev( hm1, hm2, &
-                                                 real(nc(i,k),kind=core_rknd), &
-                                                 pdf_dim, &
+                 call norm_transform_mean_stdev( 1, hm1(k,:), hm2(k,:), &
+                                                 Ncnm_in(k), pdf_dim, &
                                                  mu_x_1, mu_x_2, &
                                                  sigma_x_1, sigma_x_2, &
                                                  sigma2_on_mu2_ip_1, &
@@ -1852,13 +1857,10 @@ subroutine mmicro_pcond ( sub_column,           &
                                                  mu_x_1_n, mu_x_2_n, &
                                                  sigma_x_1_n, sigma_x_2_n )
 
-                 call comp_corr_norm( zero, real( qc(i,k), kind = core_rknd ), & ! Intent(in)
-                                      real( qc(i,k), kind = core_rknd ), & ! Intent(in)
-                                      real( lcldm(i,k), kind = core_rknd ), & ! Intent(in)
-                                      real( lcldm(i,k), kind = core_rknd ), & ! Intent(in)
-                                      mixt_frac(k), & ! Intent(in)
-                                      one, one, & ! Intent(in)
-                                      zero, wphydrometp_zt, & ! Intent(in)
+                 call comp_corr_norm( 1, zeros_vector, rc_in(k), rc_in(k), & ! Intent(in)
+                                      lcldm_in(k), lcldm_in(k), mixt_frac(k), & ! Intent(in)
+                                      ones_vector, ones_vector, & ! Intent(in)
+                                      zeros_vector, wphydrometp_zt(k,:), & ! Intent(in)
                                       mu_x_1, mu_x_2, sigma_x_1, sigma_x_2, & ! Intent(in)
                                       sigma_x_1_n, sigma_x_2_n, & ! Intent(in)
                                       corr_array_n_cloud, corr_array_n_below, & ! Intent(in)
@@ -2381,8 +2383,11 @@ subroutine mmicro_pcond ( sub_column,           &
                  wphydrometp_zt(k,2) = zero
 
                  Ncnm_in(k) = real( nc(i,k), kind = core_rknd )
+                 rc_in(k) = real( qc(i,k), kind = core_rknd )
+                 lcldm_in(k) = real( lcldm(i,k), kind = core_rknd )
 
                  ones_vector = one
+                 zeros_vector = zero
 
                  call compute_mean_stdev( 1, hydromet(k,:),               & ! Intent(in)
                                           hydrometp2_zt(k,:), Ncnm_in(k), & ! Intent(in)
@@ -2396,9 +2401,8 @@ subroutine mmicro_pcond ( sub_column,           &
                                           sigma2_on_mu2_ip_1,             & ! Intent(out)
                                           sigma2_on_mu2_ip_2              ) ! Intent(out)
 
-                 call norm_transform_mean_stdev( hm1, hm2, &
-                                                 real(nc(i,k),kind=core_rknd), &
-                                                 pdf_dim, &
+                 call norm_transform_mean_stdev( 1, hm1(k,:), hm2(k,:), &
+                                                 Ncnm_in(k), pdf_dim, &
                                                  mu_x_1, mu_x_2, &
                                                  sigma_x_1, sigma_x_2, &
                                                  sigma2_on_mu2_ip_1, &
@@ -2406,13 +2410,10 @@ subroutine mmicro_pcond ( sub_column,           &
                                                  mu_x_1_n, mu_x_2_n, &
                                                  sigma_x_1_n, sigma_x_2_n )
 
-                 call comp_corr_norm( zero, real( qc(i,k), kind = core_rknd ), & ! Intent(in)
-                                      real( qc(i,k), kind = core_rknd ), & ! Intent(in)
-                                      real( lcldm(i,k), kind = core_rknd ), & ! Intent(in)
-                                      real( lcldm(i,k), kind = core_rknd ), & ! Intent(in)
-                                      mixt_frac(k), & ! Intent(in)
-                                      one, one, & ! Intent(in)
-                                      zero, wphydrometp_zt, & ! Intent(in)
+                 call comp_corr_norm( 1, zeros_vector, rc_in(k), rc_in(k), & ! Intent(in)
+                                      lcldm_in(k), lcldm_in(k), mixt_frac(k), & ! Intent(in)
+                                      ones_vector, ones_vector, & ! Intent(in)
+                                      zeros_vector, wphydrometp_zt(k,:), & ! Intent(in)
                                       mu_x_1, mu_x_2, sigma_x_1, sigma_x_2, & ! Intent(in)
                                       sigma_x_1_n, sigma_x_2_n, & ! Intent(in)
                                       corr_array_n_cloud, corr_array_n_below, & ! Intent(in)
