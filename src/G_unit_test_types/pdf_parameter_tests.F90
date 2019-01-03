@@ -183,9 +183,13 @@ module pdf_parameter_tests
       wm,      & ! Mean of w (overall)                 [m/s]
       rtm,     & ! Mean of rt (overall)                [kg/kg]
       thlm,    & ! Mean of thl (overall)               [K]
+      um,      & ! Mean of eastward wind (overall)     [m/s]
+      vm,      & ! Mean of northward wind (overall)    [m/s]
       wp2,     & ! Variance of w (overall)             [m^2/s^2]
       rtp2,    & ! Variance of rt (overall)            [kg^2/kg^2]
       thlp2,   & ! Variance of thl (overall)           [K^2]
+      up2,     & ! Variance of u (overall)             [m^2/s^2]
+      vp2,     & ! Variance of v (overall)             [m^2/s^2]
       wp3,     & ! <w'^3>                              [m^3/s^3]
       rtp3,    & ! <rt'^3>                             [kg^3/kg^3]
       thlp3,   & ! <thl'^3>                            [K^3]
@@ -194,6 +198,8 @@ module pdf_parameter_tests
       Skthl,   & ! Skewness of thl (overall)           [-]
       wprtp,   & ! Covariance of w and rt (overall)    [(m/s)kg/kg]
       wpthlp,  & ! Covariance of w and thl (overall)   [(m/s)K]
+      upwp,    & ! Covariance of u and w (overall)     [(m/s)^2]
+      vpwp,    & ! Covariance of v and w (overall)     [(m/s)^2]
       rtpthlp    ! Covariance of rt and thl (overall)  [(kg/kg)K]
 
     real( kind = core_rknd ), dimension(nz) :: &
@@ -220,6 +226,10 @@ module pdf_parameter_tests
       mu_rt_2,         & ! Mean of rt (2nd PDF component)            [kg/kg]
       mu_thl_1,        & ! Mean of thl (1st PDF component)           [K]
       mu_thl_2,        & ! Mean of thl (2nd PDF component)           [K]
+      mu_u_1,          & ! Mean of u (1st PDF component)             [m/s]
+      mu_u_2,          & ! Mean of u (2nd PDF component)             [m/s]
+      mu_v_1,          & ! Mean of v (1st PDF component)             [m/s]
+      mu_v_2,          & ! Mean of v (2nd PDF component)             [m/s]
       sigma_w_1,       & ! Standard deviation of w (1st PDF comp.)   [m/s]
       sigma_w_2,       & ! Standard deviation of w (2nd PDF comp.)   [m/s]
       sigma_rt_1,      & ! Standard deviation of rt (1st PDF comp.)  [kg/kg]
@@ -232,6 +242,10 @@ module pdf_parameter_tests
       sigma_rt_2_sqd,  & ! Variance of rt (2nd PDF component)        [kg^2/kg^2]
       sigma_thl_1_sqd, & ! Variance of thl (1st PDF component)       [K^2]
       sigma_thl_2_sqd, & ! Variance of thl (2nd PDF component)       [K^2]
+      sigma_u_1_sqd,   & ! Variance of u (1st PDF component)         [m^2/s^2]
+      sigma_u_2_sqd,   & ! Variance of u (2nd PDF component)         [m^2/s^2]
+      sigma_v_1_sqd,   & ! Variance of v (1st PDF component)         [m^2/s^2]
+      sigma_v_2_sqd,   & ! Variance of v (2nd PDF component)         [m^2/s^2]
       mixt_frac          ! Mixture fraction                          [-]
 
     real( kind = core_rknd ), dimension(nz) :: &
@@ -334,6 +348,8 @@ module pdf_parameter_tests
       w_2_n,         & ! Normalized mean of w (2nd PDF comp.) (ADG1)     [-]
       alpha_thl,     & ! Factor relating to normalized variance for th_l [-]
       alpha_rt,      & ! Factor relating to normalized variance for r_t  [-]
+      alpha_u,       & ! Factor relating to normalized variance for u    [-]
+      alpha_v,       & ! Factor relating to normalized variance for v    [-]
       gamma_Skw_fnc, & ! Skewness function for tunable parameter gamma   [-]
       sigma_sqd_w      ! Width of individual w plumes (ADG1)             [-]
 
@@ -420,6 +436,14 @@ module pdf_parameter_tests
     ! Set gr%nz to nz.  This is for use within PDF subroutines that input and
     ! output variable arrays of size gr%nz.
     gr%nz = nz
+
+    ! Set dummy values of horz wind variables for ADG1 call
+    um =   0.00_core_rknd
+    vm =   0.00_core_rknd
+    up2 =  1.00_core_rknd
+    vp2 =  1.00_core_rknd
+    upwp = 0.00_core_rknd
+    vpwp = 0.00_core_rknd
 
     ! Perform unit tests.
     do iter_param_sets = 1, num_param_sets, 1
@@ -1080,18 +1104,21 @@ module pdf_parameter_tests
           sigma_sqd_w = compute_sigma_sqd_w( gamma_Skw_fnc, wp2, thlp2, &
                                              rtp2, wpthlp, wprtp )
 
-          call ADG1_pdf_driver( wm, rtm, thlm, wp2, rtp2, thlp2,       & ! In
-                                Skw, wprtp, wpthlp, sqrt_wp2,          & ! In
-                                sigma_sqd_w, mixt_frac_max_mag,        & ! In
-                                sclrm, sclrp2, wpsclrp, l_scalar_calc, & ! In
-                                mu_w_1, mu_w_2, mu_rt_1, mu_rt_2,      & ! Out
-                                mu_thl_1, mu_thl_2, sigma_w_1_sqd,     & ! Out
-                                sigma_w_2_sqd, sigma_rt_1_sqd,         & ! Out
-                                sigma_rt_2_sqd, sigma_thl_1_sqd,       & ! Out
-                                sigma_thl_2_sqd, mixt_frac, alpha_rt,  & ! Out
-                                alpha_thl, mu_sclr_1, mu_sclr_2,       & ! Out
-                                sigma_sclr_1_sqd, sigma_sclr_2_sqd,    & ! Out
-                                alpha_sclr                             ) ! Out
+          call ADG1_pdf_driver( wm, rtm, thlm, um, vm,                  & ! In 
+                               wp2, rtp2, thlp2, up2, vp2,              & ! In 
+                               Skw, wprtp, wpthlp, upwp, vpwp, sqrt_wp2,& ! In 
+                               sigma_sqd_w, mixt_frac_max_mag,          & ! In 
+                               sclrm, sclrp2, wpsclrp, l_scalar_calc,   & ! In 
+                               mu_w_1, mu_w_2, mu_rt_1, mu_rt_2, mu_thl_1, mu_thl_2,& ! Out
+                               mu_u_1, mu_u_2, mu_v_1, mu_v_2,          & ! Out
+                               sigma_w_1_sqd, sigma_w_2_sqd, sigma_rt_1_sqd, & ! Out
+                               sigma_rt_2_sqd, sigma_thl_1_sqd, sigma_thl_2_sqd, & ! Out
+                               sigma_u_1_sqd, sigma_u_2_sqd,            & ! Out
+                               sigma_v_1_sqd, sigma_v_2_sqd,            & ! Out
+                               mixt_frac, alpha_rt, alpha_thl,          & ! Out
+                               alpha_u, alpha_v,                        & ! Out
+                               mu_sclr_1, mu_sclr_2, sigma_sclr_1_sqd,  & ! Out
+                               sigma_sclr_2_sqd, alpha_sclr )             ! Out
 
        elseif ( test_PDF_type == iiPDF_TSDADG ) then
 

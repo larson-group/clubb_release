@@ -195,6 +195,14 @@ module pdf_closure_module
       wpthlp,      & ! w'th_l'                                    [K(m/s)]
       rtpthlp        ! r_t'th_l'                                  [K(kg/kg)]
 
+    real( kind = core_rknd ), dimension(gr%nz) ::  & 
+      um,          & ! Grid-mean eastward wind     [m/s]
+      up2,         & ! u'^2                        [(m/s)^2]
+      upwp,        & ! u'w'                        [(m/s)^2]
+      vm,          & ! Grid-mean northward wind    [m/s]
+      vp2,         & ! v'^2                        [(m/s)^2]
+      vpwp           ! v'w'                        [(m/s)^2]
+
     real( kind = core_rknd ), dimension(gr%nz, sclr_dim), intent(in) ::  & 
       sclrm,       & ! Mean passive scalar        [units vary]
       wpsclrp,     & ! w' sclr'                   [units vary]
@@ -243,6 +251,10 @@ module pdf_closure_module
       rcp2,               & ! r_c'^2                [(kg^2)/(kg^2)]
       wprtpthlp             ! w' r_t' th_l'         [(m kg K)/(s kg)]
 
+    real( kind = core_rknd ), dimension(gr%nz) ::  & 
+      uprcp,              & ! u' r_c'               [(m kg)/(s kg)]
+      vprcp                 ! v' r_c'               [(m kg)/(s kg)]
+
     type(pdf_parameter), dimension(gr%nz), intent(out) :: & 
       pdf_params     ! pdf paramters         [units vary]
 
@@ -289,6 +301,14 @@ module pdf_closure_module
       thl_2,         & ! Mean of th_l (2nd PDF component)                    [K]
       varnce_thl_1,  & ! Variance of th_l (1st PDF component)              [K^2]
       varnce_thl_2,  & ! Variance of th_l (2nd PDF component)              [K^2]
+      u_1,           & ! Mean of eastward wind (1st PDF component)         [m/s]
+      u_2,           & ! Mean of eastward wind (2nd PDF component)         [m/s]
+      varnce_u_1,    & ! Variance of u (1st PDF component)             [m^2/s^2]
+      varnce_u_2,    & ! Variance of u (2nd PDF component)             [m^2/s^2]
+      v_1,           & ! Mean of northward wind (1st PDF component)        [m/s]
+      v_2,           & ! Mean of northward wind (2nd PDF component)        [m/s]
+      varnce_v_1,    & ! Variance of v (1st PDF component)             [m^2/s^2]
+      varnce_v_2,    & ! Variance of v (2nd PDF component)             [m^2/s^2]
       corr_w_rt_1,   & ! Correlation of w and r_t (1st PDF component)        [-]
       corr_w_rt_2,   & ! Correlation of w and r_t (2nd PDF component)        [-]
       corr_w_thl_1,  & ! Correlation of w and th_l (1st PDF component)       [-]
@@ -297,6 +317,8 @@ module pdf_closure_module
       corr_rt_thl_2, & ! Correlation of r_t and th_l (2nd PDF component)     [-]
       alpha_thl,     & ! Factor relating to normalized variance for th_l     [-]
       alpha_rt,      & ! Factor relating to normalized variance for r_t      [-]
+      alpha_u,       & ! Factor relating to normalized variance for u        [-]
+      alpha_v,       & ! Factor relating to normalized variance for v        [-]
       crt_1,         & ! Coef. on r_t in s/t eqns. (1st PDF comp.)           [-]
       crt_2,         & ! Coef. on r_t in s/t eqns. (2nd PDF comp.)           [-]
       cthl_1,        & ! Coef. on th_l in s/t eqns. (1st PDF comp.)  [(kg/kg)/K]
@@ -315,6 +337,10 @@ module pdf_closure_module
       corr_w_chi_2,    & ! Correlation of w and chi (2nd PDF component)      [-]
       corr_w_eta_1,    & ! Correlation of w and eta (1st PDF component)      [-]
       corr_w_eta_2,    & ! Correlation of w and eta (2nd PDF component)      [-]
+      corr_u_w_1,      & ! Correlation of u and w   (1st PDF component)      [-]
+      corr_u_w_2,      & ! Correlation of u and w   (2nd PDF component)      [-]
+      corr_v_w_1,      & ! Correlation of v and w   (1st PDF component)      [-]
+      corr_v_w_2,      & ! Correlation of v and w   (2nd PDF component)      [-]
       corr_chi_eta_1,  & ! Correlation of chi and eta (1st PDF component)    [-]
       corr_chi_eta_2,  & ! Correlation of chi and eta (2nd PDF component)    [-]
       rsatl_1,         & ! Mean of r_sl (1st PDF component)              [kg/kg]
@@ -366,7 +392,11 @@ module pdf_closure_module
       rtprcp_contrib_comp_1,  & ! <rt'rc'> contrib. (1st PDF comp.)  [kg^2/kg^2]
       rtprcp_contrib_comp_2,  & ! <rt'rc'> contrib. (2nd PDF comp.)  [kg^2/kg^2]
       thlprcp_contrib_comp_1, & ! <thl'rc'> contrib. (1st PDF comp.)  [K(kg/kg)]
-      thlprcp_contrib_comp_2    ! <thl'rc'> contrib. (2nd PDF comp.)  [K(kg/kg)]
+      thlprcp_contrib_comp_2, & ! <thl'rc'> contrib. (2nd PDF comp.)  [K(kg/kg)]
+      uprcp_contrib_comp_1,   & ! <u'rc'> contrib. (1st PDF comp.)  [m/s(kg/kg)]
+      uprcp_contrib_comp_2,   & ! <u'rc'> contrib. (2nd PDF comp.)  [m/s(kg/kg)]
+      vprcp_contrib_comp_1,   & ! <v'rc'> contrib. (1st PDF comp.)  [m/s(kg/kg)]
+      vprcp_contrib_comp_2      ! <v'rc'> contrib. (2nd PDF comp.)  [m/s(kg/kg)]
 
     ! variables for computing ice cloud fraction
     real( kind = core_rknd), dimension(gr%nz) :: &
@@ -474,14 +504,19 @@ module pdf_closure_module
     ! theta-l, and passive scalar variables.
     if ( iiPDF_type == iiPDF_ADG1 ) then ! use ADG1
 
-       call ADG1_pdf_driver( wm, rtm, thlm, wp2, rtp2, thlp2,         & ! In
-                             Skw, wprtp, wpthlp, sqrt_wp2,            & ! In
+       call ADG1_pdf_driver( wm, rtm, thlm, um, vm,                   & ! In
+                             wp2, rtp2, thlp2, up2, vp2,              & ! In
+                             Skw, wprtp, wpthlp, upwp, vpwp, sqrt_wp2,& ! In
                              sigma_sqd_w, mixt_frac_max_mag,          & ! In
                              sclrm, sclrp2, wpsclrp, l_scalar_calc,   & ! In
                              w_1, w_2, rt_1, rt_2, thl_1, thl_2,      & ! Out
+                             u_1, u_2, v_1, v_2,                      & ! Out
                              varnce_w_1, varnce_w_2, varnce_rt_1,     & ! Out
                              varnce_rt_2, varnce_thl_1, varnce_thl_2, & ! Out
+                             varnce_u_1, varnce_u_2,                  & ! Out
+                             varnce_v_1, varnce_v_2,                  & ! Out
                              mixt_frac, alpha_rt, alpha_thl,          & ! Out
+                             alpha_u, alpha_v,                        & ! Out
                              sclr1, sclr2, varnce_sclr1,              & ! Out
                              varnce_sclr2, alpha_sclr )                 ! Out
 
@@ -868,7 +903,6 @@ module pdf_closure_module
     cloud_frac = mixt_frac * cloud_frac_1 + ( one - mixt_frac ) * cloud_frac_2
     rcm = mixt_frac * rc_1 + ( one - mixt_frac ) * rc_2
 
-
     if ( iiPDF_type == iiPDF_ADG1 .or. iiPDF_type == iiPDF_ADG2 ) then
 
         ! corr_w_rt and corr_w_thl are zero for these pdf types so
@@ -877,6 +911,10 @@ module pdf_closure_module
         corr_w_chi_2 = zero
         corr_w_eta_1 = zero
         corr_w_eta_2 = zero
+        corr_u_w_1   = zero
+        corr_u_w_2   = zero
+        corr_v_w_1   = zero
+        corr_v_w_2   = zero
 
     else 
         
@@ -921,25 +959,33 @@ module pdf_closure_module
     
     ! Calculate the contributions to <w'rc'>, <w'^2 rc'>, <rt'rc'>, and
     ! <thl'rc'> from the 1st PDF component.
-    call calc_xprcp_component( wm, rtm, thlm, rcm,                & ! In
-                               w_1, rt_1, thl_1, varnce_w_1,      & ! In
+    call calc_xprcp_component( wm, rtm, thlm, um, vm, rcm,        & ! In
+                               w_1, rt_1, thl_1, u_1, v_1,        & ! In
+                               varnce_w_1,                        & ! In
                                chi_1, stdev_chi_1, stdev_eta_1,   & ! In
                                corr_w_chi_1, corr_chi_eta_1,      & ! In
+                               corr_u_w_1, corr_v_w_1,            & ! In
                                crt_1, cthl_1, rc_1, cloud_frac_1, & ! In
                                wprcp_contrib_comp_1,              & ! Out
                                wp2rcp_contrib_comp_1,             & ! Out
                                rtprcp_contrib_comp_1,             & ! Out
-                               thlprcp_contrib_comp_1             ) ! Out
+                               thlprcp_contrib_comp_1,            & ! Out
+                               uprcp_contrib_comp_1,              & ! Out
+                               vprcp_contrib_comp_1               ) ! Out
 
-    call calc_xprcp_component( wm, rtm, thlm, rcm,                & ! In
-                               w_2, rt_2, thl_2, varnce_w_2,      & ! In
+    call calc_xprcp_component( wm, rtm, thlm, um, vm, rcm,        & ! In
+                               w_2, rt_2, thl_2, u_2, v_2,        & ! In
+                               varnce_w_2,                        & ! In
                                chi_2, stdev_chi_2, stdev_eta_2,   & ! In
                                corr_w_chi_2, corr_chi_eta_2,      & ! In
+                               corr_u_w_2, corr_v_w_2,            & ! In
                                crt_2, cthl_2, rc_2, cloud_frac_2, & ! In
                                wprcp_contrib_comp_2,              & ! Out
                                wp2rcp_contrib_comp_2,             & ! Out
                                rtprcp_contrib_comp_2,             & ! Out
-                               thlprcp_contrib_comp_2             ) ! Out
+                               thlprcp_contrib_comp_2,            & ! Out
+                               uprcp_contrib_comp_2,              & ! Out
+                               vprcp_contrib_comp_2               ) ! Out
 
     
     ! Calculate rc_coef, which is the coefficient on <x'rc'> in the <x'thv'> equation.
@@ -959,6 +1005,11 @@ module pdf_closure_module
     thlprcp = mixt_frac * thlprcp_contrib_comp_1 &
               + ( one - mixt_frac ) * thlprcp_contrib_comp_2
 
+    uprcp = mixt_frac * uprcp_contrib_comp_1 &
+            + ( one - mixt_frac ) * uprcp_contrib_comp_2
+
+    vprcp = mixt_frac * vprcp_contrib_comp_1 &
+            + ( one - mixt_frac ) * vprcp_contrib_comp_2
 
     ! Calculate <w'thv'>, <w'^2 thv'>, <rt'thv'>, and <thl'thv'>.
     wpthvp = wpthlp + ep1 * thv_ds * wprtp + rc_coef * wprcp
@@ -2017,15 +2068,19 @@ module pdf_closure_module
   end function calc_cloud_frac
 
   !=============================================================================
-  subroutine calc_xprcp_component( wm, rtm, thlm, rcm,                & ! In
-                                   w_i, rt_i, thl_i, varnce_w_i,      & ! In
+  subroutine calc_xprcp_component( wm, rtm, thlm, um, vm, rcm,        & ! In
+                                   w_i, rt_i, thl_i, u_i, v_i,        & ! In
+                                   varnce_w_i,                        & ! In
                                    chi_i, stdev_chi_i, stdev_eta_i,   & ! In
                                    corr_w_chi_i, corr_chi_eta_i,      & ! In
+                                   corr_u_w_i, corr_v_w_i,            & ! In
                                    crt_i, cthl_i, rc_i, cloud_frac_i, & ! In
                                    wprcp_contrib_comp_i,              & ! Out
                                    wp2rcp_contrib_comp_i,             & ! Out
                                    rtprcp_contrib_comp_i,             & ! Out
-                                   thlprcp_contrib_comp_i             ) ! Out
+                                   thlprcp_contrib_comp_i,            & ! Out
+                                   uprcp_contrib_comp_i,              & ! Out
+                                   vprcp_contrib_comp_i               ) ! Out
 
     ! Description:
     ! Calculates the contribution to <w'rc'>, <w'^2 rc'>, <rt'rc'>, and
@@ -2403,16 +2458,22 @@ module pdf_closure_module
       wm,             & ! Mean of w (overall)                          [m/s]
       rtm,            & ! Mean of rt (overall)                         [kg/kg]
       thlm,           & ! Mean of thl (overall)                        [K]
+      um,             & ! Mean of eastward wind (overall)              [m/s]
+      vm,             & ! Mean of northward wind (overall)             [m/s]
       rcm,            & ! Mean of rc (overall)                         [kg/kg]
       w_i,            & ! Mean of w (ith PDF component)                [m/s]
       rt_i,           & ! Mean of rt (ith PDF component)               [kg/kg]
       thl_i,          & ! Mean of thl (ith PDF component)              [K]
+      u_i,            & ! Mean of eastward wind (ith PDF component)    [m/s]
+      v_i,            & ! Mean of northward wind (ith PDF component)   [m/s]
       varnce_w_i,     & ! Variance of w (ith PDF component)            [m^2/s^2]
       chi_i,          & ! Mean of chi (ith PDF component)              [kg/kg]
       stdev_chi_i,    & ! Standard deviation of chi (ith PDF comp.)    [kg/kg]
       stdev_eta_i,    & ! Standard deviation of eta (ith PDF comp.)    [kg/kg]
       corr_w_chi_i,   & ! Correlation of w and chi (ith PDF component) [-]
       corr_chi_eta_i, & ! Correlation of chi and eta (ith PDF comp.)   [-]
+      corr_u_w_i,     & ! Correlation of u and w (ith PDF component)   [-]
+      corr_v_w_i,     & ! Correlation of v and w (ith PDF component)   [-]
       crt_i,          & ! Coef. on rt in chi/eta eqns. (ith PDF comp.) [-]
       cthl_i,         & ! Coef. on thl: chi/eta eqns. (ith PDF comp.)  [kg/kg/K]
       rc_i,           & ! Mean of rc (ith PDF component)               [kg/kg]
@@ -2423,7 +2484,9 @@ module pdf_closure_module
       wprcp_contrib_comp_i,   & ! <w'rc'> contrib. (ith PDF comp.)  [m/s(kg/kg)]
       wp2rcp_contrib_comp_i,  & ! <w'^2rc'> contrib. (ith comp) [m^2/s^2(kg/kg)]
       rtprcp_contrib_comp_i,  & ! <rt'rc'> contrib. (ith PDF comp.)  [kg^2/kg^2]
-      thlprcp_contrib_comp_i    ! <thl'rc'> contrib. (ith PDF comp.)  [K(kg/kg)]
+      thlprcp_contrib_comp_i, & ! <thl'rc'> contrib. (ith PDF comp.)  [K(kg/kg)]
+      uprcp_contrib_comp_i,   & ! <u'rc'> contrib. (ith PDF comp.)  [m/s(kg/kg)]
+      vprcp_contrib_comp_i      ! <v'rc'> contrib. (ith PDF comp.)  [m/s(kg/kg)]
 
     ! ---------------------- Begin Code ------------------
     
@@ -2442,8 +2505,12 @@ module pdf_closure_module
                              + ( corr_chi_eta_i * stdev_eta_i - stdev_chi_i ) &
                                / ( two * cthl_i ) * stdev_chi_i * cloud_frac_i
 
+    uprcp_contrib_comp_i = ( u_i - um ) * ( rc_i - rcm )
+
+    vprcp_contrib_comp_i = ( v_i - vm ) * ( rc_i - rcm )
 
     ! If iiPDF_type isn't iiPDF_ADG1 or iiPDF_ADG2, so corr_w_chi_i /= 0
+    !   (and perhaps corr_u_w_i /= 0).
     if ( .not. ( iiPDF_type == iiPDF_ADG1 .or. iiPDF_type == iiPDF_ADG2 ) ) then
 
         ! Chi varies significantly in the ith PDF component (stdev_chi > chi_tol)
@@ -2458,6 +2525,9 @@ module pdf_closure_module
                                       * sqrt( varnce_w_i ) * stdev_chi_i * cloud_frac_i &
                                     + corr_w_chi_i**2 * varnce_w_i * stdev_chi_i &
                                       * exp( - chi_i**2 / ( two * stdev_chi_i**2 ) ) / sqrt_2pi
+
+            ! In principle, uprcp_contrib_comp_i might depend on corr_u_w_i here.
+
         end where
 
     end if 
