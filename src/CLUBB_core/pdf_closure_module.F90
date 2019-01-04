@@ -39,15 +39,18 @@ module pdf_closure_module
   ! and GFDL.
   !#######################################################################
   !#######################################################################
-  subroutine pdf_closure( hydromet_dim, p_in_Pa, exner, thv_ds, wm, &
-                          wp2, wp3, sigma_sqd_w,                    &
-                          Skw, Skthl_in, Skrt_in, rtm, rtp2,        &
-                          wprtp, thlm, thlp2,                       &
-                          wpthlp, rtpthlp, sclrm,                   &
-                          wpsclrp, sclrp2, sclrprtp,                &
-                          sclrpthlp,                                &
+  subroutine pdf_closure( hydromet_dim, p_in_Pa, exner, thv_ds,     &
+                          wm, wp2, wp3, sigma_sqd_w,                &
+                          Skw, Skthl_in, Skrt_in,                   &
+                          rtm, rtp2, wprtp,                         &
+                          thlm, thlp2, wpthlp,                      &
+                          um, up2, upwp,                            &
+                          vm, vp2, vpwp,                            &
+                          rtpthlp,                                  &
+                          sclrm, wpsclrp, sclrp2,                   &
+                          sclrprtp, sclrpthlp,                      &
 #ifdef GFDL
-                          RH_crit, do_liquid_only_in_clubb,        & ! h1g, 2010-06-15
+                          RH_crit, do_liquid_only_in_clubb,         & ! h1g, 2010-06-15
 #endif
                           wphydrometp, wp2hmp,                      &
                           rtphmp, thlphmp,                          &
@@ -56,10 +59,13 @@ module pdf_closure_module
                           cloud_frac, ice_supersat_frac,            &
                           rcm, wpthvp, wp2thvp, rtpthvp,            &
                           thlpthvp, wprcp, wp2rcp, rtprcp,          &
-                          thlprcp, rcp2, pdf_params,                &
-                          pdf_implicit_coefs_terms,                 &
-                          F_w, F_rt, F_thl, min_F_w, max_F_w,       &
-                          min_F_rt, max_F_rt, min_F_thl, max_F_thl, &
+                          thlprcp, rcp2,                            &
+                          uprcp, vprcp,                             &
+                          pdf_params, pdf_implicit_coefs_terms,     &
+                          F_w, F_rt, F_thl,                         &
+                          min_F_w, max_F_w,                         &
+                          min_F_rt, max_F_rt,                       &
+                          min_F_thl, max_F_thl,                     &
                           wpsclrprtp, wpsclrp2, sclrpthvp,          &
                           wpsclrpthlp, sclrprcp, wp2sclrp,          &
                           rc_coef                                   )
@@ -195,7 +201,7 @@ module pdf_closure_module
       wpthlp,      & ! w'th_l'                                    [K(m/s)]
       rtpthlp        ! r_t'th_l'                                  [K(kg/kg)]
 
-    real( kind = core_rknd ), dimension(gr%nz) ::  & 
+    real( kind = core_rknd ), dimension(gr%nz), intent(in) ::  &
       um,          & ! Grid-mean eastward wind     [m/s]
       up2,         & ! u'^2                        [(m/s)^2]
       upwp,        & ! u'w'                        [(m/s)^2]
@@ -251,7 +257,7 @@ module pdf_closure_module
       rcp2,               & ! r_c'^2                [(kg^2)/(kg^2)]
       wprtpthlp             ! w' r_t' th_l'         [(m kg K)/(s kg)]
 
-    real( kind = core_rknd ), dimension(gr%nz) ::  & 
+    real( kind = core_rknd ), dimension(gr%nz), intent(out) ::  &
       uprcp,              & ! u' r_c'               [(m kg)/(s kg)]
       vprcp                 ! v' r_c'               [(m kg)/(s kg)]
 
