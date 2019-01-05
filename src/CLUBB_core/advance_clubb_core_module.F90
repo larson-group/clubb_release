@@ -2298,7 +2298,7 @@ module advance_clubb_core_module
       rtprcp_zt,   & ! r_t' r_c' (on thermo. grid)      [(kg^2)/(kg^2)] 
       thlprcp_zt,  & ! th_l' r_c' (on thermo. grid)     [(K kg)/kg]
       uprcp_zt,    & ! u' r_c' (on thermo. grid)        [(m kg)/(s kg)]
-      vprcp_zt      ! v' r_c' (on thermo. grid)        [(m kg)/(s kg)]
+      vprcp_zt       ! v' r_c' (on thermo. grid)        [(m kg)/(s kg)]
 
     real( kind = core_rknd ), dimension(gr%nz, sclr_dim) :: &       
       sclrpthvp_zt, & ! sclr'th_v' (on thermo. grid) 
@@ -2804,6 +2804,10 @@ module advance_clubb_core_module
       rtprcp(gr%nz)     = 0.0_core_rknd
       thlprcp           = zt2zm( thlprcp_zt )
       thlprcp(gr%nz)    = 0.0_core_rknd
+      uprcp             = zt2zm( uprcp_zt )
+      uprcp(gr%nz)      = 0.0_core_rknd
+      vprcp             = zt2zm( vprcp_zt )
+      vprcp(gr%nz)      = 0.0_core_rknd
 
       ! Initialize variables to avoid uninitialized variables.
       cloud_frac_zm   = 0.0_core_rknd
