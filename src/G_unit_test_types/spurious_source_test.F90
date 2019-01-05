@@ -227,10 +227,13 @@ module spurious_source_test
 
     ! Variables used to predict <u> and <u'w'>, as well as <v> and <v'w'>.
     real( kind = core_rknd ), dimension(nz) ::  & 
-      um,   & ! <u>:  mean west-east horiz. velocity (thermo. levs.)   [m/s]
-      upwp, & ! <u'w'>:  momentum flux (momentum levels)               [m^2/s^2]
-      vm,   & ! <v>:  mean south-north horiz. velocity (thermo. levs.) [m/s]
-      vpwp    ! <v'w'>:  momentum flux (momentum levels)               [m^2/s^2]
+      um,    & ! <u>:  mean west-east horiz. velocity (thermo. levs.)   [m/s]
+      upwp,  & ! <u'w'>:  momentum flux (momentum levels)               [m^2/s^2]
+      vm,    & ! <v>:  mean south-north horiz. velocity (thermo. levs.) [m/s]
+      vpwp,  & ! <v'w'>:  momentum flux (momentum levels)               [m^2/s^2]
+      uprcp, & ! < u' r_c' >              [(m kg)/(s kg)]
+      vprcp, & ! < v' r_c' >              [(m kg)/(s kg)]
+      rc_coef    ! Coefficient on X'r_c' in X'th_v' equation    [K/(kg/kg)]
 
     real( kind = core_rknd ), dimension(nz) :: &
       w_1_n_zm, &
@@ -602,6 +605,10 @@ module spurious_source_test
        vm = zero
        upwp = zero
        vpwp = zero
+       ! Below I assume that the buoy term in the upwp eqn doesn't matter:
+       uprcp = zero
+       vprcp = zero
+       rc_coef = one
 
        ! Calculate the value of em.
        em = one_half * ( wp2 + up2 + vp2 )
@@ -647,6 +654,7 @@ module spurious_source_test
                              pdf_implicit_coefs_terms, &
                              um_forcing, vm_forcing, ug, vg, wpthvp, &
                              fcor, um_ref, vm_ref, up2, vp2, &
+                             uprcp, vprcp, rc_coef, &
                              rtm, wprtp, thlm, wpthlp, &
                              sclrm, wpsclrp, um, upwp, vm, vpwp )
 

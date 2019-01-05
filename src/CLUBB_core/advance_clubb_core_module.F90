@@ -597,6 +597,11 @@ module advance_clubb_core_module
       wprcp,            & ! w'r_c' (momentum levels)                  [(kg/kg) m/s]
       ice_supersat_frac   ! ice cloud fraction (thermodynamic levels) [-]
 
+    real( kind = core_rknd ), dimension(gr%nz) ::  &
+      uprcp,              & ! < u' r_c' >              [(m kg)/(s kg)]
+      vprcp                 ! < v' r_c' >              [(m kg)/(s kg)]
+
+
 #if defined(CLUBB_CAM) || defined(GFDL)
     real( kind = core_rknd ), intent(out), dimension(gr%nz) :: &
       khzt, &       ! eddy diffusivity on thermo levels
@@ -919,8 +924,11 @@ module advance_clubb_core_module
        call pdf_closure_driver( dt, hydromet_dim, wprtp,       & ! Intent(in)
                                 thlm, wpthlp, rtp2, rtp3,      & ! Intent(in)
                                 thlp2, thlp3, rtpthlp, wp2,    & ! Intent(in)
-                                wp3, wm_zm, wm_zt, p_in_Pa,    & ! Intent(in)
-                                exner, thv_ds_zm, thv_ds_zt,   & ! Intent(in)
+                                wp3, wm_zm, wm_zt,             & ! Intent(in)
+                                um, up2, upwp,                 & ! Intent(in)
+                                vm, vp2, vpwp,                 & ! Intent(in)
+                                p_in_Pa, exner,                & ! Intent(in)
+                                thv_ds_zm, thv_ds_zt,          & ! Intent(in)
                                 rfrzm, hydromet, wphydrometp,  & ! Intent(in)
                                 wp2hmp, rtphmp_zt, thlphmp_zt, & ! Intent(in)
                                 sclrm, wpsclrp, sclrp2,        & ! Intent(in)
@@ -940,7 +948,9 @@ module advance_clubb_core_module
                                 rtm_frz, thlm_frz, sclrpthvp,  & ! Intent(out)
                                 wp4, wp2rtp, wprtp2, wp2thlp,  & ! Intent(out)
                                 wpthlp2, wprtpthlp, wp2rcp,    & ! Intent(out)
-                                rtprcp, rcp2, Skw_velocity,    & ! Intent(out)
+                                rtprcp, rcp2,                  & ! Intent(out)
+                                uprcp, vprcp,                  & ! Intent(out)
+                                Skw_velocity,                  & ! Intent(out)
                                 cloud_frac_zm,                 & ! Intent(out)
                                 ice_supersat_frac_zm,          & ! Intent(out)
                                 rtm_zm, thlm_zm, rcm_zm,       & ! Intent(out)
@@ -1457,6 +1467,7 @@ module advance_clubb_core_module
                             pdf_implicit_coefs_terms,                        & ! intent(in)
                             um_forcing, vm_forcing, ug, vg, wpthvp,          & ! intent(in)
                             fcor, um_ref, vm_ref, up2, vp2,                  & ! intent(in)
+                            uprcp, vprcp, rc_coef,                           & ! intent(in)
                             rtm, wprtp, thlm, wpthlp,                        & ! intent(inout)
                             sclrm, wpsclrp, um, upwp, vm, vpwp )               ! intent(inout)
 
@@ -1718,8 +1729,11 @@ module advance_clubb_core_module
        call pdf_closure_driver( dt, hydromet_dim, wprtp,       & ! Intent(in)
                                 thlm, wpthlp, rtp2, rtp3,      & ! Intent(in)
                                 thlp2, thlp3, rtpthlp, wp2,    & ! Intent(in)
-                                wp3, wm_zm, wm_zt, p_in_Pa,    & ! Intent(in)
-                                exner, thv_ds_zm, thv_ds_zt,   & ! Intent(in)
+                                wp3, wm_zm, wm_zt,             & ! Intent(in)
+                                um, up2, upwp,                 & ! Intent(in)
+                                vm, vp2, vpwp,                 & ! Intent(in)
+                                p_in_Pa, exner,                & ! Intent(in)
+                                thv_ds_zm, thv_ds_zt,          & ! Intent(in)
                                 rfrzm, hydromet, wphydrometp,  & ! Intent(in)
                                 wp2hmp, rtphmp_zt, thlphmp_zt, & ! Intent(in)
                                 sclrm, wpsclrp, sclrp2,        & ! Intent(in)
@@ -1739,7 +1753,9 @@ module advance_clubb_core_module
                                 rtm_frz, thlm_frz, sclrpthvp,  & ! Intent(out)
                                 wp4, wp2rtp, wprtp2, wp2thlp,  & ! Intent(out)
                                 wpthlp2, wprtpthlp, wp2rcp,    & ! Intent(out)
-                                rtprcp, rcp2, Skw_velocity,    & ! Intent(out)
+                                rtprcp, rcp2,                  & ! Intent(out)
+                                uprcp, vprcp,                  & ! Intent(out)
+                                Skw_velocity,                  & ! Intent(out)
                                 cloud_frac_zm,                 & ! Intent(out)
                                 ice_supersat_frac_zm,          & ! Intent(out)
                                 rtm_zm, thlm_zm, rcm_zm,       & ! Intent(out)
@@ -1933,8 +1949,11 @@ module advance_clubb_core_module
   subroutine pdf_closure_driver( dt, hydromet_dim, wprtp,       & ! Intent(in)
                                  thlm, wpthlp, rtp2, rtp3,      & ! Intent(in)
                                  thlp2, thlp3, rtpthlp, wp2,    & ! Intent(in)
-                                 wp3, wm_zm, wm_zt, p_in_Pa,    & ! Intent(in)
-                                 exner, thv_ds_zm, thv_ds_zt,   & ! Intent(in)
+                                 wp3, wm_zm, wm_zt,             & ! Intent(in)
+                                 um, up2, upwp,                 & ! Intent(in)
+                                 vm, vp2, vpwp,                 & ! Intent(in)
+                                 p_in_Pa, exner,                & ! Intent(in)
+                                 thv_ds_zm, thv_ds_zt,          & ! Intent(in)
                                  rfrzm, hydromet, wphydrometp,  & ! Intent(in)
                                  wp2hmp, rtphmp_zt, thlphmp_zt, & ! Intent(in)
                                  sclrm, wpsclrp, sclrp2,        & ! Intent(in)
@@ -1954,7 +1973,9 @@ module advance_clubb_core_module
                                  rtm_frz, thlm_frz, sclrpthvp,  & ! Intent(out)
                                  wp4, wp2rtp, wprtp2, wp2thlp,  & ! Intent(out)
                                  wpthlp2, wprtpthlp, wp2rcp,    & ! Intent(out)
-                                 rtprcp, rcp2, Skw_velocity,    & ! Intent(out)
+                                 rtprcp, rcp2,                  & ! Intent(out)
+                                 uprcp, vprcp,                  & ! Intent(out)
+                                 Skw_velocity,                  & ! Intent(out)
                                  cloud_frac_zm,                 & ! Intent(out)
                                  ice_supersat_frac_zm,          & ! Intent(out)
                                  rtm_zm, thlm_zm, rcm_zm,       & ! Intent(out)
@@ -2120,7 +2141,7 @@ module advance_clubb_core_module
       thv_ds_zt, & ! Dry, base-state theta_v on thermo. levs.       [K]
       rfrzm        ! Total ice-phase water mixing ratio             [kg/kg]
 
-    real( kind = core_rknd ), dimension(gr%nz) ::  &
+    real( kind = core_rknd ), dimension(gr%nz), intent(in) ::  &
       um,          & ! Grid-mean eastward wind     [m/s]
       up2,         & ! u'^2                        [(m/s)^2]
       upwp,        & ! u'w'                        [(m/s)^2]
@@ -2198,9 +2219,9 @@ module advance_clubb_core_module
       rtprcp,    & ! < r_t' r_c' > (momentum levels)          [kg^2/kg^2]
       rcp2         ! Variance of r_c (momentum levels)        [kg^2/kg^2]
 
-    real( kind = core_rknd ), dimension(gr%nz) ::  &
-      uprcp,              & ! u' r_c'               [(m kg)/(s kg)]
-      vprcp                 ! v' r_c'               [(m kg)/(s kg)]
+    real( kind = core_rknd ), dimension(gr%nz), intent(out) ::  &
+      uprcp,              & ! < u' r_c' >              [(m kg)/(s kg)]
+      vprcp                 ! < v' r_c' >              [(m kg)/(s kg)]
 
     ! Variables being passed back to only advance_clubb_core (for statistics).
     real( kind = core_rknd ), dimension(gr%nz), intent(out) ::  & 
@@ -3364,6 +3385,14 @@ module advance_clubb_core_module
             err_code = clubb_fatal_error
             return
          endif ! iiPDF_type /= iiPDF_ADG1
+
+         if (  ipdf_call_placement == ipdf_post_advance_fields ) then
+            write(fstderr,*) "Currently,  ipdf_call_placement == ipdf_post_advance_fields" &
+                             // " is incompatible with the l_predict_upwp_vpwp code" &
+                             // " because uprcp has not been fed through advance_clubb_core."
+            err_code = clubb_fatal_error
+            return
+         endif 
 
       endif ! l_predict_upwp_vpwp
 

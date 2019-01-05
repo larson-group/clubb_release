@@ -61,6 +61,7 @@ module advance_xm_wpxp_module
                               pdf_implicit_coefs_terms, &
                               um_forcing, vm_forcing, ug, vg, wpthvp, &
                               fcor, um_ref, vm_ref, up2, vp2, &
+                              uprcp, vprcp, rc_coef, & 
                               rtm, wprtp, thlm, wpthlp, &
                               sclrm, wpsclrp, um, upwp, vm, vpwp )
 
@@ -109,7 +110,8 @@ module advance_xm_wpxp_module
         one_half, &
         zero, &
         zero_threshold, &
-        eps
+        eps, &
+        ep1
 
     use parameters_model, only: & 
         sclr_dim, &  ! Variable(s)
@@ -283,6 +285,11 @@ module advance_xm_wpxp_module
       ug,         & ! <u> geostrophic wind (thermodynamic levels)  [m/s]
       vg,         & ! <v> geostrophic wind (thermodynamic levels)  [m/s]
       wpthvp        ! <w'thv'> (momentum levels)                   [m/s K]
+
+    real( kind = core_rknd ), dimension(gr%nz), intent(in) ::  &
+      uprcp,              & ! < u' r_c' >              [(m kg)/(s kg)]
+      vprcp,              & ! < v' r_c' >              [(m kg)/(s kg)]
+      rc_coef               ! Coefficient on X'r_c' in X'th_v' equation [K/(kg/kg)]
 
      real( kind = core_rknd ), intent(in) ::  &
       fcor          ! Coriolis parameter                           [s^-1]
@@ -1227,6 +1234,9 @@ module advance_xm_wpxp_module
          ! Use a crude approximation for buoyancy terms <u'thv'> and <v'thv'>.
          !upthvp = upwp * wpthvp / max( wp2, w_tol_sqd )
          !vpthvp = vpwp * wpthvp / max( wp2, w_tol_sqd )
+         !upthvp = upthlp + ep1 * thv_ds_zm * uprtp + rc_coef * uprcp
+         !vpthvp = vpthlp + ep1 * thv_ds_zm * vprtp + rc_coef * vprcp
+
          upthvp = 0.3_core_rknd * ( upthlp + 200.0_core_rknd * uprtp ) &
                   + 200._core_rknd * sign( one, upwp) * sqrt( up2 * rcm**2 )
          vpthvp = 0.3_core_rknd * ( vpthlp + 200.0_core_rknd * vprtp ) &
