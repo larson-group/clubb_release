@@ -322,13 +322,13 @@ module Nc_Ncn_eqns
     ! only be calculated from the PDF.
     cloud_frac = mixt_frac * cloud_frac_1 + ( one - mixt_frac ) * cloud_frac_2
 
+    Ncm = Nc_in_cloud * cloud_frac
+
     where ( cloud_frac > cloud_frac_min &
             .and. abs( const_corr_chi_Ncn * const_Ncnp2_on_Ncnm2 ) > eps )
 
        ! There is cloud found at this grid level.  Additionally, Ncn varies.
-       ! Calculate Nc_in_cloud.
-       Ncm = Nc_in_cloud * cloud_frac
-
+       ! Calculate <Ncn>.
        Ncnm = Ncm_to_Ncnm( nz, mu_chi_1, mu_chi_2, sigma_chi_1, sigma_chi_2, &
                            mixt_frac, Ncm, const_Ncnp2_on_Ncnm2, &
                            const_corr_chi_Ncn, Nc_in_cloud )

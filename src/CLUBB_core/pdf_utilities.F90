@@ -68,7 +68,11 @@ module pdf_utilities
 
 
     ! Find the mean of ln x for the ith component of the PDF.
-    mu_x_n = log( mu_x / sqrt( one + sigma2_on_mu2 ) )
+    ! The max( mu_x / sqrt( 1 + sigma_x^2 / mu_x^2 ), tiny( mu_x ) ) statement
+    ! is used to prevent taking ln 0, which will produce a result of -infinity.
+    ! This would happen when mu_x is 0.  However, this code should not be
+    ! entered when mu_x has a value of 0.
+    mu_x_n = log( max( mu_x / sqrt( one + sigma2_on_mu2 ), tiny( mu_x ) ) )
 
 
     return
@@ -435,16 +439,16 @@ module pdf_utilities
     ! sigma_y_n = 0.  The resulting corr_x_y and corr_x_y_n are undefined.
     ! However, the divide-by-zero problem needs to be addressed in the code.
     where ( sigma_y_n > zero )
-       ! Use the maximum of y_sigma2_on_mu2 and epsilon( y_sigma2_on_mu2 )
-       ! instead of just y_sigma2_on_mu2.  The value of y_sigma2_on_mu2 must
-       ! already be greater than 0 in order for this block of code to be entered
-       ! (when y_sigma2_on_mu2 = 0, sigma_y_n = 0, and this block of code is not
+       ! Use the maximum of y_sigma2_on_mu2 and tiny( y_sigma2_on_mu2 ) instead
+       ! of just y_sigma2_on_mu2.  The value of y_sigma2_on_mu2 must already be
+       ! greater than 0 in order for this block of code to be entered (when
+       ! y_sigma2_on_mu2 = 0, sigma_y_n = 0, and this block of code is not
        ! entered).  However, since a "where" statement is used here, this block
        ! of code may be erroneously entered when sigma_y_n and y_sigma2_on_mu2
        ! are equal to 0.  While these erroneous results are thrown away, they
        ! may result in a floating point error that can cause the run to stop.
        corr_x_y = corr_x_y_n * sigma_y_n &
-                  / sqrt( max( y_sigma2_on_mu2, epsilon( y_sigma2_on_mu2 ) ) )
+                  / sqrt( max( y_sigma2_on_mu2, tiny( y_sigma2_on_mu2 ) ) )
     elsewhere ! sigma_y_n = 0
        ! The value of sigma_y_n / sqrt( y_sigma2_on_mu2 ) can be rewritten as:
        ! sqrt( ln( 1 + y_sigma2_on_mu2 ) ) / sqrt( y_sigma2_on_mu2 ).
