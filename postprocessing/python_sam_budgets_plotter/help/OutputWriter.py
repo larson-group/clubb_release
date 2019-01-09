@@ -1,5 +1,6 @@
 import os
 import logging
+from datetime import datetime as dt
 
 #-------------------------------------------------------------------------------
 #   L O G G E R
@@ -190,6 +191,7 @@ def writeSamBudgetSubHeader(FILE):
 ###############################################################################
 # Writes the footer of a page
 ###############################################################################
+# NOTE: (Steffen Domke) Replaced static year of 2016 with datetime.datetime.now().year
 def writeFooter(FILE):
     logger.info('writeFooter')
     with open(FILE, "a") as myfile:
@@ -197,12 +199,12 @@ def writeFooter(FILE):
 	<hr noshade size=5 width=70%>
 	<div align="CENTER">
 		<font size="-2">
-		Copyright &#169; 2016 Larson Group. All rights reserved. 
+		Copyright &#169; {} Larson Group. All rights reserved. 
 		</font>
 	</div>
 </body>
 </html>
-""")
+""".format(dt.now().year))
 
 ###############################################################################
 # Inserts an image
