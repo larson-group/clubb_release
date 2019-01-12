@@ -928,7 +928,8 @@ module pdf_utilities
         gr    ! Variable type(s)
 
     use constants_clubb, only: &
-        one,  & ! Variable(s)
+        max_mag_correlation, & ! Variable(s)
+        one, &
         zero
 
     use clubb_precision, only: &
@@ -969,12 +970,8 @@ module pdf_utilities
              + ( one - mixt_frac ) * sqrt( sigma_x_2_sqd * sigma_y_2_sqd ) )
 
        ! The correlation must fall within the bounds of
-       ! -1 <= corr_x_y_1 (= corr_x_y_2) <= 1.
-       where ( corr_x_y_1 > one )
-          corr_x_y_1 = one
-       elsewhere ( corr_x_y_1 < -one )
-          corr_x_y_1 = -one
-       endwhere
+       ! -max_mag_correlation < corr_x_y_1 (= corr_x_y_2) < max_mag_correlation
+       corr_x_y_1 = max( -max_mag_correlation, min( max_mag_correlation, corr_x_y_1 ) )
 
     elsewhere ! sigma_x_1^2 * sigma_y_1^2 = 0 and sigma_x_2^2 * sigma_y_2^2 = 0.
 
