@@ -77,30 +77,25 @@ benchmark test cases, and creating plots.
 -------------------------------------------------------
 - STEP 1: OBTAINING THE CODE FROM THE REPOSITORY
 -------------------------------------------------------
-Checking CLUBB out requires the user to have signed up for a CLUBB account.
-This can be done at http://clubb.larson-group.com/register.php and will
-require a valid e-mail address.
+Checking CLUBB out requires the user to be a collaborator on the clubb_release github repository.
+Sign up can be done at http://carson.math.uwm.edu:4567 and will
+require a github username.
 
-After entering the required information in the registration page, an e-mail
-will be sent to the entered e-mail address with the password for the new
-CLUBB account.
+After entering the required information in the registration page, an invitation e-mail
+will be sent to the email associated with the github account entered.
 
-Please note that each user will only need to sign up for a CLUBB account once.
-After this, the same e-mail address and password combination will work to
-download the CLUBB code.
+Please note that each user will only need to sign up once.
 
-With a valid CLUBB account, the CLUBB code can be checked out from its
-repository using subversion (a.k.a. svn).  If you have not already downloaded CLUBB,
+With the valid permissions as a collaborator, the CLUBB code can be cloned from its
+repository using git.  If you have not already downloaded CLUBB,
 then at a bash prompt, type in the following command from the directory where
 you want the clubb folder to be placed, all on one line:
-user@computer ~$ svn co http://carson.math.uwm.edu/repos/clubb_repos/trunk 
-          clubb --username EMAIL
-(EMAIL is the e-mail address used to register for a CLUBB account. )
+user@computer ~$ git clone http://github.com/larson-group/clubb_release.git 
 
-After entering this command, svn will prompt for a password. The password will
-have been sent via e-mail after signing up for a CLUBB account. After the
-password is entered, subversion will download the CLUBB source code into the
-directory specified as the last option in the svn command; in the example
+After entering this command, git will prompt for a username and password. 
+Use your github credentials. After the authorized credentials are entered, 
+git will download the CLUBB source code into the directory specified as the
+last option in the git command; in the example
 above, it will be downloaded to the clubb/ directory.  On some computers,
 when entering the password, the cursor may remain in the same spot
 and the screen may remain blank.  Don't be confused; hit return, and 
@@ -123,11 +118,24 @@ Once in the compile directory, run the compile.bash script, using the config
 file corresponding to the target platform to run CLUBB on.
 For instance, on a Linux machine, to compile with gfortran, use the following
 command:
-user@computer compile$ ./compile.bash config/linux_x86_64_gfortran.bash
+user@computer compile$ ./compile.bash -c config/linux_x86_64_gfortran.bash
 
 To run this on a Mac OS X machine, you should use the following command:
 
-user@computer compile$ ./compile.bash config/macosx_x86_64_gfortran.bash
+user@computer compile$ ./compile.bash -c config/macosx_x86_64_gfortran.bash
+
+Note: If clubb did not compile correctly (e.g. compiled with wrong config)
+and you are using a mac, try installing gnu-getopt as opposed to bsd-getopt (default on mac) - compile.bash expects gnu-getopt.
+Another work around for this is to change the default compile configuration in compile.bash.
+To do this comment out the config for linux gfortran and uncomment the config for macOS gfortran in compile.bash  
+
+The code should look like this:
+# Set using the default config flags
+#       CONFIG=./config/linux_x86_64_gfortran.bash # Linux (Redhat Enterprise 5 / GNU)
+#       CONFIG=./config/linux_x86_64_g95_optimize.bash # Linux (Redhat Enterprise 5 g95)
+        CONFIG=./config/macosx_x86_64_gfortran.bash # MacOS X / GNU
+#       CONFIG=./config/aix_powerpc_xlf90_bluefire.bash # IBM AIX on Bluefire / XL Fortran
+#       CONFIG=./config/solaris_generic_oracle.bash # Oracle/Sun Solaris / Oracle/Sun Fortran
 
 (If you want a primer on using the command line shell on Macs, see
 https://developer.apple.com/library/mac/documentation/OpenSource/Conceptual/ShellScripting/CommandLInePrimer/CommandLine.html .)
