@@ -1,4 +1,6 @@
 import os
+from netCDF4 import Dataset
+
 class DataReader():
     '''
     This class is responsible for handling input files. Given a
@@ -6,8 +8,25 @@ class DataReader():
     netcdf) and then uses the correct helper file (e.g.
     NetcdfReader.py) to load the data into python.
     '''
+
+
     def __init__(self):
         print("DataReader not implemented")
+        self.nc_filenames = []
+        self.grads_dat_filenames = []
+        self.grads_ctl_filenames = []
+        self.nc_datasets = []
+
+    def load_nc_file(self, filename):
+        '''
+        Load the given NetCDF file
+        :param filename: the netcdf file to be loaded
+        :return: a netcdf dataset containing the data from the given file
+        '''
+        dataset = Dataset(filename, "r+", format="NETCDF4")
+        print("Variables: " + str(dataset.variables))
+        #print(filename + ": " + str(dataset))
+        return dataset
 
     def load_folder(self, folder_path):
         '''
@@ -16,8 +35,19 @@ class DataReader():
         :param folder_path: The path of the folder to be loaded
         :return: None
         '''
-        data_files = []
         for root, dirs, files in os.walk(folder_path):
             for filename in files:
                 abs_filename = os.path.abspath(os.path.join(root, filename))
-                data_files.append(abs_filename)
+                file_ext = os.path.splitext(filename)[1]
+                if file_ext == ".nc":
+                    self.nc_filenames.append(abs_filename)
+                    self.nc_datasets.append(self.load_nc_file(abs_filename))
+                elif file_ext == ".dat":
+                    self.grads_dat_filenames.append(abs_filename)
+                elif file_ext == ".ctl":
+                    self.grads_ctl_filenames.append(abs_filename)
+                else:
+                    print("Filetype " + file_ext + " is not supported. Attempted to load " + abs_filename)
+        # print("Files loaded:\n\n----nc files----\n" + str(self.nc_filenames) + "\n\n----dat files----\n" + str(self.grads_dat_filenames) +
+        #       "\n\n----ctl files----\n" + str(self.grads_ctl_filenames))
+
