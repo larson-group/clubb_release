@@ -24,7 +24,7 @@ module stats_variables
     stats_tsamp = 0._core_rknd, & ! Sampling interval   [s]
     stats_tout  = 0._core_rknd ! Output interval     [s]
 
-!!$omp   threadprivate(stats_tsamp, stats_tout)
+!$omp   threadprivate(stats_tsamp, stats_tout)
 
   logical, public ::  &
     l_stats            = .false., & ! Main flag to turn statistics on/off
@@ -36,7 +36,7 @@ module stats_variables
                       ! requested format, e.g. l_grads = .true. and
                       ! stats_tout < 60.0
 
-!!$omp   threadprivate(l_stats, l_output_rad_files, l_netcdf, l_grads, l_silhs_out, &
+!$omp   threadprivate(l_stats, l_output_rad_files, l_netcdf, l_grads, l_silhs_out, &
 !$omp     l_allow_small_stats_tout)
 
   logical, public :: & 
