@@ -8,10 +8,67 @@ Author: Nicolas Strike
 Date: Jan 2019
 '''
 import argparse
+from DataReader import DataReader
 
-def main():
+class PyPlotGen:
+    def __init__(self, input_folder, output_folder, replace=False, les=False, cgbest=False, hoc=False,plotrefs=False,
+                 nightly=False,hq_imgs=False, eps=False, zip=False, thin=False, no_legends=False,ensemble=False,
+                 budget_moments=False, bu_morr=False,diff=False):
+        '''
+        This creates an instance of PyPlotGen. Each parameter is a command line parameter passed in from the argparser
+        below.
+        :param input_folder:
+        :param output_folder:
+        :param replace:
+        :param les:
+        :param cgbest:
+        :param hoc:
+        :param plotrefs:
+        :param nightly:
+        :param hq_imgs:
+        :param eps:
+        :param zip:
+        :param thin:
+        :param no_legends:
+        :param ensemble:
+        :param budget_moments:
+        :param bu_morr:
+        :param diff:
+        '''
+        self.input_folder = input_folder
+        self.output_folder = output_folder
+        self.replace = replace
+        self.les = les
+        self.cgbest = cgbest
+        self.hoc = hoc
+        self.plotrefs = plotrefs
+        self.nightly = nightly
+        self.hq_imgs = hq_imgs
+        self.eps = eps
+        self.zip = zip
+        self.thin = thin
+        self.no_legends = no_legends
+        self.ensemble = ensemble
+        self.budget_moments = budget_moments
+        self.bu_morr = bu_morr
+        self.diff = diff
+
+    def run(self):
+        '''
+        Runs PyPlotGen
+        :return:
+        '''
+        print("PyPlotGen would run right now if it was written")
+        data_reader = DataReader()
+        data_reader.load_folder(self.input_folder)
+        # TODO
+
+def process_args():
     '''
-    This is the main method that starts the program
+    This method takes arguments in from the command line and feeds them into
+    a PyPlotGen object
+
+    :return: a PyPlotGen object containing the parameters as given from the commandline.
     '''
     parser = argparse.ArgumentParser()
     parser.add_argument("-r","--replace",help="If the output folder already exists, replace it with the new one.", action="store_true")
@@ -64,11 +121,13 @@ def main():
     if args.diff:
         print("Diff flag detected, but that feature is not yet implemented")
 
-
-
-
-
-
+    pyplotgen = PyPlotGen(args.input, args.output, replace=args.replace, les=args.les, cgbest=args.plot_golaz_best,
+                          hoc=args.plot_hoc_2005,plotrefs=args.all_best, nightly=args.nightly,
+                          hq_imgs=args.high_quality_imgs, eps=args.save_eps, zip=args.zip, thin=args.thin,
+                          no_legends=args.no_legends,ensemble=args.ensemble, budget_moments=args.budget_moments,
+                          bu_morr=args.bu_morr,diff=args.diff)
+    return pyplotgen
 # run main if file is run by interpreter
 if __name__ == "__main__":
-    main()
+    pyplotgen = process_args()
+    pyplotgen.run()
