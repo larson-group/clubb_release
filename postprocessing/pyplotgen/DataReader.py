@@ -11,11 +11,33 @@ class DataReader():
 
 
     def __init__(self):
+        '''
+        This is the object constructer. Initalizes class variables and data
+        '''
         print("DataReader not implemented")
         self.nc_filenames = []
         self.grads_dat_filenames = []
         self.grads_ctl_filenames = []
         self.nc_datasets = []
+
+    def cleanup(self):
+        '''
+        This is the cleanup method. This is called on the instance's destruction
+        to unallocate resources that may be held (e.g. dataset files).
+        :return:
+        '''
+        for dataset in self.nc_datasets:
+            dataset.close()
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        '''
+        Calls the cleanup and cleanly closes out the object isntance
+        :param exc_type:
+        :param exc_val:
+        :param exc_tb:
+        :return:
+        '''
+        self.cleanup()
 
     def load_nc_file(self, filename):
         '''
@@ -27,6 +49,7 @@ class DataReader():
         print("Variables: " + str(dataset.variables))
         #print(filename + ": " + str(dataset))
         return dataset
+
 
     def load_folder(self, folder_path):
         '''
