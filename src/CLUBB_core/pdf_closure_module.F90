@@ -908,6 +908,7 @@ module pdf_closure_module
     ! https://arxiv.org/pdf/1711.03675v1.pdf#nameddest=url:anl_int_cloud_terms
     cloud_frac = mixt_frac * cloud_frac_1 + ( one - mixt_frac ) * cloud_frac_2
     rcm = mixt_frac * rc_1 + ( one - mixt_frac ) * rc_2
+    rcm = max( zero_threshold, rcm )
 
     if ( iiPDF_type == iiPDF_ADG1 .or. iiPDF_type == iiPDF_ADG2 ) then
 
