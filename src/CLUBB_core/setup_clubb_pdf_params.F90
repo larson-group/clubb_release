@@ -613,22 +613,21 @@ module setup_clubb_pdf_params
                                 sigma_x_2_n, corr_array_1_n, &
                                 corr_array_2_n, l_stats_samp )
 
+    !!! Pack the PDF parameters
+    call pack_hydromet_pdf_params( nz, hm_1, hm_2, pdf_dim,    & ! In
+                                   mu_x_1, mu_x_2,             & ! In
+                                   sigma_x_1, sigma_x_2,       & ! In
+                                   corr_array_1, corr_array_2, & ! In
+                                   precip_frac, precip_frac_1, & ! In
+                                   precip_frac_2,              & ! In
+                                   hydromet_pdf_params         ) ! Out
+
     !!! Setup PDF parameters loop.
     ! Loop over all model thermodynamic level above the model lower boundary.
     ! Now also including "model lower boundary" -- Eric Raut Aug 2013
     ! Now not  including "model lower boundary" -- Eric Raut Aug 2014
 
     do k = 2, nz, 1
-
-       !!! Pack the PDF parameters
-       call pack_hydromet_pdf_params( hm_1(k,:), hm_2(k,:), pdf_dim, &    ! In
-                                      mu_x_1(:,k), mu_x_2(:,k), &         ! In
-                                      sigma_x_1(:,k), sigma_x_2(:,k), &   ! In
-                                      corr_array_1(:,:,k), & ! In
-                                      corr_array_2(:,:,k), & ! In
-                                      precip_frac(k), precip_frac_1(k), & ! In
-                                      precip_frac_2(k), &                 ! In
-                                      hydromet_pdf_params(k) )            ! Out
 
        if ( l_diagnose_correlations ) then
 
@@ -1055,7 +1054,7 @@ module setup_clubb_pdf_params
     logical :: &
       l_limit_corr_chi_eta    ! Flag to limit the correlation of chi and eta [-]
 
-    integer :: ivar, jvar ! Loop iterators
+    integer :: ivar, jvar, hm_idx ! Indices
 
     ! ---- Begin Code ----
 
@@ -1091,8 +1090,10 @@ module setup_clubb_pdf_params
        ! hydrometeor for each PDF component and each hydrometeor type.
        do jvar = iiPDF_Ncn+1, pdf_dim
 
+          hm_idx = pdf2hydromet_idx(jvar)
+
           call calc_corr_w_hm_n( nz, wm_zt, &
-                                 wphydrometp_zt(:,pdf2hydromet_idx(jvar)), &
+                                 wphydrometp_zt(:,hm_idx), &
                                  mu_x_1(iiPDF_w,:), mu_x_2(iiPDF_w,:), &
                                  mu_x_1(jvar,:), mu_x_2(jvar,:), &
                                  sigma_x_1(iiPDF_w,:), sigma_x_2(iiPDF_w,:), &
@@ -1100,7 +1101,7 @@ module setup_clubb_pdf_params
                                  sigma_x_1_n(jvar,:), sigma_x_2_n(jvar,:), &
                                  mixt_frac, precip_frac_1, precip_frac_2, &
                                  corr_w_hm_1_n(jvar,:), corr_w_hm_2_n(jvar,:), &
-                                 hydromet_tol(pdf2hydromet_idx(jvar)) )
+                                 hydromet_tol(hm_idx) )
 
        enddo ! jvar = iiPDF_Ncn+1, pdf_dim
 
@@ -2639,7 +2640,7 @@ module setup_clubb_pdf_params
       sigma_x_2_n    ! Std. dev. array (normal space): PDF vars (comp. 2) [u.v.]
 
     ! Local Variable
-    integer :: ivar  ! Loop index
+    integer :: ivar, hm_idx  ! Indices
 
 
     ! The means and standard deviations in each PDF component of w, chi (old s),
@@ -2715,10 +2716,11 @@ module setup_clubb_pdf_params
     ! Normal space precipitating hydrometeor means and standard deviations.
     do ivar = iiPDF_Ncn+1, pdf_dim, 1
 
+       hm_idx = pdf2hydromet_idx(ivar)
+
        ! Normal space mean of a precipitating hydrometeor, hm, in PDF
        ! component 1.
-       where ( hm_1(:,pdf2hydromet_idx(ivar)) &
-               >= hydromet_tol(pdf2hydromet_idx(ivar)) )
+       where ( hm_1(:,hm_idx) >= hydromet_tol(hm_idx) )
 
           mu_x_1_n(ivar,:) = mean_L2N( nz, mu_x_1(ivar,:), &
                                        sigma2_on_mu2_ip_1(ivar,:) )
@@ -2742,8 +2744,7 @@ module setup_clubb_pdf_params
 
        ! Normal space mean of a precipitating hydrometeor, hm, in PDF
        ! component 2.
-       where ( hm_2(:,pdf2hydromet_idx(ivar)) &
-               >= hydromet_tol(pdf2hydromet_idx(ivar)) )
+       where ( hm_2(:,hm_idx) >= hydromet_tol(hm_idx) )
 
           mu_x_2_n(ivar,:) = mean_L2N( nz, mu_x_2(ivar,:), &
                                        sigma2_on_mu2_ip_2(ivar,:) )
@@ -3265,7 +3266,7 @@ module setup_clubb_pdf_params
       l_stats_samp     ! Flag to record statistical output.
 
     ! Local Variable
-    integer :: ivar, jvar  ! Loop indices
+    integer :: ivar, jvar, hm_idx, hm_idx_ivar, hm_idx_jvar  ! Indices
 
 
     !!! Output the statistics for hydrometeor PDF parameters.
@@ -3289,18 +3290,18 @@ module setup_clubb_pdf_params
 
        do ivar = iiPDF_Ncn+1, pdf_dim, 1
 
+          hm_idx = pdf2hydromet_idx(ivar)
+
           ! Mean of the precipitating hydrometeor (in-precip)
           ! in PDF component 1.
-          if ( imu_hm_1(pdf2hydromet_idx(ivar)) > 0 ) then
-             call stat_update_var( imu_hm_1(pdf2hydromet_idx(ivar)), &
-                                   mu_x_1(ivar,:), stats_zt )
+          if ( imu_hm_1(hm_idx) > 0 ) then
+             call stat_update_var( imu_hm_1(hm_idx), mu_x_1(ivar,:), stats_zt )
           endif
 
           ! Mean of the precipitating hydrometeor (in-precip)
           ! in PDF component 2.
-          if ( imu_hm_2(pdf2hydromet_idx(ivar)) > 0 ) then
-             call stat_update_var( imu_hm_2(pdf2hydromet_idx(ivar)), &
-                                   mu_x_2(ivar,:), stats_zt )
+          if ( imu_hm_2(hm_idx) > 0 ) then
+             call stat_update_var( imu_hm_2(hm_idx), mu_x_2(ivar,:), stats_zt )
           endif
 
        enddo ! ivar = iiPDF_Ncn+1, pdf_dim, 1
@@ -3317,18 +3318,20 @@ module setup_clubb_pdf_params
 
        do ivar = iiPDF_Ncn+1, pdf_dim, 1
 
+          hm_idx = pdf2hydromet_idx(ivar)
+
           ! Standard deviation of the precipitating hydrometeor (in-precip)
           ! in PDF component 1.
-          if ( isigma_hm_1(pdf2hydromet_idx(ivar)) > 0 ) then
-             call stat_update_var( isigma_hm_1(pdf2hydromet_idx(ivar)), &
-                                   sigma_x_1(ivar,:), stats_zt )
+          if ( isigma_hm_1(hm_idx) > 0 ) then
+             call stat_update_var( isigma_hm_1(hm_idx), sigma_x_1(ivar,:), &
+                                   stats_zt )
           endif
 
           ! Standard deviation of the precipitating hydrometeor (in-precip)
           ! in PDF component 2.
-          if ( isigma_hm_2(pdf2hydromet_idx(ivar)) > 0 ) then
-             call stat_update_var( isigma_hm_2(pdf2hydromet_idx(ivar)), &
-                                   sigma_x_2(ivar,:), stats_zt )
+          if ( isigma_hm_2(hm_idx) > 0 ) then
+             call stat_update_var( isigma_hm_2(hm_idx), sigma_x_2(ivar,:), &
+                                   stats_zt )
           endif
 
        enddo ! ivar = iiPDF_Ncn+1, pdf_dim, 1
@@ -3405,17 +3408,19 @@ module setup_clubb_pdf_params
 
        do ivar = iiPDF_Ncn+1, pdf_dim, 1
 
+          hm_idx = pdf2hydromet_idx(ivar)
+
           ! Correlation (in-precip) of w and the precipitating hydrometeor
           ! in PDF component 1.
-          if ( icorr_w_hm_1(pdf2hydromet_idx(ivar)) > 0 ) then
-             call stat_update_var( icorr_w_hm_1(pdf2hydromet_idx(ivar)), &
+          if ( icorr_w_hm_1(hm_idx) > 0 ) then
+             call stat_update_var( icorr_w_hm_1(hm_idx), &
                                    corr_array_1(ivar,iiPDF_w,:), stats_zt )
           endif
 
           ! Correlation (in-precip) of w and the precipitating hydrometeor
           ! in PDF component 2.
-          if ( icorr_w_hm_2(pdf2hydromet_idx(ivar)) > 0 ) then
-             call stat_update_var( icorr_w_hm_2(pdf2hydromet_idx(ivar)), &
+          if ( icorr_w_hm_2(hm_idx) > 0 ) then
+             call stat_update_var( icorr_w_hm_2(hm_idx), &
                                    corr_array_2(ivar,iiPDF_w,:), stats_zt )
           endif
 
@@ -3467,17 +3472,19 @@ module setup_clubb_pdf_params
 
        do ivar = iiPDF_Ncn+1, pdf_dim, 1
 
+          hm_idx = pdf2hydromet_idx(ivar)
+
           ! Correlation (in-precip) of chi (old s) and the precipitating
           ! hydrometeor in PDF component 1.
-          if ( icorr_chi_hm_1(pdf2hydromet_idx(ivar)) > 0 ) then
-             call stat_update_var( icorr_chi_hm_1(pdf2hydromet_idx(ivar)), &
+          if ( icorr_chi_hm_1(hm_idx) > 0 ) then
+             call stat_update_var( icorr_chi_hm_1(hm_idx), &
                                    corr_array_1(ivar,iiPDF_chi,:), stats_zt )
           endif
 
           ! Correlation (in-precip) of chi (old s) and the precipitating
           ! hydrometeor in PDF component 2.
-          if ( icorr_chi_hm_2(pdf2hydromet_idx(ivar)) > 0 ) then
-             call stat_update_var( icorr_chi_hm_2(pdf2hydromet_idx(ivar)), &
+          if ( icorr_chi_hm_2(hm_idx) > 0 ) then
+             call stat_update_var( icorr_chi_hm_2(hm_idx), &
                                    corr_array_2(ivar,iiPDF_chi,:), stats_zt )
           endif
 
@@ -3497,17 +3504,19 @@ module setup_clubb_pdf_params
 
        do ivar = iiPDF_Ncn+1, pdf_dim, 1
 
+          hm_idx = pdf2hydromet_idx(ivar)
+
           ! Correlation (in-precip) of eta (old t) and the precipitating
           ! hydrometeor in PDF component 1.
-          if ( icorr_eta_hm_1(pdf2hydromet_idx(ivar)) > 0 ) then
-             call stat_update_var( icorr_eta_hm_1(pdf2hydromet_idx(ivar)), &
+          if ( icorr_eta_hm_1(hm_idx) > 0 ) then
+             call stat_update_var( icorr_eta_hm_1(hm_idx), &
                                    corr_array_1(ivar,iiPDF_eta,:), stats_zt )
           endif
 
           ! Correlation (in-precip) of eta (old t) and the precipitating
           ! hydrometeor in PDF component 2.
-          if ( icorr_eta_hm_2(pdf2hydromet_idx(ivar)) > 0 ) then
-             call stat_update_var( icorr_eta_hm_2(pdf2hydromet_idx(ivar)), &
+          if ( icorr_eta_hm_2(hm_idx) > 0 ) then
+             call stat_update_var( icorr_eta_hm_2(hm_idx), &
                                    corr_array_2(ivar,iiPDF_eta,:), stats_zt )
           endif
 
@@ -3527,44 +3536,47 @@ module setup_clubb_pdf_params
 
        do ivar = iiPDF_Ncn+1, pdf_dim, 1
 
+          hm_idx = pdf2hydromet_idx(ivar)
+
           ! Correlation (in-precip) of N_cn and the precipitating
           ! hydrometeor in PDF component 1.
-          if ( icorr_Ncn_hm_1(pdf2hydromet_idx(ivar)) > 0 ) then
-             call stat_update_var( icorr_Ncn_hm_1(pdf2hydromet_idx(ivar)), &
+          if ( icorr_Ncn_hm_1(hm_idx) > 0 ) then
+             call stat_update_var( icorr_Ncn_hm_1(hm_idx), &
                                    corr_array_1(ivar,iiPDF_Ncn,:), stats_zt )
           endif
 
           ! Correlation (in-precip) of N_cn and the precipitating
           ! hydrometeor in PDF component 2.
-          if ( icorr_Ncn_hm_2(pdf2hydromet_idx(ivar)) > 0 ) then
-             call stat_update_var( icorr_Ncn_hm_2(pdf2hydromet_idx(ivar)), &
+          if ( icorr_Ncn_hm_2(hm_idx) > 0 ) then
+             call stat_update_var( icorr_Ncn_hm_2(hm_idx), &
                                    corr_array_2(ivar,iiPDF_Ncn,:), stats_zt )
           endif
 
        enddo ! ivar = iiPDF_Ncn+1, pdf_dim, 1
 
        do ivar = iiPDF_Ncn+1, pdf_dim, 1
-         do jvar = ivar+1, pdf_dim, 1
 
-           ! Correlation (in-precip) of two different hydrometeors (hmx and
-           ! hmy) in PDF component 1.
-           if ( icorr_hmx_hmy_1(pdf2hydromet_idx(jvar),pdf2hydromet_idx(ivar)) &
-                > 0 ) then
-             call stat_update_var( &
-               icorr_hmx_hmy_1(pdf2hydromet_idx(jvar),pdf2hydromet_idx(ivar)), &
-               corr_array_1(jvar,ivar,:), stats_zt )
-           endif
+          hm_idx_ivar = pdf2hydromet_idx(ivar)
 
-           ! Correlation (in-precip) of two different hydrometeors (hmx and
-           ! hmy) in PDF component 2.
-           if ( icorr_hmx_hmy_2(pdf2hydromet_idx(jvar),pdf2hydromet_idx(ivar)) &
-                > 0 ) then
-             call stat_update_var( &
-               icorr_hmx_hmy_2(pdf2hydromet_idx(jvar),pdf2hydromet_idx(ivar)), &
-               corr_array_2(jvar,ivar,:), stats_zt )
-           endif
+          do jvar = ivar+1, pdf_dim, 1
 
-         enddo ! jvar = ivar+1, pdf_dim, 1
+             hm_idx_jvar = pdf2hydromet_idx(jvar)
+
+             ! Correlation (in-precip) of two different hydrometeors (hmx and
+             ! hmy) in PDF component 1.
+             if ( icorr_hmx_hmy_1(hm_idx_jvar,hm_idx_ivar) > 0 ) then
+               call stat_update_var( icorr_hmx_hmy_1(hm_idx_jvar,hm_idx_ivar), &
+                                     corr_array_1(jvar,ivar,:), stats_zt )
+             endif
+
+             ! Correlation (in-precip) of two different hydrometeors (hmx and
+             ! hmy) in PDF component 2.
+             if ( icorr_hmx_hmy_2(hm_idx_jvar,hm_idx_ivar) > 0 ) then
+               call stat_update_var( icorr_hmx_hmy_2(hm_idx_jvar,hm_idx_ivar), &
+                                     corr_array_2(jvar,ivar,:), stats_zt )
+             endif
+
+          enddo ! jvar = ivar+1, pdf_dim, 1
        enddo ! ivar = iiPDF_Ncn+1, pdf_dim, 1
 
     endif ! l_stats_samp
@@ -3658,7 +3670,7 @@ module setup_clubb_pdf_params
       mu_Ncn_1_n, & ! Mean of ln Ncn (1st PDF component)   [ln(num/kg)]
       mu_Ncn_2_n    ! Mean of ln Ncn (2nd PDF component)   [ln(num/kg)]
 
-    integer :: ivar, jvar  ! Loop indices
+    integer :: ivar, jvar, hm_idx, hm_idx_ivar, hm_idx_jvar  ! Indices
 
 
     !!! Output the statistics for normal space hydrometeor PDF parameters.
@@ -3668,8 +3680,10 @@ module setup_clubb_pdf_params
 
        do ivar = iiPDF_Ncn+1, pdf_dim, 1
 
+          hm_idx = pdf2hydromet_idx(ivar)
+
           ! Mean (in-precip) of ln hm in PDF component 1.
-          if ( imu_hm_1_n(pdf2hydromet_idx(ivar)) > 0 ) then
+          if ( imu_hm_1_n(hm_idx) > 0 ) then
              where ( mu_x_1_n(ivar,:) > real( -huge( 0.0 ), kind = core_rknd ) )
                 mu_hm_1_n = mu_x_1_n(ivar,:)
              elsewhere
@@ -3680,12 +3694,11 @@ module setup_clubb_pdf_params
                 ! Set to -huge for single precision.
                 mu_hm_1_n = real( -huge( 0.0 ), kind = core_rknd )
              endwhere
-             call stat_update_var( imu_hm_1_n(pdf2hydromet_idx(ivar)), &
-                                   mu_hm_1_n, stats_zt )
+             call stat_update_var( imu_hm_1_n(hm_idx), mu_hm_1_n, stats_zt )
           endif
 
           ! Mean (in-precip) of ln hm in PDF component 2.
-          if ( imu_hm_2_n(pdf2hydromet_idx(ivar)) > 0 ) then
+          if ( imu_hm_2_n(hm_idx) > 0 ) then
              where ( mu_x_2_n(ivar,:) > real( -huge( 0.0 ), kind = core_rknd ) )
                 mu_hm_2_n = mu_x_2_n(ivar,:)
              elsewhere
@@ -3696,8 +3709,7 @@ module setup_clubb_pdf_params
                 ! Set to -huge for single precision.
                 mu_hm_2_n = real( -huge( 0.0 ), kind = core_rknd )
              endwhere
-             call stat_update_var( imu_hm_2_n(pdf2hydromet_idx(ivar)), &
-                                   mu_hm_2_n, stats_zt )
+             call stat_update_var( imu_hm_2_n(hm_idx), mu_hm_2_n, stats_zt )
           endif
 
        enddo ! ivar = iiPDF_Ncn+1, pdf_dim, 1
@@ -3736,16 +3748,18 @@ module setup_clubb_pdf_params
 
        do ivar = iiPDF_Ncn+1, pdf_dim, 1
 
+          hm_idx = pdf2hydromet_idx(ivar)
+
           ! Standard deviation (in-precip) of ln hm in PDF component 1.
-          if ( isigma_hm_1_n(pdf2hydromet_idx(ivar)) > 0 ) then
-             call stat_update_var( isigma_hm_1_n(pdf2hydromet_idx(ivar)), &
-                                   sigma_x_1_n(ivar,:), stats_zt )
+          if ( isigma_hm_1_n(hm_idx) > 0 ) then
+             call stat_update_var( isigma_hm_1_n(hm_idx), sigma_x_1_n(ivar,:), &
+                                   stats_zt )
           endif
 
           ! Standard deviation (in-precip) of ln hm in PDF component 2.
-          if ( isigma_hm_2_n(pdf2hydromet_idx(ivar)) > 0 ) then
-             call stat_update_var( isigma_hm_2_n(pdf2hydromet_idx(ivar)), &
-                                   sigma_x_2_n(ivar,:), stats_zt )
+          if ( isigma_hm_2_n(hm_idx) > 0 ) then
+             call stat_update_var( isigma_hm_2_n(hm_idx), sigma_x_2_n(ivar,:), &
+                                   stats_zt )
           endif
 
        enddo ! ivar = iiPDF_Ncn+1, pdf_dim, 1
@@ -3764,15 +3778,17 @@ module setup_clubb_pdf_params
 
        do ivar = iiPDF_Ncn+1, pdf_dim, 1
 
+          hm_idx = pdf2hydromet_idx(ivar)
+
           ! Correlation (in-precip) of w and ln hm in PDF component 1.
-          if ( icorr_w_hm_1_n(pdf2hydromet_idx(ivar)) > 0 ) then
-             call stat_update_var( icorr_w_hm_1_n(pdf2hydromet_idx(ivar)), &
+          if ( icorr_w_hm_1_n(hm_idx) > 0 ) then
+             call stat_update_var( icorr_w_hm_1_n(hm_idx), &
                                    corr_array_1_n(ivar,iiPDF_w,:), stats_zt )
           endif
 
           ! Correlation (in-precip) of w and ln hm in PDF component 2.
-          if ( icorr_w_hm_2_n(pdf2hydromet_idx(ivar)) > 0 ) then
-             call stat_update_var( icorr_w_hm_2_n(pdf2hydromet_idx(ivar)), &
+          if ( icorr_w_hm_2_n(hm_idx) > 0 ) then
+             call stat_update_var( icorr_w_hm_2_n(hm_idx), &
                                    corr_array_2_n(ivar,iiPDF_w,:), stats_zt )
           endif
 
@@ -3792,15 +3808,17 @@ module setup_clubb_pdf_params
 
        do ivar = iiPDF_Ncn+1, pdf_dim, 1
 
+          hm_idx = pdf2hydromet_idx(ivar)
+
           ! Correlation (in-precip) of chi (old s) and ln hm in PDF component 1.
-          if ( icorr_chi_hm_1_n(pdf2hydromet_idx(ivar)) > 0 ) then
-             call stat_update_var( icorr_chi_hm_1_n(pdf2hydromet_idx(ivar)), &
+          if ( icorr_chi_hm_1_n(hm_idx) > 0 ) then
+             call stat_update_var( icorr_chi_hm_1_n(hm_idx), &
                                    corr_array_1_n(ivar,iiPDF_chi,:), stats_zt )
           endif
 
           ! Correlation (in-precip) of chi( old s) and ln hm in PDF component 2.
-          if ( icorr_chi_hm_2_n(pdf2hydromet_idx(ivar)) > 0 ) then
-             call stat_update_var( icorr_chi_hm_2_n(pdf2hydromet_idx(ivar)), &
+          if ( icorr_chi_hm_2_n(hm_idx) > 0 ) then
+             call stat_update_var( icorr_chi_hm_2_n(hm_idx), &
                                    corr_array_2_n(ivar,iiPDF_chi,:), stats_zt )
           endif
 
@@ -3822,15 +3840,17 @@ module setup_clubb_pdf_params
 
        do ivar = iiPDF_Ncn+1, pdf_dim, 1
 
+          hm_idx = pdf2hydromet_idx(ivar)
+
           ! Correlation (in-precip) of eta (old t) and ln hm in PDF component 1.
-          if ( icorr_eta_hm_1_n(pdf2hydromet_idx(ivar)) > 0 ) then
-             call stat_update_var( icorr_eta_hm_1_n(pdf2hydromet_idx(ivar)), &
+          if ( icorr_eta_hm_1_n(hm_idx) > 0 ) then
+             call stat_update_var( icorr_eta_hm_1_n(hm_idx), &
                                    corr_array_1_n(ivar,iiPDF_eta,:), stats_zt )
           endif
 
           ! Correlation (in-precip) of eta (old t) and ln hm in PDF component 2.
-          if ( icorr_eta_hm_2_n(pdf2hydromet_idx(ivar)) > 0 ) then
-             call stat_update_var( icorr_eta_hm_2_n(pdf2hydromet_idx(ivar)), &
+          if ( icorr_eta_hm_2_n(hm_idx) > 0 ) then
+             call stat_update_var( icorr_eta_hm_2_n(hm_idx), &
                                    corr_array_2_n(ivar,iiPDF_eta,:), stats_zt )
           endif
 
@@ -3852,44 +3872,49 @@ module setup_clubb_pdf_params
 
        do ivar = iiPDF_Ncn+1, pdf_dim, 1
 
+          hm_idx = pdf2hydromet_idx(ivar)
+
           ! Correlation (in-precip) of ln N_cn and ln hm in PDF
           ! component 1.
-          if ( icorr_Ncn_hm_1_n(pdf2hydromet_idx(ivar)) > 0 ) then
-             call stat_update_var( icorr_Ncn_hm_1_n(pdf2hydromet_idx(ivar)), &
+          if ( icorr_Ncn_hm_1_n(hm_idx) > 0 ) then
+             call stat_update_var( icorr_Ncn_hm_1_n(hm_idx), &
                                    corr_array_1_n(ivar,iiPDF_Ncn,:), stats_zt )
           endif
 
           ! Correlation (in-precip) of ln N_cn and ln hm in PDF
           ! component 2.
-          if ( icorr_Ncn_hm_2_n(pdf2hydromet_idx(ivar)) > 0 ) then
-             call stat_update_var( icorr_Ncn_hm_2_n(pdf2hydromet_idx(ivar)), &
+          if ( icorr_Ncn_hm_2_n(hm_idx) > 0 ) then
+             call stat_update_var( icorr_Ncn_hm_2_n(hm_idx), &
                                    corr_array_2_n(ivar,iiPDF_Ncn,:), stats_zt )
           endif
 
        enddo ! ivar = iiPDF_Ncn+1, pdf_dim, 1
 
        do ivar = iiPDF_Ncn+1, pdf_dim, 1
-         do jvar = ivar+1, pdf_dim, 1
 
-           ! Correlation (in-precip) of ln hmx and ln hmy (two different
-           ! hydrometeors) in PDF component 1.
-           if (icorr_hmx_hmy_1_n(pdf2hydromet_idx(jvar),pdf2hydromet_idx(ivar))&
-                > 0 ) then
-             call stat_update_var( &
-             icorr_hmx_hmy_1_n(pdf2hydromet_idx(jvar),pdf2hydromet_idx(ivar)), &
-             corr_array_1_n(jvar,ivar,:), stats_zt )
-           endif
+          hm_idx_ivar = pdf2hydromet_idx(ivar)
 
-           ! Correlation (in-precip) of ln hmx and ln hmy (two different
-           ! hydrometeors) in PDF component 2.
-           if (icorr_hmx_hmy_2_n(pdf2hydromet_idx(jvar),pdf2hydromet_idx(ivar))&
-                > 0 ) then
-             call stat_update_var( &
-             icorr_hmx_hmy_2_n(pdf2hydromet_idx(jvar),pdf2hydromet_idx(ivar)), &
-             corr_array_2_n(jvar,ivar,:), stats_zt )
-           endif
+          do jvar = ivar+1, pdf_dim, 1
 
-         enddo ! jvar = ivar+1, pdf_dim, 1
+             hm_idx_jvar= pdf2hydromet_idx(jvar)
+
+             ! Correlation (in-precip) of ln hmx and ln hmy (two different
+             ! hydrometeors) in PDF component 1.
+             if ( icorr_hmx_hmy_1_n(hm_idx_jvar,hm_idx_ivar) > 0 ) then
+                call stat_update_var( &
+                        icorr_hmx_hmy_1_n(hm_idx_jvar,hm_idx_ivar), &
+                        corr_array_1_n(jvar,ivar,:), stats_zt )
+             endif
+
+             ! Correlation (in-precip) of ln hmx and ln hmy (two different
+             ! hydrometeors) in PDF component 2.
+             if ( icorr_hmx_hmy_2_n(hm_idx_jvar,hm_idx_ivar) > 0 ) then
+                call stat_update_var( &
+                        icorr_hmx_hmy_2_n(hm_idx_jvar,hm_idx_ivar), &
+                        corr_array_2_n(jvar,ivar,:), stats_zt )
+             endif
+
+          enddo ! jvar = ivar+1, pdf_dim, 1
        enddo ! ivar = iiPDF_Ncn+1, pdf_dim, 1
 
     endif ! l_stats_samp
@@ -3900,7 +3925,7 @@ module setup_clubb_pdf_params
   end subroutine pdf_param_ln_hm_stats
 
   !=============================================================================
-  subroutine pack_hydromet_pdf_params( hm_1, hm_2, pdf_dim, mu_x_1, &     ! In
+  subroutine pack_hydromet_pdf_params( nz, hm_1, hm_2, pdf_dim, mu_x_1, & ! In
                                        mu_x_2, sigma_x_1, sigma_x_2, &    ! In
                                        corr_array_1, corr_array_2, &      ! In
                                        precip_frac, precip_frac_1, &      ! In
@@ -3938,85 +3963,88 @@ module setup_clubb_pdf_params
     implicit none
 
     ! Input Variables
-    real( kind = core_rknd ), dimension(hydromet_dim), intent(in) :: &
+    integer, intent(in) :: &
+      nz    ! Number of vertical grid levels
+
+    real( kind = core_rknd ), dimension(nz,hydromet_dim), intent(in) :: &
       hm_1, & ! Mean of a precip. hydrometeor (1st PDF component)  [units vary]
       hm_2    ! Mean of a precip. hydrometeor (2nd PDF component)  [units vary]
 
     integer, intent(in) :: &
       pdf_dim   ! Number of variables in the mean/stdev arrays
 
-    real( kind = core_rknd ), dimension(pdf_dim), intent(in) :: &
+    real( kind = core_rknd ), dimension(pdf_dim,nz), intent(in) :: &
       mu_x_1,    & ! Mean array of PDF vars. (1st PDF component)    [units vary]
       mu_x_2,    & ! Mean array of PDF vars. (2nd PDF component)    [units vary]
       sigma_x_1, & ! Standard deviation array of PDF vars (comp. 1) [units vary]
       sigma_x_2    ! Standard deviation array of PDF vars (comp. 2) [units vary]
 
-    real( kind = core_rknd ), dimension(pdf_dim,pdf_dim), intent(in) :: &
+    real( kind = core_rknd ), dimension(pdf_dim,pdf_dim,nz), intent(in) :: &
       corr_array_1, & ! Correlation array of PDF vars. (comp. 1)    [-]
       corr_array_2    ! Correlation array of PDF vars. (comp. 2)    [-]
 
-    real( kind = core_rknd ), intent(in) :: &
+    real( kind = core_rknd ), dimension(nz), intent(in) :: &
       precip_frac,   & ! Precipitation fraction (overall)           [-]
       precip_frac_1, & ! Precipitation fraction (1st PDF component) [-]
       precip_frac_2    ! Precipitation fraction (2nd PDF component) [-]
 
     ! Output Variable
-    type(hydromet_pdf_parameter), intent(out) :: &
+    type(hydromet_pdf_parameter), dimension(nz), intent(out) :: &
       hydromet_pdf_params    ! Hydrometeor PDF parameters        [units vary]
 
     ! Local Variables
-    integer :: ivar, jvar  ! Loop indices
+    integer :: ivar, jvar, pdf_idx  ! Indices
 
 
     ! Pack remaining means and standard deviations into hydromet_pdf_params.
     do ivar = 1, hydromet_dim, 1
 
+       pdf_idx = hydromet2pdf_idx(ivar)
+
        ! Mean of a hydrometeor (overall) in the 1st PDF component.
-       hydromet_pdf_params%hm_1(ivar) = hm_1(ivar)
+       hydromet_pdf_params%hm_1(ivar) = hm_1(:,ivar)
        ! Mean of a hydrometeor (overall) in the 2nd PDF component.
-       hydromet_pdf_params%hm_2(ivar) = hm_2(ivar)
+       hydromet_pdf_params%hm_2(ivar) = hm_2(:,ivar)
 
        ! Mean of a hydrometeor (in-precip) in the 1st PDF component.
-       hydromet_pdf_params%mu_hm_1(ivar) = mu_x_1(hydromet2pdf_idx(ivar))
+       hydromet_pdf_params%mu_hm_1(ivar) = mu_x_1(pdf_idx,:)
        ! Mean of a hydrometeor (in-precip) in the 2nd PDF component.
-       hydromet_pdf_params%mu_hm_2(ivar) = mu_x_2(hydromet2pdf_idx(ivar))
+       hydromet_pdf_params%mu_hm_2(ivar) = mu_x_2(pdf_idx,:)
 
        ! Standard deviation of a hydrometeor (in-precip) in the
        ! 1st PDF component.
-       hydromet_pdf_params%sigma_hm_1(ivar) = sigma_x_1(hydromet2pdf_idx(ivar))
+       hydromet_pdf_params%sigma_hm_1(ivar) = sigma_x_1(pdf_idx,:)
        ! Standard deviation of a hydrometeor (in-precip) in the
        ! 2nd PDF component.
-       hydromet_pdf_params%sigma_hm_2(ivar) = sigma_x_2(hydromet2pdf_idx(ivar))
+       hydromet_pdf_params%sigma_hm_2(ivar) = sigma_x_2(pdf_idx,:)
 
        ! Correlation (in-precip) of w and a hydrometeor in the 1st PDF
        ! component.
-       hydromet_pdf_params%corr_w_hm_1(ivar) &
-       = corr_array_1( hydromet2pdf_idx(ivar), iiPDF_w )
+       hydromet_pdf_params%corr_w_hm_1(ivar) = corr_array_1(pdf_idx,iiPDF_w,:)
 
        ! Correlation (in-precip) of w and a hydrometeor in the 2nd PDF
        ! component.
-       hydromet_pdf_params%corr_w_hm_2(ivar) &
-       = corr_array_2( hydromet2pdf_idx(ivar), iiPDF_w )
+       hydromet_pdf_params%corr_w_hm_2(ivar) = corr_array_2(pdf_idx,iiPDF_w,:)
 
        ! Correlation (in-precip) of chi and a hydrometeor in the 1st PDF
        ! component.
        hydromet_pdf_params%corr_chi_hm_1(ivar) &
-       = corr_array_1( hydromet2pdf_idx(ivar), iiPDF_chi )
+       = corr_array_1(pdf_idx,iiPDF_chi,:)
 
        ! Correlation (in-precip) of chi and a hydrometeor in the 2nd PDF
        ! component.
        hydromet_pdf_params%corr_chi_hm_2(ivar) &
-       = corr_array_2( hydromet2pdf_idx(ivar), iiPDF_chi )
+       = corr_array_2(pdf_idx,iiPDF_chi,:)
 
        ! Correlation (in-precip) of eta and a hydrometeor in the 1st PDF
        ! component.
        hydromet_pdf_params%corr_eta_hm_1(ivar) &
-       = corr_array_1( hydromet2pdf_idx(ivar), iiPDF_eta )
+       = corr_array_1(pdf_idx,iiPDF_eta,:)
 
        ! Correlation (in-precip) of eta and a hydrometeor in the 2nd PDF
        ! component.
        hydromet_pdf_params%corr_eta_hm_2(ivar) &
-       = corr_array_2( hydromet2pdf_idx(ivar), iiPDF_eta )
+       = corr_array_2(pdf_idx,iiPDF_eta,:)
 
        ! Correlation (in-precip) of two hydrometeors, hmx and hmy, in the 1st
        ! PDF component.
@@ -4025,7 +4053,7 @@ module setup_clubb_pdf_params
        do jvar = ivar+1, hydromet_dim, 1
 
           hydromet_pdf_params%corr_hmx_hmy_1(jvar,ivar) &
-          = corr_array_1( hydromet2pdf_idx(jvar), hydromet2pdf_idx(ivar) )
+          = corr_array_1(hydromet2pdf_idx(jvar),pdf_idx,:)
 
           hydromet_pdf_params%corr_hmx_hmy_1(ivar,jvar) &
           = hydromet_pdf_params%corr_hmx_hmy_1(jvar,ivar)
@@ -4039,7 +4067,7 @@ module setup_clubb_pdf_params
        do jvar = ivar+1, hydromet_dim, 1
 
           hydromet_pdf_params%corr_hmx_hmy_2(jvar,ivar) &
-          = corr_array_2( hydromet2pdf_idx(jvar), hydromet2pdf_idx(ivar) )
+          = corr_array_2(hydromet2pdf_idx(jvar),pdf_idx,:)
 
           hydromet_pdf_params%corr_hmx_hmy_2(ivar,jvar) &
           = hydromet_pdf_params%corr_hmx_hmy_2(jvar,ivar)
@@ -4049,14 +4077,14 @@ module setup_clubb_pdf_params
     enddo ! ivar = 1, hydromet_dim, 1
 
     ! Mean of Ncn (overall) in the 1st PDF component.
-    hydromet_pdf_params%mu_Ncn_1 = mu_x_1(iiPDF_Ncn)
+    hydromet_pdf_params%mu_Ncn_1 = mu_x_1(iiPDF_Ncn,:)
     ! Mean of Ncn (overall) in the 2nd PDF component.
-    hydromet_pdf_params%mu_Ncn_2 = mu_x_2(iiPDF_Ncn)
+    hydromet_pdf_params%mu_Ncn_2 = mu_x_2(iiPDF_Ncn,:)
 
     ! Standard deviation of Ncn (overall) in the 1st PDF component.
-    hydromet_pdf_params%sigma_Ncn_1 = sigma_x_1(iiPDF_Ncn)
+    hydromet_pdf_params%sigma_Ncn_1 = sigma_x_1(iiPDF_Ncn,:)
     ! Standard deviation of Ncn (overall) in the 2nd PDF component.
-    hydromet_pdf_params%sigma_Ncn_2 = sigma_x_2(iiPDF_Ncn)
+    hydromet_pdf_params%sigma_Ncn_2 = sigma_x_2(iiPDF_Ncn,:)
 
     ! Precipitation fraction (overall).
     hydromet_pdf_params%precip_frac   = precip_frac

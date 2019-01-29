@@ -186,6 +186,10 @@ module advance_xm_wpxp_module
         iuprtp,  &
         ivpthlp, &
         ivprtp,  &
+        iupthvp, &
+        iuprcp,  &
+        ivpthvp, &
+        ivprcp,  &
         iC7_Skw_fnc, &
         iC6rt_Skw_fnc, &
         iC6thl_Skw_fnc, &
@@ -1201,13 +1205,13 @@ module advance_xm_wpxp_module
          endif ! .not. l_implemented
 
          ! Add "extra term" and optional Coriolis term for <u'w'> and <v'w'>.
-         upwp_forcing = zero  ! C7_Skw_fnc * wp2 * ddzt( um )
-         vpwp_forcing = zero  ! C7_Skw_fnc * wp2 * ddzt( vm )
+         upwp_forcing = C7_Skw_fnc * wp2 * ddzt( um )
+         vpwp_forcing = C7_Skw_fnc * wp2 * ddzt( vm )
 
          if ( l_stats_samp ) then
-            call stat_update_var( iupwp_pr4, 0.0_core_rknd * C7_Skw_fnc * wp2 * ddzt( um ), &
+            call stat_update_var( iupwp_pr4, C7_Skw_fnc * wp2 * ddzt( um ), &
                                   stats_zm )
-            call stat_update_var( ivpwp_pr4, 0.0_core_rknd * C7_Skw_fnc * wp2 * ddzt( vm ), &
+            call stat_update_var( ivpwp_pr4, C7_Skw_fnc * wp2 * ddzt( vm ), &
                                   stats_zm )
          endif ! l_stats_samp
 
@@ -1224,23 +1228,26 @@ module advance_xm_wpxp_module
                              C6rt_Skw_fnc, tau_C6_zm, C7_Skw_fnc, & ! Intent(in)
                              vprtp )                                ! Intent(out)
 
+         ! Use a crude approximation for buoyancy terms <u'thv'> and <v'thv'>.
+         !upthvp = upwp * wpthvp / max( wp2, w_tol_sqd )
+         !vpthvp = vpwp * wpthvp / max( wp2, w_tol_sqd )
+         !upthvp = 0.3_core_rknd * ( upthlp + 200.0_core_rknd * uprtp ) &
+         !         + 200._core_rknd * sign( one, upwp) * sqrt( up2 * rcm**2 )
+         !vpthvp = 0.3_core_rknd * ( vpthlp + 200.0_core_rknd * vprtp ) &
+         !         + 200._core_rknd * sign( one, vpwp ) * sqrt( vp2 * rcm**2 )
+         upthvp = upthlp + ep1 * thv_ds_zm * uprtp + rc_coef * uprcp
+         vpthvp = vpthlp + ep1 * thv_ds_zm * vprtp + rc_coef * vprcp
+
          if ( l_stats_samp ) then
             call stat_update_var( iupthlp, upthlp, stats_zm )
             call stat_update_var( iuprtp,  uprtp,  stats_zm )
             call stat_update_var( ivpthlp, vpthlp, stats_zm )
             call stat_update_var( ivprtp,  vprtp,  stats_zm )
+            call stat_update_var( iupthvp, upthvp, stats_zm )
+            call stat_update_var( iuprcp,  uprcp,  stats_zm )
+            call stat_update_var( ivpthvp, vpthvp, stats_zm )
+            call stat_update_var( ivprcp,  vprcp,  stats_zm )
          endif ! l_stats_samp
-
-         ! Use a crude approximation for buoyancy terms <u'thv'> and <v'thv'>.
-         !upthvp = upwp * wpthvp / max( wp2, w_tol_sqd )
-         !vpthvp = vpwp * wpthvp / max( wp2, w_tol_sqd )
-         !upthvp = upthlp + ep1 * thv_ds_zm * uprtp + rc_coef * uprcp
-         !vpthvp = vpthlp + ep1 * thv_ds_zm * vprtp + rc_coef * vprcp
-
-         upthvp = 0.3_core_rknd * ( upthlp + 200.0_core_rknd * uprtp ) &
-                  + 200._core_rknd * sign( one, upwp) * sqrt( up2 * rcm**2 )
-         vpthvp = 0.3_core_rknd * ( vpthlp + 200.0_core_rknd * vprtp ) &
-                  + 200._core_rknd * sign( one, vpwp ) * sqrt( vp2 * rcm**2 )
 
          call xm_wpxp_rhs( xm_wpxp_um, l_iter, dt, um, upwp, & ! In
                            um_tndcy, upwp_forcing, C7_Skw_fnc, & ! In

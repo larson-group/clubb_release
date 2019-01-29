@@ -283,6 +283,9 @@ module microphys_init_cleanup
       iiNi, & ! Hydrometeor array index for ice concentration, Ni
       iiNg    ! Hydrometeor array index for graupel concentration, Ng
 
+    integer, parameter :: &
+      one_lev = 1    ! Constant for calling a subroutine using 1 vertical level
+
 
     namelist /microphysics_setting/ &
       microphys_scheme, l_cloud_sed, sigma_g, &
@@ -959,7 +962,7 @@ module microphys_init_cleanup
        enddo ! i = 1, hydromet_dim, 1
 
        ! Calculate the correlations given the normal space correlations.
-       call denorm_transform_corr( 1, pdf_dim, &
+       call denorm_transform_corr( one_lev, pdf_dim, &
                                    sigma_x_n_cloud, sigma_x_n_below, &
                                    sigma2_on_mu2_ip_cloud, &
                                    sigma2_on_mu2_ip_below, &
