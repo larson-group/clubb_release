@@ -9,6 +9,8 @@ Date: Jan 2019
 '''
 import argparse
 from DataReader import DataReader
+from netCDF4 import Dataset
+from Plotter import Plotter
 
 class PyPlotGen:
     def __init__(self, input_folder, output_folder, replace=False, les=False, cgbest=False, hoc=False,plotrefs=False,
@@ -52,6 +54,7 @@ class PyPlotGen:
         self.budget_moments = budget_moments
         self.bu_morr = bu_morr
         self.diff = diff
+        self.nc_datasets = None
 
     def run(self):
         '''
@@ -60,7 +63,15 @@ class PyPlotGen:
         '''
         print("PyPlotGen would run right now if it was written")
         data_reader = DataReader()
-        data_reader.load_folder(self.input_folder)
+        self.nc_datasets = data_reader.load_folder(self.input_folder)
+        plotter = Plotter()
+        for dataset in self.nc_datasets:
+            filename = dataset.filepath()
+            if ("dycoms2_rf01_zt") in filename.lower():
+                print("Opening " + filename)
+                plotter.plot_case(None, self.nc_datasets[0])
+
+
         # TODO
 
 def process_args():
