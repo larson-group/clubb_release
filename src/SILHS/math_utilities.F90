@@ -37,7 +37,7 @@ module math_utilities
       n_levels, &
       n_samples
 
-    real( kind = core_rknd ), dimension(n_samples), intent(in) :: &
+    real( kind = core_rknd ),dimension(n_levels,n_samples), intent(in) :: &
       weight   ! Weights for individual points of the vector
 
     real( kind = core_rknd ),dimension(n_levels,n_samples), intent(in) :: &
@@ -55,7 +55,7 @@ module math_utilities
     k = k
 
     forall( k = 1:n_levels )
-      mean(k) = sum( weight(1:n_samples) * x_sample(k,1:n_samples) ) &
+      mean(k) = sum( weight(k,1:n_samples) * x_sample(k,1:n_samples) ) &
               / real( n_samples, kind=core_rknd )
     end forall
 
@@ -88,7 +88,7 @@ module math_utilities
     real( kind = core_rknd ),dimension(n_levels,n_samples), intent(in) :: &
       x_sample ! Collection of sample points    [units vary]
 
-    real( kind = core_rknd ),dimension(n_samples), intent(in) :: &
+    real( kind = core_rknd ),dimension(n_levels,n_samples), intent(in) :: &
       weight ! Coefficient to weight the nth sample point by [-]
 
     real( kind = core_rknd ),dimension(n_levels), intent(in) :: &
@@ -107,7 +107,7 @@ module math_utilities
 
     do sample=1, n_samples
       variance(1:n_levels) = variance(1:n_levels) &
-        + weight(sample) * ( x_sample(1:n_levels,sample) - x_mean(1:n_levels) )**2
+        + weight(1:n_levels,sample) * ( x_sample(1:n_levels,sample) - x_mean(1:n_levels) )**2
     end do
 
     variance(1:n_levels) = variance(1:n_levels) / real( n_samples, kind=core_rknd )
@@ -138,7 +138,7 @@ module math_utilities
       x_sample, & ! Collection of sample points    [units vary]
       y_sample
 
-    real( kind = core_rknd ),dimension(n_samples), intent(in) :: &
+    real( kind = core_rknd ),dimension(n_levels,n_samples), intent(in) :: &
       weight ! Coefficient to weight the nth sample point by [-]
 
     real( kind = core_rknd ),dimension(n_levels), intent(in) :: &
@@ -158,7 +158,7 @@ module math_utilities
 
     do sample=1, n_samples
       covariance(1:n_levels) = covariance(1:n_levels) &
-        + weight(sample) * ( x_sample(1:n_levels,sample) - x_mean(1:n_levels) ) &
+        + weight(1:n_levels,sample) * ( x_sample(1:n_levels,sample) - x_mean(1:n_levels) ) &
            * ( y_sample(1:n_levels,sample) - y_mean(1:n_levels) )
     end do
 

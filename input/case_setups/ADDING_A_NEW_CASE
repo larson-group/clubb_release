@@ -32,8 +32,8 @@ these schemes.
 CLUBB can also use Latin Hypercube sampling of the PDF to drive a microphysics
 scheme (i.e. it can account for subgrid scale variability of temperature, 
 moisture, and vertical velocity for the purposes of predicting rain, snow and 
-ice).  For a warm phase cloud example of this see rico_lh and for a 
-mixed-phase cloud see mpace_b_lh.  Our correlations appear in a file named
+ice).  For a warm phase cloud example of this see rico_silhs and for a 
+mixed-phase cloud see mpace_b_silhs.  Our correlations appear in a file named
 <case name>_corr_array_below.in and <case name>_corr_array_cloud.in;  the values
 come from various LES simulations and are approximate, since the actual values
 will vary in and out of cloud and with time.

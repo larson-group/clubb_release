@@ -134,8 +134,10 @@ l_calc_w_corr = .false.
 ! "coamps", "simplified_ice", "none"
 microphys_scheme = "khairoutdinov_kogan",
 Nc0_in_cloud  = 100.e6,
-hmp2_ip_on_hmm2_ip_ratios%rrp2_ip_on_rrm2_ip = 1.0
-hmp2_ip_on_hmm2_ip_ratios%Nrp2_ip_on_Nrm2_ip = 1.0
+hmp2_ip_on_hmm2_ip_intrcpt%rr = 1.0
+hmp2_ip_on_hmm2_ip_intrcpt%Nr = 1.0
+hmp2_ip_on_hmm2_ip_slope%rr = 0.0
+hmp2_ip_on_hmm2_ip_slope%Nr = 0.0
 Ncnp2_on_Ncnm2                               = 2.2
 
 C_evap = 0.5,

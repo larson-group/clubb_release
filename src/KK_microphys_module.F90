@@ -52,6 +52,9 @@ module KK_microphys_module
     ! Description:
 
     ! References:
+    ! Khairoutdinov, M. and Y. Kogan, 2000:  A New Cloud Physics
+    !    Parameterization in a Large-Eddy Simulation Model of Marine
+    !    Stratocumulus.  Mon. Wea. Rev., 128, 229--243.
     !-----------------------------------------------------------------------
 
     use constants_clubb, only: &
@@ -70,7 +73,7 @@ module KK_microphys_module
         KK_Nrm_evap_local_mean, & ! Procedure(s)
         KK_Nrm_auto_mean
 
-    use KK_utilities, only: &
+    use advance_microphys_module, only: &
         get_cloud_top_level    ! Procedure(s)
 
     use pdf_parameter_module, only: &
@@ -80,8 +83,7 @@ module KK_microphys_module
         hydromet_dim  ! Variable(s)
 
     use clubb_precision, only: &
-        core_rknd,      & ! Variable(s)
-        time_precision
+        core_rknd       ! Variable(s)
 
     use parameters_microphys, only: &
         l_silhs_KK_convergence_adj_mean ! Variable
@@ -352,7 +354,7 @@ module KK_microphys_module
     thlm_mc(nz) = zero
 
     ! Find the vertical level index of cloud top.
-    cloud_top_level = get_cloud_top_level( nz, rcm )
+    cloud_top_level = get_cloud_top_level( nz, rcm, hydromet )
 
     !!! Microphysics sedimentation velocities.
     call KK_sedimentation( nz, cloud_top_level, KK_mean_vol_rad, Vrr, VNr, &
@@ -386,7 +388,7 @@ module KK_microphys_module
   end subroutine KK_local_microphys
 
   !=============================================================================
-  subroutine KK_upscaled_microphys( dt, nz, d_variables, l_stats_samp, & ! In
+  subroutine KK_upscaled_microphys( dt, nz, pdf_dim, l_stats_samp, & ! In
                                     wm_zt, rtm, thlm, p_in_Pa,         & ! In
                                     exner, rho, rcm,                   & ! In
                                     pdf_params, hydromet_pdf_params,   & ! In
@@ -407,6 +409,30 @@ module KK_microphys_module
     ! functional form of the PDF.
 
     ! References:
+    ! Larson, V. E. and B. M. Griffin, 2013:  Analytic upscaling of a local
+    !    microphysics scheme. Part I: Derivation.  Q. J. Roy. Meteorol. Soc.,
+    !    139, 670, 46--57, doi:http://dx.doi.org/10.1002/qj.1967.
+    !
+    ! Griffin, B. M. and V. E. Larson, 2013:  Analytic upscaling of a local
+    !    microphysics scheme. Part II: Simulations.  Q. J. Roy. Meteorol. Soc.,
+    !    139, 670, 58--69, doi:http://dx.doi.org/10.1002/qj.1966.
+    !
+    ! Griffin, B. M., 2016:  Improving the Subgrid-Scale Representation of
+    !    Hydrometeors and Microphysical Feedback Effects Using a Multivariate
+    !    PDF.  Doctoral dissertation, University of Wisconsin -- Milwaukee,
+    !    Milwaukee, WI, Paper 1144, 165 pp., URL
+    !    http://dc.uwm.edu/cgi/viewcontent.cgi?article=2149&context=etd.
+    !
+    ! Griffin, B. M. and V. E. Larson, 2016:  Supplement of A new subgrid-scale
+    !    representation of hydrometeor fields using a multivariate PDF.
+    !    Geosci. Model Dev., 9, 6,
+    !    doi:http://dx.doi.org/10.5194/gmd-9-2031-2016-supplement.
+    !
+    ! Griffin, B. M. and V. E. Larson, 2016:  Parameterizing microphysical
+    !    effects on variances and covariances of moisture and heat content using
+    !    a multivariate probability density function: a study with CLUBB (tag
+    !    MVCS).  Geosci. Model Dev., 9, 11, 4273--4295,
+    !    doi:http://dx.doi.org/10.5194/gmd-9-4273-2016.
     !-----------------------------------------------------------------------
 
     use grid_class, only: &
@@ -431,7 +457,7 @@ module KK_microphys_module
     use KK_upscaled_covariances, only: &
         KK_upscaled_covar_driver    ! Procedure(s)
 
-    use KK_utilities, only: &
+    use advance_microphys_module, only: &
         get_cloud_top_level    ! Procedure(s)
 
     use pdf_parameter_module, only: &
@@ -444,12 +470,11 @@ module KK_microphys_module
         hydromet_dim  ! Variable(s)
 
     use array_index, only: &
-        iirrm, & ! Constant(s)
-        iiNrm
+        iirr, & ! Constant(s)
+        iiNr
 
     use clubb_precision, only: &
-        core_rknd,      & ! Variable(s)
-        time_precision
+        core_rknd        ! Variable(s)
 
     use stats_type_utilities, only: &
         stat_update_var ! Procedure(s)
@@ -477,7 +502,7 @@ module KK_microphys_module
 
     integer, intent(in) :: &
       nz,          & ! Number of model vertical grid levels
-      d_variables    ! Number of variables in the correlation arrays
+      pdf_dim   ! Number of variables in the correlation arrays
 
     logical, intent(in) :: &
       l_stats_samp    ! Flag to sample statistics
@@ -500,13 +525,13 @@ module KK_microphys_module
     real( kind = core_rknd ), dimension(nz,hydromet_dim), intent(in) :: &
       hydromet       ! Hydrometeor mean, < h_m > (thermodynamic levels)  [units]
 
-    real( kind = core_rknd ), dimension(d_variables, nz), intent(in) :: &
+    real( kind = core_rknd ), dimension(pdf_dim, nz), intent(in) :: &
       mu_x_1_n,    & ! Mean array (normal space): PDF vars. (comp. 1) [un. vary]
       mu_x_2_n,    & ! Mean array (normal space): PDF vars. (comp. 2) [un. vary]
       sigma_x_1_n, & ! Std. dev. array (normal space): PDF vars (comp. 1) [u.v.]
       sigma_x_2_n    ! Std. dev. array (normal space): PDF vars (comp. 2) [u.v.]
 
-    real( kind = core_rknd ), dimension(d_variables,d_variables,nz), &
+    real( kind = core_rknd ), dimension(pdf_dim,pdf_dim,nz), &
     intent(in) :: &
       corr_array_1_n, & ! Corr. array (normal space) of PDF vars. (comp. 1)  [-]
       corr_array_2_n    ! Corr. array (normal space) of PDF vars. (comp. 2)  [-]
@@ -705,7 +730,7 @@ module KK_microphys_module
 
 
        !!! Unpack the PDF parameters.
-       call unpack_pdf_params_KK( d_variables, mu_x_1_n(:,k), mu_x_2_n(:,k), &
+       call unpack_pdf_params_KK( pdf_dim, mu_x_1_n(:,k), mu_x_2_n(:,k), &
                                   sigma_x_1_n(:,k), sigma_x_2_n(:,k), &
                                   corr_array_1_n(:,:,k), &
                                   corr_array_2_n(:,:,k), &
@@ -942,7 +967,7 @@ module KK_microphys_module
     thlm_mc(nz) = zero
 
     ! Find the vertical level index of cloud top.
-    cloud_top_level = get_cloud_top_level( nz, rcm )
+    cloud_top_level = get_cloud_top_level( nz, rcm, hydromet )
 
     !!! Microphysics sedimentation velocities.
     call KK_sedimentation( nz, cloud_top_level, KK_mean_vol_rad, Vrr, VNr, &
@@ -980,10 +1005,10 @@ module KK_microphys_module
     ! The implicit and explicit components used to calculate the covariances of
     ! hydrometeor sedimentation velocities and their associated hydrometeors
     ! (<V_rr'r_r'> and <V_Nr'N_r'>) are fed into the output arrays.
-    hydromet_vel_covar_zt_impc(:,iirrm) = Vrrprrp_zt_impc
-    hydromet_vel_covar_zt_expc(:,iirrm) = Vrrprrp_zt_expc
-    hydromet_vel_covar_zt_impc(:,iiNrm) = VNrpNrp_zt_impc
-    hydromet_vel_covar_zt_expc(:,iiNrm) = VNrpNrp_zt_expc
+    hydromet_vel_covar_zt_impc(:,iirr) = Vrrprrp_zt_impc
+    hydromet_vel_covar_zt_expc(:,iirr) = Vrrprrp_zt_expc
+    hydromet_vel_covar_zt_impc(:,iiNr) = VNrpNrp_zt_impc
+    hydromet_vel_covar_zt_expc(:,iiNr) = VNrpNrp_zt_expc
 
     ! Statistics
     if ( l_stats_samp ) then
@@ -1061,8 +1086,8 @@ module KK_microphys_module
         hydromet_dim  ! Variable(s)
 
     use array_index, only: &
-        iirrm, & ! Constant(s)
-        iiNrm
+        iirr, & ! Constant(s)
+        iiNr
 
     use clubb_precision, only: &
         core_rknd  ! Variable(s)
@@ -1112,8 +1137,8 @@ module KK_microphys_module
     hydromet_vel(:,:) = zero
 
     ! Set up mean field variables for <r_r> and <N_r>.
-    rrm = hydromet(:,iirrm)
-    Nrm = hydromet(:,iiNrm)
+    rrm = hydromet(:,iirr)
+    Nrm = hydromet(:,iiNr)
 
     ! Set KK microphysics tendency adjustment flags
     l_src_adj_enabled  = .true.
@@ -1131,6 +1156,31 @@ module KK_microphys_module
     ! Description:
 
     ! References:
+    ! Eq. (3), Eq. (22), Eq. (29), and Eq. (33) of Khairoutdinov, M. and
+    ! Y. Kogan, 2000:  A New Cloud Physics Parameterization in a Large-Eddy
+    ! Simulation Model of Marine Stratocumulus.  Mon. Wea. Rev., 128, 229--243.
+    !
+    ! Eq. (22), Eq. (28), Eq. (38), and Eq. (51) of Larson, V. E. and
+    ! B. M. Griffin, 2013:  Analytic upscaling of a local microphysics scheme.
+    ! Part I: Derivation.  Q. J. Roy. Meteorol. Soc., 139, 670, 46--57,
+    ! doi:http://dx.doi.org/10.1002/qj.1967.
+    !
+    ! Eq. (C21) of Griffin, B. M., 2016:  Improving the Subgrid-Scale
+    ! Representation of Hydrometeors and Microphysical Feedback Effects Using a
+    ! Multivariate PDF.  Doctoral dissertation, University of
+    ! Wisconsin -- Milwaukee, Milwaukee, WI, Paper 1144, 165 pp., URL
+    ! http://dc.uwm.edu/cgi/viewcontent.cgi?article=2149&context=etd.
+    !
+    ! Eq. (S21) of Griffin, B. M. and V. E. Larson, 2016:  Supplement of
+    ! A new subgrid-scale representation of hydrometeor fields using a
+    ! multivariate PDF.  Geosci. Model Dev., 9, 6,
+    ! doi:http://dx.doi.org/10.5194/gmd-9-2031-2016-supplement.
+    !
+    ! Eq. (A27) of Griffin, B. M. and V. E. Larson, 2016:  Parameterizing
+    ! microphysical effects on variances and covariances of moisture and heat
+    ! content using a multivariate probability density function: a study with
+    ! CLUBB (tag MVCS).  Geosci. Model Dev., 9, 11, 4273--4295, 
+    ! doi:http://dx.doi.org/10.5194/gmd-9-4273-2016.
     !-----------------------------------------------------------------------
 
     use clubb_precision, only: &
@@ -1229,15 +1279,15 @@ module KK_microphys_module
     !-----------------------------------------------------------------------
 
     use clubb_precision, only: &
-        core_rknd, &  ! Variable(s)
-        time_precision
+        core_rknd  ! Variable(s)
 
     use constants_clubb, only: &
         Lv,           & ! Constant(s)
         Cp,           &
         zero,         &
         rr_tol,       &
-        Nr_tol
+        Nr_tol,       &
+        eps
 
     use KK_Nrm_tendencies, only: &
         KK_Nrm_evap_local_mean, & ! Procedure(s)
@@ -1369,10 +1419,10 @@ module KK_microphys_module
 
        ! Recalcuate the net evaporation rate of <N_r> based on the net
        ! evaporation rate of <r_r>.
-       if ( KK_evap_tndcy /= rrm_evap_net .and. &
-            rrm > rr_tol .and. Nrm > Nr_tol ) then
-          Nrm_evap_net &
-          = KK_Nrm_evap_local_mean( rrm_evap_net, Nrm, rrm, dt )
+       if ( abs(KK_evap_tndcy-rrm_evap_net) > abs(KK_evap_tndcy+rrm_evap_net)*eps/2 &
+            .and. rrm > rr_tol &
+            .and. Nrm > Nr_tol ) then
+          Nrm_evap_net = KK_Nrm_evap_local_mean( rrm_evap_net, Nrm, rrm, dt )
        else
           Nrm_evap_net = KK_Nrm_evap_tndcy
        endif
@@ -1595,6 +1645,9 @@ module KK_microphys_module
     ! Description:
 
     ! References:
+    ! Eq. (37) of Khairoutdinov, M. and Y. Kogan, 2000:  A New Cloud Physics
+    ! Parameterization in a Large-Eddy Simulation Model of Marine Stratocumulus.
+    ! Mon. Wea. Rev., 128, 229--243.
     !-----------------------------------------------------------------------
 
     use constants_clubb, only: &
@@ -1691,8 +1744,8 @@ module KK_microphys_module
         hydromet_dim  ! Variable(s)
 
     use array_index, only: &
-        iirrm, & ! Constant(s)
-        iiNrm
+        iirr, & ! Constant(s)
+        iiNr
 
     use clubb_precision, only: &
         core_rknd  ! Variable(s)
@@ -1718,12 +1771,12 @@ module KK_microphys_module
     !!! Output mean hydrometeor tendencies and mean sedimentation velocities.
 
     ! Mean field tendencies.
-    hydromet_mc(:,iirrm) = rrm_mc
-    hydromet_mc(:,iiNrm) = Nrm_mc
+    hydromet_mc(:,iirr) = rrm_mc
+    hydromet_mc(:,iiNr) = Nrm_mc
 
     ! Sedimentation Velocities.
-    hydromet_vel(:,iirrm) = Vrr
-    hydromet_vel(:,iiNrm) = VNr
+    hydromet_vel(:,iirr) = Vrr
+    hydromet_vel(:,iiNr) = VNr
 
 
     return
@@ -1731,7 +1784,7 @@ module KK_microphys_module
   end subroutine KK_microphys_output
 
   !=============================================================================
-  subroutine unpack_pdf_params_KK( d_variables, mu_x_1_n, mu_x_2_n, &
+  subroutine unpack_pdf_params_KK( pdf_dim, mu_x_1_n, mu_x_2_n, &
                                    sigma_x_1_n, sigma_x_2_n, &
                                    corr_array_1_n, &
                                    corr_array_2_n, &
@@ -1768,19 +1821,17 @@ module KK_microphys_module
     !-----------------------------------------------------------------------
 
     use hydromet_pdf_parameter_module, only: &
-        hydromet_pdf_parameter  ! Variable(s)
-
-    use corr_varnce_module, only: &
-        iiPDF_w,        & ! Variable(s)
-        iiPDF_chi, &
-        iiPDF_eta, &
-        iiPDF_rr,    &
-        iiPDF_Nr,       &
-        iiPDF_Ncn
+        hydromet_pdf_parameter  ! Variable(s)      
 
     use array_index, only: &
-        iirrm, & ! Variable(s)
-        iiNrm
+        iirr,     & ! Variable(s)
+        iiNr,     & 
+        iiPDF_w,   & 
+        iiPDF_chi, &
+        iiPDF_eta, &
+        iiPDF_rr,  &
+        iiPDF_Nr,  &
+        iiPDF_Ncn
 
     use clubb_precision, only: &
         core_rknd    ! Variable(s)
@@ -1789,15 +1840,15 @@ module KK_microphys_module
 
     ! Input Variables
     integer, intent(in) :: &
-      d_variables    ! Number of variables in the correlation array.
+      pdf_dim   ! Number of variables in the correlation array.
 
-    real( kind = core_rknd ), dimension(d_variables), intent(in) :: &
+    real( kind = core_rknd ), dimension(pdf_dim), intent(in) :: &
       mu_x_1_n,    & ! Mean array (normal space): PDF vars. (comp. 1) [un. vary]
       mu_x_2_n,    & ! Mean array (normal space): PDF vars. (comp. 2) [un. vary]
       sigma_x_1_n, & ! Std. dev. array (normal space): PDF vars (comp. 1) [u.v.]
       sigma_x_2_n    ! Std. dev. array (normal space): PDF vars (comp. 2) [u.v.]
 
-    real( kind = core_rknd ), dimension(d_variables,d_variables), &
+    real( kind = core_rknd ), dimension(pdf_dim,pdf_dim), &
     intent(in) :: &
       corr_array_1_n, & ! Corr. array (normal space) of PDF vars. (comp. 1)  [-]
       corr_array_2_n    ! Corr. array (normal space) of PDF vars. (comp. 2)  [-]
@@ -1911,23 +1962,23 @@ module KK_microphys_module
     sigma_Ncn_2_n = sigma_x_2_n(iiPDF_Ncn)
 
     ! Unpack variables from hydromet_pdf_params
-    mu_rr_1     = hydromet_pdf_params%mu_hm_1(iirrm)
-    mu_rr_2     = hydromet_pdf_params%mu_hm_2(iirrm)
-    mu_Nr_1     = hydromet_pdf_params%mu_hm_1(iiNrm)
-    mu_Nr_2     = hydromet_pdf_params%mu_hm_2(iiNrm)
+    mu_rr_1     = hydromet_pdf_params%mu_hm_1(iirr)
+    mu_rr_2     = hydromet_pdf_params%mu_hm_2(iirr)
+    mu_Nr_1     = hydromet_pdf_params%mu_hm_1(iiNr)
+    mu_Nr_2     = hydromet_pdf_params%mu_hm_2(iiNr)
     mu_Ncn_1    = hydromet_pdf_params%mu_Ncn_1
     mu_Ncn_2    = hydromet_pdf_params%mu_Ncn_2
-    sigma_rr_1  = hydromet_pdf_params%sigma_hm_1(iirrm)
-    sigma_rr_2  = hydromet_pdf_params%sigma_hm_2(iirrm)
-    sigma_Nr_1  = hydromet_pdf_params%sigma_hm_1(iiNrm)
-    sigma_Nr_2  = hydromet_pdf_params%sigma_hm_2(iiNrm)
+    sigma_rr_1  = hydromet_pdf_params%sigma_hm_1(iirr)
+    sigma_rr_2  = hydromet_pdf_params%sigma_hm_2(iirr)
+    sigma_Nr_1  = hydromet_pdf_params%sigma_hm_1(iiNr)
+    sigma_Nr_2  = hydromet_pdf_params%sigma_hm_2(iiNr)
     sigma_Ncn_1 = hydromet_pdf_params%sigma_Ncn_1
     sigma_Ncn_2 = hydromet_pdf_params%sigma_Ncn_2
 
-    rr_1          = hydromet_pdf_params%hm_1(iirrm)
-    rr_2          = hydromet_pdf_params%hm_2(iirrm)
-    Nr_1          = hydromet_pdf_params%hm_1(iiNrm)
-    Nr_2          = hydromet_pdf_params%hm_2(iiNrm)
+    rr_1          = hydromet_pdf_params%hm_1(iirr)
+    rr_2          = hydromet_pdf_params%hm_2(iirr)
+    Nr_1          = hydromet_pdf_params%hm_1(iiNr)
+    Nr_2          = hydromet_pdf_params%hm_2(iiNr)
     precip_frac   = hydromet_pdf_params%precip_frac
     precip_frac_1 = hydromet_pdf_params%precip_frac_1
     precip_frac_2 = hydromet_pdf_params%precip_frac_2

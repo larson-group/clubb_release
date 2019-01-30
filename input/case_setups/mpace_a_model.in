@@ -150,10 +150,23 @@ l_graupel = .false.,
 l_arctic_nucl = .true. ! Use MPACE observations for ice nucleation.
 
 ! Addition for using latin hypercube sampling
-hmp2_ip_on_hmm2_ip_ratios%rrp2_ip_on_rrm2_ip = 1.0
-hmp2_ip_on_hmm2_ip_ratios%Nrp2_ip_on_Nrm2_ip = 0.6
-hmp2_ip_on_hmm2_ip_ratios%rsp2_ip_on_rsm2_ip = 1.0
-hmp2_ip_on_hmm2_ip_ratios%Nsp2_ip_on_Nsm2_ip = 0.6
+hmp2_ip_on_hmm2_ip_intrcpt%rr = 1.0
+hmp2_ip_on_hmm2_ip_intrcpt%Nr = 0.6
+hmp2_ip_on_hmm2_ip_intrcpt%rs = 1.0
+hmp2_ip_on_hmm2_ip_intrcpt%Ns = 0.6
+hmp2_ip_on_hmm2_ip_intrcpt%ri = 1.0
+hmp2_ip_on_hmm2_ip_intrcpt%Ni = 1.0
+hmp2_ip_on_hmm2_ip_intrcpt%rg = 1.0
+hmp2_ip_on_hmm2_ip_intrcpt%Ng = 1.0
+
+hmp2_ip_on_hmm2_ip_slope%rr = 0.0
+hmp2_ip_on_hmm2_ip_slope%Nr = 0.0
+hmp2_ip_on_hmm2_ip_slope%ri = 0.0
+hmp2_ip_on_hmm2_ip_slope%Ni = 0.0
+hmp2_ip_on_hmm2_ip_slope%rs = 0.0
+hmp2_ip_on_hmm2_ip_slope%Ns = 0.0
+hmp2_ip_on_hmm2_ip_slope%rg = 0.0
+hmp2_ip_on_hmm2_ip_slope%Ng = 0.0
 
 Ncnp2_on_Ncnm2                               = 2.2
 
@@ -164,7 +177,7 @@ Nc0_in_cloud = 70.e6 ! #/m3
 lh_microphys_type = "disabled",
 lh_num_samples = 4,
 lh_sequence_length = 1,
-l_fix_chi_eta_correlations = .true.,
+l_fix_w_chi_eta_correlations = .true.,
 
 ! two aerosol mode defaults from MPACE (from Hugh)
 aer_rm1 = 0.052e-6  

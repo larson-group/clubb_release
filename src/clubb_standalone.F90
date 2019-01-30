@@ -10,9 +10,10 @@ program clubb_standalone
 
   use clubb_driver, only: run_clubb ! Procedure(s)
   
-  use error_code, only: clubb_no_error ! Variable(s)
-
-  use error_code, only: fatal_error ! Procedure(s)
+  use error_code, only: &
+        clubb_no_error, &               ! Constants
+        clubb_fatal_error, &
+        err_code                        ! Error indicator
 
   use parameter_indices, only: nparams ! Variable(s)
 
@@ -44,9 +45,6 @@ program clubb_standalone
   real( kind = core_rknd ), dimension(nparams) :: & 
     params  ! Array of the model constants
 
-  ! Internal variables
-  integer :: err_code 
-
 !-----------------------------------------------------------------------
 
   ! --- Begin Code ---
@@ -58,11 +56,10 @@ program clubb_standalone
   err_code = clubb_no_error
 
   ! Run the model
-  call run_clubb( params, namelist_filename, l_stdout, err_code )
+  call run_clubb( params, namelist_filename, l_stdout )
 
-  if ( fatal_error( err_code ) ) then
-    stop "Model wasn't valid, check your parameters and timestep"
-
+  if ( err_code == clubb_fatal_error ) then
+    stop "Fatal error in clubb, check your parameter values and timestep"
   else
     write(fstderr,*) "Program exited normally"
     call exit(success_code)

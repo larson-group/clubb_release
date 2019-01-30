@@ -52,9 +52,6 @@ module precipitation_fraction
         l_frozen_hm,  &
         hydromet_tol
 
-    use error_code, only : &
-        clubb_at_least_debug_level ! Procedure(s)
-
     use stats_variables, only: &
         stats_sfc,        & ! Variable(s)
         iprecip_frac_tol
@@ -64,6 +61,11 @@ module precipitation_fraction
 
     use clubb_precision, only: &
         core_rknd  ! Variable(s)
+
+    use error_code, only: &
+        clubb_at_least_debug_level, &   ! Procedure
+        err_code, &                     ! Error Indicator
+        clubb_fatal_error               ! Constant
 
     implicit none
 
@@ -213,7 +215,8 @@ module precipitation_fraction
 
        write(fstderr,*) "Invalid option to calculate precip_frac_1 " &
                         // "and precip_frac_2."
-       stop
+       err_code = clubb_fatal_error
+       return
 
     endif ! precip_frac_calc_type
 
@@ -633,23 +636,20 @@ module precipitation_fraction
 
              ! Double check precip_frac_1
              if ( precip_frac_1(k) > one ) then
+
                 precip_frac_1(k) = one
-                if ( precip_frac(k) == one ) then
-                   precip_frac_2(k) = one
-                else
-                   precip_frac_2(k) = ( precip_frac(k) - mixt_frac(k) ) &
-                                      / ( one - mixt_frac(k) )
-                endif
-             elseif ( precip_frac_1(k) > zero &
-                      .and. precip_frac_1(k) < precip_frac_tol ) then
+
+                precip_frac_2(k) = ( precip_frac(k) - mixt_frac(k) ) &
+                                   / ( one - mixt_frac(k) )
+
+             elseif ( precip_frac_1(k) > zero .and. precip_frac_1(k) < precip_frac_tol ) then
+
                 precip_frac_1(k) = precip_frac_tol
-                if ( precip_frac(k) == precip_frac_tol ) then
-                   precip_frac_2(k) = precip_frac_tol
-                else
-                   precip_frac_2(k) = ( precip_frac(k) &
-                                        - mixt_frac(k) * precip_frac_1(k) ) &
-                                      / ( one - mixt_frac(k) )
-                endif
+
+                ! fp = a*fp1+(1-a)*fp2 solving for fp2
+                precip_frac_2(k) = precip_frac_1(k) * ( ( ( precip_frac(k) / precip_frac_1(k)) &
+                                   - mixt_frac(k) ) / ( one - mixt_frac(k) ) )
+                
              endif
 
           elseif ( precip_frac_2(k) > zero &
@@ -669,23 +669,20 @@ module precipitation_fraction
 
              ! Double check precip_frac_1
              if ( precip_frac_1(k) > one ) then
+
                 precip_frac_1(k) = one
-                if ( precip_frac(k) == one ) then
-                   precip_frac_2(k) = one
-                else
-                   precip_frac_2(k) = ( precip_frac(k) - mixt_frac(k) ) &
-                                      / ( one - mixt_frac(k) )
-                endif
-             elseif ( precip_frac_1(k) > zero &
-                      .and. precip_frac_1(k) < precip_frac_tol ) then
+
+                precip_frac_2(k) = ( precip_frac(k) - mixt_frac(k) ) &
+                                   / ( one - mixt_frac(k) )
+
+             elseif ( precip_frac_1(k) > zero .and. precip_frac_1(k) < precip_frac_tol ) then
+
                 precip_frac_1(k) = precip_frac_tol
-                if ( precip_frac(k) == precip_frac_tol ) then
-                   precip_frac_2(k) = precip_frac_tol
-                else
-                   precip_frac_2(k) = ( precip_frac(k) &
-                                        - mixt_frac(k) * precip_frac_1(k) ) &
-                                      / ( one - mixt_frac(k) )
-                endif
+
+                ! fp = a*fp1+(1-a)*fp2 solving for fp2
+                precip_frac_2(k) = precip_frac_1(k) * ( ( ( precip_frac(k) / precip_frac_1(k)) &
+                                   - mixt_frac(k) ) / ( one - mixt_frac(k) ) )
+
              endif
 
           endif ! Special cases for precip_frac_2
@@ -830,23 +827,21 @@ module precipitation_fraction
 
                    ! Double check precip_frac_1
                    if ( precip_frac_1(k) > one ) then
+
                       precip_frac_1(k) = one
-                      if ( precip_frac(k) == one ) then
-                         precip_frac_2(k) = one
-                      else
-                         precip_frac_2(k) = ( precip_frac(k) - mixt_frac(k) ) &
-                                            / ( one - mixt_frac(k) )
-                      endif
+
+                      precip_frac_2(k) = ( precip_frac(k) - mixt_frac(k) ) &
+                                         / ( one - mixt_frac(k) )
+
                    elseif ( precip_frac_1(k) < precip_frac_tol ) then
+
                       precip_frac_1(k) = precip_frac_tol
-                      if ( precip_frac(k) == precip_frac_tol ) then
-                         precip_frac_2(k) = precip_frac_tol
-                      else
-                         precip_frac_2(k) &
-                         = ( precip_frac(k) &
-                             - mixt_frac(k) * precip_frac_1(k) ) &
-                           / ( one - mixt_frac(k) )
-                      endif
+
+                      ! fp = a*fp1+(1-a)*fp2 solving for fp2
+                      precip_frac_2(k) = precip_frac_1(k) * &
+                                         ( ( ( precip_frac(k) / precip_frac_1(k)) &
+                                         - mixt_frac(k) ) / ( one - mixt_frac(k) ) )
+
                    endif
 
                 endif ! precip_frac_2(k) < precip_frac_tol
@@ -888,24 +883,20 @@ module precipitation_fraction
 
                    ! Double check precip_frac_2
                    if ( precip_frac_2(k) > one ) then
+
                       precip_frac_2(k) = one
-                      if ( precip_frac(k) == one ) then
-                         precip_frac_1(k) = one
-                      else
-                         precip_frac_1(k) &
-                         = ( precip_frac(k) - ( one - mixt_frac(k) ) ) &
-                           / mixt_frac(k)
-                      endif
+
+                      precip_frac_1(k) = ( ( precip_frac(k) - one ) + mixt_frac(k) ) &
+                                         / mixt_frac(k)
+
                    elseif ( precip_frac_2(k) < precip_frac_tol ) then
+
                       precip_frac_2(k) = precip_frac_tol
-                      if ( precip_frac(k) == precip_frac_tol ) then
-                         precip_frac_1(k) = precip_frac_tol
-                      else
-                         precip_frac_1(k) &
-                         = ( precip_frac(k) &
-                             - ( one - mixt_frac(k) ) * precip_frac_2(k) ) &
-                           / mixt_frac(k)
-                      endif
+
+                      ! fp = a*fp1+(1-a)*fp2 solving for fp1
+                      precip_frac_1(k) = ( precip_frac(k) - precip_frac_2(k) ) / mixt_frac(k) &
+                                         + precip_frac_2(k)
+
                    endif
 
                 endif ! precip_frac_1(k) < precip_frac_tol
@@ -947,22 +938,20 @@ module precipitation_fraction
 
                 ! Double check precip_frac_1
                 if ( precip_frac_1(k) > one ) then
+
                    precip_frac_1(k) = one
-                   if ( precip_frac(k) == one ) then
-                      precip_frac_2(k) = one
-                   else
-                      precip_frac_2(k) = ( precip_frac(k) - mixt_frac(k) ) &
-                                         / ( one - mixt_frac(k) )
-                   endif
+
+                   precip_frac_2(k) = ( precip_frac(k) - mixt_frac(k) ) &
+                                      / ( one - mixt_frac(k) )
+
                 elseif ( precip_frac_1(k) < precip_frac_tol ) then
+
                    precip_frac_1(k) = precip_frac_tol
-                   if ( precip_frac(k) == precip_frac_tol ) then
-                      precip_frac_2(k) = precip_frac_tol
-                   else
-                      precip_frac_2(k) = ( precip_frac(k) &
-                                           - mixt_frac(k) * precip_frac_1(k) ) &
-                                         / ( one - mixt_frac(k) )
-                   endif
+
+                   ! fp = a*fp1+(1-a)*fp2 solving for fp2
+                   precip_frac_2(k) = precip_frac_1(k) * ( ( ( precip_frac(k) / precip_frac_1(k)) &
+                                      - mixt_frac(k) ) / ( one - mixt_frac(k) ) )
+
                 endif
 
              elseif ( precip_frac_2(k) < precip_frac_tol ) then
@@ -978,22 +967,20 @@ module precipitation_fraction
 
                 ! Double check precip_frac_1
                 if ( precip_frac_1(k) > one ) then
+
                    precip_frac_1(k) = one
-                   if ( precip_frac(k) == one ) then
-                      precip_frac_2(k) = one
-                   else
-                      precip_frac_2(k) = ( precip_frac(k) - mixt_frac(k) ) &
-                                         / ( one - mixt_frac(k) )
-                   endif
+
+                   precip_frac_2(k) = ( precip_frac(k) - mixt_frac(k) ) &
+                                      / ( one - mixt_frac(k) )
+
                 elseif ( precip_frac_1(k) < precip_frac_tol ) then
+
                    precip_frac_1(k) = precip_frac_tol
-                   if ( precip_frac(k) == precip_frac_tol ) then
-                      precip_frac_2(k) = precip_frac_tol
-                   else
-                      precip_frac_2(k) = ( precip_frac(k) &
-                                           - mixt_frac(k) * precip_frac_1(k) ) &
-                                         / ( one - mixt_frac(k) )
-                   endif
+
+                   ! fp = a*fp1+(1-a)*fp2 solving for fp2
+                   precip_frac_2(k) = precip_frac_1(k) * ( ( ( precip_frac(k) / precip_frac_1(k)) &
+                                      - mixt_frac(k) ) / ( one - mixt_frac(k) ) )
+
                 endif
 
              endif ! Special cases for precip_frac_2
@@ -1042,6 +1029,10 @@ module precipitation_fraction
     use clubb_precision, only: &
         core_rknd  ! Variable(s)
 
+    use error_code, only: &
+        err_code, &                     ! Error Indicator
+        clubb_fatal_error               ! Constant
+
     implicit none
 
     ! Input Variables
@@ -1077,7 +1068,8 @@ module precipitation_fraction
              write(fstderr,*) "level = ", k
              write(fstderr,*) "precip_frac = ", precip_frac(k), &
                               "precip_frac_tol = ", precip_frac_tol
-             stop
+             err_code = clubb_fatal_error
+             return
           endif
 
           ! Overall precipitation fraction cannot exceed 1.
@@ -1085,7 +1077,8 @@ module precipitation_fraction
              write(fstderr,*) "precip_frac > 1"
              write(fstderr,*) "level = ", k
              write(fstderr,*) "precip_frac = ", precip_frac(k)
-             stop
+             err_code = clubb_fatal_error
+             return
           endif
 
           ! Precipitation fraction in the 1st PDF component is allowed to be 0
@@ -1099,7 +1092,8 @@ module precipitation_fraction
              write(fstderr,*) "level = ", k
              write(fstderr,*) "precip_frac_1 = ", precip_frac_1(k), &
                               "precip_frac_tol = ", precip_frac_tol
-             stop
+             err_code = clubb_fatal_error
+             return
           endif
 
           ! Precipitation fraction in the 1st PDF component cannot exceed 1.
@@ -1107,7 +1101,8 @@ module precipitation_fraction
              write(fstderr,*) "precip_frac_1 > 1"
              write(fstderr,*) "level = ", k
              write(fstderr,*) "precip_frac_1 = ", precip_frac_1(k)
-             stop
+             err_code = clubb_fatal_error
+             return
           endif
 
           ! Precipiation fraction in the 1st PDF component cannot be negative.
@@ -1115,7 +1110,8 @@ module precipitation_fraction
              write(fstderr,*) "precip_frac_1 < 0"
              write(fstderr,*) "level = ", k
              write(fstderr,*) "precip_frac_1 = ", precip_frac_1(k)
-             stop
+             err_code = clubb_fatal_error
+             return
           endif
 
           ! Precipitation fraction in the 2nd PDF component is allowed to be 0
@@ -1129,7 +1125,8 @@ module precipitation_fraction
              write(fstderr,*) "level = ", k
              write(fstderr,*) "precip_frac_2 = ", precip_frac_2(k), &
                               "precip_frac_tol = ", precip_frac_tol
-             stop
+             err_code = clubb_fatal_error
+             return
           endif
 
           ! Precipitation fraction in the 2nd PDF component cannot exceed 1.
@@ -1137,7 +1134,8 @@ module precipitation_fraction
              write(fstderr,*) "precip_frac_2 > 1"
              write(fstderr,*) "level = ", k
              write(fstderr,*) "precip_frac_2 = ", precip_frac_2(k)
-             stop
+             err_code = clubb_fatal_error
+             return
           endif
 
           ! Precipiation fraction in the 2nd PDF component cannot be negative.
@@ -1145,7 +1143,8 @@ module precipitation_fraction
              write(fstderr,*) "precip_frac_2 < 0"
              write(fstderr,*) "level = ", k
              write(fstderr,*) "precip_frac_2 = ", precip_frac_2(k)
-             stop
+             err_code = clubb_fatal_error
+             return
           endif
 
        else  ! all( hydromet(k,:) < hydromet_tol(:) )
@@ -1156,7 +1155,8 @@ module precipitation_fraction
              write(fstderr,*) "precip_frac /= 0 when no hydrometeors are found"
              write(fstderr,*) "level = ", k
              write(fstderr,*) "precip_frac = ", precip_frac(k)
-             stop
+             err_code = clubb_fatal_error
+             return
           endif
 
           ! Precipitation fraction in the 1st PDF component must be 0 when no
@@ -1166,7 +1166,8 @@ module precipitation_fraction
                               // "are found"
              write(fstderr,*) "level = ", k
              write(fstderr,*) "precip_frac_1 = ", precip_frac_1(k)
-             stop
+             err_code = clubb_fatal_error
+             return
           endif
 
           ! Precipitation fraction in the 2nd PDF component must be 0 when no
@@ -1176,7 +1177,8 @@ module precipitation_fraction
                               // "are found"
              write(fstderr,*) "level = ", k
              write(fstderr,*) "precip_frac_2 = ", precip_frac_2(k)
-             stop
+             err_code = clubb_fatal_error
+             return
           endif
 
        endif  ! any( hydromet(k,:) >= hydromet_tol(:) )
@@ -1206,7 +1208,8 @@ module precipitation_fraction
                            mixt_frac(k) * precip_frac_1(k) &
                            + ( one - mixt_frac(k) ) * precip_frac_2(k)
           write(fstderr,*) "precip_frac = ", precip_frac(k)
-          stop
+          err_code = clubb_fatal_error
+          return
        endif
 
     enddo  ! k = 1, nz, 1

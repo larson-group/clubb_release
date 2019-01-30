@@ -72,6 +72,8 @@ module generate_uniform_sample_module
   !   Generates a matrix X that contains a Latin Hypercube sample.
   !   The sample is uniformly distributed.
   ! References:
+  ! https://arxiv.org/pdf/1711.03675v1.pdf#nameddest=url:lh_algorithm
+  !
   !   See Art B. Owen (2003), ``Quasi-Monte Carlo Sampling,"
   !      a chapter from SIGGRAPH 2003
   !-------------------------------------------------------------------------------
@@ -134,7 +136,7 @@ module generate_uniform_sample_module
     end if ! First call to the driver
 
     ! Latin hypercube sample generation
-    ! Generate one_height_time_matrix, an nt_repeat x d_variables array of random integers
+    ! Generate one_height_time_matrix, an nt_repeat x pdf_dimarray of random integers
     i_rmd = mod( iter-1, sequence_length )
 
     if ( i_rmd == 0 ) then

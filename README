@@ -2,7 +2,7 @@ $Id$
 
 ********************************************************************************
 *                           Copyright Notice
-*                       This code is (C) 2006-2016
+*                       This code is (C) 2006-2018
 *         Jean-Christophe Golaz, Vincent E. Larson, Brian M. Griffin, 
 *            David P. Schanen, Adam J. Smith, and Michael J. Falk.
 *
@@ -15,12 +15,13 @@ $Id$
 *         subject to copyright.
 ********************************************************************************
 
-
 ********************************************************************************
 *        Overview of the Cloud Layers Unified By Binormals (CLUBB) code        
 ********************************************************************************
-
 For a detailed description of the model code see:  
+
+Larson, V. E., 2017: CLUBB-SILHS: A parameterization of subgrid variability
+  in the atmosphere.  https://arxiv.org/pdf/1711.03675.pdf.
 
 Golaz, J.-C., V. E. Larson, and W. R. Cotton, 2002:  A PDF-Based Model for
   Boundary Layer Clouds. Part I: Method and Model Description.  J. Atmos. Sci.,
@@ -39,7 +40,8 @@ model equations and finer details on how the discretization was done.
 The single column model executable ("clubb_standalone") runs a particular 
 case (e.g. BOMEX shallow nonprecipitating cumulus case) 
 and outputs statistical data in either Grid Analysis and
-Display System (GrADS) format or Network Common Data Form (netCDF) format.
+Display System (GrADS) format or Network Common Data Form (netCDF) format
+(if the --netcdf flag is used with the run script run_scm.bash).
 GrADS is both a data file format and a plotting program.  See
 <http://www.iges.org/grads/> for a description of GrADS.  NetCDF is a self 
 describing data file format that can be read by the GrADS plotting program, 
@@ -67,6 +69,7 @@ CLUBB is a single-column atmospheric model written in ISO Fortran 2003, and
 executed using scripts written in the GNU Bash scripting language.
 Some utilities for CLUBB have been implemented in MATLAB, Python, or Perl.
 
+
 This quick start guide has instructions for checking CLUBB out from the UWM
 repositories, compiling CLUBB using the gfortran compiler, running one of the
 benchmark test cases, and creating plots.
@@ -74,29 +77,25 @@ benchmark test cases, and creating plots.
 -------------------------------------------------------
 - STEP 1: OBTAINING THE CODE FROM THE REPOSITORY
 -------------------------------------------------------
-Checking CLUBB out requires the user to have signed up for a CLUBB account.
-This can be done at http://clubb.larson-group.com/register.php and will
-require a valid e-mail address.
+Checking CLUBB out requires the user to be a collaborator on the clubb_release github repository.
+Sign up can be done at http://carson.math.uwm.edu:4567 and will
+require a github username.
 
-After entering the required information in the registration page, an e-mail
-will be sent to the entered e-mail address with the password for the new
-CLUBB account.
+After entering the required information in the registration page, an invitation e-mail
+will be sent to the email associated with the github account entered.
 
-Please note that each user will only need to sign up for a CLUBB account once.
-After this, the same e-mail address and password combination will work to
-download the CLUBB code.
+Please note that each user will only need to sign up once.
 
-With a valid CLUBB account, the CLUBB code can be checked out from its
-repository using subversion (a.k.a. svn).  If you have not already downloaded CLUBB,
-then at a bash prompt, type in the following command, all on one line:
-user@computer ~$ svn co http://carson.math.uwm.edu/repos/clubb_repos/trunk 
-          clubb --username EMAIL
-(EMAIL is the e-mail address used to register for a CLUBB account)
+With the valid permissions as a collaborator, the CLUBB code can be cloned from its
+repository using git.  If you have not already downloaded CLUBB,
+then at a bash prompt, type in the following command from the directory where
+you want the clubb folder to be placed, all on one line:
+user@computer ~$ git clone http://github.com/larson-group/clubb_release.git 
 
-After entering this command, svn will prompt for a password. The password will
-have been sent via e-mail after signing up for a CLUBB account. After the
-password is entered, subversion will download the CLUBB source code into the
-directory specified as the last option in the svn command; in the example
+After entering this command, git will prompt for a username and password. 
+Use your github credentials. After the authorized credentials are entered, 
+git will download the CLUBB source code into the directory specified as the
+last option in the git command; in the example
 above, it will be downloaded to the clubb/ directory.  On some computers,
 when entering the password, the cursor may remain in the same spot
 and the screen may remain blank.  Don't be confused; hit return, and 
@@ -110,18 +109,33 @@ to compile properly with various Fortran compilers, including g95 and
 gfortran, which are both free.  The CLUBB code relies on a script called mkmf 
 which requires your system to have Perl installed.
 
-To compile, change directories to the CLUBB source directory (e.g. "clubb"),
-and then to the compile directory within the CLUBB source directory.
+To compile, change directories to the CLUBB directory (e.g. "clubb"),
+and then to the compile directory within the CLUBB directory:
+
+user@computer ~$ cd clubb/compile
 
 Once in the compile directory, run the compile.bash script, using the config
 file corresponding to the target platform to run CLUBB on.
 For instance, on a Linux machine, to compile with gfortran, use the following
 command:
-user@computer compile$ ./compile.bash config/linux_x86_64_gfortran.bash
+user@computer compile$ ./compile.bash -c config/linux_x86_64_gfortran.bash
 
 To run this on a Mac OS X machine, you should use the following command:
 
-$ ./compile.bash config/macosx_x86_64_gfortran.bash
+user@computer compile$ ./compile.bash -c config/macosx_x86_64_gfortran.bash
+
+Note: If clubb did not compile correctly (e.g. compiled with wrong config)
+and you are using a mac, try installing gnu-getopt as opposed to bsd-getopt (default on mac) - compile.bash expects gnu-getopt.
+Another work around for this is to change the default compile configuration in compile.bash.
+To do this comment out the config for linux gfortran and uncomment the config for macOS gfortran in compile.bash  
+
+The code should look like this:
+# Set using the default config flags
+#       CONFIG=./config/linux_x86_64_gfortran.bash # Linux (Redhat Enterprise 5 / GNU)
+#       CONFIG=./config/linux_x86_64_g95_optimize.bash # Linux (Redhat Enterprise 5 g95)
+        CONFIG=./config/macosx_x86_64_gfortran.bash # MacOS X / GNU
+#       CONFIG=./config/aix_powerpc_xlf90_bluefire.bash # IBM AIX on Bluefire / XL Fortran
+#       CONFIG=./config/solaris_generic_oracle.bash # Oracle/Sun Solaris / Oracle/Sun Fortran
 
 (If you want a primer on using the command line shell on Macs, see
 https://developer.apple.com/library/mac/documentation/OpenSource/Conceptual/ShellScripting/CommandLInePrimer/CommandLine.html .)
@@ -130,7 +144,7 @@ The command line will output information relating to the compilation of CLUBB.
 
 If you change something in the configuration and need to remove the old 
 executables and object files you can type:
-$ ./clean_all.bash
+user@computer compile$ ./clean_all.bash
 
 Then recompile the code.
 
@@ -146,6 +160,10 @@ run_scm.bash script. This script will run the CLUBB model for a single case,
 which can be specified on the command line. For example, to run the BOMEX case:
 user@computer run_scripts$ ./run_scm.bash bomex
 
+To list various run-time options --- such as settings for grid spacing,
+time step, stats output, and netcdf format --- type
+user@computer run_scripts$ ./run_scm.bash --help
+
 Other cases that you may run are listed in run_scripts/RUN_CASES.  The command
 line will output information relating to the case as it runs.  In addition,
 output from the case will be placed in the output directory inside the CLUBB
@@ -155,12 +173,12 @@ checkout.
 - STEP 4: VIEWING THE RESULTS WITH PLOTGEN
 -------------------------------------------------------
 After a case has been run, the resulting output (whether it be in either GrADS 
-or netCDF format) can
-be used to create graphs.  There are many programs available that can be used to
-do this, but one way is to use an included perl script called plotgen. 
-Plotgen interfaces with MATLAB to produce high-quality plots that allow 
-CLUBB's output to be easily visualized.  Other options for plotting the output 
-can be found at http://www.unidata.ucar.edu/software/netcdf/software.html.
+or netCDF format) can be used to create graphs.  One way is to use an 
+included perl script called plotgen. Plotgen interfaces with MATLAB to 
+produce high-quality plots that allow CLUBB's output to be easily visualized.  
+Another option for plotting the output is to use GrADS, described below.
+Other options for plotting the output can be found at 
+http://www.unidata.ucar.edu/software/netcdf/software.html.
 
 **************************************************************************
                                   NOTE:
@@ -174,7 +192,7 @@ plots output directory. This must be called from the postprocessing/plotgen
 directory inside the CLUBB checkout.
 
 Mac users in W434, at the terminal, type in the following command:
-$ export DYLD_LIBRARY_PATH=/usr/local/ImageMagick/lib/
+user@computer$ export PATH="/opt/ImageMagick/bin:$PATH"
 
 Then, to generate a webpage containing plots, type (if your output 
 is in ~/clubb/output and you want the plots to go in directory ~/plots):
@@ -183,29 +201,36 @@ user@computer$ cd  ~/clubb/postprocessing/plotgen
 
 user@computer$ ./plotgen.pl ~/clubb/output ~/plots
 
+(Here the tilde, ~, tells the OS to look in the user's home directory.)
 The above line will use plotgen to create plots from the simulation output
 in ~/clubb/output, and place the resulting plots in the ~/plots directory.  
-(Here the tilde, ~, tells the OS to look in the user's home directory.)
+plotgen will create the ~/plots directory if it does not exist,
+and if it does exist, instead use 
+
+user@computer$ ./plotgen.pl -r ~/clubb/output ~/plots
+
+in order to overwrite what's in the ~\plots directory.
 If you want to overplot two simulations, move each set of output files to 
 its own directory, e.g. ~/clubb/output/sim1 and ~/clubb/output/sim2, and
 type the command
 
 user@computer$ cd  ~/clubb/postprocessing/plotgen
-user@computer$ ./plotgen.pl ~/clubb/output/sim1 ~/clubb/output/sim2 ~/plots
+user@computer plotgen$ ./plotgen.pl ~/clubb/output/sim1 ~/clubb/output/sim2 ~/plots
 
 To view the plots, use a web browser to view index.html in the plots directory.
 user@computer ~$ firefox ~/plots/index.html
 
+Alternatively, one can use the command "pwd" in order to find the directory path
+to the index.html file.  Then go to a web browser URL bar, type "file://" then the path,
+and then "/index.html".
+
 MAC Users in W434 use the following command
-$ /Applications/Firefox.app/Contents/MacOS/firefox-bin ~/plots/index.html
+user@computer$ /Applications/Firefox.app/Contents/MacOS/firefox-bin ~/plots/index.html
 assuming that the index.html file is in the plots directory.
 
 Plotgen will plot only the test cases that have output; therefore, if only
 the BOMEX case has been run, for example, the resulting plotgen plots will
 only have BOMEX included.
-
-Nota bene: If "./plotgen.pl " is replaced by "./plotgen.pl -r ", then 
-the contents of the plotgen output folder will be replaced.
 
 -------------------------------------------------------
 - SUMMARY FOR LINUX
@@ -368,13 +393,18 @@ Several compilers allows for promotion of real variables without a "kind="
 statement to double precision at compile time through the use of a compiler
 flag.  This will not currently work with the numerical recipes subroutines
 referenced by the tuner because they use operator overloading (therefore you can
-only use tune_type = 2 when all real variables are promoted)
+only use tune_type = 2 when all real variables are promoted).
+It also fails to work with Morrison microphysics (clubb:ticket:585#comment:13).
 
 To do this:
 
 1. Do a clean_all.bash if have object files and programs from a prior compile.
 2. Edit compile.bash so that l_double_precision=true.
 3. ./compile.bash
+
+To set the precision of CLUBB's internal variables, in the 
+compile/config .bash file you wish to use, set -DCLUBB_REAL_TYPE=8 
+for double precision or -DCLUBB_REAL_TYPE=4 for single precision.
 
 -----------------------------------------------------------------------
 - (1.2) Building (i.e. compiling) for use in a host model:
@@ -719,6 +749,7 @@ See postprocessing/plotgen/README for more information on plotgen.pl.
 
 Otherwise, you can view the raw CLUBB output files in GrADS or netCDF
 format using a plotting program such as GrADS (http://www.iges.org/grads/).
+To open a GrADS session, type "grads" at a Linux prompt.
 
 --------------------------------------------------------------------------
 - (2.4) Determining whether two CLUBB simulations produce different output:
@@ -801,8 +832,8 @@ simulation at the restart time.
 2.  Create a subdirectory in the <CLUBB BASE DIRECTORY> called "restart" and 
     move the GrADS output files to that subdirectory.
 
-3.  Edit the following three variables at the end of the flag section of 
-    the model file:
+3.  Edit the following three variables at the end of the &model_setting section of 
+    the model.in file:
 
     l_restart = .true.
     restart_path_case = restart/<CASE NAME>
@@ -1319,7 +1350,7 @@ source file ../src/CLUBB_core/grid_class.F90 and doc/CLUBBeqns.pdf.
   sigma_sqd_w, which is diagnosed based purely on momentum-level variables
   wpthlp, wp2, thlp2, wprtp, and rtp2.  Another example of this, as referenced
   above in the section on "Thermodynamic-level variables", is em, which is
-  diagnosed based purely on momentum-level variables wp2, up2, and vp2.
+  diagnosed based purely on momentum-level variables wp2, up2, and vp2. 
 
   When momentum-level variables are at their "home" momentum levels, they simply
   use their "base" name (wprtp, up2, sigma_sqd_w, rtpthlp, etc.). However, when
@@ -1346,8 +1377,8 @@ source file ../src/CLUBB_core/grid_class.F90 and doc/CLUBBeqns.pdf.
   Kh, and time-scale, tau. Both are based on one thermodynamic-level variable,
   Lscale, and one momentum-level variable, em.
 
-  When a homeless variable is at it's cardboard box on momentum levels, a "_zm"
-  extension is tacked onto it, and when it is at it's cardboard box on
+  When a homeless variable is at its cardboard box on momentum levels, a "_zm"
+  extension is tacked onto it, and when it is at its cardboard box on
   thermodynamic levels, a "_zt" extension is tacked onto it. Thus, skewness of w
   is called Skw_zt at thermodynamic levels and Skw_zm at momentum levels.
   Likewise, eddy diffusivity and time-scale are Kh_zt and tau_zt, respectively,

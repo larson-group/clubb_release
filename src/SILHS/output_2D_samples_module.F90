@@ -121,7 +121,7 @@ module output_2D_samples_module
 
 !-------------------------------------------------------------------------------
   subroutine output_2D_lognormal_dist_file &
-             ( nz, num_samples, d_variables, X_nl_all_levs )
+             ( nz, num_samples, pdf_dim, X_nl_all_levs )
 ! Description:
 !   Output a 2D snapshot of latin hypercube samples
 ! References:
@@ -131,7 +131,7 @@ module output_2D_samples_module
     use output_netcdf, only: write_netcdf ! Procedure(s)
 #endif
 
-    use clubb_precision, only: stat_rknd, core_rknd ! Constant(s)
+    use clubb_precision, only: stat_rknd ! Constant(s)
 
     implicit none
 
@@ -139,21 +139,21 @@ module output_2D_samples_module
     integer, intent(in) :: &
       nz,          & ! Number of vertical levels
       num_samples, & ! Number of samples per variable
-      d_variables    ! Number variates being sampled
+      pdf_dim   ! Number variates being sampled
 
-    real(kind=stat_rknd), intent(in), dimension(nz,num_samples,d_variables) :: &
+    real(kind=stat_rknd), intent(in), dimension(nz,num_samples,pdf_dim) :: &
       X_nl_all_levs ! Sample that is transformed ultimately to normal-lognormal
 
     integer :: sample, j
 
     ! ---- Begin Code ----
 
-    do j = 1, d_variables
+    do j = 1, pdf_dim
       allocate( lognormal_sample_file%var(j)%ptr(num_samples,1,nz) )
     end do
 
     do sample = 1, num_samples
-      do j = 1, d_variables
+      do j = 1, pdf_dim
         lognormal_sample_file%var(j)%ptr(sample,1,1:nz) = X_nl_all_levs(1:nz,sample,j)
       end do
     end do
@@ -164,7 +164,7 @@ module output_2D_samples_module
     stop "This version of CLUBB was not compiled for netCDF output"
 #endif
 
-    do j = 1, d_variables
+    do j = 1, pdf_dim
       deallocate( lognormal_sample_file%var(j)%ptr )
     end do
 
@@ -202,7 +202,7 @@ module output_2D_samples_module
     integer, intent(in), dimension(nz,num_samples) :: &
       X_mixt_comp_all_levs ! Either 1 or 2
 
-    real( kind = core_rknd ), dimension(num_samples), intent(in) :: &
+    real( kind = core_rknd ), dimension(nz,num_samples), intent(in) :: &
       lh_sample_point_weights ! Weight of each sample
 
     integer :: sample, j, k
@@ -222,7 +222,7 @@ module output_2D_samples_module
         real( X_mixt_comp_all_levs(1:nz,sample), kind=stat_rknd )
       do k = 1, nz 
         uniform_sample_file%var(dp2+2)%ptr(sample,1,k) = &
-          real( lh_sample_point_weights(sample), kind=stat_rknd )
+          real( lh_sample_point_weights(k,sample), kind=stat_rknd )
       end do
     end do
 

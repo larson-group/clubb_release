@@ -2,8 +2,8 @@ import netCDF4
 import numpy as np
 import pylab as pl
 
-clubb_nc     = netCDF4.Dataset('rico_lh_zt.nc')
-silhs_nc     = netCDF4.Dataset('rico_lh_lh_zt.nc')
+clubb_nc     = netCDF4.Dataset('rico_silhs_zt.nc')
+silhs_nc     = netCDF4.Dataset('rico_silhs_lh_zt.nc')
 
 #clubb_var = clubb_nc.variables['rrm']
 cf1 = clubb_nc.variables['cloud_frac1']

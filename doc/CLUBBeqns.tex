@@ -8,7 +8,7 @@
 \usepackage{amssymb}
 
 % Block Array
-\usepackage{blkarray}
+%\usepackage{blkarray}
 
 % Use different colors
 \usepackage{color}
@@ -4007,8 +4007,9 @@ function to each log-normally distributed variate in the sample (while the
 normally distributed variates remain the same).
 \begin{equation}
 \mathbf{x} =
-\begin{blockarray}{cc}
-\begin{block}{(c)c}
+\begin{array}{cc}
+% \begin{blockarray}{cc}
+% \begin{block}{(c)c}
 x_{\mathrm{norm},1} & \chi \\
 x_{\mathrm{norm},2} & \eta \\
 x_{\mathrm{norm},3} & w \\
@@ -4016,8 +4017,9 @@ x_{\mathrm{norm},3} & w \\
 \exp(x_{\mathrm{norm},5}) & \mathrm{hm}_1 \\
 \vdots & \\
 \exp(x_{\mathrm{norm},d}) & \mathrm{hm}_n \\
-\end{block}
-\end{blockarray}
+% \end{block}
+% \end{blockarray}
+\end{array}
 \end{equation}
 
 \subsection{Integrating over a PDF using SILHS}

@@ -1,8 +1,8 @@
 import netCDF4
 import matplotlib.pyplot as plt
 
-nl_nc = netCDF4.Dataset('rico_lh_nl_lh_sample_points_2D.nc')
-silhs_sfc_nc = netCDF4.Dataset('rico_lh_lh_sfc.nc')
+nl_nc = netCDF4.Dataset('rico_silhs_nl_lh_sample_points_2D.nc')
+silhs_sfc_nc = netCDF4.Dataset('rico_silhs_lh_sfc.nc')
 
 chi = nl_nc.variables['chi']
 rr  = nl_nc.variables['rr']

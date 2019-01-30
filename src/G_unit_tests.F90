@@ -118,6 +118,12 @@ program G_unit_tests
   use constants_clubb, only: &
       fstdout  ! Constant(s)
 
+  use pdf_closure_module, only: &
+      iiPDF_new,    & ! Variable(s)
+      iiPDF_ADG1,   &
+      iiPDF_TSDADG, &
+      iiPDF_LY93
+
   use KK_integrals_tests, only: &
       KK_integrals_tests_driver  ! Procedure(s)
 
@@ -139,6 +145,15 @@ program G_unit_tests
   use mu_sigma_hm_tests, only: &
       mu_sigma_hm_unit_tests  ! Procedure(s)
 
+  use pdf_parameter_tests, only: &
+      pdf_parameter_unit_tests  ! Procedure(s)
+
+  use spurious_source_test, only: &
+      spurious_source_unit_test  ! Procedure(s)
+
+  !use tuner_tests, only: &
+  !    tuner_tests_driver        ! Procedure
+
   implicit none
 
   ! Local Constants
@@ -157,13 +172,17 @@ program G_unit_tests
     l_silhs_category_test = .true.,     & ! Flag for silhs category test
     show_read_test_arrays = .true.,     & ! If true, the arrays used in
                                           !   read_corr_mtx_test will be shown
-    l_mu_sigma_hm_tests = .true.          ! Flag for the hydromet mu/sigma tests
+    l_mu_sigma_hm_tests = .true.,       & ! Flag for the hydromet mu/sigma tests
+    l_pdf_parameter_tests = .true.,     & ! Flag for the PDF parameter tests
+    l_spurious_source_test = .true.,    & ! Flag for the spurious source test
+    l_tuner_tests = .true.                ! Flag for the tuner tests
 
   ! Definition of namelist
   namelist /G_unit_namelist/ &
     l_KK_unit_tests, l_corr_cholesky_mtx_tests, l_hole_filling_tests, &
     l_Nc_Ncn_test, l_read_corr_mtx_test, l_silhs_category_test, &
-    l_mu_sigma_hm_tests
+    l_mu_sigma_hm_tests, l_pdf_parameter_tests, l_spurious_source_test, &
+    l_tuner_tests
 
 
   ! Read namelist file
@@ -217,6 +236,33 @@ program G_unit_tests
         exit_code = 1
      endif
   endif
+
+  if ( l_pdf_parameter_tests ) then
+     if ( pdf_parameter_unit_tests( iiPDF_ADG1 ) /= 0 ) then
+        exit_code = 1
+     endif
+     if ( pdf_parameter_unit_tests( iiPDF_LY93 ) /= 0 ) then
+        exit_code = 1
+     endif
+     if ( pdf_parameter_unit_tests( iiPDF_TSDADG ) /= 0 ) then
+        exit_code = 1
+     endif
+     if ( pdf_parameter_unit_tests( iiPDF_new ) /= 0 ) then
+        exit_code = 1
+     endif
+  endif
+
+  if ( l_spurious_source_test ) then
+     if ( spurious_source_unit_test( ) /= 0 ) then
+        exit_code = 1
+     endif
+  endif
+
+  !if ( l_tuner_tests ) then
+  !   if ( tuner_tests_driver( ) /= 0 ) then
+  !      exit_code = 1
+  !   endif
+  !endif
 
   ! Stop with exit code if error found
   if (exit_code /= 0) then

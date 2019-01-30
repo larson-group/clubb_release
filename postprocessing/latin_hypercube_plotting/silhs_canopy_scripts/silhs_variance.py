@@ -1,7 +1,7 @@
 import netCDF4
 import numpy as np
 
-case_name = 'rico_lh'
+case_name = 'rico_silhs'
 num_categories = 8
 
 nc        = netCDF4.Dataset(case_name + '_zt.nc')

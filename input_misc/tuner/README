@@ -104,7 +104,7 @@ weight_case_nl | real array, default precision
  Specifies how much weight to give a case in the cost function.
 
 --------------------------------------------------------------------------------
-2. &initspread:
+2. &initmax:
 --------------------------------------------------------------------------------
 
   Name        | Data type  

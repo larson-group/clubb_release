@@ -35,6 +35,7 @@ C12         = 1.000000 ! Constant applied to vertical velocity diffusion. Units 
 !C13         = 0.100000 ! Not currently used in model. Units [-]
 C14         = 1.000000 ! Constant applied to up2 and vp2. Units [-]
 C15         = 0.400000 ! Constant applied to wp3_bp2. Units [-]
+C_wp2_splat = 0.000000 ! Pre-factor for vertical compression of eddies. Units [-]
 C6rt_Lscale0  = 14.0 ! Used to damp C6rt as a function of Lscale Units [-]
 C6thl_Lscale0 = 14.0 ! Used to damp C6thl as a function of Lscale Units [-]
 C7_Lscale0    = 0.850000 ! Used to damp C7 as a function of Lscale Units [-]
@@ -78,4 +79,5 @@ c_K10h = 1.0           ! Coefficient of thermo   diffusivity, Kmh_zm. Units [-]
 thlp2_rad_coef = 1.0   ! Coefficient of thlp2_rad. Units [-]
 thlp2_rad_cloud_frac_thresh = 0.1 ! Minimum cloud fraction for computation of thlp2_rad. Units [-]
 up2_vp2_factor = 2.0   ! Coefficient of up2_sfc and vp2_sfc    [-]
+Skw_max_mag = 4.5      ! Max magnitude of skewness     [-]
 /

@@ -17,7 +17,7 @@
 
       use constants_clubb, only:  fstdout  ! Constant(s)
 
-      use error_code, only:  clubb_at_least_debug_level  ! Procedure(s)
+      use error_code, only: clubb_at_least_debug_level  ! Procedure
 
       implicit none
 

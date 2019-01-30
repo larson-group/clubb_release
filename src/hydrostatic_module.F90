@@ -84,7 +84,8 @@ module hydrostatic_module
     use constants_clubb, only: & 
         kappa,  & ! Variable(s)
         p0, & 
-        Rd
+        Rd, &
+        eps
 
     use grid_class, only: & 
         gr,  & ! Variable(s)
@@ -151,7 +152,7 @@ module hydrostatic_module
 
       dthvm_dz = gr%invrs_dzm(k-1) * ( thvm(k) - thvm(k-1) )
 
-      if ( dthvm_dz /= 0.0_core_rknd ) then
+      if ( abs(dthvm_dz) > eps ) then
 
         exner(k) &
         = calc_exner_linear_thvm( thvm(k-1), dthvm_dz, &
@@ -181,7 +182,7 @@ module hydrostatic_module
     dthvm_dz = ( thvm_zm(gr%nz) - thvm(gr%nz) ) &
                / ( gr%zm(gr%nz) - gr%zt(gr%nz) )
 
-    if ( dthvm_dz /= 0.0_core_rknd ) then
+    if ( abs(dthvm_dz) > eps ) then
 
       exner_zm(gr%nz) &
       = calc_exner_linear_thvm &

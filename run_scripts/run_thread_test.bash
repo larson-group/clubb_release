@@ -15,7 +15,7 @@
 # Set the number of threads to
 export OMP_NUM_THREADS=8
 
-RUN_CASES=( fire bomex rico_lh gabls3 )
+RUN_CASES=( fire bomex rico_silhs gabls3 )
 NAMELISTS=( 'clubb_1.in' 'clubb_2.in' 'clubb_3.in' 'clubb_4.in' )
 FLAGS_FILE="../input/tunable_parameters/configurable_model_flags.in"
 PARAMS_FILE="../input/tunable_parameters/tunable_parameters.in"
@@ -60,6 +60,10 @@ run_parallel()
 		MODEL_FILE='../input/case_setups/'"${RUN_CASES[$x]}"'_model.in'
 		cat $MODEL_FILE $FLAGS_FILE $PARAMS_FILE $SILHS_PARAMS_FILE $STATS_FILE > "${NAMELISTS[$x]}"
 
+		#####
+		# Added July 10th, 2018 to find parallel running errors.
+		echo "Configuring file: $MODEL_FILE"
+		#####
 
 		# Set debug level to 0
 #		sed -i 's/debug_level\s*=\s*.*/debug_level = 0/g' "${NAMELISTS[$x]}"
@@ -71,8 +75,19 @@ run_parallel()
 	done
 
 	# Run the CLUBB thread test
+	#####
+	# Added July 10th, 2018 to find parallel running errors.
+	echo "Checking clubb_thread_test"
+	#####
+
 	if [ -e ../bin/clubb_thread_test ]; then
 		../bin/clubb_thread_test &> /dev/null
+
+	#####
+	# Added July 10th, 2018 to find parallel running errors.
+	echo "Clubb_thread_test success"
+	#####
+
 	else
 		echo "clubb_thread_test not found (did you re-compile?)"
 		exit
@@ -80,6 +95,12 @@ run_parallel()
 
 	# Remove the namelists
 	for (( x=0;  x < "${#RUN_CASES[@]}"; x++ )); do
+
+	#####
+	#  Added July 10th, 2018 to find parallel running errors.
+	echo "Removing file(s): ${NAMELISTS[$x]}"
+	#####
+
 		rm -f "${NAMELISTS[$x]}"
 	done
 	echo 'Done!'
@@ -98,13 +119,13 @@ cd $scriptPath
 run_serial
 
 mkdir $SERIAL
-mv ../output/*.??? $SERIAL
+mv ../output/*.* $SERIAL
 
 # Run in parallel mode
 run_parallel
 
 mkdir $PARALLEL
-mv ../output/*.??? $PARALLEL
+mv ../output/*.* $PARALLEL
 
 echo -n "Diffing the output... "
 for (( x=0;  x < "${#RUN_CASES[@]}"; x++ )); do

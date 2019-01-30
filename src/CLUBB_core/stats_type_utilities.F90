@@ -260,13 +260,17 @@ module stats_type_utilities
     !   None
     !---------------------------------------------------------------------
 
-    use error_code, only: clubb_debug ! Procedure(s)
-
     use clubb_precision, only: &
       stat_rknd ! Constant
 
     use stat_file_module, only: &
       clubb_i, clubb_j ! Variable(s)
+
+    use constants_clubb, only: & 
+      fstderr   ! Constant(s) 
+
+    use error_code, only: &
+      clubb_at_least_debug_level   ! Procedure
 
     implicit none
 
@@ -296,11 +300,10 @@ module stats_type_utilities
 
         grid_kind%l_in_update(clubb_i,clubb_j,grid_level, var_index) = .true.  ! Start Record
 
-      else
+      else if ( clubb_at_least_debug_level( 1 ) ) then
 
-        call clubb_debug( 1, &
-          "Beginning an update before finishing previous for variable: "// &
-          trim( grid_kind%file%var(var_index)%name ) )
+            write(fstderr,*) "Beginning an update before finishing previous for variable: "// &
+                              trim( grid_kind%file%var(var_index)%name ) 
       endif
 
     endif
@@ -384,10 +387,14 @@ module stats_type_utilities
     ! stat_end_update for more details.
     !---------------------------------------------------------------------
 
-    use error_code, only: clubb_debug ! Procedure(s)
-
     use stat_file_module, only: &
       clubb_i, clubb_j ! Variable(s)
+
+    use constants_clubb, only: & 
+      fstderr   ! Constant(s) 
+
+    use error_code, only: &
+      clubb_at_least_debug_level   ! Procedure
 
     implicit none
 
@@ -416,11 +423,10 @@ module stats_type_utilities
 
         grid_kind%l_in_update(clubb_i,clubb_j,grid_level,var_index) = .false. ! End Record
 
-      else
+      else if ( clubb_at_least_debug_level( 1 ) ) then
 
-        call clubb_debug( 1, "Ending before beginning update. For variable "// &
-        grid_kind%file%var(var_index)%name )
-
+        write(fstderr,*) "Ending before beginning update. For variable "// &
+                          grid_kind%file%var(var_index)%name 
       endif
 
     endif

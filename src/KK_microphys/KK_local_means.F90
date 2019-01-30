@@ -19,6 +19,9 @@ module KK_local_means
     ! Description:
 
     ! References:
+    ! Eq. (22) of Khairoutdinov, M. and Y. Kogan, 2000:  A New Cloud Physics
+    ! Parameterization in a Large-Eddy Simulation Model of Marine Stratocumulus.
+    ! Mon. Wea. Rev., 128, 229--243.
     !-----------------------------------------------------------------------
 
     use constants_clubb, only: &
@@ -81,6 +84,9 @@ module KK_local_means
     ! Description:
 
     ! References:
+    ! Eq. (29) of Khairoutdinov, M. and Y. Kogan, 2000:  A New Cloud Physics
+    ! Parameterization in a Large-Eddy Simulation Model of Marine Stratocumulus.
+    ! Mon. Wea. Rev., 128, 229--243.
     !-----------------------------------------------------------------------
 
     use constants_clubb, only: &
@@ -138,6 +144,9 @@ module KK_local_means
     ! Description:
 
     ! References:
+    ! Eq. (33) of Khairoutdinov, M. and Y. Kogan, 2000:  A New Cloud Physics
+    ! Parameterization in a Large-Eddy Simulation Model of Marine Stratocumulus.
+    ! Mon. Wea. Rev., 128, 229--243.
     !-----------------------------------------------------------------------
 
     use constants_clubb, only: &
@@ -195,6 +204,9 @@ module KK_local_means
     ! Description:
 
     ! References:
+    ! Eq. (3) of Khairoutdinov, M. and Y. Kogan, 2000:  A New Cloud Physics
+    ! Parameterization in a Large-Eddy Simulation Model of Marine Stratocumulus.
+    ! Mon. Wea. Rev., 128, 229--243.
     !-----------------------------------------------------------------------
 
     use parameters_KK, only: &

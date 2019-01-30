@@ -1,8 +1,0 @@
-! $Id$
-!
-! The latent_ht and sens_ht values are currently not used for this case.
-! They are included here to provide an easier transition if they are used at
-! some point in the future.
-Time[s]   latent_ht[W\m^2]   sens_ht[W\m^2]  T_sfc[K] 
-0.        2000.              2000.           300.375
-230400.   2000.              2000.           300.375

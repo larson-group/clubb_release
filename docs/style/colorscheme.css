@@ -1,0 +1,238 @@
+/*----------------------------------------------------------------------------
+	portale colorscheme.css for colorscheme 1
+
+	this css-file contains all definitions, that depend on the colorscheme.
+
+
+----------------------------------------------------------------------------*/
+
+
+/*--- header ---------------------------------------------------------------*/
+#header	{
+
+}
+
+/*--- main navigation - color 4 --------------------------------------------*/
+#main_nav_container {
+	/* color 4 */
+	background: #627E7B url(../images/static/white.gif) right no-repeat;
+}
+
+/*--- key visiual ----------------------------------------------------------*/
+
+/*--- logo -----------------------------------------------------------------*/
+
+/*--- caption - color 1 ----------------------------------------------------*/
+
+#text_caption {
+	/* color 1 */
+	color:  #1D2D2B;
+}
+
+/*--- main navigation ------------------------------------------------------*/
+
+#main_nav_list	{
+
+}
+
+/*--- main navigation items ------------------------------------------------*/
+
+#main_nav_list a {
+	color: #ffffff;
+
+	background-position: right top;
+}
+
+#main_nav_list a:hover {
+	color: #ffffff;
+
+	background-position: top right;
+}
+
+#main_nav_list a.main_nav_active_item {
+	color: #ffffff;
+
+	background-position: top right;
+}
+
+/*--- container for the subnavigation --------------------------------------*/
+
+.sub_nav_container {
+}
+/*--- subnavigation items --------------------------------------------------*/
+
+a.sub_nav_item {
+	/* color 1 */
+	color: #1D2D2B;
+
+}
+
+.sub_nav_list a:hover {
+
+	/* color 1 */
+	color: #1D2D2B;
+}
+
+.sub_nav_list a.sub_nav_active_item {
+	color: #ffffff;
+
+}
+
+/*--- footer ---------------------------------------------------------------*/
+
+#footer_text {
+	color: #696969;
+}
+
+/*----------------------------------------------------------------------------
+  default-styles for html-elements
+----------------------------------------------------------------------------*/
+
+/*--- body -----------------------------------------------------------------*/
+
+body#main_body {
+	color: #696969;
+	/* color 6 */
+	background: #BCC9C8 url(../images/static/pgbk.gif) repeat-x;
+}
+
+/*--- button ---------------------------------------------------------------*/
+
+#content_container button {
+	color: #ffffff;
+	/* color 3 */
+	background-color: #314E49;
+	/* color 2 */
+	border-color: #243B37;
+	border-style: solid;
+	border-width: 1px;
+}
+	
+#content_container button:hover {
+	/* color 6 */
+	border-color: #BCC9C8;
+}
+
+#content_container button:active {
+	color: 333333;
+	border-color: #333333;
+}
+	
+
+/*--- paragraph ------------------------------------------------------------*/
+
+#content_container p {
+	color: #696969;
+}
+#content_container strong {
+	color: #696969;
+}
+
+/*--- headings -------------------------------------------------------------*/
+
+#content_container h1 {
+	color: #696969;
+}
+
+#content_container h2 {
+	color: #696969;
+}
+
+#content_container h3 {
+	color: #696969;
+}
+
+/*--- links - color 1 -----------------------------------------------------*/
+
+#content_container a:link{
+	/* color 1 */
+	color: #1D2D2B;
+}
+
+#content_container a:visited {
+	/* color 0 */
+	color: #1D333B;
+}
+
+#content_container a:hover {
+}
+
+#content_container a:active {
+	color: #333333;
+}
+
+/*--- tables ---------------------------------------------------------------*/
+
+#content_container table {
+}
+
+#content_container th {
+}
+
+#content_container tr {
+}
+
+#content_container td {
+}
+
+#content_container table {
+}
+
+#content_container th {
+	color: #ffffff;
+	/* color 3 */
+	background-color: #314E49;
+}
+
+#content_container tr.odd {
+	color: #696969;
+	/* color 5 */
+	background-color: #8CA3A3;
+}
+
+#content_container tr.even {
+	color: #696969;
+	/* color 6 */
+	background-color: #BCC9C8;
+}
+
+/*--- forms ----------------------------------------------------------------*/
+
+#content_container fieldset {
+	color: #696969;
+	/* color 5 */
+	background-color: #8CA3A3;
+	/* color 2 */
+	border-color: #243B37;
+}
+
+#content_container legend{
+	color: #696969;
+}
+
+#content_container label {
+	color: #696969;
+}
+
+#content_container input {
+	background: #ffffff;
+	/* color 0 */
+	color: #1D333B;
+	/* color 2 */
+	border-color: #243B37;
+	border-style:solid;
+	border-width: 1px;
+}
+
+#content_container textarea {
+	background: #ffffff;
+	/* color 0 */
+	color: #1D333B;
+	/* color 2 */
+	border-color: #243B37;
+	border-style:solid;
+	border-width: 1px;
+}
+
+/*--------------------------------------------------------------------------*/
+

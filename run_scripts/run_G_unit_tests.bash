@@ -14,7 +14,7 @@ cd $run_dir
 cp "../input_misc/G_unit_tests.in" "G_unit_tests.in"
 
 # Run G_unit_tests
-../bin/G_unit_tests
+./../bin/G_unit_tests
 
 if [ $? != 0 ]; then
   # Remove the namelist from the local directory.

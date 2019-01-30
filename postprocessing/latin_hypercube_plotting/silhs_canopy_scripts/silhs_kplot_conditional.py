@@ -2,19 +2,19 @@ import netCDF4
 import numpy as np
 import pylab as pl
 
-clubb_nc     = netCDF4.Dataset('cldwt/rico_lh_zt.nc')
+clubb_nc     = netCDF4.Dataset('cldwt/rico_silhs_zt.nc')
 
-silhs_files = [ 'cldwt/rico_lh_lh_zt.nc' ]
+silhs_files = [ 'cldwt/rico_silhs_lh_zt.nc' ]
 silhs_labels = [ 'cldwt' ]
-silhs_sfc_nc = netCDF4.Dataset('cldwt/rico_lh_lh_sfc.nc')
+silhs_sfc_nc = netCDF4.Dataset('cldwt/rico_silhs_lh_sfc.nc')
 
 silhs_ncs = list()
 for silhs_file in silhs_files:
     silhs_ncs.append(netCDF4.Dataset(silhs_file))
 
 #############
-silhs_2D_u = netCDF4.Dataset('cldwt/rico_lh_u_lh_sample_points_2D.nc')
-silhs_2D_nl = netCDF4.Dataset('cldwt/rico_lh_nl_lh_sample_points_2D.nc')
+silhs_2D_u = netCDF4.Dataset('cldwt/rico_silhs_u_lh_sample_points_2D.nc')
+silhs_2D_nl = netCDF4.Dataset('cldwt/rico_silhs_nl_lh_sample_points_2D.nc')
 dp1 = silhs_2D_u.variables['dp1']
 rr_nl = silhs_2D_nl.variables['rr']
 mf1 = clubb_nc.variables['mixt_frac']

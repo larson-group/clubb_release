@@ -15,7 +15,7 @@ module rico
   contains
 
 !----------------------------------------------------------------------
-  subroutine rico_tndcy( exner, &
+  subroutine rico_tndcy( rtm, exner, &
                          thlm_forcing, rtm_forcing, & 
                          sclrm_forcing, edsclrm_forcing )
 !
@@ -38,6 +38,9 @@ module rico
 
   use constants_clubb, only: g_per_kg ! Variable(s)
 
+  use spec_hum_to_mixing_ratio, only: &
+      force_spec_hum_to_mixing_ratio ! Procedure(s)
+
   use clubb_precision, only: core_rknd ! Variable(s)
 
  
@@ -48,8 +51,9 @@ module rico
 
   ! Input Variables
 
-  real( kind = core_rknd ), dimension(gr%nz), intent(in) :: & 
-  exner    ! Exner function                         [-]
+  real( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
+    rtm,   & ! Mean total water mixing ratio    [kg/kg]
+    exner    ! Exner function                   [-]
 
   ! Output Variables
   real( kind = core_rknd ), dimension(gr%nz), intent(out) :: & 
@@ -64,8 +68,10 @@ module rico
 
   ! Local Variables, general
   integer :: k          ! Loop index
+
   real( kind = core_rknd )    :: &
-    t_tendency ! Temperature (not potential temperature) tendency [K s^-1]
+    t_tendency,  & ! Temperature (not potential temperature) tendency [K s^-1]
+    qtm_forcing    ! Large-scale forcing of specific humidity         [kg/kg/s]
 
   ! Compute large-scale horizontal temperature advection
   ! NEW-- "And Radiation"... 15 Dec 2006, Michael Falk
@@ -92,20 +98,25 @@ module rico
   ! Equations located in 1D models > Set up short composite run on reference site
   do k=1,gr%nz
     if (gr%zt(k) < 3000._core_rknd) then
-      rtm_forcing(k) = - 1.0_core_rknd / 86400._core_rknd + & 
+      qtm_forcing = - 1.0_core_rknd / 86400._core_rknd + & 
         (0.345_core_rknd+1.0_core_rknd) / (86400._core_rknd * 3000._core_rknd) &
         * gr%zt(k)  ! Units [g kg^-1 s^-1] - known magic number
     else if (gr%zt(k) < 4000._core_rknd ) then
-      rtm_forcing(k) = 0.345_core_rknd / 86400._core_rknd  
+      qtm_forcing = 0.345_core_rknd / 86400._core_rknd  
                 ! Units [g kg^-1 s^-1] - known magic number
     else if (gr%zt(k) < 5000._core_rknd ) then
-      rtm_forcing(k) = 0.345_core_rknd / 86400._core_rknd + & 
+      qtm_forcing = 0.345_core_rknd / 86400._core_rknd + & 
        (-0.345_core_rknd) / (86400._core_rknd*(5000._core_rknd-4000._core_rknd)) &
        * (gr%zt(k)-4000._core_rknd)! Units [g kg^-1 s^-1] known magic number
     else
-      rtm_forcing(k) = 0._core_rknd  ! Units [g kg^-1 s^-1]
+      qtm_forcing = 0._core_rknd  ! Units [g kg^-1 s^-1]
     end if
-    rtm_forcing(k) = rtm_forcing(k) / g_per_kg  ! Converts [g kg^-1 s^-1] to [kg kg^-1 s^-1]
+    qtm_forcing = qtm_forcing / g_per_kg  ! Converts [g kg^-1 s^-1] to [kg kg^-1 s^-1]
+
+    ! Convert forcings from terms of total water specific humidity to terms of
+    ! total water mixing ratio.
+    call force_spec_hum_to_mixing_ratio( rtm(k), qtm_forcing, rtm_forcing(k) )
+
   end do
 
   ! Test scalars with thetal and rt if desired

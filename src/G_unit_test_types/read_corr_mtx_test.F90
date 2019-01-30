@@ -17,7 +17,7 @@ module read_corr_mtx_test
   ! Included Modules
   use corr_varnce_module, &
     only: read_correlation_matrix, & !Subroutine(s)
-      setup_pdf_indices, &
+      init_pdf_indices, &
       print_corr_matrix
 
   use clubb_precision, only: core_rknd
@@ -33,7 +33,7 @@ module read_corr_mtx_test
   ! Passed in to read_correlation_matrix
   integer, parameter :: &
     iunit = 5, &    !input unit
-    d_variables = 12  !number of variables
+    pdf_dim= 12  !number of variables
 
   character(LEN=*), parameter :: &
     input_file = "../input_misc/corr_array.in" ! Path to the file
@@ -76,8 +76,8 @@ module read_corr_mtx_test
     end if
 
     ! Allocate Arrays
-    allocate( test_corr_array(d_variables,d_variables) )
-    allocate( corr_array(d_variables,d_variables) )
+    allocate( test_corr_array(pdf_dim,pdf_dim) )
+    allocate( corr_array(pdf_dim,pdf_dim) )
 
     ! Initialize all values to 0.
     test_corr_array = zero
@@ -123,28 +123,28 @@ module read_corr_mtx_test
     /), shape(test_corr_array) )
 
     ! setup the system under test
-    call setup_pdf_indices(12, 5, 6, &
+    call init_pdf_indices(12, 5, 6, &
                            7, 8, 9, 10, &
                            11, 12)
 
     ! Read the correlation aray in the given test file
     call read_correlation_matrix(iunit, input_file, &
-      d_variables, corr_array)
+      pdf_dim, corr_array)
 
     ! Print out the array if required
     if (show_corr_arrays) then
       print *, "Expected:"
-      call print_corr_matrix(d_variables, test_corr_array)
+      call print_corr_matrix(pdf_dim, test_corr_array)
       print *, "Actual:"
-      call print_corr_matrix(d_variables, corr_array)
+      call print_corr_matrix(pdf_dim, corr_array)
     end if
 
     errors = 0
 
     ! Check for differences (between the original array and the one
     ! read in) greater than the acceptable tolerance.
-    do n_col = 1, d_variables
-      do n_row = 1, d_variables
+    do n_col = 1, pdf_dim
+      do n_row = 1, pdf_dim
         if ( abs(test_corr_array(n_row, n_col)-corr_array(n_row, n_col)) > tol ) then
               errors = errors + 1
         end if

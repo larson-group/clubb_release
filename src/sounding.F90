@@ -55,7 +55,7 @@ module sounding
     !           ,iisclr_CO2
 
     use error_code, only: &
-      clubb_at_least_debug_level ! Function
+      clubb_at_least_debug_level  ! Procedure
 
     use input_names, only: &
       z_name, & ! Variables
@@ -175,7 +175,7 @@ module sounding
 
     !---------------------------------------------------------------------------------------------
     ! Status Message
-    if( clubb_at_least_debug_level(1) ) then
+    if( clubb_at_least_debug_level( 1 ) ) then
       print *, "Path to sounding: ", trim( runtype )//'_sounding.in'
       print *, "File exists? ", l_sounding_exists
       print *, "Path to sclr_sounding: ", trim( runtype )//'_sclr_sounding.in'

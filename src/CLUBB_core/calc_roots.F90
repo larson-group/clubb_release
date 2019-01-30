@@ -14,7 +14,7 @@ module calc_roots
   contains
 
   !=============================================================================
-  pure function cubic_solve( a_coef, b_coef, c_coef, d_coef ) &
+  pure function cubic_solve( nz, a_coef, b_coef, c_coef, d_coef ) &
   result( roots )
 
     ! Description:
@@ -72,23 +72,26 @@ module calc_roots
     implicit none
 
     ! Input Variables
-    real( kind = core_rknd ), intent(in) :: &
+    integer, intent(in) :: &
+      nz    ! Number of vertical levels
+
+    real( kind = core_rknd ), dimension(nz), intent(in) :: &
       a_coef, & ! Coefficient a (of x^3) in a*x^3 + b*x^2 + c^x + d = 0    [-]
       b_coef, & ! Coefficient b (of x^2) in a*x^3 + b*x^2 + c^x + d = 0    [-]
       c_coef, & ! Coefficient c (of x) in a*x^3 + b*x^2 + c^x + d = 0      [-]
       d_coef    ! Coefficient d in a*x^3 + b*x^2 + c^x + d = 0             [-]
 
     ! Return Variables
-    complex( kind = core_rknd ), dimension(3) :: &
+    complex( kind = core_rknd ), dimension(nz,3) :: &
       roots    ! Roots of x that satisfy a*x^3 + b*x^2 + c*x + d = 0       [-]
 
     ! Local Variables
-    real( kind = core_rknd ) :: &
+    real( kind = core_rknd ), dimension(nz) :: &
       cap_Q_coef,  & ! Coefficient Q in cubic formula     [-]
       cap_R_coef,  & ! Coefficient R in cubic formula     [-]
       determinant    ! Determinant D in cubic formula     [-]
 
-    complex( kind = core_rknd ) :: &
+    complex( kind = core_rknd ), dimension(nz) :: &
       sqrt_det,   & ! Square root of determinant D in cubic formula     [-]
       cap_S_coef, & ! Coefficient S in cubic formula                    [-]
       cap_T_coef    ! Coefficient T in cubic formula                    [-]
@@ -123,61 +126,46 @@ module calc_roots
     ! D = R^2 + Q^3.
     determinant = cap_Q_coef**3 + cap_R_coef**2
 
-    if ( determinant < zero ) then
+    ! Calculate the square root of the determinant.  This will be a complex
+    ! number.
+    sqrt_det = sqrt( cmplx( determinant, kind = core_rknd ) )
 
-       ! Calculate the square root of the determinant.  This will be a complex
-       ! number.
-       sqrt_det = sqrt( cmplx( determinant, kind = core_rknd ) )
+    ! Find the value of the coefficient S; where
+    ! S = ( R + sqrt( D ) )^(1/3).
+    cap_S_coef &
+    = ( cmplx( cap_R_coef, kind = core_rknd ) + sqrt_det )**one_third_cmplx
 
-       ! Find the value of the coefficient S; where
-       ! S = ( R + sqrt( D ) )^(1/3).
-       cap_S_coef &
-       = ( cmplx( cap_R_coef, kind = core_rknd ) + sqrt_det )**one_third_cmplx
-
-       ! Find the value of the coefficient T; where
-       ! T = ( R - sqrt( D ) )^(1/3).
-       cap_T_coef &
-       = ( cmplx( cap_R_coef, kind = core_rknd ) - sqrt_det )**one_third_cmplx
-
-    else ! determinant >= 0
-
-       ! Find the value of the coefficient S; where
-       ! S = ( R + sqrt( D ) )^(1/3).
-       cap_S_coef &
-       = cmplx( cube_root( cap_R_coef + sqrt( determinant ) ), &
-                kind = core_rknd )
-
-       ! Find the value of the coefficient T; where
-       ! T = ( R - sqrt( D ) )^(1/3).
-       cap_T_coef &
-       = cmplx( cube_root( cap_R_coef - sqrt( determinant ) ), &
-                kind = core_rknd )
-
-    endif ! determinant < 0
+    ! Find the value of the coefficient T; where
+    ! T = ( R - sqrt( D ) )^(1/3).
+    cap_T_coef &
+    = ( cmplx( cap_R_coef, kind = core_rknd ) - sqrt_det )**one_third_cmplx
 
     ! Find the values of the roots.
     ! This root is always real-valued.
     ! x(1) = -(1/3)*(b/a) + ( S + T ).
-    roots(1) = - one_third_cmplx * cmplx( b_coef/a_coef, kind = core_rknd ) &
-               + ( cap_S_coef + cap_T_coef )
+    roots(:,1) &
+    = - one_third_cmplx * cmplx( b_coef/a_coef, kind = core_rknd ) &
+      + ( cap_S_coef + cap_T_coef )
 
     ! This root is real-valued when D < 0 (even though the square root of the
     ! determinant is a complex number), as well as when D = 0 (when it is part
     ! of a double or triple root).  When D > 0, this root is a complex number.
     ! It is the complex conjugate of roots(3).
     ! x(2) = -(1/3)*(b/a) - (1/2) * ( S + T ) + (1/2)i * sqrt(3) * ( S - T ).
-    roots(2) = - one_third_cmplx * cmplx( b_coef/a_coef, kind = core_rknd ) &
-               - one_half_cmplx * ( cap_S_coef + cap_T_coef ) &
-               + one_half_cmplx * i_cmplx * sqrt_3 * ( cap_S_coef - cap_T_coef )
+    roots(:,2) &
+    = - one_third_cmplx * cmplx( b_coef/a_coef, kind = core_rknd ) &
+      - one_half_cmplx * ( cap_S_coef + cap_T_coef ) &
+      + one_half_cmplx * i_cmplx * sqrt_3 * ( cap_S_coef - cap_T_coef )
 
     ! This root is real-valued when D < 0 (even though the square root of the
     ! determinant is a complex number), as well as when D = 0 (when it is part
     ! of a double or triple root).  When D > 0, this root is a complex number.
     ! It is the complex conjugate of roots(2).
     ! x(3) = -(1/3)*(b/a) - (1/2) * ( S + T ) - (1/2)i * sqrt(3) * ( S - T ).
-    roots(3) = - one_third_cmplx * cmplx( b_coef/a_coef, kind = core_rknd ) &
-               - one_half_cmplx * ( cap_S_coef + cap_T_coef ) &
-               - one_half_cmplx * i_cmplx * sqrt_3 * ( cap_S_coef - cap_T_coef )
+    roots(:,3) &
+    = - one_third_cmplx * cmplx( b_coef/a_coef, kind = core_rknd ) &
+      - one_half_cmplx * ( cap_S_coef + cap_T_coef ) &
+      - one_half_cmplx * i_cmplx * sqrt_3 * ( cap_S_coef - cap_T_coef )
 
 
     return
@@ -185,7 +173,7 @@ module calc_roots
   end function cubic_solve
 
   !=============================================================================
-  pure function quadratic_solve( a_coef, b_coef, c_coef ) &
+  pure function quadratic_solve( nz, a_coef, b_coef, c_coef ) &
   result( roots )
 
     ! Description:
@@ -226,20 +214,23 @@ module calc_roots
     implicit none
 
     ! Input Variables
-    real( kind = core_rknd ), intent(in) :: &
+    integer, intent(in) :: &
+      nz    ! Number of vertical levels
+
+    real( kind = core_rknd ), dimension(nz), intent(in) :: &
       a_coef, & ! Coefficient a (of x^2) in a*x^2 + b*x + c = 0    [-]
       b_coef, & ! Coefficient b (of x) in a*x^2 + b*x + c = 0      [-]
       c_coef    ! Coefficient c in a*x^2 + b*x + c = 0             [-]
 
     ! Return Variables
-    complex( kind = core_rknd ), dimension(2) :: &
+    complex( kind = core_rknd ), dimension(nz,2) :: &
       roots    ! Roots of x that satisfy a*x^2 + b*x + c = 0       [-]
 
     ! Local Variables
-    real( kind = core_rknd ) :: &
+    real( kind = core_rknd ), dimension(nz) :: &
       determinant    ! Determinant D in quadratic formula     [-]
 
-    complex( kind = core_rknd ) :: &
+    complex( kind = core_rknd ), dimension(nz) :: &
       sqrt_det    ! Square root of determinant D in quadratic formula     [-]
 
 
@@ -247,33 +238,24 @@ module calc_roots
     ! D = b^2 - 4*a*c.
     determinant = b_coef**2 - four * a_coef * c_coef
 
-    if ( determinant >= zero ) then
-
-       ! Calculate the square root of the determinant.
-       sqrt_det = cmplx( sqrt( determinant ), kind = core_rknd )
-
-    else ! determinant < 0
-
-       ! Calculate the square root of the determinant.  This will be a complex
-       ! number.
-       sqrt_det = sqrt( cmplx( determinant, kind = core_rknd ) )
-
-    endif ! determinant >= 0
+    ! Calculate the square root of the determinant.  This will be a complex
+    ! number.
+    sqrt_det = sqrt( cmplx( determinant, kind = core_rknd ) )
 
     ! Find the values of the roots.
     ! This root is real-valued when D > 0, as well as when D = 0 (when it is
     ! part of a double root).  When D < 0, this root is a complex number.  It is
     ! the complex conjugate of roots(2).
     ! x(1) = ( -b + sqrt( b^2 - 4*a*c ) ) / (2*a); and
-    roots(1) = ( -cmplx( b_coef, kind = core_rknd ) + sqrt_det ) &
-               / cmplx( two * a_coef, kind = core_rknd )
+    roots(:,1) = ( -cmplx( b_coef, kind = core_rknd ) + sqrt_det ) &
+                 / cmplx( two * a_coef, kind = core_rknd )
 
     ! This root is real-valued when D > 0, as well as when D = 0 (when it is
     ! part of a double root).  When D < 0, this root is a complex number.  It is
     ! the complex conjugate of roots(1).
     ! x(2) = ( -b - sqrt( b^2 - 4*a*c ) ) / (2*a).
-    roots(2) = ( -cmplx( b_coef, kind = core_rknd ) - sqrt_det ) &
-               / cmplx( two * a_coef, kind = core_rknd )
+    roots(:,2) = ( -cmplx( b_coef, kind = core_rknd ) - sqrt_det ) &
+                 / cmplx( two * a_coef, kind = core_rknd )
 
 
     return

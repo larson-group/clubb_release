@@ -26,6 +26,7 @@ module microphys_init_cleanup
 
   !=============================================================================
   subroutine init_microphys( iunit, runtype, namelist_file, case_info_file, &
+                             host_dx, host_dy, &
                              hydromet_dim )
 
     ! Description:
@@ -101,10 +102,6 @@ module microphys_init_cleanup
     use parameters_microphys, only: &
         lh_microphys_type_int => lh_microphys_type ! Determines how the LH samples are used
 
-    use array_index, only: &
-        hydromet_list, & ! Names of the hydrometeor species
-        hydromet_tol     ! Variable(s)
-
     use phys_buffer, only: & ! Used for placing wp2_zt in morrison_gettelman microphysics
         pbuf_init
 
@@ -116,27 +113,10 @@ module microphys_init_cleanup
     ! Change by Marc Pilon on 11/16/11
 
     use array_index, only: & 
-        l_frozen_hm, & ! Variables
-        l_mix_rat_hm,&
-        iirrm, &
-        iiNrm, &
-        iirsm, &
-        iirim, &
-        iirgm, &
-        iiNsm, & 
-        iiNim, &
-        iiNgm
+        iiPDF_Ncn
 
     use constants_clubb, only: &
         cm3_per_m3, &
-        rr_tol,     &
-        ri_tol,     &
-        rs_tol,     &
-        rg_tol,     &
-        Nr_tol,     &
-        Ni_tol,     &
-        Ns_tol,     &
-        Ng_tol,     &
         zero
 
     ! The version of the Morrison 2005 microphysics that is in SAM.
@@ -171,7 +151,8 @@ module microphys_init_cleanup
     use text_writer, only: &
         write_text   ! Used to write microphysics settings to setup.txt file
 
-    use error_code, only: clubb_at_least_debug_level ! Function
+    use error_code, only: &
+        clubb_at_least_debug_level   ! Procedure
 
     use gfdl_activation, only: nooc, sul_concen, & ! Variables
         low_concen, high_concen, &
@@ -191,18 +172,17 @@ module microphys_init_cleanup
         precip_frac_calc_type  ! Variable(s)
 
     use corr_varnce_module, only: &
-        hmp2_ip_on_hmm2_ip_ratios_type, & ! Type(s)
-        hmp2_ip_on_hmm2_ip,             & ! Variable(s)
-        Ncnp2_on_Ncnm2,                 &
-        d_variables,                    &
-        iiPDF_Ncn,                      &
-        corr_array_n_cloud,             &
-        corr_array_n_below,             &
-        setup_pdf_indices,              & ! Procedure(s)
-        setup_corr_varnce_array
+        hmp2_ip_on_hmm2_ip_slope_type,      & ! Types
+        hmp2_ip_on_hmm2_ip_intrcpt_type,    &
+        hmp2_ip_on_hmm2_ip, &
+        Ncnp2_on_Ncnm2,                     & ! Variable(s)
+        pdf_dim,                            &
+        corr_array_n_cloud,                 &
+        corr_array_n_below,                 &
+        setup_corr_varnce_array               ! Procedure(s)
 
     use pdf_utilities, only: &
-        stdev_L2N    ! Procedure(s)
+        stdev_L2N_1lev    ! Procedure(s)
 
     use setup_clubb_pdf_params, only: &
         denorm_transform_corr    ! Procedure(s)
@@ -222,7 +202,10 @@ module microphys_init_cleanup
         l_evaporate_cold_rcm, &
         l_morr_xp2_mc, &
         l_const_Nc_in_cloud, &  ! Use a constant cloud droplet conc. within cloud (K&K)
-        l_fix_chi_eta_correlations  ! Use a fixed correlation for chi/eta(s/t Mellor) (SILHS)
+        l_fix_w_chi_eta_correlations  ! Use a fixed correlation for chi/eta(s/t Mellor) (SILHS)
+
+    use clubb_api_module, only: &
+        init_pdf_hydromet_arrays_api
 
     implicit none
 
@@ -250,6 +233,10 @@ module microphys_init_cleanup
 
     character(len=*), intent(in) :: &
       case_info_file ! Name of simulation info file (plain text)
+    
+    real( kind = core_rknd ), intent(in) :: &
+      host_dx, &
+      host_dy
 
     ! Output variables
     integer, intent(out) :: & 
@@ -266,7 +253,11 @@ module microphys_init_cleanup
      corr_file_path_cloud, &
      corr_file_path_below
 
-    type(hmp2_ip_on_hmm2_ip_ratios_type) :: hmp2_ip_on_hmm2_ip_ratios
+    type( hmp2_ip_on_hmm2_ip_slope_type ) :: &
+        hmp2_ip_on_hmm2_ip_slope        ! [1/m]
+      
+    type( hmp2_ip_on_hmm2_ip_intrcpt_type ) :: &
+        hmp2_ip_on_hmm2_ip_intrcpt      ! [-]
 
     real( kind = core_rknd ), dimension(:), allocatable :: &
       sigma_x_n_cloud, & ! Std. devs. (normal space): PDF vars (in cloud) [u.v.]
@@ -282,6 +273,19 @@ module microphys_init_cleanup
 
     integer :: ivar       ! Loop index
 
+    integer :: &
+      iirr, & ! Hydrometeor array index for rain water mixing ratio, rr
+      iirs, & ! Hydrometeor array index for snow mixing ratio, rs
+      iiri, & ! Hydrometeor array index for ice mixing ratio, ri
+      iirg, & ! Hydrometeor array index for graupel mixing ratio, rg
+      iiNr, & ! Hydrometeor array index for rain drop concentration, Nr
+      iiNs, & ! Hydrometeor array index for snow concentration, Ns
+      iiNi, & ! Hydrometeor array index for ice concentration, Ni
+      iiNg    ! Hydrometeor array index for graupel concentration, Ng
+
+    integer, parameter :: &
+      one_lev = 1    ! Constant for calling a subroutine using 1 vertical level
+
 
     namelist /microphysics_setting/ &
       microphys_scheme, l_cloud_sed, sigma_g, &
@@ -289,8 +293,9 @@ module microphys_init_cleanup
       l_seifert_beheng, l_predict_Nc, l_const_Nc_in_cloud, specify_aerosol, &
       l_subgrid_w, l_arctic_nucl, l_cloud_edge_activation, l_fix_pgam, &
       l_in_cloud_Nc_diff, lh_microphys_type, l_local_kk, lh_num_samples, &
-      lh_sequence_length, lh_seed, l_fix_chi_eta_correlations, l_silhs_KK_convergence_adj_mean, &
-      hmp2_ip_on_hmm2_ip_ratios, Ncnp2_on_Ncnm2, &
+      lh_sequence_length, lh_seed, l_fix_w_chi_eta_correlations, &
+      l_silhs_KK_convergence_adj_mean, hmp2_ip_on_hmm2_ip_slope, &
+      hmp2_ip_on_hmm2_ip_intrcpt, Ncnp2_on_Ncnm2, &
       C_evap, r_0, microphys_start_time, &
       Nc0_in_cloud, ccnconst, ccnexpnt, aer_rm1, aer_rm2, &
       aer_n1, aer_n2, aer_sig1, aer_sig2, pgam_fixed
@@ -421,8 +426,8 @@ module microphys_init_cleanup
        call write_text ( "lh_seed = ", lh_seed, l_write_to_file, iunit )
        call write_text ( "l_lh_importance_sampling = ", &
                          l_lh_importance_sampling, l_write_to_file, iunit )
-       call write_text ( "l_fix_chi_eta_correlations = ", l_fix_chi_eta_correlations, &
-                         l_write_to_file, iunit )
+       call write_text ( "l_fix_w_chi_eta_correlations = ", &
+                         l_fix_w_chi_eta_correlations, l_write_to_file, iunit )
        call write_text ( "l_silhs_KK_convergence_adj_mean = ", &
                          l_silhs_KK_convergence_adj_mean, &
                          l_write_to_file, iunit )
@@ -439,30 +444,58 @@ module microphys_init_cleanup
                          l_write_to_file, iunit )
        call write_text ( "l_lh_var_frac = ", l_lh_var_frac, l_write_to_file, iunit )
        call write_text ( "l_lh_normalize_weights = ", l_lh_normalize_weights, l_write_to_file, &
-                         iunit )
-       call write_text ( "rrp2_ip_on_rrm2_ip = ", &
-                         hmp2_ip_on_hmm2_ip_ratios%rrp2_ip_on_rrm2_ip, &
+                         iunit )       
+       call write_text ( "host_dx = ", host_dx, &
+                         l_write_to_file, iunit )       
+       call write_text ( "host_dy = ", host_dy, &
                          l_write_to_file, iunit )
-       call write_text ( "Nrp2_ip_on_Nrm2_ip = ", &
-                         hmp2_ip_on_hmm2_ip_ratios%Nrp2_ip_on_Nrm2_ip, &
+       call write_text ( "hmp2_ip_on_hmm2_ip_slope%rr = ", &
+                         hmp2_ip_on_hmm2_ip_slope%rr, &
                          l_write_to_file, iunit )
-       call write_text ( "rip2_ip_on_rim2_ip = ", &
-                         hmp2_ip_on_hmm2_ip_ratios%rip2_ip_on_rim2_ip, &
+       call write_text ( "hmp2_ip_on_hmm2_ip_slope%ri = ", &
+                         hmp2_ip_on_hmm2_ip_slope%ri, &
                          l_write_to_file, iunit )
-       call write_text ( "Nip2_ip_on_Nim2_ip = ", &
-                         hmp2_ip_on_hmm2_ip_ratios%Nip2_ip_on_Nim2_ip, &
+       call write_text ( "hmp2_ip_on_hmm2_ip_slope%rs = ", &
+                         hmp2_ip_on_hmm2_ip_slope%rs, &
                          l_write_to_file, iunit )
-       call write_text ( "rsp2_ip_on_rsm2_ip = ", &
-                         hmp2_ip_on_hmm2_ip_ratios%rsp2_ip_on_rsm2_ip, &
+       call write_text ( "hmp2_ip_on_hmm2_ip_slope%rg = ", &
+                         hmp2_ip_on_hmm2_ip_slope%rg, &
                          l_write_to_file, iunit )
-       call write_text ( "Nsp2_ip_on_Nsm2_ip = ", &
-                         hmp2_ip_on_hmm2_ip_ratios%Nsp2_ip_on_Nsm2_ip, &
+       call write_text ( "hmp2_ip_on_hmm2_ip_slope%Nr = ", &
+                         hmp2_ip_on_hmm2_ip_slope%Nr, &
                          l_write_to_file, iunit )
-       call write_text ( "rgp2_ip_on_rgm2_ip = ", &
-                         hmp2_ip_on_hmm2_ip_ratios%rgp2_ip_on_rgm2_ip, &
+       call write_text ( "hmp2_ip_on_hmm2_ip_slope%Ni = ", &
+                         hmp2_ip_on_hmm2_ip_slope%Ni, &
                          l_write_to_file, iunit )
-       call write_text ( "Ngp2_ip_on_Ngm2_ip = ", &
-                         hmp2_ip_on_hmm2_ip_ratios%Ngp2_ip_on_Ngm2_ip, &
+       call write_text ( "hmp2_ip_on_hmm2_ip_slope%Ni = ", &
+                         hmp2_ip_on_hmm2_ip_slope%Ni, &
+                         l_write_to_file, iunit )
+       call write_text ( "hmp2_ip_on_hmm2_ip_slope%Ng = ", &
+                         hmp2_ip_on_hmm2_ip_slope%Ng, &
+                         l_write_to_file, iunit )
+      call write_text ( "hmp2_ip_on_hmm2_ip_intrcpt%rr = ", &
+                         hmp2_ip_on_hmm2_ip_intrcpt%rr, &
+                         l_write_to_file, iunit )
+       call write_text ( "hmp2_ip_on_hmm2_ip_intrcpt%ri = ", &
+                         hmp2_ip_on_hmm2_ip_intrcpt%ri, &
+                         l_write_to_file, iunit )
+       call write_text ( "hmp2_ip_on_hmm2_ip_intrcpt%rs = ", &
+                         hmp2_ip_on_hmm2_ip_intrcpt%rs, &
+                         l_write_to_file, iunit )
+       call write_text ( "hmp2_ip_on_hmm2_ip_intrcpt%rg = ", &
+                         hmp2_ip_on_hmm2_ip_intrcpt%rg, &
+                         l_write_to_file, iunit )
+       call write_text ( "hmp2_ip_on_hmm2_ip_intrcpt%Nr = ", &
+                         hmp2_ip_on_hmm2_ip_intrcpt%Nr, &
+                         l_write_to_file, iunit )
+       call write_text ( "hmp2_ip_on_hmm2_ip_intrcpt%Ni = ", &
+                         hmp2_ip_on_hmm2_ip_intrcpt%Ni, &
+                         l_write_to_file, iunit )
+       call write_text ( "hmp2_ip_on_hmm2_ip_intrcpt%Ni = ", &
+                         hmp2_ip_on_hmm2_ip_intrcpt%Ni, &
+                         l_write_to_file, iunit )
+       call write_text ( "hmp2_ip_on_hmm2_ip_intrcpt%Ng = ", &
+                         hmp2_ip_on_hmm2_ip_intrcpt%Ng, &
                          l_write_to_file, iunit )
        call write_text ( "Ncnp2_on_Ncnm2 = ", Ncnp2_on_Ncnm2, &
                          l_write_to_file, iunit )
@@ -496,7 +529,7 @@ module microphys_init_cleanup
 
        if ( l_write_to_file ) close(unit=iunit)
 
-    endif ! clubb_at_least_debug_level(1)
+    endif ! clubb_at_least_debug_level( 1 )
 
     ! Read in the name list for initialization, if it exists
     open(unit=iunit, file=namelist_file, status='old', action='read')
@@ -533,22 +566,22 @@ module microphys_init_cleanup
 
     case ( "morrison" )
 
-       iirrm = 1
-       iiNrm = 2
+       iirr = 1
+       iiNr = 2
 
        if ( l_ice_microphys ) then
 
-          iirim = 3
-          iiNim = 4
-          iirsm = 5
-          iiNsm = 6
+          iiri = 3
+          iiNi = 4
+          iirs = 5
+          iiNs = 6
 
           doicemicro = .true.
 
           if ( l_graupel ) then
 
-             iirgm = 7
-             iiNgm = 8
+             iirg = 7
+             iiNg = 8
 
              hydromet_dim = 8
 
@@ -556,8 +589,8 @@ module microphys_init_cleanup
 
           else ! l_graupel disabled
 
-             iirgm = -1
-             iiNgm = -1
+             iirg = -1
+             iiNg = -1
 
              hydromet_dim = 6
 
@@ -567,12 +600,12 @@ module microphys_init_cleanup
 
        else ! l_ice_microphys disabled
 
-          iirsm = -1
-          iirim = -1
-          iiNsm = -1
-          iiNim = -1
-          iirgm = -1
-          iiNgm = -1
+          iirs = -1
+          iiri = -1
+          iiNs = -1
+          iiNi = -1
+          iirg = -1
+          iiNg = -1
 
           hydromet_dim = 2
 
@@ -650,11 +683,11 @@ module microphys_init_cleanup
           stop "Fatal error."
        endif
 
-       if ( .not. l_fix_chi_eta_correlations .and. l_ice_microphys &
+       if ( .not. l_fix_w_chi_eta_correlations .and. l_ice_microphys &
             .and. trim( lh_microphys_type ) /= "disabled" ) then
-          write(fstderr,*) "The flag l_fix_chi_eta_correlations must be true" &
-                           // " in order to enable latin hypercube sampling" &
-                           // " and ice microphysics."
+          write(fstderr,*) "The flag l_fix_w_chi_eta_correlations must be" &
+                           // " true in order to enable latin hypercube" &
+                           // " sampling and ice microphysics."
           write(fstderr,*) "The flag l_ice_microphys must be set" &
                            // " to false to use this option."
           stop "Fatal error."
@@ -669,15 +702,15 @@ module microphys_init_cleanup
 
     case ( "morrison_gettelman" )
 
-       iirrm = -1
-       iirsm = -1
-       iirim = 1
-       iirgm = -1
+       iirr = -1
+       iirs = -1
+       iiri = 1
+       iirg = -1
 
-       iiNrm = -1
-       iiNsm = -1
-       iiNim = 2
-       iiNgm = -1
+       iiNr = -1
+       iiNs = -1
+       iiNi = 2
+       iiNg = -1
 
        hydromet_dim = 2
 
@@ -697,8 +730,8 @@ module microphys_init_cleanup
        allocate( l_hydromet_sed(hydromet_dim) )
 
        ! Sedimentation is handled within the MG microphysics
-       l_hydromet_sed(iirim) = .false.
-       l_hydromet_sed(iiNim)   = .false.
+       l_hydromet_sed(iiri) = .false.
+       l_hydromet_sed(iiNi)   = .false.
 
        ! Initialize constants for aerosols
        call ini_microp_aero()
@@ -715,28 +748,28 @@ module microphys_init_cleanup
           stop "Fatal Error"
        endif
 
-       iirrm = 1
-       iirsm = 2
-       iirim = 3
-       iirgm = 4
+       iirr = 1
+       iirs = 2
+       iiri = 3
+       iirg = 4
 
-       iiNrm = 5
+       iiNr = 5
        ! Nsm is computed diagnostically in the subroutine coamps_microphys_driver
-       iiNsm = -1
-       iiNim = 6
-       iiNgm = -1
+       iiNs = -1
+       iiNi = 6
+       iiNg = -1
 
        hydromet_dim = 6
 
        allocate( l_hydromet_sed(hydromet_dim) )
 
-       l_hydromet_sed(iiNrm) = .true.
-       l_hydromet_sed(iiNim) = .false.
+       l_hydromet_sed(iiNr) = .true.
+       l_hydromet_sed(iiNi) = .false.
 
-       l_hydromet_sed(iirrm) = .true.
-       l_hydromet_sed(iirsm) = .true.
-       l_hydromet_sed(iirim) = .true.
-       l_hydromet_sed(iirgm) = .true.
+       l_hydromet_sed(iirr) = .true.
+       l_hydromet_sed(iirs) = .true.
+       l_hydromet_sed(iiri) = .true.
+       l_hydromet_sed(iirg) = .true.
 
     case ( "khairoutdinov_kogan" )
 
@@ -746,34 +779,34 @@ module microphys_init_cleanup
           stop "Fatal Error"
        endif
 
-       iirrm = 1
-       iirsm = -1
-       iirim = -1
-       iirgm = -1
+       iirr = 1
+       iirs = -1
+       iiri = -1
+       iirg = -1
 
-       iiNrm = 2
-       iiNsm = -1
-       iiNim = -1
-       iiNgm = -1
+       iiNr = 2
+       iiNs = -1
+       iiNi = -1
+       iiNg = -1
 
        hydromet_dim = 2
 
        allocate( l_hydromet_sed(hydromet_dim) )
 
-       l_hydromet_sed(iirrm) = .true.
-       l_hydromet_sed(iiNrm) = .true.
+       l_hydromet_sed(iirr) = .true.
+       l_hydromet_sed(iiNr) = .true.
 
     case ( "simplified_ice", "none" )
 
-       iirrm = -1
-       iirsm = -1
-       iirim = -1
-       iirgm = -1
+       iirr = -1
+       iirs = -1
+       iiri = -1
+       iirg = -1
 
-       iiNrm = -1
-       iiNsm = -1
-       iiNim = -1
-       iiNgm = -1
+       iiNr = -1
+       iiNs = -1
+       iiNi = -1
+       iiNg = -1
 
        hydromet_dim = 0
 
@@ -786,76 +819,12 @@ module microphys_init_cleanup
 
     end select
 
-    ! Set up predictive precipitating hydrometeor arrays.
-    allocate( hydromet_list(hydromet_dim) )
-    allocate( hydromet_tol(hydromet_dim) )
-    allocate( l_mix_rat_hm(hydromet_dim) )
-    allocate( l_frozen_hm(hydromet_dim) )
-    allocate( hmp2_ip_on_hmm2_ip(hydromet_dim) )
-    if ( iirrm > 0 ) then
-       ! The microphysics scheme predicts rain water mixing ratio, rr.
-       hydromet_list(iirrm)      = "rrm"
-       l_mix_rat_hm(iirrm)       = .true.
-       l_frozen_hm(iirrm)        = .false.
-       hydromet_tol(iirrm)       = rr_tol
-       hmp2_ip_on_hmm2_ip(iirrm) = hmp2_ip_on_hmm2_ip_ratios%rrp2_ip_on_rrm2_ip
-    endif
-    if ( iirim > 0 ) then
-       ! The microphysics scheme predicts ice mixing ratio, ri.
-       hydromet_list(iirim)      = "rim"
-       l_mix_rat_hm(iirim)       = .true.
-       l_frozen_hm(iirim)        = .true.
-       hydromet_tol(iirim)       = ri_tol
-       hmp2_ip_on_hmm2_ip(iirim) = hmp2_ip_on_hmm2_ip_ratios%rip2_ip_on_rim2_ip
-    endif
-    if ( iirsm > 0 ) then
-       ! The microphysics scheme predicts snow mixing ratio, rs.
-       hydromet_list(iirsm)      = "rsm"
-       l_mix_rat_hm(iirsm)       = .true.
-       l_frozen_hm(iirsm)        = .true.
-       hydromet_tol(iirsm)       = rs_tol
-       hmp2_ip_on_hmm2_ip(iirsm) = hmp2_ip_on_hmm2_ip_ratios%rsp2_ip_on_rsm2_ip
-    endif
-    if ( iirgm > 0 ) then
-       ! The microphysics scheme predicts graupel mixing ratio, rg.
-       hydromet_list(iirgm)      = "rgm"
-       l_mix_rat_hm(iirgm)       = .true.
-       l_frozen_hm(iirgm)        = .true.
-       hydromet_tol(iirgm)       = rg_tol
-       hmp2_ip_on_hmm2_ip(iirgm) = hmp2_ip_on_hmm2_ip_ratios%rgp2_ip_on_rgm2_ip
-    endif
-    if ( iiNrm > 0 ) then
-       ! The microphysics scheme predicts rain drop concentration, Nr.
-       hydromet_list(iiNrm)      = "Nrm"
-       l_frozen_hm(iiNrm)        = .false.
-       l_mix_rat_hm(iiNrm)       = .false.
-       hydromet_tol(iiNrm)       = Nr_tol
-       hmp2_ip_on_hmm2_ip(iiNrm) = hmp2_ip_on_hmm2_ip_ratios%Nrp2_ip_on_Nrm2_ip
-    endif
-    if ( iiNim > 0 ) then
-       ! The microphysics scheme predicts ice concentration, Ni.
-       hydromet_list(iiNim)      = "Nim"
-       l_mix_rat_hm(iiNim)       = .false.
-       l_frozen_hm(iiNim)        = .true.
-       hydromet_tol(iiNim)       = Ni_tol
-       hmp2_ip_on_hmm2_ip(iiNim) = hmp2_ip_on_hmm2_ip_ratios%Nip2_ip_on_Nim2_ip
-    endif
-    if ( iiNsm > 0 ) then
-       ! The microphysics scheme predicts snowflake concentration, Ns.
-       hydromet_list(iiNsm)      = "Nsm"
-       l_mix_rat_hm(iiNsm)       = .false.
-       l_frozen_hm(iiNsm)        = .true.
-       hydromet_tol(iiNsm)       = Ns_tol
-       hmp2_ip_on_hmm2_ip(iiNsm) = hmp2_ip_on_hmm2_ip_ratios%Nsp2_ip_on_Nsm2_ip
-    endif
-    if ( iiNgm > 0 ) then
-       ! The microphysics scheme predicts graupel concentration, Ng.
-       hydromet_list(iiNgm)      = "Ngm"
-       l_mix_rat_hm(iiNgm)       = .false.
-       l_frozen_hm(iiNgm)        = .true.
-       hydromet_tol(iiNgm)       = Ng_tol
-       hmp2_ip_on_hmm2_ip(iiNgm) = hmp2_ip_on_hmm2_ip_ratios%Ngp2_ip_on_Ngm2_ip
-    endif
+    ! Set up pdf indices, hydromet indicies, hydromet arrays, and hydromet variance ratios
+    call init_pdf_hydromet_arrays_api( host_dx, host_dy, hydromet_dim,  & ! intent(in)
+                                       iirr, iiri, iirs, iirg,          & ! intent(in)
+                                       iiNr, iiNi, iiNs, iiNg,          & ! intent(in)
+                                       hmp2_ip_on_hmm2_ip_slope,        & ! optional(in)
+                                       hmp2_ip_on_hmm2_ip_intrcpt       ) ! optional(in)
 
     select case ( trim( lh_microphys_type ) )
     case ( "interactive" )
@@ -933,10 +902,6 @@ module microphys_init_cleanup
        stop
     endif
 
-    call setup_pdf_indices( hydromet_dim, iirrm, iiNrm, &
-                            iirim, iiNim, iirsm, iiNsm, &
-                            iirgm, iiNgm )
-
     corr_file_path_cloud = corr_input_path//trim( runtype )//cloud_file_ext
     corr_file_path_below = corr_input_path//trim( runtype )//below_file_ext
 
@@ -957,16 +922,16 @@ module microphys_init_cleanup
          .and. trim( microphys_scheme ) /= "none" ) then
 
        ! Allocate variables.
-       allocate( sigma2_on_mu2_ip_cloud(d_variables) )
-       allocate( sigma2_on_mu2_ip_below(d_variables) )
-       allocate( sigma_x_n_cloud(d_variables) )
-       allocate( sigma_x_n_below(d_variables) )
-       allocate( corr_array_cloud(d_variables,d_variables) )
-       allocate( corr_array_below(d_variables,d_variables) )
+       allocate( sigma2_on_mu2_ip_cloud(pdf_dim) )
+       allocate( sigma2_on_mu2_ip_below(pdf_dim) )
+       allocate( sigma_x_n_cloud(pdf_dim) )
+       allocate( sigma_x_n_below(pdf_dim) )
+       allocate( corr_array_cloud(pdf_dim,pdf_dim) )
+       allocate( corr_array_below(pdf_dim,pdf_dim) )
 
        ! Initialize variables.
-       sigma2_on_mu2_ip_cloud(d_variables) = zero
-       sigma2_on_mu2_ip_below(d_variables) = zero
+       sigma2_on_mu2_ip_cloud(pdf_dim) = zero
+       sigma2_on_mu2_ip_below(pdf_dim) = zero
        sigma_x_n_cloud = zero
        sigma_x_n_below = zero
        corr_array_cloud = zero
@@ -982,22 +947,22 @@ module microphys_init_cleanup
        endif
        ! Ncn:  sigma_Ncn_i_n
        sigma_x_n_cloud(iiPDF_Ncn) &
-       = stdev_L2N( sigma2_on_mu2_ip_cloud(iiPDF_Ncn) )
+       = stdev_L2N_1lev( sigma2_on_mu2_ip_cloud(iiPDF_Ncn) )
        sigma_x_n_below(iiPDF_Ncn) = sigma_x_n_cloud(iiPDF_Ncn)
 
        ! Loop over all hydrometeors.
-       do ivar = iiPDF_Ncn+1, d_variables, 1
+       do ivar = iiPDF_Ncn+1, pdf_dim, 1
           ! Hydrometeor sigma_hm_i^2/mu_hm_i^2
           sigma2_on_mu2_ip_cloud(ivar) &
           = omicron * hmp2_ip_on_hmm2_ip(pdf2hydromet_idx(ivar))
           sigma2_on_mu2_ip_below(ivar) = sigma2_on_mu2_ip_cloud(ivar)
           ! Hydrometeor sigma_hm_i_n
-          sigma_x_n_cloud(ivar) = stdev_L2N( sigma2_on_mu2_ip_cloud(ivar) )
+          sigma_x_n_cloud(ivar) = stdev_L2N_1lev( sigma2_on_mu2_ip_cloud(ivar) )
           sigma_x_n_below(ivar) = sigma_x_n_cloud(ivar)
        enddo ! i = 1, hydromet_dim, 1
 
        ! Calculate the correlations given the normal space correlations.
-       call denorm_transform_corr( d_variables, &
+       call denorm_transform_corr( one_lev, pdf_dim, &
                                    sigma_x_n_cloud, sigma_x_n_below, &
                                    sigma2_on_mu2_ip_cloud, &
                                    sigma2_on_mu2_ip_below, &
@@ -1005,19 +970,19 @@ module microphys_init_cleanup
                                    corr_array_n_below, &
                                    corr_array_cloud, corr_array_below )
 
-       call mirror_lower_triangular_matrix( d_variables, corr_array_cloud(:,:) )
-       call mirror_lower_triangular_matrix( d_variables, corr_array_below(:,:) )
+       call mirror_lower_triangular_matrix( pdf_dim, corr_array_cloud(:,:) )
+       call mirror_lower_triangular_matrix( pdf_dim, corr_array_below(:,:) )
 
        ! Print the correlation arrays to the screen.
        write(fstdout,'(1x,A)') "Correlation array (approximate); in cloud:"
-       do ivar = 1, d_variables, 1
+       do ivar = 1, pdf_dim, 1
           write(fstdout,'(12F7.3)') corr_array_cloud(ivar,:)
-       enddo ! ivar = 1, d_variables, 1
+       enddo ! ivar = 1, pdf_dim, 1
 
        write(fstdout,'(1x,A)') "Correlation array (approximate); below cloud:"
-       do ivar = 1, d_variables, 1
+       do ivar = 1, pdf_dim, 1
           write(fstdout,'(12F7.3)') corr_array_below(ivar,:)
-       enddo ! ivar = 1, d_variables, 1
+       enddo ! ivar = 1, pdf_dim, 1
 
        ! This will open the cases setup.txt file and append it to include the
        ! parameters in the microphysics_setting namelist. This file was created
@@ -1028,14 +993,14 @@ module microphys_init_cleanup
                 position='append' )
 
           write(iunit,'(1x,A)') "Correlation array (approximate); in cloud:"
-          do ivar = 1, d_variables, 1
+          do ivar = 1, pdf_dim, 1
              write(iunit,'(12F7.3)') corr_array_cloud(ivar,:)
-          enddo ! ivar = 1, d_variables, 1
+          enddo ! ivar = 1, pdf_dim, 1
 
           write(iunit,'(1x,A)') "Correlation array (approximate); below cloud:"
-          do ivar = 1, d_variables, 1
+          do ivar = 1, pdf_dim, 1
              write(iunit,'(12F7.3)') corr_array_below(ivar,:)
-          enddo ! ivar = 1, d_variables, 1
+          enddo ! ivar = 1, pdf_dim, 1
 
           close( unit=iunit )
 

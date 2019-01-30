@@ -10,7 +10,7 @@ module stats_zt_module
   public :: stats_init_zt
 
   ! Constant parameters
-  integer, parameter, public :: nvarmax_zt = 754 ! Maximum variables allowed
+  integer, parameter, public :: nvarmax_zt = 800 ! Maximum variables allowed
 
   contains
 
@@ -70,7 +70,8 @@ module stats_zt_module
         iKh_zt, & 
         iwp2thvp, & 
         iwp2rcp, & 
-        iwprtpthlp, & 
+        iwprtpthlp, &
+        irc_coef, &
         isigma_sqd_w_zt, &
         iSkw_zt, &
         iSkthl_zt, &
@@ -104,10 +105,10 @@ module stats_zt_module
         isigma_Ncn_2_n
 
     use stats_variables, only: &
-        icorr_w_chi_1,     & ! Variable(s)
-        icorr_w_chi_2,     &
-        icorr_w_eta_1,     &
-        icorr_w_eta_2,     &
+        icorr_w_chi_1_ca,  & ! Variable(s)
+        icorr_w_chi_2_ca,  &
+        icorr_w_eta_1_ca,  &
+        icorr_w_eta_2_ca,  &
         icorr_w_hm_1,    &
         icorr_w_hm_2,    &
         icorr_w_Ncn_1,   &
@@ -215,7 +216,19 @@ module stats_zt_module
         iwp3_pr2, & 
         iwp3_pr3, &
         iwp3_dp1, &
-        iwp3_cl
+        iwp3_sdmp, &
+        iwp3_cl, &
+        iwp3_splat
+
+    use stats_variables, only: &
+        irtp3_bt, &
+        irtp3_tp, &
+        irtp3_ac, &
+        irtp3_dp, &
+        ithlp3_bt, &
+        ithlp3_tp, &
+        ithlp3_ac, &
+        ithlp3_dp
 
     ! Monotonic flux limiter diagnostic variables
     use stats_variables, only: &
@@ -303,6 +316,7 @@ module stats_zt_module
         ivm_f, & 
         ivm_sdmp, &
         ivm_ndg, &
+        ivm_mfl, &
         ium_bt, & 
         ium_ma, & 
         ium_gf, & 
@@ -310,7 +324,8 @@ module stats_zt_module
         ium_ta, &
         ium_f, &
         ium_sdmp, &
-        ium_ndg
+        ium_ndg, &
+        ium_mfl
 
     use stats_variables, only: & 
         imixt_frac, & ! Variable(s) 
@@ -343,13 +358,45 @@ module stats_zt_module
         istdev_eta_2, &
         icovar_chi_eta_1, &
         icovar_chi_eta_2, &
+        icorr_w_chi_1, &
+        icorr_w_chi_2, &
+        icorr_w_eta_1, &
+        icorr_w_eta_2, &
         icorr_chi_eta_1, &
         icorr_chi_eta_2, &
-        irrtthl, &
+        icorr_w_rt_1, &
+        icorr_w_rt_2, &
+        icorr_w_thl_1, &
+        icorr_w_thl_2, &
+        icorr_rt_thl_1, &
+        icorr_rt_thl_2, &
         icrt_1, &
         icrt_2, &
         icthl_1, &
         icthl_2
+
+    use stats_variables, only: &
+        iF_w, &
+        iF_rt, &
+        iF_thl, &
+        imin_F_w, &
+        imax_F_w, &
+        imin_F_rt, &
+        imax_F_rt, &
+        imin_F_thl, &
+        imax_F_thl
+
+    use stats_variables, only: &
+        icoef_wprtp2_implicit, &
+        iterm_wprtp2_explicit, &
+        icoef_wpthlp2_implicit, &
+        iterm_wpthlp2_explicit, &
+        icoef_wprtpthlp_implicit, &
+        iterm_wprtpthlp_explicit, &
+        icoef_wp2rtp_implicit, &
+        iterm_wp2rtp_explicit, &
+        icoef_wp2thlp_implicit, &
+        iterm_wp2thlp_explicit
 
     use stats_variables, only: & 
         iwp2_zt, & 
@@ -1324,6 +1371,13 @@ module stats_zt_module
              l_silhs=.false., grid_kind=stats_zt )
         k = k + 1
 
+      case ('rc_coef')
+        irc_coef = k
+        call stat_assign( var_index=irc_coef, var_name="rc_coef", &
+             var_description="Coefficient of X'r_c' [K/(kg/kg)]", &
+             var_units="K/(kg/kg)", l_silhs=.false., grid_kind=stats_zt )
+        k = k + 1
+
       case ('sigma_sqd_w_zt')
         isigma_sqd_w_zt = k
         call stat_assign( var_index=isigma_sqd_w_zt, var_name="sigma_sqd_w_zt", &
@@ -1775,11 +1829,100 @@ module stats_zt_module
              var_units="m^{3} s^{-4}", l_silhs=.false., grid_kind=stats_zt )
         k = k + 1
 
+      case ('wp3_sdmp')
+        iwp3_sdmp = k
+        call stat_assign( var_index=iwp3_sdmp, var_name="wp3_sdmp", &
+             var_description="wp3 budget: wp3 sponge damping term [m^{3} s^{-4}]", &
+             var_units="m^{3} s^{-4}", l_silhs=.false., grid_kind=stats_zt )
+        k = k + 1
+
       case ('wp3_cl')
         iwp3_cl = k
         call stat_assign( var_index=iwp3_cl, var_name="wp3_cl", &
              var_description="wp3 budget: wp3 clipping term [m^{3} s^{-4}]", &
              var_units="m^{3} s^{-4}", l_silhs=.false., grid_kind=stats_zt )
+        k = k + 1
+
+      case ('wp3_splat')
+        iwp3_splat = k
+        call stat_assign( var_index=iwp3_splat, var_name="wp3_splat", &
+             var_description="wp3 budget: wp3 splatting term [m^3 s^-4]", &
+             var_units="m^3 s^-4", l_silhs=.false., grid_kind=stats_zt )
+        k = k + 1
+
+      case ('rtp3_bt')
+        irtp3_bt = k
+
+        call stat_assign( var_index=irtp3_bt, var_name="rtp3_bt", &
+             var_description="rtp3 budget: rtp3 time tendency " &
+                             // "[kg^{3} kg^{-3} s^{-1}]", &
+             var_units="kg^{3} kg^{-3} s^{-1}", l_silhs=.false., &
+             grid_kind=stats_zt )
+        k = k + 1
+
+      case ('rtp3_tp')
+        irtp3_tp = k
+
+        call stat_assign( var_index=irtp3_tp, var_name="rtp3_tp", &
+             var_description="rtp3 budget: rtp3 turbulent production " &
+                             // "[kg^{3} kg^{-3} s^{-1}]", &
+             var_units="kg^{3} kg^{-3} s^{-1}", l_silhs=.false., &
+             grid_kind=stats_zt )
+        k = k + 1
+
+      case ('rtp3_ac')
+        irtp3_ac = k
+
+        call stat_assign( var_index=irtp3_ac, var_name="rtp3_ac", &
+             var_description="rtp3 budget: rtp3 accumulation " &
+                             // "[kg^{3} kg^{-3} s^{-1}]", &
+             var_units="kg^{3} kg^{-3} s^{-1}", l_silhs=.false., &
+             grid_kind=stats_zt )
+        k = k + 1
+
+      case ('rtp3_dp')
+        irtp3_dp = k
+
+        call stat_assign( var_index=irtp3_dp, var_name="rtp3_dp", &
+             var_description="rtp3 budget: rtp3 dissipation " &
+                             // "[kg^{3} kg^{-3} s^{-1}]", &
+             var_units="kg^{3} kg^{-3} s^{-1}", l_silhs=.false., &
+             grid_kind=stats_zt )
+        k = k + 1
+
+      case ('thlp3_bt')
+        ithlp3_bt = k
+
+        call stat_assign( var_index=ithlp3_bt, var_name="thlp3_bt", &
+             var_description="thlp3 budget: thlp3 time tendency " &
+                             // "[K^{3} s^{-1}]", &
+             var_units="K^{3} s^{-1}", l_silhs=.false., grid_kind=stats_zt )
+        k = k + 1
+
+      case ('thlp3_tp')
+        ithlp3_tp = k
+
+        call stat_assign( var_index=ithlp3_tp, var_name="thlp3_tp", &
+             var_description="thlp3 budget: thlp3 turbulent production " &
+                             // "[K^{3} s^{-1}]", &
+             var_units="K^{3} s^{-1}", l_silhs=.false., grid_kind=stats_zt )
+        k = k + 1
+
+      case ('thlp3_ac')
+        ithlp3_ac = k
+
+        call stat_assign( var_index=ithlp3_ac, var_name="thlp3_ac", &
+             var_description="thlp3 budget: thlp3 accumulation " &
+                             // "[K^{3} s^{-1}]", &
+             var_units="K^{3} s^{-1}", l_silhs=.false., grid_kind=stats_zt )
+        k = k + 1
+
+      case ('thlp3_dp')
+        ithlp3_dp = k
+
+        call stat_assign( var_index=ithlp3_dp, var_name="thlp3_dp", &
+             var_description="thlp3 budget: thlp3 dissipation [K^{3} s^{-1}]", &
+             var_units="K^{3} s^{-1}", l_silhs=.false., grid_kind=stats_zt )
         k = k + 1
 
       case ('rrm_bt')
@@ -3344,6 +3487,14 @@ module stats_zt_module
              l_silhs=.false., grid_kind=stats_zt )
         k = k + 1
 
+      case ('vm_mfl')
+        ivm_mfl = k
+        call stat_assign( var_index=ivm_mfl, var_name="vm_mfl", &
+             var_description="vm budget: vm monotonic flux limiter " &
+                             // "[m s^{-2}]", var_units="m s^{-2}", &
+             l_silhs=.false., grid_kind=stats_zt )
+        k = k + 1
+
       case ('um_bt')
         ium_bt = k
 
@@ -3399,6 +3550,14 @@ module stats_zt_module
         ium_ndg = k
         call stat_assign( var_index=ium_ndg, var_name="um_ndg", &
              var_description="um budget: um nudging [m s^{-2}]", var_units="m s^{-2}", &
+             l_silhs=.false., grid_kind=stats_zt )
+        k = k + 1
+
+      case ('um_mfl')
+        ium_mfl = k
+        call stat_assign( var_index=ium_mfl, var_name="um_mfl", &
+             var_description="um budget: um monotonic flux limiter " &
+                             // "[m s^{-2}]", var_units="m s^{-2}", &
              l_silhs=.false., grid_kind=stats_zt )
         k = k + 1
 
@@ -3624,6 +3783,42 @@ module stats_zt_module
              var_units="kg^2/kg^2", l_silhs=.false., grid_kind=stats_zt )
         k = k + 1
 
+      case ('corr_w_chi_1')
+        icorr_w_chi_1 = k
+
+        call stat_assign( var_index=icorr_w_chi_1, var_name="corr_w_chi_1", &
+                          var_description="Correlation of w and chi (s)" &
+                          // " (1st PDF component) [-]", var_units="-", &
+                          l_silhs=.false., grid_kind=stats_zt )
+        k = k + 1
+
+      case ('corr_w_chi_2')
+        icorr_w_chi_2 = k
+
+        call stat_assign( var_index=icorr_w_chi_2, var_name="corr_w_chi_2", &
+                          var_description="Correlation of w and chi (s)" &
+                          // " (2nd PDF component) [-]", var_units="-", &
+                          l_silhs=.false., grid_kind=stats_zt )
+        k = k + 1
+
+      case ('corr_w_eta_1')
+        icorr_w_eta_1 = k
+
+        call stat_assign( var_index=icorr_w_eta_1, var_name="corr_w_eta_1", &
+                          var_description="Correlation of w and eta (t)" &
+                          // " (1st PDF component) [-]", var_units="-", &
+                          l_silhs=.false., grid_kind=stats_zt )
+        k = k + 1
+
+      case ('corr_w_eta_2')
+        icorr_w_eta_2 = k
+
+        call stat_assign( var_index=icorr_w_eta_2, var_name="corr_w_eta_2", &
+                          var_description="Correlation of w and eta (t)" &
+                          // " (2nd PDF component) [-]", var_units="-", &
+                          l_silhs=.false., grid_kind=stats_zt )
+        k = k + 1
+
       case ('corr_chi_eta_1')
         icorr_chi_eta_1 = k
 
@@ -3646,12 +3841,57 @@ module stats_zt_module
                           l_silhs=.false., grid_kind=stats_zt )
         k = k + 1
 
-      case ('rrtthl')
-        irrtthl = k
+      case ('corr_w_rt_1')
+        icorr_w_rt_1 = k
 
-        call stat_assign( var_index=irrtthl, var_name="rrtthl", &
+        call stat_assign( var_index=icorr_w_rt_1, var_name="corr_w_rt_1", &
+                          var_description="Correlation of w and rt" &
+                          // " (1st PDF component) [-]", var_units="-", &
+                          l_silhs=.false., grid_kind=stats_zt )
+        k = k + 1
+
+      case ('corr_w_rt_2')
+        icorr_w_rt_2 = k
+
+        call stat_assign( var_index=icorr_w_rt_2, var_name="corr_w_rt_2", &
+                          var_description="Correlation of w and rt" &
+                          // " (2nd PDF component) [-]", var_units="-", &
+                          l_silhs=.false., grid_kind=stats_zt )
+        k = k + 1
+
+      case ('corr_w_thl_1')
+        icorr_w_thl_1 = k
+
+        call stat_assign( var_index=icorr_w_thl_1, var_name="corr_w_thl_1", &
+                          var_description="Correlation of w and thl" &
+                          // " (1st PDF component) [-]", var_units="-", &
+                          l_silhs=.false., grid_kind=stats_zt )
+        k = k + 1
+
+      case ('corr_w_thl_2')
+        icorr_w_thl_2 = k
+
+        call stat_assign( var_index=icorr_w_thl_2, var_name="corr_w_thl_2", &
+                          var_description="Correlation of w and thl" &
+                          // " (2nd PDF component) [-]", var_units="-", &
+                          l_silhs=.false., grid_kind=stats_zt )
+        k = k + 1
+
+      case ('corr_rt_thl_1')
+        icorr_rt_thl_1 = k
+
+        call stat_assign( var_index=icorr_rt_thl_1, var_name="corr_rt_thl_1", &
                           var_description="Correlation of rt and thl" &
-                          // " (both PDF components) [-]", var_units="-", &
+                          // " (1st PDF component) [-]", var_units="-", &
+                          l_silhs=.false., grid_kind=stats_zt )
+        k = k + 1
+
+      case ('corr_rt_thl_2')
+        icorr_rt_thl_2 = k
+
+        call stat_assign( var_index=icorr_rt_thl_2, var_name="corr_rt_thl_2", &
+                          var_description="Correlation of rt and thl" &
+                          // " (2nd PDF component) [-]", var_units="-", &
                           l_silhs=.false., grid_kind=stats_zt )
         k = k + 1
 
@@ -3691,6 +3931,207 @@ module stats_zt_module
                           var_units="kg/kg/K", l_silhs=.false., grid_kind=stats_zt )
         k = k + 1
 
+      case('F_w')
+        iF_w = k
+
+        call stat_assign( var_index=iF_w, var_name="F_w", &
+                          var_description="Parameter for the spread of the" &
+                          // " PDF component means of w (new PDF)  [-]", &
+                          var_units="-", l_silhs=.false., grid_kind=stats_zt )
+        k = k + 1
+
+      case('F_rt')
+        iF_rt = k
+
+        call stat_assign( var_index=iF_rt, var_name="F_rt", &
+                          var_description="Parameter for the spread of the" &
+                          // " PDF component means of rt (new PDF)  [-]", &
+                          var_units="-", l_silhs=.false., grid_kind=stats_zt )
+        k = k + 1
+
+      case('F_thl')
+        iF_thl = k
+
+        call stat_assign( var_index=iF_thl, var_name="F_thl", &
+                          var_description="Parameter for the spread of the" &
+                          // " PDF component means of thl (new PDF)  [-]", &
+                          var_units="-", l_silhs=.false., grid_kind=stats_zt )
+        k = k + 1
+
+      case('min_F_w')
+        imin_F_w = k
+
+        call stat_assign( var_index=imin_F_w, var_name="min_F_w", &
+                          var_description="Minimum allowable value of the" &
+                          // " parameter F_w (new PDF)  [-]", &
+                          var_units="-", l_silhs=.false., grid_kind=stats_zt )
+        k = k + 1
+
+      case('max_F_w')
+        imax_F_w = k
+
+        call stat_assign( var_index=imax_F_w, var_name="max_F_w", &
+                          var_description="Maximum allowable value of the" &
+                          // " parameter F_w (new PDF)  [-]", &
+                          var_units="-", l_silhs=.false., grid_kind=stats_zt )
+        k = k + 1
+
+      case('min_F_rt')
+        imin_F_rt = k
+
+        call stat_assign( var_index=imin_F_rt, var_name="min_F_rt", &
+                          var_description="Minimum allowable value of the" &
+                          // " parameter F_rt (new PDF)  [-]", &
+                          var_units="-", l_silhs=.false., grid_kind=stats_zt )
+        k = k + 1
+
+      case('max_F_rt')
+        imax_F_rt = k
+
+        call stat_assign( var_index=imax_F_rt, var_name="max_F_rt", &
+                          var_description="Maximum allowable value of the" &
+                          // " parameter F_rt (new PDF)  [-]", &
+                          var_units="-", l_silhs=.false., grid_kind=stats_zt )
+        k = k + 1
+
+      case('min_F_thl')
+        imin_F_thl = k
+
+        call stat_assign( var_index=imin_F_thl, var_name="min_F_thl", &
+                          var_description="Minimum allowable value of the" &
+                          // " parameter F_thl (new PDF)  [-]", &
+                          var_units="-", l_silhs=.false., grid_kind=stats_zt )
+        k = k + 1
+
+      case('max_F_thl')
+        imax_F_thl = k
+
+        call stat_assign( var_index=imax_F_thl, var_name="max_F_thl", &
+                          var_description="Maximum allowable value of the" &
+                          // " parameter F_thl (new PDF)  [-]", &
+                          var_units="-", l_silhs=.false., grid_kind=stats_zt )
+        k = k + 1
+
+      case ( 'coef_wprtp2_implicit' )
+        icoef_wprtp2_implicit = k
+        call stat_assign( var_index=icoef_wprtp2_implicit, &
+                          var_name="coef_wprtp2_implicit", &
+                          var_description="wprtp2" &
+                                          // " = coef_wprtp2_implicit" &
+                                          // " * rtp2" &
+                                          // " + term_wprtp2_explicit [m/s]", &
+                          var_units="m/s", l_silhs=.false., grid_kind=stats_zt )
+        k = k + 1
+
+      case ( 'term_wprtp2_explicit' )
+        iterm_wprtp2_explicit = k
+        call stat_assign( var_index=iterm_wprtp2_explicit, &
+                          var_name="term_wprtp2_explicit", &
+                          var_description="wprtp2" &
+                                          // " = coef_wprtp2_implicit" &
+                                          // " * rtp2" &
+                                          // " + term_wprtp2_explicit" &
+                                          // " [m/s kg^2/kg^2]", &
+                          var_units="m/s kg^2/kg^2", l_silhs=.false., &
+                          grid_kind=stats_zt )
+        k = k + 1
+
+      case ( 'coef_wpthlp2_implicit' )
+        icoef_wpthlp2_implicit = k
+        call stat_assign( var_index=icoef_wpthlp2_implicit, &
+                          var_name="coef_wpthlp2_implicit", &
+                          var_description="wpthlp2" &
+                                          // " = coef_wpthlp2_implicit" &
+                                          // " * thlp2" &
+                                          // " + term_wpthlp2_explicit [m/s]", &
+                          var_units="m/s", l_silhs=.false., grid_kind=stats_zt )
+        k = k + 1
+
+      case ( 'term_wpthlp2_explicit' )
+        iterm_wpthlp2_explicit = k
+        call stat_assign( var_index=iterm_wpthlp2_explicit, &
+                          var_name="term_wpthlp2_explicit", &
+                          var_description="wpthlp2" &
+                                          // " = coef_wpthlp2_implicit" &
+                                          // " * thlp2" &
+                                          // " + term_wpthlp2_explicit" &
+                                          // " [m/s K^2]", &
+                          var_units="m/s K^2", l_silhs=.false., &
+                          grid_kind=stats_zt )
+        k = k + 1
+
+      case ( 'coef_wprtpthlp_implicit' )
+        icoef_wprtpthlp_implicit = k
+        call stat_assign( var_index=icoef_wprtpthlp_implicit, &
+                          var_name="coef_wprtpthlp_implicit", &
+                          var_description="wprtpthlp" &
+                                          // " = coef_wprtpthlp_implicit" &
+                                          // " * rtpthlp" &
+                                          // " + term_wprtpthlp_explicit" &
+                                          // " [m/s]", &
+                          var_units="m/s", l_silhs=.false., grid_kind=stats_zt )
+        k = k + 1
+
+      case ( 'term_wprtpthlp_explicit' )
+        iterm_wprtpthlp_explicit = k
+        call stat_assign( var_index=iterm_wprtpthlp_explicit, &
+                          var_name="term_wprtpthlp_explicit", &
+                          var_description="wprtpthlp" &
+                                          // " = coef_wprtpthlp_implicit" &
+                                          // " * rtpthlp" &
+                                          // " + term_wprtpthlp_explicit" &
+                                          // " [m/s (kg/kg) K]", &
+                          var_units="m/s (kg/kg) K", l_silhs=.false., &
+                          grid_kind=stats_zt )
+        k = k + 1
+
+      case ( 'coef_wp2rtp_implicit' )
+        icoef_wp2rtp_implicit = k
+        call stat_assign( var_index=icoef_wp2rtp_implicit, &
+                          var_name="coef_wp2rtp_implicit", &
+                          var_description="wp2rtp" &
+                                          // " = coef_wp2rtp_implicit" &
+                                          // " * wprtp" &
+                                          // " + term_wp2rtp_explicit [m/s]", &
+                          var_units="m/s", l_silhs=.false., grid_kind=stats_zt )
+        k = k + 1
+
+      case ( 'term_wp2rtp_explicit' )
+        iterm_wp2rtp_explicit = k
+        call stat_assign( var_index=iterm_wp2rtp_explicit, &
+                          var_name="term_wp2rtp_explicit", &
+                          var_description="wp2rtp" &
+                                          // " = coef_wp2rtp_implicit" &
+                                          // " * wprtp" &
+                                          // " + term_wp2rtp_explicit" &
+                                          // " [m^2/s^2 kg/kg]", &
+                          var_units="m^2/s^2 kg/kg", l_silhs=.false., &
+                          grid_kind=stats_zt )
+        k = k + 1
+
+      case ( 'coef_wp2thlp_implicit' )
+        icoef_wp2thlp_implicit = k
+        call stat_assign( var_index=icoef_wp2thlp_implicit, &
+                          var_name="coef_wp2thlp_implicit", &
+                          var_description="wp2thlp" &
+                                          // " = coef_wp2thlp_implicit" &
+                                          // " * wpthlp" &
+                                          // " + term_wp2thlp_explicit [m/s]", &
+                          var_units="m/s", l_silhs=.false., grid_kind=stats_zt )
+        k = k + 1
+
+      case ( 'term_wp2thlp_explicit' )
+        iterm_wp2thlp_explicit = k
+        call stat_assign( var_index=iterm_wp2thlp_explicit, &
+                          var_name="term_wp2thlp_explicit", &
+                          var_description="wp2thlp" &
+                                          // " = coef_wp2thlp_implicit" &
+                                          // " * wpthlp" &
+                                          // " + term_wp2thlp_explicit" &
+                                          // " [m^2/s^2 K]", &
+                          var_units="m^2/s^2 K", l_silhs=.false., &
+                          grid_kind=stats_zt )
+        k = k + 1
 
       case('wp2_zt')
         iwp2_zt = k
@@ -4290,43 +4731,47 @@ module stats_zt_module
 
          k = k + 1
 
-      case ('corr_w_chi_1')
-        icorr_w_chi_1 = k
+      case ('corr_w_chi_1_ca')
+        icorr_w_chi_1_ca = k
 
-        call stat_assign( var_index=icorr_w_chi_1, var_name="corr_w_chi_1", &
+        call stat_assign( var_index=icorr_w_chi_1_ca, &
+                          var_name="corr_w_chi_1_ca", &
                           var_description="Correlation of w and chi" &
-                          // " (1st PDF component) -- should be 0 by" &
-                          // " CLUBB standards [-]", var_units="-", &
+                          // " (1st PDF component) found in the correlation" &
+                          // " array [-]", var_units="-", &
                           l_silhs=.false., grid_kind=stats_zt )
         k = k + 1
 
-      case ('corr_w_chi_2')
-        icorr_w_chi_2 = k
+      case ('corr_w_chi_2_ca')
+        icorr_w_chi_2_ca = k
 
-        call stat_assign( var_index=icorr_w_chi_2, var_name="corr_w_chi_2", &
+        call stat_assign( var_index=icorr_w_chi_2_ca, &
+                          var_name="corr_w_chi_2_ca", &
                           var_description="Correlation of w and chi" &
-                          // " (2nd PDF component) -- should be 0 by" &
-                          // " CLUBB standards [-]", var_units="-", &
+                          // " (2nd PDF component) found in the correlation" &
+                          // " array [-]", var_units="-", &
                           l_silhs=.false., grid_kind=stats_zt )
         k = k + 1
 
-      case ('corr_w_eta_1')
-        icorr_w_eta_1 = k
+      case ('corr_w_eta_1_ca')
+        icorr_w_eta_1_ca = k
 
-        call stat_assign( var_index=icorr_w_eta_1, var_name="corr_w_eta_1", &
+        call stat_assign( var_index=icorr_w_eta_1_ca, &
+                          var_name="corr_w_eta_1_ca", &
                           var_description="Correlation of w and eta" &
-                          // " (1st PDF component) -- should be 0 by" &
-                          // " CLUBB standards [-]", var_units="-", &
+                          // " (1st PDF component) found in the correlation" &
+                          // " array [-]", var_units="-", &
                           l_silhs=.false., grid_kind=stats_zt )
         k = k + 1
 
-      case ('corr_w_eta_2')
-        icorr_w_eta_2 = k
+      case ('corr_w_eta_2_ca')
+        icorr_w_eta_2_ca = k
 
-        call stat_assign( var_index=icorr_w_eta_2, var_name="corr_w_eta_2", &
+        call stat_assign( var_index=icorr_w_eta_2_ca, &
+                          var_name="corr_w_eta_2_ca", &
                           var_description="Correlation of w and eta" &
-                          // " (2nd PDF component) -- should be 0 by" &
-                          // " CLUBB standards [-]", var_units="-", &
+                          // " (2nd PDF component) found in the correlation" &
+                          // " array [-]", var_units="-", &
                           l_silhs=.false., grid_kind=stats_zt )
         k = k + 1
 

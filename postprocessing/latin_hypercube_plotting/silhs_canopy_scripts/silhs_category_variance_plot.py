@@ -4,8 +4,8 @@ import pylab as pl
 
 num_importance_categories = 8
 
-nc     = netCDF4.Dataset('rico_lh_lh_zt.nc')
-sfc_nc = netCDF4.Dataset('rico_lh_lh_sfc.nc')
+nc     = netCDF4.Dataset('rico_silhs_lh_zt.nc')
+sfc_nc = netCDF4.Dataset('rico_silhs_lh_sfc.nc')
 
 cat_labels = ['c_p_1', 'c_p_2', 'nc_p_1', 'nc_p_2', 'c_np_1', \
               'c_np_2', 'nc_np_1', 'nc_np_2']

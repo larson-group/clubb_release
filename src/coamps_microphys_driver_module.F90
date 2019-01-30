@@ -50,7 +50,6 @@ module coamps_microphys_driver_module
       fstderr ! Constant(s)
     use saturation, only: sat_mixrat_liq, sat_mixrat_ice ! Procedure(s)
     use clubb_precision, only: time_precision, core_rknd ! Variable(s)
-    use error_code, only: clubb_debug ! Procedure(s)
     use grid_class, only: zt2zm ! Procedure(s)
     use grid_class, only: gr ! Variable(s)
 
@@ -58,12 +57,12 @@ module coamps_microphys_driver_module
 
     use stats_variables, only: stats_zt, l_stats_samp,  & ! Variable(s)
         im_vol_rad_rain, & 
-        im_vol_rad_cloud, & 
-! Addition by Adam Smith, 24 April 2008
-! Adding snow particle number concentration and snowslope
-       isnowslope, & 
-       iNsm
-! End of ajsmith4's addition
+        im_vol_rad_cloud, &
+        isnowslope, & 
+        iNsm
+
+    use error_code, only: &
+        clubb_at_least_debug_level  ! Procedure
 
     use parameters_microphys, only: l_graupel, l_ice_microphys ! Variable(s)
 
@@ -518,9 +517,14 @@ module coamps_microphys_driver_module
 ! Compute quantities for computing tendencies
     rvm = real(rtm - rcm)
 
-    if ( any( rvm < 0. ) ) then
-      call clubb_debug(1, 'in COAMPS (R) microphys driver rvm < 0')
-      where ( rvm < 0. ) rvm = 0.
+    if( any( rvm < 0. ) ) then
+
+        if ( clubb_at_least_debug_level( 1 ) ) then
+            write(fstderr,*) 'in COAMPS (R) microphys driver: some rvm < 0'
+        end if
+
+        where ( rvm < 0. ) rvm = 0.
+
     end if
 
       thm(1:kk+1) = real(thlm(1:kk+1) & 

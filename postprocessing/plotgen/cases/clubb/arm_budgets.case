@@ -90,7 +90,8 @@
           {'filename' => 'arm_zm.ctl', 'type' => 'auto', 'name' => 'wp2\_cl', 'expression' => 'wp2_cl', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'arm_zm.ctl', 'type' => 'auto', 'name' => 'wp2\_pd', 'expression' => 'wp2_pd', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'arm_zm.ctl', 'type' => 'auto', 'name' => 'wp2\_sf', 'expression' => 'wp2_sf', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'arm_zm.ctl', 'type' => 'auto', 'name' => 'wp2\_residual', 'expression' => 'wp2_bt - (wp2_ma + wp2_ta + wp2_ac + wp2_bp + wp2_pr1 + wp2_pr2 + wp2_pr3 + wp2_dp1 + wp2_dp2 + wp2_cl + wp2_pd + wp2_sf)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+          {'filename' => 'arm_zm.ctl', 'type' => 'auto', 'name' => 'wp2\_splat', 'expression' => 'wp2_splat', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'arm_zm.ctl', 'type' => 'auto', 'name' => 'wp2\_residual', 'expression' => 'wp2_bt - (wp2_ma + wp2_ta + wp2_ac + wp2_bp + wp2_pr1 + wp2_pr2 + wp2_pr3 + wp2_dp1 + wp2_dp2 + wp2_cl + wp2_pd + wp2_sf + wp2_splat)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
 
        {'plotTitle' => 'wp3 budgets', 'axisLabel' => '[m^{3} s^{-4}]', 'type' => 'profile', 'lines' =>
@@ -107,7 +108,8 @@
           {'filename' => 'arm_zt.ctl', 'type' => 'auto', 'name' => 'wp3\_pr2', 'expression' => 'wp3_pr2', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'arm_zt.ctl', 'type' => 'auto', 'name' => 'wp3\_dp1', 'expression' => 'wp3_dp1', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'arm_zt.ctl', 'type' => 'auto', 'name' => 'wp3\_cl', 'expression' => 'wp3_cl', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'arm_zt.ctl', 'type' => 'auto', 'name' => 'wp3\_residual', 'expression' => 'wp3_bt - (wp3_ma + wp3_ta + wp3_tp + wp3_ac + wp3_bp1 + wp3_bp2 + wp3_pr1 + wp3_pr2 + wp3_pr3 + wp3_dp1 + wp3_cl)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+          {'filename' => 'arm_zt.ctl', 'type' => 'auto', 'name' => 'wp3\_splat', 'expression' => 'wp3_splat', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'arm_zt.ctl', 'type' => 'auto', 'name' => 'wp3\_residual', 'expression' => 'wp3_bt - (wp3_ma + wp3_ta + wp3_tp + wp3_ac + wp3_bp1 + wp3_bp2 + wp3_pr1 + wp3_pr2 + wp3_pr3 + wp3_dp1 + wp3_cl+wp3_splat)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
 
        {'plotTitle' => 'thlp2 budgets', 'axisLabel' => '[(K^2)/s]', 'type' => 'profile', 'lines' =>
@@ -153,6 +155,42 @@
           {'filename' => 'arm_zm.ctl', 'type' => 'auto', 'name' => 'rtpthlp\_sf', 'expression' => 'rtpthlp_sf', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'arm_zm.ctl', 'type' => 'auto', 'name' => 'rtpthlp\_forcing', 'expression' => 'rtpthlp_forcing', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'arm_zm.ctl', 'type' => 'auto', 'name' => 'rtpthlp\_residual', 'expression' => 'rtpthlp_bt - (rtpthlp_ma + rtpthlp_ta + rtpthlp_tp1 + rtpthlp_tp2 + rtpthlp_dp1 + rtpthlp_dp2 + rtpthlp_cl + rtpthlp_sf + rtpthlp_forcing)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+
+       {'plotTitle' => 'upwp budgets', 'axisLabel' => '[m^2/s^3]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'arm_zm.ctl', 'type' => 'auto', 'name' => 'upwp\_bt', 'expression' => 'upwp_bt', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'arm_zm.ctl', 'type' => 'auto', 'name' => 'upwp\_ma', 'expression' => 'upwp_ma', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'arm_zm.ctl', 'type' => 'auto', 'name' => 'upwp\_ta', 'expression' => 'upwp_ta', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'arm_zm.ctl', 'type' => 'auto', 'name' => 'upwp\_tp', 'expression' => 'upwp_tp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'arm_zm.ctl', 'type' => 'auto', 'name' => 'upwp\_ac', 'expression' => 'upwp_ac', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'arm_zm.ctl', 'type' => 'auto', 'name' => 'upwp\_bp', 'expression' => 'upwp_bp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'arm_zm.ctl', 'type' => 'auto', 'name' => 'upwp\_pr1', 'expression' => 'upwp_pr1', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'arm_zm.ctl', 'type' => 'auto', 'name' => 'upwp\_pr2', 'expression' => 'upwp_pr2', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'arm_zm.ctl', 'type' => 'auto', 'name' => 'upwp\_pr3', 'expression' => 'upwp_pr3', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'arm_zm.ctl', 'type' => 'auto', 'name' => 'upwp\_pr4', 'expression' => 'upwp_pr4', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'arm_zm.ctl', 'type' => 'auto', 'name' => 'upwp\_dp1', 'expression' => 'upwp_dp1', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'arm_zm.ctl', 'type' => 'auto', 'name' => 'upwp\_mfl', 'expression' => 'upwp_mfl', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'arm_zm.ctl', 'type' => 'auto', 'name' => 'upwp\_cl', 'expression' => 'upwp_cl', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'arm_zm.ctl', 'type' => 'auto', 'name' => 'upwp\_residual', 'expression' => 'upwp_bt - (upwp_ma + upwp_ta + upwp_tp + upwp_ac + upwp_bp + upwp_pr1 + upwp_pr2 + upwp_pr3 + upwp_pr4 + upwp_dp1 + upwp_mfl + upwp_cl)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+
+       {'plotTitle' => 'vpwp budgets', 'axisLabel' => '[m^2/s^3]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'arm_zm.ctl', 'type' => 'auto', 'name' => 'vpwp\_bt', 'expression' => 'vpwp_bt', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'arm_zm.ctl', 'type' => 'auto', 'name' => 'vpwp\_ma', 'expression' => 'vpwp_ma', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'arm_zm.ctl', 'type' => 'auto', 'name' => 'vpwp\_ta', 'expression' => 'vpwp_ta', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'arm_zm.ctl', 'type' => 'auto', 'name' => 'vpwp\_tp', 'expression' => 'vpwp_tp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'arm_zm.ctl', 'type' => 'auto', 'name' => 'vpwp\_ac', 'expression' => 'vpwp_ac', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'arm_zm.ctl', 'type' => 'auto', 'name' => 'vpwp\_bp', 'expression' => 'vpwp_bp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'arm_zm.ctl', 'type' => 'auto', 'name' => 'vpwp\_pr1', 'expression' => 'vpwp_pr1', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'arm_zm.ctl', 'type' => 'auto', 'name' => 'vpwp\_pr2', 'expression' => 'vpwp_pr2', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'arm_zm.ctl', 'type' => 'auto', 'name' => 'vpwp\_pr3', 'expression' => 'vpwp_pr3', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'arm_zm.ctl', 'type' => 'auto', 'name' => 'vpwp\_pr4', 'expression' => 'vpwp_pr4', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'arm_zm.ctl', 'type' => 'auto', 'name' => 'vpwp\_dp1', 'expression' => 'vpwp_dp1', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'arm_zm.ctl', 'type' => 'auto', 'name' => 'vpwp\_mfl', 'expression' => 'vpwp_mfl', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'arm_zm.ctl', 'type' => 'auto', 'name' => 'vpwp\_cl', 'expression' => 'vpwp_cl', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'arm_zm.ctl', 'type' => 'auto', 'name' => 'vpwp\_residual', 'expression' => 'vpwp_bt - (vpwp_ma + vpwp_ta + vpwp_tp + vpwp_ac + vpwp_bp + vpwp_pr1 + vpwp_pr2 + vpwp_pr3 + vpwp_pr4 + vpwp_dp1 + vpwp_mfl + vpwp_cl)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]}
 
     ],

@@ -8,4 +8,7 @@ l_Nc_Ncn_test = .true.             ! Flag for Nc-Ncn Equations tests
 l_read_corr_mtx_test = .true.      ! Flag for correlation matrix test
 l_silhs_category_test = .true.     ! Flag for SILHS category test
 l_mu_sigma_hm_tests = .true.       ! Flag for hydrometeor mu/sigma tests
+l_pdf_parameter_tests = .true.     ! Flag for PDF parameter tests
+l_spurious_source_test = .true.    ! Flag for spurious source test
+l_tuner_tests = .true.             ! Flag for PDF parameter tests
 /

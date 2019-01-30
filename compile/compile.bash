@@ -49,6 +49,11 @@
 # precision, core_rknd, which this flag does not affect).
 l_double_precision=false
 
+# This flag allows for the use of the MKL Lapack routines rather than the provided ones
+# located in src. As of Oct 2018 the MKL Lapack routines have been found to be 
+# significantly slower. This flag can be enabled by running this script with the -m option.
+l_use_mkl_lapack=false
+
 # Figure out the directory where the script is located
 scriptPath=`dirname $0`
 
@@ -58,20 +63,51 @@ restoreDir=`pwd`
 # Change directories to the one the script is located in
 cd $scriptPath
 
-if [ -z $1 ]; then
-	# Set using the default config flags
 
+# Set using the default config flags
 	CONFIG=./config/linux_x86_64_gfortran.bash # Linux (Redhat Enterprise 5 / GNU)
 #	CONFIG=./config/linux_x86_64_g95_optimize.bash # Linux (Redhat Enterprise 5 g95)
 #	CONFIG=./config/macosx_x86_64_gfortran.bash # MacOS X / GNU
 #	CONFIG=./config/aix_powerpc_xlf90_bluefire.bash # IBM AIX on Bluefire / XL Fortran
 #	CONFIG=./config/solaris_generic_oracle.bash # Oracle/Sun Solaris / Oracle/Sun Fortran
 
-else
-	# Set config based on the first argument given to compile.bash
+# Note that we use `"$@"' to let each command-line parameter expand to a 
+# separate word. The quotes around `$@' are essential!
+# We need TEMP as the `eval set --' would nuke the return value of getopt.
+# This also expects gnu-getopt as opposed to BSD getopt. 
+# Make sure you have gnu-getopt installed and it is before BSD getopt in your PATH.
+TEMP=`getopt -o c:mh --long mkl_lapack,config:,help -n 'compile.bash' -- "$@"`
 
-	CONFIG=$1
-fi
+if [ $? != 0 ] ; then echo "Run with -h for help." >&2 ; exit 1 ; fi
+
+# Note the quotes around `$TEMP': they are essential!
+eval set -- "$TEMP"
+
+while true ; do
+	case "$1" in
+		-c|--config) # Set the compiler options folder
+        
+           	 	# Set new config file to the one specfied in the argument list
+           	 	CONFIG=$2
+
+			shift 2 ;;
+		-m|--mkl_lapack) # Specifiy lapack version
+
+			l_use_mkl_lapack=true
+
+			shift;;
+        	-h|--help) # Print the help message
+
+			echo -e "Usage: compile.bash [-c FILE] [-m] [-h]"
+			echo -e "\t-c FILE, --config FILE\t  Path to config flags file"
+			echo -e "\t-m, --mkl_lapack\t  Flag to use MKL Lapack routines"
+			echo -e "\t-h, --help\t\t  Prints this help message"
+
+			exit 1 ;;
+		--) shift ; break ;;
+		*) echo "Something bad happened!" ; exit 1 ;;
+	esac
+done
 
 # Load desired configuration file
 if [ -e $CONFIG ]; then
@@ -212,6 +248,11 @@ if [ -e  $srcdir/Microphys_utils  ]; then
 fi
 if [ -e  $srcdir/CLUBB_core ]; then
 	ls $srcdir/CLUBB_core/*.[f,F]90 > "$generated_lists_dir"/clubb_param_files
+
+    # Compile provided Lapack routines if not using MKL version
+    if ! "$l_use_mkl_lapack"; then
+	    ls $srcdir/Lapack/*.f >> "$generated_lists_dir"/clubb_param_files
+    fi
 else
 	echo "Fatal error, CLUBB_core directory is missing"
 	exit -1

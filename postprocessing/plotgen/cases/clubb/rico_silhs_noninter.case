@@ -1,0 +1,156 @@
+# RICO case file for non-interactive SILHS runs!!
+
+%CASE = 
+(
+    'name' => 'rico_silhs',
+    'enabled' => 'false',
+    'type' => 'standard',
+    'headerText' => 'Header Text',
+    'startTime' => 4201.0,  # [minutes]
+    'endTime' => 4320.0,    # [minutes]
+    'startHeight' => 0.0,  # [m]
+    'endHeight' => 4500.0, # [m]
+    'plots' =>
+    [
+       {'plotTitle' => 'rvm\_mc', 'axisLabel' => 'rvm\_mc', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'rico_silhs_zt.ctl', 'type' => 'les', 'name' => 'analytic', 'expression' => 'rvm_mc', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'rico_silhs_lh_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'lh_rvm_mc', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'rcm\_mc', 'axisLabel' => 'rcm\_mc', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'rico_silhs_zt.ctl', 'type' => 'les', 'name' => 'analytic', 'expression' => 'rcm_mc', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'rico_silhs_lh_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'lh_rcm_mc', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Vrr', 'axisLabel' => 'Vrr', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'rico_silhs_zm.ctl', 'type' => 'les', 'name' => 'analytic', 'expression' => 'Vrr', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'rico_silhs_lh_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'lh_Vrr', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'VNr', 'axisLabel' => 'VNr', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'rico_silhs_zm.ctl', 'type' => 'les', 'name' => 'analytic', 'expression' => 'VNr', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'rico_silhs_lh_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'lh_VNr', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'rrm\_mc\_nonadj', 'axisLabel' => 'rrm\_mc\_nonadj', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'rico_silhs_zt.ctl', 'type' => 'les', 'name' => 'analytic', 'expression' => 'rrm_mc_nonadj', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'rico_silhs_lh_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'lh_rrm_mc_nonadj', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+       ]},
+       {'plotTitle' => 'rrm\_mc', 'axisLabel' => 'rrm\_mc', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'rico_silhs_zt.ctl', 'type' => 'les', 'name' => 'analytic', 'expression' => 'rrm_mc', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'rico_silhs_lh_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'lh_rrm_mc', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+       ]},
+       {'plotTitle' => 'Nrm\_mc', 'axisLabel' => 'Nrm\_mc', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'rico_silhs_zt.ctl', 'type' => 'les', 'name' => 'analytic', 'expression' => 'Nrm_mc', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'rico_silhs_lh_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'lh_Nrm_mc', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+       ]},
+       {'plotTitle' => 'thlm\_mc', 'axisLabel' => 'thlm\_mc', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'rico_silhs_zt.ctl', 'type' => 'les', 'name' => 'analytic', 'expression' => 'thlm_mc', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'rico_silhs_lh_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'lh_thlm_mc', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+       ]},
+       {'plotTitle' => 'm\_vol\_rad\_rain', 'axisLabel' => 'm\_vol\_rad\_rain', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'rico_silhs_zt.ctl', 'type' => 'les', 'name' => 'analytic', 'expression' => 'mvrr', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'rico_silhs_lh_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'lh_m_vol_rad_rain', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+       ]},
+       {'plotTitle' => 'rrm\_auto', 'axisLabel' => 'rrm\_auto', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'rico_silhs_zt.ctl', 'type' => 'les', 'name' => 'analytic', 'expression' => 'rrm_auto', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'rico_silhs_lh_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'lh_rrm_auto', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+       ]},
+       {'plotTitle' => 'rrm\_accr', 'axisLabel' => 'rrm\_accr', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'rico_silhs_zt.ctl', 'type' => 'les', 'name' => 'analytic', 'expression' => 'rrm_accr', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'rico_silhs_lh_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'lh_rrm_accr', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+       ]},
+       {'plotTitle' => 'rrm\_cond', 'axisLabel' => 'rrm\_cond', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'rico_silhs_zt.ctl', 'type' => 'les', 'name' => 'analytic', 'expression' => 'rrm_cond', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'rico_silhs_lh_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'lh_rrm_evap', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+       ]},
+       {'plotTitle' => 'Nrm\_auto', 'axisLabel' => 'Nrm\_auto', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'rico_silhs_zt.ctl', 'type' => 'les', 'name' => 'analytic', 'expression' => 'Nrm_auto', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'rico_silhs_lh_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'lh_Nrm_auto', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+       ]},
+       {'plotTitle' => 'Nrm\_cond', 'axisLabel' => 'Nrm\_cond', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'rico_silhs_zt.ctl', 'type' => 'les', 'name' => 'analytic', 'expression' => 'Nrm_cond', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'rico_silhs_lh_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'lh_Nrm_cond', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+       ]},
+       {'plotTitle' => 'mixt\_frac', 'axisLabel' => 'mixt\_frac', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'rico_silhs_zt.ctl', 'type' => 'les', 'name' => 'analytic', 'expression' => 'mixt_frac', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'rico_silhs_lh_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'lh_mixt_frac', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+       ]},
+       {'plotTitle' => 'thlm', 'axisLabel' => 'thlm', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'rico_silhs_zt.ctl', 'type' => 'les', 'name' => 'analytic', 'expression' => 'thlm', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'rico_silhs_lh_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'lh_thlm', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+       ]},
+       {'plotTitle' => 'rtp2\_zt', 'axisLabel' => 'rtp2\_zt', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'rico_silhs_zt.ctl', 'type' => 'les', 'name' => 'analytic', 'expression' => 'rtp2_zt', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'rico_silhs_lh_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'lh_rtp2_zt', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+       ]},
+       {'plotTitle' => 'thlp2\_zt', 'axisLabel' => 'thlp2\_zt', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'rico_silhs_zt.ctl', 'type' => 'les', 'name' => 'analytic', 'expression' => 'thlp2_zt', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'rico_silhs_lh_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'lh_thlp2_zt', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+       ]},
+       {'plotTitle' => 'rtp2\_mc', 'axisLabel' => 'rtp2\_mc', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'rico_silhs_zm.ctl', 'type' => 'les', 'name' => 'analytic', 'expression' => 'rtp2_mc', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'rico_silhs_zm.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'lh_rtp2_mc', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+       ]},
+       {'plotTitle' => 'thlp2\_mc', 'axisLabel' => 'thlp2\_mc', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'rico_silhs_zm.ctl', 'type' => 'les', 'name' => 'analytic', 'expression' => 'thlp2_mc', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'rico_silhs_zm.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'lh_thlp2_mc', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+       ]},
+       {'plotTitle' => 'wprtp\_mc', 'axisLabel' => 'wprtp\_mc', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'rico_silhs_zm.ctl', 'type' => 'les', 'name' => 'analytic', 'expression' => 'wprtp_mc', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'rico_silhs_zm.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'lh_wprtp_mc', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+       ]},
+       {'plotTitle' => 'wpthlp\_mc', 'axisLabel' => 'wpthlp\_mc', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'rico_silhs_zm.ctl', 'type' => 'les', 'name' => 'analytic', 'expression' => 'wpthlp_mc', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'rico_silhs_zm.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'lh_wpthlp_mc', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+       ]},
+       {'plotTitle' => 'rtpthlp\_mc', 'axisLabel' => 'rtpthlp\_mc', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'rico_silhs_zm.ctl', 'type' => 'les', 'name' => 'analytic', 'expression' => 'rtpthlp_mc', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'rico_silhs_zm.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'lh_rtpthlp_mc', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+       ]},
+       {'plotTitle' => 'cloud\_frac (unweighted)', 'axisLabel' => 'cloud\_frac', 'type' => 'profile', 'lines' =>
+        [
+          {'filename' => 'rico_silhs_zt.ctl', 'type' => 'les', 'name' => 'analytic', 'expression' => 'cloud_frac', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+           {'filename' => 'rico_silhs_lh_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'lh_cloud_frac_unweighted', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+        ]},
+        {'plotTitle' => 'mixt\_frac (unweighted)', 'axisLabel' => 'mixt\_frac', 'type' => 'profile', 'lines' =>
+        [
+           {'filename' => 'rico_silhs_zt.ctl', 'type' => 'les', 'name' => 'analytic', 'expression' => 'mixt_frac', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+           {'filename' => 'rico_silhs_lh_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'lh_mixt_frac_unweighted', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+        ]},
+        {'plotTitle' => 'precip\_frac (unweighted)', 'axisLabel' => 'precip\_frac', 'type' => 'profile', 'lines' =>
+        [
+           {'filename' => 'rico_silhs_zt.ctl', 'type' => 'les', 'name' => 'analytic', 'expression' => 'precip_frac', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+           {'filename' => 'rico_silhs_lh_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'lh_precip_frac_unweighted', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+        ]},
+    ],
+    'nightlyOutput' =>
+    {
+        'subText' => '',
+        'subHtml' => ''
+    },
+    'additionalOutput' =>
+    {
+        'subText' => '',
+        'subHtml' => ''
+    }
+)

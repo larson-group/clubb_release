@@ -60,6 +60,7 @@ if [ $RUN_TYPE = 'single' ] ; then # Single Case.
    # Select a run, comment out the rest.
    # The selected case will be used in the nightly tuning run
    # RUN_CASE=arm
+   # RUN_CASE=arm_97
    # RUN_CASE=atex
    # RUN_CASE=bomex
    # RUN_CASE=cgils_s6
@@ -69,13 +70,14 @@ if [ $RUN_TYPE = 'single' ] ; then # Single Case.
    # RUN_CASE=dycoms2_rf02_do
    # RUN_CASE=dycoms2_rf02_ds
    # RUN_CASE=dycoms2_rf02_nd
-   RUN_CASE=fire
+    RUN_CASE=fire
    # RUN_CASE=gabls2
    # RUN_CASE=gabls3_night
    # RUN_CASE=jun25_altocu (Needs an error_jun25_altocu.in file before running)
+   # RUN_CASE=lba
    # RUN_CASE=nov11_altocu
    # RUN_CASE=rico
-   # RUN_CASE=wangara 
+   # RUN_CASE=wangara
 
 elif [ $RUN_TYPE = 'multiple' ] ; then # Multiple Cases.
 
@@ -88,9 +90,8 @@ elif [ $RUN_TYPE = 'multiple' ] ; then # Multiple Cases.
    # example: all
    # all includes all models with LES data, except for Nov. 11 Altocu
    # (and GABLS2, Jun. 25 Altocu, and RICO).
-   #RUN_CASE=all
-   #MODEL_MULT=(arm atex bomex dycoms2_rf01 dycoms2_rf02_do\
-   # dycoms2_rf02_ds dycoms2_rf02_nd fire wangara)
+   RUN_CASE=fire_atex
+   MODEL_MULT=(fire atex)
 
    # example: BOMEX and FIRE
    # RUN_CASE=bomex_fire
@@ -101,8 +102,8 @@ elif [ $RUN_TYPE = 'multiple' ] ; then # Multiple Cases.
    # MODEL_MULT=(arm bomex dycoms2_rf01 dycoms2_rf02_do)
 
    # example: rico, cgils_s6/11/12, rf02_nd, and arm
-   RUN_CASE=ticket_756
-   MODEL_MULT=(arm rico cgils_s6 cgils_s11 cgils_s12 dycoms2_rf02_nd)
+   #RUN_CASE=ticket_756
+   #MODEL_MULT=(arm rico dycoms2_rf02_nd)
 
 fi
 
@@ -253,7 +254,7 @@ rm -f *'_hoc.in'
 echo "Running with the optimal parameter set"
 
 # The newest parameter file should have the optimal set
-PARAMS_FILE=`ls -t ../input/tunable_parameters/tunable_parameters* | head -n 1` 
+PARAMS_FILE=`ls -t ../input/tunable_parameters/tunable_parameters_* | head -n 1` 
 
 # For the model flag tuning runs
 FLAGS_FILE=`ls -t ../input/tunable_parameters/configurable_model_flags* | head -n 1` 

@@ -180,21 +180,20 @@ module morrison_microphys_module
         l_graupel
 
     use array_index, only:  & 
-        iirrm, iirsm, iirim, iirgm, &
-        iiNrm, iiNsm, iiNim, iiNgm
+        iirr, iirs, iiri, iirg, &
+        iiNr, iiNs, iiNi, iiNg
 
     use constants_clubb, only: &
         sec_per_day
 
     use clubb_precision, only: &
         core_rknd   ! Variable(s)
-        
 
     use variables_prognostic_module, only: &
         rho_ds_zt
 
     use error_code, only: &
-        clubb_at_least_debug_level
+        clubb_at_least_debug_level   ! Procedure
 
     use fill_holes, only: &
         vertical_integral
@@ -668,38 +667,38 @@ module morrison_microphys_module
 
 
     ! Unpack hydrometeor arrays.
-    rrm = hydromet(:,iirrm)
+    rrm = hydromet(:,iirr)
 
-    rrm_r4 = hydromet_r4(:,iirrm)
-    Nrm_r4    = hydromet_r4(:,iiNrm)
+    rrm_r4 = hydromet_r4(:,iirr)
+    Nrm_r4    = hydromet_r4(:,iiNr)
 
-    rrm_mc_r4 = hydromet_mc_r4(:,iirrm)
-    Nrm_mc_r4    = hydromet_mc_r4(:,iiNrm)
+    rrm_mc_r4 = hydromet_mc_r4(:,iirr)
+    Nrm_mc_r4    = hydromet_mc_r4(:,iiNr)
 
     if ( l_ice_microphys ) then
 
-       rim  = hydromet(:,iirim)
-       rsm = hydromet(:,iirsm)
+       rim  = hydromet(:,iiri)
+       rsm = hydromet(:,iirs)
 
-       rim_r4  = hydromet_r4(:,iirim)
-       Nim_r4    = hydromet_r4(:,iiNim)
-       rsm_r4 = hydromet_r4(:,iirsm)
-       Nsm_r4 = hydromet_r4(:,iiNsm)
+       rim_r4  = hydromet_r4(:,iiri)
+       Nim_r4    = hydromet_r4(:,iiNi)
+       rsm_r4 = hydromet_r4(:,iirs)
+       Nsm_r4 = hydromet_r4(:,iiNs)
 
-       rim_mc_r4  = hydromet_mc_r4(:,iirim)
-       Nim_mc_r4    = hydromet_mc_r4(:,iiNim)
-       rsm_mc_r4 = hydromet_mc_r4(:,iirsm)
-       Nsm_mc_r4 = hydromet_mc_r4(:,iiNsm)
+       rim_mc_r4  = hydromet_mc_r4(:,iiri)
+       Nim_mc_r4    = hydromet_mc_r4(:,iiNi)
+       rsm_mc_r4 = hydromet_mc_r4(:,iirs)
+       Nsm_mc_r4 = hydromet_mc_r4(:,iiNs)
 
        if ( l_graupel ) then
 
-          rgm = hydromet(:,iirgm)
+          rgm = hydromet(:,iirg)
 
-          rgm_r4 = hydromet_r4(:,iirgm)
-          Ngm_r4 = hydromet_r4(:,iiNgm)
+          rgm_r4 = hydromet_r4(:,iirg)
+          Ngm_r4 = hydromet_r4(:,iiNg)
 
-          rgm_mc_r4 = hydromet_mc_r4(:,iirgm)
-          Ngm_mc_r4 = hydromet_mc_r4(:,iiNgm)
+          rgm_mc_r4 = hydromet_mc_r4(:,iirg)
+          Ngm_mc_r4 = hydromet_mc_r4(:,iiNg)
 
        else ! l_graupel disabled
 
@@ -808,31 +807,31 @@ module morrison_microphys_module
                             + real( rgm_sten, kind = core_rknd) )
 
     ! Pack hydrometeor arrays.
-    hydromet_r4(:,iirrm) = rrm_r4
-    hydromet_r4(:,iiNrm)    = Nrm_r4
+    hydromet_r4(:,iirr) = rrm_r4
+    hydromet_r4(:,iiNr)    = Nrm_r4
 
-    hydromet_mc_r4(:,iirrm) = rrm_mc_r4
-    hydromet_mc_r4(:,iiNrm)    = Nrm_mc_r4
+    hydromet_mc_r4(:,iirr) = rrm_mc_r4
+    hydromet_mc_r4(:,iiNr)    = Nrm_mc_r4
 
     if ( l_ice_microphys ) then
 
-       hydromet_r4(:,iirim)  = rim_r4
-       hydromet_r4(:,iiNim)    = Nim_r4
-       hydromet_r4(:,iirsm) = rsm_r4
-       hydromet_r4(:,iiNsm) = Nsm_r4
+       hydromet_r4(:,iiri)  = rim_r4
+       hydromet_r4(:,iiNi)    = Nim_r4
+       hydromet_r4(:,iirs) = rsm_r4
+       hydromet_r4(:,iiNs) = Nsm_r4
 
-       hydromet_mc_r4(:,iirim)  = rim_mc_r4
-       hydromet_mc_r4(:,iiNim)    = Nim_mc_r4
-       hydromet_mc_r4(:,iirsm) = rsm_mc_r4
-       hydromet_mc_r4(:,iiNsm) = Nsm_mc_r4
+       hydromet_mc_r4(:,iiri)  = rim_mc_r4
+       hydromet_mc_r4(:,iiNi)    = Nim_mc_r4
+       hydromet_mc_r4(:,iirs) = rsm_mc_r4
+       hydromet_mc_r4(:,iiNs) = Nsm_mc_r4
 
        if ( l_graupel ) then
 
-          hydromet_r4(:,iirgm) = rgm_r4
-          hydromet_r4(:,iiNgm) = Ngm_r4
+          hydromet_r4(:,iirg) = rgm_r4
+          hydromet_r4(:,iiNg) = Ngm_r4
 
-          hydromet_mc_r4(:,iirgm) = rgm_mc_r4
-          hydromet_mc_r4(:,iiNgm) = Ngm_mc_r4
+          hydromet_mc_r4(:,iirg) = rgm_mc_r4
+          hydromet_mc_r4(:,iiNg) = Ngm_mc_r4
 
        endif
 
@@ -874,25 +873,24 @@ module morrison_microphys_module
     ! Multiply by -1 so that negative is associated with falling precip
     morr_rain_vel_r4(:) = morr_rain_vel_r4(:) * (-1.0)
     do k = 1, nz, 1
-      hydromet_vel_zt(k,iirrm) = real( morr_rain_vel_r4(k), kind = core_rknd )
+      hydromet_vel_zt(k,iirr) = real( morr_rain_vel_r4(k), kind = core_rknd )
     end do
     
-    if ( clubb_at_least_debug_level( 2 ) ) then
 
-       rsm_sd_morr_int = vertical_integral( (nz - 2 + 1), rho_ds_zt(2:nz), &
+    rsm_sd_morr_int = vertical_integral( (nz - 2 + 1), rho_ds_zt(2:nz), &
                             real( rsm_sten(2:nz), kind=core_rknd ), &
-                            gr%invrs_dzt(2:nz) )
+                            gr%dzt(2:nz) )
 
-       if ( rsm_sd_morr_int > maxval( real( rsm_sten(2:nz), &
+    call microphys_put_var( irsm_sd_morr_int, (/rsm_sd_morr_int/), microphys_stats_sfc )
+
+    if ( clubb_at_least_debug_level( 1 ) ) then
+        if ( rsm_sd_morr_int > maxval( real( rsm_sten(2:nz), &
                                                kind=core_rknd ) ) ) then
-          print *, "Warning: rsm_sd_morr was not conservative!" // &
+            print *, "Warning: rsm_sd_morr was not conservative!" // &
                    " rsm_sd_morr_verical_integr = ", rsm_sd_morr_int
-       endif
-
-       call microphys_put_var( irsm_sd_morr_int, (/rsm_sd_morr_int/), microphys_stats_sfc )
-
+        endif
     endif
-
+    
     call microphys_put_var( irrm_auto, rrm_auto, microphys_stats_zt )
     call microphys_put_var( irrm_accr, rrm_accr, microphys_stats_zt )
     call microphys_put_var( irrm_cond, rrm_evap, microphys_stats_zt )

@@ -153,8 +153,15 @@ module constants_clubb
   real( kind = core_rknd ), parameter, public :: &
     one_hundred   = 100.0_core_rknd,             & ! 100
     fifty         = 50.0_core_rknd,              & ! 50
+    thirty_six    = 36.0_core_rknd,              & ! 36
     twenty        = 20.0_core_rknd,              & ! 20
+    eighteen      = 18.0_core_rknd,              & ! 18
+    twelve        = 12.0_core_rknd,              & ! 12
     ten           = 10.0_core_rknd,              & ! 10
+    nine          = 9.0_core_rknd,               & ! 9
+    eight         = 8.0_core_rknd,               & ! 8
+    seven         = 7.0_core_rknd,               & ! 7
+    six           = 6.0_core_rknd,               & ! 6
     five          = 5.0_core_rknd,               & ! 5
     four          = 4.0_core_rknd,               & ! 4
     three         = 3.0_core_rknd,               & ! 3
@@ -311,12 +318,6 @@ module constants_clubb
   real( kind = core_rknd ), parameter, public :: &
     w_tol_sqd = w_tol**2 ! [m^2/s^2]
 
-  real( kind = core_rknd ), parameter, public :: &
-    Skw_max_mag = 4.5_core_rknd  ! Max magnitude of skewness     [-]
-
-  real( kind = core_rknd ), parameter, public :: &
-    Skw_max_mag_sqd = Skw_max_mag**2 ! Max mag. of Skw squared [-]
-
   ! Set tolerances for Khairoutdinov and Kogan rain microphysics to insure
   ! against numerical errors.  The tolerance values for Nc, rr, and Nr insure
   ! against underflow errors in computing the PDF for l_kk_rain.  Basically,
@@ -383,6 +384,9 @@ module constants_clubb
   real( kind = core_rknd ), parameter, public ::  & 
     eps = 1.0e-10_core_rknd ! Small value to prevent a divide by zero
 
+  real( kind = core_rknd ), parameter, public :: &
+    max_num_stdevs = 5.0_core_rknd ! Range of standard deviations for statistical significance
+
   real( kind = core_rknd ), parameter, public ::  &
     zero_threshold = 0.0_core_rknd ! Defining a threshold on a physical quantity to be 0.
 
@@ -390,7 +394,8 @@ module constants_clubb
   ! have.  Statistically, a correlation is not allowed to be less than -1 or
   ! greater than 1, so the maximum magnitude would be 1.
   real( kind = core_rknd ), parameter, public :: &
-    max_mag_correlation = 0.99_core_rknd
+    max_mag_correlation = 0.99_core_rknd, &      ! Most correlations use this
+    max_mag_correlation_flux = 0.99_core_rknd    ! Special for wprtp and wpthlp
 
   real( kind = core_rknd ), parameter, public :: &
     cloud_frac_min = 0.005_core_rknd ! Threshold for cloud fractions

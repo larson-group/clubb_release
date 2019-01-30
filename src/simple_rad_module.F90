@@ -178,7 +178,7 @@ module simple_rad_module
 
 !-------------------------------------------------------------------------------
   subroutine simple_rad( rho, rho_zm, rtm, rcm, exner,  & 
-                         err_code, Frad_LW, radht_LW )
+                         Frad_LW, radht_LW )
 ! Description:
 !   A simplified radiation driver
 ! References:
@@ -189,9 +189,12 @@ module simple_rad_module
 
     use grid_class, only: zt2zm ! Procedure(s)
 
-    use constants_clubb, only: fstderr, Cp ! Variable(s)
+    use constants_clubb, only: fstderr, Cp, eps ! Variable(s)
 
-    use error_code, only: clubb_rtm_level_not_found ! Variable(s)
+    use error_code, only: &
+        clubb_at_least_debug_level,  & ! Procedure
+        err_code,                    & ! Error Indicator
+        clubb_fatal_error                 ! Constant
 
     use stats_type_utilities, only: stat_update_var_pt ! Procedure(s)
 
@@ -227,9 +230,7 @@ module simple_rad_module
       rtm,    & ! Total water mixing ratio       [kg/kg]
       rcm,    & ! Cloud water mixing ratio       [kg/kg]
       exner     ! Exner function.                [-]
-
-    integer, intent(inout) :: err_code
-
+    
     ! Output Variables
     real( kind = core_rknd ), intent(out), dimension(gr%nz) ::  & 
       Frad_LW,         & ! Radiative flux                 [W/m^2]
@@ -250,7 +251,7 @@ module simple_rad_module
 
     do k = 1, gr%nz, 1
 
-      if ( F1 /= 0._core_rknd ) then
+      if ( F1 > eps ) then
         Frad_LW(k) = F0 * exp( -kappa * LWP(k) ) & 
                 + F1 * exp( -kappa * (LWP(1) - LWP(k)) )
 
@@ -268,27 +269,32 @@ module simple_rad_module
       do while ( k <= gr%nz .and. rtm(k) > 8.0e-3_core_rknd )
         k = k + 1
       end do
-      if ( k == gr%nz+1 .or. k == 2 ) then
-        write(fstderr,*) "Identification of 8.0 g/kg level failed"
-        write(fstderr,*) "Subroutine: simple_rad. " & 
-          // "File: simple_rad_module.F90"
-        write(fstderr,*) "k = ", k
-        write(fstderr,*) "rtm(k) = ", rtm(k)
-        err_code = clubb_rtm_level_not_found
-        return
-      end if
+    
+    if ( clubb_at_least_debug_level( 0 ) ) then
+        if ( k == gr%nz+1 .or. k == 2 ) then
+            write(fstderr,*) "Identification of 8.0 g/kg level failed"
+            write(fstderr,*) "Subroutine: simple_rad. " & 
+              // "File: simple_rad_module.F90"
+            write(fstderr,*) "k = ", k
+            write(fstderr,*) "rtm(k) = ", rtm(k)
+            err_code = clubb_fatal_error
+            return
+        end if
+    end if
 
       z_i = lin_interpolate_two_points( 8.0e-3_core_rknd, rtm(k), rtm(k-1), gr%zt(k), gr%zt(k-1) )
 
       ! Compute the Heaviside step function for z - z_i.
       do k = 1, gr%nz, 1
-        if ( gr%zm(k) - z_i  <  0.0_core_rknd ) then
+        !if gr%zm(k) > z_i
+        if ( gr%zm(k)-z_i < -eps ) then
           Heaviside(k) = 0.0_core_rknd
-        else if ( gr%zm(k) - z_i  ==  0.0_core_rknd ) then
-          Heaviside(k) = 0.5_core_rknd
-        else if ( gr%zm(k) - z_i  >  0.0_core_rknd ) then
+        !if gr%zm(k) < z_i
+        else if ( gr%zm(k)-z_i > eps) then
           Heaviside(k) = 1.0_core_rknd
-        end if
+        else !gr%zm(k) and z_i are equal within eps
+          Heaviside(k) = 0.5_core_rknd
+        end if       
       end do
 
       do k = 1, gr%nz, 1

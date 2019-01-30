@@ -107,7 +107,7 @@ echo "Testing SAM's API Commitment"
 python api_commitment_test.py -cpu CLUBB_core $samDir --exclude-dir="CLUBB","SILHS" > sam_modules.txt
 
 echo "Testing CAM's API Commitment"
-python api_commitment_test.py -cpu CLUBB_core $camDir --exclude-dir="cime","clubb","silhs" > cam_modules.txt
+python api_commitment_test.py -cpu CLUBB_core $camDir --exclude-dir="spcam","cime","clubb","silhs" > cam_modules.txt
 
 echo "Testing WRF's API Commitment"
 python api_commitment_test.py -cpu CLUBB_core $wrfDir --exclude-dir="clubb","silhs" > wrf_modules.txt
@@ -131,6 +131,21 @@ else
     if [ -s "$sam_modules" ] || [ -s "$wrf_modules" ] || [ -s "$cam_modules" ] ; then
         echo "ERROR: A host model is circumventing the API." 
         echo "Please inspect the nightly test API Commitment Table."
+        echo "MODELS AT FAULT INCLUDE:"
+
+                if [ -s "$sam_modules" ] ; then
+                        echo " - SAM Model"
+                        cat sam_modules.txt             
+                fi
+                if [ -s "$wrf_modules" ] ; then 
+                        echo " - WRF Model"
+                        cat wrf_modules.txt
+                fi
+                if [ -s "$cam_modules" ] ; then
+                        echo " - CAM Model"
+                        cat cam_modules.txt
+                fi
+
         exitCode=1
     else 
         echo "All host models passed."

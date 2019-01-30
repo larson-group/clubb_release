@@ -4,6 +4,7 @@
 ! be ignored.
 
 arm
+arm_97
 atex
 bomex
 dycoms2_rf01
@@ -15,14 +16,15 @@ dycoms2_rf02_so
 fire
 gabls2
 gabls3
+lba
 mpace_a
 mpace_b
 rico
+twp_ice
 wangara
 
 ! The following are unreleased cases. External users should comment these
 ! lines out before running run_scm_all.bash and run_bindiff_all.bash
-arm_97
 astex_a209
 cgils_s6
 !cgils_s6_p2k
@@ -38,13 +40,11 @@ clex9_oct14
 !cloud_feedback_s11_p2k
 !cloud_feedback_s12
 !cloud_feedback_s12_p2k
-cobra
+!cobra
 gabls3_night
 jun25_altocu
-lba
-mpace_b_lh
+mpace_b_silhs
 nov11_altocu
-rico_lh
-twp_ice
+rico_silhs
 mc3e
 !arm_3year

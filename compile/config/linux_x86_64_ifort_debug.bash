@@ -26,14 +26,14 @@ WARNINGS="-warn all -warn notruncated_source"
 DISABLE_WARNINGS="-warn none"
 
 # == Machine specific options ==
-ARCH="-xHost -openmp" # This should work on most modern AMD/Intel computers
+ARCH="-xHost -qopenmp" # This should work on most modern AMD/Intel computers
 # == Used to promote all real's to double precision ==
 DOUBLE_PRECISION="-real-size 64"
 
 # == Optimization ==
 # No optimization
-OPTIMIZE="-O0"
-#OPTIMIZE="-O3 -vec-report0"
+OPTIMIZE="-O0 -fp-model strict"
+#OPTIMIZE="-O3"
 
 # == NetCDF Location ==
 NETCDF="/usr/local/netcdf-intel64"

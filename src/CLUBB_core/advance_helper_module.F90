@@ -1,5 +1,5 @@
 !-------------------------------------------------------------------------
-! $Id$
+! $Id: advance_helper_module.F90 8769 2018-08-11 22:54:36Z vlarson@uwm.edu $
 !===============================================================================
 module advance_helper_module
 
@@ -14,7 +14,8 @@ module advance_helper_module
     set_boundary_conditions_rhs, &
     calc_stability_correction,   &
     calc_brunt_vaisala_freq_sqd, &
-    compute_Cx_fnc_Richardson
+    compute_Cx_fnc_Richardson, &
+    term_wp2_splat, term_wp3_splat
 
   private ! Set Default Scope
 
@@ -158,8 +159,8 @@ module advance_helper_module
   end subroutine set_boundary_conditions_rhs
 
   !===============================================================================
-  function calc_stability_correction( thlm, Lscale, em, exner, rtm, rcm, p_in_Pa, &
-                                      cloud_frac, thvm ) &
+  function calc_stability_correction( thlm, Lscale, em, exner, rtm, rcm, &
+                                      p_in_Pa, thvm ) &
     result ( stability_correction )
   !
   ! Description:
@@ -193,7 +194,6 @@ module advance_helper_module
       rtm,             & ! total water mixing ratio, r_t             [kg/kg]
       rcm,             & ! cloud water mixing ratio, r_c             [kg/kg]
       p_in_Pa,         & ! Air pressure                              [Pa]
-      cloud_frac,      & ! Cloud fraction                            [-]
       thvm               ! Virtual potential temperature             [K]
 
     ! Result
@@ -205,8 +205,9 @@ module advance_helper_module
       lambda0_stability
 
     !------------ Begin Code --------------
-    brunt_vaisala_freq_sqd = calc_brunt_vaisala_freq_sqd( thlm, exner, rtm, rcm, p_in_Pa, &
-                                                          cloud_frac, thvm )
+    call calc_brunt_vaisala_freq_sqd( thlm, exner, rtm, rcm, p_in_Pa, thvm, &
+                                      brunt_vaisala_freq_sqd )
+
     lambda0_stability = merge( lambda0_stability_coef, zero, brunt_vaisala_freq_sqd > zero )
 
     stability_correction = 1.0_core_rknd &
@@ -216,8 +217,8 @@ module advance_helper_module
   end function calc_stability_correction
 
   !===============================================================================
-  function calc_brunt_vaisala_freq_sqd( thlm, exner, rtm, rcm, p_in_Pa, cloud_frac, thvm ) &
-    result( brunt_vaisala_freq_sqd )
+  subroutine calc_brunt_vaisala_freq_sqd( thlm, exner, rtm, rcm, p_in_Pa, thvm, &
+                                           brunt_vaisala_freq_sqd )
 
   ! Description:
   !   Calculate the Brunt-Vaisala frequency squared, N^2.
@@ -231,7 +232,6 @@ module advance_helper_module
 
     use constants_clubb, only: &
       grav, & ! Constant(s)
-      cloud_frac_min, &
       Lv, Cp, Rd, ep, &
       one
 
@@ -262,11 +262,10 @@ module advance_helper_module
       rtm,     &  ! total water mixing ratio, r_t      [kg/kg]
       rcm,     &  ! cloud water mixing ratio, r_c      [kg/kg]
       p_in_Pa, &  ! Air pressure                       [Pa]
-      cloud_frac, & ! Cloud fraction                   [-]
       thvm        ! Virtual potential temperature      [K]
 
     ! Output Variables
-    real( kind = core_rknd ), dimension(gr%nz) :: &
+    real( kind = core_rknd ), dimension(gr%nz), intent(out) :: &
       brunt_vaisala_freq_sqd ! Brunt-Vaisala frequency squared, N^2 [1/s^2]
 
     ! Local Variables
@@ -282,51 +281,52 @@ module advance_helper_module
     thvm_zm = zt2zm( thvm )
     ddzt_thvm = ddzt( thvm )
 
-    if ( l_brunt_vaisala_freq_moist ) then
-      ! These parameters are needed to compute the moist Brunt-Vaisala
-      ! frequency.
-      T_in_K = thlm2T_in_K( thlm, exner, rcm )
-      T_in_K_zm = zt2zm( T_in_K )
-      rsat = sat_mixrat_liq( p_in_Pa, T_in_K )
-      rsat_zm = zt2zm( rsat )
-      ddzt_rsat = ddzt( rsat )
-      thm = thlm + Lv/(Cp*exner) * rcm
-      thm_zm = zt2zm( thm )
-      ddzt_thm = ddzt( thm )
-      ddzt_rtm = ddzt( rtm )
-    end if
-
-    do k=1, gr%nz
-
-      if ( .not. l_brunt_vaisala_freq_moist ) then
+    if ( .not. l_brunt_vaisala_freq_moist ) then
 
         ! Dry Brunt-Vaisala frequency
         if ( l_use_thvm_in_bv_freq ) then
-          brunt_vaisala_freq_sqd(k) = ( grav / thvm_zm(k) ) * ddzt_thvm(k)
+
+          brunt_vaisala_freq_sqd(:) = ( grav / thvm_zm(:) ) * ddzt_thvm(:)
+
         else
-          brunt_vaisala_freq_sqd(k) = ( grav / T0 ) * ddzt_thlm(k)
+
+          brunt_vaisala_freq_sqd(:) = ( grav / T0 ) * ddzt_thlm(:)
+    
         end if
 
-      else ! l_brunt_vaisala_freq_moist
+    else ! l_brunt_vaisala_freq_moist
 
-        ! In-cloud Brunt-Vaisala frequency. This is Eq. (36) of Durran and Klemp (1982)
-        brunt_vaisala_freq_sqd(k) = &
-          grav * ( ((one + Lv*rsat_zm(k) / (Rd*T_in_K_zm(k))) / &
-            (one + ep*(Lv**2)*rsat_zm(k)/(Cp*Rd*T_in_K_zm(k)**2))) * &
-            ( (one/thm_zm(k) * ddzt_thm(k)) + (Lv/(Cp*T_in_K_zm(k)))*ddzt_rsat(k)) - &
-            ddzt_rtm(k) )
+        T_in_K = thlm2T_in_K( thlm, exner, rcm )
+        T_in_K_zm = zt2zm( T_in_K )
+        rsat = sat_mixrat_liq( p_in_Pa, T_in_K )
+        rsat_zm = zt2zm( rsat )
+        ddzt_rsat = ddzt( rsat )
+        thm = thlm + Lv/(Cp*exner) * rcm
+        thm_zm = zt2zm( thm )
+        ddzt_thm = ddzt( thm )
+        ddzt_rtm = ddzt( rtm )
 
-      end if ! .not. l_brunt_vaisala_freq_moist
+        do k=1, gr%nz
 
-    end do ! k=1, gr%nz
+            ! In-cloud Brunt-Vaisala frequency. This is Eq. (36) of Durran and Klemp (1982)
+            brunt_vaisala_freq_sqd(k) = &
+              grav * ( ((one + Lv*rsat_zm(k) / (Rd*T_in_K_zm(k))) / &
+                (one + ep*(Lv**2)*rsat_zm(k)/(Cp*Rd*T_in_K_zm(k)**2))) * &
+                ( (one/thm_zm(k) * ddzt_thm(k)) + (Lv/(Cp*T_in_K_zm(k)))*ddzt_rsat(k)) - &
+                ddzt_rtm(k) )
+
+        end do ! k=1, gr%nz
+
+    end if ! .not. l_brunt_vaisala_freq_moist
 
     return
-  end function calc_brunt_vaisala_freq_sqd
+
+  end subroutine calc_brunt_vaisala_freq_sqd
 
 !===============================================================================
-  function compute_Cx_fnc_Richardson( thlm, um, vm, em, Lscale, exner, rtm, &
-                                      rcm, p_in_Pa, cloud_frac, thvm, rho_ds_zm ) &
-    result( Cx_fnc_Richardson )
+  subroutine compute_Cx_fnc_Richardson( thlm, um, vm, em, Lscale, exner, rtm, &
+                                        rcm, p_in_Pa, thvm, rho_ds_zm, &
+                                        Cx_fnc_Richardson )
 
   ! Description:
   !   Compute Cx as a function of the Richardson number
@@ -346,8 +346,7 @@ module advance_helper_module
     use constants_clubb, only: &
       one_fourth, &     ! Constant(s)
       one_third,  &
-      one,        &
-      five
+      one
 
     use interpolation, only: &
       linear_interp_factor ! Procedure
@@ -392,13 +391,12 @@ module advance_helper_module
       rtm,     & ! total water mixing ratio, r_t                  [kg/kg]
       rcm,     & ! cloud water mixing ratio, r_c                  [kg/kg]
       p_in_Pa, & ! Air pressure                                   [Pa]
-      cloud_frac, & ! Cloud fraction                              [-]
       thvm,    & ! Virtual potential temperature                  [K]
       rho_ds_zm  ! Dry static density on momentum levels          [kg/m^3]
 
 
     ! Output Variable
-    real( kind = core_rknd), dimension(gr%nz) :: &
+    real( kind = core_rknd), dimension(gr%nz), intent(out) :: &
       Cx_fnc_Richardson
 
     ! Local Variables
@@ -410,10 +408,19 @@ module advance_helper_module
       turb_freq_sqd, &
       Lscale_zm
 
+    real ( kind = core_rknd ), dimension(gr%nz) :: &
+        invrs_min_max_diff, &
+        invrs_num_div_thresh
+
   !-----------------------------------------------------------------------
+
     !----- Begin Code -----
-    brunt_vaisala_freq_sqd = calc_brunt_vaisala_freq_sqd( thlm, exner, rtm, rcm, p_in_Pa, &
-                                                          cloud_frac, thvm )
+
+    call calc_brunt_vaisala_freq_sqd( thlm, exner, rtm, rcm, p_in_Pa, thvm, &
+                                      brunt_vaisala_freq_sqd )
+
+    invrs_min_max_diff = 1.0_core_rknd / ( Richardson_num_max - Richardson_num_min )
+    invrs_num_div_thresh = 1.0_core_rknd / Richardson_num_divisor_threshold
 
     ! Statistics sampling
     if ( l_stats_samp ) then
@@ -442,7 +449,7 @@ module advance_helper_module
       if ( l_stats_samp ) &
         call stat_update_var( ishear_sqd, shear_sqd, stats_zm )
     else
-      Richardson_num = brunt_vaisala_freq_sqd / Richardson_num_divisor_threshold
+      Richardson_num = brunt_vaisala_freq_sqd * invrs_num_div_thresh
     end if
 
     if ( l_Richardson_vert_avg ) then
@@ -454,16 +461,8 @@ module advance_helper_module
     end if
 
     ! Cx_fnc_Richardson is interpolated based on the value of Richardson_num
-    where ( Richardson_num <= Richardson_num_min )
-      Cx_fnc_Richardson = Cx_min
-    else where ( Richardson_num >= Richardson_num_max )
-      Cx_fnc_Richardson = Cx_max
-    else where
-      ! Linear interpolation
-      Cx_fnc_Richardson = &
-        linear_interp_factor( (Richardson_num-Richardson_num_min) / &
-                              (Richardson_num_max-Richardson_num_min), Cx_max, Cx_min )
-    end where
+    Cx_fnc_Richardson = linear_interp_factor( &
+                        (Richardson_num-Richardson_num_min) * invrs_min_max_diff , Cx_max, Cx_min )
 
     if ( l_Cx_fnc_Richardson_vert_avg ) then
       Cx_fnc_Richardson = Lscale_width_vert_avg( Cx_fnc_Richardson, Lscale_zm, rho_ds_zm, &
@@ -479,7 +478,7 @@ module advance_helper_module
       call stat_update_var( iRichardson_num, Richardson_num, stats_zm )
     end if
 
-  end function compute_Cx_fnc_Richardson
+  end subroutine compute_Cx_fnc_Richardson
   !----------------------------------------------------------------------
 
   !----------------------------------------------------------------------
@@ -497,12 +496,6 @@ module advance_helper_module
     use grid_class, only: &
       gr ! Variable
 
-    use fill_holes, only: &
-      vertical_avg ! Procedure
-
-    use constants_clubb, only: &
-      one_half
-
     implicit none
 
     ! Input Variables
@@ -519,97 +512,261 @@ module advance_helper_module
       Lscale_width_vert_avg ! Vertically averaged profile (on momentum levels)
 
     ! Local Variables
-    integer :: k, k_avg_lower, k_avg_upper, k_inner_loop
+    integer :: &
+        k, i,        & ! Loop variable
+        k_avg_lower, &
+        k_avg_upper
 
     real( kind = core_rknd ), dimension(gr%nz) :: &
-      one_half_avg_width
+      one_half_avg_width, &
+      numer_terms, &
+      denom_terms
 
-    real( kind = core_rknd ), dimension(:), allocatable :: &
-      rho_ds_zm_virtual, &
-      var_profile_virtual, &
-      invrs_dzm_virtual
+    integer :: n_below_ground_levels
 
-    integer :: n_virtual_levels, n_below_ground_levels
+    real( kind = core_rknd ) :: & 
+      numer_integral, & ! Integral in the numerator (see description)
+      denom_integral    ! Integral in the denominator (see description)
 
   !----------------------------------------------------------------------
+
     !----- Begin Code -----
+
     one_half_avg_width = max( Lscale_zm, 500.0_core_rknd )
 
-    outer_vert_loop: do k=1, gr%nz
+    ! Pre calculate numerator and denominator terms
+    do k=1, gr%nz
+        numer_terms(k) = rho_ds_zm(k) * gr%dzm(k) * var_profile(k)
+        denom_terms(k) = rho_ds_zm(k) * gr%dzm(k)
+    end do
 
-      !-----------------------------------------------------------------------
-      ! Hunt down all vertical levels with one_half_avg_width(k) of gr%zm(k).
-      !-----------------------------------------------------------------------
+    k_avg_upper = 2
+    k_avg_lower = 1
 
-      k_avg_upper = k
+    ! For every grid level
+    do k=1, gr%nz
 
-      inner_vert_loop_upward: do k_inner_loop=k+1, gr%nz
-        if ( gr%zm(k_inner_loop) - gr%zm(k) <= one_half_avg_width(k) ) then
-          ! Include this height level in the average.
-          k_avg_upper = k_inner_loop
-        else
-          ! Do not include this level in the average. No point in searching further.
-          exit
+        !-----------------------------------------------------------------------
+        ! Hunt down all vertical levels with one_half_avg_width(k) of gr%zm(k).
+        ! 
+        !     k_avg_upper and k_avg_lower are saved each loop iteration, this 
+        !     improves computational efficiency since their values are likely
+        !     within one or two grid levels of where they were last found to 
+        !     be. This is because one_half_avg_width does not change drastically
+        !     from one grid level to the next. Thus, less searching is required
+        !     by allowing the search to start at a value that is close to the
+        !     desired value and allowing each value to increment or decrement 
+        !     as needed. 
+        !-----------------------------------------------------------------------
+
+
+        ! Determine if k_avg_upper needs to increment or decrement
+        if ( gr%zm(k_avg_upper) - gr%zm(k) > one_half_avg_width(k) ) then
+
+            ! k_avg_upper is too large, decrement it
+            do while ( gr%zm(k_avg_upper) - gr%zm(k) > one_half_avg_width(k) )
+                k_avg_upper = k_avg_upper - 1
+            end do
+
+        elseif ( k_avg_upper < gr%nz ) then
+
+            ! k_avg_upper is too small, increment it
+            do while ( gr%zm(k_avg_upper+1) - gr%zm(k) <= one_half_avg_width(k) )
+
+                k_avg_upper = k_avg_upper + 1
+
+                if ( k_avg_upper == gr%nz ) exit
+
+            end do
+
         end if
-      end do inner_vert_loop_upward
 
-      k_avg_lower = k
-      inner_vert_loop_downward: do k_inner_loop=k-1, 1, -1
-        if ( gr%zm(k) - gr%zm(k_inner_loop) <= one_half_avg_width(k) ) then
-          ! Include this height level in the average.
-          k_avg_lower = k_inner_loop
-        else
-          ! Do not include this level in the average. No point in searching further.
-          exit
+
+        ! Determine if k_avg_lower needs to increment or decrement
+        if ( gr%zm(k) - gr%zm(k_avg_lower) > one_half_avg_width(k) ) then
+
+            ! k_avg_lower is too small, increment it
+            do while ( gr%zm(k) - gr%zm(k_avg_lower) > one_half_avg_width(k) )
+
+                k_avg_lower = k_avg_lower + 1
+
+            end do
+
+        elseif ( k_avg_lower > 1 ) then
+
+            ! k_avg_lower is too large, decrement it
+            do while ( gr%zm(k) - gr%zm(k_avg_lower-1) <= one_half_avg_width(k) )
+
+                k_avg_lower = k_avg_lower - 1
+
+                if ( k_avg_lower == 1 ) exit
+
+            end do 
+
         end if
-      end do inner_vert_loop_downward
 
-      ! Compute the number of levels below ground to include.
-      if ( k_avg_lower > 1 ) then
-        ! k=1, the lowest "real" level, is not included in the average, so no
-        ! below-ground levels should be included.
-        n_below_ground_levels = 0
-      else
-        ! The number of below-ground levels included is equal to the distance
-        ! below the lowest level spanned by one_half_avg_width(k)
-        ! divided by the distance between vertical levels below ground; the
-        ! latter is assumed to be the same as the distance between the first and
-        ! second vertical levels.
-        n_below_ground_levels = int( ( one_half_avg_width(k)-(gr%zm(k)-gr%zm(1)) ) / &
+
+        ! Compute the number of levels below ground to include.
+        if ( k_avg_lower > 1 ) then
+
+            ! k=1, the lowest "real" level, is not included in the average, so no
+            ! below-ground levels should be included.
+            n_below_ground_levels = 0
+
+            numer_integral = 0.0_core_rknd
+            denom_integral = 0.0_core_rknd
+
+        else
+
+            ! The number of below-ground levels included is equal to the distance
+            ! below the lowest level spanned by one_half_avg_width(k)
+            ! divided by the distance between vertical levels below ground; the
+            ! latter is assumed to be the same as the distance between the first and
+            ! second vertical levels.
+            n_below_ground_levels = int( ( one_half_avg_width(k)-(gr%zm(k)-gr%zm(1)) ) / &
                                         ( gr%zm(2)-gr%zm(1) ) )
-      end if
 
-      ! Prepare the virtual levels!
-      n_virtual_levels = k_avg_upper-k_avg_lower+n_below_ground_levels+1
-      allocate( rho_ds_zm_virtual(n_virtual_levels), var_profile_virtual(n_virtual_levels), &
-                invrs_dzm_virtual(n_virtual_levels) )
+            numer_integral = n_below_ground_levels * denom_terms(1) * var_below_ground_value
+            denom_integral = n_below_ground_levels * denom_terms(1)
 
-      ! All vertical levels have rho_ds_zm and invrs_dzm_virtual equal to the
-      ! values at k=1. The value of var_profile at k=1 is given as an argument
-      ! to this function.
-      if ( n_below_ground_levels > 0 ) then
-        rho_ds_zm_virtual(1:n_below_ground_levels) = rho_ds_zm(1)
-        var_profile_virtual(1:n_below_ground_levels) = var_below_ground_value
-        invrs_dzm_virtual(1:n_below_ground_levels) = gr%invrs_dzm(1)
-      end if
+        end if
 
-      ! Set up the above-ground virtual levels.
-      rho_ds_zm_virtual(n_below_ground_levels+1:n_virtual_levels) = &
-        rho_ds_zm(k_avg_lower:k_avg_upper)
-      var_profile_virtual(n_below_ground_levels+1:n_virtual_levels) = &
-        var_profile(k_avg_lower:k_avg_upper)
-      invrs_dzm_virtual(n_below_ground_levels+1:n_virtual_levels) = &
-        gr%invrs_dzm(k_avg_lower:k_avg_upper)
+            
+        ! Add numerator and denominator terms for all above-ground levels
+        do i = k_avg_lower, k_avg_upper
 
-      ! Finally, compute the average.
-      Lscale_width_vert_avg(k) = vertical_avg( n_virtual_levels, rho_ds_zm_virtual, &
-                                               var_profile_virtual, invrs_dzm_virtual )
+            numer_integral = numer_integral + numer_terms(i)
+            denom_integral = denom_integral + denom_terms(i)
 
-      deallocate( rho_ds_zm_virtual, var_profile_virtual, invrs_dzm_virtual )
+        end do
 
-    end do outer_vert_loop
+        Lscale_width_vert_avg(k) = numer_integral / denom_integral
+
+    end do
 
     return
+
   end function Lscale_width_vert_avg
+
+ !============================================================================
+  subroutine term_wp2_splat( C_wp2_splat, nz, dt, wp2, wp2_zt, tau_zm, &
+                             wp2_splat )
+
+
+  ! Description:
+  !   This subroutine computes the (negative) tendency of wp2 due
+  !   to "splatting" of eddies, e.g., near the ground or a Sc inversion.
+  !   term_splat is intended to be added to the right-hand side of 
+  !   the wp2 equation, and -0.5*term_splat is intended to be added to each 
+  !   of the up2 and vp2 equations.  The functional form of term splat is
+  !
+  !   term_splat \propto - w'2 * (turbulent time scale) * ( d/dz( sqrt(w'2) ) )^2
+
+    ! Included Modules
+    use grid_class, only: &
+      ddzt   ! Procedure(s)
+
+    use clubb_precision, only: & 
+      core_rknd 
+
+    use constants_clubb, only: &
+      five  ! Constant(s)
+
+    implicit none 
+
+    ! Input Variables
+    integer, intent(in) :: & 
+      nz          ! Number of vertical levels                    [-]
+
+    real( kind = core_rknd ), intent(in) :: & 
+      C_wp2_splat, &          ! Tuning parameter                    [-]
+      dt                      ! CLUBB computational time step       [s]
+
+    real( kind = core_rknd ), dimension(nz), intent(in) :: & 
+      wp2,     &  ! Variance of vertical velocity on the momentum grid [m^2/s^2]
+      wp2_zt,  &  ! Variance of vertical velocity on the thermodynamic grid [m^2/s^2]
+      tau_zm     ! Turbulent time scale on the momentum grid               [s]
+
+    ! Output Variable
+    real( kind = core_rknd ), dimension(nz), intent(out) :: & 
+      wp2_splat     ! Tendency of <w'^2> due to splatting of eddies (on zm grid) [m^2/s^3]
+
+    ! Local Variable
+    real( kind = core_rknd ), dimension(nz) :: & 
+      d_sqrt_wp2_dz    ! d/dz( sqrt( w'2 ) )                 [1/s]
+
+    ! ---- Begin Code ----
+
+    d_sqrt_wp2_dz = ddzt( sqrt( wp2_zt ) )
+    ! The splatting term is clipped so that the incremental change doesn't exceed 5 times the
+    !   value of wp2 itself.  This prevents spikes in wp2 from being propagated to up2 and vp2.
+    !   However, it does introduce undesired dependence on the time step.
+    !   Someday we may wish to treat this term using a semi-implicit discretization.
+    wp2_splat = - wp2 * min( five/dt, C_wp2_splat * tau_zm * d_sqrt_wp2_dz**2 )
+    !wp2_splat = - C_wp2_splat * wp2 * 900.0_core_rknd * d_sqrt_wp2_dz**2
+
+  end subroutine term_wp2_splat
+
+  !============================================================================
+  subroutine term_wp3_splat( C_wp2_splat, nz, dt, wp2, wp3, tau_zt, &
+                             wp3_splat )
+
+  ! Description:
+  !   This subroutine computes the damping of wp3 due
+  !   to "splatting" of eddies, e.g., as they approach the ground or a Sc inversion.
+  !   term_wp3_splat is intended to be added to the right-hand side of 
+  !   the wp3 equation.  The functional form of wp3_splat is
+  !
+  !   wp3_splat \propto - w'3 * (turbulent time scale) * ( d/dz( sqrt(w'2) ) )^2
+  !
+  !   If the coefficient on wp3_splat is at least 1.5 times greater than the 
+  !   coefficient on wp2_splat, then skewness will be damped, promoting
+  !   more stratiform layers.
+
+    ! Included Modules
+    use grid_class, only: &
+      ddzm   ! Procedure(s)
+
+    use clubb_precision, only: & 
+      core_rknd 
+
+    use constants_clubb, only: &
+      three, &  ! Constant(s)
+      five
+
+    implicit none 
+
+    ! Input Variables
+    integer, intent(in) :: & 
+      nz          ! Number of vertical levels                    [-]
+
+    real( kind = core_rknd ), intent(in) :: & 
+      C_wp2_splat, &          ! Tuning parameter                    [-]
+      dt                      ! CLUBB computational time step       [s]
+
+    real( kind = core_rknd ), dimension(nz), intent(in) :: & 
+      wp2,     &  ! Variance of vertical velocity on the momentum grid [m^2/s^2]
+      wp3,     &  ! Third moment of vertical velocity on the momentum grid [m^3/s^3]
+      tau_zt      ! Turbulent time scale on the thermal grid               [s]
+
+    ! Output Variable
+    real( kind = core_rknd ), dimension(nz), intent(out) :: & 
+      wp3_splat     ! Tendency of <w'^3> due to splatting of eddies (on zt grid) [m^3/s^4]
+
+    ! Local Variable
+    real( kind = core_rknd ), dimension(nz) :: & 
+      d_sqrt_wp2_dz    ! d/dz( sqrt( w'2 ) )                 [1/s]
+
+    ! ---- Begin Code ----
+
+    d_sqrt_wp2_dz = ddzm( sqrt( wp2 ) )
+    ! The splatting term is clipped so that the incremental change doesn't exceed 5 times the
+    !   value of wp2 itself.  This prevents spikes in wp2 from being propagated to up2 and vp2.
+    !   However, it does introduce undesired dependence on the time step.
+    !   Someday we may wish to treat this term using a semi-implicit discretization.
+    wp3_splat = - wp3 * min( five/dt, three * C_wp2_splat * tau_zt * d_sqrt_wp2_dz**2 )
+    !wp3_splat = - three * C_wp2_splat * wp3 * 900._core_rknd * d_sqrt_wp2_dz**2
+
+  end subroutine term_wp3_splat
 
 end module advance_helper_module

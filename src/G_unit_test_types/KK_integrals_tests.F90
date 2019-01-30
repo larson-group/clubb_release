@@ -33,6 +33,9 @@ module KK_integrals_tests
     use clubb_precision, only: &
         dp ! double precision
 
+    use model_flags, only: &
+        l_high_accuracy_parab_cyl_fnc
+
     implicit none
 
     ! Output Vars
@@ -54,10 +57,13 @@ module KK_integrals_tests
 
     ! Declare the tolerance value, which is the maximum acceptable percent
     ! difference between the results.
-    tol = 1.0e-12_dp
+    tol = 1.5e-12_dp
 
     ! Initialize total number of mismatches.
     total_mismatches = 0
+
+    ! Use high accuracy for tests
+    l_high_accuracy_parab_cyl_fnc = .true.
 
     write(fstdout,'(A)') "Performing KK integrals tests"
     write(fstdout,'(A)') " "
@@ -1133,8 +1139,8 @@ module KK_integrals_tests
     !-----------------------------------------------------------------------
 
     use constants_clubb, only: &
-        zero_dp, & ! Constant(s)
-        fstdout
+        fstdout, & ! Constant(s)
+        eps
 
     use clubb_precision, only: &
         dp ! double precision
@@ -1162,7 +1168,7 @@ module KK_integrals_tests
     ! Percent difference between the result obtained for the integral using
     ! the CLUBB code and the result obtained for the same integral using the
     ! same code in MATLAB.
-    if ( comparison_result /= zero_dp ) then
+    if ( abs(comparison_result) > eps ) then
        percent_diff = 100.0_dp * abs( ( obtained_result - comparison_result ) &
                                       / comparison_result )
     else  ! Integral should have a value of 0.

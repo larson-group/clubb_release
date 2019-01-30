@@ -37,6 +37,8 @@ module silhs_importance_sample_module
   !   Applies importance sampling to a single vertical level !
 
   ! References:
+  ! https://arxiv.org/pdf/1711.03675v1.pdf#nameddest=url:importance_sampling
+  ! 
   !   clubb:ticket:736 !
   !-----------------------------------------------------------------------
 
@@ -53,9 +55,6 @@ module silhs_importance_sample_module
     use hydromet_pdf_parameter_module, only: &
       hydromet_pdf_parameter ! Type
 
-    use error_code, only: &
-      clubb_at_least_debug_level  ! Procedure
-
     use parameters_silhs, only: &
       eight_cluster_allocation_opt, & ! Constant(s)
       four_cluster_allocation_opt, &
@@ -64,6 +63,9 @@ module silhs_importance_sample_module
       l_lh_limit_weights, &
       cluster_allocation_strategy, &
       l_lh_normalize_weights
+
+    use error_code, only: &
+        clubb_at_least_debug_level  ! Procedure
 
     implicit none
 
@@ -442,7 +444,7 @@ module silhs_importance_sample_module
       fstderr
 
     use error_code, only: &
-      clubb_at_least_debug_level  ! Procedure
+        clubb_at_least_debug_level  ! Procedure
 
     implicit none
 
@@ -640,7 +642,9 @@ module silhs_importance_sample_module
           ! If the random number is greater than category_cumulative_probs(num_imp_categories-1)
           ! and less than 1, then it belongs in the last category
           if ( rand_vect(sample) >= category_cumulative_probs(category) .and. &
-               rand_vect(sample) < one ) then
+               rand_vect(sample) <= one ) then ! Sometimes rand num == 1 (?!), 
+                                               ! triggering the Invalid rand_vect num error below.
+                                               ! See clubb:ticket:805. 
             int_sample_category(sample) = category
           end if
 
@@ -791,7 +795,7 @@ module silhs_importance_sample_module
       core_rknd      ! Constant
 
     use error_code, only: &
-      clubb_at_least_debug_level ! Procedure
+        clubb_at_least_debug_level  ! Procedure
 
     implicit none
 
@@ -986,7 +990,7 @@ module silhs_importance_sample_module
       fstderr       ! Constant
 
     use error_code, only: &
-      clubb_at_least_debug_level ! Procedure
+        clubb_at_least_debug_level  ! Procedure
 
     implicit none
 
@@ -1167,7 +1171,8 @@ module silhs_importance_sample_module
       core_rknd       ! Constant
 
     use constants_clubb, only: &
-      zero            ! Constant
+      zero,         & ! Constant
+      eps
 
     implicit none
 
@@ -1219,7 +1224,7 @@ module silhs_importance_sample_module
     pdf_prob_var_frac_prod_sum = sum( cluster_real_probs(:) * cluster_variance_fractions(:) )
 
     ! Compute the prescribed probability for each cluster!
-    if ( pdf_prob_var_frac_prod_sum == zero ) then
+    if ( abs(pdf_prob_var_frac_prod_sum) < eps ) then
       ! No variance prescribed in clusters with non-zero PDF probability!
       ! Fall back to no importance sampling!
       cluster_prescribed_probs(:) = cluster_real_probs(:)
@@ -1233,7 +1238,7 @@ module silhs_importance_sample_module
       do icategory=1, num_categories_in_cluster(icluster)
         cat_idx = cluster_categories(icluster,icategory)
         ! Scale category probability based on the cluster probability
-        if ( cluster_real_probs(icluster) == zero ) then
+        if ( abs(cluster_real_probs(icluster)) < eps) then
           category_prescribed_probs(cat_idx) = zero
         else
           category_prescribed_probs(cat_idx) = ( category_real_probs(cat_idx) / &
@@ -1423,9 +1428,7 @@ module silhs_importance_sample_module
 
     use constants_clubb, only: &
       one,  &    ! Constant(s)
-      two,  &
-      zero, &
-      fstderr
+      two
 
     use pdf_utilities, only: &
       compute_mean_binormal ! Procedure
@@ -1510,9 +1513,8 @@ module silhs_importance_sample_module
     use clubb_precision, only: &
       core_rknd             ! Precision
 
-    use constants_clubb, only: &
-      zero, &               ! Constant(s)
-      one, &
+    use constants_clubb, only: &      
+      one, &               ! Constant(s)
       fstderr
 
     use pdf_parameter_module, only: &
@@ -2037,7 +2039,7 @@ module silhs_importance_sample_module
 !----------------------------------------------------------------------
 
   !-----------------------------------------------------------------------
-  function determine_sample_categories( num_samples, d_variables, X_nl_one_lev, &
+  function determine_sample_categories( num_samples, pdf_dim, X_nl_one_lev, &
                                         X_mixt_comp_one_lev, importance_categories ) &
   result( int_sample_category )
 
@@ -2055,7 +2057,7 @@ module silhs_importance_sample_module
     use constants_clubb, only: &
       zero     ! Constant(s)
 
-    use corr_varnce_module, only: &
+    use array_index, only: &
       iiPDF_chi, &
       iiPDF_rr
 
@@ -2064,9 +2066,9 @@ module silhs_importance_sample_module
     ! Input Variables
     integer, intent(in) :: &
       num_samples, &        ! Number of SILHS sample points
-      d_variables           ! Number of variates in X_nl
+      pdf_dim          ! Number of variates in X_nl
 
-    real( kind = core_rknd ), dimension(num_samples,d_variables), intent(in) :: &
+    real( kind = core_rknd ), dimension(num_samples,pdf_dim), intent(in) :: &
       X_nl_one_lev          ! SILHS sample vector at one height level
 
     integer, dimension(num_samples), intent(in) :: &

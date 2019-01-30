@@ -12,7 +12,8 @@ vars_zt =
 'mixt_frac', 'w_1', 'w_2', 'varnce_w_1', 'varnce_w_2', 'thl_1', 'thl_2', 
 'varnce_thl_1', 'varnce_thl_2',
 'rt_1', 'rt_2', 'varnce_rt_1', 'varnce_rt_2', 'rc_1', 'rc_2', 'rsatl_1', 'rsatl_2', 'cloud_frac_1', 'cloud_frac_2',
-'chi_1', 'chi_2', 'stdev_chi_1', 'stdev_chi_2', 'rrtthl',
+'chi_1', 'chi_2', 'stdev_chi_1', 'stdev_chi_2', 'corr_w_rt_1', 'corr_w_rt_2', 'corr_w_thl_1', 'corr_w_thl_2',
+'corr_rt_thl_1', 'corr_rt_thl_2',
 ''
 
 vars_zm = 

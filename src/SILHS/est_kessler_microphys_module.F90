@@ -17,7 +17,7 @@ module est_kessler_microphys_module
 !------------------------------------------------------------------------
 
   subroutine est_kessler_microphys &
-             ( nz, num_samples, d_variables, &
+             ( nz, num_samples, pdf_dim, &
                X_nl_all_levs, pdf_params, rcm, cloud_frac, &
                X_mixt_comp_all_levs, lh_sample_point_weights, &
                lh_AKm, AKm, AKstd, AKstd_cld, &
@@ -36,9 +36,6 @@ module est_kessler_microphys_module
       zero_threshold, &
       zero
 
-    use anl_erf, only:  &
-      erf ! Procedure(s)
-
     use pdf_parameter_module, only:  &
       pdf_parameter  ! Type
 
@@ -52,9 +49,9 @@ module est_kessler_microphys_module
     integer, intent(in) :: &
       nz, &          ! Number of vertical levels
       num_samples, & ! Number of sample points
-      d_variables    ! Number of variates
+      pdf_dim   ! Number of variates
 
-    real( kind = core_rknd ), dimension(nz,num_samples,d_variables), intent(in) :: &
+    real( kind = core_rknd ), dimension(nz,num_samples,pdf_dim), intent(in) :: &
       X_nl_all_levs ! Sample that is transformed ultimately to normal-lognormal
 
     real( kind = core_rknd ), dimension(nz), intent(in) :: &
@@ -69,7 +66,7 @@ module est_kessler_microphys_module
     integer, dimension(nz,num_samples), intent(in) :: &
       X_mixt_comp_all_levs ! Whether we're in mixture component 1 or 2
 
-    real( kind = core_rknd ), dimension(num_samples), intent(in) :: &
+    real( kind = core_rknd ), dimension(nz,num_samples), intent(in) :: &
       lh_sample_point_weights ! Weight for cloud weighted sampling
 
     real( kind = core_rknd ), dimension(nz), intent(out) :: &
@@ -181,7 +178,7 @@ module est_kessler_microphys_module
              cloud_frac_1, cloud_frac_2, &
              rcm_sample, & 
              !X_nl(1:n,3), X_nl(1:n,4), X_nl(1:n,5),
-             X_mixt_comp_all_levs(level,:), lh_sample_point_weights, lh_AKm(level) )
+             X_mixt_comp_all_levs(level,:), lh_sample_point_weights(level,:), lh_AKm(level) )
 
       ! Compute Monte Carlo estimate of liquid for test purposes.
       call rc_estimate &
@@ -269,9 +266,6 @@ module est_kessler_microphys_module
       g_per_kg, &
       zero, &
       one
-
-!   use error_code, only:  &
-!     clubb_at_least_debug_level  ! Procedure(s)
 
     use parameters_silhs, only: &
       l_lh_importance_sampling ! Variable(s)
@@ -373,7 +367,7 @@ module est_kessler_microphys_module
 !          print*, 'fraction_1= ', fraction_1
 
 ! V. Larson change to try to fix sampling
-!          if ( in_mixt_frac_1( X_u_one_lev(sample,d_variables+1), fraction_1 ) ) then
+!          if ( in_mixt_frac_1( X_u_one_lev(sample,pdf_dim+1), fraction_1 ) ) then
 !          print*, '-1+2*int((sample+1)/2)= ', -1+2*int((sample+1)/2)
 !          print*, '-1+2*int((sample+1)/2)= ', int(sample)
       if ( X_mixt_comp_one_lev(sample) == 1 ) then
@@ -482,9 +476,6 @@ module est_kessler_microphys_module
     use constants_clubb, only: &
       one, &       ! Constant(s)
       zero
-
-!   use error_code, only:  &
-!       clubb_at_least_debug_level  ! Procedure(s)
 
     implicit none
 

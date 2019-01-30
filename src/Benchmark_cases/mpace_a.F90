@@ -61,7 +61,7 @@ module mpace_a
 !-----------------------------------------------------------------------
 
     use constants_clubb, only: Cp, Rd, & ! Variable(s)
-                         sec_per_hr, g_per_kg
+                         sec_per_hr, g_per_kg, fstderr
 
     use parameters_model, only: sclr_dim, edsclr_dim ! Variable(s)
 
@@ -75,7 +75,7 @@ module mpace_a
 
     use array_index, only: iisclr_rt, iisclr_thl, iiedsclr_rt, iiedsclr_thl ! Variable(s)
 
-    use error_code, only: clubb_debug ! Procedure(s)
+    use error_code, only: clubb_at_least_debug_level  ! Procedure
 
     ! Note that this subroutine is from the time_dependent_input module, but
     ! mpace_a does not have time dependent input.
@@ -147,8 +147,8 @@ module mpace_a
                      before_time, after_time, ratio)
 
     ! Sanity check to ensure that time_times is sorted.
-    if( before_time == -1 .or. after_time == -1 ) then
-      call clubb_debug(1, "file_times not sorted in mpace_a_tndcy.")
+    if( clubb_at_least_debug_level( 1 ) .and. (before_time == -1 .or. after_time == -1) ) then
+      write(fstderr,*) "file_times not sorted in mpace_a_tndcy."
     endif 
 
     do k=1,file_nlevels
@@ -241,13 +241,13 @@ module mpace_a
 !          http://science.arm.gov/wg/cpm/scm/scmic5/index.html
 !-----------------------------------------------------------------------
 
-    use constants_clubb, only: Cp, Lv ! Constant(s)
+    use constants_clubb, only: Cp, Lv, fstderr ! Constant(s)
 
     use clubb_precision, only: time_precision, core_rknd ! Variable(s)
 
-    use error_code, only: clubb_debug ! Procedure(s)
-
     use interpolation, only: linear_interp_factor ! Procedure(s)
+
+    use error_code, only: clubb_at_least_debug_level  ! Procedure
 
     ! Note that this subroutine is from time_dependent_input, but 
     ! mpace_a does not have time_dependent input.
@@ -291,8 +291,8 @@ module mpace_a
 
     ! Sanity check to make certain that the values read into
     ! file_times are sorted. Joshua Fasching June 2008
-    if ( before_time == -1 .or. after_time == -1 ) then
-      call clubb_debug(1, "file_times not sorted in MPACE_A")
+    if ( clubb_at_least_debug_level( 1 ) .and. (before_time == -1 .or. after_time == -1) ) then
+      write(fstderr,*) "file_times not sorted in MPACE_A"
     endif
 
     latent_heat_flx = linear_interp_factor( ratio, file_latent_ht(after_time), &

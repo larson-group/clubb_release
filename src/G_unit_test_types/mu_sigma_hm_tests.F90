@@ -4,9 +4,8 @@ module mu_sigma_hm_tests
 
   implicit none
 
-  public :: mu_sigma_hm_unit_tests
-
-  private :: produce_seed
+  public :: mu_sigma_hm_unit_tests, &
+            produce_seed
 
   private  ! default scope
 
@@ -86,15 +85,22 @@ module mu_sigma_hm_tests
 
     implicit none
 
+    integer, parameter :: &
+      nz = 1    ! Number of vertical grid levels
+
+    real( kind = core_rknd ), dimension(nz) :: &
+      hmm,           & ! Hydrometeor mean (overall), <hm>            [hm un]
+      hmm_ip,        & ! Hydrometeor mean (in-precip.), <hm|_ip>     [hm un]
+      hmp2,          & ! Hydrometeor variance (overall), <hm'^2>     [(hm un)^2]
+      mixt_frac,     & ! Mixture fraction                            [-]
+      precip_frac,   & ! Precipitation fraction (overall)            [-]
+      precip_frac_1, & ! Precipitation fraction (1st PDF component)  [-]
+      precip_frac_2, & ! Precipitation fraction (2nd PDF component)  [-]
+      mu_thl_1,      & ! Mean of th_l (1st PDF component)            [K]
+      mu_thl_2         ! Mean of th_l (2nd PDF component)            [K]
+
     real( kind = core_rknd ) :: &
-      hmm,                & ! Hydrometeor mean (overall), <hm>           [hm un]
-      hmm_ip,             & ! Hydrometeor mean (in-precip.), <hm|_ip>    [hm un]
-      hmp2,               & ! Hydrometeor variance (overall), <hm'^2>  [hm un^2]
       hmp2_ip_on_hmm2_ip, & ! Ratio <hm|_ip'^2> / <hm|_ip>^2                 [-]
-      mixt_frac,          & ! Mixture fraction                               [-]
-      precip_frac,        & ! Precipitation fraction (overall)               [-]
-      precip_frac_1,      & ! Precipitation fraction (1st PDF component)     [-]
-      precip_frac_2,      & ! Precipitation fraction (2nd PDF component)     [-]
       hm_tol,             & ! Tolerance value of hydrometeor             [hm un]
       precip_frac_tol       ! Min. precip. frac. when hydromet. are present  [-]
 
@@ -102,7 +108,7 @@ module mu_sigma_hm_tests
       omicron,        & ! Relative width parameter, omicron = R / Rmax       [-]
       zeta_vrnce_rat    ! Width parameter for sigma_hm_1^2 / mu_hm_1^2       [-]
 
-    real( kind = core_rknd ) :: &
+    real( kind = core_rknd ), dimension(nz) :: &
       mu_hm_1,    & ! Mean of hm (1st PDF component) in-precip (ip)      [hm un]
       mu_hm_2,    & ! Mean of hm (2nd PDF component) ip                  [hm un]
       sigma_hm_1, & ! Standard deviation of hm (1st PDF component) ip    [hm un]
@@ -110,11 +116,11 @@ module mu_sigma_hm_tests
       hm_1,       & ! Mean of hm (1st PDF component)                     [hm un]
       hm_2          ! Mean of hm (2nd PDF component)                     [hm un]
 
-    real( kind = core_rknd ) :: &
+    real( kind = core_rknd ), dimension(nz) :: &
       sigma_hm_1_sqd_on_mu_hm_1_sqd, & ! Ratio sigma_hm_1**2 / mu_hm_1**2    [-]
       sigma_hm_2_sqd_on_mu_hm_2_sqd    ! Ratio sigma_hm_2**2 / mu_hm_2**2    [-]
 
-    real( kind = core_rknd ) :: &
+    real( kind = core_rknd ), dimension(nz) :: &
       recalc_hmm,   & ! Recalculation of <hm> using PDF parameters       [hm un]
       recalc_hmp2,  & ! Recalculation of <hm'^2> using PDF parameters  [hm un^2]
       calc_rat_rat    ! Calculation of the "ratio of ratios"                 [-]
@@ -123,7 +129,7 @@ module mu_sigma_hm_tests
     real( kind = core_rknd ), parameter :: &
       tol = 1.0e-11_core_rknd
 
-    logical :: &
+    logical, dimension(nz) :: &
       l_pass_test_1, & ! Flag for passing test 1
       l_pass_test_2, & ! Flag for passing test 2
       l_pass_test_3, & ! Flag for passing test 3
@@ -133,8 +139,11 @@ module mu_sigma_hm_tests
     integer :: &
       mu_sigma_hm_unit_tests  ! Returns pass or fail
 
-    integer :: &
+    integer, dimension(nz) :: &
       num_failed_sets    ! Records the number of failed parameter sets
+
+    logical, dimension(nz) :: &
+      l_failed_sets    ! Flag for whether any sets failed or not
 
     integer :: &
       seed_size    ! The size of the random seed array expected by the system
@@ -142,13 +151,17 @@ module mu_sigma_hm_tests
     integer, dimension(:), allocatable :: &
       seed_vals    ! Values used to seed the random number generator
 
+    real( kind = core_rknd ), dimension(nz) :: &
+      precip_frac_1_min    ! Minimum value for precip_frac_1 in parameter set 10
+
     real( kind = core_rknd ) :: &
-      precip_frac_1_min, & ! Minimum value for precip_frac_1 in parameter set 10
       rand1,             & ! Random number 1 used for PDF parameter set 10
       rand2,             & ! Random number 2 used for PDF parameter set 10
       rand3,             & ! Random number 3 used for PDF parameter set 10
       rand4,             & ! Random number 4 used for PDF parameter set 10
-      rand5                ! Random number 5 used for PDF parameter set 10
+      rand5,             & ! Random number 5 used for PDF parameter set 10
+      rand6,             & ! Random number 6 used for PDF parameter set 10
+      rand7                ! Random number 7 used for PDF parameter set 10
 
     integer, parameter :: &
       num_param_sets = 10,     & ! Number of different PDF parameter sets used
@@ -181,6 +194,8 @@ module mu_sigma_hm_tests
           precip_frac_1 = 1.0_core_rknd
           hmp2_ip_on_hmm2_ip = 3.6_core_rknd
           hm_tol = 1.0e-10_core_rknd
+          mu_thl_1 = 299.0_core_rknd
+          mu_thl_2 = 300.0_core_rknd
        elseif ( iter_param_sets == 2 ) then
           write(fstdout,*) "PDF parameter set 2:"
           hmm = 5.0e-6_core_rknd
@@ -189,6 +204,8 @@ module mu_sigma_hm_tests
           precip_frac_1 = 0.5_core_rknd
           hmp2_ip_on_hmm2_ip = 1.0_core_rknd
           hm_tol = 1.0e-10_core_rknd
+          mu_thl_1 = 300.0_core_rknd
+          mu_thl_2 = 299.0_core_rknd
        elseif ( iter_param_sets == 3 ) then
           write(fstdout,*) "PDF parameter set 3:"
           hmm = 1.0e-10_core_rknd
@@ -197,6 +214,8 @@ module mu_sigma_hm_tests
           precip_frac_1 = 0.75_core_rknd
           hmp2_ip_on_hmm2_ip = 0.5_core_rknd
           hm_tol = 1.0e-10_core_rknd
+          mu_thl_1 = 299.0_core_rknd
+          mu_thl_2 = 300.0_core_rknd
        elseif ( iter_param_sets == 4 ) then
           write(fstdout,*) "PDF parameter set 4:"
           hmm = 4.0e-5_core_rknd
@@ -205,6 +224,8 @@ module mu_sigma_hm_tests
           precip_frac_1 = 0.01_core_rknd
           hmp2_ip_on_hmm2_ip = 2.5_core_rknd
           hm_tol = 1.0e-10_core_rknd
+          mu_thl_1 = 300.0_core_rknd
+          mu_thl_2 = 299.0_core_rknd
        elseif ( iter_param_sets == 5 ) then
           write(fstdout,*) "PDF parameter set 5:"
           hmm = 4.0e-5_core_rknd
@@ -213,6 +234,8 @@ module mu_sigma_hm_tests
           precip_frac_1 = ( precip_frac - 0.0001_core_rknd ) / mixt_frac
           hmp2_ip_on_hmm2_ip = 2.5_core_rknd
           hm_tol = 1.0e-10_core_rknd
+          mu_thl_1 = 299.0_core_rknd
+          mu_thl_2 = 300.0_core_rknd
        elseif ( iter_param_sets == 6 ) then
           write(fstdout,*) "PDF parameter set 6:"
           hmm = 1.0e-5_core_rknd
@@ -221,6 +244,8 @@ module mu_sigma_hm_tests
           precip_frac_1 = 1.0_core_rknd
           hmp2_ip_on_hmm2_ip = 1.5_core_rknd
           hm_tol = 1.0e-10_core_rknd
+          mu_thl_1 = 300.0_core_rknd
+          mu_thl_2 = 299.0_core_rknd
        elseif ( iter_param_sets == 7 ) then
           write(fstdout,*) "PDF parameter set 7:"
           hmm = 6.0e-5_core_rknd
@@ -229,6 +254,8 @@ module mu_sigma_hm_tests
           precip_frac_1 = 0.9_core_rknd
           hmp2_ip_on_hmm2_ip = 5.0_core_rknd
           hm_tol = 1.0e-10_core_rknd
+          mu_thl_1 = 299.0_core_rknd
+          mu_thl_2 = 300.0_core_rknd
        elseif ( iter_param_sets == 8 ) then
           write(fstdout,*) "PDF parameter set 8:"
           hmm = 8.0e-7_core_rknd
@@ -237,6 +264,8 @@ module mu_sigma_hm_tests
           precip_frac_1 = 0.1_core_rknd
           hmp2_ip_on_hmm2_ip = 0.75_core_rknd
           hm_tol = 1.0e-10_core_rknd
+          mu_thl_1 = 300.0_core_rknd
+          mu_thl_2 = 299.0_core_rknd
        elseif ( iter_param_sets == 9 ) then
           write(fstdout,*) "PDF parameter set 9:"
           hmm = 1.35e-5_core_rknd
@@ -245,6 +274,8 @@ module mu_sigma_hm_tests
           precip_frac_1 = 0.5_core_rknd
           hmp2_ip_on_hmm2_ip = 2.0_core_rknd
           hm_tol = 1.0e-10_core_rknd
+          mu_thl_1 = 300.0_core_rknd
+          mu_thl_2 = 300.0_core_rknd
        elseif ( iter_param_sets == 10 ) then
           write(fstdout,*) "PDF parameter set 10 (randomly generated):"
           call random_seed( size=seed_size )
@@ -258,6 +289,8 @@ module mu_sigma_hm_tests
           call random_number( rand3 )
           call random_number( rand4 )
           call random_number( rand5 )
+          call random_number( rand6 )
+          call random_number( rand7 )
           ! The value of hmm can range from 1.0 x 10^-6 to 5.1 x 10^-5.
           hmm = 5.0e-5_core_rknd * rand1 + 1.0e-6_core_rknd
           ! The value of mixt_frac can range from 0.01 to 0.99.
@@ -280,6 +313,9 @@ module mu_sigma_hm_tests
           hmp2_ip_on_hmm2_ip = 0.2_core_rknd + rand5 * 4.8_core_rknd
           ! The value of hm_tol remains constant.
           hm_tol = 1.0e-10_core_rknd
+          ! Set the mean value of theta-l in each PDF component.
+          mu_thl_1 = 299.0_core_rknd + rand6
+          mu_thl_2 = 299.0_core_rknd + rand7
        endif ! iter_param_sets == index
 
        ! Calculate precip_frac_2.
@@ -354,11 +390,12 @@ module mu_sigma_hm_tests
              ! This subroutine is called only when precip_frac_1 > 0 and
              ! precip_frac_2 > 0 (there is precipitation in both PDF
              ! components).
-             call calc_comp_mu_sigma_hm( hmm, hmp2, &                     ! In
+             call calc_comp_mu_sigma_hm( nz, hmm, hmp2, &                 ! In
                                          hmp2_ip_on_hmm2_ip, &            ! In
                                          mixt_frac, precip_frac, &        ! In
                                          precip_frac_1, precip_frac_2, &  ! In
                                          hm_tol, precip_frac_tol, &       ! In
+                                         mu_thl_1, mu_thl_2, &            ! In
                                          omicron, zeta_vrnce_rat, &       ! In
                                          mu_hm_1, mu_hm_2, &              ! Out
                                          sigma_hm_1, sigma_hm_2, &        ! Out
@@ -394,15 +431,18 @@ module mu_sigma_hm_tests
              !    | <hm>|_recalc - <hm> |  <=  | <hm> | * tol;
              ! and since <hm> is always positive:
              !    | <hm>|_recalc - <hm> |  <=  <hm> * tol.
-             if ( abs( recalc_hmm - hmm ) <= hmm * tol ) then
+             where ( abs( recalc_hmm - hmm ) <= hmm * tol )
                 l_pass_test_1 = .true.
-             else
+             elsewhere
                 l_pass_test_1 = .false.
+             endwhere
+
+             if ( any( .not. l_pass_test_1 ) ) then
                 write(fstderr,*) "Test 1 failed"
                 write(fstderr,*) "hmm = ", hmm
                 write(fstderr,*) "recalc_hmm = ", recalc_hmm
                 write(fstderr,*) ""
-             endif
+             endif ! any( .not. l_pass_test_1 )
 
              ! Test 2
              ! Compare the original hmp2 to its recalculated value.
@@ -411,15 +451,18 @@ module mu_sigma_hm_tests
              !    | <hm'^2>|_recalc - <hm'^2> |  <=  | <hm'^2> | * tol;
              ! and since <hm'^2> is always positive:
              !    | <hm'^2>|_recalc - <hm'^2> |  <=  <hm'^2> * tol.
-             if ( abs( recalc_hmp2 - hmp2 ) <= hmp2 * tol ) then
+             where ( abs( recalc_hmp2 - hmp2 ) <= hmp2 * tol )
                 l_pass_test_2 = .true.
-             else
+             elsewhere
                 l_pass_test_2 = .false.
+             endwhere
+
+             if ( any( .not. l_pass_test_2 ) ) then
                 write(fstderr,*) "Test 2 failed"
                 write(fstderr,*) "hmp2 = ", hmp2
                 write(fstderr,*) "recalc_hp2 = ", recalc_hmp2
                 write(fstderr,*) ""
-             endif
+             endif ! any( .not. l_pass_test_2 )
 
              ! Test 3
              ! Compare the "ratio of ratios" to 1 + zeta.
@@ -428,19 +471,32 @@ module mu_sigma_hm_tests
              !    | calc_rat_rat - ( 1 + zeta ) |  <=  | ( 1 + zeta ) | * tol;
              ! and since 1 + zeta is always positive:
              !    | calc_rat_rat - ( 1 + zeta ) |  <=  ( 1 + zeta ) * tol.
+             ! Update:
+             ! When mu_thl_1 <= mu_thl_2:
+             ! zeta = zeta_in, when zeta_in >= 0; and 
+             ! zeta = ( 1 / ( 1 + zeta_in ) ) - 1, when zeta_in < 0.
+             ! When mu_thl_1 > mu_thl_2:
+             ! zeta = zeta_in, when zeta_in <= 0; and 
+             ! zeta = ( 1 / ( 1 + zeta_in ) ) - 1, when zeta_in > 0.
              if ( omicron > zero ) then
-                if ( abs( calc_rat_rat - ( one + zeta_vrnce_rat ) ) &
-                     <= ( one + zeta_vrnce_rat ) * tol ) then
-                   l_pass_test_3 = .true.
-                else
-                   l_pass_test_3 = .false.
-                   write(fstderr,*) "Test 3 failed"
-                   write(fstderr,*) "sigma_hm_1_sqd_on_mu_hm_1_sqd " &
-                                    // "/ sigma_hm_2_sqd_on_mu_hm_2_sqd = ", &
-                                    calc_rat_rat
-                   write(fstderr,*) "1 + zeta = ", one + zeta_vrnce_rat
-                   write(fstderr,*) ""
-                endif
+                where ( ( mu_thl_1 <= mu_thl_2 .and. zeta_vrnce_rat >= zero ) &
+                        .or. ( mu_thl_1 > mu_thl_2 &
+                               .and. zeta_vrnce_rat <= zero ) )
+                   where ( abs( calc_rat_rat - ( one + zeta_vrnce_rat ) ) &
+                        <= ( one + zeta_vrnce_rat ) * tol )
+                      l_pass_test_3 = .true.
+                   elsewhere
+                      l_pass_test_3 = .false.
+                   endwhere
+                elsewhere
+                   where ( abs( calc_rat_rat &
+                                - ( one / ( one + zeta_vrnce_rat ) ) ) &
+                           <= ( one / ( one + zeta_vrnce_rat ) ) * tol )
+                      l_pass_test_3 = .true.
+                   elsewhere
+                      l_pass_test_3 = .false.
+                   endwhere
+                endwhere
              else ! omicron = 0
                 ! When omicron = 0, both ratios, sigma_hm_1_sqd_on_mu_hm_1_sqd
                 ! and sigma_hm_2_sqd_on_mu_hm_2_sqd, have a value of 0.  Their
@@ -449,15 +505,30 @@ module mu_sigma_hm_tests
                 l_pass_test_3 = .true.
              endif ! omicron > 0
 
+             if ( any( .not. l_pass_test_3 ) ) then
+                write(fstderr,*) "Test 3 failed"
+                write(fstderr,*) "sigma_hm_1_sqd_on_mu_hm_1_sqd " &
+                                 //"/ sigma_hm_2_sqd_on_mu_hm_2_sqd = ", &
+                                 calc_rat_rat
+                write(fstderr,*) "1 + zeta = ", one + zeta_vrnce_rat
+                write(fstderr,*) "1 / ( 1 + zeta ) = ", &
+                                 one / ( one + zeta_vrnce_rat )
+                write(fstderr,*) ""
+             endif ! any( .not. l_pass_test_3 )
+
              ! Test 4
              ! Check that mu_hm_1, mu_hm_2, hm_1, and hm_2 have at least
              ! threshold values.
-             if ( ( mu_hm_1 >= ( hm_tol / precip_frac_1 ) * (one-tol) ) &
-                  .and. ( mu_hm_2 >= ( hm_tol / precip_frac_2 ) * (one-tol) ) &
-                  .and. ( hm_1 >= hm_tol ) .and. ( hm_2 >= hm_tol ) ) then
+             where ( ( mu_hm_1 >= ( hm_tol / precip_frac_1 ) * (one-tol) ) &
+                     .and. ( mu_hm_2 &
+                             >= ( hm_tol / precip_frac_2 ) * (one-tol) ) &
+                     .and. ( hm_1 >= hm_tol ) .and. ( hm_2 >= hm_tol ) )
                 l_pass_test_4 = .true.
-             else
+             elsewhere
                 l_pass_test_4 = .false.
+             endwhere
+
+             if ( any( .not. l_pass_test_4 ) ) then
                 write(fstderr,*) "Test 4 failed"
                 write(fstderr,*) "mu_hm_1 = ", mu_hm_1
                 write(fstderr,*) "hm_tol/precip_frac_1 = ", hm_tol/precip_frac_1
@@ -467,17 +538,20 @@ module mu_sigma_hm_tests
                 write(fstderr,*) "hm_2 = ", hm_2
                 write(fstderr,*) "hm_tol = ", hm_tol
                 write(fstderr,*) ""
-             endif
+             endif ! any( .not. l_pass_test_4 )
 
              ! Test 5
              ! Check that sigma_hm_1, sigma_hm_2, sigma_hm_1_sqd_on_mu_hm_1_sqd,
              ! and sigma_hm_2_sqd_on_mu_hm_2_sqd have a value of at least zero.
-             if ( ( sigma_hm_1 >= zero ) .and. ( sigma_hm_2 >= zero ) &
-                  .and. ( sigma_hm_1_sqd_on_mu_hm_1_sqd >= zero ) &
-                  .and. ( sigma_hm_2_sqd_on_mu_hm_2_sqd >= zero ) ) then
+             where ( ( sigma_hm_1 >= zero ) .and. ( sigma_hm_2 >= zero ) &
+                     .and. ( sigma_hm_1_sqd_on_mu_hm_1_sqd >= zero ) &
+                     .and. ( sigma_hm_2_sqd_on_mu_hm_2_sqd >= zero ) )
                 l_pass_test_5 = .true.
-             else
+             elsewhere
                 l_pass_test_5 = .false.
+             endwhere
+
+             if ( any( .not. l_pass_test_5 ) ) then
                 write(fstderr,*) "Test 5 failed"
                 write(fstderr,*) "sigma_hm_1 = ", sigma_hm_1
                 write(fstderr,*) "sigma_hm_2 = ", sigma_hm_2
@@ -486,23 +560,28 @@ module mu_sigma_hm_tests
                 write(fstderr,*) "sigma_hm_2^2 / mu_hm_2^2 = ", &
                                  sigma_hm_2_sqd_on_mu_hm_2_sqd
                 write(fstderr,*) ""
-             endif
+             endif ! any( .not. l_pass_test_5 )
 
 
-             if ( l_pass_test_1 .and. l_pass_test_2 .and. l_pass_test_3 &
-                  .and. l_pass_test_4 .and. l_pass_test_5 ) then
+             where ( l_pass_test_1 .and. l_pass_test_2 .and. l_pass_test_3 &
+                     .and. l_pass_test_4 .and. l_pass_test_5 )
                 ! All tests pass
                 num_failed_sets = num_failed_sets
-             else
+                l_failed_sets = .false.
+             elsewhere
                 ! At least one test failed
                 num_failed_sets = num_failed_sets + 1
+                l_failed_sets = .true.
+             endwhere
+
+             if ( any( l_failed_sets ) ) then
                 write(fstderr,*) "At least one test or check failed for " &
                                  // "the following parameter set:  "
                 write(fstderr,*) "PDF parameter set index = ", iter_param_sets
                 write(fstderr,*) "omicron = ", omicron
                 write(fstderr,*) "zeta = ", zeta_vrnce_rat
                 write(fstderr,*) ""
-             endif
+             endif ! any( l_failed_sets )
 
 
           enddo ! iter_zeta_vrnce_rat = 1, num_zeta_vrnce_rat, 1
@@ -527,6 +606,8 @@ module mu_sigma_hm_tests
     hmp2_ip_on_hmm2_ip = 3.2_core_rknd
     hm_tol = 1.0e-10_core_rknd
     precip_frac_tol = 0.01_core_rknd
+    mu_thl_1 = 299.0_core_rknd
+    mu_thl_2 = 300.0_core_rknd
 
     ! Calculate <hm|_ip>.
     hmm_ip = hmm / precip_frac
@@ -537,11 +618,12 @@ module mu_sigma_hm_tests
     ! Call the subroutine for calculating mu_hm_1, mu_hm_2, sigma_hm_1,
     ! sigma_hm_2, hm_1, hm_2, sigma_hm_1_sqd_on_mu_hm_1_sqd, and
     ! sigma_hm_2_sqd_on_mu_hm_2_sqd.
-    call calc_comp_mu_sigma_hm( hmm, hmp2, &                     ! In
+    call calc_comp_mu_sigma_hm( nz, hmm, hmp2, &                 ! In
                                 hmp2_ip_on_hmm2_ip, &            ! In
                                 mixt_frac, precip_frac, &        ! In
                                 precip_frac_1, precip_frac_2, &  ! In
                                 hm_tol, precip_frac_tol, &       ! In
+                                mu_thl_1, mu_thl_2, &            ! In
                                 omicron, zeta_vrnce_rat, &       ! In
                                 mu_hm_1, mu_hm_2, &              ! Out
                                 sigma_hm_1, sigma_hm_2, &        ! Out
@@ -569,15 +651,18 @@ module mu_sigma_hm_tests
     !    | <hm>|_recalc - <hm> |  <=  | <hm> | * tol;
     ! and since <hm> is always positive:
     !    | <hm>|_recalc - <hm> |  <=  <hm> * tol.
-    if ( abs( recalc_hmm - hmm ) <= hmm * tol ) then
+    where ( abs( recalc_hmm - hmm ) <= hmm * tol )
        l_pass_test_1 = .true.
-    else
+    elsewhere
        l_pass_test_1 = .false.
+    endwhere
+
+    if ( any( .not. l_pass_test_1 ) ) then
        write(fstderr,*) "Test 1 failed"
        write(fstderr,*) "hmm = ", hmm
        write(fstderr,*) "recalc_hmm = ", recalc_hmm
        write(fstderr,*) ""
-    endif
+    endif ! any( .not. l_pass_test_1 )
 
     ! Test 2
     ! Compare the original hmp2 to its recalculated value.
@@ -586,27 +671,35 @@ module mu_sigma_hm_tests
     !    | <hm'^2>|_recalc - <hm'^2> |  <=  | <hm'^2> | * tol;
     ! and since <hm'^2> is always positive:
     !    | <hm'^2>|_recalc - <hm'^2> |  <=  <hm'^2> * tol.
-    if ( abs( recalc_hmp2 - hmp2 ) <= hmp2 * tol ) then
+    where ( abs( recalc_hmp2 - hmp2 ) <= hmp2 * tol )
        l_pass_test_2 = .true.
-    else
+    elsewhere
        l_pass_test_2 = .false.
+    endwhere
+
+    if ( any( .not. l_pass_test_2 ) ) then
        write(fstderr,*) "Test 2 failed"
        write(fstderr,*) "hmp2 = ", hmp2
        write(fstderr,*) "recalc_hp2 = ", recalc_hmp2
        write(fstderr,*) ""
-    endif
+    endif ! any( .not. l_pass_test_2 )
 
-    if ( l_pass_test_1 .and. l_pass_test_2 ) then
+    where ( l_pass_test_1 .and. l_pass_test_2 )
        ! Both tests pass
        num_failed_sets = num_failed_sets
-    else
+       l_failed_sets = .false.
+    elsewhere
        ! At least one test failed
        num_failed_sets = num_failed_sets + 1
+       l_failed_sets = .true.
+    endwhere
+
+    if ( any( l_failed_sets ) ) then
        write(fstderr,*) "At least one test or check failed for " &
                          // "the precip. in 1st PDF component only " &
                          // "parameter set."
        write(fstderr,*) ""
-    endif
+    endif ! any( l_failed_sets )
 
     ! Precipitation found in 2nd PDF component only.
     write(fstdout,*) "Checking values with precipitation in 2nd PDF " &
@@ -620,6 +713,8 @@ module mu_sigma_hm_tests
     hmp2_ip_on_hmm2_ip = 3.2_core_rknd
     hm_tol = 1.0e-10_core_rknd
     precip_frac_tol = 0.01_core_rknd
+    mu_thl_1 = 299.0_core_rknd
+    mu_thl_2 = 300.0_core_rknd
 
     ! Calculate <hm|_ip>.
     hmm_ip = hmm / precip_frac
@@ -630,11 +725,12 @@ module mu_sigma_hm_tests
     ! Call the subroutine for calculating mu_hm_1, mu_hm_2, sigma_hm_1,
     ! sigma_hm_2, hm_1, hm_2, sigma_hm_1_sqd_on_mu_hm_1_sqd, and
     ! sigma_hm_2_sqd_on_mu_hm_2_sqd.
-    call calc_comp_mu_sigma_hm( hmm, hmp2, &                     ! In
+    call calc_comp_mu_sigma_hm( nz, hmm, hmp2, &                 ! In
                                 hmp2_ip_on_hmm2_ip, &            ! In
                                 mixt_frac, precip_frac, &        ! In
                                 precip_frac_1, precip_frac_2, &  ! In
                                 hm_tol, precip_frac_tol, &       ! In
+                                mu_thl_1, mu_thl_2, &            ! In
                                 omicron, zeta_vrnce_rat, &       ! In
                                 mu_hm_1, mu_hm_2, &              ! Out
                                 sigma_hm_1, sigma_hm_2, &        ! Out
@@ -662,15 +758,18 @@ module mu_sigma_hm_tests
     !    | <hm>|_recalc - <hm> |  <=  | <hm> | * tol;
     ! and since <hm> is always positive:
     !    | <hm>|_recalc - <hm> |  <=  <hm> * tol.
-    if ( abs( recalc_hmm - hmm ) <= hmm * tol ) then
+    where ( abs( recalc_hmm - hmm ) <= hmm * tol )
        l_pass_test_1 = .true.
-    else
+    elsewhere
        l_pass_test_1 = .false.
+    endwhere
+
+    if ( any( .not. l_pass_test_1 ) ) then
        write(fstderr,*) "Test 1 failed"
        write(fstderr,*) "hmm = ", hmm
        write(fstderr,*) "recalc_hmm = ", recalc_hmm
        write(fstderr,*) ""
-    endif
+    endif ! any( .not. l_pass_test_1 )
 
     ! Test 2
     ! Compare the original hmp2 to its recalculated value.
@@ -679,36 +778,44 @@ module mu_sigma_hm_tests
     !    | <hm'^2>|_recalc - <hm'^2> |  <=  | <hm'^2> | * tol;
     ! and since <hm'^2> is always positive:
     !    | <hm'^2>|_recalc - <hm'^2> |  <=  <hm'^2> * tol.
-    if ( abs( recalc_hmp2 - hmp2 ) <= hmp2 * tol ) then
+    where ( abs( recalc_hmp2 - hmp2 ) <= hmp2 * tol )
        l_pass_test_2 = .true.
-    else
+    elsewhere
        l_pass_test_2 = .false.
+    endwhere
+
+    if ( any( .not. l_pass_test_2 ) ) then
        write(fstderr,*) "Test 2 failed"
        write(fstderr,*) "hmp2 = ", hmp2
        write(fstderr,*) "recalc_hp2 = ", recalc_hmp2
        write(fstderr,*) ""
-    endif
+    endif ! any( .not. l_pass_test_2 )
 
-    if ( l_pass_test_1 .and. l_pass_test_2 ) then
+    where ( l_pass_test_1 .and. l_pass_test_2 )
        ! Both tests pass
        num_failed_sets = num_failed_sets
-    else
+       l_failed_sets = .false.
+    elsewhere
        ! At least one test failed
        num_failed_sets = num_failed_sets + 1
+       l_failed_sets = .true.
+    endwhere
+
+    if ( any( l_failed_sets ) ) then
        write(fstderr,*) "At least one test or check failed for " &
                          // "the precip. in 2nd PDF component only " &
                          // "parameter set."
        write(fstderr,*) ""
-    endif
+    endif ! any( l_failed_sets )
 
 
     ! Print results and return exit code.
-    if ( num_failed_sets == 0 ) then
+    if ( sum( num_failed_sets ) == 0 ) then
        write(fstdout,'(1x,A)') "Success!"
        write(fstdout,*) ""
        mu_sigma_hm_unit_tests = 0 ! Exit Code = 0, Success!
     else ! num_failed_sets > 0
-       write(fstdout,'(1x,A,I4,A)') "There were ", num_failed_sets, &
+       write(fstdout,'(1x,A,I4,A)') "There were ", sum( num_failed_sets ), &
                                     " failed parameter sets."
        write(fstdout,*) ""
        mu_sigma_hm_unit_tests = 1 ! Exit Code = 1, Fail

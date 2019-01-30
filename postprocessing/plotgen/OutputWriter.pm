@@ -287,9 +287,9 @@ sub writeSamBudgetSubHeader()
         <TD ALIGN="CENTER" COLSPAN=11><B>Budget Variable Equivalence Table</B></TD>
     </TR>
     <TR>
-	<TD ALIGN="CENTER" COLSPAN=2><B>W2 (wp2)</B></TD>
-	<TD ALIGN="CENTER" COLSPAN=2><B>TW/QW (wpthlp/wprtp)</B></TD>
-	<TD ALIGN="CENTER" COLSPAN=2><B>T2/Q2 (thlp2/rtp2)</B></TD>
+	<TD ALIGN="CENTER" COLSPAN=2><B>W2/W3 (wp2/wp3)</B></TD>
+	<TD ALIGN="CENTER" COLSPAN=2><B>THLW/QW (wpthlp/wprtp)</B></TD>
+	<TD ALIGN="CENTER" COLSPAN=2><B>THL2/Q2/QTHL (thlp2/rtp2/rtpthlp)</B></TD>
     </TR>
     <TR>
         <TD ALIGN="CENTER"><B>SAM</B></TD>
@@ -304,7 +304,7 @@ sub writeSamBudgetSubHeader()
         <TD ALIGN="CENTER">ta</TD>
         <TD ALIGN="CENTER">ADV (T)</TD>
         <TD ALIGN="CENTER">ta</TD>
-        <TD ALIGN="CENTER">ADVTR (T)</TD>
+        <TD ALIGN="CENTER">ADV(TR) (T)</TD>
         <TD ALIGN="CENTER">ta</TD>
     </TR>
     <TR>
@@ -337,14 +337,54 @@ sub writeSamBudgetSubHeader()
         <TD ALIGN="CENTER">DIFF (D)</TD>
         <TD ALIGN="CENTER">dp1</TD>
         <TD ALIGN="CENTER">PREC (PC)</TD>
+        <TD ALIGN="CENTER">mc</TD>
+    </TR>
+    <TR>
+        <TD ALIGN="CENTER">SDMP</TD>
+        <TD ALIGN="CENTER">sdmp</TD>
+        <TD ALIGN="CENTER">PREC (PC)</TD>
+        <TD ALIGN="CENTER">mc</TD>
+        <TD ALIGN="CENTER">RAD</TD>
+        <TD ALIGN="CENTER">&nbsp;</TD>
+    </TR>
+    <TR>
+        <TD ALIGN="CENTER">BT</TD>
+        <TD ALIGN="CENTER">bt</TD>
+        <TD ALIGN="CENTER">RAD</TD>
+        <TD ALIGN="CENTER">&nbsp;</TD>
+        <TD ALIGN="CENTER">FORC</TD>
         <TD ALIGN="CENTER">&nbsp;</TD>
     </TR>
     <TR>
         <TD ALIGN="CENTER">_RES (Residual)</TD>
         <TD ALIGN="CENTER">&nbsp;</TD>
-        <TD ALIGN="CENTER">PREC (PC)</TD>
+        <TD ALIGN="CENTER">FORC</TD>
+        <TD ALIGN="CENTER">&nbsp;</TD>
+        <TD ALIGN="CENTER">CLSD</TD>
+        <TD ALIGN="CENTER">&nbsp;</TD>
+    </TR>
+    <TR>
+        <TD ALIGN="CENTER">&nbsp;</TD>
+        <TD ALIGN="CENTER">&nbsp;</TD>
+        <TD ALIGN="CENTER">CLSD</TD>
+        <TD ALIGN="CENTER">&nbsp;</TD>
+        <TD ALIGN="CENTER">BT</TD>
+        <TD ALIGN="CENTER">bt</TD>
+    </TR>
+    <TR>
+        <TD ALIGN="CENTER">&nbsp;</TD>
+        <TD ALIGN="CENTER">&nbsp;</TD>
+        <TD ALIGN="CENTER">SDMP</TD>
         <TD ALIGN="CENTER">&nbsp;</TD>
         <TD ALIGN="CENTER">_RES (Residual)</TD>
+        <TD ALIGN="CENTER">&nbsp;</TD>
+    </TR>
+    <TR>
+        <TD ALIGN="CENTER">&nbsp;</TD>
+        <TD ALIGN="CENTER">&nbsp;</TD>
+        <TD ALIGN="CENTER">BT</TD>
+        <TD ALIGN="CENTER">bt</TD>
+        <TD ALIGN="CENTER">&nbsp;</TD>
         <TD ALIGN="CENTER">&nbsp;</TD>
     </TR>
     <TR>
@@ -784,7 +824,7 @@ sub writeFooter()
 	<hr noshade size=5 width=70%>
 	<div align="CENTER">
 		<font size="-2">
-		Copyright &#169; 2016 Larson Group. All rights reserved. 
+		Copyright &#169; 2017 Larson Group. All rights reserved. 
 		</font>
 	</div>
 </body>

@@ -163,7 +163,7 @@ module bugsrad_driver
     do z = 2, nz
       if ( rtm(z) < rcm(z) ) then
         sp_humidity(1,z-1) = 0.0_dp
-        if ( clubb_at_least_debug_level(1) ) then
+        if ( clubb_at_least_debug_level( 1 ) ) then
           write(fstderr,*) "rvm < 0 at ", z, " before BUGSrad, specific humidity set to 0"
         endif
       else
@@ -489,7 +489,7 @@ module bugsrad_driver
 
       if ( l_write_to_file ) close(unit=iunit);
 
-    end if ! clubb_at_least_debug_level(1)
+    end if ! clubb_at_least_debug_level( 1 )
 
     do k = 1, size( cos_solar_zen_values )
       if ( cos_solar_zen_values(k) == -999._core_rknd ) then

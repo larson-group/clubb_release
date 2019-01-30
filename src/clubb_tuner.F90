@@ -6,10 +6,21 @@ program clubb_tuner
 !     Description:
 !     ``Tunes'' constants in clubb so that the output matches LES output.
 !     Uses amoeba or amebsa to calculate the min of (f_les - f_clubb)^2
-
+! 
 !     References:
 !     _Numerical Recipes in Fortran 90_ (Chapter 10) 
 !     (Amoeba & Amebsa subroutine)
+! 
+!   Advice for anyone attempting changes in the future:
+!       Almost everything in this file and the error.F90 file needs
+!       replacement. The way variables are read in from the error_*.in 
+!       files should be completely different, the way the variables are
+!       set up should be different, these functions should be in modules,
+!       there's a large number of things that straight up don't work and
+!       give no information as to what the error was, and some comments 
+!       are actually just question marks. Hopefully you like
+!       spaghetti and staring at your screen in despair wondering what
+!       could possibly be wrong this time.
 !----------------------------------------------------------------------
   use error, only:  & 
     tuner_init, min_les_clubb_diff,                & ! Subroutines 
@@ -24,7 +35,8 @@ program clubb_tuner
     iamoeba, & ! Constants
     iamebsa, &
     iesa, &
-    iflags
+    iflags, &
+    iploops
 
   use constants_clubb, only: & 
     fstdout ! Variable
@@ -66,25 +78,31 @@ program clubb_tuner
   ! Attempt to find the optimal parameter set
   do
     select case ( tune_type )
-    case ( iamoeba )
-      call amoeba_driver( )
 
-    case ( iamebsa )
-      call amebsa_driver( )
+        case ( iamoeba )
+          call amoeba_driver( )
 
-    case ( iesa )
-      call enhanced_simann_driver( )
+        case ( iamebsa )
+          call amebsa_driver( )
 
-    case ( iflags )
-      call logical_flags_driver( current_date, current_time )
-      stop "Program exited normally"
+        case ( iesa )
+          call enhanced_simann_driver( )
 
-    case default
-       stop "Unknown tuning type"
+        case ( iflags )
+          call logical_flags_driver( current_date, current_time )
+          stop "Program exited normally"
+
+        case( iploops )
+          call param_loops_driver( )
+          write(fstdout,*) "All parameter sets have been run"
+
+        case default
+           stop "Unknown tuning type"
     end select
 
     ! Print to stdout if specified
     if ( l_results_stdout ) call write_results( fstdout )
+
 
     ! Save results in file if specified
     if ( l_save_tuning_run ) then
@@ -92,24 +110,39 @@ program clubb_tuner
       call write_results( file_unit )
     end if ! l_save_tuning_run
 
-    ! Query to see if we should exit the loop
+
+    ! Print completion message
     call write_text( "Run Complete.", l_save_tuning_run, file_unit )
 
-    write(unit=fstdout,fmt='(A)', advance='no')  & 
-      "Re-run with new parameters?(y/n) "
-    read(*,*) user_response
+
+    ! Query to see if we should exit the loop
+    if ( tune_type /= iploops ) then
+       ! Prompt the user to re-run with new parameters.
+       write(unit=fstdout,fmt='(A)', advance='no')  & 
+         "Re-run with new parameters?(y/n) "
+       read(*,*) user_response
+    else
+       ! For the parameter loops tuner, automatically enter a response of "no".
+       ! This allows the tuner to be run in the background.
+       user_response = "n"
+    endif
+
+
     ! Save tuning results in file if specified
     if( l_save_tuning_run ) then
       write(file_unit,*) "Re-run with new parameters?(y/n) ", user_response
       close(unit=file_unit)
     end if ! l_save_tuning_run
 
+    
+    ! what does a continue without a line number do? apparently what it says, continue :o
     select case ( trim( user_response ) )
-    case ( "Yes", "yes", "y", "Y" )
-      continue
-    case default
-      exit
+        case ( "Yes", "yes", "y", "Y" )
+          continue
+        case default
+          exit
     end select
+
 
     ! Save tuning results in file if specified
     if ( tune_type == iamoeba .or. tune_type == iamebsa ) then
@@ -120,17 +153,25 @@ program clubb_tuner
       call write_text( "Current f_tol= ", f_tol, l_save_tuning_run, file_unit )
 
       write(fstdout,fmt='(A)', advance='no') "Enter new f_tol=   "
+
       read(*,*) f_tol
+
       ! Save tuning results in file if specified
       if ( l_save_tuning_run ) write(file_unit,*) "Enter new f_tol=   ", f_tol
+
       if ( l_save_tuning_run ) close(unit=file_unit)
+
     end if
+
+
     if ( tune_type == iesa .or. tune_type == iamebsa ) then
       write(fstdout,fmt='(A)', advance='no') "New annealing temp =   "
       read(*,*) anneal_temp
     end if
 
+
     call tuner_init( l_read_files=.false. )
+
 
   end do ! user_response /= 'y', 'Y' or 'yes'
 
@@ -198,6 +239,7 @@ program clubb_tuner
 #ifdef TUNER
   use nr, only:  & 
       amoeba ! Procedure(s)
+
   use error, only:  & 
     ! Variable(s)
     ndim,                                & ! Array dimensions
@@ -260,8 +302,10 @@ program clubb_tuner
 #ifdef TUNER
   use nr, only:  & 
       amebsa ! Procedure(s)
+
   use nrtype, only:  & 
       SP ! Variable(s)
+
   use error, only: & 
       param_vals_matrix,  & ! Variable(s)
       anneal_temp, & 
@@ -290,7 +334,7 @@ program clubb_tuner
 
   real( kind = core_rknd ), dimension(ndim) ::  & 
     pb ! ???
-   
+
   real( kind = core_rknd ) ::  & 
     ybb,   & ! ???
     yb,    & ! ???
@@ -321,6 +365,8 @@ program clubb_tuner
   cost_fnc_vector_r4 = real(cost_fnc_vector(1:ndim+1))
 
   do jiter = 1, anneal_iter ! anneal_iter taken from /stat/ namelist
+
+
     iter  = iiter
     tmptr = tmptr * 0.8_core_rknd
 
@@ -336,9 +382,11 @@ program clubb_tuner
     yb = real(yb_r4, kind = core_rknd)
 
     nit = nit + iiter - iter
+
     if ( yb < ybb ) then
       ybb = yb
     end if
+
     if ( iter > 0 ) exit
   end do
 
@@ -347,6 +395,7 @@ program clubb_tuner
 
   param_vals_matrix(1,1:ndim) = pb(1:ndim)
   min_err = ybb
+
 
   return
 
@@ -366,14 +415,22 @@ subroutine enhanced_simann_driver
   !   No. 2, June 1997, pp. 209--228.
   !------------------------------------------------------------------------
 
-  use enhanced_simann, only: esa_driver ! Procedure(s)
+  use enhanced_simann, only: &
+        esa_driver, & ! Procedure(s)
+        esa_driver_siarry
 
   use error, only: & ! Variable(s)
-    ndim,               & ! Array dimensions
-    param_vals_matrix,  & ! The 'p' matrix
-    param_vals_spread,  & ! Used here for the initial value of rostep
-    anneal_temp,        & ! Start annealing temperature
-    min_err               ! Minimum value of the cost function
+    ndim,                 & ! Array dimensions
+    param_vals_matrix,    & ! The parameters to tune matrix
+    param_vals_max,       & ! The maximum values for the parameters
+    anneal_temp,          & ! Start annealing temperature
+    min_err,              & ! Minimum value of the cost function
+    stp_adjst_center_in,  & 
+    stp_adjst_spread_in,  &
+    iter,                 &
+    tuning_filename,      &
+    file_unit,            &
+    f_tol
 
   use error, only:  & ! Procedure(s)
     min_les_clubb_diff  ! Cost function
@@ -383,13 +440,14 @@ subroutine enhanced_simann_driver
 
   implicit none
 
+  logical, parameter :: l_esa_siarry = .false.    ! Toggle between old and new code
+
   ! Local Variables
 
   real( kind = core_rknd ), dimension(ndim) :: &
     xinit,  & ! Initial values for the tunable parameters
-    x0min,  & ! Minimum value for the tunable parameters
-    x0max,  & ! Maximum value for the tunable parameters
-    rostep, & ! Initial step size
+    xmin,  & ! Minimum value for the tunable parameters
+    xmax,  & ! Maximum value for the tunable parameters
     xopt      ! Final values for the tunable parameters
 
   real( kind = core_rknd ) :: enopt ! Optimal cost
@@ -398,19 +456,23 @@ subroutine enhanced_simann_driver
 
   xinit = param_vals_matrix(1,1:ndim)
 
-  ! Set the minimum for the parameters.  Assume no parameter is < 0 for now
-  x0min(1:ndim) = 0._core_rknd 
+  ! set constraints, this should be read in from file
+  xmin = 0._core_rknd 
+  xmax = param_vals_max
 
-  ! Set the maximum for the parameters.  Assume parameters will be most 5 
-  ! times the current value.
-  x0max(1:ndim) = 5._core_rknd * param_vals_matrix(1,1:ndim) 
+  if ( l_esa_siarry ) then 
+    call esa_driver_siarry( xinit, xmin, xmax, anneal_temp, min_les_clubb_diff, xopt, enopt )
+  else 
+    call esa_driver( xinit, xmin, xmax,                         & ! intent(in)
+                     anneal_temp,                               & ! intent(inout)
+                     xopt, enopt,                               & ! intent(out)
+                     min_les_clubb_diff,                        & ! procedure    
+                     stp_adjst_center_in, stp_adjst_spread_in,  & ! optional(in)
+                     f_tol, tuning_filename, file_unit,         & ! ^
+                     iter                                       ) ! optional(inout) 
+  end if
 
-  rostep(1:ndim) = param_vals_spread(1:ndim)
-
-  call esa_driver( xinit, x0min, x0max, rostep, & ! In
-                   anneal_temp, min_les_clubb_diff, & ! In/out, Function
-                   xopt, enopt ) ! Out
-
+                   
   param_vals_matrix(1,1:ndim) = xopt(1:ndim)
   min_err = enopt
 
@@ -460,7 +522,7 @@ subroutine logical_flags_driver( current_date, current_time )
     i8 = selected_int_kind( 15 )
 
   integer, parameter :: &
-    ndim = 12, & ! Temporarily hardwired for a fixed number of flags
+    ndim = 10, & ! Temporarily hardwired for a fixed number of flags
     two_ndim = 2**ndim, &
     iunit = 10
 
@@ -501,9 +563,7 @@ subroutine logical_flags_driver( current_date, current_time )
                                 model_flags_default(7),  &
                                 model_flags_default(8),  &
                                 model_flags_default(9),  & 
-                                model_flags_default(10), &
-                                model_flags_default(11), &
-                                model_flags_default(12) )
+                                model_flags_default(10) )
 
   ! This should always be 1.0; it's here as a sanity check
   cost_func_default = real( min_les_clubb_diff( real(param_vals_matrix(1,:)) ), kind = core_rknd )
@@ -616,9 +676,7 @@ subroutine logical_flags_driver( current_date, current_time )
                                    model_flags_array(1,7), &
                                    model_flags_array(1,8), &
                                    model_flags_array(1,9), & 
-                                   model_flags_array(1,10),& 
-                                   model_flags_array(1,11),&
-                                   model_flags_array(1,12)  )
+                                   model_flags_array(1,10)  )
 
     filename_nml = "../input/tunable_parameters/configurable_model_flags_"//current_date//'_' & 
       //current_time(1:4)//".in"
@@ -632,3 +690,47 @@ subroutine logical_flags_driver( current_date, current_time )
 
   return
 end subroutine logical_flags_driver
+  !------------------------------------------------------------------------
+  subroutine param_loops_driver( )
+
+    ! Description:
+    ! The parameters loops tuner allows the user to select (through hard-wired
+    ! coding) a few tunable parameters (up to 4) and define values to loop over
+    ! for each parameters.  This allows the tuner to loop through all of
+    ! parameter space to look for the lowest value of the cost function.
+    !
+    ! This tuner does not use random numbers or "downhill" tuning, etc.  It
+    ! loops over all of the defined values in parameter space, calculates the
+    ! cost function for each parameter set, and exits.  It does not do further
+    ! tuning.
+    !
+    ! The number of values and the values for each selected parameter are set
+    ! in subroutine tuner_init in error.F90.
+
+    !-----------------------------------------------------------------------
+
+    use error, only: &
+        ndim,              &
+        param_vals_matrix, &
+        cost_fnc_vector,   &
+        min_err
+
+    implicit none
+
+    ! Local Variables
+    integer :: &
+      min_idx    ! Index for parameter set with minimum value of cost function
+
+
+    min_idx = minloc( cost_fnc_vector, 1 )
+
+    ! Place the parameter set with the minimum value of the cost function in
+    ! the 1st row of the parameter array.
+    param_vals_matrix(1,1:ndim) = param_vals_matrix(min_idx,1:ndim)
+
+    min_err = cost_fnc_vector(min_idx)
+
+
+    return
+
+  end subroutine param_loops_driver

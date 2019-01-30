@@ -22,7 +22,7 @@ import glob
 #  ./silhs_rms_timeseries_profiles_4pan_mult_sim.py [options] path1 [path2 [...]]
 #######################################################################
 
-case_name = 'rico_lh'
+case_name = 'rico_silhs'
 time1 = 0
 time2 = 864
 

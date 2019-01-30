@@ -34,14 +34,14 @@ function [] = find_grads_differences( ctl_file, t1, t2, tol )
 % It accomplishes this by taking a time average over a given period for
 % each file and comparing a vertical profile of each variable over that
 % time period.  If the two profiles are not within tolerance, the script will
-% print a message to the screen.
+% print a message to the screen.  Otherwise, the script will silently exit.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 
 % Necessary include files
 addpath '../matlab_include/'
 
-% The three directories containing three different ctlfile file sets.
+% The three directories containing three different ctl_file files WITH TRAILING SLASHES.
 path1  = ['/home/ldgrant/clubb/output/'];
 path2  = ['/home/ldgrant/clubb/output/'];
 path3  = ['/home/ldgrant/clubb_clean/output/'];

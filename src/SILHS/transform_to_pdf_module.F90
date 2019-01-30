@@ -15,23 +15,26 @@ module transform_to_pdf_module
 
 !-------------------------------------------------------------------------------
   subroutine transform_uniform_sample_to_pdf &
-             ( d_variables, d_uniform_extra, & ! In
+             ( pdf_dim, d_uniform_extra, & ! In
                mu1, mu2, sigma1, sigma2, & ! In
                corr_Cholesky_mtx_1, & ! In
                corr_Cholesky_mtx_2, & ! In
                X_u_one_lev, X_mixt_comp_one_lev, & ! In
+               cloud_frac_1, cloud_frac_2, & ! In
                l_in_precip_one_lev, & ! In
                X_nl_one_lev ) ! Out
 ! Description:
 !   This subroutine transforms a uniform sample to a sample from CLUBB's PDF.
 
 ! References:
+!   https://arxiv.org/pdf/1711.03675v1.pdf#nameddest=url:uniform2pdf
+!
 !   ``Supplying Local Microphysical Parameterizations with Information about
 !     Subgrid Variability: Latin Hypercube Sampling'', JAS Vol. 62,
 !     p. 4010--4026, Larson, et al. 2005
 !-------------------------------------------------------------------------------
 
-    use corr_varnce_module, only: &
+    use array_index, only: &
       iiPDF_chi, & ! Variable(s)
       iiPDF_eta, &
       iiPDF_w
@@ -53,40 +56,44 @@ module transform_to_pdf_module
 
     ! Input Variables
     integer, intent(in) :: &
-      d_variables, &  ! `d' Number of variates (normally 3 + microphysics specific variables)
+      pdf_dim, &  ! `d' Number of variates (normally 3 + microphysics specific variables)
       d_uniform_extra ! Number of variates included in uniform sample only (often 2)
 
-    real( kind = core_rknd ), dimension(d_variables,d_variables), intent(in) :: &
+    real( kind = core_rknd ), dimension(pdf_dim,pdf_dim), intent(in) :: &
       corr_Cholesky_mtx_1, & ! Correlations Cholesky matrix (1st comp.)  [-]
       corr_Cholesky_mtx_2    ! Correlations Cholesky matrix (2nd comp.)  [-]
 
-    real( kind = core_rknd ), dimension(d_variables), intent(in) :: &
+    real( kind = core_rknd ), dimension(pdf_dim), intent(in) :: &
       mu1,    & ! Means of the hydrometeors, 1st comp. (chi, eta, w, <hydrometeors>)  [units vary]
       mu2,    & ! Means of the hydrometeors, 2nd comp. (chi, eta, w, <hydrometeors>)  [units vary]
       sigma1, & ! Stdevs of the hydrometeors, 1st comp. (chi, eta, w, <hydrometeors>) [units vary]
       sigma2    ! Stdevs of the hydrometeors, 2nd comp. (chi, eta, w, <hydrometeors>) [units vary]
 
-    real( kind = core_rknd ), intent(in), dimension(d_variables+d_uniform_extra) :: &
+    real( kind = core_rknd ), intent(in), dimension(pdf_dim+d_uniform_extra) :: &
       X_u_one_lev ! Sample drawn from uniform distribution from a particular grid level
 
     integer, intent(in) :: &
       X_mixt_comp_one_lev ! Whether we're in the 1st or 2nd mixture component
 
+    real( kind = core_rknd ), intent(in) :: &
+      cloud_frac_1, & ! Cloud fraction (1st PDF component)    [-]
+      cloud_frac_2    ! Cloud fraction (2nd PDF component)    [-]
+
     logical, intent(in) :: &
       l_in_precip_one_lev ! Whether we are in precipitation (T/F)
 
-    real( kind = core_rknd ), intent(out), dimension(d_variables) :: &
+    real( kind = core_rknd ), intent(out), dimension(pdf_dim) :: &
       X_nl_one_lev ! Sample that is transformed ultimately to normal-lognormal
 
     ! Local Variables
 
-    logical, dimension(d_variables) :: &
+    logical, dimension(pdf_dim) :: &
       l_d_variable_lognormal ! Whether a given variable in X_nl has a lognormal dist.
 
-    real( kind = core_rknd ), dimension(d_variables,d_variables) :: &
+    real( kind = core_rknd ), dimension(pdf_dim,pdf_dim) :: &
       Sigma1_Cholesky, Sigma2_Cholesky ! Cholesky factorization of Sigma1,2
 
-    real( kind = core_rknd ), dimension(d_variables) :: &
+    real( kind = core_rknd ), dimension(pdf_dim) :: &
        Sigma1_scaling, & ! Scaling factors for Sigma1 for accuracy [units vary]
        Sigma2_scaling    ! Scaling factors for Sigma2 for accuracy [units vary]
 
@@ -95,12 +102,16 @@ module transform_to_pdf_module
 
     integer :: i !, ivar1, ivar2
 
+    ! Flag to clip sample point values of chi in extreme situations.
+    logical, parameter :: &
+      l_clip_extreme_chi_sample_pts = .true.
+
     ! ---- Begin Code ----
 
     ! Determine which variables are a lognormal distribution
     i = max( iiPDF_chi, iiPDF_eta, iiPDF_w )
     l_d_variable_lognormal(1:i) = .false. ! The 1st 3 variates
-    l_d_variable_lognormal(i+1:d_variables) = .true.  ! Hydrometeors
+    l_d_variable_lognormal(i+1:pdf_dim) = .true.  ! Hydrometeors
 
     !---------------------------------------------------------------------------
     ! Generate a set of sample points for a microphysics/radiation scheme
@@ -123,7 +134,7 @@ module transform_to_pdf_module
       ! Multiply the first three elements of the variance matrix by the
       ! values of the standard deviation of chi_1, eta_1, and w1
       call row_mult_lower_tri_matrix &
-           ( d_variables, sigma1, corr_Cholesky_mtx_1, & ! In
+           ( pdf_dim, sigma1, corr_Cholesky_mtx_1, & ! In
              Sigma1_Cholesky ) ! Out
 
     elseif ( X_mixt_comp_one_lev == 2 ) then
@@ -132,14 +143,14 @@ module transform_to_pdf_module
       ! Multiply the first three elements of the variance matrix by the
       ! values of the standard deviation of s2, t2, and w2
       call row_mult_lower_tri_matrix &
-           ( d_variables, sigma2, corr_Cholesky_mtx_2, & ! In
+           ( pdf_dim, sigma2, corr_Cholesky_mtx_2, & ! In
              Sigma2_Cholesky ) ! Out
 
     end if ! X_mixt_comp_one_lev == 1
 
     ! Compute the new set of sample points using the update variance matrices
     ! for this level
-    call sample_points( d_variables, d_uniform_extra, &  ! intent(in)
+    call sample_points( pdf_dim, d_uniform_extra, &  ! intent(in)
                         mu1, mu2, &  ! intent(in)
                         l_d_variable_lognormal, & ! intent(in)
                         X_u_one_lev, & ! intent(in)
@@ -152,17 +163,76 @@ module transform_to_pdf_module
     ! Zero precipitation hydrometeors if not in precipitation
     if ( .not. l_in_precip_one_lev ) then
 
-      call zero_precip_hydromets( d_variables, & ! Intent(in)
+      call zero_precip_hydromets( pdf_dim, & ! Intent(in)
                                   X_nl_one_lev ) ! Intent(inout)
 
     end if
+
+    ! Clip extreme sample point values of chi, when necessary.
+    ! The values of PDF component cloud fraction have been clipped within PDF
+    ! closure under extreme conditions.  This code forces the sample point
+    ! values of chi to be saturated or unsaturated to match the condition
+    ! enforced by the clipping of PDF component cloud fraction.
+    if ( l_clip_extreme_chi_sample_pts ) then
+
+       if ( X_mixt_comp_one_lev == 1 ) then
+
+          ! The sample is from the 1st PDF component.
+
+          if ( cloud_frac_1 < epsilon( cloud_frac_1 ) ) then
+
+             ! Cloud fraction in the 1st PDF component is 0.
+             ! All sample point values of chi must be <= 0.
+             if ( X_nl_one_lev(iiPDF_chi) > zero ) then
+                ! Clip the sample point value of chi back to 0.
+                X_nl_one_lev(iiPDF_chi) = zero
+             endif ! X_nl_one_lev(iiPDF_chi) > zero
+
+          elseif ( cloud_frac_1 > ( one - epsilon( cloud_frac_1 ) ) ) then
+
+             ! Cloud fraction in the 1st PDF component is 1.
+             ! All sample point values of chi must be > 0.
+             if ( X_nl_one_lev(iiPDF_chi) <= zero ) then
+                ! Clip the sample point value of chi to epsilon.
+                X_nl_one_lev(iiPDF_chi) = epsilon( zero )
+             endif ! X_nl_one_lev(iiPDF_chi) <= zero
+
+          endif ! cloud_frac_1
+
+       elseif ( X_mixt_comp_one_lev == 2 ) then
+
+          ! The sample is from the 2nd PDF component.
+
+          if ( cloud_frac_2 < epsilon( cloud_frac_2 ) ) then
+
+             ! Cloud fraction in the 2nd PDF component is 0.
+             ! All sample point values of chi must be <= 0.
+             if ( X_nl_one_lev(iiPDF_chi) > zero ) then
+                ! Clip the sample point value of chi back to 0.
+                X_nl_one_lev(iiPDF_chi) = zero
+             endif ! X_nl_one_lev(iiPDF_chi) > zero
+
+          elseif ( cloud_frac_2 > ( one - epsilon( cloud_frac_2 ) ) ) then
+
+             ! Cloud fraction in the 2nd PDF component is 1.
+             ! All sample point values of chi must be > 0.
+             if ( X_nl_one_lev(iiPDF_chi) <= zero ) then
+                ! Clip the sample point value of chi to epsilon.
+                X_nl_one_lev(iiPDF_chi) = epsilon( zero )
+             endif ! X_nl_one_lev(iiPDF_chi) <= zero
+
+          endif ! cloud_frac_2
+
+       endif ! X_mixt_comp_one_lev
+
+    endif ! l_clip_extreme_chi_sample_pts
 
 
     return
   end subroutine transform_uniform_sample_to_pdf
 
 !---------------------------------------------------------------------------------------------------
-  subroutine zero_precip_hydromets( d_variables, X_nl_one_lev )
+  subroutine zero_precip_hydromets( pdf_dim, X_nl_one_lev )
 
   ! Description:
   !   Sets the sample values of the precipitating hydrometeors to zero
@@ -177,7 +247,7 @@ module transform_to_pdf_module
     use constants_clubb, only: &
       zero           ! Constant
 
-    use corr_varnce_module, only: &
+    use array_index, only: &
       iiPDF_Ncn      ! Variable
 
     implicit none
@@ -185,11 +255,11 @@ module transform_to_pdf_module
     ! Input Variables
 
     integer, intent(in) :: &
-      d_variables  ! Number of hydrometeors                                        [count]
+      pdf_dim ! Number of hydrometeors                                        [count]
 
     ! Input/Output Variables
 
-    real( kind = core_rknd ), intent(inout), dimension(d_variables) :: &
+    real( kind = core_rknd ), intent(inout), dimension(pdf_dim) :: &
       X_nl_one_lev      ! Sample of hydrometeors (normal-lognormal space)          [units vary]
 
     ! Local Variables
@@ -199,14 +269,14 @@ module transform_to_pdf_module
 
     !----- Begin Code -----
 
-    do ivar = iiPDF_Ncn+1, d_variables
+    do ivar = iiPDF_Ncn+1, pdf_dim
       X_nl_one_lev(ivar) = zero
     end do
 
   end subroutine zero_precip_hydromets
 
 !---------------------------------------------------------------------------------------------------
-  subroutine sample_points( d_variables, d_uniform_extra, &
+  subroutine sample_points( pdf_dim, d_uniform_extra, &
                             mu1, mu2,  &
                             l_d_variable_lognormal, &
                             X_u_one_lev, &
@@ -236,29 +306,29 @@ module transform_to_pdf_module
 
     ! Input variables
     integer, intent(in) :: &
-      d_variables, &    ! Number of variates
+      pdf_dim, &    ! Number of variates
       d_uniform_extra   ! Variates included in uniform sample only
 
     ! Latin hypercube variables, i.e. chi, eta, w, etc.
-    real( kind = core_rknd ), intent(in), dimension(d_variables) :: &
+    real( kind = core_rknd ), intent(in), dimension(pdf_dim) :: &
       mu1, mu2 ! d-dimensional column vector of means of 1st, 2nd components
 
-    logical, intent(in), dimension(d_variables) :: &
+    logical, intent(in), dimension(pdf_dim) :: &
       l_d_variable_lognormal ! Whether a given element of X_nl is lognormal
 
-    real( kind = core_rknd ), intent(in), dimension(d_variables+d_uniform_extra) :: &
+    real( kind = core_rknd ), intent(in), dimension(pdf_dim+d_uniform_extra) :: &
       X_u_one_lev ! Sample drawn from uniform distribution from particular grid level [-]
 
     integer, intent(in) :: &
       X_mixt_comp_one_lev ! Whether we're in the 1st or 2nd mixture component
 
-    ! Columns of Sigma_Cholesky, X_nl_one_lev:  1   2   3   4 ... d_variables
+    ! Columns of Sigma_Cholesky, X_nl_one_lev:  1   2   3   4 ... pdf_dim
     !                                           chi eta w   hydrometeors
-    real( kind = core_rknd ), intent(in), dimension(d_variables,d_variables) :: &
+    real( kind = core_rknd ), intent(in), dimension(pdf_dim,pdf_dim) :: &
       Sigma1_Cholesky, & ! [units vary]
       Sigma2_Cholesky
 
-    real( kind = core_rknd ), intent(in), dimension(d_variables) :: &
+    real( kind = core_rknd ), intent(in), dimension(pdf_dim) :: &
       Sigma1_scaling, Sigma2_scaling ! Scaling factors on Sigma1,2 [units vary]
 
     logical, intent(in) :: &
@@ -266,14 +336,14 @@ module transform_to_pdf_module
 
     ! Output Variables
 
-    real( kind = core_rknd ), intent(out), dimension(d_variables) :: &
+    real( kind = core_rknd ), intent(out), dimension(pdf_dim) :: &
       X_nl_one_lev ! Sample that is transformed ultimately to normal-lognormal
 
     ! ---- Begin Code ----
 
     ! Generate n samples of a d-variate Gaussian mixture
     ! by transforming Latin hypercube points, X_u_one_lev.
-    call gaus_mixt_points( d_variables, d_uniform_extra, mu1, mu2, &  ! intent(in)
+    call gaus_mixt_points( pdf_dim, d_uniform_extra, mu1, mu2, &  ! intent(in)
                            Sigma1_Cholesky, Sigma2_Cholesky, & ! intent(in)
                            Sigma1_scaling, Sigma2_scaling, & ! intent(in)
                            l_Sigma1_scaling, l_Sigma2_scaling, & ! intent(in)
@@ -290,7 +360,7 @@ module transform_to_pdf_module
 !-------------------------------------------------------------------------------
 
 !----------------------------------------------------------------------
-  subroutine gaus_mixt_points( d_variables, d_uniform_extra, mu1, mu2, & ! Intent(in)
+  subroutine gaus_mixt_points( pdf_dim, d_uniform_extra, mu1, mu2, & ! Intent(in)
                                Sigma1_Cholesky, Sigma2_Cholesky, & ! Intent(in)
                                Sigma1_scaling, Sigma2_scaling, & ! Intent(in)
                                l_Sigma1_scaling, l_Sigma2_scaling, & ! Intent(in)
@@ -312,20 +382,20 @@ module transform_to_pdf_module
     ! Input Variables
 
     integer, intent(in) :: &
-      d_variables, &    ! Number of variates
+      pdf_dim, &    ! Number of variates
       d_uniform_extra   ! Variates included in uniform sample only
 
-    real( kind = core_rknd ), intent(in), dimension(d_variables) :: &
+    real( kind = core_rknd ), intent(in), dimension(pdf_dim) :: &
       mu1, mu2 ! d-dimensional column vector of means of 1st, 2nd Gaussians
 
     ! Latin hypercube sample from uniform distribution from a particular grid level
-    real( kind = core_rknd ), intent(in), dimension(d_variables+d_uniform_extra) :: &
+    real( kind = core_rknd ), intent(in), dimension(pdf_dim+d_uniform_extra) :: &
       X_u_one_lev
 
-    real( kind = core_rknd ), dimension(d_variables,d_variables), intent(in) :: &
+    real( kind = core_rknd ), dimension(pdf_dim,pdf_dim), intent(in) :: &
       Sigma1_Cholesky, Sigma2_Cholesky ! Cholesky factorization of Sigma1,2
 
-    real( kind = core_rknd ), dimension(d_variables), intent(in) :: &
+    real( kind = core_rknd ), dimension(pdf_dim), intent(in) :: &
       Sigma1_scaling, & ! Scaling factors for Sigma1 for accuracy [units vary]
       Sigma2_scaling    ! Scaling factors for Sigma2 for accuracy [units vary]
 
@@ -337,12 +407,12 @@ module transform_to_pdf_module
 
     ! Output Variables
 
-    real( kind = core_rknd ), intent(out), dimension(d_variables) :: &
+    real( kind = core_rknd ), intent(out), dimension(pdf_dim) :: &
       X_nl_one_lev ! [n by d] matrix, each row of which is a d-dimensional sample
 
     ! Local Variables
 
-    real( kind = core_rknd ), dimension(d_variables) :: &
+    real( kind = core_rknd ), dimension(pdf_dim) :: &
       std_normal  ! Standard normal multiplied by the factorized Sigma    [-]
 
     integer :: ivar ! Loop iterators
@@ -350,7 +420,7 @@ module transform_to_pdf_module
     ! ---- Begin Code ----
 
     ! From Latin hypercube sample, generate standard normal sample
-    do ivar = 1, d_variables
+    do ivar = 1, pdf_dim
       std_normal(ivar) = ltqnorm( X_u_one_lev(ivar) )
     end do
 
@@ -359,18 +429,18 @@ module transform_to_pdf_module
     if ( X_mixt_comp_one_lev == 1 ) then
 
       call multiply_Cholesky &
-          ( d_variables, std_normal, & ! In
+          ( pdf_dim, std_normal, & ! In
             mu1, Sigma1_Cholesky, &  ! In
             Sigma1_scaling, l_Sigma1_scaling, & ! In
-            X_nl_one_lev(1:d_variables) ) ! Out
+            X_nl_one_lev(1:pdf_dim) ) ! Out
 
     else if ( X_mixt_comp_one_lev == 2 ) then
 
       call multiply_Cholesky &
-           ( d_variables, std_normal, & ! In
+           ( pdf_dim, std_normal, & ! In
              mu2, Sigma2_Cholesky, &  ! In
              Sigma2_scaling, l_Sigma2_scaling, & ! In
-             X_nl_one_lev(1:d_variables) ) ! Out
+             X_nl_one_lev(1:pdf_dim) ) ! Out
 
     else
       print *, X_mixt_comp_one_lev
@@ -413,16 +483,12 @@ module transform_to_pdf_module
       core_rknd, &    ! Constant(s)
       dp ! double precision
 
-    use constants_clubb, only: &
-      pi_dp,       &     ! Constant(s)
-      sqrt_2_dp,   &
+    use constants_clubb, only: &    
+      sqrt_2_dp,   &        ! Constant(s)
       sqrt_2pi_dp, &
       two_dp,      &
       one_dp,      &
       one_half_dp
-
-    use anl_erf, only: &
-      dp_erfc               ! Procedure
 
 #ifdef CLUBB_CAM
     ! Some compilers cannot handle 1.0/0.0, so in CAM we import their
@@ -578,7 +644,7 @@ module transform_to_pdf_module
     ! slightly but did improve results.
     ! Eric Raut 23Aug14
     if ( l_apply_halley_method ) then
-      e = one_half_dp * dp_erfc(-z/sqrt_2_dp) - p
+      e = one_half_dp * erfc(-z/sqrt_2_dp) - p
       u = e * sqrt_2pi_dp * exp( (z**2) / two_dp )
       z = z - u / ( one_dp + z*u/two_dp )
     end if
@@ -590,7 +656,7 @@ module transform_to_pdf_module
   end function ltqnorm
 
 !-------------------------------------------------------------------------------
-  subroutine multiply_Cholesky( d_variables, std_normal, mu, Sigma_Cholesky, &
+  subroutine multiply_Cholesky( pdf_dim, std_normal, mu, Sigma_Cholesky, &
                                   Sigma_scaling, l_scaled, &
                                   nonstd_normal )
 ! Description:
@@ -614,18 +680,18 @@ module transform_to_pdf_module
       incx = 1 ! Increment for x in dtrmv
 
     ! Input Variables
-    integer, intent(in) :: d_variables ! Number of variates (normally=5)
+    integer, intent(in) :: pdf_dim! Number of variates (normally=5)
 
-    real( kind = core_rknd ), intent(in), dimension(d_variables) :: &
+    real( kind = core_rknd ), intent(in), dimension(pdf_dim) :: &
       std_normal ! vector of d-variate standard normal distribution [-]
 
-    real( kind = core_rknd ), intent(in), dimension(d_variables) :: &
+    real( kind = core_rknd ), intent(in), dimension(pdf_dim) :: &
       mu ! d-dimensional column vector of means of Gaussian     [units vary]
 
-    real( kind = core_rknd ), intent(in), dimension(d_variables,d_variables) :: &
+    real( kind = core_rknd ), intent(in), dimension(pdf_dim,pdf_dim) :: &
       Sigma_Cholesky ! Cholesky factorization of the Sigma matrix [units vary]
 
-    real( kind = core_rknd ), intent(in), dimension(d_variables) :: &
+    real( kind = core_rknd ), intent(in), dimension(pdf_dim) :: &
       Sigma_scaling ! Scaling for Sigma / mu    [units vary]
 
     logical, intent(in) :: l_scaled ! Whether any scaling was done to Sigma
@@ -635,10 +701,10 @@ module transform_to_pdf_module
     ! nxd matrix of n samples from d-variate normal distribution
     !   with mean mu and covariance structure Sigma
     real( kind = core_rknd ), intent(out) :: &
-      nonstd_normal(d_variables)
+      nonstd_normal(pdf_dim)
 
     ! Local Variables
-    real( kind = core_rknd ), dimension(d_variables) :: &
+    real( kind = core_rknd ), dimension(pdf_dim) :: &
       Sigma_times_std_normal ! Sigma * std_normal [units vary]
 
     ! --- Begin Code ---
@@ -650,14 +716,14 @@ module transform_to_pdf_module
     if ( kind( 0.0_core_rknd ) == kind( 0.0D0 ) ) then
 
       ! core_rknd is double precision
-      call dtrmv( 'Lower', 'N', 'N', d_variables, Sigma_Cholesky, d_variables, & ! In
+      call dtrmv( 'Lower', 'N', 'N', pdf_dim, Sigma_Cholesky, pdf_dim, & ! In
                   Sigma_times_std_normal, & ! In/out
                   incx ) ! In
 
     else if ( kind( 0.0_core_rknd ) == kind( 0.0 ) ) then
 
       ! core_rknd is single precision
-      call strmv( 'Lower', 'N', 'N', d_variables, Sigma_Cholesky, d_variables, & ! In
+      call strmv( 'Lower', 'N', 'N', pdf_dim, Sigma_Cholesky, pdf_dim, & ! In
                   Sigma_times_std_normal, & ! In/out
                   incx ) ! In
 

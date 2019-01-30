@@ -38,9 +38,6 @@ module Nc_Ncn_test
         stdev_L2N,  & ! Procedure(s)
         corr_NL2NN
 
-    use anl_erf, only: &
-        erfc ! Procedure(s)
-
     use clubb_precision, only: &
         core_rknd  ! Variable(s)
 
@@ -50,33 +47,39 @@ module Nc_Ncn_test
     integer :: Nc_Ncn_unit_test ! Returns the exit code of the test
 
     ! Local Variables
-    real( kind = core_rknd ) :: &
-      mu_chi_1,        & ! Mean of chi(s) (1st PDF component)                   [kg/kg]
-      mu_chi_2,        & ! Mean of chi(s) (2nd PDF component)                   [kg/kg]
-      mu_Ncn_1,      & ! Mean of Ncn (1st PDF component)                [num/kg]
-      mu_Ncn_2,      & ! Mean of Ncn (2nd PDF component)                [num/kg]
-      sigma_chi_1,     & ! Standard deviation of chi(s) (1st PDF component)     [kg/kg]
-      sigma_chi_2,     & ! Standard deviation of chi(s) (2nd PDF component)     [kg/kg]
-      sigma_Ncn_1,   & ! Standard deviation of Ncn (1st PDF component)  [num/kg]
-      sigma_Ncn_2,   & ! Standard deviation of Ncn (2nd PDF component)  [num/kg]
-      sigma_Ncn_1_n, & ! Standard deviation of ln Ncn (1st PDF component)    [-]
-      sigma_Ncn_2_n, & ! Standard deviation of ln Ncn (2nd PDF component)    [-]
-      corr_chi_Ncn_1_n, & ! Correlation between chi(s) and ln Ncn (1st PDF comp.)    [-]
-      corr_chi_Ncn_2_n, & ! Correlation between chi(s) and ln Ncn (2nd PDF comp.)    [-]
-      mixt_frac,     & ! Mixture fraction                                    [-]
-      cloud_frac_1,  & ! Cloud fraction (1st PDF component)                  [-]
-      cloud_frac_2     ! Cloud fraction (2nd PDF component)                  [-]
+    integer, parameter :: &
+      nz = 1
 
-    real( kind = core_rknd ) :: &
+    real( kind = core_rknd ), dimension(nz) :: &
+      mu_chi_1,         & ! Mean of chi(s) (1st PDF component)           [kg/kg]
+      mu_chi_2,         & ! Mean of chi(s) (2nd PDF component)           [kg/kg]
+      mu_Ncn_1,         & ! Mean of Ncn (1st PDF component)             [num/kg]
+      mu_Ncn_2,         & ! Mean of Ncn (2nd PDF component)             [num/kg]
+      sigma_chi_1,      & ! Standard deviation of chi(s) (1st PDF comp.) [kg/kg]
+      sigma_chi_2,      & ! Standard deviation of chi(s) (2nd PDF comp.) [kg/kg]
+      sigma_Ncn_1,      & ! Standard deviation of Ncn (1st PDF comp.)   [num/kg]
+      sigma_Ncn_2,      & ! Standard deviation of Ncn (2nd PDF comp.)   [num/kg]
+      sigma_Ncn_1_n,    & ! Standard deviation of ln Ncn (1st PDF component) [-]
+      sigma_Ncn_2_n,    & ! Standard deviation of ln Ncn (2nd PDF component) [-]
+      corr_chi_Ncn_1_n, & ! Correlation of chi(s) and ln Ncn (1st PDF comp.) [-]
+      corr_chi_Ncn_2_n, & ! Correlation of chi(s) and ln Ncn (2nd PDF comp.) [-]
+      mixt_frac,        & ! Mixture fraction                                 [-]
+      cloud_frac_1,     & ! Cloud fraction (1st PDF component)               [-]
+      cloud_frac_2        ! Cloud fraction (2nd PDF component)               [-]
+
+    real( kind = core_rknd ), dimension(nz) :: &
       Ncm,         & ! Mean cloud droplet concentration (overall)       [num/kg]
       Nc_in_cloud, & ! Mean cloud droplet concentration (in-cloud)      [num/kg]
       Ncnm           ! Mean simplified cloud nuclei concentration       [num/kg]
 
     real( kind = core_rknd ) :: &
       const_Ncnp2_on_Ncnm2, & ! Prescribed ratio of <Ncn'^2> to <Ncn>        [-]
-      const_corr_chi_Ncn         ! Prescribed correlation between chi(s) and Ncn     [-]
+      const_corr_chi_Ncn      ! Prescribed correlation of chi(s) and Ncn     [-]
 
-    real( kind = core_rknd ) :: &
+    real( kind = core_rknd ), dimension(nz) :: &
+      const_Ncnp2_on_Ncnm2_in    ! Prescribed ratio of <Ncn'^2> to <Ncn>     [-]
+
+    real( kind = core_rknd ), dimension(nz) :: &
       percent_diff    ! Percent difference between Ncnm before and after     [%]
 
     real( kind = core_rknd ), parameter :: &
@@ -278,24 +281,29 @@ module Nc_Ncn_test
        write(fstdout,*) "corr_chi_Ncn_1 = corr_chi_Ncn_2 = ", const_corr_chi_Ncn
        write(fstdout,*) "mixture fraction = ", mixt_frac
 
-       const_Ncnp2_on_Ncnm2 = sigma_Ncn_1**2 / mu_Ncn_1**2
+       const_Ncnp2_on_Ncnm2_in = sigma_Ncn_1**2 / mu_Ncn_1**2
 
-       sigma_Ncn_1_n = stdev_L2N( const_Ncnp2_on_Ncnm2 ) 
+       const_Ncnp2_on_Ncnm2 = const_Ncnp2_on_Ncnm2_in(nz)
+
+       sigma_Ncn_1_n = stdev_L2N( nz, const_Ncnp2_on_Ncnm2_in ) 
 
        sigma_Ncn_2_n = sigma_Ncn_1_n
 
        if ( const_Ncnp2_on_Ncnm2 > zero ) then
 
           corr_chi_Ncn_1_n &
-          = corr_NL2NN( const_corr_chi_Ncn, sigma_Ncn_1_n, const_Ncnp2_on_Ncnm2 ) 
+          = corr_NL2NN( const_corr_chi_Ncn, sigma_Ncn_1_n(nz), &
+                        const_Ncnp2_on_Ncnm2 ) 
 
           corr_chi_Ncn_2_n = corr_chi_Ncn_1_n
 
        endif
 
-       cloud_frac_1 = one_half * erfc( - ( mu_chi_1 / ( sqrt_2 * sigma_chi_1 ) ) )
+       cloud_frac_1 &
+       = one_half * erfc( - ( mu_chi_1 / ( sqrt_2 * sigma_chi_1 ) ) )
 
-       cloud_frac_2 = one_half * erfc( - ( mu_chi_2 / ( sqrt_2 * sigma_chi_2 ) ) )
+       cloud_frac_2 &
+       = one_half * erfc( - ( mu_chi_2 / ( sqrt_2 * sigma_chi_2 ) ) )
 
        write(fstdout,*) "cloud fraction (1st PDF component) = ", cloud_frac_1
 
@@ -309,7 +317,7 @@ module Nc_Ncn_test
        ! Calculate Ncm and Nc_in_cloud from PDF parameters (Ncn) and cloud
        ! fraction.
        Nc_in_cloud &
-       = Ncnm_to_Nc_in_cloud( mu_chi_1, mu_chi_2, mu_Ncn_1, mu_Ncn_2, &
+       = Ncnm_to_Nc_in_cloud( nz, mu_chi_1, mu_chi_2, mu_Ncn_1, mu_Ncn_2, &
                               sigma_chi_1, sigma_chi_2, sigma_Ncn_1, &
                               sigma_Ncn_2, sigma_Ncn_1_n, sigma_Ncn_2_n, &
                               corr_chi_Ncn_1_n, corr_chi_Ncn_2_n, mixt_frac, &
@@ -317,7 +325,7 @@ module Nc_Ncn_test
 
        write(fstdout,*) "Nc_in_cloud (from Ncn) = ", Nc_in_cloud
 
-       Ncm = Ncnm_to_Ncm( mu_chi_1, mu_chi_2, mu_Ncn_1, mu_Ncn_2, &
+       Ncm = Ncnm_to_Ncm( nz, mu_chi_1, mu_chi_2, mu_Ncn_1, mu_Ncn_2, &
                           sigma_chi_1, sigma_chi_2, sigma_Ncn_1, &
                           sigma_Ncn_2, sigma_Ncn_1_n, sigma_Ncn_2_n, &
                           corr_chi_Ncn_1_n, corr_chi_Ncn_2_n, mixt_frac )
@@ -326,14 +334,14 @@ module Nc_Ncn_test
 
        ! Calculate Ncnm from Ncm, Nc_in_cloud, PDF parameters, and cloud
        ! fraction.
-       Ncnm = Nc_in_cloud_to_Ncnm( mu_chi_1, mu_chi_2, sigma_chi_1, &
+       Ncnm = Nc_in_cloud_to_Ncnm( nz, mu_chi_1, mu_chi_2, sigma_chi_1, &
                                    sigma_chi_2, mixt_frac, Nc_in_cloud, &
                                    cloud_frac_1, cloud_frac_2, &
                                    const_Ncnp2_on_Ncnm2, const_corr_chi_Ncn )
 
        write(fstdout,*) "Ncnm (from Nc_in_cloud) = ", Ncnm
 
-       Ncnm = Ncm_to_Ncnm( mu_chi_1, mu_chi_2, sigma_chi_1, sigma_chi_2, &
+       Ncnm = Ncm_to_Ncnm( nz, mu_chi_1, mu_chi_2, sigma_chi_1, sigma_chi_2, &
                            mixt_frac, Ncm, const_Ncnp2_on_Ncnm2, &
                            const_corr_chi_Ncn, Nc_in_cloud )
 
@@ -344,7 +352,7 @@ module Nc_Ncn_test
        ! calculations).
        percent_diff = one_hundred * abs( ( Ncnm - mu_Ncn_1 ) / mu_Ncn_1 )
 
-       if ( percent_diff <= tol ) then
+       if ( percent_diff(nz) <= tol ) then
 
           ! The percentage difference between Ncnm (here, after back-and-forth
           ! calculations) and mu_Ncn_1 (here, Ncnm before back-and-forth

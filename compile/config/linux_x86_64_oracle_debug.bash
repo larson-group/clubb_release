@@ -23,11 +23,11 @@ DEBUG="-C -fns=no -stackvar -xcheck=init_local -ftrap=common -traceback=common"
 # This is the preferred warning level when compiling CLUBB with Sun Studio.
 #   Level -w4 produces a warning message for each call to an overloaded 
 #   operator, resulting in a huge number of warnings.
-WARNINGS="-w3 -ansi"
+WARNINGS="-w3"
 
 # == Machine specific flags ==
 # Note that when linking to sunperf (for LAPACK) you must use -dalign
-ARCH="-g -xtarget=native -m64 -dalign"
+ARCH="-g -xtarget=generic -m64 -dalign"
 #ARCH="-g -m64 -xtarget=native -dalign"
 
 # == Used to promote all real's to double precision ==

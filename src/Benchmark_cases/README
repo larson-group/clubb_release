@@ -7,6 +7,9 @@ arm:          Shallow cumulus over the ARM site in Oklahoma.
               of the diurnal cycle of shallow cumulus convection over land. 
               Quart. J. Roy. Meteor.  Soc., 128, 1075-1093. 
 
+arm_97:       Midlatitude summertime deep convective case 
+              https://pdfs.semanticscholar.org/b075/2472113877159a460931e6a48df5519105db.pdf
+
 astex:        Shallow Cu rising into Sc over the Northern Altantic.
               http://appconv.metoffice.com/blclouds/GCSS_BLclouds_files/Past_cases.html#case3
               Bretherton, C. S., S. K. Krueger, M. C. Wyant, P. Bechtold, E. van Meijgaard, 
@@ -45,6 +48,13 @@ gabls2:       Diurnal cycle of boundary layer over land, including
               stable nighttime layer.
               http://www.misu.su.se/~gunilla/gabls/
 
+lba:          Tropical  Rainfall Measuring Mission Large-Scale Biosphere-Atmosphere
+              Transition from shallow to deep convection over land from early morning 
+              to early afternoon.
+              https://research.vu.nl/ws/portalfiles/portal/1853605
+              https://agupubs.onlinelibrary.wiley.com/doi/abs/10.1029/2001JD000335
+              
+
 mpace_a:      Multi-layered, mixed-phase Arctic stratus.
               http://science.arm.gov/workinggroup/cpm/scm/scmic5/index.html
 
@@ -53,6 +63,10 @@ mpace_b:      Single-layered, mixed-phase Arctic stratus.
               
 rico:         Precipitating Shallow Cumulus Case
               http://www.knmi.nl/samenw/rico/index.html
+
+twp_ice:      Tropical Warm Pool International Cloud Experiment, deep convective case
+              https://pdfs.semanticscholar.org/a30c/7c6433a5a1f51e25b9bca3f794e5b6bf942f.pdf
+              
 
 wangara:      Dry convective boundary layer over land.
               2002: "A PDF-based model for boundary layer clouds. 

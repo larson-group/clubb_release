@@ -144,16 +144,25 @@ l_var_covar_src = .true.
 lh_microphys_type = "interactive",
 lh_num_samples = 8,
 lh_sequence_length = 1,
-l_fix_chi_eta_correlations = .true.,
+l_fix_w_chi_eta_correlations = .true.,
 
-hmp2_ip_on_hmm2_ip_ratios%rrp2_ip_on_rrm2_ip = 5.0
-hmp2_ip_on_hmm2_ip_ratios%Nrp2_ip_on_Nrm2_ip = 2.5
-hmp2_ip_on_hmm2_ip_ratios%rip2_ip_on_rim2_ip = 1.25
-hmp2_ip_on_hmm2_ip_ratios%Nip2_ip_on_Nim2_ip = 0.625
-hmp2_ip_on_hmm2_ip_ratios%rsp2_ip_on_rsm2_ip = 1.25
-hmp2_ip_on_hmm2_ip_ratios%Nsp2_ip_on_Nsm2_ip = 0.625
-hmp2_ip_on_hmm2_ip_ratios%rgp2_ip_on_rgm2_ip = 1.25
-hmp2_ip_on_hmm2_ip_ratios%Ngp2_ip_on_Ngm2_ip = 0.625
+hmp2_ip_on_hmm2_ip_intrcpt%rr = 5.0
+hmp2_ip_on_hmm2_ip_intrcpt%Nr = 2.5
+hmp2_ip_on_hmm2_ip_intrcpt%ri = 1.25
+hmp2_ip_on_hmm2_ip_intrcpt%Ni = 0.625
+hmp2_ip_on_hmm2_ip_intrcpt%rs = 1.25
+hmp2_ip_on_hmm2_ip_intrcpt%Ns = 0.625
+hmp2_ip_on_hmm2_ip_intrcpt%rg = 1.25
+hmp2_ip_on_hmm2_ip_intrcpt%Ng = 0.625
+
+hmp2_ip_on_hmm2_ip_slope%rr = 0.0
+hmp2_ip_on_hmm2_ip_slope%Nr = 0.0
+hmp2_ip_on_hmm2_ip_slope%ri = 0.0
+hmp2_ip_on_hmm2_ip_slope%Ni = 0.0
+hmp2_ip_on_hmm2_ip_slope%rs = 0.0
+hmp2_ip_on_hmm2_ip_slope%Ns = 0.0
+hmp2_ip_on_hmm2_ip_slope%rg = 0.0
+hmp2_ip_on_hmm2_ip_slope%Ng = 0.0
 
 Ncnp2_on_Ncnm2 = 0.003
 

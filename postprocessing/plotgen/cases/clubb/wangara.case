@@ -89,6 +89,31 @@
           {'filename' => '/home/matlabuser/plotgen/HOC_20051217/wangara_zm.ctl', 'type' => 'dec17', 'name' => 'HOC 12/17/2005', 'expression' => 'rtpthlp', 'lineWidth' => '5', 'lineType' => '-.', 'lineColor' => '[ 0.63, 0.00, 0.79 ]'},
           {'filename' => 'wangara_zm.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'rtpthlp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
+       {'plotTitle' => 'rtp3', 'axisLabel' => 'rtp3 [(kg/kg)^3]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => '/home/matlabuser/plotgen/LES_files/wangara_rams.ctl', 'type' => 'les', 'name' => 'RAMS-LES', 'expression' => 'rtp3', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
+          {'filename' => 'wangara_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'rtp3', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'thlp3', 'axisLabel' => 'thlp3 [K^3]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => '/home/matlabuser/plotgen/LES_files/wangara_rams.ctl', 'type' => 'les', 'name' => 'RAMS-LES', 'expression' => 'thlp3', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
+          {'filename' => 'wangara_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'thlp3', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Skewness of w', 'axisLabel' => 'Skw [-]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => '/home/matlabuser/plotgen/LES_files/wangara_rams.ctl', 'type' => 'les', 'name' => 'RAMS-LES', 'expression' => 'wp3 ./ (wp2 + 1.6e-3).^1.5', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
+          {'filename' => 'wangara_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'Skw_zt', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Skewness of r_t', 'axisLabel' => 'Skrt [-]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => '/home/matlabuser/plotgen/LES_files/wangara_rams.ctl', 'type' => 'les', 'name' => 'RAMS-LES', 'expression' => 'rtp3 ./ (rtp2 + 4e-16).^1.5', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
+          {'filename' => 'wangara_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'Skrt_zt', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Skewness of \theta_l', 'axisLabel' => 'Skthl [-]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => '/home/matlabuser/plotgen/LES_files/wangara_rams.ctl', 'type' => 'les', 'name' => 'RAMS-LES', 'expression' => 'thlp3 ./ (thlp2 + 4e-4).^1.5', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
+          {'filename' => 'wangara_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'Skthl_zt', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
        {'plotTitle' => 'Vertical Wind Component, w (subsidence)', 'axisLabel' => 'wm [m/s]', 'type' => 'profile', 'lines' =>
        [
           {'filename' => '/home/matlabuser/plotgen/LES_files/wangara_rams.ctl', 'type' => 'les', 'name' => 'RAMS-LES', 'expression' => 'wm', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
@@ -138,6 +163,41 @@
           {'filename' => '/home/matlabuser/plotgen/HOC_20051217/wangara_zm.ctl', 'type' => 'dec17', 'name' => 'HOC 12/17/2005', 'expression' => 'vp2', 'lineWidth' => '5', 'lineType' => '-.', 'lineColor' => '[ 0.63, 0.00, 0.79 ]'},
           {'filename' => 'wangara_zm.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'vp2', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
+       {'plotTitle' => 'Variance of r_c', 'axisLabel' => 'rcp2 [kg^2/kg^2]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => '/home/matlabuser/plotgen/LES_files/wangara_rams.ctl', 'type' => 'les', 'name' => 'RAMS-LES', 'expression' => 'rlp2', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
+          {'filename' => 'wangara_zm.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'rcp2', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'wp4', 'axisLabel' => 'wp4 [m^4/s^4]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => '/home/matlabuser/plotgen/LES_files/wangara_rams.ctl', 'type' => 'les', 'name' => 'RAMS-LES', 'expression' => 'wp4', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
+          {'filename' => 'wangara_zm.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'wp4', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'wp2thlp', 'axisLabel' => 'wp2thlp [m^2/s^2 K]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => '/home/matlabuser/plotgen/LES_files/wangara_rams.ctl', 'type' => 'les', 'name' => 'RAMS-LES', 'expression' => 'wp2thlp', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
+          {'filename' => 'wangara_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'wp2thlp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'wp2rtp', 'axisLabel' => 'wp2rtp [m^2/s^2 kg/kg]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => '/home/matlabuser/plotgen/LES_files/wangara_rams.ctl', 'type' => 'les', 'name' => 'RAMS-LES', 'expression' => 'wp2rtp', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
+          {'filename' => 'wangara_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'wp2rtp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'wpthlp2', 'axisLabel' => 'wpthlp2 [m/s K^2]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => '/home/matlabuser/plotgen/LES_files/wangara_rams.ctl', 'type' => 'les', 'name' => 'RAMS-LES', 'expression' => 'wpthlp2', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
+          {'filename' => 'wangara_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'wpthlp2', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'wprtp2', 'axisLabel' => 'wprtp2 [m/s kg^2/kg^2]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => '/home/matlabuser/plotgen/LES_files/wangara_rams.ctl', 'type' => 'les', 'name' => 'RAMS-LES', 'expression' => 'wprtp2', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
+          {'filename' => 'wangara_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'wprtp2', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'wprtpthlp', 'axisLabel' => 'wprtpthlp [m/s kg/kg K]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => '/home/matlabuser/plotgen/LES_files/wangara_rams.ctl', 'type' => 'les', 'name' => 'RAMS-LES', 'expression' => 'wprtpthlp', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
+          {'filename' => 'wangara_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'wprtpthlp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},       
        {'plotTitle' => 'Buoyancy flux ', 'axisLabel' => 'wpthvp [K m/s]', 'type' => 'profile', 'lines' =>
        [
           {'filename' => '/home/matlabuser/plotgen/LES_files/wangara_rams.ctl', 'type' => 'les', 'name' => 'RAMS-LES', 'expression' => 'wpthvp', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
@@ -145,18 +205,39 @@
        ]},
        {'plotTitle' => 'Contribution of Cloud Water Flux to wpthvp', 'axisLabel' => 'rc\_coef * wprcp   [K m/s]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => '/home/matlabuser/plotgen/LES_files/wangara_rams.ctl', 'type' => 'les', 'name' => 'RAMS-LES', 'expression' => 'wpqcp .* (2.5e6 ./ (1004.67*ex0) - 1.61*thvm)', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
-          {'filename' => 'wangara_zm.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'rc_coef .* wprcp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+          {'filename' => '/home/matlabuser/plotgen/LES_files/wangara_rams.ctl', 'type' => 'les', 'name' => 'RAMS-LES', 'expression' => 'wprlp .* (2.5e6 ./ (1004.67*((p/1.0e5).^(287.04/1004.67))) - 1.61*thvm)', 'lineWidth' => '5', 'lineType' => '-', 'lineColor'
+ => '[ 0.00, 0.00, 0.00 ]'},
+          {'filename' => 'wangara_zm.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'rc_coef_zm .* wprcp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'wp2thvp', 'axisLabel' => 'wp2thvp [m^2/s^2 K]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => '/home/matlabuser/plotgen/LES_files/wangara_rams.ctl', 'type' => 'les', 'name' => 'RAMS-LES', 'expression' => 'wp2thvp', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
+          {'filename' => 'wangara_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'wp2thvp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},       
+       {'plotTitle' => 'Cloud water contribution to wp2thvp', 'axisLabel' => 'rc\_coef * wp2rcp   [m^2/s^2 K]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => '/home/matlabuser/plotgen/LES_files/wangara_rams.ctl', 'type' => 'les', 'name' => 'RAMS-LES', 'expression' => 'wp2rlp .* (2.5e6 ./ (1004.67*((p/1.0e5).^(287.04/1004.67))) - 1.61*thvm)', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
+          {'filename' => 'wangara_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'rc_coef .* wp2rcp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'thlpthvp', 'axisLabel' => 'thlpthvp [K^2]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => '/home/matlabuser/plotgen/LES_files/wangara_rams.ctl', 'type' => 'les', 'name' => 'RAMS-LES', 'expression' => 'thlpthvp', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
+          {'filename' => 'wangara_zm.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'thlpthvp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
        {'plotTitle' => 'Cloud water contribution to thlpthvp', 'axisLabel' => 'rc\_coef * thlprcp   [K^2]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => '/home/matlabuser/plotgen/LES_files/wangara_rams.ctl', 'type' => 'les', 'name' => 'RAMS-LES', 'expression' => '(2.5e6 ./ (1004.67*ex0) - 1.61*thvm).*thlpqcp', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
-          {'filename' => 'wangara_zm.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'rc_coef .* thlprcp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+          {'filename' => '/home/matlabuser/plotgen/LES_files/wangara_rams.ctl', 'type' => 'les', 'name' => 'RAMS-LES', 'expression' => 'thlprlp .* (2.5e6 ./ (1004.67*((p/1.0e5).^(287.04/1004.67))) - 1.61*thvm)', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
+          {'filename' => 'wangara_zm.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'rc_coef_zm .* thlprcp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
-       {'plotTitle' => 'Cloud water contribution to rtpthvp', 'axisLabel' => 'rc\_coef * rtprcp   [K kg/kg]', 'type' => 'profile', 'lines' =>
+       {'plotTitle' => 'rtpthvp', 'axisLabel' => 'rtpthvp [kg/kg K]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => '/home/matlabuser/plotgen/LES_files/wangara_rams.ctl', 'type' => 'les', 'name' => 'RAMS-LES', 'expression' => '(2.5e6 ./ (1004.67*ex0) - 1.61*thvm).*qtpqcp', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
-          {'filename' => 'wangara_zm.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'rc_coef .* rtprcp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+          {'filename' => '/home/matlabuser/plotgen/LES_files/wangara_rams.ctl', 'type' => 'les', 'name' => 'RAMS-LES', 'expression' => 'rtpthvp', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
+          {'filename' => 'wangara_zm.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'rtpthvp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Cloud water contribution to rtpthvp', 'axisLabel' => 'rc\_coef * rtprcp   [kg/kg K]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => '/home/matlabuser/plotgen/LES_files/wangara_rams.ctl', 'type' => 'les', 'name' => 'RAMS-LES', 'expression' => 'rtprlp .* (2.5e6 ./ (1004.67*((p/1.0e5).^(287.04/1004.67))) - 1.61*thvm)', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
+          {'filename' => 'wangara_zm.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'rc_coef_zm .* rtprcp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
        {'plotTitle' => 'Mixing Length', 'axisLabel' => 'Lscale [m]', 'type' => 'profile', 'lines' =>
        [
@@ -166,95 +247,13 @@
        [
           {'filename' => 'wangara_zm.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'tau_zm', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
-       {'plotTitle' => 'LW + SW radiative heating rate', 'axisLabel' => 'radht [K/s]', 'type' => 'profile', 'lines' =>
-       [
-          {'filename' => '/home/matlabuser/plotgen/LES_files/wangara_rams.ctl', 'type' => 'les', 'name' => 'RAMS-LES', 'expression' => 'radht', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
-          {'filename' => 'wangara_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'radht', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
-       ]},
-       {'plotTitle' => 'Precip Fraction', 'axisLabel' => 'precip\_frac [%]', 'type' => 'profile', 'lines' =>
-       [
-          {'filename' => 'wangara_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'precip_frac * 100', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
-       ]},
-       {'plotTitle' => 'Ice Fraction', 'axisLabel' => 'ice\_supersat\_frac [%]', 'type' => 'profile', 'lines' =>
-       [
-          {'filename' => 'wangara_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'ice_supersat_frac * 100', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
-       ]},
-       {'plotTitle' => 'Rain Water Mixing Ratio, r_r', 'axisLabel' => 'rrm [kg/kg]', 'type' => 'profile', 'lines' =>
-       [
-          {'filename' => '/home/matlabuser/plotgen/LES_files/wangara_rams.ctl', 'type' => 'les', 'name' => 'RAMS-LES', 'expression' => 'qrm', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
-          {'filename' => '/home/matlabuser/plotgen/Chris_Golaz_best_ever/wangara_zt.ctl', 'type' => 'bestever', 'name' => 'CLUBB r408 \"best-ever\"', 'expression' => 'rrm', 'lineWidth' => '3', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.50, 0.00 ]'},
-          {'filename' => '/home/matlabuser/plotgen/HOC_20051217/wangara_zt.ctl', 'type' => 'dec17', 'name' => 'HOC 12/17/2005', 'expression' => 'rrm', 'lineWidth' => '5', 'lineType' => '-.', 'lineColor' => '[ 0.63, 0.00, 0.79 ]'},
-          {'filename' => 'wangara_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'rrm', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
-       ]},
-       {'plotTitle' => 'Rain Drop Concentration, N_r', 'axisLabel' => 'Nrm [num/kg]', 'type' => 'profile', 'lines' =>
-       [
-          {'filename' => '/home/matlabuser/plotgen/LES_files/wangara_rams.ctl', 'type' => 'les', 'name' => 'RAMS-LES', 'expression' => 'nrm', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
-          {'filename' => '/home/matlabuser/plotgen/Chris_Golaz_best_ever/wangara_zt.ctl', 'type' => 'bestever', 'name' => 'CLUBB r408 \"best-ever\"', 'expression' => 'Nrm', 'lineWidth' => '3', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.50, 0.00 ]'},
-          {'filename' => '/home/matlabuser/plotgen/HOC_20051217/wangara_zt.ctl', 'type' => 'dec17', 'name' => 'HOC 12/17/2005', 'expression' => 'Nrm', 'lineWidth' => '5', 'lineType' => '-.', 'lineColor' => '[ 0.63, 0.00, 0.79 ]'},
-          {'filename' => 'wangara_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'Nrm', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
-       ]},
-       {'plotTitle' => 'Cloud Droplet Concentration', 'axisLabel' => 'Ncm [num/kg]', 'type' => 'profile', 'lines' =>
-       [
-          {'filename' => '/home/matlabuser/plotgen/LES_files/wangara_rams.ctl', 'type' => 'les', 'name' => 'RAMS-LES', 'expression' => 'ncm', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
-          {'filename' => '/home/matlabuser/plotgen/Chris_Golaz_best_ever/wangara_zt.ctl', 'type' => 'bestever', 'name' => 'CLUBB r408 \"best-ever\"', 'expression' => 'Ncm', 'lineWidth' => '3', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.50, 0.00 ]'},
-          {'filename' => '/home/matlabuser/plotgen/HOC_20051217/wangara_zt.ctl', 'type' => 'dec17', 'name' => 'HOC 12/17/2005', 'expression' => 'Ncm', 'lineWidth' => '5', 'lineType' => '-.', 'lineColor' => '[ 0.63, 0.00, 0.79 ]'},
-          {'filename' => 'wangara_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'Ncm', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
-       ]},
-       {'plotTitle' => 'In Cloud Droplet Concentration', 'axisLabel' => 'Nc\_in\_cloud [num/kg]', 'type' => 'profile', 'lines' =>
-       [
-          {'filename' => 'wangara_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'Nc_in_cloud', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
-       ]},
-       {'plotTitle' => 'Graupel Mixing Ratio', 'axisLabel' => 'rgm [kg/kg]', 'type' => 'profile', 'lines' =>
-       [
-          {'filename' => '/home/matlabuser/plotgen/LES_files/wangara_rams.ctl', 'type' => 'les', 'name' => 'RAMS-LES', 'expression' => 'qgm', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
-          {'filename' => '/home/matlabuser/plotgen/Chris_Golaz_best_ever/wangara_zt.ctl', 'type' => 'bestever', 'name' => 'CLUBB r408 \"best-ever\"', 'expression' => 'rgm', 'lineWidth' => '3', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.50, 0.00 ]'},
-          {'filename' => '/home/matlabuser/plotgen/HOC_20051217/wangara_zt.ctl', 'type' => 'dec17', 'name' => 'HOC 12/17/2005', 'expression' => 'rgm', 'lineWidth' => '5', 'lineType' => '-.', 'lineColor' => '[ 0.63, 0.00, 0.79 ]'},
-          {'filename' => 'wangara_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'rgm', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
-       ]},
-       {'plotTitle' => 'Cloud Ice Mixing Ratio', 'axisLabel' => 'rim [kg/kg]', 'type' => 'profile', 'lines' =>
-       [
-          {'filename' => '/home/matlabuser/plotgen/LES_files/wangara_rams.ctl', 'type' => 'les', 'name' => 'RAMS-LES', 'expression' => 'qim', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
-          {'filename' => '/home/matlabuser/plotgen/Chris_Golaz_best_ever/wangara_zt.ctl', 'type' => 'bestever', 'name' => 'CLUBB r408 \"best-ever\"', 'expression' => 'rim', 'lineWidth' => '3', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.50, 0.00 ]'},
-          {'filename' => '/home/matlabuser/plotgen/HOC_20051217/wangara_zt.ctl', 'type' => 'dec17', 'name' => 'HOC 12/17/2005', 'expression' => 'rim', 'lineWidth' => '5', 'lineType' => '-.', 'lineColor' => '[ 0.63, 0.00, 0.79 ]'},
-          {'filename' => 'wangara_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'rim', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
-       ]},
-       {'plotTitle' => 'Cloud Ice Concentration', 'axisLabel' => 'Nim [num/kg]', 'type' => 'profile', 'lines' =>
-       [
-          {'filename' => '/home/matlabuser/plotgen/LES_files/wangara_rams.ctl', 'type' => 'les', 'name' => 'RAMS-LES', 'expression' => 'nim', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
-          {'filename' => '/home/matlabuser/plotgen/Chris_Golaz_best_ever/wangara_zt.ctl', 'type' => 'bestever', 'name' => 'CLUBB r408 \"best-ever\"', 'expression' => 'Nim', 'lineWidth' => '3', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.50, 0.00 ]'},
-          {'filename' => '/home/matlabuser/plotgen/HOC_20051217/wangara_zt.ctl', 'type' => 'dec17', 'name' => 'HOC 12/17/2005', 'expression' => 'Nim', 'lineWidth' => '5', 'lineType' => '-.', 'lineColor' => '[ 0.63, 0.00, 0.79 ]'},
-          {'filename' => 'wangara_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'Nim', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
-       ]},
-       {'plotTitle' => 'Snow Mixing Ratio', 'axisLabel' => 'rsm [kg/kg]', 'type' => 'profile', 'lines' =>
-       [
-          {'filename' => '/home/matlabuser/plotgen/LES_files/wangara_rams.ctl', 'type' => 'les', 'name' => 'RAMS-LES', 'expression' => 'qsm', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
-          {'filename' => '/home/matlabuser/plotgen/Chris_Golaz_best_ever/wangara_zt.ctl', 'type' => 'bestever', 'name' => 'CLUBB r408 \"best-ever\"', 'expression' => 'rsm', 'lineWidth' => '3', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.50, 0.00 ]'},
-          {'filename' => '/home/matlabuser/plotgen/HOC_20051217/wangara_zt.ctl', 'type' => 'dec17', 'name' => 'HOC 12/17/2005', 'expression' => 'rsm', 'lineWidth' => '5', 'lineType' => '-.', 'lineColor' => '[ 0.63, 0.00, 0.79 ]'},
-          {'filename' => 'wangara_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'rsm', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
-       ]},
-       {'plotTitle' => 'Snow Number Concentration', 'axisLabel' => 'Nsm [num/kg]', 'type' => 'profile', 'lines' =>
-       [
-          {'filename' => 'wangara_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'Nsm', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
-       ]},
        {'plotTitle' => 'Liquid Water Path', 'axisLabel' => 'lwp [kg/m^2]', 'type' => 'timeseries', 'startTime' => '1', 'lines' =>
        [
           {'filename' => 'wangara_sfc.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'lwp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
-       {'plotTitle' => 'Surface rainfall rate', 'axisLabel' => 'rain\_rate\_sfc [mm/day]', 'type' => 'timeseries', 'startTime' => '1', 'lines' =>
-       [
-          {'filename' => 'wangara_sfc.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'precip_rate_sfc', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
-       ]},
        {'plotTitle' => 'Density-Weighted Vertically Averaged wp2', 'axisLabel' => 'wp2 [m^2/s^2]', 'type' => 'timeseries', 'startTime' => '1', 'lines' =>
        [
           {'filename' => 'wangara_sfc.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'wp2_vert_avg', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
-       ]},
-       {'plotTitle' => 'Cloud Ice Water Path', 'axisLabel' => 'iwp [kg/m^2]', 'type' => 'timeseries', 'startTime' => '1', 'lines' =>
-       [
-          {'filename' => 'wangara_sfc.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'iwp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
-       ]},
-       {'plotTitle' => 'Snow Water Path', 'axisLabel' => 'swp [kg/m^2]', 'type' => 'timeseries', 'startTime' => '1', 'lines' =>
-       [
-          {'filename' => 'wangara_sfc.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'swp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
     ],
     'nightlyOutput' =>

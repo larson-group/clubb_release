@@ -279,11 +279,11 @@ module matrix_operations
 
         if ( iter == itermax ) then
           write(fstderr,*) "iteration =", iter, "itermax =", itermax
-          stop "Fatal error in Cholesky_factor"
+          write(fstderr,*) "Fatal error in Cholesky_factor"
         else if ( clubb_at_least_debug_level( 1 ) ) then
           ! Adding a STOP statement to prevent this problem from slipping under
           ! the rug.
-          stop "Fatal error in Cholesky_factor"
+          write(fstderr,*) "Fatal error in Cholesky_factor"
           write(fstderr,*) "Attempting to modify matrix to allow factorization."
         end if
 
@@ -397,19 +397,17 @@ module matrix_operations
     case( :-1 )
       write(fstderr,*) "Symm_matrix_eigenvalues:" // & 
         " illegal value for argument ", -info
-      stop
     case( 0 )
       ! Success!
 
     case( 1: )
       write(fstderr,*) "Symm_matrix_eigenvalues: Algorithm failed to converge."
-      stop
     end select
 
     return
   end subroutine Symm_matrix_eigenvalues
 !-------------------------------------------------------------------------------
-  subroutine set_lower_triangular_matrix( d_variables, index1, index2, xpyp, &
+  subroutine set_lower_triangular_matrix( pdf_dim, index1, index2, xpyp, &
                                           matrix )
 ! Description:
 !   Set a value for the lower triangular portion of a matrix.
@@ -427,14 +425,14 @@ module matrix_operations
 
     ! Input Variables
     integer, intent(in) :: &
-      d_variables, & ! Number of variates
+      pdf_dim, & ! Number of variates
       index1, index2 ! Indices for 2 variates (the order doesn't matter)
 
     real( kind = core_rknd ), intent(in) :: &
       xpyp ! Value for the matrix (usually a correlation or covariance) [units vary]
 
     ! Input/Output Variables
-    real( kind = core_rknd ), dimension(d_variables,d_variables), intent(inout) :: &
+    real( kind = core_rknd ), dimension(pdf_dim,pdf_dim), intent(inout) :: &
       matrix ! The lower triangular matrix
 
     integer :: i,j
@@ -454,7 +452,7 @@ module matrix_operations
 !-------------------------------------------------------------------------------
 
 !-------------------------------------------------------------------------------
-  subroutine get_lower_triangular_matrix( d_variables, index1, index2, matrix, &
+  subroutine get_lower_triangular_matrix( pdf_dim, index1, index2, matrix, &
                                           xpyp )
 ! Description:
 !   Returns a value from the lower triangular portion of a matrix.
@@ -472,11 +470,11 @@ module matrix_operations
 
     ! Input Variables
     integer, intent(in) :: &
-      d_variables, & ! Number of variates
+      pdf_dim, & ! Number of variates
       index1, index2 ! Indices for 2 variates (the order doesn't matter)
 
     ! Input/Output Variables
-    real( kind = core_rknd ), dimension(d_variables,d_variables), intent(in) :: &
+    real( kind = core_rknd ), dimension(pdf_dim,pdf_dim), intent(in) :: &
       matrix ! The covariance matrix
 
     real( kind = core_rknd ), intent(out) :: &

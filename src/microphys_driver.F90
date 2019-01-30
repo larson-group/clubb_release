@@ -21,14 +21,14 @@ module microphys_driver
   implicit none
 
   ! Subroutines
-  public :: microphys_schemes
+  public :: calc_microphys_scheme_tendcies
 
   private ! Default Scope
 
   contains
 
   !=============================================================================
-  subroutine microphys_schemes( dt, time_current, n_variables, runtype, & ! In
+  subroutine calc_microphys_scheme_tendcies( dt, time_current, n_variables, runtype, & ! In
                                 thlm, p_in_Pa, exner, rho, rho_zm, rtm, & ! In
                                 rcm, cloud_frac, wm_zt, wm_zm, wp2_zt, &  ! In
                                 hydromet, Nc_in_cloud, &                  ! In
@@ -139,12 +139,12 @@ module microphys_driver
         stat_end_update
 
     use array_index, only:  & 
-        iirrm, & ! Variable(s)
-        iirsm, &
-        iirim, &
-        iirgm, &
-        iiNrm, &
-        iiNim
+        iirr, & ! Variable(s)
+        iirs, &
+        iiri, &
+        iirg, &
+        iiNr, &
+        iiNi
 
     use stats_variables, only: & 
         stats_zt,  & ! Variable(s)
@@ -189,7 +189,7 @@ module microphys_driver
         core_rknd
 
     use corr_varnce_module, only: &
-        d_variables ! Variable(s)
+        pdf_dim! Variable(s)
 
     use microphys_stats_vars_module, only: &
         microphys_stats_vars_type,  & ! Type
@@ -237,7 +237,7 @@ module microphys_driver
     type(hydromet_pdf_parameter), dimension(gr%nz), intent(in) :: &
       hydromet_pdf_params     ! PDF parameters
 
-    real( kind = core_rknd ), dimension(gr%nz,lh_num_samples,d_variables), &
+    real( kind = core_rknd ), dimension(gr%nz,lh_num_samples,pdf_dim), &
     intent(in) :: &
       X_nl_all_levs ! Normally and lognormally distributed hydrometeors and other variables
 
@@ -408,17 +408,17 @@ module microphys_driver
       call coamps_microphys_driver & 
            ( runtype, time_current, dt, & ! In
              rtm, wm_zm, p_in_Pa, exner, rho, & ! In
-             thlm, hydromet(:,iirim), hydromet(:,iirrm),  &  ! In
-             hydromet(:,iirgm), hydromet(:,iirsm), & ! In
-             rcm, Ncm_microphys, hydromet(:,iiNrm), hydromet(:,iiNim), & !In
+             thlm, hydromet(:,iiri), hydromet(:,iirr),  &  ! In
+             hydromet(:,iirg), hydromet(:,iirs), & ! In
+             rcm, Ncm_microphys, hydromet(:,iiNr), hydromet(:,iiNi), & !In
              Nccnm, cond, & ! Inout
-             hydromet_vel_zt(:,iirsm), hydromet_vel_zt(:,iirim), & ! Out
-             hydromet_vel_zt(:,iirrm), hydromet_vel_zt(:,iiNrm),  &  ! Out
-             hydromet_vel_zt(:,iirgm), &  ! Out
-             hydromet_mc(:,iirim), hydromet_mc(:,iirrm), & ! Out
-             hydromet_mc(:,iirgm), hydromet_mc(:,iirsm), & ! Out
-             hydromet_mc(:,iiNrm), & ! Out
-             Ncm_mc, hydromet_mc(:,iiNim), & ! Out
+             hydromet_vel_zt(:,iirs), hydromet_vel_zt(:,iiri), & ! Out
+             hydromet_vel_zt(:,iirr), hydromet_vel_zt(:,iiNr),  &  ! Out
+             hydromet_vel_zt(:,iirg), &  ! Out
+             hydromet_mc(:,iiri), hydromet_mc(:,iirr), & ! Out
+             hydromet_mc(:,iirg), hydromet_mc(:,iirs), & ! Out
+             hydromet_mc(:,iiNr), & ! Out
+             Ncm_mc, hydromet_mc(:,iiNi), & ! Out
              rvm_mc, rcm_mc, thlm_mc )
 #else
       stop "Not compiled with COAMPS microphysics"
@@ -429,20 +429,20 @@ module microphys_driver
       if ( l_stats_samp ) then
 
         ! Sedimentation velocity for rrm
-        call stat_update_var(iVrr, zt2zm( hydromet_vel_zt(:,iirrm) ), stats_zm)
+        call stat_update_var(iVrr, zt2zm( hydromet_vel_zt(:,iirr) ), stats_zm)
 
         ! Sedimentation velocity for Nrm
-        call stat_update_var(iVNr, zt2zm( hydromet_vel_zt(:,iiNrm) ), stats_zm )
+        call stat_update_var(iVNr, zt2zm( hydromet_vel_zt(:,iiNr) ), stats_zm )
 
         ! Sedimentation velocity for snow
-        call stat_update_var(iVrs, zt2zm( hydromet_vel_zt(:,iirsm) ), stats_zm )
+        call stat_update_var(iVrs, zt2zm( hydromet_vel_zt(:,iirs) ), stats_zm )
 
         ! Sedimentation velocity for pristine ice
-        call stat_update_var( iVri, zt2zm( hydromet_vel_zt(:,iirim) ), stats_zm )
+        call stat_update_var( iVri, zt2zm( hydromet_vel_zt(:,iiri) ), stats_zm )
 
         ! Sedimentation velocity for graupel
         call stat_update_var( iVrg, &
-                            zt2zm( hydromet_vel_zt(:,iirgm) ), stats_zm )
+                            zt2zm( hydromet_vel_zt(:,iirg) ), stats_zm )
       endif ! l_stats_samp
 
     case ( "morrison" )
@@ -450,7 +450,7 @@ module microphys_driver
       if ( lh_microphys_type /= lh_microphys_disabled ) then
 #ifdef SILHS
         call lh_microphys_driver &
-             ( dt, gr%nz, lh_num_samples, d_variables, & ! In
+             ( dt, gr%nz, lh_num_samples, pdf_dim, & ! In
                X_nl_all_levs, lh_sample_point_weights, & ! In
                pdf_params, hydromet_pdf_params, p_in_Pa, exner, rho, & ! In
                rcm, delta_zt, cloud_frac, & ! In
@@ -531,7 +531,7 @@ module microphys_driver
 
       ! Output rain sedimentation velocity
       if ( l_stats_samp ) then
-        call stat_update_var(iVrr, zt2zm( hydromet_vel_zt(:,iirrm) ), stats_zm)
+        call stat_update_var(iVrr, zt2zm( hydromet_vel_zt(:,iirr) ), stats_zm)
       endif
 
     case ( "morrison_gettelman" )
@@ -545,7 +545,7 @@ module microphys_driver
 
       rvm = rtm - rcm
       call mg_microphys_driver &
-           ( dt, gr%nz, l_stats_samp, gr%invrs_dzt, thlm, p_in_Pa, exner, &
+           ( dt, gr%nz, l_stats_samp, gr%dzt, thlm, p_in_Pa, exner, &
              rho, cloud_frac, rcm, Ncm_microphys, rvm, Nccnm, pdf_params, hydromet, &
              hydromet_mc, hydromet_vel_zt, rcm_mc, rvm_mc, thlm_mc )
 
@@ -555,7 +555,7 @@ module microphys_driver
 
 #ifdef SILHS
         call lh_microphys_driver &
-             ( dt, gr%nz, lh_num_samples, d_variables, & ! In
+             ( dt, gr%nz, lh_num_samples, pdf_dim, & ! In
                X_nl_all_levs, lh_sample_point_weights, & ! In
                pdf_params, hydromet_pdf_params, p_in_Pa, exner, rho, & ! In
                rcm, delta_zt, cloud_frac, & ! In
@@ -575,9 +575,9 @@ module microphys_driver
 
         if ( l_stats_samp ) then
           ! Latin hypercube estimate for sedimentation velocities
-          call stat_update_var( ilh_Vrr, hydromet_vel_zt(:,iirrm), stats_lh_zt )
+          call stat_update_var( ilh_Vrr, hydromet_vel_zt(:,iirr), stats_lh_zt )
 
-          call stat_update_var( ilh_VNr, hydromet_vel_zt(:,iiNrm), stats_lh_zt )
+          call stat_update_var( ilh_VNr, hydromet_vel_zt(:,iiNr), stats_lh_zt )
 
         endif
 
@@ -632,10 +632,10 @@ module microphys_driver
       if ( l_stats_samp ) then
 
         ! Sedimentation velocity for rrm
-        call stat_update_var( iVrr, zt2zm( hydromet_vel_zt(:,iirrm) ), stats_zm )
+        call stat_update_var( iVrr, zt2zm( hydromet_vel_zt(:,iirr) ), stats_zm )
 
         ! Sedimentation velocity for Nrm
-        call stat_update_var( iVNr, zt2zm( hydromet_vel_zt(:,iiNrm) ), stats_zm )
+        call stat_update_var( iVNr, zt2zm( hydromet_vel_zt(:,iiNr) ), stats_zm )
 
       endif ! l_stats_samp
 
@@ -731,7 +731,7 @@ module microphys_driver
 
     return
 
-  end subroutine microphys_schemes
+  end subroutine calc_microphys_scheme_tendcies
 
 !===============================================================================
 

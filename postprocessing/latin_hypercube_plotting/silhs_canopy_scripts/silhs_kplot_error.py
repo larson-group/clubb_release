@@ -2,11 +2,11 @@ import netCDF4
 import numpy as np
 import pylab as pl
 
-clubb_nc     = netCDF4.Dataset('cldwt/rico_lh_zt.nc')
+clubb_nc     = netCDF4.Dataset('cldwt/rico_silhs_zt.nc')
 
-silhs_files = [ 'cldwt/rico_lh_lh_zt.nc' ]
+silhs_files = [ 'cldwt/rico_silhs_lh_zt.nc' ]
 silhs_labels = [ 'cldwt' ]
-silhs_sfc_nc = netCDF4.Dataset('cldwt/rico_lh_lh_sfc.nc')
+silhs_sfc_nc = netCDF4.Dataset('cldwt/rico_silhs_lh_sfc.nc')
 
 silhs_ncs = list()
 for silhs_file in silhs_files:
