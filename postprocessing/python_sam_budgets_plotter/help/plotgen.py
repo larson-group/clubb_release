@@ -206,6 +206,8 @@ def get_all_variables(nc, lines, plotLabels, nh, nt, t0, t1, h0, h1):
     logger.debug(plotLabels)
     # Initialize list of all plots
     plot_data = []
+    # Rename to make some of the expressions in SAM standalone work
+    n = nh
     for i,l in enumerate(lines):
         # Initialize list of all lines in plot l
         plot_lines = []
@@ -213,9 +215,10 @@ def get_all_variables(nc, lines, plotLabels, nh, nt, t0, t1, h0, h1):
         functions = []
         logger.debug('Iterate over lines')
         for j,var in enumerate(l):
-            isfunc = isFunction(var[2])
-            logger.debug("Is function? %s",str(isfunc))
-            if not isfunc:
+            if var[2] is None:
+                logger.debug("Add dummy line")
+                plot_lines.append([var[0], var[1], var[4], None])
+            elif not isFunction(var[2]):
                 logger.debug(plotLabels[i])
                 logger.debug(var[2])
                 logger.debug(var[0])
@@ -239,13 +242,15 @@ def get_all_variables(nc, lines, plotLabels, nh, nt, t0, t1, h0, h1):
                 #plot_lines.append([var[0], var[1], var[2], var[4], data])
                 plot_lines.append([var[0], var[1], var[4], data])
             else:
-                functions.append([var[0], var[1], var[2], var[4]])
+                plot_lines.append(None)
+                functions.append([var[0], var[1], var[2], var[4], j])
         logger.debug('Iterate over functions')
         for func in functions:
             expression = func[2]
             logger.debug('Calculate %s', func[0])
             for k in range(len(plot_lines)):
-                expression = expression.replace(plot_lines[k][0], 'plot_lines['+str(k)+'][3]')
+                if plot_lines[k] is not None and plot_lines[k][3] is not None:
+                    expression = expression.replace(plot_lines[k][0], 'plot_lines['+str(k)+'][3]')
             try:
                 data = eval(expression)
             except Exception as e:
@@ -253,7 +258,8 @@ def get_all_variables(nc, lines, plotLabels, nh, nt, t0, t1, h0, h1):
                 data = np.zeros(nh)
             # var[2] not needed?
             #plot_lines.append([func[0], func[1], func[2], data])
-            plot_lines.append([func[0], func[1], func[3], data])
+            logger.debug(func[4])
+            plot_lines[func[4]] = [func[0], func[1], func[3], data]
         plot_data.append(plot_lines)
     return dict(zip(plotLabels, plot_data))
 
@@ -276,7 +282,7 @@ def plot_default(plots, cf, data, h):
         # pb.get_units() needs nc
         name = plot_case_name.format(plot=plot_label)
         imageNames.append(name)
-        pb.plot_profiles(data[plot_label], h, units, cf.yLabel, title, os.path.join(jpg_dir,name), startLevel=2, lw=cf.lw, pdf=pdf)
+        pb.plot_profiles(data[plot_label], h, units, cf.yLabel, title, os.path.join(jpg_dir,name), startLevel=2, lw=cf.lw, grid=False, pdf=pdf)
     pdf.close()
     
     # write html page
@@ -465,7 +471,7 @@ def plot_comparison(plots, cf, data_clubb, data_sam, h_clubb, h_sam):
     for i, plot_label in enumerate(plots.sortPlots):
         logger.info('Generating plot %s', plot_label)
         title, units = plots.plotNames[i]
-        pb.plot_comparison(data_clubb[plot_label], data_sam[plot_label], h_clubb, h_sam, units, cf.yLabel, title, os.path.join(jpg_dir, plot_case_name.format(plot=plot_label)), pdf=pdf)
+        pb.plot_comparison(data_clubb[plot_label], data_sam[plot_label], h_clubb, h_sam, units, cf.yLabel, title, os.path.join(jpg_dir, plot_case_name.format(plot=plot_label)), startLevel=0, grid=False, pdf=pdf)
     pdf.close()
     # TODO: Generate html
     
@@ -545,6 +551,7 @@ def plotgen_default(plots, cf):
         data = get_all_variables(nc, plots.lines, plots.sortPlots, len(h), len(t), idx_t0, idx_t1, idx_h0, idx_h1)
     logger.info("Create plots")
     plot_default(plots, cf, data, h)
+    #logger.debug(mpp.rcParams['text.usetex'])
 
 
 def plotgen_3d(plots, cf):
@@ -613,6 +620,10 @@ def plotgen_comparison(plots, cf):
     logger.debug("h1_sam = %d",idx_h1_sam)
     logger.debug("t0_sam = %d",idx_t0_sam)
     logger.debug("t1_sam = %d",idx_t1_sam)
+    logger.debug(h_clubb.shape)
+    logger.debug(h_clubb[idx_h0_clubb:idx_h1_clubb])
+    logger.debug(h_sam.shape)
+    logger.debug(h_sam[idx_h0_sam:idx_h1_sam])
     # TODO: distinguish between zm and zt data!!
     logger.info("Fetching sam data")
     data_sam = get_all_variables(nc_sam, plots.lines_sam, plots.sortPlots, len(h_sam), len(t_sam), idx_t0_sam, idx_t1_sam, idx_h0_sam, idx_h1_sam)

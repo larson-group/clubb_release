@@ -34,24 +34,24 @@ sortPlots = sortPlots_zm + sortPlots_zt
 
 # Construct plot name from long name in netcdf instead
 plotNames_zm = [\
-    ["Vertical east-west momentum flux", "u'w' [m^2/s^2]"],\
-    ["Vertical north-south momentum flux", "v'w' [m^2/s^2]"],\
-    ["Variance of east-west air velocity", "u'^2[m^2/s^2]"],\
-    ["Variance of north-south air velocity", "v'^2 [m^2/s^2]"],\
-    ["Variance of vertical air velocity", "w'^2 [m^2/s^2]"],\
-    ["Eastward liquid water flux", "u'rc' [(m/s)(kg/kg)]"],\
-    ["Northward liquid water flux", "v'rc' [(m/s)(kg/kg)]"],\
-    ["Eastward theta_v flux", "u'thv' [(m/s)K]"],\
-    ["Northward theta_v flux", "v'thv' [(m/s)K]"],\
-    ["Eastward total water flux", "u'rt' [(m/s)(kg/kg)]"],\
-    ["Northward total water flux", "v'rt' [(m/s)(kg/kg)]"],\
-    ["Eastward theta_l flux", "u'thl' [(m/s)K]"],\
-    ["Northward theta_l flux", "v'thl' [(m/s)K]"],\
+    ["Vertical east-west momentum flux", r"$\overline{u'w'}\ \left[\frac{m^2}{s^2}\right]$"],\
+    ["Vertical north-south momentum flux", r"$\overline{v'w'}\ \left[\frac{m^2}{s^2}\right]$"],\
+    ["Variance of east-west air velocity", r"$\overline{u'^2}\ \left[\frac{m^2}{s^2}\right]$"],\
+    ["Variance of north-south air velocity", r"$\overline{v'^2}\ \left[\frac{m^2}{s^2}\right]$"],\
+    ["Variance of vertical air velocity", r"$\overline{w'^2}\ \left[\frac{m^2}{s^2}\right]$"],\
+    ["Eastward liquid water flux", r"$\overline{u'r_c'}\ \left[\frac{m\ kg}{s\ kg}\right]$"],\
+    ["Northward liquid water flux", r"$\overline{v'r_c'}\ \left[\frac{m\ kg}{s\ kg}\right]$"],\
+    ["Eastward theta_v flux", r"$\overline{u'\theta_v'}\ \left[\frac{m\ K}{s}\right]$"],\
+    ["Northward theta_v flux", r"$\overline{v'\theta_v'}\ \left[\frac{m\ K}{s}\right]$"],\
+    ["Eastward total water flux", r"$\overline{u'r_t'}\ \left[\frac{m\ kg}{s\ kg}\right]$"],\
+    ["Northward total water flux", r"$\overline{v'r_t'}\ \left[\frac{m\ kg}{s\ kg}\right]$"],\
+    ["Eastward theta_l flux", r"$\overline{u'\theta_l'}\ \left[\frac{m\ K}{s}\right]$"],\
+    ["Northward theta_l flux", r"$\overline{v'\theta_l'}\ \left[\frac{m\ K}{s}\right]$"],\
     ]
 
 plotNames_zt = [\
-    ['East-west (u) wind', 'um [m/s]'],\
-    ['North-south (v) wind', 'vm [m/s]'],\
+    ['East-west (u) wind', r"$\bar{u}\ [\frac{m}{s}]$"],\
+    ['North-south (v) wind', r"$\bar{v}\ [\frac{m}{s}]$"],\
     ]
 
 plotNames = plotNames_zm + plotNames_zt

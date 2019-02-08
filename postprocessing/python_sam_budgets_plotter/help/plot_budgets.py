@@ -26,6 +26,7 @@ logger.setLevel(logging.DEBUG)
 styles = ['-','--','-.',':']
 #ticks = stick(useMathText=True)
 #ticks.set_powerlimits((-3,3))
+pow_lim = 1
 legend_pos = [2,1]
 legend_title = ['bottom', 'top']
 # Create 9 maximally distinguishable colors TODO!!
@@ -61,6 +62,7 @@ fontsizes = {
 def plot_budgets(budgets_data, level, xLabel, yLabel, title, name, lw = 5, grid = True,  color = 'nipy_spectral', pdf=None):
     logger.info('plot_budgets')
     """
+    This function is deprecated and has been replaced by plot_profiles below.
     Plots a plot with budgets
     Input:
       budgets_data   --  list of budgets (names (index 0) and values (index 3))
@@ -72,7 +74,6 @@ def plot_budgets(budgets_data, level, xLabel, yLabel, title, name, lw = 5, grid 
       lw             --  linewidth of the budgets
       color          --  name of colormap
       pdf            --  axes object for output in pdf
-      xax            --  switch to plot on different x-scale (0=bottom, 1=top) (not implemented)
     """
     # clear the plot
     #plt.clf()
@@ -134,7 +135,7 @@ def plot_budgets(budgets_data, level, xLabel, yLabel, title, name, lw = 5, grid 
         #limit = round(limit/10**e)
         axes[i].set_xlim(-limit, limit)
         ticks = stick(useMathText=True)
-        ticks.set_powerlimits((-3,3))
+        ticks.set_powerlimits((-pow_lim,pow_lim))
         axes[i].xaxis.set_major_formatter(ticks)
         axes[i].grid(grid)
         axes[i].legend(loc=legend_pos[i], prop={'size':8})
@@ -164,6 +165,7 @@ def plot_budgets(budgets_data, level, xLabel, yLabel, title, name, lw = 5, grid 
 
 def plot_profiles(data, level, xLabel, yLabel, title, name, startLevel = 0, lw = 5, grid = True, color = 'nipy_spectral', pdf=None):
     """
+    This function replaced plot_budgets, so it should be used from now on.
     Plots a plot with budgets
     TODO: Change line label
     Input:
@@ -181,10 +183,10 @@ def plot_profiles(data, level, xLabel, yLabel, title, name, startLevel = 0, lw =
     yLabel         --  label of the y axis
     title          --  title of the plot
     name           --  name of the file
+    startLevel     --  Height level at which to plot lines, values below this level will be ignored
     lw             --  linewidth of the plot lines
-    color          --  name of colormap
+    color          --  name of colormap (deprecated, as color sequence is hard coded at the momemt)
     pdf            --  PdfPages object
-    xax            --  switch to plot on different x-scale (0=bottom, 1=top) (not implemented)
     """
     logger.info('plot_profiles')
     fig = plt.figure(figsize=(10,10))
@@ -203,13 +205,13 @@ def plot_profiles(data, level, xLabel, yLabel, title, name, startLevel = 0, lw =
     ax.set_title(title, fontsize=fontsizes['title'], y=titlepos)
     
     # show grid
-    #ax.grid(True, which='both')
+    #ax.grid(grid, which='both')
     ax.axvline(x=0, color='k',ls="--", alpha=.5)
     ax.axhline(y=0, color='k',ls="--", alpha=.5)
         
     # color of lines
     cmap = plt.get_cmap(color)
-    # getting as many colors as lines to plot
+    # getting as many colors as lines to plot (deprecated)
     counter_colors = 0
     for budget in data:
         if budget[1]:
@@ -219,13 +221,20 @@ def plot_profiles(data, level, xLabel, yLabel, title, name, startLevel = 0, lw =
     # loop over lines in plot
     j = 0
     for i in range(len(data)):
-        logger.debug('dimension of %s: %s', data[i][0], len(data[i][3]))
-        # if it is a help variable, like BUOY e.g., the variable should not be plotted. It is included in B+P variables
-        if data[i][1]:
-            # plot line
-            axes[data[i][2]].plot(data[i][3][startLevel:], level[startLevel:], label=data[i][0], color=color_arr[j%len(color_arr)], lw=lw, ls=styles[j%len(styles)])
-            # Change color for next line
-            j += 1
+        if data[i][3] is None and data[i][1]:
+            logger.debug('Add dummy line for %s', data[i][0])
+            # plot dummy line, even necessary?
+            #axes[data[i][2]].plot([])
+            # increment line counter j
+            j+=1
+        else:
+            logger.debug('dimension of %s: %s', data[i][0], len(data[i][3]))
+            # if it is a help variable, like BUOY e.g., the variable should not be plotted. It is included in B+P variables
+            if data[i][1]:
+                # plot line
+                axes[data[i][2]].plot(data[i][3][startLevel:], level[startLevel:], label=data[i][0], color=color_arr[j%len(color_arr)], lw=lw, ls=styles[j%len(styles)])
+                # Change color for next line
+                j += 1
             
     # x axis should be symmetric
     # List to save ticks of each axis
@@ -241,9 +250,9 @@ def plot_profiles(data, level, xLabel, yLabel, title, name, startLevel = 0, lw =
         axes[i].set_xlim(-limit, limit)
         # Set tick label format to scalar formatter with length sensitive format (switch to scientific format when a set order of magnitude is reached)
         ticks = stick(useMathText=True)
-        ticks.set_powerlimits((-3,3))
+        ticks.set_powerlimits((-pow_lim,pow_lim))
         axes[i].xaxis.set_major_formatter(ticks)
-        axes[i].grid(False)
+        axes[i].grid(grid, which='both')
         # Generate legend
         axes[i].legend(loc=legend_pos[i], prop={'size': fontsizes['legend']}, title=legend_title[i] if len(axes)>1 else None)
         # Add ticks to list
@@ -290,8 +299,9 @@ def plot_comparison(data_clubb, data_sam, level_clubb, level_sam, xLabel, yLabel
     yLabel         --  label of the y axis
     title          --  title of the plot
     name           --  name of the file
+    startLevel     --  
+    grid           --  switch: True = shpw grid for both axes, False=do not show grid (default)
     pdf            --  PdfPages object
-    xax            --  switch to plot on different x-scale (0=bottom, 1=top) (not implemented)
     """
     logger.info('plot_profiles')
     fig = plt.figure(figsize=(10,10))
@@ -316,7 +326,8 @@ def plot_comparison(data_clubb, data_sam, level_clubb, level_sam, xLabel, yLabel
     
     # loop over lines in plot
     for i in range(len(data_clubb)):
-        logger.debug('dimension of %s: %s', data_clubb[i][0], len(data_clubb[i]))
+        logger.debug('dimension of CLUBB data %s: %s', data_clubb[i][0], len(data_clubb[i][3]))
+        logger.debug('dimension of SAM data %s: %s', data_sam[i][0], len(data_sam[i][3]))
         # if it is a help variable, like BUOY e.g., the variable should not be plotted. It is included in B+P variables
         if data_clubb[i][1]:
             ## plot lines
@@ -336,7 +347,7 @@ def plot_comparison(data_clubb, data_sam, level_clubb, level_sam, xLabel, yLabel
                 ax.set_xlim(xmin, xmax)
     # Set tick label format to scalar formatter with length sensitive format (switch to scientific format when a set order of magnitude is reached)
     ticks = stick(useMathText=True)
-    ticks.set_powerlimits((-3,3))
+    ticks.set_powerlimits((-pow_lim,pow_lim))
     ax.xaxis.set_major_formatter(ticks)
     # Increase fontsize for ticklabels
     ax.tick_params(axis='both', labelsize=fontsizes['ticks'])

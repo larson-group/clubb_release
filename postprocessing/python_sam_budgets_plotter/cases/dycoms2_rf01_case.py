@@ -30,19 +30,19 @@ endHeight = 1100.0    # [m]
 # run entry for header in html file
 run = '{case}_{nx}x{ny}x{nz}_{dxy}m_{dz}m_{dt}s'.format(case=case, nx=nx, ny=ny, nz=nz, dxy=dxy, dz=dz, dt=dt)
 # jpg file names
-plot_case_name = '{case}_{{type}}_{{date}}_{{plot}}'.format(case=case.lower())
+plot_case_name = '{case}_{dx}x{dx}_{{type}}_{{date}}_{{plot}}'.format(case=case.lower(), dx=nx)
 ## use absolute paths or relative paths originating from the directory containing plotgen.py
 # directory for output files
 out_dir = '/home/sdomke/workspace/plotgen_out/{case}_{{date}}/'.format(case=case.lower())
 # pdf output name
-out_pdf = '{case}_{{type}}_{{date}}.pdf'.format(case=case.lower())
+out_pdf = '{case}_{dx}x{dx}_{{type}}_{{date}}.pdf'.format(case=case.lower(),dx=nx)
 
 ## input .nc file
 ## SAM
 # nc file generated from .stat output
-sam_file = '/home/sdomke/workspace/clubb/avi_out/DYCOMS_RF01_96x96x320_181116.nc'
+sam_file = '/home/sdomke/workspace/clubb/avi_out/DYCOMS_RF01_96x96x320_190207.nc'
 # nc file generated from .bin3D output
-sam_3d_file = '/home/sdomke/workspace/clubb/avi_out/out3d/DYCOMS_RF01_96x96x320_96_0000022290.nc'
+sam_3d_file = '/home/sdomke/workspace/clubb/avi_out/out3d/DYCOMS_RF01_96x96x320_96_0000028800.nc'
 ## CLUBB
 clubb_zm_file = '/home/sdomke/workspace/clubb/clubb_out/dycoms2_rf01_zm.nc'
 clubb_zt_file = '/home/sdomke/workspace/clubb/clubb_out/dycoms2_rf01_zt.nc'

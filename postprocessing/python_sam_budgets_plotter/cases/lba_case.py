@@ -29,17 +29,17 @@ endHeight = 2500.0    # [m]
 # run entry for header in html file
 run = '{case}_{nx}x{ny}x{nz}_{dxy}m_{dz}m_{dt}s'.format(case=case, nx=nx, ny=ny, nz=nz, dxy=dxy, dz=dz, dt=dt)
 # jpg file names
-plot_case_name = '{case}_{{type}}_{{date}}_{{plot}}'.format(case=case.lower())
+plot_case_name = '{case}_{dx}x{dx}_{{type}}_{{date}}_{{plot}}'.format(case=case.lower(), dx=nx)
 ## use absolute paths or relative paths originating from the directory containing plotgen.py
 # directory for output files
 out_dir = '/home/sdomke/workspace/plotgen_out/{case}_{{date}}/'.format(case=case.lower())
 # pdf output name
-out_pdf = '{case}_{{type}}_{{date}}.pdf'.format(case=case.lower())
+out_pdf = '{case}_{dx}x{dx}_{{type}}_{{date}}.pdf'.format(case=case.lower(),dx=nx)
 
 ## input .nc file
 ## SAM
 # nc file generated from .stat output
-sam_file = '/home/sdomke/workspace/clubb/avi_out/LBA_128kmx128kmx128_1km_Morrison_190204.nc'
+sam_file = '/home/sdomke/workspace/clubb/avi_out/LBA_128kmx128kmx128_1km_Morrison_190205.nc'
 # nc file generated from .bin3D output
 sam_3d_file = '/home/sdomke/workspace/clubb/avi_out/out3d/LBA_128kmx128kmx128_1km_Morrison_64_0000003600.nc'
 ## CLUBB

@@ -60,7 +60,8 @@ type_name_template = '{}_variables'
 
 # List of cases
 case_dict = {
-    "BOMEX" : "bomex_case",
+    "BOMEX 64x64" : "bomex_case",
+    "BOMEX 128x128" : "bomex_large_case",
     "DYCOMS_RF01" : "dycoms2_rf01_case",
     "DYCOMS_RF02" : "dycoms2_rf02_case",
     "RICO" : "rico_case",
