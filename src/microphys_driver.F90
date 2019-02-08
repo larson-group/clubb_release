@@ -81,9 +81,6 @@ module microphys_driver
     use morrison_microphys_module, only: &
         morrison_microphys_driver  ! Procedure(s)
 
-    use mg_microphys_driver_module, only: &
-        mg_microphys_driver  ! Procedure(s)
-
     use latin_hypercube_driver_module, only: &
         lh_clipped_variables_type  ! Type
 
@@ -170,14 +167,6 @@ module microphys_driver
 
     use stats_clubb_utilities, only: & 
         stats_accumulate_lh_tend ! Procedure(s)
-
-    use phys_buffer, only: & ! Used for placing wp2_zt in morrison_gettelman microphysics
-        pbuf_add,      &
-        pbuf_allocate, &
-        pbuf_setval
-
-    use shr_kind_mod, only: &
-        shr_kind_r8  ! Variable(s)
 
     use parameters_microphys, only: &
         lh_microphys_type,        & ! Determines how the LH samples are used
@@ -266,7 +255,7 @@ module microphys_driver
     ! For COAMPS Nccnm is initialized and Nim & Ncm are computed within
     ! subroutine adjtg.
     real( kind = core_rknd ), dimension(gr%nz), intent(inout) :: & 
-      Nccnm    ! Cloud condensation nuclei concentration (COAMPS/MG)  [num/kg]
+      Nccnm    ! Cloud condensation nuclei concentration (COAMPS)  [num/kg]
 
     ! Output Variables
     real( kind = core_rknd ), dimension(gr%nz,hydromet_dim), intent(out) :: & 
@@ -533,21 +522,6 @@ module microphys_driver
       if ( l_stats_samp ) then
         call stat_update_var(iVrr, zt2zm( hydromet_vel_zt(:,iirr) ), stats_zm)
       endif
-
-    case ( "morrison_gettelman" )
-
-      ! Place wp2 into the dummy phys_buffer module to import it into microp_aero_ts.
-      ! Placed here because parameters cannot be changed on mg_microphys_driver with
-      ! the way LH is currently set up.
-      call pbuf_add( 'WP2', 1, gr%nz, 1 )
-      call pbuf_allocate()
-      call pbuf_setval( 'WP2', real( wp2_zt, kind=shr_kind_r8 ) )
-
-      rvm = rtm - rcm
-      call mg_microphys_driver &
-           ( dt, gr%nz, l_stats_samp, gr%dzt, thlm, p_in_Pa, exner, &
-             rho, cloud_frac, rcm, Ncm_microphys, rvm, Nccnm, pdf_params, hydromet, &
-             hydromet_mc, hydromet_vel_zt, rcm_mc, rvm_mc, thlm_mc )
 
     case ( "khairoutdinov_kogan" )
 

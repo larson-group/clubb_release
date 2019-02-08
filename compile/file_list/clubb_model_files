@@ -25,7 +25,6 @@
 ../src/coamps_microphys_driver_module.F90
 ../src/cos_solar_zen_module.F90
 ../src/ice_dfsn_module.F90
-../src/mg_microphys_driver_module.F90
 ../src/morrison_microphys_module.F90
 ../src/microphys_driver.F90
 ../src/microphys_init_cleanup.F90

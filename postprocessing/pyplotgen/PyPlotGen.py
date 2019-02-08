@@ -59,7 +59,7 @@ class PyPlotGen:
     def run(self):
         '''
         Runs PyPlotGen
-        :return:
+        :return: n/a
         '''
         print("PyPlotGen would run right now if it was written")
         data_reader = DataReader()
@@ -69,10 +69,9 @@ class PyPlotGen:
             filename = dataset.filepath()
             if ("dycoms2_rf01_zt") in filename.lower():
                 print("Opening " + filename)
-                plotter.plot_case(None, self.nc_datasets[0])
+                plot_data = data_reader.getPlotsData(dataset, None) # TODO change None to be the selected case
+                plotter.plot(plot_data)
 
-
-        # TODO
 
 def process_args():
     '''
