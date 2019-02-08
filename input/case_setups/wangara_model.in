@@ -140,7 +140,7 @@ l_input_fields = .false.,
 /
 
 &microphysics_setting
-! The schemes are: "khairoutdinov_kogan", "morrison", "morrison_gettelman",
+! The schemes are: "khairoutdinov_kogan", "morrison", 
 ! "coamps", "simplified_ice", "none"
 microphys_scheme = "none"
 /

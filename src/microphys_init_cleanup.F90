@@ -102,9 +102,6 @@ module microphys_init_cleanup
     use parameters_microphys, only: &
         lh_microphys_type_int => lh_microphys_type ! Determines how the LH samples are used
 
-    use phys_buffer, only: & ! Used for placing wp2_zt in morrison_gettelman microphysics
-        pbuf_init
-
     ! Adding coefficient variable for clex9_oct14 case to reduce NNUCCD
     ! and NNUCCC
     use module_mp_graupel, only: &
@@ -137,12 +134,6 @@ module microphys_init_cleanup
 
     use module_mp_Graupel, only: &
         GRAUPEL_INIT ! Subroutine
-
-    use cldwat2m_micro, only: &
-        ini_micro                ! Subroutine
-
-    use microp_aero, only: &
-        ini_microp_aero ! Subroutine
 
     use constants_clubb, only: &
         fstdout, & ! Constant(s)
@@ -540,8 +531,7 @@ module microphys_init_cleanup
     if( l_gfdl_activation ) then
        ! Ensure a microphysics that has Ncm is being used
        if( trim( microphys_scheme ) == "coamps" .or. &
-           trim( microphys_scheme ) == "morrison" & 
-           .or. trim( microphys_scheme ) == "morrison_gettelman") then
+           trim( microphys_scheme ) == "morrison" ) then
 
           ! Read in the lookup tables
           call Loading( droplets, droplets2 )
@@ -700,46 +690,6 @@ module microphys_init_cleanup
 
        call GRAUPEL_INIT()
 
-    case ( "morrison_gettelman" )
-
-       iirr = -1
-       iirs = -1
-       iiri = 1
-       iirg = -1
-
-       iiNr = -1
-       iiNs = -1
-       iiNi = 2
-       iiNg = -1
-
-       hydromet_dim = 2
-
-       if ( l_predict_Nc ) then
-          write(fstderr,*) "Morrison-Gettelman microphysics is not currently" &
-                           // " configured for l_predict_Nc = T"
-          stop "Fatal error."
-       endif
-
-       if ( l_cloud_sed ) then
-          write(fstderr,*) "Morrison-Gettelman microphysics has seperate code" &
-                           // " for cloud water sedimentation, therefore" &
-                           // " l_cloud_sed should be set to .false."
-          stop "Fatal error."
-       endif
-
-       allocate( l_hydromet_sed(hydromet_dim) )
-
-       ! Sedimentation is handled within the MG microphysics
-       l_hydromet_sed(iiri) = .false.
-       l_hydromet_sed(iiNi)   = .false.
-
-       ! Initialize constants for aerosols
-       call ini_microp_aero()
-
-       ! Setup the MG scheme
-       call ini_micro()
-       call pbuf_init()
-
     case ( "coamps" )
 
        if ( .not. l_predict_Nc ) then
@@ -845,10 +795,9 @@ module microphys_init_cleanup
     ! coamps, morrison-gettelman, or simplified_ice microphysics
     if ( ( .not. ( lh_microphys_type_int == lh_microphys_disabled ) ) &
            .and. ( trim( microphys_scheme ) == "coamps" .or. &
-                   trim( microphys_scheme ) == "morrison_gettelman" .or. &
                    trim( microphys_scheme ) == "simplified_ice" ) ) then
        stop "LH sampling can not be enabled when using coamps," &
-            // " morrison_gettelman, or simplified_ice microphysics types"
+            // " or simplified_ice microphysics types"
     endif
 
     ! Make sure user hasn't selected l_silhs_KK_convergence_adj_mean when using
@@ -1046,9 +995,6 @@ module microphys_init_cleanup
     use corr_varnce_module, only: &
         hmp2_ip_on_hmm2_ip
 
-    use phys_buffer, only: & ! Used for placing wp2_zt in MG microphys.
-        pbuf_deallocate
-
     implicit none
 
     intrinsic :: allocated
@@ -1077,10 +1023,6 @@ module microphys_init_cleanup
 
     if ( allocated( hmp2_ip_on_hmm2_ip ) ) then
        deallocate( hmp2_ip_on_hmm2_ip )
-    endif
-
-    if ( trim( microphys_scheme ) == "morrison_gettelman" ) then
-       call pbuf_deallocate()
     endif
 
 

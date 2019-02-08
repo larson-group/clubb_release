@@ -119,7 +119,7 @@ fi
 
 # ------------------------------------------------------------------------------
 # Required libraries + platform specific libraries from LDFLAGS
-REQ_LIBS="-lclubb_mg -lclubb_bugsrad -lclubb_KK_microphys -lclubb_parabolic -lclubb_morrison -lmicrophys_utils -lclubb_param"
+REQ_LIBS="-lclubb_bugsrad -lclubb_KK_microphys -lclubb_parabolic -lclubb_morrison -lmicrophys_utils -lclubb_param"
 
 OPT_LIBS="-lclubb_other"
 # ------------------------------------------------------------------------------
@@ -218,7 +218,6 @@ mkdir "$generated_lists_dir"
 repository_file_lists=( \
 	$dir/file_list/clubb_bugsrad_files \
 	$dir/file_list/clubb_KK_microphys_files \
-	$dir/file_list/clubb_mg_files \
 	$dir/file_list/clubb_model_files \
 	$dir/file_list/clubb_morrison_files \
 	$dir/file_list/clubb_standalone_files \
@@ -301,10 +300,6 @@ $mkmf -t $bindir/mkmf_template \
 $mkmf -t $bindir/mkmf_template \
   -p $libdir/libclubb_morrison.a -m Make.clubb_morrison -c "${CPPDEFS}" \
   -e $all_files_list -o "${DISABLE_WARNINGS}" $dir/file_list/clubb_morrison_files
-  
-$mkmf -t $bindir/mkmf_template \
-  -p $libdir/libclubb_mg.a -m Make.clubb_mg -c "${CPPDEFS}" \
-  -e $all_files_list -o "${DISABLE_WARNINGS}" $dir/file_list/clubb_mg_files
 
 $mkmf -t $bindir/mkmf_template \
   -p $libdir/libclubb_gfdlact.a -m Make.clubb_gfdlact -c "${CPPDEFS}" \
@@ -393,9 +388,6 @@ libclubb_coamps.a: libclubb_param.a
 
 libclubb_morrison.a: libclubb_param.a libmicrophys_utils.a
 	cd $objdir; \$(MAKE) -f Make.clubb_morrison
-	
-libclubb_mg.a: libclubb_param.a libclubb_KK_microphys.a
-	cd $objdir; \$(MAKE) -f Make.clubb_mg
 
 libclubb_gfdlact.a: 
 	cd $objdir; \$(MAKE) -f Make.clubb_gfdlact
@@ -403,25 +395,25 @@ libclubb_gfdlact.a:
 libsilhs.a: libclubb_param.a libclubb_KK_microphys.a libmicrophys_utils.a
 	cd $objdir; \$(MAKE) -f Make.silhs
 
-libclubb_other.a: libclubb_param.a libclubb_bugsrad.a libclubb_KK_microphys.a libclubb_coamps.a libclubb_morrison.a libclubb_mg.a libclubb_gfdlact.a libsilhs.a
+libclubb_other.a: libclubb_param.a libclubb_bugsrad.a libclubb_KK_microphys.a libclubb_coamps.a libclubb_morrison.a libclubb_gfdlact.a libsilhs.a
 	cd $objdir; \$(MAKE) -f Make.clubb_other
 
-clubb_standalone: libclubb_bugsrad.a libclubb_param.a libclubb_KK_microphys.a $COAMPS_LIB libclubb_morrison.a libclubb_mg.a libclubb_other.a $GFDLACT_LIB $lh_LIB
+clubb_standalone: libclubb_bugsrad.a libclubb_param.a libclubb_KK_microphys.a $COAMPS_LIB libclubb_morrison.a libclubb_other.a $GFDLACT_LIB $lh_LIB
 	cd $objdir; \$(MAKE) -f Make.clubb_standalone
 
-clubb_thread_test: libclubb_bugsrad.a libclubb_param.a libclubb_KK_microphys.a $COAMPS_LIB libclubb_morrison.a libclubb_mg.a libclubb_other.a $GFDLACT_LIB $lh_LIB
+clubb_thread_test: libclubb_bugsrad.a libclubb_param.a libclubb_KK_microphys.a $COAMPS_LIB libclubb_morrison.a libclubb_other.a $GFDLACT_LIB $lh_LIB
 	cd $objdir; \$(MAKE) -f Make.clubb_thread_test
 
-clubb_tuner: libclubb_bugsrad.a libclubb_param.a libclubb_KK_microphys.a $COAMPS_LIB libclubb_morrison.a libclubb_mg.a libclubb_other.a $GFDLACT_LIB $lh_LIB
+clubb_tuner: libclubb_bugsrad.a libclubb_param.a libclubb_KK_microphys.a $COAMPS_LIB libclubb_morrison.a libclubb_other.a $GFDLACT_LIB $lh_LIB
 	cd $objdir; \$(MAKE) -f Make.clubb_tuner
 
-jacobian: libclubb_bugsrad.a libclubb_param.a libclubb_KK_microphys.a $COAMPS_LIB libclubb_morrison.a libclubb_mg.a libclubb_other.a $GFDLACT_LIB $lh_LIB
+jacobian: libclubb_bugsrad.a libclubb_param.a libclubb_KK_microphys.a $COAMPS_LIB libclubb_morrison.a libclubb_other.a $GFDLACT_LIB $lh_LIB
 	cd $objdir; \$(MAKE) -f Make.jacobian
 
-G_unit_tests: libclubb_bugsrad.a libclubb_param.a libclubb_KK_microphys.a $COAMPS_LIB libclubb_morrison.a libclubb_mg.a libclubb_other.a $GFDLACT_LIB $lh_LIB
+G_unit_tests: libclubb_bugsrad.a libclubb_param.a libclubb_KK_microphys.a $COAMPS_LIB libclubb_morrison.a libclubb_other.a $GFDLACT_LIB $lh_LIB
 	cd $objdir; \$(MAKE) -f Make.G_unit_tests
 
-int2txt: libclubb_bugsrad.a libclubb_param.a libclubb_KK_microphys.a $COAMPS_LIB libclubb_morrison.a libclubb_mg.a libclubb_other.a
+int2txt: libclubb_bugsrad.a libclubb_param.a libclubb_KK_microphys.a $COAMPS_LIB libclubb_morrison.a libclubb_other.a
 	cd $objdir; \$(MAKE) -f Make.int2txt
 
 clean:
