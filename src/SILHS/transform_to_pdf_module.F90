@@ -104,7 +104,7 @@ module transform_to_pdf_module
 
     ! Flag to clip sample point values of chi in extreme situations.
     logical, parameter :: &
-      l_clip_extreme_chi_sample_pts = .false.
+      l_clip_extreme_chi_sample_pts = .true.
 
     ! ---- Begin Code ----
 
