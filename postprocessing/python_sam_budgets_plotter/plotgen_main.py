@@ -29,11 +29,6 @@ logger.addHandler(streamHandler)
 logger.setLevel(logging.DEBUG)
 #logger.setLevel(logging.CRITICAL)
 
-#-------------------------------------------------------------------------------
-#    GLOBAL DEFINITIONS
-#-------------------------------------------------------------------------------
-ntrials = 3 # maximum number of input trials before closing the program
-
 
 def main():
     

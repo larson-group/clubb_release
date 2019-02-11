@@ -45,6 +45,9 @@ sam_3d_file = '/home/sdomke/workspace/clubb/avi_out/out3d/RICO_256x256x100_drizz
 ## CLUBB
 clubb_zm_file = '/home/sdomke/workspace/clubb/clubb_out/rico_zm.nc'
 clubb_zt_file = '/home/sdomke/workspace/clubb/clubb_out/rico_zt.nc'
+## old CLUBB
+old_clubb_zm_file = '/home/sdomke/workspace/clubb/clubb_out/rico_zm.nc'
+old_clubb_zt_file = '/home/sdomke/workspace/clubb/clubb_out/rico_zt.nc'
 
 ## case setup files
 sam_prm = case_folder+'/prm.les'

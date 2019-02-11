@@ -11,6 +11,13 @@ import os
 import logging
 
 #-------------------------------------------------------------------------------
+#    GLOBAL DEFINITIONS
+#-------------------------------------------------------------------------------
+ntrials = 3 # maximum number of input trials before closing the program
+affirmatives = ['y', 'yes', 'aye', 'yay', 'pos', '1']
+negatives = ['n', 'no', 'nay', 'nope', 'neg', '0']
+
+#-------------------------------------------------------------------------------
 #   L O G G E R
 #-------------------------------------------------------------------------------
 logger = logging.getLogger('plotgen.help.defs')

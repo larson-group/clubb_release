@@ -46,6 +46,9 @@ sam_3d_file = '/home/sdomke/workspace/clubb/avi_out/out3d/DYCOMS_RF01_96x96x320_
 ## CLUBB
 clubb_zm_file = '/home/sdomke/workspace/clubb/clubb_out/dycoms2_rf01_zm.nc'
 clubb_zt_file = '/home/sdomke/workspace/clubb/clubb_out/dycoms2_rf01_zt.nc'
+## old CLUBB
+old_clubb_zm_file = '/home/sdomke/workspace/clubb/clubb_out/dycoms2_rf01_zm.nc'
+old_clubb_zt_file = '/home/sdomke/workspace/clubb/clubb_out/dycoms2_rf01_zt.nc'
 
 ## case setup files
 sam_prm = case_folder+'/prm.les'

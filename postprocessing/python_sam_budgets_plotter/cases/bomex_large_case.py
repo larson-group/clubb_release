@@ -45,6 +45,9 @@ sam_3d_file = '/home/sdomke/workspace/clubb/avi_out/out3d/BOMEX_128x128x75_100m_
 ## CLUBB
 clubb_zm_file = '/home/sdomke/workspace/clubb/clubb_out/bomex_zm.nc'
 clubb_zt_file = '/home/sdomke/workspace/clubb/clubb_out/bomex_zt.nc'
+## old CLUBB
+old_clubb_zm_file = '/home/sdomke/workspace/clubb/clubb_out/bomex_zm.nc'
+old_clubb_zt_file = '/home/sdomke/workspace/clubb/clubb_out/bomex_zt.nc'
 
 ## case setup files
 sam_prm = case_folder+'/prm.les'

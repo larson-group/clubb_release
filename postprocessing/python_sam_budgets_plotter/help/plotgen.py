@@ -53,7 +53,7 @@ def init_plotgen(plots, cf):
     
     return out_dir, jpg_dir, plot_case_name, out_pdf
 
-def load_nc(plots, cf):
+def load_nc(plots, cf, old_clubb=False):
     """
     bla
     """
@@ -86,6 +86,16 @@ def load_nc(plots, cf):
             nc_list.append(Dataset(cf.sam_3d_file,'r'))
         except IOError as e:
             logger.error('The file {}, specified as sam_3d_file in the {} case file, could not be opened: {}'.format(e.filename, cf.case, e.message))
+            sys.exit()
+    if old_clubb:
+        logger.info('Loading netcdf for old CLUBB data.')
+        try:
+            if plots.sortPlots_zm:
+                nc_list.append(Dataset(cf.old_clubb_zm_file, 'r'))
+            if plots.sortPlots_zt:
+                nc_list.append(Dataset(cf.old_clubb_zt_file, 'r'))
+        except IOError as e:
+            logger.error('The file {}, specified in the {} case file, could not be opened: {}'.format(e.filename, cf.case, e.message))
             sys.exit()
     return nc_list
 
@@ -457,9 +467,10 @@ def plot_3d(plots, cf, data, h, prm_vars, fps=1, gif=False):
         pdf.close()
     
 
-def plot_comparison(plots, cf, data_clubb, data_sam, h_clubb, h_sam):
+def plot_comparison(plots, cf, data_clubb, data_sam, h_clubb, h_sam, plot_old_clubb=False, data_old=None, h_old=None):
     """
     bla
+    Added functionality to include old CLUBB data in plots. TODO: Deuglify code
     TODO: get units from clubb long name
     """
     logger.info('plot_comparison')
@@ -471,7 +482,7 @@ def plot_comparison(plots, cf, data_clubb, data_sam, h_clubb, h_sam):
     for i, plot_label in enumerate(plots.sortPlots):
         logger.info('Generating plot %s', plot_label)
         title, units = plots.plotNames[i]
-        pb.plot_comparison(data_clubb[plot_label], data_sam[plot_label], h_clubb, h_sam, units, cf.yLabel, title, os.path.join(jpg_dir, plot_case_name.format(plot=plot_label)), startLevel=0, grid=False, pdf=pdf)
+        pb.plot_comparison(data_clubb[plot_label], data_sam[plot_label], h_clubb, h_sam, units, cf.yLabel, title, os.path.join(jpg_dir, plot_case_name.format(plot=plot_label)), startLevel=0, grid=False, pdf=pdf, plot_old_clubb=plot_old_clubb, data_old=data_old[plot_label], level_old=h_old)
     pdf.close()
     # TODO: Generate html
     
@@ -581,10 +592,38 @@ def plotgen_3d(plots, cf):
 def plotgen_comparison(plots, cf):
     """
     bla
+    Added fugly code to include old CLUBB data in comparison plots. TODO: Find better way to implement this.
     """
     logger.info("plotgen_comparison")
-    ncs = load_nc(plots, cf)
+    old_clubb = None
+    for n in range(ntrials):
+        user_input = raw_input('Include old CLUBB data?(y/n) -> ').lower()
+        if user_input in affirmatives:
+            old_clubb = True
+            break
+        elif user_input in negatives:
+            old_clubb = False
+            break
+        else:
+            logger.info('Trial #%d/%d. Invalid input. Please type y to include old CLUBB data and n otherwise.', n+1, ntrials)
+    if old_clubb is None:
+        logger.error('Too many tries. Ending program...')
+        sys.exit()
+    if old_clubb:
+        logger.info('Using old CLUBB data.')
+    ncs = load_nc(plots, cf, old_clubb)
     # Separate nc files
+    # Get nc files for old CLUBB data
+    nc_zm_old = None
+    nc_zt_old = None
+    if old_clubb:
+        if plots.sortPlots_zt:
+            nc_zt_old = ncs.pop()
+        if plots.sortPlots_zm:
+            nc_zm_old = ncs.pop()
+            nc_clubb_old = nc_zm_old
+        else:
+            nc_clubb_old = nc_zt_old
     if plots.sortPlots_zm and plots.sortPlots_zt:
         nc_zm, nc_zt, nc_sam = ncs
         nc_clubb = nc_zm
@@ -597,6 +636,7 @@ def plotgen_comparison(plots, cf):
         nc_clubb = nc_zt
         nc_zm = None
     logger.info('Fetching dimension variables')
+    logger.info('New CLUBB')
     t_clubb = get_t_dim(nc_clubb)
     h_clubb = get_h_dim(nc_clubb, model='clubb')
     idx_h0_clubb = (np.abs(h_clubb - cf.startHeight)).argmin()
@@ -605,6 +645,7 @@ def plotgen_comparison(plots, cf):
     idx_t0_clubb = (np.abs(t_clubb - cf.startTime*60)).argmin()
     idx_t1_clubb = (np.abs(t_clubb - cf.endTime*60)).argmin()+1
     h_clubb = h_clubb[idx_h0_clubb:idx_h1_clubb]
+    logger.info('SAM')
     t_sam = get_t_dim(nc_sam)
     h_sam = get_h_dim(nc_sam, model='sam')
     idx_h0_sam = (np.abs(h_sam - cf.startHeight)).argmin()
@@ -612,6 +653,21 @@ def plotgen_comparison(plots, cf):
     idx_t0_sam = (np.abs(t_sam - cf.startTime)).argmin()
     idx_t1_sam = (np.abs(t_sam - cf.endTime)).argmin()+1
     h_sam = h_sam[idx_h0_sam:idx_h1_sam]
+    if old_clubb:
+        t_clubb_old = get_t_dim(nc_clubb_old)
+        h_clubb_old = get_h_dim(nc_clubb_old, model='clubb')
+        idx_h0_clubb_old = (np.abs(h_clubb_old - cf.startHeight)).argmin()
+        idx_h1_clubb_old = (np.abs(h_clubb_old - cf.endHeight)).argmin()+1
+        # Times for CLUBB are given in seconds, for SAM in minutes
+        idx_t0_clubb_old = (np.abs(t_clubb_old - cf.startTime*60)).argmin()
+        idx_t1_clubb_old = (np.abs(t_clubb_old - cf.endTime*60)).argmin()+1
+        h_clubb_old = h_clubb[idx_h0_clubb_old:idx_h1_clubb_old]
+        logger.debug("h0_clubb_old = %d",idx_h0_clubb)
+        logger.debug("h1_clubb_old = %d",idx_h1_clubb)
+        logger.debug("t0_clubb_old = %d",idx_t0_clubb)
+        logger.debug("t1_clubb_old = %d",idx_t1_clubb)
+        logger.debug(h_clubb_old.shape)
+        logger.debug(h_clubb_old[idx_h0_clubb_old:idx_h1_clubb_old])
     logger.debug("h0_clubb = %d",idx_h0_clubb)
     logger.debug("h1_clubb = %d",idx_h1_clubb)
     logger.debug("t0_clubb = %d",idx_t0_clubb)
@@ -625,9 +681,10 @@ def plotgen_comparison(plots, cf):
     logger.debug(h_sam.shape)
     logger.debug(h_sam[idx_h0_sam:idx_h1_sam])
     # TODO: distinguish between zm and zt data!!
-    logger.info("Fetching sam data")
+    logger.info("Fetching SAM data")
     data_sam = get_all_variables(nc_sam, plots.lines_sam, plots.sortPlots, len(h_sam), len(t_sam), idx_t0_sam, idx_t1_sam, idx_h0_sam, idx_h1_sam)
     #logger.debug(data_sam)
+    logger.info("Fetching CLUBB data")
     data_zm = None
     data_zt = None
     if plots.sortPlots_zm:
@@ -641,8 +698,24 @@ def plotgen_comparison(plots, cf):
     # combine both dictionaries
     data_clubb = data_zm.copy()
     data_clubb.update(data_zt)
+    logger.info("Fetching old CLUBB data")
+    if old_clubb:
+        data_zm_old = None
+        data_zt_old = None
+        if plots.sortPlots_zm:
+            logger.info("Fetching old clubb_zm data")
+            data_zm_old = get_all_variables(nc_zm_old, plots.lines_zm, plots.sortPlots_zm, len(h_clubb_old), len(t_clubb_old), idx_t0_clubb_old, idx_t1_clubb_old, idx_h0_clubb_old, idx_h1_clubb_old)
+            logger.debug(data_zm_old)
+        if plots.sortPlots_zt:
+            logger.info("Fetching old clubb_zt data")
+            data_zt_old = get_all_variables(nc_zt_old, plots.lines_zt, plots.sortPlots_zt, len(h_clubb_old), len(t_clubb_old), idx_t0_clubb_old, idx_t1_clubb_old, idx_h0_clubb_old, idx_h1_clubb_old)
+            logger.debug(data_zt_old)
+        # combine both dictionaries
+        data_clubb_old = data_zm_old.copy()
+        data_clubb_old.update(data_zt_old)
+        logger.debug(data_clubb_old)
     logger.info("Create plots")
-    plot_comparison(plots, cf, data_clubb, data_sam, h_clubb, h_sam)
+    plot_comparison(plots, cf, data_clubb, data_sam, h_clubb, h_sam, plot_old_clubb=old_clubb, data_old=data_clubb_old, h_old=h_clubb_old)
 
 
 # Compile plot functions in dict

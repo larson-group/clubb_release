@@ -39,13 +39,19 @@ comp_style = {
         'color' : 'red',
         'lw'    : 2,
         'ls'    : '--',
-        'label' : 'CLUBB'
+        'label' : 'new CLUBB'
         },
     'sam'   : {
         'color' : 'black',
         'lw'    : 5,
         'ls'    : '-',
         'label' : 'SAM-LES'
+        },
+    'old'   : {
+        'color' : 'green',
+        'lw'    : 2,
+        'ls'    : ':',
+        'label' : 'old CLUBB'
         },
     }
 
@@ -279,7 +285,7 @@ def plot_profiles(data, level, xLabel, yLabel, title, name, startLevel = 0, lw =
     plt.close(fig)
 
 
-def plot_comparison(data_clubb, data_sam, level_clubb, level_sam, xLabel, yLabel, title, name, startLevel = 0, grid = False, pdf=None):
+def plot_comparison(data_clubb, data_sam, level_clubb, level_sam, xLabel, yLabel, title, name, startLevel = 0, grid = False, pdf=None, plot_old_clubb=False, data_old=None, level_old=None):
     """
     Plots a plot with budgets
     Input:
@@ -328,6 +334,8 @@ def plot_comparison(data_clubb, data_sam, level_clubb, level_sam, xLabel, yLabel
     for i in range(len(data_clubb)):
         logger.debug('dimension of CLUBB data %s: %s', data_clubb[i][0], len(data_clubb[i][3]))
         logger.debug('dimension of SAM data %s: %s', data_sam[i][0], len(data_sam[i][3]))
+        if plot_old_clubb:
+            logger.debug('dimension of old CLUBB data %s: %s', data_old[i][0], len(data_old[i][3]))
         # if it is a help variable, like BUOY e.g., the variable should not be plotted. It is included in B+P variables
         if data_clubb[i][1]:
             ## plot lines
@@ -340,6 +348,12 @@ def plot_comparison(data_clubb, data_sam, level_clubb, level_sam, xLabel, yLabel
             logger.debug("Data limits: CLUBB: (%f, %f); SAM: (%f, %f)", data_clubb[i][3].min(), data_clubb[i][3].max(), data_sam[i][3].min(), data_sam[i][3].max())
             xmin = min(data_sam[i][3].min(), data_clubb[i][3].min())
             xmax = max(data_sam[i][3].max(), data_clubb[i][3].max())
+            # old CLUBB
+            if plot_old_clubb:
+                d = comp_style['old']
+                ax.plot(data_old[i][3][startLevel:], level_old[startLevel:], label=d['label'], color=d['color'], lw=d['lw'], ls=d['ls'])
+                xmin = min(xmin, data_old[i][3].min())
+                xmax = max(xmax, data_old[i][3].max())
             xmin -= .1*(xmax-xmin)
             xmax += .1*(xmax-xmin)
             logger.debug("Set xlim to (%f, %f)", xmin, xmax)
