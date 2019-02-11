@@ -661,7 +661,7 @@ def plotgen_comparison(plots, cf):
         # Times for CLUBB are given in seconds, for SAM in minutes
         idx_t0_clubb_old = (np.abs(t_clubb_old - cf.startTime*60)).argmin()
         idx_t1_clubb_old = (np.abs(t_clubb_old - cf.endTime*60)).argmin()+1
-        h_clubb_old = h_clubb[idx_h0_clubb_old:idx_h1_clubb_old]
+        h_clubb_old = h_clubb_old[idx_h0_clubb_old:idx_h1_clubb_old]
         logger.debug("h0_clubb_old = %d",idx_h0_clubb)
         logger.debug("h1_clubb_old = %d",idx_h1_clubb)
         logger.debug("t0_clubb_old = %d",idx_t0_clubb)
