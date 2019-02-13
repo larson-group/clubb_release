@@ -2,12 +2,17 @@
 -------------------------------------------------------------------------------
    G E N E R A L   I N F O R M A T I O N
 -------------------------------------------------------------------------------
-This file contains general constants and information about the variables saved
+This file contains general constants and information about the SAM variables saved
 in the netCDF file needed for plotgen.py.
 
 The list variables sortPlots, plotNames and lines are sorted identically in
 order to relate the individual variables.
 """
+
+#-------------------------------------------------------------------------------
+#   I M P O R T S
+#-------------------------------------------------------------------------------
+from numpy import nan
 
 #-------------------------------------------------------------------------------
 #   C O N S T A N T S
@@ -17,6 +22,7 @@ HOUR = 3600
 KG = 1000.
 g_per_second_to_kg_per_day = 1. / (DAY * HOUR * KG)
 kg_per_second_to_kg_per_day = 1. / (DAY * HOUR)
+filler = nan
 header = 'SAM standalone profiles'
 name = 'sam_standalone'
 nc_files = ['sam']
@@ -38,6 +44,7 @@ sortPlots = ['theta_l', 'r_t', 'theta_l_flux', 'r_t_flux', 'cloudliq_frac', 'r_c
                 'MicroFractions', 'Buoy_Flux', \
                 'uprcp', 'uprtp', 'upthlp', 'upthvp', \
                 'vprcp', 'vprtp', 'vpthlp', 'vpthvp', \
+                'ucld' , 'vcld' , 'wcld',\
                 ]
                 
 # settings of each plot:
@@ -123,6 +130,10 @@ plotNames = [\
                 [r"Covariance of $v\ &\ r_t$", r"$\overline{v'r_t'} / vr_t\ \left[\frac{m^2}{s^2}\right]$"],\
                 [r"Covariance of $v\ &\ \theta_l$", r"$\overline{v'\theta_l'} / v\theta_l\ \left[\frac{m^2}{s^2}\right]$"],\
                 [r"Covariance of $v\ &\ \theta_v$", r"$\overline{v'\theta_v'} / v\theta_v\ \left[\frac{m^2}{s^2}\right]$"],\
+                # Conditional mean wind speeds in clouds
+                [r"Eastward conditional mean wind in clouds", r"$u_{cld}\ \left[\frac{m}{s}\right]$"],\
+                [r"Northward conditional mean wind in clouds", r"$v_{cld}\ \ \left[\frac{m}{s}\right]$"],\
+                [r"Vertical conditional mean wind in clouds", r"$w_{cld}\ \ \left[\frac{m}{s}\right]$"],\
             ]
 
 # lines of each plot:
@@ -546,6 +557,18 @@ vpthlp = [\
 vpthvp = [\
     ['VPTHVP', True, 'VPTHVP', 1., 0],\
         ]
+ucld = [\
+    ['UCLD', True, 'UCLD', 1., 0 ],\
+    ]
+
+vcld = [\
+    ['VCLD', True, 'VCLD', 1., 0 ],\
+    ]
+
+wcld = [\
+    ['WCLD', True, 'WCLD', 1., 0 ],\
+    ]
+
 lines = [thetal, rt, thetalflux, rtflux, cloudliqfrac, qcl, wVar, w3, thetalVar, rtVar, covarThetalRt, wobs, U, V, covarUW, covarVW, uVar, vVar,\
         QR, QRIP, QRP2, QRP2_QRIP, \
         Nrm, Nrm_IP, Nrp2, Nrp2_NrmIP, \
@@ -559,4 +582,5 @@ lines = [thetal, rt, thetalflux, rtflux, cloudliqfrac, qcl, wVar, w3, thetalVar,
         MicroFractions, Buoy_Flux, \
         uprcp, uprtp, upthlp, upthvp, \
         vprcp, vprtp, vpthlp, vpthvp,\
+        ucld, vcld, wcld,\
         ]

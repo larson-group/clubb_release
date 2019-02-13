@@ -1,3 +1,22 @@
+"""
+-------------------------------------------------------------------------------
+G E N E R A L   I N F O R M A T I O N
+-------------------------------------------------------------------------------
+This file contains general constants and information about the CLUBB variables saved
+in the netCDF file needed for plotgen.py.
+
+The list variables sortPlots, plotNames and lines are split up,
+depending on which file they are contained in,
+and sorted identically in order to relate the individual variables.
+
+The user should be careful not to use the same plot name in sortPlots_zm and _zt,
+as these will be used as keys in a dictionary.
+"""
+#-------------------------------------------------------------------------------
+#   I M P O R T S
+#-------------------------------------------------------------------------------
+from numpy import nan
+
 #-------------------------------------------------------------------------------
 #   C O N S T A N T S
 #-------------------------------------------------------------------------------
@@ -6,6 +25,7 @@ HOUR = 3600
 KG = 1000
 g_per_second_to_kg_per_day = 1. / (DAY * HOUR * KG)
 kg_per_second_to_kg_per_day = 1. / (DAY * HOUR)
+filler = nan
 header = 'CLUBB budgets'
 name = 'clubb_budgets'
 nc_files = ['clubb_zm']

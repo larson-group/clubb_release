@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """
 bla
-TODO: LaTeX formatting of labels
+TODO: Clean up logger output
 """
 
 #-------------------------------------------------------------------------------

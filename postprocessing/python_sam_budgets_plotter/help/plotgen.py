@@ -168,7 +168,7 @@ def get_values_from_prm(cf):
     return prm_vars
 
 
-def get_all_variables(nc, lines, plotLabels, nh, nt, t0, t1, h0, h1):
+def get_all_variables(nc, lines, plotLabels, nh, nt, t0, t1, h0, h1, filler=0):
     """
     TODO: Include pb.get_units in output structure
     Get variables from netcdf and store in dictionary with the following structure:
@@ -238,16 +238,16 @@ def get_all_variables(nc, lines, plotLabels, nh, nt, t0, t1, h0, h1):
                 # Fetch data
                 data = pb.get_var_from_nc(nc, var[2], var[3], nh, nt)
                 logger.debug(data.shape)
+                # NAN test: -1000 is the value assigned for invalid data
+                if np.any(np.isnan(data)) or np.any(data <= -1000):
+                    # if there are invalid data points in the variable replace by filler value
+                    logger.warning("Invalid data in variable %s of plot %s.", var[0], plotLabels[i])
+                    data = np.where(np.logical_or(np.isnan(data), data<=-9000), filler, data)
                 # Average over given time indices
                 logger.debug("%d>%d?",t1,t0)
                 logger.debug(t1>t0)
                 if t1>t0:
                     data = pb.mean_profiles(data, t0, t1, h0, h1)
-                # NAN test: -1000 is the value assigned for 
-                if np.any(np.isnan(data)) or np.any(data <= -1000):
-                    # if there are no values for the variable
-                    data = np.zeros(nh)
-                    logger.warning("Invalid data in variable %s of plot %s.", var[0], plotLabels[i])
                 # Save to plots, var[2] not needed?
                 #plot_lines.append([var[0], var[1], var[2], var[4], data])
                 plot_lines.append([var[0], var[1], var[4], data])
@@ -509,6 +509,7 @@ def plot_comparison(plots, cf, data_clubb, data_sam, h_clubb, h_sam, plot_old_cl
 def plotgen_default(plots, cf):
     """
     bla
+    This plotting routine plots height profiles of data from either the SAM or CLUBB simulations
     """
     logger.info("plotgen_default")
     ncs = load_nc(plots, cf)
@@ -526,14 +527,15 @@ def plotgen_default(plots, cf):
             nc = nc_zt
             nc_zm = None
     else:
-        nc, = ncs
+        nc_sam, = ncs
+        nc = nc_sam
     logger.info('Fetching dimension variables')
     t = get_t_dim(nc)
     # Distinguish between CLUBB and SAM, as z dimension variables have different names
     if 'clubb' in plots.name:
         h = get_h_dim(nc, model='clubb')
     else:
-        h = get_h_dim(nc, model='sam')
+        h = get_h_dim(nc_sam, model='sam')
     logger.info('Find nearest levels to case setup')
     idx_h0 = (np.abs(h - cf.startHeight)).argmin()
     idx_h1 = (np.abs(h - cf.endHeight)).argmin()+1
@@ -546,20 +548,21 @@ def plotgen_default(plots, cf):
         idx_t1 = (np.abs(t - cf.endTime)).argmin()+1
     h = h[idx_h0:idx_h1]
     if 'clubb' in plots.name:
+        # Initialize data variables as empty dicts
         data_zm = {}
         data_zt = {}
         if nc_zm:
             logger.info("Fetching clubb_zm data")
-            data_zm = get_all_variables(nc_zm, plots.lines_zm, plots.sortPlots_zm, len(h), len(t), idx_t0, idx_t1, idx_h0, idx_h1)
+            data_zm = get_all_variables(nc_zm, plots.lines_zm, plots.sortPlots_zm, len(h), len(t), idx_t0, idx_t1, idx_h0, idx_h1, filler=plots.filler)
         if nc_zt:
             logger.info("Fetching clubb_zt data")
-            data_zt = get_all_variables(nc_zt, plots.lines_zt, plots.sortPlots_zt, len(h), len(t), idx_t0, idx_t1, idx_h0, idx_h1)
+            data_zt = get_all_variables(nc_zt, plots.lines_zt, plots.sortPlots_zt, len(h), len(t), idx_t0, idx_t1, idx_h0, idx_h1, filler=plots.filler)
         # Combine both dictionaries
         data = data_zm.copy()
         data.update(data_zt)
     else:
         logger.info("Fetching sam data")
-        data = get_all_variables(nc, plots.lines, plots.sortPlots, len(h), len(t), idx_t0, idx_t1, idx_h0, idx_h1)
+        data = get_all_variables(nc_sam, plots.lines, plots.sortPlots, len(h), len(t), idx_t0, idx_t1, idx_h0, idx_h1, filler=plots.filler)
     logger.info("Create plots")
     plot_default(plots, cf, data, h)
     #logger.debug(mpp.rcParams['text.usetex'])
@@ -582,7 +585,7 @@ def plotgen_3d(plots, cf):
     idx_h1 = (np.abs(h - cf.endHeight)).argmin()+1
     h = h[idx_h0:idx_h1]
     logger.info("Fetching sam_3d data")
-    data = get_all_variables(nc, plots.lines, plots.sortPlots, len(h), 1, 0, 0, idx_h0, idx_h1)
+    data = get_all_variables(nc, plots.lines, plots.sortPlots, len(h), 1, 0, 0, idx_h0, idx_h1, filler=plots.filler)
     data = {key:value[0][-1]  for (key,value) in data.iteritems()}
     logger.debug(data)
     logger.info("Create plots")
@@ -682,18 +685,18 @@ def plotgen_comparison(plots, cf):
     logger.debug(h_sam[idx_h0_sam:idx_h1_sam])
     # TODO: distinguish between zm and zt data!!
     logger.info("Fetching SAM data")
-    data_sam = get_all_variables(nc_sam, plots.lines_sam, plots.sortPlots, len(h_sam), len(t_sam), idx_t0_sam, idx_t1_sam, idx_h0_sam, idx_h1_sam)
+    data_sam = get_all_variables(nc_sam, plots.lines_sam, plots.sortPlots, len(h_sam), len(t_sam), idx_t0_sam, idx_t1_sam, idx_h0_sam, idx_h1_sam, filler=plots.filler)
     #logger.debug(data_sam)
     logger.info("Fetching CLUBB data")
     data_zm = None
     data_zt = None
     if plots.sortPlots_zm:
         logger.info("Fetching clubb_zm data")
-        data_zm = get_all_variables(nc_zm, plots.lines_zm, plots.sortPlots_zm, len(h_clubb), len(t_clubb), idx_t0_clubb, idx_t1_clubb, idx_h0_clubb, idx_h1_clubb)
+        data_zm = get_all_variables(nc_zm, plots.lines_zm, plots.sortPlots_zm, len(h_clubb), len(t_clubb), idx_t0_clubb, idx_t1_clubb, idx_h0_clubb, idx_h1_clubb, filler=plots.filler)
         #logger.debug(data_clubb_zm)
     if plots.sortPlots_zt:
         logger.info("Fetching clubb_zt data")
-        data_zt = get_all_variables(nc_zt, plots.lines_zt, plots.sortPlots_zt, len(h_clubb), len(t_clubb), idx_t0_clubb, idx_t1_clubb, idx_h0_clubb, idx_h1_clubb)
+        data_zt = get_all_variables(nc_zt, plots.lines_zt, plots.sortPlots_zt, len(h_clubb), len(t_clubb), idx_t0_clubb, idx_t1_clubb, idx_h0_clubb, idx_h1_clubb, filler=plots.filler)
         #logger.debug(data_clubb_zt)
     # combine both dictionaries
     data_clubb = data_zm.copy()
@@ -704,11 +707,11 @@ def plotgen_comparison(plots, cf):
         data_zt_old = None
         if plots.sortPlots_zm:
             logger.info("Fetching old clubb_zm data")
-            data_zm_old = get_all_variables(nc_zm_old, plots.lines_zm, plots.sortPlots_zm, len(h_clubb_old), len(t_clubb_old), idx_t0_clubb_old, idx_t1_clubb_old, idx_h0_clubb_old, idx_h1_clubb_old)
+            data_zm_old = get_all_variables(nc_zm_old, plots.lines_zm, plots.sortPlots_zm, len(h_clubb_old), len(t_clubb_old), idx_t0_clubb_old, idx_t1_clubb_old, idx_h0_clubb_old, idx_h1_clubb_old, filler=plots.filler)
             logger.debug(data_zm_old)
         if plots.sortPlots_zt:
             logger.info("Fetching old clubb_zt data")
-            data_zt_old = get_all_variables(nc_zt_old, plots.lines_zt, plots.sortPlots_zt, len(h_clubb_old), len(t_clubb_old), idx_t0_clubb_old, idx_t1_clubb_old, idx_h0_clubb_old, idx_h1_clubb_old)
+            data_zt_old = get_all_variables(nc_zt_old, plots.lines_zt, plots.sortPlots_zt, len(h_clubb_old), len(t_clubb_old), idx_t0_clubb_old, idx_t1_clubb_old, idx_h0_clubb_old, idx_h1_clubb_old, filler=plots.filler)
             logger.debug(data_zt_old)
         # combine both dictionaries
         data_clubb_old = data_zm_old.copy()
