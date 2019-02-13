@@ -8,9 +8,10 @@ Author: Nicolas Strike
 Date: Jan 2019
 '''
 import argparse
+
 from DataReader import DataReader
-from netCDF4 import Dataset
 from Plotter import Plotter
+
 
 class PyPlotGen:
     def __init__(self, input_folder, output_folder, replace=False, les=False, cgbest=False, hoc=False,plotrefs=False,
