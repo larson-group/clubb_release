@@ -37,7 +37,7 @@ color_arr = ['#e41a1c','#377eb8','#4daf4a','#984ea3','#a65628','#000000','#99999
 comp_style = {
     'clubb' : {
         'color' : 'red',
-        'lw'    : 2,
+        'lw'    : 3,
         'ls'    : '--',
         'label' : 'new CLUBB'
         },
@@ -49,7 +49,7 @@ comp_style = {
         },
     'old'   : {
         'color' : 'green',
-        'lw'    : 2,
+        'lw'    : 3,
         'ls'    : ':',
         'label' : 'old CLUBB'
         },

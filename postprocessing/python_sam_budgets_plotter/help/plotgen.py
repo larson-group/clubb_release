@@ -258,16 +258,23 @@ def get_all_variables(nc, lines, plotLabels, nh, nt, t0, t1, h0, h1, filler=0):
         for func in functions:
             expression = func[2]
             logger.debug('Calculate %s', func[0])
+            # Insert plot_lines entries into function string
+            all_nan = True # Check if all values in expression are NAN
             for k in range(len(plot_lines)):
                 if plot_lines[k] is not None and plot_lines[k][3] is not None:
-                    expression = expression.replace(plot_lines[k][0], 'plot_lines['+str(k)+'][3]')
-            try:
-                data = eval(expression)
-            except Exception as e:
-                logger.error('Expression %s of line %s in plot %s could not be evaluated: %s', expression, plotLabels[i], func[0], e.message)
-                data = np.zeros(nh)
-            # var[2] not needed?
-            #plot_lines.append([func[0], func[1], func[2], data])
+                    if not np.all(np.isnan(plot_lines[k][3])):
+                        all_nan = False
+                    # Replace variables in expression with their respective entries from plot_lines and replace NAN values with zero
+                    expression = expression.replace(plot_lines[k][0], 'np.where(np.isnan(plot_lines['+str(k)+'][3]),0,plot_lines['+str(k)+'][3])')
+            # if all entries are NAN, return array containing only NANs
+            if all_nan:
+                data = np.full(nh, np.nan)
+            else:
+                try:
+                    data = eval(expression)
+                except Exception as e:
+                    logger.error('Expression %s of line %s in plot %s could not be evaluated: %s', expression, plotLabels[i], func[0], e.message)
+                    data = np.full(nh, np.nan)
             logger.debug(func[4])
             plot_lines[func[4]] = [func[0], func[1], func[3], data]
         plot_data.append(plot_lines)

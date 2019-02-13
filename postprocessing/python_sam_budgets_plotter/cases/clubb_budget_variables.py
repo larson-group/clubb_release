@@ -40,16 +40,16 @@ sortPlots = sortPlots_zm + sortPlots_zt
 
 # Construct plot name from long name in netcdf instead
 plotNames_zm = [\
-    ["Vertical east-west momentum flux", r"$\overline{u'w'}\ \left[\frac{m^2}{s^2}\right]$"],\
-    ["Vertical north-south momentum flux", r"$\overline{v'w'}\ \left[\frac{m^2}{s^2}\right]$"],\
-    ["Variance of east-west air velocity", r"$\overline{u'^2}\ \left[\frac{m^2}{s^2}\right]$"],\
-    ["Variance of north-south air velocity", r"$\overline{v'^2}\ \left[\frac{m^2}{s^2}\right]$"],\
-    ["Variance of vertical air velocity", r"$\overline{w'^2}\ \left[\frac{m^2}{s^2}\right]$"],\
-    ["Vertical east-west momentum flux", r"$\overline{u'w'}\ \left[\frac{m^2}{s^2}\right]$"],\
-    ["Vertical north-south momentum flux", r"$\overline{v'w'}\ \left[\frac{m^2}{s^2}\right]$"],\
-    ["Variance of east-west air velocity", r"$\overline{u'^2}\ \left[\frac{m^2}{s^2}\right]$"],\
-    ["Variance of north-south air velocity", r"$\overline{v'^2}\ \left[\frac{m^2}{s^2}\right]$"],\
-    ["Variance of vertical air velocity", r"$\overline{w'^2}\ \left[\frac{m^2}{s^2}\right]$"],\
+    ["Vertical eastward momentum flux", r"$\mathrm{\overline{u'w'}\ \left[\frac{m^2}{s^2}\right]}$"],\
+    ["Vertical northward momentum flux", r"$\mathrm{\overline{v'w'}\ \left[\frac{m^2}{s^2}\right]}$"],\
+    ["Variance of eastward air velocity", r"$\mathrm{\overline{u'^2}\ \left[\frac{m^2}{s^2}\right]}$"],\
+    ["Variance of northward air velocity", r"$\mathrm{\overline{v'^2}\ \left[\frac{m^2}{s^2}\right]}$"],\
+    ["Variance of vertical air velocity", r"$\mathrm{\overline{w'^2}\ \left[\frac{m^2}{s^2}\right]}$"],\
+    ["Vertical eastward momentum flux", r"$\mathrm{\overline{u'w'}\ \left[\frac{m^2}{s^2}\right]}$"],\
+    ["Vertical northward momentum flux", r"$\mathrm{\overline{v'w'}\ \left[\frac{m^2}{s^2}\right]}$"],\
+    ["Variance of eastward air velocity", r"$\mathrm{\overline{u'^2}\ \left[\frac{m^2}{s^2}\right]}$"],\
+    ["Variance of northward air velocity", r"$\mathrm{\overline{v'^2}\ \left[\frac{m^2}{s^2}\right]}$"],\
+    ["Variance of vertical air velocity", r"$\mathrm{\overline{w'^2}\ \left[\frac{m^2}{s^2}\right]}$"],\
     ]
 
 plotNames_zt = []

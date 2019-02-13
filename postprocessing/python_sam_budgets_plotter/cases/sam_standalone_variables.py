@@ -56,18 +56,18 @@ plotNames = [\
                 ['Turbulent Flux of r_t', 'wprtp / qtflux(s) [(kg/kg) m/s]'],\
                 ['Cloud Liquid Fraction', ' [%/100]'],\
                 ['Cloud Water Mixing Ratio, r_c', 'rcm / qcl [kg/kg]'],\
-                [r"Variance of w", r"$\overline{w'^2} / w^2\ \left[\frac{m^2}{s^2}\right]$"],\
-                [r"Third-order Moment of w", r"$\overline{w'^3} / w^3\ \left[\frac{m^3}{s^3}\right]$"],\
+                [r"Variance of w", r"$\mathrm{\overline{w'^2} / w^2\ \left[\frac{m^2}{s^2}\right]}$"],\
+                [r"Third-order Moment of w", r"$\mathrm{\overline{w'^3} / w^3\ \left[\frac{m^3}{s^3}\right]}$"],\
                 ['Variance of theta_l', 'thlp2 / tl2 [K^2]'],\
                 ['Variance of r_t', 'rtp2 / qtp2 [(kg/kg)^2]'],\
                 ['Covariance of r_t & theta_l', 'rtpthlp [(kg/kg) K]'],\
-                [r"Vertical Wind Component, w (subsidence)", r"$w_{obs}\ \left[\frac{m}{s}\right]$"],\
-                [r"Zonal Wind Component, u", r"$\bar{u} / u\ \left[\frac{m}{s}\right]$"],\
-                [r"Meridonal Wind Component, v", r"$\bar{v} / v\ \left[\frac{m}{s}\right]$"],\
-                [r"Covariance of u & w", r"$\overline{u'w'} / uw\ \left[\frac{m^2}{s^2}\right]$"],\
-                [r"Covariance of v & w", r"$\overline{v'w'} / vw\ \left[\frac{m^2}{s^2}\right]$"],\
-                [r"Variance of u wind", r"$\overline{u'^2} / u^2\ \left[\frac{m^2}{s^2}\right]$"],\
-                [r"Variance of v wind", r"$\overline{v'^2} / v^2\ \left[\frac{m^2}{s^2}\right]$"],\
+                [r"Vertical Wind Component, w (subsidence)", r"$\mathrm{w_{obs}\ \left[\frac{m}{s}\right]}$"],\
+                [r"Zonal Wind Component, u", r"$\mathrm{\bar{u} / u\ \left[\frac{m}{s}\right]}$"],\
+                [r"Meridonal Wind Component, v", r"$\mathrm{\bar{v} / v\ \left[\frac{m}{s}\right]}$"],\
+                [r"Covariance of u & w", r"$\mathrm{\overline{u'w'} / uw\ \left[\frac{m^2}{s^2}\right]}$"],\
+                [r"Covariance of v & w", r"$\mathrm{\overline{v'w'} / vw\ \left[\frac{m^2}{s^2}\right]}$"],\
+                [r"Variance of u wind", r"$\mathrm{\overline{u'^2} / u^2\ \left[\frac{m^2}{s^2}\right]}$"],\
+                [r"Variance of v wind", r"$\mathrm{\overline{v'^2} / v^2\ \left[\frac{m^2}{s^2}\right]}$"],\
                 # Rain Water Mixing Ratio
                 ['Rain Water Mixing Ratio', 'qrm [kg/kg]'],\
                 ['Rain Water Mixing Ratio in Rain', 'qrm_ip [kg/kg]'],\
@@ -121,19 +121,19 @@ plotNames = [\
                 #['Cloud Ice Water Path', 'iwp [kg/m^2]'],\
                 #['Snow Water Path', 'swp [kg/m^2]'],\
                 # buoyancy sub-terms for parameterization in upwp budget
-                [r"Covariance of $u\ &\ r_c$", r"$\overline{u'r_c'} / ur_c\ \left[\frac{m^2}{s^2}\right]$"],\
-                [r"Covariance of $u\ &\ r_t$", r"$\overline{u'r_t'} / ur_t\ \left[\frac{m^2}{s^2}\right]$"],\
-                [r"Covariance of $u\ &\ \theta_l$", r"$\overline{u'\theta_l'} / u\theta_l\ \left[\frac{m^2}{s^2}\right]$"],\
-                [r"Covariance of $u\ &\ \theta_v$", r"$\overline{u'\theta_v'} / u\theta_v\ \left[\frac{m^2}{s^2}\right]$"],\
+                [r"Covariance of $\mathrm{u\ &\ r_c}$", r"$\mathrm{\overline{u'r_c'} / ur_c\ \left[\frac{m^2}{s^2}\right]}$"],\
+                [r"Covariance of $\mathrm{u\ &\ r_t}$", r"$\mathrm{\overline{u'r_t'} / ur_t\ \left[\frac{m^2}{s^2}\right]}$"],\
+                [r"Covariance of $\mathrm{u\ &\ \theta_l}$", r"$\mathrm{\overline{u'\theta_l'} / u\theta_l\ \left[\frac{m^2}{s^2}\right]}$"],\
+                [r"Covariance of $\mathrm{u\ &\ \theta_v}$", r"$\mathrm{\overline{u'\theta_v'} / u\theta_v\ \left[\frac{m^2}{s^2}\right]}$"],\
                 # buoyancy sub-terms for parameterization in upwp budget
-                [r"Covariance of $v\ &\ r_c$", r"$\overline{v'r_c'} / vr_c\ \left[\frac{m^2}{s^2}\right]$"],\
-                [r"Covariance of $v\ &\ r_t$", r"$\overline{v'r_t'} / vr_t\ \left[\frac{m^2}{s^2}\right]$"],\
-                [r"Covariance of $v\ &\ \theta_l$", r"$\overline{v'\theta_l'} / v\theta_l\ \left[\frac{m^2}{s^2}\right]$"],\
-                [r"Covariance of $v\ &\ \theta_v$", r"$\overline{v'\theta_v'} / v\theta_v\ \left[\frac{m^2}{s^2}\right]$"],\
+                [r"Covariance of $\mathrm{v\ &\ r_c}$", r"$\mathrm{\overline{v'r_c'} / vr_c\ \left[\frac{m^2}{s^2}\right]}$"],\
+                [r"Covariance of $\mathrm{v\ &\ r_t}$", r"$\mathrm{\overline{v'r_t'} / vr_t\ \left[\frac{m^2}{s^2}\right]}$"],\
+                [r"Covariance of $\mathrm{v\ &\ \theta_l}$", r"$\mathrm{\overline{v'\theta_l'} / v\theta_l\ \left[\frac{m^2}{s^2}\right]}$"],\
+                [r"Covariance of $\mathrm{v\ &\ \theta_v}$", r"$\mathrm{\overline{v'\theta_v'} / v\theta_v\ \left[\frac{m^2}{s^2}\right]}$"],\
                 # Conditional mean wind speeds in clouds
-                [r"Eastward conditional mean wind in clouds", r"$u_{cld}\ \left[\frac{m}{s}\right]$"],\
-                [r"Northward conditional mean wind in clouds", r"$v_{cld}\ \ \left[\frac{m}{s}\right]$"],\
-                [r"Vertical conditional mean wind in clouds", r"$w_{cld}\ \ \left[\frac{m}{s}\right]$"],\
+                [r"Eastward conditional mean wind in clouds", r"$\mathrm{u_{cld}\ \left[\frac{m}{s}\right]}$"],\
+                [r"Northward conditional mean wind in clouds", r"$\mathrm{v_{cld}\ \ \left[\frac{m}{s}\right]}$"],\
+                [r"Vertical conditional mean wind in clouds", r"$\mathrm{w_{cld}\ \ \left[\frac{m}{s}\right]}$"],\
             ]
 
 # lines of each plot:
@@ -559,14 +559,17 @@ vpthvp = [\
         ]
 ucld = [\
     ['UCLD', True, 'UCLD', 1., 0 ],\
+    ['U', True, 'U', 1., 0 ],\
     ]
 
 vcld = [\
     ['VCLD', True, 'VCLD', 1., 0 ],\
+    ['V', True, 'V', 1., 0 ],\
     ]
 
 wcld = [\
     ['WCLD', True, 'WCLD', 1., 0 ],\
+    ['W', True, 'W', 1., 0 ],\
     ]
 
 lines = [thetal, rt, thetalflux, rtflux, cloudliqfrac, qcl, wVar, w3, thetalVar, rtVar, covarThetalRt, wobs, U, V, covarUW, covarVW, uVar, vVar,\
