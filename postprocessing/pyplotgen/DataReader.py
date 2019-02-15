@@ -8,10 +8,13 @@ a Plotter instance for graphing.
 '''
 
 import os
-from netCDF4 import Dataset
-import numpy as np
-from collections import OrderedDict
+import re
 from collections import namedtuple
+from netCDF4 import Dataset
+import configparser
+
+import numpy as np
+
 
 class DataReader():
     '''
@@ -23,6 +26,9 @@ class DataReader():
     :author: Nicolas Strike
     :data: January 2019
     '''
+
+    case_filename = '/home/strike/clubb/postprocessing/pyplotgen/cases/dycoms2_rf01_case.ini'
+    general_case_filename = '/home/strike/clubb/postprocessing/pyplotgen/cases/general_standalone_variables.ini'
 
 
     def __init__(self):
@@ -203,6 +209,28 @@ class DataReader():
 
         return start_idx, end_idx
 
+    def get2dArrayFromString(self, data_string, rows = -1, columns = 2):
+        '''
+        Some elements of our config ini files are stored as 2d arrays
+        but are read by config parser as a string. This method takes in
+        the string and returns it as an array. By default it interprets
+        it as a 2d array with n rows and 2 columns. In numpy, -1 denotes
+        'autofill', filling that dimension until it runs out of data.
+
+        The string given must be a series of comma seperated values.
+        Do not use quote markers to denote strings, as it will blindly
+        match whatever is between commas. Any newline characters in
+        the string will be removed.
+
+        :param data_string: The array string to be interpreted
+        :param rows: The number of rows in the data. It is reccomended to keep this at -1 to allow numpy to autofit to the amount of data
+        :param columns: The number of columns in the dataset
+        :return: a numpy array containing the data from the data_string formated into the specified number of rows and columns
+        '''
+        data_array = np.array(re.findall("\".*?\"",data_string, re.MULTILINE)) # Turn the string into a 1d array
+        # for i in data_array
+        data_array = data_array.reshape(rows,columns) # Turn the 1d array into a rows X columns array
+        return data_array
 
     def getPlotsData(self, netcdf_data, case):
         '''
@@ -221,6 +249,10 @@ class DataReader():
         :return: A plot struct containing the data elements listed above
         :author: Nicolas Strike
         '''
+        case_config = configparser.ConfigParser()
+        case_config.read(self.case_filename)
+        general_config = configparser.RawConfigParser()
+        general_config.read(self.general_case_filename)
 
         # TODO load these, don't hardcode them
         x_variable_name = "thlm"
@@ -236,10 +268,11 @@ class DataReader():
         start_x_value = 281 # Used to determine what x value to begin the graph at
         end_x_value = 310 # Used to determine what x value to end the graph at
         # TODO load these, don't hardcode them
-        title = self.get_long_name(netcdf_data, x_variable_name)
-        x_axis_title = x_variable_name + "[K]"
-        y_axis_title = "Height [m]"
+        plot_names = self.get2dArrayFromString(general_config['default']['plotNames'])
 
+        title = plot_names[0][0] #self.get_long_name(netcdf_data, x_variable_name)
+        x_axis_title = plot_names[0][1] # x_variable_name + "[K]"
+        y_axis_title = case_config['plot_settings']['yLabel']
 
         # Process inspired by Stackoverflow: https://stackoverflow.com/questions/45582344/extracting-data-from-netcdf-by-python
         x_axis_values = self.get_values_from_nc(netcdf_data, x_variable_name, x_conversion_factor, x_level_amount, x_num_timesteps)
