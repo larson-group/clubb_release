@@ -281,7 +281,7 @@ def get_all_variables(nc, lines, plotLabels, nh, nt, t0, t1, h0, h1, filler=0):
     return dict(zip(plotLabels, plot_data))
 
 
-def plot_default(plots, cf, data, h):
+def plot_default(plots, cf, data, h, centering):
     """
     bla
     TODO: pass startLevel etc. to plot routine (style file?)
@@ -299,7 +299,7 @@ def plot_default(plots, cf, data, h):
         # pb.get_units() needs nc
         name = plot_case_name.format(plot=plot_label)
         imageNames.append(name)
-        pb.plot_profiles(data[plot_label], h, units, cf.yLabel, title, os.path.join(jpg_dir,name), startLevel=2, lw=cf.lw, grid=False, pdf=pdf)
+        pb.plot_profiles(data[plot_label], h, units, cf.yLabel, title, os.path.join(jpg_dir,name), startLevel=0, lw=cf.lw, grid=False, centering=centering, pdf=pdf)
     pdf.close()
     
     # write html page
@@ -571,7 +571,9 @@ def plotgen_default(plots, cf):
         logger.info("Fetching sam data")
         data = get_all_variables(nc_sam, plots.lines, plots.sortPlots, len(h), len(t), idx_t0, idx_t1, idx_h0, idx_h1, filler=plots.filler)
     logger.info("Create plots")
-    plot_default(plots, cf, data, h)
+    # Center plots if plotting budgets
+    logger.debug("Centering=%s", str('budget' in plots.name))
+    plot_default(plots, cf, data, h, centering='budget' in plots.name)
     #logger.debug(mpp.rcParams['text.usetex'])
 
 

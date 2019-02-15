@@ -558,18 +558,18 @@ vpthvp = [\
     ['VPTHVP', True, 'VPTHVP', 1., 0],\
         ]
 ucld = [\
-    ['UCLD', True, 'UCLD', 1., 0 ],\
-    ['U', True, 'U', 1., 0 ],\
+    ['In-cloud mean of U', True, 'UCLD', 1., 0 ],\
+    ['Total mean of U', True, 'U', 1., 0 ],\
     ]
 
 vcld = [\
-    ['VCLD', True, 'VCLD', 1., 0 ],\
-    ['V', True, 'V', 1., 0 ],\
+    ['In-cloud mean of V', True, 'VCLD', 1., 0 ],\
+    ['Total mean of V', True, 'V', 1., 0 ],\
     ]
 
 wcld = [\
-    ['WCLD', True, 'WCLD', 1., 0 ],\
-    ['W', True, 'W', 1., 0 ],\
+    ['In-cloud mean of W', True, 'WCLD', 1., 0 ],\
+    ['Total mean of W', True, 'W', 1., 0 ],\
     ]
 
 lines = [thetal, rt, thetalflux, rtflux, cloudliqfrac, qcl, wVar, w3, thetalVar, rtVar, covarThetalRt, wobs, U, V, covarUW, covarVW, uVar, vVar,\

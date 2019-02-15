@@ -169,7 +169,7 @@ def plot_budgets(budgets_data, level, xLabel, yLabel, title, name, lw = 5, grid 
     
 
 
-def plot_profiles(data, level, xLabel, yLabel, title, name, startLevel = 0, lw = 5, grid = True, color = 'nipy_spectral', pdf=None):
+def plot_profiles(data, level, xLabel, yLabel, title, name, startLevel = 0, lw = 5, grid = True, color = 'nipy_spectral', centering=False, pdf=None):
     """
     This function replaced plot_budgets, so it should be used from now on.
     Plots a plot with budgets
@@ -226,6 +226,8 @@ def plot_profiles(data, level, xLabel, yLabel, title, name, startLevel = 0, lw =
     
     # loop over lines in plot
     j = 0
+    lims = np.full((len(axes),2), fill_value=np.nan)
+    #logger.debug(lims)
     for i in range(len(data)):
         if data[i][3] is None and data[i][1]:
             logger.debug('Add dummy line for %s', data[i][0])
@@ -239,21 +241,30 @@ def plot_profiles(data, level, xLabel, yLabel, title, name, startLevel = 0, lw =
             if data[i][1]:
                 # plot line
                 axes[data[i][2]].plot(data[i][3][startLevel:], level[startLevel:], label=data[i][0], color=color_arr[j%len(color_arr)], lw=lw, ls=styles[j%len(styles)])
+                if not np.all(np.isnan(data[i][3])):
+                    lims[data[i][2],0] = np.nanmin( (np.nanmin(data[i][3]), lims[data[i][2],0]) )
+                    lims[data[i][2],1] = np.nanmax( (np.nanmax(data[i][3]), lims[data[i][2],1]) )
                 # Change color for next line
                 j += 1
-            
+
+    #logger.debug(lims)
     # x axis should be symmetric
     # List to save ticks of each axis
     ticklist = []
     for i in range(len(axes)):
-        xlimits = axes[i].get_xlim()
-        # Calculate absolute maximum of x values
-        limit = max(abs(xlimits[0]), abs(xlimits[1]))
-        # Round to next bigger reasonable number, not needed?
-        #e = math.floor(math.log10(limit))
-        #limit = round(limit/10**e)
-        # Set x limits symmetrically
-        axes[i].set_xlim(-limit, limit)
+        if centering:
+            xlimits = axes[i].get_xlim()
+            # Calculate absolute maximum of x values
+            limit = max(abs(xlimits[0]), abs(xlimits[1]))
+            # Round to next bigger reasonable number, not needed?
+            #e = math.floor(math.log10(limit))
+            #limit = round(limit/10**e)
+            # Set x limits symmetrically
+            axes[i].set_xlim(-limit, limit)
+        else:
+            margin = np.abs(lims[i,1]-lims[i,0])*.1
+            if not np.any(np.isnan(lims[i])):
+                axes[i].set_xlim(lims[i]+np.array((-margin,margin)))
         # Set tick label format to scalar formatter with length sensitive format (switch to scientific format when a set order of magnitude is reached)
         ticks = stick(useMathText=True)
         ticks.set_powerlimits((-pow_lim,pow_lim))
