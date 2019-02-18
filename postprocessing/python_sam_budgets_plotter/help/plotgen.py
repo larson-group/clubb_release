@@ -489,7 +489,10 @@ def plot_comparison(plots, cf, data_clubb, data_sam, h_clubb, h_sam, plot_old_cl
     for i, plot_label in enumerate(plots.sortPlots):
         logger.info('Generating plot %s', plot_label)
         title, units = plots.plotNames[i]
-        pb.plot_comparison(data_clubb[plot_label], data_sam[plot_label], h_clubb, h_sam, units, cf.yLabel, title, os.path.join(jpg_dir, plot_case_name.format(plot=plot_label)), startLevel=0, grid=False, pdf=pdf, plot_old_clubb=plot_old_clubb, data_old=data_old[plot_label], level_old=h_old)
+        if plot_old_clubb:
+            pb.plot_comparison(data_clubb[plot_label], data_sam[plot_label], h_clubb, h_sam, units, cf.yLabel, title, os.path.join(jpg_dir, plot_case_name.format(plot=plot_label)), startLevel=0, grid=False, pdf=pdf, plot_old_clubb=plot_old_clubb, data_old=data_old[plot_label], level_old=h_old)
+        else:
+            pb.plot_comparison(data_clubb[plot_label], data_sam[plot_label], h_clubb, h_sam, units, cf.yLabel, title, os.path.join(jpg_dir, plot_case_name.format(plot=plot_label)), startLevel=0, grid=False, pdf=pdf)
     pdf.close()
     # TODO: Generate html
     
@@ -665,6 +668,7 @@ def plotgen_comparison(plots, cf):
     idx_t0_sam = (np.abs(t_sam - cf.startTime)).argmin()
     idx_t1_sam = (np.abs(t_sam - cf.endTime)).argmin()+1
     h_sam = h_sam[idx_h0_sam:idx_h1_sam]
+    h_clubb_old = None
     if old_clubb:
         t_clubb_old = get_t_dim(nc_clubb_old)
         h_clubb_old = get_h_dim(nc_clubb_old, model='clubb')
@@ -711,6 +715,7 @@ def plotgen_comparison(plots, cf):
     data_clubb = data_zm.copy()
     data_clubb.update(data_zt)
     logger.info("Fetching old CLUBB data")
+    data_clubb_old = None
     if old_clubb:
         data_zm_old = None
         data_zt_old = None
