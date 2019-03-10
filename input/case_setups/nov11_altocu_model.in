@@ -128,7 +128,7 @@ l_prescribed_avg_deltaz = .false.
 /
 
 &microphysics_setting
-! The schemes are: "khairoutdinov_kogan", "morrison", "morrison_gettelman",
+! The schemes are: "khairoutdinov_kogan", "morrison", 
 ! "coamps", "simplified_ice", "none"
 microphys_scheme = "morrison"
 l_ice_microphys = .true.

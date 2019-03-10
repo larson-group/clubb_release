@@ -3514,20 +3514,6 @@ module clubb_driver
         l_input_Ncm = .false.
       end if
 
-    case ( "morrison_gettelman" )
-      l_input_rrm = .false.
-      l_input_rsm = .false.
-      l_input_rim = .true.
-      l_input_rgm = .false.
-      l_input_Nccnm = .false.
-      if ( l_predict_Nc ) then
-        l_input_Ncm = .true.
-      else
-        l_input_Ncm = .false.
-      end if
-      l_input_Nrm = .false.
-      l_input_Nim =  .true.
-
     case ( "khairoutdinov_kogan" )
       l_input_rrm = .true.
       l_input_rsm = .false.

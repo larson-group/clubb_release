@@ -143,7 +143,7 @@ l_calc_w_corr = .false.
 /
 
 &microphysics_setting
-! The schemes are: "khairoutdinov_kogan", "morrison", "morrison_gettelman",
+! The schemes are: "khairoutdinov_kogan", "morrison", 
 ! "coamps", "simplified_ice", "none"
 microphys_scheme = "khairoutdinov_kogan"
 l_fix_w_chi_eta_correlations = .false.

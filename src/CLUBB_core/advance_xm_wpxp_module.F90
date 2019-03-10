@@ -186,6 +186,10 @@ module advance_xm_wpxp_module
         iuprtp,  &
         ivpthlp, &
         ivprtp,  &
+        iupthvp, &
+        iuprcp,  &
+        ivpthvp, &
+        ivprcp,  &
         iC7_Skw_fnc, &
         iC6rt_Skw_fnc, &
         iC6thl_Skw_fnc, &
@@ -430,8 +434,9 @@ module advance_xm_wpxp_module
       zeros_vector  ! Array of zeros, of the size of a vertical profile [-]
 
     real( kind = core_rknd ), allocatable, dimension(:,:) :: & 
-      rhs,     &! Right-hand sides of band diag. matrix. (LAPACK)
-      solution  ! solution vectors of band diag. matrix. (LAPACK)
+      rhs,      & ! Right-hand sides of band diag. matrix. (LAPACK)
+      rhs_save, & ! Saved Right-hand sides of band diag. matrix. (LAPACK)
+      solution    ! solution vectors of band diag. matrix. (LAPACK)
 
     ! Constant parameters as a function of Skw.
 
@@ -441,7 +446,7 @@ module advance_xm_wpxp_module
     real( kind = core_rknd ) :: rcond
 
     ! Indices
-    integer :: i
+    integer :: i, k
 
     !---------------------------------------------------------------------------
 
@@ -460,6 +465,7 @@ module advance_xm_wpxp_module
 
     ! Allocate rhs and solution vector
     allocate( rhs(2*gr%nz,nrhs) )
+    allocate( rhs_save(2*gr%nz,nrhs) )
     allocate( solution(2*gr%nz,nrhs) )
 
     ! This is initialized solely for the purpose of avoiding a compiler
@@ -851,6 +857,10 @@ module advance_xm_wpxp_module
                         wpxp_upper_lim, wpxp_lower_lim, & ! In
                         rhs(:,1) ) ! Out
 
+      ! Save the value of rhs, which will be overwritten with the solution as
+      ! part of the solving routine.
+      rhs_save = rhs
+
       ! Solve r_t / w'r_t'
       if ( l_stats_samp .and. irtm_matrix_condt_num > 0 ) then
         call xm_wpxp_solve( nrhs, &                     ! Intent(in)
@@ -863,11 +873,25 @@ module advance_xm_wpxp_module
       endif
 
       if ( clubb_at_least_debug_level( 0 ) ) then
-          if ( err_code == clubb_fatal_error ) then
-              write(fstderr,'(a)') "Mean total water & total water flux LU decomp. failed"
-              return
-          end if
-      end if
+         if ( err_code == clubb_fatal_error ) then
+            write(fstderr,'(a)') "Mean total water & total water flux LU decomp. failed"
+            write(fstderr,*) "rtm and wprtp LHS"
+            do k = 1, gr%nz
+               write(fstderr,*) "zt level = ", k, "height [m] = ", gr%zt(k), &
+                                "LHS = ", lhs(1:nsup+nsub+1,2*k-1)
+               write(fstderr,*) "zm level = ", k, "height [m] = ", gr%zm(k), &
+                                "LHS = ", lhs(1:nsup+nsub+1,2*k)
+            enddo ! k = 1, gr%nz
+            write(fstderr,*) "rtm and wprtp RHS"
+            do k = 1, gr%nz
+               write(fstderr,*) "zt level = ", k, "height [m] = ", gr%zt(k), &
+                                "RHS = ", rhs_save(2*k-1,1)
+               write(fstderr,*) "zm level = ", k, "height [m] = ", gr%zm(k), &
+                                "RHS = ", rhs_save(2*k,1)
+            enddo ! k = 1, gr%nz
+            return
+         endif
+      endif
 
       call xm_wpxp_clipping_and_stats &
            ( xm_wpxp_rtm, dt, wp2, rtp2, wm_zt,  &  ! Intent(in)
@@ -918,6 +942,10 @@ module advance_xm_wpxp_module
                         wpxp_upper_lim, wpxp_lower_lim, & ! In
                         rhs(:,1) ) ! Out
 
+      ! Save the value of rhs, which will be overwritten with the solution as
+      ! part of the solving routine.
+      rhs_save = rhs
+
       ! Solve for th_l / w'th_l'
       if ( l_stats_samp .and. ithlm_matrix_condt_num > 0 ) then
         call xm_wpxp_solve( nrhs, &                     ! Intent(in)
@@ -930,11 +958,25 @@ module advance_xm_wpxp_module
       endif
 
       if ( clubb_at_least_debug_level( 0 ) ) then
-          if ( err_code == clubb_fatal_error ) then
-              write(fstderr,'(a)') "Liquid pot. temp & thetal flux LU decomp. failed"
-              return
-          end if
-      end if
+         if ( err_code == clubb_fatal_error ) then
+            write(fstderr,'(a)') "Liquid pot. temp & thetal flux LU decomp. failed"
+            write(fstderr,*) "thlm and wpthlp LHS"
+            do k = 1, gr%nz
+               write(fstderr,*) "zt level = ", k, "height [m] = ", gr%zt(k), &
+                                "LHS = ", lhs(1:nsup+nsub+1,2*k-1)
+               write(fstderr,*) "zm level = ", k, "height [m] = ", gr%zm(k), &
+                                "LHS = ", lhs(1:nsup+nsub+1,2*k)
+            enddo ! k = 1, gr%nz
+            write(fstderr,*) "thlm and wpthlp RHS"
+            do k = 1, gr%nz
+               write(fstderr,*) "zt level = ", k, "height [m] = ", gr%zt(k), &
+                                "RHS = ", rhs_save(2*k-1,1)
+               write(fstderr,*) "zm level = ", k, "height [m] = ", gr%zm(k), &
+                                "RHS = ", rhs_save(2*k,1)
+            enddo ! k = 1, gr%nz
+            return
+         endif
+      endif
 
       call xm_wpxp_clipping_and_stats &
            ( xm_wpxp_thlm, dt, wp2, thlp2, wm_zt,  & ! Intent(in)
@@ -1006,17 +1048,35 @@ module advance_xm_wpxp_module
                           wpxp_upper_lim, wpxp_lower_lim, & ! In
                           rhs(:,1) ) ! Out
 
+        ! Save the value of rhs, which will be overwritten with the solution as
+        ! part of the solving routine.
+        rhs_save = rhs
+
         ! Solve for sclrm / w'sclr'
         call xm_wpxp_solve( nrhs, &              ! Intent(in)
                             lhs, rhs, &          ! Intent(inout)
                             solution )           ! Intent(out)
 
         if ( clubb_at_least_debug_level( 0 ) ) then
-            if ( err_code == clubb_fatal_error ) then   
-                write(fstderr,*) "Passive scalar # ", i, " LU decomp. failed."
-                return
-            end if
-        end if
+           if ( err_code == clubb_fatal_error ) then   
+              write(fstderr,*) "Passive scalar # ", i, " LU decomp. failed."
+              write(fstderr,*) "sclrm and wpsclrp LHS"
+              do k = 1, gr%nz
+                 write(fstderr,*) "zt level = ", k, "height [m] = ", gr%zt(k), &
+                                  "LHS = ", lhs(1:nsup+nsub+1,2*k-1)
+                 write(fstderr,*) "zm level = ", k, "height [m] = ", gr%zm(k), &
+                                  "LHS = ", lhs(1:nsup+nsub+1,2*k)
+              enddo ! k = 1, gr%nz
+              write(fstderr,*) "sclrm and wpsclrp RHS"
+              do k = 1, gr%nz
+                 write(fstderr,*) "zt level = ", k, "height [m] = ", gr%zt(k), &
+                                  "RHS = ", rhs_save(2*k-1,1)
+                 write(fstderr,*) "zm level = ", k, "height [m] = ", gr%zm(k), &
+                                  "RHS = ", rhs_save(2*k,1)
+              enddo ! k = 1, gr%nz
+              return
+           endif
+        endif
 
         call xm_wpxp_clipping_and_stats &
              ( xm_wpxp_scalar, dt, wp2, sclrp2(:,i),  & ! Intent(in)
@@ -1201,13 +1261,13 @@ module advance_xm_wpxp_module
          endif ! .not. l_implemented
 
          ! Add "extra term" and optional Coriolis term for <u'w'> and <v'w'>.
-         upwp_forcing = zero  ! C7_Skw_fnc * wp2 * ddzt( um )
-         vpwp_forcing = zero  ! C7_Skw_fnc * wp2 * ddzt( vm )
+         upwp_forcing = C7_Skw_fnc * wp2 * ddzt( um )
+         vpwp_forcing = C7_Skw_fnc * wp2 * ddzt( vm )
 
          if ( l_stats_samp ) then
-            call stat_update_var( iupwp_pr4, 0.0_core_rknd * C7_Skw_fnc * wp2 * ddzt( um ), &
+            call stat_update_var( iupwp_pr4, C7_Skw_fnc * wp2 * ddzt( um ), &
                                   stats_zm )
-            call stat_update_var( ivpwp_pr4, 0.0_core_rknd * C7_Skw_fnc * wp2 * ddzt( vm ), &
+            call stat_update_var( ivpwp_pr4, C7_Skw_fnc * wp2 * ddzt( vm ), &
                                   stats_zm )
          endif ! l_stats_samp
 
@@ -1224,23 +1284,26 @@ module advance_xm_wpxp_module
                              C6rt_Skw_fnc, tau_C6_zm, C7_Skw_fnc, & ! Intent(in)
                              vprtp )                                ! Intent(out)
 
+         ! Use a crude approximation for buoyancy terms <u'thv'> and <v'thv'>.
+         !upthvp = upwp * wpthvp / max( wp2, w_tol_sqd )
+         !vpthvp = vpwp * wpthvp / max( wp2, w_tol_sqd )
+         !upthvp = 0.3_core_rknd * ( upthlp + 200.0_core_rknd * uprtp ) &
+         !         + 200._core_rknd * sign( one, upwp) * sqrt( up2 * rcm**2 )
+         !vpthvp = 0.3_core_rknd * ( vpthlp + 200.0_core_rknd * vprtp ) &
+         !         + 200._core_rknd * sign( one, vpwp ) * sqrt( vp2 * rcm**2 )
+         upthvp = upthlp + ep1 * thv_ds_zm * uprtp + rc_coef * uprcp
+         vpthvp = vpthlp + ep1 * thv_ds_zm * vprtp + rc_coef * vprcp
+
          if ( l_stats_samp ) then
             call stat_update_var( iupthlp, upthlp, stats_zm )
             call stat_update_var( iuprtp,  uprtp,  stats_zm )
             call stat_update_var( ivpthlp, vpthlp, stats_zm )
             call stat_update_var( ivprtp,  vprtp,  stats_zm )
+            call stat_update_var( iupthvp, upthvp, stats_zm )
+            call stat_update_var( iuprcp,  uprcp,  stats_zm )
+            call stat_update_var( ivpthvp, vpthvp, stats_zm )
+            call stat_update_var( ivprcp,  vprcp,  stats_zm )
          endif ! l_stats_samp
-
-         ! Use a crude approximation for buoyancy terms <u'thv'> and <v'thv'>.
-         !upthvp = upwp * wpthvp / max( wp2, w_tol_sqd )
-         !vpthvp = vpwp * wpthvp / max( wp2, w_tol_sqd )
-         !upthvp = upthlp + ep1 * thv_ds_zm * uprtp + rc_coef * uprcp
-         !vpthvp = vpthlp + ep1 * thv_ds_zm * vprtp + rc_coef * vprcp
-
-         upthvp = 0.3_core_rknd * ( upthlp + 200.0_core_rknd * uprtp ) &
-                  + 200._core_rknd * sign( one, upwp) * sqrt( up2 * rcm**2 )
-         vpthvp = 0.3_core_rknd * ( vpthlp + 200.0_core_rknd * vprtp ) &
-                  + 200._core_rknd * sign( one, vpwp ) * sqrt( vp2 * rcm**2 )
 
          call xm_wpxp_rhs( xm_wpxp_um, l_iter, dt, um, upwp, & ! In
                            um_tndcy, upwp_forcing, C7_Skw_fnc, & ! In
@@ -1264,6 +1327,10 @@ module advance_xm_wpxp_module
 
       endif ! l_predict_upwp_vpwp
 
+      ! Save the value of rhs, which will be overwritten with the solution as
+      ! part of the solving routine.
+      rhs_save = rhs
+
       ! Solve for all fields
       if ( l_stats_samp &
            .and. ithlm_matrix_condt_num + irtm_matrix_condt_num > 0 ) then
@@ -1274,6 +1341,48 @@ module advance_xm_wpxp_module
          call xm_wpxp_solve( nrhs, &              ! Intent(in)
                              lhs, rhs, &          ! Intent(inout)
                              solution )           ! Intent(out)
+      endif
+
+      if ( clubb_at_least_debug_level( 0 ) ) then
+         if ( err_code == clubb_fatal_error ) then
+            write(fstderr,'(a)') "xm & wpxp LU decomp. failed"
+            write(fstderr,*) "General xm and wpxp LHS"
+            do k = 1, gr%nz
+               write(fstderr,*) "zt level = ", k, "height [m] = ", gr%zt(k), &
+                                "LHS = ", lhs(1:nsup+nsub+1,2*k-1)
+               write(fstderr,*) "zm level = ", k, "height [m] = ", gr%zm(k), &
+                                "LHS = ", lhs(1:nsup+nsub+1,2*k)
+            enddo ! k = 1, gr%nz
+            do i = 1, nrhs
+               if ( i == 1 ) then
+                  write(fstderr,*) "rtm and wprtp RHS"
+               elseif ( i == 2 ) then
+                  write(fstderr,*) "thlm and wpthlp RHS"
+               else ! i > 2
+                  if ( sclr_dim > 0 ) then
+                     if ( i <= 2+sclr_dim ) then
+                        write(fstderr,*) "sclrm and wpsclrp RHS for sclr", i-2
+                     endif ! i <= 2+sclr_dim )
+                  endif ! sclr_dim > 0
+                  if ( l_predict_upwp_vpwp ) then
+                     if ( i == 3+sclr_dim ) then
+                        write(fstderr,*) "um and upwp RHS"
+                     elseif ( i == 4+sclr_dim ) then
+                        write(fstderr,*) "vm and vpwp RHS"
+                     endif
+                  endif ! l_predict_upwp_vpwp
+               endif
+               do k = 1, gr%nz
+                  write(fstderr,*) "zt level = ", k, &
+                                   "height [m] = ", gr%zt(k), &
+                                   "RHS = ", rhs_save(2*k-1,i)
+                  write(fstderr,*) "zm level = ", k, &
+                                   "height [m] = ", gr%zm(k), &
+                                   "RHS = ", rhs_save(2*k,i)
+               enddo ! k = 1, gr%nz
+            enddo ! i = 1, nrhs
+            return
+         endif
       endif
 
       call xm_wpxp_clipping_and_stats &
@@ -1380,7 +1489,7 @@ module advance_xm_wpxp_module
           !        .and. ( .not. l_explicit_turbulent_adv_wpxp ) )
 
     ! De-allocate memory
-    deallocate( rhs, solution )
+    deallocate( rhs, rhs_save, solution )
 
     if ( rtm_sponge_damp_settings%l_sponge_damping ) then
 

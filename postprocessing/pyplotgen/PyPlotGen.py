@@ -8,7 +8,10 @@ Author: Nicolas Strike
 Date: Jan 2019
 '''
 import argparse
+
 from DataReader import DataReader
+from Plotter import Plotter
+
 
 class PyPlotGen:
     def __init__(self, input_folder, output_folder, replace=False, les=False, cgbest=False, hoc=False,plotrefs=False,
@@ -52,16 +55,24 @@ class PyPlotGen:
         self.budget_moments = budget_moments
         self.bu_morr = bu_morr
         self.diff = diff
+        self.nc_datasets = None
 
     def run(self):
         '''
         Runs PyPlotGen
-        :return:
+        :return: n/a
         '''
         print("PyPlotGen would run right now if it was written")
         data_reader = DataReader()
-        data_reader.load_folder(self.input_folder)
-        # TODO
+        self.nc_datasets = data_reader.load_folder(self.input_folder)
+        plotter = Plotter()
+        for dataset in self.nc_datasets:
+            filename = dataset.filepath()
+            if ("dycoms2_rf01_zt") in filename.lower():
+                print("Opening " + filename)
+                plot_data = data_reader.getPlotsData(dataset, None) # TODO change None to be the selected case
+                plotter.plot(plot_data)
+
 
 def process_args():
     '''

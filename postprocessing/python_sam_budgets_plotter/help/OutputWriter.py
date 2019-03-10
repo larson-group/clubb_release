@@ -5,10 +5,10 @@ from datetime import datetime as dt
 #-------------------------------------------------------------------------------
 #   L O G G E R
 #-------------------------------------------------------------------------------
-FORMAT='%(asctime)s:%(levelname)s:%(message)s'
-logging.basicConfig(format=FORMAT)
-logger = logging.getLogger('OutputWriter')
-#logger.setLevel(logging.DEBUG)
+logger = logging.getLogger('plotgen.help.ow')
+#logger.setLevel(logging.INFO)
+logger.setLevel(logging.DEBUG)
+#logger.setLevel(logging.CRITICAL)
 
 #-------------------------------------------------------------------------------
 #    F U N C T I O N S
