@@ -62,16 +62,18 @@ class PyPlotGen:
         Runs PyPlotGen
         :return: n/a
         '''
-        print("PyPlotGen would run right now if it was written")
         data_reader = DataReader()
-        self.nc_datasets = data_reader.load_folder(self.input_folder)
+        self.nc_datasets = data_reader.loadFolder(self.input_folder)
         plotter = Plotter()
         for dataset in self.nc_datasets:
             filename = dataset.filepath()
-            if ("dycoms2_rf01_zt") in filename.lower():
+            if ("dycoms_rf01_96x96x320") in filename.lower():
                 print("Opening " + filename)
-                plot_data = data_reader.getPlotsData(dataset, None) # TODO change None to be the selected case
-                plotter.plot(plot_data)
+                all_plot_data = data_reader.getPlotsData(dataset, None) # TODO change None to be the selected case
+                plotter.plot(all_plot_data[0]) # TODO this is a temp test value, loop below is better
+                break # TODO this is part of the temp fix
+                # for plot_data in all_plot_data:
+                #     plotter.plot(plot_data)
 
 
 def process_args():

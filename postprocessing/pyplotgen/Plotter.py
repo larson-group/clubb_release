@@ -7,7 +7,10 @@ the DataReader class.
 :author: Nicolas Strike
 :date: Early 2019
 '''
+import math
 
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
 
@@ -37,14 +40,24 @@ class Plotter:
         '''
         Plots a case onto a set of graphs (panels)
         :param case: The case to be plotted
-        :param data: The data to plot with the case
+        :param data: The data to plot with the case formatted as the namedtuple defined in DataReader.py
         :return:
         '''
+        print(data)
         line_format = "r--"
+
         plt.figure(1)
         plt.subplot(111)
         plt.plot(data.x_values, data.y_values, line_format)
         plt.title(data.title)
         plt.ylabel(data.y_title)
         plt.xlabel(data.x_title)
-        plt.show()
+
+        x_min = data.x_values.min()
+        x_max = data.x_values.max()
+
+        # plt.xlim(math.floor(x_min),math.ceil(x_max))
+        # plt.autoscale(tight=True)
+        # print("Saving file")
+        plt.savefig(data.title.replace('"', '').replace(',','').replace(' ', '_') + '.png')
+        # print("Saved file")
