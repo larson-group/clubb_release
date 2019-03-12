@@ -281,7 +281,7 @@ def get_all_variables(nc, lines, plotLabels, nh, nt, t0, t1, h0, h1, filler=0):
     return dict(zip(plotLabels, plot_data))
 
 
-def plot_default(plots, cf, data, h):
+def plot_default(plots, cf, data, h, centering):
     """
     bla
     TODO: pass startLevel etc. to plot routine (style file?)
@@ -299,7 +299,7 @@ def plot_default(plots, cf, data, h):
         # pb.get_units() needs nc
         name = plot_case_name.format(plot=plot_label)
         imageNames.append(name)
-        pb.plot_profiles(data[plot_label], h, units, cf.yLabel, title, os.path.join(jpg_dir,name), startLevel=2, lw=cf.lw, grid=False, pdf=pdf)
+        pb.plot_profiles(data[plot_label], h, units, cf.yLabel, title, os.path.join(jpg_dir,name), startLevel=0, lw=cf.lw, grid=False, centering=centering, pdf=pdf)
     pdf.close()
     
     # write html page
@@ -489,7 +489,10 @@ def plot_comparison(plots, cf, data_clubb, data_sam, h_clubb, h_sam, plot_old_cl
     for i, plot_label in enumerate(plots.sortPlots):
         logger.info('Generating plot %s', plot_label)
         title, units = plots.plotNames[i]
-        pb.plot_comparison(data_clubb[plot_label], data_sam[plot_label], h_clubb, h_sam, units, cf.yLabel, title, os.path.join(jpg_dir, plot_case_name.format(plot=plot_label)), startLevel=0, grid=False, pdf=pdf, plot_old_clubb=plot_old_clubb, data_old=data_old[plot_label], level_old=h_old)
+        if plot_old_clubb:
+            pb.plot_comparison(data_clubb[plot_label], data_sam[plot_label], h_clubb, h_sam, units, cf.yLabel, title, os.path.join(jpg_dir, plot_case_name.format(plot=plot_label)), startLevel=0, grid=False, pdf=pdf, plot_old_clubb=plot_old_clubb, data_old=data_old[plot_label], level_old=h_old)
+        else:
+            pb.plot_comparison(data_clubb[plot_label], data_sam[plot_label], h_clubb, h_sam, units, cf.yLabel, title, os.path.join(jpg_dir, plot_case_name.format(plot=plot_label)), startLevel=0, grid=False, pdf=pdf)
     pdf.close()
     # TODO: Generate html
     
@@ -571,7 +574,9 @@ def plotgen_default(plots, cf):
         logger.info("Fetching sam data")
         data = get_all_variables(nc_sam, plots.lines, plots.sortPlots, len(h), len(t), idx_t0, idx_t1, idx_h0, idx_h1, filler=plots.filler)
     logger.info("Create plots")
-    plot_default(plots, cf, data, h)
+    # Center plots if plotting budgets
+    logger.debug("Centering=%s", str('budget' in plots.name))
+    plot_default(plots, cf, data, h, centering='budget' in plots.name)
     #logger.debug(mpp.rcParams['text.usetex'])
 
 
@@ -663,6 +668,7 @@ def plotgen_comparison(plots, cf):
     idx_t0_sam = (np.abs(t_sam - cf.startTime)).argmin()
     idx_t1_sam = (np.abs(t_sam - cf.endTime)).argmin()+1
     h_sam = h_sam[idx_h0_sam:idx_h1_sam]
+    h_clubb_old = None
     if old_clubb:
         t_clubb_old = get_t_dim(nc_clubb_old)
         h_clubb_old = get_h_dim(nc_clubb_old, model='clubb')
@@ -709,6 +715,7 @@ def plotgen_comparison(plots, cf):
     data_clubb = data_zm.copy()
     data_clubb.update(data_zt)
     logger.info("Fetching old CLUBB data")
+    data_clubb_old = None
     if old_clubb:
         data_zm_old = None
         data_zt_old = None

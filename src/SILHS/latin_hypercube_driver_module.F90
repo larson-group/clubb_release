@@ -1901,8 +1901,8 @@ module latin_hypercube_driver_module
         if ( ilh_lwp > 0 ) then
           xtmp &
           = vertical_integral &
-               ( (gr%nz - 2 + 1), rho_ds_zt(2:gr%nz), &
-                 lh_rcm(2:gr%nz), gr%dzt(2:gr%nz) )
+               ( (nz - 2 + 1), rho_ds_zt(2:nz), &
+                 lh_rcm(2:nz), gr%dzt(2:nz) )
 
           call stat_update_var_pt( ilh_lwp, 1, xtmp, stats_lh_sfc )
         end if
@@ -1932,8 +1932,8 @@ module latin_hypercube_driver_module
         if ( ilh_vwp > 0 ) then
           xtmp &
           = vertical_integral &
-               ( (gr%nz - 2 + 1), rho_ds_zt(2:gr%nz), &
-                 lh_rvm(2:gr%nz), gr%dzt(2:gr%nz) )
+               ( (nz - 2 + 1), rho_ds_zt(2:nz), &
+                 lh_rvm(2:nz), gr%dzt(2:nz) )
 
           call stat_update_var_pt( ilh_vwp, 1, xtmp, stats_lh_sfc )
         end if
