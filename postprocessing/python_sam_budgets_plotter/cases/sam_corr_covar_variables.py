@@ -6,7 +6,7 @@ HOUR = 3600
 KG = 1000
 g_per_second_to_kg_per_day = 1. / (DAY * HOUR * KG)
 kg_per_second_to_kg_per_day = 1. / (DAY * HOUR)
-header = 'SAM correlation and covariance profiles'
+header = 'SAM correlations and covariance profiles'
 name = 'sam_corrs_covars'
 nc_files = ['sam']
 

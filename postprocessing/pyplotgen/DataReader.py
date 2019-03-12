@@ -15,6 +15,9 @@ import configparser
 import pandas as pd
 
 import numpy as np
+import pathlib as pathlib
+
+from Plotter import Plotter
 
 
 class DataReader():
@@ -28,7 +31,7 @@ class DataReader():
     :data: January 2019
     '''
 
-    panel_filename = '/home/strike/clubb/postprocessing/pyplotgen/cases/base/Panel_thlm.ini'
+    # panel_filename = '/home/strike/clubb/postprocessing/pyplotgen/cases/panels/base/Panel_thlm.ini'
     # panel_type_filename = '/home/strike/clubb/postprocessing/pyplotgen/cases/PanelType_Profile.ini'
 
 
@@ -41,7 +44,10 @@ class DataReader():
         self.grads_dat_filenames = []
         self.grads_ctl_filenames = []
         self.nc_datasets = []
-        self.PlotData = namedtuple("PlotData", "x_values y_values title x_title y_title")
+        self.root_dir =  pathlib.Path(__file__).parent
+        self.panels_dir = self.root_dir.as_uri() + "/cases/panels/"
+
+        # print(self.root_dir)
 
     def cleanup(self):
         '''
@@ -52,31 +58,6 @@ class DataReader():
         '''
         for dataset in self.nc_datasets:
             dataset.close()
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        '''
-        Calls the cleanup and cleanly closes out the object isntance
-        :param exc_type:
-        :param exc_val:
-        :param exc_tb:
-        :return:
-        :author: Nicolas Strike
-        '''
-        self.cleanup()
-
-    def __loadNcFile__(self, filename):
-        '''
-        Load the given NetCDF file
-        :param filename: the netcdf file to be loaded
-        :return: a netcdf dataset containing the data from the given file
-        '''
-        dataset = Dataset(filename, "r+", format="NETCDF4")
-        # print("\n\nVariables:\n")
-        # for key in dataset.variables.keys():
-        #     print("\t" + key)
-        #print(filename + ": " + str(dataset))
-        return dataset
-
 
     def loadFolder(self, folder_path):
         '''
@@ -103,22 +84,111 @@ class DataReader():
         # print("Files loaded:\n\n----nc files----\n" + str(self.nc_filenames) + "\n\n----dat files----\n" + str(self.grads_dat_filenames) +
         #       "\n\n----ctl files----\n" + str(self.grads_ctl_filenames))
 
+    def getPlotsData(self, netcdf_data, case_filename, panel_filename):
+        '''
+        Create a plot tuple containing the data needed to
+        create a graph.
 
-    def __meanProfiles__(self, var):
+        Plot tuple definition:
+        Plot(x_values=<array with x values>, y_values=<array with y values>, title='Name of Graph',
+            x_title='X Axis Title', y_title='Y Axis Title')
+
+        Example creation:
+            myPlot = Plot(x_values=arrayOfXValues, y_values=arrayOfYValues, title='Example Plot', x_title='My X Axis', y_title='My Y Axis')
+
+        :param netcdf_data: The NetCDF data object containing the desired data, e.g. variables to be plotted
+        :param case: The case to be plotted (e.g. contains title, data labels, start/end values, etc
+        :return: A plot struct containing the data elements listed above
+        :author: Nicolas Strike
+        '''
+
+        case_config = configparser.ConfigParser()
+        case_config.read(case_filename)
+
+        panel_config = configparser.ConfigParser()
+        panel_config.read(panel_filename)
+
+        panel_type_config = configparser.RawConfigParser()
+        panel_parent_dir = self.panels_dir
+        panel_type_filename = panel_config['defaults']['panel-type_file']
+        panel_type_config.read(panel_parent_dir + panel_type_filename)
+
+        panel_vars_str = panel_config['defaults']['model_vars']
+        panel_vars = self.getArrayFromString(panel_vars_str)
+        # num_lines = panel_vars.__len__()
+
+        y_variable_name = panel_config['defaults']['y_axis_data']#"z"
+        conversion_factors_str = panel_config['defaults']['conversion_factors']
+        conversion_factors = self.getArrayFromString(conversion_factors_str)
+        for i in range(len(conversion_factors)):
+            conversion_factors[i] = float(conversion_factors[i])
+        # TODO load these, don't hardcode them
+        y_level_amount = 1
+        y_num_timesteps = 1
+        y_axis_values = self.__getValuesFromNc__(netcdf_data, y_variable_name, conversion_factors[0], y_level_amount, y_num_timesteps) #TODO conversion shouldn't be only 1 value
+
+
+        equation = panel_config['defaults']['vars_relationship']
+        # Process inspired by Stackoverflow: https://stackoverflow.com/questions/45582344/extracting-data-from-netcdf-by-python
+        start_time_value = float(case_config['defaults']['start_time'])  # Used to determine what x value to begin the graph at
+        end_time_value = float(case_config['defaults']['end_time'])
+        time_values = self.__getValuesFromNc__(netcdf_data, "time", 1, 1, 1) #TODO conversion shouldn't be only 1 value
+        (start_time_index, end_time_idx) = self.__getStartEndIndex__(time_values, start_time_value, end_time_value) # Get the index values that correspond to the desired start/end x values
+
+        x_axis_values = self.__calcVariableValues__(netcdf_data, panel_vars, equation, conversion_factors)# self.__getValuesFromNc__(netcdf_data, x_variable_name, x_conversion_factor, x_level_amount, x_num_timesteps)
+        x_axis_values = self.__meanProfiles__(x_axis_values, start_time_index, end_time_idx)
+        x_axis_values = x_axis_values.reshape((-1,))
+
+        # Get plot restrictions from case
+        start_plot_value = float(case_config['defaults']['start_height'])  # Used to determine what x value to begin the graph at
+        end_plot_value = float(case_config['defaults']['end_height'])  # Used to determine what x value to end the graph at
+        (start_plot_index, end_plot_idx) = self.__getStartEndIndex__(y_axis_values, start_plot_value, end_plot_value) # Get the index values that correspond to the desired start/end x values
+        x_axis_values = x_axis_values[start_plot_index:end_plot_idx + 1] # we use end_plot_idx + 1 to ensure python uses the last value (off by one)
+        y_axis_values = y_axis_values[start_plot_index: end_plot_idx + 1] # we use end_plot_idx + 1 to ensure python uses the last value (off by one)
+
+        plot_data = Plotter.PlotValues(x_values=x_axis_values, y_values=y_axis_values)
+
+        return plot_data
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        '''
+        Calls the cleanup and cleanly closes out the object isntance
+        :param exc_type:
+        :param exc_val:
+        :param exc_tb:
+        :return:
+        :author: Nicolas Strike
+        '''
+        self.cleanup()
+
+    def __loadNcFile__(self, filename):
+        '''
+        Load the given NetCDF file
+        :param filename: the netcdf file to be loaded
+        :return: a netcdf dataset containing the data from the given file
+        '''
+        dataset = Dataset(filename, "r+", format="NETCDF4")
+        # print("\n\nVariables:\n")
+        # for key in dataset.variables.keys():
+        #     print("\t" + key)
+        #print(filename + ": " + str(dataset))
+        return dataset
+
+    def __meanProfiles__(self, var, idx_t0, idx_t1):
         # logger.info('mean_profiles')
         """
         Input:
           var    -- time x height array of some property
           idx_t0 -- Index corrosponding to the beginning of the averaging interval
           idx_t1 -- Index corrosponding to the end of the averaging interval
-          idx_z0 -- Index corrosponding to the lowest model level of the averaging interval
-          idx_z1 -- Index corrosponding to the highest model level of the averaging interval
+          idx_z0 -- Index corrosponding to the lowest model height of the averaging interval
+          idx_z1 -- Index corrosponding to the highest model height of the averaging interval
 
         Output:
           var    -- time averaged vertical profile of the specified variable
         """
         # Nic changed nanmean() to mean()
-        var_average = np.mean(var[:,:],axis=0)
+        var_average = np.mean(var[idx_t0:idx_t1,:],axis=0)
         return var_average
 
     def __getUnits__(self, nc, varname):
@@ -186,7 +256,7 @@ class DataReader():
             var = np.zeros(shape=(level_amount, num_timesteps)) - 1.
         return var
 
-    def getStartEndIndex(self, data, start_value, end_value):
+    def __getStartEndIndex__(self, data, start_value, end_value):
         '''
         Get the list floor index that contains the value to start graphing at and the
         ceiling index that contains the end value to stop graphing at
@@ -210,7 +280,7 @@ class DataReader():
 
         return start_idx, end_idx
 
-    def __getArrayFromString__(self, data_string, rows = -1, columns = 1):
+    def getArrayFromString(self, data_string, rows = -1, columns = 1):
         '''
         Some elements of our config ini files are stored as 2d arrays
         but are read by config parser as a string. This method takes in
@@ -232,7 +302,6 @@ class DataReader():
         # for i in data_array
         #data_array = data_array.reshape(rows,columns) # Turn the 1d array into a rows X columns array
         return data_array
-
 
     def __parseAxisData__(self, axis_data_str):
         '''
@@ -262,7 +331,7 @@ class DataReader():
             lines_data.append(data)
         return lines_data
 
-    def isFunction(self, value):
+    def __isFunction__(self, value):
         '''
         Given a string, this function
         determines if it represents a
@@ -273,7 +342,7 @@ class DataReader():
         :return: True if the string is a math function, False otherwise
         '''
 
-        # logger.info('isFunction')
+        # logger.info('__isFunction__')
         isFunc = False
         if '+' in value:
             isFunc = True
@@ -305,7 +374,6 @@ class DataReader():
                 rowIndex = i
                 break
         return rowIndex
-
 
     def __calcVariableValues__(self, netcdf_data, plot_vars, equation, conversion_factors):
         '''
@@ -353,81 +421,4 @@ class DataReader():
         new_values = eval(equation)
         return new_values
 
-    def getPlotsData(self, netcdf_data, case):
-        '''
-        Create a plot tuple containing the data needed to
-        create a graph.
 
-        Plot tuple definition:
-        Plot(x_values=<array with x values>, y_values=<array with y values>, title='Name of Graph',
-            x_title='X Axis Title', y_title='Y Axis Title')
-
-        Example creation:
-            myPlot = Plot(x_values=arrayOfXValues, y_values=arrayOfYValues, title='Example Plot', x_title='My X Axis', y_title='My Y Axis')
-
-        :param netcdf_data: The NetCDF data object containing the desired data, e.g. variables to be plotted
-        :param case: The case to be plotted (e.g. contains title, data labels, start/end values, etc
-        :return: A plot struct containing the data elements listed above
-        :author: Nicolas Strike
-        '''
-        panel_config = configparser.ConfigParser()
-        panel_config.read(self.panel_filename)
-        panel_type_config = configparser.RawConfigParser()
-        panel_parent_dir = '/home/strike/clubb/postprocessing/pyplotgen/cases/' # TODO stop hardcoding this
-        panel_type_filename = panel_config['defaults']['panel-type_file']
-        panel_type_config.read(panel_parent_dir + panel_type_filename)
-
-        all_plots_data = []
-        panel_vars_str = panel_config['defaults']['model_vars']
-        panel_vars = self.__getArrayFromString__(panel_vars_str)
-        # num_lines = panel_vars.__len__()
-
-
-        # TODO load these, don't hardcode them
-        y_variable_name = panel_config['defaults']['y_axis_data']#"z"
-        conversion_factors_str = panel_config['defaults']['conversion_factors']
-        conversion_factors = self.__getArrayFromString__(conversion_factors_str)
-        for i in range(len(conversion_factors)):
-            conversion_factors[i] = float(conversion_factors[i])
-        y_level_amount = 1
-        y_num_timesteps = 1
-        y_axis_values = self.__getValuesFromNc__(netcdf_data, y_variable_name, conversion_factors[0], y_level_amount, y_num_timesteps) #TODO conversion shouldn't be only 1 value
-
-        # for i in range(0, num_lines):
-            #TODO TEMP DEV TEST
-            # if panel_vars[i] != "thetal":
-            #     break
-            # line_config = panel_type_config['default'][panel_vars[i]]
-            # line_data = self.__parseAxisData__(line_config)
-            # plot_index = self.__getLineToPlotIndex__(line_data)
-            # TODO load these, don't hardcode them
-            # nc_var_name = panel_type_config['default'][panel_vars[i]]
-            # var_name_raw_str = panel_type_config[nc_var_name._name]['nc_name']
-            # x_variable_name = line_data[plot_index][0] #var_name_raw_str.split('\n', re.MULTILINE)[0]
-            # x_conversion_factor = 1.0
-            # x_level_amount = 1
-            # x_num_timesteps = 1
-
-            # TODO load these, don't hardcode them
-        start_x_value = int(panel_config['defaults']['x_min']) # Used to determine what x value to begin the graph at
-        end_x_value = int(panel_config['defaults']['x_max']) # Used to determine what x value to end the graph at
-        # TODO load these, don't hardcode them
-        # plot_names = self.__getArrayFromString__(panel_type_config['default']['plotNames'])
-
-        title = panel_config['defaults']['title'] #self.get_long_name(netcdf_data, x_variable_name)
-        x_axis_title = panel_config['defaults']['x_label'] # x_variable_name + "[K]"
-        y_axis_title = panel_config['defaults']['y_label']
-        equation = panel_config['defaults']['vars_relationship']
-        # Process inspired by Stackoverflow: https://stackoverflow.com/questions/45582344/extracting-data-from-netcdf-by-python
-        x_axis_values = self.__calcVariableValues__(netcdf_data, panel_vars, equation, conversion_factors)# self.__getValuesFromNc__(netcdf_data, x_variable_name, x_conversion_factor, x_level_amount, x_num_timesteps)
-        x_axis_values = self.__meanProfiles__(x_axis_values)
-        x_axis_values = x_axis_values.reshape((-1,))
-        (start_index, end_idx) = self.getStartEndIndex(x_axis_values, start_x_value, end_x_value) # Get the index values that correspond to the desired start/end x values
-
-        x_axis_values = x_axis_values[start_index:end_idx + 1] # we use end_idx + 1 to ensure python uses the last value (off by one)
-        y_axis_values = y_axis_values[start_index: end_idx + 1] # we use end_idx + 1 to ensure python uses the last value (off by one)
-
-        plot_data = self.PlotData(x_values=x_axis_values, y_values=y_axis_values, title=title, x_title=x_axis_title, y_title=y_axis_title)
-        all_plots_data.append(plot_data)
-
-        return all_plots_data

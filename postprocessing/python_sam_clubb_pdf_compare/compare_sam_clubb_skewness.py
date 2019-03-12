@@ -122,7 +122,7 @@ nc.close()
 
 
 #----------------------------------------------------------------------------------------
-# Compute normalized Skewness of w and the normalized correlation of (w and thl) and
+# Compute normalized Skewness of w and the normalized correlations of (w and thl) and
 # (w and rt). 
 sam_Skw = return_skewness(sam_wp3,sam_wp2,w_tol)
 sam_Skw_hat = return_nrmlz_skw(sam_Skw,sigma_tilde_w_sqd)

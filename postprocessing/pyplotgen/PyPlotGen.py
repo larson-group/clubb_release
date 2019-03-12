@@ -8,6 +8,10 @@ Author: Nicolas Strike
 Date: Jan 2019
 '''
 import argparse
+import os
+
+import configparser
+import pathlib
 
 from DataReader import DataReader
 from Plotter import Plotter
@@ -56,25 +60,78 @@ class PyPlotGen:
         self.bu_morr = bu_morr
         self.diff = diff
         self.nc_datasets = None
+        self.data_reader = DataReader()
+
 
     def run(self):
         '''
         Runs PyPlotGen
         :return: n/a
         '''
-        data_reader = DataReader()
-        self.nc_datasets = data_reader.loadFolder(self.input_folder)
-        plotter = Plotter()
+        self.nc_datasets = self.data_reader.loadFolder(self.input_folder)
         for dataset in self.nc_datasets:
-            filename = dataset.filepath()
-            if ("dycoms_rf01_96x96x320") in filename.lower():
-                print("Opening " + filename)
-                all_plot_data = data_reader.getPlotsData(dataset, None) # TODO change None to be the selected case
-                plotter.plot(all_plot_data[0]) # TODO this is a temp test value, loop below is better
-                break # TODO this is part of the temp fix
-                # for plot_data in all_plot_data:
-                #     plotter.plot(plot_data)
+            dataset_filename = dataset.filepath()
+            if ("dycoms_rf01_96x96x320") in dataset_filename.lower():
+                casefile = "/home/strike/clubb/postprocessing/pyplotgen/cases/Case_dycoms2_rf01.ini"
+                print("Opening " + dataset_filename)
+                self.plotCase(dataset, casefile)
+                break # TODO TEMP FIX
 
+
+    def plotCase(self, dataset, casefile):
+        '''
+        This method plots all the panels relevant to a case
+        to png files
+
+        :param dataset: The NetCDF dataset containing the desired data
+        :param casefile: The full filename of a casefile describing what panels to plot
+        :return: none
+        '''
+        case_config = configparser.ConfigParser()
+        case_config.read(casefile)
+
+        all_plot_values = [] # TODO change None to be the selected case
+        all_plot_details = []
+        plotter = Plotter()
+
+        panel_groups_str = case_config['defaults']['panel_groups']
+        panel_groups = self.data_reader.getArrayFromString(panel_groups_str)
+        root_dir = pathlib.Path(__file__).parent
+        panels_dir = str(root_dir) + "/cases/panels/"
+        for panel_group in panel_groups:
+            panel_group_dir =  panels_dir + panel_group + "/"
+            panels = self.getFilesInFolder(panel_group_dir)
+            for panel in panels:
+                panel_config = configparser.ConfigParser()
+                panel_config.read(panel)
+
+                title = panel_config['defaults']['title'] #self.get_long_name(netcdf_data, x_variable_name)
+                x_axis_title = panel_config['defaults']['x_label'] # x_variable_name + "[K]"
+                y_axis_title = panel_config['defaults']['y_label']
+                plot_details = Plotter.PlotDetails(title=title, y_title=y_axis_title, x_title=x_axis_title)
+                all_plot_details.append(plot_details)
+
+                plot_values = self.data_reader.getPlotsData(dataset, casefile, panel)
+                all_plot_values.append(plot_values)
+
+        for i in range(len(all_plot_values)):
+            plotter.plot(all_plot_values[i],all_plot_details[i]) # TODO this is a temp test value, loop below is better
+
+
+    def getFilesInFolder(self, folder):
+            '''
+            Returns a list of files contained in a folder
+
+            :param folder: The folder containing files
+            :return: list of files in the given folder
+            '''
+            panel_files = []
+            for root, dirs, files in os.walk(folder):
+                for filename in files:
+                    abs_filename = os.path.abspath(os.path.join(root, filename))
+                    panel_files.append(abs_filename)
+
+            return panel_files
 
 def process_args():
     '''
