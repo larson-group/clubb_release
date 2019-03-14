@@ -148,7 +148,8 @@ module clubb_api_module
 
   use parameters_tunable, only : &
     l_prescribed_avg_deltaz, & ! used in adj_low_res_nu. If .true., avg_deltaz = deltaz
-    mu
+    mu, &
+    params_list
 
   use parameter_indices, only:  &
     nparams, & ! Variable(s)
@@ -358,7 +359,8 @@ module clubb_api_module
     stats_tout
 
   public :: &
-    calculate_thlp2_rad_api, mu, update_xp2_mc_api, sat_mixrat_liq_api
+    calculate_thlp2_rad_api, mu, params_list, &
+    update_xp2_mc_api, sat_mixrat_liq_api
 
   public :: &
     ! To Convert Between Common CLUBB-related quantities:
