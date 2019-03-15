@@ -173,4 +173,4 @@ cloud_interpolation = 'quadric'
 # Legend location in seconary subplot
 legend_pos_3d = 1
 
-# TODO: Define dictionaty for fontsizes in 3d plot
+# TODO: Define dictionary for fontsizes in 3d plot
