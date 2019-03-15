@@ -7,11 +7,19 @@ the DataReader class.
 :author: Nicolas Strike
 :date: Early 2019
 '''
+import math
+from collections import namedtuple
 
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
 
 class Plotter:
+    PlotValues = namedtuple("PlotValues", "x_values y_values")
+    PlotDetails = namedtuple("PlotDetails", "title x_title y_title")
+
+
 
     def __init__(self):
         '''
@@ -33,18 +41,30 @@ class Plotter:
         # plt.plot(thlm_time[11])
 
 
-    def plot(self, data):
+    def plot(self, values, details):
         '''
         Plots a case onto a set of graphs (panels)
         :param case: The case to be plotted
-        :param data: The data to plot with the case
+        :param values: The values to plot with the case formatted as the namedtuple defined in DataReader.py
         :return:
         '''
+        print(values)
         line_format = "r--"
-        plt.figure(1)
+
+        plt.figure()
         plt.subplot(111)
-        plt.plot(data.x_values, data.y_values, line_format)
-        plt.title(data.title)
-        plt.ylabel(data.y_title)
-        plt.xlabel(data.x_title)
-        plt.show()
+        plt.plot(values.x_values, values.y_values, line_format)
+        plt.title(details.title)
+        plt.ylabel(details.y_title)
+        plt.xlabel(details.x_title)
+
+        # x_min = values.x_values.min()
+        # x_max = values.x_values.max()
+        #
+        # plt.xlim(math.floor(x_min),math.ceil(x_max))
+        # plt.ylim(math.floor(x_min),math.ceil(x_max))
+
+        # plt.autoscale(tight=True)
+        # print("Saving file")
+        plt.savefig(details.title.replace('"', '').replace(',', '').replace(' ', '_') + '.png')
+        # print("Saved file")

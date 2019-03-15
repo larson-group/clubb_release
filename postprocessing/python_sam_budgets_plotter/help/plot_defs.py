@@ -22,7 +22,7 @@ logger.setLevel(logging.DEBUG)
 #    F U N C T I O N S
 #-------------------------------------------------------------------------------
 def isFunction(value):
-    logger.info('isFunction')
+    logger.info('__isFunction__')
     isFunc = False
     if '+' in value:
         isFunc = True
