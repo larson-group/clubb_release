@@ -24,7 +24,7 @@ kg_per_second_to_kg_per_day = 1. / (DAY * HOUR)
 filler = nan
 header = 'SAM horizontal plots'
 name = 'sam_3d_{wt}'
-nc_files = ['sam_3d']
+nc_files = ['sam', 'sam_3d']
 title_template = '{wt} {case} {x}x{y}x{z} dx={dx}m dz={dz}m t={t} height level {h}m'
 wind_types = ['total_horizontal_wind', 'horizontal_wind_perturbation']
 
@@ -40,7 +40,9 @@ quiver_cmap = 'copper'
 # P L O T S
 #-------------------------------------------------------------------------------
 # Names of the variables
-sortPlots = ['qn', 'u', 'v', 'w']
+sortPlots_3d = ['qn', 'u', 'v', 'w']
+sortPlots_std = ['uw', 'vw']
+sortPlots = sortPlots_3d + sortPlots_std
 
 qn = [\
     ['QN', True, 'QN', 1., 0],\
@@ -58,4 +60,15 @@ w = [\
     ['W', True, 'W', 1., 0],\
     ]
 
-lines = [qn, u, v, w]
+uw = [\
+    [r"$\overline{u'w'}$", True, 'UW', 1., 0],\
+    ]
+
+vw = [\
+    [r"$\overline{v'w'}$", True, 'VW', 1., 0],\
+    ]
+
+
+lines_3d = [qn, u, v, w]
+lines_std = [uw, vw]
+lines = lines_3d + lines_std

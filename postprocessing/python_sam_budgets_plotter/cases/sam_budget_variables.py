@@ -21,7 +21,8 @@ HOUR = 3600
 KG = 1000
 g_per_second_to_kg_per_day = 1. / (DAY * HOUR * KG)
 kg_per_second_to_kg_per_day = 1. / (DAY * HOUR)
-filler = nan
+filler = nan                                                # Define the fill value which should replace invalid values in the data
+startLevel = 0                                              # Set the lower height level at which the plots should begin
 header = 'SAM budgets'
 name = 'sam_budgets'
 nc_files = ['sam']
@@ -33,37 +34,37 @@ sortPlots = ['HL', 'QT', 'TW', 'THLW', 'QW', 'QTOGW', 'W2', 'W3', 'T2', 'THL2', 
 # settings of each plot:
 # plot number, plot title, axis label
 plotNames = [\
-                ['HL 3D SAM Benchmark Budgets', r"$\mathrm{HL\ \left[\frac{K}{s}\right]}$"],\
-                ['QT 3D SAM Benchmark Budgets', r"$\mathrm{QTO\ \left[\frac{kg}{kg\ s}\right]}$"],\
-                ['TW SAM 3D Benchmark Budgets', r"$\mathrm{TW\ \left[\frac{m\ K}{s^2}\right]}$"],\
-                ['THLW SAM 3D Benchmark Budgets', r"$\mathrm{THLW\ \left[\frac{m K}{s^2}\right]}$"],\
-                ['QW SAM 3D Benchmark Budgets', r"$\mathrm{QW\ \left[\frac{kg\ m}{kg\ s^2}\right]}$"],\
-                ['QTOGW SAM 3D Benchmark Budgets', r"$\mathrm{QTOGW\ \left[\frac{kg\ m}{kg\ s^2}\right]}$"],\
-                ['W2 SAM 3D Benchmark Budgets', r"$\mathrm{\overline{w'^2}\ \left[\frac{m^2}{s^3}\right]}$"],\
-                ['W3 SAM 3D Benchmark Budgets', r"$\mathrm{\overline{w'^3}\ \left[\frac{m^3}{s^4}\right]}$"],\
-                ['T2 3D SAM Benchmark Budgets', r"$\mathrm{T^2\ \left[\frac{K^2}{s}\right]}$"],\
-                ['THL2 3D SAM Benchmark Budgets', r"$\mathrm{THL^2\ \left[\frac{K^2}{s}\right]}$"],\
-                ['Q2 3D SAM Benchmark Budgets', r"$\mathrm{Q^2\ \left[\frac{kg^2}{kg^2\ s}\right]}$"],\
-                ['QTOG2 3D SAM Benchmark Budgets', r"$\mathrm{QTOG^2\ \left[\frac{kg^2}{kg^2\ s}\right]}$"],\
-                ['QTHL 3D SAM Benchmark Budgets', r"$\mathrm{QTHL\ \left[\frac{kg\ K}{kg\ s}\right]}$"],\
-                ['TKE 3D SAM Benchmark Budgets', r"$\mathrm{TKE\ \left[\frac{m^2}{s^3}\right]}$"],\
-                ['TKE (SGS) 3D SAM Benchmark Budgets', r"$\mathrm{TKE\ \left[\frac{m^2}{s^3}\right]}$"],\
-                ['U2+V2 3D SAM Benchmark Budgets', r"$\mathrm{\overline{u'^2}+\overline{v'^2}\ \left[\frac{m^2}{s^2}\right]}$"],\
-                ['WU 3D SAM Benchmark Budgets', r"$\mathrm{\overline{u'w'}\ \left[\frac{m^2}{s^2}\right]}$"],\
-                ['WV 3D SAM Benchmark Budgets', r"$\mathrm{\overline{v'w'}\ \left[\frac{m^2}{s^2}\right]}$"],\
-                ['U2 3D SAM Benchmark Budgets', r"$\mathrm{\overline{u'^2}\ \left[\frac{m^2}{s^2}\right]}$"],\
-                ['V2 3D SAM Benchmark Budgets', r"$\mathrm{\overline{v'^2}\ \left[\frac{m^2}{s^2}\right]}$"],\
-                ['V2 Comparison from U2V2-U2', r"$\mathrm{\overline{v'^2}\ \left[\frac{m^2}{s^2}\right]}$"],\
-                ['C14/TAU Calculation based on\nU2 and V2 Budgets', r"$\mathrm{\frac{C_{14}}{TAU}\ \left[\frac{1}{s}\right]}$"],\
-                ['C2/TAU Calculation based on QTOG2 Budget', r"$\mathrm{\frac{C_2}{TAU}\ \left[\frac{1}{s}\right]}$"],\
-                ['C2/TAU Calculation based on QT2 Budget', r"$\mathrm{\frac{C_2}{TAU}\ \left[\frac{1}{s}\right]}$"],\
-                ['C2/TAU Calculation based on THL2 Budget', r"$\mathrm{\frac{C_2}{TAU}\ \left[\frac{1}{s}\right]}$"],\
-                ['C2/TAU Comparison', r"$\mathrm{\frac{C_2}{TAU}\ \left[\frac{1}{s}\right]}$"],\
-                ['U2 3D SAM Benchmark Budgets', r"$\mathrm{\overline{u'^2}\ \left[\frac{m^2}{s^2}\right]}$"],\
-                ['V2 3D SAM Benchmark Budgets', r"$\mathrm{\overline{v'^2}\ \left[\frac{m^2}{s^2}\right]}$"],\
-                ['W2 3D SAM Benchmark Budgets', r"$\mathrm{\overline{w'^2}\ \left[\frac{m^2}{s^2}\right]}$"],\
-                ['WU 3D SAM Benchmark Budgets', r"$\mathrm{\overline{u'w'}\ \left[\frac{m^2}{s^2}\right]}$"],\
-                ['WV 3D SAM Benchmark Budgets', r"$\mathrm{\overline{v'w'}\ \left[\frac{m^2}{s^2}\right]}$"],\
+                ['HL 3D SAM Benchmark Budgets', r"$\mathrm{HL\text{ budget terms } \left[\frac{K}{s}\right]}$"],\
+                ['QT 3D SAM Benchmark Budgets', r"$\mathrm{QTO\text{ budget terms } \left[\frac{kg}{kg\ s}\right]}$"],\
+                ['TW SAM 3D Benchmark Budgets', r"$\mathrm{TW\text{ budget terms } \left[\frac{m\ K}{s^2}\right]}$"],\
+                ['THLW SAM 3D Benchmark Budgets', r"$\mathrm{THLW\text{ budget terms } \left[\frac{m K}{s^2}\right]}$"],\
+                ['QW SAM 3D Benchmark Budgets', r"$\mathrm{QW\text{ budget terms } \left[\frac{kg\ m}{kg\ s^2}\right]}$"],\
+                ['QTOGW SAM 3D Benchmark Budgets', r"$\mathrm{QTOGW\text{ budget terms } \left[\frac{kg\ m}{kg\ s^2}\right]}$"],\
+                ['W2 SAM 3D Benchmark Budgets', r"$\mathrm{\overline{w'^2}\text{ budget terms } \left[\frac{m^2}{s^3}\right]}$"],\
+                ['W3 SAM 3D Benchmark Budgets', r"$\mathrm{\overline{w'^3}\text{ budget terms } \left[\frac{m^3}{s^4}\right]}$"],\
+                ['T2 3D SAM Benchmark Budgets', r"$\mathrm{T^2\text{ budget terms } \left[\frac{K^2}{s}\right]}$"],\
+                ['THL2 3D SAM Benchmark Budgets', r"$\mathrm{THL^2\text{ budget terms } \left[\frac{K^2}{s}\right]}$"],\
+                ['Q2 3D SAM Benchmark Budgets', r"$\mathrm{Q^2\text{ budget terms } \left[\frac{kg^2}{kg^2\ s}\right]}$"],\
+                ['QTOG2 3D SAM Benchmark Budgets', r"$\mathrm{QTOG^2\text{ budget terms } \left[\frac{kg^2}{kg^2\ s}\right]}$"],\
+                ['QTHL 3D SAM Benchmark Budgets', r"$\mathrm{QTHL\text{ budget terms } \left[\frac{kg\ K}{kg\ s}\right]}$"],\
+                ['TKE 3D SAM Benchmark Budgets', r"$\mathrm{TKE\text{ budget terms } \left[\frac{m^2}{s^3}\right]}$"],\
+                ['TKE (SGS) 3D SAM Benchmark Budgets', r"$\mathrm{TKE\text{ budget terms } \left[\frac{m^2}{s^3}\right]}$"],\
+                ['U2+V2 3D SAM Benchmark Budgets', r"$\mathrm{\overline{u'^2}+\overline{v'^2}\text{ budget terms } \left[\frac{m^2}{s^2}\right]}$"],\
+                ['WU 3D SAM Benchmark Budgets', r"$\mathrm{\overline{u'w'}\text{ budget terms } \left[\frac{m^2}{s^2}\right]}$"],\
+                ['WV 3D SAM Benchmark Budgets', r"$\mathrm{\overline{v'w'}\text{ budget terms } \left[\frac{m^2}{s^2}\right]}$"],\
+                ['U2 3D SAM Benchmark Budgets', r"$\mathrm{\overline{u'^2}\text{ budget terms } \left[\frac{m^2}{s^2}\right]}$"],\
+                ['V2 3D SAM Benchmark Budgets', r"$\mathrm{\overline{v'^2}\text{ budget terms } \left[\frac{m^2}{s^2}\right]}$"],\
+                ['V2 Comparison from U2V2-U2', r"$\mathrm{\overline{v'^2}\text{ budget terms } \left[\frac{m^2}{s^2}\right]}$"],\
+                ['C14/TAU Calculation based on\nU2 and V2 Budgets', r"$\mathrm{\frac{C_{14}}{TAU}\text{ budget terms } \left[\frac{1}{s}\right]}$"],\
+                ['C2/TAU Calculation based on QTOG2 Budget', r"$\mathrm{\frac{C_2}{TAU}\text{ budget terms } \left[\frac{1}{s}\right]}$"],\
+                ['C2/TAU Calculation based on QT2 Budget', r"$\mathrm{\frac{C_2}{TAU}\text{ budget terms } \left[\frac{1}{s}\right]}$"],\
+                ['C2/TAU Calculation based on THL2 Budget', r"$\mathrm{\frac{C_2}{TAU}\text{ budget terms } \left[\frac{1}{s}\right]}$"],\
+                ['C2/TAU Comparison', r"$\mathrm{\frac{C_2}{TAU}\text{ budget terms } \left[\frac{1}{s}\right]}$"],\
+                ['U2 3D SAM Benchmark Budgets', r"$\mathrm{\overline{u'^2}\text{ budget terms } \left[\frac{m^2}{s^2}\right]}$"],\
+                ['V2 3D SAM Benchmark Budgets', r"$\mathrm{\overline{v'^2}\text{ budget terms } \left[\frac{m^2}{s^2}\right]}$"],\
+                ['W2 3D SAM Benchmark Budgets', r"$\mathrm{\overline{w'^2}\text{ budget terms } \left[\frac{m^2}{s^2}\right]}$"],\
+                ['WU 3D SAM Benchmark Budgets', r"$\mathrm{\overline{u'w'}\text{ budget terms } \left[\frac{m^2}{s^2}\right]}$"],\
+                ['WV 3D SAM Benchmark Budgets', r"$\mathrm{\overline{v'w'}\text{ budget terms } \left[\frac{m^2}{s^2}\right]}$"],\
             ]
 
 # lines of each plot:

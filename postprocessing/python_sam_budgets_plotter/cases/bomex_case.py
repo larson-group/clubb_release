@@ -39,7 +39,8 @@ out_pdf = '{case}_{dx}x{dx}_{{type}}_{{date}}.pdf'.format(case=case.lower(),dx=n
 ## input .nc files
 ## SAM
 # nc file generated from .stat output
-sam_file = '/home/sdomke/workspace/clubb/avi_out/BOMEX_64x64x75_100m_40m_1s_190205.nc'
+#sam_file = '/home/sdomke/workspace/clubb/avi_out/BOMEX_64x64x75_100m_40m_1s_190205.nc'
+sam_file = '/home/sdomke/workspace/clubb/avi_out/grid_change/BOMEX_64x64x75_100m_40m_1s.nc'
 # nc file generated from .bin3D output
 sam_3d_file = '/home/sdomke/workspace/clubb/avi_out/out3d/BOMEX_64x64x75_100m_40m_1s_64_0000021600.nc'
 ## CLUBB

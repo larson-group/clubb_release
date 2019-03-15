@@ -11,13 +11,6 @@ import os
 import logging
 
 #-------------------------------------------------------------------------------
-#    GLOBAL DEFINITIONS
-#-------------------------------------------------------------------------------
-ntrials = 3 # maximum number of input trials before closing the program
-affirmatives = ['y', 'yes', 'aye', 'yay', 'pos', '1']
-negatives = ['n', 'no', 'nay', 'nope', 'neg', '0']
-
-#-------------------------------------------------------------------------------
 #   L O G G E R
 #-------------------------------------------------------------------------------
 logger = logging.getLogger('plotgen.help.defs')
@@ -47,7 +40,15 @@ def makeDirectory(pathToFile):
     if not os.path.exists(pathToFile):
         os.makedirs(pathToFile)
 
+#-------------------------------------------------------------------------------
+#    GLOBAL DEFINITIONS
+#-------------------------------------------------------------------------------
+## PROGRAM DEFINITIONS
+ntrials = 3 # maximum number of input trials before closing the program
+affirmatives = ['y', 'yes', 'aye', 'yay', 'pos', '1']
+negatives = ['n', 'no', 'nay', 'nope', 'neg', '0']
 
+## PLOTTING CHOICES
 # List of output types
 # TODO: How to define??
 type_dict = {
@@ -77,9 +78,11 @@ case_dict = {
 case_names = case_dict.keys()
 case_modules = case_dict.values()
 
+## FORMATTING
 # Define date format to be used in file names by datetime.datetime.strftime
 date_file_format = '%Y%m%d'
 
+## FILE IMPORT PATTERNS
 # Define search patterns
 dt_pattern = "dt = ([0-9]*[.[0-9]*]?)"
 prm_patterns = {
@@ -91,6 +94,7 @@ prm_patterns = {
     'nsave3Dend' : "nsave3Dend\s*=\s*([0-9]*[.[0-9]*]?)",
     }
 
+## PLOT FORMATTING
 quiver_scale_factor = {
     "BOMEX" : 500,
     "DYCOMS_RF01" : 750,
@@ -99,7 +103,6 @@ quiver_scale_factor = {
     "LBA" : 500,
     } # list of cases, append as needed
 
-
 figure_scale = {
     "BOMEX" : 1,
     "DYCOMS_RF01" : 1,
@@ -107,3 +110,67 @@ figure_scale = {
     "RICO" : 2,      # grid is huge, individual arrows can barely be distinguished
     "LBA" : 1,
     } # list of cases, append as needed
+
+# Power limit for tick floating point formatting
+pow_lim = 1
+
+# List of fontsizes
+fontsizes = {
+    'labels' : 25,
+    'ticks' : 20,
+    'title' : 30,
+    'legend' : 18,
+    }
+
+# Line formatting for comparison plots
+comp_style = {
+    'clubb' : {
+        'color' : 'red',
+        'lw'    : 3,
+        'ls'    : '--',
+        'label' : 'new CLUBB'
+        },
+    'sam'   : {
+        'color' : 'black',
+        'lw'    : 5,
+        'ls'    : '-',
+        'label' : 'SAM-LES'
+        },
+    'old'   : {
+        'color' : 'green',
+        'lw'    : 3,
+        'ls'    : ':',
+        'label' : 'old CLUBB'
+        },
+    }
+
+# List of line styles (cycling)
+styles = ['-','--','-.',':']
+
+# Legend positions for both x-axes
+legend_pos = [2,1]
+
+# Distinguishing titles for legends
+legend_title = ['bottom', 'top']
+
+# List of distinguishable colors for multiple plots lines
+#             red       blue      green     purple    brown     black     grey      orange    magenta
+color_arr = ['#e41a1c','#377eb8','#4daf4a','#984ea3','#a65628','#000000','#999999','#ffa600','#f750bf']
+
+## Horizontal cloud slice plots
+# Line colors for secondary plots in cloud plot
+col_3d = {
+    'uw' : 'g',
+    'vw' : 'r',
+    }
+
+# Width ratios of primary to secondary plot
+width_ratio = [5,1]
+
+# Interpolation algorithm for imshow of vertical wind component
+cloud_interpolation = 'quadric'
+
+# Legend location in seconary subplot
+legend_pos_3d = 1
+
+# TODO: Define dictionaty for fontsizes in 3d plot

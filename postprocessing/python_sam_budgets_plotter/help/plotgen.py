@@ -10,6 +10,8 @@ import matplotlib as mpl
 from matplotlib import pyplot as mpp
 import matplotlib.animation as manim
 from matplotlib.backends.backend_pdf import PdfPages
+from matplotlib.ticker import ScalarFormatter as stick
+from mpl_toolkits.axes_grid1 import make_axes_locatable
 from netCDF4 import Dataset
 from PyPDF2 import PdfFileWriter as pdfw, PdfFileReader as pdfr
 
@@ -299,7 +301,7 @@ def plot_default(plots, cf, data, h, centering):
         # pb.get_units() needs nc
         name = plot_case_name.format(plot=plot_label)
         imageNames.append(name)
-        pb.plot_profiles(data[plot_label], h, units, cf.yLabel, title, os.path.join(jpg_dir,name), startLevel=0, lw=cf.lw, grid=False, centering=centering, pdf=pdf)
+        pb.plot_profiles(data[plot_label], h, units, cf.yLabel, title, os.path.join(jpg_dir,name), startLevel=plots.startLevel, lw=cf.lw, grid=False, centering=centering, pdf=pdf)
     pdf.close()
     
     # write html page
@@ -328,7 +330,7 @@ def plot_default(plots, cf, data, h, centering):
     os.rename(os.path.join(out_dir,'tmp.pdf'), out_pdf) # rename newly created pdf
 
 
-def plot_3d(plots, cf, data, h, prm_vars, fps=1, gif=False):
+def plot_3d(plots, cf, data, h, prm_vars, fps=2, gif=False):
     """
     Generate horizontal output showing cloud outlines and wind speeds
     TODO: Special handling of RICO, because of huge grid -> split up grid in multiple subgrids?
@@ -341,6 +343,8 @@ def plot_3d(plots, cf, data, h, prm_vars, fps=1, gif=False):
     u_3d = data['u']
     v_3d = data['v']
     w_3d = data['w']
+    uw = data['uw']
+    vw = data['vw']
     logger.debug(qn_3d.shape)
     logger.debug(u_3d.shape)
     logger.debug(v_3d.shape)
@@ -357,20 +361,43 @@ def plot_3d(plots, cf, data, h, prm_vars, fps=1, gif=False):
     dims = qn_3d.shape
     # Create meshgrid for 2d plot
     logger.info('Create meshgrid')
-    grid_1d = np.arange(dims[1])*cf.dxy
+    grid_1d = np.arange(dims[1])
     xgrid, ygrid = np.meshgrid(grid_1d, grid_1d)
     logger.info('Setup color maps')
-    # Create normalization for projection onto colormap
-    norm = mpl.colors.Normalize(vmin=w_3d.min(), vmax=w_3d.max())
     # Calculate cloud fraction for shading of height indicator
     cloud_frac_cmap = mpl.cm.get_cmap(plots.cloud_frac_cmap)
     cloud_frac = (qn_3d>0).mean(axis=(1,2))
     cloud_frac = cloud_frac/cloud_frac.max()
-    colors = cloud_frac_cmap(cloud_frac)
+    cloud_colors = cloud_frac_cmap(cloud_frac)
     # Get quiver cmap
-    quiver_cmap = mpl.cm.get_cmap(plots.quiver_cmap)
+    #quiver_cmap = mpl.cm.get_cmap(plots.quiver_cmap)
+    ## Generate quiver colormap
+    # Get limits of w data in order to generate colormap
+    wlim = w_3d.min(),w_3d.max()
+    # Create normalization for projection onto colormap
+    norm = mpl.colors.Normalize(vmin=wlim[0], vmax=wlim[1])
+    # Calculate position of 0 in normalized data (projected onto [0;1])
+    zero = (0-wlim[0])/(wlim[1]-wlim[0])
+    grey_tone = 1
+    # Get color codes:
+    red = mpl.colors.to_rgb('xkcd:red')
+    red = (.9,0,0)
+    green = mpl.colors.to_rgb('tab:green')
+    green = (0,.75,0)
+    sky = 'skyblue'
+    #sky = (.7,.9,1)
+    #green = mpl.colors.to_rgb('orange')
+    #green = (1,.5,0)
+    
+    cdict = {"red":((0,red[0],red[0]),(zero,grey_tone,grey_tone),(1,green[0],green[0])),
+             "green":((0,red[1],red[1]),(zero,grey_tone,grey_tone),(1,green[1],green[1])),
+             "blue":((0,red[2],red[2]),(zero,grey_tone,grey_tone),(1,green[2],green[2])),
+             #"alpha":((0,1,1),(zero,0,0),(1,1,1))
+             }
+    quiver_cmap = mpl.colors.LinearSegmentedColormap('quiver_cmap',cdict, N=1000)
     # Define base figsize
-    figsize = np.array(mpp.rcParams['figure.figsize'])*4
+    #figsize = np.array(mpp.rcParams['figure.figsize'])*4
+    figsize = (32.5,20)
     logger.info('Setup mp4 output')
     # Initialize ffmpeg
     Writer = manim.writers['ffmpeg']
@@ -391,36 +418,35 @@ def plot_3d(plots, cf, data, h, prm_vars, fps=1, gif=False):
         # Clear figures
         fig.clear()
         # Prepare canvas
-        ax1, ax2 = fig.subplots(1, 2, gridspec_kw={'width_ratios':[50,1]})
-        wt_title = wt.replace('_',' ')
-        fig.suptitle(title.format(h=h[i], wt=wt_title), fontsize=20)
-        #logger.debug("Set ylim to (%f, %f)", -prm_vars['dx'], dims[1]*prm_vars['dx'])
-        ax1.set_ylim(-prm_vars['dx'], dims[1]*prm_vars['dx'])
-        ax2.set_xlim(0,1)
-        ax2.set_xticks([])
-        ax2.set_ylim(0, h_limits[-1])
-        ax1.set_title('Cloud cover and {} vectors'.format(wt_title), loc ='left', fontsize=20)
-        ax2.set_title('height\nlevel')
-        ax2.set_ylabel('Cloud fraction', fontsize=16)
+        ax1, ax2 = fig.subplots(1, 2, gridspec_kw={'width_ratios':width_ratio})
         # Get data at height level i
         qn = qn_3d[i]
         u = u_3d[i]
         v = v_3d[i]
         w = w_3d[i]
+        # Print vertical wind component array as background image
+        #pc = ax1.scatter(xgrid, ygrid, c=w, cmap=quiver_cmap, norm=norm, marker='s', alpha=.5, s=200)
+        pc = ax1.imshow(w, cmap=quiver_cmap, norm=norm, interpolation=cloud_interpolation, origin='lower')
         # Plot cloud contour fields
-        cs = ax1.contourf(xgrid, ygrid, qn>0, levels=[0,.5,1], colors=['white','skyblue'])
+        cs = ax1.contourf(xgrid, ygrid, qn>0, levels=[.5,1], colors=[sky], extend='neither', alpha=.5)
+        #cs = ax1.contourf(xgrid, ygrid, qn>0, levels=[.5,1], colors=[sky], extend='neither', linewidths=[10])
         # Plot wind fields
         if 'total' in wt:
-            q = ax1.quiver(xgrid, ygrid, u, v, w, angles='xy', minshaft=2, minlength=0, scale=quiver_scale_factor[cf.case], cmap=quiver_cmap, norm=norm)
+            #q = ax1.quiver(xgrid, ygrid, u, v, w, angles='xy', minshaft=2, minlength=0, scale=quiver_scale_factor[cf.case], cmap=quiver_cmap, norm=norm)
+            q = ax1.quiver(xgrid, ygrid, u, v, angles='xy', minshaft=2, minlength=0, scale=quiver_scale_factor[cf.case], pivot='mid')
         else:
             # Calculate deviation from horizontal mean
             u_dev = u - u.mean()
             v_dev = v - v.mean()
-            q = ax1.quiver(xgrid, ygrid, u_dev, v_dev, w, angles='xy', minshaft=2, minlength=0, scale=quiver_scale_factor[cf.case]/5, cmap=quiver_cmap, norm=norm)
+            #q = ax1.quiver(xgrid, ygrid, u_dev, v_dev, w, angles='xy', minshaft=2, minlength=0, scale=quiver_scale_factor[cf.case]/5, cmap=quiver_cmap, norm=norm)
+            q = ax1.quiver(xgrid, ygrid, u_dev, v_dev, angles='xy', minshaft=2, minlength=0, scale=quiver_scale_factor[cf.case]/5, pivot='mid')
         
         # Add colorbar to ax1
-        cb = fig.colorbar(q, ax=ax1, aspect=50)
-        cb.ax.set_ylabel('Vertical wind velocity', fontsize=16)
+        divider = make_axes_locatable(ax1)
+        cax = divider.append_axes('right', size='5%',pad=.05)
+        cb = fig.colorbar(pc, cax=cax)
+        cb.ax.set_ylabel('Vertical wind velocity', fontsize=fontsizes['labels'])
+        cb.ax.tick_params(labelsize=fontsizes['labels'])
         # Create wind vector field
         wind_field = np.stack((u,v))
         # Calculate mean horizontal wind strength
@@ -430,32 +456,74 @@ def plot_3d(plots, cf, data, h, prm_vars, fps=1, gif=False):
         mean_dir = np.arccos(mean_wind[0]/np.linalg.norm(mean_wind))*180/np.pi
         if mean_wind[1]<0:
             mean_dir = 360-mean_dir
-            # Generate quiver key
-            ax1.quiverkey(q, .8, 1.01, mean_speed, 'Mean wind: {:.1f}'.format(mean_speed)+r'$\frac{m}{s}$', angle=mean_dir, labelsep=.5, labelpos='E', fontproperties={'size':20})
-            # Fill second subplot
-            # Generate Rectangles
-            for idx in range(len(h)):
-                ax2.add_patch(mpl.patches.Rectangle((0, h_limits[idx]), 1, h_extent[idx], color=colors[idx]))
-                #ax2_dev.add_patch(mpl.patches.Rectangle((0, h_limits[idx]), 1, h_extent[idx], color=colors[idx]))
-            # Add height indicator
-            ax2.axhline(h[i], 0, 1, color='black')
-            ax2.arrow(2.5, h[i], -.01, 0, color='black', head_width=h_extent.mean(), head_length=1).set_clip_on(False)
-            # Generate output names
-            #logger.debug(plot_case_name)
-            plot_case_name_frame = plot_case_name.format(wt=wt, plot=int(h[i]))
-            #logger.debug(os.path.join(out_dir, plot_case_name.format(plot=int(h[i]))))
-            for el in ax1.get_xticklabels()+ax1.get_yticklabels():
-                el.set_fontsize(20)
-            # Reduce blank space between subplots (using fig.subplots_adjust, because tight_layout isnt working properly)
-            #fig.tight_layout()
-            fig.subplots_adjust(wspace=0)
-            # Save as png
-            #logger.debug(os.path.join(jpg_dir, plot_case_name_frame))
-            fig.savefig(os.path.join(jpg_dir, plot_case_name_frame))
-            # Save to pdf
-            pdf.savefig(fig)
-            #logger.debug("frame %d saved",i)
-            fig.canvas.draw_idle()
+        # Generate quiver key
+        ax1.quiverkey(q, .8, 1.01, mean_speed, 'Mean wind: {:.1f}'.format(mean_speed)+r'$\frac{m}{s}$', angle=mean_dir, labelsep=.5, labelpos='E', fontproperties={'size':20})
+        # Fill second subplot
+        for line in plots.sortPlots_std:
+            ax2.plot(data[line][1], h, label=data[line][0], color=col_3d[line], ls='-', lw=5)
+        # Generate Rectangles
+        xlims = ax2.get_xlim()
+        for idx in range(len(h)):
+            ax2.add_patch(mpl.patches.Rectangle((xlims[0], h_limits[idx]), xlims[1]-xlims[0], h_extent[idx], color=cloud_colors[idx]))
+        # Format plot
+        wt_title = wt.replace('_',' ')
+        fig.suptitle(title.format(h=h[i], wt=wt_title), fontsize=fontsizes['title'])
+        #logger.debug("Set ylim to (%f, %f)", -prm_vars['dx'], dims[1]*prm_vars['dx'])
+        ax1.set_xlim(-.6, dims[1]-.4)
+        ax1.set_ylim(-.6, dims[2]-.4)
+        ax2.set_ylim(0, h_limits[-1])
+        ax1.set_xlabel(r'Eastward grid dimension $\mathrm{\left[100 m\right]}$', fontsize=fontsizes['labels'])
+        ax1.set_ylabel(r'Northward grid dimension $\mathrm{\left[100 m\right]}$', fontsize=fontsizes['labels'])
+        ax1.set_title('Cloud cover and {} vectors'.format(wt_title), loc ='left', fontsize=fontsizes['title'])
+        ax2.set_title('Profile of momentum fluxes', fontsize=fontsizes['title'])
+        ax2.set_ylabel(r'Cloud fraction / Height $\mathrm{\left[m\right]}$', fontsize=fontsizes['labels'])
+        ax2.set_xlabel(r"Vertical momentum fluxes $\mathrm{\left[\frac{m^2}{s^2}\right]}$", fontsize=fontsizes['labels'])
+        # Generate output names
+        #logger.debug(plot_case_name)
+        plot_case_name_frame = plot_case_name.format(wt=wt, plot=int(h[i]))
+        #logger.debug(os.path.join(out_dir, plot_case_name.format(plot=int(h[i]))))
+        ## Modify ticks
+        # Set fontsize
+        ax1.tick_params(axis='both', labelsize=fontsizes['ticks'])
+        ax2.tick_params(axis='both', labelsize=fontsizes['ticks'])
+        # Change labels
+        #labels = []
+        #logger.debug('xticks old: %s',str(list(ax1.get_xticklabels())))
+        #for el in ax1.get_xticks():
+            #try:
+                #labels.append(int(el*prm_vars['dx']))
+            #except ValueError as ve:
+                #labels.append('')
+        #ax1.set_xticklabels(labels)
+        ##logger.debug('xticks new: %s',str(list(ax1.get_xticklabels())))
+        #labels = []
+        ##logger.debug('yticks old: %s',str(list(ax1.get_yticklabels())))
+        #for el in ax1.get_yticks():
+            #try:
+                #labels.append(int(el*prm_vars['dx']))
+            #except ValueError as ve:
+                #labels.append('')
+        #ax1.set_yticklabels(labels)
+        ax2.legend(loc=legend_pos_3d, prop={'size': fontsizes['legend']})
+        ax2.axvline(x=0, color='k', ls='--', alpha=.5)
+        # Add height indicator
+        ax2.axhline(h[i], 0, 1, color='black')
+        ax2.arrow(xlims[1]+(xlims[1]-xlims[0])/10, h[i], -(xlims[1]-xlims[0])/10, 0, length_includes_head=True, color='black', head_width=h_extent.mean(), head_length=(xlims[1]-xlims[0])/10).set_clip_on(False)
+        # Set tick label format to scalar formatter with length sensitive format (switch to scientific format when a set order of magnitude is reached)
+        ticks = stick(useMathText=True)
+        ticks.set_powerlimits((-pow_lim,pow_lim))
+        ax2.xaxis.get_offset_text().set_size(20)
+        #logger.debug('yticks new: %s',str(list(ax1.get_yticklabels())))
+        # Reduce blank space between subplots (using fig.subplots_adjust, because tight_layout isnt working properly)
+        #fig.tight_layout()
+        fig.subplots_adjust(wspace=0, hspace=0)
+        # Save as png
+        #logger.debug(os.path.join(jpg_dir, plot_case_name_frame))
+        fig.savefig(os.path.join(jpg_dir, plot_case_name_frame))
+        # Save to pdf
+        pdf.savefig(fig)
+        #logger.debug("frame %d saved",i)
+        fig.canvas.draw_idle()
     logger.info('Generate ouput')
     for wt in plots.wind_types:
         logger.info(wt)
@@ -468,9 +536,9 @@ def plot_3d(plots, cf, data, h, prm_vars, fps=1, gif=False):
         logger.info('Save files')
         logger.debug('%d frames',len(h))
         if gif:
-            ani.save(os.path.join(out_dir, plot_case_name.format(wt=wt, plot='mov'))+'.gif', writer='imagemagick', fps=30)
+            ani.save(os.path.join(out_dir, plot_case_name.format(wt=wt, plot='mov'))+'.gif', writer='imagemagick', fps=fps)
         else:
-            ani.save(os.path.join(out_dir, plot_case_name.format(wt=wt, plot='mov'))+'.mp4', fps=30)
+            ani.save(os.path.join(out_dir, plot_case_name.format(wt=wt, plot='mov'))+'.mp4', fps=fps)
         pdf.close()
     
 
@@ -492,7 +560,7 @@ def plot_comparison(plots, cf, data_clubb, data_sam, h_clubb, h_sam, plot_old_cl
         if plot_old_clubb:
             pb.plot_comparison(data_clubb[plot_label], data_sam[plot_label], h_clubb, h_sam, units, cf.yLabel, title, os.path.join(jpg_dir, plot_case_name.format(plot=plot_label)), startLevel=0, grid=False, pdf=pdf, plot_old_clubb=plot_old_clubb, data_old=data_old[plot_label], level_old=h_old)
         else:
-            pb.plot_comparison(data_clubb[plot_label], data_sam[plot_label], h_clubb, h_sam, units, cf.yLabel, title, os.path.join(jpg_dir, plot_case_name.format(plot=plot_label)), startLevel=0, grid=False, pdf=pdf)
+            pb.plot_comparison(data_clubb[plot_label], data_sam[plot_label], h_clubb, h_sam, units, cf.yLabel, title, os.path.join(jpg_dir, plot_case_name.format(plot=plot_label)), startLevel=plots.startLevel, grid=False, pdf=pdf)
     pdf.close()
     # TODO: Generate html
     
@@ -583,25 +651,49 @@ def plotgen_default(plots, cf):
 def plotgen_3d(plots, cf):
     """
     bla
-    TODO: specify mp4 or gif outout type
+    TODO: Add choice mp4 or gif to setup file
     """
     logger.info("plotgen_3d")
-    nc, = load_nc(plots, cf)
+    gif = None
+    for n in range(ntrials):
+        user_input = raw_input('Movie output as .mp4 (1) or .gif(2)? -> ')
+        try:
+            if int(user_input)==2:
+                gif = True
+                break
+            elif int(user_input)==1:
+                gif = False
+                break
+            else:
+                logger.warning('Invalid input. Choice of valid input options: 1 (.mp4), 2 (.gif)')
+                continue
+        except ValueError as err:
+            logger.warning('Invalid input. Choice of valid input options: 1 (.mp4), 2 (.gif)')
+            continue
+    if gif is None:
+        logger.error('Too many invalid trials. Exiting...')
+        sys.exit()
+    nc_std,nc_3d = load_nc(plots, cf)
     logger.info('Fetching information from prm file')
     prm_vars = get_values_from_prm(cf)
     logger.info('Fetching dimension variables')
     # t not necessarily needed for momentary plot TODO
-    #t = get_t_dim(nc, create=True, dt=prm_vars['dt'])
-    h = get_h_dim(nc, model='sam', create=True, cf=cf)
+    t = get_t_dim(nc_std, create=False)
+    idx_t0 = (np.abs(t - cf.startTime)).argmin()
+    idx_t1 = (np.abs(t - cf.endHeight)).argmin()+1
+    h = get_h_dim(nc_std, model='sam', create=False, cf=cf)
     idx_h0 = (np.abs(h - cf.startHeight)).argmin()
     idx_h1 = (np.abs(h - cf.endHeight)).argmin()+1
     h = h[idx_h0:idx_h1]
+    logger.info("Fetching sam data")
+    data_std = get_all_variables(nc_std, plots.lines_std, plots.sortPlots_std, len(h), len(t), idx_t0, idx_t1, idx_h0, idx_h1, filler=plots.filler)
     logger.info("Fetching sam_3d data")
-    data = get_all_variables(nc, plots.lines, plots.sortPlots, len(h), 1, 0, 0, idx_h0, idx_h1, filler=plots.filler)
-    data = {key:value[0][-1]  for (key,value) in data.iteritems()}
-    logger.debug(data)
+    data_3d = get_all_variables(nc_3d, plots.lines_3d, plots.sortPlots_3d, len(h), 1, 0, 0, idx_h0, idx_h1, filler=plots.filler)
+    data = {key:value[0][-1]  for (key,value) in data_3d.iteritems()}
+    data.update({key:[value[0][0], value[0][-1]] for (key,value) in data_std.iteritems()})
+    logger.debug("3d data: %s", str(data))
     logger.info("Create plots")
-    plot_3d(plots, cf, data, h, prm_vars)
+    plot_3d(plots, cf, data, h, prm_vars, gif=gif)
     
     
 def plotgen_comparison(plots, cf):
