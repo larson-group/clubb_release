@@ -987,7 +987,8 @@ module advance_clubb_core_module
 
        ! Compute sigma_sqd_w (dimensionless PDF width parameter)
        sigma_sqd_w &
-       = compute_sigma_sqd_w( gamma_Skw_fnc, wp2, thlp2, rtp2, wpthlp, wprtp )
+       = compute_sigma_sqd_w( gamma_Skw_fnc, wp2, thlp2, rtp2, &
+                              up2, vp2, wpthlp, wprtp, upwp, vpwp )
 
        ! Smooth in the vertical using interpolation
        sigma_sqd_w = zt2zm( zm2zt( sigma_sqd_w ) )
@@ -2513,7 +2514,8 @@ module advance_clubb_core_module
     end if
 
     ! Compute sigma_sqd_w (dimensionless PDF width parameter)
-    sigma_sqd_w = compute_sigma_sqd_w( gamma_Skw_fnc, wp2, thlp2, rtp2, wpthlp, wprtp )
+    sigma_sqd_w = compute_sigma_sqd_w( gamma_Skw_fnc, wp2, thlp2, rtp2, &
+                                       up2, vp2, wpthlp, wprtp, upwp, vpwp )
 
     if ( l_stats_samp .and. l_samp_stats_in_pdf_call ) then
       call stat_update_var( igamma_Skw_fnc, gamma_Skw_fnc, & ! intent(in)
