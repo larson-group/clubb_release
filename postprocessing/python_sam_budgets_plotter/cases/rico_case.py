@@ -25,6 +25,7 @@ startTime = 181.0     # [minutes]
 endTime = 360.0       # [minutes]
 startHeight = 0.0     # [m]
 endHeight = 2500.0    # [m]
+time_3d = 259200.0    # dt
 
 # run entry for header in html file
 run = '{case}_{nx}x{ny}x{nz}_{dxy}m_{dz}m_{dt}s'.format(case=case, nx=nx, ny=ny, nz=nz, dxy=dxy, dz=dz, dt=dt)
@@ -42,7 +43,14 @@ out_pdf = '{case}_{dx}x{dx}_{{type}}_{{date}}.pdf'.format(case=case.lower(),dx=n
 #sam_file = '/home/sdomke/workspace/clubb/avi_out/RICO_256x256x100_drizzle_190207.nc'
 sam_file = '/home/sdomke/workspace/clubb/avi_out/grid_change/RICO_256x256x100_drizzle.nc'
 # nc file generated from .bin3D output
-sam_3d_file = '/home/sdomke/workspace/clubb/avi_out/out3d/RICO_256x256x100_drizzle_128_0000259200.nc'
+sam_3d_file = '/home/sdomke/workspace/clubb/avi_out/out3d/RICO_256x256x100_drizzle_256_0000259200.nc'
+
+# nc files for publishing runs with bigger horizontal grid (256x256):
+out_dir = '/home/sdomke/workspace/plotgen_out/publishing_runs/{case}_{{date}}/'.format(case=case.lower())
+sam_file = '/home/sdomke/workspace/clubb/avi_out/publishing_runs/RICO_512x512x100_drizzle.nc'
+sam_3d_file = '/home/sdomke/workspace/clubb/avi_out/publishing_runs/3d/RICO_256x256x100_drizzle_256_0000259200.nc'
+
+
 ## CLUBB
 clubb_zm_file = '/home/sdomke/workspace/clubb/clubb_out/rico_zm.nc'
 clubb_zt_file = '/home/sdomke/workspace/clubb/clubb_out/rico_zt.nc'

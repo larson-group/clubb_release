@@ -6,6 +6,7 @@ import re
 import logging
 from datetime import datetime as dt
 import numpy as np
+from scipy.ndimage.morphology import binary_dilation as bin_dilation
 import matplotlib as mpl
 from matplotlib import pyplot as mpp
 import matplotlib.animation as manim
@@ -250,6 +251,8 @@ def get_all_variables(nc, lines, plotLabels, nh, nt, t0, t1, h0, h1, filler=0):
                 logger.debug(t1>t0)
                 if t1>t0:
                     data = pb.mean_profiles(data, t0, t1, h0, h1)
+                else:
+                    data = data[h0:h1]
                 # Save to plots, var[2] not needed?
                 #plot_lines.append([var[0], var[1], var[2], var[4], data])
                 plot_lines.append([var[0], var[1], var[4], data])
@@ -330,7 +333,7 @@ def plot_default(plots, cf, data, h, centering):
     os.rename(os.path.join(out_dir,'tmp.pdf'), out_pdf) # rename newly created pdf
 
 
-def plot_3d(plots, cf, data, h, prm_vars, fps=2, gif=False):
+def plot_3d(plots, cf, data, h, h_limits, h_extent, prm_vars, fps=2, gif=False):
     """
     Generate horizontal output showing cloud outlines and wind speeds
     TODO: Special handling of RICO, because of huge grid -> split up grid in multiple subgrids?
@@ -338,126 +341,223 @@ def plot_3d(plots, cf, data, h, prm_vars, fps=2, gif=False):
     logger.info('plot_3d')
     # Initialise names
     out_dir, jpg_dir, plot_case_name, out_pdf = init_plotgen(plots, cf)
-    # Unpack arrays
+    
+    ### Get data
+    logger.info('Unpack data and perform calculations')
+    ## Unpack arrays
     qn_3d = data['qn']
     u_3d = data['u']
     v_3d = data['v']
     w_3d = data['w']
-    uw = data['uw']
-    vw = data['vw']
-    logger.debug(qn_3d.shape)
-    logger.debug(u_3d.shape)
-    logger.debug(v_3d.shape)
-    logger.debug(w_3d.shape)
-    # Define height level limits
-    h_limits = np.array([0])
-    logger.debug(h)
-    for i in range(len(h)):
-        h_limits = np.append(h_limits, 2*h[i]-h_limits[i])
-    logger.debug(h_limits)
-    h_extent = np.diff(h_limits)
-    logger.debug(h_extent)
+    ## Calculate needed values
+    # Create cloud mask
+    cld_mask = qn_3d>cld_lim
+    # Create dilated cloud mask with cross structure element
+    # Create structure element
+    dot = np.zeros((3,3))
+    dot[1,1]=1
+    mid = np.ones((3,3))
+    for i in range(4):
+        mid[i/2*2,i%2*2]=0
+    struct = np.stack((dot,mid,dot))
+    # Apply dilation
+    cld_mask_dilated = bin_dilation(cld_mask, struct)
+    # Profile of mean wind component
+    um = u_3d.mean(axis=(1,2))
+    vm = v_3d.mean(axis=(1,2))
+    wm = w_3d.mean(axis=(1,2))
+    # 3d field of u'w' and v'w'
+    up = u_3d-um.reshape((um.size,1,1))
+    vp = v_3d-vm.reshape((vm.size,1,1))
+    wp = w_3d-wm.reshape((wm.size,1,1))
+    uw = up*wp
+    vw = vp*wp
+    # Profile of horizontal wind strength
+    wind_strength = np.linalg.norm(np.stack((um,vm)), axis=0)
+    # Profile of wind direction
+    mean_dir = np.arccos(um/wind_strength)*180/np.pi
+    mean_dir = np.where(vm<0, 360-mean_dir, mean_dir)
+    # DEBUGGING
+    logger.debug("qn_3d.shape=%s",str(qn_3d.shape))
+    logger.debug("u_3d.shape=%s",str(u_3d.shape))
+    logger.debug("v_3d.shape=%s",str(v_3d.shape))
+    logger.debug("w_3d.shape=%s",str(w_3d.shape))
+    logger.debug("um.shape=%s",str(um.shape))
+    logger.debug("vm.shape=%s",str(vm.shape))
+    logger.debug("wm.shape=%s",str(wm.shape))
+    logger.debug("up.shape=%s",str(up.shape))
+    logger.debug("vp.shape=%s",str(vp.shape))
+    logger.debug("wp.shape=%s",str(wp.shape))
+    logger.debug("uw.shape=%s",str(uw.shape))
+    logger.debug("vw.shape=%s",str(vw.shape))
+    logger.debug("wind_strength.shape=%s",str(wind_strength.shape))
+    logger.debug("mean_dir.shape=%s",str(mean_dir.shape))
+    logger.debug("uw.shape=%s",str(uw.shape))
+    ## Define height level limits (DEPRECATED: moved to plotgen_3d and introduced as parameter, as limits not reconstructable from sliced h)
+    #h_limits = np.array([0])
+    #logger.debug(h)
+    #for i in range(len(h)):
+        #h_limits = np.append(h_limits, 2*h[i]-h_limits[i])
+    #logger.debug(h_limits)
+    #h_extent = np.diff(h_limits)
+    #logger.debug(h_extent)
+    # Create arrays to save conditional u'w'
+    uw_cld = np.zeros(um.size)
+    vw_cld = np.zeros(vm.size)
+    uw_dilated = np.zeros(um.size)
+    vw_dilated = np.zeros(vm.size)
+    
+    ### Get colormaps
+    # TODO: what if uw.min*uw.max>0?
+    # TODO: for uw and vw, what to do with outliers???
+    logger.info('Setup color maps')
+    ## Get cloud fraction color map
+    # Calculate cloud fraction for shading of height indicator
+    cloud_frac_cmap = mpl.cm.get_cmap(plots.cloud_frac_cmap)
+    cloud_frac = cld_mask.mean(axis=(1,2))
+    cloud_frac = cloud_frac/cloud_frac.max()
+    # Generate colors from color map
+    cloud_colors = cloud_frac_cmap(cloud_frac)
+    ## Generate quiver colormap
+    # Define segment colors:
+    #red = mpl.colors.to_rgb('xkcd:red')
+    red = (.9,0,0)
+    #green = mpl.colors.to_rgb('tab:green')
+    green = (0,.75,0)
+    cld_col = 'skyblue'
+    dilated_col = 'mediumblue'
+    grey_tone = 1       # grey value at 0
+    ### Get colormaps and normalizations for projection onto colormap
+    ## UW
+    # Get limits for uw data in order to generate colormap
+    uwlim = uw.min(), uw.max()
+    logger.debug("uwlim=(%f,%f)",uwlim[0], uwlim[1])
+    logger.debug('uwlim[0]=(%f,%f)',uw[0].min(), uw[0].max())
+    norm_uw = mpl.colors.Normalize(vmin=uwlim[0], vmax=uwlim[1])
+    # Calculate position of 0 in normalized data (projected onto [0;1])
+    zero_uw = (0-uwlim[0])/(uwlim[1]-uwlim[0])
+    # Define color map segments
+    cdict_uw = {"red":((0,red[0],red[0]),(zero_uw,grey_tone,grey_tone),(1,green[0],green[0])),
+                "green":((0,red[1],red[1]),(zero_uw,grey_tone,grey_tone),(1,green[1],green[1])),
+                "blue":((0,red[2],red[2]),(zero_uw,grey_tone,grey_tone),(1,green[2],green[2])),
+                #"alpha":((0,1,1),(zero,0,0),(1,1,1))
+                }
+    # Create color map
+    quiver_cmap_uw = mpl.colors.LinearSegmentedColormap('quiver_cmap_uw', cdict_uw, N=1000)
+    
+    
+    ## VW
+    # Get limits for vw data in order to generate colormap
+    vwlim = vw.min(), vw.max()
+    logger.debug("vwlim=(%f,%f)",vwlim[0], vwlim[1])
+    logger.debug('vwlim[0]=(%f,%f)',vw[0].min(), vw[0].max())
+    norm_vw = mpl.colors.Normalize(vmin=vwlim[0], vmax=vwlim[1])
+    # Calculate position of 0 in normalized data (projected onto [0;1])
+    zero_vw = (0-vwlim[0])/(vwlim[1]-vwlim[0])
+    # Define color map segments
+    cdict_vw = {"red":((0,red[0],red[0]),(zero_vw,grey_tone,grey_tone),(1,green[0],green[0])),
+                "green":((0,red[1],red[1]),(zero_vw,grey_tone,grey_tone),(1,green[1],green[1])),
+                "blue":((0,red[2],red[2]),(zero_vw,grey_tone,grey_tone),(1,green[2],green[2])),
+                #"alpha":((0,1,1),(zero,0,0),(1,1,1))
+                }
+    # Create color map
+    quiver_cmap_vw = mpl.colors.LinearSegmentedColormap('quiver_cmap_vw', cdict_vw, N=1000)
+    
+    ## W
+    # Get limits of w data in order to generate colormap
+    wlim = w_3d.min(),w_3d.max()
+    norm_w = mpl.colors.Normalize(vmin=wlim[0], vmax=wlim[1])
+    # Calculate position of 0 in normalized data (projected onto [0;1])
+    zero_w = (0-wlim[0])/(wlim[1]-wlim[0])
+    # Define color map segments
+    cdict_w = {"red":((0,red[0],red[0]),(zero_w,grey_tone,grey_tone),(1,green[0],green[0])),
+             "green":((0,red[1],red[1]),(zero_w,grey_tone,grey_tone),(1,green[1],green[1])),
+             "blue":((0,red[2],red[2]),(zero_w,grey_tone,grey_tone),(1,green[2],green[2])),
+             #"alpha":((0,1,1),(zero,0,0),(1,1,1))
+             }
+    # Create color map
+    quiver_cmap_w = mpl.colors.LinearSegmentedColormap('quiver_cmap_w',cdict_w, N=1000)
+    
+    ## Plotting preparations
     # Get shape of arrays, here (z,x,y)
     dims = qn_3d.shape
     # Create meshgrid for 2d plot
     logger.info('Create meshgrid')
     grid_1d = np.arange(dims[1])
     xgrid, ygrid = np.meshgrid(grid_1d, grid_1d)
-    logger.info('Setup color maps')
-    # Calculate cloud fraction for shading of height indicator
-    cloud_frac_cmap = mpl.cm.get_cmap(plots.cloud_frac_cmap)
-    cloud_frac = (qn_3d>0).mean(axis=(1,2))
-    cloud_frac = cloud_frac/cloud_frac.max()
-    cloud_colors = cloud_frac_cmap(cloud_frac)
-    # Get quiver cmap
-    #quiver_cmap = mpl.cm.get_cmap(plots.quiver_cmap)
-    ## Generate quiver colormap
-    # Get limits of w data in order to generate colormap
-    wlim = w_3d.min(),w_3d.max()
-    # Create normalization for projection onto colormap
-    norm = mpl.colors.Normalize(vmin=wlim[0], vmax=wlim[1])
-    # Calculate position of 0 in normalized data (projected onto [0;1])
-    zero = (0-wlim[0])/(wlim[1]-wlim[0])
-    grey_tone = 1
-    # Get color codes:
-    red = mpl.colors.to_rgb('xkcd:red')
-    red = (.9,0,0)
-    green = mpl.colors.to_rgb('tab:green')
-    green = (0,.75,0)
-    sky = 'skyblue'
-    #sky = (.7,.9,1)
-    #green = mpl.colors.to_rgb('orange')
-    #green = (1,.5,0)
-    
-    cdict = {"red":((0,red[0],red[0]),(zero,grey_tone,grey_tone),(1,green[0],green[0])),
-             "green":((0,red[1],red[1]),(zero,grey_tone,grey_tone),(1,green[1],green[1])),
-             "blue":((0,red[2],red[2]),(zero,grey_tone,grey_tone),(1,green[2],green[2])),
-             #"alpha":((0,1,1),(zero,0,0),(1,1,1))
-             }
-    quiver_cmap = mpl.colors.LinearSegmentedColormap('quiver_cmap',cdict, N=1000)
-    # Define base figsize
+    # Define base figsize (DEPRECATED: moved to plot_defs.py)
     #figsize = np.array(mpp.rcParams['figure.figsize'])*4
-    figsize = (32.5,20)
+    #figsize = (32.5,20)
     logger.info('Setup mp4 output')
     # Initialize ffmpeg
     Writer = manim.writers['ffmpeg']
     writer = Writer(fps=fps, metadata={'artist':'Steffen Domke'})
-    # Generate title
-    title = plots.title_template.format(case = cf.case,
-                                        x = dims[1],
-                                        y = dims[2],
-                                        z = dims[0],
-                                        dx = prm_vars['dx'],
-                                        dz = h_extent.mean(),
-                                        t = (prm_vars['nsave3Dstart']+prm_vars['nsave3Dend'])*.5*prm_vars['dt'],
-                                        h = '{h}',
-                                        wt = '{wt}')
+    # Generate title (TODO: denote time interval in case file?)
+    title = plots.title_template.format(
+        case = cf.case,
+        x = dims[1],
+        y = dims[2],
+        z = dims[0],
+        dx = prm_vars['dx'],
+        dz = h_extent.mean(),
+        t = (cf.time_3d*cf.dt)/60.)
     # Define update function for mp4/gif creation
-    def update_plot(i, wt):
-        logger.debug('Generating frame %d',i)
+    def update_plot(framenumber, wt):
+        logger.debug('Generating frame %d', framenumber)
+        #logger.debug('wt: %s', wt)
+        
+        # Fill conditional u'w' arrays
+        if cld_mask[framenumber].sum()>0:
+            uw_cld[framenumber] = uw[framenumber, cld_mask[framenumber]].mean()
+            vw_cld[framenumber] = vw[framenumber, cld_mask[framenumber]].mean()
+        if cld_mask_dilated[framenumber].sum()>0:
+            uw_dilated[framenumber] = uw[framenumber, cld_mask_dilated[framenumber]].mean()
+            vw_dilated[framenumber] = vw[framenumber, cld_mask_dilated[framenumber]].mean()
+        
         # Clear figures
         fig.clear()
         # Prepare canvas
         ax1, ax2 = fig.subplots(1, 2, gridspec_kw={'width_ratios':width_ratio})
-        # Get data at height level i
-        qn = qn_3d[i]
-        u = u_3d[i]
-        v = v_3d[i]
-        w = w_3d[i]
+        # Get data at height level framenumber
+        #qn = qn_3d[framenumber]
+        u = u_3d[framenumber]
+        v = v_3d[framenumber]
+        #w = w_3d[framenumber]
         # Print vertical wind component array as background image
-        #pc = ax1.scatter(xgrid, ygrid, c=w, cmap=quiver_cmap, norm=norm, marker='s', alpha=.5, s=200)
-        pc = ax1.imshow(w, cmap=quiver_cmap, norm=norm, interpolation=cloud_interpolation, origin='lower')
+        if 'uw' in wt:
+            pc = ax1.imshow(uw[framenumber], cmap=quiver_cmap_uw, norm=norm_uw, interpolation=cloud_interpolation, origin='lower')
+        elif 'vw' in wt:
+            pc = ax1.imshow(vw[framenumber], cmap=quiver_cmap_vw, norm=norm_vw, interpolation=cloud_interpolation, origin='lower')
+        else:
+            pc = ax1.imshow(w_3d[framenumber], cmap=quiver_cmap_w, norm=norm_w, interpolation=cloud_interpolation, origin='lower')
         # Plot cloud contour fields
-        cs = ax1.contourf(xgrid, ygrid, qn>0, levels=[.5,1], colors=[sky], extend='neither', alpha=.5)
-        #cs = ax1.contourf(xgrid, ygrid, qn>0, levels=[.5,1], colors=[sky], extend='neither', linewidths=[10])
+        cs = ax1.contourf(xgrid, ygrid, cld_mask[framenumber], levels=[.5,1], colors=[cld_col], extend='neither', alpha=.5)
+        # Plot contour of halo
+        ax1.contour(xgrid, ygrid, cld_mask_dilated[framenumber], levels=[.5,1], colors=[dilated_col], extend='neither', alpha=.5)
         # Plot wind fields
         if 'total' in wt:
             #q = ax1.quiver(xgrid, ygrid, u, v, w, angles='xy', minshaft=2, minlength=0, scale=quiver_scale_factor[cf.case], cmap=quiver_cmap, norm=norm)
             q = ax1.quiver(xgrid, ygrid, u, v, angles='xy', minshaft=2, minlength=0, scale=quiver_scale_factor[cf.case], pivot='mid')
         else:
             # Calculate deviation from horizontal mean
-            u_dev = u - u.mean()
-            v_dev = v - v.mean()
+            #u_dev = u - um[framenumber]
+            #v_dev = v - v[framenumber]
             #q = ax1.quiver(xgrid, ygrid, u_dev, v_dev, w, angles='xy', minshaft=2, minlength=0, scale=quiver_scale_factor[cf.case]/5, cmap=quiver_cmap, norm=norm)
-            q = ax1.quiver(xgrid, ygrid, u_dev, v_dev, angles='xy', minshaft=2, minlength=0, scale=quiver_scale_factor[cf.case]/5, pivot='mid')
+            q = ax1.quiver(xgrid, ygrid, u-um[framenumber], v-vm[framenumber], angles='xy', minshaft=2, minlength=0, scale=quiver_scale_factor[cf.case]/5, pivot='mid')
         
         # Add colorbar to ax1
         divider = make_axes_locatable(ax1)
-        cax = divider.append_axes('right', size='5%',pad=.05)
+        cax = divider.append_axes('right', size='5%',pad=.1)
         cb = fig.colorbar(pc, cax=cax)
-        cb.ax.set_ylabel('Vertical wind velocity', fontsize=fontsizes['labels'])
+        if 'uw' in wt:
+            cb.ax.set_ylabel(r"u'w' $\mathrm{\left[\frac{m^2}{s^2}\right]}$", fontsize=fontsizes['labels'])
+        elif 'vw' in wt:
+            cb.ax.set_ylabel(r"v'w' $\mathrm{\left[\frac{m^2}{s^2}\right]}$", fontsize=fontsizes['labels'])
+        else:
+            cb.ax.set_ylabel(r'w $\mathrm{\left[\frac{m}{s}\right]}$', fontsize=fontsizes['labels'])
         cb.ax.tick_params(labelsize=fontsizes['labels'])
-        # Create wind vector field
-        wind_field = np.stack((u,v))
-        # Calculate mean horizontal wind strength
-        mean_speed = np.linalg.norm(wind_field, axis=0).mean()
-        # Calculate mean wind direction
-        mean_wind = wind_field.mean(axis=(1,2))
-        mean_dir = np.arccos(mean_wind[0]/np.linalg.norm(mean_wind))*180/np.pi
-        if mean_wind[1]<0:
-            mean_dir = 360-mean_dir
         # Generate quiver key
-        ax1.quiverkey(q, .8, 1.01, mean_speed, 'Mean wind: {:.1f}'.format(mean_speed)+r'$\frac{m}{s}$', angle=mean_dir, labelsep=.5, labelpos='E', fontproperties={'size':20})
+        ax1.quiverkey(q, .8, 1.01, wind_strength[framenumber], 'Mean wind: {:.1f}'.format(wind_strength[framenumber])+r'$\frac{m}{s}$', angle=mean_dir[framenumber], labelsep=.2*np.abs(um).max(), labelpos='E', fontproperties={'size':20})
         # Fill second subplot
         for line in plots.sortPlots_std:
             ax2.plot(data[line][1], h, label=data[line][0], color=col_3d[line], ls='-', lw=5)
@@ -467,21 +567,23 @@ def plot_3d(plots, cf, data, h, prm_vars, fps=2, gif=False):
             ax2.add_patch(mpl.patches.Rectangle((xlims[0], h_limits[idx]), xlims[1]-xlims[0], h_extent[idx], color=cloud_colors[idx]))
         # Format plot
         wt_title = wt.replace('_',' ')
-        fig.suptitle(title.format(h=h[i], wt=wt_title), fontsize=fontsizes['title'])
+        fig.suptitle(title.format(h=h[framenumber], wt=wt_title), fontsize=fontsizes['title'])
         #logger.debug("Set ylim to (%f, %f)", -prm_vars['dx'], dims[1]*prm_vars['dx'])
         ax1.set_xlim(-.6, dims[1]-.4)
         ax1.set_ylim(-.6, dims[2]-.4)
         ax2.set_ylim(0, h_limits[-1])
-        ax1.set_xlabel(r'Eastward grid dimension $\mathrm{\left[100 m\right]}$', fontsize=fontsizes['labels'])
-        ax1.set_ylabel(r'Northward grid dimension $\mathrm{\left[100 m\right]}$', fontsize=fontsizes['labels'])
-        ax1.set_title('Cloud cover and {} vectors'.format(wt_title), loc ='left', fontsize=fontsizes['title'])
+        ax2.yaxis.tick_right()
+        ax2.yaxis.set_label_position('right')
+        ax1.set_xlabel(r'Eastward grid dimension $\mathrm{{\left[{:.0f} m\right]}}$'.format(prm_vars['dx']), fontsize=fontsizes['labels'])
+        ax1.set_ylabel(r'Northward grid dimension $\mathrm{{\left[{:.0f} m\right]}}$'.format(prm_vars['dx']), fontsize=fontsizes['labels'])
+        ax1.set_title('Cloud cover and {}'.format(wt_title.split('+')[0]), loc ='left', fontsize=fontsizes['title'])
         ax2.set_title('Profile of momentum fluxes', fontsize=fontsizes['title'])
         ax2.set_ylabel(r'Cloud fraction / Height $\mathrm{\left[m\right]}$', fontsize=fontsizes['labels'])
         ax2.set_xlabel(r"Vertical momentum fluxes $\mathrm{\left[\frac{m^2}{s^2}\right]}$", fontsize=fontsizes['labels'])
         # Generate output names
         #logger.debug(plot_case_name)
-        plot_case_name_frame = plot_case_name.format(wt=wt, plot=int(h[i]))
-        #logger.debug(os.path.join(out_dir, plot_case_name.format(plot=int(h[i]))))
+        plot_case_name_frame = plot_case_name.format(wt=wt, plot=int(h[framenumber]))
+        #logger.debug(os.path.join(out_dir, plot_case_name.format(plot=int(h[framenumber]))))
         ## Modify ticks
         # Set fontsize
         ax1.tick_params(axis='both', labelsize=fontsizes['ticks'])
@@ -507,8 +609,8 @@ def plot_3d(plots, cf, data, h, prm_vars, fps=2, gif=False):
         ax2.legend(loc=legend_pos_3d, prop={'size': fontsizes['legend']})
         ax2.axvline(x=0, color='k', ls='--', alpha=.5)
         # Add height indicator
-        ax2.axhline(h[i], 0, 1, color='black')
-        ax2.arrow(xlims[1]+(xlims[1]-xlims[0])/10, h[i], -(xlims[1]-xlims[0])/10, 0, length_includes_head=True, color='black', head_width=h_extent.mean(), head_length=(xlims[1]-xlims[0])/10).set_clip_on(False)
+        ax2.axhline(h[framenumber], 0, 1, color='black')
+        ax2.arrow(xlims[0]-(xlims[1]-xlims[0])/10, h[framenumber], (xlims[1]-xlims[0])/10, 0, length_includes_head=True, color='black', head_width=h_limits[-1]/50., head_length=(xlims[1]-xlims[0])/10).set_clip_on(False)
         # Set tick label format to scalar formatter with length sensitive format (switch to scientific format when a set order of magnitude is reached)
         ticks = stick(useMathText=True)
         ticks.set_powerlimits((-pow_lim,pow_lim))
@@ -522,13 +624,13 @@ def plot_3d(plots, cf, data, h, prm_vars, fps=2, gif=False):
         fig.savefig(os.path.join(jpg_dir, plot_case_name_frame))
         # Save to pdf
         pdf.savefig(fig)
-        #logger.debug("frame %d saved",i)
+        #logger.debug("frame %d saved",framenumber)
         fig.canvas.draw_idle()
     logger.info('Generate ouput')
     for wt in plots.wind_types:
         logger.info(wt)
         # Create figures for output
-        fig = mpp.figure(figsize=figsize*figure_scale[cf.case])
+        fig = mpp.figure(figsize=np.array(figsize)*figure_scale[cf.case])
         logger.info("Creating output pdf: %s", out_pdf)
         pdf = PdfPages(out_pdf.format(wt=wt))
         logger.info('Generate output')
@@ -540,6 +642,18 @@ def plot_3d(plots, cf, data, h, prm_vars, fps=2, gif=False):
         else:
             ani.save(os.path.join(out_dir, plot_case_name.format(wt=wt, plot='mov'))+'.mp4', fps=fps)
         pdf.close()
+    # Create plots for conditional u'w':
+    logger.debug(plot_case_name)
+    uw_pdf = PdfPages(os.path.join(out_dir, out_pdf.format(wt='conditional_uw_profiles')))
+    pb.plot_profiles([["In-cloud mean of u'w'",True,0,uw_cld]], h, r"Cloud Conditional $\mathrm{\overline{u'w'}\ \left[\frac{m^2}{s^2}\right]}$", cf.yLabel, "In-cloud mean of u'w'", os.path.join(jpg_dir,'uw_cld'), startLevel=0, lw=cf.lw, grid=False, centering=False, pdf=uw_pdf)
+    
+    pb.plot_profiles([["Extended in-cloud mean of u'w'",True,0,uw_dilated]], h, r"Dilated Cloud Conditional $\mathrm{\overline{u'w'}\ \left[\frac{m^2}{s^2}\right]}$", cf.yLabel, "Extended in-cloud mean of u'w'", os.path.join(jpg_dir,'uw_dilated'), startLevel=0, lw=cf.lw, grid=False, centering=False, pdf=uw_pdf)
+    
+    pb.plot_profiles([["In-cloud mean of v'w'",True,0,vw_cld]], h, r"Cloud Conditional $\mathrm{\overline{v'w'}\ \left[\frac{m^2}{s^2}\right]}$", cf.yLabel, "In-cloud mean of v'w'", os.path.join(jpg_dir,'vw_cld'), startLevel=0, lw=cf.lw, grid=False, centering=False, pdf=uw_pdf)
+    
+    pb.plot_profiles([["Extended in-cloud mean of v'w'",True,0,vw_dilated]], h, r"Dilated Cloud Conditional $\mathrm{\overline{v'w'}\ \left[\frac{m^2}{s^2}\right]}$", cf.yLabel, "Extended in-cloud mean of v'w'", os.path.join(jpg_dir,'vw_dilated'), startLevel=0, lw=cf.lw, grid=False, centering=False, pdf=uw_pdf)
+    uw_pdf.close()
+    
     
 
 def plot_comparison(plots, cf, data_clubb, data_sam, h_clubb, h_sam, plot_old_clubb=False, data_old=None, h_old=None):
@@ -651,7 +765,7 @@ def plotgen_default(plots, cf):
 def plotgen_3d(plots, cf):
     """
     bla
-    TODO: Add choice mp4 or gif to setup file
+    TODO: No data from std sam nc file needed
     """
     logger.info("plotgen_3d")
     gif = None
@@ -682,9 +796,22 @@ def plotgen_3d(plots, cf):
     idx_t0 = (np.abs(t - cf.startTime)).argmin()
     idx_t1 = (np.abs(t - cf.endHeight)).argmin()+1
     h = get_h_dim(nc_std, model='sam', create=False, cf=cf)
+    # Calculate height level limits
+    h_limits = np.array([0])
+    logger.debug(h)
+    for i in range(len(h)):
+        h_limits = np.append(h_limits, 2*h[i]-h_limits[i])
+    # Calculate height indices based on parameters in case file
     idx_h0 = (np.abs(h - cf.startHeight)).argmin()
     idx_h1 = (np.abs(h - cf.endHeight)).argmin()+1
+    logger.debug('Height indices: [%d,%d]',idx_h0, idx_h1)
+    # Slice arrays
     h = h[idx_h0:idx_h1]
+    h_limits = h_limits[idx_h0:idx_h1+1]
+    logger.debug(h_limits)
+    # Calculate height level extents
+    h_extent = np.diff(h_limits)
+    logger.debug(h_extent)
     logger.info("Fetching sam data")
     data_std = get_all_variables(nc_std, plots.lines_std, plots.sortPlots_std, len(h), len(t), idx_t0, idx_t1, idx_h0, idx_h1, filler=plots.filler)
     logger.info("Fetching sam_3d data")
@@ -693,7 +820,7 @@ def plotgen_3d(plots, cf):
     data.update({key:[value[0][0], value[0][-1]] for (key,value) in data_std.iteritems()})
     logger.debug("3d data: %s", str(data))
     logger.info("Create plots")
-    plot_3d(plots, cf, data, h, prm_vars, gif=gif)
+    plot_3d(plots, cf, data, h, h_limits, h_extent, prm_vars, gif=gif)
     
     
 def plotgen_comparison(plots, cf):

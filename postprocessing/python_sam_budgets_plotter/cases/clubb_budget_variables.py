@@ -41,16 +41,16 @@ sortPlots = sortPlots_zm + sortPlots_zt
 
 # Construct plot name from long name in netcdf instead
 plotNames_zm = [\
-    ["Vertical eastward momentum flux", r"$\mathrm{\overline{u'w'}\text{ budget terms } \left[\frac{m^2}{s^3}\right]}$"],\
-    ["Vertical northward momentum flux", r"$\mathrm{\overline{v'w'}\text{ budget terms } \left[\frac{m^2}{s^3}\right]}$"],\
-    ["Variance of eastward air velocity", r"$\mathrm{\overline{u'^2}\text{ budget terms } \left[\frac{m^2}{s^3}\right]}$"],\
-    ["Variance of northward air velocity", r"$\mathrm{\overline{v'^2}\text{ budget terms } \left[\frac{m^2}{s^3}\right]}$"],\
-    ["Variance of vertical air velocity", r"$\mathrm{\overline{w'^2}\text{ budget terms } \left[\frac{m^2}{s^3}\right]}$"],\
-    ["Vertical eastward momentum flux", r"$\mathrm{\overline{u'w'}\text{ budget terms } \left[\frac{m^2}{s^3}\right]}$"],\
-    ["Vertical northward momentum flux", r"$\mathrm{\overline{v'w'}\text{ budget terms } \left[\frac{m^2}{s^3}\right]}$"],\
-    ["Variance of eastward air velocity", r"$\mathrm{\overline{u'^2}\text{ budget terms } \left[\frac{m^2}{s^3}\right]}$"],\
-    ["Variance of northward air velocity", r"$\mathrm{\overline{v'^2}\text{ budget terms } \left[\frac{m^2}{s^3}\right]}$"],\
-    ["Variance of vertical air velocity", r"$\mathrm{\overline{w'^2}\text{ budget terms } \left[\frac{m^2}{s^3}\right]}$"],\
+    ["Vertical eastward momentum flux", r"$\mathrm{\overline{u'w'}}$ budget terms $\mathrm{\left[\frac{m^2}{s^3}\right]}$"],\
+    ["Vertical northward momentum flux", r"$\mathrm{\overline{v'w'}}$ budget terms $\mathrm{\left[\frac{m^2}{s^3}\right]}$"],\
+    ["Variance of eastward air velocity", r"$\mathrm{\overline{u'^2}}$ budget terms $\mathrm{\left[\frac{m^2}{s^3}\right]}$"],\
+    ["Variance of northward air velocity", r"$\mathrm{\overline{v'^2}}$ budget terms $\mathrm{\left[\frac{m^2}{s^3}\right]}$"],\
+    ["Variance of vertical air velocity", r"$\mathrm{\overline{w'^2}}$ budget terms $\mathrm{\left[\frac{m^2}{s^3}\right]}$"],\
+    ["Vertical eastward momentum flux", r"$\mathrm{\overline{u'w'}}$ budget terms $\mathrm{\left[\frac{m^2}{s^3}\right]}$"],\
+    ["Vertical northward momentum flux", r"$\mathrm{\overline{v'w'}}$ budget terms $\mathrm{\left[\frac{m^2}{s^3}\right]}$"],\
+    ["Variance of eastward air velocity", r"$\mathrm{\overline{u'^2}}$ budget terms $\mathrm{\left[\frac{m^2}{s^3}\right]}$"],\
+    ["Variance of northward air velocity", r"$\mathrm{\overline{v'^2}}$ budget terms $\mathrm{\left[\frac{m^2}{s^3}\right]}$"],\
+    ["Variance of vertical air velocity", r"$\mathrm{\overline{w'^2}}$ budget terms $\mathrm{\left[\frac{m^2}{s^3}\right]}$"],\
     ]
 
 plotNames_zt = []

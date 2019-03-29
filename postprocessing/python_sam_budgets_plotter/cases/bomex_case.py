@@ -25,6 +25,7 @@ startTime = 181.0     # [minutes]
 endTime = 360.0       # [minutes]
 startHeight = 0.0     # [m]
 endHeight = 2500.0    # [m]
+time_3d = 21600.0     # dt
 
 # run entry for header in html file
 run = '{case}_{nx}x{ny}x{nz}_{dxy}m_{dz}m_{dt}s'.format(case=case, nx=nx, ny=ny, nz=nz, dxy=dxy, dz=dz, dt=dt)
@@ -43,6 +44,12 @@ out_pdf = '{case}_{dx}x{dx}_{{type}}_{{date}}.pdf'.format(case=case.lower(),dx=n
 sam_file = '/home/sdomke/workspace/clubb/avi_out/grid_change/BOMEX_64x64x75_100m_40m_1s.nc'
 # nc file generated from .bin3D output
 sam_3d_file = '/home/sdomke/workspace/clubb/avi_out/out3d/BOMEX_64x64x75_100m_40m_1s_64_0000021600.nc'
+
+# nc files for publishing runs with bigger horizontal grid (256x256):
+out_dir = '/home/sdomke/workspace/plotgen_out/publishing_runs/{case}_{{date}}/'.format(case=case.lower())
+sam_file = '/home/sdomke/workspace/clubb/avi_out/publishing_runs/BOMEX_256x256x75_100m_40m_1s.nc'
+sam_3d_file = '/home/sdomke/workspace/clubb/avi_out/publishing_runs/3d/BOMEX_256x256x75_100m_40m_1s_256_0000021600.nc'
+
 ## CLUBB
 clubb_zm_file = '/home/sdomke/workspace/clubb/clubb_out/bomex_zm.nc'
 clubb_zt_file = '/home/sdomke/workspace/clubb/clubb_out/bomex_zt.nc'

@@ -25,8 +25,9 @@ filler = nan
 header = 'SAM horizontal plots'
 name = 'sam_3d_{wt}'
 nc_files = ['sam', 'sam_3d']
-title_template = '{wt} {case} {x}x{y}x{z} dx={dx}m dz={dz}m t={t} height level {h}m'
-wind_types = ['total_horizontal_wind', 'horizontal_wind_perturbation']
+title_template = '{{wt}}, {case}, {x}x{y}x{z}, dx={dx:.0f}m, dz={dz:.1f}m, t={t:.0f}min, h={{h:.1f}}m'
+wind_types = ['total_horizontal_wind+w_map', 'total_horizontal_wind+uw_map', 'total_horizontal_wind+vw_map', 'horizontal_wind_perturbation+w_map', 'horizontal_wind_perturbation+uw_map', 'horizontal_wind_perturbation+vw_map']
+#wind_types = ['horizontal_wind_perturbation+uw_map']
 
 #-------------------------------------------------------------------------------
 # P L O T   S E T U P

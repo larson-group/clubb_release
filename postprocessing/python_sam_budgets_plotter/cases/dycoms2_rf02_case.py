@@ -26,6 +26,7 @@ startTime = 120.0      # [minutes]
 endTime = 240.0       # [minutes]
 startHeight = 20.0    # [m]
 endHeight = 1200.0    # [m]
+time_3d = 43200.0     # dt
 
 # run entry for header in html file
 run = '{case}_{nx}x{ny}x{nz}_{dxy}m_{dz}m_{dt}s'.format(case=case, nx=nx, ny=ny, nz=nz, dxy=dxy, dz=dz, dt=dt)
@@ -45,6 +46,12 @@ sam_file = '/home/sdomke/workspace/clubb/avi_out/grid_change/DYCOMS_RF02_128x128
 #sam_file = '/home/sdomke/workspace/clubb/sam_out/outstat/DYCOMS_RF02_64x64x96_7200_dr_nosed_181205.nc'
 # nc file generated from .bin3D output
 sam_3d_file = '/home/sdomke/workspace/clubb/avi_out/out3d/DYCOMS_RF02_128x128x96_dr_nosed_64_0000043200.nc'
+
+# nc files for publishing runs with bigger horizontal grid (256x256):
+out_dir = '/home/sdomke/workspace/plotgen_out/publishing_runs/{case}_{{date}}/'.format(case=case.lower())
+sam_file = '/home/sdomke/workspace/clubb/avi_out/publishing_runs/DYCOMS_RF02_256x256x96_dr_nosed.nc'
+sam_3d_file = '/home/sdomke/workspace/clubb/avi_out/publishing_runs/3d/DYCOMS_RF02_256x256x96_dr_nosed_256_0000043200.nc'
+
 ## CLUBB
 clubb_zm_file = '/home/sdomke/workspace/clubb/clubb_out/dycoms2_rf02_ds_zm.nc'
 clubb_zt_file = '/home/sdomke/workspace/clubb/clubb_out/dycoms2_rf02_ds_zt.nc'

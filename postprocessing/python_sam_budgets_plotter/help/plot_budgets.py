@@ -9,6 +9,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 import logging
 from matplotlib.ticker import ScalarFormatter as stick
+# Imports used for moving power offset
+import types
+import matplotlib.transforms as mpt
 
 #-------------------------------------------------------------------------------
 #   L O G G E R
@@ -65,6 +68,7 @@ fontsizes = {
 #-------------------------------------------------------------------------------
 #   F U N C T I O N S
 #-------------------------------------------------------------------------------
+# DEPRECATED!!!
 def plot_budgets(budgets_data, level, xLabel, yLabel, title, name, lw = 5, grid = True,  color = 'nipy_spectral', pdf=None):
     logger.info('plot_budgets')
     """
@@ -167,7 +171,7 @@ def plot_budgets(budgets_data, level, xLabel, yLabel, title, name, lw = 5, grid 
         pdf[0].set_ylabel(yLabel)
         pdf[0].set_title(title, fontsize=18, y=titlepos)
     
-
+# END plot_budgets (DEPRECATED!)
 
 def plot_profiles(data, level, xLabel, yLabel, title, name, startLevel = 0, lw = 5, grid = True, color = 'nipy_spectral', centering=False, pdf=None):
     """
@@ -200,7 +204,11 @@ def plot_profiles(data, level, xLabel, yLabel, title, name, startLevel = 0, lw =
     #logger.debug([b[2] for b in data])
     if any([b[2]==1 for b in data]):
         axes = [ax, ax.twiny()]
-        titlepos = 1.04
+        for i, el in enumerate(axes):
+            el.xaxis._update_offset_text_position = types.MethodType(x_update_offset_text_position, el.xaxis)
+        axes[1].xaxis.tick_top()
+        axes[1].xaxis.offset_text_position = 'top'
+        titlepos = 1.06
     else:
         axes = [ax]
         titlepos = 1.01
@@ -250,8 +258,10 @@ def plot_profiles(data, level, xLabel, yLabel, title, name, startLevel = 0, lw =
     #logger.debug(lims)
     # x axis should be symmetric
     # List to save ticks of each axis
+    logger.info('Plot formatting')
     ticklist = []
     for i in range(len(axes)):
+        #logger.debug('Adjusting plot limits')
         if centering:
             xlimits = axes[i].get_xlim()
             # Calculate absolute maximum of x values
@@ -266,6 +276,7 @@ def plot_profiles(data, level, xLabel, yLabel, title, name, startLevel = 0, lw =
             if not np.any(np.isnan(lims[i])):
                 axes[i].set_xlim(lims[i]+np.array((-margin,margin)))
         # Set tick label format to scalar formatter with length sensitive format (switch to scientific format when a set order of magnitude is reached)
+        #logger.debug('Setting tick labels to scientific notation')
         ticks = stick(useMathText=True)
         ticks.set_powerlimits((-pow_lim,pow_lim))
         axes[i].xaxis.set_major_formatter(ticks)
@@ -277,6 +288,7 @@ def plot_profiles(data, level, xLabel, yLabel, title, name, startLevel = 0, lw =
 
     # For multiple axes adjust ticks to coincide
     if len(axes)>1:
+        #logger.debug('Matching ticks for multiple x axes')
         ls = map(len,ticklist)
         l = max(ls)
         for i in range(len(axes)):
@@ -286,11 +298,14 @@ def plot_profiles(data, level, xLabel, yLabel, title, name, startLevel = 0, lw =
     for i in range(len(axes)):
         axes[i].tick_params(axis='both', labelsize=fontsizes['ticks'])
         axes[i].xaxis.get_offset_text().set_size(fontsizes['ticks'])
+    #logger.debug('Redrawing figure')
     fig.canvas.draw_idle()
                 
     # Save plot
+    #logger.debug('Saving to jpg')
     fig.savefig(name)
     if pdf:
+        #logger.debug('Saving to pdf')
         pdf.savefig(fig)
     # Close figure
     plt.close(fig)
@@ -499,3 +514,32 @@ def get_long_name(nc, varname):
         long_name = "nm"
     
     return long_name
+    
+
+# As the tick_top function of Axis currently does not move the power offset, this is a fix until it is officially implemented in pyplot
+def x_update_offset_text_position(self, bboxes, bboxes2):
+    logger.info('x_update_offset_text_position')
+    x, y = self.offsetText.get_position()
+    logger.debug((x,y))
+    
+    if self.offset_text_position == 'bottom':
+        logger.debug('bottom')
+        if bboxes:
+            bbox = mpt.Bbox.union(bboxes)
+        else:
+            bbox = self.axes.bbox
+        y = bbox.ymin - self.OFFSETTEXTPAD * self.figure.dpi / 72.0
+        self.offsetText.set(va='top', ha='right')
+
+    else:
+        logger.debug('top')
+        if bboxes2:
+            bbox = mpt.Bbox.union(bboxes2)
+        else:
+            bbox = self.axes.bbox
+        y = bbox.ymax + self.OFFSETTEXTPAD * self.figure.dpi / 72.0 - .75 * self.figure.dpi
+        x = x * (1.007)
+        self.offsetText.set(va='bottom', ha='left')
+        
+    logger.debug((x,y))
+    self.offsetText.set_position((x, y))

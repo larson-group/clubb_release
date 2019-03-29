@@ -26,27 +26,27 @@ varopts=(1 3 4 5 7)
 compinput=("y" "n")
 
 # Loop over variable cases
-for vars in ${varopts[@]}
-do
-  # Loop over setup cases
-  for case in ${caseopts[@]}
-  do
-    echo "vars = $vars, case=$case"
-    python plotgen_main.py <<< "$vars
-    $case"
-  done
-done
+# for vars in ${varopts[@]}
+# do
+#   # Loop over setup cases
+#   for case in ${caseopts[@]}
+#   do
+#     echo "vars = $vars, case=$case"
+#     python plotgen_main.py <<< "$vars
+#     $case"
+#   done
+# done
 
 # Generate comparison plots
 # Loop over setup cases
-vars=6
-for case in ${caseopts[@]}
-do
-  echo "vars = $vars, case=$case"
-  python plotgen_main.py <<< "$vars
-  $case
-  y"
-done
+# vars=6
+# for case in ${caseopts[@]}
+# do
+#   echo "vars = $vars, case=$case"
+#   python plotgen_main.py <<< "$vars
+#   $case
+# y"
+# done
 
 # Generate horizontal plots
 # Loop over setup cases
@@ -61,4 +61,3 @@ do
     $i"
   done
 done
-

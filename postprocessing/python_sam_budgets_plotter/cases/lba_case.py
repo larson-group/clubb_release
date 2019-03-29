@@ -21,10 +21,11 @@ nz = 128
 dxy = 1000            # [m]
 dz = '25-250'         # [m]
 dt = 6                # [s]
-startTime = 181.0     # [minutes]
+startTime = 301.0     # [minutes]
 endTime = 360.0       # [minutes]
 startHeight = 0.0     # [m]
-endHeight = 2500.0    # [m]
+endHeight = 15000.0   # [m]
+time_3d = 3600.0      # dt
 
 # run entry for header in html file
 run = '{case}_{nx}x{ny}x{nz}_{dxy}m_{dz}m_{dt}s'.format(case=case, nx=nx, ny=ny, nz=nz, dxy=dxy, dz=dz, dt=dt)

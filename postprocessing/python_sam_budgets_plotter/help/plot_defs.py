@@ -43,6 +43,8 @@ def makeDirectory(pathToFile):
 #-------------------------------------------------------------------------------
 #    GLOBAL DEFINITIONS
 #-------------------------------------------------------------------------------
+## CONSTANTS
+cld_lim = 0 # lower bound of water content at which grid point is in cloud
 ## PROGRAM DEFINITIONS
 ntrials = 3 # maximum number of input trials before closing the program
 affirmatives = ['y', 'yes', 'aye', 'yay', 'pos', '1']
@@ -158,6 +160,10 @@ legend_title = ['bottom', 'top']
 color_arr = ['#e41a1c','#377eb8','#4daf4a','#984ea3','#a65628','#000000','#999999','#ffa600','#f750bf']
 
 ## Horizontal cloud slice plots
+# Define base figsize
+#figsize = np.array(mpp.rcParams['figure.figsize'])*4
+figsize = (32.5,20)
+
 # Line colors for secondary plots in cloud plot
 col_3d = {
     'uw' : 'g',
