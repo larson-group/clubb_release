@@ -190,9 +190,11 @@ module advance_clubb_core_module
       fstderr, &
       zero_threshold, &
       three_halves, &
+      one_fourth, &
       one, &
       unused_var, &
       grav, &
+      vonk, &
       eps
 
     use parameters_tunable, only: & 
@@ -448,7 +450,7 @@ module advance_clubb_core_module
       l_iter_xp2_xpyp = .true. ! Set to true when rtp2/thlp2/rtpthlp, et cetera are prognostic
 
     real( kind = core_rknd ), parameter :: &
-      tau_const = 900._core_rknd
+      tau_const = 1000._core_rknd
 
     !!! Input Variables
     logical, intent(in) ::  & 
@@ -724,12 +726,21 @@ module advance_clubb_core_module
       rel_humidity        ! Relative humidity after PDF closure [-]
 
     real( kind = core_rknd ), dimension(gr%nz) :: &
-       stability_correction, & ! Stability correction factor
-       tau_N2_zm,            & ! Tau with a static stability correction applied to it [s]
-       tau_C6_zm,            & ! Tau values used for the C6 (pr1) term in wpxp [s]
-       tau_C1_zm,            & ! Tau values used for the C1 (dp1) term in wp2 [s]
-       Cx_fnc_Richardson,    & ! Cx_fnc computed from Richardson_num          [-]
-       brunt_vaisala_freq_sqd  ! Buoyancy frequency squared, N^2              [s^-2}
+       stability_correction,   & ! Stability correction factor
+       tau_N2_zm,              & ! Tau with a static stability correction applied to it [s]
+       tau_C6_zm,              & ! Tau values used for the C6 (pr1) term in wpxp [s]
+       tau_C1_zm,              & ! Tau values used for the C1 (dp1) term in wp2 [s]
+       Cx_fnc_Richardson,      & ! Cx_fnc computed from Richardson_num          [-]
+       brunt_vaisala_freq_sqd, & ! Buoyancy frequency squared, N^2              [s^-2]
+       invrs_tau_zm,           & ! One divided by tau on zm levels              [s^-1]
+       invrs_tau_N2_zm,        & ! One divided by tau, including stability effects [s^-1]
+       ustar                     ! Friction velocity  [m/s]
+
+
+    real( kind = core_rknd ), parameter :: &
+       ufmin = 0.01_core_rknd,       & ! minimum value of friction velocity     [m/s]
+       z_displace = 20.0_core_rknd,  & ! displacement of log law profile above ground   [m]
+       tau_N2_coef = 0.1_core_rknd     ! coefficient (> 0) for N2 term in invrs_tau_zm. [-]
 
     real( kind = core_rknd ) :: Lscale_max
 
@@ -1242,13 +1253,31 @@ module advance_clubb_core_module
         call calc_brunt_vaisala_freq_sqd( thlm, exner, rtm, rcm, p_in_Pa, thvm, & ! intent(in)
                                           brunt_vaisala_freq_sqd )   ! intent(out)
 
-        tau_zt = tau_const / &
-                     ( one + 0.1_core_rknd * tau_const * & 
-                             sqrt( max( zero_threshold, brunt_vaisala_freq_sqd ) ) )
-        tau_zm = max( zero_threshold, zt2zm( tau_zt ) )
+        ustar = max( ( upwp_sfc**2 + vpwp_sfc**2 )**(one_fourth), ufmin )
 
-!       tau_zt = tau_const
-!       tau_zm = tau_const
+        invrs_tau_zm = one / tau_const &
+         + 0.1_core_rknd * ( ustar / vonk ) / ( gr%zm - sfc_elevation + z_displace ) &
+         + 0.02_core_rknd * zt2zm( zm2zt( sqrt( (ddzt( um ))**2 + (ddzt( vm ))**2 ) ) )  &
+         + tau_N2_coef * sqrt( max( zero_threshold, &
+              zt2zm( zm2zt( brunt_vaisala_freq_sqd ) ) - 1e-4_core_rknd) )
+
+        if ( gr%zm(1) - sfc_elevation + z_displace < eps ) then
+             stop  "Lowest zm grid level is below ground in CLUBB."
+        end if 
+
+        tau_zm = one / invrs_tau_zm
+
+        tau_zt = zm2zt( tau_zm )
+
+        invrs_tau_N2_zm = invrs_tau_zm  & 
+                          + tau_N2_coef * sqrt( max( zero_threshold, brunt_vaisala_freq_sqd ) )
+
+        tau_N2_zm = tau_zm
+
+!        tau_zt = tau_const / &
+!                     ( one + 0.1_core_rknd * tau_const * & 
+!                             sqrt( max( zero_threshold, brunt_vaisala_freq_sqd ) ) )
+!        tau_zm = max( zero_threshold, zt2zm( tau_zt ) )
 
         Lscale = tau_zt * sqrt_em_zt
 
