@@ -30,7 +30,8 @@ styles = ['-','--','-.',':']
 #ticks = stick(useMathText=True)
 #ticks.set_powerlimits((-3,3))
 pow_lim = 1
-legend_pos = [2,1]
+#legend_pos = [2,1]
+legend_pos = [1,2]
 legend_title = ['bottom', 'top']
 # Create 9 maximally distinguishable colors TODO!!
 #             red       blue      green     purple    brown     black     grey      orange    magenta

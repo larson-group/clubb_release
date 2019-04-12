@@ -146,8 +146,9 @@ comp_style = {
         },
     }
 
-# List of line styles (cycling)
-styles = ['-','--','-.',':']
+# List of line styles (cycling) (BUG: ls '-.' is not displayed correctly in legend!)
+#styles = ['-','--','-.',':']
+styles = ['-','--',':']
 
 # Legend positions for both x-axes
 legend_pos = [2,1]
@@ -178,5 +179,17 @@ cloud_interpolation = 'quadric'
 
 # Legend location in seconary subplot
 legend_pos_3d = 1
+
+# Set dilation length for halo definition (1 is not enough!)
+dil_len = 4
+
+# Set quantile for outlier cutoff: 0<=quant<=100, enter 0 for min/max
+# The amount of outliers seems to be approximately constant with array size, but in order to get a visually acceptable distribution, we need to take quantiles
+quant = 1e-2
+#trash = 20
+
+# Set point skip for horizontal plots
+skip = 4
+
 
 # TODO: Define dictionary for fontsizes in 3d plot

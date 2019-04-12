@@ -32,7 +32,7 @@ nc_files = ['sam']                                          # NetCDF files neede
 # P L O T S
 #-------------------------------------------------------------------------------
 # Names of the variables
-sortPlots = ['theta_l', 'r_t', 'theta_l_flux', 'r_t_flux', 'cloudliq_frac', 'r_c', 'w_var', 'w3', 'theta_l_var', 'r_t_var', 'covar_thetal_rt', 'wobs', 'U', 'V', 'covar_uw', 'covar_vw', 'u_var', 'v_var',\
+sortPlots = ['theta_l', 'r_t', 'theta_l_flux', 'r_t_flux', 'cloudliq_frac', 'r_c', 'w_var', 'w3', 'theta_l_var', 'r_t_var', 'covar_thetal_rt', 'wobs', 'U', 'V', 'covar_uw', 'covar_vw', 'u_var', 'v_var', 'corr_uw', 'corr_vw',\
                 'QR', 'QR_IP', 'QRP2', 'QRP2_QRIP', \
                 'Nrm', 'Nrm_IP', 'Nrp2', 'Nrp2_NrmIP', \
                 'Ncm', 'Ncm_IP', 'Ncp2', 'Ncp2_NcmIP', \
@@ -57,18 +57,20 @@ plotNames = [\
                 ['Turbulent Flux of r_t', 'wprtp / qtflux(s) [(kg/kg) m/s]'],\
                 ['Cloud Liquid Fraction', ' [%/100]'],\
                 ['Cloud Water Mixing Ratio, r_c', 'rcm / qcl [kg/kg]'],\
-                [r"Variance of w", r"$\mathrm{\overline{w'^2} / w^2\ \left[\frac{m^2}{s^2}\right]}$"],\
-                [r"Third-order Moment of w", r"$\mathrm{\overline{w'^3} / w^3\ \left[\frac{m^3}{s^3}\right]}$"],\
+                [r"Variance of w", r"$\mathrm{\overline{w'^2}\ \left[\frac{m^2}{s^2}\right]}$"],\
+                [r"Third-order Moment of w", r"$\mathrm{\overline{w'^3}\ \left[\frac{m^3}{s^3}\right]}$"],\
                 ['Variance of theta_l', 'thlp2 / tl2 [K^2]'],\
                 ['Variance of r_t', 'rtp2 / qtp2 [(kg/kg)^2]'],\
                 ['Covariance of r_t & theta_l', 'rtpthlp [(kg/kg) K]'],\
                 [r"Vertical Wind Component, w (subsidence)", r"$\mathrm{w_{obs}\ \left[\frac{m}{s}\right]}$"],\
-                [r"Zonal Wind Component, u", r"$\mathrm{\bar{u} / u\ \left[\frac{m}{s}\right]}$"],\
-                [r"Meridonal Wind Component, v", r"$\mathrm{\bar{v} / v\ \left[\frac{m}{s}\right]}$"],\
-                [r"Covariance of u & w", r"$\mathrm{\overline{u'w'} / uw\ \left[\frac{m^2}{s^2}\right]}$"],\
-                [r"Covariance of v & w", r"$\mathrm{\overline{v'w'} / vw\ \left[\frac{m^2}{s^2}\right]}$"],\
-                [r"Variance of u wind", r"$\mathrm{\overline{u'^2} / u^2\ \left[\frac{m^2}{s^2}\right]}$"],\
-                [r"Variance of v wind", r"$\mathrm{\overline{v'^2} / v^2\ \left[\frac{m^2}{s^2}\right]}$"],\
+                [r"Zonal Wind Component, u", r"$\mathrm{\bar{u}\ \left[\frac{m}{s}\right]}$"],\
+                [r"Meridonal Wind Component, v", r"$\mathrm{\bar{v}\ \left[\frac{m}{s}\right]}$"],\
+                [r"Covariance of u & w", r"$\mathrm{\overline{u'w'}\ \left[\frac{m^2}{s^2}\right]}$"],\
+                [r"Covariance of v & w", r"$\mathrm{\overline{v'w'}\ \left[\frac{m^2}{s^2}\right]}$"],\
+                [r"Variance of u wind", r"$\mathrm{\overline{u'^2}\ \left[\frac{m^2}{s^2}\right]}$"],\
+                [r"Variance of v wind", r"$\mathrm{\overline{v'^2}\ \left[\frac{m^2}{s^2}\right]}$"],\
+                [r"Correlation of u and w", r"$\mathrm{\overline{u'w'} / \sqrt{\overline{u'^2}\overline{w'^2}}\ [1]}$"],\
+                [r"Correlation of v and w", r"$\mathrm{\overline{v'w'} / \sqrt{\overline{v'^2}\overline{w'^2}}\ [1]}$"],\
                 # Rain Water Mixing Ratio
                 ['Rain Water Mixing Ratio', 'qrm [kg/kg]'],\
                 ['Rain Water Mixing Ratio in Rain', 'qrm_ip [kg/kg]'],\
@@ -122,15 +124,15 @@ plotNames = [\
                 #['Cloud Ice Water Path', 'iwp [kg/m^2]'],\
                 #['Snow Water Path', 'swp [kg/m^2]'],\
                 # buoyancy sub-terms for parameterization in upwp budget
-                [r"Covariance of $\mathrm{u\ &\ r_c}$", r"$\mathrm{\overline{u'r_c'} / ur_c\ \left[\frac{m^2}{s^2}\right]}$"],\
-                [r"Covariance of $\mathrm{u\ &\ r_t}$", r"$\mathrm{\overline{u'r_t'} / ur_t\ \left[\frac{m^2}{s^2}\right]}$"],\
-                [r"Covariance of $\mathrm{u\ &\ \theta_l}$", r"$\mathrm{\overline{u'\theta_l'} / u\theta_l\ \left[\frac{m^2}{s^2}\right]}$"],\
-                [r"Covariance of $\mathrm{u\ &\ \theta_v}$", r"$\mathrm{\overline{u'\theta_v'} / u\theta_v\ \left[\frac{m^2}{s^2}\right]}$"],\
+                [r"Covariance of $\mathrm{u\ &\ r_c}$", r"$\mathrm{\overline{u'r_c'}\ \left[\frac{m^2}{s^2}\right]}$"],\
+                [r"Covariance of $\mathrm{u\ &\ r_t}$", r"$\mathrm{\overline{u'r_t'}\ \left[\frac{m^2}{s^2}\right]}$"],\
+                [r"Covariance of $\mathrm{u\ &\ \theta_l}$", r"$\mathrm{\overline{u'\theta_l'}\ \left[\frac{m^2}{s^2}\right]}$"],\
+                [r"Covariance of $\mathrm{u\ &\ \theta_v}$", r"$\mathrm{\overline{u'\theta_v'}\ \left[\frac{m^2}{s^2}\right]}$"],\
                 # buoyancy sub-terms for parameterization in upwp budget
-                [r"Covariance of $\mathrm{v\ &\ r_c}$", r"$\mathrm{\overline{v'r_c'} / vr_c\ \left[\frac{m^2}{s^2}\right]}$"],\
-                [r"Covariance of $\mathrm{v\ &\ r_t}$", r"$\mathrm{\overline{v'r_t'} / vr_t\ \left[\frac{m^2}{s^2}\right]}$"],\
-                [r"Covariance of $\mathrm{v\ &\ \theta_l}$", r"$\mathrm{\overline{v'\theta_l'} / v\theta_l\ \left[\frac{m^2}{s^2}\right]}$"],\
-                [r"Covariance of $\mathrm{v\ &\ \theta_v}$", r"$\mathrm{\overline{v'\theta_v'} / v\theta_v\ \left[\frac{m^2}{s^2}\right]}$"],\
+                [r"Covariance of $\mathrm{v\ &\ r_c}$", r"$\mathrm{\overline{v'r_c'}\ \left[\frac{m^2}{s^2}\right]}$"],\
+                [r"Covariance of $\mathrm{v\ &\ r_t}$", r"$\mathrm{\overline{v'r_t'}\ \left[\frac{m^2}{s^2}\right]}$"],\
+                [r"Covariance of $\mathrm{v\ &\ \theta_l}$", r"$\mathrm{\overline{v'\theta_l'}\ \left[\frac{m^2}{s^2}\right]}$"],\
+                [r"Covariance of $\mathrm{v\ &\ \theta_v}$", r"$\mathrm{\overline{v'\theta_v'}\ \left[\frac{m^2}{s^2}\right]}$"],\
                 # Conditional mean wind speeds in clouds
                 [r"Eastward conditional mean wind in clouds", r"$\mathrm{u_{cld}\ \left[\frac{m}{s}\right]}$"],\
                 [r"Northward conditional mean wind in clouds", r"$\mathrm{v_{cld}\ \ \left[\frac{m}{s}\right]}$"],\
@@ -231,10 +233,12 @@ V = [\
         ]
         
 covarUW = [\
-         # variables of covarUV
-         ['UPWP_SGS', False, 'UPWP_SGS', 1., 0],\
-         ['UW', False, 'UW', 1., 0],\
+         # variables of covarUW
+         ['UPWP_SGS', True, 'UPWP_SGS', 1., 0],\
+         ['UWSB', True, 'UWSB', 1., 0],\
+         ['UW', True, 'UW', 1., 0],\
          ['UW', True, 'UW + UPWP_SGS', 1., 0],\
+         ['UW_noSG',True,'UW-UWSB',1,0],\
         ]
         
 covarVW = [\
@@ -243,21 +247,47 @@ covarVW = [\
          ['VW', False, 'VW', 1., 0],\
          ['VW', True, 'VW + VPWP_SGS', 1., 0],\
         ]
-        
+
 uVar = [\
          # variables of uVar
          ['UP2_SGS', False, 'UP2_SGS', 1., 0],\
          ['U2', False, 'U2', 1., 0],\
          ['UVAR', True, 'UP2_SGS + U2', 1., 0],\
         ]
-        
+
 vVar = [\
          # variables of vVar
          ['VP2_SGS', False, 'VP2_SGS', 1., 0],\
          ['V2', False, 'V2', 1., 0],\
          ['VVAR', True, 'VP2_SGS + V2', 1., 0],\
         ]
-        
+
+corrUW = [\
+        # variables of uVar
+        ['UP2_SGS', False, 'UP2_SGS', 1., 0],\
+        ['U2', False, 'U2', 1., 0],\
+        # variables of wVar
+        ['WP2_SGS', False, 'WP2_SGS', 1., 0],\
+        ['W2', False, 'W2', 1., 0],\
+        # variables of covarUW
+        ['UPWP_SGS', False, 'UPWP_SGS', 1., 0],\
+        ['UW', False, 'UW', 1., 0],\
+        ['corr(U,W)', True,'(UW+UPWP_SGS)/(np.sqrt((U2+UP2_SGS)*(W2+WP2_SGS)+1e-4))', 1., 0],\
+        ]
+    
+corrVW = [\
+        # variables of vVar
+        ['VP2_SGS', False, 'VP2_SGS', 1., 0],\
+        ['V2', False, 'V2', 1., 0],\
+        # variables of wVar
+        ['WP2_SGS', False, 'WP2_SGS', 1., 0],\
+        ['W2', False, 'W2', 1., 0],\
+        # variables of covarUW
+        ['VPWP_SGS', False, 'VPWP_SGS', 1., 0],\
+        ['VW', False, 'VW', 1., 0],\
+        ['corr(V,W)', True,'(VW+VPWP_SGS)/(np.sqrt((V2+VP2_SGS)*(W2+WP2_SGS)+1e-4))', 1., 0],\
+        ]
+
 # Rain Water Mixing Ratio
 
 QR = [\
@@ -573,7 +603,8 @@ wcld = [\
     ['Total mean of W', True, 'W', 1., 0 ],\
     ]
 
-lines = [thetal, rt, thetalflux, rtflux, cloudliqfrac, qcl, wVar, w3, thetalVar, rtVar, covarThetalRt, wobs, U, V, covarUW, covarVW, uVar, vVar,\
+lines = [thetal, rt, thetalflux, rtflux, cloudliqfrac, qcl, \
+        wVar, w3, thetalVar, rtVar, covarThetalRt, wobs, U, V, covarUW, covarVW, uVar, vVar, corrUW, corrVW, \
         QR, QRIP, QRP2, QRP2_QRIP, \
         Nrm, Nrm_IP, Nrp2, Nrp2_NrmIP, \
         Ncm, Ncm_IP, Ncp2, Ncp2_NcmIP, \

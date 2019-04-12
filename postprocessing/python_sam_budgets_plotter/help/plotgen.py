@@ -252,7 +252,14 @@ def get_all_variables(nc, lines, plotLabels, nh, nt, t0, t1, h0, h1, filler=0):
                 if t1>t0:
                     data = pb.mean_profiles(data, t0, t1, h0, h1)
                 else:
-                    data = data[h0:h1]
+                    # No time averaging
+                    if data.ndim==2:
+                        # 2d data here has the dimensions 0:time, 1:height(z)
+                        # usually, 2d data should be averaged over time, this might not work! (TODO: test)
+                        data=data[:,h0:h1]
+                    elif data.ndim==3:
+                        # 3d data here has the dimenions 0:z, 1:x, 2:y
+                        data = data[h0:h1]
                 # Save to plots, var[2] not needed?
                 #plot_lines.append([var[0], var[1], var[2], var[4], data])
                 plot_lines.append([var[0], var[1], var[4], data])
@@ -331,9 +338,32 @@ def plot_default(plots, cf, data, h, centering):
             writer.write(tmp_pdf) # write pdf content to output file
     # file streams closed
     os.rename(os.path.join(out_dir,'tmp.pdf'), out_pdf) # rename newly created pdf
+    
+    # Write plot parameters to params file
+    param_file = open(os.path.join(out_dir, 'plot_params_{}'.format(plots.name)), "w")
+    # dilation length dil_len
+    # percentile value quant
+    # cloud_interpolation cloud_interpolation
+    # grid skip length skip
+    # cloud recognition limit cld_lim
+    # (boundary times)
+    # (boundary heights)
+    # (grid size)
+    # (grid spacing)
+    prms = [
+        '# simulation parameters',
+        '(nx, ny, nz) = ({}, {}, {})'.format(cf.nx, cf.ny, cf.nz),
+        'sampling time = {}-{}min'.format(cf.startTime, cf.endTime),
+        'dx = {}'.format(cf.dxy),
+        'dy = {}'.format(cf.dxy),
+        'dz = {}'.format(cf.dz),
+        'height = {} - {}'.format(cf.startHeight, cf.endHeight)
+        ]
+    param_file.write('\n'.join(prms))
+    param_file.close()
 
 
-def plot_3d(plots, cf, data, h, h_limits, h_extent, prm_vars, fps=2, gif=False):
+def plot_3d(plots, cf, data, h, h_limits, h_extent, prm_vars, fps=2, dil_len=1, gif=False):
     """
     Generate horizontal output showing cloud outlines and wind speeds
     TODO: Special handling of RICO, because of huge grid -> split up grid in multiple subgrids?
@@ -345,33 +375,94 @@ def plot_3d(plots, cf, data, h, h_limits, h_extent, prm_vars, fps=2, gif=False):
     ### Get data
     logger.info('Unpack data and perform calculations')
     ## Unpack arrays
-    qn_3d = data['qn']
-    u_3d = data['u']
-    v_3d = data['v']
-    w_3d = data['w']
+    qn_3d = data['qn_3d']
+    #thv_3d = data['thetav']
+    u_3d = data['u_3d']
+    v_3d = data['v_3d']
+    w_3d = data['w_3d']
+    u_2d = data['u']
+    v_2d = data['v']
+    w_2d = data['w']
+    ucld_2d = data['ucld']
+    vcld_2d = data['vcld']
+    wcld_2d = data['wcld']
+    uw_2d = data['uw']
+    vw_2d = data['vw']
+    logger.debug('u_2d = %s',u_2d)
+    logger.debug('v_2d = %s',v_2d)
+    logger.debug('w_2d = %s',w_2d)
+    logger.debug('ucld_2d = %s',ucld_2d)
+    logger.debug('vcld_2d = %s',vcld_2d)
+    logger.debug('wcld_2d = %s',wcld_2d)
+    logger.debug('uw_2d = %s',uw_2d)
+    logger.debug('vw_2d = %s',vw_2d)
+    # interolate on the stupid s-grid
+    u_3d = np.cumsum(u_3d,axis=1)
+    v_3d = np.cumsum(v_3d,axis=2)
+    w_3d = np.cumsum(w_3d,axis=0)
+    u_3d[:,2:] = u_3d[:,2:] - u_3d[:,:-2]
+    v_3d[:,:,2:] = v_3d[:,:,2:] - v_3d[:,:,:-2]
+    w_3d[2:] = w_3d[2:] - w_3d[:-2]
+    u_3d[:,:-1] = u_3d[:,1:]/2.
+    v_3d[:,:,:-1] = v_3d[:,:,1:]/2.
+    w_3d[:-1] = w_3d[1:]/2.
+    # Set last entries to 0 or NAN, as they cannot b running averaged
+    u_3d[:,-1] = np.nan
+    v_3d[:,:,-1] = np.nan
+    w_3d[-1] = np.nan
+    # Due to the interpolation of w, we might have to exclude the last level of h here (TODO)
+    #logger.debug('u=%s', str(u_3d.shape))
+    #logger.debug('v=%s', str(v_3d.shape))
+    #logger.debug('w=%s', str(w_3d.shape))
+    #logger.debug('qn=%s', str(qn_3d.shape))
     ## Calculate needed values
     # Create cloud mask
     cld_mask = qn_3d>cld_lim
-    # Create dilated cloud mask with cross structure element
-    # Create structure element
-    dot = np.zeros((3,3))
-    dot[1,1]=1
-    mid = np.ones((3,3))
-    for i in range(4):
-        mid[i/2*2,i%2*2]=0
-    struct = np.stack((dot,mid,dot))
+    # Create dilated cloud mask with cross kernel
+    # Create dilation kernel
+    # Restrict input
+    #logger.debug("dil_len=%i",dil_len)
+    dil_len = min(5,max(1,dil_len))
+    #logger.debug("dil_len=%i",dil_len)
+    # Calculate kernel size
+    s = 1 + 2*dil_len
+    # dot is outward most kernel layer
+    dot = np.zeros((s,s))
+    dot[dil_len,dil_len]=1
+    # Dilate dot with cross to generate additional layers
+    cross = np.zeros((3,3))
+    cross[1,:]=1
+    cross = np.logical_or(cross, cross.T)
+    # Generate kernel
+    kern = np.empty((s,s,s))
+    kern[0] = dot
+    kern[-1] = dot
+    for i in range(1,dil_len+1):
+        tmp = bin_dilation(kern[i-1],cross)
+        kern[i] = tmp
+        kern[-i-1] = tmp
+    logger.debug("Dilation kernel:\n%s", str(kern))
     # Apply dilation
-    cld_mask_dilated = bin_dilation(cld_mask, struct)
+    dilated_mask = bin_dilation(cld_mask, kern)
+    # Difference is halo
+    halo_mask = np.logical_xor(dilated_mask, cld_mask)
+    # Complement of dilated is no cloud mask
+    nocld_mask = np.logical_not(dilated_mask)
+    logger.debug("Masks cover all grid points: %s", str(np.all((dilated_mask+nocld_mask)==1)))
     # Profile of mean wind component
-    um = u_3d.mean(axis=(1,2))
-    vm = v_3d.mean(axis=(1,2))
-    wm = w_3d.mean(axis=(1,2))
+    um = np.nanmean(u_3d, axis=(1,2))
+    vm = np.nanmean(v_3d, axis=(1,2))
+    wm = np.nanmean(w_3d, axis=(1,2))
+    #thvm = np.nanmean(thv_3d, axis=(1,2))
     # 3d field of u'w' and v'w'
-    up = u_3d-um.reshape((um.size,1,1))
-    vp = v_3d-vm.reshape((vm.size,1,1))
-    wp = w_3d-wm.reshape((wm.size,1,1))
+    up = u_3d - um[:,None,None]
+    wp = w_3d - wm[:,None,None]
+    vp = v_3d - vm[:,None,None]
+    #thvp = thv_3d - thvm[:,None,None]
     uw = up*wp
     vw = vp*wp
+    #upthvp = up*thvp
+    #vpthvp = vp*thvp
     # Profile of horizontal wind strength
     wind_strength = np.linalg.norm(np.stack((um,vm)), axis=0)
     # Profile of wind direction
@@ -402,14 +493,34 @@ def plot_3d(plots, cf, data, h, h_limits, h_extent, prm_vars, fps=2, gif=False):
     #h_extent = np.diff(h_limits)
     #logger.debug(h_extent)
     # Create arrays to save conditional u'w'
-    uw_cld = np.zeros(um.size)
-    vw_cld = np.zeros(vm.size)
-    uw_dilated = np.zeros(um.size)
-    vw_dilated = np.zeros(vm.size)
+    uw_cld = np.full(wm.size, np.nan)
+    vw_cld = np.full(wm.size, np.nan)
+    uw_halo = np.full(wm.size, np.nan)
+    vw_halo = np.full(wm.size, np.nan)
+    uw_nocld = np.full(wm.size, np.nan)
+    vw_nocld = np.full(wm.size, np.nan)
+    u_cld_mean = np.full(um.size, np.nan)
+    v_cld_mean = np.full(vm.size, np.nan)
+    w_cld_mean = np.full(vm.size, np.nan)
+    u_halo_mean = np.full(um.size, np.nan)
+    v_halo_mean = np.full(vm.size, np.nan)
+    w_halo_mean = np.full(vm.size, np.nan)
+    u_nocld_mean = np.full(um.size, np.nan)
+    v_nocld_mean = np.full(vm.size, np.nan)
+    w_nocld_mean = np.full(vm.size, np.nan)
+    #upthvp_cld = np.full(um.size, np.nan)
+    #upthvp_halo = np.full(um.size, np.nan)
+    #upthvp_nocld = np.full(um.size, np.nan)
+    #vpthvp_cld = np.full(vm.size, np.nan)
+    #vpthvp_halo = np.full(vm.size, np.nan)
+    #vpthvp_nocld = np.full(vm.size, np.nan)
+    #thvp_cld = np.full(thvm.size, np.nan)
+    #thvp_halo = np.full(thvm.size, np.nan)
+    #thvp_nocld = np.full(thvm.size, np.nan)
+    
     
     ### Get colormaps
     # TODO: what if uw.min*uw.max>0?
-    # TODO: for uw and vw, what to do with outliers???
     logger.info('Setup color maps')
     ## Get cloud fraction color map
     # Calculate cloud fraction for shading of height indicator
@@ -424,15 +535,23 @@ def plot_3d(plots, cf, data, h, h_limits, h_extent, prm_vars, fps=2, gif=False):
     red = (.9,0,0)
     #green = mpl.colors.to_rgb('tab:green')
     green = (0,.75,0)
-    cld_col = 'skyblue'
-    dilated_col = 'mediumblue'
+    #cld_col = 'skyblue' # This one was used for coloring patches, changed to two different lines
+    cld_col = 'blue'
+    #halo_col = 'mediumblue' # This is too similar to the cloud color, try grey/silver
+    halo_col = 'grey'
     grey_tone = 1       # grey value at 0
     ### Get colormaps and normalizations for projection onto colormap
     ## UW
     # Get limits for uw data in order to generate colormap
-    uwlim = uw.min(), uw.max()
+    #uwlim = uw.min(), uw.max() # Do not use this, because of outliers
+    # Amount of outliers seeems to be constant with data array size, but to achieve good distribution over color scale, percentiles are better
+    uwlim = np.nanpercentile(uw,quant,interpolation='lower'), np.nanpercentile(uw,100-quant,interpolation='higher')
+    # Get norm boundaries for color scale by discarding outliers only
+    #uwsort = np.sort(uw.flatten())
+    #uwlim = uwsort[trash], uwsort[-trash]
+    logger.debug('uw.min=%f, uw.max=%f',np.nanmin(uw),np.nanmax(uw))
     logger.debug("uwlim=(%f,%f)",uwlim[0], uwlim[1])
-    logger.debug('uwlim[0]=(%f,%f)',uw[0].min(), uw[0].max())
+    logger.debug('uw[0].min=%f,uw[0].max=%f',np.nanmin(uw[0]), np.nanmax(uw[0]))
     norm_uw = mpl.colors.Normalize(vmin=uwlim[0], vmax=uwlim[1])
     # Calculate position of 0 in normalized data (projected onto [0;1])
     zero_uw = (0-uwlim[0])/(uwlim[1]-uwlim[0])
@@ -448,9 +567,15 @@ def plot_3d(plots, cf, data, h, h_limits, h_extent, prm_vars, fps=2, gif=False):
     
     ## VW
     # Get limits for vw data in order to generate colormap
-    vwlim = vw.min(), vw.max()
+    #vwlim = vw.min(), vw.max() # Do not use this, because of outliers
+    # Amount of outliers seeems to be constant with data array size, but to achieve good distribution over color scale, percentiles are better
+    vwlim = np.nanpercentile(vw,quant,interpolation='lower'), np.nanpercentile(vw,100-quant,interpolation='higher')
+    # Get norm boundaries for color scale by discarding outliers only
+    #vwsort = np.sort(vw.flatten())
+    #vwlim = vwsort[trash], vwsort[-trash]
+    logger.debug('uw.min=%f, uw.max=%f',np.nanmin(uw),np.nanmax(uw))
     logger.debug("vwlim=(%f,%f)",vwlim[0], vwlim[1])
-    logger.debug('vwlim[0]=(%f,%f)',vw[0].min(), vw[0].max())
+    logger.debug('vw[0].min=%f,vw[0].max=%f',np.nanmin(vw[0]), np.nanmax(vw[0]))
     norm_vw = mpl.colors.Normalize(vmin=vwlim[0], vmax=vwlim[1])
     # Calculate position of 0 in normalized data (projected onto [0;1])
     zero_vw = (0-vwlim[0])/(vwlim[1]-vwlim[0])
@@ -463,9 +588,45 @@ def plot_3d(plots, cf, data, h, h_limits, h_extent, prm_vars, fps=2, gif=False):
     # Create color map
     quiver_cmap_vw = mpl.colors.LinearSegmentedColormap('quiver_cmap_vw', cdict_vw, N=1000)
     
+    ## UP
+    # Get limits of w data in order to generate colormap, min/max still work for w, as there are no outliers
+    uplim = np.nanmin(up), np.nanmax(up)
+    # Use in order to exclude outliers
+    #wlim = np.percentile(w,quant), np.percentile(w,100-quant)
+    norm_up = mpl.colors.Normalize(vmin=uplim[0], vmax=uplim[1])
+    # Calculate position of 0 in normalized data (projected onto [0;1])
+    zero_up = (0-uplim[0])/(uplim[1]-uplim[0])
+    # Define color map segments
+    cdict_w = {"red":((0,red[0],red[0]),(zero_up,grey_tone,grey_tone),(1,green[0],green[0])),
+               "green":((0,red[1],red[1]),(zero_up,grey_tone,grey_tone),(1,green[1],green[1])),
+               "blue":((0,red[2],red[2]),(zero_up,grey_tone,grey_tone),(1,green[2],green[2])),
+               #"alpha":((0,1,1),(zero,0,0),(1,1,1))
+    }
+    # Create color map
+    quiver_cmap_up = mpl.colors.LinearSegmentedColormap('quiver_cmap_up',cdict_w, N=1000)
+    
+    ## VP
+    # Get limits of w data in order to generate colormap, min/max still work for w, as there are no outliers
+    vplim = np.nanmin(vp), np.nanmax(vp)
+    # Use in order to exclude outliers
+    #wlim = np.percentile(w,quant), np.percentile(w,100-quant)
+    norm_vp = mpl.colors.Normalize(vmin=vplim[0], vmax=vplim[1])
+    # Calculate position of 0 in normalized data (projected onto [0;1])
+    zero_vp = (0-vplim[0])/(vplim[1]-vplim[0])
+    # Define color map segments
+    cdict_w = {"red":((0,red[0],red[0]),(zero_vp,grey_tone,grey_tone),(1,green[0],green[0])),
+               "green":((0,red[1],red[1]),(zero_vp,grey_tone,grey_tone),(1,green[1],green[1])),
+               "blue":((0,red[2],red[2]),(zero_vp,grey_tone,grey_tone),(1,green[2],green[2])),
+               #"alpha":((0,1,1),(zero,0,0),(1,1,1))
+               }
+    # Create color map
+    quiver_cmap_vp = mpl.colors.LinearSegmentedColormap('quiver_cmap_vp',cdict_w, N=1000)
+    
     ## W
-    # Get limits of w data in order to generate colormap
-    wlim = w_3d.min(),w_3d.max()
+    # Get limits of w data in order to generate colormap, min/max still work for w, as there are no outliers
+    wlim = np.nanmin(w_3d), np.nanmax(w_3d)
+    # Use in order to exclude outliers
+    #wlim = np.percentile(w,quant), np.percentile(w,100-quant)
     norm_w = mpl.colors.Normalize(vmin=wlim[0], vmax=wlim[1])
     # Calculate position of 0 in normalized data (projected onto [0;1])
     zero_w = (0-wlim[0])/(wlim[1]-wlim[0])
@@ -481,10 +642,21 @@ def plot_3d(plots, cf, data, h, h_limits, h_extent, prm_vars, fps=2, gif=False):
     ## Plotting preparations
     # Get shape of arrays, here (z,x,y)
     dims = qn_3d.shape
+    N = dims[1]*dims[2]
     # Create meshgrid for 2d plot
-    logger.info('Create meshgrid')
-    grid_1d = np.arange(dims[1])
-    xgrid, ygrid = np.meshgrid(grid_1d, grid_1d)
+    logger.info('Create meshgrids')
+    # contour
+    contour_1d = np.arange(dims[1])
+    contour_xgrid, contour_ygrid= np.meshgrid(contour_1d, contour_1d)
+    #logger.debug('contour_1d=%s', str(contour_1d.shape))
+    #logger.debug('contour_x=%s, contour_y=%s', str(contour_xgrid.shape), str(contour_ygrid.shape))
+    # quiver
+    quiver_1d = np.arange(0,dims[1],skip)
+    quiver_xgrid, quiver_ygrid= np.meshgrid(quiver_1d, quiver_1d)
+    #logger.debug('quiver_1d=%s', str(quiver_1d.shape))
+    #logger.debug('quiver_x=%s, quiver_y=%s', str(quiver_xgrid.shape), str(quiver_ygrid.shape))
+    #logger.debug('um=%s, u_skip=%s', str(um.shape), str(u_3d[0,::skip,::skip].shape))
+
     # Define base figsize (DEPRECATED: moved to plot_defs.py)
     #figsize = np.array(mpp.rcParams['figure.figsize'])*4
     #figsize = (32.5,20)
@@ -506,44 +678,71 @@ def plot_3d(plots, cf, data, h, h_limits, h_extent, prm_vars, fps=2, gif=False):
         logger.debug('Generating frame %d', framenumber)
         #logger.debug('wt: %s', wt)
         
-        # Fill conditional u'w' arrays
+        # Get data at height level framenumber
+        #qn = qn_3d[framenumber]
+        u = u_3d[framenumber]
+        v = v_3d[framenumber]
+        
+        # Fill conditional u'w' arrays (TEST: divide by dimx*dimy or reduced because of NANs?)
         if cld_mask[framenumber].sum()>0:
-            uw_cld[framenumber] = uw[framenumber, cld_mask[framenumber]].mean()
-            vw_cld[framenumber] = vw[framenumber, cld_mask[framenumber]].mean()
-        if cld_mask_dilated[framenumber].sum()>0:
-            uw_dilated[framenumber] = uw[framenumber, cld_mask_dilated[framenumber]].mean()
-            vw_dilated[framenumber] = vw[framenumber, cld_mask_dilated[framenumber]].mean()
+            uw_cld[framenumber] = np.nansum(uw[framenumber, cld_mask[framenumber]])/N
+            vw_cld[framenumber] = np.nansum(vw[framenumber, cld_mask[framenumber]])/N
+            u_cld_mean[framenumber] = np.nansum(u[cld_mask[framenumber]])/N
+            v_cld_mean[framenumber] = np.nansum(v[cld_mask[framenumber]])/N
+            w_cld_mean[framenumber] = np.nansum(w_3d[framenumber, cld_mask[framenumber]])/N
+            #upthvp_cld[framenumber] = np.nansum(upthvp[framenumber, cld_mask[framenumber]])/N
+            #vpthvp_cld[framenumber] = np.nansum(vpthvp[framenumber, cld_mask[framenumber]])/N
+            #thvp_cld[framenumber] = np.nansum(thvp[framenumber, cld_mask[framenumber]])/N
+        if halo_mask[framenumber].sum()>0:
+            uw_halo[framenumber] = np.nansum(uw[framenumber, halo_mask[framenumber]])/N
+            vw_halo[framenumber] = np.nansum(vw[framenumber, halo_mask[framenumber]])/N
+            u_halo_mean[framenumber] = np.nansum(u[halo_mask[framenumber]])/N
+            v_halo_mean[framenumber] = np.nansum(v[halo_mask[framenumber]])/N
+            w_halo_mean[framenumber] = np.nansum(w_3d[framenumber, halo_mask[framenumber]])/N
+            #upthvp_halo[framenumber] = np.nansum(upthvp[framenumber, halo_mask[framenumber]])/N
+            #vpthvp_halo[framenumber] = np.nansum(vpthvp[framenumber, halo_mask[framenumber]])/N
+            #thvp_halo[framenumber] = np.nansum(thvp[framenumber, halo_mask[framenumber]])/N
+        if nocld_mask[framenumber].sum()>0:
+            uw_nocld[framenumber] = np.nansum(uw[framenumber, nocld_mask[framenumber]])/N
+            vw_nocld[framenumber] = np.nansum(vw[framenumber, nocld_mask[framenumber]])/N
+            u_nocld_mean[framenumber] = np.nansum(u[nocld_mask[framenumber]])/N
+            v_nocld_mean[framenumber] = np.nansum(v[nocld_mask[framenumber]])/N
+            w_nocld_mean[framenumber] = np.nansum(w_3d[framenumber, nocld_mask[framenumber]])/N
+            #upthvp_nocld[framenumber] = np.nansum(upthvp[framenumber, nocld_mask[framenumber]])/N
+            #vpthvp_nocld[framenumber] = np.nansum(vpthvp[framenumber, nocld_mask[framenumber]])/N
+            #thvp_nocld[framenumber] = np.nansum(thvp[framenumber, nocld_mask[framenumber]])/N
         
         # Clear figures
         fig.clear()
         # Prepare canvas
         ax1, ax2 = fig.subplots(1, 2, gridspec_kw={'width_ratios':width_ratio})
-        # Get data at height level framenumber
-        #qn = qn_3d[framenumber]
-        u = u_3d[framenumber]
-        v = v_3d[framenumber]
         #w = w_3d[framenumber]
         # Print vertical wind component array as background image
         if 'uw' in wt:
             pc = ax1.imshow(uw[framenumber], cmap=quiver_cmap_uw, norm=norm_uw, interpolation=cloud_interpolation, origin='lower')
         elif 'vw' in wt:
             pc = ax1.imshow(vw[framenumber], cmap=quiver_cmap_vw, norm=norm_vw, interpolation=cloud_interpolation, origin='lower')
+        elif 'up' in wt:
+            pc = ax1.imshow(up[framenumber], cmap=quiver_cmap_up, norm=norm_up, interpolation=cloud_interpolation, origin='lower')
+        elif 'vp' in wt:
+            pc = ax1.imshow(vp[framenumber], cmap=quiver_cmap_vp, norm=norm_vp, interpolation=cloud_interpolation, origin='lower')
         else:
             pc = ax1.imshow(w_3d[framenumber], cmap=quiver_cmap_w, norm=norm_w, interpolation=cloud_interpolation, origin='lower')
-        # Plot cloud contour fields
-        cs = ax1.contourf(xgrid, ygrid, cld_mask[framenumber], levels=[.5,1], colors=[cld_col], extend='neither', alpha=.5)
-        # Plot contour of halo
-        ax1.contour(xgrid, ygrid, cld_mask_dilated[framenumber], levels=[.5,1], colors=[dilated_col], extend='neither', alpha=.5)
+        # Plot cloud contour fields (Changed to line instead of patch, TEST: alpha or not alpha?:  alpha=.5)
+        # TEST: increase linewidths? -> 2 or 3
+        cs = ax1.contour(contour_xgrid, contour_ygrid, cld_mask[framenumber], levels=[.5,1], colors=[cld_col], extend='neither')
+        # Plot contour of halo (TEST: alpha or not alpha?)
+        ax1.contour(contour_xgrid, contour_ygrid, dilated_mask[framenumber], levels=[.5,1], colors=[halo_col], extend='neither')
         # Plot wind fields
         if 'total' in wt:
             #q = ax1.quiver(xgrid, ygrid, u, v, w, angles='xy', minshaft=2, minlength=0, scale=quiver_scale_factor[cf.case], cmap=quiver_cmap, norm=norm)
-            q = ax1.quiver(xgrid, ygrid, u, v, angles='xy', minshaft=2, minlength=0, scale=quiver_scale_factor[cf.case], pivot='mid')
+            q = ax1.quiver(quiver_xgrid, quiver_ygrid, u[::skip,::skip], v[::skip,::skip], angles='xy', minshaft=2, minlength=0, scale=quiver_scale_factor[cf.case], pivot='mid')
         else:
             # Calculate deviation from horizontal mean
             #u_dev = u - um[framenumber]
             #v_dev = v - v[framenumber]
             #q = ax1.quiver(xgrid, ygrid, u_dev, v_dev, w, angles='xy', minshaft=2, minlength=0, scale=quiver_scale_factor[cf.case]/5, cmap=quiver_cmap, norm=norm)
-            q = ax1.quiver(xgrid, ygrid, u-um[framenumber], v-vm[framenumber], angles='xy', minshaft=2, minlength=0, scale=quiver_scale_factor[cf.case]/5, pivot='mid')
+            q = ax1.quiver(quiver_xgrid, quiver_ygrid, u[::skip,::skip]-um[framenumber], v[::skip,::skip]-vm[framenumber], angles='xy', minshaft=2, minlength=0, scale=quiver_scale_factor[cf.case]/5, pivot='mid')
         
         # Add colorbar to ax1
         divider = make_axes_locatable(ax1)
@@ -553,13 +752,17 @@ def plot_3d(plots, cf, data, h, h_limits, h_extent, prm_vars, fps=2, gif=False):
             cb.ax.set_ylabel(r"u'w' $\mathrm{\left[\frac{m^2}{s^2}\right]}$", fontsize=fontsizes['labels'])
         elif 'vw' in wt:
             cb.ax.set_ylabel(r"v'w' $\mathrm{\left[\frac{m^2}{s^2}\right]}$", fontsize=fontsizes['labels'])
+        elif 'up' in wt:
+            cb.ax.set_ylabel(r"u' $\mathrm{\left[\frac{m}{s}\right]}$", fontsize=fontsizes['labels'])
+        elif 'vp' in wt:
+            cb.ax.set_ylabel(r"v' $\mathrm{\left[\frac{m}{s}\right]}$", fontsize=fontsizes['labels'])
         else:
             cb.ax.set_ylabel(r'w $\mathrm{\left[\frac{m}{s}\right]}$', fontsize=fontsizes['labels'])
         cb.ax.tick_params(labelsize=fontsizes['labels'])
         # Generate quiver key
-        ax1.quiverkey(q, .8, 1.01, wind_strength[framenumber], 'Mean wind: {:.1f}'.format(wind_strength[framenumber])+r'$\frac{m}{s}$', angle=mean_dir[framenumber], labelsep=.2*np.abs(um).max(), labelpos='E', fontproperties={'size':20})
+        ax1.quiverkey(q, .8, 1.01, wind_strength[framenumber], 'Mean wind: {:.1f}'.format(wind_strength[framenumber])+r'$\frac{m}{s}$', angle=mean_dir[framenumber], labelsep=.2*np.nanmax(np.abs(um)), labelpos='E', fontproperties={'size':20})
         # Fill second subplot
-        for line in plots.sortPlots_std:
+        for line in plots.profiles:
             ax2.plot(data[line][1], h, label=data[line][0], color=col_3d[line], ls='-', lw=5)
         # Generate Rectangles
         xlims = ax2.get_xlim()
@@ -645,14 +848,150 @@ def plot_3d(plots, cf, data, h, h_limits, h_extent, prm_vars, fps=2, gif=False):
     # Create plots for conditional u'w':
     logger.debug(plot_case_name)
     uw_pdf = PdfPages(os.path.join(out_dir, out_pdf.format(wt='conditional_uw_profiles')))
-    pb.plot_profiles([["In-cloud mean of u'w'",True,0,uw_cld]], h, r"Cloud Conditional $\mathrm{\overline{u'w'}\ \left[\frac{m^2}{s^2}\right]}$", cf.yLabel, "In-cloud mean of u'w'", os.path.join(jpg_dir,'uw_cld'), startLevel=0, lw=cf.lw, grid=False, centering=False, pdf=uw_pdf)
+    uw_plots = [[r"In-cloud mean of $\mathrm{\overline{u'w'}}$", True, 0, uw_cld],
+                [r"In-halo mean of $\mathrm{\overline{u'w'}}$", True, 0, uw_halo],
+                [r"Extended in-cloud mean of $\mathrm{\overline{u'w'}}$", True, 0, np.nansum(np.stack((uw_cld,uw_halo)),0)],
+                [r"Out-cloud mean of $\mathrm{\overline{u'w'}}$", True, 0, uw_nocld],
+                [r"Added means of $\mathrm{\overline{u'w'}}$", True, 0, np.nansum(np.stack((uw_cld,uw_halo,uw_nocld)),0)],
+                [r"$\mathrm{\overline{u'w'}}$ from std output", True, 0, data['uw'][1]]
+                ]
+    vw_plots = [[r"In-cloud mean of $\mathrm{\overline{v'w'}}$", True, 0, vw_cld],
+                [r"In-halo mean of $\mathrm{\overline{v'w'}}$", True, 0, vw_halo],
+                [r"Extended in-cloud mean of $\mathrm{\overline{v'w'}}$", True, 0, np.nansum(np.stack((vw_cld,vw_halo)),0)],
+                [r"Out-cloud mean of $\mathrm{\overline{v'w'}}$", True, 0, vw_nocld],
+                [r"Added means of $\mathrm{\overline{v'w'}}$", True, 0, np.nansum(np.stack((vw_cld,vw_halo,vw_nocld)),0)],
+                [r"$\mathrm{\overline{v'w'}}$ from std output", True, 0, data['vw'][1]]
+                ]
+    um_plots = [["In-cloud mean of u",True,0,u_cld_mean],
+                ["In-halo mean of u",True,0,u_halo_mean],
+                ["Extended in-cloud mean of u",True,0,np.nansum(np.stack((u_cld_mean,u_halo_mean)),0)],
+                ["Out-cloud mean of u",True,0,u_nocld_mean],
+                ["Added means of u",True,0,np.nansum(np.stack((u_cld_mean,u_halo_mean,u_nocld_mean)),0)],
+                # Add means from std ouput
+                [r"$\mathrm{\bar{u}}$ from std output", True, 0, data['u'][1]],
+                [r"In-cloud mean of u from std output", True, 0, data['ucld'][1]]
+                ]
+    vm_plots = [["In-cloud mean of v",True,0,v_cld_mean],
+                ["In-halo mean of v",True,0,v_halo_mean],
+                ["Extended in-cloud mean of v",True,0,np.nansum(np.stack((v_cld_mean,v_halo_mean)),0)],
+                ["Out-cloud mean of v",True,0,v_nocld_mean],
+                ["Added means of v",True,0,np.nansum(np.stack((v_cld_mean,v_halo_mean,v_nocld_mean)),0)],
+                # Add means from std ouput
+                [r"$\mathrm{\bar{v}}$ from std output", True, 0, data['v'][1]],
+                [r"In-cloud mean of v from std output", True, 0, data['vcld'][1]]
+                ]
+    wm_plots = [["In-cloud mean of w",True,0,w_cld_mean],
+                ["In-halo mean of w",True,0,w_halo_mean],
+                ["Extended in-cloud mean of w",True,0,np.nansum(np.stack((w_cld_mean,w_halo_mean)),0)],
+                ["Out-cloud mean of w",True,0,w_nocld_mean],
+                ["Added means of w",True,0,np.nansum(np.stack((w_cld_mean,w_halo_mean,w_nocld_mean)),0)],
+                # Add means from std ouput
+                [r"$\mathrm{\bar{w}}$ from std output", True, 0, data['w'][1]],
+                [r"In-cloud mean of w from std output", True, 0, data['wcld'][1]]
+                ]
+    # theta_v not included in 3d data
+    #upthvp_plots = [[r"In-cloud mean of $\mathrm{\overline{u'\theta_v'}}$", True, 0, upthvp_cld],
+                    #[r"In-halo mean of $\mathrm{\overline{u'\theta_v'}}$", True, 0, upthvp_halo],
+                    #[r"Extended in-cloud mean of $\mathrm{\overline{u'\theta_v'}}$", True, 0, np.nansum(np.stack((upthvp_cld,upthvp_halo)), 0)],
+                    #[r"Out-cloud mean of $\mathrm{\overline{u'\theta_v'}}$", True, 0, upthvp_nocld],
+                    #[r"Total mean of $\mathrm{\overline{u'\theta_v'}}$", True, 0, upthvp_total],
+                    #[r"Added means of $\mathrm{\overline{u'\theta_v'}}$", True, 0, np.nansum(np.stack((upthvp_cld,upthvp_halo,upthvp_nocld)),0)]
+                    #]
+    #vpthvp_plots = [["In-cloud mean of $\mathrm{\overline{v'\theta_v'}}$", True, 0, vpthvp_cld],
+                    #["In-halo mean of $\mathrm{\overline{v'\theta_v'}}$", True, 0, vpthvp_halo],
+                    #["Extended in-cloud mean of $\mathrm{\overline{v'\theta_v'}}$", True, 0, np.nansum(np.stack((vpthvp_cld,vpthvp_halo)),0)],
+                    #["Out-cloud mean of $\mathrm{\overline{v'\theta_v'}}$", True, 0, vpthvp_nocld],
+                    #["Total mean of $\mathrm{\overline{v'\theta_v'}}$", True, 0, vpthvp_total],
+                    #["Added means of $\mathrm{\overline{v'\theta_v'}}$", True, 0, np.nansum(np.stack((vpthvp_cld,vpthvp_halo,vpthvp_nocld)),0)]
+                    #]
+    #thvp_plots = [["In-cloud mean of $\mathrm{\overline{\theta_v'}}$", True, 0, thvp_cld],
+                  #["In-halo mean of $\mathrm{\overline{\theta_v'}}$", True, 0, thvp_halo],
+                  #["Extended in-cloud mean of $\mathrm{\overline{\theta_v'}}$", True, 0, np.nansum(np.stack((thvp_cld,thvp_halo)),0)],
+                  #["Out-cloud mean of $\mathrm{\overline{\theta_v'}}$", True, 0, thvp_nocld],
+                  #["Total mean of $\mathrm{\overline{\theta_v'}}$", True, 0, thvp_total],
+                  #["Added means of $\mathrm{\overline{\theta_v'}}$", True, 0, np.nansum(np.stack((thvp_cld,thvp_halo,thvp_nocld)),0)]
+                  #]
+    # UW plots
+    for k in range(len(uw_plots)):
+        pb.plot_profiles([uw_plots[k]], h, r"Cloud Conditional $\mathrm{\overline{u'w'}\ \left[\frac{m^2}{s^2}\right]}$", cf.yLabel, uw_plots[k][0], os.path.join(jpg_dir,'uw_cld{}'.format(k)), startLevel=0, lw=cf.lw, grid=False, centering=False, pdf=uw_pdf)
+
+    pb.plot_profiles([["u'^2",True,0,np.nanmean(up*up, axis=(1,2))]], h, "u'^2", cf.yLabel, "u'^2", os.path.join(jpg_dir,'up2'), startLevel=0, lw=cf.lw, grid=False, centering=False, pdf=uw_pdf)
     
-    pb.plot_profiles([["Extended in-cloud mean of u'w'",True,0,uw_dilated]], h, r"Dilated Cloud Conditional $\mathrm{\overline{u'w'}\ \left[\frac{m^2}{s^2}\right]}$", cf.yLabel, "Extended in-cloud mean of u'w'", os.path.join(jpg_dir,'uw_dilated'), startLevel=0, lw=cf.lw, grid=False, centering=False, pdf=uw_pdf)
+    pb.plot_profiles(uw_plots, h, r"Cloud Conditional $\mathrm{\overline{u'w'}\ \left[\frac{m^2}{s^2}\right]}$", cf.yLabel, r"Conditional mean of $\mathrm{\overline{u'w'}}$", os.path.join(jpg_dir,'uw_cld_all'), startLevel=0, lw=cf.lw, grid=False, centering=False, pdf=uw_pdf)
     
-    pb.plot_profiles([["In-cloud mean of v'w'",True,0,vw_cld]], h, r"Cloud Conditional $\mathrm{\overline{v'w'}\ \left[\frac{m^2}{s^2}\right]}$", cf.yLabel, "In-cloud mean of v'w'", os.path.join(jpg_dir,'vw_cld'), startLevel=0, lw=cf.lw, grid=False, centering=False, pdf=uw_pdf)
+    # TODO: Add standard mean u
+    #pb.plot_profiles([["Extended in-cloud mean of u",True,0,u_cld_mean]], h, r"Extended Cloud Conditional $\mathrm{\bar{u}\ \left[\frac{m}{s}\right]}$", cf.yLabel, "Extended Conditional mean of u", os.path.join(jpg_dir,'u_cld_mean'), startLevel=0, lw=cf.lw, grid=False, centering=False, pdf=uw_pdf)
     
-    pb.plot_profiles([["Extended in-cloud mean of v'w'",True,0,vw_dilated]], h, r"Dilated Cloud Conditional $\mathrm{\overline{v'w'}\ \left[\frac{m^2}{s^2}\right]}$", cf.yLabel, "Extended in-cloud mean of v'w'", os.path.join(jpg_dir,'vw_dilated'), startLevel=0, lw=cf.lw, grid=False, centering=False, pdf=uw_pdf)
+    # U plots
+    pb.plot_profiles(um_plots, h, r"Cloud Conditional $\mathrm{\bar{u}\ \left[\frac{m}{s}\right]}$", cf.yLabel, "Comparison of conditional means of u", os.path.join(jpg_dir, 'u_cld_all'), startLevel=0, lw=cf.lw, grid=False, centering=False, pdf=uw_pdf)
+
+    # VW plots
+    for k in range(len(vw_plots)):
+        pb.plot_profiles([vw_plots[k]], h, r"Cloud Conditional $\mathrm{\overline{v'w'}\ \left[\frac{m^2}{s^2}\right]}$", cf.yLabel, vw_plots[k][0], os.path.join(jpg_dir,'vw_cld{}'.format(k)), startLevel=0, lw=cf.lw, grid=False, centering=False, pdf=uw_pdf)
+        
+    pb.plot_profiles([["v'^2",True,0,np.nanmean(vp*vp, axis=(1,2))]], h, "v'^2", cf.yLabel, "v'^2", os.path.join(jpg_dir,'vp2'), startLevel=0, lw=cf.lw, grid=False, centering=False, pdf=uw_pdf)
+    
+    pb.plot_profiles(vw_plots, h, r"Cloud Conditional $\mathrm{\overline{v'w'}\ \left[\frac{m^2}{s^2}\right]}$", cf.yLabel, r"Conditional mean of $\mathrm{\overline{v'w'}}$", os.path.join(jpg_dir,'vw_cld_all'), startLevel=0, lw=cf.lw, grid=False, centering=False, pdf=uw_pdf)
+    
+    # TODO: Add standard mean v
+    #pb.plot_profiles([["Extended in-cloud mean of v",True,0,v_cld_mean]], h, r"Extended Cloud Conditional $\mathrm{\bar{v}\ \left[\frac{m}{s}\right]}$", cf.yLabel, "Extended Conditional mean of v", os.path.join(jpg_dir,'v_cld_mean'), startLevel=0, lw=cf.lw, grid=False, centering=False, pdf=uw_pdf)
+    
+    # V plots
+    pb.plot_profiles(vm_plots, h, r"Cloud Conditional $\mathrm{\bar{v}\ \left[\frac{m}{s}\right]}$", cf.yLabel, "Comparison of conditional means of v", os.path.join(jpg_dir, 'v_cld_all'), startLevel=0, lw=cf.lw, grid=False, centering=False, pdf=uw_pdf)
+    
+    # W plots
+    pb.plot_profiles(wm_plots, h, r"Cloud Conditional $\mathrm{\bar{w}\ \left[\frac{m}{s}\right]}$", cf.yLabel, "Comparison of conditional means of w", os.path.join(jpg_dir, 'w_cld_all'), startLevel=0, lw=cf.lw, grid=False, centering=False, pdf=uw_pdf)
+    
+    ## UTHV plot
+    #for k in range(len(upthvp_plots)):
+        #pb.plot_profiles([upthvp_plots[k]], h, r"Cloud Conditional $\mathrm{\overline{u'\theta_v'}\ \left[\frac{m^2K^2}{s^2}\right]}$", cf.yLabel, upthvp_plots[k][0], os.path.join(jpg_dir,'upthvp_cld{}'.format(k)), startLevel=0, lw=cf.lw, grid=False, centering=False, pdf=uw_pdf)
+    
+    #pb.plot_profiles(upthvp_plots, h, r"Cloud Conditional $\mathrm{\overline{u'\theta_v'}\ \left[\frac{m^2K^2}{s^2}\right]}$", cf.yLabel, r"Conditional $\mathrm{\overline{u'\theta_v'}}$", os.path.join(jpg_dir,'upthvp_cld_all'), startLevel=0, lw=cf.lw, grid=False, centering=False, pdf=uw_pdf)
+    
+    ## VTHV plot
+    #for k in range(len(vpthvp_plots)):
+        #pb.plot_profiles([vpthvp_plots[k]], h, r"Cloud Conditional $\mathrm{\overline{v'\theta_v'}\ \left[\frac{m^2K^2}{s^2}\right]}$", cf.yLabel, vpthvp_plots[k][0], os.path.join(jpg_dir,'vpthvp_cld{}'.format(k)), startLevel=0, lw=cf.lw, grid=False, centering=False, pdf=uw_pdf)
+        
+    #pb.plot_profiles(vpthvp_plots, h, r"Cloud Conditional $\mathrm{\overline{v'\theta_v'}\ \left[\frac{m^2K^2}{s^2}\right]}$", cf.yLabel, r"Conditional $\mathrm{\overline{v'\theta_v'}}$", os.path.join(jpg_dir,'vpthvp_cld_all'), startLevel=0, lw=cf.lw, grid=False, centering=False, pdf=uw_pdf)
+        
+    ## THV plot
+    #for k in range(len(thvp_plots)):
+        #pb.plot_profiles([thvp_plots[k]], h, r"Cloud Conditional $\mathrm{\overline{\theta_v'}\ \left[K^2}\right]}$", cf.yLabel, thvp_plots[k][0], os.path.join(jpg_dir,'thvp_cld{}'.format(k)), startLevel=0, lw=cf.lw, grid=False, centering=False, pdf=uw_pdf)
+
+    #pb.plot_profiles(thvp_plots, h, r"Cloud Conditional $\mathrm{\overline{\theta_v'}\ \left[K^2\right]}$", cf.yLabel, r"Conditional $\mathrm{\overline{\theta_v'}}$", os.path.join(jpg_dir,'thvp_cld_all'), startLevel=0, lw=cf.lw, grid=False, centering=False, pdf=uw_pdf)
+
+    # UM plots
+    
     uw_pdf.close()
+    
+    # Write plot parameters to params file
+    param_file = open(os.path.join(out_dir, 'plot_3d_params'), "w")
+    # dilation length dil_len
+    # percentile value quant
+    # cloud_interpolation cloud_interpolation
+    # grid skip length skip
+    # cloud recognition limit cld_lim
+    # (boundary times)
+    # (boundary heights)
+    # (grid size)
+    # (grid spacing)
+    prms = [
+        '# simulation parameters',
+        '(nx, ny, nz) = ({}, {}, {})'.format(dims[1], dims[2], dims[0]),
+        't = {}'.format(float(cf.time_3d)*float(cf.dt)),
+        'dx = {}'.format(cf.dxy),
+        'dy = {}'.format(cf.dxy),
+        'dz = {}'.format(cf.dz),
+        'height = {} - {}'.format(cf.startHeight, cf.endHeight),
+        '# plotting parameters:',
+        'number of arrows skipped = {}'.format(skip),
+        'cloud recognition limit for water vapor = {}'.format(cld_lim),
+        'background interpolation method = {}'.format(cloud_interpolation),
+        'cloud halo dilation length'.format(dil_len),
+        'convariance percentile cutoff = {}'.format(quant)
+        ]
+    param_file.write('\n'.join(prms))
+    param_file.close()
     
     
 
@@ -691,6 +1030,29 @@ def plot_comparison(plots, cf, data_clubb, data_sam, h_clubb, h_sam, plot_old_cl
             writer.write(tmp_pdf) # write pdf content to output file
     # file streams closed
     os.rename(os.path.join(out_dir,'tmp.pdf'), out_pdf) # rename newly created pdf
+    
+    # Write plot parameters to params file
+    param_file = open(os.path.join(out_dir, 'plot_params_{}'.format(plots.name)), "w")
+    # dilation length dil_len
+    # percentile value quant
+    # cloud_interpolation cloud_interpolation
+    # grid skip length skip
+    # cloud recognition limit cld_lim
+    # (boundary times)
+    # (boundary heights)
+    # (grid size)
+    # (grid spacing)
+    prms = [
+        '# simulation parameters',
+        '(nx, ny, nz) = ({}, {}, {})'.format(cf.nx, cf.ny, cf.nz),
+        'sampling time = {}-{}min'.format(cf.startTime, cf.endTime),
+        'dx = {}'.format(cf.dxy),
+        'dy = {}'.format(cf.dxy),
+        'dz = {}'.format(cf.dz),
+        'height = {} - {}'.format(cf.startHeight, cf.endHeight)
+        ]
+    param_file.write('\n'.join(prms))
+    param_file.close()
 
 
 
@@ -765,7 +1127,6 @@ def plotgen_default(plots, cf):
 def plotgen_3d(plots, cf):
     """
     bla
-    TODO: No data from std sam nc file needed
     """
     logger.info("plotgen_3d")
     gif = None
@@ -820,7 +1181,7 @@ def plotgen_3d(plots, cf):
     data.update({key:[value[0][0], value[0][-1]] for (key,value) in data_std.iteritems()})
     logger.debug("3d data: %s", str(data))
     logger.info("Create plots")
-    plot_3d(plots, cf, data, h, h_limits, h_extent, prm_vars, gif=gif)
+    plot_3d(plots, cf, data, h, h_limits, h_extent, prm_vars, dil_len=dil_len, gif=gif)
     
     
 def plotgen_comparison(plots, cf):
