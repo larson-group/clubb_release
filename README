@@ -34,7 +34,7 @@ Larson, V. E. and J.-C. Golaz, 2005:  Using Probability Density Functions to
   Derive Consistent Closure Relationships among Higher-Order Moments.  Mon. Wea.
   Rev., 133, 1023--1042.
 
-   See also the ./doc/CLUBBeqns.pdf file in the svn repository for the CLUBB
+   See also the ./doc/CLUBBeqns.pdf file in the git repository for the CLUBB
 model equations and finer details on how the discretization was done.
 
 The single column model executable ("clubb_standalone") runs a particular 
@@ -78,7 +78,7 @@ benchmark test cases, and creating plots.
 - STEP 1: OBTAINING THE CODE FROM THE REPOSITORY
 -------------------------------------------------------
 Checking CLUBB out requires the user to be a collaborator on the clubb_release github repository.
-Sign up can be done at http://carson.math.uwm.edu:4567 and will
+Sign up can be done at https://carson.math.uwm.edu/larson-group/clubb_site/signup and will
 require a github username.
 
 After entering the required information in the registration page, an invitation e-mail
@@ -239,13 +239,12 @@ only have BOMEX included.
 To check out, compile, and run CLUBB, and use plotgen to view the results,
 follow the following steps:
 
-- Have a valid CLUBB account
-  - Sign up at: http://clubb.larson-group.com/register.php
-  - This only needs to be performed once
-- Check out the CLUBB code with subversion
-  - svn co http://carson.math.uwm.edu/repos/clubb_repos/trunk
-    clubb --username EMAIL
-    (all on one line)
+- Become a CLUBB collaborator
+  - Sign up at: https://carson.math.uwm.edu/larson-group/clubb_site/signup
+  - This only needs to be performed once. 
+  - You must have a valid GitHub account.
+- Check out the CLUBB code with git
+  - git clone https://github.com/larson-group/clubb_release.git
 - Compile the CLUBB source code with a Fortran compiler (e.g. gfortran)
   - ./compile.bash config/linux_x86_64_gfortran.bash
     (in the clubb/compile directory)
@@ -464,7 +463,7 @@ such as the following:
 -----------------------------------------------------------------------
 - Method 2: Use a host model's make to compile CLUBB 
 -----------------------------------------------------------------------
-We've used svn externals to put the CLUBB_core directory into the SAM host
+We've used git subtrees to put the CLUBB_core directory into the SAM host
 model, and compile CLUBB using the SAM's Build script.  Other host models
 that utilize B. Eaton's mkDepends and mkSrcFiles could be similarly
 configured.  The basic method is to put the src/CLUBB_core directory into
@@ -797,7 +796,7 @@ This method requires Matlab as the plots are generated through Matlab.
 The basic usage below will plot 1 or more (as many as desired) specified
 output directories against other data for comparison.  For more detailed
 information on plotgen, including detailed usage and options see:
-http://www.larson-group.com/twiki/bin/view.pl/Documentation/CarsonDoc/Plotgen3.
+http://www.larson-group.com/twiki/bin/view.pl/Documentation/CarsonDoc/Plotgen3 (Deprecated).
 
 Usage: plotgen output_directory1 (output_directory2) ... directory_for_plots
 
@@ -1247,13 +1246,13 @@ If you have changes that you'd like to see included in the repository version
 of CLUBB, please feel free to contribute them.  We'll gladly review your 
 changes and consider them for inclusion.  
 
-To contribute the changes, type 'svn update' to merge the latest repository
+To contribute the changes, type 'git pull' to merge the latest repository
 version of CLUBB with your local version, and then create a file containing 
 the differences between the repository and your version:
 
-$ svn diff > patchfile
+$ git diff > patchfile
 
-Then email us patchfile.  See the svn book online for more details about svn.
+Then email us patchfile.  See https://git-scm.com/doc for more details about git.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %
