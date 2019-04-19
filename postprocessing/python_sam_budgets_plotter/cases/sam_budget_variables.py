@@ -92,7 +92,6 @@ QT = [\
          ['QTEND', True, 'QTEND', g_per_second_to_kg_per_day, 0],\
          ['QTSTOR', True, 'QTSTOR', g_per_second_to_kg_per_day, 0],\
          ['QV_TNDCY', True, 'QV_TNDCY', g_per_second_to_kg_per_day, 0],\
-         ['QC_TNDCY', True, 'QC_TNDCY', g_per_second_to_kg_per_day, 0],\
          ['QT_RES', True, 'QTSTOR+(-1)*(QTADV+QTDIFF+QTSRC+QTSINK+QTEND)', 1, 0],\
         ]
          
@@ -228,7 +227,7 @@ TKE = [\
         ['DISSIP', False, 'DISSIP', 1, 0],\
         ['DIFTR+DISS', True, 'DISSIP + DIFTR', 1, 0],\
         ['TKEBT', True, 'BT', 1., 0],\
-        ['TKE_RES', True, 'TKEBT - (SHEAR + BUOYA + ADVTR + PRESSTR + DIFTR + SDMP + DISSIP)', 1, 0],\
+        ['TKE_RES', True, 'BT - (SHEAR + BUOYA + ADVTR + PRESSTR + DIFTR + SDMP + DISSIP)', 1, 0],\
        ]
          
 TKES = [\
@@ -240,7 +239,6 @@ TKES = [\
         ['TKE_RES', True, '-(SHEARS + BUOYAS + ADVTRS + DISSIPS)', 1, 0],\
        ]
        
-       # NOTE(Steffen Domke): TKESHEAR is duplicate
 U2V2 = [\
         # variables of U2 + V2 = 2 * TKE - W2
         ['W2ADV', False, 'W2ADV', 1, 0],\
@@ -257,18 +255,18 @@ U2V2 = [\
         ['TKEDIFTR', False, 'DIFTR', 1, 0],\
         ['TKEDISSIP', False, 'DISSIP', 1, 0],\
         ['TKESDMP', False, 'SDMP', 1, 0],\
-        ['TKESHEAR', False, 'SHEAR', 1, 0],\
         ['TKEBT', False, 'BT', 1., 0],\
-        ['U2V2ADV', True, '2. * TKEADVTR - W2ADV', 1., 0],\
-        ['U2V2BUOY', True, '2. * TKEBUOYA - W2BUOY', 1., 0],\
-        ['U2V2PRESS', True, '2. * TKEPRESSTR - W2PRES', 1., 0],\
+        ['U2V2ADV', True, '2. * ADVTR - W2ADV', 1., 0],\
+        ['U2V2BUOY', True, '2. * BUOYA - W2BUOY', 1., 0],\
+        ['U2V2PRESS', True, '2. * PRESSTR - W2PRES', 1., 0],\
         ['U2V2REDIS', True, '- W2REDIS', 1, 0],\
-        ['U2V2DIFF', True, '2. * TKEDIFTR - W2DIFF', 1., 0],\
-        ['U2V2DISSIP', True, '2. * TKEDISSIP', 1, 0],\
-        ['U2V2SDMP', True, '2. * TKESDMP - W2SDMP', 1., 0],\
-        ['U2V2SHEAR', True, '2. * TKESHEAR', 1, 0],\
-        ['U2V2BT', True, '2. * TKEBT - W2BT', 1, 0],\
-        ['U2V2_RES', True, 'U2V2BT - (U2V2ADV + U2V2BUOY + U2V2PRESS + U2V2DIFF + U2V2DISSIP + U2V2SDMP + U2V2REDIS + U2V2SHEAR)', 1., 0],\
+        ['U2V2DIFF', True, '2. * DIFTR - W2DIFF', 1., 0],\
+        ['U2V2DISSIP', True, '2. * DISSIP', 1, 0],\
+        ['U2V2SDMP', True, '2. * SDMP - W2SDMP', 1., 0],\
+        ['U2V2SHEAR', True, '2. * SHEAR', 1, 0],\
+        ['U2V2BT', True, '2. * BT - W2BT', 1, 0],\
+        #['U2V2_RES', True, '2 * TKE_RES - W2_RES', 1., 0],\
+        ['U2V2_RES', True, '2. * (BT - (ADVTR + BUOYA + PRESSTR + DIFTR + DISSIP + SDMP + SHEAR)) - W2BT + (W2ADV + W2BUOY + W2PRES + W2DIFF + W2SDMP + W2REDIS)', 1., 0],\
        ]
   
 WU = [\
@@ -356,6 +354,7 @@ V2_COMP = [\
         ['W2SDMP', False, 'W2SDMP', 1, 0],\
         ['W2REDIS', False, 'W2REDIS', 1, 0],\
         ['W2BT', False, 'W2BT', 1, 0],\
+        #['W2_RES', False, 'W2BT - (W2ADV + W2PRES + W2REDIS + W2BUOY + W2DIFF + W2SDMP)', 1, 0],\
         ['TKEADVTR', False, 'ADVTR', 1, 0],\
         ['TKESHEAR', False, 'SHEAR', 1, 0],\
         ['TKEBUOYA', False, 'BUOYA', 1, 0],\
@@ -363,20 +362,14 @@ V2_COMP = [\
         ['TKEDIFTR', False, 'DIFTR', 1, 0],\
         ['TKEDISSIP', False, 'DISSIP', 1, 0],\
         ['TKESDMP', False, 'SDMP', 1, 0],\
-        ['TKESHEAR', False, 'SHEAR', 1, 0],\
         ['TKEBT', False, 'BT', 1., 0],\
-        ['U2V2ADV', False, '2. * TKEADVTR - W2ADV', 1., 0],\
-        ['U2V2BUOY', False, '2. * TKEBUOYA - W2BUOY', 1., 0],\
-        ['U2V2PRESS', False, '2. * TKEPRESSTR - W2PRES', 1., 0],\
-        ['U2V2REDIS', False, '- W2REDIS', 1, 0],\
-        ['U2V2DIFF', False, '2. * TKEDIFTR - W2DIFF', 1., 0],\
-        ['U2V2DISSIP', False, '2. * TKEDISSIP', 1, 0],\
-        ['U2V2SDMP', False, '2. * TKESDMP - W2SDMP', 1., 0],\
-        ['U2V2SHEAR', False, '2. * TKESHEAR', 1, 0],\
-        ['U2V2BT', True, '2. * TKEBT - W2BT', 1, 0],\
-        ['U2V2_RES', True, 'U2V2BT - (U2V2ADV + U2V2BUOY + U2V2PRESS + U2V2DIFF + U2V2DISSIP + U2V2SDMP + U2V2REDIS + U2V2SHEAR)', 1., 0],\
-        ['V2BT', True, 'U2V2BT - U2BT', 1., 0],\
-        ['V2_RES', True, 'U2V2_RES - U2_RES', 1., 0],\
+        #['TKE_RES', False, 'BT - (SHEAR + BUOYA + ADVTR + PRESSTR + DIFTR + SDMP + DISSIP)', 1, 0],\
+        ['U2V2BT', True, '2. * BT - W2BT', 1, 0],\
+        #['U2V2_RES', True, '2 * TKE_RES - W2_RES', 1., 0],\
+        ['U2V2_RES', True, '2. * (BT - (ADVTR + BUOYA + PRESSTR + DIFTR + DISSIP + SDMP + SHEAR)) - W2BT + (W2ADV + W2BUOY + W2PRES + W2DIFF + W2SDMP + W2REDIS)', 1., 0],\
+        ['V2BT', True, '2 * BT - W2BT - U2BT', 1., 0],\
+        #['V2_RES', True, 'U2V2_RES - U2_RES', 1., 0],\
+        ['V2_RES', True, '2. * (BT - (ADVTR + BUOYA + PRESSTR + DIFTR + DISSIP + SDMP + SHEAR)) - W2BT - U2BT + (W2ADV + U2ADV + W2BUOY + W2PRES + W2DIFF + U2DIFF + W2SDMP + W2REDIS + U2REDIS + U2SHEAR)', 1., 0],\
     ]
 
 U2_V2_TAU = [\
@@ -451,7 +444,7 @@ U2_REDUCED = [\
     ['pressure', True, 'U2REDIS', 1, 0],\
     ['turb. prod.', True, 'U2SHEAR', 1, 0],\
     ['time tndncy', True, 'U2BT', 1, 0],\
-    ['residual', True, 'time tndncy - (advection + turb. prod. + pressure + dissipation)', 1, 0],\
+    ['residual', True, 'U2BT - (U2ADV + U2SHEAR + U2REDIS + U2DIFF)', 1, 0],\
     ]
                     
 V2_REDUCED = [\
@@ -462,7 +455,7 @@ V2_REDUCED = [\
     ['pressure', True, 'V2REDIS', 1, 0],\
     ['turb. prod.', True, 'V2SHEAR', 1, 0],\
     ['time tndncy', True, 'V2BT', 1, 0],\
-    ['residual', True, 'time tndncy - (advection + turb. prod. + pressure + dissipation)', 1, 0],\
+    ['residual', True, 'V2BT - (V2ADV + V2SHEAR + V2REDIS + V2DIFF)', 1, 0],\
     ]
 
 W2_REDUCED = [\
@@ -476,7 +469,7 @@ W2_REDUCED = [\
     ['pressure', True, 'W2REDIS + W2PRES', 1, 0],\
     ['turb. prod.', True, None, 1., 0],\
     ['time tndncy', True, 'W2BT', 1, 0],\
-    ['residual', True, 'time tndncy - (advection + pressure + buoyancy + dissipation + W2SDMP)', 1, 0],\
+    ['residual', True, 'W2BT - (W2ADV + W2REDIS + W2PRES + W2BUOY + W2DIFF + W2SDMP)', 1, 0],\
     ]
 
 WU_REDUCED = [\
@@ -490,7 +483,7 @@ WU_REDUCED = [\
     ['pressure', True, 'WUPRES + WUANIZ', 1, 0],\
     ['turb. prod.', True, 'WUSHEAR', 1, 0],\
     ['time tndncy', True, 'WUBT', 1, 0],\
-    ['residual', True, 'time tndncy- (advection + buoyancy + dissipation + pressure + turb. prod. + WUSDMP)', 1, 0],\
+    ['residual', True, 'WUBT - (WUADV + WUBUOY + WUDIFF + WUPRES + WUANIZ + WUSHEAR + WUSDMP)', 1, 0],\
     ]
 
 WV_REDUCED = [\
@@ -504,7 +497,7 @@ WV_REDUCED = [\
     ['pressure', True, 'WVPRES + WVANIZ', 1, 0],\
     ['turb. prod.', True, 'WVSHEAR', 1, 0],\
     ['time tndncy', True, 'WVBT', 1, 0],\
-    ['residual', True, 'time tndncy - (advection + buoyancy + dissipation + pressure + turb. prod. + WVSDMP)', 1, 0],\
+    ['residual', True, 'WVBT - (WVADV + WVBUOY + WVDIFF + WVPRES + WVANIZ + WVSHEAR + WVSDMP)', 1, 0],\
     ]
 
 lines = [HL, QT, TW, THLW, QW, QTOGW, W2, W3, T2, THL2, Q2, QTOG2, QTHL, TKE, TKES, U2V2, WU, WV, U2, V2, V2_COMP, U2_V2_TAU, QTOG2_TAU, Q2_TAU, THL2_TAU, C2_TAU_COMP, U2_REDUCED, V2_REDUCED, W2_REDUCED, WU_REDUCED, WV_REDUCED]
