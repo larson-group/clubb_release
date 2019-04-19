@@ -191,5 +191,21 @@ quant = 1e-2
 # Set point skip for horizontal plots
 skip = 4
 
+# Hatching linewidth for cloud contours
+hw = 2
+
+# Cloud contour and hatching color
+cld_col = 'blue'
+hatch_col = (0,0,1,.5)
+#cld_col = 'skyblue' # This one was used for coloring patches, changed to two different lines
+
+# Cloud halo contour color
+#halo_col = 'mediumblue' # This is too similar to the cloud color, try grey/silver
+halo_col = 'grey'
+
+# Segment colors for background image
+red = (.9,0,0)
+green = (0,.75,0)
+zero_col = 1
 
 # TODO: Define dictionary for fontsizes in 3d plot

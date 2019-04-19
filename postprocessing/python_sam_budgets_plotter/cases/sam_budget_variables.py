@@ -34,37 +34,37 @@ sortPlots = ['HL', 'QT', 'TW', 'THLW', 'QW', 'QTOGW', 'W2', 'W3', 'T2', 'THL2', 
 # settings of each plot:
 # plot number, plot title, axis label
 plotNames = [\
-                ['HL 3D SAM Benchmark Budgets', r"$\mathrm{HL}$ budget terms $\mathrm{\left[\frac{K}{s}\right]}$"],\
-                ['QT 3D SAM Benchmark Budgets', r"$\mathrm{QTO}$ budget terms $\mathrm{\left[\frac{kg}{kg\ s}\right]}$"],\
-                ['TW SAM 3D Benchmark Budgets', r"$\mathrm{TW}$ budget terms $\mathrm{\left[\frac{m\ K}{s^2}\right]}$"],\
-                ['THLW SAM 3D Benchmark Budgets', r"$\mathrm{THLW}$ budget terms $\mathrm{\left[\frac{m K}{s^2}\right]}$"],\
-                ['QW SAM 3D Benchmark Budgets', r"$\mathrm{QW}$ budget terms $\mathrm{\left[\frac{kg\ m}{kg\ s^2}\right]}$"],\
-                ['QTOGW SAM 3D Benchmark Budgets', r"$\mathrm{QTOGW}$ budget terms $\mathrm{\left[\frac{kg\ m}{kg\ s^2}\right]}$"],\
-                ['W2 SAM 3D Benchmark Budgets', r"$\mathrm{\overline{w'^2}}$ budget terms $\mathrm{\left[\frac{m^2}{s^3}\right]}$"],\
-                ['W3 SAM 3D Benchmark Budgets', r"$\mathrm{\overline{w'^3}}$ budget terms $\mathrm{\left[\frac{m^3}{s^4}\right]}$"],\
-                ['T2 3D SAM Benchmark Budgets', r"$\mathrm{T^2}$ budget terms $\mathrm{\left[\frac{K^2}{s}\right]}$"],\
-                ['THL2 3D SAM Benchmark Budgets', r"$\mathrm{THL^2}$ budget terms $\mathrm{\left[\frac{K^2}{s}\right]}$"],\
-                ['Q2 3D SAM Benchmark Budgets', r"$\mathrm{Q^2}$ budget terms $\mathrm{\left[\frac{kg^2}{kg^2\ s}\right]}$"],\
-                ['QTOG2 3D SAM Benchmark Budgets', r"$\mathrm{QTOG^2}$ budget terms $\mathrm{\left[\frac{kg^2}{kg^2\ s}\right]}$"],\
-                ['QTHL 3D SAM Benchmark Budgets', r"$\mathrm{QTHL}$ budget terms $\mathrm{\left[\frac{kg\ K}{kg\ s}\right]}$"],\
-                ['TKE 3D SAM Benchmark Budgets', r"$\mathrm{TKE}$ budget terms $\mathrm{\left[\frac{m^2}{s^3}\right]}$"],\
-                ['TKE (SGS) 3D SAM Benchmark Budgets', r"$\mathrm{TKE}$ budget terms $\mathrm{\left[\frac{m^2}{s^3}\right]}$"],\
-                ['U2+V2 3D SAM Benchmark Budgets', r"$\mathrm{\overline{u'^2}+\overline{v'^2}}$ budget terms $\mathrm{\left[\frac{m^2}{s^2}\right]}$"],\
-                ['WU 3D SAM Benchmark Budgets', r"$\mathrm{\overline{u'w'}}$ budget terms $\mathrm{\left[\frac{m^2}{s^3}\right]}$"],\
-                ['WV 3D SAM Benchmark Budgets', r"$\mathrm{\overline{v'w'}}$ budget terms $\mathrm{\left[\frac{m^2}{s^3}\right]}$"],\
-                ['U2 3D SAM Benchmark Budgets', r"$\mathrm{\overline{u'^2}}$ budget terms $\mathrm{\left[\frac{m^2}{s^3}\right]}$"],\
-                ['V2 3D SAM Benchmark Budgets', r"$\mathrm{\overline{v'^2}}$ budget terms $\mathrm{\left[\frac{m^2}{s^3}\right]}$"],\
-                ['V2 Comparison from U2V2-U2', r"$\mathrm{\overline{v'^2}}$ budget terms $\mathrm{\left[\frac{m^2}{s^3}\right]}$"],\
-                [r'$\mathrm{\frac{C_{14}}{\tau}}$ Calculation based on U2 and V2 Budgets', r"$\mathrm{\frac{C_{14}}{\tau}\ \left[\frac{1}{s}\right]}$"],\
-                [r'$\mathrm{\frac{C_2}{\tau}}$ Calculation based on QTOG2 Budget', r"$\mathrm{\frac{C_2}{\tau}\ \left[\frac{1}{s}\right]}$"],\
-                [r'$\mathrm{\frac{C_2}{\tau}}$ Calculation based on QT2 Budget', r"$\mathrm{\frac{C_2}{\tau}\ \left[\frac{1}{s}\right]}$"],\
-                [r'$\mathrm{\frac{C_2}{\tau}}$ Calculation based on THL2 Budget', r"$\mathrm{\frac{C_2}{\tau}\ \left[\frac{1}{s}\right]}$"],\
-                [r'$\mathrm{\frac{C}{\tau}}$ Comparison', r"$\mathrm{\frac{C}{\tau}\ \left[\frac{1}{s}\right]}$"],\
-                ['U2 3D SAM Benchmark Budgets', r"$\mathrm{\overline{u'^2}}$ budget terms $\mathrm{\left[\frac{m^2}{s^3}\right]}$"],\
-                ['V2 3D SAM Benchmark Budgets', r"$\mathrm{\overline{v'^2}}$ budget terms $\mathrm{\left[\frac{m^2}{s^3}\right]}$"],\
-                ['W2 3D SAM Benchmark Budgets', r"$\mathrm{\overline{w'^2}}$ budget terms $\mathrm{\left[\frac{m^2}{s^3}\right]}$"],\
-                ['WU 3D SAM Benchmark Budgets', r"$\mathrm{\overline{u'w'}}$ budget terms $\mathrm{\left[\frac{m^2}{s^3}\right]}$"],\
-                ['WV 3D SAM Benchmark Budgets', r"$\mathrm{\overline{v'w'}}$ budget terms $\mathrm{\left[\frac{m^2}{s^3}\right]}$"],\
+                [r"$\mathrm{HL}$", r"$\mathrm{HL}$ budget terms $\mathrm{\left[\frac{K}{s}\right]}$"],\
+                [r"$\mathrm{QT}$", r"$\mathrm{QT}$ budget terms $\mathrm{\left[\frac{kg}{kg\ s}\right]}$"],\
+                [r"$\mathrm{TW}$", r"$\mathrm{TW}$ budget terms $\mathrm{\left[\frac{m\ K}{s^2}\right]}$"],\
+                [r"$\mathrm{THLW}$", r"$\mathrm{THLW}$ budget terms $\mathrm{\left[\frac{m K}{s^2}\right]}$"],\
+                [r"$\mathrm{QW}$", r"$\mathrm{QW}$ budget terms $\mathrm{\left[\frac{kg\ m}{kg\ s^2}\right]}$"],\
+                [r"$\mathrm{QTOGW}$", r"$\mathrm{QTOGW}$ budget terms $\mathrm{\left[\frac{kg\ m}{kg\ s^2}\right]}$"],\
+                [r"$\mathrm{\overline{w'^2}}$", r"$\mathrm{\overline{w'^2}}$ budget terms $\mathrm{\left[\frac{m^2}{s^3}\right]}$"],\
+                [r"$\mathrm{\overline{w'^3}}$", r"$\mathrm{\overline{w'^3}}$ budget terms $\mathrm{\left[\frac{m^3}{s^4}\right]}$"],\
+                [r"$\mathrm{T^2}$", r"$\mathrm{T^2}$ budget terms $\mathrm{\left[\frac{K^2}{s}\right]}$"],\
+                [r"$\mathrm{THL^2}$", r"$\mathrm{THL^2}$ budget terms $\mathrm{\left[\frac{K^2}{s}\right]}$"],\
+                [r"$\mathrm{Q^2}$", r"$\mathrm{Q^2}$ budget terms $\mathrm{\left[\frac{kg^2}{kg^2\ s}\right]}$"],\
+                [r"$\mathrm{QTOG^2}$", r"$\mathrm{QTOG^2}$ budget terms $\mathrm{\left[\frac{kg^2}{kg^2\ s}\right]}$"],\
+                [r"$\mathrm{QTHL}$", r"$\mathrm{QTHL}$ budget terms $\mathrm{\left[\frac{kg\ K}{kg\ s}\right]}$"],\
+                [r"$\mathrm{TKE}$", r"$\mathrm{TKE}$ budget terms $\mathrm{\left[\frac{m^2}{s^3}\right]}$"],\
+                [r"$\mathrm{TKE}_{SGS}$", r"$\mathrm{TKE}_{SGS}$ budget terms $\mathrm{\left[\frac{m^2}{s^3}\right]}$"],\
+                [r"$\mathrm{\overline{u'^2}+\overline{v'^2}}$", r"$\mathrm{\overline{u'^2}+\overline{v'^2}}$ budget terms $\mathrm{\left[\frac{m^2}{s^2}\right]}$"],\
+                [r"$\mathrm{\overline{u'w'}}$", r"$\mathrm{\overline{u'w'}}$ budget terms $\mathrm{\left[\frac{m^2}{s^3}\right]}$"],\
+                [r"$\mathrm{\overline{v'w'}}$", r"$\mathrm{\overline{v'w'}}$ budget terms $\mathrm{\left[\frac{m^2}{s^3}\right]}$"],\
+                [r"$\mathrm{\overline{u'^2}}$", r"$\mathrm{\overline{u'^2}}$ budget terms $\mathrm{\left[\frac{m^2}{s^3}\right]}$"],\
+                [r"$\mathrm{\overline{v'^2}}$", r"$\mathrm{\overline{v'^2}}$ budget terms $\mathrm{\left[\frac{m^2}{s^3}\right]}$"],\
+                [r"$\mathrm{(\overline{u'^2}+\overline{v'^2}) - \overline{u'^2}}$", r"$\mathrm{\overline{v'^2}}$ budget terms $\mathrm{\left[\frac{m^2}{s^3}\right]}$"],\
+                [r"$\mathrm{\frac{C_{14}}{\tau}\ (\overline{u'^2}, \overline{v'^2})}$", r"$\mathrm{\frac{C_{14}}{\tau}\ \left[\frac{1}{s}\right]}$"],\
+                [r"$\mathrm{\frac{C_2}{\tau}\ (QTOG^2)}$", r"$\mathrm{\frac{C_2}{\tau}\ \left[\frac{1}{s}\right]}$"],\
+                [r"$\mathrm{\frac{C_2}{\tau}\ (QT^2)}$", r"$\mathrm{\frac{C_2}{\tau}\ \left[\frac{1}{s}\right]}$"],\
+                [r"$\mathrm{\frac{C_2}{\tau}\ (THL^2)}$", r"$\mathrm{\frac{C_2}{\tau}\ \left[\frac{1}{s}\right]}$"],\
+                [r"$\mathrm{\frac{C}{\tau}}$ Comparison", r"$\mathrm{\frac{C}{\tau}\ \left[\frac{1}{s}\right]}$"],\
+                [r"$\mathrm{\overline{u'^2}}$ (reduced)", r"$\mathrm{\overline{u'^2}}$ budget terms $\mathrm{\left[\frac{m^2}{s^3}\right]}$"],\
+                [r"$\mathrm{\overline{v'^2}}$ (reduced)", r"$\mathrm{\overline{v'^2}}$ budget terms $\mathrm{\left[\frac{m^2}{s^3}\right]}$"],\
+                [r"$\mathrm{\overline{w'^2}}$ (reduced)", r"$\mathrm{\overline{w'^2}}$ budget terms $\mathrm{\left[\frac{m^2}{s^3}\right]}$"],\
+                [r"$\mathrm{\overline{u'w'}}$ (reduced)", r"$\mathrm{\overline{u'w'}}$ budget terms $\mathrm{\left[\frac{m^2}{s^3}\right]}$"],\
+                [r"$\mathrm{\overline{v'w'}}$ (reduced)", r"$\mathrm{\overline{v'w'}}$ budget terms $\mathrm{\left[\frac{m^2}{s^3}\right]}$"],\
             ]
 
 # lines of each plot:

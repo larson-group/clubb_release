@@ -187,8 +187,9 @@ def plot_profiles(data, level, xLabel, yLabel, title, name, startLevel = 0, lw =
                        0   | plot label
                        1   | switch: - True  = show line in plot
                            |         - False = do not show line
-                       2   | plot axis (0: left, 1: right)
-                       3   | data of variable (numpy array)
+                       2   | netcdf variable name
+                       3   | plot axis (0: left, 1: right)
+                       4   | data of variable (numpy array)
     level          --  height levels
     xLabel         --  label of the x axis
     yLabel         --  label of the y axis
@@ -203,7 +204,7 @@ def plot_profiles(data, level, xLabel, yLabel, title, name, startLevel = 0, lw =
     fig = plt.figure(figsize=(10,10))
     ax = fig.add_subplot(111)
     #logger.debug([b[2] for b in data])
-    if any([b[2]==1 for b in data]):
+    if any([b[3]==1 for b in data]):
         axes = [ax, ax.twiny()]
         for i, el in enumerate(axes):
             el.xaxis._update_offset_text_position = types.MethodType(x_update_offset_text_position, el.xaxis)
@@ -238,21 +239,21 @@ def plot_profiles(data, level, xLabel, yLabel, title, name, startLevel = 0, lw =
     lims = np.full((len(axes),2), fill_value=np.nan)
     #logger.debug(lims)
     for i in range(len(data)):
-        if data[i][3] is None and data[i][1]:
+        if data[i][4] is None and data[i][1]:
             logger.debug('Add dummy line for %s', data[i][0])
             # plot dummy line, even necessary?
             #axes[data[i][2]].plot([])
             # increment line counter j
             j+=1
         else:
-            logger.debug('dimension of %s: %s', data[i][0], len(data[i][3]))
+            logger.debug('dimension of %s: %s', data[i][0], len(data[i][4]))
             # if it is a help variable, like BUOY e.g., the variable should not be plotted. It is included in B+P variables
             if data[i][1]:
                 # plot line
-                axes[data[i][2]].plot(data[i][3][startLevel:], level[startLevel:], label=data[i][0], color=color_arr[j%len(color_arr)], lw=lw, ls=styles[j%len(styles)])
-                if not np.all(np.isnan(data[i][3])):
-                    lims[data[i][2],0] = np.nanmin( (np.nanmin(data[i][3]), lims[data[i][2],0]) )
-                    lims[data[i][2],1] = np.nanmax( (np.nanmax(data[i][3]), lims[data[i][2],1]) )
+                axes[data[i][3]].plot(data[i][4][startLevel:], level[startLevel:], label=data[i][0], color=color_arr[j%len(color_arr)], lw=lw, ls=styles[j%len(styles)])
+                if not np.all(np.isnan(data[i][4])):
+                    lims[data[i][3],0] = np.nanmin( (np.nanmin(data[i][4]), lims[data[i][3],0]) )
+                    lims[data[i][3],1] = np.nanmax( (np.nanmax(data[i][4]), lims[data[i][3],1]) )
                 # Change color for next line
                 j += 1
 
@@ -316,16 +317,18 @@ def plot_comparison(data_clubb, data_sam, level_clubb, level_sam, xLabel, yLabel
     """
     Plots a plot with budgets
     Input:
-    data_clubb      --  list of CLUBB data per plot line
-    data_sam        --  list of SAM data per plot line
-    Structure of data:
-    Index | Description
-    ______________________________________________
-    0   | plot label
-    1   | switch: - True  = show line in plot
-        |         - False = do not show line
-    2   | plot axis (0: left, 1: right)
-    3   | data of variable (numpy array)
+    data_clubb     --  list of CLUBB data per plot line
+    data_sam       --  list of SAM data per plot line
+    data           --  list of data per plot line
+                        Structure of data:
+                        Index | Description
+                        ______________________________________________
+                        0   | plot label
+                        1   | switch: - True  = show line in plot
+                            |         - False = do not show line
+                        2   | netcdf variable name
+                        3   | plot axis (0: left, 1: right)
+                        4   | data of variable (numpy array)
     level_clubb    --  height levels for CLUBB model
     level_sam      --  height levels for SAM model
     xLabel         --  label of the x axis
@@ -359,28 +362,28 @@ def plot_comparison(data_clubb, data_sam, level_clubb, level_sam, xLabel, yLabel
     
     # loop over lines in plot
     for i in range(len(data_clubb)):
-        logger.debug('dimension of CLUBB data %s: %s', data_clubb[i][0], len(data_clubb[i][3]))
-        logger.debug('dimension of SAM data %s: %s', data_sam[i][0], len(data_sam[i][3]))
+        logger.debug('dimension of CLUBB data %s: %s', data_clubb[i][0], len(data_clubb[i][4]))
+        logger.debug('dimension of SAM data %s: %s', data_sam[i][0], len(data_sam[i][4]))
         if plot_old_clubb:
-            logger.debug('dimension of old CLUBB data %s: %s', data_old[i][0], len(data_old[i][3]))
+            logger.debug('dimension of old CLUBB data %s: %s', data_old[i][0], len(data_old[i][4]))
         # if it is a help variable, like BUOY e.g., the variable should not be plotted. It is included in B+P variables
         if data_clubb[i][1]:
             ## plot lines
             # SAM
             d = comp_style['sam']
-            ax.plot(data_sam[i][3][startLevel:], level_sam[startLevel:], label=d['label'], color=d['color'], lw=d['lw'], ls=d['ls'])
+            ax.plot(data_sam[i][4][startLevel:], level_sam[startLevel:], label=d['label'], color=d['color'], lw=d['lw'], ls=d['ls'])
             # CLUBB
             d = comp_style['clubb']
-            ax.plot(data_clubb[i][3][startLevel:], level_clubb[startLevel:], label=d['label'], color=d['color'], lw=d['lw'], ls=d['ls'])
-            logger.debug("Data limits: CLUBB: (%f, %f); SAM: (%f, %f)", data_clubb[i][3].min(), data_clubb[i][3].max(), data_sam[i][3].min(), data_sam[i][3].max())
-            xmin = min(data_sam[i][3].min(), data_clubb[i][3].min())
-            xmax = max(data_sam[i][3].max(), data_clubb[i][3].max())
+            ax.plot(data_clubb[i][4][startLevel:], level_clubb[startLevel:], label=d['label'], color=d['color'], lw=d['lw'], ls=d['ls'])
+            logger.debug("Data limits: CLUBB: (%f, %f); SAM: (%f, %f)", data_clubb[i][4].min(), data_clubb[i][4].max(), data_sam[i][4].min(), data_sam[i][4].max())
+            xmin = min(data_sam[i][4].min(), data_clubb[i][4].min())
+            xmax = max(data_sam[i][4].max(), data_clubb[i][4].max())
             # old CLUBB
             if plot_old_clubb:
                 d = comp_style['old']
-                ax.plot(data_old[i][3][startLevel:], level_old[startLevel:], label=d['label'], color=d['color'], lw=d['lw'], ls=d['ls'])
-                xmin = min(xmin, data_old[i][3].min())
-                xmax = max(xmax, data_old[i][3].max())
+                ax.plot(data_old[i][4][startLevel:], level_old[startLevel:], label=d['label'], color=d['color'], lw=d['lw'], ls=d['ls'])
+                xmin = min(xmin, data_old[i][4].min())
+                xmax = max(xmax, data_old[i][4].max())
             xmin -= .1*(xmax-xmin)
             xmax += .1*(xmax-xmin)
             logger.debug("Set xlim to (%f, %f)", xmin, xmax)
@@ -455,7 +458,7 @@ def get_var_from_nc(nc, varname, conversion, n, t):
         var = var*conversion
     else:
         logger.debug('%s is not in keys', varname)
-        var = np.zeros(shape=(n,t)) - 1000.
+        var = np.zeros(shape=(t,n)) - 1000.
         
     return var
 

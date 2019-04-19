@@ -60,7 +60,7 @@ old_clubb_zm_file = '/home/sdomke/workspace/clubb/clubb_out/dycoms2_rf02_ds_zm.n
 old_clubb_zt_file = '/home/sdomke/workspace/clubb/clubb_out/dycoms2_rf02_ds_zt.nc'
 
 ## case setup files
-sam_prm = case_folder+'/prm'
+sam_prm = case_folder+'/prm.les2'
 sam_grd = case_folder+'/grd.les'
 
 # header in html file
