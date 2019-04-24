@@ -259,16 +259,21 @@ def get_all_variables(nc, lines, plotLabels, nh, nt, t0, t1, h0, h1, filler=0):
                 # Average over given time indices
                 logger.debug("%d>%d?",t1,t0)
                 logger.debug(t1>t0)
+                # TODO: Fix error when key not found -> data already has reduced size
+                # t1>t0 should only apply for profile data!
                 if t1>t0:
                     if not condPlot:
-                        data = pb.mean_profiles(data, t0, t1, h0, h1)
+                        if data.shape[1]>nh:
+                            data = pb.mean_profiles(data, t0, t1, h0, h1)
+                        else:
+                            data = pb.mean_profiles(data, t0, t1, 0, nh)
                 else:
                     # No time averaging
-                    if data.ndim==2:
+                    if data.ndim==2 and data.shape[1]>nh:
                         # 2d data here has the dimensions 0:time, 1:height(z)
                         # usually, 2d data should be averaged over time, this might not work! (TODO: test)
                         data=data[:,h0:h1]
-                    elif data.ndim==3:
+                    elif data.ndim==3 and data.shape[0]>nh:
                         # 3d data here has the dimenions 0:z, 1:x, 2:y
                         data = data[h0:h1]
                 # Save to plots, use var[2] as identifier string for replacement
@@ -304,11 +309,15 @@ def get_all_variables(nc, lines, plotLabels, nh, nt, t0, t1, h0, h1, filler=0):
                     data = np.full(nh, np.nan)
             #logger.debug("Line insertion index: %d", func[4])
             plot_lines[func[4]] = [func[0], func[1], func[0], func[3], data]
-        # Apply late averaging:
+        # Apply late averaging. Only for profile data!:
         if condPlot and t1>t0:
             logger.debug('Applying late averaging')
             for i in range(len(plot_lines)):
-                plot_lines[i][4] = pb.mean_profiles(plot_lines[i][4], t0, t1, h0, h1)
+                data = plot_lines[i][4]
+                if data.shape[1]>nh:
+                    plot_lines[i][4] = pb.mean_profiles(data, t0, t1, h0, h1)
+                else:
+                    plot_lines[i][4] = pb.mean_profiles(data, t0, t1, 0, nh)
         plot_data.append(plot_lines)
     
     return dict(zip(plotLabels, plot_data))
@@ -887,13 +896,13 @@ def plot_3d(plots, cf, data, h, h_limits, h_extent, prm_vars, fps=2, dil_len=1, 
     logger.debug(plot_case_name)
     uw_pdf = PdfPages(os.path.join(out_dir, out_pdf.format(wt='conditional_uw_profiles')))
     uw_plots = [[r"In-cloud mean of $\mathrm{\overline{u'w'}}$", True, 'dummy', 0, uw_cld],
-                [r"In-halo mean of $\mathrm{\overline{u'w'}}$", True, 'dummy', 0, uw_halo],
-                [r"Out-cloud mean of $\mathrm{\overline{u'w'}}$", True, 'dummy', 0, uw_nocld],
+                #[r"In-halo mean of $\mathrm{\overline{u'w'}}$", True, 'dummy', 0, uw_halo],
+                #[r"Out-cloud mean of $\mathrm{\overline{u'w'}}$", True, 'dummy', 0, uw_nocld],
                 [r"Extended in-cloud mean of $\mathrm{\overline{u'w'}}$", True, 'dummy', 0, np.nansum(np.stack((uw_cld*cld_cnt,uw_halo*halo_cnt)),0)/dilated_cnt],
                 #[r"Extended in-cloud mean of $\mathrm{\overline{u'w'}}$", True, 'dummy', 0, np.nansum(np.stack((uw_cld,uw_halo)),0)],
                 #[r"Added means of $\mathrm{\overline{u'w'}}$", True, 'dummy', 0, np.nansum(np.stack((uw_cld,uw_halo,uw_nocld)),0)],
                 [r"Added means of $\mathrm{\overline{u'w'}}$", True, 'dummy', 0, np.nansum(np.stack((uw_cld*cld_cnt,uw_halo*halo_cnt,uw_nocld*nocld_cnt))/N,0)],
-                [r"$\mathrm{\overline{u'w'}}$ from std output", True, 'dummy', 0, data['uw'][1]]
+                #[r"$\mathrm{\overline{u'w'}}$ from std output", True, 'dummy', 0, data['uw'][1]]
                 ]
     vw_plots = [[r"In-cloud mean of $\mathrm{\overline{v'w'}}$", True, 'dummy', 0, vw_cld],
                 [r"In-halo mean of $\mathrm{\overline{v'w'}}$", True, 'dummy', 0, vw_halo],
@@ -902,7 +911,7 @@ def plot_3d(plots, cf, data, h, h_limits, h_extent, prm_vars, fps=2, dil_len=1, 
                 #[r"Extended in-cloud mean of $\mathrm{\overline{v'w'}}$", True, 'dummy', 0, np.nansum(np.stack((vw_cld,vw_halo)),0)],
                 #[r"Added means of $\mathrm{\overline{v'w'}}$", True, 'dummy', 0, np.nansum(np.stack((vw_cld,vw_halo,vw_nocld)),0)],
                 [r"Added means of $\mathrm{\overline{v'w'}}$", True, 'dummy', 0, np.nansum(np.stack((vw_cld*cld_cnt,vw_halo*halo_cnt,vw_nocld*nocld_cnt))/N,0)],
-                [r"$\mathrm{\overline{v'w'}}$ from std output", True, 'dummy', 0, data['vw'][1]]
+                #[r"$\mathrm{\overline{v'w'}}$ from std output", True, 'dummy', 0, data['vw'][1]]
                 ]
     um_plots = [["In-cloud mean of u", True, 'dummy', 0, u_cld_mean],
                 ["In-halo mean of u", True, 'dummy', 0, u_halo_mean],
@@ -912,8 +921,8 @@ def plot_3d(plots, cf, data, h, h_limits, h_extent, prm_vars, fps=2, dil_len=1, 
                 #["Added means of u", True, 'dummy', 0, np.nansum(np.stack((u_cld_mean,u_halo_mean,u_nocld_mean)),0)],
                 ["Added means of u", True, 'dummy', 0, np.nansum(np.stack((u_cld_mean*cld_cnt,u_halo_mean*halo_cnt,u_nocld_mean*nocld_cnt))/N,0)],
                 # Add means from std ouput
-                [r"$\mathrm{\bar{u}}$ from std output", True, 'dummy', 0, data['u'][1]],
-                [r"In-cloud mean of u from std output", True, 'dummy', 0, data['ucld'][1]]
+                #[r"$\mathrm{\bar{u}}$ from std output", True, 'dummy', 0, data['u'][1]],
+                #[r"In-cloud mean of u from std output", True, 'dummy', 0, data['ucld'][1]]
                 ]
     vm_plots = [["In-cloud mean of v", True, 'dummy', 0, v_cld_mean],
                 ["In-halo mean of v", True, 'dummy', 0, v_halo_mean],
@@ -923,8 +932,8 @@ def plot_3d(plots, cf, data, h, h_limits, h_extent, prm_vars, fps=2, dil_len=1, 
                 #["Added means of v", True, 'dummy', 0, np.nansum(np.stack((v_cld_mean,v_halo_mean,v_nocld_mean)),0)],
                 ["Added means of v", True, 'dummy', 0, np.nansum(np.stack((v_cld_mean*cld_cnt,v_halo_mean*halo_cnt,v_nocld_mean*nocld_cnt))/N,0)],
                 # Add means from std ouput
-                [r"$\mathrm{\bar{v}}$ from std output", True, 'dummy', 0, data['v'][1]],
-                [r"In-cloud mean of v from std output", True, 'dummy', 0, data['vcld'][1]]
+                #[r"$\mathrm{\bar{v}}$ from std output", True, 'dummy', 0, data['v'][1]],
+                #[r"In-cloud mean of v from std output", True, 'dummy', 0, data['vcld'][1]]
                 ]
     wm_plots = [["In-cloud mean of w", True, 'dummy', 0, w_cld_mean],
                 ["In-halo mean of w", True, 'dummy', 0, w_halo_mean],
@@ -934,8 +943,8 @@ def plot_3d(plots, cf, data, h, h_limits, h_extent, prm_vars, fps=2, dil_len=1, 
                 #["Added means of w", True, 'dummy', 0, np.nansum(np.stack((w_cld_mean,w_halo_mean,w_nocld_mean)),0)],
                 ["Added means of w", True, 'dummy', 0, np.nansum(np.stack((w_cld_mean*cld_cnt,w_halo_mean*halo_cnt,w_nocld_mean*nocld_cnt))/N,0)],
                 # Add means from std ouput
-                [r"$\mathrm{\bar{w}}$ from std output", True, 'dummy', 0, data['w'][1]],
-                [r"In-cloud mean of w from std output", True, 'dummy', 0, data['wcld'][1]]
+                #[r"$\mathrm{\bar{w}}$ from std output", True, 'dummy', 0, data['w'][1]],
+                #[r"In-cloud mean of w from std output", True, 'dummy', 0, data['wcld'][1]]
                 ]
     # theta_v not included in 3d data
     #upthvp_plots = [[r"In-cloud mean of $\mathrm{\overline{u'\theta_v'}}$", True, 'dummy', 0, upthvp_cld],
