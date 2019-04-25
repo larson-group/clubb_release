@@ -379,6 +379,7 @@ module clubb_api_module
     clubb_no_error, &
     fill_holes_driver_api, & ! OR
     fill_holes_vertical_api, &
+    fill_holes_hydromet_api, &
     set_clubb_debug_level_api, &
     vertical_integral_api
 
@@ -1159,6 +1160,37 @@ contains
       rho_ds, rho_ds_zm, &
       field )
   end subroutine fill_holes_vertical_api
+
+  !=============================================================================
+  ! fill_holes_hydromet - fills holes in a hydrometeor using mass from another
+  ! hydrometeor that has the same phase.
+  !=============================================================================
+  subroutine fill_holes_hydromet_api( nz, hydromet_dim, hydromet, & ! Intent(in)
+                                      hydromet_filled ) ! Intent(out)
+
+    use fill_holes, only: &
+        fill_holes_hydromet ! Procedure
+
+    implicit none
+
+    ! Input Variables
+    integer, intent(in) :: &
+      hydromet_dim, & ! Number of hydrometeor fields
+      nz              ! Number of vertical grid levels
+
+    real( kind = core_rknd ), dimension(nz,hydromet_dim), intent(in) :: &
+      hydromet    ! Mean of hydrometeor fields    [units vary] 
+
+    ! Output Variables
+    real( kind = core_rknd ), dimension(nz,hydromet_dim), intent(out) :: &
+      hydromet_filled ! Mean of hydrometeor fields after hole filling [un. vary]
+
+
+    call fill_holes_hydromet( nz, hydromet_dim, hydromet, & ! Intent(in)
+                              hydromet_filled ) ! Intent(out)
+
+
+  end subroutine fill_holes_hydromet_api
 
   !================================================================================================
   ! vertical_integral - Computes the vertical integral.
