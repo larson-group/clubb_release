@@ -75,8 +75,8 @@ plotNames_zm = [\
     ]
 
 plotNames_zt = [\
-    [r"$\overline{u}}$", r"Eastward mean wind $\overline{u}\ \mathrm{\left[m\,s^{-1}\right]}$"],\
-    [r"$\overline{v}}$", r"Northward mean wind $\overline{v}\ \mathrm{\left[m\,s^{-1}\right]}$"],\
+    [r"$\overline{u}}$", r"Eastward mean wind, $\overline{u}\ \mathrm{\left[m\,s^{-1}\right]}$"],\
+    [r"$\overline{v}}$", r"Northward mean wind, $\overline{v}\ \mathrm{\left[m\,s^{-1}\right]}$"],\
     ]
 
 plotNames = plotNames_zm + plotNames_zt

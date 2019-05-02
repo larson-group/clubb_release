@@ -121,7 +121,7 @@ fontsizes = {
     'labels' : 25,
     'ticks' : 22,
     'title' : 30,
-    'legend' : 25,
+    'legend' : 24,
     }
 
 # Line formatting for comparison plots
@@ -130,7 +130,7 @@ comp_style = {
         'color' : 'red',
         'lw'    : 3,
         'ls'    : '--',
-        'label' : 'new CLUBB'
+        'label' : 'prog. mom. flux'
         },
     'sam'   : {
         'color' : 'black',
@@ -142,7 +142,7 @@ comp_style = {
         'color' : 'green',
         'lw'    : 3,
         'ls'    : ':',
-        'label' : 'old CLUBB'
+        'label' : 'downgradient dfsn.'
         },
     }
 
@@ -153,7 +153,7 @@ styles = [':', '-','--']
 # Legend positions for both x-axes
 #legend_pos = [2,1]
 #legend_pos = [1,2]
-legend_pos = [7,6]
+legend_pos = [0,0]
 
 # Distinguishing titles for legends
 legend_title = ['bottom', 'top']

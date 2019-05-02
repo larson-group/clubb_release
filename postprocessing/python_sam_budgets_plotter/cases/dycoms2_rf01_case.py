@@ -28,7 +28,6 @@ endTime = 240.0         # [minutes]
 startHeight = 20.0      # [m]
 endHeight = 1100.0      # [m]
 time_3d = 28800.0       # dt
-cld_cutoff = endHeight  # [m]
 
 # run entry for header in html file
 run = '{case}_{nx}x{ny}x{nz}_{dxy}m_{dz}m_{dt}s'.format(case=case, nx=nx, ny=ny, nz=nz, dxy=dxy, dz=dz, dt=dt)

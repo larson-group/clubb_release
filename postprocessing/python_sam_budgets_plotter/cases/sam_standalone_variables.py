@@ -639,139 +639,139 @@ vpthvp = [\
 
 # Conditional plots
 ucld = [\
-    [r'Layer averaged, $\overline{u}$', True, 'U', 1., 0 ],\
-    [r'Cloud averaged, $\overline{u}^\mathrm{cld}$', True, 'UCLD', 1., 0 ],\
+    [r'Layer avg., $\overline{u}$', True, 'U', 1., 0 ],\
+    [r'Cloud avg., $\overline{u}^\mathrm{cld}$', True, 'UCLD', 1., 0 ],\
     ]
 
 vcld = [\
-    [r'Layer averaged, $\overline{v}}$', True, 'V', 1., 0 ],\
-    [r'Cloud averaged, $\overline{v}^\mathrm{cld}$', True, 'VCLD', 1., 0 ],\
+    [r'Layer avg., $\overline{v}}$', True, 'V', 1., 0 ],\
+    [r'Cloud avg., $\overline{v}^\mathrm{cld}$', True, 'VCLD', 1., 0 ],\
     ]
 
 wcld = [\
-    [r'Layer averaged, $\overline{w}$', True, 'WM', 1., 0 ],\
-        [r'Cloud averaged, $\overline{w}^\mathrm{cld}$', True, 'WCLD', 1., 0 ],\
+    [r'Layer avg., $\overline{w}$', True, 'WM', 1., 0 ],\
+        [r'Cloud avg., $\overline{w}^\mathrm{cld}$', True, 'WCLD', 1., 0 ],\
     ]
 
 # Conditional comparison plots
 
 ucond = [\
-    [r'Layer averaged, $\overline{u}$', True, None, 1., 0 ],\
-    [r'Cloud averaged, $\overline{u}^\mathrm{cld}$', True, 'UCLD', 1., 0 ],\
+    [r'Layer avg., $\overline{u}$', True, None, 1., 0 ],\
+    [r'Cloud avg., $\overline{u}^\mathrm{cld}$', True, 'UCLD', 1., 0 ],\
     ['U', False, 'U', 1., 0 ],\
     ['CLD', False, 'CLD', 1., 0],\
-    [r'Environment averaged, $\overline{u}^\mathrm{env}$', True, '(U - CLD*UCLD)/(1-CLD)', 1., 0],\
+    [r'Environment avg., $\overline{u}^\mathrm{env}$', True, '(U - CLD*UCLD)/(1-CLD)', 1., 0],\
     ]
 
 uweight = [\
     ['UCLD', False, 'UCLD', 1., 0 ],\
     ['U', False, 'U', 1., 0 ],\
     ['CLD', False, 'CLD', 1., 0],\
-    [r'Layer averaged, $\overline{u}$', True, None, 1., 0 ],\
-    [r'Cloud averaged, $\overline{u}^\mathrm{cld}$', True, 'CLD * UCLD', 1., 0 ],\
-    [r'Environment averaged, $\overline{u}^\mathrm{env}$', True, '(U - CLD*UCLD)', 1., 0],\
+    [r'Layer avg., $\overline{u}$', True, None, 1., 0 ],\
+    [r'Cloud avg., $C\cdot\overline{u}^\mathrm{cld}$', True, 'CLD * UCLD', 1., 0 ],\
+    [r'Environment avg., $(1-C)\cdot\overline{u}^\mathrm{env}$', True, '(U - CLD*UCLD)', 1., 0],\
     ]
 
 vcond = [\
-    [r'Layer averaged, $\overline{v}$', True, None, 1., 0 ],\
-    [r'Cloud averaged, $\overline{v}^\mathrm{cld}$', True, 'VCLD', 1., 0 ],\
+    [r'Layer avg., $\overline{v}$', True, None, 1., 0 ],\
+    [r'Cloud avg., $\overline{v}^\mathrm{cld}$', True, 'VCLD', 1., 0 ],\
     ['V', False, 'V', 1., 0 ],\
     ['CLD', False, 'CLD', 1., 0],\
-    [r'Environment averaged, $\overline{v}^\mathrm{env}$', True, '(V - CLD*VCLD)/(1-CLD)', 1., 0],\
+    [r'Environment avg., $\overline{v}^\mathrm{env}$', True, '(V - CLD*VCLD)/(1-CLD)', 1., 0],\
     ]
 
 vweight = [\
     ['VCLD', False, 'VCLD', 1., 0 ],\
     ['V', False, 'V', 1., 0 ],\
     ['CLD', False, 'CLD', 1., 0],\
-    [r'Layer averaged, $\overline{v}$', True, None, 1., 0 ],\
-    [r'Cloud averaged, $\overline{v}^\mathrm{cld}$', True, 'CLD * VCLD', 1., 0 ],\
-    [r'Environment averaged, $\overline{v}^\mathrm{env}$', True, '(V - CLD*VCLD)', 1., 0],\
+    [r'Layer avg., $\overline{v}$', True, None, 1., 0 ],\
+    [r'Cloud avg., $c \cdot \overline{v}^\mathrm{cld}$', True, 'CLD * VCLD', 1., 0 ],\
+    [r'Environment avg., $(1-C) \cdot \overline{v}^\mathrm{env}$', True, '(V - CLD*VCLD)', 1., 0],\
     ]
 
 wcond = [\
     ['WM', False, 'WM', 1., 0 ],\
-    [r'Layer averaged, $\overline{w}$', True, None, 1., 0 ],\
-    [r'Cloud averaged, $\overline{w}^\mathrm{cld}$', True, 'WCLD', 1., 0 ],\
+    [r'Layer avg., $\overline{w}$', True, None, 1., 0 ],\
+    [r'Cloud avg., $\overline{w}^\mathrm{cld}$', True, 'WCLD', 1., 0 ],\
     ['CLD', False, 'CLD', 1., 0],\
-    [r'Environment averaged, $\overline{w}^\mathrm{env}$', True, '(WM - CLD*WCLD)/(1-CLD)', 1., 0],\
+    [r'Environment avg., $\overline{w}^\mathrm{env}$', True, '(WM - CLD*WCLD)/(1-CLD)', 1., 0],\
     ]
 
 wweight = [\
     ['WM', False, 'WM', 1., 0 ],\
     ['WCLD', False, 'WCLD', 1., 0 ],\
     ['CLD', False, 'CLD', 1., 0],\
-    [r'Layer averaged, $\overline{w}$', True, None, 1., 0 ],\
-    [r'Cloud averaged, $\overline{w}^\mathrm{cld}$', True, 'CLD * WCLD', 1., 0 ],\
-    [r'Environment averaged, $\overline{w}^\mathrm{env}$', True, '(WM - CLD*WCLD)', 1., 0],\
+    [r'Layer avg., $\overline{w}$', True, None, 1., 0 ],\
+    [r'Cloud avg., $C\cdot\overline{w}^\mathrm{cld}$', True, 'CLD * WCLD', 1., 0 ],\
+    [r'Environment avg., $(1-C)\cdot\overline{w}^\mathrm{env}$', True, '(WM - CLD*WCLD)', 1., 0],\
     ]
 
 uwcond = [\
-    [r"Layer averaged, $\overline{u'w'}$", True, None, 1., 0 ],\
-    [r"Cloud averaged, $\overline{u'w'}^\mathrm{cld}$", True, 'UWCLD', 1., 0 ],\
+    [r"Layer avg., $\overline{u'w'}$", True, None, 1., 0 ],\
+    [r"Cloud avg., $\overline{u'w'}^\mathrm{cld}$", True, 'UWCLD', 1., 0 ],\
     ['UW', False, 'UW', 1., 0 ],\
     ['CLD', False, 'CLD', 1., 0],\
-    [r"Environment averaged, $\overline{u'w'}^\mathrm{env}$", True, '(UW - CLD*UWCLD)/(1-CLD)', 1., 1],\
+    [r"Environment avg., $\overline{u'w'}^\mathrm{env}$", True, '(UW - CLD*UWCLD)/(1-CLD)', 1., 1],\
     ]
 
 uwweight = [\
     ['UWCLD', False, 'UWCLD', 1., 0 ],\
     ['UW', False, 'UW', 1., 0 ],\
     ['CLD', False, 'CLD', 1., 0],\
-    [r"Layer averaged, $\overline{u'w'}$", True, None, 1., 0 ],\
-    [r"Cloud averaged, $\overline{u'w'}^\mathrm{cld}$", True, 'CLD*UWCLD', 1., 0 ],\
-    [r"Environment averaged, $\overline{u'w'}^\mathrm{env}$", True, '(UW - CLD*UWCLD)', 1., 0],\
+    [r"Layer avg., $\overline{u'w'}$", True, None, 1., 0 ],\
+    [r"Cloud avg., $C\cdot\overline{u'w'}^\mathrm{cld}$", True, 'CLD*UWCLD', 1., 0 ],\
+    [r"Environment avg., $(1-C)\cdot\overline{u'w'}^\mathrm{env}$", True, '(UW - CLD*UWCLD)', 1., 0],\
     ]
 
 vwcond = [\
-    [r"Layer averaged, $\overline{v'w'}$", True, None, 1., 0 ],\
-    [r"Cloud averaged, $\overline{v'w'}^\mathrm{cld}$", True, 'VWCLD', 1., 0 ],\
+    [r"Layer avg., $\overline{v'w'}$", True, None, 1., 0 ],\
+    [r"Cloud avg., $\overline{v'w'}^\mathrm{cld}$", True, 'VWCLD', 1., 0 ],\
     ['VW', False, 'VW', 1., 0 ],\
     ['CLD', False, 'CLD', 1., 0],\
-    [r"Environment averaged, $\overline{v'w'}^\mathrm{env}$", True, '(VW - CLD*VWCLD)/(1-CLD)', 1., 1],\
+    [r"Environment avg., $\overline{v'w'}^\mathrm{env}$", True, '(VW - CLD*VWCLD)/(1-CLD)', 1., 1],\
     ]
 
 vwweight = [\
     ['VWCLD', False, 'VWCLD', 1., 0 ],\
     ['VW', False, 'VW', 1., 0 ],\
     ['CLD', False, 'CLD', 1., 0],\
-    [r"Layer averaged, $\overline{v'w'}$", True, None, 1., 0 ],\
-    [r"Cloud averaged, $\overline{v'w'}^\mathrm{cld}$", True, 'CLD * VWCLD', 1., 0 ],\
-    [r"Environment averaged, $\overline{v'w'}^\mathrm{env}$", True, '(VW - CLD*VWCLD)', 1., 1],\
+    [r"Layer avg., $\overline{v'w'}$", True, None, 1., 0 ],\
+    [r"Cloud avg., $C\cdot\overline{v'w'}^\mathrm{cld}$", True, 'CLD * VWCLD', 1., 0 ],\
+    [r"Environment avg., $(1-C)\cdot\overline{v'w'}^\mathrm{env}$", True, '(VW - CLD*VWCLD)', 1., 1],\
     ]
 
 tvcond = [\
-    [r"Layer averaged, $\overline{\theta}_v}$", True, None, 1., 0 ],\
-    [r'Cloud averaged, $\overline{\theta}_v^\mathrm{cld}$', True, 'TVCLD', 1., 0 ],\
+    [r"Layer avg., $\overline{\theta}_v}$", True, None, 1., 0 ],\
+    [r'Cloud avg., $\overline{\theta}_v^\mathrm{cld}$', True, 'TVCLD', 1., 0 ],\
     ['THETAV', False, 'THETAV', 1., 0 ],\
     ['CLD', False, 'CLD', 1., 0],\
-    [r'Environment averaged, $\overline{\theta}_v^\mathrm{env}$', True, '(THETAV - CLD*TVCLD)/(1-CLD)', 1., 0],\
+    [r'Environment avg., $\overline{\theta}_v^\mathrm{env}$', True, '(THETAV - CLD*TVCLD)/(1-CLD)', 1., 0],\
     ]
 
 tvweight = [\
     ['THETAV', False, 'THETAV', 1., 0 ],\
     [r'TVCLD', False, 'TVCLD', 1., 0 ],\
     ['CLD', False, 'CLD', 1., 0],\
-    [r"Layer averaged, $\overline{\theta}_v}$", True, None, 1., 0 ],\
-    [r'Cloud averaged, $\overline{\theta}_v^\mathrm{cld}$', True, 'CLD * TVCLD', 1., 0 ],\
-    [r'Environment averaged, $\overline{\theta}_v^\mathrm{env}$', True, '(THETAV - CLD*TVCLD)/(1-CLD)', 1., 0],\
+    [r"Layer avg., $\overline{\theta}_v}$", True, None, 1., 0 ],\
+    [r'Cloud avg., $C\cdot\overline{\theta}_v^\mathrm{cld}$', True, 'CLD * TVCLD', 1., 0 ],\
+    [r'Environment avg., $(1-C)\cdot\overline{\theta}_v^\mathrm{env}$', True, '(THETAV - CLD*TVCLD)/(1-CLD)', 1., 0],\
     ]
 
 tlcond = [\
-    [r"Layer averaged $\overline{w's_L'}$", True, None, 1., 0 ],\
-    [r"Cloud averaged, $\overline{w's'_L}^\mathrm{cld}$", True, 'TLWCLD', 1., 0 ],\
+    [r"Layer avg. $\overline{w's_L'}$", True, None, 1., 0 ],\
+    [r"Cloud avg., $\overline{w's'_L}^\mathrm{cld}$", True, 'TLWCLD', 1., 0 ],\
     ['TLFLUX', False, 'TLFLUX', 1., 0 ],\
     ['CLD', False, 'CLD', 1., 0],\
-    [r"Environment averaged, $\overline{w's'_L}^\mathrm{env}$", True, '(TLFLUX - CLD*TLWCLD)/(1-CLD)', 1., 0],\
+    [r"Environment avg., $\overline{w's'_L}^\mathrm{env}$", True, '(TLFLUX - CLD*TLWCLD)/(1-CLD)', 1., 0],\
     ]
 
 tlweight = [\
     ['TLFLUX', False, 'TLFLUX', 1., 0 ],\
     [r"TLWCLD", False, 'TLWCLD', 1., 0 ],\
     ['CLD', False, 'CLD', 1., 0],\
-    [r"Layer averaged $\overline{w's_L'}$", True, None, 1., 0 ],\
-    [r"Cloud averaged, $\overline{w's'_L}^\mathrm{cld}$", True, 'CLD * TLWCLD', 1., 0 ],\
-    [r"Environment averaged, $\overline{w's'_L}^\mathrm{env}$", True, '(TLFLUX - CLD*TLWCLD)/(1-CLD)', 1., 0],\
+    [r"Layer avg. $\overline{w's_L'}$", True, None, 1., 0 ],\
+    [r"Cloud avg., $C\cdot\overline{w's'_L}^\mathrm{cld}$", True, 'CLD * TLWCLD', 1., 0 ],\
+    [r"Environment avg., $(1-C)\cdot\overline{w's'_L}^\mathrm{env}$", True, '(TLFLUX - CLD*TLWCLD)/(1-CLD)', 1., 0],\
     ]
 
 qtwcond= [\
@@ -780,9 +780,9 @@ qtwcond= [\
     [r"QTWCLD", False, 'QTWCLD', 1., 0 ],\
     ['RHO', False, 'RHO', 1., 0],\
     ['CLD', False, 'CLD', 1., 0],\
-    [r"Layer averaged $\overline{w'r_t'}$", True, None, 1., 0 ],\
-    [r"Cloud averaged, $\overline{w'r_t'}^\mathrm{cld}$", True, 'QTWCLD/1000', 1., 0 ],\
-    [r"Environment averaged, $\overline{w'r_t'}^\mathrm{env}$", True, '((QTFLUX/ (RHO * 2.5104e+6)) - CLD*QTWCLD/1000)/(1-CLD)', 1., 0],\
+    [r"Layer avg. $\overline{w'r_t'}$", True, None, 1., 0 ],\
+    [r"Cloud avg., $\overline{w'r_t'}^\mathrm{cld}$", True, 'QTWCLD/1000', 1., 0 ],\
+    [r"Environment avg., $\overline{w'r_t'}^\mathrm{env}$", True, '((QTFLUX/ (RHO * 2.5104e+6)) - CLD*QTWCLD/1000)/(1-CLD)', 1., 0],\
     ]
 
 qtwweight = [\
@@ -791,21 +791,21 @@ qtwweight = [\
     [r"QTWCLD", False, 'QTWCLD', 1., 0 ],\
     ['RHO', False, 'RHO', 1., 0],\
     ['CLD', False, 'CLD', 1., 0],\
-    [r"Layer averaged $\overline{w'r_t'}$", True, None, 1., 0 ],\
-    [r"Cloud averaged, $\overline{w'r_t'}^\mathrm{cld}$", True, 'CLD*QTWCLD/1000', 1., 0 ],\
-    [r"Environment averaged, $\overline{w'r_t'}^\mathrm{env}$", True, '((QTFLUX/ (RHO * 2.5104e+6)) - CLD*QTWCLD/1000)', 1., 0],\
+    [r"Layer avg. $\overline{w'r_t'}$", True, None, 1., 0 ],\
+    [r"Cloud avg., $C\cdot\overline{w'r_t'}^\mathrm{cld}$", True, 'CLD*QTWCLD/1000', 1., 0 ],\
+    [r"Environment avg., $(1-C)\cdot\overline{w'r_t'}^\mathrm{env}$", True, '((QTFLUX/ (RHO * 2.5104e+6)) - CLD*QTWCLD/1000)', 1., 0],\
     ]
 
 uwall = [\
-    [r"Layer averaged, $\overline{u'w'}$", True, 'UW', 1., 0],\
-    [r"Layer averaged, $\overline{u'^2}$", True, 'U2', 1., 0],\
-    [r"Layer averaged, $\overline{w'^2}$", True, 'W2', 1., 0],\
+    [r"Layer avg., $\overline{u'w'}$", True, 'UW', 1., 0],\
+    [r"Layer avg., $\overline{u'^2}$", True, 'U2', 1., 0],\
+    [r"Layer avg., $\overline{w'^2}$", True, 'W2', 1., 0],\
         ]
     
 vwall = [\
-    [r"Layer averaged, $\overline{v'w'}$", True, 'VW', 1., 0],\
-    [r"Layer averaged, $\overline{v'^2}$", True, 'V2', 1., 0],\
-    [r"Layer averaged, $\overline{w'^2}$", True, 'W2', 1., 0],\
+    [r"Layer avg., $\overline{v'w'}$", True, 'VW', 1., 0],\
+    [r"Layer avg., $\overline{v'^2}$", True, 'V2', 1., 0],\
+    [r"Layer avg., $\overline{w'^2}$", True, 'W2', 1., 0],\
         ]
 
 lines = [thetal, rt, thetalflux, corr_w_tl, rtflux, corr_w_rt, cloudliqfrac, qcl, \

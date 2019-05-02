@@ -25,6 +25,7 @@ filler = nan                                                # Define the fill va
 startLevel = 0                                              # Set the lower height level at which the plots should begin. For example, startLevel=2 would cut off the lowest 2 data points for each line.
 header = 'SAM budgets'
 name = 'sam_budgets'
+prefix = 'LES'
 nc_files = ['sam']
 
 #-------------------------------------------------------------------------------

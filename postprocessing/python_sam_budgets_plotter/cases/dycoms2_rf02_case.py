@@ -28,7 +28,6 @@ endTime = 240.0         # [minutes]
 startHeight = 20.0      # [m]
 endHeight = 1200.0      # [m]
 time_3d = 43200.0       # dt
-cld_cutoff = endHeight  # [m]
 
 # run entry for header in html file
 run = '{case}_{nx}x{ny}x{nz}_{dxy}m_{dz}m_{dt}s'.format(case=case, nx=nx, ny=ny, nz=nz, dxy=dxy, dz=dz, dt=dt)
@@ -55,11 +54,11 @@ sam_file = '/home/sdomke/workspace/clubb/avi_out/publishing_runs/DYCOMS_RF02_256
 sam_3d_file = '/home/sdomke/workspace/clubb/avi_out/publishing_runs/3d/DYCOMS_RF02_256x256x96_dr_nosed_256_0000043200.nc'
 
 ## CLUBB
-clubb_zm_file = '/home/sdomke/workspace/clubb/clubb_out/dycoms2_rf02_ds_zm.nc'
-clubb_zt_file = '/home/sdomke/workspace/clubb/clubb_out/dycoms2_rf02_ds_zt.nc'
+clubb_zm_file = '/home/sdomke/workspace/clubb/clubb_out/dycoms2_rf02_do_zm.nc'
+clubb_zt_file = '/home/sdomke/workspace/clubb/clubb_out/dycoms2_rf02_do_zt.nc'
 ## old CLUBB
-old_clubb_zm_file = '/home/sdomke/workspace/clubb/clubb_out/dycoms2_rf02_ds_zm.nc'
-old_clubb_zt_file = '/home/sdomke/workspace/clubb/clubb_out/dycoms2_rf02_ds_zt.nc'
+old_clubb_zm_file = '/home/sdomke/workspace/clubb/clubb_out/dycoms2_rf02_do_zm_old.nc'
+old_clubb_zt_file = '/home/sdomke/workspace/clubb/clubb_out/dycoms2_rf02_do_zt_old.nc'
 
 ## case setup files
 sam_prm = case_folder+'/prm.les2'

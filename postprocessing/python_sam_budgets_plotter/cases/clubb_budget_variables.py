@@ -28,6 +28,7 @@ kg_per_second_to_kg_per_day = 1. / (DAY * HOUR)
 filler = nan                                                # Define the fill value which should replace invalid values in the data
 startLevel = 0                                              # Set the lower height level at which the plots should begin. For example, startLevel=2 would cut off the lowest 2 data points for each line.
 header = 'CLUBB budgets'
+prefix = 'CLUBB'
 name = 'clubb_budgets'                                      # String used as part of the output file name
 nc_files = ['clubb_zm']                                     # NetCDF files needed for plots, paths are defined
 

@@ -25,9 +25,8 @@ dt = 1                # [s]
 startTime = 181.0     # [minutes]
 endTime = 360.0       # [minutes]
 startHeight = 0.0   # [m]
-endHeight = 2000.0    # [m]
+endHeight = 2500.0    # [m]
 time_3d = 21600.0     # dt
-cld_cutoff = 2000.0   # [m]
 
 # run entry for header in html file
 run = '{case}_{nx}x{ny}x{nz}_{dxy}m_{dz}m_{dt}s'.format(case=case, nx=nx, ny=ny, nz=nz, dxy=dxy, dz=dz, dt=dt)
@@ -56,8 +55,8 @@ sam_3d_file = '/home/sdomke/workspace/clubb/avi_out/publishing_runs/3d/BOMEX_256
 clubb_zm_file = '/home/sdomke/workspace/clubb/clubb_out/bomex_zm.nc'
 clubb_zt_file = '/home/sdomke/workspace/clubb/clubb_out/bomex_zt.nc'
 ## old CLUBB
-old_clubb_zm_file = '/home/sdomke/workspace/clubb/clubb_out/bomex_zm.nc'
-old_clubb_zt_file = '/home/sdomke/workspace/clubb/clubb_out/bomex_zt.nc'
+old_clubb_zm_file = '/home/sdomke/workspace/clubb/clubb_out/bomex_zm_old.nc'
+old_clubb_zt_file = '/home/sdomke/workspace/clubb/clubb_out/bomex_zt_old.nc'
 
 ## case setup files
 sam_prm = case_folder+'/prm.les'
