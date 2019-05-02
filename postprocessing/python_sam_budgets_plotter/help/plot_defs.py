@@ -114,14 +114,14 @@ figure_scale = {
     } # list of cases, append as needed
 
 # Power limit for tick floating point formatting
-pow_lim = 1
+pow_lims = (-2,3)
 
 # List of fontsizes
 fontsizes = {
     'labels' : 25,
-    'ticks' : 20,
+    'ticks' : 22,
     'title' : 30,
-    'legend' : 18,
+    'legend' : 25,
     }
 
 # Line formatting for comparison plots
@@ -148,21 +148,38 @@ comp_style = {
 
 # List of line styles (cycling) (BUG: ls '-.' is not displayed correctly in legend!)
 #styles = ['-','--','-.',':']
-styles = ['-','--',':']
+styles = [':', '-','--']
 
 # Legend positions for both x-axes
-legend_pos = [2,1]
+#legend_pos = [2,1]
+#legend_pos = [1,2]
+legend_pos = [7,6]
 
 # Distinguishing titles for legends
 legend_title = ['bottom', 'top']
 
-# List of distinguishable colors for multiple plots lines
+# List of distinguishable colors for multiple plot lines
 #             red       blue      green     purple    brown     black     grey      orange    magenta
 color_arr = ['#e41a1c','#377eb8','#4daf4a','#984ea3','#a65628','#000000','#999999','#ffa600','#f750bf']
+# Alternative styles for conditional averages
+#           black   orange      blue        green   purple      brown       grey    magenta
+#color_arr = ['k', 'darkorange', '#377eb8','#4daf4a','#984ea3','#a65628','#999999','#f750bf']
+#styles = ['-', ':','--']
+
+## Heinze line colors (solid, dashed): 
+#   - lime: pressure redistribution (Pi (resolved), P (subgrid scale))
+#   - dodgerblue/deepskyblue: turbulent transport (T^t), pressure transport (T^p)
+#   - red: buoyancy (B)
+#   - black: mean-velocity shear (G), viscous dissipation (D)
+# Budget color array
+# advection, buoyancy, dissipation, isotropy, pressure, turb. prod. time tndncy, residual
+#color_arr = ['dodgerblue', 'red', 'black', 'lime', 'dodgerblue', 'black', 'grey', 'orange']
+#styles = ['-', '-', '--', '-', '--', '-', '-', ':']
 
 ## Horizontal cloud slice plots
 # Define base figsize
 #figsize = np.array(mpp.rcParams['figure.figsize'])*4
+profile_figsize=(11,10)
 figsize = (32.5,20)
 
 # Line colors for secondary plots in cloud plot
@@ -196,7 +213,7 @@ hw = 2
 
 # Cloud contour and hatching color
 cld_col = 'blue'
-hatch_col = (0,0,1,.5)
+hatch_col = (0,0,1,.3)
 #cld_col = 'skyblue' # This one was used for coloring patches, changed to two different lines
 
 # Cloud halo contour color

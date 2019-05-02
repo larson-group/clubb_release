@@ -12,6 +12,7 @@ to plot height profiles and budgets for the LBA case
 # TODO: check parameters in Heinze/Siebesma and (auto-)rename name,case,out_dir etc
 
 case = 'LBA'
+full_name = case
 case_folder = '/home/sdomke/workspace/clubb/sam_clubb/{case}'.format(case=case)
 enabled = True # not used in plotgen, no idea what this should do
 #type = 'budget' # not used in plotgen

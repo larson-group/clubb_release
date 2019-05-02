@@ -12,6 +12,7 @@ to plot height profiles and budgets for the BOMEX case
 # TODO: check parameters in Heinze/Siebesma and (auto-)rename name,case,out_dir etc
 
 case = 'BOMEX'
+full_name = case
 case_folder = '/home/sdomke/workspace/clubb/sam_clubb/{case}'.format(case=case)
 enabled = True # not used in plotgen, no idea what this should do
 #type = 'budget' # not used in plotgen
@@ -23,9 +24,10 @@ dz = 40               # [m]
 dt = 1                # [s]
 startTime = 181.0     # [minutes]
 endTime = 360.0       # [minutes]
-startHeight = 0.0     # [m]
-endHeight = 2500.0    # [m]
+startHeight = 0.0   # [m]
+endHeight = 2000.0    # [m]
 time_3d = 21600.0     # dt
+cld_cutoff = 2000.0   # [m]
 
 # run entry for header in html file
 run = '{case}_{nx}x{ny}x{nz}_{dxy}m_{dz}m_{dt}s'.format(case=case, nx=nx, ny=ny, nz=nz, dxy=dxy, dz=dz, dt=dt)
