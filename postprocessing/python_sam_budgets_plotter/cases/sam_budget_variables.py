@@ -481,7 +481,7 @@ U2_REDUCED = [\
     ['isotropy', True, 'U2REDIS', 1, 0],\
     ['pressure', True, None, 1, 0],\
     ['turb. prod.', True, 'U2SHEAR', 1, 0],\
-    ['time tndncy', True, 'U2BT', 1, 0],\
+    ['time tndcy', True, 'U2BT', 1, 0],\
     ['residual', True, 'U2BT - (U2ADV + U2SHEAR + U2REDIS + U2DIFF)', 1, 0],\
     ]
                     
@@ -493,7 +493,7 @@ V2_REDUCED = [\
     ['isotropy', True, 'V2REDIS', 1, 0],\
     ['pressure', True, None, 1, 0],\
     ['turb. prod.', True, 'V2SHEAR', 1, 0],\
-    ['time tndncy', True, 'V2BT', 1, 0],\
+    ['time tndcy', True, 'V2BT', 1, 0],\
     ['residual', True, 'V2BT - (V2ADV + V2SHEAR + V2REDIS + V2DIFF)', 1, 0],\
     ]
 
@@ -507,7 +507,7 @@ W2_REDUCED = [\
     ['pressure', False, 'W2PRES', 1, 0],\
     ['pressure', True, 'W2REDIS + W2PRES', 1, 0],\
     ['turb. prod.', True, None, 1., 0],\
-    ['time tndncy', True, 'W2BT', 1, 0],\
+    ['time tndcy', True, 'W2BT', 1, 0],\
     ['residual', True, 'W2BT - (W2ADV + W2REDIS + W2PRES + W2BUOY + W2DIFF + W2SDMP)', 1, 0],\
     ]
 
@@ -521,7 +521,7 @@ W2_REDUCED = [\
     #['dissipation', True, 'WUDIFF', 1, 0],\
     #['pressure', True, 'WUPRES + WUANIZ', 1, 0],\
     #['turb. prod.', True, 'WUSHEAR', 1, 0],\
-    #['time tndncy', True, 'WUBT', 1, 0],\
+    #['time tndcy', True, 'WUBT', 1, 0],\
     #['residual', True, 'WUBT - (WUADV + WUBUOY + WUDIFF + WUPRES + WUANIZ + WUSHEAR + WUSDMP)', 1, 0],\
     #]
 
@@ -536,7 +536,7 @@ WU_REDUCED = [\
     ['isotropy', False, 'WUANIZ', 1, 0],\
     ['pressure', False, 'WUPRES', 1, 0],\
     ['turb. prod.', True, 'WUSHEAR', 1, 0],\
-    ['time tndncy', True, 'WUBT', 1, 0],\
+    ['time tndcy', True, 'WUBT', 1, 0],\
     ['residual', True, 'WUBT - (WUADV + WUBUOY + WUDIFF + WUPRES + WUANIZ + WUSHEAR + WUSDMP)', 1, 0],\
     ]
 
@@ -550,7 +550,7 @@ WV_REDUCED = [\
     ['pressure', False, 'WVPRES', 1, 0],\
     ['pressure', True, 'WVPRES + WVANIZ', 1, 0],\
     ['turb. prod.', True, 'WVSHEAR', 1, 0],\
-    ['time tndncy', True, 'WVBT', 1, 0],\
+    ['time tndcy', True, 'WVBT', 1, 0],\
     ['residual', True, 'WVBT - (WVADV + WVBUOY + WVDIFF + WVPRES + WVANIZ + WVSHEAR + WVSDMP)', 1, 0],\
     ]
 
