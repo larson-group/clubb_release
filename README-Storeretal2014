@@ -2,7 +2,7 @@ Details necessary to repeat the simulations from Storer et al. 2014:
 
 *  SAM files necessary for prescribing radiation in TWP-ICE and ARM97, and
    for plotting comparisons with CLUBB-SILHS are available at:
-   http://www.larson-group.com/storer/
+   https://carson.math.uwm.edu/larson-group/storer/
 
 *  SAM files should be placed in the SAMoutput directory within the trunk.
 
