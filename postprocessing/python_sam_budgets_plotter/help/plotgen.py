@@ -416,6 +416,8 @@ def plot_3d(plots, cf, data, h, h_limits, h_extent, prm_vars, fps=2, dil_len=1, 
     logger.info('Unpacking data and perform calculations')
     ## Unpack arrays
     qn_3d = data['qn_3d']
+    qv_3d = data['qv_3d']
+    qt_3d = qn_3d+qv_3d
     #thv_3d = data['thetav']
     u_3d = data['u_3d']
     v_3d = data['v_3d']
@@ -497,14 +499,17 @@ def plot_3d(plots, cf, data, h, h_limits, h_extent, prm_vars, fps=2, dil_len=1, 
     um = np.nanmean(u_3d, axis=(1,2))
     vm = np.nanmean(v_3d, axis=(1,2))
     wm = np.nanmean(w_3d, axis=(1,2))
+    qm = np.nanmean(qt_3d, axis=(1,2))
     #thvm = np.nanmean(thv_3d, axis=(1,2))
     # 3d field of u'w' and v'w'
     up = u_3d - um[:,None,None]
     wp = w_3d - wm[:,None,None]
     vp = v_3d - vm[:,None,None]
+    qp = qt_3d - qm[:,None,None]
     #thvp = thv_3d - thvm[:,None,None]
     uw = up*wp
     vw = vp*wp
+    wq = wp*qp
     #upthvp = up*thvp
     #vpthvp = vp*thvp
     # Profile of horizontal wind strength
@@ -539,10 +544,13 @@ def plot_3d(plots, cf, data, h, h_limits, h_extent, prm_vars, fps=2, dil_len=1, 
     # Create arrays to save conditional u'w'
     uw_cld = np.full(wm.size, np.nan)
     vw_cld = np.full(wm.size, np.nan)
+    wq_cld = np.full(wm.size, np.nan)
     uw_halo = np.full(wm.size, np.nan)
     vw_halo = np.full(wm.size, np.nan)
+    wq_halo = np.full(wm.size, np.nan)
     uw_nocld = np.full(wm.size, np.nan)
     vw_nocld = np.full(wm.size, np.nan)
+    wq_nocld = np.full(wm.size, np.nan)
     u_cld_mean = np.full(um.size, np.nan)
     v_cld_mean = np.full(vm.size, np.nan)
     w_cld_mean = np.full(vm.size, np.nan)
@@ -709,7 +717,8 @@ def plot_3d(plots, cf, data, h, h_limits, h_extent, prm_vars, fps=2, dil_len=1, 
         z = dims[0],
         dx = prm_vars['dx'],
         dz = h_extent.mean(),
-        t = (cf.time_3d*cf.dt)/60.)
+        t = (cf.time_3d*cf.dt)/60.
+        )
     # Define update function for mp4/gif creation
     def update_plot(framenumber, wt):
         logger.info('Generating frame %d', framenumber)
@@ -724,6 +733,7 @@ def plot_3d(plots, cf, data, h, h_limits, h_extent, prm_vars, fps=2, dil_len=1, 
         if cld_mask[framenumber].sum()>0:
             uw_cld[framenumber] = np.nanmean(uw[framenumber, cld_mask[framenumber]])
             vw_cld[framenumber] = np.nanmean(vw[framenumber, cld_mask[framenumber]])
+            wq_cld[framenumber] = np.nanmean(wq[framenumber, cld_mask[framenumber]])
             u_cld_mean[framenumber] = np.nanmean(u[cld_mask[framenumber]])
             v_cld_mean[framenumber] = np.nanmean(v[cld_mask[framenumber]])
             w_cld_mean[framenumber] = np.nanmean(w_3d[framenumber, cld_mask[framenumber]])
@@ -738,6 +748,7 @@ def plot_3d(plots, cf, data, h, h_limits, h_extent, prm_vars, fps=2, dil_len=1, 
         if halo_mask[framenumber].sum()>0:
             uw_halo[framenumber] = np.nanmean(uw[framenumber, halo_mask[framenumber]])
             vw_halo[framenumber] = np.nanmean(vw[framenumber, halo_mask[framenumber]])
+            wq_halo[framenumber] = np.nanmean(wq[framenumber, halo_mask[framenumber]])
             u_halo_mean[framenumber] = np.nanmean(u[halo_mask[framenumber]])
             v_halo_mean[framenumber] = np.nanmean(v[halo_mask[framenumber]])
             w_halo_mean[framenumber] = np.nanmean(w_3d[framenumber, halo_mask[framenumber]])
@@ -752,6 +763,7 @@ def plot_3d(plots, cf, data, h, h_limits, h_extent, prm_vars, fps=2, dil_len=1, 
         if nocld_mask[framenumber].sum()>0:
             uw_nocld[framenumber] = np.nanmean(uw[framenumber, nocld_mask[framenumber]])
             vw_nocld[framenumber] = np.nanmean(vw[framenumber, nocld_mask[framenumber]])
+            wq_nocld[framenumber] = np.nanmean(wq[framenumber, nocld_mask[framenumber]])
             u_nocld_mean[framenumber] = np.nanmean(u[nocld_mask[framenumber]])
             v_nocld_mean[framenumber] = np.nanmean(v[nocld_mask[framenumber]])
             w_nocld_mean[framenumber] = np.nanmean(w_3d[framenumber, nocld_mask[framenumber]])
@@ -869,7 +881,7 @@ def plot_3d(plots, cf, data, h, h_limits, h_extent, prm_vars, fps=2, dil_len=1, 
         ax2.arrow(xlims[0]-(xlims[1]-xlims[0])/10, h[framenumber], (xlims[1]-xlims[0])/10, 0, length_includes_head=True, color='black', head_width=h_limits[-1]/50., head_length=(xlims[1]-xlims[0])/10).set_clip_on(False)
         # Set tick label format to scalar formatter with length sensitive format (switch to scientific format when a set order of magnitude is reached)
         ticks = stick(useMathText=True)
-        ticks.set_powerlimits((-pow_lim,pow_lim))
+        ticks.set_powerlimits(pow_lims)
         ax2.xaxis.get_offset_text().set_size(20)
         #logger.debug('yticks new: %s',str(list(ax1.get_yticklabels())))
         # Reduce blank space between subplots (using fig.subplots_adjust, because tight_layout isnt working properly)
@@ -902,31 +914,60 @@ def plot_3d(plots, cf, data, h, h_limits, h_extent, prm_vars, fps=2, dil_len=1, 
     logger.debug(plot_case_name)
     cutoff=-10
     uw_pdf = PdfPages(os.path.join(out_dir, out_pdf.format(wt='conditional_uw_profiles')))
-    uw_plots = [[r"Cloud averaged, $\overline{u'w'}^\mathrm{cld}$", True, 'dummy', 0, uw_cld[:cutoff]],
-                #[r"In-halo mean of $\mathrm{\overline{u'w'}}$", True, 'dummy', 0, uw_halo],
-                #[r"Out-cloud mean of $\mathrm{\overline{u'w'}}$", True, 'dummy', 0, uw_nocld],
-                [r"Cloud+Halo averaged, $\overline{u'w'}^\mathrm{ext}$", True, 'dummy', 1, (np.nansum(np.stack((uw_cld*cld_cnt,uw_halo*halo_cnt)),0)/dilated_cnt)[:cutoff]],
+    #uw_plots = [[r"Cloud averaged, $\overline{u'w'}^\mathrm{cld}$", True, 'dummy', 0, uw_cld[:cutoff]],
+                ##[r"In-halo mean of $\mathrm{\overline{u'w'}}$", True, 'dummy', 0, uw_halo],
+                ##[r"Out-cloud mean of $\mathrm{\overline{u'w'}}$", True, 'dummy', 0, uw_nocld],
+                #[r"Cloud+Halo averaged, $\overline{u'w'}^\mathrm{(c\!+\!h)}$", True, 'dummy', 1, (np.nansum(np.stack((uw_cld*cld_cnt,uw_halo*halo_cnt)),0)/dilated_cnt)[:cutoff]],
+                ##[r"Extended in-cloud mean of $\mathrm{\overline{u'w'}}$", True, 'dummy', 0, np.nansum(np.stack((uw_cld,uw_halo)),0)],
+                ##[r"Added means of $\mathrm{\overline{u'w'}}$", True, 'dummy', 0, np.nansum(np.stack((uw_cld,uw_halo,uw_nocld)),0)],
+                #[r"Layer averaged, $\overline{u'w'}$", True, 'dummy', 1, np.nansum(np.stack((uw_cld*cld_cnt,uw_halo*halo_cnt,uw_nocld*nocld_cnt))/N,0)[:cutoff]],
+                ##[r"$\mathrm{\overline{u'w'}}$ from std output", True, 'dummy', 0, data['uw'][1]]
+                #]
+                
+    uw_plots = [[r"Cloud avg., $\overline{u'w'}^\mathrm{cld}$", True, 'dummy', 0, uw_cld[:cutoff]],
+                [r"Halo avg., $\overline{u'w'}^\mathrm{halo}$", True, 'dummy', 0, uw_halo[:cutoff]],
+                #[r"Halo avg., $\overline{u'w'}^\mathrm{halo}$", True, 'dummy', 0, None],
+                [r"Env. avg., $\overline{u'w'}^\mathrm{env}$", True, 'dummy', 0, uw_nocld[:cutoff]],
+                #[r"Environment avg., $\overline{u'w'}\mathrm{env}$", True, 'dummy', 0, None],
+                #[r"Cloud+Halo averaged, $\overline{u'w'}^\mathrm{(c\!+\!h)}$", True, 'dummy', 1, (np.nansum(np.stack((uw_cld*cld_cnt,uw_halo*halo_cnt)),0)/dilated_cnt)[:cutoff]],
+                [r"Cloud+Halo avg., $\overline{u'w'}^\mathrm{(c\!+\!h)}$", True, 'dummy', 0, None],
                 #[r"Extended in-cloud mean of $\mathrm{\overline{u'w'}}$", True, 'dummy', 0, np.nansum(np.stack((uw_cld,uw_halo)),0)],
                 #[r"Added means of $\mathrm{\overline{u'w'}}$", True, 'dummy', 0, np.nansum(np.stack((uw_cld,uw_halo,uw_nocld)),0)],
-                [r"Layer averaged, $\overline{u'w'}$", True, 'dummy', 1, np.nansum(np.stack((uw_cld*cld_cnt,uw_halo*halo_cnt,uw_nocld*nocld_cnt))/N,0)[:cutoff]],
+                [r"Layer avg., $\overline{u'w'}$", True, 'dummy', 0, np.nansum(np.stack((uw_cld*cld_cnt,uw_halo*halo_cnt,uw_nocld*nocld_cnt))/N,0)[:cutoff]],
                 #[r"$\mathrm{\overline{u'w'}}$ from std output", True, 'dummy', 0, data['uw'][1]]
                 ]
     vw_plots = [[r"Cloud averaged, $\overline{v'w'}^\mathrm{cld}$", True, 'dummy', 0, vw_cld[:cutoff]],
                 [r"Halo averaged, $\overline{v'w'}^\mathrm{halo}$", True, 'dummy', 0, vw_halo[:cutoff]],
                 [r"Environment averaged, $\overline{v'w'}^\mathrm{env}$", True, 'dummy', 0, vw_nocld[:cutoff]],
-                [r"Cloud+Halo averaged, $\overline{v'w'}^\mathrm{ext}$", True, 'dummy', 0, (np.nansum(np.stack((vw_cld*cld_cnt,vw_halo*halo_cnt)),0)/dilated_cnt)[:cutoff]],
+                [r"Cloud+Halo averaged, $\overline{v'w'}^\mathrm{(c\!+\!h)}$", True, 'dummy', 0, (np.nansum(np.stack((vw_cld*cld_cnt,vw_halo*halo_cnt)),0)/dilated_cnt)[:cutoff]],
                 #[r"Extended in-cloud mean of $\mathrm{\overline{v'w'}}$", True, 'dummy', 0, np.nansum(np.stack((vw_cld,vw_halo)),0)],
                 #[r"Added means of $\mathrm{\overline{v'w'}}$", True, 'dummy', 0, np.nansum(np.stack((vw_cld,vw_halo,vw_nocld)),0)],
                 [r"Layer averaged, $\overline{v'w'}$", True, 'dummy', 1, np.nansum(np.stack((vw_cld*cld_cnt,vw_halo*halo_cnt,vw_nocld*nocld_cnt))/N,0)[:cutoff]],
                 #[r"$\mathrm{\overline{v'w'}}$ from std output", True, 'dummy', 0, data['vw'][1]]
                 ]
-    um_plots = [[r"Cloud averaged, $\overline{u}^\mathrm{cld}$", True, 'dummy', 0, u_cld_mean[:cutoff]],
-                [r"Halo averaged, $\overline{u}^\mathrm{halo}$", True, 'dummy', 0, u_halo_mean[:cutoff]],
-                [r"Environment averaged,  $\overline{u}^\mathrm{env}$", True, 'dummy', 0, u_nocld_mean[:cutoff]],
-                [r"Cloud+Halo averaged, $\overline{u}^\mathrm{ext}$", True, 'dummy', 0, (np.nansum(np.stack((u_cld_mean*cld_cnt,u_halo_mean*halo_cnt)),0)/dilated_cnt)[:cutoff]],
+    
+    wq_plots = [[r"Cloud weighted, $\overline{w'q_t'}^\mathrm{cld}$", True, 'dummy', 0, wq_cld[:cutoff]*cld_cnt[:cutoff]/N],
+                #[r"Halo averaged, $\overline{u'w'}^\mathrm{halo}$", True, 'dummy', 0, uw_halo],
+                [r"Halo weighted, $\overline{w'q_t'}^\mathrm{halo}$", True, 'dummy', 0, None],
+                #[r"Environment averaged, $\overline{u'w'}\mathrm{env}$", True, 'dummy', 0, uw_nocld],
+                [r"Environment weighted, $\overline{w'q_t'}^\mathrm{env}$", True, 'dummy', 0, (wq_halo*halo_cnt+wq_nocld*nocld_cnt)[:cutoff]/N],
+                #[r"Cloud+Halo averaged, $\overline{u'w'}^\mathrm{(c\!+\!h)}$", True, 'dummy', 1, (np.nansum(np.stack((uw_cld*cld_cnt,uw_halo*halo_cnt)),0)/dilated_cnt)[:cutoff]],
+                [r"Cloud+Halo avg., $\overline{w'q_t'}^\mathrm{(c\!+\!h)}$", True, 'dummy', 0, None],
+                #[r"Extended in-cloud mean of $\mathrm{\overline{u'w'}}$", True, 'dummy', 0, np.nansum(np.stack((uw_cld,uw_halo)),0)],
+                #[r"Added means of $\mathrm{\overline{u'w'}}$", True, 'dummy', 0, np.nansum(np.stack((uw_cld,uw_halo,uw_nocld)),0)],
+                [r"Layer avg., $\overline{w'q_t'}$", True, 'dummy', 0, np.nansum(np.stack((wq_cld*cld_cnt,wq_halo*halo_cnt,wq_nocld*nocld_cnt)),0)[:cutoff]/N],
+                #[r"$\mathrm{\overline{u'w'}}$ from std output", True, 'dummy', 0, data['uw'][1]]
+                ]
+    
+    um_plots = [[r"Cloud avg., $\bar{u}^\mathrm{cld}$", True, 'dummy', 0, u_cld_mean[:cutoff]],
+                [r"Halo avg., $\bar{u}^\mathrm{halo}$", True, 'dummy', 0, u_halo_mean[:cutoff]],
+                [r"Env. avg.,  $\bar{u}^\mathrm{env}$", True, 'dummy', 0, u_nocld_mean[:cutoff]],
+                #[r"Cloud+Halo averaged, $\overline{u}^\mathrm{(c\!+\!h)}$", True, 'dummy', 0, (np.nansum(np.stack((u_cld_mean*cld_cnt,u_halo_mean*halo_cnt)),0)/dilated_cnt)[:cutoff]],
+                [r"Cloud+Halo avg., $\bar{u}^\mathrm{(c\!+\!h)}$", True, 'dummy', 0, None],
                 #["Extended in-cloud mean of u", True, 'dummy', 0, np.nansum(np.stack((u_cld_mean,u_halo_mean)),0)],
+                #["Extended in-cloud mean of u", True, 'dummy', 0, None],
                 #["Added means of u", True, 'dummy', 0, np.nansum(np.stack((u_cld_mean,u_halo_mean,u_nocld_mean)),0)],
-                ["Layer averaged, $\overline{u}$", True, 'dummy', 0, np.nansum(np.stack((u_cld_mean*cld_cnt,u_halo_mean*halo_cnt,u_nocld_mean*nocld_cnt))/N,0)[:cutoff]],
+                [r"Layer avg., $\bar{u}$", True, 'dummy', 0, np.nansum(np.stack((u_cld_mean*cld_cnt,u_halo_mean*halo_cnt,u_nocld_mean*nocld_cnt))/N,0)[:cutoff]],
                 # Add means from std ouput
                 #[r"$\mathrm{\bar{u}}$ from std output", True, 'dummy', 0, data['u'][1]],
                 #[r"In-cloud mean of u from std output", True, 'dummy', 0, data['ucld'][1]]
@@ -981,30 +1022,32 @@ def plot_3d(plots, cf, data, h, h_limits, h_extent, prm_vars, fps=2, dil_len=1, 
 
     pb.plot_profiles([["u'^2",True,'dummy',0,np.nanmean(up*up, axis=(1,2))]], h, "u'^2", cf.yLabel, "u'^2", os.path.join(jpg_dir,'up2'), startLevel=0, lw=cf.lw, grid=False, centering=False, pdf=uw_pdf)
     
-    pb.plot_profiles(uw_plots, h[:cutoff], r"Cloud Conditional $\mathrm{\overline{u'w'}\ \left[\frac{m^2}{s^2}\right]}$", cf.yLabel, r"Conditional mean of $\mathrm{\overline{u'w'}}$", os.path.join(jpg_dir,'uw_cld_all'), startLevel=0, lw=cf.lw, grid=False, centering=True, pdf=uw_pdf)
+    pb.plot_profiles(uw_plots, h[:cutoff], r"Cloud conditional $\mathrm{\overline{u'w'}\ \left[\frac{m^2}{s^2}\right]}$", cf.yLabel, r"Conditional means of $\mathrm{\overline{u'w'}}$", os.path.join(jpg_dir,'uw_cld_all'), startLevel=0, lw=cf.lw, grid=False, centering=True, pdf=uw_pdf)
     
     # TODO: Add standard mean u
     #pb.plot_profiles([["Extended in-cloud mean of u",True,0,u_cld_mean]], h, r"Extended Cloud Conditional $\mathrm{\bar{u}\ \left[\frac{m}{s}\right]}$", cf.yLabel, "Extended Conditional mean of u", os.path.join(jpg_dir,'u_cld_mean'), startLevel=0, lw=cf.lw, grid=False, centering=False, pdf=uw_pdf)
     
     # U plots
-    pb.plot_profiles(um_plots, h[:cutoff], r"Cloud Conditional $\mathrm{\bar{u}\ \left[\frac{m}{s}\right]}$", cf.yLabel, "Comparison of conditional means of u", os.path.join(jpg_dir, 'u_cld_all'), startLevel=0, lw=cf.lw, grid=False, centering=False, pdf=uw_pdf)
+    pb.plot_profiles(um_plots, h[:cutoff], r"Cloud conditional $\mathrm{\bar{u}\ \left[\frac{m}{s}\right]}$", cf.yLabel, "Comparison of conditional means of u", os.path.join(jpg_dir, 'u_cld_all'), startLevel=0, lw=cf.lw, grid=False, centering=False, pdf=uw_pdf)
 
     # VW plots
     for k in range(len(vw_plots)):
-        pb.plot_profiles([vw_plots[k]], h[:cutoff], r"Cloud Conditional $\mathrm{\overline{v'w'}\ \left[\frac{m^2}{s^2}\right]}$", cf.yLabel, vw_plots[k][0], os.path.join(jpg_dir,'vw_cld{}'.format(k)), startLevel=0, lw=cf.lw, grid=False, centering=False, pdf=uw_pdf)
+        pb.plot_profiles([vw_plots[k]], h[:cutoff], r"Cloud conditional $\mathrm{\overline{v'w'}\ \left[\frac{m^2}{s^2}\right]}$", cf.yLabel, vw_plots[k][0], os.path.join(jpg_dir,'vw_cld{}'.format(k)), startLevel=0, lw=cf.lw, grid=False, centering=False, pdf=uw_pdf)
         
     pb.plot_profiles([["v'^2",True,'dummy', 0,np.nanmean(vp*vp, axis=(1,2))]], h, "v'^2", cf.yLabel, "v'^2", os.path.join(jpg_dir,'vp2'), startLevel=0, lw=cf.lw, grid=False, centering=False, pdf=uw_pdf)
     
-    pb.plot_profiles(vw_plots, h[:cutoff], r"Cloud Conditional $\mathrm{\overline{v'w'}\ \left[\frac{m^2}{s^2}\right]}$", cf.yLabel, r"Conditional mean of $\mathrm{\overline{v'w'}}$", os.path.join(jpg_dir,'vw_cld_all'), startLevel=0, lw=cf.lw, grid=False, centering=True, pdf=uw_pdf)
+    pb.plot_profiles(vw_plots, h[:cutoff], r"Cloud conditional $\mathrm{\overline{v'w'}\ \left[\frac{m^2}{s^2}\right]}$", cf.yLabel, r"Conditional means of $\mathrm{\overline{v'w'}}$", os.path.join(jpg_dir,'vw_cld_all'), startLevel=0, lw=cf.lw, grid=False, centering=True, pdf=uw_pdf)
+    
+    pb.plot_profiles(wq_plots, h[:cutoff], r"Cloud conditional $\mathrm{\overline{w'q_n'}\ \left[g\,m\,kg^{-1}\,s^{-1}\right]}$", cf.yLabel, r"Conditional means of $\overline{w'q_n'}}$", os.path.join(jpg_dir,'wq_cld_all'), startLevel=0, lw=cf.lw, grid=False, centering=True, pdf=uw_pdf)
     
     # TODO: Add standard mean v
     #pb.plot_profiles([["Extended in-cloud mean of v",True,0,v_cld_mean]], h, r"Extended Cloud Conditional $\mathrm{\bar{v}\ \left[\frac{m}{s}\right]}$", cf.yLabel, "Extended Conditional mean of v", os.path.join(jpg_dir,'v_cld_mean'), startLevel=0, lw=cf.lw, grid=False, centering=False, pdf=uw_pdf)
     
     # V plots
-    pb.plot_profiles(vm_plots, h[:cutoff], r"Cloud Conditional $\mathrm{\bar{v}\ \left[\frac{m}{s}\right]}$", cf.yLabel, "Comparison of conditional means of v", os.path.join(jpg_dir, 'v_cld_all'), startLevel=0, lw=cf.lw, grid=False, centering=False, pdf=uw_pdf)
+    pb.plot_profiles(vm_plots, h[:cutoff], r"Cloud conditional $\mathrm{\bar{v}\ \left[\frac{m}{s}\right]}$", cf.yLabel, "Comparison of conditional means of v", os.path.join(jpg_dir, 'v_cld_all'), startLevel=0, lw=cf.lw, grid=False, centering=False, pdf=uw_pdf)
     
     # W plots
-    pb.plot_profiles(wm_plots, h[:cutoff], r"Cloud Conditional $\mathrm{\bar{w}\ \left[\frac{m}{s}\right]}$", cf.yLabel, "Comparison of conditional means of w", os.path.join(jpg_dir, 'w_cld_all'), startLevel=0, lw=cf.lw, grid=False, centering=False, pdf=uw_pdf)
+    pb.plot_profiles(wm_plots, h[:cutoff], r"Cloud conditional $\mathrm{\bar{w}\ \left[\frac{m}{s}\right]}$", cf.yLabel, "Comparison of conditional means of w", os.path.join(jpg_dir, 'w_cld_all'), startLevel=0, lw=cf.lw, grid=False, centering=False, pdf=uw_pdf)
     
     ## UTHV plot
     #for k in range(len(upthvp_plots)):

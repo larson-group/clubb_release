@@ -147,8 +147,8 @@ comp_style = {
     }
 
 # List of line styles (cycling) (BUG: ls '-.' is not displayed correctly in legend!)
-#styles = ['-','--','-.',':']
-styles = [':', '-','--']
+styles = ['-','--',':']
+#styles = [':', '-','--']
 
 # Legend positions for both x-axes
 #legend_pos = [2,1]
@@ -161,10 +161,15 @@ legend_title = ['bottom', 'top']
 # List of distinguishable colors for multiple plot lines
 #             red       blue      green     purple    brown     black     grey      orange    magenta
 color_arr = ['#e41a1c','#377eb8','#4daf4a','#984ea3','#a65628','#000000','#999999','#ffa600','#f750bf']
+
 # Alternative styles for conditional averages
-#           black   orange      blue        green   purple      brown       grey    magenta
-#color_arr = ['k', 'darkorange', '#377eb8','#4daf4a','#984ea3','#a65628','#999999','#f750bf']
-#styles = ['-', ':','--']
+#               orange      blue      black   green   purple      brown      grey    magenta
+#color_arr = ['darkorange', '#377eb8', 'k', '#4daf4a','#984ea3','#a65628','#999999','#f750bf']
+#styles = [':', '--','-']
+# Conditional style 2
+##             red       green     blue      bla             black     brown     grey      orange    magenta
+#color_arr = ['#e41a1c','#4daf4a','#377eb8','lightseagreen','#000000','#a65628','#999999','#ffa600','#f750bf']
+#styles = ['--','--','--',':','-']
 
 ## Heinze line colors (solid, dashed): 
 #   - lime: pressure redistribution (Pi (resolved), P (subgrid scale))

@@ -44,7 +44,7 @@ profiles = ['uw', 'vw']
 #-------------------------------------------------------------------------------
 # Names of the variables (NOTE: THETAV NOT IN 3D DATA!)
 #sortPlots_3d = ['qn', 'thetav', 'u', 'v', 'w']
-sortPlots_3d = ['qn_3d', 'u_3d', 'v_3d', 'w_3d']
+sortPlots_3d = ['qn_3d', 'qv_3d', 'u_3d', 'v_3d', 'w_3d']
 sortPlots_std = ['uw', 'vw', 'u', 'v', 'w', 'ucld', 'vcld', 'wcld']
 # TODO: additional std data: U, V (,U2, V2, THV, UTHV, VTHV)
 sortPlots = sortPlots_3d + sortPlots_std
@@ -53,6 +53,9 @@ qn_3d = [\
     ['QN', True, 'QN', 1., 0],\
     ]
 
+qv_3d = [\
+    ['QV', True, 'QV', 1., 0],\
+        ]
 #thetav = [\
     #['THETAV', True, 'THETAV', 1., 0],\
     #]
@@ -105,6 +108,6 @@ wcld = [\
     ]
 
 #lines_3d = [qn, thetav, u, v, w]
-lines_3d = [qn_3d, u_3d, v_3d, w_3d]
+lines_3d = [qn_3d, qv_3d, u_3d, v_3d, w_3d]
 lines_std = [uw, vw, u, v, w, ucld, vcld, wcld]
 lines = lines_3d + lines_std

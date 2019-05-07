@@ -46,8 +46,8 @@ sortPlots = ['theta_l', 'r_t', 'theta_l_flux', 'corr_w_tl', 'r_t_flux', 'corr_w_
                 'uprcp', 'uprtp', 'upthlp', 'upthvp', \
                 'vprcp', 'vprtp', 'vpthlp', 'vpthvp', \
                 'ucld' , 'vcld' , 'wcld',\
-                'ucond', 'uweight', 'vcond', 'vweight', 'wcod', 'wweight',\
-                'uwcond', 'uwweight', 'vwcond', 'vwweight', 'tvcond', 'tvweight', 'tlcond', 'tlweight', 'qtwcond', 'qtwweight',\
+                'ucond', 'uweight', 'vcond', 'vweight', 'wcond', 'wweight',\
+                'uwcond', 'uwweight', 'vwcond', 'vwweight', 'tvcond', 'tvweight', 'tlweight', 'qtwweight',\
                 'uwall','vwall',\
                 ]
                 
@@ -156,9 +156,9 @@ plotNames = [\
                 [r"Weighted $\overline{v'w'}^\mathrm{cld}, \overline{v'w'}^\mathrm{env}$", r"Weighted flux, $\overline{v'w'}\ \mathrm{\left[m^2\, s^{-2}\right]}$"],\
                 [r"Condt. $\overline{\theta}_v^\mathrm{cld}, \overline{\theta}_v^\mathrm{env}$", r"Conditional virt. pot. temp., $\overline{\theta}_v\ \mathrm{\left[K\right]}$"],\
                 [r"Weighted $\overline{\theta}_v^\mathrm{cld}, \overline{\theta}_v^\mathrm{env}$", r"Weighted virt. pot. temp., $\overline{\theta}_v\ \mathrm{\left[K\right]}$"],\
-                [r"Condt. $\overline{w's_L'}^\mathrm{cld}, \overline{w's_L'}^\mathrm{env}$", r"Conditional flux, $\overline{w's_L'}\ \mathrm{\left[K\,m\, s^{-1}\right]}$"],\
+                #[r"Condt. $\overline{w's_L'}^\mathrm{cld}, \overline{w's_L'}^\mathrm{env}$", r"Conditional flux, $\overline{w's_L'}\ \mathrm{\left[K\,m\, s^{-1}\right]}$"],\
                 [r"Weighted $\overline{w's_L'}^\mathrm{cld}, \overline{w's_L'}^\mathrm{env}$", r"Weighted flux, $\overline{w's_L'}\ \mathrm{\left[K\,m\, s^{-1}\right]}$"],\
-                [r"Condt. $\overline{w'r_t'}^\mathrm{cld}, \overline{w'r_t'}^\mathrm{env}$", r"Conditional flux, $\overline{w'r_t'}\ \mathrm{\left[kg\,kg^{-1}\, m\,s^{-1}\right]}$"],\
+                #[r"Condt. $\overline{w'r_t'}^\mathrm{cld}, \overline{w'r_t'}^\mathrm{env}$", r"Conditional flux, $\overline{w'r_t'}\ \mathrm{\left[kg\,kg^{-1}\, m\,s^{-1}\right]}$"],\
                 [r"Weighted $\overline{w'r_t'}^\mathrm{cld}, \overline{w'r_t'}^\mathrm{env}$", r"Weighted flux, $\overline{w'r_t'}\ \mathrm{\left[kg\,kg^{-1}\, m\,s^{-1}\right]}$"],\
                 [r"Eastward 2nd-moments", r"2nd moments $\mathrm{\left[m^2\,s^{-2}\right]}$"],\
                 [r"Northward 2nd-moments", r"2nd moments $\mathrm{\left[m^2\,s^{-2}\right]}$"],\
@@ -714,6 +714,7 @@ uwcond = [\
     [r"Environment avg., $\overline{u'w'}^\mathrm{env}$", True, '(UW - CLD*UWCLD)/(1-CLD)', 1., 1],\
     ]
 
+
 uwweight = [\
     ['UWCLD', False, 'UWCLD', 1., 0 ],\
     ['UW', False, 'UW', 1., 0 ],\
@@ -757,43 +758,24 @@ tvweight = [\
     [r'Environment avg., $(1-C)\cdot\overline{\theta}_v^\mathrm{env}$', True, '(THETAV - CLD*TVCLD)/(1-CLD)', 1., 0],\
     ]
 
-tlcond = [\
-    [r"Layer avg. $\overline{w's_L'}$", True, None, 1., 0 ],\
-    [r"Cloud avg., $\overline{w's'_L}^\mathrm{cld}$", True, 'TLWCLD', 1., 0 ],\
-    ['TLFLUX', False, 'TLFLUX', 1., 0 ],\
-    ['CLD', False, 'CLD', 1., 0],\
-    [r"Environment avg., $\overline{w's'_L}^\mathrm{env}$", True, '(TLFLUX - CLD*TLWCLD)/(1-CLD)', 1., 0],\
-    ]
-
 tlweight = [\
     ['TLFLUX', False, 'TLFLUX', 1., 0 ],\
-    [r"TLWCLD", False, 'TLWCLD', 1., 0 ],\
+    [r"RHO", False, 'RHO', 1., 0 ],\
+    [r"Layer avg. $\overline{w's_L'}$", False, 'TLFLUX/RHO/1004', 1., 0 ],\
+    [r"Cloud avg., $C\cdot\overline{w's'_L}^\mathrm{cld}$", True, 'TLWCLD', 1., 0 ],\
     ['CLD', False, 'CLD', 1., 0],\
-    [r"Layer avg. $\overline{w's_L'}$", True, None, 1., 0 ],\
-    [r"Cloud avg., $C\cdot\overline{w's'_L}^\mathrm{cld}$", True, 'CLD * TLWCLD', 1., 0 ],\
-    [r"Environment avg., $(1-C)\cdot\overline{w's'_L}^\mathrm{env}$", True, '(TLFLUX - CLD*TLWCLD)/(1-CLD)', 1., 0],\
+    [r"Env. avg., $(1-C)\cdot\overline{w's'_L}^\mathrm{env}$", True, '(TLFLUX/RHO/1004 - TLWCLD)', 1., 0],\
     ]
 
-qtwcond= [\
-    ['QTFLUX', False, 'QTFLUX', 1., 0 ],\
+qtwweight= [\
+    #['WPRTP', False, 'WPRTP', 1., 0 ],\
     #['WPRTP_SGS', False, 'WPRTP_SGS', 1., 0],\
     [r"QTWCLD", False, 'QTWCLD', 1., 0 ],\
     ['RHO', False, 'RHO', 1., 0],\
     ['CLD', False, 'CLD', 1., 0],\
-    [r"Layer avg. $\overline{w'r_t'}$", True, None, 1., 0 ],\
+    [r"Layer avg. $\overline{w'r_t'}$", False, 'WPRTP', 1., 0 ],\
     [r"Cloud avg., $\overline{w'r_t'}^\mathrm{cld}$", True, 'QTWCLD/1000', 1., 0 ],\
-    [r"Environment avg., $\overline{w'r_t'}^\mathrm{env}$", True, '((QTFLUX/ (RHO * 2.5104e+6)) - CLD*QTWCLD/1000)/(1-CLD)', 1., 0],\
-    ]
-
-qtwweight = [\
-    ['QTFLUX', False, 'QTFLUX', 1., 0 ],\
-    #['WPRTP_SGS', False, 'WPRTP_SGS', 1., 0],\
-    [r"QTWCLD", False, 'QTWCLD', 1., 0 ],\
-    ['RHO', False, 'RHO', 1., 0],\
-    ['CLD', False, 'CLD', 1., 0],\
-    [r"Layer avg. $\overline{w'r_t'}$", True, None, 1., 0 ],\
-    [r"Cloud avg., $C\cdot\overline{w'r_t'}^\mathrm{cld}$", True, 'CLD*QTWCLD/1000', 1., 0 ],\
-    [r"Environment avg., $(1-C)\cdot\overline{w'r_t'}^\mathrm{env}$", True, '((QTFLUX/ (RHO * 2.5104e+6)) - CLD*QTWCLD/1000)', 1., 0],\
+    [r"Environment avg., $\overline{w'r_t'}^\mathrm{env}$", True, '(WPRTP - QTWCLD/1000)', 1., 0],\
     ]
 
 uwall = [\
@@ -824,6 +806,6 @@ lines = [thetal, rt, thetalflux, corr_w_tl, rtflux, corr_w_rt, cloudliqfrac, qcl
         vprcp, vprtp, vpthlp, vpthvp,\
         ucld, vcld, wcld,\
         ucond, uweight, vcond, vweight, wcond, wweight,\
-        uwcond, uwweight, vwcond, vwweight, tvcond, tvweight, tlcond, tlweight, qtwcond, qtwweight,\
+        uwcond, uwweight, vwcond, vwweight, tvcond, tvweight, tlweight, qtwweight,\
         uwall,vwall,\
         ]

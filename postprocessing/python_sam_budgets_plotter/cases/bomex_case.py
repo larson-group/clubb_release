@@ -48,7 +48,8 @@ sam_3d_file = '/home/sdomke/workspace/clubb/avi_out/out3d/BOMEX_64x64x75_100m_40
 
 # nc files for publishing runs with bigger horizontal grid (256x256):
 out_dir = '/home/sdomke/workspace/plotgen_out/publishing_runs/{case}_{{date}}/'.format(case=case.lower())
-sam_file = '/home/sdomke/workspace/clubb/avi_out/publishing_runs/BOMEX_256x256x75_100m_40m_1s.nc'
+#sam_file = '/home/sdomke/workspace/clubb/avi_out/publishing_runs/BOMEX_256x256x75_100m_40m_1s.nc'
+sam_file = '/home/sdomke/workspace/clubb/avi_out/publishing_runs/bomex_fixed/BOMEX_256x256x75_100m_40m_1s.nc'
 sam_3d_file = '/home/sdomke/workspace/clubb/avi_out/publishing_runs/3d/BOMEX_256x256x75_100m_40m_1s_256_0000021600.nc'
 
 ## CLUBB
