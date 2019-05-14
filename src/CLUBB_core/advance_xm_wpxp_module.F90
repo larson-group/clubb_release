@@ -413,6 +413,12 @@ module advance_xm_wpxp_module
       vpthlp,       & ! northward horz turb flux of theta_l (mom levs)   [m/s K]
       uprtp,        & ! eastward horz turb flux of tot water (mom levs)  [m/s kg/kg]
       vprtp           ! northward horz turb flux of tot water (mom levs) [m/s kg/kg]
+ 
+
+    real( kind = core_rknd ), dimension(gr%nz) :: & 
+      ustar,             & ! Friction velocity  [m/s]
+      invrs_tau_upxp_zm, & ! 1 over the dissipation time for upxp [1/s]
+      tau_upxp_zm          ! Damping time scale for upxp variables [s]
 
     ! Variables used as part of the monotonic turbulent advection scheme.
     ! Find the lowermost and uppermost grid levels that can have an effect
@@ -639,7 +645,8 @@ module advance_xm_wpxp_module
           ! Calculate a_1.
           ! It is a variable that is a function of sigma_sqd_w (where
           ! sigma_sqd_w is located on momentum levels).
-          a1(1:gr%nz) = one / ( one - sigma_sqd_w(1:gr%nz) )
+          !a1(1:gr%nz) = one / ( one - sigma_sqd_w(1:gr%nz) )
+          a1(1:gr%nz) = 3.0_core_rknd * one / ( one - sigma_sqd_w(1:gr%nz) )
 
           ! Interpolate a_1 from momentum levels to thermodynamic levels.  This
           ! will be used for the <w'x'> turbulent advection (ta) term.
@@ -1205,27 +1212,38 @@ module advance_xm_wpxp_module
          endif ! .not. l_implemented
 
          ! Add "extra term" and optional Coriolis term for <u'w'> and <v'w'>.
-         upwp_forcing = C7_Skw_fnc * wp2 * ddzt( um )
-         vpwp_forcing = C7_Skw_fnc * wp2 * ddzt( vm )
+         upwp_forcing = 0.0_core_rknd * (C7_Skw_fnc+0.0_core_rknd) * wp2 * ddzt( um )  &
+                            + 0.0_core_rknd * C6rt_Skw_fnc / tau_C6_zm * upwp
+         vpwp_forcing = 0.0_core_rknd * (C7_Skw_fnc+0.0_core_rknd) * wp2 * ddzt( vm )  &
+                            + 0.0_core_rknd * C6rt_Skw_fnc / tau_C6_zm * vpwp
 
          if ( l_stats_samp ) then
-            call stat_update_var( iupwp_pr4, C7_Skw_fnc * wp2 * ddzt( um ), &
+            call stat_update_var( iupwp_pr4, &
+                                  0.0_core_rknd * (C7_Skw_fnc+0.0_core_rknd) * wp2 * ddzt( um ) &
+                                  + 0.0_core_rknd * C6rt_Skw_fnc / tau_C6_zm * upwp, &
                                   stats_zm )
-            call stat_update_var( ivpwp_pr4, C7_Skw_fnc * wp2 * ddzt( vm ), &
+            call stat_update_var( ivpwp_pr4, &
+                                  0.0_core_rknd * (C7_Skw_fnc+0.0_core_rknd) * wp2 * ddzt( vm ) &
+                                  + 0.0_core_rknd * C6rt_Skw_fnc / tau_C6_zm * vpwp, &
                                   stats_zm )
          endif ! l_stats_samp
 
+         ustar = max( ( upwp(1)**2 + vpwp(1)**2 )**(0.25_core_rknd), 0.01_core_rknd )
+         invrs_tau_upxp_zm = one / 900._core_rknd &
+         + 0.1_core_rknd * ( ustar / 0.4_core_rknd ) / ( gr%zm + 20._core_rknd )
+         tau_upxp_zm = one / invrs_tau_upxp_zm
+
          call diagnose_upxp( upwp, thlm, wpthlp, um, &               ! Intent(in)
-                             C6thl_Skw_fnc, tau_C6_zm, C7_Skw_fnc, & ! Intent(in)
+                             C6thl_Skw_fnc, tau_upxp_zm, C7_Skw_fnc, & ! Intent(in)
                              upthlp )                                ! Intent(out)
          call diagnose_upxp( upwp, rtm, wprtp, um, &                ! Intent(in)
-                             C6rt_Skw_fnc, tau_C6_zm, C7_Skw_fnc, & ! Intent(in)
+                             C6rt_Skw_fnc, tau_upxp_zm, C7_Skw_fnc, & ! Intent(in)
                              uprtp )                                ! Intent(out)
          call diagnose_upxp( vpwp, thlm, wpthlp, vm, &               ! Intent(in)
-                             C6thl_Skw_fnc, tau_C6_zm, C7_Skw_fnc, & ! Intent(in)
+                             C6thl_Skw_fnc, tau_upxp_zm, C7_Skw_fnc, & ! Intent(in)
                              vpthlp )                                ! Intent(out)
          call diagnose_upxp( vpwp, rtm, wprtp, vm, &                ! Intent(in)
-                             C6rt_Skw_fnc, tau_C6_zm, C7_Skw_fnc, & ! Intent(in)
+                             C6rt_Skw_fnc, tau_upxp_zm, C7_Skw_fnc, & ! Intent(in)
                              vprtp )                                ! Intent(out)
 
          ! Use a crude approximation for buoyancy terms <u'thv'> and <v'thv'>.
@@ -4057,8 +4075,9 @@ module advance_xm_wpxp_module
     real( kind = core_rknd ), dimension(gr%nz), intent(out) :: &
         ypxp        ! horizontal flux of a conserved scalar, either upthlp, uprtp, vpthlp, or vprtp
 
+
     ypxp = ( tau_C6_zm / C6x_Skw_fnc ) * &
-              ( - ypwp * ddzt( xm ) - (one - C7_Skw_fnc ) * ( wpxp * ddzt( ym ) ) )
+              ( - ypwp * ddzt( xm ) - (one - 0.0_core_rknd * C7_Skw_fnc ) * ( wpxp * ddzt( ym ) ) )
 
     return
 

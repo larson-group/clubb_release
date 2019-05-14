@@ -11,13 +11,6 @@ import os
 import logging
 
 #-------------------------------------------------------------------------------
-#    GLOBAL DEFINITIONS
-#-------------------------------------------------------------------------------
-ntrials = 3 # maximum number of input trials before closing the program
-affirmatives = ['y', 'yes', 'aye', 'yay', 'pos', '1']
-negatives = ['n', 'no', 'nay', 'nope', 'neg', '0']
-
-#-------------------------------------------------------------------------------
 #   L O G G E R
 #-------------------------------------------------------------------------------
 logger = logging.getLogger('plotgen.help.defs')
@@ -29,7 +22,7 @@ logger.setLevel(logging.DEBUG)
 #    F U N C T I O N S
 #-------------------------------------------------------------------------------
 def isFunction(value):
-    logger.info('isFunction')
+    logger.info('__isFunction__')
     isFunc = False
     if '+' in value:
         isFunc = True
@@ -47,7 +40,17 @@ def makeDirectory(pathToFile):
     if not os.path.exists(pathToFile):
         os.makedirs(pathToFile)
 
+#-------------------------------------------------------------------------------
+#    GLOBAL DEFINITIONS
+#-------------------------------------------------------------------------------
+## CONSTANTS
+cld_lim = 0 # lower bound of water content at which grid point is in cloud
+## PROGRAM DEFINITIONS
+ntrials = 3 # maximum number of input trials before closing the program
+affirmatives = ['y', 'yes', 'aye', 'yay', 'pos', '1']
+negatives = ['n', 'no', 'nay', 'nope', 'neg', '0']
 
+## PLOTTING CHOICES
 # List of output types
 # TODO: How to define??
 type_dict = {
@@ -77,9 +80,11 @@ case_dict = {
 case_names = case_dict.keys()
 case_modules = case_dict.values()
 
+## FORMATTING
 # Define date format to be used in file names by datetime.datetime.strftime
 date_file_format = '%Y%m%d'
 
+## FILE IMPORT PATTERNS
 # Define search patterns
 dt_pattern = "dt = ([0-9]*[.[0-9]*]?)"
 prm_patterns = {
@@ -91,6 +96,7 @@ prm_patterns = {
     'nsave3Dend' : "nsave3Dend\s*=\s*([0-9]*[.[0-9]*]?)",
     }
 
+## PLOT FORMATTING
 quiver_scale_factor = {
     "BOMEX" : 500,
     "DYCOMS_RF01" : 750,
@@ -99,7 +105,6 @@ quiver_scale_factor = {
     "LBA" : 500,
     } # list of cases, append as needed
 
-
 figure_scale = {
     "BOMEX" : 1,
     "DYCOMS_RF01" : 1,
@@ -107,3 +112,100 @@ figure_scale = {
     "RICO" : 2,      # grid is huge, individual arrows can barely be distinguished
     "LBA" : 1,
     } # list of cases, append as needed
+
+# Power limit for tick floating point formatting
+pow_lim = 1
+
+# List of fontsizes
+fontsizes = {
+    'labels' : 25,
+    'ticks' : 20,
+    'title' : 30,
+    'legend' : 18,
+    }
+
+# Line formatting for comparison plots
+comp_style = {
+    'clubb' : {
+        'color' : 'red',
+        'lw'    : 3,
+        'ls'    : '--',
+        'label' : 'new CLUBB'
+        },
+    'sam'   : {
+        'color' : 'black',
+        'lw'    : 5,
+        'ls'    : '-',
+        'label' : 'SAM-LES'
+        },
+    'old'   : {
+        'color' : 'green',
+        'lw'    : 3,
+        'ls'    : ':',
+        'label' : 'old CLUBB'
+        },
+    }
+
+# List of line styles (cycling) (BUG: ls '-.' is not displayed correctly in legend!)
+#styles = ['-','--','-.',':']
+styles = ['-','--',':']
+
+# Legend positions for both x-axes
+legend_pos = [2,1]
+
+# Distinguishing titles for legends
+legend_title = ['bottom', 'top']
+
+# List of distinguishable colors for multiple plots lines
+#             red       blue      green     purple    brown     black     grey      orange    magenta
+color_arr = ['#e41a1c','#377eb8','#4daf4a','#984ea3','#a65628','#000000','#999999','#ffa600','#f750bf']
+
+## Horizontal cloud slice plots
+# Define base figsize
+#figsize = np.array(mpp.rcParams['figure.figsize'])*4
+figsize = (32.5,20)
+
+# Line colors for secondary plots in cloud plot
+col_3d = {
+    'uw' : 'g',
+    'vw' : 'r',
+    }
+
+# Width ratios of primary to secondary plot
+width_ratio = [5,1]
+
+# Interpolation algorithm for imshow of vertical wind component
+cloud_interpolation = 'quadric'
+
+# Legend location in seconary subplot
+legend_pos_3d = 1
+
+# Set dilation length for halo definition (1 is not enough!)
+dil_len = 4
+
+# Set quantile for outlier cutoff: 0<=quant<=100, enter 0 for min/max
+# The amount of outliers seems to be approximately constant with array size, but in order to get a visually acceptable distribution, we need to take quantiles
+quant = 1e-2
+#trash = 20
+
+# Set point skip for horizontal plots
+skip = 4
+
+# Hatching linewidth for cloud contours
+hw = 2
+
+# Cloud contour and hatching color
+cld_col = 'blue'
+hatch_col = (0,0,1,.5)
+#cld_col = 'skyblue' # This one was used for coloring patches, changed to two different lines
+
+# Cloud halo contour color
+#halo_col = 'mediumblue' # This is too similar to the cloud color, try grey/silver
+halo_col = 'grey'
+
+# Segment colors for background image
+red = (.9,0,0)
+green = (0,.75,0)
+zero_col = 1
+
+# TODO: Define dictionary for fontsizes in 3d plot

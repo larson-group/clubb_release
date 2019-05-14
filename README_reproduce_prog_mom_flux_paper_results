@@ -1,0 +1,25 @@
+To reproduce the prog. mom. flux results, go to the top directory and issue
+the following commands:
+
+./compile/compile.bash
+
+./run_scripts/run_scm.bash <casename> --netcdf
+
+where <casename> denotes either bomex or dycoms2_rf02_do.
+
+To reproduce the eddy diffusivity results, replace the file
+
+input/tunable_parameters/configurable_model_flags.in
+
+with
+
+input/tunable_parameters/configurable_model_flags.in.diagmom
+
+and then simply re-run the case.
+
+To create plots, go to postprocessing/python_sam_budgets_plotter and type:
+
+python plotgen_main.py
+
+To plot SAM fields, SAM output will be required.
+

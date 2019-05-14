@@ -20,15 +20,16 @@ from numpy import nan
 #-------------------------------------------------------------------------------
 #   C O N S T A N T S
 #-------------------------------------------------------------------------------
-DAY = 24
-HOUR = 3600
-KG = 1000
+DAY = 24                                                    # 1d  = 24h
+HOUR = 3600                                                 # 1h  = 3600s
+KG = 1000                                                   # 1kg = 1000g
 g_per_second_to_kg_per_day = 1. / (DAY * HOUR * KG)
 kg_per_second_to_kg_per_day = 1. / (DAY * HOUR)
-filler = nan
+filler = nan                                                # Define the fill value which should replace invalid values in the data
+startLevel = 0                                              # Set the lower height level at which the plots should begin. For example, startLevel=2 would cut off the lowest 2 data points for each line.
 header = 'CLUBB budgets'
-name = 'clubb_budgets'
-nc_files = ['clubb_zm']
+name = 'clubb_budgets'                                      # String used as part of the output file name
+nc_files = ['clubb_zm']                                     # NetCDF files needed for plots, paths are defined
 
 #-------------------------------------------------------------------------------
 # P L O T S
@@ -40,16 +41,16 @@ sortPlots = sortPlots_zm + sortPlots_zt
 
 # Construct plot name from long name in netcdf instead
 plotNames_zm = [\
-    ["Vertical eastward momentum flux", r"$\mathrm{\overline{u'w'}\ \left[\frac{m^2}{s^2}\right]}$"],\
-    ["Vertical northward momentum flux", r"$\mathrm{\overline{v'w'}\ \left[\frac{m^2}{s^2}\right]}$"],\
-    ["Variance of eastward air velocity", r"$\mathrm{\overline{u'^2}\ \left[\frac{m^2}{s^2}\right]}$"],\
-    ["Variance of northward air velocity", r"$\mathrm{\overline{v'^2}\ \left[\frac{m^2}{s^2}\right]}$"],\
-    ["Variance of vertical air velocity", r"$\mathrm{\overline{w'^2}\ \left[\frac{m^2}{s^2}\right]}$"],\
-    ["Vertical eastward momentum flux", r"$\mathrm{\overline{u'w'}\ \left[\frac{m^2}{s^2}\right]}$"],\
-    ["Vertical northward momentum flux", r"$\mathrm{\overline{v'w'}\ \left[\frac{m^2}{s^2}\right]}$"],\
-    ["Variance of eastward air velocity", r"$\mathrm{\overline{u'^2}\ \left[\frac{m^2}{s^2}\right]}$"],\
-    ["Variance of northward air velocity", r"$\mathrm{\overline{v'^2}\ \left[\frac{m^2}{s^2}\right]}$"],\
-    ["Variance of vertical air velocity", r"$\mathrm{\overline{w'^2}\ \left[\frac{m^2}{s^2}\right]}$"],\
+    ["Vertical eastward momentum flux", r"$\mathrm{\overline{u'w'}}$ budget terms $\mathrm{\left[\frac{m^2}{s^3}\right]}$"],\
+    ["Vertical northward momentum flux", r"$\mathrm{\overline{v'w'}}$ budget terms $\mathrm{\left[\frac{m^2}{s^3}\right]}$"],\
+    ["Variance of eastward air velocity", r"$\mathrm{\overline{u'^2}}$ budget terms $\mathrm{\left[\frac{m^2}{s^3}\right]}$"],\
+    ["Variance of northward air velocity", r"$\mathrm{\overline{v'^2}}$ budget terms $\mathrm{\left[\frac{m^2}{s^3}\right]}$"],\
+    ["Variance of vertical air velocity", r"$\mathrm{\overline{w'^2}}$ budget terms $\mathrm{\left[\frac{m^2}{s^3}\right]}$"],\
+    ["Vertical eastward momentum flux", r"$\mathrm{\overline{u'w'}}$ budget terms $\mathrm{\left[\frac{m^2}{s^3}\right]}$"],\
+    ["Vertical northward momentum flux", r"$\mathrm{\overline{v'w'}}$ budget terms $\mathrm{\left[\frac{m^2}{s^3}\right]}$"],\
+    ["Variance of eastward air velocity", r"$\mathrm{\overline{u'^2}}$ budget terms $\mathrm{\left[\frac{m^2}{s^3}\right]}$"],\
+    ["Variance of northward air velocity", r"$\mathrm{\overline{v'^2}}$ budget terms $\mathrm{\left[\frac{m^2}{s^3}\right]}$"],\
+    ["Variance of vertical air velocity", r"$\mathrm{\overline{w'^2}}$ budget terms $\mathrm{\left[\frac{m^2}{s^3}\right]}$"],\
     ]
 
 plotNames_zt = []

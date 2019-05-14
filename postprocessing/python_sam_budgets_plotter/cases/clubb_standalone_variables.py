@@ -20,15 +20,16 @@ from numpy import nan
 #-------------------------------------------------------------------------------
 #   C O N S T A N T S
 #-------------------------------------------------------------------------------
-DAY = 24
-HOUR = 3600
-KG = 1000.
+DAY = 24                                                    # 1d  = 24h
+HOUR = 3600                                                 # 1h  = 3600s
+KG = 1000.                                                  # 1kg = 1000g
 g_per_second_to_kg_per_day = 1. / (DAY * HOUR * KG)
 kg_per_second_to_kg_per_day = 1. / (DAY * HOUR)
-filler = nan
+filler = nan                                                # Define the fill value which should replace invalid values in the data
+startLevel = 0                                              # Set the lower height level at which the plots should begin. For example, startLevel=2 would cut off the lowest 2 data points for each line.
 header = 'CLUBB standalone profiles'
-name = 'clubb_standalone'
-nc_files = ['clubb_zm', 'clubb_zt']
+name = 'clubb_standalone'                                   # String used as part of the output file name
+nc_files = ['clubb_zm', 'clubb_zt']                         # NetCDF files needed for plots, paths are defined
 
 #-------------------------------------------------------------------------------
 # P L O T S
