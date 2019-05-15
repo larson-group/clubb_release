@@ -48,7 +48,9 @@ sortPlots = ['theta_l', 'r_t', 'theta_l_flux', 'corr_w_tl', 'r_t_flux', 'corr_w_
                 'ucld' , 'vcld' , 'wcld',\
                 'ucond', 'uweight', 'vcond', 'vweight', 'wcond', 'wweight',\
                 'uwcond', 'uwweight', 'vwcond', 'vwweight', 'tvcond', 'tvweight', 'tlweight', 'qtwweight',\
+                'qtcond',\
                 'uwall','vwall',\
+                'cld',\
                 ]
                 
 # settings of each plot:
@@ -69,7 +71,7 @@ plotNames = [\
                 [r'Covariance of $r_t$ & $\theta_l$', r'rtpthlp $\mathrm{\left[kg\,kg^{-1}\,K\right]}$'],\
                 [r"$w_{obs}$", r"Observed wind, $w_{obs}\ \mathrm{\left[m\,s^{-1}\right]}$"],\
                 [r"Zonal Wind Component, $\overline{u}$", r"$\overline{u}\ \mathrm{\left[m\,s^{-1}\right]}$"],\
-                [r"Meridonal Wind Component, $$overline{v}$", r"$\overline{v}\ \mathrm{\left[m\,s^{-1}\right]}$"],\
+                [r"Meridonal Wind Component, $\overline{v}$", r"$\overline{v}\ \mathrm{\left[m\,s^{-1}\right]}$"],\
                 [r"$\overline{u'w'}$", r"Momentum flux, $\overline{u'w'}\ \mathrm{\left[m^2\,s^{-2}\right]}$"],\
                 [r"$\overline{v'w'}$", r"Momentum flux, $\overline{v'w'}\ \mathrm{\left[m^2\,s^{-2}\right]}$"],\
                 [r"$\overline{u'^2}$", r"Momentum variance, $\overline{u'^2}\ \mathrm{\left[m^2\,s^{-2}\right]}$"],\
@@ -160,8 +162,10 @@ plotNames = [\
                 [r"Weighted $\overline{w's_L'}^\mathrm{cld}, \overline{w's_L'}^\mathrm{env}$", r"Weighted flux, $\overline{w's_L'}\ \mathrm{\left[K\,m\, s^{-1}\right]}$"],\
                 #[r"Condt. $\overline{w'r_t'}^\mathrm{cld}, \overline{w'r_t'}^\mathrm{env}$", r"Conditional flux, $\overline{w'r_t'}\ \mathrm{\left[kg\,kg^{-1}\, m\,s^{-1}\right]}$"],\
                 [r"Weighted $\overline{w'r_t'}^\mathrm{cld}, \overline{w'r_t'}^\mathrm{env}$", r"Weighted flux, $\overline{w'r_t'}\ \mathrm{\left[kg\,kg^{-1}\, m\,s^{-1}\right]}$"],\
+                [r"Condt. QT$", r"Conditional water, QT $\mathrm{\left[g\,kg^{-1}\right]}$"],\
                 [r"Eastward 2nd-moments", r"2nd moments $\mathrm{\left[m^2\,s^{-2}\right]}$"],\
                 [r"Northward 2nd-moments", r"2nd moments $\mathrm{\left[m^2\,s^{-2}\right]}$"],\
+                ['Cloud fraction', 'Cloud fraction [-]'],\
             ]
 
 # lines of each plot:
@@ -212,12 +216,12 @@ rtflux = [\
 
 corr_w_rt = [\
         # variables of corr_w_rt
-        ['QTFLUX', False, 'QTFLUX', 1., 0],\
+        ['WPRTP', False, 'WPRTP', 1., 0],\
         ['QT2', False, 'QT2', 1., 0],\
         ['W2', False, 'W2', 1., 0],\
         ['RHO', False, 'RHO', 1., 0],\
         ['WPRTP_SGS', False, 'WPRTP_SGS', 1., 0],\
-        [r'Corr($w,r_t$)', True, '((QTFLUX/ (RHO * 2.5104e+6)) + WPRTP_SGS)/np.sqrt((W2*QT2)+1e-4)', 1., 0],\
+        [r'Corr($w,r_t$)', True, 'WPRTP/(np.sqrt(W2*QT2*1e-6)+1e-8)', 1., 0],\
         ]
 
 cloudliqfrac = [\
@@ -778,6 +782,12 @@ qtwweight= [\
     [r"Environment avg., $\overline{w'r_t'}^\mathrm{env}$", True, '(WPRTP - QTWCLD/1000)', 1., 0],\
     ]
 
+qtcond = [\
+        ['QTCLD', True, 'QTCLD', 1., 0],\
+        ['QT', True, 'QT', 1., 0],\
+        ['QTENV', True, 'QT-QTCLD',1.,0]
+        ]
+
 uwall = [\
     [r"Layer avg., $\overline{u'w'}$", True, 'UW', 1., 0],\
     [r"Layer avg., $\overline{u'^2}$", True, 'U2', 1., 0],\
@@ -788,6 +798,10 @@ vwall = [\
     [r"Layer avg., $\overline{v'w'}$", True, 'VW', 1., 0],\
     [r"Layer avg., $\overline{v'^2}$", True, 'V2', 1., 0],\
     [r"Layer avg., $\overline{w'^2}$", True, 'W2', 1., 0],\
+        ]
+
+cld = [\
+    ['CLD',True,'CLD',1.,0],\
         ]
 
 lines = [thetal, rt, thetalflux, corr_w_tl, rtflux, corr_w_rt, cloudliqfrac, qcl, \
@@ -807,5 +821,7 @@ lines = [thetal, rt, thetalflux, corr_w_tl, rtflux, corr_w_rt, cloudliqfrac, qcl
         ucld, vcld, wcld,\
         ucond, uweight, vcond, vweight, wcond, wweight,\
         uwcond, uwweight, vwcond, vwweight, tvcond, tvweight, tlweight, qtwweight,\
+        qtcond,\
         uwall,vwall,\
+        cld,\
         ]

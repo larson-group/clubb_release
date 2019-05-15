@@ -40,7 +40,7 @@ logger.setLevel(logging.DEBUG)
 #-------------------------------------------------------------------------------
 def init_plotgen(plots, cf):
     """
-    bla
+    Initialise paths, create subfolders, fill out naming templates
     """
     logger.info("init_plotgen")
     date = dt.now().strftime(date_file_format)
@@ -58,7 +58,7 @@ def init_plotgen(plots, cf):
 
 def load_nc(plots, cf, old_clubb=False):
     """
-    bla
+    Load netcdf files based on information from case files
     """
     logger.info('load_nc')
     nc_list = []
@@ -106,7 +106,7 @@ def get_t_dim(nc, create=False, dt=None):
     """
     TODO:   - implement nsave3Dstart/end
             - match time scaling to consistent units of minutes/seconds
-    bla
+    Read from netcdf or generate array for time dimension (In some netcdf files the dimension arrays are invalid)
     """
     logger.info('get_t_dim')
     t = pb.get_var_from_nc(nc, 'time', 1, 0, 0)
@@ -119,7 +119,7 @@ def get_t_dim(nc, create=False, dt=None):
 
 def get_h_dim(nc, model, create=False, cf=None):
     """
-    bla
+    Read from netcdf or generate array for height (z) dimension (In some netcdf files the dimension arrays are invalid)
     """
     logger.info('get_h_dim')
     if model=='clubb':
@@ -149,7 +149,7 @@ def get_h_dim(nc, model, create=False, cf=None):
 
 def get_values_from_prm(cf):
     """
-    bla
+    Read parameters from prm file. Path is stored in case file
     """
     logger.info('get_values_from_prm')
     try:
@@ -174,7 +174,6 @@ def get_values_from_prm(cf):
 def get_all_variables(nc, lines, plotLabels, nh, nt, t0, t1, h0, h1, filler=0):
     """
     TODO: Include pb.get_units in output structure?
-    TODO: For cloud conditional plots, evaluate expression first, then take average over sampling time
     Get variables from netcdf and store in dictionary with the following structure:
     dict entry: 'variable name' : [<plot info>]
     1 entry = 1 plot
@@ -326,7 +325,7 @@ def get_all_variables(nc, lines, plotLabels, nh, nt, t0, t1, h0, h1, filler=0):
 
 def plot_default(plots, cf, data, h, centering):
     """
-    bla
+    Default plotting routine. Plots a series of figures containing height profiles from data.
     TODO: pass startLevel etc. to plot routine (style file?)
     """
     logger.info('plot_default')
@@ -405,8 +404,10 @@ def plot_default(plots, cf, data, h, centering):
 
 def plot_3d(plots, cf, data, h, h_limits, h_extent, prm_vars, fps=2, dil_len=1, gif=False):
     """
-    Generate horizontal output showing cloud outlines and wind speeds
-    TODO: Special handling of RICO, because of huge grid -> split up grid in multiple subgrids?
+    Generates horizontal output showing cloud outlines and wind speeds
+    Additionally, creates cloud conditional profiles
+    TODO:   Special handling of RICO, because of huge grid -> split up grid in multiple subgrids?
+            Split up creation of cloud conditionals and horizontal plots into different routines
     """
     logger.info('plot_3d')
     # Initialise names
@@ -1104,8 +1105,8 @@ def plot_3d(plots, cf, data, h, h_limits, h_extent, prm_vars, fps=2, dil_len=1, 
 
 def plot_comparison(plots, cf, data_clubb, data_sam, h_clubb, h_sam, plot_old_clubb=False, data_old=None, h_old=None):
     """
-    bla
-    Added functionality to include old CLUBB data in plots. TODO: Deuglify code
+    Create a series of figures containing profile plots from SAM and CLUBB data.
+    Added functionality to include old CLUBB data in plots.
     TODO: get units from clubb long name
     """
     logger.info('plot_comparison')
@@ -1177,8 +1178,8 @@ def plot_comparison(plots, cf, data_clubb, data_sam, h_clubb, h_sam, plot_old_cl
 
 def plotgen_default(plots, cf):
     """
-    bla
-    This plotting routine plots height profiles of data from either the SAM or CLUBB simulations
+    Routine setting up default height profile plotting for either SAM or CLUBB data.
+    Data is processed here and afterwards, the plot_default routine is called to create plots.
     """
     logger.info("plotgen_default")
     ncs = load_nc(plots, cf)
@@ -1243,7 +1244,8 @@ def plotgen_default(plots, cf):
 
 def plotgen_3d(plots, cf):
     """
-    bla
+    Routine setting up horizontal and cloud conditional plotting from SAM 3D snapshots.
+    Data is processed here and afterwards, the plot_3d routine is called to create plots and movies.
     """
     logger.info("plotgen_3d")
     gif = None
@@ -1303,8 +1305,10 @@ def plotgen_3d(plots, cf):
     
 def plotgen_comparison(plots, cf):
     """
-    bla
-    Added fugly code to include old CLUBB data in comparison plots. TODO: Find better way to implement this.
+    Routine setting up height profile comparison plotting for both SAM and CLUBB data.
+    Data is processed here and afterwards, the plot_comparison routine is called to create plots
+    Added code to include old CLUBB data in comparison plots.
+    TODO: Find better way to implement this.
     """
     logger.info("plotgen_comparison")
     old_clubb = None
