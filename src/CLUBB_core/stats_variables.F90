@@ -214,7 +214,7 @@ module stats_variables
     isilhs_variance_category, &
     ilh_samp_frac_category
 
-!$omp threadprivate( isilhs_variance_category )
+!$omp threadprivate( isilhs_variance_category, ilh_samp_frac_category )
 
   integer, public :: & 
      iNcm = 0,             & ! Brian
@@ -435,7 +435,7 @@ module stats_variables
 !$omp   threadprivate(irrm_bt, irrm_ma, irrm_ta, irrm_sd)
 !$omp   threadprivate(irrm_ts, irrm_sd_morr)
 !$omp   threadprivate(irrm_cond, irrm_auto, irrm_accr)
-!$omp   threadprivate(irrm_cond_adj, irrm_src_adj )
+!$omp   threadprivate(irrm_cond_adj, irrm_src_adj, irrm_mc_nonadj)
 !$omp   threadprivate(irrm_mc, irrm_hf, irrm_wvhf, irrm_cl)
 
   integer, public :: &
@@ -1056,6 +1056,7 @@ module stats_variables
 
 !$omp   threadprivate(igamma_Skw_fnc, iC6rt_Skw_fnc, iC6thl_Skw_fnc)
 !$omp   threadprivate(iC7_Skw_fnc, iC1_Skw_fnc)
+!$omp   threadprivate(ibrunt_vaisala_freq_sqd, iRichardson_num, ishear_sqd)
 
   integer, public :: &
     icoef_wp4_implicit = 0
