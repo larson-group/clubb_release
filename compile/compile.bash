@@ -348,6 +348,11 @@ if [ -e $srcdir/SILHS ]; then
 	CLUBBStandardsCheck_silhs="-perl ../utilities/CLUBBStandardsCheck.pl ../src/SILHS/*.F90"
 fi
 
+# Check if python is installed so check_for_missing_threadprivate.py can be ran
+if [ -e `which python` ]; then
+    CHECK_FOR_MISSING_THREADPRIVATE="python ../utilities/check_for_missing_threadprivate.py ../src/CLUBB_core/ ../src/SILHS/"
+fi
+
 # ------------------------------------------------------------------------------
 # Generate master makefile
 # CLUBB generates libraries.  The dependencies between such libraries must
@@ -360,6 +365,7 @@ cat > Makefile << EOF
 
 all:	libclubb_param.a libclubb_bugsrad.a clubb_standalone clubb_tuner \
 	jacobian G_unit_tests int2txt clubb_thread_test
+	$CHECK_FOR_MISSING_THREADPRIVATE
 	perl ../utilities/CLUBBStandardsCheck.pl ../src/*.F90
 	perl ../utilities/CLUBBStandardsCheck.pl ../src/CLUBB_core/*.F90
 	perl ../utilities/CLUBBStandardsCheck.pl ../src/Benchmark_cases/*.F90
