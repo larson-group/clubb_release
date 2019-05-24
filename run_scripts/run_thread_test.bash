@@ -1,6 +1,6 @@
 #!/bin/bash
 ###############################################################################
-# $Id$
+# $Id: run_thread_test.bash 6867 2014-05-07 20:29:32Z schemena@uwm.edu $
 #
 # Desciption:
 #   Script to run the test whether CLUBB is still threadsafe.

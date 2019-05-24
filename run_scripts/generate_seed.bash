@@ -1,5 +1,5 @@
 #!/bin/bash
-# $Id$
+# $Id: generate_seed.bash 5197 2011-05-24 20:09:18Z dschanen@uwm.edu $
 # Usage:
 #  Create a new rand_seed.dat 
 #  Used by clubb_tuner to seed the Merssene twister pseudo-random number generator.

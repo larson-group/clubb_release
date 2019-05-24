@@ -1,6 +1,6 @@
 #!/bin/bash
 #######################################################################
-# $Id$
+# $Id: run_scm_debug.bash 5612 2012-01-11 16:20:14Z vondeyle@uwm.edu $
 #
 # Description:
 # Script to run the standalone CLUBB program with a debugger.  

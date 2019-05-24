@@ -1,6 +1,6 @@
 #!/bin/bash
 #######################################################################
-# $Id$
+# $Id: run_timestep_tests.bash 4307 2010-01-04 19:50:51Z senkbeil@uwm.edu $
 #
 # Script to test CLUBB by running all cases at various time step
 # lengths.  This script calls:

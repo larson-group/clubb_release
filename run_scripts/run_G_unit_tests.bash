@@ -1,5 +1,5 @@
 #!/bin/bash
-# $Id$
+# $Id: run_G_unit_tests.bash 6963 2014-06-19 20:55:45Z bmg2@uwm.edu $
 #-------------------------------------------------------------------------------
 # Description:
 # Script to run G_unit_tests, which is the unit testing framework.

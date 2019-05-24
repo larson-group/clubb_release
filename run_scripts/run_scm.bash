@@ -1,6 +1,6 @@
 #!/bin/bash
 ###############################################################################
-# $Id$
+# $Id: run_scm.bash 7368 2014-11-06 18:47:25Z betlej@uwm.edu $
 #
 # Desciption:
 #   Script to run the standalone CLUBB program.  We need this because not all 

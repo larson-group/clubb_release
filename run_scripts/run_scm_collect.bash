@@ -1,6 +1,6 @@
 #!/bin/bash
 #######################################################################
-# $Id$
+# $Id: run_scm_collect.bash 5618 2012-01-13 17:25:17Z dschanen@uwm.edu $
 #
 # Description:
 # Script to run an instance of GCSS ARM or other case for profiling 

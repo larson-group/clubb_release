@@ -1,6 +1,6 @@
 #!/bin/bash
 ##########################################################################
-# $Id$
+# $Id: run_scm_collect_suite.bash 5585 2011-12-29 21:54:19Z dschanen@uwm.edu $
 #
 # Description:
 # Script that runs a predefined set of test cases for creating an overall

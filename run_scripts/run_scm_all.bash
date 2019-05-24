@@ -1,6 +1,6 @@
 #!/bin/bash
 #######################################################################
-# $Id$
+# $Id: run_scm_all.bash 6836 2014-04-10 22:55:54Z raut@uwm.edu $
 #
 # Script to run the standalone CLUBB program for all models.
 # Tested with bash v2.  Might work with Ksh.

@@ -1,6 +1,6 @@
 #!/bin/bash
 #####################################################################
-# $Id$
+# $Id: time_scm_all.bash 4821 2010-10-19 20:00:44Z eihoppe@uwm.edu $
 #
 # Script that times a run of the standalone CLUBB program for all models.
 # Utilizes the -e (--performance_test) option of run_scm(_all).bash, and

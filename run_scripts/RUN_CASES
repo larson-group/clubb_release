@@ -1,4 +1,4 @@
-! $Id$
+! $Id: RUN_CASES 7140 2014-07-31 19:14:05Z betlej@uwm.edu $
 ! Declare any cases that should be run with run_scm_all.bash and 
 ! run_bindiff_all.bash. Any blank lines and lines starting with '!' will
 ! be ignored.
