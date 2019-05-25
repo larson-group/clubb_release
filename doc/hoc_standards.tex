@@ -547,6 +547,10 @@ module declination
 end module declination
 \end{verbatim}
 
+\item Better yet, don't use module variables at all unless they have the parameter attribute.  
+That will avoid the need for \texttt{threadprivate} directives and will make the flow of information
+easier to understand in a global model that calls CLUBB.
+
 \item Good use of whitespace can make code easier to read and debug.  
 One simple convention used in CLUBB is to put an extra space between 
 parenthesis for functions and subroutines to differentiate them from 
