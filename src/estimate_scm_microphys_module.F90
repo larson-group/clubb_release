@@ -124,7 +124,7 @@ module estimate_scm_microphys_module
     real( kind = core_rknd ), dimension(num_samples), intent(in) :: &
       lh_sample_point_weights ! Weight for cloud weighted sampling
 
-    type(pdf_parameter), dimension(nz), intent(in) :: &
+    type(pdf_parameter), intent(in) :: &
       pdf_params    ! The PDF parameters
 
     type(hydromet_pdf_parameter), dimension(nz), intent(in) :: &

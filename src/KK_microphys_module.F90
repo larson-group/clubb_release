@@ -76,9 +76,6 @@ module KK_microphys_module
     use advance_microphys_module, only: &
         get_cloud_top_level    ! Procedure(s)
 
-    use pdf_parameter_module, only: &
-        pdf_parameter  ! Variable(s)
-
     use parameters_model, only: &
         hydromet_dim  ! Variable(s)
 
@@ -516,7 +513,7 @@ module KK_microphys_module
       rho,     & ! Density                                         [kg/m^3]
       rcm        ! Mean cloud water mixing ratio                   [kg/kg]
 
-    type(pdf_parameter), dimension(nz), intent(in) :: &
+    type(pdf_parameter), intent(in) :: &
       pdf_params    ! PDF parameters                         [units vary]
 
     type(hydromet_pdf_parameter), dimension(nz), intent(in) :: &
@@ -832,7 +829,11 @@ module KK_microphys_module
                                          KK_evap_coef, KK_auto_coef, &
                                          KK_accr_coef, KK_evap_tndcy(k), &
                                          KK_auto_tndcy(k), KK_accr_tndcy(k), &
-                                         pdf_params(k), k, l_stats_samp, &
+                                         pdf_params%rt_1(k), pdf_params%rt_2(k), &
+                                         pdf_params%thl_1(k), pdf_params%thl_2(k), &
+                                         pdf_params%crt_1(k), pdf_params%crt_2(k), &
+                                         pdf_params%cthl_1(k), pdf_params%cthl_2(k), &
+                                         k, l_stats_samp, &
                                          wprtp_mc_zt(k), &
                                          wpthlp_mc_zt(k), &
                                          rtp2_mc_zt(k), &

@@ -73,7 +73,7 @@ module silhs_category_variance_module
     real( kind = core_rknd ), dimension(num_samples), intent(in) :: &
       lh_sample_point_weights ! Weight of SILHS sample points
 
-    type(pdf_parameter), dimension(nz), intent(in) :: &
+    type(pdf_parameter), intent(in) :: &
       pdf_params              ! The PDF parameters!
 
     type(hydromet_pdf_parameter), dimension(nz), intent(in) :: &
@@ -193,7 +193,7 @@ module silhs_category_variance_module
     real( kind = core_rknd ), dimension(num_samples), intent(in) :: &
       lh_sample_point_weights ! Weight of SILHS sample points
 
-    type(pdf_parameter), dimension(nz), intent(in) :: &
+    type(pdf_parameter), intent(in) :: &
       pdf_params              ! The PDF parameters!
 
     type(hydromet_pdf_parameter), dimension(nz), intent(in) :: &
@@ -233,8 +233,9 @@ module silhs_category_variance_module
                               X_mixt_comp_all_levs(k,:), importance_categories )
 
       category_real_probs = &
-        compute_category_real_probs( importance_categories, pdf_params(k), &
-                                     hydromet_pdf_params(k) )
+        compute_category_real_probs( importance_categories, &
+                                     pdf_params%cloud_frac_1(k), pdf_params%cloud_frac_2(k), &
+                                     pdf_params%mixt_frac(k), hydromet_pdf_params(k) )
 
       do isample=1, num_samples
 

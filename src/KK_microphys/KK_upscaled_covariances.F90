@@ -54,13 +54,16 @@ module KK_upscaled_covariances
                                        KK_evap_coef, KK_auto_coef, &
                                        KK_accr_coef, KK_evap_tndcy, &
                                        KK_auto_tndcy, KK_accr_tndcy, &
-                                       pdf_params, level, l_stats_samp, &
+                                       mu_rt_1, mu_rt_2, &
+                                       mu_thl_1,mu_thl_2, &
+                                       crt1, crt2, &
+                                       cthl1, cthl2, &
+                                       level, l_stats_samp, &
                                        wprtp_mc_src_tndcy, &
                                        wpthlp_mc_src_tndcy, &
                                        rtp2_mc_src_tndcy, &
                                        thlp2_mc_src_tndcy, &
                                        rtpthlp_mc_src_tndcy )
-
     ! Description:
 
     ! References:
@@ -88,9 +91,6 @@ module KK_upscaled_covariances
 
     use constants_clubb, only:  &
         eta_tol  ! Constant
-
-    use pdf_parameter_module, only: &
-        pdf_parameter  ! Variable(s) type
 
     use clubb_precision, only: &
         core_rknd    ! Variable(s)
@@ -198,8 +198,15 @@ module KK_upscaled_covariances
       KK_auto_tndcy, & ! KK autoconversion tendency         [(kg/kg)/s]
       KK_accr_tndcy    ! KK accretion tendency              [(kg/kg)/s]
 
-    type(pdf_parameter), intent(in) :: &
-      pdf_params    ! PDF parameters                        [units vary]
+    real( kind = core_rknd ), intent(in) :: &
+      mu_rt_1,  & ! Mean of rt (PDF component 1)            [kg/kg]
+      mu_rt_2,  & ! Mean of rt (PDF component 2)            [kg/kg]
+      mu_thl_1, & ! Mean of thl (PDF component 1)           [K]
+      mu_thl_2, & ! Mean of thl (PDF component 2)           [K]
+      crt1,     & ! Coefficient c_rt (1st PDF component)    [-]
+      crt2,     & ! Coefficient c_rt (2nd PDF component)    [-]
+      cthl1,    & ! Coefficient c_thl (1st PDF component)   [(kg/kg)/K]
+      cthl2       ! Coefficient c_thl (2nd PDF component)   [(kg/kg)/K]
 
     integer, intent(in) :: &
       level         ! Vertical level index                  [-]
@@ -217,16 +224,6 @@ module KK_upscaled_covariances
 
     ! Local Variables
     real( kind = core_rknd ) :: &
-      mu_rt_1,  & ! Mean of rt (PDF component 1)            [kg/kg]
-      mu_rt_2,  & ! Mean of rt (PDF component 2)            [kg/kg]
-      mu_thl_1, & ! Mean of thl (PDF component 1)           [K]
-      mu_thl_2, & ! Mean of thl (PDF component 2)           [K]
-      crt1,     & ! Coefficient c_rt (1st PDF component)    [-]
-      crt2,     & ! Coefficient c_rt (2nd PDF component)    [-]
-      cthl1,    & ! Coefficient c_thl (1st PDF component)   [(kg/kg)/K]
-      cthl2       ! Coefficient c_thl (2nd PDF component)   [(kg/kg)/K]
-
-    real( kind = core_rknd ) :: &
       w_KK_evap_covar,   & ! Covar. of w and KK evap. tend.    [m*(kg/kg)/s^2]
       rt_KK_evap_covar,  & ! Covar. of rt and KK evap. tend.   [(kg/kg)^2/s]
       thl_KK_evap_covar, & ! Covar. of thl and KK evap. tend.  [K*(kg/kg)/s]
@@ -236,17 +233,6 @@ module KK_upscaled_covariances
       w_KK_accr_covar,   & ! Covar. of w and KK accr. tend.    [m*(kg/kg)/s^2]
       rt_KK_accr_covar,  & ! Covar. of rt and KK accr. tend.   [(kg/kg)^2/s]
       thl_KK_accr_covar    ! Covar. of thl and KK accr. tend.  [K*(kg/kg)/s]
-
-
-    ! Enter the PDF parameters.
-    mu_rt_1  = pdf_params%rt_1
-    mu_rt_2  = pdf_params%rt_2
-    mu_thl_1 = pdf_params%thl_1
-    mu_thl_2 = pdf_params%thl_2
-    crt1     = pdf_params%crt_1
-    crt2     = pdf_params%crt_2
-    cthl1    = pdf_params%cthl_1
-    cthl2    = pdf_params%cthl_2
 
     
     ! Calculate the covariance of vertical velocity and KK evaporation tendency.

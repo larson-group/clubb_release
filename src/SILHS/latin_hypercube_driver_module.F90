@@ -109,7 +109,7 @@ module latin_hypercube_driver_module
       sequence_length, & ! nt_repeat/num_samples; number of timesteps before sequence repeats
       nz                 ! Number of vertical model levels
 
-    type(pdf_parameter), dimension(nz), intent(in) :: &
+    type(pdf_parameter), intent(in) :: &
       pdf_params ! PDF parameters       [units vary]
 
     real( kind = core_rknd ), dimension(nz), intent(in) :: &
@@ -187,9 +187,10 @@ module latin_hypercube_driver_module
     
       ! Generate a uniformly distributed sample at k_lh_start
       call generate_uniform_sample_at_k_lh_start &
-           ( iter, pdf_dim, d_uniform_extra, num_samples, sequence_length, & ! Intent(in)
-             pdf_params(k_lh_start), hydromet_pdf_params(k_lh_start), &          ! Intent(in)
-             X_u_all_levs(k_lh_start,:,:), lh_sample_point_weights(1,:)  )             ! Intent(out)
+           ( iter, pdf_dim, d_uniform_extra, num_samples, sequence_length,          & ! Intent(in)
+            pdf_params%cloud_frac_1(k_lh_start), pdf_params%cloud_frac_2(k_lh_start),   & ! " "
+            pdf_params%mixt_frac(k_lh_start), hydromet_pdf_params(k_lh_start),          & ! " "
+             X_u_all_levs(k_lh_start,:,:), lh_sample_point_weights(1,:)  ) ! Intent(out)
                           
       forall ( k = 2:nz )
         lh_sample_point_weights(k,:) = lh_sample_point_weights(1,:)
@@ -211,12 +212,13 @@ module latin_hypercube_driver_module
         ! 
         call generate_uniform_sample_at_k_lh_start &
           ( iter, pdf_dim, d_uniform_extra, num_samples, sequence_length, & ! Intent(in)
-            pdf_params(k), hydromet_pdf_params(k), &          ! Intent(in)
+            pdf_params%cloud_frac_1(k), pdf_params%cloud_frac_2(k), &       ! Intent(in)
+            pdf_params%mixt_frac(k), hydromet_pdf_params(k), &              ! Intent(in)
             X_u_all_levs(k,:,:), lh_sample_point_weights(k,:) )             ! Intent(out)
       end if
            
       ! Determine mixture component for all levels
-      where ( in_mixt_comp_1( X_u_all_levs(k,:,pdf_dim+1), pdf_params(k)%mixt_frac ) )
+      where ( in_mixt_comp_1( X_u_all_levs(k,:,pdf_dim+1), pdf_params%mixt_frac(k) ) )
         X_mixt_comp_all_levs(k,:) = 1
       else where
         X_mixt_comp_all_levs(k,:) = 2
@@ -268,7 +270,7 @@ module latin_hypercube_driver_module
                corr_cholesky_mtx_1(:,:,k), & ! In
                corr_cholesky_mtx_2(:,:,k), & ! In
                X_u_all_levs(k,sample,:), X_mixt_comp_all_levs(k,sample), & ! In
-               pdf_params(k)%cloud_frac_1, pdf_params(k)%cloud_frac_2, & ! In
+               pdf_params%cloud_frac_1(k), pdf_params%cloud_frac_2(k), & ! In
                l_in_precip(k,sample), & ! In
                X_nl_all_levs(k,sample,:) ) ! Out
       end do ! sample = 1, num_samples, 1
@@ -299,15 +301,18 @@ module latin_hypercube_driver_module
 
       do k=2, nz
 
-        call assert_consistent_cloud_frac( pdf_params(k), l_error_in_sub )
+        call assert_consistent_cloud_frac( pdf_params%chi_1(k), pdf_params%chi_2(k), & 
+                                   pdf_params%cloud_frac_1(k), pdf_params%cloud_frac_2(k), &
+                                   pdf_params%stdev_chi_1(k), pdf_params%stdev_chi_2(k), & 
+                                   l_error_in_sub )
         l_error = l_error .or. l_error_in_sub
 
         ! Check for correct transformation in normal space
         call assert_correct_cloud_normal( num_samples, X_u_all_levs(k,:,iiPDF_chi), & ! In
                                           X_nl_all_levs(k,:,iiPDF_chi), & ! In
                                           X_mixt_comp_all_levs(k,:), & ! In
-                                          pdf_params(k)%cloud_frac_1, & ! In
-                                          pdf_params(k)%cloud_frac_2, & ! In
+                                          pdf_params%cloud_frac_1(k), & ! In
+                                          pdf_params%cloud_frac_2(k), & ! In
                                           l_error_in_sub ) ! Out
         l_error = l_error .or. l_error_in_sub
 
@@ -327,7 +332,8 @@ module latin_hypercube_driver_module
 !-------------------------------------------------------------------------------
   subroutine generate_uniform_sample_at_k_lh_start &
              ( iter, pdf_dim, d_uniform_extra, num_samples, sequence_length, &
-               pdf_params, hydromet_pdf_params, &
+               cloud_frac_1, cloud_frac_2, &
+               mixt_frac, hydromet_pdf_params, &
                X_u_k_lh_start, lh_sample_point_weights )
 
   ! Description:
@@ -349,9 +355,6 @@ module latin_hypercube_driver_module
     use parameters_silhs, only: &
       l_lh_straight_mc, &         ! Variable(s)
       l_lh_importance_sampling
-
-    use pdf_parameter_module, only: &
-      pdf_parameter               ! Type
 
     use hydromet_pdf_parameter_module, only: &
       hydromet_pdf_parameter      ! Type
@@ -387,8 +390,9 @@ module latin_hypercube_driver_module
       num_samples,       &        ! Number of SILHS sample points
       sequence_length             ! Number of timesteps before new sample points are picked
 
-    type(pdf_parameter), intent(in) :: &
-      pdf_params                  ! The PDF parameters at k_lh_start
+    real( kind = core_rknd ), intent(in) :: &
+      cloud_frac_1, cloud_frac_2, &     ! The PDF parameters at k_lh_start
+      mixt_frac
 
     type(hydromet_pdf_parameter), intent(in) :: &
       hydromet_pdf_params
@@ -440,8 +444,8 @@ module latin_hypercube_driver_module
           call cloud_weighted_sampling_driver &
                ( num_samples, one_height_time_matrix(:,iiPDF_chi), & ! In
                  one_height_time_matrix(:,pdf_dim+1), & ! In
-                 pdf_params%cloud_frac_1, pdf_params%cloud_frac_2, & ! In
-                 pdf_params%mixt_frac, & ! In
+                 cloud_frac_1, cloud_frac_2, & ! In
+                 mixt_frac, & ! In
                  X_u_k_lh_start(:,iiPDF_chi), & ! In/Out
                  X_u_k_lh_start(:,pdf_dim+1), & ! In/Out
                  lh_sample_point_weights ) ! Out
@@ -449,11 +453,13 @@ module latin_hypercube_driver_module
         else ! .not. l_lh_old_cloud_weighted
 
           call importance_sampling_driver &
-               ( num_samples, pdf_params, hydromet_pdf_params, & ! In
-                 X_u_k_lh_start(:,iiPDF_chi), & ! In/Out
-                 X_u_k_lh_start(:,pdf_dim+1), & ! In/Out
-                 X_u_k_lh_start(:,pdf_dim+2), & ! In/Out
-                 lh_sample_point_weights ) ! Out
+               ( num_samples,                       & ! In
+                 cloud_frac_1, cloud_frac_2,        & ! In
+                 mixt_frac, hydromet_pdf_params,    & ! In
+                 X_u_k_lh_start(:,iiPDF_chi),       & ! In/Out
+                 X_u_k_lh_start(:,pdf_dim+1),       & ! In/Out
+                 X_u_k_lh_start(:,pdf_dim+2),       & ! In/Out
+                 lh_sample_point_weights )            ! Out
 
         end if ! l_lh_old_cloud_weighted
 
@@ -640,7 +646,7 @@ module latin_hypercube_driver_module
     real( kind = core_rknd ), dimension(nz), intent(in) :: &
       rcm         ! Liquid water mixing ratio               [kg/kg]
 
-    type(pdf_parameter), dimension(nz), intent(in) :: &
+    type(pdf_parameter), intent(in) :: &
       pdf_params  ! PDF parameters       [units vary]
 
     ! Output Variable
@@ -761,7 +767,7 @@ module latin_hypercube_driver_module
     real( kind = core_rknd ), dimension(nz,num_samples,pdf_dim), intent(in) :: &
       X_nl_all_levs_raw    ! Raw (unclipped) SILHS sample points    [units vary]
 
-    type(pdf_parameter), dimension(nz), intent(in) :: &
+    type(pdf_parameter), intent(in) :: &
       pdf_params             ! **The** PDF parameters!
 
     ! Output Variables
@@ -824,16 +830,16 @@ module latin_hypercube_driver_module
     do k = 2, nz
 
       ! Enter the PDF parameters!!
-      rt_1   = pdf_params(k)%rt_1
-      rt_2   = pdf_params(k)%rt_2
-      thl_1  = pdf_params(k)%thl_1
-      thl_2  = pdf_params(k)%thl_2
-      crt_1  = pdf_params(k)%crt_1
-      crt_2  = pdf_params(k)%crt_2
-      cthl_1 = pdf_params(k)%cthl_1
-      cthl_2 = pdf_params(k)%cthl_2
-      chi_1  = pdf_params(k)%chi_1
-      chi_2  = pdf_params(k)%chi_2
+      rt_1   = pdf_params%rt_1(k)
+      rt_2   = pdf_params%rt_2(k)
+      thl_1  = pdf_params%thl_1(k)
+      thl_2  = pdf_params%thl_2(k)
+      crt_1  = pdf_params%crt_1(k)
+      crt_2  = pdf_params%crt_2(k)
+      cthl_1 = pdf_params%cthl_1(k)
+      cthl_2 = pdf_params%cthl_2(k)
+      chi_1  = pdf_params%chi_1(k)
+      chi_2  = pdf_params%chi_2(k)
 
       do isample = 1, num_samples
 
@@ -930,12 +936,15 @@ module latin_hypercube_driver_module
 !-----------------------------------------------------------------------
 
 !-------------------------------------------------------------------------------
-  subroutine assert_consistent_cloud_frac( pdf_params, l_error )
+  subroutine assert_consistent_cloud_frac( chi_1, chi_2, & 
+                                           cloud_frac_1, cloud_frac_2, &
+                                           stdev_chi_1, stdev_chi_2, &
+                                           l_error )
 
   ! Description:
   !   Performs an assertion check that cloud_frac_i is consistent with chi_i and
   !   stdev_chi_i in pdf_params for each PDF component.
-
+  ! 
   ! References:
   !   Eric Raut
   !-----------------------------------------------------------------------
@@ -943,15 +952,14 @@ module latin_hypercube_driver_module
     use constants_clubb, only: &
       fstderr          ! Constant
 
-    use pdf_parameter_module, only: &
-      pdf_parameter    ! Type
-
     implicit none
 
     ! Input Variables
-    type(pdf_parameter), intent(in) :: &
-      pdf_params       ! PDF parameters, containing distribution of chi     [units vary]
-                       ! and cloud fraction
+    real( kind = core_rknd ), intent(in) :: &
+      chi_1, chi_2, &                   ! Discription of the distribution of chi 
+      cloud_frac_1, cloud_frac_2, &     ! and cloud fraction [units vary]
+      stdev_chi_1, stdev_chi_2
+                       
 
     ! Output Variables
     logical, intent(out) :: &
@@ -968,7 +976,7 @@ module latin_hypercube_driver_module
 
     ! Perform assertion check for PDF component 1
     call assert_consistent_cf_component &
-         ( pdf_params%chi_1, pdf_params%stdev_chi_1, pdf_params%cloud_frac_1, & ! Intent(in)
+         ( chi_1, stdev_chi_1, cloud_frac_1, & ! Intent(in)
            l_error_in_sub )                                                    ! Intent(out)
 
     l_error = l_error .or. l_error_in_sub
@@ -978,7 +986,7 @@ module latin_hypercube_driver_module
 
     ! Perform assertion check for PDF component 2
     call assert_consistent_cf_component &
-         ( pdf_params%chi_2, pdf_params%stdev_chi_2, pdf_params%cloud_frac_2, & ! Intent(in)
+         ( chi_2, stdev_chi_2, cloud_frac_2, & ! Intent(in)
            l_error_in_sub )                                                    ! Intent(out)
 
     l_error = l_error .or. l_error_in_sub
@@ -1026,9 +1034,6 @@ module latin_hypercube_driver_module
         one,     &
         chi_tol, &
         eps
-
-    use pdf_parameter_module, only: &
-        pdf_parameter    ! Type
 
     use transform_to_pdf_module, only: &
         ltqnorm          ! Procedure
@@ -2192,7 +2197,7 @@ module latin_hypercube_driver_module
     real( kind = core_rknd ), dimension(nz,num_samples), intent(in) :: &
       X_u_chi_all_levs     ! Uniform value of chi
 
-    type(pdf_parameter), dimension(nz), intent(in) :: &
+    type(pdf_parameter), intent(in) :: &
       pdf_params           ! The official PDF parameters!
 
     real( kind = core_rknd ), dimension(nz,num_samples), intent(in) :: &
@@ -2302,10 +2307,10 @@ module latin_hypercube_driver_module
 
               if ( X_mixt_comp_all_levs(k,isample) == 1 ) then
                 l_in_comp_1 = .true.
-                cloud_frac_i = pdf_params(k)%cloud_frac_1
+                cloud_frac_i = pdf_params%cloud_frac_1(k)
               else
                 l_in_comp_1 = .false.
-                cloud_frac_i = pdf_params(k)%cloud_frac_2
+                cloud_frac_i = pdf_params%cloud_frac_2(k)
               end if
 
               l_in_cloud = X_u_chi_all_levs(k,isample) > (one - cloud_frac_i)

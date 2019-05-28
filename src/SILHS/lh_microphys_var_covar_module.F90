@@ -114,7 +114,7 @@ module lh_microphys_var_covar_module
       var_thl_mc, &
       covar_rt_mc_thl_mc
 
-    type(pdf_parameter), dimension(nz), intent(in) :: &
+    type(pdf_parameter), intent(in) :: &
       pdf_params    ! The PDF parameters_silhs
       
   !-----------------------------------------------------------------------

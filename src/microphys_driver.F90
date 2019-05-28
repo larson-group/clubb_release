@@ -220,7 +220,7 @@ module microphys_driver
     real( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
       Nc_in_cloud    ! Mean (in-cloud) cloud droplet concentration      [num/kg]
 
-    type(pdf_parameter), dimension(gr%nz), intent(in) :: & 
+    type(pdf_parameter), intent(in) :: & 
       pdf_params     ! PDF parameters
 
     type(hydromet_pdf_parameter), dimension(gr%nz), intent(in) :: &
@@ -321,7 +321,6 @@ module microphys_driver
 
     logical :: l_latin_hypercube_input
 
-
     ! We must initialize intent(out) variables. If we do not, and they do not
     ! otherwise get assigned (e.g. microphys_scheme=="none"), then we are not
     ! within the realms of Fortran standards compliance.
@@ -371,8 +370,8 @@ module microphys_driver
     aeromass = aeromass_value
 
     ! Determine 's' from Mellor (1977)
-    chi(:) = pdf_params(:)%mixt_frac * pdf_params(:)%chi_1 &
-                  + ( one - pdf_params(:)%mixt_frac ) * pdf_params(:)%chi_2
+    chi(:) = pdf_params%mixt_frac * pdf_params%chi_1 &
+                  + ( one - pdf_params%mixt_frac ) * pdf_params%chi_2
 
     ! Compute standard deviation of vertical velocity in the grid column
     wtmp(:) = sqrt( wp2_zt(:) )
@@ -501,7 +500,7 @@ module microphys_driver
           rrm_evap = microphys_get_var( irrm_cond, microphys_stats_zt )
 
           call update_xp2_mc( gr%nz, dt, cloud_frac, rcm, rvm, thlm_morr, & ! Intent(in)  
-                              wm_zt, exner, rrm_evap, pdf_params,      & ! Intent(in)
+                              wm_zt, exner, rrm_evap, pdf_params,         & ! Intent(in)
                               rtp2_mc, thlp2_mc, wprtp_mc, wpthlp_mc,     & ! Intent(out)
                               rtpthlp_mc )                                  ! Intent(out)
 

@@ -102,7 +102,7 @@ module mixed_moment_PDF_integrals
       corr_array_1_n, & ! Corr. array (normal space) of PDF vars. (comp. 1)  [-]
       corr_array_2_n    ! Corr. array (normal space) of PDF vars. (comp. 2)  [-]
 
-    type(pdf_parameter), dimension(nz), intent(in) :: &
+    type(pdf_parameter), intent(in) :: &
       pdf_params    ! PDF parameters                                [units vary]
 
     type(hydromet_pdf_parameter), dimension(nz), intent(in) :: &
@@ -196,18 +196,18 @@ module mixed_moment_PDF_integrals
        ! Unpack the means of w, rt, and thl in each PDF component.
        mu_w_1   = mu_x_1_n(iiPDF_w,k)
        mu_w_2   = mu_x_2_n(iiPDF_w,k)
-       mu_rt_1  = pdf_params(k)%rt_1
-       mu_rt_2  = pdf_params(k)%rt_2
-       mu_thl_1 = pdf_params(k)%thl_1
-       mu_thl_2 = pdf_params(k)%thl_2
+       mu_rt_1  = pdf_params%rt_1(k)
+       mu_rt_2  = pdf_params%rt_2(k)
+       mu_thl_1 = pdf_params%thl_1(k)
+       mu_thl_2 = pdf_params%thl_2(k)
 
        ! Unpack the standard deviations of w, rt, and thl in each PDF component.
        sigma_w_1   = sigma_x_1_n(iiPDF_w,k)
        sigma_w_2   = sigma_x_2_n(iiPDF_w,k)
-       sigma_rt_1  = sqrt( pdf_params(k)%varnce_rt_1 )
-       sigma_rt_2  = sqrt( pdf_params(k)%varnce_rt_2 )
-       sigma_thl_1 = sqrt( pdf_params(k)%varnce_thl_1 )
-       sigma_thl_2 = sqrt( pdf_params(k)%varnce_thl_2 )
+       sigma_rt_1  = sqrt( pdf_params%varnce_rt_1(k) )
+       sigma_rt_2  = sqrt( pdf_params%varnce_rt_2(k) )
+       sigma_thl_1 = sqrt( pdf_params%varnce_thl_1(k) )
+       sigma_thl_2 = sqrt( pdf_params%varnce_thl_2(k) )
 
        ! Unpack the standard deviations of chi and eta in each PDF component.
        sigma_chi_1 = sigma_x_1_n(iiPDF_chi,k)
@@ -216,7 +216,7 @@ module mixed_moment_PDF_integrals
        sigma_eta_2 = sigma_x_2_n(iiPDF_eta,k)
 
        ! Unpack the mixture fraction.
-       mixt_frac = pdf_params(k)%mixt_frac
+       mixt_frac = pdf_params%mixt_frac(k)
 
        ! Unpack the precipitation fraction in each PDF component.
        precip_frac_1 = hydromet_pdf_params(k)%precip_frac_1
@@ -224,10 +224,10 @@ module mixed_moment_PDF_integrals
 
        ! Unpack the coefficients of rt and thl in the chi/eta PDF transformation
        ! equations for each PDF component.
-       crt_1  = pdf_params(k)%crt_1
-       crt_2  = pdf_params(k)%crt_2
-       cthl_1 = pdf_params(k)%cthl_1
-       cthl_2 = pdf_params(k)%cthl_2
+       crt_1  = pdf_params%crt_1(k)
+       crt_2  = pdf_params%crt_2(k)
+       cthl_1 = pdf_params%cthl_1(k)
+       cthl_2 = pdf_params%cthl_2(k)
 
        ! Re-calculate rtm, thlm, and wm from PDF parameters.
        ! This needs to be done because rtm and thlm have been advanced since

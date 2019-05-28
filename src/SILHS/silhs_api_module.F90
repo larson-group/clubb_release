@@ -140,7 +140,7 @@ contains
       sequence_length, & ! nt_repeat/num_samples; number of timesteps before sequence repeats.
       nz                 ! Number of vertical model levels
 
-    type(pdf_parameter), dimension(nz), intent(in) :: &
+    type(pdf_parameter), intent(in) :: &
       pdf_params ! PDF parameters       [units vary]
 
     real( kind = core_rknd ), dimension(nz), intent(in) :: &
@@ -270,7 +270,7 @@ contains
     real( kind = core_rknd ), dimension(nz), intent(in) :: &
       rcm          ! Liquid water mixing ratio                [kg/kg]
 
-    type(pdf_parameter), dimension(nz), intent(in) :: &
+    type(pdf_parameter), intent(in) :: &
       pdf_params ! PDF parameters       [units vary]
 
     integer, dimension(nz,num_samples), intent(in) :: &
@@ -337,7 +337,7 @@ contains
     real( kind = core_rknd ), dimension(nz,num_samples,pdf_dim), intent(in) :: &
       X_nl_all_levs_raw    ! Raw (unclipped) SILHS sample points    [units vary]
 
-    type(pdf_parameter), dimension(nz), intent(in) :: &
+    type(pdf_parameter), intent(in) :: &
       pdf_params             ! **The** PDF parameters!
 
     ! Output Variables
@@ -407,7 +407,7 @@ contains
       lh_wpthlp_mc_zt, &               ! SILHS microphys. est. tendency of <w'thl'>  [m*K/s^2]
       lh_rtpthlp_mc_zt                 ! SILHS microphys. est. tendency of <rt'thl'> [K*(kg/kg)/s]
 
-    type(pdf_parameter), dimension(nz), intent(in) :: &
+    type(pdf_parameter), intent(in) :: &
       pdf_params    ! The PDF parameters_silhs
 
     call lh_microphys_var_covar_driver &

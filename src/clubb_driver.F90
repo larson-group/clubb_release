@@ -1447,7 +1447,6 @@ module clubb_driver
                                          rtphmp_zt, thlphmp_zt, wp2hmp )        ! Intent(out)
 
       endif ! not microphys_scheme == "none"
-
       
       ! Measure time in setup_pdf_parameters and hydrometeor_mixed_moments
       call cpu_time(time_stop)
@@ -1495,8 +1494,6 @@ module clubb_driver
       lh_sample_point_weights = -999._core_rknd
       if ( .false. .or. Lscale(1) < 0._core_rknd ) print *, ""
 #endif /* SILHS */
-
-
       
       ! Measure time in SILHS
       call cpu_time(time_stop)
@@ -1614,7 +1611,7 @@ module clubb_driver
       ! of advance_clubb_core.  Vince Larson 7 Feb 2006
       time_current = time_initial + real( itime, kind=time_precision ) * &
                                     real(dt_main, kind=time_precision)
-     
+
       ! This was moved from above to be less confusing to the user,
       ! since before it would appear as though the last timestep
       ! was not executed. -dschanen 19 May 08

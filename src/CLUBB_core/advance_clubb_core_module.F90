@@ -304,7 +304,7 @@ module advance_clubb_core_module
       wp3_on_wp2_zt
 
     use pdf_parameter_module, only: &
-        pdf_parameter,        & ! Variable Type
+        pdf_parameter, &
         implicit_coefs_terms
 
 #ifdef GFDL
@@ -574,7 +574,7 @@ module advance_clubb_core_module
     real( kind = core_rknd ), intent(inout), dimension(gr%nz,sclr_dim) :: &
       sclrpthvp    ! < sclr' th_v' > (momentum levels)   [units vary]
 
-    type(pdf_parameter), dimension(gr%nz), intent(inout) :: &
+    type(pdf_parameter), intent(inout) :: &
       pdf_params,    & ! Fortran structure of PDF parameters on thermodynamic levels    [units vary]
       pdf_params_zm    ! Fortran structure of PDF parameters on momentum levels        [units vary]
 
@@ -707,7 +707,7 @@ module advance_clubb_core_module
       mu_pert_pos_rt, mu_pert_neg_rt ! For l_Lscale_plume_centered
 
     !The following variables are defined for use when l_use_ice_latent = .true.
-    type(pdf_parameter), dimension(gr%nz) :: &
+    type(pdf_parameter) :: &
       pdf_params_frz
 
     type(implicit_coefs_terms), dimension(gr%nz) :: &
@@ -2271,12 +2271,12 @@ module advance_clubb_core_module
       wpsclrpthlp    ! < w' sclr' th_l' > (thermodynamic levels)  [units vary]
 
     ! Variable being passed back to and out of advance_clubb_core.
-    type(pdf_parameter), dimension(gr%nz), intent(out) :: & 
+    type(pdf_parameter), intent(inout) :: & 
       pdf_params,     & ! PDF parameters                          [units vary]
       pdf_params_frz    ! Output for use in pert. Lscale calc.
 
     ! Variable being passed back to only advance_clubb_core.
-    type(pdf_parameter), dimension(gr%nz), intent(out) :: & 
+    type(pdf_parameter), intent(inout) :: & 
       pdf_params_zm    ! PDF parameters   [units vary]
 
     type(implicit_coefs_terms), dimension(gr%nz), intent(out) :: &
@@ -2381,7 +2381,7 @@ module advance_clubb_core_module
       pdf_implicit_coefs_terms_zm_frz
 
     ! The following variables are defined for use when l_use_ice_latent = .true.
-    type(pdf_parameter), dimension(gr%nz) :: &
+    type(pdf_parameter ):: &
       pdf_params_zm_frz
 
     real( kind = core_rknd ), dimension(gr%nz)  :: &
@@ -2482,10 +2482,6 @@ module advance_clubb_core_module
     logical :: l_spur_supersat   ! Spurious supersaturation?
 
     integer :: i, k
-
-    ! Initialize Variables
-    call init_pdf_params( gr%nz, pdf_params_zm )
-    call init_pdf_params( gr%nz, pdf_params_frz )
 
     !---------------------------------------------------------------------------
     ! Interpolate wp3, rtp3, and thlp3 to momentum levels, and wp2, rtp2, and
@@ -2650,7 +2646,7 @@ module advance_clubb_core_module
       ! of subgrid clouds
       do k=1, gr%nz
 
-        if ( pdf_params(k)%chi_1/pdf_params(k)%stdev_chi_1 > -1._core_rknd ) then
+        if ( pdf_params%chi_1(k)/pdf_params%stdev_chi_1(k) > -1._core_rknd ) then
 
           ! Recalculate cloud_frac and r_c for each PDF component
 
@@ -2666,22 +2662,22 @@ module advance_clubb_core_module
 
           cloud_frac_refined = compute_mean_binormal &
                                ( cloud_frac_1_refined, cloud_frac_2_refined, &
-                                 pdf_params(k)%mixt_frac )
+                                 pdf_params%mixt_frac(k) )
 
           rcm_refined = compute_mean_binormal &
-                        ( rc_1_refined, rc_2_refined, pdf_params(k)%mixt_frac )
+                        ( rc_1_refined, rc_2_refined, pdf_params%mixt_frac(k) )
 
           if ( l_interactive_refined ) then
             ! I commented out the lines that modify the values in pdf_params, as it seems that
             ! these values need to remain consistent with the rest of the PDF.
             ! Eric Raut Jun 2014
             ! Replace pdf_closure estimates with refined estimates
-            ! pdf_params(k)%rc_1 = rc_1_refined
-            ! pdf_params(k)%rc_2 = rc_2_refined
+            ! pdf_params%rc_1(k) = rc_1_refined
+            ! pdf_params%rc_2(k) = rc_2_refined
             rcm(k) = rcm_refined
 
-            ! pdf_params(k)%cloud_frac_1 = cloud_frac_1_refined
-            ! pdf_params(k)%cloud_frac_2 = cloud_frac_2_refined
+            ! pdf_params%cloud_frac_1(k) = cloud_frac_1_refined
+            ! pdf_params%cloud_frac_2(k) = cloud_frac_2_refined
             cloud_frac(k) = cloud_frac_refined
           end if
 
@@ -2690,7 +2686,7 @@ module advance_clubb_core_module
           ! output to stats!
           cloud_frac_refined = cloud_frac(k)
           rcm_refined = rcm(k)
-        end if ! pdf_params(k)%chi_1/pdf_params(k)%stdev_chi_1 > -1._core_rknd
+        end if ! pdf_params%chi_1(k)/pdf_params%stdev_chi_1(k) > -1._core_rknd
 
         ! Stats output
         if ( l_stats_samp .and. l_samp_stats_in_pdf_call ) then
@@ -2984,6 +2980,9 @@ module advance_clubb_core_module
       thlm_zm_frz(gr%nz) = max( thlm_zm_frz(gr%nz), thl_tol )
 
       if ( l_call_pdf_closure_twice ) then
+    
+        call init_pdf_params( gr%nz, pdf_params_zm_frz )
+
         ! Call pdf_closure again to output the variables which belong on the momentum grid.
         call pdf_closure & 
              ( hydromet_dim, p_in_Pa_zm, exner_zm, thv_ds_zm,         & ! intent(in)
@@ -3682,7 +3681,7 @@ module advance_clubb_core_module
         wpsclrp2,    & ! w'sclr'^2
         wpsclrpthlp    ! w'sclr'thl'
 
-      type (pdf_parameter), dimension(gr%nz), intent(inout) :: &
+      type (pdf_parameter), intent(inout) :: &
         pdf_params ! PDF parameters [units vary]
 
       ! Thermo. level variables brought to momentum levels either by
@@ -3702,7 +3701,7 @@ module advance_clubb_core_module
         wpsclrp2_zm,    & ! w'sclr'^2 on momentum grid 
         wpsclrpthlp_zm    ! w'sclr'thl' on momentum grid
 
-      type (pdf_parameter), dimension(gr%nz), intent(inout) :: &
+      type (pdf_parameter), intent(inout) :: &
         pdf_params_zm ! PDF parameters on momentum grid [units vary]
 
       ! Local variables
@@ -4273,7 +4272,7 @@ module advance_clubb_core_module
         cloud_frac, & ! Cloud fraction             [-]
         rcm           ! Liquid water mixing ratio  [kg/kg]
 
-      type (pdf_parameter), dimension(gr%nz), intent(in) :: &
+      type (pdf_parameter), intent(in) :: &
         pdf_params    ! PDF Parameters  [units vary]
 
       ! Output variables
@@ -4295,8 +4294,8 @@ module advance_clubb_core_module
 
       do k = 1, gr%nz
 
-        chi_mean(k) =      pdf_params(k)%mixt_frac  * pdf_params(k)%chi_1 + &
-                    (1.0_core_rknd-pdf_params(k)%mixt_frac) * pdf_params(k)%chi_2
+        chi_mean(k) =      pdf_params%mixt_frac(k)  * pdf_params%chi_1(k) + &
+                    (1.0_core_rknd-pdf_params%mixt_frac(k)) * pdf_params%chi_2(k)
 
       end do
 
@@ -4378,9 +4377,9 @@ module advance_clubb_core_module
                "Error: Should not arrive here in computation of cloud_cover"
 
             write(fstderr,*) "At grid level k = ", k
-            write(fstderr,*) "pdf_params(k)%mixt_frac = ", pdf_params(k)%mixt_frac
-            write(fstderr,*) "pdf_params(k)%chi_1 = ", pdf_params(k)%chi_1
-            write(fstderr,*) "pdf_params(k)%chi_2 = ", pdf_params(k)%chi_2
+            write(fstderr,*) "pdf_params(k)%mixt_frac = ", pdf_params%mixt_frac(k)
+            write(fstderr,*) "pdf_params(k)%chi_1 = ", pdf_params%chi_1(k)
+            write(fstderr,*) "pdf_params(k)%chi_2 = ", pdf_params%chi_2(k)
             write(fstderr,*) "cloud_frac(k) = ", cloud_frac(k)
             write(fstderr,*) "rcm(k) = ", rcm(k)
             write(fstderr,*) "rcm(k+1) = ", rcm(k+1)

@@ -13,8 +13,6 @@ interface
                             rcm_mc, rvm_mc, thlm_mc, &
                             microphys_stats_zt, microphys_stats_sfc )
 
-    use pdf_parameter_module, only: pdf_parameter
-
     use parameters_model, only: hydromet_dim
 
     use clubb_precision, only: core_rknd
