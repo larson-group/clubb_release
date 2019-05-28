@@ -1,0 +1,67 @@
+Changes (bloss, Apr 09):
+
+ + Modified scheme to use total water (vapor + cloud liquid) as a
+prognostic variable in place of separate vapor and cloud liquid
+variables.  This should reduce the cost associated with scalar
+advection.  With this scheme, saturation adjustment occurs before
+calling the microphysics, so that a consistent set of temperature,
+water vapor and cloud liquid values can be input to the microphysics.
+This saturation adjustment could be more expensive than the old one
+within the microphysics, since you do not have a reference value of
+cloud liquid to start from.
+
+ + The latent heating due to the microphysics is not readily
+accessible with the total water formulation, so that it is no longer
+output in the statistics.
+
+ + The EFFRQ* effective radius outputs in the past were susceptible to
+errors due to non-uniformity of hydrometeor fractions across
+processors or time steps.  As a result, these outputs have been
+eliminated.  In their place, a new output Q*OEFFR which represents a
+scaled version of the layer optical depth has been added.  This can be
+used to compute a consistent effective radius from the averaged
+optical depth and mixing ratio.  For example, the cloud liquid
+effective radius may be computed as:
+
+  EFFRC = QC / QCOEFFR
+
+where QC is in g/kg, QCOEFFR is in g/kg/micron and EFFRC is in
+microns.
+
+ + The default setting for dopredictNc was changed to .false.
+Now, by default, the cloud liquid droplet concentration will be set to
+Nc0 which itself has a default value of 100./cm3.
+
+Changes (UW Milwaukee, as of August 2014)
+
+A brief summary of what has been changed from the original SAM code is as follows:
+
+1. The subroutine M2005MICRO_GRAUPEL has had changes from the equivalent WRF subroutine
+that handle changes due to sedimentation for long timesteps.
+
+2. The subgrid-scale cloud fraction from the CLUBB parameterization is now fed into the
+above subroutine, and used to divide the grid boxes into a clear portion where it is
+assumed no rain, et cetera forms, and a cloudy portion where vapor is temporarily set
+to saturation with respect to liquid.  This is intended to give a better solution when running
+SAM-CLUBB as coarse horizontal resolutions.
+
+3. A subroutine POS_QV_ADJ has been added to prevent vapor water mixing ratio from becoming
+negative.  This seems to usually happen the SGS cloud fraction code is used and other species
+grow too quickly in a single timestep.  The code takes a single "k" level of the altitude and
+attempts to fill the missing vapor by converting some of the total present at that altitude
+back into vapor water mixing ratio.  Since this code is called after sedimentation is applied
+it can sometimes fail to "fill the hole".
+
+4. Numerous budget terms from module_mp_graupel code have extracted for output to the SAM
+stat file.  These can be very useful for analyzing what processes are influencing a simulation.
+
+5. The namelist variable dospecifyaersol was changed from a logical to an integer.
+Its new definition is:
+0 = no aerosol mode
+1 = power-law
+2 = lognormal
+
+6. The calculation of SGS variance of vertical velocity is taken from CLUBB 
+parameterization (variable wp2 in the code) and used for aerosol activation.  
+Again, this is to improve results at horizontal coarse resolutions, which typically
+cannot resolve updrafts and downdrafts as well as hires LES simulation.
