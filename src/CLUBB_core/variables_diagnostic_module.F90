@@ -55,7 +55,7 @@ module variables_diagnostic_module
 
 !$omp threadprivate(rsat)
 
-  type(pdf_parameter), allocatable, public :: &
+  type(pdf_parameter), allocatable, public, save :: &
     pdf_params_zm, & ! pdf_params on momentum levels  [units vary]
     pdf_params_zm_frz !used when l_use_ice_latent = .true.
 

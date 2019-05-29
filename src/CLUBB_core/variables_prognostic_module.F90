@@ -169,7 +169,7 @@ module variables_prognostic_module
 
 !$omp threadprivate(sigma_sqd_w)
 
-  type(pdf_parameter), allocatable, public :: &
+  type(pdf_parameter), allocatable, public, save :: &
     pdf_params, &
     pdf_params_frz !for use when l_use_ice_latent = .true.
 
