@@ -1,3 +1,6 @@
+# Example call (include trailing slash):
+# python check_for_missing_threadprivate.py /path/to/CLUBB_core/ /path/to/SILHS/
+
 """  A function that checks whether CLUBB-SILHS module variables have been 
 declared as threadprivate.  This is necessary to ensure thread safety
 in CAM-CLUBB runs that use openmp shared-memory parallelization. """
@@ -93,8 +96,8 @@ def findThreadPrivates(fileName):
     """ Given a file, return a list of all variables 
     that are declared threadprivate. """
     with open(fileName) as srcFile:
-        srcString = srcFile.read().replace('\n', '')  # Make file into one big string
-        srcString = srcString.split("contains\s*\n")[0]  # Chop off everything after "contains"
+        srcString = srcFile.read()     # Make file into one big string
+        srcString = re.split("contains\s*\n",srcString)[0]  # Chop off everything after "contains"
         listOfThreadPrivates = re.findall(r"(?si)!\$omp\s*threadprivate\s*(\(.*?\))", srcString)
         listOfThreadPrivates = [x.strip("()") for x in listOfThreadPrivates]  # Eliminate parentheses
         listOfThreadPrivates = [x.split(",") for x in listOfThreadPrivates]  # Separate variables
