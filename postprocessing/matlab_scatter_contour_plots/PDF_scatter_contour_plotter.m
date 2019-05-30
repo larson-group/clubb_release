@@ -62,8 +62,8 @@ end % strcmp( input_file_clubb, 'default' )
 % level and then displayed in scatterplots and histograms.
 %clubb_height_idx = 11; % RICO 380 m.
 %clubb_height_idx = 32; % RICO 1220 m.
-clubb_height_idx = 39; % RICO 1500 m.
-%clubb_height_idx = 25; % LBA 2424 m. rr and Nr 
+%clubb_height_idx = 39; % RICO 1500 m.
+clubb_height_idx = 25; % LBA 2424 m. rr and Nr 
 %clubb_height_idx = 44; % LBA 6500 m. rs, Ns, rg, and Ng
 %clubb_height_idx = 60; % LBA 10500 m. ri and Ni
 %clubb_height_idx = 15; % LBA 1029 m.
@@ -77,9 +77,9 @@ clubb_height_idx = 39; % RICO 1500 m.
 %clubb_height_idx = 50; % RF02 775 m.
 
 % Information to be printed on the plots.
-casename = 'RICO';
+%casename = 'RICO';
 %casename = 'RF02';
-%casename = 'LBA';
+casename = 'LBA';
 %print_note = 'Input fields (predictive fields)';
 print_note = '';
 % Use variable name written out, rather than symbol, in the title.
@@ -90,36 +90,36 @@ use_long_title = true;
 filename_addition = '';
 
 % Select the plots that will be plotted.
-plot_rt_thl  = true;
-plot_chi_eta = true;
-plot_w_rr    = true;
-plot_w_Nr    = true;
-plot_chi_rr  = true;
-plot_chi_Nr  = true;
-plot_eta_rr  = true;
-plot_eta_Nr  = true;
-plot_rr_Nr   = true;
-plot_w       = true;
-plot_rt      = true;
-plot_thl     = true;
-plot_chi     = true;
-plot_eta     = true;
+plot_rt_thl  = false;
+plot_chi_eta = false;
+plot_w_rr    = false;
+plot_w_Nr    = false;
+plot_chi_rr  = false;
+plot_chi_Nr  = false;
+plot_eta_rr  = false;
+plot_eta_Nr  = false;
+plot_rr_Nr   = false;
+plot_w       = false;
+plot_rt      = false;
+plot_thl     = false;
+plot_chi     = false;
+plot_eta     = false;
 plot_rr      = true;
 plot_Nr      = true;
 plot_ln_rr   = true;
 plot_ln_Nr   = true;
-plot_ri      = true;
-plot_Ni      = true;
-plot_ln_ri   = true;
-plot_ln_Ni   = true;
-plot_rs      = true;
-plot_Ns      = true;
-plot_ln_rs   = true;
-plot_ln_Ns   = true;
-plot_rg      = true;
-plot_Ng      = true;
-plot_ln_rg   = true;
-plot_ln_Ng   = true;
+plot_ri      = false;
+plot_Ni      = false;
+plot_ln_ri   = false;
+plot_ln_Ni   = false;
+plot_rs      = false;
+plot_Ns      = false;
+plot_ln_rs   = false;
+plot_ln_Ns   = false;
+plot_rg      = false;
+plot_Ng      = false;
+plot_ln_rg   = false;
+plot_ln_Ng   = false;
 
 % Select the type of output file for MATLAB.
 output_type = '-depsc';
@@ -144,9 +144,9 @@ else
    % Customize legend text for CLUBB files.
    % The auto_legend_text flag must be turned off to do this.
    % The first CLUBB file has an index of 2.
-   legend_text(2,1:9) = 'CLUBB DDL';
-   legend_text(3,1:8) = 'CLUBB DL';
-   legend_text(4,1:8) = 'CLUBB SL';
+   legend_text(2,1:3) = 'DDL';
+   legend_text(3,1:2) = 'DL';
+   legend_text(4,1:2) = 'SL';
 end % auto_legend_text
 
 % Assign line colors, line styles, and line widths for CLUBB lines in
