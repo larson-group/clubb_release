@@ -1,1 +1,0 @@
-This file is being used to verify that the wrf update scripts are working. Please ignore this file, as it will be deleted soon.
