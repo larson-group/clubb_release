@@ -1,37 +1,45 @@
-from pyplotgen.DataReader import DataReader
+'''
+:author: Nicolas Strike
+:date: Mid 2019
+'''
 
+
+from pyplotgen.DataReader import DataReader
 
 class PanelGroup:
     '''
+    This is the parent PanelGroup class. All other panel groups
+    should be created as a subclass of this one. Properties and
+    methods common to each PanelGroup can be found here.
 
+
+    A PanelGroup child defines Lineplots, Panels, and is responsible for
+    calculating any 'calculated' variables from netcdf
     '''
     def __init__(self, ncdf_file):
-        '''
-
-        '''
-        # self.panel_type = panel_type
-        # self.blacklisted_panels = blacklisted_panels
         self.ncdf_file = ncdf_file
         self.panels = []
 
-    def plot(self, netcdf_data):
+    def plot(self):
         '''
-
-        :param plotter:
-        :return:
+        Plots every panel in this group to the output folder specified
+        in the pyplotgen launch parameters, unless the panel is blacklisted.
+        
+        :return: n/a
         '''
         for panel in self.panels:
             if not panel.blacklisted:
-                panel.plot(netcdf_data)
+                panel.plot(self.ncdf_file)
 
     def get_var_from_ncdf(self, varname):
         '''
+        Retrieve numerical data from netcdf
 
         :param varname:
         :return:
         '''
         data_reader = DataReader()
-        return data_reader.getVarData(self.ncdf_file, varname, 1.0, 1, 1) #TODO hardcoded
+        return data_reader.getVarData(self.ncdf_file, varname)
 
 
     def __getStartEndIndex__(self, data, start_value, end_value):
@@ -57,22 +65,3 @@ class PanelGroup:
                 end_idx = i
 
         return start_idx, end_idx
-
-    def __constrain__(self, min_index, max_index):
-        '''
-        Restrict all panels to the min_idx->max_idx set of data for each lineplot
-
-        :param min_index:
-        :param max_index:
-        :return:
-        '''
-        pass
-
-    # def get_xy_data_from_ncdf(self, x_name, y_name): # 99999 is an arbitrarily chosen large number, replace it
-    #     '''
-    #
-    #     :param varname:
-    #     :return:
-    #     '''
-    #     data_reader = DataReader()
-    #     return data_reader.getPlotsData(self.ncdf_file, x_name, y_name, [1], 0, 1200)

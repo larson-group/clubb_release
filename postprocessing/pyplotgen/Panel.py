@@ -1,3 +1,9 @@
+'''
+:author: Nicolas Strike
+:date: Mid 2019
+'''
+
+
 from pyplotgen.Lineplot import Lineplot
 from pyplotgen.PantelType import PanelType
 from pyplotgen.Plotter import Plotter
@@ -5,16 +11,11 @@ from pyplotgen.Plotter import Plotter
 
 class Panel:
     '''
-
+    Represents an individual panel/graph. Each graph contains a number of details
+    specific to it, such as a title. Each graph can be plotted/saved to a file.
     '''
-    def __init__(self, base_plot : Lineplot,
-                 panel_type : PanelType = None, title : str = "Unnamed panel", overplots = None,
-                 x_title = "x axis", y_title = "y axis", line_format = "", blacklisted = False):
-        '''
-
-        '''
-        # self.x_varname = x_varname
-        # self.y_varname = y_varname
+    def __init__(self, base_plot : Lineplot,panel_type : PanelType = None, title : str = "Unnamed panel",
+                 overplots = None, x_title = "x axis", y_title = "y axis", line_format = "", blacklisted = False):
         self.base_plot = base_plot
         self.panel_type = panel_type
         self.title = title
@@ -25,6 +26,7 @@ class Panel:
 
     def plot(self, netcdf_data):
         '''
+        Save the panel's graphical representation to a file in the 'output' folder from launch parameters
 
         :param plotter:
         :return:

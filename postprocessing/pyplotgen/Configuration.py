@@ -9,7 +9,7 @@ from pyplotgen.Plotter import Plotter
 # Plots
 ##########
 
-# test_plot = Plot(plot_name="TestPlot")
+# test_plot = Plot(label="TestPlot")
 
 
 ##########

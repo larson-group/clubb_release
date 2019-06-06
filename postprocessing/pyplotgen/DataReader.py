@@ -17,9 +17,6 @@ class NetCdfVariable:
     Class used for conviniently storying the information about a given netcdf variable
     '''
     def __init__(self, name, ncdf_file, conversion_factor = 1, start_time = -1, end_time = -1, timestep = -1, one_dimentional = False):
-        '''
-
-        '''
         data_reader = DataReader()
         self.name = name
         self.start_time = start_time
@@ -77,10 +74,6 @@ class DataReader():
     :data: January 2019
     '''
 
-    # panel_filename = '/home/strike/clubb/postprocessing/pyplotgen/cases/panels/base/Panel_thlm.ini'
-    # panel_type_filename = '/home/strike/clubb/postprocessing/pyplotgen/cases/PanelType_Profile.ini'
-
-
     def __init__(self):
         '''
         This is the object constructer. Initalizes class variables and data
@@ -92,8 +85,6 @@ class DataReader():
         self.nc_datasets = []
         self.root_dir =  pathlib.Path(__file__).parent
         self.panels_dir = self.root_dir.as_uri() + "/cases/panels/"
-
-        # print(self.root_dir)
 
     def cleanup(self):
         '''
@@ -127,8 +118,6 @@ class DataReader():
                 else:
                     print("Filetype " + file_ext + " is not supported. Attempted to load " + abs_filename)
         return self.nc_datasets
-        # print("Files loaded:\n\n----nc files----\n" + str(self.nc_filenames) + "\n\n----dat files----\n" + str(self.grads_dat_filenames) +
-        #       "\n\n----ctl files----\n" + str(self.grads_ctl_filenames))
 
     def getVarData(self, netcdf_data, variable: NetCdfVariable):
         '''
@@ -171,10 +160,6 @@ class DataReader():
         :return: a netcdf dataset containing the data from the given file
         '''
         dataset = Dataset(filename, "r+", format="NETCDF4")
-        # print("\n\nVariables:\n")
-        # for key in dataset.variables.keys():
-        #     print("\t" + key)
-        #print(filename + ": " + str(dataset))
         return dataset
 
     def __meanProfiles__(self, var, idx_t0 = 0, idx_t1 = -1):

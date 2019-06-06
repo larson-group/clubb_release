@@ -1,4 +1,8 @@
-# from pyplotgen.NetCdfVariable import NetCdfVariable
+'''
+:author: Nicolas Strike
+:date: Mid 2019
+'''
+
 from pyplotgen.DataReader import NetCdfVariable
 from pyplotgen.Panel import Panel
 from pyplotgen.PanelGroup import PanelGroup
@@ -7,12 +11,9 @@ from pyplotgen.Lineplot import Lineplot
 
 class PanelGroupTest(PanelGroup):
     '''
-
+    This is a panel group used for testing the functionality of pyplotgen.
     '''
     def __init__(self, ncdf_file):
-        '''
-
-        '''
         super(PanelGroupTest, self).__init__(ncdf_file)
 
         ### Panel config ###
@@ -33,23 +34,24 @@ class PanelGroupTest(PanelGroup):
         self.__constrain__(independent_min_idx, independent_max_idx)
 
         ### Plot / Panel pairs
-        liq_pot_temp_plot =  Lineplot(self.thlm, self.z, plot_name="clubb current")
+        liq_pot_temp_plot =  Lineplot(self.thlm, self.z, label="clubb current")
         liq_pot_temp_panel = Panel(liq_pot_temp_plot, title="Liquid Water Potential Temperature, θl", x_title="thlm [K]", y_title=y_title)
 
-        tot_water_mix_plot =  Lineplot(self.rtm, self.z, plot_name="clubb current")
+        tot_water_mix_plot =  Lineplot(self.rtm, self.z, label="clubb current")
         tot_water_mix_panel = Panel(tot_water_mix_plot, title="Total Water Mixing Ratio, @", x_title="rtm [kg/kg]", y_title=y_title)
 
         ### Build panels ###
         self.panels = [liq_pot_temp_panel, tot_water_mix_panel]
 
-    def plot(self, netcdf_data):
+    def plot(self):
         '''
+        Plots every panel in this group to the output folder specified
+        in the pyplotgen launch parameters, unless the panel is blacklisted.
 
-        :param plotter:
-        :param netcdf_data:
-        :return:
+        Uses the PanelGroup.plot() function
+        :return: n/a
         '''
-        super().plot(netcdf_data)
+        super().plot()
 
     def __constrain__(self, min_index, max_index):
         '''
@@ -57,7 +59,7 @@ class PanelGroupTest(PanelGroup):
 
         :param min_index:
         :param max_index:
-        :return:
+        :return: n/a
         '''
         self.z.data = self.z.data[min_index:max_index]
         self.rtm.data = self.rtm.data[min_index:max_index]
