@@ -41,22 +41,22 @@ class Plotter:
         # plt.plot(thlm_time[11])
 
 
-    def plot(self, values, details):
+    def plot(self, x_values, y_values, title = "unnamed plot", x_title = "x axis", y_title = "y title"):
         '''
         Plots a case onto a set of graphs (panels)
         :param case: The case to be plotted
         :param values: The values to plot with the case formatted as the namedtuple defined in DataReader.py
         :return:
         '''
-        print(values)
+        # print(values)
         line_format = "r--"
 
         plt.figure()
         plt.subplot(111)
-        plt.plot(values.x_values, values.y_values, line_format)
-        plt.title(details.title)
-        plt.ylabel(details.y_title)
-        plt.xlabel(details.x_title)
+        plt.plot(x_values, y_values, line_format)
+        plt.title(title)
+        plt.ylabel(y_title)
+        plt.xlabel(x_title)
 
         # x_min = values.x_values.min()
         # x_max = values.x_values.max()
@@ -66,5 +66,5 @@ class Plotter:
 
         # plt.autoscale(tight=True)
         # print("Saving file")
-        plt.savefig(details.title.replace('"', '').replace(',', '').replace(' ', '_') + '.png')
+        plt.savefig(title.replace('"', '').replace(',', '').replace(' ', '_') + '.png')
         # print("Saved file")

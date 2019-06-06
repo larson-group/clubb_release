@@ -8,16 +8,62 @@ a Plotter instance for graphing.
 '''
 
 import os
-import re
-from collections import namedtuple
 from netCDF4 import Dataset
-import configparser
-import pandas as pd
-
 import numpy as np
 import pathlib as pathlib
 
-from Plotter import Plotter
+class NetCdfVariable:
+    '''
+    Class used for conviniently storying the information about a given netcdf variable
+    '''
+    def __init__(self, name, ncdf_file, conversion_factor = 1, start_time = -1, end_time = -1, timestep = -1, one_dimentional = False):
+        '''
+
+        '''
+        data_reader = DataReader()
+        self.name = name
+        self.start_time = start_time
+        self.end_time = end_time
+        self.timestep = timestep
+        self.conv_factor = conversion_factor
+        self.one_dimentional = one_dimentional
+        self.data = data_reader.getVarData(ncdf_file, self)
+
+    def constrain(self, min_value, max_value):
+        '''
+        Remove everything in the data from before min_value
+        and after max_value
+
+        :param min_value:
+        :param max_value:
+        :return:
+        '''
+        start_idx, end_idx = self.__getStartEndIndex__(self.data, min_value, max_value)
+        self.data = self.data[start_idx:end_idx]
+
+    def __getStartEndIndex__(self, data, start_value, end_value):
+        '''
+        Get the list floor index that contains the value to start graphing at and the
+        ceiling index that contains the end value to stop graphing at
+
+        If neither are found, returns the entire array back
+        :param start_value: The first value to be graphed (may return indexes to values smaller than this)
+        :param end_value: The last value that needs to be graphed (may return indexes to values larger than this)
+        :return: (tuple) start_idx, end_idx   which contains the starting and ending index representing the start and end time passed into the function
+        :author: Nicolas Strike
+        '''
+        start_idx = 0
+        end_idx = len(data) -1
+        for i in range(0,len(data)):
+            # Check for start index
+            test_value = data[i]
+            if test_value <= start_value and test_value > data[start_idx]:
+                start_idx = i
+            # Check for end index
+            if test_value >= end_value and test_value < data[end_idx]:
+                end_idx = i
+
+        return start_idx, end_idx
 
 
 class DataReader():
@@ -62,7 +108,7 @@ class DataReader():
     def loadFolder(self, folder_path):
         '''
         Finds all dataset files in a given folder and loads
-        them using the appropriet helper class.
+        them using the appropriate helper class.
         :param folder_path: The path of the folder to be loaded
         :return: An array of datasets
         :author: Nicolas Strike
@@ -84,71 +130,28 @@ class DataReader():
         # print("Files loaded:\n\n----nc files----\n" + str(self.nc_filenames) + "\n\n----dat files----\n" + str(self.grads_dat_filenames) +
         #       "\n\n----ctl files----\n" + str(self.grads_ctl_filenames))
 
-    def getPlotsData(self, netcdf_data, case_filename, panel_filename):
+    def getVarData(self, netcdf_data, variable: NetCdfVariable):
         '''
-        Create a plot tuple containing the data needed to
-        create a graph.
 
-        Plot tuple definition:
-        Plot(x_values=<array with x values>, y_values=<array with y values>, title='Name of Graph',
-            x_title='X Axis Title', y_title='Y Axis Title')
-
-        Example creation:
-            myPlot = Plot(x_values=arrayOfXValues, y_values=arrayOfYValues, title='Example Plot', x_title='My X Axis', y_title='My Y Axis')
-
-        :param netcdf_data: The NetCDF data object containing the desired data, e.g. variables to be plotted
-        :param case: The case to be plotted (e.g. contains title, data labels, start/end values, etc
-        :return: A plot struct containing the data elements listed above
         :author: Nicolas Strike
         '''
 
-        case_config = configparser.ConfigParser()
-        case_config.read(case_filename)
-
-        panel_config = configparser.ConfigParser()
-        panel_config.read(panel_filename)
-
-        panel_type_config = configparser.RawConfigParser()
-        panel_parent_dir = self.panels_dir
-        panel_type_filename = panel_config['defaults']['panel-type_file']
-        panel_type_config.read(panel_parent_dir + panel_type_filename)
-
-        panel_vars_str = panel_config['defaults']['model_vars']
-        panel_vars = self.getArrayFromString(panel_vars_str)
-        # num_lines = panel_vars.__len__()
-
-        y_variable_name = panel_config['defaults']['y_axis_data']#"z"
-        conversion_factors_str = panel_config['defaults']['conversion_factors']
-        conversion_factors = self.getArrayFromString(conversion_factors_str)
-        for i in range(len(conversion_factors)):
-            conversion_factors[i] = float(conversion_factors[i])
         # TODO load these, don't hardcode them
-        y_level_amount = 1
-        y_num_timesteps = 1
-        y_axis_values = self.__getValuesFromNc__(netcdf_data, y_variable_name, conversion_factors[0], y_level_amount, y_num_timesteps) #TODO conversion shouldn't be only 1 value
-
-
-        equation = panel_config['defaults']['vars_relationship']
-        # Process inspired by Stackoverflow: https://stackoverflow.com/questions/45582344/extracting-data-from-netcdf-by-python
-        start_time_value = float(case_config['defaults']['start_time'])  # Used to determine what x value to begin the graph at
-        end_time_value = float(case_config['defaults']['end_time'])
+        start_time_value = variable.start_time
+        end_time_value = variable.end_time
+        variable_name = variable.name
+        conv_factor = variable.conv_factor
+        level_amount = 1
+        num_timesteps = 1
         time_values = self.__getValuesFromNc__(netcdf_data, "time", 1, 1, 1) #TODO conversion shouldn't be only 1 value
         (start_time_index, end_time_idx) = self.__getStartEndIndex__(time_values, start_time_value, end_time_value) # Get the index values that correspond to the desired start/end x values
 
-        x_axis_values = self.__calcVariableValues__(netcdf_data, panel_vars, equation, conversion_factors)# self.__getValuesFromNc__(netcdf_data, x_variable_name, x_conversion_factor, x_level_amount, x_num_timesteps)
-        x_axis_values = self.__meanProfiles__(x_axis_values, start_time_index, end_time_idx)
-        x_axis_values = x_axis_values.reshape((-1,))
+        values = self.__getValuesFromNc__(netcdf_data, variable_name, conv_factor, 1, 1) #TODO conversion shouldn't be only 1 value\
+        if not variable.one_dimentional:
+            values = self.__meanProfiles__(values, start_time_index, end_time_idx)
 
-        # Get plot restrictions from case
-        start_plot_value = float(case_config['defaults']['start_height'])  # Used to determine what x value to begin the graph at
-        end_plot_value = float(case_config['defaults']['end_height'])  # Used to determine what x value to end the graph at
-        (start_plot_index, end_plot_idx) = self.__getStartEndIndex__(y_axis_values, start_plot_value, end_plot_value) # Get the index values that correspond to the desired start/end x values
-        x_axis_values = x_axis_values[start_plot_index:end_plot_idx + 1] # we use end_plot_idx + 1 to ensure python uses the last value (off by one)
-        y_axis_values = y_axis_values[start_plot_index: end_plot_idx + 1] # we use end_plot_idx + 1 to ensure python uses the last value (off by one)
+        return values
 
-        plot_data = Plotter.PlotValues(x_values=x_axis_values, y_values=y_axis_values)
-
-        return plot_data
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         '''
@@ -174,7 +177,7 @@ class DataReader():
         #print(filename + ": " + str(dataset))
         return dataset
 
-    def __meanProfiles__(self, var, idx_t0, idx_t1):
+    def __meanProfiles__(self, var, idx_t0 = 0, idx_t1 = -1):
         # logger.info('mean_profiles')
         """
         Input:
@@ -187,6 +190,9 @@ class DataReader():
         Output:
           var    -- time averaged vertical profile of the specified variable
         """
+        if idx_t1 is -1:
+            idx_t1 = len(var)
+
         # Nic changed nanmean() to mean()
         var_average = np.mean(var[idx_t0:idx_t1,:],axis=0)
         return var_average
@@ -279,146 +285,3 @@ class DataReader():
                 end_idx = i
 
         return start_idx, end_idx
-
-    def getArrayFromString(self, data_string, rows = -1, columns = 1):
-        '''
-        Some elements of our config ini files are stored as 2d arrays
-        but are read by config parser as a string. This method takes in
-        the string and returns it as an array. By default it interprets
-        it as a 2d array with n rows and 2 columns. In numpy, -1 denotes
-        'autofill', filling that dimension until it runs out of data.
-
-        The string given must be a series of comma seperated values.
-        Do not use quote markers to denote strings, as it will blindly
-        match whatever is between commas. Any newline characters in
-        the string will be removed.
-
-        :param data_string: The array string to be interpreted
-        :param rows: The number of rows in the data. It is reccomended to keep this at -1 to allow numpy to autofit to the amount of data
-        :param columns: The number of columns in the dataset
-        :return: a numpy array containing the data from the data_string formated into the specified number of rows and columns
-        '''
-        data_array = re.compile("\s*,\s*").split(data_string) #np.array(re.findall("\".*?\"",data_string, re.MULTILINE)) # Turn the string into a 1d array
-        # for i in data_array
-        #data_array = data_array.reshape(rows,columns) # Turn the 1d array into a rows X columns array
-        return data_array
-
-    def __parseAxisData__(self, axis_data_str):
-        '''
-        This function takes in a string defined in a ini config
-        file that defines plot variables and an equation to graph.
-
-        Example of an input string:
-            variables = THETAL, False, THETAL, 1., 0,
-                THETA, False, THETA, 1., 0,
-                TABS, False, TABS, 1., 0,
-                QI, False, QI, 1./KG, 0,
-                THETAL, True, THETAL + 2500.4 * (THETA/TABS) * QI, 1., 0
-        :param axis_data_str:
-        :return: Array of numeric values given from equation given in the string
-        '''
-        variable_lines = axis_data_str.strip(' ').split('\n', re.MULTILINE)
-        lines_data = []
-        for line in variable_lines:
-            data = line.split(',')
-            if "true" in data[1].lower():
-                data[1] = True
-            else:
-                data[1] = False
-            data[3] = float(data[3])
-            data[4] = float(data[4])
-
-            lines_data.append(data)
-        return lines_data
-
-    def __isFunction__(self, value):
-        '''
-        Given a string, this function
-        determines if it represents a
-        mathmatical function. In particular
-        it will return true if the string
-        contains any of +-*/.
-
-        :return: True if the string is a math function, False otherwise
-        '''
-
-        # logger.info('__isFunction__')
-        isFunc = False
-        if '+' in value:
-            isFunc = True
-        elif '-' in value:
-            isFunc = True
-        elif '*' in value:
-            isFunc = True
-        elif '/' in value:
-            isFunc = True
-        return isFunc
-
-    def __getLineToPlotIndex__(self, array2d):
-        '''
-        Given a 2d array containing Axis Data, aka
-        variable_lines data, return the row that
-        contains True in the second column. This
-        is used to find the index of the line that
-        contains the variable to be plotted to a graph
-        (which also likely contains an equation in column
-        3).
-
-        :param array: a 2d array containing parsed axis data (see parseAxisData())
-        :return: the row aka dim 0 index containing a value of True in the second column
-        :author: Nicolas Strike
-        '''
-        rowIndex = -1
-        for i in range(0, len(array2d)):
-            if array2d[i][1] == True:
-                rowIndex = i
-                break
-        return rowIndex
-
-    def __calcVariableValues__(self, netcdf_data, plot_vars, equation, conversion_factors):
-        '''
-        This function takes a line config such as the one used by
-        __parseAxisData__() and calculates the new data array from
-        the equation listed in the variable data. If the equation
-        is simply a variable name, the original data will be
-        returned back.
-
-        Example input:
-            [[THETAL, False, THETAL, 1., 0],
-            [THETA, False, THETA, 1., 0],
-            [TABS, False, TABS, 1., 0],
-            [QI, False, QI, 1., 0],
-            [THETAL, True, THETAL + 2500.4 * (THETA/TABS) * QI, 1., 0]]
-
-        :param plot_vars: A 2d array containing the variable names, conversion factors, and equation needed to calculate the new values
-        :return: A 1d array containing the calculated values
-        '''
-        variable_values = {}
-        # equation_row = self.__getLineToPlotIndex__(plot_vars)
-        # equation = plot_vars[equation_row][2]
-        variables_evaled = []
-
-        #pad the equation to help with regex
-        equation = " " + equation + " "
-        i = 0
-        for variable in plot_vars:
-            #each variable should be of the form: variable name within python, is this the variable w/ equation to be plotted, variable name in SAM output, model conversion rate
-            level_amount = 1 # TODO stop hardcoding this
-            num_timesteps = 1 # TODO stop hardcoding this
-
-            variable_values[variable] = self.__getValuesFromNc__(netcdf_data, variable, conversion_factors[i], level_amount, num_timesteps)
-
-            #replace each variable name with a reference to python's equivalent variable,
-            # but avoid overwriting variables with the same beginning
-            # (e.g. overwrite THETAL variable when THETA get's processed)
-            var_replacement = " variable_values['"+variable+"'] "
-            #equation = equation.replace(var_to_replace, var_replacement)
-            if not variable in variables_evaled:
-                equation = re.sub('(\W)' + variable + '(\W)',r'\1' + var_replacement + r'\2', equation)
-            variables_evaled.append(variable)
-            i += 1
-
-        new_values = eval(equation)
-        return new_values
-
-
