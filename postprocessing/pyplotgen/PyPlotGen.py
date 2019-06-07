@@ -10,6 +10,7 @@ Date: Jan 2019
 import argparse
 
 from pyplotgen.DataReader import DataReader
+from pyplotgen.CaseTest import CaseTest
 from pyplotgen.PanelGroupTest import PanelGroupTest
 
 class PyPlotGen:
@@ -70,8 +71,9 @@ class PyPlotGen:
                 # casefile = "/home/strike/clubb/postprocessing/pyplotgen/cases/Case_dycoms2_rf01.ini"
                 print("Opening " + dataset_filename)
                 # self.plotCase(dataset, casefile)
-                test_group = PanelGroupTest(dataset)
-                test_group.plot()
+                test_case = CaseTest(dataset)
+                # test_group = PanelGroupTest(dataset)
+                test_case.plot()
                 break # TODO TEMP FIX
 
 

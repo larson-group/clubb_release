@@ -24,7 +24,7 @@ class Panel:
         self.y_title = y_title
         self.blacklisted = blacklisted
 
-    def plot(self, netcdf_data):
+    def plot(self):
         '''
         Save the panel's graphical representation to a file in the 'output' folder from launch parameters
 

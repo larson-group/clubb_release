@@ -1,7 +1,10 @@
+from pyplotgen import PanelGroup
+from pyplotgen.Case import Case
+
 from pyplotgen.PanelGroupTest import PanelGroupTest
 
 
-class Case:
+class CaseTest(Case):
     '''
 
     '''
@@ -15,11 +18,13 @@ class Case:
         self.enabled = True
         self.ncdf_file = ncdf_file
 
-        self.panel_groups = []
+        testGroup = PanelGroupTest(self.ncdf_file)
+        self.panel_groups = [testGroup]
         self.panels = []
 
-        for panel in self.panel_groups.panels:
-            self.panels.append(panel)
+        for panelgroup in self.panel_groups:
+            for panel in panelgroup.panels:
+                self.panels.append(panel)
 
     def plot(self):
         '''
@@ -27,5 +32,4 @@ class Case:
         :param plotter:
         :return:
         '''
-        for panel in self.panels:
-            panel.plot()
+        super().plot()
