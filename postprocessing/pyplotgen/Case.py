@@ -1,4 +1,4 @@
-from pyplotgen.PanelGroupTest import PanelGroupTest
+from pyplotgen.VariableGroupTest import VariableGroupBase
 
 
 class Case:
@@ -9,7 +9,7 @@ class Case:
         '''
 
         '''
-        self.name = "testcase"
+        self.name = "unnamed-case"
         self.start_time = 0
         self.end_time = -1
         self.enabled = True
@@ -21,11 +21,11 @@ class Case:
         for panel in self.panel_groups.panels:
             self.panels.append(panel)
 
-    def plot(self):
+    def plot(self, casename):
         '''
 
         :param plotter:
         :return:
         '''
         for panel in self.panels:
-            panel.plot()
+            panel.plot(casename)

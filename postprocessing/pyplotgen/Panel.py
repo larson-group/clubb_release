@@ -2,10 +2,9 @@
 :author: Nicolas Strike
 :date: Mid 2019
 '''
-
-
+from pyplotgen.DataReader import NetCdfVariable
 from pyplotgen.Lineplot import Lineplot
-from pyplotgen.PantelType import PanelType
+from pyplotgen.PanelType import PanelType
 from pyplotgen.Plotter import Plotter
 
 
@@ -14,17 +13,106 @@ class Panel:
     Represents an individual panel/graph. Each graph contains a number of details
     specific to it, such as a title. Each graph can be plotted/saved to a file.
     '''
-    def __init__(self, base_plot : Lineplot,panel_type : PanelType = None, title : str = "Unnamed panel",
-                 overplots = None, x_title = "x axis", y_title = "y axis", line_format = "", blacklisted = False):
-        self.base_plot = base_plot
+    TYPE_PROFILE = 'profile'
+    TYPE_BUDGET = 'budget'
+    TYPE_TIMESERIES = 'timeseries'
+
+    def __init__(self, variable_name, ncdf_file, averaging_start_time=-1, averaging_end_time=-1, panel_type = 'profile', title : str = "Unnamed panel",
+                 overplots = None, dependant_title = "dependant variable", line_format = "", blacklisted = False,
+                 independent_min_value = 0, independent_max_value = -1):
+
+        self.ncdf_file = ncdf_file
+        self.averaging_start_time = averaging_start_time
+        self.averaging_end_time = averaging_end_time
+        self.independent_min_value = independent_min_value
+        self.independent_max_value = independent_max_value
         self.panel_type = panel_type
+
+        self.z = NetCdfVariable('z', ncdf_file, one_dimentional=True, start_time=averaging_start_time, end_time=averaging_end_time)
+        self.z_min_idx, self.z_max_idx = self.__getStartEndIndex__(self.z.data, self.independent_min_value, self.independent_max_value)
+        self.z.data = self.z.data[self.z_min_idx:self.z_max_idx]
+
+        self.time = NetCdfVariable('time', ncdf_file, one_dimentional=True)
+        self.time.data = self.time.data[self.independent_min_value:self.independent_max_value]
+
+        self.base_plot = self.__var_to_lineplot__(variable_name)
         self.title = title
         self.overplots = overplots
-        self.x_title = x_title
-        self.y_title = y_title
+        self.dependant_title = dependant_title
+        self.x_title = "x title unassigned"
+        self.y_title = "y title unassigned"
+        self.__init_axis_titles__()
         self.blacklisted = blacklisted
 
-    def plot(self):
+
+
+    def __var_to_lineplot__(self, varname, label = ""):
+        '''
+
+        :param varname:
+        :return:
+        '''
+
+        lineplot = None
+        if self.panel_type is Panel.TYPE_PROFILE:
+            variable = NetCdfVariable(varname, self.ncdf_file, start_time=self.averaging_start_time, end_time=self.averaging_end_time)
+            variable.data = variable.data[self.z_min_idx:self.z_max_idx]
+            lineplot = Lineplot(variable, self.z, label=label)
+
+        elif self.panel_type is Panel.TYPE_BUDGET:
+            pass
+        elif self.panel_type is Panel.TYPE_TIMESERIES:
+            variable = NetCdfVariable(varname, self.ncdf_file, one_dimentional=True, start_time=self.independent_min_value, end_time=self.independent_max_value)
+            # variable.data = variable.data[self.averaging_start_time:self.averaging_end_time]
+            lineplot = Lineplot(self.time, variable, label=label)
+        else:
+            raise ValueError('Invalid panel type ' + self.panel_type + '. Valid options are profile, budget, timeseries')
+        return lineplot
+
+    def __init_axis_titles__(self):
+        '''
+
+        :return:
+        '''
+        if self.panel_type is Panel.TYPE_PROFILE:
+            self.x_title = self.dependant_title
+            self.y_title = "Height, [m]"
+        elif self.panel_type is Panel.TYPE_BUDGET:
+            pass
+            # self.x_title =
+            # self.y_title =
+        elif self.panel_type is Panel.TYPE_TIMESERIES:
+            self.x_title = "Time [min]"
+            self.y_title = self.dependant_title
+        else:
+            raise ValueError('Invalid panel type ' + self.panel_type + '. Valid options are profile, budget, timeseries')
+
+    def __getStartEndIndex__(self, data, start_value, end_value):
+        '''
+        Get the list floor index that contains the value to start graphing at and the
+        ceiling index that contains the end value to stop graphing at
+
+        If neither are found, returns the entire array back
+        :param start_value: The first value to be graphed (may return indexes to values smaller than this)
+        :param end_value: The last value that needs to be graphed (may return indexes to values larger than this)
+        :return: (tuple) start_idx, end_idx   which contains the starting and ending index representing the start and end time passed into the function
+        :author: Nicolas Strike
+        '''
+        start_idx = 0
+        end_idx = len(data) -1
+        for i in range(0,len(data)):
+            # Check for start index
+            test_value = data[i]
+            if test_value <= start_value and test_value > data[start_idx]:
+                start_idx = i
+            # Check for end index
+            if test_value >= end_value and test_value < data[end_idx]:
+                end_idx = i
+
+        return start_idx, end_idx
+
+
+    def plot(self, casename):
         '''
         Save the panel's graphical representation to a file in the 'output' folder from launch parameters
 
@@ -32,4 +120,4 @@ class Panel:
         :return:
         '''
         plotter = Plotter()
-        plotter.plot(self.base_plot.x.data, self.base_plot.y.data, title=self.title, x_title=self.x_title, y_title=self.y_title)
+        plotter.plot(self.base_plot.x.data, self.base_plot.y.data, casename, title=self.title, x_title=self.x_title, y_title=self.y_title)

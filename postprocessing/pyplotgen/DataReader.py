@@ -96,11 +96,12 @@ class DataReader():
         for dataset in self.nc_datasets:
             dataset.close()
 
-    def loadFolder(self, folder_path):
+    def loadFolder(self, folder_path, ignore_git = True):
         '''
         Finds all dataset files in a given folder and loads
         them using the appropriate helper class.
         :param folder_path: The path of the folder to be loaded
+        :param ignore_git: Ignore files and paths that contain '.git' in their name
         :return: An array of datasets
         :author: Nicolas Strike
         '''
@@ -108,6 +109,8 @@ class DataReader():
             for filename in files:
                 abs_filename = os.path.abspath(os.path.join(root, filename))
                 file_ext = os.path.splitext(filename)[1]
+                if ignore_git and '.git' in abs_filename:
+                    continue
                 if file_ext == ".nc":
                     self.nc_filenames.append(abs_filename)
                     self.nc_datasets.append(self.__loadNcFile__(abs_filename))

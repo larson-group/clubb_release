@@ -7,6 +7,7 @@ the DataReader class.
 :author: Nicolas Strike
 :date: Mid 2019
 '''
+import os
 from collections import namedtuple
 
 import matplotlib
@@ -38,7 +39,7 @@ class Plotter:
         # plt.plot(thlm_time[11])
 
 
-    def plot(self, x_values, y_values, title = "unnamed plot", x_title = "x axis", y_title = "y title", line_format = "r--"):
+    def plot(self, x_values, y_values, casename, title = "unnamed plot", x_title = "x axis", y_title = "y title", line_format = "r--"):
         '''
         Saves a single panel/graph to the output directory specified by the pyplotgen launch paramters
 
@@ -59,4 +60,14 @@ class Plotter:
         plt.ylabel(y_title)
         plt.xlabel(x_title)
         # plt.autoscale(tight=True)
-        plt.savefig(title.replace('"', '').replace(',', '').replace(' ', '_') + '.png')
+        try:
+            os.mkdir("output")
+        except FileExistsError:
+            pass # do nothing
+        # Because os.mkdir("output") can fail and prevent os.mkdir("output/" + casename) from being called we must
+        # use two separate trys
+        try:
+            os.mkdir("output/" + casename)
+        except FileExistsError:
+            pass # do nothing
+        plt.savefig("output/" +casename+'/' + title.replace('"', '').replace(',', '').replace(' ', '_') + '.png')

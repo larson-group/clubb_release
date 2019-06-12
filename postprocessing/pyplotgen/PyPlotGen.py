@@ -11,7 +11,8 @@ import argparse
 
 from pyplotgen.DataReader import DataReader
 from pyplotgen.CaseTest import CaseTest
-from pyplotgen.PanelGroupTest import PanelGroupTest
+from pyplotgen.HtmlWriter import HtmlWriter
+from pyplotgen.VariableGroupTest import VariableGroupBase
 
 class PyPlotGen:
     def __init__(self, input_folder, output_folder, replace=False, les=False, cgbest=False, hoc=False,plotrefs=False,
@@ -38,8 +39,8 @@ class PyPlotGen:
         :param bu_morr:
         :param diff:
         '''
-        self.input_folder = "/home/strike/sam_benchmark_runs" # input_folder # TODO stop hardcoding
-        self.output_folder = output_folder
+        self.input_folder = input_folder # TODO stop hardcoding
+        # self.output_folder = output_folder
         self.replace = replace
         self.les = les
         self.cgbest = cgbest
@@ -65,16 +66,18 @@ class PyPlotGen:
         :return: n/a
         '''
         self.nc_datasets = self.data_reader.loadFolder(self.input_folder)
+        cases_plotted = {}
         for dataset in self.nc_datasets:
             dataset_filename = dataset.filepath()
-            if ("dycoms_rf01_96x96x320") in dataset_filename.lower():
-                # casefile = "/home/strike/clubb/postprocessing/pyplotgen/cases/Case_dycoms2_rf01.ini"
+            if "dycoms_rf01_96x96x320" in dataset_filename.lower() and ".git" not in dataset_filename.lower():
                 print("Opening " + dataset_filename)
-                # self.plotCase(dataset, casefile)
                 test_case = CaseTest(dataset)
-                # test_group = PanelGroupTest(dataset)
                 test_case.plot()
+                cases_plotted[test_case.name] = test_case
                 break # TODO TEMP FIX
+
+        # html_writer = HtmlWriter(cases_plotted)
+        # html_writer.save()
 
 
 def process_args():
