@@ -28,12 +28,12 @@ class Panel:
         self.independent_max_value = independent_max_value
         self.panel_type = panel_type
 
-        self.z = NetCdfVariable('z', ncdf_file, one_dimentional=True, start_time=averaging_start_time, end_time=averaging_end_time)
+        self.z = NetCdfVariable('z', ncdf_file, avging_start_time=averaging_start_time, avging_end_time=averaging_end_time)
         self.z_min_idx, self.z_max_idx = self.__getStartEndIndex__(self.z.data, self.independent_min_value, self.independent_max_value)
         self.z.data = self.z.data[self.z_min_idx:self.z_max_idx]
 
-        self.time = NetCdfVariable('time', ncdf_file, one_dimentional=True)
-        self.time.data = self.time.data[self.independent_min_value:self.independent_max_value]
+        self.time = NetCdfVariable('time', ncdf_file)
+        # self.time.data = self.time.data[self.independent_min_value:self.independent_max_value]
 
         self.base_plot = self.__var_to_lineplot__(variable_name)
         self.title = title
@@ -55,15 +55,15 @@ class Panel:
 
         lineplot = None
         if self.panel_type is Panel.TYPE_PROFILE:
-            variable = NetCdfVariable(varname, self.ncdf_file, start_time=self.averaging_start_time, end_time=self.averaging_end_time)
+            variable = NetCdfVariable(varname, self.ncdf_file, avging_start_time=self.averaging_start_time, avging_end_time=self.averaging_end_time)
             variable.data = variable.data[self.z_min_idx:self.z_max_idx]
             lineplot = Lineplot(variable, self.z, label=label)
 
         elif self.panel_type is Panel.TYPE_BUDGET:
             pass
         elif self.panel_type is Panel.TYPE_TIMESERIES:
-            variable = NetCdfVariable(varname, self.ncdf_file, one_dimentional=True, start_time=self.independent_min_value, end_time=self.independent_max_value)
-            # variable.data = variable.data[self.averaging_start_time:self.averaging_end_time]
+            variable = NetCdfVariable(varname, self.ncdf_file, avging_start_time=self.averaging_start_time, avging_end_time=self.averaging_end_time, avg_axis=1)
+            variable.data = variable.data[self.independent_min_value:self.independent_max_value]
             lineplot = Lineplot(self.time, variable, label=label)
         else:
             raise ValueError('Invalid panel type ' + self.panel_type + '. Valid options are profile, budget, timeseries')

@@ -16,14 +16,24 @@ class NetCdfVariable:
     '''
     Class used for conviniently storying the information about a given netcdf variable
     '''
-    def __init__(self, name, ncdf_file, conversion_factor = 1, start_time = -1, end_time = -1, timestep = -1, one_dimentional = False):
+    def __init__(self, name, ncdf_file, conversion_factor = 1, avging_start_time = -1, avging_end_time = -1, timestep = -1, avg_axis = 0):
+        '''
+
+        :param name:
+        :param ncdf_file:
+        :param conversion_factor:
+        :param avging_start_time:
+        :param avging_end_time:
+        :param timestep:
+        :param avg_axis: The axis to avg data over. 0 for time-avg, 1 for height avg
+        '''
         data_reader = DataReader()
         self.name = name
-        self.start_time = start_time
-        self.end_time = end_time
+        self.start_time = avging_start_time
+        self.end_time = avging_end_time
         self.timestep = timestep
         self.conv_factor = conversion_factor
-        self.one_dimentional = one_dimentional
+        self.avg_axis = avg_axis
         self.data = data_reader.getVarData(ncdf_file, self)
 
     def constrain(self, min_value, max_value):
@@ -133,14 +143,15 @@ class DataReader():
         end_time_value = variable.end_time
         variable_name = variable.name
         conv_factor = variable.conv_factor
+        avg_axis = variable.avg_axis
         level_amount = 1
         num_timesteps = 1
         time_values = self.__getValuesFromNc__(netcdf_data, "time", 1, 1, 1) #TODO conversion shouldn't be only 1 value
-        (start_time_index, end_time_idx) = self.__getStartEndIndex__(time_values, start_time_value, end_time_value) # Get the index values that correspond to the desired start/end x values
+        (start_avging_index, end_avging_idx) = self.__getStartEndIndex__(time_values, start_time_value, end_time_value) # Get the index values that correspond to the desired start/end x values
 
         values = self.__getValuesFromNc__(netcdf_data, variable_name, conv_factor, 1, 1) #TODO conversion shouldn't be only 1 value\
-        if not variable.one_dimentional:
-            values = self.__meanProfiles__(values, start_time_index, end_time_idx)
+        if values.ndim > 1:#not variable.one_dimentional:
+            values = self.__meanProfiles__(values, start_avging_index, end_avging_idx, avg_axis=avg_axis)
 
         return values
 
@@ -165,7 +176,7 @@ class DataReader():
         dataset = Dataset(filename, "r+", format="NETCDF4")
         return dataset
 
-    def __meanProfiles__(self, var, idx_t0 = 0, idx_t1 = -1):
+    def __meanProfiles__(self, var, idx_t0 = 0, idx_t1 = -1, idx_z0 = 0, idx_z1 = -1, avg_axis=0):
         # logger.info('mean_profiles')
         """
         Input:
@@ -182,7 +193,10 @@ class DataReader():
             idx_t1 = len(var)
 
         # Nic changed nanmean() to mean()
-        var_average = np.mean(var[idx_t0:idx_t1,:],axis=0)
+        if avg_axis is 0: # if time-averaged
+            var_average = np.mean(var[idx_t0:idx_t1,:],axis=avg_axis)
+        else: # if height averaged
+            var_average = np.mean(var[:,idx_z0:idx_z1],axis=avg_axis)
         return var_average
 
     def __getUnits__(self, nc, varname):
@@ -247,7 +261,8 @@ class DataReader():
             var = var*conversion
         else:
             # logger.debug('%s is not in keys', varname)
-            var = np.zeros(shape=(level_amount, num_timesteps)) - 1.
+            # var = np.zeros(shape=(level_amount, num_timesteps)) - 1.
+            raise ValueError("Variable " + varname + " does not exist in nc file")
         return var
 
     def __getStartEndIndex__(self, data, start_value, end_value):
