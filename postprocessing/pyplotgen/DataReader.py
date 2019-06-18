@@ -146,7 +146,11 @@ class DataReader():
         avg_axis = variable.avg_axis
         level_amount = 1
         num_timesteps = 1
-        time_values = self.__getValuesFromNc__(netcdf_data, "time", 1, 1, 1) #TODO conversion shouldn't be only 1 value
+        time_conv_factor = 1
+        source_model = self.getNcdfSourceModel(netcdf_data)
+        if source_model == "sam":
+            time_conv_factor = 60
+        time_values = self.__getValuesFromNc__(netcdf_data, "time", time_conv_factor, 1, 1) #TODO conversion shouldn't be only 1 value
         (start_avging_index, end_avging_idx) = self.__getStartEndIndex__(time_values, start_time_value, end_time_value) # Get the index values that correspond to the desired start/end x values
 
         values = self.__getValuesFromNc__(netcdf_data, variable_name, conv_factor, 1, 1) #TODO conversion shouldn't be only 1 value\
@@ -194,9 +198,9 @@ class DataReader():
 
         # Nic changed nanmean() to mean()
         if avg_axis is 0: # if time-averaged
-            var_average = np.mean(var[idx_t0:idx_t1,:],axis=avg_axis)
+            var_average = np.nanmean(var[idx_t0:idx_t1,:],axis=avg_axis)
         else: # if height averaged
-            var_average = np.mean(var[:,idx_z0:idx_z1],axis=avg_axis)
+            var_average = np.nanmean(var[:,idx_z0:idx_z1],axis=avg_axis)
         return var_average
 
     def __getUnits__(self, nc, varname):
@@ -259,6 +263,9 @@ class DataReader():
             var = nc.variables[varname]
             var = np.squeeze(var)
             var = var*conversion
+            # Variables with 0-1 data points/values return a float after being 'squeeze()'ed, this converts it back to an array
+            if isinstance(var, float):
+                var = np.array([var])
         else:
             # logger.debug('%s is not in keys', varname)
             # var = np.zeros(shape=(level_amount, num_timesteps)) - 1.
@@ -286,5 +293,21 @@ class DataReader():
             # Check for end index
             if test_value >= end_value and test_value < data[end_idx]:
                 end_idx = i
+        if end_idx == -1:
+            raise ValueError("Event end_value " + str(end_value) + " is too large. There is no subset of data [start:end] that contains " + str(end_value))
 
         return start_idx, end_idx
+
+    def getNcdfSourceModel(self, ncdf_file: Dataset):
+        '''
+        Guesses the model that outputted a given ncdf file
+
+        :param ncdf_file: NetCDF output file from some supported model (e.g. CLUBB, SAM)
+        :return: the (estimated) name of the model that outputted the input file
+        '''
+        if 'altitude' in ncdf_file.variables.keys():
+            return 'clubb'
+        elif 'z' in ncdf_file.variables.keys():
+            return 'sam'
+        else:
+            return 'unknown-model'

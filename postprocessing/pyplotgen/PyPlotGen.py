@@ -58,6 +58,7 @@ class PyPlotGen:
         self.diff = diff
         self.nc_datasets = None
         self.data_reader = DataReader()
+        self.sam_data_reader = DataReader()
 
 
     def run(self):
@@ -66,12 +67,14 @@ class PyPlotGen:
         :return: n/a
         '''
         self.nc_datasets = self.data_reader.loadFolder(self.input_folder)
+        # self.sam_datasets = self.sam_data_reader.loadFolder("/home/strike/sam_benchmark_runs")
         cases_plotted = {}
         for dataset in self.nc_datasets:
             dataset_filename = dataset.filepath()
-            if "dycoms_rf01_96x96x320" in dataset_filename.lower() and ".git" not in dataset_filename.lower():
+            if "dycoms2_rf01_zm" in dataset_filename.lower() and ".git" not in dataset_filename.lower():
+                sam_file = self.sam_data_reader.__loadNcFile__("/home/strike/sam_benchmark_runs/DYCOMS_RF01_96x96x320/DYCOMS_RF01_96x96x320.nc")
                 print("Opening " + dataset_filename)
-                test_case = CaseTest(dataset)
+                test_case = CaseTest(dataset, sam_file=sam_file)
                 test_case.plot()
                 cases_plotted[test_case.name] = test_case
                 break # TODO TEMP FIX
@@ -103,7 +106,7 @@ def process_args():
     parser.add_argument("--budget-moments",help="Plot all defined budgets of moments", action="store_true")
     parser.add_argument("--bu-morr",help="For morrison microphysics: breaks microphysical source terms into component processes", action="store_true")
     parser.add_argument("--diff",help="Plot the difference between two input folders", action="store_true")
-    parser.add_argument("input",help="Input folder containing grads or netcdf output data.", action="store")
+    parser.add_argument("input",help="Input folder containing netcdf output data.", action="store")
     parser.add_argument("output",help="Name of folder to create and store plots into.", action="store")
     args = parser.parse_args()
 

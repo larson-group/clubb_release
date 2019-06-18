@@ -39,7 +39,7 @@ class Plotter:
         # plt.plot(thlm_time[11])
 
 
-    def plot(self, x_values, y_values, casename, title = "unnamed plot", x_title = "x axis", y_title = "y title", line_format = "r--"):
+    def plot(self, lineplots, casename, title ="unnamed plot", x_title ="x axis", y_title ="y title"):
         '''
         Saves a single panel/graph to the output directory specified by the pyplotgen launch paramters
 
@@ -55,10 +55,12 @@ class Plotter:
         '''
         plt.figure()
         plt.subplot(111)
-        plt.plot(x_values, y_values, line_format)
+        for var in lineplots:
+            plt.plot(var.x.data, var.y.data, var.line_format, label=var.label)
         plt.title(title)
         plt.ylabel(y_title)
         plt.xlabel(x_title)
+        plt.figlegend()
         # plt.autoscale(tight=True)
         try:
             os.mkdir("output")

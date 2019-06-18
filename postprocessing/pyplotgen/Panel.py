@@ -6,6 +6,7 @@ from pyplotgen.DataReader import NetCdfVariable
 from pyplotgen.Lineplot import Lineplot
 from pyplotgen.PanelType import PanelType
 from pyplotgen.Plotter import Plotter
+from pyplotgen.VarnameConversions import CLUBB_TO_SAM
 
 
 class Panel:
@@ -18,8 +19,8 @@ class Panel:
     TYPE_TIMESERIES = 'timeseries'
 
     def __init__(self, variable_name, ncdf_file, averaging_start_time=-1, averaging_end_time=-1, panel_type = 'profile', title : str = "Unnamed panel",
-                 overplots = None, dependant_title = "dependant variable", line_format = "", blacklisted = False,
-                 independent_min_value = 0, independent_max_value = -1):
+                 dependant_title = "dependant variable", line_format = "", blacklisted = False,
+                 independent_min_value = 0, independent_max_value = -1, sam_file = None):
 
         self.ncdf_file = ncdf_file
         self.averaging_start_time = averaging_start_time
@@ -27,17 +28,23 @@ class Panel:
         self.independent_min_value = independent_min_value
         self.independent_max_value = independent_max_value
         self.panel_type = panel_type
+        self.all_plots = []
 
-        self.z = NetCdfVariable('z', ncdf_file, avging_start_time=averaging_start_time, avging_end_time=averaging_end_time)
+        self.z = NetCdfVariable('altitude', ncdf_file, avging_start_time=averaging_start_time, avging_end_time=averaging_end_time)
         self.z_min_idx, self.z_max_idx = self.__getStartEndIndex__(self.z.data, self.independent_min_value, self.independent_max_value)
         self.z.data = self.z.data[self.z_min_idx:self.z_max_idx]
 
         self.time = NetCdfVariable('time', ncdf_file)
         # self.time.data = self.time.data[self.independent_min_value:self.independent_max_value]
 
-        self.base_plot = self.__var_to_lineplot__(variable_name)
+        self.base_plot = self.__var_to_lineplot__(variable_name, self.ncdf_file, label="current clubb")
+        self.all_plots.append(self.base_plot)
+
+        if sam_file is not None:
+            self.sam_plot = self.__var_to_lineplot__(CLUBB_TO_SAM[variable_name], sam_file, label="LES output", line_format="k-")
+            self.all_plots.append(self.sam_plot)
+
         self.title = title
-        self.overplots = overplots
         self.dependant_title = dependant_title
         self.x_title = "x title unassigned"
         self.y_title = "y title unassigned"
@@ -46,7 +53,7 @@ class Panel:
 
 
 
-    def __var_to_lineplot__(self, varname, label = ""):
+    def __var_to_lineplot__(self, varname, override_ncdf_file, label = "", line_format = "", is_sam_var = False):
         '''
 
         :param varname:
@@ -55,16 +62,16 @@ class Panel:
 
         lineplot = None
         if self.panel_type is Panel.TYPE_PROFILE:
-            variable = NetCdfVariable(varname, self.ncdf_file, avging_start_time=self.averaging_start_time, avging_end_time=self.averaging_end_time)
+            variable = NetCdfVariable(varname, override_ncdf_file, avging_start_time=self.averaging_start_time, avging_end_time=self.averaging_end_time)
             variable.data = variable.data[self.z_min_idx:self.z_max_idx]
-            lineplot = Lineplot(variable, self.z, label=label)
+            lineplot = Lineplot(variable, self.z, label=label, line_format=line_format)
 
         elif self.panel_type is Panel.TYPE_BUDGET:
             pass
         elif self.panel_type is Panel.TYPE_TIMESERIES:
-            variable = NetCdfVariable(varname, self.ncdf_file, avging_start_time=self.averaging_start_time, avging_end_time=self.averaging_end_time, avg_axis=1)
+            variable = NetCdfVariable(varname, override_ncdf_file, avging_start_time=self.averaging_start_time, avging_end_time=self.averaging_end_time, avg_axis=1)
             variable.data = variable.data[self.independent_min_value:self.independent_max_value]
-            lineplot = Lineplot(self.time, variable, label=label)
+            lineplot = Lineplot(self.time, variable, label=label, line_format=line_format)
         else:
             raise ValueError('Invalid panel type ' + self.panel_type + '. Valid options are profile, budget, timeseries')
         return lineplot
@@ -120,4 +127,4 @@ class Panel:
         :return:
         '''
         plotter = Plotter()
-        plotter.plot(self.base_plot.x.data, self.base_plot.y.data, casename, title=self.title, x_title=self.x_title, y_title=self.y_title)
+        plotter.plot(self.all_plots, casename, title=self.title, x_title=self.x_title, y_title=self.y_title)
