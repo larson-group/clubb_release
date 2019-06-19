@@ -13,7 +13,7 @@ class Case:
         self.start_time = 0
         self.end_time = -1
         self.enabled = True
-        self.ncdf_file = ncdf_file
+        self.ncdf_files = ncdf_file
 
         self.panel_groups = []
         self.panels = []

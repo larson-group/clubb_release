@@ -18,11 +18,11 @@ class Panel:
     TYPE_BUDGET = 'budget'
     TYPE_TIMESERIES = 'timeseries'
 
-    def __init__(self, variable_name, ncdf_file, averaging_start_time=-1, averaging_end_time=-1, panel_type = 'profile', title : str = "Unnamed panel",
+    def __init__(self, variable_name, ncdf_files, averaging_start_time=-1, averaging_end_time=-1, panel_type ='profile', title : str = "Unnamed panel",
                  dependant_title = "dependant variable", line_format = "", blacklisted = False,
                  independent_min_value = 0, independent_max_value = -1, sam_file = None):
 
-        self.ncdf_file = ncdf_file
+        self.ncdf_files = ncdf_files
         self.averaging_start_time = averaging_start_time
         self.averaging_end_time = averaging_end_time
         self.independent_min_value = independent_min_value
@@ -30,18 +30,18 @@ class Panel:
         self.panel_type = panel_type
         self.all_plots = []
 
-        self.z = NetCdfVariable('altitude', ncdf_file, avging_start_time=averaging_start_time, avging_end_time=averaging_end_time)
+        self.z = NetCdfVariable('altitude', ncdf_files, avging_start_time=averaging_start_time, avging_end_time=averaging_end_time)
         self.z_min_idx, self.z_max_idx = self.__getStartEndIndex__(self.z.data, self.independent_min_value, self.independent_max_value)
         self.z.data = self.z.data[self.z_min_idx:self.z_max_idx]
 
-        self.time = NetCdfVariable('time', ncdf_file)
+        self.time = NetCdfVariable('time', ncdf_files)
         # self.time.data = self.time.data[self.independent_min_value:self.independent_max_value]
 
-        self.base_plot = self.__var_to_lineplot__(variable_name, self.ncdf_file, label="current clubb")
+        self.base_plot = self.__var_to_lineplot__(variable_name, self.ncdf_files, label="current clubb")
         self.all_plots.append(self.base_plot)
 
         if sam_file is not None:
-            self.sam_plot = self.__var_to_lineplot__(CLUBB_TO_SAM[variable_name], sam_file, label="LES output", line_format="k-")
+            self.sam_plot = self.__var_to_lineplot__(CLUBB_TO_SAM[variable_name], [sam_file], label="LES output", line_format="k-",avg_axis=1)
             self.all_plots.append(self.sam_plot)
 
         self.title = title
@@ -53,7 +53,7 @@ class Panel:
 
 
 
-    def __var_to_lineplot__(self, varname, override_ncdf_file, label = "", line_format = "", is_sam_var = False):
+    def __var_to_lineplot__(self, varname, ncdf_files, label ="", line_format ="", avg_axis=0): # TODO is avg_axis appropriate here?
         '''
 
         :param varname:
@@ -62,14 +62,16 @@ class Panel:
 
         lineplot = None
         if self.panel_type is Panel.TYPE_PROFILE:
-            variable = NetCdfVariable(varname, override_ncdf_file, avging_start_time=self.averaging_start_time, avging_end_time=self.averaging_end_time)
-            variable.data = variable.data[self.z_min_idx:self.z_max_idx]
-            lineplot = Lineplot(variable, self.z, label=label, line_format=line_format)
+            for file in ncdf_files:
+                if varname in file.variables.keys():
+                    variable = NetCdfVariable(varname, [file], avging_start_time=self.averaging_start_time, avging_end_time=self.averaging_end_time, avg_axis=avg_axis)
+                    variable.data = variable.data[self.z_min_idx:self.z_max_idx]
+                    lineplot = Lineplot(variable, self.z, label=label, line_format=line_format)
 
         elif self.panel_type is Panel.TYPE_BUDGET:
             pass
         elif self.panel_type is Panel.TYPE_TIMESERIES:
-            variable = NetCdfVariable(varname, override_ncdf_file, avging_start_time=self.averaging_start_time, avging_end_time=self.averaging_end_time, avg_axis=1)
+            variable = NetCdfVariable(varname, ncdf_files, avging_start_time=self.averaging_start_time, avging_end_time=self.averaging_end_time, avg_axis=1)
             variable.data = variable.data[self.independent_min_value:self.independent_max_value]
             lineplot = Lineplot(self.time, variable, label=label, line_format=line_format)
         else:

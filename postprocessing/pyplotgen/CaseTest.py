@@ -8,7 +8,7 @@ class CaseTest(Case):
     '''
 
     '''
-    def __init__(self, ncdf_file, sam_file = None):
+    def __init__(self, ncdf_files, sam_file = None):
         '''
 
         '''
@@ -16,9 +16,9 @@ class CaseTest(Case):
         self.start_time = 0
         self.end_time = -1
         self.enabled = True
-        self.ncdf_file = ncdf_file
+        self.ncdf_files = ncdf_files
 
-        testGroup = VariableGroupBase(self.ncdf_file, sam_file=sam_file)
+        testGroup = VariableGroupBase(self.ncdf_files, sam_file=sam_file)
         self.panel_groups = [testGroup]
         self.panels = []
 

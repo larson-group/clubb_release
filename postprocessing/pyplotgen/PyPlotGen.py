@@ -69,18 +69,17 @@ class PyPlotGen:
         self.nc_datasets = self.data_reader.loadFolder(self.input_folder)
         # self.sam_datasets = self.sam_data_reader.loadFolder("/home/strike/sam_benchmark_runs")
         cases_plotted = {}
-        for dataset in self.nc_datasets:
-            dataset_filename = dataset.filepath()
-            if "dycoms2_rf01_zm" in dataset_filename.lower() and ".git" not in dataset_filename.lower():
+        for case_key in self.nc_datasets.keys():
+            ncdf_files = self.nc_datasets[case_key]
+            dataset_filenames = [dataset.filepath() for dataset in ncdf_files]
+
+            if "dycoms2_rf01_" in dataset_filenames[0] and "sst" not in dataset_filenames[0] and ".git" not in dataset_filenames:
                 sam_file = self.sam_data_reader.__loadNcFile__("/home/strike/sam_benchmark_runs/DYCOMS_RF01_96x96x320/DYCOMS_RF01_96x96x320.nc")
-                print("Opening " + dataset_filename)
-                test_case = CaseTest(dataset, sam_file=sam_file)
+                print("Plotting case ", case_key)
+                test_case = CaseTest(ncdf_files, sam_file=sam_file)
                 test_case.plot()
                 cases_plotted[test_case.name] = test_case
                 break # TODO TEMP FIX
-
-        # html_writer = HtmlWriter(cases_plotted)
-        # html_writer.save()
 
 
 def process_args():
