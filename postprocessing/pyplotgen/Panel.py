@@ -18,38 +18,37 @@ class Panel:
     TYPE_BUDGET = 'budget'
     TYPE_TIMESERIES = 'timeseries'
 
-    def __init__(self, variable_name, ncdf_files, averaging_start_time=-1, averaging_end_time=-1, panel_type ='profile', title : str = "Unnamed panel",
-                 dependant_title = "dependant variable", line_format = "", blacklisted = False,
-                 independent_min_value = 0, independent_max_value = -1, sam_file = None):
+    def __init__(self,plots, panel_type ='profile', title : str = "Unnamed panel",
+                 dependant_title = "dependant variable"):
 
-        self.ncdf_files = ncdf_files
-        self.averaging_start_time = averaging_start_time
-        self.averaging_end_time = averaging_end_time
-        self.independent_min_value = independent_min_value
-        self.independent_max_value = independent_max_value
+        # self.ncdf_files = ncdf_files
+        # self.averaging_start_time = averaging_start_time
+        # self.averaging_end_time = averaging_end_time
+        # self.independent_min_value = independent_min_value
+        # self.independent_max_value = independent_max_value
         self.panel_type = panel_type
-        self.all_plots = []
+        self.all_plots = plots
 
-        self.z = NetCdfVariable('altitude', ncdf_files, avging_start_time=averaging_start_time, avging_end_time=averaging_end_time)
-        self.z_min_idx, self.z_max_idx = self.__getStartEndIndex__(self.z.data, self.independent_min_value, self.independent_max_value)
-        self.z.data = self.z.data[self.z_min_idx:self.z_max_idx]
+        # self.z = NetCdfVariable('altitude', ncdf_files, avging_start_time=averaging_start_time, avging_end_time=averaging_end_time)
+        # self.z_min_idx, self.z_max_idx = self.__getStartEndIndex__(self.z.data, self.independent_min_value, self.independent_max_value)
+        # self.z.data = self.z.data[self.z_min_idx:self.z_max_idx]
 
-        self.time = NetCdfVariable('time', ncdf_files)
+        # self.time = NetCdfVariable('time', ncdf_files)
         # self.time.data = self.time.data[self.independent_min_value:self.independent_max_value]
 
-        self.base_plot = self.__var_to_lineplot__(variable_name, self.ncdf_files, label="current clubb")
-        self.all_plots.append(self.base_plot)
+        # self.base_plot = self.__var_to_lineplot__(variable_name, self.ncdf_files, label="current clubb")
+        # self.all_plots.append(self.base_plot)
 
-        if sam_file is not None:
-            self.sam_plot = self.__var_to_lineplot__(CLUBB_TO_SAM[variable_name], [sam_file], label="LES output", line_format="k-",avg_axis=1)
-            self.all_plots.append(self.sam_plot)
+        # if sam_file is not None:
+        #     self.sam_plot = self.__var_to_lineplot__(CLUBB_TO_SAM[variable_name], [sam_file], label="LES output", line_format="k-",avg_axis=1)
+        #     self.all_plots.append(self.sam_plot)
 
         self.title = title
         self.dependant_title = dependant_title
         self.x_title = "x title unassigned"
         self.y_title = "y title unassigned"
         self.__init_axis_titles__()
-        self.blacklisted = blacklisted
+        # self.blacklisted = blacklisted
 
 
 

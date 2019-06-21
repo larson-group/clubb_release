@@ -1,7 +1,7 @@
 
 CLUBB_TO_SAM = {
     "wp2":"W2",
-    "thlm":"THETAL",
+    "thlm":"calculated_value",
     "wpthlp" : "TLFLUX",
     "wprtp" : "QTFLUX",
     "wp3" : "W3",

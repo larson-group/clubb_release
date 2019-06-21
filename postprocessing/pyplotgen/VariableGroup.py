@@ -2,9 +2,11 @@
 :author: Nicolas Strike
 :date: Mid 2019
 '''
+from pyplotgen import Panel
+from pyplotgen.DataReader import DataReader, NetCdfVariable
+from pyplotgen.Lineplot import Lineplot
+from pyplotgen.VarnameConversions import CLUBB_TO_SAM
 
-
-from pyplotgen.DataReader import DataReader
 
 class VariableGroup:
     '''
@@ -19,6 +21,7 @@ class VariableGroup:
     def __init__(self, ncdf_file):
         self.ncdf_file = ncdf_file
         self.panels = []
+        self.panel_type = Panel.Panel.TYPE_PROFILE
 
     def plot(self):
         '''
@@ -31,16 +34,58 @@ class VariableGroup:
             if not panel.blacklisted:
                 panel.plot(self.ncdf_file)
 
-    def get_var_from_ncdf(self, varname):
+    def get_var_from_ncdf(self, netcdf_variable:NetCdfVariable):
         '''
         Retrieve numerical data from netcdf
+
+        :param netcdf_variable:
+        :return:
+        '''
+        data_reader = DataReader()
+        return data_reader.getVarData(netcdf_variable.ncdf_files, netcdf_variable)
+
+
+        # super().getLinePlots('thlm', ncdf_files, averaging_start_time=averaging_start_time,
+        #                      averaging_end_time=averaging_end_time, independent_min_value=height_min_value,
+        #                      independent_max_value=height_max_value, sam_file=sam_file)
+    def getLinePlots(self, varname, ncdf_files, label="", line_format="", avg_axis=0, override_panel_type=None, averaging_start_time = 0,
+                     averaging_end_time=-1, sam_file=None): # TODO is avg_axis appropriate here?
+        '''
 
         :param varname:
         :return:
         '''
-        data_reader = DataReader()
-        return data_reader.getVarData(self.ncdf_file, varname)
+        if override_panel_type is not None:
+            panel_type = override_panel_type
+        else:
+            panel_type = self.panel_type
 
+        all_plots = []
+
+        if sam_file is not None:
+            sam_plot = self.getLinePlots(CLUBB_TO_SAM[varname], [sam_file], label="LES output", line_format="k-",avg_axis=1)
+            all_plots.extend(sam_plot)
+
+        lineplot = None
+        if panel_type is Panel.Panel.TYPE_PROFILE:
+            for file in ncdf_files:
+                if varname in file.variables.keys():
+                    variable = NetCdfVariable(varname, [file], avging_start_time=averaging_start_time, avging_end_time=averaging_end_time, avg_axis=avg_axis)
+                    variable.data = variable.data[self.z_min_idx:self.z_max_idx]
+                    lineplot = Lineplot(variable, self.z, label=label, line_format=line_format)
+                    break
+
+        elif panel_type is Panel.Panel.TYPE_BUDGET:
+            pass
+        elif panel_type is Panel.Panel.TYPE_TIMESERIES:
+            variable = NetCdfVariable(varname, ncdf_files, avging_start_time=averaging_start_time, avging_end_time=averaging_end_time, avg_axis=1)
+            variable.data = variable.data[self.timeseries_start_time:self.timeseries_end_time]
+            lineplot = Lineplot(self.time, variable, label=label, line_format=line_format)
+        else:
+            raise ValueError('Invalid panel type ' + panel_type + '. Valid options are profile, budget, timeseries')
+
+        all_plots.append(lineplot)
+        return all_plots
 
     def __getStartEndIndex__(self, data, start_value, end_value):
         '''
@@ -65,3 +110,4 @@ class VariableGroup:
                 end_idx = i
 
         return start_idx, end_idx
+

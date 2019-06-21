@@ -28,6 +28,7 @@ class NetCdfVariable:
         :param avg_axis: The axis to avg data over. 0 for time-avg, 1 for height avg
         '''
         data_reader = DataReader()
+        self.ncdf_files = ncdf_files
         self.name = name
         self.start_time = avging_start_time
         self.end_time = avging_end_time
