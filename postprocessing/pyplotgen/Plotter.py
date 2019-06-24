@@ -16,10 +16,6 @@ import matplotlib.pyplot as plt
 
 
 class Plotter:
-    PlotValues = namedtuple("PlotValues", "x_values y_values")
-    PlotDetails = namedtuple("PlotDetails", "title x_title y_title")
-
-
 
     def __init__(self):
         pass
@@ -53,10 +49,19 @@ class Plotter:
         :param line_format: Describes how the line shall appear. See https://matplotlib.org/2.1.2/api/_as_gen/matplotlib.pyplot.plot.html
         :return: n/a
         '''
+
+
+
         plt.figure()
         plt.subplot(111)
         for var in lineplots:
-            plt.plot(var.x.data, var.y.data, var.line_format, label=var.label)
+            x_data = var.x.data
+            y_data = var.y.data
+            if x_data.shape[0] != y_data.shape[0]:
+                raise ValueError("X and Y data have different shapes X: "+str(x_data.shape)
+                                 + "  Y:" + str(y_data.shape) + ". Attempted to plot " + title + " using X: " +
+                                 x_title + "  Y: " + y_title)
+            plt.plot(x_data, y_data, var.line_format, label=var.label)
         plt.title(title)
         plt.ylabel(y_title)
         plt.xlabel(x_title)

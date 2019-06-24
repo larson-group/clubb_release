@@ -49,7 +49,7 @@ class VariableGroup:
         #                      averaging_end_time=averaging_end_time, independent_min_value=height_min_value,
         #                      independent_max_value=height_max_value, sam_file=sam_file)
     def getLinePlots(self, varname, ncdf_files, label="", line_format="", avg_axis=0, override_panel_type=None, averaging_start_time = 0,
-                     averaging_end_time=-1, sam_file=None): # TODO is avg_axis appropriate here?
+                     averaging_end_time=-1, sam_file=None, conversion_factor=1, sam_conv_factor=1): # TODO is avg_axis appropriate here?
         '''
 
         :param varname:
@@ -63,22 +63,28 @@ class VariableGroup:
         all_plots = []
 
         if sam_file is not None:
-            sam_plot = self.getLinePlots(CLUBB_TO_SAM[varname], [sam_file], label="LES output", line_format="k-",avg_axis=1)
+            sam_plot = self.getLinePlots(CLUBB_TO_SAM[varname], [sam_file], label="LES output", line_format="k-",avg_axis=1, conversion_factor=sam_conv_factor)
             all_plots.extend(sam_plot)
 
         lineplot = None
         if panel_type is Panel.Panel.TYPE_PROFILE:
             for file in ncdf_files:
                 if varname in file.variables.keys():
-                    variable = NetCdfVariable(varname, [file], avging_start_time=averaging_start_time, avging_end_time=averaging_end_time, avg_axis=avg_axis)
-                    variable.data = variable.data[self.z_min_idx:self.z_max_idx]
-                    lineplot = Lineplot(variable, self.z, label=label, line_format=line_format)
+                    variable = NetCdfVariable(varname, [file], avging_start_time=averaging_start_time, avging_end_time=averaging_end_time, avg_axis=avg_axis, conversion_factor=conversion_factor)
+                    independent_var_data = self.z
+                    model_src_reader = DataReader()
+                    model_src = model_src_reader.getNcdfSourceModel(file)
+                    if model_src == "sam":
+                        independent_var_data = self.z_sam
+                    min_idx,max_idx = self.__getStartEndIndex__(independent_var_data.data, self.height_min_value,self.height_max_value)
+                    variable.data = variable.data[min_idx:max_idx+1]
+                    lineplot = Lineplot(variable, independent_var_data, label=label, line_format=line_format)
                     break
 
         elif panel_type is Panel.Panel.TYPE_BUDGET:
             pass
         elif panel_type is Panel.Panel.TYPE_TIMESERIES:
-            variable = NetCdfVariable(varname, ncdf_files, avging_start_time=averaging_start_time, avging_end_time=averaging_end_time, avg_axis=1)
+            variable = NetCdfVariable(varname, ncdf_files, avging_start_time=averaging_start_time, avging_end_time=averaging_end_time, avg_axis=1, conversion_factor=conversion_factor)
             variable.data = variable.data[self.timeseries_start_time:self.timeseries_end_time]
             lineplot = Lineplot(self.time, variable, label=label, line_format=line_format)
         else:
