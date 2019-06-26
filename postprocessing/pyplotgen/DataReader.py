@@ -16,11 +16,11 @@ class NetCdfVariable:
     '''
     Class used for conviniently storying the information about a given netcdf variable
     '''
-    def __init__(self, name, ncdf_files, conversion_factor = 1, avging_start_time = -1, avging_end_time = -1, timestep = -1, avg_axis = 0):
+    def __init__(self, name, ncdf_data, conversion_factor = 1, avging_start_time = -1, avging_end_time = -1, timestep = -1, avg_axis = 0, fill_zeros=False):
         '''
 
         :param name:
-        :param ncdf_files:
+        :param ncdf_data: Accepts either a Dataset object to pull data from, or a dict of Datasets which will automatically be searched for the variable
         :param conversion_factor:
         :param avging_start_time:
         :param avging_end_time:
@@ -28,14 +28,16 @@ class NetCdfVariable:
         :param avg_axis: The axis to avg data over. 0 for time-avg, 1 for height avg
         '''
         data_reader = DataReader()
-        self.ncdf_files = ncdf_files
+        self.ncdf_data = ncdf_data
         self.name = name
         self.start_time = avging_start_time
         self.end_time = avging_end_time
         self.timestep = timestep
         self.conv_factor = conversion_factor
         self.avg_axis = avg_axis
-        self.data = data_reader.getVarData(ncdf_files, self)
+        if isinstance(ncdf_data, dict):
+            self.autoSet_ncdf_data()
+        self.data = data_reader.getVarData(self.ncdf_data, self, fill_zeros=fill_zeros)
 
     def constrain(self, min_value, max_value):
         '''
@@ -73,6 +75,17 @@ class NetCdfVariable:
 
         return start_idx, end_idx
 
+    def autoSet_ncdf_data(self):
+        '''
+        Looks through the input files for a case and finds the returns the filetype
+        containing the reqested variable.
+
+        :return:
+        '''
+        for subdataset in self.ncdf_data.values():
+            if self.name in subdataset.variables.keys():
+                self.ncdf_data = subdataset
+                break
 
 class DataReader():
     '''
@@ -111,7 +124,9 @@ class DataReader():
         them using the appropriate helper class.
         :param folder_path: The path of the folder to be loaded
         :param ignore_git: Ignore files and paths that contain '.git' in their name
-        :return: An array of datasets
+        :return: A 2 dimentional dictionary where a case_key (e.g. gabls3_rad)
+        contains a dictionary defining filenames behind a filetype key (e.g. zm)
+        For example: to access the zm data for gabls3_rad, simply call nc_datasets['gabls3']['zm']
         :author: Nicolas Strike
         '''
         for root, dirs, files in os.walk(folder_path):
@@ -120,17 +135,18 @@ class DataReader():
                 file_ext = os.path.splitext(filename)[1]
                 if ignore_git and '.git' in abs_filename or file_ext != '.nc':
                     continue
-                ext_offset = filename.rfind('_') # Find offset to eliminate trailing chars like "_zt.nc", "_zm.nc", and "_sfc.nc
+                ext_offset = filename.rindex('_') # Find offset to eliminate trailing chars like "_zt.nc", "_zm.nc", and "_sfc.nc
+                file_type = filename[ext_offset+1:-3] # Type of current file (zm, zt, or sfc)
                 case_key = filename[:ext_offset]
                 if case_key in self.nc_filenames.keys():
-                    self.nc_filenames[case_key].append(abs_filename)
-                    self.nc_datasets[case_key].append(self.__loadNcFile__(abs_filename))
+                    self.nc_filenames[case_key][file_type] = abs_filename
+                    self.nc_datasets[case_key][file_type] = self.__loadNcFile__(abs_filename)
                 else:
-                    self.nc_filenames[case_key] = [abs_filename]
-                    self.nc_datasets[case_key] = [self.__loadNcFile__(abs_filename)]
+                    self.nc_filenames[case_key] = {file_type : abs_filename}
+                    self.nc_datasets[case_key] = {file_type : self.__loadNcFile__(abs_filename)}
         return self.nc_datasets
 
-    def getVarData(self, netcdf_datasets, variable: NetCdfVariable):
+    def getVarData(self, netcdf_dataset, variable: NetCdfVariable, fill_zeros=False):
         '''
 
         :author: Nicolas Strike
@@ -145,18 +161,35 @@ class DataReader():
         level_amount = 1
         num_timesteps = 1
         time_conv_factor = 1
-        source_model = self.getNcdfSourceModel(netcdf_datasets[0])
+        source_model = self.getNcdfSourceModel(netcdf_dataset)
         if source_model == "sam":
             time_conv_factor = 60
-        time_values = self.__getValuesFromNc__(netcdf_datasets, "time", time_conv_factor, 1, 1) #TODO conversion shouldn't be only 1 value
+
+        time_values = self.__getValuesFromNc__(netcdf_dataset, "time", time_conv_factor, 1, 1) #TODO conversion shouldn't be only 1 value
         (start_avging_index, end_avging_idx) = self.__getStartEndIndex__(time_values, start_time_value, end_time_value) # Get the index values that correspond to the desired start/end x values
 
-        values = self.__getValuesFromNc__(netcdf_datasets, variable_name, conv_factor, 1, 1) #TODO conversion shouldn't be only 1 value\
+        try:
+            values = self.__getValuesFromNc__(netcdf_dataset, variable_name, conv_factor, 1, 1, fill_zeros=fill_zeros) #TODO conversion shouldn't be only 1 value\
+        except ValueError:
+        # Autofill values with zeros if allowed, otherwise propagate the error
+            if fill_zeros:
+                size = 0
+                for dimention in netcdf_dataset.dimensions.values():
+                    if dimention.size > size:
+                        size = dimention.size
+                values = np.zeros(size)
+            else:
+                raise
         if values.ndim > 1:#not variable.one_dimentional:
             values = self.__meanProfiles__(values, start_avging_index, end_avging_idx, avg_axis=avg_axis)
 
         return values
 
+    def getAllDatasetsAsList(self):
+        '''
+
+        :return: A list containing all datasets
+        '''
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         '''
@@ -213,10 +246,8 @@ class DataReader():
 
         keys = nc.variables.keys()
         if varname in keys:
-            # logger.debug('%s is in keys', varname)
             unit = nc.variables[varname].units
         else:
-            # logger.debug('%s is not in keys', varname)
             unit = "nm"
 
         return unit
@@ -233,19 +264,17 @@ class DataReader():
 
         keys = nc.variables.keys()
         if varname in keys:
-            # logger.debug('%s is in keys', varname)
             long_name = nc.variables[varname].long_name
         else:
-            # logger.debug('%s is not in keys', varname)
             long_name = "nm"
 
         return long_name
 
-    def __getValuesFromNc__(self, ncdf_datasets, varname, conversion, level_amount, num_timesteps):
+    def __getValuesFromNc__(self, ncdf_data, varname, conversion, level_amount, num_timesteps, fill_zeros=False):
         """
         Get data values out of a netcdf object, returning them as an array
 
-        :param ncdf_datasets: Netcdf file object
+        :param ncdf_data: Netcdf file object
         :param varname: Variable name string
         :param conversion: Conversion factor
         :param level_amount: amount of level
@@ -254,22 +283,20 @@ class DataReader():
         :return: time x height array of the specified variable, scaled by conversion factor
         """
         var_values = None
-        for ncdf_data in ncdf_datasets:
-            keys = ncdf_data.variables.keys()
-            #varname = varname.upper()
-            if varname in keys:
-                # logger.debug('%s is in keys', varname)
-                var_values = ncdf_data.variables[varname]
-                var_values = np.squeeze(var_values)
-                var_values = var_values*conversion
-                # Variables with 0-1 data points/values return a float after being 'squeeze()'ed, this converts it back to an array
-                if isinstance(var_values, float):
-                    var_values = np.array([var_values])
-                break
+        # for ncdf_data in ncdf_data:
+        keys = ncdf_data.variables.keys()
+        #varname = varname.upper()
+        if varname in keys:
+            # logger.debug('%s is in keys', varname)
+            var_values = ncdf_data.variables[varname]
+            var_values = np.squeeze(var_values)
+            var_values = var_values*conversion
+            # Variables with 0-1 data points/values return a float after being 'squeeze()'ed, this converts it back to an array
+            if isinstance(var_values, float):
+                var_values = np.array([var_values])
+            # break
         if var_values is None:
-            # logger.debug('%s is not in keys', varname)
-            # var_values = np.zeros(shape=(level_amount, num_timesteps)) - 1.
-            raise ValueError("Variable " + varname + " does not exist in ncdf_datasets file")
+            raise ValueError("Variable " + varname + " does not exist in ncdf_data file")
         return var_values
 
     def __getStartEndIndex__(self, data, start_value, end_value):

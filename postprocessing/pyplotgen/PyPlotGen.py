@@ -11,8 +11,6 @@ import argparse
 
 from pyplotgen.DataReader import DataReader
 from pyplotgen.CaseTest import CaseTest
-from pyplotgen.HtmlWriter import HtmlWriter
-from pyplotgen.VariableGroupTest import VariableGroupBase
 
 class PyPlotGen:
     def __init__(self, input_folder, output_folder, replace=False, les=False, cgbest=False, hoc=False,plotrefs=False,
@@ -71,10 +69,11 @@ class PyPlotGen:
         cases_plotted = {}
         for case_key in self.nc_datasets.keys():
             ncdf_files = self.nc_datasets[case_key]
-            dataset_filenames = [dataset.filepath() for dataset in ncdf_files]
+            dataset_filenames = [dataset.filepath() for dataset in self.nc_datasets[case_key].values()]
 
             if "dycoms2_rf01_" in dataset_filenames[0] and "sst" not in dataset_filenames[0] and ".git" not in dataset_filenames:
-                sam_file = self.sam_data_reader.__loadNcFile__("/home/strike/sam_benchmark_runs/DYCOMS_RF01_96x96x320/DYCOMS_RF01_96x96x320.nc")
+                sam_file = self.sam_data_reader.__loadNcFile__("/home/strike/sam_benchmark_runs/DYCOMS_RF01_96x96x320.nc")
+                # sam_file = None
                 print("Plotting case ", case_key)
                 test_case = CaseTest(ncdf_files, sam_file=sam_file)
                 test_case.plot()
@@ -128,7 +127,7 @@ def process_args():
     if args.zip:
         print("Zip flag detected, but that feature is not yet implemented")
     if args.thin:
-        print("Thin plot lines flag detected, but that feature is not yet implemented")
+        print("Thin plotAll lines flag detected, but that feature is not yet implemented")
     if args.no_legends:
         print("No legends flag detected, but that feature is not yet implemented")
     if args.ensemble:

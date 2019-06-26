@@ -2,11 +2,11 @@
 
 class Lineplot:
     '''
-    This class holds information commonly passed around when using plot data.
+    This class holds information commonly passed around when using plotAll data.
     Data included is anything necessary to graph a line using pyplot, including the
-    numerical values, line format style, and a label for the plot
+    numerical values, line format style, and a label for the plotAll
     '''
-    def __init__(self, x_data, y_data, line_format = "", label ="Unlabeled plot"):
+    def __init__(self, x_data, y_data, line_format = "", label ="Unlabeled plotAll"):
         '''
 
         '''

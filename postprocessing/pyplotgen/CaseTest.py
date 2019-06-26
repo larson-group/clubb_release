@@ -32,4 +32,4 @@ class CaseTest(Case):
         :param plotter:
         :return:
         '''
-        super().plot(self.name)
+        super().plot()
