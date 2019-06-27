@@ -1,6 +1,4 @@
-from pyplotgen import VariableGroup
 from pyplotgen.Case import Case
-
 from pyplotgen.VariableGroupTest import VariableGroupBase
 
 

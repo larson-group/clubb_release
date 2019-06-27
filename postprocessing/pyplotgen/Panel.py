@@ -3,9 +3,6 @@
 :date: Mid 2019
 '''
 import os
-
-from pyplotgen.DataReader import NetCdfVariable
-from pyplotgen.Lineplot import Lineplot
 import matplotlib.pyplot as plt
 
 
@@ -18,7 +15,7 @@ class Panel:
     TYPE_BUDGET = 'budget'
     TYPE_TIMESERIES = 'timeseries'
 
-    def __init__(self,plots, panel_type ='profile', title : str = "Unnamed panel", dependant_title = "dependant variable"):
+    def __init__(self, plots, panel_type="profile", title="Unnamed panel", dependant_title="dependant variable"):
 
         self.panel_type = panel_type
         self.all_plots = plots
@@ -29,32 +26,6 @@ class Panel:
         self.__init_axis_titles__()
         # self.blacklisted = blacklisted
 
-
-
-    def __var_to_lineplot__(self, varname, ncdf_files, label ="", line_format ="", avg_axis=0): # TODO is avg_axis appropriate here?
-        '''
-
-        :param varname:
-        :return:
-        '''
-
-        lineplot = None
-        if self.panel_type == Panel.TYPE_PROFILE:
-            for file in ncdf_files:
-                if varname in file.variables.keys():
-                    variable = NetCdfVariable(varname, [file], avging_start_time=self.averaging_start_time, avging_end_time=self.averaging_end_time, avg_axis=avg_axis)
-                    variable.data = variable.data[self.z_min_idx:self.z_max_idx]
-                    lineplot = Lineplot(variable, self.z, label=label, line_format=line_format)
-
-        elif self.panel_type == Panel.TYPE_BUDGET:
-            pass
-        elif self.panel_type == Panel.TYPE_TIMESERIES:
-            variable = NetCdfVariable(varname, ncdf_files, avging_start_time=self.averaging_start_time, avging_end_time=self.averaging_end_time, avg_axis=1)
-            variable.data = variable.data[self.independent_min_value:self.independent_max_value]
-            lineplot = Lineplot(self.time, variable, label=label, line_format=line_format)
-        else:
-            raise ValueError('Invalid panel type ' + self.panel_type + '. Valid options are profile, budget, timeseries')
-        return lineplot
 
     def __init_axis_titles__(self):
         '''
@@ -97,18 +68,6 @@ class Panel:
                 end_idx = i
 
         return start_idx, end_idx
-
-
-    # def plotAll(self, casename):
-    #     '''
-    #     Save the panel's graphical representation to a file in the 'output' folder from launch parameters
-    #
-    #     :param plotter:
-    #     :return:
-    #     '''
-    #     # plotter = Plotter()
-    #     self.plot(self.all_plots, casename, title=self.title, x_title=self.x_title, y_title=self.y_title)
-
 
     def plot(self, casename):
         '''

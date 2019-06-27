@@ -37,7 +37,7 @@ class PyPlotGen:
         :param bu_morr:
         :param diff:
         '''
-        self.input_folder = input_folder # TODO stop hardcoding
+        self.input_folder = input_folder
         # self.output_folder = output_folder
         self.replace = replace
         self.les = les
@@ -145,7 +145,7 @@ def process_args():
                           no_legends=args.no_legends,ensemble=args.ensemble, budget_moments=args.budget_moments,
                           bu_morr=args.bu_morr,diff=args.diff)
     return pyplotgen
-# run main if file is run by interpreter
+
 if __name__ == "__main__":
     pyplotgen = process_args()
     pyplotgen.run()

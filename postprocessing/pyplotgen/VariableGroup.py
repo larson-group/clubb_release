@@ -38,18 +38,18 @@ class VariableGroup:
             if not panel.blacklisted:
                 panel.plot(self.name)
 
-    def get_var_from_ncdf(self, netcdf_variable:NetCdfVariable):
+    def get_var_from_ncdf(self, netcdf_variable):
         '''
         Retrieve numerical data from netcdf
 
-        :param netcdf_variable:
+        :param netcdf_variable: Of type NetCDFVariable
         :return:
         '''
         data_reader = DataReader()
         return data_reader.getVarData(netcdf_variable.ncdf_data, netcdf_variable)
 
     def getVarLinePlots(self, varname, ncdf_datasets, label="", line_format="", avg_axis=0, override_panel_type=None, averaging_start_time = 0,
-                        averaging_end_time=-1, sam_file=None, conversion_factor=1, sam_conv_factor=1): # TODO is avg_axis appropriate here?
+                        averaging_end_time=-1, sam_file=None, conversion_factor=1, sam_conv_factor=1):
         '''
         Get a list of Lineplot objects for a specific clubb variable. If sam_file is specified it will also
         attempt to generate Lineplots for the SAM equivalent variables, using the name conversions found in

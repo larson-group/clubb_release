@@ -1,8 +1,4 @@
 '''
-This file is used to load data in from netcdf and grads
-formatted files and provide a Plot class instance to
-a Plotter instance for graphing.
-
 :author: Nicolas Strike
 :date: Early 2019
 '''
@@ -14,17 +10,16 @@ import pathlib as pathlib
 
 class NetCdfVariable:
     '''
-    Class used for conviniently storying the information about a given netcdf variable
+    Class used for conveniently storing the information about a given netcdf variable
     '''
-    def __init__(self, name, ncdf_data, conversion_factor = 1, avging_start_time = -1, avging_end_time = -1, timestep = -1, avg_axis = 0, fill_zeros=False):
+    def __init__(self, name, ncdf_data, conversion_factor = 1, avging_start_time = 0, avging_end_time = -1, avg_axis = 0, fill_zeros=False):
         '''
 
-        :param name:
+        :param name: the name of the variable as defined in the ncdf_data
         :param ncdf_data: Accepts either a Dataset object to pull data from, or a dict of Datasets which will automatically be searched for the variable
-        :param conversion_factor:
-        :param avging_start_time:
-        :param avging_end_time:
-        :param timestep:
+        :param conversion_factor: A multiplication factor multiplied to every value in the dataset. Defaults to 1
+        :param avging_start_time: The time value to being the averaging period, e.g. 181 minutes. Defaults to 0.
+        :param avging_end_time: The time value to stop the averaging period, e.g. 240 minutes. Defaults to -1.
         :param avg_axis: The axis to avg data over. 0 for time-avg, 1 for height avg
         '''
         data_reader = DataReader()
@@ -32,24 +27,12 @@ class NetCdfVariable:
         self.name = name
         self.start_time = avging_start_time
         self.end_time = avging_end_time
-        self.timestep = timestep
         self.conv_factor = conversion_factor
         self.avg_axis = avg_axis
         if isinstance(ncdf_data, dict):
             self.autoSet_ncdf_data()
         self.data = data_reader.getVarData(self.ncdf_data, self, fill_zeros=fill_zeros)
 
-    def constrain(self, min_value, max_value):
-        '''
-        Remove everything in the data from before min_value
-        and after max_value
-
-        :param min_value:
-        :param max_value:
-        :return:
-        '''
-        start_idx, end_idx = self.__getStartEndIndex__(self.data, min_value, max_value)
-        self.data = self.data[start_idx:end_idx]
 
     def __getStartEndIndex__(self, data, start_value, end_value):
         '''
@@ -100,7 +83,7 @@ class DataReader():
 
     def __init__(self):
         '''
-        This is the object constructer. Initalizes class variables and data
+        This is the object constructor. Initializes class variables and data
         :author: Nicolas Strike
         '''
         self.nc_filenames = {}
@@ -111,7 +94,7 @@ class DataReader():
     def cleanup(self):
         '''
         This is the cleanup method. This is called on the instance's destruction
-        to unallocate resources that may be held (e.g. dataset files).
+        to deallocate resources that may be held (e.g. dataset files).
         :return:
         :author: Nicolas Strike
         '''
@@ -146,30 +129,27 @@ class DataReader():
                     self.nc_datasets[case_key] = {file_type : self.__loadNcFile__(abs_filename)}
         return self.nc_datasets
 
-    def getVarData(self, netcdf_dataset, variable: NetCdfVariable, fill_zeros=False):
-        '''
+    def getVarData(self, netcdf_dataset, ncdf_variable, fill_zeros=False):
+        """
 
         :author: Nicolas Strike
-        '''
+        """
 
-        # TODO load these, don't hardcode them
-        start_time_value = variable.start_time
-        end_time_value = variable.end_time
-        variable_name = variable.name
-        conv_factor = variable.conv_factor
-        avg_axis = variable.avg_axis
-        level_amount = 1
-        num_timesteps = 1
+        start_time_value = ncdf_variable.start_time
+        end_time_value = ncdf_variable.end_time
+        variable_name = ncdf_variable.name
+        conv_factor = ncdf_variable.conv_factor
+        avg_axis = ncdf_variable.avg_axis
         time_conv_factor = 1
         source_model = self.getNcdfSourceModel(netcdf_dataset)
         if source_model == "sam":
             time_conv_factor = 60
 
-        time_values = self.__getValuesFromNc__(netcdf_dataset, "time", time_conv_factor, 1, 1) #TODO conversion shouldn't be only 1 value
+        time_values = self.__getValuesFromNc__(netcdf_dataset, "time", time_conv_factor)
         (start_avging_index, end_avging_idx) = self.__getStartEndIndex__(time_values, start_time_value, end_time_value) # Get the index values that correspond to the desired start/end x values
 
         try:
-            values = self.__getValuesFromNc__(netcdf_dataset, variable_name, conv_factor, 1, 1, fill_zeros=fill_zeros) #TODO conversion shouldn't be only 1 value\
+            values = self.__getValuesFromNc__(netcdf_dataset, variable_name, conv_factor)
         except ValueError:
         # Autofill values with zeros if allowed, otherwise propagate the error
             if fill_zeros:
@@ -180,7 +160,7 @@ class DataReader():
                 values = np.zeros(size)
             else:
                 raise
-        if values.ndim > 1:#not variable.one_dimentional:
+        if values.ndim > 1:#not ncdf_variable.one_dimentional:
             values = self.__meanProfiles__(values, start_avging_index, end_avging_idx, avg_axis=avg_axis)
 
         return values
@@ -270,7 +250,7 @@ class DataReader():
 
         return long_name
 
-    def __getValuesFromNc__(self, ncdf_data, varname, conversion, level_amount, num_timesteps, fill_zeros=False):
+    def __getValuesFromNc__(self, ncdf_data, varname, conversion):
         """
         Get data values out of a netcdf object, returning them as an array
 
@@ -296,7 +276,9 @@ class DataReader():
                 var_values = np.array([var_values])
             # break
         if var_values is None:
-            raise ValueError("Variable " + varname + " does not exist in ncdf_data file")
+            raise ValueError("Variable " + varname + " does not exist in ncdf_data file. If this is expected,"
+                                                     " try passing fill_zeros=True when you create the "
+                                                     "NetCdfVariable for " + varname)
         return var_values
 
     def __getStartEndIndex__(self, data, start_value, end_value):
@@ -325,16 +307,16 @@ class DataReader():
 
         return start_idx, end_idx
 
-    def getNcdfSourceModel(self, ncdf_file: Dataset):
+    def getNcdfSourceModel(self, ncdf_dataset):
         '''
         Guesses the model that outputted a given ncdf file
 
-        :param ncdf_file: NetCDF output file from some supported model (e.g. CLUBB, SAM)
+        :param ncdf_dataset: NetCDF Dataset object imported from output file from some supported model (e.g. CLUBB, SAM)
         :return: the (estimated) name of the model that outputted the input file
         '''
-        if 'altitude' in ncdf_file.variables.keys():
+        if 'altitude' in ncdf_dataset.variables.keys():
             return 'clubb'
-        elif 'z' in ncdf_file.variables.keys():
+        elif 'z' in ncdf_dataset.variables.keys():
             return 'sam'
         else:
             return 'unknown-model'
