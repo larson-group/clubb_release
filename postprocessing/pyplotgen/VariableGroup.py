@@ -2,6 +2,8 @@
 :author: Nicolas Strike
 :date: Mid 2019
 '''
+from netCDF4._netCDF4 import Dataset
+
 from pyplotgen import Panel
 from pyplotgen.DataReader import DataReader, NetCdfVariable
 from pyplotgen.Lineplot import Lineplot
@@ -80,6 +82,9 @@ class VariableGroup:
         if sam_file is not None:
             sam_plot = self.getVarLinePlots(CLUBB_TO_SAM[varname], {'sam':sam_file}, label="LES output", line_format="k-", avg_axis=1, conversion_factor=sam_conv_factor)
             all_plots.extend(sam_plot)
+
+        if isinstance(ncdf_datasets, Dataset):
+            ncdf_datasets = {'auto':ncdf_datasets}
 
         lineplot = None
         if panel_type is Panel.Panel.TYPE_PROFILE:

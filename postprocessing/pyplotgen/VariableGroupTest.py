@@ -31,7 +31,7 @@ class VariableGroupBase(VariableGroup):
         self.height_max_value = 1200
 
         ### Initialize Height ###
-        self.z = NetCdfVariable('altitude', ncdf_files, avging_start_time=self.averaging_start_time,
+        self.z = NetCdfVariable('altitude', ncdf_files['zm'], avging_start_time=self.averaging_start_time,
                                 avging_end_time=self.averaging_end_time)
         self.z_min_idx, self.z_max_idx = self.__getStartEndIndex__(self.z.data, self.height_min_value,
                                                                    self.height_max_value)
@@ -69,7 +69,7 @@ class VariableGroupBase(VariableGroup):
 
         # SAM variables that don't require calculation beyond a conversion factor can be plotted by defining the
         # variable name conversion in the file VarnameConversions.py
-        wpthlp_plots = super().getVarLinePlots('wpthlp', ncdf_files, averaging_start_time=self.averaging_start_time,
+        wpthlp_plots = super().getVarLinePlots('wpthlp', ncdf_files['zm'], averaging_start_time=self.averaging_start_time,
                                                averaging_end_time=self.averaging_end_time, sam_file=sam_file,
                                                label="current clubb", line_format='r--')
         wprtp_plots = super().getVarLinePlots('wprtp', ncdf_files, averaging_start_time=self.averaging_start_time,

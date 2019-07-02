@@ -72,7 +72,7 @@ class PyPlotGen:
             dataset_filenames = [dataset.filepath() for dataset in self.nc_datasets[case_key].values()]
 
             if "dycoms2_rf01_" in dataset_filenames[0] and "sst" not in dataset_filenames[0] and ".git" not in dataset_filenames:
-                sam_file = self.sam_data_reader.__loadNcFile__("/home/strike/sam_benchmark_runs/DYCOMS_RF01_96x96x320.nc")
+                sam_file = self.sam_data_reader.__loadNcFile__("/home/nicolas/sam_benchmark_runs/DYCOMS_RF01_96x96x320.nc")
                 # sam_file = None
                 print("Plotting case ", case_key)
                 test_case = CaseTest(ncdf_files, sam_file=sam_file)
