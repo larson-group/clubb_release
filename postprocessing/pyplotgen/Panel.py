@@ -3,6 +3,8 @@
 :date: Mid 2019
 '''
 import os
+import string
+
 import matplotlib.pyplot as plt
 
 
@@ -110,5 +112,8 @@ class Panel:
             os.mkdir("output/" + casename)
         except FileExistsError:
             pass # do nothing
-
-        plt.savefig("output/" +casename+'/' + self.title.replace('"', '').replace(',', '').replace(' ', '_') + '.png')
+        filename = self.title
+        filename = filename.translate(str.maketrans('', '', string.punctuation))
+        filename = filename.replace(' ', '_')
+        rel_filename = "output/" +casename+'/' + filename
+        plt.savefig(rel_filename)
