@@ -52,11 +52,11 @@ class VariableGroupBase(VariableGroup):
         variables = [
             {'clubb_name': 'thlm', 'sam_calc': self.getThlmSamPlot},
             {'clubb_name': 'rtm', 'sam_calc': self.getRtmSamPlot},
-            {'clubb_name': 'wpthlp'},
-            {'clubb_name': 'wprtp'},
-            {'clubb_name': 'wp2'},
-            {'clubb_name': 'wp2_vert_avg', 'type':Panel.TYPE_TIMESERIES},
-            {'clubb_name': 'cloud_frac'}
+            {'clubb_name': 'wpthlp', 'sam_name': 'WPTHLP'},
+            {'clubb_name': 'wprtp', 'sam_name': 'WPRTP'},
+            {'clubb_name': 'wp2', 'sam_name': 'W2'},
+            {'clubb_name': 'wp2_vert_avg', 'sam_name': 'CWP',  'type':Panel.TYPE_TIMESERIES},
+            {'clubb_name': 'cloud_frac', 'sam_name': 'CLD'}
 
         ]
 

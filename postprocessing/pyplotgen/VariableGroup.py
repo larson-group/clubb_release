@@ -7,7 +7,6 @@ from netCDF4._netCDF4 import Dataset
 from pyplotgen.Panel import Panel
 from pyplotgen.DataReader import DataReader, NetCdfVariable
 from pyplotgen.Lineplot import Lineplot
-from pyplotgen.VarnameConversions import CLUBB_TO_SAM
 
 
 class VariableGroup:
@@ -60,11 +59,14 @@ class VariableGroup:
         '''
         data_reader = DataReader()
         clubb_name = variable['clubb_name']
+        sam_name = None
         sam_file = self.sam_file
         if 'sam_calc' in variable.keys():
             sam_file = None # don't try to autoplot sam if sam is a calculated value
+        if 'sam_name' in variable.keys():
+            sam_name = variable['sam_name']
         plots = self.getVarLinePlots(clubb_name, self.ncdf_files, averaging_start_time=self.averaging_start_time,
-                                     averaging_end_time=self.averaging_end_time, sam_file=sam_file,
+                                     averaging_end_time=self.averaging_end_time, sam_name= sam_name, sam_file=sam_file,
                                      label="current clubb", line_format='r--')
         variable['plots'] = plots
         if 'title' not in variable.keys():
@@ -95,7 +97,7 @@ class VariableGroup:
 
     def getVarLinePlots(self, varname, ncdf_datasets, label="", line_format="", avg_axis=0, override_panel_type=None,
                         averaging_start_time=0,
-                        averaging_end_time=-1, sam_file=None, conversion_factor=1, sam_conv_factor=1):
+                        averaging_end_time=-1, sam_name=None, sam_file=None, conversion_factor=1, sam_conv_factor=1):
         '''
         Get a list of Lineplot objects for a specific clubb variable. If sam_file is specified it will also
         attempt to generate Lineplots for the SAM equivalent variables, using the name conversions found in
@@ -123,8 +125,8 @@ class VariableGroup:
 
         all_plots = []
 
-        if sam_file is not None:
-            sam_plot = self.getVarLinePlots(CLUBB_TO_SAM[varname], {'sam': sam_file}, label="LES output",
+        if sam_file is not None and sam_name is not None:
+            sam_plot = self.getVarLinePlots(sam_name, {'sam': sam_file}, label="LES output",
                                             line_format="k-", avg_axis=1, conversion_factor=sam_conv_factor)
             all_plots.extend(sam_plot)
 
