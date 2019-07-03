@@ -117,3 +117,4 @@ class Panel:
         filename = filename.replace(' ', '_')
         rel_filename = "output/" +casename+'/' + filename
         plt.savefig(rel_filename)
+        plt.close()

@@ -19,14 +19,52 @@ class VariableGroupBase(VariableGroup):
     def __init__(self, ncdf_files, sam_file=None):
         super(VariableGroupBase, self).__init__(ncdf_files, sam_file)
 
+        variables = [
+            {'clubb_name': 'thlm', 'sam_calc': self.getThlmSamPlot},
+            {'clubb_name': 'rtm', 'sam_calc': self.getRtmSamPlot},
+            {'clubb_name': 'wpthlp', 'sam_name': 'WPTHLP'},
+            {'clubb_name': 'wprtp', 'sam_name': 'WPRTP'},
+            {'clubb_name': 'rcm', 'sam_name': "QCL", 'sam_conv_factor': 1/1000},
+            {'clubb_name': 'wp3', 'sam_name': 'W3'},
+            {'clubb_name': 'thlp2', 'sam_name': 'THLP2'},
+            {'clubb_name': 'rtp2', 'sam_name': 'RTP2'},
+            {'clubb_name': 'wm', 'sam_name': 'WOBS'},
+            {'clubb_name': 'um', 'sam_name': 'U'},
+            {'clubb_name': 'vm', 'sam_name': 'V'},
+            {'clubb_name': 'wp3', 'sam_name': 'W3'},
+            {'clubb_name': 'wp2', 'sam_name': 'W2'},
+            {'clubb_name': 'wp2_vert_avg', 'sam_name': 'CWP', 'type': Panel.TYPE_TIMESERIES},
+            {'clubb_name': 'cloud_frac', 'sam_name': 'CLD'},
+            {'clubb_name': 'upwp', 'sam_name': 'UW'},
+            {'clubb_name': 'vpwp', 'sam_name': 'VW'},
+            {'clubb_name': 'up2', 'sam_name': 'U2'},
+            {'clubb_name': 'tau_zm'},
+            {'clubb_name': 'vp2', 'sam_name': 'V2'},
+            {'clubb_name': 'Lscale'},
+            {'clubb_name': 'wpthvp'},
+            {'clubb_name': 'rtpthlp', 'sam_name': 'RTPTHLP'},
+            {'clubb_name': 'rtp3', 'sam_name': 'RTP3'},
+            {'clubb_name': 'radht'},
+            {'clubb_name': 'Skw_zt'},
+            {'clubb_name': 'thlp3', 'sam_name': 'THLP3'},
+            {'clubb_name': 'rtpthvp'},
+            {'clubb_name': 'Skrt_zt'},
+            {'clubb_name': 'Skthl_zt'},
+            # {'clubb_name': 'corr_w_chi_i'},
+            # {'clubb_name': 'corr_chi_eta_i'},
+            {'clubb_name': 'rcp2'},
+            {'clubb_name': 'thlpthvp'},
+
+        ]
+
         self.name = "base variables"
 
         ### Panel config ###
         sec_per_min = 60
-        self.averaging_start_time = 181 * sec_per_min  # minutes * seconds
-        self.averaging_end_time = 240 * sec_per_min  # minutes * seconds
-        self.timeseries_start_time = 0 * sec_per_min  # minutes * seconds
-        self.timeseries_end_time = 240 * sec_per_min  # minutes * seconds
+        self.averaging_start_time = 181 * sec_per_min
+        self.averaging_end_time = 240 * sec_per_min
+        self.timeseries_start_time = 0 * sec_per_min
+        self.timeseries_end_time = 240 * sec_per_min
         self.height_min_value = 0
         self.height_max_value = 1200
 
@@ -49,16 +87,7 @@ class VariableGroupBase(VariableGroup):
                                                                                self.height_max_value)
             self.z_sam.data = self.z_sam.data[self.z_sam_min_idx:self.z_sam_max_idx]
 
-        variables = [
-            {'clubb_name': 'thlm', 'sam_calc': self.getThlmSamPlot},
-            {'clubb_name': 'rtm', 'sam_calc': self.getRtmSamPlot},
-            {'clubb_name': 'wpthlp', 'sam_name': 'WPTHLP'},
-            {'clubb_name': 'wprtp', 'sam_name': 'WPRTP'},
-            {'clubb_name': 'wp2', 'sam_name': 'W2'},
-            {'clubb_name': 'wp2_vert_avg', 'sam_name': 'CWP',  'type':Panel.TYPE_TIMESERIES},
-            {'clubb_name': 'cloud_frac', 'sam_name': 'CLD'}
 
-        ]
 
         for variable in variables:
             super().addClubbVariable(variable)
