@@ -50,13 +50,13 @@ class VariableGroupBase(VariableGroup):
             self.z_sam.data = self.z_sam.data[self.z_sam_min_idx:self.z_sam_max_idx]
 
         variables = [
-            {'clubb_name': 'thlm', 'title': 'Liquid Water Potential Temperature, Theta l', 'axis_title':'thlm [K]', 'sam_calc':self.getThlmSamPlot},
-            {'clubb_name': 'rtm', 'title': 'Turbulent Flux of Theta l', 'axis_title': 'wpthlp [K m/s]', 'sam_calc':self.getRtmSamPlot},
-            {'clubb_name': 'wpthlp', 'title': 'Turbulent Flux of Theta l', 'axis_title': 'wpthlp [K m/s]'},
-            {'clubb_name': 'wprtp', 'title': 'Turbulent Flux of rt', 'axis_title': 'wprtp [(kg/kg) m/s]'},
-            {'clubb_name': 'wp2', 'title': 'Variance of w', 'axis_title': 'wp2 [m^2/s^2]'},
-            {'clubb_name': 'wp2_vert_avg', 'title': 'Density-Weighted Vertically Averaged wp2', 'axis_title': 'wp2 [m^2/s^2]', 'type':Panel.TYPE_TIMESERIES},
-            {'clubb_name': 'cloud_frac', 'title': 'Cloud Frac', 'axis_title': 'cloud_frac[%]'}
+            {'clubb_name': 'thlm', 'sam_calc': self.getThlmSamPlot},
+            {'clubb_name': 'rtm', 'sam_calc': self.getRtmSamPlot},
+            {'clubb_name': 'wpthlp'},
+            {'clubb_name': 'wprtp'},
+            {'clubb_name': 'wp2'},
+            {'clubb_name': 'wp2_vert_avg', 'type':Panel.TYPE_TIMESERIES},
+            {'clubb_name': 'cloud_frac'}
 
         ]
 

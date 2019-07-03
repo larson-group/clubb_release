@@ -232,7 +232,7 @@ class DataReader():
 
         return unit
 
-    def __getLongName__(self, nc, varname):
+    def getLongName(self, ncdf_datasets, varname):
         # logger.info('get_long_name:%s', varname)
         """
         Input:
@@ -242,13 +242,41 @@ class DataReader():
           long_name as string
         """
 
-        keys = nc.variables.keys()
-        if varname in keys:
-            long_name = nc.variables[varname].long_name
-        else:
-            long_name = "nm"
+        if isinstance(ncdf_datasets, Dataset):
+            ncdf_datasets = {'auto':ncdf_datasets}
 
+        long_name = "longname not found"
+        for dataset in ncdf_datasets.values():
+            keys = dataset.variables.keys()
+            if varname in keys:
+                long_name = dataset.variables[varname].long_name
+                break
         return long_name
+
+
+    def getAxisTitle(self, ncdf_datasets, varname):
+        # logger.info('get_long_name:%s', varname)
+        """
+        Input:
+          nc         --  Netcdf file object
+          varname    --  Variable name string
+        Output:
+          long_name as string
+        """
+
+        if isinstance(ncdf_datasets, Dataset):
+            ncdf_datasets = {'auto':ncdf_datasets}
+
+        axis_title = "axis title not found"
+        for dataset in ncdf_datasets.values():
+            keys = dataset.variables.keys()
+            if varname in keys:
+                imported_name = dataset.variables[varname].name
+                units = dataset.variables[varname].units
+                axis_title = imported_name + ' ' + '[' + units + ']'
+                break
+        return axis_title
+
 
     def __getValuesFromNc__(self, ncdf_data, varname, conversion):
         """

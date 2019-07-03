@@ -1,7 +1,7 @@
 
 CLUBB_TO_SAM = {
     "wp2":"W2",
-    "thlm":"calculated_value",
+    "thlm":"calculated_value_thlm",
     "cloud_frac":"CLD",
     "wpthlp" : "WPTHLP",
     "wprtp" : "WPRTP",
