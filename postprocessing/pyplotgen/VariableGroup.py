@@ -88,9 +88,14 @@ class VariableGroup:
             sam_file = self.sam_file # redefine sam_file incase sam_calc wiped it
         if 'sam_conv_factor' in variable.keys():
             sam_conv_factor = variable['sam_conv_factor']
+
+        panel_type = self.panel_type
+        if 'type' in variable.keys():
+            panel_type = variable['type']
         plots = self.getVarLinePlots(clubb_name, self.ncdf_files, averaging_start_time=self.averaging_start_time,
                                      averaging_end_time=self.averaging_end_time, sam_name= sam_name, sam_file=sam_file,
-                                     sam_conv_factor=sam_conv_factor, label="current clubb", line_format='r--')
+                                     sam_conv_factor=sam_conv_factor, label="current clubb", line_format='r--',
+                                     override_panel_type=panel_type)
         variable['plots'] = plots
         if 'title' not in variable.keys():
             imported_title = data_reader.getLongName(self.ncdf_files, clubb_name)
@@ -114,7 +119,7 @@ class VariableGroup:
             title = variable['title']
             axis_label = variable['axis_title']
             plotset = variable['plots']
-            panel = Panel(plotset, title=title, dependant_title=axis_label)
+            panel = Panel(plotset, title=title, dependant_title=axis_label, panel_type=variable['type'])
             self.panels.append(panel)
 
     def getVarLinePlots(self, varname, ncdf_datasets, label="", line_format="", avg_axis=0, override_panel_type=None,
@@ -152,7 +157,8 @@ class VariableGroup:
             sam_plot = self.getVarLinePlots(sam_name, {'sam': sam_file}, label="LES output",
                                             line_format="k-", avg_axis=avg_axis, conversion_factor=sam_conv_factor,
                                             averaging_start_time=averaging_start_time*clubb_sec_to_sam_min,
-                                            averaging_end_time=averaging_end_time*clubb_sec_to_sam_min)
+                                            averaging_end_time=averaging_end_time*clubb_sec_to_sam_min,
+                                            override_panel_type=panel_type)
             all_plots.extend(sam_plot)
 
         if isinstance(ncdf_datasets, Dataset):
