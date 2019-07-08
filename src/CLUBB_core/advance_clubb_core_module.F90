@@ -210,7 +210,11 @@ module advance_clubb_core_module
       c_K10h, &
       C1, C14, &
       C5, C4, &
-      C_wp2_splat
+      C_wp2_splat,&
+      C_invrs_tau_bkgnd,&
+      C_invrs_tau_sfc,&
+      C_invrs_tau_shear,&
+      C_invrs_tau_N2
 
     use parameters_model, only: &
         sclr_dim, & ! Variable(s)
@@ -393,7 +397,8 @@ module advance_clubb_core_module
         ium_bt,        &
         irvm,          &
         irel_humidity, &
-        iwpthlp_zt
+        iwpthlp_zt   , &
+        itau_zm_simp  
 
     use stats_variables, only: &
         iwprtp_zt,     &
@@ -737,13 +742,15 @@ module advance_clubb_core_module
        brunt_vaisala_freq_sqd, & ! Buoyancy frequency squared, N^2              [s^-2]
        invrs_tau_zm,           & ! One divided by tau on zm levels              [s^-1]
        invrs_tau_N2_zm,        & ! One divided by tau, including stability effects [s^-1]
-       ustar                     ! Friction velocity  [m/s]
+       ustar,                  &   ! Friction velocity  [m/s]
+       invrs_tau_zm_simp,      & 
+       tau_zm_simp,            &
+       tau_zt_simp
 
 
     real( kind = core_rknd ), parameter :: &
        ufmin = 0.01_core_rknd,       & ! minimum value of friction velocity     [m/s]
-       z_displace = 20.0_core_rknd,  & ! displacement of log law profile above ground   [m]
-       tau_N2_coef = 0.1_core_rknd     ! coefficient (> 0) for N2 term in invrs_tau_zm. [-]
+       z_displace = 20.0_core_rknd   ! displacement of log law profile above ground   [m]
 
     real( kind = core_rknd ) :: Lscale_max
 
@@ -1258,22 +1265,27 @@ module advance_clubb_core_module
 
         ustar = max( ( upwp_sfc**2 + vpwp_sfc**2 )**(one_fourth), ufmin )
 
-        invrs_tau_zm = one / tau_const &
-         + 0.1_core_rknd * ( ustar / vonk ) / ( gr%zm - sfc_elevation + z_displace ) &
-         + 0.02_core_rknd * zt2zm( zm2zt( sqrt( (ddzt( um ))**2 + (ddzt( vm ))**2 ) ) )  &
-         + tau_N2_coef * sqrt( max( zero_threshold, &
+        invrs_tau_zm = C_invrs_tau_bkgnd / tau_const &
+         + C_invrs_tau_sfc * ( ustar / vonk ) / ( gr%zm - sfc_elevation + z_displace ) &
+         + C_invrs_tau_shear * zt2zm( zm2zt( sqrt( (ddzt( um ))**2 + (ddzt( vm ))**2 ) ) )  &
+         + C_invrs_tau_N2 * sqrt( max( zero_threshold, &
               zt2zm( zm2zt( brunt_vaisala_freq_sqd ) ) - 1e-4_core_rknd) )
+
+        invrs_tau_zm_simp = C_invrs_tau_bkgnd  / tau_const & 
+         + C_invrs_tau_sfc * ( ustar / vonk ) / ( gr%zm - sfc_elevation + z_displace ) & 
+         + C_invrs_tau_N2 * zt2zm( zm2zt( sqrt( (ddzt( um ))**2 + (ddzt( vm ))**2 ) ) )
 
         if ( gr%zm(1) - sfc_elevation + z_displace < eps ) then
              stop  "Lowest zm grid level is below ground in CLUBB."
         end if
 
         tau_zm = one / invrs_tau_zm
+        tau_zm_simp = one / invrs_tau_zm_simp  
 
         tau_zt = zm2zt( tau_zm )
 
         invrs_tau_N2_zm = invrs_tau_zm  &
-                          + tau_N2_coef * sqrt( max( zero_threshold, brunt_vaisala_freq_sqd ) )
+                          + C_invrs_tau_N2 * sqrt( max( zero_threshold, brunt_vaisala_freq_sqd ) )
 
         tau_N2_zm = tau_zm
 
