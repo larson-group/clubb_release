@@ -25,10 +25,11 @@ class VariableGroupBase(VariableGroup):
         '''
         self.name = "base variables"
         # TODO Support fill_zeros
-        self.variables = [
+        self.variable_definitions = [
             {'clubb_name': 'thlm', 'sam_calc': self.getThlmSamPlot},
             {'clubb_name': 'rtm', 'sam_calc': self.getRtmSamPlot},
-            {'clubb_name': 'wpthlp', 'sam_name': 'WPTHLP'},
+            # {'clubb_name': 'wpthlp', 'sam_name': 'WPTHLP'},
+            {'clubb_name': 'wpthlp', 'sam_calc': self.getWpthlpSamPlot},
             {'clubb_name': 'wprtp', 'sam_name': 'WPRTP'},
             {'clubb_name': 'rcm', 'sam_name': "QCL", 'sam_conv_factor': 1/1000},
             {'clubb_name': 'wp3', 'sam_name': 'W3'},
@@ -117,3 +118,19 @@ class VariableGroupBase(VariableGroup):
 
         rtm_lineplot = Lineplot(rtm, self.z_sam.data, line_format="k-", label="LES output")
         return rtm_lineplot
+
+    def getWpthlpSamPlot(self):
+        '''
+
+        :return:
+        '''
+        sam_start_time = self.averaging_start_time / 60
+        sam_end_time = self.averaging_end_time / 60
+
+        wpthlp_ncdf = NetCdfVariable('WPTHLP', self.sam_file, 1, avging_start_time=sam_start_time, avging_end_time=sam_end_time)
+        wpthlp = wpthlp_ncdf.data
+        wpthlp = wpthlp[self.z_sam_min_idx:self.z_sam_max_idx]
+
+
+        wpthlp_lineplot = Lineplot(wpthlp, self.z_sam.data, line_format='k-', label='LES output')
+        return wpthlp_lineplot

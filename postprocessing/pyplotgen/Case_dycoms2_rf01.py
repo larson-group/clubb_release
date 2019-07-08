@@ -1,5 +1,5 @@
 from pyplotgen.Case import Case
-from pyplotgen.VariableGroupTest import VariableGroupBase
+from pyplotgen.VariableGroupBase import VariableGroupBase
 
 
 class Case_dycoms2_rf01(Case):
@@ -10,7 +10,7 @@ class Case_dycoms2_rf01(Case):
         '''
 
         '''
-        self.name = "Base-variables"
+        self.name = "dycoms_rf01"
         sec_per_min = 60
         self.averaging_start_time = 181 * sec_per_min
         self.averaging_end_time = 240 * sec_per_min

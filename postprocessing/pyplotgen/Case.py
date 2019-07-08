@@ -1,4 +1,4 @@
-from pyplotgen.VariableGroupTest import VariableGroupBase
+from pyplotgen.VariableGroupBase import VariableGroupBase
 
 
 class Case:

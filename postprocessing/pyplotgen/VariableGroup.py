@@ -21,6 +21,7 @@ class VariableGroup:
     '''
 
     def __init__(self, ncdf_datasets, case, sam_file=None):
+        self.variables = []
         self.panels = []
         self.panel_type = Panel.TYPE_PROFILE
         self.sam_file = sam_file
@@ -55,7 +56,7 @@ class VariableGroup:
 
 
 
-        for variable in self.variables:
+        for variable in self.variable_definitions:
             self.addClubbVariable(variable)
         self.generatePanels()
 
@@ -100,6 +101,7 @@ class VariableGroup:
         if 'sam_calc' in variable.keys():
             samplot = variable['sam_calc']()
             plots.append(samplot)
+        self.variables.append(variable)
 
     def generatePanels(self):
         '''
@@ -111,7 +113,6 @@ class VariableGroup:
         for variable in self.variables:
             title = variable['title']
             axis_label = variable['axis_title']
-            #        liq_pot_temp = Panel(thlm_plots, title="Liquid Water Potential Temperature, Theta l", dependant_title="thlm [K]")
             plotset = variable['plots']
             panel = Panel(plotset, title=title, dependant_title=axis_label)
             self.panels.append(panel)
@@ -147,8 +148,11 @@ class VariableGroup:
         all_plots = []
 
         if sam_file is not None and sam_name is not None:
+            clubb_sec_to_sam_min = 1/60
             sam_plot = self.getVarLinePlots(sam_name, {'sam': sam_file}, label="LES output",
-                                            line_format="k-", avg_axis=1, conversion_factor=sam_conv_factor)
+                                            line_format="k-", avg_axis=avg_axis, conversion_factor=sam_conv_factor,
+                                            averaging_start_time=averaging_start_time*clubb_sec_to_sam_min,
+                                            averaging_end_time=averaging_end_time*clubb_sec_to_sam_min)
             all_plots.extend(sam_plot)
 
         if isinstance(ncdf_datasets, Dataset):

@@ -293,7 +293,6 @@ class DataReader():
         var_values = None
         # for ncdf_data in ncdf_data:
         keys = ncdf_data.variables.keys()
-        #varname = varname.upper()
         if varname in keys:
             # logger.debug('%s is in keys', varname)
             var_values = ncdf_data.variables[varname]
