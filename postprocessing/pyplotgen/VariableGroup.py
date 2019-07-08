@@ -20,15 +20,21 @@ class VariableGroup:
     calculating any 'calculated' variables from netcdf
     '''
 
-    def __init__(self, ncdf_datasets, sam_file=None):
+    def __init__(self, ncdf_datasets, case, sam_file=None):
         self.name = "unnamed group"
         # self.ncdf_file = ncdf_datasets
         self.variables = []
         self.panels = []
         self.panel_type = Panel.TYPE_PROFILE
-
         self.sam_file = sam_file
         self.ncdf_files = ncdf_datasets
+        self.averaging_start_time = case.averaging_start_time
+        self.averaging_end_time = case.averaging_end_time
+        self.timeseries_start_time = case.timeseries_start_time
+        self.timeseries_end_time = case.timeseries_end_time
+        self.height_min_value = case.height_min_value
+        self.height_max_value = case.height_max_value
+
 
     def plot(self):
         '''

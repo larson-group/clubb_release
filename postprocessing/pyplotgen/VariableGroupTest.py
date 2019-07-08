@@ -16,9 +16,10 @@ class VariableGroupBase(VariableGroup):
     of panels.
     '''
 
-    def __init__(self, ncdf_files, sam_file=None):
-        super(VariableGroupBase, self).__init__(ncdf_files, sam_file)
+    def __init__(self, ncdf_files, case, sam_file=None):
+        super(VariableGroupBase, self).__init__(ncdf_files, case, sam_file)
 
+        # TODO Support fill_zeros
         variables = [
             {'clubb_name': 'thlm', 'sam_calc': self.getThlmSamPlot},
             {'clubb_name': 'rtm', 'sam_calc': self.getRtmSamPlot},
@@ -50,8 +51,8 @@ class VariableGroupBase(VariableGroup):
             {'clubb_name': 'rtpthvp'},
             {'clubb_name': 'Skrt_zt'},
             {'clubb_name': 'Skthl_zt'},
-            # {'clubb_name': 'corr_w_chi_i'},
-            # {'clubb_name': 'corr_chi_eta_i'},
+            {'clubb_name': 'corr_w_chi_2'},
+            {'clubb_name': 'corr_chi_eta_2'},
             {'clubb_name': 'rcp2'},
             {'clubb_name': 'thlpthvp'},
 
@@ -59,14 +60,7 @@ class VariableGroupBase(VariableGroup):
 
         self.name = "base variables"
 
-        ### Panel config ###
-        sec_per_min = 60
-        self.averaging_start_time = 181 * sec_per_min
-        self.averaging_end_time = 240 * sec_per_min
-        self.timeseries_start_time = 0 * sec_per_min
-        self.timeseries_end_time = 240 * sec_per_min
-        self.height_min_value = 0
-        self.height_max_value = 1200
+
 
         ### Initialize Height ###
         self.z = NetCdfVariable('altitude', ncdf_files['zm'], avging_start_time=self.averaging_start_time,
@@ -76,6 +70,7 @@ class VariableGroupBase(VariableGroup):
         self.z.data = self.z.data[self.z_min_idx:self.z_max_idx]
 
         ### Initialize Time ###
+        sec_per_min = 60
         sec_to_min = 1 / sec_per_min
         self.time = NetCdfVariable('time', ncdf_files, conversion_factor=sec_to_min)
 

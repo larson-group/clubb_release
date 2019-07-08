@@ -8,6 +8,8 @@ Author: Nicolas Strike
 Date: Jan 2019
 '''
 import argparse
+import subprocess
+import sys
 
 from pyplotgen.DataReader import DataReader
 from pyplotgen.CaseTest import CaseTest
@@ -79,7 +81,7 @@ class PyPlotGen:
                 test_case.plot()
                 cases_plotted[test_case.name] = test_case
                 break # TODO TEMP FIX
-
+        subprocess.run(['sigal', 'build', '-f', 'output/'])  # Use sigal to build html in '_build/'
 
 def process_args():
     '''
