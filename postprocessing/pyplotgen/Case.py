@@ -23,7 +23,7 @@ class Case:
         for panel in self.panel_groups.panels:
             self.panels.append(panel)
 
-    def plot(self):
+    def plot(self, output_folder):
         '''
         Plot all panels associated with the case
         :param casename: str name of the case
@@ -34,6 +34,6 @@ class Case:
         curr_panel_num = 0
         for panel in self.panels:
             print("\r\tplotting ",  curr_panel_num, " of ", num_plots, " | ", panel.title, end="")
-            panel.plot(self.name)
+            panel.plot(output_folder, self.name)
             curr_panel_num += 1
             print("\r\tplotted  ", curr_panel_num, " of ", num_plots, " | ", panel.title)

@@ -59,18 +59,6 @@ class VariableGroup:
             self.addClubbVariable(variable)
         self.generatePanels()
 
-
-    def plot(self):
-        '''
-        Plots every panel in this group to the output folder specified
-        in the pyplotgen launch parameters, unless the panel is blacklisted.
-        
-        :return: n/a
-        '''
-        for panel in self.panels:
-            if not panel.blacklisted:
-                panel.plot(self.name)
-
     def get_var_from_ncdf(self, netcdf_variable):
         '''
         Retrieve numerical data from netcdf

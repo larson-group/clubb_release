@@ -64,16 +64,6 @@ class VariableGroupBase(VariableGroup):
         ]
         super().__init__(ncdf_datasets, case, sam_file)
 
-    def plot(self):
-        '''
-        Plots every panel in this group to the output folder specified
-        in the pyplotgen launch parameters, unless the panel is blacklisted.
-
-        Uses the PanelGroup.plotAll() function
-        :return: n/a
-        '''
-        super().plot()
-
     def getThlmSamPlot(self):
         '''
         Calculates thlm values from sam output using
