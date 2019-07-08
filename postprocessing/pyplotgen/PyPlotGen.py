@@ -76,11 +76,16 @@ class PyPlotGen:
             if "dycoms2_rf01_" in dataset_filenames[0] and "sst" not in dataset_filenames[0] and ".git" not in dataset_filenames:
                 sam_file = self.sam_data_reader.__loadNcFile__("/home/nicolas/sam_benchmark_runs/DYCOMS_RF01_96x96x320.nc")
                 # sam_file = None
+                print("##################################################")
                 print("Plotting case ", case_key)
+                print("##################################################")
                 test_case = CaseTest(ncdf_files, sam_file=sam_file)
                 test_case.plot()
                 cases_plotted[test_case.name] = test_case
                 break # TODO TEMP FIX
+        print("##################################################")
+        print("Generating webpage for viewing plots ")
+        print("##################################################")
         subprocess.run(['sigal', 'build', '-f', 'output/'])  # Use sigal to build html in '_build/'
 
 def process_args():

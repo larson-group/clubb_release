@@ -21,9 +21,6 @@ class VariableGroup:
     '''
 
     def __init__(self, ncdf_datasets, case, sam_file=None):
-        self.name = "unnamed group"
-        # self.ncdf_file = ncdf_datasets
-        self.variables = []
         self.panels = []
         self.panel_type = Panel.TYPE_PROFILE
         self.sam_file = sam_file
@@ -34,6 +31,33 @@ class VariableGroup:
         self.timeseries_end_time = case.timeseries_end_time
         self.height_min_value = case.height_min_value
         self.height_max_value = case.height_max_value
+
+
+        ### Initialize Height ###
+        self.z = NetCdfVariable('altitude', ncdf_datasets['zm'], avging_start_time=self.averaging_start_time,
+                                avging_end_time=self.averaging_end_time)
+        self.z_min_idx, self.z_max_idx = self.__getStartEndIndex__(self.z.data, self.height_min_value,
+                                                                   self.height_max_value)
+        self.z.data = self.z.data[self.z_min_idx:self.z_max_idx]
+
+        ### Initialize Time ###
+        sec_per_min = 60
+        sec_to_min = 1 / sec_per_min
+        self.time = NetCdfVariable('time', ncdf_datasets, conversion_factor=sec_to_min)
+
+        ### Initialize Sam Height ###
+        if sam_file != None:
+            self.z_sam = NetCdfVariable('z', sam_file, avging_start_time=self.averaging_start_time,
+                                        avging_end_time=self.averaging_end_time)
+            self.z_sam_min_idx, self.z_sam_max_idx = self.__getStartEndIndex__(self.z_sam.data, self.height_min_value,
+                                                                               self.height_max_value)
+            self.z_sam.data = self.z_sam.data[self.z_sam_min_idx:self.z_sam_max_idx]
+
+
+
+        for variable in self.variables:
+            self.addClubbVariable(variable)
+        self.generatePanels()
 
 
     def plot(self):
@@ -88,7 +112,6 @@ class VariableGroup:
         if 'sam_calc' in variable.keys():
             samplot = variable['sam_calc']()
             plots.append(samplot)
-        self.variables.append(variable)
 
     def generatePanels(self):
         '''

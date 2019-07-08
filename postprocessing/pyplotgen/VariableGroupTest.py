@@ -16,11 +16,16 @@ class VariableGroupBase(VariableGroup):
     of panels.
     '''
 
-    def __init__(self, ncdf_files, case, sam_file=None):
-        super(VariableGroupBase, self).__init__(ncdf_files, case, sam_file)
+    def __init__(self, ncdf_datasets, case, sam_file=None):
+        '''
 
+        :param ncdf_datasets:
+        :param case:
+        :param sam_file:
+        '''
+        self.name = "base variables"
         # TODO Support fill_zeros
-        variables = [
+        self.variables = [
             {'clubb_name': 'thlm', 'sam_calc': self.getThlmSamPlot},
             {'clubb_name': 'rtm', 'sam_calc': self.getRtmSamPlot},
             {'clubb_name': 'wpthlp', 'sam_name': 'WPTHLP'},
@@ -57,37 +62,7 @@ class VariableGroupBase(VariableGroup):
             {'clubb_name': 'thlpthvp'},
 
         ]
-
-        self.name = "base variables"
-
-
-
-        ### Initialize Height ###
-        self.z = NetCdfVariable('altitude', ncdf_files['zm'], avging_start_time=self.averaging_start_time,
-                                avging_end_time=self.averaging_end_time)
-        self.z_min_idx, self.z_max_idx = self.__getStartEndIndex__(self.z.data, self.height_min_value,
-                                                                   self.height_max_value)
-        self.z.data = self.z.data[self.z_min_idx:self.z_max_idx]
-
-        ### Initialize Time ###
-        sec_per_min = 60
-        sec_to_min = 1 / sec_per_min
-        self.time = NetCdfVariable('time', ncdf_files, conversion_factor=sec_to_min)
-
-        ### Initialize Sam Height ###
-        if sam_file != None:
-            self.z_sam = NetCdfVariable('z', sam_file, avging_start_time=self.averaging_start_time,
-                                        avging_end_time=self.averaging_end_time)
-            self.z_sam_min_idx, self.z_sam_max_idx = self.__getStartEndIndex__(self.z_sam.data, self.height_min_value,
-                                                                               self.height_max_value)
-            self.z_sam.data = self.z_sam.data[self.z_sam_min_idx:self.z_sam_max_idx]
-
-
-
-        for variable in variables:
-            super().addClubbVariable(variable)
-        super().generatePanels()
-
+        super().__init__(ncdf_datasets, case, sam_file)
 
     def plot(self):
         '''
