@@ -213,6 +213,8 @@ class DataReader():
             var_average = np.nanmean(var[idx_t0:idx_t1, :], axis=avg_axis)
         else:  # if height averaged
             var_average = np.nanmean(var[:, idx_z0:idx_z1], axis=avg_axis)
+            warn("Using height averaging. If this is not desirable, change your averaging axis from 1 to 0 for time "
+                 "averaging instead.")
         return var_average
 
     def __getUnits__(self, nc, varname):

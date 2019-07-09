@@ -6,7 +6,7 @@ from netCDF4._netCDF4 import Dataset
 
 from pyplotgen.Panel import Panel
 from pyplotgen.DataReader import DataReader, NetCdfVariable
-from pyplotgen.Lineplot import Lineplot
+from pyplotgen.Line import Line
 
 
 class VariableGroup:
@@ -16,7 +16,7 @@ class VariableGroup:
     methods common to each PanelGroup can be found here.
 
 
-    A PanelGroup child defines Lineplots, Panels, and is responsible for
+    A PanelGroup child defines Lines, Panels, and is responsible for
     calculating any 'calculated' variables from netcdf
     '''
 
@@ -91,10 +91,10 @@ class VariableGroup:
         panel_type = self.panel_type
         if 'type' in variable.keys():
             panel_type = variable['type']
-        plots = self.getVarLinePlots(clubb_name, self.ncdf_files, averaging_start_time=self.averaging_start_time,
-                                     averaging_end_time=self.averaging_end_time, sam_name= sam_name, sam_file=sam_file,
-                                     sam_conv_factor=sam_conv_factor, label="current clubb", line_format='r--',
-                                     override_panel_type=panel_type)
+        plots = self.getVarLines(clubb_name, self.ncdf_files, averaging_start_time=self.averaging_start_time,
+                                 averaging_end_time=self.averaging_end_time, sam_name= sam_name, sam_file=sam_file,
+                                 sam_conv_factor=sam_conv_factor, label="current clubb", line_format='r--',
+                                 override_panel_type=panel_type)
         variable['plots'] = plots
         if 'title' not in variable.keys():
             imported_title = data_reader.getLongName(self.ncdf_files, clubb_name)
@@ -124,12 +124,12 @@ class VariableGroup:
             panel = Panel(plotset, title=title, dependant_title=axis_label, panel_type=panel_type)
             self.panels.append(panel)
 
-    def getVarLinePlots(self, varname, ncdf_datasets, label="", line_format="", avg_axis=0, override_panel_type=None,
-                        averaging_start_time=0, averaging_end_time=-1, sam_name=None, sam_file=None, conversion_factor=1,
-                        sam_conv_factor=1):
+    def getVarLines(self, varname, ncdf_datasets, label="", line_format="", avg_axis=0, override_panel_type=None,
+                    averaging_start_time=0, averaging_end_time=-1, sam_name=None, sam_file=None, conversion_factor=1,
+                    sam_conv_factor=1):
         '''
-        Get a list of Lineplot objects for a specific clubb variable. If sam_file is specified it will also
-        attempt to generate Lineplots for the SAM equivalent variables, using the name conversions found in
+        Get a list of Line objects for a specific clubb variable. If sam_file is specified it will also
+        attempt to generate Lines for the SAM equivalent variables, using the name conversions found in
         VarnameConversions.py. If a SAM variable needs to be calculated (uses an equation) then it will have
         to be created within that variable group's file and not here.
 
@@ -144,7 +144,7 @@ class VariableGroup:
         :param sam_file: Dataset object containing SAM plotAll data
         :param conversion_factor: A multiplying factor used to scale clubb output. Defaults to 1.
         :param sam_conv_factor: A multiplying factor used to scale sam output. Defaults to 1.
-        :return: A list of Lineplot objects containing clubb and (if requested) sam data. Returns None if requested variable is not found.
+        :return: A list of Line objects containing clubb and (if requested) sam data. Returns None if requested variable is not found.
         '''
 
         if override_panel_type is not None:
@@ -156,17 +156,17 @@ class VariableGroup:
 
         if sam_file is not None and sam_name is not None:
             clubb_sec_to_sam_min = 1/60
-            sam_plot = self.getVarLinePlots(sam_name, {'sam': sam_file}, label="LES output",
-                                            line_format="k-", avg_axis=avg_axis, conversion_factor=sam_conv_factor,
-                                            averaging_start_time=averaging_start_time*clubb_sec_to_sam_min,
-                                            averaging_end_time=averaging_end_time*clubb_sec_to_sam_min,
-                                            override_panel_type=panel_type)
+            sam_plot = self.getVarLines(sam_name, {'sam': sam_file}, label="LES output",
+                                        line_format="k-", avg_axis=avg_axis, conversion_factor=sam_conv_factor,
+                                        averaging_start_time=averaging_start_time*clubb_sec_to_sam_min,
+                                        averaging_end_time=averaging_end_time*clubb_sec_to_sam_min,
+                                        override_panel_type=panel_type)
             all_plots.extend(sam_plot)
 
         if isinstance(ncdf_datasets, Dataset):
             ncdf_datasets = {'auto': ncdf_datasets}
 
-        lineplot = None
+        line = None
         if panel_type is Panel.TYPE_PROFILE:
 
             for file in ncdf_datasets.values():
@@ -182,7 +182,7 @@ class VariableGroup:
                     min_idx, max_idx = self.__getStartEndIndex__(independent_var_data.data, self.height_min_value,
                                                                  self.height_max_value)
                     variable.data = variable.data[min_idx:max_idx + 1]
-                    lineplot = Lineplot(variable, independent_var_data, label=label, line_format=line_format)
+                    line = Line(variable, independent_var_data, label=label, line_format=line_format)
                     break
 
         elif panel_type is Panel.TYPE_BUDGET:
@@ -192,12 +192,12 @@ class VariableGroup:
                                       avging_end_time=averaging_end_time, avg_axis=1,
                                       conversion_factor=conversion_factor)
             variable.data = variable.data[self.timeseries_start_time:self.timeseries_end_time]
-            lineplot = Lineplot(self.time, variable, label=label, line_format=line_format)
+            line = Line(self.time, variable, label=label, line_format=line_format)
         else:
             raise ValueError('Invalid panel type ' + panel_type + '. Valid options are profile, budget, timeseries')
-        if lineplot == None:
+        if line == None:
             raise ValueError('Failed to find variable ' + varname + " in " + str(file))
-        all_plots.append(lineplot)
+        all_plots.append(line)
         return all_plots
 
     def __getStartEndIndex__(self, data, start_value, end_value):

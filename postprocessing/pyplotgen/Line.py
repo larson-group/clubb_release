@@ -1,6 +1,6 @@
 
 
-class Lineplot:
+class Line:
     '''
     This class holds information commonly passed around when using plotAll data.
     Data included is anything necessary to graph a line using pyplot, including the

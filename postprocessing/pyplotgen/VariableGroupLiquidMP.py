@@ -6,7 +6,7 @@
 from pyplotgen.DataReader import NetCdfVariable
 from pyplotgen.Panel import Panel
 from pyplotgen.VariableGroup import VariableGroup
-from pyplotgen.Lineplot import Lineplot
+from pyplotgen.Line import Line
 
 
 class VariableGroupLiquidMP(VariableGroup):
@@ -26,8 +26,8 @@ class VariableGroupLiquidMP(VariableGroup):
             {'clubb_name': 'precip_frac'},
             {'clubb_name': 'rrm', 'sam_name': 'QPL', 'sam_conv_factor': 1 / 1000},
             {'clubb_name': 'Nrm'},  # (NR * 1e+6) ./ RHO
-            # {'clubb_name': 'wprrp', 'sam_name': 'WPRRP'},
-            # {'clubb_name': 'wpnrp', 'sam_name': 'WPNRP'},
+            # {'clubb_name': 'wprrp', 'sam_name': 'WPRRP'},  # Not found in lba case file
+            # {'clubb_name': 'wpnrp', 'sam_name': 'WPNRP'},  # Not found in lba case file
             {'clubb_name': 'rwp', 'sam_name': 'RWP', 'sam_conv_factor': 1/1000, 'type': Panel.TYPE_TIMESERIES}
 
         ]

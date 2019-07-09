@@ -6,7 +6,7 @@
 from pyplotgen.DataReader import NetCdfVariable
 from pyplotgen.Panel import Panel
 from pyplotgen.VariableGroup import VariableGroup
-from pyplotgen.Lineplot import Lineplot
+from pyplotgen.Line import Line
 
 
 class VariableGroupKKMP(VariableGroup):

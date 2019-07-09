@@ -6,7 +6,7 @@
 from pyplotgen.DataReader import NetCdfVariable
 from pyplotgen.Panel import Panel
 from pyplotgen.VariableGroup import VariableGroup
-from pyplotgen.Lineplot import Lineplot
+from pyplotgen.Line import Line
 
 
 class VariableGroupBase(VariableGroup):
@@ -26,8 +26,8 @@ class VariableGroupBase(VariableGroup):
         self.name = "base variables"
         # TODO Support fill_zeros
         self.variable_definitions = [
-            {'clubb_name': 'thlm', 'sam_calc': self.getThlmSamPlot},
-            {'clubb_name': 'rtm', 'sam_calc': self.getRtmSamPlot},
+            {'clubb_name': 'thlm', 'sam_calc': self.getThlmSamLine},
+            {'clubb_name': 'rtm', 'sam_calc': self.getRtmSamLine},
             {'clubb_name': 'wpthlp', 'sam_name': 'WPTHLP'},
             {'clubb_name': 'wprtp', 'sam_name': 'WPRTP'},
             {'clubb_name': 'rcm', 'sam_name': "QCL", 'sam_conv_factor': 1/1000},
@@ -64,7 +64,7 @@ class VariableGroupBase(VariableGroup):
         ]
         super().__init__(ncdf_datasets, case, sam_file)
 
-    def getThlmSamPlot(self):
+    def getThlmSamLine(self):
         '''
         Calculates thlm values from sam output using
         the following equation
@@ -93,10 +93,10 @@ class VariableGroupBase(VariableGroup):
         thlm = thetal + (2500.4 * (theta / tabs) * (qi / 1000))
         thlm = thlm[self.z_sam_min_idx:self.z_sam_max_idx]
 
-        thlm_lineplot = Lineplot(thlm, self.z_sam.data, line_format="k-", label="LES output")
-        return thlm_lineplot
+        thlm_line = Line(thlm, self.z_sam.data, line_format="k-", label="LES output")
+        return thlm_line
 
-    def getRtmSamPlot(self):
+    def getRtmSamLine(self):
         '''
         Calculates rtm values from sam output using
         the following equation
@@ -115,21 +115,5 @@ class VariableGroupBase(VariableGroup):
         rtm = (qt - qi) / 1000
         rtm = rtm[self.z_sam_min_idx:self.z_sam_max_idx]
 
-        rtm_lineplot = Lineplot(rtm, self.z_sam.data, line_format="k-", label="LES output")
-        return rtm_lineplot
-
-    def getWpthlpSamPlot(self):
-        '''
-
-        :return:
-        '''
-        sam_start_time = self.averaging_start_time / 60
-        sam_end_time = self.averaging_end_time / 60
-
-        wpthlp_ncdf = NetCdfVariable('WPTHLP', self.sam_file, 1, avging_start_time=sam_start_time, avging_end_time=sam_end_time)
-        wpthlp = wpthlp_ncdf.data
-        wpthlp = wpthlp[self.z_sam_min_idx:self.z_sam_max_idx]
-
-
-        wpthlp_lineplot = Lineplot(wpthlp, self.z_sam.data, line_format='k-', label='LES output')
-        return wpthlp_lineplot
+        rtm_line = Line(rtm, self.z_sam.data, line_format="k-", label="LES output")
+        return rtm_line
