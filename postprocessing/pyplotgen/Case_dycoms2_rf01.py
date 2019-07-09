@@ -1,5 +1,6 @@
 from pyplotgen.Case import Case
 from pyplotgen.VariableGroupBase import VariableGroupBase
+from pyplotgen.VariableGroupWs import VariableGroupWs
 
 
 class Case_dycoms2_rf01(Case):
@@ -20,8 +21,9 @@ class Case_dycoms2_rf01(Case):
         self.height_max_value = 1200
         self.enabled = True
         self.ncdf_files = ncdf_files
-        testGroup = VariableGroupBase(self.ncdf_files, self, sam_file=sam_file)
-        self.panel_groups = [testGroup]
+        base_variables = VariableGroupBase(self.ncdf_files, self, sam_file=sam_file)
+        w_variables = VariableGroupWs(self.ncdf_files, self, sam_file=sam_file)
+        self.panel_groups = [base_variables, w_variables]
         self.panels = []
 
         for panelgroup in self.panel_groups:
