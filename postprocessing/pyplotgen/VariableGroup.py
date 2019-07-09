@@ -42,8 +42,7 @@ class VariableGroup:
         self.z.data = self.z.data[self.z_min_idx:self.z_max_idx]
 
         ### Initialize Time ###
-        sec_per_min = 60
-        sec_to_min = 1 / sec_per_min
+        sec_to_min = 1 / 60
         self.time = NetCdfVariable('time', ncdf_datasets, conversion_factor=sec_to_min)
 
         ### Initialize Sam Height ###
@@ -119,7 +118,10 @@ class VariableGroup:
             title = variable['title']
             axis_label = variable['axis_title']
             plotset = variable['plots']
-            panel = Panel(plotset, title=title, dependant_title=axis_label, panel_type=variable['type'])
+            panel_type = self.panel_type
+            if 'type' in variable.keys():
+                panel_type = variable['type']
+            panel = Panel(plotset, title=title, dependant_title=axis_label, panel_type=panel_type)
             self.panels.append(panel)
 
     def getVarLinePlots(self, varname, ncdf_datasets, label="", line_format="", avg_axis=0, override_panel_type=None,
