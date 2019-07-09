@@ -21,14 +21,13 @@ class VariableGroupLiquidMP(VariableGroup):
         self.name = "liquid mp variables"
         # TODO Support fill_zeros
         self.variable_definitions = [
-            {'clubb_name': 'ncm'},
+            {'clubb_name': 'Ncm'}, # LES
             {'clubb_name': 'Nc_in_cloud'},
             {'clubb_name': 'precip_frac'},
             {'clubb_name': 'rrm', 'sam_name': 'QPL', 'sam_conv_factor': 1 / 1000},
-            {'clubb_name': 'ncm'},
-            {'clubb_name': 'nrm'},  # (NR * 1e+6) ./ RHO
-            {'clubb_name': 'wprrp', 'sam_name': 'WPRRP'},
-            {'clubb_name': 'wpnrp', 'sam_name': 'WPNRP'},
+            {'clubb_name': 'Nrm'},  # (NR * 1e+6) ./ RHO
+            # {'clubb_name': 'wprrp', 'sam_name': 'WPRRP'},
+            # {'clubb_name': 'wpnrp', 'sam_name': 'WPNRP'},
             {'clubb_name': 'rwp', 'sam_name': 'RWP', 'sam_conv_factor': 1/1000, 'type': Panel.TYPE_TIMESERIES}
 
         ]

@@ -11,6 +11,7 @@ import argparse
 import subprocess
 import sys
 
+from pyplotgen.Case_lba import Case_lba
 from pyplotgen.DataReader import DataReader
 from pyplotgen.Case_dycoms2_rf01 import Case_dycoms2_rf01
 
@@ -73,16 +74,27 @@ class PyPlotGen:
             ncdf_files = self.nc_datasets[case_key]
             dataset_filenames = [dataset.filepath() for dataset in self.nc_datasets[case_key].values()]
 
+            if "lba" in dataset_filenames[0] and ".git" not in dataset_filenames:
+                sam_file = self.sam_data_reader.__loadNcFile__("/home/nicolas/sam_benchmark_runs/JULY_2017/LBA_128kmx128kmx128_1km_Morrison/LBA_128kmx128kmx128_1km_Morrison.nc")
+                # sam_file = None
+                print("##################################################")
+                print("Plotting case ", case_key)
+                print("##################################################")
+                lba = Case_lba(ncdf_files, sam_file=sam_file)
+                lba.plot(self.output_folder)
+                # cases_plotted[dycoms_rf01.name] = lba
+                # break # TODO TEMP FIX
+
             if "dycoms2_rf01_" in dataset_filenames[0] and "sst" not in dataset_filenames[0] and ".git" not in dataset_filenames:
                 sam_file = self.sam_data_reader.__loadNcFile__("/home/nicolas/sam_benchmark_runs/DYCOMS_RF01_96x96x320.nc")
                 # sam_file = None
                 print("##################################################")
                 print("Plotting case ", case_key)
                 print("##################################################")
-                test_case = Case_dycoms2_rf01(ncdf_files, sam_file=sam_file)
-                test_case.plot(self.output_folder)
-                # cases_plotted[test_case.name] = test_case
-                break # TODO TEMP FIX
+                dycoms_rf01 = Case_dycoms2_rf01(ncdf_files, sam_file=sam_file)
+                dycoms_rf01.plot(self.output_folder)
+                # cases_plotted[dycoms_rf01.name] = dycoms_rf01
+                # break # TODO TEMP FIX
         print("##################################################")
         print("Generating webpage for viewing plots ")
         print("##################################################")

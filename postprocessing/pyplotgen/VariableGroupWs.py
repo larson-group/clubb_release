@@ -27,7 +27,7 @@ class VariableGroupWs(VariableGroup):
             {'clubb_name': 'wpthlp2', 'sam_name': 'WPTHLP2'},
             {'clubb_name': 'wprtp2', 'sam_name': 'WPRTP2'},
             {'clubb_name': 'wprtpthlp', 'sam_name': 'WPRTPTHLP'},
-            {'clubb_name': 'wp2thvp', 'sam_name': 'WP2THVP'}
+            {'clubb_name': 'wp2thvp', 'sam_name': 'WP2THVP'} # LES
 
         ]
         super().__init__(ncdf_datasets, case, sam_file)
