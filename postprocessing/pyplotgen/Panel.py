@@ -104,7 +104,7 @@ class Panel:
             os.mkdir(output_folder + "/" + casename)
         except FileExistsError:
             pass # do nothing
-        filename = self.title
+        filename = self.y_title + "_VS_" + self.x_title
         filename = filename.translate(str.maketrans('', '', string.punctuation))
         filename = filename.replace(' ', '_')
         rel_filename = output_folder + "/" +casename+'/' + filename

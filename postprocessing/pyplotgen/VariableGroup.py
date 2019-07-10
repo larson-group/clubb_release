@@ -93,7 +93,7 @@ class VariableGroup:
             panel_type = variable['type']
         plots = self.getVarLines(clubb_name, self.ncdf_files, averaging_start_time=self.averaging_start_time,
                                  averaging_end_time=self.averaging_end_time, sam_name= sam_name, sam_file=sam_file,
-                                 sam_conv_factor=sam_conv_factor, label="current clubb", line_format='r--',
+                                 sam_conv_factor=sam_conv_factor, label="current clubb", line_format='b-',
                                  override_panel_type=panel_type)
         variable['plots'] = plots
         if 'title' not in variable.keys():

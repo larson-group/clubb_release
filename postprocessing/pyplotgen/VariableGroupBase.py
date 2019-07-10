@@ -47,19 +47,19 @@ class VariableGroupBase(VariableGroup):
             {'clubb_name': 'tau_zm'},
             {'clubb_name': 'vp2', 'sam_name': 'V2'},
             {'clubb_name': 'Lscale'},
-            {'clubb_name': 'wpthvp'},
+            {'clubb_name': 'wpthvp', 'sam_name': 'WPTHVP'},
             {'clubb_name': 'rtpthlp', 'sam_name': 'RTPTHLP'},
             {'clubb_name': 'rtp3', 'sam_name': 'RTP3'},
-            {'clubb_name': 'radht'},
-            {'clubb_name': 'Skw_zt'},
+            {'clubb_name': 'radht', 'sam_name': 'RADQR', 'sam_conv_factor': 1/86400},
+            {'clubb_name': 'Skw_zt'},  # WP3 ./ (WP2 + 1.6e-3).^1.5
             {'clubb_name': 'thlp3', 'sam_name': 'THLP3'},
-            {'clubb_name': 'rtpthvp'},
-            {'clubb_name': 'Skrt_zt'},
-            {'clubb_name': 'Skthl_zt'},
+            {'clubb_name': 'rtpthvp', 'sam_name': 'RTPTHVP'},
+            {'clubb_name': 'Skrt_zt'},  # RTP3 ./ (RTP2 + 4e-16).^1.5
+            {'clubb_name': 'Skthl_zt'},  # THLP3 ./ (THLP2 + 4e-4).^1.5
             {'clubb_name': 'corr_w_chi_2'},
             {'clubb_name': 'corr_chi_eta_2'},
-            {'clubb_name': 'rcp2'},
-            {'clubb_name': 'thlpthvp'},
+            {'clubb_name': 'rcp2', 'sam_name': 'QC2', 'sam_conv_factor': 1/10**6},
+            {'clubb_name': 'thlpthvp', 'sam_name': 'THLPTHVP'},
 
         ]
         super().__init__(ncdf_datasets, case, sam_file)
