@@ -6,7 +6,7 @@ from netCDF4._netCDF4 import Dataset
 
 from pyplotgen.Panel import Panel
 from pyplotgen.DataReader import DataReader, NetCdfVariable
-from pyplotgen.Lineplot import Lineplot
+from pyplotgen.Line import Line
 
 
 class VariableGroup:
@@ -16,30 +16,48 @@ class VariableGroup:
     methods common to each PanelGroup can be found here.
 
 
-    A PanelGroup child defines Lineplots, Panels, and is responsible for
+    A PanelGroup child defines Lines, Panels, and is responsible for
     calculating any 'calculated' variables from netcdf
     '''
 
-    def __init__(self, ncdf_datasets, sam_file=None):
-        self.name = "unnamed group"
-        # self.ncdf_file = ncdf_datasets
+    def __init__(self, ncdf_datasets, case, sam_file=None):
         self.variables = []
         self.panels = []
         self.panel_type = Panel.TYPE_PROFILE
-
         self.sam_file = sam_file
         self.ncdf_files = ncdf_datasets
+        self.averaging_start_time = case.averaging_start_time
+        self.averaging_end_time = case.averaging_end_time
+        self.timeseries_start_time = case.timeseries_start_time
+        self.timeseries_end_time = case.timeseries_end_time
+        self.height_min_value = case.height_min_value
+        self.height_max_value = case.height_max_value
 
-    def plot(self):
-        '''
-        Plots every panel in this group to the output folder specified
-        in the pyplotgen launch parameters, unless the panel is blacklisted.
-        
-        :return: n/a
-        '''
-        for panel in self.panels:
-            if not panel.blacklisted:
-                panel.plot(self.name)
+
+        ### Initialize Height ###
+        self.z = NetCdfVariable('altitude', ncdf_datasets['zm'], avging_start_time=self.averaging_start_time,
+                                avging_end_time=self.averaging_end_time)
+        self.z_min_idx, self.z_max_idx = self.__getStartEndIndex__(self.z.data, self.height_min_value,
+                                                                   self.height_max_value)
+        self.z.data = self.z.data[self.z_min_idx:self.z_max_idx]
+
+        ### Initialize Time ###
+        sec_to_min = 1 / 60
+        self.time = NetCdfVariable('time', ncdf_datasets, conversion_factor=sec_to_min)
+
+        ### Initialize Sam Height ###
+        if sam_file != None:
+            self.z_sam = NetCdfVariable('z', sam_file, avging_start_time=self.averaging_start_time,
+                                        avging_end_time=self.averaging_end_time)
+            self.z_sam_min_idx, self.z_sam_max_idx = self.__getStartEndIndex__(self.z_sam.data, self.height_min_value,
+                                                                               self.height_max_value)
+            self.z_sam.data = self.z_sam.data[self.z_sam_min_idx:self.z_sam_max_idx]
+
+
+
+        for variable in self.variable_definitions:
+            self.addClubbVariable(variable)
+        self.generatePanels()
 
     def get_var_from_ncdf(self, netcdf_variable):
         '''
@@ -61,13 +79,22 @@ class VariableGroup:
         clubb_name = variable['clubb_name']
         sam_name = None
         sam_file = self.sam_file
+        sam_conv_factor = 1
         if 'sam_calc' in variable.keys():
             sam_file = None # don't try to autoplot sam if sam is a calculated value
         if 'sam_name' in variable.keys():
             sam_name = variable['sam_name']
-        plots = self.getVarLinePlots(clubb_name, self.ncdf_files, averaging_start_time=self.averaging_start_time,
-                                     averaging_end_time=self.averaging_end_time, sam_name= sam_name, sam_file=sam_file,
-                                     label="current clubb", line_format='r--')
+            sam_file = self.sam_file # redefine sam_file incase sam_calc wiped it
+        if 'sam_conv_factor' in variable.keys():
+            sam_conv_factor = variable['sam_conv_factor']
+
+        panel_type = self.panel_type
+        if 'type' in variable.keys():
+            panel_type = variable['type']
+        plots = self.getVarLines(clubb_name, self.ncdf_files, averaging_start_time=self.averaging_start_time,
+                                 averaging_end_time=self.averaging_end_time, sam_name= sam_name, sam_file=sam_file,
+                                 sam_conv_factor=sam_conv_factor, label="current clubb", line_format='r--',
+                                 override_panel_type=panel_type)
         variable['plots'] = plots
         if 'title' not in variable.keys():
             imported_title = data_reader.getLongName(self.ncdf_files, clubb_name)
@@ -90,17 +117,19 @@ class VariableGroup:
         for variable in self.variables:
             title = variable['title']
             axis_label = variable['axis_title']
-            #        liq_pot_temp = Panel(thlm_plots, title="Liquid Water Potential Temperature, Theta l", dependant_title="thlm [K]")
             plotset = variable['plots']
-            panel = Panel(plotset, title=title, dependant_title=axis_label)
+            panel_type = self.panel_type
+            if 'type' in variable.keys():
+                panel_type = variable['type']
+            panel = Panel(plotset, title=title, dependant_title=axis_label, panel_type=panel_type)
             self.panels.append(panel)
 
-    def getVarLinePlots(self, varname, ncdf_datasets, label="", line_format="", avg_axis=0, override_panel_type=None,
-                        averaging_start_time=0,
-                        averaging_end_time=-1, sam_name=None, sam_file=None, conversion_factor=1, sam_conv_factor=1):
+    def getVarLines(self, varname, ncdf_datasets, label="", line_format="", avg_axis=0, override_panel_type=None,
+                    averaging_start_time=0, averaging_end_time=-1, sam_name=None, sam_file=None, conversion_factor=1,
+                    sam_conv_factor=1):
         '''
-        Get a list of Lineplot objects for a specific clubb variable. If sam_file is specified it will also
-        attempt to generate Lineplots for the SAM equivalent variables, using the name conversions found in
+        Get a list of Line objects for a specific clubb variable. If sam_file is specified it will also
+        attempt to generate Lines for the SAM equivalent variables, using the name conversions found in
         VarnameConversions.py. If a SAM variable needs to be calculated (uses an equation) then it will have
         to be created within that variable group's file and not here.
 
@@ -115,7 +144,7 @@ class VariableGroup:
         :param sam_file: Dataset object containing SAM plotAll data
         :param conversion_factor: A multiplying factor used to scale clubb output. Defaults to 1.
         :param sam_conv_factor: A multiplying factor used to scale sam output. Defaults to 1.
-        :return: A list of Lineplot objects containing clubb and (if requested) sam data. Returns None if requested variable is not found.
+        :return: A list of Line objects containing clubb and (if requested) sam data. Returns None if requested variable is not found.
         '''
 
         if override_panel_type is not None:
@@ -126,14 +155,18 @@ class VariableGroup:
         all_plots = []
 
         if sam_file is not None and sam_name is not None:
-            sam_plot = self.getVarLinePlots(sam_name, {'sam': sam_file}, label="LES output",
-                                            line_format="k-", avg_axis=1, conversion_factor=sam_conv_factor)
+            clubb_sec_to_sam_min = 1/60
+            sam_plot = self.getVarLines(sam_name, {'sam': sam_file}, label="LES output",
+                                        line_format="k-", avg_axis=avg_axis, conversion_factor=sam_conv_factor,
+                                        averaging_start_time=averaging_start_time*clubb_sec_to_sam_min,
+                                        averaging_end_time=averaging_end_time*clubb_sec_to_sam_min,
+                                        override_panel_type=panel_type)
             all_plots.extend(sam_plot)
 
         if isinstance(ncdf_datasets, Dataset):
             ncdf_datasets = {'auto': ncdf_datasets}
 
-        lineplot = None
+        line = None
         if panel_type is Panel.TYPE_PROFILE:
 
             for file in ncdf_datasets.values():
@@ -149,7 +182,7 @@ class VariableGroup:
                     min_idx, max_idx = self.__getStartEndIndex__(independent_var_data.data, self.height_min_value,
                                                                  self.height_max_value)
                     variable.data = variable.data[min_idx:max_idx + 1]
-                    lineplot = Lineplot(variable, independent_var_data, label=label, line_format=line_format)
+                    line = Line(variable, independent_var_data, label=label, line_format=line_format)
                     break
 
         elif panel_type is Panel.TYPE_BUDGET:
@@ -159,12 +192,12 @@ class VariableGroup:
                                       avging_end_time=averaging_end_time, avg_axis=1,
                                       conversion_factor=conversion_factor)
             variable.data = variable.data[self.timeseries_start_time:self.timeseries_end_time]
-            lineplot = Lineplot(self.time, variable, label=label, line_format=line_format)
+            line = Line(self.time, variable, label=label, line_format=line_format)
         else:
             raise ValueError('Invalid panel type ' + panel_type + '. Valid options are profile, budget, timeseries')
-        if lineplot == None:
+        if line == None:
             raise ValueError('Failed to find variable ' + varname + " in " + str(file))
-        all_plots.append(lineplot)
+        all_plots.append(line)
         return all_plots
 
     def __getStartEndIndex__(self, data, start_value, end_value):

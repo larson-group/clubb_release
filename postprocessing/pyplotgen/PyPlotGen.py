@@ -8,9 +8,12 @@ Author: Nicolas Strike
 Date: Jan 2019
 '''
 import argparse
+import subprocess
+import sys
 
+from pyplotgen.Case_lba import Case_lba
 from pyplotgen.DataReader import DataReader
-from pyplotgen.CaseTest import CaseTest
+from pyplotgen.Case_dycoms2_rf01 import Case_dycoms2_rf01
 
 class PyPlotGen:
     def __init__(self, input_folder, output_folder, replace=False, les=False, cgbest=False, hoc=False,plotrefs=False,
@@ -38,7 +41,7 @@ class PyPlotGen:
         :param diff:
         '''
         self.input_folder = input_folder
-        # self.output_folder = output_folder
+        self.output_folder = output_folder
         self.replace = replace
         self.les = les
         self.cgbest = cgbest
@@ -66,20 +69,36 @@ class PyPlotGen:
         '''
         self.nc_datasets = self.data_reader.loadFolder(self.input_folder)
         # self.sam_datasets = self.sam_data_reader.loadFolder("/home/strike/sam_benchmark_runs")
-        cases_plotted = {}
+        # cases_plotted = {}
         for case_key in self.nc_datasets.keys():
             ncdf_files = self.nc_datasets[case_key]
             dataset_filenames = [dataset.filepath() for dataset in self.nc_datasets[case_key].values()]
 
+            if "lba" in dataset_filenames[0] and ".git" not in dataset_filenames:
+                sam_file = self.sam_data_reader.__loadNcFile__("/home/nicolas/sam_benchmark_runs/JULY_2017/LBA_128kmx128kmx128_1km_Morrison/LBA_128kmx128kmx128_1km_Morrison.nc")
+                # sam_file = None
+                print("##################################################")
+                print("Plotting case ", case_key)
+                print("##################################################")
+                lba = Case_lba(ncdf_files, sam_file=sam_file)
+                lba.plot(self.output_folder)
+                # cases_plotted[dycoms_rf01.name] = lba
+                # break # TODO TEMP FIX
+
             if "dycoms2_rf01_" in dataset_filenames[0] and "sst" not in dataset_filenames[0] and ".git" not in dataset_filenames:
                 sam_file = self.sam_data_reader.__loadNcFile__("/home/nicolas/sam_benchmark_runs/DYCOMS_RF01_96x96x320.nc")
                 # sam_file = None
+                print("##################################################")
                 print("Plotting case ", case_key)
-                test_case = CaseTest(ncdf_files, sam_file=sam_file)
-                test_case.plot()
-                cases_plotted[test_case.name] = test_case
-                break # TODO TEMP FIX
-
+                print("##################################################")
+                dycoms_rf01 = Case_dycoms2_rf01(ncdf_files, sam_file=sam_file)
+                dycoms_rf01.plot(self.output_folder)
+                # cases_plotted[dycoms_rf01.name] = dycoms_rf01
+                # break # TODO TEMP FIX
+        print("##################################################")
+        print("Generating webpage for viewing plots ")
+        print("##################################################")
+        subprocess.run(['sigal', 'build', '-f', self.output_folder+'/'])  # Use sigal to build html in '_build/'
 
 def process_args():
     '''

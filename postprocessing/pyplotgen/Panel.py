@@ -71,21 +71,13 @@ class Panel:
 
         return start_idx, end_idx
 
-    def plot(self, casename):
+    def plot(self, output_folder, casename):
         '''
-        Saves a single panel/graph to the output directory specified by the pyplotgen launch paramters
+         Saves a single panel/graph to the output directory specified by the pyplotgen launch paramters
 
-        The x_values and y_values lists must be in order, as they are associated by index
-
-        :param x_values: A list containing the x values at which each y value shall be plotted
-        :param y_values: A list containing the y to plotAll at each x value
-        :param title: The title of the panel, e.g. Liquid Water Potential Temperature
-        :param x_title: Label for x-axis, e.g. thlm [K]
-        :param y_title: Label for y-axis, e.g. Height [m]
-        :param line_format: Describes how the line shall appear. See https://matplotlib.org/2.1.2/api/_as_gen/matplotlib.pyplot.plotAll.html
-        :return: n/a
+        :param casename:
+        :return:
         '''
-
         plt.figure()
         plt.subplot(111)
         for var in self.all_plots:
@@ -93,7 +85,7 @@ class Panel:
             y_data = var.y.data
             if x_data.shape[0] != y_data.shape[0]:
                 raise ValueError("X and Y data have different shapes X: "+str(x_data.shape)
-                                 + "  Y:" + str(y_data.shape) + ". Attempted to plotAll " + self.title + " using X: " +
+                                 + "  Y:" + str(y_data.shape) + ". Attempted to plot " + self.title + " using X: " +
                                  self.x_title + "  Y: " + self.y_title)
             plt.plot(x_data, y_data, var.line_format, label=var.label)
         plt.title(self.title)
@@ -105,15 +97,16 @@ class Panel:
         # Because os.mkdir("output") can fail and prevent os.mkdir("output/" + casename) from being called we must
         # use two separate trys
         try:
-            os.mkdir("output")
+            os.mkdir(output_folder)
         except FileExistsError:
             pass # do nothing
         try:
-            os.mkdir("output/" + casename)
+            os.mkdir(output_folder + "/" + casename)
         except FileExistsError:
             pass # do nothing
         filename = self.title
         filename = filename.translate(str.maketrans('', '', string.punctuation))
         filename = filename.replace(' ', '_')
-        rel_filename = "output/" +casename+'/' + filename
+        rel_filename = output_folder + "/" +casename+'/' + filename
         plt.savefig(rel_filename)
+        plt.close()

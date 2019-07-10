@@ -1,4 +1,4 @@
-from pyplotgen.VariableGroupTest import VariableGroupBase
+from pyplotgen.VariableGroupBase import VariableGroupBase
 
 
 class Case:
@@ -23,11 +23,17 @@ class Case:
         for panel in self.panel_groups.panels:
             self.panels.append(panel)
 
-    def plot(self):
+    def plot(self, output_folder):
         '''
         Plot all panels associated with the case
         :param casename: str name of the case
         :return:
         '''
+        # print("\n")
+        num_plots = len(self.panels)
+        curr_panel_num = 0
         for panel in self.panels:
-            panel.plot(self.name)
+            print("\r\tplotting ",  curr_panel_num, " of ", num_plots, " | ", panel.title, end="")
+            panel.plot(output_folder, self.name)
+            curr_panel_num += 1
+            print("\r\tplotted  ", curr_panel_num, " of ", num_plots, " | ", panel.title)
