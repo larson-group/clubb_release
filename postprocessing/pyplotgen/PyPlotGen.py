@@ -11,6 +11,9 @@ import argparse
 import subprocess
 import sys
 
+from pyplotgen.Case_arm_97 import Case_arm_97
+from pyplotgen.Case_astex_a209 import Case_astex_a209
+from pyplotgen.Case_cgils_s12 import Case_cgils_s12
 from pyplotgen.Case_lba import Case_lba
 from pyplotgen.DataReader import DataReader
 from pyplotgen.Case_dycoms2_rf01 import Case_dycoms2_rf01
@@ -72,29 +75,26 @@ class PyPlotGen:
         # cases_plotted = {}
         for case_key in self.nc_datasets.keys():
             ncdf_files = self.nc_datasets[case_key]
-            dataset_filenames = [dataset.filepath() for dataset in self.nc_datasets[case_key].values()]
-
-            if "lba" in dataset_filenames[0] and ".git" not in dataset_filenames:
-                sam_file = self.sam_data_reader.__loadNcFile__("/home/nicolas/sam_benchmark_runs/JULY_2017/LBA_128kmx128kmx128_1km_Morrison/LBA_128kmx128kmx128_1km_Morrison.nc")
-                # sam_file = None
-                print("##################################################")
-                print("Plotting case ", case_key)
-                print("##################################################")
-                lba = Case_lba(ncdf_files, sam_file=sam_file)
+            # dataset_filenames = [dataset.filepath() for dataset in self.nc_datasets[case_key].values()]
+            print("##################################################")
+            print("Plotting case ", case_key)
+            print("##################################################")
+            if case_key == 'astex_a209':
+                astex_a209 = Case_astex_a209(ncdf_files, plot_sam=self.les)
+                astex_a209.plot(self.output_folder)
+            if case_key == 'arm_97':
+                arm_97 = Case_arm_97(ncdf_files, plot_sam=self.les)#, sam_file=sam_file)
+                arm_97.plot(self.output_folder)
+            if case_key == 'cgils_s12':
+                print("\tSkipping case - see issue here: https://github.com/larson-group/sys_admin/issues/542#issuecomment-510426354")
+                # cgils_s12 = Case_cgils_s12(ncdf_files, plot_sam=self.les)#, sam_file=sam_file)
+                # cgils_s12.plot(self.output_folder)
+            if case_key == 'lba':
+                lba = Case_lba(ncdf_files, plot_sam=self.les)#, sam_file=sam_file)
                 lba.plot(self.output_folder)
-                # cases_plotted[dycoms_rf01.name] = lba
-                # break # TODO TEMP FIX
-
-            if "dycoms2_rf01_" in dataset_filenames[0] and "sst" not in dataset_filenames[0] and ".git" not in dataset_filenames:
-                sam_file = self.sam_data_reader.__loadNcFile__("/home/nicolas/sam_benchmark_runs/DYCOMS_RF01_96x96x320.nc")
-                # sam_file = None
-                print("##################################################")
-                print("Plotting case ", case_key)
-                print("##################################################")
-                dycoms_rf01 = Case_dycoms2_rf01(ncdf_files, sam_file=sam_file)
+            if case_key == 'dycoms2_rf01':
+                dycoms_rf01 = Case_dycoms2_rf01(ncdf_files, plot_sam=self.les)#, sam_file=sam_file)
                 dycoms_rf01.plot(self.output_folder)
-                # cases_plotted[dycoms_rf01.name] = dycoms_rf01
-                # break # TODO TEMP FIX
         print("##################################################")
         print("Generating webpage for viewing plots ")
         print("##################################################")
@@ -129,8 +129,6 @@ def process_args():
 
     if args.replace:
         print("Replace flag detected, but that feature is not yet implemented")
-    if args.les:
-        print("LES flag detected, but that feature is not yet implemented")
     if args.plot_golaz_best:
         print("Plot golaz best flag detected, but that feature is not yet implemented")
     if args.plot_hoc_2005:
