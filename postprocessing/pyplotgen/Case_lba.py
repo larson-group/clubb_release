@@ -18,10 +18,8 @@ class Case_lba(Case):
         '''
         self.name = "lba"
         sec_per_min = 60
-        self.averaging_start_time = 300 * sec_per_min
-        self.averaging_end_time = 360 * sec_per_min
-        self.timeseries_start_time = 0 * sec_per_min
-        self.timeseries_end_time = 360 * sec_per_min
+        self.start_time = 300 * sec_per_min
+        self.end_time = 360 * sec_per_min
         self.height_min_value = 0
         self.height_max_value = 12000
         self.enabled = True

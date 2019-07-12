@@ -18,16 +18,15 @@ class Case_astex_a209(Case):
         '''
         self.name = "astex_a209"
         sec_per_min = 60
-        self.averaging_start_time = 2340 * sec_per_min
-        self.averaging_end_time = 2400 * sec_per_min
-        self.timeseries_start_time = 0 * sec_per_min
-        self.timeseries_end_time = self.averaging_end_time * sec_per_min
+        self.start_time = 2340 * sec_per_min
+        self.end_time = 2400 * sec_per_min
         self.height_min_value = 0
         self.height_max_value = 6000
         self.enabled = True
         self.ncdf_files = ncdf_files
         sam_file = None
         # Astex_a209 doesn't plot SAM
+
         # if plot_sam:
         #     datareader = DataReader()
         #     sam_file = datareader.__loadNcFile__(

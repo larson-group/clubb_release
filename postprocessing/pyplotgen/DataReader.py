@@ -16,22 +16,22 @@ class NetCdfVariable:
     Class used for conveniently storing the information about a given netcdf variable
     '''
 
-    def __init__(self, name, ncdf_data, conversion_factor=1, avging_start_time=0, avging_end_time=-1, avg_axis=0,
+    def __init__(self, name, ncdf_data, conversion_factor=1, start_time=0, end_time=-1, avg_axis=0,
                  fill_zeros=False):
         '''
 
         :param name: the name of the variable as defined in the ncdf_data
         :param ncdf_data: Accepts either a Dataset object to pull data from, or a dict of Datasets which will automatically be searched for the variable
         :param conversion_factor: A multiplication factor multiplied to every value in the dataset. Defaults to 1
-        :param avging_start_time: The time value to being the averaging period, e.g. 181 minutes. Defaults to 0.
-        :param avging_end_time: The time value to stop the averaging period, e.g. 240 minutes. Defaults to -1.
+        :param start_time: The time value to being the averaging period, e.g. 181 minutes. Defaults to 0.
+        :param end_time: The time value to stop the averaging period, e.g. 240 minutes. Defaults to -1.
         :param avg_axis: The axis to avg data over. 0 for time-avg, 1 for height avg
         '''
         data_reader = DataReader()
         self.ncdf_data = ncdf_data
         self.name = name
-        self.start_time = avging_start_time
-        self.end_time = avging_end_time
+        self.start_time = start_time
+        self.end_time = end_time
         self.conv_factor = conversion_factor
         self.avg_axis = avg_axis
         if isinstance(ncdf_data, dict):

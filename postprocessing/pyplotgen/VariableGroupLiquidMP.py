@@ -41,11 +41,11 @@ class VariableGroupLiquidMP(VariableGroup):
         :return:
         '''
         sec_per_min = 60
-        sam_start_time = self.averaging_start_time / sec_per_min
-        sam_end_time = self.averaging_end_time / sec_per_min
-        nc_ncdf = NetCdfVariable('NC', self.sam_file, 1, avging_start_time=sam_start_time, avging_end_time=sam_end_time, fill_zeros=True)
+        sam_start_time = self.start_time / sec_per_min
+        sam_end_time = self.end_time / sec_per_min
+        nc_ncdf = NetCdfVariable('NC', self.sam_file, 1, start_time=sam_start_time, end_time=sam_end_time, fill_zeros=True)
         nc = nc_ncdf.data
-        rho_ncdf = NetCdfVariable('RHO', self.sam_file, 1, avging_start_time=sam_start_time, avging_end_time=sam_end_time)
+        rho_ncdf = NetCdfVariable('RHO', self.sam_file, 1, start_time=sam_start_time, end_time=sam_end_time)
         rho = rho_ncdf.data
         nc = nc[self.z_sam_min_idx:self.z_sam_max_idx]
         rho = rho[self.z_sam_min_idx:self.z_sam_max_idx]
@@ -61,11 +61,11 @@ class VariableGroupLiquidMP(VariableGroup):
         :return:
         '''
         sec_per_min = 60
-        sam_start_time = self.averaging_start_time / sec_per_min
-        sam_end_time = self.averaging_end_time / sec_per_min
-        nr_ncdf = NetCdfVariable('NR', self.sam_file, 1, avging_start_time=sam_start_time, avging_end_time=sam_end_time, fill_zeros=True)
+        sam_start_time = self.start_time / sec_per_min
+        sam_end_time = self.end_time / sec_per_min
+        nr_ncdf = NetCdfVariable('NR', self.sam_file, 1, start_time=sam_start_time, end_time=sam_end_time, fill_zeros=True)
         nr = nr_ncdf.data
-        rho_ncdf = NetCdfVariable('RHO', self.sam_file, 1, avging_start_time=sam_start_time, avging_end_time=sam_end_time)
+        rho_ncdf = NetCdfVariable('RHO', self.sam_file, 1, start_time=sam_start_time, end_time=sam_end_time)
         rho = rho_ncdf.data
         nr = nr[self.z_sam_min_idx:self.z_sam_max_idx]
         rho = rho[self.z_sam_min_idx:self.z_sam_max_idx]
