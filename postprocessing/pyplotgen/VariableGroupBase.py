@@ -49,17 +49,17 @@ class VariableGroupBase(VariableGroup):
             {'clubb_name': 'Lscale'},
             {'clubb_name': 'wpthvp', 'sam_name': 'WPTHVP', 'fallback_func': self.getWpthvpFallback},
             {'clubb_name': 'rtpthlp', 'sam_name': 'RTPTHLP', 'fallback_func': self.getRtpthlpFallback},
-            # {'clubb_name': 'rtp3', 'sam_name': 'RTP3'},
+            {'clubb_name': 'rtp3', 'sam_name': 'RTP3', 'fallback_func': self.getRtp3Fallback},
             {'clubb_name': 'radht', 'sam_name': 'RADQR', 'sam_conv_factor': 1/86400},
             {'clubb_name': 'Skw_zt', 'sam_calc': self.getSkwZtSamLine},
-            # {'clubb_name': 'thlp3', 'sam_name': 'THLP3'},
-            # {'clubb_name': 'rtpthvp', 'sam_name': 'RTPTHVP'},
+            {'clubb_name': 'thlp3', 'sam_name': 'THLP3'},
+            {'clubb_name': 'rtpthvp', 'sam_name': 'RTPTHVP'},
             {'clubb_name': 'Skrt_zt', 'sam_calc': self.getSkrtZtSamLine},
             {'clubb_name': 'Skthl_zt', 'sam_calc': self.getSkthlZtSamLine},
             {'clubb_name': 'corr_w_chi_1'},
             {'clubb_name': 'corr_chi_eta_1'},
             {'clubb_name': 'rcp2', 'sam_name': 'QC2', 'sam_conv_factor': 1/10**6},
-            # {'clubb_name': 'thlpthvp', 'sam_name': 'THLPTHVP'},
+            {'clubb_name': 'thlpthvp', 'sam_name': 'THLPTHVP'},
 
         ]
         super().__init__(ncdf_datasets, case, sam_file)
@@ -298,3 +298,22 @@ class VariableGroupBase(VariableGroup):
         rtp2_line = Line(rtp2, self.z_sam.data, line_format="k-", label="LES output")
         return rtp2_line
 
+    def getRtp3Fallback(self):
+        '''
+        Caclulates Rtp3 output
+        rc_coef_zm .* rtprcp
+        :return:
+        '''
+        sec_per_min = 60
+        sam_start_time = self.start_time / sec_per_min
+        sam_end_time = self.end_time / sec_per_min
+
+        rc_coef_zm_ncdf = NetCdfVariable('rc_coef_zm', self.sam_file, 1, start_time=sam_start_time, end_time=sam_end_time)
+        rc_coef_zm = rc_coef_zm_ncdf.data
+        rtprcp_ncdf = NetCdfVariable('rtprcp', self.sam_file, 1, start_time=sam_start_time, end_time=sam_end_time)
+        rtprcp = rtprcp_ncdf.data
+
+        rtp3 = rc_coef_zm * (rtprcp)
+        rtp3 = rtp3[self.z_sam_min_idx:self.z_sam_max_idx]
+        rtp3_line = Line(rtp3, self.z_sam.data, line_format='k-', label='LES output')
+        return rtp3_line
