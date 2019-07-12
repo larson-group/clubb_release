@@ -221,7 +221,7 @@
        ]},
        {'plotTitle' => 'Ice Fraction', 'axisLabel' => 'ice\_supersat\_frac [%]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => 'lba_zt.ctl', 'typFe' => 'auto', 'name' => 'auto', 'expression' => 'ice_supersat_frac * 100', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+          {'filename' => 'lba_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'ice_supersat_frac * 100', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
        {'plotTitle' => 'Rain Water Mixing Ratio, r_r', 'axisLabel' => 'rrm [kg/kg]', 'type' => 'profile', 'lines' =>
        [
