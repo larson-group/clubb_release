@@ -16,7 +16,6 @@ class Case:
         self.end_time = -1
         self.enabled = True
         self.ncdf_datasets = ncdf_datasets
-
         self.panel_groups = []
         self.panels = []
 

@@ -283,16 +283,12 @@ class DataReader():
         :param ncdf_data: Netcdf file object
         :param varname: Variable name string
         :param conversion: Conversion factor
-        :param level_amount: amount of level
-        :param  num_timesteps: amount of timesteps level_amount and num_timesteps are used, if the variable cannot be found
 
         :return: time x height array of the specified variable, scaled by conversion factor
         """
         var_values = None
-        # for ncdf_data in ncdf_data:
         keys = ncdf_data.variables.keys()
         if varname in keys:
-            # logger.debug('%s is in keys', varname)
             var_values = ncdf_data.variables[varname]
             var_values = np.squeeze(var_values)
             var_values = var_values * conversion

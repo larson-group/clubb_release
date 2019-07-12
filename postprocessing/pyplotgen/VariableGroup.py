@@ -2,6 +2,9 @@
 :author: Nicolas Strike
 :date: Mid 2019
 '''
+import sys
+from _warnings import warn
+
 from netCDF4._netCDF4 import Dataset
 
 from pyplotgen.Panel import Panel
@@ -21,18 +24,20 @@ class VariableGroup:
     '''
 
     def __init__(self, ncdf_datasets, case, sam_file=None):
+        print("\tGenerating variable-group data")
         self.variables = []
         self.panels = []
         self.panel_type = Panel.TYPE_PROFILE
         self.sam_file = sam_file
         self.ncdf_files = ncdf_datasets
+        self.casename = case.name
         self.averaging_start_time = case.averaging_start_time
         self.averaging_end_time = case.averaging_end_time
         self.timeseries_start_time = case.timeseries_start_time
         self.timeseries_end_time = case.timeseries_end_time
         self.height_min_value = case.height_min_value
         self.height_max_value = case.height_max_value
-
+        self.default_line_format = 'b-'
 
         ### Initialize Height ###
         self.z = NetCdfVariable('altitude', ncdf_datasets['zm'], avging_start_time=self.averaging_start_time,
@@ -53,9 +58,8 @@ class VariableGroup:
                                                                                self.height_max_value)
             self.z_sam.data = self.z_sam.data[self.z_sam_min_idx:self.z_sam_max_idx]
 
-
-
         for variable in self.variable_definitions:
+            print("\tProcessing ", variable['clubb_name'])
             self.addClubbVariable(variable)
         self.generatePanels()
 
@@ -81,20 +85,24 @@ class VariableGroup:
         sam_file = self.sam_file
         sam_conv_factor = 1
         if 'sam_calc' in variable.keys():
-            sam_file = None # don't try to autoplot sam if sam is a calculated value
+            sam_file = None  # don't try to autoplot sam if sam is a calculated value
         if 'sam_name' in variable.keys():
             sam_name = variable['sam_name']
-            sam_file = self.sam_file # redefine sam_file incase sam_calc wiped it
+            sam_file = self.sam_file  # redefine sam_file incase sam_calc wiped it
         if 'sam_conv_factor' in variable.keys():
             sam_conv_factor = variable['sam_conv_factor']
 
         panel_type = self.panel_type
+        fallback = None
+        if 'fallback_func' in variable.keys():
+            fallback = variable['fallback_func']
         if 'type' in variable.keys():
             panel_type = variable['type']
         plots = self.getVarLines(clubb_name, self.ncdf_files, averaging_start_time=self.averaging_start_time,
-                                 averaging_end_time=self.averaging_end_time, sam_name= sam_name, sam_file=sam_file,
-                                 sam_conv_factor=sam_conv_factor, label="current clubb", line_format='r--',
-                                 override_panel_type=panel_type)
+                                 averaging_end_time=self.averaging_end_time, sam_name=sam_name, sam_file=sam_file,
+                                 sam_conv_factor=sam_conv_factor, label="current clubb",
+                                 line_format=self.default_line_format,
+                                 override_panel_type=panel_type, fallback_func=fallback)
         variable['plots'] = plots
         if 'title' not in variable.keys():
             imported_title = data_reader.getLongName(self.ncdf_files, clubb_name)
@@ -102,7 +110,7 @@ class VariableGroup:
         if 'axis_title' not in variable.keys():
             imported_axis_title = data_reader.getAxisTitle(self.ncdf_files, clubb_name)
             variable['axis_title'] = imported_axis_title
-        if 'sam_calc' in variable.keys():
+        if 'sam_calc' in variable.keys() and sam_file is not None:
             samplot = variable['sam_calc']()
             plots.append(samplot)
         self.variables.append(variable)
@@ -126,7 +134,7 @@ class VariableGroup:
 
     def getVarLines(self, varname, ncdf_datasets, label="", line_format="", avg_axis=0, override_panel_type=None,
                     averaging_start_time=0, averaging_end_time=-1, sam_name=None, sam_file=None, conversion_factor=1,
-                    sam_conv_factor=1):
+                    sam_conv_factor=1, fallback_func=None):
         '''
         Get a list of Line objects for a specific clubb variable. If sam_file is specified it will also
         attempt to generate Lines for the SAM equivalent variables, using the name conversions found in
@@ -155,50 +163,87 @@ class VariableGroup:
         all_plots = []
 
         if sam_file is not None and sam_name is not None:
-            clubb_sec_to_sam_min = 1/60
+            clubb_sec_to_sam_min = 1 / 60
             sam_plot = self.getVarLines(sam_name, {'sam': sam_file}, label="LES output",
                                         line_format="k-", avg_axis=avg_axis, conversion_factor=sam_conv_factor,
-                                        averaging_start_time=averaging_start_time*clubb_sec_to_sam_min,
-                                        averaging_end_time=averaging_end_time*clubb_sec_to_sam_min,
-                                        override_panel_type=panel_type)
+                                        averaging_start_time=averaging_start_time * clubb_sec_to_sam_min,
+                                        averaging_end_time=averaging_end_time * clubb_sec_to_sam_min,
+                                        override_panel_type=panel_type, fallback_func=fallback_func)
             all_plots.extend(sam_plot)
 
         if isinstance(ncdf_datasets, Dataset):
             ncdf_datasets = {'auto': ncdf_datasets}
 
         line = None
-        if panel_type is Panel.TYPE_PROFILE:
+        for file in ncdf_datasets.values():
+            if varname not in file.variables.keys():
+                continue  # Skip loop if varname isn't in the file
 
-            for file in ncdf_datasets.values():
-                if varname in file.variables.keys() or len(ncdf_datasets.values()) == 1:
-                    variable = NetCdfVariable(varname, file, avging_start_time=averaging_start_time,
-                                              avging_end_time=averaging_end_time, avg_axis=avg_axis,
-                                              conversion_factor=conversion_factor)
-                    independent_var_data = self.z
-                    model_src_reader = DataReader()
-                    model_src = model_src_reader.getNcdfSourceModel(file)
-                    if model_src == "sam":
-                        independent_var_data = self.z_sam
-                    min_idx, max_idx = self.__getStartEndIndex__(independent_var_data.data, self.height_min_value,
-                                                                 self.height_max_value)
-                    variable.data = variable.data[min_idx:max_idx + 1]
-                    line = Line(variable, independent_var_data, label=label, line_format=line_format)
-                    break
-
-        elif panel_type is Panel.TYPE_BUDGET:
-            pass
-        elif panel_type is Panel.TYPE_TIMESERIES:
             variable = NetCdfVariable(varname, ncdf_datasets, avging_start_time=averaging_start_time,
-                                      avging_end_time=averaging_end_time, avg_axis=1,
+                                      avging_end_time=averaging_end_time, avg_axis=avg_axis,
                                       conversion_factor=conversion_factor)
-            variable.data = variable.data[self.timeseries_start_time:self.timeseries_end_time]
-            line = Line(self.time, variable, label=label, line_format=line_format)
-        else:
-            raise ValueError('Invalid panel type ' + panel_type + '. Valid options are profile, budget, timeseries')
-        if line == None:
-            raise ValueError('Failed to find variable ' + varname + " in " + str(file))
+
+            if panel_type is Panel.TYPE_PROFILE:
+                line = self.__get_profile_line__(variable, file, label)
+                break
+            elif panel_type is Panel.TYPE_BUDGET:
+                pass
+            elif panel_type is Panel.TYPE_TIMESERIES:
+                # TODO redeclaring variable is a temp fix until timeseries is auto-discovered
+                variable = NetCdfVariable(varname, ncdf_datasets, avging_start_time=averaging_start_time,
+                                          avging_end_time=averaging_end_time, avg_axis=1,
+                                          conversion_factor=conversion_factor)
+                variable.data = variable.data[self.timeseries_start_time:self.timeseries_end_time]
+                line = Line(self.time, variable, label=label, line_format=line_format)
+            else:
+                raise ValueError('Invalid panel type ' + panel_type + '. Valid options are profile, budget, timeseries')
+        if line is None:
+            warn("\tFailed to find variable " + varname + " in case " + self.casename +
+                 ". Attempting to use fallback function.")
+            line = self.__getVarFromFallback__(fallback_func, varname)
         all_plots.append(line)
         return all_plots
+
+    def __get_profile_line__(self, variable, file, label):
+        '''
+        Assumes variable can be plotted as a profile and returns a Line object
+        representing the given variable for a profile plot. 
+        
+        :param variable: 
+        :return: Line object representing the given variable for a profile plot
+        '''
+        # variable = NetCdfVariable(varname, file, avging_start_time=start_time,
+        #                           avging_end_time=end_time, avg_axis=0,
+        #                           conversion_factor=conv_factor)
+        independent_var_data = self.z
+        model_src_reader = DataReader()
+        model_src = model_src_reader.getNcdfSourceModel(file)
+        if model_src == "sam":
+            independent_var_data = self.z_sam
+        min_idx, max_idx = self.__getStartEndIndex__(independent_var_data.data, self.height_min_value,
+                                                     self.height_max_value)
+        variable.data = variable.data[min_idx:max_idx + 1]
+        line = Line(variable, independent_var_data, label=label, line_format=self.default_line_format)
+        return line
+
+    def __getVarFromFallback__(self, fallback, varname):
+        '''
+        Some older model output doesn't contain all variables, e.g cgils_s12 doesn't contain WPTHLP.
+        This method attempts to use a function under the name 'fallback_func' to generate the requested
+        data similarly to how 'sam_calc' calculates sam output into a clubb format. If successful,
+        returns varline data, otherwise raises error
+        :return: None
+        '''
+        if fallback is None:
+            raise TypeError("Failed to find variable " + varname + " in clubb output for case " +
+                            self.casename + " and there is no fallback function specified. If this is expected "
+                                            "(e.g. this model doesn't output the " + varname +
+                            " variable) then please add a fallback function to the variable's definition. "
+                            "If it is not expected, please  make sure the correct .nc files are being loaded.")
+        varline = fallback()
+        print("\tFallback for ", varname, " successful")
+        return varline
+
 
     def __getStartEndIndex__(self, data, start_value, end_value):
         '''
