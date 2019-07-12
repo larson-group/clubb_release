@@ -18,10 +18,8 @@ class Case_cgils_s12(Case):
         '''
         self.name = "cgils_s12"
         sec_per_min = 60
-        self.averaging_start_time = 12960 * sec_per_min
-        self.averaging_end_time = 14400 * sec_per_min
-        self.timeseries_start_time = 0 * sec_per_min
-        self.timeseries_end_time = self.averaging_end_time * sec_per_min
+        self.start_time = 12960 * sec_per_min
+        self.end_time = 14400 * sec_per_min
         self.height_min_value = 0
         self.height_max_value = 5950
         self.enabled = True

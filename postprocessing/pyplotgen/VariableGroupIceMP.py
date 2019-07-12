@@ -42,11 +42,11 @@ class VariableGroupIceMP(VariableGroup):
         :return:
         '''
         sec_per_min = 60
-        sam_start_time = self.averaging_start_time / sec_per_min
-        sam_end_time = self.averaging_end_time / sec_per_min
-        ni_ncdf = NetCdfVariable('NI', self.sam_file, 1, avging_start_time=sam_start_time, avging_end_time=sam_end_time)
+        sam_start_time = self.start_time / sec_per_min
+        sam_end_time = self.end_time / sec_per_min
+        ni_ncdf = NetCdfVariable('NI', self.sam_file, 1, start_time=sam_start_time, end_time=sam_end_time)
         ni = ni_ncdf.data
-        rho_ncdf = NetCdfVariable('RHO', self.sam_file, 1, avging_start_time=sam_start_time, avging_end_time=sam_end_time)
+        rho_ncdf = NetCdfVariable('RHO', self.sam_file, 1, start_time=sam_start_time, end_time=sam_end_time)
         rho = rho_ncdf.data
         nim = (ni * (10 ** 6) / rho)
         nim = nim[self.z_sam_min_idx:self.z_sam_max_idx]
@@ -60,11 +60,11 @@ class VariableGroupIceMP(VariableGroup):
         :return:
         '''
         sec_per_min = 60
-        sam_start_time = self.averaging_start_time / sec_per_min
-        sam_end_time = self.averaging_end_time / sec_per_min
-        ns_ncdf = NetCdfVariable('NS', self.sam_file, 1, avging_start_time=sam_start_time, avging_end_time=sam_end_time)
+        sam_start_time = self.start_time / sec_per_min
+        sam_end_time = self.end_time / sec_per_min
+        ns_ncdf = NetCdfVariable('NS', self.sam_file, 1, start_time=sam_start_time, end_time=sam_end_time)
         ns = ns_ncdf.data
-        rho_ncdf = NetCdfVariable('RHO', self.sam_file, 1, avging_start_time=sam_start_time, avging_end_time=sam_end_time)
+        rho_ncdf = NetCdfVariable('RHO', self.sam_file, 1, start_time=sam_start_time, end_time=sam_end_time)
         rho = rho_ncdf.data
         nsm = (ns * (10 ** 6) / rho)
         nsm = nsm[self.z_sam_min_idx:self.z_sam_max_idx]

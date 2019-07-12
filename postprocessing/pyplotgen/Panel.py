@@ -87,7 +87,11 @@ class Panel:
                 raise ValueError("X and Y data have different shapes X: "+str(x_data.shape)
                                  + "  Y:" + str(y_data.shape) + ". Attempted to plot " + self.title + " using X: " +
                                  self.x_title + "  Y: " + self.y_title)
-            plt.plot(x_data, y_data, var.line_format, label=var.label)
+            if var.line_format == 'k-':
+                linewidth = 4
+            else:
+                linewidth = 2
+            plt.plot(x_data, y_data, var.line_format, label=var.label, linewidth=linewidth)
         plt.title(self.title)
         plt.ylabel(self.y_title)
         plt.xlabel(self.x_title)

@@ -72,22 +72,22 @@ class VariableGroupBase(VariableGroup):
         :return: requested variable data in the form of a list. Returned data is already cropped to the appropriate min,max indices
         '''
         sec_per_min = 60
-        sam_start_time = self.averaging_start_time / sec_per_min
-        sam_end_time = self.averaging_end_time / sec_per_min
+        sam_start_time = self.start_time / sec_per_min
+        sam_end_time = self.end_time / sec_per_min
 
-        thetal_ncdf = NetCdfVariable('THETAL', self.sam_file, 1, avging_start_time=sam_start_time,
-                                     avging_end_time=sam_end_time)
+        thetal_ncdf = NetCdfVariable('THETAL', self.sam_file, 1, start_time=sam_start_time,
+                                     end_time=sam_end_time)
         thetal = thetal_ncdf.data
 
-        theta_ncdf = NetCdfVariable('THETA', self.sam_file, 1, avging_start_time=sam_start_time,
-                                    avging_end_time=sam_end_time)
+        theta_ncdf = NetCdfVariable('THETA', self.sam_file, 1, start_time=sam_start_time,
+                                    end_time=sam_end_time)
         theta = theta_ncdf.data
 
-        tabs_ncdf = NetCdfVariable('TABS', self.sam_file, 1, avging_start_time=sam_start_time,
-                                   avging_end_time=sam_end_time)
+        tabs_ncdf = NetCdfVariable('TABS', self.sam_file, 1, start_time=sam_start_time,
+                                   end_time=sam_end_time)
         tabs = tabs_ncdf.data
 
-        qi_ncdf = NetCdfVariable('QI', self.sam_file, 1, avging_start_time=sam_start_time, avging_end_time=sam_end_time, fill_zeros=True)
+        qi_ncdf = NetCdfVariable('QI', self.sam_file, 1, start_time=sam_start_time, end_time=sam_end_time, fill_zeros=True)
         qi = qi_ncdf.data
 
         thlm = thetal + (2500.4 * (theta / tabs) * (qi / 1000))
@@ -103,13 +103,13 @@ class VariableGroupBase(VariableGroup):
         (QT-QI) ./ 1000
         :return: requested variable data in the form of a list. Returned data is already cropped to the appropriate min,max indices
         '''
-        sam_start_time = self.averaging_start_time / 60
-        sam_end_time = self.averaging_end_time / 60
+        sam_start_time = self.start_time / 60
+        sam_end_time = self.end_time / 60
 
-        qt_ncdf = NetCdfVariable('QT', self.sam_file, 1, avging_start_time=sam_start_time, avging_end_time=sam_end_time)
+        qt_ncdf = NetCdfVariable('QT', self.sam_file, 1, start_time=sam_start_time, end_time=sam_end_time)
         qt = qt_ncdf.data
 
-        qi_ncdf = NetCdfVariable('QI', self.sam_file, 1, avging_start_time=sam_start_time, avging_end_time=sam_end_time, fill_zeros=True)
+        qi_ncdf = NetCdfVariable('QI', self.sam_file, 1, start_time=sam_start_time, end_time=sam_end_time, fill_zeros=True)
         qi = qi_ncdf.data
 
         rtm = (qt - qi) / 1000
@@ -126,13 +126,13 @@ class VariableGroupBase(VariableGroup):
         WP3 ./ (WP2 + 1.6e-3).^1.5
         :return: requested variable data in the form of a list. Returned data is already cropped to the appropriate min,max indices
         '''
-        sam_start_time = self.averaging_start_time / 60
-        sam_end_time = self.averaging_end_time / 60
+        sam_start_time = self.start_time / 60
+        sam_end_time = self.end_time / 60
 
-        wp3_ncdf = NetCdfVariable('WP3', self.sam_file, 1, avging_start_time=sam_start_time, avging_end_time=sam_end_time)
+        wp3_ncdf = NetCdfVariable('WP3', self.sam_file, 1, start_time=sam_start_time, end_time=sam_end_time)
         wp3 = wp3_ncdf.data
 
-        wp2_ncdf = NetCdfVariable('WP2', self.sam_file, 1, avging_start_time=sam_start_time, avging_end_time=sam_end_time)
+        wp2_ncdf = NetCdfVariable('WP2', self.sam_file, 1, start_time=sam_start_time, end_time=sam_end_time)
         wp2 = wp2_ncdf.data
 
         skw_zt = wp3 / (wp2 + 1.6e-3 ) ** 1.5
@@ -148,13 +148,13 @@ class VariableGroupBase(VariableGroup):
          # RTP3 ./ (RTP2 + 4e-16).^1.5  
          :return: requested variable data in the form of a list. Returned data is already cropped to the appropriate min,max indices
         '''
-        sam_start_time = self.averaging_start_time / 60
-        sam_end_time = self.averaging_end_time / 60
+        sam_start_time = self.start_time / 60
+        sam_end_time = self.end_time / 60
 
-        rtp3_ncdf = NetCdfVariable('RTP3', self.sam_file, 1, avging_start_time=sam_start_time, avging_end_time=sam_end_time)
+        rtp3_ncdf = NetCdfVariable('RTP3', self.sam_file, 1, start_time=sam_start_time, end_time=sam_end_time)
         rtp3 = rtp3_ncdf.data
 
-        rtp2_ncdf = NetCdfVariable('RTP2', self.sam_file, 1, avging_start_time=sam_start_time, avging_end_time=sam_end_time)
+        rtp2_ncdf = NetCdfVariable('RTP2', self.sam_file, 1, start_time=sam_start_time, end_time=sam_end_time)
         rtp2 = rtp2_ncdf.data
 
         skrtp_zt = rtp3 / (rtp2 + 4e-16) ** 1.5
@@ -170,13 +170,13 @@ class VariableGroupBase(VariableGroup):
         THLP3 ./ (THLP2 + 4e-4).^1.5
          :return: requested variable data in the form of a list. Returned data is already cropped to the appropriate min,max indices
         '''
-        sam_start_time = self.averaging_start_time / 60
-        sam_end_time = self.averaging_end_time / 60
+        sam_start_time = self.start_time / 60
+        sam_end_time = self.end_time / 60
 
-        thlp3_ncdf = NetCdfVariable('THLP3', self.sam_file, 1, avging_start_time=sam_start_time, avging_end_time=sam_end_time)
+        thlp3_ncdf = NetCdfVariable('THLP3', self.sam_file, 1, start_time=sam_start_time, end_time=sam_end_time)
         thlp3 = thlp3_ncdf.data
 
-        thlp2_ncdf = NetCdfVariable('THLP2', self.sam_file, 1, avging_start_time=sam_start_time, avging_end_time=sam_end_time)
+        thlp2_ncdf = NetCdfVariable('THLP2', self.sam_file, 1, start_time=sam_start_time, end_time=sam_end_time)
         thlp2 = thlp2_ncdf.data
 
         skthl_zt = thlp3 / (thlp2 + 4e-16) ** 1.5
@@ -191,13 +191,13 @@ class VariableGroupBase(VariableGroup):
         WPTHLP = (TLFLUX) ./ (RHO * 1004)
         :return:
         '''
-        sam_start_time = self.averaging_start_time / 60
-        sam_end_time = self.averaging_end_time / 60
+        sam_start_time = self.start_time / 60
+        sam_end_time = self.end_time / 60
 
-        tlflux_ncdf = NetCdfVariable('TLFLUX', self.sam_file, 1, avging_start_time=sam_start_time, avging_end_time=sam_end_time)
+        tlflux_ncdf = NetCdfVariable('TLFLUX', self.sam_file, 1, start_time=sam_start_time, end_time=sam_end_time)
         tlflux = tlflux_ncdf.data
 
-        rho_ncdf = NetCdfVariable('RHO', self.sam_file, 1, avging_start_time=sam_start_time, avging_end_time=sam_end_time)
+        rho_ncdf = NetCdfVariable('RHO', self.sam_file, 1, start_time=sam_start_time, end_time=sam_end_time)
         rho = rho_ncdf.data
 
         wpthlp = tlflux / (rho * 1004)
@@ -212,13 +212,13 @@ class VariableGroupBase(VariableGroup):
         WPRTP = (QTFLUX) ./ (RHO * 2.5104e+6)
         :return:
         '''
-        sam_start_time = self.averaging_start_time / 60
-        sam_end_time = self.averaging_end_time / 60
+        sam_start_time = self.start_time / 60
+        sam_end_time = self.end_time / 60
 
-        qtflux_ncdf = NetCdfVariable('QTFLUX', self.sam_file, 1, avging_start_time=sam_start_time, avging_end_time=sam_end_time)
+        qtflux_ncdf = NetCdfVariable('QTFLUX', self.sam_file, 1, start_time=sam_start_time, end_time=sam_end_time)
         qtflux = qtflux_ncdf.data
 
-        rho_ncdf = NetCdfVariable('RHO', self.sam_file, 1, avging_start_time=sam_start_time, avging_end_time=sam_end_time)
+        rho_ncdf = NetCdfVariable('RHO', self.sam_file, 1, start_time=sam_start_time, end_time=sam_end_time)
         rho = rho_ncdf.data
 
         wprtp = qtflux / (rho * 2.5104e+6)
@@ -233,13 +233,13 @@ class VariableGroupBase(VariableGroup):
         WPTHVP =  (TVFLUX) ./ ( RHO * 1004)
         :return:
         '''
-        sam_start_time = self.averaging_start_time / 60
-        sam_end_time = self.averaging_end_time / 60
+        sam_start_time = self.start_time / 60
+        sam_end_time = self.end_time / 60
 
-        tvflux_ncdf = NetCdfVariable('TVFLUX', self.sam_file, 1, avging_start_time=sam_start_time, avging_end_time=sam_end_time)
+        tvflux_ncdf = NetCdfVariable('TVFLUX', self.sam_file, 1, start_time=sam_start_time, end_time=sam_end_time)
         tvflux = tvflux_ncdf.data
 
-        rho_ncdf = NetCdfVariable('RHO', self.sam_file, 1, avging_start_time=sam_start_time, avging_end_time=sam_end_time)
+        rho_ncdf = NetCdfVariable('RHO', self.sam_file, 1, start_time=sam_start_time, end_time=sam_end_time)
         rho = rho_ncdf.data
 
         wpthvp = tvflux / (rho * 1004)
@@ -254,10 +254,10 @@ class VariableGroupBase(VariableGroup):
         THLP2 = TL2
         :return:
         '''
-        sam_start_time = self.averaging_start_time / 60
-        sam_end_time = self.averaging_end_time / 60
+        sam_start_time = self.start_time / 60
+        sam_end_time = self.end_time / 60
 
-        tl2_ncdf = NetCdfVariable('TL2', self.sam_file, 1, avging_start_time=sam_start_time, avging_end_time=sam_end_time)
+        tl2_ncdf = NetCdfVariable('TL2', self.sam_file, 1, start_time=sam_start_time, end_time=sam_end_time)
         tl2 = tl2_ncdf.data
         tl2 = tl2[self.z_sam_min_idx:self.z_sam_max_idx]
 
@@ -270,10 +270,10 @@ class VariableGroupBase(VariableGroup):
         Rtpthlp = TQ
         :return:
         '''
-        sam_start_time = self.averaging_start_time / 60
-        sam_end_time = self.averaging_end_time / 60
+        sam_start_time = self.start_time / 60
+        sam_end_time = self.end_time / 60
 
-        tq_ncdf = NetCdfVariable('TQ', self.sam_file, 1, avging_start_time=sam_start_time, avging_end_time=sam_end_time)
+        tq_ncdf = NetCdfVariable('TQ', self.sam_file, 1, start_time=sam_start_time, end_time=sam_end_time)
         tq2 = tq_ncdf.data
         tq2 = tq2[self.z_sam_min_idx:self.z_sam_max_idx]
 
@@ -286,10 +286,10 @@ class VariableGroupBase(VariableGroup):
         THLP2 = QT2 / 1e+6
         :return:
         '''
-        sam_start_time = self.averaging_start_time / 60
-        sam_end_time = self.averaging_end_time / 60
+        sam_start_time = self.start_time / 60
+        sam_end_time = self.end_time / 60
 
-        qt2_ncdf = NetCdfVariable('QT2', self.sam_file, 1, avging_start_time=sam_start_time, avging_end_time=sam_end_time)
+        qt2_ncdf = NetCdfVariable('QT2', self.sam_file, 1, start_time=sam_start_time, end_time=sam_end_time)
         qt2 = qt2_ncdf.data
 
         rtp2 = qt2 / 1e6

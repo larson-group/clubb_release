@@ -18,10 +18,8 @@ class Case_arm_97(Case):
         '''
         self.name = "arm_97"
         sec_per_min = 60
-        self.averaging_start_time = 4321 * sec_per_min
-        self.averaging_end_time = 5580 * sec_per_min
-        self.timeseries_start_time = 0 * sec_per_min
-        self.timeseries_end_time = self.averaging_end_time * sec_per_min
+        self.start_time = 4321 * sec_per_min
+        self.end_time = 5580 * sec_per_min
         self.height_min_value = 0
         self.height_max_value = 18000
         self.enabled = True
@@ -33,12 +31,12 @@ class Case_arm_97(Case):
                 "/home/nicolas/sam_benchmark_runs/ARM97_r1315_128x128x128_1km_Morrison/ARM9707.nc")
         base_variables = VariableGroupBase(self.ncdf_files, self, sam_file=sam_file)
         # w_variables = VariableGroupWs(self.ncdf_files, self, sam_file=sam_file)
-        ice_variables = VariableGroupIceMP(self.ncdf_files, self, sam_file=sam_file)
-        liquid_variables = VariableGroupLiquidMP(self.ncdf_files, self, sam_file=sam_file)
+        # ice_variables = VariableGroupIceMP(self.ncdf_files, self, sam_file=sam_file)
+        # liquid_variables = VariableGroupLiquidMP(self.ncdf_files, self, sam_file=sam_file)
         # corr_variables = VariableGroupCorrelations(self.ncdf_files, self, sam_file=sam_file)
         # kk_variables = VariableGroupKKMP(self.ncdf_files, self, sam_file=sam_file)
 
-        self.panel_groups = [base_variables, ice_variables, liquid_variables]
+        self.panel_groups = [base_variables]#, ice_variables, liquid_variables]
         self.panels = []
 
         for panelgroup in self.panel_groups:

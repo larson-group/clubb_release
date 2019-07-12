@@ -80,9 +80,11 @@ class PyPlotGen:
             print("Plotting case ", case_key)
             print("##################################################")
             if case_key == 'astex_a209':
+                # print("\tSkipping case")
                 astex_a209 = Case_astex_a209(ncdf_files, plot_sam=self.les)
                 astex_a209.plot(self.output_folder)
             if case_key == 'arm_97':
+                # print("\tSkipping case")
                 arm_97 = Case_arm_97(ncdf_files, plot_sam=self.les)#, sam_file=sam_file)
                 arm_97.plot(self.output_folder)
             if case_key == 'cgils_s12':
@@ -90,9 +92,11 @@ class PyPlotGen:
                 # cgils_s12 = Case_cgils_s12(ncdf_files, plot_sam=self.les)#, sam_file=sam_file)
                 # cgils_s12.plot(self.output_folder)
             if case_key == 'lba':
+                # print("\tSkipping case")
                 lba = Case_lba(ncdf_files, plot_sam=self.les)#, sam_file=sam_file)
                 lba.plot(self.output_folder)
             if case_key == 'dycoms2_rf01':
+                # print("\tSkipping case")
                 dycoms_rf01 = Case_dycoms2_rf01(ncdf_files, plot_sam=self.les)#, sam_file=sam_file)
                 dycoms_rf01.plot(self.output_folder)
         print("##################################################")

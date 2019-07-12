@@ -31,19 +31,17 @@ class VariableGroup:
         self.sam_file = sam_file
         self.ncdf_files = ncdf_datasets
         self.casename = case.name
-        self.averaging_start_time = case.averaging_start_time
-        self.averaging_end_time = case.averaging_end_time
-        self.timeseries_start_time = case.timeseries_start_time
-        self.timeseries_end_time = case.timeseries_end_time
+        self.start_time = case.start_time
+        self.end_time = case.end_time
+        # self.timeseries_start_time = 0
+        # self.end_time = case.timeseries_end_time
         self.height_min_value = case.height_min_value
         self.height_max_value = case.height_max_value
         self.default_line_format = 'b-'
 
         ### Initialize Height ###
-        self.z = NetCdfVariable('altitude', ncdf_datasets['zm'], avging_start_time=self.averaging_start_time,
-                                avging_end_time=self.averaging_end_time)
-        self.z_min_idx, self.z_max_idx = self.__getStartEndIndex__(self.z.data, self.height_min_value,
-                                                                   self.height_max_value)
+        self.z = NetCdfVariable('altitude', ncdf_datasets['zm'], start_time=self.start_time, end_time=self.end_time)
+        self.z_min_idx, self.z_max_idx = self.__getStartEndIndex__(self.z.data, self.height_min_value, self.height_max_value)
         self.z.data = self.z.data[self.z_min_idx:self.z_max_idx]
 
         ### Initialize Time ###
@@ -52,10 +50,8 @@ class VariableGroup:
 
         ### Initialize Sam Height ###
         if sam_file != None:
-            self.z_sam = NetCdfVariable('z', sam_file, avging_start_time=self.averaging_start_time,
-                                        avging_end_time=self.averaging_end_time)
-            self.z_sam_min_idx, self.z_sam_max_idx = self.__getStartEndIndex__(self.z_sam.data, self.height_min_value,
-                                                                               self.height_max_value)
+            self.z_sam = NetCdfVariable('z', sam_file, start_time=self.start_time, end_time=self.end_time)
+            self.z_sam_min_idx, self.z_sam_max_idx = self.__getStartEndIndex__(self.z_sam.data, self.height_min_value, self.height_max_value)
             self.z_sam.data = self.z_sam.data[self.z_sam_min_idx:self.z_sam_max_idx]
 
         for variable in self.variable_definitions:
@@ -98,8 +94,8 @@ class VariableGroup:
             fallback = variable['fallback_func']
         if 'type' in variable.keys():
             panel_type = variable['type']
-        plots = self.getVarLines(clubb_name, self.ncdf_files, averaging_start_time=self.averaging_start_time,
-                                 averaging_end_time=self.averaging_end_time, sam_name=sam_name, sam_file=sam_file,
+        plots = self.getVarLines(clubb_name, self.ncdf_files, start_time=self.start_time,
+                                 end_time=self.end_time, sam_name=sam_name, sam_file=sam_file,
                                  sam_conv_factor=sam_conv_factor, label="current clubb",
                                  line_format=self.default_line_format,
                                  override_panel_type=panel_type, fallback_func=fallback)
@@ -133,7 +129,7 @@ class VariableGroup:
             self.panels.append(panel)
 
     def getVarLines(self, varname, ncdf_datasets, label="", line_format="", avg_axis=0, override_panel_type=None,
-                    averaging_start_time=0, averaging_end_time=-1, sam_name=None, sam_file=None, conversion_factor=1,
+                    start_time=0, end_time=-1, sam_name=None, sam_file=None, conversion_factor=1,
                     sam_conv_factor=1, fallback_func=None):
         '''
         Get a list of Line objects for a specific clubb variable. If sam_file is specified it will also
@@ -147,8 +143,8 @@ class VariableGroup:
         :param line_format: Line formatting string used by matplotlib's PyPlot
         :param avg_axis: Axis over which to average values. 0 - time average, 1 - height average
         :param override_panel_type: Override the VariableGroup's default panel type
-        :param averaging_start_time: Beginning period of the averaging interval. Give a time VALUE, e.g. 240
-        :param averaging_end_time: Ending period of the averaging interval. Give a time VALUE, e.g. 120
+        :param start_time: Beginning period of the averaging interval. Give a time VALUE, e.g. 240
+        :param end_time: Ending period of the averaging interval. Give a time VALUE, e.g. 120
         :param sam_file: Dataset object containing SAM plotAll data
         :param conversion_factor: A multiplying factor used to scale clubb output. Defaults to 1.
         :param sam_conv_factor: A multiplying factor used to scale sam output. Defaults to 1.
@@ -166,34 +162,34 @@ class VariableGroup:
             clubb_sec_to_sam_min = 1 / 60
             sam_plot = self.getVarLines(sam_name, {'sam': sam_file}, label="LES output",
                                         line_format="k-", avg_axis=avg_axis, conversion_factor=sam_conv_factor,
-                                        averaging_start_time=averaging_start_time * clubb_sec_to_sam_min,
-                                        averaging_end_time=averaging_end_time * clubb_sec_to_sam_min,
+                                        start_time=start_time * clubb_sec_to_sam_min,
+                                        end_time=end_time * clubb_sec_to_sam_min,
                                         override_panel_type=panel_type, fallback_func=fallback_func)
             all_plots.extend(sam_plot)
 
         if isinstance(ncdf_datasets, Dataset):
-            ncdf_datasets = {'auto': ncdf_datasets}
+            ncdf_datasets = {'converted_to_dict': ncdf_datasets}
 
         line = None
         for file in ncdf_datasets.values():
             if varname not in file.variables.keys():
                 continue  # Skip loop if varname isn't in the file
 
-            variable = NetCdfVariable(varname, ncdf_datasets, avging_start_time=averaging_start_time,
-                                      avging_end_time=averaging_end_time, avg_axis=avg_axis,
+            variable = NetCdfVariable(varname, ncdf_datasets, start_time=start_time,
+                                      end_time=end_time, avg_axis=avg_axis,
                                       conversion_factor=conversion_factor)
 
             if panel_type is Panel.TYPE_PROFILE:
-                line = self.__get_profile_line__(variable, file, label)
+                line = self.__get_profile_line__(variable, file, label, line_format)
                 break
             elif panel_type is Panel.TYPE_BUDGET:
                 pass
             elif panel_type is Panel.TYPE_TIMESERIES:
                 # TODO redeclaring variable is a temp fix until timeseries is auto-discovered
-                variable = NetCdfVariable(varname, ncdf_datasets, avging_start_time=averaging_start_time,
-                                          avging_end_time=averaging_end_time, avg_axis=1,
+                variable = NetCdfVariable(varname, ncdf_datasets, start_time=start_time,
+                                          end_time=end_time, avg_axis=1,
                                           conversion_factor=conversion_factor)
-                variable.data = variable.data[self.timeseries_start_time:self.timeseries_end_time]
+                variable.data = variable.data[0:int(variable.end_time)]
                 line = Line(self.time, variable, label=label, line_format=line_format)
             else:
                 raise ValueError('Invalid panel type ' + panel_type + '. Valid options are profile, budget, timeseries')
@@ -204,7 +200,7 @@ class VariableGroup:
         all_plots.append(line)
         return all_plots
 
-    def __get_profile_line__(self, variable, file, label):
+    def __get_profile_line__(self, variable, file, label, line_format):
         '''
         Assumes variable can be plotted as a profile and returns a Line object
         representing the given variable for a profile plot. 
@@ -223,7 +219,7 @@ class VariableGroup:
         min_idx, max_idx = self.__getStartEndIndex__(independent_var_data.data, self.height_min_value,
                                                      self.height_max_value)
         variable.data = variable.data[min_idx:max_idx + 1]
-        line = Line(variable, independent_var_data, label=label, line_format=self.default_line_format)
+        line = Line(variable, independent_var_data, label=label, line_format=line_format)
         return line
 
     def __getVarFromFallback__(self, fallback, varname):
