@@ -20,6 +20,7 @@ class Case_dycoms2_rf01(Case):
         self.height_max_value = 1200
         self.enabled = True
         self.ncdf_files = ncdf_files
+        self.blacklisted_variables = []
         sam_file = None
         if plot_sam:
             datareader = DataReader()
