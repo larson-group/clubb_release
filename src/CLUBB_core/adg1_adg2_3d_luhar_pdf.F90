@@ -29,21 +29,25 @@ module adg1_adg2_3d_luhar_pdf
   contains
 
   !=============================================================================
-  subroutine ADG1_pdf_driver( wm, rtm, thlm, um, vm,                   & ! In
-                              wp2, rtp2, thlp2, up2, vp2,              & ! In
-                              Skw, wprtp, wpthlp, upwp, vpwp, sqrt_wp2,& ! In
-                              sigma_sqd_w, mixt_frac_max_mag,          & ! In
-                              sclrm, sclrp2, wpsclrp, l_scalar_calc,   & ! In
-                              w_1, w_2, rt_1, rt_2, thl_1, thl_2,      & ! Out
-                              u_1, u_2, v_1, v_2,                      & ! Out
-                              varnce_w_1, varnce_w_2, varnce_rt_1,     & ! Out
-                              varnce_rt_2, varnce_thl_1, varnce_thl_2, & ! Out
-                              varnce_u_1, varnce_u_2,                  & ! Out
-                              varnce_v_1, varnce_v_2,                  & ! Out
-                              mixt_frac, alpha_rt, alpha_thl,          & ! Out
-                              alpha_u, alpha_v,                        & ! Out
-                              sclr_1, sclr_2, varnce_sclr_1,           & ! Out
-                              varnce_sclr_2, alpha_sclr )                ! Out
+  subroutine ADG1_pdf_driver( wm, rtm, thlm, um, vm,                    & ! In
+                              wp2, rtp2, thlp2, up2, vp2,               & ! In
+                              Skw, wprtp, wpthlp, upwp, vpwp, sqrt_wp2, & ! In
+                              sigma_sqd_w, mixt_frac_max_mag,           & ! In
+                              sclrm, sclrp2, wpsclrp, l_scalar_calc,    & ! In
+                              w_1, w_2,                                 & ! Out
+                              rt_1, rt_2,                               & ! Out
+                              thl_1, thl_2,                             & ! Out
+                              u_1, u_2, v_1, v_2,                       & ! Out
+                              varnce_w_1, varnce_w_2,                   & ! Out
+                              varnce_rt_1, varnce_rt_2,                 & ! Out
+                              varnce_thl_1, varnce_thl_2,               & ! Out
+                              varnce_u_1, varnce_u_2,                   & ! Out
+                              varnce_v_1, varnce_v_2,                   & ! Out
+                              mixt_frac,                                & ! Out
+                              alpha_rt, alpha_thl,                      & ! Out
+                              alpha_u, alpha_v,                         & ! Out
+                              sclr_1, sclr_2, varnce_sclr_1,            & ! Out
+                              varnce_sclr_2, alpha_sclr )                 ! Out
 
     ! Calculates the PDF parameters using the Analytic Double Gaussian 1 (ADG1)
     ! PDF closure.
@@ -196,15 +200,19 @@ module adg1_adg2_3d_luhar_pdf
   end subroutine ADG1_pdf_driver
 
   !=============================================================================
-  subroutine ADG2_pdf_driver( wm, rtm, thlm, wp2, rtp2, thlp2,         & ! In
-                              Skw, wprtp, wpthlp, sqrt_wp2,            & ! In
-                              sclrm, sclrp2, wpsclrp, l_scalar_calc,   & ! In
-                              w_1, w_2, rt_1, rt_2, thl_1, thl_2,      & ! Out
-                              varnce_w_1, varnce_w_2, varnce_rt_1,     & ! Out
-                              varnce_rt_2, varnce_thl_1, varnce_thl_2, & ! Out
-                              mixt_frac, alpha_rt, alpha_thl,          & ! Out
-                              sigma_sqd_w, sclr_1, sclr_2,             & ! Out
-                              varnce_sclr_1, varnce_sclr_2, alpha_sclr ) ! Out
+  subroutine ADG2_pdf_driver( wm, rtm, thlm, wp2, rtp2, thlp2,          & ! In
+                              Skw, wprtp, wpthlp, sqrt_wp2,             & ! In
+                              sclrm, sclrp2, wpsclrp, l_scalar_calc,    & ! In
+                              w_1, w_2,                                 & ! Out
+                              rt_1, rt_2,                               & ! Out
+                              thl_1, thl_2,                             & ! Out
+                              varnce_w_1, varnce_w_2,                   & ! Out
+                              varnce_rt_1, varnce_rt_2,                 & ! Out
+                              varnce_thl_1, varnce_thl_2,               & ! Out
+                              mixt_frac,                                & ! Out
+                              alpha_rt, alpha_thl,                      & ! Out
+                              sigma_sqd_w, sclr_1, sclr_2,              & ! Out
+                              varnce_sclr_1, varnce_sclr_2, alpha_sclr )  ! Out
 
     ! Calculates the PDF parameters using the Analytic Double Gaussian 2 (ADG2)
     ! PDF closure.
@@ -342,10 +350,13 @@ module adg1_adg2_3d_luhar_pdf
   !=============================================================================
   subroutine Luhar_3D_pdf_driver( wm, rtm, thlm, wp2, rtp2, thlp2,      & ! In
                                   Skw, Skrt, Skthl, wprtp, wpthlp,      & ! In
-                                  w_1, w_2, rt_1, rt_2, thl_1, thl_2,   & ! Out
-                                  varnce_w_1, varnce_w_2, varnce_rt_1,  & ! Out
-                                  varnce_rt_2, varnce_thl_1,            & ! Out
-                                  varnce_thl_2, mixt_frac )               ! Out
+                                  w_1, w_2,                             & ! Out
+                                  rt_1, rt_2,                           & ! Out
+                                  thl_1, thl_2,                         & ! Out
+                                  varnce_w_1, varnce_w_2,               & ! Out
+                                  varnce_rt_1,  varnce_rt_2,            & ! Out
+                                  varnce_thl_1, varnce_thl_2,           & ! Out
+                                  mixt_frac )                             ! Out
 
     ! Calculates the PDF parameters using the 3D Luhar PDF closure.
 
