@@ -88,9 +88,9 @@ class PyPlotGen:
                 arm_97 = Case_arm_97(ncdf_files, plot_sam=self.les)#, sam_file=sam_file)
                 arm_97.plot(self.output_folder)
             if case_key == 'cgils_s12':
-                print("\tSkipping case - see issue here: https://github.com/larson-group/sys_admin/issues/542#issuecomment-510426354")
-                # cgils_s12 = Case_cgils_s12(ncdf_files, plot_sam=self.les)#, sam_file=sam_file)
-                # cgils_s12.plot(self.output_folder)
+                # print("\tSkipping case - see issue here: https://github.com/larson-group/sys_admin/issues/542#issuecomment-510426354")
+                cgils_s12 = Case_cgils_s12(ncdf_files, plot_sam=self.les)#, sam_file=sam_file)
+                cgils_s12.plot(self.output_folder)
             if case_key == 'lba':
                 # print("\tSkipping case")
                 lba = Case_lba(ncdf_files, plot_sam=self.les)#, sam_file=sam_file)

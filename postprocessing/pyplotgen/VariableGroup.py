@@ -33,8 +33,6 @@ class VariableGroup:
         self.casename = case.name
         self.start_time = case.start_time
         self.end_time = case.end_time
-        # self.timeseries_start_time = 0
-        # self.end_time = case.timeseries_end_time
         self.height_min_value = case.height_min_value
         self.height_max_value = case.height_max_value
         self.default_line_format = 'b-'
@@ -56,7 +54,11 @@ class VariableGroup:
 
         for variable in self.variable_definitions:
             print("\tProcessing ", variable['clubb_name'])
-            self.addClubbVariable(variable)
+            if variable['clubb_name'] in case.blacklisted_variables:
+                # Skip this variable if it's blacklisted for the case
+                continue
+            else:
+                self.addClubbVariable(variable)
         self.generatePanels()
 
     def get_var_from_ncdf(self, netcdf_variable):
@@ -77,9 +79,12 @@ class VariableGroup:
         '''
         data_reader = DataReader()
         clubb_name = variable['clubb_name']
+        fill_zeros = False
         sam_name = None
         sam_file = self.sam_file
         sam_conv_factor = 1
+        if 'fill_zeros' in variable.keys():
+            fill_zeros = variable['fill_zeros']
         if 'sam_calc' in variable.keys():
             sam_file = None  # don't try to autoplot sam if sam is a calculated value
         if 'sam_name' in variable.keys():
@@ -97,7 +102,7 @@ class VariableGroup:
         plots = self.getVarLines(clubb_name, self.ncdf_files, start_time=self.start_time,
                                  end_time=self.end_time, sam_name=sam_name, sam_file=sam_file,
                                  sam_conv_factor=sam_conv_factor, label="current clubb",
-                                 line_format=self.default_line_format,
+                                 line_format=self.default_line_format, fill_zeros = fill_zeros,
                                  override_panel_type=panel_type, fallback_func=fallback)
         variable['plots'] = plots
         if 'title' not in variable.keys():
@@ -130,7 +135,7 @@ class VariableGroup:
 
     def getVarLines(self, varname, ncdf_datasets, label="", line_format="", avg_axis=0, override_panel_type=None,
                     start_time=0, end_time=-1, sam_name=None, sam_file=None, conversion_factor=1,
-                    sam_conv_factor=1, fallback_func=None):
+                    sam_conv_factor=1, fallback_func=None, fill_zeros=False):
         '''
         Get a list of Line objects for a specific clubb variable. If sam_file is specified it will also
         attempt to generate Lines for the SAM equivalent variables, using the name conversions found in
@@ -164,7 +169,7 @@ class VariableGroup:
                                         line_format="k-", avg_axis=avg_axis, conversion_factor=sam_conv_factor,
                                         start_time=start_time * clubb_sec_to_sam_min,
                                         end_time=end_time * clubb_sec_to_sam_min,
-                                        override_panel_type=panel_type, fallback_func=fallback_func)
+                                        override_panel_type=panel_type, fallback_func=fallback_func, fill_zeros=fill_zeros)
             all_plots.extend(sam_plot)
 
         if isinstance(ncdf_datasets, Dataset):
@@ -177,7 +182,7 @@ class VariableGroup:
 
             variable = NetCdfVariable(varname, ncdf_datasets, start_time=start_time,
                                       end_time=end_time, avg_axis=avg_axis,
-                                      conversion_factor=conversion_factor)
+                                      conversion_factor=conversion_factor, fill_zeros=fill_zeros)
 
             if panel_type is Panel.TYPE_PROFILE:
                 line = self.__get_profile_line__(variable, file, label, line_format)
@@ -189,7 +194,8 @@ class VariableGroup:
                 variable = NetCdfVariable(varname, ncdf_datasets, start_time=start_time,
                                           end_time=end_time, avg_axis=1,
                                           conversion_factor=conversion_factor)
-                variable.data = variable.data[0:int(variable.end_time)]
+                # variable.data = variable.data[0:int(variable.end_time)]
+                variable.constrain(0, variable.end_time, data=self.time.data)
                 line = Line(self.time, variable, label=label, line_format=line_format)
             else:
                 raise ValueError('Invalid panel type ' + panel_type + '. Valid options are profile, budget, timeseries')
@@ -234,7 +240,8 @@ class VariableGroup:
             raise TypeError("Failed to find variable " + varname + " in clubb output for case " +
                             self.casename + " and there is no fallback function specified. If this is expected "
                                             "(e.g. this model doesn't output the " + varname +
-                            " variable) then please add a fallback function to the variable's definition. "
+                            " variable) then please add a fallback function to the variable's definition or "
+                            "   allow allow the variable to be filled with zeros. "
                             "If it is not expected, please  make sure the correct .nc files are being loaded.")
         varline = fallback()
         print("\tFallback for ", varname, " successful")

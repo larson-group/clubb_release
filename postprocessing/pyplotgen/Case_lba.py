@@ -24,6 +24,7 @@ class Case_lba(Case):
         self.height_max_value = 12000
         self.enabled = True
         self.ncdf_files = ncdf_files
+        self.blacklisted_variables = []
         sam_file = None
         if plot_sam:
             datareader = DataReader()

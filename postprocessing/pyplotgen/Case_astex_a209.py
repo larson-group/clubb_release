@@ -24,6 +24,7 @@ class Case_astex_a209(Case):
         self.height_max_value = 6000
         self.enabled = True
         self.ncdf_files = ncdf_files
+        self.blacklisted_variables = []
         sam_file = None
         # Astex_a209 doesn't plot SAM
 

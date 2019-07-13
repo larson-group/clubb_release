@@ -16,8 +16,7 @@ class NetCdfVariable:
     Class used for conveniently storing the information about a given netcdf variable
     '''
 
-    def __init__(self, name, ncdf_data, conversion_factor=1, start_time=0, end_time=-1, avg_axis=0,
-                 fill_zeros=False):
+    def __init__(self, name, ncdf_data, conversion_factor=1, start_time=0, end_time=-1, avg_axis=0, fill_zeros=False):
         '''
 
         :param name: the name of the variable as defined in the ncdf_data
@@ -62,6 +61,20 @@ class NetCdfVariable:
 
         return start_idx, end_idx
 
+    def constrain(self, start_value, end_value, data=None):
+        '''
+        Remove all data elements from the variable that are not between the start and end value. Assumes
+        the data is always increasing. If the optional data parameter is used, it will restrict to the indices
+        of where the start/end values are in that dataset rather than the variables data itself.
+        :param start_value: The smallest possible value
+        :param end_value: The largest possible value
+        :return: none, operates in place
+        '''
+        if data is None:
+            data = self.data
+        start_idx, end_idx = self.__getStartEndIndex__(data, start_value, end_value)
+        self.data = self.data[start_idx:end_idx+1]
+
     def autoSet_ncdf_data(self):
         '''
         Looks through the input files for a case and finds the returns the filetype
@@ -73,6 +86,9 @@ class NetCdfVariable:
             if self.name in subdataset.variables.keys():
                 self.ncdf_data = subdataset
                 break
+
+    def __len__(self):
+        return self.data.size
 
 
 class DataReader():
