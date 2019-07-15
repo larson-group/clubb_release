@@ -21,13 +21,15 @@ module LY93_pdf
   contains
 
   !=============================================================================
-  subroutine LY93_driver( wm, rtm, thlm, wp2, rtp2,          & ! In
-                          thlp2, Skw, Skrt, Skthl,           & ! In
-                          mu_w_1, mu_w_2, mu_rt_1, mu_rt_2,  & ! Out
-                          mu_thl_1, mu_thl_2, sigma_w_1_sqd, & ! Out
-                          sigma_w_2_sqd, sigma_rt_1_sqd,     & ! Out
-                          sigma_rt_2_sqd, sigma_thl_1_sqd,   & ! Out
-                          sigma_thl_2_sqd, mixt_frac         ) ! Out
+  subroutine LY93_driver( wm, rtm, thlm, wp2, rtp2,         & ! In
+                          thlp2, Skw, Skrt, Skthl,          & ! In
+                          mu_w_1, mu_w_2,                   & ! Out
+                          mu_rt_1, mu_rt_2,                 & ! Out
+                          mu_thl_1, mu_thl_2,               & ! Out
+                          sigma_w_1_sqd, sigma_w_2_sqd,     & ! Out
+                          sigma_rt_1_sqd, sigma_rt_2_sqd,   & ! Out
+                          sigma_thl_1_sqd, sigma_thl_2_sqd, & ! Out
+                          mixt_frac )                         ! Out
 
     ! Description:
     ! Calculates the mixture fraction and the PDF component means and PDF
