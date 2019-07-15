@@ -43,8 +43,11 @@ class VariableGroup:
         self.z.data = self.z.data[self.z_min_idx:self.z_max_idx]
 
         ### Initialize Time ###
-        sec_to_min = 1 / 60
-        self.time = NetCdfVariable('time', ncdf_datasets, conversion_factor=sec_to_min)
+        # sec_to_min = 1 / 60
+        self.time = NetCdfVariable('time', ncdf_datasets)#, conversion_factor=sec_to_min)
+        time_scale_factor = self.time.data[0]
+        # Rescale time values to SAM minutes for output
+        self.time.data = self.time.data[:] / time_scale_factor
 
         ### Initialize Sam Height ###
         if sam_file != None:
@@ -196,6 +199,7 @@ class VariableGroup:
                                           conversion_factor=conversion_factor)
                 # variable.data = variable.data[0:int(variable.end_time)]
                 variable.constrain(0, variable.end_time, data=self.time.data)
+                self.time.constrain(0, end_time)
                 line = Line(self.time, variable, label=label, line_format=line_format)
             else:
                 raise ValueError('Invalid panel type ' + panel_type + '. Valid options are profile, budget, timeseries')

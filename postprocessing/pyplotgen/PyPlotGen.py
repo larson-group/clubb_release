@@ -11,6 +11,7 @@ import argparse
 import subprocess
 import sys
 
+from pyplotgen.Case_arm import Case_arm
 from pyplotgen.Case_arm_97 import Case_arm_97
 from pyplotgen.Case_astex_a209 import Case_astex_a209
 from pyplotgen.Case_cgils_s12 import Case_cgils_s12
@@ -85,19 +86,23 @@ class PyPlotGen:
                 astex_a209.plot(self.output_folder)
             if case_key == 'arm_97':
                 # print("\tSkipping case")
-                arm_97 = Case_arm_97(ncdf_files, plot_sam=self.les)#, sam_file=sam_file)
+                arm_97 = Case_arm_97(ncdf_files, plot_sam=self.les)
                 arm_97.plot(self.output_folder)
+            if case_key == 'arm':
+                print("\tSkipping case")
+                cgils_arm = Case_arm(ncdf_files, plot_sam=self.les)
+                cgils_arm.plot(self.output_folder)
             if case_key == 'cgils_s12':
-                # print("\tSkipping case - see issue here: https://github.com/larson-group/sys_admin/issues/542#issuecomment-510426354")
-                cgils_s12 = Case_cgils_s12(ncdf_files, plot_sam=self.les)#, sam_file=sam_file)
+                # print("\tSkipping case")
+                cgils_s12 = Case_cgils_s12(ncdf_files, plot_sam=self.les)
                 cgils_s12.plot(self.output_folder)
             if case_key == 'lba':
                 # print("\tSkipping case")
-                lba = Case_lba(ncdf_files, plot_sam=self.les)#, sam_file=sam_file)
+                lba = Case_lba(ncdf_files, plot_sam=self.les)
                 lba.plot(self.output_folder)
             if case_key == 'dycoms2_rf01':
                 # print("\tSkipping case")
-                dycoms_rf01 = Case_dycoms2_rf01(ncdf_files, plot_sam=self.les)#, sam_file=sam_file)
+                dycoms_rf01 = Case_dycoms2_rf01(ncdf_files, plot_sam=self.les)
                 dycoms_rf01.plot(self.output_folder)
         print("##################################################")
         print("Generating webpage for viewing plots ")
