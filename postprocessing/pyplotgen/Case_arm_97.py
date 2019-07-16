@@ -18,8 +18,8 @@ class Case_arm_97(Case):
         '''
         self.name = "arm_97"
         sec_per_min = 60
-        self.start_time = 4321 * sec_per_min
-        self.end_time = 5580 * sec_per_min
+        self.start_time = 4321 #* sec_per_min
+        self.end_time = 5580 #* sec_per_min
         self.height_min_value = 0
         self.height_max_value = 18000
         self.enabled = True

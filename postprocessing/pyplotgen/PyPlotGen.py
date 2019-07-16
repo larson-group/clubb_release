@@ -15,6 +15,7 @@ from pyplotgen.Case_arm import Case_arm
 from pyplotgen.Case_arm_97 import Case_arm_97
 from pyplotgen.Case_astex_a209 import Case_astex_a209
 from pyplotgen.Case_cgils_s12 import Case_cgils_s12
+from pyplotgen.Case_dycoms2_rf02_ds import Case_dycoms2_rf02_ds
 from pyplotgen.Case_lba import Case_lba
 from pyplotgen.DataReader import DataReader
 from pyplotgen.Case_dycoms2_rf01 import Case_dycoms2_rf01
@@ -81,7 +82,7 @@ class PyPlotGen:
             print("Plotting case ", case_key)
             print("##################################################")
             if case_key == 'astex_a209':
-                # print("\tSkipping case")
+                print("\tSkipping case")
                 astex_a209 = Case_astex_a209(ncdf_files, plot_sam=self.les)
                 astex_a209.plot(self.output_folder)
             if case_key == 'arm_97':
@@ -103,6 +104,10 @@ class PyPlotGen:
             if case_key == 'dycoms2_rf01':
                 # print("\tSkipping case")
                 dycoms_rf01 = Case_dycoms2_rf01(ncdf_files, plot_sam=self.les)
+                dycoms_rf01.plot(self.output_folder)
+            if case_key == 'dycoms2_rf02_ds':
+                # print("\tSkipping case")
+                dycoms_rf01 = Case_dycoms2_rf02_ds(ncdf_files, plot_sam=self.les)
                 dycoms_rf01.plot(self.output_folder)
         print("##################################################")
         print("Generating webpage for viewing plots ")

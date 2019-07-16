@@ -14,8 +14,8 @@ class Case_dycoms2_rf01(Case):
         '''
         self.name = "dycoms_rf01"
         sec_per_min = 60
-        self.start_time = 181 * sec_per_min
-        self.end_time = 240 * sec_per_min
+        self.start_time = 181 #* sec_per_min
+        self.end_time = 240 #* sec_per_min
         self.height_min_value = 0
         self.height_max_value = 1200
         self.enabled = True

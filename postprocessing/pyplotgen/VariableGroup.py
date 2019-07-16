@@ -45,9 +45,9 @@ class VariableGroup:
         ### Initialize Time ###
         # sec_to_min = 1 / 60
         self.time = NetCdfVariable('time', ncdf_datasets)#, conversion_factor=sec_to_min)
-        time_scale_factor = self.time.data[0]
+        #time_scale_factor = self.time.data[0]
         # Rescale time values to SAM minutes for output
-        self.time.data = self.time.data[:] / time_scale_factor
+        #self.time.data = self.time.data[:] / time_scale_factor
 
         ### Initialize Sam Height ###
         if sam_file != None:
@@ -143,7 +143,7 @@ class VariableGroup:
         Get a list of Line objects for a specific clubb variable. If sam_file is specified it will also
         attempt to generate Lines for the SAM equivalent variables, using the name conversions found in
         VarnameConversions.py. If a SAM variable needs to be calculated (uses an equation) then it will have
-        to be created within that variable group's file and not here.
+        to be created within that variable group's dataset and not here.
 
         :param varname: str name of the clubb variable to be plotted, case sensitive
         :param ncdf_datasets: List of Dataset objects containing clubb or sam netcdf data
@@ -170,8 +170,8 @@ class VariableGroup:
             clubb_sec_to_sam_min = 1 / 60
             sam_plot = self.getVarLines(sam_name, {'sam': sam_file}, label="LES output",
                                         line_format="k-", avg_axis=avg_axis, conversion_factor=sam_conv_factor,
-                                        start_time=start_time * clubb_sec_to_sam_min,
-                                        end_time=end_time * clubb_sec_to_sam_min,
+                                        start_time=start_time ,#* clubb_sec_to_sam_min,
+                                        end_time=end_time,# * clubb_sec_to_sam_min,
                                         override_panel_type=panel_type, fallback_func=fallback_func, fill_zeros=fill_zeros)
             all_plots.extend(sam_plot)
 
@@ -179,27 +179,28 @@ class VariableGroup:
             ncdf_datasets = {'converted_to_dict': ncdf_datasets}
 
         line = None
-        for file in ncdf_datasets.values():
-            if varname not in file.variables.keys():
-                continue  # Skip loop if varname isn't in the file
+        for dataset in ncdf_datasets.values():
+            self.time = NetCdfVariable('time', dataset)
+            if varname not in dataset.variables.keys():
+                continue  # Skip loop if varname isn't in the dataset
 
             variable = NetCdfVariable(varname, ncdf_datasets, start_time=start_time,
                                       end_time=end_time, avg_axis=avg_axis,
                                       conversion_factor=conversion_factor, fill_zeros=fill_zeros)
 
             if panel_type is Panel.TYPE_PROFILE:
-                line = self.__get_profile_line__(variable, file, label, line_format)
+                line = self.__get_profile_line__(variable, dataset, label, line_format)
                 break
             elif panel_type is Panel.TYPE_BUDGET:
                 pass
             elif panel_type is Panel.TYPE_TIMESERIES:
                 # TODO redeclaring variable is a temp fix until timeseries is auto-discovered
-                variable = NetCdfVariable(varname, ncdf_datasets, start_time=start_time,
+                variable = NetCdfVariable(varname, ncdf_datasets, start_time=0,
                                           end_time=end_time, avg_axis=1,
                                           conversion_factor=conversion_factor)
                 # variable.data = variable.data[0:int(variable.end_time)]
                 variable.constrain(0, variable.end_time, data=self.time.data)
-                self.time.constrain(0, end_time)
+                self.time.constrain(0, variable.end_time)
                 line = Line(self.time, variable, label=label, line_format=line_format)
             else:
                 raise ValueError('Invalid panel type ' + panel_type + '. Valid options are profile, budget, timeseries')

@@ -36,6 +36,7 @@ class NetCdfVariable:
         if isinstance(ncdf_data, dict):
             self.autoSet_ncdf_data()
         self.data = data_reader.getVarData(self.ncdf_data, self, fill_zeros=fill_zeros)
+        # print()
 
     def __getStartEndIndex__(self, data, start_value, end_value):
         '''
@@ -167,8 +168,8 @@ class DataReader():
         # TODO make sure  auto-determining end time isn't a poor decision
         if end_time_value == -1:
             end_time_value = time_values[-1]
-        (start_avging_index, end_avging_idx) = self.__getStartEndIndex__(time_values, start_time_value,
-                                                                         end_time_value)  # Get the index values that correspond to the desired start/end x values
+        # Get the index values that correspond to the desired start/end x values
+        start_avging_index, end_avging_idx = self.__getStartEndIndex__(time_values, start_time_value, end_time_value)
 
         try:
             values = self.__getValuesFromNc__(netcdf_dataset, variable_name, conv_factor)
@@ -182,7 +183,7 @@ class DataReader():
                 values = np.zeros(size)
             else:
                 raise
-        if values.ndim > 1:  # not ncdf_variable.one_dimentional:
+        if values.ndim > 1:  # not ncdf_variable.one_dimensional:
             values = self.__meanProfiles__(values, start_avging_index, end_avging_idx, avg_axis=avg_axis)
 
         return values
@@ -316,6 +317,13 @@ class DataReader():
             raise ValueError("Variable " + varname + " does not exist in ncdf_data file. If this is expected,"
                                                      " try passing fill_zeros=True when you create the "
                                                      "NetCdfVariable for " + varname)
+        if varname == 'time' and self.getNcdfSourceModel(ncdf_data) == 'clubb':
+            sec_per_min = 60
+            # Rescale time values to SAM minutes for output
+            var_values = var_values[:] / sec_per_min
+        if varname == 'time' and var_values[0] != 1:
+            warn("First time value is " + str(var_values[0]) + " instead of 1. Are these time values supposed to be scaled to minutes?")
+
         return var_values
 
     def __getStartEndIndex__(self, data, start_value, end_value):

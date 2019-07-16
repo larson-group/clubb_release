@@ -18,8 +18,8 @@ class Case_astex_a209(Case):
         '''
         self.name = "astex_a209"
         sec_per_min = 60
-        self.start_time = 2340 * sec_per_min
-        self.end_time = 2400 * sec_per_min
+        self.start_time = 2340 #* sec_per_min
+        self.end_time = 2400 #* sec_per_min
         self.height_min_value = 0
         self.height_max_value = 6000
         self.enabled = True
