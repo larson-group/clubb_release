@@ -15,6 +15,8 @@ from pyplotgen.Case_arm import Case_arm
 from pyplotgen.Case_arm_97 import Case_arm_97
 from pyplotgen.Case_astex_a209 import Case_astex_a209
 from pyplotgen.Case_cgils_s12 import Case_cgils_s12
+from pyplotgen.Case_cgils_s6 import Case_cgils_s6
+from pyplotgen.Case_clex9_oct14 import Case_clex9_oct14
 from pyplotgen.Case_dycoms2_rf02_ds import Case_dycoms2_rf02_ds
 from pyplotgen.Case_lba import Case_lba
 from pyplotgen.DataReader import DataReader
@@ -82,7 +84,7 @@ class PyPlotGen:
             print("Plotting case ", case_key)
             print("##################################################")
             if case_key == 'astex_a209':
-                print("\tSkipping case")
+                # print("\tSkipping case")
                 astex_a209 = Case_astex_a209(ncdf_files, plot_sam=self.les)
                 astex_a209.plot(self.output_folder)
             if case_key == 'arm_97':
@@ -97,6 +99,14 @@ class PyPlotGen:
                 # print("\tSkipping case")
                 cgils_s12 = Case_cgils_s12(ncdf_files, plot_sam=self.les)
                 cgils_s12.plot(self.output_folder)
+            if case_key == 'cgils_s6':
+                # print("\tSkipping case")
+                cgils_s6 = Case_cgils_s6(ncdf_files, plot_sam=self.les)
+                cgils_s6.plot(self.output_folder)
+            if case_key == 'clex9_oct14':
+                # print("\tSkipping case")
+                clex9_oct14 = Case_clex9_oct14(ncdf_files, plot_sam=self.les)
+                clex9_oct14.plot(self.output_folder)
             if case_key == 'lba':
                 # print("\tSkipping case")
                 lba = Case_lba(ncdf_files, plot_sam=self.les)

@@ -34,7 +34,6 @@ class VariableGroupIceMP(VariableGroup):
         ]
         super().__init__(ncdf_datasets, case, sam_file)
 
-
     def getNimSamLine(self):
         '''
         Caclulates Nim from sam -> clubb using the equation
@@ -42,8 +41,8 @@ class VariableGroupIceMP(VariableGroup):
         :return:
         '''
         sec_per_min = 60
-        sam_start_time = self.start_time / sec_per_min
-        sam_end_time = self.end_time / sec_per_min
+        sam_start_time = self.start_time  # / sec_per_min
+        sam_end_time = self.end_time  # / sec_per_min
         ni_ncdf = NetCdfVariable('NI', self.sam_file, 1, start_time=sam_start_time, end_time=sam_end_time)
         ni = ni_ncdf.data
         rho_ncdf = NetCdfVariable('RHO', self.sam_file, 1, start_time=sam_start_time, end_time=sam_end_time)
@@ -60,8 +59,8 @@ class VariableGroupIceMP(VariableGroup):
         :return:
         '''
         sec_per_min = 60
-        sam_start_time = self.start_time / sec_per_min
-        sam_end_time = self.end_time / sec_per_min
+        sam_start_time = self.start_time  # / sec_per_min
+        sam_end_time = self.end_time  # / sec_per_min
         ns_ncdf = NetCdfVariable('NS', self.sam_file, 1, start_time=sam_start_time, end_time=sam_end_time)
         ns = ns_ncdf.data
         rho_ncdf = NetCdfVariable('RHO', self.sam_file, 1, start_time=sam_start_time, end_time=sam_end_time)
@@ -77,8 +76,8 @@ class VariableGroupIceMP(VariableGroup):
         Rim = QCI / 1000
         :return:
         '''
-        sam_start_time = self.start_time / 60
-        sam_end_time = self.end_time / 60
+        sam_start_time = self.start_time  # / 60
+        sam_end_time = self.end_time  # / 60
 
         qci_ncdf = NetCdfVariable('QCI', self.sam_file, 1, start_time=sam_start_time, end_time=sam_end_time)
         qci = qci_ncdf.data
@@ -88,15 +87,14 @@ class VariableGroupIceMP(VariableGroup):
         rim = Line(rim, self.z_sam.data, line_format="k-", label="LES output")
         return rim
 
-
     def getRsmFallback(self):
         '''
         This gets called if Rsm isn't outputted in an nc file as a backup way of gathering the data for plotting.
         Rsm = QPI / 1000
         :return:
         '''
-        sam_start_time = self.start_time / 60
-        sam_end_time = self.end_time / 60
+        sam_start_time = self.start_time  # / 60
+        sam_end_time = self.end_time  # / 60
 
         qpi_ncdf = NetCdfVariable('QCI', self.sam_file, 1, start_time=sam_start_time, end_time=sam_end_time)
         qpi = qpi_ncdf.data

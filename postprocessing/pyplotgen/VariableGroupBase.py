@@ -72,8 +72,8 @@ class VariableGroupBase(VariableGroup):
         :return: requested variable data in the form of a list. Returned data is already cropped to the appropriate min,max indices
         '''
         sec_per_min = 60
-        sam_start_time = self.start_time / sec_per_min
-        sam_end_time = self.end_time / sec_per_min
+        sam_start_time = self.start_time #/ sec_per_min
+        sam_end_time = self.end_time #/ sec_per_min
 
         thetal_ncdf = NetCdfVariable('THETAL', self.sam_file, 1, start_time=sam_start_time,
                                      end_time=sam_end_time)
@@ -103,8 +103,8 @@ class VariableGroupBase(VariableGroup):
         (QT-QI) ./ 1000
         :return: requested variable data in the form of a list. Returned data is already cropped to the appropriate min,max indices
         '''
-        sam_start_time = self.start_time / 60
-        sam_end_time = self.end_time / 60
+        sam_start_time = self.start_time #/ 60
+        sam_end_time = self.end_time #/ 60
 
         qt_ncdf = NetCdfVariable('QT', self.sam_file, 1, start_time=sam_start_time, end_time=sam_end_time)
         qt = qt_ncdf.data
@@ -126,8 +126,8 @@ class VariableGroupBase(VariableGroup):
         WP3 ./ (WP2 + 1.6e-3).^1.5
         :return: requested variable data in the form of a list. Returned data is already cropped to the appropriate min,max indices
         '''
-        sam_start_time = self.start_time / 60
-        sam_end_time = self.end_time / 60
+        sam_start_time = self.start_time #/ 60
+        sam_end_time = self.end_time #/ 60
 
         wp3_ncdf = NetCdfVariable('WP3', self.sam_file, 1, start_time=sam_start_time, end_time=sam_end_time)
         wp3 = wp3_ncdf.data
@@ -148,8 +148,8 @@ class VariableGroupBase(VariableGroup):
          # RTP3 ./ (RTP2 + 4e-16).^1.5  
          :return: requested variable data in the form of a list. Returned data is already cropped to the appropriate min,max indices
         '''
-        sam_start_time = self.start_time / 60
-        sam_end_time = self.end_time / 60
+        sam_start_time = self.start_time #/ 60
+        sam_end_time = self.end_time #/ 60
 
         rtp3_ncdf = NetCdfVariable('RTP3', self.sam_file, 1, start_time=sam_start_time, end_time=sam_end_time)
         rtp3 = rtp3_ncdf.data
@@ -170,8 +170,8 @@ class VariableGroupBase(VariableGroup):
         THLP3 ./ (THLP2 + 4e-4).^1.5
          :return: requested variable data in the form of a list. Returned data is already cropped to the appropriate min,max indices
         '''
-        sam_start_time = self.start_time / 60
-        sam_end_time = self.end_time / 60
+        sam_start_time = self.start_time #/ 60
+        sam_end_time = self.end_time #/ 60
 
         thlp3_ncdf = NetCdfVariable('THLP3', self.sam_file, 1, start_time=sam_start_time, end_time=sam_end_time)
         thlp3 = thlp3_ncdf.data
@@ -191,8 +191,8 @@ class VariableGroupBase(VariableGroup):
         WPTHLP = (TLFLUX) ./ (RHO * 1004)
         :return:
         '''
-        sam_start_time = self.start_time / 60
-        sam_end_time = self.end_time / 60
+        sam_start_time = self.start_time #/ 60
+        sam_end_time = self.end_time #/ 60
 
         tlflux_ncdf = NetCdfVariable('TLFLUX', self.sam_file, 1, start_time=sam_start_time, end_time=sam_end_time)
         tlflux = tlflux_ncdf.data
@@ -212,8 +212,8 @@ class VariableGroupBase(VariableGroup):
         WPRTP = (QTFLUX) ./ (RHO * 2.5104e+6)
         :return:
         '''
-        sam_start_time = self.start_time / 60
-        sam_end_time = self.end_time / 60
+        sam_start_time = self.start_time #/ 60
+        sam_end_time = self.end_time #/ 60
 
         qtflux_ncdf = NetCdfVariable('QTFLUX', self.sam_file, 1, start_time=sam_start_time, end_time=sam_end_time)
         qtflux = qtflux_ncdf.data
@@ -233,8 +233,8 @@ class VariableGroupBase(VariableGroup):
         WPTHVP =  (TVFLUX) ./ ( RHO * 1004)
         :return:
         '''
-        sam_start_time = self.start_time / 60
-        sam_end_time = self.end_time / 60
+        sam_start_time = self.start_time #/ 60
+        sam_end_time = self.end_time #/ 60
 
         tvflux_ncdf = NetCdfVariable('TVFLUX', self.sam_file, 1, start_time=sam_start_time, end_time=sam_end_time)
         tvflux = tvflux_ncdf.data
@@ -254,8 +254,8 @@ class VariableGroupBase(VariableGroup):
         THLP2 = TL2
         :return:
         '''
-        sam_start_time = self.start_time / 60
-        sam_end_time = self.end_time / 60
+        sam_start_time = self.start_time #/ 60
+        sam_end_time = self.end_time #/ 60
 
         tl2_ncdf = NetCdfVariable('TL2', self.sam_file, 1, start_time=sam_start_time, end_time=sam_end_time)
         tl2 = tl2_ncdf.data
@@ -270,8 +270,8 @@ class VariableGroupBase(VariableGroup):
         Rtpthlp = TQ
         :return:
         '''
-        sam_start_time = self.start_time / 60
-        sam_end_time = self.end_time / 60
+        sam_start_time = self.start_time #/ 60
+        sam_end_time = self.end_time #/ 60
 
         tq_ncdf = NetCdfVariable('TQ', self.sam_file, 1, start_time=sam_start_time, end_time=sam_end_time)
         tq2 = tq_ncdf.data
@@ -286,8 +286,8 @@ class VariableGroupBase(VariableGroup):
         THLP2 = QT2 / 1e+6
         :return:
         '''
-        sam_start_time = self.start_time / 60
-        sam_end_time = self.end_time / 60
+        sam_start_time = self.start_time #/ 60
+        sam_end_time = self.end_time #/ 60
 
         qt2_ncdf = NetCdfVariable('QT2', self.sam_file, 1, start_time=sam_start_time, end_time=sam_end_time)
         qt2 = qt2_ncdf.data

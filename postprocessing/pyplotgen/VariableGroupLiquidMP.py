@@ -41,8 +41,8 @@ class VariableGroupLiquidMP(VariableGroup):
         :return:
         '''
         sec_per_min = 60
-        sam_start_time = self.start_time / sec_per_min
-        sam_end_time = self.end_time / sec_per_min
+        sam_start_time = self.start_time # / sec_per_min
+        sam_end_time = self.end_time # / sec_per_min
         nc_ncdf = NetCdfVariable('NC', self.sam_file, 1, start_time=sam_start_time, end_time=sam_end_time, fill_zeros=True)
         nc = nc_ncdf.data
         rho_ncdf = NetCdfVariable('RHO', self.sam_file, 1, start_time=sam_start_time, end_time=sam_end_time)
@@ -61,8 +61,8 @@ class VariableGroupLiquidMP(VariableGroup):
         :return:
         '''
         sec_per_min = 60
-        sam_start_time = self.start_time / sec_per_min
-        sam_end_time = self.end_time / sec_per_min
+        sam_start_time = self.start_time # / sec_per_min
+        sam_end_time = self.end_time # / sec_per_min
         nr_ncdf = NetCdfVariable('NR', self.sam_file, 1, start_time=sam_start_time, end_time=sam_end_time, fill_zeros=True)
         nr = nr_ncdf.data
         rho_ncdf = NetCdfVariable('RHO', self.sam_file, 1, start_time=sam_start_time, end_time=sam_end_time)
