@@ -12,6 +12,7 @@ import subprocess
 from pyplotgen.Case_arm import Case_arm
 from pyplotgen.Case_arm_97 import Case_arm_97
 from pyplotgen.Case_astex_a209 import Case_astex_a209
+from pyplotgen.Case_bomex import Case_bomex
 from pyplotgen.Case_cgils_s11 import Case_cgils_s11
 from pyplotgen.Case_cgils_s12 import Case_cgils_s12
 from pyplotgen.Case_cgils_s6 import Case_cgils_s6
@@ -97,6 +98,10 @@ class PyPlotGen:
                 print("\tSkipping case")
                 cgils_arm = Case_arm(ncdf_files, plot_sam=self.les)
                 cgils_arm.plot(self.output_folder)
+            if case_key == 'bomex':
+                print("\tSkipping case")
+                bomex = Case_bomex(ncdf_files, plot_sam=self.les)
+                bomex.plot(self.output_folder)
             if case_key == 'cgils_s6':
                 # print("\tSkipping case")
                 cgils_s6 = Case_cgils_s6(ncdf_files, plot_sam=self.les)
