@@ -9,14 +9,16 @@ Date: Jan 2019
 '''
 import argparse
 import subprocess
-import sys
-
 from pyplotgen.Case_arm import Case_arm
 from pyplotgen.Case_arm_97 import Case_arm_97
 from pyplotgen.Case_astex_a209 import Case_astex_a209
+from pyplotgen.Case_cgils_s11 import Case_cgils_s11
 from pyplotgen.Case_cgils_s12 import Case_cgils_s12
 from pyplotgen.Case_cgils_s6 import Case_cgils_s6
+from pyplotgen.Case_clex9_nov02 import Case_clex9_nov02
 from pyplotgen.Case_clex9_oct14 import Case_clex9_oct14
+from pyplotgen.Case_dycoms2_rf01_fixed_sst import Case_dycoms2_rf01_fixed_sst
+from pyplotgen.Case_dycoms2_rf02_do import Case_dycoms2_rf02_do
 from pyplotgen.Case_dycoms2_rf02_ds import Case_dycoms2_rf02_ds
 from pyplotgen.Case_lba import Case_lba
 from pyplotgen.DataReader import DataReader
@@ -95,18 +97,26 @@ class PyPlotGen:
                 print("\tSkipping case")
                 cgils_arm = Case_arm(ncdf_files, plot_sam=self.les)
                 cgils_arm.plot(self.output_folder)
-            if case_key == 'cgils_s12':
-                # print("\tSkipping case")
-                cgils_s12 = Case_cgils_s12(ncdf_files, plot_sam=self.les)
-                cgils_s12.plot(self.output_folder)
             if case_key == 'cgils_s6':
                 # print("\tSkipping case")
                 cgils_s6 = Case_cgils_s6(ncdf_files, plot_sam=self.les)
                 cgils_s6.plot(self.output_folder)
+            if case_key == 'cgils_s11':
+                # print("\tSkipping case")
+                cgils_s11 = Case_cgils_s11(ncdf_files, plot_sam=self.les)
+                cgils_s11.plot(self.output_folder)
+            if case_key == 'cgils_s12':
+                # print("\tSkipping case")
+                cgils_s12 = Case_cgils_s12(ncdf_files, plot_sam=self.les)
+                cgils_s12.plot(self.output_folder)
             if case_key == 'clex9_oct14':
                 # print("\tSkipping case")
                 clex9_oct14 = Case_clex9_oct14(ncdf_files, plot_sam=self.les)
                 clex9_oct14.plot(self.output_folder)
+            if case_key == 'clex9_nov02':
+                # print("\tSkipping case")
+                clex9_nov02 = Case_clex9_nov02(ncdf_files, plot_sam=self.les)
+                clex9_nov02.plot(self.output_folder)
             if case_key == 'lba':
                 # print("\tSkipping case")
                 lba = Case_lba(ncdf_files, plot_sam=self.les)
@@ -115,10 +125,19 @@ class PyPlotGen:
                 # print("\tSkipping case")
                 dycoms_rf01 = Case_dycoms2_rf01(ncdf_files, plot_sam=self.les)
                 dycoms_rf01.plot(self.output_folder)
+            if case_key == 'dycoms2_rf01_fixed_sst':
+                # print("\tSkipping case")
+
+                dycoms_rf01_fixed_sst = Case_dycoms2_rf01_fixed_sst(ncdf_files, plot_sam=self.les)
+                dycoms_rf01_fixed_sst.plot(self.output_folder)
             if case_key == 'dycoms2_rf02_ds':
                 # print("\tSkipping case")
-                dycoms_rf01 = Case_dycoms2_rf02_ds(ncdf_files, plot_sam=self.les)
-                dycoms_rf01.plot(self.output_folder)
+                dycoms_rf02_ds = Case_dycoms2_rf02_ds(ncdf_files, plot_sam=self.les)
+                dycoms_rf02_ds.plot(self.output_folder)
+            if case_key == 'dycoms2_rf02_do':
+                # print("\tSkipping case")
+                dycoms_rf02_do = Case_dycoms2_rf02_do(ncdf_files, plot_sam=self.les)
+                dycoms_rf02_do.plot(self.output_folder)
         print("##################################################")
         print("Generating webpage for viewing plots ")
         print("##################################################")

@@ -302,6 +302,8 @@ class VariableGroupBase(VariableGroup):
         '''
         Caclulates Rtp3 output
         rc_coef_zm .* rtprcp
+
+        TODO Sam fallback: ((QCFLUX) ./ (RHO * 2.5104e+6)) .* (2.5e6 ./ (1004.67*((PRES / 1000).^(287.04/1004.67))) - 1.61*THETAV)
         :return:
         '''
         sec_per_min = 60
