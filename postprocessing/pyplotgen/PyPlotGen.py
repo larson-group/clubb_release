@@ -12,6 +12,7 @@ import subprocess
 from pyplotgen.Case_arm import Case_arm
 from pyplotgen.Case_arm_97 import Case_arm_97
 from pyplotgen.Case_astex_a209 import Case_astex_a209
+from pyplotgen.Case_atex import Case_atex
 from pyplotgen.Case_bomex import Case_bomex
 from pyplotgen.Case_cgils_s11 import Case_cgils_s11
 from pyplotgen.Case_cgils_s12 import Case_cgils_s12
@@ -21,6 +22,8 @@ from pyplotgen.Case_clex9_oct14 import Case_clex9_oct14
 from pyplotgen.Case_dycoms2_rf01_fixed_sst import Case_dycoms2_rf01_fixed_sst
 from pyplotgen.Case_dycoms2_rf02_do import Case_dycoms2_rf02_do
 from pyplotgen.Case_dycoms2_rf02_ds import Case_dycoms2_rf02_ds
+from pyplotgen.Case_fire import Case_fire
+from pyplotgen.Case_gabls2 import Case_gabls2
 from pyplotgen.Case_lba import Case_lba
 from pyplotgen.DataReader import DataReader
 from pyplotgen.Case_dycoms2_rf01 import Case_dycoms2_rf01
@@ -98,6 +101,10 @@ class PyPlotGen:
                 print("\tSkipping case")
                 cgils_arm = Case_arm(ncdf_files, plot_sam=self.les)
                 cgils_arm.plot(self.output_folder)
+            if case_key == 'atex':
+                print("\tSkipping case")
+                atex = Case_atex(ncdf_files, plot_sam=self.les)
+                atex.plot(self.output_folder)
             if case_key == 'bomex':
                 print("\tSkipping case")
                 bomex = Case_bomex(ncdf_files, plot_sam=self.les)
@@ -132,7 +139,6 @@ class PyPlotGen:
                 dycoms_rf01.plot(self.output_folder)
             if case_key == 'dycoms2_rf01_fixed_sst':
                 # print("\tSkipping case")
-
                 dycoms_rf01_fixed_sst = Case_dycoms2_rf01_fixed_sst(ncdf_files, plot_sam=self.les)
                 dycoms_rf01_fixed_sst.plot(self.output_folder)
             if case_key == 'dycoms2_rf02_ds':
@@ -143,10 +149,22 @@ class PyPlotGen:
                 # print("\tSkipping case")
                 dycoms_rf02_do = Case_dycoms2_rf02_do(ncdf_files, plot_sam=self.les)
                 dycoms_rf02_do.plot(self.output_folder)
-        print("##################################################")
+            if case_key == 'fire':
+                # print("\tSkipping case")
+                fire = Case_fire(ncdf_files, plot_sam=self.les)
+                fire.plot(self.output_folder)
+            if case_key == 'gabls2':
+                # print("\tSkipping case")
+                gabls2 = Case_gabls2(ncdf_files, plot_sam=self.les)
+                gabls2.plot(self.output_folder)
+            print("##################################################")
         print("Generating webpage for viewing plots ")
         print("##################################################")
         subprocess.run(['sigal', 'build', '-f', self.output_folder+'/'])  # Use sigal to build html in '_build/'
+
+    def plotAstex_a209(self):
+        astex_a209 = Case_astex_a209(ncdf_files, plot_sam=self.les)
+        astex_a209.plot(self.output_folder)
 
 def process_args():
     '''
@@ -214,3 +232,4 @@ def process_args():
 if __name__ == "__main__":
     pyplotgen = process_args()
     pyplotgen.run()
+
