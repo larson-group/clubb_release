@@ -28,6 +28,9 @@ from pyplotgen.Case_gabls3 import Case_gabls3
 from pyplotgen.Case_gabls3_night import Case_gabls3_night
 from pyplotgen.Case_lba import Case_lba
 from pyplotgen.Case_mc3e import Case_mc3e
+from pyplotgen.Case_mpace_a import Case_mpace_a
+from pyplotgen.Case_mpace_b import Case_mpace_b
+from pyplotgen.Case_mpace_b_silhs import Case_mpace_b_silhs
 from pyplotgen.DataReader import DataReader
 from pyplotgen.Case_dycoms2_rf01 import Case_dycoms2_rf01
 
@@ -92,86 +95,98 @@ class PyPlotGen:
             print("##################################################")
             print("Plotting case ", case_key)
             print("##################################################")
-            if case_key == 'astex_a209':
+            # if case_key == 'astex_a209':
+            #     # print("\tSkipping case")
+            #     astex_a209 = Case_astex_a209(ncdf_files, plot_sam=self.les)
+            #     astex_a209.plot(self.output_folder)
+            # if case_key == 'arm_97':
+            #     # print("\tSkipping case")
+            #     arm_97 = Case_arm_97(ncdf_files, plot_sam=self.les)
+            #     arm_97.plot(self.output_folder)
+            # if case_key == 'arm':
+            #     print("\tSkipping case")
+            #     cgils_arm = Case_arm(ncdf_files, plot_sam=self.les)
+            #     cgils_arm.plot(self.output_folder)
+            # if case_key == 'atex':
+            #     print("\tSkipping case")
+            #     atex = Case_atex(ncdf_files, plot_sam=self.les)
+            #     atex.plot(self.output_folder)
+            # if case_key == 'bomex':
+            #     print("\tSkipping case")
+            #     bomex = Case_bomex(ncdf_files, plot_sam=self.les)
+            #     bomex.plot(self.output_folder)
+            # if case_key == 'cgils_s6':
+            #     # print("\tSkipping case")
+            #     cgils_s6 = Case_cgils_s6(ncdf_files, plot_sam=self.les)
+            #     cgils_s6.plot(self.output_folder)
+            # if case_key == 'cgils_s11':
+            #     # print("\tSkipping case")
+            #     cgils_s11 = Case_cgils_s11(ncdf_files, plot_sam=self.les)
+            #     cgils_s11.plot(self.output_folder)
+            # if case_key == 'cgils_s12':
+            #     # print("\tSkipping case")
+            #     cgils_s12 = Case_cgils_s12(ncdf_files, plot_sam=self.les)
+            #     cgils_s12.plot(self.output_folder)
+            # if case_key == 'clex9_oct14':
+            #     # print("\tSkipping case")
+            #     clex9_oct14 = Case_clex9_oct14(ncdf_files, plot_sam=self.les)
+            #     clex9_oct14.plot(self.output_folder)
+            # if case_key == 'clex9_nov02':
+            #     # print("\tSkipping case")
+            #     clex9_nov02 = Case_clex9_nov02(ncdf_files, plot_sam=self.les)
+            #     clex9_nov02.plot(self.output_folder)
+            # if case_key == 'lba':
+            #     # print("\tSkipping case")
+            #     lba = Case_lba(ncdf_files, plot_sam=self.les)
+            #     lba.plot(self.output_folder)
+            # if case_key == 'dycoms2_rf01':
+            #     # print("\tSkipping case")
+            #     dycoms_rf01 = Case_dycoms2_rf01(ncdf_files, plot_sam=self.les)
+            #     dycoms_rf01.plot(self.output_folder)
+            # if case_key == 'dycoms2_rf01_fixed_sst':
+            #     # print("\tSkipping case")
+            #     dycoms_rf01_fixed_sst = Case_dycoms2_rf01_fixed_sst(ncdf_files, plot_sam=self.les)
+            #     dycoms_rf01_fixed_sst.plot(self.output_folder)
+            # if case_key == 'dycoms2_rf02_ds':
+            #     # print("\tSkipping case")
+            #     dycoms_rf02_ds = Case_dycoms2_rf02_ds(ncdf_files, plot_sam=self.les)
+            #     dycoms_rf02_ds.plot(self.output_folder)
+            # if case_key == 'dycoms2_rf02_do':
+            #     # print("\tSkipping case")
+            #     dycoms_rf02_do = Case_dycoms2_rf02_do(ncdf_files, plot_sam=self.les)
+            #     dycoms_rf02_do.plot(self.output_folder)
+            # if case_key == 'fire':
+            #     # print("\tSkipping case")
+            #     fire = Case_fire(ncdf_files, plot_sam=self.les)
+            #     fire.plot(self.output_folder)
+            # if case_key == 'gabls2':
+            #     # print("\tSkipping case")
+            #     gabls2 = Case_gabls2(ncdf_files, plot_sam=self.les)
+            #     gabls2.plot(self.output_folder)
+            # if case_key == 'gabls3':
+            #     # print("\tSkipping case")
+            #     gabls3 = Case_gabls3(ncdf_files, plot_sam=self.les)
+            #     gabls3.plot(self.output_folder)
+            # if case_key == 'gabls3_night':
+            #     # print("\tSkipping case")
+            #     gabls3_night = Case_gabls3_night(ncdf_files, plot_sam=self.les)
+            #     gabls3_night.plot(self.output_folder)
+            # if case_key == 'mc3e':
+            #     # print("\tSkipping case")
+            #     mc3e = Case_mc3e(ncdf_files, plot_sam=self.les)
+            #     mc3e.plot(self.output_folder)
+            # if case_key == 'mpace_a':
+            #     # print("\tSkipping case")
+            #     mpace_a = Case_mpace_a(ncdf_files, plot_sam=self.les)
+            #     mpace_a.plot(self.output_folder)
+            # if case_key == 'mpace_b':
+            #     # print("\tSkipping case")
+            #     mpace_b = Case_mpace_b(ncdf_files, plot_sam=self.les)
+            #     mpace_b.plot(self.output_folder)
+            if case_key == 'mpace_b_silhs':
                 # print("\tSkipping case")
-                astex_a209 = Case_astex_a209(ncdf_files, plot_sam=self.les)
-                astex_a209.plot(self.output_folder)
-            if case_key == 'arm_97':
-                # print("\tSkipping case")
-                arm_97 = Case_arm_97(ncdf_files, plot_sam=self.les)
-                arm_97.plot(self.output_folder)
-            if case_key == 'arm':
-                print("\tSkipping case")
-                cgils_arm = Case_arm(ncdf_files, plot_sam=self.les)
-                cgils_arm.plot(self.output_folder)
-            if case_key == 'atex':
-                print("\tSkipping case")
-                atex = Case_atex(ncdf_files, plot_sam=self.les)
-                atex.plot(self.output_folder)
-            if case_key == 'bomex':
-                print("\tSkipping case")
-                bomex = Case_bomex(ncdf_files, plot_sam=self.les)
-                bomex.plot(self.output_folder)
-            if case_key == 'cgils_s6':
-                # print("\tSkipping case")
-                cgils_s6 = Case_cgils_s6(ncdf_files, plot_sam=self.les)
-                cgils_s6.plot(self.output_folder)
-            if case_key == 'cgils_s11':
-                # print("\tSkipping case")
-                cgils_s11 = Case_cgils_s11(ncdf_files, plot_sam=self.les)
-                cgils_s11.plot(self.output_folder)
-            if case_key == 'cgils_s12':
-                # print("\tSkipping case")
-                cgils_s12 = Case_cgils_s12(ncdf_files, plot_sam=self.les)
-                cgils_s12.plot(self.output_folder)
-            if case_key == 'clex9_oct14':
-                # print("\tSkipping case")
-                clex9_oct14 = Case_clex9_oct14(ncdf_files, plot_sam=self.les)
-                clex9_oct14.plot(self.output_folder)
-            if case_key == 'clex9_nov02':
-                # print("\tSkipping case")
-                clex9_nov02 = Case_clex9_nov02(ncdf_files, plot_sam=self.les)
-                clex9_nov02.plot(self.output_folder)
-            if case_key == 'lba':
-                # print("\tSkipping case")
-                lba = Case_lba(ncdf_files, plot_sam=self.les)
-                lba.plot(self.output_folder)
-            if case_key == 'dycoms2_rf01':
-                # print("\tSkipping case")
-                dycoms_rf01 = Case_dycoms2_rf01(ncdf_files, plot_sam=self.les)
-                dycoms_rf01.plot(self.output_folder)
-            if case_key == 'dycoms2_rf01_fixed_sst':
-                # print("\tSkipping case")
-                dycoms_rf01_fixed_sst = Case_dycoms2_rf01_fixed_sst(ncdf_files, plot_sam=self.les)
-                dycoms_rf01_fixed_sst.plot(self.output_folder)
-            if case_key == 'dycoms2_rf02_ds':
-                # print("\tSkipping case")
-                dycoms_rf02_ds = Case_dycoms2_rf02_ds(ncdf_files, plot_sam=self.les)
-                dycoms_rf02_ds.plot(self.output_folder)
-            if case_key == 'dycoms2_rf02_do':
-                # print("\tSkipping case")
-                dycoms_rf02_do = Case_dycoms2_rf02_do(ncdf_files, plot_sam=self.les)
-                dycoms_rf02_do.plot(self.output_folder)
-            if case_key == 'fire':
-                # print("\tSkipping case")
-                fire = Case_fire(ncdf_files, plot_sam=self.les)
-                fire.plot(self.output_folder)
-            if case_key == 'gabls2':
-                # print("\tSkipping case")
-                gabls2 = Case_gabls2(ncdf_files, plot_sam=self.les)
-                gabls2.plot(self.output_folder)
-            if case_key == 'gabls3':
-                # print("\tSkipping case")
-                gabls3 = Case_gabls3(ncdf_files, plot_sam=self.les)
-                gabls3.plot(self.output_folder)
-            if case_key == 'gabls3_night':
-                # print("\tSkipping case")
-                gabls3_night = Case_gabls3_night(ncdf_files, plot_sam=self.les)
-                gabls3_night.plot(self.output_folder)
-            if case_key == 'mc3e':
-                # print("\tSkipping case")
-                mc3e = Case_mc3e(ncdf_files, plot_sam=self.les)
-                mc3e.plot(self.output_folder)
+                mpace_b_silhs = Case_mpace_b_silhs(ncdf_files, plot_sam=self.les)
+                mpace_b_silhs.plot(self.output_folder)
 
         print("##################################################")
         print("Generating webpage for viewing plots ")
