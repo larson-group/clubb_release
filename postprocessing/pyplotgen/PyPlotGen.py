@@ -24,7 +24,10 @@ from pyplotgen.Case_dycoms2_rf02_do import Case_dycoms2_rf02_do
 from pyplotgen.Case_dycoms2_rf02_ds import Case_dycoms2_rf02_ds
 from pyplotgen.Case_fire import Case_fire
 from pyplotgen.Case_gabls2 import Case_gabls2
+from pyplotgen.Case_gabls3 import Case_gabls3
+from pyplotgen.Case_gabls3_night import Case_gabls3_night
 from pyplotgen.Case_lba import Case_lba
+from pyplotgen.Case_mc3e import Case_mc3e
 from pyplotgen.DataReader import DataReader
 from pyplotgen.Case_dycoms2_rf01 import Case_dycoms2_rf01
 
@@ -157,14 +160,23 @@ class PyPlotGen:
                 # print("\tSkipping case")
                 gabls2 = Case_gabls2(ncdf_files, plot_sam=self.les)
                 gabls2.plot(self.output_folder)
-            print("##################################################")
+            if case_key == 'gabls3':
+                # print("\tSkipping case")
+                gabls3 = Case_gabls3(ncdf_files, plot_sam=self.les)
+                gabls3.plot(self.output_folder)
+            if case_key == 'gabls3_night':
+                # print("\tSkipping case")
+                gabls3_night = Case_gabls3_night(ncdf_files, plot_sam=self.les)
+                gabls3_night.plot(self.output_folder)
+            if case_key == 'mc3e':
+                # print("\tSkipping case")
+                mc3e = Case_mc3e(ncdf_files, plot_sam=self.les)
+                mc3e.plot(self.output_folder)
+
+        print("##################################################")
         print("Generating webpage for viewing plots ")
         print("##################################################")
         subprocess.run(['sigal', 'build', '-f', self.output_folder+'/'])  # Use sigal to build html in '_build/'
-
-    def plotAstex_a209(self):
-        astex_a209 = Case_astex_a209(ncdf_files, plot_sam=self.les)
-        astex_a209.plot(self.output_folder)
 
 def process_args():
     '''
