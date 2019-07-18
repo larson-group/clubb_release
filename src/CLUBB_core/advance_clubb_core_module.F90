@@ -346,6 +346,9 @@ module advance_clubb_core_module
     use advance_xp3_module, only: &
         advance_xp3    ! Procedure(s)
 
+    use calc_pressure, only: &
+        update_pressure    ! Procedure(s)
+
     use clubb_precision, only:  &
         core_rknd ! Variable(s)
 
@@ -488,10 +491,8 @@ module advance_clubb_core_module
       rtpthlp_forcing, & ! <r_t'th_l'> covariance forcing (momentum levels) [K*(kg/kg)/s]
       wm_zm,           & ! vertical mean wind component on momentum levels  [m/s]
       wm_zt,           & ! vertical mean wind component on thermo. levels   [m/s]
-      p_in_Pa,         & ! Air pressure (thermodynamic levels)       [Pa]
       rho_zm,          & ! Air density on momentum levels            [kg/m^3]
       rho,             & ! Air density on thermodynamic levels       [kg/m^3]
-      exner,           & ! Exner function (thermodynamic levels)     [-]
       rho_ds_zm,       & ! Dry, static density on momentum levels    [kg/m^3]
       rho_ds_zt,       & ! Dry, static density on thermo. levels     [kg/m^3]
       invrs_rho_ds_zm, & ! Inverse dry, static density on momentum levs. [m^3/kg]
@@ -570,6 +571,10 @@ module advance_clubb_core_module
       sclrp2,    & ! sclr'^2 (momentum levels)            [{units vary}^2]
       sclrprtp,  & ! sclr'rt' (momentum levels)           [{units vary} (kg/kg)]
       sclrpthlp    ! sclr'thl' (momentum levels)          [{units vary} K]
+
+    real( kind = core_rknd ), intent(inout), dimension(gr%nz) ::  &
+      p_in_Pa, & ! Air pressure (thermodynamic levels)       [Pa]
+      exner      ! Exner function (thermodynamic levels)     [-]
 
     real( kind = core_rknd ), intent(inout), dimension(gr%nz) ::  &
       rcm,        & ! cloud water mixing ratio, r_c (thermo. levels) [kg/kg]
@@ -669,6 +674,10 @@ module advance_clubb_core_module
       thlm_pert_pos_rt, thlm_pert_neg_rt, &     ! For avg. calculation of Lscale  [K]
       rtm_pert_pos_rt, rtm_pert_neg_rt          ! For avg. calculation of Lscale  [kg/kg]
     !Lscale_weight Uncomment this if you need to use this vairable at some point.
+
+    real( kind = core_rknd ), dimension(gr%nz) ::  &
+      p_in_Pa_zm, & ! Air pressure on momentum levels       [Pa]
+      exner_zm      ! Exner function on momentum levels     [-]
 
     real( kind = core_rknd ), dimension(gr%nz) :: &
       w_1_zm,        & ! Mean w (1st PDF component)                   [m/s]
@@ -1756,6 +1765,11 @@ module advance_clubb_core_module
         call fill_holes_vertical(2,0.0_core_rknd,"zt",rho_ds_zt,rho_ds_zm,edsclrm(:,ixind))
       enddo
 #endif
+
+    ! Update pressure and exner based on the new values of the thermodynamic
+    ! predictive fields.
+    call update_pressure( thlm, rtm, rcm, rho_ds_zt, thv_ds_zt, &
+                          p_in_Pa, exner, p_in_Pa_zm, exner_zm )
 
     if ( ipdf_call_placement == ipdf_post_advance_fields &
          .or. ipdf_call_placement == ipdf_pre_post_advance_fields ) then
