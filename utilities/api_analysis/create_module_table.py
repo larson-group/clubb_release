@@ -1,17 +1,25 @@
-import os, sys, fileinput, time
+"""
+Create Module Table (create_module_table.py)
+
+Author: schemenauero
+Date: 7/02/14
+
+When ran in a folder which also has module lists, this script returns
+an html table of which modules are used in which list
+"""
+
+import sys
+import time
 from api_commitment_test import findFiles, arrayOfFileNames
 
-# ~~~~~~ Create Module Table ~~~~~~ schemenauero ~~~~~~ 7/02/14 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# When ran in a folder which also has module lists, this script returns 
-# an html table of which modules are used in which list
 
 def formatBool(boolean):
-    retStr = ""
-    if (boolean):
-        retStr = "<td>"+str(boolean)+"</td>"
+    if boolean:
+        retStr = "<td>" + str(boolean) + "</td>"
     else:
-        retStr = "<td style='color:lightgrey'>"+str(boolean)+"</td>"
+        retStr = "<td style='color:lightgrey'>" + str(boolean) + "</td>"
     return retStr
+
 
 def getClubbCoreModules(clubbCoreLocation):
     retVals = []
@@ -19,6 +27,7 @@ def getClubbCoreModules(clubbCoreLocation):
         if ".svn-base" not in mod:
             retVals.append(mod)
     return retVals
+
 
 # Setup Input
 try:
@@ -55,7 +64,7 @@ modules = []
 
 # Add the modules in clubb core
 for mod in getClubbCoreModules(sys.argv[1]):
-    moduleSet.add(str(mod)+"\n")
+    moduleSet.add(str(mod) + "\n")
 
 modules = list(moduleSet)
 
@@ -70,7 +79,7 @@ usedByWrf = False
 usedByCam = False
 usedByClubbCore = False
 # Using "sortable" http://www.kryogenix.org/code/browser/sorttable/#symbolsbeforesorting
-table =  '<!DOCTYPE html><html><script src="sorttable.js"></script>'
+table = '<!DOCTYPE html><html><script src="sorttable.js"></script>'
 table += "<style>table,td, th{"
 table += "border:1px solid black;"
 table += "border-collapse: collapse;"
@@ -116,13 +125,13 @@ for module in modules:
         usedByClubbCore = True
         currentUsers += 1
 
-    table += "<tr><td>"+module+"</td>"
-    table += "<td>"+str(currentUsers)+"</td>"
+    table += "<tr><td>" + module + "</td>"
+    table += "<td>" + str(currentUsers) + "</td>"
     table += formatBool(usedByClubbCore)
     table += formatBool(usedByClubbStandalone)
     table += formatBool(usedBySam)
     table += formatBool(usedByWrf)
-    table += formatBool(usedByCam)+"</tr>"
+    table += formatBool(usedByCam) + "</tr>"
 
 table += "</table></body></html>"
 

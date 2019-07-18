@@ -9,6 +9,10 @@ import numpy as np
 import matplotlib.pyplot as plt
 import logging
 from matplotlib.ticker import ScalarFormatter as stick
+# Imports used for moving power offset
+import types
+import matplotlib.transforms as mpt
+from plot_defs import *
 
 #-------------------------------------------------------------------------------
 #   L O G G E R
@@ -18,53 +22,10 @@ logger = logging.getLogger('plotgen.help.pb')
 logger.setLevel(logging.DEBUG)
 #logger.setLevel(logging.CRITICAL)
 
-
-#-------------------------------------------------------------------------------
-#   D E F I N I T I O N S
-#-------------------------------------------------------------------------------
-#styles = ['-']
-styles = ['-','--','-.',':']
-#ticks = stick(useMathText=True)
-#ticks.set_powerlimits((-3,3))
-pow_lim = 1
-legend_pos = [2,1]
-legend_title = ['bottom', 'top']
-# Create 9 maximally distinguishable colors TODO!!
-#             red       blue      green     purple    brown     black     grey      orange    magenta
-color_arr = ['#e41a1c','#377eb8','#4daf4a','#984ea3','#a65628','#000000','#999999','#ffa600','#f750bf']
-
-## Comparison styles
-comp_style = {
-    'clubb' : {
-        'color' : 'red',
-        'lw'    : 3,
-        'ls'    : '--',
-        'label' : 'new CLUBB'
-        },
-    'sam'   : {
-        'color' : 'black',
-        'lw'    : 5,
-        'ls'    : '-',
-        'label' : 'SAM-LES'
-        },
-    'old'   : {
-        'color' : 'green',
-        'lw'    : 3,
-        'ls'    : ':',
-        'label' : 'old CLUBB'
-        },
-    }
-
-fontsizes = {
-    'labels' : 25,
-    'ticks' : 20,
-    'title' : 30,
-    'legend' : 18,
-    }
-
 #-------------------------------------------------------------------------------
 #   F U N C T I O N S
 #-------------------------------------------------------------------------------
+# DEPRECATED!!!
 def plot_budgets(budgets_data, level, xLabel, yLabel, title, name, lw = 5, grid = True,  color = 'nipy_spectral', pdf=None):
     logger.info('plot_budgets')
     """
@@ -141,7 +102,7 @@ def plot_budgets(budgets_data, level, xLabel, yLabel, title, name, lw = 5, grid 
         #limit = round(limit/10**e)
         axes[i].set_xlim(-limit, limit)
         ticks = stick(useMathText=True)
-        ticks.set_powerlimits((-pow_lim,pow_lim))
+        ticks.set_powerlimits(pow_lims)
         axes[i].xaxis.set_major_formatter(ticks)
         axes[i].grid(grid)
         axes[i].legend(loc=legend_pos[i], prop={'size':8})
@@ -167,13 +128,12 @@ def plot_budgets(budgets_data, level, xLabel, yLabel, title, name, lw = 5, grid 
         pdf[0].set_ylabel(yLabel)
         pdf[0].set_title(title, fontsize=18, y=titlepos)
     
-
+# END plot_budgets (DEPRECATED!)
 
 def plot_profiles(data, level, xLabel, yLabel, title, name, startLevel = 0, lw = 5, grid = True, color = 'nipy_spectral', centering=False, pdf=None):
     """
-    This function replaced plot_budgets, so it should be used from now on.
-    Plots a plot with budgets
-    TODO: Change line label
+    NOTE: This function replaced plot_budgets, so it should be used from now on.
+    Creates a height profile plot with one line per entry in data
     Input:
     data           --  list of data per plot line
                        Structure of data:
@@ -182,8 +142,9 @@ def plot_profiles(data, level, xLabel, yLabel, title, name, startLevel = 0, lw =
                        0   | plot label
                        1   | switch: - True  = show line in plot
                            |         - False = do not show line
-                       2   | plot axis (0: left, 1: right)
-                       3   | data of variable (numpy array)
+                       2   | netcdf variable name
+                       3   | plot axis (0: left, 1: right)
+                       4   | data of variable (numpy array)
     level          --  height levels
     xLabel         --  label of the x axis
     yLabel         --  label of the y axis
@@ -195,12 +156,17 @@ def plot_profiles(data, level, xLabel, yLabel, title, name, startLevel = 0, lw =
     pdf            --  PdfPages object
     """
     logger.info('plot_profiles')
-    fig = plt.figure(figsize=(10,10))
+    fig = plt.figure(figsize=profile_figsize)
     ax = fig.add_subplot(111)
     #logger.debug([b[2] for b in data])
-    if any([b[2]==1 for b in data]):
+    if any([b[3]==1 for b in data]):
         axes = [ax, ax.twiny()]
-        titlepos = 1.04
+        for i, el in enumerate(axes):
+            el.xaxis._update_offset_text_position = types.MethodType(x_update_offset_text_position, el.xaxis)
+        axes[1].xaxis.tick_top()
+        axes[1].xaxis.offset_text_position = 'top'
+        titlepos = 1.06
+        centering=True
     else:
         axes = [ax]
         titlepos = 1.01
@@ -209,6 +175,7 @@ def plot_profiles(data, level, xLabel, yLabel, title, name, startLevel = 0, lw =
     ax.set_xlabel(xLabel, fontsize=fontsizes['labels'])
     ax.set_ylabel(yLabel, fontsize=fontsizes['labels'])
     ax.set_title(title, fontsize=fontsizes['title'], y=titlepos)
+    #ax.text(0.1,0.9,'c)',fontsize=30,transform=ax.transAxes)
     
     # show grid
     #ax.grid(grid, which='both')
@@ -229,29 +196,31 @@ def plot_profiles(data, level, xLabel, yLabel, title, name, startLevel = 0, lw =
     lims = np.full((len(axes),2), fill_value=np.nan)
     #logger.debug(lims)
     for i in range(len(data)):
-        if data[i][3] is None and data[i][1]:
+        if data[i][4] is None and data[i][1]:
             logger.debug('Add dummy line for %s', data[i][0])
             # plot dummy line, even necessary?
             #axes[data[i][2]].plot([])
             # increment line counter j
             j+=1
         else:
-            logger.debug('dimension of %s: %s', data[i][0], len(data[i][3]))
+            logger.debug('dimension of %s: %s', data[i][0], len(data[i][4]))
             # if it is a help variable, like BUOY e.g., the variable should not be plotted. It is included in B+P variables
             if data[i][1]:
                 # plot line
-                axes[data[i][2]].plot(data[i][3][startLevel:], level[startLevel:], label=data[i][0], color=color_arr[j%len(color_arr)], lw=lw, ls=styles[j%len(styles)])
-                if not np.all(np.isnan(data[i][3])):
-                    lims[data[i][2],0] = np.nanmin( (np.nanmin(data[i][3]), lims[data[i][2],0]) )
-                    lims[data[i][2],1] = np.nanmax( (np.nanmax(data[i][3]), lims[data[i][2],1]) )
+                axes[data[i][3]].plot(data[i][4][startLevel:], level[startLevel:], label=data[i][0], color=color_arr[j%len(color_arr)], lw=lw, ls=styles[j%len(styles)])
+                if not np.all(np.isnan(data[i][4])):
+                    lims[data[i][3],0] = np.nanmin( (np.nanmin(data[i][4]), lims[data[i][3],0]) )
+                    lims[data[i][3],1] = np.nanmax( (np.nanmax(data[i][4]), lims[data[i][3],1]) )
                 # Change color for next line
                 j += 1
 
     #logger.debug(lims)
     # x axis should be symmetric
     # List to save ticks of each axis
+    logger.info('Plot formatting')
     ticklist = []
     for i in range(len(axes)):
+        #logger.debug('Adjusting plot limits')
         if centering:
             xlimits = axes[i].get_xlim()
             # Calculate absolute maximum of x values
@@ -266,8 +235,9 @@ def plot_profiles(data, level, xLabel, yLabel, title, name, startLevel = 0, lw =
             if not np.any(np.isnan(lims[i])):
                 axes[i].set_xlim(lims[i]+np.array((-margin,margin)))
         # Set tick label format to scalar formatter with length sensitive format (switch to scientific format when a set order of magnitude is reached)
+        #logger.debug('Setting tick labels to scientific notation')
         ticks = stick(useMathText=True)
-        ticks.set_powerlimits((-pow_lim,pow_lim))
+        ticks.set_powerlimits(pow_lims)
         axes[i].xaxis.set_major_formatter(ticks)
         axes[i].grid(grid, which='both')
         # Generate legend
@@ -277,6 +247,7 @@ def plot_profiles(data, level, xLabel, yLabel, title, name, startLevel = 0, lw =
 
     # For multiple axes adjust ticks to coincide
     if len(axes)>1:
+        #logger.debug('Matching ticks for multiple x axes')
         ls = map(len,ticklist)
         l = max(ls)
         for i in range(len(axes)):
@@ -286,11 +257,14 @@ def plot_profiles(data, level, xLabel, yLabel, title, name, startLevel = 0, lw =
     for i in range(len(axes)):
         axes[i].tick_params(axis='both', labelsize=fontsizes['ticks'])
         axes[i].xaxis.get_offset_text().set_size(fontsizes['ticks'])
+    #logger.debug('Redrawing figure')
     fig.canvas.draw_idle()
                 
     # Save plot
+    #logger.debug('Saving to jpg')
     fig.savefig(name)
     if pdf:
+        #logger.debug('Saving to pdf')
         pdf.savefig(fig)
     # Close figure
     plt.close(fig)
@@ -300,16 +274,18 @@ def plot_comparison(data_clubb, data_sam, level_clubb, level_sam, xLabel, yLabel
     """
     Plots a plot with budgets
     Input:
-    data_clubb      --  list of CLUBB data per plot line
-    data_sam        --  list of SAM data per plot line
-    Structure of data:
-    Index | Description
-    ______________________________________________
-    0   | plot label
-    1   | switch: - True  = show line in plot
-        |         - False = do not show line
-    2   | plot axis (0: left, 1: right)
-    3   | data of variable (numpy array)
+    data_clubb     --  list of CLUBB data per plot line
+    data_sam       --  list of SAM data per plot line
+    data           --  list of data per plot line
+                        Structure of data:
+                        Index | Description
+                        ______________________________________________
+                        0   | plot label
+                        1   | switch: - True  = show line in plot
+                            |         - False = do not show line
+                        2   | netcdf variable name
+                        3   | plot axis (0: left, 1: right)
+                        4   | data of variable (numpy array)
     level_clubb    --  height levels for CLUBB model
     level_sam      --  height levels for SAM model
     xLabel         --  label of the x axis
@@ -321,7 +297,7 @@ def plot_comparison(data_clubb, data_sam, level_clubb, level_sam, xLabel, yLabel
     pdf            --  PdfPages object
     """
     logger.info('plot_profiles')
-    fig = plt.figure(figsize=(10,10))
+    fig = plt.figure(figsize=profile_figsize)
     ax = fig.add_subplot(111)
     # A 2nd axis should not be necessary here, as there will only be one line for SAM and CLUBB each per plot
     #if any([b[2]==1 for b in data]):
@@ -335,6 +311,7 @@ def plot_comparison(data_clubb, data_sam, level_clubb, level_sam, xLabel, yLabel
     ax.set_xlabel(xLabel, fontsize=fontsizes['labels'])
     ax.set_ylabel(yLabel, fontsize=fontsizes['labels'])
     ax.set_title(title, fontsize=fontsizes['title'], y=titlepos)
+    #ax.text(0.93,0.9,'d)',fontsize=30,transform=ax.transAxes,zorder=100)
 
     # show grid
     ax.grid(grid)
@@ -343,28 +320,28 @@ def plot_comparison(data_clubb, data_sam, level_clubb, level_sam, xLabel, yLabel
     
     # loop over lines in plot
     for i in range(len(data_clubb)):
-        logger.debug('dimension of CLUBB data %s: %s', data_clubb[i][0], len(data_clubb[i][3]))
-        logger.debug('dimension of SAM data %s: %s', data_sam[i][0], len(data_sam[i][3]))
+        logger.debug('dimension of CLUBB data %s: %s', data_clubb[i][0], len(data_clubb[i][4]))
+        logger.debug('dimension of SAM data %s: %s', data_sam[i][0], len(data_sam[i][4]))
         if plot_old_clubb:
-            logger.debug('dimension of old CLUBB data %s: %s', data_old[i][0], len(data_old[i][3]))
+            logger.debug('dimension of old CLUBB data %s: %s', data_old[i][0], len(data_old[i][4]))
         # if it is a help variable, like BUOY e.g., the variable should not be plotted. It is included in B+P variables
         if data_clubb[i][1]:
             ## plot lines
             # SAM
             d = comp_style['sam']
-            ax.plot(data_sam[i][3][startLevel:], level_sam[startLevel:], label=d['label'], color=d['color'], lw=d['lw'], ls=d['ls'])
+            ax.plot(data_sam[i][4][startLevel:], level_sam[startLevel:], label=d['label'], color=d['color'], lw=d['lw'], ls=d['ls'])
             # CLUBB
             d = comp_style['clubb']
-            ax.plot(data_clubb[i][3][startLevel:], level_clubb[startLevel:], label=d['label'], color=d['color'], lw=d['lw'], ls=d['ls'])
-            logger.debug("Data limits: CLUBB: (%f, %f); SAM: (%f, %f)", data_clubb[i][3].min(), data_clubb[i][3].max(), data_sam[i][3].min(), data_sam[i][3].max())
-            xmin = min(data_sam[i][3].min(), data_clubb[i][3].min())
-            xmax = max(data_sam[i][3].max(), data_clubb[i][3].max())
+            ax.plot(data_clubb[i][4][startLevel:], level_clubb[startLevel:], label=d['label'], color=d['color'], lw=d['lw'], ls=d['ls'])
+            logger.debug("Data limits: CLUBB: (%f, %f); SAM: (%f, %f)", data_clubb[i][4].min(), data_clubb[i][4].max(), data_sam[i][4].min(), data_sam[i][4].max())
+            xmin = min(data_sam[i][4].min(), data_clubb[i][4].min())
+            xmax = max(data_sam[i][4].max(), data_clubb[i][4].max())
             # old CLUBB
             if plot_old_clubb:
                 d = comp_style['old']
-                ax.plot(data_old[i][3][startLevel:], level_old[startLevel:], label=d['label'], color=d['color'], lw=d['lw'], ls=d['ls'])
-                xmin = min(xmin, data_old[i][3].min())
-                xmax = max(xmax, data_old[i][3].max())
+                ax.plot(data_old[i][4][startLevel:], level_old[startLevel:], label=d['label'], color=d['color'], lw=d['lw'], ls=d['ls'])
+                xmin = min(xmin, data_old[i][4].min())
+                xmax = max(xmax, data_old[i][4].max())
             xmin -= .1*(xmax-xmin)
             xmax += .1*(xmax-xmin)
             logger.debug("Set xlim to (%f, %f)", xmin, xmax)
@@ -372,14 +349,14 @@ def plot_comparison(data_clubb, data_sam, level_clubb, level_sam, xLabel, yLabel
                 ax.set_xlim(xmin, xmax)
     # Set tick label format to scalar formatter with length sensitive format (switch to scientific format when a set order of magnitude is reached)
     ticks = stick(useMathText=True)
-    ticks.set_powerlimits((-pow_lim,pow_lim))
+    ticks.set_powerlimits(pow_lims)
     ax.xaxis.set_major_formatter(ticks)
     # Increase fontsize for ticklabels
     ax.tick_params(axis='both', labelsize=fontsizes['ticks'])
     ax.xaxis.get_offset_text().set_size(fontsizes['ticks'])
     fig.canvas.draw_idle()
     # Add legend
-    ax.legend(loc=0, prop={'size': fontsizes['legend']})
+    ax.legend(loc=legend_pos[0], prop={'size': fontsizes['legend']})
 
     # Save plot
     fig.savefig(name)
@@ -412,7 +389,7 @@ def get_budgets_from_nc(nc, varname, conversion, n, t):
         var = var*conversion
     else:
         logger.debug('%s is not in keys', varname)
-        var = np.zeros(shape=(n,t)) - 1000.
+        var = np.zeros(shape=(t,n)) - 1000.
         
     return var
 
@@ -439,7 +416,7 @@ def get_var_from_nc(nc, varname, conversion, n, t):
         var = var*conversion
     else:
         logger.debug('%s is not in keys', varname)
-        var = np.zeros(shape=(n,t)) - 1000.
+        var = np.zeros(shape=(t,n)) - 1000.
         
     return var
 
@@ -499,3 +476,32 @@ def get_long_name(nc, varname):
         long_name = "nm"
     
     return long_name
+    
+
+# As the tick_top function of Axis currently does not move the power offset, this is a fix until it is officially implemented in pyplot
+def x_update_offset_text_position(self, bboxes, bboxes2):
+    logger.info('x_update_offset_text_position')
+    x, y = self.offsetText.get_position()
+    logger.debug((x,y))
+    
+    if self.offset_text_position == 'bottom':
+        logger.debug('bottom')
+        if bboxes:
+            bbox = mpt.Bbox.union(bboxes)
+        else:
+            bbox = self.axes.bbox
+        y = bbox.ymin - self.OFFSETTEXTPAD * self.figure.dpi / 72.0
+        self.offsetText.set(va='top', ha='right')
+
+    else:
+        logger.debug('top')
+        if bboxes2:
+            bbox = mpt.Bbox.union(bboxes2)
+        else:
+            bbox = self.axes.bbox
+        y = bbox.ymax + self.OFFSETTEXTPAD * self.figure.dpi / 72.0 - .75 * self.figure.dpi
+        x = x * (1.007)
+        self.offsetText.set(va='bottom', ha='left')
+        
+    logger.debug((x,y))
+    self.offsetText.set_position((x, y))

@@ -14,7 +14,7 @@ NIGHTLY=false
 SHORT_CASES=false
 PRIORITY_CASES=false
 
-OUTPUT_DIR="/usr/nightly_tests/nightly_tests/output"
+OUTPUT_DIR=$nightlyOut
 
 # Figure out the directory where the script is located
 scriptPath=`dirname $0`

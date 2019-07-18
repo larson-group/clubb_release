@@ -22,8 +22,8 @@ run_scm_all.bash:
 
   NOTE: 
   You can specify to run the cases in nightly mode using --nightly (or -n).
-  In nightly mode, the output is sent to /usr/nightly_tests/nightly_tests/output/CLUBB_current.
-  Whatever was in this directory before is copied to  /usr/nightly_tests/nightly_tests/output/CLUBB_previous
+  In nightly mode, the output is sent to $nightlyOut/CLUBB_current.
+  Whatever was in this directory before is copied to  $nightlyOut/CLUBB_previous
   Both of these directories are created if they don't exist.
 
   You can specify to run only the short cases using --short-cases (or -c).  This omits the 

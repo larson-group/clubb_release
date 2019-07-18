@@ -13,6 +13,13 @@ COARDS convention. The to_convert and new_file variables will need to be
 adjusted for your own use. It takes around an hour to convert most NetCDF
 files.
 
+check_for_missing_threadprivate.py checks whether a module variable 
+in CLUBB or SILHS has been declared but not designated as a threadprivate.
+In such a case, the variables are not thread safe and different threads
+may store a variable in the same memory location, causing errors.
+In particular, such an omission may cause CAM-CLUBB-SILHS to produce 
+different results when different numbers of openmp threads are selected.
+
 check_for_errors.py checks CLUBB source code files for common mistakes or
 CLUBB standards violations. It checks for uninitialized output variables,
 magic flags, and magic numbers. An output variable is only initialized if it

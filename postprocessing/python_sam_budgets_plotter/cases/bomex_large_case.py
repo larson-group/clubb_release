@@ -12,6 +12,7 @@ to plot height profiles and budgets for the BOMEX case
 # TODO: check parameters in Heinze/Siebesma and (auto-)rename name,case,out_dir etc
 
 case = 'BOMEX'
+full_name = case
 case_folder = '/home/sdomke/workspace/clubb/sam_clubb/{case}'.format(case=case)
 enabled = True # not used in plotgen, no idea what this should do
 #type = 'budget' # not used in plotgen
@@ -25,6 +26,7 @@ startTime = 181.0     # [minutes]
 endTime = 360.0       # [minutes]
 startHeight = 0.0     # [m]
 endHeight = 2500.0    # [m]
+time_3d = 21600.0     # [s]
 
 # run entry for header in html file
 run = '{case}_{nx}x{ny}x{nz}_{dxy}m_{dz}m_{dt}s'.format(case=case, nx=nx, ny=ny, nz=nz, dxy=dxy, dz=dz, dt=dt)
@@ -46,8 +48,8 @@ sam_3d_file = '/home/sdomke/workspace/clubb/avi_out/out3d/BOMEX_128x128x75_100m_
 clubb_zm_file = '/home/sdomke/workspace/clubb/clubb_out/bomex_zm.nc'
 clubb_zt_file = '/home/sdomke/workspace/clubb/clubb_out/bomex_zt.nc'
 ## old CLUBB
-old_clubb_zm_file = '/home/sdomke/workspace/clubb/clubb_out/bomex_zm.nc'
-old_clubb_zt_file = '/home/sdomke/workspace/clubb/clubb_out/bomex_zt.nc'
+old_clubb_zm_file = '/home/sdomke/workspace/clubb/clubb_out/bomex_zm_old.nc'
+old_clubb_zt_file = '/home/sdomke/workspace/clubb/clubb_out/bomex_zt_old.nc'
 
 ## case setup files
 sam_prm = case_folder+'/prm.les'

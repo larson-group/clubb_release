@@ -2,7 +2,11 @@
 # -*- coding: utf-8 -*-
 """
 bla
-TODO: Clean up logger output
+TODO:   Clean up logger output
+        Clean up plot_3d code:
+                write function for creation of segmented colormap
+                write function to generate meshgrids
+                clean up reading data from netcdf file
 """
 
 #-------------------------------------------------------------------------------

@@ -12,6 +12,7 @@ to plot height profiles and budgets for the LBA case
 # TODO: check parameters in Heinze/Siebesma and (auto-)rename name,case,out_dir etc
 
 case = 'LBA'
+full_name = case
 case_folder = '/home/sdomke/workspace/clubb/sam_clubb/{case}'.format(case=case)
 enabled = True # not used in plotgen, no idea what this should do
 #type = 'budget' # not used in plotgen
@@ -21,10 +22,11 @@ nz = 128
 dxy = 1000            # [m]
 dz = '25-250'         # [m]
 dt = 6                # [s]
-startTime = 181.0     # [minutes]
+startTime = 301.0     # [minutes]
 endTime = 360.0       # [minutes]
 startHeight = 0.0     # [m]
-endHeight = 2500.0    # [m]
+endHeight = 15000.0   # [m]
+time_3d = 3600.0      # dt
 
 # run entry for header in html file
 run = '{case}_{nx}x{ny}x{nz}_{dxy}m_{dz}m_{dt}s'.format(case=case, nx=nx, ny=ny, nz=nz, dxy=dxy, dz=dz, dt=dt)
@@ -39,7 +41,8 @@ out_pdf = '{case}_{dx}x{dx}_{{type}}_{{date}}.pdf'.format(case=case.lower(),dx=n
 ## input .nc file
 ## SAM
 # nc file generated from .stat output
-sam_file = '/home/sdomke/workspace/clubb/avi_out/LBA_128kmx128kmx128_1km_Morrison_190205.nc'
+#sam_file = '/home/sdomke/workspace/clubb/avi_out/LBA_128kmx128kmx128_1km_Morrison_190205.nc'
+sam_file = '/home/sdomke/workspace/clubb/avi_out/grid_change/LBA_128kmx128kmx128_1km_Morrison.nc'
 # nc file generated from .bin3D output
 sam_3d_file = '/home/sdomke/workspace/clubb/avi_out/out3d/LBA_128kmx128kmx128_1km_Morrison_64_0000003600.nc'
 ## CLUBB

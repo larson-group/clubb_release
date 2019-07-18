@@ -861,11 +861,13 @@ module pdf_utilities
   end function compute_variance_binormal
 
   !=============================================================================
-  subroutine calc_comp_corrs_binormal( xpyp, xm, ym, mu_x_1, mu_x_2,  & ! In
-                                       mu_y_1, mu_y_2, sigma_x_1_sqd, & ! In
-                                       sigma_x_2_sqd, sigma_y_1_sqd,  & ! In
-                                       sigma_y_2_sqd, mixt_frac,      & ! In
-                                       corr_x_y_1, corr_x_y_2         ) ! Out
+  subroutine calc_comp_corrs_binormal( xpyp, xm, ym,                    & ! In
+                                       mu_x_1, mu_x_2,                  & ! In
+                                       mu_y_1, mu_y_2,                  & ! In
+                                       sigma_x_1_sqd, sigma_x_2_sqd,    & ! In
+                                       sigma_y_1_sqd, sigma_y_2_sqd,    & ! In
+                                       mixt_frac,                       & ! In
+                                       corr_x_y_1, corr_x_y_2 )           ! Out
 
     ! Description:
     ! Calculates the PDF component correlations of variables x and y, where
@@ -989,8 +991,10 @@ module pdf_utilities
   end subroutine calc_comp_corrs_binormal
 
   !=============================================================================
-  pure function calc_corr_chi_x( crt_i, cthl_i, sigma_rt_i, sigma_thl_i,  &
-                                 sigma_chi_i, corr_rt_x_i, corr_thl_x_i )  &
+  pure function calc_corr_chi_x( crt_i, cthl_i,             &
+                                 sigma_rt_i, sigma_thl_i,   &
+                                 sigma_chi_i,               &
+                                 corr_rt_x_i, corr_thl_x_i )  &
   result( corr_chi_x_i )
 
     ! Description:
@@ -1106,8 +1110,10 @@ module pdf_utilities
   end function calc_corr_chi_x
 
   !=============================================================================
-  pure function calc_corr_eta_x( crt_i, cthl_i, sigma_rt_i, sigma_thl_i,  &
-                                 sigma_eta_i, corr_rt_x_i, corr_thl_x_i )  &
+  pure function calc_corr_eta_x( crt_i, cthl_i,             &
+                                 sigma_rt_i, sigma_thl_i,   &
+                                 sigma_eta_i, corr_rt_x_i,  &
+                                 corr_thl_x_i )  &
   result( corr_eta_x_i )
 
     ! Description:

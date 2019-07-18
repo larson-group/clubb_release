@@ -21,9 +21,11 @@ HOUR = 3600
 KG = 1000
 g_per_second_to_kg_per_day = 1. / (DAY * HOUR * KG)
 kg_per_second_to_kg_per_day = 1. / (DAY * HOUR)
-filler = nan
+filler = nan                                                # Define the fill value which should replace invalid values in the data
+startLevel = 0                                              # Set the lower height level at which the plots should begin. For example, startLevel=2 would cut off the lowest 2 data points for each line.
 header = 'SAM budgets'
 name = 'sam_budgets'
+prefix = 'LES'
 nc_files = ['sam']
 
 #-------------------------------------------------------------------------------
@@ -32,39 +34,76 @@ nc_files = ['sam']
 sortPlots = ['HL', 'QT', 'TW', 'THLW', 'QW', 'QTOGW', 'W2', 'W3', 'T2', 'THL2', 'Q2', 'QTOG2', 'QTHL', 'TKE', 'TKES', 'U2V2', 'WU','WV','U2', 'V2', 'V2_COMP', 'U2_V2_TAU', 'QTOG2_TAU', 'Q2_TAU', 'THL2_TAU', 'C2_TAU_COMP', 'U2_REDUCED', 'V2_REDUCED', 'W2_REDUCED', 'WU REDUCED', 'WV REDUCED']
 # settings of each plot:
 # plot number, plot title, axis label
+#plotNames = [\
+                #[r"$\mathrm{HL}$", r"$\mathrm{HL}$ budget terms $\mathrm{\left[K\,s^{-1}\right]}$"],\
+                #[r"$\mathrm{QT}$", r"$\mathrm{QT}$ budget terms $\mathrm{\left[kg\,kg^{-1}\,s^{-1}\right]}$"],\
+                #[r"$\mathrm{TW}$", r"$\mathrm{TW}$ budget terms $\mathrm{\left[m\,K\,s^{-2}\right]}$"],\
+                #[r"$\mathrm{THLW}$", r"$\mathrm{THLW}$ budget terms $\mathrm{\left[m\,K\,s^{-2}\right]}$"],\
+                #[r"$\mathrm{QW}$", r"$\mathrm{QW}$ budget terms $\mathrm{\left[kg\,kg^{-1}\,m\,s^{-2}\right]}$"],\
+                #[r"$\mathrm{QTOGW}$", r"$\mathrm{QTOGW}$ budget terms $\mathrm{\left[kg\,kg^{-1}\,m\,s^{-2}\right]}$"],\
+                #[r"$\mathrm{\overline{w'^2}}$", r"$\mathrm{\overline{w'^2}}$ budget terms $\mathrm{\left[m^2\,s^{-3}\right]}$"],\
+                #[r"$\mathrm{\overline{w'^3}}$", r"$\mathrm{\overline{w'^3}}$ budget terms $\mathrm{\left[m^3\,s^{-4}\right]}$"],\
+                #[r"$\mathrm{T^2}$", r"$\mathrm{T^2}$ budget terms $\mathrm{\left[K^2\,s^{-1}\right]}$"],\
+                #[r"$\mathrm{THL^2}$", r"$\mathrm{THL^2}$ budget terms $\mathrm{\left[K^2\,s^{-1}\right]}$"],\
+                #[r"$\mathrm{Q^2}$", r"$\mathrm{Q^2}$ budget terms $\mathrm{\left[kg^2\,kg^{-2}\,s^{-1}\right]}$"],\
+                #[r"$\mathrm{QTOG^2}$", r"$\mathrm{QTOG^2}$ budget terms $\mathrm{\left[kg^2\,kg^{-2}\,s^{-1}\right]}$"],\
+                #[r"$\mathrm{QTHL}$", r"$\mathrm{QTHL}$ budget terms $\mathrm{\left[kg\,kg^{-1}\,K\,s^{-1}\right]}$"],\
+                #[r"$\mathrm{TKE}$", r"$\mathrm{TKE}$ budget terms $\mathrm{\left[m^2\,s^{-3}\right]}$"],\
+                #[r"$\mathrm{TKE}_{SGS}$", r"$\mathrm{TKE}_{SGS}$ budget terms $\mathrm{\left[m^2\,s^{-3}\right]}$"],\
+                #[r"$\mathrm{\overline{u'^2}+\overline{v'^2}}$", r"$\mathrm{\overline{u'^2}+\overline{v'^2}}$ budget terms $\mathrm{\left[m^2\, s^{-3}\right]}$"],\
+                #[r"$\mathrm{\overline{u'w'}}$", r"$\mathrm{\overline{u'w'}}$ budget terms $\mathrm{\left[m^2\,s^{-3}\right]}$"],\
+                #[r"$\mathrm{\overline{v'w'}}$", r"$\mathrm{\overline{v'w'}}$ budget terms $\mathrm{\left[m^2\,s^{-3}\right]}$"],\
+                #[r"$\mathrm{\overline{u'^2}}$", r"$\mathrm{\overline{u'^2}}$ budget terms $\mathrm{\left[m^2\,s^{-3}\right]}$"],\
+                #[r"$\mathrm{\overline{v'^2}}$", r"$\mathrm{\overline{v'^2}}$ budget terms $\mathrm{\left[m^2\,s^{-3}\right]}$"],\
+                #[r"$\mathrm{(\overline{u'^2}+\overline{v'^2}) - \overline{u'^2}}$", r"$\mathrm{\overline{v'^2}}$ budget terms $\mathrm{\left[m^2\, s^{-3}\right]}$"],\
+                #[r"$\mathrm{\frac{C_{14}}{\tau}\ (\overline{u'^2}, \overline{v'^2})}$", r"$\mathrm{\frac{C_{14}}{\tau}\ \left[s^{-1}\right]}$"],\
+                #[r"$\mathrm{\frac{C_2}{\tau}\ (QTOG^2)}$", r"$\mathrm{\frac{C_2}{\tau}\ \left[s^{-1}\right]}$"],\
+                #[r"$\mathrm{\frac{C_2}{\tau}\ (QT^2)}$", r"$\mathrm{\frac{C_2}{\tau}\ \left[s^{-1}\right]}$"],\
+                #[r"$\mathrm{\frac{C_2}{\tau}\ (THL^2)}$", r"$\mathrm{\frac{C_2}{\tau}\ \left[s^{-1}\right]}$"],\
+                #[r"$\mathrm{\frac{C}{\tau}}$ Comparison", r"$\mathrm{\frac{C}{\tau}\ \left[s^{-1}\right]}$"],\
+                #[r"$\mathrm{\overline{u'^2}} budget$", r"$\mathrm{\overline{u'^2}}$ budget terms $\mathrm{\left[m^2\,s^{-3}\right]}$"],\
+                #[r"$\mathrm{\overline{v'^2}} budget$", r"$\mathrm{\overline{v'^2}}$ budget terms $\mathrm{\left[m^2\,s^{-3}\right]}$"],\
+                #[r"$\mathrm{\overline{w'^2}} budget$", r"$\mathrm{\overline{w'^2}}$ budget terms $\mathrm{\left[m^2\,s^{-3}\right]}$"],\
+                #[r"$\mathrm{\overline{u'w'}} budget$", r"$\mathrm{\overline{u'w'}}$ budget terms $\mathrm{\left[m^2\,s^{-3}\right]}$"],\
+                #[r"$\mathrm{\overline{v'w'}}$ budget", r"$\mathrm{\overline{v'w'}}$ budget terms $\mathrm{\left[m^2\,s^{-3}\right]}$"],\
+            #]
+
+
 plotNames = [\
-                ['HL 3D SAM Benchmark Budgets', r"$\mathrm{HL\ \left[\frac{K}{s}\right]}$"],\
-                ['QT 3D SAM Benchmark Budgets', r"$\mathrm{QTO\ \left[\frac{kg}{kg\ s}\right]}$"],\
-                ['TW SAM 3D Benchmark Budgets', r"$\mathrm{TW\ \left[\frac{m\ K}{s^2}\right]}$"],\
-                ['THLW SAM 3D Benchmark Budgets', r"$\mathrm{THLW\ \left[\frac{m K}{s^2}\right]}$"],\
-                ['QW SAM 3D Benchmark Budgets', r"$\mathrm{QW\ \left[\frac{kg\ m}{kg\ s^2}\right]}$"],\
-                ['QTOGW SAM 3D Benchmark Budgets', r"$\mathrm{QTOGW\ \left[\frac{kg\ m}{kg\ s^2}\right]}$"],\
-                ['W2 SAM 3D Benchmark Budgets', r"$\mathrm{\overline{w'^2}\ \left[\frac{m^2}{s^3}\right]}$"],\
-                ['W3 SAM 3D Benchmark Budgets', r"$\mathrm{\overline{w'^3}\ \left[\frac{m^3}{s^4}\right]}$"],\
-                ['T2 3D SAM Benchmark Budgets', r"$\mathrm{T^2\ \left[\frac{K^2}{s}\right]}$"],\
-                ['THL2 3D SAM Benchmark Budgets', r"$\mathrm{THL^2\ \left[\frac{K^2}{s}\right]}$"],\
-                ['Q2 3D SAM Benchmark Budgets', r"$\mathrm{Q^2\ \left[\frac{kg^2}{kg^2\ s}\right]}$"],\
-                ['QTOG2 3D SAM Benchmark Budgets', r"$\mathrm{QTOG^2\ \left[\frac{kg^2}{kg^2\ s}\right]}$"],\
-                ['QTHL 3D SAM Benchmark Budgets', r"$\mathrm{QTHL\ \left[\frac{kg\ K}{kg\ s}\right]}$"],\
-                ['TKE 3D SAM Benchmark Budgets', r"$\mathrm{TKE\ \left[\frac{m^2}{s^3}\right]}$"],\
-                ['TKE (SGS) 3D SAM Benchmark Budgets', r"$\mathrm{TKE\ \left[\frac{m^2}{s^3}\right]}$"],\
-                ['U2+V2 3D SAM Benchmark Budgets', r"$\mathrm{\overline{u'^2}+\overline{v'^2}\ \left[\frac{m^2}{s^2}\right]}$"],\
-                ['WU 3D SAM Benchmark Budgets', r"$\mathrm{\overline{u'w'}\ \left[\frac{m^2}{s^2}\right]}$"],\
-                ['WV 3D SAM Benchmark Budgets', r"$\mathrm{\overline{v'w'}\ \left[\frac{m^2}{s^2}\right]}$"],\
-                ['U2 3D SAM Benchmark Budgets', r"$\mathrm{\overline{u'^2}\ \left[\frac{m^2}{s^2}\right]}$"],\
-                ['V2 3D SAM Benchmark Budgets', r"$\mathrm{\overline{v'^2}\ \left[\frac{m^2}{s^2}\right]}$"],\
-                ['V2 Comparison from U2V2-U2', r"$\mathrm{\overline{v'^2}\ \left[\frac{m^2}{s^2}\right]}$"],\
-                ['C14/TAU Calculation based on\nU2 and V2 Budgets', r"$\mathrm{\frac{C_{14}}{TAU}\ \left[\frac{1}{s}\right]}$"],\
-                ['C2/TAU Calculation based on QTOG2 Budget', r"$\mathrm{\frac{C_2}{TAU}\ \left[\frac{1}{s}\right]}$"],\
-                ['C2/TAU Calculation based on QT2 Budget', r"$\mathrm{\frac{C_2}{TAU}\ \left[\frac{1}{s}\right]}$"],\
-                ['C2/TAU Calculation based on THL2 Budget', r"$\mathrm{\frac{C_2}{TAU}\ \left[\frac{1}{s}\right]}$"],\
-                ['C2/TAU Comparison', r"$\mathrm{\frac{C_2}{TAU}\ \left[\frac{1}{s}\right]}$"],\
-                ['U2 3D SAM Benchmark Budgets', r"$\mathrm{\overline{u'^2}\ \left[\frac{m^2}{s^2}\right]}$"],\
-                ['V2 3D SAM Benchmark Budgets', r"$\mathrm{\overline{v'^2}\ \left[\frac{m^2}{s^2}\right]}$"],\
-                ['W2 3D SAM Benchmark Budgets', r"$\mathrm{\overline{w'^2}\ \left[\frac{m^2}{s^2}\right]}$"],\
-                ['WU 3D SAM Benchmark Budgets', r"$\mathrm{\overline{u'w'}\ \left[\frac{m^2}{s^2}\right]}$"],\
-                ['WV 3D SAM Benchmark Budgets', r"$\mathrm{\overline{v'w'}\ \left[\frac{m^2}{s^2}\right]}$"],\
-            ]
+        [r"$\mathrm{HL}$", r"$\mathrm{HL}$ budget terms $\mathrm{\left[K\,s^{-1}\right]}$"],\
+        [r"$\mathrm{QT}$", r"$\mathrm{QT}$ budget terms $\mathrm{\left[kg\,kg^{-1}\,s^{-1}\right]}$"],\
+        [r"$\mathrm{TW}$", r"$\mathrm{TW}$ budget terms $\mathrm{\left[m\,K\,s^{-2}\right]}$"],\
+        [r"$\mathrm{THLW}$", r"$\mathrm{THLW}$ budget terms $\mathrm{\left[m\,K\,s^{-2}\right]}$"],\
+        [r"$\mathrm{QW}$", r"$\mathrm{QW}$ budget terms $\mathrm{\left[kg\,kg^{-1}\,m\,s^{-2}\right]}$"],\
+        [r"$\mathrm{QTOGW}$", r"$\mathrm{QTOGW}$ budget terms $\mathrm{\left[kg\,kg^{-1}\,m\,s^{-2}\right]}$"],\
+        [r"$\overline{w'^2}$", r"$\overline{w'^2}$ budget terms $\mathrm{\left[m^2\,s^{-3}\right]}$"],\
+        [r"$\overline{w'^3}$", r"$\overline{w'^3}$ budget terms $\mathrm{\left[m^3\,s^{-4}\right]}$"],\
+        [r"$\mathrm{T^2}$", r"$\mathrm{T^2}$ budget terms $\mathrm{\left[K^2\,s^{-1}\right]}$"],\
+        [r"$\mathrm{THL^2}$", r"$\mathrm{THL^2}$ budget terms $\mathrm{\left[K^2\,s^{-1}\right]}$"],\
+        [r"$\mathrm{Q^2}$", r"$\mathrm{Q^2}$ budget terms $\mathrm{\left[kg^2\,kg^{-2}\,s^{-1}\right]}$"],\
+        [r"$\mathrm{QTOG^2}$", r"$\mathrm{QTOG^2}$ budget terms $\mathrm{\left[kg^2\,kg^{-2}\,s^{-1}\right]}$"],\
+        [r"$\mathrm{QTHL}$", r"$\mathrm{QTHL}$ budget terms $\mathrm{\left[kg\,kg^{-1}\,K\,s^{-1}\right]}$"],\
+        [r"$\mathrm{TKE}$", r"$\mathrm{TKE}$ budget terms $\mathrm{\left[m^2\,s^{-3}\right]}$"],\
+        [r"$\mathrm{TKE}_{SGS}$", r"$\mathrm{TKE}_{SGS}$ budget terms $\mathrm{\left[m^2\,s^{-3}\right]}$"],\
+        [r"$\overline{u'^2}+\overline{v'^2}$", r"$\overline{u'^2}+\overline{v'^2}$ budget terms $\mathrm{\left[m^2\, s^{-3}\right]}$"],\
+        [r"$\overline{u'w'}$", r"$\overline{u'w'}$ budget terms $\mathrm{\left[m^2\,s^{-3}\right]}$"],\
+        [r"$\overline{v'w'}$", r"$\overline{v'w'}$ budget terms $\mathrm{\left[m^2\,s^{-3}\right]}$"],\
+        [r"$\overline{u'^2}$", r"$\overline{u'^2}$ budget terms $\mathrm{\left[m^2\,s^{-3}\right]}$"],\
+        [r"$\overline{v'^2}$", r"$\overline{v'^2}$ budget terms $\mathrm{\left[m^2\,s^{-3}\right]}$"],\
+        [r"$(\overline{u'^2}+\overline{v'^2}) - \overline{u'^2}$", r"$\overline{v'^2}$ budget terms $\mathrm{\left[m^2\, s^{-3}\right]}$"],\
+        [r"$\frac{C_{14}}{\tau}\ (\overline{u'^2}, \overline{v'^2})$", r"$\frac{C_{14}}{\tau}\ \mathrm{\left[s^{-1}\right]}$"],\
+        [r"$\frac{C_2}{\tau}\ (QTOG^2)$", r"$\frac{C_2}{\tau}\ \mathrm{\left[s^{-1}\right]}$"],\
+        [r"$\frac{C_2}{\tau}\ (QT^2)$", r"$\frac{C_2}{\tau}\ \mathrm{\left[s^{-1}\right]}$"],\
+        [r"$\frac{C_2}{\tau}\ (THL^2)$", r"$\frac{C_2}{\tau}\ \mathrm{\left[s^{-1}\right]}$"],\
+        [r"$\frac{C}{\tau}$ Comparison", r"$\frac{C}{\tau}\ \mathrm{\left[s^{-1}\right]}$"],\
+        [r"$\overline{u'^2}$ budget", r"$\overline{u'^2}$ budget terms $\mathrm{\left[m^2\,s^{-3}\right]}$"],\
+        [r"$\overline{v'^2}$ budget", r"$\overline{v'^2}$ budget terms $\mathrm{\left[m^2\,s^{-3}\right]}$"],\
+        [r"$\overline{w'^2}$ budget", r"$\overline{w'^2}$ budget terms $\mathrm{\left[m^2\,s^{-3}\right]}$"],\
+        [r"$\overline{u'w'}$ budget", r"$\overline{u'w'}$ budget terms $\mathrm{\left[m^2\,s^{-3}\right]}$"],\
+        [r"$\overline{v'w'}$ budget", r"$\overline{v'w'}$ budget terms $\mathrm{\left[m^2\,s^{-3}\right]}$"],\
+        ]
+    
+
 
 # lines of each plot:
 # variable name within python, shall this variable be plotted?, variable name in SAM output, conversion
@@ -91,7 +130,6 @@ QT = [\
          ['QTEND', True, 'QTEND', g_per_second_to_kg_per_day, 0],\
          ['QTSTOR', True, 'QTSTOR', g_per_second_to_kg_per_day, 0],\
          ['QV_TNDCY', True, 'QV_TNDCY', g_per_second_to_kg_per_day, 0],\
-         ['QC_TNDCY', True, 'QC_TNDCY', g_per_second_to_kg_per_day, 0],\
          ['QT_RES', True, 'QTSTOR+(-1)*(QTADV+QTDIFF+QTSRC+QTSINK+QTEND)', 1, 0],\
         ]
          
@@ -227,7 +265,7 @@ TKE = [\
         ['DISSIP', False, 'DISSIP', 1, 0],\
         ['DIFTR+DISS', True, 'DISSIP + DIFTR', 1, 0],\
         ['TKEBT', True, 'BT', 1., 0],\
-        ['TKE_RES', True, 'TKEBT - (SHEAR + BUOYA + ADVTR + PRESSTR + DIFTR + SDMP + DISSIP)', 1, 0],\
+        ['TKE_RES', True, 'BT - (SHEAR + BUOYA + ADVTR + PRESSTR + DIFTR + SDMP + DISSIP)', 1, 0],\
        ]
          
 TKES = [\
@@ -239,7 +277,6 @@ TKES = [\
         ['TKE_RES', True, '-(SHEARS + BUOYAS + ADVTRS + DISSIPS)', 1, 0],\
        ]
        
-       # NOTE(Steffen Domke): TKESHEAR is duplicate
 U2V2 = [\
         # variables of U2 + V2 = 2 * TKE - W2
         ['W2ADV', False, 'W2ADV', 1, 0],\
@@ -256,18 +293,18 @@ U2V2 = [\
         ['TKEDIFTR', False, 'DIFTR', 1, 0],\
         ['TKEDISSIP', False, 'DISSIP', 1, 0],\
         ['TKESDMP', False, 'SDMP', 1, 0],\
-        ['TKESHEAR', False, 'SHEAR', 1, 0],\
         ['TKEBT', False, 'BT', 1., 0],\
-        ['U2V2ADV', True, '2. * TKEADVTR - W2ADV', 1., 0],\
-        ['U2V2BUOY', True, '2. * TKEBUOYA - W2BUOY', 1., 0],\
-        ['U2V2PRESS', True, '2. * TKEPRESSTR - W2PRES', 1., 0],\
+        ['U2V2ADV', True, '2. * ADVTR - W2ADV', 1., 0],\
+        ['U2V2BUOY', True, '2. * BUOYA - W2BUOY', 1., 0],\
+        ['U2V2PRESS', True, '2. * PRESSTR - W2PRES', 1., 0],\
         ['U2V2REDIS', True, '- W2REDIS', 1, 0],\
-        ['U2V2DIFF', True, '2. * TKEDIFTR - W2DIFF', 1., 0],\
-        ['U2V2DISSIP', True, '2. * TKEDISSIP', 1, 0],\
-        ['U2V2SDMP', True, '2. * TKESDMP - W2SDMP', 1., 0],\
-        ['U2V2SHEAR', True, '2. * TKESHEAR', 1, 0],\
-        ['U2V2BT', True, '2. * TKEBT - W2BT', 1, 0],\
-        ['U2V2_RES', True, 'U2V2BT - (U2V2ADV + U2V2BUOY + U2V2PRESS + U2V2DIFF + U2V2DISSIP + U2V2SDMP + U2V2REDIS + U2V2SHEAR)', 1., 0],\
+        ['U2V2DIFF', True, '2. * DIFTR - W2DIFF', 1., 0],\
+        ['U2V2DISSIP', True, '2. * DISSIP', 1, 0],\
+        ['U2V2SDMP', True, '2. * SDMP - W2SDMP', 1., 0],\
+        ['U2V2SHEAR', True, '2. * SHEAR', 1, 0],\
+        ['U2V2BT', True, '2. * BT - W2BT', 1, 0],\
+        #['U2V2_RES', True, '2 * TKE_RES - W2_RES', 1., 0],\
+        ['U2V2_RES', True, '2. * (BT - (ADVTR + BUOYA + PRESSTR + DIFTR + DISSIP + SDMP + SHEAR)) - W2BT + (W2ADV + W2BUOY + W2PRES + W2DIFF + W2SDMP + W2REDIS)', 1., 0],\
        ]
   
 WU = [\
@@ -280,7 +317,7 @@ WU = [\
         ['WUBUOY', True, 'WUBUOY', 1, 0],\
         ['WUSHEAR', True, 'WUSHEAR', 1, 0],\
         ['WUBT', True, 'WUBT', 1, 0],\
-        ['WUSDMP', True, 'WUSDMP', 1, 0],\
+        ['WUSDMP', False, 'WUSDMP', 1, 0],\
       ]
 
 WV = [\
@@ -293,7 +330,7 @@ WV = [\
         ['WVBUOY', True, 'WVBUOY', 1, 0],\
         ['WVSHEAR', True, 'WVSHEAR', 1, 0],\
         ['WVBT', True, 'WVBT', 1, 0],\
-        ['WVSDMP', True, 'WVSDMP', 1, 0],\
+        ['WVSDMP', False, 'WVSDMP', 1, 0],\
      ]
 
 
@@ -355,6 +392,7 @@ V2_COMP = [\
         ['W2SDMP', False, 'W2SDMP', 1, 0],\
         ['W2REDIS', False, 'W2REDIS', 1, 0],\
         ['W2BT', False, 'W2BT', 1, 0],\
+        #['W2_RES', False, 'W2BT - (W2ADV + W2PRES + W2REDIS + W2BUOY + W2DIFF + W2SDMP)', 1, 0],\
         ['TKEADVTR', False, 'ADVTR', 1, 0],\
         ['TKESHEAR', False, 'SHEAR', 1, 0],\
         ['TKEBUOYA', False, 'BUOYA', 1, 0],\
@@ -362,51 +400,45 @@ V2_COMP = [\
         ['TKEDIFTR', False, 'DIFTR', 1, 0],\
         ['TKEDISSIP', False, 'DISSIP', 1, 0],\
         ['TKESDMP', False, 'SDMP', 1, 0],\
-        ['TKESHEAR', False, 'SHEAR', 1, 0],\
         ['TKEBT', False, 'BT', 1., 0],\
-        ['U2V2ADV', False, '2. * TKEADVTR - W2ADV', 1., 0],\
-        ['U2V2BUOY', False, '2. * TKEBUOYA - W2BUOY', 1., 0],\
-        ['U2V2PRESS', False, '2. * TKEPRESSTR - W2PRES', 1., 0],\
-        ['U2V2REDIS', False, '- W2REDIS', 1, 0],\
-        ['U2V2DIFF', False, '2. * TKEDIFTR - W2DIFF', 1., 0],\
-        ['U2V2DISSIP', False, '2. * TKEDISSIP', 1, 0],\
-        ['U2V2SDMP', False, '2. * TKESDMP - W2SDMP', 1., 0],\
-        ['U2V2SHEAR', False, '2. * TKESHEAR', 1, 0],\
-        ['U2V2BT', True, '2. * TKEBT - W2BT', 1, 0],\
-        ['U2V2_RES', True, 'U2V2BT - (U2V2ADV + U2V2BUOY + U2V2PRESS + U2V2DIFF + U2V2DISSIP + U2V2SDMP + U2V2REDIS + U2V2SHEAR)', 1., 0],\
-        ['V2BT', True, 'U2V2BT - U2BT', 1., 0],\
-        ['V2_RES', True, 'U2V2_RES - U2_RES', 1., 0],\
+        #['TKE_RES', False, 'BT - (SHEAR + BUOYA + ADVTR + PRESSTR + DIFTR + SDMP + DISSIP)', 1, 0],\
+        ['U2V2BT', True, '2. * BT - W2BT', 1, 0],\
+        #['U2V2_RES', True, '2 * TKE_RES - W2_RES', 1., 0],\
+        ['U2V2_RES', True, '2. * (BT - (ADVTR + BUOYA + PRESSTR + DIFTR + DISSIP + SDMP + SHEAR)) - W2BT + (W2ADV + W2BUOY + W2PRES + W2DIFF + W2SDMP + W2REDIS)', 1., 0],\
+        ['V2BT', True, '2 * BT - W2BT - U2BT', 1., 0],\
+        #['V2_RES', True, 'U2V2_RES - U2_RES', 1., 0],\
+        ['V2_RES', True, '2. * (BT - (ADVTR + BUOYA + PRESSTR + DIFTR + DISSIP + SDMP + SHEAR)) - W2BT - U2BT + (W2ADV + U2ADV + W2BUOY + W2PRES + W2DIFF + U2DIFF + W2SDMP + W2REDIS + U2REDIS + U2SHEAR)', 1., 0],\
     ]
 
 U2_V2_TAU = [\
-    ['U2DIFF', True, 'U2DIFF', 1, 0],\
-    ['V2DIFF', True, 'V2DIFF', 1, 0],\
-    ['TKES', True, 'TKES', 1, 1],\
-    ['TKE', True, 'TKE', 1, 1],\
-    ['C14/tau_U2', True, '- (3/2) * U2DIFF / np.maximum( TKE + TKES, 1e-6 )', 1, 0],\
-    ['C14/tau_V2', True, ' - (3/2) * V2DIFF / np.maximum( TKE + TKES, 1e-6 )', 1, 0],\
+    [r'U2DIFF', True, 'U2DIFF', 1, 0],\
+    [r'V2DIFF', True, 'V2DIFF', 1, 0],\
+    [r'TKES', True, 'TKES', 1, 1],\
+    [r'TKE', True, 'TKE', 1, 1],\
+    [r"$\frac{C_{14}}{\tau}\ (u'^2)$", True, '- (3/2) * U2DIFF / np.maximum( TKE + TKES, 1e-6 )', 1, 0],\
+    [r"$\frac{C_{14}}{\tau}\ (v'^2)$", True, ' - (3/2) * V2DIFF / np.maximum( TKE + TKES, 1e-6 )', 1, 0],\
     ]
 
 
 QTOG2_TAU = [\
-    ['QTOG2DISSIP', True, 'QTOG2DISSIP', 1, 0],\
-    ['QTOG2DIFTR', True, 'QTOG2DIFTR', 1, 0],\
-    ['QTOG2', True, 'QTOG2', 1, 1],\
-    ['C2/tau_QTOG2', True, '- ( QTOG2DISSIP + QTOG2DIFTR ) / np.maximum( QTOG2*1e-6, 1e-12 )', 1, 0],\
+    [r'QTOG2DISSIP', True, 'QTOG2DISSIP', 1, 0],\
+    [r'QTOG2DIFTR', True, 'QTOG2DIFTR', 1, 0],\
+    [r'QTOG2', True, 'QTOG2', 1, 1],\
+    [r"$\frac{C_2}{\tau}\ (q_{tog}'^2)$", True, '- ( QTOG2DISSIP + QTOG2DIFTR ) / np.maximum( QTOG2*1e-6, 1e-12 )', 1, 0],\
     ]
 
 Q2_TAU = [\
-    ['Q2DISSIP', True, 'Q2DISSIP', 1, 0],\
-    ['Q2DIFTR', True, 'Q2DIFTR', 1, 0],\
-    ['QT2', True, 'QT2', 1, 1],\
-    ['C2/tau_Q2', True, '- ( Q2DISSIP + Q2DIFTR ) / np.maximum( QT2 * 1e-6, 1e-12 )', 1, 0],\
+    [r'Q2DISSIP', True, 'Q2DISSIP', 1, 0],\
+    [r'Q2DIFTR', True, 'Q2DIFTR', 1, 0],\
+    [r'QT2', True, 'QT2', 1, 1],\
+    [r"$\frac{C_2}{\tau}\ (q'^2)$", True, '- ( Q2DISSIP + Q2DIFTR ) / np.maximum( QT2 * 1e-6, 1e-12 )', 1, 0],\
     ]
 
 THL2_TAU = [\
     ['THL2DISSIP', True, 'THL2DISSIP', 1, 0],\
     ['THL2DIFTR', True, 'THL2DIFTR', 1, 0],\
     ['THEL2', True, 'THEL2', 1, 1],\
-    ['C2/tau_THL2', True, ' - ( THL2DISSIP + THL2DIFTR ) / np.maximum( THEL2, 1e-6 )', 1, 0],\
+    [r"$\frac{C_2}{\tau}\ (\theta_l'^2)$", True, ' - ( THL2DISSIP + THL2DIFTR ) / np.maximum( THEL2, 1e-6 )', 1, 0],\
     ]
 
 C2_TAU_COMP = [\
@@ -423,11 +455,11 @@ C2_TAU_COMP = [\
     ['V2DIFF', False, 'V2DIFF', 1, 0],\
     ['TKES', False, 'TKES', 1, 0],\
     ['TKE', False, 'TKE', 1, 0],\
-    ['C14/tau_U2', True, '- (3/2) * U2DIFF / np.maximum( TKE + TKES, 1e-6 )', 1, 0],\
-    ['C14/tau_V2', True, ' - (3/2) * V2DIFF / np.maximum( TKE + TKES, 1e-6 )', 1, 0],\
-    ['C2/tau_QTOG2', True, '- ( QTOG2DISSIP + QTOG2DIFTR ) / np.maximum( QTOG2 * 1e-6, 1e-12 )', 1, 0],\
-    ['C2/tau_THL2', True, ' - ( THL2DISSIP + THL2DIFTR ) / np.maximum( THEL2, 1e-6 )', 1, 0],\
-    ['C2/tau_Q2', True, '- ( Q2DISSIP + Q2DIFTR ) / np.maximum( QT2 * 1e-6, 1e-12 )', 1, 0],\
+    [r"$\frac{C_{14}}{\tau}\ (u'^2)$", True, '- (3/2) * U2DIFF / np.maximum( TKE + TKES, 1e-6 )', 1, 0],\
+    [r"$\frac{C_{14}}{\tau}\ (v'^2)$", True, ' - (3/2) * V2DIFF / np.maximum( TKE + TKES, 1e-6 )', 1, 0],\
+    [r"$\frac{C_2}{\tau}\ (q_{tog}'^2)$", True, '- ( QTOG2DISSIP + QTOG2DIFTR ) / np.maximum( QTOG2 * 1e-6, 1e-12 )', 1, 0],\
+    [r"$\frac{C_2}{\tau}\ (\theta_l'^2)$", True, ' - ( THL2DISSIP + THL2DIFTR ) / np.maximum( THEL2, 1e-6 )', 1, 0],\
+    [r"$\frac{C_2}{\tau}\ (q'^2)$", True, '- ( Q2DISSIP + Q2DIFTR ) / np.maximum( QT2 * 1e-6, 1e-12 )', 1, 0],\
     ]
 
 # Define budget plots with reduced number of lines:
@@ -447,10 +479,11 @@ U2_REDUCED = [\
     ['advection', True, 'U2ADV', 1, 0],\
     ['buoyancy', True, None, 1., 0],\
     ['dissipation', True, 'U2DIFF', 1, 0],\
-    ['pressure', True, 'U2REDIS', 1, 0],\
+    ['isotropy', True, 'U2REDIS', 1, 0],\
+    ['pressure', True, None, 1, 0],\
     ['turb. prod.', True, 'U2SHEAR', 1, 0],\
-    ['time tndncy', True, 'U2BT', 1, 0],\
-    ['residual', True, 'time tndncy - (advection + turb. prod. + pressure + dissipation)', 1, 0],\
+    ['time tndcy', True, 'U2BT', 1, 0],\
+    ['residual', True, 'U2BT - (U2ADV + U2SHEAR + U2REDIS + U2DIFF)', 1, 0],\
     ]
                     
 V2_REDUCED = [\
@@ -458,52 +491,68 @@ V2_REDUCED = [\
     ['advection', True, 'V2ADV', 1, 0],\
     ['buoyancy', True, None, 1., 0],\
     ['dissipation', True, 'V2DIFF', 1, 0],\
-    ['pressure', True, 'V2REDIS', 1, 0],\
+    ['isotropy', True, 'V2REDIS', 1, 0],\
+    ['pressure', True, None, 1, 0],\
     ['turb. prod.', True, 'V2SHEAR', 1, 0],\
-    ['time tndncy', True, 'V2BT', 1, 0],\
-    ['residual', True, 'time tndncy - (advection + turb. prod. + pressure + dissipation)', 1, 0],\
+    ['time tndcy', True, 'V2BT', 1, 0],\
+    ['residual', True, 'V2BT - (V2ADV + V2SHEAR + V2REDIS + V2DIFF)', 1, 0],\
     ]
 
 W2_REDUCED = [\
-    # variables of W2
-    ['W2PRES', False, 'W2PRES', 1, 0],\
-    ['W2REDIS', False, 'W2REDIS', 1, 0],\
+    ## variables of W2
     ['W2SDMP', False, 'W2SDMP',1, 0],\
     ['advection', True, 'W2ADV', 1, 0],\
     ['buoyancy', True, 'W2BUOY', 1, 0],\
     ['dissipation', True, 'W2DIFF', 1, 0],\
+    ['isotropy', False, 'W2REDIS', 1, 0],\
+    ['pressure', False, 'W2PRES', 1, 0],\
     ['pressure', True, 'W2REDIS + W2PRES', 1, 0],\
     ['turb. prod.', True, None, 1., 0],\
-    ['time tndncy', True, 'W2BT', 1, 0],\
-    ['residual', True, 'time tndncy - (advection + pressure + buoyancy + dissipation + W2SDMP)', 1, 0],\
+    ['time tndcy', True, 'W2BT', 1, 0],\
+    ['residual', True, 'W2BT - (W2ADV + W2REDIS + W2PRES + W2BUOY + W2DIFF + W2SDMP)', 1, 0],\
     ]
 
+#WU_REDUCED = [\
+    ## variables of WU
+    #['WUPRES', False, 'WUPRES', 1, 0],\
+    #['WUANIZ', False, 'WUANIZ', 1, 0],\
+    #['WUSDMP', False, 'WUSDMP', 1, 0],\
+    #['advection', True, 'WUADV', 1, 0],\
+    #['buoyancy', True, 'WUBUOY', 1, 0],\
+    #['dissipation', True, 'WUDIFF', 1, 0],\
+    #['pressure', True, 'WUPRES + WUANIZ', 1, 0],\
+    #['turb. prod.', True, 'WUSHEAR', 1, 0],\
+    #['time tndcy', True, 'WUBT', 1, 0],\
+    #['residual', True, 'WUBT - (WUADV + WUBUOY + WUDIFF + WUPRES + WUANIZ + WUSHEAR + WUSDMP)', 1, 0],\
+    #]
+
+
 WU_REDUCED = [\
-    # variables of WV
-    ['WUPRES', False, 'WUPRES', 1, 0],\
-    ['WUANIZ', False, 'WUANIZ', 1, 0],\
+    # variables of WU
     ['WUSDMP', False, 'WUSDMP', 1, 0],\
     ['advection', True, 'WUADV', 1, 0],\
     ['buoyancy', True, 'WUBUOY', 1, 0],\
     ['dissipation', True, 'WUDIFF', 1, 0],\
     ['pressure', True, 'WUPRES + WUANIZ', 1, 0],\
+    ['isotropy', False, 'WUANIZ', 1, 0],\
+    ['pressure', False, 'WUPRES', 1, 0],\
     ['turb. prod.', True, 'WUSHEAR', 1, 0],\
-    ['time tndncy', True, 'WUBT', 1, 0],\
-    ['residual', True, 'time tndncy- (advection + buoyancy + dissipation + pressure + turb. prod. + WUSDMP)', 1, 0],\
+    ['time tndcy', True, 'WUBT', 1, 0],\
+    ['residual', True, 'WUBT - (WUADV + WUBUOY + WUDIFF + WUPRES + WUANIZ + WUSHEAR + WUSDMP)', 1, 0],\
     ]
 
 WV_REDUCED = [\
     # variables of WV
-    ['WVPRES', False, 'WVPRES', 1, 0],\
-    ['WVANIZ', False, 'WVANIZ', 1, 0],\
     ['WVSDMP', False, 'WVSDMP', 1, 0],\
     ['advection', True, 'WVADV', 1, 0],\
     ['buoyancy', True, 'WVBUOY', 1, 0],\
     ['dissipation', True, 'WVDIFF', 1, 0],\
+    ['isotropy', False, 'WVANIZ', 1, 0],\
+    ['pressure', False, 'WVPRES', 1, 0],\
     ['pressure', True, 'WVPRES + WVANIZ', 1, 0],\
     ['turb. prod.', True, 'WVSHEAR', 1, 0],\
-    ['time tndncy', True, 'WVBT', 1, 0],\
-    ['residual', True, 'time tndncy - (advection + buoyancy + dissipation + pressure + turb. prod. + WVSDMP)', 1, 0],\
+    ['time tndcy', True, 'WVBT', 1, 0],\
+    ['residual', True, 'WVBT - (WVADV + WVBUOY + WVDIFF + WVPRES + WVANIZ + WVSHEAR + WVSDMP)', 1, 0],\
     ]
 
 lines = [HL, QT, TW, THLW, QW, QTOGW, W2, W3, T2, THL2, Q2, QTOG2, QTHL, TKE, TKES, U2V2, WU, WV, U2, V2, V2_COMP, U2_V2_TAU, QTOG2_TAU, Q2_TAU, THL2_TAU, C2_TAU_COMP, U2_REDUCED, V2_REDUCED, W2_REDUCED, WU_REDUCED, WV_REDUCED]

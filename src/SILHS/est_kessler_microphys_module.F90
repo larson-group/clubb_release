@@ -60,7 +60,7 @@ module est_kessler_microphys_module
     real( kind = core_rknd ), dimension(nz), intent(in) :: &
       rcm          ! Liquid water mixing ratio                [kg/kg]
 
-    type(pdf_parameter), dimension(nz), intent(in) :: &
+    type(pdf_parameter), intent(in) :: &
       pdf_params ! PDF parameters       [units vary]
 
     integer, dimension(nz,num_samples), intent(in) :: &
@@ -141,17 +141,17 @@ module est_kessler_microphys_module
       !thl2       = pdf_params(level)%thl2
       !sthl1      = pdf_params(level)%sthl1
       !sthl2      = pdf_params(level)%sthl2
-      mixt_frac   = pdf_params(level)%mixt_frac
+      mixt_frac   = pdf_params%mixt_frac(level)
 !     rc1         = pdf_params(level)%rc1
 !     rc2         = pdf_params(level)%rc2
 !     cloud_frac_1 = pdf_params(level)%cloud_frac_1
 !     cloud_frac_2 = pdf_params(level)%cloud_frac_2
       cloud_frac_1 = 1.0_core_rknd ! For in and out of cloud sampling -dschanen 30 Jul 09
       cloud_frac_2 = 1.0_core_rknd !     "    "
-      chi_1          = pdf_params(level)%chi_1
-      chi_2          = pdf_params(level)%chi_2
-      stdev_chi_1    = pdf_params(level)%stdev_chi_1
-      stdev_chi_2    = pdf_params(level)%stdev_chi_2
+      chi_1          = pdf_params%chi_1(level)
+      chi_2          = pdf_params%chi_2(level)
+      stdev_chi_1    = pdf_params%stdev_chi_1(level)
+      stdev_chi_2    = pdf_params%stdev_chi_2(level)
 
       ! Compute mean cloud fraction and cloud water
 

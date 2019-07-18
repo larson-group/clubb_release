@@ -90,7 +90,7 @@ contains
     real( kind = core_rknd ), intent(in), dimension(num_samples) :: &
       lh_sample_point_weights ! Weight given the individual sample points
 
-    type(pdf_parameter), dimension(nz), intent(in) :: & 
+    type(pdf_parameter), intent(in) :: & 
       pdf_params ! PDF parameters       [units vary]
 
     type(hydromet_pdf_parameter), dimension(nz), intent(in) :: &
