@@ -184,7 +184,7 @@ class DataReader():
             else:
                 raise
         if values.ndim > 1:  # not ncdf_variable.one_dimensional:
-            values = self.__meanProfiles__(values, start_avging_index, end_avging_idx, avg_axis=avg_axis)
+            values = self.__meanProfiles__(values, start_avging_index, end_avging_idx + 1, avg_axis=avg_axis)
 
         return values
 
