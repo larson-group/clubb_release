@@ -7,6 +7,8 @@ module calc_pressure
             init_pressure,   &
             calculate_thvm
 
+  private ! default scope
+
   contains
 
   !=============================================================================
@@ -121,7 +123,7 @@ module calc_pressure
     ! Flag to calculate pressure and exner on momentum levels.  Otherwise,
     ! linear interpolation of exner will be used.
     logical, parameter :: &
-      l_calc_p_exner_m_levs = .false.
+      l_calc_p_exner_m_levs = .true.
 
     integer :: k  ! Vertical level index
 
@@ -179,12 +181,12 @@ module calc_pressure
     else ! .not. l_calc_p_exner_m_levs
 
        ! Interpolate exner to momentum levels
-       exner_zm(k) = zt2zm( exner, k )
+       exner_zm(gr%nz) = zt2zm( exner, gr%nz )
 
     endif ! l_calc_p_exner_m_levs
 
     ! Calculate pressure on the uppermost momentum level.
-    p_in_Pa_zm(gr%nz) = ( exner_zm(gr%nz) * p0**kappa )**(one/kappa)
+    p_in_Pa_zm(gr%nz) = p0 * exner_zm(gr%nz)**(one/kappa)
 
     ! Calculate exner at all other thermodynamic and momentum grid levels,
     ! which are all located below the uppermost thermodynamic grid level.
@@ -212,7 +214,7 @@ module calc_pressure
        endif
 
        ! Calculate pressure on thermodynamic levels.
-       p_in_Pa(k) = ( exner(k) * p0**kappa )**(one/kappa)
+       p_in_Pa(k) = p0 * exner(k)**(one/kappa)
 
        if ( l_calc_p_exner_m_levs ) then
 
@@ -241,7 +243,7 @@ module calc_pressure
        endif ! l_calc_p_exner_m_levs
 
        ! Calculate pressure on momentum levels.
-       p_in_Pa_zm(k) = ( exner_zm(k) * p0**kappa )**(one/kappa)
+       p_in_Pa_zm(k) = p0 * exner_zm(k)**(one/kappa)
 
     enddo ! k = gr%nz-1, 2, -1
 
@@ -263,12 +265,12 @@ module calc_pressure
      else ! thvm(k+1) = thvm_zm(k)
 
        exner_zm(1) &
-       = exner(2) + g_ov_Cp * ( gr%zt(2) - gr%zm(1) / thvm_zm(1) )
+       = exner(2) + g_ov_Cp * ( gr%zt(2) - gr%zm(1) ) / thvm_zm(1)
 
     endif
 
     ! Calculate pressure at the model lower boundary or surface.
-    p_in_Pa_zm(1) = ( exner_zm(1) * p0**kappa )**(one/kappa)
+    p_in_Pa_zm(1) = p0 * exner_zm(1)**(one/kappa)
 
     ! For the lowest thermodynamic level, which is below the model lower
     ! boundary, set pressure and exner to the pressure and exner found at the
@@ -282,7 +284,7 @@ module calc_pressure
   end subroutine update_pressure
 
   !=============================================================================
-  subroutine init_pressure( thvm, psfc, &
+  subroutine init_pressure( thvm, p_sfc, &
                             p_in_Pa, exner, p_in_Pa_zm, exner_zm )
 
     ! Description:
@@ -348,7 +350,7 @@ module calc_pressure
       thvm    ! Mean theta_v (thermodynamic levels)                [K]
 
     real( kind = core_rknd ), intent(in) :: &
-      psfc    ! Surface pressure                                   [Pa]
+      p_sfc    ! Surface pressure                                   [Pa]
 
     ! Output Variables
     real( kind = core_rknd ), dimension(gr%nz), intent(out) :: &
@@ -369,8 +371,8 @@ module calc_pressure
 
     ! The pressure (and exner) at the lowest momentum level is the surface
     ! pressure (and exner based on the surface pressure).
-    p_in_Pa_zm(1) = psfc
-    exner_zm(1) = ( psfc / p0 )**kappa
+    p_in_Pa_zm(1) = p_sfc
+    exner_zm(1) = ( p_sfc / p0 )**kappa
 
     ! Set the pressure (and exner) at the lowest thermodynamic level, which is
     ! below the model lower boundary, to their values at the model lower
@@ -406,7 +408,7 @@ module calc_pressure
     endif
 
     ! Calculate pressure on thermodynamic levels.
-    p_in_Pa(2) = ( exner(2) * p0**kappa )**(one/kappa)
+    p_in_Pa(2) = p0 * exner(2)**(one/kappa)
 
     ! Loop over all other thermodynamic vertical grid levels.
     do k = 3, gr%nz, 1
@@ -426,7 +428,7 @@ module calc_pressure
        endif
 
        ! Calculate pressure on thermodynamic levels.
-       p_in_Pa(k) = ( exner(k) * p0**kappa )**(one/kappa)
+       p_in_Pa(k) = p0 * exner(k)**(one/kappa)
 
     enddo ! k = 2, gr%nz, 1
 
@@ -449,7 +451,7 @@ module calc_pressure
        endif
 
        ! Calculate pressure on momentum levels.
-       p_in_Pa_zm(k) = ( exner_zm(k) * p0**kappa )**(one/kappa)
+       p_in_Pa_zm(k) = p0 * exner_zm(k)**(one/kappa)
 
     enddo ! k = 2, gr%nz, 1
 

@@ -2404,6 +2404,7 @@ module clubb_driver
         zt2zm ! Procedure(s)
 
     use constants_clubb, only:  & ! Constant(s)
+        one,   & ! 1
         Rd,    & ! Gas constant for dry air          [J/(kg K)]
         Cp,    & ! Specific heat of dry air          [J/(kg K)]
         Lv,    & ! Latent heat of vaporization       [J/kg]
@@ -2413,6 +2414,9 @@ module clubb_driver
         p0,    & ! Reference pressure of 10^5 Pa     [Pa]
         zero_threshold, & ! A threshold value of 0   [units vary]
         fstderr    ! Output to error output stream
+
+    use calc_pressure, only: &
+        calculate_thvm    ! Procedure(s)
 
     use parameters_model, only:  & 
         T0,  &  !------------------------------------- Variable(s)
@@ -2688,27 +2692,16 @@ module clubb_driver
       ! To use theta_l instead of theta, simply substitute the following for
       ! theta in the above expression:  theta_l + {L_v/(C_p*exner)} * r_c.
       !
-      ! The CLUBB code generally uses an approximated and linearized version of
-      ! the above equation (in order to calculate thv' terms -- such as w'thv',
-      ! etc.) for theta_v throughout the model code, such that:
+      ! The CLUBB code uses a linearized version of the above equation (in order
+      ! to calculate thv' terms -- such as w'thv', etc.) for theta_v throughout
+      ! the model code, such that:
       !
       ! theta_v = theta_l + { (R_v/R_d) - 1 } * thv_ds * r_t
       !                   + [ {L_v/(C_p*exner)} - (R_v/R_d) * thv_ds ] * r_c;
       !
       ! where thv_ds is used as a reference value to approximate theta_l.
-      ! However, since only the mean value of theta_v (thvm) is desired in this
-      ! subroutine, and since an accurate calculation is desired due to the fact
-      ! that model pressure, exner, and density rely on this calculation of
-      ! thvm, the exact version is used in this subroutine.
-      do k = 1, gr%nz, 1
-        thvm(k) &
-        = thm(k) &
-          * ( 1.0_core_rknd &
-              + ep1 * ( max( rtm(k) - rcm(k), zero_threshold ) &
-                            / ( 1.0_core_rknd + rtm(k) ) ) &
-              - ( rcm(k) / ( 1.0_core_rknd + rtm(k) ) ) &
-            )
-      enddo
+      thvm = calculate_thvm( thlm, rtm, rcm, exner, &
+                             thm * ( one + ep2 * ( rtm - rcm ) )**kappa )
 
       ! Recompute more accurate initial exner function, pressure, and density
       ! using thvm, which includes the effects of water vapor and cloud water.
@@ -2985,27 +2978,16 @@ module clubb_driver
       ! To use theta_l instead of theta, simply substitute the following for
       ! theta in the above expression:  theta_l + {L_v/(C_p*exner)} * r_c.
       !
-      ! The CLUBB code generally uses an approximated and linearized version of
-      ! the above equation (in order to calculate thv' terms -- such as w'thv',
-      ! etc.) for theta_v throughout the model code, such that:
+      ! The CLUBB code uses a linearized version of the above equation (in order
+      ! to calculate thv' terms -- such as w'thv', etc.) for theta_v throughout
+      ! the model code, such that:
       !
       ! theta_v = theta_l + { (R_v/R_d) - 1 } * thv_ds * r_t
       !                   + [ {L_v/(C_p*exner)} - (R_v/R_d) * thv_ds ] * r_c;
       !
       ! where thv_ds is used as a reference value to approximate theta_l.
-      ! However, since only the mean value of theta_v (thvm) is desired in this
-      ! subroutine, and since an accurate calculation is desired due to the fact
-      ! that model pressure, exner, and density rely on this calculation of
-      ! thvm, the exact version is used in this subroutine.
-      do k = 1, gr%nz, 1
-        thvm(k) &
-        = thm(k) &
-          * ( 1.0_core_rknd &
-              + ep1 * ( max( rtm(k) - rcm(k), zero_threshold ) &
-                            / ( 1.0_core_rknd + rtm(k) ) ) &
-              - ( rcm(k) / ( 1.0_core_rknd + rtm(k) ) ) &
-            )
-      enddo
+      thvm = calculate_thvm( thlm, rtm, rcm, exner, &
+                             thm * ( one + ep2 * ( rtm - rcm ) )**kappa )
 
       ! Compute total density (moisture included) using pressure, exner, and
       ! thvm.

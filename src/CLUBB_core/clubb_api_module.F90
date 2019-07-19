@@ -579,10 +579,8 @@ contains
       rtpthlp_forcing, & ! <r_t'th_l'> forcing (momentum levels) [K*(kg/kg)/s]
       wm_zm,           & ! w mean wind component on momentum levels  [m/s]
       wm_zt,           & ! w mean wind component on thermo. levels   [m/s]
-      p_in_Pa,         & ! Air pressure (thermodynamic levels)       [Pa]
       rho_zm,          & ! Air density on momentum levels            [kg/m^3]
       rho,             & ! Air density on thermodynamic levels       [kg/m^3]
-      exner,           & ! Exner function (thermodynamic levels)     [-]
       rho_ds_zm,       & ! Dry, static density on momentum levels    [kg/m^3]
       rho_ds_zt,       & ! Dry, static density on thermo. levels     [kg/m^3]
       invrs_rho_ds_zm, & ! Inv. dry, static density @ momentum levs. [m^3/kg]
@@ -663,7 +661,11 @@ contains
       sclrprtp,  & ! sclr'rt' (momentum levels)           [{units vary} (kg/kg)]
       sclrpthlp    ! sclr'thl' (momentum levels)          [{units vary} K]
 
-   real( kind = core_rknd ), intent(inout), dimension(gr%nz) ::  &
+    real( kind = core_rknd ), intent(inout), dimension(gr%nz) ::  &
+      p_in_Pa, & ! Air pressure (thermodynamic levels)       [Pa]
+      exner      ! Exner function (thermodynamic levels)     [-]
+
+    real( kind = core_rknd ), intent(inout), dimension(gr%nz) ::  &
       rcm,        & ! cloud water mixing ratio, r_c (thermo. levels) [kg/kg]
       cloud_frac, & ! cloud fraction (thermodynamic levels)          [-]
       wpthvp,     & ! < w' th_v' > (momentum levels)                 [kg/kg K]

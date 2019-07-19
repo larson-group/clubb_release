@@ -10,9 +10,7 @@ module hydrostatic_module
   public :: hydrostatic, &
             inverse_hydrostatic
 
-  private :: calc_exner_const_thvm, &
-             calc_exner_linear_thvm, &
-             calc_z_linear_thvm
+  private :: calc_z_linear_thvm
 
   contains
 
@@ -81,16 +79,15 @@ module hydrostatic_module
     !
     !------------------------------------------------------------------------
 
-    use constants_clubb, only: & 
-        kappa,  & ! Variable(s)
-        p0, & 
-        Rd, &
-        eps
-
     use grid_class, only: & 
         gr,  & ! Variable(s)
-        zm2zt,  & ! Procedure(s)
         zt2zm
+
+    use constants_clubb, only: & 
+        Rd    ! Gas Constant for Dry Air  [J/(kg K)]
+
+    use calc_pressure, only: &
+        init_pressure    ! Procedure(s)
 
     use clubb_precision, only: &
         core_rknd ! Variable(s)
@@ -117,10 +114,11 @@ module hydrostatic_module
     real( kind = core_rknd ), dimension(gr%nz) ::  &
       thvm_zm       ! Theta_v interpolated to momentum levels  [K]
 
-    real( kind = core_rknd ) :: &
-      dthvm_dz      ! Constant d(thvm)/dz between successive levels   [K/m]
-
     integer :: k
+
+    ! Calculate pressure and exner on both thermodynamic and momentum levels.
+    call init_pressure( thvm, p_sfc, &
+                        p_in_Pa, exner, p_in_Pa_zm, exner_zm )
 
     ! Interpolate thvm from thermodynamic to momentum levels.  Linear
     ! interpolation is used, except for the uppermost momentum level, where a
@@ -129,83 +127,7 @@ module hydrostatic_module
     ! consistent with the rest of this code.
     thvm_zm = zt2zm( thvm )
 
-    ! Exner is defined on thermodynamic grid levels except for the value at
-    ! index 1.  Since thermodynamic level 1 is below the surface, it is
-    ! disregarded, and the value of exner(1) corresponds to surface value, which
-    ! is actually at momentum level 1.
-    exner(1) = ( p_sfc/p0 )**kappa
-    exner_zm(1) = ( p_sfc/p0 )**kappa
-
-    ! Consider the value of exner at thermodynamic level (2) to be based on
-    ! a constant thvm between thermodynamic level (2) and momentum level (1),
-    ! which is the surface or model lower boundary.  Since thlm(1) is set equal
-    ! to thlm(2), the values of thvm are considered to be basically constant
-    ! near the ground.
-    exner(2) &
-    = calc_exner_const_thvm( thvm(2), gr%zt(2), gr%zm(1), exner(1) )
-
-    ! Given the value of exner at thermodynamic level k-1, and considering
-    ! thvm to vary linearly between its values at thermodynamic levels k
-    ! and k-1, the value of exner can be found at thermodynamic level k,
-    ! as well as at intermediate momentum level k-1.
-    do k = 3, gr%nz
-
-      dthvm_dz = gr%invrs_dzm(k-1) * ( thvm(k) - thvm(k-1) )
-
-      if ( abs(dthvm_dz) > eps ) then
-
-        exner(k) &
-        = calc_exner_linear_thvm( thvm(k-1), dthvm_dz, &
-                                  gr%zt(k-1), gr%zt(k), exner(k-1) )
-
-        exner_zm(k-1) &
-        = calc_exner_linear_thvm( thvm(k-1), dthvm_dz, &
-                                  gr%zt(k-1), gr%zm(k-1), exner(k-1) )
-
-      else ! dthvm_dz = 0
-
-        exner(k) &
-        = calc_exner_const_thvm &
-             ( thvm(k), gr%zt(k), gr%zt(k-1), exner(k-1) )
-
-        exner_zm(k-1) &
-        = calc_exner_const_thvm &
-             ( thvm(k), gr%zm(k-1), gr%zt(k-1), exner(k-1) )
-
-      endif
-
-    enddo ! k = 3, gr%nz
-
-    ! Find the value of exner_zm at momentum level gr%nz by using a linear
-    ! extension of thvm from the two thermodynamic level immediately below
-    ! momentum level gr%nz.
-    dthvm_dz = ( thvm_zm(gr%nz) - thvm(gr%nz) ) &
-               / ( gr%zm(gr%nz) - gr%zt(gr%nz) )
-
-    if ( abs(dthvm_dz) > eps ) then
-
-      exner_zm(gr%nz) &
-      = calc_exner_linear_thvm &
-           ( thvm(gr%nz), dthvm_dz, &
-             gr%zt(gr%nz), gr%zm(gr%nz), exner(gr%nz) )
-
-    else ! dthvm_dz = 0
-
-      exner_zm(gr%nz) &
-      = calc_exner_const_thvm &
-           ( thvm(gr%nz), gr%zm(gr%nz), gr%zt(gr%nz), exner(gr%nz) )
-
-    endif
-
-    ! Calculate pressure based on the values of exner.
-
-    do k = 1, gr%nz
-      p_in_Pa(k) = p0 * exner(k)**( 1._core_rknd/kappa )
-      p_in_Pa_zm(k) = p0 * exner_zm(k)**( 1._core_rknd/kappa )
-    enddo
-
     ! Calculate density based on pressure, exner, and thvm.
-
     do k = 1, gr%nz
       rho(k) = p_in_Pa(k) / ( Rd * thvm(k) * exner(k) )
       rho_zm(k) = p_in_Pa_zm(k) / ( Rd * thvm_zm(k) * exner_zm(k) )
@@ -213,6 +135,7 @@ module hydrostatic_module
 
 
     return
+
   end subroutine hydrostatic
 
 !===============================================================================
@@ -410,190 +333,6 @@ module hydrostatic_module
 
     return
   end subroutine inverse_hydrostatic
-
-!===============================================================================
-  pure function calc_exner_const_thvm( thvm, z_2, z_1, exner_1 ) &
-  result( exner_2 )
-
-    ! Description:
-    ! This function solves for exner at a level, given exner at another level,
-    ! the altitudes of both levels, and a constant thvm over the depth of the
-    ! level.
-    !
-    ! The derivative of exner is given by the following equation:
-    !
-    ! d(exner)/dz = - grav / (Cp * thvm).
-    !
-    ! This equation is integrated to solve for exner, such that:
-    !
-    ! INT(exner_1:exner_2) d(exner)
-    ! = - ( grav / Cp ) INT(z_1:z_2) (1/thvm) dz.
-    !
-    ! Since thvm is considered to be a constant over the depth of the layer
-    ! between z_1 and z_2, the equation can be written as:
-    !
-    ! INT(exner_1:exner_2) d(exner) = - grav / ( Cp * thvm ) INT(z_1:z_2) dz.
-    !
-    ! Solving the integral:
-    !
-    ! exner_2 = exner_1 - [ grav / ( Cp * thvm ) ] * ( z_2 - z_1 ).
-
-    ! References:
-    !-------------------------------------------------------------------
-
-    use constants_clubb, only: &
-        grav,  & ! Gravitational acceleration                  [m/s^2]
-        Cp       ! Specific heat of dry air at const. pressure [J/(kg*K)]
-
-    use clubb_precision, only: &
-        core_rknd ! Variable(s)
-
-    implicit none
-
-    ! Input Variables
-    real( kind = core_rknd ), intent(in) :: &
-      thvm,    & ! Constant value of thvm over the layer    [K]
-      z_2,     & ! Altitude at the top of the layer         [m]
-      z_1,     & ! Altitude at the bottom of the layer      [m]
-      exner_1    ! Exner at the bottom of the layer         [-]
-
-    ! Return Variable
-    real( kind = core_rknd ) :: exner_2  ! Exner at the top of the layer        [-]
-
-    ! Calculate exner at top of the layer.
-    exner_2 = exner_1 - ( grav / ( Cp * thvm ) ) * ( z_2 - z_1 )
-
-    return
-  end function calc_exner_const_thvm
-
-!===============================================================================
-  pure function calc_exner_linear_thvm( thvm_km1, dthvm_dz, &
-                                        z_km1, z_2, exner_km1  ) &
-  result( exner_2 )
-
-    ! Description:
-    ! This function solves for exner at a level, given exner at another level,
-    ! the altitudes of both levels, and a value of thvm that is considered to
-    ! vary linearly over the depth of the level.
-    !
-    ! The derivative of exner is given by the following equation:
-    !
-    ! d(exner)/dz = - grav / (Cp * thvm).
-    !
-    ! This equation is integrated to solve for exner, such that:
-    !
-    ! INT(exner_1:exner_2) d(exner)
-    ! = - ( grav / Cp ) INT(z_1:z_2) (1/thvm) dz.
-    !
-    ! The value of thvm is considered to vary linearly (with respect to height)
-    ! over the depth of the level (resulting in a constant d(thvm)/dz over the
-    ! depth of the level).  The entire level between z_1 and z_2 must be
-    ! encompassed between two levels with two known values of thvm.  The value
-    ! of thvm at the upper level (z_up) is called thvm_up, and the value of thvm
-    ! at the lower level (z_low) is called thvm_low.  Again, the values of thvm
-    ! at all interior altitudes, z_low <= z_1 < z <= z_2 <= z_up, behave
-    ! linearly between thvm_low and thvm_up, such that:
-    !
-    ! thvm(z)
-    ! = [ ( thvm_up - thvm_low ) / ( z_up - z_low ) ] * ( z - z_low)
-    !   + thvm_low
-    ! = [ d(thvm)/dz ] * ( z - z_low ) + thvm_low
-    ! = C_a*z + C_b;
-    !
-    ! where:
-    !
-    ! C_a
-    ! = ( thvm_up - thvm_low ) / ( z_up - z_low )
-    ! = d(thvm)/dz;
-    !
-    ! and:
-    !
-    ! C_b
-    ! = thvm_low - [ ( thvm_up - thvm_low ) / ( z_up - z_low ) ] * z_low
-    ! = thvm_low - [ d(thvm)/dz ] * z_low.
-    !
-    ! The integral becomes:
-    !
-    ! INT(exner_1:exner_2) d(exner)
-    ! = - ( grav / Cp ) INT(z_1:z_2) [ 1 / ( C_a*z + C_b ) ] dz.
-    !
-    ! Performing a u-substitution ( u = C_a*z + C_b ), the equation becomes:
-    !
-    ! INT(exner_1:exner_2) d(exner)
-    ! = - ( grav / Cp ) * ( 1 / C_a ) INT(z=z_1:z=z_2) (1/u) du.
-    !
-    ! Solving the integral, and then re-substituting for u:
-    !
-    ! exner_2 = exner_1
-    !           - ( grav / Cp ) * ( 1 / C_a )
-    !             * ln [ ( C_a*z_2 + C_b ) / ( C_a*z_1 + C_b ) ].
-    !
-    ! Re-substituting for C_a and C_b:
-    !
-    ! exner_2
-    ! = exner_1
-    !   - ( grav / Cp ) * ( 1 / {d(thvm)/dz} )
-    !     * ln [   ( {d(thvm)/dz}*z_2 + thvm_low - {d(thvm)/dz}*z_low )
-    !            / ( {d(thvm)/dz}*z_1 + thvm_low - {d(thvm)/dz}*z_low ) ].
-    !
-    ! This equation is used to calculate exner_2 using exner_1, which is at the
-    ! same level as z_1.  Furthermore, thvm_low and z_low are taken from the
-    ! same level as z_1 and exner_1.  Thus, z_1 = z_low.  Therefore:
-    !
-    ! exner_2
-    ! = exner_low
-    !   - ( grav / Cp ) * ( 1 / {d(thvm)/dz} )
-    !     * ln [ ( thvm_low + {d(thvm)/dz}*(z_2-z_low) ) / thvm_low ].
-    !
-    ! Considering either a thermodynamic or sounding level k-1 as the low level
-    ! in the integration, and that thvm varies linearly between level k-1 and
-    ! level k:
-    !
-    ! exner_2
-    ! = exner(k-1)
-    !   - ( grav / Cp ) * ( 1 / {d(thvm)/dz} )
-    !     * ln [ ( thvm(k-1) + {d(thvm)/dz}*(z_2-z(k-1)) ) / thvm(k-1) ];
-    !
-    ! where:
-    !
-    ! d(thvm)/dz = ( thvm(k) - thvm(k-1) ) / ( z(k) - z(k-1) );
-    !
-    ! and where z(k-1) < z_2 <= z(k); and {d(thvm)/dz} /= 0.  If the value of
-    ! {d(thvm)/dz} is 0, then thvm is considered to be a constant over the depth
-    ! of the level.  The appropriate equation is found in pure function
-    ! calc_exner_const_thvm.
-
-    ! References:
-    !-------------------------------------------------------------------
-
-    use clubb_precision, only: &
-        core_rknd ! Variable(s)
-
-    use constants_clubb, only: &
-        grav,  & ! Gravitational acceleration                   [m/s^2]
-        Cp       ! Specific heat of dry air at const. pressure  [J/(kg*K)]
-
-    implicit none
-
-    ! Input Variables
-    real( kind = core_rknd ), intent(in) :: &
-      thvm_km1,  & ! Value of thvm at level k-1                     [K]
-      dthvm_dz,  & ! Constant d(thvm)/dz between levels k-1 and k   [K/m]
-      z_km1,     & ! Altitude at level k-1                          [m]
-      z_2,       & ! Altitude at the top of the layer               [m]
-      exner_km1    ! Exner at level k-1                             [-]
-
-    ! Return Variable
-    real( kind = core_rknd ) :: exner_2 ! Exner at the top of the layer                 [-]
-
-    ! Calculate exner at the top of the layer.
-    exner_2  &
-    = exner_km1 &
-      - ( grav / Cp ) * ( 1.0_core_rknd / dthvm_dz )  &
-        * log(  ( thvm_km1 + dthvm_dz * ( z_2 - z_km1 ) )  /  thvm_km1  )
-
-    return
-  end function calc_exner_linear_thvm
 
 !===============================================================================
   pure function calc_z_linear_thvm( thvm_km1, dthvm_dexner, &
