@@ -33,16 +33,18 @@ from pyplotgen.Case_mc3e import Case_mc3e
 from pyplotgen.Case_mpace_a import Case_mpace_a
 from pyplotgen.Case_mpace_b import Case_mpace_b
 from pyplotgen.Case_mpace_b_silhs import Case_mpace_b_silhs
+from pyplotgen.Case_nov11_altocu import Case_nov11_altocu
 from pyplotgen.Case_rico import Case_rico
 from pyplotgen.Case_twp_ice import Case_twp_ice
 from pyplotgen.Case_wangara import Case_wangara
 from pyplotgen.DataReader import DataReader
 from pyplotgen.Case_dycoms2_rf01 import Case_dycoms2_rf01
 
+
 class PyPlotGen:
-    def __init__(self, input_folder, output_folder, replace=False, les=False, cgbest=False, hoc=False,plotrefs=False,
-                 nightly=False,hq_imgs=False, eps=False, zip=False, thin=False, no_legends=False,ensemble=False,
-                 budget_moments=False, bu_morr=False,diff=False):
+    def __init__(self, input_folder, output_folder, replace=False, les=False, cgbest=False, hoc=False, plotrefs=False,
+                 nightly=False, hq_imgs=False, eps=False, zip=False, thin=False, no_legends=False, ensemble=False,
+                 budget_moments=False, bu_morr=False, diff=False):
         '''
         This creates an instance of PyPlotGen. Each parameter is a command line parameter passed in from the argparser
         below.
@@ -85,7 +87,6 @@ class PyPlotGen:
         self.data_reader = DataReader()
         self.sam_data_reader = DataReader()
 
-
     def run(self):
         '''
         Runs PyPlotGen
@@ -96,121 +97,130 @@ class PyPlotGen:
         # cases_plotted = {}
         for case_key in self.nc_datasets.keys():
             ncdf_files = self.nc_datasets[case_key]
-            # dataset_filenames = [dataset.filepath() for dataset in self.nc_datasets[case_key].values()]
+            dataset_filenames = [dataset.filepath() for dataset in self.nc_datasets[case_key].values()]
             print("##################################################")
             print("Plotting case ", case_key)
             print("##################################################")
-            if case_key == 'astex_a209':
+            print("Case will be built with the following file(s):")
+            for file in dataset_filenames:
+                print("\t", file)
+            print()
+            # if case_key == 'astex_a209':
+            #     # print("\tSkipping case")
+            #     astex_a209 = Case_astex_a209(ncdf_files, plot_sam=self.les)
+            #     astex_a209.plot(self.output_folder)
+            # elif case_key == 'arm_97':
+            #     # print("\tSkipping case")
+            #     arm_97 = Case_arm_97(ncdf_files, plot_sam=self.les)
+            #     arm_97.plot(self.output_folder)
+            # elif case_key == 'arm':
+            #     print("\tSkipping case")
+            #     cgils_arm = Case_arm(ncdf_files, plot_sam=self.les)
+            #     cgils_arm.plot(self.output_folder)
+            # elif case_key == 'atex':
+            #     print("\tSkipping case")
+            #     atex = Case_atex(ncdf_files, plot_sam=self.les)
+            #     atex.plot(self.output_folder)
+            # elif case_key == 'bomex':
+            #     print("\tSkipping case")
+            #     bomex = Case_bomex(ncdf_files, plot_sam=self.les)
+            #     bomex.plot(self.output_folder)
+            # elif case_key == 'cgils_s6':
+            #     # print("\tSkipping case")
+            #     cgils_s6 = Case_cgils_s6(ncdf_files, plot_sam=self.les)
+            #     cgils_s6.plot(self.output_folder)
+            # elif case_key == 'cgils_s11':
+            #     # print("\tSkipping case")
+            #     cgils_s11 = Case_cgils_s11(ncdf_files, plot_sam=self.les)
+            #     cgils_s11.plot(self.output_folder)
+            # elif case_key == 'cgils_s12':
+            #     # print("\tSkipping case")
+            #     cgils_s12 = Case_cgils_s12(ncdf_files, plot_sam=self.les)
+            #     cgils_s12.plot(self.output_folder)
+            # elif case_key == 'clex9_oct14':
+            #     # print("\tSkipping case")
+            #     clex9_oct14 = Case_clex9_oct14(ncdf_files, plot_sam=self.les)
+            #     clex9_oct14.plot(self.output_folder)
+            # elif case_key == 'clex9_nov02':
+            #     # print("\tSkipping case")
+            #     clex9_nov02 = Case_clex9_nov02(ncdf_files, plot_sam=self.les)
+            #     clex9_nov02.plot(self.output_folder)
+            # elif case_key == 'lba':
+            #     # print("\tSkipping case")
+            #     lba = Case_lba(ncdf_files, plot_sam=self.les)
+            #     lba.plot(self.output_folder)
+            # elif case_key == 'dycoms2_rf01':
+            #     # print("\tSkipping case")
+            #     dycoms_rf01 = Case_dycoms2_rf01(ncdf_files, plot_sam=self.les)
+            #     dycoms_rf01.plot(self.output_folder)
+            # elif case_key == 'dycoms2_rf01_fixed_sst':
+            #     # print("\tSkipping case")
+            #     dycoms_rf01_fixed_sst = Case_dycoms2_rf01_fixed_sst(ncdf_files, plot_sam=self.les)
+            #     dycoms_rf01_fixed_sst.plot(self.output_folder)
+            # elif case_key == 'dycoms2_rf02_ds':
+            #     # print("\tSkipping case")
+            #     dycoms_rf02_ds = Case_dycoms2_rf02_ds(ncdf_files, plot_sam=self.les)
+            #     dycoms_rf02_ds.plot(self.output_folder)
+            # elif case_key == 'dycoms2_rf02_do':
+            #     # print("\tSkipping case")
+            #     dycoms_rf02_do = Case_dycoms2_rf02_do(ncdf_files, plot_sam=self.les)
+            #     dycoms_rf02_do.plot(self.output_folder)
+            # elif case_key == 'fire':
+            #     # print("\tSkipping case")
+            #     fire = Case_fire(ncdf_files, plot_sam=self.les)
+            #     fire.plot(self.output_folder)
+            # elif case_key == 'gabls2':
+            #     # print("\tSkipping case")
+            #     gabls2 = Case_gabls2(ncdf_files, plot_sam=self.les)
+            #     gabls2.plot(self.output_folder)
+            # elif case_key == 'gabls3':
+            #     # print("\tSkipping case")
+            #     gabls3 = Case_gabls3(ncdf_files, plot_sam=self.les)
+            #     gabls3.plot(self.output_folder)
+            # elif case_key == 'gabls3_night':
+            #     # print("\tSkipping case")
+            #     gabls3_night = Case_gabls3_night(ncdf_files, plot_sam=self.les)
+            #     gabls3_night.plot(self.output_folder)
+            # elif case_key == 'mc3e':
+            #     # print("\tSkipping case")
+            #     mc3e = Case_mc3e(ncdf_files, plot_sam=self.les)
+            #     mc3e.plot(self.output_folder)
+            # elif case_key == 'mpace_a':
+            #     # print("\tSkipping case")
+            #     mpace_a = Case_mpace_a(ncdf_files, plot_sam=self.les)
+            #     mpace_a.plot(self.output_folder)
+            # elif case_key == 'mpace_b':
+            #     # print("\tSkipping case")
+            #     mpace_b = Case_mpace_b(ncdf_files, plot_sam=self.les)
+            #     mpace_b.plot(self.output_folder)
+            # elif case_key == 'mpace_b_silhs':
+            #     # print("\tSkipping case")
+            #     mpace_b_silhs = Case_mpace_b_silhs(ncdf_files, plot_sam=self.les)
+            #     mpace_b_silhs.plot(self.output_folder)
+            if case_key == 'nov11_altocu':
                 # print("\tSkipping case")
-                astex_a209 = Case_astex_a209(ncdf_files, plot_sam=self.les)
-                astex_a209.plot(self.output_folder)
-            elif case_key == 'arm_97':
-                # print("\tSkipping case")
-                arm_97 = Case_arm_97(ncdf_files, plot_sam=self.les)
-                arm_97.plot(self.output_folder)
-            elif case_key == 'arm':
-                print("\tSkipping case")
-                cgils_arm = Case_arm(ncdf_files, plot_sam=self.les)
-                cgils_arm.plot(self.output_folder)
-            elif case_key == 'atex':
-                print("\tSkipping case")
-                atex = Case_atex(ncdf_files, plot_sam=self.les)
-                atex.plot(self.output_folder)
-            elif case_key == 'bomex':
-                print("\tSkipping case")
-                bomex = Case_bomex(ncdf_files, plot_sam=self.les)
-                bomex.plot(self.output_folder)
-            elif case_key == 'cgils_s6':
-                # print("\tSkipping case")
-                cgils_s6 = Case_cgils_s6(ncdf_files, plot_sam=self.les)
-                cgils_s6.plot(self.output_folder)
-            elif case_key == 'cgils_s11':
-                # print("\tSkipping case")
-                cgils_s11 = Case_cgils_s11(ncdf_files, plot_sam=self.les)
-                cgils_s11.plot(self.output_folder)
-            elif case_key == 'cgils_s12':
-                # print("\tSkipping case")
-                cgils_s12 = Case_cgils_s12(ncdf_files, plot_sam=self.les)
-                cgils_s12.plot(self.output_folder)
-            elif case_key == 'clex9_oct14':
-                # print("\tSkipping case")
-                clex9_oct14 = Case_clex9_oct14(ncdf_files, plot_sam=self.les)
-                clex9_oct14.plot(self.output_folder)
-            elif case_key == 'clex9_nov02':
-                # print("\tSkipping case")
-                clex9_nov02 = Case_clex9_nov02(ncdf_files, plot_sam=self.les)
-                clex9_nov02.plot(self.output_folder)
-            elif case_key == 'lba':
-                # print("\tSkipping case")
-                lba = Case_lba(ncdf_files, plot_sam=self.les)
-                lba.plot(self.output_folder)
-            elif case_key == 'dycoms2_rf01':
-                # print("\tSkipping case")
-                dycoms_rf01 = Case_dycoms2_rf01(ncdf_files, plot_sam=self.les)
-                dycoms_rf01.plot(self.output_folder)
-            elif case_key == 'dycoms2_rf01_fixed_sst':
-                # print("\tSkipping case")
-                dycoms_rf01_fixed_sst = Case_dycoms2_rf01_fixed_sst(ncdf_files, plot_sam=self.les)
-                dycoms_rf01_fixed_sst.plot(self.output_folder)
-            elif case_key == 'dycoms2_rf02_ds':
-                # print("\tSkipping case")
-                dycoms_rf02_ds = Case_dycoms2_rf02_ds(ncdf_files, plot_sam=self.les)
-                dycoms_rf02_ds.plot(self.output_folder)
-            elif case_key == 'dycoms2_rf02_do':
-                # print("\tSkipping case")
-                dycoms_rf02_do = Case_dycoms2_rf02_do(ncdf_files, plot_sam=self.les)
-                dycoms_rf02_do.plot(self.output_folder)
-            elif case_key == 'fire':
-                # print("\tSkipping case")
-                fire = Case_fire(ncdf_files, plot_sam=self.les)
-                fire.plot(self.output_folder)
-            elif case_key == 'gabls2':
-                # print("\tSkipping case")
-                gabls2 = Case_gabls2(ncdf_files, plot_sam=self.les)
-                gabls2.plot(self.output_folder)
-            elif case_key == 'gabls3':
-                # print("\tSkipping case")
-                gabls3 = Case_gabls3(ncdf_files, plot_sam=self.les)
-                gabls3.plot(self.output_folder)
-            elif case_key == 'gabls3_night':
-                # print("\tSkipping case")
-                gabls3_night = Case_gabls3_night(ncdf_files, plot_sam=self.les)
-                gabls3_night.plot(self.output_folder)
-            elif case_key == 'mc3e':
-                # print("\tSkipping case")
-                mc3e = Case_mc3e(ncdf_files, plot_sam=self.les)
-                mc3e.plot(self.output_folder)
-            elif case_key == 'mpace_a':
-                # print("\tSkipping case")
-                mpace_a = Case_mpace_a(ncdf_files, plot_sam=self.les)
-                mpace_a.plot(self.output_folder)
-            elif case_key == 'mpace_b':
-                # print("\tSkipping case")
-                mpace_b = Case_mpace_b(ncdf_files, plot_sam=self.les)
-                mpace_b.plot(self.output_folder)
-            elif case_key == 'mpace_b_silhs':
-                # print("\tSkipping case")
-                mpace_b_silhs = Case_mpace_b_silhs(ncdf_files, plot_sam=self.les)
-                mpace_b_silhs.plot(self.output_folder)
-            elif case_key == 'rico':
-                # print("\tSkipping case")
-                rico = Case_rico(ncdf_files, plot_sam=self.les)
-                rico.plot(self.output_folder)
-            elif case_key == 'twp_ice':
-                # print("\tSkipping case")
-                twp_ice = Case_twp_ice(ncdf_files, plot_sam=self.les)
-                twp_ice.plot(self.output_folder)
-            elif case_key == 'wangara':
-                # print("\tSkipping case")
-                wangara = Case_wangara(ncdf_files, plot_sam=self.les)
-                wangara.plot(self.output_folder)
-            else:
-                warn("Case " + case_key + " has not been implemented or is commented out. Skipping. ")
+                nov11_altocu = Case_nov11_altocu(ncdf_files, plot_sam=self.les)
+                nov11_altocu.plot(self.output_folder)
+            # elif case_key == 'rico':
+            #     # print("\tSkipping case")
+            #     rico = Case_rico(ncdf_files, plot_sam=self.les)
+            #     rico.plot(self.output_folder)
+            # elif case_key == 'twp_ice':
+            #     # print("\tSkipping case")
+            #     twp_ice = Case_twp_ice(ncdf_files, plot_sam=self.les)
+            #     twp_ice.plot(self.output_folder)
+            # elif case_key == 'wangara':
+            #     # print("\tSkipping case")
+            #     wangara = Case_wangara(ncdf_files, plot_sam=self.les)
+            #     wangara.plot(self.output_folder)
+            # else:
+            #     warn("Case " + case_key + " has not been implemented or is commented out. Skipping. ")
 
         print("##################################################")
         print("Generating webpage for viewing plots ")
         print("##################################################")
-        subprocess.run(['sigal', 'build', '-f', self.output_folder+'/'])  # Use sigal to build html in '_build/'
+        subprocess.run(['sigal', 'build', '-f', self.output_folder + '/'])  # Use sigal to build html in '_build/'
+
 
 def process_args():
     '''
@@ -220,23 +230,25 @@ def process_args():
     :return: a PyPlotGen object containing the parameters as given from the commandline.
     '''
     parser = argparse.ArgumentParser()
-    parser.add_argument("-r","--replace",help="If the output folder already exists, replace it with the new one.", action="store_true")
-    parser.add_argument("-l","--les",help="Plot LES data for comparison.", action="store_true")
-    parser.add_argument("-b","--plot-golaz-best",help="Plot Chris Golaz Best Ever data for comparison.", action="store_true")
-    parser.add_argument("-d","--plot-hoc-2005",help="Plot !HOC 12/17/2015 data for comparison.", action="store_true")
-    parser.add_argument("-a","--all-best",help="Same as -lbd. Plots LES, Golaz Best Ever, and HOC 2005 data for comparison.", action="store_true")
-    parser.add_argument("-n","--nightly",help="Run in nightly mode.", action="store_true") # TODO update this description with what it means
-    parser.add_argument("-q","--high-quality-imgs",help="Output high quality images (does not auto scale)", action="store_true") #TODO update if this does auto scale
-    parser.add_argument("-e","--save-eps",help="Does not delete EPS images after conversion.", action="store_true") #TODO what does this mean?
-    parser.add_argument("-z","--zip",help="Output data into a compressed zip file.", action="store_true")
-    parser.add_argument("--thin",help="Plot using thin solid lines.", action="store_true")
-    parser.add_argument("--no-legends",help="Plot without legend boxes defining the line types.", action="store_true")
-    parser.add_argument("--ensemble",help="Plot ensemble tuner runs", action="store_true") #TODO is this needed?
-    parser.add_argument("--budget-moments",help="Plot all defined budgets of moments", action="store_true")
-    parser.add_argument("--bu-morr",help="For morrison microphysics: breaks microphysical source terms into component processes", action="store_true")
-    parser.add_argument("--diff",help="Plot the difference between two input folders", action="store_true")
-    parser.add_argument("input",help="Input folder containing netcdf output data.", action="store")
-    parser.add_argument("output",help="Name of folder to create and store plots into.", action="store")
+    parser.add_argument("-r", "--replace", help="If the output folder already exists, replace it with the new one.", action="store_true")
+    parser.add_argument("-l", "--les", help="Plot LES data for comparison.", action="store_true")
+    parser.add_argument("-b", "--plot-golaz-best", help="Plot Chris Golaz Best Ever data for comparison.", action="store_true")
+    parser.add_argument("-d", "--plot-hoc-2005", help="Plot !HOC 12/17/2015 data for comparison.", action="store_true")
+    parser.add_argument("-a", "--all-best", help="Same as -lbd. Plots LES, Golaz Best Ever, and HOC 2005 data for comparison.", action="store_true")
+    parser.add_argument("-n", "--nightly", help="Run in nightly mode.", action="store_true")  # TODO update this description with what it means
+    parser.add_argument("-q", "--high-quality-imgs", help="Output high quality images (does not auto scale)",
+                        action="store_true")  # TODO update if this does auto scale
+    parser.add_argument("-e", "--save-eps", help="Does not delete EPS images after conversion.", action="store_true")  # TODO what does this mean?
+    parser.add_argument("-z", "--zip", help="Output data into a compressed zip file.", action="store_true")
+    parser.add_argument("--thin", help="Plot using thin solid lines.", action="store_true")
+    parser.add_argument("--no-legends", help="Plot without legend boxes defining the line types.", action="store_true")
+    parser.add_argument("--ensemble", help="Plot ensemble tuner runs", action="store_true")  # TODO is this needed?
+    parser.add_argument("--budget-moments", help="Plot all defined budgets of moments", action="store_true")
+    parser.add_argument("--bu-morr", help="For morrison microphysics: breaks microphysical source terms into component processes",
+                        action="store_true")
+    parser.add_argument("--diff", help="Plot the difference between two input folders", action="store_true")
+    parser.add_argument("input", help="Input folder containing netcdf output data.", action="store")
+    parser.add_argument("output", help="Name of folder to create and store plots into.", action="store")
     args = parser.parse_args()
 
     if args.replace:
@@ -269,13 +281,13 @@ def process_args():
         print("Diff flag detected, but that feature is not yet implemented")
 
     pyplotgen = PyPlotGen(args.input, args.output, replace=args.replace, les=args.les, cgbest=args.plot_golaz_best,
-                          hoc=args.plot_hoc_2005,plotrefs=args.all_best, nightly=args.nightly,
+                          hoc=args.plot_hoc_2005, plotrefs=args.all_best, nightly=args.nightly,
                           hq_imgs=args.high_quality_imgs, eps=args.save_eps, zip=args.zip, thin=args.thin,
-                          no_legends=args.no_legends,ensemble=args.ensemble, budget_moments=args.budget_moments,
-                          bu_morr=args.bu_morr,diff=args.diff)
+                          no_legends=args.no_legends, ensemble=args.ensemble, budget_moments=args.budget_moments,
+                          bu_morr=args.bu_morr, diff=args.diff)
     return pyplotgen
+
 
 if __name__ == "__main__":
     pyplotgen = process_args()
     pyplotgen.run()
-

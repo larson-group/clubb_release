@@ -34,7 +34,7 @@ class NetCdfVariable:
         self.conv_factor = conversion_factor
         self.avg_axis = avg_axis
         if isinstance(ncdf_data, dict):
-            self.autoSet_ncdf_data()
+            self.filter_datasets()
         self.data = data_reader.getVarData(self.ncdf_data, self, fill_zeros=fill_zeros)
         # print()
 
@@ -60,7 +60,7 @@ class NetCdfVariable:
             if test_value >= end_value and test_value < data[end_idx]:
                 end_idx = i
 
-        return start_idx, end_idx
+        return start_idx, end_idx + 1
 
     def constrain(self, start_value, end_value, data=None):
         '''
@@ -74,12 +74,13 @@ class NetCdfVariable:
         if data is None:
             data = self.data
         start_idx, end_idx = self.__getStartEndIndex__(data, start_value, end_value)
-        self.data = self.data[start_idx:end_idx+1]
+        self.data = self.data[start_idx:end_idx]
 
-    def autoSet_ncdf_data(self):
+
+    def filter_datasets(self):
         '''
         Looks through the input files for a case and finds the returns the filetype
-        containing the reqested variable.
+        containing the requested variable.
 
         :return:
         '''
@@ -167,14 +168,16 @@ class DataReader():
         time_values = self.__getValuesFromNc__(netcdf_dataset, "time", time_conv_factor)
         # TODO make sure  auto-determining end time isn't a poor decision
         if end_time_value == -1:
+            if variable_name != 'time':
+                warn("End time value was not specified (or was set to -1) for variable "+variable_name+". Automatically using last time in dataset.")
             end_time_value = time_values[-1]
         # Get the index values that correspond to the desired start/end x values
-        start_avging_index, end_avging_idx = self.__getStartEndIndex__(time_values, start_time_value, end_time_value)
+        start_avg_index, end_avg_idx = self.__getStartEndIndex__(time_values, start_time_value, end_time_value)
 
         try:
             values = self.__getValuesFromNc__(netcdf_dataset, variable_name, conv_factor)
         except ValueError:
-            # Autofill values with zeros if allowed, otherwise propagate the error
+            # Auto fill values with zeros if allowed, otherwise propagate the error
             if fill_zeros:
                 size = 0
                 for dimention in netcdf_dataset.dimensions.values():
@@ -184,7 +187,7 @@ class DataReader():
             else:
                 raise
         if values.ndim > 1:  # not ncdf_variable.one_dimensional:
-            values = self.__meanProfiles__(values, start_avging_index, end_avging_idx + 1, avg_axis=avg_axis)
+            values = self.__meanProfiles__(values, start_avg_index, end_avg_idx + 1, avg_axis=avg_axis)
 
         return values
 
@@ -213,13 +216,15 @@ class DataReader():
         Input:
           var    -- time x height array of some property
           idx_t0 -- Index corresponding to the beginning of the averaging interval
-          idx_t1 -- Index corresponding to the end of the averaging interval
+          idx_t1 -- Index corresponding to the end of the averaging interval, this value is exclusive.
+                    If you want the data at this index to be included in averaging do your index + 1
           idx_z0 -- Index corresponding to the lowest model height of the averaging interval
           idx_z1 -- Index corresponding to the highest model height of the averaging interval
 
         Output:
           var    -- time averaged vertical profile of the specified variable
         """
+        idx_t1 = idx_t1
         if idx_t1 is -1:
             idx_t1 = len(var)
             warn("An end index for the time averaging interval was not specified. Automatically using the last index.")
@@ -227,6 +232,7 @@ class DataReader():
             warn("Time averaging interval is less than or equal to 1 (idx_t0 = " + str(idx_t0) + ", idx_t1 = " + str(
                 idx_t1) + ").")
         if avg_axis is 0:  # if time-averaged
+            temp = var[idx_t0:idx_t1, :]
             var_average = np.nanmean(var[idx_t0:idx_t1, :], axis=avg_axis)
         else:  # if height averaged
             var_average = np.nanmean(var[:, idx_z0:idx_z1], axis=avg_axis)

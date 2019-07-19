@@ -37,42 +37,18 @@ class VariableGroup:
         self.height_max_value = case.height_max_value
         self.default_line_format = 'b-'
 
-        ### Initialize Height ###
-        self.z = NetCdfVariable('altitude', ncdf_datasets['zm'], start_time=self.start_time, end_time=self.end_time)
-        self.z_min_idx, self.z_max_idx = self.__getStartEndIndex__(self.z.data, self.height_min_value, self.height_max_value)
-        self.z.data = self.z.data[self.z_min_idx:self.z_max_idx]
-
-        ### Initialize Time ###
-        # sec_to_min = 1 / 60
-        self.time = NetCdfVariable('time', ncdf_datasets)#, conversion_factor=sec_to_min)
-        #time_scale_factor = self.time.data[0]
-        # Rescale time values to SAM minutes for output
-        #self.time.data = self.time.data[:] / time_scale_factor
-
         ### Initialize Sam Height ###
-        if sam_file != None:
-            self.z_sam = NetCdfVariable('z', sam_file, start_time=self.start_time, end_time=self.end_time)
-            self.z_sam_min_idx, self.z_sam_max_idx = self.__getStartEndIndex__(self.z_sam.data, self.height_min_value, self.height_max_value)
-            self.z_sam.data = self.z_sam.data[self.z_sam_min_idx:self.z_sam_max_idx]
+        # if sam_file != None:
+        #     self.z_sam = NetCdfVariable('z', sam_file, start_time=self.start_time, end_time=self.end_time)
+        #     self.z_sam_min_idx, self.z_sam_max_idx = self.__getStartEndIndex__(self.z_sam.data, self.height_min_value, self.height_max_value)
+        #     self.z_sam.data = self.z_sam.data[self.z_sam_min_idx:self.z_sam_max_idx]
 
         for variable in self.variable_definitions:
             print("\tProcessing ", variable['clubb_name'])
-            if variable['clubb_name'] in case.blacklisted_variables:
+            if variable['clubb_name'] not in case.blacklisted_variables:
                 # Skip this variable if it's blacklisted for the case
-                continue
-            else:
                 self.addClubbVariable(variable)
         self.generatePanels()
-
-    def get_var_from_ncdf(self, netcdf_variable):
-        '''
-        Retrieve numerical data from netcdf
-
-        :param netcdf_variable: Of type NetCDFVariable
-        :return:
-        '''
-        data_reader = DataReader()
-        return data_reader.getVarData(netcdf_variable.ncdf_data, netcdf_variable)
 
     def addClubbVariable(self, variable):
         '''
@@ -164,30 +140,29 @@ class VariableGroup:
         else:
             panel_type = self.panel_type
 
-        all_plots = []
+        all_lines = []
 
         if sam_file is not None and sam_name is not None:
-            clubb_sec_to_sam_min = 1 / 60
+            # clubb_sec_to_sam_min = 1 / 60
             sam_plot = self.getVarLines(sam_name, {'sam': sam_file}, label="LES output",
                                         line_format="k-", avg_axis=avg_axis, conversion_factor=sam_conv_factor,
                                         start_time=start_time ,#* clubb_sec_to_sam_min,
                                         end_time=end_time,# * clubb_sec_to_sam_min,
                                         override_panel_type=panel_type, fallback_func=fallback_func, fill_zeros=fill_zeros)
-            all_plots.extend(sam_plot)
+            all_lines.extend(sam_plot)
 
         if isinstance(ncdf_datasets, Dataset):
             ncdf_datasets = {'converted_to_dict': ncdf_datasets}
 
         line = None
         for dataset in ncdf_datasets.values():
-            self.time = NetCdfVariable('time', dataset)
+
             if varname not in dataset.variables.keys():
                 continue  # Skip loop if varname isn't in the dataset
 
             variable = NetCdfVariable(varname, ncdf_datasets, start_time=start_time,
                                       end_time=end_time, avg_axis=avg_axis,
                                       conversion_factor=conversion_factor, fill_zeros=fill_zeros)
-
             if panel_type is Panel.TYPE_PROFILE:
                 line = self.__get_profile_line__(variable, dataset, label, line_format)
                 break
@@ -198,20 +173,20 @@ class VariableGroup:
                 variable = NetCdfVariable(varname, ncdf_datasets, start_time=0,
                                           end_time=end_time, avg_axis=1,
                                           conversion_factor=conversion_factor)
-                # variable.data = variable.data[0:int(variable.end_time)]
-                variable.constrain(0, variable.end_time, data=self.time.data)
-                self.time.constrain(0, variable.end_time)
-                line = Line(self.time, variable, label=label, line_format=line_format)
+                time = NetCdfVariable('time', dataset)
+                variable.constrain(0, variable.end_time, data=time.data)
+                time.constrain(0, variable.end_time)
+                line = Line(time, variable, label=label, line_format=line_format)
             else:
                 raise ValueError('Invalid panel type ' + panel_type + '. Valid options are profile, budget, timeseries')
         if line is None:
             warn("\tFailed to find variable " + varname + " in case " + self.casename +
                  ". Attempting to use fallback function.")
             line = self.__getVarFromFallback__(fallback_func, varname)
-        all_plots.append(line)
-        return all_plots
+        all_lines.append(line)
+        return all_lines
 
-    def __get_profile_line__(self, variable, file, label, line_format):
+    def __get_profile_line__(self, variable, dataset, label, line_format):
         '''
         Assumes variable can be plotted as a profile and returns a Line object
         representing the given variable for a profile plot. 
@@ -219,18 +194,13 @@ class VariableGroup:
         :param variable: 
         :return: Line object representing the given variable for a profile plot
         '''
-        # variable = NetCdfVariable(varname, file, avging_start_time=start_time,
-        #                           avging_end_time=end_time, avg_axis=0,
-        #                           conversion_factor=conv_factor)
-        independent_var_data = self.z
-        model_src_reader = DataReader()
-        model_src = model_src_reader.getNcdfSourceModel(file)
-        if model_src == "sam":
-            independent_var_data = self.z_sam
-        min_idx, max_idx = self.__getStartEndIndex__(independent_var_data.data, self.height_min_value,
-                                                     self.height_max_value)
-        variable.data = variable.data[min_idx:max_idx + 1]
-        line = Line(variable, independent_var_data, label=label, line_format=line_format)
+        if 'altitude' in dataset.variables.keys():
+            z = NetCdfVariable('altitude', dataset, start_time=self.start_time, end_time=self.end_time)
+        else:
+            z = NetCdfVariable('z', dataset, start_time=self.start_time, end_time=self.end_time)
+        variable.constrain(self.height_min_value, self.height_max_value, data=z.data)
+        z.constrain(self.height_min_value, self.height_max_value)
+        line = Line(variable, z, label=label, line_format=line_format)
         return line
 
     def __getVarFromFallback__(self, fallback, varname):
@@ -275,4 +245,4 @@ class VariableGroup:
             if test_value >= end_value and test_value < data[end_idx]:
                 end_idx = i
 
-        return start_idx, end_idx
+        return start_idx, end_idx + 1

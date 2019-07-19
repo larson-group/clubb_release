@@ -10,6 +10,8 @@ class Line:
         '''
 
         '''
+        if len(x_data) != len(y_data):
+            raise ValueError("The size of x is not the same as the size of Y. " + str(len(x_data)) + " (x) vs " + str(len(y_data)) + "(y)")
         self.x = x_data
         self.y = y_data
         self.line_format = line_format

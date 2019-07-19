@@ -43,13 +43,18 @@ class VariableGroupIceMP(VariableGroup):
         sec_per_min = 60
         sam_start_time = self.start_time  # / sec_per_min
         sam_end_time = self.end_time  # / sec_per_min
+
+        z_ncdf = NetCdfVariable('z', self.sam_file, 1)
+        z = z_ncdf.data
+        start_idx, end_idx = self.__getStartEndIndex__(z, self.height_min_value, self.height_max_value)
+
         ni_ncdf = NetCdfVariable('NI', self.sam_file, 1, start_time=sam_start_time, end_time=sam_end_time)
         ni = ni_ncdf.data
         rho_ncdf = NetCdfVariable('RHO', self.sam_file, 1, start_time=sam_start_time, end_time=sam_end_time)
         rho = rho_ncdf.data
         nim = (ni * (10 ** 6) / rho)
-        nim = nim[self.z_sam_min_idx:self.z_sam_max_idx]
-        nim_line = Line(nim, self.z_sam.data, line_format='k-', label='LES output')
+        nim = nim[start_idx:end_idx]
+        nim_line = Line(nim, z, line_format='k-', label='LES output')
         return nim_line
 
     def getNsmSamLine(self):
@@ -61,13 +66,18 @@ class VariableGroupIceMP(VariableGroup):
         sec_per_min = 60
         sam_start_time = self.start_time  # / sec_per_min
         sam_end_time = self.end_time  # / sec_per_min
+
+        z_ncdf = NetCdfVariable('z', self.sam_file, 1)
+        z = z_ncdf.data
+        start_idx, end_idx = self.__getStartEndIndex__(z, self.height_min_value, self.height_max_value)
+
         ns_ncdf = NetCdfVariable('NS', self.sam_file, 1, start_time=sam_start_time, end_time=sam_end_time)
         ns = ns_ncdf.data
         rho_ncdf = NetCdfVariable('RHO', self.sam_file, 1, start_time=sam_start_time, end_time=sam_end_time)
         rho = rho_ncdf.data
         nsm = (ns * (10 ** 6) / rho)
-        nsm = nsm[self.z_sam_min_idx:self.z_sam_max_idx]
-        nsm_line = Line(nsm, self.z_sam.data, line_format='k-', label='LES output')
+        nsm = nsm[start_idx:end_idx]
+        nsm_line = Line(nsm, z, line_format='k-', label='LES output')
         return nsm_line
 
     def getRimFallback(self):
@@ -79,12 +89,16 @@ class VariableGroupIceMP(VariableGroup):
         sam_start_time = self.start_time  # / 60
         sam_end_time = self.end_time  # / 60
 
+        z_ncdf = NetCdfVariable('z', self.sam_file, 1)
+        z = z_ncdf.data
+        start_idx, end_idx = self.__getStartEndIndex__(z, self.height_min_value, self.height_max_value)
+
         qci_ncdf = NetCdfVariable('QCI', self.sam_file, 1, start_time=sam_start_time, end_time=sam_end_time)
         qci = qci_ncdf.data
-        qci = qci[self.z_sam_min_idx:self.z_sam_max_idx]
+        qci = qci[start_idx:end_idx]
 
         rim = qci / 1000
-        rim = Line(rim, self.z_sam.data, line_format="k-", label="LES output")
+        rim = Line(rim, z, line_format="k-", label="LES output")
         return rim
 
     def getRsmFallback(self):
@@ -96,10 +110,14 @@ class VariableGroupIceMP(VariableGroup):
         sam_start_time = self.start_time  # / 60
         sam_end_time = self.end_time  # / 60
 
+        z_ncdf = NetCdfVariable('z', self.sam_file, 1)
+
         qpi_ncdf = NetCdfVariable('QCI', self.sam_file, 1, start_time=sam_start_time, end_time=sam_end_time)
+        qpi_ncdf.constrain(self.height_min_value, self.height_max_value, data=z_ncdf.data)
         qpi = qpi_ncdf.data
-        qpi = qpi[self.z_sam_min_idx:self.z_sam_max_idx]
 
         rsm = qpi / 1000
-        rsm = Line(rsm, self.z_sam.data, line_format="k-", label="LES output")
+
+        z_ncdf.constrain(self.height_min_value, self.height_max_value)
+        rsm = Line(rsm, z_ncdf.data, line_format="k-", label="LES output")
         return rsm

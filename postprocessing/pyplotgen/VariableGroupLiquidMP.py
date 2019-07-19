@@ -43,15 +43,20 @@ class VariableGroupLiquidMP(VariableGroup):
         sec_per_min = 60
         sam_start_time = self.start_time # / sec_per_min
         sam_end_time = self.end_time # / sec_per_min
+
+        z_ncdf = NetCdfVariable('z', self.sam_file, 1)
+
         nc_ncdf = NetCdfVariable('NC', self.sam_file, 1, start_time=sam_start_time, end_time=sam_end_time, fill_zeros=True)
+        nc_ncdf.constrain(self.height_min_value, self.height_max_value, data=z_ncdf.data)
         nc = nc_ncdf.data
         rho_ncdf = NetCdfVariable('RHO', self.sam_file, 1, start_time=sam_start_time, end_time=sam_end_time)
+        rho_ncdf.constrain(self.height_min_value, self.height_max_value, data=z_ncdf.data)
         rho = rho_ncdf.data
-        nc = nc[self.z_sam_min_idx:self.z_sam_max_idx]
-        rho = rho[self.z_sam_min_idx:self.z_sam_max_idx]
+
         ncm = (nc * (10 ** 6) / rho)
-        ncm = ncm[self.z_sam_min_idx:self.z_sam_max_idx]
-        ncm_line = Line(ncm, self.z_sam.data, line_format='k-', label='LES output')
+
+        z_ncdf.constrain(self.height_min_value, self.height_max_value, data=z_ncdf.data)
+        ncm_line = Line(ncm, z_ncdf.data, line_format='k-', label='LES output')
         return ncm_line
 
     def getNrmSamLine(self):
@@ -63,13 +68,19 @@ class VariableGroupLiquidMP(VariableGroup):
         sec_per_min = 60
         sam_start_time = self.start_time # / sec_per_min
         sam_end_time = self.end_time # / sec_per_min
+
+        z_ncdf = NetCdfVariable('z', self.sam_file, 1)
+
         nr_ncdf = NetCdfVariable('NR', self.sam_file, 1, start_time=sam_start_time, end_time=sam_end_time, fill_zeros=True)
+        nr_ncdf.constrain(self.height_min_value, self.height_max_value, data=z_ncdf.data)
         nr = nr_ncdf.data
+
         rho_ncdf = NetCdfVariable('RHO', self.sam_file, 1, start_time=sam_start_time, end_time=sam_end_time)
+        rho_ncdf.constrain(self.height_min_value, self.height_max_value, data=z_ncdf.data)
         rho = rho_ncdf.data
-        nr = nr[self.z_sam_min_idx:self.z_sam_max_idx]
-        rho = rho[self.z_sam_min_idx:self.z_sam_max_idx]
+
         nrm = (nr * (10 ** 6) / rho)
-        nrm = nrm[self.z_sam_min_idx:self.z_sam_max_idx]
-        nrm_line = Line(nrm, self.z_sam.data, line_format='k-', label='LES output')
+
+        z_ncdf.constrain(self.height_min_value, self.height_max_value)
+        nrm_line = Line(nrm, z_ncdf.data, line_format='k-', label='LES output')
         return nrm_line
