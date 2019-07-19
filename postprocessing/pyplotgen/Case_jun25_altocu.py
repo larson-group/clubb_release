@@ -8,7 +8,7 @@ from pyplotgen.VariableGroupLiquidMP import VariableGroupLiquidMP
 from pyplotgen.VariableGroupWs import VariableGroupWs
 
 
-class Case_mpace_b(Case):
+class Case_jun25_altocu(Case):
     '''
 
     '''
@@ -16,21 +16,21 @@ class Case_mpace_b(Case):
         '''
 
         '''
-        self.name = "mpace_b"
+        self.name = "jun25_altocu"
         sec_per_min = 60
-        self.start_time = 541 #* sec_per_min
-        self.end_time = 720 #* sec_per_min
-        self.height_min_value = 0
-        self.height_max_value = 2750
+        self.start_time = 181 #* sec_per_min
+        self.end_time = 240 #   * sec_per_min
+        self.height_min_value = 4808
+        self.height_max_value = 7308
         self.enabled = True
         self.ncdf_files = ncdf_files
-        self.blacklisted_variables = ['Ngm', 'wpNrp']
+        self.blacklisted_variables = ['Ngm', 'wprrp','wpNrp']
         sam_file = None
         # TODO LES file unknown
         # if plot_sam:
         #     datareader = DataReader()
         #     sam_file = datareader.__loadNcFile__(
-        #         "/home/nicolas/sam_benchmark_runs/MC3E_r1359_128x128x128_1km_Morrison/MC3E.nc")
+        #         "/home/nicolas/sam_benchmark_runs/TWP_ICE_r1315_128x128x128_1km_Morrison/TWP_ICE.nc")
         base_variables = VariableGroupBase(self.ncdf_files, self, sam_file=sam_file)
         # w_variables = VariableGroupWs(self.ncdf_files, self, sam_file=sam_file)
         ice_variables = VariableGroupIceMP(self.ncdf_files, self, sam_file=sam_file)

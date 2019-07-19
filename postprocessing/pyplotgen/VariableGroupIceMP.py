@@ -86,19 +86,15 @@ class VariableGroupIceMP(VariableGroup):
         Rim = QCI / 1000
         :return:
         '''
-        sam_start_time = self.start_time  # / 60
-        sam_end_time = self.end_time  # / 60
-
         z_ncdf = NetCdfVariable('z', self.sam_file, 1)
-        z = z_ncdf.data
-        start_idx, end_idx = self.__getStartEndIndex__(z, self.height_min_value, self.height_max_value)
 
-        qci_ncdf = NetCdfVariable('QCI', self.sam_file, 1, start_time=sam_start_time, end_time=sam_end_time)
+        qci_ncdf = NetCdfVariable('QCI', self.sam_file, 1, start_time=self.start_time, end_time=self.end_time)
+        qci_ncdf.constrain(self.height_min_value, self.height_max_value, data=z_ncdf.data)
         qci = qci_ncdf.data
-        qci = qci[start_idx:end_idx]
 
         rim = qci / 1000
-        rim = Line(rim, z, line_format="k-", label="LES output")
+        z_ncdf.constrain(self.height_min_value, self.height_max_value)
+        rim = Line(rim, z_ncdf.data, line_format="k-", label="LES output")
         return rim
 
     def getRsmFallback(self):

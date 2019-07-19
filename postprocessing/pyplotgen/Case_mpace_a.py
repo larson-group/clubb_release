@@ -24,7 +24,7 @@ class Case_mpace_a(Case):
         self.height_max_value = 10000
         self.enabled = True
         self.ncdf_files = ncdf_files
-        self.blacklisted_variables = ['rtp3', 'thlp3', 'rtpthvp', 'thlpthvp', 'Ngm'] # thlpthvp is a calculated value
+        self.blacklisted_variables = ['rtp3', 'thlp3', 'rtpthvp', 'thlpthvp', 'Ngm', 'wpNrp'] # thlpthvp is a calculated value
         sam_file = None
         # TODO LES file unknown
         # if plot_sam:

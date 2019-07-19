@@ -26,8 +26,8 @@ class VariableGroupLiquidMP(VariableGroup):
             {'clubb_name': 'precip_frac'},
             {'clubb_name': 'rrm', 'sam_name': 'QPL', 'sam_conv_factor': 1 / 1000},
             {'clubb_name': 'Nrm', 'sam_calc': self.getNrmSamLine},
-            # {'clubb_name': 'wprrp', 'sam_name': 'WPRRP'},  # Not found in lba case file
-            # {'clubb_name': 'wpnrp', 'sam_name': 'WPNRP'},  # Not found in lba case file
+            {'clubb_name': 'wprrp', 'sam_name': 'WPRRP'},  # Not found in lba case file
+            {'clubb_name': 'wpNrp', 'sam_name': 'WPNRP'},  # Not found in lba case file
             {'clubb_name': 'rwp', 'sam_name': 'RWP', 'sam_conv_factor': 1/1000, 'type': Panel.TYPE_TIMESERIES}
 
         ]
@@ -40,16 +40,13 @@ class VariableGroupLiquidMP(VariableGroup):
         (NC * 1e+6) ./ RHO
         :return:
         '''
-        sec_per_min = 60
-        sam_start_time = self.start_time # / sec_per_min
-        sam_end_time = self.end_time # / sec_per_min
 
         z_ncdf = NetCdfVariable('z', self.sam_file, 1)
 
-        nc_ncdf = NetCdfVariable('NC', self.sam_file, 1, start_time=sam_start_time, end_time=sam_end_time, fill_zeros=True)
+        nc_ncdf = NetCdfVariable('NC', self.sam_file, 1, start_time=self.start_time, end_time=self.end_time, fill_zeros=True)
         nc_ncdf.constrain(self.height_min_value, self.height_max_value, data=z_ncdf.data)
         nc = nc_ncdf.data
-        rho_ncdf = NetCdfVariable('RHO', self.sam_file, 1, start_time=sam_start_time, end_time=sam_end_time)
+        rho_ncdf = NetCdfVariable('RHO', self.sam_file, 1, start_time=self.start_time, end_time=self.end_time)
         rho_ncdf.constrain(self.height_min_value, self.height_max_value, data=z_ncdf.data)
         rho = rho_ncdf.data
 
@@ -65,17 +62,14 @@ class VariableGroupLiquidMP(VariableGroup):
         (NR * 1e+6) ./ RHO
         :return:
         '''
-        sec_per_min = 60
-        sam_start_time = self.start_time # / sec_per_min
-        sam_end_time = self.end_time # / sec_per_min
 
         z_ncdf = NetCdfVariable('z', self.sam_file, 1)
 
-        nr_ncdf = NetCdfVariable('NR', self.sam_file, 1, start_time=sam_start_time, end_time=sam_end_time, fill_zeros=True)
+        nr_ncdf = NetCdfVariable('NR', self.sam_file, 1, start_time=self.start_time, end_time=self.end_time, fill_zeros=True)
         nr_ncdf.constrain(self.height_min_value, self.height_max_value, data=z_ncdf.data)
         nr = nr_ncdf.data
 
-        rho_ncdf = NetCdfVariable('RHO', self.sam_file, 1, start_time=sam_start_time, end_time=sam_end_time)
+        rho_ncdf = NetCdfVariable('RHO', self.sam_file, 1, start_time=self.start_time, end_time=self.end_time)
         rho_ncdf.constrain(self.height_min_value, self.height_max_value, data=z_ncdf.data)
         rho = rho_ncdf.data
 

@@ -24,7 +24,7 @@ class Case_rico(Case):
         self.height_max_value = 4000
         self.enabled = True
         self.ncdf_files = ncdf_files
-        self.blacklisted_variables = []
+        self.blacklisted_variables = ['wpNrp']
         sam_file = None
         if plot_sam:
             datareader = DataReader()

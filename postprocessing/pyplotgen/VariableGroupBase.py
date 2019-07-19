@@ -64,6 +64,8 @@ class VariableGroupBase(VariableGroup):
         ]
         super().__init__(ncdf_datasets, case, sam_file)
 
+    # lwp vs time, rc_coef * wprcp, rc_coef * thlprcp, thlpthvp, rc_coef * rtprcp
+
     def getThlmSamLine(self):
         '''
         Calculates thlm values from sam output using
@@ -71,25 +73,25 @@ class VariableGroupBase(VariableGroup):
         (THETAL + 2500.4.*(THETA./TABS).*(QI./1000))
         :return: requested variable data in the form of a list. Returned data is already cropped to the appropriate min,max indices
         '''
-        sec_per_min = 60
-        sam_start_time = self.start_time #/ sec_per_min
-        sam_end_time = self.end_time #/ sec_per_min
+
+        self.start_time = self.start_time 
+        self.end_time = self.end_time 
 
         z_ncdf = NetCdfVariable('z', self.sam_file, 1)
 
-        thetal_ncdf = NetCdfVariable('THETAL', self.sam_file, 1, start_time=sam_start_time, end_time=sam_end_time)
+        thetal_ncdf = NetCdfVariable('THETAL', self.sam_file, 1, start_time=self.start_time, end_time=self.end_time)
         thetal_ncdf.constrain(self.height_min_value, self.height_max_value, data=z_ncdf.data)
         thetal = thetal_ncdf.data
 
-        theta_ncdf = NetCdfVariable('THETA', self.sam_file, 1, start_time=sam_start_time, end_time=sam_end_time)
+        theta_ncdf = NetCdfVariable('THETA', self.sam_file, 1, start_time=self.start_time, end_time=self.end_time)
         theta_ncdf.constrain(self.height_min_value, self.height_max_value, data=z_ncdf.data)
         theta = theta_ncdf.data
 
-        tabs_ncdf = NetCdfVariable('TABS', self.sam_file, 1, start_time=sam_start_time,end_time=sam_end_time)
+        tabs_ncdf = NetCdfVariable('TABS', self.sam_file, 1, start_time=self.start_time,end_time=self.end_time)
         tabs_ncdf.constrain(self.height_min_value, self.height_max_value, data=z_ncdf.data)
         tabs = tabs_ncdf.data
 
-        qi_ncdf = NetCdfVariable('QI', self.sam_file, 1, start_time=sam_start_time, end_time=sam_end_time, fill_zeros=True)
+        qi_ncdf = NetCdfVariable('QI', self.sam_file, 1, start_time=self.start_time, end_time=self.end_time, fill_zeros=True)
         qi_ncdf.constrain(self.height_min_value, self.height_max_value, data=z_ncdf.data)
         qi = qi_ncdf.data
 
@@ -106,16 +108,16 @@ class VariableGroupBase(VariableGroup):
         (QT-QI) ./ 1000
         :return: requested variable data in the form of a list. Returned data is already cropped to the appropriate min,max indices
         '''
-        sam_start_time = self.start_time #/ 60
-        sam_end_time = self.end_time #/ 60
+        self.start_time = self.start_time 
+        self.end_time = self.end_time 
 
         z_ncdf = NetCdfVariable('z', self.sam_file, 1)
 
-        qt_ncdf = NetCdfVariable('QT', self.sam_file, 1, start_time=sam_start_time, end_time=sam_end_time)
+        qt_ncdf = NetCdfVariable('QT', self.sam_file, 1, start_time=self.start_time, end_time=self.end_time)
         qt_ncdf.constrain(self.height_min_value, self.height_max_value, data=z_ncdf.data)
         qt = qt_ncdf.data
 
-        qi_ncdf = NetCdfVariable('QI', self.sam_file, 1, start_time=sam_start_time, end_time=sam_end_time, fill_zeros=True)
+        qi_ncdf = NetCdfVariable('QI', self.sam_file, 1, start_time=self.start_time, end_time=self.end_time, fill_zeros=True)
         qi_ncdf.constrain(self.height_min_value, self.height_max_value, data=z_ncdf.data)
         qi = qi_ncdf.data
 
@@ -133,16 +135,16 @@ class VariableGroupBase(VariableGroup):
         WP3 ./ (WP2 + 1.6e-3).^1.5
         :return: requested variable data in the form of a list. Returned data is already cropped to the appropriate min,max indices
         '''
-        sam_start_time = self.start_time #/ 60
-        sam_end_time = self.end_time #/ 60
+        self.start_time = self.start_time 
+        self.end_time = self.end_time 
 
         z_ncdf = NetCdfVariable('z', self.sam_file, 1)
 
-        wp3_ncdf = NetCdfVariable('WP3', self.sam_file, 1, start_time=sam_start_time, end_time=sam_end_time)
+        wp3_ncdf = NetCdfVariable('WP3', self.sam_file, 1, start_time=self.start_time, end_time=self.end_time)
         wp3_ncdf.constrain(self.height_min_value, self.height_max_value, data=z_ncdf.data)
         wp3 = wp3_ncdf.data
 
-        wp2_ncdf = NetCdfVariable('WP2', self.sam_file, 1, start_time=sam_start_time, end_time=sam_end_time)
+        wp2_ncdf = NetCdfVariable('WP2', self.sam_file, 1, start_time=self.start_time, end_time=self.end_time)
         wp2_ncdf.constrain(self.height_min_value, self.height_max_value, data=z_ncdf.data)
         wp2 = wp2_ncdf.data
 
@@ -159,16 +161,16 @@ class VariableGroupBase(VariableGroup):
          # RTP3 ./ (RTP2 + 4e-16).^1.5  
          :return: requested variable data in the form of a list. Returned data is already cropped to the appropriate min,max indices
         '''
-        sam_start_time = self.start_time #/ 60
-        sam_end_time = self.end_time #/ 60
+        self.start_time = self.start_time 
+        self.end_time = self.end_time 
 
         z_ncdf = NetCdfVariable('z', self.sam_file, 1)
 
-        rtp3_ncdf = NetCdfVariable('RTP3', self.sam_file, 1, start_time=sam_start_time, end_time=sam_end_time)
+        rtp3_ncdf = NetCdfVariable('RTP3', self.sam_file, 1, start_time=self.start_time, end_time=self.end_time)
         rtp3_ncdf.constrain(self.height_min_value, self.height_max_value, data=z_ncdf.data)
         rtp3 = rtp3_ncdf.data
 
-        rtp2_ncdf = NetCdfVariable('RTP2', self.sam_file, 1, start_time=sam_start_time, end_time=sam_end_time)
+        rtp2_ncdf = NetCdfVariable('RTP2', self.sam_file, 1, start_time=self.start_time, end_time=self.end_time)
         rtp2_ncdf.constrain(self.height_min_value, self.height_max_value, data=z_ncdf.data)
         rtp2 = rtp2_ncdf.data
 
@@ -185,16 +187,16 @@ class VariableGroupBase(VariableGroup):
         THLP3 ./ (THLP2 + 4e-4).^1.5
          :return: requested variable data in the form of a list. Returned data is already cropped to the appropriate min,max indices
         '''
-        sam_start_time = self.start_time #/ 60
-        sam_end_time = self.end_time #/ 60
+        self.start_time = self.start_time 
+        self.end_time = self.end_time 
 
         z_ncdf = NetCdfVariable('z', self.sam_file, 1)
 
-        thlp3_ncdf = NetCdfVariable('THLP3', self.sam_file, 1, start_time=sam_start_time, end_time=sam_end_time)
+        thlp3_ncdf = NetCdfVariable('THLP3', self.sam_file, 1, start_time=self.start_time, end_time=self.end_time)
         thlp3_ncdf.constrain(self.height_min_value, self.height_max_value, data=z_ncdf.data)
         thlp3 = thlp3_ncdf.data
 
-        thlp2_ncdf = NetCdfVariable('THLP2', self.sam_file, 1, start_time=sam_start_time, end_time=sam_end_time)
+        thlp2_ncdf = NetCdfVariable('THLP2', self.sam_file, 1, start_time=self.start_time, end_time=self.end_time)
         thlp2_ncdf.constrain(self.height_min_value, self.height_max_value, data=z_ncdf.data)
         thlp2 = thlp2_ncdf.data
 
@@ -210,16 +212,16 @@ class VariableGroupBase(VariableGroup):
         WPTHLP = (TLFLUX) ./ (RHO * 1004)
         :return:
         '''
-        sam_start_time = self.start_time #/ 60
-        sam_end_time = self.end_time #/ 60
+        self.start_time = self.start_time 
+        self.end_time = self.end_time 
 
         z_ncdf = NetCdfVariable('z', self.sam_file, 1)
 
-        tlflux_ncdf = NetCdfVariable('TLFLUX', self.sam_file, 1, start_time=sam_start_time, end_time=sam_end_time)
+        tlflux_ncdf = NetCdfVariable('TLFLUX', self.sam_file, 1, start_time=self.start_time, end_time=self.end_time)
         tlflux_ncdf.constrain(self.height_min_value, self.height_max_value, data=z_ncdf.data)
         tlflux = tlflux_ncdf.data
 
-        rho_ncdf = NetCdfVariable('RHO', self.sam_file, 1, start_time=sam_start_time, end_time=sam_end_time)
+        rho_ncdf = NetCdfVariable('RHO', self.sam_file, 1, start_time=self.start_time, end_time=self.end_time)
         rho_ncdf.constrain(self.height_min_value, self.height_max_value, data=z_ncdf.data)
         rho = rho_ncdf.data
 
@@ -235,16 +237,16 @@ class VariableGroupBase(VariableGroup):
         WPRTP = (QTFLUX) ./ (RHO * 2.5104e+6)
         :return:
         '''
-        sam_start_time = self.start_time #/ 60
-        sam_end_time = self.end_time #/ 60
+        self.start_time = self.start_time 
+        self.end_time = self.end_time 
 
         z_ncdf = NetCdfVariable('z', self.sam_file, 1)
 
-        qtflux_ncdf = NetCdfVariable('QTFLUX', self.sam_file, 1, start_time=sam_start_time, end_time=sam_end_time)
+        qtflux_ncdf = NetCdfVariable('QTFLUX', self.sam_file, 1, start_time=self.start_time, end_time=self.end_time)
         qtflux_ncdf.constrain(self.height_min_value, self.height_max_value, data=z_ncdf.data)
         qtflux = qtflux_ncdf.data
 
-        rho_ncdf = NetCdfVariable('RHO', self.sam_file, 1, start_time=sam_start_time, end_time=sam_end_time)
+        rho_ncdf = NetCdfVariable('RHO', self.sam_file, 1, start_time=self.start_time, end_time=self.end_time)
         rho_ncdf.constrain(self.height_min_value, self.height_max_value, data=z_ncdf.data)
         rho = rho_ncdf.data
 
@@ -260,16 +262,16 @@ class VariableGroupBase(VariableGroup):
         WPTHVP =  (TVFLUX) ./ ( RHO * 1004)
         :return:
         '''
-        sam_start_time = self.start_time #/ 60
-        sam_end_time = self.end_time #/ 60
+        self.start_time = self.start_time 
+        self.end_time = self.end_time 
 
         z_ncdf = NetCdfVariable('z', self.sam_file, 1)
 
-        tvflux_ncdf = NetCdfVariable('TVFLUX', self.sam_file, 1, start_time=sam_start_time, end_time=sam_end_time)
+        tvflux_ncdf = NetCdfVariable('TVFLUX', self.sam_file, 1, start_time=self.start_time, end_time=self.end_time)
         tvflux_ncdf.constrain(self.height_min_value, self.height_max_value, data=z_ncdf.data)
         tvflux = tvflux_ncdf.data
 
-        rho_ncdf = NetCdfVariable('RHO', self.sam_file, 1, start_time=sam_start_time, end_time=sam_end_time)
+        rho_ncdf = NetCdfVariable('RHO', self.sam_file, 1, start_time=self.start_time, end_time=self.end_time)
         rho_ncdf.constrain(self.height_min_value, self.height_max_value, data=z_ncdf.data)
         rho = rho_ncdf.data
 
@@ -285,12 +287,12 @@ class VariableGroupBase(VariableGroup):
         THLP2 = TL2
         :return:
         '''
-        sam_start_time = self.start_time #/ 60
-        sam_end_time = self.end_time #/ 60
+        self.start_time = self.start_time 
+        self.end_time = self.end_time 
 
         z_ncdf = NetCdfVariable('z', self.sam_file, 1)
 
-        tl2_ncdf = NetCdfVariable('TL2', self.sam_file, 1, start_time=sam_start_time, end_time=sam_end_time)
+        tl2_ncdf = NetCdfVariable('TL2', self.sam_file, 1, start_time=self.start_time, end_time=self.end_time)
         tl2_ncdf.constrain(self.height_min_value, self.height_max_value, data=z_ncdf.data)
         tl2 = tl2_ncdf.data
 
@@ -304,12 +306,12 @@ class VariableGroupBase(VariableGroup):
         Rtpthlp = TQ
         :return:
         '''
-        sam_start_time = self.start_time #/ 60
-        sam_end_time = self.end_time #/ 60
+        self.start_time = self.start_time 
+        self.end_time = self.end_time 
 
         z_ncdf = NetCdfVariable('z', self.sam_file, 1)
 
-        tq_ncdf = NetCdfVariable('TQ', self.sam_file, 1, start_time=sam_start_time, end_time=sam_end_time)
+        tq_ncdf = NetCdfVariable('TQ', self.sam_file, 1, start_time=self.start_time, end_time=self.end_time)
         tq_ncdf.constrain(self.height_min_value, self.height_max_value, data=z_ncdf.data)
         tq2 = tq_ncdf.data
 
@@ -323,12 +325,12 @@ class VariableGroupBase(VariableGroup):
         THLP2 = QT2 / 1e+6
         :return:
         '''
-        sam_start_time = self.start_time #/ 60
-        sam_end_time = self.end_time #/ 60
+        self.start_time = self.start_time 
+        self.end_time = self.end_time 
 
         z_ncdf = NetCdfVariable('z', self.sam_file, 1)
 
-        qt2_ncdf = NetCdfVariable('QT2', self.sam_file, 1, start_time=sam_start_time, end_time=sam_end_time)
+        qt2_ncdf = NetCdfVariable('QT2', self.sam_file, 1, start_time=self.start_time, end_time=self.end_time)
         qt2_ncdf.constrain(self.height_min_value, self.height_max_value, data=z_ncdf.data)
         qt2 = qt2_ncdf.data
 
@@ -346,17 +348,15 @@ class VariableGroupBase(VariableGroup):
         TODO Sam fallback: ((QCFLUX) ./ (RHO * 2.5104e+6)) .* (2.5e6 ./ (1004.67*((PRES / 1000).^(287.04/1004.67))) - 1.61*THETAV)
         :return:
         '''
-        sec_per_min = 60
-        sam_start_time = self.start_time / sec_per_min
-        sam_end_time = self.end_time / sec_per_min
+
 
         z_ncdf = NetCdfVariable('z', self.sam_file, 1)
 
-        rc_coef_zm_ncdf = NetCdfVariable('rc_coef_zm', self.sam_file, 1, start_time=sam_start_time, end_time=sam_end_time)
+        rc_coef_zm_ncdf = NetCdfVariable('rc_coef_zm', self.sam_file, 1, start_time=self.start_time, end_time=self.end_time)
         rc_coef_zm_ncdf.constrain(self.height_min_value, self.height_max_value, data=z_ncdf.data)
         rc_coef_zm = rc_coef_zm_ncdf.data
 
-        rtprcp_ncdf = NetCdfVariable('rtprcp', self.sam_file, 1, start_time=sam_start_time, end_time=sam_end_time)
+        rtprcp_ncdf = NetCdfVariable('rtprcp', self.sam_file, 1, start_time=self.start_time, end_time=self.end_time)
         rtprcp_ncdf.constrain(self.height_min_value, self.height_max_value, data=z_ncdf.data)
         rtprcp = rtprcp_ncdf.data
 

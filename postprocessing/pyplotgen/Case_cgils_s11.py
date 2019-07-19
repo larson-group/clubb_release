@@ -17,14 +17,13 @@ class Case_cgils_s11(Case):
 
         '''
         self.name = "cgils_s11"
-        sec_per_min = 60
-        self.start_time = 12960 #* sec_per_min
-        self.end_time = 14400 #* sec_per_min
+        self.start_time = 12960
+        self.end_time = 14400
         self.height_min_value = 0
         self.height_max_value = 5950
         self.enabled = True
         self.ncdf_files = ncdf_files
-        self.blacklisted_variables = ['Ngm', 'rgm', 'rtp3', 'thlp3', 'rtpthvp', 'thlpthvp']
+        self.blacklisted_variables = ['Ngm', 'rgm', 'rtp3', 'thlp3', 'rtpthvp', 'thlpthvp', 'wprrp', 'wpNrp']
         sam_file = None
         if plot_sam:
             datareader = DataReader()

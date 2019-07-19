@@ -24,7 +24,7 @@ class Case_mpace_b_silhs(Case):
         self.height_max_value = 2750
         self.enabled = True
         self.ncdf_files = ncdf_files
-        self.blacklisted_variables = ['Ngm']
+        self.blacklisted_variables = ['Ngm', 'wpNrp']
         sam_file = None
         # TODO LES file unknown
         # if plot_sam:

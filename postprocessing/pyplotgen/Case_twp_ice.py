@@ -24,7 +24,7 @@ class Case_twp_ice(Case):
         self.height_max_value = 19000
         self.enabled = True
         self.ncdf_files = ncdf_files
-        self.blacklisted_variables = ['rtp3', 'thlp3', 'rtpthvp', 'thlpthvp', 'Ngm']
+        self.blacklisted_variables = ['rtp3', 'thlp3', 'rtpthvp', 'thlpthvp', 'Ngm', 'wprrp', 'wpNrp']
         sam_file = None
         if plot_sam:
             datareader = DataReader()

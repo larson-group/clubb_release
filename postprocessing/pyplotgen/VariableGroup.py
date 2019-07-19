@@ -37,12 +37,6 @@ class VariableGroup:
         self.height_max_value = case.height_max_value
         self.default_line_format = 'b-'
 
-        ### Initialize Sam Height ###
-        # if sam_file != None:
-        #     self.z_sam = NetCdfVariable('z', sam_file, start_time=self.start_time, end_time=self.end_time)
-        #     self.z_sam_min_idx, self.z_sam_max_idx = self.__getStartEndIndex__(self.z_sam.data, self.height_min_value, self.height_max_value)
-        #     self.z_sam.data = self.z_sam.data[self.z_sam_min_idx:self.z_sam_max_idx]
-
         for variable in self.variable_definitions:
             print("\tProcessing ", variable['clubb_name'])
             if variable['clubb_name'] not in case.blacklisted_variables:
@@ -78,11 +72,11 @@ class VariableGroup:
             fallback = variable['fallback_func']
         if 'type' in variable.keys():
             panel_type = variable['type']
-        plots = self.getVarLines(clubb_name, self.ncdf_files, start_time=self.start_time,
-                                 end_time=self.end_time, sam_name=sam_name, sam_file=sam_file,
-                                 sam_conv_factor=sam_conv_factor, label="current clubb",
-                                 line_format=self.default_line_format, fill_zeros = fill_zeros,
-                                 override_panel_type=panel_type, fallback_func=fallback)
+        plots = self.__getVarLines__(clubb_name, self.ncdf_files, start_time=self.start_time,
+                                     end_time=self.end_time, sam_name=sam_name, sam_file=sam_file,
+                                     sam_conv_factor=sam_conv_factor, label="current clubb",
+                                     line_format=self.default_line_format, fill_zeros = fill_zeros,
+                                     override_panel_type=panel_type, fallback_func=fallback)
         variable['plots'] = plots
         if 'title' not in variable.keys():
             imported_title = data_reader.getLongName(self.ncdf_files, clubb_name)
@@ -112,9 +106,9 @@ class VariableGroup:
             panel = Panel(plotset, title=title, dependant_title=axis_label, panel_type=panel_type)
             self.panels.append(panel)
 
-    def getVarLines(self, varname, ncdf_datasets, label="", line_format="", avg_axis=0, override_panel_type=None,
-                    start_time=0, end_time=-1, sam_name=None, sam_file=None, conversion_factor=1,
-                    sam_conv_factor=1, fallback_func=None, fill_zeros=False):
+    def __getVarLines__(self, varname, ncdf_datasets, label="", line_format="", avg_axis=0, override_panel_type=None,
+                        start_time=0, end_time=-1, sam_name=None, sam_file=None, conversion_factor=1,
+                        sam_conv_factor=1, fallback_func=None, fill_zeros=False):
         '''
         Get a list of Line objects for a specific clubb variable. If sam_file is specified it will also
         attempt to generate Lines for the SAM equivalent variables, using the name conversions found in
@@ -144,11 +138,11 @@ class VariableGroup:
 
         if sam_file is not None and sam_name is not None:
             # clubb_sec_to_sam_min = 1 / 60
-            sam_plot = self.getVarLines(sam_name, {'sam': sam_file}, label="LES output",
-                                        line_format="k-", avg_axis=avg_axis, conversion_factor=sam_conv_factor,
-                                        start_time=start_time ,#* clubb_sec_to_sam_min,
-                                        end_time=end_time,# * clubb_sec_to_sam_min,
-                                        override_panel_type=panel_type, fallback_func=fallback_func, fill_zeros=fill_zeros)
+            sam_plot = self.__getVarLines__(sam_name, {'sam': sam_file}, label="LES output",
+                                            line_format="k-", avg_axis=avg_axis, conversion_factor=sam_conv_factor,
+                                            start_time=start_time,  #* clubb_sec_to_sam_min,
+                                            end_time=end_time,  # * clubb_sec_to_sam_min,
+                                            override_panel_type=panel_type, fallback_func=fallback_func, fill_zeros=fill_zeros)
             all_lines.extend(sam_plot)
 
         if isinstance(ncdf_datasets, Dataset):
@@ -221,28 +215,3 @@ class VariableGroup:
         varline = fallback()
         print("\tFallback for ", varname, " successful")
         return varline
-
-
-    def __getStartEndIndex__(self, data, start_value, end_value):
-        '''
-        Get the list floor index that contains the value to start graphing at and the
-        ceiling index that contains the end value to stop graphing at
-
-        If neither are found, returns the entire array back
-        :param start_value: The first value to be graphed (may return indexes to values smaller than this)
-        :param end_value: The last value that needs to be graphed (may return indexes to values larger than this)
-        :return: (tuple) start_idx, end_idx   which contains the starting and ending index representing the start and end time passed into the function
-        :author: Nicolas Strike
-        '''
-        start_idx = 0
-        end_idx = len(data) - 1
-        for i in range(0, len(data)):
-            # Check for start index
-            test_value = data[i]
-            if test_value <= start_value and test_value > data[start_idx]:
-                start_idx = i
-            # Check for end index
-            if test_value >= end_value and test_value < data[end_idx]:
-                end_idx = i
-
-        return start_idx, end_idx + 1

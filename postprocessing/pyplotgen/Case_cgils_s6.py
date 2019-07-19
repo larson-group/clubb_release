@@ -24,7 +24,7 @@ class Case_cgils_s6(Case):
         self.height_max_value = 5950
         self.enabled = True
         self.ncdf_files = ncdf_files
-        self.blacklisted_variables = ['Ngm', 'rgm', 'rtp3', 'thlp3', 'rtpthvp', 'thlpthvp']
+        self.blacklisted_variables = ['Ngm', 'rgm', 'rtp3', 'thlp3', 'rtpthvp', 'thlpthvp', 'wprrp', 'wpNrp']
         sam_file = None
         if plot_sam:
             datareader = DataReader()
