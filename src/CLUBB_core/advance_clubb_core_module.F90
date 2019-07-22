@@ -3199,19 +3199,6 @@ module advance_clubb_core_module
           iiPDF_LY93,     &
           iiPDF_type
 
-#ifdef MKL
-      use csr_matrix_module, only: &
-          initialize_csr_matrix, & ! Subroutine
-          intlc_5d_5d_ja_size      ! Variable
-
-      use gmres_wrap, only: &
-          gmres_init              ! Subroutine
-
-      use gmres_cache, only: &
-          gmres_cache_temp_init, & ! Subroutine
-          gmres_idx_wp2wp3         ! Variable
-#endif /* MKL */
-
       use clubb_precision, only: &
           core_rknd ! Variable(s)
 
@@ -3559,18 +3546,6 @@ module advance_clubb_core_module
       ! declared, allocated, initialized, and deallocated whether CLUBB
       ! is part of a larger model or not.
       call setup_diagnostic_variables( gr%nz )  ! intent(in)
-
-#ifdef MKL
-      ! Initialize the CSR matrix class.
-      if ( l_gmres ) then
-        call initialize_csr_matrix
-      end if
-
-      if ( l_gmres ) then
-        call gmres_cache_temp_init( gr%nz ) ! intent(in)
-        call gmres_init( (2 * gr%nz), intlc_5d_5d_ja_size ) ! intent(in)
-      end if
-#endif /* MKL */
 
       return
     end subroutine setup_clubb_core
