@@ -8,6 +8,7 @@ class Case_gabls3(Case):
     '''
 
     '''
+    name = 'gabls3'
     def __init__(self, ncdf_files, plot_sam = True):
         '''
 

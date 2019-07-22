@@ -9,7 +9,9 @@ Date: Jan 2019
 '''
 import argparse
 import subprocess
+import threading
 from _warnings import warn
+from concurrent.futures import ThreadPoolExecutor
 
 from pyplotgen.Case_arm import Case_arm
 from pyplotgen.Case_arm_97 import Case_arm_97
@@ -94,138 +96,32 @@ class PyPlotGen:
         :return: n/a
         '''
         self.nc_datasets = self.data_reader.loadFolder(self.input_folder)
-        # self.sam_datasets = self.sam_data_reader.loadFolder("/home/strike/sam_benchmark_runs")
-        # cases_plotted = {}
-        for case_key in self.nc_datasets.keys():
-            ncdf_files = self.nc_datasets[case_key]
-            dataset_filenames = [dataset.filepath() for dataset in self.nc_datasets[case_key].values()]
-            print("##################################################")
-            print("Plotting case ", case_key)
-            print("##################################################")
-            print("Case will be built with the following file(s):")
-            for file in dataset_filenames:
-                print("\t", file)
-            print()
-            if case_key == 'astex_a209':
-                # print("\tSkipping case")
-                astex_a209 = Case_astex_a209(ncdf_files, plot_sam=self.les)
-                astex_a209.plot(self.output_folder)
-            elif case_key == 'arm_97':
-                # print("\tSkipping case")
-                arm_97 = Case_arm_97(ncdf_files, plot_sam=self.les)
-                arm_97.plot(self.output_folder)
-            elif case_key == 'arm':
-                print("\tSkipping case")
-                cgils_arm = Case_arm(ncdf_files, plot_sam=self.les)
-                cgils_arm.plot(self.output_folder)
-            elif case_key == 'atex':
-                print("\tSkipping case")
-                atex = Case_atex(ncdf_files, plot_sam=self.les)
-                atex.plot(self.output_folder)
-            elif case_key == 'bomex':
-                print("\tSkipping case")
-                bomex = Case_bomex(ncdf_files, plot_sam=self.les)
-                bomex.plot(self.output_folder)
-            elif case_key == 'cgils_s6':
-                # print("\tSkipping case")
-                cgils_s6 = Case_cgils_s6(ncdf_files, plot_sam=self.les)
-                cgils_s6.plot(self.output_folder)
-            elif case_key == 'cgils_s11':
-                # print("\tSkipping case")
-                cgils_s11 = Case_cgils_s11(ncdf_files, plot_sam=self.les)
-                cgils_s11.plot(self.output_folder)
-            elif case_key == 'cgils_s12':
-                # print("\tSkipping case")
-                cgils_s12 = Case_cgils_s12(ncdf_files, plot_sam=self.les)
-                cgils_s12.plot(self.output_folder)
-            elif case_key == 'clex9_oct14':
-                # print("\tSkipping case")
-                clex9_oct14 = Case_clex9_oct14(ncdf_files, plot_sam=self.les)
-                clex9_oct14.plot(self.output_folder)
-            elif case_key == 'clex9_nov02':
-                # print("\tSkipping case")
-                clex9_nov02 = Case_clex9_nov02(ncdf_files, plot_sam=self.les)
-                clex9_nov02.plot(self.output_folder)
-            elif case_key == 'lba':
-                # print("\tSkipping case")
-                lba = Case_lba(ncdf_files, plot_sam=self.les)
-                lba.plot(self.output_folder)
-            elif case_key == 'dycoms2_rf01':
-                # print("\tSkipping case")
-                dycoms_rf01 = Case_dycoms2_rf01(ncdf_files, plot_sam=self.les)
-                dycoms_rf01.plot(self.output_folder)
-            elif case_key == 'dycoms2_rf01_fixed_sst':
-                # print("\tSkipping case")
-                dycoms_rf01_fixed_sst = Case_dycoms2_rf01_fixed_sst(ncdf_files, plot_sam=self.les)
-                dycoms_rf01_fixed_sst.plot(self.output_folder)
-            elif case_key == 'dycoms2_rf02_ds':
-                # print("\tSkipping case")
-                dycoms_rf02_ds = Case_dycoms2_rf02_ds(ncdf_files, plot_sam=self.les)
-                dycoms_rf02_ds.plot(self.output_folder)
-            elif case_key == 'dycoms2_rf02_do':
-                # print("\tSkipping case")
-                dycoms_rf02_do = Case_dycoms2_rf02_do(ncdf_files, plot_sam=self.les)
-                dycoms_rf02_do.plot(self.output_folder)
-            elif case_key == 'fire':
-                # print("\tSkipping case")
-                fire = Case_fire(ncdf_files, plot_sam=self.les)
-                fire.plot(self.output_folder)
-            elif case_key == 'gabls2':
-                # print("\tSkipping case")
-                gabls2 = Case_gabls2(ncdf_files, plot_sam=self.les)
-                gabls2.plot(self.output_folder)
-            elif case_key == 'gabls3':
-                # print("\tSkipping case")
-                gabls3 = Case_gabls3(ncdf_files, plot_sam=self.les)
-                gabls3.plot(self.output_folder)
-            elif case_key == 'gabls3_night':
-                # print("\tSkipping case")
-                gabls3_night = Case_gabls3_night(ncdf_files, plot_sam=self.les)
-                gabls3_night.plot(self.output_folder)
-            elif case_key == 'jun25_altocu':
-                # print("\tSkipping case")
-                jun25_altocu = Case_jun25_altocu(ncdf_files, plot_sam=self.les)
-                jun25_altocu.plot(self.output_folder)
-            elif case_key == 'mc3e':
-                # print("\tSkipping case")
-                mc3e = Case_mc3e(ncdf_files, plot_sam=self.les)
-                mc3e.plot(self.output_folder)
-            elif case_key == 'mpace_a':
-                # print("\tSkipping case")
-                mpace_a = Case_mpace_a(ncdf_files, plot_sam=self.les)
-                mpace_a.plot(self.output_folder)
-            elif case_key == 'mpace_b':
-                # print("\tSkipping case")
-                mpace_b = Case_mpace_b(ncdf_files, plot_sam=self.les)
-                mpace_b.plot(self.output_folder)
-            elif case_key == 'mpace_b_silhs':
-                # print("\tSkipping case")
-                mpace_b_silhs = Case_mpace_b_silhs(ncdf_files, plot_sam=self.les)
-                mpace_b_silhs.plot(self.output_folder)
-            elif case_key == 'nov11_altocu':
-                # print("\tSkipping case")
-                nov11_altocu = Case_nov11_altocu(ncdf_files, plot_sam=self.les)
-                nov11_altocu.plot(self.output_folder)
-            elif case_key == 'rico':
-                # print("\tSkipping case")
-                rico = Case_rico(ncdf_files, plot_sam=self.les)
-                rico.plot(self.output_folder)
-            elif case_key == 'twp_ice':
-                # print("\tSkipping case")
-                twp_ice = Case_twp_ice(ncdf_files, plot_sam=self.les)
-                twp_ice.plot(self.output_folder)
-            elif case_key == 'wangara':
-                # print("\tSkipping case")
-                wangara = Case_wangara(ncdf_files, plot_sam=self.les)
-                wangara.plot(self.output_folder)
-            else:
-                warn("Case " + case_key + " has not been implemented or is commented out. Skipping. ")
+        cases = [Case_astex_a209, Case_arm, Case_arm_97, Case_arm_97, Case_atex, Case_bomex, Case_cgils_s6, Case_cgils_s11, Case_cgils_s12,
+                 Case_clex9_oct14, Case_clex9_nov02, Case_dycoms2_rf01, Case_dycoms2_rf01_fixed_sst, Case_dycoms2_rf02_do, Case_dycoms2_rf02_ds,
+                 Case_fire, Case_gabls2, Case_gabls3, Case_gabls3_night, Case_jun25_altocu, Case_lba, Case_mc3e, Case_mpace_a, Case_mpace_b,
+                 Case_mpace_b_silhs, Case_nov11_altocu, Case_rico, Case_twp_ice, Case_wangara]
 
-        print("##################################################")
-        print("Generating webpage for viewing plots ")
-        print("##################################################")
+        # for case_key in self.nc_datasets.keys():
+        #     ncdf_files = self.nc_datasets[case_key]
+        for case in  cases:
+            self.run_case(case, self.nc_datasets[case.name])
+
+        print('###########################################')
+        print("\nGenerating webpage for viewing plots ")
         subprocess.run(['sigal', 'build', '-f', self.output_folder + '/'])  # Use sigal to build html in '_build/'
 
+    def run_case(self, case, ncdf_files):
+        '''
+        Run a case
+        :param case: The case class object ot be ran. E.g. pass in reference to Case_astex_a209 class (NOT an instance)
+        :param ncdf_files: Dictionary of netcdf files to load data from
+        :return: none
+        '''
+        print('###########################################')
+        print("plotting ", case.name)
+        temp_case = case(ncdf_files, plot_sam=self.les)
+        temp_case.plot(self.output_folder)
+        print("done plotting ", case.name)
 
 def process_args():
     '''

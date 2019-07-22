@@ -8,11 +8,13 @@ class Case_bomex(Case):
     '''
 
     '''
+    name = 'bomex'
+
     def __init__(self, ncdf_files, plot_sam = True):
         '''
 
         '''
-        self.name = "bomex"
+        self.name = Case_bomex.name
         sec_per_min = 60
         self.start_time = 181 #* sec_per_min
         self.end_time = 360 #* sec_per_min

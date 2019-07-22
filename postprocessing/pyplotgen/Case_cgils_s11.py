@@ -12,11 +12,13 @@ class Case_cgils_s11(Case):
     '''
 
     '''
+    name = 'cgils_s11'
+
     def __init__(self, ncdf_files, plot_sam = True):
         '''
 
         '''
-        self.name = "cgils_s11"
+        self.name = Case_cgils_s11.name
         self.start_time = 12960
         self.end_time = 14400
         self.height_min_value = 0

@@ -30,7 +30,7 @@ class VariableGroupBase(VariableGroup):
             {'clubb_name': 'rtm', 'sam_calc': self.getRtmSamLine},
             {'clubb_name': 'wpthlp', 'sam_name': 'WPTHLP', 'fallback_func': self.getWpthlpFallback},
             {'clubb_name': 'wprtp', 'sam_name': 'WPRTP', 'fallback_func': self.getWprtpFallback},
-            {'clubb_name': 'rcm', 'sam_name': "QCL", 'sam_conv_factor': 1/1000},
+            {'clubb_name': 'rcm', 'sam_name': "QCL", 'sam_conv_factor': 1 / 1000},
             {'clubb_name': 'wp3', 'sam_name': 'W3'},
             {'clubb_name': 'thlp2', 'sam_name': 'THLP2', 'fallback_func': self.getThlp2Fallback},
             {'clubb_name': 'rtp2', 'sam_name': 'RTP2', 'fallback_func': self.getRtp2Fallback},
@@ -50,7 +50,7 @@ class VariableGroupBase(VariableGroup):
             {'clubb_name': 'wpthvp', 'sam_name': 'WPTHVP', 'fallback_func': self.getWpthvpFallback},
             {'clubb_name': 'rtpthlp', 'sam_name': 'RTPTHLP', 'fallback_func': self.getRtpthlpFallback},
             {'clubb_name': 'rtp3', 'sam_name': 'RTP3', 'fallback_func': self.getRtp3Fallback},
-            {'clubb_name': 'radht', 'sam_name': 'RADQR', 'sam_conv_factor': 1/86400},
+            {'clubb_name': 'radht', 'sam_name': 'RADQR', 'sam_conv_factor': 1 / 86400},
             {'clubb_name': 'Skw_zt', 'sam_calc': self.getSkwZtSamLine},
             {'clubb_name': 'thlp3', 'sam_name': 'THLP3'},
             {'clubb_name': 'rtpthvp', 'sam_name': 'RTPTHVP'},
@@ -58,12 +58,16 @@ class VariableGroupBase(VariableGroup):
             {'clubb_name': 'Skthl_zt', 'sam_calc': self.getSkthlZtSamLine},
             {'clubb_name': 'corr_w_chi_1'},
             {'clubb_name': 'corr_chi_eta_1'},
-            {'clubb_name': 'rcp2', 'sam_name': 'QC2', 'sam_conv_factor': 1/10**6},
+            {'clubb_name': 'rcp2', 'sam_name': 'QC2', 'sam_conv_factor': 1 / 10 ** 6},
             {'clubb_name': 'thlpthvp', 'sam_name': 'THLPTHVP'},
-
+            {'clubb_name': 'rc_coef_zm .* wprcp', 'fallback_func': self.get_rc_coef_zm_X_wprcp_clubb_line,
+             'title': 'Contribution of Cloud Water Flux to wpthvp', 'axis_title': 'rc_coef_zm * wprcp [K m/s]'},
+            {'clubb_name': 'lwp', 'type': Panel.TYPE_TIMESERIES}
         ]
         super().__init__(ncdf_datasets, case, sam_file)
 
+
+    # Missing variables
     # lwp vs time, rc_coef * wprcp, rc_coef * thlprcp, thlpthvp, rc_coef * rtprcp
 
     def getThlmSamLine(self):
@@ -74,8 +78,8 @@ class VariableGroupBase(VariableGroup):
         :return: requested variable data in the form of a list. Returned data is already cropped to the appropriate min,max indices
         '''
 
-        self.start_time = self.start_time 
-        self.end_time = self.end_time 
+        self.start_time = self.start_time
+        self.end_time = self.end_time
 
         z_ncdf = NetCdfVariable('z', self.sam_file, 1)
 
@@ -87,7 +91,7 @@ class VariableGroupBase(VariableGroup):
         theta_ncdf.constrain(self.height_min_value, self.height_max_value, data=z_ncdf.data)
         theta = theta_ncdf.data
 
-        tabs_ncdf = NetCdfVariable('TABS', self.sam_file, 1, start_time=self.start_time,end_time=self.end_time)
+        tabs_ncdf = NetCdfVariable('TABS', self.sam_file, 1, start_time=self.start_time, end_time=self.end_time)
         tabs_ncdf.constrain(self.height_min_value, self.height_max_value, data=z_ncdf.data)
         tabs = tabs_ncdf.data
 
@@ -108,8 +112,8 @@ class VariableGroupBase(VariableGroup):
         (QT-QI) ./ 1000
         :return: requested variable data in the form of a list. Returned data is already cropped to the appropriate min,max indices
         '''
-        self.start_time = self.start_time 
-        self.end_time = self.end_time 
+        self.start_time = self.start_time
+        self.end_time = self.end_time
 
         z_ncdf = NetCdfVariable('z', self.sam_file, 1)
 
@@ -127,7 +131,6 @@ class VariableGroupBase(VariableGroup):
         rtm_line = Line(rtm, z_ncdf.data, line_format="k-", label="LES output")
         return rtm_line
 
-
     def getSkwZtSamLine(self):
         '''
         Calculates Skw_zt values from sam output using
@@ -135,8 +138,8 @@ class VariableGroupBase(VariableGroup):
         WP3 ./ (WP2 + 1.6e-3).^1.5
         :return: requested variable data in the form of a list. Returned data is already cropped to the appropriate min,max indices
         '''
-        self.start_time = self.start_time 
-        self.end_time = self.end_time 
+        self.start_time = self.start_time
+        self.end_time = self.end_time
 
         z_ncdf = NetCdfVariable('z', self.sam_file, 1)
 
@@ -148,7 +151,7 @@ class VariableGroupBase(VariableGroup):
         wp2_ncdf.constrain(self.height_min_value, self.height_max_value, data=z_ncdf.data)
         wp2 = wp2_ncdf.data
 
-        skw_zt = wp3 / (wp2 + 1.6e-3 ) ** 1.5
+        skw_zt = wp3 / (wp2 + 1.6e-3) ** 1.5
 
         z_ncdf.constrain(self.height_min_value, self.height_max_value)
         skw_zt_line = Line(skw_zt, z_ncdf.data, line_format="k-", label="LES output")
@@ -161,8 +164,8 @@ class VariableGroupBase(VariableGroup):
          # RTP3 ./ (RTP2 + 4e-16).^1.5  
          :return: requested variable data in the form of a list. Returned data is already cropped to the appropriate min,max indices
         '''
-        self.start_time = self.start_time 
-        self.end_time = self.end_time 
+        self.start_time = self.start_time
+        self.end_time = self.end_time
 
         z_ncdf = NetCdfVariable('z', self.sam_file, 1)
 
@@ -179,7 +182,7 @@ class VariableGroupBase(VariableGroup):
         z_ncdf.constrain(self.height_min_value, self.height_max_value, data=z_ncdf.data)
         skrtp_zt_line = Line(skrtp_zt, z_ncdf.data, line_format="k-", label="LES output")
         return skrtp_zt_line
-    
+
     def getSkthlZtSamLine(self):
         '''
         Calculates Skthl_zt values from sam output using
@@ -187,8 +190,8 @@ class VariableGroupBase(VariableGroup):
         THLP3 ./ (THLP2 + 4e-4).^1.5
          :return: requested variable data in the form of a list. Returned data is already cropped to the appropriate min,max indices
         '''
-        self.start_time = self.start_time 
-        self.end_time = self.end_time 
+        self.start_time = self.start_time
+        self.end_time = self.end_time
 
         z_ncdf = NetCdfVariable('z', self.sam_file, 1)
 
@@ -212,8 +215,8 @@ class VariableGroupBase(VariableGroup):
         WPTHLP = (TLFLUX) ./ (RHO * 1004)
         :return:
         '''
-        self.start_time = self.start_time 
-        self.end_time = self.end_time 
+        self.start_time = self.start_time
+        self.end_time = self.end_time
 
         z_ncdf = NetCdfVariable('z', self.sam_file, 1)
 
@@ -237,8 +240,8 @@ class VariableGroupBase(VariableGroup):
         WPRTP = (QTFLUX) ./ (RHO * 2.5104e+6)
         :return:
         '''
-        self.start_time = self.start_time 
-        self.end_time = self.end_time 
+        self.start_time = self.start_time
+        self.end_time = self.end_time
 
         z_ncdf = NetCdfVariable('z', self.sam_file, 1)
 
@@ -262,8 +265,8 @@ class VariableGroupBase(VariableGroup):
         WPTHVP =  (TVFLUX) ./ ( RHO * 1004)
         :return:
         '''
-        self.start_time = self.start_time 
-        self.end_time = self.end_time 
+        self.start_time = self.start_time
+        self.end_time = self.end_time
 
         z_ncdf = NetCdfVariable('z', self.sam_file, 1)
 
@@ -287,8 +290,8 @@ class VariableGroupBase(VariableGroup):
         THLP2 = TL2
         :return:
         '''
-        self.start_time = self.start_time 
-        self.end_time = self.end_time 
+        self.start_time = self.start_time
+        self.end_time = self.end_time
 
         z_ncdf = NetCdfVariable('z', self.sam_file, 1)
 
@@ -306,8 +309,8 @@ class VariableGroupBase(VariableGroup):
         Rtpthlp = TQ
         :return:
         '''
-        self.start_time = self.start_time 
-        self.end_time = self.end_time 
+        self.start_time = self.start_time
+        self.end_time = self.end_time
 
         z_ncdf = NetCdfVariable('z', self.sam_file, 1)
 
@@ -325,8 +328,8 @@ class VariableGroupBase(VariableGroup):
         THLP2 = QT2 / 1e+6
         :return:
         '''
-        self.start_time = self.start_time 
-        self.end_time = self.end_time 
+        self.start_time = self.start_time
+        self.end_time = self.end_time
 
         z_ncdf = NetCdfVariable('z', self.sam_file, 1)
 
@@ -349,7 +352,6 @@ class VariableGroupBase(VariableGroup):
         :return:
         '''
 
-
         z_ncdf = NetCdfVariable('z', self.sam_file, 1)
 
         rc_coef_zm_ncdf = NetCdfVariable('rc_coef_zm', self.sam_file, 1, start_time=self.start_time, end_time=self.end_time)
@@ -365,3 +367,54 @@ class VariableGroupBase(VariableGroup):
         z_ncdf.constrain(self.height_min_value, self.height_max_value)
         rtp3_line = Line(rtp3, z_ncdf.data, line_format='k-', label='LES output')
         return rtp3_line
+
+    def get_rc_coef_zm_X_wprcp_clubb_line(self):
+        '''
+        Calculates the Contribution of Cloud Water Flux
+        to wpthvp using the equation
+        rc_coef_zm .* wprcp
+        :return: Line representing rc_coef_zm .* wprcp
+        '''
+        z_ncdf = NetCdfVariable('altitude', self.ncdf_files['zm'], 1)
+
+        rc_coef_zm_ncdf = NetCdfVariable('rc_coef_zm', self.ncdf_files['zm'], 1, start_time=self.start_time, end_time=self.end_time, fill_zeros=True)
+        rc_coef_zm_ncdf.constrain(self.height_min_value, self.height_max_value, data=z_ncdf.data)
+        rc_coef_zm = rc_coef_zm_ncdf.data
+
+        wprcp_ncdf = NetCdfVariable('wprcp', self.ncdf_files['zm'], 1, start_time=self.start_time, end_time=self.end_time, fill_zeros=True)
+        wprcp_ncdf.constrain(self.height_min_value, self.height_max_value, data=z_ncdf.data)
+        wprcp = wprcp_ncdf.data
+
+        output = rc_coef_zm * wprcp
+
+        z_ncdf.constrain(self.height_min_value, self.height_max_value)
+        output = Line(output, z_ncdf.data, line_format='b-', label='current clubb')
+        return output
+
+    def get_rc_coef_zm_X_wprcp_sam_line(self):
+        '''
+        Calculates the Contribution of Cloud Water Flux
+        to wpthvp for SAM using the equation
+
+        wpqcp .* (2.5e6 ./ (1004.67*ex0) - 1.61*thvm)
+        :return:
+        '''
+        z_ncdf = NetCdfVariable('z', self.sam_file, 1)
+
+        wpgcp_ncdf = NetCdfVariable('wpgcp', self.sam_file, 1, start_time=self.start_time, end_time=self.end_time)
+        wpgcp_ncdf.constrain(self.height_min_value, self.height_max_value, data=z_ncdf.data)
+        wpgcp = wpgcp_ncdf.data
+
+        thvm_ncdf = NetCdfVariable('thvm', self.sam_file, 1, start_time=self.start_time, end_time=self.end_time)
+        thvm_ncdf.constrain(self.height_min_value, self.height_max_value, data=z_ncdf.data)
+        thvm = thvm_ncdf.data
+
+        ex0_ncdf = NetCdfVariable('ex0', self.sam_file, 1, start_time=self.start_time, end_time=self.end_time)
+        ex0_ncdf.constrain(self.height_min_value, self.height_max_value, data=z_ncdf.data)
+        ex0 = thvm_ncdf.data
+
+        output = wpgcp * (2.5e6 / (1004.67 * ex0) - 1.61 * thvm)
+
+        z_ncdf.constrain(self.height_min_value, self.height_max_value)
+        output = Line(output, z_ncdf.data, line_format='k-', label='LES output')
+        return output

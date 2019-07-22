@@ -21,17 +21,13 @@ class VariableGroupCorrelations(VariableGroup):
         self.name = "w variables"
         # TODO Support fill_zeros
         self.variable_definitions = [
-            {'clubb_name': 'corr_w_rr_1'},#, 'sam_name': 'WP4'},
-            {'clubb_name': 'corr_w_Nr_1'},#, 'sam_name': 'WP2THLP'},
-            {'clubb_name': 'corr_w_Ncn_1'},#, 'sam_name': 'WP2RTP'},
-            {'clubb_name': 'corr_chi_rr_1'},#, 'sam_name': 'WPTHLP2'},
-            {'clubb_name': 'corr_chi_Nr_1'},#, 'sam_name': 'WPRTP2'},
-            {'clubb_name': 'corr_chi_Ncn_1'},#, 'sam_name': 'WPRTPTHLP'},
-            {'clubb_name': 'corr_rr_Nr_1'},#, 'sam_name': 'WP2THVP'},
-            # {'clubb_name': 'corr_w_Ncn_1'},#, 'sam_name': 'WPTHLP2'},
-            # {'clubb_name': 'corr_chi_Ncn_1'},#, 'sam_name': 'WPRTP2'},
-            # {'clubb_name': 'corr_rr_Nr_1'},#, 'sam_name': 'WPRTPTHLP'}
+            {'clubb_name': 'corr_w_rr_1'},
+            {'clubb_name': 'corr_w_Nr_1'},
+            {'clubb_name': 'corr_w_Ncn_1'},
+            {'clubb_name': 'corr_chi_rr_1'},
+            {'clubb_name': 'corr_chi_Nr_1'},
+            {'clubb_name': 'corr_chi_Ncn_1'},
+            {'clubb_name': 'corr_rr_Nr_1'},
 
         ]
         super().__init__(ncdf_datasets, case, sam_file)
-

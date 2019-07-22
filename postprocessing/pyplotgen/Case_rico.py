@@ -12,14 +12,14 @@ class Case_rico(Case):
     '''
 
     '''
+    name = 'rico'
     def __init__(self, ncdf_files, plot_sam = True):
         '''
 
         '''
-        self.name = "rico"
         sec_per_min = 60
-        self.start_time = 4201 #* sec_per_min
-        self.end_time = 4320 #* sec_per_min
+        self.start_time = 4201
+        self.end_time = 4320
         self.height_min_value = 0
         self.height_max_value = 4000
         self.enabled = True

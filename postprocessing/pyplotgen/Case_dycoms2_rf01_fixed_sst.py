@@ -8,11 +8,13 @@ class Case_dycoms2_rf01_fixed_sst(Case):
     '''
 
     '''
+    name = 'dycoms2_rf01_fixed_sst'
+
     def __init__(self, ncdf_files, plot_sam = True):
         '''
 
         '''
-        self.name = "dycoms_rf01_fixed_sst"
+        self.name = Case_dycoms2_rf01_fixed_sst.name
         sec_per_min = 60
         self.start_time = 2520 #* sec_per_min
         self.end_time = 2700 #* sec_per_min

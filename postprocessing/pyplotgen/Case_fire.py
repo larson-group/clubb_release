@@ -8,11 +8,12 @@ class Case_fire(Case):
     '''
 
     '''
+    name = 'fire'
     def __init__(self, ncdf_files, plot_sam = True):
         '''
 
         '''
-        self.name = "fire"
+        self.name = Case_fire.name
         sec_per_min = 60
         self.start_time = 61 #* sec_per_min
         self.end_time = 120 #* sec_per_min

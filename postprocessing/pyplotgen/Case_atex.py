@@ -8,11 +8,13 @@ class Case_atex(Case):
     '''
 
     '''
+    name = 'atex'
+
     def __init__(self, ncdf_files, plot_sam = True):
         '''
 
         '''
-        self.name = "atex"
+        self.name = Case_atex.name
         sec_per_min = 60
         self.start_time = 421 #* sec_per_min
         self.end_time = 480 #* sec_per_min

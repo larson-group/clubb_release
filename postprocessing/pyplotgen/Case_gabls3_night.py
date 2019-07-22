@@ -8,12 +8,11 @@ class Case_gabls3_night(Case):
     '''
 
     '''
-
+    name = 'gabls3_night'
     def __init__(self, ncdf_files, plot_sam=True):
         '''
 
         '''
-        self.name = "gabls3_night"
         sec_per_min = 60
         self.start_time = 421  # * sec_per_min
         self.end_time = 480  # * sec_per_min

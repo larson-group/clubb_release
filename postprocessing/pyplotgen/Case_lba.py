@@ -12,11 +12,12 @@ class Case_lba(Case):
     '''
 
     '''
+    name = 'lba'
     def __init__(self, ncdf_files, plot_sam = True):
         '''
 
         '''
-        self.name = "lba"
+        # self.name = "lba"
         sec_per_min = 60
         self.start_time = 300 #* sec_per_min
         self.end_time = 360 #   * sec_per_min

@@ -12,11 +12,11 @@ class Case_mc3e(Case):
     '''
 
     '''
+    name = 'mc3e'
     def __init__(self, ncdf_files, plot_sam = True):
         '''
 
         '''
-        self.name = "mc3e"
         sec_per_min = 60
         self.start_time = 1 #* sec_per_min
         self.end_time = 64800 #* sec_per_min

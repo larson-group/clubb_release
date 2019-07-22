@@ -12,14 +12,13 @@ class Case_mpace_b_silhs(Case):
     '''
 
     '''
+    name = 'mpace_b_silhs'
     def __init__(self, ncdf_files, plot_sam = True):
         '''
 
         '''
-        self.name = "mpace_b_silhs"
-        sec_per_min = 60
-        self.start_time = 541 #* sec_per_min
-        self.end_time = 720 #* sec_per_min
+        self.start_time = 541
+        self.end_time = 720
         self.height_min_value = 0
         self.height_max_value = 2750
         self.enabled = True

@@ -36,7 +36,6 @@ class NetCdfVariable:
         if isinstance(ncdf_data, dict):
             self.filter_datasets()
         self.data = data_reader.getVarData(self.ncdf_data, self, fill_zeros=fill_zeros)
-        # print()
 
     def __getStartEndIndex__(self, data, start_value, end_value):
         '''

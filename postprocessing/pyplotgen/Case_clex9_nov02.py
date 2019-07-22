@@ -12,11 +12,13 @@ class Case_clex9_nov02(Case):
     '''
 
     '''
+    name = 'clex9_nov02'
+
     def __init__(self, ncdf_files, plot_sam = True):
         '''
 
         '''
-        self.name = "clex9_nov02"
+        self.name = Case_clex9_nov02.name
         sec_per_min = 60
         self.start_time = 181 #* sec_per_min
         self.end_time = 240 #* sec_per_min

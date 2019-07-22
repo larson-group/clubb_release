@@ -12,11 +12,11 @@ class Case_twp_ice(Case):
     '''
 
     '''
+    name = 'twp_ice'
     def __init__(self, ncdf_files, plot_sam = True):
         '''
 
         '''
-        self.name = "twp_ice"
         sec_per_min = 60
         self.start_time = 1 #* sec_per_min
         self.end_time = 9900 #   * sec_per_min

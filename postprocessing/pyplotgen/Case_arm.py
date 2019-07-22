@@ -12,11 +12,14 @@ class Case_arm(Case):
     '''
 
     '''
+
+    name = 'arm'
+
     def __init__(self, ncdf_files, plot_sam = True):
         '''
 
         '''
-        self.name = "arm"
+        self.name = Case_arm.name
         sec_per_min = 60
         self.start_time = 481 #* sec_per_min
         self.end_time = 540 #* sec_per_min

@@ -28,7 +28,7 @@ class Case:
         :param casename: str name of the case
         :return:
         '''
-        # print("\n")
+        print("\n")
         num_plots = len(self.panels)
         curr_panel_num = 0
         for panel in self.panels:

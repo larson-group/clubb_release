@@ -11,11 +11,12 @@ class Case_dycoms2_rf02_do(Case):
     '''
 
     '''
+    name = 'dycoms2_rf02_do'
     def __init__(self, ncdf_files, plot_sam = True):
         '''
 
         '''
-        self.name = "dycoms_rf02_do"
+        self.name = Case_dycoms2_rf02_do.name
         sec_per_min = 60
         self.start_time = 301 #* sec_per_min
         self.end_time = 360 #* sec_per_min

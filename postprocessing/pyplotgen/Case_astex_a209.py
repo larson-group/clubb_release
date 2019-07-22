@@ -12,11 +12,14 @@ class Case_astex_a209(Case):
     '''
 
     '''
+
+    name = 'astex_a209'
+
     def __init__(self, ncdf_files, plot_sam = True):
         '''
 
         '''
-        self.name = "astex_a209"
+        self.name = Case_astex_a209.name
         sec_per_min = 60
         self.start_time = 2340 #* sec_per_min
         self.end_time = 2400 #* sec_per_min

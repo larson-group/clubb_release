@@ -12,11 +12,13 @@ class Case_cgils_s6(Case):
     '''
 
     '''
+    name = 'cgils_s6'
+
     def __init__(self, ncdf_files, plot_sam = True):
         '''
 
         '''
-        self.name = "cgils_s6"
+        self.name = Case_cgils_s6.name
         sec_per_min = 60
         self.start_time = 12960 #* sec_per_min
         self.end_time = 14400 #* sec_per_min

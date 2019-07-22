@@ -12,11 +12,11 @@ class Case_nov11_altocu(Case):
     '''
 
     '''
+    name = 'nov11_altocu'
     def __init__(self, ncdf_files, plot_sam = True):
         '''
 
         '''
-        self.name = "nov11_altocu"
         sec_per_min = 60
         self.start_time = 91 #* sec_per_min
         self.end_time = 150 #   * sec_per_min

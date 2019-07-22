@@ -12,11 +12,11 @@ class Case_mpace_b(Case):
     '''
 
     '''
+    name = 'mpace_b'
     def __init__(self, ncdf_files, plot_sam = True):
         '''
 
         '''
-        self.name = "mpace_b"
         sec_per_min = 60
         self.start_time = 541 #* sec_per_min
         self.end_time = 720 #* sec_per_min

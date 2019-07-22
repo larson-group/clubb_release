@@ -8,11 +8,12 @@ class Case_dycoms2_rf01(Case):
     '''
 
     '''
+    name = 'dycoms2_rf01'
     def __init__(self, ncdf_files, plot_sam = True):
         '''
 
         '''
-        self.name = "dycoms_rf01"
+        self.name = Case_dycoms2_rf01.name
         sec_per_min = 60
         self.start_time = 181 #* sec_per_min
         self.end_time = 240 #* sec_per_min
