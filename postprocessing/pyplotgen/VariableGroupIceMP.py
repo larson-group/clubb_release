@@ -29,8 +29,8 @@ class VariableGroupIceMP(VariableGroup):
             {'clubb_name': 'swp', 'type': Panel.TYPE_TIMESERIES, 'sam_name': 'SWP', 'sam_conv_factor': 1 / 1000},
             {'clubb_name': 'ice_supersat_frac'},
             {'clubb_name': 'Ngm', 'sam_name': 'NG', 'sam_conv_factor': 10 ** 6, 'fill_zeros': True},
-            {'clubb_name': 'rgm', 'sam_name': 'QG', 'sam_conv_factor': 1 / 1000}
-            # {'clubb_name': 'morr_rain_rate'}
+            {'clubb_name': 'rgm', 'sam_name': 'QG', 'sam_conv_factor': 1 / 1000},
+            {'clubb_name': 'precip_rate_sfc', 'sam_name': 'PREC', 'type': Panel.TYPE_TIMESERIES}
         ]
         super().__init__(ncdf_datasets, case, sam_file)
 

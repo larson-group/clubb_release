@@ -28,9 +28,12 @@ class VariableGroupLiquidMP(VariableGroup):
             {'clubb_name': 'Nrm', 'sam_calc': self.getNrmSamLine},
             {'clubb_name': 'wprrp', 'sam_name': 'WPRRP'},  # Not found in lba case file
             {'clubb_name': 'wpNrp', 'sam_name': 'WPNRP'},  # Not found in lba case file
-            {'clubb_name': 'rwp', 'sam_name': 'RWP', 'sam_conv_factor': 1/1000, 'type': Panel.TYPE_TIMESERIES}
+            {'clubb_name': 'rwp', 'sam_name': 'RWP', 'sam_conv_factor': 1 / 1000, 'type': Panel.TYPE_TIMESERIES},
+            {'clubb_name': 'precip_rate_sfc', 'type': Panel.TYPE_TIMESERIES}
 
         ]
+        #rain_rate_sfc vs time
+
         super().__init__(ncdf_datasets, case, sam_file)
 
 

@@ -100,9 +100,8 @@ class PyPlotGen:
                  Case_clex9_oct14, Case_clex9_nov02, Case_dycoms2_rf01, Case_dycoms2_rf01_fixed_sst, Case_dycoms2_rf02_do, Case_dycoms2_rf02_ds,
                  Case_fire, Case_gabls2, Case_gabls3, Case_gabls3_night, Case_jun25_altocu, Case_lba, Case_mc3e, Case_mpace_a, Case_mpace_b,
                  Case_mpace_b_silhs, Case_nov11_altocu, Case_rico, Case_twp_ice, Case_wangara]
+        cases = [Case_astex_a209]
 
-        # for case_key in self.nc_datasets.keys():
-        #     ncdf_files = self.nc_datasets[case_key]
         for case in  cases:
             self.run_case(case, self.nc_datasets[case.name])
 

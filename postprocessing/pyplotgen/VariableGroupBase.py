@@ -61,14 +61,14 @@ class VariableGroupBase(VariableGroup):
             {'clubb_name': 'rcp2', 'sam_name': 'QC2', 'sam_conv_factor': 1 / 10 ** 6},
             {'clubb_name': 'thlpthvp', 'sam_name': 'THLPTHVP'},
             {'clubb_name': 'rc_coef_zm .* wprcp', 'fallback_func': self.get_rc_coef_zm_X_wprcp_clubb_line,
-             'title': 'Contribution of Cloud Water Flux to wpthvp', 'axis_title': 'rc_coef_zm * wprcp [K m/s]'},
+                'title': 'Contribution of Cloud Water Flux to wpthvp', 'axis_title': 'rc_coef_zm * wprcp [K m/s]'},
+            {'clubb_name': 'rc_coef_zm .* thlprcp', 'fallback_func': self.get_rc_coef_zm_X_thlprcp_clubb_line,
+                'title': 'Contribution of Cloud Water Flux to thlprcp', 'axis_title': 'rc_coef_zm * thlprcp [K^2]'},
+            {'clubb_name': 'rc_coef_zm .* rtprcp', 'fallback_func': self.get_rc_coef_zm_X_rtprcp_clubb_line,
+                'title': 'Contribution of Cloud Water Flux to rtprcp', 'axis_title': 'rc_coef_zm * rtprcp [kg/kg K]'},
             {'clubb_name': 'lwp', 'type': Panel.TYPE_TIMESERIES}
         ]
         super().__init__(ncdf_datasets, case, sam_file)
-
-
-    # Missing variables
-    # lwp vs time, rc_coef * wprcp, rc_coef * thlprcp, thlpthvp, rc_coef * rtprcp
 
     def getThlmSamLine(self):
         '''
@@ -417,4 +417,51 @@ class VariableGroupBase(VariableGroup):
 
         z_ncdf.constrain(self.height_min_value, self.height_max_value)
         output = Line(output, z_ncdf.data, line_format='k-', label='LES output')
+        return output
+
+    # rc_coef_zm. * thlprcp
+    def get_rc_coef_zm_X_thlprcp_clubb_line(self):
+        '''
+        Calculates the Contribution of Cloud Water Flux
+        to thlprcp using the equation
+        rc_coef_zm * thlprcp
+        :return: Line representing rc_coef_zm .* thlprcp
+        '''
+        z_ncdf = NetCdfVariable('altitude', self.ncdf_files['zm'], 1)
+
+        rc_coef_zm_ncdf = NetCdfVariable('rc_coef_zm', self.ncdf_files['zm'], 1, start_time=self.start_time, end_time=self.end_time, fill_zeros=True)
+        rc_coef_zm_ncdf.constrain(self.height_min_value, self.height_max_value, data=z_ncdf.data)
+        rc_coef_zm = rc_coef_zm_ncdf.data
+
+        thlprcp_ncdf = NetCdfVariable('thlprcp', self.ncdf_files['zm'], 1, start_time=self.start_time, end_time=self.end_time, fill_zeros=True)
+        thlprcp_ncdf.constrain(self.height_min_value, self.height_max_value, data=z_ncdf.data)
+        thlprcp = thlprcp_ncdf.data
+
+        output = rc_coef_zm * thlprcp
+
+        z_ncdf.constrain(self.height_min_value, self.height_max_value)
+        output = Line(output, z_ncdf.data, line_format='b-', label='current clubb')
+        return output
+    
+    def get_rc_coef_zm_X_rtprcp_clubb_line(self):
+        '''
+        Calculates the Contribution of Cloud Water Flux
+        to rtprcp using the equation
+        rc_coef_zm * rtprcp
+        :return: Line representing rc_coef_zm .* rtprcp
+        '''
+        z_ncdf = NetCdfVariable('altitude', self.ncdf_files['zm'], 1)
+
+        rc_coef_zm_ncdf = NetCdfVariable('rc_coef_zm', self.ncdf_files['zm'], 1, start_time=self.start_time, end_time=self.end_time, fill_zeros=True)
+        rc_coef_zm_ncdf.constrain(self.height_min_value, self.height_max_value, data=z_ncdf.data)
+        rc_coef_zm = rc_coef_zm_ncdf.data
+
+        rtprcp_ncdf = NetCdfVariable('rtprcp', self.ncdf_files['zm'], 1, start_time=self.start_time, end_time=self.end_time, fill_zeros=True)
+        rtprcp_ncdf.constrain(self.height_min_value, self.height_max_value, data=z_ncdf.data)
+        rtprcp = rtprcp_ncdf.data
+
+        output = rc_coef_zm * rtprcp
+
+        z_ncdf.constrain(self.height_min_value, self.height_max_value)
+        output = Line(output, z_ncdf.data, line_format='b-', label='current clubb')
         return output
