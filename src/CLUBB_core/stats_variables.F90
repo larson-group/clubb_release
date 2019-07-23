@@ -119,8 +119,10 @@ module stats_variables
 !$omp   isigma_sqd_w_zt, irho )
 
   integer, public :: &
-     itau_zm_simp = 0
-!$omp threadprivate( itau_zm_simp )
+     itau_zm_simp = 0,     & 
+     itau_xp2_zm= 0,     &
+     itau_wp2_zm= 0
+!$omp threadprivate( itau_zm_simp,itau_wp2_zm, itau_xp2_zm )
 
 
   integer, dimension(:), allocatable, public :: & 
