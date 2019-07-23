@@ -88,4 +88,6 @@ C_invrs_tau_bkgnd = 1.0  ! Coefficient of inverse tau term contributed by backgr
 C_invrs_tau_sfc = 0.1    ! Coefficient of inverse tau term contributed by surface log law [-]
 C_invrs_tau_shear = 0.02 ! Coefficient of inverse tau term contributed by vertical wind shear [-]
 C_invrs_tau_N2 = 0.2     ! Coefficient of inverse tau term contributed by Brunt Vaisala frequency [-]
+C_invrs_tau_N2_wp2 = 0.2 ! Coefficient of inverse tau term contributed by Brunt Vaisala frequency but for wp2_wpxp [-]
+C_invrs_tau_N2_xp2 = 0.2 ! Coefficient of inverse tau term contributed by Brunt Vaisala frequency but for wp2_wpxp [-]
 /

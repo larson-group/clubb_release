@@ -26,7 +26,7 @@ module parameter_indices
   private ! Default Scope
 
   integer, parameter, public ::  & 
-    nparams = 82 ! Total tunable parameters
+    nparams = 84 ! Total tunable parameters
 
 !***************************************************************
 !                    ***** IMPORTANT *****
@@ -124,7 +124,9 @@ module parameter_indices
     iC_invrs_tau_bkgnd            = 79, &
     iC_invrs_tau_sfc              = 80, &
     iC_invrs_tau_shear            = 81, &
-    iC_invrs_tau_N2               = 82
+    iC_invrs_tau_N2               = 82, &
+    iC_invrs_tau_N2_wp2           = 83, &
+    iC_invrs_tau_N2_xp2           = 84
 
 
 end module parameter_indices
