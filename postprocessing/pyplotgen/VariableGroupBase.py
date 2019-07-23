@@ -67,6 +67,8 @@ class VariableGroupBase(VariableGroup):
             {'clubb_name': 'rc_coef_zm .* rtprcp', 'fallback_func': self.get_rc_coef_zm_X_rtprcp_clubb_line,
                 'title': 'Contribution of Cloud Water Flux to rtprcp', 'axis_title': 'rc_coef_zm * rtprcp [kg/kg K]'},
             {'clubb_name': 'lwp', 'type': Panel.TYPE_TIMESERIES}
+
+            # TODO corr chi 2's
         ]
         super().__init__(ncdf_datasets, case, sam_file)
 

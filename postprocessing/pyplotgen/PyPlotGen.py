@@ -26,6 +26,8 @@ from pyplotgen.Case_clex9_oct14 import Case_clex9_oct14
 from pyplotgen.Case_dycoms2_rf01_fixed_sst import Case_dycoms2_rf01_fixed_sst
 from pyplotgen.Case_dycoms2_rf02_do import Case_dycoms2_rf02_do
 from pyplotgen.Case_dycoms2_rf02_ds import Case_dycoms2_rf02_ds
+from pyplotgen.Case_dycoms2_rf02_nd import Case_dycoms2_rf02_nd
+from pyplotgen.Case_dycoms2_rf02_so import Case_dycoms2_rf02_so
 from pyplotgen.Case_fire import Case_fire
 from pyplotgen.Case_gabls2 import Case_gabls2
 from pyplotgen.Case_gabls3 import Case_gabls3
@@ -100,10 +102,14 @@ class PyPlotGen:
                  Case_clex9_oct14, Case_clex9_nov02, Case_dycoms2_rf01, Case_dycoms2_rf01_fixed_sst, Case_dycoms2_rf02_do, Case_dycoms2_rf02_ds,
                  Case_fire, Case_gabls2, Case_gabls3, Case_gabls3_night, Case_jun25_altocu, Case_lba, Case_mc3e, Case_mpace_a, Case_mpace_b,
                  Case_mpace_b_silhs, Case_nov11_altocu, Case_rico, Case_twp_ice, Case_wangara]
-        cases = [Case_astex_a209]
+        cases = [Case_dycoms2_rf02_so]
 
-        for case in  cases:
-            self.run_case(case, self.nc_datasets[case.name])
+        for case in cases:
+            try:
+                self.run_case(case, self.nc_datasets[case.name])
+            except (KeyError):
+                raise FileNotFoundError("The dataset for " + case.name + " was not found in " + self.output_folder +
+                                        ". Please make sure the dataset exists uses the name " + case.name + "_EXT.nc")
 
         print('###########################################')
         print("\nGenerating webpage for viewing plots ")

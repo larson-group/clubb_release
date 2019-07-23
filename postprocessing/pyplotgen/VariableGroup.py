@@ -207,10 +207,10 @@ class VariableGroup:
         '''
         if fallback is None:
             raise TypeError("Failed to find variable " + varname + " in clubb output for case " +
-                            self.casename + " and there is no fallback function specified. If this is expected "
+                            self.casename + " and there is no fallback function specified.\nIf this is expected "
                                             "(e.g. this model doesn't output the " + varname +
-                            " variable) then please add a fallback function to the variable's definition or "
-                            "   allow allow the variable to be filled with zeros. "
+                            " variable) then please add a fallback function to the variable's definition to manually calculate it or "
+                            " allow allow the variable to be filled with zeros.\n"
                             "If it is not expected, please  make sure the correct .nc files are being loaded.")
         varline = fallback()
         print("\tFallback for ", varname, " successful")
