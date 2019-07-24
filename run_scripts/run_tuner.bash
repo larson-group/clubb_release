@@ -226,10 +226,12 @@ cp $RAND_SEED .
 # Run tuner, keep a log of STDOUT & STDERR
 #
 if ( $NIGHTLY ); then
-	../bin/clubb_tuner 2>&1 | tee 'tuner_'$RUN_CASE'_'$DATE'.log'
+	logFile='tuner_'$RUN_CASE'_'$DATE'.log'
 else
-	../bin/clubb_tuner
+	logFile='tmp.log'
 fi
+
+../bin/clubb_tuner 2>&1 | tee $logFile
 
 #
 # Run tuner, don't keep a log
@@ -263,7 +265,7 @@ if [ $RUN_TYPE = 'single' ] ; then # Single Case.
 
    # Concatenate *_model.in and *_stats.in into clubb.in
    cat $STATS_OPT_IN $PARAMS_FILE $SILHS_PARAMS_FILE $MODEL_FILE $FLAGS_FILE | sed -e 's/\!.*//' > 'clubb.in'
-    ../bin/clubb_standalone
+    ../bin/clubb_standalone 2>&1 | tee -a $logFile
 
 elif [ $RUN_TYPE = 'multiple' ] ; then # Multiple Cases.
 
@@ -271,9 +273,21 @@ elif [ $RUN_TYPE = 'multiple' ] ; then # Multiple Cases.
 		MODEL_FILE=$MODEL_DIR$EACH_CASE'_model.in'
 		# Concatenate *_model.in and *_stats.in into clubb.in
         cat $STATS_OPT_IN $PARAMS_FILE $MODEL_FILE $FLAGS_FILE | sed -e 's/\!.*//' > 'clubb.in'
-		../bin/clubb_standalone
+		../bin/clubb_standalone 2>&1 | tee -a $logFile
    done
 
 fi
 
 rm -f 'clubb.in' 'rand_seed.dat'
+
+if [ `grep -c "STOP Fatal error" $logFile` -gt 0 ]; then
+	exitStatus=1
+else
+	exitStatus=0
+fi
+
+if ( ! $NIGHTLY ); then
+	rm $logFile
+fi
+
+exit $exitStatus
