@@ -169,7 +169,7 @@ module parameters_tunable
     C_invrs_tau_shear    = 0.02_core_rknd, &   !
     C_invrs_tau_N2       = 0.1_core_rknd,  &   ! 
     C_invrs_tau_N2_wp2   = 0.2_core_rknd,  &   !
-    C_invrs_tau_N2_xp2   = 0.0_core_rknd       ! 
+    C_invrs_tau_N2_xp2   = 0.2_core_rknd       ! 
 
 !$omp threadprivate(C_invrs_tau_bkgnd,C_invrs_tau_sfc)
 !$omp threadprivate(C_invrs_tau_shear,C_invrs_tau_N2)  
@@ -364,7 +364,7 @@ module parameters_tunable
        "Skw_max_mag                 ", "C_invrs_tau_bkgnd           ", &
        "C_invrs_tau_sfc             ", "C_invrs_tau_shear           ", &
        "C_invrs_tau_N2              ", "C_invrs_tau_N2_wp2          ", &
-       "C_invrs_tau_N2_xp2i         "  /)
+       "C_invrs_tau_N2_xp2          "  /)
 
   real( kind = core_rknd ), parameter, private :: &
     init_value = -999._core_rknd ! Initial value for the parameters, used to detect missing values

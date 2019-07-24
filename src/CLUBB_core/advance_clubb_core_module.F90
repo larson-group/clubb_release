@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id$
+! $sId$
 !-----------------------------------------------------------------------
 
 module advance_clubb_core_module
@@ -403,7 +403,7 @@ module advance_clubb_core_module
         irvm,          &
         irel_humidity, &
         iwpthlp_zt,    &
-        itau_zm_simp,  &
+        itau_no_N2_zm,  &
         itau_xp2_zm,   &
         itau_wp2_zm  
 
@@ -757,14 +757,14 @@ module advance_clubb_core_module
        invrs_tau_xp2_zm,       & ! One divided by tau_xp2, including stability effects (partly) [s^-1]
        invrs_tau_wp2_zm,       & ! One divided by tau_wp2, including stability effects (partly) [s^-1]
        invrs_tau_N2_zm,        & ! One divided by tau, including stability effects [s^-1]
-       invrs_tau_zm_simp,      & ! One divided by tau_simp on zm levels              [s^-1] 
+       invrs_tau_no_N2_zm,     & ! One divided by tau (without N2) on zm levels              [s^-1] 
        ustar,                  & ! Friction velocity  [m/s]
-       tau_zm_simp,            & ! Tau without Brunt Freq
+       tau_no_N2_zm,            & ! Tau without Brunt Freq
        tau_wp2_zm,             & ! Tau values used for advance_wp2_wpxp
        tau_xp2_zm,             & ! Tau values used for advance_xp2_wpxp
        tau_wp2_zt,             & ! Tau at zt levels
        tau_xp2_zt,             & ! -
-       tau_simp_zt               ! -
+       tau_no_N2_zt               ! -
  
 
 
@@ -1275,6 +1275,12 @@ module advance_clubb_core_module
       tau_zt = MIN( Lscale / sqrt_em_zt, taumax )
       tau_zm = MIN( ( MAX( zt2zm( Lscale ), zero_threshold )  &
                      / SQRT( MAX( em_min, em ) ) ), taumax )
+
+      tau_xp2_zm = tau_zm   ! Just for the interface of advance_xp2_xpwp  
+      tau_wp2_zm = tau_zm   ! Just for the interface of advance_xp2_xpwp 
+      tau_xp2_zt = tau_zt   ! Not be used currently 
+      tau_wp2_zt = tau_zt   ! 
+
 ! End Vince Larson's replacement.
 
 
@@ -1285,20 +1291,20 @@ module advance_clubb_core_module
 
         ustar = max( ( upwp_sfc**2 + vpwp_sfc**2 )**(one_fourth), ufmin )
 
-        invrs_tau_zm_simp = C_invrs_tau_bkgnd  / tau_const &
+        invrs_tau_no_N2_zm = C_invrs_tau_bkgnd  / tau_const &
          + C_invrs_tau_sfc * ( ustar / vonk ) / ( gr%zm - sfc_elevation + z_displace ) &
          + C_invrs_tau_shear * zt2zm( zm2zt( sqrt( (ddzt( um ))**2 + (ddzt( vm ))**2 ) ) )
 
 
-        invrs_tau_zm = invrs_tau_zm_simp & 
+        invrs_tau_zm = invrs_tau_no_N2_zm & 
               + C_invrs_tau_N2 * sqrt( max( zero_threshold, &
               zt2zm( zm2zt( brunt_vaisala_freq_sqd ) ) - 1e-4_core_rknd) )
 
-        invrs_tau_wp2_zm = invrs_tau_zm_simp &
+        invrs_tau_wp2_zm = invrs_tau_no_N2_zm &
               + C_invrs_tau_N2_wp2 * sqrt( max( zero_threshold, &
               zt2zm( zm2zt( brunt_vaisala_freq_sqd ) ) - 1e-4_core_rknd) ) 
 
-        invrs_tau_xp2_zm = invrs_tau_zm_simp &
+        invrs_tau_xp2_zm = invrs_tau_no_N2_zm &
               + C_invrs_tau_N2_xp2 * sqrt( max( zero_threshold, &
               zt2zm( zm2zt( brunt_vaisala_freq_sqd ) ) - 1e-4_core_rknd) )
 
@@ -1307,16 +1313,15 @@ module advance_clubb_core_module
              stop  "Lowest zm grid level is below ground in CLUBB."
         end if
 
-        tau_zm_simp = one / invrs_tau_zm_simp  
-        tau_zm      = one / invrs_tau_zm
-        tau_wp2_zm  = one / invrs_tau_wp2_zm
-        tau_xp2_zm  = one / invrs_tau_xp2_zm
+        tau_no_N2_zm = one / invrs_tau_no_N2_zm  
+        tau_zm       = one / invrs_tau_zm
+        tau_wp2_zm   = one / invrs_tau_wp2_zm
+        tau_xp2_zm   = one / invrs_tau_xp2_zm
 
-
-        tau_zt      = zm2zt( tau_zm )
-        tau_simp_zt = zm2zt( tau_zm_simp )
-        tau_wp2_zt  = zm2zt( tau_wp2_zm )
-        tau_xp2_zt  = zm2zt( tau_xp2_zm )
+        tau_zt       = zm2zt( tau_zm )
+        tau_no_N2_zt = zm2zt( tau_no_N2_zm )
+        tau_wp2_zt   = zm2zt( tau_wp2_zm )
+        tau_xp2_zt   = zm2zt( tau_xp2_zm )
 
 
 !        invrs_tau_N2_zm = invrs_tau_zm  &
@@ -1525,7 +1530,7 @@ module advance_clubb_core_module
       end if ! l_stability_correction
 
       if ( l_stats_samp ) then
-      call stat_update_var( itau_zm_simp,tau_zm_simp , stats_zm)
+      call stat_update_var( itau_no_N2_zm,tau_no_N2_zm , stats_zm)
       call stat_update_var( itau_xp2_zm,tau_xp2_zm , stats_zm)
       call stat_update_var( itau_wp2_zm,tau_wp2_zm , stats_zm)
       end if
@@ -4578,12 +4583,6 @@ module advance_clubb_core_module
     core_rknd                     ! Constant(s)
 
   use grid_class, only:  &
-    zt2zm                         ! Procedure
-
-  use constants_clubb, only: &
-    two, &
-    rc_tol
-
   use parameters_tunable, only: &
     thlp2_rad_coef                 ! Variable(s)
 

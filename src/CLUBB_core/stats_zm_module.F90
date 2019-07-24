@@ -46,7 +46,7 @@ module stats_zm_module
         irtpthvp, & 
         ithlpthvp, & 
         itau_zm, & 
-        itau_zm_simp, &
+        itau_no_N2_zm, &
         itau_wp2_zm, &
         itau_xp2_zm, &
         iKh_zm, & 
@@ -652,10 +652,10 @@ module stats_zm_module
              l_silhs=.false., grid_kind=stats_zm )
         k = k + 1
 
-      case ('tau_zm_simp')
-        itau_zm_simp = k
+      case ('tau_no_N2_zm')
+        itau_no_N2_zm = k
 
-        call stat_assign( var_index=itau_zm_simp, var_name="tau_zm_simp", &
+        call stat_assign( var_index=itau_no_N2_zm, var_name="tau_no_N2_zm", &
              var_description="simple tau on momentum levels [s]", var_units="s", &
              l_silhs=.false., grid_kind=stats_zm )
         k = k + 1

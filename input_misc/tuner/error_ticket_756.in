@@ -133,4 +133,6 @@ C_invrs_tau_bkgnd            = 0.
 C_invrs_tau_sfc              = 0.
 C_invrs_tau_shear            = 0.
 C_invrs_tau_N2               = 0.
+C_invrs_tau_N2_xp2           = 0.
+C_invrs_tau_N2_wp2           = 0.
 /
