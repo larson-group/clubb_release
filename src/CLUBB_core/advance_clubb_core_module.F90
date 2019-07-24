@@ -4583,8 +4583,14 @@ module advance_clubb_core_module
     core_rknd                     ! Constant(s)
 
   use grid_class, only:  &
+    zt2zm                         ! Procedure
+
+  use constants_clubb, only: &
+    two, &
+    rc_tol
+
   use parameters_tunable, only: &
-    thlp2_rad_coef                 ! Variable(s)
+    thlp2_rad_coef    
 
   implicit none
 
