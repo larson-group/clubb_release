@@ -38,9 +38,8 @@ class Panel:
             self.x_title = self.dependant_title
             self.y_title = "Height, [m]"
         elif self.panel_type is Panel.TYPE_BUDGET:
-            pass
-            # self.x_title =
-            # self.y_title =
+            self.y_title = "Height, [m]"
+            self.x_title = self.dependant_title
         elif self.panel_type is Panel.TYPE_TIMESERIES:
             self.x_title = "Time [min]"
             self.y_title = self.dependant_title
@@ -96,7 +95,8 @@ class Panel:
         plt.ylabel(self.y_title)
         plt.xlabel(self.x_title)
         plt.figlegend()
-
+        # if self.panel_type == Panel.TYPE_BUDGET:
+        #     plt.
         # Create folders
         # Because os.mkdir("output") can fail and prevent os.mkdir("output/" + casename) from being called we must
         # use two separate trys

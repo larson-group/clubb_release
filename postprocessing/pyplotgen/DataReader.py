@@ -78,8 +78,8 @@ class NetCdfVariable:
 
     def filter_datasets(self):
         '''
-        Looks through the input files for a case and finds the returns the filetype
-        containing the requested variable.
+        Looks through the input files for a case and finds the dataset
+        containing the requested variable and assignes it ot self.ncdf_data
 
         :return:
         '''
@@ -239,7 +239,7 @@ class DataReader():
                  "averaging instead.")
         return var_average
 
-    def __getUnits__(self, nc, varname):
+    def __getUnits__(self, datasets, varname):
         """
         Input:
           nc         --  Netcdf file object
@@ -247,13 +247,14 @@ class DataReader():
         Output:
           unit as string
         """
-
-        keys = nc.variables.keys()
-        if varname in keys:
-            unit = nc.variables[varname].units
-        else:
-            unit = "nm"
-
+        if not isinstance(datasets, dict):
+            datasets = {'auto dict': datasets}
+        for dataset in datasets.values():
+            keys = dataset.variables.keys()
+            if varname in keys:
+                unit = dataset.variables[varname].units
+            else:
+                unit = "n/a"
         return unit
 
     def getLongName(self, ncdf_datasets, varname):
@@ -284,6 +285,8 @@ class DataReader():
         Output:
           long_name as string
         """
+
+        # TODO limit uses of this method for performance
 
         if isinstance(ncdf_datasets, Dataset):
             ncdf_datasets = {'auto': ncdf_datasets}
