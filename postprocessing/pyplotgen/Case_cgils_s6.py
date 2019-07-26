@@ -1,6 +1,7 @@
 from pyplotgen.Case import Case
 from pyplotgen.DataReader import DataReader
 from pyplotgen.VariableGroupBase import VariableGroupBase
+from pyplotgen.VariableGroupBaseBudgets import VariableGroupBaseBudgets
 from pyplotgen.VariableGroupCorrelations import VariableGroupCorrelations
 from pyplotgen.VariableGroupIceMP import VariableGroupIceMP
 from pyplotgen.VariableGroupKKMP import VariableGroupKKMP
@@ -33,13 +34,14 @@ class Case_cgils_s6(Case):
             sam_file = datareader.__loadNcFile__(
                 "/home/nicolas/sam_benchmark_runs/SAM6.6/CLOUD_FEEDBACK_s6/ctl_s6_96x96x128_100m_DRZ_N100_tqndg.nc")
         base_variables = VariableGroupBase(self.ncdf_files, self, sam_file=sam_file)
+        budget_variables = VariableGroupBaseBudgets(ncdf_files, self)
         # w_variables = VariableGroupWs(self.ncdf_files, self, sam_file=sam_file)
         ice_variables = VariableGroupIceMP(self.ncdf_files, self, sam_file=sam_file)
         liquid_variables = VariableGroupLiquidMP(self.ncdf_files, self, sam_file=sam_file)
         # corr_variables = VariableGroupCorrelations(self.ncdf_files, self, sam_file=sam_file)
         # kk_variables = VariableGroupKKMP(self.ncdf_files, self, sam_file=sam_file)
 
-        self.panel_groups = [base_variables, ice_variables, liquid_variables]
+        self.panel_groups = [base_variables, ice_variables, liquid_variables, budget_variables]
         self.panels = []
 
         for panelgroup in self.panel_groups:

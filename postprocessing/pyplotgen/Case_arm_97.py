@@ -33,7 +33,7 @@ class Case_arm_97(Case):
             datareader = DataReader()
             sam_file = datareader.__loadNcFile__(
                 "/home/nicolas/sam_benchmark_runs/ARM97_r1315_128x128x128_1km_Morrison/ARM9707.nc")
-        # base_variables = VariableGroupBase(self.ncdf_files, self, sam_file=sam_file)
+        base_variables = VariableGroupBase(self.ncdf_files, self, sam_file=sam_file)
         budget_variables = VariableGroupBaseBudgets(ncdf_files, self)
         # w_variables = VariableGroupWs(self.ncdf_files, self, sam_file=sam_file)
         # ice_variables = VariableGroupIceMP(self.ncdf_files, self, sam_file=sam_file)
@@ -41,7 +41,7 @@ class Case_arm_97(Case):
         # corr_variables = VariableGroupCorrelations(self.ncdf_files, self, sam_file=sam_file)
         # kk_variables = VariableGroupKKMP(self.ncdf_files, self, sam_file=sam_file)
 
-        self.panel_groups = [budget_variables]#, ice_variables, liquid_variables]
+        self.panel_groups = [base_variables, budget_variables]#, ice_variables, liquid_variables]
         self.panels = []
 
         for panelgroup in self.panel_groups:

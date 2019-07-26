@@ -54,6 +54,7 @@ class VariableGroup:
         clubb_name = variable_def_dict['clubb_name']
         fill_zeros = False
         sam_name = None
+        lines = None
         sam_file = self.sam_file
         sam_conv_factor = 1
         if 'fill_zeros' in variable_def_dict.keys():

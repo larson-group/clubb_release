@@ -1,6 +1,7 @@
 from pyplotgen.Case import Case
 from pyplotgen.DataReader import DataReader
 from pyplotgen.VariableGroupBase import VariableGroupBase
+from pyplotgen.VariableGroupBaseBudgets import VariableGroupBaseBudgets
 from pyplotgen.VariableGroupWs import VariableGroupWs
 
 
@@ -31,8 +32,9 @@ class Case_dycoms2_rf01_fixed_sst(Case):
             sam_file = datareader.__loadNcFile__(
                 "/home/nicolas/sam_benchmark_runs/SAM6.6/DYCOMS_RF01_fixed_sst/DYCOMS_RF01_96x96x320_LES_fixed_sst.nc")
         base_variables = VariableGroupBase(self.ncdf_files, self, sam_file=sam_file)
+        budget_variables = VariableGroupBaseBudgets(ncdf_files, self)
         # w_variables = VariableGroupWs(self.ncdf_files, self, sam_file=sam_file)
-        self.panel_groups = [base_variables]
+        self.panel_groups = [base_variables, budget_variables]
         self.panels = []
 
         for panelgroup in self.panel_groups:

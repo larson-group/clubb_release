@@ -1,6 +1,7 @@
 from pyplotgen.Case import Case
 from pyplotgen.DataReader import DataReader
 from pyplotgen.VariableGroupBase import VariableGroupBase
+from pyplotgen.VariableGroupBaseBudgets import VariableGroupBaseBudgets
 from pyplotgen.VariableGroupCorrelations import VariableGroupCorrelations
 from pyplotgen.VariableGroupKKMP import VariableGroupKKMP
 from pyplotgen.VariableGroupLiquidMP import VariableGroupLiquidMP
@@ -30,12 +31,13 @@ class Case_dycoms2_rf02_nd(Case):
             sam_file = datareader.__loadNcFile__(
                 "/home/nicolas/sam_benchmark_runs/JULY_2017/DYCOMS_RF02_128x128x96_nodr_nosed/DYCOMS_RF02_128x128x96_nodr_nosed.nc")
         base_variables = VariableGroupBase(self.ncdf_files, self, sam_file=sam_file)
+        budget_variables = VariableGroupBaseBudgets(ncdf_files, self)
         w_variables = VariableGroupWs(self.ncdf_files, self, sam_file=sam_file)
         # ice_variables = VariableGroupIceMP(self.ncdf_files, self, sam_file=sam_file)
         liquid_variables = VariableGroupLiquidMP(self.ncdf_files, self, sam_file=sam_file)
         # corr_variables = VariableGroupCorrelations(self.ncdf_files, self, sam_file=sam_file)
         kk_variables = VariableGroupKKMP(self.ncdf_files, self, sam_file=sam_file)
-        self.panel_groups = [base_variables, w_variables, liquid_variables, kk_variables]
+        self.panel_groups = [base_variables, w_variables, liquid_variables, kk_variables, budget_variables]
         self.panels = []
 
         for panelgroup in self.panel_groups:

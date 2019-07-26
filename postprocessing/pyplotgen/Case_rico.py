@@ -1,6 +1,7 @@
 from pyplotgen.Case import Case
 from pyplotgen.DataReader import DataReader
 from pyplotgen.VariableGroupBase import VariableGroupBase
+from pyplotgen.VariableGroupBaseBudgets import VariableGroupBaseBudgets
 from pyplotgen.VariableGroupCorrelations import VariableGroupCorrelations
 from pyplotgen.VariableGroupIceMP import VariableGroupIceMP
 from pyplotgen.VariableGroupKKMP import VariableGroupKKMP
@@ -31,12 +32,13 @@ class Case_rico(Case):
             sam_file = datareader.__loadNcFile__(
                 "/home/nicolas/sam_benchmark_runs/JULY_2017/RICO_256x256x100_drizzle/RICO_256x256x100_drizzle.nc")
         base_variables = VariableGroupBase(self.ncdf_files, self, sam_file=sam_file)
+        budget_variables = VariableGroupBaseBudgets(ncdf_files, self)
         w_variables = VariableGroupWs(self.ncdf_files, self, sam_file=sam_file)
         # ice_variables = VariableGroupIceMP(self.ncdf_files, self, sam_file=sam_file)
         liquid_variables = VariableGroupLiquidMP(self.ncdf_files, self, sam_file=sam_file)
         corr_variables = VariableGroupCorrelations(self.ncdf_files, self, sam_file=sam_file)
         kk_variables = VariableGroupKKMP(self.ncdf_files, self, sam_file=sam_file)
-        self.panel_groups = [base_variables, w_variables, liquid_variables, corr_variables, kk_variables]
+        self.panel_groups = [base_variables, w_variables, liquid_variables, corr_variables, kk_variables, budget_variables]
         self.panels = []
 
         for panelgroup in self.panel_groups:
