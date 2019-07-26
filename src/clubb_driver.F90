@@ -1615,7 +1615,7 @@ module clubb_driver
       ! This was moved from above to be less confusing to the user,
       ! since before it would appear as though the last timestep
       ! was not executed. -dschanen 19 May 08
-      if ( ( l_stats_last .or. .not. l_stats ) .and. l_stdout ) then
+      if ( ( l_stats_last .or. l_stats ) .and. l_stdout ) then
         write(unit=fstdout,fmt='(a,i8,a,f10.1)') 'iteration = ',  & 
           itime, '; time = ', time_current
       end if

@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-! $Id$
+! $sId$
 !-----------------------------------------------------------------------
 
 module advance_clubb_core_module
@@ -210,11 +210,13 @@ module advance_clubb_core_module
       c_K10h, &
       C1, C14, &
       C5, C4, &
-      C_wp2_splat,&
-      C_invrs_tau_bkgnd,&
-      C_invrs_tau_sfc,&
-      C_invrs_tau_shear,&
-      C_invrs_tau_N2
+      C_wp2_splat, &
+      C_invrs_tau_bkgnd, &
+      C_invrs_tau_sfc, & 
+      C_invrs_tau_shear, &
+      C_invrs_tau_N2, &
+      C_invrs_tau_N2_xp2, &
+      C_invrs_tau_N2_wp2
 
     use parameters_model, only: &
         sclr_dim, & ! Variable(s)
@@ -331,7 +333,8 @@ module advance_clubb_core_module
         calc_surface_varnce ! Procedure
 
     use mixing_length, only: &
-        compute_mixing_length ! Procedure
+        compute_mixing_length, &    ! Procedure
+        calc_Lscale_directly  ! for Lscale
 
     use advance_windm_edsclrm_module, only:  &
         advance_windm_edsclrm  ! Procedure(s)
@@ -400,8 +403,10 @@ module advance_clubb_core_module
         ium_bt,        &
         irvm,          &
         irel_humidity, &
-        iwpthlp_zt   , &
-        itau_zm_simp  
+        iwpthlp_zt,    &
+        itau_no_N2_zm,  &
+        itau_xp2_zm,   &
+        itau_wp2_zm  
 
     use stats_variables, only: &
         iwprtp_zt,     &
@@ -667,13 +672,8 @@ module advance_clubb_core_module
       gamma_Skw_fnc, & ! Gamma as a function of skewness          [-]
       sigma_sqd_w,   & ! PDF width parameter (momentum levels)    [-]
       sigma_sqd_w_zt, & ! PDF width parameter (thermodynamic levels)    [-]
-      sqrt_em_zt,    & ! sqrt( em ) on zt levels; where em is TKE [m/s]
-      Lscale_pert_1, Lscale_pert_2, & ! For avg. calculation of Lscale  [m]
-      thlm_pert_1, thlm_pert_2, &     ! For avg. calculation of Lscale  [K]
-      rtm_pert_1, rtm_pert_2,   &     ! For avg. calculation of Lscale  [kg/kg]
-      thlm_pert_pos_rt, thlm_pert_neg_rt, &     ! For avg. calculation of Lscale  [K]
-      rtm_pert_pos_rt, rtm_pert_neg_rt          ! For avg. calculation of Lscale  [kg/kg]
-    !Lscale_weight Uncomment this if you need to use this vairable at some point.
+      sqrt_em_zt        ! sqrt( em ) on zt levels; where em is TKE [m/s]
+!Lscale_weight Uncomment this if you need to use this vairable at some point.
 
     real( kind = core_rknd ), dimension(gr%nz) ::  &
       p_in_Pa_zm, & ! Air pressure on momentum levels       [Pa]
@@ -700,7 +700,6 @@ module advance_clubb_core_module
       rtm_zm,               & ! Total water mixing ratio             [kg/kg]
       thlm_zm,              & ! Liquid potential temperature         [kg/kg]
       rcm_zm,               & ! Liquid water mixing ratio on m-levs. [kg/kg]
-      sign_rtpthlp,         & ! Sign of the covariance rtpthlp       [-]
       wpsclrp_zt,           & ! Scalar flux on thermo. levels        [un. vary]
       sclrp2_zt               ! Scalar variance on thermo.levels     [un. vary]
 
@@ -719,9 +718,7 @@ module advance_clubb_core_module
       thlm_integral_forcing, &
       thlm_flux_top, &
       thlm_flux_sfc, &
-      thlm_spur_src, &
-      mu_pert_1, mu_pert_2, & ! For l_avg_Lscale
-      mu_pert_pos_rt, mu_pert_neg_rt ! For l_Lscale_plume_centered
+      thlm_spur_src
 
     !The following variables are defined for use when l_use_ice_latent = .true.
     type(pdf_parameter) :: &
@@ -750,11 +747,18 @@ module advance_clubb_core_module
        Cx_fnc_Richardson,      & ! Cx_fnc computed from Richardson_num          [-]
        brunt_vaisala_freq_sqd, & ! Buoyancy frequency squared, N^2              [s^-2]
        invrs_tau_zm,           & ! One divided by tau on zm levels              [s^-1]
+       invrs_tau_xp2_zm,       & ! One divided by tau_xp2, including stability effects (partly) [s^-1]
+       invrs_tau_wp2_zm,       & ! One divided by tau_wp2, including stability effects (partly) [s^-1]
        invrs_tau_N2_zm,        & ! One divided by tau, including stability effects [s^-1]
-       ustar,                  &   ! Friction velocity  [m/s]
-       invrs_tau_zm_simp,      & 
-       tau_zm_simp,            &
-       tau_zt_simp
+       invrs_tau_no_N2_zm,     & ! One divided by tau (without N2) on zm levels              [s^-1] 
+       ustar,                  & ! Friction velocity  [m/s]
+       tau_no_N2_zm,            & ! Tau without Brunt Freq
+       tau_wp2_zm,             & ! Tau values used for advance_wp2_wpxp
+       tau_xp2_zm,             & ! Tau values used for advance_xp2_wpxp
+       tau_wp2_zt,             & ! Tau at zt levels
+       tau_xp2_zt,             & ! -
+       tau_no_N2_zt               ! -
+ 
 
 
     real( kind = core_rknd ), parameter :: &
@@ -1095,165 +1099,14 @@ module advance_clubb_core_module
 
       if ( .not. l_diag_Lscale_from_tau ) then ! compute Lscale 1st, using buoyant parcel calc
 
-      if ( l_avg_Lscale .and. .not. l_Lscale_plume_centered ) then
 
-         ! Call compute length two additional times with perturbed values
-         ! of rtm and thlm so that an average value of Lscale may be calculated.
+        call calc_Lscale_directly ( l_implemented, p_in_Pa, exner, & 
+                  rtm, thlm, thvm, &
+                  newmu, rtm_frz, thlm_frz, rtp2,  thlp2,  rtpthlp, &
+                  pdf_params, pdf_params_frz, em, &
+                  thv_ds_zt, Lscale_max, &
+                  Lscale, Lscale_up, Lscale_down )
 
-         do k = 1, gr%nz, 1
-            sign_rtpthlp(k) = sign( one, rtpthlp(k) )
-         enddo
-
-         if ( l_use_ice_latent ) then
-
-            ! Include the effects of ice in the length scale calculation
-
-            rtm_pert_1  = rtm_frz &
-                          + Lscale_pert_coef * sqrt( max( rtp2, rt_tol**2 ) )
-            thlm_pert_1 = thlm_frz &
-                          + sign_rtpthlp * Lscale_pert_coef &
-                            * sqrt( max( thlp2, thl_tol**2 ) )
-            mu_pert_1   = newmu / Lscale_mu_coef
-
-            rtm_pert_2  = rtm_frz &
-                          - Lscale_pert_coef * sqrt( max( rtp2, rt_tol**2 ) )
-            thlm_pert_2 = thlm_frz &
-                          - sign_rtpthlp * Lscale_pert_coef &
-                            * sqrt( max( thlp2, thl_tol**2 ) )
-            mu_pert_2   = newmu * Lscale_mu_coef
-
-         else
-
-            rtm_pert_1  = rtm &
-                          + Lscale_pert_coef * sqrt( max( rtp2, rt_tol**2 ) )
-            thlm_pert_1 = thlm &
-                          + sign_rtpthlp * Lscale_pert_coef &
-                            * sqrt( max( thlp2, thl_tol**2 ) )
-            mu_pert_1   = newmu / Lscale_mu_coef
-
-            rtm_pert_2  = rtm &
-                          - Lscale_pert_coef * sqrt( max( rtp2, rt_tol**2 ) )
-            thlm_pert_2 = thlm &
-                          - sign_rtpthlp * Lscale_pert_coef &
-                            * sqrt( max( thlp2, thl_tol**2 ) )
-            mu_pert_2   = newmu * Lscale_mu_coef
-
-         endif
-
-         call compute_mixing_length( thvm, thlm_pert_1,                            & !intent(in)
-                              rtm_pert_1, em, Lscale_max, p_in_Pa,                 & !intent(in)
-                              exner, thv_ds_zt, mu_pert_1, l_implemented,          & !intent(in)
-                              Lscale_pert_1, Lscale_up, Lscale_down )                !intent(out)
-
-         call compute_mixing_length( thvm, thlm_pert_2,                            & !intent(in)
-                              rtm_pert_2, em, Lscale_max, p_in_Pa,                 & !intent(in)
-                              exner, thv_ds_zt, mu_pert_2, l_implemented,          & !intent(in)
-                              Lscale_pert_2, Lscale_up, Lscale_down )                !intent(out)
-
-      else if ( l_avg_Lscale .and. l_Lscale_plume_centered ) then
-        ! Take the values of thl and rt based one 1st or 2nd plume
-
-        do k = 1, gr%nz, 1
-          sign_rtpthlp(k) = sign(1.0_core_rknd, rtpthlp(k))
-        end do
-
-        if ( l_use_ice_latent ) then
-          where ( pdf_params_frz%rt_1 > pdf_params_frz%rt_2 )
-            rtm_pert_pos_rt = pdf_params_frz%rt_1 &
-                       + Lscale_pert_coef * sqrt( max( pdf_params_frz%varnce_rt_1, rt_tol**2 ) )
-            thlm_pert_pos_rt = pdf_params_frz%thl_1 + ( sign_rtpthlp * Lscale_pert_coef &
-                       * sqrt( max( pdf_params_frz%varnce_thl_1, thl_tol**2 ) ) )
-            thlm_pert_neg_rt = pdf_params_frz%thl_2 - ( sign_rtpthlp * Lscale_pert_coef &
-                       * sqrt( max( pdf_params_frz%varnce_thl_2, thl_tol**2 ) ) )
-            rtm_pert_neg_rt = pdf_params_frz%rt_2 &
-                       - Lscale_pert_coef * sqrt( max( pdf_params_frz%varnce_rt_2, rt_tol**2 ) )
-            !Lscale_weight = pdf_params%mixt_frac
-          else where
-            rtm_pert_pos_rt = pdf_params_frz%rt_2 &
-                       + Lscale_pert_coef * sqrt( max( pdf_params_frz%varnce_rt_2, rt_tol**2 ) )
-            thlm_pert_pos_rt = pdf_params_frz%thl_2 + ( sign_rtpthlp * Lscale_pert_coef &
-                       * sqrt( max( pdf_params_frz%varnce_thl_2, thl_tol**2 ) ) )
-            thlm_pert_neg_rt = pdf_params_frz%thl_1 - ( sign_rtpthlp * Lscale_pert_coef &
-                       * sqrt( max( pdf_params_frz%varnce_thl_1, thl_tol**2 ) ) )
-            rtm_pert_neg_rt = pdf_params_frz%rt_1 &
-                       - Lscale_pert_coef * sqrt( max( pdf_params_frz%varnce_rt_1, rt_tol**2 ) )
-            !Lscale_weight = 1.0_core_rknd - pdf_params%mixt_frac
-          end where
-        else
-          where ( pdf_params%rt_1 > pdf_params%rt_2 )
-            rtm_pert_pos_rt = pdf_params%rt_1 &
-                       + Lscale_pert_coef * sqrt( max( pdf_params%varnce_rt_1, rt_tol**2 ) )
-            thlm_pert_pos_rt = pdf_params%thl_1 + ( sign_rtpthlp * Lscale_pert_coef &
-                       * sqrt( max( pdf_params%varnce_thl_1, thl_tol**2 ) ) )
-            thlm_pert_neg_rt = pdf_params%thl_2 - ( sign_rtpthlp * Lscale_pert_coef &
-                       * sqrt( max( pdf_params%varnce_thl_2, thl_tol**2 ) ) )
-            rtm_pert_neg_rt = pdf_params%rt_2 &
-                       - Lscale_pert_coef * sqrt( max( pdf_params%varnce_rt_2, rt_tol**2 ) )
-            !Lscale_weight = pdf_params%mixt_frac
-          else where
-            rtm_pert_pos_rt = pdf_params%rt_2 &
-                       + Lscale_pert_coef * sqrt( max( pdf_params%varnce_rt_2, rt_tol**2 ) )
-            thlm_pert_pos_rt = pdf_params%thl_2 + ( sign_rtpthlp * Lscale_pert_coef &
-                       * sqrt( max( pdf_params%varnce_thl_2, thl_tol**2 ) ) )
-            thlm_pert_neg_rt = pdf_params%thl_1 - ( sign_rtpthlp * Lscale_pert_coef &
-                       * sqrt( max( pdf_params%varnce_thl_1, thl_tol**2 ) ) )
-            rtm_pert_neg_rt = pdf_params%rt_1 &
-                       - Lscale_pert_coef * sqrt( max( pdf_params%varnce_rt_1, rt_tol**2 ) )
-            !Lscale_weight = 1.0_core_rknd - pdf_params%mixt_frac
-          end where
-        end if
-        mu_pert_pos_rt  = newmu / Lscale_mu_coef
-        mu_pert_neg_rt  = newmu * Lscale_mu_coef
-
-        ! Call length with perturbed values of thl and rt
-        call compute_mixing_length( thvm, thlm_pert_pos_rt,                    & !intent(in)
-                           rtm_pert_pos_rt, em, Lscale_max, p_in_Pa,           & !intent(in)
-                           exner, thv_ds_zt, mu_pert_pos_rt, l_implemented,    & !intent(in)
-                           Lscale_pert_1, Lscale_up, Lscale_down )               !intent(out)
-
-        call compute_mixing_length( thvm, thlm_pert_neg_rt,                    & !intent(in)
-                           rtm_pert_neg_rt, em, Lscale_max, p_in_Pa,           & !intent(in)
-                           exner, thv_ds_zt, mu_pert_neg_rt, l_implemented,    & !intent(in)
-                           Lscale_pert_2, Lscale_up, Lscale_down )               !intent(out)
-      else
-        Lscale_pert_1 = unused_var ! Undefined
-        Lscale_pert_2 = unused_var ! Undefined
-
-      end if ! l_avg_Lscale
-
-      if ( l_stats_samp ) then
-        call stat_update_var( iLscale_pert_1, Lscale_pert_1, & ! intent(in)
-                              stats_zt )                             ! intent(inout)
-        call stat_update_var( iLscale_pert_2, Lscale_pert_2, & ! intent(in)
-                              stats_zt )                             ! intent(inout)
-      end if ! l_stats_samp
-
-      ! ********** NOTE: **********
-      ! This call to compute_mixing_length must be last.  Otherwise, the values of
-      ! Lscale_up and Lscale_down in stats will be based on perturbation length scales
-      ! rather than the mean length scale.
-
-      ! Diagnose CLUBB's turbulent mixing length scale.
-      call compute_mixing_length( thvm, thlm,                           & !intent(in)
-                           rtm, em, Lscale_max, p_in_Pa,                & !intent(in)
-                           exner, thv_ds_zt, newmu, l_implemented,      & !intent(in)
-                           Lscale, Lscale_up, Lscale_down )               !intent(out)
-
-      if ( l_avg_Lscale ) then
-        if ( l_Lscale_plume_centered ) then
-          ! Weighted average of mean, pert_1, & pert_2
-!       Lscale = 0.5_core_rknd * ( Lscale + Lscale_weight*Lscale_pert_1 &
-!                                  + (1.0_core_rknd-Lscale_weight)*Lscale_pert_2 )
-
-          ! Weighted average of just the perturbed values
-!       Lscale = Lscale_weight*Lscale_pert_1 + (1.0_core_rknd-Lscale_weight)*Lscale_pert_2
-
-          ! Un-weighted average of just the perturbed values
-          Lscale = 0.5_core_rknd*( Lscale_pert_1 + Lscale_pert_2 )
-        else
-          Lscale = (1.0_core_rknd/3.0_core_rknd) * ( Lscale + Lscale_pert_1 + Lscale_pert_2 )
-        end if
-      end if
 
       !----------------------------------------------------------------
       ! Dissipation time
@@ -1264,6 +1117,12 @@ module advance_clubb_core_module
       tau_zt = MIN( Lscale / sqrt_em_zt, taumax )
       tau_zm = MIN( ( MAX( zt2zm( Lscale ), zero_threshold )  &
                      / SQRT( MAX( em_min, em ) ) ), taumax )
+
+      tau_xp2_zm = tau_zm   ! Just for the interface of advance_xp2_xpwp  
+      tau_wp2_zm = tau_zm   ! Just for the interface of advance_xp2_xpwp 
+      tau_xp2_zt = tau_zt   ! Not be used currently 
+      tau_wp2_zt = tau_zt   ! 
+
 ! End Vince Larson's replacement.
 
 
@@ -1274,29 +1133,43 @@ module advance_clubb_core_module
 
         ustar = max( ( upwp_sfc**2 + vpwp_sfc**2 )**(one_fourth), ufmin )
 
-        invrs_tau_zm = C_invrs_tau_bkgnd / tau_const &
+        invrs_tau_no_N2_zm = C_invrs_tau_bkgnd  / tau_const &
          + C_invrs_tau_sfc * ( ustar / vonk ) / ( gr%zm - sfc_elevation + z_displace ) &
-         + C_invrs_tau_shear * zt2zm( zm2zt( sqrt( (ddzt( um ))**2 + (ddzt( vm ))**2 ) ) )  &
-         + C_invrs_tau_N2 * sqrt( max( zero_threshold, &
+         + C_invrs_tau_shear * zt2zm( zm2zt( sqrt( (ddzt( um ))**2 + (ddzt( vm ))**2 ) ) )
+
+
+        invrs_tau_zm = invrs_tau_no_N2_zm & 
+              + C_invrs_tau_N2 * sqrt( max( zero_threshold, &
               zt2zm( zm2zt( brunt_vaisala_freq_sqd ) ) - 1e-4_core_rknd) )
 
-        invrs_tau_zm_simp = C_invrs_tau_bkgnd  / tau_const & 
-         + C_invrs_tau_sfc * ( ustar / vonk ) / ( gr%zm - sfc_elevation + z_displace ) & 
-         + C_invrs_tau_N2 * zt2zm( zm2zt( sqrt( (ddzt( um ))**2 + (ddzt( vm ))**2 ) ) )
+        invrs_tau_wp2_zm = invrs_tau_no_N2_zm &
+              + C_invrs_tau_N2_wp2 * sqrt( max( zero_threshold, &
+              zt2zm( zm2zt( brunt_vaisala_freq_sqd ) ) - 1e-4_core_rknd) ) 
+
+        invrs_tau_xp2_zm = invrs_tau_no_N2_zm &
+              + C_invrs_tau_N2_xp2 * sqrt( max( zero_threshold, &
+              zt2zm( zm2zt( brunt_vaisala_freq_sqd ) ) - 1e-4_core_rknd) )
+
 
         if ( gr%zm(1) - sfc_elevation + z_displace < eps ) then
              stop  "Lowest zm grid level is below ground in CLUBB."
         end if
 
-        tau_zm = one / invrs_tau_zm
-        tau_zm_simp = one / invrs_tau_zm_simp  
+        tau_no_N2_zm = one / invrs_tau_no_N2_zm  
+        tau_zm       = one / invrs_tau_zm
+        tau_wp2_zm   = one / invrs_tau_wp2_zm
+        tau_xp2_zm   = one / invrs_tau_xp2_zm
 
-        tau_zt = zm2zt( tau_zm )
+        tau_zt       = zm2zt( tau_zm )
+        tau_no_N2_zt = zm2zt( tau_no_N2_zm )
+        tau_wp2_zt   = zm2zt( tau_wp2_zm )
+        tau_xp2_zt   = zm2zt( tau_xp2_zm )
 
-        invrs_tau_N2_zm = invrs_tau_zm  &
-                          + C_invrs_tau_N2 * sqrt( max( zero_threshold, brunt_vaisala_freq_sqd ) )
 
-        tau_N2_zm = tau_zm
+!        invrs_tau_N2_zm = invrs_tau_zm  &
+!                          + C_invrs_tau_N2 * sqrt( max( zero_threshold, brunt_vaisala_freq_sqd ) )
+!
+!        tau_N2_zm = tau_zm
 
 !        tau_zt = tau_const / &
 !                     ( one + 0.1_core_rknd * tau_const * &
@@ -1498,6 +1371,12 @@ module advance_clubb_core_module
 
       end if ! l_stability_correction
 
+      if ( l_stats_samp ) then
+      call stat_update_var( itau_no_N2_zm,tau_no_N2_zm , stats_zm)
+      call stat_update_var( itau_xp2_zm,tau_xp2_zm , stats_zm)
+      call stat_update_var( itau_wp2_zm,tau_wp2_zm , stats_zm)
+      end if
+
       ! Cx_fnc_Richardson is only used if one of these flags is true,
       ! otherwise its value is irrelevant, set it to 0 to avoid NaN problems
       if ( l_use_C7_Richardson .or. l_use_C11_Richardson .or. l_use_wp3_pr3 ) then
@@ -1566,7 +1445,7 @@ module advance_clubb_core_module
       ! Advance the prognostic equations
       !   for scalar variances and covariances,
       !   plus the horizontal wind variances by one time step, by one time step.
-      call advance_xp2_xpyp( tau_zm, wm_zm, rtm, wprtp, thlm,        & ! intent(in)
+      call advance_xp2_xpyp( tau_xp2_zm, wm_zm, rtm, wprtp, thlm,    & ! intent(in)
                              wpthlp, wpthvp, um, vm, wp2, wp2_zt,    & ! intent(in)
                              wp3, upwp, vpwp, sigma_sqd_w, Skw_zm,   & ! intent(in)
                              wprtp2, wpthlp2, wprtpthlp,             & ! intent(in)
@@ -1621,7 +1500,7 @@ module advance_clubb_core_module
            ( dt, sfc_elevation, sigma_sqd_w, wm_zm,              & ! intent(in)
              wm_zt, a3_coef, a3_coef_zt, wp3_on_wp2, wp4,        & ! intent(in)
              wpthvp, wp2thvp, um, vm, upwp, vpwp,                & ! intent(in)
-             up2, vp2, Kh_zm, Kh_zt, tau_zm, tau_zt,             & ! intent(in)
+             up2, vp2, Kh_zm, Kh_zt, tau_wp2_zm, tau_wp2_zt,     & ! intent(in)
              tau_C1_zm, Skw_zm, Skw_zt, rho_ds_zm,               & ! intent(in)
              rho_ds_zt, invrs_rho_ds_zm,                         & ! intent(in)
              invrs_rho_ds_zt, radf, thv_ds_zm,                   & ! intent(in)
@@ -3199,19 +3078,6 @@ module advance_clubb_core_module
           iiPDF_LY93,     &
           iiPDF_type
 
-#ifdef MKL
-      use csr_matrix_module, only: &
-          initialize_csr_matrix, & ! Subroutine
-          intlc_5d_5d_ja_size      ! Variable
-
-      use gmres_wrap, only: &
-          gmres_init              ! Subroutine
-
-      use gmres_cache, only: &
-          gmres_cache_temp_init, & ! Subroutine
-          gmres_idx_wp2wp3         ! Variable
-#endif /* MKL */
-
       use clubb_precision, only: &
           core_rknd ! Variable(s)
 
@@ -3559,18 +3425,6 @@ module advance_clubb_core_module
       ! declared, allocated, initialized, and deallocated whether CLUBB
       ! is part of a larger model or not.
       call setup_diagnostic_variables( gr%nz )  ! intent(in)
-
-#ifdef MKL
-      ! Initialize the CSR matrix class.
-      if ( l_gmres ) then
-        call initialize_csr_matrix
-      end if
-
-      if ( l_gmres ) then
-        call gmres_cache_temp_init( gr%nz ) ! intent(in)
-        call gmres_init( (2 * gr%nz), intlc_5d_5d_ja_size ) ! intent(in)
-      end if
-#endif /* MKL */
 
       return
     end subroutine setup_clubb_core
@@ -4578,7 +4432,7 @@ module advance_clubb_core_module
     rc_tol
 
   use parameters_tunable, only: &
-    thlp2_rad_coef                 ! Variable(s)
+    thlp2_rad_coef    
 
   implicit none
 
@@ -4619,5 +4473,4 @@ module advance_clubb_core_module
 
 
     !-----------------------------------------------------------------------
-
 end module advance_clubb_core_module

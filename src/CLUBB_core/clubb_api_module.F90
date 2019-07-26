@@ -797,13 +797,6 @@ contains
 !   use model_flags, only: &
 !     setup_model_flags    ! Subroutine
 
-#ifdef MKL
-      use csr_matrix_class, only: &
-        initialize_csr_class, & ! Subroutine
-        intlc_5d_5d_ja_size     ! Variable
-
-#endif
-
       implicit none
 
     ! Input Variables
