@@ -167,7 +167,7 @@ class DataReader():
         time_values = self.__getValuesFromNc__(netcdf_dataset, "time", time_conv_factor)
         # TODO make sure  auto-determining end time isn't a poor decision
         if end_time_value == -1:
-            if variable_name != 'time':
+            if variable_name != 'time' and variable_name != 'z' and variable_name != 'altitude':
                 warn("End time value was not specified (or was set to -1) for variable "+variable_name+". Automatically using last time in dataset.")
             end_time_value = time_values[-1]
         # Get the index values that correspond to the desired start/end x values

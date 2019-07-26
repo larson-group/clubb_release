@@ -95,8 +95,6 @@ class Panel:
         plt.ylabel(self.y_title)
         plt.xlabel(self.x_title)
         plt.figlegend()
-        # if self.panel_type == Panel.TYPE_BUDGET:
-        #     plt.
         # Create folders
         # Because os.mkdir("output") can fail and prevent os.mkdir("output/" + casename) from being called we must
         # use two separate trys
@@ -108,9 +106,13 @@ class Panel:
             os.mkdir(output_folder + "/" + casename)
         except FileExistsError:
             pass # do nothing
-        filename = self.y_title + "_VS_" + self.x_title
+        if self.panel_type == Panel.TYPE_BUDGET:
+            filename = self.title + '_budget'
+        else:
+            filename = self.y_title + "_VS_" + self.x_title
         filename = filename.translate(str.maketrans('', '', string.punctuation))
         filename = filename.replace(' ', '_')
+
         rel_filename = output_folder + "/" +casename+'/' + filename
         plt.savefig(rel_filename)
         plt.close()

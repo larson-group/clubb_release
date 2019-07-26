@@ -158,7 +158,7 @@ class VariableGroup:
             elif panel_type is Panel.TYPE_BUDGET:
                 # for overline in lines:
                     if varname in dataset.variables.keys():
-                        budget_lines = self.__get_budget_lines__(varname, lines, dataset)
+                        budget_lines = self.__get_budget_lines__(lines, dataset)
                         all_lines.extend(budget_lines)
             elif panel_type is Panel.TYPE_TIMESERIES:
                 line = self.__get_timeseries_line__(varname, dataset, end_time, conversion_factor, label, line_format)
@@ -209,7 +209,7 @@ class VariableGroup:
         return line
 
 # TODO convert to add_overline()
-    def __get_budget_lines__(self, varname, lines, dataset):
+    def __get_budget_lines__(self, lines, dataset):
         '''
 
         :param variable:
@@ -219,15 +219,24 @@ class VariableGroup:
         '''
         output_lines = []
         for line_definition in lines:
-            variable = NetCdfVariable(line_definition['clubb_name'], dataset, start_time=self.start_time, end_time=self.end_time)
-            if 'altitude' in dataset.variables.keys():
-                z = NetCdfVariable('altitude', dataset, start_time=self.start_time, end_time=self.end_time)
+            if line_definition['clubb_name'] not in dataset.variables.keys():
+                warn("\tFailed to find variable " + line_definition['clubb_name'] + " in case " + self.casename +
+                     ". Attempting to use fallback function.")
+                fallback = line_definition['fallback_func']
+                fallback_output = self.__getVarFromFallback__(fallback, line_definition['clubb_name'])
+                # fallback = line_definition['fallback_func']
+                # fallback_output = fallback()
+                output_lines.append(fallback_output)
             else:
-                z = NetCdfVariable('z', dataset, start_time=self.start_time, end_time=self.end_time)
-            variable.constrain(self.height_min_value, self.height_max_value, data=z.data)
-            z.constrain(self.height_min_value, self.height_max_value)
-            line_definition = Line(variable, z, label=line_definition['label'], line_format="")  # uses auto-generating line format
-            output_lines.append(line_definition)
+                variable = NetCdfVariable(line_definition['clubb_name'], dataset, start_time=self.start_time, end_time=self.end_time)
+                if 'altitude' in dataset.variables.keys():
+                    z = NetCdfVariable('altitude', dataset, start_time=self.start_time, end_time=self.end_time)
+                else:
+                    z = NetCdfVariable('z', dataset, start_time=self.start_time, end_time=self.end_time)
+                variable.constrain(self.height_min_value, self.height_max_value, data=z.data)
+                z.constrain(self.height_min_value, self.height_max_value)
+                line_definition = Line(variable, z, label=line_definition['label'], line_format="")  # uses auto-generating line format
+                output_lines.append(line_definition)
         return output_lines
 
     def __getVarFromFallback__(self, fallback, varname):
@@ -248,3 +257,21 @@ class VariableGroup:
         varline = fallback()
         print("\tFallback for ", varname, " successful")
         return varline
+
+    def __getFallbackVar__(self, varname, dataset, conversion_factor = 1):
+        '''
+        This function is used within a fallback function to get the data of a certain variable,
+        constrained between a min/max height.
+
+        :param varname:
+        :return:
+        '''
+        if 'z' in dataset.variables.keys():
+            z_ncdf = NetCdfVariable('z', dataset, 1)
+        else:
+            z_ncdf = NetCdfVariable('altitude', dataset, 1)
+        var_ncdf = NetCdfVariable(varname, dataset, conversion_factor, start_time=self.start_time, end_time=self.end_time)
+        var_ncdf.constrain(self.height_min_value, self.height_max_value, data=z_ncdf.data)
+        var_data = var_ncdf.data
+
+        return var_data
