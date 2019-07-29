@@ -70,7 +70,7 @@ class Panel:
 
         return start_idx, end_idx
 
-    def plot(self, output_folder, casename, replace_images = False):
+    def plot(self, output_folder, casename, replace_images = False, no_legends = True):
         '''
          Saves a single panel/graph to the output directory specified by the pyplotgen launch paramters
 
@@ -94,7 +94,8 @@ class Panel:
         plt.title(self.title)
         plt.ylabel(self.y_title)
         plt.xlabel(self.x_title)
-        plt.figlegend()
+        if no_legends is False:
+            plt.figlegend()
         # Create folders
         # Because os.mkdir("output") can fail and prevent os.mkdir("output/" + casename) from being called we must
         # use two separate trys

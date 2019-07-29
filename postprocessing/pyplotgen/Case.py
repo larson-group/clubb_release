@@ -6,23 +6,23 @@ class Case:
     A case is basically a collection of variable groups and
     panels that share attributes like start/end time and get plotted together.
     '''
-    def __init__(self, ncdf_datasets):
-        '''
-        Initalize a case
-        :param ncdf_datasets: List of Dataset objects containing netcdf data from clubb
-        '''
-        self.name = "unnamed-case"
-        self.start_time = 0
-        self.end_time = -1
-        self.enabled = True
-        self.ncdf_datasets = ncdf_datasets
-        self.panel_groups = []
-        self.panels = []
+    # def __init__(self, ncdf_datasets):
+    #     '''
+    #     Initalize a case
+    #     :param ncdf_datasets: List of Dataset objects containing netcdf data from clubb
+    #     '''
+    #     self.name = "unnamed-case"
+    #     self.start_time = 0
+    #     self.end_time = -1
+    #     self.enabled = True
+    #     self.ncdf_datasets = ncdf_datasets
+    #     self.panel_groups = []
+    #     self.panels = []
+    #
+    #     for panel in self.panel_groups.panels:
+    #         self.panels.append(panel)
 
-        for panel in self.panel_groups.panels:
-            self.panels.append(panel)
-
-    def plot(self, output_folder, replace_images = False):
+    def plot(self, output_folder, replace_images = False, no_legends = False):
         '''
         Plot all panels associated with the case
         :param casename: str name of the case
@@ -33,6 +33,6 @@ class Case:
         curr_panel_num = 0
         for panel in self.panels:
             print("\r\tplotting ",  curr_panel_num, " of ", num_plots, " | ", panel.title, end="")
-            panel.plot(output_folder, self.name, replace_images=replace_images)
+            panel.plot(output_folder, self.name, replace_images=replace_images, no_legends=no_legends)
             curr_panel_num += 1
             print("\r\tplotted  ", curr_panel_num, " of ", num_plots, " | ", panel.title)
