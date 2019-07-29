@@ -15,19 +15,19 @@ class Case_arm(Case):
 
     name = 'arm'
 
-    def __init__(self, ncdf_files, plot_sam = True):
+    def __init__(self, ncdf_files, plot_sam=True, plot_budgets = False):
         '''
 
         '''
         self.name = Case_arm.name
-        sec_per_min = 60
-        self.start_time = 481 #* sec_per_min
-        self.end_time = 540 #* sec_per_min
+        self.plot_budgets = plot_budgets
+        self.start_time = 481  
+        self.end_time = 540 
         self.height_min_value = 0
         self.height_max_value = 3500
         self.enabled = True
         self.ncdf_files = ncdf_files
-        self.blacklisted_variables = []#'rtp3', 'thlp3', 'rtpthvp', 'thlpthvp']
+        self.blacklisted_variables = [] 
         sam_file = None
         if plot_sam:
             datareader = DataReader()
@@ -40,7 +40,7 @@ class Case_arm(Case):
         # corr_variables = VariableGroupCorrelations(self.ncdf_files, self, sam_file=sam_file)
         # kk_variables = VariableGroupKKMP(self.ncdf_files, self, sam_file=sam_file)
 
-        self.panel_groups = [base_variables]#, w_variables]
+        self.panel_groups = [base_variables] 
         self.panels = []
 
         for panelgroup in self.panel_groups:

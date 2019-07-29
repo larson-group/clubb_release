@@ -14,11 +14,11 @@ class Case_lba(Case):
 
     '''
     name = 'lba'
-    def __init__(self, ncdf_files, plot_sam = True):
+    def __init__(self, ncdf_files, plot_sam = True, plot_budgets = False):
         '''
 
         '''
-        # self.name = "lba"
+        self.plot_budgets = plot_budgets
         self.start_time = 300
         self.end_time = 360
         self.height_min_value = 0
@@ -39,8 +39,12 @@ class Case_lba(Case):
         # corr_variables = VariableGroupCorrelations(self.ncdf_files, self, sam_file=sam_file)
         # kk_variables = VariableGroupKKMP(self.ncdf_files, self, sam_file=sam_file)
 
-        self.panel_groups = [base_variables, w_variables, ice_variables, liquid_variables, budget_variables]
+        self.panel_groups = [base_variables, w_variables, ice_variables, liquid_variables]
         self.panels = []
+
+        if self.plot_budgets:
+            budget_variables = VariableGroupBaseBudgets(ncdf_files, self)
+            self.panels.extend(budget_variables.panels)
 
         for panelgroup in self.panel_groups:
             for panel in panelgroup.panels:

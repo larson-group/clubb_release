@@ -30,6 +30,7 @@ class VariableGroup:
         self.defualt_panel_type = Panel.TYPE_PROFILE
         self.sam_file = sam_file
         self.ncdf_files = ncdf_datasets
+        self.case = case
         self.casename = case.name
         self.start_time = case.start_time
         self.end_time = case.end_time
@@ -159,14 +160,14 @@ class VariableGroup:
             elif panel_type is Panel.TYPE_BUDGET:
                 # for overline in lines:
                     if varname in dataset.variables.keys():
-                        budget_lines = self.__get_budget_lines__(lines, dataset)
+                        budget_lines = self.__get_budget_lines__(lines, dataset, fill_zeros)
                         all_lines.extend(budget_lines)
             elif panel_type is Panel.TYPE_TIMESERIES:
                 line = self.__get_timeseries_line__(varname, dataset, end_time, conversion_factor, label, line_format)
             else:
                 raise ValueError('Invalid panel type ' + panel_type + '. Valid options are profile, budget, timeseries')
         if line is None and panel_type != Panel.TYPE_BUDGET:
-            warn("\tFailed to find variable " + varname + " in case " + self.casename +
+            print("\tFailed to find variable " + varname + " in case " + self.casename +
                  ". Attempting to use fallback function.")
             line = self.__getVarFromFallback__(fallback_func, varname)
         if panel_type != Panel.TYPE_BUDGET:
@@ -210,7 +211,7 @@ class VariableGroup:
         return line
 
 # TODO convert to add_overline()
-    def __get_budget_lines__(self, lines, dataset):
+    def __get_budget_lines__(self, lines, dataset, fill_zeros):
         '''
 
         :param variable:
@@ -220,24 +221,37 @@ class VariableGroup:
         '''
         output_lines = []
         for line_definition in lines:
-            if line_definition['clubb_name'] not in dataset.variables.keys():
-                warn("\tFailed to find variable " + line_definition['clubb_name'] + " in case " + self.casename +
+            varname = line_definition['clubb_name']
+            if varname not in dataset.variables.keys():
+                print("\tFailed to find variable " + line_definition['clubb_name'] + " in case " + self.casename +
                      ". Attempting to use fallback function.")
-                fallback = line_definition['fallback_func']
-                fallback_output = self.__getVarFromFallback__(fallback, line_definition['clubb_name'])
-                # fallback = line_definition['fallback_func']
-                # fallback_output = fallback()
-                output_lines.append(fallback_output)
-            else:
-                variable = NetCdfVariable(line_definition['clubb_name'], dataset, start_time=self.start_time, end_time=self.end_time)
-                if 'altitude' in dataset.variables.keys():
-                    z = NetCdfVariable('altitude', dataset, start_time=self.start_time, end_time=self.end_time)
+                if 'fallback_func' in line_definition.keys():
+                    fallback = line_definition['fallback_func']
+                    fallback_output = self.__getVarFromFallback__(fallback, line_definition['clubb_name'])
+                    output_lines.append(fallback_output)
+
+                    return output_lines
+
+                elif not fill_zeros:
+                    raise TypeError("Failed to find variable " + varname + " in clubb output for case " +
+                                    self.casename + " and there is no fallback function specified.\nIf this is expected "
+                                                    "(e.g. this model doesn't output the " + varname +
+                                    " variable) then please add a fallback function to the variable's definition to manually calculate it or"
+                                    " allow allow the variable to be filled with zeros.\n"
+                                    "If it is not expected, please  make sure the correct .nc files are being loaded; ncdump is the recommended "
+                                    "tool for verifying a variable/data exists in a file.")
                 else:
-                    z = NetCdfVariable('z', dataset, start_time=self.start_time, end_time=self.end_time)
-                variable.constrain(self.height_min_value, self.height_max_value, data=z.data)
-                z.constrain(self.height_min_value, self.height_max_value)
-                line_definition = Line(variable, z, label=line_definition['label'], line_format="")  # uses auto-generating line format
-                output_lines.append(line_definition)
+                    print("\t", varname, " fallback function not found. Filling values with zeros instead.")
+
+            variable = NetCdfVariable(line_definition['clubb_name'], dataset, start_time=self.start_time, end_time=self.end_time, fill_zeros=fill_zeros)
+            if 'altitude' in dataset.variables.keys():
+                z = NetCdfVariable('altitude', dataset, start_time=self.start_time, end_time=self.end_time)
+            else:
+                z = NetCdfVariable('z', dataset, start_time=self.start_time, end_time=self.end_time)
+            variable.constrain(self.height_min_value, self.height_max_value, data=z.data)
+            z.constrain(self.height_min_value, self.height_max_value)
+            line_definition = Line(variable, z, label=line_definition['label'], line_format="")  # uses auto-generating line format
+            output_lines.append(line_definition)
         return output_lines
 
     def __getVarFromFallback__(self, fallback, varname):
@@ -248,18 +262,11 @@ class VariableGroup:
         returns varline data, otherwise raises error
         :return: None
         '''
-        if fallback is None:
-            raise TypeError("Failed to find variable " + varname + " in clubb output for case " +
-                            self.casename + " and there is no fallback function specified.\nIf this is expected "
-                                            "(e.g. this model doesn't output the " + varname +
-                            " variable) then please add a fallback function to the variable's definition to manually calculate it or "
-                            " allow allow the variable to be filled with zeros.\n"
-                            "If it is not expected, please  make sure the correct .nc files are being loaded.")
         varline = fallback()
         print("\tFallback for ", varname, " successful")
         return varline
 
-    def __getFallbackVar__(self, varname, dataset, conversion_factor = 1):
+    def __getFallbackVar__(self, varname, dataset, conversion_factor = 1, fill_zeros = False):
         '''
         This function is used within a fallback function to get the data of a certain variable,
         constrained between a min/max height.
@@ -271,7 +278,7 @@ class VariableGroup:
             z_ncdf = NetCdfVariable('z', dataset, 1)
         else:
             z_ncdf = NetCdfVariable('altitude', dataset, 1)
-        var_ncdf = NetCdfVariable(varname, dataset, conversion_factor, start_time=self.start_time, end_time=self.end_time)
+        var_ncdf = NetCdfVariable(varname, dataset, conversion_factor, start_time=self.start_time, end_time=self.end_time, fill_zeros=fill_zeros)
         var_ncdf.constrain(self.height_min_value, self.height_max_value, data=z_ncdf.data)
         var_data = var_ncdf.data
 
