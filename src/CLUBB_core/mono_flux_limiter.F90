@@ -1781,7 +1781,7 @@ module mono_flux_limiter
           gr  ! Variable(s)
 
       use constants_clubb, only: &
-          sqrt_2pi, &
+          sqrt_2pi, &  ! Constant(s)
           sqrt_2, &
           one, &
           one_half
