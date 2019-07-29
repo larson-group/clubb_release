@@ -122,7 +122,7 @@ class PyPlotGen:
         print('###########################################')
         print("plotting ", case.name)
         temp_case = case(ncdf_files, plot_sam=self.les, plot_budgets = self.plot_budgets)
-        temp_case.plot(self.output_folder, replace_images=self.replace_images)
+        temp_case.plot(self.output_folder, replace_images=self.replace_images, no_legends = self.no_legends)
         print("done plotting ", case.name)
 
 def process_args():
