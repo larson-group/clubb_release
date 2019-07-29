@@ -70,7 +70,7 @@ class Panel:
 
         return start_idx, end_idx
 
-    def plot(self, output_folder, casename):
+    def plot(self, output_folder, casename, replace_images = False):
         '''
          Saves a single panel/graph to the output directory specified by the pyplotgen launch paramters
 
@@ -107,12 +107,17 @@ class Panel:
         except FileExistsError:
             pass # do nothing
         if self.panel_type == Panel.TYPE_BUDGET:
-            filename = self.title + '_budget'
+            filename = self.panel_type + self.title
         else:
-            filename = self.y_title + "_VS_" + self.x_title
+            filename = self.panel_type+ '_' + self.y_title + "_VS_" + self.x_title
         filename = filename.translate(str.maketrans('', '', string.punctuation))
         filename = filename.replace(' ', '_')
 
         rel_filename = output_folder + "/" +casename+'/' + filename
-        plt.savefig(rel_filename)
+        if os.path.isfile(rel_filename+'.png') and replace_images is True:
+            plt.savefig(rel_filename)
+        if not os.path.isfile(rel_filename+'.png'):
+            plt.savefig(rel_filename)
+        if os.path.isfile(rel_filename + '.png') and replace_images is False:
+            print("\n\tImage " + rel_filename+'.png already exists. To overwrite this image during runtime pass in the --replace (-r) parameter.')
         plt.close()

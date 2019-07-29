@@ -10,14 +10,14 @@ class Case_fire(Case):
 
     '''
     name = 'fire'
-    def __init__(self, ncdf_files, plot_sam = True):
+    def __init__(self, ncdf_files, plot_sam = True, plot_budgets = False):
         '''
 
         '''
         self.name = Case_fire.name
-        sec_per_min = 60
-        self.start_time = 61 #* sec_per_min
-        self.end_time = 120 #* sec_per_min
+        self.plot_budgets = False #  plot_budgets
+        self.start_time = 61
+        self.end_time = 120
         self.height_min_value = 0
         self.height_max_value = 1000
         self.enabled = True
@@ -33,8 +33,12 @@ class Case_fire(Case):
         # TODO budget variables are not in the nc outputut
         # budget_variables = VariableGroupBaseBudgets(ncdf_files, self)
         w_variables = VariableGroupWs(self.ncdf_files, self, sam_file=sam_file)
-        self.panel_groups = [base_variables, w_variables]#, budget_variables]
+        self.panel_groups = [base_variables, w_variables]
         self.panels = []
+
+        if self.plot_budgets:
+            budget_variables = VariableGroupBaseBudgets(ncdf_files, self)
+            self.panels.extend(budget_variables.panels)
 
         for panelgroup in self.panel_groups:
             for panel in panelgroup.panels:

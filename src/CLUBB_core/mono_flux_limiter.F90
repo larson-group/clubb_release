@@ -1782,7 +1782,9 @@ module mono_flux_limiter
 
       use constants_clubb, only: &
           sqrt_2pi, &
-          sqrt_2, one, one_half
+          sqrt_2, &
+          one, &
+          one_half
 
       use clubb_precision, only: &
         core_rknd ! Variable(s)
@@ -1937,7 +1939,14 @@ module mono_flux_limiter
 
 #endif
 
-     return
+    ! Upper and lower levels are not used, set to 0 to be safe and avoid NaN problems
+    mean_w_down_i(1) = 0.0_core_rknd
+    mean_w_up_i(1) = 0.0_core_rknd
+
+    mean_w_down_i(gr%nz) = 0.0_core_rknd
+    mean_w_up_i(gr%nz) = 0.0_core_rknd
+
+    return
 
   end subroutine calc_mean_w_up_down_component
 

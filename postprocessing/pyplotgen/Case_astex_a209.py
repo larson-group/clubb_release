@@ -16,11 +16,12 @@ class Case_astex_a209(Case):
 
     name = 'astex_a209'
 
-    def __init__(self, ncdf_files, plot_sam = True):
+    def __init__(self, ncdf_files, plot_sam = True, plot_budgets = False):
         '''
 
         '''
         self.name = Case_astex_a209.name
+        self.plot_budgets = plot_budgets
         self.start_time = 2340
         self.end_time = 2400
         self.height_min_value = 0
@@ -37,15 +38,18 @@ class Case_astex_a209(Case):
         #         "/home/nicolas/sam_benchmark_runs/JULY_2017/LBA_128kmx128kmx128_1km_Morrison/LBA_128kmx128kmx128_1km_Morrison.nc")
         base_variables = VariableGroupBase(self.ncdf_files, self, sam_file=sam_file)
         w_variables = VariableGroupWs(self.ncdf_files, self, sam_file=sam_file)
-        budget_variables = VariableGroupBaseBudgets(ncdf_files, self)
         # ice_variables = VariableGroupIceMP(self.ncdf_files, self, sam_file=sam_file)
         liquid_variables = VariableGroupLiquidMP(self.ncdf_files, self, sam_file=sam_file)
         corr_variables = VariableGroupCorrelations(self.ncdf_files, self, sam_file=sam_file)
         kk_variables = VariableGroupKKMP(self.ncdf_files, self, sam_file=sam_file)
 
 
-        self.panel_groups = [base_variables, w_variables, liquid_variables, corr_variables, kk_variables, budget_variables]
+        self.panel_groups = [base_variables, w_variables, liquid_variables, corr_variables, kk_variables]
         self.panels = []
+
+        if self.plot_budgets:
+            budget_variables = VariableGroupBaseBudgets(ncdf_files, self)
+            self.panels.extend(budget_variables.panels)
 
         for panelgroup in self.panel_groups:
             for panel in panelgroup.panels:
