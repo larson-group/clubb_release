@@ -216,7 +216,8 @@ module advance_clubb_core_module
       C_invrs_tau_shear, &
       C_invrs_tau_N2, &
       C_invrs_tau_N2_xp2, &
-      C_invrs_tau_N2_wp2
+      C_invrs_tau_N2_wp2, &
+      C_invrs_tau_N2_clear_wp3
 
     use parameters_model, only: &
         sclr_dim, & ! Variable(s)
@@ -749,15 +750,18 @@ module advance_clubb_core_module
        invrs_tau_zm,           & ! One divided by tau on zm levels              [s^-1]
        invrs_tau_xp2_zm,       & ! One divided by tau_xp2, including stability effects (partly) [s^-1]
        invrs_tau_wp2_zm,       & ! One divided by tau_wp2, including stability effects (partly) [s^-1]
+       invrs_tau_wp3_zm,       & ! One divided by tau_wp3, including stability effects (partly) [s^-1]
        invrs_tau_N2_zm,        & ! One divided by tau, including stability effects [s^-1]
        invrs_tau_no_N2_zm,     & ! One divided by tau (without N2) on zm levels              [s^-1] 
        ustar,                  & ! Friction velocity  [m/s]
-       tau_no_N2_zm,            & ! Tau without Brunt Freq
+       tau_no_N2_zm,           & ! Tau without Brunt Freq
        tau_wp2_zm,             & ! Tau values used for advance_wp2_wpxp
+       tau_wp3_zm,             & ! Tau values used for advance_wp3_wp2
        tau_xp2_zm,             & ! Tau values used for advance_xp2_wpxp
-       tau_wp2_zt,             & ! Tau at zt levels
-       tau_xp2_zt,             & ! -
-       tau_no_N2_zt               ! -
+       tau_wp2_zt,             & ! Tau wp2 at zt levels
+       tau_wp3_zt,             & ! Tau wp3 at zt levels
+       tau_xp2_zt,             & ! Tau xp2 at zt levels
+       tau_no_N2_zt              ! 
  
 
 
@@ -1122,6 +1126,7 @@ module advance_clubb_core_module
       tau_wp2_zm = tau_zm   ! Just for the interface of advance_xp2_xpwp 
       tau_xp2_zt = tau_zt   ! Not be used currently 
       tau_wp2_zt = tau_zt   ! 
+      tau_wp3_zt = tau_zt
 
 ! End Vince Larson's replacement.
 
@@ -1150,6 +1155,12 @@ module advance_clubb_core_module
               + C_invrs_tau_N2_xp2 * sqrt( max( zero_threshold, &
               zt2zm( zm2zt( brunt_vaisala_freq_sqd ) ) - 1e-4_core_rknd) )
 
+        invrs_tau_wp3_zm = invrs_tau_wp2_zm &
+              + C_invrs_tau_N2_clear_wp3 * sqrt( max( zero_threshold, &
+                zt2zm( zm2zt( brunt_vaisala_freq_sqd ) ) ) ) &
+              * min(one, max(zero_threshold, one &
+              - ( (ice_supersat_frac_zm - 0.005_core_rknd )/(0.01- 0.005_core_rknd) ) ) )
+
 
         if ( gr%zm(1) - sfc_elevation + z_displace < eps ) then
              stop  "Lowest zm grid level is below ground in CLUBB."
@@ -1159,11 +1170,15 @@ module advance_clubb_core_module
         tau_zm       = one / invrs_tau_zm
         tau_wp2_zm   = one / invrs_tau_wp2_zm
         tau_xp2_zm   = one / invrs_tau_xp2_zm
+        tau_wp3_zm   = one / invrs_tau_wp3_zm
+
 
         tau_zt       = zm2zt( tau_zm )
         tau_no_N2_zt = zm2zt( tau_no_N2_zm )
         tau_wp2_zt   = zm2zt( tau_wp2_zm )
         tau_xp2_zt   = zm2zt( tau_xp2_zm )
+        tau_wp3_zt   = zm2zt( tau_wp3_zm )
+        
 
 
 !        invrs_tau_N2_zm = invrs_tau_zm  &
@@ -1366,8 +1381,8 @@ module advance_clubb_core_module
 
       else
         tau_N2_zm = unused_var
-        tau_C6_zm = tau_zm
-        tau_C1_zm = tau_zm
+        tau_C6_zm = tau_zm  
+        tau_C1_zm = tau_wp2_zm   ! Note, we let tau_C4 = tau_C1= tau_wp2_zm in advance_wp2_wp3
 
       end if ! l_stability_correction
 
@@ -1500,7 +1515,7 @@ module advance_clubb_core_module
            ( dt, sfc_elevation, sigma_sqd_w, wm_zm,              & ! intent(in)
              wm_zt, a3_coef, a3_coef_zt, wp3_on_wp2, wp4,        & ! intent(in)
              wpthvp, wp2thvp, um, vm, upwp, vpwp,                & ! intent(in)
-             up2, vp2, Kh_zm, Kh_zt, tau_wp2_zm, tau_wp2_zt,     & ! intent(in)
+             up2, vp2, Kh_zm, Kh_zt, tau_wp2_zm, tau_wp3_zt,     & ! intent(in)
              tau_C1_zm, Skw_zm, Skw_zt, rho_ds_zm,               & ! intent(in)
              rho_ds_zt, invrs_rho_ds_zm,                         & ! intent(in)
              invrs_rho_ds_zt, radf, thv_ds_zm,                   & ! intent(in)
