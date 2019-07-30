@@ -74,8 +74,8 @@ class PyPlotGen:
         for case_def in all_cases:
             print('###########################################')
             print("plotting ", case_def['name'])
-            case = Case(case_def,self.nc_datasets[case_def['name']], plot_sam=self.les)
-            case.plot(self.output_folder, replace_images=self.replace_images, no_legends = self.no_legends)
+            case = Case(case_def,self.nc_datasets[case_def['name']], plot_sam=self.les, plot_budgets=self.plot_budgets)
+            case.plot(self.output_folder, replace_images=self.replace_images, no_legends = self.no_legends, thin_lines=self.thin)
 
         print('###########################################')
         print("\nGenerating webpage for viewing plots ")
@@ -113,8 +113,6 @@ def process_args():
         print("Plot all reference plots flag detected, but that feature is not yet implemented")
     if args.zip:
         print("Zip flag detected, but that feature is not yet implemented")
-    if args.thin:
-        print("Thin plotAll lines flag detected, but that feature is not yet implemented")
     if args.ensemble:
         print("Ensemble flag detected, but that feature is not yet implemented")
     if args.bu_morr:

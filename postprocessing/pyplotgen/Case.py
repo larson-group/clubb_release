@@ -1,5 +1,5 @@
 from pyplotgen.DataReader import DataReader
-from pyplotgen.VariableGroupBase import VariableGroupBase
+from pyplotgen.VariableGroupBaseBudgets import VariableGroupBaseBudgets
 
 
 class Case:
@@ -22,14 +22,12 @@ class Case:
         self.ncdf_datasets = ncdf_datasets
         self.blacklisted_variables = case_definition['blacklisted_vars']
         self.plot_budgets = plot_budgets
+        if 'disable_budgets' in case_definition.keys() and case_definition['disable_budgets'] is True:
+            self.plot_budgets = False
         sam_file = None
         if plot_sam and case_definition['sam_file'] is not None:
             datareader = DataReader()
             sam_file = datareader.__loadNcFile__(case_definition['sam_file'])
-
-        # if self.plot_budgets:
-        #     budget_variables = VariableGroupBaseBudgets(ncdf_files, self)
-        #     self.panels.extend(budget_variables.panels)
 
         self.panels = []
         for group in self.var_groups:
@@ -37,7 +35,11 @@ class Case:
             for panel in temp_group.panels :
                 self.panels.append(panel)
 
-    def plot(self, output_folder, replace_images = False, no_legends = False):
+        if self.plot_budgets:
+            budget_variables = VariableGroupBaseBudgets(self.ncdf_datasets, self)
+            self.panels.extend(budget_variables.panels)
+
+    def plot(self, output_folder, replace_images = False, no_legends = False, thin_lines = False):
         '''
         Plot all panels associated with the case
         :param casename: str name of the case
@@ -48,6 +50,6 @@ class Case:
         curr_panel_num = 0
         for panel in self.panels:
             print("\r\tplotting ",  curr_panel_num, " of ", num_plots, " | ", panel.title, end="")
-            panel.plot(output_folder, self.name, replace_images=replace_images, no_legends=no_legends)
+            panel.plot(output_folder, self.name, replace_images=replace_images, no_legends=no_legends, thin_lines=thin_lines)
             curr_panel_num += 1
             print("\r\tplotted  ", curr_panel_num, " of ", num_plots, " | ", panel.title)

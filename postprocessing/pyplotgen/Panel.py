@@ -70,7 +70,7 @@ class Panel:
 
         return start_idx, end_idx
 
-    def plot(self, output_folder, casename, replace_images = False, no_legends = True):
+    def plot(self, output_folder, casename, replace_images = False, no_legends = True, thin_lines = False):
         '''
          Saves a single panel/graph to the output directory specified by the pyplotgen launch paramters
 
@@ -90,7 +90,10 @@ class Panel:
                 linewidth = 4
             else:
                 linewidth = 2
+            if thin_lines:
+                linewidth = 1
             plt.plot(x_data, y_data, var.line_format, label=var.label, linewidth=linewidth)
+
         plt.title(self.title)
         plt.ylabel(self.y_title)
         plt.xlabel(self.x_title)
