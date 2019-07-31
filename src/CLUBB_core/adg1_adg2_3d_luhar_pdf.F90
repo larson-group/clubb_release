@@ -1068,7 +1068,7 @@ module adg1_adg2_3d_luhar_pdf
     ! variables for a generalization of Chris Golaz' closure
     ! varies width of plumes in theta_l, rt
     real ( kind = core_rknd ) :: &
-      width_factor ! Width factor relating to PDF component 1    [-]
+      width_factor_1 ! Width factor relating to PDF component 1    [-]
 
     integer :: &
       k     ! Vertical loop index
@@ -1098,13 +1098,13 @@ module adg1_adg2_3d_luhar_pdf
 
             alpha_x(k) = max( min( alpha_x(k), one ), zero_threshold )
 
-            width_factor = two_thirds * beta &
+            width_factor_1 = two_thirds * beta &
                              + two * mixt_frac(k) * ( one - two_thirds * beta )
 
             ! Vince Larson multiplied original expressions by width_factor_1,2
             !   to generalize scalar skewnesses.  05 Nov 03
-            varnce_x_1(k) = width_factor * xp2(k) * alpha_x(k) / mixt_frac(k)
-            varnce_x_2(k) = ( two - width_factor ) * xp2(k) * alpha_x(k) / ( one - mixt_frac(k) )
+            varnce_x_1(k) = width_factor_1 * xp2(k) * alpha_x(k) / mixt_frac(k)
+            varnce_x_2(k) = ( two - width_factor_1 ) * xp2(k) * alpha_x(k) / ( one - mixt_frac(k) )
 
         end if
 
