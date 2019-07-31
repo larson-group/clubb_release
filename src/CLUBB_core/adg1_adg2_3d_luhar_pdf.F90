@@ -1067,44 +1067,49 @@ module adg1_adg2_3d_luhar_pdf
     ! Local Variables
     ! variables for a generalization of Chris Golaz' closure
     ! varies width of plumes in theta_l, rt
-    real ( kind = core_rknd ), dimension(gr%nz) :: &
-      width_factor_1, & ! Width factor relating to PDF component 1    [-]
-      width_factor_2    ! Width factor relating to PDF component 2    [-]
+    real ( kind = core_rknd ) :: &
+      width_factor ! Width factor relating to PDF component 1    [-]
 
+    integer :: &
+      k     ! Vertical loop index
 
-    where ( wp2 <= w_tol_sqd .or. xp2 <= x_tol**2)
-        
-        ! Vertical velocity doesn't vary.  Variable x is treated as a single
-        ! Gaussian in this situation.
-        x_1        = xm
-        x_2        = xm
-        varnce_x_1 = xp2
-        varnce_x_2 = xp2
-        alpha_x    = one_half
-        
-    elsewhere
-        
-        x_1 = xm - wpxp / ( sqrt_wp2 * w_2_n )
-        x_2 = xm - wpxp / ( sqrt_wp2 * w_1_n )
+    !----- Begin Code -----
 
-        alpha_x = one_half &
-                  * ( one - wpxp * wpxp &
-                            / ( ( one - sigma_sqd_w ) * wp2 * xp2 ) )
+    do k = 1, gr%nz
 
-        alpha_x = max( min( alpha_x, one ), zero_threshold )
-        
-        width_factor_1 = two_thirds * beta &
-                         + two * mixt_frac * ( one - two_thirds * beta )
+        if ( wp2(k) <= w_tol_sqd .or. xp2(k) <= x_tol**2 ) then
 
-        width_factor_2 = two - width_factor_1
-        
-        ! Vince Larson multiplied original expressions by width_factor_1,2
-        !   to generalize scalar skewnesses.  05 Nov 03
-        varnce_x_1 = width_factor_1 * xp2 * alpha_x / mixt_frac
-        varnce_x_2 = width_factor_2 * xp2 * alpha_x / ( one - mixt_frac )
-        
-    endwhere
-    
+            ! Vertical velocity doesn't vary.  Variable x is treated as a single
+            ! Gaussian in this situation.
+            x_1(k)        = xm(k)
+            x_2(k)        = xm(k)
+            varnce_x_1(k) = xp2(k)
+            varnce_x_2(k) = xp2(k)
+            alpha_x(k)    = one_half
+
+        else
+
+            x_1(k) = xm(k) - wpxp(k) / ( sqrt_wp2(k) * w_2_n(k) )
+            x_2(k) = xm(k) - wpxp(k) / ( sqrt_wp2(k) * w_1_n(k) )
+
+            alpha_x(k) = one_half &
+                         * ( one - wpxp(k) * wpxp(k) &
+                                   / ( ( one - sigma_sqd_w(k) ) * wp2(k) * xp2(k) ) )
+
+            alpha_x(k) = max( min( alpha_x(k), one ), zero_threshold )
+
+            width_factor = two_thirds * beta &
+                             + two * mixt_frac(k) * ( one - two_thirds * beta )
+
+            ! Vince Larson multiplied original expressions by width_factor_1,2
+            !   to generalize scalar skewnesses.  05 Nov 03
+            varnce_x_1(k) = width_factor * xp2(k) * alpha_x(k) / mixt_frac(k)
+            varnce_x_2(k) = ( two - width_factor ) * xp2(k) * alpha_x(k) / ( one - mixt_frac(k) )
+
+        end if
+
+    end do
+
     return
 
   end subroutine ADG1_ADG2_responder_params
