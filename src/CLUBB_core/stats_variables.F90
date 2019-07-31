@@ -121,8 +121,10 @@ module stats_variables
   integer, public :: &
      itau_no_N2_zm = 0,     & 
      itau_xp2_zm   = 0,     &
-     itau_wp2_zm   = 0
-!$omp threadprivate( itau_no_N2_zm,itau_wp2_zm, itau_xp2_zm )
+     itau_wp2_zm   = 0,     &
+     itau_wp3_zm   = 0
+!$omp threadprivate( itau_no_N2_zm,itau_wp2_zm, itau_xp2_zm, itau_wp3_zm )
+
 
 
   integer, dimension(:), allocatable, public :: & 

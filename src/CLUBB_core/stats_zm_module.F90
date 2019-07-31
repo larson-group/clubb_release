@@ -48,6 +48,7 @@ module stats_zm_module
         itau_zm, & 
         itau_no_N2_zm, &
         itau_wp2_zm, &
+        itau_wp3_zm, &
         itau_xp2_zm, &
         iKh_zm, & 
         iK_hm, & 
@@ -668,6 +669,15 @@ module stats_zm_module
              var_description="tau for wp2 on momentum levels [s]", var_units="s",&
              l_silhs=.false., grid_kind=stats_zm )
         k = k + 1
+
+      case ('tau_wp3_zm')
+        itau_wp3_zm = k
+
+        call stat_assign( var_index=itau_wp3_zm, var_name="tau_wp3_zm", &
+             var_description="tau for wp3 on momentum levels [s]", var_units="s",&
+             l_silhs=.false., grid_kind=stats_zm )
+        k = k + 1
+
 
       case ('tau_xp2_zm')
         itau_xp2_zm = k
