@@ -1436,65 +1436,88 @@ module pdf_closure_module
       corr_chi_eta      ! Correlation of chi and eta for each component.
 
     ! ----------- Local Variables -----------
-    real( kind = core_rknd ), dimension(gr%nz) ::  &
-      beta
-
     real( kind = core_rknd ) :: &
       varnce_rt_term, &
       corr_rt_thl_term, &
-      varnce_thl_term
+      varnce_thl_term, &
+      varnce_chi, &
+      varnce_eta, &
+      beta, &
+      invrs_beta_rsatl_p1
+
+    real( kind = core_rknd ), parameter :: &
+      chi_tol_sqd = chi_tol**2, &
+      eta_tol_sqd = eta_tol**2, &
+      Cp_on_Lv = Cp / Lv
 
     ! Loop variable
-    integer :: i
+    integer :: k
 
     ! ----------- Begin Code -----------
 
-    ! SD's beta (eqn. 8)
-    beta = ep * ( Lv/(Rd*tl) ) * ( Lv/(Cp*tl) )
+    do k = 1, gr%nz
 
-    ! s from Lewellen and Yoh 1993 (LY) eqn. 1
-    chi = ( rt - rsatl ) / ( one + beta * rsatl )
+        ! SD's beta (eqn. 8)
+        beta = ep * Lv**2 / ( Rd * Cp * tl(k)**2 )
 
-    ! For each normal distribution in the sum of two normal distributions,
-    ! s' = crt * rt'  +  cthl * thl';
-    ! therefore, x's' = crt * x'rt'  +  cthl * x'thl'.
-    ! Larson et al. May, 2001.
-    crt  = one / ( one + beta * rsatl )
-    cthl = (one + beta * rt) / ( one + beta * rsatl )**2 * ( Cp/Lv ) * beta * rsatl * exner
+        invrs_beta_rsatl_p1 = one / ( one + beta * rsatl(k) )
+
+        ! s from Lewellen and Yoh 1993 (LY) eqn. 1
+        chi(k) = ( rt(k) - rsatl(k) ) * invrs_beta_rsatl_p1
+
+        ! For each normal distribution in the sum of two normal distributions,
+        ! s' = crt * rt'  +  cthl * thl';
+        ! therefore, x's' = crt * x'rt'  +  cthl * x'thl'.
+        ! Larson et al. May, 2001.
+        crt(k)  = invrs_beta_rsatl_p1
+        cthl(k) = ( one + beta * rt(k) ) * invrs_beta_rsatl_p1**2 &
+                  * Cp_on_Lv * beta * rsatl(k) * exner(k)
+    end do
 
     ! Calculate covariance, correlation, and standard deviation of 
     ! chi and eta for each component
     ! Include subplume correlation of qt, thl
-    do i = 1, gr%nz
+    do k = 1, gr%nz
        
-        varnce_rt_term = crt(i)**2 * varnce_rt(i)
-        varnce_thl_term = cthl(i)**2 * varnce_thl(i)
+        varnce_rt_term = crt(k)**2 * varnce_rt(k)
+        varnce_thl_term = cthl(k)**2 * varnce_thl(k)
 
-        covar_chi_eta(i) = varnce_rt_term - varnce_thl_term
+        covar_chi_eta(k) = varnce_rt_term - varnce_thl_term
 
-        corr_rt_thl_term = two * corr_rt_thl(i) * crt(i) * cthl(i) &
-                           * sqrt( varnce_rt(i) * varnce_thl(i) )
+        corr_rt_thl_term = two * corr_rt_thl(k) * crt(k) * cthl(k) &
+                           * sqrt( varnce_rt(k) * varnce_thl(k) )
 
-        stdev_chi(i) = sqrt( varnce_rt_term - corr_rt_thl_term + varnce_thl_term )
-        stdev_eta(i) = sqrt( varnce_rt_term + corr_rt_thl_term + varnce_thl_term )
-        
+        varnce_chi = varnce_rt_term - corr_rt_thl_term + varnce_thl_term
+        varnce_eta = varnce_rt_term + corr_rt_thl_term + varnce_thl_term
+
+        ! We need to introduce a threshold value for the variance of chi and eta
+        if ( varnce_chi < chi_tol_sqd .or. varnce_eta < eta_tol_sqd ) then
+
+            if ( varnce_chi < chi_tol_sqd ) then
+                stdev_chi(k) = zero  ! Treat chi as a delta function
+            else
+                stdev_chi(k) = sqrt( varnce_chi )
+            end if
+
+            if ( varnce_eta < eta_tol_sqd ) then
+                stdev_eta(k) = zero  ! Treat eta as a delta function
+            else
+                stdev_eta(k) = sqrt( varnce_eta )
+            end if
+
+            corr_chi_eta(k) = zero
+
+        else
+
+            stdev_chi(k) = sqrt( varnce_chi )
+            stdev_eta(k) = sqrt( varnce_eta )
+
+            corr_chi_eta(k) = covar_chi_eta(k) / ( stdev_chi(k) * stdev_eta(k) )
+            corr_chi_eta(k) = min( max_mag_correlation, max( -max_mag_correlation, corr_chi_eta(k) ) )
+
+        end if
+
     end do
-
-    ! We need to introduce a threshold value for the variance of chi and eta
-    where ( stdev_chi < chi_tol .or. stdev_eta < eta_tol )
-
-        where ( stdev_chi < chi_tol ) stdev_chi = zero  ! Treat chi as a delta function
-        where ( stdev_eta < eta_tol ) stdev_eta = zero  ! Treat eta as a delta function
-
-        corr_chi_eta = zero
-
-    elsewhere
-
-        corr_chi_eta = covar_chi_eta / ( stdev_chi * stdev_eta )
-        corr_chi_eta = min( max_mag_correlation, max( -max_mag_correlation, corr_chi_eta ) )
-
-    end where
-
 
   end subroutine transform_pdf_chi_eta_component
   
