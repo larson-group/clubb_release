@@ -821,9 +821,36 @@ module pdf_closure_module
                                           pdf_params%corr_chi_eta_1 )                         ! Out
     
     ! Calculate cloud fraction component for pdf 1
-    call calc_cloud_frac_component( pdf_params%chi_1, pdf_params%stdev_chi_1,   & ! In
-                                    chi_at_liq_sat,                             & ! In
-                                    pdf_params%cloud_frac_1, pdf_params%rc_1 )    ! Out
+    call calc_liquid_cloud_frac_component( pdf_params%chi_1, pdf_params%stdev_chi_1,    & ! In
+                                           pdf_params%cloud_frac_1, pdf_params%rc_1 )     ! Out
+
+    ! Calc ice_supersat_frac
+    if ( l_calc_ice_supersat_frac ) then
+
+      do i = 1, gr%nz
+
+        if ( tl1(i) <= T_freeze_K ) then
+
+          ! Temperature is freezing, we must compute chi_at_ice_sat and
+          ! calculate the new cloud_frac_component
+          chi_at_ice_sat1 = ( sat_mixrat_ice( p_in_Pa(i), tl1(i) ) - pdf_params%rsatl_1(i) ) &
+                            * pdf_params%crt_1(i)
+
+          call calc_cloud_frac_component( pdf_params%chi_1(i), pdf_params%stdev_chi_1(i), &
+                                          chi_at_ice_sat1, &
+                                          pdf_params%ice_supersat_frac_1(i), rc_1_ice(i) )
+        else
+
+            ! Temperature is warmer than freezing, the ice_supersat_frac calculation is
+            ! the same as cloud_frac
+            pdf_params%ice_supersat_frac_1(i) = pdf_params%cloud_frac_1(i)
+            rc_1_ice(i) = pdf_params%rc_1(i)
+
+        end if
+
+      end do
+
+    end if
 
     
     call transform_pdf_chi_eta_component( tl2, pdf_params%rsatl_2, pdf_params%rt_2, exner,  & ! In
@@ -836,43 +863,18 @@ module pdf_closure_module
 
     
     ! Calculate cloud fraction component for pdf 2
-    call calc_cloud_frac_component( pdf_params%chi_2, pdf_params%stdev_chi_2,               & ! In
-                                    chi_at_liq_sat,                                         & ! In
-                                    pdf_params%cloud_frac_2, pdf_params%rc_2 )                ! Out
+    call calc_liquid_cloud_frac_component( pdf_params%chi_2, pdf_params%stdev_chi_2,    & ! In
+                                           pdf_params%cloud_frac_2, pdf_params%rc_2 )     ! Out
 
     ! Calc ice_supersat_frac
     if ( l_calc_ice_supersat_frac ) then
 
         do i = 1, gr%nz
 
-            if ( tl1(i) <= T_freeze_K ) then
-    
-                ! Temperature is freezing, we must compute chi_at_ice_sat and 
-                ! calculate the a new cloud_frac_component
-                chi_at_ice_sat1 = ( sat_mixrat_ice( p_in_Pa(i), tl1(i) ) - pdf_params%rsatl_1(i) ) &
-                                  * pdf_params%crt_1(i)
-
-                call calc_cloud_frac_component( pdf_params%chi_1(i), pdf_params%stdev_chi_1(i), &
-                                                chi_at_ice_sat1, &
-                                                pdf_params%ice_supersat_frac_1(i), rc_1_ice(i) )
-            else
-
-                ! Temperature is warmer than freezing, the ice_supersat_frac calculation is 
-                ! the same as cloud_frac
-                pdf_params%ice_supersat_frac_1(i) = pdf_params%cloud_frac_1(i)
-                rc_1_ice(i) = pdf_params%rc_1(i)
-
-            end if
-
-        end do
-
-
-        do i = 1, gr%nz
-
             if ( tl2(i) <= T_freeze_K ) then
 
                 ! Temperature is freezing, we must compute chi_at_ice_sat and 
-                ! calculate the a new cloud_frac_component
+                ! calculate the new cloud_frac_component
                 chi_at_ice_sat2 = ( sat_mixrat_ice( p_in_Pa(i), tl2(i) ) - pdf_params%rsatl_2(i) ) &
                                   * pdf_params%crt_2(i)
 
@@ -1892,9 +1894,8 @@ module pdf_closure_module
   end function calc_wpxpyp_pdf
 
   !=============================================================================
-  elemental subroutine calc_cloud_frac_component( mean_chi_i, stdev_chi_i, &
-                                                  chi_at_sat, &
-                                                  cloud_frac_i, rc_i )
+  subroutine calc_liquid_cloud_frac_component( mean_chi, stdev_chi, &
+                                               cloud_frac, rc )
     ! Description:
     ! Calculates the PDF component cloud water mixing ratio, rc_i, and cloud
     ! fraction, cloud_frac_i, for the ith PDF component.
@@ -1949,6 +1950,175 @@ module pdf_closure_module
     ! References:
     !----------------------------------------------------------------------
 
+    use grid_class, only: &
+        gr
+
+    use constants_clubb, only: &
+        chi_tol,        & ! Tolerance for pdf parameter chi       [kg/kg]
+        sqrt_2pi,       & ! sqrt(2*pi)
+        sqrt_2,       & ! sqrt(2*pi)
+        one,            & ! 1
+        one_half,       & ! 1/2
+        zero,           & ! 0
+        max_num_stdevs, &
+        eps
+
+    use clubb_precision, only: &
+        core_rknd     ! Precision
+
+    implicit none
+
+    !----------- Input Variables -----------
+    real( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
+      mean_chi,  & ! Mean of chi (old s) (ith PDF component)           [kg/kg]
+      stdev_chi    ! Standard deviation of chi (ith PDF component)     [kg/kg]
+
+    !----------- Output Variables -----------
+    real( kind = core_rknd ), dimension(gr%nz), intent(out) :: &
+      cloud_frac, & ! Cloud fraction (ith PDF component)               [-]
+      rc            ! Mean cloud water mixing ratio (ith PDF comp.)    [kg/kg]
+
+    !----------- Local Variables -----------
+    real( kind = core_rknd), parameter :: &
+      invrs_sqrt_2 = one / sqrt_2, &
+      invrs_sqrt_2pi = one / sqrt_2pi
+
+#ifdef MKL
+    real( kind = core_rknd ), dimension(gr%nz) :: &
+      mean_chi_packed,      & ! Values of chi needed in expensive calculation           [kg/kg]
+      stdev_chi_packed,     & ! Values of stdev_chi needed in expensive calculation     [kg/kg]
+      cloud_frac_packed,    & ! Cloud fraction, only calculated values                  [-]
+      rc_packed,            & !  Mean cloud water mixing ratio, only calculated values  [kg/kg]
+      zeta, zeta_sqd,       &
+      exp_cache
+
+    integer, dimension(gr%nz) :: &
+      v_calc_mask    ! Mask to indicate which indicies need vectorizable calculations
+
+    integer :: &
+      v_num_calcs   ! Number of elements needing calculation, can act as an index variable
+#else
+    real( kind = core_rknd ) :: &
+      zeta
+#endif
+
+    integer :: k    ! Vertical loop index
+
+    !----------- Begin Code -----------
+
+#ifdef MKL
+    v_calc_mask(:) = 0
+    v_num_calcs = 0
+#endif
+
+    do k = 1, gr%nz
+
+        if ( ( abs( mean_chi(k) ) <= eps .and. stdev_chi(k) <= chi_tol ) &
+               .or. ( mean_chi(k) < - max_num_stdevs * stdev_chi(k) ) ) then
+
+            ! The mean of chi is at saturation and does not vary in the ith PDF component
+            cloud_frac(k) = zero
+            rc(k)         = zero
+
+        elseif ( mean_chi(k) > max_num_stdevs * stdev_chi(k) ) then
+
+            ! The mean of chi is multiple standard deviations above the saturation point.
+            ! Thus, all cloud in the ith PDF component.
+            cloud_frac(k) = one
+            rc(k)         = mean_chi(k)
+
+        else
+
+            ! The mean of chi is within max_num_stdevs of the saturation point.
+            ! Thus, layer is partly cloudy, requires calculation.
+#ifdef MKL
+            ! MKL functions are available, the calculations will be completed
+            ! over contiguous array sections, simply save needed values here
+
+            ! Increment count of elements needing calculation
+            v_num_calcs = v_num_calcs + 1
+
+            ! Copy values which are needed in calculation into contiguous array section
+            mean_chi_packed(v_num_calcs) = mean_chi(k)
+            stdev_chi_packed(v_num_calcs) = stdev_chi(k)
+
+            ! Keep track of where result goes using this mask, so we can unpack
+            ! the contiguous array back into the output array after calculation
+            v_calc_mask(k) = 1
+#else
+            ! MKL functions are unavailable, use these scalar calculations instead
+
+            zeta = mean_chi(k) / stdev_chi(k)
+
+            cloud_frac(k) = one_half * ( one + erf( zeta * invrs_sqrt_2 )  )
+
+            rc(k) = mean_chi(k) * cloud_frac(k) &
+                    + stdev_chi(k) * exp( - one_half * zeta**2 ) * invrs_sqrt_2pi
+#endif
+
+        end if
+
+    end do
+
+#ifdef MKL
+    ! If there are any calculations to complete, then v_num_calcs > 0, and the values to
+    ! operate on are all stored in contiguous sections in the "packed" arrays. This means the
+    ! packed arrays are only valid on (1:v_num_calcs), and values outside that range may
+    ! be NaN. For more information on Intel's MKL_VML functions, see the Vector Mathematical
+    ! Functions section of the MKL developer reference for Fortran
+    if( v_num_calcs > 0 ) then
+
+        ! zeta = mean_chi_packed / stdev_chi_packed
+        call vddiv( v_num_calcs, mean_chi_packed , stdev_chi_packed, zeta )
+
+        ! Cumulative normal distribution function, erf_cache = 0.5*(1+erf(zeta/sqrt2))
+        call vdcdfnorm( v_num_calcs, zeta, cloud_frac_packed )
+
+        ! zeta_sqd = zeta**2
+        call vdsqr( v_num_calcs, zeta, zeta_sqd )
+
+        ! exp_cache = exp( -0.5*zeta**2 )
+        call vdexp( v_num_calcs, - one_half * zeta_sqd(1:v_num_calcs), exp_cache )
+
+        do k = 1, v_num_calcs
+            rc_packed(k) = mean_chi_packed(k) * cloud_frac_packed(k) &
+                           + stdev_chi_packed(k) * exp_cache(k) * invrs_sqrt_2pi
+        end do
+
+        ! Unpack results from contiguous array sections and put them into output arrays,
+        ! where to put them is defined by v_calc_mask
+        call vdunpackm( gr%nz, cloud_frac_packed, cloud_frac, v_calc_mask )
+        call vdunpackm( gr%nz, rc_packed, rc, v_calc_mask )
+
+    end if
+
+#endif
+
+    return
+
+  end subroutine calc_liquid_cloud_frac_component
+
+  !=============================================================================
+  elemental subroutine calc_cloud_frac_component( mean_chi, stdev_chi, &
+                                                  chi_at_sat, &
+                                                  cloud_frac, rc )
+    ! Description:
+    !   An elemental version of the cloud fraction calculation. This
+    !   procedure takes an extra argument, chi_at_sat, allowing it to
+    !   be used for the ice_supersat_frac calculation as well. This is
+    !   because the saturation point will be non-zero when calculating
+    !   ice_supersat_frac if tl is below freezing on that grid level,
+    !   unlike the calculation of the liquid cloud fraction, where the
+    !   saturation point is always 0. Additionally, the ice_supersat_frac
+    !   only needs to be calculated when tl is below freezing, otherwise
+    !   it is equal to the liquid cloud fraction component, so being
+    !   elemental allows this procedure to be called only for the grid
+    !   levels where tl < T_freeze_K.
+    !
+    !   The description of the equations are located in the description
+    !   of calc_liquid_cloud_frac_component.
+    !----------------------------------------------------------------------
+
     use constants_clubb, only: &
         chi_tol,        & ! Tolerance for pdf parameter chi       [kg/kg]
         sqrt_2pi,       & ! sqrt(2*pi)
@@ -1966,44 +2136,48 @@ module pdf_closure_module
 
     !----------- Input Variables -----------
     real( kind = core_rknd ), intent(in) :: &
-      mean_chi_i,  & ! Mean of chi (old s) (ith PDF component)           [kg/kg]
-      stdev_chi_i, & ! Standard deviation of chi (ith PDF component)     [kg/kg]
+      mean_chi,    & ! Mean of chi (old s) (ith PDF component)           [kg/kg]
+      stdev_chi,   & ! Standard deviation of chi (ith PDF component)     [kg/kg]
       chi_at_sat     ! Value of chi at saturation (0--liquid; neg.--ice) [kg/kg]
 
     !----------- Output Variables -----------
     real( kind = core_rknd ), intent(out) :: &
-      cloud_frac_i, & ! Cloud fraction (ith PDF component)               [-]
-      rc_i            ! Mean cloud water mixing ratio (ith PDF comp.)    [kg/kg]
+      cloud_frac, & ! Cloud fraction (ith PDF component)               [-]
+      rc            ! Mean cloud water mixing ratio (ith PDF comp.)    [kg/kg]
 
     !----------- Local Variables -----------
-    real( kind = core_rknd) :: zeta_i
+    real( kind = core_rknd), parameter :: &
+      invrs_sqrt_2 = one / sqrt_2, &
+      invrs_sqrt_2pi = one / sqrt_2pi
+
+    real( kind = core_rknd) :: zeta
 
     !----------- Begin Code -----------
 
-    if ( ( abs( mean_chi_i - chi_at_sat ) <= eps .and. stdev_chi_i <= chi_tol ) &
-           .or. ( mean_chi_i - chi_at_sat < - max_num_stdevs * stdev_chi_i ) ) then
+    if ( ( abs( mean_chi - chi_at_sat ) <= eps .and. stdev_chi <= chi_tol ) &
+           .or. ( mean_chi - chi_at_sat < - max_num_stdevs * stdev_chi ) ) then
 
         ! The mean of chi is at saturation and does not vary in the ith PDF component
-        cloud_frac_i = zero
-        rc_i         = zero
+        cloud_frac = zero
+        rc         = zero
 
-    elseif ( mean_chi_i - chi_at_sat > max_num_stdevs * stdev_chi_i ) then
+    elseif ( mean_chi - chi_at_sat > max_num_stdevs * stdev_chi ) then
 
         ! The mean of chi is multiple standard deviations above the saturation point.
         ! Thus, all cloud in the ith PDF component.
-        cloud_frac_i = one
-        rc_i         = mean_chi_i - chi_at_sat
+        cloud_frac = one
+        rc         = mean_chi - chi_at_sat
     
     else
 
         ! The mean of chi is within max_num_stdevs of the saturation point.
         ! Thus, layer is partly cloudy, requires calculation.
-        zeta_i = ( mean_chi_i - chi_at_sat ) / stdev_chi_i
+        zeta = ( mean_chi - chi_at_sat ) / stdev_chi
 
-        cloud_frac_i = one_half * ( one + erf( zeta_i / sqrt_2 )  )
+        cloud_frac = one_half * ( one + erf( zeta * invrs_sqrt_2 )  )
 
-        rc_i = ( mean_chi_i - chi_at_sat ) * cloud_frac_i &
-               + stdev_chi_i * exp( - one_half * zeta_i**2 ) / ( sqrt_2pi )
+        rc = ( mean_chi - chi_at_sat ) * cloud_frac &
+             + stdev_chi * exp( - one_half * zeta**2 ) * invrs_sqrt_2pi
 
     end if
 
