@@ -80,8 +80,8 @@ class Panel:
         plt.figure()
         plt.subplot(111)
         for var in self.all_plots:
-            x_data = var.x.data
-            y_data = var.y.data
+            x_data = var.x
+            y_data = var.y
             if x_data.shape[0] != y_data.shape[0]:
                 raise ValueError("X and Y data have different shapes X: "+str(x_data.shape)
                                  + "  Y:" + str(y_data.shape) + ". Attempted to plot " + self.title + " using X: " +

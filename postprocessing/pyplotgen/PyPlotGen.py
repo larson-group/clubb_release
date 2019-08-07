@@ -22,7 +22,7 @@ class PyPlotGen:
 
     def __init__(self, input_folder, output_folder, replace=False, les=False, cgbest=False, hoc=False, plotrefs=False,
                 zip=False, thin=False, no_legends=False, ensemble=False,
-                 budget_moments=False, bu_morr=False, diff=False):
+                 budget_moments=False, bu_morr=False, diff=None):
         '''
         This creates an instance of PyPlotGen. Each parameter is a command line parameter passed in from the argparser
         below.
@@ -50,6 +50,7 @@ class PyPlotGen:
         self.les = les
         self.cgbest = cgbest
         self.hoc = hoc
+        self.plot_diff = diff
         self.plotrefs = plotrefs
         self.zip = zip
         self.thin = thin
@@ -68,19 +69,26 @@ class PyPlotGen:
         :return: n/a
         '''
         self.nc_datasets = self.data_reader.loadFolder(self.input_folder)
+        diff_datasets = None
+        if self.diff is not None:
+            diff_datasets = self.data_reader.loadFolder(self.diff)
         all_cases = Case_definitions.ALL_CASES
 
         # TODO Handle dataset not found/partial nc output
         for case_def in all_cases:
             print('###########################################')
             print("plotting ", case_def['name'])
-            case = Case(case_def,self.nc_datasets[case_def['name']], plot_sam=self.les, plot_budgets=self.plot_budgets)
+            case_diff_datasets = None
+            if self.diff is not None:
+                case_diff_datasets = diff_datasets[case_def['name']]
+            case = Case(case_def,self.nc_datasets[case_def['name']], plot_sam=self.les, plot_budgets=self.plot_budgets, diff_datasets=case_diff_datasets)
             case.plot(self.output_folder, replace_images=self.replace_images, no_legends = self.no_legends, thin_lines=self.thin)
 
         print('###########################################')
         print("\nGenerating webpage for viewing plots ")
         subprocess.run(['sigal', 'build', '-f', self.output_folder + '/'])  # Use sigal to build html in '_build/'
-
+        print('###########################################')
+        print("Output can be viewed at file://" + self.output_folder + "/../_build/index.html with a web browser")
 def process_args():
     '''
     This method takes arguments in from the command line and feeds them into
@@ -100,7 +108,7 @@ def process_args():
     parser.add_argument("--ensemble", help="Plot ensemble tuner runs", action="store_true")  # TODO is this needed?
     parser.add_argument("--plot-budgets", help="Plot all defined budgets of moments", action="store_true")
     parser.add_argument("--bu-morr", help="For morrison microphysics: breaks microphysical source terms into component processes",action="store_true")
-    parser.add_argument("--diff", help="Plot the difference between two input folders", action="store_true")
+    parser.add_argument("--diff", help="Plot the difference between two input folders", action="store")
     parser.add_argument("input", help="Input folder containing netcdf output data.", action="store")
     parser.add_argument("output", help="Name of folder to create and store plots into.", action="store")
     args = parser.parse_args()
@@ -117,8 +125,6 @@ def process_args():
         print("Ensemble flag detected, but that feature is not yet implemented")
     if args.bu_morr:
         print("Morrison breakdown flag detected, but that feature is not yet implemented")
-    if args.diff:
-        print("Diff flag detected, but that feature is not yet implemented")
 
     pyplotgen = PyPlotGen(args.input, args.output, replace=args.replace, les=args.les, cgbest=args.plot_golaz_best,
                           hoc=args.plot_hoc_2005, plotrefs=args.all_best, zip=args.zip, thin=args.thin,

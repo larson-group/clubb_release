@@ -75,6 +75,7 @@ class VariableGroup:
             fallback = variable_def_dict['fallback_func']
         if 'type' in variable_def_dict.keys():
             panel_type = variable_def_dict['type']
+
         lines = self.__getVarLines__(clubb_name, self.ncdf_files, start_time=self.start_time,
                                      end_time=self.end_time, sam_name=sam_name, sam_file=sam_file,
                                      sam_conv_factor=sam_conv_factor, label="current clubb",
