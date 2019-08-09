@@ -749,11 +749,11 @@ module advance_clubb_core_module
        brunt_vaisala_freq_sqd,      & ! Buoyancy frequency squared, N^2              [s^-2]
        brunt_vaisala_freq_sqd_smth, & ! smoothed Buoyancy frequency squared, N^2     [s^-2]
        invrs_tau_zm,                & ! One divided by tau on zm levels              [s^-1]
-       invrs_tau_xp2_zm,            & ! One divided by tau_xp2, including stability effects (partly) [s^-1]
-       invrs_tau_wp2_zm,            & ! One divided by tau_wp2, including stability effects (partly) [s^-1]
-       invrs_tau_wp3_zm,            & ! One divided by tau_wp3, including stability effects (partly) [s^-1]
-       invrs_tau_N2_zm,             & ! One divided by tau, including stability effects [s^-1]
-       invrs_tau_no_N2_zm,          & ! One divided by tau (without N2) on zm levels              [s^-1] 
+       invrs_tau_xp2_zm,            & ! One divided by tau_xp2 [s^-1]
+       invrs_tau_wp2_zm,            & ! One divided by tau_wp2 [s^-1]
+       invrs_tau_wp3_zm,            & ! One divided by tau_wp3 [s^-1]
+       invrs_tau_N2_zm,             & ! One divided by tau with stability effects    [s^-1]
+       invrs_tau_no_N2_zm,          & ! One divided by tau (without N2) on zm levels [s^-1] 
        ustar,                       & ! Friction velocity  [m/s]
        tau_no_N2_zm,                & ! Tau without Brunt Freq
        tau_wp2_zm,                  & ! Tau values used for advance_wp2_wpxp
