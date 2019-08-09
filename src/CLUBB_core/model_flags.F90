@@ -239,10 +239,10 @@ module model_flags
 !$omp threadprivate( l_const_Nc_in_cloud, l_fix_w_chi_eta_correlations )
 
   logical, public :: &
-    l_stability_correct_tau_zm = .true., & ! Use tau_N2_zm instead of tau_zm in wpxp_pr1
+    l_stability_correct_tau_zm = .false., & ! Use tau_N2_zm instead of tau_zm in wpxp_pr1
                                            ! stability correction
 
-    l_damp_wp2_using_em = .false.,       & ! In wp2 equation, use a dissipation
+    l_damp_wp2_using_em = .true.,       & ! In wp2 equation, use a dissipation
                                            ! formula of -(2/3)*em/tau_zm, as in Bougeault (1981)
 
     l_do_expldiff_rtm_thlm = .false.,    & ! Diffuse rtm and thlm explicitly
@@ -256,7 +256,7 @@ module model_flags
     l_use_ice_latent = .false.,          & ! Includes the effects of ice latent heating in
                                            !  turbulence terms
 
-    l_use_C7_Richardson = .false.,       & ! Parameterize C7 based on Richardson number
+    l_use_C7_Richardson = .true.,       & ! Parameterize C7 based on Richardson number
     l_use_C11_Richardson = .false.,      & ! Parameterize C16 based on Richardson number
 
     l_brunt_vaisala_freq_moist = .false.,& ! Use a different formula for the Brunt-Vaisala 
@@ -290,7 +290,8 @@ module model_flags
     l_tke_aniso, l_vert_avg_closure, l_single_C2_Skw, l_standard_term_ta, &
     l_use_cloud_cover, l_calc_thlp2_rad, l_rcm_supersat_adj, &
     l_damp_wp3_Skw_squared, l_min_wp2_from_corr_wx, l_min_xp2_from_corr_wx, &
-    l_C2_cloud_frac, l_predict_upwp_vpwp, l_diag_Lscale_from_tau
+    l_C2_cloud_frac, l_predict_upwp_vpwp, l_diag_Lscale_from_tau, &
+    l_stability_correct_tau_zm, l_damp_wp2_using_em, l_use_C7_Richardson
 
   contains
 

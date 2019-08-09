@@ -1143,19 +1143,24 @@ module advance_clubb_core_module
          + C_invrs_tau_sfc * ( ustar / vonk ) / ( gr%zm - sfc_elevation + z_displace ) &
          + C_invrs_tau_shear * zt2zm( zm2zt( sqrt( (ddzt( um ))**2 + (ddzt( vm ))**2 ) ) )
 
-        brunt_vaisala_freq_sqd_smth = zt2zm( zm2zt( brunt_vaisala_freq_sqd ) ) 
+!        brunt_vaisala_freq_sqd_smth = zt2zm( zm2zt( brunt_vaisala_freq_sqd ) )
+!       The min function below smooths the slope discontinuity in brunt freq
+!           and thereby allows tau to remain large in Sc layers in which thlm may
+!           be slightly stably stratified.
+        brunt_vaisala_freq_sqd_smth = zt2zm( zm2zt( &
+              min( brunt_vaisala_freq_sqd, 1.e8_core_rknd * abs(brunt_vaisala_freq_sqd)**3 ) ) )
 
         invrs_tau_zm = invrs_tau_no_N2_zm & 
               + C_invrs_tau_N2 * sqrt( max( zero_threshold, &
-              brunt_vaisala_freq_sqd_smth - 1e-4_core_rknd) )
+              brunt_vaisala_freq_sqd_smth ) )
 
         invrs_tau_wp2_zm = invrs_tau_no_N2_zm &
               + C_invrs_tau_N2_wp2 * sqrt( max( zero_threshold, &
-              brunt_vaisala_freq_sqd_smth - 1e-4_core_rknd) ) 
+              brunt_vaisala_freq_sqd_smth ) )
 
         invrs_tau_xp2_zm = invrs_tau_no_N2_zm &
               + C_invrs_tau_N2_xp2 * sqrt( max( zero_threshold, &
-              brunt_vaisala_freq_sqd_smth - 1e-4_core_rknd) )
+              brunt_vaisala_freq_sqd_smth ) )
 
         invrs_tau_wp3_zm = invrs_tau_wp2_zm &
               + C_invrs_tau_N2_clear_wp3 * sqrt( max( zero_threshold, &

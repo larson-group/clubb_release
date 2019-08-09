@@ -375,7 +375,7 @@ module advance_helper_module
     logical, parameter :: &
       l_Cx_fnc_Richardson_vert_avg = .false.,& ! Vertically average Cx_fnc_Richardson over a
                                         !  distance of Lscale
-      l_Richardson_vert_avg = .true. , & ! Vertically average Richardson_num over a
+      l_Richardson_vert_avg = .false. , & ! Vertically average Richardson_num over a
                                          !  distance of Lscale
       l_use_shear_turb_freq_sqd = .false.! Use turb_freq_sqd and shear_sqd in denominator of
                                          !  Richardson_num
@@ -461,8 +461,12 @@ module advance_helper_module
     end if
 
     ! Cx_fnc_Richardson is interpolated based on the value of Richardson_num
+    ! The min function ensures that Cx does not exceed Cx_max, regardless of the
+    !     value of Richardson_num_max.
     Cx_fnc_Richardson = linear_interp_factor( &
-                        (Richardson_num-Richardson_num_min) * invrs_min_max_diff , Cx_max, Cx_min )
+                        ( min(Richardson_num_max,Richardson_num)-Richardson_num_min ) &
+                             * invrs_min_max_diff, &
+                          Cx_max, Cx_min )
 
     if ( l_Cx_fnc_Richardson_vert_avg ) then
       Cx_fnc_Richardson = Lscale_width_vert_avg( Cx_fnc_Richardson, Lscale_zm, rho_ds_zm, &
