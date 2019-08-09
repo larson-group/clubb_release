@@ -61,6 +61,7 @@ class PyPlotGen:
         self.diff = diff
         self.nc_datasets = None
         self.data_reader = DataReader()
+        self.diff_files_data_reader = DataReader()
         self.sam_data_reader = DataReader()
 
     def run(self):
@@ -71,7 +72,7 @@ class PyPlotGen:
         self.nc_datasets = self.data_reader.loadFolder(self.input_folder)
         diff_datasets = None
         if self.diff is not None:
-            diff_datasets = self.data_reader.loadFolder(self.diff)
+            diff_datasets = self.diff_files_data_reader.loadFolder(self.diff)
         all_cases = Case_definitions.ALL_CASES
 
         # TODO Handle dataset not found/partial nc output

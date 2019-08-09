@@ -7,6 +7,9 @@ from pyplotgen.VariableGroupWs import VariableGroupWs
 
 sam_output_root = "/home/strike/sam_benchmark_runs"
 
+# the 'name' parameter must be the same as the filename without the extention.
+#   E.g. to use lba_zt.nc and lba_zm.nc the case's name must be 'lba'
+
 ARM = {'name': 'arm', 'start_time': 481, 'end_time': 540, 'height_min_value': 0, 'height_max_value': 3500, 'enabled': True, 'disable_budgets': False,
        'blacklisted_vars': [], 'sam_file': sam_output_root + "/JULY_2017/ARM_96x96x110/GCSSARM_96x96x110_67m_40m_1s.nc",
        'var_groups': [VariableGroupBase]}
@@ -162,4 +165,4 @@ ALL_CASES = [ARM, ARM_97, ASTEX_A209, ATEX, BOMEX, CGILS_S6, CGILS_S11, CGILS_S1
              DYCOMS2_RF02_DO, DYCOMS2_RF02_DS, DYCOMS2_RF02_ND, DYCOMS2_RF02_SO, FIRE, GABLS2, GABLS3, GABLS3_NIGHT, JUN25_ALTOCU, LBA, MC3E,
              MPACE_A, MPACE_B, MPACE_B_SILHS, NOV11_ALTOCU, RICO, TWP_ICE, WANGARA]
 
-ALL_CASES = [ARM_97]
+# ALL_CASES = [ARM_97]

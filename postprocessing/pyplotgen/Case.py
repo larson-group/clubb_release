@@ -1,6 +1,9 @@
 import math
 
+import numpy as np
+
 from pyplotgen.DataReader import DataReader
+from pyplotgen.Panel import Panel
 from pyplotgen.VariableGroupBaseBudgets import VariableGroupBaseBudgets
 
 
@@ -48,28 +51,62 @@ class Case:
             for idx in range(len(self.panels)):
                 regular_panel = self.panels[idx]
                 diff_panel = self.diff_panels[idx]
-                diff_lines = self.getDiffLinesBetweenPanels(regular_panel, diff_panel)
+                diff_on_y = False
+                if regular_panel.panel_type == Panel.TYPE_TIMESERIES:
+                    diff_on_y = True
+                diff_lines = self.getDiffLinesBetweenPanels(regular_panel, diff_panel, get_y_diff=diff_on_y)
                 self.panels[idx].all_plots = diff_lines
 
         if self.plot_budgets:
             budget_variables = VariableGroupBaseBudgets(self.ncdf_datasets, self)
             self.panels.extend(budget_variables.panels)
 
-    def getDiffLinesBetweenPanels(self, panelA, panelB, get_y_diff_instead = False):
+    def getDiffLinesBetweenPanels(self, panelA, panelB, get_y_diff = False):
         '''
 
         :param panelA:
         :param panelB:
         :return:
         '''
-        diff_lines = []
         linesA = panelA.all_plots
         linesB = panelB.all_plots
         newLines = linesA
         for idx in range(len(linesA)):
-            diff_line = abs( linesA[idx].x - linesB[idx].x)
-            newLines[idx].x = (diff_line)
+            if get_y_diff:
+                a_data = linesA[idx].y
+                b_data = linesB[idx].y
+                diff_line_data = self.__getArrayDiff__(a_data, b_data)
+                newLines[idx].y = (diff_line_data)
+            else:
+                a_data = linesA[idx].x
+                b_data = linesB[idx].x
+                diff_line_data = self.__getArrayDiff__(a_data, b_data)
+                newLines[idx].x = (diff_line_data)
         return newLines
+
+    def __getArrayDiff__(self, arrA, arrB):
+        '''
+        Returns an array containing the difference between the two arrays.
+        arrB is subtracted from arrA and the values are NOT given as absolute value.
+        If one array has fewer entries than another, the value of the longer array will be
+        appended (i.e. this uses the fill-zeros philosophy).
+
+        :param arrA: The first array (usually contains larger values)
+        :param arrB: The second array (usually contains smaller values)
+        :return: a numpy array containing arrA - arrB
+        '''
+
+        # Fill zeros on smallest array
+        zerosA = [0 for i in range(len(arrA), len(arrB))]
+        zerosB = [0 for i in range(len(arrB), len(arrA))]
+        arrA = np.append(arrA, zerosA)
+        arrB = np.append(arrB, zerosB)
+
+        diff_line = arrA - arrB
+        diff_line = [abs(value) for value in diff_line] # ensure every difference is positive
+        diff_line = np.asarray(diff_line)
+        return diff_line
+
 
     def plot(self, output_folder, replace_images = False, no_legends = False, thin_lines = False):
         '''
