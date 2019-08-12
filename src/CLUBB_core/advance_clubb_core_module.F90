@@ -351,7 +351,8 @@ module advance_clubb_core_module
         advance_xp3    ! Procedure(s)
 
     use calc_pressure, only: &
-        update_pressure    ! Procedure(s)
+        update_pressure, & ! Procedure(s)
+        calculate_thvm
 
     use clubb_precision, only:  &
         core_rknd ! Variable(s)
@@ -1078,12 +1079,11 @@ module advance_clubb_core_module
     ! Smooth again as above
     wp3_on_wp2_zt = zm2zt( wp3_on_wp2 )
 
-      !----------------------------------------------------------------
-      ! Compute thvm
-      !----------------------------------------------------------------
+    !----------------------------------------------------------------
+    ! Compute thvm
+    !----------------------------------------------------------------
 
-      thvm = thlm + ep1 * thv_ds_zt * rtm &
-                  + ( Lv/(Cp*exner) - ep2 * thv_ds_zt ) * rcm
+    thvm = calculate_thvm( thlm, rtm, rcm, exner, thv_ds_zt )
 
       !----------------------------------------------------------------
       ! Compute tke (turbulent kinetic energy)
