@@ -52,8 +52,8 @@ NETCDF="/usr/local/netcdf-gfortran" # RHEL5
 #LAPACK="-llapack -lblas" # The netlib reference LAPACK/BLAS
 #LAPACK="-L/usr/lib64 -llapack -L/usr/local/atlas/lib -lf77blas -lcblas -latlas" # ATLAS BLAS (faster)
 #LAPACK="-L/usr/lib/atlas-sse3 -llapack -lf77blas -lcblas -latlas" # Fedora 11 setup
-ACML="/opt/acml4.4.0/gfortran64/lib"
-LAPACK="-L$ACML -lacml -lacml_mv -Wl,-rpath $ACML" # AMD Core Math Library
+#ACML="/opt/acml4.4.0/gfortran64/lib"
+#LAPACK="-L$ACML -lacml -lacml_mv -Wl,-rpath $ACML" # AMD Core Math Library
 
 # == Linking Flags ==
 # Use -s to strip (no debugging); 
