@@ -35,7 +35,7 @@ module calc_pressure
     !
     ! The value of mean theta_v (thvm) is calculated at each thermodynamic grid
     ! level, and linear interpolation is used in the integral equation for all
-    ! altitude in-between successive thermodynamic levels, such that:
+    ! altitudes in-between successive thermodynamic levels, such that:
     !
     ! thvm(z) = ( ( thvm2 - thvm1 ) / ( z2 - z1 ) ) * ( z - z1 ) + thvm1.
     !
@@ -128,10 +128,9 @@ module calc_pressure
 
     integer :: k  ! Vertical level index
 
-    ! ---- Begin code ----
 
     ! Calculate thvm on thermodynamic grid levels.
-    thvm = calculate_thvm( thlm, rtm, rcm, exner, thv_ds_zt )
+    thvm = calculate_thvm( gr%nz, thlm, rtm, rcm, exner, thv_ds_zt )
 
     ! Interpolate thvm to momentum grid levels.
     thvm_zm = zt2zm( thvm )
@@ -477,7 +476,7 @@ module calc_pressure
   end subroutine init_pressure
 
   !=============================================================================
-  function calculate_thvm( thlm, rtm, rcm, exner, thv_ds_zt ) &
+  function calculate_thvm( nz, thlm, rtm, rcm, exner, thv_ds_zt ) &
   result( thvm )
 
     ! Description:
@@ -486,9 +485,6 @@ module calc_pressure
 
     ! References:
     !-----------------------------------------------------------------------
-
-    use grid_class, only: &
-        gr    ! Variable Type(s)
 
     use constants_clubb, only: &
         Lv,  & ! Latent Heat of Vaporizaion    [J/kg]
@@ -502,7 +498,10 @@ module calc_pressure
     implicit none
 
     ! Input Variables
-    real( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
+    integer, intent(in) :: &
+      nz    ! Number of vertical levels
+
+    real( kind = core_rknd ), dimension(nz), intent(in) :: &
       thlm,      & ! Mean theta_l (thermodynamic levels)          [K]
       rtm,       & ! Mean total water (thermodynamic levels)      [kg/kg]
       rcm,       & ! Mean cloud water (thermodynamic levels)      [kg/kg]
@@ -510,7 +509,7 @@ module calc_pressure
       thv_ds_zt    ! Reference theta_v on thermodynamic levels    [K]
 
     ! Return Variable
-    real( kind = core_rknd ), dimension(gr%nz) :: &
+    real( kind = core_rknd ), dimension(nz) :: &
       thvm    ! Mean theta_v (thermodynamic levels)    [K]
 
 

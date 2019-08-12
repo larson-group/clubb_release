@@ -10,7 +10,8 @@ module hydrostatic_module
   public :: hydrostatic, &
             inverse_hydrostatic
 
-  private :: calc_z_linear_thvm
+  private :: calc_ref_z_linear_thvm,     &
+             calc_ref_z_sfc_linear_thvm
 
   contains
 
@@ -190,9 +191,7 @@ module hydrostatic_module
     real( kind = core_rknd ) ::  &
       exner_sfc,    & ! Value of exner at the surface                    [-]
       ref_z_sfc,    & ! Alt. diff between surface and lowest snd. level  [m]
-      z_snd_bottom, & ! Altitude of the bottom of the input sounding     [m]
-      dthvm_dexner    ! Constant rate of change of thvm with respect to
-    ! exner between sounding levels k-1 and k          [K]
+      z_snd_bottom    ! Altitude of the bottom of the input sounding     [m]
 
     integer ::  &
       rev_low_idx, &
@@ -212,21 +211,13 @@ module hydrostatic_module
 
     do k = 2, nlevels
 
-      ! The value of thvm is given at two successive sounding levels.  For
-      ! purposes of achieving a quality estimate of altitude at each pressure
-      ! sounding level, the value of thvm is considered to vary linearly
-      ! with respect to exner between two successive sounding levels.  Thus,
-      ! there is a constant d(thvm)/d(exner) between the two successive
-      ! sounding levels.  If thvm is constant, then d(thvm)/d(exner) is 0.
-      dthvm_dexner = ( thvm(k) - thvm(k-1) ) / ( exner(k) - exner(k-1) )
-
       ! Calculate the value of the reference height at sounding level k, based
-      ! the value of thvm at sounding level k-1, the constant value of
-      ! d(thvm)/d(exner), the value of exner at sounding levels k-1 and k, and
-      ! the reference altitude at sounding level k-1.
+      ! the value of thvm at sounding levels k-1 and k, the value of exner at
+      ! sounding levels k-1 and k, and the reference altitude at sounding level
+      ! k-1.
       ref_z_snd(k) &
-      = calc_z_linear_thvm( thvm(k-1), dthvm_dexner, &
-                            exner(k-1), exner(k), ref_z_snd(k-1) )
+      = calc_ref_z_linear_thvm( thvm(k-1), thvm(k), &
+                                exner(k-1), exner(k), ref_z_snd(k-1) )
 
     enddo
 
@@ -264,14 +255,11 @@ module hydrostatic_module
       ! sounding that gr%zt(2) is below the first sounding level, the code in
       ! subroutine read_sounding (found in sounding.F90) will stop the run.
 
-      ! Calculate the appropriate d(thvm)/d(exner).
-      dthvm_dexner = ( thvm(2) - thvm(1) ) / ( exner(2) - exner(1) )
-
       ! Calculate the difference between the altitude of the surface (or model
       ! lower boundary) and the altitude of the lowest level of the sounding.
       ref_z_sfc  &
-      = calc_z_linear_thvm( thvm(1), dthvm_dexner, &
-                            exner(1), exner_sfc, ref_z_snd(1) )
+      = calc_ref_z_sfc_linear_thvm( thvm(1), thvm(2), z(1), z(2), &
+                                 exner(1), exner_sfc )
 
     else  ! exner(nlevels) < exner_sfc < exner(1)
 
@@ -309,15 +297,12 @@ module hydrostatic_module
       ! Find the index of the upper level.
       high_idx = low_idx + 1
 
-      ! Calculate the appropriate d(thvm)/d(exner).
-      dthvm_dexner = ( thvm(high_idx) - thvm(low_idx) )  &
-                       /  ( exner(high_idx) - exner(low_idx) )
-
       ! Calculate the difference between the altitude of the surface (or model
       ! lower boundary) and the altitude of the lowest level of the sounding.
       ref_z_sfc  &
-      = calc_z_linear_thvm( thvm(low_idx), dthvm_dexner, &
-                            exner(low_idx), exner_sfc, ref_z_snd(low_idx) )
+      = calc_ref_z_sfc_linear_thvm( thvm(low_idx), thvm(high_idx), &
+                                    ref_z_snd(low_idx), ref_z_snd(high_idx), &
+                                    exner(low_idx), exner_sfc )
 
     endif  ! exner_sfc
 
@@ -332,12 +317,13 @@ module hydrostatic_module
 
 
     return
+
   end subroutine inverse_hydrostatic
 
 !===============================================================================
-  pure function calc_z_linear_thvm( thvm_km1, dthvm_dexner, &
-                                    exner_km1, exner_2, z_km1 ) &
-  result( z_2 )
+  pure function calc_ref_z_linear_thvm( thvm_km1, thvm_k, &
+                                        exner_km1, exner_k, z_km1 ) &
+  result( z_k )
 
     ! Description:
     ! This function solves for z (altitude) at a level, given altitude at
@@ -350,100 +336,27 @@ module hydrostatic_module
     !
     ! This equation is integrated to solve for z, such that:
     !
-    ! INT(exner_1:exner_2) thvm d(exner) = - ( grav / Cp ) INT(z_1:z_2) dz.
+    ! INT(exner_1:exner_2) d(exner) = - ( grav / Cp ) INT(z_1:z_2) (1/thvm) dz.
     !
-    ! The value of thvm is considered to vary linearly (with respect to exner)
-    ! over the depth of the level (resulting in a constant d(thvm)/d(exner) over
-    ! the depth of the level).  The entire level between exner_1 and exner_2
-    ! must be encompassed between two levels with two known values of thvm.  The
-    ! value of thvm at the upper level (exner_up) is called thvm_up, and the
-    ! value of thvm at the lower level (exner_low) is called thvm_low.  Again,
-    ! the values of thvm at all interior exner levels,
-    ! exner_low >= exner_1 > exner >= exner_2 >= exner_up, behave linearly
-    ! between thvm_low and thvm_up, such that:
+    ! The value of mean theta_v (thvm) is calculated at each level, and linear
+    ! interpolation is used in the integral equation for all altitudes
+    ! in-between successive levels, such that:
     !
-    ! thvm(exner)
-    ! = [ ( thvm_up - thvm_low ) / ( exner_up - exner_low ) ]
-    !     * ( exner - exner_low )
-    !   + thvm_low
-    ! = [ d(thvm)/d(exner) ] * ( exner - exner_low ) + thvm_low
-    ! = C_a*z + C_b;
+    ! thvm(z) = ( ( thvm2 - thvm1 ) / ( z2 - z1 ) ) * ( z - z1 ) + thvm1.
     !
-    ! where:
+    ! The integrals are solved, and the equation can be solved for the thickness
+    ! z2 - z1, such that:
     !
-    ! C_a
-    ! = ( thvm_up - thvm_low ) / ( exner_up - exner_low )
-    ! = d(thvm)/d(exner);
-    !
-    ! and:
-    !
-    ! C_b
-    ! = thvm_low
-    !   - [ ( thvm_up - thvm_low ) / ( exner_up - exner_low ) ] * exner_low
-    ! = thvm_low - [ d(thvm)/d(exner) ] * exner_low.
-    !
-    ! The integral becomes:
-    !
-    ! INT(exner_1:exner_2) ( C_a*exner + C_b ) d(exner)
-    ! = - ( grav / Cp ) INT(z_1:z_2) dz.
-    !
-    ! Solving the integral:
-    !
-    ! z_2
-    ! = z_1
-    !   - ( Cp / grav )
-    !     * [    (1/2) * {d(thvm)/d(exner)} * ( {exner_2}^2 - {exner_1}^2 )
-    !          + ( thvm_low - {d(thvm)/d(exner)} * exner_low )
-    !            * ( exner_2 - exner_1 )  ].
-    !
-    ! This equation is used to calculate z_2 using z_1, which is at the same
-    ! level as exner_1.  Furthermore, thvm_low and exner_low are taken from the
-    ! same level as exner_1 and z_1.  Thus, exner_1 = exner_low.  Therefore:
-    !
-    ! z_2
-    ! = z_low
-    !   - ( Cp / grav )
-    !     * [    (1/2) * {d(thvm)/d(exner)} * ( {exner_2}^2 - {exner_low}^2 )
-    !          + ( thvm_low - {d(thvm)/d(exner)} * exner_low )
-    !            * ( exner_2 - exner_low )  ].
-    !
-    ! Considering a sounding level k-1 as the low level in the integration, and
-    ! that thvm varies linearly (with respect to exner) between level k-1 and
-    ! level k:
-    !
-    ! z_2
-    ! = z(k-1)
-    !   - ( Cp / grav )
-    !     * [    (1/2) * {d(thvm)/d(exner)} * ( {exner_2}^2 - {exner(k-1)}^2 )
-    !          + ( thvm(k-1) - {d(thvm)/d(exner)} * exner(k-1) )
-    !            * ( exner_2 - exner(k-1) )  ];
-    !
-    ! where:
-    !
-    ! d(thvm)/d(exner)
-    ! = ( thvm(k) - thvm(k-1) ) / ( exner(k) - exner(k-1) );
-    !
-    ! and where exner(k-1) > exner_2 >= exner(k).  If the value of
-    ! d(thvm)/d(exner) is 0, then thvm is considered to be a constant over the
-    ! depth of the level, and the equation will reduce to:
-    !
-    ! z_2 = z(k-1) - ( Cp / grav ) * thvm(k-1) * ( exner_2 - exner(k-1) ).
-    !
-    !
-    ! IMPORTANT NOTE:
-    !
-    ! CLUBB is an altitude-based model.  All linear interpolations (and
-    ! extensions) are based on considering a variable to change linearly with
-    ! respect to altitude, rather than with respect to exner.  An exception is
-    ! made here to calculate the altitude of a sounding level based on a
-    ! sounding given in terms of a pressure coordinate rather than a height
-    ! coordinate.  After the altitude of the sounding level has been calculated,
-    ! the values of the sounding variables are interpolated onto the model grid
-    ! linearly with respect to altitude.  Therefore, considering a variable to
-    ! change linearly with respect to exner is not consistent with the rest of
-    ! the model code, but provides for a better estimation of the altitude of
-    ! the sounding levels (than simply considering thvm to be constant over the
-    ! depth of the sounding level).
+    ! z2 - z1
+    !   | - ( Cp / grav )
+    !   |   * ( exner2 - exner1 ) * ( thvm2 - thvm1 ) / ln( thvm2 / thvm1 );
+    ! = | where thvm2 /= thvm1;
+    !   |
+    !   | - ( Cp / grav ) * ( exner2 - exner1 ) * thvm;
+    !   | where thvm2 = thvm1 (= thvm).
+    ! 
+    ! The value of height (z) can be calculated using the above equation at all
+    ! levels once the value of height is known at one level.
 
     ! References:
     !-------------------------------------------------------------------
@@ -459,26 +372,137 @@ module hydrostatic_module
 
     ! Input Variables
     real( kind = core_rknd ), intent(in) :: &
-      thvm_km1,     & ! Value of thvm at sounding level k-1                 [K]
-      dthvm_dexner, & ! Constant d(thvm)/d(exner) between levels k-1 and k  [K]
-      exner_km1,    & ! Value of exner at sounding level k-1                [-]
-      exner_2,      & ! Value of exner at the top of the layer              [-]
-      z_km1           ! Altitude at sounding level k-1                      [m]
+      thvm_km1,  & ! Value of thvm at sounding level k-1      [K]
+      thvm_k,    & ! Value of thvm at sounding level k        [K]
+      exner_km1, & ! Value of exner at sounding level k-1     [-]
+      exner_k,   & ! Value of exner at sounding level k       [-]
+      z_km1        ! Altitude at sounding level k-1           [m]
 
     ! Return Variable
-    real( kind = core_rknd ) :: z_2       ! Altitude at the top of the layer                    [m]
+    real( kind = core_rknd ) :: z_k   ! Altitude at sounding level k     [m]
 
-    ! Calculate z_2 at the top of the layer.
-    z_2  &
-    = z_km1  &
-      - ( Cp / grav )  &
-        * (   0.5_core_rknd * dthvm_dexner * ( exner_2**2 - exner_km1**2 )  &
-            + ( thvm_km1 - dthvm_dexner * exner_km1 )  &
-              * ( exner_2 - exner_km1 )  &
-          )
+    ! Calculate z at sounding level k.
+    if ( abs( thvm_k - thvm_km1 ) > epsilon( thvm_k ) * thvm_k ) then
+
+       z_k &
+       = z_km1 &
+         - ( Cp / grav ) * ( exner_k - exner_km1 ) * ( thvm_k - thvm_km1 ) &
+           / log( thvm_k / thvm_km1 )
+
+    else ! thvm_k = thvm_km1
+
+       z_k = z_km1 - ( Cp / grav ) * ( exner_k - exner_km1 ) * thvm_k
+
+    endif
+
 
     return
-  end function calc_z_linear_thvm
+
+  end function calc_ref_z_linear_thvm
+
+!===============================================================================
+  pure function calc_ref_z_sfc_linear_thvm( thvm_km1, thvm_k, z_km1, z_k, &
+                                            exner_km1, exner_sfc ) &
+  result( ref_z_sfc )
+
+    ! Description:
+    ! This function solves for the difference between the altitude of the model
+    ! lower boundary and the altitude of a sounding level.  Since the altitude
+    ! of the model lower boundary is known, this routine allows the actual
+    ! altitude of a sounding level to be calculated.  Once a sounding level
+    ! altitude is known, the altitudes of the remaining sounding levels can also
+    ! be calculated.
+    !
+    ! The derivative of exner is given by the following equation:
+    !
+    ! d(exner)/dz = - grav / (Cp * thvm).
+    !
+    ! This equation is integrated to solve for ref_z_sfc, such that:
+    !
+    ! INT(exner1:exner_sfc) d(exner)
+    ! = - ( grav / Cp ) INT(z1:ref_z_sfc) (1/thvm) dz;
+    !
+    ! where exner1 and z1 are exner and altitude, respectively, at a sounding
+    ! level, exner_sfc is surface exner (calculated from surface pressure), and
+    ! ref_z_sfc is the height of the surface relative to sounding level z1.  
+    !
+    ! The value of mean theta_v (thvm) is calculated at each level, and linear
+    ! interpolation is used in the integral equation for all altitudes
+    ! in-between successive levels, such that:
+    !
+    ! thvm(z) = ( ( thvm2 - thvm1 ) / ( z2 - z1 ) ) * ( z - z1 ) + thvm1.
+    !
+    ! In the above equation, z2 - z1 is the thickness between two sounding
+    ! levels (which has already been calculated), and thvm1 and thvm2 are the
+    ! values of thvm at those two sounding levels.  The thickness z - z1 is
+    ! the difference between altitude z and the sounding level z1.
+    !
+    ! The integrals are solved, and the equation can be solved for ref_z_sfc,
+    ! such that:
+    !
+    ! ref_z_sfc
+    !   | ( ( z2 - z1 ) / ( thvm2 - thvm1 ) )
+    !   | * ( thvm1 * exp{ - ( Cp / grav ) * ( exner_sfc - exner1 )
+    !   |                    * ( ( thvm2 - thvm1 ) / ( z2 - z1 ) ) }
+    ! = |     - thvm1 + ( ( thvm2 - thvm1 ) / ( z2 - z1 ) ) * z1 );
+    !   | where thvm2 /= thvm1;
+    !   |
+    !   | z1 - ( Cp / grav ) * ( exner2 - exner1 ) * thvm;
+    !   | where thvm2 = thvm1 (= thvm).
+    ! 
+    ! Prior to calculating ref_z_sfc, the thickness between all sounding levels
+    ! were already calculated.  The calculation of ref_z_sfc allows for the
+    ! difference between the surface and a sounding level to be calculated
+    ! (ref_z_sfc - z1).  Since the altitude of the surface is already provided
+    ! (zm_init), the ref_z_sfc - z1 calculation allows for the calculation of
+    ! the altitude of a sounding level.  Once the altitude of a sounding level
+    ! is calculated, the altitude of all other sounding levels are known, since
+    ! the thicknesses between all sounding levels were already calculated.
+
+    ! References:
+    !-------------------------------------------------------------------
+
+    use clubb_precision, only: &
+        core_rknd ! Variable(s)
+
+    use constants_clubb, only: &
+        grav,  & ! Gravitational acceleration                   [m/s^2]
+        Cp       ! Specific heat of dry air at const. pressure  [J/(kg*K)]
+
+    implicit none
+
+    ! Input Variables
+    real( kind = core_rknd ), intent(in) :: &
+      thvm_km1,  & ! Value of thvm at sounding level k-1          ` [K]
+      thvm_k,    & ! Value of thvm at sounding level k              [K]
+      z_km1,     & ! Reference altitude at sounding level k-1       [m]
+      z_k,       & ! Reference altitude at sounding level k         [m]
+      exner_km1, & ! Value of exner at sounding level k-1           [-]
+      exner_sfc    ! Value of exner at the surface                  [-]
+
+    ! Return Variable
+    real( kind = core_rknd ) :: &
+      ref_z_sfc   ! Altitude at of surface compared to sounding level k-1    [m]
+
+    ! Calculate z at sounding level k.
+    if ( abs( thvm_k - thvm_km1 ) > epsilon( thvm_k ) * thvm_k ) then
+
+       ref_z_sfc &
+       = ( ( z_k - z_km1 ) / ( thvm_k - thvm_km1 ) ) &
+         * ( thvm_km1 * exp( - ( Cp / grav ) * ( exner_sfc - exner_km1 ) &
+                               * ( ( thvm_k - thvm_km1 ) / ( z_k - z_km1 ) ) ) &
+             - thvm_km1 + ( ( thvm_k - thvm_km1 ) / ( z_k - z_km1 ) ) * z_km1 )
+
+    else ! thvm_k = thvm_km1
+
+       ref_z_sfc = z_km1 - ( Cp / grav ) * ( exner_sfc - exner_km1 ) * thvm_k;
+
+    endif
+
+
+    return
+
+  end function calc_ref_z_sfc_linear_thvm
 
 !===============================================================================
 

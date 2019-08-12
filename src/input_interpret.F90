@@ -11,18 +11,19 @@ module input_interpret
 
   contains
 
-  !------------------------------------------------------------------------------
-  subroutine read_z_profile( nvar, nsize, retVars, p_sfc, zm_init, z, p_in_Pa, alt_type)
-    !
-    !  Description: Searches for the variable specified by either 'z[m]' or
-    !  'Press[Pa]' in the collection of retVars. If the subroutine finds the
-    !  variable indicated by 'z[m]',
-    !  then it returns it. If the subroutine finds 'Press[Pa]' then it converts
-    !  it to values of altitude in meters.
-    !  If it does not find either or finds both the program using this subroutine
-    !  will exit gracefully with a warning message.
-    !
-    !-------------------------------------------------------------------------------
+  !-----------------------------------------------------------------------------
+  subroutine read_z_profile( nvar, nsize, retVars, p_sfc, zm_init, &
+                             z, p_in_Pa, alt_type )
+
+    ! Description:
+    ! Searches for the variable specified by either 'z[m]' or 'Press[Pa]' in the
+    ! collection of retVars.  If the subroutine finds the variable indicated by
+    ! 'z[m]', then it returns it.  If the subroutine finds 'Press[Pa]' then it
+    ! converts it to values of altitude in meters.  If it does not find either
+    ! or finds both the program using this subroutine will exit gracefully with
+    ! a warning message.
+
+    !-----------------------------------------------------------------------
 
     use input_reader, only: &
         read_x_profile, & ! Prodedure(s)
@@ -33,8 +34,9 @@ module input_interpret
         p0, &
         Cp, &
         Lv, &
+        ep2, &
+        one, &
         zero_threshold, &
-        ep1, &
         fstderr
 
     use saturation, only: &
@@ -43,6 +45,9 @@ module input_interpret
 
     use hydrostatic_module, only: &
         inverse_hydrostatic ! Procedure(s)
+
+    use calc_pressure, only: &
+        calculate_thvm    ! Procedure(s)
 
     use input_names, only: &
         z_name, & ! Variable(s)
@@ -62,15 +67,14 @@ module input_interpret
 
     integer, intent(in) :: nsize
 
-    type(one_dim_read_var), dimension(nvar), intent(in) :: retVars ! Collection
-    !                                                                being searched
+    type(one_dim_read_var), dimension(nvar), intent(in) :: &
+      retVars    ! Collection being searched
 
     real( kind = core_rknd ), intent(in) :: &
-      p_sfc, &         ! Pressure at the surface [Pa]
-      zm_init         ! Height at zm(1)         [m]
+      p_sfc,   & ! Pressure at the surface    [Pa]
+      zm_init    ! Height at zm(1)            [m]
 
     ! Output Variable(s)
-
     real( kind = core_rknd ), intent(out), dimension(nsize) :: &
       z ! Height sounding profile [m]
 
@@ -83,7 +87,13 @@ module input_interpret
     intrinsic :: max
 
     ! Local Variables
-    real( kind = core_rknd ), dimension( nsize ) :: exner, thvm, rcm, theta, rtm
+    real( kind = core_rknd ), dimension( nsize ) :: &
+      exner,   & ! Exner function at sounding levels                    [-]
+      thvm,    & ! Mean theta-v at sounding levels                      [K]
+      rcm,     & ! Mean cloud water mixing ratio at sounding levels     [kg/kg]
+      theta,   & ! Mean potential temperature at sounding levels        [K]
+      rtm,     & ! Mean total water mixing ratio at sounding levels     [kg/kg]
+      thlm       ! Mean liquid water potential temp. at sounding levs.  [K]
 
     integer :: nlevels, k
 
@@ -148,6 +158,11 @@ module input_interpret
            ! Convert temperature to potential temperature, theta.
            theta(1:nlevels) = theta(1:nlevels) / exner(1:nlevels)
 
+           ! Calculate theta_l from theta and cloud water mixing ratio, such
+           ! that:  theta_l = theta - [Lv/(Cp*exner)]*rcm.
+           thlm(1:nlevels) = theta(1:nlevels) &
+                              - Lv/(Cp*exner(1:nlevels)) * rcm(1:nlevels)
+
 
         case ( theta_name )
 
@@ -161,11 +176,17 @@ module input_interpret
                      zero_threshold )
            enddo
 
+           ! Calculate theta_l from theta and cloud water mixing ratio, such
+           ! that:  theta_l = theta - [Lv/(Cp*exner)]*rcm.
+           thlm(1:nlevels) = theta(1:nlevels) &
+                              - Lv/(Cp*exner(1:nlevels)) * rcm(1:nlevels)
+
 
         case ( thetal_name )
 
            ! The variable "theta" actually contains liquid water potential
            ! temperature, theta_l, at this point.
+           thlm(1:nlevels) = theta(1:nlevels)
 
            ! Determine initial cloud water mixing ratio.  If the profile is
            ! unsaturated, then theta = theta_l.  If the profile is saturated at
@@ -173,12 +194,12 @@ module input_interpret
            ! an iterative method involving theta_l, total water mixing ratio,
            ! pressure, and exner.
            do k =1, nlevels, 1
-              rcm(k) = rcm_sat_adj( theta(k), rtm(k), p_in_Pa(k), exner(k) )
+              rcm(k) = rcm_sat_adj( thlm(k), rtm(k), p_in_Pa(k), exner(k) )
            enddo
 
            ! Calculate theta from theta_l and cloud water mixing ratio, such
            ! that:  theta = theta_l + [Lv/(Cp*exner)]*rcm.
-           theta(1:nlevels) = theta(1:nlevels) &
+           theta(1:nlevels) = thlm(1:nlevels) &
                               + Lv/(Cp*exner(1:nlevels)) * rcm(1:nlevels)
 
 
@@ -221,31 +242,24 @@ module input_interpret
         ! To use theta_l instead of theta, simply substitute the following for
         ! theta in the above expression:  theta_l + {L_v/(C_p*exner)} * r_c.
         !
-        ! The CLUBB code generally uses an approximated and linearized version
-        ! of the above equation (in order to calculate thv' terms -- such as
-        ! w'thv', etc.) for theta_v throughout the model code, such that:
+        ! The CLUBB code uses a linearized version of the above equation (in
+        ! order to calculate thv' terms -- such as w'thv', etc.) for theta_v
+        ! throughout the model code, such that:
         !
         ! theta_v = theta_l + { (R_v/R_d) - 1 } * thv_ds * r_t
         !                   + [ {L_v/(C_p*exner)} - (R_v/R_d) * thv_ds ] * r_c;
         !
         ! where thv_ds is used as a reference value to approximate theta_l.
-        ! However, since only the mean value of theta_v (thvm) is desired in
-        ! this subroutine, and since an accurate calculation is desired due to
-        ! the fact that the model initial sounding depends on this calculation
-        ! of thvm, the exact version is used in this subroutine.
-        do k = 1, nlevels, 1
-           thvm(k) &
-           = theta(k) &
-             * ( 1.0_core_rknd &
-                 + ep1 * ( max( rtm(k) - rcm(k), zero_threshold ) &
-                               / ( 1.0_core_rknd + rtm(k) ) ) &
-                 - ( rcm(k) / ( 1.0_core_rknd + rtm(k) ) ) &
-               )
-        enddo
+        thvm(1:nlevels) &
+        = calculate_thvm( nlevels, thlm(1:nlevels), rtm(1:nlevels), &
+                          rcm(1:nlevels), exner(1:nlevels), &
+                          theta(1:nlevels) &
+                          * ( one + ep2 * ( rtm(1:nlevels) &
+                                            - rcm(1:nlevels) ) )**kappa )
 
         ! Find the altitudes, z, of the pressure sounding levels.
-        call inverse_hydrostatic ( p_sfc, zm_init, nlevels, thvm, exner, &
-                                   z )
+        call inverse_hydrostatic( p_sfc, zm_init, nlevels, thvm, exner, &
+                                  z )
 
 
       else
@@ -258,7 +272,7 @@ module input_interpret
     endif
 
   end subroutine read_z_profile
-  !-------------------------------------------------------------------------------------------------
+  !-----------------------------------------------------------------------------
   subroutine read_theta_profile( nvar, nsize, retVars, theta_type, theta )
     !
     !  Description: Searches for the variable specified by either 'thetal[K]' or 'theta[K]' in the
