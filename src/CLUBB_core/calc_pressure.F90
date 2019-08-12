@@ -130,7 +130,7 @@ module calc_pressure
 
 
     ! Calculate thvm on thermodynamic grid levels.
-    thvm = calculate_thvm( gr%nz, thlm, rtm, rcm, exner, thv_ds_zt )
+    thvm = calculate_thvm( thlm, rtm, rcm, exner, thv_ds_zt )
 
     ! Interpolate thvm to momentum grid levels.
     thvm_zm = zt2zm( thvm )
@@ -476,7 +476,7 @@ module calc_pressure
   end subroutine init_pressure
 
   !=============================================================================
-  function calculate_thvm( nz, thlm, rtm, rcm, exner, thv_ds_zt ) &
+  elemental function calculate_thvm( thlm, rtm, rcm, exner, thv_ds_zt ) &
   result( thvm )
 
     ! Description:
@@ -498,10 +498,7 @@ module calc_pressure
     implicit none
 
     ! Input Variables
-    integer, intent(in) :: &
-      nz    ! Number of vertical levels
-
-    real( kind = core_rknd ), dimension(nz), intent(in) :: &
+    real( kind = core_rknd ), intent(in) :: &
       thlm,      & ! Mean theta_l (thermodynamic levels)          [K]
       rtm,       & ! Mean total water (thermodynamic levels)      [kg/kg]
       rcm,       & ! Mean cloud water (thermodynamic levels)      [kg/kg]
@@ -509,7 +506,7 @@ module calc_pressure
       thv_ds_zt    ! Reference theta_v on thermodynamic levels    [K]
 
     ! Return Variable
-    real( kind = core_rknd ), dimension(nz) :: &
+    real( kind = core_rknd ) :: &
       thvm    ! Mean theta_v (thermodynamic levels)    [K]
 
 

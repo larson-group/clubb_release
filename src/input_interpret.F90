@@ -251,7 +251,7 @@ module input_interpret
         !
         ! where thv_ds is used as a reference value to approximate theta_l.
         thvm(1:nlevels) &
-        = calculate_thvm( nlevels, thlm(1:nlevels), rtm(1:nlevels), &
+        = calculate_thvm( thlm(1:nlevels), rtm(1:nlevels), &
                           rcm(1:nlevels), exner(1:nlevels), &
                           theta(1:nlevels) &
                           * ( one + ep2 * ( rtm(1:nlevels) &

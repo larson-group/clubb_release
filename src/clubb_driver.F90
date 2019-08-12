@@ -2715,7 +2715,7 @@ module clubb_driver
     !                   + [ {L_v/(C_p*exner)} - (R_v/R_d) * thv_ds ] * r_c;
     !
     ! where thv_ds is used as a reference value to approximate theta_l.
-    thvm = calculate_thvm( gr%nz, thlm, rtm, rcm, exner, &
+    thvm = calculate_thvm( thlm, rtm, rcm, exner, &
                            thm * ( one + ep2 * ( rtm - rcm ) )**kappa )
 
     ! Recompute more accurate initial exner function, pressure, and density
