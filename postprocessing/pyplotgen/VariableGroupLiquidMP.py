@@ -3,10 +3,10 @@
 :date: Mid 2019
 '''
 
-from pyplotgen.DataReader import NetCdfVariable
-from pyplotgen.Panel import Panel
-from pyplotgen.VariableGroup import VariableGroup
-from pyplotgen.Line import Line
+from DataReader import NetCdfVariable
+from Panel import Panel
+from VariableGroup import VariableGroup
+from Line import Line
 
 
 class VariableGroupLiquidMP(VariableGroup):

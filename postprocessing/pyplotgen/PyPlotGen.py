@@ -8,11 +8,12 @@ Author: Nicolas Strike
 Date: Jan 2019
 '''
 import argparse
+import os
 import subprocess
 
-from pyplotgen import Case_definitions
-from pyplotgen.Case import Case
-from pyplotgen.DataReader import DataReader
+import Case_definitions
+from Case import Case
+from DataReader import DataReader
 
 
 class PyPlotGen:
@@ -75,6 +76,13 @@ class PyPlotGen:
             diff_datasets = self.diff_files_data_reader.loadFolder(self.diff)
         all_cases = Case_definitions.ALL_CASES
 
+        # Ensure SAM output is available
+        print("Checking for SAM output...")
+        if not os.path.isfile(Case_definitions.SAM_OUTPUT_ROOT) and not os.path.islink(Case_definitions.SAM_OUTPUT_ROOT):
+            print("Sam output was not found in " + Case_definitions.SAM_OUTPUT_ROOT + ", downloading now.")
+            subprocess.run(['git', 'clone', 'https://carson.math.uwm.edu/sam_benchmark_runs.git'])  # Use sigal to build html in '_build/'
+        else:
+            print("Sam output found in " + Case_definitions.SAM_OUTPUT_ROOT)
         # TODO Handle dataset not found/partial nc output
         for case_def in all_cases:
             print('###########################################')

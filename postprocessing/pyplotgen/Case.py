@@ -2,9 +2,9 @@ import math
 
 import numpy as np
 
-from pyplotgen.DataReader import DataReader
-from pyplotgen.Panel import Panel
-from pyplotgen.VariableGroupBaseBudgets import VariableGroupBaseBudgets
+from DataReader import DataReader
+from Panel import Panel
+from VariableGroupBaseBudgets import VariableGroupBaseBudgets
 
 
 class Case:

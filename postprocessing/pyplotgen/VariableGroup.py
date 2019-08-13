@@ -7,9 +7,9 @@ from _warnings import warn
 
 from netCDF4._netCDF4 import Dataset
 
-from pyplotgen.Panel import Panel
-from pyplotgen.DataReader import DataReader, NetCdfVariable
-from pyplotgen.Line import Line
+from Panel import Panel
+from DataReader import DataReader, NetCdfVariable
+from Line import Line
 
 
 class VariableGroup:

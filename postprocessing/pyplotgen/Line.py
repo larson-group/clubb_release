@@ -1,4 +1,4 @@
-from pyplotgen.DataReader import NetCdfVariable
+from DataReader import NetCdfVariable
 
 
 class Line:

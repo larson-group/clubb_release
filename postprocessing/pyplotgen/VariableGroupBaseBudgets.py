@@ -3,9 +3,9 @@
 :date: Mid 2019
 '''
 
-from pyplotgen.Panel import Panel
-from pyplotgen.VariableGroup import VariableGroup
-from pyplotgen.Line import Line
+from Panel import Panel
+from VariableGroup import VariableGroup
+from Line import Line
 
 
 class VariableGroupBaseBudgets(VariableGroup):
