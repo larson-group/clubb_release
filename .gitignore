@@ -1,0 +1,5 @@
+output/
+bin/
+lib/
+obj/
+**/.idea
