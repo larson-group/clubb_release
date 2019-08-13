@@ -3,3 +3,4 @@ bin/
 lib/
 obj/
 **/.idea
+postprocessing/pyplotgen/sam_benchmark_runs
