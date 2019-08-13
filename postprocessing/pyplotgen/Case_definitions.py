@@ -63,7 +63,7 @@ CLEX9_OCT14 = {'name': 'clex9_oct14', 'start_time': 181, 'end_time': 240, 'heigh
 
 DYCOMS2_RF01 = {'name': 'dycoms2_rf01', 'start_time': 181, 'end_time': 240, 'height_min_value': 0, 'height_max_value': 1200, 'enabled': True, 'disable_budgets': False,
                 'blacklisted_vars': [],
-                'sam_file': SAM_OUTPUT_ROOT + "/JULY_2017/DYCOMS_RF01_96x96x320",
+                'sam_file': SAM_OUTPUT_ROOT + "/JULY_2017/DYCOMS_RF01_96x96x320/DYCOMS_RF01_96x96x320.nc",
                 'var_groups': [VariableGroupBase, VariableGroupWs]}
 
 DYCOMS2_RF01_FIXED_SST = {'name': 'dycoms2_rf01_fixed_sst', 'start_time': 2520, 'end_time': 2700, 'height_min_value': 0, 'height_max_value': 1200,
