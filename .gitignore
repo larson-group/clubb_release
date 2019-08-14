@@ -3,4 +3,5 @@ bin/
 lib/
 obj/
 **/.idea
-postprocessing/pyplotgen/sam_benchmark_runs
+postprocessing/pyplotgen/les_and_clubb_benchmark_runs
+
