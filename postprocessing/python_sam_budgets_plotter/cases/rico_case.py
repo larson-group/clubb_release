@@ -22,10 +22,10 @@ nz = 100
 dxy = 100             # [m]
 dz = 40               # [m]
 dt = 1                # [s]
-startTime = 181.0     # [minutes]
-endTime = 360.0       # [minutes]
+startTime = 2000.0     # [minutes]
+endTime = 2500.0       # [minutes]
 startHeight = 0.0     # [m]
-endHeight = 2500.0    # [m]
+endHeight = 4000.0    # [m]
 time_3d = 259200.0    # dt
 
 # run entry for header in html file

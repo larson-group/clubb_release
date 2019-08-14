@@ -162,7 +162,7 @@ plotNames = [\
                 [r"Weighted $\overline{w's_L'}^\mathrm{cld}, \overline{w's_L'}^\mathrm{env}$", r"Weighted flux, $\overline{w's_L'}\ \mathrm{\left[K\,m\, s^{-1}\right]}$"],\
                 #[r"Condt. $\overline{w'r_t'}^\mathrm{cld}, \overline{w'r_t'}^\mathrm{env}$", r"Conditional flux, $\overline{w'r_t'}\ \mathrm{\left[kg\,kg^{-1}\, m\,s^{-1}\right]}$"],\
                 [r"Weighted $\overline{w'r_t'}^\mathrm{cld}, \overline{w'r_t'}^\mathrm{env}$", r"Weighted flux, $\overline{w'r_t'}\ \mathrm{\left[kg\,kg^{-1}\, m\,s^{-1}\right]}$"],\
-                [r"Condt. QT$", r"Conditional water, QT $\mathrm{\left[g\,kg^{-1}\right]}$"],\
+                [r"Condt. QT", r"Conditional water, QT $\mathrm{\left[g\,kg^{-1}\right]}$"],\
                 [r"Eastward 2nd-moments", r"2nd moments $\mathrm{\left[m^2\,s^{-2}\right]}$"],\
                 [r"Northward 2nd-moments", r"2nd moments $\mathrm{\left[m^2\,s^{-2}\right]}$"],\
                 ['Cloud fraction', 'Cloud fraction [-]'],\

@@ -43,9 +43,9 @@ def generate_cmap(data, cmapName, maxCol='g', minCol='r', zeroCol='w', N=1000, q
     matplotlib.colors.LinearSegmentedColormap(cmapName,cdict,N=N)
     """
     # Convert colors to rgba
-    maxRGBA = mpl.colors(maxCol)
-    minRGBA = mpl.colors(minCol)
-    zeroRGBA = mpl.colors(zeroCol)
+    maxRGBA = mpl.colors.to_rgba(maxCol)
+    minRGBA = mpl.colors.to_rgba(minCol)
+    zeroRGBA = mpl.colors.to_rgba(zeroCol)
     
     # Get limits from data in order to generate colormap
     #lims = data.min(), data.max() # Do not use this, because of outliers
@@ -57,7 +57,7 @@ def generate_cmap(data, cmapName, maxCol='g', minCol='r', zeroCol='w', N=1000, q
         interpol[1]
     except Exception as e:
         interpol = (interpol, interpol)
-    lims = np.nanpercentile(data,quant,interpolation=interpol[0]), np.nanpercentile(uw,100-quant,interpolation=interpol[1])
+    lims = np.nanpercentile(data,quant,interpolation=interpol[0]), np.nanpercentile(data,100-quant,interpolation=interpol[1])
     #logger.debug('uw.min=%f, uw.max=%f',np.nanmin(uw),np.nanmax(uw))
     #logger.debug("uwlim=(%f,%f)",uwlim[0], uwlim[1])
     #logger.debug('uw[0].min=%f,uw[0].max=%f',np.nanmin(uw[0]), np.nanmax(uw[0]))

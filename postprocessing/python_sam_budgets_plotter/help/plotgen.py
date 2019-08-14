@@ -392,12 +392,19 @@ def plot_default(plots, cf, data, h, centering):
     prms = [
         '# simulation parameters',
         '(nx, ny, nz) = ({}, {}, {})'.format(cf.nx, cf.ny, cf.nz),
-        'sampling time = {}-{}min'.format(cf.startTime, cf.endTime),
-        'dx = {}'.format(cf.dxy),
-        'dy = {}'.format(cf.dxy),
-        'dz = {}'.format(cf.dz),
-        'height = {} - {}'.format(cf.startHeight, cf.endHeight)
+        'sampling time = {} - {} min'.format(cf.startTime, cf.endTime),
+        'dx = {} m'.format(cf.dxy),
+        'dy = {} m'.format(cf.dxy),
+        'dz = {} m'.format(cf.dz),
+        'height = {} - {} m'.format(cf.startHeight, cf.endHeight)
         ]
+    if 'clubb' in plots.name:
+        prms.extend(
+            'CLUBB zm input file name = {}'.format(cf.clubb_zm_file),
+            'CLUBB zt input file name = {}'.format(cf.clubb_zt_file)
+            )
+    else:
+        prms.append('SAM input file name = {}'.format(cf.sam_file))
     param_file.write('\n'.join(prms))
     param_file.close()
 
@@ -1096,7 +1103,9 @@ def plot_3d(plots, cf, data, h, h_limits, h_extent, prm_vars, fps=2, dil_len=1, 
         'cloud recognition limit for water vapor = {}'.format(cld_lim),
         'background interpolation method = {}'.format(cloud_interpolation),
         'cloud halo dilation length'.format(dil_len),
-        'convariance percentile cutoff = {}'.format(quant)
+        'convariance percentile cutoff = {}'.format(quant),
+        '3D input file name = {}'.format(cf.sam_3d_file),
+        '2D input file name = {}'.format(cf.sam_file),
         ]
     param_file.write('\n'.join(prms))
     param_file.close()
@@ -1165,7 +1174,12 @@ def plot_comparison(plots, cf, data_clubb, data_sam, h_clubb, h_sam, plot_old_cl
         'dx = {}'.format(cf.dxy),
         'dy = {}'.format(cf.dxy),
         'dz = {}'.format(cf.dz),
-        'height = {} - {}'.format(cf.startHeight, cf.endHeight)
+        'height = {} - {}'.format(cf.startHeight, cf.endHeight),
+        'SAM input file name = {}'.format(cf.sam_file),
+        'New CLUBB zm input file name = {}'.format(cf.clubb_zm_file),
+        'New CLUBB zt input file name = {}'.format(cf.clubb_zt_file),
+        'Old CLUBB zm input file name = {}'.format(cf.old_clubb_zm_file),
+        'Old CLUBB zt input file name = {}'.format(cf.old_clubb_zt_file),
         ]
     param_file.write('\n'.join(prms))
     param_file.close()
