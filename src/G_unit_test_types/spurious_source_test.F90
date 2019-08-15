@@ -354,8 +354,10 @@ module spurious_source_test
                           0.76_core_rknd /)
        rtp2_snd = (/ zero, 2.5e-7_core_rknd, 2.5e-7_core_rknd, zero /)
        thlp2_snd = (/ zero, 0.1_core_rknd, 0.1_core_rknd, zero /)
-       Cx_fnc_Richardson_snd = (/ 5.0_core_rknd, 5.0_core_rknd, &
-                                  5.0_core_rknd, 5.0_core_rknd /)
+       ! The value of Cx_fnc_Richardson should be between 0 and 1, as
+       ! the C7_Skw_fnc might be set to the value of Cx_fnc_Richardson.
+       Cx_fnc_Richardson_snd = (/ 0.1_core_rknd, 0.5_core_rknd, &
+                                  0.7_core_rknd, 0.9_core_rknd /)
        Lscale_snd = (/ 200.0_core_rknd, 100.0_core_rknd, 50.0_core_rknd, &
                        10.0_core_rknd /)
        wp2rtp_snd = (/ zero, 1.0e-5_core_rknd, 7.5e-6_core_rknd, zero /)
