@@ -280,7 +280,7 @@ fi
 
 rm -f 'clubb.in' 'rand_seed.dat'
 
-if [ `grep -c "STOP Fatal error" $logFile` -gt 0 ]; then
+if [ `grep -c "Fatal error" $logFile` -gt 0 ]; then
 	exitStatus=1
 else
 	exitStatus=0
