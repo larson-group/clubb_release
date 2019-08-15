@@ -76,6 +76,7 @@ case_dict = {
     "DYCOMS_RF02" : "dycoms2_rf02_case",
     "RICO" : "rico_case",
     "LBA" : "lba_case",
+    "GCSSARM" : "gcssarm_case"
     } # list of cases, append as needed
 case_names = case_dict.keys()
 case_modules = case_dict.values()
