@@ -16,7 +16,7 @@ class VariableGroupBase(VariableGroup):
     of panels.
     '''
 
-    def __init__(self, ncdf_datasets, case, sam_file=None):
+    def __init__(self, ncdf_datasets, case, sam_file=None, coamps_file=None):
         '''
 
         :param ncdf_datasets:
@@ -24,53 +24,54 @@ class VariableGroupBase(VariableGroup):
         :param sam_file:
         '''
         self.name = "base variables"
-        # TODO Support fill_zeros
         self.variable_definitions = [
-            {'clubb_name': 'thlm', 'sam_calc': self.getThlmSamLine},
-            {'clubb_name': 'rtm', 'sam_calc': self.getRtmSamLine},
-            {'clubb_name': 'wpthlp', 'sam_name': 'WPTHLP', 'fallback_func': self.getWpthlpFallback},
-            {'clubb_name': 'wprtp', 'sam_name': 'WPRTP', 'fallback_func': self.getWprtpFallback},
-            {'clubb_name': 'rcm', 'sam_name': "QCL", 'sam_conv_factor': 1 / 1000},
+            {'clubb_name': 'thlm', 'sam_calc': self.getThlmSamLine, 'coamps_name': 'thlm'},
+            {'clubb_name': 'rtm', 'sam_calc': self.getRtmSamLine, 'coamps_name': 'qtm'},
+            {'clubb_name': 'wpthlp', 'sam_name': 'WPTHLP', 'fallback_func': self.getWpthlpFallback, 'coamps_name': 'wpthlp'},
+            {'clubb_name': 'wprtp', 'sam_name': 'WPRTP', 'fallback_func': self.getWprtpFallback, 'coamps_name': 'wpqtp'},
+            {'clubb_name': 'rcm', 'sam_name': "QCL", 'sam_conv_factor': 1 / 1000, 'coamps_name': 'qcm'},
             {'clubb_name': 'wp3', 'sam_name': 'W3'},
-            {'clubb_name': 'thlp2', 'sam_name': 'THLP2', 'fallback_func': self.getThlp2Fallback},
-            {'clubb_name': 'rtp2', 'sam_name': 'RTP2', 'fallback_func': self.getRtp2Fallback},
-            {'clubb_name': 'wm', 'sam_name': 'WOBS'},
-            {'clubb_name': 'um', 'sam_name': 'U'},
-            {'clubb_name': 'vm', 'sam_name': 'V'},
-            {'clubb_name': 'wp3', 'sam_name': 'W3'},
-            {'clubb_name': 'wp2', 'sam_name': 'W2'},
+            {'clubb_name': 'thlp2', 'sam_name': 'THLP2', 'fallback_func': self.getThlp2Fallback, 'coamps_name': 'thlp2'},
+            {'clubb_name': 'rtp2', 'sam_name': 'RTP2', 'fallback_func': self.getRtp2Fallback, 'coamps_name': 'qtp2'},
+            {'clubb_name': 'wm', 'sam_name': 'WOBS', 'coamps_name': 'wlsm'},
+            {'clubb_name': 'um', 'sam_name': 'U', 'coamps_name': 'um'},
+            {'clubb_name': 'vm', 'sam_name': 'V', 'coamps_name': 'vm'},
+            {'clubb_name': 'wp3', 'sam_name': 'W3', 'coamps_name': 'wp3'},
+            {'clubb_name': 'wp2', 'sam_name': 'W2', 'coamps_name': 'wp2'},
             {'clubb_name': 'wp2_vert_avg', 'sam_name': 'CWP', 'type': Panel.TYPE_TIMESERIES},
-            {'clubb_name': 'cloud_frac', 'sam_name': 'CLD'},
-            {'clubb_name': 'upwp', 'sam_name': 'UW'},
-            {'clubb_name': 'vpwp', 'sam_name': 'VW'},
-            {'clubb_name': 'up2', 'sam_name': 'U2'},
+            {'clubb_name': 'cloud_frac', 'sam_name': 'CLD', 'coamps_name': 'cf'},
+            {'clubb_name': 'upwp', 'sam_name': 'UW'}, # TODO coamps eqn wpup + wpup_sgs
+            {'clubb_name': 'vpwp', 'sam_name': 'VW'}, # TODO coamps eqn wpvp + wpvp_sgs
+            {'clubb_name': 'up2', 'sam_name': 'U2', 'coamps_name': 'up2'},
             {'clubb_name': 'tau_zm'},
-            {'clubb_name': 'vp2', 'sam_name': 'V2'},
+            {'clubb_name': 'vp2', 'sam_name': 'V2', 'coamps_name': 'vp2'},
             {'clubb_name': 'Lscale'},
-            {'clubb_name': 'wpthvp', 'sam_name': 'WPTHVP', 'fallback_func': self.getWpthvpFallback},
-            {'clubb_name': 'rtpthlp', 'sam_name': 'RTPTHLP', 'fallback_func': self.getRtpthlpFallback},
-            {'clubb_name': 'rtp3', 'sam_name': 'RTP3', 'fallback_func': self.getRtp3Fallback},
-            {'clubb_name': 'radht', 'sam_name': 'RADQR', 'sam_conv_factor': 1 / 86400},
-            {'clubb_name': 'Skw_zt', 'sam_calc': self.getSkwZtSamLine},
-            {'clubb_name': 'thlp3', 'sam_name': 'THLP3'},
-            {'clubb_name': 'rtpthvp', 'sam_name': 'RTPTHVP'},
-            {'clubb_name': 'Skrt_zt', 'sam_calc': self.getSkrtZtSamLine},
-            {'clubb_name': 'Skthl_zt', 'sam_calc': self.getSkthlZtSamLine},
+            {'clubb_name': 'wpthvp', 'sam_name': 'WPTHVP', 'fallback_func': self.getWpthvpFallback, 'coamps_name': 'wpthvp'},
+            {'clubb_name': 'rtpthlp', 'sam_name': 'RTPTHLP', 'fallback_func': self.getRtpthlpFallback, 'coamps_name': 'qtpthlp'},
+            {'clubb_name': 'rtp3', 'sam_name': 'RTP3', 'fallback_func': self.getRtp3Fallback, 'coamps_name': 'qtp3'},
+            {'clubb_name': 'radht', 'sam_name': 'RADQR', 'sam_conv_factor': 1 / 86400, 'coamps_name': 'radht'},
+            {'clubb_name': 'Skw_zt', 'sam_calc': self.getSkwZtSamLine}, # TODO coamps eqn wp3 ./ (wp2 + 1.6e-3).^1.5
+            {'clubb_name': 'thlp3', 'sam_name': 'THLP3', 'coamps_name': 'thlp3'},
+            {'clubb_name': 'rtpthvp', 'sam_name': 'RTPTHVP', 'coamps_name': 'qtpthvp'},
+            {'clubb_name': 'Skrt_zt', 'sam_calc': self.getSkrtZtSamLine}, # TODO coamps eqn qtp3 ./ (qtp2 + 4e-16).^1.5
+            {'clubb_name': 'Skthl_zt', 'sam_calc': self.getSkthlZtSamLine}, # TODO coamps eqn thlp3 ./ (thlp2 + 4e-4).^1.5
             {'clubb_name': 'corr_w_chi_1'},
             {'clubb_name': 'corr_chi_eta_1'},
-            {'clubb_name': 'rcp2', 'sam_name': 'QC2', 'sam_conv_factor': 1 / 10 ** 6},
-            {'clubb_name': 'thlpthvp', 'sam_name': 'THLPTHVP'},
+            {'clubb_name': 'rcp2', 'sam_name': 'QC2', 'sam_conv_factor': 1 / 10 ** 6, 'coamps_name': 'qcp2'},
+            {'clubb_name': 'thlpthvp', 'sam_name': 'THLPTHVP', 'coamps_name': 'thlpthvp'},
             {'clubb_name': 'rc_coef_zm .* wprcp', 'fallback_func': self.get_rc_coef_zm_X_wprcp_clubb_line,
-                'title': 'Contribution of Cloud Water Flux to wpthvp', 'axis_title': 'rc_coef_zm * wprcp [K m/s]'},
+                'title': 'Contribution of Cloud Water Flux to wpthvp', 'axis_title': 'rc_coef_zm * wprcp [K m/s]'}, # TODO coamps eqn wpqcp .* (2.5e6 ./ (1004.67*ex0) - 1.61*thvm)
             {'clubb_name': 'rc_coef_zm .* thlprcp', 'fallback_func': self.get_rc_coef_zm_X_thlprcp_clubb_line,
-                'title': 'Contribution of Cloud Water Flux to thlprcp', 'axis_title': 'rc_coef_zm * thlprcp [K^2]'},
+                'title': 'Contribution of Cloud Water Flux to thlprcp', 'axis_title': 'rc_coef_zm * thlprcp [K^2]'}, # TODO coamps eqn thlpqcp .* (2.5e6 ./ (1004.67*ex0) - 1.61*thvm)
             {'clubb_name': 'rc_coef_zm .* rtprcp', 'fallback_func': self.get_rc_coef_zm_X_rtprcp_clubb_line,
-                'title': 'Contribution of Cloud Water Flux to rtprcp', 'axis_title': 'rc_coef_zm * rtprcp [kg/kg K]'},
+                'title': 'Contribution of Cloud Water Flux to rtprcp', 'axis_title': 'rc_coef_zm * rtprcp [kg/kg K]'}, # TODO coamp eqn qtpqcp .* (2.5e6 ./ (1004.67*ex0) - 1.61*thvm)
             {'clubb_name': 'lwp', 'type': Panel.TYPE_TIMESERIES}
+            # TODO rc_coev * wp2rcp
+
 
             # TODO corr chi 2's
         ]
-        super().__init__(ncdf_datasets, case, sam_file)
+        super().__init__(ncdf_datasets, case, sam_file=sam_file, coamps_file=coamps_file)
 
     def getThlmSamLine(self):
         '''

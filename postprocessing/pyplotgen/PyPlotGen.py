@@ -76,13 +76,9 @@ class PyPlotGen:
             diff_datasets = self.diff_files_data_reader.loadFolder(self.diff)
         all_cases = Case_definitions.ALL_CASES
 
-        # Ensure SAM output is available
-        print("Checking for SAM output...")
-        if not os.path.isfile(Case_definitions.SAM_OUTPUT_ROOT) and not os.path.islink(Case_definitions.SAM_OUTPUT_ROOT):
-            print("Sam output was not found in " + Case_definitions.SAM_OUTPUT_ROOT + ", downloading now.")
-            subprocess.run(['git', 'clone', 'https://carson.math.uwm.edu/sam_benchmark_runs.git'])  # Use sigal to build html in '_build/'
-        else:
-            print("Sam output found in " + Case_definitions.SAM_OUTPUT_ROOT)
+        # Downloads model output (sam, les, clubb) if it doesn't exist
+        self.downloadModelOutputs()
+
         # TODO Handle dataset not found/partial nc output
         for case_def in all_cases:
             print('###########################################')
@@ -90,7 +86,7 @@ class PyPlotGen:
             case_diff_datasets = None
             if self.diff is not None:
                 case_diff_datasets = diff_datasets[case_def['name']]
-            case = Case(case_def,self.nc_datasets[case_def['name']], plot_sam=self.les, plot_budgets=self.plot_budgets, diff_datasets=case_diff_datasets)
+            case = Case(case_def, self.nc_datasets[case_def['name']], plot_les=self.les, plot_budgets=self.plot_budgets, diff_datasets=case_diff_datasets)
             case.plot(self.output_folder, replace_images=self.replace_images, no_legends = self.no_legends, thin_lines=self.thin)
 
         print('###########################################')
@@ -98,6 +94,25 @@ class PyPlotGen:
         subprocess.run(['sigal', 'build', '-f', self.output_folder + '/'])  # Use sigal to build html in '_build/'
         print('###########################################')
         print("Output can be viewed at file://" + self.output_folder + "/../_build/index.html with a web browser")
+
+    def downloadModelOutputs(self):
+        '''
+        Checks for model output, e.g. sam benchmark runs, and if it
+        doesn't exist, downloads it.
+        Supports: SAM, COAMPS, CLUBB
+
+        :return:
+        '''
+
+
+        # Ensure benchmark output is available
+        print("Checking for model benchmark output...")
+        if not os.path.isfile(Case_definitions.BENCHMARK_OUTPUT_ROOT) and not os.path.islink(Case_definitions.BENCHMARK_OUTPUT_ROOT):
+            print("Benchmark output was not found in " + Case_definitions.BENCHMARK_OUTPUT_ROOT + ", downloading now.")
+            subprocess.run(['git', 'clone', 'https://carson.math.uwm.edu/les_and_clubb_benchmark_runs.git'])
+        else:
+            print("Benchmark output found in " + Case_definitions.BENCHMARK_OUTPUT_ROOT)
+
 def process_args():
     '''
     This method takes arguments in from the command line and feeds them into

@@ -11,7 +11,7 @@ from Line import Line
 
 class VariableGroupLiquidMP(VariableGroup):
 
-    def __init__(self, ncdf_datasets, case, sam_file=None):
+    def __init__(self, ncdf_datasets, case, sam_file=None, coamps_file=None):
         '''
 
         :param ncdf_datasets:
@@ -19,7 +19,6 @@ class VariableGroupLiquidMP(VariableGroup):
         :param sam_file:
         '''
         self.name = "liquid mp variables"
-        # TODO Support fill_zeros
         self.variable_definitions = [
             {'clubb_name': 'Ncm', 'sam_calc': self.getNcmSamLine},
             {'clubb_name': 'Nc_in_cloud'},
@@ -34,7 +33,7 @@ class VariableGroupLiquidMP(VariableGroup):
         ]
         #rain_rate_sfc vs time
 
-        super().__init__(ncdf_datasets, case, sam_file)
+        super().__init__(ncdf_datasets, case, sam_file=sam_file, coamps_file=coamps_file)
 
 
     def getNcmSamLine(self):

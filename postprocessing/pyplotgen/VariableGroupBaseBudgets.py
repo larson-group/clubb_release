@@ -13,7 +13,7 @@ class VariableGroupBaseBudgets(VariableGroup):
 
     '''
 
-    def __init__(self, ncdf_datasets, case, sam_file=None):
+    def __init__(self, ncdf_datasets, case, sam_file=None, coamps_file=None):
         '''
 
         :param ncdf_datasets:
@@ -208,7 +208,7 @@ class VariableGroupBaseBudgets(VariableGroup):
             {'clubb_name': 'vpwp', 'lines': vpwp_lines, 'type': Panel.TYPE_BUDGET, 'fill_zeros': True},
 
         ]
-        super().__init__(ncdf_datasets, case, sam_file)
+        super().__init__(ncdf_datasets, case, sam_file=sam_file, coamps_file=coamps_file)
 
     def getThlmClipping(self):
         '''

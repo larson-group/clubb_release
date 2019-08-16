@@ -1,7 +1,7 @@
 import unittest
 import numpy as np
 
-from pyplotgen.DataReader import DataReader
+from DataReader import DataReader
 
 
 class DataReaderTest(unittest.TestCase):

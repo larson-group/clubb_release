@@ -11,7 +11,7 @@ from Line import Line
 
 class VariableGroupIceMP(VariableGroup):
 
-    def __init__(self, ncdf_datasets, case, sam_file=None):
+    def __init__(self, ncdf_datasets, case, sam_file=None, coamps_file=None):
         '''
 
         :param ncdf_datasets:
@@ -19,7 +19,6 @@ class VariableGroupIceMP(VariableGroup):
         :param sam_file:
         '''
         self.name = "ice mp variables"
-        # TODO Support fill_zeros
         self.variable_definitions = [
             {'clubb_name': 'rim', 'sam_name': 'QI', 'sam_conv_factor': 1 / 1000, 'fallback_func': self.getRimFallback},
             {'clubb_name': 'Nim', 'sam_calc': self.getNimSamLine},
@@ -32,7 +31,7 @@ class VariableGroupIceMP(VariableGroup):
             {'clubb_name': 'rgm', 'sam_name': 'QG', 'sam_conv_factor': 1 / 1000},
             {'clubb_name': 'precip_rate_sfc', 'sam_name': 'PREC', 'type': Panel.TYPE_TIMESERIES}
         ]
-        super().__init__(ncdf_datasets, case, sam_file)
+        super().__init__(ncdf_datasets, case, sam_file=sam_file, coamps_file=coamps_file)
 
     def getNimSamLine(self):
         '''

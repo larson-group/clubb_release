@@ -11,7 +11,7 @@ from Line import Line
 
 class VariableGroupCorrelations(VariableGroup):
 
-    def __init__(self, ncdf_datasets, case, sam_file=None):
+    def __init__(self, ncdf_datasets, case, sam_file=None, coamps_file=None):
         '''
 
         :param ncdf_datasets:
@@ -19,7 +19,6 @@ class VariableGroupCorrelations(VariableGroup):
         :param sam_file:
         '''
         self.name = "w variables"
-        # TODO Support fill_zeros
         self.variable_definitions = [
             {'clubb_name': 'corr_w_rr_1'},
             {'clubb_name': 'corr_w_Nr_1'},
@@ -30,4 +29,4 @@ class VariableGroupCorrelations(VariableGroup):
             {'clubb_name': 'corr_rr_Nr_1'},
 
         ]
-        super().__init__(ncdf_datasets, case, sam_file)
+        super().__init__(ncdf_datasets, case, sam_file=sam_file, coamps_file=coamps_file)

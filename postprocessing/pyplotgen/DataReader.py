@@ -325,10 +325,32 @@ class DataReader():
             raise ValueError("Variable " + varname + " does not exist in ncdf_data file. If this is expected,"
                                                      " try passing fill_zeros=True when you create the "
                                                      "NetCdfVariable for " + varname)
+
+        # SAM outputs time in the form minutes since 1969-06-22 00:00:00.0
+        # We want to convert time values over to minutes starting at clubbs start time
+
+        # sam time -> clubb minutes
+        if varname == 'time' and self.getNcdfSourceModel(ncdf_data) == 'sam':
+            # SAM outputs time in the form minutes since 1969-06-22 00:00:00.0
+            num_seconds_between_19690207_and_19690622 = 11664000
+            var_values = var_values[:] + num_seconds_between_19690207_and_19690622
+
+        # clubb time -> clubb minutes
         if varname == 'time' and self.getNcdfSourceModel(ncdf_data) == 'clubb':
+            # clubb outputs time in the form seconds since 1969-02-07 00:00:00.0
+            # num_seconds_between_19690207_and_19690622 = 11664000
+            # var_values = var_values[:] - num_seconds_between_19690207_and_19690622
             sec_per_min = 60
-            # Rescale time values to SAM minutes for output
             var_values = var_values[:] / sec_per_min
+
+        # coamps time -> sam time conversion
+        if varname == 'time' and self.getNcdfSourceModel(ncdf_data) == 'coamps':
+            # coamps outputs time in hours since 1-1-1 00:00:00
+            # num_hrs_between_00010101_and_19690207 = 17252064
+            var_values = var_values[:] - var_values[0] + 1# num_hrs_between_00010101_and_19690207
+            min_per_hr = 60
+            var_values = var_values[:] * min_per_hr
+
         if varname == 'time' and var_values[0] != 1:
             warn("First time value is " + str(var_values[0]) + " instead of 1. Are these time values supposed to be scaled to minutes?")
 
@@ -372,5 +394,7 @@ class DataReader():
             return 'clubb'
         elif 'z' in ncdf_dataset.variables.keys():
             return 'sam'
+        elif 'lev' in ncdf_dataset.variables.keys():
+            return 'coamps'
         else:
             return 'unknown-model'
