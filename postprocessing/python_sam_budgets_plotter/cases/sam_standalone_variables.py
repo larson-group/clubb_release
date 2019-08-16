@@ -263,8 +263,9 @@ rtVar = [\
         ]
         
 covarThetalRt = [\
-         # variables of covarThetalRt
-         ['CovarThetaLRT', True, 'RTPTHLP_SGS', 1., 0],\
+         # variables of covarThetalRt NOTE: RTPTHLP_SGS not found in nc file
+         #['CovarThetaLRT', True, 'RTPTHLP_SGS', 1., 0],\
+         ['CovarThetaLRT', True, 'RTPTHLP', 1., 0],\
         ]
         
 wobs = [\

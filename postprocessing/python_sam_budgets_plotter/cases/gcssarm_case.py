@@ -24,7 +24,7 @@ dt = 1                # [s]
 startTime = 301.0     # [minutes]
 endTime = 840.0       # [minutes]
 startHeight = 0.0   # [m]
-endHeight = 2500.0    # [m]
+endHeight = 3500.0    # [m]
 time_3d = 21600.0     # dt
 
 # run entry for header in html file
