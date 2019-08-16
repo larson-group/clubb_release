@@ -65,7 +65,7 @@ class VariableGroupBase(VariableGroup):
                 'title': 'Contribution of Cloud Water Flux to thlprcp', 'axis_title': 'rc_coef_zm * thlprcp [K^2]'}, # TODO coamps eqn thlpqcp .* (2.5e6 ./ (1004.67*ex0) - 1.61*thvm)
             {'clubb_name': 'rc_coef_zm .* rtprcp', 'fallback_func': self.get_rc_coef_zm_X_rtprcp_clubb_line,
                 'title': 'Contribution of Cloud Water Flux to rtprcp', 'axis_title': 'rc_coef_zm * rtprcp [kg/kg K]'}, # TODO coamp eqn qtpqcp .* (2.5e6 ./ (1004.67*ex0) - 1.61*thvm)
-            {'clubb_name': 'lwp', 'type': Panel.TYPE_TIMESERIES}
+            {'clubb_name': 'lwp', 'type': Panel.TYPE_TIMESERIES, 'sam_name': 'CWP', 'sam_conv_factor': 1/1000}
             # TODO rc_coev * wp2rcp
 
 
@@ -105,7 +105,7 @@ class VariableGroupBase(VariableGroup):
         thlm = thetal + (2500.4 * (theta / tabs) * (qi / 1000))
 
         z_ncdf.constrain(self.height_min_value, self.height_max_value)
-        thlm_line = Line(thlm, z_ncdf.data, line_format="k-", label="LES output")
+        thlm_line = Line(thlm, z_ncdf.data, line_format="k-", label="SAM-LES")
         return thlm_line
 
     def getRtmSamLine(self):
@@ -131,7 +131,7 @@ class VariableGroupBase(VariableGroup):
         rtm = (qt - qi) / 1000
 
         z_ncdf.constrain(self.height_min_value, self.height_max_value)
-        rtm_line = Line(rtm, z_ncdf.data, line_format="k-", label="LES output")
+        rtm_line = Line(rtm, z_ncdf.data, line_format="k-", label="SAM-LES")
         return rtm_line
 
     def getSkwZtSamLine(self):
@@ -157,7 +157,7 @@ class VariableGroupBase(VariableGroup):
         skw_zt = wp3 / (wp2 + 1.6e-3) ** 1.5
 
         z_ncdf.constrain(self.height_min_value, self.height_max_value)
-        skw_zt_line = Line(skw_zt, z_ncdf.data, line_format="k-", label="LES output")
+        skw_zt_line = Line(skw_zt, z_ncdf.data, line_format="k-", label="SAM-LES")
         return skw_zt_line
 
     def getSkrtZtSamLine(self):
@@ -183,7 +183,7 @@ class VariableGroupBase(VariableGroup):
         skrtp_zt = rtp3 / (rtp2 + 4e-16) ** 1.5
 
         z_ncdf.constrain(self.height_min_value, self.height_max_value, data=z_ncdf.data)
-        skrtp_zt_line = Line(skrtp_zt, z_ncdf.data, line_format="k-", label="LES output")
+        skrtp_zt_line = Line(skrtp_zt, z_ncdf.data, line_format="k-", label="SAM-LES")
         return skrtp_zt_line
 
     def getSkthlZtSamLine(self):
@@ -209,7 +209,7 @@ class VariableGroupBase(VariableGroup):
         skthl_zt = thlp3 / (thlp2 + 4e-16) ** 1.5
 
         z_ncdf.constrain(self.height_min_value, self.height_max_value)
-        skthl_zt_line = Line(skthl_zt, z_ncdf.data, line_format="k-", label="LES output")
+        skthl_zt_line = Line(skthl_zt, z_ncdf.data, line_format="k-", label="SAM-LES")
         return skthl_zt_line
 
     def getWpthlpFallback(self):
@@ -234,7 +234,7 @@ class VariableGroupBase(VariableGroup):
         wpthlp = tlflux / (rho * 1004)
 
         z_ncdf.constrain(self.height_min_value, self.height_max_value)
-        wpthlp = Line(wpthlp, z_ncdf.data, line_format="k-", label="LES output")
+        wpthlp = Line(wpthlp, z_ncdf.data, line_format="k-", label="SAM-LES")
         return wpthlp
 
     def getWprtpFallback(self):
@@ -259,7 +259,7 @@ class VariableGroupBase(VariableGroup):
         wprtp = qtflux / (rho * 2.5104e+6)
 
         z_ncdf.constrain(self.height_min_value, self.height_max_value)
-        wprtp = Line(wprtp, z_ncdf.data, line_format="k-", label="LES output")
+        wprtp = Line(wprtp, z_ncdf.data, line_format="k-", label="SAM-LES")
         return wprtp
 
     def getWpthvpFallback(self):
@@ -284,7 +284,7 @@ class VariableGroupBase(VariableGroup):
         wpthvp = tvflux / (rho * 1004)
 
         z_ncdf.constrain(self.height_min_value, self.height_max_value)
-        wpthvp = Line(wpthvp, z_ncdf.data, line_format="k-", label="LES output")
+        wpthvp = Line(wpthvp, z_ncdf.data, line_format="k-", label="SAM-LES")
         return wpthvp
 
     def getThlp2Fallback(self):
@@ -303,7 +303,7 @@ class VariableGroupBase(VariableGroup):
         tl2 = tl2_ncdf.data
 
         z_ncdf.constrain(self.height_min_value, self.height_max_value)
-        tl2_line = Line(tl2, z_ncdf.data, line_format="k-", label="LES output")
+        tl2_line = Line(tl2, z_ncdf.data, line_format="k-", label="SAM-LES")
         return tl2_line
 
     def getRtpthlpFallback(self):
@@ -322,7 +322,7 @@ class VariableGroupBase(VariableGroup):
         tq2 = tq_ncdf.data
 
         z_ncdf.constrain(self.height_min_value, self.height_max_value)
-        thlp2 = Line(tq2, z_ncdf.data, line_format="k-", label="LES output")
+        thlp2 = Line(tq2, z_ncdf.data, line_format="k-", label="SAM-LES")
         return thlp2
 
     def getRtp2Fallback(self):
@@ -343,7 +343,7 @@ class VariableGroupBase(VariableGroup):
         rtp2 = qt2 / 1e6
 
         z_ncdf.constrain(self.height_min_value, self.height_max_value)
-        rtp2_line = Line(rtp2, z_ncdf.data, line_format="k-", label="LES output")
+        rtp2_line = Line(rtp2, z_ncdf.data, line_format="k-", label="SAM-LES")
         return rtp2_line
 
     def getRtp3Fallback(self):
@@ -368,7 +368,7 @@ class VariableGroupBase(VariableGroup):
         rtp3 = rc_coef_zm * (rtprcp)
 
         z_ncdf.constrain(self.height_min_value, self.height_max_value)
-        rtp3_line = Line(rtp3, z_ncdf.data, line_format='k-', label='LES output')
+        rtp3_line = Line(rtp3, z_ncdf.data, line_format='k-', label='SAM-LES')
         return rtp3_line
 
     def get_rc_coef_zm_X_wprcp_clubb_line(self):
@@ -419,7 +419,7 @@ class VariableGroupBase(VariableGroup):
         output = wpgcp * (2.5e6 / (1004.67 * ex0) - 1.61 * thvm)
 
         z_ncdf.constrain(self.height_min_value, self.height_max_value)
-        output = Line(output, z_ncdf.data, line_format='k-', label='LES output')
+        output = Line(output, z_ncdf.data, line_format='k-', label='SAM-LES')
         return output
 
     # rc_coef_zm. * thlprcp

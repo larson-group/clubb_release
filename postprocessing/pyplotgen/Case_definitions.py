@@ -27,7 +27,7 @@ ARM_97 = {'name': 'arm_97', 'start_time': 4321, 'end_time': 5580, 'height_min_va
           'blacklisted_vars': ['rtp3', 'thlp3', 'rtpthvp', 'thlpthvp'],
           'sam_file': SAM_OUTPUT_ROOT + "/ARM97_r1315_128x128x128_1km_Morrison/ARM9707.nc",
           'coamps_file': None,
-          'var_groups': [VariableGroupBase]}
+          'var_groups': [VariableGroupBase, VariableGroupIceMP]}
 
 ASTEX_A209 = {'name': 'astex_a209', 'start_time': 2340, 'end_time': 2400, 'height_min_value': 0,
               'height_max_value': 6000, 'enabled': True, 'disable_budgets': False,
@@ -238,4 +238,4 @@ ALL_CASES = [ARM, ARM_97, ASTEX_A209, ATEX, BOMEX, CGILS_S6, CGILS_S11, CGILS_S1
              JUN25_ALTOCU, LBA, MC3E,
              MPACE_A, MPACE_B, MPACE_B_SILHS, NOV11_ALTOCU, RICO, TWP_ICE, WANGARA]
 
-ALL_CASES = [FIRE]
+ALL_CASES = [ASTEX_A209]

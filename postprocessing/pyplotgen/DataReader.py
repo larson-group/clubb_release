@@ -231,7 +231,6 @@ class DataReader():
             warn("Time averaging interval is less than or equal to 1 (idx_t0 = " + str(idx_t0) + ", idx_t1 = " + str(
                 idx_t1) + ").")
         if avg_axis is 0:  # if time-averaged
-            temp = var[idx_t0:idx_t1, :]
             var_average = np.nanmean(var[idx_t0:idx_t1, :], axis=avg_axis)
         else:  # if height averaged
             var_average = np.nanmean(var[:, idx_z0:idx_z1], axis=avg_axis)
@@ -332,8 +331,10 @@ class DataReader():
         # sam time -> clubb minutes
         if varname == 'time' and self.getNcdfSourceModel(ncdf_data) == 'sam':
             # SAM outputs time in the form minutes since 1969-06-22 00:00:00.0
-            num_seconds_between_19690207_and_19690622 = 11664000
-            var_values = var_values[:] + num_seconds_between_19690207_and_19690622
+            # num_seconds_between_19690207_and_19690622 = 18663840 #11664000
+            # var_values = var_values[:] - num_seconds_between_19690207_and_19690622
+            var_values = var_values[:] - var_values[0] + 1
+            # pass # offsetting sam values has not been tested, nor found to be necessary
 
         # clubb time -> clubb minutes
         if varname == 'time' and self.getNcdfSourceModel(ncdf_data) == 'clubb':
@@ -346,10 +347,12 @@ class DataReader():
         # coamps time -> sam time conversion
         if varname == 'time' and self.getNcdfSourceModel(ncdf_data) == 'coamps':
             # coamps outputs time in hours since 1-1-1 00:00:00
-            # num_hrs_between_00010101_and_19690207 = 17252064
-            var_values = var_values[:] - var_values[0] + 1# num_hrs_between_00010101_and_19690207
+            # The first time value in coamps output is 7-7 of 1987 at 0:0:0
+            # num_hrs_between_00010101_and_19870707 = 17413440
+            # var_values = var_values[:] - num_hrs_between_00010101_and_19870707
             min_per_hr = 60
             var_values = var_values[:] * min_per_hr
+            var_values = var_values[:] - var_values[0] + 1
 
         if varname == 'time' and var_values[0] != 1:
             warn("First time value is " + str(var_values[0]) + " instead of 1. Are these time values supposed to be scaled to minutes?")

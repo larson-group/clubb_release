@@ -53,7 +53,7 @@ class VariableGroupIceMP(VariableGroup):
         rho = rho_ncdf.data
         nim = (ni * (10 ** 6) / rho)
         nim = nim[start_idx:end_idx]
-        nim_line = Line(nim, z, line_format='k-', label='LES output')
+        nim_line = Line(nim, z, line_format='k-', label='SAM-LES')
         return nim_line
 
     def getNsmSamLine(self):
@@ -76,7 +76,7 @@ class VariableGroupIceMP(VariableGroup):
         rho = rho_ncdf.data
         nsm = (ns * (10 ** 6) / rho)
         nsm = nsm[start_idx:end_idx]
-        nsm_line = Line(nsm, z, line_format='k-', label='LES output')
+        nsm_line = Line(nsm, z, line_format='k-', label='SAM-LES')
         return nsm_line
 
     def getRimFallback(self):
@@ -93,7 +93,7 @@ class VariableGroupIceMP(VariableGroup):
 
         rim = qci / 1000
         z_ncdf.constrain(self.height_min_value, self.height_max_value)
-        rim = Line(rim, z_ncdf.data, line_format="k-", label="LES output")
+        rim = Line(rim, z_ncdf.data, line_format="k-", label="SAM-LES")
         return rim
 
     def getRsmFallback(self):
@@ -114,5 +114,5 @@ class VariableGroupIceMP(VariableGroup):
         rsm = qpi / 1000
 
         z_ncdf.constrain(self.height_min_value, self.height_max_value)
-        rsm = Line(rsm, z_ncdf.data, line_format="k-", label="LES output")
+        rsm = Line(rsm, z_ncdf.data, line_format="k-", label="SAM-LES")
         return rsm

@@ -55,7 +55,7 @@ class VariableGroupLiquidMP(VariableGroup):
         ncm = (nc * (10 ** 6) / rho)
 
         z_ncdf.constrain(self.height_min_value, self.height_max_value, data=z_ncdf.data)
-        ncm_line = Line(ncm, z_ncdf.data, line_format='k-', label='LES output')
+        ncm_line = Line(ncm, z_ncdf.data, line_format='k-', label='SAM-LES')
         return ncm_line
 
     def getNrmSamLine(self):
@@ -78,5 +78,5 @@ class VariableGroupLiquidMP(VariableGroup):
         nrm = (nr * (10 ** 6) / rho)
 
         z_ncdf.constrain(self.height_min_value, self.height_max_value)
-        nrm_line = Line(nrm, z_ncdf.data, line_format='k-', label='LES output')
+        nrm_line = Line(nrm, z_ncdf.data, line_format='k-', label='SAM-LES')
         return nrm_line
