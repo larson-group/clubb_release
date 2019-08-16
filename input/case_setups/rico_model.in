@@ -61,8 +61,8 @@ time_initial = 0.0       ! Model start time [seconds since midnight on start dat
 time_final   = 259200.0  ! Model end time [seconds since midnight on start date]
 
 
-dt_main    = 300.0   ! Model timestep [s]
-dt_rad = 300.0   ! Radiation timestep [s] 
+dt_main    = 60.0   ! Model timestep [s]
+dt_rad = 60.0   ! Radiation timestep [s] 
 
 sfctype = 0      ! Select surface scheme (cases without specified surface fluxes).
                  ! 0 ==> fixed surface sensible and latent heat fluxes,
@@ -173,7 +173,7 @@ l_calc_thlp2_rad = .false.,
 
 l_stats      = .true.   ! Flag for statistical output.
 fname_prefix = "rico"   ! Prefix of output filename.
-stats_tsamp  = 300.     ! Frequency of statistical sampling [s]
+stats_tsamp  = 60.     ! Frequency of statistical sampling [s]
                         ! For most complete sampling, let 
                         ! stats_tsamp = dt_main
                         ! (stats_tsamp must multiply evenly into stats_tout)

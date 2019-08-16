@@ -21,10 +21,10 @@ nz = 100
 dxy = 100             # [m]
 dz = 40               # [m]
 dt = 1                # [s]
-startTime = 181.0     # [minutes]
-endTime = 360.0       # [minutes]
+startTime = 721.0     # [minutes]
+endTime = 1440.0       # [minutes]
 startHeight = 0.0     # [m]
-endHeight = 2500.0    # [m]
+endHeight = 4000.0    # [m]
 time_3d = 259200.0    # dt
 
 # run entry for header in html file
@@ -33,30 +33,23 @@ run = '{case}_{nx}x{ny}x{nz}_{dxy}m_{dz}m_{dt}s'.format(case=case, nx=nx, ny=ny,
 plot_case_name = '{case}_{dx}x{dx}_{{type}}_{{date}}_{{plot}}'.format(case=case.lower(), dx=nx)
 ## use absolute paths or relative paths originating from the directory containing plotgen.py
 # directory for output files
-out_dir = '/home/sdomke/workspace/plotgen_out/{case}_{{date}}/'.format(case=case.lower())
+out_dir = '../../output/plotgen_out/{case}_{{date}}/'.format(case=case.lower())
 # pdf output name
 out_pdf = '{case}_{dx}x{dx}_{{type}}_{{date}}.pdf'.format(case=case.lower(),dx=nx)
 
 ## input .nc file
 ## SAM
 # nc file generated from .stat output
-#sam_file = '/home/sdomke/workspace/clubb/avi_out/RICO_256x256x100_drizzle_190207.nc'
-sam_file = '/home/sdomke/workspace/clubb/avi_out/grid_change/RICO_256x256x100_drizzle.nc'
+sam_file = '../../output/RICO_512x512x100_drizzle.nc'
 # nc file generated from .bin3D output
 sam_3d_file = '/home/sdomke/workspace/clubb/avi_out/out3d/RICO_256x256x100_drizzle_256_0000259200.nc'
 
-# nc files for publishing runs with bigger horizontal grid (256x256):
-out_dir = '/home/sdomke/workspace/plotgen_out/publishing_runs/{case}_{{date}}/'.format(case=case.lower())
-sam_file = '/home/sdomke/workspace/clubb/avi_out/publishing_runs/RICO_512x512x100_drizzle.nc'
-sam_3d_file = '/home/sdomke/workspace/clubb/avi_out/publishing_runs/3d/RICO_256x256x100_drizzle_256_0000259200.nc'
-
-
 ## CLUBB
-clubb_zm_file = '/home/sdomke/workspace/clubb/clubb_out/rico_zm.nc'
-clubb_zt_file = '/home/sdomke/workspace/clubb/clubb_out/rico_zt.nc'
+clubb_zm_file = '../../output/prog_mom_flux_paper/new/rico_zm.nc'
+clubb_zt_file = '../../output/prog_mom_flux_paper/new/rico_zt.nc'
 ## old CLUBB
-old_clubb_zm_file = '/home/sdomke/workspace/clubb/clubb_out/rico_zm.nc'
-old_clubb_zt_file = '/home/sdomke/workspace/clubb/clubb_out/rico_zt.nc'
+old_clubb_zm_file = '../../output/prog_mom_flux_paper/old/rico_zm.nc'
+old_clubb_zt_file = '../../output/prog_mom_flux_paper/old/rico_zt.nc'
 
 ## case setup files
 sam_prm = case_folder+'/prm.les'

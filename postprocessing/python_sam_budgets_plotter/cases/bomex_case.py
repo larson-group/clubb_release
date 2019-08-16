@@ -42,19 +42,14 @@ out_pdf = '{case}_{dx}x{dx}_{{type}}_{{date}}.pdf'.format(case=case.lower(),dx=n
 # nc file generated from .stat output
 sam_file = '../../output/BOMEX_256x256x75_100m_40m_1s.nc'
 # nc file generated from .bin3D output
-sam_3d_file = '/home/sdomke/workspace/clubb/avi_out/out3d/BOMEX_64x64x75_100m_40m_1s_64_0000021600.nc'
-
-# nc files for publishing runs with bigger horizontal grid (256x256):
-#out_dir = '/home/sdomke/workspace/plotgen_out/publishing_runs/{case}_{{date}}/'.format(case=case.lower())
-#sam_file = '/home/sdomke/workspace/clubb/avi_out/publishing_runs/BOMEX_256x256x75_100m_40m_1s.nc'
 sam_3d_file = '/home/sdomke/workspace/clubb/avi_out/publishing_runs/3d/BOMEX_256x256x75_100m_40m_1s_256_0000021600.nc'
 
 ## CLUBB
-clubb_zm_file = '../../output/7fc2077_tau_upxp_20190331/bomex_zm.nc'
-clubb_zt_file = '../../output/7fc2077_tau_upxp_20190331/bomex_zt.nc'
+clubb_zm_file = '../../output/prog_mom_flux_paper/new/bomex_zm.nc'
+clubb_zt_file = '../../output/prog_mom_flux_paper/new/bomex_zt.nc'
 ## old CLUBB
-old_clubb_zm_file = '../../output/7fc2077_tuned_upwp_bud_eddiff_20190317/bomex_zm.nc'
-old_clubb_zt_file = '../../output/7fc2077_tuned_upwp_bud_eddiff_20190317/bomex_zt.nc'
+old_clubb_zm_file = '../../output/prog_mom_flux_paper/old/bomex_zm.nc'
+old_clubb_zt_file = '../../output/prog_mom_flux_paper/old/bomex_zt.nc'
 
 ## case setup files
 sam_prm = case_folder+'/prm.les'

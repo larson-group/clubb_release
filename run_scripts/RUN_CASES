@@ -4,36 +4,36 @@
 ! be ignored.
 
 arm
-arm_97
-atex
+!arm_97
+!atex
 bomex
 dycoms2_rf01
-dycoms2_rf01_fixed_sst
+!dycoms2_rf01_fixed_sst
 dycoms2_rf02_do
-dycoms2_rf02_ds
-dycoms2_rf02_nd
-dycoms2_rf02_so
-fire
-gabls2
-gabls3
-lba
-mpace_a
-mpace_b
+!dycoms2_rf02_ds
+!dycoms2_rf02_nd
+!dycoms2_rf02_so
+!fire
+!gabls2
+!gabls3
+!lba
+!mpace_a
+!mpace_b
 rico
-twp_ice
-wangara
+!twp_ice
+!wangara
 
 ! The following are unreleased cases. External users should comment these
 ! lines out before running run_scm_all.bash and run_bindiff_all.bash
-astex_a209
-cgils_s6
+!astex_a209
+!cgils_s6
 !cgils_s6_p2k
-cgils_s11
+!cgils_s11
 !cgils_s11_p2k
-cgils_s12
+!cgils_s12
 !cgils_s12_p2k
-clex9_nov02
-clex9_oct14
+!clex9_nov02
+!clex9_oct14
 !cloud_feedback_s6
 !cloud_feedback_s6_p2k
 !cloud_feedback_s11
@@ -41,10 +41,10 @@ clex9_oct14
 !cloud_feedback_s12
 !cloud_feedback_s12_p2k
 !cobra
-gabls3_night
-jun25_altocu
-mpace_b_silhs
-nov11_altocu
-rico_silhs
-mc3e
+!gabls3_night
+!jun25_altocu
+!mpace_b_silhs
+!nov11_altocu
+!rico_silhs
+!mc3e
 !arm_3year

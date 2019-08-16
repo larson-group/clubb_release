@@ -22,8 +22,8 @@ nz = 320
 dxy = 35              # [m]
 dz = 5                # [m]
 dt = .5               # [s]
-startTime = 61.0      # [minutes]
-endTime = 180.0       # [minutes]
+startTime = 121.0      # [minutes]
+endTime = 240.0       # [minutes]
 startHeight = 20.0    # [m]
 endHeight = 1100.0    # [m]
 time_3d = 28800.0     # dt
@@ -34,29 +34,23 @@ run = '{case}_{nx}x{ny}x{nz}_{dxy}m_{dz}m_{dt}s'.format(case=case, nx=nx, ny=ny,
 plot_case_name = '{case}_{dx}x{dx}_{{type}}_{{date}}_{{plot}}'.format(case=case.lower(), dx=nx)
 ## use absolute paths or relative paths originating from the directory containing plotgen.py
 # directory for output files
-out_dir = '/home/sdomke/workspace/plotgen_out/{case}_{{date}}/'.format(case=case.lower())
+out_dir = '../../output/plotgen_out/{case}_{{date}}/'.format(case=case.lower())
 # pdf output name
 out_pdf = '{case}_{dx}x{dx}_{{type}}_{{date}}.pdf'.format(case=case.lower(),dx=nx)
 
 ## input .nc file
 ## SAM
 # nc file generated from .stat output
-#sam_file = '/home/sdomke/workspace/clubb/avi_out/DYCOMS_RF01_96x96x320_190207.nc'
-sam_file = '/home/sdomke/workspace/clubb/avi_out/grid_change/DYCOMS_RF01_96x96x320.nc'
+sam_file = '../../output/DYCOMS_RF01_256x256x320.nc'
 # nc file generated from .bin3D output
-sam_3d_file = '/home/sdomke/workspace/clubb/avi_out/out3d/DYCOMS_RF01_96x96x320_96_0000028800.nc'
-
-# nc files for publishing runs with bigger horizontal grid (256x256):
-out_dir = '/home/sdomke/workspace/plotgen_out/publishing_runs/{case}_{{date}}/'.format(case=case.lower())
-sam_file = '/home/sdomke/workspace/clubb/avi_out/publishing_runs/DYCOMS_RF01_256x256x320.nc'
 sam_3d_file = '/home/sdomke/workspace/clubb/avi_out/publishing_runs/3d/DYCOMS_RF01_256x256x320_256_0000028800.nc'
 
 ## CLUBB
-clubb_zm_file = '/home/sdomke/workspace/clubb/clubb_out/dycoms2_rf01_zm.nc'
-clubb_zt_file = '/home/sdomke/workspace/clubb/clubb_out/dycoms2_rf01_zt.nc'
+clubb_zm_file = '../../output/prog_mom_flux_paper/new/dycoms2_rf01_zm.nc'
+clubb_zt_file = '../../output/prog_mom_flux_paper/new/dycoms2_rf01_zt.nc'
 ## old CLUBB
-old_clubb_zm_file = '/home/sdomke/workspace/clubb/clubb_out/dycoms2_rf01_zm.nc'
-old_clubb_zt_file = '/home/sdomke/workspace/clubb/clubb_out/dycoms2_rf01_zt.nc'
+old_clubb_zm_file = '../../output/prog_mom_flux_paper/old/dycoms2_rf01_zm.nc'
+old_clubb_zt_file = '../../output/prog_mom_flux_paper/old/dycoms2_rf01_zt.nc'
 
 ## case setup files
 sam_prm = case_folder+'/prm'
