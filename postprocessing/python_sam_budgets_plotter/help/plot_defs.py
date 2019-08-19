@@ -70,8 +70,7 @@ type_name_template = '{}_variables'
 
 # List of cases
 case_dict = {
-    "BOMEX 64x64" : "bomex_case",
-    "BOMEX 128x128" : "bomex_large_case",
+    "BOMEX" : "bomex_case",
     "DYCOMS_RF01" : "dycoms2_rf01_case",
     "DYCOMS_RF02" : "dycoms2_rf02_case",
     "RICO" : "rico_case",
@@ -171,16 +170,6 @@ color_arr = ['#e41a1c','#377eb8','#4daf4a','#984ea3','#a65628','#000000','#99999
 ##             red       green     blue      bla             black     brown     grey      orange    magenta
 #color_arr = ['#e41a1c','#4daf4a','#377eb8','lightseagreen','#000000','#a65628','#999999','#ffa600','#f750bf']
 #styles = ['--','--','--',':','-']
-
-## Heinze line colors (solid, dashed): 
-#   - lime: pressure redistribution (Pi (resolved), P (subgrid scale))
-#   - dodgerblue/deepskyblue: turbulent transport (T^t), pressure transport (T^p)
-#   - red: buoyancy (B)
-#   - black: mean-velocity shear (G), viscous dissipation (D)
-# Budget color array
-# advection, buoyancy, dissipation, isotropy, pressure, turb. prod. time tndncy, residual
-#color_arr = ['dodgerblue', 'red', 'black', 'lime', 'dodgerblue', 'black', 'grey', 'orange']
-#styles = ['-', '-', '--', '-', '--', '-', '-', ':']
 
 ## Horizontal cloud slice plots
 # Define base figsize

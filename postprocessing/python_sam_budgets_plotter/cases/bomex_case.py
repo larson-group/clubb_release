@@ -9,9 +9,9 @@ to plot height profiles and budgets for the BOMEX case
 #-------------------------------------------------------------------------------
 #   G E N E R A L   D E F A U L T   S E T T I N G S
 #-------------------------------------------------------------------------------
-# TODO: check parameters in Heinze/Siebesma and (auto-)rename name,case,out_dir etc
 
 case = 'BOMEX'
+full_name = case
 case_folder = '/home/sdomke/workspace/clubb/sam_clubb/{case}'.format(case=case)
 enabled = True # not used in plotgen, no idea what this should do
 #type = 'budget' # not used in plotgen
@@ -42,7 +42,7 @@ out_pdf = '{case}_{dx}x{dx}_{{type}}_{{date}}.pdf'.format(case=case.lower(),dx=n
 # nc file generated from .stat output
 sam_file = '../../output/BOMEX_256x256x75_100m_40m_1s.nc'
 # nc file generated from .bin3D output
-sam_3d_file = '/home/sdomke/workspace/clubb/avi_out/publishing_runs/3d/BOMEX_256x256x75_100m_40m_1s_256_0000021600.nc'
+sam_3d_file = '../../output/sam_3d/BOMEX_256x256x75_100m_40m_1s_256_0000021600.nc'
 
 ## CLUBB
 clubb_zm_file = '../../output/prog_mom_flux_paper/new/bomex_zm.nc'

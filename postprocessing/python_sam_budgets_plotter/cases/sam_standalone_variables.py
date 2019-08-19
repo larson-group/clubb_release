@@ -32,7 +32,7 @@ nc_files = ['sam']                                          # NetCDF files neede
 # P L O T S
 #-------------------------------------------------------------------------------
 # Names of the variables
-sortPlots = ['theta_l', 'r_t', 'theta_l_flux', 'r_t_flux', 'cloudliq_frac', 'r_c', 'w_var', 'w3', 'theta_l_var', 'r_t_var', 'covar_thetal_rt', 'wobs', 'U', 'V', 'covar_uw', 'covar_vw', 'u_var', 'v_var', 'corr_uw', 'corr_vw',\
+sortPlots = ['theta_l', 'r_t', 'theta_l_flux', 'corr_w_tl', 'r_t_flux', 'corr_w_rt', 'cloudliq_frac', 'r_c', 'w_var', 'w3', 'theta_l_var', 'r_t_var', 'covar_thetal_rt', 'wobs', 'U', 'V', 'covar_uw', 'covar_vw', 'u_var', 'v_var', 'corr_uw', 'corr_vw',\
                 'QR', 'QR_IP', 'QRP2', 'QRP2_QRIP', \
                 'Nrm', 'Nrm_IP', 'Nrp2', 'Nrp2_NrmIP', \
                 'Ncm', 'Ncm_IP', 'Ncp2', 'Ncp2_NcmIP', \
@@ -46,107 +46,126 @@ sortPlots = ['theta_l', 'r_t', 'theta_l_flux', 'r_t_flux', 'cloudliq_frac', 'r_c
                 'uprcp', 'uprtp', 'upthlp', 'upthvp', \
                 'vprcp', 'vprtp', 'vpthlp', 'vpthvp', \
                 'ucld' , 'vcld' , 'wcld',\
-                'ucomp', 'vcomp', 'wcomp', 'uwcomp', 'vwcomp', 'tvcomp', 'tlcomp', 'qtwcomp',\
+                'ucond', 'uweight', 'vcond', 'vweight', 'wcond', 'wweight',\
+                'uwcond', 'uwweight', 'vwcond', 'vwweight', 'tvcond', 'tvweight', 'tlweight', 'qtwweight',\
+                'qtcond',\
+                'uwall','vwall',\
+                'cld',\
                 ]
                 
 # settings of each plot:
 # plot number, plot title, axis label
 plotNames = [\
-                ['Liquid Water Potential Temperature, theta_l', 'thetal [K]'],\
-                ['Total Water Mixing Ratio, r_t', 'rtm / qt [kg/kg]'],\
-                ['Turbulent Flux of theta_l', 'wpthlp / thflux(s) [K m/s]'],\
-                ['Turbulent Flux of r_t', 'wprtp / qtflux(s) [(kg/kg) m/s]'],\
+                [r'Liquid Water Potential Temperature, $\theta_l$', r'$\theta_l\ \mathrm{\left[K\right]}$'],\
+                [r'Total Water Mixing Ratio, $r_t}$', r'rtm / qt $\mathrm{\left[kg\,kg^{-1}\right]}$'],\
+                [r'Turbulent Flux of $\theta_l$', r'wpthlp / thflux(s) $\mathrm{\left[K\,m\,s^{-1}\right]}$'],\
+                [r'Corr($w,\theta_l$)', r"Correlation $\overline{w'\theta_l'} / \sqrt{\overline{w'^2}\;\overline{\theta_l'^2}}\ \mathrm{\left[-\right]}$"],\
+                [r'Turbulent Flux of $r_t$', r'wprtp / qtflux(s) $\mathrm{\left[kg\,kg^{-1}\,m\,s^{-1}\right]}$'],\
+                [r'Corr($w,r_t$)', r"Correlation, $\overline{w'r_t'} / \sqrt{\overline{w'^2}\;\overline{r_t'^2}}\ \mathrm{\left[-\right]}$"],\
                 ['Cloud Liquid Fraction', ' [%/100]'],\
-                ['Cloud Water Mixing Ratio, r_c', 'rcm / qcl [kg/kg]'],\
-                [r"$\mathrm{\overline{w'^2}}$", r"Momentum variance $\mathrm{\overline{w'^2}\ \left[\frac{m^2}{s^2}\right]}$"],\
-                [r"$\mathrm{\overline{w'^3}}$", r"Third-order Moment $\mathrm{\overline{w'^3}\ \left[\frac{m^3}{s^3}\right]}$"],\
-                ['Variance of theta_l', 'thlp2 / tl2 [K^2]'],\
-                ['Variance of r_t', 'rtp2 / qtp2 [(kg/kg)^2]'],\
-                ['Covariance of r_t & theta_l', 'rtpthlp [(kg/kg) K]'],\
-                [r"$\mathrm{w_{obs}}$", r"Observed wind $\mathrm{w_{obs}\ \left[\frac{m}{s}\right]}$"],\
-                [r"Zonal Wind Component, u", r"$\mathrm{\bar{u}\ \left[\frac{m}{s}\right]}$"],\
-                [r"Meridonal Wind Component, v", r"$\mathrm{\bar{v}\ \left[\frac{m}{s}\right]}$"],\
-                [r"$\mathrm{\overline{u'w'}}$", r"Momentum flux $\mathrm{\overline{u'w'}\ \left[\frac{m^2}{s^2}\right]}$"],\
-                [r"$\mathrm{\overline{v'w'}}$", r"Momentum flux $\mathrm{\overline{v'w'}\ \left[\frac{m^2}{s^2}\right]}$"],\
-                [r"$\mathrm{\overline{u'^2}}$", r"Momentum variance $\mathrm{\overline{u'^2}\ \left[\frac{m^2}{s^2}\right]}$"],\
-                [r"$\mathrm{\overline{v'^2}}$", r"Momentum variance $\mathrm{\overline{v'^2}\ \left[\frac{m^2}{s^2}\right]}$"],\
-                [r"Corr(u,w)", r"Flux correlation $\mathrm{\overline{u'w'} / \sqrt{\overline{u'^2}\overline{w'^2}}\ [-]}$"],\
-                [r"Corr(v,w)", r"Flux correlation $\mathrm{\overline{v'w'} / \sqrt{\overline{v'^2}\overline{w'^2}}\ [-]}$"],\
+                ['Cloud Water Mixing Ratio, r_c', r'rcm / qcl $\mathrm{\left[kg\,kg^{-1}\right]}$'],\
+                [r"$\overline{w'^2}$", r"Momentum variance, $\overline{w'^2}\ \mathrm{\left[m^2\,s^{-2}\right]}$"],\
+                [r"$\overline{w'^3}$", r"Third-order Moment, $\overline{w'^3}\ \mathrm{\left[m^3\,s^{-3}\right]}$"],\
+                [r'Variance of $\theta_l$', r'thlp2 / tl2 $\mathrm{\left[K^2\right]}$'],\
+                [r'Variance of $r_t$', r'rtp2 / qtp2 $\mathrm{\left[kg^2\,kg^{-2}\right]}$'],\
+                [r'Covariance of $r_t$ & $\theta_l$', r'rtpthlp $\mathrm{\left[kg\,kg^{-1}\,K\right]}$'],\
+                [r"$w_{obs}$", r"Observed wind, $w_{obs}\ \mathrm{\left[m\,s^{-1}\right]}$"],\
+                [r"Zonal Wind Component, $\overline{u}$", r"$\overline{u}\ \mathrm{\left[m\,s^{-1}\right]}$"],\
+                [r"Meridonal Wind Component, $\overline{v}$", r"$\overline{v}\ \mathrm{\left[m\,s^{-1}\right]}$"],\
+                [r"$\overline{u'w'}$", r"Momentum flux, $\overline{u'w'}\ \mathrm{\left[m^2\,s^{-2}\right]}$"],\
+                [r"$\overline{v'w'}$", r"Momentum flux, $\overline{v'w'}\ \mathrm{\left[m^2\,s^{-2}\right]}$"],\
+                [r"$\overline{u'^2}$", r"Momentum variance, $\overline{u'^2}\ \mathrm{\left[m^2\,s^{-2}\right]}$"],\
+                [r"$\overline{v'^2}$", r"Momentum variance, $\overline{v'^2}\ \mathrm{\left[m^2\,s^{-2}\right]}$"],\
+                [r"Corr($u,w$)", r"Correlation, $\overline{u'w'} / \sqrt{\overline{u'^2}\;\overline{w'^2}}\ \mathrm{\left[-\right]}$"],\
+                [r"Corr($v,w$)", r"Correlation, $\overline{v'w'} / \sqrt{\overline{v'^2}\;\overline{w'^2}}\ \mathrm{\left[-\right]}$"],\
                 # Rain Water Mixing Ratio
-                ['Rain Water Mixing Ratio', 'qrm [kg/kg]'],\
-                ['Rain Water Mixing Ratio in Rain', 'qrm_ip [kg/kg]'],\
-                ['Domain-wide Variance\nof Rain Water Mixing Ratio', 'qrp2 [(kg/kg)^2]'],\
-                ['Within-rain Variance\nof Rain Water Mixing Ratio', 'qrp2_ip / qrm_ip^2 [-]'],\
+                ['Rain Water Mixing Ratio', r'qrm $\mathrm{\left[kg\,kg^{-1}\right]}$'],\
+                ['Rain Water Mixing Ratio in Rain', r'qrm_ip $\mathrm{\left[kg\,kg^{-1}\right]}$'],\
+                ['Domain-wide Variance\nof Rain Water Mixing Ratio', r'qrp2 $\mathrm{\left[kg^2\,kg^{-2}\right]}$'],\
+                ['Within-rain Variance\nof Rain Water Mixing Ratio', r'qrp2_ip / qrm_ip^2 [-]'],\
                 #Rain Drop Number Concentration
-                ['Rain Drop Concentration', 'Nrm [num/kg]'],\
-                ['Rain Drop Concentration in Rain', 'Nrm_ip [num/kg]'],\
-                ['Domain-wide Variance\nof Rain Drop Concentration', 'Nrp2 [(num/kg)^2]'],\
+                ['Rain Drop Concentration', r'Nrm $\mathrm{\left[num\,kg^{-1}\right]}$'],\
+                ['Rain Drop Concentration in Rain', r'Nrm_ip $\mathrm{\left[num\,kg^{-1}\right]}$'],\
+                ['Domain-wide Variance\nof Rain Drop Concentration', r'Nrp2 $\mathrm{\left[num^2\,kg^{-2}\right]}$'],\
                 ['Within-rain Variance\nof Rain Drop Concentration', 'Nrp2_ip / Nrm_ip^2 [-]'],\
                 #Cloud Droplet Number Concentration
-                ['Cloud Droplet Number Concentration', 'Ncm [num/kg]'],\
-                ['Cloud Droplet Number Concentration in Cloud', 'Ncm_ip [num/kg]'],\
-                ['Domain-wide Variance\nof Cloud Droplet Number Concentration', 'Ncp2 [(#/kg)^2]'],\
+                ['Cloud Droplet Number Concentration', r'Ncm $\mathrm{\left[num\,kg^{-1}\right]}$'],\
+                ['Cloud Droplet Number Concentration in Cloud', r'Ncm_ip $\mathrm{\left[num\,kg^{-1}\right]}$'],\
+                ['Domain-wide Variance\nof Cloud Droplet Number Concentration', r'Ncp2 $\mathrm{\left[\#^2\,kg^{-2}\right]}$'],\
                 ['Within-cloud Variance\nof Cloud Droplet Number Concentration', 'Ncp2_ip / Ncm_ip^2 [-]'],\
                 #Graupel Number Concentration
-                ['Graupel Number Concentration', 'Ngm [kg/kg]'],\
-                ['Graupel Number Concentration in Graupel', 'Ngm_ip [num/kg]'],\
-                ['Domain-wide Variance\nof Graupel Number Concentration', 'Ngp2 [(kg/kg)^2]'],\
+                ['Graupel Number Concentration', r'Ngm $\mathrm{\left[kg\,kg^{-1}\right]}$'],\
+                ['Graupel Number Concentration in Graupel', r'Ngm_ip $\mathrm{\left[num\,kg^{-1}\right]}$'],\
+                ['Domain-wide Variance\nof Graupel Number Concentration', r'Ngp2 $\mathrm{\left[kg^2\,kg^{-2}\right]}$'],\
                 ['Within-graupel Variance\nof Graupel Number Concentration', 'Ngp2_ip / Ngm_ip^2 [-]'],\
                 #Graupel Mixing Ratio
-                ['Graupel Mixing Ratio', 'qgm [kg/kg]'],\
-                ['Graupel Mixing Ratio in Graupel', 'qgm_ip [kg/kg]'],\
-                ['Domain-wide Variance\nof Graupel Mixing Ratio', 'qgp2 [(kg/kg)^2]'],\
+                ['Graupel Mixing Ratio', r'qgm $\mathrm{\left[kg\,kg^{-1}\right]}$'],\
+                ['Graupel Mixing Ratio in Graupel', r'qgm_ip $\mathrm{\left[kg\,kg^{-1}\right]}$'],\
+                ['Domain-wide Variance\nof Graupel Mixing Ratio', r'qgp2 $\mathrm{\left[kg^2\,kg^{-2}\right]}$'],\
                 ['Within-graupel Variance\nof Graupel Mixing Ratio', 'qgp2_ip / qgm_ip^2 [-]'],\
                 #Cloud Ice Mixing Ratio
-                ['Cloud Ice Mixing Ratio', 'qim [kg/kg]'],\
-                ['Cloud Ice Mixing Ratio in Cloud Ice', 'qim_ip [kg/kg]'],\
-                ['Domain-wide Variance\nof Cloud Ice Mixing Ratio', 'qip2 [(kg/kg)^2]'],\
+                ['Cloud Ice Mixing Ratio', r'qim $\mathrm{\left[kg\,kg^{-1}\right]}$'],\
+                ['Cloud Ice Mixing Ratio in Cloud Ice', r'qim_ip $\mathrm{\left[kg\,kg^{-1}\right]}$'],\
+                ['Domain-wide Variance\nof Cloud Ice Mixing Ratio', r'qip2 $\mathrm{\left[kg^2\,kg^{-2}\right]}$'],\
                 ['Within-cloud-ice Variance\nof Cloud Ice  Mixing Ratio', 'qip2_ip / qim_ip^2 [-]'],\
                 #Cloud Ice Number Concentration
-                ['Cloud Ice Concentration', 'Nim [num/kg]'],\
-                ['Cloud Ice Number Concentration in Cloud Ice', 'Ni_ip [num/kg]'],\
-                ['Domain-wide Variance\nof Cloud Ice Number Concentration', 'Nip2 [(num/kg)^2]'],\
+                ['Cloud Ice Concentration', r'Nim $\mathrm{\left[num\,kg^{-1}\right]}$'],\
+                ['Cloud Ice Number Concentration in Cloud Ice', r'Ni_ip $\mathrm{\left[num\,kg^{-1}\right]}$'],\
+                ['Domain-wide Variance\nof Cloud Ice Number Concentration', r'Nip2 $\mathrm{\left[num^2\,kg^{-2}\right]}$'],\
                 ['Within-cloud-ice Variance\nof Cloud Ice Number Concentration', 'Nip2_ip / Nim_ip^2 [-]'],\
                 #Snow Mixing Ratio
-                ['Snow Mixing Ratio ', 'qsm [kg/kg]'],\
-                ['Snow Mixing Ratio in Snow', 'qsm_ip [kg/kg]'],\
-                ['Domain-wide Variance\nof Snow Mixing Ratio', 'qsp2 [(kg/kg)^2]'],\
+                ['Snow Mixing Ratio ', r'qsm $\mathrm{\left[kg\,kg^{-1}\right]}$'],\
+                ['Snow Mixing Ratio in Snow', r'qsm_ip $\mathrm{\left[kg\,kg^{-1}\right]}$'],\
+                ['Domain-wide Variance\nof Snow Mixing Ratio', r'qsp2 $\mathrm{\left[kg^2\,kg^{-2}\right]}$'],\
                 ['Within-snow Variance\nof Snow Mixing Ratio ', 'qsp2_ip / qsm_ip^2 [-]'],\
                 #Snow Number Concentration
-                ['Snow Number Concentration', 'Nsm [num/kg]'],\
-                ['Snow Number Concentration in Snow', 'Nsm_ip [num/kg]'],\
-                ['Domain-wide Variance\nof Snow Number Concentration', 'Nsp2 [(#/kg)^2]'],\
+                ['Snow Number Concentration', r'Nsm $\mathrm{\left[num\,kg^{-1}\right]}$'],\
+                ['Snow Number Concentration in Snow', r'Nsm_ip $\mathrm{\left[num\,kg^{-1}\right]}$'],\
+                ['Domain-wide Variance\nof Snow Number Concentration', r'Nsp2 $\mathrm{\left[\#^2\,kg^{-2}\right]}$'],\
                 ['Within-snow Variance\nof Snow Number Concentration', 'Nsp2_ip / Nsm_ip^2 [-]'],\
                 ['Micro Fractions', '[%/100]'],\
-                ['Buoyancy flux', 'wpthvp / tlflux [K m/s]'],\
-                #['Liquid Water Path', 'lwp [kg/m^2]'],\
-                #['Surface rainfall rate', 'rain_rate_sfc[mm/day]'],\
-                #['Density-Weighted Vertically Averaged wp2', 'wp2 / w2 [m^2/s^2]'],\
-                #['Cloud Ice Water Path', 'iwp [kg/m^2]'],\
-                #['Snow Water Path', 'swp [kg/m^2]'],\
+                ['Buoyancy flux', r'wpthvp / tlflux $\mathrm{\left[K\,m\,s^{-1}\right]}$'],\
+                #['Liquid Water Path', r'lwp $\mathrm{\left[kg\,m^{-2}\right]}$'],\
+                #['Surface rainfall rate', r'rain_rate_sfc $\mathrm{\left[mm\,d^{-1}]}$'],\
+                #['Density-Weighted Vertically Averaged wp2', r'wp2 / w2 $\mathrm{\left[m^2\,s^{-2}\right]}$'],\
+                #['Cloud Ice Water Path', r'iwp $\mathrm{\left[kg\,m^{-2}]}$'],\
+                #['Snow Water Path', r'swp $\mathrm{\left[kg\,m^{-2}]}$'],\
                 # buoyancy sub-terms for parameterization in upwp budget
-                [r"$\mathrm{\overline{u'r_c'}}$", r"Liquid water flux $\mathrm{\overline{u'r_c'}\ \left[\frac{m^2}{s^2}\right]}$"],\
-                [r"$\mathrm{\overline{u'r_t'}}$", r"Total water flux $\mathrm{\overline{u'r_t'}\ \left[\frac{m^2}{s^2}\right]}$"],\
-                [r"$\mathrm{\overline{u'\theta_l'}}$", r"Liq. water pot. temp. flux $\mathrm{\overline{u'\theta_l'}\ \left[\frac{m^2}{s^2}\right]}$"],\
-                [r"$\mathrm{\overline{u'\theta_v'}}$", r"Virtual pot. temp. flux $\mathrm{\overline{u'\theta_v'}\ \left[\frac{m^2}{s^2}\right]}$"],\
+                [r"$\overline{u'r_c'}$", r"Liquid water flux, $\overline{u'r_c'}\ \mathrm{\left[m^2\,s^{-2}\right]}$"],\
+                [r"$\overline{u'r_t'}$", r"Total water flux, $\overline{u'r_t'}\ \mathrm{\left[m^2\,s^{-2}\right]}$"],\
+                [r"$\overline{u'\theta_l'}$", r"Liq. water pot. temp. flux, $\overline{u'\theta_l'}\ \mathrm{\left[m^2\,s^{-2}\right]}$"],\
+                [r"$\overline{u'\theta_v'}$", r"Virtual pot. temp. flux, $\overline{u'\theta_v'}\ \mathrm{\left[m^2\,s^{-2}\right]}$"],\
                 # buoyancy sub-terms for parameterization in vpwp budget
-                [r"$\mathrm{\overline{v'r_c'}}$", r"Liquid water flux $\mathrm{\overline{v'r_c'}\ \left[\frac{m^2}{s^2}\right]}$"],\
-                [r"$\mathrm{\overline{v'r_t'}}$", r"Total water flux $\mathrm{\overline{v'r_t'}\ \left[\frac{m^2}{s^2}\right]}$"],\
-                [r"$\mathrm{\overline{v'\theta_l'}}$", r"Liq. water pot. temp. flux $\mathrm{\overline{v'\theta_l'}\ \left[\frac{m^2}{s^2}\right]}$"],\
-                [r"$\mathrm{\overline{v'\theta_v'}}$", r"Virtual pot.temp. flux $\mathrm{\overline{v'\theta_v'}\ \left[\frac{m^2}{s^2}\right]}$"],\
+                [r"$\overline{v'r_c'}$", r"Liquid water flux, $\overline{v'r_c'}\ \mathrm{\left[m^2\,s^{-2}\right]}$"],\
+                [r"$\overline{v'r_t'}$", r"Total water flux, $\overline{v'r_t'}\ \mathrm{\left[m^2\,s^{-2}\right]}$"],\
+                [r"$\overline{v'\theta_l'}$", r"Liq. water pot. temp. flux, $\overline{v'\theta_l'}\ \mathrm{\left[m^2\,s^{-2}\right]}$"],\
+                [r"$\overline{v'\theta_v'}$", r"Virtual pot.temp. flux, $\overline{v'\theta_v'}\ \mathrm{\left[m^2\,s^{-2}\right]}$"],\
                 # Conditional mean wind speeds in clouds
-                [r"$\mathrm{\bar{u}_{cld}}$", r"(In-cloud) mean wind $\mathrm{u_{cld}\ \left[\frac{m}{s}\right]}$"],\
-                [r"$\mathrm{\bar{v}_{cld}}$", r"(In-cloud) mean wind $\mathrm{v_{cld}\ \ \left[\frac{m}{s}\right]}$"],\
-                [r"$\mathrm{\bar{w}_{cld}}$", r"(In-cloud) mean wind $\mathrm{w_{cld}\ \ \left[\frac{m}{s}\right]}$"],\
-                # Conditional comparison plots
-                [r"$\mathrm{\bar{u}_{cld}, \bar{u}_{env}}$", r"Cloud conditional mean wind $\mathrm{\bar{u}*\ \left[\frac{m}{s}\right]}$"],\
-                [r"$\mathrm{\bar{v}_{cld}, \bar{v}_{env}}$", r"Cloud conditional mean wind $\mathrm{\bar{v}*\ \left[\frac{m}{s}\right]}$"],\
-                [r"$\mathrm{\bar{w}_{cld}, \bar{w}_{env}}$", r"Cloud conditional mean wind $\mathrm{\bar{w}*\ \left[\frac{m}{s}\right]}$"],\
-                [r"$\mathrm{\overline{u'w'}_{cld}, \overline{u'w'}_{env}}$", r"Cloud conditional flux $\mathrm{\overline{u'w'}*\ \left[\frac{m^2}{s^2}\right]}$"],\
-                [r"$\mathrm{\overline{v'w'}_{cld}, \overline{v'w'}_{env}}$", r"Cloud conditional flux $\mathrm{\overline{v'w'}*\ \left[\frac{m^2}{s^2}\right]}$"],\
-                [r"$\mathrm{\bar{\theta}_v^{cld}, \bar{\theta}_v^{env}}$", r"Cloud cond. virt. pot. temp. $\mathrm{\bar{\theta}_v*\ \left[K\right]}$"],\
-                [r"$\mathrm{\overline{s_L'w'}_{cld}, \overline{s_L'w'}_{env}}$", r"Cloud conditional flux $\mathrm{\overline{s_L'w'}*\ \left[\frac{K\,m}{s}\right]}$"],\
-                [r"$\mathrm{\overline{r_t'w'}_{cld}, \overline{r_t'w'}_{env}}$", r"Cloud conditional flux $\mathrm{\overline{r_t'w'}*\ \left[\frac{g\,m}{kg\,s}\right]}$"],\
+                [r"$\overline{u}^\mathrm{{cld}}$", r"Conditional mean wind, $\overline{u}^\mathrm{{cld}}\ \mathrm{\left[m\,s^{-1}\right]}$"],\
+                [r"$\overline{v}^\mathrm{{cld}}$", r"Conditional mean wind, $\overline{v}^\mathrm{{cld}}\ \ \mathrm{\left[m\,s^{-1}\right]}$"],\
+                [r"$\overline{w}^\mathrm{{cld}}$", r"Conditional mean wind, $\overline{w}^\mathrm{{cld}}\ \ \mathrm{\left[m\,s^{-1}\right]}$"],\
+                # Conditional comparison plots for wind components
+                [r"Condt. $\overline{u}^\mathrm{cld},\ \overline{u}^\mathrm{env}$", r"Conditional mean wind, $\overline{u}\ \mathrm{\left[m\,s^{-1}\right]}$"],\
+                [r"Weighted $\overline{u}^\mathrm{cld},\ \overline{u}^\mathrm{env}$", r"Weighted mean wind, $\overline{u}\ \mathrm{\left[m\,s^{-1}\right]}$"],\
+                [r"Condt. $\overline{v}^\mathrm{cld},\ \overline{v}^\mathrm{env}$", r"Conditional mean wind, $\overline{v}\ \mathrm{\left[m\,s^{-1}\right]}$"],\
+                [r"Weighted $\overline{v}^\mathrm{cld},\ \overline{v}^\mathrm{env}$", r"Weighted mean wind, $\overline{v}\ \mathrm{\left[m\,s^{-1}\right]}$"],\
+                [r"Condt. $\overline{w}^\mathrm{cld},\ \overline{w}^\mathrm{env}$", r"Conditional mean wind, $\overline{w}\ \mathrm{\left[m\,s^{-1}\right]}$"],\
+                [r"Weighted $\overline{w}^\mathrm{cld},\ \overline{w}^\mathrm{env}$", r"Weighted mean wind, $\overline{w}\ \mathrm{\left[m\,s^{-1}\right]}$"],\
+                # Conditional comparison plots for momentum flux
+                [r"Condt. $\overline{u'w'}^\mathrm{cld}, \overline{u'w'}^\mathrm{env}$", r"Conditional flux, $\overline{u'w'}\ \mathrm{\left[m^2\, s^{-2}\right]}$"],\
+                [r"Weighted $\overline{u'w'}^\mathrm{cld}, \overline{u'w'}^\mathrm{env}$", r"Weighted flux, $\overline{u'w'}\ \mathrm{\left[m^2\, s^{-2}\right]}$"],\
+                [r"Condt. $\overline{v'w'}^\mathrm{cld}, \overline{v'w'}^\mathrm{env}$", r"Conditional flux, $\overline{v'w'}\ \mathrm{\left[m^2\, s^{-2}\right]}$"],\
+                [r"Weighted $\overline{v'w'}^\mathrm{cld}, \overline{v'w'}^\mathrm{env}$", r"Weighted flux, $\overline{v'w'}\ \mathrm{\left[m^2\, s^{-2}\right]}$"],\
+                [r"Condt. $\overline{\theta}_v^\mathrm{cld}, \overline{\theta}_v^\mathrm{env}$", r"Conditional virt. pot. temp., $\overline{\theta}_v\ \mathrm{\left[K\right]}$"],\
+                [r"Weighted $\overline{\theta}_v^\mathrm{cld}, \overline{\theta}_v^\mathrm{env}$", r"Weighted virt. pot. temp., $\overline{\theta}_v\ \mathrm{\left[K\right]}$"],\
+                #[r"Condt. $\overline{w's_L'}^\mathrm{cld}, \overline{w's_L'}^\mathrm{env}$", r"Conditional flux, $\overline{w's_L'}\ \mathrm{\left[K\,m\, s^{-1}\right]}$"],\
+                [r"Weighted $\overline{w's_L'}^\mathrm{cld}, \overline{w's_L'}^\mathrm{env}$", r"Weighted flux, $\overline{w's_L'}\ \mathrm{\left[K\,m\, s^{-1}\right]}$"],\
+                #[r"Condt. $\overline{w'r_t'}^\mathrm{cld}, \overline{w'r_t'}^\mathrm{env}$", r"Conditional flux, $\overline{w'r_t'}\ \mathrm{\left[kg\,kg^{-1}\, m\,s^{-1}\right]}$"],\
+                [r"Weighted $\overline{w'r_t'}^\mathrm{cld}, \overline{w'r_t'}^\mathrm{env}$", r"Weighted flux, $\overline{w'r_t'}\ \mathrm{\left[kg\,kg^{-1}\, m\,s^{-1}\right]}$"],\
+                [r"Condt. QT", r"Conditional water, QT $\mathrm{\left[g\,kg^{-1}\right]}$"],\
+                [r"Eastward 2nd-moments", r"2nd moments $\mathrm{\left[m^2\,s^{-2}\right]}$"],\
+                [r"Northward 2nd-moments", r"2nd moments $\mathrm{\left[m^2\,s^{-2}\right]}$"],\
+                ['Cloud fraction', 'Cloud fraction [-]'],\
             ]
 
 # lines of each plot:
@@ -158,7 +177,7 @@ thetal = [\
          ['THETA', False, 'THETA', 1., 0],\
          ['TABS', False, 'TABS', 1., 0],\
          ['QI', False, 'QI', 1./KG, 0],\
-         ['THETAL', True, 'THETAL + 2500.4 * (THETA/TABS) * QI', 1., 0],\
+         [r'$\theta_l$', True, 'THETAL + 2500.4 * (THETA/TABS) * QI', 1., 0],\
         ]        
 
 rt = [\
@@ -167,23 +186,44 @@ rt = [\
          ['QT', False, 'QT', 1., 0],\
          ['RT', True, '(QT-QI)', 1./KG, 0],\
         ]
-        
+
 thetalflux = [\
          # variables of thetalflux
          ['TLFLUX', False, 'TLFLUX', 1., 0],\
          ['RHO', False, 'RHO', 1., 0],\
          ['WPTHLP_SGS', False, 'WPTHLP_SGS', 1., 0],\
-         ['THETALFLUX', True, '((TLFLUX) / (RHO * 1004.)) + WPTHLP_SGS', 1., 0],\
+         [r"$\overline{w'\theta_l'}$", True, '((TLFLUX) / (RHO * 1004.)) + WPTHLP_SGS', 1., 0],\
         ]
-        
+
+corr_w_tl = [\
+        # variables of corr_w_tl
+        ['TLFLUX', False, 'TLFLUX', 1., 0],\
+        ['TL2', False, 'TL2', 1., 0],\
+        ['W2', False, 'W2', 1., 0],\
+        ['RHO', False, 'RHO', 1., 0],\
+        ['WPTHLP_SGS', False, 'WPTHLP_SGS', 1., 0],\
+        [r'Corr($w,\theta_l$)', True, '(((TLFLUX) / (RHO * 1004.)) + WPTHLP_SGS)/np.sqrt(W2*TL2 + 1e-4)', 1., 0],\
+        ]
+
 rtflux = [\
          # variables of rtflux
-         ['QTFLUX', False, 'TLFLUX', 1., 0],\
+         ['QTFLUX', False, 'QTFLUX', 1., 0],\
          ['RHO', False, 'RHO', 1., 0],\
          ['WPRTP_SGS', False, 'WPRTP_SGS', 1., 0],\
-         ['RTFLUX', True, '(TLFLUX / (RHO * 2.5104e+6)) + WPRTP_SGS', 1., 0],\
+         [r"$\overline{w'r_t'}$", True, '(QTFLUX/ (RHO * 2.5104e+6)) + WPRTP_SGS', 1., 0],\
         ]
-    
+
+
+corr_w_rt = [\
+        # variables of corr_w_rt
+        ['WPRTP', False, 'WPRTP', 1., 0],\
+        ['QT2', False, 'QT2', 1., 0],\
+        ['W2', False, 'W2', 1., 0],\
+        ['RHO', False, 'RHO', 1., 0],\
+        ['WPRTP_SGS', False, 'WPRTP_SGS', 1., 0],\
+        [r'Corr($w,r_t$)', True, 'WPRTP/(np.sqrt(W2*QT2*1e-6)+1e-8)', 1., 0],\
+        ]
+
 cloudliqfrac = [\
         # variables of cloudliqfrac
         ['cloudliq_frac_em6', True, 'cloudliq_frac_em6', 1., 0],\
@@ -198,14 +238,14 @@ wVar = [\
          # variables of wVar
          ['WP2_SGS', False, 'WP2_SGS', 1., 0],\
          ['W2', False, 'W2', 1., 0],\
-         [r"$\mathrm{\overline{w'^2}}$", True, 'WP2_SGS + W2', 1., 0],\
+         [r"$\overline{w'^2}$", True, 'WP2_SGS + W2', 1., 0],\
         ]
         
 w3 = [\
          # variables of wVar
          ['WP3_SGS', False, 'WP3_SGS', 1., 0],\
          ['W3', False, 'W3', 1., 0],\
-         [r"$\mathrm{\overline{w'^3}}$", True, 'WP3_SGS + W3', 1., 0],\
+         [r"$\overline{w'^3}$", True, 'WP3_SGS + W3', 1., 0],\
         ]
         
 thetalVar = [\
@@ -223,8 +263,9 @@ rtVar = [\
         ]
         
 covarThetalRt = [\
-         # variables of covarThetalRt
-         ['CovarThetaLRT', True, 'RTPTHLP_SGS', 1., 0],\
+         # variables of covarThetalRt NOTE: RTPTHLP_SGS not found in nc file
+         #['CovarThetaLRT', True, 'RTPTHLP_SGS', 1., 0],\
+         ['CovarThetaLRT', True, 'RTPTHLP', 1., 0],\
         ]
         
 wobs = [\
@@ -234,44 +275,44 @@ wobs = [\
         
 U = [\
          # variables of U
-        [r"$\mathrm{\bar{u}}$", True, 'U', 1., 0],\
+        [r"$\overline{u}$", True, 'U', 1., 0],\
         ]
         
 V = [\
          # variables of V
-        [r"$\mathrm{\bar{v}}$", True, 'V', 1., 0],\
+        [r"$\overline{v}$", True, 'V', 1., 0],\
         ]
         
 covarUW = [\
          # variables of covarUW (standard SAM run has no SGS output, only SB)
          ['UPWP_SGS', False, 'UPWP_SGS', 1., 0],\
-         [r"$\mathrm{\overline{u'w'}}$ (subgrid)", True, 'UWSB', 1., 0],\
+         [r"$\overline{u'w'}$ (subgrid)", True, 'UWSB', 1., 0],\
          ['UW', False, 'UW', 1., 0],\
-         [r"$\mathrm{\overline{u'w'}}$ (resolved)", True,'UW-UWSB+UPWP_SGS',1,0],\
-         [r"$\mathrm{\overline{u'w'}}$ (total)", True, 'UW+UPWP_SGS', 1., 0],\
+         [r"$\overline{u'w'}$ (resolved)", True,'UW-UWSB+UPWP_SGS',1,0],\
+         [r"$\overline{u'w'}$ (total)", True, 'UW+UPWP_SGS', 1., 0],\
         ]
         
 covarVW = [\
          # variables of covarVW (standard SAM run has no SGS output, only SB)
          ['VPWP_SGS', False, 'VPWP_SGS', 1., 0],\
-         [r"$\mathrm{\overline{v'w'}}$ (subgrid)", True, 'VWSB', 1., 0],\
+         [r"$\overline{v'w'}$ (subgrid)", True, 'VWSB', 1., 0],\
          ['VW', False, 'VW', 1., 0],\
-         [r"$\mathrm{\overline{v'w'}}$ (resolved)", True,'VW-VWSB',1,0],\
-         [r"$\mathrm{\overline{v'w'}}$ (total)", True, 'VW + VPWP_SGS', 1., 0],\
+         [r"$\overline{v'w'}$ (resolved)", True,'VW-VWSB',1,0],\
+         [r"$\overline{v'w'}$ (total)", True, 'VW + VPWP_SGS', 1., 0],\
         ]
 
 uVar = [\
          # variables of uVar
          ['UP2_SGS', False, 'UP2_SGS', 1., 0],\
          ['U2', False, 'U2', 1., 0],\
-         [r"$\mathrm{\overline{u'^2}}$", True, 'UP2_SGS + U2', 1., 0],\
+         [r"$\overline{u'^2}$", True, 'UP2_SGS + U2', 1., 0],\
         ]
 
 vVar = [\
          # variables of vVar
          ['VP2_SGS', False, 'VP2_SGS', 1., 0],\
          ['V2', False, 'V2', 1., 0],\
-         [r"$\mathrm{\overline{v'^2}}$", True, 'VP2_SGS + V2', 1., 0],\
+         [r"$\overline{v'^2}$", True, 'VP2_SGS + V2', 1., 0],\
         ]
 
 corrUW = [\
@@ -284,7 +325,7 @@ corrUW = [\
         # variables of covarUW
         ['UPWP_SGS', False, 'UPWP_SGS', 1., 0],\
         ['UW', False, 'UW', 1., 0],\
-        ['corr(u,w)', True,'(UW+UPWP_SGS)/(np.sqrt((U2+UP2_SGS)*(W2+WP2_SGS)+1e-4))', 1., 0],\
+        [r'Corr($u,w$)', True,'(UW+UPWP_SGS)/(np.sqrt((U2+UP2_SGS)*(W2+WP2_SGS)+1e-4))', 1., 0],\
         ]
     
 corrVW = [\
@@ -297,7 +338,7 @@ corrVW = [\
         # variables of covarUW
         ['VPWP_SGS', False, 'VPWP_SGS', 1., 0],\
         ['VW', False, 'VW', 1., 0],\
-        ['corr(v,w)', True,'(VW+VPWP_SGS)/(np.sqrt((V2+VP2_SGS)*(W2+WP2_SGS)+1e-4))', 1., 0],\
+        [r'Corr($v,w$)', True,'(VW+VPWP_SGS)/(np.sqrt((V2+VP2_SGS)*(W2+WP2_SGS)+1e-4))', 1., 0],\
         ]
 
 # Rain Water Mixing Ratio
@@ -570,113 +611,201 @@ SWP = [\
         ]
 
 uprcp = [\
-        [r"$\mathrm{\overline{u'r_c'}}$", True, 'UPRCP', 1., 0],\
+        [r"$\overline{u'r_c'}$", True, 'UPRCP', 1., 0],\
         ]
 
 uprtp = [\
-        [r"$\mathrm{\overline{u'r_t'}}$", True, 'UPRTP', 1., 0],\
+        [r"$\overline{u'r_t'}$", True, 'UPRTP', 1., 0],\
         ]
 
 upthlp = [\
-        [r"$\mathrm{\overline{u'\theta_l'}}$", True, 'UPTHLP', 1., 0],\
+        [r"$\overline{u'\theta_l'}$", True, 'UPTHLP', 1., 0],\
         ]
     
 upthvp = [\
-        [r"$\mathrm{\overline{u'\theta_v'}}$", True, 'UPTHVP', 1., 0],\
+        [r"$\overline{u'\theta_v'}$", True, 'UPTHVP', 1., 0],\
         ]
     
 vprcp = [\
-        [r"$\mathrm{\overline{v'r_c'}}$", True, 'VPRCP', 1., 0],\
+        [r"$\overline{v'r_c'}$", True, 'VPRCP', 1., 0],\
         ]
 
 vprtp = [\
-        [r"$\mathrm{\overline{v'r_t'}}$", True, 'VPRTP', 1., 0],\
+        [r"$\overline{v'r_t'}$", True, 'VPRTP', 1., 0],\
         ]
 
 vpthlp = [\
-        [r"$\mathrm{\overline{v'\theta_l'}}$", True, 'VPTHLP', 1., 0],\
+        [r"$\overline{v'\theta_l'}$", True, 'VPTHLP', 1., 0],\
         ]
 
 vpthvp = [\
-        [r"$\mathrm{\overline{v'\theta_v'}}$", True, 'VPTHVP', 1., 0],\
+        [r"$\overline{v'\theta_v'}$", True, 'VPTHVP', 1., 0],\
         ]
 
 # Conditional plots
 ucld = [\
-    ['In-cloud mean of u', True, 'UCLD', 1., 0 ],\
-    ['Total mean of u', True, 'U', 1., 0 ],\
+    [r'Layer avg., $\overline{u}$', True, 'U', 1., 0 ],\
+    [r'Cloud avg., $\overline{u}^\mathrm{cld}$', True, 'UCLD', 1., 0 ],\
     ]
 
-
 vcld = [\
-    ['In-cloud mean of v', True, 'VCLD', 1., 0 ],\
-    ['Total mean of v', True, 'V', 1., 0 ],\
+    [r'Layer avg., $\overline{v}}$', True, 'V', 1., 0 ],\
+    [r'Cloud avg., $\overline{v}^\mathrm{cld}$', True, 'VCLD', 1., 0 ],\
     ]
 
 wcld = [\
-    ['In-cloud mean of w', True, 'WCLD', 1., 0 ],\
-    ['Total mean of w', True, 'WM', 1., 0 ],\
+    [r'Layer avg., $\overline{w}$', True, 'WM', 1., 0 ],\
+        [r'Cloud avg., $\overline{w}^\mathrm{cld}$', True, 'WCLD', 1., 0 ],\
     ]
 
-# Cnditional comparison plots
+# Conditional comparison plots
 
-ucomp = [\
-    ['In-cloud mean of u', True, 'UCLD', 1., 0 ],\
-    ['Total mean of u', False, 'U', 1., 0 ],\
+ucond = [\
+    [r'Layer avg., $\overline{u}$', True, None, 1., 0 ],\
+    [r'Cloud avg., $\overline{u}^\mathrm{cld}$', True, 'UCLD', 1., 0 ],\
+    ['U', False, 'U', 1., 0 ],\
     ['CLD', False, 'CLD', 1., 0],\
-    ['Environmental mean of u', True, '(U - CLD*UCLD)/(1-CLD)', 1., 0],\
+    [r'Environment avg., $\overline{u}^\mathrm{env}$', True, '(U - CLD*UCLD)/(1-CLD)', 1., 0],\
     ]
 
-vcomp = [\
-    ['In-cloud mean of v', True, 'VCLD', 1., 0 ],\
+uweight = [\
+    ['UCLD', False, 'UCLD', 1., 0 ],\
+    ['U', False, 'U', 1., 0 ],\
+    ['CLD', False, 'CLD', 1., 0],\
+    [r'Layer avg., $\overline{u}$', True, None, 1., 0 ],\
+    [r'Cloud avg., $C\cdot\overline{u}^\mathrm{cld}$', True, 'CLD * UCLD', 1., 0 ],\
+    [r'Environment avg., $(1-C)\cdot\overline{u}^\mathrm{env}$', True, '(U - CLD*UCLD)', 1., 0],\
+    ]
+
+vcond = [\
+    [r'Layer avg., $\overline{v}$', True, None, 1., 0 ],\
+    [r'Cloud avg., $\overline{v}^\mathrm{cld}$', True, 'VCLD', 1., 0 ],\
     ['V', False, 'V', 1., 0 ],\
     ['CLD', False, 'CLD', 1., 0],\
-    ['Environmental mean of v', True, '(V - CLD*VCLD)/(1-CLD)', 1., 0],\
+    [r'Environment avg., $\overline{v}^\mathrm{env}$', True, '(V - CLD*VCLD)/(1-CLD)', 1., 0],\
     ]
 
-wcomp = [\
-    ['In-cloud mean of w', True, 'WCLD', 1., 0 ],\
-    ['WM', False, 'WM', 1., 0 ],\
+vweight = [\
+    ['VCLD', False, 'VCLD', 1., 0 ],\
+    ['V', False, 'V', 1., 0 ],\
     ['CLD', False, 'CLD', 1., 0],\
-    ['Environmental mean of w', True, '(WM - CLD*WCLD)/(1-CLD)', 1., 0],\
+    [r'Layer avg., $\overline{v}$', True, None, 1., 0 ],\
+    [r'Cloud avg., $c \cdot \overline{v}^\mathrm{cld}$', True, 'CLD * VCLD', 1., 0 ],\
+    [r'Environment avg., $(1-C) \cdot \overline{v}^\mathrm{env}$', True, '(V - CLD*VCLD)', 1., 0],\
     ]
 
-uwcomp = [\
-    [r"In-cloud $\mathrm{\overline{u'w'}}$", True, 'UWCLD', 1., 0 ],\
+wcond = [\
+    ['WM', False, 'WM', 1., 0 ],\
+    [r'Layer avg., $\overline{w}$', True, None, 1., 0 ],\
+    [r'Cloud avg., $\overline{w}^\mathrm{cld}$', True, 'WCLD', 1., 0 ],\
+    ['CLD', False, 'CLD', 1., 0],\
+    [r'Environment avg., $\overline{w}^\mathrm{env}$', True, '(WM - CLD*WCLD)/(1-CLD)', 1., 0],\
+    ]
+
+wweight = [\
+    ['WM', False, 'WM', 1., 0 ],\
+    ['WCLD', False, 'WCLD', 1., 0 ],\
+    ['CLD', False, 'CLD', 1., 0],\
+    [r'Layer avg., $\overline{w}$', True, None, 1., 0 ],\
+    [r'Cloud avg., $C\cdot\overline{w}^\mathrm{cld}$', True, 'CLD * WCLD', 1., 0 ],\
+    [r'Environment avg., $(1-C)\cdot\overline{w}^\mathrm{env}$', True, '(WM - CLD*WCLD)', 1., 0],\
+    ]
+
+uwcond = [\
+    [r"Layer avg., $\overline{u'w'}$", True, None, 1., 0 ],\
+    [r"Cloud avg., $\overline{u'w'}^\mathrm{cld}$", True, 'UWCLD', 1., 0 ],\
     ['UW', False, 'UW', 1., 0 ],\
     ['CLD', False, 'CLD', 1., 0],\
-    [r"Environmental $\mathrm{\overline{u'w'}}$", True, '(UW - CLD*UWCLD)/(1-CLD)', 1., 0],\
+    [r"Environment avg., $\overline{u'w'}^\mathrm{env}$", True, '(UW - CLD*UWCLD)/(1-CLD)', 1., 1],\
     ]
 
-vwcomp = [\
-    [r"In-cloud $\mathrm{\overline{v'w'}}$", True, 'VWCLD', 1., 0 ],\
+
+uwweight = [\
+    ['UWCLD', False, 'UWCLD', 1., 0 ],\
+    ['UW', False, 'UW', 1., 0 ],\
+    ['CLD', False, 'CLD', 1., 0],\
+    [r"Layer avg., $\overline{u'w'}$", True, None, 1., 0 ],\
+    [r"Cloud avg., $C\cdot\overline{u'w'}^\mathrm{cld}$", True, 'CLD*UWCLD', 1., 0 ],\
+    [r"Environment avg., $(1-C)\cdot\overline{u'w'}^\mathrm{env}$", True, '(UW - CLD*UWCLD)', 1., 0],\
+    ]
+
+vwcond = [\
+    [r"Layer avg., $\overline{v'w'}$", True, None, 1., 0 ],\
+    [r"Cloud avg., $\overline{v'w'}^\mathrm{cld}$", True, 'VWCLD', 1., 0 ],\
     ['VW', False, 'VW', 1., 0 ],\
     ['CLD', False, 'CLD', 1., 0],\
-    [r"Environmental $\mathrm{\overline{v'w'}}$", True, '(VW - CLD*VWCLD)/(1-CLD)', 1., 0],\
+    [r"Environment avg., $\overline{v'w'}^\mathrm{env}$", True, '(VW - CLD*VWCLD)/(1-CLD)', 1., 1],\
     ]
 
-tvcomp = [\
-    [r'In-cloud $\mathrm{\bar{\theta}_v}$', True, 'TVCLD', 1., 0 ],\
+vwweight = [\
+    ['VWCLD', False, 'VWCLD', 1., 0 ],\
+    ['VW', False, 'VW', 1., 0 ],\
+    ['CLD', False, 'CLD', 1., 0],\
+    [r"Layer avg., $\overline{v'w'}$", True, None, 1., 0 ],\
+    [r"Cloud avg., $C\cdot\overline{v'w'}^\mathrm{cld}$", True, 'CLD * VWCLD', 1., 0 ],\
+    [r"Environment avg., $(1-C)\cdot\overline{v'w'}^\mathrm{env}$", True, '(VW - CLD*VWCLD)', 1., 1],\
+    ]
+
+tvcond = [\
+    [r"Layer avg., $\overline{\theta}_v}$", True, None, 1., 0 ],\
+    [r'Cloud avg., $\overline{\theta}_v^\mathrm{cld}$', True, 'TVCLD', 1., 0 ],\
     ['THETAV', False, 'THETAV', 1., 0 ],\
     ['CLD', False, 'CLD', 1., 0],\
-    [r'Environmental $\mathrm{\bar{\theta}_v}$', True, '(THETAV - CLD*TVCLD)/(1-CLD)', 1., 0],\
+    [r'Environment avg., $\overline{\theta}_v^\mathrm{env}$', True, '(THETAV - CLD*TVCLD)/(1-CLD)', 1., 0],\
     ]
 
-tlcomp = [\
-    [r"In-cloud $\mathrm{\overline{s'_Lw'}}$", True, 'TLWCLD', 1., 0 ],\
+tvweight = [\
+    ['THETAV', False, 'THETAV', 1., 0 ],\
+    [r'TVCLD', False, 'TVCLD', 1., 0 ],\
+    ['CLD', False, 'CLD', 1., 0],\
+    [r"Layer avg., $\overline{\theta}_v}$", True, None, 1., 0 ],\
+    [r'Cloud avg., $C\cdot\overline{\theta}_v^\mathrm{cld}$', True, 'CLD * TVCLD', 1., 0 ],\
+    [r'Environment avg., $(1-C)\cdot\overline{\theta}_v^\mathrm{env}$', True, '(THETAV - CLD*TVCLD)/(1-CLD)', 1., 0],\
+    ]
+
+tlweight = [\
     ['TLFLUX', False, 'TLFLUX', 1., 0 ],\
+    [r"RHO", False, 'RHO', 1., 0 ],\
+    [r"Layer avg. $\overline{w's_L'}$", False, 'TLFLUX/RHO/1004', 1., 0 ],\
+    [r"Cloud avg., $C\cdot\overline{w's'_L}^\mathrm{cld}$", True, 'TLWCLD', 1., 0 ],\
     ['CLD', False, 'CLD', 1., 0],\
-    [r"Environmental $\mathrm{\overline{s'_Lw'}}$", True, '(TLFLUX - CLD*TLWCLD)/(1-CLD)', 1., 0],\
+    [r"Env. avg., $(1-C)\cdot\overline{w's'_L}^\mathrm{env}$", True, '(TLFLUX/RHO/1004 - TLWCLD)', 1., 0],\
     ]
 
-qtwcomp = [\
-    [r"In-cloud $\mathrm{\overline{r_t'w'}}$", True, 'QTWCLD', 1., 0 ],\
-    ['WPRTP', False, 'WPRTP', 1., 0 ],\
+qtwweight= [\
+    #['WPRTP', False, 'WPRTP', 1., 0 ],\
+    #['WPRTP_SGS', False, 'WPRTP_SGS', 1., 0],\
+    [r"QTWCLD", False, 'QTWCLD', 1., 0 ],\
+    ['RHO', False, 'RHO', 1., 0],\
     ['CLD', False, 'CLD', 1., 0],\
-    [r"Environmental $\mathrm{\overline{r_t'w'}}$", True, '(WPRTP - CLD*QTWCLD)/(1-CLD)', 1., 0],\
+    [r"Layer avg. $\overline{w'r_t'}$", False, 'WPRTP', 1., 0 ],\
+    [r"Cloud avg., $\overline{w'r_t'}^\mathrm{cld}$", True, 'QTWCLD/1000', 1., 0 ],\
+    [r"Environment avg., $\overline{w'r_t'}^\mathrm{env}$", True, '(WPRTP - QTWCLD/1000)', 1., 0],\
     ]
 
-lines = [thetal, rt, thetalflux, rtflux, cloudliqfrac, qcl, \
+qtcond = [\
+        ['QTCLD', True, 'QTCLD', 1., 0],\
+        ['QT', True, 'QT', 1., 0],\
+        ['QTENV', True, 'QT-QTCLD',1.,0]
+        ]
+
+uwall = [\
+    [r"Layer avg., $\overline{u'w'}$", True, 'UW', 1., 0],\
+    [r"Layer avg., $\overline{u'^2}$", True, 'U2', 1., 0],\
+    [r"Layer avg., $\overline{w'^2}$", True, 'W2', 1., 0],\
+        ]
+    
+vwall = [\
+    [r"Layer avg., $\overline{v'w'}$", True, 'VW', 1., 0],\
+    [r"Layer avg., $\overline{v'^2}$", True, 'V2', 1., 0],\
+    [r"Layer avg., $\overline{w'^2}$", True, 'W2', 1., 0],\
+        ]
+
+cld = [\
+    ['CLD',True,'CLD',1.,0],\
+        ]
+
+lines = [thetal, rt, thetalflux, corr_w_tl, rtflux, corr_w_rt, cloudliqfrac, qcl, \
         wVar, w3, thetalVar, rtVar, covarThetalRt, wobs, U, V, covarUW, covarVW, uVar, vVar, corrUW, corrVW, \
         QR, QRIP, QRP2, QRP2_QRIP, \
         Nrm, Nrm_IP, Nrp2, Nrp2_NrmIP, \
@@ -691,5 +820,9 @@ lines = [thetal, rt, thetalflux, rtflux, cloudliqfrac, qcl, \
         uprcp, uprtp, upthlp, upthvp, \
         vprcp, vprtp, vpthlp, vpthvp,\
         ucld, vcld, wcld,\
-        ucomp, vcomp, wcomp, uwcomp, vwcomp, tvcomp, tlcomp, qtwcomp,\
+        ucond, uweight, vcond, vweight, wcond, wweight,\
+        uwcond, uwweight, vwcond, vwweight, tvcond, tvweight, tlweight, qtwweight,\
+        qtcond,\
+        uwall,vwall,\
+        cld,\
         ]

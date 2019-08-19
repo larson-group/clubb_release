@@ -23,7 +23,7 @@ dz = 80               # [m]
 dt = 1                # [s]
 startTime = 301.0     # [minutes]
 endTime = 840.0       # [minutes]
-startHeight = 0.0   # [m]
+startHeight = 0.0     # [m]
 endHeight = 3500.0    # [m]
 time_3d = 21600.0     # dt
 
@@ -42,7 +42,7 @@ out_pdf = '{case}_{dx}x{dx}_{{type}}_{{date}}.pdf'.format(case=case.lower(),dx=n
 # nc file generated from .stat output
 sam_file = '../../output/GCSSARM_96x96x110_67m_40m_1s.nc'
 # nc file generated from .bin3D output
-sam_3d_file = '/home/sdomke/workspace/clubb/avi_out/out3d/GCSSARM_96x96x110_67m_40m_1s_96_0000052200.nc'
+sam_3d_file = '../../output/sam_3d/GCSSARM_96x96x110_67m_40m_1s_96_0000052200.nc'
 
 ## CLUBB
 clubb_zm_file = '../../output/prog_mom_flux_paper/new/arm_zm.nc'

@@ -28,6 +28,7 @@ kg_per_second_to_kg_per_day = 1. / (DAY * HOUR)
 filler = nan                                                # Define the fill value which should replace invalid values in the data
 startLevel = 0                                              # Set the lower height level at which the plots should begin. For example, startLevel=2 would cut off the lowest 2 data points for each line.
 header = 'CLUBB budgets'
+prefix = 'CLUBB'
 name = 'clubb_budgets'                                      # String used as part of the output file name
 nc_files = ['clubb_zm']                                     # NetCDF files needed for plots, paths are defined
 
@@ -41,16 +42,16 @@ sortPlots = sortPlots_zm + sortPlots_zt
 
 # Construct plot name from long name in netcdf instead
 plotNames_zm = [\
-    ["Vertical eastward momentum flux", r"$\mathrm{\overline{u'w'}}$ budget terms $\mathrm{\left[\frac{m^2}{s^3}\right]}$"],\
-    ["Vertical northward momentum flux", r"$\mathrm{\overline{v'w'}}$ budget terms $\mathrm{\left[\frac{m^2}{s^3}\right]}$"],\
-    ["Variance of eastward air velocity", r"$\mathrm{\overline{u'^2}}$ budget terms $\mathrm{\left[\frac{m^2}{s^3}\right]}$"],\
-    ["Variance of northward air velocity", r"$\mathrm{\overline{v'^2}}$ budget terms $\mathrm{\left[\frac{m^2}{s^3}\right]}$"],\
-    ["Variance of vertical air velocity", r"$\mathrm{\overline{w'^2}}$ budget terms $\mathrm{\left[\frac{m^2}{s^3}\right]}$"],\
-    ["Vertical eastward momentum flux", r"$\mathrm{\overline{u'w'}}$ budget terms $\mathrm{\left[\frac{m^2}{s^3}\right]}$"],\
-    ["Vertical northward momentum flux", r"$\mathrm{\overline{v'w'}}$ budget terms $\mathrm{\left[\frac{m^2}{s^3}\right]}$"],\
-    ["Variance of eastward air velocity", r"$\mathrm{\overline{u'^2}}$ budget terms $\mathrm{\left[\frac{m^2}{s^3}\right]}$"],\
-    ["Variance of northward air velocity", r"$\mathrm{\overline{v'^2}}$ budget terms $\mathrm{\left[\frac{m^2}{s^3}\right]}$"],\
-    ["Variance of vertical air velocity", r"$\mathrm{\overline{w'^2}}$ budget terms $\mathrm{\left[\frac{m^2}{s^3}\right]}$"],\
+    [r"$\overline{u'w'}$ budget", r"$\overline{u'w'}$ budget terms $\mathrm{\left[m^2\,s^{-3} \right]}$"],\
+    [r"$\overline{v'w'}$ budget", r"$\overline{v'w'}$ budget terms $\mathrm{\left[m^2\,s^{-3} \right]}$"],\
+    [r"$\overline{u'^2}$ budget", r"$\overline{u'^2}$ budget terms $\mathrm{\left[m^2\,s^{-3} \right]}$"],\
+    [r"$\overline{v'^2}$ budget", r"$\overline{v'^2}$ budget terms $\mathrm{\left[m^2\,s^{-3} \right]}$"],\
+    [r"$\overline{w'^2}$ budget", r"$\overline{w'^2}$ budget terms $\mathrm{\left[m^2\,s^{-3} \right]}$"],\
+    [r"$\overline{u'w'}$ budget", r"$\overline{u'w'}$ budget terms $\mathrm{\left[m^2\,s^{-3} \right]}$"],\
+    [r"$\overline{v'w'}$ budget", r"$\overline{v'w'}$ budget terms $\mathrm{\left[m^2\,s^{-3} \right]}$"],\
+    [r"$\overline{u'^2}$ budget", r"$\overline{u'^2}$ budget terms $\mathrm{\left[m^2\,s^{-3} \right]}$"],\
+    [r"$\overline{v'^2}$ budget", r"$\overline{v'^2}$ budget terms $\mathrm{\left[m^2\,s^{-3} \right]}$"],\
+    [r"$\overline{w'^2}$ budget", r"$\overline{w'^2}$ budget terms $\mathrm{\left[m^2\,s^{-3} \right]}$"],\
     ]
 
 plotNames_zt = []
@@ -173,7 +174,7 @@ upwp_reduced = [\
     ['dissipation', True, 'upwp_dp1', 1., 0],\
     ['pressure', True, 'upwp_pr1 + upwp_pr2 + upwp_pr3 + upwp_pr4', 1., 0],\
     ['turb. prod.', True, 'upwp_tp', 1. ,0],\
-    ['time tndncy', True, 'upwp_bt', 1., 0],\
+    ['time tndcy', True, 'upwp_bt', 1., 0],\
     ['residual', True, 'upwp_ac + upwp_cl + upwp_ma + upwp_mfl', 1., 0],\
     ]
 
@@ -192,7 +193,7 @@ vpwp_reduced = [\
     ['dissipation', True, 'vpwp_dp1', 1., 0],\
     ['pressure', True, 'vpwp_pr1 + vpwp_pr2 + vpwp_pr3 + vpwp_pr4', 1., 0],\
     ['turb. prod.', True, 'vpwp_tp', 1. ,0],\
-    ['time tndncy', True, 'vpwp_bt', 1., 0],\
+    ['time tndcy', True, 'vpwp_bt', 1., 0],\
     ['residual', True, 'vpwp_ac + vpwp_cl + vpwp_ma + vpwp_mfl', 1., 0],\
     ]
 
@@ -212,7 +213,7 @@ up2_reduced = [
     ['dissipation', True, 'up2_pr1 + up2_dp2', 1., 0],\
     ['pressure', True, 'up2_dp1 + up2_pr2 + up2_splat', 1., 0],\
     ['turb. prod.', True, 'up2_tp', 1., 0],\
-    ['time tndncy', True, 'up2_bt', 1., 0],\
+    ['time tndcy', True, 'up2_bt', 1., 0],\
     ['residual', True, 'up2_cl + up2_ma + up2_pd + up2_sdmp + up2_sf', 1., 0],\
     ]
 
@@ -232,7 +233,7 @@ vp2_reduced = [
     ['dissipation', True, 'vp2_pr1 + vp2_dp2', 1., 0],\
     ['pressure', True, 'vp2_dp1 + vp2_pr2 + vp2_splat', 1., 0],\
     ['turb. prod.', True, 'vp2_tp', 1., 0],\
-    ['time tndncy', True, 'vp2_bt', 1., 0],\
+    ['time tndcy', True, 'vp2_bt', 1., 0],\
     ['residual', True, 'vp2_cl + vp2_ma + vp2_pd + vp2_sdmp + vp2_sf', 1., 0],\
     ]
 
@@ -254,7 +255,7 @@ wp2_reduced = [
     ['dissipation', True, 'wp2_dp1 + wp2_dp2', 1., 0],\
     ['pressure', True, 'wp2_pr1 + wp2_pr2 + wp2_pr3 + wp2_splat', 1., 0],\
     ['turb. prod.', True, None, 1., 0],\
-    ['time tndncy', True, 'wp2_bt', 1., 0],\
+    ['time tndcy', True, 'wp2_bt', 1., 0],\
     ['residual', True, 'wp2_ac + wp2_cl + wp2_ma + wp2_pd + wp2_sdmp + wp2_sf', 1., 0],\
     ]
 

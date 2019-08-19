@@ -12,6 +12,7 @@ from matplotlib.ticker import ScalarFormatter as stick
 # Imports used for moving power offset
 import types
 import matplotlib.transforms as mpt
+from plot_defs import *
 
 #-------------------------------------------------------------------------------
 #   L O G G E R
@@ -20,51 +21,6 @@ logger = logging.getLogger('plotgen.help.pb')
 #logger.setLevel(logging.INFO)
 logger.setLevel(logging.DEBUG)
 #logger.setLevel(logging.CRITICAL)
-
-
-#-------------------------------------------------------------------------------
-#   D E F I N I T I O N S
-#-------------------------------------------------------------------------------
-#styles = ['-']
-styles = ['-','--','-.',':']
-#ticks = stick(useMathText=True)
-#ticks.set_powerlimits((-3,3))
-pow_lim = 1
-#legend_pos = [2,1]
-legend_pos = [1,2]
-legend_title = ['bottom', 'top']
-# Create 9 maximally distinguishable colors TODO!!
-#             red       blue      green     purple    brown     black     grey      orange    magenta
-color_arr = ['#e41a1c','#377eb8','#4daf4a','#984ea3','#a65628','#000000','#999999','#ffa600','#f750bf']
-
-## Comparison styles
-comp_style = {
-    'clubb' : {
-        'color' : 'red',
-        'lw'    : 3,
-        'ls'    : '--',
-        'label' : 'new CLUBB'
-        },
-    'sam'   : {
-        'color' : 'black',
-        'lw'    : 5,
-        'ls'    : '-',
-        'label' : 'SAM-LES'
-        },
-    'old'   : {
-        'color' : 'green',
-        'lw'    : 3,
-        'ls'    : ':',
-        'label' : 'old CLUBB'
-        },
-    }
-
-fontsizes = {
-    'labels' : 25,
-    'ticks' : 20,
-    'title' : 30,
-    'legend' : 18,
-    }
 
 #-------------------------------------------------------------------------------
 #   F U N C T I O N S
@@ -146,7 +102,7 @@ def plot_budgets(budgets_data, level, xLabel, yLabel, title, name, lw = 5, grid 
         #limit = round(limit/10**e)
         axes[i].set_xlim(-limit, limit)
         ticks = stick(useMathText=True)
-        ticks.set_powerlimits((-pow_lim,pow_lim))
+        ticks.set_powerlimits(pow_lims)
         axes[i].xaxis.set_major_formatter(ticks)
         axes[i].grid(grid)
         axes[i].legend(loc=legend_pos[i], prop={'size':8})
@@ -176,9 +132,8 @@ def plot_budgets(budgets_data, level, xLabel, yLabel, title, name, lw = 5, grid 
 
 def plot_profiles(data, level, xLabel, yLabel, title, name, startLevel = 0, lw = 5, grid = True, color = 'nipy_spectral', centering=False, pdf=None):
     """
-    This function replaced plot_budgets, so it should be used from now on.
-    Plots a plot with budgets
-    TODO: Change line label
+    NOTE: This function replaced plot_budgets, so it should be used from now on.
+    Creates a height profile plot with one line per entry in data
     Input:
     data           --  list of data per plot line
                        Structure of data:
@@ -201,7 +156,7 @@ def plot_profiles(data, level, xLabel, yLabel, title, name, startLevel = 0, lw =
     pdf            --  PdfPages object
     """
     logger.info('plot_profiles')
-    fig = plt.figure(figsize=(10,10))
+    fig = plt.figure(figsize=profile_figsize)
     ax = fig.add_subplot(111)
     #logger.debug([b[2] for b in data])
     if any([b[3]==1 for b in data]):
@@ -211,6 +166,7 @@ def plot_profiles(data, level, xLabel, yLabel, title, name, startLevel = 0, lw =
         axes[1].xaxis.tick_top()
         axes[1].xaxis.offset_text_position = 'top'
         titlepos = 1.06
+        centering=True
     else:
         axes = [ax]
         titlepos = 1.01
@@ -219,6 +175,7 @@ def plot_profiles(data, level, xLabel, yLabel, title, name, startLevel = 0, lw =
     ax.set_xlabel(xLabel, fontsize=fontsizes['labels'])
     ax.set_ylabel(yLabel, fontsize=fontsizes['labels'])
     ax.set_title(title, fontsize=fontsizes['title'], y=titlepos)
+    #ax.text(0.1,0.9,'c)',fontsize=30,transform=ax.transAxes)
     
     # show grid
     #ax.grid(grid, which='both')
@@ -280,7 +237,7 @@ def plot_profiles(data, level, xLabel, yLabel, title, name, startLevel = 0, lw =
         # Set tick label format to scalar formatter with length sensitive format (switch to scientific format when a set order of magnitude is reached)
         #logger.debug('Setting tick labels to scientific notation')
         ticks = stick(useMathText=True)
-        ticks.set_powerlimits((-pow_lim,pow_lim))
+        ticks.set_powerlimits(pow_lims)
         axes[i].xaxis.set_major_formatter(ticks)
         axes[i].grid(grid, which='both')
         # Generate legend
@@ -340,7 +297,7 @@ def plot_comparison(data_clubb, data_sam, level_clubb, level_sam, xLabel, yLabel
     pdf            --  PdfPages object
     """
     logger.info('plot_profiles')
-    fig = plt.figure(figsize=(10,10))
+    fig = plt.figure(figsize=profile_figsize)
     ax = fig.add_subplot(111)
     # A 2nd axis should not be necessary here, as there will only be one line for SAM and CLUBB each per plot
     #if any([b[2]==1 for b in data]):
@@ -354,6 +311,7 @@ def plot_comparison(data_clubb, data_sam, level_clubb, level_sam, xLabel, yLabel
     ax.set_xlabel(xLabel, fontsize=fontsizes['labels'])
     ax.set_ylabel(yLabel, fontsize=fontsizes['labels'])
     ax.set_title(title, fontsize=fontsizes['title'], y=titlepos)
+    #ax.text(0.93,0.9,'d)',fontsize=30,transform=ax.transAxes,zorder=100)
 
     # show grid
     ax.grid(grid)
@@ -391,14 +349,14 @@ def plot_comparison(data_clubb, data_sam, level_clubb, level_sam, xLabel, yLabel
                 ax.set_xlim(xmin, xmax)
     # Set tick label format to scalar formatter with length sensitive format (switch to scientific format when a set order of magnitude is reached)
     ticks = stick(useMathText=True)
-    ticks.set_powerlimits((-pow_lim,pow_lim))
+    ticks.set_powerlimits(pow_lims)
     ax.xaxis.set_major_formatter(ticks)
     # Increase fontsize for ticklabels
     ax.tick_params(axis='both', labelsize=fontsizes['ticks'])
     ax.xaxis.get_offset_text().set_size(fontsizes['ticks'])
     fig.canvas.draw_idle()
     # Add legend
-    ax.legend(loc=0, prop={'size': fontsizes['legend']})
+    ax.legend(loc=legend_pos[0], prop={'size': fontsizes['legend']})
 
     # Save plot
     fig.savefig(name)
@@ -431,7 +389,7 @@ def get_budgets_from_nc(nc, varname, conversion, n, t):
         var = var*conversion
     else:
         logger.debug('%s is not in keys', varname)
-        var = np.zeros(shape=(n,t)) - 1000.
+        var = np.zeros(shape=(t,n)) - 1000.
         
     return var
 

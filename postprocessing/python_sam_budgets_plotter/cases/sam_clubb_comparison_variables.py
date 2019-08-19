@@ -59,24 +59,24 @@ sortPlots = sortPlots_zm + sortPlots_zt
 
 
 plotNames_zm = [\
-    [r"$\mathrm{\overline{u'w'}}$", r"Momentum flux $\mathrm{\overline{u'w'}\ \left[\frac{m^2}{s^2}\right]}$"],\
-    [r"$\mathrm{\overline{v'w'}}$", r"Momentum flux $\mathrm{\overline{v'w'}\ \left[\frac{m^2}{s^2}\right]}$"],\
-    [r"$\mathrm{\overline{u'^2}}$", r"Momentum variance $\mathrm{\overline{u'^2}\ \left[\frac{m^2}{s^2}\right]}$"],\
-    [r"$\mathrm{\overline{v'^2}}$", r"Momentum variance $\mathrm{\overline{v'^2}\ \left[\frac{m^2}{s^2}\right]}$"],\
-    [r"$\mathrm{\overline{w'^2}}$", r"Momentum variance $\mathrm{\overline{w'^2}\ \left[\frac{m^2}{s^2}\right]}$"],\
-    [r"$\mathrm{\overline{u'r_c'}}$", r"Liquid water flux $\mathrm{\overline{u'r_c'}\ \left[\frac{m\ kg}{s\ kg}\right]}$"],\
-    [r"$\mathrm{\overline{v'r_c'}}$", r"Liquid water flux $\mathrm{\overline{v'r_c'}\ \left[\frac{m\ kg}{s\ kg}\right]}$"],\
-    [r"$\mathrm{\overline{u'\theta_v'}}$", r"Virt. pot. temp. flux $\mathrm{\overline{u'\theta_v'}\ \left[\frac{m\ K}{s}\right]}$"],\
-    [r"$\mathrm{\overline{v'\theta_v'}}$", r"Virt. pot. temp. flux $\mathrm{\overline{v'\theta_v'}\ \left[\frac{m\ K}{s}\right]}$"],\
-    [r"$\mathrm{\overline{u'r_t'}}$", r"Total water flux $\mathrm{\overline{u'r_t'}\ \left[\frac{m\ kg}{s\ kg}\right]}$"],\
-    [r"$\mathrm{\overline{v'r_t'}}$", r"Total water flux $\mathrm{\overline{v'r_t'}\ \left[\frac{m\ kg}{s\ kg}\right]}$"],\
-    [r"$\mathrm{\overline{u'\theta_l'}}$", r"Liq. water pot. temp. flux $\mathrm{\overline{u'\theta_l'}\ \left[\frac{m\ K}{s}\right]}$"],\
-    [r"$\mathrm{\overline{v'\theta_l'}}$", r"Liq. water pot. temp. flux $\mathrm{\overline{v'\theta_l'}\ \left[\frac{m\ K}{s}\right]}$"],\
+    [r"$\overline{u'w'}$", r"Momentum flux, $\overline{u'w'}\ \mathrm{\left[m^2\,s^{-2}\right]}$"],\
+    [r"$\overline{v'w'}$", r"Momentum flux, $\overline{v'w'}\ \mathrm{\left[m^2\,s^{-2}\right]}$"],\
+    [r"$\overline{u'^2}$", r"Momentum variance, $\overline{u'^2}\ \mathrm{\left[m^2\,s^{-2}\right]}$"],\
+    [r"$\overline{v'^2}$", r"Momentum variance, $\overline{v'^2}\ \mathrm{\left[m^2\,s^{-2}\right]}$"],\
+    [r"$\overline{w'^2}$", r"Momentum variance, $\overline{w'^2}\ \mathrm{\left[m^2\,s^{-2}\right]}$"],\
+    [r"$\overline{u'r_c'}$", r"Liquid water flux, $\overline{u'r_c'}\ \mathrm{\left[kg\,kg^{-1}\,m\,s^{-1}\right]}$"],\
+    [r"$\overline{v'r_c'}$", r"Liquid water flux, $\overline{v'r_c'}\ \mathrm{\left[kg\,kg^{-1}\,m\,s^{-1}\right]}$"],\
+    [r"$\overline{u'\theta_v'}$", r"Virt. pot. temp. flux, $\overline{u'\theta_v'}\ \mathrm{\left[K\,m\,s^{-1}\right]}$"],\
+    [r"$\overline{v'\theta_v'}$", r"Virt. pot. temp. flux, $\overline{v'\theta_v'}\ \mathrm{\left[K\,m\,s^{-1}\right]}$"],\
+    [r"$\overline{u'r_t'}$", r"Total water flux, $\overline{u'r_t'}\ \mathrm{\left[kg\,kg^{-1}\,m\,s^{-1}\right]}$"],\
+    [r"$\overline{v'r_t'}$", r"Total water flux, $\overline{v'r_t'}\ \mathrm{\left[kg\,kg^{-1}\,m\,s^{-1}\right]}$"],\
+    [r"$\overline{u'\theta_l'}$", r"Liq. water pot. temp. flux, $\overline{u'\theta_l'}\ \mathrm{\left[K\,m\,s^{-1}\right]}$"],\
+    [r"$\overline{v'\theta_l'}$", r"Liq. water pot. temp. flux, $\overline{v'\theta_l'}\ \mathrm{\left[K\,m\,s^{-1}\right]}$"],\
     ]
 
 plotNames_zt = [\
-    [r"$\mathrm{\bar{u}}$", r"Eastward mean wind $\mathrm{\bar{u}\ [\frac{m}{s}]}$"],\
-    [r"$\mathrm{\bar{v}}$", r"Northward mean wind $\mathrm{\bar{v}\ [\frac{m}{s}]}$"],\
+    [r"$\overline{u}}$", r"Eastward mean wind, $\overline{u}\ \mathrm{\left[m\,s^{-1}\right]}$"],\
+    [r"$\overline{v}}$", r"Northward mean wind, $\overline{v}\ \mathrm{\left[m\,s^{-1}\right]}$"],\
     ]
 
 plotNames = plotNames_zm + plotNames_zt

@@ -27,15 +27,12 @@ name = 'sam_3d_{wt}'
 nc_files = ['sam', 'sam_3d']
 title_template = '{{wt}}, {case}, {x}x{y}x{z}, dx={dx:.0f}m, dz={dz:.1f}m, t={t:.0f}min, h={{h:.1f}}m'
 wind_types = ['total_horizontal_wind+w_map', 'total_horizontal_wind+up_map', 'total_horizontal_wind+vp_map', 'total_horizontal_wind+uw_map', 'total_horizontal_wind+vw_map', 'horizontal_wind_perturbation+w_map', 'horizontal_wind_perturbation+up_map', 'horizontal_wind_perturbation+vp_map', 'horizontal_wind_perturbation+uw_map', 'horizontal_wind_perturbation+vw_map']
-#wind_types = ['horizontal_wind_perturbation+up_map']
 
 #-------------------------------------------------------------------------------
 # P L O T   S E T U P
 #-------------------------------------------------------------------------------
 # Names of the variables
 cloud_frac_cmap = 'Blues'
-# DEPRECATED: quiver maps are created  dynamically!
-#quiver_cmap = 'copper'
 profiles = ['uw', 'vw']
 
 #-------------------------------------------------------------------------------
@@ -43,13 +40,17 @@ profiles = ['uw', 'vw']
 #-------------------------------------------------------------------------------
 # Names of the variables (NOTE: THETAV NOT IN 3D DATA!)
 #sortPlots_3d = ['qn', 'thetav', 'u', 'v', 'w']
-sortPlots_3d = ['qn_3d', 'u_3d', 'v_3d', 'w_3d']
+sortPlots_3d = ['qn_3d', 'qv_3d', 'u_3d', 'v_3d', 'w_3d']
 sortPlots_std = ['uw', 'vw', 'u', 'v', 'w', 'ucld', 'vcld', 'wcld']
 # TODO: additional std data: U, V (,U2, V2, THV, UTHV, VTHV)
 sortPlots = sortPlots_3d + sortPlots_std
 
 qn_3d = [\
     ['QN', True, 'QN', 1., 0],\
+    ]
+
+qv_3d = [\
+    ['QV', True, 'QV', 1., 0],\
     ]
 
 #thetav = [\
@@ -104,6 +105,6 @@ wcld = [\
     ]
 
 #lines_3d = [qn, thetav, u, v, w]
-lines_3d = [qn_3d, u_3d, v_3d, w_3d]
+lines_3d = [qn_3d, qv_3d, u_3d, v_3d, w_3d]
 lines_std = [uw, vw, u, v, w, ucld, vcld, wcld]
 lines = lines_3d + lines_std
