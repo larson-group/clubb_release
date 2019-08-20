@@ -13,7 +13,7 @@ to plot height profiles and budgets for the BOMEX case
 case = 'BOMEX'
 full_name = case
 case_folder = '/home/sdomke/workspace/clubb/sam_clubb/{case}'.format(case=case)
-enabled = True # not used in plotgen, no idea what this should do
+enabled = True
 #type = 'budget' # not used in plotgen
 nx = 256
 ny = 256

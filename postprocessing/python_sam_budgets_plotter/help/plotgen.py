@@ -238,6 +238,7 @@ def get_all_variables(nc, lines, plotLabels, nh, nt, t0, t1, h0, h1, filler=0):
         for j,var in enumerate(l):
             logger.info("Getting variable %s", var[0])
             if var[2] is None:
+                # TODO: conversion factor is not applied to function entries!!!
                 logger.debug("Adding dummy line")
                 plot_lines.append([var[0], var[1], var[2], var[4], None])
             elif not isFunction(var[2]):
@@ -349,7 +350,7 @@ def plot_default(plots, cf, data, h, centering):
             title2 = ', {case}, t={startTime:.0f}-{endTime:.0f} min'.format(case=cf.full_name, startTime=cf.startTime, endTime=cf.endTime)
         else:
             title2 = ', {case}, t={startTime:.0f} min'.format(case=cf.full_name, startTime=cf.startTime)
-        pb.plot_profiles(data[plot_label], h, units, cf.yLabel, prefix+title+title2, os.path.join(jpg_dir,name), startLevel=plots.startLevel, lw=cf.lw, grid=False, centering=centering, pdf=pdf)
+        pb.plot_profiles(data[plot_label], h, units, cf.yLabel, prefix+title+title2, os.path.join(jpg_dir,name), textEntry=plots.plotText, textPos=plots.textPos,startLevel=plots.startLevel, lw=cf.lw, grid=False, centering=centering, pdf=pdf)
         #pb.plot_profiles(data[plot_label], h, units, cf.yLabel, title+title2, os.path.join(jpg_dir,name), startLevel=plots.startLevel, lw=cf.lw, grid=False, centering=np.any([el[3]==1 for el in data[plot_label]]), pdf=pdf)
     pdf.close()
     
@@ -399,10 +400,10 @@ def plot_default(plots, cf, data, h, centering):
         'height = {} - {} m'.format(cf.startHeight, cf.endHeight)
         ]
     if 'clubb' in plots.name:
-        prms.extend(
+        prms.extend([
             'CLUBB zm input file name = {}'.format(cf.clubb_zm_file),
             'CLUBB zt input file name = {}'.format(cf.clubb_zt_file)
-            )
+            ])
     else:
         prms.append('SAM input file name = {}'.format(cf.sam_file))
     param_file.write('\n'.join(prms))
@@ -1136,9 +1137,9 @@ def plot_comparison(plots, cf, data_clubb, data_sam, h_clubb, h_sam, plot_old_cl
         else:
             title2 = ', {case}, t={startTime:.0f} min'.format(case=cf.full_name, startTime=cf.startTime)
         if plot_old_clubb:
-            pb.plot_comparison(data_clubb[plot_label], data_sam[plot_label], h_clubb, h_sam, units, cf.yLabel, prefix+title+title2, os.path.join(jpg_dir, plot_case_name.format(plot=plot_label)), startLevel=0, grid=False, pdf=pdf, plot_old_clubb=plot_old_clubb, data_old=data_old[plot_label], level_old=h_old)
+            pb.plot_comparison(data_clubb[plot_label], data_sam[plot_label], h_clubb, h_sam, units, cf.yLabel, prefix+title+title2, os.path.join(jpg_dir, plot_case_name.format(plot=plot_label)), textEntry=plots.plotText, textPos=plots.textPos, startLevel=0, grid=False, pdf=pdf, plot_old_clubb=plot_old_clubb, data_old=data_old[plot_label], level_old=h_old)
         else:
-            pb.plot_comparison(data_clubb[plot_label], data_sam[plot_label], h_clubb, h_sam, units, cf.yLabel, prefix+title+title2, os.path.join(jpg_dir, plot_case_name.format(plot=plot_label)), startLevel=plots.startLevel, grid=False, pdf=pdf)
+            pb.plot_comparison(data_clubb[plot_label], data_sam[plot_label], h_clubb, h_sam, units, cf.yLabel, prefix+title+title2, os.path.join(jpg_dir, plot_case_name.format(plot=plot_label)), textEntry=plots.plotText, textPos=plots.textPos, startLevel=plots.startLevel, grid=False, pdf=pdf)
     pdf.close()
     # TODO: Generate html
     
@@ -1222,16 +1223,16 @@ def plotgen_default(plots, cf):
         h = get_h_dim(nc_sam, model='sam')
     logger.info('Find nearest levels to case setup')
     idx_h0 = (np.abs(h - cf.startHeight)).argmin()
-    idx_h1 = (np.abs(h - cf.endHeight)).argmin()+1
+    idx_h1 = min((np.abs(h - cf.endHeight)).argmin()+1, h.size-1)
     logger.debug("Height indices: %d, %d", idx_h0, idx_h1)
     logger.debug("Height limits: %f, %f", h[idx_h0], h[idx_h1])
     # Times for CLUBB are given in seconds, for SAM in minutes
     if 'clubb' in plots.name:
         idx_t0 = (np.abs(t - cf.startTime*60)).argmin()
-        idx_t1 = (np.abs(t - cf.endTime*60)).argmin()+1
+        idx_t1 = min((np.abs(t - cf.endTime*60)).argmin()+1, t.size-1)
     else:
         idx_t0 = (np.abs(t - cf.startTime)).argmin()
-        idx_t1 = (np.abs(t - cf.endTime)).argmin()+1
+        idx_t1 = min((np.abs(t - cf.endTime)).argmin()+1, t.size-1)
     h = h[idx_h0:idx_h1]
     if 'clubb' in plots.name:
         # Initialize data variables as empty dicts
@@ -1288,7 +1289,7 @@ def plotgen_3d(plots, cf):
     # t not necessarily needed for momentary plot TODO
     t = get_t_dim(nc_std, create=False)
     idx_t0 = (np.abs(t - cf.startTime)).argmin()
-    idx_t1 = (np.abs(t - cf.endHeight)).argmin()+1
+    idx_t1 = min((np.abs(t - cf.endTime)).argmin()+1, t.size-1)
     h = get_h_dim(nc_std, model='sam', create=False, cf=cf)
     # Calculate height level limits
     h_limits = np.array([0])
@@ -1297,7 +1298,7 @@ def plotgen_3d(plots, cf):
         h_limits = np.append(h_limits, 2*h[i]-h_limits[i])
     # Calculate height indices based on parameters in case file
     idx_h0 = (np.abs(h - cf.startHeight)).argmin()
-    idx_h1 = (np.abs(h - cf.endHeight)).argmin()+1
+    idx_h1 = min((np.abs(h - cf.endHeight)).argmin()+1, h.size-1)
     logger.debug('Height indices: [%d,%d]',idx_h0, idx_h1)
     # Slice arrays
     h = h[idx_h0:idx_h1]
@@ -1370,28 +1371,28 @@ def plotgen_comparison(plots, cf):
     t_clubb = get_t_dim(nc_clubb)
     h_clubb = get_h_dim(nc_clubb, model='clubb')
     idx_h0_clubb = (np.abs(h_clubb - cf.startHeight)).argmin()
-    idx_h1_clubb = (np.abs(h_clubb - cf.endHeight)).argmin()+1
+    idx_h1_clubb = min((np.abs(h_clubb - cf.endHeight)).argmin()+1, h_clubb.size-1)
     # Times for CLUBB are given in seconds, for SAM in minutes
     idx_t0_clubb = (np.abs(t_clubb - cf.startTime*60)).argmin()
-    idx_t1_clubb = (np.abs(t_clubb - cf.endTime*60)).argmin()+1
+    idx_t1_clubb = min((np.abs(t_clubb - cf.endTime*60)).argmin()+1, t_clubb.size-1)
     h_clubb = h_clubb[idx_h0_clubb:idx_h1_clubb]
     logger.info('SAM')
     t_sam = get_t_dim(nc_sam)
     h_sam = get_h_dim(nc_sam, model='sam')
     idx_h0_sam = (np.abs(h_sam - cf.startHeight)).argmin()
-    idx_h1_sam = (np.abs(h_sam - cf.endHeight)).argmin()+1
+    idx_h1_sam = min((np.abs(h_sam - cf.endHeight)).argmin()+1, h_sam.size-1)
     idx_t0_sam = (np.abs(t_sam - cf.startTime)).argmin()
-    idx_t1_sam = (np.abs(t_sam - cf.endTime)).argmin()+1
+    idx_t1_sam = min((np.abs(t_sam - cf.endTime)).argmin()+1, t_sam.size-1)
     h_sam = h_sam[idx_h0_sam:idx_h1_sam]
     h_clubb_old = None
     if old_clubb:
         t_clubb_old = get_t_dim(nc_clubb_old)
         h_clubb_old = get_h_dim(nc_clubb_old, model='clubb')
         idx_h0_clubb_old = (np.abs(h_clubb_old - cf.startHeight)).argmin()
-        idx_h1_clubb_old = (np.abs(h_clubb_old - cf.endHeight)).argmin()+1
+        idx_h1_clubb_old = min((np.abs(h_clubb_old - cf.endHeight)).argmin()+1, h_clubb_old.size-1)
         # Times for CLUBB are given in seconds, for SAM in minutes
         idx_t0_clubb_old = (np.abs(t_clubb_old - cf.startTime*60)).argmin()
-        idx_t1_clubb_old = (np.abs(t_clubb_old - cf.endTime*60)).argmin()+1
+        idx_t1_clubb_old = min((np.abs(t_clubb_old - cf.endTime*60)).argmin()+1, t_clubb_old.size-1)
         h_clubb_old = h_clubb_old[idx_h0_clubb_old:idx_h1_clubb_old]
         logger.debug("h0_clubb_old = %d",idx_h0_clubb)
         logger.debug("h1_clubb_old = %d",idx_h1_clubb)

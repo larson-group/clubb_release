@@ -26,7 +26,7 @@ logger.setLevel(logging.DEBUG)
 #   F U N C T I O N S
 #-------------------------------------------------------------------------------
 # DEPRECATED!!!
-def plot_budgets(budgets_data, level, xLabel, yLabel, title, name, lw = 5, grid = True,  color = 'nipy_spectral', pdf=None):
+def plot_budgets(budgets_data, level, xLabel, yLabel, title, name, lw=5, grid=True,  color='nipy_spectral', pdf=None):
     logger.info('plot_budgets')
     """
     This function is deprecated and has been replaced by plot_profiles below.
@@ -130,7 +130,7 @@ def plot_budgets(budgets_data, level, xLabel, yLabel, title, name, lw = 5, grid 
     
 # END plot_budgets (DEPRECATED!)
 
-def plot_profiles(data, level, xLabel, yLabel, title, name, startLevel = 0, lw = 5, grid = True, color = 'nipy_spectral', centering=False, pdf=None):
+def plot_profiles(data, level, xLabel, yLabel, title, name, textEntry="", textPos=(0,0), startLevel=0, lw=5, grid=True, color='nipy_spectral', centering=False, pdf=None):
     """
     NOTE: This function replaced plot_budgets, so it should be used from now on.
     Creates a height profile plot with one line per entry in data
@@ -150,7 +150,9 @@ def plot_profiles(data, level, xLabel, yLabel, title, name, startLevel = 0, lw =
     yLabel         --  label of the y axis
     title          --  title of the plot
     name           --  name of the file
-    startLevel     --  Height level at which to plot lines, values below this level will be ignored
+    textEntry      --  Additional text to be put into plot
+    textPos        --  Position of additional text in data coordinates
+    startLevel     --  Height level at which to plot lines, values below this level will be ignored (Redundant with startHeight entry in case file)
     lw             --  linewidth of the plot lines
     color          --  name of colormap (deprecated, as color sequence is hard coded at the momemt)
     pdf            --  PdfPages object
@@ -171,11 +173,12 @@ def plot_profiles(data, level, xLabel, yLabel, title, name, startLevel = 0, lw =
         axes = [ax]
         titlepos = 1.01
             
-    # set axis labels and title
+    # set axis labels, title, and additional text
     ax.set_xlabel(xLabel, fontsize=fontsizes['labels'])
     ax.set_ylabel(yLabel, fontsize=fontsizes['labels'])
     ax.set_title(title, fontsize=fontsizes['title'], y=titlepos)
     #ax.text(0.1,0.9,'c)',fontsize=30,transform=ax.transAxes)
+    ax.text(textPos[0], textPos[1], textEntry, fontsize=30, transform=ax.transAxes)
     
     # show grid
     #ax.grid(grid, which='both')
@@ -270,7 +273,7 @@ def plot_profiles(data, level, xLabel, yLabel, title, name, startLevel = 0, lw =
     plt.close(fig)
 
 
-def plot_comparison(data_clubb, data_sam, level_clubb, level_sam, xLabel, yLabel, title, name, startLevel = 0, grid = False, pdf=None, plot_old_clubb=False, data_old=None, level_old=None):
+def plot_comparison(data_clubb, data_sam, level_clubb, level_sam, xLabel, yLabel, title, name, textEntry="", textPos=(0,0), startLevel=0, grid=False, pdf=None, plot_old_clubb=False, data_old=None, level_old=None):
     """
     Plots a plot with budgets
     Input:
@@ -292,8 +295,10 @@ def plot_comparison(data_clubb, data_sam, level_clubb, level_sam, xLabel, yLabel
     yLabel         --  label of the y axis
     title          --  title of the plot
     name           --  name of the file
-    startLevel     --  
-    grid           --  switch: True = shpw grid for both axes, False=do not show grid (default)
+    textEntry      --  Additional text to be put into plot
+    textPos        --  Position of additional text in data coordinates
+    startLevel     --  Height level at which to plot lines, values below this level will be ignored (Redundant with startHeight entry in case file)
+    grid           --  switch: True = show grid for both axes, False=do not show grid (default)
     pdf            --  PdfPages object
     """
     logger.info('plot_profiles')
@@ -307,11 +312,11 @@ def plot_comparison(data_clubb, data_sam, level_clubb, level_sam, xLabel, yLabel
         #axes = [ax]
     titlepos = 1.01
     
-    # set axis labels and title
+    # set axis labels, title, and additional text
     ax.set_xlabel(xLabel, fontsize=fontsizes['labels'])
     ax.set_ylabel(yLabel, fontsize=fontsizes['labels'])
     ax.set_title(title, fontsize=fontsizes['title'], y=titlepos)
-    #ax.text(0.93,0.9,'d)',fontsize=30,transform=ax.transAxes,zorder=100)
+    ax.text(textPos[0], textPos[1], textEntry, fontsize=30, transform=ax.transAxes, zorder=100)
 
     # show grid
     ax.grid(grid)

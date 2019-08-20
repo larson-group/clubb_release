@@ -9,11 +9,11 @@ to plot height profiles and budgets for the LBA case
 #-------------------------------------------------------------------------------
 #   G E N E R A L   D E F A U L T   S E T T I N G S
 #-------------------------------------------------------------------------------
-# TODO: check parameters in Heinze/Siebesma and (auto-)rename name,case,out_dir etc
 
 case = 'LBA'
+full_name = case
 case_folder = '/home/sdomke/workspace/clubb/sam_clubb/{case}'.format(case=case)
-enabled = True # not used in plotgen, no idea what this should do
+enabled = True
 #type = 'budget' # not used in plotgen
 nx = 128
 ny = 128
@@ -33,7 +33,7 @@ run = '{case}_{nx}x{ny}x{nz}_{dxy}m_{dz}m_{dt}s'.format(case=case, nx=nx, ny=ny,
 plot_case_name = '{case}_{dx}x{dx}_{{type}}_{{date}}_{{plot}}'.format(case=case.lower(), dx=nx)
 ## use absolute paths or relative paths originating from the directory containing plotgen.py
 # directory for output files
-out_dir = '/home/sdomke/workspace/plotgen_out/{case}_{{date}}/'.format(case=case.lower())
+out_dir = '../../output/plotgen_out/{case}_{{date}}/'.format(case=case.lower())
 # pdf output name
 out_pdf = '{case}_{dx}x{dx}_{{type}}_{{date}}.pdf'.format(case=case.lower(),dx=nx)
 
@@ -41,16 +41,16 @@ out_pdf = '{case}_{dx}x{dx}_{{type}}_{{date}}.pdf'.format(case=case.lower(),dx=n
 ## SAM
 # nc file generated from .stat output
 #sam_file = '/home/sdomke/workspace/clubb/avi_out/LBA_128kmx128kmx128_1km_Morrison_190205.nc'
-sam_file = '/home/sdomke/workspace/clubb/avi_out/grid_change/LBA_128kmx128kmx128_1km_Morrison.nc'
+sam_file = '../../output/LBA_128kmx128kmx128_1km_Morrison.nc'
 # nc file generated from .bin3D output
-sam_3d_file = '/home/sdomke/workspace/clubb/avi_out/out3d/LBA_128kmx128kmx128_1km_Morrison_64_0000003600.nc'
-## CLUBB
-clubb_zm_file = '/home/sdomke/workspace/clubb/clubb_out/lba_zm.nc'
-clubb_zt_file = '/home/sdomke/workspace/clubb/clubb_out/lba_zt.nc'
-## old CLUBB
-old_clubb_zm_file = '/home/sdomke/workspace/clubb/clubb_out/lba_zm.nc'
-old_clubb_zt_file = '/home/sdomke/workspace/clubb/clubb_out/lba_zt.nc'
+sam_3d_file = '../../output/sam_3d/LBA_128kmx128kmx128_1km_Morrison_64_0000003600.nc'
 
+## CLUBB (case not included)
+clubb_zm_file = '../../output/prog_mom_flux_paper/new/lba_zm.nc'
+clubb_zt_file = '../../output/prog_mom_flux_paper/new/lba_zt.nc'
+## old CLUBB
+old_clubb_zm_file = '../../output/prog_mom_flux_paper/old/lba_zm.nc'
+old_clubb_zt_file = '../../output/prog_mom_flux_paper/old/lba_zt.nc'
 ## case setup files
 sam_prm = case_folder+'/prm.les'
 sam_grd = case_folder+'/grd.les'
