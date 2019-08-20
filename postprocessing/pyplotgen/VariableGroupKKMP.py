@@ -3,13 +3,12 @@
 :date: Mid 2019
 '''
 
-from DataReader import NetCdfVariable
 from VariableGroup import VariableGroup
 
 
 class VariableGroupKKMP(VariableGroup):
 
-    def __init__(self, ncdf_datasets, case, sam_file=None, coamps_file=None):
+    def __init__(self, ncdf_datasets, case, sam_file=None, coamps_file=None, r408_dataset=None):
         '''
 
         :param ncdf_datasets:
@@ -22,4 +21,4 @@ class VariableGroupKKMP(VariableGroup):
             {'clubb_name': 'rrm_accr', 'sam_name': 'ACCRM'},
             {'clubb_name': 'rrm_auto', 'sam_name': 'AUTOM'}
         ]
-        super().__init__(ncdf_datasets, case, sam_file=sam_file, coamps_file=coamps_file)
+        super().__init__(ncdf_datasets, case, sam_file=sam_file, coamps_file=coamps_file, r408_dataset=r408_dataset)

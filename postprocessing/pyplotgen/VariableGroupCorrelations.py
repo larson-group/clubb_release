@@ -3,15 +3,12 @@
 :date: Mid 2019
 '''
 
-from DataReader import NetCdfVariable
-from Panel import Panel
 from VariableGroup import VariableGroup
-from Line import Line
 
 
 class VariableGroupCorrelations(VariableGroup):
 
-    def __init__(self, ncdf_datasets, case, sam_file=None, coamps_file=None):
+    def __init__(self, ncdf_datasets, case, sam_file=None, coamps_file=None, r408_dataset=None):
         '''
 
         :param ncdf_datasets:
@@ -29,4 +26,4 @@ class VariableGroupCorrelations(VariableGroup):
             {'clubb_name': 'corr_rr_Nr_1'},
 
         ]
-        super().__init__(ncdf_datasets, case, sam_file=sam_file, coamps_file=coamps_file)
+        super().__init__(ncdf_datasets, case, sam_file=sam_file, coamps_file=coamps_file, r408_dataset=r408_dataset)

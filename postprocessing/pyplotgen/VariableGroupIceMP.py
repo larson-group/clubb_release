@@ -4,14 +4,14 @@
 '''
 
 from DataReader import NetCdfVariable
+from Line import Line
 from Panel import Panel
 from VariableGroup import VariableGroup
-from Line import Line
 
 
 class VariableGroupIceMP(VariableGroup):
 
-    def __init__(self, ncdf_datasets, case, sam_file=None, coamps_file=None):
+    def __init__(self, ncdf_datasets, case, sam_file=None, coamps_file=None, r408_dataset=None):
         '''
 
         :param ncdf_datasets:
@@ -31,7 +31,7 @@ class VariableGroupIceMP(VariableGroup):
             {'clubb_name': 'rgm', 'sam_name': 'QG', 'sam_conv_factor': 1 / 1000},
             {'clubb_name': 'precip_rate_sfc', 'sam_name': 'PREC', 'type': Panel.TYPE_TIMESERIES}
         ]
-        super().__init__(ncdf_datasets, case, sam_file=sam_file, coamps_file=coamps_file)
+        super().__init__(ncdf_datasets, case, sam_file=sam_file, coamps_file=coamps_file, r408_dataset=r408_dataset)
 
     def getNimSamLine(self):
         '''

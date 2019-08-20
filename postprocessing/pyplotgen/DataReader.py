@@ -4,11 +4,11 @@
 '''
 
 import os
+import pathlib as pathlib
 from warnings import warn
 
-from netCDF4 import Dataset
 import numpy as np
-import pathlib as pathlib
+from netCDF4 import Dataset
 
 
 class NetCdfVariable:
@@ -310,6 +310,8 @@ class DataReader():
 
         :return: time x height array of the specified variable, scaled by conversion factor
         """
+        if ncdf_data is None:
+            raise ValueError("ncdf_data was passed as None into __getValuesFromNc__ while looking for variable " + varname)
         var_values = None
         keys = ncdf_data.variables.keys()
         if varname in keys:
@@ -323,7 +325,7 @@ class DataReader():
         if var_values is None:
             raise ValueError("Variable " + varname + " does not exist in ncdf_data file. If this is expected,"
                                                      " try passing fill_zeros=True when you create the "
-                                                     "NetCdfVariable for " + varname)
+                                                     "NetCdfVariable for " + varname + ".\nVariables found in dataset: " + str(ncdf_data.variables.keys()))
 
         # SAM outputs time in the form minutes since 1969-06-22 00:00:00.0
         # We want to convert time values over to minutes starting at clubbs start time
@@ -331,28 +333,29 @@ class DataReader():
         # sam time -> clubb minutes
         if varname == 'time' and self.getNcdfSourceModel(ncdf_data) == 'sam':
             # SAM outputs time in the form minutes since 1969-06-22 00:00:00.0
-            # num_seconds_between_19690207_and_19690622 = 18663840 #11664000
-            # var_values = var_values[:] - num_seconds_between_19690207_and_19690622
+
             var_values = var_values[:] - var_values[0] + 1
-            # pass # offsetting sam values has not been tested, nor found to be necessary
 
         # clubb time -> clubb minutes
-        if varname == 'time' and self.getNcdfSourceModel(ncdf_data) == 'clubb':
+        elif varname == 'time' and self.getNcdfSourceModel(ncdf_data) == 'clubb':
             # clubb outputs time in the form seconds since 1969-02-07 00:00:00.0
-            # num_seconds_between_19690207_and_19690622 = 11664000
-            # var_values = var_values[:] - num_seconds_between_19690207_and_19690622
+
             sec_per_min = 60
             var_values = var_values[:] / sec_per_min
 
         # coamps time -> sam time conversion
-        if varname == 'time' and self.getNcdfSourceModel(ncdf_data) == 'coamps':
+        elif varname == 'time' and self.getNcdfSourceModel(ncdf_data) == 'coamps':
             # coamps outputs time in hours since 1-1-1 00:00:00
             # The first time value in coamps output is 7-7 of 1987 at 0:0:0
-            # num_hrs_between_00010101_and_19870707 = 17413440
-            # var_values = var_values[:] - num_hrs_between_00010101_and_19870707
+
             min_per_hr = 60
             var_values = var_values[:] * min_per_hr
             var_values = var_values[:] - var_values[0] + 1
+        elif self.getNcdfSourceModel(ncdf_data) == 'unknown-model':
+            warn("Warning, unknown model detected. PyPlotgen doesn't know where this netcdf data is from." + str(ncdf_data))
+            if varname == 'time':
+                warn("Attempting to autoshift time values")
+                var_values = var_values[:] - var_values[0] + 1
 
         if varname == 'time' and var_values[0] != 1:
             warn("First time value is " + str(var_values[0]) + " instead of 1. Are these time values supposed to be scaled to minutes?")

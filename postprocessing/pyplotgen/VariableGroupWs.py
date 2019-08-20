@@ -4,13 +4,13 @@
 '''
 
 from DataReader import NetCdfVariable
-from VariableGroup import VariableGroup
 from Line import Line
+from VariableGroup import VariableGroup
 
 
 class VariableGroupWs(VariableGroup):
 
-    def __init__(self, ncdf_datasets, case, sam_file=None, coamps_file=None):
+    def __init__(self, ncdf_datasets, case, sam_file=None, coamps_file=None, r408_dataset=None):
         '''
 
         :param ncdf_datasets:
@@ -20,7 +20,7 @@ class VariableGroupWs(VariableGroup):
         self.name = "w variables"
         self.variable_definitions = [
             {'clubb_name': 'wp4', 'sam_name': 'WP4', 'coamps_name': 'wp4'},
-            {'clubb_name': 'wp2thlp', 'sam_name': 'WP2THLP', 'coamps_name': 'wp2thlp'},
+            {'clubb_name': 'wp2thlp', 'sam_name': 'WP2THLP', 'coamps_name': 'wp2thlp', 'fill_zeros':'True'},
             {'clubb_name': 'wp2rtp', 'sam_name': 'WP2RTP', 'coamps_name': 'wp2qtp'},
             {'clubb_name': 'wpthlp2', 'sam_name': 'WPTHLP2', 'coamps_name': 'wpthlp2'},
             {'clubb_name': 'wprtp2', 'sam_name': 'WPRTP2', 'coamps_name': 'wpqtp2'},
@@ -30,7 +30,7 @@ class VariableGroupWs(VariableGroup):
                 'title': 'Contribution of Cloud Water Flux to wprcp', 'axis_title': 'rc_coef_zm * wprcp [K m/s]'}
 
         ]
-        super().__init__(ncdf_datasets, case, sam_file, coamps_file=coamps_file)
+        super().__init__(ncdf_datasets, case, sam_file, coamps_file=coamps_file, r408_dataset=r408_dataset)
 
 
 

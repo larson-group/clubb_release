@@ -1,5 +1,3 @@
-import math
-
 import numpy as np
 
 from DataReader import DataReader
@@ -12,7 +10,7 @@ class Case:
     A case is basically a collection of variable groups and
     panels that share attributes like start/end time and get plotted together.
     '''
-    def __init__(self, case_definition, ncdf_datasets, plot_les = False,plot_budgets = False, diff_datasets=None):
+    def __init__(self, case_definition, ncdf_datasets, plot_les = False,plot_budgets = False, diff_datasets=None, plot_r408=False):
         '''
         Initalize a case
         :param ncdf_datasets: List of Dataset objects containing netcdf data from clubb
@@ -27,6 +25,7 @@ class Case:
         self.ncdf_datasets = ncdf_datasets
         self.blacklisted_variables = case_definition['blacklisted_vars']
         self.plot_budgets = plot_budgets
+        self.plot_r408 = plot_r408
         self.diff_datasets = diff_datasets
         if 'disable_budgets' in case_definition.keys() and case_definition['disable_budgets'] is True:
             self.plot_budgets = False
@@ -41,10 +40,20 @@ class Case:
             datareader = DataReader()
             coamps_file = datareader.__loadNcFile__(case_definition['coamps_file'])
 
+        r408_datasets = {}
+        if plot_r408 and case_definition['r408_file'] is not None:
+            data_reader = DataReader()
+            r408_filenames = case_definition['r408_file']
+            for type_ext in r408_filenames:
+                temp_r408_dataset = data_reader.__loadNcFile__(r408_filenames[type_ext])
+                r408_datasets[type_ext] = temp_r408_dataset
+        else:
+            r408_datasets = None
+
         self.panels = []
         self.diff_panels = []
         for VarGroup in self.var_groups:
-            temp_group = VarGroup(self.ncdf_datasets, self, sam_file=sam_file, coamps_file=coamps_file)
+            temp_group = VarGroup(self.ncdf_datasets, self, sam_file=sam_file, coamps_file=coamps_file, r408_dataset=r408_datasets)
 
             for panel in temp_group.panels :
                 self.panels.append(panel)
@@ -52,7 +61,7 @@ class Case:
         # Convert panels to difference panels if user passed in --diff <<folder>>
         if self.diff_datasets is not None:
             for VarGroup in self.var_groups:
-                diff_group = VarGroup(self.diff_datasets, self, sam_file=sam_file, coamps_file=coamps_file)
+                diff_group = VarGroup(self.diff_datasets, self, sam_file=sam_file, coamps_file=coamps_file, r408_file=r408_datasets)
                 for panel in diff_group.panels:
                     self.diff_panels.append(panel)
             for idx in range(len(self.panels)):
