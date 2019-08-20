@@ -11,9 +11,9 @@ to plot height profiles and budgets for the GCSSARM case
 #-------------------------------------------------------------------------------
 
 case = 'GCSSARM'
-full_name = case
+full_name = 'ARM'
 case_folder = '/home/sdomke/workspace/clubb/sam_clubb/{case}'.format(case=case)
-enabled = True # not used in plotgen, no idea what this should do
+enabled = True
 #type = 'budget' # not used in plotgen
 nx = 96
 ny = 96
@@ -23,9 +23,9 @@ dz = 80               # [m]
 dt = 1                # [s]
 startTime = 301.0     # [minutes]
 endTime = 840.0       # [minutes]
-startHeight = 0.0   # [m]
+startHeight = 0.0     # [m]
 endHeight = 3500.0    # [m]
-time_3d = 21600.0     # dt
+time_3d = 21600.0     # [s]
 
 # run entry for header in html file
 run = '{case}_{nx}x{ny}x{nz}_{dxy}m_{dz}m_{dt}s'.format(case=case, nx=nx, ny=ny, nz=nz, dxy=dxy, dz=dz, dt=dt)
@@ -47,11 +47,11 @@ sam_3d_file = '/home/sdomke/workspace/clubb/avi_out/out3d/GCSSARM_96x96x110_67m_
 
 
 ## CLUBB
-clubb_zm_file = None
-clubb_zt_file = None
+clubb_zm_file = 'home/sdomke/workspace/clubb/clubb_out/prog_mom_flux_paper/new/arm_zm.nc'
+clubb_zt_file = 'home/sdomke/workspace/clubb/clubb_out/prog_mom_flux_paper/new/arm_zt.nc'
 ## old CLUBB
-old_clubb_zm_file = None
-old_clubb_zt_file = None
+old_clubb_zm_file = 'home/sdomke/workspace/clubb/clubb_out/prog_mom_flux_paper/old/arm_zm.nc'
+old_clubb_zt_file = 'home/sdomke/workspace/clubb/clubb_out/prog_mom_flux_paper/old/arm_zt.nc'
 
 ## case setup files
 sam_prm = case_folder+'/prm'

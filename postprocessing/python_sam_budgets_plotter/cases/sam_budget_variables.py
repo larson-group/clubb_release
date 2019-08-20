@@ -22,11 +22,14 @@ KG = 1000
 g_per_second_to_kg_per_day = 1. / (DAY * HOUR * KG)
 kg_per_second_to_kg_per_day = 1. / (DAY * HOUR)
 filler = nan                                                # Define the fill value which should replace invalid values in the data
-startLevel = 0                                              # Set the lower height level at which the plots should begin. For example, startLevel=2 would cut off the lowest 2 data points for each line.
+startLevel = 0                                              # Set the lower height level at which the plots should begin. For example, startLevel=2 would cut off the lowest 2 data points for each line. (NOTE: Redundant with startHeight entry in case setup files)
 header = 'SAM budgets'
 name = 'sam_budgets'
 prefix = 'LES'
 nc_files = ['sam']
+# Put additional text entry into plot (TODO: Create lists for texts and positions for each plot)
+plotText = 'a)'                                             # Additional text entry to be put into plot
+textPos = (.1,.9)                                           # Position of text within plot in data coordinates (x,y)
 
 #-------------------------------------------------------------------------------
 # P L O T S

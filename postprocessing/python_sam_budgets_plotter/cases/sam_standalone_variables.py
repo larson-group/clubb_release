@@ -23,10 +23,13 @@ KG = 1000.                                                  # 1kg = 1000g
 g_per_second_to_kg_per_day = 1. / (DAY * HOUR * KG)
 kg_per_second_to_kg_per_day = 1. / (DAY * HOUR)
 filler = nan                                                # Define the fill value which should replace invalid values in the data
-startLevel = 0                                              # Set the lower height level at which the plots should begin. For example, startLevel=2 would cut off the lowest 2 data points for each line.
+startLevel = 0                                              # Set the lower height level at which the plots should begin. For example, startLevel=2 would cut off the lowest 2 data points for each line. (NOTE: Redundant with startHeight entry in case setup files)
 header = 'SAM standalone profiles'
 name = 'sam_standalone'                                     # String used as part of the output file name
 nc_files = ['sam']                                          # NetCDF files needed for plots, paths are defined
+# Put additional text entry into plot (TODO: Create lists for texts and positions for each plot)
+plotText = 'a)'                                             # Additional text entry to be put into plot
+textPos = (.1,.9)                                           # Position of text within plot in data coordinates (x,y)
 
 #-------------------------------------------------------------------------------
 # P L O T S
@@ -57,7 +60,7 @@ sortPlots = ['theta_l', 'r_t', 'theta_l_flux', 'corr_w_tl', 'r_t_flux', 'corr_w_
 # plot number, plot title, axis label
 plotNames = [\
                 [r'Liquid Water Potential Temperature, $\theta_l$', r'$\theta_l\ \mathrm{\left[K\right]}$'],\
-                [r'Total Water Mixing Ratio, $r_t}$', r'rtm / qt $\mathrm{\left[kg\,kg^{-1}\right]}$'],\
+                [r'Total Water Mixing Ratio, $r_t$', r'rtm / qt $\mathrm{\left[kg\,kg^{-1}\right]}$'],\
                 [r'Turbulent Flux of $\theta_l$', r'wpthlp / thflux(s) $\mathrm{\left[K\,m\,s^{-1}\right]}$'],\
                 [r'Corr($w,\theta_l$)', r"Correlation $\overline{w'\theta_l'} / \sqrt{\overline{w'^2}\;\overline{\theta_l'^2}}\ \mathrm{\left[-\right]}$"],\
                 [r'Turbulent Flux of $r_t$', r'wprtp / qtflux(s) $\mathrm{\left[kg\,kg^{-1}\,m\,s^{-1}\right]}$'],\

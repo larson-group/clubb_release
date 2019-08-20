@@ -24,10 +24,13 @@ KG = 1000.                                                  # 1kg = 1000g
 g_per_second_to_kg_per_day = 1. / (DAY * HOUR * KG)
 kg_per_second_to_kg_per_day = 1. / (DAY * HOUR)
 filler = nan                                                # Define the fill value which should replace invalid values in the data
-startLevel = 0                                              # Set the lower height level at which the plots should begin. For example, startLevel=2 would cut off the lowest 2 data points for each line.
+startLevel = 0                                              # Set the lower height level at which the plots should begin. For example, startLevel=2 would cut off the lowest 2 data points for each line. (NOTE: Redundant with startHeight entry in case setup files)
 header = 'SAM CLUBB comparison'
 name = 'sam_clubb_comparison'                               # String used as part of the output file name
 nc_files = ['clubb_zm', 'clubb_zt', 'sam']                  # NetCDF files needed for plots, paths are defined in case setup files
+# Put additional text entry into plot (TODO: Create lists for texts and positions for each plot)
+plotText = 'b)'                                             # Additional text entry to be put into plot
+textPos = (.93,.9)                                          # Position of text within plot in data coordinates (x,y)
 
 #-------------------------------------------------------------------------------
 # P L O T S
@@ -36,7 +39,7 @@ nc_files = ['clubb_zm', 'clubb_zt', 'sam']                  # NetCDF files neede
 # zm
 sortPlots_zm = ['upwp', 'vpwp', 'up2', 'vp2', 'wp2', 'uprcp', 'vprcp', 'upthvp', 'vpthvp', 'uprtp', 'vprtp', 'upthlp', 'vpthlp']
 # zt
-sortPlots_zt = ['um', 'vm']
+sortPlots_zt = ['um', 'vm', 'cld', 'theta_l', 'r_t']
 
 sortPlots = sortPlots_zm + sortPlots_zt
 
@@ -77,6 +80,9 @@ plotNames_zm = [\
 plotNames_zt = [\
     [r"$\overline{u}}$", r"Eastward mean wind, $\overline{u}\ \mathrm{\left[m\,s^{-1}\right]}$"],\
     [r"$\overline{v}}$", r"Northward mean wind, $\overline{v}\ \mathrm{\left[m\,s^{-1}\right]}$"],\
+    [r"Cloud fraction", r"Cloud fraction [-]"],\
+    [r'$\theta_l$', r'Liquid water potential temperature, $\theta_l\ \mathrm{\left[K\right]}$'],\
+    [r'$r_t$', r'Total water mixing ratio, $r_t\ \mathrm{\left[kg\,kg^{-1}\right]}$'],\
     ]
 
 plotNames = plotNames_zm + plotNames_zt
@@ -147,9 +153,21 @@ vpthlp_clubb = [\
     ['vpthlp', True, 'vpthlp',1., 0],\
     ]
 
+cld_clubb = [\
+    ['cloud_frac', True, 'cloud_frac', 1., 0],\
+    ]
+
+thetal_clubb = [\
+    ['thlm', True, 'thlm', 1., 0],\
+    ]
+
+rt_clubb = [\
+    ['rtm', True, 'rtm', 1., 0],\
+    ]
+
 # Gather plots in list
 lines_zm = [upwp_clubb, vpwp_clubb, up2_clubb, vp2_clubb, wp2_clubb, uprcp_clubb, vprcp_clubb, upthvp_clubb, vpthvp_clubb, uprtp_clubb, vprtp_clubb, upthlp_clubb, vpthlp_clubb]
-lines_zt = [um_clubb, vm_clubb]
+lines_zt = [um_clubb, vm_clubb, cld_clubb, thetal_clubb, rt_clubb]
 lines_clubb = lines_zm + lines_zt
 
 ##SAM
@@ -213,4 +231,19 @@ vpthlp_sam = [\
     ['VPTHLP', True, 'VPTHLP',1., 0],\
     ]
 
-lines_sam = [upwp_sam, vpwp_sam, up2_sam, vp2_sam, wp2_sam, uprcp_sam, vprcp_sam, upthvp_sam, vpthvp_sam, uprtp_sam, vprtp_sam, upthlp_sam, vpthlp_sam, um_sam, vm_sam]
+cld_sam = [\
+    ['CLD', True, 'CLD', 1., 0],\
+    ]
+
+thetal_sam = [\
+    ['THETAL', True, 'THETAL', 1., 0],\
+    ]
+
+rt_sam = [\
+    # variables of rt
+    ['RT', True, '(QT-QI)/1000.', 1., 0],\
+    ['QI', False, 'QI', 1., 0],\
+    ['QT', False, 'QT', 1., 0],\
+    ]
+
+lines_sam = [upwp_sam, vpwp_sam, up2_sam, vp2_sam, wp2_sam, uprcp_sam, vprcp_sam, upthvp_sam, vpthvp_sam, uprtp_sam, vprtp_sam, upthlp_sam, vpthlp_sam, um_sam, vm_sam, cld_sam, thetal_sam, rt_sam]

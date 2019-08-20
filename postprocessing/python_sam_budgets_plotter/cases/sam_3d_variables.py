@@ -35,8 +35,6 @@ wind_types = ['horizontal_wind_perturbation+up_map']
 #-------------------------------------------------------------------------------
 # Names of the variables
 cloud_frac_cmap = 'Blues'
-# DEPRECATED: quiver maps are created  dynamically!
-#quiver_cmap = 'copper'
 profiles = ['uw', 'vw']
 
 #-------------------------------------------------------------------------------
@@ -55,7 +53,8 @@ qn_3d = [\
 
 qv_3d = [\
     ['QV', True, 'QV', 1., 0],\
-        ]
+    ]
+
 #thetav = [\
     #['THETAV', True, 'THETAV', 1., 0],\
     #]

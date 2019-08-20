@@ -24,9 +24,9 @@ dz = 40               # [m]
 dt = 1                # [s]
 startTime = 181.0     # [minutes]
 endTime = 360.0       # [minutes]
-startHeight = 0.0   # [m]
+startHeight = 0.0     # [m]
 endHeight = 2500.0    # [m]
-time_3d = 21600.0     # dt
+time_3d = 21600.0     # [s]
 
 # run entry for header in html file
 run = '{case}_{nx}x{ny}x{nz}_{dxy}m_{dz}m_{dt}s'.format(case=case, nx=nx, ny=ny, nz=nz, dxy=dxy, dz=dz, dt=dt)
