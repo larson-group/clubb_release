@@ -177,10 +177,6 @@ module extended_atmosphere_module
     allocate( extended_p_in_Pa(extended_atmos_dim) )
     allocate( extended_exner(extended_atmos_dim) )
 
-    do ivar = 1, n_rad_scalars
-      allocate( extended_rad_scalars(ivar)%values(extended_atmos_dim) )
-    end do
-
     ! Either convert to pressure or from pressure
 
     call read_z_profile( n_snd_var, extended_atmos_dim, sounding_profiles, p_sfc, zm_init, &
