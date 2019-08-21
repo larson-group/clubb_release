@@ -23,15 +23,20 @@ class VariableGroup:
     '''
 
     def __init__(self, ncdf_datasets, case, sam_file=None, coamps_file=None, r408_dataset=None):
+        '''
+
+        :param ncdf_datasets: A dictionary or Netcdf dataset containing the data to be plotted
+        :param case: An instance of a Case object
+        '''
         print("\tGenerating variable-group data")
         self.variables = []
         self.panels = []
         self.defualt_panel_type = Panel.TYPE_PROFILE
+        self.ncdf_files = ncdf_datasets
+        self.case = case
         self.sam_file = sam_file
         self.coamps_file = coamps_file
         self.r408_dataset = r408_dataset
-        self.ncdf_files = ncdf_datasets
-        self.case = case
         self.casename = case.name
         self.start_time = case.start_time
         self.end_time = case.end_time
@@ -60,6 +65,7 @@ class VariableGroup:
         if 'fill_zeros' in variable_def_dict.keys():
             fill_zeros = variable_def_dict['fill_zeros']
 
+        # TODO refactor these chunks into method arguments
         sam_name = None
         sam_file = self.sam_file
         sam_conv_factor = 1
@@ -147,9 +153,9 @@ class VariableGroup:
             else:
                 imported_axis_title = data_reader.getAxisTitle(self.ncdf_files, clubb_name)
                 variable_def_dict['axis_title'] = imported_axis_title
-        if 'sam_calc' in variable_def_dict.keys() and sam_file is not None:
+        if 'sam_calc' in variable_def_dict.keys() and self.sam_file is not None and data_reader.getNcdfSourceModel(self.sam_file):
             samplot = variable_def_dict['sam_calc']()
-            lines.append(samplot)
+            variable_def_dict['plots'].append(samplot)
         self.variables.append(variable_def_dict)
 
     def generatePanels(self):
@@ -328,6 +334,7 @@ class VariableGroup:
         :param varname:
         :return:
         '''
+        # TODO support lev z variable
         if 'z' in dataset.variables.keys():
             z_ncdf = NetCdfVariable('z', dataset, 1)
         else:

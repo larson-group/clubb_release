@@ -325,7 +325,7 @@ class DataReader():
         if var_values is None:
             raise ValueError("Variable " + varname + " does not exist in ncdf_data file. If this is expected,"
                                                      " try passing fill_zeros=True when you create the "
-                                                     "NetCdfVariable for " + varname + ".\nVariables found in dataset: " + str(ncdf_data.variables.keys()))
+                                                     "NetCdfVariable for " + varname + ".\nVariables found in dataset: " + str(ncdf_data))
 
         # SAM outputs time in the form minutes since 1969-06-22 00:00:00.0
         # We want to convert time values over to minutes starting at clubbs start time

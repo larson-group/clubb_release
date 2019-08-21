@@ -39,7 +39,7 @@ class VariableGroupBase(VariableGroup):
             {'clubb_name': 'wp3',	 'r408_name': 'wp3',	 'sam_name': 'W3',	 'coamps_name': 'wp3'},
             {'clubb_name': 'wp2',	 'r408_name': 'wp2',	 'sam_name': 'W2',	 'coamps_name': 'wp2'},
             {'clubb_name': 'wp2_vert_avg',	 'r408_name': 'wp2_vert_avg',	 'sam_name': 'CWP',	 'type': Panel.TYPE_TIMESERIES,	 'fill_zeros': True},
-            {'clubb_name': 'cloud_frac',	 'r408_name': 'cloud_frac',	 'sam_name': 'CLD',	 'coamps_name': 'cf',	 'fill_zeros': True},
+            {'clubb_name': 'cloud_frac',	 'r408_name': 'cf',	 'sam_name': 'CLD',	 'coamps_name': 'cf',	 'fill_zeros': True},
             {'clubb_name': 'upwp',	 'r408_name': 'upwp',	 'sam_name': 'UW'},	 # TODO coamps eqn wpup + wpup_sgs
             {'clubb_name': 'vpwp',	 'r408_name': 'vpwp',	 'sam_name': 'VW'},	 # TODO coamps eqn wpvp + wpvp_sgs
             {'clubb_name': 'up2',	 'r408_name': 'up2',	 'sam_name': 'U2',	 'coamps_name': 'up2', 'fill_zeros': True},
@@ -59,6 +59,8 @@ class VariableGroupBase(VariableGroup):
             {'clubb_name': 'corr_chi_eta_1',	 'r408_name': 'corr_chi_eta_1', 'fill_zeros': True},
             {'clubb_name': 'rcp2',	 'r408_name': 'rcp2',	 'sam_name': 'QC2',	 'sam_conv_factor': 1 / 10 ** 6,	 'coamps_name': 'qcp2', 'fill_zeros': True},
             {'clubb_name': 'thlpthvp',	 'r408_name': 'thlpthvp',	 'sam_name': 'THLPTHVP',	 'coamps_name': 'thlpthvp'},
+
+            # TODO SAM output for these variables
             {'clubb_name': 'rc_coef_zm .* wprcp',	 'r408_name': 'rc_coef_zm .* wprcp',	 'fallback_func': self.get_rc_coef_zm_X_wprcp_clubb_line,
                 'title': 'Contribution of Cloud Water Flux to wpthvp',	 'axis_title': 'rc_coef_zm * wprcp [K m/s]'},	 # TODO coamps eqn wpqcp .* (2.5e6 ./ (1004.67*ex0) - 1.61*thvm)
             {'clubb_name': 'rc_coef_zm .* thlprcp',	 'r408_name': 'rc_coef_zm .* thlprcp',	 'fallback_func': self.get_rc_coef_zm_X_thlprcp_clubb_line,
@@ -146,11 +148,11 @@ class VariableGroupBase(VariableGroup):
 
         z_ncdf = NetCdfVariable('z', self.sam_file, 1)
 
-        wp3_ncdf = NetCdfVariable('WP3', self.sam_file, 1, start_time=self.start_time, end_time=self.end_time)
+        wp3_ncdf = NetCdfVariable('WP3', self.sam_file, 1, start_time=self.start_time, end_time=self.end_time, fill_zeros=True) # TODO fill zeros tempfix until pyplotgen can handle multiple aliases
         wp3_ncdf.constrain(self.height_min_value, self.height_max_value, data=z_ncdf.data)
         wp3 = wp3_ncdf.data
 
-        wp2_ncdf = NetCdfVariable('WP2', self.sam_file, 1, start_time=self.start_time, end_time=self.end_time)
+        wp2_ncdf = NetCdfVariable('WP2', self.sam_file, 1, start_time=self.start_time, end_time=self.end_time, fill_zeros=True)# TODO fill zeros tempfix until pyplotgen can handle multiple aliases
         wp2_ncdf.constrain(self.height_min_value, self.height_max_value, data=z_ncdf.data)
         wp2 = wp2_ncdf.data
 
@@ -172,11 +174,11 @@ class VariableGroupBase(VariableGroup):
 
         z_ncdf = NetCdfVariable('z', self.sam_file, 1)
 
-        rtp3_ncdf = NetCdfVariable('RTP3', self.sam_file, 1, start_time=self.start_time, end_time=self.end_time)
+        rtp3_ncdf = NetCdfVariable('RTP3', self.sam_file, 1, start_time=self.start_time, end_time=self.end_time, fill_zeros=True)# TODO fill zeros tempfix until pyplotgen can handle multiple aliases
         rtp3_ncdf.constrain(self.height_min_value, self.height_max_value, data=z_ncdf.data)
         rtp3 = rtp3_ncdf.data
 
-        rtp2_ncdf = NetCdfVariable('RTP2', self.sam_file, 1, start_time=self.start_time, end_time=self.end_time)
+        rtp2_ncdf = NetCdfVariable('RTP2', self.sam_file, 1, start_time=self.start_time, end_time=self.end_time, fill_zeros=True)# TODO fill zeros tempfix until pyplotgen can handle multiple aliases
         rtp2_ncdf.constrain(self.height_min_value, self.height_max_value, data=z_ncdf.data)
         rtp2 = rtp2_ncdf.data
 
@@ -198,11 +200,11 @@ class VariableGroupBase(VariableGroup):
 
         z_ncdf = NetCdfVariable('z', self.sam_file, 1)
 
-        thlp3_ncdf = NetCdfVariable('THLP3', self.sam_file, 1, start_time=self.start_time, end_time=self.end_time)
+        thlp3_ncdf = NetCdfVariable('THLP3', self.sam_file, 1, start_time=self.start_time, end_time=self.end_time, fill_zeros=True) # TODO fill zeros tempfix until pyplotgen can handle multiple aliases
         thlp3_ncdf.constrain(self.height_min_value, self.height_max_value, data=z_ncdf.data)
         thlp3 = thlp3_ncdf.data
 
-        thlp2_ncdf = NetCdfVariable('THLP2', self.sam_file, 1, start_time=self.start_time, end_time=self.end_time)
+        thlp2_ncdf = NetCdfVariable('THLP2', self.sam_file, 1, start_time=self.start_time, end_time=self.end_time, fill_zeros=True) # TODO fill zeros tempfix until pyplotgen can handle multiple aliases
         thlp2_ncdf.constrain(self.height_min_value, self.height_max_value, data=z_ncdf.data)
         thlp2 = thlp2_ncdf.data
 

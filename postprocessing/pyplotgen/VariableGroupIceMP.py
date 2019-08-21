@@ -39,20 +39,25 @@ class VariableGroupIceMP(VariableGroup):
         (NI * 1e+6) ./ RHO
         :return:
         '''
-        sec_per_min = 60
-        sam_start_time = self.start_time  # / sec_per_min
-        sam_end_time = self.end_time  # / sec_per_min
+        # sec_per_min = 60
+        # sam_start_time = self.start_time  # / sec_per_min
+        # sam_end_time = self.end_time  # / sec_per_min
 
-        z_ncdf = NetCdfVariable('z', self.sam_file, 1)
-        z = z_ncdf.data
-        start_idx, end_idx = self.__getStartEndIndex__(z, self.height_min_value, self.height_max_value)
+        z = self.__getFallbackVar__('z', self.sam_file)
+        ni = self.__getFallbackVar__('NI', self.sam_file, fill_zeros=True)
+        rho = self.__getFallbackVar__('RHO', self.sam_file, fill_zeros=True)
 
-        ni_ncdf = NetCdfVariable('NI', self.sam_file, 1, start_time=sam_start_time, end_time=sam_end_time)
-        ni = ni_ncdf.data
-        rho_ncdf = NetCdfVariable('RHO', self.sam_file, 1, start_time=sam_start_time, end_time=sam_end_time)
-        rho = rho_ncdf.data
+
+        # z_ncdf = NetCdfVariable('z', self.sam_file, 1)
+        # z = z_ncdf.data
+        # start_idx, end_idx = self.__getStartEndIndex__(z, self.height_min_value, self.height_max_value)
+
+        # ni_ncdf = NetCdfVariable('NI', self.sam_file, 1, start_time=sam_start_time, end_time=sam_end_time)
+        # ni = ni_ncdf.data
+        # rho_ncdf = NetCdfVariable('RHO', self.sam_file, 1, start_time=sam_start_time, end_time=sam_end_time)
+        # rho = rho_ncdf.data
         nim = (ni * (10 ** 6) / rho)
-        nim = nim[start_idx:end_idx]
+        # nim = nim[start_idx:end_idx]
         nim_line = Line(nim, z, line_format='k-', label='SAM-LES')
         return nim_line
 
@@ -65,17 +70,19 @@ class VariableGroupIceMP(VariableGroup):
         sec_per_min = 60
         sam_start_time = self.start_time  # / sec_per_min
         sam_end_time = self.end_time  # / sec_per_min
+        z = self.__getFallbackVar__('z', self.sam_file)
+        ns = self.__getFallbackVar__('NS', self.sam_file, fill_zeros=True)
+        rho = self.__getFallbackVar__('RHO', self.sam_file, fill_zeros=True)
+        # z_ncdf = NetCdfVariable('z', self.sam_file, 1)
+        # z = z_ncdf.data
+        # start_idx, end_idx = self.__getStartEndIndex__(z, self.height_min_value, self.height_max_value)
 
-        z_ncdf = NetCdfVariable('z', self.sam_file, 1)
-        z = z_ncdf.data
-        start_idx, end_idx = self.__getStartEndIndex__(z, self.height_min_value, self.height_max_value)
-
-        ns_ncdf = NetCdfVariable('NS', self.sam_file, 1, start_time=sam_start_time, end_time=sam_end_time)
-        ns = ns_ncdf.data
-        rho_ncdf = NetCdfVariable('RHO', self.sam_file, 1, start_time=sam_start_time, end_time=sam_end_time)
-        rho = rho_ncdf.data
+        # ns_ncdf = NetCdfVariable('NS', self.sam_file, 1, start_time=sam_start_time, end_time=sam_end_time)
+        # ns = ns_ncdf.data
+        # rho_ncdf = NetCdfVariable('RHO', self.sam_file, 1, start_time=sam_start_time, end_time=sam_end_time)
+        # rho = rho_ncdf.data
         nsm = (ns * (10 ** 6) / rho)
-        nsm = nsm[start_idx:end_idx]
+        # nsm = nsm[start_idx:end_idx]
         nsm_line = Line(nsm, z, line_format='k-', label='SAM-LES')
         return nsm_line
 
