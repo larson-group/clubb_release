@@ -622,7 +622,7 @@ module advance_xp2_xpyp_module
       endif
       
       do k = 1, gr%nz
-        threshold = rtp2_clip_coef * rtm(k)**2
+        threshold = max( rt_tol**2, rtp2_clip_coef * zt2zm( rtm, k )**2 )
         if ( rtp2(k) > threshold ) then
           rtp2(k) = threshold
         end if
