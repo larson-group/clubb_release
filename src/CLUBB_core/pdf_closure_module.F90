@@ -1515,7 +1515,8 @@ module pdf_closure_module
             stdev_eta(k) = sqrt( varnce_eta )
 
             corr_chi_eta(k) = covar_chi_eta(k) / ( stdev_chi(k) * stdev_eta(k) )
-            corr_chi_eta(k) = min( max_mag_correlation, max( -max_mag_correlation, corr_chi_eta(k) ) )
+            corr_chi_eta(k) = min( max_mag_correlation, &
+                                   max( -max_mag_correlation, corr_chi_eta(k) ) )
 
         end if
 
