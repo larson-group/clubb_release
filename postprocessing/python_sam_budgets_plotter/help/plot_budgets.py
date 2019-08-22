@@ -176,7 +176,7 @@ def plot_profiles(data, level, xLabel, yLabel, title, name, textEntry="", textPo
     # set axis labels, title, and additional text
     ax.set_xlabel(xLabel, fontsize=fontsizes['labels'])
     ax.set_ylabel(yLabel, fontsize=fontsizes['labels'])
-    ax.set_title(title, fontsize=fontsizes['title'], y=titlepos)
+    ax.set_title(title, fontsize=fontsizes['title'], x=.48, y=titlepos, horizontalalignment='center')
     #ax.text(0.1,0.9,'c)',fontsize=30,transform=ax.transAxes)
     ax.text(textPos[0], textPos[1], textEntry, fontsize=30, transform=ax.transAxes)
     

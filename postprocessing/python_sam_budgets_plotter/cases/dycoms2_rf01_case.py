@@ -12,7 +12,7 @@ to plot height profiles and budgets for the DYCOMS2_RF01 case
 
 #case = 'DYCOMS2_RF01'
 case = 'DYCOMS_RF01'
-full_name = 'DYCOMS-II RF01'
+full_name = 'DYCOMS RF01'
 case_folder = '/home/sdomke/workspace/clubb/sam_clubb/{case}'.format(case=case)
 enabled = True
 #type = 'budget' # not used in plotgen
