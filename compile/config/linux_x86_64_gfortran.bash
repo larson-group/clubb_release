@@ -46,7 +46,7 @@ OPTIMIZE="-O2"
 
 # == NetCDF Location ==
 #NETCDF="/usr" # Ubuntu / Fedora
-NETCDF="/usr/local/netcdf-gfortran" # RHEL5
+NETCDF="/usr/local/NETCDF-Fortran-4.4.5-gfortran" # RHEL5
 
 # == LAPACK libraries ==
 #LAPACK="-llapack -lblas" # The netlib reference LAPACK/BLAS
@@ -60,7 +60,7 @@ NETCDF="/usr/local/netcdf-gfortran" # RHEL5
 # Use -L<library path> -l<lib> to link in an external library
 # Use -Wl,-rpath <library path> to set a search path for shared libs
 #LDFLAGS="-L$NETCDF/lib -lnetcdf -lnetcdff $LAPACK" # Ubuntu
-LDFLAGS="$ARCH -L$NETCDF/lib -lnetcdf $LAPACK" # RHEL5
+LDFLAGS="$ARCH -L$NETCDF/lib -lnetcdff $LAPACK" # RHEL5
 
 # == Compiler flags ==
 # You will need to `make clean' if you change these

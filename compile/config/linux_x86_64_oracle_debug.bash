@@ -37,7 +37,7 @@ DOUBLE_PRECISION="-xtypemap=real:64,double:64,integer:32"
 NETCDF="/usr/local/netcdf-sun64"
 
 # == LAPACK libraries ==
-LAPACK="-xlic_lib=sunperf" # Sun performance library
+#LAPACK="-xlic_lib=sunperf" # Sun performance library
 #LAPACK="-L/usr/local/lib -llapack -L/usr/local/atlas/lib -lf77blas -lcblas -latlas"
 
 # == Linking Flags ==
