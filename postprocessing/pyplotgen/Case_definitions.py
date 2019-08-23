@@ -16,7 +16,6 @@ R408_OUTPUT_ROOT = BENCHMARK_OUTPUT_ROOT + ""
 # the 'name' parameter must be the same as the filename without the extention.
 #   E.g. to use lba_zt.nc and lba_zm.nc the case's name must be 'lba'
 
-# TODO Skw_zt SAM line not showing
 ARM = {'name': 'arm', 'start_time': 481, 'end_time': 540, 'height_min_value': 0, 'height_max_value': 3500,
        'enabled': True, 'disable_budgets': False,
        'blacklisted_vars': ['radht'],
@@ -292,4 +291,4 @@ ALL_CASES = [ARM, ARM_97, ASTEX_A209, ATEX, BOMEX, CGILS_S6, CGILS_S11, CGILS_S1
              JUN25_ALTOCU, LBA, MC3E,
              MPACE_A, MPACE_B, MPACE_B_SILHS, NOV11_ALTOCU, RICO, TWP_ICE, WANGARA]
 
-# ALL_CASES = [ARM]
+# ALL_CASES = [BOMEX]

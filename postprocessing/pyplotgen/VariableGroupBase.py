@@ -25,49 +25,49 @@ class VariableGroupBase(VariableGroup):
         '''
         self.name = "base variables"
         self.variable_definitions = [
-            {'clubb_name': 'thlm',	 'r408_name': 'thlm',	 'sam_calc': self.getThlmSamLine,	 'coamps_name': 'thlm'},
-            {'clubb_name': 'rtm',	 'r408_name': 'rtm',	 'sam_calc': self.getRtmSamLine,	 'coamps_name': 'qtm'},
-            {'clubb_name': 'wpthlp', 'r408_name': 'wpthlp',	 'sam_name': 'WPTHLP',	 'fallback_func': self.getWpthlpFallback,	 'coamps_name': 'wpthlp'},
-            {'clubb_name': 'wprtp',	 'r408_name': 'wprtp',	 'sam_name': 'WPRTP',	 'fallback_func': self.getWprtpFallback,	 'coamps_name': 'wpqtp'},
-            {'clubb_name': 'rcm',	 'r408_name': 'rcm',	 'sam_name': "QCL",	 'sam_conv_factor': 1 / 1000,	 'coamps_name': 'qcm'},
-            {'clubb_name': 'wp3',	 'r408_name': 'wp3',	 'sam_name': 'W3',  'coamps_name': 'wp3'},
-            {'clubb_name': 'thlp2',	 'r408_name': 'thlp2',	 'sam_name': 'THLP2',	 'fallback_func': self.getThlp2Fallback,	 'coamps_name': 'thlp2'},
-            {'clubb_name': 'rtp2',	 'r408_name': 'rtp2',	 'sam_name': 'RTP2',	 'fallback_func': self.getRtp2Fallback,	 'coamps_name': 'qtp2'},
-            {'clubb_name': 'wm',	 'r408_name': 'wm',	    'sam_name': 'WOBS',	 'coamps_name': 'wlsm'},
-            {'clubb_name': 'um',	 'r408_name': 'um',	    'sam_name': 'U',	 'coamps_name': 'um'},
-            {'clubb_name': 'vm',	 'r408_name': 'vm',	    'sam_name': 'V',	 'coamps_name': 'vm'},
-            {'clubb_name': 'wp3',	 'r408_name': 'wp3',	 'sam_name': 'W3',	 'coamps_name': 'wp3'},
-            {'clubb_name': 'wp2',	 'r408_name': 'wp2',	 'sam_name': 'W2',	 'coamps_name': 'wp2'},
-            {'clubb_name': 'wp2_vert_avg',	 'r408_name': 'wp2_vert_avg',	 'sam_name': 'CWP',	 'type': Panel.TYPE_TIMESERIES,	 'fill_zeros': True},
-            {'clubb_name': 'cloud_frac',	 'r408_name': 'cf',	 'sam_name': 'CLD',	 'coamps_name': 'cf',	 'fill_zeros': True},
-            {'clubb_name': 'upwp',	 'r408_name': 'upwp',	 'sam_name': 'UW'},	 # TODO coamps eqn wpup + wpup_sgs
-            {'clubb_name': 'vpwp',	 'r408_name': 'vpwp',	 'sam_name': 'VW'},	 # TODO coamps eqn wpvp + wpvp_sgs
-            {'clubb_name': 'up2',	 'r408_name': 'up2',	 'sam_name': 'U2',	 'coamps_name': 'up2', 'fill_zeros': True},
-            {'clubb_name': 'tau_zm',	 'r408_name': 'tau_zm', 'fill_zeros': True},
-            {'clubb_name': 'vp2',	 'r408_name': 'vp2',	 'sam_name': 'V2',	 'coamps_name': 'vp2', 'fill_zeros': True},
-            {'clubb_name': 'Lscale',	 'r408_name': 'Lscale', 'fill_zeros': True},
-            {'clubb_name': 'wpthvp',	 'r408_name': 'wpthvp',	 'sam_name': 'WPTHVP',	 'fallback_func': self.getWpthvpFallback,	 'coamps_name': 'wpthvp'},
-            {'clubb_name': 'rtpthlp',	 'r408_name': 'rtpthlp',	 'sam_name': 'RTPTHLP',	 'fallback_func': self.getRtpthlpFallback,	 'coamps_name': 'qtpthlp'},
-            {'clubb_name': 'rtp3',	 'r408_name': 'rtp3',	 'sam_name': 'RTP3',	 'fallback_func': self.getRtp3Fallback,	 'coamps_name': 'qtp3', 'fill_zeros': True},
-            {'clubb_name': 'radht',	 'r408_name': 'radht',	 'sam_name': 'RADQR',	 'sam_conv_factor': 1 / 86400,	 'coamps_name': 'radht'},
-            {'clubb_name': 'Skw_zt',	 'r408_name': 'Skw_zt',	 'sam_calc': self.getSkwZtSamLine, 'fill_zeros':True},	 # TODO coamps eqn wp3 ./ (wp2 + 1.6e-3).^1.5
-            {'clubb_name': 'thlp3',	 'r408_name': 'thlp3',	 'sam_name': 'THLP3',	 'coamps_name': 'thlp3', 'fill_zeros': True},
-            {'clubb_name': 'rtpthvp',	 'r408_name': 'rtpthvp',	 'sam_name': 'RTPTHVP',	 'coamps_name': 'qtpthvp'},
-            {'clubb_name': 'Skrt_zt',	 'r408_name': 'Skrt_zt',	 'sam_calc': self.getSkrtZtSamLine, 'fill_zeros': True},	 # TODO coamps eqn qtp3 ./ (qtp2 + 4e-16).^1.5
-            {'clubb_name': 'Skthl_zt',	 'r408_name': 'Skthl_zt',	 'sam_calc': self.getSkthlZtSamLine, 'fill_zeros': True},	 # TODO coamps eqn thlp3 ./ (thlp2 + 4e-4).^1.5
-            {'clubb_name': 'corr_w_chi_1',	 'r408_name': 'corr_w_chi_1', 'fill_zeros': True},
-            {'clubb_name': 'corr_chi_eta_1',	 'r408_name': 'corr_chi_eta_1', 'fill_zeros': True},
-            {'clubb_name': 'rcp2',	 'r408_name': 'rcp2',	 'sam_name': 'QC2',	 'sam_conv_factor': 1 / 10 ** 6,	 'coamps_name': 'qcp2', 'fill_zeros': True},
-            {'clubb_name': 'thlpthvp',	 'r408_name': 'thlpthvp',	 'sam_name': 'THLPTHVP',	 'coamps_name': 'thlpthvp'},
+            {'aliases': ['thlm'], 'sam_calc': self.getThlmSamLine},
+            {'aliases': ['rtm', 'qtm'],	 'sam_calc': self.getRtmSamLine},
+            {'aliases': ['wpthlp', 'WPTHLP'], 'fallback_func': self.getWpthlpFallback},
+            {'aliases': ['wprtp', 'WPRTP', 'wpqtp'], 'fallback_func': self.getWprtpFallback},
+            {'aliases': ['cloud_frac', 'cf', 'CLD']},
+            {'aliases': ['rcm', 'QCL', 'qcm'], 'sam_conv_factor': 1 / 1000},
+            {'aliases': ['wp2', 'W2', 'WP2']},
+            {'aliases': ['wp3', 'W3', 'WP3'],	 'sam_name': 'W3'},
+            {'aliases': ['thlp2', 'THLP2'], 'fallback_func': self.getThlp2Fallback},
+            {'aliases': ['rtp2', 'RTP2', 'qtp2'], 'fallback_func': self.getRtp2Fallback},
+            {'aliases': ['rtpthlp', 'RTPTHLP', 'qtpthlp'], 'fallback_func': self.getRtpthlpFallback},
+            {'aliases': ['rtp3', 'RTP3', 'qtp3'], 'fallback_func': self.getRtp3Fallback},
+            {'aliases': ['thlp3', 'THLP3']},
+            {'aliases': ['Skw_zt'],	 'sam_calc': self.getSkwZtSamLine, 'fill_zeros':True},	# TODO SAM output (arm97) is wrong # TODO coamps eqn wp3 ./ (wp2 + 1.6e-3).^1.5
+            {'aliases': ['Skrt_zt'],	 'sam_calc': self.getSkrtZtSamLine, 'fill_zeros': True},	 # TODO coamps eqn qtp3 ./ (qtp2 + 4e-16).^1.5
+            {'aliases': ['Skthl_zt'],	 'sam_calc': self.getSkthlZtSamLine, 'fill_zeros': True},	 # TODO coamps eqn thlp3 ./ (thlp2 + 4e-4).^1.5
+            {'aliases': ['wm', 'WOBS', 'wlsm']},
+            {'aliases': ['um', 'U']},
+            {'aliases': ['vm', 'V']},
+            {'aliases': ['upwp', 'UW']}, # TODO coamps eqn wpup + wpup_sgs
+            {'aliases': ['vpwp', 'VW']}, # TODO coamps eqn wpvp + wpvp_sgs
+            {'aliases': ['up2', 'U2']},
+            {'aliases': ['vp2', 'V2']},
+            {'aliases': ['rcp2', 'QC2', 'qcp2'], 'sam_conv_factor': 1 / 10 ** 6},
+            {'aliases': ['wp2_vert_avg', 'CWP'], 'type': Panel.TYPE_TIMESERIES,	 'fill_zeros': True},
+            {'aliases': ['tau_zm'], 'fill_zeros': True},
+            {'aliases': ['Lscale'], 'fill_zeros': True},
+            {'aliases': ['wpthvp', 'WPTHVP'], 'fallback_func': self.getWpthvpFallback},
+            {'aliases': ['radht', 'RADQR'], 'sam_conv_factor': 1 / 86400},
+            {'aliases': ['rtpthvp', 'RTPTHVP', 'qtpthvp']},
+            {'aliases': ['corr_w_chi_1'], 'fill_zeros': True},
+            {'aliases': ['corr_chi_eta_1'], 'fill_zeros': True},
+            {'aliases': ['thlpthvp']}, # TODO SAM output missing (arm)
 
             # TODO SAM output for these variables
-            {'clubb_name': 'rc_coef_zm .* wprcp',	 'r408_name': 'rc_coef_zm .* wprcp',	 'fallback_func': self.get_rc_coef_zm_X_wprcp_clubb_line,
+            {'aliases': ['rc_coef_zm .* wprcp'],	 'fallback_func': self.get_rc_coef_zm_X_wprcp_clubb_line,
                 'title': 'Contribution of Cloud Water Flux to wpthvp',	 'axis_title': 'rc_coef_zm * wprcp [K m/s]'},	 # TODO coamps eqn wpqcp .* (2.5e6 ./ (1004.67*ex0) - 1.61*thvm)
-            {'clubb_name': 'rc_coef_zm .* thlprcp',	 'r408_name': 'rc_coef_zm .* thlprcp',	 'fallback_func': self.get_rc_coef_zm_X_thlprcp_clubb_line,
+            {'aliases': ['rc_coef_zm .* thlprcp'],	 'fallback_func': self.get_rc_coef_zm_X_thlprcp_clubb_line,
                 'title': 'Contribution of Cloud Water Flux to thlprcp',	 'axis_title': 'rc_coef_zm * thlprcp [K^2]'},	 # TODO coamps eqn thlpqcp .* (2.5e6 ./ (1004.67*ex0) - 1.61*thvm)
-            {'clubb_name': 'rc_coef_zm .* rtprcp',	 'r408_name': 'rc_coef_zm .* rtprcp',	 'fallback_func': self.get_rc_coef_zm_X_rtprcp_clubb_line,
+            {'aliases': ['rc_coef_zm .* rtprcp'],	 'fallback_func': self.get_rc_coef_zm_X_rtprcp_clubb_line,
                 'title': 'Contribution of Cloud Water Flux to rtprcp',	 'axis_title': 'rc_coef_zm * rtprcp [kg/kg K]'},	 # TODO coamp eqn qtpqcp .* (2.5e6 ./ (1004.67*ex0) - 1.61*thvm)
-            {'clubb_name': 'lwp',	 'r408_name': 'lwp',	 'type': Panel.TYPE_TIMESERIES,	 'sam_name': 'CWP',	 'sam_conv_factor': 1/1000}
+            {'aliases': ['lwp', 'CWP'],	 'type': Panel.TYPE_TIMESERIES, 'sam_conv_factor': 1/1000}
+
             # TODO rc_coev * wp2rcp
 
 
@@ -214,7 +214,7 @@ class VariableGroupBase(VariableGroup):
         skthl_zt_line = Line(skthl_zt, z_ncdf.data, line_format="k-", label="SAM-LES")
         return skthl_zt_line
 
-    def getWpthlpFallback(self):
+    def getWpthlpFallback(self, dataset_override = None):
         '''
         This gets called if WPTHLP isn't outputted in an nc file as a backup way of gathering the data for plotting.
         WPTHLP = (TLFLUX) ./ (RHO * 1004)
@@ -239,7 +239,7 @@ class VariableGroupBase(VariableGroup):
         wpthlp = Line(wpthlp, z_ncdf.data, line_format="k-", label="SAM-LES")
         return wpthlp
 
-    def getWprtpFallback(self):
+    def getWprtpFallback(self, dataset_override = None):
         '''
         This gets called if WPRTP isn't outputted in an nc file as a backup way of gathering the data for plotting.
         WPRTP = (QTFLUX) ./ (RHO * 2.5104e+6)
@@ -264,7 +264,7 @@ class VariableGroupBase(VariableGroup):
         wprtp = Line(wprtp, z_ncdf.data, line_format="k-", label="SAM-LES")
         return wprtp
 
-    def getWpthvpFallback(self):
+    def getWpthvpFallback(self, dataset_override = None):
         '''
         This gets called if WPTHVP isn't outputted in an nc file as a backup way of gathering the data for plotting.
         WPTHVP =  (TVFLUX) ./ ( RHO * 1004)
@@ -289,7 +289,7 @@ class VariableGroupBase(VariableGroup):
         wpthvp = Line(wpthvp, z_ncdf.data, line_format="k-", label="SAM-LES")
         return wpthvp
 
-    def getThlp2Fallback(self):
+    def getThlp2Fallback(self, dataset_override = None):
         '''
         This gets called if THLP2 isn't outputted in an nc file as a backup way of gathering the data for plotting.
         THLP2 = TL2
@@ -308,7 +308,7 @@ class VariableGroupBase(VariableGroup):
         tl2_line = Line(tl2, z_ncdf.data, line_format="k-", label="SAM-LES")
         return tl2_line
 
-    def getRtpthlpFallback(self):
+    def getRtpthlpFallback(self, dataset_override = None):
         '''
         This gets called if Rtpthlp isn't outputted in an nc file as a backup way of gathering the data for plotting.
         Rtpthlp = TQ
@@ -327,7 +327,7 @@ class VariableGroupBase(VariableGroup):
         thlp2 = Line(tq2, z_ncdf.data, line_format="k-", label="SAM-LES")
         return thlp2
 
-    def getRtp2Fallback(self):
+    def getRtp2Fallback(self, dataset_override = None):
         '''
         This gets called if RTP2 isn't outputted in an nc file as a backup way of gathering the data for plotting.
         THLP2 = QT2 / 1e+6
@@ -348,32 +348,32 @@ class VariableGroupBase(VariableGroup):
         rtp2_line = Line(rtp2, z_ncdf.data, line_format="k-", label="SAM-LES")
         return rtp2_line
 
-    def getRtp3Fallback(self):
+    def getRtp3Fallback(self, dataset_override=None):
         '''
         Caclulates Rtp3 output
         rc_coef_zm .* rtprcp
 
-        TODO Sam fallback: ((QCFLUX) ./ (RHO * 2.5104e+6)) .* (2.5e6 ./ (1004.67*((PRES / 1000).^(287.04/1004.67))) - 1.61*THETAV)
         :return:
         '''
+        rtp3 = None
+        if dataset_override is not None:
+            dataset = dataset_override
+        else:
+            dataset = self.sam_file
+        if 'rc_coef_zm' in dataset.variables.keys() and 'rtprcp' in dataset.variables.keys():
+            rc_coef_zm = self.__getFallbackVar__('rc_coef_zm', dataset)
+            rtprcp = self.__getFallbackVar__('rtprcp', dataset)
+            rtp3 = rc_coef_zm * (rtprcp)
 
-        z_ncdf = NetCdfVariable('z', self.sam_file, 1)
+        elif 'QCFLUX' in dataset.variables.keys():
+            QCFLUX = self.__getFallbackVar__('QCFLUX', dataset)
+            RHO = self.__getFallbackVar__('RHO', dataset)
+            PRES = self.__getFallbackVar__('PRES', dataset)
+            THETAV = self.__getFallbackVar__('THETAV', dataset)
+            rtp3 = ((QCFLUX) / (RHO * 2.5104e+6)) * (2.5e6 / (1004.67*((PRES / 1000)**(287.04/1004.67))) - 1.61*THETAV)
+        return rtp3
 
-        rc_coef_zm_ncdf = NetCdfVariable('rc_coef_zm', self.sam_file, 1, start_time=self.start_time, end_time=self.end_time)
-        rc_coef_zm_ncdf.constrain(self.height_min_value, self.height_max_value, data=z_ncdf.data)
-        rc_coef_zm = rc_coef_zm_ncdf.data
-
-        rtprcp_ncdf = NetCdfVariable('rtprcp', self.sam_file, 1, start_time=self.start_time, end_time=self.end_time)
-        rtprcp_ncdf.constrain(self.height_min_value, self.height_max_value, data=z_ncdf.data)
-        rtprcp = rtprcp_ncdf.data
-
-        rtp3 = rc_coef_zm * (rtprcp)
-
-        z_ncdf.constrain(self.height_min_value, self.height_max_value)
-        rtp3_line = Line(rtp3, z_ncdf.data, line_format='k-', label='SAM-LES')
-        return rtp3_line
-
-    def get_rc_coef_zm_X_wprcp_clubb_line(self):
+    def get_rc_coef_zm_X_wprcp_clubb_line(self, dataset_override=None):
         '''
         Calculates the Contribution of Cloud Water Flux
         to wpthvp using the equation
@@ -396,7 +396,7 @@ class VariableGroupBase(VariableGroup):
         output = Line(output, z_ncdf.data, line_format='b-', label='current clubb')
         return output
 
-    def get_rc_coef_zm_X_wprcp_sam_line(self):
+    def get_rc_coef_zm_X_wprcp_sam_line(self, dataset_override = None):
         '''
         Calculates the Contribution of Cloud Water Flux
         to wpthvp for SAM using the equation
@@ -425,7 +425,7 @@ class VariableGroupBase(VariableGroup):
         return output
 
     # rc_coef_zm. * thlprcp
-    def get_rc_coef_zm_X_thlprcp_clubb_line(self):
+    def get_rc_coef_zm_X_thlprcp_clubb_line(self, dataset_override = None):
         '''
         Calculates the Contribution of Cloud Water Flux
         to thlprcp using the equation
@@ -448,7 +448,7 @@ class VariableGroupBase(VariableGroup):
         output = Line(output, z_ncdf.data, line_format='b-', label='current clubb')
         return output
     
-    def get_rc_coef_zm_X_rtprcp_clubb_line(self):
+    def get_rc_coef_zm_X_rtprcp_clubb_line(self, dataset_override = None):
         '''
         Calculates the Contribution of Cloud Water Flux
         to rtprcp using the equation

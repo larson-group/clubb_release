@@ -45,8 +45,10 @@ class VariableGroup:
         self.default_line_format = 'b-'
 
         for variable in self.variable_definitions:
-            print("\tProcessing ", variable['clubb_name'])
-            if variable['clubb_name'] not in case.blacklisted_variables:
+            print("\tProcessing ", variable['aliases'])
+
+            # Only add variable if none of the aliases are blacklisted
+            if len(list(set(variable['aliases']).intersection(case.blacklisted_variables))) == 0: #variable['aliases'] not in case.blacklisted_variables:
                 # Skip this variable if it's blacklisted for the case
                 self.addClubbVariable(variable)
         self.generatePanels()
@@ -58,7 +60,7 @@ class VariableGroup:
         :return:
         '''
         data_reader = DataReader()
-        clubb_name = variable_def_dict['clubb_name']
+        aliases = variable_def_dict['aliases']
         fill_zeros = False
         lines = None
 
@@ -66,36 +68,24 @@ class VariableGroup:
             fill_zeros = variable_def_dict['fill_zeros']
 
         # TODO refactor these chunks into method arguments
-        sam_name = None
         sam_file = self.sam_file
         sam_conv_factor = 1
         if 'sam_calc' in variable_def_dict.keys():
             sam_file = None  # don't try to autoplot sam if sam is a calculated value
-        if 'sam_name' in variable_def_dict.keys():
-            sam_name = variable_def_dict['sam_name']
-            sam_file = self.sam_file  # redefine sam_file incase sam_calc wiped it
         if 'sam_conv_factor' in variable_def_dict.keys():
             sam_conv_factor = variable_def_dict['sam_conv_factor']
 
         coamps_file = self.coamps_file
-        coamps_name = None
         coamps_conv_factor = 1
         if 'coamps_calc' in variable_def_dict.keys():
             coamps_file = None  # don't try to autoplot coamps if coamps is a calculated value
-        if 'coamps_name' in variable_def_dict.keys():
-            coamps_name = variable_def_dict['coamps_name']
-            coamps_file = self.coamps_file  # redefine coamps_file incase coamps_calc wiped it
         if 'coamps_conv_factor' in variable_def_dict.keys():
             coamps_conv_factor = variable_def_dict['coamps_conv_factor']
 
         r408_dataset = self.r408_dataset
-        r408_name = None
         r408_conv_factor = 1
         if 'r408_calc' in variable_def_dict.keys():
             r408_dataset = None  # don't try to autoplot if calculated value
-        if 'r408_name' in variable_def_dict.keys():
-            r408_name = variable_def_dict['r408_name']
-            r408_dataset = self.r408_dataset
         if 'r408_conv_factor' in variable_def_dict.keys():
             r408_conv_factor = variable_def_dict['r408_conv_factor']
 
@@ -109,41 +99,30 @@ class VariableGroup:
             panel_type = variable_def_dict['type']
 
         all_lines = []
-        if sam_file is not None and sam_name is not None:
-            sam_lines = self.__getVarLines__(sam_name, sam_file, conversion_factor=sam_conv_factor,
-                                             label="SAM-LES",
-                                             line_format="k-", fill_zeros = fill_zeros,
-                                             override_panel_type=panel_type, fallback_func=fallback, lines=lines)
-            all_lines.extend(sam_lines)
+        if sam_file is not None:
+            all_lines.extend(self.__getVarLines__(aliases, sam_file, conversion_factor=sam_conv_factor, label="SAM-LES",
+                                             line_format="k-", fill_zeros = fill_zeros, override_panel_type=panel_type,
+                                             fallback_func=fallback, lines=lines))
 
-        if coamps_file is not None and coamps_name is not None:
-            coamps_lines = self.__getVarLines__(coamps_name, coamps_file, conversion_factor=coamps_conv_factor,
-                                             label="COAMPS-LES",
-                                             line_format="k-", fill_zeros = fill_zeros,
-                                             override_panel_type=panel_type, fallback_func=fallback, lines=lines)
-            all_lines.extend(coamps_lines)
+        if coamps_file is not None:
+            all_lines.extend(self.__getVarLines__(aliases, coamps_file, conversion_factor=coamps_conv_factor,label="COAMPS-LES",
+                                                line_format="k-", fill_zeros = fill_zeros,override_panel_type=panel_type,
+                                                fallback_func=fallback, lines=lines))
 
-        if r408_dataset is not None and r408_name is not None:
-            r408_lines = self.__getVarLines__(r408_name, r408_dataset, conversion_factor=r408_conv_factor,
-                                                label="CLUBB r408 'best ever'",
-                                                line_format="g-", fill_zeros = fill_zeros,
-                                                override_panel_type=panel_type, fallback_func=fallback, lines=lines)
-            all_lines.extend(r408_lines)
+        if r408_dataset is not None:
+            all_lines.extend(self.__getVarLines__(aliases, r408_dataset, conversion_factor=r408_conv_factor,
+                                                  label="CLUBB r408 'best ever'",line_format="g-", fill_zeros = fill_zeros,
+                                                  override_panel_type=panel_type, fallback_func=fallback, lines=lines))
 
-        clubb_lines = self.__getVarLines__(clubb_name, self.ncdf_files,
-                                     label="current clubb",
-                                     line_format=self.default_line_format, fill_zeros = fill_zeros,
-                                     override_panel_type=panel_type, fallback_func=fallback, lines=lines)
-        all_lines.extend(clubb_lines)
-                                     # sam_name=sam_name, sam_file=sam_file, sam_conv_factor=sam_conv_factor,
-                                     # coamps_name=coamps_name, coamps_file=coamps_file, coamps_conv_factor=coamps_conv_factor,
-                                     # r408_name=r408_name, r408_dataset=r408_dataset, r408_conv_factor=r408_conv_factor)
+        all_lines.extend(self.__getVarLines__(aliases, self.ncdf_files,label="current clubb",
+                                              line_format=self.default_line_format, fill_zeros = fill_zeros,
+                                              override_panel_type=panel_type, fallback_func=fallback, lines=lines))
 
-
+        clubb_name = variable_def_dict['aliases'][0]
         variable_def_dict['plots'] = all_lines
         if 'title' not in variable_def_dict.keys():
             if panel_type == Panel.TYPE_BUDGET:
-                variable_def_dict['title'] = variable_def_dict['clubb_name']
+                variable_def_dict['title'] = clubb_name
             else:
                 imported_title = data_reader.getLongName(self.ncdf_files, clubb_name)
                 variable_def_dict['title'] = imported_title
@@ -153,9 +132,11 @@ class VariableGroup:
             else:
                 imported_axis_title = data_reader.getAxisTitle(self.ncdf_files, clubb_name)
                 variable_def_dict['axis_title'] = imported_axis_title
+
         if 'sam_calc' in variable_def_dict.keys() and self.sam_file is not None and data_reader.getNcdfSourceModel(self.sam_file):
             samplot = variable_def_dict['sam_calc']()
             variable_def_dict['plots'].append(samplot)
+
         self.variables.append(variable_def_dict)
 
     def generatePanels(self):
@@ -175,7 +156,7 @@ class VariableGroup:
             panel = Panel(plotset, title=title, dependant_title=axis_label, panel_type=panel_type)
             self.panels.append(panel)
 
-    def __getVarLines__(self, varname, ncdf_datasets, label="", line_format="", avg_axis=0, override_panel_type=None,
+    def __getVarLines__(self, aliases, ncdf_datasets, label="", line_format="", avg_axis=0, override_panel_type=None,
                         fallback_func=None, fill_zeros=False, lines=None, conversion_factor=1):
         """
         Get a list of Line objects for a specific clubb variable. If sam_file is specified it will also
@@ -205,24 +186,25 @@ class VariableGroup:
             ncdf_datasets = {'converted_to_dict': ncdf_datasets}
         line = None
         for dataset in ncdf_datasets.values():
-            if varname not in dataset.variables.keys():
-                continue  # Skip loop if varname isn't in the dataset, this avoids some crashes
-            if panel_type is Panel.TYPE_PROFILE:
-                line = self.__get_profile_line__(varname, dataset, label, line_format, conversion_factor, avg_axis, fill_zeros)
-                break
-            elif panel_type is Panel.TYPE_BUDGET:
-                # for overline in lines:
-                    if varname in dataset.variables.keys():
-                        budget_lines = self.__get_budget_lines__(lines, dataset, fill_zeros)
-                        all_lines.extend(budget_lines)
-            elif panel_type is Panel.TYPE_TIMESERIES:
-                line = self.__get_timeseries_line__(varname, dataset, self.end_time, conversion_factor, label, line_format, fill_zeros)
-            else:
-                raise ValueError('Invalid panel type ' + panel_type + '. Valid options are profile, budget, timeseries')
+            for varname in aliases:
+                if varname not in dataset.variables.keys():
+                    continue  # Skip loop if varname isn't in the dataset, this avoids some crashes
+                if panel_type is Panel.TYPE_PROFILE:
+                    line = self.__get_profile_line__(varname, dataset, label, line_format, conversion_factor, avg_axis, fill_zeros)
+                    break
+                elif panel_type is Panel.TYPE_BUDGET:
+                    # for overline in lines:
+                        if varname in dataset.variables.keys():
+                            budget_lines = self.__get_budget_lines__(lines, dataset, fill_zeros, label, line_format)
+                            all_lines.extend(budget_lines)
+                elif panel_type is Panel.TYPE_TIMESERIES:
+                    line = self.__get_timeseries_line__(varname, dataset, self.end_time, conversion_factor, label, line_format, fill_zeros)
+                else:
+                    raise ValueError('Invalid panel type ' + panel_type + '. Valid options are profile, budget, timeseries')
         if line is None and panel_type != Panel.TYPE_BUDGET and fill_zeros is False:
             print("\tFailed to find variable " + str(varname) + " in case " + str(self.casename) +
                  ". Attempting to use fallback function.")
-            line = self.__getVarFromFallback__(fallback_func, varname)
+            line = self.__getVarDataFromFallback__(fallback_func, varname, ncdf_datasets, label, line_format)
         if panel_type != Panel.TYPE_BUDGET and line is not None:
             all_lines.append(line)
         return all_lines
@@ -258,7 +240,6 @@ class VariableGroup:
         :param line_format:
         :return:
         '''
-        # TODO redeclaring variable is a temp fix until timeseries is auto-discovered
         variable = NetCdfVariable(varname, dataset, start_time=0, end_time=end_time, avg_axis=1, conversion_factor=conversion_factor, fill_zeros=fill_zeros)
         time = NetCdfVariable('time', dataset)
         variable.constrain(0, variable.end_time, data=time.data)
@@ -266,8 +247,7 @@ class VariableGroup:
         line = Line(time, variable, label=label, line_format=line_format)
         return line
 
-# TODO convert to add_overline()
-    def __get_budget_lines__(self, lines, dataset, fill_zeros):
+    def __get_budget_lines__(self, lines, dataset, fill_zeros, label, line_format):
         '''
 
         :param variable:
@@ -277,15 +257,30 @@ class VariableGroup:
         '''
         output_lines = []
         for line_definition in lines:
-            varname = line_definition['clubb_name']
-            if varname not in dataset.variables.keys():
-                print("\tFailed to find variable " + line_definition['clubb_name'] + " in case " + self.casename +
-                     ". Attempting to use fallback function.")
+            line_added = False
+            varnames = line_definition['aliases']
+            for varname in varnames:
+                if varname in dataset.variables.keys():
+                    variable = NetCdfVariable(varname, dataset, start_time=self.start_time, end_time=self.end_time, fill_zeros=fill_zeros)
+                    if 'altitude' in dataset.variables.keys():
+                        z = NetCdfVariable('altitude', dataset, start_time=self.start_time, end_time=self.end_time)
+                    else:
+                        z = NetCdfVariable('z', dataset, start_time=self.start_time, end_time=self.end_time)
+                    variable.constrain(self.height_min_value, self.height_max_value, data=z.data)
+                    z.constrain(self.height_min_value, self.height_max_value)
+                    line_definition = Line(variable, z, label=line_definition['label'], line_format="")  # uses auto-generating line format
+                    output_lines.append(line_definition)
+                    line_added = True
+                    break
+
+            if not line_added:
+                print("\tFailed to find variable " + varname + " in case " + self.casename +
+                      ". Attempting to use fallback function.")
                 if 'fallback_func' in line_definition.keys():
                     fallback = line_definition['fallback_func']
-                    fallback_output = self.__getVarFromFallback__(fallback, line_definition['clubb_name'])
+                    fallback_output = self.__getVarDataFromFallback__(fallback, varname, {'budget':dataset}, label, line_format)
+                    fallback_output = Line(fallback_output.x, z, line_format='k-', label='SAM-LES')
                     output_lines.append(fallback_output)
-
                     return output_lines
 
                 elif not fill_zeros:
@@ -298,33 +293,32 @@ class VariableGroup:
                                     "tool for verifying a variable/data exists in a file.")
                 else:
                     print("\t", varname, " fallback function not found. Filling values with zeros instead.")
-
-            variable = NetCdfVariable(line_definition['clubb_name'], dataset, start_time=self.start_time, end_time=self.end_time, fill_zeros=fill_zeros)
-            if 'altitude' in dataset.variables.keys():
-                z = NetCdfVariable('altitude', dataset, start_time=self.start_time, end_time=self.end_time)
-            else:
-                z = NetCdfVariable('z', dataset, start_time=self.start_time, end_time=self.end_time)
-            variable.constrain(self.height_min_value, self.height_max_value, data=z.data)
-            z.constrain(self.height_min_value, self.height_max_value)
-            line_definition = Line(variable, z, label=line_definition['label'], line_format="")  # uses auto-generating line format
-            output_lines.append(line_definition)
         return output_lines
 
-    def __getVarFromFallback__(self, fallback, varname):
+    def __getVarDataFromFallback__(self, fallback, varname, datasets, label, line_format):
         '''
         Some older model output doesn't contain all variables, e.g cgils_s12 doesn't contain WPTHLP.
         This method attempts to use a function under the name 'fallback_func' to generate the requested
         data similarly to how 'sam_calc' calculates sam output into a clubb format. If successful,
         returns varline data, otherwise raises error
-        :return: None
+        :return:
         '''
-        try:
-            varline = fallback()
-            print("\tFallback for ", varname, " successful")
-            return varline
-        except TypeError:
-            warn("Fallback failed for variable " + str(varname) + ".")
-            return None
+        for dataset in datasets.values():
+            try:
+                varline = fallback(dataset_override=dataset)
+                if not isinstance(varline, Line):
+                    if 'altitude' in dataset.variables.keys():
+                        z = NetCdfVariable('altitude', dataset, start_time=self.start_time, end_time=self.end_time)
+                    elif 'z' in dataset.variables.keys():
+                        z = NetCdfVariable('z', dataset, start_time=self.start_time, end_time=self.end_time)
+                    else:
+                        z = NetCdfVariable('lev', dataset, start_time=self.start_time, end_time=self.end_time)
+                    varline = Line(varline, z, line_format=line_format, label=label)
+                print("\tFallback for ", varname, " successful")
+                return varline
+            except TypeError as e:
+                warn("Fallback failed for variable " + str(varname) + ". Skipping it.\n" + str(e))
+                return None
 
     def __getFallbackVar__(self, varname, dataset, conversion_factor = 1, fill_zeros = False):
         '''
@@ -334,11 +328,12 @@ class VariableGroup:
         :param varname:
         :return:
         '''
-        # TODO support lev z variable
         if 'z' in dataset.variables.keys():
             z_ncdf = NetCdfVariable('z', dataset, 1)
-        else:
+        elif 'altitude' in dataset.variables.keys():
             z_ncdf = NetCdfVariable('altitude', dataset, 1)
+        else:
+            z_ncdf = NetCdfVariable('lev', dataset, 1)
         var_ncdf = NetCdfVariable(varname, dataset, conversion_factor, start_time=self.start_time, end_time=self.end_time, fill_zeros=fill_zeros)
         var_ncdf.constrain(self.height_min_value, self.height_max_value, data=z_ncdf.data)
         var_data = var_ncdf.data

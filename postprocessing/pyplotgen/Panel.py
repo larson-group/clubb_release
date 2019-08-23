@@ -4,6 +4,7 @@
 '''
 import os
 import string
+from time import time
 
 import matplotlib.pyplot as plt
 
@@ -111,12 +112,11 @@ class Panel:
         except FileExistsError:
             pass # do nothing
         if self.panel_type == Panel.TYPE_BUDGET:
-            filename = self.panel_type + self.title
+            filename = str(time()) + self.panel_type + self.title
         else:
-            filename = self.panel_type+ '_' + self.y_title + "_VS_" + self.x_title
+            filename = str(time()) + self.panel_type+ '_' + self.y_title + "_VS_" + self.x_title
         filename = filename.translate(str.maketrans('', '', string.punctuation))
         filename = filename.replace(' ', '_')
-
         rel_filename = output_folder + "/" +casename+'/' + filename
         if os.path.isfile(rel_filename+'.png') and replace_images is True:
             plt.savefig(rel_filename)

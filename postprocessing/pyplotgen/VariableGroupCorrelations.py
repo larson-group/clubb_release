@@ -17,13 +17,13 @@ class VariableGroupCorrelations(VariableGroup):
         '''
         self.name = "w variables"
         self.variable_definitions = [
-            {'clubb_name': 'corr_w_rr_1'},
-            {'clubb_name': 'corr_w_Nr_1'},
-            {'clubb_name': 'corr_w_Ncn_1'},
-            {'clubb_name': 'corr_chi_rr_1'},
-            {'clubb_name': 'corr_chi_Nr_1'},
-            {'clubb_name': 'corr_chi_Ncn_1'},
-            {'clubb_name': 'corr_rr_Nr_1'},
+            {'aliases': ['corr_w_rr_1']},
+            {'aliases': ['corr_w_Nr_1']},
+            {'aliases': ['corr_w_Ncn_1']},
+            {'aliases': ['corr_chi_rr_1']},
+            {'aliases': ['corr_chi_Nr_1']},
+            {'aliases': ['corr_chi_Ncn_1']},
+            {'aliases': ['corr_rr_Nr_1']},
 
         ]
         super().__init__(ncdf_datasets, case, sam_file=sam_file, coamps_file=coamps_file, r408_dataset=r408_dataset)

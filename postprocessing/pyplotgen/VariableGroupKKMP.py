@@ -17,8 +17,8 @@ class VariableGroupKKMP(VariableGroup):
         '''
         self.name = "kk mp variables"
         self.variable_definitions = [
-            {'clubb_name': 'rrm_cond', 'sam_name': 'EVAPM'},
-            {'clubb_name': 'rrm_accr', 'sam_name': 'ACCRM'},
-            {'clubb_name': 'rrm_auto', 'sam_name': 'AUTOM'}
+            {'aliases': ['rrm_cond', 'EVAPM']},
+            {'aliases': ['rrm_accr', 'ACCRM']},
+            {'aliases': ['rrm_auto', 'AUTOM']}
         ]
         super().__init__(ncdf_datasets, case, sam_file=sam_file, coamps_file=coamps_file, r408_dataset=r408_dataset)
