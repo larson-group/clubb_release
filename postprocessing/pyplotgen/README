@@ -1,0 +1,27 @@
+# Quickstart
+Pyplotgen takes parameters in the form `python3 ./PyPlotGen.py [OPTION]... INPUT-FOLDER OUTPUT-FOLDER`
+Pyplotgen only supports input in the netcdf (.nc) format.
+
+## Valid options
+
+| *Option Flag* | *Description* |
+| --- | --- |
+| -r --replace | Overwrite the output folder if it already exists |
+| -l --les | Overplot LES output data |
+| --thin | Plot lines with a thin width |
+| --plot-budgets | Includes budget panels in output |
+| --diff [FOLDER NAME] | (Experimental) Plots the difference between the input folder and the folder specified after --diff instead of plotting a regular profile |
+| --no-legends | Panels are drawn without a line legend |
+
+## Example Command
+
+To run python on clubb ouput located in `/home/strike/clubb_nc_ouput` and save the generated panels/graph into `/home/strike/clubb/postprocessing/pyplotgen/output` with budget plots and les output, run this command:
+
+`python3 ./PyPlotGen.py --plot-budgets -r -l /home/strike/clubb_nc_output /home/strike/clubb/postprocessing/pyplotgen/output`
+
+## Dependencies
+To install the dependencies necessary for PyPlotgen to run, run the command
+```
+pip3 install -r requirements.txt
+```
+from within the PyPlotGen directory
