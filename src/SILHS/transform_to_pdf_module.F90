@@ -671,9 +671,10 @@ module transform_to_pdf_module
     use clubb_precision, only: &
       core_rknd
 
-    implicit none
+    use lapack_interfaces, only: &
+      lapack_trmv       ! Procedure
 
-    external :: dtrmv ! BLAS upper/lower triangular multiplication subroutine
+    implicit none
 
     ! Parameters
     integer, parameter :: &
@@ -711,28 +712,11 @@ module transform_to_pdf_module
 
     Sigma_times_std_normal = std_normal ! Copy std_normal into 'x'
 
-    ! Call the level 2 BLAS subroutine to multiply std_normal by Sigma_Cholesky
-
-    if ( kind( 0.0_core_rknd ) == kind( 0.0D0 ) ) then
-
-      ! core_rknd is double precision
-      call dtrmv( 'Lower', 'N', 'N', pdf_dim, Sigma_Cholesky, pdf_dim, & ! In
-                  Sigma_times_std_normal, & ! In/out
-                  incx ) ! In
-
-    else if ( kind( 0.0_core_rknd ) == kind( 0.0 ) ) then
-
-      ! core_rknd is single precision
-      call strmv( 'Lower', 'N', 'N', pdf_dim, Sigma_Cholesky, pdf_dim, & ! In
-                  Sigma_times_std_normal, & ! In/out
-                  incx ) ! In
-
-    else
-
-      ! core_rknd is neither single precision nor double precision
-      stop "Cannot call dtrmv or strmv in multiply_Cholesky"
-
-    end if
+    ! Call the level 2 BLAS subroutine to multiply std_normal by Sigma_Cholesky, using 
+    ! Lapack routines, strmv for single precision or dtrmv for double precision
+    call lapack_trmv( 'Lower', 'N', 'N', pdf_dim, Sigma_Cholesky, pdf_dim, & ! In
+                      Sigma_times_std_normal, & ! In/out
+                      incx ) ! In
 
     if ( l_scaled ) then
       ! Add mu to Sigma * std_normal (scaled)
