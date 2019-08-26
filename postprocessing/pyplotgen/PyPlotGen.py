@@ -85,14 +85,18 @@ class PyPlotGen:
             print("\nDeleting old plots")
             subprocess.run(['rm', '-rf', self.output_folder + '/'])
         for case_def in all_cases:
-            print('###########################################')
-            print("plotting ", case_def['name'])
-            case_diff_datasets = None
-            if self.diff is not None:
-                case_diff_datasets = diff_datasets[case_def['name']]
-            case = Case(case_def, self.nc_datasets[case_def['name']], plot_les=self.les, plot_budgets=self.plot_budgets,
-                        diff_datasets=case_diff_datasets, plot_r408=self.cgbest)
-            case.plot(self.output_folder, replace_images=self.replace_images, no_legends = self.no_legends, thin_lines=self.thin)
+            if case_def['name'] in self.nc_datasets.keys():
+
+                print('###########################################')
+                print("plotting ", case_def['name'])
+                case_diff_datasets = None
+                if self.diff is not None:
+                    case_diff_datasets = diff_datasets[case_def['name']]
+                case = Case(case_def, self.nc_datasets[case_def['name']], plot_les=self.les, plot_budgets=self.plot_budgets,
+                            diff_datasets=case_diff_datasets, plot_r408=self.cgbest)
+                case.plot(self.output_folder, replace_images=self.replace_images, no_legends = self.no_legends, thin_lines=self.thin)
+            # else:
+            #     print("Clubb input nc files not found. Skipping case.")
         print('###########################################')
         print("\nGenerating webpage for viewing plots ")
         subprocess.run(['sigal', 'build', '-f', self.output_folder + '/'])  # Use sigal to build html in '_build/'
