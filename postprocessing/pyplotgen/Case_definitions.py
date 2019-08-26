@@ -15,6 +15,7 @@ R408_OUTPUT_ROOT = BENCHMARK_OUTPUT_ROOT + ""
 
 # the 'name' parameter must be the same as the filename without the extention.
 #   E.g. to use lba_zt.nc and lba_zm.nc the case's name must be 'lba'
+# Blacklisted variable names must use the clubb-name version
 
 ARM = {'name': 'arm', 'start_time': 481, 'end_time': 540, 'height_min_value': 0, 'height_max_value': 3500,
        'enabled': True, 'disable_budgets': False,
@@ -28,7 +29,7 @@ ARM = {'name': 'arm', 'start_time': 481, 'end_time': 540, 'height_min_value': 0,
 
 ARM_97 = {'name': 'arm_97', 'start_time': 4321, 'end_time': 5580, 'height_min_value': 0, 'height_max_value': 18000,
           'enabled': True, 'disable_budgets': False,
-          'blacklisted_vars': ['rtp3', 'thlp3', 'rtpthvp', 'thlpthvp'],
+          'blacklisted_vars': ['rtp3','Skrt_zt', 'Skthl_zt', 'thlp3', 'rtpthvp', 'thlpthvp'],
           'sam_file': SAM_OUTPUT_ROOT + "/ARM97_r1315_128x128x128_1km_Morrison/ARM9707.nc",
           'coamps_file': None,
           'r408_file': None,
@@ -47,7 +48,8 @@ ATEX = {'name': 'atex', 'start_time': 421, 'end_time': 480, 'height_min_value': 
         'enabled': True, 'disable_budgets': False,
         'blacklisted_vars': [],
         'sam_file': None,
-        'coamps_file': LES_OUTPUT_ROOT + "/atex_coamps_sm.nc",
+        'coamps_file': {'sm': LES_OUTPUT_ROOT + "/atex_coamps_sm.nc",
+                        'sw': LES_OUTPUT_ROOT + "/atex_coamps_sw.nc"},
         'r408_file': {'zm': R408_OUTPUT_ROOT + '/Chris_Golaz_best_ever/atex_zm.nc',
                       'zt': R408_OUTPUT_ROOT + '/Chris_Golaz_best_ever/atex_zt.nc',
                       'sfc': R408_OUTPUT_ROOT + '/Chris_Golaz_best_ever/atex_sfc.nc'},
@@ -65,7 +67,7 @@ BOMEX = {'name': 'bomex', 'start_time': 181, 'end_time': 360, 'height_min_value'
 
 CGILS_S6 = {'name': 'cgils_s6', 'start_time': 12960, 'end_time': 14400, 'height_min_value': 0, 'height_max_value': 5950,
             'enabled': True, 'disable_budgets': False,
-            'blacklisted_vars': ['Ngm', 'rgm', 'rtp3', 'thlp3', 'rtpthvp', 'thlpthvp', 'wprrp', 'wpNrp'],
+            'blacklisted_vars': ['Ngm', 'rgm', 'Skrt_zt', 'Skthl_zt', 'thlp3', 'rtpthvp', 'thlpthvp', 'wprrp', 'wpNrp'],
             'sam_file': SAM_OUTPUT_ROOT + "/SAM6.6/CLOUD_FEEDBACK_s6/ctl_s6_96x96x128_100m_DRZ_N100_tqndg.nc",
             'coamps_file': None,
             'r408_file': None,
@@ -73,7 +75,7 @@ CGILS_S6 = {'name': 'cgils_s6', 'start_time': 12960, 'end_time': 14400, 'height_
 
 CGILS_S11 = {'name': 'cgils_s11', 'start_time': 12960, 'end_time': 14400, 'height_min_value': 0,
              'height_max_value': 5950, 'enabled': True, 'disable_budgets': False,
-             'blacklisted_vars': ['Ngm', 'rgm', 'rtp3', 'thlp3', 'rtpthvp', 'thlpthvp', 'wprrp', 'wpNrp'],
+             'blacklisted_vars': ['Ngm', 'rgm', 'Skthl_zt', 'Skrt_zt', 'rtpthvp', 'thlpthvp', 'wprrp', 'wpNrp'],
              'sam_file': SAM_OUTPUT_ROOT + "/SAM6.6/CLOUD_FEEDBACK_s11/ctl_s11_96x96x320_50m_DRZ_N100_ref.nc",
              'coamps_file': None,
              'r408_file': None,
@@ -81,7 +83,7 @@ CGILS_S11 = {'name': 'cgils_s11', 'start_time': 12960, 'end_time': 14400, 'heigh
 
 CGILS_S12 = {'name': 'cgils_s12', 'start_time': 12960, 'end_time': 14400, 'height_min_value': 0,
              'height_max_value': 5950, 'enabled': True, 'disable_budgets': False,
-             'blacklisted_vars': ['Ngm', 'rgm', 'rtp3', 'thlp3', 'rtpthvp', 'thlpthvp', 'wprrp', 'wpNrp'],
+             'blacklisted_vars': ['Ngm', 'rgm', 'Skrt_zt', 'Skthl_zt', 'rtpthvp', 'thlpthvp', 'wprrp', 'wpNrp'],
              'sam_file': SAM_OUTPUT_ROOT + "/SAM6.6/CLOUD_FEEDBACK_s12/ctl_s12_96x96x192_25m_DRZ_N100_fixnudge.nc",
              'coamps_file': None,
              'r408_file': None,
@@ -91,7 +93,8 @@ CLEX9_NOV02 = {'name': 'clex9_nov02', 'start_time': 181, 'end_time': 240, 'heigh
                'height_max_value': 6072, 'enabled': True, 'disable_budgets': False,
                'blacklisted_vars': [],
                'sam_file': None,
-               'coamps_file': LES_OUTPUT_ROOT + "/clex9_nov02_coamps_sm.nc",
+               'coamps_file': {'sm': LES_OUTPUT_ROOT + "/clex9_nov02_coamps_sm.nc",
+                               'sw': LES_OUTPUT_ROOT + "/clex9_nov02_coamps_sw.nc"},
                'r408_file': None,
                'var_groups': [VariableGroupBase, VariableGroupLiquidMP, VariableGroupIceMP]}
 
@@ -99,7 +102,8 @@ CLEX9_OCT14 = {'name': 'clex9_oct14', 'start_time': 181, 'end_time': 240, 'heigh
                'height_max_value': 6688, 'enabled': True, 'disable_budgets': False,
                'blacklisted_vars': [],
                'sam_file': None,
-               'coamps_file': LES_OUTPUT_ROOT + "/clex9_oct14_coamps_sm.nc",
+               'coamps_file': {'sm': LES_OUTPUT_ROOT + "/clex9_oct14_coamps_sm.nc",
+                               'sw': LES_OUTPUT_ROOT + "/clex9_oct14_coamps_sw.nc"},
                'r408_file': None,
                'var_groups': [VariableGroupBase, VariableGroupLiquidMP, VariableGroupIceMP]}
 
@@ -116,7 +120,7 @@ DYCOMS2_RF01 = {'name': 'dycoms2_rf01', 'start_time': 181, 'end_time': 240, 'hei
 DYCOMS2_RF01_FIXED_SST = {'name': 'dycoms2_rf01_fixed_sst', 'start_time': 2520, 'end_time': 2700, 'height_min_value': 0,
                           'height_max_value': 1200,
                           'enabled': True, 'disable_budgets': False,
-                          'blacklisted_vars': ['rtp3', 'thlp3', 'rtpthvp', 'thlpthvp'],
+                          'blacklisted_vars': ['rtp3', 'Skrt_zt', 'Skthl_zt', 'rtpthvp', 'thlpthvp'],
                           'sam_file': SAM_OUTPUT_ROOT + "/SAM6.6/DYCOMS_RF01_fixed_sst/DYCOMS_RF01_96x96x320_LES_fixed_sst.nc",
                           'coamps_file': None,
                           'r408_file': None,
@@ -168,7 +172,8 @@ FIRE = {'name': 'fire', 'start_time': 61, 'end_time': 120, 'height_min_value': 0
         'enabled': True, 'disable_budgets': False,
         'blacklisted_vars': [],
         'sam_file': None,
-        'coamps_file': LES_OUTPUT_ROOT + "/fire_coamps_sm.nc",
+        'coamps_file': { 'sm' : LES_OUTPUT_ROOT + "/fire_coamps_sm.nc",
+                         'sw' : LES_OUTPUT_ROOT + "/fire_coamps_sw.nc"},
         'r408_file': {'zm': R408_OUTPUT_ROOT + '/Chris_Golaz_best_ever/fire_zm.nc',
                       'zt': R408_OUTPUT_ROOT + '/Chris_Golaz_best_ever/fire_zt.nc',
                       'sfc': R408_OUTPUT_ROOT + '/Chris_Golaz_best_ever/fire_sfc.nc'},
@@ -180,7 +185,8 @@ GABLS2 = {'name': 'gabls2', 'start_time': 2101, 'end_time': 2160, 'height_min_va
           'blacklisted_vars': ['tau_zm', 'radht', 'Skw_zt', 'Skrt_zt', 'Skthl_zt', 'corr_w_chi_1', 'corr_chi_eta_1',
                                'rcp2', 'thlpthvp', 'rtpthvp'],
           'sam_file': None,
-          'coamps_file': LES_OUTPUT_ROOT + "/gabls2_coamps_sm.nc",
+          'coamps_file': {'sm': LES_OUTPUT_ROOT + "/gabls2_coamps_sm.nc",
+                          'sw': LES_OUTPUT_ROOT + "/gabls2_coamps_sw.nc"},
           'r408_file': None,
           'var_groups': [VariableGroupBase]}
 
@@ -204,7 +210,8 @@ JUN25_ALTOCU = {'name': 'jun25_altocu', 'start_time': 181, 'end_time': 240, 'hei
                 'height_max_value': 7308, 'enabled': True, 'disable_budgets': False,
                 'blacklisted_vars': ['Ngm', 'wprrp', 'wpNrp'],
                 'sam_file': None,
-                'coamps_file': LES_OUTPUT_ROOT + "/jun25_altocu_qc3_coamps_sm.nc",
+                'coamps_file': {'sm': LES_OUTPUT_ROOT + "/jun25_altocu_qc3_coamps_sm.nc",
+                                'sw': LES_OUTPUT_ROOT + "/jun25_altocu_qc3_coamps_sw.nc"},
                 'r408_file': None,
                 'var_groups': [VariableGroupBase, VariableGroupLiquidMP, VariableGroupIceMP]}
 
@@ -218,7 +225,7 @@ LBA = {'name': 'lba', 'start_time': 300, 'end_time': 360, 'height_min_value': 0,
 
 MC3E = {'name': 'mc3e', 'start_time': 1, 'end_time': 64800, 'height_min_value': 0, 'height_max_value': 18000,
         'enabled': True, 'disable_budgets': False,
-        'blacklisted_vars': ['rtp3', 'thlp3', 'rtpthvp', 'thlpthvp', 'Ngm', 'wprrp', 'wpNrp'],
+        'blacklisted_vars': ['rtp3', 'Skrt_zt', 'Skthl_zt', 'rtpthvp', 'thlpthvp', 'Ngm', 'wprrp', 'wpNrp'],
         'sam_file': SAM_OUTPUT_ROOT + "/MC3E_r1359_128x128x128_1km_Morrison/MC3E.nc",
         'coamps_file': None,
         'r408_file': None,
@@ -226,7 +233,7 @@ MC3E = {'name': 'mc3e', 'start_time': 1, 'end_time': 64800, 'height_min_value': 
 
 MPACE_A = {'name': 'mpace_a', 'start_time': 4141, 'end_time': 4320, 'height_min_value': 0, 'height_max_value': 10000,
            'enabled': True, 'disable_budgets': False,
-           'blacklisted_vars': ['rtp3', 'thlp3', 'rtpthvp', 'thlpthvp', 'Ngm', 'wpNrp'],
+           'blacklisted_vars': ['Skrt_zt', 'Skthl_zt', 'rtpthvp', 'thlpthvp', 'Ngm', 'wpNrp'],
            'sam_file': None,
            'coamps_file': None,
            'r408_file': None,
@@ -236,7 +243,8 @@ MPACE_B = {'name': 'mpace_b', 'start_time': 541, 'end_time': 720, 'height_min_va
            'enabled': True, 'disable_budgets': False,
            'blacklisted_vars': ['Ngm', 'wpNrp'],
            'sam_file': None,
-           'coamps_file': LES_OUTPUT_ROOT + "/mpace_b_coamps_sm.nc",
+           'coamps_file': {'sm': LES_OUTPUT_ROOT + "/mpace_b_coamps_sm.nc",
+                           'sw': LES_OUTPUT_ROOT + "/mpace_b_coamps_sw.nc"},
            'r408_file': None,
            'var_groups': [VariableGroupBase, VariableGroupLiquidMP, VariableGroupIceMP]}
 
@@ -244,7 +252,8 @@ MPACE_B_SILHS = {'name': 'mpace_b_silhs', 'start_time': 541, 'end_time': 720, 'h
                  'height_max_value': 2750, 'enabled': True, 'disable_budgets': False,
                  'blacklisted_vars': ['Ngm', 'wpNrp'],
                  'sam_file': None,
-                 'coamps_file': LES_OUTPUT_ROOT + "/mpace_b_coamps_sm.nc",
+                 'coamps_file': {'sm': LES_OUTPUT_ROOT + "/mpace_b_coamps_sm.nc",
+                                 'sw': LES_OUTPUT_ROOT + "/mpace_b_coamps_sw.nc"},
                  'r408_file': None,
                  'var_groups': [VariableGroupBase, VariableGroupLiquidMP, VariableGroupIceMP]}
 
@@ -252,7 +261,8 @@ NOV11_ALTOCU = {'name': 'nov11_altocu', 'start_time': 91, 'end_time': 150, 'heig
                 'height_max_value': 6150, 'enabled': True, 'disable_budgets': False,
                 'blacklisted_vars': ['Ngm'],
                 'sam_file': None,
-                'coamps_file': LES_OUTPUT_ROOT + "/nov11_altocu_coamps_sm.nc",
+                'coamps_file':{'sm': LES_OUTPUT_ROOT + "/nov11_altocu_coamps_sm.nc",
+                               'sw': LES_OUTPUT_ROOT + "/nov11_altocu_coamps_sw.nc"},
                 'r408_file': {'zm': R408_OUTPUT_ROOT + '/Chris_Golaz_best_ever/nov11_altocu_zm.nc',
                               'zt': R408_OUTPUT_ROOT + '/Chris_Golaz_best_ever/nov11_altocu_zt.nc',
                               'sfc': R408_OUTPUT_ROOT + '/Chris_Golaz_best_ever/nov11_altocu_sfc.nc'},
@@ -269,7 +279,7 @@ RICO = {'name': 'rico', 'start_time': 4201, 'end_time': 4320, 'height_min_value'
 
 TWP_ICE = {'name': 'twp_ice', 'start_time': 1, 'end_time': 9900, 'height_min_value': 0, 'height_max_value': 19000,
            'enabled': True, 'disable_budgets': False,
-           'blacklisted_vars': ['rtp3', 'thlp3', 'rtpthvp', 'thlpthvp', 'Ngm', 'wprrp', 'wpNrp'],
+           'blacklisted_vars': ['rtp3', 'Skrt_zt', 'Skthl_zt', 'rtpthvp', 'thlpthvp', 'Ngm', 'wprrp', 'wpNrp'],
            'sam_file': SAM_OUTPUT_ROOT + "/TWP_ICE_r1315_128x128x128_1km_Morrison/TWP_ICE.nc",
            'coamps_file': None,
            'r408_file': None,
@@ -285,10 +295,19 @@ WANGARA = {'name': 'wangara', 'start_time': 181, 'end_time': 240, 'height_min_va
                          'sfc': R408_OUTPUT_ROOT + '/Chris_Golaz_best_ever/wangara_sfc.nc'},
            'var_groups': [VariableGroupBase, VariableGroupWs]}
 
-ALL_CASES = [ARM, ARM_97, ASTEX_A209, ATEX, BOMEX, CGILS_S6, CGILS_S11, CGILS_S12, CLEX9_NOV02, CLEX9_OCT14,
-             DYCOMS2_RF01, DYCOMS2_RF01_FIXED_SST,
-             DYCOMS2_RF02_DO, DYCOMS2_RF02_DS, DYCOMS2_RF02_ND, DYCOMS2_RF02_SO, FIRE, GABLS2, GABLS3, GABLS3_NIGHT,
-             JUN25_ALTOCU, LBA, MC3E,
-             MPACE_A, MPACE_B, MPACE_B_SILHS, NOV11_ALTOCU, RICO, TWP_ICE, WANGARA]
+ALL_CASES = [ARM, ARM_97, ASTEX_A209, ATEX,
+             BOMEX,
+             CGILS_S6, CGILS_S11, CGILS_S12, CLEX9_NOV02, CLEX9_OCT14,
+             DYCOMS2_RF01, DYCOMS2_RF01_FIXED_SST, DYCOMS2_RF02_DO, DYCOMS2_RF02_DS, DYCOMS2_RF02_ND, DYCOMS2_RF02_SO,
+             FIRE,
+             GABLS2, GABLS3, GABLS3_NIGHT,
+             JUN25_ALTOCU,
+             LBA,
+             MC3E, MPACE_A, MPACE_B, MPACE_B_SILHS,
+             NOV11_ALTOCU,
+             RICO,
+             TWP_ICE,
+             WANGARA
+             ]
 
-# ALL_CASES = [BOMEX]
+# ALL_CASES = [MC3E,MPACE_A, MPACE_B, MPACE_B_SILHS, NOV11_ALTOCU, RICO, TWP_ICE, WANGARA]

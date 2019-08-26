@@ -26,6 +26,17 @@ class NetCdfVariable:
         :param end_time: The time value to stop the averaging period, e.g. 240 minutes. Defaults to -1.
         :param avg_axis: The axis to avg data over. 0 for time-avg, 1 for height avg
         '''
+
+        # If argument name is a list of aliases, find the correct one and assign it
+        # if isinstance(ncdf_data, Dataset):
+        #     ncdf_data = {'temp': ncdf_data}
+        if isinstance(name, list):
+            for tempname in name:
+                if tempname in ncdf_data.variables.keys():
+                    name = tempname
+                    break
+        if isinstance(name, list):
+            raise NameError("None of the values " + str(name) + " were found in the dataset " + str(ncdf_data))
         data_reader = DataReader()
         self.ncdf_data = ncdf_data
         self.name = name
@@ -166,7 +177,7 @@ class DataReader():
 
         time_values = self.__getValuesFromNc__(netcdf_dataset, "time", time_conv_factor)
         if end_time_value == -1:
-            if variable_name != 'time' and variable_name != 'z' and variable_name != 'altitude':
+            if variable_name != 'time' and variable_name != 'z' and variable_name != 'altitude' and variable_name != 'lev':
                 warn("End time value was not specified (or was set to -1) for variable "+variable_name+". Automatically using last time in dataset.")
             end_time_value = time_values[-1]
         # Get the index values that correspond to the desired start/end x values
@@ -392,11 +403,14 @@ class DataReader():
         :param ncdf_dataset: NetCDF Dataset object imported from output file from some supported model (e.g. CLUBB, SAM)
         :return: the (estimated) name of the model that outputted the input file
         '''
-        if 'altitude' in ncdf_dataset.variables.keys():
-            return 'clubb'
-        elif 'z' in ncdf_dataset.variables.keys():
-            return 'sam'
-        elif 'lev' in ncdf_dataset.variables.keys():
-            return 'coamps'
-        else:
-            return 'unknown-model'
+        if isinstance(ncdf_dataset, Dataset):
+            ncdf_dataset = {'temp': ncdf_dataset}
+        for dataset in ncdf_dataset.values():
+            if 'altitude' in dataset.variables.keys():
+                return 'clubb'
+            elif 'z' in dataset.variables.keys():
+                return 'sam'
+            elif 'lev' in dataset.variables.keys():
+                return 'coamps'
+            else:
+                return 'unknown-model'

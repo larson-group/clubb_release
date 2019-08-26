@@ -50,10 +50,10 @@ class VariableGroup:
             # Only add variable if none of the aliases are blacklisted
             if len(list(set(variable['aliases']).intersection(case.blacklisted_variables))) == 0: #variable['aliases'] not in case.blacklisted_variables:
                 # Skip this variable if it's blacklisted for the case
-                self.addClubbVariable(variable)
+                self.addVariable(variable)
         self.generatePanels()
 
-    def addClubbVariable(self, variable_def_dict):
+    def addVariable(self, variable_def_dict):
         '''
         Given basic details about a variable like name,
         create lines/panels for the variable
@@ -133,9 +133,13 @@ class VariableGroup:
                 imported_axis_title = data_reader.getAxisTitle(self.ncdf_files, clubb_name)
                 variable_def_dict['axis_title'] = imported_axis_title
 
-        if 'sam_calc' in variable_def_dict.keys() and self.sam_file is not None and data_reader.getNcdfSourceModel(self.sam_file):
+        if 'sam_calc' in variable_def_dict.keys() and self.sam_file is not None and data_reader.getNcdfSourceModel(self.sam_file) == 'sam':
             samplot = variable_def_dict['sam_calc']()
             variable_def_dict['plots'].append(samplot)
+
+        if 'coamps_calc' in variable_def_dict.keys() and self.coamps_file is not None and data_reader.getNcdfSourceModel(self.coamps_file) == 'coamps':
+            coampsplot = variable_def_dict['coamps_calc']()
+            variable_def_dict['plots'].append(coampsplot)
 
         self.variables.append(variable_def_dict)
 

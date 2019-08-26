@@ -38,13 +38,13 @@ class VariableGroupBase(VariableGroup):
             {'aliases': ['rtpthlp', 'RTPTHLP', 'qtpthlp'], 'fallback_func': self.getRtpthlpFallback},
             {'aliases': ['rtp3', 'RTP3', 'qtp3'], 'fallback_func': self.getRtp3Fallback},
             {'aliases': ['thlp3', 'THLP3']},
-            {'aliases': ['Skw_zt'],	 'sam_calc': self.getSkwZtSamLine, 'fill_zeros':True},	# TODO SAM output (arm97) is wrong # TODO coamps eqn wp3 ./ (wp2 + 1.6e-3).^1.5
-            {'aliases': ['Skrt_zt'],	 'sam_calc': self.getSkrtZtSamLine, 'fill_zeros': True},	 # TODO coamps eqn qtp3 ./ (qtp2 + 4e-16).^1.5
-            {'aliases': ['Skthl_zt'],	 'sam_calc': self.getSkthlZtSamLine, 'fill_zeros': True},	 # TODO coamps eqn thlp3 ./ (thlp2 + 4e-4).^1.5
+            {'aliases': ['Skw_zt'],	 'sam_calc': self.getSkwZtLesLine, 'coamps_calc': self.getSkwZtLesLine, 'fill_zeros':True},
+            {'aliases': ['Skrt_zt'],	 'sam_calc': self.getSkrtZtLesLine, 'coamps_calc': self.getSkrtZtLesLine, 'fill_zeros': True},
+            {'aliases': ['Skthl_zt'],	 'sam_calc': self.getSkthlZtLesLine, 'coamps_calc': self.getSkthlZtLesLine, 'fill_zeros': True},
             {'aliases': ['wm', 'WOBS', 'wlsm']},
             {'aliases': ['um', 'U']},
             {'aliases': ['vm', 'V']},
-            {'aliases': ['upwp', 'UW']}, # TODO coamps eqn wpup + wpup_sgs
+            {'aliases': ['upwp', 'UW'], 'coamps_calc': self.getUwLesLine}, # TODO coamps eqn wpup + wpup_sgs
             {'aliases': ['vpwp', 'VW']}, # TODO coamps eqn wpvp + wpvp_sgs
             {'aliases': ['up2', 'U2']},
             {'aliases': ['vp2', 'V2']},
@@ -57,7 +57,7 @@ class VariableGroupBase(VariableGroup):
             {'aliases': ['rtpthvp', 'RTPTHVP', 'qtpthvp']},
             {'aliases': ['corr_w_chi_1'], 'fill_zeros': True},
             {'aliases': ['corr_chi_eta_1'], 'fill_zeros': True},
-            {'aliases': ['thlpthvp']}, # TODO SAM output missing (arm)
+            {'aliases': ['thlpthvp', 'THLPTHVP']},
 
             # TODO SAM output for these variables
             {'aliases': ['rc_coef_zm .* wprcp'],	 'fallback_func': self.get_rc_coef_zm_X_wprcp_clubb_line,
@@ -136,82 +136,110 @@ class VariableGroupBase(VariableGroup):
         rtm_line = Line(rtm, z_ncdf.data, line_format="k-", label="SAM-LES")
         return rtm_line
 
-    def getSkwZtSamLine(self):
+    def getSkwZtLesLine(self):
         '''
         Calculates Skw_zt values from sam output using
         the following equation
         WP3 ./ (WP2 + 1.6e-3).^1.5
         :return: requested variable data in the form of a list. Returned data is already cropped to the appropriate min,max indices
         '''
-        self.start_time = self.start_time
-        self.end_time = self.end_time
+        dataset = None
+        if self.sam_file is not None:
+            dataset = self.sam_file
+            z_ncdf = NetCdfVariable('z', dataset, 1)
+            line_format = 'k-'
+            label = 'SAM-LES'
 
-        z_ncdf = NetCdfVariable('z', self.sam_file, 1)
+        if self.coamps_file is not None:
+            dataset = self.coamps_file['sm']
+            z_ncdf = NetCdfVariable('lev', dataset, 1)
+            line_format = 'k-'
+            label = 'COAMPS-LES'
 
-        wp3_ncdf = NetCdfVariable('WP3', self.sam_file, 1, start_time=self.start_time, end_time=self.end_time, fill_zeros=True) # TODO fill zeros tempfix until pyplotgen can handle multiple aliases
+        wp3_ncdf = NetCdfVariable(['WP3', 'W3', 'wp3'], dataset, 1, start_time=self.start_time, end_time=self.end_time, fill_zeros=True) # TODO fill zeros tempfix until pyplotgen can handle multiple aliases
         wp3_ncdf.constrain(self.height_min_value, self.height_max_value, data=z_ncdf.data)
         wp3 = wp3_ncdf.data
 
-        wp2_ncdf = NetCdfVariable('WP2', self.sam_file, 1, start_time=self.start_time, end_time=self.end_time, fill_zeros=True)# TODO fill zeros tempfix until pyplotgen can handle multiple aliases
+        wp2_ncdf = NetCdfVariable(['WP2', 'W2', 'wp2'], dataset, 1, start_time=self.start_time, end_time=self.end_time, fill_zeros=True)# TODO fill zeros tempfix until pyplotgen can handle multiple aliases
         wp2_ncdf.constrain(self.height_min_value, self.height_max_value, data=z_ncdf.data)
         wp2 = wp2_ncdf.data
 
         skw_zt = wp3 / (wp2 + 1.6e-3) ** 1.5
 
         z_ncdf.constrain(self.height_min_value, self.height_max_value)
-        skw_zt_line = Line(skw_zt, z_ncdf.data, line_format="k-", label="SAM-LES")
+        skw_zt_line = Line(skw_zt, z_ncdf.data, line_format=line_format, label=label)
         return skw_zt_line
 
-    def getSkrtZtSamLine(self):
+    def getSkrtZtLesLine(self):
         '''
         Calculates Skrt_zt values from sam output using
         the following equation
-         # RTP3 ./ (RTP2 + 4e-16).^1.5  
+         sam eqn RTP3 ./ (RTP2 + 4e-16).^1.5
+         coamps eqn qtp3 ./ (qtp2 + 4e-16).^1.5
          :return: requested variable data in the form of a list. Returned data is already cropped to the appropriate min,max indices
         '''
-        self.start_time = self.start_time
-        self.end_time = self.end_time
+        dataset = None
+        if self.sam_file is not None:
+            dataset = self.sam_file
+            z_ncdf = NetCdfVariable('z', dataset, 1)
+            line_format = 'k-'
+            label = 'SAM-LES'
 
-        z_ncdf = NetCdfVariable('z', self.sam_file, 1)
+        if self.coamps_file is not None:
+            dataset = self.coamps_file['sm']
+            z_ncdf = NetCdfVariable('lev', dataset, 1)
+            line_format = 'k-'
+            label = 'COAMPS-LES'
 
-        rtp3_ncdf = NetCdfVariable('RTP3', self.sam_file, 1, start_time=self.start_time, end_time=self.end_time, fill_zeros=True)# TODO fill zeros tempfix until pyplotgen can handle multiple aliases
-        rtp3_ncdf.constrain(self.height_min_value, self.height_max_value, data=z_ncdf.data)
-        rtp3 = rtp3_ncdf.data
+        # rtp3_ncdf = NetCdfVariable(['RTP3', 'qtp3'], dataset, 1, start_time=self.start_time, end_time=self.end_time, fill_zeros=True)# TODO fill zeros tempfix until pyplotgen can handle multiple aliases
+        # rtp3_ncdf.constrain(self.height_min_value, self.height_max_value, data=z_ncdf.data)
+        # rtp3 = rtp3_ncdf.data
+        #
+        # rtp2_ncdf = NetCdfVariable(['RTP2', 'qtp2'], dataset, 1, start_time=self.start_time, end_time=self.end_time, fill_zeros=True)# TODO fill zeros tempfix until pyplotgen can handle multiple aliases
+        # rtp2_ncdf.constrain(self.height_min_value, self.height_max_value, data=z_ncdf.data)
+        # rtp2 = rtp2_ncdf.data
 
-        rtp2_ncdf = NetCdfVariable('RTP2', self.sam_file, 1, start_time=self.start_time, end_time=self.end_time, fill_zeros=True)# TODO fill zeros tempfix until pyplotgen can handle multiple aliases
-        rtp2_ncdf.constrain(self.height_min_value, self.height_max_value, data=z_ncdf.data)
-        rtp2 = rtp2_ncdf.data
-
+        rtp3 = self.__getFallbackVar__(['RTP3', 'qtp3'], dataset)
+        rtp2 = self.__getFallbackVar__(['RTP2', 'qtp2'], dataset)
         skrtp_zt = rtp3 / (rtp2 + 4e-16) ** 1.5
 
         z_ncdf.constrain(self.height_min_value, self.height_max_value, data=z_ncdf.data)
-        skrtp_zt_line = Line(skrtp_zt, z_ncdf.data, line_format="k-", label="SAM-LES")
+        skrtp_zt_line = Line(skrtp_zt, z_ncdf.data, line_format=line_format, label=label)
         return skrtp_zt_line
 
-    def getSkthlZtSamLine(self):
+    def getSkthlZtLesLine(self):
         '''
         Calculates Skthl_zt values from sam output using
         the following equation
-        THLP3 ./ (THLP2 + 4e-4).^1.5
+        sam THLP3 ./ (THLP2 + 4e-4).^1.5
+        coamps eqn thlp3 ./ (thlp2 + 4e-4).^1.5
          :return: requested variable data in the form of a list. Returned data is already cropped to the appropriate min,max indices
         '''
-        self.start_time = self.start_time
-        self.end_time = self.end_time
+        dataset = None
+        if self.sam_file is not None:
+            dataset = self.sam_file
+            z_ncdf = NetCdfVariable('z', dataset, 1)
+            line_format = 'k-'
+            label = 'SAM-LES'
 
-        z_ncdf = NetCdfVariable('z', self.sam_file, 1)
+        if self.coamps_file is not None:
+            dataset = self.coamps_file['sm']
+            z_ncdf = NetCdfVariable('lev', dataset, 1)
+            line_format = 'k-'
+            label = 'COAMPS-LES'
 
-        thlp3_ncdf = NetCdfVariable('THLP3', self.sam_file, 1, start_time=self.start_time, end_time=self.end_time, fill_zeros=True) # TODO fill zeros tempfix until pyplotgen can handle multiple aliases
+        thlp3_ncdf = NetCdfVariable(['THLP3', 'thlp3'], dataset, 1, start_time=self.start_time, end_time=self.end_time, fill_zeros=True) # TODO fill zeros tempfix until pyplotgen can handle multiple aliases
         thlp3_ncdf.constrain(self.height_min_value, self.height_max_value, data=z_ncdf.data)
         thlp3 = thlp3_ncdf.data
 
-        thlp2_ncdf = NetCdfVariable('THLP2', self.sam_file, 1, start_time=self.start_time, end_time=self.end_time, fill_zeros=True) # TODO fill zeros tempfix until pyplotgen can handle multiple aliases
+        thlp2_ncdf = NetCdfVariable(['THLP2', 'thlp2'], dataset, 1, start_time=self.start_time, end_time=self.end_time, fill_zeros=True) # TODO fill zeros tempfix until pyplotgen can handle multiple aliases
         thlp2_ncdf.constrain(self.height_min_value, self.height_max_value, data=z_ncdf.data)
         thlp2 = thlp2_ncdf.data
 
         skthl_zt = thlp3 / (thlp2 + 4e-16) ** 1.5
 
         z_ncdf.constrain(self.height_min_value, self.height_max_value)
-        skthl_zt_line = Line(skthl_zt, z_ncdf.data, line_format="k-", label="SAM-LES")
+        skthl_zt_line = Line(skthl_zt, z_ncdf.data, line_format=line_format, label=label)
         return skthl_zt_line
 
     def getWpthlpFallback(self, dataset_override = None):
@@ -470,3 +498,32 @@ class VariableGroupBase(VariableGroup):
         z_ncdf.constrain(self.height_min_value, self.height_max_value)
         output = Line(output, z_ncdf.data, line_format='b-', label='current clubb')
         return output
+
+    def getUwLesLine(self):
+        '''
+        coamps eqn upwp = wpup + wpup_sgs
+
+         :return: requested variable data in the form of a list. Returned data is already cropped to the appropriate min,max indices
+        '''
+        dataset = None
+
+        # Commented out until SAM output is needed for UW
+        # if self.sam_file is not None:
+        #     dataset = self.sam_file
+        #     z_ncdf = NetCdfVariable('z', dataset, 1)
+        #     line_format = 'k-'
+        #     label = 'SAM-LES'
+
+        if self.coamps_file is not None:
+            dataset = self.coamps_file['sw']
+            z_ncdf = self.__getFallbackVar__('lev', dataset)
+            line_format = 'k-'
+            label = 'COAMPS-LES'
+
+        wpup = self.__getFallbackVar__('wpup', dataset)
+        wpup_sgs = self.__getFallbackVar__('wpup_sgs', dataset)
+
+
+        upwp = wpup + wpup_sgs
+        upwp_line = Line(upwp, z_ncdf.data, line_format=line_format, label=label)
+        return upwp_line

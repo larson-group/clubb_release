@@ -35,17 +35,22 @@ class Case:
             datareader = DataReader()
             sam_file = datareader.__loadNcFile__(case_definition['sam_file'])
 
-        coamps_file = None
+        coamps_datasets = {}
         if plot_les and case_definition['coamps_file'] is not None:
             datareader = DataReader()
-            coamps_file = datareader.__loadNcFile__(case_definition['coamps_file'])
+            coamps_filenames = case_definition['coamps_file']
+            for type_ext in coamps_filenames:
+                temp_coamps_dataset = datareader.__loadNcFile__(coamps_filenames[type_ext])
+                coamps_datasets[type_ext] = temp_coamps_dataset
+        else:
+            coamps_datasets = None
 
         r408_datasets = {}
         if plot_r408 and case_definition['r408_file'] is not None:
-            data_reader = DataReader()
+            datareader = DataReader()
             r408_filenames = case_definition['r408_file']
             for type_ext in r408_filenames:
-                temp_r408_dataset = data_reader.__loadNcFile__(r408_filenames[type_ext])
+                temp_r408_dataset = datareader.__loadNcFile__(r408_filenames[type_ext])
                 r408_datasets[type_ext] = temp_r408_dataset
         else:
             r408_datasets = None
@@ -53,7 +58,7 @@ class Case:
         self.panels = []
         self.diff_panels = []
         for VarGroup in self.var_groups:
-            temp_group = VarGroup(self.ncdf_datasets, self, sam_file=sam_file, coamps_file=coamps_file, r408_dataset=r408_datasets)
+            temp_group = VarGroup(self.ncdf_datasets, self, sam_file=sam_file, coamps_file=coamps_datasets, r408_dataset=r408_datasets)
 
             for panel in temp_group.panels :
                 self.panels.append(panel)
@@ -61,7 +66,7 @@ class Case:
         # Convert panels to difference panels if user passed in --diff <<folder>>
         if self.diff_datasets is not None:
             for VarGroup in self.var_groups:
-                diff_group = VarGroup(self.diff_datasets, self, sam_file=sam_file, coamps_file=coamps_file, r408_file=r408_datasets)
+                diff_group = VarGroup(self.diff_datasets, self, sam_file=sam_file, coamps_file=coamps_datasets, r408_file=r408_datasets)
                 for panel in diff_group.panels:
                     self.diff_panels.append(panel)
             for idx in range(len(self.panels)):
