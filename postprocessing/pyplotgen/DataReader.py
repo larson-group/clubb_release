@@ -358,7 +358,7 @@ class DataReader():
             min_per_hr = 60
             var_values = var_values[:] * min_per_hr
             var_values = var_values[:] - var_values[0] + 1
-        elif self.getNcdfSourceModel(ncdf_data) == 'unknown-model':
+        elif self.getNcdfSourceModel(ncdf_data) == 'unknown-model' and 'sfc' not in ncdf_data.history:
             warn("Warning, unknown model detected. PyPlotgen doesn't know where this netcdf data is from." + str(ncdf_data))
             if varname == 'time':
                 warn("Attempting to autoshift time values")

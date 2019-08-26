@@ -60,11 +60,11 @@ class VariableGroupBase(VariableGroup):
             {'aliases': ['thlpthvp', 'THLPTHVP']},
 
             # TODO SAM output for these variables
-            {'aliases': ['rc_coef_zm .* wprcp'],	 'fallback_func': self.get_rc_coef_zm_X_wprcp_clubb_line,
+            {'aliases': ['rc_coef_zm * wprcp'],	 'fallback_func': self.get_rc_coef_zm_X_wprcp_clubb_line,
                 'title': 'Contribution of Cloud Water Flux to wpthvp',	 'axis_title': 'rc_coef_zm * wprcp [K m/s]'},	 # TODO coamps eqn wpqcp .* (2.5e6 ./ (1004.67*ex0) - 1.61*thvm)
-            {'aliases': ['rc_coef_zm .* thlprcp'],	 'fallback_func': self.get_rc_coef_zm_X_thlprcp_clubb_line,
+            {'aliases': ['rc_coef_zm * thlprcp'],	 'fallback_func': self.get_rc_coef_zm_X_thlprcp_clubb_line,
                 'title': 'Contribution of Cloud Water Flux to thlprcp',	 'axis_title': 'rc_coef_zm * thlprcp [K^2]'},	 # TODO coamps eqn thlpqcp .* (2.5e6 ./ (1004.67*ex0) - 1.61*thvm)
-            {'aliases': ['rc_coef_zm .* rtprcp'],	 'fallback_func': self.get_rc_coef_zm_X_rtprcp_clubb_line,
+            {'aliases': ['rc_coef_zm * rtprcp'],	 'fallback_func': self.get_rc_coef_zm_X_rtprcp_clubb_line,
                 'title': 'Contribution of Cloud Water Flux to rtprcp',	 'axis_title': 'rc_coef_zm * rtprcp [kg/kg K]'},	 # TODO coamp eqn qtpqcp .* (2.5e6 ./ (1004.67*ex0) - 1.61*thvm)
             {'aliases': ['lwp', 'CWP'],	 'type': Panel.TYPE_TIMESERIES, 'sam_conv_factor': 1/1000}
 
