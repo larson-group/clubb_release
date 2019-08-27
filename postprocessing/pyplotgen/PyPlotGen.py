@@ -14,6 +14,7 @@ import subprocess
 import Case_definitions
 from Case import Case
 from DataReader import DataReader
+from python_html_gallery import gallery
 
 
 class PyPlotGen:
@@ -99,9 +100,9 @@ class PyPlotGen:
             #     print("Clubb input nc files not found. Skipping case.")
         print('###########################################')
         print("\nGenerating webpage for viewing plots ")
-        subprocess.run(['sigal', 'build', '-f', self.output_folder + '/'])  # Use sigal to build html in '_build/'
+        gallery.main()
         print('###########################################')
-        print("Output can be viewed at file://" + self.output_folder + "/../_build/index.html with a web browser")
+        print("Output can be viewed at file://" + self.output_folder + "/index.html with a web browser")
 
     def downloadModelOutputs(self):
         '''

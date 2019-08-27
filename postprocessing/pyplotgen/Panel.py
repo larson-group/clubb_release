@@ -94,7 +94,21 @@ class Panel:
             if thin_lines:
                 linewidth = 1
             plt.plot(x_data, y_data, var.line_format, label=var.label, linewidth=linewidth)
+        # plt.rcParams.update({'font.size': 16})
 
+        # Set font sizes
+        SMALL_SIZE = 10
+        MEDIUM_SIZE = 12
+        BIGGER_SIZE = 16
+        plt.rc('font', size=SMALL_SIZE)          # controls default text sizes
+        plt.rc('axes', titlesize=BIGGER_SIZE)     # fontsize of the axes title
+        plt.rc('axes', labelsize=BIGGER_SIZE)    # fontsize of the x and y labels
+        plt.rc('xtick', labelsize=MEDIUM_SIZE)    # fontsize of the tick labels
+        plt.rc('ytick', labelsize=MEDIUM_SIZE)    # fontsize of the tick labels
+        plt.rc('legend', fontsize=MEDIUM_SIZE)    # legend fontsize
+        plt.rc('figure', titlesize=BIGGER_SIZE)  # fontsize of the figure title
+
+        # Set titles
         plt.title(self.title)
         plt.ylabel(self.y_title)
         plt.xlabel(self.x_title)
@@ -102,7 +116,7 @@ class Panel:
             plt.figlegend()
         # Create folders
         # Because os.mkdir("output") can fail and prevent os.mkdir("output/" + casename) from being called we must
-        # use two separate trys
+        # use two separate try blokcs
         try:
             os.mkdir(output_folder)
         except FileExistsError:
@@ -118,10 +132,10 @@ class Panel:
         filename = filename.translate(str.maketrans('', '', string.punctuation))
         filename = filename.replace(' ', '_')
         rel_filename = output_folder + "/" +casename+'/' + filename
-        if os.path.isfile(rel_filename+'.png') and replace_images is True:
-            plt.savefig(rel_filename)
+        if os.path.isfile(rel_filename+'.jpg') and replace_images is True:
+            plt.savefig(rel_filename+'.jpg', format='jpeg')
         if not os.path.isfile(rel_filename+'.png'):
-            plt.savefig(rel_filename)
-        if os.path.isfile(rel_filename + '.png') and replace_images is False:
-            print("\n\tImage " + rel_filename+'.png already exists. To overwrite this image during runtime pass in the --replace (-r) parameter.')
+            plt.savefig(rel_filename+'.jpg', format='jpeg')
+        if os.path.isfile(rel_filename + '.jpg') and replace_images is False:
+            print("\n\tImage " + rel_filename+'.jpg already exists. To overwrite this image during runtime pass in the --replace (-r) parameter.')
         plt.close()
