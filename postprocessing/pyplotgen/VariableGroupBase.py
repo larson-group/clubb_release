@@ -61,6 +61,7 @@ class VariableGroupBase(VariableGroup):
 
             # TODO SAM output for these variables
             {'aliases': ['rc_coef_zm * wprcp'],	 'fallback_func': self.get_rc_coef_zm_X_wprcp_clubb_line,
+                'sam_calc': self.get_rc_coef_zm_X_wprcp_sam_line,
                 'title': 'Contribution of Cloud Water Flux to wpthvp',	 'axis_title': 'rc_coef_zm * wprcp [K m/s]'},	 # TODO coamps eqn wpqcp .* (2.5e6 ./ (1004.67*ex0) - 1.61*thvm)
             {'aliases': ['rc_coef_zm * thlprcp'],	 'fallback_func': self.get_rc_coef_zm_X_thlprcp_clubb_line,
                 'title': 'Contribution of Cloud Water Flux to thlprcp',	 'axis_title': 'rc_coef_zm * thlprcp [K^2]'},	 # TODO coamps eqn thlpqcp .* (2.5e6 ./ (1004.67*ex0) - 1.61*thvm)
@@ -429,27 +430,24 @@ class VariableGroupBase(VariableGroup):
         Calculates the Contribution of Cloud Water Flux
         to wpthvp for SAM using the equation
 
-        wpqcp .* (2.5e6 ./ (1004.67*ex0) - 1.61*thvm)
+        sam eqn WPRCP * (2.5e6 / (1004.67*((PRES / 1000)^(287.04/1004.67))) - 1.61*THETAV)
         :return:
         '''
-        z_ncdf = NetCdfVariable('z', self.sam_file, 1)
 
-        wpgcp_ncdf = NetCdfVariable('wpgcp', self.sam_file, 1, start_time=self.start_time, end_time=self.end_time)
-        wpgcp_ncdf.constrain(self.height_min_value, self.height_max_value, data=z_ncdf.data)
-        wpgcp = wpgcp_ncdf.data
+        dataset = self.sam_file
+        if dataset_override is not None:
+            dataset = dataset_override
 
-        thvm_ncdf = NetCdfVariable('thvm', self.sam_file, 1, start_time=self.start_time, end_time=self.end_time)
-        thvm_ncdf.constrain(self.height_min_value, self.height_max_value, data=z_ncdf.data)
-        thvm = thvm_ncdf.data
+        z = self.__getFallbackVar__('z', dataset)
 
-        ex0_ncdf = NetCdfVariable('ex0', self.sam_file, 1, start_time=self.start_time, end_time=self.end_time)
-        ex0_ncdf.constrain(self.height_min_value, self.height_max_value, data=z_ncdf.data)
-        ex0 = thvm_ncdf.data
+        WPRCP = self.__getFallbackVar__('WPRCP', dataset, fill_zeros=True)
+        PRES = self.__getFallbackVar__('PRES', dataset, fill_zeros=True)
+        THETAV = self.__getFallbackVar__('THETAV', dataset, fill_zeros=True)
 
-        output = wpgcp * (2.5e6 / (1004.67 * ex0) - 1.61 * thvm)
+        output = WPRCP * (2.5e6 / (1004.67*((PRES / 1000)**(287.04/1004.67))) - 1.61*THETAV)
 
-        z_ncdf.constrain(self.height_min_value, self.height_max_value)
-        output = Line(output, z_ncdf.data, line_format='k-', label='SAM-LES')
+        # z_ncdf.constrain(self.height_min_value, self.height_max_value)
+        output = Line(output, z, line_format='k-', label='SAM-LES')
         return output
 
     # rc_coef_zm. * thlprcp

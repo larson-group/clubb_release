@@ -206,9 +206,11 @@ class VariableGroup:
                 else:
                     raise ValueError('Invalid panel type ' + panel_type + '. Valid options are profile, budget, timeseries')
         if line is None and panel_type != Panel.TYPE_BUDGET and fill_zeros is False:
-            print("\tFailed to find variable " + str(varname) + " in case " + str(self.casename) +
+            datareader = DataReader()
+            src_model = datareader.getNcdfSourceModel(dataset)
+            print("\tFailed to find variable " + str(aliases) + " in " + src_model + " output for " + " case " + str(self.casename) +
                  ". Attempting to use fallback function.")
-            line = self.__getVarDataFromFallback__(fallback_func, varname, ncdf_datasets, label, line_format)
+            line = self.__getVarDataFromFallback__(fallback_func, aliases, ncdf_datasets, label, line_format)
         if panel_type != Panel.TYPE_BUDGET and line is not None:
             all_lines.append(line)
         return all_lines

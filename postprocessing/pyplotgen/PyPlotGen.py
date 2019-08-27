@@ -145,8 +145,6 @@ def process_args():
     parser.add_argument("output", help="Name of folder to create and store plots into.", action="store")
     args = parser.parse_args()
 
-    if args.plot_golaz_best:
-        print("Plot golaz best flag detected, but that feature is not yet implemented")
     if args.plot_hoc_2005:
         print("Plot HOC 2005 flag detected, but that feature is not yet implemented")
     if args.all_best:

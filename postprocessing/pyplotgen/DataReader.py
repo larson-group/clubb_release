@@ -333,31 +333,14 @@ class DataReader():
             raise ValueError("Variable " + varname + " does not exist in ncdf_data file. If this is expected,"
                                                      " try passing fill_zeros=True when you create the "
                                                      "NetCdfVariable for " + varname + ".\nVariables found in dataset: " + str(ncdf_data))
-
-        # SAM outputs time in the form minutes since 1969-06-22 00:00:00.0
-        # We want to convert time values over to minutes starting at clubbs start time
-
-        # sam time -> clubb minutes
-        if varname == 'time' and self.getNcdfSourceModel(ncdf_data) == 'sam':
-            # SAM outputs time in the form minutes since 1969-06-22 00:00:00.0
-
+        if varname == 'time' and 'hour' in ncdf_data.variables[varname].units:
+            var_values = var_values[:] * 60
             var_values = var_values[:] - var_values[0] + 1
 
-        # clubb time -> clubb minutes
-        elif varname == 'time' and self.getNcdfSourceModel(ncdf_data) == 'clubb':
-            # clubb outputs time in the form seconds since 1969-02-07 00:00:00.0
-
-            sec_per_min = 60
-            var_values = var_values[:] / sec_per_min
-
-        # coamps time -> sam time conversion
-        elif varname == 'time' and self.getNcdfSourceModel(ncdf_data) == 'coamps':
-            # coamps outputs time in hours since 1-1-1 00:00:00
-            # The first time value in coamps output is 7-7 of 1987 at 0:0:0
-
-            min_per_hr = 60
-            var_values = var_values[:] * min_per_hr
+        if varname == 'time' and 'sec' in ncdf_data.variables[varname].units:
+            var_values = var_values[:] / 60
             var_values = var_values[:] - var_values[0] + 1
+
         elif self.getNcdfSourceModel(ncdf_data) == 'unknown-model' and 'sfc' not in ncdf_data.history:
             warn("Warning, unknown model detected. PyPlotgen doesn't know where this netcdf data is from." + str(ncdf_data))
             if varname == 'time':
@@ -412,5 +395,7 @@ class DataReader():
                 return 'sam'
             elif 'lev' in dataset.variables.keys():
                 return 'coamps'
+            elif 'sfc' in dataset.history:
+                return 'sfc calculations'
             else:
                 return 'unknown-model'
