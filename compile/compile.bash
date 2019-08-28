@@ -250,7 +250,9 @@ if [ -e  $srcdir/CLUBB_core ]; then
 
     # Compile provided Lapack routines if not using MKL version
     if ! "$l_use_mkl_lapack"; then
-	    ls $srcdir/Lapack/*.f >> "$generated_lists_dir"/clubb_param_files
+	    ls $srcdir/Lapack/Lapack_double/*.f >> "$generated_lists_dir"/clubb_param_files
+	    ls $srcdir/Lapack/Lapack_single/*.f >> "$generated_lists_dir"/clubb_param_files
+	    ls $srcdir/Lapack/Lapack_shared/*.f >> "$generated_lists_dir"/clubb_param_files
     fi
 else
 	echo "Fatal error, CLUBB_core directory is missing"
