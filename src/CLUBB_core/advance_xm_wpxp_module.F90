@@ -3450,6 +3450,10 @@ module advance_xm_wpxp_module
                                 rho_ds_zt, rho_ds_zm, &
                                 xm )
 
+      ! Hole filling does not affect the below ground level, perform a blunt clipping
+      ! here on that level to prevent small values of xm(1)
+      xm(1) = max( xm(1), xm_tol )
+
     endif ! any( xm < xm_threshold ) .and. l_hole_fill
           ! .and. solve_type /= xm_wpxp_um .and. solve_type /= xm_wpxp_vm
 
