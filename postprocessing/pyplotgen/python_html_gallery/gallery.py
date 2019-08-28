@@ -49,8 +49,10 @@ def RandomThumb(page):
         glob.glob(os.path.join(page.split('/')[0], '*_thumb.jpg')))
 
 
-def OrganizeRoot():
+def OrganizeRoot(output_dir):
     """Creates directories for images in root directory."""
+
+    static.root = output_dir
     try:
         os.chdir(static.root)
     except OSError:
@@ -176,9 +178,9 @@ def WriteIndex():
         os.path.join(static.root, static.index), page_count))
 
 
-def main():
+def main(output_dir):
     """Main function."""
-    OrganizeRoot()
+    OrganizeRoot(output_dir)
     WriteGalleryPages()
     WriteIndex()
 

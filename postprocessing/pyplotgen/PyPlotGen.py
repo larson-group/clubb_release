@@ -18,14 +18,14 @@ from python_html_gallery import gallery
 
 
 class PyPlotGen:
-    '''
+    """
 
-    '''
+    """
 
     def __init__(self, input_folder, output_folder, replace=False, les=False, cgbest=False, hoc=False, plotrefs=False,
                 zip=False, thin=False, no_legends=False, ensemble=False,
                  budget_moments=False, bu_morr=False, diff=None):
-        '''
+        """
         This creates an instance of PyPlotGen. Each parameter is a command line parameter passed in from the argparser
         below.
         :param input_folder:
@@ -45,7 +45,7 @@ class PyPlotGen:
         :param budget_moments:
         :param bu_morr:
         :param diff:
-        '''
+        """
         self.input_folder = input_folder
         self.output_folder = output_folder
         self.replace_images = replace
@@ -67,10 +67,10 @@ class PyPlotGen:
         self.sam_data_reader = DataReader()
 
     def run(self):
-        '''
+        """
         Runs all PyPlotGen cases
         :return: n/a
-        '''
+        """
         self.nc_datasets = self.data_reader.loadFolder(self.input_folder)
         diff_datasets = None
         if self.diff is not None:
@@ -100,18 +100,18 @@ class PyPlotGen:
             #     print("Clubb input nc files not found. Skipping case.")
         print('###########################################')
         print("\nGenerating webpage for viewing plots ")
-        gallery.main()
+        gallery.main(self.output_folder)
         print('###########################################')
         print("Output can be viewed at file://" + self.output_folder + "/index.html with a web browser")
 
     def downloadModelOutputs(self):
-        '''
+        """
         Checks for model output, e.g. sam benchmark runs, and if it
         doesn't exist, downloads it.
         Supports: SAM, COAMPS, CLUBB
 
         :return:
-        '''
+        """
 
 
         # Ensure benchmark output is available
@@ -123,12 +123,12 @@ class PyPlotGen:
             print("Benchmark output found in " + Case_definitions.BENCHMARK_OUTPUT_ROOT)
 
 def process_args():
-    '''
+    """
     This method takes arguments in from the command line and feeds them into
     a PyPlotGen object
 
     :return: a PyPlotGen object containing the parameters as given from the commandline.
-    '''
+    """
     parser = argparse.ArgumentParser()
     parser.add_argument("-r", "--replace", help="If the output folder already exists, replace it with the new one.", action="store_true")
     parser.add_argument("-l", "--les", help="Plot LES data for comparison.", action="store_true")
