@@ -1,12 +1,12 @@
-'''
+"""
+:Author: Nicolas Strike
+:Date: Jan 2019
+
 This file is the main driver for PyPlotGen. It handles the overall
 process of retrieving the user's input and dictating the loading
 of files, generation of plots, and then the export of plots, though
 these processes are mostly carried out by other classes/files.
-
-Author: Nicolas Strike
-Date: Jan 2019
-'''
+"""
 import argparse
 import os
 import subprocess
@@ -70,8 +70,8 @@ class PyPlotGen:
 
     def run(self):
         """
-        Runs all PyPlotGen cases
-        :return: n/a
+        Runs PyPlotGen
+        :return: None
         """
         self.nc_datasets = self.data_reader.loadFolder(self.input_folder)
         diff_datasets = None
@@ -80,7 +80,7 @@ class PyPlotGen:
         all_cases = Case_definitions.ALL_CASES
 
         # Downloads model output (sam, les, clubb) if it doesn't exist
-        self.downloadModelOutputs()
+        self.__downloadModelOutputs__()
 
         # TODO Handle dataset not found/partial nc output
         if self.replace_images:
@@ -109,7 +109,7 @@ class PyPlotGen:
         print('###########################################')
         print("Output can be viewed at file://" + self.output_folder + "/index.html with a web browser")
 
-    def downloadModelOutputs(self):
+    def __downloadModelOutputs__(self):
         """
         Checks for model output, e.g. sam benchmark runs, and if it
         doesn't exist, downloads it.
@@ -127,7 +127,7 @@ class PyPlotGen:
         else:
             print("Benchmark output found in " + Case_definitions.BENCHMARK_OUTPUT_ROOT)
 
-def process_args():
+def __process_args__():
     """
     This method takes arguments in from the command line and feeds them into
     a PyPlotGen object
@@ -169,5 +169,5 @@ def process_args():
     return pyplotgen
 
 if __name__ == "__main__":
-    pyplotgen = process_args()
+    pyplotgen = __process_args__()
     pyplotgen.run()

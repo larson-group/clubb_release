@@ -1,3 +1,8 @@
+"""
+:author: Nicolas Strike
+:date: Early 2019
+"""
+
 import numpy as np
 
 from DataReader import DataReader
@@ -6,15 +11,29 @@ from VariableGroupBaseBudgets import VariableGroupBaseBudgets
 
 
 class Case:
-    '''
+    """
     A case is basically a collection of variable groups and
     panels that share attributes like start/end time and get plotted together.
-    '''
+    This is a generic class used by Case_Definitions.py to provide functionality.
+    In order to create a new case, please add the case's definition to Case_Definitions.py (don't forget to add the
+    definition to the list ALL_CASES = [...] at the bottom of the file).
+    """
     def __init__(self, case_definition, ncdf_datasets, plot_les = False,plot_budgets = False, diff_datasets=None, plot_r408=False):
-        '''
-        Initalize a case
-        :param ncdf_datasets: List of Dataset objects containing netcdf data from clubb
-        '''
+        """
+        Initialize a Case
+
+        :param case_definition: dict containing case specific elements. These are pulled in from Case_definitions.py,
+            see Case_definitions.py for details on how to structure the dict
+        :param ncdf_datasets: dict containing Dataset objects holding the data needed for the case. The key for each
+            value/Dataset in the dict is set to the ext provided in the filename (e.g. sfc, zt, zm)
+        :param plot_les: If True pyplotgen plots LES lines, if False pyplotgen does not plot LES lines
+        :param plot_budgets: If True pyplotgen will plot Budgets in addition to the other plots
+                If False, pyplotgen will not plot budgets
+        :param diff_datasets: If True, pyplotgen will plot the numeric difference between two input folders
+                If False, pyplotgen will plot regularly
+        :param plot_r408: If True, pyplotgen will plot the Chris Golaz 'best ever' clubb r408 data lines
+                If False, pyplotgen will not plot the Chris Golaz 'best ever' clubb r408 data lines
+        """
         self.name = case_definition['name']
         self.start_time = case_definition['start_time']
         self.end_time = case_definition['end_time']
@@ -83,12 +102,18 @@ class Case:
             self.panels.extend(budget_variables.panels)
 
     def getDiffLinesBetweenPanels(self, panelA, panelB, get_y_diff = False):
-        '''
+        """
+        Given two panels of type Panel, this function calculates the numerical
+        difference between each line of the two panels and returns the numerical
+        values as a list [] for each line in the panel.
 
-        :param panelA:
-        :param panelB:
-        :return:
-        '''
+        This function assumes that the data lines are in the same order on each panel
+        and that each panel has the same number of lines
+
+        :param panelA: The first panel for comparison
+        :param panelB: The second panel for comparison
+        :return: A 2D list containing the numerical values for the difference between each line in the given panels.
+        """
         linesA = panelA.all_plots
         linesB = panelB.all_plots
         newLines = linesA
@@ -106,7 +131,7 @@ class Case:
         return newLines
 
     def __getArrayDiff__(self, arrA, arrB):
-        '''
+        """
         Returns an array containing the difference between the two arrays.
         arrB is subtracted from arrA and the values are NOT given as absolute value.
         If one array has fewer entries than another, the value of the longer array will be
@@ -115,7 +140,7 @@ class Case:
         :param arrA: The first array (usually contains larger values)
         :param arrB: The second array (usually contains smaller values)
         :return: a numpy array containing arrA - arrB
-        '''
+        """
 
         # Fill zeros on smallest array
         zerosA = [0 for i in range(len(arrA), len(arrB))]
@@ -130,11 +155,11 @@ class Case:
 
 
     def plot(self, output_folder, replace_images = False, no_legends = False, thin_lines = False):
-        '''
-        Plot all panels associated with the case
-        :param casename: str name of the case
-        :return:
-        '''
+        """
+        Plot all panels associated with the case, these will be saved to a .jpg file in the <<output>>/<<casename>> folder
+        :param casename: The name of the case as a string
+        :return: None
+        """
         print("\n")
         num_plots = len(self.panels)
         curr_panel_num = 0

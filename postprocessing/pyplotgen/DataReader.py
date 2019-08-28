@@ -1,7 +1,7 @@
-'''
+"""
 :author: Nicolas Strike
 :date: Early 2019
-'''
+"""
 
 import os
 import pathlib as pathlib
@@ -12,12 +12,12 @@ from netCDF4 import Dataset
 
 
 class NetCdfVariable:
-    '''
+    """
     Class used for conveniently storing the information about a given netcdf variable
-    '''
+    """
 
     def __init__(self, name, ncdf_data, conversion_factor=1, start_time=0, end_time=-1, avg_axis=0, fill_zeros=False):
-        '''
+        """
 
         :param name: the name of the variable as defined in the ncdf_data
         :param ncdf_data: Accepts either a Dataset object to pull data from, or a dict of Datasets which will automatically be searched for the variable
@@ -25,7 +25,8 @@ class NetCdfVariable:
         :param start_time: The time value to being the averaging period, e.g. 181 minutes. Defaults to 0.
         :param end_time: The time value to stop the averaging period, e.g. 240 minutes. Defaults to -1.
         :param avg_axis: The axis to avg data over. 0 for time-avg, 1 for height avg
-        '''
+        :param fill_zeros: If a variable is not found, setting fill_zeros to True allows pyplotgen to create a fake variable containing 0 for its values.
+        """
 
         # If argument name is a list of aliases, find the correct one and assign it
         # if isinstance(ncdf_data, Dataset):
@@ -49,7 +50,7 @@ class NetCdfVariable:
         self.data = data_reader.getVarData(self.ncdf_data, self, fill_zeros=fill_zeros)
 
     def __getStartEndIndex__(self, data, start_value, end_value):
-        '''
+        """
         Get the list floor index that contains the value to start graphing at and the
         ceiling index that contains the end value to stop graphing at
 
@@ -58,7 +59,7 @@ class NetCdfVariable:
         :param end_value: The last value that needs to be graphed (may return indexes to values larger than this)
         :return: (tuple) start_idx, end_idx   which contains the starting and ending index representing the start and end time passed into the function
         :author: Nicolas Strike
-        '''
+        """
         start_idx = 0
         end_idx = len(data) - 1
         for i in range(0, len(data)):
@@ -73,14 +74,16 @@ class NetCdfVariable:
         return start_idx, end_idx + 1
 
     def constrain(self, start_value, end_value, data=None):
-        '''
+        """
         Remove all data elements from the variable that are not between the start and end value. Assumes
         the data is always increasing. If the optional data parameter is used, it will restrict to the indices
         of where the start/end values are in that dataset rather than the variables data itself.
+
         :param start_value: The smallest possible value
         :param end_value: The largest possible value
-        :return: none, operates in place
-        '''
+        :param data: A list of data values to find start/ending indicies for constraining rather than using the NetCdfVariable's data.
+        :return: None, operates in place
+        """
         if data is None:
             data = self.data
         start_idx, end_idx = self.__getStartEndIndex__(data, start_value, end_value)
@@ -88,12 +91,13 @@ class NetCdfVariable:
 
 
     def filter_datasets(self):
-        '''
-        Looks through the input files for a case and finds the dataset
-        containing the requested variable and assignes it ot self.ncdf_data
+        """
+        Looks through the input files for a case and finds the Dataset
+        containing the requested variable and assigns it to self.ncdf_data
+        Assumes self.ncdf_data is a dictionary.
 
-        :return:
-        '''
+        :return: None
+        """
         for subdataset in self.ncdf_data.values():
             if self.name in subdataset.variables.keys():
                 self.ncdf_data = subdataset
@@ -104,38 +108,37 @@ class NetCdfVariable:
 
 
 class DataReader():
-    '''
-    This class is responsible for handling input files. Given a
-    input file, it determines what format it is in (grads vs
-    netcdf) and then uses the correct helper file (e.g.
-    NetcdfReader.py) to load the data into python.
+    """
+    This class is responsible for handling input files. Given input
+    files it reads them and returns NetCDF Dataset objects to python. It is
+    also responsible for performing the time-averaging calculation at load time.
 
     :author: Nicolas Strike
     :data: January 2019
-    '''
+    """
 
     def __init__(self):
-        '''
+        """
         This is the object constructor. Initializes class variables and data
         :author: Nicolas Strike
-        '''
+        """
         self.nc_filenames = {}
         self.nc_datasets = {}
         self.root_dir = pathlib.Path(__file__).parent
         self.panels_dir = self.root_dir.as_uri() + "/cases/panels/"
 
     def cleanup(self):
-        '''
+        """
         This is the cleanup method. This is called on the instance's destruction
         to deallocate resources that may be held (e.g. dataset files).
         :return:
         :author: Nicolas Strike
-        '''
+        """
         for dataset in self.nc_datasets:
             dataset.close()
 
     def loadFolder(self, folder_path, ignore_git=True):
-        '''
+        """
         Finds all dataset files in a given folder and loads
         them using the appropriate helper class.
         :param folder_path: The path of the folder to be loaded
@@ -144,7 +147,7 @@ class DataReader():
         contains a dictionary defining filenames behind a filetype key (e.g. zm)
         For example: to access the zm data for gabls3_rad, simply call nc_datasets['gabls3']['zm']
         :author: Nicolas Strike
-        '''
+        """
         for root, dirs, files in os.walk(folder_path):
             for filename in files:
                 abs_filename = os.path.abspath(os.path.join(root, filename))
@@ -165,8 +168,14 @@ class DataReader():
 
     def getVarData(self, netcdf_dataset, ncdf_variable, fill_zeros=False):
         """
+        Given a Dataset and NetCdfVariable object, this function returns the numerical
+        data for the given variable.
 
-        :author: Nicolas Strike
+        :param netcdf_dataset: Dataset containing the given variable
+        :param ncdf_variable: NetCdfVariable object to get data values for
+        :param fill_zeros: If the variable is not found in the Dataset, setting fill_zeros = True will allow
+            pyplotgen to autofill 0 for each datapoint.
+        :return: The list of numeric values for the given variable
         """
         start_time_value = ncdf_variable.start_time
         end_time_value = ncdf_variable.end_time
@@ -201,22 +210,22 @@ class DataReader():
         return values
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        '''
+        """
         Calls the cleanup and cleanly closes out the object isntance
         :param exc_type:
         :param exc_val:
         :param exc_tb:
         :return:
         :author: Nicolas Strike
-        '''
+        """
         self.cleanup()
 
     def __loadNcFile__(self, filename):
-        '''
+        """
         Load the given NetCDF file
         :param filename: the netcdf file to be loaded
         :return: a netcdf dataset containing the data from the given file
-        '''
+        """
         dataset = Dataset(filename, "r+", format="NETCDF4")
         return dataset
 
@@ -272,7 +281,7 @@ class DataReader():
           nc         --  Netcdf file object
           varname    --  Variable name string
         Output:
-          long_name as string
+          long_name as string, often used as a title
         """
 
         if isinstance(ncdf_datasets, Dataset):
@@ -292,7 +301,7 @@ class DataReader():
           nc         --  Netcdf file object
           varname    --  Variable name string
         Output:
-          long_name as string
+          long_name as string, often used as a title
         """
         if isinstance(ncdf_datasets, Dataset):
             ncdf_datasets = {'auto': ncdf_datasets}
@@ -353,7 +362,7 @@ class DataReader():
         return var_values
 
     def __getStartEndIndex__(self, data, start_value, end_value):
-        '''
+        """
         Get the list floor index that contains the value to start graphing at and the
         ceiling index that contains the end value to stop graphing at
 
@@ -362,7 +371,7 @@ class DataReader():
         :param end_value: The last value that needs to be graphed (may return indexes to values larger than this)
         :return: (tuple) start_idx, end_idx   which contains the starting and ending index representing the start and end time passed into the function
         :author: Nicolas Strike
-        '''
+        """
         start_idx = 0
         end_idx = len(data) - 1
         for i in range(0, len(data)):
@@ -380,12 +389,14 @@ class DataReader():
         return start_idx, end_idx
 
     def getNcdfSourceModel(self, ncdf_dataset):
-        '''
-        Guesses the model that outputted a given ncdf file
+        """
+        Guesses the model that outputted a given ncdf file. Currently does this by investigating which type of
+        elevation is outputted (e.g. altitude, z, lev). If there is not elevation parameter found, and the filename
+        contains 'sfc' it will return a generic 'sfc calculations' value.
 
         :param ncdf_dataset: NetCDF Dataset object imported from output file from some supported model (e.g. CLUBB, SAM)
         :return: the (estimated) name of the model that outputted the input file
-        '''
+        """
         if isinstance(ncdf_dataset, Dataset):
             ncdf_dataset = {'temp': ncdf_dataset}
         for dataset in ncdf_dataset.values():

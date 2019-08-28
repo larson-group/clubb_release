@@ -12,12 +12,12 @@ from VariableGroup import VariableGroup
 class VariableGroupLiquidMP(VariableGroup):
 
     def __init__(self, ncdf_datasets, case, sam_file=None, coamps_file=None, r408_dataset=None):
-        '''
+        """
 
         :param ncdf_datasets:
         :param case:
         :param sam_file:
-        '''
+        """
         self.name = "liquid mp variables"
         self.variable_definitions = [
             {'aliases': ['Ncm'], 'sam_calc': self.getNcmSamLine},
@@ -37,11 +37,11 @@ class VariableGroupLiquidMP(VariableGroup):
 
 
     def getNcmSamLine(self):
-        '''
+        """
         Caclulates Nim from sam -> clubb using the equation
         (NC * 1e+6) ./ RHO
         :return:
-        '''
+        """
 
         z_ncdf = NetCdfVariable('z', self.sam_file, 1)
 
@@ -59,11 +59,11 @@ class VariableGroupLiquidMP(VariableGroup):
         return ncm_line
 
     def getNrmSamLine(self):
-        '''
+        """
         Caclulates Nim from sam -> clubb using the equation
         (NR * 1e+6) ./ RHO
         :return:
-        '''
+        """
 
         z_ncdf = NetCdfVariable('z', self.sam_file, 1)
 

@@ -10,15 +10,22 @@ import matplotlib.pyplot as plt
 
 
 class Panel:
-    '''
-    Represents an individual panel/graph. Each graph contains a number of details
-    specific to it, such as a title. Each graph can be plotted/saved to a file.
-    '''
+    """
+    Represents an individual panel/graph. Each panel contains a number of details
+    specific to it, such as a title, axis labels, and lines. Each panel can be plotted/saved to a file.
+    """
     TYPE_PROFILE = 'profile'
     TYPE_BUDGET = 'budget'
     TYPE_TIMESERIES = 'timeseries'
 
     def __init__(self, plots, panel_type="profile", title="Unnamed panel", dependant_title="dependant variable"):
+        """
+        Creates a new panel
+        :param plots: list of Line objects to plot onto the panel
+        :param panel_type: Type of panel being plotted (i.e. budget, profile, timeseries)
+        :param title: The title of this plot (e.g. 'Liquid water potential tempature')
+        :param dependant_title: Label of the dependant axis (labels the x-axis for all panel types except timeseries).
+        """
 
         self.panel_type = panel_type
         self.all_plots = plots
@@ -27,14 +34,12 @@ class Panel:
         self.x_title = "x title unassigned"
         self.y_title = "y title unassigned"
         self.__init_axis_titles__()
-        # self.blacklisted = blacklisted
-
 
     def __init_axis_titles__(self):
-        '''
+        """
 
         :return:
-        '''
+        """
         if self.panel_type is Panel.TYPE_PROFILE:
             self.x_title = self.dependant_title
             self.y_title = "Height, [m]"
@@ -48,7 +53,7 @@ class Panel:
             raise ValueError('Invalid panel type ' + self.panel_type + '. Valid options are profile, budget, timeseries')
 
     def __getStartEndIndex__(self, data, start_value, end_value):
-        '''
+        """
         Get the list floor index that contains the value to start graphing at and the
         ceiling index that contains the end value to stop graphing at
 
@@ -57,7 +62,7 @@ class Panel:
         :param end_value: The last value that needs to be graphed (may return indexes to values larger than this)
         :return: (tuple) start_idx, end_idx   which contains the starting and ending index representing the start and end time passed into the function
         :author: Nicolas Strike
-        '''
+        """
         start_idx = 0
         end_idx = len(data) -1
         for i in range(0,len(data)):
@@ -72,12 +77,12 @@ class Panel:
         return start_idx, end_idx
 
     def plot(self, output_folder, casename, replace_images = False, no_legends = True, thin_lines = False):
-        '''
-         Saves a single panel/graph to the output directory specified by the pyplotgen launch paramters
+        """
+         Saves a single panel/graph to the output directory specified by the pyplotgen launch parameters
 
-        :param casename:
-        :return:
-        '''
+        :param casename: The name of the case that's plotting this panel
+        :return: None
+        """
         plt.figure()
         plt.subplot(111)
         for var in self.all_plots:

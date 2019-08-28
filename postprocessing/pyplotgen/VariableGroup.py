@@ -1,7 +1,7 @@
-'''
+"""
 :author: Nicolas Strike
 :date: Mid 2019
-'''
+"""
 from warnings import warn
 
 from netCDF4._netCDF4 import Dataset
@@ -12,22 +12,24 @@ from Panel import Panel
 
 
 class VariableGroup:
-    '''
-    This is the parent PanelGroup class. All other panel groups
+    """
+    This is the parent VariableGroup class. All other panel groups
     should be created as a subclass of this one. Properties and
     methods common to each PanelGroup can be found here.
 
-
-    A PanelGroup child defines Lines, Panels, and is responsible for
+    A VariableGroup child defines Lines, Panels, etc., and is responsible for
     calculating any 'calculated' variables from netcdf
-    '''
+    """
 
     def __init__(self, ncdf_datasets, case, sam_file=None, coamps_file=None, r408_dataset=None):
-        '''
-
+        """
+        Initialize common Variable group parameters
         :param ncdf_datasets: A dictionary or Netcdf dataset containing the data to be plotted
         :param case: An instance of a Case object
-        '''
+        :param sam_file: NetCDF4 Dataset object containing sam ouput
+        :param coamps_file: NetCDF4 Dataset object containing coamps ouput
+        :param r408_dataset: NetCDF4 Dataset object containing clubb r408 ('chris golaz') output
+        """
         print("\tGenerating variable-group data")
         self.variables = []
         self.panels = []
@@ -54,11 +56,80 @@ class VariableGroup:
         self.generatePanels()
 
     def addVariable(self, variable_def_dict):
-        '''
-        Given basic details about a variable like name,
-        create lines/panels for the variable
-        :return:
-        '''
+        """
+        Given basic details about a variable, like name, this
+        creates lines/panels for the variable and then adds that
+        variable to the list of all variables for this VariableGroup
+
+        :param variable_def_dict: A dict containing the information defining a variable. These definitions are declared
+        inside a VariableGroup child class, e.g. VariableGroupBase.
+
+        Valid dict keys/options include:
+
+        *aliases*: A list of names various models refer to this variable as. E.g. ['wprtp', 'WPRTP', 'wpqtp']
+
+        *sam_calc*: (optional) A functional reference to a method that calculates a sam variable. This is given as the name of the
+        function *without* the () after the name. E.g. self.getThlmSamLine
+
+        *coamps_calc*: (optional) A functional reference to a method that calculates a coamps variable. This is given as the name of the
+        function *without* the () after the name. E.g. self.getThlmSamLine
+
+        *sam_conv_factor*: (optional) Numeric value to scale a sam variable by. E.g. 1/1000, or 100
+
+        *coamps_conv_factor*: (optional) Numeric value to scale a coamps variable by. E.g. 1/1000, or 100
+
+        *r408_conv_factor*: (optional) Numeric value to scale a clubb r408 variable by. E.g. 1/1000, or 100
+
+        *type*: (optional) Override the default type 'profile' with either 'budget' or 'timeseries'
+
+        *fallback_func*: (optional) If a variable is not found within a dataset and a fallback_func is specified, this
+        function will be called to attempt retrieving the variable (before filling zeros if fill_zeros=True). Like the
+        model_calc option, this is a functional reference to a method that calculates the given variable. E.g. self.getWpthlpFallback
+
+        *title*: (optional) Override the default panel title, or provide one if it's not specified in the netcdf file.
+
+        *axis_title*: (optional) Override the default dependant axis title, or provide one if it's not specified in the netcdf file.
+
+        *fill_zeros*: (optional) If a variable isn't found in netcdf output, and there is no fallback_func (or the fallback failed),
+        setting this to True allows PyPlotgen to fill all datapoints with 0 and continue plotting.
+
+        *lines*: * (budget variables only) Defines lines to plot for budget cases. Passed seperately because it's a lot of text.
+        This is given in the form of a list of lines, here's an example:
+
+        .. code-block:: python
+            :linenos:
+
+            thlm_lines = [
+            {'aliases': ['thlm_bt'], 'label': 'thlm_bt'},
+            {'aliases': ['thlm_ma'], 'label': 'thlm_ma'},
+            {'aliases': ['thlm_ta'], 'label': 'thlm_ta'},
+            {'aliases': ['thlm_mc'], 'label': 'thlm_mc'},
+            {'aliases': ['thlm_clipping'], 'label': 'thlm_bt', 'fallback_func': self.getThlmClipping},
+            {'aliases': ['radht'], 'label': 'radht'},
+            {'aliases': ['lsforcing'], 'label': 'lsforcing', 'fallback_func': self.getLsforcing},
+            {'aliases': ['thlm_residual'], 'label': 'thlm_residual', 'fallback_func': self.getThlmResidual},
+            ]
+
+        Here are a couple examples of other (non-budget) variable definitions:
+
+        .. code-block:: python
+            :linenos:
+
+            {
+            'aliases': ['Skrt_zt'],
+            'sam_calc': self.getSkrtZtLesLine,
+            'coamps_calc': self.getSkrtZtLesLine,
+            'fill_zeros': True
+            }
+
+            {
+            'aliases': ['lwp', 'CWP'],
+            'type': Panel.TYPE_TIMESERIES,
+            'sam_conv_factor': 1/1000
+            },
+
+        :return: None
+        """
         data_reader = DataReader()
         aliases = variable_def_dict['aliases']
         fill_zeros = False
@@ -144,12 +215,12 @@ class VariableGroup:
         self.variables.append(variable_def_dict)
 
     def generatePanels(self):
-        '''
+        """
         Generates a set of panels from the plots stored in self.
         Does not return anything, simply assigns the panels into
         self.panels
-        :return:
-        '''
+        :return: None
+        """
         for variable in self.variables:
             title = variable['title']
             axis_label = variable['axis_title']
@@ -238,14 +309,14 @@ class VariableGroup:
         return line
 
     def __get_timeseries_line__(self, varname, dataset, end_time, conversion_factor, label, line_format, fill_zeros):
-        '''
+        """
 
         :param variable:
         :param dataset:
         :param label:
         :param line_format:
         :return:
-        '''
+        """
         variable = NetCdfVariable(varname, dataset, start_time=0, end_time=end_time, avg_axis=1, conversion_factor=conversion_factor, fill_zeros=fill_zeros)
         time = NetCdfVariable('time', dataset)
         variable.constrain(0, variable.end_time, data=time.data)
@@ -254,13 +325,13 @@ class VariableGroup:
         return line
 
     def __get_budget_lines__(self, lines, dataset, fill_zeros, label, line_format):
-        '''
+        """
 
         :param variable:
         :param dataset:
         :param label:
         :return:
-        '''
+        """
         output_lines = []
         for line_definition in lines:
             line_added = False
@@ -302,13 +373,13 @@ class VariableGroup:
         return output_lines
 
     def __getVarDataFromFallback__(self, fallback, varname, datasets, label, line_format):
-        '''
+        """
         Some older model output doesn't contain all variables, e.g cgils_s12 doesn't contain WPTHLP.
         This method attempts to use a function under the name 'fallback_func' to generate the requested
         data similarly to how 'sam_calc' calculates sam output into a clubb format. If successful,
         returns varline data, otherwise raises error
         :return:
-        '''
+        """
         for dataset in datasets.values():
             try:
                 varline = fallback(dataset_override=dataset)
@@ -327,13 +398,13 @@ class VariableGroup:
                 return None
 
     def __getFallbackVar__(self, varname, dataset, conversion_factor = 1, fill_zeros = False):
-        '''
+        """
         This function is used within a fallback function to get the data of a certain variable,
         constrained between a min/max height.
 
         :param varname:
         :return:
-        '''
+        """
         if 'z' in dataset.variables.keys():
             z_ncdf = NetCdfVariable('z', dataset, 1)
         elif 'altitude' in dataset.variables.keys():

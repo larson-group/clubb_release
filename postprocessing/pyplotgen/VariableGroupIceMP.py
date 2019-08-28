@@ -1,7 +1,7 @@
-'''
+"""
 :author: Nicolas Strike
 :date: Mid 2019
-'''
+"""
 
 from Line import Line
 from Panel import Panel
@@ -11,12 +11,12 @@ from VariableGroup import VariableGroup
 class VariableGroupIceMP(VariableGroup):
 
     def __init__(self, ncdf_datasets, case, sam_file=None, coamps_file=None, r408_dataset=None):
-        '''
+        """
 
         :param ncdf_datasets:
         :param case:
         :param sam_file:
-        '''
+        """
         self.name = "ice mp variables"
         self.variable_definitions = [
             {'aliases': ['rim', 'QI', 'QCI'], 'sam_conv_factor': 1 / 1000},#, 'fallback_func': self.getRimFallback},
@@ -33,11 +33,11 @@ class VariableGroupIceMP(VariableGroup):
         super().__init__(ncdf_datasets, case, sam_file=sam_file, coamps_file=coamps_file, r408_dataset=r408_dataset)
 
     def getNimSamLine(self):
-        '''
+        """
         Caclulates Nim from sam -> clubb using the equation
         (NI * 1e+6) ./ RHO
         :return:
-        '''
+        """
         z = self.__getFallbackVar__('z', self.sam_file)
         ni = self.__getFallbackVar__('NI', self.sam_file, fill_zeros=True)
         rho = self.__getFallbackVar__('RHO', self.sam_file, fill_zeros=True)
@@ -47,11 +47,11 @@ class VariableGroupIceMP(VariableGroup):
         return nim_line
 
     def getNsmSamLine(self):
-        '''
+        """
         Caclulates Nim from sam -> clubb using the equation
         (NS * 1e+6) ./ RHO
         :return:
-        '''
+        """
 
         z = self.__getFallbackVar__('z', self.sam_file)
         ns = self.__getFallbackVar__('NS', self.sam_file, fill_zeros=True)

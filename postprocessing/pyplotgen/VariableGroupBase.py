@@ -1,7 +1,7 @@
-'''
+"""
 :author: Nicolas Strike
 :date: Mid 2019
-'''
+"""
 
 from DataReader import NetCdfVariable
 from Line import Line
@@ -10,19 +10,19 @@ from VariableGroup import VariableGroup
 
 
 class VariableGroupBase(VariableGroup):
-    '''
+    """
     This is a panel group used for testing the functionality of pyplotgen.
     It contains a set of common panels being used for representing the majority
     of panels.
-    '''
+    """
 
     def __init__(self, ncdf_datasets, case, sam_file=None, coamps_file=None, r408_dataset=None):
-        '''
+        """
 
         :param ncdf_datasets:
         :param case:
         :param sam_file:
-        '''
+        """
         self.name = "base variables"
         self.variable_definitions = [
             {'aliases': ['thlm'], 'sam_calc': self.getThlmSamLine},
@@ -49,6 +49,7 @@ class VariableGroupBase(VariableGroup):
             {'aliases': ['up2', 'U2']},
             {'aliases': ['vp2', 'V2']},
             {'aliases': ['rcp2', 'QC2', 'qcp2'], 'sam_conv_factor': 1 / 10 ** 6},
+            {'aliases': ['lwp', 'CWP'],	 'type': Panel.TYPE_TIMESERIES, 'sam_conv_factor': 1/1000},
             {'aliases': ['wp2_vert_avg', 'CWP'], 'type': Panel.TYPE_TIMESERIES,	 'fill_zeros': True},
             {'aliases': ['tau_zm'], 'fill_zeros': True},
             {'aliases': ['Lscale'], 'fill_zeros': True},
@@ -66,8 +67,7 @@ class VariableGroupBase(VariableGroup):
             {'aliases': ['rc_coef_zm * thlprcp'],	 'fallback_func': self.get_rc_coef_zm_X_thlprcp_clubb_line,
                 'title': 'Contribution of Cloud Water Flux to thlprcp',	 'axis_title': 'rc_coef_zm * thlprcp [K^2]'},	 # TODO coamps eqn thlpqcp .* (2.5e6 ./ (1004.67*ex0) - 1.61*thvm)
             {'aliases': ['rc_coef_zm * rtprcp'],	 'fallback_func': self.get_rc_coef_zm_X_rtprcp_clubb_line,
-                'title': 'Contribution of Cloud Water Flux to rtprcp',	 'axis_title': 'rc_coef_zm * rtprcp [kg/kg K]'},	 # TODO coamp eqn qtpqcp .* (2.5e6 ./ (1004.67*ex0) - 1.61*thvm)
-            {'aliases': ['lwp', 'CWP'],	 'type': Panel.TYPE_TIMESERIES, 'sam_conv_factor': 1/1000}
+                'title': 'Contribution of Cloud Water Flux to rtprcp',	 'axis_title': 'rc_coef_zm * rtprcp [kg/kg K]'}	 # TODO coamp eqn qtpqcp .* (2.5e6 ./ (1004.67*ex0) - 1.61*thvm)
 
             # TODO rc_coev * wp2rcp
 
@@ -77,12 +77,12 @@ class VariableGroupBase(VariableGroup):
         super().__init__(ncdf_datasets, case, sam_file=sam_file, coamps_file=coamps_file, r408_dataset=r408_dataset)
 
     def getThlmSamLine(self):
-        '''
+        """
         Calculates thlm values from sam output using
         the following equation
         (THETAL + 2500.4.*(THETA./TABS).*(QI./1000))
         :return: requested variable data in the form of a list. Returned data is already cropped to the appropriate min,max indices
-        '''
+        """
 
         self.start_time = self.start_time
         self.end_time = self.end_time
@@ -112,12 +112,12 @@ class VariableGroupBase(VariableGroup):
         return thlm_line
 
     def getRtmSamLine(self):
-        '''
+        """
         Calculates rtm values from sam output using
         the following equation
         (QT-QI) ./ 1000
         :return: requested variable data in the form of a list. Returned data is already cropped to the appropriate min,max indices
-        '''
+        """
         self.start_time = self.start_time
         self.end_time = self.end_time
 
@@ -138,12 +138,12 @@ class VariableGroupBase(VariableGroup):
         return rtm_line
 
     def getSkwZtLesLine(self):
-        '''
+        """
         Calculates Skw_zt values from sam output using
         the following equation
         WP3 ./ (WP2 + 1.6e-3).^1.5
         :return: requested variable data in the form of a list. Returned data is already cropped to the appropriate min,max indices
-        '''
+        """
         dataset = None
         if self.sam_file is not None:
             dataset = self.sam_file
@@ -172,13 +172,13 @@ class VariableGroupBase(VariableGroup):
         return skw_zt_line
 
     def getSkrtZtLesLine(self):
-        '''
+        """
         Calculates Skrt_zt values from sam output using
         the following equation
          sam eqn RTP3 ./ (RTP2 + 4e-16).^1.5
          coamps eqn qtp3 ./ (qtp2 + 4e-16).^1.5
          :return: requested variable data in the form of a list. Returned data is already cropped to the appropriate min,max indices
-        '''
+        """
         dataset = None
         if self.sam_file is not None:
             dataset = self.sam_file
@@ -209,13 +209,13 @@ class VariableGroupBase(VariableGroup):
         return skrtp_zt_line
 
     def getSkthlZtLesLine(self):
-        '''
+        """
         Calculates Skthl_zt values from sam output using
         the following equation
         sam THLP3 ./ (THLP2 + 4e-4).^1.5
         coamps eqn thlp3 ./ (thlp2 + 4e-4).^1.5
          :return: requested variable data in the form of a list. Returned data is already cropped to the appropriate min,max indices
-        '''
+        """
         dataset = None
         if self.sam_file is not None:
             dataset = self.sam_file
@@ -244,11 +244,11 @@ class VariableGroupBase(VariableGroup):
         return skthl_zt_line
 
     def getWpthlpFallback(self, dataset_override = None):
-        '''
+        """
         This gets called if WPTHLP isn't outputted in an nc file as a backup way of gathering the data for plotting.
         WPTHLP = (TLFLUX) ./ (RHO * 1004)
         :return:
-        '''
+        """
         self.start_time = self.start_time
         self.end_time = self.end_time
 
@@ -269,11 +269,11 @@ class VariableGroupBase(VariableGroup):
         return wpthlp
 
     def getWprtpFallback(self, dataset_override = None):
-        '''
+        """
         This gets called if WPRTP isn't outputted in an nc file as a backup way of gathering the data for plotting.
         WPRTP = (QTFLUX) ./ (RHO * 2.5104e+6)
         :return:
-        '''
+        """
         self.start_time = self.start_time
         self.end_time = self.end_time
 
@@ -294,11 +294,11 @@ class VariableGroupBase(VariableGroup):
         return wprtp
 
     def getWpthvpFallback(self, dataset_override = None):
-        '''
+        """
         This gets called if WPTHVP isn't outputted in an nc file as a backup way of gathering the data for plotting.
         WPTHVP =  (TVFLUX) ./ ( RHO * 1004)
         :return:
-        '''
+        """
         self.start_time = self.start_time
         self.end_time = self.end_time
 
@@ -319,11 +319,11 @@ class VariableGroupBase(VariableGroup):
         return wpthvp
 
     def getThlp2Fallback(self, dataset_override = None):
-        '''
+        """
         This gets called if THLP2 isn't outputted in an nc file as a backup way of gathering the data for plotting.
         THLP2 = TL2
         :return:
-        '''
+        """
         self.start_time = self.start_time
         self.end_time = self.end_time
 
@@ -338,11 +338,11 @@ class VariableGroupBase(VariableGroup):
         return tl2_line
 
     def getRtpthlpFallback(self, dataset_override = None):
-        '''
+        """
         This gets called if Rtpthlp isn't outputted in an nc file as a backup way of gathering the data for plotting.
         Rtpthlp = TQ
         :return:
-        '''
+        """
         self.start_time = self.start_time
         self.end_time = self.end_time
 
@@ -357,11 +357,11 @@ class VariableGroupBase(VariableGroup):
         return thlp2
 
     def getRtp2Fallback(self, dataset_override = None):
-        '''
+        """
         This gets called if RTP2 isn't outputted in an nc file as a backup way of gathering the data for plotting.
         THLP2 = QT2 / 1e+6
         :return:
-        '''
+        """
         self.start_time = self.start_time
         self.end_time = self.end_time
 
@@ -378,12 +378,12 @@ class VariableGroupBase(VariableGroup):
         return rtp2_line
 
     def getRtp3Fallback(self, dataset_override=None):
-        '''
+        """
         Caclulates Rtp3 output
         rc_coef_zm .* rtprcp
 
         :return:
-        '''
+        """
         rtp3 = None
         if dataset_override is not None:
             dataset = dataset_override
@@ -403,12 +403,12 @@ class VariableGroupBase(VariableGroup):
         return rtp3
 
     def get_rc_coef_zm_X_wprcp_clubb_line(self, dataset_override=None):
-        '''
+        """
         Calculates the Contribution of Cloud Water Flux
         to wpthvp using the equation
         rc_coef_zm .* wprcp
         :return: Line representing rc_coef_zm .* wprcp
-        '''
+        """
         z_ncdf = NetCdfVariable('altitude', self.ncdf_files['zm'], 1)
 
         rc_coef_zm_ncdf = NetCdfVariable('rc_coef_zm', self.ncdf_files['zm'], 1, start_time=self.start_time, end_time=self.end_time, fill_zeros=True)
@@ -426,13 +426,13 @@ class VariableGroupBase(VariableGroup):
         return output
 
     def get_rc_coef_zm_X_wprcp_sam_line(self, dataset_override = None):
-        '''
+        """
         Calculates the Contribution of Cloud Water Flux
         to wpthvp for SAM using the equation
 
         sam eqn WPRCP * (2.5e6 / (1004.67*((PRES / 1000)^(287.04/1004.67))) - 1.61*THETAV)
         :return:
-        '''
+        """
 
         dataset = self.sam_file
         if dataset_override is not None:
@@ -452,12 +452,12 @@ class VariableGroupBase(VariableGroup):
 
     # rc_coef_zm. * thlprcp
     def get_rc_coef_zm_X_thlprcp_clubb_line(self, dataset_override = None):
-        '''
+        """
         Calculates the Contribution of Cloud Water Flux
         to thlprcp using the equation
         rc_coef_zm * thlprcp
         :return: Line representing rc_coef_zm .* thlprcp
-        '''
+        """
         z_ncdf = NetCdfVariable('altitude', self.ncdf_files['zm'], 1)
 
         rc_coef_zm_ncdf = NetCdfVariable('rc_coef_zm', self.ncdf_files['zm'], 1, start_time=self.start_time, end_time=self.end_time, fill_zeros=True)
@@ -475,12 +475,12 @@ class VariableGroupBase(VariableGroup):
         return output
     
     def get_rc_coef_zm_X_rtprcp_clubb_line(self, dataset_override = None):
-        '''
+        """
         Calculates the Contribution of Cloud Water Flux
         to rtprcp using the equation
         rc_coef_zm * rtprcp
         :return: Line representing rc_coef_zm .* rtprcp
-        '''
+        """
         z_ncdf = NetCdfVariable('altitude', self.ncdf_files['zm'], 1)
 
         rc_coef_zm_ncdf = NetCdfVariable('rc_coef_zm', self.ncdf_files['zm'], 1, start_time=self.start_time, end_time=self.end_time, fill_zeros=True)
@@ -498,11 +498,11 @@ class VariableGroupBase(VariableGroup):
         return output
 
     def getUwLesLine(self):
-        '''
+        """
         coamps eqn upwp = wpup + wpup_sgs
 
          :return: requested variable data in the form of a list. Returned data is already cropped to the appropriate min,max indices
-        '''
+        """
         dataset = None
 
         # Commented out until SAM output is needed for UW

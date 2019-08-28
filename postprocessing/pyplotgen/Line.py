@@ -1,16 +1,26 @@
+"""
+:author: Nicolas Strike
+:date: Early 2019
+"""
+
 from DataReader import NetCdfVariable
 
 
 class Line:
-    '''
-    This class holds information commonly passed around when using plotAll data.
+    """
+    This class holds information commonly passed around when using plot data.
     Data included is anything necessary to graph a line using pyplot, including the
-    numerical values, line format style, and a label for the plot
-    '''
+    numerical values, line format style, and a label for the plot. In the future we
+    would like to seperate the data from the format.
+    """
     def __init__(self, x_data, y_data, line_format = "", label ="Unlabeled plot"):
-        '''
-
-        '''
+        """
+        Create a new line
+        :param x_data: list of values to plot along x axis, must have same length as y
+        :param y_data: list of values to plot along y axis, must have same length as x
+        :param line_format: A str containing the format for the line plot. See pyplot docs for more info.
+        :param label: name of the line (e.g. 'current clubb')
+        """
         if len(x_data) != len(y_data):
             raise ValueError("The size of x is not the same as the size of Y. " + str(len(x_data)) + " (x) vs " + str(len(y_data)) + "(y)")
         if isinstance(x_data, NetCdfVariable):

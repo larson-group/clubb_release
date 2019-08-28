@@ -1,3 +1,59 @@
+"""
+:author: Nicolas Strike
+:date: Early 2019
+
+This file is mostly a definition of Cases. Each case is defined in the following format
+using python dictionaries (values surrounded with < > must have the < > removed to be valid).
+
+.. code-block:: python
+    :linenos:
+
+    CASENAME = {'name': 'casename', 'start_time': <numeric value>, 'end_time': <numeric value>,
+       'height_min_value': <numeric value>, 'height_max_value': <numeric value>,
+       'enabled': True, 'disable_budgets': False,
+       'blacklisted_vars': ['list', 'of', 'variable', 'names', 'to', 'exclude', 'from', 'plotting'],
+       'sam_file': <path to sam file>",
+       'coamps_file': <path to coamps file>,
+       'r408_file': {'zm': <path to r408 file>,
+                     'zt': <path to r408 file>,
+                     'sfc': <path to r408 file>},
+       'var_groups': [VariableGroupBase, <other variable groups to plot>]}
+
+**Important note**:
+When creating a new case, add it to the ALL_CASES list at the bottom of the file. Additionally, please add it in
+alphabetical order.
+
+**Case Definition values explained**:
+
+    *name*: must be the same as the filename without the extention.
+        E.g. to use lba_zt.nc and lba_zm.nc the case's name must be 'lba'. Extensions are determined
+        by the last instance of _
+
+    *start_time*: An integer value representing which timestep to begin the time-averaging interval.
+        Valid options are from 1 -> list minute value. Give in terms of clubb minutes.
+
+    *end_time*: An integer value representing which timestep to end the time-averaging interval.
+        Valid options are from 1 -> list minute value. Give in terms of clubb minutes.
+        Also used to determine where to stop timeseries plots
+
+    *height_min_value*: The elevation to begin height plots at
+
+    *height_max_value*: The elevation to end height plots at
+
+    *enabled*: If set to False, this case will not be plotted.
+
+    *blacklisted_vars*: List of variables to avoid plotting for this case. Names must use the clubb-name version
+
+    *sam_file*: Path to the SAM .nc file for this case (please use the SAM_OUTPUT_ROOT variable as a base).
+
+    *coamps_file*: dict containing paths to the coamps .nc files for this case (please use the LES_OUTPUT_ROOT variable as a base).
+
+    *r408_file*: dict containing paths to the r408 .nc files for this case (please use the R408_OUTPUT_ROOT variable as a base).
+
+    *var_groups*: list of python class names, where the classes use the naming scheme VariableGroup____.py and define a variable group.
+
+"""
+
 import os
 
 from VariableGroupBase import VariableGroupBase
@@ -13,9 +69,6 @@ LES_OUTPUT_ROOT = BENCHMARK_OUTPUT_ROOT + "les_runs"
 ARCHIVED_CLUBB_OUTPUT_ROOT = BENCHMARK_OUTPUT_ROOT + "archived_clubb_runs"
 R408_OUTPUT_ROOT = BENCHMARK_OUTPUT_ROOT + ""
 
-# the 'name' parameter must be the same as the filename without the extention.
-#   E.g. to use lba_zt.nc and lba_zm.nc the case's name must be 'lba'
-# Blacklisted variable names must use the clubb-name version
 
 ARM = {'name': 'arm', 'start_time': 481, 'end_time': 540, 'height_min_value': 0, 'height_max_value': 3500,
        'enabled': True, 'disable_budgets': False,
