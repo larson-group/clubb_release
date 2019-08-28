@@ -65,6 +65,8 @@ class PyPlotGen:
         self.data_reader = DataReader()
         self.diff_files_data_reader = DataReader()
         self.sam_data_reader = DataReader()
+        if self.output_folder[0] == '.':
+            self.output_folder = os.path.dirname(os.path.realpath(__file__)) + "/" + self.output_folder
 
     def run(self):
         """
@@ -100,6 +102,9 @@ class PyPlotGen:
             #     print("Clubb input nc files not found. Skipping case.")
         print('###########################################')
         print("\nGenerating webpage for viewing plots ")
+        if not os.path.exists(self.output_folder):
+            os.mkdir(self.output_folder)
+
         gallery.main(self.output_folder)
         print('###########################################')
         print("Output can be viewed at file://" + self.output_folder + "/index.html with a web browser")
