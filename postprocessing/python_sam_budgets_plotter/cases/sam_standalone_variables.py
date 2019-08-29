@@ -28,7 +28,7 @@ header = 'SAM standalone profiles'
 name = 'sam_standalone'                                     # String used as part of the output file name
 nc_files = ['sam']                                          # NetCDF files needed for plots, paths are defined
 # Put additional text entry into plot (TODO: Create lists for texts and positions for each plot)
-plotText = 'a)'                                             # Additional text entry to be put into plot
+plotText = ''                                             # Additional text entry to be put into plot
 textPos = (.1,.9)                                           # Position of text within plot in data coordinates (x,y)
 
 #-------------------------------------------------------------------------------

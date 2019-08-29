@@ -353,6 +353,7 @@ def plot_comparison(data_clubb, data_sam, level_clubb, level_sam, xLabel, yLabel
             if xmax-xmin >0:
                 ax.set_xlim(xmin, xmax)
     # Set tick label format to scalar formatter with length sensitive format (switch to scientific format when a set order of magnitude is reached)
+    ax.locator_params(axis='x',nbins=8)
     ticks = stick(useMathText=True)
     ticks.set_powerlimits(pow_lims)
     ax.xaxis.set_major_formatter(ticks)

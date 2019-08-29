@@ -29,7 +29,7 @@ header = 'SAM CLUBB comparison'
 name = 'sam_clubb_comparison'                               # String used as part of the output file name
 nc_files = ['clubb_zm', 'clubb_zt', 'sam']                  # NetCDF files needed for plots, paths are defined in case setup files
 # Put additional text entry into plot (TODO: Create lists for texts and positions for each plot)
-plotText = 'b)'                                             # Additional text entry to be put into plot
+plotText = ''                                             # Additional text entry to be put into plot
 textPos = (.93,.9)                                          # Position of text within plot in data coordinates (x,y)
 
 #-------------------------------------------------------------------------------
