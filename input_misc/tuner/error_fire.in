@@ -34,7 +34,7 @@ weight_case_nl(1)       = 1.0,
 /
 
 &initmax
-C1                           = 5.
+C1                           = 0.
 C1b                          = 0.
 C1c                          = 0.
 C2rt                         = 0.
@@ -44,14 +44,14 @@ C2                           = 0.
 C2b                          = 0.
 C2c                          = 0.
 C4                           = 0.
-C5                           = 0.
+C5                           = 1.
 C6rt                         = 0.
 C6rtb                        = 0.
 C6rtc                        = 0.
 C6thl                        = 0.
 C6thlb                       = 0.
 C6thlc                       = 0.
-C7                           = 1.
+C7                           = 0.
 C7b                          = 0.
 C7c                          = 0.
 C8                           = 0.
@@ -90,7 +90,7 @@ pdf_component_stdev_factor_w = 0.
 coef_spread_DG_means_rt      = 0.
 coef_spread_DG_means_thl     = 0.
 beta                         = 0.
-gamma_coef                   = 0.
+gamma_coef                   = 1.
 gamma_coefb                  = 0.
 gamma_coefc                  = 0.
 taumin                       = 0.
