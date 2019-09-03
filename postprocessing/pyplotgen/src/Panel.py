@@ -7,6 +7,8 @@ from datetime import datetime
 
 import matplotlib.pyplot as plt
 
+from config import Style_definitions
+
 
 class Panel:
     """
@@ -91,26 +93,23 @@ class Panel:
                 raise ValueError("X and Y data have different shapes X: "+str(x_data.shape)
                                  + "  Y:" + str(y_data.shape) + ". Attempted to plot " + self.title + " using X: " +
                                  self.x_title + "  Y: " + self.y_title)
-            if var.line_format == 'k-':
-                linewidth = 4
+            if var.line_format == Style_definitions.LES_LINE_STYLE:
+                linewidth = Style_definitions.LES_LINE_THICKNESS
             else:
-                linewidth = 2
+                linewidth = Style_definitions.DEFAULT_LINE_THICKNESS
             if thin_lines:
-                linewidth = 1
+                linewidth = Style_definitions.THIN_LINE_THICKNESS
             plt.plot(x_data, y_data, var.line_format, label=var.label, linewidth=linewidth)
         # plt.rcParams.update({'font.size': 16})
 
         # Set font sizes
-        SMALL_SIZE = 10
-        MEDIUM_SIZE = 12
-        BIGGER_SIZE = 16
-        plt.rc('font', size=SMALL_SIZE)          # controls default text sizes
-        plt.rc('axes', titlesize=BIGGER_SIZE)     # fontsize of the axes title
-        plt.rc('axes', labelsize=BIGGER_SIZE)    # fontsize of the x and y labels
-        plt.rc('xtick', labelsize=MEDIUM_SIZE)    # fontsize of the tick labels
-        plt.rc('ytick', labelsize=MEDIUM_SIZE)    # fontsize of the tick labels
-        plt.rc('legend', fontsize=SMALL_SIZE)    # legend fontsize
-        plt.rc('figure', titlesize=BIGGER_SIZE)  # fontsize of the figure title
+        plt.rc('font', size=Style_definitions.DEFAULT_TEXT_SIZE)          # controls default text sizes
+        plt.rc('axes', titlesize=Style_definitions.AXES_TITLE_FONT_SIZE)     # fontsize of the axes title
+        plt.rc('axes', labelsize=Style_definitions.AXES_LABEL_FONT_SIZE)    # fontsize of the x and y labels
+        plt.rc('xtick', labelsize=Style_definitions.X_TICKMARK_FONT_SIZE)    # fontsize of the tick labels
+        plt.rc('ytick', labelsize=Style_definitions.Y_TICKMARK_FONT_SIZE)    # fontsize of the tick labels
+        plt.rc('legend', fontsize=Style_definitions.LEGEND_FONT_SIZE)    # legend fontsize
+        plt.rc('figure', titlesize=Style_definitions.TITLE_TEXT_SIZE)  # fontsize of the figure title
 
         # Set titles
         plt.title(self.title)

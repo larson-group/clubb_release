@@ -271,6 +271,7 @@ class DataReader():
             keys = dataset.variables.keys()
             if varname in keys:
                 unit = dataset.variables[varname].units
+                break
             else:
                 unit = "n/a"
         return unit

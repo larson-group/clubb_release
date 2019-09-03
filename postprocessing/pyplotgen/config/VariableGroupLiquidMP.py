@@ -2,7 +2,7 @@
 :author: Nicolas Strike
 :date: Mid 2019
 '''
-
+from config import Style_definitions
 from src.DataReader import NetCdfVariable
 from src.Line import Line
 from src.Panel import Panel
@@ -55,7 +55,7 @@ class VariableGroupLiquidMP(VariableGroup):
         ncm = (nc * (10 ** 6) / rho)
 
         z_ncdf.constrain(self.height_min_value, self.height_max_value, data=z_ncdf.data)
-        ncm_line = Line(ncm, z_ncdf.data, line_format='k-', label='SAM-LES')
+        ncm_line = Line(ncm, z_ncdf.data, line_format=Style_definitions.LES_LINE_STYLE, label=Style_definitions.SAM_LABEL)
         return ncm_line
 
     def getNrmSamLine(self):
@@ -78,5 +78,5 @@ class VariableGroupLiquidMP(VariableGroup):
         nrm = (nr * (10 ** 6) / rho)
 
         z_ncdf.constrain(self.height_min_value, self.height_max_value)
-        nrm_line = Line(nrm, z_ncdf.data, line_format='k-', label='SAM-LES')
+        nrm_line = Line(nrm, z_ncdf.data, line_format=Style_definitions.LES_LINE_STYLE, label=Style_definitions.SAM_LABEL)
         return nrm_line

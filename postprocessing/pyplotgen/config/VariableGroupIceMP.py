@@ -2,7 +2,7 @@
 :author: Nicolas Strike
 :date: Mid 2019
 """
-
+from config import Style_definitions
 from src.Line import Line
 from src.Panel import Panel
 from src.VariableGroup import VariableGroup
@@ -43,7 +43,7 @@ class VariableGroupIceMP(VariableGroup):
         rho = self.__getFallbackVar__('RHO', self.sam_file, fill_zeros=True)
 
         nim = (ni * (10 ** 6) / rho)
-        nim_line = Line(nim, z, line_format='k-', label='SAM-LES')
+        nim_line = Line(nim, z, line_format=Style_definitions.LES_LINE_STYLE, label=Style_definitions.SAM_LABEL)
         return nim_line
 
     def getNsmSamLine(self):
@@ -58,6 +58,6 @@ class VariableGroupIceMP(VariableGroup):
         rho = self.__getFallbackVar__('RHO', self.sam_file, fill_zeros=True)
 
         nsm = (ns * (10 ** 6) / rho)
-        nsm_line = Line(nsm, z, line_format='k-', label='SAM-LES')
+        nsm_line = Line(nsm, z, line_format=Style_definitions.LES_LINE_STYLE, label=Style_definitions.SAM_LABEL)
         return nsm_line
 

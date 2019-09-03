@@ -2,7 +2,7 @@
 :author: Nicolas Strike
 :date: Mid 2019
 """
-
+from config import Style_definitions
 from src.DataReader import NetCdfVariable
 from src.Line import Line
 from src.Panel import Panel
@@ -108,7 +108,7 @@ class VariableGroupBase(VariableGroup):
         thlm = thetal + (2500.4 * (theta / tabs) * (qi / 1000))
 
         z_ncdf.constrain(self.height_min_value, self.height_max_value)
-        thlm_line = Line(thlm, z_ncdf.data, line_format="k-", label="SAM-LES")
+        thlm_line = Line(thlm, z_ncdf.data, line_format=Style_definitions.LES_LINE_STYLE, label=Style_definitions.SAM_LABEL)
         return thlm_line
 
     def getRtmSamLine(self):
@@ -134,7 +134,7 @@ class VariableGroupBase(VariableGroup):
         rtm = (qt - qi) / 1000
 
         z_ncdf.constrain(self.height_min_value, self.height_max_value)
-        rtm_line = Line(rtm, z_ncdf.data, line_format="k-", label="SAM-LES")
+        rtm_line = Line(rtm, z_ncdf.data, line_format=Style_definitions.LES_LINE_STYLE, label=Style_definitions.SAM_LABEL)
         return rtm_line
 
     def getSkwZtLesLine(self):
@@ -148,13 +148,13 @@ class VariableGroupBase(VariableGroup):
         if self.sam_file is not None:
             dataset = self.sam_file
             z_ncdf = NetCdfVariable('z', dataset, 1)
-            line_format = 'k-'
-            label = 'SAM-LES'
+            line_format = Style_definitions.LES_LINE_STYLE
+            label = Style_definitions.SAM_LABEL
 
         if self.coamps_file is not None:
             dataset = self.coamps_file['sm']
             z_ncdf = NetCdfVariable('lev', dataset, 1)
-            line_format = 'k-'
+            line_format = Style_definitions.LES_LINE_STYLE
             label = 'COAMPS-LES'
 
         wp3_ncdf = NetCdfVariable(['WP3', 'W3', 'wp3'], dataset, 1, start_time=self.start_time, end_time=self.end_time, fill_zeros=True) # TODO fill zeros tempfix until pyplotgen can handle multiple aliases
@@ -183,13 +183,13 @@ class VariableGroupBase(VariableGroup):
         if self.sam_file is not None:
             dataset = self.sam_file
             z_ncdf = NetCdfVariable('z', dataset, 1)
-            line_format = 'k-'
-            label = 'SAM-LES'
+            line_format = Style_definitions.LES_LINE_STYLE
+            label = Style_definitions.SAM_LABEL
 
         if self.coamps_file is not None:
             dataset = self.coamps_file['sm']
             z_ncdf = NetCdfVariable('lev', dataset, 1)
-            line_format = 'k-'
+            line_format = Style_definitions.LES_LINE_STYLE
             label = 'COAMPS-LES'
 
         # rtp3_ncdf = NetCdfVariable(['RTP3', 'qtp3'], dataset, 1, start_time=self.start_time, end_time=self.end_time, fill_zeros=True)# TODO fill zeros tempfix until pyplotgen can handle multiple aliases
@@ -220,13 +220,13 @@ class VariableGroupBase(VariableGroup):
         if self.sam_file is not None:
             dataset = self.sam_file
             z_ncdf = NetCdfVariable('z', dataset, 1)
-            line_format = 'k-'
-            label = 'SAM-LES'
+            line_format = Style_definitions.LES_LINE_STYLE
+            label = Style_definitions.SAM_LABEL
 
         if self.coamps_file is not None:
             dataset = self.coamps_file['sm']
             z_ncdf = NetCdfVariable('lev', dataset, 1)
-            line_format = 'k-'
+            line_format = Style_definitions.LES_LINE_STYLE
             label = 'COAMPS-LES'
 
         thlp3_ncdf = NetCdfVariable(['THLP3', 'thlp3'], dataset, 1, start_time=self.start_time, end_time=self.end_time, fill_zeros=True) # TODO fill zeros tempfix until pyplotgen can handle multiple aliases
@@ -265,7 +265,7 @@ class VariableGroupBase(VariableGroup):
         wpthlp = tlflux / (rho * 1004)
 
         z_ncdf.constrain(self.height_min_value, self.height_max_value)
-        wpthlp = Line(wpthlp, z_ncdf.data, line_format="k-", label="SAM-LES")
+        wpthlp = Line(wpthlp, z_ncdf.data, line_format=Style_definitions.LES_LINE_STYLE, label=Style_definitions.SAM_LABEL)
         return wpthlp
 
     def getWprtpFallback(self, dataset_override = None):
@@ -290,7 +290,7 @@ class VariableGroupBase(VariableGroup):
         wprtp = qtflux / (rho * 2.5104e+6)
 
         z_ncdf.constrain(self.height_min_value, self.height_max_value)
-        wprtp = Line(wprtp, z_ncdf.data, line_format="k-", label="SAM-LES")
+        wprtp = Line(wprtp, z_ncdf.data, line_format=Style_definitions.LES_LINE_STYLE, label=Style_definitions.SAM_LABEL)
         return wprtp
 
     def getWpthvpFallback(self, dataset_override = None):
@@ -315,7 +315,7 @@ class VariableGroupBase(VariableGroup):
         wpthvp = tvflux / (rho * 1004)
 
         z_ncdf.constrain(self.height_min_value, self.height_max_value)
-        wpthvp = Line(wpthvp, z_ncdf.data, line_format="k-", label="SAM-LES")
+        wpthvp = Line(wpthvp, z_ncdf.data, line_format=Style_definitions.LES_LINE_STYLE, label=Style_definitions.SAM_LABEL)
         return wpthvp
 
     def getThlp2Fallback(self, dataset_override = None):
@@ -334,7 +334,7 @@ class VariableGroupBase(VariableGroup):
         tl2 = tl2_ncdf.data
 
         z_ncdf.constrain(self.height_min_value, self.height_max_value)
-        tl2_line = Line(tl2, z_ncdf.data, line_format="k-", label="SAM-LES")
+        tl2_line = Line(tl2, z_ncdf.data, line_format=Style_definitions.LES_LINE_STYLE, label=Style_definitions.SAM_LABEL)
         return tl2_line
 
     def getRtpthlpFallback(self, dataset_override = None):
@@ -353,7 +353,7 @@ class VariableGroupBase(VariableGroup):
         tq2 = tq_ncdf.data
 
         z_ncdf.constrain(self.height_min_value, self.height_max_value)
-        thlp2 = Line(tq2, z_ncdf.data, line_format="k-", label="SAM-LES")
+        thlp2 = Line(tq2, z_ncdf.data, line_format=Style_definitions.LES_LINE_STYLE, label=Style_definitions.SAM_LABEL)
         return thlp2
 
     def getRtp2Fallback(self, dataset_override = None):
@@ -374,7 +374,7 @@ class VariableGroupBase(VariableGroup):
         rtp2 = qt2 / 1e6
 
         z_ncdf.constrain(self.height_min_value, self.height_max_value)
-        rtp2_line = Line(rtp2, z_ncdf.data, line_format="k-", label="SAM-LES")
+        rtp2_line = Line(rtp2, z_ncdf.data, line_format=Style_definitions.LES_LINE_STYLE, label=Style_definitions.SAM_LABEL)
         return rtp2_line
 
     def getRtp3Fallback(self, dataset_override=None):
@@ -447,7 +447,7 @@ class VariableGroupBase(VariableGroup):
         output = WPRCP * (2.5e6 / (1004.67*((PRES / 1000)**(287.04/1004.67))) - 1.61*THETAV)
 
         # z_ncdf.constrain(self.height_min_value, self.height_max_value)
-        output = Line(output, z, line_format='k-', label='SAM-LES')
+        output = Line(output, z, line_format=Style_definitions.LES_LINE_STYLE, label=Style_definitions.SAM_LABEL)
         return output
 
     # rc_coef_zm. * thlprcp
@@ -509,13 +509,13 @@ class VariableGroupBase(VariableGroup):
         # if self.sam_file is not None:
         #     dataset = self.sam_file
         #     z_ncdf = NetCdfVariable('z', dataset, 1)
-        #     line_format = 'k-'
-        #     label = 'SAM-LES'
+        #     line_format = Style_definitions.LES_LINE_STYLE
+        #     label = Style_definitions.SAM_LABEL
 
         if self.coamps_file is not None:
             dataset = self.coamps_file['sw']
             z_ncdf = self.__getFallbackVar__('lev', dataset)
-            line_format = 'k-'
+            line_format = Style_definitions.LES_LINE_STYLE
             label = 'COAMPS-LES'
 
         wpup = self.__getFallbackVar__('wpup', dataset)

@@ -6,6 +6,7 @@ from warnings import warn
 
 from netCDF4._netCDF4 import Dataset
 
+from config import Style_definitions
 from src.DataReader import DataReader, NetCdfVariable
 from src.Line import Line
 from src.Panel import Panel
@@ -44,7 +45,6 @@ class VariableGroup:
         self.end_time = case.end_time
         self.height_min_value = case.height_min_value
         self.height_max_value = case.height_max_value
-        self.default_line_format = 'b-'
 
         for variable in self.variable_definitions:
             print("\tProcessing ", variable['aliases'])
@@ -171,22 +171,22 @@ class VariableGroup:
 
         all_lines = []
         if sam_file is not None:
-            all_lines.extend(self.__getVarLines__(aliases, sam_file, conversion_factor=sam_conv_factor, label="SAM-LES",
-                                             line_format="k-", fill_zeros = fill_zeros, override_panel_type=panel_type,
+            all_lines.extend(self.__getVarLines__(aliases, sam_file, conversion_factor=sam_conv_factor, label=Style_definitions.SAM_LABEL,
+                                             line_format=Style_definitions.LES_LINE_STYLE, fill_zeros = fill_zeros, override_panel_type=panel_type,
                                              fallback_func=fallback, lines=lines))
 
         if coamps_file is not None:
-            all_lines.extend(self.__getVarLines__(aliases, coamps_file, conversion_factor=coamps_conv_factor,label="COAMPS-LES",
-                                                line_format="k-", fill_zeros = fill_zeros,override_panel_type=panel_type,
+            all_lines.extend(self.__getVarLines__(aliases, coamps_file, conversion_factor=coamps_conv_factor,label=Style_definitions.COAMPS_LABEL,
+                                                line_format=Style_definitions.LES_LINE_STYLE, fill_zeros = fill_zeros,override_panel_type=panel_type,
                                                 fallback_func=fallback, lines=lines))
 
         if r408_dataset is not None:
             all_lines.extend(self.__getVarLines__(aliases, r408_dataset, conversion_factor=r408_conv_factor,
-                                                  label="CLUBB r408 'best ever'",line_format="g-", fill_zeros = fill_zeros,
+                                                  label=Style_definitions.GOLAZ_LABEL,line_format=Style_definitions.GOLAZ_BEST_R408_LINE_STYLE, fill_zeros = fill_zeros,
                                                   override_panel_type=panel_type, fallback_func=fallback, lines=lines))
 
-        all_lines.extend(self.__getVarLines__(aliases, self.ncdf_files,label="current clubb",
-                                              line_format=self.default_line_format, fill_zeros = fill_zeros,
+        all_lines.extend(self.__getVarLines__(aliases, self.ncdf_files,label=Style_definitions.DEFAULT_LABEL,
+                                              line_format=Style_definitions.DEFAULT_LINE_STYLE, fill_zeros = fill_zeros,
                                               override_panel_type=panel_type, fallback_func=fallback, lines=lines))
 
         clubb_name = variable_def_dict['aliases'][0]
@@ -241,7 +241,7 @@ class VariableGroup:
 
         :param varname: str name of the clubb variable to be plotted, case sensitive
         :param ncdf_datasets: List of Dataset objects containing clubb or sam netcdf data
-        :param label: Label to give the base-plotAll on the legend. This is normally 'current clubb', but not provided as default to help avoid debugging confusion.
+        :param label: Label to give the base-plotAll on the legend. This is normally Style_definitions.DEFAULT_LABEL, but not provided as default to help avoid debugging confusion.
         :param line_format: Line formatting string used by matplotlib's PyPlot
         :param avg_axis: Axis over which to average values. 0 - time average, 1 - height average
         :param override_panel_type: Override the VariableGroup's default panel type
@@ -356,7 +356,7 @@ class VariableGroup:
                 if 'fallback_func' in line_definition.keys():
                     fallback = line_definition['fallback_func']
                     fallback_output = self.__getVarDataFromFallback__(fallback, varname, {'budget':dataset}, label, line_format)
-                    fallback_output = Line(fallback_output.x, z, line_format='k-', label='SAM-LES')
+                    fallback_output = Line(fallback_output.x, z, line_format=Style_definitions.LES_LINE_STYLE, label=Style_definitions.SAM_LABEL)
                     output_lines.append(fallback_output)
                     return output_lines
 
