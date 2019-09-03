@@ -3,9 +3,9 @@
 :date: Mid 2019
 """
 
-from Line import Line
-from Panel import Panel
-from VariableGroup import VariableGroup
+from src.Line import Line
+from src.Panel import Panel
+from src.VariableGroup import VariableGroup
 
 
 class VariableGroupIceMP(VariableGroup):

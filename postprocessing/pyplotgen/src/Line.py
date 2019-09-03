@@ -3,7 +3,7 @@
 :date: Early 2019
 """
 
-from DataReader import NetCdfVariable
+from src.DataReader import NetCdfVariable
 
 
 class Line:

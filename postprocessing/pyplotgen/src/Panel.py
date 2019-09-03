@@ -3,7 +3,6 @@
 :date: Mid 2019
 '''
 import os
-import string
 from datetime import datetime
 
 import matplotlib.pyplot as plt
@@ -110,7 +109,7 @@ class Panel:
         plt.rc('axes', labelsize=BIGGER_SIZE)    # fontsize of the x and y labels
         plt.rc('xtick', labelsize=MEDIUM_SIZE)    # fontsize of the tick labels
         plt.rc('ytick', labelsize=MEDIUM_SIZE)    # fontsize of the tick labels
-        plt.rc('legend', fontsize=MEDIUM_SIZE)    # legend fontsize
+        plt.rc('legend', fontsize=SMALL_SIZE)    # legend fontsize
         plt.rc('figure', titlesize=BIGGER_SIZE)  # fontsize of the figure title
 
         # Set titles
@@ -130,11 +129,15 @@ class Panel:
             os.mkdir(output_folder + "/" + casename)
         except FileExistsError:
             pass # do nothing
+
+        filename = self.panel_type + "_"+ str(datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+
         if self.panel_type == Panel.TYPE_BUDGET:
-            filename = str(datetime.now()) + self.panel_type + self.title
+            filename = filename + "_"+ self.title
         else:
-            filename = str(datetime.now()) + self.panel_type+ '_' + self.y_title + "_VS_" + self.x_title
-        filename = filename.translate(str.maketrans('', '', string.punctuation))
+            filename = filename + '_' + self.y_title + "_VS_" + self.x_title
+        # filename = filename.translate(str.maketrans('', '', string.punctuation))
+        filename = self.__remove_invalid_filename_chars__(filename)
         filename = filename.replace(' ', '_')
         rel_filename = output_folder + "/" +casename+'/' + filename
         if os.path.isfile(rel_filename+'.jpg') and replace_images is True:
@@ -144,3 +147,18 @@ class Panel:
         if os.path.isfile(rel_filename + '.jpg') and replace_images is False:
             print("\n\tImage " + rel_filename+'.jpg already exists. To overwrite this image during runtime pass in the --replace (-r) parameter.')
         plt.close()
+
+    def __remove_invalid_filename_chars__(self, filename):
+        """
+        Removes characters from a string that are not valid for a filename
+
+        :param filename: Filename string to have characters removed
+        :return: a character stripped version of the filename
+        """
+        filename = filename.replace('.', '')
+        # filename = filename.replace(':', '')
+        # filename = filename.replace('[', '')
+        # filename = filename.replace(']', '')
+        filename = filename.replace('/', '')
+        filename = filename.replace(',', '')
+        return filename

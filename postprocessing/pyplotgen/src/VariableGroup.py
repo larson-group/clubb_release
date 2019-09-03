@@ -6,9 +6,9 @@ from warnings import warn
 
 from netCDF4._netCDF4 import Dataset
 
-from DataReader import DataReader, NetCdfVariable
-from Line import Line
-from Panel import Panel
+from src.DataReader import DataReader, NetCdfVariable
+from src.Line import Line
+from src.Panel import Panel
 
 
 class VariableGroup:

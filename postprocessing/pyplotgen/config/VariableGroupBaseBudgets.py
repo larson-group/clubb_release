@@ -3,9 +3,9 @@
 :date: Mid 2019
 """
 
-from Line import Line
-from Panel import Panel
-from VariableGroup import VariableGroup
+from src.Line import Line
+from src.Panel import Panel
+from src.VariableGroup import VariableGroup
 
 
 class VariableGroupBaseBudgets(VariableGroup):
@@ -14,12 +14,7 @@ class VariableGroupBaseBudgets(VariableGroup):
     """
 
     def __init__(self, ncdf_datasets, case, sam_file=None, coamps_file=None, r408_dataset=None):
-        """
 
-        :param ncdf_datasets:
-        :param case:
-        :param sam_file:
-        """
         self.name = "base variables budgets"
         
         thlm_lines = [

@@ -5,9 +5,9 @@
 
 import numpy as np
 
-from DataReader import DataReader
-from Panel import Panel
-from VariableGroupBaseBudgets import VariableGroupBaseBudgets
+from config.VariableGroupBaseBudgets import VariableGroupBaseBudgets
+from src.DataReader import DataReader
+from src.Panel import Panel
 
 
 class Case:
@@ -37,7 +37,6 @@ class Case:
         self.name = case_definition['name']
         self.start_time = case_definition['start_time']
         self.end_time = case_definition['end_time']
-        self.enabled = case_definition['enabled']
         self.var_groups = case_definition['var_groups']
         self.height_min_value = case_definition['height_min_value']
         self.height_max_value = case_definition['height_max_value']

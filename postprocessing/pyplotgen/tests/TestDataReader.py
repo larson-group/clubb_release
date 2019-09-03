@@ -1,7 +1,8 @@
 import unittest
+
 import numpy as np
 
-from DataReader import DataReader
+from src.DataReader import DataReader
 
 
 class DataReaderTest(unittest.TestCase):

@@ -3,7 +3,7 @@
 :date: Mid 2019
 """
 
-from VariableGroup import VariableGroup
+from src.VariableGroup import VariableGroup
 
 
 class VariableGroupWs(VariableGroup):

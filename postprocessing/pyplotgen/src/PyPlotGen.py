@@ -11,10 +11,10 @@ import argparse
 import os
 import subprocess
 
-import Case_definitions
-from Case import Case
-from DataReader import DataReader
+from config import Case_definitions
 from python_html_gallery import gallery
+from src.Case import Case
+from src.DataReader import DataReader
 
 
 class PyPlotGen:
@@ -121,7 +121,8 @@ class PyPlotGen:
 
         # Ensure benchmark output is available
         print("Checking for model benchmark output...")
-        if not os.path.isfile(Case_definitions.BENCHMARK_OUTPUT_ROOT) and not os.path.islink(Case_definitions.BENCHMARK_OUTPUT_ROOT):
+        if not os.path.isfile(Case_definitions.BENCHMARK_OUTPUT_ROOT) and not os.path.islink(
+                Case_definitions.BENCHMARK_OUTPUT_ROOT):
             print("Benchmark output was not found in " + Case_definitions.BENCHMARK_OUTPUT_ROOT + ", downloading now.")
             subprocess.run(['git', 'clone', 'https://carson.math.uwm.edu/les_and_clubb_benchmark_runs.git'])
         else:
