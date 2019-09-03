@@ -6,6 +6,7 @@ import os
 from datetime import datetime
 
 import matplotlib.pyplot as plt
+import numpy as np
 
 from config import Style_definitions
 
@@ -84,11 +85,29 @@ class Panel:
         :param casename: The name of the case that's plotting this panel
         :return: None
         """
+
         plt.figure()
         plt.subplot(111)
+
+        # Set font sizes
+        plt.rc('font', size=Style_definitions.DEFAULT_TEXT_SIZE)          # controls default text sizes
+        plt.rc('axes', titlesize=Style_definitions.AXES_TITLE_FONT_SIZE)     # fontsize of the axes title
+        plt.rc('axes', labelsize=Style_definitions.AXES_LABEL_FONT_SIZE)    # fontsize of the x and y labels
+        plt.rc('xtick', labelsize=Style_definitions.X_TICKMARK_FONT_SIZE)    # fontsize of the tick labels
+        plt.rc('ytick', labelsize=Style_definitions.Y_TICKMARK_FONT_SIZE)    # fontsize of the tick labels
+        plt.rc('legend', fontsize=Style_definitions.LEGEND_FONT_SIZE)    # legend fontsize
+        plt.rc('figure', titlesize=Style_definitions.TITLE_TEXT_SIZE)  # fontsize of the figure title
+
+        plt.ticklabel_format(style='sci', axis='x', scilimits=(0,0))
+
+        max_panel_value = 0
         for var in self.all_plots:
             x_data = var.x
             y_data = var.y
+
+            max_variable_value = max(abs(np.amin(x_data)),np.amax(x_data))
+            max_panel_value = max(max_panel_value,max_variable_value)
+
             if x_data.shape[0] != y_data.shape[0]:
                 raise ValueError("X and Y data have different shapes X: "+str(x_data.shape)
                                  + "  Y:" + str(y_data.shape) + ". Attempted to plot " + self.title + " using X: " +
@@ -102,14 +121,6 @@ class Panel:
             plt.plot(x_data, y_data, var.line_format, label=var.label, linewidth=linewidth)
         # plt.rcParams.update({'font.size': 16})
 
-        # Set font sizes
-        plt.rc('font', size=Style_definitions.DEFAULT_TEXT_SIZE)          # controls default text sizes
-        plt.rc('axes', titlesize=Style_definitions.AXES_TITLE_FONT_SIZE)     # fontsize of the axes title
-        plt.rc('axes', labelsize=Style_definitions.AXES_LABEL_FONT_SIZE)    # fontsize of the x and y labels
-        plt.rc('xtick', labelsize=Style_definitions.X_TICKMARK_FONT_SIZE)    # fontsize of the tick labels
-        plt.rc('ytick', labelsize=Style_definitions.Y_TICKMARK_FONT_SIZE)    # fontsize of the tick labels
-        plt.rc('legend', fontsize=Style_definitions.LEGEND_FONT_SIZE)    # legend fontsize
-        plt.rc('figure', titlesize=Style_definitions.TITLE_TEXT_SIZE)  # fontsize of the figure title
 
         # Set titles
         plt.title(self.title)
@@ -117,6 +128,16 @@ class Panel:
         plt.xlabel(self.x_title)
         if no_legends is False:
             plt.figlegend()
+
+
+        ax = plt.gca()
+        ax.grid(Style_definitions.SHOW_GRID)
+        # Center budgets
+        if self.panel_type is Panel.TYPE_BUDGET:
+            plt.xlim(-1 * max_panel_value,max_panel_value)
+            # pass
+            # ax.spines['left'].set_position('zero')
+            # ax.spines['right'].set_color('none')
         # Create folders
         # Because os.mkdir("output") can fail and prevent os.mkdir("output/" + casename) from being called we must
         # use two separate try blokcs
@@ -129,7 +150,7 @@ class Panel:
         except FileExistsError:
             pass # do nothing
 
-        filename = self.panel_type + "_"+ str(datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+        filename = self.panel_type + "_"+ str(datetime.now())
 
         if self.panel_type == Panel.TYPE_BUDGET:
             filename = filename + "_"+ self.title

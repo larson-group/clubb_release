@@ -38,9 +38,9 @@ class VariableGroupIceMP(VariableGroup):
         (NI * 1e+6) ./ RHO
         :return:
         """
-        z = self.__getFallbackVar__('z', self.sam_file)
-        ni = self.__getFallbackVar__('NI', self.sam_file, fill_zeros=True)
-        rho = self.__getFallbackVar__('RHO', self.sam_file, fill_zeros=True)
+        z = self.__getVarForCalculations__('z', self.sam_file)
+        ni = self.__getVarForCalculations__('NI', self.sam_file, fill_zeros=True)
+        rho = self.__getVarForCalculations__('RHO', self.sam_file, fill_zeros=True)
 
         nim = (ni * (10 ** 6) / rho)
         nim_line = Line(nim, z, line_format=Style_definitions.LES_LINE_STYLE, label=Style_definitions.SAM_LABEL)
@@ -53,9 +53,9 @@ class VariableGroupIceMP(VariableGroup):
         :return:
         """
 
-        z = self.__getFallbackVar__('z', self.sam_file)
-        ns = self.__getFallbackVar__('NS', self.sam_file, fill_zeros=True)
-        rho = self.__getFallbackVar__('RHO', self.sam_file, fill_zeros=True)
+        z = self.__getVarForCalculations__('z', self.sam_file)
+        ns = self.__getVarForCalculations__('NS', self.sam_file, fill_zeros=True)
+        rho = self.__getVarForCalculations__('RHO', self.sam_file, fill_zeros=True)
 
         nsm = (ns * (10 ** 6) / rho)
         nsm_line = Line(nsm, z, line_format=Style_definitions.LES_LINE_STYLE, label=Style_definitions.SAM_LABEL)

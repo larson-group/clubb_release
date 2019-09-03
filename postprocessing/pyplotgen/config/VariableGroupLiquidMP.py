@@ -3,7 +3,6 @@
 :date: Mid 2019
 '''
 from config import Style_definitions
-from src.DataReader import NetCdfVariable
 from src.Line import Line
 from src.Panel import Panel
 from src.VariableGroup import VariableGroup
@@ -42,20 +41,13 @@ class VariableGroupLiquidMP(VariableGroup):
         (NC * 1e+6) ./ RHO
         :return:
         """
-
-        z_ncdf = NetCdfVariable('z', self.sam_file, 1)
-
-        nc_ncdf = NetCdfVariable('NC', self.sam_file, 1, start_time=self.start_time, end_time=self.end_time, fill_zeros=True)
-        nc_ncdf.constrain(self.height_min_value, self.height_max_value, data=z_ncdf.data)
-        nc = nc_ncdf.data
-        rho_ncdf = NetCdfVariable('RHO', self.sam_file, 1, start_time=self.start_time, end_time=self.end_time)
-        rho_ncdf.constrain(self.height_min_value, self.height_max_value, data=z_ncdf.data)
-        rho = rho_ncdf.data
+        z = self.__getVarForCalculations__('z', self.sam_file)
+        nc = self.__getVarForCalculations__('NC', self.sam_file, fill_zeros=True)
+        rho = self.__getVarForCalculations__('RHO', self.sam_file)
 
         ncm = (nc * (10 ** 6) / rho)
 
-        z_ncdf.constrain(self.height_min_value, self.height_max_value, data=z_ncdf.data)
-        ncm_line = Line(ncm, z_ncdf.data, line_format=Style_definitions.LES_LINE_STYLE, label=Style_definitions.SAM_LABEL)
+        ncm_line = Line(ncm, z, line_format=Style_definitions.LES_LINE_STYLE, label=Style_definitions.SAM_LABEL)
         return ncm_line
 
     def getNrmSamLine(self):
@@ -65,18 +57,11 @@ class VariableGroupLiquidMP(VariableGroup):
         :return:
         """
 
-        z_ncdf = NetCdfVariable('z', self.sam_file, 1)
-
-        nr_ncdf = NetCdfVariable('NR', self.sam_file, 1, start_time=self.start_time, end_time=self.end_time, fill_zeros=True)
-        nr_ncdf.constrain(self.height_min_value, self.height_max_value, data=z_ncdf.data)
-        nr = nr_ncdf.data
-
-        rho_ncdf = NetCdfVariable('RHO', self.sam_file, 1, start_time=self.start_time, end_time=self.end_time)
-        rho_ncdf.constrain(self.height_min_value, self.height_max_value, data=z_ncdf.data)
-        rho = rho_ncdf.data
+        z = self.__getVarForCalculations__('z', self.sam_file)
+        nr = self.__getVarForCalculations__('NR', self.sam_file, fill_zeros=True)
+        rho = self.__getVarForCalculations__('RHO', self.sam_file)
 
         nrm = (nr * (10 ** 6) / rho)
 
-        z_ncdf.constrain(self.height_min_value, self.height_max_value)
-        nrm_line = Line(nrm, z_ncdf.data, line_format=Style_definitions.LES_LINE_STYLE, label=Style_definitions.SAM_LABEL)
+        nrm_line = Line(nrm, z, line_format=Style_definitions.LES_LINE_STYLE, label=Style_definitions.SAM_LABEL)
         return nrm_line

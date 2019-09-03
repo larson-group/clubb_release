@@ -397,7 +397,7 @@ class VariableGroup:
                 warn("Fallback failed for variable " + str(varname) + ". Skipping it.\n" + str(e))
                 return None
 
-    def __getFallbackVar__(self, varname, dataset, conversion_factor = 1, fill_zeros = False):
+    def __getVarForCalculations__(self, varname, dataset, conversion_factor = 1, fill_zeros = False):
         """
         This function is used within a fallback function to get the data of a certain variable,
         constrained between a min/max height.

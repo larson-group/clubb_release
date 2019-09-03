@@ -83,32 +83,15 @@ class VariableGroupBase(VariableGroup):
         (THETAL + 2500.4.*(THETA./TABS).*(QI./1000))
         :return: requested variable data in the form of a list. Returned data is already cropped to the appropriate min,max indices
         """
-
-        self.start_time = self.start_time
-        self.end_time = self.end_time
-
-        z_ncdf = NetCdfVariable('z', self.sam_file, 1)
-
-        thetal_ncdf = NetCdfVariable('THETAL', self.sam_file, 1, start_time=self.start_time, end_time=self.end_time)
-        thetal_ncdf.constrain(self.height_min_value, self.height_max_value, data=z_ncdf.data)
-        thetal = thetal_ncdf.data
-
-        theta_ncdf = NetCdfVariable('THETA', self.sam_file, 1, start_time=self.start_time, end_time=self.end_time)
-        theta_ncdf.constrain(self.height_min_value, self.height_max_value, data=z_ncdf.data)
-        theta = theta_ncdf.data
-
-        tabs_ncdf = NetCdfVariable('TABS', self.sam_file, 1, start_time=self.start_time, end_time=self.end_time)
-        tabs_ncdf.constrain(self.height_min_value, self.height_max_value, data=z_ncdf.data)
-        tabs = tabs_ncdf.data
-
-        qi_ncdf = NetCdfVariable('QI', self.sam_file, 1, start_time=self.start_time, end_time=self.end_time, fill_zeros=True)
-        qi_ncdf.constrain(self.height_min_value, self.height_max_value, data=z_ncdf.data)
-        qi = qi_ncdf.data
+        z = self.__getVarForCalculations__('z', self.sam_file)
+        thetal = self.__getVarForCalculations__('THETAL', self.sam_file)
+        theta = self.__getVarForCalculations__('THETA', self.sam_file)
+        tabs = self.__getVarForCalculations__('TABS', self.sam_file)
+        qi = self.__getVarForCalculations__('QI', self.sam_file, fill_zeros=True)
 
         thlm = thetal + (2500.4 * (theta / tabs) * (qi / 1000))
 
-        z_ncdf.constrain(self.height_min_value, self.height_max_value)
-        thlm_line = Line(thlm, z_ncdf.data, line_format=Style_definitions.LES_LINE_STYLE, label=Style_definitions.SAM_LABEL)
+        thlm_line = Line(thlm, z, line_format=Style_definitions.LES_LINE_STYLE, label=Style_definitions.SAM_LABEL)
         return thlm_line
 
     def getRtmSamLine(self):
@@ -118,23 +101,14 @@ class VariableGroupBase(VariableGroup):
         (QT-QI) ./ 1000
         :return: requested variable data in the form of a list. Returned data is already cropped to the appropriate min,max indices
         """
-        self.start_time = self.start_time
-        self.end_time = self.end_time
+        z = self.__getVarForCalculations__('z', self.sam_file)
 
-        z_ncdf = NetCdfVariable('z', self.sam_file, 1)
-
-        qt_ncdf = NetCdfVariable('QT', self.sam_file, 1, start_time=self.start_time, end_time=self.end_time)
-        qt_ncdf.constrain(self.height_min_value, self.height_max_value, data=z_ncdf.data)
-        qt = qt_ncdf.data
-
-        qi_ncdf = NetCdfVariable('QI', self.sam_file, 1, start_time=self.start_time, end_time=self.end_time, fill_zeros=True)
-        qi_ncdf.constrain(self.height_min_value, self.height_max_value, data=z_ncdf.data)
-        qi = qi_ncdf.data
+        qt = self.__getVarForCalculations__('QT', self.sam_file)
+        qi = self.__getVarForCalculations__('QI', self.sam_file, fill_zeros=True)
 
         rtm = (qt - qi) / 1000
 
-        z_ncdf.constrain(self.height_min_value, self.height_max_value)
-        rtm_line = Line(rtm, z_ncdf.data, line_format=Style_definitions.LES_LINE_STYLE, label=Style_definitions.SAM_LABEL)
+        rtm_line = Line(rtm, z, line_format=Style_definitions.LES_LINE_STYLE, label=Style_definitions.SAM_LABEL)
         return rtm_line
 
     def getSkwZtLesLine(self):
@@ -147,28 +121,21 @@ class VariableGroupBase(VariableGroup):
         dataset = None
         if self.sam_file is not None:
             dataset = self.sam_file
-            z_ncdf = NetCdfVariable('z', dataset, 1)
             line_format = Style_definitions.LES_LINE_STYLE
             label = Style_definitions.SAM_LABEL
 
         if self.coamps_file is not None:
             dataset = self.coamps_file['sm']
-            z_ncdf = NetCdfVariable('lev', dataset, 1)
             line_format = Style_definitions.LES_LINE_STYLE
             label = 'COAMPS-LES'
 
-        wp3_ncdf = NetCdfVariable(['WP3', 'W3', 'wp3'], dataset, 1, start_time=self.start_time, end_time=self.end_time, fill_zeros=True) # TODO fill zeros tempfix until pyplotgen can handle multiple aliases
-        wp3_ncdf.constrain(self.height_min_value, self.height_max_value, data=z_ncdf.data)
-        wp3 = wp3_ncdf.data
-
-        wp2_ncdf = NetCdfVariable(['WP2', 'W2', 'wp2'], dataset, 1, start_time=self.start_time, end_time=self.end_time, fill_zeros=True)# TODO fill zeros tempfix until pyplotgen can handle multiple aliases
-        wp2_ncdf.constrain(self.height_min_value, self.height_max_value, data=z_ncdf.data)
-        wp2 = wp2_ncdf.data
+        z = self.__getVarForCalculations__(['z', 'lev', 'altitude'], dataset)
+        wp3 = self.__getVarForCalculations__(['WP3', 'W3', 'wp3'], dataset)
+        wp2 = self.__getVarForCalculations__(['WP2', 'W2', 'wp2'], dataset)
 
         skw_zt = wp3 / (wp2 + 1.6e-3) ** 1.5
 
-        z_ncdf.constrain(self.height_min_value, self.height_max_value)
-        skw_zt_line = Line(skw_zt, z_ncdf.data, line_format=line_format, label=label)
+        skw_zt_line = Line(skw_zt, z, line_format=line_format, label=label)
         return skw_zt_line
 
     def getSkrtZtLesLine(self):
@@ -182,30 +149,20 @@ class VariableGroupBase(VariableGroup):
         dataset = None
         if self.sam_file is not None:
             dataset = self.sam_file
-            z_ncdf = NetCdfVariable('z', dataset, 1)
             line_format = Style_definitions.LES_LINE_STYLE
             label = Style_definitions.SAM_LABEL
 
         if self.coamps_file is not None:
             dataset = self.coamps_file['sm']
-            z_ncdf = NetCdfVariable('lev', dataset, 1)
             line_format = Style_definitions.LES_LINE_STYLE
             label = 'COAMPS-LES'
 
-        # rtp3_ncdf = NetCdfVariable(['RTP3', 'qtp3'], dataset, 1, start_time=self.start_time, end_time=self.end_time, fill_zeros=True)# TODO fill zeros tempfix until pyplotgen can handle multiple aliases
-        # rtp3_ncdf.constrain(self.height_min_value, self.height_max_value, data=z_ncdf.data)
-        # rtp3 = rtp3_ncdf.data
-        #
-        # rtp2_ncdf = NetCdfVariable(['RTP2', 'qtp2'], dataset, 1, start_time=self.start_time, end_time=self.end_time, fill_zeros=True)# TODO fill zeros tempfix until pyplotgen can handle multiple aliases
-        # rtp2_ncdf.constrain(self.height_min_value, self.height_max_value, data=z_ncdf.data)
-        # rtp2 = rtp2_ncdf.data
-
-        rtp3 = self.__getFallbackVar__(['RTP3', 'qtp3'], dataset)
-        rtp2 = self.__getFallbackVar__(['RTP2', 'qtp2'], dataset)
+        z = self.__getVarForCalculations__(['z', 'lev', 'altitude'], dataset)
+        rtp3 = self.__getVarForCalculations__(['RTP3', 'qtp3'], dataset)
+        rtp2 = self.__getVarForCalculations__(['RTP2', 'qtp2'], dataset)
         skrtp_zt = rtp3 / (rtp2 + 4e-16) ** 1.5
 
-        z_ncdf.constrain(self.height_min_value, self.height_max_value, data=z_ncdf.data)
-        skrtp_zt_line = Line(skrtp_zt, z_ncdf.data, line_format=line_format, label=label)
+        skrtp_zt_line = Line(skrtp_zt, z, line_format=line_format, label=label)
         return skrtp_zt_line
 
     def getSkthlZtLesLine(self):
@@ -219,28 +176,21 @@ class VariableGroupBase(VariableGroup):
         dataset = None
         if self.sam_file is not None:
             dataset = self.sam_file
-            z_ncdf = NetCdfVariable('z', dataset, 1)
             line_format = Style_definitions.LES_LINE_STYLE
             label = Style_definitions.SAM_LABEL
 
         if self.coamps_file is not None:
             dataset = self.coamps_file['sm']
-            z_ncdf = NetCdfVariable('lev', dataset, 1)
             line_format = Style_definitions.LES_LINE_STYLE
             label = 'COAMPS-LES'
 
-        thlp3_ncdf = NetCdfVariable(['THLP3', 'thlp3'], dataset, 1, start_time=self.start_time, end_time=self.end_time, fill_zeros=True) # TODO fill zeros tempfix until pyplotgen can handle multiple aliases
-        thlp3_ncdf.constrain(self.height_min_value, self.height_max_value, data=z_ncdf.data)
-        thlp3 = thlp3_ncdf.data
-
-        thlp2_ncdf = NetCdfVariable(['THLP2', 'thlp2'], dataset, 1, start_time=self.start_time, end_time=self.end_time, fill_zeros=True) # TODO fill zeros tempfix until pyplotgen can handle multiple aliases
-        thlp2_ncdf.constrain(self.height_min_value, self.height_max_value, data=z_ncdf.data)
-        thlp2 = thlp2_ncdf.data
+        z = self.__getVarForCalculations__(['z', 'lev', 'altitude'], dataset)
+        thlp3 = self.__getVarForCalculations__(['THLP3', 'thlp3'], dataset)
+        thlp2 = self.__getVarForCalculations__(['THLP2', 'thlp2'], dataset)
 
         skthl_zt = thlp3 / (thlp2 + 4e-16) ** 1.5
 
-        z_ncdf.constrain(self.height_min_value, self.height_max_value)
-        skthl_zt_line = Line(skthl_zt, z_ncdf.data, line_format=line_format, label=label)
+        skthl_zt_line = Line(skthl_zt, z, line_format=line_format, label=label)
         return skthl_zt_line
 
     def getWpthlpFallback(self, dataset_override = None):
@@ -249,23 +199,13 @@ class VariableGroupBase(VariableGroup):
         WPTHLP = (TLFLUX) ./ (RHO * 1004)
         :return:
         """
-        self.start_time = self.start_time
-        self.end_time = self.end_time
-
-        z_ncdf = NetCdfVariable('z', self.sam_file, 1)
-
-        tlflux_ncdf = NetCdfVariable('TLFLUX', self.sam_file, 1, start_time=self.start_time, end_time=self.end_time)
-        tlflux_ncdf.constrain(self.height_min_value, self.height_max_value, data=z_ncdf.data)
-        tlflux = tlflux_ncdf.data
-
-        rho_ncdf = NetCdfVariable('RHO', self.sam_file, 1, start_time=self.start_time, end_time=self.end_time)
-        rho_ncdf.constrain(self.height_min_value, self.height_max_value, data=z_ncdf.data)
-        rho = rho_ncdf.data
+        z = self.__getVarForCalculations__(['z'], self.sam_file)
+        tlflux = self.__getVarForCalculations__(['TLFLUX'], self.sam_file)
+        rho = self.__getVarForCalculations__(['RHO'], self.sam_file)
 
         wpthlp = tlflux / (rho * 1004)
 
-        z_ncdf.constrain(self.height_min_value, self.height_max_value)
-        wpthlp = Line(wpthlp, z_ncdf.data, line_format=Style_definitions.LES_LINE_STYLE, label=Style_definitions.SAM_LABEL)
+        wpthlp = Line(wpthlp, z, line_format=Style_definitions.LES_LINE_STYLE, label=Style_definitions.SAM_LABEL)
         return wpthlp
 
     def getWprtpFallback(self, dataset_override = None):
@@ -390,15 +330,15 @@ class VariableGroupBase(VariableGroup):
         else:
             dataset = self.sam_file
         if 'rc_coef_zm' in dataset.variables.keys() and 'rtprcp' in dataset.variables.keys():
-            rc_coef_zm = self.__getFallbackVar__('rc_coef_zm', dataset)
-            rtprcp = self.__getFallbackVar__('rtprcp', dataset)
+            rc_coef_zm = self.__getVarForCalculations__('rc_coef_zm', dataset)
+            rtprcp = self.__getVarForCalculations__('rtprcp', dataset)
             rtp3 = rc_coef_zm * (rtprcp)
 
         elif 'QCFLUX' in dataset.variables.keys():
-            QCFLUX = self.__getFallbackVar__('QCFLUX', dataset)
-            RHO = self.__getFallbackVar__('RHO', dataset)
-            PRES = self.__getFallbackVar__('PRES', dataset)
-            THETAV = self.__getFallbackVar__('THETAV', dataset)
+            QCFLUX = self.__getVarForCalculations__('QCFLUX', dataset)
+            RHO = self.__getVarForCalculations__('RHO', dataset)
+            PRES = self.__getVarForCalculations__('PRES', dataset)
+            THETAV = self.__getVarForCalculations__('THETAV', dataset)
             rtp3 = ((QCFLUX) / (RHO * 2.5104e+6)) * (2.5e6 / (1004.67*((PRES / 1000)**(287.04/1004.67))) - 1.61*THETAV)
         return rtp3
 
@@ -409,20 +349,13 @@ class VariableGroupBase(VariableGroup):
         rc_coef_zm .* wprcp
         :return: Line representing rc_coef_zm .* wprcp
         """
-        z_ncdf = NetCdfVariable('altitude', self.ncdf_files['zm'], 1)
-
-        rc_coef_zm_ncdf = NetCdfVariable('rc_coef_zm', self.ncdf_files['zm'], 1, start_time=self.start_time, end_time=self.end_time, fill_zeros=True)
-        rc_coef_zm_ncdf.constrain(self.height_min_value, self.height_max_value, data=z_ncdf.data)
-        rc_coef_zm = rc_coef_zm_ncdf.data
-
-        wprcp_ncdf = NetCdfVariable('wprcp', self.ncdf_files['zm'], 1, start_time=self.start_time, end_time=self.end_time, fill_zeros=True)
-        wprcp_ncdf.constrain(self.height_min_value, self.height_max_value, data=z_ncdf.data)
-        wprcp = wprcp_ncdf.data
+        z = self.__getVarForCalculations__('altitude', self.ncdf_files['zm'])
+        rc_coef_zm = self.__getVarForCalculations__('rc_coef_zm', self.ncdf_files['zm'], fill_zeros=True)
+        wprcp = self.__getVarForCalculations__('wprcp', self.ncdf_files['zm'], fill_zeros=True)
 
         output = rc_coef_zm * wprcp
 
-        z_ncdf.constrain(self.height_min_value, self.height_max_value)
-        output = Line(output, z_ncdf.data, line_format='b-', label='current clubb')
+        output = Line(output, z, line_format=Style_definitions.DEFAULT_LINE_STYLE, label=Style_definitions.DEFAULT_LABEL)
         return output
 
     def get_rc_coef_zm_X_wprcp_sam_line(self, dataset_override = None):
@@ -438,15 +371,14 @@ class VariableGroupBase(VariableGroup):
         if dataset_override is not None:
             dataset = dataset_override
 
-        z = self.__getFallbackVar__('z', dataset)
+        z = self.__getVarForCalculations__('z', dataset)
 
-        WPRCP = self.__getFallbackVar__('WPRCP', dataset, fill_zeros=True)
-        PRES = self.__getFallbackVar__('PRES', dataset, fill_zeros=True)
-        THETAV = self.__getFallbackVar__('THETAV', dataset, fill_zeros=True)
+        WPRCP = self.__getVarForCalculations__('WPRCP', dataset, fill_zeros=True)
+        PRES = self.__getVarForCalculations__('PRES', dataset, fill_zeros=True)
+        THETAV = self.__getVarForCalculations__('THETAV', dataset, fill_zeros=True)
 
         output = WPRCP * (2.5e6 / (1004.67*((PRES / 1000)**(287.04/1004.67))) - 1.61*THETAV)
 
-        # z_ncdf.constrain(self.height_min_value, self.height_max_value)
         output = Line(output, z, line_format=Style_definitions.LES_LINE_STYLE, label=Style_definitions.SAM_LABEL)
         return output
 
@@ -458,20 +390,13 @@ class VariableGroupBase(VariableGroup):
         rc_coef_zm * thlprcp
         :return: Line representing rc_coef_zm .* thlprcp
         """
-        z_ncdf = NetCdfVariable('altitude', self.ncdf_files['zm'], 1)
-
-        rc_coef_zm_ncdf = NetCdfVariable('rc_coef_zm', self.ncdf_files['zm'], 1, start_time=self.start_time, end_time=self.end_time, fill_zeros=True)
-        rc_coef_zm_ncdf.constrain(self.height_min_value, self.height_max_value, data=z_ncdf.data)
-        rc_coef_zm = rc_coef_zm_ncdf.data
-
-        thlprcp_ncdf = NetCdfVariable('thlprcp', self.ncdf_files['zm'], 1, start_time=self.start_time, end_time=self.end_time, fill_zeros=True)
-        thlprcp_ncdf.constrain(self.height_min_value, self.height_max_value, data=z_ncdf.data)
-        thlprcp = thlprcp_ncdf.data
+        z = self.__getVarForCalculations__('altitude', self.ncdf_files['zm'])
+        rc_coef_zm = self.__getVarForCalculations__('rc_coef_zm', self.ncdf_files['zm'])
+        thlprcp = self.__getVarForCalculations__('thlprcp', self.ncdf_files['zm'])
 
         output = rc_coef_zm * thlprcp
 
-        z_ncdf.constrain(self.height_min_value, self.height_max_value)
-        output = Line(output, z_ncdf.data, line_format='b-', label='current clubb')
+        output = Line(output, z, line_format=Style_definitions.DEFAULT_LINE_STYLE, label=Style_definitions.DEFAULT_LABEL)
         return output
     
     def get_rc_coef_zm_X_rtprcp_clubb_line(self, dataset_override = None):
@@ -481,20 +406,13 @@ class VariableGroupBase(VariableGroup):
         rc_coef_zm * rtprcp
         :return: Line representing rc_coef_zm .* rtprcp
         """
-        z_ncdf = NetCdfVariable('altitude', self.ncdf_files['zm'], 1)
-
-        rc_coef_zm_ncdf = NetCdfVariable('rc_coef_zm', self.ncdf_files['zm'], 1, start_time=self.start_time, end_time=self.end_time, fill_zeros=True)
-        rc_coef_zm_ncdf.constrain(self.height_min_value, self.height_max_value, data=z_ncdf.data)
-        rc_coef_zm = rc_coef_zm_ncdf.data
-
-        rtprcp_ncdf = NetCdfVariable('rtprcp', self.ncdf_files['zm'], 1, start_time=self.start_time, end_time=self.end_time, fill_zeros=True)
-        rtprcp_ncdf.constrain(self.height_min_value, self.height_max_value, data=z_ncdf.data)
-        rtprcp = rtprcp_ncdf.data
+        z = self.__getVarForCalculations__('altitude', self.ncdf_files['zm'])
+        rc_coef_zm = self.__getVarForCalculations__('rc_coef_zm', self.ncdf_files['zm'])
+        rtprcp = self.__getVarForCalculations__('rtprcp', self.ncdf_files['zm'])
 
         output = rc_coef_zm * rtprcp
 
-        z_ncdf.constrain(self.height_min_value, self.height_max_value)
-        output = Line(output, z_ncdf.data, line_format='b-', label='current clubb')
+        output = Line(output, z, line_format=Style_definitions.DEFAULT_LINE_STYLE, label=Style_definitions.DEFAULT_LABEL)
         return output
 
     def getUwLesLine(self):
@@ -514,12 +432,12 @@ class VariableGroupBase(VariableGroup):
 
         if self.coamps_file is not None:
             dataset = self.coamps_file['sw']
-            z_ncdf = self.__getFallbackVar__('lev', dataset)
+            z_ncdf = self.__getVarForCalculations__('lev', dataset)
             line_format = Style_definitions.LES_LINE_STYLE
             label = 'COAMPS-LES'
 
-        wpup = self.__getFallbackVar__('wpup', dataset)
-        wpup_sgs = self.__getFallbackVar__('wpup_sgs', dataset)
+        wpup = self.__getVarForCalculations__('wpup', dataset)
+        wpup_sgs = self.__getVarForCalculations__('wpup_sgs', dataset)
 
 
         upwp = wpup + wpup_sgs
