@@ -133,6 +133,7 @@ def WriteGalleryPage(page):
 
     with open(static.index, 'w') as index_file:
         index_file.write(static.header % page)
+        index_file.write(static.case_title % page)
         index_file.write(static.timestamp % Now())
 
         try:

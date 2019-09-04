@@ -32,7 +32,6 @@ header = ("""<!doctype html>
       border-radius: 0.25em;
       margin: 1em auto;
       padding: 2em;
-      width: 1600px;
     }
     p {
       font-size: 16px;
@@ -56,6 +55,7 @@ header = ("""<!doctype html>
 br = '\n<br>'
 footer = '\n</div></body></html>'
 img_src = '\n<img src="%s">'
+case_title = '\n<h1>%s</h1>'
 timestamp = '\n<p>This page was created on %s</p>'
 url_dir = '\n<p><a href="%s" target="_blank">%s</a></p>'
 url_img = '\n<a href="%s" target="_blank"><img title="%s" src="%s"></a>'
