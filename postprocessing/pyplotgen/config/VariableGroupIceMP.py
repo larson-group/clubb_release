@@ -2,8 +2,6 @@
 :author: Nicolas Strike
 :date: Mid 2019
 """
-from config import Style_definitions
-from src.Line import Line
 from src.Panel import Panel
 from src.VariableGroup import VariableGroup
 
@@ -38,13 +36,12 @@ class VariableGroupIceMP(VariableGroup):
         (NI * 1e+6) ./ RHO
         :return:
         """
-        z = self.__getVarForCalculations__('z', self.sam_file)
-        ni = self.__getVarForCalculations__('NI', self.sam_file, fill_zeros=True)
-        rho = self.__getVarForCalculations__('RHO', self.sam_file, fill_zeros=True)
+        ni = self.getVarForCalculations('NI', self.sam_file, fill_zeros=True)
+        rho = self.getVarForCalculations('RHO', self.sam_file, fill_zeros=True)
+        z = self.getVarForCalculations(['z', 'lev', 'altitude'], self.sam_file)
 
         nim = (ni * (10 ** 6) / rho)
-        nim_line = Line(nim, z, line_format=Style_definitions.LES_LINE_STYLE, label=Style_definitions.SAM_LABEL)
-        return nim_line
+        return nim, z
 
     def getNsmSamLine(self):
         """
@@ -52,12 +49,10 @@ class VariableGroupIceMP(VariableGroup):
         (NS * 1e+6) ./ RHO
         :return:
         """
-
-        z = self.__getVarForCalculations__('z', self.sam_file)
-        ns = self.__getVarForCalculations__('NS', self.sam_file, fill_zeros=True)
-        rho = self.__getVarForCalculations__('RHO', self.sam_file, fill_zeros=True)
+        ns = self.getVarForCalculations('NS', self.sam_file, fill_zeros=True)
+        rho = self.getVarForCalculations('RHO', self.sam_file, fill_zeros=True)
+        z = self.getVarForCalculations(['z', 'lev', 'altitude'], self.sam_file)
 
         nsm = (ns * (10 ** 6) / rho)
-        nsm_line = Line(nsm, z, line_format=Style_definitions.LES_LINE_STYLE, label=Style_definitions.SAM_LABEL)
-        return nsm_line
+        return nsm, z
 

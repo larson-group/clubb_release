@@ -2,8 +2,6 @@
 :author: Nicolas Strike
 :date: Mid 2019
 '''
-from config import Style_definitions
-from src.Line import Line
 from src.Panel import Panel
 from src.VariableGroup import VariableGroup
 
@@ -41,14 +39,12 @@ class VariableGroupLiquidMP(VariableGroup):
         (NC * 1e+6) ./ RHO
         :return:
         """
-        z = self.__getVarForCalculations__('z', self.sam_file)
-        nc = self.__getVarForCalculations__('NC', self.sam_file, fill_zeros=True)
-        rho = self.__getVarForCalculations__('RHO', self.sam_file)
+        nc = self.getVarForCalculations('NC', self.sam_file, fill_zeros=True)
+        rho = self.getVarForCalculations('RHO', self.sam_file)
+        z = self.getVarForCalculations(['z', 'lev', 'altitude'], self.sam_file)
 
         ncm = (nc * (10 ** 6) / rho)
-
-        ncm_line = Line(ncm, z, line_format=Style_definitions.LES_LINE_STYLE, label=Style_definitions.SAM_LABEL)
-        return ncm_line
+        return ncm, z
 
     def getNrmSamLine(self):
         """
@@ -56,12 +52,9 @@ class VariableGroupLiquidMP(VariableGroup):
         (NR * 1e+6) ./ RHO
         :return:
         """
-
-        z = self.__getVarForCalculations__('z', self.sam_file)
-        nr = self.__getVarForCalculations__('NR', self.sam_file, fill_zeros=True)
-        rho = self.__getVarForCalculations__('RHO', self.sam_file)
+        nr = self.getVarForCalculations('NR', self.sam_file, fill_zeros=True)
+        rho = self.getVarForCalculations('RHO', self.sam_file)
+        z = self.getVarForCalculations(['z', 'lev', 'altitude'], self.sam_file)
 
         nrm = (nr * (10 ** 6) / rho)
-
-        nrm_line = Line(nrm, z, line_format=Style_definitions.LES_LINE_STYLE, label=Style_definitions.SAM_LABEL)
-        return nrm_line
+        return nrm, z

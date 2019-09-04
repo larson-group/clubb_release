@@ -376,4 +376,4 @@ ALL_CASES = [ARM, ARM_97, ASTEX_A209, ATEX,
              WANGARA
              ]
 
-# ALL_CASES = [BOMEX]
+# ALL_CASES = [JUN25_ALTOCU]

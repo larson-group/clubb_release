@@ -3,7 +3,6 @@
 :date: Mid 2019
 """
 
-from src.Line import Line
 from src.Panel import Panel
 from src.VariableGroup import VariableGroup
 
@@ -22,7 +21,7 @@ class VariableGroupBaseBudgets(VariableGroup):
             {'aliases': ['thlm_ma'], 'label': 'thlm_ma'},
             {'aliases': ['thlm_ta'], 'label': 'thlm_ta'},
             {'aliases': ['thlm_mc'], 'label': 'thlm_mc'},
-            {'aliases': ['thlm_clipping'], 'label': 'thlm_bt', 'fallback_func': self.getThlmClipping},
+            {'aliases': ['thlm_clipping'], 'label': 'thlm_clipping', 'fallback_func': self.getThlmClipping},
             {'aliases': ['radht'], 'label': 'radht'},
             {'aliases': ['lsforcing'], 'label': 'lsforcing', 'fallback_func': self.getLsforcing},
             {'aliases': ['thlm_residual'], 'label': 'thlm_residual', 'fallback_func': self.getThlmResidual},
@@ -213,16 +212,15 @@ class VariableGroupBaseBudgets(VariableGroup):
         :return:
         '''
 
-        z_ncdf = self.__getVarForCalculations__('altitude', self.ncdf_files['zt'], fill_zeros=True)
-        thlm_mfl = self.__getVarForCalculations__('thlm_mfl', self.ncdf_files['zt'], fill_zeros=True)
-        thlm_cl = self.__getVarForCalculations__('thlm_cl', self.ncdf_files['zt'], fill_zeros=True)
-        thlm_tacl = self.__getVarForCalculations__('thlm_tacl', self.ncdf_files['zt'], fill_zeros=True)
-        thlm_sdmp = self.__getVarForCalculations__('thlm_sdmp', self.ncdf_files['zt'], fill_zeros=True)
+        z = self.getVarForCalculations('altitude', self.ncdf_files['zt'], fill_zeros=True)
+        thlm_mfl = self.getVarForCalculations('thlm_mfl', self.ncdf_files['zt'], fill_zeros=True)
+        thlm_cl = self.getVarForCalculations('thlm_cl', self.ncdf_files['zt'], fill_zeros=True)
+        thlm_tacl = self.getVarForCalculations('thlm_tacl', self.ncdf_files['zt'], fill_zeros=True)
+        thlm_sdmp = self.getVarForCalculations('thlm_sdmp', self.ncdf_files['zt'], fill_zeros=True)
 
         output_data = thlm_mfl+thlm_cl+thlm_tacl+thlm_sdmp
-        output_line = Line(output_data, z_ncdf, line_format="", label="thlm_clipping")
 
-        return output_line
+        return output_data, z
 
     def getLsforcing(self, dataset_override = None):
         '''
@@ -231,37 +229,35 @@ class VariableGroupBaseBudgets(VariableGroup):
         thlm_forcing-radht-thlm_mc
         :return:
         '''
-        z_ncdf = self.__getVarForCalculations__('altitude', self.ncdf_files['zt'], fill_zeros=True)
-        thlm_forcing = self.__getVarForCalculations__('thlm_forcing', self.ncdf_files['zt'], fill_zeros=True)
-        radht = self.__getVarForCalculations__('radht', self.ncdf_files['zt'], fill_zeros=True)
-        thlm_mc = self.__getVarForCalculations__('thlm_mc', self.ncdf_files['zt'], fill_zeros=True)
+        z = self.getVarForCalculations('altitude', self.ncdf_files['zt'], fill_zeros=True)
+        thlm_forcing = self.getVarForCalculations('thlm_forcing', self.ncdf_files['zt'], fill_zeros=True)
+        radht = self.getVarForCalculations('radht', self.ncdf_files['zt'], fill_zeros=True)
+        thlm_mc = self.getVarForCalculations('thlm_mc', self.ncdf_files['zt'], fill_zeros=True)
 
         output_data = thlm_forcing - radht - thlm_mc
-        output_line = Line(output_data, z_ncdf, line_format="", label="lsforcing")
 
-        return output_line
-    
+        return output_data, z
+
     def getThlmResidual(self, dataset_override = None):
         '''
 
 
         thlm_bt-(thlm_ma+thlm_ta+thlm_mfl+thlm_cl+thlm_tacl+thlm_sdmp+thlm_forcing)
-        :return: 
+        :return:
         '''
-        z_ncdf = self.__getVarForCalculations__('altitude', self.ncdf_files['zt'], fill_zeros=True)
-        thlm_mfl = self.__getVarForCalculations__('thlm_mfl', self.ncdf_files['zt'], fill_zeros=True)
-        thlm_cl = self.__getVarForCalculations__('thlm_cl', self.ncdf_files['zt'], fill_zeros=True)
-        thlm_tacl = self.__getVarForCalculations__('thlm_tacl', self.ncdf_files['zt'], fill_zeros=True)
-        thlm_sdmp = self.__getVarForCalculations__('thlm_sdmp', self.ncdf_files['zt'], fill_zeros=True)
-        thlm_bt = self.__getVarForCalculations__('thlm_bt', self.ncdf_files['zt'], fill_zeros=True)
-        thlm_ta = self.__getVarForCalculations__('thlm_ta', self.ncdf_files['zt'], fill_zeros=True)
-        thlm_forcing = self.__getVarForCalculations__('thlm_forcing', self.ncdf_files['zt'], fill_zeros=True)
-        thlm_ma = self.__getVarForCalculations__('thlm_ma', self.ncdf_files['zt'], fill_zeros=True)
+        z = self.getVarForCalculations('altitude', self.ncdf_files['zt'], fill_zeros=True)
+        thlm_mfl = self.getVarForCalculations('thlm_mfl', self.ncdf_files['zt'], fill_zeros=True)
+        thlm_cl = self.getVarForCalculations('thlm_cl', self.ncdf_files['zt'], fill_zeros=True)
+        thlm_tacl = self.getVarForCalculations('thlm_tacl', self.ncdf_files['zt'], fill_zeros=True)
+        thlm_sdmp = self.getVarForCalculations('thlm_sdmp', self.ncdf_files['zt'], fill_zeros=True)
+        thlm_bt = self.getVarForCalculations('thlm_bt', self.ncdf_files['zt'], fill_zeros=True)
+        thlm_ta = self.getVarForCalculations('thlm_ta', self.ncdf_files['zt'], fill_zeros=True)
+        thlm_forcing = self.getVarForCalculations('thlm_forcing', self.ncdf_files['zt'], fill_zeros=True)
+        thlm_ma = self.getVarForCalculations('thlm_ma', self.ncdf_files['zt'], fill_zeros=True)
 
         output_data = thlm_bt-(thlm_ma+thlm_ta+thlm_mfl+thlm_cl+thlm_tacl+thlm_sdmp+thlm_forcing)
-        output_line = Line(output_data, z_ncdf, line_format="", label="thlm_clipping")
 
-        return output_line
+        return output_data, z
 
     def getRtmClipping(self, dataset_override = None):
         '''
@@ -270,16 +266,15 @@ class VariableGroupBaseBudgets(VariableGroup):
         rtm_mfl + rtm_cl + rtm_tacl + rtm_sdmp
         :return:
         '''
-        z_ncdf = self.__getVarForCalculations__('altitude', self.ncdf_files['zt'], fill_zeros=True)
-        rtm_mfl = self.__getVarForCalculations__('rtm_mfl', self.ncdf_files['zt'], fill_zeros=True)
-        rtm_cl = self.__getVarForCalculations__('rtm_cl', self.ncdf_files['zt'], fill_zeros=True)
-        rtm_tacl = self.__getVarForCalculations__('rtm_tacl', self.ncdf_files['zt'], fill_zeros=True)
-        rtm_sdmp = self.__getVarForCalculations__('rtm_sdmp', self.ncdf_files['zt'], fill_zeros=True)
+        z = self.getVarForCalculations('altitude', self.ncdf_files['zt'], fill_zeros=True)
+        rtm_mfl = self.getVarForCalculations('rtm_mfl', self.ncdf_files['zt'], fill_zeros=True)
+        rtm_cl = self.getVarForCalculations('rtm_cl', self.ncdf_files['zt'], fill_zeros=True)
+        rtm_tacl = self.getVarForCalculations('rtm_tacl', self.ncdf_files['zt'], fill_zeros=True)
+        rtm_sdmp = self.getVarForCalculations('rtm_sdmp', self.ncdf_files['zt'], fill_zeros=True)
 
         output_data = rtm_mfl + rtm_cl + rtm_tacl + rtm_sdmp
-        output_line = Line(output_data, z_ncdf, line_format="", label="rtm_clipping")
 
-        return output_line
+        return output_data, z
 
     def getRtmForcing(self, dataset_override = None):
         '''
@@ -288,14 +283,13 @@ class VariableGroupBaseBudgets(VariableGroup):
         rtm_forcing - rtm_mc
         :return:
         '''
-        z_ncdf = self.__getVarForCalculations__('altitude', self.ncdf_files['zt'], fill_zeros=True)
-        rtm_mc = self.__getVarForCalculations__('rtm_mc', self.ncdf_files['zt'], fill_zeros=True)
-        rtm_forcing = self.__getVarForCalculations__('rtm_forcing', self.ncdf_files['zt'], fill_zeros=True)
+        z = self.getVarForCalculations('altitude', self.ncdf_files['zt'], fill_zeros=True)
+        rtm_mc = self.getVarForCalculations('rtm_mc', self.ncdf_files['zt'], fill_zeros=True)
+        rtm_forcing = self.getVarForCalculations('rtm_forcing', self.ncdf_files['zt'], fill_zeros=True)
 
         output_data = rtm_forcing - rtm_mc
-        output_line = Line(output_data, z_ncdf, line_format="", label="rtm_forcinng")
 
-        return output_line
+        return output_data, z
 
     def getRtmResidual(self, dataset_override = None):
         '''
@@ -304,21 +298,20 @@ class VariableGroupBaseBudgets(VariableGroup):
         rtm_bt - (rtm_ma + rtm_ta + rtm_mfl + rtm_cl + rtm_tacl + rtm_sdmp + rtm_forcing + rtm_pd)
         :return:
         '''
-        z_ncdf = self.__getVarForCalculations__('altitude', self.ncdf_files['zt'], fill_zeros=True)
-        rtm_mfl = self.__getVarForCalculations__('rtm_mfl', self.ncdf_files['zt'], fill_zeros=True)
-        rtm_cl = self.__getVarForCalculations__('rtm_cl', self.ncdf_files['zt'], fill_zeros=True)
-        rtm_tacl = self.__getVarForCalculations__('rtm_tacl', self.ncdf_files['zt'], fill_zeros=True)
-        rtm_sdmp = self.__getVarForCalculations__('rtm_sdmp', self.ncdf_files['zt'], fill_zeros=True)
-        rtm_bt = self.__getVarForCalculations__('rtm_bt', self.ncdf_files['zt'], fill_zeros=True)
-        rtm_ta = self.__getVarForCalculations__('rtm_ta', self.ncdf_files['zt'], fill_zeros=True)
-        rtm_forcing = self.__getVarForCalculations__('rtm_forcing', self.ncdf_files['zt'], fill_zeros=True)
-        rtm_pd = self.__getVarForCalculations__('rtm_pd', self.ncdf_files['zt'], fill_zeros=True)
-        rtm_ma = self.__getVarForCalculations__('rtm_ma', self.ncdf_files['zt'], fill_zeros=True)
+        z = self.getVarForCalculations('altitude', self.ncdf_files['zt'], fill_zeros=True)
+        rtm_mfl = self.getVarForCalculations('rtm_mfl', self.ncdf_files['zt'], fill_zeros=True)
+        rtm_cl = self.getVarForCalculations('rtm_cl', self.ncdf_files['zt'], fill_zeros=True)
+        rtm_tacl = self.getVarForCalculations('rtm_tacl', self.ncdf_files['zt'], fill_zeros=True)
+        rtm_sdmp = self.getVarForCalculations('rtm_sdmp', self.ncdf_files['zt'], fill_zeros=True)
+        rtm_bt = self.getVarForCalculations('rtm_bt', self.ncdf_files['zt'], fill_zeros=True)
+        rtm_ta = self.getVarForCalculations('rtm_ta', self.ncdf_files['zt'], fill_zeros=True)
+        rtm_forcing = self.getVarForCalculations('rtm_forcing', self.ncdf_files['zt'], fill_zeros=True)
+        rtm_pd = self.getVarForCalculations('rtm_pd', self.ncdf_files['zt'], fill_zeros=True)
+        rtm_ma = self.getVarForCalculations('rtm_ma', self.ncdf_files['zt'], fill_zeros=True)
 
         output_data = rtm_bt - (rtm_ma + rtm_ta + rtm_mfl + rtm_cl + rtm_tacl + rtm_sdmp + rtm_forcing + rtm_pd)
-        output_line = Line(output_data, z_ncdf, line_format="", label="rtm_residual")
 
-        return output_line
+        return output_data, z
 
     def getWpthlpResidual(self, dataset_override = None):
         '''
@@ -327,27 +320,26 @@ class VariableGroupBaseBudgets(VariableGroup):
         wpthlp_bt - (wpthlp_ma + wpthlp_ta + wpthlp_tp + wpthlp_ac + wpthlp_bp + wpthlp_pr1 + wpthlp_pr2 + wpthlp_pr3 + wpthlp_dp1 + wpthlp_mfl + wpthlp_cl + wpthlp_sicl + wpthlp_forcing)
         :return:
         '''
-        z_ncdf = self.__getVarForCalculations__('altitude', self.ncdf_files['zm'], fill_zeros=True)
-        wpthlp_mfl = self.__getVarForCalculations__('wpthlp_mfl', self.ncdf_files['zm'], fill_zeros=True)
-        wpthlp_cl = self.__getVarForCalculations__('wpthlp_cl', self.ncdf_files['zm'], fill_zeros=True)
-        wpthlp_tp = self.__getVarForCalculations__('wpthlp_tp', self.ncdf_files['zm'], fill_zeros=True)
-        wpthlp_ac = self.__getVarForCalculations__('wpthlp_ac', self.ncdf_files['zm'], fill_zeros=True)
-        wpthlp_pr1 = self.__getVarForCalculations__('wpthlp_pr1', self.ncdf_files['zm'], fill_zeros=True)
-        wpthlp_pr3 = self.__getVarForCalculations__('wpthlp_pr3', self.ncdf_files['zm'], fill_zeros=True)
-        wpthlp_pr2 = self.__getVarForCalculations__('wpthlp_pr2', self.ncdf_files['zm'], fill_zeros=True)
-        wpthlp_dp1 = self.__getVarForCalculations__('wpthlp_dp1', self.ncdf_files['zm'], fill_zeros=True)
-        wpthlp_sicl = self.__getVarForCalculations__('wpthlp_sicl', self.ncdf_files['zm'], fill_zeros=True)
-        wpthlp_bt = self.__getVarForCalculations__('wpthlp_bt', self.ncdf_files['zm'], fill_zeros=True)
-        wpthlp_ta = self.__getVarForCalculations__('wpthlp_ta', self.ncdf_files['zm'], fill_zeros=True)
-        wpthlp_forcing = self.__getVarForCalculations__('wpthlp_forcing', self.ncdf_files['zm'], fill_zeros=True)
-        wpthlp_bp = self.__getVarForCalculations__('wpthlp_bp', self.ncdf_files['zm'], fill_zeros=True)
-        wpthlp_ma = self.__getVarForCalculations__('wpthlp_ma', self.ncdf_files['zm'], fill_zeros=True)
+        z = self.getVarForCalculations('altitude', self.ncdf_files['zm'], fill_zeros=True)
+        wpthlp_mfl = self.getVarForCalculations('wpthlp_mfl', self.ncdf_files['zm'], fill_zeros=True)
+        wpthlp_cl = self.getVarForCalculations('wpthlp_cl', self.ncdf_files['zm'], fill_zeros=True)
+        wpthlp_tp = self.getVarForCalculations('wpthlp_tp', self.ncdf_files['zm'], fill_zeros=True)
+        wpthlp_ac = self.getVarForCalculations('wpthlp_ac', self.ncdf_files['zm'], fill_zeros=True)
+        wpthlp_pr1 = self.getVarForCalculations('wpthlp_pr1', self.ncdf_files['zm'], fill_zeros=True)
+        wpthlp_pr3 = self.getVarForCalculations('wpthlp_pr3', self.ncdf_files['zm'], fill_zeros=True)
+        wpthlp_pr2 = self.getVarForCalculations('wpthlp_pr2', self.ncdf_files['zm'], fill_zeros=True)
+        wpthlp_dp1 = self.getVarForCalculations('wpthlp_dp1', self.ncdf_files['zm'], fill_zeros=True)
+        wpthlp_sicl = self.getVarForCalculations('wpthlp_sicl', self.ncdf_files['zm'], fill_zeros=True)
+        wpthlp_bt = self.getVarForCalculations('wpthlp_bt', self.ncdf_files['zm'], fill_zeros=True)
+        wpthlp_ta = self.getVarForCalculations('wpthlp_ta', self.ncdf_files['zm'], fill_zeros=True)
+        wpthlp_forcing = self.getVarForCalculations('wpthlp_forcing', self.ncdf_files['zm'], fill_zeros=True)
+        wpthlp_bp = self.getVarForCalculations('wpthlp_bp', self.ncdf_files['zm'], fill_zeros=True)
+        wpthlp_ma = self.getVarForCalculations('wpthlp_ma', self.ncdf_files['zm'], fill_zeros=True)
 
         output_data = wpthlp_bt - (wpthlp_ma + wpthlp_ta + wpthlp_tp + wpthlp_ac + wpthlp_bp + wpthlp_pr1 + wpthlp_pr2 + wpthlp_pr3 + wpthlp_dp1 + wpthlp_mfl + wpthlp_cl + wpthlp_sicl + wpthlp_forcing)
-        output_line = Line(output_data, z_ncdf, line_format="", label="wpthlp_residual")
 
-        return output_line
-    
+        return output_data, z
+
     def getWprtpResidual(self, dataset_override = None):
         '''
 
@@ -355,27 +347,26 @@ class VariableGroupBaseBudgets(VariableGroup):
         wprtp_bt - (wprtp_ma + wprtp_ta + wprtp_tp + wprtp_ac + wprtp_bp + wprtp_pr1 + wprtp_pr2 + wprtp_pr3 + wprtp_dp1 + wprtp_mfl + wprtp_cl + wprtp_sicl + wprtp_forcing)
         :return:
         '''
-        z_ncdf = self.__getVarForCalculations__('altitude', self.ncdf_files['zm'], fill_zeros=True)
-        wprtp_mfl = self.__getVarForCalculations__('wprtp_mfl', self.ncdf_files['zm'], fill_zeros=True)
-        wprtp_cl = self.__getVarForCalculations__('wprtp_cl', self.ncdf_files['zm'], fill_zeros=True)
-        wprtp_tp = self.__getVarForCalculations__('wprtp_tp', self.ncdf_files['zm'], fill_zeros=True)
-        wprtp_ac = self.__getVarForCalculations__('wprtp_ac', self.ncdf_files['zm'], fill_zeros=True)
-        wprtp_pr1 = self.__getVarForCalculations__('wprtp_pr1', self.ncdf_files['zm'], fill_zeros=True)
-        wprtp_pr3 = self.__getVarForCalculations__('wprtp_pr3', self.ncdf_files['zm'], fill_zeros=True)
-        wprtp_pr2 = self.__getVarForCalculations__('wprtp_pr2', self.ncdf_files['zm'], fill_zeros=True)
-        wprtp_dp1 = self.__getVarForCalculations__('wprtp_dp1', self.ncdf_files['zm'], fill_zeros=True)
-        wprtp_sicl = self.__getVarForCalculations__('wprtp_sicl', self.ncdf_files['zm'], fill_zeros=True)
-        wprtp_bt = self.__getVarForCalculations__('wprtp_bt', self.ncdf_files['zm'], fill_zeros=True)
-        wprtp_ta = self.__getVarForCalculations__('wprtp_ta', self.ncdf_files['zm'], fill_zeros=True)
-        wprtp_forcing = self.__getVarForCalculations__('wprtp_forcing', self.ncdf_files['zm'], fill_zeros=True)
-        wprtp_bp = self.__getVarForCalculations__('wprtp_bp', self.ncdf_files['zm'], fill_zeros=True)
-        wprtp_ma = self.__getVarForCalculations__('wprtp_ma', self.ncdf_files['zm'], fill_zeros=True)
-        wprtp_pd = self.__getVarForCalculations__('wprtp_pd', self.ncdf_files['zm'], fill_zeros=True)
+        z = self.getVarForCalculations('altitude', self.ncdf_files['zm'], fill_zeros=True)
+        wprtp_mfl = self.getVarForCalculations('wprtp_mfl', self.ncdf_files['zm'], fill_zeros=True)
+        wprtp_cl = self.getVarForCalculations('wprtp_cl', self.ncdf_files['zm'], fill_zeros=True)
+        wprtp_tp = self.getVarForCalculations('wprtp_tp', self.ncdf_files['zm'], fill_zeros=True)
+        wprtp_ac = self.getVarForCalculations('wprtp_ac', self.ncdf_files['zm'], fill_zeros=True)
+        wprtp_pr1 = self.getVarForCalculations('wprtp_pr1', self.ncdf_files['zm'], fill_zeros=True)
+        wprtp_pr3 = self.getVarForCalculations('wprtp_pr3', self.ncdf_files['zm'], fill_zeros=True)
+        wprtp_pr2 = self.getVarForCalculations('wprtp_pr2', self.ncdf_files['zm'], fill_zeros=True)
+        wprtp_dp1 = self.getVarForCalculations('wprtp_dp1', self.ncdf_files['zm'], fill_zeros=True)
+        wprtp_sicl = self.getVarForCalculations('wprtp_sicl', self.ncdf_files['zm'], fill_zeros=True)
+        wprtp_bt = self.getVarForCalculations('wprtp_bt', self.ncdf_files['zm'], fill_zeros=True)
+        wprtp_ta = self.getVarForCalculations('wprtp_ta', self.ncdf_files['zm'], fill_zeros=True)
+        wprtp_forcing = self.getVarForCalculations('wprtp_forcing', self.ncdf_files['zm'], fill_zeros=True)
+        wprtp_bp = self.getVarForCalculations('wprtp_bp', self.ncdf_files['zm'], fill_zeros=True)
+        wprtp_ma = self.getVarForCalculations('wprtp_ma', self.ncdf_files['zm'], fill_zeros=True)
+        wprtp_pd = self.getVarForCalculations('wprtp_pd', self.ncdf_files['zm'], fill_zeros=True)
 
         output_data = wprtp_bt - (wprtp_ma + wprtp_ta + wprtp_tp + wprtp_ac + wprtp_bp + wprtp_pr1 + wprtp_pr2 + wprtp_pr3 + wprtp_dp1 + wprtp_mfl + wprtp_cl + wprtp_sicl + wprtp_pd + wprtp_forcing)
-        output_line = Line(output_data, z_ncdf, line_format="", label="wprtp_residual")
 
-        return output_line
+        return output_data, z
 
     def getWp2Residual(self, dataset_override = None):
         '''
@@ -384,26 +375,25 @@ class VariableGroupBaseBudgets(VariableGroup):
         wp2_bt - (wp2_ma + wp2_ta + wp2_tp + wp2_ac + wp2_bp + wp2_pr1 + wp2_pr2 + wp2_pr3 + wp2_dp1 + wp2_mfl + wp2_cl + wp2_sicl + wp2_forcing)
         :return:
         '''
-        z_ncdf = self.__getVarForCalculations__('altitude', self.ncdf_files['zm'], fill_zeros=True)
-        wp2_sf = self.__getVarForCalculations__('wp2_sf', self.ncdf_files['zm'], fill_zeros=True)
-        wp2_cl = self.__getVarForCalculations__('wp2_cl', self.ncdf_files['zm'], fill_zeros=True)
-        wp2_ac = self.__getVarForCalculations__('wp2_ac', self.ncdf_files['zm'], fill_zeros=True)
-        wp2_pr1 = self.__getVarForCalculations__('wp2_pr1', self.ncdf_files['zm'], fill_zeros=True)
-        wp2_pr3 = self.__getVarForCalculations__('wp2_pr3', self.ncdf_files['zm'], fill_zeros=True)
-        wp2_pr2 = self.__getVarForCalculations__('wp2_pr2', self.ncdf_files['zm'], fill_zeros=True)
-        wp2_dp1 = self.__getVarForCalculations__('wp2_dp1', self.ncdf_files['zm'], fill_zeros=True)
-        wp2_dp2 = self.__getVarForCalculations__('wp2_dp2', self.ncdf_files['zm'], fill_zeros=True)
-        wp2_bt = self.__getVarForCalculations__('wp2_bt', self.ncdf_files['zm'], fill_zeros=True)
-        wp2_ta = self.__getVarForCalculations__('wp2_ta', self.ncdf_files['zm'], fill_zeros=True)
-        wp2_splat = self.__getVarForCalculations__('wp2_splat', self.ncdf_files['zm'], fill_zeros=True)
-        wp2_bp = self.__getVarForCalculations__('wp2_bp', self.ncdf_files['zm'], fill_zeros=True)
-        wp2_ma = self.__getVarForCalculations__('wp2_ma', self.ncdf_files['zm'], fill_zeros=True)
-        wp2_pd = self.__getVarForCalculations__('wp2_pd', self.ncdf_files['zm'], fill_zeros=True)
+        z = self.getVarForCalculations('altitude', self.ncdf_files['zm'], fill_zeros=True)
+        wp2_sf = self.getVarForCalculations('wp2_sf', self.ncdf_files['zm'], fill_zeros=True)
+        wp2_cl = self.getVarForCalculations('wp2_cl', self.ncdf_files['zm'], fill_zeros=True)
+        wp2_ac = self.getVarForCalculations('wp2_ac', self.ncdf_files['zm'], fill_zeros=True)
+        wp2_pr1 = self.getVarForCalculations('wp2_pr1', self.ncdf_files['zm'], fill_zeros=True)
+        wp2_pr3 = self.getVarForCalculations('wp2_pr3', self.ncdf_files['zm'], fill_zeros=True)
+        wp2_pr2 = self.getVarForCalculations('wp2_pr2', self.ncdf_files['zm'], fill_zeros=True)
+        wp2_dp1 = self.getVarForCalculations('wp2_dp1', self.ncdf_files['zm'], fill_zeros=True)
+        wp2_dp2 = self.getVarForCalculations('wp2_dp2', self.ncdf_files['zm'], fill_zeros=True)
+        wp2_bt = self.getVarForCalculations('wp2_bt', self.ncdf_files['zm'], fill_zeros=True)
+        wp2_ta = self.getVarForCalculations('wp2_ta', self.ncdf_files['zm'], fill_zeros=True)
+        wp2_splat = self.getVarForCalculations('wp2_splat', self.ncdf_files['zm'], fill_zeros=True)
+        wp2_bp = self.getVarForCalculations('wp2_bp', self.ncdf_files['zm'], fill_zeros=True)
+        wp2_ma = self.getVarForCalculations('wp2_ma', self.ncdf_files['zm'], fill_zeros=True)
+        wp2_pd = self.getVarForCalculations('wp2_pd', self.ncdf_files['zm'], fill_zeros=True)
 
         output_data = wp2_bt - (wp2_ma + wp2_ta + wp2_ac + wp2_bp + wp2_pr1 + wp2_pr2 + wp2_pr3 + wp2_dp1 + wp2_dp2 + wp2_cl + wp2_pd + wp2_sf + wp2_splat)
-        output_line = Line(output_data, z_ncdf, line_format="", label="wp2_residual")
 
-        return output_line
+        return output_data, z
 
     def getWp3Residual(self, dataset_override = None):
         '''
@@ -412,26 +402,25 @@ class VariableGroupBaseBudgets(VariableGroup):
         wp3_bt - (wp3_ma + wp3_ta + wp3_tp + wp3_ac + wp3_bp1 + wp3_bp2 + wp3_pr1 + wp3_pr2 + wp3_pr3 + wp3_dp1 + wp3_cl+wp3_splat)
         :return:
         '''
-        z_ncdf = self.__getVarForCalculations__('altitude', self.ncdf_files['zt'], fill_zeros=True)
-        wp3_bp1 = self.__getVarForCalculations__('wp3_bp1', self.ncdf_files['zt'], fill_zeros=True)
-        wp3_bp2 = self.__getVarForCalculations__('wp3_bp2', self.ncdf_files['zt'], fill_zeros=True)
-        wp3_cl = self.__getVarForCalculations__('wp3_cl', self.ncdf_files['zt'], fill_zeros=True)
-        wp3_ac = self.__getVarForCalculations__('wp3_ac', self.ncdf_files['zt'], fill_zeros=True)
-        wp3_pr1 = self.__getVarForCalculations__('wp3_pr1', self.ncdf_files['zt'], fill_zeros=True)
-        wp3_pr3 = self.__getVarForCalculations__('wp3_pr3', self.ncdf_files['zt'], fill_zeros=True)
-        wp3_pr2 = self.__getVarForCalculations__('wp3_pr2', self.ncdf_files['zt'], fill_zeros=True)
-        wp3_dp1 = self.__getVarForCalculations__('wp3_dp1', self.ncdf_files['zt'], fill_zeros=True)
-        wp3_bt = self.__getVarForCalculations__('wp3_bt', self.ncdf_files['zt'], fill_zeros=True)
-        wp3_ta = self.__getVarForCalculations__('wp3_ta', self.ncdf_files['zt'], fill_zeros=True)
-        wp3_splat = self.__getVarForCalculations__('wp3_splat', self.ncdf_files['zt'], fill_zeros=True)
-        wp3_ma = self.__getVarForCalculations__('wp3_ma', self.ncdf_files['zt'], fill_zeros=True)
-        wp3_tp = self.__getVarForCalculations__('wp3_tp', self.ncdf_files['zt'], fill_zeros=True)
+        z = self.getVarForCalculations('altitude', self.ncdf_files['zt'], fill_zeros=True)
+        wp3_bp1 = self.getVarForCalculations('wp3_bp1', self.ncdf_files['zt'], fill_zeros=True)
+        wp3_bp2 = self.getVarForCalculations('wp3_bp2', self.ncdf_files['zt'], fill_zeros=True)
+        wp3_cl = self.getVarForCalculations('wp3_cl', self.ncdf_files['zt'], fill_zeros=True)
+        wp3_ac = self.getVarForCalculations('wp3_ac', self.ncdf_files['zt'], fill_zeros=True)
+        wp3_pr1 = self.getVarForCalculations('wp3_pr1', self.ncdf_files['zt'], fill_zeros=True)
+        wp3_pr3 = self.getVarForCalculations('wp3_pr3', self.ncdf_files['zt'], fill_zeros=True)
+        wp3_pr2 = self.getVarForCalculations('wp3_pr2', self.ncdf_files['zt'], fill_zeros=True)
+        wp3_dp1 = self.getVarForCalculations('wp3_dp1', self.ncdf_files['zt'], fill_zeros=True)
+        wp3_bt = self.getVarForCalculations('wp3_bt', self.ncdf_files['zt'], fill_zeros=True)
+        wp3_ta = self.getVarForCalculations('wp3_ta', self.ncdf_files['zt'], fill_zeros=True)
+        wp3_splat = self.getVarForCalculations('wp3_splat', self.ncdf_files['zt'], fill_zeros=True)
+        wp3_ma = self.getVarForCalculations('wp3_ma', self.ncdf_files['zt'], fill_zeros=True)
+        wp3_tp = self.getVarForCalculations('wp3_tp', self.ncdf_files['zt'], fill_zeros=True)
 
 
         output_data = wp3_bt - (wp3_ma + wp3_ta + wp3_tp + wp3_ac + wp3_bp1 + wp3_bp2 + wp3_pr1 + wp3_pr2 + wp3_pr3 + wp3_dp1 + wp3_cl+wp3_splat)
-        output_line = Line(output_data, z_ncdf, line_format="", label="wp3_residual")
 
-        return output_line
+        return output_data, z
 
     def getThlp2Residual(self, dataset_override = None):
         '''
@@ -440,23 +429,22 @@ class VariableGroupBaseBudgets(VariableGroup):
         thlp2_bt - (thlp2_ma + thlp2_ta + thlp2_tp + thlp2_dp1 + thlp2_dp2 + thlp2_cl + thlp2_pd + thlp2_sf + thlp2_forcing)
         :return:
         '''
-        z_ncdf = self.__getVarForCalculations__('altitude', self.ncdf_files['zm'], fill_zeros=True)
-        thlp2_cl = self.__getVarForCalculations__('thlp2_cl', self.ncdf_files['zm'], fill_zeros=True)
-        thlp2_dp2 = self.__getVarForCalculations__('thlp2_dp2', self.ncdf_files['zm'], fill_zeros=True)
-        thlp2_forcing = self.__getVarForCalculations__('thlp2_forcing', self.ncdf_files['zm'], fill_zeros=True)
-        thlp2_sf = self.__getVarForCalculations__('thlp2_sf', self.ncdf_files['zm'], fill_zeros=True)
-        thlp2_dp1 = self.__getVarForCalculations__('thlp2_dp1', self.ncdf_files['zm'], fill_zeros=True)
-        thlp2_bt = self.__getVarForCalculations__('thlp2_bt', self.ncdf_files['zm'], fill_zeros=True)
-        thlp2_ta = self.__getVarForCalculations__('thlp2_ta', self.ncdf_files['zm'], fill_zeros=True)
-        thlp2_pd = self.__getVarForCalculations__('thlp2_pd', self.ncdf_files['zm'], fill_zeros=True)
-        thlp2_ma = self.__getVarForCalculations__('thlp2_ma', self.ncdf_files['zm'], fill_zeros=True)
-        thlp2_tp = self.__getVarForCalculations__('thlp2_tp', self.ncdf_files['zm'], fill_zeros=True)
+        z = self.getVarForCalculations('altitude', self.ncdf_files['zm'], fill_zeros=True)
+        thlp2_cl = self.getVarForCalculations('thlp2_cl', self.ncdf_files['zm'], fill_zeros=True)
+        thlp2_dp2 = self.getVarForCalculations('thlp2_dp2', self.ncdf_files['zm'], fill_zeros=True)
+        thlp2_forcing = self.getVarForCalculations('thlp2_forcing', self.ncdf_files['zm'], fill_zeros=True)
+        thlp2_sf = self.getVarForCalculations('thlp2_sf', self.ncdf_files['zm'], fill_zeros=True)
+        thlp2_dp1 = self.getVarForCalculations('thlp2_dp1', self.ncdf_files['zm'], fill_zeros=True)
+        thlp2_bt = self.getVarForCalculations('thlp2_bt', self.ncdf_files['zm'], fill_zeros=True)
+        thlp2_ta = self.getVarForCalculations('thlp2_ta', self.ncdf_files['zm'], fill_zeros=True)
+        thlp2_pd = self.getVarForCalculations('thlp2_pd', self.ncdf_files['zm'], fill_zeros=True)
+        thlp2_ma = self.getVarForCalculations('thlp2_ma', self.ncdf_files['zm'], fill_zeros=True)
+        thlp2_tp = self.getVarForCalculations('thlp2_tp', self.ncdf_files['zm'], fill_zeros=True)
 
 
         output_data = thlp2_bt - (thlp2_ma + thlp2_ta + thlp2_tp + thlp2_dp1 + thlp2_dp2 + thlp2_cl + thlp2_pd + thlp2_sf + thlp2_forcing)
-        output_line = Line(output_data, z_ncdf, line_format="", label="thlp2_residual")
 
-        return output_line
+        return output_data, z
 
     def getRtp2Residual(self, dataset_override = None):
         '''
@@ -465,23 +453,22 @@ class VariableGroupBaseBudgets(VariableGroup):
         rtp2_bt - (rtp2_ma + rtp2_ta + rtp2_tp + rtp2_dp1 + rtp2_dp2 + rtp2_cl + rtp2_pd + rtp2_sf + rtp2_forcing)
         :return:
         '''
-        z_ncdf = self.__getVarForCalculations__('altitude', self.ncdf_files['zm'], fill_zeros=True)
-        rtp2_cl = self.__getVarForCalculations__('rtp2_cl', self.ncdf_files['zm'], fill_zeros=True)
-        rtp2_dp2 = self.__getVarForCalculations__('rtp2_dp2', self.ncdf_files['zm'], fill_zeros=True)
-        rtp2_forcing = self.__getVarForCalculations__('rtp2_forcing', self.ncdf_files['zm'], fill_zeros=True)
-        rtp2_sf = self.__getVarForCalculations__('rtp2_sf', self.ncdf_files['zm'], fill_zeros=True)
-        rtp2_dp1 = self.__getVarForCalculations__('rtp2_dp1', self.ncdf_files['zm'], fill_zeros=True)
-        rtp2_bt = self.__getVarForCalculations__('rtp2_bt', self.ncdf_files['zm'], fill_zeros=True)
-        rtp2_ta = self.__getVarForCalculations__('rtp2_ta', self.ncdf_files['zm'], fill_zeros=True)
-        rtp2_pd = self.__getVarForCalculations__('rtp2_pd', self.ncdf_files['zm'], fill_zeros=True)
-        rtp2_ma = self.__getVarForCalculations__('rtp2_ma', self.ncdf_files['zm'], fill_zeros=True)
-        rtp2_tp = self.__getVarForCalculations__('rtp2_tp', self.ncdf_files['zm'], fill_zeros=True)
+        z = self.getVarForCalculations('altitude', self.ncdf_files['zm'], fill_zeros=True)
+        rtp2_cl = self.getVarForCalculations('rtp2_cl', self.ncdf_files['zm'], fill_zeros=True)
+        rtp2_dp2 = self.getVarForCalculations('rtp2_dp2', self.ncdf_files['zm'], fill_zeros=True)
+        rtp2_forcing = self.getVarForCalculations('rtp2_forcing', self.ncdf_files['zm'], fill_zeros=True)
+        rtp2_sf = self.getVarForCalculations('rtp2_sf', self.ncdf_files['zm'], fill_zeros=True)
+        rtp2_dp1 = self.getVarForCalculations('rtp2_dp1', self.ncdf_files['zm'], fill_zeros=True)
+        rtp2_bt = self.getVarForCalculations('rtp2_bt', self.ncdf_files['zm'], fill_zeros=True)
+        rtp2_ta = self.getVarForCalculations('rtp2_ta', self.ncdf_files['zm'], fill_zeros=True)
+        rtp2_pd = self.getVarForCalculations('rtp2_pd', self.ncdf_files['zm'], fill_zeros=True)
+        rtp2_ma = self.getVarForCalculations('rtp2_ma', self.ncdf_files['zm'], fill_zeros=True)
+        rtp2_tp = self.getVarForCalculations('rtp2_tp', self.ncdf_files['zm'], fill_zeros=True)
 
 
         output_data = rtp2_bt - (rtp2_ma + rtp2_ta + rtp2_tp + rtp2_dp1 + rtp2_dp2 + rtp2_cl + rtp2_pd + rtp2_sf + rtp2_forcing)
-        output_line = Line(output_data, z_ncdf, line_format="", label="rtp2_residual")
 
-        return output_line
+        return output_data, z
 
     def getRtpthlpResidual(self, dataset_override = None):
         '''
@@ -490,24 +477,23 @@ class VariableGroupBaseBudgets(VariableGroup):
         rtpthlp_bt - (rtpthlp_ma + rtpthlp_ta + rtpthlp_tp + rtpthlp_dp1 + rtpthlp_dp2 + rtpthlp_cl + rtpthlp_pd + rtpthlp_sf + rtpthlp_forcing)
         :return:
         '''
-        z_ncdf = self.__getVarForCalculations__('altitude', self.ncdf_files['zm'], fill_zeros=True)
-        rtpthlp_cl = self.__getVarForCalculations__('rtpthlp_cl', self.ncdf_files['zm'], fill_zeros=True)
-        rtpthlp_dp2 = self.__getVarForCalculations__('rtpthlp_dp2', self.ncdf_files['zm'], fill_zeros=True)
-        rtpthlp_forcing = self.__getVarForCalculations__('rtpthlp_forcing', self.ncdf_files['zm'], fill_zeros=True)
-        rtpthlp_sf = self.__getVarForCalculations__('rtpthlp_sf', self.ncdf_files['zm'], fill_zeros=True)
-        rtpthlp_dp1 = self.__getVarForCalculations__('rtpthlp_dp1', self.ncdf_files['zm'], fill_zeros=True)
-        rtpthlp_bt = self.__getVarForCalculations__('rtpthlp_bt', self.ncdf_files['zm'], fill_zeros=True)
-        rtpthlp_ta = self.__getVarForCalculations__('rtpthlp_ta', self.ncdf_files['zm'], fill_zeros=True)
-        rtpthlp_tp2 = self.__getVarForCalculations__('rtpthlp_tp2', self.ncdf_files['zm'], fill_zeros=True)
-        rtpthlp_ma = self.__getVarForCalculations__('rtpthlp_ma', self.ncdf_files['zm'], fill_zeros=True)
-        rtpthlp_tp1 = self.__getVarForCalculations__('rtpthlp_tp1', self.ncdf_files['zm'], fill_zeros=True)
+        z = self.getVarForCalculations('altitude', self.ncdf_files['zm'], fill_zeros=True)
+        rtpthlp_cl = self.getVarForCalculations('rtpthlp_cl', self.ncdf_files['zm'], fill_zeros=True)
+        rtpthlp_dp2 = self.getVarForCalculations('rtpthlp_dp2', self.ncdf_files['zm'], fill_zeros=True)
+        rtpthlp_forcing = self.getVarForCalculations('rtpthlp_forcing', self.ncdf_files['zm'], fill_zeros=True)
+        rtpthlp_sf = self.getVarForCalculations('rtpthlp_sf', self.ncdf_files['zm'], fill_zeros=True)
+        rtpthlp_dp1 = self.getVarForCalculations('rtpthlp_dp1', self.ncdf_files['zm'], fill_zeros=True)
+        rtpthlp_bt = self.getVarForCalculations('rtpthlp_bt', self.ncdf_files['zm'], fill_zeros=True)
+        rtpthlp_ta = self.getVarForCalculations('rtpthlp_ta', self.ncdf_files['zm'], fill_zeros=True)
+        rtpthlp_tp2 = self.getVarForCalculations('rtpthlp_tp2', self.ncdf_files['zm'], fill_zeros=True)
+        rtpthlp_ma = self.getVarForCalculations('rtpthlp_ma', self.ncdf_files['zm'], fill_zeros=True)
+        rtpthlp_tp1 = self.getVarForCalculations('rtpthlp_tp1', self.ncdf_files['zm'], fill_zeros=True)
 
 
         output_data = rtpthlp_bt - (rtpthlp_ma + rtpthlp_ta + rtpthlp_tp1 + rtpthlp_tp2 + rtpthlp_dp1 + rtpthlp_dp2 + rtpthlp_cl + rtpthlp_sf + rtpthlp_forcing)
-        output_line = Line(output_data, z_ncdf, line_format="", label="rtpthlp_residual")
 
-        return output_line
-    
+        return output_data, z
+
     def getUpwpResidual(self, dataset_override = None):
         '''
 
@@ -515,27 +501,26 @@ class VariableGroupBaseBudgets(VariableGroup):
         upwp_bt - (upwp_ma + upwp_ta + upwp_tp + upwp_dp1 + upwp_dp2 + upwp_cl + upwp_pd + upwp_sf + upwp_forcing)
         :return:
         '''
-        z_ncdf = self.__getVarForCalculations__('altitude', self.ncdf_files['zm'], fill_zeros=True)
-        upwp_cl = self.__getVarForCalculations__('upwp_cl', self.ncdf_files['zm'], fill_zeros=True)
-        upwp_tp = self.__getVarForCalculations__('upwp_tp', self.ncdf_files['zm'], fill_zeros=True)
-        upwp_ac = self.__getVarForCalculations__('upwp_ac', self.ncdf_files['zm'], fill_zeros=True)
-        upwp_bp = self.__getVarForCalculations__('upwp_bp', self.ncdf_files['zm'], fill_zeros=True)
-        upwp_dp1 = self.__getVarForCalculations__('upwp_dp1', self.ncdf_files['zm'], fill_zeros=True)
-        upwp_bt = self.__getVarForCalculations__('upwp_bt', self.ncdf_files['zm'], fill_zeros=True)
-        upwp_ta = self.__getVarForCalculations__('upwp_ta', self.ncdf_files['zm'], fill_zeros=True)
-        upwp_pr1 = self.__getVarForCalculations__('upwp_pr1', self.ncdf_files['zm'], fill_zeros=True)
-        upwp_pr2 = self.__getVarForCalculations__('upwp_pr2', self.ncdf_files['zm'], fill_zeros=True)
-        upwp_pr3 = self.__getVarForCalculations__('upwp_pr3', self.ncdf_files['zm'], fill_zeros=True)
-        upwp_pr4 = self.__getVarForCalculations__('upwp_pr4', self.ncdf_files['zm'], fill_zeros=True)
-        upwp_mfl = self.__getVarForCalculations__('upwp_mfl', self.ncdf_files['zm'], fill_zeros=True)
-        upwp_ma = self.__getVarForCalculations__('upwp_ma', self.ncdf_files['zm'], fill_zeros=True)
+        z = self.getVarForCalculations('altitude', self.ncdf_files['zm'], fill_zeros=True)
+        upwp_cl = self.getVarForCalculations('upwp_cl', self.ncdf_files['zm'], fill_zeros=True)
+        upwp_tp = self.getVarForCalculations('upwp_tp', self.ncdf_files['zm'], fill_zeros=True)
+        upwp_ac = self.getVarForCalculations('upwp_ac', self.ncdf_files['zm'], fill_zeros=True)
+        upwp_bp = self.getVarForCalculations('upwp_bp', self.ncdf_files['zm'], fill_zeros=True)
+        upwp_dp1 = self.getVarForCalculations('upwp_dp1', self.ncdf_files['zm'], fill_zeros=True)
+        upwp_bt = self.getVarForCalculations('upwp_bt', self.ncdf_files['zm'], fill_zeros=True)
+        upwp_ta = self.getVarForCalculations('upwp_ta', self.ncdf_files['zm'], fill_zeros=True)
+        upwp_pr1 = self.getVarForCalculations('upwp_pr1', self.ncdf_files['zm'], fill_zeros=True)
+        upwp_pr2 = self.getVarForCalculations('upwp_pr2', self.ncdf_files['zm'], fill_zeros=True)
+        upwp_pr3 = self.getVarForCalculations('upwp_pr3', self.ncdf_files['zm'], fill_zeros=True)
+        upwp_pr4 = self.getVarForCalculations('upwp_pr4', self.ncdf_files['zm'], fill_zeros=True)
+        upwp_mfl = self.getVarForCalculations('upwp_mfl', self.ncdf_files['zm'], fill_zeros=True)
+        upwp_ma = self.getVarForCalculations('upwp_ma', self.ncdf_files['zm'], fill_zeros=True)
 
 
         output_data = upwp_bt - (upwp_ma + upwp_ta + upwp_tp + upwp_ac + upwp_bp + upwp_pr1 + upwp_pr2 + upwp_pr3 + upwp_pr4 + upwp_dp1 + upwp_mfl + upwp_cl)
-        output_line = Line(output_data, z_ncdf, line_format="", label="upwp_residual")
 
-        return output_line
-    
+        return output_data, z
+
     def getVpwpResidual(self, dataset_override = None):
         '''
 
@@ -543,23 +528,22 @@ class VariableGroupBaseBudgets(VariableGroup):
         vpwp_bt - (vpwp_ma + vpwp_ta + vpwp_tp + vpwp_dp1 + vpwp_dp2 + vpwp_cl + vpwp_pd + vpwp_sf + vpwp_forcing)
         :return:
         '''
-        z_ncdf = self.__getVarForCalculations__('altitude', self.ncdf_files['zm'], fill_zeros=True)
-        vpwp_cl = self.__getVarForCalculations__('vpwp_cl', self.ncdf_files['zm'], fill_zeros=True)
-        vpwp_tp = self.__getVarForCalculations__('vpwp_tp', self.ncdf_files['zm'], fill_zeros=True)
-        vpwp_ac = self.__getVarForCalculations__('vpwp_ac', self.ncdf_files['zm'], fill_zeros=True)
-        vpwp_bp = self.__getVarForCalculations__('vpwp_bp', self.ncdf_files['zm'], fill_zeros=True)
-        vpwp_dp1 = self.__getVarForCalculations__('vpwp_dp1', self.ncdf_files['zm'], fill_zeros=True)
-        vpwp_bt = self.__getVarForCalculations__('vpwp_bt', self.ncdf_files['zm'], fill_zeros=True)
-        vpwp_ta = self.__getVarForCalculations__('vpwp_ta', self.ncdf_files['zm'], fill_zeros=True)
-        vpwp_pr1 = self.__getVarForCalculations__('vpwp_pr1', self.ncdf_files['zm'], fill_zeros=True)
-        vpwp_pr2 = self.__getVarForCalculations__('vpwp_pr2', self.ncdf_files['zm'], fill_zeros=True)
-        vpwp_pr3 = self.__getVarForCalculations__('vpwp_pr3', self.ncdf_files['zm'], fill_zeros=True)
-        vpwp_pr4 = self.__getVarForCalculations__('vpwp_pr4', self.ncdf_files['zm'], fill_zeros=True)
-        vpwp_mfl = self.__getVarForCalculations__('vpwp_mfl', self.ncdf_files['zm'], fill_zeros=True)
-        vpwp_ma = self.__getVarForCalculations__('vpwp_ma', self.ncdf_files['zm'], fill_zeros=True)
+        z = self.getVarForCalculations('altitude', self.ncdf_files['zm'], fill_zeros=True)
+        vpwp_cl = self.getVarForCalculations('vpwp_cl', self.ncdf_files['zm'], fill_zeros=True)
+        vpwp_tp = self.getVarForCalculations('vpwp_tp', self.ncdf_files['zm'], fill_zeros=True)
+        vpwp_ac = self.getVarForCalculations('vpwp_ac', self.ncdf_files['zm'], fill_zeros=True)
+        vpwp_bp = self.getVarForCalculations('vpwp_bp', self.ncdf_files['zm'], fill_zeros=True)
+        vpwp_dp1 = self.getVarForCalculations('vpwp_dp1', self.ncdf_files['zm'], fill_zeros=True)
+        vpwp_bt = self.getVarForCalculations('vpwp_bt', self.ncdf_files['zm'], fill_zeros=True)
+        vpwp_ta = self.getVarForCalculations('vpwp_ta', self.ncdf_files['zm'], fill_zeros=True)
+        vpwp_pr1 = self.getVarForCalculations('vpwp_pr1', self.ncdf_files['zm'], fill_zeros=True)
+        vpwp_pr2 = self.getVarForCalculations('vpwp_pr2', self.ncdf_files['zm'], fill_zeros=True)
+        vpwp_pr3 = self.getVarForCalculations('vpwp_pr3', self.ncdf_files['zm'], fill_zeros=True)
+        vpwp_pr4 = self.getVarForCalculations('vpwp_pr4', self.ncdf_files['zm'], fill_zeros=True)
+        vpwp_mfl = self.getVarForCalculations('vpwp_mfl', self.ncdf_files['zm'], fill_zeros=True)
+        vpwp_ma = self.getVarForCalculations('vpwp_ma', self.ncdf_files['zm'], fill_zeros=True)
 
 
         output_data = vpwp_bt - (vpwp_ma + vpwp_ta + vpwp_tp + vpwp_ac + vpwp_bp + vpwp_pr1 + vpwp_pr2 + vpwp_pr3 + vpwp_pr4 + vpwp_dp1 + vpwp_mfl + vpwp_cl)
-        output_line = Line(output_data, z_ncdf, line_format="", label="vpwp_residual")
 
-        return output_line
+        return output_data, z

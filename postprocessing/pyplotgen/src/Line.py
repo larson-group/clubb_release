@@ -22,7 +22,8 @@ class Line:
         :param label: name of the line (e.g. 'current clubb')
         """
         if len(x_data) != len(y_data):
-            raise ValueError("The size of x is not the same as the size of Y. " + str(len(x_data)) + " (x) vs " + str(len(y_data)) + "(y)")
+            raise ValueError("The size of X(" + str(len(x_data)) + ") is not the same as the size of Y(" + str(len(y_data)) +
+                             ") for the \"" + label + "\" line.")
         if isinstance(x_data, NetCdfVariable):
             x_data = x_data.data
         if isinstance(y_data, NetCdfVariable):

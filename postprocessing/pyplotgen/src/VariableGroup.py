@@ -4,6 +4,7 @@
 """
 from warnings import warn
 
+import numpy as np
 from netCDF4._netCDF4 import Dataset
 
 from config import Style_definitions
@@ -205,14 +206,19 @@ class VariableGroup:
                 variable_def_dict['axis_title'] = imported_axis_title
 
         if 'sam_calc' in variable_def_dict.keys() and self.sam_file is not None and data_reader.getNcdfSourceModel(self.sam_file) == 'sam':
-            samplot = variable_def_dict['sam_calc']()
+            samplot_data, z = variable_def_dict['sam_calc']()
+            # z = self.getVarForCalculations('z', self.sam_file)
+            samplot = Line(samplot_data, z, line_format=Style_definitions.LES_LINE_STYLE, label=Style_definitions.SAM_LABEL)
             variable_def_dict['plots'].append(samplot)
 
         if 'coamps_calc' in variable_def_dict.keys() and self.coamps_file is not None and data_reader.getNcdfSourceModel(self.coamps_file) == 'coamps':
-            coampsplot = variable_def_dict['coamps_calc']()
+            coampsplot_data, z = variable_def_dict['coamps_calc']()
+            # z = self.getVarForCalculations('lev', self.coamps_file)
+            coampsplot = Line(coampsplot_data, z, line_format=Style_definitions.LES_LINE_STYLE, label=Style_definitions.COAMPS_LABEL)
             variable_def_dict['plots'].append(coampsplot)
 
         self.variables.append(variable_def_dict)
+
 
     def generatePanels(self):
         """
@@ -356,7 +362,7 @@ class VariableGroup:
                 if 'fallback_func' in line_definition.keys():
                     fallback = line_definition['fallback_func']
                     fallback_output = self.__getVarDataFromFallback__(fallback, varname, {'budget':dataset}, label, line_format)
-                    fallback_output = Line(fallback_output.x, z, line_format=Style_definitions.LES_LINE_STYLE, label=Style_definitions.SAM_LABEL)
+                    fallback_output = Line(fallback_output.x, z, line_format="", label=line_definition['label'])
                     output_lines.append(fallback_output)
                     return output_lines
 
@@ -382,37 +388,31 @@ class VariableGroup:
         """
         for dataset in datasets.values():
             try:
-                varline = fallback(dataset_override=dataset)
-                if not isinstance(varline, Line):
-                    if 'altitude' in dataset.variables.keys():
-                        z = NetCdfVariable('altitude', dataset, start_time=self.start_time, end_time=self.end_time)
-                    elif 'z' in dataset.variables.keys():
-                        z = NetCdfVariable('z', dataset, start_time=self.start_time, end_time=self.end_time)
-                    else:
-                        z = NetCdfVariable('lev', dataset, start_time=self.start_time, end_time=self.end_time)
-                    varline = Line(varline, z, line_format=line_format, label=label)
+                varline, z = fallback(dataset_override=dataset)
+                varline = Line(varline, z, line_format=line_format, label=label)
                 print("\tFallback for ", varname, " successful")
                 return varline
             except TypeError as e:
                 warn("Fallback failed for variable " + str(varname) + ". Skipping it.\n" + str(e))
                 return None
 
-    def __getVarForCalculations__(self, varname, dataset, conversion_factor = 1, fill_zeros = False):
+    def getVarForCalculations(self, varname, datasets, conversion_factor = 1, fill_zeros = False):
         """
         This function is used within a fallback function to get the data of a certain variable,
         constrained between a min/max height.
 
         :param varname:
+        :param include_z: If set to True, getVarForCalculations will return a tuple containing the data for both the varname
+        variable and the height variable in a tuple ordered as (varname, z)
         :return:
         """
-        if 'z' in dataset.variables.keys():
-            z_ncdf = NetCdfVariable('z', dataset, 1)
-        elif 'altitude' in dataset.variables.keys():
-            z_ncdf = NetCdfVariable('altitude', dataset, 1)
-        else:
-            z_ncdf = NetCdfVariable('lev', dataset, 1)
-        var_ncdf = NetCdfVariable(varname, dataset, conversion_factor, start_time=self.start_time, end_time=self.end_time, fill_zeros=fill_zeros)
-        var_ncdf.constrain(self.height_min_value, self.height_max_value, data=z_ncdf.data)
-        var_data = var_ncdf.data
-
+        if isinstance(datasets, Dataset):
+            datasets = {'auto': datasets}
+        for dataset in datasets.values():
+            z_ncdf = NetCdfVariable(['z','altitude','lev'], dataset, 1)
+            var_ncdf = NetCdfVariable(varname, dataset, conversion_factor, start_time=self.start_time, end_time=self.end_time, fill_zeros=fill_zeros)
+            var_ncdf.constrain(self.height_min_value, self.height_max_value, data=z_ncdf.data)
+            var_data = var_ncdf.data
+            if np.amax(var_ncdf.data) != 0:
+                break # Avoid overwriting vardata with auto-filled zeros
         return var_data
