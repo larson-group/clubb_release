@@ -21,24 +21,24 @@ header = ("""<!doctype html>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style type="text/css">
     body {
-      background-color: #002b36;
-      color: #839496;
       font-family: "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
       margin: 0;
       padding: 0;
     }
     div {
-      background-color: #073642;
       border-radius: 0.25em;
       margin: 1em auto;
       padding: 2em;
+      text-align: center;
+    }
+    h1{
+      font-size: 48px;
     }
     p {
       font-size: 16px;
       padding-bottom: 1.5em;
     }
     a:link, a:visited {
-      color: #93a1a1;
       font-size: 24px;
       text-decoration: underline;
     }
@@ -54,8 +54,10 @@ header = ("""<!doctype html>
 
 br = '\n<br>'
 footer = '\n</div></body></html>'
+nav = '%s</div>\n<div>'
 img_src = '\n<img src="%s">'
 case_title = '\n<h1>%s</h1>'
-timestamp = '\n<p>This page was created on %s</p>'
-url_dir = '\n<p><a href="%s" target="_blank">%s</a></p>'
-url_img = '\n<a href="%s" target="_blank"><img title="%s" src="%s"></a>'
+timestamp = '\n<p>Page created on %s</p>'
+url_dir = '\n<p><a href="%s">%s</a></p>'
+url_img = '\n<a href="%s"><img title="%s" src="%s"></a>'
+

@@ -128,12 +128,19 @@ class Panel:
         plt.title(self.title)
         plt.ylabel(self.y_title)
         plt.xlabel(self.x_title)
-        if no_legends is False:
-            plt.figlegend()
+
 
 
         ax = plt.gca()
         ax.grid(Style_definitions.SHOW_GRID)
+        if no_legends is False:
+            # plt.figlegend()
+            # Shrink current axis by 20%
+            box = ax.get_position()
+            ax.set_position([box.x0, box.y0, box.width * 0.8, box.height])
+            # Put a legend to the right of the current axis
+            ax.legend(loc='center left', bbox_to_anchor=(1, 0.5))
+
         # Center budgets
         if self.panel_type is Panel.TYPE_BUDGET:
             plt.xlim(-1 * max_panel_value,max_panel_value)

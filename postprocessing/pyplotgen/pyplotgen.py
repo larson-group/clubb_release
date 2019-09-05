@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 """
 :Author: Nicolas Strike
 :Date: Jan 2019
@@ -148,21 +149,27 @@ def __process_args__():
     parser.add_argument("--plot-budgets", help="Plot all defined budgets of moments", action="store_true")
     parser.add_argument("--bu-morr", help="For morrison microphysics: breaks microphysical source terms into component processes",action="store_true")
     parser.add_argument("--diff", help="Plot the difference between two input folders", action="store")
-    parser.add_argument("input", help="Input folder containing netcdf output data.", action="store")
-    parser.add_argument("output", help="Name of folder to create and store plots into.", action="store")
+    parser.add_argument("-i", "--input", help="Input folder containing netcdf output data.", action="store", default="../../output")
+    parser.add_argument("-o", "--output", help="Name of folder to create and store plots into.", action="store", default="./output")
     args = parser.parse_args()
 
-    if args.all_best:
-        print("Plot all reference plots flag detected, but that feature is not yet implemented")
     if args.zip:
         print("Zip flag detected, but that feature is not yet implemented")
     if args.ensemble:
         print("Ensemble flag detected, but that feature is not yet implemented")
     if args.bu_morr:
         print("Morrison breakdown flag detected, but that feature is not yet implemented")
+    les = args.les
+    cgbest = args.plot_golaz_best
+    hoc = args.plot_hoc_2005
 
-    pyplotgen = PyPlotGen(args.input, args.output, replace=args.replace, les=args.les, cgbest=args.plot_golaz_best,
-                          hoc=args.plot_hoc_2005, plotrefs=args.all_best, zip=args.zip, thin=args.thin,
+    if args.all_best:
+        les = True
+        cgbest = True
+        hoc = True
+
+    pyplotgen = PyPlotGen(args.input, args.output, replace=args.replace, les=les, cgbest=cgbest,
+                          hoc=hoc, plotrefs=args.all_best, zip=args.zip, thin=args.thin,
                           no_legends=args.no_legends, ensemble=args.ensemble, budget_moments=args.plot_budgets,
                           bu_morr=args.bu_morr, diff=args.diff)
     return pyplotgen
