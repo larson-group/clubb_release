@@ -7,20 +7,24 @@ If you wish to change a line color, font size, etc., then this is the place to d
 """
 
 # Line Styles
+# Details on line styles here: https://matplotlib.org/2.1.2/api/_as_gen/matplotlib.pyplot.plot.html
 DEFAULT_LINE_STYLE = "r-"
 LES_LINE_STYLE = "k-"
 GOLAZ_BEST_R408_LINE_STYLE = "g-"
+HOC_LINE_STYLE = 'm-.'
 
+# Line Thicknesses
 DEFAULT_LINE_THICKNESS = 2
-LES_LINE_THICKNESS = 4
+LES_LINE_THICKNESS = 6
+ARCHIVED_CLUBB_LINE_THICKNESS = 4
 THIN_LINE_THICKNESS = 1 # Used if --thin-lines is passed, overrides every other size
-
 
 # Line Labels
 DEFAULT_LABEL = "current clubb"
 SAM_LABEL = "SAM-LES"
 COAMPS_LABEL = "COAMPS-LES"
 GOLAZ_LABEL = "CLUBB r408 'best ever'"
+HOC_LABEL = 'HOC 12/17/2005'
 
 # Text/Font
 SMALL_FONT_SIZE = 10

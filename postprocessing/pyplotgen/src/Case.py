@@ -18,7 +18,8 @@ class Case:
     In order to create a new case, please add the case's definition to Case_Definitions.py (don't forget to add the
     definition to the list ALL_CASES = [...] at the bottom of the file).
     """
-    def __init__(self, case_definition, ncdf_datasets, plot_les = False,plot_budgets = False, diff_datasets=None, plot_r408=False):
+    def __init__(self, case_definition, ncdf_datasets, diff_datasets=None,
+                 plot_les = False,plot_budgets = False, plot_r408=False, plot_hoc=False):
         """
         Initialize a Case
 
@@ -44,6 +45,7 @@ class Case:
         self.blacklisted_variables = case_definition['blacklisted_vars']
         self.plot_budgets = plot_budgets
         self.plot_r408 = plot_r408
+        self.plot_hoc = plot_hoc
         self.diff_datasets = diff_datasets
         if 'disable_budgets' in case_definition.keys() and case_definition['disable_budgets'] is True:
             self.plot_budgets = False
@@ -73,10 +75,20 @@ class Case:
         else:
             r408_datasets = None
 
+        hoc_datasets = {}
+        if plot_hoc and case_definition['hoc_file'] is not None:
+            datareader = DataReader()
+            hoc_filenames = case_definition['hoc_file']
+            for type_ext in hoc_filenames:
+                temp_hoc_dataset = datareader.__loadNcFile__(hoc_filenames[type_ext])
+                hoc_datasets[type_ext] = temp_hoc_dataset
+        else:
+            hoc_datasets = None
+
         self.panels = []
         self.diff_panels = []
         for VarGroup in self.var_groups:
-            temp_group = VarGroup(self.ncdf_datasets, self, sam_file=sam_file, coamps_file=coamps_datasets, r408_dataset=r408_datasets)
+            temp_group = VarGroup(self.ncdf_datasets, self, sam_file=sam_file, coamps_file=coamps_datasets, r408_dataset=r408_datasets, hoc_dataset=hoc_datasets)
 
             for panel in temp_group.panels :
                 self.panels.append(panel)
@@ -84,7 +96,7 @@ class Case:
         # Convert panels to difference panels if user passed in --diff <<folder>>
         if self.diff_datasets is not None:
             for VarGroup in self.var_groups:
-                diff_group = VarGroup(self.diff_datasets, self, sam_file=sam_file, coamps_file=coamps_datasets, r408_file=r408_datasets)
+                diff_group = VarGroup(self.diff_datasets, self, sam_file=sam_file, coamps_file=coamps_datasets, r408_file=r408_datasets, hoc_dataset=hoc_datasets)
                 for panel in diff_group.panels:
                     self.diff_panels.append(panel)
             for idx in range(len(self.panels)):

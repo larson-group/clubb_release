@@ -23,7 +23,7 @@ class VariableGroup:
     calculating any 'calculated' variables from netcdf
     """
 
-    def __init__(self, ncdf_datasets, case, sam_file=None, coamps_file=None, r408_dataset=None):
+    def __init__(self, ncdf_datasets, case, sam_file=None, coamps_file=None, r408_dataset=None, hoc_dataset=None):
         """
         Initialize common Variable group parameters
         :param ncdf_datasets: A dictionary or Netcdf dataset containing the data to be plotted
@@ -41,6 +41,7 @@ class VariableGroup:
         self.sam_file = sam_file
         self.coamps_file = coamps_file
         self.r408_dataset = r408_dataset
+        self.hoc_dataset = hoc_dataset
         self.casename = case.name
         self.start_time = case.start_time
         self.end_time = case.end_time
@@ -161,6 +162,13 @@ class VariableGroup:
         if 'r408_conv_factor' in variable_def_dict.keys():
             r408_conv_factor = variable_def_dict['r408_conv_factor']
 
+        hoc_dataset = self.hoc_dataset
+        hoc_conv_factor = 1
+        if 'hoc_calc' in variable_def_dict.keys():
+            hoc_dataset = None  # don't try to autoplot if calculated value
+        if 'hoc_conv_factor' in variable_def_dict.keys():
+            hoc_conv_factor = variable_def_dict['hoc_conv_factor']
+
         if 'lines' in variable_def_dict.keys():
             lines = variable_def_dict['lines']
         panel_type = self.defualt_panel_type
@@ -184,6 +192,11 @@ class VariableGroup:
         if r408_dataset is not None:
             all_lines.extend(self.__getVarLines__(aliases, r408_dataset, conversion_factor=r408_conv_factor,
                                                   label=Style_definitions.GOLAZ_LABEL,line_format=Style_definitions.GOLAZ_BEST_R408_LINE_STYLE, fill_zeros = fill_zeros,
+                                                  override_panel_type=panel_type, fallback_func=fallback, lines=lines))
+
+        if hoc_dataset is not None:
+            all_lines.extend(self.__getVarLines__(aliases, hoc_dataset, conversion_factor=hoc_conv_factor,
+                                                  label=Style_definitions.HOC_LABEL,line_format=Style_definitions.HOC_LINE_STYLE, fill_zeros = fill_zeros,
                                                   override_panel_type=panel_type, fallback_func=fallback, lines=lines))
 
         all_lines.extend(self.__getVarLines__(aliases, self.ncdf_files,label=Style_definitions.DEFAULT_LABEL,

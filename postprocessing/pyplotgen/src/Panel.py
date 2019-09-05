@@ -114,6 +114,8 @@ class Panel:
                                  self.x_title + "  Y: " + self.y_title)
             if var.line_format == Style_definitions.LES_LINE_STYLE:
                 linewidth = Style_definitions.LES_LINE_THICKNESS
+            elif var.line_format == Style_definitions.GOLAZ_BEST_R408_LINE_STYLE:
+                linewidth = Style_definitions.ARCHIVED_CLUBB_LINE_THICKNESS
             else:
                 linewidth = Style_definitions.DEFAULT_LINE_THICKNESS
             if thin_lines:

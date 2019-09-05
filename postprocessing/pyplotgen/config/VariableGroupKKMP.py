@@ -8,7 +8,7 @@ from src.VariableGroup import VariableGroup
 
 class VariableGroupKKMP(VariableGroup):
 
-    def __init__(self, ncdf_datasets, case, sam_file=None, coamps_file=None, r408_dataset=None):
+    def __init__(self, ncdf_datasets, case, sam_file=None, coamps_file=None, r408_dataset=None, hoc_dataset=None):
         """
 
         :param ncdf_datasets:
@@ -21,4 +21,4 @@ class VariableGroupKKMP(VariableGroup):
             {'aliases': ['rrm_accr', 'ACCRM']},
             {'aliases': ['rrm_auto', 'AUTOM']}
         ]
-        super().__init__(ncdf_datasets, case, sam_file=sam_file, coamps_file=coamps_file, r408_dataset=r408_dataset)
+        super().__init__(ncdf_datasets, case, sam_file=sam_file, coamps_file=coamps_file, r408_dataset=r408_dataset, hoc_dataset=hoc_dataset)
