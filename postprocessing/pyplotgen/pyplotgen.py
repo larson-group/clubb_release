@@ -11,6 +11,7 @@ these processes are mostly carried out by other classes/files.
 import argparse
 import os
 import subprocess
+from warnings import warn
 
 from config import Case_definitions
 from python_html_gallery import gallery
@@ -88,9 +89,10 @@ class PyPlotGen:
             print('###########################################')
             print("\nDeleting old plots")
             subprocess.run(['rm', '-rf', self.output_folder + '/'])
+        cases_plotted = 0
         for case_def in all_cases:
             if case_def['name'] in self.nc_datasets.keys():
-
+                cases_plotted += 1
                 print('###########################################')
                 print("plotting ", case_def['name'])
                 case_diff_datasets = None
@@ -102,6 +104,9 @@ class PyPlotGen:
             # else:
             #     print("Clubb input nc files not found. Skipping case.")
         print('###########################################')
+        if cases_plotted == 0:
+            warn("Warning, no cases were plotted! Make sure the input folder " + self.input_folder +
+                 " contains .nc files or use the --input (-i) parameter to manually specify an input folder.")
         print("\nGenerating webpage for viewing plots ")
         if not os.path.exists(self.output_folder):
             os.mkdir(self.output_folder)
