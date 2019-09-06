@@ -58,6 +58,7 @@ module advance_xm_wpxp_module
                               mixt_frac_zm, l_implemented, em, wp2sclrp, &
                               sclrpthvp, sclrm_forcing, sclrp2, exner, rcm, &
                               p_in_Pa, thvm, Cx_fnc_Richardson, &
+                              ice_supersat_frac, &
                               pdf_implicit_coefs_terms, &
                               um_forcing, vm_forcing, ug, vg, wpthvp, &
                               fcor, um_ref, vm_ref, up2, vp2, &
@@ -267,11 +268,12 @@ module advance_xm_wpxp_module
       sclrp2           ! For clipping Vince Larson             [Units vary]
 
     real( kind = core_rknd ), intent(in), dimension(gr%nz) ::  &
-      exner,           & ! Exner function                            [-]
-      rcm,             & ! cloud water mixing ratio, r_c             [kg/kg]
-      p_in_Pa,         & ! Air pressure                              [Pa]
-      thvm,            & ! Virutal potential temperature             [K]
-      Cx_fnc_Richardson  ! Cx_fnc computed from Richardson_num       [-]
+      exner,            & ! Exner function                            [-]
+      rcm,              & ! cloud water mixing ratio, r_c             [kg/kg]
+      p_in_Pa,          & ! Air pressure                              [Pa]
+      thvm,             & ! Virutal potential temperature             [K]
+      Cx_fnc_Richardson,& ! Cx_fnc computed from Richardson_num       [-]
+      ice_supersat_frac
 
     type(implicit_coefs_terms), dimension(gr%nz), intent(in) :: &
       pdf_implicit_coefs_terms    ! Implicit coefs / explicit terms [units vary]
@@ -965,6 +967,7 @@ module advance_xm_wpxp_module
                                  Kw6, C7_Skw_fnc, invrs_rho_ds_zt,                 & ! In
                                  rho_ds_zm, l_implemented, em,                     & ! In
                                  Lscale, thlm, exner, rtm, rcm, p_in_Pa, thvm,     & ! In
+                                 ice_supersat_frac,  & ! In
                                  lhs_diff_zm, lhs_diff_zt, lhs_ma_zt, lhs_ma_zm,   & ! Out
                                  lhs_tp, lhs_ta_xm, lhs_ac_pr2 )                     ! Out
 
@@ -1049,7 +1052,7 @@ module advance_xm_wpxp_module
                                        mixt_frac_zm, l_implemented, em, &
                                        wp2sclrp, sclrpthvp, sclrm_forcing, &
                                        sclrp2, exner, rcm, p_in_Pa, thvm, &
-                                       Cx_fnc_Richardson, &
+                                       Cx_fnc_Richardson,&
                                        pdf_implicit_coefs_terms, um_forcing, &
                                        vm_forcing, ug, vg, wpthvp, fcor, &
                                        um_ref, vm_ref, up2, vp2, uprcp, vprcp, &
@@ -2349,6 +2352,7 @@ module advance_xm_wpxp_module
                                      Kw6, C7_Skw_fnc, invrs_rho_ds_zt,                  & ! In
                                      rho_ds_zm, l_implemented, em,                      & ! In
                                      Lscale, thlm, exner, rtm, rcm, p_in_Pa, thvm,      & ! In
+                                     ice_supersat_frac, & ! In
                                      lhs_diff_zm, lhs_diff_zt, lhs_ma_zt, lhs_ma_zm,    & ! Out
                                      lhs_tp, lhs_ta_xm, lhs_ac_pr2 )                      ! Out
     ! Description:
@@ -2408,7 +2412,8 @@ module advance_xm_wpxp_module
       Kw6,                    & ! Coef. of eddy diffusivity for w'x'     [m^2/s]
       C7_Skw_fnc,             & ! C_7 parameter with Sk_w applied            [-]
       rho_ds_zm,              & ! Dry, static density on momentum levs. [kg/m^3]
-      invrs_rho_ds_zt           ! Inv. dry, static density at t-levs.   [m^3/kg]
+      invrs_rho_ds_zt,        &  ! Inv. dry, static density at t-levs.   [m^3/kg]
+      ice_supersat_frac
 
     logical, intent(in) ::  & 
       l_implemented   ! Flag for CLUBB being implemented in a larger model.
@@ -2475,7 +2480,7 @@ module advance_xm_wpxp_module
         
         if ( l_stability_correct_Kh_N2_zm ) then
           Kh_N2_zm = Kh_zm / calc_stability_correction( thlm, Lscale, em, exner, rtm, rcm, &
-                                                        p_in_Pa, thvm )
+                                                        p_in_Pa, thvm, ice_supersat_frac)
         else
           Kh_N2_zm = Kh_zm
         end if

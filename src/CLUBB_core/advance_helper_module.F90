@@ -160,7 +160,7 @@ module advance_helper_module
 
   !===============================================================================
   function calc_stability_correction( thlm, Lscale, em, exner, rtm, rcm, &
-                                      p_in_Pa, thvm ) &
+                                      p_in_Pa, thvm, ice_supersat_frac ) &
     result ( stability_correction )
   !
   ! Description:
@@ -194,19 +194,29 @@ module advance_helper_module
       rtm,             & ! total water mixing ratio, r_t             [kg/kg]
       rcm,             & ! cloud water mixing ratio, r_c             [kg/kg]
       p_in_Pa,         & ! Air pressure                              [Pa]
-      thvm               ! Virtual potential temperature             [K]
+      thvm,            & ! Virtual potential temperature             [K]
+      ice_supersat_frac
 
     ! Result
     real( kind = core_rknd ), dimension(gr%nz) :: &
       stability_correction
 
-    real( kind = core_rknd ), dimension(gr%nz) :: &
+   real( kind = core_rknd ), dimension(gr%nz) :: &
       brunt_vaisala_freq_sqd, & !  []
+      brunt_vaisala_freq_sqd_mixed, &
+      brunt_vaisala_freq_sqd_dry, & !  []
+      brunt_vaisala_freq_sqd_moist, &
+      brunt_vaisala_freq_sqd_plus, &
       lambda0_stability
 
     !------------ Begin Code --------------
-    call calc_brunt_vaisala_freq_sqd( thlm, exner, rtm, rcm, p_in_Pa, thvm, &
-                                      brunt_vaisala_freq_sqd )
+    call calc_brunt_vaisala_freq_sqd(  thlm, exner, rtm, rcm, p_in_Pa, thvm, &
+                                      ice_supersat_frac, brunt_vaisala_freq_sqd, &
+                                      brunt_vaisala_freq_sqd_mixed,&
+                                      brunt_vaisala_freq_sqd_dry, &
+                                      brunt_vaisala_freq_sqd_moist, &
+                                      brunt_vaisala_freq_sqd_plus )
+ 
 
     lambda0_stability = merge( lambda0_stability_coef, zero, brunt_vaisala_freq_sqd > zero )
 
@@ -217,8 +227,12 @@ module advance_helper_module
   end function calc_stability_correction
 
   !===============================================================================
-  subroutine calc_brunt_vaisala_freq_sqd( thlm, exner, rtm, rcm, p_in_Pa, thvm, &
-                                           brunt_vaisala_freq_sqd )
+  subroutine calc_brunt_vaisala_freq_sqd(  thlm, exner, rtm, rcm, p_in_Pa, thvm, &
+                                           ice_supersat_frac, brunt_vaisala_freq_sqd, &
+                                           brunt_vaisala_freq_sqd_mixed,&
+                                           brunt_vaisala_freq_sqd_dry, &
+                                           brunt_vaisala_freq_sqd_moist, &
+                                           brunt_vaisala_freq_sqd_plus )
 
   ! Description:
   !   Calculate the Brunt-Vaisala frequency squared, N^2.
@@ -262,16 +276,26 @@ module advance_helper_module
       rtm,     &  ! total water mixing ratio, r_t      [kg/kg]
       rcm,     &  ! cloud water mixing ratio, r_c      [kg/kg]
       p_in_Pa, &  ! Air pressure                       [Pa]
-      thvm        ! Virtual potential temperature      [K]
+      thvm,    &  ! Virtual potential temperature      [K]
+      ice_supersat_frac
 
     ! Output Variables
     real( kind = core_rknd ), dimension(gr%nz), intent(out) :: &
-      brunt_vaisala_freq_sqd ! Brunt-Vaisala frequency squared, N^2 [1/s^2]
+      brunt_vaisala_freq_sqd, & ! Brunt-Vaisala frequency squared, N^2 [1/s^2]
+      brunt_vaisala_freq_sqd_mixed, &
+      brunt_vaisala_freq_sqd_dry,&
+      brunt_vaisala_freq_sqd_moist, &
+      brunt_vaisala_freq_sqd_plus
 
     ! Local Variables
     real( kind = core_rknd ), dimension(gr%nz) :: &
       T_in_K, T_in_K_zm, rsat, rsat_zm, thm, thm_zm, ddzt_thlm, &
       ddzt_thm, ddzt_rsat, ddzt_rtm, thvm_zm, ddzt_thvm
+
+    real( kind = core_rknd ), dimension(gr%nz) :: &
+      stat_dry, stat_liq, ddzt_stat_liq, ddzt_stat_liq_zm, &
+      stat_dry_virtual, stat_dry_virtual_zm,  ddzt_rtm_zm
+
 
     integer :: k
 
@@ -294,6 +318,49 @@ module advance_helper_module
     
         end if
 
+        T_in_K = thlm2T_in_K( thlm, exner, rcm )
+        T_in_K_zm = zt2zm( T_in_K )
+
+        rsat = sat_mixrat_liq( p_in_Pa, T_in_K )
+        rsat_zm = zt2zm( rsat )
+        ddzt_rsat = ddzt( rsat )
+        thm = thlm + Lv/(Cp*exner) * rcm
+        thm_zm = zt2zm( thm )
+        ddzt_thm = ddzt( thm )
+        ddzt_rtm = ddzt( rtm )
+
+        stat_dry  =  Cp * T_in_K + grav * gr%zt
+        stat_liq  =  stat_dry -Lv * rcm
+        ddzt_stat_liq       = ddzt( stat_liq )
+        ddzt_stat_liq_zm    = zt2zm( ddzt_stat_liq)
+        stat_dry_virtual    = stat_dry + Cp * T_in_K *(0.608*(rtm-rcm)- rcm)
+        stat_dry_virtual_zm = zt2zm(stat_dry_virtual_zm)
+        ddzt_rtm_zm         = zt2zm( ddzt_rtm )
+
+         brunt_vaisala_freq_sqd_dry(:) = ( grav / thm_zm)* ddzt_thm(:)
+
+        do k=1, gr%nz
+          brunt_vaisala_freq_sqd_plus(k) = grav/stat_dry_virtual (k) * &
+          ( (ice_supersat_frac(k) * 0.5 + (1- ice_supersat_frac(k))) * ddzt_stat_liq_zm (k) + &
+            (ice_supersat_frac(k) * Lv  - (1- ice_supersat_frac(k)) *0.608*Cp)* ddzt_rtm_zm(k) )
+        end do ! k=1, gr%nz
+
+        do k=1, gr%nz
+
+            ! In-cloud Brunt-Vaisala frequency. This is Eq. (36) of Durran and
+            ! Klemp (1982)
+            brunt_vaisala_freq_sqd_moist(k) = &
+              grav * ( ((one + Lv*rsat_zm(k) / (Rd*T_in_K_zm(k))) / &
+              (one + ep*(Lv**2)*rsat_zm(k)/(Cp*Rd*T_in_K_zm(k)**2))) * &
+              ( (one/thm_zm(k) * ddzt_thm(k)) + (Lv/(Cp*T_in_K_zm(k)))*ddzt_rsat(k)) - &
+              ddzt_rtm(k) )
+
+        end do ! k=1, gr%nz
+
+        brunt_vaisala_freq_sqd_mixed(:) =  &
+               merge (brunt_vaisala_freq_sqd_moist,brunt_vaisala_freq_sqd_dry,&
+               ice_supersat_frac .gt. 0 )
+
     else ! l_brunt_vaisala_freq_moist
 
         T_in_K = thlm2T_in_K( thlm, exner, rcm )
@@ -308,14 +375,16 @@ module advance_helper_module
 
         do k=1, gr%nz
 
-            ! In-cloud Brunt-Vaisala frequency. This is Eq. (36) of Durran and Klemp (1982)
+            ! In-cloud Brunt-Vaisala frequency. This is Eq. (36) of Durran and
+            ! Klemp (1982)
             brunt_vaisala_freq_sqd(k) = &
               grav * ( ((one + Lv*rsat_zm(k) / (Rd*T_in_K_zm(k))) / &
                 (one + ep*(Lv**2)*rsat_zm(k)/(Cp*Rd*T_in_K_zm(k)**2))) * &
-                ( (one/thm_zm(k) * ddzt_thm(k)) + (Lv/(Cp*T_in_K_zm(k)))*ddzt_rsat(k)) - &
+                ( (one/thm_zm(k) * ddzt_thm(k)) +(Lv/(Cp*T_in_K_zm(k)))*ddzt_rsat(k)) - &
                 ddzt_rtm(k) )
 
         end do ! k=1, gr%nz
+
 
     end if ! .not. l_brunt_vaisala_freq_moist
 
@@ -326,7 +395,7 @@ module advance_helper_module
 !===============================================================================
   subroutine compute_Cx_fnc_Richardson( thlm, um, vm, em, Lscale, exner, rtm, &
                                         rcm, p_in_Pa, thvm, rho_ds_zm, &
-                                        Cx_fnc_Richardson )
+                                        ice_supersat_frac, Cx_fnc_Richardson )
 
   ! Description:
   !   Compute Cx as a function of the Richardson number
@@ -382,17 +451,18 @@ module advance_helper_module
 
     ! Input Variables
     real( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
-      thlm,    & ! th_l (liquid water potential temperature)      [K]
-      um,      & ! u mean wind component (thermodynamic levels)   [m/s]
-      vm,      & ! v mean wind component (thermodynamic levels)   [m/s]
-      em,      & ! Turbulent Kinetic Energy (TKE)                 [m^2/s^2]
-      Lscale,  & ! Turbulent mixing length                        [m]
-      exner,   & ! Exner function                                 [-]
-      rtm,     & ! total water mixing ratio, r_t                  [kg/kg]
-      rcm,     & ! cloud water mixing ratio, r_c                  [kg/kg]
-      p_in_Pa, & ! Air pressure                                   [Pa]
-      thvm,    & ! Virtual potential temperature                  [K]
-      rho_ds_zm  ! Dry static density on momentum levels          [kg/m^3]
+      thlm,      & ! th_l (liquid water potential temperature)      [K]
+      um,        & ! u mean wind component (thermodynamic levels)   [m/s]
+      vm,        & ! v mean wind component (thermodynamic levels)   [m/s]
+      em,        & ! Turbulent Kinetic Energy (TKE)                 [m^2/s^2]
+      Lscale,    & ! Turbulent mixing length                        [m]
+      exner,     & ! Exner function                                 [-]
+      rtm,       & ! total water mixing ratio, r_t                  [kg/kg]
+      rcm,       & ! cloud water mixing ratio, r_c                  [kg/kg]
+      p_in_Pa,   & ! Air pressure                                   [Pa]
+      thvm,      & ! Virtual potential temperature                  [K]
+      rho_ds_zm, &  ! Dry static density on momentum levels          [kg/m^3]
+      ice_supersat_frac  ! ice cloud fraction 
 
 
     ! Output Variable
@@ -402,6 +472,10 @@ module advance_helper_module
     ! Local Variables
     real( kind = core_rknd ), dimension(gr%nz) :: &
       brunt_vaisala_freq_sqd, &
+      brunt_vaisala_freq_sqd_mixed,&
+      brunt_vaisala_freq_sqd_dry, &
+      brunt_vaisala_freq_sqd_moist, &
+      brunt_vaisala_freq_sqd_plus, &
       Richardson_num, &
       dum_dz, dvm_dz, &
       shear_sqd, &
@@ -416,8 +490,12 @@ module advance_helper_module
 
     !----- Begin Code -----
 
-    call calc_brunt_vaisala_freq_sqd( thlm, exner, rtm, rcm, p_in_Pa, thvm, &
-                                      brunt_vaisala_freq_sqd )
+    call calc_brunt_vaisala_freq_sqd(  thlm, exner, rtm, rcm, p_in_Pa, thvm, &
+                                  ice_supersat_frac, brunt_vaisala_freq_sqd, &
+                                  brunt_vaisala_freq_sqd_mixed,&
+                                  brunt_vaisala_freq_sqd_dry, &
+                                  brunt_vaisala_freq_sqd_moist, &
+                                  brunt_vaisala_freq_sqd_plus )
 
     invrs_min_max_diff = 1.0_core_rknd / ( Richardson_num_max - Richardson_num_min )
     invrs_num_div_thresh = 1.0_core_rknd / Richardson_num_divisor_threshold
@@ -464,9 +542,8 @@ module advance_helper_module
     ! The min function ensures that Cx does not exceed Cx_max, regardless of the
     !     value of Richardson_num_max.
     Cx_fnc_Richardson = linear_interp_factor( &
-                        ( min(Richardson_num_max,Richardson_num)-Richardson_num_min ) &
-                             * invrs_min_max_diff, &
-                          Cx_max, Cx_min )
+                    ( max(min(Richardson_num_max,Richardson_num),Richardson_num_min) &
+                    - Richardson_num_min )  * invrs_min_max_diff, Cx_max, Cx_min )
 
     if ( l_Cx_fnc_Richardson_vert_avg ) then
       Cx_fnc_Richardson = Lscale_width_vert_avg( Cx_fnc_Richardson, Lscale_zm, rho_ds_zm, &

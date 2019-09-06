@@ -192,7 +192,9 @@ module spurious_source_test
       rcm,               & ! cloud water mixing ratio, r_c             [kg/kg]
       p_in_Pa,           & ! Air pressure                              [Pa]
       thvm,              & ! Virutal potential temperature             [K]
-      Cx_fnc_Richardson    ! Cx_fnc computed from Richardson_num       [-]
+      Cx_fnc_Richardson, & ! Cx_fnc computed from Richardson_num       [-]
+      ice_supersat_frac      
+
 
     type(implicit_coefs_terms), dimension(nz) :: &
       pdf_implicit_coefs_terms    ! Implicit coefs / explicit terms [units vary]
@@ -653,6 +655,7 @@ module spurious_source_test
                              mixt_frac_zm, l_implemented, em, wp2sclrp, &
                              sclrpthvp, sclrm_forcing, sclrp2, exner, rcm, &
                              p_in_Pa, thvm, Cx_fnc_Richardson, &
+                             ice_supersat_frac, &
                              pdf_implicit_coefs_terms, &
                              um_forcing, vm_forcing, ug, vg, wpthvp, &
                              fcor, um_ref, vm_ref, up2, vp2, &
