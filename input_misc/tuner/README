@@ -32,9 +32,13 @@ anneal_iter | integer
  number of times the subroutine is called.
 
 anneal_temp | real, default precision
-max_final_temp      = 0.01,
  Used for both amebsa and the enhanced simulated annealing algorithm.  
  It determines the starting temperature for the algorithms.
+ 
+max_final_temp | real, default precision
+ Used to specify the maximum temperature the simulated annealing tuner can 
+ stop on. For example, 0.1 would mean that the temp must be below 0.1 before
+ calling it quits.
 
 tune_type | integer
    0 for amoeba(downhill simplex method with random restart), or
