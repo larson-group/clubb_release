@@ -65,6 +65,7 @@ module error
   real( kind = core_rknd ), public ::  & 
     f_tol = 1e-5_core_rknd,             & ! The precision to tune for
     anneal_temp = 100._core_rknd,       & ! Initial temperature for the SA algorithm
+    max_final_temp = 1._core_rknd,      & ! Maxmimum final temperature for the SA algorithm
     stp_adjst_center_in = .5_core_rknd, &
     stp_adjst_spread_in = 1._core_rknd
 
@@ -269,7 +270,7 @@ module error
 
     ! Namelists read from error.in
     namelist /stats/  & 
-      f_tol, tune_type, anneal_temp, anneal_iter, & 
+      f_tol, tune_type, anneal_temp, max_final_temp, anneal_iter, & 
       l_results_stdout, l_results_file, l_stdout_on_invalid, &
       t_variables, weight_var_nl, stp_adjst_center_in, stp_adjst_spread_in
 
@@ -1151,6 +1152,7 @@ module error
     end do
     write(unit=iunit,fmt=*) "weight_var_nl = ", weight_var
     write(unit=iunit,fmt=*) "anneal_temp = " , anneal_temp
+    write(unit=iunit,fmt=*) "max_final_temp = " , max_final_temp
     write(unit=iunit,fmt=*) "anneal_iter = " , anneal_iter
     write(unit=iunit,fmt=*) "tune_type   = " , tune_type
     write(unit=iunit,fmt=*) "/"

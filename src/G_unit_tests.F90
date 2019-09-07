@@ -151,8 +151,8 @@ program G_unit_tests
   use spurious_source_test, only: &
       spurious_source_unit_test  ! Procedure(s)
 
-  !use tuner_tests, only: &
-  !    tuner_tests_driver        ! Procedure
+  use tuner_tests, only: &
+      tuner_tests_driver        ! Procedure
 
   implicit none
 
@@ -258,11 +258,11 @@ program G_unit_tests
      endif
   endif
 
-  !if ( l_tuner_tests ) then
-  !   if ( tuner_tests_driver( ) /= 0 ) then
-  !      exit_code = 1
-  !   endif
-  !endif
+  if ( l_tuner_tests ) then
+     if ( tuner_tests_driver( ) /= 0 ) then
+        exit_code = 1
+     endif
+  endif
 
   ! Stop with exit code if error found
   if (exit_code /= 0) then

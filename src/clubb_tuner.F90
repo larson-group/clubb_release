@@ -10,17 +10,7 @@ program clubb_tuner
 !     References:
 !     _Numerical Recipes in Fortran 90_ (Chapter 10) 
 !     (Amoeba & Amebsa subroutine)
-! 
-!   Advice for anyone attempting changes in the future:
-!       Almost everything in this file and the error.F90 file needs
-!       replacement. The way variables are read in from the error_*.in 
-!       files should be completely different, the way the variables are
-!       set up should be different, these functions should be in modules,
-!       there's a large number of things that straight up don't work and
-!       give no information as to what the error was, and some comments 
-!       are actually just question marks. Hopefully you like
-!       spaghetti and staring at your screen in despair wondering what
-!       could possibly be wrong this time.
+!
 !----------------------------------------------------------------------
   use error, only:  & 
     tuner_init, min_les_clubb_diff,                & ! Subroutines 
@@ -424,6 +414,7 @@ subroutine enhanced_simann_driver
     param_vals_matrix,    & ! The parameters to tune matrix
     param_vals_max,       & ! The maximum values for the parameters
     anneal_temp,          & ! Start annealing temperature
+    max_final_temp,       & ! Maximum final annealing temperature
     min_err,              & ! Minimum value of the cost function
     stp_adjst_center_in,  & 
     stp_adjst_spread_in,  &
@@ -464,7 +455,7 @@ subroutine enhanced_simann_driver
     call esa_driver_siarry( xinit, xmin, xmax, anneal_temp, min_les_clubb_diff, xopt, enopt )
   else 
     call esa_driver( xinit, xmin, xmax,                         & ! intent(in)
-                     anneal_temp,                               & ! intent(inout)
+                     anneal_temp, max_final_temp,               & ! intent(inout)
                      xopt, enopt,                               & ! intent(out)
                      min_les_clubb_diff,                        & ! procedure    
                      stp_adjst_center_in, stp_adjst_spread_in,  & ! optional(in)

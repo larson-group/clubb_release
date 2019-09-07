@@ -8,13 +8,14 @@ l_stdout_on_invalid = .true.,
 t_variables         = "cloud_frac", "cf", "rcm", "qcm"
 weight_var_nl       = 0.5, 0.5
 anneal_temp         = 10.,
+max_final_temp      = 0.01,
 anneal_iter         = 100,
 tune_type           = 2
 stp_adjst_center_in = 0.6
 stp_adjst_spread_in = 0.8
 /
 
-! clubb_stats_file is the name of clubb stats file;  This should be the same as 
+! clubb_stats_file is the name of clubb stats file;  This should be the same as
 !   fname_zm  or fname_zm in the statsnl namelist.
 ! les_stats_file is the name of LES grads data file
 ! z_i and z_f are levels to look at when tuning. This does not need

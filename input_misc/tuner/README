@@ -32,6 +32,7 @@ anneal_iter | integer
  number of times the subroutine is called.
 
 anneal_temp | real, default precision
+max_final_temp      = 0.01,
  Used for both amebsa and the enhanced simulated annealing algorithm.  
  It determines the starting temperature for the algorithms.
 

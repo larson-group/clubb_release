@@ -8,3 +8,6 @@
 ../src/G_unit_test_types/mu_sigma_hm_tests.F90
 ../src/G_unit_test_types/pdf_parameter_tests.F90
 ../src/G_unit_test_types/spurious_source_test.F90
+../src/G_unit_test_types/tuner_tests.F90
+../src/enhanced_simann.F90
+../src/error.F90

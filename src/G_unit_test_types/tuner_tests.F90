@@ -7,7 +7,7 @@
 !   calls for the functions in question to locate the global minimum a certain
 !   percent of the time. This percentage was determined experimentally by spending
 !   a long time seeing what the best percentage I could get was. The variables that
-!   were changed to increase this global minimum finding ratio are tmpini, 
+!   were changed to increase this global minimum finding ratio are intial_temp, 
 !   stp_adjst_center, and stp_adjust_spread
 ! 
 ! Functions:
@@ -64,7 +64,7 @@ module tuner_tests
 
     logical :: &
         l_esa_siarry = .false.,     & ! Turn on to use Siarry's ESA algorithm
-        l_print_outs = .false.         ! Print outs of results, useful for testing
+        l_print_outs = .false.        ! Print outs of results, useful for testing
 
 
     integer, parameter :: &
@@ -158,7 +158,7 @@ module tuner_tests
                 xinit, xmin, xmax, xopt, xrand
 
         real( kind = core_rknd ) :: goldstein_price_test, nrgy_opt, &
-                tmpini, stp_adjst_center, stp_adjst_spread, f_tol
+                intial_temp, max_final_temp, stp_adjst_center, stp_adjst_spread, f_tol
 
         integer :: &
             pass_count, &
@@ -168,10 +168,11 @@ module tuner_tests
         ! setup variables
         xmin = -2._core_rknd
         xmax = 2._core_rknd
-        f_tol = 1.e-10_core_rknd
+        f_tol = 1.e-2_core_rknd
         pass_count = 0
 
-        tmpini = 450._core_rknd
+        intial_temp = 450._core_rknd
+        max_final_temp = 1.e-10_core_rknd
         stp_adjst_center = 0.58_core_rknd
         stp_adjst_spread = 0.28_core_rknd
 
@@ -184,12 +185,13 @@ module tuner_tests
 
             if ( l_esa_siarry ) then
 
-                call esa_driver_siarry( xinit, xmin, xmax, tmpini, goldstein_price, xopt, nrgy_opt )
+                call esa_driver_siarry( xinit, xmin, xmax, intial_temp, goldstein_price, &
+                                        xopt, nrgy_opt )
             else 
                 
                 ! minimize
                 call esa_driver( xinit, xmin, xmax,                     & ! intent(in)
-                                 tmpini,                                & ! intent(inout)
+                                 intial_temp, max_final_temp,           & ! intent(in)
                                  xopt, nrgy_opt,                        & ! intent(out)
                                  goldstein_price,                       & ! procedure    
                                  stp_adjst_center, stp_adjst_spread,    & ! optional(in)
@@ -243,7 +245,7 @@ module tuner_tests
                 xinit, xmin, xmax, xopt, xrand
 
         real( kind = core_rknd ) :: rastrigin_test, nrgy_opt, &
-                tmpini, stp_adjst_center, stp_adjst_spread, f_tol
+                intial_temp, max_final_temp, stp_adjst_center, stp_adjst_spread, f_tol
 
         integer :: &
             pass_count, &
@@ -252,10 +254,11 @@ module tuner_tests
         ! setup variables
         xmin = -5.12_core_rknd
         xmax = 5.12_core_rknd
-        f_tol = 1.e-10_core_rknd
+        f_tol = 1.e-2_core_rknd
         pass_count = 0
 
-        tmpini = 20.
+        intial_temp = 20.
+        max_final_temp = 1.e-10_core_rknd
         stp_adjst_center = 0.694
         stp_adjst_spread = 0.1
         
@@ -268,11 +271,11 @@ module tuner_tests
 
             if ( l_esa_siarry ) then
 
-                call esa_driver_siarry( xinit, xmin, xmax, tmpini, rastrigin, xopt, nrgy_opt )
+                call esa_driver_siarry( xinit, xmin, xmax, intial_temp, rastrigin, xopt, nrgy_opt )
             else 
                 ! minimize
                 call esa_driver( xinit, xmin, xmax,                     & ! intent(in)
-                                 tmpini,                                & ! intent(inout)
+                                 intial_temp, max_final_temp,           & ! intent(in)
                                  xopt, nrgy_opt,                        & ! intent(out)
                                  rastrigin,                             & ! procedure    
                                  stp_adjst_center, stp_adjst_spread,    & ! optional(in)
@@ -322,7 +325,7 @@ module tuner_tests
                 xinit, xmin, xmax, xopt, xrand
 
         real( kind = core_rknd ) :: himmelblau_test, nrgy_opt, &
-                tmpini, stp_adjst_center, stp_adjst_spread, f_tol
+                intial_temp, max_final_temp, stp_adjst_center, stp_adjst_spread, f_tol
 
         integer :: &
             pass_count, &
@@ -332,10 +335,11 @@ module tuner_tests
         ! setup variables
         xmin = -5._core_rknd
         xmax = 5._core_rknd
-        f_tol = 1.e-10_core_rknd
+        f_tol = 1.e-2_core_rknd
         pass_count = 0
 
-        tmpini = 10._core_rknd
+        intial_temp = 10._core_rknd
+        max_final_temp = 1.e-10_core_rknd
         stp_adjst_center = 0.96_core_rknd
         stp_adjst_spread = 0.8_core_rknd
         
@@ -347,11 +351,11 @@ module tuner_tests
 
             if ( l_esa_siarry ) then
 
-                call esa_driver_siarry( xinit, xmin, xmax, tmpini, himmelblau, xopt, nrgy_opt )
+                call esa_driver_siarry( xinit, xmin, xmax, intial_temp, himmelblau, xopt, nrgy_opt )
             else 
                 ! minimize
                 call esa_driver( xinit, xmin, xmax,                     & ! intent(in)
-                                 tmpini,                                & ! intent(inout)
+                                 intial_temp, max_final_temp,           & ! intent(in)
                                  xopt, nrgy_opt,                        & ! intent(out)
                                  himmelblau,                            & ! procedure    
                                  stp_adjst_center, stp_adjst_spread,    & ! optional(in)
@@ -401,7 +405,7 @@ module tuner_tests
                 xinit, xmin, xmax, xopt, xrand
 
         real( kind = core_rknd ) :: eggholder_test, nrgy_opt, &
-                tmpini, stp_adjst_center, stp_adjst_spread, f_tol
+                intial_temp, max_final_temp, stp_adjst_center, stp_adjst_spread, f_tol
 
         integer :: &
             pass_count, &
@@ -411,10 +415,11 @@ module tuner_tests
         ! setup variables
         xmin = -512._core_rknd
         xmax = 512._core_rknd
-        f_tol = 1.e-10_core_rknd
+        f_tol = 1.e-2_core_rknd
         pass_count = 0
 
-        tmpini = 85000._core_rknd
+        intial_temp = 85000._core_rknd
+        max_final_temp = 1.e-10_core_rknd
         stp_adjst_center = 0.128_core_rknd
         stp_adjst_spread = 0.87_core_rknd
         
@@ -427,11 +432,11 @@ module tuner_tests
 
             if ( l_esa_siarry ) then
 
-                call esa_driver_siarry( xinit, xmin, xmax, tmpini, eggholder, xopt, nrgy_opt )
+                call esa_driver_siarry( xinit, xmin, xmax, intial_temp, eggholder, xopt, nrgy_opt )
             else 
                 ! minimize
                 call esa_driver( xinit, xmin, xmax,                     & ! intent(in)
-                                 tmpini,                                & ! intent(inout)
+                                 intial_temp, max_final_temp,           & ! intent(in)
                                  xopt, nrgy_opt,                        & ! intent(out)
                                  eggholder,                             & ! procedure    
                                  stp_adjst_center, stp_adjst_spread,    & ! optional(in)
@@ -475,7 +480,7 @@ module tuner_tests
                 xinit, xmin, xmax, xopt, xrand
 
         real( kind = core_rknd ) :: schaffer_test, nrgy_opt, &
-                tmpini, stp_adjst_center, stp_adjst_spread, f_tol
+                intial_temp, max_final_temp, stp_adjst_center, stp_adjst_spread, f_tol
 
         integer :: &
             pass_count, &
@@ -485,10 +490,11 @@ module tuner_tests
         ! setup variables
         xmin = -100._core_rknd
         xmax = 100._core_rknd
-        f_tol = 1.e-10_core_rknd
+        f_tol = 1.e-2_core_rknd
         pass_count = 0
 
-        tmpini = 20._core_rknd
+        intial_temp = 20._core_rknd
+        max_final_temp = 1.e-10_core_rknd
         stp_adjst_center = 0.8_core_rknd
         stp_adjst_spread = 0.4_core_rknd
        
@@ -501,11 +507,11 @@ module tuner_tests
 
             if ( l_esa_siarry ) then
 
-                call esa_driver_siarry( xinit, xmin, xmax, tmpini, schaffer, xopt, nrgy_opt )
+                call esa_driver_siarry( xinit, xmin, xmax, intial_temp, schaffer, xopt, nrgy_opt )
             else 
                 ! minimize
                 call esa_driver( xinit, xmin, xmax,                     & ! intent(in)
-                                 tmpini,                                & ! intent(inout)
+                                 intial_temp, max_final_temp,           & ! intent(in)
                                  xopt, nrgy_opt,                        & ! intent(out)
                                  schaffer,                              & ! procedure    
                                  stp_adjst_center, stp_adjst_spread,    & ! optional(in)

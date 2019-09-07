@@ -28,7 +28,7 @@ module enhanced_simann
     contains
 !-----------------------------------------------------------------------------
     subroutine esa_driver( xinit, xmin, xmax,                         & ! intent(in)
-                           tmpini,                                    & ! intent(inout)
+                           initial_temp, max_final_temp,              & ! intent(inout)
                            xopt, nrgy_opt,                            & ! intent(out)
                            fobj,                                      & ! procedure
                            stp_adjst_center_in, stp_adjst_spread_in,  & ! optional(in)
@@ -55,8 +55,9 @@ module enhanced_simann
           xmax,     & ! Maximum values for the x vector
           xinit       ! Initial argument for fobj
 
-        real( kind = core_rknd ), intent(inout) :: &
-          tmpini      ! Initial temperature
+        real( kind = core_rknd ), intent(in) :: &
+          initial_temp, &    ! Initial temperature
+          max_final_temp    ! Maximum allowed final temperature
 
         real( kind = core_rknd ), dimension(:), intent(out) :: &
           xopt        ! Array of optimal parameters
@@ -142,7 +143,7 @@ module enhanced_simann
         vars = size( xinit )
         xopt(:) = xinit(:)
         xstart = xinit     
-        temp = tmpini
+        temp = initial_temp
         iter = 1
         if ( present(iter_in) ) iter_in = 1
 
@@ -226,8 +227,9 @@ module enhanced_simann
                 ! if energy is the best overall, save it and the vars
                 if ( new_nrgy < nrgy_opt ) then
 
-                    ! if it's best by more than threshold, reset stages with no improvement counter
-                    if ( nrgy_opt - new_nrgy > f_tol ) then
+                    ! if the ratio of previos best to new best is greater than the fractional
+                    ! tolerance, then reset stages with no improvement to continue
+                    if ( nrgy_opt - new_nrgy > f_tol * nrgy_opt ) then
                         stages_w_no_improve = 0
                     end if
 
@@ -254,11 +256,11 @@ module enhanced_simann
                 cycle                   
             end if
 
-            ! temp *= decay, where min_cool < decay = min at current temp / average < max_cool
-            if ( tot_nrgy < f_tol ) then
-                temp = temp * min_cool
-            else 
+            ! temp *= decay, where max_cool < decay = min at current temp / average < min_cool
+            if ( tot_nrgy > 0.0_core_rknd ) then
                 temp = temp * max( min( min_nrgy * sum(attempted)/tot_nrgy, min_cool ), max_cool )
+            else 
+                temp = temp * min_cool
             end if
 
             ! improvement ratio = how well a variable did in improving results
@@ -281,7 +283,7 @@ module enhanced_simann
             end if
 
             ! too many temp stages with no improvement
-            if ( temp <= f_tol .and. stages_w_no_improve > no_improve_max ) then
+            if ( temp <= max_final_temp .and. stages_w_no_improve > no_improve_max ) then
 
                 ! debugging
                 if ( present(file_name) .and. present(file_unit) ) then
