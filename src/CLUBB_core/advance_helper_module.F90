@@ -359,7 +359,7 @@ module advance_helper_module
 
         brunt_vaisala_freq_sqd_mixed(:) =  &
                merge (brunt_vaisala_freq_sqd_moist,brunt_vaisala_freq_sqd_dry,&
-               ice_supersat_frac .gt. 0 )
+               ice_supersat_frac > 0 )
 
     else ! l_brunt_vaisala_freq_moist
 
