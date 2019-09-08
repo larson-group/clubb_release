@@ -1189,8 +1189,8 @@ module advance_clubb_core_module
               brunt_vaisala_freq_sqd_smth ) )!,0.002_core_rknd )
 
         invrs_tau_xp2_zm = merge(0.003_core_rknd, invrs_tau_xp2_zm, &
-              zt2zm(ice_supersat_frac) .le. 0.01_core_rknd &
-              .and. invrs_tau_xp2_zm  .ge. 0.003_core_rknd)
+              zt2zm(ice_supersat_frac) <= 0.01_core_rknd &
+              .and. invrs_tau_xp2_zm  >= 0.003_core_rknd)
 
         invrs_tau_wpxp_zm = invrs_tau_zm & 
               + C_invrs_tau_N2_wpxp * brunt_freq_out_cloud 
