@@ -50,6 +50,24 @@ ntrials = 3 # maximum number of input trials before closing the program
 affirmatives = ['y', 'yes', 'aye', 'yay', 'pos', '1']
 negatives = ['n', 'no', 'nay', 'nope', 'neg', '0']
 
+## CASE FILE DEFINITIONS
+# define constants to use as indexer instead of integers
+PLOT_ID = 0
+PLOT_TITLE = 1
+PLOT_XLABEL = 2
+PLOT_TEXT = 3
+PLOT_TEXTPOS = 4
+PLOT_LINES = 5
+PLOT_LINES_SAM = 5
+PLOT_LINES_CLUBB = 6
+
+# define line list indexer constants
+LINE_NAME = 0
+LINE_VISIB = 1
+LINE_EXPRESSION = 2
+LINE_FACTOR = 3
+LINE_XAX = 4
+
 ## PLOTTING CHOICES
 # List of output types
 # TODO: How to define??

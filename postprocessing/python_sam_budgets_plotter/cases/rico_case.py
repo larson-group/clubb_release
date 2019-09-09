@@ -15,8 +15,8 @@ full_name = case
 case_folder = '/home/sdomke/workspace/clubb/sam_clubb/{case}'.format(case=case)
 enabled = True
 #type = 'budget' # not used in plotgen
-nx = 256
-ny = 256
+nx = 512
+ny = 512
 nz = 100
 dxy = 100             # [m]
 dz = 40               # [m]

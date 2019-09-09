@@ -15,6 +15,9 @@ To run this program from the command line, first change the working directory to
 the directory containing the plotgen.py file, then type the following line into
 the console using any python2 interpreter, and finally hit <Enter>:
 python2 plotgen.py
+
+TODO:   - Change setup lists in variable setup files to dictionary with meaningful string keys:
+id, title, xlabel, text, textpos, sam lines, clubb lines
 """
 
 #-------------------------------------------------------------------------------
