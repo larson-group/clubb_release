@@ -7,6 +7,13 @@ in the netCDF file needed for plotgen.py.
 
 The list variables sortPlots, plotNames and lines are sorted identically in
 order to relate the individual variables.
+TODO: Redo setup lists so noone has to count lines to get the number of entries right
+Structure of list entries:
+- plot name
+- title
+- units
+- text + position
+- list of variables and lines
 """
 #-------------------------------------------------------------------------------
 #   I M P O R T S
@@ -16,62 +23,32 @@ from numpy import nan
 #-------------------------------------------------------------------------------
 #   C O N S T A N T S
 #-------------------------------------------------------------------------------
-DAY = 24
-HOUR = 3600
-KG = 1000
+# Definition of commonly used conversion factors
+DAY = 24                                                    # 1d  = 24h
+HOUR = 3600                                                 # 1h  = 3600s
+KG = 1000.                                                  # 1kg = 1000g
 g_per_second_to_kg_per_day = 1. / (DAY * HOUR * KG)
 kg_per_second_to_kg_per_day = 1. / (DAY * HOUR)
+
 filler = nan                                                # Define the fill value which should replace invalid values in the data
-startLevel = 0                                              # Set the lower height level at which the plots should begin. For example, startLevel=2 would cut off the lowest 2 data points for each line. (NOTE: Redundant with startHeight entry in case setup files)
-header = 'SAM budgets'
-name = 'sam_budgets'
-prefix = 'LES'
-nc_files = ['sam']
+#startLevel = 0                                              # Set the lower height level at which the plots should begin. For example, startLevel=2 would cut off the lowest 2 data points for each line. (DEPRECATED: Redundant with startHeight entry in case setup files)
+header = 'SAM budgets'                                      # Plot description used for the header on the html page (NOTE: redundant with name?)
+name = 'sam_budgets'                                        # Plot description used for file names and identifying plot types, MUST CONTAIN MODEL NAMES!
+prefix = 'LES, '                                            # Prefix identifier used in plot titles
+nc_files = ['sam']                                          # List of NETCDF files containing the data needed for creating the plots listed belo. Paths are defined in case setup files
 # Put additional text entry into plot (TODO: Create lists for texts and positions for each plot)
-plotText = 'a)'                                             # Additional text entry to be put into plot
+plotText = ''                                               # Additional text entry to be put into plot
 textPos = (.1,.9)                                           # Position of text within plot in data coordinates (x,y)
 
 #-------------------------------------------------------------------------------
 # P L O T S
 #-------------------------------------------------------------------------------
+# Names of variables
 sortPlots = ['HL', 'QT', 'TW', 'THLW', 'QW', 'QTOGW', 'W2', 'W3', 'T2', 'THL2', 'Q2', 'QTOG2', 'QTHL', 'TKE', 'TKES', 'U2V2', 'WU','WV','U2', 'V2', 'V2_COMP', 'U2_V2_TAU', 'QTOG2_TAU', 'Q2_TAU', 'THL2_TAU', 'C2_TAU_COMP', 'U2_REDUCED', 'V2_REDUCED', 'W2_REDUCED', 'WU REDUCED', 'WV REDUCED']
+
 # settings of each plot:
-# plot number, plot title, axis label
-#plotNames = [\
-                #[r"$\mathrm{HL}$", r"$\mathrm{HL}$ budget terms $\mathrm{\left[K\,s^{-1}\right]}$"],\
-                #[r"$\mathrm{QT}$", r"$\mathrm{QT}$ budget terms $\mathrm{\left[kg\,kg^{-1}\,s^{-1}\right]}$"],\
-                #[r"$\mathrm{TW}$", r"$\mathrm{TW}$ budget terms $\mathrm{\left[m\,K\,s^{-2}\right]}$"],\
-                #[r"$\mathrm{THLW}$", r"$\mathrm{THLW}$ budget terms $\mathrm{\left[m\,K\,s^{-2}\right]}$"],\
-                #[r"$\mathrm{QW}$", r"$\mathrm{QW}$ budget terms $\mathrm{\left[kg\,kg^{-1}\,m\,s^{-2}\right]}$"],\
-                #[r"$\mathrm{QTOGW}$", r"$\mathrm{QTOGW}$ budget terms $\mathrm{\left[kg\,kg^{-1}\,m\,s^{-2}\right]}$"],\
-                #[r"$\mathrm{\overline{w'^2}}$", r"$\mathrm{\overline{w'^2}}$ budget terms $\mathrm{\left[m^2\,s^{-3}\right]}$"],\
-                #[r"$\mathrm{\overline{w'^3}}$", r"$\mathrm{\overline{w'^3}}$ budget terms $\mathrm{\left[m^3\,s^{-4}\right]}$"],\
-                #[r"$\mathrm{T^2}$", r"$\mathrm{T^2}$ budget terms $\mathrm{\left[K^2\,s^{-1}\right]}$"],\
-                #[r"$\mathrm{THL^2}$", r"$\mathrm{THL^2}$ budget terms $\mathrm{\left[K^2\,s^{-1}\right]}$"],\
-                #[r"$\mathrm{Q^2}$", r"$\mathrm{Q^2}$ budget terms $\mathrm{\left[kg^2\,kg^{-2}\,s^{-1}\right]}$"],\
-                #[r"$\mathrm{QTOG^2}$", r"$\mathrm{QTOG^2}$ budget terms $\mathrm{\left[kg^2\,kg^{-2}\,s^{-1}\right]}$"],\
-                #[r"$\mathrm{QTHL}$", r"$\mathrm{QTHL}$ budget terms $\mathrm{\left[kg\,kg^{-1}\,K\,s^{-1}\right]}$"],\
-                #[r"$\mathrm{TKE}$", r"$\mathrm{TKE}$ budget terms $\mathrm{\left[m^2\,s^{-3}\right]}$"],\
-                #[r"$\mathrm{TKE}_{SGS}$", r"$\mathrm{TKE}_{SGS}$ budget terms $\mathrm{\left[m^2\,s^{-3}\right]}$"],\
-                #[r"$\mathrm{\overline{u'^2}+\overline{v'^2}}$", r"$\mathrm{\overline{u'^2}+\overline{v'^2}}$ budget terms $\mathrm{\left[m^2\, s^{-3}\right]}$"],\
-                #[r"$\mathrm{\overline{u'w'}}$", r"$\mathrm{\overline{u'w'}}$ budget terms $\mathrm{\left[m^2\,s^{-3}\right]}$"],\
-                #[r"$\mathrm{\overline{v'w'}}$", r"$\mathrm{\overline{v'w'}}$ budget terms $\mathrm{\left[m^2\,s^{-3}\right]}$"],\
-                #[r"$\mathrm{\overline{u'^2}}$", r"$\mathrm{\overline{u'^2}}$ budget terms $\mathrm{\left[m^2\,s^{-3}\right]}$"],\
-                #[r"$\mathrm{\overline{v'^2}}$", r"$\mathrm{\overline{v'^2}}$ budget terms $\mathrm{\left[m^2\,s^{-3}\right]}$"],\
-                #[r"$\mathrm{(\overline{u'^2}+\overline{v'^2}) - \overline{u'^2}}$", r"$\mathrm{\overline{v'^2}}$ budget terms $\mathrm{\left[m^2\, s^{-3}\right]}$"],\
-                #[r"$\mathrm{\frac{C_{14}}{\tau}\ (\overline{u'^2}, \overline{v'^2})}$", r"$\mathrm{\frac{C_{14}}{\tau}\ \left[s^{-1}\right]}$"],\
-                #[r"$\mathrm{\frac{C_2}{\tau}\ (QTOG^2)}$", r"$\mathrm{\frac{C_2}{\tau}\ \left[s^{-1}\right]}$"],\
-                #[r"$\mathrm{\frac{C_2}{\tau}\ (QT^2)}$", r"$\mathrm{\frac{C_2}{\tau}\ \left[s^{-1}\right]}$"],\
-                #[r"$\mathrm{\frac{C_2}{\tau}\ (THL^2)}$", r"$\mathrm{\frac{C_2}{\tau}\ \left[s^{-1}\right]}$"],\
-                #[r"$\mathrm{\frac{C}{\tau}}$ Comparison", r"$\mathrm{\frac{C}{\tau}\ \left[s^{-1}\right]}$"],\
-                #[r"$\mathrm{\overline{u'^2}} budget$", r"$\mathrm{\overline{u'^2}}$ budget terms $\mathrm{\left[m^2\,s^{-3}\right]}$"],\
-                #[r"$\mathrm{\overline{v'^2}} budget$", r"$\mathrm{\overline{v'^2}}$ budget terms $\mathrm{\left[m^2\,s^{-3}\right]}$"],\
-                #[r"$\mathrm{\overline{w'^2}} budget$", r"$\mathrm{\overline{w'^2}}$ budget terms $\mathrm{\left[m^2\,s^{-3}\right]}$"],\
-                #[r"$\mathrm{\overline{u'w'}} budget$", r"$\mathrm{\overline{u'w'}}$ budget terms $\mathrm{\left[m^2\,s^{-3}\right]}$"],\
-                #[r"$\mathrm{\overline{v'w'}}$ budget", r"$\mathrm{\overline{v'w'}}$ budget terms $\mathrm{\left[m^2\,s^{-3}\right]}$"],\
-            #]
-
-
+# (plot number, )plot title, x-axis label
+# TODO: Construct plot name from long name in netcdf instead
 plotNames = [\
         [r"$\mathrm{HL}$", r"$\mathrm{HL}$ budget terms $\mathrm{\left[K\,s^{-1}\right]}$"],\
         [r"$\mathrm{QT}$", r"$\mathrm{QT}$ budget terms $\mathrm{\left[kg\,kg^{-1}\,s^{-1}\right]}$"],\
@@ -105,11 +82,48 @@ plotNames = [\
         [r"$\overline{u'w'}$ budget", r"$\overline{u'w'}$ budget terms $\mathrm{\left[m^2\,s^{-3}\right]}$"],\
         [r"$\overline{v'w'}$ budget", r"$\overline{v'w'}$ budget terms $\mathrm{\left[m^2\,s^{-3}\right]}$"],\
         ]
-    
 
+# Text and position (specified in axis coords: (0,0)=lower left corner, (1,1)=upper right) inserted into each plot)
+text = [\
+    ['',(.1,.9)],\
+    ['',(.1,.9)],\
+    ['',(.1,.9)],\
+    ['',(.1,.9)],\
+    ['',(.1,.9)],\
+    ['',(.1,.9)],\
+    ['',(.1,.9)],\
+    ['',(.1,.9)],\
+    ['',(.1,.9)],\
+    ['',(.1,.9)],\
+    ['',(.1,.9)],\
+    ['',(.1,.9)],\
+    ['',(.1,.9)],\
+    ['',(.1,.9)],\
+    ['',(.1,.9)],\
+    ['',(.1,.9)],\
+    ['',(.1,.9)],\
+    ['',(.1,.9)],\
+    ['',(.1,.9)],\
+    ['',(.1,.9)],\
+    ['',(.1,.9)],\
+    ['',(.1,.9)],\
+    ['',(.1,.9)],\
+    ['',(.1,.9)],\
+    ['',(.1,.9)],\
+    ['',(.1,.9)],\
+    ['',(.1,.9)],\
+    ['',(.1,.9)],\
+    ['',(.1,.9)],\
+    ['',(.1,.9)],\
+    ['',(.1,.9)],\
+    ]
 
-# lines of each plot:
-# variable name within python, shall this variable be plotted?, variable name in SAM output, conversion
+# Line list entry description:
+#0: line name
+#1: line visibility setting
+#2: line variable or expression
+#3: line scaling factor
+#4: line xaxis selection
 
 # T_TNDCY not a SAM variable
 HL = [\
@@ -558,4 +572,49 @@ WV_REDUCED = [\
     ['residual', True, 'WVBT - (WVADV + WVBUOY + WVDIFF + WVPRES + WVANIZ + WVSHEAR + WVSDMP)', 1, 0],\
     ]
 
+# Gather plots in list
 lines = [HL, QT, TW, THLW, QW, QTOGW, W2, W3, T2, THL2, Q2, QTOG2, QTHL, TKE, TKES, U2V2, WU, WV, U2, V2, V2_COMP, U2_V2_TAU, QTOG2_TAU, Q2_TAU, THL2_TAU, C2_TAU_COMP, U2_REDUCED, V2_REDUCED, W2_REDUCED, WU_REDUCED, WV_REDUCED]
+
+# Combine all setup parameters into one list of lists/dicts(?)
+# TODO: Add style entry to lines, 
+# Choice: Keep plot entries as list and use alias for indexing OR Change from lists to dicts OR use pandas
+# List entry description:
+#0: plot id
+#1: plot title
+#2: plot x-label
+#3: plot text
+#4: plot text position
+#5: plot lines
+plots = [
+    ['HL', r"$\mathrm{HL}$", r"$\mathrm{HL}$ budget terms $\mathrm{\left[K\,s^{-1}\right]}$", '', (0.1, 0.9), HL],
+    ['QT', r"$\mathrm{QT}$", r"$\mathrm{QT}$ budget terms $\mathrm{\left[kg\,kg^{-1}\,s^{-1}\right]}$", '', (0.1, 0.9), QT],
+    ['TW', r"$\mathrm{TW}$", r"$\mathrm{TW}$ budget terms $\mathrm{\left[m\,K\,s^{-2}\right]}$", '', (0.1, 0.9), TW],
+    ['THLW', r"$\mathrm{THLW}$", r"$\mathrm{THLW}$ budget terms $\mathrm{\left[m\,K\,s^{-2}\right]}$", '', (0.1, 0.9), THLW],
+    ['QW', r"$\mathrm{QW}$", r"$\mathrm{QW}$ budget terms $\mathrm{\left[kg\,kg^{-1}\,m\,s^{-2}\right]}$", '', (0.1, 0.9), QW],
+    ['QTOGW', r"$\mathrm{QTOGW}$", r"$\mathrm{QTOGW}$ budget terms $\mathrm{\left[kg\,kg^{-1}\,m\,s^{-2}\right]}$", '', (0.1, 0.9), QTOGW],
+    ['W2', r"$\overline{w'^2}$", r"$\overline{w'^2}$ budget terms $\mathrm{\left[m^2\,s^{-3}\right]}$", '', (0.1, 0.9), W2],
+    ['W3', r"$\overline{w'^3}$", r"$\overline{w'^3}$ budget terms $\mathrm{\left[m^3\,s^{-4}\right]}$", '', (0.1, 0.9), W3],
+    ['T2', r"$\mathrm{T^2}$", r"$\mathrm{T^2}$ budget terms $\mathrm{\left[K^2\,s^{-1}\right]}$", '', (0.1, 0.9), T2],
+    ['THL2', r"$\mathrm{THL^2}$", r"$\mathrm{THL^2}$ budget terms $\mathrm{\left[K^2\,s^{-1}\right]}$", '', (0.1, 0.9), THL2],
+    ['Q2', r"$\mathrm{Q^2}$", r"$\mathrm{Q^2}$ budget terms $\mathrm{\left[kg^2\,kg^{-2}\,s^{-1}\right]}$", '', (0.1, 0.9), Q2],
+    ['QTOG2', r"$\mathrm{QTOG^2}$", r"$\mathrm{QTOG^2}$ budget terms $\mathrm{\left[kg^2\,kg^{-2}\,s^{-1}\right]}$", '', (0.1, 0.9), QTOG2],
+    ['QTHL', r"$\mathrm{QTHL}$", r"$\mathrm{QTHL}$ budget terms $\mathrm{\left[kg\,kg^{-1}\,K\,s^{-1}\right]}$", '', (0.1, 0.9), QTHL],
+    ['TKE', r"$\mathrm{TKE}$", r"$\mathrm{TKE}$ budget terms $\mathrm{\left[m^2\,s^{-3}\right]}$", '', (0.1, 0.9), TKE],
+    ['TKES', r"$\mathrm{TKE}_{SGS}$", r"$\mathrm{TKE}_{SGS}$ budget terms $\mathrm{\left[m^2\,s^{-3}\right]}$", '', (0.1, 0.9), TKES],
+    ['U2V2', r"$\overline{u'^2}+\overline{v'^2}$", r"$\overline{u'^2}+\overline{v'^2}$ budget terms $\mathrm{\left[m^2\, s^{-3}\right]}$", '', (0.1, 0.9), U2V2],
+    ['WU', r"$\overline{u'w'}$", r"$\overline{u'w'}$ budget terms $\mathrm{\left[m^2\,s^{-3}\right]}$", '', (0.1, 0.9), WU],
+    ['WV', r"$\overline{v'w'}$", r"$\overline{v'w'}$ budget terms $\mathrm{\left[m^2\,s^{-3}\right]}$", '', (0.1, 0.9), WV],
+    ['U2', r"$\overline{u'^2}$", r"$\overline{u'^2}$ budget terms $\mathrm{\left[m^2\,s^{-3}\right]}$", '', (0.1, 0.9), U2],
+    ['V2', r"$\overline{v'^2}$", r"$\overline{v'^2}$ budget terms $\mathrm{\left[m^2\,s^{-3}\right]}$", '', (0.1, 0.9), V2],
+    ['V2_COMP', r"$(\overline{u'^2}+\overline{v'^2}) - \overline{u'^2}$", r"$\overline{v'^2}$ budget terms $\mathrm{\left[m^2\, s^{-3}\right]}$", '', (0.1, 0.9), V2_COMP],
+    ['U2_V2_TAU', r"$\frac{C_{14}}{\tau}\ (\overline{u'^2}, \overline{v'^2})$", r"$\frac{C_{14}}{\tau}\ \mathrm{\left[s^{-1}\right]}$", '', (0.1, 0.9), U2_V2_TAU],
+    ['QTOG2_TAU', r"$\frac{C_2}{\tau}\ (QTOG^2)$", r"$\frac{C_2}{\tau}\ \mathrm{\left[s^{-1}\right]}$", '', (0.1, 0.9), QTOG2_TAU],
+    ['Q2_TAU', r"$\frac{C_2}{\tau}\ (QT^2)$", r"$\frac{C_2}{\tau}\ \mathrm{\left[s^{-1}\right]}$", '', (0.1, 0.9), Q2_TAU],
+    ['THL2_TAU', r"$\frac{C_2}{\tau}\ (THL^2)$", r"$\frac{C_2}{\tau}\ \mathrm{\left[s^{-1}\right]}$", '', (0.1, 0.9), THL2_TAU],
+    ['C2_TAU_COMP', r"$\frac{C}{\tau}$ Comparison", r"$\frac{C}{\tau}\ \mathrm{\left[s^{-1}\right]}$", '', (0.1, 0.9), C2_TAU_COMP],
+    ['U2_REDUCED', r"$\overline{u'^2}$ budget", r"$\overline{u'^2}$ budget terms $\mathrm{\left[m^2\,s^{-3}\right]}$", '', (0.1, 0.9), U2_REDUCED],
+    ['V2_REDUCED', r"$\overline{v'^2}$ budget", r"$\overline{v'^2}$ budget terms $\mathrm{\left[m^2\,s^{-3}\right]}$", '', (0.1, 0.9), V2_REDUCED],
+    ['W2_REDUCED', r"$\overline{w'^2}$ budget", r"$\overline{w'^2}$ budget terms $\mathrm{\left[m^2\,s^{-3}\right]}$", '', (0.1, 0.9), W2_REDUCED],
+    ['WU REDUCED', r"$\overline{u'w'}$ budget", r"$\overline{u'w'}$ budget terms $\mathrm{\left[m^2\,s^{-3}\right]}$", '', (0.1, 0.9), WU_REDUCED],
+    ['WV REDUCED', r"$\overline{v'w'}$ budget", r"$\overline{v'w'}$ budget terms $\mathrm{\left[m^2\,s^{-3}\right]}$", '', (0.1, 0.9), WV_REDUCED],
+    ]

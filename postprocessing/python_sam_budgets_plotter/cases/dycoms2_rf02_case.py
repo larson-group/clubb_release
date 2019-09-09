@@ -16,8 +16,8 @@ full_name = 'DYCOMS-II RF02'
 case_folder = '/home/sdomke/workspace/clubb/sam_clubb/{case}'.format(case=case)
 enabled = True 
 #type = 'budget' # not used in plotgen
-nx = 128
-ny = 128
+nx = 256
+ny = 256
 nz = 96
 dxy = 50                # [m]
 dz = '5-80'             # [m]

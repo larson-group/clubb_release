@@ -130,7 +130,8 @@ def plot_budgets(budgets_data, level, xLabel, yLabel, title, name, lw=5, grid=Tr
     
 # END plot_budgets (DEPRECATED!)
 
-def plot_profiles(data, level, xLabel, yLabel, title, name, textEntry="", textPos=(0,0), startLevel=0, lw=5, grid=True, color='nipy_spectral', centering=False, pdf=None):
+#def plot_profiles(data, level, xLabel, yLabel, title, name, textEntry="", textPos=(0,0), startLevel=0, lw=5, grid=True, color='nipy_spectral', centering=False, pdf=None):
+def plot_profiles(data, level, xLabel, yLabel, title, name, textEntry="", textPos=(0,0), lw=5, grid=True, color='nipy_spectral', centering=False, pdf=None):
     """
     NOTE: This function replaced plot_budgets, so it should be used from now on.
     Creates a height profile plot with one line per entry in data
@@ -152,7 +153,7 @@ def plot_profiles(data, level, xLabel, yLabel, title, name, textEntry="", textPo
     name           --  name of the file
     textEntry      --  Additional text to be put into plot
     textPos        --  Position of additional text in data coordinates
-    startLevel     --  Height level at which to plot lines, values below this level will be ignored (Redundant with startHeight entry in case file)
+    startLevel     --  (removed) Height level at which to plot lines, values below this level will be ignored (Redundant with startHeight entry in case file)
     lw             --  linewidth of the plot lines
     color          --  name of colormap (deprecated, as color sequence is hard coded at the momemt)
     pdf            --  PdfPages object
@@ -210,7 +211,8 @@ def plot_profiles(data, level, xLabel, yLabel, title, name, textEntry="", textPo
             # if it is a help variable, like BUOY e.g., the variable should not be plotted. It is included in B+P variables
             if data[i][1]:
                 # plot line
-                axes[data[i][3]].plot(data[i][4][startLevel:], level[startLevel:], label=data[i][0], color=color_arr[j%len(color_arr)], lw=lw, ls=styles[j%len(styles)])
+                #axes[data[i][3]].plot(data[i][4][startLevel:], level[startLevel:], label=data[i][0], color=color_arr[j%len(color_arr)], lw=lw, ls=styles[j%len(styles)])
+                axes[data[i][3]].plot(data[i][4], level, label=data[i][0], color=color_arr[j%len(color_arr)], lw=lw, ls=styles[j%len(styles)])
                 if not np.all(np.isnan(data[i][4])):
                     lims[data[i][3],0] = np.nanmin( (np.nanmin(data[i][4]), lims[data[i][3],0]) )
                     lims[data[i][3],1] = np.nanmax( (np.nanmax(data[i][4]), lims[data[i][3],1]) )
@@ -273,7 +275,8 @@ def plot_profiles(data, level, xLabel, yLabel, title, name, textEntry="", textPo
     plt.close(fig)
 
 
-def plot_comparison(data_clubb, data_sam, level_clubb, level_sam, xLabel, yLabel, title, name, textEntry="", textPos=(0,0), startLevel=0, grid=False, pdf=None, plot_old_clubb=False, data_old=None, level_old=None):
+#def plot_comparison(data_clubb, data_sam, level_clubb, level_sam, xLabel, yLabel, title, name, textEntry="", textPos=(0,0), startLevel=0, grid=False, pdf=None, plot_old_clubb=False, data_old=None, level_old=None):
+def plot_comparison(data_clubb, data_sam, level_clubb, level_sam, xLabel, yLabel, title, name, textEntry="", textPos=(0,0), grid=False, pdf=None, plot_old_clubb=False, data_old=None, level_old=None):
     """
     Plots a plot with budgets
     Input:
@@ -297,7 +300,7 @@ def plot_comparison(data_clubb, data_sam, level_clubb, level_sam, xLabel, yLabel
     name           --  name of the file
     textEntry      --  Additional text to be put into plot
     textPos        --  Position of additional text in data coordinates
-    startLevel     --  Height level at which to plot lines, values below this level will be ignored (Redundant with startHeight entry in case file)
+    startLevel     --  (removed) Height level at which to plot lines, values below this level will be ignored (Redundant with startHeight entry in case file)
     grid           --  switch: True = show grid for both axes, False=do not show grid (default)
     pdf            --  PdfPages object
     """
@@ -334,17 +337,20 @@ def plot_comparison(data_clubb, data_sam, level_clubb, level_sam, xLabel, yLabel
             ## plot lines
             # SAM
             d = comp_style['sam']
-            ax.plot(data_sam[i][4][startLevel:], level_sam[startLevel:], label=d['label'], color=d['color'], lw=d['lw'], ls=d['ls'])
+            #ax.plot(data_sam[i][4][startLevel:], level_sam[startLevel:], label=d['label'], color=d['color'], lw=d['lw'], ls=d['ls'])
+            ax.plot(data_sam[i][4], level_sam, label=d['label'], color=d['color'], lw=d['lw'], ls=d['ls'])
             # CLUBB
             d = comp_style['clubb']
-            ax.plot(data_clubb[i][4][startLevel:], level_clubb[startLevel:], label=d['label'], color=d['color'], lw=d['lw'], ls=d['ls'])
+            #ax.plot(data_clubb[i][4][startLevel:], level_clubb[startLevel:], label=d['label'], color=d['color'], lw=d['lw'], ls=d['ls'])
+            ax.plot(data_clubb[i][4], level_clubb, label=d['label'], color=d['color'], lw=d['lw'], ls=d['ls'])
             logger.debug("Data limits: CLUBB: (%f, %f); SAM: (%f, %f)", data_clubb[i][4].min(), data_clubb[i][4].max(), data_sam[i][4].min(), data_sam[i][4].max())
             xmin = min(data_sam[i][4].min(), data_clubb[i][4].min())
             xmax = max(data_sam[i][4].max(), data_clubb[i][4].max())
             # old CLUBB
             if plot_old_clubb:
                 d = comp_style['old']
-                ax.plot(data_old[i][4][startLevel:], level_old[startLevel:], label=d['label'], color=d['color'], lw=d['lw'], ls=d['ls'])
+                #ax.plot(data_old[i][4][startLevel:], level_old[startLevel:], label=d['label'], color=d['color'], lw=d['lw'], ls=d['ls'])
+                ax.plot(data_old[i][4], level_old, label=d['label'], color=d['color'], lw=d['lw'], ls=d['ls'])
                 xmin = min(xmin, data_old[i][4].min())
                 xmax = max(xmax, data_old[i][4].max())
             xmin -= .1*(xmax-xmin)
