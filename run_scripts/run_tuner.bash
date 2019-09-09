@@ -232,6 +232,7 @@ else
 fi
 
 ../bin/clubb_tuner 2>&1 | tee $logFile
+exitStatus=${PIPESTATUS[0]}
 
 #
 # Run tuner, don't keep a log
@@ -282,8 +283,6 @@ rm -f 'clubb.in' 'rand_seed.dat'
 
 if [ `grep -c "Fatal error" $logFile` -gt 0 ]; then
 	exitStatus=1
-else
-	exitStatus=0
 fi
 
 if ( ! $NIGHTLY ); then
