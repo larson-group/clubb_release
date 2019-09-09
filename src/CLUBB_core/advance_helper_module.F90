@@ -334,7 +334,7 @@ module advance_helper_module
         ddzt_stat_liq       = ddzt( stat_liq )
         ddzt_stat_liq_zm    = zt2zm( ddzt_stat_liq)
         stat_dry_virtual    = stat_dry + Cp * T_in_K *(0.608*(rtm-rcm)- rcm)
-        stat_dry_virtual_zm = zt2zm(stat_dry_virtual_zm)
+        stat_dry_virtual_zm = zt2zm(stat_dry_virtual)
         ddzt_rtm_zm         = zt2zm( ddzt_rtm )
 
          brunt_vaisala_freq_sqd_dry(:) = ( grav / thm_zm)* ddzt_thm(:)
