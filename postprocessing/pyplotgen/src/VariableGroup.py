@@ -59,7 +59,7 @@ class VariableGroup:
 
     def addVariable(self, variable_def_dict):
         """
-        Given basic details about a variable, like name, this
+        Given basic details about a variable, this
         creates lines/panels for the variable and then adds that
         variable to the list of all variables for this VariableGroup
 
@@ -71,10 +71,10 @@ class VariableGroup:
         *aliases*: A list of names various models refer to this variable as. E.g. ['wprtp', 'WPRTP', 'wpqtp']
 
         *sam_calc*: (optional) A functional reference to a method that calculates a sam variable. This is given as the name of the
-        function *without* the () after the name. E.g. self.getThlmSamLine
+        function *without* the () after the name. E.g. self.getThlmSamCalc
 
         *coamps_calc*: (optional) A functional reference to a method that calculates a coamps variable. This is given as the name of the
-        function *without* the () after the name. E.g. self.getThlmSamLine
+        function *without* the () after the name. E.g. self.getThlmSamCalc
 
         *sam_conv_factor*: (optional) Numeric value to scale a sam variable by. E.g. 1/1000, or 100
 
@@ -119,8 +119,8 @@ class VariableGroup:
 
             {
             'aliases': ['Skrt_zt'],
-            'sam_calc': self.getSkrtZtLesLine,
-            'coamps_calc': self.getSkrtZtLesLine,
+            'sam_calc': self.getSkrtZtLesCalc,
+            'coamps_calc': self.getSkrtZtLesCalc,
             'fill_zeros': True
             }
 
@@ -131,7 +131,9 @@ class VariableGroup:
             },
 
         :return: None
+
         """
+
         data_reader = DataReader()
         aliases = variable_def_dict['aliases']
         fill_zeros = False
@@ -220,13 +222,11 @@ class VariableGroup:
 
         if 'sam_calc' in variable_def_dict.keys() and self.sam_file is not None and data_reader.getNcdfSourceModel(self.sam_file) == 'sam':
             samplot_data, z = variable_def_dict['sam_calc']()
-            # z = self.getVarForCalculations('z', self.sam_file)
             samplot = Line(samplot_data, z, line_format=Style_definitions.LES_LINE_STYLE, label=Style_definitions.SAM_LABEL)
             variable_def_dict['plots'].append(samplot)
 
         if 'coamps_calc' in variable_def_dict.keys() and self.coamps_file is not None and data_reader.getNcdfSourceModel(self.coamps_file) == 'coamps':
             coampsplot_data, z = variable_def_dict['coamps_calc']()
-            # z = self.getVarForCalculations('lev', self.coamps_file)
             coampsplot = Line(coampsplot_data, z, line_format=Style_definitions.LES_LINE_STYLE, label=Style_definitions.COAMPS_LABEL)
             variable_def_dict['plots'].append(coampsplot)
 
@@ -417,7 +417,9 @@ class VariableGroup:
         :param varname:
         :param include_z: If set to True, getVarForCalculations will return a tuple containing the data for both the varname
         variable and the height variable in a tuple ordered as (varname, z)
+
         :return:
+
         """
         if isinstance(datasets, Dataset):
             datasets = {'auto': datasets}

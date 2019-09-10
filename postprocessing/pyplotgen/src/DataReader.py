@@ -270,7 +270,7 @@ class DataReader():
         for dataset in datasets.values():
             keys = dataset.variables.keys()
             if varname in keys:
-                unit = dataset.variables[varname].units
+                unit = "$" + dataset.variables[varname].units + "$" # $'s are used to format equations
                 break
             else:
                 unit = "n/a"
@@ -313,7 +313,7 @@ class DataReader():
             if varname in keys:
                 imported_name = dataset.variables[varname].name
                 units = dataset.variables[varname].units
-                axis_title = imported_name + ' ' + '[' + units + ']'
+                axis_title = imported_name + ' ' + '[$' + units + '$]' # $'s are used to format equations
                 break
         return axis_title
 

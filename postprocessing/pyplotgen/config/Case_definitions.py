@@ -48,6 +48,8 @@ alphabetical order.
 
     *r408_file*: dict containing paths to the r408 .nc files for this case (please use the R408_OUTPUT_ROOT variable as a base).
 
+    *hoc_file*: dict containing paths to the hod .nc files for this case (please use the HOC_OUTPUT_ROOT variable as a base).
+
     *var_groups*: list of python class names, where the classes use the naming scheme VariableGroup____.py and define a variable group.
 
 """
@@ -414,6 +416,7 @@ WANGARA = {'name': 'wangara', 'start_time': 181, 'end_time': 240, 'height_min_va
                         'sfc': HOC_OUTPUT_ROOT + '/wangara_sfc.nc'},
            'var_groups': [VariableGroupBase, VariableGroupWs]}
 
+# DO NOT EDIT THIS LIST UNLESS YOU ARE ADDING A NEW CASE. NEVER REMOVE CASES FROM THIS LIST. You may define a subset of cases at the end of this file.
 ALL_CASES = [ARM, ARM_97, ASTEX_A209, ATEX,
              BOMEX,
              CGILS_S6, CGILS_S11, CGILS_S12, CLEX9_NOV02, CLEX9_OCT14,

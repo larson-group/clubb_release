@@ -22,8 +22,8 @@ class VariableGroupBase(VariableGroup):
         """
         self.name = "base variables"
         self.variable_definitions = [
-            {'aliases': ['thlm'], 'sam_calc': self.getThlmSamLine},
-            {'aliases': ['rtm', 'qtm'],	 'sam_calc': self.getRtmSamLine},
+            {'aliases': ['thlm'], 'sam_calc': self.getThlmSamCalc},
+            {'aliases': ['rtm', 'qtm'],	 'sam_calc': self.getRtmSamCalc},
             {'aliases': ['wpthlp', 'WPTHLP'], 'fallback_func': self.getWpthlpFallback},
             {'aliases': ['wprtp', 'WPRTP', 'wpqtp'], 'fallback_func': self.getWprtpFallback},
             {'aliases': ['cloud_frac', 'cf', 'CLD']},
@@ -35,9 +35,9 @@ class VariableGroupBase(VariableGroup):
             {'aliases': ['rtpthlp', 'RTPTHLP', 'qtpthlp', 'TQ']},
             {'aliases': ['rtp3', 'RTP3', 'qtp3'], 'fallback_func': self.getRtp3Fallback},
             {'aliases': ['thlp3', 'THLP3']},
-            {'aliases': ['Skw_zt'],	 'sam_calc': self.getSkwZtLesLine, 'coamps_calc': self.getSkwZtLesLine, 'fill_zeros':True},
-            {'aliases': ['Skrt_zt'],	 'sam_calc': self.getSkrtZtLesLine, 'coamps_calc': self.getSkrtZtLesLine, 'fill_zeros': True},
-            {'aliases': ['Skthl_zt'],	 'sam_calc': self.getSkthlZtLesLine, 'coamps_calc': self.getSkthlZtLesLine, 'fill_zeros': True},
+            {'aliases': ['Skw_zt'],	 'sam_calc': self.getSkwZtLesCalc, 'coamps_calc': self.getSkwZtLesCalc, 'fill_zeros':True},
+            {'aliases': ['Skrt_zt'],	 'sam_calc': self.getSkrtZtLesCalc, 'coamps_calc': self.getSkrtZtLesCalc, 'fill_zeros': True},
+            {'aliases': ['Skthl_zt'],	 'sam_calc': self.getSkthlZtLesCalc, 'coamps_calc': self.getSkthlZtLesCalc, 'fill_zeros': True},
             {'aliases': ['wm', 'WOBS', 'wlsm']},
             {'aliases': ['um', 'U']},
             {'aliases': ['vm', 'V']},
@@ -59,11 +59,11 @@ class VariableGroupBase(VariableGroup):
 
             # TODO SAM output for these variables
             {'aliases': ['rc_coef_zm * wprcp'],	 'fallback_func': self.get_rc_coef_zm_X_wprcp_clubb_line,
-                'sam_calc': self.get_rc_coef_zm_X_wprcp_sam_line,
+                'sam_calc': self.get_rc_coef_zm_X_wprcp_sam_calc,
                 'title': 'Contribution of Cloud Water Flux to wpthvp',	 'axis_title': 'rc_coef_zm * wprcp [K m/s]'},	 # TODO coamps eqn wpqcp .* (2.5e6 ./ (1004.67*ex0) - 1.61*thvm)
-            {'aliases': ['rc_coef_zm * thlprcp'],	 'fallback_func': self.get_rc_coef_zm_X_thlprcp_clubb_line,
+            {'aliases': ['rc_coef_zm * thlprcp'],	 'fallback_func': self.get_rc_coef_zm_X_thlprcp_clubb_fallback,
                 'title': 'Contribution of Cloud Water Flux to thlprcp',	 'axis_title': 'rc_coef_zm * thlprcp [K^2]'},	 # TODO coamps eqn thlpqcp .* (2.5e6 ./ (1004.67*ex0) - 1.61*thvm)
-            {'aliases': ['rc_coef_zm * rtprcp'],	 'fallback_func': self.get_rc_coef_zm_X_rtprcp_clubb_line,
+            {'aliases': ['rc_coef_zm * rtprcp'],	 'fallback_func': self.get_rc_coef_zm_X_rtprcp_clubb_fallback,
                 'title': 'Contribution of Cloud Water Flux to rtprcp',	 'axis_title': 'rc_coef_zm * rtprcp [kg/kg K]'}	 # TODO coamp eqn qtpqcp .* (2.5e6 ./ (1004.67*ex0) - 1.61*thvm)
 
             # TODO rc_coev * wp2rcp
@@ -73,7 +73,7 @@ class VariableGroupBase(VariableGroup):
         ]
         super().__init__(ncdf_datasets, case, sam_file=sam_file, coamps_file=coamps_file, r408_dataset=r408_dataset, hoc_dataset=hoc_dataset)
 
-    def getThlmSamLine(self, dataset_override = None):
+    def getThlmSamCalc(self, dataset_override = None):
         """
         Calculates thlm values from sam output using
         the following equation
@@ -89,7 +89,7 @@ class VariableGroupBase(VariableGroup):
         thlm = thetal + (2500.4 * (theta / tabs) * (qi / 1000))
         return thlm, z
 
-    def getRtmSamLine(self, dataset_override = None):
+    def getRtmSamCalc(self, dataset_override = None):
         """
         Calculates rtm values from sam output using
         the following equation
@@ -103,7 +103,7 @@ class VariableGroupBase(VariableGroup):
         rtm = (qt - qi) / 1000
         return rtm,z
 
-    def getSkwZtLesLine(self, dataset_override = None):
+    def getSkwZtLesCalc(self, dataset_override = None):
         """
         Calculates Skw_zt values from sam output using
         the following equation
@@ -125,13 +125,13 @@ class VariableGroupBase(VariableGroup):
 
         return skw_zt, z
 
-    def getSkrtZtLesLine(self, dataset_override = None):
+    def getSkrtZtLesCalc(self, dataset_override = None):
         """
         Calculates Skrt_zt values from sam output using
         the following equation
          sam eqn RTP3 ./ (RTP2 + 4e-16).^1.5
          coamps eqn qtp3 ./ (qtp2 + 4e-16).^1.5
-         :return: requested variable data in the form of a list. Returned data is already cropped to the appropriate min,max indices
+        :return: requested variable data in the form of a list. Returned data is already cropped to the appropriate min,max indices
         """
         dataset = None
         if self.sam_file is not None:
@@ -147,13 +147,13 @@ class VariableGroupBase(VariableGroup):
 
         return skrtp_zt, z
 
-    def getSkthlZtLesLine(self, dataset_override = None):
+    def getSkthlZtLesCalc(self, dataset_override = None):
         """
         Calculates Skthl_zt values from sam output using
         the following equation
         sam THLP3 ./ (THLP2 + 4e-4).^1.5
         coamps eqn thlp3 ./ (thlp2 + 4e-4).^1.5
-         :return: requested variable data in the form of a list. Returned data is already cropped to the appropriate min,max indices
+        :return: requested variable data in the form of a list. Returned data is already cropped to the appropriate min,max indices
         """
         dataset = None
         if self.sam_file is not None:
@@ -177,9 +177,9 @@ class VariableGroupBase(VariableGroup):
         """
         tlflux = self.getVarForCalculations(['TLFLUX'], self.sam_file)
         rho = self.getVarForCalculations(['RHO'], self.sam_file)
+        z = self.getVarForCalculations(['z', 'lev', 'altitude'], self.sam_file)
 
         wpthlp = tlflux / (rho * 1004)
-        z = self.getVarForCalculations(['z', 'lev', 'altitude'], self.sam_file)
 
         return wpthlp, z
 
@@ -260,7 +260,7 @@ class VariableGroupBase(VariableGroup):
         output = rc_coef_zm * wprcp
         return output, z
 
-    def get_rc_coef_zm_X_wprcp_sam_line(self, dataset_override = None):
+    def get_rc_coef_zm_X_wprcp_sam_calc(self, dataset_override = None):
         """
         Calculates the Contribution of Cloud Water Flux
         to wpthvp for SAM using the equation
@@ -282,7 +282,7 @@ class VariableGroupBase(VariableGroup):
         return output, z
 
     # rc_coef_zm. * thlprcp
-    def get_rc_coef_zm_X_thlprcp_clubb_line(self, dataset_override = None):
+    def get_rc_coef_zm_X_thlprcp_clubb_fallback(self, dataset_override = None):
         """
         Calculates the Contribution of Cloud Water Flux
         to thlprcp using the equation
@@ -299,7 +299,7 @@ class VariableGroupBase(VariableGroup):
         output = rc_coef_zm * thlprcp
         return output, z
     
-    def get_rc_coef_zm_X_rtprcp_clubb_line(self, dataset_override = None):
+    def get_rc_coef_zm_X_rtprcp_clubb_fallback(self, dataset_override = None):
         """
         Calculates the Contribution of Cloud Water Flux
         to rtprcp using the equation

@@ -78,7 +78,7 @@ class Panel:
 
         return start_idx, end_idx
 
-    def plot(self, output_folder, casename, replace_images = False, no_legends = True, thin_lines = False):
+    def plot(self, output_folder, casename, replace_images = False, no_legends = True, thin_lines = False, alphabetic_id=""):
         """
          Saves a single panel/graph to the output directory specified by the pyplotgen launch parameters
 
@@ -99,7 +99,7 @@ class Panel:
         plt.rc('figure', titlesize=Style_definitions.TITLE_TEXT_SIZE)  # fontsize of the figure title
 
         plt.ticklabel_format(style='sci', axis='x', scilimits=(0,0))
-
+        plt.gcf().subplots_adjust(bottom=0.15) # prevent x-axis label from getting cut off
         max_panel_value = 0
         for var in self.all_plots:
             x_data = var.x
@@ -121,20 +121,18 @@ class Panel:
             if thin_lines:
                 linewidth = Style_definitions.THIN_LINE_THICKNESS
             plt.plot(x_data, y_data, var.line_format, label=var.label, linewidth=linewidth)
-        # plt.rcParams.update({'font.size': 16})
-
 
         # Set titles
         plt.title(self.title)
         plt.ylabel(self.y_title)
         plt.xlabel(self.x_title)
 
-
-
         ax = plt.gca()
         ax.grid(Style_definitions.SHOW_GRID)
+        if alphabetic_id != "":
+            ax.text(0.9, 0.9, '('+alphabetic_id+')', ha='center', va='center', transform=ax.transAxes, fontsize=Style_definitions.LARGE_FONT_SIZE) # Add letter label to panels
+
         if no_legends is False:
-            # plt.figlegend()
             # Shrink current axis by 20%
             box = ax.get_position()
             ax.set_position([box.x0, box.y0, box.width * 0.8, box.height])
@@ -144,9 +142,7 @@ class Panel:
         # Center budgets
         if self.panel_type is Panel.TYPE_BUDGET:
             plt.xlim(-1 * max_panel_value,max_panel_value)
-            # pass
-            # ax.spines['left'].set_position('zero')
-            # ax.spines['right'].set_color('none')
+
         # Create folders
         # Because os.mkdir("output") can fail and prevent os.mkdir("output/" + casename) from being called we must
         # use two separate try blokcs
@@ -165,7 +161,6 @@ class Panel:
             filename = filename + "_"+ self.title
         else:
             filename = filename + '_' + self.y_title + "_VS_" + self.x_title
-        # filename = filename.translate(str.maketrans('', '', string.punctuation))
         filename = self.__remove_invalid_filename_chars__(filename)
         filename = filename.replace(' ', '_')
         rel_filename = output_folder + "/" +casename+'/' + filename
@@ -185,9 +180,6 @@ class Panel:
         :return: a character stripped version of the filename
         """
         filename = filename.replace('.', '')
-        # filename = filename.replace(':', '')
-        # filename = filename.replace('[', '')
-        # filename = filename.replace(']', '')
         filename = filename.replace('/', '')
         filename = filename.replace(',', '')
         return filename

@@ -47,6 +47,7 @@ class Case:
         self.plot_r408 = plot_r408
         self.plot_hoc = plot_hoc
         self.diff_datasets = diff_datasets
+        self.next_panel_alphabetic_id_code = 97
         if 'disable_budgets' in case_definition.keys() and case_definition['disable_budgets'] is True:
             self.plot_budgets = False
 
@@ -165,7 +166,7 @@ class Case:
         return diff_line
 
 
-    def plot(self, output_folder, replace_images = False, no_legends = False, thin_lines = False):
+    def plot(self, output_folder, replace_images = False, no_legends = False, thin_lines = False, show_alphabetic_id = False):
         """
         Plot all panels associated with the case, these will be saved to a .jpg file in the <<output>>/<<casename>> folder
         :param casename: The name of the case as a string
@@ -176,6 +177,32 @@ class Case:
         curr_panel_num = 0
         for panel in self.panels:
             print("\r\tplotting ",  curr_panel_num, " of ", num_plots, " | ", panel.title)
-            panel.plot(output_folder, self.name, replace_images=replace_images, no_legends=no_legends, thin_lines=thin_lines)
+            if show_alphabetic_id:
+                alphabetic_id = self.__getNextAlphabeticID()
+            else:
+                alphabetic_id = ""
+            panel.plot(output_folder, self.name, replace_images=replace_images, no_legends=no_legends, thin_lines=thin_lines, alphabetic_id=alphabetic_id)
             curr_panel_num += 1
             print("\r\tplotted  ", curr_panel_num, " of ", num_plots, " | ", panel.title)
+
+    def __getNextAlphabeticID(self):
+        """
+
+        :return:
+        """
+        a = 97
+        z = 122
+        num_letters_a_to_z = 26
+        if self.next_panel_alphabetic_id_code >= a and self.next_panel_alphabetic_id_code <= z:
+            letter = chr(self.next_panel_alphabetic_id_code)
+            self.next_panel_alphabetic_id_code += 1
+            return letter
+        else:
+            first_letter_offset = int((self.next_panel_alphabetic_id_code - a) / num_letters_a_to_z) - 1
+            first_letter = chr(a + first_letter_offset)
+
+            second_letter_offset = int((self.next_panel_alphabetic_id_code - a * int(self.next_panel_alphabetic_id_code / a)) % num_letters_a_to_z)
+            second_letter = chr(a + second_letter_offset)
+
+            self.next_panel_alphabetic_id_code +=1
+            return first_letter + second_letter
