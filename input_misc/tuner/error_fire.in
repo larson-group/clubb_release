@@ -1,7 +1,7 @@
 ! $Id$
 
 &stats
-f_tol               = 0.005,
+f_tol               = 0.05,
 l_results_stdout    = .true.,
 l_results_file      = .true.,
 l_stdout_on_invalid = .true.,
@@ -91,7 +91,7 @@ pdf_component_stdev_factor_w = 0.
 coef_spread_DG_means_rt      = 0.
 coef_spread_DG_means_thl     = 0.
 beta                         = 0.
-gamma_coef                   = .99
+gamma_coef                   = 0.5
 gamma_coefb                  = 0.
 gamma_coefc                  = 0.
 taumin                       = 0.
