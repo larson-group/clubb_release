@@ -689,11 +689,6 @@ module clubb_driver
 #else
       call write_text( "-DTUNER disabled", l_write_to_file, iunit )
 #endif
-#ifdef UNRELEASED_CODE
-      call write_text( "-DUNRELEASED_CODE enabled", l_write_to_file, iunit )
-#else
-      call write_text( "-DUNRELEASED_CODE disabled", l_write_to_file, iunit )
-#endif
 #ifdef SILHS
       call write_text( "-DSILHS enabled", l_write_to_file, iunit )
 #else
@@ -2051,7 +2046,6 @@ module clubb_driver
       em = 1.0_core_rknd
       em(gr%nz) = em_min
 
-#ifdef UNRELEASED_CODE
       ! March 2000 ARM case
     case ( "arm_0003" )
 
@@ -2087,9 +2081,6 @@ module clubb_driver
       end do
       em(1) = em(2)
       em(gr%nz) = em_min
-
-
-#endif
 
       ! GCSS FIRE Sc
     case ( "fire" )
@@ -2319,11 +2310,8 @@ module clubb_driver
       em(1) = em(2)
       em(gr%nz) = em_min
 
-
-#ifdef UNRELEASED_CODE
     case ( "gabls3_night" )
       em = 1.0_core_rknd
-#endif
 
     case ( "gabls3" )
       em = 1.0_core_rknd
@@ -3406,13 +3394,11 @@ module clubb_driver
     ! Case specific modules
     use arm, only: arm_sfclyr !------------------------------ Procedure(s)
 
-#ifdef UNRELEASED_CODE
     use arm_0003, only: arm_0003_sfclyr !-------------------- Procedure(s)
 
     use arm_3year, only: arm_3year_sfclyr !------------------ Procedure(s)
 
     use astex_a209, only: astex_a209_sfclyr !---------------- astex_a209_tndcy ! Procedure(s)
-#endif
 
     use atex, only: atex_tndcy, atex_sfclyr !---------------- Procedure(s)
 
@@ -3420,7 +3406,6 @@ module clubb_driver
 
     use bomex, only: bomex_tndcy, bomex_sfclyr !------------- Procedure(s)
 
-#ifdef UNRELEASED_CODE
     use clex9_nov02, only: clex9_nov02_read_t_dependent !---- Procedure(s)
 
     use clex9_oct14, only: clex9_oct14_read_t_dependent !---- Procedure(s)
@@ -3428,7 +3413,6 @@ module clubb_driver
     use cloud_feedback, only: cloud_feedback_sfclyr !-------- Procedure(s)
 
     use cobra, only: cobra_sfclyr !-------------------------- Procedure(s)
-#endif
 
     use dycoms2_rf01, only:     &           !---------------- Procedure(s)
         dycoms2_rf01_tndcy, dycoms2_rf01_sfclyr
@@ -3443,12 +3427,9 @@ module clubb_driver
 
     use gabls3, only: gabls3_sfclyr !------------------------ Procedures(s)
 
-#ifdef UNRELEASED_CODE
     use gabls3_night, only: gabls3_night_sfclyr
 
     use jun25, only: jun25_altocu_read_t_dependent !--------- Procedure(s)
-
-#endif
     
     use lba, only: lba_tndcy, lba_sfclyr !------------------- Procedure(s)
 
@@ -3456,9 +3437,7 @@ module clubb_driver
 
     use mpace_b, only: mpace_b_tndcy, mpace_b_sfclyr !------- Procedure(s)
 
-#ifdef UNRELEASED_CODE
     use nov11, only: nov11_altocu_rtm_adjust, nov11_altocu_read_t_dependent ! Procedure(s)
-#endif
 
     use rico, only: rico_tndcy, rico_sfclyr !---------------- Procedure(s)
 
@@ -3546,13 +3525,10 @@ module clubb_driver
 
       select case ( runtype )
 
-#ifdef UNRELEASED_CODE
-
 !    case ( "astex_a209" ) ! ASTEX Sc case for K & K
 !      call astex_a209_tndcy( wm_zt, wm_zm,  &           ! Intent(out)
 !                       thlm_forcing, rtm_forcing , &    ! Intent(out)
 !                       sclrm_forcing, edsclrm_forcing ) ! Intent(out)
-#endif
 
       case ( "atex" ) ! ATEX case
         call atex_tndcy( time_current, time_initial, &   ! Intent(in)
@@ -3651,7 +3627,6 @@ module clubb_driver
                           thlm(2), rtm(2), gr%zt(2), exner(1), & ! Intent(in)
                           wpthlp_sfc, wprtp_sfc, ustar )         ! Intent(out)
 
-#ifdef UNRELEASED_CODE
     case ( "gabls3_night" )
       call gabls3_night_sfclyr( time_current, um(2), vm(2),    & ! Intent(in)
                           thlm(2), rtm(2), gr%zt(2),           & ! Intent(in)
@@ -3723,8 +3698,6 @@ module clubb_driver
       call nov11_altocu_read_t_dependent( time_current, &             ! Intent(in)
                                           sens_ht, latent_ht )        ! Intent(out)
 
-#endif
-
     case ( "fire", "generic" )  ! Generic setup, and GCSS FIRE
       l_compute_momentum_flux = .true.
       l_set_sclr_sfc_rtm_thlm = .true.
@@ -3732,8 +3705,6 @@ module clubb_driver
       call fire_sfclyr( time_current, ubar, p_sfc,            &       ! Intent(in)
                         thlm(2), rtm(2), exner(1),   &                ! Intent(in)
                         wpthlp_sfc, wprtp_sfc, ustar, T_sfc )         ! Intent(out)
-
-#ifdef UNRELEASED_CODE
 
     case ( "cloud_feedback_s6", "cloud_feedback_s6_p2k",   &
            "cloud_feedback_s11", "cloud_feedback_s11_p2k", &
@@ -3748,8 +3719,6 @@ module clubb_driver
                                   ubar, p_sfc, T_sfc,            &   ! Intent(in)
                                   wpthlp_sfc, wprtp_sfc, ustar)      ! Intent(out)
 
-#endif
-
     case ( "arm" )
       l_compute_momentum_flux = .true.
       l_set_sclr_sfc_rtm_thlm = .true.
@@ -3757,8 +3726,6 @@ module clubb_driver
       call arm_sfclyr( time_current, gr%zt(2), rho_sfc,  &   ! Intent(in)
                         thlm(2), ubar,               &       ! Intent(in)
                         wpthlp_sfc, wprtp_sfc, ustar )       ! Intent(out)
-
-#ifdef UNRELEASED_CODE
 
     case ( "arm_0003" )
       l_compute_momentum_flux = .true.
@@ -3778,8 +3745,6 @@ module clubb_driver
       call arm_97_sfclyr( time_current, gr%zt(2), rho_zm(1), &   ! Intent(in)
                           thlm(2), ubar,                     &   ! Intent(in)
                           wpthlp_sfc, wprtp_sfc, ustar )         ! Intent(out)
-
-#endif
 
     case ( "arm_97" )
       l_compute_momentum_flux = .true.

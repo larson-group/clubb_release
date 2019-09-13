@@ -33,7 +33,6 @@
 # - generated_lists/param_files : files needed for libclubb_param.a
 # - generated_lists/coamps_files : files needed for libclubb_coamps.a
 # - generated_lists/numerical_recipes_files : Numerical Recipes files for clubb_tuner
-# - generated_lists/clubb_optional_files: Code in the UNRELEASED_CODE blocks of clubb
 # - generated_lists/silhs_files: Code in the SILHS blocks of clubb
 # - generated_lists/clubb_gfdl_activation_files : files needed for libclubb_gfdlact.a
 #
@@ -134,9 +133,6 @@ if ! "$l_double_precision"; then
 		CPPDEFS="${CPPDEFS} -DTUNER"
 	fi
 fi
-if [ -e $srcdir/Benchmark_cases/Unreleased_cases ]; then
-	CPPDEFS="${CPPDEFS} -DUNRELEASED_CODE"
-fi
 
 if [ -e $srcdir/SCM_Activation ]; then
 	#CPPDEFS="${CPPDEFS} -DAERSOL_ACT"
@@ -230,9 +226,6 @@ repository_file_lists=( \
 
 # ------------------------------------------------------------------------------
 #  Determine which restricted files are in the source directory and make a list
-if [ -e $srcdir/Benchmark_cases/Unreleased_cases ]; then
-	ls $srcdir/Benchmark_cases/Unreleased_cases/*.F90 > "$generated_lists_dir"/clubb_optional_files
-fi
 if [ -e $srcdir/SILHS ]; then
 	ls $srcdir/SILHS/*.F90 > "$generated_lists_dir"/silhs_files
 fi
@@ -312,8 +305,7 @@ $mkmf -t $bindir/mkmf_template \
   -e $all_files_list "$generated_lists_dir"/silhs_files
 
 $mkmf -t $bindir/mkmf_template -p $libdir/libclubb_other.a -m Make.clubb_other -c "${CPPDEFS}" \
-  -o "${WARNINGS}" -e $all_files_list "$generated_lists_dir"/clubb_optional_files \
-  $dir/file_list/clubb_model_files
+  -o "${WARNINGS}" -e $all_files_list $dir/file_list/clubb_model_files
 
 $mkmf -t $bindir/mkmf_template -p $bindir/clubb_standalone \
   -m Make.clubb_standalone -c "${CPPDEFS}" -o "${WARNINGS}" $clubb_standalone_mods \
@@ -342,10 +334,6 @@ cd $dir
 
 #-------------------------------------------------------------------------------
 # Determine if additional folders need to be checked against the standard
-if [ -e $srcdir/Benchmark_cases/Unreleased_cases ]; then
-	CLUBBStandardsCheck_unreleased_cases="-perl ../utilities/CLUBBStandardsCheck.pl ../src/Benchmark_cases/Unreleased_cases/*.F90"
-fi
-
 if [ -e $srcdir/SILHS ]; then
 	CLUBBStandardsCheck_silhs="-perl ../utilities/CLUBBStandardsCheck.pl ../src/SILHS/*.F90"
 fi
@@ -371,7 +359,6 @@ all:	libclubb_param.a libclubb_bugsrad.a clubb_standalone clubb_tuner \
 	perl ../utilities/CLUBBStandardsCheck.pl ../src/*.F90
 	perl ../utilities/CLUBBStandardsCheck.pl ../src/CLUBB_core/*.F90
 	perl ../utilities/CLUBBStandardsCheck.pl ../src/Benchmark_cases/*.F90
-	$CLUBBStandardsCheck_unreleased_cases
 	perl ../utilities/CLUBBStandardsCheck.pl ../src/KK_microphys/*.F90
 	$CLUBBStandardsCheck_silhs
 	perl ../utilities/CLUBBStandardsCheck.pl ../src/G_unit_test_types/*.F90

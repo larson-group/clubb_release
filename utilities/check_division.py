@@ -206,7 +206,6 @@ files_to_check = []
 if( len(sys.argv) == 1 ):
   files_to_check += glob.glob("../src/*.F90")
   files_to_check += glob.glob("../src/Benchmark_cases/*.F90")
-  files_to_check += glob.glob("../src/Benchmark_cases/Unreleased_cases/*.F90")
   files_to_check += glob.glob("../src/CLUBB_core/*.F90")
   files_to_check += glob.glob("../src/KK_microphys/*.F90")
   files_to_check += glob.glob("../src/Latin_hypercube/*.F90")

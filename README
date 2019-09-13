@@ -575,11 +575,6 @@ also do make distclean without the need to change directories.
    <CLUBB BASE DIRECTORY> refers the the directory where clubb is installed.
    <CASE NAME> refers to the cloud case, e.g. arm, atex, bomex, etc.
 
-   Note:
-   For external users (i.e. those users not at UW-Milwaukee) cases that 
-   are experimental or in testing won't be available. See run_scripts/RUN_CASES
-   for a list of cases that are unreleased.
-
 1. cd <CLUBB BASE DIRECTORY>/input/case_setups
 
 2. Edit <CASE NAME>_model.in for each case you wish to run, or just leave 
