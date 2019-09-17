@@ -383,7 +383,7 @@ module new_hybrid_pdf
 
 
     ! Calculate the mixture fraction.
-    mixt_frac = calc_mixture_fraction( Skw, F_w, zeta_w )
+    mixt_frac = calculate_mixture_fraction( Skw, F_w, zeta_w )
 
     if ( mixt_frac > zero .and. mixt_frac < one ) then
 
@@ -611,6 +611,7 @@ module new_hybrid_pdf
 
     use constants_clubb, only: &
         three, & ! Variable(s)
+        two,   &
         one,   &
         zero
 
@@ -807,9 +808,9 @@ module new_hybrid_pdf
   end function calc_coef_wp4_implicit
 
   !=============================================================================
-  elemental subroutine calc_coef_wp2xp_implicit( wp2, mixt_frac, F_w, &
-                                                 coef_sigma_w_1_sqd,  &
-                                                 coef_sigma_w_2_sqd   ) &
+  elemental function calc_coef_wp2xp_implicit( wp2, mixt_frac, F_w, &
+                                               coef_sigma_w_1_sqd,  &
+                                               coef_sigma_w_2_sqd   ) &
   result( coef_wp2xp_implicit )
 
     ! Description:
@@ -955,15 +956,15 @@ module new_hybrid_pdf
 
     return
 
-  end subroutine calc_coef_wp2xp_implicit
+  end function calc_coef_wp2xp_implicit
 
   !=============================================================================
-  function calc_coef_wpxp2_implicit( wp2, xp2, wpxp, sgn_wpxp, &
-                                     mixt_frac, F_w, F_x, &
-                                     coef_sigma_w_1_sqd, &
-                                     coef_sigma_w_2_sqd, &
-                                     coef_sigma_x_1_sqd, &
-                                     coef_sigma_x_2_sqd  ) &
+  function calc_coefs_wpxp2_semiimpl( wp2, xp2, wpxp, sgn_wpxp, &
+                                      mixt_frac, F_w, F_x, &
+                                      coef_sigma_w_1_sqd, &
+                                      coef_sigma_w_2_sqd, &
+                                      coef_sigma_x_1_sqd, &
+                                      coef_sigma_x_2_sqd  ) &
   result( coef_wpxp2_implicit )
 
     ! Description:
@@ -1225,7 +1226,7 @@ module new_hybrid_pdf
 
     return
 
-  end function calc_coef_wpxp2_implicit
+  end function calc_coefs_wpxp2_semiimpl
 
   !=============================================================================
   subroutine calc_coefs_wpxpyp_semiimpl( wp2, xp2, yp2, wpxp,      & ! In
