@@ -8,7 +8,7 @@ module new_hybrid_pdf
   ! mixing ratio (rt), and liquid water potential temperature (thl).
 
   ! References:
-  ! Griffin and Larson (2018)
+  ! Griffin and Larson (2020)
   !-------------------------------------------------------------------------
 
   implicit none
@@ -959,13 +959,12 @@ module new_hybrid_pdf
   end function calc_coef_wp2xp_implicit
 
   !=============================================================================
-  function calc_coefs_wpxp2_semiimpl( wp2, xp2, wpxp, sgn_wpxp, &
-                                      mixt_frac, F_w, F_x, &
-                                      coef_sigma_w_1_sqd, &
-                                      coef_sigma_w_2_sqd, &
-                                      coef_sigma_x_1_sqd, &
-                                      coef_sigma_x_2_sqd  ) &
-  result( coef_wpxp2_implicit )
+  elemental subroutine calc_coefs_wpxp2_semiimpl( wp2, wpxp,           & ! In
+                                                  mixt_frac, F_w,      & ! In
+                                                  coef_sigma_x_1_sqd,  & ! In
+                                                  coef_sigma_x_2_sqd,  & ! In
+                                                  coef_wpxp2_implicit, & ! Out
+                                                  term_wpxp2_explicit )  ! Out
 
     ! Description:
     ! The predictive equation for <x'^2> contains a turbulent advection term of
@@ -993,16 +992,11 @@ module new_hybrid_pdf
     ! mu_w_2 - <w> = - sqrt(F_w) * sqrt( mixt_frac / ( 1 - mixt_frac ) )
     !                  * sqrt( <w'^2> );
     !
-    ! mu_x_1 - <x> = sqrt(F_x) * sqrt( ( 1 - mixt_frac ) / mixt_frac )
-    !                * sqrt( <x'^2> ) * sgn( <w'x'> );
+    ! mu_x_1 - <x> = sqrt( ( 1 - mixt_frac ) / mixt_frac )
+    !                * <w'x'> / sqrt( F_w * <w'^2> );
     !
-    ! mu_x_2 - <x> = - sqrt(F_x) * sqrt( mixt_frac / ( 1 - mixt_frac ) )
-    !                  * sqrt( <x'^2> ) * sgn( <w'x'> );
-  ! mu_x_1 = <x> + sqrt( ( 1 - mixt_frac ) / mixt_frac )
-  !                * <w'x'> / sqrt( F_w * <w'^2> );
-  !
-  ! mu_x_2 = <x> - sqrt( mixt_frac / ( 1 - mixt_frac ) )
-  !                * <w'x'> / sqrt( F_w * <w'^2> );
+    ! mu_x_2 - <x> = - sqrt( mixt_frac / ( 1 - mixt_frac ) )
+    !                  * <w'x'> / sqrt( F_w * <w'^2> );
     !
     ! sigma_w_1 = sqrt( coef_sigma_w_1_sqd * <w'^2> );
     !
@@ -1012,153 +1006,64 @@ module new_hybrid_pdf
     !
     ! sigma_x_2 = sqrt( coef_sigma_x_2_sqd * <x'^2> ).
     !
-    ! Either w can be the setting variable and x can be a responding variable,
-    ! x can be the setting variable and w can be a responding variable, or both
-    ! w and x can be responding variables.
-    !
-    ! When w is the setting variable, coef_sigma_w_1_sqd and coef_sigma_w_2_sqd
-    ! are given by:
+    ! The equations for coef_sigma_w_1_sqd and coef_sigma_w_2_sqd are:
     !
     ! coef_sigma_w_1_sqd = ( ( zeta_w + 1 ) * ( 1 - F_w ) )
     !                      / ( ( zeta_w + 2 ) * mixt_frac ); and
     !
     ! coef_sigma_w_2_sqd = ( 1 - F_w ) / ( ( zeta_w + 2 ) * ( 1 - mixt_frac ) ).
     !
-    ! When w is a responding variable, coef_sigma_w_1_sqd and coef_sigma_w_2_sqd
-    ! are given by:
+    ! The equations for coef_sigma_x_1_sqd and coef_sigma_x_2_sqd are:
     !
-    ! coef_sigma_w_1_sqd = sqrt( mixt_frac * ( 1 - mixt_frac ) ) * Skw
-    !                      / ( 3 * mixt_frac * sqrt( F_w ) )
-    !                      - ( 1 + mixt_frac ) * F_w / ( 3 * mixt_frac )
-    !                      + 1; and
+    ! coef_sigma_x_1_sqd
+    ! = 1 + sqrt( ( 1 - mixt_frac ) / mixt_frac )
+    !       * Skx * sqrt( F_w * <w'^2> * <x'^2> ) / ( 3 * <w'x'> )
+    !   - ( ( 1 + mixt_frac ) / mixt_frac )
+    !     * <w'x'>^2 / ( 3 * F_w * <w'^2> * <x'^2> );
     !
-    ! coef_sigma_w_2_sqd = ( ( 1 - F_w ) - mixt_frac * coef_sigma_w_1_sqd )
-    !                      / ( 1 - mixt_frac ).
+    ! coef_sigma_x_2_sqd
+    ! = 1 - sqrt( mixt_frac / ( 1 - mixt_frac ) )
+    !       * Skx * sqrt( F_w * <w'^2> * <x'^2> ) / ( 3 * <w'x'> )
+    !   + ( ( mixt_frac - 2 ) / ( 1 - mixt_frac ) )
+    !     * <w'x'>^2 / ( 3 * F_w * <w'^2> * <x'^2> ).
     !
-    ! When x is the setting variable, coef_sigma_x_1_sqd and coef_sigma_x_2_sqd
-    ! are given by:
-    !
-    ! coef_sigma_x_1_sqd = ( ( zeta_x + 1 ) * ( 1 - F_x ) )
-    !                      / ( ( zeta_x + 2 ) * mixt_frac ); and
-    !
-    ! coef_sigma_x_2_sqd = ( 1 - F_x ) / ( ( zeta_x + 2 ) * ( 1 - mixt_frac ) ).
-    !
-    ! When x is a responding variable, coef_sigma_x_1_sqd and coef_sigma_x_2_sqd
-    ! are given by:
-    !
-    ! coef_sigma_x_1_sqd = sqrt( mixt_frac * ( 1 - mixt_frac ) )
-    !                      * Skx * sgn( <w'x'> )
-    !                      / ( 3 * mixt_frac * sqrt( F_x ) )
-    !                      - ( 1 + mixt_frac ) * F_x / ( 3 * mixt_frac )
-    !                      + 1; and
-    !
-    ! coef_sigma_x_2_sqd = ( ( 1 - F_x ) - mixt_frac * coef_sigma_x_1_sqd )
-    !                      / ( 1 - mixt_frac ).
-    !
-    ! Additionally:
-    !
-    ! corr_w_x_1 = corr_w_x_2
-    ! = ( <w'x'> - mixt_frac * ( mu_w_1 - <w> ) * ( mu_x_1 - <x> )
-    !            - ( 1 - mixt_frac ) * ( mu_w_2 - <w> ) * ( mu_x_2 - <x> ) )
-    !   / ( mixt_frac * sigma_w_1 * sigma_x_1
-    !       + ( 1 - mixt_frac ) * sigma_w_2 * sigma_x_2 );
-    !
-    ! where -1 <= corr_w_x_1 = corr_w_x_2 <= 1.  This equation can be rewritten
-    ! as:
-    !
-    ! corr_w_x_1 = corr_w_x_2
-    ! = ( <w'x'>
-    !     - sqrt( F_w ) * sqrt( F_x ) * sgn( <w'x'> )
-    !       * sqrt( <w'^2> ) * sqrt( <x'^2 > ) )
-    !   / ( ( mixt_frac * sqrt( coef_sigma_w_1_sqd * coef_sigma_x_1_sqd )
-    !         + ( 1 - mixt_frac )
-    !           * sqrt( coef_sigma_w_2_sqd * coef_sigma_x_2_sqd ) )
-    !       * sqrt( <w'^2> ) * sqrt( <x'^2> ) ).
+    ! Additionally, corr_w_x_1 = corr_w_x_2 = 0.
     !
     ! The equation for <w'x'^2> becomes:
     !
     ! <w'x'^2>
-    ! = sqrt( mixt_frac * ( 1 - mixt_frac ) ) * sqrt( <w'^2> )
-    !   * ( sqrt( F_w ) * F_x
-    !       * ( ( 1 - mixt_frac ) / mixt_frac - mixt_frac / ( 1 - mixt_frac ) )
-    !       + sqrt( F_w ) * ( coef_sigma_x_1_sqd - coef_sigma_x_2_sqd )
-    !       + ( 2 * sqrt( F_x ) * sgn( <w'x'> ) * <w'x'>
-    !           * ( sqrt( coef_sigma_w_1_sqd * coef_sigma_x_1_sqd )
-    !               - sqrt( coef_sigma_w_2_sqd * coef_sigma_x_2_sqd ) ) )
-    !         / ( ( mixt_frac * sqrt( coef_sigma_w_1_sqd * coef_sigma_x_1_sqd )
-    !               + ( 1 - mixt_frac )
-    !                 * sqrt( coef_sigma_w_2_sqd * coef_sigma_x_2_sqd ) )
-    !             * sqrt( <w'^2> ) * sqrt( <x'^2> ) )
-    !       - ( 2 * sqrt( F_w ) * F_x 
-    !           * ( sqrt( coef_sigma_w_1_sqd * coef_sigma_x_1_sqd )
-    !               - sqrt( coef_sigma_w_2_sqd * coef_sigma_x_2_sqd ) ) )
-    !         / ( mixt_frac * sqrt( coef_sigma_w_1_sqd * coef_sigma_x_1_sqd )
-    !             + ( 1 - mixt_frac )
-    !               * sqrt( coef_sigma_w_2_sqd * coef_sigma_x_2_sqd ) ) )
-    !   * <x'^2>
+    ! = sqrt( mixt_frac * ( 1 - mixt_frac ) ) * sqrt( F_w * <w'^2> )
+    !   * ( coef_sigma_x_1_sqd - coef_sigma_x_2_sqd ) * <x'^2>
+    !   + sqrt( mixt_frac * ( 1 - mixt_frac ) )
+    !     * <w'x'>^2 / sqrt( F_w * <w'^2> )
+    !     * ( ( 1 - mixt_frac ) / mixt_frac  - mixt_frac / ( 1 - mixt_frac ) ).
     !
     ! This equation is of the form:
     !
-    ! <w'x'^2> = coef_wpxp2_implicit * <x'^2>;
+    ! <w'x'^2> = coef_wpxp2_implicit * <x'^2> + term_wpxp2_explicit;
     !
     ! where:
     !
     ! coef_wpxp2_implicit
-    ! = sqrt( mixt_frac * ( 1 - mixt_frac ) ) * sqrt( <w'^2> )
-    !   * ( sqrt( F_w ) * F_x
-    !       * ( ( 1 - mixt_frac ) / mixt_frac - mixt_frac / ( 1 - mixt_frac ) )
-    !       + sqrt( F_w ) * ( coef_sigma_x_1_sqd - coef_sigma_x_2_sqd )
-    !       + ( 2 * sqrt( F_x ) * sgn( <w'x'> ) * <w'x'>
-    !           * ( sqrt( coef_sigma_w_1_sqd * coef_sigma_x_1_sqd )
-    !               - sqrt( coef_sigma_w_2_sqd * coef_sigma_x_2_sqd ) ) )
-    !         / ( ( mixt_frac * sqrt( coef_sigma_w_1_sqd * coef_sigma_x_1_sqd )
-    !               + ( 1 - mixt_frac )
-    !                 * sqrt( coef_sigma_w_2_sqd * coef_sigma_x_2_sqd ) )
-    !             * sqrt( <w'^2> ) * sqrt( <x'^2> ) )
-    !       - ( 2 * sqrt( F_w ) * F_x 
-    !           * ( sqrt( coef_sigma_w_1_sqd * coef_sigma_x_1_sqd )
-    !               - sqrt( coef_sigma_w_2_sqd * coef_sigma_x_2_sqd ) ) )
-    !         / ( mixt_frac * sqrt( coef_sigma_w_1_sqd * coef_sigma_x_1_sqd )
-    !             + ( 1 - mixt_frac )
-    !               * sqrt( coef_sigma_w_2_sqd * coef_sigma_x_2_sqd ) ) ).
+    ! = sqrt( mixt_frac * ( 1 - mixt_frac ) ) * sqrt( F_w * <w'^2> )
+    !   * ( coef_sigma_x_1_sqd - coef_sigma_x_2_sqd ); and
     !
-    ! In the special case that coef_sigma_w_1_sqd * coef_sigma_x_1_sqd = 0 and
-    ! coef_sigma_w_2_sqd * coef_sigma_x_2_sqd = 0, the above equation is
-    ! undefined.  However, the equation for this special case can be derived by
-    ! taking the original equation for <w'x'^2> and setting both
-    ! sigma_w_1 * sigma_x_1 = 0 and sigma_w_2 * sigma_x_2 = 0.  The equation
-    ! becomes:
+    ! term_wpxp2_explicit
+    ! = sqrt( mixt_frac * ( 1 - mixt_frac ) ) * <w'x'>^2 / sqrt( F_w * <w'^2> )
+    !   * ( ( 1 - mixt_frac ) / mixt_frac  - mixt_frac / ( 1 - mixt_frac ) ).
     !
-    ! <w'x'^2>
-    ! = mixt_frac * ( ( mu_w_1 - <w> ) * ( ( mu_x_1 - <x> )^2 + sigma_x_1^2 )
-    !   + ( 1 - mixt_frac ) * ( ( mu_w_2 - <w> )
-    !                           * ( ( mu_x_2 - <x> )^2 + sigma_x_2^2 );
-    !
-    ! and making the same substitutions as before, it can be rewritten as:
-    !
-    ! <w'x'^2>
-    ! = sqrt( mixt_frac * ( 1 - mixt_frac ) ) * sqrt( <w'^2> ) * sqrt( F_w )
-    !   * ( F_x * ( ( 1 - mixt_frac ) / mixt_frac
-    !               - mixt_frac / ( 1 - mixt_frac ) )
-    !       + ( coef_sigma_x_1_sqd - coef_sigma_x_2_sqd ) ) * <x'^2>.
-    !
-    ! The coefficient in this special case is:
-    !
-    ! coef_wpxp2_implicit
-    ! = sqrt( mixt_frac * ( 1 - mixt_frac ) ) * sqrt( <w'^2> ) * sqrt( F_w )
-    !   * ( F_x * ( ( 1 - mixt_frac ) / mixt_frac
-    !               - mixt_frac / ( 1 - mixt_frac ) )
-    !       + ( coef_sigma_x_1_sqd - coef_sigma_x_2_sqd ) ).
+    ! In the special case that F_w = 0, mu_w_1 - <w> = mu_w_2 - <w> = 0, and
+    ! <w'x'^2> = 0.  The value of coef_wp2xp_implicit = 0 when F_w = 0.
+    ! Likewise, the value of <w'x'> = 0 when F_w = 0, which makes
+    ! term_wp2xp_explicit undefined in this scenario.  However, since both
+    ! <w'x'^2> = 0 and coef_wp2xp_implicit = 0, term_wp2xp_explicit = 0 in this
+    ! situation.
 
     ! References:
     !-----------------------------------------------------------------------
 
-    use grid_class, only: &
-        gr    ! Variable type(s)
-
     use constants_clubb, only: &
-        two,  & ! Variable(s)
-        one,  &
+        one,  & ! Variable(s)
         zero
 
     use clubb_precision, only: &
@@ -1167,66 +1072,43 @@ module new_hybrid_pdf
     implicit none
 
     ! Input Variables
-    real ( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
+    real ( kind = core_rknd ), intent(in) :: &
       wp2,                & ! Variance of w (overall)                  [m^2/s^2]
-      xp2,                & ! Variance of x (overall)           [(units vary)^2]
       wpxp,               & ! Covariance of w and x           [m/s (units vary)]
-      sgn_wpxp,           & ! Sign of the covariance of w and x              [-]
       mixt_frac,          & ! Mixture fraction                               [-]
       F_w,                & ! Parameter: spread of the PDF comp. means of w  [-]
-      F_x,                & ! Parameter: spread of the PDF comp. means of x  [-]
-      coef_sigma_w_1_sqd, & ! sigma_w_1^2 = coef_sigma_w_1_sqd * <w'^2>      [-]
-      coef_sigma_w_2_sqd, & ! sigma_w_2^2 = coef_sigma_w_2_sqd * <w'^2>      [-]
       coef_sigma_x_1_sqd, & ! sigma_x_1^2 = coef_sigma_x_1_sqd * <x'^2>      [-]
       coef_sigma_x_2_sqd    ! sigma_x_2^2 = coef_sigma_x_2_sqd * <x'^2>      [-]
 
-    ! Return Variable
-    real ( kind = core_rknd ), dimension(gr%nz) :: &
-      coef_wpxp2_implicit ! Coef.: <w'x'^2> = coef_wpxp2_implicit * <x'^2> [m/s]
-
-    ! Local Variable
-    real ( kind = core_rknd ), dimension(gr%nz) :: &
-      coefs_factor    ! Factor involving coef_sigma_... coefficients         [-]
+    ! Output Variables
+    ! Coefs.: <w'x'^2> = coef_wpxp2_implicit * <x'^2> + term_wpxp2_explicit
+    real ( kind = core_rknd ), intent(out) :: &
+      coef_wpxp2_implicit, & ! Coefficient that is multiplied by <x'^2>  [m/s]
+      term_wpxp2_explicit    ! Term that is on the RHS    [m/s (units vary)^2]
 
 
-    ! Calculate coef_wpxp2_implicit.
-    where ( ( coef_sigma_w_1_sqd * coef_sigma_x_1_sqd > zero &
-              .or. coef_sigma_w_2_sqd * coef_sigma_x_2_sqd > zero ) &
-            .and. ( wp2 * xp2 > zero ) )
-
-       coefs_factor &
-       = ( sqrt( coef_sigma_w_1_sqd * coef_sigma_x_1_sqd ) &
-           - sqrt( coef_sigma_w_2_sqd * coef_sigma_x_2_sqd ) ) &
-         / ( mixt_frac * sqrt( coef_sigma_w_1_sqd * coef_sigma_x_1_sqd ) &
-             + ( one - mixt_frac ) &
-               * sqrt( coef_sigma_w_2_sqd * coef_sigma_x_2_sqd ) )
+    ! Calculate coef_wpxp2_implicit and term_wpxp2_explicit.
+    if ( F_w > 0 ) then
 
        coef_wpxp2_implicit &
-       = sqrt( mixt_frac * ( one - mixt_frac ) ) * sqrt( wp2 ) &
-         * ( sqrt( F_w ) * F_x &
-             * ( ( one - mixt_frac ) / mixt_frac &
-                 - mixt_frac / ( one - mixt_frac ) ) &
-             + sqrt( F_w ) * ( coef_sigma_x_1_sqd - coef_sigma_x_2_sqd ) &
-             + two * sqrt( F_x ) * coefs_factor * sgn_wpxp * wpxp &
-               / ( sqrt( wp2 ) * sqrt( xp2 ) ) &
-             - two * sqrt( F_w ) * F_x * coefs_factor )
+       = sqrt( mixt_frac * ( one - mixt_frac ) ) * sqrt( F_w * wp2 ) &
+         * ( coef_sigma_x_1_sqd - coef_sigma_x_2_sqd )
 
-    elsewhere ! ( coef_sigma_w_1_sqd * coef_sigma_x_1_sqd = 0
-              !   and coef_sigma_w_2_sqd * coef_sigma_x_2_sqd = 0 )
-              ! or wp2 * xp2 = 0
+       term_wpxp2_explicit &
+       = sqrt( mixt_frac * ( one - mixt_frac ) ) * wpxp**2 / sqrt( F_w * wp2 ) &
+         * ( ( one - mixt_frac ) / mixt_frac - mixt_frac / ( one - mixt_frac ) )
 
-       coef_wpxp2_implicit &
-       = sqrt( mixt_frac * ( one - mixt_frac ) ) * sqrt( wp2 ) * sqrt( F_w ) &
-         * ( F_x * ( ( one - mixt_frac ) / mixt_frac &
-                     - mixt_frac / ( one - mixt_frac ) ) &
-             + ( coef_sigma_x_1_sqd - coef_sigma_x_2_sqd ) )
+    else ! F_w = 0
 
-    endwhere
+       coef_wpxp2_implicit = zero
+       term_wpxp2_explicit = zero
+
+    endif ! F_w > 0
 
 
     return
 
-  end function calc_coefs_wpxp2_semiimpl
+  end subroutine calc_coefs_wpxp2_semiimpl
 
   !=============================================================================
   subroutine calc_coefs_wpxpyp_semiimpl( wp2, xp2, yp2, wpxp,      & ! In
