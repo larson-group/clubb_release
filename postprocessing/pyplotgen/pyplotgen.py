@@ -26,7 +26,7 @@ class PyPlotGen:
 
     def __init__(self, input_folder, output_folder, replace=False, les=False, cgbest=False, hoc=False, plotrefs=False,
                 zip=False, thin=False, no_legends=False, ensemble=False,
-                 budget_moments=False, bu_morr=False, diff=None):
+                 budget_moments=False, bu_morr=False, diff=None, show_alphabetic_id=False):
         """
         This creates an instance of PyPlotGen. Each parameter is a command line parameter passed in from the argparser
         below.
@@ -67,6 +67,7 @@ class PyPlotGen:
         self.data_reader = DataReader()
         self.diff_files_data_reader = DataReader()
         self.sam_data_reader = DataReader()
+        self.show_alphabetic_id = show_alphabetic_id
         if self.output_folder[0] == '.':
             self.output_folder = os.path.dirname(os.path.realpath(__file__)) + "/" + self.output_folder
 
@@ -84,7 +85,6 @@ class PyPlotGen:
         # Downloads model output (sam, les, clubb) if it doesn't exist
         self.__downloadModelOutputs__()
 
-        # TODO Handle dataset not found/partial nc output
         if self.replace_images:
             print('###########################################')
             print("\nDeleting old plots")
@@ -96,13 +96,13 @@ class PyPlotGen:
                 print('###########################################')
                 print("plotting ", case_def['name'])
                 case_diff_datasets = None
+                casename = case_def['name']
                 if self.diff is not None:
-                    case_diff_datasets = diff_datasets[case_def['name']]
-                case = Case(case_def, self.nc_datasets[case_def['name']], plot_les=self.les, plot_budgets=self.plot_budgets,
+                    case_diff_datasets = diff_datasets[casename]
+                case = Case(case_def, self.nc_datasets[casename], plot_les=self.les, plot_budgets=self.plot_budgets,
                             diff_datasets=case_diff_datasets, plot_r408=self.cgbest, plot_hoc=self.hoc)
-                case.plot(self.output_folder, replace_images=self.replace_images, no_legends = self.no_legends, thin_lines=self.thin)
-            # else:
-            #     print("Clubb input nc files not found. Skipping case.")
+                case.plot(self.output_folder, replace_images=self.replace_images, no_legends = self.no_legends,
+                          thin_lines=self.thin, show_alphabetic_id=self.show_alphabetic_id)
         print('###########################################')
         if cases_plotted == 0:
             warn("Warning, no cases were plotted! Make sure the input folder " + self.input_folder +
@@ -148,13 +148,14 @@ def __process_args__():
     parser.add_argument("-d", "--plot-hoc-2005", help="Plot !HOC 12/17/2015 data for comparison.", action="store_true")
     parser.add_argument("-a", "--all-best", help="Same as -lbd. Plots LES, Golaz Best Ever, and HOC 2005 data for comparison.", action="store_true")
     parser.add_argument("-z", "--zip", help="Output data into a compressed zip file.", action="store_true")
+    parser.add_argument("--show-alphabetic-id", help="Add an identifying character to the top right of a panel.", action="store_true")
     parser.add_argument("--thin", help="Plot using thin solid lines.", action="store_true")
     parser.add_argument("--no-legends", help="Plot without legend boxes defining the line types.", action="store_true")
     parser.add_argument("--ensemble", help="Plot ensemble tuner runs", action="store_true")  # TODO is this needed?
     parser.add_argument("--plot-budgets", help="Plot all defined budgets of moments", action="store_true")
     parser.add_argument("--bu-morr", help="For morrison microphysics: breaks microphysical source terms into component processes",action="store_true")
     parser.add_argument("--diff", help="Plot the difference between two input folders", action="store")
-    parser.add_argument("-i", "--input", help="Input folder containing netcdf output data.", action="store", default="../../output")
+    parser.add_argument("-i", "--input", help="Input folder containing netcdf output data.", action="store", default="../../output", nargs='+')
     parser.add_argument("-o", "--output", help="Name of folder to create and store plots into.", action="store", default="./output")
     args = parser.parse_args()
 
@@ -176,7 +177,7 @@ def __process_args__():
     pyplotgen = PyPlotGen(args.input, args.output, replace=args.replace, les=les, cgbest=cgbest,
                           hoc=hoc, plotrefs=args.all_best, zip=args.zip, thin=args.thin,
                           no_legends=args.no_legends, ensemble=args.ensemble, budget_moments=args.plot_budgets,
-                          bu_morr=args.bu_morr, diff=args.diff)
+                          bu_morr=args.bu_morr, diff=args.diff, show_alphabetic_id = args.show_alphabetic_id)
     return pyplotgen
 
 if __name__ == "__main__":

@@ -41,8 +41,8 @@ class VariableGroupBase(VariableGroup):
             {'aliases': ['wm', 'WOBS', 'wlsm']},
             {'aliases': ['um', 'U']},
             {'aliases': ['vm', 'V']},
-            {'aliases': ['upwp', 'UW'], 'coamps_calc': self.getUwCoampsData}, # TODO coamps eqn wpup + wpup_sgs
-            {'aliases': ['vpwp', 'VW']}, # TODO coamps eqn wpvp + wpvp_sgs
+            {'aliases': ['upwp', 'UW'], 'coamps_calc': self.getUwCoampsData},
+            {'aliases': ['vpwp', 'VW'], 'coamps_calc': self.getVwCoampsData},
             {'aliases': ['up2', 'U2']},
             {'aliases': ['vp2', 'V2']},
             {'aliases': ['rcp2', 'QC2', 'qcp2'], 'sam_conv_factor': 1 / 10 ** 6},
@@ -58,13 +58,25 @@ class VariableGroupBase(VariableGroup):
             {'aliases': ['thlpthvp', 'THLPTHVP']},
 
             # TODO SAM output for these variables
-            {'aliases': ['rc_coef_zm * wprcp'],	 'fallback_func': self.get_rc_coef_zm_X_wprcp_clubb_line,
-                'sam_calc': self.get_rc_coef_zm_X_wprcp_sam_calc,
-                'title': 'Contribution of Cloud Water Flux to wpthvp',	 'axis_title': 'rc_coef_zm * wprcp [K m/s]'},	 # TODO coamps eqn wpqcp .* (2.5e6 ./ (1004.67*ex0) - 1.61*thvm)
-            {'aliases': ['rc_coef_zm * thlprcp'],	 'fallback_func': self.get_rc_coef_zm_X_thlprcp_clubb_fallback,
-                'title': 'Contribution of Cloud Water Flux to thlprcp',	 'axis_title': 'rc_coef_zm * thlprcp [K^2]'},	 # TODO coamps eqn thlpqcp .* (2.5e6 ./ (1004.67*ex0) - 1.61*thvm)
-            {'aliases': ['rc_coef_zm * rtprcp'],	 'fallback_func': self.get_rc_coef_zm_X_rtprcp_clubb_fallback,
-                'title': 'Contribution of Cloud Water Flux to rtprcp',	 'axis_title': 'rc_coef_zm * rtprcp [kg/kg K]'}	 # TODO coamp eqn qtpqcp .* (2.5e6 ./ (1004.67*ex0) - 1.61*thvm)
+            # TODO validate coamps output
+            {'aliases': ['rc_coef_zm * wprcp'],
+             'fallback_func': self.get_rc_coef_zm_X_wprcp_clubb_line,
+             'sam_calc': self.get_rc_coef_zm_X_wprcp_sam_calc,
+             'coamps_calc': self.get_rc_coef_zm_X_wprcp_coamps_calc,
+             'title': 'Contribution of Cloud Water Flux to wpthvp',
+             'axis_title': 'rc_coef_zm * wprcp [K m/s]'},
+
+            {'aliases': ['rc_coef_zm * thlprcp'],
+             'coamps_calc': self.get_rc_coef_zm_X_thlprcp_coamps_calc,
+             'fallback_func': self.get_rc_coef_zm_X_thlprcp_clubb_fallback,
+             'title': 'Contribution of Cloud Water Flux to thlprcp',
+             'axis_title': 'rc_coef_zm * thlprcp [K^2]'},
+
+            {'aliases': ['rc_coef_zm * rtprcp'],
+             'coamps_calc': self.get_rc_coef_zm_X_rtprcp_coamps_calc,
+             'fallback_func': self.get_rc_coef_zm_X_rtprcp_clubb_fallback,
+             'title': 'Contribution of Cloud Water Flux to rtprcp',
+             'axis_title': 'rc_coef_zm * rtprcp [kg/kg K]'}
 
             # TODO rc_coev * wp2rcp
 
@@ -251,9 +263,10 @@ class VariableGroupBase(VariableGroup):
         rc_coef_zm .* wprcp
         :return: Line representing rc_coef_zm .* wprcp
         """
-        dataset = self.ncdf_files['zm']
         if dataset_override is not None:
             dataset = dataset_override
+        else:
+            dataset = self.ncdf_files['zm']
         rc_coef_zm = self.getVarForCalculations('rc_coef_zm', dataset, fill_zeros=True)
         wprcp = self.getVarForCalculations('wprcp', dataset, fill_zeros=True)
         z = self.getVarForCalculations(['z', 'lev', 'altitude'], dataset)
@@ -269,10 +282,10 @@ class VariableGroupBase(VariableGroup):
         :return:
         """
 
-        dataset = self.sam_file
         if dataset_override is not None:
             dataset = dataset_override
-
+        else:
+            dataset = self.sam_file
         z = self.getVarForCalculations(['z', 'lev', 'altitude'], dataset)
         WPRCP = self.getVarForCalculations('WPRCP', dataset, fill_zeros=True)
         PRES = self.getVarForCalculations('PRES', dataset, fill_zeros=True)
@@ -289,16 +302,17 @@ class VariableGroupBase(VariableGroup):
         rc_coef_zm * thlprcp
         :return: Line representing rc_coef_zm .* thlprcp
         """
-        dataset = self.ncdf_files['zm']
         if dataset_override is not None:
             dataset = dataset_override
+        else:
+            dataset = self.ncdf_files['zm']
         z = self.getVarForCalculations(['z', 'lev', 'altitude'], dataset)
         rc_coef_zm = self.getVarForCalculations('rc_coef_zm', dataset, fill_zeros=True)
         thlprcp = self.getVarForCalculations('thlprcp', dataset, fill_zeros=True)
 
         output = rc_coef_zm * thlprcp
         return output, z
-    
+
     def get_rc_coef_zm_X_rtprcp_clubb_fallback(self, dataset_override = None):
         """
         Calculates the Contribution of Cloud Water Flux
@@ -306,9 +320,10 @@ class VariableGroupBase(VariableGroup):
         rc_coef_zm * rtprcp
         :return: Line representing rc_coef_zm .* rtprcp
         """
-        dataset = self.ncdf_files['zm']
         if dataset_override is not None:
             dataset = dataset_override
+        else:
+            dataset = self.ncdf_files['zm']
         z = self.getVarForCalculations(['z', 'lev', 'altitude'], dataset)
         rc_coef_zm = self.getVarForCalculations('rc_coef_zm', dataset, fill_zeros=True)
         rtprcp = self.getVarForCalculations('rtprcp', dataset, fill_zeros=True)
@@ -322,12 +337,76 @@ class VariableGroupBase(VariableGroup):
 
          :return: requested variable data in the form of a list. Returned data is already cropped to the appropriate min,max indices
         """
-        dataset = self.coamps_file['sw']
         if dataset_override is not None:
             dataset = dataset_override['sw']
+        else:
+            dataset = self.coamps_file['sw']
         z = self.getVarForCalculations(['z', 'lev', 'altitude'], dataset)
         wpup = self.getVarForCalculations('wpup', dataset)
         wpup_sgs = self.getVarForCalculations('wpup_sgs', dataset)
 
         upwp = wpup + wpup_sgs
         return upwp, z
+
+    def getVwCoampsData(self, dataset_override = None):
+        """
+        coamps eqn vpwp = wpvp + wpvp_sgs
+
+         :return: requested variable data in the form of a list. Returned data is already cropped to the appropriate min,max indices
+        """
+        if dataset_override is not None:
+            dataset = dataset_override['sw']
+        else:
+            dataset = self.coamps_file['sw']
+        z = self.getVarForCalculations(['z', 'lev', 'altitude'], dataset)
+        wpvp = self.getVarForCalculations('wpvp', dataset)
+        wpvp_sgs = self.getVarForCalculations('wpvp_sgs', dataset)
+
+        vpwp = wpvp + wpvp_sgs
+        return vpwp, z
+
+    def get_rc_coef_zm_X_wprcp_coamps_calc(self, dataset_override = None):
+        """coamps eqn thlpqcp .* (2.5e6 ./ (1004.67*ex0) - 1.61*thvm)
+        coamps eqn wpqcp .* (2.5e6 ./ (1004.67*ex0) - 1.61*thvm)
+        :param dataset_override:
+        :return:
+        """
+        dataset = self.coamps_file['sw']
+        z = self.getVarForCalculations(['z', 'lev', 'altitude'], dataset)
+        wpqcp = self.getVarForCalculations('wqpcp', dataset, fill_zeros=True)
+        ex0 = self.getVarForCalculations('ex0', dataset, fill_zeros=True)
+        thvm = self.getVarForCalculations('thvm', dataset, fill_zeros=True)
+
+        output = wpqcp * (2.5e6 / (1004.67 * ex0) - 1.61*thvm)
+        return output, z
+
+    def get_rc_coef_zm_X_thlprcp_coamps_calc(self, dataset_override = None):
+        """
+        coamps eqn thlpqcp .* (2.5e6 ./ (1004.67*ex0) - 1.61*thvm)
+        :param dataset_override:
+        :return:
+        """
+        dataset = self.coamps_file['sw']
+        z = self.getVarForCalculations(['z', 'lev', 'altitude'], dataset)
+        thlpqcp = self.getVarForCalculations('thlpqcp', dataset, fill_zeros=True)
+        ex0 = self.getVarForCalculations('ex0', dataset, fill_zeros=True)
+        thvm = self.getVarForCalculations('thvm', dataset, fill_zeros=True)
+
+        output = thlpqcp * (2.5e6 / (1004.67*ex0) - 1.61*thvm)
+        return output, z
+
+    def get_rc_coef_zm_X_rtprcp_coamps_calc(self, dataset_override = None):
+        """
+        coamp eqn qtpqcp .* (2.5e6 ./ (1004.67*ex0) - 1.61*thvm)
+        :param dataset_override:
+        :return:
+        """
+        dataset = self.coamps_file['sw']
+        z = self.getVarForCalculations(['z', 'lev', 'altitude'], dataset)
+        qtpqcp = self.getVarForCalculations('qtpqcp', dataset, fill_zeros=True)
+        ex0 = self.getVarForCalculations('ex0', dataset, fill_zeros=True)
+        thvm = self.getVarForCalculations('thvm', dataset, fill_zeros=True)
+
+        output = qtpqcp * (2.5e6 / (1004.67*ex0) - 1.61*thvm)
+        return output, z
+

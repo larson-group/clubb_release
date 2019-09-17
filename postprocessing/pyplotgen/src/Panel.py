@@ -78,6 +78,7 @@ class Panel:
 
         return start_idx, end_idx
 
+    # TODO add 'output.txt' config file to plots
     def plot(self, output_folder, casename, replace_images = False, no_legends = True, thin_lines = False, alphabetic_id=""):
         """
          Saves a single panel/graph to the output directory specified by the pyplotgen launch parameters
@@ -86,7 +87,7 @@ class Panel:
         :return: None
         """
 
-        plt.figure()
+        plt.figure(figsize=(9,6))
         plt.subplot(111)
 
         # Set font sizes
@@ -117,7 +118,7 @@ class Panel:
             elif var.line_format == Style_definitions.GOLAZ_BEST_R408_LINE_STYLE:
                 linewidth = Style_definitions.ARCHIVED_CLUBB_LINE_THICKNESS
             else:
-                linewidth = Style_definitions.DEFAULT_LINE_THICKNESS
+                linewidth = Style_definitions.CLUBB_LINE_THICKNESS
             if thin_lines:
                 linewidth = Style_definitions.THIN_LINE_THICKNESS
             plt.plot(x_data, y_data, var.line_format, label=var.label, linewidth=linewidth)

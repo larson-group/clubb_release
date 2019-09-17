@@ -19,7 +19,7 @@ except ImportError:
     try:
         import Image
     except ImportError:
-        print('Requires Python Imaging Library. See README.')
+        print('Requires Python Imaging Library. See README.md.')
         sys.exit(1)
 
 
