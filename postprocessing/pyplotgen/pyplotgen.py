@@ -11,6 +11,7 @@ these processes are mostly carried out by other classes/files.
 import argparse
 import os
 import subprocess
+from datetime import datetime
 from warnings import warn
 
 from config import Case_definitions
@@ -70,6 +71,10 @@ class PyPlotGen:
         self.show_alphabetic_id = show_alphabetic_id
         if self.output_folder[0] == '.':
             self.output_folder = os.path.dirname(os.path.realpath(__file__)) + "/" + self.output_folder
+        if os.path.isdir(self.output_folder) and self.replace_images == False:
+            self.output_folder = self.output_folder + '_generated_on_' + str(datetime.now())
+            self.output_folder = self.__remove_invalid_filename_chars__(self.output_folder)
+            self.output_folder = self.output_folder.replace(' ', '_')
 
     def run(self):
         """
@@ -127,12 +132,24 @@ class PyPlotGen:
 
         # Ensure benchmark output is available
         print("Checking for model benchmark output...")
-        if not os.path.isfile(Case_definitions.BENCHMARK_OUTPUT_ROOT) and not os.path.islink(
+        if not os.path.isdir(Case_definitions.BENCHMARK_OUTPUT_ROOT) and not os.path.islink(
                 Case_definitions.BENCHMARK_OUTPUT_ROOT):
             print("Benchmark output was not found in " + Case_definitions.BENCHMARK_OUTPUT_ROOT + ", downloading now.")
             subprocess.run(['git', 'clone', 'https://carson.math.uwm.edu/les_and_clubb_benchmark_runs.git'])
         else:
             print("Benchmark output found in " + Case_definitions.BENCHMARK_OUTPUT_ROOT)
+
+    def __remove_invalid_filename_chars__(self, string):
+        """
+        Removes characters from a string that are not valid for a filename
+
+        :param string: Filename string to have characters removed
+        :return: a character stripped version of the filename
+        """
+        string = string.replace('.', '')
+        string = string.replace(',', '')
+        string = string.replace(':', '-')
+        return string
 
 def __process_args__():
     """

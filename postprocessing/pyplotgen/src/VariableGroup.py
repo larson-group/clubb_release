@@ -201,12 +201,15 @@ class VariableGroup:
             all_lines.extend(self.__getVarLines__(aliases, hoc_dataset, conversion_factor=hoc_conv_factor,
                                                   label=Style_definitions.HOC_LABEL,line_format=Style_definitions.HOC_LINE_STYLE, fill_zeros = fill_zeros,
                                                   override_panel_type=panel_type, fallback_func=fallback, lines=lines))
+        num_folders_plotted = 0
         for ncdf_files_subfolder in self.ncdf_files:
             datasets = self.ncdf_files[ncdf_files_subfolder]
             label = os.path.basename(ncdf_files_subfolder)
-            all_lines.extend(self.__getVarLines__(aliases, datasets, label=label,
-                                                  line_format="", fill_zeros = fill_zeros,
+            if num_folders_plotted < len(Style_definitions.CLUBB_LABEL_OVERRIDE):
+                label = Style_definitions.CLUBB_LABEL_OVERRIDE[num_folders_plotted]
+            all_lines.extend(self.__getVarLines__(aliases, datasets, label=label, fill_zeros = fill_zeros,
                                                   override_panel_type=panel_type, fallback_func=fallback, lines=lines))
+            num_folders_plotted += 1
 
         clubb_name = variable_def_dict['aliases'][0]
         variable_def_dict['plots'] = all_lines
