@@ -26,7 +26,7 @@ case_name = 'rico_silhs'
 time1 = 0
 time2 = 864
 
-clubb_var_strs  = [ 'rrm_auto',    'rrm_accr',    'rrm_cond',    'rrm_mc_nonadj' ]
+clubb_var_strs  = [ 'rrm_auto',    'rrm_accr',    'rrm_evap',    'rrm_mc_nonadj' ]
 silhs_var_strs  = [ 'lh_rrm_auto', 'lh_rrm_accr', 'lh_rrm_evap', 'lh_rrm_mc_nonadj' ]
 
 # 0: RMS (default)
@@ -228,7 +228,7 @@ for plot_num in range(4):
     elif clubb_var_strs[plot_num] == 'rrm_accr':
         eq = '$\\left(\\frac{\\partial r_r}{\\partial t}\\right)_\\mathrm{accr}$'
         pl.title('Accretion ' + eq)
-    elif clubb_var_strs[plot_num] == 'rrm_cond':
+    elif clubb_var_strs[plot_num] == 'rrm_evap':
         eq = '$\\left(\\frac{\\partial r_r}{\\partial t}\\right)_\\mathrm{evap}$'
         pl.title('Evaporation ' + eq)
     elif clubb_var_strs[plot_num] == 'rrm_mc_nonadj':

@@ -163,7 +163,7 @@ module microphys_driver
         iNcm_act,      & ! Variable(s)
         iNc_activated, &
         iNccnm,        &
-        irrm_cond
+        irrm_evap
 
     use stats_clubb_utilities, only: & 
         stats_accumulate_lh_tend ! Procedure(s)
@@ -497,7 +497,7 @@ module microphys_driver
 
         if ( l_morr_xp2_mc) then
 
-          rrm_evap = microphys_get_var( irrm_cond, microphys_stats_zt )
+          rrm_evap = microphys_get_var( irrm_evap, microphys_stats_zt )
 
           call update_xp2_mc( gr%nz, dt, cloud_frac, rcm, rvm, thlm_morr, & ! Intent(in)  
                               wm_zt, exner, rrm_evap, pdf_params,         & ! Intent(in)

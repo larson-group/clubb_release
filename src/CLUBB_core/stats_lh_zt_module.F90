@@ -89,7 +89,7 @@ module stats_lh_zt_module
       ilh_rrm_accr, &
       ilh_rrm_evap, &
       ilh_Nrm_auto, &
-      ilh_Nrm_cond
+      ilh_Nrm_evap
 
     use stats_variables, only: &
       ilh_cloud_frac_unweighted, &
@@ -98,9 +98,9 @@ module stats_lh_zt_module
 
     use stats_variables, only: &
       ilh_rrm_src_adj,  & ! Variable(s)
-      ilh_rrm_cond_adj, &
+      ilh_rrm_evap_adj, &
       ilh_Nrm_src_adj,     &
-      ilh_Nrm_cond_adj, &
+      ilh_Nrm_evap_adj, &
       ilh_rrm_mc_nonadj
 
     use stats_variables, only: &
@@ -574,9 +574,9 @@ module stats_lh_zt_module
              var_units="num/kg/s", l_silhs=.true., grid_kind=stats_lh_zt )
         k = k + 1
 
-      case ( 'lh_Nrm_cond' )
-        ilh_Nrm_cond = k
-        call stat_assign( var_index=ilh_Nrm_cond, var_name="lh_Nrm_cond", &
+      case ( 'lh_Nrm_evap' )
+        ilh_Nrm_evap = k
+        call stat_assign( var_index=ilh_Nrm_evap, var_name="lh_Nrm_evap", &
              var_description="Latin hypercube estimate of Nrm evaporation [num/kg/s]", &
              var_units="num/kg/s", l_silhs=.true., grid_kind=stats_lh_zt )
         k = k + 1
@@ -588,9 +588,9 @@ module stats_lh_zt_module
              var_units="kg/kg/s", l_silhs=.true., grid_kind=stats_lh_zt )
         k = k + 1
 
-      case ( 'lh_rrm_cond_adj' )
-        ilh_rrm_cond_adj = k
-        call stat_assign( var_index=ilh_rrm_cond_adj, var_name="lh_rrm_cond_adj", &
+      case ( 'lh_rrm_evap_adj' )
+        ilh_rrm_evap_adj = k
+        call stat_assign( var_index=ilh_rrm_evap_adj, var_name="lh_rrm_evap_adj", &
              var_description="Latin hypercube estimate of evap adjustment (KK only!) [kg/kg/s]", &
              var_units="kg/kg/s", l_silhs=.true., grid_kind=stats_lh_zt )
         k = k + 1
@@ -603,9 +603,9 @@ module stats_lh_zt_module
              var_units="kg/kg/s", l_silhs=.true., grid_kind=stats_lh_zt )
         k = k + 1
 
-      case ( 'lh_Nrm_cond_adj' )
-        ilh_Nrm_cond_adj = k
-        call stat_assign( var_index=ilh_Nrm_cond_adj, var_name="lh_Nrm_cond_adj", &
+      case ( 'lh_Nrm_evap_adj' )
+        ilh_Nrm_evap_adj = k
+        call stat_assign( var_index=ilh_Nrm_evap_adj, var_name="lh_Nrm_evap_adj", &
              var_description="Latin hypercube estimate of Nrm evap adjustment (KK only!) &
              &[kg/kg/s]", &
              var_units="kg/kg/s", l_silhs=.true., grid_kind=stats_lh_zt )

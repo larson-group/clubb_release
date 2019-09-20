@@ -45,11 +45,11 @@ vars_zt =
 'rtp3_bt', 'rtp3_tp', 'rtp3_ac', 'rtp3_dp',
 'thlp3_bt', 'thlp3_tp', 'thlp3_ac', 'thlp3_dp',
 'rrm_bt', 'rrm_ma', 'rrm_sd', 'rrm_ts', 'rrm_sd_morr',
-'rrm_ta', 'rrm_cond', 'rrm_auto', 'rrm_accr',
-'rrm_cond_adj', 'rrm_src_adj',
+'rrm_ta', 'rrm_evap', 'rrm_auto', 'rrm_accr',
+'rrm_evap_adj', 'rrm_src_adj',
 'rrm_hf', 'rrm_wvhf', 'rrm_cl', 'rrm_mc',
-'Nrm_bt', 'Nrm_ma', 'Nrm_sd', 'Nrm_ts', 'Nrm_ta', 'Nrm_cond', 'Nrm_auto',
-'Nrm_cond_adj', 'Nrm_src_adj', 'Nrm_cl', 'Nrm_mc',
+'Nrm_bt', 'Nrm_ma', 'Nrm_sd', 'Nrm_ts', 'Nrm_ta', 'Nrm_evap', 'Nrm_auto',
+'Nrm_evap_adj', 'Nrm_src_adj', 'Nrm_cl', 'Nrm_mc',
 'Ncm_bt', 'Ncm_ma', 'Ncm_ta', 'Ncm_mc', 'Ncm_cl', 'Ncm_act',
 'rsm_bt', 'rsm_ma', 'rsm_sd', 'rsm_sd_morr', 'rsm_ta', 'rsm_mc',
 'rsm_hf', 'rsm_wvhf', 'rsm_cl',
@@ -116,8 +116,8 @@ vars_lh_zt =
 'lh_chi', 'lh_eta', 'lh_chip2', 'lh_rtp2_zt', 'lh_thlp2_zt',
 'lh_Nrm', 'lh_Nim', 'lh_Ncnm', 'lh_Ncm', 'lh_Ngm', 'lh_Nsm',
 'lh_rcm_avg', 'lh_rrm_auto', 'lh_rrm_accr', 'lh_rrm_evap',
-'lh_Nrm_auto', 'lh_Nrm_cond', 'lh_rrm_src_adj', 'lh_rrm_cond_adj',
-'lh_Nrm_src_adj', 'lh_Nrm_cond_adj', 'lh_precip_frac', 'lh_mixt_frac', 'lh_m_vol_rad_rain',
+'lh_Nrm_auto', 'lh_Nrm_evap', 'lh_rrm_src_adj', 'lh_rrm_evap_adj',
+'lh_Nrm_src_adj', 'lh_Nrm_evap_adj', 'lh_precip_frac', 'lh_mixt_frac', 'lh_m_vol_rad_rain',
 ''
 
 vars_lh_sfc =
