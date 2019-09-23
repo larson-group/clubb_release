@@ -148,22 +148,30 @@ class DataReader():
         For example: to access the zm data for gabls3_rad, simply call nc_datasets['gabls3']['zm']
         :author: Nicolas Strike
         """
-        for root, dirs, files in os.walk(folder_path):
-            for filename in files:
-                abs_filename = os.path.abspath(os.path.join(root, filename))
-                file_ext = os.path.splitext(filename)[1]
-                if ignore_git and '.git' in abs_filename or file_ext != '.nc':
-                    continue
-                ext_offset = filename.rindex(
-                    '_')  # Find offset to eliminate trailing chars like "_zt.nc", "_zm.nc", and "_sfc.nc
-                file_type = filename[ext_offset + 1:-3]  # Type of current file (zm, zt, or sfc)
-                case_key = filename[:ext_offset]
-                if case_key in self.nc_filenames.keys():
-                    self.nc_filenames[case_key][file_type] = abs_filename
-                    self.nc_datasets[case_key][file_type] = self.__loadNcFile__(abs_filename)
-                else:
-                    self.nc_filenames[case_key] = {file_type: abs_filename}
-                    self.nc_datasets[case_key] = {file_type: self.__loadNcFile__(abs_filename)}
+
+
+        # TODO THERES NO WAY THIS WORKS RIGHT NOW, WE'RE TRYING TO SUPPORT MUTLIPLE FOLDERS
+
+
+        for sub_folder in folder_path:
+            for root, dirs, files in os.walk(sub_folder):
+                for filename in files:
+                    abs_filename = os.path.abspath(os.path.join(root, filename))
+                    file_ext = os.path.splitext(filename)[1]
+                    if ignore_git and '.git' in abs_filename or file_ext != '.nc':
+                        continue
+                    ext_offset = filename.rindex('_')  # Find offset to eliminate trailing chars like "_zt.nc", "_zm.nc", and "_sfc.nc
+                    file_type = filename[ext_offset + 1:-3]  # Type of current file (zm, zt, or sfc)
+                    case_key = filename[:ext_offset]
+                    if case_key in self.nc_filenames.keys() and sub_folder in self.nc_filenames[case_key].keys():
+                        self.nc_filenames[case_key][sub_folder][file_type] = abs_filename
+                        self.nc_datasets[case_key][sub_folder][file_type] = self.__loadNcFile__(abs_filename)
+                    elif case_key in self.nc_filenames.keys() and sub_folder not in self.nc_filenames[case_key].keys():
+                        self.nc_filenames[case_key][sub_folder] = {file_type: abs_filename}
+                        self.nc_datasets[case_key][sub_folder] = {file_type: self.__loadNcFile__(abs_filename)}
+                    else:
+                        self.nc_filenames[case_key] = {sub_folder: {file_type: abs_filename}}
+                        self.nc_datasets[case_key] = {sub_folder: {file_type: self.__loadNcFile__(abs_filename)} }
         return self.nc_datasets
 
     def getVarData(self, netcdf_dataset, ncdf_variable, fill_zeros=False):

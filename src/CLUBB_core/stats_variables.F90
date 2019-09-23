@@ -430,10 +430,10 @@ module stats_variables
      irrm_sd = 0, &
      irrm_ts = 0, &
      irrm_sd_morr = 0, &
-     irrm_cond = 0, &
+     irrm_evap = 0, &
      irrm_auto = 0, &
      irrm_accr = 0, &
-     irrm_cond_adj = 0, &
+     irrm_evap_adj = 0, &
      irrm_src_adj = 0, &
      irrm_mc_nonadj = 0, &
      irrm_mc = 0, &
@@ -443,8 +443,8 @@ module stats_variables
 
 !$omp   threadprivate(irrm_bt, irrm_ma, irrm_ta, irrm_sd)
 !$omp   threadprivate(irrm_ts, irrm_sd_morr)
-!$omp   threadprivate(irrm_cond, irrm_auto, irrm_accr)
-!$omp   threadprivate(irrm_cond_adj, irrm_src_adj, irrm_mc_nonadj)
+!$omp   threadprivate(irrm_evap, irrm_auto, irrm_accr)
+!$omp   threadprivate(irrm_evap_adj, irrm_src_adj, irrm_mc_nonadj)
 !$omp   threadprivate(irrm_mc, irrm_hf, irrm_wvhf, irrm_cl)
 
   integer, public :: &
@@ -453,15 +453,15 @@ module stats_variables
      iNrm_ta = 0, &
      iNrm_sd = 0, &
      iNrm_ts = 0, &
-     iNrm_cond = 0, &
+     iNrm_evap = 0, &
      iNrm_auto = 0, &
-     iNrm_cond_adj = 0, &
+     iNrm_evap_adj = 0, &
      iNrm_src_adj = 0, &
      iNrm_mc = 0, &
      iNrm_cl = 0
 
-!$omp   threadprivate(iNrm_bt, iNrm_ma, iNrm_ta, iNrm_sd, iNrm_ts, iNrm_cond)
-!$omp   threadprivate(iNrm_auto, iNrm_cond_adj, iNrm_src_adj )
+!$omp   threadprivate(iNrm_bt, iNrm_ma, iNrm_ta, iNrm_sd, iNrm_ts, iNrm_evap)
+!$omp   threadprivate(iNrm_auto, iNrm_evap_adj, iNrm_src_adj )
 !$omp   threadprivate(iNrm_mc, iNrm_cl)
 
 
@@ -778,21 +778,21 @@ module stats_variables
     ilh_rrm_accr = 0, & ! Latin hypercube estimate of accretion
     ilh_rrm_evap = 0, & ! Latin hypercube estimate of evaporation
     ilh_Nrm_auto    = 0, & ! Latin hypercube estimate of Nrm autoconversion
-    ilh_Nrm_cond    = 0, & ! Latin hypercube estimate of Nrm evaporation
+    ilh_Nrm_evap    = 0, & ! Latin hypercube estimate of Nrm evaporation
     ilh_m_vol_rad_rain = 0, &
     ilh_rrm_mc_nonadj = 0
 
 !$omp   threadprivate( ilh_rrm_auto, ilh_rrm_accr, ilh_rrm_evap, &
-!$omp                  ilh_Nrm_auto, ilh_Nrm_cond, ilh_m_vol_rad_rain, &
+!$omp                  ilh_Nrm_auto, ilh_Nrm_evap, ilh_m_vol_rad_rain, &
 !$omp                  ilh_rrm_mc_nonadj )
 
   integer, public :: &
     ilh_rrm_src_adj  = 0, & ! Latin hypercube estimate of source adjustment (KK only!)
-    ilh_rrm_cond_adj = 0, & ! Latin hypercube estimate of evap adjustment (KK only!)
+    ilh_rrm_evap_adj = 0, & ! Latin hypercube estimate of evap adjustment (KK only!)
     ilh_Nrm_src_adj     = 0, & ! Latin hypercube estimate of Nrm source adjustmet (KK only!)
-    ilh_Nrm_cond_adj    = 0    ! Latin hypercube estimate of Nrm evap adjustment (KK only!)
-!$omp   threadprivate( ilh_rrm_src_adj, ilh_rrm_cond_adj, ilh_Nrm_src_adj, &
-!$omp                  ilh_Nrm_cond_adj     )
+    ilh_Nrm_evap_adj    = 0    ! Latin hypercube estimate of Nrm evap adjustment (KK only!)
+!$omp   threadprivate( ilh_rrm_src_adj, ilh_rrm_evap_adj, ilh_Nrm_src_adj, &
+!$omp                  ilh_Nrm_evap_adj     )
 
   integer, public :: &
     ilh_Vrr = 0, & ! Latin hypercube estimate of rrm sedimentation velocity

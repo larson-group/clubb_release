@@ -448,14 +448,14 @@ module estimate_scm_microphys_module
       stats_lh_zt, &  ! Variable(s)
       irrm_auto, &
       irrm_accr, &
-      irrm_cond, &
+      irrm_evap, &
       iNrm_auto, &
-      iNrm_cond, &
+      iNrm_evap, &
       ilh_rrm_auto, &
       ilh_rrm_accr, &
       ilh_rrm_evap, &
       ilh_Nrm_auto, &
-      ilh_Nrm_cond, &
+      ilh_Nrm_evap, &
       im_vol_rad_rain, &
       ilh_m_vol_rad_rain, &
       irrm_mc_nonadj, &
@@ -495,7 +495,7 @@ module estimate_scm_microphys_module
 
       if ( ilh_rrm_evap > 0 ) then
         call stat_update_var( ilh_rrm_evap, microphys_get_var( &
-             irrm_cond, microphys_stats_zt_avg ), stats_lh_zt )
+             irrm_evap, microphys_stats_zt_avg ), stats_lh_zt )
       end if
 
       if ( ilh_Nrm_auto > 0 ) then
@@ -503,9 +503,9 @@ module estimate_scm_microphys_module
              iNrm_auto, microphys_stats_zt_avg ), stats_lh_zt )
       end if
 
-      if ( ilh_Nrm_cond > 0 ) then
-        call stat_update_var( ilh_Nrm_cond, microphys_get_var( &
-             iNrm_cond, microphys_stats_zt_avg ), stats_lh_zt )
+      if ( ilh_Nrm_evap > 0 ) then
+        call stat_update_var( ilh_Nrm_evap, microphys_get_var( &
+             iNrm_evap, microphys_stats_zt_avg ), stats_lh_zt )
       end if
 
       if ( trim( microphys_scheme ) == "khairoutdinov_kogan" ) then
@@ -569,13 +569,13 @@ module estimate_scm_microphys_module
         stats_lh_zt,     &
         irrm_auto,       &
         irrm_accr,       &
-        irrm_cond,       &
+        irrm_evap,       &
         iNrm_auto,       &
-        iNrm_cond,       &
+        iNrm_evap,       &
         ilh_rrm_src_adj, &
         ilh_Nrm_src_adj, &
-        ilh_rrm_cond_adj,&
-        ilh_Nrm_cond_adj
+        ilh_rrm_evap_adj,&
+        ilh_Nrm_evap_adj
 
     use microphys_stats_vars_module, only: &
         microphys_stats_vars_type, &     ! Type
@@ -649,10 +649,10 @@ module estimate_scm_microphys_module
 
     rrm_auto = microphys_get_var( irrm_auto, microphys_stats_zt )
     rrm_accr = microphys_get_var( irrm_accr, microphys_stats_zt )
-    rrm_evap = microphys_get_var( irrm_cond, microphys_stats_zt )
+    rrm_evap = microphys_get_var( irrm_evap, microphys_stats_zt )
 
     Nrm_auto    = microphys_get_var( iNrm_auto,    microphys_stats_zt )
-    Nrm_evap    = microphys_get_var( iNrm_cond,    microphys_stats_zt )
+    Nrm_evap    = microphys_get_var( iNrm_evap,    microphys_stats_zt )
 
     ! Loop over each vertical level above the lower boundary
     do k = 2, nz, 1
@@ -716,12 +716,12 @@ module estimate_scm_microphys_module
         call stat_update_var( ilh_Nrm_src_adj, adj_terms%Nrm_src_adj, stats_lh_zt )
       end if
 
-      if ( ilh_rrm_cond_adj > 0 ) then
-        call stat_update_var( ilh_rrm_cond_adj, adj_terms%rrm_cond_adj, stats_lh_zt )
+      if ( ilh_rrm_evap_adj > 0 ) then
+        call stat_update_var( ilh_rrm_evap_adj, adj_terms%rrm_evap_adj, stats_lh_zt )
       end if
 
-      if ( ilh_Nrm_cond_adj > 0 ) then
-        call stat_update_var( ilh_Nrm_cond_adj, adj_terms%Nrm_cond_adj, stats_lh_zt )
+      if ( ilh_Nrm_evap_adj > 0 ) then
+        call stat_update_var( ilh_Nrm_evap_adj, adj_terms%Nrm_evap_adj, stats_lh_zt )
       end if
 
     end if ! l_stats_samp

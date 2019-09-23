@@ -17,7 +17,7 @@ class VariableGroupKKMP(VariableGroup):
         """
         self.name = "kk mp variables"
         self.variable_definitions = [
-            {'aliases': ['rrm_cond', 'EVAPM']},
+            {'aliases': ['rrm_evap', 'EVAPM']},
             {'aliases': ['rrm_accr', 'ACCRM']},
             {'aliases': ['rrm_auto', 'AUTOM']}
         ]

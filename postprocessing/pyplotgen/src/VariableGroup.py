@@ -2,6 +2,7 @@
 :author: Nicolas Strike
 :date: Mid 2019
 """
+import os
 from warnings import warn
 
 import numpy as np
@@ -200,24 +201,30 @@ class VariableGroup:
             all_lines.extend(self.__getVarLines__(aliases, hoc_dataset, conversion_factor=hoc_conv_factor,
                                                   label=Style_definitions.HOC_LABEL,line_format=Style_definitions.HOC_LINE_STYLE, fill_zeros = fill_zeros,
                                                   override_panel_type=panel_type, fallback_func=fallback, lines=lines))
-
-        all_lines.extend(self.__getVarLines__(aliases, self.ncdf_files,label=Style_definitions.DEFAULT_LABEL,
-                                              line_format=Style_definitions.DEFAULT_LINE_STYLE, fill_zeros = fill_zeros,
-                                              override_panel_type=panel_type, fallback_func=fallback, lines=lines))
+        num_folders_plotted = 0
+        for ncdf_files_subfolder in self.ncdf_files:
+            datasets = self.ncdf_files[ncdf_files_subfolder]
+            label = os.path.basename(ncdf_files_subfolder)
+            if num_folders_plotted < len(Style_definitions.CLUBB_LABEL_OVERRIDE):
+                label = Style_definitions.CLUBB_LABEL_OVERRIDE[num_folders_plotted]
+            all_lines.extend(self.__getVarLines__(aliases, datasets, label=label, fill_zeros = fill_zeros,
+                                                  override_panel_type=panel_type, fallback_func=fallback, lines=lines))
+            num_folders_plotted += 1
 
         clubb_name = variable_def_dict['aliases'][0]
         variable_def_dict['plots'] = all_lines
+        first_input_datasets = self.ncdf_files[next(iter(self.ncdf_files))]
         if 'title' not in variable_def_dict.keys():
             if panel_type == Panel.TYPE_BUDGET:
                 variable_def_dict['title'] = clubb_name
             else:
-                imported_title = data_reader.getLongName(self.ncdf_files, clubb_name)
+                imported_title = data_reader.getLongName(first_input_datasets, clubb_name)
                 variable_def_dict['title'] = imported_title
         if 'axis_title' not in variable_def_dict.keys():
             if panel_type == Panel.TYPE_BUDGET:
-                variable_def_dict['axis_title'] = "["+data_reader.__getUnits__(self.ncdf_files, clubb_name)+"]"
+                variable_def_dict['axis_title'] = "["+data_reader.__getUnits__(first_input_datasets, clubb_name)+"]"
             else:
-                imported_axis_title = data_reader.getAxisTitle(self.ncdf_files, clubb_name)
+                imported_axis_title = data_reader.getAxisTitle(first_input_datasets, clubb_name)
                 variable_def_dict['axis_title'] = imported_axis_title
 
         if 'sam_calc' in variable_def_dict.keys() and self.sam_file is not None and data_reader.getNcdfSourceModel(self.sam_file) == 'sam':
@@ -260,7 +267,7 @@ class VariableGroup:
 
         :param varname: str name of the clubb variable to be plotted, case sensitive
         :param ncdf_datasets: List of Dataset objects containing clubb or sam netcdf data
-        :param label: Label to give the base-plotAll on the legend. This is normally Style_definitions.DEFAULT_LABEL, but not provided as default to help avoid debugging confusion.
+        :param label: Label to give the base-plotAll on the legend. This is normally Style_definitions.CLUBB_LABEL, but not provided as default to help avoid debugging confusion.
         :param line_format: Line formatting string used by matplotlib's PyPlot
         :param avg_axis: Axis over which to average values. 0 - time average, 1 - height average
         :param override_panel_type: Override the VariableGroup's default panel type

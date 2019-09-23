@@ -232,7 +232,7 @@
        {'plotTitle' => 'Mean evaporation rate', 'axisLabel' => 'evap [kg/kg/s]', 'type' => 'profile', 'lines' =>
        [
           {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/JULY_2017/DYCOMS_RF02_128x128x96_dr_nosed/DYCOMS_RF02_128x128x96_dr_nosed.nc', 'type' => 'les', 'name' => 'SAM-LES', 'expression' => 'EVAPM', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
-          {'filename' => 'dycoms2_rf02_do_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'rrm_cond', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+          {'filename' => 'dycoms2_rf02_do_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'rrm_evap', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},       
        {'plotTitle' => 'Mean accretion rate', 'axisLabel' => 'accr [kg/kg/s]', 'type' => 'profile', 'lines' =>
        [

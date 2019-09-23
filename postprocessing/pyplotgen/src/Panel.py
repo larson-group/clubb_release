@@ -7,6 +7,7 @@ from datetime import datetime
 
 import matplotlib.pyplot as plt
 import numpy as np
+from cycler import cycler
 
 from config import Style_definitions
 
@@ -78,6 +79,7 @@ class Panel:
 
         return start_idx, end_idx
 
+    # TODO add 'output.txt' config file to plots
     def plot(self, output_folder, casename, replace_images = False, no_legends = True, thin_lines = False, alphabetic_id=""):
         """
          Saves a single panel/graph to the output directory specified by the pyplotgen launch parameters
@@ -86,8 +88,15 @@ class Panel:
         :return: None
         """
 
-        plt.figure()
         plt.subplot(111)
+
+        # Set line color/style. This will cycle through all colors, then once colors run out use a new style and cycle through
+        # colors again
+        default_cycler = (cycler(linestyle=Style_definitions.STYLE_ROTATION) * cycler(color=Style_definitions.COLOR_ROTATION))
+        plt.rc('axes', prop_cycle=default_cycler)
+
+        # Set graph size
+        plt.figure(figsize=(9,6))
 
         # Set font sizes
         plt.rc('font', size=Style_definitions.DEFAULT_TEXT_SIZE)          # controls default text sizes
@@ -98,8 +107,12 @@ class Panel:
         plt.rc('legend', fontsize=Style_definitions.LEGEND_FONT_SIZE)    # legend fontsize
         plt.rc('figure', titlesize=Style_definitions.TITLE_TEXT_SIZE)  # fontsize of the figure title
 
+        # Use scientific numbers
         plt.ticklabel_format(style='sci', axis='x', scilimits=(0,0))
-        plt.gcf().subplots_adjust(bottom=0.15) # prevent x-axis label from getting cut off
+
+        # prevent x-axis label from getting cut off
+        plt.gcf().subplots_adjust(bottom=0.15)
+
         max_panel_value = 0
         for var in self.all_plots:
             x_data = var.x
@@ -117,21 +130,30 @@ class Panel:
             elif var.line_format == Style_definitions.GOLAZ_BEST_R408_LINE_STYLE:
                 linewidth = Style_definitions.ARCHIVED_CLUBB_LINE_THICKNESS
             else:
-                linewidth = Style_definitions.DEFAULT_LINE_THICKNESS
+                linewidth = Style_definitions.CLUBB_LINE_THICKNESS
             if thin_lines:
                 linewidth = Style_definitions.THIN_LINE_THICKNESS
-            plt.plot(x_data, y_data, var.line_format, label=var.label, linewidth=linewidth)
+            if var.line_format != "":
+                plt.plot(x_data, y_data, var.line_format, label=var.label, linewidth=linewidth)
+            else: # If format is not specified, use the color/style rotation specified in Style_definitions.py
+                plt.plot(x_data, y_data, label=var.label, linewidth=linewidth)
 
         # Set titles
         plt.title(self.title)
         plt.ylabel(self.y_title)
         plt.xlabel(self.x_title)
 
+        # Show grid if enabled
         ax = plt.gca()
         ax.grid(Style_definitions.SHOW_GRID)
+
+        ax.set_prop_cycle(default_cycler)
+
+        # Add alphabetic ID
         if alphabetic_id != "":
             ax.text(0.9, 0.9, '('+alphabetic_id+')', ha='center', va='center', transform=ax.transAxes, fontsize=Style_definitions.LARGE_FONT_SIZE) # Add letter label to panels
 
+        # Plot legend
         if no_legends is False:
             # Shrink current axis by 20%
             box = ax.get_position()
@@ -162,7 +184,6 @@ class Panel:
         else:
             filename = filename + '_' + self.y_title + "_VS_" + self.x_title
         filename = self.__remove_invalid_filename_chars__(filename)
-        filename = filename.replace(' ', '_')
         rel_filename = output_folder + "/" +casename+'/' + filename
         if os.path.isfile(rel_filename+'.jpg') and replace_images is True:
             plt.savefig(rel_filename+'.jpg', format='jpeg')
@@ -182,4 +203,6 @@ class Panel:
         filename = filename.replace('.', '')
         filename = filename.replace('/', '')
         filename = filename.replace(',', '')
+        filename = filename.replace(':', '-')
+        filename = filename.replace(' ', '_')
         return filename
