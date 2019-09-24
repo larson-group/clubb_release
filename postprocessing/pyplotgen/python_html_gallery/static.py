@@ -67,12 +67,16 @@ idx_page = '<html>\n\t' \
             '</frameset>\n\t'\
             '</html>'
 
+a_tag = '<div align="CENTER"><a name="%s"><font size="+6"><b>%s</b></font></a></div>'
+br = '\n<br>'
+
+setup_file_link = '<a href="%s">Case setup information for input folder %s</a>' + br
+
 br = '\n<br>'
 footer = '\n</div></body></html>'
 nav = '%s</div>\n<div>'
 img_src = '\n<img src="%s">'
 case_title = '\n<h1>%s</h1>'
-a_tag = '<div align="CENTER"><a name="%s"><font size="+6"><b>%s</b></font></a></div>'
 timestamp = '\n<p>Page created on %s</p>'
 url_dir = '\n<p><a href="%s">%s</a></p>'
 url_img = '\n<a href="%s"><img title="%s" src="%s"></a>'

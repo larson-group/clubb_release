@@ -132,11 +132,21 @@ def WriteGalleryPage(page):
   """
     # os.chdir(static.root)
 
-    with open(static.plots, 'a') as index_file:
-        # index_file.write(static.header % page)
-        # index_file.write(static.case_title % page)
-        index_file.write(static.a_tag % (page, page))
-        index_file.write(static.timestamp % Now())
+    with open(static.plots, 'a') as plots_file:
+        # plots_file.write(static.header % page)
+        # plots_file.write(static.case_title % page)
+        plots_file.write(static.a_tag % (page, page))
+
+        # Write case_setup.txt links
+        for setup_file in glob.glob(page+'/*.txt'):
+            setup_file_tail_len = 10
+            # Find the number of characters that occur in the setupfile's name before the name of the input folder.
+            # The format for setup filenames is casename/casename_inputfoldername_setup.txt
+            casename_prefix_len = len(page) * 2 + 2 # length is num characters in page/page_  including the '/' and '_'
+            setup_file_src_folder = setup_file[casename_prefix_len: -setup_file_tail_len]
+            plots_file.write(static.setup_file_link % (setup_file, setup_file_src_folder) + "\n")
+
+        plots_file.write(static.timestamp % Now())
 
         try:
             img_paths = '*.jpg'
@@ -147,9 +157,9 @@ def WriteGalleryPage(page):
             return
 
         for e in GenerateThumbnails(page, jpgs):
-            index_file.write(e)
+            plots_file.write(e)
 
-        # index_file.write(static.footer)
+        # plots_file.write(static.footer)
 
 
 def WriteGalleryPages():
@@ -157,7 +167,7 @@ def WriteGalleryPages():
     with open(static.plots, 'w') as index_file:
         index_file.write(static.header)
 
-    for page in sorted(ListDirs(static.root), key=os.path.getmtime):
+    for page in sorted(ListDirs(static.root)):
         WriteGalleryPage(page)
 
     with open(static.plots, 'a') as index_file:
@@ -173,11 +183,9 @@ def WriteNavigation():
         # nav_file.write(static.timestamp % Now())
 
         page_count = 0
-        for page in sorted(ListDirs(static.root), key=os.path.getmtime):
+        for page in sorted(ListDirs(static.root)):
             page_count += 1
             try:
-                # for _ in range(static.n_thumbs):
-                #   nav_file.write(static.img_src % RandomThumb(page))
                 nav_file.write(static.nav_a_tag % (page, page))
             except IndexError:
                 print('%s: No thumbnails found, removing' % page)
