@@ -141,51 +141,71 @@ module new_hybrid_pdf_main
     real( kind = core_rknd ), dimension(gr%nz) :: &
       zeta_w    ! Parameter for the PDF component variances of w           [-]
 
-    real ( kind = core_rknd ) :: &
-      lambda_w    ! Param. that increases or decreases Skw dependence  [-]
-
-    real ( kind = core_rknd ), dimension(gr%nz) :: &
+    real( kind = core_rknd ), dimension(gr%nz) :: &
       coef_wp4_implicit,     & ! <w'^4> = coef_wp4_implicit * <w'^2>^2       [-]
       coef_wprtp2_implicit,  & ! <w'rt'^2> = coef_wprtp2_implicit*<rt'^2>  [m/s]
       coef_wpthlp2_implicit    ! <w'thl'^2>=coef_wpthlp2_implicit*<thl'^2> [m/s]
 
     ! <w'^2 rt'> = coef_wp2rtp_implicit * <w'rt'> + term_wp2rtp_explicit
-    real ( kind = core_rknd ), dimension(gr%nz) :: &
+    real( kind = core_rknd ), dimension(gr%nz) :: &
       coef_wp2rtp_implicit, & ! Coefficient that is multiplied by <w'rt'>  [m/s]
       term_wp2rtp_explicit    ! Term that is on the RHS          [m^2/s^2 kg/kg]
 
     ! <w'^2 thl'> = coef_wp2thlp_implicit * <w'thl'> + term_wp2thlp_explicit
-    real ( kind = core_rknd ), dimension(gr%nz) :: &
+    real( kind = core_rknd ), dimension(gr%nz) :: &
       coef_wp2thlp_implicit, & ! Coef. that is multiplied by <w'thl'>      [m/s]
       term_wp2thlp_explicit    ! Term that is on the RHS             [m^2/s^2 K]
 
     ! <w'rt'thl'> = coef_wprtpthlp_implicit*<rt'thl'> + term_wprtpthlp_explicit
-    real ( kind = core_rknd ), dimension(gr%nz) :: &
+    real( kind = core_rknd ), dimension(gr%nz) :: &
       coef_wprtpthlp_implicit, & ! Coef. that is multiplied by <rt'thl'>   [m/s]
       term_wprtpthlp_explicit    ! Term that is on the RHS         [m/s(kg/kg)K]
 
+    real( kind = core_rknd ), dimension(gr%nz) :: &
+      max_corr_w_sclr_sqd    ! Max value of wpsclrp^2 / ( wp2 * sclrp2 )     [-]
 
-    lambda_w = 0.5_core_rknd
+    integer :: k, sclr_indx  ! Loop indices
 
+
+    ! Calculate the maximum value of the square of the correlation of w and a
+    ! scalar when scalars are used.
+    ! Initialize max_corr_w_sclr_sqd to 0.  It needs to retain this value even
+    ! when sclr_dim = 0.
+    max_corr_w_sclr_sqd = zero
+    if ( sclr_dim > 0 ) then
+       do k = 1, gr%nz, 1
+          do sclr_indx = 1, sclr_dim, 1
+             max_corr_w_sclr_sqd(k) = max( wpsclrp(k,sclr_indx)**2 &
+                                           / ( wp2(k) * sclrp2(k,sclr_indx) ), &
+                                           max_corr_w_sclr_sqd(k) )
+          enddo ! sclr_indx = 1, sclr_dim, 1
+       enddo ! k = 1, gr%nz, 1
+    endif ! sclr_dim > 0
+
+    ! Calculate the values of PDF tunable parameters F_w and zeta_w.
     ! Vertical velocity, w, will always be the setter variable.
-    call calc_F_w_zeta_w( Skw,                          & ! In
-                          slope_coef_spread_DG_means_w, & ! In
-                          pdf_component_stdev_factor_w, & ! In
-                          lambda_w,                     & ! In
-                          F_w, zeta_w,                  & ! Out
-                          min_F_w, max_F_w              ) ! Out
+    call calc_F_w_zeta_w( Skw, wprtp, wpthlp, upwp, vpwp, & ! In
+                          wp2, rtp2, thlp2, up2, vp2,     & ! In
+                          max_corr_w_sclr_sqd,            & ! In
+                          F_w, zeta_w, min_F_w, max_F_w   ) ! Out
 
     ! Calculate the PDF parameters, including mixture fraction, for the
     ! setter variable, w.
-    call calc_setter_var_params( wm, wp2, Skw, sgn_wp2,     & ! In
-                                 F_w, zeta_w,               & ! In
-                                 mu_w_1, mu_w_2, sigma_w_1, & ! Out
-                                 sigma_w_2, mixt_frac,      & ! Out
-                                 coef_sigma_w_1_sqd,        & ! Out
-                                 coef_sigma_w_2_sqd         ) ! Out
+    call calculate_w_params( wm, wp2, Skw, F_w, zeta_w, & ! In
+                             mu_w_1, mu_w_2, sigma_w_1, & ! Out
+                             sigma_w_2, mixt_frac,      & ! Out
+                             coef_sigma_w_1_sqd,        & ! Out
+                             coef_sigma_w_2_sqd         ) ! Out
 
     sigma_w_1_sqd = sigma_w_1**2
     sigma_w_2_sqd = sigma_w_2**2
+
+    if ( any( mixt_frac < zero ) ) then
+       write(fstderr,*) "Mixture fraction cannot be calculated."
+       write(fstderr,*) "The value of F_w must be greater than 0 when " &
+                        // "| Skw | > 0."
+       stop
+    endif
 
     ! Calculate the PDF parameters for responder variable rt.
     call calc_responder_var( rtm, rtp2, sgn_wprtp, mixt_frac, & ! In
@@ -480,7 +500,7 @@ module new_hybrid_pdf_main
   !=============================================================================
   elemental subroutine calc_F_w_zeta_w( Skw, wprtp, wpthlp, upwp, vpwp, & ! In
                                         wp2, rtp2, thlp2, up2, vp2,     & ! In
-                                        wpsclrp, sclrp2,                & ! In
+                                        max_corr_w_sclr_sqd,            & ! In
                                         F_w, zeta_w, min_F_w, max_F_w   ) ! Out
 
     ! Description:
@@ -557,18 +577,19 @@ module new_hybrid_pdf_main
 
     ! Input Variables
     real( kind = core_rknd ), intent(in) :: &
-      Skw,     & ! Skewness of w (overall)              [-]
-      wprtp,   & ! Covariance (overall) of w and rt     [m/s (kg/kg)]
-      wpthlp,  & ! Covariance (overall) of w and thl    [m/s K]
-      upwp,    & ! Covariance (overall) of u and w      [m^2/s^2]
-      vpwp,    & ! Covariance (overall) of u and v      [m^2/s^2]
-      wp2,     & ! Variance (overall) of w              [m^2/s^2]
-      rtp2,    & ! Variance (overall) of rt             [(kg/kg)^2]
-      thlp2,   & ! Variance (overall) of thl            [K^2]
-      up2,     & ! Variance (overall) of u              [m^2/s^2]
-      vp2,     & ! Variance (overall) of v              [m^2/s^2]
-      wpsclrp, & ! Covariance (overall) of w and sclr   [m/s (units vary)]
-      sclrp2     ! Variance (overall) of sclr           [(units vary)]
+      Skw,    & ! Skewness of w (overall)              [-]
+      wprtp,  & ! Covariance (overall) of w and rt     [m/s (kg/kg)]
+      wpthlp, & ! Covariance (overall) of w and thl    [m/s K]
+      upwp,   & ! Covariance (overall) of u and w      [m^2/s^2]
+      vpwp,   & ! Covariance (overall) of u and v      [m^2/s^2]
+      wp2,    & ! Variance (overall) of w              [m^2/s^2]
+      rtp2,   & ! Variance (overall) of rt             [(kg/kg)^2]
+      thlp2,  & ! Variance (overall) of thl            [K^2]
+      up2,    & ! Variance (overall) of u              [m^2/s^2]
+      vp2       ! Variance (overall) of v              [m^2/s^2]
+
+    real( kind = core_rknd ), intent(in) :: &
+      max_corr_w_sclr_sqd    ! Max value of wpsclrp^2 / ( wp2 * sclrp2 )     [-]
 
     ! Output Variables
     real( kind = core_rknd ), intent(out) :: &
@@ -579,17 +600,17 @@ module new_hybrid_pdf_main
 
     ! Local Variables
     real( kind = core_rknd ) :: &
-      exp_Skw_interp_factor    ! Function to interp. between min. and max.   [-]
-
-    real( kind = core_rknd ), parameter :: &
-      lambda = 0.5_core_rknd    ! Parameter for Skw dependence    [-]
-
-    real( kind = core_rknd ) :: &
       corr_w_rt_sqd,    & ! Value of wprtp^2 / ( wp2 * rtp2 )              [-]
       corr_w_thl_sqd,   & ! Value of wpthlp^2 / ( wp2 * thlp2 )            [-]
       corr_u_w_sqd,     & ! Value of upwp^2 / ( up2 * wp2 )                [-]
       corr_v_w_sqd,     & ! Value of vpwp^2 / ( vp2 * wp2 )                [-]
       max_corr_w_x_sqd    ! Max. val. of wpxp^2/(wp2*xp2) for all vars. x  [-]
+
+    real( kind = core_rknd ) :: &
+      exp_Skw_interp_factor    ! Function to interp. between min. and max.   [-]
+
+    real( kind = core_rknd ), parameter :: &
+      lambda = 0.5_core_rknd    ! Parameter for Skw dependence    [-]
 
 
     ! Find the maximum value of <w'x'>^2 / ( <w'^2> * <x'^2> ) for all
@@ -612,30 +633,25 @@ module new_hybrid_pdf_main
        corr_w_thl_sqd = zero
     endif
 
-    ! Calculate the maximum value of corr_w_rt^2 and corr_w_thl^2.
-    max_corr_w_x_sqd = max( corr_w_rt_sqd, corr_w_thl_sqd )
+    ! Calculate the squared value of the correlation of u and w.
+    if ( up2 * wp2 > zero ) then
+       corr_u_w_sqd = upwp**2 / ( up2 * wp2 )
+    else
+       corr_u_w_sqd = zero
+    endif
 
-    if ( l_predict_upwp_vpwp ) then
+    ! Calculate the squared value of the correlation of v and w.
+    if ( vp2 * wp2 > zero ) then
+       corr_v_w_sqd = vpwp**2 / ( vp2 * wp2 )
+    else
+       corr_v_w_sqd = zero
+    endif
 
-       ! Calculate the squared value of the correlation of u and w.
-       if ( up2 * wp2 > zero ) then
-          corr_u_w_sqd = upwp**2 / ( up2 * wp2 )
-       else
-          corr_u_w_sqd = zero
-       endif
-
-       ! Calculate the squared value of the correlation of v and w.
-       if ( vp2 * wp2 > zero ) then
-          corr_v_w_sqd = vpwp**2 / ( vp2 * wp2 )
-       else
-          corr_v_w_sqd = zero
-       endif
-
-       ! Include corr_u_w^2 and corr_v_w^2 in the calculation of max(corr_w_x^2)
-       max_corr_w_x_sqd = max( max_corr_w_x_sqd, corr_u_w_sqd, corr_v_w_sqd )
-
-    endif ! l_predict_upwp_vpwp
-
+    ! Calculate the maximum value of corr_w_rt^2, corr_w_thl^2, corr_u_w^2, and
+    ! corr_v_w^2 in the calculation of max(corr_w_x^2).  Include the maximum
+    ! value of corr_w_sclr^2 (for all sclrs) when scalars are found.
+    max_corr_w_x_sqd = max( corr_w_rt_sqd, corr_w_thl_sqd, &
+                            corr_u_w_sqd, corr_v_w_sqd, max_corr_w_sclr_sqd )
 
     ! Calculate min_F_w and set max_F_w to 1.
     if ( abs( Skw ) > zero ) then
