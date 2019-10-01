@@ -96,7 +96,7 @@ class Panel:
         plt.rc('axes', prop_cycle=default_cycler)
 
         # Set graph size
-        plt.figure(figsize=(9,6))
+        plt.figure(figsize=(10,6))
 
         # Set font sizes
         plt.rc('font', size=Style_definitions.DEFAULT_TEXT_SIZE)          # controls default text sizes

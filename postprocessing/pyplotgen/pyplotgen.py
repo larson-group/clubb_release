@@ -190,7 +190,7 @@ def __process_args__():
     parser = argparse.ArgumentParser()
     parser.add_argument("-r", "--replace", help="If the output folder already exists, replace it with the new one.", action="store_true")
     parser.add_argument("-l", "--les", help="Plot LES data for comparison.", action="store_true")
-    parser.add_argument("-b", "--plot-golaz-best", help="Plot Chris Golaz Best Ever data for comparison.", action="store_true")
+    parser.add_argument("-g", "--plot-golaz-best", help="Plot Chris Golaz Best Ever data for comparison.", action="store_true")
     parser.add_argument("-d", "--plot-hoc-2005", help="Plot !HOC 12/17/2015 data for comparison.", action="store_true")
     parser.add_argument("-a", "--all-best", help="Same as -lbd. Plots LES, Golaz Best Ever, and HOC 2005 data for comparison.", action="store_true")
     parser.add_argument("-z", "--zip", help="Output data into a compressed zip file.", action="store_true")
@@ -198,7 +198,7 @@ def __process_args__():
     parser.add_argument("--thin", help="Plot using thin solid lines.", action="store_true")
     parser.add_argument("--no-legends", help="Plot without legend boxes defining the line types.", action="store_true")
     parser.add_argument("--ensemble", help="Plot ensemble tuner runs", action="store_true")  # TODO is this needed?
-    parser.add_argument("--plot-budgets", help="Plot all defined budgets of moments", action="store_true")
+    parser.add_argument("-b", "--plot-budgets", help="Plot all defined budgets of moments", action="store_true")
     parser.add_argument("--bu-morr", help="For morrison microphysics: breaks microphysical source terms into component processes",action="store_true")
     parser.add_argument("--diff", help="Plot the difference between two input folders", action="store")
     parser.add_argument("-i", "--input", help="Input folder containing netcdf output data.", action="store", default=["../../output"], nargs='+')

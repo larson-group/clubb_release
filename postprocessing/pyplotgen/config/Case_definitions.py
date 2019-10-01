@@ -50,7 +50,8 @@ alphabetical order.
 
     *hoc_file*: dict containing paths to the hod .nc files for this case (please use the HOC_OUTPUT_ROOT variable as a base).
 
-    *var_groups*: list of python class names, where the classes use the naming scheme VariableGroup____.py and define a variable group.
+    *var_groups*: These are the groups of variables to be plotted for the given case. var_groups is defined as a
+        list of python class names, where the classes use the naming scheme VariableGroup____.py and define a variable group.
 
 """
 
@@ -83,7 +84,7 @@ below (all caps).
 
 For example, to plot only bomex and fire:
 
-# ALL_CASES = [BOMEX, FIRE]
+ALL_CASES = [BOMEX, FIRE]
 """
 
 ARM = {'name': 'arm', 'start_time': 481, 'end_time': 540, 'height_min_value': 0, 'height_max_value': 3500,
@@ -433,4 +434,4 @@ ALL_CASES = [ARM, ARM_97, ASTEX_A209, ATEX,
              ]
 
 # If uncommented, this line will override the real ALL_CASES given above, forcing pyplotgen to only plot some cases.
-# ALL_CASES = [DYCOMS2_RF01]
+# ALL_CASES = [BOMEX, DYCOMS2_RF01]

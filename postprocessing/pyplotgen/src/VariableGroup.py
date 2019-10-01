@@ -72,10 +72,16 @@ class VariableGroup:
         *aliases*: A list of names various models refer to this variable as. E.g. ['wprtp', 'WPRTP', 'wpqtp']
 
         *sam_calc*: (optional) A functional reference to a method that calculates a sam variable. This is given as the name of the
-        function *without* the () after the name. E.g. self.getThlmSamCalc
+        function *without*  a set of parenthesis () after the name. E.g. self.getThlmSamCalc
 
         *coamps_calc*: (optional) A functional reference to a method that calculates a coamps variable. This is given as the name of the
-        function *without* the () after the name. E.g. self.getThlmSamCalc
+        function *without* a set of parenthesis () after the name. E.g. self.getThlmCoampsCalc
+
+        *r408_calc*: (optional) A functional reference to a method that calculates a r408 variable. This is given as the name of the
+        function *without*  a set of parenthesis () after the name. E.g. self.getR408SamCalc
+
+        *hoc_calc*: (optional) A functional reference to a method that calculates a hoc-2005 variable. This is given as the name of the
+        function *without* a set of parenthesis () after the name. E.g. self.getThlmHocCalc
 
         *sam_conv_factor*: (optional) Numeric value to scale a sam variable by. E.g. 1/1000, or 100
 
@@ -103,14 +109,14 @@ class VariableGroup:
             :linenos:
 
             thlm_lines = [
-            {'aliases': ['thlm_bt'], 'label': 'thlm_bt'},
-            {'aliases': ['thlm_ma'], 'label': 'thlm_ma'},
-            {'aliases': ['thlm_ta'], 'label': 'thlm_ta'},
-            {'aliases': ['thlm_mc'], 'label': 'thlm_mc'},
-            {'aliases': ['thlm_clipping'], 'label': 'thlm_bt', 'fallback_func': self.getThlmClipping},
-            {'aliases': ['radht'], 'label': 'radht'},
-            {'aliases': ['lsforcing'], 'label': 'lsforcing', 'fallback_func': self.getLsforcing},
-            {'aliases': ['thlm_residual'], 'label': 'thlm_residual', 'fallback_func': self.getThlmResidual},
+            {'aliases': ['thlm_bt'], 'legend_label': 'thlm_bt'},
+            {'aliases': ['thlm_ma'], 'legend_label': 'thlm_ma'},
+            {'aliases': ['thlm_ta'], 'legend_label': 'thlm_ta'},
+            {'aliases': ['thlm_mc'], 'legend_label': 'thlm_mc'},
+            {'aliases': ['thlm_clipping'], 'legend_label': 'thlm_bt', 'fallback_func': self.getThlmClipping},
+            {'aliases': ['radht'], 'legend_label': 'radht'},
+            {'aliases': ['lsforcing'], 'legend_label': 'lsforcing', 'fallback_func': self.getLsforcing},
+            {'aliases': ['thlm_residual'], 'legend_label': 'thlm_residual', 'fallback_func': self.getThlmResidual},
             ]
 
         Here are a couple examples of other (non-budget) variable definitions:
@@ -267,7 +273,7 @@ class VariableGroup:
 
         :param varname: str name of the clubb variable to be plotted, case sensitive
         :param ncdf_datasets: List of Dataset objects containing clubb or sam netcdf data
-        :param label: Label to give the base-plotAll on the legend. This is normally Style_definitions.CLUBB_LABEL, but not provided as default to help avoid debugging confusion.
+        :param legend_label: Label to give the base-plotAll on the legend. This is normally Style_definitions.CLUBB_LABEL, but not provided as default to help avoid debugging confusion.
         :param line_format: Line formatting string used by matplotlib's PyPlot
         :param avg_axis: Axis over which to average values. 0 - time average, 1 - height average
         :param override_panel_type: Override the VariableGroup's default panel type
@@ -371,7 +377,7 @@ class VariableGroup:
                         z = NetCdfVariable('z', dataset, start_time=self.start_time, end_time=self.end_time)
                     variable.constrain(self.height_min_value, self.height_max_value, data=z.data)
                     z.constrain(self.height_min_value, self.height_max_value)
-                    line_definition = Line(variable, z, label=line_definition['label'], line_format="")  # uses auto-generating line format
+                    line_definition = Line(variable, z, label=line_definition['legend_label'], line_format="")  # uses auto-generating line format
                     output_lines.append(line_definition)
                     line_added = True
                     break
@@ -382,7 +388,7 @@ class VariableGroup:
                 if 'fallback_func' in line_definition.keys():
                     fallback = line_definition['fallback_func']
                     fallback_output = self.__getVarDataFromFallback__(fallback, varname, {'budget':dataset}, label, line_format)
-                    fallback_output = Line(fallback_output.x, z, line_format="", label=line_definition['label'])
+                    fallback_output = Line(fallback_output.x, z, line_format="", label=line_definition['legend_label'])
                     output_lines.append(fallback_output)
                     return output_lines
 
