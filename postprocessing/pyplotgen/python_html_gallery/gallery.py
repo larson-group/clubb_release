@@ -88,6 +88,7 @@ def GenerateThumbnails(page, jpgs):
     url_imgs = []
 
     for jpg in jpgs:
+        jpg = page + '/' + jpg
         try:
             im = Image.open(jpg)
             if im.size > static.min_size:
@@ -129,62 +130,86 @@ def WriteGalleryPage(page):
   Args:
     page: str, name of page under root directory.
   """
-    os.chdir(os.path.join(static.root, page))
+    # os.chdir(static.root)
 
-    with open(static.index, 'w') as index_file:
-        index_file.write(static.header % page)
-        index_file.write(static.case_title % page)
-        index_file.write(static.timestamp % Now())
+    with open(static.plots, 'a') as plots_file:
+        # plots_file.write(static.header % page)
+        # plots_file.write(static.case_title % page)
+        plots_file.write(static.a_tag % (page, page))
+
+        # Write case_setup.txt links
+        for setup_file in glob.glob(page+'/*.txt'):
+            setup_file_tail_len = 10
+            # Find the number of characters that occur in the setupfile's name before the name of the input folder.
+            # The format for setup filenames is casename/casename_inputfoldername_setup.txt
+            casename_prefix_len = len(page) * 2 + 2 # length is num characters in page/page_  including the '/' and '_'
+            setup_file_src_folder = setup_file[casename_prefix_len: -setup_file_tail_len]
+            plots_file.write(static.setup_file_link % (setup_file, setup_file_src_folder) + "\n")
+
+        plots_file.write(static.timestamp % Now())
 
         try:
-            jpgs = sorted(ListFiles('*.jpg', '.'), reverse=True)[::-1]
+            img_paths = '*.jpg'
+            case_images = ListFiles(img_paths, page)
+            jpgs = sorted(case_images, reverse=True)[::-1]
         except TypeError:
             print('%s: No images found' % page)
             return
 
         for e in GenerateThumbnails(page, jpgs):
-            index_file.write(e)
+            plots_file.write(e)
 
-        index_file.write(static.footer)
+        # plots_file.write(static.footer)
 
 
 def WriteGalleryPages():
     """Write gallery pages for directories in root path."""
-    for page in sorted(ListDirs(static.root), key=os.path.getmtime):
+    with open(static.plots, 'w') as index_file:
+        index_file.write(static.header)
+
+    for page in sorted(ListDirs(static.root)):
         WriteGalleryPage(page)
 
+    with open(static.plots, 'a') as index_file:
+        index_file.write(static.footer)
 
-def WriteIndex():
-    """Write index file with gallery links and thumbnails in root path."""
+
+def WriteNavigation():
+    """Write navigation file with gallery links and thumbnails in root path."""
     os.chdir(static.root)
 
-    with open(static.index, 'w') as index_file:
-        index_file.write(static.header % 'PyPlotgen Output')
-        index_file.write(static.timestamp % Now())
+    with open(static.navigation, 'w') as nav_file:
+        nav_file.write(static.nav_header)
+        # nav_file.write(static.timestamp % Now())
 
         page_count = 0
-        for page in sorted(glob.glob('*/%s' % static.index)):
+        for page in sorted(ListDirs(static.root)):
             page_count += 1
             try:
-                # for _ in range(static.n_thumbs):
-                #   index_file.write(static.img_src % RandomThumb(page))
-                index_file.write(static.url_dir % (page, page.split('/')[0]))
+                nav_file.write(static.nav_a_tag % (page, page))
             except IndexError:
                 print('%s: No thumbnails found, removing' % page)
                 os.unlink(page)
 
-        index_file.write(static.footer)
+        nav_file.write(static.nav_footer)
 
     print('Wrote %s with %s gallery link(s)' % (
-        os.path.join(static.root, static.index), page_count))
+        os.path.join(static.root, static.navigation), page_count))
 
+def WriteIndex():
+    os.chdir(static.root)
+
+    with open(static.index, 'w') as index_file:
+        index_file.write(static.idx_page)
+
+    print("Wrote index.html")
 
 def main(output_dir):
     """Main function."""
     OrganizeRoot(output_dir)
     WriteGalleryPages()
+    WriteNavigation()
     WriteIndex()
-
 
 if __name__ == '__main__':
     main()

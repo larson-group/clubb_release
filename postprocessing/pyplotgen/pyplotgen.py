@@ -9,7 +9,9 @@ of files, generation of plots, and then the export of plots, though
 these processes are mostly carried out by other classes/files.
 """
 import argparse
+import glob
 import os
+import shutil
 import subprocess
 from datetime import datetime
 from warnings import warn
@@ -64,6 +66,7 @@ class PyPlotGen:
         self.plot_budgets = budget_moments
         self.bu_morr = bu_morr
         self.diff = diff
+        self.cases_plotted = []
         self.nc_datasets = None
         self.data_reader = DataReader()
         self.diff_files_data_reader = DataReader()
@@ -94,10 +97,10 @@ class PyPlotGen:
             print('###########################################')
             print("\nDeleting old plots")
             subprocess.run(['rm', '-rf', self.output_folder + '/'])
-        cases_plotted = 0
+        num_cases_plotted = 0
         for case_def in all_cases:
             if case_def['name'] in self.nc_datasets.keys():
-                cases_plotted += 1
+                num_cases_plotted += 1
                 print('###########################################')
                 print("plotting ", case_def['name'])
                 case_diff_datasets = None
@@ -108,17 +111,43 @@ class PyPlotGen:
                             diff_datasets=case_diff_datasets, plot_r408=self.cgbest, plot_hoc=self.hoc)
                 case.plot(self.output_folder, replace_images=self.replace_images, no_legends = self.no_legends,
                           thin_lines=self.thin, show_alphabetic_id=self.show_alphabetic_id)
+                self.cases_plotted.append(casename)
         print('###########################################')
-        if cases_plotted == 0:
+        if num_cases_plotted == 0:
             warn("Warning, no cases were plotted! Make sure the input folder " + self.input_folder +
                  " contains .nc files or use the --input (-i) parameter to manually specify an input folder.")
         print("\nGenerating webpage for viewing plots ")
         if not os.path.exists(self.output_folder):
             os.mkdir(self.output_folder)
 
+        self.__copySetupFiles__()
         gallery.main(self.output_folder)
         print('###########################################')
         print("Output can be viewed at file://" + self.output_folder + "/index.html with a web browser")
+
+    def __copySetupFiles__(self):
+        """
+        Copies case setup files from the input folder(s)
+        into the pyplotgen output folders.
+
+        :return:
+        """
+        print("Looking for case_setup.txt files")
+        for folder in self.input_folder:
+            setup_file_search_pattern = folder + '/*_setup.txt'
+            folder_basename = os.path.basename(folder)
+
+            for file in glob.glob(setup_file_search_pattern):
+                file_basename = os.path.basename(file)
+                casename = file_basename[:-10]
+                copy_dest_folder = self.output_folder + '/'+casename+'/'
+                copy_dest_file =  copy_dest_folder + file_basename[:-10] + '_' + folder_basename + file_basename[-10:]
+
+                if casename in self.cases_plotted:
+                    if not os.path.exists(copy_dest_folder):
+                        os.mkdir(copy_dest_folder)
+                    shutil.copy(file, copy_dest_file)
+                    print("\tFound setup file " + str(file))
 
     def __downloadModelOutputs__(self):
         """
@@ -172,7 +201,7 @@ def __process_args__():
     parser.add_argument("--plot-budgets", help="Plot all defined budgets of moments", action="store_true")
     parser.add_argument("--bu-morr", help="For morrison microphysics: breaks microphysical source terms into component processes",action="store_true")
     parser.add_argument("--diff", help="Plot the difference between two input folders", action="store")
-    parser.add_argument("-i", "--input", help="Input folder containing netcdf output data.", action="store", default="../../output", nargs='+')
+    parser.add_argument("-i", "--input", help="Input folder containing netcdf output data.", action="store", default=["../../output"], nargs='+')
     parser.add_argument("-o", "--output", help="Name of folder to create and store plots into.", action="store", default="./output")
     args = parser.parse_args()
 

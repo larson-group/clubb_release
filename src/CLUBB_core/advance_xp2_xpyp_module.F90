@@ -170,6 +170,12 @@ module advance_xp2_xpyp_module
     use array_index, only: &
         iisclr_rt, &
         iisclr_thl
+        
+    use mean_adv, only:  & 
+        term_ma_zm_lhs_all      ! Procedure(s)
+
+    use diffusion, only:  & 
+        diffusion_zm_lhs_all    ! Procedure(s)
 
     implicit none
 
@@ -262,16 +268,9 @@ module advance_xp2_xpyp_module
     real( kind = core_rknd ), dimension(3,gr%nz) ::  & 
       lhs ! Tridiagonal matrix
 
-    real( kind = core_rknd ), dimension(gr%nz,1) :: & 
-      rhs ! RHS vector of tridiagonal matrix
-
     real( kind = core_rknd ), dimension(gr%nz,2) :: & 
       uv_rhs,    &! RHS vectors of tridiagonal system for up2/vp2
       uv_solution ! Solution to the tridiagonal system for up2/vp2
-
-    real( kind = core_rknd ), dimension(gr%nz,sclr_dim*3) ::  & 
-      sclr_rhs,   & ! RHS vectors of tridiagonal system for the passive scalars
-      sclr_solution ! Solution to tridiagonal system for the passive scalars
 
     ! Eddy Diffusion for Variances and Covariances.
     real( kind = core_rknd ), dimension(gr%nz) ::  & 
@@ -313,6 +312,11 @@ module advance_xp2_xpyp_module
       rhs_ta_wpsclrp2,      & ! For <w'sclr'^2>
       rhs_ta_wpsclrprtp,    & ! For <w'sclr'rt'>
       rhs_ta_wpsclrpthlp      ! For <w'sclr'thl'>
+      
+    real( kind = core_rknd ), dimension(3,gr%nz) :: & 
+      lhs_diff,     & ! Diffusion contributions to lhs, dissipation term 2
+      lhs_diff_uv,  & ! Diffusion contributions to lhs for <w'u'^2> and <w'v'^2>
+      lhs_ma          ! Mean advection contributions to lhs
 
     logical :: l_scalar_calc, l_first_clip_ts, l_last_clip_ts
 
@@ -323,7 +327,7 @@ module advance_xp2_xpyp_module
 
     ! Loop indices
     integer :: i, k
-
+    
     !---------------------------- Begin Code ----------------------------------
 
     if ( clubb_at_least_debug_level( 0 ) ) then
@@ -351,7 +355,6 @@ module advance_xp2_xpyp_module
 
        C2thl_1d   = C2rt_1d
        C2rtthl_1d = C2rt_1d
-
        C2sclr_1d  = C2rt_1d
 
     else ! .not. l_single_C2_Skw
@@ -424,92 +427,70 @@ module advance_xp2_xpyp_module
                                  rhs_ta_wprtp2, rhs_ta_wpthlp2, rhs_ta_wprtpthlp,   & ! Out
                                  rhs_ta_wpup2, rhs_ta_wpvp2, rhs_ta_wpsclrp2,       & ! Out
                                  rhs_ta_wpsclrprtp, rhs_ta_wpsclrpthlp              ) ! Out
+                                 
+    ! Calculate LHS eddy diffusion term: dissipation term 2 (dp2). This is the 
+    ! diffusion term for all LHS matrices except <w'u'^2> and <w'v'^2>
+    call diffusion_zm_lhs_all( Kw2(:), nu2_vert_res_dep(:),      & ! In
+                               gr%invrs_dzt(:), gr%invrs_dzm(:), & ! In
+                               lhs_diff(:,:)                     ) ! Out
+                               
+    ! Calculate LHS mean advection (ma) term, this term is equal for all LHS matrices
+    call term_ma_zm_lhs_all( wm_zm(:), gr%invrs_dzm(:), & ! In
+                             lhs_ma(:,:)                ) ! Out
+                             
+                             
+    if ( ( C2rt == C2thl .and. C2rt == C2rtthl ) .and. &
+         ( l_explicit_turbulent_adv_xpyp .or. &
+           .not. l_explicit_turbulent_adv_xpyp .and. iiPDF_type == iiPDF_ADG1 ) ) then
+           
+       ! All left hand side matricies are equal for rtp2, thlp2, rtpthlp, and scalars.
+       ! Thus only one solve is neccesary, using combined right hand sides
+       call solve_xp2_xpyp_with_single_lhs( C2rt_1d, tau_zm, rtm, thlm, wprtp, wpthlp,      & ! In
+                                            rtp2_forcing, thlp2_forcing, rtpthlp_forcing,   & ! In
+                                            sclrm, wpsclrp, sclrp2_forcing,                 & ! In
+                                            sclrprtp_forcing, sclrpthlp_forcing,            & ! In
+                                            lhs_ta_wprtp2, lhs_ma, lhs_diff,                & ! In
+                                            rhs_ta_wprtp2, rhs_ta_wpthlp2,                  & ! In
+                                            rhs_ta_wprtpthlp, rhs_ta_wpsclrp2,              & ! In
+                                            rhs_ta_wpsclrprtp, rhs_ta_wpsclrpthlp,          & ! In
+                                            dt, l_iter, l_scalar_calc,                      & ! In
+                                            rtp2, thlp2, rtpthlp,                           & ! Out
+                                            sclrp2, sclrprtp, sclrpthlp )                     ! Out
+    else
+        
+        ! Left hand sides are potentially different, this requires multiple solves
+        call solve_xp2_xpyp_with_multiple_lhs( C2rt_1d, C2thl_1d, C2rtthl_1d, C2sclr_1d,     & ! In
+                                               tau_zm, rtm, thlm, wprtp, wpthlp,             & ! In
+                                               rtp2_forcing, thlp2_forcing, rtpthlp_forcing, & ! In
+                                               sclrm, wpsclrp, sclrp2_forcing,               & ! In
+                                               sclrprtp_forcing, sclrpthlp_forcing,          & ! In
+                                               lhs_ta_wprtp2, lhs_ta_wpthlp2,                & ! In
+                                               lhs_ta_wprtpthlp, lhs_ta_wpsclrxp,            & ! In
+                                               lhs_ma, lhs_diff,                             & ! In
+                                               rhs_ta_wprtp2, rhs_ta_wpthlp2,                & ! In
+                                               rhs_ta_wprtpthlp, rhs_ta_wpsclrp2,            & ! In
+                                               rhs_ta_wpsclrprtp, rhs_ta_wpsclrpthlp,        & ! In
+                                               dt, l_iter, l_scalar_calc,                    & ! In
+                                               rtp2, thlp2, rtpthlp,                         & ! Out
+                                               sclrp2, sclrprtp, sclrpthlp )                   ! Out
+    end if
     
-
-    !!!!!***** r_t'^2 *****!!!!!
-    
-    ! Implicit contributions to term rtp2
-    call xp2_xpyp_lhs( dt, l_iter, & ! In
-                       tau_zm, wm_zm, Kw2, & ! In
-                       C2rt_1d, nu2_vert_res_dep, & ! In
-                       lhs_ta_wprtp2, & ! In
-                       lhs ) ! Out
-
-
-    call xp2_xpyp_rhs( xp2_xpyp_rtp2, dt, l_iter, & ! In
-                       wprtp, wprtp, & ! In
-                       rtm, rtm, rtp2, rtp2_forcing, & ! In
-                       C2rt_1d, tau_zm, rt_tol**2, & ! In
-                       lhs_ta_wprtp2, rhs_ta_wprtp2, & ! In
-                       rhs ) ! Out
-
-    ! Solve the tridiagonal system
-    call xp2_xpyp_solve( xp2_xpyp_rtp2, 1, & ! Intent(in)
-                         rhs, lhs, rtp2 )    ! Intent(inout)
-
     if ( l_stats_samp ) then
       call xp2_xpyp_implicit_stats( xp2_xpyp_rtp2, rtp2 ) ! Intent(in)
-    end if
-
-    !!!!!***** th_l'^2 *****!!!!!
-
-    ! Implicit contributions to term thlp2
-    call xp2_xpyp_lhs( dt, l_iter, & ! In
-                       tau_zm, wm_zm, Kw2, & ! In
-                       C2thl_1d, nu2_vert_res_dep, & ! In
-                       lhs_ta_wpthlp2, & ! In
-                       lhs ) ! Out
-
-    ! Explicit contributions to thlp2
-    call xp2_xpyp_rhs( xp2_xpyp_thlp2, dt, l_iter, & ! In
-                       wpthlp, wpthlp, & ! In
-                       thlm, thlm, thlp2, thlp2_forcing, & ! In
-                       C2thl_1d, tau_zm, thl_tol**2, & ! In
-                       lhs_ta_wpthlp2, rhs_ta_wpthlp2, & ! In
-                       rhs ) ! Out
-
-    ! Solve the tridiagonal system
-    call xp2_xpyp_solve( xp2_xpyp_thlp2, 1, & ! Intent(in)
-                         rhs, lhs, thlp2 )    ! Intent(inout)
-
-    if ( l_stats_samp ) then
       call xp2_xpyp_implicit_stats( xp2_xpyp_thlp2, thlp2 ) ! Intent(in)
-    end if
-
-
-    !!!!!***** r_t'th_l' *****!!!!!
-
-    ! Implicit contributions to term rtpthlp
-    call xp2_xpyp_lhs( dt, l_iter, & ! In
-                       tau_zm, wm_zm, Kw2, & ! In
-                       C2rtthl_1d, nu2_vert_res_dep, & ! In
-                       lhs_ta_wprtpthlp, & ! In
-                       lhs ) ! Out
-
-    ! Explicit contributions to rtpthlp
-    call xp2_xpyp_rhs( xp2_xpyp_rtpthlp, dt, l_iter, & ! In
-                       wprtp, wpthlp, & ! In
-                       rtm, thlm, rtpthlp, rtpthlp_forcing, & ! In
-                       C2rtthl_1d, tau_zm, zero_threshold, & ! In
-                       lhs_ta_wprtpthlp, rhs_ta_wprtpthlp, & ! In
-                       rhs ) ! Out
-
-    ! Solve the tridiagonal system
-    call xp2_xpyp_solve( xp2_xpyp_rtpthlp, 1, & ! Intent(in)
-                         rhs, lhs, rtpthlp )    ! Intent(inout)
-
-    if ( l_stats_samp ) then
       call xp2_xpyp_implicit_stats( xp2_xpyp_rtpthlp, rtpthlp ) ! Intent(in)
     end if
 
-
     !!!!!***** u'^2 / v'^2 *****!!!!!
+    
+    ! Calculate LHS eddy diffusion term: dissipation term 2 (dp2), for <w'u'^2> and <w'v'^2>
+    call diffusion_zm_lhs_all( Kw9(:), nu9_vert_res_dep(:),      & ! In
+                               gr%invrs_dzt(:), gr%invrs_dzm(:), & ! In
+                               lhs_diff_uv(:,:)                  ) ! Out
 
     ! Implicit contributions to term up2/vp2
-    call xp2_xpyp_lhs( dt, l_iter, & ! In
-                       tau_zm, wm_zm, Kw9, & ! In
-                       C4_C14_1d, nu9_vert_res_dep, & ! In
-                       lhs_ta_wpup2_wpvp2, & ! In
+    call xp2_xpyp_lhs( dt, l_iter, tau_zm, C4_C14_1d, & ! In
+                       lhs_ta_wpup2_wpvp2, lhs_ma, lhs_diff_uv, & ! In
                        lhs ) ! Out
 
     ! Explicit contributions to up2
@@ -768,87 +749,6 @@ module advance_xp2_xpyp_module
 
     if ( l_scalar_calc ) then
 
-      ! Implicit contributions to passive scalars
-
-      !!!!!***** sclr'^2, sclr'r_t', sclr'th_l' *****!!!!!
-
-      call xp2_xpyp_lhs( dt, l_iter, & ! In
-                         tau_zm, wm_zm, Kw2, & ! In
-                         C2sclr_1d, nu2_vert_res_dep, & ! In
-                         lhs_ta_wpsclrxp, & ! In
-                         lhs ) ! Out
-
-
-      ! Explicit contributions to passive scalars
-
-      do i = 1, sclr_dim, 1
-
-        ! Forcing for <sclr'^2>.
-        sclrp2_forcing = zero
-
-        !!!!!***** sclr'^2 *****!!!!!
-        call xp2_xpyp_rhs( xp2_xpyp_sclrp2, dt, l_iter, & ! In
-                           wpsclrp(:,i), wpsclrp(:,i), & ! In
-                           sclrm(:,i), sclrm(:,i), & ! In
-                           sclrp2(:,i), sclrp2_forcing, & ! In
-                           C2sclr_1d, tau_zm, sclr_tol(i)**2, & ! In
-                           lhs_ta_wpsclrxp, rhs_ta_wpsclrp2(:,i), & ! In
-                           sclr_rhs(:,i) ) ! Out
-
-        !!!!!***** sclr'r_t' *****!!!!!
-        if ( i == iisclr_rt ) then
-           ! In this case we're trying to emulate rt'^2 with sclr'rt', so we
-           ! handle this as we would a variance, even though generally speaking
-           ! the scalar is not rt
-           sclrprtp_forcing = rtp2_forcing
-           threshold = rt_tol**2
-        else
-           sclrprtp_forcing = zero
-           threshold = zero_threshold
-        endif
-        
-        call xp2_xpyp_rhs( xp2_xpyp_sclrprtp, dt, l_iter, & ! In
-                           wpsclrp(:,i), wprtp, & ! In
-                           sclrm(:,i), rtm, sclrprtp(:,i), & ! In
-                           sclrprtp_forcing, & ! In
-                           C2sclr_1d, tau_zm, threshold, & ! In
-                           lhs_ta_wpsclrxp, rhs_ta_wpsclrprtp(:,i), & ! In
-                           sclr_rhs(:,i+sclr_dim) ) ! Out
-
-        !!!!!***** sclr'th_l' *****!!!!!
-
-        if ( i == iisclr_thl ) then
-           ! In this case we're trying to emulate thl'^2 with sclr'thl', so we
-           ! handle this as we did with sclr_rt, above.
-           sclrpthlp_forcing = thlp2_forcing
-           threshold = thl_tol**2
-        else
-           sclrpthlp_forcing = zero
-           threshold = zero_threshold
-        endif
-
-        call xp2_xpyp_rhs( xp2_xpyp_sclrpthlp, dt, l_iter, & ! In
-                           wpsclrp(:,i), wpthlp, & ! In
-                           sclrm(:,i), thlm, sclrpthlp(:,i), & ! In
-                           sclrpthlp_forcing, & ! In
-                           C2sclr_1d, tau_zm, threshold, & ! In
-                           lhs_ta_wpsclrxp, rhs_ta_wpsclrpthlp(:,i), & ! In
-                           sclr_rhs(:,i+2*sclr_dim) ) ! Out
-
-      enddo ! 1..sclr_dim
-
-
-      ! Solve the tridiagonal system
-
-      call xp2_xpyp_solve( xp2_xpyp_scalars, 3*sclr_dim, &   ! Intent(in)
-                           sclr_rhs, lhs, sclr_solution )    ! Intent(inout)
-
-      sclrp2(:,1:sclr_dim) = sclr_solution(:,1:sclr_dim)
-
-      sclrprtp(:,1:sclr_dim) = sclr_solution(:,sclr_dim+1:2*sclr_dim)
-
-      sclrpthlp(:,1:sclr_dim) = sclr_solution(:,2*sclr_dim+1:3*sclr_dim)
-
       ! Apply hole filling algorithm to the scalar variance terms
       if ( l_hole_fill ) then
         do i = 1, sclr_dim, 1
@@ -992,12 +892,477 @@ module advance_xp2_xpyp_module
 
     return
   end subroutine advance_xp2_xpyp
+  
+  !============================================================================================
+  subroutine solve_xp2_xpyp_with_single_lhs( C2x, tau_zm, rtm, thlm, wprtp, wpthlp, &
+                                             rtp2_forcing, thlp2_forcing, rtpthlp_forcing, &
+                                             sclrm, wpsclrp, sclrp2_forcing, &
+                                             sclrprtp_forcing, sclrpthlp_forcing, &
+                                             lhs_ta, lhs_ma, lhs_diff, &
+                                             rhs_ta_wprtp2, rhs_ta_wpthlp2, &
+                                             rhs_ta_wprtpthlp, rhs_ta_wpsclrp2, &
+                                             rhs_ta_wpsclrprtp, rhs_ta_wpsclrpthlp, &
+                                             dt, l_iter, l_scalar_calc, &
+                                             rtp2, thlp2, rtpthlp, &
+                                             sclrp2, sclrprtp, sclrpthlp )
+      ! Description:
+      !     This subroutine generates a single lhs matrix and multiple rhs matricies, then 
+      !     solves the system. This should only be used when the lhs matrices for 
+      !     <w'r_t'>, <w'th_l'>, <w'rt'thl'> ,<w'sclr'^2>, <w'sclr'rt'>,  and <w'sclr'thl'>
+      !     are identical. Otherwise multiple lhs matrices and multiple solves are required.
+      !----------------------------------------------------------------------------------
+      
+      use grid_class, only: &
+        gr
+        
+      use clubb_precision, only:  & 
+        core_rknd ! Variable(s)
+        
+      use constants_clubb, only: & 
+        rt_tol, & 
+        thl_tol, &
+        zero, &
+        zero_threshold
+      
+      use parameters_model, only: &
+        sclr_dim, & ! Variable(s)
+        sclr_tol
+          
+      use array_index, only: &
+        iisclr_rt, &
+        iisclr_thl
+      
+      implicit none
+      
+      real( kind = core_rknd ), intent(in), dimension(gr%nz) ::  & 
+        C2x,             &
+        tau_zm,          & ! Time-scale tau on momentum levels     [s]
+        rtm,             & ! Total water mixing ratio (t-levs)     [kg/kg]
+        thlm,            & ! Liquid potential temp. (t-levs)       [K]
+        wprtp,           & ! <w'r_t'> (momentum levels)            [(m/s)(kg/kg)]
+        wpthlp,          & ! <w'th_l'> (momentum levels)           [(m K)/s]
+        rtp2_forcing,    & ! <r_t'^2> forcing (momentum levels)    [(kg/kg)^2/s]
+        thlp2_forcing,   & ! <th_l'^2> forcing (momentum levels)   [K^2/s]
+        rtpthlp_forcing    ! <r_t'th_l'> forcing (momentum levels) [(kg/kg)K/s]
+
+      logical, intent(in) :: &
+        l_iter, & ! Whether variances are prognostic
+        l_scalar_calc
+
+      real( kind = core_rknd ), intent(in) :: &
+        dt             ! Model timestep                                [s]
+        
+      ! Passive scalar input
+      real( kind = core_rknd ), intent(in), dimension(gr%nz, sclr_dim) ::  & 
+        sclrm,       & ! Mean value; pass. scalar (t-levs.) [{sclr units}]
+        wpsclrp        ! <w'sclr'> (momentum levels)        [m/s{sclr units}]
+        
+      real( kind = core_rknd ), dimension(gr%nz) :: &
+        sclrp2_forcing,    & ! <sclr'^2> forcing (momentum levels)    [units vary]
+        sclrprtp_forcing,  & ! <sclr'r_t'> forcing (momentum levels)  [units vary]
+        sclrpthlp_forcing    ! <sclr'th_l'> forcing (momentum levels) [units vary]
+
+      real( kind = core_rknd ), intent(in), dimension(3,gr%nz) :: & 
+        lhs_ta, &
+        lhs_diff,     & ! Diffusion contributions to lhs, dissipation term 2
+        lhs_ma          ! Mean advection contributions to lhs
+
+      real( kind = core_rknd ), intent(in), dimension(gr%nz) :: &
+        rhs_ta_wprtp2,    & ! For <w'rt'^2>
+        rhs_ta_wpthlp2,   & ! For <w'thl'^2>
+        rhs_ta_wprtpthlp    ! For <w'rt'thl'>
+        
+      real( kind = core_rknd ), dimension(gr%nz,sclr_dim) :: &
+        rhs_ta_wpsclrp2,      & ! For <w'sclr'^2>
+        rhs_ta_wpsclrprtp,    & ! For <w'sclr'rt'><w'sclr'^2><w'sclr'thl'>
+        rhs_ta_wpsclrpthlp      ! For <w'sclr'thl'>
+
+      ! Input/Output variables
+      ! An attribute of (inout) is also needed to import the value of the variances
+      ! at the surface.  Brian.  12/18/05.
+      real( kind = core_rknd ), intent(inout), dimension(gr%nz) ::  & 
+        rtp2,    & ! <r_t'^2>                      [(kg/kg)^2]
+        thlp2,   & ! <th_l'^2>                     [K^2]
+        rtpthlp    ! <r_t'th_l'>                   [(kg K)/kg]
+        
+      real( kind = core_rknd ), intent(inout), dimension(gr%nz, sclr_dim) ::  & 
+        sclrp2, sclrprtp, sclrpthlp
+        
+      
+      real( kind = core_rknd ), dimension(3,gr%nz) ::  & 
+        lhs ! Tridiagonal matrix
+      
+      real( kind = core_rknd ), dimension(gr%nz,3+3*sclr_dim) :: &
+        rhs, &
+        solution
+        
+      real( kind = core_rknd ) :: & 
+        threshold     ! Minimum value for variances                   [units vary]
+        
+      integer :: i
+      
+      
+      ! Calculate lhs matrix
+      call xp2_xpyp_lhs( dt, l_iter, tau_zm, C2x,   & ! In
+                         lhs_ta, lhs_ma, lhs_diff,  & ! In
+                         lhs )                        ! Out
+      
+      ! Calculate rhs matricies
+      call xp2_xpyp_rhs( xp2_xpyp_rtp2, dt, l_iter,     & ! In
+                         wprtp, wprtp,                  & ! In
+                         rtm, rtm, rtp2, rtp2_forcing,  & ! In
+                         C2x, tau_zm, rt_tol**2,        & ! In
+                         lhs_ta, rhs_ta_wprtp2,         & ! In
+                         rhs(:,1) )                       ! Out
+                         
+      call xp2_xpyp_rhs( xp2_xpyp_thlp2, dt, l_iter,        & ! In
+                         wpthlp, wpthlp,                    & ! In
+                         thlm, thlm, thlp2, thlp2_forcing,  & ! In
+                         C2x, tau_zm, thl_tol**2,           & ! In
+                         lhs_ta, rhs_ta_wpthlp2,            & ! In
+                         rhs(:,2) )                           ! Out
+     
+     call xp2_xpyp_rhs( xp2_xpyp_rtpthlp, dt, l_iter,           & ! In
+                        wprtp, wpthlp,                          & ! In
+                        rtm, thlm, rtpthlp, rtpthlp_forcing,    & ! In
+                        C2x, tau_zm, zero_threshold,            & ! In
+                        lhs_ta, rhs_ta_wprtpthlp,               & ! In
+                        rhs(:,3) )                                ! Out
+     
+     if ( l_scalar_calc ) then
+      
+       do i = 1, sclr_dim, 1
+
+         ! Forcing for <sclr'^2>.
+         sclrp2_forcing = zero
+
+         !!!!!***** sclr'^2 *****!!!!!
+         call xp2_xpyp_rhs( xp2_xpyp_sclrp2, dt, l_iter,    & ! In
+                            wpsclrp(:,i), wpsclrp(:,i),     & ! In
+                            sclrm(:,i), sclrm(:,i),         & ! In
+                            sclrp2(:,i), sclrp2_forcing,    & ! In
+                            C2x, tau_zm, sclr_tol(i)**2,    & ! In
+                            lhs_ta, rhs_ta_wpsclrp2(:,i),   & ! In
+                            rhs(:,3+i) )                      ! Out
+
+         !!!!!***** sclr'r_t' *****!!!!!
+         if ( i == iisclr_rt ) then
+            ! In this case we're trying to emulate rt'^2 with sclr'rt', so we
+            ! handle this as we would a variance, even though generally speaking
+            ! the scalar is not rt
+            sclrprtp_forcing = rtp2_forcing
+            threshold = rt_tol**2
+         else
+            sclrprtp_forcing = zero
+            threshold = zero_threshold
+         endif
+         
+         call xp2_xpyp_rhs( xp2_xpyp_sclrprtp, dt, l_iter,  & ! In
+                            wpsclrp(:,i), wprtp,            & ! In
+                            sclrm(:,i), rtm, sclrprtp(:,i), & ! In
+                            sclrprtp_forcing,               & ! In
+                            C2x, tau_zm, threshold,         & ! In
+                            lhs_ta, rhs_ta_wpsclrprtp(:,i), & ! In
+                            rhs(:,3+i+sclr_dim) )             ! Out
+
+         !!!!!***** sclr'th_l' *****!!!!!
+         if ( i == iisclr_thl ) then
+            ! In this case we're trying to emulate thl'^2 with sclr'thl', so we
+            ! handle this as we did with sclr_rt, above.
+            sclrpthlp_forcing = thlp2_forcing
+            threshold = thl_tol**2
+         else
+            sclrpthlp_forcing = zero
+            threshold = zero_threshold
+         endif
+
+         call xp2_xpyp_rhs( xp2_xpyp_sclrpthlp, dt, l_iter,     & ! In
+                            wpsclrp(:,i), wpthlp,               & ! In
+                            sclrm(:,i), thlm, sclrpthlp(:,i),   & ! In
+                            sclrpthlp_forcing,                  & ! In
+                            C2x, tau_zm, threshold,             & ! In
+                            lhs_ta, rhs_ta_wpsclrpthlp(:,i),    & ! In
+                            rhs(:,3+i+2*sclr_dim) )               ! Out
+
+       enddo ! 1..sclr_dim
+       
+     end if
+     
+     ! Solve multiple rhs with single lhs
+     call xp2_xpyp_solve_multiple( 3+3*sclr_dim, &      ! Intent(in)
+                                   rhs, lhs, solution ) ! Intent(inout)
+                
+     ! Copy solutions to corresponding output variables                   
+     rtp2 = solution(:,1)
+     thlp2 = solution(:,2)
+     rtpthlp = solution(:,3)
+     
+     if ( l_scalar_calc ) then
+       sclrp2 = solution(:,4:3+sclr_dim)
+       sclrprtp = solution(:,3+sclr_dim+1:3+2*sclr_dim)
+       sclrpthlp = solution(:,3+2*sclr_dim+1:3+3*sclr_dim) 
+     end if
+      
+  end subroutine solve_xp2_xpyp_with_single_lhs
+  
+  !============================================================================================
+  subroutine solve_xp2_xpyp_with_multiple_lhs( C2rt_1d, C2thl_1d, C2rtthl_1d, C2sclr_1d, &
+                                    tau_zm, rtm, thlm, wprtp, wpthlp, &
+                                    rtp2_forcing, thlp2_forcing, rtpthlp_forcing, &
+                                    sclrm, wpsclrp, &
+                                    sclrp2_forcing, sclrprtp_forcing, sclrpthlp_forcing, &
+                                    lhs_ta_wprtp2, lhs_ta_wpthlp2, &
+                                    lhs_ta_wprtpthlp, lhs_ta_wpsclrxp, &
+                                    lhs_ma, lhs_diff, &
+                                    rhs_ta_wprtp2, rhs_ta_wpthlp2, rhs_ta_wprtpthlp, &
+                                    rhs_ta_wpsclrp2, rhs_ta_wpsclrprtp, rhs_ta_wpsclrpthlp, &
+                                    dt, l_iter, l_scalar_calc, &
+                                    rtp2, thlp2, rtpthlp, &
+                                    sclrp2, sclrprtp, sclrpthlp )
+      ! Description:
+      !     This subroutine generates different lhs and rhs matrices to solve for.
+      !     
+      !----------------------------------------------------------------------------------
+      
+      use grid_class, only: &
+        gr
+        
+      use clubb_precision, only:  & 
+        core_rknd ! Variable(s)
+        
+      use constants_clubb, only: & 
+        rt_tol, & 
+        thl_tol, &
+        zero, &
+        zero_threshold
+      
+      use parameters_model, only: &
+        sclr_dim, & ! Variable(s)
+        sclr_tol
+          
+      use array_index, only: &
+        iisclr_rt, &
+        iisclr_thl
+      
+      implicit none
+      
+      real( kind = core_rknd ), intent(in), dimension(gr%nz) ::  & 
+        C2rt_1d, C2thl_1d, C2rtthl_1d, C2sclr_1d, &
+        tau_zm,          & ! Time-scale tau on momentum levels     [s]
+        rtm,             & ! Total water mixing ratio (t-levs)     [kg/kg]
+        thlm,            & ! Liquid potential temp. (t-levs)       [K]
+        wprtp,           & ! <w'r_t'> (momentum levels)            [(m/s)(kg/kg)]
+        wpthlp,          & ! <w'th_l'> (momentum levels)           [(m K)/s]
+        rtp2_forcing,    & ! <r_t'^2> forcing (momentum levels)    [(kg/kg)^2/s]
+        thlp2_forcing,   & ! <th_l'^2> forcing (momentum levels)   [K^2/s]
+        rtpthlp_forcing    ! <r_t'th_l'> forcing (momentum levels) [(kg/kg)K/s]
+
+      logical, intent(in) :: &
+        l_iter, & ! Whether variances are prognostic
+        l_scalar_calc
+
+      real( kind = core_rknd ), intent(in) :: &
+        dt             ! Model timestep                                [s]
+        
+      ! Passive scalar input
+      real( kind = core_rknd ), intent(in), dimension(gr%nz, sclr_dim) ::  & 
+        sclrm,       & ! Mean value; pass. scalar (t-levs.) [{sclr units}]
+        wpsclrp        ! <w'sclr'> (momentum levels)        [m/s{sclr units}]
+        
+      real( kind = core_rknd ), dimension(gr%nz) :: &
+        sclrp2_forcing,    & ! <sclr'^2> forcing (momentum levels)    [units vary]
+        sclrprtp_forcing,  & ! <sclr'r_t'> forcing (momentum levels)  [units vary]
+        sclrpthlp_forcing    ! <sclr'th_l'> forcing (momentum levels) [units vary]
+
+      real( kind = core_rknd ), intent(in), dimension(3,gr%nz) :: & 
+        lhs_ta_wprtp2,      & ! Turbulent advection term for <w'rt'^2>
+        lhs_ta_wpthlp2,     & ! Turbulent advection term for <w'thl'^2>
+        lhs_ta_wprtpthlp,   & ! Turbulent advection term for <w'rtp'thl'>
+        lhs_ta_wpsclrxp,    & ! Turbulent advection term for <w'sclrx'>
+        lhs_diff,           & ! Diffusion contributions to lhs, dissipation term 2
+        lhs_ma                ! Mean advection contributions to lhs
+
+      real( kind = core_rknd ), intent(in), dimension(gr%nz) :: &
+        rhs_ta_wprtp2,    & ! For <w'rt'^2>
+        rhs_ta_wpthlp2,   & ! For <w'thl'^2>
+        rhs_ta_wprtpthlp    ! For <w'rt'thl'>
+        
+      real( kind = core_rknd ), dimension(gr%nz,sclr_dim) :: &
+        rhs_ta_wpsclrp2,      & ! For <w'sclr'^2>
+        rhs_ta_wpsclrprtp,    & ! For <w'sclr'rt'>
+        rhs_ta_wpsclrpthlp      ! For <w'sclr'thl'>
+
+      ! Input/Output variables
+      ! An attribute of (inout) is also needed to import the value of the variances
+      ! at the surface.  Brian.  12/18/05.
+      real( kind = core_rknd ), intent(inout), dimension(gr%nz) ::  & 
+        rtp2,    & ! <r_t'^2>                      [(kg/kg)^2]
+        thlp2,   & ! <th_l'^2>                     [K^2]
+        rtpthlp    ! <r_t'th_l'>                   [(kg K)/kg]
+        
+      real( kind = core_rknd ), intent(inout), dimension(gr%nz, sclr_dim) ::  & 
+        sclrp2, sclrprtp, sclrpthlp
+        
+      
+      real( kind = core_rknd ), dimension(3,gr%nz) ::  & 
+        lhs ! Tridiagonal matrix
+      
+      real( kind = core_rknd ), dimension(gr%nz) :: &
+        rhs
+        
+      real( kind = core_rknd ), dimension(gr%nz,sclr_dim*3) ::  & 
+        sclr_rhs,   & ! RHS vectors of tridiagonal system for the passive scalars
+        sclr_solution ! Solution to tridiagonal system for the passive scalars
+        
+      real( kind = core_rknd ) :: & 
+        threshold     ! Minimum value for variances                   [units vary]
+        
+      integer :: i
+      
+      
+      !!!!!***** r_t'^2 *****!!!!!
+      
+      ! Implicit contributions to term rtp2
+      call xp2_xpyp_lhs( dt, l_iter, tau_zm, C2rt_1d, & ! In
+                         lhs_ta_wprtp2, lhs_ma, lhs_diff, & ! In
+                         lhs ) ! Out
+
+      call xp2_xpyp_rhs( xp2_xpyp_rtp2, dt, l_iter, & ! In
+                         wprtp, wprtp, & ! In
+                         rtm, rtm, rtp2, rtp2_forcing, & ! In
+                         C2rt_1d, tau_zm, rt_tol**2, & ! In
+                         lhs_ta_wprtp2, rhs_ta_wprtp2, & ! In
+                         rhs ) ! Out
+                         
+      ! Solve the tridiagonal system
+      call xp2_xpyp_solve( xp2_xpyp_rtp2, 1, & ! Intent(in)
+                           rhs, lhs, rtp2 )    ! Intent(inout)
+      
+      !!!!!***** th_l'^2 *****!!!!!
+
+      ! Implicit contributions to term thlp2
+      call xp2_xpyp_lhs( dt, l_iter, tau_zm, C2thl_1d, & ! In
+                         lhs_ta_wpthlp2, lhs_ma, lhs_diff, & ! In
+                         lhs ) ! Out
+
+      ! Explicit contributions to thlp2
+      call xp2_xpyp_rhs( xp2_xpyp_thlp2, dt, l_iter, & ! In
+                         wpthlp, wpthlp, & ! In
+                         thlm, thlm, thlp2, thlp2_forcing, & ! In
+                         C2thl_1d, tau_zm, thl_tol**2, & ! In
+                         lhs_ta_wpthlp2, rhs_ta_wpthlp2, & ! In
+                         rhs ) ! Out
+
+      ! Solve the tridiagonal system
+      call xp2_xpyp_solve( xp2_xpyp_thlp2, 1, & ! Intent(in)
+                           rhs, lhs, thlp2 )    ! Intent(inout)
+
+      !!!!!***** r_t'th_l' *****!!!!!
+
+      ! Implicit contributions to term rtpthlp
+      call xp2_xpyp_lhs( dt, l_iter, tau_zm, C2rtthl_1d, & ! In
+                         lhs_ta_wprtpthlp, lhs_ma, lhs_diff, & ! In
+                         lhs ) ! Out
+
+      ! Explicit contributions to rtpthlp
+      call xp2_xpyp_rhs( xp2_xpyp_rtpthlp, dt, l_iter, & ! In
+                         wprtp, wpthlp, & ! In
+                         rtm, thlm, rtpthlp, rtpthlp_forcing, & ! In
+                         C2rtthl_1d, tau_zm, zero_threshold, & ! In
+                         lhs_ta_wprtpthlp, rhs_ta_wprtpthlp, & ! In
+                         rhs ) ! Out
+
+      ! Solve the tridiagonal system
+      call xp2_xpyp_solve( xp2_xpyp_rtpthlp, 1, & ! Intent(in)
+                           rhs, lhs, rtpthlp )    ! Intent(inout)
+    
+    if ( l_scalar_calc ) then
+        ! Implicit contributions to passive scalars
+
+        !!!!!***** sclr'^2, sclr'r_t', sclr'th_l' *****!!!!!
+
+        call xp2_xpyp_lhs( dt, l_iter, tau_zm, C2sclr_1d, & ! In
+                           lhs_ta_wpsclrxp, lhs_ma, lhs_diff, & ! In
+                           lhs ) ! Out
+
+
+        ! Explicit contributions to passive scalars
+
+        do i = 1, sclr_dim, 1
+
+          ! Forcing for <sclr'^2>.
+          sclrp2_forcing = zero
+
+          !!!!!***** sclr'^2 *****!!!!!
+          call xp2_xpyp_rhs( xp2_xpyp_sclrp2, dt, l_iter, & ! In
+                             wpsclrp(:,i), wpsclrp(:,i), & ! In
+                             sclrm(:,i), sclrm(:,i), & ! In
+                             sclrp2(:,i), sclrp2_forcing, & ! In
+                             C2sclr_1d, tau_zm, sclr_tol(i)**2, & ! In
+                             lhs_ta_wpsclrxp, rhs_ta_wpsclrp2(:,i), & ! In
+                             sclr_rhs(:,i) ) ! Out
+
+          !!!!!***** sclr'r_t' *****!!!!!
+          if ( i == iisclr_rt ) then
+             ! In this case we're trying to emulate rt'^2 with sclr'rt', so we
+             ! handle this as we would a variance, even though generally speaking
+             ! the scalar is not rt
+             sclrprtp_forcing = rtp2_forcing
+             threshold = rt_tol**2
+          else
+             sclrprtp_forcing = zero
+             threshold = zero_threshold
+          endif
+          
+          call xp2_xpyp_rhs( xp2_xpyp_sclrprtp, dt, l_iter, & ! In
+                             wpsclrp(:,i), wprtp, & ! In
+                             sclrm(:,i), rtm, sclrprtp(:,i), & ! In
+                             sclrprtp_forcing, & ! In
+                             C2sclr_1d, tau_zm, threshold, & ! In
+                             lhs_ta_wpsclrxp, rhs_ta_wpsclrprtp(:,i), & ! In
+                             sclr_rhs(:,i+sclr_dim) ) ! Out
+
+          !!!!!***** sclr'th_l' *****!!!!!
+
+          if ( i == iisclr_thl ) then
+             ! In this case we're trying to emulate thl'^2 with sclr'thl', so we
+             ! handle this as we did with sclr_rt, above.
+             sclrpthlp_forcing = thlp2_forcing
+             threshold = thl_tol**2
+          else
+             sclrpthlp_forcing = zero
+             threshold = zero_threshold
+          endif
+
+          call xp2_xpyp_rhs( xp2_xpyp_sclrpthlp, dt, l_iter, & ! In
+                             wpsclrp(:,i), wpthlp, & ! In
+                             sclrm(:,i), thlm, sclrpthlp(:,i), & ! In
+                             sclrpthlp_forcing, & ! In
+                             C2sclr_1d, tau_zm, threshold, & ! In
+                             lhs_ta_wpsclrxp, rhs_ta_wpsclrpthlp(:,i), & ! In
+                             sclr_rhs(:,i+2*sclr_dim) ) ! Out
+
+        enddo ! 1..sclr_dim
+
+
+        ! Solve the tridiagonal system
+
+        call xp2_xpyp_solve( xp2_xpyp_scalars, 3*sclr_dim, &   ! Intent(in)
+                             sclr_rhs, lhs, sclr_solution )    ! Intent(inout)
+
+        sclrp2(:,1:sclr_dim) = sclr_solution(:,1:sclr_dim)
+
+        sclrprtp(:,1:sclr_dim) = sclr_solution(:,sclr_dim+1:2*sclr_dim)
+
+        sclrpthlp(:,1:sclr_dim) = sclr_solution(:,2*sclr_dim+1:3*sclr_dim)
+
+    end if
+      
+  end subroutine solve_xp2_xpyp_with_multiple_lhs
 
   !=============================================================================
-  subroutine xp2_xpyp_lhs( dt, l_iter, & ! Intau_zm, wm_zm, Kw, & ! In
-                           tau_zm, wm_zm, Kw, & ! In
-                           Cn, nu, & ! In
-                           lhs_ta, &
+  subroutine xp2_xpyp_lhs( dt, l_iter, tau_zm, Cn, & ! In
+                           lhs_ta, lhs_ma, lhs_diff, & ! In
                            lhs ) ! Out
 
   ! Description:
@@ -1019,10 +1384,6 @@ module advance_xp2_xpyp_module
   !         of greater than 1 can be applied to make the term more
   !         numerically stable.
   ! 
-  ! 
-  !   --- THIS SUBROUTINE HAS BEEN OPTIMIZED ---
-  !   Significant changes to this routine may adversely affect computational speed
-  !       - Gunther Huebler, Aug. 2018, clubb:ticket:834
   !----------------------------------------------------------------------------------
 
     use grid_class, only: & 
@@ -1093,19 +1454,17 @@ module advance_xp2_xpyp_module
 
     real( kind = core_rknd ), dimension(gr%nz), intent(in) :: & 
       tau_zm,                  & ! Time-scale tau on momentum levels         [s]
-      wm_zm,                   & ! w wind component on momentum levels     [m/s]
-      Kw,                      & ! Coef. of eddy diffusivity (all vars.) [m^2/s]
-      Cn,                      & ! Coefficient C_n                           [-]
-      nu                         ! Background const. coef. of eddy diff. [m^2/s]
+      Cn                         ! Coefficient C_n                           [-]
+      
+    real( kind = core_rknd ), dimension(3,gr%nz), intent(in) :: & 
+      lhs_diff, & ! Diffusion contributions to lhs, dissipation term 2
+      lhs_ma      ! Mean advection contributions to lhs
 
     !------------------- Output Variables -------------------
     real( kind = core_rknd ), dimension(3,gr%nz), intent(out) :: & 
       lhs         ! Implicit contributions to the term
 
     !---------------- Local Variables -------------------
-    real( kind = core_rknd ), dimension(3,gr%nz) :: & 
-      lhs_diff, & ! Diffusion contributions to lhs, dissipation term 2
-      lhs_ma      ! Mean advection contributions to lhs
     
     real( kind = core_rknd ), dimension(gr%nz) :: &
       lhs_dp1   ! LHS dissipation term 1
@@ -1122,14 +1481,6 @@ module advance_xp2_xpyp_module
         lhs_dp1(k) = term_dp1_lhs( Cn(k), tau_zm(k) ) * gamma_over_implicit_ts
     enddo ! k=2..gr%nz-1
 
-    ! Calculate LHS eddy diffusion term: dissipation term 2 (dp2).
-    call diffusion_zm_lhs_all( Kw(:), nu(:),                     & ! Intent(in)
-                               gr%invrs_dzt(:), gr%invrs_dzm(:), & ! Intent(in)
-                               lhs_diff(:,:)                     ) ! Intent(out) 
-
-    ! Calculate LHS mean advection (ma) term.
-    call term_ma_zm_lhs_all( wm_zm(:), gr%invrs_dzm(:), & ! Intent(in)
-                             lhs_ma(:,:)              ) ! Intent(out)
 
     ! Combine all lhs terms into lhs, should be fully vectorized
     do k = 2, gr%nz-1
@@ -1339,6 +1690,105 @@ module advance_xp2_xpyp_module
 
     return
   end subroutine xp2_xpyp_solve
+  
+   !=============================================================================
+   subroutine xp2_xpyp_solve_multiple( nrhs, rhs, lhs, xapxbp )
+
+     ! Description:
+     !  Solve a tridiagonal system for rtp2, thlp2, rtpthlp, and any scalars at 
+     !  the same time. The way xp2_xpyp_solve is written is not capable of this
+     !  because of the case statement options.
+     !
+     ! References:
+     !   None
+     !-----------------------------------------------------------------------
+
+     use constants_clubb, only: &
+         one  ! Constant(s)
+
+     use lapack_wrap, only:  & 
+         tridag_solve,  & ! Variable(s)
+         tridag_solvex !, &
+
+     use grid_class, only: & 
+         gr ! Variable(s)
+
+     use stats_type_utilities, only: & 
+         stat_update_var_pt  ! Procedure(s)
+
+     use stats_variables, only: & 
+         stats_sfc, &  ! Derived type
+         irtp2_matrix_condt_num, & ! Stat index Variables
+         ithlp2_matrix_condt_num, & 
+         irtpthlp_matrix_condt_num, & 
+         l_stats_samp  ! Logical
+
+     use clubb_precision, only: &
+         core_rknd ! Variable(s)
+
+     implicit none
+
+     ! External
+     intrinsic :: trim
+
+     ! Constant parameters
+     integer, parameter :: & 
+       kp1_mdiag = 1, & ! Momentum superdiagonal index.
+       k_mdiag   = 2, & ! Momentum main diagonal index.
+       km1_mdiag = 3    ! Momentum subdiagonal index.
+
+     ! Input variables
+     integer, intent(in) :: &
+       nrhs  ! Number of right hand side vectors
+
+     ! Input/Ouput variables
+     real( kind = core_rknd ), dimension(gr%nz,nrhs), intent(inout) :: & 
+       rhs  ! Explicit contributions to x variance/covariance term [units vary]
+
+     real( kind = core_rknd ), dimension(3,gr%nz), intent(inout) :: & 
+       lhs  ! Implicit contributions to x variance/covariance term [units vary]
+
+     ! Output Variables
+     real( kind = core_rknd ), dimension(gr%nz,nrhs), intent(out) ::  & 
+       xapxbp ! Computed value of the variable(s) at <t+1> [units vary]
+
+     ! Local variables
+     real( kind = core_rknd ) :: rcond  ! Est. of the reciprocal of the condition # on the matrix
+
+     ! --- Begin Code ---
+
+     if ( l_stats_samp .and. ( irtp2_matrix_condt_num > 0 .or. ithlp2_matrix_condt_num > 0 &
+                               .or. irtpthlp_matrix_condt_num > 0 ) ) then
+         
+       call tridag_solvex & 
+            ( "single xp2_xpyp lhs", gr%nz, nrhs, &                                 ! Intent(in) 
+              lhs(kp1_mdiag,:), lhs(k_mdiag,:), lhs(km1_mdiag,:), rhs(:,1:nrhs),  & ! Intent(inout)
+              xapxbp(:,1:nrhs), rcond )                                             ! Intent(out)
+
+       !------------------------------------------------------------------------
+       ! Note that these are diagnostics from inverting the matrix, not a budget
+       !------------------------------------------------------------------------
+
+       ! Est. of the condition number of the variance LHS matrix
+       call stat_update_var_pt( irtp2_matrix_condt_num, 1, one / rcond, &  ! Intent(in)
+                                stats_sfc )                                ! Intent(inout)
+                                
+       call stat_update_var_pt( ithlp2_matrix_condt_num, 1, one / rcond, &  ! Intent(in)
+                                stats_sfc )                                 ! Intent(inout)
+                                 
+       call stat_update_var_pt( irtpthlp_matrix_condt_num, 1, one / rcond, &  ! Intent(in)
+                                stats_sfc )                                   ! Intent(inout)
+     else
+         
+       call tridag_solve & 
+            ( "single xp2_xpyp lhs", gr%nz, nrhs,                                 & ! Intent(i)
+              lhs(kp1_mdiag,:), lhs(k_mdiag,:), lhs(km1_mdiag,:), rhs(:,1:nrhs),  & ! Intent(inout)
+              xapxbp(:,1:nrhs) )                                                    ! Intent(out)
+              
+     end if
+
+     return
+ end subroutine xp2_xpyp_solve_multiple
 
   !=============================================================================
   subroutine xp2_xpyp_implicit_stats( solve_type, xapxbp )
@@ -2340,23 +2790,18 @@ module advance_xp2_xpyp_module
       sgn_t_vel_rtpthlp, & ! Sign of the turbulent velocity for <rt'thl'>    [-]
       sgn_t_vel_up2_vp2    ! Sign of the turbulent vel. for <u'^2>/<v'^2>    [-]
 
-    ! <w'sclr'x'> = coef_wpsclrpxp_implicit*<sclr'x'> + term_wpsclrpxp_explicit;
-    ! where x is sclr, rt, or thl.
     real ( kind = core_rknd ), dimension(gr%nz) :: &
-      coef_wpsclrpxp_implicit,   & ! Coef. that is multiplied by <sclr'x'> [m/s]
       term_wpsclrp2_explicit,    & ! Term that is on the RHS        [units vary]
       term_wpsclrprtp_explicit,  & ! Term that is on the RHS        [units vary]
       term_wpsclrpthlp_explicit    ! Term that is on the RHS        [units vary]
 
     real ( kind = core_rknd ), dimension(gr%nz) :: &
-      coef_wpsclrpxp_implicit_zm,   & ! coef_wpsclrpxp_impl interp. m-levs [m/s]
       term_wpsclrp2_explicit_zm,    & ! term_wpsclrp2_expl interp zm   [un vary]
       term_wpsclrprtp_explicit_zm,  & ! term_wpsclrprtp_expl interp zm [un vary]
       term_wpsclrpthlp_explicit_zm    ! term_wpsclrpthlp_expl intrp zm [un vary]
 
     ! Sign of turbulent velocity (used for "upwind" turbulent advection)
     real ( kind = core_rknd ), dimension(gr%nz) :: &
-      sgn_t_vel_sclrpxp,   & ! Sign of the turbulent velocity for <sclr'x'>  [-]
       sgn_t_vel_sclrp2,    & ! Sign of the turbulent velocity for <sclr'^2>  [-]
       sgn_t_vel_sclrprtp,  & ! Sign of the turbulent velocity for <sclr'rt'> [-]
       sgn_t_vel_sclrpthlp    ! Sign of the turbulent vel. for <sclr'thl'>    [-]
@@ -2601,36 +3046,12 @@ module advance_xp2_xpyp_module
                                        lhs_ta_wprtp2(:,:)           ) ! Intent(out)
 
         ! For ADG1, the LHS turbulent advection terms for 
-        ! <w'rt'^2>, <w'thl'^2>, and <w'rt'thl'> are all equal
+        ! <w'rt'^2>, <w'thl'^2>, <w'rt'thl'>, and <w'sclr'x'> are all equal
         lhs_ta_wpthlp2 = lhs_ta_wprtp2
         lhs_ta_wprtpthlp = lhs_ta_wprtp2  
 
-
         if ( l_scalar_calc ) then
-            
-          ! Implicit contributions to passive scalars
-            
-          ! Calculate the momentum level coefficients and sign of vertical velocity if
-          ! l_upwind_xpyp_ta is true
-          if( l_upwind_xpyp_ta ) then
-            coef_wpsclrpxp_implicit_zm = one_third * beta * a1 * wp3_on_wp2
-            sgn_t_vel_sclrpxp = wp3_on_wp2
-          else
-            coef_wpsclrpxp_implicit = one_third * beta * a1_zt * wp3_on_wp2_zt
-          end if
-          
-          ! Calculate the LHS turbulent advection term for <w'sclr'x'>
-          call xpyp_term_ta_pdf_lhs_all( coef_wpsclrpxp_implicit(:),        & ! Intent(in)
-                                         rho_ds_zt(:),                      & ! Intent(in)
-                                         invrs_rho_ds_zm(:),                & ! Intent(in)
-                                         gr%invrs_dzm(:),                   & ! Intent(in)
-                                         l_upwind_xpyp_ta,                  & ! Intent(in)
-                                         sgn_t_vel_sclrpxp(:),              & ! Intent(in)
-                                         coef_wpsclrpxp_implicit_zm(:),     & ! Intent(in)
-                                         rho_ds_zm(:),                      & ! Intent(in)
-                                         gr%invrs_dzt(:),                   & ! Intent(in)
-                                         lhs_ta_wpsclrxp(:,:)               ) ! Intent(out)   
-         
+          lhs_ta_wpsclrxp = lhs_ta_wprtp2 
         end if
         
         ! Explicit contributions
