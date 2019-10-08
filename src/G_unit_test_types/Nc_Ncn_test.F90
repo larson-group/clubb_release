@@ -285,7 +285,7 @@ module Nc_Ncn_test
 
        const_Ncnp2_on_Ncnm2 = const_Ncnp2_on_Ncnm2_in(nz)
 
-       sigma_Ncn_1_n = stdev_L2N( nz, const_Ncnp2_on_Ncnm2_in ) 
+       sigma_Ncn_1_n = stdev_L2N( const_Ncnp2_on_Ncnm2_in ) 
 
        sigma_Ncn_2_n = sigma_Ncn_1_n
 

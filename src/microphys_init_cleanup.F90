@@ -173,7 +173,7 @@ module microphys_init_cleanup
         setup_corr_varnce_array               ! Procedure(s)
 
     use pdf_utilities, only: &
-        stdev_L2N_1lev    ! Procedure(s)
+        stdev_L2N    ! Procedure(s)
 
     use setup_clubb_pdf_params, only: &
         denorm_transform_corr    ! Procedure(s)
@@ -896,7 +896,7 @@ module microphys_init_cleanup
        endif
        ! Ncn:  sigma_Ncn_i_n
        sigma_x_n_cloud(iiPDF_Ncn) &
-       = stdev_L2N_1lev( sigma2_on_mu2_ip_cloud(iiPDF_Ncn) )
+       = stdev_L2N( sigma2_on_mu2_ip_cloud(iiPDF_Ncn) )
        sigma_x_n_below(iiPDF_Ncn) = sigma_x_n_cloud(iiPDF_Ncn)
 
        ! Loop over all hydrometeors.
@@ -906,7 +906,7 @@ module microphys_init_cleanup
           = omicron * hmp2_ip_on_hmm2_ip(pdf2hydromet_idx(ivar))
           sigma2_on_mu2_ip_below(ivar) = sigma2_on_mu2_ip_cloud(ivar)
           ! Hydrometeor sigma_hm_i_n
-          sigma_x_n_cloud(ivar) = stdev_L2N_1lev( sigma2_on_mu2_ip_cloud(ivar) )
+          sigma_x_n_cloud(ivar) = stdev_L2N( sigma2_on_mu2_ip_cloud(ivar) )
           sigma_x_n_below(ivar) = sigma_x_n_cloud(ivar)
        enddo ! i = 1, hydromet_dim, 1
 
