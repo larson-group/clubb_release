@@ -39,6 +39,9 @@ module est_kessler_microphys_module
     use pdf_parameter_module, only:  &
       pdf_parameter  ! Type
 
+    use parameters_silhs, only: &
+      l_lh_importance_sampling
+
     use clubb_precision, only: &
       core_rknd
 
@@ -174,11 +177,13 @@ module est_kessler_microphys_module
       ! Call microphysics, i.e. Kessler autoconversion.
       ! A_K = (1e-3/s)*(rc-0.5kg/kg)*H(rc-0.5kg/kg)
       call autoconv_estimate &
-           ( num_samples, mixt_frac, &
-             cloud_frac_1, cloud_frac_2, &
-             rcm_sample, & 
+           ( num_samples, mixt_frac, &                                          ! Intent(in)
+             cloud_frac_1, cloud_frac_2, &                                      ! Intent(in)
+             rcm_sample, &                                                      ! Intent(in)
              !X_nl(1:n,3), X_nl(1:n,4), X_nl(1:n,5),
-             X_mixt_comp_all_levs(level,:), lh_sample_point_weights(level,:), lh_AKm(level) )
+             X_mixt_comp_all_levs(level,:), lh_sample_point_weights(level,:), & ! Intent(in)
+             l_lh_importance_sampling, &                                        ! Intent(in)
+             lh_AKm(level) )                                                    ! Intent(out)
 
       ! Compute Monte Carlo estimate of liquid for test purposes.
       call rc_estimate &
@@ -252,9 +257,11 @@ module est_kessler_microphys_module
   end subroutine est_kessler_microphys
 !-----------------------------------------------------------------------
   subroutine autoconv_estimate( num_samples, mixt_frac, &
-                              cloud_frac_1, cloud_frac_2, rc, &
-                             !w, Nc, rr, &
-                              X_mixt_comp_one_lev, lh_sample_point_weights, ac_m )
+                                cloud_frac_1, cloud_frac_2, rc, &
+                                !w, Nc, rr, &
+                                X_mixt_comp_one_lev, lh_sample_point_weights, &
+                                l_lh_importance_sampling, &
+                                ac_m )
 ! Description:
 !   Compute Kessler grid box avg autoconversion (kg/kg)/s.
 ! References:
@@ -266,9 +273,6 @@ module est_kessler_microphys_module
       g_per_kg, &
       zero, &
       one
-
-    use parameters_silhs, only: &
-      l_lh_importance_sampling ! Variable(s)
 
     use clubb_precision, only: &
       core_rknd
@@ -305,6 +309,9 @@ module est_kessler_microphys_module
 
     real( kind = core_rknd ), dimension(num_samples), intent(in) :: &
        lh_sample_point_weights ! Weight for cloud weighted sampling
+
+    logical, intent(in) :: &
+      l_lh_importance_sampling ! Do importance sampling (SILHS)
 
     ! Output Variables
 
