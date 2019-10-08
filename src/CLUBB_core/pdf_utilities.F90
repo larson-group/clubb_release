@@ -410,7 +410,7 @@ module pdf_utilities
     ! in an unrealizable value for corr_x_y.
     if ( corr_x_y > max_mag_correlation ) then
        corr_x_y = max_mag_correlation
-    elseif ( corr_x_y < -max_mag_correlation )
+    elseif ( corr_x_y < -max_mag_correlation ) then
        corr_x_y = -max_mag_correlation
     endif
 
