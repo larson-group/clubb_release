@@ -283,11 +283,6 @@ module advance_xp2_xpyp_module
     real( kind = core_rknd ), dimension(gr%nz,sclr_dim) :: &
       sclrprtp_chnge,  & ! Net change in sclr'r_t' due to clipping  [units vary]
       sclrpthlp_chnge    ! Net change in sclr'th_l' due to clipping [units vary]
-
-    real( kind = core_rknd ), dimension(gr%nz) :: &
-      sclrp2_forcing,    & ! <sclr'^2> forcing (momentum levels)    [units vary]
-      sclrprtp_forcing,  & ! <sclr'r_t'> forcing (momentum levels)  [units vary]
-      sclrpthlp_forcing    ! <sclr'th_l'> forcing (momentum levels) [units vary]
       
     ! Turbulent advection terms
     
@@ -447,8 +442,7 @@ module advance_xp2_xpyp_module
        ! Thus only one solve is neccesary, using combined right hand sides
        call solve_xp2_xpyp_with_single_lhs( C2rt_1d, tau_zm, rtm, thlm, wprtp, wpthlp,      & ! In
                                             rtp2_forcing, thlp2_forcing, rtpthlp_forcing,   & ! In
-                                            sclrm, wpsclrp, sclrp2_forcing,                 & ! In
-                                            sclrprtp_forcing, sclrpthlp_forcing,            & ! In
+                                            sclrm, wpsclrp,                                 & ! In
                                             lhs_ta_wprtp2, lhs_ma, lhs_diff,                & ! In
                                             rhs_ta_wprtp2, rhs_ta_wpthlp2,                  & ! In
                                             rhs_ta_wprtpthlp, rhs_ta_wpsclrp2,              & ! In
@@ -462,8 +456,7 @@ module advance_xp2_xpyp_module
         call solve_xp2_xpyp_with_multiple_lhs( C2rt_1d, C2thl_1d, C2rtthl_1d, C2sclr_1d,     & ! In
                                                tau_zm, rtm, thlm, wprtp, wpthlp,             & ! In
                                                rtp2_forcing, thlp2_forcing, rtpthlp_forcing, & ! In
-                                               sclrm, wpsclrp, sclrp2_forcing,               & ! In
-                                               sclrprtp_forcing, sclrpthlp_forcing,          & ! In
+                                               sclrm, wpsclrp,                               & ! In
                                                lhs_ta_wprtp2, lhs_ta_wpthlp2,                & ! In
                                                lhs_ta_wprtpthlp, lhs_ta_wpsclrxp,            & ! In
                                                lhs_ma, lhs_diff,                             & ! In
@@ -896,8 +889,7 @@ module advance_xp2_xpyp_module
   !============================================================================================
   subroutine solve_xp2_xpyp_with_single_lhs( C2x, tau_zm, rtm, thlm, wprtp, wpthlp, &
                                              rtp2_forcing, thlp2_forcing, rtpthlp_forcing, &
-                                             sclrm, wpsclrp, sclrp2_forcing, &
-                                             sclrprtp_forcing, sclrpthlp_forcing, &
+                                             sclrm, wpsclrp, &
                                              lhs_ta, lhs_ma, lhs_diff, &
                                              rhs_ta_wprtp2, rhs_ta_wpthlp2, &
                                              rhs_ta_wprtpthlp, rhs_ta_wpsclrp2, &
@@ -934,6 +926,8 @@ module advance_xp2_xpyp_module
       
       implicit none
       
+      ! -------- Input Variables --------
+      
       real( kind = core_rknd ), intent(in), dimension(gr%nz) ::  & 
         C2x,             &
         tau_zm,          & ! Time-scale tau on momentum levels     [s]
@@ -956,11 +950,6 @@ module advance_xp2_xpyp_module
       real( kind = core_rknd ), intent(in), dimension(gr%nz, sclr_dim) ::  & 
         sclrm,       & ! Mean value; pass. scalar (t-levs.) [{sclr units}]
         wpsclrp        ! <w'sclr'> (momentum levels)        [m/s{sclr units}]
-        
-      real( kind = core_rknd ), dimension(gr%nz) :: &
-        sclrp2_forcing,    & ! <sclr'^2> forcing (momentum levels)    [units vary]
-        sclrprtp_forcing,  & ! <sclr'r_t'> forcing (momentum levels)  [units vary]
-        sclrpthlp_forcing    ! <sclr'th_l'> forcing (momentum levels) [units vary]
 
       real( kind = core_rknd ), intent(in), dimension(3,gr%nz) :: & 
         lhs_ta, &
@@ -972,12 +961,13 @@ module advance_xp2_xpyp_module
         rhs_ta_wpthlp2,   & ! For <w'thl'^2>
         rhs_ta_wprtpthlp    ! For <w'rt'thl'>
         
-      real( kind = core_rknd ), dimension(gr%nz,sclr_dim) :: &
+      real( kind = core_rknd ), intent(in), dimension(gr%nz,sclr_dim) :: &
         rhs_ta_wpsclrp2,      & ! For <w'sclr'^2>
         rhs_ta_wpsclrprtp,    & ! For <w'sclr'rt'><w'sclr'^2><w'sclr'thl'>
         rhs_ta_wpsclrpthlp      ! For <w'sclr'thl'>
 
-      ! Input/Output variables
+      ! -------- In/Out Variables --------
+      
       ! An attribute of (inout) is also needed to import the value of the variances
       ! at the surface.  Brian.  12/18/05.
       real( kind = core_rknd ), intent(inout), dimension(gr%nz) ::  & 
@@ -988,6 +978,7 @@ module advance_xp2_xpyp_module
       real( kind = core_rknd ), intent(inout), dimension(gr%nz, sclr_dim) ::  & 
         sclrp2, sclrprtp, sclrpthlp
         
+      ! -------- Local Variables --------
       
       real( kind = core_rknd ), dimension(3,gr%nz) ::  & 
         lhs ! Tridiagonal matrix
@@ -996,11 +987,17 @@ module advance_xp2_xpyp_module
         rhs, &
         solution
         
+      real( kind = core_rknd ), dimension(gr%nz) :: &
+        sclrp2_forcing,    & ! <sclr'^2> forcing (momentum levels)    [units vary]
+        sclrprtp_forcing,  & ! <sclr'r_t'> forcing (momentum levels)  [units vary]
+        sclrpthlp_forcing    ! <sclr'th_l'> forcing (momentum levels) [units vary]
+        
       real( kind = core_rknd ) :: & 
         threshold     ! Minimum value for variances                   [units vary]
         
       integer :: i
       
+      ! -------- Begin Code --------
       
       ! Calculate lhs matrix
       call xp2_xpyp_lhs( dt, l_iter, tau_zm, C2x,   & ! In
@@ -1110,7 +1107,6 @@ module advance_xp2_xpyp_module
                                     tau_zm, rtm, thlm, wprtp, wpthlp, &
                                     rtp2_forcing, thlp2_forcing, rtpthlp_forcing, &
                                     sclrm, wpsclrp, &
-                                    sclrp2_forcing, sclrprtp_forcing, sclrpthlp_forcing, &
                                     lhs_ta_wprtp2, lhs_ta_wpthlp2, &
                                     lhs_ta_wprtpthlp, lhs_ta_wpsclrxp, &
                                     lhs_ma, lhs_diff, &
@@ -1146,6 +1142,8 @@ module advance_xp2_xpyp_module
       
       implicit none
       
+      ! -------- Input Variables --------
+      
       real( kind = core_rknd ), intent(in), dimension(gr%nz) ::  & 
         C2rt_1d, C2thl_1d, C2rtthl_1d, C2sclr_1d, &
         tau_zm,          & ! Time-scale tau on momentum levels     [s]
@@ -1168,11 +1166,6 @@ module advance_xp2_xpyp_module
       real( kind = core_rknd ), intent(in), dimension(gr%nz, sclr_dim) ::  & 
         sclrm,       & ! Mean value; pass. scalar (t-levs.) [{sclr units}]
         wpsclrp        ! <w'sclr'> (momentum levels)        [m/s{sclr units}]
-        
-      real( kind = core_rknd ), dimension(gr%nz) :: &
-        sclrp2_forcing,    & ! <sclr'^2> forcing (momentum levels)    [units vary]
-        sclrprtp_forcing,  & ! <sclr'r_t'> forcing (momentum levels)  [units vary]
-        sclrpthlp_forcing    ! <sclr'th_l'> forcing (momentum levels) [units vary]
 
       real( kind = core_rknd ), intent(in), dimension(3,gr%nz) :: & 
         lhs_ta_wprtp2,      & ! Turbulent advection term for <w'rt'^2>
@@ -1187,10 +1180,12 @@ module advance_xp2_xpyp_module
         rhs_ta_wpthlp2,   & ! For <w'thl'^2>
         rhs_ta_wprtpthlp    ! For <w'rt'thl'>
         
-      real( kind = core_rknd ), dimension(gr%nz,sclr_dim) :: &
+      real( kind = core_rknd ), intent(in), dimension(gr%nz,sclr_dim) :: &
         rhs_ta_wpsclrp2,      & ! For <w'sclr'^2>
         rhs_ta_wpsclrprtp,    & ! For <w'sclr'rt'>
         rhs_ta_wpsclrpthlp      ! For <w'sclr'thl'>
+
+      ! -------- In/Out Variables --------
 
       ! Input/Output variables
       ! An attribute of (inout) is also needed to import the value of the variances
@@ -1203,12 +1198,18 @@ module advance_xp2_xpyp_module
       real( kind = core_rknd ), intent(inout), dimension(gr%nz, sclr_dim) ::  & 
         sclrp2, sclrprtp, sclrpthlp
         
+      ! -------- Local Variables --------
       
       real( kind = core_rknd ), dimension(3,gr%nz) ::  & 
         lhs ! Tridiagonal matrix
       
       real( kind = core_rknd ), dimension(gr%nz) :: &
         rhs
+        
+      real( kind = core_rknd ), dimension(gr%nz) :: &
+        sclrp2_forcing,    & ! <sclr'^2> forcing (momentum levels)    [units vary]
+        sclrprtp_forcing,  & ! <sclr'r_t'> forcing (momentum levels)  [units vary]
+        sclrpthlp_forcing    ! <sclr'th_l'> forcing (momentum levels) [units vary]
         
       real( kind = core_rknd ), dimension(gr%nz,sclr_dim*3) ::  & 
         sclr_rhs,   & ! RHS vectors of tridiagonal system for the passive scalars
@@ -1219,6 +1220,7 @@ module advance_xp2_xpyp_module
         
       integer :: i
       
+      ! -------- Begin Code --------
       
       !!!!!***** r_t'^2 *****!!!!!
       
