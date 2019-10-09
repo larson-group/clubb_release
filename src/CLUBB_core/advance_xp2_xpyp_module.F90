@@ -27,16 +27,17 @@ module advance_xp2_xpyp_module
 
   ! Private named constants to avoid string comparisons
   integer, parameter, private :: &
-    xp2_xpyp_rtp2 = 1, &     ! Named constant for rtp2 solves
-    xp2_xpyp_thlp2 = 2, &    ! Named constant for thlp2 solves
-    xp2_xpyp_rtpthlp = 3, &  ! Named constant for rtpthlp solves
-    xp2_xpyp_up2_vp2 = 4, &  ! Named constant for up2_vp2 solves
-    xp2_xpyp_up2 = 5, &      ! Named constant for up2 solves
-    xp2_xpyp_vp2 = 6, &      ! Named constant for vp2 solves
-    xp2_xpyp_scalars = 7, &  ! Named constant for scalar solves
-    xp2_xpyp_sclrp2 = 8, &   ! Named constant for sclrp2 solves
-    xp2_xpyp_sclrprtp = 9, & ! Named constant for sclrprtp solves
-    xp2_xpyp_sclrpthlp = 10  ! Named constant for sclrpthlp solves
+    xp2_xpyp_rtp2 = 1, &        ! Named constant for rtp2 solves
+    xp2_xpyp_thlp2 = 2, &       ! Named constant for thlp2 solves
+    xp2_xpyp_rtpthlp = 3, &     ! Named constant for rtpthlp solves
+    xp2_xpyp_up2_vp2 = 4, &     ! Named constant for up2_vp2 solves
+    xp2_xpyp_vp2 = 6, &         ! Named constant for vp2 solves
+    xp2_xpyp_up2 = 5, &         ! Named constant for up2 solves
+    xp2_xpyp_scalars = 7, &     ! Named constant for scalar solves
+    xp2_xpyp_sclrp2 = 8, &      ! Named constant for sclrp2 solves
+    xp2_xpyp_sclrprtp = 9, &    ! Named constant for sclrprtp solves
+    xp2_xpyp_sclrpthlp = 10, &  ! Named constant for sclrpthlp solves
+    xp2_xpyp_single_lhs = 11    ! Named constant for single lhs solve
 
   contains
 
@@ -1086,8 +1087,8 @@ module advance_xp2_xpyp_module
      end if
      
      ! Solve multiple rhs with single lhs
-     call xp2_xpyp_solve_multiple( 3+3*sclr_dim, &      ! Intent(in)
-                                   rhs, lhs, solution ) ! Intent(inout)
+     call xp2_xpyp_solve( xp2_xpyp_single_lhs, 3+3*sclr_dim, &      ! Intent(in)
+                          rhs, lhs, solution ) ! Intent(inout)
                 
      ! Copy solutions to corresponding output variables                   
      rtp2 = solution(:,1)
@@ -1645,11 +1646,15 @@ module advance_xp2_xpyp_module
     real( kind = core_rknd ) :: rcond  ! Est. of the reciprocal of the condition # on the matrix
 
     integer ::  ixapxbp_matrix_condt_num ! Stat index
+    
+    logical :: l_single_lhs_solve
 
     character(len=10) :: &
       solve_type_str ! solve_type in string format for debug output purposes
 
     ! --- Begin Code ---
+    
+    l_single_lhs_solve = .false.
 
     select case ( solve_type )
       !------------------------------------------------------------------------
@@ -1667,6 +1672,13 @@ module advance_xp2_xpyp_module
     case ( xp2_xpyp_up2_vp2 )
       ixapxbp_matrix_condt_num  = iup2_vp2_matrix_condt_num
       solve_type_str = "up2_vp2"
+    case ( xp2_xpyp_single_lhs )
+      ! In single solve tpype, condition number is either output for none or all 
+      ! rtp2, thlp2, and rtpthlp together
+      ixapxbp_matrix_condt_num = max( irtp2_matrix_condt_num, ithlp2_matrix_condt_num, &
+                                      irtpthlp_matrix_condt_num )
+      l_single_lhs_solve = .true.
+      solve_type_str = "xp2_xpyp_single_lhs"
     case default
       ! No condition number is setup for the passive scalars
       ixapxbp_matrix_condt_num  = 0
@@ -1674,123 +1686,43 @@ module advance_xp2_xpyp_module
     end select
 
     if ( l_stats_samp .and. ixapxbp_matrix_condt_num > 0 ) then
+      
       call tridag_solvex & 
            ( solve_type_str, gr%nz, nrhs, &                                        ! Intent(in) 
              lhs(kp1_mdiag,:), lhs(k_mdiag,:), lhs(km1_mdiag,:), rhs(:,1:nrhs),  & ! Intent(inout)
              xapxbp(:,1:nrhs), rcond )                                             ! Intent(out)
 
-      ! Est. of the condition number of the variance LHS matrix
-      call stat_update_var_pt( ixapxbp_matrix_condt_num, 1, one / rcond, &  ! Intent(in)
-                               stats_sfc )                                  ! Intent(inout)
+      if ( l_single_lhs_solve ) then
+        
+        ! Single lhs solve including rtp2, thlp2, rtpthlp. Estimate for each.
+        call stat_update_var_pt( irtp2_matrix_condt_num, 1, one / rcond, &  ! Intent(in)
+                                 stats_sfc )                                ! Intent(inout)
+                                 
+        call stat_update_var_pt( ithlp2_matrix_condt_num, 1, one / rcond, &  ! Intent(in)
+                                 stats_sfc )                                 ! Intent(inout)
+                                 
+        call stat_update_var_pt( irtpthlp_matrix_condt_num, 1, one / rcond, & ! Intent(in)
+                                 stats_sfc )                                  ! Intent(inout)
+        
+      else
+        
+        ! Est. of the condition number of the variance LHS matrix
+        call stat_update_var_pt( ixapxbp_matrix_condt_num, 1, one / rcond, &  ! Intent(in)
+                                 stats_sfc )                                  ! Intent(inout)
+                                 
+      end if
 
     else
+      
       call tridag_solve & 
            ( solve_type_str, gr%nz, nrhs, lhs(kp1_mdiag,:),  &      ! Intent(in)
              lhs(k_mdiag,:), lhs(km1_mdiag,:), rhs(:,1:nrhs),  &    ! Intent(inout)
              xapxbp(:,1:nrhs) )                                     ! Intent(out)
+             
     end if
 
     return
   end subroutine xp2_xpyp_solve
-  
-   !=============================================================================
-   subroutine xp2_xpyp_solve_multiple( nrhs, rhs, lhs, xapxbp )
-
-     ! Description:
-     !  Solve a tridiagonal system for rtp2, thlp2, rtpthlp, and any scalars at 
-     !  the same time. The way xp2_xpyp_solve is written is not capable of this
-     !  because of the case statement options.
-     !
-     ! References:
-     !   None
-     !-----------------------------------------------------------------------
-
-     use constants_clubb, only: &
-         one  ! Constant(s)
-
-     use lapack_wrap, only:  & 
-         tridag_solve,  & ! Variable(s)
-         tridag_solvex !, &
-
-     use grid_class, only: & 
-         gr ! Variable(s)
-
-     use stats_type_utilities, only: & 
-         stat_update_var_pt  ! Procedure(s)
-
-     use stats_variables, only: & 
-         stats_sfc, &  ! Derived type
-         irtp2_matrix_condt_num, & ! Stat index Variables
-         ithlp2_matrix_condt_num, & 
-         irtpthlp_matrix_condt_num, & 
-         l_stats_samp  ! Logical
-
-     use clubb_precision, only: &
-         core_rknd ! Variable(s)
-
-     implicit none
-
-     ! External
-     intrinsic :: trim
-
-     ! Constant parameters
-     integer, parameter :: & 
-       kp1_mdiag = 1, & ! Momentum superdiagonal index.
-       k_mdiag   = 2, & ! Momentum main diagonal index.
-       km1_mdiag = 3    ! Momentum subdiagonal index.
-
-     ! Input variables
-     integer, intent(in) :: &
-       nrhs  ! Number of right hand side vectors
-
-     ! Input/Ouput variables
-     real( kind = core_rknd ), dimension(gr%nz,nrhs), intent(inout) :: & 
-       rhs  ! Explicit contributions to x variance/covariance term [units vary]
-
-     real( kind = core_rknd ), dimension(3,gr%nz), intent(inout) :: & 
-       lhs  ! Implicit contributions to x variance/covariance term [units vary]
-
-     ! Output Variables
-     real( kind = core_rknd ), dimension(gr%nz,nrhs), intent(out) ::  & 
-       xapxbp ! Computed value of the variable(s) at <t+1> [units vary]
-
-     ! Local variables
-     real( kind = core_rknd ) :: rcond  ! Est. of the reciprocal of the condition # on the matrix
-
-     ! --- Begin Code ---
-
-     if ( l_stats_samp .and. ( irtp2_matrix_condt_num > 0 .or. ithlp2_matrix_condt_num > 0 &
-                               .or. irtpthlp_matrix_condt_num > 0 ) ) then
-         
-       call tridag_solvex & 
-            ( "single xp2_xpyp lhs", gr%nz, nrhs, &                                 ! Intent(in) 
-              lhs(kp1_mdiag,:), lhs(k_mdiag,:), lhs(km1_mdiag,:), rhs(:,1:nrhs),  & ! Intent(inout)
-              xapxbp(:,1:nrhs), rcond )                                             ! Intent(out)
-
-       !------------------------------------------------------------------------
-       ! Note that these are diagnostics from inverting the matrix, not a budget
-       !------------------------------------------------------------------------
-
-       ! Est. of the condition number of the variance LHS matrix
-       call stat_update_var_pt( irtp2_matrix_condt_num, 1, one / rcond, &  ! Intent(in)
-                                stats_sfc )                                ! Intent(inout)
-                                
-       call stat_update_var_pt( ithlp2_matrix_condt_num, 1, one / rcond, &  ! Intent(in)
-                                stats_sfc )                                 ! Intent(inout)
-                                 
-       call stat_update_var_pt( irtpthlp_matrix_condt_num, 1, one / rcond, &  ! Intent(in)
-                                stats_sfc )                                   ! Intent(inout)
-     else
-         
-       call tridag_solve & 
-            ( "single xp2_xpyp lhs", gr%nz, nrhs,                                 & ! Intent(i)
-              lhs(kp1_mdiag,:), lhs(k_mdiag,:), lhs(km1_mdiag,:), rhs(:,1:nrhs),  & ! Intent(inout)
-              xapxbp(:,1:nrhs) )                                                    ! Intent(out)
-              
-     end if
-
-     return
- end subroutine xp2_xpyp_solve_multiple
 
   !=============================================================================
   subroutine xp2_xpyp_implicit_stats( solve_type, xapxbp )
