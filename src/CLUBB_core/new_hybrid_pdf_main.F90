@@ -395,43 +395,95 @@ module new_hybrid_pdf_main
        ! semi-implicitly.
 
        ! <w'rt'^2> = coef_wprtp2_implicit * <rt'^2> + term_wprtp2_explicit
-       coef_wprtp2_implicit &
-       = calc_coef_wpxp2_implicit( wp2, rtp2, wprtp, sgn_wprtp, &
-                                   mixt_frac, F_w, F_rt, &
-                                   coef_sigma_w_1_sqd, &
-                                   coef_sigma_w_2_sqd, &
-                                   coef_sigma_rt_1_sqd, &
-                                   coef_sigma_rt_2_sqd  )
+       call calc_coefs_wpxp2_semiimpl( wp2, wprtp,           & ! In
+                                       mixt_frac, F_w,       & ! In
+                                       coef_sigma_rt_1_sqd,  & ! In
+                                       coef_sigma_rt_2_sqd,  & ! In
+                                       coef_wprtp2_implicit, & ! Out
+                                       term_wprtp2_explicit )  ! Out
 
        ! <w'thl'^2> = coef_wpthlp2_implicit * <thl'^2> + term_wprtp2_explicit
-       coef_wpthlp2_implicit &
-       = calc_coef_wpxp2_implicit( wp2, thlp2, wpthlp, sgn_wpthlp, &
-                                   mixt_frac, F_w, F_thl, &
-                                   coef_sigma_w_1_sqd, &
-                                   coef_sigma_w_2_sqd, &
-                                   coef_sigma_thl_1_sqd, &
-                                   coef_sigma_thl_2_sqd  )
+       call calc_coefs_wpxp2_semiimpl( wp2, wpthlp,           & ! In
+                                       mixt_frac, F_w,        & ! In
+                                       coef_sigma_thl_1_sqd,  & ! In
+                                       coef_sigma_thl_2_sqd,  & ! In
+                                       coef_wpthlp2_implicit, & ! Out
+                                       term_wpthlp2_explicit )  ! Out
 
        ! <w'rt'thl'> = coef_wprtpthlp_implicit * <rt'thl'>
        !               + term_wprtpthlp_explicit
-       call calc_coefs_wpxpyp_semiimpl( wp2, rtp2, thlp2, wprtp,       & ! In
-                                        wpthlp, sgn_wprtp, sgn_wpthlp, & ! In
-                                        mixt_frac, F_w, F_rt, F_thl,   & ! In
-                                        coef_sigma_w_1_sqd  ,          & ! In
-                                        coef_sigma_w_2_sqd,            & ! In
-                                        coef_sigma_rt_1_sqd,           & ! In
-                                        coef_sigma_rt_2_sqd,           & ! In
-                                        coef_sigma_thl_1_sqd,          & ! In
-                                        coef_sigma_thl_2_sqd,          & ! In
-                                        coef_wprtpthlp_implicit,       & ! Out
-                                        term_wprtpthlp_explicit        ) ! Out
+       call calc_coefs_wpxpyp_semiimpl( wp2, wprtp, wpthlp,      & ! In
+                                        mixt_frac, F_w,          & ! In
+                                        coef_sigma_rt_1_sqd,     & ! In
+                                        coef_sigma_rt_2_sqd,     & ! In
+                                        coef_sigma_thl_1_sqd,    & ! In
+                                        coef_sigma_thl_2_sqd,    & ! In
+                                        coef_wprtpthlp_implicit, & ! Out
+                                        term_wprtpthlp_explicit  ) ! Out
+
+       ! <w'u'^2> = coef_wpup2_implicit * <u'^2> + term_wpup2_explicit
+       call calc_coefs_wpxp2_semiimpl( wp2, upwp,           & ! In
+                                       mixt_frac, F_w,      & ! In
+                                       coef_sigma_u_1_sqd,  & ! In
+                                       coef_sigma_u_2_sqd,  & ! In
+                                       coef_wpup2_implicit, & ! Out
+                                       term_wpup2_explicit )  ! Out
+
+       ! <w'v'^2> = coef_wpvp2_implicit * <v'^2> + term_wpvp2_explicit
+       call calc_coefs_wpxp2_semiimpl( wp2, vpwp,           & ! In
+                                       mixt_frac, F_w,      & ! In
+                                       coef_sigma_v_1_sqd,  & ! In
+                                       coef_sigma_v_2_sqd,  & ! In
+                                       coef_wpvp2_implicit, & ! Out
+                                       term_wpvp2_explicit )  ! Out
+
+       if ( sclr_dim > 0 ) then
+
+         do j = 1, sclr_dim, 1
+
+            ! <w'sclr'^2> = coef_wpsclrp2_implicit * <sclr'^2>
+            !               + term_wpsclrp2_explicit
+            call calc_coefs_wpxp2_semiimpl( wp2, wpsclrjp,           & ! In
+                                            mixt_frac, F_w,          & ! In
+                                            coef_sigma_sclrj_1_sqd,  & ! In
+                                            coef_sigma_sclrj_2_sqd,  & ! In
+                                            coef_wpsclrjp2_implicit, & ! Out
+                                            term_wpsclrjp2_explicit )  ! Out
+
+            ! <w'rt'sclr'> = coef_wprtpsclrp_implicit * <sclr'rt'>
+            !                + term_wprtpsclrp_explicit
+            call calc_coefs_wpxpyp_semiimpl( wp2, wprtp, wpsclrjp,      & ! In
+                                             mixt_frac, F_w,            & ! In
+                                             coef_sigma_rt_1_sqd,       & ! In
+                                             coef_sigma_rt_2_sqd,       & ! In
+                                             coef_sigma_sclrj_1_sqd,    & ! In
+                                             coef_sigma_sclrj_2_sqd,    & ! In
+                                             coef_wprtpsclrjp_implicit, & ! Out
+                                             term_wprtpsclrjp_explicit  ) ! Out
+
+            ! <w'thl'sclr'> = coef_wpthlpsclrp_implicit * <sclr'thl'>
+            !                 + term_wpthlpsclrp_explicit
+            call calc_coefs_wpxpyp_semiimpl( wp2, wpthlp, wpsclrjp,      & ! In
+                                             mixt_frac, F_w,             & ! In
+                                             coef_sigma_thl_1_sqd,       & ! In
+                                             coef_sigma_thl_2_sqd,       & ! In
+                                             coef_sigma_sclrj_1_sqd,     & ! In
+                                             coef_sigma_sclrj_2_sqd,     & ! In
+                                             coef_wpthlpsclrjp_implicit, & ! Out
+                                             term_wpthlpsclrjp_explicit  ) ! Out
+
+         enddo ! j = 1, sclr_dim, 1
+
+       endif ! sclr_dim > 0
 
     else ! l_explicit_turbulent_adv_xpyp
 
        ! Turbulent advection of <rt'^2>, <thl'^2>, <rt'thl'>, <u'^2>, <v'^2>,
        ! <sclr'^2>, <sclr'rt'>, and <sclr'thl'> are being handled explicitly.
        coef_wprtp2_implicit = zero
+       term_wprtp2_explicit = zero
        coef_wpthlp2_implicit = zero
+       term_wpthlp2_explicit = zero
        coef_wprtpthlp_implicit = zero
        term_wprtpthlp_explicit = zero
 
@@ -440,19 +492,19 @@ module new_hybrid_pdf_main
     ! Pack the implicit coefficients and explicit terms into a single type
     ! variable for output.
     pdf_implicit_coefs_terms%coef_wp4_implicit = coef_wp4_implicit
-    pdf_implicit_coefs_terms%coef_wprtp2_implicit = coef_wprtp2_implicit
-    pdf_implicit_coefs_terms%coef_wpthlp2_implicit = coef_wpthlp2_implicit
     pdf_implicit_coefs_terms%coef_wp2rtp_implicit = coef_wp2rtp_implicit
-    pdf_implicit_coefs_terms%term_wp2rtp_explicit = term_wp2rtp_explicit
     pdf_implicit_coefs_terms%coef_wp2thlp_implicit = coef_wp2thlp_implicit
-    pdf_implicit_coefs_terms%term_wp2thlp_explicit = term_wp2thlp_explicit
+    pdf_implicit_coefs_terms%coef_wprtp2_implicit = coef_wprtp2_implicit
+    pdf_implicit_coefs_terms%coef_wprtp2_explicit = coef_wprtp2_explicit
+    pdf_implicit_coefs_terms%coef_wpthlp2_implicit = coef_wpthlp2_implicit
+    pdf_implicit_coefs_terms%coef_wpthlp2_explicit = coef_wpthlp2_explicit
     pdf_implicit_coefs_terms%coef_wprtpthlp_implicit = coef_wprtpthlp_implicit
     pdf_implicit_coefs_terms%term_wprtpthlp_explicit = term_wprtpthlp_explicit
 
 
     return
 
-  end subroutine new_pdf_driver
+  end subroutine new_hybrid_pdf_driver
 
   !=============================================================================
   elemental subroutine calc_responder_var( xm, xp2, wpxp, wp2, & ! In
