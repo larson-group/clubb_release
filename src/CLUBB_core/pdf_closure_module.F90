@@ -16,12 +16,13 @@ module pdf_closure_module
   ! the w, rt, and theta-l (or w, chi, and eta) portion of CLUBB's multivariate,
   ! two-component PDF.
   integer, parameter, public :: &
-    iiPDF_ADG1 = 1,     & ! ADG1 PDF
-    iiPDF_ADG2 = 2,     & ! ADG2 PDF
-    iiPDF_3D_Luhar = 3, & ! 3D Luhar PDF
-    iiPDF_new = 4,      & ! new PDF
-    iiPDF_TSDADG = 5,   & ! new TSDADG PDF
-    iiPDF_LY93 = 6        ! Lewellen and Yoh (1993)
+    iiPDF_ADG1 = 1,       & ! ADG1 PDF
+    iiPDF_ADG2 = 2,       & ! ADG2 PDF
+    iiPDF_3D_Luhar = 3,   & ! 3D Luhar PDF
+    iiPDF_new = 4,        & ! new PDF
+    iiPDF_TSDADG = 5,     & ! new TSDADG PDF
+    iiPDF_LY93 = 6,       & ! Lewellen and Yoh (1993)
+    iiPDF_new_hybrid = 7    ! new hybrid PDF
 
   ! The selected two component normal PDF for w, rt, and theta-l.
   integer, parameter, public :: &
