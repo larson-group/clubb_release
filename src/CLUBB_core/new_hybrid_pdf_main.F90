@@ -172,6 +172,12 @@ module new_hybrid_pdf_main
       coef_sigma_v_1_sqd,   & ! sigma_v_1^2 = coef_sigma_v_1_sqd * <v'^2>    [-]
       coef_sigma_v_2_sqd      ! sigma_v_2^2 = coef_sigma_v_2_sqd * <v'^2>    [-]
 
+    ! sigma_sclr_1^2 = coef_sigma_sclr_1_sqd * <sclr'^2>
+    ! sigma_sclr_2^2 = coef_sigma_sclr_2_sqd * <sclr'^2>
+    real( kind = core_rknd ), dimension(gr%nz,sclr_dim) :: &
+      coef_sigma_sclr_1_sqd, & ! Coefficient that is multiplied by <sclr'^2> [-]
+      coef_sigma_sclr_2_sqd    ! Coefficient that is multiplied by <sclr'^2> [-]
+
     real( kind = core_rknd ), dimension(gr%nz) :: &
       zeta_w    ! Parameter for the PDF component variances of w           [-]
 
@@ -181,6 +187,10 @@ module new_hybrid_pdf_main
       coef_wp2thlp_implicit, & ! <w'^2 thl'>=coef_wp2thlp_implicit*<w'thl'>[m/s]
       coef_wp2up_implicit,   & ! <w'^2 u'> = coef_wp2up_implicit * <u'w'>  [m/s]
       coef_wp2vp_implicit      ! <w'^2 v'> = coef_wp2vp_implicit * <v'w'>  [m/s]
+
+    ! <w'^2 sclr'> = coef_wp2sclrp_implicit * <w'sclr'>
+    real( kind = core_rknd ), dimension(gr%nz,sclr_dim) :: &
+      coef_wp2sclrp_implicit    ! Coef. that is multiplied by <w'sclr'>    [m/s]
 
     ! <w'rt'^2> = coef_wprtp2_implicit * <rt'^2> + term_wprtp2_explicit
     real( kind = core_rknd ), dimension(gr%nz) :: &
@@ -206,6 +216,60 @@ module new_hybrid_pdf_main
     real( kind = core_rknd ), dimension(gr%nz) :: &
       coef_wpvp2_implicit, & ! Coefficient that is multiplied by <v'^2>    [m/s]
       term_wpvp2_explicit    ! Term that is on the RHS                 [m^3/s^3]
+
+    ! <w'sclr'^2> = coef_wpsclrp2_implicit * <sclr'^2> + term_wpsclrp2_explicit
+    real( kind = core_rknd ), dimension(gr%nz,sclr_dim) :: &
+      coef_wpsclrp2_implicit, & ! Coef. that is multiplied by <sclr'^2>    [m/s]
+      term_wpsclrp2_explicit    ! Term that is on the RHS    [m/s(units vary)^2]
+
+    ! <w'rt'sclr'> = coef_wprtpsclrp_implicit * <sclr'rt'>
+    !                + term_wprtpsclrp_explicit
+    real( kind = core_rknd ), dimension(gr%nz,sclr_dim) :: &
+      coef_wprtpsclrp_implicit, & ! Coef. that is multiplied by <sclr'rt'> [m/s]
+      term_wprtpsclrp_explicit    ! Term that is on the RHS [m/s(kg/kg)(un. v.)]
+
+    ! <w'thl'sclr'> = coef_wpthlpsclrp_implicit * <sclr'thl'>
+    !                 + term_wpthlpsclrp_explicit
+    real( kind = core_rknd ), dimension(gr%nz,sclr_dim) :: &
+      coef_wpthlpsclrp_implicit, & ! Coef. that is mult. by <sclr'thl'>    [m/s]
+      term_wpthlpsclrp_explicit    ! Term that is on the RHS  [(m/s)K(un. vary)]
+
+    ! Variables to interface with code for the jth scalar
+    real( kind = core_rknd ), dimension(gr%nz) :: &
+      sclrjm,   & ! Mean of sclr j (overall)                [units vary]
+      sclrjp2,  & ! Variance of sclr j (overall)            [(units vary)^2]
+      wpsclrjp, & ! Covariance of w and sclr j (overall)    [(m/s)(units vary)]
+      Sksclrj     ! Skewness of rt (overall)                [-]
+
+    real( kind = core_rknd ), dimension(gr%nz) :: &
+      mu_sclrj_1,        & ! Mean of sclr j (1st PDF component) [units vary]
+      mu_sclrj_2,        & ! Mean of sclr j (2nd PDF component) [units vary]
+      sigma_sclrj_1_sqd, & ! Variance of sclr j (1st PDF comp.) [(units vary)^2]
+      sigma_sclrj_2_sqd    ! Variance of sclr j (2nd PDF comp.) [(units vary)^2]
+
+    ! sigma_sclrj_1^2 = coef_sigma_sclrj_1_sqd * <sclrj'^2>
+    ! sigma_sclrj_2^2 = coef_sigma_sclrj_2_sqd * <sclrj'^2>
+    real( kind = core_rknd ), dimension(gr%nz) :: &
+      coef_sigma_sclrj_1_sqd, & ! Coef. that is multiplied by <sclrj'^2>    [-]
+      coef_sigma_sclrj_2_sqd    ! Coef. that is multiplied by <sclrj'^2>    [-]
+
+    ! <w'sclrj'^2> = coef_wpsclrjp2_implicit * <sclrj'^2>
+    !                + term_wpsclrjp2_explicit
+    real( kind = core_rknd ), dimension(gr%nz) :: &
+      coef_wpsclrjp2_implicit, & ! Coef. that is multiplied by <sclrj'^2>  [m/s]
+      term_wpsclrjp2_explicit    ! Term that is on the RHS   [m/s(units vary)^2]
+
+    ! <w'rt'sclrj'> = coef_wprtpsclrjp_implicit * <sclrj'rt'>
+    !                 + term_wprtpsclrjp_explicit
+    real( kind = core_rknd ), dimension(gr%nz,sclr_dim) :: &
+      coef_wprtpsclrjp_implicit, & ! Coef. that is mult. by <sclr'rt'>     [m/s]
+      term_wprtpsclrjp_explicit    ! Term that is on the RHS [m/s(kg/kg)(un.v.)]
+
+    ! <w'thl'sclrj'> = coef_wpthlpsclrjp_implicit * <sclrj'thl'>
+    !                  + term_wpthlpsclrjp_explicit
+    real( kind = core_rknd ), dimension(gr%nz) :: &
+      coef_wpthlpsclrjp_implicit, & ! Coef. that is mult. by <sclrj'thl'>  [m/s]
+      term_wpthlpsclrjp_explicit    ! Term that is on the RHS [(m/s)K(un. vary)]
 
     real( kind = core_rknd ), dimension(gr%nz) :: &
       max_corr_w_sclr_sqd    ! Max value of wpsclrp^2 / ( wp2 * sclrp2 )     [-]
@@ -441,6 +505,12 @@ module new_hybrid_pdf_main
 
          do j = 1, sclr_dim, 1
 
+            do k = 1, gr%nz, 1
+               wpsclrjp(k) = wpsclrp(k,j)
+               coef_sigma_sclrj_1_sqd(k) = coef_sigma_sclr_1_sqd(k,j)
+               coef_sigma_sclrj_2_sqd(k) = coef_sigma_sclr_2_sqd(k,j)
+            enddo ! k = 1, gr%nz, 1
+
             ! <w'sclr'^2> = coef_wpsclrp2_implicit * <sclr'^2>
             !               + term_wpsclrp2_explicit
             call calc_coefs_wpxp2_semiimpl( wp2, wpsclrjp,           & ! In
@@ -472,6 +542,15 @@ module new_hybrid_pdf_main
                                              coef_wpthlpsclrjp_implicit, & ! Out
                                              term_wpthlpsclrjp_explicit  ) ! Out
 
+            do k = 1, gr%nz, 1
+               coef_wpsclrp2_implicit(k,j) = coef_wpsclrjp2_implicit(k)
+               term_wpsclrp2_explicit(k,j) = term_wpsclrjp2_explicit(k)
+               coef_wprtpsclrp_implicit(k,j) = coef_wprtpsclrjp_implicit(k)
+               term_wprtpsclrp_explicit(k,j) = term_wprtpsclrjp_explicit(k)
+               coef_wpthlpsclrp_implicit(k,j) = coef_wpthlpsclrjp_implicit(k)
+               term_wpthlpsclrp_explicit(k,j) = term_wpthlpsclrjp_explicit(k)
+            enddo ! k = 1, gr%nz, 1
+
          enddo ! j = 1, sclr_dim, 1
 
        endif ! sclr_dim > 0
@@ -486,6 +565,18 @@ module new_hybrid_pdf_main
        term_wpthlp2_explicit = zero
        coef_wprtpthlp_implicit = zero
        term_wprtpthlp_explicit = zero
+       coef_wpup2_implicit = zero
+       term_wpup2_explicit = zero
+       coef_wpvp2_implicit = zero
+       term_wpvp2_explicit = zero
+       if ( sclr_dim > 0 ) then
+          coef_wpsclrp2_implicit = zero
+          term_wpsclrp2_explicit = zero
+          coef_wprtpsclrp_implicit = zero
+          term_wprtpsclrp_explicit = zero
+          coef_wpthlpsclrp_implicit = zero
+          term_wpthlpsclrp_explicit = zero
+       endif ! sclr_dim > 0
 
     endif ! .not. l_explicit_turbulent_adv_xpyp
 
