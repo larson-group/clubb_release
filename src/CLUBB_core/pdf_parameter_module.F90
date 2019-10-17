@@ -80,25 +80,53 @@ module pdf_parameter_module
   ! from the PDF and the resulting PDF parameters.
   type implicit_coefs_terms
 
-    real ( kind = core_rknd ) :: &
-      coef_wp4_implicit,     & ! <w'^4> = coef_wp4_implicit * <w'^2>^2       [-]
-      coef_wprtp2_implicit,  & ! <w'rt'^2> = coef_wprtp2_implicit*<rt'^2>  [m/s]
-      coef_wpthlp2_implicit    ! <w'thl'^2>=coef_wpthlp2_implicit*<thl'^2> [m/s]
+    real( kind = core_rknd ) :: &
+      coef_wp4_implicit    ! <w'^4> = coef_wp4_implicit * <w'^2>^2       [-]
 
     ! <w'^2 rt'> = coef_wp2rtp_implicit * <w'rt'> + term_wp2rtp_explicit
-    real ( kind = core_rknd ) :: &
+    real( kind = core_rknd ) :: &
       coef_wp2rtp_implicit, & ! Coefficient that is multiplied by <w'rt'>  [m/s]
       term_wp2rtp_explicit    ! Term that is on the RHS          [m^2/s^2 kg/kg]
 
     ! <w'^2 thl'> = coef_wp2thlp_implicit * <w'thl'> + term_wp2thlp_explicit
-    real ( kind = core_rknd ) :: &
+    real( kind = core_rknd ) :: &
       coef_wp2thlp_implicit, & ! Coef. that is multiplied by <w'thl'>      [m/s]
       term_wp2thlp_explicit    ! Term that is on the RHS             [m^2/s^2 K]
 
+    ! <w'^2 u'> = coef_wp2up_implicit * <u'w'> + term_wp2up_explicit
+    real( kind = core_rknd ) :: &
+      coef_wp2up_implicit, & ! Coefficient that is multiplied by <u'w'>    [m/s]
+      term_wp2up_explicit    ! Term that is on the RHS                 [m^3/s^3]
+
+    ! <w'^2 v'> = coef_wp2vp_implicit * <v'w'> + term_wp2vp_explicit
+    real( kind = core_rknd ) :: &
+      coef_wp2vp_implicit, & ! Coefficient that is multiplied by <v'w'>    [m/s]
+      term_wp2vp_explicit    ! Term that is on the RHS                 [m^3/s^3]
+
+    ! <w'rt'^2> = coef_wprtp2_implicit * <rt'^2> + term_wprtp2_explicit
+    real( kind = core_rknd ) :: &
+      coef_wprtp2_implicit, & ! Coefficient that is multiplied by <rt'^2>  [m/s]
+      term_wprtp2_explicit    ! Term that is on the RHS          [m/s kg^2/kg^2]
+
+    ! <w'thl'^2> = coef_wpthlp2_implicit * <thl'^2> + term_wpthlp2_explicit
+    real( kind = core_rknd ) :: &
+      coef_wpthlp2_implicit, & ! Coef. that is multiplied by <thl'^2>      [m/s]
+      term_wpthlp2_explicit    ! Term that is on the RHS               [m/s K^2]
+
     ! <w'rt'thl'> = coef_wprtpthlp_implicit*<rt'thl'> + term_wprtpthlp_explicit
-    real ( kind = core_rknd ) :: &
+    real( kind = core_rknd ) :: &
       coef_wprtpthlp_implicit, & ! Coef. that is multiplied by <rt'thl'>   [m/s]
       term_wprtpthlp_explicit    ! Term that is on the RHS         [m/s(kg/kg)K]
+
+    ! <w'u'^2> = coef_wpup2_implicit * <u'^2> + term_wpup2_explicit
+    real( kind = core_rknd ) :: &
+      coef_wpup2_implicit, & ! Coefficient that is multiplied by <u'^2>    [m/s]
+      term_wpup2_explicit    ! Term that is on the RHS                 [m^3/s^3]
+
+    ! <w'v'^2> = coef_wpvp2_implicit * <v'^2> + term_wpvp2_explicit
+    real( kind = core_rknd ) :: &
+      coef_wpvp2_implicit, & ! Coefficient that is multiplied by <v'^2>    [m/s]
+      term_wpvp2_explicit    ! Term that is on the RHS                 [m^3/s^3]
 
   end type implicit_coefs_terms
 

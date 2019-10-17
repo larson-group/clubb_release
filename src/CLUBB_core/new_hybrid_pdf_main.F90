@@ -24,9 +24,9 @@ module new_hybrid_pdf_main
   contains
 
   !=============================================================================
-  subroutine new_hybrid_pdf_driver( wm, rtm, thlm, um, vm, wp2, rtp2,   & ! In
-                                    thlp2, up2, vp2, Skw, wprtp,        & ! In
-                                    wpthlp, rtpthlp, upwp, vpwp,        & ! In
+  subroutine new_hybrid_pdf_driver( wm, rtm, thlm, um, vm,              & ! In
+                                    wp2, rtp2, thlp2, up2, vp2,         & ! In
+                                    Skw, wprtp, wpthlp, upwp, vpwp,     & ! In
                                     sclrm, sclrp2, wpsclrp,             & ! In
                                     Skrt, Skthl, Sku, Skv, Sksclr,      & ! I/O
                                     mu_w_1, mu_w_2,                     & ! Out
@@ -74,6 +74,9 @@ module new_hybrid_pdf_main
         l_explicit_turbulent_adv_wpxp, &
         l_explicit_turbulent_adv_xpyp
 
+    use parameters_model, only: &
+        sclr_dim
+
     use clubb_precision, only: &
         core_rknd    ! Variable(s)
 
@@ -94,7 +97,6 @@ module new_hybrid_pdf_main
       Skw,     & ! Skewness of w (overall)             [-]
       wprtp,   & ! Covariance of w and rt (overall)    [(m/s)kg/kg]
       wpthlp,  & ! Covariance of w and thl (overall)   [(m/s)K]
-      rtpthlp, & ! Covariance of rt and thl (overall)  [(kg/kg)K]
       upwp,    & ! Covariance of u and w (overall)     [m^2/s^2]
       vpwp       ! Covariance of v and w (overall)     [m^2/s^2]
 
@@ -261,7 +263,7 @@ module new_hybrid_pdf_main
 
     ! <w'rt'sclrj'> = coef_wprtpsclrjp_implicit * <sclrj'rt'>
     !                 + term_wprtpsclrjp_explicit
-    real( kind = core_rknd ), dimension(gr%nz,sclr_dim) :: &
+    real( kind = core_rknd ), dimension(gr%nz) :: &
       coef_wprtpsclrjp_implicit, & ! Coef. that is mult. by <sclr'rt'>     [m/s]
       term_wprtpsclrjp_explicit    ! Term that is on the RHS [m/s(kg/kg)(un.v.)]
 
@@ -584,13 +586,23 @@ module new_hybrid_pdf_main
     ! variable for output.
     pdf_implicit_coefs_terms%coef_wp4_implicit = coef_wp4_implicit
     pdf_implicit_coefs_terms%coef_wp2rtp_implicit = coef_wp2rtp_implicit
+    pdf_implicit_coefs_terms%term_wp2rtp_explicit = zero
     pdf_implicit_coefs_terms%coef_wp2thlp_implicit = coef_wp2thlp_implicit
+    pdf_implicit_coefs_terms%term_wp2thlp_explicit = zero
+    pdf_implicit_coefs_terms%coef_wp2up_implicit = coef_wp2up_implicit
+    pdf_implicit_coefs_terms%term_wp2up_explicit = zero
+    pdf_implicit_coefs_terms%coef_wp2vp_implicit = coef_wp2vp_implicit
+    pdf_implicit_coefs_terms%term_wp2vp_explicit = zero
     pdf_implicit_coefs_terms%coef_wprtp2_implicit = coef_wprtp2_implicit
-    pdf_implicit_coefs_terms%coef_wprtp2_explicit = coef_wprtp2_explicit
+    pdf_implicit_coefs_terms%term_wprtp2_explicit = term_wprtp2_explicit
     pdf_implicit_coefs_terms%coef_wpthlp2_implicit = coef_wpthlp2_implicit
-    pdf_implicit_coefs_terms%coef_wpthlp2_explicit = coef_wpthlp2_explicit
+    pdf_implicit_coefs_terms%term_wpthlp2_explicit = term_wpthlp2_explicit
     pdf_implicit_coefs_terms%coef_wprtpthlp_implicit = coef_wprtpthlp_implicit
     pdf_implicit_coefs_terms%term_wprtpthlp_explicit = term_wprtpthlp_explicit
+    pdf_implicit_coefs_terms%coef_wpup2_implicit = coef_wpup2_implicit
+    pdf_implicit_coefs_terms%term_wpup2_explicit = term_wpup2_explicit
+    pdf_implicit_coefs_terms%coef_wpvp2_implicit = coef_wpvp2_implicit
+    pdf_implicit_coefs_terms%term_wpvp2_explicit = term_wpvp2_explicit
 
 
     return
