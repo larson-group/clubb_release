@@ -119,6 +119,13 @@ module pdf_parameter_tests
     use new_pdf_main, only: &
         new_pdf_driver    ! Procedure(s)
 
+    use new_hybrid_pdf, only: &
+        calculate_w_params,          & ! Procedure(s)
+        calculate_coef_wp4_implicit
+
+    use new_hybrid_pdf_main, only: &
+        new_hybrid_pdf_driver    ! Procedure(s)
+
     use adg1_adg2_3d_luhar_pdf, only: &
         ADG1_w_closure,  & ! Procedure(s)
         ADG1_pdf_driver
@@ -136,11 +143,12 @@ module pdf_parameter_tests
         LY93_driver
 
     use pdf_closure_module, only: &
-        iiPDF_new,    & ! Variable(s)
-        iiPDF_ADG1,   &
-        iiPDF_TSDADG, &
-        iiPDF_LY93,   &
-        calc_wp4_pdf    ! Procedure(s)
+        iiPDF_new,        & ! Variable(s)
+        iiPDF_ADG1,       &
+        iiPDF_TSDADG,     &
+        iiPDF_LY93,       &
+        iiPDF_new_hybrid, &
+        calc_wp4_pdf        ! Procedure(s)
 
     use pdf_parameter_module, only: &
         implicit_coefs_terms    ! Variable Type
@@ -196,6 +204,8 @@ module pdf_parameter_tests
       Skw,     & ! Skewness of w (overall)             [-]
       Skrt,    & ! Skewness of rt (overall)            [-]
       Skthl,   & ! Skewness of thl (overall)           [-]
+      Sku,     & ! Skewness of u (overall)             [-]
+      Skv,     & ! Skewness of v (overall)             [-]
       wprtp,   & ! Covariance of w and rt (overall)    [(m/s)kg/kg]
       wpthlp,  & ! Covariance of w and thl (overall)   [(m/s)K]
       upwp,    & ! Covariance of u and w (overall)     [(m/s)^2]
@@ -384,6 +394,7 @@ module pdf_parameter_tests
       sclrm,            & ! Mean of passive scalar (overall)        [units vary]
       sclrp2,           & ! Variance of pass. scalar (overall)  [(units vary)^2]
       wpsclrp,          & ! Covariance of w and pass. scalar  [m/s (units vary)]
+      Sksclr,           & ! Skewness of sclr (overall)                       [-]
       mu_sclr_1,        & ! Mean of passive scalar (1st PDF comp.)  [units vary]
       mu_sclr_2,        & ! Mean of passive scalar (2nd PDF comp.)  [units vary]
       sigma_sclr_1_sqd, & ! Variance pass. sclr (1st PDF comp.) [(units vary)^2]
@@ -404,6 +415,9 @@ module pdf_parameter_tests
 
     if ( test_PDF_type == iiPDF_new ) then
        write(fstdout,*) "Performing PDF parameter unit tests for the new PDF"
+       write(fstdout,*) ""
+    elseif ( test_PDF_type == iiPDF_new_hybrid ) then
+       write(fstdout,*) "Performing PDF parameter unit tests for the new hybrid PDF"
        write(fstdout,*) ""
     elseif ( test_PDF_type == iiPDF_ADG1 ) then
        write(fstdout,*) "Performing PDF parameter unit tests for ADG1"
@@ -662,6 +676,18 @@ module pdf_parameter_tests
           rtpthlp = 0.9_core_rknd * sqrt( rtp2 ) * sqrt( thlp2 )
        endwhere
 
+       where ( sign( one, upwp ) * sign( one, wp3 ) < zero )
+          Sku = -0.5_core_rknd * Skw 
+       elsewhere
+          Sku = 0.5_core_rknd * Skw
+       endwhere
+
+       where ( sign( one, vpwp ) * sign( one, wp3 ) < zero )
+          Skv = -0.5_core_rknd * Skw 
+       elsewhere
+          Skv = 0.5_core_rknd * Skw
+       endwhere
+
        ! Print PDF parameters
        write(fstdout,*) "wm = ", wm
        write(fstdout,*) "rtm = ", rtm
@@ -774,6 +800,156 @@ module pdf_parameter_tests
                 = calc_coef_wp4_implicit( mixt_frac, F_w, &
                                           coef_sigma_w_1_sqd, &
                                           coef_sigma_w_2_sqd )
+
+                wp4_implicit_calc = coef_wp4_implicit * wp2**2
+
+                ! Test 7
+                ! Compare the <w'^4> calculated by the PDF to its value
+                ! calculated by <w'^4> = wp4_implicit_calc * <w'^2>^2 (which was
+                ! derived from the PDF).
+                !    | ( <w'^4>|_pdf - <w'^4>|_impl ) / <w'^4>|_pdf |  <=  tol;
+                ! which can be rewritten as:
+                !    | <w'^4>|_pdf - <w'^4>|_impl |  <=  <w'^4>|_pdf * tol.
+                where ( abs( wp4_pdf_calc - wp4_implicit_calc ) &
+                        <= max( wp4_pdf_calc, w_tol**4 ) * tol )
+                   l_pass_test_7 = .true.
+                elsewhere
+                   l_pass_test_7 = .false.
+                endwhere
+
+                if ( any( .not. l_pass_test_7 ) ) then
+                   do idx = 1, nz, 1
+                      if ( .not. l_pass_test_7(idx) ) then
+                         write(fstderr,*) "Test 7 failed"
+                         !write(fstderr,*) "index = ", idx
+                         write(fstderr,*) "wp4 pdf = ", wp4_pdf_calc(idx)
+                         write(fstderr,*) "wp4 implicit calc = ", &
+                                          wp4_implicit_calc(idx)
+                         write(fstderr,*) ""
+                      endif ! .not. l_pass_test_7(idx)
+                   enddo ! idx = 1, nz, 1
+                endif
+
+                where ( l_pass_test_1 .and. l_pass_test_2 .and. l_pass_test_3 &
+                        .and. l_pass_test_4 .and. l_pass_test_5 &
+                        .and. l_pass_test_6 .and. l_pass_test_7 )
+                   ! All tests pass
+                   num_failed_sets = num_failed_sets
+                   l_failed_sets = .false.
+                elsewhere
+                   ! At least one test failed
+                   num_failed_sets = num_failed_sets + 1
+                   l_failed_sets = .true.
+                endwhere
+
+                if ( any( l_failed_sets ) ) then
+                   do idx = 1, nz, 1
+                      if ( l_failed_sets(idx) ) then
+                         write(fstderr,*) "At least one test or check for " &
+                                          // "the setting variable PDF " &
+                                          // "failed for the following " &
+                                          // "parameter set:  "
+                         write(fstderr,*) "PDF parameter set index = ", &
+                                          iter_param_sets
+                         write(fstderr,*) "F_w = ", F_w(idx)
+                         write(fstderr,*) "zeta_w = ", zeta_w(idx)
+                         write(fstderr,*) ""
+                      endif ! l_failed_sets(idx)
+                   enddo ! idx = 1, nz, 1
+                endif
+
+             enddo ! iter_zeta_w = 1, num_zeta_w, 1
+
+          enddo ! iter_F_w = 1, num_F_w, 1
+
+       elseif ( test_PDF_type == iiPDF_new_hybrid ) then
+
+          write(fstdout,*) "Running tests for the above parameter set for " &
+                           // "all combinations of F_w and zeta_w for the " &
+                           // "setting variable.  F_w values are 0 (or " &
+                           // "1.0 x 10^-5), 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, " &
+                           // "0.7, 0.8, 0.9, and 1.  Zeta_w values are 0, " &
+                           // "-1/2, 1, -1/3, 1/2, -1/5, 1/4, -9/10, 9, " &
+                           // "-3/4, and 3."
+          write(fstdout,*) ""
+
+          do iter_F_w = 1, num_F_w, 1
+
+             ! Set the value of F_w.
+             if ( iter_F_w == 1 ) then
+                where ( abs( Skw ) > zero )
+                   ! The value of F_w needs to be greater than 0 when
+                   ! | Skw | > 0 in order for the PDF to be valid.
+                   F_w = 1.0e-5_core_rknd
+                elsewhere ! Skw = 0
+                   ! F_w can have a value of 0 when Skw = 0.
+                   F_w = zero
+                endwhere ! | Skw | > 0
+             else ! iter_F_w > 1
+                ! F_w ranges from 0 to 1.
+                F_w = 0.1_core_rknd * real( iter_F_w - 1, kind = core_rknd )
+             endif ! iter_F_w
+
+             do iter_zeta_w = 1, num_zeta_w, 1
+
+                ! Set the value of zeta_w.
+                if ( iter_zeta_w == 1 ) then
+                   zeta_w = zero
+                elseif ( iter_zeta_w == 2 ) then
+                   zeta_w = -one_half
+                elseif ( iter_zeta_w == 3 ) then
+                   zeta_w = one
+                elseif ( iter_zeta_w == 4 ) then
+                   zeta_w = -one_third
+                elseif ( iter_zeta_w == 5 ) then
+                   zeta_w = one_half
+                elseif ( iter_zeta_w == 6 ) then
+                   zeta_w = -0.2_core_rknd
+                elseif ( iter_zeta_w == 7 ) then
+                   zeta_w = one_fourth
+                elseif ( iter_zeta_w == 8 ) then
+                   zeta_w = -0.9_core_rknd
+                elseif ( iter_zeta_w == 9 ) then
+                   zeta_w = 9.0_core_rknd
+                elseif ( iter_zeta_w == 10 ) then
+                   zeta_w = -three_fourths
+                elseif ( iter_zeta_w == 11 ) then
+                   zeta_w = three
+                endif
+
+                ! Call the subroutine for calculating mu_w_1, mu_w_2, sigma_w_1,
+                ! sigma_w_2, and mixt_frac.
+                call calculate_w_params( wm, wp2, Skw, F_w, zeta_w, & ! In
+                                         mu_w_1, mu_w_2, sigma_w_1, & ! Out
+                                         sigma_w_2, mixt_frac,      & ! Out
+                                         coef_sigma_w_1_sqd,        & ! Out
+                                         coef_sigma_w_2_sqd         ) ! Out
+
+                sigma_w_1_sqd = sigma_w_1**2
+                sigma_w_2_sqd = sigma_w_2**2
+
+                l_check_mu_w_1_gte_mu_w_2 = .true.
+
+                ! Perform the tests for the "setter" variable, which is the
+                ! variable that is used to set the mixture fraction.
+                call setter_var_tests( nz, wm, wp2, wp3, Skw,        & ! In
+                                       mu_w_1, mu_w_2, sigma_w_1,    & ! In
+                                       sigma_w_2, mixt_frac, tol,    & ! In
+                                       sigma_w_1_sqd, sigma_w_2_sqd, & ! In
+                                       l_pass_test_1, l_pass_test_2, & ! Out
+                                       l_pass_test_3, l_pass_test_4, & ! Out
+                                       l_pass_test_5, l_pass_test_6, & ! Out
+                                       l_check_mu_w_1_gte_mu_w_2     ) ! Out
+
+                ! Calculate <w'^4> by integrating over the PDF.
+                wp4_pdf_calc = calc_wp4_pdf( wm, mu_w_1, mu_w_2, sigma_w_1**2, &
+                                             sigma_w_2**2, mixt_frac )
+
+                ! Calculate <w'^4> by <w'^4> = coef_wp4_implicit * <w'^2>^2.
+                coef_wp4_implicit &
+                = calculate_coef_wp4_implicit( mixt_frac, F_w, &
+                                               coef_sigma_w_1_sqd, &
+                                               coef_sigma_w_2_sqd )
 
                 wp4_implicit_calc = coef_wp4_implicit * wp2**2
 
@@ -1086,6 +1262,38 @@ module pdf_parameter_tests
           rtp3 = Skrt * rtp2**1.5
           thlp3 = Skthl * thlp2**1.5
 
+       elseif ( test_PDF_type == iiPDF_new_hybrid ) then
+
+          write(fstdout,*) "Running tests for the above parameter set for " &
+                           // "the full PDF (the setting of F and zeta " &
+                           // "values is handled internally)."
+          write(fstdout,*) ""
+
+          call new_hybrid_pdf_driver( wm, rtm, thlm, um, vm,              &! In
+                                      wp2, rtp2, thlp2, up2, vp2,         &! In
+                                      Skw, wprtp, wpthlp, upwp, vpwp,     &! In
+                                      sclrm, sclrp2, wpsclrp,             &! In
+                                      Skrt, Skthl, Sku, Skv, Sksclr,      &! I/O
+                                      mu_w_1, mu_w_2,                     &! Out
+                                      mu_rt_1, mu_rt_2,                   &! Out
+                                      mu_thl_1, mu_thl_2,                 &! Out
+                                      mu_u_1, mu_u_2, mu_v_1, mu_v_2,     &! Out
+                                      sigma_w_1_sqd, sigma_w_2_sqd,       &! Out
+                                      sigma_rt_1_sqd, sigma_rt_2_sqd,     &! Out
+                                      sigma_thl_1_sqd, sigma_thl_2_sqd,   &! Out
+                                      sigma_u_1_sqd, sigma_u_2_sqd,       &! Out
+                                      sigma_v_1_sqd, sigma_v_2_sqd,       &! Out
+                                      mu_sclr_1, mu_sclr_2,               &! Out
+                                      sigma_sclr_1_sqd, sigma_sclr_2_sqd, &! Out
+                                      mixt_frac,                          &! Out
+                                      pdf_implicit_coefs_terms,           &! Out
+                                      F_w, min_F_w, max_F_w               )! Out
+
+          ! Recalculate <rt'^3> and <thl'^3> just in case Skrt and Skthl needed
+          ! to be clipped in new_pdf_driver.
+          rtp3 = Skrt * rtp2**1.5
+          thlp3 = Skthl * thlp2**1.5
+
        elseif ( test_PDF_type == iiPDF_ADG1 ) then
 
           write(fstdout,*) "Running tests for the above parameter set for " &
@@ -1314,6 +1522,7 @@ module pdf_parameter_tests
        endif
 
        if ( ( test_PDF_type == iiPDF_new ) &
+            .or. ( test_PDF_type == iiPDF_new_hybrid ) &
             .or. ( test_PDF_type == iiPDF_LY93 ) ) then
 
           ! Test 14
@@ -1423,6 +1632,7 @@ module pdf_parameter_tests
        endif
 
        if ( ( test_PDF_type == iiPDF_new ) &
+            .or. ( test_PDF_type == iiPDF_new_hybrid ) &
             .or. ( test_PDF_type == iiPDF_LY93 ) ) then
 
           ! Test 18

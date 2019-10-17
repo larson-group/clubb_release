@@ -4,8 +4,10 @@ module new_hybrid_pdf
 
   ! Description:
   ! The portion of CLUBB's multivariate, two-component PDF that is the
-  ! trivariate, two-component normal PDF of vertical velocity (w), total water
-  ! mixing ratio (rt), and liquid water potential temperature (thl).
+  ! multivariate, two-component normal PDF of vertical velocity (w), total water
+  ! mixing ratio (rt), liquid water potential temperature (thl), and optionally,
+  ! the west-east horizontal wind component (u), the south-north horizontal wind
+  ! component (v), and passive scalars (sclr).
 
   ! References:
   ! Griffin and Larson (2020)
@@ -13,12 +15,12 @@ module new_hybrid_pdf
 
   implicit none
 
-  public :: calculate_mixture_fraction, & ! Procedure(s)
-            calculate_w_params,         &
-            calculate_responder_params, &
-            calc_coef_wp4_implicit,     &
-            calc_coef_wp2xp_implicit,   &
-            calc_coefs_wpxp2_semiimpl,  &
+  public :: calculate_mixture_fraction,  & ! Procedure(s)
+            calculate_w_params,          &
+            calculate_responder_params,  &
+            calculate_coef_wp4_implicit, &
+            calc_coef_wp2xp_implicit,    &
+            calc_coefs_wpxp2_semiimpl,   &
             calc_coefs_wpxpyp_semiimpl
 
   private
@@ -702,9 +704,9 @@ module new_hybrid_pdf
   end subroutine calculate_responder_params
 
   !=============================================================================
-  elemental function calc_coef_wp4_implicit( mixt_frac, F_w, &
-                                             coef_sigma_w_1_sqd, &
-                                             coef_sigma_w_2_sqd ) &
+  elemental function calculate_coef_wp4_implicit( mixt_frac, F_w, &
+                                                  coef_sigma_w_1_sqd, &
+                                                  coef_sigma_w_2_sqd ) &
   result( coef_wp4_implicit )
 
     ! Description:
@@ -805,7 +807,7 @@ module new_hybrid_pdf
 
     return
 
-  end function calc_coef_wp4_implicit
+  end function calculate_coef_wp4_implicit
 
   !=============================================================================
   elemental function calc_coef_wp2xp_implicit( wp2, mixt_frac, F_w, &

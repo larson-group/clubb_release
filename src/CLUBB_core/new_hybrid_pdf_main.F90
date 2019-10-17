@@ -60,10 +60,10 @@ module new_hybrid_pdf_main
         fstderr
 
     use new_hybrid_pdf, only: &
-        calculate_w_params,         & ! Procedure(s)
-        calc_coef_wp4_implicit,     &
-        calc_coef_wp2xp_implicit,   &
-        calc_coefs_wpxp2_semiimpl,  &
+        calculate_w_params,          & ! Procedure(s)
+        calculate_coef_wp4_implicit, &
+        calc_coef_wp2xp_implicit,    &
+        calc_coefs_wpxp2_semiimpl,   &
         calc_coefs_wpxpyp_semiimpl
 
     use pdf_parameter_module, only: &
@@ -401,9 +401,9 @@ module new_hybrid_pdf_main
 
        ! <w'^4> = coef_wp4_implicit * <w'^2>^2.
        coef_wp4_implicit &
-       = calc_coef_wp4_implicit( mixt_frac, F_w, &
-                                 coef_sigma_w_1_sqd, &
-                                 coef_sigma_w_2_sqd )
+       = calculate_coef_wp4_implicit( mixt_frac, F_w, &
+                                      coef_sigma_w_1_sqd, &
+                                      coef_sigma_w_2_sqd )
 
     else ! l_explicit_turbulent_adv_wp3
 

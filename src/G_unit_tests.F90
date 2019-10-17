@@ -119,10 +119,11 @@ program G_unit_tests
       fstdout  ! Constant(s)
 
   use pdf_closure_module, only: &
-      iiPDF_new,    & ! Variable(s)
-      iiPDF_ADG1,   &
-      iiPDF_TSDADG, &
-      iiPDF_LY93
+      iiPDF_new,        & ! Variable(s)
+      iiPDF_ADG1,       &
+      iiPDF_TSDADG,     &
+      iiPDF_LY93,       &
+      iiPDF_new_hybrid
 
   use KK_integrals_tests, only: &
       KK_integrals_tests_driver  ! Procedure(s)
@@ -248,6 +249,9 @@ program G_unit_tests
         exit_code = 1
      endif
      if ( pdf_parameter_unit_tests( iiPDF_new ) /= 0 ) then
+        exit_code = 1
+     endif
+     if ( pdf_parameter_unit_tests( iiPDF_new_hybrid ) /= 0 ) then
         exit_code = 1
      endif
   endif
