@@ -667,6 +667,12 @@ module new_hybrid_pdf
          - ( ( one + mixt_frac ) / mixt_frac ) &
            * wpxp**2 / ( three * F_w * wp2 * xp2 )
 
+       ! Mathematically, the value of coef_sigma_x_1_sqd cannot be less than 0.
+       ! Numerically, this can happen when numerical round off error causes an
+       ! epsilon-sized negative value.  When this happens, reset the value of
+       ! coef_sigma_x_1_sqd to 0.
+       coef_sigma_x_1_sqd = max( coef_sigma_x_1_sqd, zero )
+
        sigma_x_1_sqd = coef_sigma_x_1_sqd * xp2
 
        ! Calculate the variance of x in the 2nd PDF component.
@@ -681,6 +687,12 @@ module new_hybrid_pdf
                * Skx * sqrt( F_w * wp2 * xp2 ) / ( three * wpxp ) &
          + ( ( mixt_frac - two ) / ( one - mixt_frac ) ) &
            * wpxp**2 / ( three * F_w * wp2 * xp2 )
+
+       ! Mathematically, the value of coef_sigma_x_2_sqd cannot be less than 0.
+       ! Numerically, this can happen when numerical round off error causes an
+       ! epsilon-sized negative value.  When this happens, reset the value of
+       ! coef_sigma_x_2_sqd to 0.
+       coef_sigma_x_2_sqd = max( coef_sigma_x_2_sqd, zero )
 
        sigma_x_2_sqd = coef_sigma_x_2_sqd * xp2
 
