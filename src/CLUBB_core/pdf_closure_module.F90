@@ -42,14 +42,14 @@ module pdf_closure_module
   !#######################################################################
   subroutine pdf_closure( hydromet_dim, p_in_Pa, exner, thv_ds,     &
                           wm, wp2, wp3, sigma_sqd_w,                &
-                          Skw, Skthl_in, Skrt_in,                   &
+                          Skw, Skthl_in, Skrt_in, Sku_in, Skv_in,   &
                           rtm, rtp2, wprtp,                         &
                           thlm, thlp2, wpthlp,                      &
                           um, up2, upwp,                            &
                           vm, vp2, vpwp,                            &
                           rtpthlp,                                  &
                           sclrm, wpsclrp, sclrp2,                   &
-                          sclrprtp, sclrpthlp,                      &
+                          sclrprtp, sclrpthlp, Sksclr_in,           &
 #ifdef GFDL
                           RH_crit, do_liquid_only_in_clubb,         & ! h1g, 2010-06-15
 #endif
@@ -131,6 +131,9 @@ module pdf_closure_module
     use new_pdf_main, only: &
         new_pdf_driver    ! Procedure(s)
 
+    use new_hybrid_pdf_main, only: &
+        new_hybrid_pdf_driver    ! Procedure(s)
+
     use adg1_adg2_3d_luhar_pdf, only: &
         ADG1_pdf_driver,     & ! Procedure(s)
         ADG2_pdf_driver,     &
@@ -194,6 +197,8 @@ module pdf_closure_module
       Skw,         & ! Skewness of w                              [-]
       Skthl_in,    & ! Skewness of thl                            [-]
       Skrt_in,     & ! Skewness of rt                             [-]
+      Sku_in,      & ! Skewness of u                              [-]
+      Skv_in,      & ! Skewness of v                              [-]
       rtm,         & ! Mean total water mixing ratio              [kg/kg]
       rtp2,        & ! r_t'^2                                     [(kg/kg)^2]
       wprtp,       & ! w'r_t'                                     [(kg/kg)(m/s)]
@@ -215,7 +220,8 @@ module pdf_closure_module
       wpsclrp,     & ! w' sclr'                   [units vary]
       sclrp2,      & ! sclr'^2                    [units vary]
       sclrprtp,    & ! sclr' r_t'                 [units vary]
-      sclrpthlp      ! sclr' th_l'                [units vary]
+      sclrpthlp,   & ! sclr' th_l'                [units vary]
+      Sksclr_in      ! Skewness of sclr           [-]
 
 #ifdef  GFDL
     ! critial relative humidity for nucleation
@@ -339,7 +345,12 @@ module pdf_closure_module
     real( kind = core_rknd ), dimension(gr%nz) :: &
       sqrt_wp2, & ! Square root of wp2          [m/s]
       Skthl,    & ! Skewness of thl             [-]
-      Skrt        ! Skewness of rt              [-]
+      Skrt,     & ! Skewness of rt              [-]
+      Sku,      & ! Skewness of u               [-]
+      Skv         ! Skewness of v               [-]
+
+    real( kind = core_rknd ), dimension(gr%nz,sclr_dim) :: &
+      Sksclr      ! Skewness of rt              [-]
 
     ! Thermodynamic quantity
 
@@ -420,24 +431,37 @@ module pdf_closure_module
         ! value back out.
         Skrt = Skrt_in
         Skthl = Skthl_in
+        Sku = Sku_in
+        Skv = Skv_in
+        Sksclr = Sksclr_in
 
     endif
 
 
     ! Initialize to 0 to prevent a runtime error
-    if ( iiPDF_type /= iiPDF_new ) then
+    if ( iiPDF_type /= iiPDF_new .and. iiPDF_type /= iiPDF_new_hybrid ) then
 
        do k = 1, gr%nz
 
            pdf_implicit_coefs_terms(k)%coef_wp4_implicit = zero
-           pdf_implicit_coefs_terms(k)%coef_wprtp2_implicit = zero
-           pdf_implicit_coefs_terms(k)%coef_wpthlp2_implicit = zero
            pdf_implicit_coefs_terms(k)%coef_wp2rtp_implicit = zero
            pdf_implicit_coefs_terms(k)%term_wp2rtp_explicit = zero
            pdf_implicit_coefs_terms(k)%coef_wp2thlp_implicit = zero
            pdf_implicit_coefs_terms(k)%term_wp2thlp_explicit = zero
+           pdf_implicit_coefs_terms(k)%coef_wp2up_implicit = zero
+           pdf_implicit_coefs_terms(k)%term_wp2up_explicit = zero
+           pdf_implicit_coefs_terms(k)%coef_wp2vp_implicit = zero
+           pdf_implicit_coefs_terms(k)%term_wp2vp_explicit = zero
+           pdf_implicit_coefs_terms(k)%coef_wprtp2_implicit = zero
+           pdf_implicit_coefs_terms(k)%term_wprtp2_explicit = zero
+           pdf_implicit_coefs_terms(k)%coef_wpthlp2_implicit = zero
+           pdf_implicit_coefs_terms(k)%term_wpthlp2_explicit = zero
            pdf_implicit_coefs_terms(k)%coef_wprtpthlp_implicit = zero
            pdf_implicit_coefs_terms(k)%term_wprtpthlp_explicit = zero
+           pdf_implicit_coefs_terms(k)%coef_wpup2_implicit = zero
+           pdf_implicit_coefs_terms(k)%term_wpup2_explicit = zero
+           pdf_implicit_coefs_terms(k)%coef_wpvp2_implicit = zero
+           pdf_implicit_coefs_terms(k)%term_wpvp2_explicit = zero
 
         end do
 
@@ -552,6 +576,31 @@ module pdf_closure_module
                          pdf_params%varnce_thl_1, pdf_params%varnce_thl_2,  & ! Out
                          pdf_params%mixt_frac )                               ! Out
 
+    elseif ( iiPDF_type == iiPDF_new_hybrid ) then ! use new hybrid PDF
+
+       call new_hybrid_pdf_driver( wm, rtm, thlm, um, vm,              & ! In
+                                   wp2, rtp2, thlp2, up2, vp2,         & ! In
+                                   Skw, wprtp, wpthlp, upwp, vpwp,     & ! In
+                                   sclrm, sclrp2, wpsclrp,             & ! In
+                                   Skrt, Skthl, Sku, Skv, Sksclr,      & ! I/O
+                                   pdf_params%w_1, pdf_params%w_2,     & ! Out
+                                   pdf_params%rt_1, pdf_params%rt_2,   & ! Out
+                                   pdf_params%thl_1, pdf_params%thl_2, & ! Out
+                                   u_1, u_2, v_1, v_2,                 & ! Out
+                                   pdf_params%varnce_w_1,              & ! Out
+                                   pdf_params%varnce_w_2,              & ! Out
+                                   pdf_params%varnce_rt_1,             & ! Out
+                                   pdf_params%varnce_rt_2,             & ! Out
+                                   pdf_params%varnce_thl_1,            & ! Out
+                                   pdf_params%varnce_thl_2,            & ! Out
+                                   varnce_u_1, varnce_u_2,             & ! Out
+                                   varnce_v_1, varnce_v_2,             & ! Out
+                                   sclr1, sclr2,                       & ! Out
+                                   varnce_sclr1, varnce_sclr2,         & ! Out
+                                   pdf_params%mixt_frac,               & ! Out
+                                   pdf_implicit_coefs_terms,           & ! Out
+                                   F_w, min_F_w, max_F_w               ) ! Out
+
     endif ! iiPDF_type
 
 
@@ -564,14 +613,21 @@ module pdf_closure_module
                                    pdf_params%mixt_frac,                                    & ! In
                                    pdf_params%corr_rt_thl_1, pdf_params%corr_rt_thl_2 )       ! Out
 
-    if ( iiPDF_type == iiPDF_ADG1 .or. iiPDF_type == iiPDF_ADG2 ) then
+    if ( iiPDF_type == iiPDF_ADG1 .or. iiPDF_type == iiPDF_ADG2 &
+         .or. iiPDF_type == iiPDF_new_hybrid ) then
 
-       ! ADG1 and ADG2 define corr_w_rt_1, corr_w_rt_2, corr_w_thl_1, and
+       ! These PDF types define corr_w_rt_1, corr_w_rt_2, corr_w_thl_1, and
        ! corr_w_thl_2 to all have a value of 0, so skip the calculation.
+       ! The values of corr_u_w_1, corr_u_w_2, corr_v_w_1, and corr_v_w_2 are
+       ! all defined to be 0, as well.
        pdf_params%corr_w_rt_1  = zero
        pdf_params%corr_w_rt_2  = zero
        pdf_params%corr_w_thl_1 = zero
        pdf_params%corr_w_thl_2 = zero
+       corr_u_w_1   = zero
+       corr_u_w_2   = zero
+       corr_v_w_1   = zero
+       corr_v_w_2   = zero
 
     else
 
@@ -617,9 +673,10 @@ module pdf_closure_module
                                          pdf_params%mixt_frac,                              & ! In
                                          corr_sclr_rt_1(:,i), corr_sclr_rt_2(:,i) )           ! Out
 
-          if ( iiPDF_type == iiPDF_ADG1 .or. iiPDF_type == iiPDF_ADG2 ) then
+          if ( iiPDF_type == iiPDF_ADG1 .or. iiPDF_type == iiPDF_ADG2 &
+               .or. iiPDF_type == iiPDF_new_hybrid ) then
 
-            ! ADG1 and ADG2 define all PDF component correlations involving w
+            ! These PDF types define all PDF component correlations involving w
             ! to have a value of 0, so skip the calculation.
             corr_w_sclr_1(:,i) = zero
             corr_w_sclr_2(:,i) = zero
@@ -918,7 +975,8 @@ module pdf_closure_module
     rcm = pdf_params%mixt_frac * pdf_params%rc_1 + ( one - pdf_params%mixt_frac ) * pdf_params%rc_2
     rcm = max( zero_threshold, rcm )
 
-    if ( iiPDF_type == iiPDF_ADG1 .or. iiPDF_type == iiPDF_ADG2 ) then
+    if ( iiPDF_type == iiPDF_ADG1 .or. iiPDF_type == iiPDF_ADG2 &
+         .or. iiPDF_type == iiPDF_new_hybrid ) then
 
         ! corr_w_rt and corr_w_thl are zero for these pdf types so
         ! corr_w_chi and corr_w_eta are zero as well
@@ -926,10 +984,6 @@ module pdf_closure_module
         pdf_params%corr_w_chi_2 = zero
         pdf_params%corr_w_eta_1 = zero
         pdf_params%corr_w_eta_2 = zero
-        corr_u_w_1   = zero
-        corr_u_w_2   = zero
-        corr_v_w_1   = zero
-        corr_v_w_2   = zero
 
     else 
         
@@ -2699,9 +2753,10 @@ module pdf_closure_module
 
     vprcp_contrib_comp_i = ( v_i - vm ) * ( rc_i - rcm )
 
-    ! If iiPDF_type isn't iiPDF_ADG1 or iiPDF_ADG2, so corr_w_chi_i /= 0
-    !   (and perhaps corr_u_w_i /= 0).
-    if ( .not. ( iiPDF_type == iiPDF_ADG1 .or. iiPDF_type == iiPDF_ADG2 ) ) then
+    ! If iiPDF_type isn't iiPDF_ADG1, iiPDF_ADG2, or iiPDF_new_hybrid, so
+    ! corr_w_chi_i /= 0 (and perhaps corr_u_w_i /= 0).
+    if ( .not. ( iiPDF_type == iiPDF_ADG1 .or. iiPDF_type == iiPDF_ADG2 &
+                 .or. iiPDF_type == iiPDF_new_hybrid ) ) then
 
         ! Chi varies significantly in the ith PDF component (stdev_chi > chi_tol)
         ! and there is some cloud (0 < cloud_frac <= 1)

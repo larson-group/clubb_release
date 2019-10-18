@@ -34,7 +34,9 @@ module variables_prognostic_module
     upwp,    & ! vertical u momentum flux      [m^2/s^2]
     vpwp,    & ! vertical v momentum flux      [m^2/s^2]
     up2,     & ! u'^2                          [m^2/s^2]
+    up3,     & ! u'^3                          [m^3/s^3]
     vp2,     & ! v'^2                          [m^2/s^2]
+    vp3,     & ! v'^3                          [m^3/s^3]
     thlm,    & ! liquid potential temperature  [K]
 !---> h1g
     temp_clubb, & ! air temperature [K]
@@ -56,7 +58,9 @@ module variables_prognostic_module
     upwp,    & ! vertical u momentum flux      [m^2/s^2]
     vpwp,    & ! vertical v momentum flux      [m^2/s^2]
     up2,     & ! u'^2                          [m^2/s^2]
+    up3,     & ! u'^3                          [m^3/s^3]
     vp2,     & ! v'^2                          [m^2/s^2]
+    vp3,     & ! v'^3                          [m^3/s^3]
     thlm,    & ! liquid potential temperature  [K]
     rtm,     & ! total water mixing ratio      [kg/kg]
     wprtp,   & ! w'rt'                         [(kg/kg) m/s]
@@ -70,7 +74,7 @@ module variables_prognostic_module
 #endif
 ! <--- h1g, 2010-06-16
 
-!$omp   threadprivate(um, vm, upwp, vpwp, up2, vp2)
+!$omp   threadprivate(um, vm, upwp, vpwp, up2, up3, vp2, vp3)
 !$omp   threadprivate(thlm, rtm, wprtp, wpthlp, wprcp)
 !$omp   threadprivate(wp2, wp3, rtp2, thlp2, rtpthlp)
 
@@ -221,7 +225,9 @@ module variables_prognostic_module
     allocate( vpwp(1:nz) )      ! vertical v momentum flux
 
     allocate( up2(1:nz) )
+    allocate( up3(1:nz) )
     allocate( vp2(1:nz) )
+    allocate( vp3(1:nz) )
 
     allocate( thlm(1:nz) )      ! liquid potential temperature
 !---> h1g, 2010-06-16
@@ -313,9 +319,11 @@ module variables_prognostic_module
     upwp(1:nz)    = 0.0_core_rknd     ! vertical u momentum flux
     vpwp(1:nz)    = 0.0_core_rknd     ! vertical v momentum flux
 
-    up2(1:nz)     = w_tol_sqd ! u'^2
-    vp2(1:nz)     = w_tol_sqd ! v'^2
-    wp2(1:nz)     = w_tol_sqd ! w'^2
+    up2(1:nz)     = w_tol_sqd     ! u'^2
+    up3(1:nz)     = 0.0_core_rknd ! u'^3
+    vp2(1:nz)     = w_tol_sqd     ! v'^2
+    vp3(1:nz)     = 0.0_core_rknd ! v'^3
+    wp2(1:nz)     = w_tol_sqd     ! w'^2
 
     thlm(1:nz)    = 0.0_core_rknd         ! liquid potential temperature
     rtm(1:nz)     = 0.0_core_rknd         ! total water mixing ratio
@@ -411,6 +419,7 @@ module variables_prognostic_module
       deallocate( vpwp )      ! vertical v momentum flux
 
       deallocate( up2, vp2 )
+      deallocate( up3, vp3 )
 
       deallocate( thlm )      ! liquid potential temperature
 
