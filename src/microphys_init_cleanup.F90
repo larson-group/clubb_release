@@ -64,19 +64,19 @@ module microphys_init_cleanup
 
     use parameters_silhs, only: &
         cluster_allocation_strategy, &  ! Strategy for distributing sample points
-        l_lh_importance_sampling, &     ! Do importance sampling (SILHS)
-        l_Lscale_vert_avg,        &     ! Vertically average Lscale in SILHS
-        l_lh_straight_mc,         &     ! Do not apply LH or importance sampling at all (SILHS)
-        l_lh_clustered_sampling,  &     ! Use prescribed probability sampling with clusters (SILHS)
-        eight_cluster_presc_probs,&     ! Sampling probabilities for prescribed mode (SILHS)
-        l_rcm_in_cloud_k_lh_start,&     ! Determine k_lh_start based on maximum within-cloud rcm
-        l_random_k_lh_start,      &     ! k_lh_start found randomly between max rcm and rcm_in_cloud
-        l_max_overlap_in_cloud,   &     ! Use maximum vertical overlap in cloud
-        l_lh_instant_var_covar_src, &   ! Produce instantaneous var/covar tendencies
-        l_lh_limit_weights,       &     ! Ensure weights stay under a given value
-        l_lh_var_frac,            &     ! Prescribe variance fractions
-        l_lh_normalize_weights,   &     ! Normalize weights to sum to num_samples
-        importance_prob_thresh,   &     ! Minimum PDF probability for importance sampling
+        l_lh_importance_sampling,    &  ! Do importance sampling (SILHS)
+        l_Lscale_vert_avg,           &  ! Vertically average Lscale in SILHS
+        l_lh_straight_mc,            &  ! Do not apply LH or importance sampling at all (SILHS)
+        l_lh_clustered_sampling,     &  ! Use prescribed probability sampling with clusters (SILHS)
+        eight_cluster_presc_probs,   &  ! Sampling probabilities for prescribed mode (SILHS)
+        l_rcm_in_cloud_k_lh_start,   &  ! Determine k_lh_start based on maximum within-cloud rcm
+        l_random_k_lh_start,         &  ! k_lh_start found randomly between max rcm and rcm_in_cloud
+        l_max_overlap_in_cloud,      &  ! Use maximum vertical overlap in cloud
+        l_lh_instant_var_covar_src,  &  ! Produce instantaneous var/covar tendencies
+        l_lh_limit_weights,          &  ! Ensure weights stay under a given value
+        l_lh_var_frac,               &  ! Prescribe variance fractions
+        l_lh_normalize_weights,      &  ! Normalize weights to sum to num_samples
+        importance_prob_thresh,      &  ! Minimum PDF probability for importance sampling
         vert_decorr_coef                ! Vertical overlap decorrelation coefficient (SILHS)
 
     use parameters_microphys, only: &
