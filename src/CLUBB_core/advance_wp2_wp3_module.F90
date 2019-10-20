@@ -495,8 +495,9 @@ module advance_wp2_wp3_module
         clip_skewness
 
     use pdf_closure_module, only: &
-        iiPDF_ADG1, & ! Variable(s)
-        iiPDF_new,  &
+        iiPDF_ADG1,       & ! Variable(s)
+        iiPDF_new,        &
+        iiPDF_new_hybrid, &
         iiPDF_type
 
     use pdf_parameter_module, only: &
@@ -682,7 +683,7 @@ module advance_wp2_wp3_module
 
     if ( .not. l_explicit_turbulent_adv_wp3 ) then
 
-       if ( iiPDF_type == iiPDF_new ) then
+       if ( iiPDF_type == iiPDF_new .or. iiPDF_type == iiPDF_new_hybrid ) then
 
           ! Unpack coef_wp4_implicit from pdf_implicit_coefs_terms.
           ! Since PDF parameters and the resulting implicit coefficients and
@@ -1120,8 +1121,9 @@ module advance_wp2_wp3_module
         term_ma_zt_lhs_all
 
     use pdf_closure_module, only: &
-        iiPDF_ADG1, & ! Variable(s)
-        iiPDF_new,  &
+        iiPDF_ADG1,       & ! Variable(s)
+        iiPDF_new,        &
+        iiPDF_new_hybrid, &
         iiPDF_type
 
     use clubb_precision, only: &
@@ -1490,16 +1492,17 @@ module advance_wp2_wp3_module
                                            gr%invrs_dzt(:), &
                                            wp3_term_ta_lhs_result(:,:) )
 
-        elseif ( iiPDF_type == iiPDF_new ) then
+        elseif ( iiPDF_type == iiPDF_new &
+                 .or. iiPDF_type == iiPDF_new_hybrid ) then
 
-            ! The new PDF is used.
+            ! The new PDF or the new hybrid PDF is used.
 
             ! Calculate terms
             call wp3_term_ta_new_pdf_lhs_all( coef_wp4_implicit(:), &
-                                                 wp2(:), rho_ds_zm(:), &
-                                                 invrs_rho_ds_zt(:), &
-                                                 gr%invrs_dzt(:), &
-                                                 lhs_ta_wp3(:,:) )
+                                              wp2(:), rho_ds_zm(:), &
+                                              invrs_rho_ds_zt(:), &
+                                              gr%invrs_dzt(:), &
+                                              lhs_ta_wp3(:,:) )
 
             ! Save terms in wp3_term_ta_lhs_result
             wp3_term_ta_lhs_result((/2,4/),:) = lhs_ta_wp3(:,:)
@@ -1742,8 +1745,9 @@ module advance_wp2_wp3_module
         diffusion_zt_lhs_all
 
     use pdf_closure_module, only: &
-        iiPDF_ADG1, & ! Variable(s)
-        iiPDF_new,  &
+        iiPDF_ADG1,       & ! Variable(s)
+        iiPDF_new,        &
+        iiPDF_new_hybrid, &
         iiPDF_type
 
     use clubb_precision, only:  & 
@@ -2098,16 +2102,17 @@ module advance_wp2_wp3_module
                                             - wp3_term_ta_lhs_result(5,k) * wp3(k-1) )
             end do
 
-        elseif ( iiPDF_type == iiPDF_new ) then
+        elseif ( iiPDF_type == iiPDF_new &
+                 .or. iiPDF_type == iiPDF_new_hybrid ) then
 
-            ! The new PDF is used.
+            ! The new PDF or the new hybrid PDF is used.
 
             ! Calculate terms
             call wp3_term_ta_new_pdf_lhs_all( coef_wp4_implicit(:), &
-                                                 wp2(:), rho_ds_zm(:), &
-                                                 invrs_rho_ds_zt(:), &
-                                                 gr%invrs_dzt(:), &
-                                                 lhs_ta_wp3(:,:) )
+                                              wp2(:), rho_ds_zm(:), &
+                                              invrs_rho_ds_zt(:), &
+                                              gr%invrs_dzt(:), &
+                                              lhs_ta_wp3(:,:) )
             ! Add terms
             do k = 2, gr%nz-1
 
@@ -2297,9 +2302,10 @@ module advance_wp2_wp3_module
                                                     - wp3_term_ta_lhs_result(5,k) * wp3(k-1) ), &
                                                stats_zt )
 
-                elseif ( iiPDF_type == iiPDF_new ) then
+                elseif ( iiPDF_type == iiPDF_new &
+                         .or. iiPDF_type == iiPDF_new_hybrid ) then
 
-                    ! The new PDF is used.
+                    ! The new PDF or the new hybrid PDF is used.
 
                     call stat_begin_update_pt( iwp3_ta, k, &
                                                - ( one - gamma_over_implicit_ts )  &

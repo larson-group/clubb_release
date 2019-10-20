@@ -1662,8 +1662,9 @@ module advance_xm_wpxp_module
       stat_update_var   ! Procedure(s)
       
     use pdf_closure_module, only: &
-      iiPDF_ADG1, & ! Variable(s)
-      iiPDF_new,  &
+      iiPDF_ADG1,       & ! Variable(s)
+      iiPDF_new,        &
+      iiPDF_new_hybrid, &
       iiPDF_type
       
     implicit none 
@@ -1948,7 +1949,7 @@ module advance_xm_wpxp_module
         ! implicit coefficients and explicit terms are calculated on
         ! thermodynamic levels.
         
-        ! The termodynamic grid level coefficients are only needed if l_upwind_wpxp_ta
+        ! The thermodynamic grid level coefficients are only needed if l_upwind_wpxp_ta
         ! is false, or if stats output is on
         if ( .not. l_upwind_wpxp_ta .or. l_stats_samp ) then
           coef_wp2rtp_implicit = pdf_implicit_coefs_terms%coef_wp2rtp_implicit
@@ -2039,6 +2040,84 @@ module advance_xm_wpxp_module
         lhs_ta_wpsclrp = zero
         rhs_ta_wpsclrp = zero
       
+      elseif ( iiPDF_type == iiPDF_new_hybrid ) then
+
+        ! The new hybrid PDF is used.
+
+        ! Unpack the variable coef_wp2rtp_implicit from the structure
+        ! pdf_implicit_coefs_terms.  The values of coef_wp2thlp_implicit,
+        ! coef_wp2up_implicit, coef_wp2vp_implict, and coef_wp2sclrp_implicit
+        ! are all equal to coef_wp2rtp_implicit.  The PDF parameters and the
+        ! resulting implicit coefficients are calculated on thermodynamic
+        ! levels.
+        
+        ! The thermodynamic grid level coefficients are only needed if
+        ! l_upwind_wpxp_ta is false, or if stats output is on
+        if ( .not. l_upwind_wpxp_ta .or. l_stats_samp ) then
+           coef_wp2rtp_implicit = pdf_implicit_coefs_terms%coef_wp2rtp_implicit
+           coef_wp2thlp_implicit = coef_wp2rtp_implicit
+        endif
+
+        if ( l_upwind_wpxp_ta ) then
+
+           ! Interpolate coef_wp2rtp_implicit to momentum levels as
+           ! coef_wp2rtp_implicit_zm, respectively.
+           coef_wp2rtp_implicit_zm &
+           = zt2zm( pdf_implicit_coefs_terms%coef_wp2rtp_implicit )
+
+           ! Calculate the sign of the turbulent velocity for <w'rt'>.
+           sgn_t_vel_wprtp &
+           = sgn_turbulent_velocity( coef_wp2rtp_implicit_zm * wprtp, wprtp )
+
+        endif ! l_upwind_wpxp_ta
+
+        ! Calculate the LHS turbulent advection term for <w'rt'>
+        call xpyp_term_ta_pdf_lhs_all( coef_wp2rtp_implicit(:),      & ! Intent(in)
+                                       rho_ds_zt(:),                 & ! Intent(in)
+                                       invrs_rho_ds_zm(:),           & ! Intent(in)
+                                       gr%invrs_dzm(:),              & ! Intent(in)
+                                       l_upwind_wpxp_ta,             & ! Intent(in)
+                                       sgn_t_vel_wprtp(:),           & ! Intent(in)
+                                       coef_wp2rtp_implicit_zm(:),   & ! Intent(in)
+                                       rho_ds_zm(:),                 & ! Intent(in)
+                                       gr%invrs_dzt(:),              & ! Intent(in)
+                                       lhs_ta_wprtp(:,:)             ) ! Intent(out) 
+                                       
+        ! For the new hybrid PDF, the LHS turbulent advection terms for 
+        ! <w'r_t'>, <w'thl'>, and <w'sclr'> are all the same.
+        lhs_ta_wpthlp = lhs_ta_wprtp
+        
+        if ( l_scalar_calc ) then
+          do i = 1, sclr_dim
+            lhs_ta_wpsclrp(:,:,i) = lhs_ta_wprtp
+          end do
+        end if
+        
+        if ( l_stats_samp ) then
+          term_wp2rtp_explicit = zero
+          term_wp2thlp_explicit = zero
+        end if
+
+        ! The <w'r_t'>, <w'thl'>, <w'sclr'> turbulent advection terms are
+        ! entirely implicit.  Set the RHS turbulent advection terms to 0
+        rhs_ta_wprtp = zero
+        rhs_ta_wpthlp = zero
+        rhs_ta_wpsclrp = zero
+        
+        if ( l_predict_upwp_vpwp ) then
+            
+          ! Predict <u> and <u'w'>, as well as <v> and <v'w'>.
+          ! These terms are equal to the <w'r_t'> terms as well in this case
+          lhs_ta_wpup = lhs_ta_wprtp
+          lhs_ta_wpvp = lhs_ta_wprtp
+          
+          ! The <w'u'> and <w'v'> turbulent advection terms are entirely
+          ! implicit.  Set the RHS turbulent advection terms to 0
+          rhs_ta_wpup = zero
+          rhs_ta_wpvp = zero
+
+        endif  
+
       endif ! iiPDF_type
 
     endif ! l_explicit_turbulent_adv_xpyp
@@ -2352,7 +2431,8 @@ module advance_xm_wpxp_module
 
        ! Predict <u> and <u'w'>, as well as <v> and <v'w'>.
        ! Currently, this requires the ADG1 PDF with implicit turbulent advection.
-       ! l_explicit_turbulent_adv_wpxp = false and iiPDF_type == iiPDF_ADG1
+       ! l_explicit_turbulent_adv_wpxp = false
+       ! and ( iiPDF_type == iiPDF_ADG1 .or. iiPDF_type == iiPDF_new_hybrid )
 
        ! Coriolis term for <u> and <v>
        if ( .not. l_implemented ) then
