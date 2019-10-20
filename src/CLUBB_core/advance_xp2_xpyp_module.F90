@@ -2600,12 +2600,13 @@ module advance_xp2_xpyp_module
       iterm_wprtpthlp_explicit
       
     use stats_type_utilities, only: & 
-      stat_update_var   ! Procedure(s)
+        stat_update_var   ! Procedure(s)
       
     use pdf_closure_module, only: &
-      iiPDF_ADG1, & ! Variable(s)
-      iiPDF_new,  &
-      iiPDF_type
+        iiPDF_ADG1,       & ! Variable(s)
+        iiPDF_new,        &
+        iiPDF_new_hybrid, &
+        iiPDF_type
       
     implicit none    
     
