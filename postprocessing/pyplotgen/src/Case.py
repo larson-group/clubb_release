@@ -61,7 +61,7 @@ class Case:
             sam_file = datareader.__loadNcFile__(case_definition['sam_file'])
 
         e3sm_file = None
-        if e3sm_dir != None and case_definition['e3sm_file'] != None:
+        if e3sm_dir != "" and e3sm_dir != None and case_definition['e3sm_file'] != None:
             datareader = DataReader()
             e3sm_filename = e3sm_dir + case_definition['e3sm_file']
             e3sm_file = datareader.__loadNcFile__(e3sm_filename)
