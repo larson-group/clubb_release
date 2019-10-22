@@ -8,6 +8,7 @@ from warnings import warn
 import numpy as np
 from netCDF4._netCDF4 import Dataset
 
+from config import Case_definitions
 from config import Style_definitions
 from src.DataReader import DataReader, NetCdfVariable
 from src.Line import Line
@@ -24,9 +25,10 @@ class VariableGroup:
     calculating any 'calculated' variables from netcdf
     """
 
-    def __init__(self, ncdf_datasets, case, sam_file=None, coamps_file=None, r408_dataset=None, hoc_dataset=None):
+    def __init__(self, ncdf_datasets, case, sam_file=None, coamps_file=None, r408_dataset=None, hoc_dataset=None,
+                 e3sm_dataset=None):
         """
-        Initialize common Variable group parameters
+        Initialize common VariableGroup parameters
         :param ncdf_datasets: A dictionary or Netcdf dataset containing the data to be plotted
         :param case: An instance of a Case object
         :param sam_file: NetCDF4 Dataset object containing sam ouput
@@ -40,6 +42,7 @@ class VariableGroup:
         self.ncdf_files = ncdf_datasets
         self.case = case
         self.sam_file = sam_file
+        self.e3sm_dataset = e3sm_dataset
         self.coamps_file = coamps_file
         self.r408_dataset = r408_dataset
         self.hoc_dataset = hoc_dataset
@@ -53,7 +56,8 @@ class VariableGroup:
             print("\tProcessing ", variable['aliases'])
 
             # Only add variable if none of the aliases are blacklisted
-            if len(list(set(variable['aliases']).intersection(case.blacklisted_variables))) == 0: #variable['aliases'] not in case.blacklisted_variables:
+            if len(list(set(variable['aliases']).intersection(
+                    case.blacklisted_variables))) == 0:  # variable['aliases'] not in case.blacklisted_variables:
                 # Skip this variable if it's blacklisted for the case
                 self.addVariable(variable)
         self.generatePanels()
@@ -83,11 +87,15 @@ class VariableGroup:
         *hoc_calc*: (optional) A functional reference to a method that calculates a hoc-2005 variable. This is given as the name of the
         function *without* a set of parenthesis () after the name. E.g. self.getThlmHocCalc
 
+        *e3sm_calc*: (optional)
+
         *sam_conv_factor*: (optional) Numeric value to scale a sam variable by. E.g. 1/1000, or 100
 
         *coamps_conv_factor*: (optional) Numeric value to scale a coamps variable by. E.g. 1/1000, or 100
 
         *r408_conv_factor*: (optional) Numeric value to scale a clubb r408 variable by. E.g. 1/1000, or 100
+
+        *e3sm_conv_factor*: (optional) Numeric value to scale an e3sm variable by. E.g. 1/1000, or 100
 
         *type*: (optional) Override the default type 'profile' with either 'budget' or 'timeseries'
 
@@ -178,6 +186,13 @@ class VariableGroup:
         if 'hoc_conv_factor' in variable_def_dict.keys():
             hoc_conv_factor = variable_def_dict['hoc_conv_factor']
 
+        e3sm_dataset = self.e3sm_dataset
+        e3sm_conv_factor = 1
+        if 'e3sm_calc' in variable_def_dict.keys():
+            e3sm_dataset = None  # don't try to autoplot e3sm if e3sm is a calculated value
+        if 'e3sm_conv_factor' in variable_def_dict.keys():
+            e3sm_conv_factor = variable_def_dict['e3sm_conv_factor']
+
         if 'lines' in variable_def_dict.keys():
             lines = variable_def_dict['lines']
         panel_type = self.defualt_panel_type
@@ -189,31 +204,44 @@ class VariableGroup:
 
         all_lines = []
         if sam_file is not None:
-            all_lines.extend(self.__getVarLines__(aliases, sam_file, conversion_factor=sam_conv_factor, label=Style_definitions.SAM_LABEL,
-                                             line_format=Style_definitions.LES_LINE_STYLE, fill_zeros = fill_zeros, override_panel_type=panel_type,
-                                             fallback_func=fallback, lines=lines))
+            all_lines.extend(self.__getVarLines__(aliases, sam_file, conversion_factor=sam_conv_factor,
+                                                  label=Style_definitions.SAM_LABEL,
+                                                  line_format=Style_definitions.LES_LINE_STYLE, fill_zeros=fill_zeros,
+                                                  override_panel_type=panel_type,
+                                                  fallback_func=fallback, lines=lines))
 
         if coamps_file is not None:
-            all_lines.extend(self.__getVarLines__(aliases, coamps_file, conversion_factor=coamps_conv_factor,label=Style_definitions.COAMPS_LABEL,
-                                                line_format=Style_definitions.LES_LINE_STYLE, fill_zeros = fill_zeros,override_panel_type=panel_type,
-                                                fallback_func=fallback, lines=lines))
+            all_lines.extend(self.__getVarLines__(aliases, coamps_file, conversion_factor=coamps_conv_factor,
+                                                  label=Style_definitions.COAMPS_LABEL,
+                                                  line_format=Style_definitions.LES_LINE_STYLE, fill_zeros=fill_zeros,
+                                                  override_panel_type=panel_type,
+                                                  fallback_func=fallback, lines=lines))
 
         if r408_dataset is not None:
             all_lines.extend(self.__getVarLines__(aliases, r408_dataset, conversion_factor=r408_conv_factor,
-                                                  label=Style_definitions.GOLAZ_LABEL,line_format=Style_definitions.GOLAZ_BEST_R408_LINE_STYLE, fill_zeros = fill_zeros,
+                                                  label=Style_definitions.GOLAZ_LABEL,
+                                                  line_format=Style_definitions.GOLAZ_BEST_R408_LINE_STYLE,
+                                                  fill_zeros=fill_zeros,
                                                   override_panel_type=panel_type, fallback_func=fallback, lines=lines))
 
         if hoc_dataset is not None:
             all_lines.extend(self.__getVarLines__(aliases, hoc_dataset, conversion_factor=hoc_conv_factor,
-                                                  label=Style_definitions.HOC_LABEL,line_format=Style_definitions.HOC_LINE_STYLE, fill_zeros = fill_zeros,
+                                                  label=Style_definitions.HOC_LABEL,
+                                                  line_format=Style_definitions.HOC_LINE_STYLE, fill_zeros=fill_zeros,
                                                   override_panel_type=panel_type, fallback_func=fallback, lines=lines))
+        if e3sm_dataset is not None:
+            all_lines.extend(self.__getVarLines__(aliases, e3sm_dataset, conversion_factor=e3sm_conv_factor,
+                                                  label=Style_definitions.E3SM_LABEL,
+                                                  line_format=Style_definitions.E3SM_LINE_STYLE, fill_zeros=fill_zeros,
+                                                  override_panel_type=panel_type, fallback_func=fallback, lines=lines))
+
         num_folders_plotted = 0
         for ncdf_files_subfolder in self.ncdf_files:
             datasets = self.ncdf_files[ncdf_files_subfolder]
             label = os.path.basename(ncdf_files_subfolder)
             if num_folders_plotted < len(Style_definitions.CLUBB_LABEL_OVERRIDE):
                 label = Style_definitions.CLUBB_LABEL_OVERRIDE[num_folders_plotted]
-            all_lines.extend(self.__getVarLines__(aliases, datasets, label=label, fill_zeros = fill_zeros,
+            all_lines.extend(self.__getVarLines__(aliases, datasets, label=label, fill_zeros=fill_zeros,
                                                   override_panel_type=panel_type, fallback_func=fallback, lines=lines))
             num_folders_plotted += 1
 
@@ -228,23 +256,33 @@ class VariableGroup:
                 variable_def_dict['title'] = imported_title
         if 'axis_title' not in variable_def_dict.keys():
             if panel_type == Panel.TYPE_BUDGET:
-                variable_def_dict['axis_title'] = "["+data_reader.__getUnits__(first_input_datasets, clubb_name)+"]"
+                variable_def_dict['axis_title'] = "[" + data_reader.__getUnits__(first_input_datasets, clubb_name) + "]"
             else:
                 imported_axis_title = data_reader.getAxisTitle(first_input_datasets, clubb_name)
                 variable_def_dict['axis_title'] = imported_axis_title
 
-        if 'sam_calc' in variable_def_dict.keys() and self.sam_file is not None and data_reader.getNcdfSourceModel(self.sam_file) == 'sam':
+        if 'sam_calc' in variable_def_dict.keys() and self.sam_file is not None and data_reader.getNcdfSourceModel(
+                self.sam_file) == 'sam':
             samplot_data, z = variable_def_dict['sam_calc']()
-            samplot = Line(samplot_data, z, line_format=Style_definitions.LES_LINE_STYLE, label=Style_definitions.SAM_LABEL)
+            samplot = Line(samplot_data, z, line_format=Style_definitions.LES_LINE_STYLE,
+                           label=Style_definitions.SAM_LABEL)
             variable_def_dict['plots'].append(samplot)
 
-        if 'coamps_calc' in variable_def_dict.keys() and self.coamps_file is not None and data_reader.getNcdfSourceModel(self.coamps_file) == 'coamps':
+        if 'coamps_calc' in variable_def_dict.keys() and self.coamps_file is not None and data_reader.getNcdfSourceModel(
+                self.coamps_file) == 'coamps':
             coampsplot_data, z = variable_def_dict['coamps_calc']()
-            coampsplot = Line(coampsplot_data, z, line_format=Style_definitions.LES_LINE_STYLE, label=Style_definitions.COAMPS_LABEL)
+            coampsplot = Line(coampsplot_data, z, line_format=Style_definitions.LES_LINE_STYLE,
+                              label=Style_definitions.COAMPS_LABEL)
             variable_def_dict['plots'].append(coampsplot)
 
-        self.variables.append(variable_def_dict)
+        if 'e3sm_calc' in variable_def_dict.keys() and self.e3sm_dataset is not None and data_reader.getNcdfSourceModel(
+                self.e3sm_dataset) == 'e3sm':
+            e3smplot_data, z = variable_def_dict['e3sm_calc']()
+            e3smplot = Line(e3smplot_data, z, line_format=Style_definitions.E3SM_LINE_STYLE,
+                           label=Style_definitions.E3SM_LABEL)
+            variable_def_dict['plots'].append(e3smplot)
 
+        self.variables.append(variable_def_dict)
 
     def generatePanels(self):
         """
@@ -271,18 +309,24 @@ class VariableGroup:
         VarnameConversions.py. If a SAM variable needs to be calculated (uses an equation) then it will have
         to be created within that variable group's dataset and not here.
 
-        :param varname: str name of the clubb variable to be plotted, case sensitive
+        :param aliases: list of strings. Each string is the name of the variable to be plotted, case sensitive
         :param ncdf_datasets: List of Dataset objects containing clubb or sam netcdf data
         :param legend_label: Label to give the base-plotAll on the legend. This is normally Style_definitions.CLUBB_LABEL, but not provided as default to help avoid debugging confusion.
         :param line_format: Line formatting string used by matplotlib's PyPlot
         :param avg_axis: Axis over which to average values. 0 - time average, 1 - height average
         :param override_panel_type: Override the VariableGroup's default panel type
-        :param start_time: Beginning period of the averaging interval. Give a time VALUE, e.g. 240
-        :param end_time: Ending period of the averaging interval. Give a time VALUE, e.g. 120
-        :param sam_file: Dataset object containing SAM plotAll data
+        :param fallback_func: If pyplotgen fails to find a variable by any of its aliases, this function will be called
+            (if the fuction is provided) as a second attempt at getting the variable. fallback_func takes in a function
+            as its data type (i.e. functional programming) and expects it to return data in the format (dependent_data, independent_data)
+            where the data is a list of numeric values.
+        :param fill_zeros: If a variable can't be found via it's aliases and any fallback or calc functions defined for that variable have failed,
+        fill_zeros is an optional last resort to simply use a list of 0s in place of the variable for calculations.
+        :param lines: Some plots require many lines to be plotted, such as budget plots. The lines parameter allows
+        someone to write a dictionary containing a description of each line that needs to be plotted.
+        For information on how to format the lines parameter, please see the config/VariableGroupBaseBudgets.py file and docs.
         :param conversion_factor: A multiplying factor used to scale clubb output. Defaults to 1.
-        :param sam_conv_factor: A multiplying factor used to scale sam output. Defaults to 1.
-        :return: A list of Line objects containing clubb and (if requested) sam data. Returns None if requested variable is not found.
+        :return: A list of Line objects containing model data from whatever models were passed in.
+        Returns None if requested variable is not found.
         """
         panel_type = self.defualt_panel_type
         if override_panel_type is not None:
@@ -297,22 +341,26 @@ class VariableGroup:
                 if varname not in dataset.variables.keys():
                     continue  # Skip loop if varname isn't in the dataset, this avoids some crashes
                 if panel_type is Panel.TYPE_PROFILE:
-                    line = self.__get_profile_line__(varname, dataset, label, line_format, conversion_factor, avg_axis, fill_zeros)
+                    line = self.__get_profile_line__(varname, dataset, label, line_format, conversion_factor, avg_axis,
+                                                     fill_zeros)
                     break
                 elif panel_type is Panel.TYPE_BUDGET:
                     # for overline in lines:
-                        if varname in dataset.variables.keys():
-                            budget_lines = self.__get_budget_lines__(lines, dataset, fill_zeros, label, line_format)
-                            all_lines.extend(budget_lines)
+                    if varname in dataset.variables.keys():
+                        budget_lines = self.__get_budget_lines__(lines, dataset, fill_zeros, label, line_format)
+                        all_lines.extend(budget_lines)
                 elif panel_type is Panel.TYPE_TIMESERIES:
-                    line = self.__get_timeseries_line__(varname, dataset, self.end_time, conversion_factor, label, line_format, fill_zeros)
+                    line = self.__get_timeseries_line__(varname, dataset, self.end_time, conversion_factor, label,
+                                                        line_format, fill_zeros)
                 else:
-                    raise ValueError('Invalid panel type ' + panel_type + '. Valid options are profile, budget, timeseries')
+                    raise ValueError(
+                        'Invalid panel type ' + panel_type + '. Valid options are profile, budget, timeseries')
         if line is None and panel_type != Panel.TYPE_BUDGET and fill_zeros is False:
             datareader = DataReader()
             src_model = datareader.getNcdfSourceModel(dataset)
-            print("\tFailed to find variable " + str(aliases) + " in " + src_model + " output for " + " case " + str(self.casename) +
-                 ". Attempting to use fallback function.")
+            print("\tFailed to find variable " + str(aliases) + " in " + src_model + " output for " + " case " + str(
+                self.casename) +
+                  ". Attempting to use fallback function.")
             line = self.__getVarDataFromFallback__(fallback_func, aliases, ncdf_datasets, label, line_format)
         if panel_type != Panel.TYPE_BUDGET and line is not None:
             all_lines.append(line)
@@ -321,17 +369,29 @@ class VariableGroup:
     def __get_profile_line__(self, varname, dataset, label, line_format, conversion_factor, avg_axis, fill_zeros):
         """
         Assumes variable can be plotted as a profile and returns a Line object
-        representing the given variable for a profile plot. 
-        
-        :param variable: 
+        representing the given variable for a profile plot. Profile plots are plots that show Height vs Varname
+
+        :param varname: The name of the variable as a string
+        :param dataset: NetCdf4 Dataset object containing the model output being plotted
+        :param label: This is the name that will be shown on the legend for this line
+        :param line_format: The pyplot line formated string representing how this line.
+        Recommended value: emtpy string ""
+        :param conversion_factor: This is a numerical value that will be multiplied element-wise to the variable. It's useful for doing
+        basic model to model conversions, e.g. SAM -> CLUBB.
+        :param avg_axis: Values will be averaged along this axis. This is basically only used for time-averaging profile plots.
+        :param fill_zeros: If a variable can't be found via it's aliases and any fallback or calc functions defined for that variable have failed,
+        fill_zeros is an optional last resort to simply use a list of 0s in place of the variable for calculations.
         :return: Line object representing the given variable for a profile plot
         """
-        variable = NetCdfVariable(varname, dataset, start_time=self.start_time, end_time=self.end_time, avg_axis=avg_axis,
+        variable = NetCdfVariable(varname, dataset, start_time=self.start_time, end_time=self.end_time,
+                                  avg_axis=avg_axis,
                                   conversion_factor=conversion_factor, fill_zeros=fill_zeros)
         if 'altitude' in dataset.variables.keys():
             z = NetCdfVariable('altitude', dataset, start_time=self.start_time, end_time=self.end_time)
         elif 'z' in dataset.variables.keys():
             z = NetCdfVariable('z', dataset, start_time=self.start_time, end_time=self.end_time)
+        elif 'Z3' in dataset.variables.keys():
+            z = NetCdfVariable('Z3', dataset, start_time=self.start_time, end_time=self.end_time)
         else:
             z = NetCdfVariable('lev', dataset, start_time=self.start_time, end_time=self.end_time)
 
@@ -343,13 +403,21 @@ class VariableGroup:
     def __get_timeseries_line__(self, varname, dataset, end_time, conversion_factor, label, line_format, fill_zeros):
         """
 
-        :param variable:
-        :param dataset:
-        :param label:
-        :param line_format:
-        :return:
+        :param varname: The name of the variable as a string
+        :param dataset: NetCdf4 Dataset object containing the model output being plotted
+        :param end_time: This is the last time value to plot. Timeseries plots always start at 0.
+        :param label: This is the name that will be shown on the legend for this line
+        :param line_format: The pyplot line formated string representing how this line.
+        Recommended value: emtpy string ""
+        :param conversion_factor: This is a numerical value that will be multiplied element-wise to the variable. It's useful for doing
+        basic model to model conversions, e.g. SAM -> CLUBB.
+        :param fill_zeros: If a variable can't be found via it's aliases and any fallback or calc functions defined for that variable have failed,
+        fill_zeros is an optional last resort to simply use a list of 0s in place of the variable for calculations.
+        :return: Line object representing the given variable for a timeseries plot
         """
-        variable = NetCdfVariable(varname, dataset, start_time=0, end_time=end_time, avg_axis=1, conversion_factor=conversion_factor, fill_zeros=fill_zeros)
+
+        variable = NetCdfVariable(varname, dataset, start_time=0, end_time=end_time, avg_axis=1,
+                                  conversion_factor=conversion_factor, fill_zeros=fill_zeros)
         time = NetCdfVariable('time', dataset)
         variable.constrain(0, variable.end_time, data=time.data)
         time.constrain(0, variable.end_time)
@@ -370,14 +438,16 @@ class VariableGroup:
             varnames = line_definition['aliases']
             for varname in varnames:
                 if varname in dataset.variables.keys():
-                    variable = NetCdfVariable(varname, dataset, start_time=self.start_time, end_time=self.end_time, fill_zeros=fill_zeros)
+                    variable = NetCdfVariable(varname, dataset, start_time=self.start_time, end_time=self.end_time,
+                                              fill_zeros=fill_zeros)
                     if 'altitude' in dataset.variables.keys():
                         z = NetCdfVariable('altitude', dataset, start_time=self.start_time, end_time=self.end_time)
                     else:
                         z = NetCdfVariable('z', dataset, start_time=self.start_time, end_time=self.end_time)
                     variable.constrain(self.height_min_value, self.height_max_value, data=z.data)
                     z.constrain(self.height_min_value, self.height_max_value)
-                    line_definition = Line(variable, z, label=line_definition['legend_label'], line_format="")  # uses auto-generating line format
+                    line_definition = Line(variable, z, label=line_definition['legend_label'],
+                                           line_format="")  # uses auto-generating line format
                     output_lines.append(line_definition)
                     line_added = True
                     break
@@ -387,7 +457,8 @@ class VariableGroup:
                       ". Attempting to use fallback function.")
                 if 'fallback_func' in line_definition.keys():
                     fallback = line_definition['fallback_func']
-                    fallback_output = self.__getVarDataFromFallback__(fallback, varname, {'budget':dataset}, label, line_format)
+                    fallback_output = self.__getVarDataFromFallback__(fallback, varname, {'budget': dataset}, label,
+                                                                      line_format)
                     fallback_output = Line(fallback_output.x, z, line_format="", label=line_definition['legend_label'])
                     output_lines.append(fallback_output)
                     return output_lines
@@ -418,11 +489,16 @@ class VariableGroup:
                 varline = Line(varline, z, line_format=line_format, label=label)
                 print("\tFallback for ", varname, " successful")
                 return varline
+            except ValueError as e:
+                # variable wasn't contained in dataset, try next dataset
+                continue
             except TypeError as e:
                 warn("Fallback failed for variable " + str(varname) + ". Skipping it.\n" + str(e))
                 return None
+        warn("Fallback failed for variable " + str(varname) + ". Skipping it.\n")
+        return None
 
-    def getVarForCalculations(self, varname, datasets, conversion_factor = 1, fill_zeros = False):
+    def getVarForCalculations(self, varname, datasets, conversion_factor=1, fill_zeros=False):
         """
         This function is used within a fallback function to get the data of a certain variable,
         constrained between a min/max height.
@@ -437,10 +513,11 @@ class VariableGroup:
         if isinstance(datasets, Dataset):
             datasets = {'auto': datasets}
         for dataset in datasets.values():
-            z_ncdf = NetCdfVariable(['z','altitude','lev'], dataset, 1)
-            var_ncdf = NetCdfVariable(varname, dataset, conversion_factor, start_time=self.start_time, end_time=self.end_time, fill_zeros=fill_zeros)
+            z_ncdf = NetCdfVariable(Case_definitions.HEIGHT_VAR_NAMES, dataset, 1)
+            var_ncdf = NetCdfVariable(varname, dataset, conversion_factor, start_time=self.start_time,
+                                      end_time=self.end_time, fill_zeros=fill_zeros)
             var_ncdf.constrain(self.height_min_value, self.height_max_value, data=z_ncdf.data)
             var_data = var_ncdf.data
-            if np.amax(var_ncdf.data) != 0:
-                break # Avoid overwriting vardata with auto-filled zeros
+            if np.amax(var_data) != 0:
+                break  # Avoid overwriting vardata with auto-filled zeros
         return var_data

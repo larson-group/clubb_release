@@ -32,11 +32,13 @@ STYLE_ROTATION = ['-', '--', ':', '-.','-', '--', ':', '-.','-', '--']
 LES_LINE_STYLE = "k-"
 GOLAZ_BEST_R408_LINE_STYLE = "g-"
 HOC_LINE_STYLE = 'm-.'
+E3SM_LINE_STYLE = 'c-'
 
 # Line Thicknesses
 CLUBB_LINE_THICKNESS = 2
 LES_LINE_THICKNESS = 6
 ARCHIVED_CLUBB_LINE_THICKNESS = 4
+E3SM_LINE_THICKNESS = 4
 THIN_LINE_THICKNESS = 1  # Used if --thin-lines is passed, overrides every other size
 
 # Line Labels
@@ -50,6 +52,7 @@ SAM_LABEL = "SAM-LES"
 COAMPS_LABEL = "COAMPS-LES"
 GOLAZ_LABEL = "CLUBB r408 'best ever'"
 HOC_LABEL = 'HOC 12/17/2005'
+E3SM_LABEL = 'E3SM'
 
 # Text styles
 # -------------

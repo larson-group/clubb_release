@@ -13,7 +13,8 @@ class VariableGroupBase(VariableGroup):
     of panels.
     """
 
-    def __init__(self, ncdf_datasets, case, sam_file=None, coamps_file=None, r408_dataset=None, hoc_dataset=None):
+    def __init__(self, ncdf_datasets, case, sam_file=None, coamps_file=None, r408_dataset=None, hoc_dataset=None,
+                 e3sm_dataset=None):
         """
 
         :param ncdf_datasets:
@@ -59,6 +60,7 @@ class VariableGroupBase(VariableGroup):
 
             # TODO SAM output for these variables
             # TODO validate coamps output
+            # TODO Fix output for these vars in some cases
             {'aliases': ['rc_coef_zm * wprcp'],
              'fallback_func': self.get_rc_coef_zm_X_wprcp_clubb_line,
              'sam_calc': self.get_rc_coef_zm_X_wprcp_sam_calc,
@@ -83,7 +85,7 @@ class VariableGroupBase(VariableGroup):
 
             # TODO corr chi 2's
         ]
-        super().__init__(ncdf_datasets, case, sam_file=sam_file, coamps_file=coamps_file, r408_dataset=r408_dataset, hoc_dataset=hoc_dataset)
+        super().__init__(ncdf_datasets, case, sam_file=sam_file, coamps_file=coamps_file, r408_dataset=r408_dataset, hoc_dataset=hoc_dataset, e3sm_dataset = e3sm_dataset)
 
     def getThlmSamCalc(self, dataset_override = None):
         """
@@ -100,6 +102,20 @@ class VariableGroupBase(VariableGroup):
 
         thlm = thetal + (2500.4 * (theta / tabs) * (qi / 1000))
         return thlm, z
+
+    # def getThlmE3smCalc(self, dataset_override = None):
+    #     """
+    #     Calculates thlm values from sam output using
+    #     the following equation
+    #     (THETAL + 2500.4.*(THETA./TABS).*(QI./1000))
+    #     :return: requested variable data in the form of a list. Returned data is already cropped to the appropriate min,max indices
+    #     """
+    #     z = self.getVarForCalculations('Z3', self.e3sm_dataset)
+    #     thlm = self.getVarForCalculations('THETAL', self.e3sm_dataset)
+    #
+    #     thlm = thlm - 650.0
+    #     return thlm, z
+
 
     def getRtmSamCalc(self, dataset_override = None):
         """

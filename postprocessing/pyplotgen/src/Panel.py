@@ -55,29 +55,29 @@ class Panel:
         else:
             raise ValueError('Invalid panel type ' + self.panel_type + '. Valid options are profile, budget, timeseries')
 
-    def __getStartEndIndex__(self, data, start_value, end_value):
-        """
-        Get the list floor index that contains the value to start graphing at and the
-        ceiling index that contains the end value to stop graphing at
-
-        If neither are found, returns the entire array back
-        :param start_value: The first value to be graphed (may return indexes to values smaller than this)
-        :param end_value: The last value that needs to be graphed (may return indexes to values larger than this)
-        :return: (tuple) start_idx, end_idx   which contains the starting and ending index representing the start and end time passed into the function
-        :author: Nicolas Strike
-        """
-        start_idx = 0
-        end_idx = len(data) -1
-        for i in range(0,len(data)):
-            # Check for start index
-            test_value = data[i]
-            if test_value <= start_value and test_value > data[start_idx]:
-                start_idx = i
-            # Check for end index
-            if test_value >= end_value and test_value < data[end_idx]:
-                end_idx = i
-
-        return start_idx, end_idx
+    # def __getStartEndIndex__(self, data, start_value, end_value):
+    #     """
+    #     Get the list floor index that contains the value to start graphing at and the
+    #     ceiling index that contains the end value to stop graphing at
+    #
+    #     If neither are found, returns the entire array back
+    #     :param start_value: The first value to be graphed (may return indexes to values smaller than this)
+    #     :param end_value: The last value that needs to be graphed (may return indexes to values larger than this)
+    #     :return: (tuple) start_idx, end_idx   which contains the starting and ending index representing the start and end time passed into the function
+    #     :author: Nicolas Strike
+    #     """
+    #     start_idx = 0
+    #     end_idx = len(data) -1
+    #     for i in range(0,len(data)):
+    #         # Check for start index
+    #         test_value = data[i]
+    #         if test_value <= start_value and test_value > data[start_idx]:
+    #             start_idx = i
+    #         # Check for end index
+    #         if test_value >= end_value and test_value < data[end_idx]:
+    #             end_idx = i
+    #
+    #     return start_idx, end_idx
 
     # TODO add 'output.txt' config file to plots
     def plot(self, output_folder, casename, replace_images = False, no_legends = True, thin_lines = False, alphabetic_id=""):
@@ -129,6 +129,8 @@ class Panel:
                 linewidth = Style_definitions.LES_LINE_THICKNESS
             elif var.line_format == Style_definitions.GOLAZ_BEST_R408_LINE_STYLE:
                 linewidth = Style_definitions.ARCHIVED_CLUBB_LINE_THICKNESS
+            elif var.line_format == Style_definitions.E3SM_LINE_STYLE:
+                linewidth = Style_definitions.E3SM_LINE_THICKNESS
             else:
                 linewidth = Style_definitions.CLUBB_LINE_THICKNESS
             if thin_lines:

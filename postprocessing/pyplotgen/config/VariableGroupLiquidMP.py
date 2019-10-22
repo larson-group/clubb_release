@@ -8,7 +8,8 @@ from src.VariableGroup import VariableGroup
 
 class VariableGroupLiquidMP(VariableGroup):
 
-    def __init__(self, ncdf_datasets, case, sam_file=None, coamps_file=None, r408_dataset=None, hoc_dataset=None):
+    def __init__(self, ncdf_datasets, case, sam_file=None, coamps_file=None, r408_dataset=None, hoc_dataset=None,
+                 e3sm_dataset=None):
         """
 
         :param ncdf_datasets:
@@ -30,7 +31,7 @@ class VariableGroupLiquidMP(VariableGroup):
         ]
         #rain_rate_sfc vs time
 
-        super().__init__(ncdf_datasets, case, sam_file=sam_file, coamps_file=coamps_file, r408_dataset=r408_dataset, hoc_dataset=hoc_dataset)
+        super().__init__(ncdf_datasets, case, sam_file=sam_file, coamps_file=coamps_file, r408_dataset=r408_dataset, hoc_dataset=hoc_dataset, e3sm_dataset = e3sm_dataset)
 
 
     def getNcmSamLine(self):
