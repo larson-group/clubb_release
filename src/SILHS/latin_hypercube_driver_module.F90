@@ -82,7 +82,17 @@ module latin_hypercube_driver_module
       stat_rknd
 
     use parameters_silhs, only: &
-      l_lh_importance_sampling
+      cluster_allocation_strategy, &
+      l_lh_importance_sampling, &
+      l_Lscale_vert_avg, &
+      l_lh_straight_mc, &
+      l_lh_clustered_sampling, &
+      l_rcm_in_cloud_k_lh_start, &
+      l_random_k_lh_start, &
+      l_max_overlap_in_cloud, &
+      l_lh_limit_weights, &
+      l_lh_var_frac, &
+      l_lh_normalize_weights
 
     use error_code, only: &
         clubb_at_least_debug_level  ! Procedure
@@ -182,14 +192,19 @@ module latin_hypercube_driver_module
 
     ! Compute k_lh_start, the starting vertical grid level 
     !   for SILHS sampling
-    k_lh_start = compute_k_lh_start( nz, rcm, pdf_params )
+    k_lh_start = compute_k_lh_start( nz, rcm, pdf_params, &
+                                     l_rcm_in_cloud_k_lh_start, &
+                                     l_random_k_lh_start )
     if ( .not. l_calc_weights_all_levs_itime ) then
     
       ! Generate a uniformly distributed sample at k_lh_start
       call generate_uniform_sample_at_k_lh_start &
            ( iter, pdf_dim, d_uniform_extra, num_samples, sequence_length,          & ! Intent(in)
-            pdf_params%cloud_frac_1(k_lh_start), pdf_params%cloud_frac_2(k_lh_start),   & ! " "
-            pdf_params%mixt_frac(k_lh_start), hydromet_pdf_params(k_lh_start),          & ! " "
+             pdf_params%cloud_frac_1(k_lh_start), pdf_params%cloud_frac_2(k_lh_start),   & ! " "
+             pdf_params%mixt_frac(k_lh_start), hydromet_pdf_params(k_lh_start),          & ! " "
+             cluster_allocation_strategy, l_lh_importance_sampling, l_lh_straight_mc,    & ! " "
+             l_lh_clustered_sampling, l_lh_limit_weights, l_lh_var_frac,                 & ! " "
+             l_lh_normalize_weights,                                                     & ! " "
              X_u_all_levs(k_lh_start,:,:), lh_sample_point_weights(1,:)  ) ! Intent(out)
                           
       forall ( k = 2:nz )
@@ -201,6 +216,7 @@ module latin_hypercube_driver_module
       call vertical_overlap_driver &
            ( nz, pdf_dim, d_uniform_extra, num_samples, &     ! Intent(in)
              k_lh_start, delta_zm, rcm, Lscale, rho_ds_zt, &      ! Intent(in)
+             l_Lscale_vert_avg, l_max_overlap_in_cloud, &         ! Intent(in)
              X_u_all_levs )                                       ! Intent(inout)
     
     end if
@@ -211,10 +227,13 @@ module latin_hypercube_driver_module
         ! moved inside the loop to apply importance sampling for each layer
         ! 
         call generate_uniform_sample_at_k_lh_start &
-          ( iter, pdf_dim, d_uniform_extra, num_samples, sequence_length, & ! Intent(in)
-            pdf_params%cloud_frac_1(k), pdf_params%cloud_frac_2(k), &       ! Intent(in)
-            pdf_params%mixt_frac(k), hydromet_pdf_params(k), &              ! Intent(in)
-            X_u_all_levs(k,:,:), lh_sample_point_weights(k,:) )             ! Intent(out)
+          ( iter, pdf_dim, d_uniform_extra, num_samples, sequence_length, &            ! Intent(in)
+            pdf_params%cloud_frac_1(k), pdf_params%cloud_frac_2(k), &                  ! Intent(in)
+            pdf_params%mixt_frac(k), hydromet_pdf_params(k), &                         ! Intent(in)
+            cluster_allocation_strategy, l_lh_importance_sampling, l_lh_straight_mc, & ! Intent(in)
+            l_lh_clustered_sampling, l_lh_limit_weights, l_lh_var_frac, &              ! Intent(in)
+            l_lh_normalize_weights, &                                                  ! Intent(in)
+            X_u_all_levs(k,:,:), lh_sample_point_weights(k,:) )                        ! Intent(out)
       end if
            
       ! Determine mixture component for all levels
@@ -334,6 +353,9 @@ module latin_hypercube_driver_module
              ( iter, pdf_dim, d_uniform_extra, num_samples, sequence_length, &
                cloud_frac_1, cloud_frac_2, &
                mixt_frac, hydromet_pdf_params, &
+               cluster_allocation_strategy, l_lh_importance_sampling, l_lh_straight_mc, &
+               l_lh_clustered_sampling, l_lh_limit_weights, l_lh_var_frac, &
+               l_lh_normalize_weights, &
                X_u_k_lh_start, lh_sample_point_weights )
 
   ! Description:
@@ -351,10 +373,6 @@ module latin_hypercube_driver_module
 
     use constants_clubb, only: &
       one, fstderr                ! Constant(s)
-
-    use parameters_silhs, only: &
-      l_lh_straight_mc, &         ! Variable(s)
-      l_lh_importance_sampling
 
     use hydromet_pdf_parameter_module, only: &
       hydromet_pdf_parameter      ! Type
@@ -396,6 +414,17 @@ module latin_hypercube_driver_module
 
     type(hydromet_pdf_parameter), intent(in) :: &
       hydromet_pdf_params
+
+    integer, intent(in) :: &
+      cluster_allocation_strategy ! Strategy for distributing sample points
+
+    logical, intent(in) :: &
+      l_lh_importance_sampling, & ! Do importance sampling (SILHS)
+      l_lh_straight_mc, &         ! Do not apply LH or importance sampling at all (SILHS)
+      l_lh_clustered_sampling, &  ! Use prescribed probability sampling with clusters (SILHS)
+      l_lh_limit_weights, &       ! Ensure weights stay under a given value
+      l_lh_var_frac, &            ! Prescribe variance fractions
+      l_lh_normalize_weights      ! Normalize weights to sum to num_samples
 
     ! Output Variables
     real( kind = core_rknd ), dimension(num_samples,pdf_dim+d_uniform_extra), intent(out) :: &
@@ -453,13 +482,15 @@ module latin_hypercube_driver_module
         else ! .not. l_lh_old_cloud_weighted
 
           call importance_sampling_driver &
-               ( num_samples,                       & ! In
-                 cloud_frac_1, cloud_frac_2,        & ! In
-                 mixt_frac, hydromet_pdf_params,    & ! In
-                 X_u_k_lh_start(:,iiPDF_chi),       & ! In/Out
-                 X_u_k_lh_start(:,pdf_dim+1),       & ! In/Out
-                 X_u_k_lh_start(:,pdf_dim+2),       & ! In/Out
-                 lh_sample_point_weights )            ! Out
+               ( num_samples,                                               & ! In
+                 cloud_frac_1, cloud_frac_2,                                & ! In
+                 mixt_frac, hydromet_pdf_params,                            & ! In
+                 cluster_allocation_strategy, l_lh_clustered_sampling,      & ! In
+                 l_lh_limit_weights, l_lh_var_frac, l_lh_normalize_weights, & ! In
+                 X_u_k_lh_start(:,iiPDF_chi),                               & ! In/Out
+                 X_u_k_lh_start(:,pdf_dim+1),                               & ! In/Out
+                 X_u_k_lh_start(:,pdf_dim+2),                               & ! In/Out
+                 lh_sample_point_weights )                                    ! Out
 
         end if ! l_lh_old_cloud_weighted
 
@@ -480,6 +511,7 @@ module latin_hypercube_driver_module
   subroutine vertical_overlap_driver &
              ( nz, pdf_dim, d_uniform_extra, num_samples, &
                k_lh_start, delta_zm, rcm, Lscale, rho_ds_zt, &
+               l_Lscale_vert_avg, l_max_overlap_in_cloud, &
                X_u_all_levs )
 
   ! Description:
@@ -505,9 +537,6 @@ module latin_hypercube_driver_module
     use array_index, only: &
       iiPDF_chi      ! Variable
 
-    use parameters_silhs, only: &
-      l_Lscale_vert_avg  ! Variable
-
     use fill_holes, only: &
       vertical_avg  ! Procedure
 
@@ -529,6 +558,10 @@ module latin_hypercube_driver_module
       rcm,             &  ! Liquid water mixing ratio                         [kg/kg]
       Lscale,          &  ! Turbulent mixing length                           [m]
       rho_ds_zt           ! Dry, static density on thermodynamic levels       [kg/m^3]
+
+    logical, intent(in) :: &
+      l_Lscale_vert_avg, &   ! Vertically average Lscale in SILHS
+      l_max_overlap_in_cloud ! Use maximum vertical overlap in cloud
 
     ! Input/Output Variables
     real( kind = core_rknd ), dimension(nz,num_samples,pdf_dim+d_uniform_extra), &
@@ -557,7 +590,8 @@ module latin_hypercube_driver_module
         Lscale_vert_avg = Lscale 
     end if
 
-    X_vert_corr(1:nz) = compute_vert_corr( nz, delta_zm, Lscale_vert_avg, rcm )
+    X_vert_corr(1:nz) = compute_vert_corr( nz, delta_zm, Lscale_vert_avg, rcm, &
+                                           l_max_overlap_in_cloud )
 
     ! Assertion check for the vertical correlation
     if ( clubb_at_least_debug_level( 1 ) ) then
@@ -608,7 +642,9 @@ module latin_hypercube_driver_module
 !-------------------------------------------------------------------------------
 
 !-----------------------------------------------------------------------
-  function compute_k_lh_start( nz, rcm, pdf_params ) result( k_lh_start )
+  function compute_k_lh_start( nz, rcm, pdf_params, &
+                               l_rcm_in_cloud_k_lh_start, &
+                               l_random_k_lh_start ) result( k_lh_start )
 
   ! Description:
   !   Determines the starting SILHS sample level
@@ -633,10 +669,6 @@ module latin_hypercube_driver_module
     use math_utilities, only: &
       rand_integer_in_range  ! Procedure
 
-    use parameters_silhs, only: &
-      l_rcm_in_cloud_k_lh_start,  &  ! Variable(s)
-      l_random_k_lh_start
-
     implicit none
 
     ! Input Variables
@@ -648,6 +680,10 @@ module latin_hypercube_driver_module
 
     type(pdf_parameter), intent(in) :: &
       pdf_params  ! PDF parameters       [units vary]
+
+    logical, intent(in) :: &
+      l_rcm_in_cloud_k_lh_start, & ! Determine k_lh_start based on maximum within-cloud rcm
+      l_random_k_lh_start          ! k_lh_start found randomly between max rcm and rcm_in_cloud
 
     ! Output Variable
     integer :: &
@@ -1692,7 +1728,8 @@ module latin_hypercube_driver_module
 !-------------------------------------------------------------------------------
 
 !-------------------------------------------------------------------------------
-  function compute_vert_corr( nz, delta_zm, Lscale_vert_avg, rcm ) result( vert_corr )
+  function compute_vert_corr( nz, delta_zm, Lscale_vert_avg, rcm, &
+                              l_max_overlap_in_cloud ) result( vert_corr )
 ! Description:
 !   This function computes the vertical correlation for arbitrary overlap, using
 !   density weighted 3pt averaged Lscale and the difference in height levels
@@ -1709,8 +1746,7 @@ module latin_hypercube_driver_module
       one
 
     use parameters_silhs, only: &
-      l_max_overlap_in_cloud, & ! Variable(s)
-      vert_decorr_coef
+      vert_decorr_coef ! Variable(s)
 
     implicit none
 
@@ -1725,6 +1761,9 @@ module latin_hypercube_driver_module
       delta_zm, &        ! Difference between altitudes    [m]
       Lscale_vert_avg, & ! Vertically averaged Lscale      [m]
       rcm                ! Cloud water mixing ratio        [kg/kg]
+
+    logical, intent(in) :: &
+      l_max_overlap_in_cloud ! Use maximum vertical overlap in cloud
 
     ! Output Variable
     real( kind = core_rknd ), dimension(nz) :: &

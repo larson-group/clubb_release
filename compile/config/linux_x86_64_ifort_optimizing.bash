@@ -36,7 +36,7 @@ WARNINGS="-warn -warn notruncated_source"
 DOUBLE_PRECISION="-real-size 64"
 
 # == NetCDF Location ==
-NETCDF="/usr/local/netcdf-intel64"
+NETCDF="/usr/local/NETCDF-Fortran-4.4.5-ifort"
 
 # == LAPACK libraries ==
 # AMD Core Math Library
@@ -48,7 +48,7 @@ LAPACK="-mkl=sequential"
 # == Linking Flags ==
 # Use -s to strip (no debugging); 
 # Use -L<library path> -l<lib> to link in an external library
-LDFLAGS="-L$NETCDF/lib -lnetcdf $LAPACK"
+LDFLAGS="-L$NETCDF/lib -lnetcdff $LAPACK"
 
 # Preprocessing Directives:
 #   -DNETCDF enables netCDF output
@@ -58,7 +58,7 @@ LDFLAGS="-L$NETCDF/lib -lnetcdf $LAPACK"
 # Define include directories. 
 # Need location of include and *.mod files for the netcdf library
 
-CPPDEFS="-DNETCDF -DCLUBB_REAL_TYPE=8"
+CPPDEFS="-DNETCDF -DCLUBB_REAL_TYPE=8 -DMKL"
 CPPFLAGS="-I$MKLPATH/../../include -I$NETCDF/include"
 
 # == Static library processing ==
