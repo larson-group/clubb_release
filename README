@@ -792,7 +792,7 @@ This method requires Matlab as the plots are generated through Matlab.
 The basic usage below will plot 1 or more (as many as desired) specified
 output directories against other data for comparison.  For more detailed
 information on plotgen, including detailed usage and options see:
-http://www.larson-group.com/twiki/bin/view.pl/Documentation/CarsonDoc/Plotgen3 (Deprecated).
+https://github.com/larson-group/sys_admin/wiki/Plotgen3Usage.
 
 Usage: plotgen output_directory1 (output_directory2) ... directory_for_plots
 

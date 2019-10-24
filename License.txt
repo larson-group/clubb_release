@@ -8,7 +8,7 @@ Thank you for your interest in CLUBB.  We work hard to create a code that implem
 
 3.  You may implement CLUBB as a parameterization in a large-scale host model that has 2 or 3 spatial dimensions without including "CLUBB" in the combined model name, but please acknowledge in presentations and publications that CLUBB has been included as a parameterization. 
 
-4.  You may not provide all or part of CLUBB to anyone without prior permission from Vincent Larson (vlarson@uwm.edu).  If you wish to share CLUBB with your collaborators without seeking permission, please ask your collaborators to register as CLUBB users at http://clubb.larson-group.com and to download CLUBB from there.  
+4.  You may not provide all or part of CLUBB to anyone without prior permission from Vincent Larson (vlarson@uwm.edu).  If you wish to share CLUBB with your collaborators without seeking permission, please ask your collaborators to register as CLUBB users at https://carson.math.uwm.edu/larson-group/clubb_site/ and to download CLUBB from there.  
 
 5.  You may not use CLUBB for commercial purposes unless you receive permission from Vincent Larson.
 
@@ -16,7 +16,7 @@ Thank you for your interest in CLUBB.  We work hard to create a code that implem
 
 7.  CLUBB is provided "as is" and without warranty.
 
-We hope that CLUBB will develop into a community resource.  We encourage users to contribute their CLUBB modifications or extensions to the CLUBB development group.  We will then consider them for inclusion in CLUBB.  Such contributions will benefit all CLUBB users.  We would be pleased to acknowledge contributors and list their CLUBB-related papers on our "About CLUBB" webpage (http://clubb.larson-group.com/about.php) for those contributors who so desire.   
+We hope that CLUBB will develop into a community resource.  We encourage users to contribute their CLUBB modifications or extensions to the CLUBB development group.  We will then consider them for inclusion in CLUBB.  Such contributions will benefit all CLUBB users.  We would be pleased to acknowledge contributors and list their CLUBB-related papers on our "About CLUBB" webpage (https://carson.math.uwm.edu/larson-group/clubb_site/about.html) for those contributors who so desire.   
 
 Thanks so much and best wishes for your research!
 

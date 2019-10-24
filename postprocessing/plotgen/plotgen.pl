@@ -3,7 +3,7 @@
 # Plotgen v3.104
 #
 # Documentation is available here:
-# http://larson-group.com/twiki/bin/view.pl/Documentation/CarsonDoc/Plotgen3
+# https://github.com/larson-group/sys_admin/wiki/Plotgen3
 ###########################################################################
 
 package Plotgen;
