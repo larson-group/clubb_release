@@ -156,7 +156,8 @@ module transform_to_pdf_module
              ! Cloud fraction in the 1st PDF component is 1.
              ! All sample point values of chi must be > 0.
              ! Clip the sample point value of chi to epsilon.
-             X_nl_all_levs(k,sample,iiPDF_chi) = max( X_nl_all_levs(k,sample,iiPDF_chi), epsilon( zero ) )
+             X_nl_all_levs(k,sample,iiPDF_chi) = max( X_nl_all_levs(k,sample,iiPDF_chi), &
+                                                      epsilon( zero ) )
 
           endif ! cloud_frac_1
 
@@ -328,7 +329,6 @@ module transform_to_pdf_module
         end do
       end do
     end do
-
 
     call multiply_Cholesky &
         ( nz, num_samples, pdf_dim, std_normal(:,:,:), & ! In
@@ -560,9 +560,6 @@ module transform_to_pdf_module
     use clubb_precision, only: &
       core_rknd
 
-    use lapack_interfaces, only: &
-      lapack_trmv       ! Procedure
-
     implicit none
 
     ! Parameters
@@ -600,27 +597,26 @@ module transform_to_pdf_module
     real( kind = core_rknd ), dimension(pdf_dim,nz,num_samples) :: &
       Sigma_times_std_normal ! Sigma * std_normal [units vary]
 
-    integer :: i, k, sample
+    integer :: i, j, k, sample
 
     ! --- Begin Code ---
 
-    Sigma_times_std_normal = std_normal ! Copy std_normal into 'x'
-
-
+    Sigma_times_std_normal = 0.0_core_rknd ! Copy std_normal into 'x'
+    
+    ! Compute Sigma_Cholesky * std_normal
     do sample = 1, num_samples
-      
       do k = 1, nz
-
-        ! Call the level 2 BLAS subroutine to multiply std_normal by Sigma_Cholesky, using 
-        ! Lapack routines, strmv for single precision or dtrmv for double precision
-        call lapack_trmv( 'Lower', 'N', 'N', pdf_dim, Sigma_Cholesky(:,:,k,sample), pdf_dim, & ! In
-                          Sigma_times_std_normal(:,k,sample), & ! In/out
-                          incx ) ! In
-                          
+        
+        do  i = 1, pdf_dim
+          do j = 1, i
+            Sigma_times_std_normal(i,k,sample) = Sigma_times_std_normal(i,k,sample) &
+                                       + Sigma_Cholesky(i,j,k,sample) * std_normal(j,k,sample)
+          end do
+        end do
+        
       end do
-      
     end do
-
+    
     
     if ( l_scaled ) then
       
