@@ -5,7 +5,7 @@
 # Plotgen4 is written to be identical from a user standpoint to plotgen3, 
 # except not requiring the use of Matlab.
 # Documentation for plotgen3 is available here until plotgen4 docs are complete:
-# http://larson-group.com/twiki/bin/view.pl/Documentation/CarsonDoc/Plotgen3
+# https://github.com/larson-group/sys_admin/wiki/Plotgen3
 ###########################################################################
 #TODO add imports
 import sys, os, OutputWriter, importlib

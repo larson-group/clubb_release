@@ -97,7 +97,7 @@ Each variable is included within a _VariableGroup_,and each variable group is in
 | Parameter | Description |
 | --- | --- |  
 | *aliases* | A list of names various models refer to this variable as. E.g. ['wprtp', 'WPRTP', 'wpqtp']. This list is to include the variable name for any models that Pyplotgen is plotting. It does not matter what order the variables are in; pyplotgen will search the list from left -> right so more frequent names are _preferred_ to go on the left for efficiency.|
-| *sam_calc*| (optional) A functional reference to a method that calculates a sam variable. This i|s given as the name of the function *without* the () after the name. E.g. `self.getThlmSamLine`
+| *sam_calc*| (optional) A functional reference to a method that calculates a sam variable. This is given as the name of the function *without* the () after the name. E.g. `self.getThlmSamLine` |
 | *coamps_calc* | (optional) A functional reference to a method that calculates a coamps variable. This is given as the name of the function *without* the () after the name. E.g. `self.getThlmCoampsLine`|
 | *sam_conv_factor* | (optional) Numeric value to scale a sam variable by. E.g. `1/1000`, or `100`|
 | *coamps_conv_factor*| (optional) Numeric value to scale a coamps variable by. E.g. `1/1000`, or `100`|

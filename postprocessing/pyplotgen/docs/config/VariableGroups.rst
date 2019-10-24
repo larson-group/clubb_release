@@ -11,74 +11,44 @@ Welcome to PyPlotgen's documentation!
    :caption: Contents:
 
 
-PyPlotgen Case
-===================
-.. automodule:: Case
-   :members:
-
-PyPlotgen Case_definitions
-======================================
-.. automodule:: Case_definitions
-   :members:
-
-PyPlotgen DataReader
-======================================
-.. automodule:: DataReader
-   :members:
-
-PyPlotgen Line
-===================
-.. automodule:: Line
-   :members:
-
-PyPlotgen Panel
-===================
-.. automodule:: Panel
-   :members:
-
-PyPlotgen PyPlotGen
-===================
-.. automodule:: PyPlotGen
-   :members:
-
 PyPlotgen VariableGroup
 ======================================
-.. automodule:: VariableGroup
+.. automodule:: src.VariableGroup
    :members:
 
 PyPlotgen VariableGroupBase
 ======================================
-.. automodule:: VariableGroupBase
+.. automodule:: config.VariableGroupBase
    :members:
 
 PyPlotgen VariableGroupBaseBudgets
 ======================================
-.. automodule:: VariableGroupBaseBudgets
+.. automodule:: config.VariableGroupBaseBudgets
    :members:
 
 PyPlotgen VariableGroupCorrelations
 ======================================
-.. automodule:: VariableGroupCorrelations
+.. automodule:: config.VariableGroupCorrelations
    :members:
 
 PyPlotgen VariableGroupIceMP
 ======================================
-.. automodule:: VariableGroupIceMP
+.. automodule:: config.VariableGroupIceMP
    :members:
 
 PyPlotgen VariableGroupKKMP
 ======================================
-.. automodule:: VariableGroupKKMP
+.. automodule:: config.VariableGroupKKMP
    :members:
 
 PyPlotgen VariableGroupLiquidMP
 ======================================
-.. automodule:: VariableGroupLiquidMP
+.. automodule:: config.VariableGroupLiquidMP
    :members:
 
 PyPlotgen VariableGroupWs
 ======================================
-.. automodule:: VariableGroupWs
+.. automodule:: config.VariableGroupWs
    :members:
 
 Indices and tables

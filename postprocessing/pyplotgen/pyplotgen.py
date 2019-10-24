@@ -28,7 +28,7 @@ class PyPlotGen:
     """
 
     def __init__(self, input_folder, output_folder, replace=False, les=False, cgbest=False, hoc=False, plotrefs=False,
-                zip=False, thin=False, no_legends=False, ensemble=False,
+                 zip=False, thin=False, no_legends=False, ensemble=False, plot_e3sm="",
                  budget_moments=False, bu_morr=False, diff=None, show_alphabetic_id=False):
         """
         This creates an instance of PyPlotGen. Each parameter is a command line parameter passed in from the argparser
@@ -55,6 +55,7 @@ class PyPlotGen:
         self.output_folder = output_folder
         self.replace_images = replace
         self.les = les
+        self.e3sm_dir = plot_e3sm
         self.cgbest = cgbest
         self.hoc = hoc
         self.plot_diff = diff
@@ -108,8 +109,8 @@ class PyPlotGen:
                 if self.diff is not None:
                     case_diff_datasets = diff_datasets[casename]
                 case = Case(case_def, self.nc_datasets[casename], plot_les=self.les, plot_budgets=self.plot_budgets,
-                            diff_datasets=case_diff_datasets, plot_r408=self.cgbest, plot_hoc=self.hoc)
-                case.plot(self.output_folder, replace_images=self.replace_images, no_legends = self.no_legends,
+                            diff_datasets=case_diff_datasets, plot_r408=self.cgbest, plot_hoc=self.hoc, e3sm_dir=self.e3sm_dir[0])
+                case.plot(self.output_folder, replace_images=self.replace_images, no_legends=self.no_legends,
                           thin_lines=self.thin, show_alphabetic_id=self.show_alphabetic_id)
                 self.cases_plotted.append(casename)
         print('###########################################')
@@ -140,8 +141,8 @@ class PyPlotGen:
             for file in glob.glob(setup_file_search_pattern):
                 file_basename = os.path.basename(file)
                 casename = file_basename[:-10]
-                copy_dest_folder = self.output_folder + '/'+casename+'/'
-                copy_dest_file =  copy_dest_folder + file_basename[:-10] + '_' + folder_basename + file_basename[-10:]
+                copy_dest_folder = self.output_folder + '/' + casename + '/'
+                copy_dest_file = copy_dest_folder + file_basename[:-10] + '_' + folder_basename + file_basename[-10:]
 
                 if casename in self.cases_plotted:
                     if not os.path.exists(copy_dest_folder):
@@ -157,7 +158,6 @@ class PyPlotGen:
 
         :return:
         """
-
 
         # Ensure benchmark output is available
         print("Checking for model benchmark output...")
@@ -180,6 +180,7 @@ class PyPlotGen:
         string = string.replace(':', '-')
         return string
 
+
 def __process_args__():
     """
     This method takes arguments in from the command line and feeds them into
@@ -188,21 +189,36 @@ def __process_args__():
     :return: a PyPlotGen object containing the parameters as given from the commandline.
     """
     parser = argparse.ArgumentParser()
-    parser.add_argument("-r", "--replace", help="If the output folder already exists, replace it with the new one.", action="store_true")
+    parser.add_argument("-r", "--replace", help="If the output folder already exists, replace it with the new one.",
+                        action="store_true")
     parser.add_argument("-l", "--les", help="Plot LES data for comparison.", action="store_true")
-    parser.add_argument("-b", "--plot-golaz-best", help="Plot Chris Golaz Best Ever data for comparison.", action="store_true")
+    parser.add_argument("-e", "--e3sm", help="Plot E3SM data for comparison. Pass a folder in with this option. This "
+                                             "folder must contain the e3sm nc files in the root directory, "
+                                             "where each filename is the name of the clubb case to plot it with. E.g. "
+                                             "name a file dycoms2_rfo2_ds.nc to plot it with that clubb case.",
+                        action="store",
+                        default=[""], nargs=1)
+    parser.add_argument("-g", "--plot-golaz-best", help="Plot Chris Golaz Best Ever data for comparison.",
+                        action="store_true")
     parser.add_argument("-d", "--plot-hoc-2005", help="Plot !HOC 12/17/2015 data for comparison.", action="store_true")
-    parser.add_argument("-a", "--all-best", help="Same as -lbd. Plots LES, Golaz Best Ever, and HOC 2005 data for comparison.", action="store_true")
+    parser.add_argument("-a", "--all-best",
+                        help="Same as -lbd. Plots LES, Golaz Best Ever, and HOC 2005 data for comparison.",
+                        action="store_true")
     parser.add_argument("-z", "--zip", help="Output data into a compressed zip file.", action="store_true")
-    parser.add_argument("--show-alphabetic-id", help="Add an identifying character to the top right of a panel.", action="store_true")
+    parser.add_argument("--show-alphabetic-id", help="Add an identifying character to the top right of a panel.",
+                        action="store_true")
     parser.add_argument("--thin", help="Plot using thin solid lines.", action="store_true")
     parser.add_argument("--no-legends", help="Plot without legend boxes defining the line types.", action="store_true")
     parser.add_argument("--ensemble", help="Plot ensemble tuner runs", action="store_true")  # TODO is this needed?
-    parser.add_argument("--plot-budgets", help="Plot all defined budgets of moments", action="store_true")
-    parser.add_argument("--bu-morr", help="For morrison microphysics: breaks microphysical source terms into component processes",action="store_true")
+    parser.add_argument("-b", "--plot-budgets", help="Plot all defined budgets of moments", action="store_true")
+    parser.add_argument("--bu-morr",
+                        help="For morrison microphysics: breaks microphysical source terms into component processes",
+                        action="store_true")
     parser.add_argument("--diff", help="Plot the difference between two input folders", action="store")
-    parser.add_argument("-i", "--input", help="Input folder containing netcdf output data.", action="store", default=["../../output"], nargs='+')
-    parser.add_argument("-o", "--output", help="Name of folder to create and store plots into.", action="store", default="./output")
+    parser.add_argument("-i", "--input", help="Input folder containing netcdf output data.", action="store",
+                        default=["../../output"], nargs='+')
+    parser.add_argument("-o", "--output", help="Name of folder to create and store plots into.", action="store",
+                        default="./output")
     args = parser.parse_args()
 
     if args.zip:
@@ -214,17 +230,19 @@ def __process_args__():
     les = args.les
     cgbest = args.plot_golaz_best
     hoc = args.plot_hoc_2005
+    e3sm = args.e3sm
 
     if args.all_best:
         les = True
         cgbest = True
         hoc = True
 
-    pyplotgen = PyPlotGen(args.input, args.output, replace=args.replace, les=les, cgbest=cgbest,
+    pyplotgen = PyPlotGen(args.input, args.output, replace=args.replace, les=les, plot_e3sm=e3sm, cgbest=cgbest,
                           hoc=hoc, plotrefs=args.all_best, zip=args.zip, thin=args.thin,
                           no_legends=args.no_legends, ensemble=args.ensemble, budget_moments=args.plot_budgets,
-                          bu_morr=args.bu_morr, diff=args.diff, show_alphabetic_id = args.show_alphabetic_id)
+                          bu_morr=args.bu_morr, diff=args.diff, show_alphabetic_id=args.show_alphabetic_id)
     return pyplotgen
+
 
 if __name__ == "__main__":
     pyplotgen = __process_args__()

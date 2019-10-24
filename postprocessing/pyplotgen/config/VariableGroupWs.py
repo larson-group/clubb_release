@@ -8,7 +8,8 @@ from src.VariableGroup import VariableGroup
 
 class VariableGroupWs(VariableGroup):
 
-    def __init__(self, ncdf_datasets, case, sam_file=None, coamps_file=None, r408_dataset=None, hoc_dataset=None):
+    def __init__(self, ncdf_datasets, case, sam_file=None, coamps_file=None, r408_dataset=None, hoc_dataset=None,
+                 e3sm_dataset=None):
         """
 
         :param ncdf_datasets:
@@ -25,5 +26,5 @@ class VariableGroupWs(VariableGroup):
             {'aliases': ['wprtpthlp', 'WPRTPTHLP', 'wpqtpthlp']},
             {'aliases': ['wp2thvp','WP2THVP']},  # TODO LES
         ]
-        super().__init__(ncdf_datasets, case, sam_file, coamps_file=coamps_file, r408_dataset=r408_dataset, hoc_dataset=hoc_dataset)
+        super().__init__(ncdf_datasets, case, sam_file, coamps_file=coamps_file, r408_dataset=r408_dataset, hoc_dataset=hoc_dataset, e3sm_dataset = e3sm_dataset)
 

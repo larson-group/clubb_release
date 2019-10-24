@@ -14,7 +14,7 @@
 # Notes:
 #  To use this program you MUST have pylab and numpy installed.  To see instructions on 
 #  how to do this see the TWiki page: 
-#  http://larson-group.com/twiki/bin/view.pl/Documentation/Documentation/MainDoc/Pylab
+#  https://github.com/larson-group/sys_admin/wiki/Pylab
 #  You must then also change the location of python to the virtual environment 
 #  python location.
 # Required Arguments

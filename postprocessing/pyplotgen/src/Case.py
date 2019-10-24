@@ -1,6 +1,6 @@
 """
 :author: Nicolas Strike
-:date: Early 2019
+:date: 2019
 """
 
 import numpy as np
@@ -18,8 +18,9 @@ class Case:
     In order to create a new case, please add the case's definition to Case_Definitions.py (don't forget to add the
     definition to the list ALL_CASES = [...] at the bottom of the file).
     """
+
     def __init__(self, case_definition, ncdf_datasets, diff_datasets=None,
-                 plot_les = False,plot_budgets = False, plot_r408=False, plot_hoc=False):
+                 plot_les=False, plot_budgets=False, plot_r408=False, plot_hoc=False, e3sm_dir =""):
         """
         Initialize a Case
 
@@ -29,11 +30,13 @@ class Case:
             value/Dataset in the dict is set to the ext provided in the filename (e.g. sfc, zt, zm)
         :param plot_les: If True pyplotgen plots LES lines, if False pyplotgen does not plot LES lines
         :param plot_budgets: If True pyplotgen will plot Budgets in addition to the other plots
-                If False, pyplotgen will not plot budgets
-        :param diff_datasets: If True, pyplotgen will plot the numeric difference between two input folders
-                If False, pyplotgen will plot regularly
+                If False (default), pyplotgen will not plot budgets
+        :param diff_datasets: Takes in netcdf datasets. If datasets are passed in, pyplotgen will plot the numeric
+            difference between the folder passed in an the input folder.
         :param plot_r408: If True, pyplotgen will plot the Chris Golaz 'best ever' clubb r408 data lines
-                If False, pyplotgen will not plot the Chris Golaz 'best ever' clubb r408 data lines
+                If False (default), pyplotgen will not plot the Chris Golaz 'best ever' clubb r408 data lines
+        :param plot_hoc: If True, pyplotgen will plot the HOC 2005 data lines
+                If False (default), pyplotgen will not plot the HOC 2005 data lines
         """
         self.name = case_definition['name']
         self.start_time = case_definition['start_time']
@@ -46,6 +49,7 @@ class Case:
         self.plot_budgets = plot_budgets
         self.plot_r408 = plot_r408
         self.plot_hoc = plot_hoc
+        self.plot_e3sm = e3sm_dir
         self.diff_datasets = diff_datasets
         self.next_panel_alphabetic_id_code = 97
         if 'disable_budgets' in case_definition.keys() and case_definition['disable_budgets'] is True:
@@ -55,6 +59,12 @@ class Case:
         if plot_les and case_definition['sam_file'] is not None:
             datareader = DataReader()
             sam_file = datareader.__loadNcFile__(case_definition['sam_file'])
+
+        e3sm_file = None
+        if e3sm_dir != "" and e3sm_dir != None and case_definition['e3sm_file'] != None:
+            datareader = DataReader()
+            e3sm_filename = e3sm_dir + case_definition['e3sm_file']
+            e3sm_file = datareader.__loadNcFile__(e3sm_filename)
 
         coamps_datasets = {}
         if plot_les and case_definition['coamps_file'] is not None:
@@ -89,15 +99,17 @@ class Case:
         self.panels = []
         self.diff_panels = []
         for VarGroup in self.var_groups:
-            temp_group = VarGroup(self.ncdf_datasets, self, sam_file=sam_file, coamps_file=coamps_datasets, r408_dataset=r408_datasets, hoc_dataset=hoc_datasets)
+            temp_group = VarGroup(self.ncdf_datasets, self, sam_file=sam_file, coamps_file=coamps_datasets,
+                                  r408_dataset=r408_datasets, hoc_dataset=hoc_datasets, e3sm_dataset = e3sm_file)
 
-            for panel in temp_group.panels :
+            for panel in temp_group.panels:
                 self.panels.append(panel)
 
         # Convert panels to difference panels if user passed in --diff <<folder>>
         if self.diff_datasets is not None:
             for VarGroup in self.var_groups:
-                diff_group = VarGroup(self.diff_datasets, self, sam_file=sam_file, coamps_file=coamps_datasets, r408_file=r408_datasets, hoc_dataset=hoc_datasets)
+                diff_group = VarGroup(self.diff_datasets, self, sam_file=sam_file, coamps_file=coamps_datasets,
+                                      r408_file=r408_datasets, hoc_dataset=hoc_datasets, e3sm_dataset = e3sm_file)
                 for panel in diff_group.panels:
                     self.diff_panels.append(panel)
             for idx in range(len(self.panels)):
@@ -113,7 +125,7 @@ class Case:
             budget_variables = VariableGroupBaseBudgets(self.ncdf_datasets, self)
             self.panels.extend(budget_variables.panels)
 
-    def getDiffLinesBetweenPanels(self, panelA, panelB, get_y_diff = False):
+    def getDiffLinesBetweenPanels(self, panelA, panelB, get_y_diff=False):
         """
         Given two panels of type Panel, this function calculates the numerical
         difference between each line of the two panels and returns the numerical
@@ -124,6 +136,8 @@ class Case:
 
         :param panelA: The first panel for comparison
         :param panelB: The second panel for comparison
+        :param get_y_diff: Default behavior is to return the difference along the x-axis, setting this to True returns
+            the difference on the y-axis
         :return: A 2D list containing the numerical values for the difference between each line in the given panels.
         """
         linesA = panelA.all_plots
@@ -161,33 +175,50 @@ class Case:
         arrB = np.append(arrB, zerosB)
 
         diff_line = arrA - arrB
-        diff_line = [abs(value) for value in diff_line] # ensure every difference is positive
+        diff_line = [abs(value) for value in diff_line]  # ensure every difference is positive
         diff_line = np.asarray(diff_line)
         return diff_line
 
-
-    def plot(self, output_folder, replace_images = False, no_legends = False, thin_lines = False, show_alphabetic_id = False):
+    def plot(self, output_folder, replace_images=False, no_legends=False, thin_lines=False, show_alphabetic_id=False):
         """
         Plot all panels associated with the case, these will be saved to a .jpg file in the <<output>>/<<casename>> folder
-        :param casename: The name of the case as a string
-        :return: None
+        :param output_folder: absolute name of the folder to save output into.
+        :param replace_images: If True, pyplotgen will overwrite images with the same name.
+            If False (default), pyplotgen will add a timestamp to the end of every filename (even if there's no filename conflict)
+        :param no_legends: If True, pyplotgen will not include a legend on output graphs.
+        If False (default), legends will be displayed.
+        :param thin_lines: If True, lines plotted will be much thinner than usual.
+        False (default) lines are plotted according to the thickness defined in config/Style_definitions.py
+        :param show_alphabetic_id: If True, pyplotgen will add an alphabetic label to the top right corner of each plot.
+        These labels will rotate through a-z incrementally. If there are more than 26 plots, it will rotate 2 dimentionally,
+        e.g. (aa), (ab), (ac),...,(ba),(bb),(bc) and etc. If show_alphabetic_id is False (default), this label is not displayed. The
+        behavior for rotations greater than zz is not defined, and although pyplotgen won't crash it may start to use
+        weird characters. The rotation resets between each case, e.g. if one case ends on label (ad), the next case will start on (a).
+        :return:
         """
+
         print("\n")
         num_plots = len(self.panels)
         curr_panel_num = 0
         for panel in self.panels:
-            print("\r\tplotting ",  curr_panel_num, " of ", num_plots, " | ", panel.title)
+            print("\r\tplotting ", curr_panel_num, " of ", num_plots, " | ", panel.title)
             if show_alphabetic_id:
                 alphabetic_id = self.__getNextAlphabeticID()
             else:
                 alphabetic_id = ""
-            panel.plot(output_folder, self.name, replace_images=replace_images, no_legends=no_legends, thin_lines=thin_lines, alphabetic_id=alphabetic_id)
+            panel.plot(output_folder, self.name, replace_images=replace_images, no_legends=no_legends,
+                       thin_lines=thin_lines, alphabetic_id=alphabetic_id)
             curr_panel_num += 1
             print("\r\tplotted  ", curr_panel_num, " of ", num_plots, " | ", panel.title)
 
     def __getNextAlphabeticID(self):
         """
-
+        When --show-alphabetic-id is passed in as a run parameter, pyplotgen will add an alphabetic label to each plot.
+        These labels are a 1 or 2d rotation through the alphabet (automatically converts to 2d if more than 26 labels are needed).
+        E.g. this method will return 'a' the first time, 'b' the second time, 'aa' the 27th time, 'ab' the 28th time, and etc.
+        This function returns the next label as a string, and keeps track of each call to this method. Call count tracking
+        is specific per case instance, e.g. if one case plots the label 'bb' last the next case will plot 'a' as the first
+        label instead of 'bc'.
         :return:
         """
         a = 97
@@ -201,8 +232,9 @@ class Case:
             first_letter_offset = int((self.next_panel_alphabetic_id_code - a) / num_letters_a_to_z) - 1
             first_letter = chr(a + first_letter_offset)
 
-            second_letter_offset = int((self.next_panel_alphabetic_id_code - a * int(self.next_panel_alphabetic_id_code / a)) % num_letters_a_to_z)
+            second_letter_offset = int((self.next_panel_alphabetic_id_code - a * int(
+                self.next_panel_alphabetic_id_code / a)) % num_letters_a_to_z)
             second_letter = chr(a + second_letter_offset)
 
-            self.next_panel_alphabetic_id_code +=1
+            self.next_panel_alphabetic_id_code += 1
             return first_letter + second_letter

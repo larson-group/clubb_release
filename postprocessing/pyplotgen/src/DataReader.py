@@ -60,18 +60,32 @@ class NetCdfVariable:
         :return: (tuple) start_idx, end_idx   which contains the starting and ending index representing the start and end time passed into the function
         :author: Nicolas Strike
         """
+
+        # If data is a an array with 1 element, return 0's
+        if(len(data) is 1):
+            return 0, 0
+
         start_idx = 0
         end_idx = len(data) - 1
-        for i in range(0, len(data)):
-            # Check for start index
-            test_value = data[i]
-            if test_value <= start_value and test_value > data[start_idx]:
-                start_idx = i
-            # Check for end index
-            if test_value >= end_value and test_value < data[end_idx]:
-                end_idx = i
+        ascending_data = data[0] < data[1]
+        if ascending_data:
+            for i in range(0, len(data)):
+                # Check for start index
+                test_value = data[i]
+                if test_value <= start_value and test_value > data[start_idx]:
+                    start_idx = i
+                # Check for end index
+                if test_value >= end_value and test_value < data[end_idx]:
+                    end_idx = i
+        else: # if data is descending
+            for i in range(0, len(data)):
+                test_value = data[i]
+                if test_value >= end_value and test_value < data[start_idx]:
+                    start_idx = i
+                if test_value <= start_value and test_value > data[end_idx]:
+                    end_idx = i
 
-        return start_idx, end_idx + 1
+        return start_idx, end_idx
 
     def constrain(self, start_value, end_value, data=None):
         """
@@ -148,11 +162,6 @@ class DataReader():
         For example: to access the zm data for gabls3_rad, simply call nc_datasets['gabls3']['zm']
         :author: Nicolas Strike
         """
-
-
-        # TODO THERES NO WAY THIS WORKS RIGHT NOW, WE'RE TRYING TO SUPPORT MUTLIPLE FOLDERS
-
-
         for sub_folder in folder_path:
             for root, dirs, files in os.walk(sub_folder):
                 for filename in files:
@@ -194,7 +203,7 @@ class DataReader():
 
         time_values = self.__getValuesFromNc__(netcdf_dataset, "time", time_conv_factor)
         if end_time_value == -1:
-            if variable_name != 'time' and variable_name != 'z' and variable_name != 'altitude' and variable_name != 'lev':
+            if variable_name != 'time' and variable_name != 'z' and variable_name != 'altitude' and variable_name != 'lev' and variable_name != 'Z3':
                 warn("End time value was not specified (or was set to -1) for variable "+variable_name+". Automatically using last time in dataset.")
             end_time_value = time_values[-1]
         # Get the index values that correspond to the desired start/end x values
@@ -215,11 +224,16 @@ class DataReader():
         if values.ndim > 1:  # not ncdf_variable.one_dimensional:
             values = self.__meanProfiles__(values, start_avg_index, end_avg_idx + 1, avg_axis=avg_axis)
 
+        # E3SM outputs Z3 as it's height variable, which may also contain an offset
+        # (e.g. e3sm height = clubb height + 650 for the dycoms2_rf01 case). This eliminates that offset.
+        if variable_name == 'Z3':
+            values = values - values[-1]
+
         return values
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         """
-        Calls the cleanup and cleanly closes out the object isntance
+        Calls the cleanup and cleanly closes out the object instance
         :param exc_type:
         :param exc_val:
         :param exc_tb:
@@ -254,8 +268,8 @@ class DataReader():
         if idx_t1 is -1:
             idx_t1 = len(var)
             warn("An end index for the time averaging interval was not specified. Automatically using the last index.")
-        if idx_t1 - idx_t0 <= 1:
-            warn("Time averaging interval is less than or equal to 1 (idx_t0 = " + str(idx_t0) + ", idx_t1 = " + str(
+        if idx_t1 - idx_t0 <= 10:
+            warn("Time averaging interval is small (less than or equal to 10): " + str(idx_t1 - idx_t0) + " | (idx_t0 = " + str(idx_t0) + ", idx_t1 = " + str(
                 idx_t1) + ").")
         if avg_axis is 0:  # if time-averaged
             var_average = np.nanmean(var[idx_t0:idx_t1, :], axis=avg_axis)
@@ -351,12 +365,22 @@ class DataReader():
             raise ValueError("Variable " + varname + " does not exist in ncdf_data file. If this is expected,"
                                                      " try passing fill_zeros=True when you create the "
                                                      "NetCdfVariable for " + varname + ".\nVariables found in dataset: " + str(ncdf_data))
+
+
+        hrs_in_day = 24
+        min_in_hr = 60
+        sec_in_min = 60
+        if varname == 'time' and 'day' in ncdf_data.variables[varname].units:
+            var_values = var_values[:] * hrs_in_day * min_in_hr
+            var_values = var_values[:] - var_values[0] + 1
+            # var_values = [i for i in range(1,len(var_values) + 1)]
+
         if varname == 'time' and 'hour' in ncdf_data.variables[varname].units:
-            var_values = var_values[:] * 60
+            var_values = var_values[:] * min_in_hr
             var_values = var_values[:] - var_values[0] + 1
 
         if varname == 'time' and 'sec' in ncdf_data.variables[varname].units:
-            var_values = var_values[:] / 60
+            var_values = var_values[:] / sec_in_min
             var_values = var_values[:] - var_values[0] + 1
 
         elif self.getNcdfSourceModel(ncdf_data) == 'unknown-model' and 'sfc' not in ncdf_data.history:
@@ -381,20 +405,29 @@ class DataReader():
         :return: (tuple) start_idx, end_idx   which contains the starting and ending index representing the start and end time passed into the function
         :author: Nicolas Strike
         """
+
+        # If data is a an array with 1 element, return 0's
+        if(len(data) is 1):
+            return 0, 0
+
         start_idx = 0
         end_idx = len(data) - 1
-        for i in range(0, len(data)):
-            # Check for start index
-            test_value = data[i]
-            if test_value <= start_value and test_value > data[start_idx]:
-                start_idx = i
-            # Check for end index
-            if test_value >= end_value and test_value < data[end_idx]:
-                end_idx = i
-        if end_idx == -1:
-            raise ValueError("Event end_value " + str(
-                end_value) + " is too large. There is no subset of data [start:end] that contains " + str(end_value))
-
+        ascending_data = data[0] < data[1]
+        if ascending_data:
+            for i in range(0, len(data)):
+                # Check for start index
+                test_value = data[i]
+                if test_value <= start_value and test_value > data[start_idx]:
+                    start_idx = i
+                # Check for end index
+                if test_value >= end_value and test_value < data[end_idx]:
+                    end_idx = i
+        else:
+            for i in range(0, len(data)):
+                test_value = data[i]
+                if test_value <= end_value and test_value :
+                    start_idx = i
+                pass
         return start_idx, end_idx
 
     def getNcdfSourceModel(self, ncdf_dataset):
@@ -417,5 +450,7 @@ class DataReader():
                 return 'coamps'
             elif 'sfc' in dataset.history:
                 return 'sfc calculations'
+            elif 'Z3' in dataset.history:
+                return 'e3sm'
             else:
                 return 'unknown-model'
