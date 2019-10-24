@@ -3197,12 +3197,13 @@ module advance_clubb_core_module
           l_explicit_turbulent_adv_wpxp
 
       use pdf_closure_module, only: &
-          iiPDF_ADG1,     & ! Variable(s)
-          iiPDF_ADG2,     &
-          iiPDF_3D_Luhar, &
-          iiPDF_new,      &
-          iiPDF_TSDADG,   &
-          iiPDF_LY93,     &
+          iiPDF_ADG1,       & ! Variable(s)
+          iiPDF_ADG2,       &
+          iiPDF_3D_Luhar,   &
+          iiPDF_new,        &
+          iiPDF_TSDADG,     &
+          iiPDF_LY93,       &
+          iiPDF_new_hybrid, &
           iiPDF_type
 
       use clubb_precision, only: &
@@ -3323,7 +3324,7 @@ module advance_clubb_core_module
 
       ! Check for the type of two component normal (double Gaussian) PDF being
       ! used for w, rt, and theta-l (or w, chi, and eta).
-      if ( iiPDF_type < iiPDF_ADG1 .or. iiPDF_type > iiPDF_LY93 ) then
+      if ( iiPDF_type < iiPDF_ADG1 .or. iiPDF_type > iiPDF_new_hybrid ) then
          write(fstderr,*) "Error in setup_clubb_core."
          write(fstderr,*) "Unknown type of double Gaussian PDF selected."
          write(fstderr,*) "iiPDF_type = ", iiPDF_type
@@ -3438,12 +3439,14 @@ module advance_clubb_core_module
          endif ! l_explicit_turbulent_adv_wpxp
 
          ! When l_predict_upwp_vpwp is enabled, the PDF type must be set to
-         ! the ADG1 PDF.  The other PDFs are not currently set up to calculate
-         ! variables needed for implicit or semi-implicit turbulent advection,
-         ! such as coef_wp2up_implicit, etc.
-         if ( iiPDF_type /= iiPDF_ADG1 ) then
-            write(fstderr,*) "Currently, only the ADG1 PDF is set up for use" &
-                             // " with the l_predict_upwp_vpwp code."
+         ! the ADG1 PDF or the new hybrid PDF.  The other PDFs are not currently
+         ! set up to calculate variables needed for implicit or semi-implicit
+         ! turbulent advection, such as coef_wp2up_implicit, etc.
+         if ( ( iiPDF_type /= iiPDF_ADG1 ) &
+              .and. ( iiPDF_type /= iiPDF_new_hybrid ) ) then
+            write(fstderr,*) "Currently, only the ADG1 PDF and the new hybrid" &
+                             // " PDF are set up for use with the" &
+                             // " l_predict_upwp_vpwp code."
             err_code = clubb_fatal_error
             return
          endif ! iiPDF_type /= iiPDF_ADG1
