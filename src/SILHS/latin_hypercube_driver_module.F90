@@ -60,7 +60,7 @@ module latin_hypercube_driver_module
       iiPDF_chi    ! Variables
 
     use transform_to_pdf_module, only: &
-      transform_uniform_sample_to_pdf      ! Procedure
+      transform_uniform_samples_to_pdf      ! Procedure
 
     use output_2D_samples_module, only: &
       output_2D_lognormal_dist_file, & ! Procedure(s)
@@ -96,6 +96,9 @@ module latin_hypercube_driver_module
 
     use error_code, only: &
         clubb_at_least_debug_level  ! Procedure
+      
+    use matrix_operations, only: &
+      row_mult_lower_tri_matrix ! Procedures
 
     implicit none
 
@@ -135,7 +138,6 @@ module latin_hypercube_driver_module
     logical, intent(in) :: &
       l_calc_weights_all_levs_itime ! determines if vertically correlated sample points are needed
     
-    
     ! Output Variables
     real( kind = core_rknd ), intent(out), dimension(nz,num_samples,pdf_dim) :: &
       X_nl_all_levs ! Sample that is transformed ultimately to normal-lognormal
@@ -172,9 +174,19 @@ module latin_hypercube_driver_module
       l_in_precip   ! Whether sample is in precipitation
 
     logical :: l_error, l_error_in_sub
-
-    ! Precipitation fraction in a component of the PDF, for each sample
-    real( kind = core_rknd ), dimension(num_samples) :: precip_frac_i
+    
+    real( kind = core_rknd ), dimension(pdf_dim,nz,num_samples) :: &
+      mu   ! Means of the hydrometeors, (chi, eta, w, <hydrometeors>)  [units vary]
+    
+    real( kind = core_rknd ), dimension(pdf_dim,pdf_dim,nz) :: &
+      Sigma_Cholesky1, &
+      Sigma_Cholesky2
+      
+    real( kind = core_rknd ), dimension(pdf_dim,pdf_dim,nz,num_samples) :: &
+      Sigma_Cholesky  ! Correlations Cholesky matrix [-]
+      
+    real( kind = core_rknd ), dimension(nz,num_samples) :: &
+      cloud_frac ! Cloud fraction for grid level and sample
 
     ! ---- Begin Code ----
 
@@ -235,30 +247,61 @@ module latin_hypercube_driver_module
             l_lh_normalize_weights, &                                                  ! Intent(in)
             X_u_all_levs(k,:,:), lh_sample_point_weights(k,:) )                        ! Intent(out)
       end if
+      
+    end do
+    
+    ! Calculate possible Sigma_Cholesky values
+    do k = 1, nz
+    
+      call row_mult_lower_tri_matrix( pdf_dim, sigma1(:,k), corr_cholesky_mtx_1(:,:,k), &
+                                      Sigma_Cholesky1(:,:,k) )
+                                      
+      call row_mult_lower_tri_matrix( pdf_dim, sigma2(:,k), corr_cholesky_mtx_2(:,:,k), &
+                                      Sigma_Cholesky2(:,:,k) )
+    end do
            
-      ! Determine mixture component for all levels
-      where ( in_mixt_comp_1( X_u_all_levs(k,:,pdf_dim+1), pdf_params%mixt_frac(k) ) )
-        X_mixt_comp_all_levs(k,:) = 1
-      else where
-        X_mixt_comp_all_levs(k,:) = 2
-      end where
+           
+    do sample = 1, num_samples 
+      
+      do k = 1, nz
+            
+        ! Determine mixture component for all levels
+        if ( X_u_all_levs(k,sample,pdf_dim+1) < pdf_params%mixt_frac(k) ) then
+          
+          X_mixt_comp_all_levs(k,sample) = 1
+          
+          ! Copy 1st component values
+          mu(:,k,sample) = mu1(:,k)
+          Sigma_Cholesky(:,:,k,sample) = Sigma_Cholesky1(:,:,k)
+          cloud_frac(k,sample) = pdf_params%cloud_frac_1(k)
+          
+          ! Determine precipitation
+          if ( X_u_all_levs(k,sample,pdf_dim+2) < hydromet_pdf_params(k)%precip_frac_1 ) then
+            l_in_precip(k,sample) = .true.
+          else
+            l_in_precip(k,sample) = .false.
+          end if
+          
+        else
+          
+          ! Copy 2nd component values
+          X_mixt_comp_all_levs(k,sample) = 2
+          mu(:,k,sample) = mu2(:,k)
+          Sigma_Cholesky(:,:,k,sample) = Sigma_Cholesky2(:,:,k)
+          cloud_frac(k,sample) = pdf_params%cloud_frac_2(k)
+          
+          ! Determine precipitation
+          if ( X_u_all_levs(k,sample,pdf_dim+2) < hydromet_pdf_params(k)%precip_frac_2 ) then
+            l_in_precip(k,sample) = .true.
+          else
+            l_in_precip(k,sample) = .false.
+          end if
+          
+        end if
 
-      ! Determine precipitation fraction
-      where ( X_mixt_comp_all_levs(k,:) == 1 )
-        precip_frac_i(:) = hydromet_pdf_params(k)%precip_frac_1
-      else where
-        precip_frac_i(:) = hydromet_pdf_params(k)%precip_frac_2
-      end where
-
-      ! Determine precipitation for all levels
-      where ( in_precipitation( X_u_all_levs(k,:,pdf_dim+2), &
-                  precip_frac_i(:) ) )
-        l_in_precip(k,:) = .true.
-      else where
-        l_in_precip(k,:) = .false.
-      end where
-
-    end do ! k = 1 .. nz
+      end do 
+      
+    end do
 
     call stats_accumulate_uniform_lh( nz, num_samples, l_in_precip, X_mixt_comp_all_levs, &
                                       X_u_all_levs(:,:,iiPDF_chi), pdf_params, &
@@ -277,23 +320,15 @@ module latin_hypercube_driver_module
       end do
     end do
 
-    ! Sample loop
-    do k = 1, nz
-      ! Generate LH sample, represented by X_u and X_nl, for level k
-      do sample = 1, num_samples, 1
-        ! Transform the uniformly distributed samples to
-        !   ones distributed according to CLUBB's PDF.
-        call transform_uniform_sample_to_pdf &
-             ( pdf_dim, d_uniform_extra, & ! In
-               mu1(:,k), mu2(:,k), sigma1(:,k), sigma2(:,k), & ! In
-               corr_cholesky_mtx_1(:,:,k), & ! In
-               corr_cholesky_mtx_2(:,:,k), & ! In
-               X_u_all_levs(k,sample,:), X_mixt_comp_all_levs(k,sample), & ! In
-               pdf_params%cloud_frac_1(k), pdf_params%cloud_frac_2(k), & ! In
-               l_in_precip(k,sample), & ! In
-               X_nl_all_levs(k,sample,:) ) ! Out
-      end do ! sample = 1, num_samples, 1
-    end do ! k = 1, nz
+    ! Generate LH sample, represented by X_u and X_nl, for level k
+    ! Transform the uniformly distributed samples to
+    !   ones distributed according to CLUBB's PDF.
+    call transform_uniform_samples_to_pdf &
+         ( nz, num_samples, pdf_dim, d_uniform_extra, & ! In
+           mu(:,:,:), Sigma_Cholesky(:,:,:,:), &
+           X_u_all_levs(:,:,:), cloud_frac(:,:), & ! In
+           l_in_precip(:,:), & ! In
+           X_nl_all_levs(:,:,:) ) ! Out
 
     if ( l_output_2D_lognormal_dist ) then
       ! Eric Raut removed lh_rt and lh_thl from call to output_2D_lognormal_dist_file
