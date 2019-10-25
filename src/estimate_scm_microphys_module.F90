@@ -18,6 +18,7 @@ module estimate_scm_microphys_module
                pdf_params, hydromet_pdf_params, p_in_Pa, exner, rho, &
                dzq, hydromet, rcm, &
                lh_clipped_vars, &
+               l_lh_instant_var_covar_src, &
                lh_hydromet_mc, lh_hydromet_vel, lh_Ncm_mc, &
                lh_rvm_mc, lh_rcm_mc, lh_thlm_mc, &
                lh_rtp2_mc, lh_thlp2_mc, lh_wprtp_mc, &
@@ -143,6 +144,9 @@ module estimate_scm_microphys_module
     type(lh_clipped_variables_type), dimension(nz,num_samples), intent(in) :: &
       lh_clipped_vars   ! Variables from SILHS sample
 
+    logical, intent(in) :: &
+      l_lh_instant_var_covar_src ! Produce instantaneous var/covar tendencies [-]
+
     ! Output Variables
 
     real( kind = core_rknd ), dimension(nz,hydromet_dim), intent(out) :: &
@@ -253,6 +257,7 @@ module estimate_scm_microphys_module
            ( nz, num_samples, dt, lh_sample_point_weights,  &  ! Intent(in)
              pdf_params, rt_all_points, thl_all_points, w_all_points,  &  ! Intent(in)
              lh_rcm_mc_all, lh_rvm_mc_all, lh_thlm_mc_all,  &  ! Intent(in)
+             l_lh_instant_var_covar_src, &                     ! Intent(in)
              lh_rtp2_mc_zt, lh_thlp2_mc_zt, lh_wprtp_mc_zt, &  ! Intent(out)
              lh_wpthlp_mc_zt, lh_rtpthlp_mc_zt )               ! Intent(out)
 

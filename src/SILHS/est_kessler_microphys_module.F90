@@ -20,6 +20,7 @@ module est_kessler_microphys_module
              ( nz, num_samples, pdf_dim, &
                X_nl_all_levs, pdf_params, rcm, cloud_frac, &
                X_mixt_comp_all_levs, lh_sample_point_weights, &
+               l_lh_importance_sampling, &
                lh_AKm, AKm, AKstd, AKstd_cld, &
                AKm_rcm, AKm_rcc, lh_rcm_avg )
 ! Description:
@@ -38,9 +39,6 @@ module est_kessler_microphys_module
 
     use pdf_parameter_module, only:  &
       pdf_parameter  ! Type
-
-    use parameters_silhs, only: &
-      l_lh_importance_sampling
 
     use clubb_precision, only: &
       core_rknd
@@ -71,6 +69,9 @@ module est_kessler_microphys_module
 
     real( kind = core_rknd ), dimension(nz,num_samples), intent(in) :: &
       lh_sample_point_weights ! Weight for cloud weighted sampling
+
+    logical, intent(in) :: &
+      l_lh_importance_sampling ! Do importance sampling (SILHS) [-]
 
     real( kind = core_rknd ), dimension(nz), intent(out) :: &
       lh_AKm,    & ! Monte Carlo estimate of Kessler autoconversion [kg/kg/s]
