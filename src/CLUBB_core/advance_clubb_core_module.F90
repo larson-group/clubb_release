@@ -2259,7 +2259,13 @@ module advance_clubb_core_module
       rtp3_zm,       & ! rtp3 interpolated to momentum levels        [kg^3/kg^3]
       thlp2_zt,      & ! thlp2 interpolated to thermodynamic levels  [K^2]
       thlp3_zm,      & ! thlp3 interpolated to momentum levels       [K^3]
+      wprtp_zt,      & ! wprtp interpolated to thermodynamic levels  [m/s kg/kg]
+      wpthlp_zt,     & ! wpthlp interpolated to thermodynamic levels [m/s K]
       rtpthlp_zt,    & ! rtpthlp interp. to thermodynamic levels     [kg/kg K]
+      up2_zt,        & ! up2 interpolated to thermodynamic levels    [m^2/s^2]
+      vp2_zt,        & ! vp2 interpolated to thermodynamic levels    [m^2/s^2]
+      upwp_zt,       & ! upwp interpolated to thermodynamic levels   [m^2/s^2]
+      vpwp_zt,       & ! vpwp interpolated to thermodynamic levels   [m^2/s^2]
       gamma_Skw_fnc, & ! Gamma as a function of skewness             [-]
       Skw_zt,        & ! Skewness of w on thermodynamic levels       [-]
       Skw_zm,        & ! Skewness of w on momentum levels            [-]
@@ -2528,9 +2534,15 @@ module advance_clubb_core_module
     !---------------------------------------------------------------------------
 
     ! Interpolate variances to the stats_zt grid (statistics and closure)
-    thlp2_zt   = max( zm2zt( thlp2 ), thl_tol**2 ) ! Positive def. quantity
     rtp2_zt    = max( zm2zt( rtp2 ), rt_tol**2 )   ! Positive def. quantity
+    thlp2_zt   = max( zm2zt( thlp2 ), thl_tol**2 ) ! Positive def. quantity
+    up2_zt     = max( zm2zt( up2 ), w_tol_sqd )    ! Positive def. quantity
+    vp2_zt     = max( zm2zt( vp2 ), w_tol_sqd )    ! Positive def. quantity
+    wprtp_zt   = zm2zt( wprtp )
+    wpthlp_zt  = zm2zt( wpthlp )
     rtpthlp_zt = zm2zt( rtpthlp )
+    upwp_zt    = zm2zt( upwp )
+    vpwp_zt    = zm2zt( vpwp )
 
     ! Compute skewness velocity for stats output purposes
     if ( iSkw_velocity > 0 ) then
@@ -2560,10 +2572,10 @@ module advance_clubb_core_module
          ( hydromet_dim, p_in_Pa, exner, thv_ds_zt,        & ! intent(in)
            wm_zt, wp2_zt, wp3, sigma_sqd_w_zt,             & ! intent(in)
            Skw_zt, Skthl_zt, Skrt_zt,                      & ! intent(in)
-           rtm, rtp2_zt, zm2zt( wprtp ),                   & ! intent(in)
-           thlm, thlp2_zt, zm2zt( wpthlp ),                & ! intent(in)
-           um, zm2zt( up2 ), zm2zt( upwp ),                & ! intent(in)
-           vm, zm2zt( vp2 ), zm2zt( vpwp ),                & ! intent(in)
+           rtm, rtp2_zt, wprtp_zt,                         & ! intent(in)
+           thlm, thlp2_zt, wpthlp_zt,                      & ! intent(in)
+           um, up2_zt, upwp_zt,                            & ! intent(in)
+           vm, vp2_zt, vpwp_zt,                            & ! intent(in)
            rtpthlp_zt,                                     & ! intent(in)
            sclrm, wpsclrp_zt, sclrp2_zt,                   & ! intent(in)
            sclrprtp_zt, sclrpthlp_zt,                      & ! intent(in)
@@ -2897,10 +2909,10 @@ module advance_clubb_core_module
            ( hydromet_dim, p_in_Pa, exner, thv_ds_zt,                  & ! intent(in)
              wm_zt, wp2_zt, wp3, sigma_sqd_w_zt,                       & ! intent(in)
              Skw_zt, Skthl_zt, Skrt_zt,                                & ! intent(in)
-             rtm_frz, rtp2_zt, zm2zt( wprtp ),                         & ! intent(in)
-             thlm_frz, thlp2_zt, zm2zt( wpthlp ),                      & ! intent(in)
-             um, zm2zt( up2 ), zm2zt( upwp ),                          & ! intent(in)
-             vm, zm2zt( vp2 ), zm2zt( vpwp ),                          & ! intent(in)
+             rtm_frz, rtp2_zt, wprtp_zt,                               & ! intent(in)
+             thlm_frz, thlp2_zt, wpthlp_zt,                            & ! intent(in)
+             um, up2_zt, upwp_zt,                                      & ! intent(in)
+             vm, vp2_zt, vpwp_zt,                                      & ! intent(in)
              rtpthlp_zt,                                               & ! intent(in)
              sclrm, wpsclrp_zt, sclrp2_zt,                             & ! intent(in)
              sclrprtp_zt, sclrpthlp_zt,                                & ! intent(in)
