@@ -390,7 +390,7 @@ module mu_sigma_hm_tests
              ! This subroutine is called only when precip_frac_1 > 0 and
              ! precip_frac_2 > 0 (there is precipitation in both PDF
              ! components).
-             call calc_comp_mu_sigma_hm( nz, hmm, hmp2, &                 ! In
+             call calc_comp_mu_sigma_hm( hmm, hmp2, &                     ! In
                                          hmp2_ip_on_hmm2_ip, &            ! In
                                          mixt_frac, precip_frac, &        ! In
                                          precip_frac_1, precip_frac_2, &  ! In
@@ -618,7 +618,7 @@ module mu_sigma_hm_tests
     ! Call the subroutine for calculating mu_hm_1, mu_hm_2, sigma_hm_1,
     ! sigma_hm_2, hm_1, hm_2, sigma_hm_1_sqd_on_mu_hm_1_sqd, and
     ! sigma_hm_2_sqd_on_mu_hm_2_sqd.
-    call calc_comp_mu_sigma_hm( nz, hmm, hmp2, &                 ! In
+    call calc_comp_mu_sigma_hm( hmm, hmp2, &                     ! In
                                 hmp2_ip_on_hmm2_ip, &            ! In
                                 mixt_frac, precip_frac, &        ! In
                                 precip_frac_1, precip_frac_2, &  ! In
@@ -725,7 +725,7 @@ module mu_sigma_hm_tests
     ! Call the subroutine for calculating mu_hm_1, mu_hm_2, sigma_hm_1,
     ! sigma_hm_2, hm_1, hm_2, sigma_hm_1_sqd_on_mu_hm_1_sqd, and
     ! sigma_hm_2_sqd_on_mu_hm_2_sqd.
-    call calc_comp_mu_sigma_hm( nz, hmm, hmp2, &                 ! In
+    call calc_comp_mu_sigma_hm( hmm, hmp2, &                     ! In
                                 hmp2_ip_on_hmm2_ip, &            ! In
                                 mixt_frac, precip_frac, &        ! In
                                 precip_frac_1, precip_frac_2, &  ! In
