@@ -2175,8 +2175,9 @@ module setup_clubb_pdf_params
         rc_tol
 
     use pdf_closure_module, only: &
-        iiPDF_ADG1, & ! Variable(s)
-        iiPDF_ADG2, &
+        iiPDF_ADG1,       & ! Variable(s)
+        iiPDF_ADG2,       &
+        iiPDF_new_hybrid, &
         iiPDF_type
 
     use clubb_precision, only: &
@@ -2249,7 +2250,8 @@ module setup_clubb_pdf_params
        ! The ADG1 PDF fixes the correlation of w and rt and the correlation of
        ! w and theta_l to be 0, which means the correlation of w and chi and the
        ! correlation of w and eta must also be 0.
-       if ( ( iiPDF_type == iiPDF_ADG1 .or. iiPDF_type == iiPDF_ADG2 ) &
+       if ( ( iiPDF_type == iiPDF_ADG1 .or. iiPDF_type == iiPDF_ADG2 &
+              .or. iiPDF_type == iiPDF_new_hybrid ) &
             .and. l_follow_ADG1_PDF_standards ) then
           corr_w_x_i = zero
        else ! use prescribed parameter values
@@ -2263,7 +2265,7 @@ module setup_clubb_pdf_params
                 corr_w_x_i = corr_w_x_NN_below
              endwhere
           endif ! l_interp_prescribed_params
-       endif ! iiPDF_type == iiPDF_ADG1
+       endif ! iiPDF_type
 
     endif ! l_fix_w_chi_eta_correlations
 
