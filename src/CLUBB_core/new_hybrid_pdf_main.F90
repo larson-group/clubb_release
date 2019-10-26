@@ -819,8 +819,9 @@ module new_hybrid_pdf_main
     !-----------------------------------------------------------------------
 
     use constants_clubb, only: &
-        one,  & ! Variable(s)
-        zero
+        one,                      & ! Variable(s)
+        zero,                     &
+        max_mag_correlation_flux
 
     use parameters_tunable, only: &
         slope_coef_spread_DG_means_w, & ! Variable(s)
@@ -908,6 +909,8 @@ module new_hybrid_pdf_main
     ! value of corr_w_sclr^2 (for all sclrs) when scalars are found.
     max_corr_w_x_sqd = max( corr_w_rt_sqd, corr_w_thl_sqd, &
                             corr_u_w_sqd, corr_v_w_sqd, max_corr_w_sclr_sqd )
+
+    max_corr_w_x_sqd = min( max_corr_w_x_sqd, max_mag_correlation_flux**2 )
 
     ! Calculate min_F_w and set max_F_w to 1.
     if ( abs( Skw ) > zero ) then
