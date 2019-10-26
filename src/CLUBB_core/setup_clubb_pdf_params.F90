@@ -275,9 +275,12 @@ module setup_clubb_pdf_params
       sigma2_on_mu2_ip_1, & ! Ratio array sigma_hm_1^2/mu_hm_1^2             [-]
       sigma2_on_mu2_ip_2    ! Ratio array sigma_hm_2^2/mu_hm_2^2             [-]
 
+    real( kind = core_rknd ), dimension(nz) :: &
+      const_Ncnp2_on_Ncnm2,       & ! Prescribed ratio: <Ncn'^2> to <Ncn>^2  [-]
+      const_corr_chi_Ncn,         & ! Prescribed corr. of chi (old s) & Ncn  [-]
+      const_corr_chi_Ncn_n_cloud    ! Prescribed corr. of chi & Ncn in cloud [-]
+
     real( kind = core_rknd ) :: &
-      const_Ncnp2_on_Ncnm2, & ! Prescribed ratio of <Ncn'^2> to <Ncn>^2      [-]
-      const_corr_chi_Ncn,   & ! Prescribed correlation of chi (old s) & Ncn  [-]
       precip_frac_tol         ! Min. precip. frac. when hydromet. present    [-]
 
     real( kind = core_rknd ), dimension(nz,hydromet_dim) :: &
@@ -407,12 +410,14 @@ module setup_clubb_pdf_params
        const_Ncnp2_on_Ncnm2 = zero
     endif
 
+    const_corr_chi_Ncn_n_cloud = corr_array_n_cloud(iiPDF_Ncn,iiPDF_chi)
+
     const_corr_chi_Ncn &
-    = corr_NN2NL( corr_array_n_cloud(iiPDF_Ncn,iiPDF_chi), &
+    = corr_NN2NL( const_corr_chi_Ncn_n_cloud, &
                   stdev_L2N( const_Ncnp2_on_Ncnm2 ), &
                   const_Ncnp2_on_Ncnm2 )
 
-    Ncnm = Nc_in_cloud_to_Ncnm( nz, mu_chi_1, mu_chi_2, sigma_chi_1, &
+    Ncnm = Nc_in_cloud_to_Ncnm( mu_chi_1, mu_chi_2, sigma_chi_1, &
                                 sigma_chi_2, mixt_frac, Nc_in_cloud, &
                                 cloud_frac_1, cloud_frac_2, &
                                 const_Ncnp2_on_Ncnm2, const_corr_chi_Ncn )
