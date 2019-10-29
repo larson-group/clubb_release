@@ -204,17 +204,18 @@ module latin_hypercube_driver_module
     
       ! Generate a uniformly distributed sample at k_lh_start
       call generate_uniform_sample_at_k_lh_start &
-           ( iter, pdf_dim, d_uniform_extra, num_samples, sequence_length,        & ! Intent(in)
-             pdf_params%cloud_frac_1(k_lh_start), pdf_params%cloud_frac_2(k_lh_start), & ! " "
-             pdf_params%mixt_frac(k_lh_start), hydromet_pdf_params(k_lh_start),        & ! " "
-             silhs_config_flags%cluster_allocation_strategy,                           & ! " "
-             silhs_config_flags%l_lh_importance_sampling,                              & ! " "
-             silhs_config_flags%l_lh_straight_mc,                                      & ! " "
-             silhs_config_flags%l_lh_clustered_sampling,                               & ! " "
-             silhs_config_flags%l_lh_limit_weights,                                    & ! " "
-             silhs_config_flags%l_lh_var_frac,                                         & ! " "
-             silhs_config_flags%l_lh_normalize_weights,                                & ! " "
-             X_u_all_levs(k_lh_start,:,:), lh_sample_point_weights(1,:)  )          ! Intent(out)
+           ( iter, pdf_dim, d_uniform_extra, num_samples, sequence_length,      & ! Intent(in)
+             pdf_params%cloud_frac_1(k_lh_start),                               & ! Intent(in)
+             pdf_params%cloud_frac_2(k_lh_start),                               & ! Intent(in)
+             pdf_params%mixt_frac(k_lh_start), hydromet_pdf_params(k_lh_start), & ! Intent(in)
+             silhs_config_flags%cluster_allocation_strategy,                    & ! Intent(in)
+             silhs_config_flags%l_lh_importance_sampling,                       & ! Intent(in)
+             silhs_config_flags%l_lh_straight_mc,                               & ! Intent(in)
+             silhs_config_flags%l_lh_clustered_sampling,                        & ! Intent(in)
+             silhs_config_flags%l_lh_limit_weights,                             & ! Intent(in)
+             silhs_config_flags%l_lh_var_frac,                                  & ! Intent(in)
+             silhs_config_flags%l_lh_normalize_weights,                         & ! Intent(in)
+             X_u_all_levs(k_lh_start,:,:), lh_sample_point_weights(1,:) )         ! Intent(out)
                           
       forall ( k = 2:nz )
         lh_sample_point_weights(k,:) = lh_sample_point_weights(1,:)
@@ -237,17 +238,18 @@ module latin_hypercube_driver_module
         ! moved inside the loop to apply importance sampling for each layer
         ! 
         call generate_uniform_sample_at_k_lh_start &
-          ( iter, pdf_dim, d_uniform_extra, num_samples, sequence_length, & ! Intent(in)
-            pdf_params%cloud_frac_1(k), pdf_params%cloud_frac_2(k), &       ! Intent(in)
-            pdf_params%mixt_frac(k), hydromet_pdf_params(k), &              ! Intent(in)
-            silhs_config_flags%cluster_allocation_strategy, &               ! Intent(in)
-            silhs_config_flags%l_lh_importance_sampling, &                  ! Intent(in)
-            silhs_config_flags%l_lh_straight_mc, &                          ! Intent(in)
-            silhs_config_flags%l_lh_clustered_sampling, &                   ! Intent(in)
-            silhs_config_flags%l_lh_limit_weights, &                        ! Intent(in)
-            silhs_config_flags%l_lh_var_frac, &                             ! Intent(in)
-            silhs_config_flags%l_lh_normalize_weights, &                    ! Intent(in)
-            X_u_all_levs(k,:,:), lh_sample_point_weights(k,:) )             ! Intent(out)
+             ( iter, pdf_dim, d_uniform_extra, num_samples, sequence_length,      & ! Intent(in)
+               pdf_params%cloud_frac_1(k_lh_start),                               & ! Intent(in)
+               pdf_params%cloud_frac_2(k_lh_start),                               & ! Intent(in)
+               pdf_params%mixt_frac(k_lh_start), hydromet_pdf_params(k_lh_start), & ! Intent(in)
+               silhs_config_flags%cluster_allocation_strategy,                    & ! Intent(in)
+               silhs_config_flags%l_lh_importance_sampling,                       & ! Intent(in)
+               silhs_config_flags%l_lh_straight_mc,                               & ! Intent(in)
+               silhs_config_flags%l_lh_clustered_sampling,                        & ! Intent(in)
+               silhs_config_flags%l_lh_limit_weights,                             & ! Intent(in)
+               silhs_config_flags%l_lh_var_frac,                                  & ! Intent(in)
+               silhs_config_flags%l_lh_normalize_weights,                         & ! Intent(in)
+               X_u_all_levs(k_lh_start,:,:), lh_sample_point_weights(1,:) )         ! Intent(out)
       end if
       
     end do
@@ -387,17 +389,18 @@ module latin_hypercube_driver_module
 
 !-------------------------------------------------------------------------------
   subroutine generate_uniform_sample_at_k_lh_start &
-             ( iter, pdf_dim, d_uniform_extra, num_samples, sequence_length, &
-               cloud_frac_1, cloud_frac_2, &
-               mixt_frac, hydromet_pdf_params, &
-               cluster_allocation_strategy, &
-               l_lh_importance_sampling, &
-               l_lh_straight_mc, &
-               l_lh_clustered_sampling, &
-               l_lh_limit_weights, &
-               l_lh_var_frac, &
-               l_lh_normalize_weights, &
-               X_u_k_lh_start, lh_sample_point_weights )
+             ( iter, pdf_dim, d_uniform_extra, num_samples, sequence_length, & ! Intent(in)
+               cloud_frac_1,                                                 & ! Intent(in)
+               cloud_frac_2,                                                 & ! Intent(in)
+               mixt_frac, hydromet_pdf_params,                               & ! Intent(in)
+               cluster_allocation_strategy,                                  & ! Intent(in)
+               l_lh_importance_sampling,                                     & ! Intent(in)
+               l_lh_straight_mc,                                             & ! Intent(in)
+               l_lh_clustered_sampling,                                      & ! Intent(in)
+               l_lh_limit_weights,                                           & ! Intent(in)
+               l_lh_var_frac,                                                & ! Intent(in)
+               l_lh_normalize_weights,                                       & ! Intent(in)
+               X_u_k_lh_start, lh_sample_point_weights )                       ! Intent(out)
 
   ! Description:
   !   Generates a uniform sample, X_u, at a single height level, applying Latin

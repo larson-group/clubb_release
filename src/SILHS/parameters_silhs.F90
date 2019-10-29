@@ -108,20 +108,29 @@ module parameters_silhs
 
     ! Output variables
     integer, intent(out) :: &
-      cluster_allocation_strategy
+      cluster_allocation_strategy   ! Two clusters, one containing all categories with either
+                                    ! cloud or precip, and the other containing categories with
+                                    ! neither
 
     logical, intent(out) :: &
-      l_lh_importance_sampling, &
-      l_Lscale_vert_avg, &
-      l_lh_straight_mc, &
-      l_lh_clustered_sampling, &
-      l_rcm_in_cloud_k_lh_start, &
-      l_random_k_lh_start, &
-      l_max_overlap_in_cloud, &
-      l_lh_instant_var_covar_src, &
-      l_lh_limit_weights, &
-      l_lh_var_frac, &
-      l_lh_normalize_weights
+      l_lh_importance_sampling, &   ! Limit noise by performing importance sampling
+      l_Lscale_vert_avg, &          ! Calculate Lscale_vert_avg in generate_silhs_sample
+      l_lh_straight_mc, &           ! Use true Monte Carlo sampling with no Latin
+                                    !  hypercube sampling and no importance sampling
+      l_lh_clustered_sampling, &    ! Use the "new" SILHS importance sampling
+                                    !  scheme with prescribed probabilities
+      l_rcm_in_cloud_k_lh_start, &  ! Determine k_lh_start based on maximum within-cloud rcm
+      l_random_k_lh_start, &        ! Place k_lh_start at a random grid level between
+                                    !  maximum rcm and maximum rcm_in_cloud
+      l_max_overlap_in_cloud, &     ! Assume maximum vertical overlap when grid-box rcm
+                                    !  exceeds cloud threshold
+      l_lh_instant_var_covar_src, & ! Produces "instantaneous" variance-covariance
+                                    !  microphysical source terms, ignoring
+                                    !  discretization effects
+      l_lh_limit_weights, &         ! Limit SILHS sample point weights for stability
+      l_lh_var_frac, &              ! Prescribe variance fractions
+      l_lh_normalize_weights        ! Scale sample point weights to sum to num_samples
+                                    ! (the "ratio estimate")
 
 !-----------------------------------------------------------------------
     ! Begin code
@@ -176,24 +185,33 @@ module parameters_silhs
 
     ! Input variables
     integer, intent(in) :: &
-      cluster_allocation_strategy
+      cluster_allocation_strategy   ! Two clusters, one containing all categories with either
+                                    ! cloud or precip, and the other containing categories with
+                                    ! neither
 
     logical, intent(in) :: &
-      l_lh_importance_sampling, &
-      l_Lscale_vert_avg, &
-      l_lh_straight_mc, &
-      l_lh_clustered_sampling, &
-      l_rcm_in_cloud_k_lh_start, &
-      l_random_k_lh_start, &
-      l_max_overlap_in_cloud, &
-      l_lh_instant_var_covar_src, &
-      l_lh_limit_weights, &
-      l_lh_var_frac, &
-      l_lh_normalize_weights
+      l_lh_importance_sampling, &   ! Limit noise by performing importance sampling
+      l_Lscale_vert_avg, &          ! Calculate Lscale_vert_avg in generate_silhs_sample
+      l_lh_straight_mc, &           ! Use true Monte Carlo sampling with no Latin
+                                    !  hypercube sampling and no importance sampling
+      l_lh_clustered_sampling, &    ! Use the "new" SILHS importance sampling
+                                    !  scheme with prescribed probabilities
+      l_rcm_in_cloud_k_lh_start, &  ! Determine k_lh_start based on maximum within-cloud rcm
+      l_random_k_lh_start, &        ! Place k_lh_start at a random grid level between
+                                    !  maximum rcm and maximum rcm_in_cloud
+      l_max_overlap_in_cloud, &     ! Assume maximum vertical overlap when grid-box rcm
+                                    !  exceeds cloud threshold
+      l_lh_instant_var_covar_src, & ! Produces "instantaneous" variance-covariance
+                                    !  microphysical source terms, ignoring
+                                    !  discretization effects
+      l_lh_limit_weights, &         ! Limit SILHS sample point weights for stability
+      l_lh_var_frac, &              ! Prescribe variance fractions
+      l_lh_normalize_weights        ! Scale sample point weights to sum to num_samples
+                                    ! (the "ratio estimate")
 
     ! Output variables
     type(silhs_config_flags_type), intent(out) :: &
-      silhs_config_flags
+      silhs_config_flags            ! Derived type holding all configurable SILHS flags
 
 !-----------------------------------------------------------------------
     ! Begin code
