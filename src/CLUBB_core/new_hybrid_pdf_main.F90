@@ -924,8 +924,13 @@ module new_hybrid_pdf_main
     exp_Skw_interp_factor &
     = exp( -abs(Skw)**lambda / slope_coef_spread_DG_means_w )
 
-    F_w = min_F_w * exp_Skw_interp_factor &
-          + max_F_w * ( one - exp_Skw_interp_factor )
+!    F_w = min_F_w * exp_Skw_interp_factor &
+!          + max_F_w * ( one - exp_Skw_interp_factor )
+
+    ! For now, use a formulation similar to what is used for ADG1.
+    ! This can be changed later.  Here, the 0.32 is equivalent to the value
+    ! of gamma_Skw_fnc that is used with ADG1.
+    F_w = max_F_w - 0.32_core_rknd * ( max_F_w - min_F_w )
 
     ! The value of zeta_w must be greater than -1.
     zeta_w = pdf_component_stdev_factor_w - one

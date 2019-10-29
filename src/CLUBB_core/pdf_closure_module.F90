@@ -601,6 +601,13 @@ module pdf_closure_module
                                    pdf_implicit_coefs_terms,           & ! Out
                                    F_w, min_F_w, max_F_w               ) ! Out
 
+       ! The calculation of skewness of rt, thl, u, v, and scalars is hard-wired
+       ! for use with the ADG1 code, which contains the variable sigma_sqd_w.
+       ! In order to use an equivalent expression for these skewnesses using the
+       ! new hybrid PDF (without doing more recoding), set the value of
+       ! sigma_sqd_w to 1 - F_w.
+       sigma_sqd_w = one - F_w
+
     endif ! iiPDF_type
 
 
