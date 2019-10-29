@@ -44,7 +44,7 @@ module latin_hypercube_driver_module
                pdf_params, delta_zm, rcm, Lscale, &               ! intent(in)
                rho_ds_zt, mu1, mu2, sigma1, sigma2, &             ! intent(in)
                corr_cholesky_mtx_1, corr_cholesky_mtx_2, &        ! intent(in)
-               hydromet_pdf_params, &                             ! intent(in)
+               hydromet_pdf_params, silhs_config_flags, &         ! intent(in)
                X_nl_all_levs, X_mixt_comp_all_levs, &             ! intent(out)
                lh_sample_point_weights )                          ! intent(out)
 
@@ -82,17 +82,7 @@ module latin_hypercube_driver_module
       stat_rknd
 
     use parameters_silhs, only: &
-      cluster_allocation_strategy, &
-      l_lh_importance_sampling, &
-      l_Lscale_vert_avg, &
-      l_lh_straight_mc, &
-      l_lh_clustered_sampling, &
-      l_rcm_in_cloud_k_lh_start, &
-      l_random_k_lh_start, &
-      l_max_overlap_in_cloud, &
-      l_lh_limit_weights, &
-      l_lh_var_frac, &
-      l_lh_normalize_weights
+      silhs_config_flags_type ! Type
 
     use error_code, only: &
         clubb_at_least_debug_level  ! Procedure
@@ -162,6 +152,9 @@ module latin_hypercube_driver_module
     type(hydromet_pdf_parameter), dimension(nz), intent(in) :: &
       hydromet_pdf_params ! Hydrometeor PDF parameters  [units vary]
 
+    type(silhs_config_flags_type), intent(in) :: &
+      silhs_config_flags ! Flags for the SILHS sampling code [-]
+
     ! Local variables
     real( kind = core_rknd ), dimension(nz,num_samples,(pdf_dim+d_uniform_extra)) :: &
       X_u_all_levs ! Sample drawn from uniform distribution
@@ -193,7 +186,7 @@ module latin_hypercube_driver_module
     l_error = .false.
 
     ! Sanity checks for l_lh_importance_sampling
-    if ( l_lh_importance_sampling .and. sequence_length /= 1 ) then
+    if ( silhs_config_flags%l_lh_importance_sampling .and. sequence_length /= 1 ) then
       write(fstderr,*) "Cloud weighted sampling requires sequence length be equal to 1."
       stop "Fatal error."
     end if
@@ -205,19 +198,23 @@ module latin_hypercube_driver_module
     ! Compute k_lh_start, the starting vertical grid level 
     !   for SILHS sampling
     k_lh_start = compute_k_lh_start( nz, rcm, pdf_params, &
-                                     l_rcm_in_cloud_k_lh_start, &
-                                     l_random_k_lh_start )
+                                     silhs_config_flags%l_rcm_in_cloud_k_lh_start, &
+                                     silhs_config_flags%l_random_k_lh_start )
     if ( .not. l_calc_weights_all_levs_itime ) then
     
       ! Generate a uniformly distributed sample at k_lh_start
       call generate_uniform_sample_at_k_lh_start &
-           ( iter, pdf_dim, d_uniform_extra, num_samples, sequence_length,          & ! Intent(in)
-             pdf_params%cloud_frac_1(k_lh_start), pdf_params%cloud_frac_2(k_lh_start),   & ! " "
-             pdf_params%mixt_frac(k_lh_start), hydromet_pdf_params(k_lh_start),          & ! " "
-             cluster_allocation_strategy, l_lh_importance_sampling, l_lh_straight_mc,    & ! " "
-             l_lh_clustered_sampling, l_lh_limit_weights, l_lh_var_frac,                 & ! " "
-             l_lh_normalize_weights,                                                     & ! " "
-             X_u_all_levs(k_lh_start,:,:), lh_sample_point_weights(1,:)  ) ! Intent(out)
+           ( iter, pdf_dim, d_uniform_extra, num_samples, sequence_length,        & ! Intent(in)
+             pdf_params%cloud_frac_1(k_lh_start), pdf_params%cloud_frac_2(k_lh_start), & ! " "
+             pdf_params%mixt_frac(k_lh_start), hydromet_pdf_params(k_lh_start),        & ! " "
+             silhs_config_flags%cluster_allocation_strategy,                           & ! " "
+             silhs_config_flags%l_lh_importance_sampling,                              & ! " "
+             silhs_config_flags%l_lh_straight_mc,                                      & ! " "
+             silhs_config_flags%l_lh_clustered_sampling,                               & ! " "
+             silhs_config_flags%l_lh_limit_weights,                                    & ! " "
+             silhs_config_flags%l_lh_var_frac,                                         & ! " "
+             silhs_config_flags%l_lh_normalize_weights,                                & ! " "
+             X_u_all_levs(k_lh_start,:,:), lh_sample_point_weights(1,:)  )          ! Intent(out)
                           
       forall ( k = 2:nz )
         lh_sample_point_weights(k,:) = lh_sample_point_weights(1,:)
@@ -226,9 +223,10 @@ module latin_hypercube_driver_module
       ! Generate uniform sample at other grid levels 
       !   by vertically correlating them
       call vertical_overlap_driver &
-           ( nz, pdf_dim, d_uniform_extra, num_samples, &     ! Intent(in)
+           ( nz, pdf_dim, d_uniform_extra, num_samples, &         ! Intent(in)
              k_lh_start, delta_zm, rcm, Lscale, rho_ds_zt, &      ! Intent(in)
-             l_Lscale_vert_avg, l_max_overlap_in_cloud, &         ! Intent(in)
+             silhs_config_flags%l_Lscale_vert_avg, &              ! Intent(in)
+             silhs_config_flags%l_max_overlap_in_cloud, &         ! Intent(in)
              X_u_all_levs )                                       ! Intent(inout)
     
     end if
@@ -239,13 +237,17 @@ module latin_hypercube_driver_module
         ! moved inside the loop to apply importance sampling for each layer
         ! 
         call generate_uniform_sample_at_k_lh_start &
-          ( iter, pdf_dim, d_uniform_extra, num_samples, sequence_length, &            ! Intent(in)
-            pdf_params%cloud_frac_1(k), pdf_params%cloud_frac_2(k), &                  ! Intent(in)
-            pdf_params%mixt_frac(k), hydromet_pdf_params(k), &                         ! Intent(in)
-            cluster_allocation_strategy, l_lh_importance_sampling, l_lh_straight_mc, & ! Intent(in)
-            l_lh_clustered_sampling, l_lh_limit_weights, l_lh_var_frac, &              ! Intent(in)
-            l_lh_normalize_weights, &                                                  ! Intent(in)
-            X_u_all_levs(k,:,:), lh_sample_point_weights(k,:) )                        ! Intent(out)
+          ( iter, pdf_dim, d_uniform_extra, num_samples, sequence_length, & ! Intent(in)
+            pdf_params%cloud_frac_1(k), pdf_params%cloud_frac_2(k), &       ! Intent(in)
+            pdf_params%mixt_frac(k), hydromet_pdf_params(k), &              ! Intent(in)
+            silhs_config_flags%cluster_allocation_strategy, &               ! Intent(in)
+            silhs_config_flags%l_lh_importance_sampling, &                  ! Intent(in)
+            silhs_config_flags%l_lh_straight_mc, &                          ! Intent(in)
+            silhs_config_flags%l_lh_clustered_sampling, &                   ! Intent(in)
+            silhs_config_flags%l_lh_limit_weights, &                        ! Intent(in)
+            silhs_config_flags%l_lh_var_frac, &                             ! Intent(in)
+            silhs_config_flags%l_lh_normalize_weights, &                    ! Intent(in)
+            X_u_all_levs(k,:,:), lh_sample_point_weights(k,:) )             ! Intent(out)
       end if
       
     end do
@@ -388,8 +390,12 @@ module latin_hypercube_driver_module
              ( iter, pdf_dim, d_uniform_extra, num_samples, sequence_length, &
                cloud_frac_1, cloud_frac_2, &
                mixt_frac, hydromet_pdf_params, &
-               cluster_allocation_strategy, l_lh_importance_sampling, l_lh_straight_mc, &
-               l_lh_clustered_sampling, l_lh_limit_weights, l_lh_var_frac, &
+               cluster_allocation_strategy, &
+               l_lh_importance_sampling, &
+               l_lh_straight_mc, &
+               l_lh_clustered_sampling, &
+               l_lh_limit_weights, &
+               l_lh_var_frac, &
                l_lh_normalize_weights, &
                X_u_k_lh_start, lh_sample_point_weights )
 
@@ -546,7 +552,8 @@ module latin_hypercube_driver_module
   subroutine vertical_overlap_driver &
              ( nz, pdf_dim, d_uniform_extra, num_samples, &
                k_lh_start, delta_zm, rcm, Lscale, rho_ds_zt, &
-               l_Lscale_vert_avg, l_max_overlap_in_cloud, &
+               l_Lscale_vert_avg, &
+               l_max_overlap_in_cloud, &
                X_u_all_levs )
 
   ! Description:

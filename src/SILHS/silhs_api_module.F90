@@ -78,12 +78,11 @@
 module silhs_api_module
 
 #ifdef SILHS
-  use parameters_silhs, only: &
-    l_lh_importance_sampling, & ! Variable(s)
-    l_Lscale_vert_avg
-
   use latin_hypercube_driver_module, only: &
     lh_clipped_variables_type ! Type
+
+  use parameters_silhs, only: &
+    silhs_config_flags_type ! Type
 
 #endif
 
@@ -97,11 +96,12 @@ module silhs_api_module
     generate_silhs_sample_api, &
     stats_accumulate_lh_api, &
     est_kessler_microphys_api, &
-    l_lh_importance_sampling, &
-    l_Lscale_vert_avg, &
     clip_transform_silhs_output_api, &
     lh_clipped_variables_type, &
-    lh_microphys_var_covar_driver_api
+    lh_microphys_var_covar_driver_api, &
+    set_default_silhs_config_flags_api, &
+    initialize_silhs_config_flags_type_api, &
+    silhs_config_flags_type
 
 contains
 
@@ -115,7 +115,7 @@ contains
     pdf_params, delta_zm, rcm, Lscale, & ! In
     rho_ds_zt, mu1, mu2, sigma1, sigma2, & ! In
     corr_cholesky_mtx_1, corr_cholesky_mtx_2, & ! In
-    hydromet_pdf_params, & ! In
+    hydromet_pdf_params, silhs_config_flags, & ! In
     X_nl_all_levs, X_mixt_comp_all_levs, & ! Out
     lh_sample_point_weights ) ! Out
 
@@ -126,6 +126,9 @@ contains
 
     use hydromet_pdf_parameter_module, only: &
       hydromet_pdf_parameter ! Type
+
+    use parameters_silhs, only: &
+      silhs_config_flags_type ! Type
 
     use clubb_precision, only: &
       core_rknd
@@ -180,13 +183,16 @@ contains
     type(hydromet_pdf_parameter), dimension(nz), intent(in) :: &
       hydromet_pdf_params
 
+    type(silhs_config_flags_type), intent(in) :: &
+      silhs_config_flags
+
     call generate_silhs_sample( &
       iter, pdf_dim, num_samples, sequence_length, nz, & ! In
       l_calc_weights_all_levs_itime, & ! In
       pdf_params, delta_zm, rcm, Lscale, & ! In
       rho_ds_zt, mu1, mu2, sigma1, sigma2, & ! In
       corr_cholesky_mtx_1, corr_cholesky_mtx_2, & ! In
-      hydromet_pdf_params, & ! In
+      hydromet_pdf_params, silhs_config_flags, & ! In
       X_nl_all_levs, X_mixt_comp_all_levs, & ! Out
       lh_sample_point_weights ) ! Out
 
@@ -241,6 +247,7 @@ contains
     nz, num_samples, pdf_dim, &
     X_nl_all_levs, pdf_params, rcm, cloud_frac, &
     X_mixt_comp_all_levs, lh_sample_point_weights, &
+    l_lh_importance_sampling, &
     lh_AKm, AKm, AKstd, AKstd_cld, &
     AKm_rcm, AKm_rcc, lh_rcm_avg )
 
@@ -279,6 +286,9 @@ contains
     real( kind = core_rknd ), dimension(nz,num_samples), intent(in) :: &
       lh_sample_point_weights ! Weight for cloud weighted sampling
 
+    logical, intent(in) :: &
+      l_lh_importance_sampling ! Do importance sampling (SILHS) [-]
+
     real( kind = core_rknd ), dimension(nz), intent(out) :: &
       lh_AKm,    & ! Monte Carlo estimate of Kessler autoconversion [kg/kg/s]
       AKm,       & ! Exact Kessler autoconversion, AKm,             [kg/kg/s]
@@ -295,6 +305,7 @@ contains
       nz, num_samples, pdf_dim, &
       X_nl_all_levs, pdf_params, rcm, cloud_frac, &
       X_mixt_comp_all_levs, lh_sample_point_weights, &
+      l_lh_importance_sampling, &
       lh_AKm, AKm, AKstd, AKstd_cld, &
       AKm_rcm, AKm_rcc, lh_rcm_avg )
 
@@ -366,6 +377,7 @@ contains
              ( nz, num_samples, dt, lh_sample_point_weights, &  ! In
                pdf_params, lh_rt_all, lh_thl_all, lh_w_all, &   ! In
                lh_rcm_mc_all, lh_rvm_mc_all, lh_thlm_mc_all, &  ! In
+               l_lh_instant_var_covar_src, &                    ! In
                lh_rtp2_mc_zt, lh_thlp2_mc_zt, lh_wprtp_mc_zt, & ! Out
                lh_wpthlp_mc_zt, lh_rtpthlp_mc_zt )              ! Out
 
@@ -399,6 +411,9 @@ contains
       lh_rvm_mc_all, &                 ! SILHS microphys. tendency of rvm            [kg/kg/s]
       lh_thlm_mc_all                   ! SILHS microphys. tendency of thlm           [K/s]
 
+    logical, intent(in) :: &
+      l_lh_instant_var_covar_src       ! Produce instantaneous var/covar tendencies  [-]
+
     ! Output Variables
     real( kind = core_rknd ), dimension(nz), intent(out) :: &
       lh_rtp2_mc_zt,   &               ! SILHS microphys. est. tendency of <rt'^2>   [(kg/kg)^2/s]
@@ -414,10 +429,126 @@ contains
          ( nz, num_samples, dt, lh_sample_point_weights, &
            pdf_params, lh_rt_all, lh_thl_all, lh_w_all, &
            lh_rcm_mc_all, lh_rvm_mc_all, lh_thlm_mc_all, &
+           l_lh_instant_var_covar_src, &
            lh_rtp2_mc_zt, lh_thlp2_mc_zt, lh_wprtp_mc_zt, &
            lh_wpthlp_mc_zt, lh_rtpthlp_mc_zt )
 
   end subroutine lh_microphys_var_covar_driver_api
+
+  !-----------------------------------------------------------------
+  ! set_default_silhs_config_flags: Sets all SILHS flags to a default setting
+  !-----------------------------------------------------------------
+
+  subroutine set_default_silhs_config_flags_api( cluster_allocation_strategy, & ! Out
+                                                 l_lh_importance_sampling, & ! Out
+                                                 l_Lscale_vert_avg, & ! Out
+                                                 l_lh_straight_mc, & ! Out
+                                                 l_lh_clustered_sampling, & ! Out
+                                                 l_rcm_in_cloud_k_lh_start, & ! Out
+                                                 l_random_k_lh_start, & ! Out
+                                                 l_max_overlap_in_cloud, & ! Out
+                                                 l_lh_instant_var_covar_src, & ! Out
+                                                 l_lh_limit_weights, & ! Out
+                                                 l_lh_var_frac, & ! Out
+                                                 l_lh_normalize_weights ) ! Out
+
+    use parameters_silhs, only: &
+      set_default_silhs_config_flags  ! Procedure
+
+    implicit none
+
+    ! Output variables
+    integer, intent(out) :: &
+      cluster_allocation_strategy
+
+    logical, intent(out) :: &
+      l_lh_importance_sampling, &
+      l_Lscale_vert_avg, &
+      l_lh_straight_mc, &
+      l_lh_clustered_sampling, &
+      l_rcm_in_cloud_k_lh_start, &
+      l_random_k_lh_start, &
+      l_max_overlap_in_cloud, &
+      l_lh_instant_var_covar_src, &
+      l_lh_limit_weights, &
+      l_lh_var_frac, &
+      l_lh_normalize_weights
+
+    call set_default_silhs_config_flags( cluster_allocation_strategy, & ! Out
+                                         l_lh_importance_sampling, & ! Out
+                                         l_Lscale_vert_avg, & ! Out
+                                         l_lh_straight_mc, & ! Out
+                                         l_lh_clustered_sampling, & ! Out
+                                         l_rcm_in_cloud_k_lh_start, & ! Out
+                                         l_random_k_lh_start, & ! Out
+                                         l_max_overlap_in_cloud, & ! Out
+                                         l_lh_instant_var_covar_src, & ! Out
+                                         l_lh_limit_weights, & ! Out
+                                         l_lh_var_frac,  & ! Out
+                                         l_lh_normalize_weights ) ! Out
+
+  end subroutine set_default_silhs_config_flags_api
+
+  !-----------------------------------------------------------------
+  ! initialize_silhs_config_flags_type: Initialize the silhs_config_flags_type
+  !-----------------------------------------------------------------
+
+  subroutine initialize_silhs_config_flags_type_api( cluster_allocation_strategy, & ! In
+                                                     l_lh_importance_sampling, & ! In
+                                                     l_Lscale_vert_avg, & ! In
+                                                     l_lh_straight_mc, & ! In
+                                                     l_lh_clustered_sampling, & ! In
+                                                     l_rcm_in_cloud_k_lh_start, & ! In
+                                                     l_random_k_lh_start, & ! In
+                                                     l_max_overlap_in_cloud, & ! In
+                                                     l_lh_instant_var_covar_src, & ! In
+                                                     l_lh_limit_weights, & ! In
+                                                     l_lh_var_frac, & ! In
+                                                     l_lh_normalize_weights, & ! In
+                                                     silhs_config_flags ) ! Out
+
+    use parameters_silhs, only: &
+      silhs_config_flags_type, &          ! Type
+      initialize_silhs_config_flags_type  ! Procedure
+
+    implicit none
+
+    ! Input variables
+    integer, intent(in) :: &
+      cluster_allocation_strategy
+
+    logical, intent(in) :: &
+      l_lh_importance_sampling, &
+      l_Lscale_vert_avg, &
+      l_lh_straight_mc, &
+      l_lh_clustered_sampling, &
+      l_rcm_in_cloud_k_lh_start, &
+      l_random_k_lh_start, &
+      l_max_overlap_in_cloud, &
+      l_lh_instant_var_covar_src, &
+      l_lh_limit_weights, &
+      l_lh_var_frac, &
+      l_lh_normalize_weights
+
+    ! Output variables
+    type(silhs_config_flags_type), intent(out) :: &
+      silhs_config_flags
+
+    call initialize_silhs_config_flags_type( cluster_allocation_strategy, & ! In
+                                             l_lh_importance_sampling, & ! In
+                                             l_Lscale_vert_avg, & ! In
+                                             l_lh_straight_mc, & ! In
+                                             l_lh_clustered_sampling, & ! In
+                                             l_rcm_in_cloud_k_lh_start, & ! In
+                                             l_random_k_lh_start, & ! In
+                                             l_max_overlap_in_cloud, & ! In
+                                             l_lh_instant_var_covar_src, & ! In
+                                             l_lh_limit_weights, & ! In
+                                             l_lh_var_frac, & ! In
+                                             l_lh_normalize_weights, & ! In
+                                             silhs_config_flags ) ! Out
+
+  end subroutine initialize_silhs_config_flags_type_api
 
 #endif
 

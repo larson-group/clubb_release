@@ -267,6 +267,9 @@ module clubb_driver
     use fill_holes, only: &
         vertical_avg  !--------------------------------------------------- Procedure(s)
 
+    use parameters_silhs, only: &
+        silhs_config_flags_type !----------------------------------------- Type(s)
+
 #ifdef _OPENMP
     ! Because Fortran I/O is not thread safe, we use this here to
     ! ensure that no model uses the same file number simultaneously
@@ -490,6 +493,9 @@ module clubb_driver
       l_calc_weights_all_levs_itime, & ! .true. if we calculate sample weights separately at all 
                                        ! grid levels at the current time step
       l_rad_itime                      ! .true. if we calculate radiation at the current time step
+
+    type(silhs_config_flags_type) :: &
+      silhs_config_flags ! Flags for the SILHS sampling code
     
     ! Definition of namelists
     namelist /model_setting/  &
@@ -914,7 +920,7 @@ module clubb_driver
     ! Setup microphysical fields
     call init_microphys( iunit, trim( runtype ), runfile, case_info_file, & ! Intent(in)
                          dummy_dx, dummy_dy, &
-                         hydromet_dim )                                     ! Intent(out)
+                         hydromet_dim, silhs_config_flags )                 ! Intent(out)
 
     ! Setup radiation parameters
     call init_radiation( iunit, runfile, case_info_file )       ! Intent(in)
@@ -1461,7 +1467,7 @@ module clubb_driver
                pdf_params, gr%dzt, rcm, Lscale, &                           ! In
                rho_ds_zt, mu_x_1_n, mu_x_2_n, sigma_x_1_n, sigma_x_2_n, &   ! In
                corr_cholesky_mtx_1, corr_cholesky_mtx_2, &                  ! In
-               hydromet_pdf_params, &                                       ! In
+               hydromet_pdf_params, silhs_config_flags, &                   ! In
                X_nl_all_levs_raw, X_mixt_comp_all_levs, &                   ! Out
                lh_sample_point_weights )                                    ! Out
 
@@ -1511,6 +1517,8 @@ module clubb_driver
                               sigma_x_1_n, sigma_x_2_n, &                             ! In
                               corr_array_1_n, corr_array_2_n, &                       ! In
                               lh_clipped_vars, &                                      ! In
+                              silhs_config_flags%l_lh_importance_sampling, &          ! In
+                              silhs_config_flags%l_lh_instant_var_covar_src, &        ! In
                               Nccnm, &                                                ! Inout
                               hydromet_mc, Ncm_mc, rcm_mc, rvm_mc, &                  ! Out
                               thlm_mc, hydromet_vel_zt, &                             ! Out

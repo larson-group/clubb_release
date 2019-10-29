@@ -16,6 +16,7 @@ module lh_microphys_var_covar_module
              ( nz, num_samples, dt, lh_sample_point_weights, &
                pdf_params, lh_rt_all, lh_thl_all, lh_w_all, &
                lh_rcm_mc_all, lh_rvm_mc_all, lh_thlm_mc_all, &
+               l_lh_instant_var_covar_src, &
                lh_rtp2_mc_zt, lh_thlp2_mc_zt, lh_wprtp_mc_zt, &
                lh_wpthlp_mc_zt, lh_rtpthlp_mc_zt )
 
@@ -53,9 +54,6 @@ module lh_microphys_var_covar_module
     use constants_clubb, only: &
       zero, one, two    ! Constant(s)
 
-    use parameters_silhs, only: &
-      l_lh_instant_var_covar_src   ! Variable
-
     use pdf_parameter_module, only: &
       pdf_parameter
       
@@ -82,6 +80,9 @@ module lh_microphys_var_covar_module
       lh_rcm_mc_all, &                 ! SILHS microphys. tendency of rcm            [kg/kg/s]
       lh_rvm_mc_all, &                 ! SILHS microphys. tendency of rvm            [kg/kg/s]
       lh_thlm_mc_all                   ! SILHS microphys. tendency of thlm           [K/s]
+
+    logical, intent(in) :: &
+      l_lh_instant_var_covar_src       ! Produce instantaneous var/covar tendencies  [-]
 
     ! Output Variables
     real( kind = core_rknd ), dimension(nz), intent(out) :: &
