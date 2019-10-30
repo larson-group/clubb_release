@@ -177,7 +177,8 @@ module clubb_api_module
 !#ifdef CLUBB_CAM /* Code for storing pdf_parameter structs in pbuf as array */
     num_pdf_params, &
 !#endif
-    pdf_parameter
+    pdf_parameter, &
+    implicit_coefs_terms
 
   use stat_file_module, only : &
     clubb_i, &    ! Used to output multiple columns
@@ -433,9 +434,10 @@ module clubb_api_module
 !#ifdef CLUBB_CAM /* Code for storing pdf_parameter structs in pbuf as array */
     pack_pdf_params_api, &
     unpack_pdf_params_api, &
-    init_pdf_params_api, &
     num_pdf_params, &
 !#endif
+    init_pdf_params_api, &
+    init_pdf_implicit_coefs_terms_api, &
     adj_low_res_nu_api, &
     assignment( = ), &
     clubb_i, &
@@ -1556,6 +1558,7 @@ contains
     
   end subroutine unpack_pdf_params_api
   
+!#endif
   !================================================================================================
   ! init_pdf_params - allocates arrays for pdf_params
   !================================================================================================
@@ -1577,8 +1580,31 @@ contains
     
   end subroutine init_pdf_params_api
   
-  
-!#endif
+  !================================================================================================
+  ! init_pdf_implicit_coefs_terms - allocates arrays for the PDF implicit
+  ! coefficient and explicit terms.
+  !================================================================================================
+  subroutine init_pdf_implicit_coefs_terms_api( nz, sclr_dim, &
+                                                pdf_implicit_coefs_terms )
+
+    use pdf_parameter_module, only: &
+        init_pdf_implicit_coefs_terms    ! Procedure(s)
+
+    implicit none
+
+    ! Input Variables
+    integer, intent(in) :: &
+      nz,       & ! Number of vertical grid levels    [-]
+      sclr_dim    ! Number of scalar variables        [-]
+
+    ! Output Variable
+    type(implicit_coefs_terms), intent(out) :: &
+      pdf_implicit_coefs_terms    ! Implicit coefs / explicit terms [units vary]
+
+    call init_pdf_implicit_coefs_terms( nz, sclr_dim, &
+                                        pdf_implicit_coefs_terms )
+
+  end subroutine init_pdf_implicit_coefs_terms_api
 
   !================================================================================================
   ! setup_pdf_parameters
