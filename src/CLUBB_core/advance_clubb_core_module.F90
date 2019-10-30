@@ -151,6 +151,7 @@ module advance_clubb_core_module
                wpthvp, wp2thvp, rtpthvp, thlpthvp, &                ! intent(inout)
                sclrpthvp, &                                         ! intent(inout)
                pdf_params, pdf_params_zm, &                         ! intent(inout)
+               pdf_implicit_coefs_terms, &                          ! intent(inout)
 #ifdef GFDL
                RH_crit, & !h1g, 2010-06-16                          ! intent(inout)
                do_liquid_only_in_clubb, &                           ! intent(in)
@@ -258,8 +259,9 @@ module advance_clubb_core_module
     !         new hybrid PDF code is ready to be interfaced with host models.
     !         This is just a temporary fix.
     use variables_prognostic_module, only: &
-        up3, & ! Variable(s)
-        vp3
+        up3,    & ! Variable(s)
+        vp3,    &
+        sclrp3
 
     use variables_diagnostic_module, only: &
       Skw_zt,  & ! Variable(s)
@@ -607,6 +609,9 @@ module advance_clubb_core_module
       pdf_params,    & ! Fortran structure of PDF parameters on thermodynamic levels    [units vary]
       pdf_params_zm    ! Fortran structure of PDF parameters on momentum levels        [units vary]
 
+    type(implicit_coefs_terms), intent(inout) :: &
+      pdf_implicit_coefs_terms    ! Implicit coefs / explicit terms [units vary]
+
 #ifdef GFDL
     real( kind = core_rknd ), intent(inout), dimension(gr%nz,sclr_dim) :: &  ! h1g, 2010-06-16
       sclrm_trsport_only  ! Passive scalar concentration due to pure transport [{units vary}/s]
@@ -714,9 +719,6 @@ module advance_clubb_core_module
       wpsclrp_zt,           & ! Scalar flux on thermo. levels        [un. vary]
       sclrp2_zt               ! Scalar variance on thermo.levels     [un. vary]
 
-    real( kind = core_rknd ), dimension(gr%nz,sclr_dim) :: &
-      sclrp3    ! <sclr'^3> (thermodynamic levels)    [un. vary]
-
     real( kind = core_rknd ) :: &
       rtm_integral_before, &
       rtm_integral_after, &
@@ -734,9 +736,6 @@ module advance_clubb_core_module
     !The following variables are defined for use when l_use_ice_latent = .true.
     type(pdf_parameter) :: &
       pdf_params_frz
-
-    type(implicit_coefs_terms), dimension(gr%nz) :: &
-      pdf_implicit_coefs_terms    ! Implicit coefs / explicit terms [units vary]
 
     real( kind = core_rknd ), dimension(gr%nz)  :: &
       rtm_frz, &
@@ -2286,7 +2285,7 @@ module advance_clubb_core_module
     type(pdf_parameter), intent(inout) :: &
       pdf_params_zm    ! PDF parameters   [units vary]
 
-    type(implicit_coefs_terms), dimension(gr%nz), intent(out) :: &
+    type(implicit_coefs_terms), intent(out) :: &
       pdf_implicit_coefs_terms    ! Implicit coefs / explicit terms [units vary]
 
     !!! Local Variables
@@ -2397,7 +2396,7 @@ module advance_clubb_core_module
       min_F_thl_zm, &
       max_F_thl_zm
 
-    type(implicit_coefs_terms), dimension(gr%nz) :: &
+    type(implicit_coefs_terms) :: &
       pdf_implicit_coefs_terms_zm,     &
       pdf_implicit_coefs_terms_frz,    &
       pdf_implicit_coefs_terms_zm_frz
@@ -2627,7 +2626,7 @@ module advance_clubb_core_module
     ! Put passive scalar input on the t grid for the PDF
     do i = 1, sclr_dim, 1
       wpsclrp_zt(:,i)   = zm2zt( wpsclrp(:,i) )
-      sclrp2_zt(:,i)    = max( zm2zt( sclrp2(:,i) ), zero_threshold ) ! Pos. def. quantity
+      sclrp2_zt(:,i)    = max( zm2zt( sclrp2(:,i) ), sclr_tol(i)**2 ) ! Pos. def. quantity
       sclrprtp_zt(:,i)  = zm2zt( sclrprtp(:,i) )
       sclrpthlp_zt(:,i) = zm2zt( sclrpthlp(:,i) )
     end do ! i = 1, sclr_dim, 1

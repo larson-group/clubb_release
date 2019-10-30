@@ -252,7 +252,7 @@ module advance_xm_wpxp_module
       Cx_fnc_Richardson,& ! Cx_fnc computed from Richardson_num       [-]
       ice_supersat_frac
 
-    type(implicit_coefs_terms), dimension(gr%nz), intent(in) :: &
+    type(implicit_coefs_terms), intent(in) :: &
       pdf_implicit_coefs_terms    ! Implicit coefs / explicit terms [units vary]
 
     ! Variables used to predict <u> and <u'w'>, as well as <v> and <v'w'>.
@@ -1671,7 +1671,7 @@ module advance_xm_wpxp_module
     
     !------------------- Input Variables -------------------
     
-    type(implicit_coefs_terms), dimension(gr%nz), intent(in) :: &
+    type(implicit_coefs_terms), intent(in) :: &
       pdf_implicit_coefs_terms    ! Implicit coefs / explicit terms [units vary]
                                 
     real( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
@@ -4775,7 +4775,7 @@ module advance_xm_wpxp_module
       thvm,            & ! Virutal potential temperature             [K]
       Cx_fnc_Richardson  ! Cx_fnc computed from Richardson_num       [-]
 
-    type(implicit_coefs_terms), dimension(gr%nz), intent(in) :: &
+    type(implicit_coefs_terms), intent(in) :: &
       pdf_implicit_coefs_terms    ! Implicit coefs / explicit terms [units vary]
 
     ! Variables used to predict <u> and <u'w'>, as well as <v> and <v'w'>.
@@ -4883,7 +4883,17 @@ module advance_xm_wpxp_module
     write(fstderr,*) "p_in_Pa = ", p_in_Pa, new_line('c')
     write(fstderr,*) "thvm = ", thvm, new_line('c')
     write(fstderr,*) "Cx_fnc_Richardson = ", Cx_fnc_Richardson, new_line('c')
-    write(fstderr,*) "pdf_implicit_coefs_terms = ", pdf_implicit_coefs_terms, &
+    write(fstderr,*) "pdf_implicit_coefs_terms%coef_wp2rtp_implicit = ", &
+                     pdf_implicit_coefs_terms%coef_wp2rtp_implicit, &
+                     new_line('c')
+    write(fstderr,*) "pdf_implicit_coefs_terms%term_wp2rtp_explicit = ", &
+                     pdf_implicit_coefs_terms%term_wp2rtp_explicit, &
+                     new_line('c')
+    write(fstderr,*) "pdf_implicit_coefs_terms%coef_wp2thlp_implicit = ", &
+                     pdf_implicit_coefs_terms%coef_wp2thlp_implicit, &
+                     new_line('c')
+    write(fstderr,*) "pdf_implicit_coefs_terms%term_wp2thlp_explicit = ", &
+                     pdf_implicit_coefs_terms%term_wp2thlp_explicit, &
                      new_line('c')
      
     if ( sclr_dim > 0 )  then
@@ -4891,6 +4901,12 @@ module advance_xm_wpxp_module
        write(fstderr,*) "wp2sclrp = ", wp2sclrp, new_line('c')
        write(fstderr,*) "sclrpthvp = ", sclrpthvp, new_line('c')
        write(fstderr,*) "sclrm_forcing = ", sclrm_forcing, new_line('c')
+       write(fstderr,*) "pdf_implicit_coefs_terms%coef_wp2sclrp_implicit = ", &
+                        pdf_implicit_coefs_terms%coef_wp2sclrp_implicit, &
+                        new_line('c')
+       write(fstderr,*) "pdf_implicit_coefs_terms%term_wp2sclrp_explicit = ", &
+                        pdf_implicit_coefs_terms%term_wp2sclrp_explicit, &
+                        new_line('c')
     endif
 
     if ( l_predict_upwp_vpwp ) then
@@ -4907,6 +4923,18 @@ module advance_xm_wpxp_module
        write(fstderr,*) "uprcp = ", uprcp, new_line('c')
        write(fstderr,*) "vprcp = ", vprcp, new_line('c')
        write(fstderr,*) "rc_coef = ",  rc_coef, new_line('c')
+       write(fstderr,*) "pdf_implicit_coefs_terms%coef_wp2up_implicit = ", &
+                        pdf_implicit_coefs_terms%coef_wp2up_implicit, &
+                        new_line('c')
+       write(fstderr,*) "pdf_implicit_coefs_terms%term_wp2up_explicit = ", &
+                        pdf_implicit_coefs_terms%term_wp2up_explicit, &
+                        new_line('c')
+       write(fstderr,*) "pdf_implicit_coefs_terms%coef_wp2vp_implicit = ", &
+                        pdf_implicit_coefs_terms%coef_wp2vp_implicit, &
+                        new_line('c')
+       write(fstderr,*) "pdf_implicit_coefs_terms%term_wp2vp_explicit = ", &
+                        pdf_implicit_coefs_terms%term_wp2vp_explicit, &
+                        new_line('c')
     endif ! l_predict_upwp_vpwp
 
     write(fstderr,*) "Intent(inout)", new_line('c')

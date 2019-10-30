@@ -271,7 +271,7 @@ module pdf_closure_module
     type(pdf_parameter), intent(inout) :: & 
       pdf_params     ! pdf paramters         [units vary]
 
-    type(implicit_coefs_terms), dimension(gr%nz), intent(out) :: &
+    type(implicit_coefs_terms), intent(out) :: &
       pdf_implicit_coefs_terms    ! Implicit coefs / explicit terms [units vary]
 
     ! Parameters output only for recording statistics (new PDF).
@@ -396,6 +396,12 @@ module pdf_closure_module
     logical, parameter :: &
       l_liq_ice_loading_test = .false. ! Temp. flag liq./ice water loading test
 
+    real( kind = core_rknd ), dimension(gr%nz) :: &
+      zeros    ! Vector of 0s (size gr%nz)    [-]
+
+    real( kind = core_rknd ), dimension(gr%nz,sclr_dim) :: &
+      zero_array    ! Array of 0s (size gr%nz x sclr_dim)    [-]
+
     integer :: k, i, hm_idx   ! Indices
 
     ! Value of chi at saturation for liquid water; always 0
@@ -441,39 +447,50 @@ module pdf_closure_module
     ! Initialize to 0 to prevent a runtime error
     if ( iiPDF_type /= iiPDF_new .and. iiPDF_type /= iiPDF_new_hybrid ) then
 
-       do k = 1, gr%nz
+       ! Set up a vector of 0s and an array of 0s to help write results back to
+       ! type variable pdf_implicit_coefs_terms.
+       zeros = zero
+       zero_array = zero
 
-           pdf_implicit_coefs_terms(k)%coef_wp4_implicit = zero
-           pdf_implicit_coefs_terms(k)%coef_wp2rtp_implicit = zero
-           pdf_implicit_coefs_terms(k)%term_wp2rtp_explicit = zero
-           pdf_implicit_coefs_terms(k)%coef_wp2thlp_implicit = zero
-           pdf_implicit_coefs_terms(k)%term_wp2thlp_explicit = zero
-           pdf_implicit_coefs_terms(k)%coef_wp2up_implicit = zero
-           pdf_implicit_coefs_terms(k)%term_wp2up_explicit = zero
-           pdf_implicit_coefs_terms(k)%coef_wp2vp_implicit = zero
-           pdf_implicit_coefs_terms(k)%term_wp2vp_explicit = zero
-           pdf_implicit_coefs_terms(k)%coef_wprtp2_implicit = zero
-           pdf_implicit_coefs_terms(k)%term_wprtp2_explicit = zero
-           pdf_implicit_coefs_terms(k)%coef_wpthlp2_implicit = zero
-           pdf_implicit_coefs_terms(k)%term_wpthlp2_explicit = zero
-           pdf_implicit_coefs_terms(k)%coef_wprtpthlp_implicit = zero
-           pdf_implicit_coefs_terms(k)%term_wprtpthlp_explicit = zero
-           pdf_implicit_coefs_terms(k)%coef_wpup2_implicit = zero
-           pdf_implicit_coefs_terms(k)%term_wpup2_explicit = zero
-           pdf_implicit_coefs_terms(k)%coef_wpvp2_implicit = zero
-           pdf_implicit_coefs_terms(k)%term_wpvp2_explicit = zero
+       pdf_implicit_coefs_terms%coef_wp4_implicit = zeros
+       pdf_implicit_coefs_terms%coef_wp2rtp_implicit = zeros
+       pdf_implicit_coefs_terms%term_wp2rtp_explicit = zeros
+       pdf_implicit_coefs_terms%coef_wp2thlp_implicit = zeros
+       pdf_implicit_coefs_terms%term_wp2thlp_explicit = zeros
+       pdf_implicit_coefs_terms%coef_wp2up_implicit = zeros
+       pdf_implicit_coefs_terms%term_wp2up_explicit = zeros
+       pdf_implicit_coefs_terms%coef_wp2vp_implicit = zeros
+       pdf_implicit_coefs_terms%term_wp2vp_explicit = zeros
+       pdf_implicit_coefs_terms%coef_wprtp2_implicit = zeros
+       pdf_implicit_coefs_terms%term_wprtp2_explicit = zeros
+       pdf_implicit_coefs_terms%coef_wpthlp2_implicit = zeros
+       pdf_implicit_coefs_terms%term_wpthlp2_explicit = zeros
+       pdf_implicit_coefs_terms%coef_wprtpthlp_implicit = zeros
+       pdf_implicit_coefs_terms%term_wprtpthlp_explicit = zeros
+       pdf_implicit_coefs_terms%coef_wpup2_implicit = zeros
+       pdf_implicit_coefs_terms%term_wpup2_explicit = zeros
+       pdf_implicit_coefs_terms%coef_wpvp2_implicit = zeros
+       pdf_implicit_coefs_terms%term_wpvp2_explicit = zeros
+       if ( sclr_dim > 0 ) then
+          pdf_implicit_coefs_terms%coef_wp2sclrp_implicit = zero_array
+          pdf_implicit_coefs_terms%term_wp2sclrp_explicit = zero_array
+          pdf_implicit_coefs_terms%coef_wpsclrp2_implicit = zero_array
+          pdf_implicit_coefs_terms%term_wpsclrp2_explicit = zero_array
+          pdf_implicit_coefs_terms%coef_wprtpsclrp_implicit = zero_array
+          pdf_implicit_coefs_terms%term_wprtpsclrp_explicit = zero_array
+          pdf_implicit_coefs_terms%coef_wpthlpsclrp_implicit = zero_array
+          pdf_implicit_coefs_terms%term_wpthlpsclrp_explicit = zero_array
+       endif ! sclr_dim > 0
 
-        end do
-
-        F_w = zero
-        F_rt = zero
-        F_thl = zero
-        min_F_w = zero
-        max_F_w = zero
-        min_F_rt = zero
-        max_F_rt = zero
-        min_F_thl = zero
-        max_F_thl = zero
+       F_w = zero
+       F_rt = zero
+       F_thl = zero
+       min_F_w = zero
+       max_F_w = zero
+       min_F_rt = zero
+       max_F_rt = zero
+       min_F_thl = zero
+       max_F_thl = zero
 
     endif
 

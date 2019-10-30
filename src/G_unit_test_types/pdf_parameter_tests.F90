@@ -281,7 +281,7 @@ module pdf_parameter_tests
       wp4_implicit_calc, & ! <w'^4> calculated by coef_wp4_implicit eq [m^4/s^4]
       wp4_pdf_calc         ! <w'^4> calculated by PDF                  [m^4/s^4]
 
-    type(implicit_coefs_terms), dimension(nz) :: &
+    type(implicit_coefs_terms) :: &
       pdf_implicit_coefs_terms    ! Implicit coefs / explicit terms [units vary]
 
     ! Tiny tolerance for acceptable numerical difference between two results.

@@ -532,6 +532,7 @@ contains
     wpthvp, wp2thvp, rtpthvp, thlpthvp, &                   ! intent(inout)
     sclrpthvp, &                                            ! intent(inout)
     pdf_params, pdf_params_zm, &                            ! intent(inout)
+    pdf_implicit_coefs_terms, &                             ! intent(inout)
 #ifdef GFDL
                RH_crit, & !h1g, 2010-06-16                  ! intent(inout)
                do_liquid_only_in_clubb, &                   ! intent(in)
@@ -546,6 +547,9 @@ contains
     rcm_in_layer, cloud_cover )                             ! intent(out)
 
     use advance_clubb_core_module, only : advance_clubb_core
+
+    use pdf_parameter_module, only: &
+        implicit_coefs_terms    ! Variable Type(s)
 
     use parameters_model, only: &
       sclr_dim, & ! Variable(s)
@@ -680,6 +684,9 @@ contains
       pdf_params,    & ! PDF parameters (thermodynamic levels)    [units vary]
       pdf_params_zm    ! PDF parameters on momentum levels        [units vary]
 
+    type(implicit_coefs_terms), intent(inout) :: &
+      pdf_implicit_coefs_terms    ! Implicit coefs / explicit terms [units vary]
+
 #ifdef GFDL
     real( kind = core_rknd ), intent(inout), dimension(gr%nz,sclr_dim) :: &  ! h1g, 2010-06-16
       sclrm_trsport_only  ! Passive scalar concentration due to pure transport [{units vary}/s]
@@ -748,6 +755,7 @@ contains
       wpthvp, wp2thvp, rtpthvp, thlpthvp, &                   ! intent(inout)
       sclrpthvp, &                                            ! intent(inout)
       pdf_params, pdf_params_zm, &                            ! intent(inout)
+      pdf_implicit_coefs_terms, &                             ! intent(inout)
 #ifdef GFDL
                RH_crit, & !h1g, 2010-06-16                    ! intent(inout)
                do_liquid_only_in_clubb, &                     ! intent(in)

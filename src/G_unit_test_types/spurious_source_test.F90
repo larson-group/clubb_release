@@ -196,7 +196,7 @@ module spurious_source_test
       ice_supersat_frac      
 
 
-    type(implicit_coefs_terms), dimension(nz) :: &
+    type(implicit_coefs_terms) :: &
       pdf_implicit_coefs_terms    ! Implicit coefs / explicit terms [units vary]
 
     ! Variables used to predict <u> and <u'w'>, as well as <v> and <v'w'>.

@@ -67,6 +67,7 @@ module clubb_driver
       vm_forcing, wprtp_forcing, wpthlp_forcing, &
       rtp2_forcing, thlp2_forcing, rtpthlp_forcing, &
       up2, vp2, wp3, rtp2, pdf_params, &
+      pdf_implicit_coefs_terms, &
       thlp2, rtpthlp, cloud_frac, ice_supersat_frac, &
       rcm_in_layer, cloud_cover
 
@@ -1405,6 +1406,7 @@ module clubb_driver
              wpthvp, wp2thvp, rtpthvp, thlpthvp, &                ! Intent(inout)
              sclrpthvp, &                                         ! Intent(inout)
              pdf_params, pdf_params_zm, &                         ! Intent(inout)
+             pdf_implicit_coefs_terms, &                          ! intent(inout)
              wprcp, ice_supersat_frac, &                          ! Intent(out)
              rcm_in_layer, cloud_cover )                          ! Intent(out)
 
@@ -1688,6 +1690,7 @@ module clubb_driver
                 lh_clipped_vars )
 
     return
+
   end subroutine run_clubb
 
   !-----------------------------------------------------------------------

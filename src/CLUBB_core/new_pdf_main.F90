@@ -25,7 +25,7 @@ module new_pdf_main
   !=============================================================================
   subroutine new_pdf_driver( wm, rtm, thlm, wp2, rtp2, thlp2, Skw,      & ! In
                              wprtp, wpthlp, rtpthlp,                    & ! In
-                             Skrt, Skthl,                               & ! In/Out
+                             Skrt, Skthl,                               & ! I/O
                              mu_w_1, mu_w_2,                            & ! Out
                              mu_rt_1, mu_rt_2,                          & ! Out
                              mu_thl_1, mu_thl_2,                        & ! Out
@@ -122,7 +122,7 @@ module new_pdf_main
       sigma_thl_2_sqd, & ! Variance of thl (2nd PDF component)  [K^2]
       mixt_frac          ! Mixture fraction                     [-]
 
-    type(implicit_coefs_terms), dimension(gr%nz), intent(out) :: &
+    type(implicit_coefs_terms), intent(out) :: &
       pdf_implicit_coefs_terms    ! Implicit coefs / explicit terms [units vary]
 
     ! Output only for recording statistics.

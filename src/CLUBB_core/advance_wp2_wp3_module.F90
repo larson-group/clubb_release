@@ -195,7 +195,7 @@ module advance_wp2_wp3_module
       wp2_splat,         & ! Tendency of <w'2> due to vertical compression of eddies [m^2/s^3]
       wp3_splat            ! Tendency of <w'3> due to vertical compression of eddies [m^3/s^4]
 
-    type(implicit_coefs_terms), dimension(gr%nz), intent(in) :: &
+    type(implicit_coefs_terms), intent(in) :: &
       pdf_implicit_coefs_terms    ! Implicit coefs / explicit terms [units vary]
 
     ! Input/Output
@@ -413,7 +413,8 @@ module advance_wp2_wp3_module
             write(fstderr,*) "thv_ds_zm = ", thv_ds_zm, new_line('c')
             write(fstderr,*) "thv_ds_zt = ", thv_ds_zt, new_line('c')
             write(fstderr,*) "Cx_fnc_Richardson = ", Cx_fnc_Richardson, new_line('c')
-            write(fstderr,*) "pdf_implicit_coefs_terms = ", pdf_implicit_coefs_terms
+            write(fstderr,*) "pdf_implicit_coefs_terms%coef_wp4_implicit = ", &
+                             pdf_implicit_coefs_terms%coef_wp4_implicit
             write(fstderr,*) new_line('c')
 
             write(fstderr,*) "Intent(in/out)"
@@ -622,7 +623,7 @@ module advance_wp2_wp3_module
       wp2_splat,       & ! Tendency of <w'2> due to vertical compression of eddies  [m^2/s^3]
       wp3_splat          ! Tendency of <w'3> due to vertical compression of eddies  [m^3/s^4]
 
-    type(implicit_coefs_terms), dimension(gr%nz), intent(in) :: &
+    type(implicit_coefs_terms), intent(in) :: &
       pdf_implicit_coefs_terms    ! Implicit coefs / explicit terms [units vary]
 
     ! Input/Output Variables

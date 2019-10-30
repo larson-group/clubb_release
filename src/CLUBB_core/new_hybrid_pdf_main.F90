@@ -148,7 +148,7 @@ module new_hybrid_pdf_main
       sigma_sclr_1_sqd, & ! Variance of sclr (1st PDF component)  [(un. vary)^2]
       sigma_sclr_2_sqd    ! Variance of sclr (2nd PDF component)  [(un. vary)^2]
 
-    type(implicit_coefs_terms), dimension(gr%nz), intent(out) :: &
+    type(implicit_coefs_terms), intent(out) :: &
       pdf_implicit_coefs_terms    ! Implicit coefs / explicit terms [units vary]
 
     ! Output only for recording statistics.
@@ -276,6 +276,12 @@ module new_hybrid_pdf_main
     real( kind = core_rknd ), dimension(gr%nz) :: &
       max_corr_w_sclr_sqd    ! Max value of wpsclrp^2 / ( wp2 * sclrp2 )     [-]
 
+    real( kind = core_rknd ), dimension(gr%nz) :: &
+      zeros    ! Vector of 0s (size gr%nz)    [-]
+
+    real( kind = core_rknd ), dimension(gr%nz,sclr_dim) :: &
+      zero_array    ! Array of 0s (size gr%nz x sclr_dim)    [-]
+
     integer :: k, j  ! Loop indices
 
 
@@ -287,9 +293,11 @@ module new_hybrid_pdf_main
     if ( sclr_dim > 0 ) then
        do k = 1, gr%nz, 1
           do j = 1, sclr_dim, 1
-             max_corr_w_sclr_sqd(k) = max( wpsclrp(k,j)**2 &
-                                           / ( wp2(k) * sclrp2(k,j) ), &
-                                           max_corr_w_sclr_sqd(k) )
+             if ( wp2(k) * sclrp2(k,j) > zero ) then
+                max_corr_w_sclr_sqd(k) = max( wpsclrp(k,j)**2 &
+                                              / ( wp2(k) * sclrp2(k,j) ), &
+                                              max_corr_w_sclr_sqd(k) )
+             endif ! wp2(k) * sclrp2(k,j) > 0
           enddo ! j = 1, sclr_dim, 1
        enddo ! k = 1, gr%nz, 1
     endif ! sclr_dim > 0
@@ -582,17 +590,22 @@ module new_hybrid_pdf_main
 
     endif ! .not. l_explicit_turbulent_adv_xpyp
 
+    ! Set up a vector of 0s and an array of 0s to help write results back to
+    ! type variable pdf_implicit_coefs_terms.
+    zeros = zero
+    zero_array = zero
+
     ! Pack the implicit coefficients and explicit terms into a single type
     ! variable for output.
     pdf_implicit_coefs_terms%coef_wp4_implicit = coef_wp4_implicit
     pdf_implicit_coefs_terms%coef_wp2rtp_implicit = coef_wp2rtp_implicit
-    pdf_implicit_coefs_terms%term_wp2rtp_explicit = zero
+    pdf_implicit_coefs_terms%term_wp2rtp_explicit = zeros
     pdf_implicit_coefs_terms%coef_wp2thlp_implicit = coef_wp2thlp_implicit
-    pdf_implicit_coefs_terms%term_wp2thlp_explicit = zero
+    pdf_implicit_coefs_terms%term_wp2thlp_explicit = zeros
     pdf_implicit_coefs_terms%coef_wp2up_implicit = coef_wp2up_implicit
-    pdf_implicit_coefs_terms%term_wp2up_explicit = zero
+    pdf_implicit_coefs_terms%term_wp2up_explicit = zeros
     pdf_implicit_coefs_terms%coef_wp2vp_implicit = coef_wp2vp_implicit
-    pdf_implicit_coefs_terms%term_wp2vp_explicit = zero
+    pdf_implicit_coefs_terms%term_wp2vp_explicit = zeros
     pdf_implicit_coefs_terms%coef_wprtp2_implicit = coef_wprtp2_implicit
     pdf_implicit_coefs_terms%term_wprtp2_explicit = term_wprtp2_explicit
     pdf_implicit_coefs_terms%coef_wpthlp2_implicit = coef_wpthlp2_implicit
@@ -603,6 +616,20 @@ module new_hybrid_pdf_main
     pdf_implicit_coefs_terms%term_wpup2_explicit = term_wpup2_explicit
     pdf_implicit_coefs_terms%coef_wpvp2_implicit = coef_wpvp2_implicit
     pdf_implicit_coefs_terms%term_wpvp2_explicit = term_wpvp2_explicit
+    if ( sclr_dim > 0 ) then
+       pdf_implicit_coefs_terms%coef_wp2sclrp_implicit = coef_wp2sclrp_implicit
+       pdf_implicit_coefs_terms%term_wp2sclrp_explicit = zero_array
+       pdf_implicit_coefs_terms%coef_wpsclrp2_implicit = coef_wpsclrp2_implicit
+       pdf_implicit_coefs_terms%term_wpsclrp2_explicit = term_wpsclrp2_explicit
+       pdf_implicit_coefs_terms%coef_wprtpsclrp_implicit &
+       = coef_wprtpsclrp_implicit
+       pdf_implicit_coefs_terms%term_wprtpsclrp_explicit &
+       = term_wprtpsclrp_explicit
+       pdf_implicit_coefs_terms%coef_wpthlpsclrp_implicit &
+       = coef_wpthlpsclrp_implicit
+       pdf_implicit_coefs_terms%term_wpthlpsclrp_explicit &
+       = term_wpthlpsclrp_explicit
+    endif ! sclr_dim > 0
 
 
     return
