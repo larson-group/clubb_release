@@ -646,6 +646,9 @@ module new_hybrid_pdf
 
     if ( abs( wpxp ) > zero ) then
 
+       ! Note:  when |<w'x'>| > 0, F_w, <w'^2>, and <x'^2> must all have values
+       !        greater than 0.
+
        ! Calculate the mean of x in the 1st PDF component.
        mu_x_1 = xm + sqrt( ( one - mixt_frac ) / mixt_frac ) &
                      * wpxp / sqrt( F_w * wp2 )
@@ -1102,7 +1105,7 @@ module new_hybrid_pdf
 
 
     ! Calculate coef_wpxp2_implicit and term_wpxp2_explicit.
-    if ( F_w > 0 ) then
+    if ( F_w > 0 .and. wp2 > 0 ) then
 
        coef_wpxp2_implicit &
        = sqrt( mixt_frac * ( one - mixt_frac ) ) * sqrt( F_w * wp2 ) &
@@ -1112,12 +1115,12 @@ module new_hybrid_pdf
        = sqrt( mixt_frac * ( one - mixt_frac ) ) * wpxp**2 / sqrt( F_w * wp2 ) &
          * ( ( one - mixt_frac ) / mixt_frac - mixt_frac / ( one - mixt_frac ) )
 
-    else ! F_w = 0
+    else ! F_w = 0 or wp2 = 0
 
        coef_wpxp2_implicit = zero
        term_wpxp2_explicit = zero
 
-    endif ! F_w > 0
+    endif ! F_w > 0 and wp2 > 0
 
 
     return
@@ -1339,7 +1342,7 @@ module new_hybrid_pdf
     ! Calculate coef_wpxpyp_implicit and term_wpxpyp_explicit.
     if ( ( coef_sigma_x_1_sqd * coef_sigma_y_1_sqd > zero &
            .or. coef_sigma_x_2_sqd * coef_sigma_y_2_sqd > zero ) &
-          .and. F_w > zero ) then
+          .and. F_w > zero .and. wp2 > zero ) then
 
        ! coefs_factor_xy
        ! = ( sqrt( coef_sigma_x_1_sqd * coef_sigma_y_1_sqd )
@@ -1367,7 +1370,7 @@ module new_hybrid_pdf
 
     else ! ( coef_sigma_x_1_sqd * coef_sigma_y_1_sqd = 0
          !   and coef_sigma_x_2_sqd * coef_sigma_y_2_sqd = 0 )
-         ! or F_w = 0
+         ! or F_w = 0 or wp2 = 0
 
        if ( F_w > 0 ) then
 
