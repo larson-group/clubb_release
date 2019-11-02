@@ -66,13 +66,13 @@ module clubb_driver
       thv_ds_zt, thlm_forcing, rtm_forcing, um_forcing, &
       vm_forcing, wprtp_forcing, wpthlp_forcing, &
       rtp2_forcing, thlp2_forcing, rtpthlp_forcing, &
-      up2, vp2, wp3, rtp2, pdf_params, &
+      up2, vp2, up3, vp3, wp3, rtp2, pdf_params, &
       pdf_implicit_coefs_terms, &
       thlp2, rtpthlp, cloud_frac, ice_supersat_frac, &
       rcm_in_layer, cloud_cover
 
     use variables_prognostic_module, only:  &
-      sclrm, sclrp2, sclrprtp, sclrpthlp, sclrm_forcing, & !----------------- Variables
+      sclrm, sclrp2, sclrp3, sclrprtp, sclrpthlp, sclrm_forcing, & !--------- Variables
       wpsclrp, wpsclrp_sfc,  &
       edsclrm, edsclrm_forcing, wpedsclrp_sfc
 
@@ -1397,10 +1397,10 @@ module clubb_driver
              rfrzm, radf, wphydrometp, &                          ! Intent(in)
              wp2hmp, rtphmp_zt, thlphmp_zt, &                     ! Intent(in)
              dummy_dx, dummy_dy, &                                ! Intent(in)
-             um, vm, upwp, vpwp, up2, vp2, &                      ! Intent(inout)
+             um, vm, upwp, vpwp, up2, vp2, up3, vp3, &            ! Intent(inout)
              thlm, rtm, wprtp, wpthlp, &                          ! Intent(inout)
              wp2, wp3, rtp2, rtp3, thlp2, thlp3, rtpthlp, &       ! Intent(inout)
-             sclrm, sclrp2, sclrprtp, sclrpthlp, &                ! Intent(inout)
+             sclrm, sclrp2, sclrp3, sclrprtp, sclrpthlp, &        ! Intent(inout)
              wpsclrp, edsclrm, &                                  ! Intent(inout)
              rcm, cloud_frac, &                                   ! Intent(inout)
              wpthvp, wp2thvp, rtpthvp, thlpthvp, &                ! Intent(inout)
