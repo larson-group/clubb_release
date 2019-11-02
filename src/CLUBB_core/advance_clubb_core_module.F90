@@ -138,14 +138,14 @@ module advance_clubb_core_module
 #endif
                wphydrometp, wp2hmp, rtphmp_zt, thlphmp_zt, &        ! intent(in)
                host_dx, host_dy, &                                  ! intent(in)
-               um, vm, upwp, vpwp, up2, vp2, &                      ! intent(inout)
+               um, vm, upwp, vpwp, up2, vp2, up3, vp3, &            ! intent(inout)
                thlm, rtm, wprtp, wpthlp, &                          ! intent(inout)
                wp2, wp3, rtp2, rtp3, thlp2, thlp3, rtpthlp, &       ! intent(inout)
                sclrm,   &                                           ! intent(inout)
 #ifdef GFDL
                sclrm_trsport_only,  &  ! h1g, 2010-06-16            ! intent(inout)
 #endif
-               sclrp2, sclrprtp, sclrpthlp, &                       ! intent(inout)
+               sclrp2, sclrp3, sclrprtp, sclrpthlp, &               ! intent(inout)
                wpsclrp, edsclrm, &                                  ! intent(inout)
                rcm, cloud_frac, &                                   ! intent(inout)
                wpthvp, wp2thvp, rtpthvp, thlpthvp, &                ! intent(inout)
@@ -254,14 +254,6 @@ module advance_clubb_core_module
     use numerical_check, only: &
         parameterization_check, & ! Procedure(s)
         calculate_spurious_source
-
-    ! Brian:  up3 and vp3 need to be passed through advance_clubb_core once the
-    !         new hybrid PDF code is ready to be interfaced with host models.
-    !         This is just a temporary fix.
-    use variables_prognostic_module, only: &
-        up3,    & ! Variable(s)
-        vp3,    &
-        sclrp3
 
     use variables_diagnostic_module, only: &
       Skw_zt,  & ! Variable(s)
@@ -570,6 +562,8 @@ module advance_clubb_core_module
       vpwp,    & ! v'w' (momentum levels)                         [m^2/s^2]
       up2,     & ! u'^2 (momentum levels)                         [m^2/s^2]
       vp2,     & ! v'^2 (momentum levels)                         [m^2/s^2]
+      up3,     & ! u'^3 (thermodynamic levels)                    [m^3/s^3]
+      vp3,     & ! v'^3 (thermodynamic levels)                    [m^3/s^3]
       rtm,     & ! total water mixing ratio, r_t (thermo. levels) [kg/kg]
       wprtp,   & ! w' r_t' (momentum levels)                      [(kg/kg) m/s]
       thlm,    & ! liq. water pot. temp., th_l (thermo. levels)   [K]
@@ -587,6 +581,7 @@ module advance_clubb_core_module
       sclrm,     & ! Passive scalar mean (thermo. levels) [units vary]
       wpsclrp,   & ! w'sclr' (momentum levels)            [{units vary} m/s]
       sclrp2,    & ! sclr'^2 (momentum levels)            [{units vary}^2]
+      sclrp3,    & ! sclr'^3 (thermodynamic levels)       [{units vary}^3]
       sclrprtp,  & ! sclr'rt' (momentum levels)           [{units vary} (kg/kg)]
       sclrpthlp    ! sclr'thl' (momentum levels)          [{units vary} K]
 
