@@ -414,6 +414,9 @@ module latin_hypercube_driver_module
     ! Included Modules
     use clubb_precision, only: &
       core_rknd                   ! Precision
+      
+    use parameters_silhs, only: &
+      uniform_sample_thresh       ! Constant
 
     use constants_clubb, only: &
       one, fstderr                ! Constant(s)
@@ -502,6 +505,10 @@ module latin_hypercube_driver_module
 
       ! Importance sampling is not performed, so all sample points have the same weight!!
       lh_sample_point_weights(1:num_samples)  =  one
+      
+      ! Clip uniform sample points to expected range
+      X_u_k_lh_start = max( uniform_sample_thresh, &
+                            min( one - uniform_sample_thresh, X_u_k_lh_start ) )
 
     else ! .not. l_lh_straight_mc
 
@@ -509,6 +516,10 @@ module latin_hypercube_driver_module
       call generate_uniform_lh_sample( iter, num_samples, sequence_length, &  ! Intent(in)
                                        pdf_dim+d_uniform_extra, &         ! Intent(in)
                                        X_u_k_lh_start(:,:) )                  ! Intent(out)
+                              
+      ! Clip uniform sample points to expected range                                 
+      X_u_k_lh_start = max( uniform_sample_thresh, &
+                            min( one - uniform_sample_thresh, X_u_k_lh_start ) )
 
       if ( l_lh_importance_sampling ) then
 

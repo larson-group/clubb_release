@@ -75,6 +75,13 @@ module parameters_silhs
     vert_decorr_coef       = 0.03_core_rknd      ! Empirically defined de-correlation constant [-]
 
   !$omp threadprivate( importance_prob_thresh, vert_decorr_coef )
+  
+  
+  real( kind = core_rknd ), public, parameter :: &
+    uniform_sample_thresh   = 1.e-6              ! Uniform samples are expected to be in the range
+                                                 ! [1.e-6,1-1.e-6] since the algorithm used to 
+                                                 ! calculate the inverse cdf is only accurate for
+                                                 ! single precision values
 
   private ! Default Scope
 
