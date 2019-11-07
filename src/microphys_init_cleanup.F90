@@ -66,6 +66,7 @@ module microphys_init_cleanup
         silhs_config_flags_type,             & ! Type(s)
         set_default_silhs_config_flags,      & ! Procedure(s)
         initialize_silhs_config_flags_type,  &
+        print_silhs_config_flags,            &
         eight_cluster_presc_probs,           & ! Sampling probabilities for prescribed mode (SILHS)
         importance_prob_thresh,              & ! Minimum PDF probability for importance sampling
         vert_decorr_coef                       ! Vertical overlap decorrelation coefficient (SILHS)
@@ -452,33 +453,15 @@ module microphys_init_cleanup
        call write_text ( "lh_sequence_length = ", lh_sequence_length, &
                          l_write_to_file, iunit )
        call write_text ( "lh_seed = ", lh_seed, l_write_to_file, iunit )
-       call write_text ( "l_lh_importance_sampling = ", &
-                         silhs_config_flags%l_lh_importance_sampling, l_write_to_file, iunit )
        call write_text ( "l_fix_w_chi_eta_correlations = ", &
                          l_fix_w_chi_eta_correlations, l_write_to_file, iunit )
        call write_text ( "l_silhs_KK_convergence_adj_mean = ", &
                          l_silhs_KK_convergence_adj_mean, &
                          l_write_to_file, iunit )
-       call write_text ( "l_lh_straight_mc = ", silhs_config_flags%l_lh_straight_mc, &
-                         l_write_to_file, iunit )
-       call write_text ( "l_lh_clustered_sampling = ", &
-                         silhs_config_flags%l_lh_clustered_sampling, l_write_to_file, iunit )
-       call write_text ( "l_rcm_in_cloud_k_lh_start = ", &
-                         silhs_config_flags%l_rcm_in_cloud_k_lh_start, l_write_to_file, iunit )
-       call write_text ( "l_random_k_lh_start = ", silhs_config_flags%l_random_k_lh_start, &
-                         l_write_to_file, iunit )
        call write_text ( "importance_prob_thresh = ", importance_prob_thresh, l_write_to_file, &
                          iunit )
-       call write_text ( "l_lh_limit_weights = ", silhs_config_flags%l_lh_limit_weights, &
-                         l_write_to_file, iunit )
-       call write_text ( "cluster_allocation_strategy = ", &
-                         silhs_config_flags%cluster_allocation_strategy, l_write_to_file, iunit )
-       call write_text ( "l_lh_var_frac = ", silhs_config_flags%l_lh_var_frac, l_write_to_file, &
-                         iunit )
-       call write_text ( "l_lh_normalize_weights = ", silhs_config_flags%l_lh_normalize_weights, &
-                         l_write_to_file, iunit )       
        call write_text ( "host_dx = ", host_dx, &
-                         l_write_to_file, iunit )       
+                         l_write_to_file, iunit )
        call write_text ( "host_dy = ", host_dy, &
                          l_write_to_file, iunit )
        call write_text ( "hmp2_ip_on_hmm2_ip_slope%rr = ", &
@@ -558,6 +541,15 @@ module microphys_init_cleanup
                          l_write_to_file, iunit )
        call write_text ( "precip_frac_calc_type = ", precip_frac_calc_type, &
                          l_write_to_file, iunit )
+
+         ! Write to file all SILHS configurable flags from the namelist configurable_silhs_flags_nl
+       call write_text( "--------------------------------------------------", &
+                        l_write_to_file, iunit )
+       call write_text( "&SILHS_setting", l_write_to_file, iunit )
+       call write_text( "--------------------------------------------------", &
+                        l_write_to_file, iunit )
+
+       call print_silhs_config_flags( iunit, silhs_config_flags ) ! Intent(in)
 
        if ( l_write_to_file ) close(unit=iunit)
 

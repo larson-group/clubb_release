@@ -86,7 +86,8 @@ module parameters_silhs
   private ! Default Scope
 
   public :: eight_cluster_presc_probs_type, silhs_config_flags_type, &
-            set_default_silhs_config_flags, initialize_silhs_config_flags_type
+            set_default_silhs_config_flags, initialize_silhs_config_flags_type, &
+            print_silhs_config_flags
 
   contains
 
@@ -238,6 +239,45 @@ module parameters_silhs
 
     return
   end subroutine initialize_silhs_config_flags_type
+!-----------------------------------------------------------------------
+
+!-------------------------------------------------------------------------------
+  subroutine print_silhs_config_flags( iunit, silhs_config_flags )
+
+    ! Description:
+    !   Prints the silhs_config_flags.
+
+    ! References:
+    !   None
+    !---------------------------------------------------------------------------
+
+    implicit none
+
+    ! Input variables
+    integer, intent(in) :: &
+      iunit ! The file to write to
+
+    type(silhs_config_flags_type), intent(in) :: &
+      silhs_config_flags ! Derived type holding all configurable SILHS flags
+
+!-----------------------------------------------------------------------
+    ! Begin code
+
+    write(iunit,*) "cluster_allocation_strategy = ", silhs_config_flags%cluster_allocation_strategy
+    write(iunit,*) "l_lh_importance_sampling = ", silhs_config_flags%l_lh_importance_sampling
+    write(iunit,*) "l_Lscale_vert_avg = ", silhs_config_flags%l_Lscale_vert_avg
+    write(iunit,*) "l_lh_straight_mc = ", silhs_config_flags%l_lh_straight_mc
+    write(iunit,*) "l_lh_clustered_sampling = ", silhs_config_flags%l_lh_clustered_sampling
+    write(iunit,*) "l_rcm_in_cloud_k_lh_start = ", silhs_config_flags%l_rcm_in_cloud_k_lh_start
+    write(iunit,*) "l_random_k_lh_start = ", silhs_config_flags%l_random_k_lh_start
+    write(iunit,*) "l_max_overlap_in_cloud = ", silhs_config_flags%l_max_overlap_in_cloud
+    write(iunit,*) "l_lh_instant_var_covar_src = ", silhs_config_flags%l_lh_instant_var_covar_src
+    write(iunit,*) "l_lh_limit_weights = ", silhs_config_flags%l_lh_limit_weights
+    write(iunit,*) "l_lh_var_frac = ", silhs_config_flags%l_lh_var_frac
+    write(iunit,*) "l_lh_normalize_weights = ", silhs_config_flags%l_lh_normalize_weights
+
+    return
+  end subroutine print_silhs_config_flags
 !-----------------------------------------------------------------------
 
 end module parameters_silhs
