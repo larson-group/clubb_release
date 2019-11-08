@@ -320,12 +320,12 @@ module transform_to_pdf_module
     integer :: sample, k, i ! Loop iterators
 
     ! ---- Begin Code ----
-
+    
     ! From Latin hypercube sample, generate standard normal sample
     do i = 1, pdf_dim
       do sample = 1, num_samples
         do k = 1, nz
-          std_normal(i,k,sample) = ltqnorm( X_u_all_levs(k,sample,i) )
+          std_normal(i,k,sample) = cdfnorminv( X_u_all_levs(k,sample,i) )
         end do
       end do
     end do
@@ -339,6 +339,76 @@ module transform_to_pdf_module
     return
   end subroutine gaus_mixt_points
 !-------------------------------------------------------------------------------
+
+!-----------------------------------------------------------------------
+  function cdfnorminv( p_core_rknd )
+! Description:
+!     This function computes the inverse of the cumulative normal distribution function.
+!     The return value is the lower tail quantile for the standard normal distribution. 
+!     This is equivalent to SQRT(2) * ERFINV(2*P-1), but is designed for computational 
+!     efficiency on GPUs, however it also has a signficant performance boost when run 
+!     on CPUs compared to the previously used ltqnorm. The GPU based performance mainly
+!     comes from the reduction of the chance for warp divergence. 
+!   
+!     THIS FUNCTION ONLY HAS SINGLE PRECISION ACCURACY, BUT ACCEPTS DOUBLE PRECISION ARGUMENTS
+!
+! References:
+!   This algorithm was designed based on the source code provided in 
+!     M.B. Giles (2010) "Approximating the erfinv function"
+!     https://people.maths.ox.ac.uk/gilesm/files/gems_erfinv.pdf
+!-----------------------------------------------------------------------
+
+    use clubb_precision, only: &
+      core_rknd
+
+    use constants_clubb, only: &
+      sqrt_2   ! Constants
+      
+    implicit none
+
+    ! ---------------- Input Variable(s) ----------------
+
+    real( kind = core_rknd ), intent(in) :: p_core_rknd
+
+    ! ---------------- Return Variable ----------------
+
+    real( kind = core_rknd ) :: cdfnorminv
+
+    ! ---------------- Local Variable(s) ----------------
+    
+    ! Polynomial coefficients
+    real( kind = core_rknd ), dimension(9), parameter :: &
+      a = (/ 2.81022636e-8, 3.43273939e-7, -3.5233877e-6, -4.39150654e-6, 0.00021858087, &
+             -0.00125372503, -0.00417768164, 0.246640727, 1.50140941 /)
+             
+    ! Polynomial coefficients
+    real( kind = core_rknd ), dimension(9), parameter :: &
+      b = (/ -0.000200214257,0.000100950558,0.00134934322,-0.00367342844,0.00573950773,&
+             -0.0076224613,0.00943887047,1.00167406,2.83297682 /)
+             
+    real( kind = core_rknd ) :: w, x
+    
+    ! ---------------- Begin Code ----------------
+    
+    x = 2 * p_core_rknd - 1._core_rknd
+    
+    w = -log( ( 1 - x ) * ( 1 + x ) ) 
+    
+    if ( w < 5.0 ) then 
+      
+      w = w - 2.5_core_rknd
+      
+      cdfnorminv = sqrt_2 * x * (((((((( a(1) * w + a(2) ) * w + a(3) ) * w + a(4) ) * w &
+                                   + a(5) ) * w + a(6) ) * w + a(7) ) * w + a(8) ) * w + a(9) )
+    else
+      
+      w = sqrt(w) - 3._core_rknd
+      
+      cdfnorminv = sqrt_2 * x * (((((((( b(1) * w + b(2) ) * w + b(3) ) * w + b(4) ) * w &
+                                   + b(5) ) * w + b(6) ) * w + b(7) ) * w + b(8) ) * w + b(9) )
+    end if            
+                
+  end function cdfnorminv
 
 !-----------------------------------------------------------------------
   function ltqnorm( p_core_rknd )

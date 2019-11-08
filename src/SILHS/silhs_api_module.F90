@@ -99,9 +99,10 @@ module silhs_api_module
     clip_transform_silhs_output_api, &
     lh_clipped_variables_type, &
     lh_microphys_var_covar_driver_api, &
+    silhs_config_flags_type, &
     set_default_silhs_config_flags_api, &
     initialize_silhs_config_flags_type_api, &
-    silhs_config_flags_type
+    print_silhs_config_flags_api
 
 contains
 
@@ -567,6 +568,29 @@ contains
                                              silhs_config_flags ) ! Out
 
   end subroutine initialize_silhs_config_flags_type_api
+
+  !-----------------------------------------------------------------
+  ! print_silhs_config_flags: Prints the silhs_config_flags
+  !-----------------------------------------------------------------
+
+  subroutine print_silhs_config_flags_api( iunit, silhs_config_flags ) ! In
+
+    use parameters_silhs, only: &
+      silhs_config_flags_type, &          ! Type
+      print_silhs_config_flags            ! Procedure
+
+    implicit none
+
+    ! Input variables
+    integer, intent(in) :: &
+      iunit ! The file to write to
+
+    type(silhs_config_flags_type), intent(in) :: &
+      silhs_config_flags ! Derived type holding all configurable SILHS flags
+
+    call print_silhs_config_flags( iunit, silhs_config_flags ) ! In
+
+  end subroutine print_silhs_config_flags_api
 
 #endif
 

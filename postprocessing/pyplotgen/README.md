@@ -7,11 +7,12 @@ Pyplotgen only supports input in the netcdf (.nc) format.
 | *Option Flag* | *Description* |
 | --- | --- |
 | -r --replace | Overwrite the output folder if it already exists |
-| -l --les | Overplot LES output data |
+| -l --les | Overplot LES output data. The nc files for les output can be overwritten by changing the directory listed for a given case inside the `Case_Definitions.py` file. |
+| -e --e3sm [FOLDER PATHNAME] | Adds lines to plot output. The filenames in the folder must either match the casename intended to run it, e.g. `bomex.nc` (using the lowercase version of the casename as defined in the `Case_definitions.py` file), or rewrite the `'e3sm_file': None,` parameter for the desired case to contain the location of the E3SM file. The second option is not reccomended because it risks pushing invalid directories to the repo. | 
 | -b --plot-golaz-best | Plots clubb r408 'best ever' plots |
 | --thin | Plot lines with a thin width |
 | --plot-budgets | Includes budget panels in output |
-| --diff [FOLDER NAME] | (Experimental) Plots the difference between the input folder and the folder specified after --diff instead of plotting a regular profile |
+| --diff [FOLDER PATHNAME] | (Experimental) Plots the difference between the input folder and the folder specified after --diff instead of plotting a regular profile |
 | --no-legends | Panels are drawn without a line legend |
 | -i --input | Manually specify an input folder. Must be followed by a folder path |
 | -o --output | Manually specify an output folder. If not specified, will automatically output to `pyplotgen/output` |
