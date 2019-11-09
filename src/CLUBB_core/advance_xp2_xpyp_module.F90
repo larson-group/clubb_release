@@ -122,8 +122,9 @@ module advance_xp2_xpyp_module
         zt2zm
 
     use pdf_closure_module, only: &
-        iiPDF_ADG1, & ! Variable(s)
-        iiPDF_new,  &
+        iiPDF_ADG1,       & ! Variable(s)
+        iiPDF_new,        &
+        iiPDF_new_hybrid, &
         iiPDF_type
 
     use pdf_parameter_module, only: &
@@ -490,41 +491,105 @@ module advance_xp2_xpyp_module
                                gr%invrs_dzt(:), gr%invrs_dzm(:), & ! In
                                lhs_diff_uv(:,:)                  ) ! Out
 
-    ! Implicit contributions to term up2/vp2
-    call xp2_xpyp_lhs( dt, l_iter, tau_zm, C4_C14_1d, & ! In
-                       lhs_ta_wpup2, lhs_ma, lhs_diff_uv, & ! In
-                       lhs ) ! Out
+    if ( iiPDF_type == iiPDF_new_hybrid ) then
 
-    ! Explicit contributions to up2
-    call xp2_xpyp_uv_rhs( xp2_xpyp_up2, dt, l_iter, & ! In
-                          wp2, wp2_zt, wpthvp, & ! In
-                          Lscale, C4_C14_1d, tau_zm,  & ! In
-                          um, vm, upwp, vpwp, up2, vp2, & ! In
-                          thv_ds_zm, C4, C5, C14, wp2_splat, & ! In
-                          lhs_ta_wpup2, rhs_ta_wpup2, & ! In
-                          uv_rhs(:,1) ) ! Out
+       ! Different LHS required for up2 and vp2.
 
-    ! Explicit contributions to vp2
-    call xp2_xpyp_uv_rhs( xp2_xpyp_vp2, dt, l_iter, & ! In
-                          wp2, wp2_zt, wpthvp, & ! In
-                          Lscale, C4_C14_1d, tau_zm,  & ! In
-                          vm, um, vpwp, upwp, vp2, up2, & ! In
-                          thv_ds_zm, C4, C5, C14, wp2_splat, & ! In
-                          lhs_ta_wpup2, rhs_ta_wpvp2, & ! In
-                          uv_rhs(:,2) ) ! Out
+       ! Solve for up2
 
-    ! Solve the tridiagonal system
-    call xp2_xpyp_solve( xp2_xpyp_up2_vp2, 2, & ! Intent(in)
-                         uv_rhs, lhs,         & ! Intent(inout)
-                         uv_solution )          ! Intent(out)
+       ! Implicit contributions to term up2
+       call xp2_xpyp_lhs( dt, l_iter, tau_zm, C4_C14_1d, & ! In
+                          lhs_ta_wpup2, lhs_ma, lhs_diff_uv, & ! In
+                          lhs ) ! Out
 
-    up2(1:gr%nz) = uv_solution(1:gr%nz,1)
-    vp2(1:gr%nz) = uv_solution(1:gr%nz,2)
+       ! Explicit contributions to up2
+       call xp2_xpyp_uv_rhs( xp2_xpyp_up2, dt, l_iter, & ! In
+                             wp2, wp2_zt, wpthvp, & ! In
+                             Lscale, C4_C14_1d, tau_zm,  & ! In
+                             um, vm, upwp, vpwp, up2, vp2, & ! In
+                             thv_ds_zm, C4, C5, C14, wp2_splat, & ! In
+                             lhs_ta_wpup2, rhs_ta_wpup2, & ! In
+                             uv_rhs(:,1) ) ! Out
 
-    if ( l_stats_samp ) then
-      call xp2_xpyp_implicit_stats( xp2_xpyp_up2, up2 ) ! Intent(in)
-      call xp2_xpyp_implicit_stats( xp2_xpyp_vp2, vp2 ) ! Intent(in)
-    end if
+       ! Solve the tridiagonal system
+       call xp2_xpyp_solve( xp2_xpyp_up2_vp2, 1, & ! Intent(in)
+                            uv_rhs, lhs,         & ! Intent(inout)
+                            uv_solution )          ! Intent(out)
+
+       up2(1:gr%nz) = uv_solution(1:gr%nz,1)
+
+       if ( l_stats_samp ) then
+          call xp2_xpyp_implicit_stats( xp2_xpyp_up2, up2 ) ! Intent(in)
+       endif
+
+       ! Solve for vp2
+
+       ! Implicit contributions to term vp2
+       call xp2_xpyp_lhs( dt, l_iter, tau_zm, C4_C14_1d, & ! In
+                          lhs_ta_wpvp2, lhs_ma, lhs_diff_uv, & ! In
+                          lhs ) ! Out
+
+       ! Explicit contributions to vp2
+       call xp2_xpyp_uv_rhs( xp2_xpyp_vp2, dt, l_iter, & ! In
+                             wp2, wp2_zt, wpthvp, & ! In
+                             Lscale, C4_C14_1d, tau_zm,  & ! In
+                             vm, um, vpwp, upwp, vp2, up2, & ! In
+                             thv_ds_zm, C4, C5, C14, wp2_splat, & ! In
+                             lhs_ta_wpvp2, rhs_ta_wpvp2, & ! In
+                             uv_rhs(:,1) ) ! Out
+
+       ! Solve the tridiagonal system
+       call xp2_xpyp_solve( xp2_xpyp_up2_vp2, 1, & ! Intent(in)
+                            uv_rhs, lhs,         & ! Intent(inout)
+                            uv_solution )          ! Intent(out)
+
+       vp2(1:gr%nz) = uv_solution(1:gr%nz,1)
+
+       if ( l_stats_samp ) then
+          call xp2_xpyp_implicit_stats( xp2_xpyp_vp2, vp2 ) ! Intent(in)
+       endif
+
+    else ! ADG1 and other types
+
+       ! ADG1 allows up2 and vp2 to use the same LHS.
+
+       ! Implicit contributions to term up2/vp2
+       call xp2_xpyp_lhs( dt, l_iter, tau_zm, C4_C14_1d, & ! In
+                          lhs_ta_wpup2, lhs_ma, lhs_diff_uv, & ! In
+                          lhs ) ! Out
+
+       ! Explicit contributions to up2
+       call xp2_xpyp_uv_rhs( xp2_xpyp_up2, dt, l_iter, & ! In
+                             wp2, wp2_zt, wpthvp, & ! In
+                             Lscale, C4_C14_1d, tau_zm,  & ! In
+                             um, vm, upwp, vpwp, up2, vp2, & ! In
+                             thv_ds_zm, C4, C5, C14, wp2_splat, & ! In
+                             lhs_ta_wpup2, rhs_ta_wpup2, & ! In
+                             uv_rhs(:,1) ) ! Out
+
+       ! Explicit contributions to vp2
+       call xp2_xpyp_uv_rhs( xp2_xpyp_vp2, dt, l_iter, & ! In
+                             wp2, wp2_zt, wpthvp, & ! In
+                             Lscale, C4_C14_1d, tau_zm,  & ! In
+                             vm, um, vpwp, upwp, vp2, up2, & ! In
+                             thv_ds_zm, C4, C5, C14, wp2_splat, & ! In
+                             lhs_ta_wpup2, rhs_ta_wpvp2, & ! In
+                             uv_rhs(:,2) ) ! Out
+
+       ! Solve the tridiagonal system
+       call xp2_xpyp_solve( xp2_xpyp_up2_vp2, 2, & ! Intent(in)
+                            uv_rhs, lhs,         & ! Intent(inout)
+                            uv_solution )          ! Intent(out)
+
+       up2(1:gr%nz) = uv_solution(1:gr%nz,1)
+       vp2(1:gr%nz) = uv_solution(1:gr%nz,2)
+
+       if ( l_stats_samp ) then
+          call xp2_xpyp_implicit_stats( xp2_xpyp_up2, up2 ) ! Intent(in)
+          call xp2_xpyp_implicit_stats( xp2_xpyp_vp2, vp2 ) ! Intent(in)
+       endif
+
+    endif ! iiPDF_type
 
 
     ! Apply the positive definite scheme to variances
