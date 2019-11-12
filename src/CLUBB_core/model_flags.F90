@@ -279,6 +279,15 @@ module model_flags
 !$omp                l_use_C11_Richardson, l_brunt_vaisala_freq_moist, l_use_thvm_in_bv_freq, &
 !$omp                l_use_wp3_pr3, l_rcm_supersat_adj, l_single_C2_Skw, l_damp_wp3_Skw_squared )
 
+  ! used in adj_low_res_nu. If .true., avg_deltaz = deltaz
+#ifdef GFDL
+  logical, public :: l_prescribed_avg_deltaz = .true.
+#else
+  logical, public :: l_prescribed_avg_deltaz = .false.
+#endif
+
+!$omp threadprivate(l_prescribed_avg_deltaz)
+
 #ifdef GFDL
   logical, public :: &
      I_sat_sphum       ! h1g, 2010-06-15
@@ -291,7 +300,9 @@ module model_flags
     l_use_cloud_cover, l_calc_thlp2_rad, l_rcm_supersat_adj, &
     l_damp_wp3_Skw_squared, l_min_wp2_from_corr_wx, l_min_xp2_from_corr_wx, &
     l_C2_cloud_frac, l_predict_upwp_vpwp, l_diag_Lscale_from_tau, &
-    l_stability_correct_tau_zm, l_damp_wp2_using_em, l_use_C7_Richardson
+    l_stability_correct_tau_zm, l_damp_wp2_using_em, l_use_C7_Richardson, &
+    l_use_precip_frac, l_do_expldiff_rtm_thlm, l_use_C11_Richardson, &
+    l_prescribed_avg_deltaz
 
   contains
 

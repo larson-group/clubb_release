@@ -122,7 +122,6 @@ time_restart  = 0.0      ! Time of model restart.
 !                e.g. checks for NaNs and spurious negative values.
 debug_level   = 2
 
-l_prescribed_avg_deltaz = .false.
 
 l_input_fields = .false.
 

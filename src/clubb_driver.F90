@@ -86,7 +86,7 @@ module clubb_driver
     use inputfields, only: stat_files
 
     use parameters_tunable, only: &
-      l_prescribed_avg_deltaz, params_list !--------------------------------- Variable(s)
+      params_list !--------------------------------- Variable(s)
 
     use advance_clubb_core_module, only: &
       setup_clubb_core,  & !------------------------------------------------- Procedure(s)
@@ -515,7 +515,7 @@ module clubb_driver
       time_restart, l_input_fields, debug_level, &
       sclr_tol, sclr_dim, iisclr_thl, iisclr_rt, iisclr_CO2, &
       edsclr_dim, iiedsclr_thl, iiedsclr_rt, iiedsclr_CO2, &
-      l_prescribed_avg_deltaz, l_rtm_nudge, rtm_min, rtm_nudge_max_altitude, &
+      l_rtm_nudge, rtm_min, rtm_nudge_max_altitude, &
       l_diagnose_correlations, l_calc_w_corr, l_calc_thlp2_rad
 
 
@@ -850,8 +850,6 @@ module clubb_driver
       call write_text( "l_uv_nudge = ", l_uv_nudge, l_write_to_file, iunit )
       call write_text( "l_restart = ", l_restart, l_write_to_file, iunit )
       call write_text( "l_input_fields = ", l_input_fields, l_write_to_file, iunit )
-      call write_text( "l_prescribed_avg_deltaz = ", l_prescribed_avg_deltaz, &
-                       l_write_to_file, iunit )
       call write_text( "restart_path_case = " // restart_path_case, l_write_to_file, iunit )
       call write_text( "time_restart = ", real( time_restart, kind = core_rknd ), &
            l_write_to_file, iunit )
