@@ -1140,7 +1140,9 @@ module setup_clubb_pdf_params
       corr_w_Ncn_2_n    ! Correlation of w and ln Ncn (2nd PDF component)    [-]
 
     real( kind = core_rknd ), dimension(nz) :: &
-       ones_vector    ! Vector of 1s
+       ones_vector,     & ! Vector of 1s
+       Ncn_tol_in,      & ! Tolerance value for Ncn
+       hydromet_tol_in    ! Tolerance value for hydromet
 
     logical :: &
       l_limit_corr_chi_eta    ! Flag to limit the correlation of chi and eta [-]
@@ -1163,19 +1165,21 @@ module setup_clubb_pdf_params
     ! approximation.
     if ( l_calc_w_corr ) then
 
+       Ncn_tol_in = Ncn_tol
+
        ! Calculate the correlation of w and ln Ncn in each PDF component.
        ! The subroutine calc_corr_w_hm_n can be used to do this as long as a
        ! value of 1 is sent in for precip_frac_1 and precip_frac_2.
        jvar = iiPDF_Ncn
-       call calc_corr_w_hm_n( nz, wm_zt, wpNcnp_zt, &
+       call calc_corr_w_hm_n( wm_zt, wpNcnp_zt, &
                               mu_x_1(iiPDF_w,:), mu_x_2(iiPDF_w,:), &
                               mu_x_1(jvar,:), mu_x_2(jvar,:), &
                               sigma_x_1(iiPDF_w,:), sigma_x_2(iiPDF_w,:), &
                               sigma_x_1(jvar,:), sigma_x_2(jvar,:), &
                               sigma_x_1_n(jvar,:), sigma_x_2_n(jvar,:), &
-                              mixt_frac, ones_vector, ones_vector, &
-                              corr_w_Ncn_1_n, corr_w_Ncn_2_n, &
-                              Ncn_tol )
+                              mixt_frac, ones_vector, &
+                              ones_vector, Ncn_tol_in, &
+                              corr_w_Ncn_1_n, corr_w_Ncn_2_n )
 
        ! Calculate the correlation of w and the natural logarithm of the
        ! hydrometeor for each PDF component and each hydrometeor type.
@@ -1183,16 +1187,17 @@ module setup_clubb_pdf_params
 
           hm_idx = pdf2hydromet_idx(jvar)
 
-          call calc_corr_w_hm_n( nz, wm_zt, &
-                                 wphydrometp_zt(:,hm_idx), &
+          hydromet_tol_in = hydromet_tol(hm_idx)
+
+          call calc_corr_w_hm_n( wm_zt, wphydrometp_zt(:,hm_idx), &
                                  mu_x_1(iiPDF_w,:), mu_x_2(iiPDF_w,:), &
                                  mu_x_1(jvar,:), mu_x_2(jvar,:), &
                                  sigma_x_1(iiPDF_w,:), sigma_x_2(iiPDF_w,:), &
                                  sigma_x_1(jvar,:), sigma_x_2(jvar,:), &
                                  sigma_x_1_n(jvar,:), sigma_x_2_n(jvar,:), &
-                                 mixt_frac, precip_frac_1, precip_frac_2, &
-                                 corr_w_hm_1_n(jvar,:), corr_w_hm_2_n(jvar,:), &
-                                 hydromet_tol(hm_idx) )
+                                 mixt_frac, precip_frac_1, &
+                                 precip_frac_2, hydromet_tol_in, &
+                                 corr_w_hm_1_n(jvar,:), corr_w_hm_2_n(jvar,:) )
 
        enddo ! jvar = iiPDF_Ncn+1, pdf_dim
 
@@ -2991,15 +2996,15 @@ module setup_clubb_pdf_params
   end subroutine denorm_transform_corr
 
   !=============================================================================
-  subroutine calc_corr_w_hm_n( nz, wm, wphydrometp, &
-                               mu_w_1, mu_w_2, &
-                               mu_hm_1, mu_hm_2, &
-                               sigma_w_1, sigma_w_2, &
-                               sigma_hm_1, sigma_hm_2, &
-                               sigma_hm_1_n, sigma_hm_2_n, &
-                               mixt_frac, precip_frac_1, precip_frac_2, &
-                               corr_w_hm_1_n, corr_w_hm_2_n, &
-                               hm_tol )
+  elemental subroutine calc_corr_w_hm_n( wm, wphydrometp, &
+                                         mu_w_1, mu_w_2, &
+                                         mu_hm_1, mu_hm_2, &
+                                         sigma_w_1, sigma_w_2, &
+                                         sigma_hm_1, sigma_hm_2, &
+                                         sigma_hm_1_n, sigma_hm_2_n, &
+                                         mixt_frac, precip_frac_1, &
+                                         precip_frac_2, hm_tol, &
+                                         corr_w_hm_1_n, corr_w_hm_2_n )
 
     ! Description:
     ! Calculates the PDF component correlation (in-precip) between vertical
@@ -3078,10 +3083,7 @@ module setup_clubb_pdf_params
     implicit none
 
     ! Input Variables
-    integer, intent(in) :: &
-      nz    ! Number of vertical levels
-
-    real( kind = core_rknd ), dimension(nz), intent(in) :: &
+    real( kind = core_rknd ), intent(in) :: &
       wm,            & ! Mean vertical velocity (overall), <w>             [m/s]
       wphydrometp,   & ! Covariance of w and hm (overall), <w'hm'>  [m/s(hm un)]
       mu_w_1,        & ! Mean of w (1st PDF component)                     [m/s]
@@ -3102,19 +3104,19 @@ module setup_clubb_pdf_params
       hm_tol           ! Hydrometeor tolerance value                     [hm un]
 
     ! Output Variables
-    real( kind = core_rknd ), dimension(nz), intent(out) :: &
+    real( kind = core_rknd ), intent(out) :: &
       corr_w_hm_1_n, & ! Correlation of w and ln hm (1st PDF component) ip   [-]
       corr_w_hm_2_n    ! Correlation of w and ln hm (2nd PDF component) ip   [-]
 
     ! Local Variables
-    real( kind = core_rknd ), dimension(nz) :: &
+    real( kind = core_rknd ) :: &
       corr_w_hm_n    ! Correlation of w and ln hm (both PDF components) ip   [-]
 
 
     ! Calculate the PDF component correlation of vertical velocity, w, and the
     ! natural logarithm of a hydrometeor, ln hm, in precipitation.
-    where ( sigma_w_1 > w_tol .and. sigma_hm_1 > hm_tol .and. &
-            sigma_w_2 > w_tol .and. sigma_hm_2 > hm_tol )
+    if ( sigma_w_1 > w_tol .and. sigma_hm_1 > hm_tol .and. &
+         sigma_w_2 > w_tol .and. sigma_hm_2 > hm_tol ) then
 
        ! Both w and hm vary in both PDF components.
        ! Calculate corr_w_hm_n (where corr_w_hm_1_n = corr_w_hm_2_n
@@ -3128,11 +3130,11 @@ module setup_clubb_pdf_params
                * sigma_w_2 * sigma_hm_2_n * mu_hm_2 )
 
        ! Check that the PDF component correlations have reasonable values.
-       where ( corr_w_hm_n > max_mag_correlation )
+       if ( corr_w_hm_n > max_mag_correlation ) then
           corr_w_hm_n = max_mag_correlation
-       elsewhere ( corr_w_hm_n < -max_mag_correlation )
+       elseif ( corr_w_hm_n < -max_mag_correlation ) then
           corr_w_hm_n = -max_mag_correlation
-       endwhere
+       endif
 
        ! The PDF component correlations between w and ln hm (in-precip) are
        ! equal.
@@ -3140,7 +3142,7 @@ module setup_clubb_pdf_params
        corr_w_hm_2_n = corr_w_hm_n
 
 
-    elsewhere ( sigma_w_1 > w_tol .and. sigma_hm_1 > hm_tol )
+    elseif ( sigma_w_1 > w_tol .and. sigma_hm_1 > hm_tol ) then
 
        ! Both w and hm vary in PDF component 1, but at least one of w and hm is
        ! constant in PDF component 2.
@@ -3152,17 +3154,17 @@ module setup_clubb_pdf_params
          / ( mixt_frac * precip_frac_1 * sigma_w_1 * sigma_hm_1_n * mu_hm_1 )
 
        ! Check that the PDF component 1 correlation has a reasonable value.
-       where ( corr_w_hm_1_n > max_mag_correlation )
+       if ( corr_w_hm_1_n > max_mag_correlation ) then
           corr_w_hm_1_n = max_mag_correlation
-       elsewhere ( corr_w_hm_1_n < -max_mag_correlation )
+       elseif ( corr_w_hm_1_n < -max_mag_correlation ) then
           corr_w_hm_1_n = -max_mag_correlation
-       endwhere
+       endif
 
        ! The PDF component 2 correlation is undefined.
        corr_w_hm_2_n = zero
        
 
-    elsewhere ( sigma_w_2 > w_tol .and. sigma_hm_2 > hm_tol )
+    elseif ( sigma_w_2 > w_tol .and. sigma_hm_2 > hm_tol ) then
 
        ! Both w and hm vary in PDF component 2, but at least one of w and hm is
        ! constant in PDF component 1.
@@ -3175,17 +3177,17 @@ module setup_clubb_pdf_params
              * sigma_w_2 * sigma_hm_2_n * mu_hm_2 )
 
        ! Check that the PDF component 2 correlation has a reasonable value.
-       where ( corr_w_hm_2_n > max_mag_correlation )
+       if ( corr_w_hm_2_n > max_mag_correlation ) then
           corr_w_hm_2_n = max_mag_correlation
-       elsewhere ( corr_w_hm_2_n < -max_mag_correlation )
+       elseif ( corr_w_hm_2_n < -max_mag_correlation ) then
           corr_w_hm_2_n = -max_mag_correlation
-       endwhere
+       endif
 
        ! The PDF component 1 correlation is undefined.
        corr_w_hm_1_n = zero
        
 
-    elsewhere    ! sigma_w_1 * sigma_hm_1 = 0 .and. sigma_w_2 * sigma_hm_2 = 0.
+    else    ! sigma_w_1 * sigma_hm_1 = 0 .and. sigma_w_2 * sigma_hm_2 = 0.
 
        ! At least one of w and hm is constant in both PDF components.
 
@@ -3194,7 +3196,7 @@ module setup_clubb_pdf_params
        corr_w_hm_2_n = zero
 
 
-    endwhere
+    endif
 
 
     return
