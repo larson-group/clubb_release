@@ -283,15 +283,6 @@ module parameters_tunable
 
 !$omp threadprivate( up2_vp2_factor )
 
-  ! used in adj_low_res_nu. If .true., avg_deltaz = deltaz
-#ifdef GFDL
-  logical, public :: l_prescribed_avg_deltaz = .true.
-#else
-  logical, public :: l_prescribed_avg_deltaz = .false.
-#endif
-
-!$omp threadprivate(l_prescribed_avg_deltaz)
-
   ! Since we lack a devious way to do this just once, this namelist
   ! must be changed as well when a new parameter is added.
   namelist /clubb_params_nl/  & 
@@ -703,6 +694,9 @@ module parameters_tunable
 
     use clubb_precision, only: &
       core_rknd ! Variable(s)
+
+    use model_flags, only: &
+      l_prescribed_avg_deltaz ! If .true., avg_deltaz = deltaz
 
     implicit none
 

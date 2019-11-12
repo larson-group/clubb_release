@@ -141,13 +141,13 @@ module clubb_api_module
     l_use_C11_Richardson, &
     l_brunt_vaisala_freq_moist, &
     l_use_thvm_in_bv_freq, &
-    l_rcm_supersat_adj
+    l_rcm_supersat_adj, &
+    l_prescribed_avg_deltaz ! used in adj_low_res_nu. If .true., avg_deltaz = deltaz
 
   use parameters_model, only : &
     hydromet_dim    ! Number of hydrometeor species
 
   use parameters_tunable, only : &
-    l_prescribed_avg_deltaz, & ! used in adj_low_res_nu. If .true., avg_deltaz = deltaz
     mu, &
     params_list
 
