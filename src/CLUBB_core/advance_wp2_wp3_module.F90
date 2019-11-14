@@ -67,6 +67,7 @@ module advance_wp2_wp3_module
                               wp2_splat, wp3_splat,                    & ! intent(in)
                               pdf_implicit_coefs_terms,                & ! In
                               wprtp, wpthlp, rtp2, thlp2,              & ! In
+                              l_min_wp2_from_corr_wx,                  & ! In
                               wp2, wp3, wp3_zm, wp2_zt )                 ! Inout
 
     ! Description:
@@ -197,6 +198,12 @@ module advance_wp2_wp3_module
 
     type(implicit_coefs_terms), intent(in) :: &
       pdf_implicit_coefs_terms    ! Implicit coefs / explicit terms [units vary]
+
+    logical, intent(in) :: &
+      l_min_wp2_from_corr_wx ! Flag to base the threshold minimum value of wp2 on keeping the
+                             ! overall correlation of w and x (w and rt, as well as w and theta-l)
+                             ! within the limits of -max_mag_correlation_flux to
+                             ! max_mag_correlation_flux.
 
     ! Input/Output
     real( kind = core_rknd ), dimension(gr%nz), intent(inout) ::  & 
@@ -340,6 +347,7 @@ module advance_wp2_wp3_module
                      wp2_splat, wp3_splat,                  & ! Intent(in)
                      pdf_implicit_coefs_terms,              & ! Intent(in)
                      wprtp, wpthlp, rtp2, thlp2,            & ! Intent(in)
+                     l_min_wp2_from_corr_wx,                & ! Intent(in)
                      wp2, wp3, wp3_zm, wp2_zt )               ! Intent(inout)
 
     ! When selected, apply sponge damping after wp2 and wp3 have been advanced.
@@ -444,6 +452,7 @@ module advance_wp2_wp3_module
                          wp2_splat, wp3_splat,                  & ! Intent(in)
                          pdf_implicit_coefs_terms,              & ! Intent(in)
                          wprtp, wpthlp, rtp2, thlp2,            & ! Intent(in)
+                         l_min_wp2_from_corr_wx,                & ! Intent(in)
                          wp2, wp3, wp3_zm, wp2_zt )               ! Intent(inout)
 
     ! Description:
@@ -477,8 +486,7 @@ module advance_wp2_wp3_module
     use model_flags, only:  & 
         l_tke_aniso,                  & ! Variable(s)
         l_hole_fill,                  &
-        l_explicit_turbulent_adv_wp3, &
-        l_min_wp2_from_corr_wx
+        l_explicit_turbulent_adv_wp3
 
     use clubb_precision, only:  & 
         core_rknd ! Variable(s)
@@ -625,6 +633,12 @@ module advance_wp2_wp3_module
 
     type(implicit_coefs_terms), intent(in) :: &
       pdf_implicit_coefs_terms    ! Implicit coefs / explicit terms [units vary]
+
+    logical, intent(in) :: &
+      l_min_wp2_from_corr_wx ! Flag to base the threshold minimum value of wp2 on keeping the
+                             ! overall correlation of w and x (w and rt, as well as w and theta-l)
+                             ! within the limits of -max_mag_correlation_flux to
+                             ! max_mag_correlation_flux.
 
     ! Input/Output Variables
     real( kind = core_rknd ), dimension(gr%nz), intent(inout) ::  & 

@@ -55,6 +55,7 @@ module advance_xp2_xpyp_module
                                sclrm, wpsclrp,                         & ! In
                                wpsclrp2, wpsclrprtp, wpsclrpthlp,      & ! In
                                wp2_splat,                              & ! In
+                               l_min_xp2_from_corr_wx,                 & ! In
                                rtp2, thlp2, rtpthlp, up2, vp2,         & ! Inout
                                sclrp2, sclrprtp, sclrpthlp)              ! Inout
 
@@ -94,7 +95,6 @@ module advance_xp2_xpyp_module
         l_hole_fill, &    ! logical constants
         l_single_C2_Skw, &
         l_explicit_turbulent_adv_xpyp, &
-        l_min_xp2_from_corr_wx, &
         l_C2_cloud_frac
 
     use parameters_tunable, only: &
@@ -244,6 +244,11 @@ module advance_xp2_xpyp_module
 
     real( kind = core_rknd ), dimension(gr%nz), intent(in) :: & 
       wp2_splat    ! Gustiness tendency for wp2 equation
+
+    logical, intent(in) :: &
+      l_min_xp2_from_corr_wx ! Flag to base the threshold minimum value of xp2 (rtp2 and thlp2) on
+                             ! keeping the overall correlation of w and x within the limits of
+                             ! -max_mag_correlation_flux to max_mag_correlation_flux.
 
     ! Input/Output variables
     ! An attribute of (inout) is also needed to import the value of the variances

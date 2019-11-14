@@ -242,7 +242,9 @@ module advance_clubb_core_module
         l_diag_Lscale_from_tau, &
         l_use_C7_Richardson, &
         l_use_C11_Richardson, &
-        l_use_wp3_pr3
+        l_use_wp3_pr3, &
+        l_min_wp2_from_corr_wx, &
+        l_min_xp2_from_corr_wx
 
     use grid_class, only: &
         gr,  & ! Variable(s)
@@ -1514,6 +1516,7 @@ module advance_clubb_core_module
                              sclrm, wpsclrp,                         & ! intent(in)
                              wpsclrp2, wpsclrprtp, wpsclrpthlp,      & ! intent(in)
                              wp2_splat,                              & ! intent(in)
+                             l_min_xp2_from_corr_wx,                 & ! intent(in)
                              rtp2, thlp2, rtpthlp, up2, vp2,         & ! intent(inout)
                              sclrp2, sclrprtp, sclrpthlp)              ! intent(inout)
 
@@ -1564,6 +1567,7 @@ module advance_clubb_core_module
              wp2_splat, wp3_splat,                               & ! intent(in)
              pdf_implicit_coefs_terms,                           & ! intent(in)
              wprtp, wpthlp, rtp2, thlp2,                         & ! intent(in)
+             l_min_wp2_from_corr_wx,                             & ! intent(in)
              wp2, wp3, wp3_zm, wp2_zt )                            ! intent(inout)
 
       if ( clubb_at_least_debug_level( 0 ) ) then
