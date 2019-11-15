@@ -62,7 +62,11 @@ module advance_xm_wpxp_module
                               pdf_implicit_coefs_terms, &
                               um_forcing, vm_forcing, ug, vg, wpthvp, &
                               fcor, um_ref, vm_ref, up2, vp2, &
-                              uprcp, vprcp, rc_coef, & 
+                              uprcp, vprcp, rc_coef, &
+                              l_diffuse_rtm_and_thlm, &
+                              l_stability_correct_Kh_N2_zm, &
+                              l_upwind_wpxp_ta, &
+                              l_upwind_xm_ma, &
                               rtm, wprtp, thlm, wpthlp, &
                               sclrm, wpsclrp, um, upwp, vm, vpwp )
 
@@ -276,6 +280,20 @@ module advance_xm_wpxp_module
       vm_ref, & ! Reference v wind component for nudging       [m/s]
       up2,    & ! Variance of the u wind component             [m^2/s^2]
       vp2       ! Variance of the v wind component             [m^2/s^2]
+
+    logical, intent(in) :: &
+      l_diffuse_rtm_and_thlm,       & ! This flag determines whether or not we want CLUBB to do
+                                      ! diffusion on rtm and thlm
+      l_stability_correct_Kh_N2_zm, & ! This flag determines whether or not we want CLUBB to apply
+                                      ! a stability correction
+      l_upwind_wpxp_ta,             & ! This flag determines whether we want to use an upwind
+                                      ! differencing approximation rather than a centered
+                                      ! differencing for turbulent or mean advection terms.
+                                      ! It affects wprtp, wpthlp, & wpsclrp.
+      l_upwind_xm_ma                  ! This flag determines whether we want to use an upwind
+                                      ! differencing approximation rather than a centered
+                                      ! differencing for turbulent or mean advection terms.
+                                      ! It affects rtm, thlm, sclrm, um and vm.
 
     ! -------------------- Input/Output Variables --------------------
     
@@ -499,6 +517,7 @@ module advance_xm_wpxp_module
                                  pdf_implicit_coefs_terms, &
                                  l_explicit_turbulent_adv_wpxp, l_predict_upwp_vpwp, &
                                  l_scalar_calc, &
+                                 l_upwind_wpxp_ta, &
                                  lhs_ta_wprtp, lhs_ta_wpthlp, lhs_ta_wpup, &
                                  lhs_ta_wpvp, lhs_ta_wpsclrp, &
                                  rhs_ta_wprtp, rhs_ta_wpthlp, rhs_ta_wpup, &
@@ -510,7 +529,10 @@ module advance_xm_wpxp_module
                                  Kw6, C7_Skw_fnc, invrs_rho_ds_zt,                 & ! In
                                  rho_ds_zm, l_implemented, em,                     & ! In
                                  Lscale, thlm, exner, rtm, rcm, p_in_Pa, thvm,     & ! In
-                                 ice_supersat_frac,  & ! In
+                                 ice_supersat_frac,                                & ! In
+                                 l_diffuse_rtm_and_thlm,                           & ! In
+                                 l_stability_correct_Kh_N2_zm,                     & ! In
+                                 l_upwind_xm_ma,                                   & ! In
                                  lhs_diff_zm, lhs_diff_zt, lhs_ma_zt, lhs_ma_zm,   & ! Out
                                  lhs_tp, lhs_ta_xm, lhs_ac_pr2 )                     ! Out
 
@@ -534,6 +556,8 @@ module advance_xm_wpxp_module
                                             rhs_ta_wprtp, rhs_ta_wpthlp, rhs_ta_wpsclrp,    & ! In
                                             lhs_tp, lhs_ta_xm, lhs_ac_pr2, lhs_pr1_wprtp,   & ! In
                                             lhs_pr1_wpthlp, lhs_pr1_wpsclrp,                & ! In
+                                            l_diffuse_rtm_and_thlm,                         & ! In
+                                            l_upwind_xm_ma,                                 & ! In
                                             rtm, wprtp, thlm, wpthlp, sclrm, wpsclrp )        ! Out
 
     else
@@ -555,6 +579,8 @@ module advance_xm_wpxp_module
                                           rhs_ta_wpvp, rhs_ta_wpsclrp,                      & ! In
                                           lhs_tp, lhs_ta_xm, lhs_ac_pr2, lhs_pr1_wprtp,     & ! In
                                           lhs_pr1_wpthlp, lhs_pr1_wpsclrp,                  & ! In
+                                          l_diffuse_rtm_and_thlm,                           & ! In
+                                          l_upwind_xm_ma,                                   & ! In
                                           rtm, wprtp, thlm, wpthlp,                         & ! Out
                                           sclrm, wpsclrp, um, upwp, vm,vpwp )                 ! Out
 
@@ -683,6 +709,7 @@ module advance_xm_wpxp_module
                           l_implemented, lhs_diff_zm, lhs_diff_zt,          & ! In
                           lhs_ma_zm, lhs_ma_zt, lhs_ta_wpxp, lhs_ta_xm,     & ! In
                           lhs_tp, lhs_pr1, lhs_ac_pr2,                      & ! In
+                          l_diffuse_rtm_and_thlm,                           & ! In
                           lhs )                                               ! Out
     ! Description:
     !   Compute LHS band diagonal matrix for xm and w'x'.
@@ -765,8 +792,7 @@ module advance_xm_wpxp_module
         zero
 
     use model_flags, only: &
-        l_clip_semi_implicit, &  ! Variable(s)
-        l_diffuse_rtm_and_thlm
+        l_clip_semi_implicit  ! Variable(s)
 
     use clubb_precision, only:  & 
         core_rknd ! Variable(s)
@@ -869,6 +895,10 @@ module advance_xm_wpxp_module
     real( kind = core_rknd ), dimension(gr%nz), intent(in) :: & 
       lhs_ac_pr2, & ! Accumulation of w'x' and w'x' pressure term 2
       lhs_pr1       ! Pressure term 1 for w'x'
+
+    logical, intent(in) :: &
+      l_diffuse_rtm_and_thlm ! This flag determines whether or not we want CLUBB to do diffusion
+                             ! on rtm and thlm
       
     real (kind = core_rknd) :: &
       invrs_dt
@@ -1100,7 +1130,10 @@ module advance_xm_wpxp_module
                                      Kw6, C7_Skw_fnc, invrs_rho_ds_zt,                  & ! In
                                      rho_ds_zm, l_implemented, em,                      & ! In
                                      Lscale, thlm, exner, rtm, rcm, p_in_Pa, thvm,      & ! In
-                                     ice_supersat_frac, & ! In
+                                     ice_supersat_frac,                                 & ! In
+                                     l_diffuse_rtm_and_thlm,                            & ! In
+                                     l_stability_correct_Kh_N2_zm,                      & ! In
+                                     l_upwind_xm_ma,                                    & ! In
                                      lhs_diff_zm, lhs_diff_zt, lhs_ma_zt, lhs_ma_zm,    & ! Out
                                      lhs_tp, lhs_ta_xm, lhs_ac_pr2 )                      ! Out
     ! Description:
@@ -1119,10 +1152,6 @@ module advance_xm_wpxp_module
         
     use parameters_tunable, only:  & 
         nu6_vert_res_dep ! Variable(s)
-        
-    use model_flags, only: &
-        l_diffuse_rtm_and_thlm,        &
-        l_stability_correct_Kh_N2_zm
 
     use clubb_precision, only:  & 
         core_rknd ! Variable(s)
@@ -1165,6 +1194,16 @@ module advance_xm_wpxp_module
 
     logical, intent(in) ::  & 
       l_implemented   ! Flag for CLUBB being implemented in a larger model.
+
+    logical, intent(in) :: &
+      l_diffuse_rtm_and_thlm,       & ! This flag determines whether or not we want CLUBB to do
+                                      ! diffusion on rtm and thlm
+      l_stability_correct_Kh_N2_zm, & ! This flag determines whether or not we want CLUBB to apply
+                                      ! a stability correction
+      l_upwind_xm_ma                  ! This flag determines whether we want to use an upwind
+                                      ! differencing approximation rather than a centered
+                                      ! differencing for turbulent or mean advection terms.
+                                      ! It affects rtm, thlm, sclrm, um and vm.
       
     !------------------- Output Variables -------------------
     real( kind = core_rknd ), dimension(3,gr%nz), intent(out) :: & 
@@ -1246,6 +1285,7 @@ module advance_xm_wpxp_module
     if ( .not. l_implemented ) then
 
         call term_ma_zt_lhs_all( wm_zt(:), gr%invrs_dzt(:), gr%invrs_dzm(:), & ! Intent(in)
+                                 l_upwind_xm_ma,                             & ! Intent(in)
                                   lhs_ma_zt(:,:)                            ) ! Intent(out)
     endif    
      
@@ -1610,6 +1650,7 @@ module advance_xm_wpxp_module
                                     pdf_implicit_coefs_terms, &
                                     l_explicit_turbulent_adv_wpxp, l_predict_upwp_vpwp, &
                                     l_scalar_calc, &
+                                    l_upwind_wpxp_ta, &
                                     lhs_ta_wprtp, lhs_ta_wpthlp, lhs_ta_wpup, &
                                     lhs_ta_wpvp, lhs_ta_wpsclrp, &
                                     rhs_ta_wprtp, rhs_ta_wpthlp, rhs_ta_wpup, &
@@ -1647,8 +1688,7 @@ module advance_xm_wpxp_module
       sgn_turbulent_velocity
       
     use model_flags, only: &
-      l_explicit_turbulent_adv_xpyp, &  ! Logical constants
-      l_upwind_wpxp_ta
+      l_explicit_turbulent_adv_xpyp     ! Logical constant
       
     use stats_variables, only: &
       l_stats_samp,             & ! Logical constant
@@ -1694,6 +1734,11 @@ module advance_xm_wpxp_module
       l_explicit_turbulent_adv_wpxp, &
       l_scalar_calc, &
       l_predict_upwp_vpwp
+
+    logical, intent(in) :: &
+      l_upwind_wpxp_ta ! This flag determines whether we want to use an upwind differencing
+                       ! approximation rather than a centered differencing for turbulent or
+                       ! mean advection terms. It affects wprtp, wpthlp, & wpsclrp.
       
     !------------------- Output Variables -------------------
         
@@ -2152,6 +2197,8 @@ module advance_xm_wpxp_module
                                             rhs_ta_wpvp, rhs_ta_wpsclrp, &
                                             lhs_tp, lhs_ta_xm, lhs_ac_pr2, lhs_pr1_wprtp, &
                                             lhs_pr1_wpthlp, lhs_pr1_wpsclrp, &
+                                            l_diffuse_rtm_and_thlm, &
+                                            l_upwind_xm_ma, &
                                             rtm, wprtp, thlm, wpthlp, &
                                             sclrm, wpsclrp, um, upwp, vm, vpwp )
     !            
@@ -2313,6 +2360,14 @@ module advance_xm_wpxp_module
 
     integer, intent(in) :: &
       nrhs         ! Number of RHS vectors
+
+    logical, intent(in) :: &
+      l_diffuse_rtm_and_thlm, & ! This flag determines whether or not we want CLUBB to do diffusion
+                                ! on rtm and thlm
+      l_upwind_xm_ma            ! This flag determines whether we want to use an upwind
+                                ! differencing approximation rather than a centered differencing
+                                ! for turbulent or mean advection terms. It affects rtm, thlm,
+                                ! sclrm, um and vm.
       
     ! ------------------- Input/Output Variables -------------------
     
@@ -2383,6 +2438,7 @@ module advance_xm_wpxp_module
                       l_implemented, lhs_diff_zm, lhs_diff_zt,        & ! In
                       lhs_ma_zm, lhs_ma_zt, lhs_ta_wpxp, lhs_ta_xm,   & ! In
                       lhs_tp, lhs_pr1_wprtp, lhs_ac_pr2,              & ! In
+                      l_diffuse_rtm_and_thlm,                         & ! In
                       lhs )                                             ! Out
 
     ! Compute the explicit portion of the r_t and w'r_t' equations.
@@ -2591,6 +2647,7 @@ module advance_xm_wpxp_module
            rt_tol**2, rt_tol, rcond, &            ! Intent(in)
            low_lev_effect, high_lev_effect, &     ! Intent(in)
            l_implemented, solution(:,1),  &       ! Intent(in)
+           l_upwind_xm_ma, &                      ! Intent(in)
            rtm, rt_tol_mfl, wprtp )               ! Intent(inout)
 
     if ( clubb_at_least_debug_level( 0 ) ) then
@@ -2607,6 +2664,7 @@ module advance_xm_wpxp_module
            thl_tol**2, thl_tol, rcond, &          ! Intent(in)
            low_lev_effect, high_lev_effect, &     ! Intent(in)
            l_implemented, solution(:,2),  &       ! Intent(in)
+           l_upwind_xm_ma, &                      ! Intent(in)
            thlm, thl_tol_mfl, wpthlp )            ! Intent(inout)
 
     if ( clubb_at_least_debug_level( 0 ) ) then
@@ -2634,6 +2692,7 @@ module advance_xm_wpxp_module
              sclr_tol(i)**2, sclr_tol(i), rcond, &    ! Intent(in)
              low_lev_effect, high_lev_effect, &       ! Intent(in)
              l_implemented, solution(:,2+i),  &       ! Intent(in)
+             l_upwind_xm_ma, &                        ! Intent(in)
              sclrm(:,i), sclr_tol(i), wpsclrp(:,i) )  ! Intent(inout)
 
       if ( clubb_at_least_debug_level( 0 ) ) then
@@ -2656,6 +2715,7 @@ module advance_xm_wpxp_module
               w_tol_sqd, w_tol, rcond,               & ! Intent(in)
               low_lev_effect, high_lev_effect,       & ! Intent(in)
               l_implemented, solution(:,3+sclr_dim), & ! Intent(in)
+              l_upwind_xm_ma,                        & ! Intent(in)
               um, w_tol, upwp                        ) ! Intent(inout)
 
        if ( clubb_at_least_debug_level( 0 ) ) then
@@ -2672,6 +2732,7 @@ module advance_xm_wpxp_module
               w_tol_sqd, w_tol, rcond,               & ! Intent(in)
               low_lev_effect, high_lev_effect,       & ! Intent(in)
               l_implemented, solution(:,4+sclr_dim), & ! Intent(in)
+              l_upwind_xm_ma,                        & ! Intent(in)
               vm, w_tol, vpwp                        ) ! Intent(inout)
 
        if ( clubb_at_least_debug_level( 0 ) ) then
@@ -2699,6 +2760,8 @@ module advance_xm_wpxp_module
                                             rhs_ta_wprtp, rhs_ta_wpthlp, rhs_ta_wpsclrp, &
                                             lhs_tp, lhs_ta_xm, lhs_ac_pr2, lhs_pr1_wprtp, &
                                             lhs_pr1_wpthlp, lhs_pr1_wpsclrp, &
+                                            l_diffuse_rtm_and_thlm, &
+                                            l_upwind_xm_ma, &
                                             rtm, wprtp, thlm, wpthlp, sclrm, wpsclrp )
     !            
     ! Description: This subroutine solves all xm_wpxp when all the LHS matrices are NOT equal.
@@ -2822,6 +2885,14 @@ module advance_xm_wpxp_module
 
     integer, intent(in) :: &
       nrhs         ! Number of RHS vectors
+
+    logical, intent(in) :: &
+      l_diffuse_rtm_and_thlm, & ! This flag determines whether or not we want CLUBB to do
+                                ! diffusion on rtm and thlm
+      l_upwind_xm_ma            ! This flag determines whether we want to use an upwind
+                                ! differencing approximation rather than a centered differencing
+                                ! for turbulent or mean advection terms. It affects rtm, thlm,
+                                ! sclrm, um and vm.
       
     ! ------------------- Input/Output Variables -------------------
     
@@ -2887,6 +2958,7 @@ module advance_xm_wpxp_module
                       l_implemented, lhs_diff_zm, lhs_diff_zt,            & ! In
                       lhs_ma_zm, lhs_ma_zt, lhs_ta_wprtp, lhs_ta_xm,      & ! In
                       lhs_tp, lhs_pr1_wprtp, lhs_ac_pr2,                  & ! In
+                      l_diffuse_rtm_and_thlm,                             & ! In
                       lhs )                                                 ! Out
 
     ! Compute the explicit portion of the r_t and w'r_t' equations.
@@ -2941,6 +3013,7 @@ module advance_xm_wpxp_module
            rt_tol**2, rt_tol, rcond, &            ! Intent(in)
            low_lev_effect, high_lev_effect, &     ! Intent(in)
            l_implemented, solution(:,1), &        ! Intent(in)
+           l_upwind_xm_ma, &                      ! Intent(in)
            rtm, rt_tol_mfl, wprtp )               ! Intent(inout)
 
     if ( clubb_at_least_debug_level( 0 ) ) then
@@ -2966,6 +3039,7 @@ module advance_xm_wpxp_module
                       l_implemented, lhs_diff_zm, lhs_diff_zt,            & ! In
                       lhs_ma_zm, lhs_ma_zt, lhs_ta_wpthlp, lhs_ta_xm,     & ! In
                       lhs_tp, lhs_pr1_wpthlp, lhs_ac_pr2,                 & ! In
+                      l_diffuse_rtm_and_thlm,                             & ! In
                       lhs )                                                 ! Out
 
     ! Compute the explicit portion of the th_l and w'th_l' equations.
@@ -3020,6 +3094,7 @@ module advance_xm_wpxp_module
            thl_tol**2, thl_tol, rcond, &           ! Intent(in)
            low_lev_effect, high_lev_effect, &      ! Intent(in)
            l_implemented, solution(:,1),  &        ! Intent(in)
+           l_upwind_xm_ma, &                       ! Intent(in)
            thlm, thl_tol_mfl, wpthlp )             ! Intent(inout)
 
     if ( clubb_at_least_debug_level( 0 ) ) then
@@ -3061,6 +3136,7 @@ module advance_xm_wpxp_module
                         l_implemented, lhs_diff_zm, lhs_diff_zt,                  & ! In
                         lhs_ma_zm, lhs_ma_zt, lhs_ta_wpsclrp(:,:,i), lhs_ta_xm,   & ! In
                         lhs_tp, lhs_pr1_wpsclrp, lhs_ac_pr2,                      & ! In
+                        l_diffuse_rtm_and_thlm,                                   & ! In
                         lhs )                                                       ! Out
 
       ! Compute the explicit portion of the sclrm and w'sclr' equations.
@@ -3111,6 +3187,7 @@ module advance_xm_wpxp_module
              sclr_tol(i)**2, sclr_tol(i), rcond, &    ! Intent(in)
              low_lev_effect, high_lev_effect, &       ! Intent(in)
              l_implemented, solution(:,1),  &         ! Intent(in)
+             l_upwind_xm_ma, &                        ! Intent(in)
              sclrm(:,i), sclr_tol(i), wpsclrp(:,i) )  ! Intent(inout)
 
       if ( clubb_at_least_debug_level( 0 ) ) then
@@ -3200,6 +3277,7 @@ module advance_xm_wpxp_module
                xp2_threshold, xm_threshold, rcond, &
                low_lev_effect, high_lev_effect, &
                l_implemented, solution, &
+               l_upwind_xm_ma, &
                xm, xm_tol, wpxp )
 
     ! Description:
@@ -3377,6 +3455,11 @@ module advance_xm_wpxp_module
 
     real( kind = core_rknd ), intent(in), dimension(2*gr%nz) :: &
       solution ! The <t+1> value of xm and wpxp   [units vary]
+
+    logical, intent(in) :: &
+      l_upwind_xm_ma ! This flag determines whether we want to use an upwind differencing
+                     ! approximation rather than a centered differencing for turbulent or
+                     ! mean advection terms. It affects rtm, thlm, sclrm, um and vm.
 
     ! Input/Output Variables
     real( kind = core_rknd ), intent(inout), dimension(gr%nz) :: & 
@@ -3645,6 +3728,7 @@ module advance_xm_wpxp_module
                                            invrs_rho_ds_zm, invrs_rho_ds_zt, &
                                            xp2_threshold, l_implemented, &
                                            low_lev_effect, high_lev_effect, &
+                                           l_upwind_xm_ma, &
                                            xm, xm_tol, wpxp )
     end if ! l_mono_flux_lim
 

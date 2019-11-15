@@ -238,7 +238,8 @@ module clubb_driver
         l_rtm_nudge, &
         l_diagnose_correlations, &
         l_calc_w_corr, &
-        l_silhs_rad
+        l_silhs_rad, &
+        l_upwind_xm_ma
 
     use soil_vegetation, only: &
         l_soil_veg !------------------------------------------------------ Variable(s)
@@ -1540,6 +1541,7 @@ module clubb_driver
                               hydromet_mc, Ncm_mc, Lscale, &             ! In
                               hydromet_vel_covar_zt_impc, &              ! In
                               hydromet_vel_covar_zt_expc, &              ! In
+                              l_upwind_xm_ma, &                          ! In
                               hydromet, hydromet_vel_zt, hydrometp2, &   ! Inout
                               K_hm, Ncm, Nc_in_cloud, rvm_mc, thlm_mc, & ! Inout
                               wphydrometp, wpNcp )   ! Out

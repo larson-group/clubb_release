@@ -82,6 +82,12 @@ module spurious_source_test
     use clubb_precision, only: &
         core_rknd    ! Variable(s)
 
+    use model_flags, only: &
+        l_diffuse_rtm_and_thlm, & ! Variable(s)
+        l_stability_correct_Kh_N2_zm, &
+        l_upwind_wpxp_ta, &
+        l_upwind_xm_ma
+
     implicit none
 
     ! Return Variable
@@ -660,6 +666,10 @@ module spurious_source_test
                              um_forcing, vm_forcing, ug, vg, wpthvp, &
                              fcor, um_ref, vm_ref, up2, vp2, &
                              uprcp, vprcp, rc_coef, &
+                             l_diffuse_rtm_and_thlm, &
+                             l_stability_correct_Kh_N2_zm, &
+                             l_upwind_wpxp_ta, &
+                             l_upwind_xm_ma, &
                              rtm, wprtp, thlm, wpthlp, &
                              sclrm, wpsclrp, um, upwp, vm, vpwp )
 

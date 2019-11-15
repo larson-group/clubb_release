@@ -36,6 +36,7 @@ module advance_windm_edsclrm_module
                edsclrm_forcing, &
                rho_ds_zm, invrs_rho_ds_zt, &
                fcor, l_implemented, &
+               l_upwind_xm_ma, &
                um, vm, edsclrm, &
                upwp, vpwp, wpedsclrp )
 
@@ -144,6 +145,11 @@ module advance_windm_edsclrm_module
 
     logical, intent(in) ::  &
       l_implemented  ! Flag for CLUBB being implemented in a larger model.
+
+    logical, intent(in) :: &
+      l_upwind_xm_ma ! This flag determines whether we want to use an upwind differencing
+                     ! approximation rather than a centered differencing for turbulent or
+                     ! mean advection terms. It affects rtm, thlm, sclrm, um and vm.
 
     ! Input/Output Variables
     real( kind = core_rknd ), dimension(gr%nz), intent(inout) ::  &
@@ -274,6 +280,7 @@ module advance_windm_edsclrm_module
                                wind_speed, u_star_sqd,                 & ! In
                                rho_ds_zm, invrs_rho_ds_zt,             & ! In
                                l_implemented, l_imp_sfc_momentum_flux, & ! In
+                               l_upwind_xm_ma,                         & ! In
                                lhs )                                     ! Out
 
        ! Decompose and back substitute for um and vm
@@ -492,6 +499,7 @@ module advance_windm_edsclrm_module
                               wind_speed, u_star_sqd,                 & ! In
                               rho_ds_zm, invrs_rho_ds_zt,             & ! In
                               l_implemented, l_imp_sfc_momentum_flux, & ! In
+                              l_upwind_xm_ma,                         & ! In
                               lhs )                                     ! Out
 
       ! Decompose and back substitute for all eddy-scalar variables
@@ -1406,6 +1414,7 @@ module advance_windm_edsclrm_module
   subroutine windm_edsclrm_lhs( dt, nu, wm_zt, Km_zm, wind_speed, u_star_sqd,  &
                                 rho_ds_zm, invrs_rho_ds_zt,  &
                                 l_implemented, l_imp_sfc_momentum_flux,  &
+                                l_upwind_xm_ma, &
                                 lhs )
     ! Description:
     ! Calculate the implicit portion of the horizontal wind or eddy-scalar
@@ -1476,6 +1485,11 @@ module advance_windm_edsclrm_module
       l_implemented, & ! Flag for CLUBB being implemented in a larger model.
       l_imp_sfc_momentum_flux  ! Flag for implicit momentum surface fluxes.
 
+    logical, intent(in) :: &
+      l_upwind_xm_ma ! This flag determines whether we want to use an upwind differencing
+                     ! approximation rather than a centered differencing for turbulent or
+                     ! mean advection terms. It affects rtm, thlm, sclrm, um and vm.
+
     ! Output Variable
     real( kind = core_rknd ), dimension(3,gr%nz), intent(out) :: &
       lhs           ! Implicit contributions to xm (tridiagonal matrix)
@@ -1537,6 +1551,7 @@ module advance_windm_edsclrm_module
     if ( .not. l_implemented ) then
 
         call term_ma_zt_lhs_all( wm_zt(:), gr%invrs_dzt(:), gr%invrs_dzm(:), &
+                                 l_upwind_xm_ma, &
                                  lhs_ma_zt(:,:) )
 
         do k = 2, gr%nz-1

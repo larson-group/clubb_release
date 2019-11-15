@@ -56,6 +56,8 @@ module advance_xp2_xpyp_module
                                wpsclrp2, wpsclrprtp, wpsclrpthlp,      & ! In
                                wp2_splat,                              & ! In
                                l_min_xp2_from_corr_wx,                 & ! In
+                               l_C2_cloud_frac,                        & ! In
+                               l_upwind_xpyp_ta,                       & ! In
                                rtp2, thlp2, rtpthlp, up2, vp2,         & ! Inout
                                sclrp2, sclrprtp, sclrpthlp)              ! Inout
 
@@ -94,8 +96,7 @@ module advance_xp2_xpyp_module
     use model_flags, only: & 
         l_hole_fill, &    ! logical constants
         l_single_C2_Skw, &
-        l_explicit_turbulent_adv_xpyp, &
-        l_C2_cloud_frac
+        l_explicit_turbulent_adv_xpyp
 
     use parameters_tunable, only: &
         C2rt,     & ! Variable(s)
@@ -246,9 +247,15 @@ module advance_xp2_xpyp_module
       wp2_splat    ! Gustiness tendency for wp2 equation
 
     logical, intent(in) :: &
-      l_min_xp2_from_corr_wx ! Flag to base the threshold minimum value of xp2 (rtp2 and thlp2) on
-                             ! keeping the overall correlation of w and x within the limits of
-                             ! -max_mag_correlation_flux to max_mag_correlation_flux.
+      l_min_xp2_from_corr_wx, & ! Flag to base the threshold minimum value of xp2 (rtp2 and thlp2)
+                                ! on keeping the overall correlation of w and x within the limits
+                                ! of -max_mag_correlation_flux to max_mag_correlation_flux.
+      l_C2_cloud_frac, &        ! Flag to use cloud fraction to adjust the value of the turbulent
+                                ! dissipation coefficient, C2.
+      l_upwind_xpyp_ta          ! This flag determines whether we want to use an upwind
+                                ! differencing approximation rather than a centered differencing
+                                ! for turbulent or mean advection terms. It affects rtp2, thlp2,
+                                ! up2, vp2, sclrp2, rtpthlp, sclrprtp, & sclrpthlp.
 
     ! Input/Output variables
     ! An attribute of (inout) is also needed to import the value of the variances
@@ -430,6 +437,7 @@ module advance_xp2_xpyp_module
                                  rho_ds_zt, invrs_rho_ds_zm, rho_ds_zm,              & ! In
                                  wp3_on_wp2, wp3_on_wp2_zt, sigma_sqd_w,             & ! In
                                  pdf_implicit_coefs_terms, l_scalar_calc,            & ! In
+                                 l_upwind_xpyp_ta,                                   & ! In
                                  lhs_ta_wprtp2, lhs_ta_wpthlp2, lhs_ta_wprtpthlp,    & ! Out
                                  lhs_ta_wpup2, lhs_ta_wpvp2, lhs_ta_wpsclrp2,        & ! Out
                                  lhs_ta_wprtpsclrp, lhs_ta_wpthlpsclrp,              & ! Out
@@ -2728,6 +2736,7 @@ module advance_xp2_xpyp_module
                                      rho_ds_zt, invrs_rho_ds_zm, rho_ds_zm, &
                                      wp3_on_wp2, wp3_on_wp2_zt, sigma_sqd_w, &
                                      pdf_implicit_coefs_terms, l_scalar_calc, &
+                                     l_upwind_xpyp_ta, &
                                      lhs_ta_wprtp2, lhs_ta_wpthlp2, lhs_ta_wprtpthlp, &
                                      lhs_ta_wpup2, lhs_ta_wpvp2, lhs_ta_wpsclrp2, &
                                      lhs_ta_wprtpsclrp, lhs_ta_wpthlpsclrp, &
@@ -2774,8 +2783,7 @@ module advance_xp2_xpyp_module
       sgn_turbulent_velocity
       
     use model_flags, only: &
-      l_explicit_turbulent_adv_xpyp, &  ! Logical constants
-      l_upwind_xpyp_ta
+      l_explicit_turbulent_adv_xpyp     ! Logical constant
       
     use stats_variables, only: &
       l_stats_samp,             & ! Logical constant
@@ -2838,6 +2846,12 @@ module advance_xp2_xpyp_module
     
     logical, intent(in) :: &
       l_scalar_calc
+
+    logical, intent(in) :: &
+      l_upwind_xpyp_ta ! This flag determines whether we want to use an upwind differencing
+                       ! approximation rather than a centered differencing for turbulent or
+                       ! mean advection terms. It affects rtp2, thlp2, up2, vp2, sclrp2,
+                       ! rtpthlp, sclrprtp, & sclrpthlp.
 
     !------------------- Output Variables -------------------
     

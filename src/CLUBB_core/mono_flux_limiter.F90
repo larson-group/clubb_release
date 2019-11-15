@@ -33,6 +33,7 @@ module mono_flux_limiter
                                              invrs_rho_ds_zm, invrs_rho_ds_zt, &
                                              xp2_threshold, l_implemented, &
                                              low_lev_effect, high_lev_effect, &
+                                             l_upwind_xm_ma, &
                                              xm, xm_tol, wpxp )
 
     ! Description:
@@ -374,6 +375,11 @@ module mono_flux_limiter
     integer, dimension(gr%nz), intent(in) ::  &
       low_lev_effect, & ! Index of lowest level that has an effect (for lev. k)
       high_lev_effect   ! Index of highest level that has an effect (for lev. k)
+
+    logical, intent(in) :: &
+      l_upwind_xm_ma ! This flag determines whether we want to use an upwind differencing
+                     ! approximation rather than a centered differencing for turbulent or
+                     ! mean advection terms. It affects rtm, thlm, sclrm, um and vm.
 
     ! Input/Output Variables
     real( kind = core_rknd ), dimension(gr%nz), intent(inout) ::  &
@@ -720,7 +726,7 @@ module mono_flux_limiter
           ! values of xm at timestep index (t+1).
 
           ! Set up the left-hand side of the tridiagonal matrix equation.
-          call mfl_xm_lhs( dt, wm_zt, l_implemented, &
+          call mfl_xm_lhs( dt, wm_zt, l_implemented, l_upwind_xm_ma, &
                            lhs_mfl_xm )
 
           ! Set up the right-hand side of tridiagonal matrix equation.
@@ -853,7 +859,7 @@ module mono_flux_limiter
   end subroutine monotonic_turbulent_flux_limit
 
   !=============================================================================
-  subroutine mfl_xm_lhs( dt, wm_zt, l_implemented, &
+  subroutine mfl_xm_lhs( dt, wm_zt, l_implemented, l_upwind_xm_ma, &
                          lhs )
 
     ! Description:
@@ -894,6 +900,11 @@ module mono_flux_limiter
     logical, intent(in) :: &
       l_implemented   ! Flag for CLUBB being implemented in a larger model.
 
+    logical, intent(in) :: &
+      l_upwind_xm_ma ! This flag determines whether we want to use an upwind differencing
+                     ! approximation rather than a centered differencing for turbulent or
+                     ! mean advection terms. It affects rtm, thlm, sclrm, um and vm.
+
     ! Output Variables
     real( kind = core_rknd ), dimension(3,gr%nz), intent(out) ::  & 
       lhs    ! Left hand side of tridiagonal matrix
@@ -922,7 +933,8 @@ module mono_flux_limiter
 
           lhs(kp1_tdiag:km1_tdiag,k) & 
           = lhs(kp1_tdiag:km1_tdiag,k) &
-          + term_ma_zt_lhs( wm_zt(k), gr%invrs_dzt(k), k, gr%invrs_dzm(k), gr%invrs_dzm(km1) )
+          + term_ma_zt_lhs( wm_zt(k), gr%invrs_dzt(k), k, gr%invrs_dzm(k), gr%invrs_dzm(km1), &
+                            l_upwind_xm_ma )
 
        else
 

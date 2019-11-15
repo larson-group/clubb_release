@@ -68,6 +68,7 @@ module advance_wp2_wp3_module
                               pdf_implicit_coefs_terms,                & ! In
                               wprtp, wpthlp, rtp2, thlp2,              & ! In
                               l_min_wp2_from_corr_wx,                  & ! In
+                              l_upwind_xm_ma,                          & ! In
                               wp2, wp3, wp3_zm, wp2_zt )                 ! Inout
 
     ! Description:
@@ -200,10 +201,14 @@ module advance_wp2_wp3_module
       pdf_implicit_coefs_terms    ! Implicit coefs / explicit terms [units vary]
 
     logical, intent(in) :: &
-      l_min_wp2_from_corr_wx ! Flag to base the threshold minimum value of wp2 on keeping the
-                             ! overall correlation of w and x (w and rt, as well as w and theta-l)
-                             ! within the limits of -max_mag_correlation_flux to
-                             ! max_mag_correlation_flux.
+      l_min_wp2_from_corr_wx, & ! Flag to base the threshold minimum value of wp2 on keeping the
+                                ! overall correlation of w and x (w and rt, as well as w and
+                                ! theta-l) within the limits of -max_mag_correlation_flux to
+                                ! max_mag_correlation_flux.
+      l_upwind_xm_ma            ! This flag determines whether we want to use an upwind
+                                ! differencing approximation rather than a centered differencing
+                                ! for turbulent or mean advection terms. It affects rtm, thlm,
+                                ! sclrm, um and vm.
 
     ! Input/Output
     real( kind = core_rknd ), dimension(gr%nz), intent(inout) ::  & 
@@ -348,6 +353,7 @@ module advance_wp2_wp3_module
                      pdf_implicit_coefs_terms,              & ! Intent(in)
                      wprtp, wpthlp, rtp2, thlp2,            & ! Intent(in)
                      l_min_wp2_from_corr_wx,                & ! Intent(in)
+                     l_upwind_xm_ma,                        & ! Intent(in)
                      wp2, wp3, wp3_zm, wp2_zt )               ! Intent(inout)
 
     ! When selected, apply sponge damping after wp2 and wp3 have been advanced.
@@ -453,6 +459,7 @@ module advance_wp2_wp3_module
                          pdf_implicit_coefs_terms,              & ! Intent(in)
                          wprtp, wpthlp, rtp2, thlp2,            & ! Intent(in)
                          l_min_wp2_from_corr_wx,                & ! Intent(in)
+                         l_upwind_xm_ma,                        & ! Intent(in)
                          wp2, wp3, wp3_zm, wp2_zt )               ! Intent(inout)
 
     ! Description:
@@ -635,10 +642,14 @@ module advance_wp2_wp3_module
       pdf_implicit_coefs_terms    ! Implicit coefs / explicit terms [units vary]
 
     logical, intent(in) :: &
-      l_min_wp2_from_corr_wx ! Flag to base the threshold minimum value of wp2 on keeping the
-                             ! overall correlation of w and x (w and rt, as well as w and theta-l)
-                             ! within the limits of -max_mag_correlation_flux to
-                             ! max_mag_correlation_flux.
+      l_min_wp2_from_corr_wx, & ! Flag to base the threshold minimum value of wp2 on keeping the
+                                ! overall correlation of w and x (w and rt, as well as w and
+                                ! theta-l) within the limits of -max_mag_correlation_flux to
+                                ! max_mag_correlation_flux.
+      l_upwind_xm_ma            ! This flag determines whether we want to use an upwind
+                                ! differencing approximation rather than a centered differencing
+                                ! for turbulent or mean advection terms. It affects rtm, thlm,
+                                ! sclrm, um and vm.
 
     ! Input/Output Variables
     real( kind = core_rknd ), dimension(gr%nz), intent(inout) ::  & 
@@ -762,6 +773,7 @@ module advance_wp2_wp3_module
                    Kw1, Kw8, Skw_zt, tau1m, tauw3t, tau_C1_zm, C1_Skw_fnc, &
                    C11_Skw_fnc, C16_fnc, rho_ds_zm, rho_ds_zt, &
                    invrs_rho_ds_zm, invrs_rho_ds_zt, l_crank_nich_diff, &
+                   l_upwind_xm_ma, &
                    lhs, wp3_pr3_lhs )
 
     ! Solve the system with LAPACK
@@ -1071,7 +1083,8 @@ module advance_wp2_wp3_module
                        wp3_on_wp2, coef_wp4_implicit, &
                        Kw1, Kw8, Skw_zt, tau1m, tauw3t, tau_C1_zm, C1_Skw_fnc, &
                        C11_Skw_fnc, C16_fnc, rho_ds_zm, rho_ds_zt, &
-                       invrs_rho_ds_zm, invrs_rho_ds_zt, l_crank_nich_diff, & 
+                       invrs_rho_ds_zm, invrs_rho_ds_zt, l_crank_nich_diff, &
+                       l_upwind_xm_ma, &
                        lhs, wp3_pr3_lhs )
     ! Description:
     ! Compute LHS band diagonal matrix for w'^2 and w'^3.
@@ -1229,6 +1242,11 @@ module advance_wp2_wp3_module
     logical, intent(in) :: & 
       l_crank_nich_diff  ! Turns on/off Crank-Nicholson diffusion.
 
+    logical, intent(in) :: &
+      l_upwind_xm_ma ! This flag determines whether we want to use an upwind differencing
+                     ! approximation rather than a centered differencing for turbulent or
+                     ! mean advection terms. It affects rtm, thlm, sclrm, um and vm.
+
     ! Output Variable
     real( kind = core_rknd ), dimension(5,2*gr%nz), intent(out) ::  & 
       lhs ! Implicit contributions to wp2/wp3 (band diag. matrix)
@@ -1282,6 +1300,7 @@ module advance_wp2_wp3_module
 
     ! Calculated mean advection term for w'3
     call term_ma_zt_lhs_all( wm_zt(:), gr%invrs_dzt(:), gr%invrs_dzm(:), &
+                             l_upwind_xm_ma, &
                              lhs_ma_zt(:,:) )
 
 

@@ -244,7 +244,13 @@ module advance_clubb_core_module
         l_use_C11_Richardson, &
         l_use_wp3_pr3, &
         l_min_wp2_from_corr_wx, &
-        l_min_xp2_from_corr_wx
+        l_min_xp2_from_corr_wx, &
+        l_C2_cloud_frac, &
+        l_diffuse_rtm_and_thlm, &
+        l_stability_correct_Kh_N2_zm, &
+        l_upwind_wpxp_ta, &
+        l_upwind_xpyp_ta, &
+        l_upwind_xm_ma
 
     use grid_class, only: &
         gr,  & ! Variable(s)
@@ -1465,6 +1471,10 @@ module advance_clubb_core_module
                             um_forcing, vm_forcing, ug, vg, wpthvp,          & ! intent(in)
                             fcor, um_ref, vm_ref, up2, vp2,                  & ! intent(in)
                             uprcp, vprcp, rc_coef,                           & ! intent(in)
+                            l_diffuse_rtm_and_thlm,                          & ! intent(in)
+                            l_stability_correct_Kh_N2_zm,                    & ! intent(in)
+                            l_upwind_wpxp_ta,                                & ! intent(in)
+                            l_upwind_xm_ma,                                  & ! intent(in)
                             rtm, wprtp, thlm, wpthlp,                        & ! intent(inout)
                             sclrm, wpsclrp, um, upwp, vm, vpwp )               ! intent(inout)
 
@@ -1517,6 +1527,8 @@ module advance_clubb_core_module
                              wpsclrp2, wpsclrprtp, wpsclrpthlp,      & ! intent(in)
                              wp2_splat,                              & ! intent(in)
                              l_min_xp2_from_corr_wx,                 & ! intent(in)
+                             l_C2_cloud_frac,                        & ! intent(in)
+                             l_upwind_xpyp_ta,                       & ! intent(in)
                              rtp2, thlp2, rtpthlp, up2, vp2,         & ! intent(inout)
                              sclrp2, sclrprtp, sclrpthlp)              ! intent(inout)
 
@@ -1568,6 +1580,7 @@ module advance_clubb_core_module
              pdf_implicit_coefs_terms,                           & ! intent(in)
              wprtp, wpthlp, rtp2, thlp2,                         & ! intent(in)
              l_min_wp2_from_corr_wx,                             & ! intent(in)
+             l_upwind_xm_ma,                                     & ! intent(in)
              wp2, wp3, wp3_zm, wp2_zt )                            ! intent(inout)
 
       if ( clubb_at_least_debug_level( 0 ) ) then
@@ -1713,6 +1726,7 @@ module advance_clubb_core_module
                                   edsclrm_forcing,                              & ! intent(in)
                                   rho_ds_zm, invrs_rho_ds_zt,                   & ! intent(in)
                                   fcor, l_implemented,                          & ! intent(in)
+                                  l_upwind_xm_ma,                               & ! intent(in)
                                   um, vm, edsclrm,                              & ! intent(inout)
                                   upwp, vpwp, wpedsclrp )                         ! intent(inout)
 

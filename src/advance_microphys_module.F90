@@ -40,6 +40,7 @@ module advance_microphys_module
                                 hydromet_mc, Ncm_mc, Lscale, &             ! In
                                 hydromet_vel_covar_zt_impc, &              ! In
                                 hydromet_vel_covar_zt_expc, &              ! In
+                                l_upwind_xm_ma, &                          ! In
                                 hydromet, hydromet_vel_zt, hydrometp2, &   ! Inout
                                 K_hm, Ncm, Nc_in_cloud, rvm_mc, thlm_mc, & ! Inout
                                 wphydrometp, wpNcp )                       ! Out
@@ -154,6 +155,11 @@ module advance_microphys_module
     real( kind = core_rknd ), dimension(gr%nz,hydromet_dim), intent(in) :: &
       hydromet_vel_covar_zt_impc, & ! Imp. comp. <V_hm'h_m'> t-levs [m/s]
       hydromet_vel_covar_zt_expc    ! Exp. comp. <V_hm'h_m'> t-levs [units(m/s)]
+
+    logical, intent(in) :: &
+      l_upwind_xm_ma ! This flag determines whether we want to use an upwind differencing
+                     ! approximation rather than a centered differencing for turbulent or
+                     ! mean advection terms. It affects rtm, thlm, sclrm, um and vm.
 
     ! Input/Output Variables
     real( kind = core_rknd ), dimension(gr%nz,hydromet_dim), intent(inout) :: &
@@ -296,6 +302,7 @@ module advance_microphys_module
                                  rho_ds_zm, rho_ds_zt, invrs_rho_ds_zt, &
                                  hydromet_mc, hydromet_vel_covar_zt_impc, &
                                  hydromet_vel_covar_zt_expc, &
+                                 l_upwind_xm_ma, &
                                  hydromet, hydromet_vel_zt, &
                                  hydrometp2, rvm_mc, thlm_mc, &
                                  wphydrometp, hydromet_vel, &
@@ -323,6 +330,7 @@ module advance_microphys_module
 
        call advance_Ncm( dt, wm_zt, cloud_frac, K_Nc, rcm, rho_ds_zm, &
                          rho_ds_zt, invrs_rho_ds_zt, Ncm_mc, &
+                         l_upwind_xm_ma, &
                          Ncm, Nc_in_cloud, &
                          wpNcp )
         
@@ -480,6 +488,7 @@ module advance_microphys_module
                                   rho_ds_zm, rho_ds_zt, invrs_rho_ds_zt, &
                                   hydromet_mc, hydromet_vel_covar_zt_impc, &
                                   hydromet_vel_covar_zt_expc, &
+                                  l_upwind_xm_ma, &
                                   hydromet, hydromet_vel_zt, &
                                   hydrometp2, rvm_mc, thlm_mc, &
                                   wphydrometp, hydromet_vel, &
@@ -576,6 +585,11 @@ module advance_microphys_module
     real( kind = core_rknd ), dimension(gr%nz,hydromet_dim), intent(in) :: &
       hydromet_vel_covar_zt_impc, & ! Imp. comp. <V_hm'h_m'> t-levs [m/s]
       hydromet_vel_covar_zt_expc    ! Exp. comp. <V_hm'h_m'> t-levs [units(m/s)]
+
+    logical, intent(in) :: &
+      l_upwind_xm_ma ! This flag determines whether we want to use an upwind differencing
+                     ! approximation rather than a centered differencing for turbulent or
+                     ! mean advection terms. It affects rtm, thlm, sclrm, um and vm.
 
     ! Input/Output Variables
     real( kind = core_rknd ), dimension(gr%nz,hydromet_dim), intent(inout) :: &
@@ -724,6 +738,7 @@ module advance_microphys_module
                            hydromet_vel(:,i), hydromet_vel_zt(:,i),     & ! In
                            hydromet_vel_covar_zt_impc(:,i),             & ! In
                            rho_ds_zm, rho_ds_zt, invrs_rho_ds_zt,       & ! In
+                           l_upwind_xm_ma,                              & ! In
                            lhs )                                          ! Out
 
        ! Set up explicit term in the RHS vector
@@ -901,6 +916,7 @@ module advance_microphys_module
   !=============================================================================
   subroutine advance_Ncm( dt, wm_zt, cloud_frac, K_Nc, rcm, rho_ds_zm, &
                           rho_ds_zt, invrs_rho_ds_zt, Ncm_mc, &
+                          l_upwind_xm_ma, &
                           Ncm, Nc_in_cloud, &
                           wpNcp )
 
@@ -976,6 +992,11 @@ module advance_microphys_module
 
     real( kind = core_rknd ), dimension(gr%nz), intent(in) :: & 
       Ncm_mc     ! Change in Ncm due to microphysics  [num/kg/s]
+
+    logical, intent(in) :: &
+      l_upwind_xm_ma ! This flag determines whether we want to use an upwind differencing
+                     ! approximation rather than a centered differencing for turbulent or
+                     ! mean advection terms. It affects rtm, thlm, sclrm, um and vm.
 
     ! Input/Output Variables
     real( kind = core_rknd ), dimension(gr%nz), intent(inout) :: &
@@ -1064,6 +1085,7 @@ module advance_microphys_module
                         Ncm_vel, Ncm_vel_zt, & ! In
                         Ncm_vel_covar_zt_impc, & ! In
                         rho_ds_zm, rho_ds_zt, invrs_rho_ds_zt, & ! In
+                        l_upwind_xm_ma, & ! In
                         lhs ) ! Out
 
     ! Set up explicit term in the RHS vector
@@ -1496,6 +1518,7 @@ module advance_microphys_module
                V_hm, V_hmt, &
                Vhmphmp_zt_impc, &
                rho_ds_zm, rho_ds_zt, invrs_rho_ds_zt, &
+               l_upwind_xm_ma, &
                lhs )
 
     ! Description:
@@ -1608,6 +1631,11 @@ module advance_microphys_module
       rho_ds_zm,       & ! Dry, static density on momentum levels   [kg/m^3]
       rho_ds_zt,       & ! Dry, static density on thermo. levels    [kg/m^3]
       invrs_rho_ds_zt    ! Inv. dry, static density @ thermo. levs. [m^3/kg]
+
+    logical, intent(in) :: &
+      l_upwind_xm_ma ! This flag determines whether we want to use an upwind differencing
+                     ! approximation rather than a centered differencing for turbulent or
+                     ! mean advection terms. It affects rtm, thlm, sclrm, um and vm.
 
     real( kind = core_rknd ), intent(out), dimension(3,gr%nz) :: & 
       lhs      ! Left hand side of tridiagonal matrix.
@@ -1740,7 +1768,7 @@ module advance_microphys_module
        lhs(kp1_tdiag:km1_tdiag,k) & 
        = lhs(kp1_tdiag:km1_tdiag,k) & 
          + term_ma_zt_lhs( wm_zt(k), gr%invrs_dzt(k), k, gr%invrs_dzm(k), &
-                           gr%invrs_dzm(km1) )
+                           gr%invrs_dzm(km1), l_upwind_xm_ma )
 
        if ( l_sed ) then
 
@@ -1790,7 +1818,7 @@ module advance_microphys_module
           if ( ihmm_ma > 0 ) then
              tmp(1:3) &
              = term_ma_zt_lhs( wm_zt(k), gr%invrs_dzt(k), k, gr%invrs_dzm(k), &
-                               gr%invrs_dzm(km1) )
+                               gr%invrs_dzm(km1), l_upwind_xm_ma )
 
              ztscr01(k) = -tmp(3)
              ztscr02(k) = -tmp(2)
