@@ -69,6 +69,9 @@ module advance_wp2_wp3_module
                               wprtp, wpthlp, rtp2, thlp2,              & ! In
                               l_min_wp2_from_corr_wx,                  & ! In
                               l_upwind_xm_ma,                          & ! In
+                              l_damp_wp2_using_em,                     & ! In
+                              l_use_C11_Richardson,                    & ! In
+                              l_damp_wp3_Skw_squared,                  & ! In
                               wp2, wp3, wp3_zm, wp2_zt )                 ! Inout
 
     ! Description:
@@ -143,10 +146,6 @@ module advance_wp2_wp3_module
         err_code,                    & ! Error Indicator
         clubb_fatal_error              ! Constant
 
-    use model_flags, only: &
-        l_damp_wp2_using_em, &  ! Logical(s)
-        l_use_C11_Richardson
-
     implicit none
 
     intrinsic :: exp
@@ -205,10 +204,14 @@ module advance_wp2_wp3_module
                                 ! overall correlation of w and x (w and rt, as well as w and
                                 ! theta-l) within the limits of -max_mag_correlation_flux to
                                 ! max_mag_correlation_flux.
-      l_upwind_xm_ma            ! This flag determines whether we want to use an upwind
+      l_upwind_xm_ma,         & ! This flag determines whether we want to use an upwind
                                 ! differencing approximation rather than a centered differencing
                                 ! for turbulent or mean advection terms. It affects rtm, thlm,
                                 ! sclrm, um and vm.
+      l_damp_wp2_using_em,    & ! In wp2 equation, use a dissipation formula of -(2/3)*em/tau_zm,
+                                ! as in Bougeault (1981)
+      l_use_C11_Richardson,   & ! Parameterize C16 based on Richardson number
+      l_damp_wp3_Skw_squared    ! Set damping on wp3 to use Skw^2 rather than Skw^4
 
     ! Input/Output
     real( kind = core_rknd ), dimension(gr%nz), intent(inout) ::  & 
@@ -354,6 +357,8 @@ module advance_wp2_wp3_module
                      wprtp, wpthlp, rtp2, thlp2,            & ! Intent(in)
                      l_min_wp2_from_corr_wx,                & ! Intent(in)
                      l_upwind_xm_ma,                        & ! Intent(in)
+                     l_damp_wp2_using_em,                   & ! Intent(in)
+                     l_damp_wp3_Skw_squared,                & ! Intent(in)
                      wp2, wp3, wp3_zm, wp2_zt )               ! Intent(inout)
 
     ! When selected, apply sponge damping after wp2 and wp3 have been advanced.
@@ -460,6 +465,8 @@ module advance_wp2_wp3_module
                          wprtp, wpthlp, rtp2, thlp2,            & ! Intent(in)
                          l_min_wp2_from_corr_wx,                & ! Intent(in)
                          l_upwind_xm_ma,                        & ! Intent(in)
+                         l_damp_wp2_using_em,                   & ! Intent(in)
+                         l_damp_wp3_Skw_squared,                & ! Intent(in)
                          wp2, wp3, wp3_zm, wp2_zt )               ! Intent(inout)
 
     ! Description:
@@ -646,10 +653,13 @@ module advance_wp2_wp3_module
                                 ! overall correlation of w and x (w and rt, as well as w and
                                 ! theta-l) within the limits of -max_mag_correlation_flux to
                                 ! max_mag_correlation_flux.
-      l_upwind_xm_ma            ! This flag determines whether we want to use an upwind
+      l_upwind_xm_ma,         & ! This flag determines whether we want to use an upwind
                                 ! differencing approximation rather than a centered differencing
                                 ! for turbulent or mean advection terms. It affects rtm, thlm,
                                 ! sclrm, um and vm.
+      l_damp_wp2_using_em,    & ! In wp2 equation, use a dissipation formula of -(2/3)*em/tau_zm,
+                                ! as in Bougeault (1981)
+      l_damp_wp3_Skw_squared    ! Set damping on wp3 to use Skw^2 rather than Skw^4
 
     ! Input/Output Variables
     real( kind = core_rknd ), dimension(gr%nz), intent(inout) ::  & 
@@ -760,6 +770,8 @@ module advance_wp2_wp3_module
                    C11_Skw_fnc, C16_fnc, rho_ds_zm, invrs_rho_ds_zt, radf, &   ! intent(in)
                    thv_ds_zm, thv_ds_zt, wp2_splat, wp3_splat, &               ! intent(in)
                    l_crank_nich_diff, &                                        ! intent(in)
+                   l_damp_wp2_using_em, &                                      ! intent(in)
+                   l_damp_wp3_Skw_squared, &                                   ! intent(in)
                    rhs )                                                       ! intent(out)
 
     ! Save the value of rhs, which will be overwritten with the solution as
@@ -774,6 +786,7 @@ module advance_wp2_wp3_module
                    C11_Skw_fnc, C16_fnc, rho_ds_zm, rho_ds_zt, &
                    invrs_rho_ds_zm, invrs_rho_ds_zt, l_crank_nich_diff, &
                    l_upwind_xm_ma, &
+                   l_damp_wp3_Skw_squared, &
                    lhs, wp3_pr3_lhs )
 
     ! Solve the system with LAPACK
@@ -1085,6 +1098,7 @@ module advance_wp2_wp3_module
                        C11_Skw_fnc, C16_fnc, rho_ds_zm, rho_ds_zt, &
                        invrs_rho_ds_zm, invrs_rho_ds_zt, l_crank_nich_diff, &
                        l_upwind_xm_ma, &
+                       l_damp_wp3_Skw_squared, &
                        lhs, wp3_pr3_lhs )
     ! Description:
     ! Compute LHS band diagonal matrix for w'^2 and w'^3.
@@ -1243,9 +1257,11 @@ module advance_wp2_wp3_module
       l_crank_nich_diff  ! Turns on/off Crank-Nicholson diffusion.
 
     logical, intent(in) :: &
-      l_upwind_xm_ma ! This flag determines whether we want to use an upwind differencing
-                     ! approximation rather than a centered differencing for turbulent or
-                     ! mean advection terms. It affects rtm, thlm, sclrm, um and vm.
+      l_upwind_xm_ma,         & ! This flag determines whether we want to use an upwind
+                                ! differencing approximation rather than a centered differencing
+                                ! for turbulent or mean advection terms. It affects rtm, thlm,
+                                ! sclrm, um and vm.
+      l_damp_wp3_Skw_squared    ! Set damping on wp3 to use Skw^2 rather than Skw^4
 
     ! Output Variable
     real( kind = core_rknd ), dimension(5,2*gr%nz), intent(out) ::  & 
@@ -1368,6 +1384,7 @@ module advance_wp2_wp3_module
 
     ! Calculate pressure terms 1 for w'^3
     call wp3_term_pr1_lhs_all( C8, C8b, tauw3t(:), Skw_zt(:), &
+                               l_damp_wp3_Skw_squared, &
                                lhs_pr1_wp3(:) )
 
 
@@ -1715,6 +1732,8 @@ module advance_wp2_wp3_module
                        C11_Skw_fnc, C16_fnc, rho_ds_zm, invrs_rho_ds_zt, radf, &
                        thv_ds_zm, thv_ds_zt, wp2_splat, wp3_splat, & 
                        l_crank_nich_diff, &
+                       l_damp_wp2_using_em, &
+                       l_damp_wp3_Skw_squared, &
                        rhs )
 
     ! Description:
@@ -1849,6 +1868,11 @@ module advance_wp2_wp3_module
 
     logical, intent(in) :: & 
       l_crank_nich_diff   ! Turns on/off Crank-Nicholson diffusion.
+
+    logical, intent(in) :: &
+      l_damp_wp2_using_em, & ! In wp2 equation, use a dissipation formula of -(2/3)*em/tau_zm,
+                             ! as in Bougeault (1981)
+      l_damp_wp3_Skw_squared ! Set damping on wp3 to use Skw^2 rather than Skw^4
 
     ! Output Variable
     real( kind = core_rknd ), dimension(2*gr%nz), intent(out) :: & 
@@ -2006,6 +2030,7 @@ module advance_wp2_wp3_module
 
     ! Calculate pressure terms 1 for w'^3
     call wp3_term_pr1_lhs_all( C8, C8b, tauw3t(:), Skw_zt(:), &
+                               l_damp_wp3_Skw_squared, &
                                lhs_pr1_wp3(:) )
 
     ! Calculate dissipation terms 1 for w'^2
@@ -2023,6 +2048,7 @@ module advance_wp2_wp3_module
 
     ! Calculate dissipation terms 1 for w'^2
     call wp2_term_dp1_rhs_all( C1_Skw_fnc(:), tau_C1_zm(:), w_tol_sqd, up2(:), vp2(:), &
+                               l_damp_wp2_using_em, &
                                rhs_dp1_wp2(:) )
 
     ! Calculate buoyancy production of w'^3 and w'^3 pressure term 2
@@ -2031,6 +2057,7 @@ module advance_wp2_wp3_module
 
     ! Calculate pressure terms 1 for w'^3
     call wp3_term_pr1_rhs_all( C8, C8b, tauw3t(:), Skw_zt(:), wp3(:), &
+                               l_damp_wp3_Skw_squared, &
                                rhs_pr1_wp3(:) )
 
 
@@ -3028,7 +3055,8 @@ module advance_wp2_wp3_module
     end subroutine wp2_terms_bp_pr2_rhs_all
 
   !=============================================================================
-  pure function wp2_term_dp1_rhs( C1_Skw_fnc, tau1m, threshold, up2, vp2 ) & 
+  pure function wp2_term_dp1_rhs( C1_Skw_fnc, tau1m, threshold, up2, vp2, &
+                                  l_damp_wp2_using_em ) & 
   result( rhs )
 
     ! Description:
@@ -3065,9 +3093,6 @@ module advance_wp2_wp3_module
     use clubb_precision, only: &
         core_rknd ! Variable(s)
 
-    use model_flags, only: &
-        l_damp_wp2_using_em ! Logical
-
     implicit none
 
     ! Input Variables
@@ -3077,6 +3102,10 @@ module advance_wp2_wp3_module
       threshold,   & ! Minimum allowable value of w'^2       [m^2/s^2]
       up2,         & ! Horizontal (east-west) velocity variance, u'^2 [m^2/s^2]
       vp2            ! Horizontal (north-south) velocity variance, v'^2 [m^2/s^2]
+
+    logical, intent(in) :: &
+      l_damp_wp2_using_em ! In wp2 equation, use a dissipation formula of -(2/3)*em/tau_zm,
+                          ! as in Bougeault (1981)
 
     ! Return Variable
     real( kind = core_rknd ) :: rhs
@@ -3099,6 +3128,7 @@ module advance_wp2_wp3_module
 
     !==================================================================================
     pure subroutine wp2_term_dp1_rhs_all( C1_Skw_fnc, tau1m, threshold, up2, vp2, &
+                                          l_damp_wp2_using_em, &
                                           rhs_dp1_wp2 )
     ! Description:
     !     This subroutine serves the same function as wp2_term_dp1_rhs (above), but
@@ -3110,9 +3140,6 @@ module advance_wp2_wp3_module
 
         use clubb_precision, only: &
             core_rknd ! Variable(s)
-
-        use model_flags, only: &
-            l_damp_wp2_using_em ! Logical
 
         use grid_class, only: &
             gr
@@ -3128,6 +3155,10 @@ module advance_wp2_wp3_module
           tau1m,       & ! Time-scale tau at momentum levels (k) [s]
           up2,         & ! Horizontal (east-west) velocity variance, u'^2 [m^2/s^2]
           vp2            ! Horizontal (north-south) velocity variance, v'^2 [m^2/s^2]
+
+        logical, intent(in) :: &
+          l_damp_wp2_using_em ! In wp2 equation, use a dissipation formula of -(2/3)*em/tau_zm,
+                              ! as in Bougeault (1981)
 
         ! Return Variable
         real( kind = core_rknd ), dimension(gr%nz), intent(out) :: &
@@ -4302,7 +4333,8 @@ module advance_wp2_wp3_module
     end subroutine wp3_terms_ac_pr2_lhs_all
 
   !=============================================================================
-  pure function wp3_term_pr1_lhs( C8, C8b, tauw3t, Skw_zt ) & 
+  pure function wp3_term_pr1_lhs( C8, C8b, tauw3t, Skw_zt, &
+                                  l_damp_wp3_Skw_squared ) & 
   result( lhs )
 
     ! Description:
@@ -4356,9 +4388,6 @@ module advance_wp2_wp3_module
     use clubb_precision, only: &
         core_rknd ! Variable(s)
 
-    use model_flags, only: &
-        l_damp_wp3_Skw_squared
-
     implicit none
 
     ! Input Variables
@@ -4367,6 +4396,9 @@ module advance_wp2_wp3_module
       C8b,     & ! Model parameter C_8b                       [-]
       tauw3t,  & ! Time-scale tau at thermodynamic levels (k) [s]
       Skw_zt     ! Skewness of w at thermodynamic levels (k)  [-]
+
+    logical, intent(in) :: &
+      l_damp_wp3_Skw_squared ! Set damping on wp3 to use Skw^2 rather than Skw^4
 
     ! Return Variable
     real( kind = core_rknd ) :: lhs
@@ -4385,6 +4417,7 @@ module advance_wp2_wp3_module
 
     !=============================================================================
     pure subroutine wp3_term_pr1_lhs_all( C8, C8b, tauw3t, Skw_zt, &
+                                          l_damp_wp3_Skw_squared, &
                                           lhs_pr1_wp3 )
     ! Description:
     !     This subroutine serves the same function as wp3_term_pr1_lhs (above), but
@@ -4402,9 +4435,6 @@ module advance_wp2_wp3_module
         use clubb_precision, only: &
             core_rknd ! Variable(s)
 
-        use model_flags, only: &
-            l_damp_wp3_Skw_squared
-
         use grid_class, only:  & 
             gr      ! Variable(s)
 
@@ -4418,6 +4448,9 @@ module advance_wp2_wp3_module
         real( kind = core_rknd ), intent(in) :: & 
           C8,      & ! Model parameter C_8                        [-]
           C8b        ! Model parameter C_8b                       [-]
+
+        logical, intent(in) :: &
+          l_damp_wp3_Skw_squared ! Set damping on wp3 to use Skw^2 rather than Skw^4
 
         ! Return Variable
         real( kind = core_rknd ), dimension(gr%nz), intent(out) :: &
@@ -4826,7 +4859,8 @@ module advance_wp2_wp3_module
 
 
   !=============================================================================
-  pure function wp3_term_pr1_rhs( C8, C8b, tauw3t, Skw_zt, wp3 ) & 
+  pure function wp3_term_pr1_rhs( C8, C8b, tauw3t, Skw_zt, wp3, &
+                                  l_damp_wp3_Skw_squared ) & 
   result( rhs )
 
     ! Description:
@@ -4875,9 +4909,6 @@ module advance_wp2_wp3_module
     use clubb_precision, only: &
         core_rknd ! Variable(s)
 
-    use model_flags, only: &
-        l_damp_wp3_Skw_squared
-
     implicit none
 
     ! Input Variables
@@ -4887,6 +4918,9 @@ module advance_wp2_wp3_module
       tauw3t,  & ! Time-scale tau at thermodynamic levels (k) [s]
       Skw_zt,  & ! Skewness of w at thermodynamic levels (k)  [-]
       wp3        ! w'^3(k)                                    [m^3/s^3]
+
+    logical, intent(in) :: &
+      l_damp_wp3_Skw_squared ! Set damping on wp3 to use Skw^2 rather than Skw^4
 
     ! Return Variable
     real( kind = core_rknd ) :: rhs
@@ -4904,6 +4938,7 @@ module advance_wp2_wp3_module
 
     !==================================================================================
     pure subroutine wp3_term_pr1_rhs_all( C8, C8b, tauw3t, Skw_zt, wp3, &
+                                          l_damp_wp3_Skw_squared, &
                                           rhs_pr1_wp3 )
     ! Description:
     !     This subroutine serves the same function as wp3_term_pr1_rhs (above), but
@@ -4920,9 +4955,6 @@ module advance_wp2_wp3_module
         use clubb_precision, only: &
             core_rknd ! Variable(s)
 
-        use model_flags, only: &
-            l_damp_wp3_Skw_squared
-
         use grid_class, only: &
             gr
 
@@ -4938,6 +4970,9 @@ module advance_wp2_wp3_module
           tauw3t,  & ! Time-scale tau at thermodynamic levels (k) [s]
           Skw_zt,  & ! Skewness of w at thermodynamic levels (k)  [-]
           wp3        ! w'^3(k)                                    [m^3/s^3]
+
+        logical, intent(in) :: &
+          l_damp_wp3_Skw_squared ! Set damping on wp3 to use Skw^2 rather than Skw^4
 
         ! Return Variable
         real( kind = core_rknd ), dimension(gr%nz), intent(out) :: &

@@ -67,6 +67,7 @@ module advance_xm_wpxp_module
                               l_stability_correct_Kh_N2_zm, &
                               l_upwind_wpxp_ta, &
                               l_upwind_xm_ma, &
+                              l_use_C7_Richardson, &
                               rtm, wprtp, thlm, wpthlp, &
                               sclrm, wpsclrp, um, upwp, vm, vpwp )
 
@@ -132,7 +133,6 @@ module advance_xm_wpxp_module
 
     use model_flags, only: &
         l_clip_semi_implicit,          & ! Variable(s)
-        l_use_C7_Richardson,           &
         l_explicit_turbulent_adv_wpxp, &
         l_predict_upwp_vpwp,           &
         l_uv_nudge
@@ -290,10 +290,11 @@ module advance_xm_wpxp_module
                                       ! differencing approximation rather than a centered
                                       ! differencing for turbulent or mean advection terms.
                                       ! It affects wprtp, wpthlp, & wpsclrp.
-      l_upwind_xm_ma                  ! This flag determines whether we want to use an upwind
+      l_upwind_xm_ma,               & ! This flag determines whether we want to use an upwind
                                       ! differencing approximation rather than a centered
                                       ! differencing for turbulent or mean advection terms.
                                       ! It affects rtm, thlm, sclrm, um and vm.
+      l_use_C7_Richardson             ! Parameterize C7 based on Richardson number
 
     ! -------------------- Input/Output Variables --------------------
     

@@ -250,7 +250,12 @@ module advance_clubb_core_module
         l_stability_correct_Kh_N2_zm, &
         l_upwind_wpxp_ta, &
         l_upwind_xpyp_ta, &
-        l_upwind_xm_ma
+        l_upwind_xm_ma, &
+        l_trapezoidal_rule_zt, &
+        l_trapezoidal_rule_zm, &
+        l_use_cloud_cover, &
+        l_rcm_supersat_adj, &
+        l_damp_wp3_Skw_squared
 
     use grid_class, only: &
         gr,  & ! Variable(s)
@@ -993,6 +998,12 @@ module advance_clubb_core_module
                                 sclrm, wpsclrp, sclrp2,        & ! Intent(in)
                                 sclrprtp, sclrpthlp, sclrp3,   & ! Intent(in)
                                 l_samp_stats_in_pdf_call,      & ! Intent(in)
+                                l_trapezoidal_rule_zt,         & ! Intent(in)
+                                l_trapezoidal_rule_zm,         & ! Intent(in)
+                                l_call_pdf_closure_twice,      & ! Intent(in)
+                                l_use_cloud_cover,             & ! Intent(in)
+                                l_use_ice_latent,              & ! Intent(in)
+                                l_rcm_supersat_adj,            & ! Intent(in)
                                 rtm,                           & ! Intent(i/o)
 #ifdef GFDL
                                 RH_crit(k, : , :),             & ! Intent(i/o)
@@ -1130,6 +1141,8 @@ module advance_clubb_core_module
                   newmu, rtm_frz, thlm_frz, rtp2,  thlp2,  rtpthlp, &
                   pdf_params, pdf_params_frz, em, &
                   thv_ds_zt, Lscale_max, &
+                  l_Lscale_plume_centered, &
+                  l_use_ice_latent, &
                   Lscale, Lscale_up, Lscale_down )
 
 
@@ -1475,6 +1488,7 @@ module advance_clubb_core_module
                             l_stability_correct_Kh_N2_zm,                    & ! intent(in)
                             l_upwind_wpxp_ta,                                & ! intent(in)
                             l_upwind_xm_ma,                                  & ! intent(in)
+                            l_use_C7_Richardson,                             & ! intent(in)
                             rtm, wprtp, thlm, wpthlp,                        & ! intent(inout)
                             sclrm, wpsclrp, um, upwp, vm, vpwp )               ! intent(inout)
 
@@ -1581,6 +1595,9 @@ module advance_clubb_core_module
              wprtp, wpthlp, rtp2, thlp2,                         & ! intent(in)
              l_min_wp2_from_corr_wx,                             & ! intent(in)
              l_upwind_xm_ma,                                     & ! intent(in)
+             l_damp_wp2_using_em,                                & ! intent(in)
+             l_use_C11_Richardson,                               & ! intent(in)
+             l_damp_wp3_Skw_squared,                             & ! intent(in)
              wp2, wp3, wp3_zm, wp2_zt )                            ! intent(inout)
 
       if ( clubb_at_least_debug_level( 0 ) ) then
@@ -1785,6 +1802,12 @@ module advance_clubb_core_module
                                 sclrm, wpsclrp, sclrp2,        & ! Intent(in)
                                 sclrprtp, sclrpthlp, sclrp3,   & ! Intent(in)
                                 l_samp_stats_in_pdf_call,      & ! Intent(in)
+                                l_trapezoidal_rule_zt,         & ! Intent(in)
+                                l_trapezoidal_rule_zm,         & ! Intent(in)
+                                l_call_pdf_closure_twice,      & ! Intent(in)
+                                l_use_cloud_cover,             & ! Intent(in)
+                                l_use_ice_latent,              & ! Intent(in)
+                                l_rcm_supersat_adj,            & ! Intent(in)
                                 rtm,                           & ! Intent(i/o)
 #ifdef GFDL
                                 RH_crit(k, : , :),             & ! Intent(i/o)
@@ -2005,6 +2028,12 @@ module advance_clubb_core_module
                                  sclrm, wpsclrp, sclrp2,        & ! Intent(in)
                                  sclrprtp, sclrpthlp, sclrp3,   & ! Intent(in)
                                  l_samp_stats_in_pdf_call,      & ! Intent(in)
+                                 l_trapezoidal_rule_zt,         & ! Intent(in)
+                                 l_trapezoidal_rule_zm,         & ! Intent(in)
+                                 l_call_pdf_closure_twice,      & ! Intent(in)
+                                 l_use_cloud_cover,             & ! Intent(in)
+                                 l_use_ice_latent,              & ! Intent(in)
+                                 l_rcm_supersat_adj,            & ! Intent(in)
                                  rtm,                           & ! Intent(i/o)
 #ifdef GFDL
                                  RH_crit(k, : , :),             & ! Intent(i/o)
@@ -2093,12 +2122,6 @@ module advance_clubb_core_module
 
     use model_flags, only: &
         l_gamma_Skw,                  & ! Variable(s)
-        l_call_pdf_closure_twice,     &
-        l_trapezoidal_rule_zm,        &
-        l_trapezoidal_rule_zt,        &
-        l_use_cloud_cover,            &
-        l_use_ice_latent,             &
-        l_rcm_supersat_adj,           &
         l_rtm_nudge,                  &
         l_explicit_turbulent_adv_wp3
 
@@ -2218,6 +2241,23 @@ module advance_clubb_core_module
 
     logical, intent(in) :: &
       l_samp_stats_in_pdf_call    ! Sample stats in this call to this subroutine
+
+    logical, intent(in) :: &
+      l_trapezoidal_rule_zt,    & ! If true, the trapezoidal rule is called for the
+                                  ! thermodynamic-level variables output from pdf_closure.
+      l_trapezoidal_rule_zm,    & ! If true, the trapezoidal rule is called for three
+                                  ! momentum-level variables – wpthvp, thlpthvp, and rtpthvp -
+                                  ! output from pdf_closure.
+      l_call_pdf_closure_twice, & ! This logical flag determines whether or not to call subroutine
+                                  ! pdf_closure twice.  If true, pdf_closure is called first on
+                                  ! thermodynamic levels and then on momentum levels so that each
+                                  ! variable is computed on its native level.  If false,
+                                  ! pdf_closure is only called on thermodynamic levels, and
+                                  ! variables which belong on momentum levels are interpolated.
+      l_use_cloud_cover,        & ! Use cloud_cover and rcm_in_layer to help boost cloud_frac and
+                                  ! rcm to help increase cloudiness at coarser grid resolutions.
+      l_use_ice_latent,         & ! Includes the effects of ice latent heating in turbulence terms
+      l_rcm_supersat_adj          ! Add excess supersaturated vapor to cloud water
 
     real( kind = core_rknd ), dimension(gr%nz), intent(inout) ::  &
       rtm    ! total water mixing ratio, r_t (thermo. levels) [kg/kg]

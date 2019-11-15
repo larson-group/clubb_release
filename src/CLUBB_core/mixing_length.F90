@@ -878,9 +878,11 @@ module mixing_length
 
 
 !===============================================================================
-  subroutine calc_Lscale_directly ( l_implemented, p_in_Pa, exner,  rtm, &
+  subroutine calc_Lscale_directly ( l_implemented, p_in_Pa, exner,  rtm,       &
                   thlm, thvm, newmu, rtm_frz, thlm_frz, rtp2, thlp2,  rtpthlp, &
                   pdf_params, pdf_params_frz, em, thv_ds_zt, Lscale_max,       &
+                  l_Lscale_plume_centered,                                     &
+                  l_use_ice_latent,                                            &
                   Lscale, Lscale_up, Lscale_down)
 
     use constants_clubb, only: &
@@ -899,10 +901,6 @@ module mixing_length
 
     use clubb_precision, only: &
         core_rknd
-
-    use model_flags, only: &
-        l_use_ice_latent, &
-        l_Lscale_plume_centered
 
     use stats_variables, only: &
         l_stats_samp,  &
@@ -950,6 +948,10 @@ module mixing_length
     type (pdf_parameter), intent(in) :: &
         pdf_params     , &   ! PDF Parameters  [units vary]
         pdf_params_frz
+
+    logical, intent(in) :: &
+      l_Lscale_plume_centered, & ! Alternate that uses the PDF to compute the perturbed values
+      l_use_ice_latent           ! Includes the effects of ice latent heating in turbulence terms
 
     real( kind = core_rknd ), dimension(gr%nz), intent(out) ::  &
       Lscale,    & ! Mixing length      [m]

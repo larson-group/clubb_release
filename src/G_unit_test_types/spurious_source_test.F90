@@ -86,7 +86,8 @@ module spurious_source_test
         l_diffuse_rtm_and_thlm, & ! Variable(s)
         l_stability_correct_Kh_N2_zm, &
         l_upwind_wpxp_ta, &
-        l_upwind_xm_ma
+        l_upwind_xm_ma, &
+        l_use_C7_Richardson
 
     implicit none
 
@@ -670,6 +671,7 @@ module spurious_source_test
                              l_stability_correct_Kh_N2_zm, &
                              l_upwind_wpxp_ta, &
                              l_upwind_xm_ma, &
+                             l_use_C7_Richardson, &
                              rtm, wprtp, thlm, wpthlp, &
                              sclrm, wpsclrp, um, upwp, vm, vpwp )
 
