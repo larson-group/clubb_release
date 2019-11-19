@@ -1693,6 +1693,9 @@ module latin_hypercube_driver_module
       one, &
       two, &
       fstderr
+      
+    use parameters_silhs, only: &
+      uniform_sample_thresh
 
     implicit none
 
@@ -1738,12 +1741,12 @@ module latin_hypercube_driver_module
 
       unbounded_point = min_val + offset
 
-      ! If unbounded_point lies outside the range [0,1],
-      ! fold it back so that it is between [0,1]
-      if ( unbounded_point > one ) then
-        X_u_one_var_all_levs(kp1) = two - unbounded_point
-      else if ( unbounded_point < zero ) then
-        X_u_one_var_all_levs(kp1) = - unbounded_point
+      ! If unbounded_point lies outside the range [uniform_sample_thresh,1-uniform_sample_thresh],
+      ! fold it back so that it is between the valid range
+      if ( unbounded_point > one - uniform_sample_thresh ) then
+        X_u_one_var_all_levs(kp1) = two - unbounded_point - two * uniform_sample_thresh
+      else if ( unbounded_point < uniform_sample_thresh ) then
+        X_u_one_var_all_levs(kp1) = - unbounded_point + two * uniform_sample_thresh
       else
         X_u_one_var_all_levs(kp1) = unbounded_point
       end if
@@ -1767,12 +1770,12 @@ module latin_hypercube_driver_module
 
       unbounded_point = min_val + offset
 
-      ! If unbounded_point lies outside the range [0,1],
-      ! fold it back so that it is between [0,1]
-      if ( unbounded_point > one ) then
-        X_u_one_var_all_levs(km1) = two - unbounded_point
-      else if ( unbounded_point < zero ) then
-        X_u_one_var_all_levs(km1) = - unbounded_point
+      ! If unbounded_point lies outside the range [uniform_sample_thresh,1-uniform_sample_thresh],
+      ! fold it back so that it is between the valid range
+      if ( unbounded_point > one - uniform_sample_thresh ) then
+        X_u_one_var_all_levs(km1) = two - unbounded_point - two * uniform_sample_thresh
+      else if ( unbounded_point < uniform_sample_thresh ) then
+        X_u_one_var_all_levs(km1) = - unbounded_point + two * uniform_sample_thresh
       else
         X_u_one_var_all_levs(km1) = unbounded_point
       end if

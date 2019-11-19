@@ -78,10 +78,10 @@ module parameters_silhs
   
   
   real( kind = core_rknd ), public, parameter :: &
-    uniform_sample_thresh   = 1.e-6              ! Uniform samples are expected to be in the range
-                                                 ! [1.e-6,1-1.e-6] since the algorithm used to 
-                                                 ! calculate the inverse cdf is only accurate for
-                                                 ! single precision values
+    uniform_sample_thresh   = 3.e-8_core_rknd    ! Uniform samples are expected to be in the range
+                                                 ! [3.e-8_core_rknd,1-3.e-8_core_rknd] since the 
+                                                 ! algorithm used to calculate the inverse cdf is 
+                                                 ! only accurate for single precision values
 
   private ! Default Scope
 
