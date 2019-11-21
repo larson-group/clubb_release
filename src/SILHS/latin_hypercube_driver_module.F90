@@ -866,11 +866,12 @@ module latin_hypercube_driver_module
     integer, dimension(nz,num_samples), intent(in) :: &
       X_mixt_comp_all_levs   ! Which component this sample is in (1 or 2)
 
-    real( kind = core_rknd ), dimension(nz,num_samples,pdf_dim), intent(in) :: &
-      X_nl_all_levs    ! SILHS sample points    [units vary]
-
     type(pdf_parameter), intent(in) :: &
       pdf_params             ! **The** PDF parameters!
+
+    ! Input/Output Variable
+    real( kind = core_rknd ), dimension(nz,num_samples,pdf_dim), intent(inout) :: &
+      X_nl_all_levs    ! SILHS sample points    [units vary]
 
     ! Output Variables
     type(lh_clipped_variables_type), dimension(nz,num_samples), intent(out) :: &
@@ -906,15 +907,15 @@ module latin_hypercube_driver_module
       do isample = 1, num_samples
         
         ! Compute lh_rt and lh_thl
-        call chi_eta_2_rtthl( pdf_params%rt_1(k), pdf_params%thl_1(k),    &
+        call chi_eta_2_rtthl( pdf_params%rt_1(k), pdf_params%thl_1(k),    & ! Intent(in)
                               pdf_params%rt_2(k), pdf_params%thl_2(k),    & ! Intent(in)
-                              pdf_params%crt_1(k), pdf_params%cthl_1(k),  &
+                              pdf_params%crt_1(k), pdf_params%cthl_1(k),  & ! Intent(in)
                               pdf_params%crt_2(k), pdf_params%cthl_2(k),  & ! Intent(in)
                               pdf_params%chi_1(k), pdf_params%chi_2(k),   & ! Intent(in)
-                              X_nl_all_levs(k,isample,iiPDF_chi), &
-                              X_nl_all_levs(k,isample,iiPDF_eta), &
-                              X_mixt_comp_all_levs(k,isample), & ! Intent(in)
-                              lh_rt(k,isample), lh_thl(k,isample) ) ! Intent(out)
+                              X_nl_all_levs(k,isample,iiPDF_chi),         & ! Intent(in) 
+                              X_nl_all_levs(k,isample,iiPDF_eta),         & ! Intent(in)
+                              X_mixt_comp_all_levs(k,isample),            & ! Intent(in)
+                              lh_rt(k,isample), lh_thl(k,isample) )         ! Intent(out)
 
         ! If necessary, clip rt
         if ( lh_rt(k,isample) < rt_tol ) then

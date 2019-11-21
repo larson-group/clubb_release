@@ -319,7 +319,7 @@ contains
   subroutine clip_transform_silhs_output_api( nz, num_samples, &             ! In
                                               pdf_dim, hydromet_dim, &       ! In
                                               X_mixt_comp_all_levs, &        ! In
-                                              X_nl_all_levs, &               ! In
+                                              X_nl_all_levs, &               ! Inout
                                               pdf_params, l_use_Ncn_to_Nc, & ! In
                                               lh_clipped_vars )              ! Out
 
@@ -345,7 +345,7 @@ contains
     integer, dimension(nz,num_samples), intent(in) :: &
       X_mixt_comp_all_levs   ! Which component this sample is in (1 or 2)
 
-    real( kind = core_rknd ), dimension(nz,num_samples,pdf_dim), intent(in) :: &
+    real( kind = core_rknd ), dimension(nz,num_samples,pdf_dim), intent(inout) :: &
       X_nl_all_levs         ! SILHS sample points    [units vary]
 
     type(pdf_parameter), intent(in) :: &

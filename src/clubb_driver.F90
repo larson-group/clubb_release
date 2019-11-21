@@ -1476,7 +1476,7 @@ module clubb_driver
         call clip_transform_silhs_output( gr%nz, lh_num_samples, &       ! In
                                           pdf_dim, hydromet_dim, &       ! In
                                           X_mixt_comp_all_levs, &        ! In
-                                          X_nl_all_levs, &               ! In
+                                          X_nl_all_levs, &               ! Inout
                                           pdf_params, l_use_Ncn_to_Nc, & ! In
                                           lh_clipped_vars )              ! Out
 
