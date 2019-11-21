@@ -362,7 +362,9 @@ module transform_to_pdf_module
       core_rknd
 
     use constants_clubb, only: &
-      sqrt_2   ! Constants
+      one,  & ! Constants
+      two,  &
+      sqrt_2   
       
     implicit none
 
@@ -390,11 +392,11 @@ module transform_to_pdf_module
     
     ! ---------------- Begin Code ----------------
     
-    x = 2 * p_core_rknd - 1._core_rknd
+    x = two * p_core_rknd - one
     
-    w = -log( ( 1 - x ) * ( 1 + x ) ) 
+    w = -log( ( one - x ) * ( one + x ) ) 
     
-    if ( w < 5.0 ) then 
+    if ( w < 5.0_core_rknd ) then 
       
       w = w - 2.5_core_rknd
       
