@@ -811,10 +811,9 @@ module latin_hypercube_driver_module
   subroutine clip_transform_silhs_output( nz, num_samples, &             ! In
                                           pdf_dim, hydromet_dim, &       ! In
                                           X_mixt_comp_all_levs, &        ! In
-                                          X_nl_all_levs_raw, &           ! In
+                                          X_nl_all_levs, &               ! In
                                           pdf_params, l_use_Ncn_to_Nc, & ! In
-                                          lh_clipped_vars, &             ! Out
-                                          X_nl_all_levs )                ! Out
+                                          lh_clipped_vars )              ! Out
 
   ! Description:
   !   Derives from the SILHS sampling structure X_nl_all_levs the variables
@@ -868,7 +867,7 @@ module latin_hypercube_driver_module
       X_mixt_comp_all_levs   ! Which component this sample is in (1 or 2)
 
     real( kind = core_rknd ), dimension(nz,num_samples,pdf_dim), intent(in) :: &
-      X_nl_all_levs_raw    ! Raw (unclipped) SILHS sample points    [units vary]
+      X_nl_all_levs    ! SILHS sample points    [units vary]
 
     type(pdf_parameter), intent(in) :: &
       pdf_params             ! **The** PDF parameters!
@@ -876,10 +875,6 @@ module latin_hypercube_driver_module
     ! Output Variables
     type(lh_clipped_variables_type), dimension(nz,num_samples), intent(out) :: &
       lh_clipped_vars        ! SILHS clipped and transformed variables
-
-    real( kind = core_rknd ), dimension(nz,num_samples,pdf_dim), &
-    intent(out) :: &
-      X_nl_all_levs    ! Clipped values of SILHS sample points    [units vary]
 
     ! Local Variables
     real( kind = core_rknd ), dimension(nz,num_samples) :: &
@@ -893,26 +888,8 @@ module latin_hypercube_driver_module
       hydromet_pts,         & ! Sample point column of hydrometeors    [un vary]
       hydromet_pts_clipped    ! Clipped sample point column of hydromet   [un v]
 
-    real( kind = core_rknd ) :: &
-      rt_1,    &
-      rt_2,    &
-      thl_1,   &
-      thl_2,   &
-      crt_1,   &
-      crt_2,   &
-      cthl_1,  &
-      cthl_2,  &
-      chi_1,   &
-      chi_2,   &
-      lh_chi,  &
-      lh_eta
-
     integer :: &
       isample, k, hm_idx
-
-    logical :: &
-      l_rt_clipped, &
-      l_rv_clipped
 
     ! Flag to clip sample points of hydrometeor concentrations.
     logical, parameter :: &
@@ -920,50 +897,33 @@ module latin_hypercube_driver_module
 
   !-----------------------------------------------------------------------
 
-    ! Initialize X_nl_all_levs to X_nl_all_levs_raw.
-    X_nl_all_levs = X_nl_all_levs_raw
-
-    l_rt_clipped = .false.
-    l_rv_clipped = .false.
-
     ! Calculate (and clip) the SILHS sample point values of rt, thl, rc, rv,
     ! and Nc.
 
     ! Loop over all thermodynamic levels above the model lower boundary.
     do k = 2, nz
 
-      ! Enter the PDF parameters!!
-      rt_1   = pdf_params%rt_1(k)
-      rt_2   = pdf_params%rt_2(k)
-      thl_1  = pdf_params%thl_1(k)
-      thl_2  = pdf_params%thl_2(k)
-      crt_1  = pdf_params%crt_1(k)
-      crt_2  = pdf_params%crt_2(k)
-      cthl_1 = pdf_params%cthl_1(k)
-      cthl_2 = pdf_params%cthl_2(k)
-      chi_1  = pdf_params%chi_1(k)
-      chi_2  = pdf_params%chi_2(k)
-
       do isample = 1, num_samples
-
-        lh_chi = X_nl_all_levs(k,isample,iiPDF_chi)
-        lh_eta = X_nl_all_levs(k,isample,iiPDF_eta)
-
+        
         ! Compute lh_rt and lh_thl
-        call chi_eta_2_rtthl( rt_1, thl_1, rt_2, thl_2, &                        ! Intent(in)
-                              crt_1, cthl_1, crt_2, cthl_2, &                    ! Intent(in)
-                              chi_1, chi_2, &                                    ! Intent(in)
-                              lh_chi, lh_eta, X_mixt_comp_all_levs(k,isample), & ! Intent(in)
-                              lh_rt(k,isample), lh_thl(k,isample) )              ! Intent(out)
+        call chi_eta_2_rtthl( pdf_params%rt_1(k), pdf_params%thl_1(k),    &
+                              pdf_params%rt_2(k), pdf_params%thl_2(k),    & ! Intent(in)
+                              pdf_params%crt_1(k), pdf_params%cthl_1(k),  &
+                              pdf_params%crt_2(k), pdf_params%cthl_2(k),  & ! Intent(in)
+                              pdf_params%chi_1(k), pdf_params%chi_2(k),   & ! Intent(in)
+                              X_nl_all_levs(k,isample,iiPDF_chi), &
+                              X_nl_all_levs(k,isample,iiPDF_eta), &
+                              X_mixt_comp_all_levs(k,isample), & ! Intent(in)
+                              lh_rt(k,isample), lh_thl(k,isample) ) ! Intent(out)
 
         ! If necessary, clip rt
         if ( lh_rt(k,isample) < rt_tol ) then
           lh_rt(k,isample) = rt_tol
-          l_rt_clipped = .true.
         end if
 
         ! Compute lh_rc
         lh_rc(k,isample) = chi_to_rc( X_nl_all_levs(k,isample,iiPDF_chi) )
+        
         ! Clip lh_rc.
         if ( lh_rc(k,isample) > lh_rt(k,isample) - rt_tol ) then
           lh_rc(k,isample) = lh_rt(k,isample) - rt_tol

@@ -452,8 +452,7 @@ module clubb_driver
       thlphmp_zt    ! Covariance of thl and a hydrometeor [K <hm units>]
 
     real( kind = core_rknd ), dimension(:,:,:), allocatable :: &
-      X_nl_all_levs,     & ! Lognormally distributed hydrometeors
-      X_nl_all_levs_raw    ! Raw (unclipped) values of SILHS sample points
+      X_nl_all_levs    ! Lognormally distributed hydrometeors
 
     integer, dimension(:,:), allocatable :: &
       X_mixt_comp_all_levs ! Which mixture component a sample is in
@@ -1060,7 +1059,6 @@ module clubb_driver
     allocate( rcm_zm(gr%nz), radht_zm(gr%nz) )
 
     allocate( X_nl_all_levs(gr%nz,lh_num_samples,pdf_dim), &
-              X_nl_all_levs_raw(gr%nz,lh_num_samples,pdf_dim), &
               X_mixt_comp_all_levs(gr%nz,lh_num_samples), &
               lh_clipped_vars(gr%nz,lh_num_samples), &
               lh_sample_point_weights(gr%nz,lh_num_samples), &
@@ -1472,16 +1470,15 @@ module clubb_driver
                rho_ds_zt, mu_x_1_n, mu_x_2_n, sigma_x_1_n, sigma_x_2_n, &   ! In
                corr_cholesky_mtx_1, corr_cholesky_mtx_2, &                  ! In
                hydromet_pdf_params, silhs_config_flags, &                   ! In
-               X_nl_all_levs_raw, X_mixt_comp_all_levs, &                   ! Out
+               X_nl_all_levs, X_mixt_comp_all_levs, &                   ! Out
                lh_sample_point_weights )                                    ! Out
 
         call clip_transform_silhs_output( gr%nz, lh_num_samples, &       ! In
                                           pdf_dim, hydromet_dim, &       ! In
                                           X_mixt_comp_all_levs, &        ! In
-                                          X_nl_all_levs_raw, &           ! In
+                                          X_nl_all_levs, &               ! In
                                           pdf_params, l_use_Ncn_to_Nc, & ! In
-                                          lh_clipped_vars, &             ! Out
-                                          X_nl_all_levs )                ! Out
+                                          lh_clipped_vars )              ! Out
 
         call stats_accumulate_lh &
              ( gr%nz, lh_num_samples, pdf_dim, rho_ds_zt, & ! In
@@ -1493,7 +1490,6 @@ module clubb_driver
 #else
       ! Alleviate compiler warnings
       X_nl_all_levs = -999._core_rknd
-      X_nl_all_levs_raw = -999._core_rknd
       lh_clipped_vars%rt = -999._core_rknd
       X_mixt_comp_all_levs = -999
       lh_sample_point_weights = -999._core_rknd
@@ -1688,7 +1684,7 @@ module clubb_driver
                 thlp2_mc, rtpthlp_mc, hydromet_mc, Ncm_mc, hydromet_vel_zt, &
                 hydromet_vel_covar_zt_impc, hydromet_vel_covar_zt_expc )
 
-    deallocate( radf, rcm_zm, radht_zm, X_nl_all_levs, X_nl_all_levs_raw, &
+    deallocate( radf, rcm_zm, radht_zm, X_nl_all_levs, &
                 X_mixt_comp_all_levs, lh_sample_point_weights, Nc_in_cloud, &
                 lh_clipped_vars )
 

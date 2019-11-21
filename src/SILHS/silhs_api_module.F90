@@ -319,10 +319,9 @@ contains
   subroutine clip_transform_silhs_output_api( nz, num_samples, &             ! In
                                               pdf_dim, hydromet_dim, &       ! In
                                               X_mixt_comp_all_levs, &        ! In
-                                              X_nl_all_levs_raw, &           ! In
+                                              X_nl_all_levs, &               ! In
                                               pdf_params, l_use_Ncn_to_Nc, & ! In
-                                              lh_clipped_vars, &             ! Out
-                                              X_nl_all_levs )                ! Out
+                                              lh_clipped_vars )              ! Out
 
     use latin_hypercube_driver_module, only : clip_transform_silhs_output, lh_clipped_variables_type
 
@@ -347,7 +346,7 @@ contains
       X_mixt_comp_all_levs   ! Which component this sample is in (1 or 2)
 
     real( kind = core_rknd ), dimension(nz,num_samples,pdf_dim), intent(in) :: &
-      X_nl_all_levs_raw    ! Raw (unclipped) SILHS sample points    [units vary]
+      X_nl_all_levs         ! SILHS sample points    [units vary]
 
     type(pdf_parameter), intent(in) :: &
       pdf_params             ! **The** PDF parameters!
@@ -356,17 +355,12 @@ contains
     type(lh_clipped_variables_type), dimension(nz,num_samples), intent(out) :: &
       lh_clipped_vars        ! SILHS clipped and transformed variables
 
-    real( kind = core_rknd ), dimension(nz,num_samples,pdf_dim), &
-    intent(out) :: &
-      X_nl_all_levs    ! Clipped values of SILHS sample points    [units vary]
-
     call clip_transform_silhs_output( nz, num_samples, &             ! In
                                       pdf_dim, hydromet_dim, &       ! In
                                       X_mixt_comp_all_levs, &        ! In
-                                      X_nl_all_levs_raw, &           ! In
+                                      X_nl_all_levs, &               ! In
                                       pdf_params, l_use_Ncn_to_Nc, & ! In
-                                      lh_clipped_vars, &             ! Out
-                                      X_nl_all_levs )                ! Out
+                                      lh_clipped_vars )              ! Out
 
   end subroutine clip_transform_silhs_output_api
 
