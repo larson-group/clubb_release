@@ -154,7 +154,8 @@ module pdf_parameter_tests
         implicit_coefs_terms    ! Variable Type
 
     use model_flags, only: &
-        l_gamma_Skw    ! Variable(s)
+        l_gamma_Skw, &    ! Variable(s)
+        l_predict_upwp_vpwp
 
     use parameters_model, only: &
         sclr_dim    ! Variable(s)
@@ -1311,7 +1312,8 @@ module pdf_parameter_tests
 
           sigma_sqd_w &
           = compute_sigma_sqd_w( gamma_Skw_fnc, wp2, thlp2, rtp2, &
-                                 up2, vp2, wpthlp, wprtp, upwp, vpwp )
+                                 up2, vp2, wpthlp, wprtp, upwp, vpwp, &
+                                 l_predict_upwp_vpwp )
 
           call ADG1_pdf_driver( wm, rtm, thlm, um, vm,                  & ! In 
                                wp2, rtp2, thlp2, up2, vp2,              & ! In 

@@ -66,6 +66,11 @@ module latin_hypercube_driver_module
       output_2D_lognormal_dist_file, & ! Procedure(s)
       output_2D_uniform_dist_file
 
+    use model_flags, only: &
+      l_tke_aniso, & ! Variable(s)
+      l_standard_term_ta, &
+      l_single_C2_Skw
+
     use pdf_parameter_module, only: &
       pdf_parameter  ! Type
 
@@ -338,13 +343,19 @@ module latin_hypercube_driver_module
       ! Eric Raut removed lh_rt and lh_thl from call to output_2D_lognormal_dist_file
       ! because they are no longer generated in generate_silhs_sample.
       call output_2D_lognormal_dist_file( nz, num_samples, pdf_dim, &
-                                          real(X_nl_all_levs, kind = stat_rknd) )
+                                          real(X_nl_all_levs, kind = stat_rknd), &
+                                          l_tke_aniso, &
+                                          l_standard_term_ta, &
+                                          l_single_C2_Skw )
     end if
     if ( l_output_2D_uniform_dist ) then
       call output_2D_uniform_dist_file( nz, num_samples, pdf_dim+2, &
                                         X_u_all_levs, &
                                         X_mixt_comp_all_levs, &
-                                        lh_sample_point_weights )
+                                        lh_sample_point_weights, &
+                                        l_tke_aniso, &
+                                        l_standard_term_ta, &
+                                        l_single_C2_Skw )
     end if
 
     ! Various nefarious assertion checks

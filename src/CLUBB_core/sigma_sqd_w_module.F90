@@ -13,7 +13,8 @@ module sigma_sqd_w_module
 
   !=============================================================================
   elemental function compute_sigma_sqd_w( gamma_Skw_fnc, wp2, thlp2, rtp2, &
-                                          up2, vp2, wpthlp, wprtp, upwp, vpwp ) &
+                                          up2, vp2, wpthlp, wprtp, upwp, vpwp, &
+                                          l_predict_upwp_vpwp ) &
     result( sigma_sqd_w )
 
     ! Description:
@@ -50,9 +51,6 @@ module sigma_sqd_w_module
         thl_tol,   &
         w_tol_sqd
 
-    use model_flags, only: &
-        l_predict_upwp_vpwp    ! Variable(s)
-
     use clubb_precision, only: &
         core_rknd ! Variable(s)
 
@@ -73,6 +71,13 @@ module sigma_sqd_w_module
       wprtp,         & ! Flux of total water mixing ratio            [m/s kg/kg]
       upwp,          & ! Flux of west-east horizontal velocity       [m^2/s^2]
       vpwp             ! Flux of south-north horizontal velocity     [m^2/s^2]
+
+    logical, intent(in) :: &
+      l_predict_upwp_vpwp ! Flag to predict <u'w'> and <v'w'> along with <u> and <v> alongside the
+                          ! advancement of <rt>, <w'rt'>, <thl>, <wpthlp>, <sclr>, and <w'sclr'> in
+                          ! subroutine advance_xm_wpxp.  Otherwise, <u'w'> and <v'w'> are still
+                          ! approximated by eddy diffusivity when <u> and <v> are advanced in
+                          ! subroutine advance_windm_edsclrm.
 
     ! Output Variable
     real( kind = core_rknd ) :: sigma_sqd_w ! PDF width parameter      [-]

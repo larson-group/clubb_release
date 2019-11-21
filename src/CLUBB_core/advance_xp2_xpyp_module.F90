@@ -55,9 +55,11 @@ module advance_xp2_xpyp_module
                                sclrm, wpsclrp,                         & ! In
                                wpsclrp2, wpsclrprtp, wpsclrpthlp,      & ! In
                                wp2_splat,                              & ! In
+                               l_predict_upwp_vpwp,                    & ! In
                                l_min_xp2_from_corr_wx,                 & ! In
                                l_C2_cloud_frac,                        & ! In
                                l_upwind_xpyp_ta,                       & ! In
+                               l_single_C2_Skw,                        & ! In
                                rtp2, thlp2, rtpthlp, up2, vp2,         & ! Inout
                                sclrp2, sclrprtp, sclrpthlp)              ! Inout
 
@@ -95,7 +97,6 @@ module advance_xp2_xpyp_module
 
     use model_flags, only: & 
         l_hole_fill, &    ! logical constants
-        l_single_C2_Skw, &
         l_explicit_turbulent_adv_xpyp
 
     use parameters_tunable, only: &
@@ -247,15 +248,21 @@ module advance_xp2_xpyp_module
       wp2_splat    ! Gustiness tendency for wp2 equation
 
     logical, intent(in) :: &
+      l_predict_upwp_vpwp,    & ! Flag to predict <u'w'> and <v'w'> along with <u> and <v>
+                                ! alongside the advancement of <rt>, <w'rt'>, <thl>, <wpthlp>,
+                                ! <sclr>, and <w'sclr'> in subroutine advance_xm_wpxp.  Otherwise,
+                                ! <u'w'> and <v'w'> are still approximated by eddy diffusivity when
+                                ! <u> and <v> are advanced in subroutine advance_windm_edsclrm.
       l_min_xp2_from_corr_wx, & ! Flag to base the threshold minimum value of xp2 (rtp2 and thlp2)
                                 ! on keeping the overall correlation of w and x within the limits
                                 ! of -max_mag_correlation_flux to max_mag_correlation_flux.
-      l_C2_cloud_frac, &        ! Flag to use cloud fraction to adjust the value of the turbulent
+      l_C2_cloud_frac,        & ! Flag to use cloud fraction to adjust the value of the turbulent
                                 ! dissipation coefficient, C2.
-      l_upwind_xpyp_ta          ! This flag determines whether we want to use an upwind
+      l_upwind_xpyp_ta,       & ! This flag determines whether we want to use an upwind
                                 ! differencing approximation rather than a centered differencing
                                 ! for turbulent or mean advection terms. It affects rtp2, thlp2,
                                 ! up2, vp2, sclrp2, rtpthlp, sclrprtp, & sclrpthlp.
+      l_single_C2_Skw           ! Use a single Skewness dependent C2 for rtp2, thlp2, and rtpthlp
 
     ! Input/Output variables
     ! An attribute of (inout) is also needed to import the value of the variances
@@ -825,6 +832,7 @@ module advance_xp2_xpyp_module
     l_last_clip_ts = .true.
     call clip_covar( xp2_xpyp_rtpthlp, l_first_clip_ts,  & ! Intent(in)
                      l_last_clip_ts, dt, rtp2, thlp2,  &  ! Intent(in)
+                     l_predict_upwp_vpwp, & ! Intent(in)
                      rtpthlp, rtpthlp_chnge )     ! Intent(inout)
 
     if ( l_scalar_calc ) then
@@ -887,6 +895,7 @@ module advance_xp2_xpyp_module
           l_last_clip_ts = .true.
           call clip_covar( clip_sclrprtp, l_first_clip_ts,  &            ! Intent(in) 
                            l_last_clip_ts, dt, sclrp2(:,i), rtp2(:), &  ! Intent(in)
+                           l_predict_upwp_vpwp, & ! Intent(in)
                            sclrprtp(:,i), sclrprtp_chnge(:,i) ) ! Intent(inout)
         end if
       enddo
@@ -909,7 +918,8 @@ module advance_xp2_xpyp_module
           l_first_clip_ts = .true.
           l_last_clip_ts = .true.
           call clip_covar( clip_sclrpthlp, l_first_clip_ts,  &            ! Intent(in) 
-                           l_last_clip_ts, dt, sclrp2(:,i), thlp2(:), &   ! Intent(in) 
+                           l_last_clip_ts, dt, sclrp2(:,i), thlp2(:), &   ! Intent(in)
+                           l_predict_upwp_vpwp, &                         ! Intent(in)
                            sclrpthlp(:,i), sclrpthlp_chnge(:,i) ) ! Intent(inout)
         end if
       enddo

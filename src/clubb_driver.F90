@@ -239,7 +239,8 @@ module clubb_driver
         l_diagnose_correlations, &
         l_calc_w_corr, &
         l_silhs_rad, &
-        l_upwind_xm_ma
+        l_upwind_xm_ma, &
+        l_tke_aniso
 
     use soil_vegetation, only: &
         l_soil_veg !------------------------------------------------------ Variable(s)
@@ -1072,6 +1073,7 @@ module clubb_driver
 
       call initialize_clubb &
            ( iunit, trim( forcings_file_path ), p_sfc, zm_init, & ! Intent(in)
+             l_tke_aniso,                                       & ! Intent(in)
              thlm, rtm, um, vm, ug, vg, wp2, up2, vp2, rcm,     & ! Intent(inout)
              wm_zt, wm_zm, em, exner,                           & ! Intent(inout)
              thvm, p_in_Pa,                                     & ! Intent(inout)
@@ -1106,6 +1108,7 @@ module clubb_driver
       ! the initial sounding anyway.
       call initialize_clubb &
            ( iunit, trim( forcings_file_path ), p_sfc, zm_init,  & ! Intent(in)
+             l_tke_aniso,                                        & ! Intent(in)
              thlm, rtm, um, vm, ug, vg, wp2, up2, vp2, rcm,      & ! Intent(inout)
              wm_zt, wm_zm, em, exner,                            & ! Intent(inout)
              thvm, p_in_Pa,                                      & ! Intent(inout)
@@ -1696,6 +1699,7 @@ module clubb_driver
   !-----------------------------------------------------------------------
   subroutine initialize_clubb &
              ( iunit, forcings_file_path, p_sfc, zm_init, &
+               l_tke_aniso, &
                thlm, rtm, um, vm, ug, vg, wp2, up2, vp2, rcm, &
                wm_zt, wm_zm, em, exner, &
                thvm, p_in_Pa, &
@@ -1738,8 +1742,7 @@ module clubb_driver
     use sounding, only: read_sounding !--------------------------------- Procedure(s)
 
     use model_flags, only: &
-        l_uv_nudge, & !------------------------------------------------ Variable(s)
-        l_tke_aniso
+        l_uv_nudge    !------------------------------------------------ Variable(s)
 
     use time_dependent_input, only: &
       initialize_t_dependent_input, & !-------------------------------- Procedure(s)
@@ -1800,6 +1803,9 @@ module clubb_driver
     real( kind = core_rknd ), intent(in) :: &
       p_sfc,  & ! Pressure at the surface        [Pa]
       zm_init   ! Initial moment. level altitude [m]
+
+    logical, intent(in) :: &
+      l_tke_aniso ! For anisotropic turbulent kinetic energy, i.e. TKE = 1/2 (u'^2 + v'^2 + w'^2)
 
     ! Output
     real( kind = core_rknd ), dimension(gr%nz), intent(inout) ::  & 

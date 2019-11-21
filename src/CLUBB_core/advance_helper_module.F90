@@ -160,7 +160,9 @@ module advance_helper_module
 
   !===============================================================================
   function calc_stability_correction( thlm, Lscale, em, exner, rtm, rcm, &
-                                      p_in_Pa, thvm, ice_supersat_frac ) &
+                                      p_in_Pa, thvm, ice_supersat_frac, &
+                                      l_brunt_vaisala_freq_moist, &
+                                      l_use_thvm_in_bv_freq ) &
     result ( stability_correction )
   !
   ! Description:
@@ -197,6 +199,11 @@ module advance_helper_module
       thvm,            & ! Virtual potential temperature             [K]
       ice_supersat_frac
 
+    logical, intent(in) :: &
+      l_brunt_vaisala_freq_moist, & ! Use a different formula for the Brunt-Vaisala frequency in
+                                    ! saturated atmospheres (from Durran and Klemp, 1982)
+      l_use_thvm_in_bv_freq         ! Use thvm in the calculation of Brunt-Vaisala frequency
+
     ! Result
     real( kind = core_rknd ), dimension(gr%nz) :: &
       stability_correction
@@ -211,7 +218,10 @@ module advance_helper_module
 
     !------------ Begin Code --------------
     call calc_brunt_vaisala_freq_sqd(  thlm, exner, rtm, rcm, p_in_Pa, thvm, &
-                                      ice_supersat_frac, brunt_vaisala_freq_sqd, &
+                                      ice_supersat_frac, &
+                                      l_brunt_vaisala_freq_moist, &
+                                      l_use_thvm_in_bv_freq, &
+                                      brunt_vaisala_freq_sqd, &
                                       brunt_vaisala_freq_sqd_mixed,&
                                       brunt_vaisala_freq_sqd_dry, &
                                       brunt_vaisala_freq_sqd_moist, &
@@ -228,7 +238,10 @@ module advance_helper_module
 
   !===============================================================================
   subroutine calc_brunt_vaisala_freq_sqd(  thlm, exner, rtm, rcm, p_in_Pa, thvm, &
-                                           ice_supersat_frac, brunt_vaisala_freq_sqd, &
+                                           ice_supersat_frac, &
+                                           l_brunt_vaisala_freq_moist, &
+                                           l_use_thvm_in_bv_freq, &
+                                           brunt_vaisala_freq_sqd, &
                                            brunt_vaisala_freq_sqd_mixed,&
                                            brunt_vaisala_freq_sqd_dry, &
                                            brunt_vaisala_freq_sqd_moist, &
@@ -263,10 +276,6 @@ module advance_helper_module
     use saturation, only: &
       sat_mixrat_liq ! Procedure
 
-    use model_flags, only: &
-      l_brunt_vaisala_freq_moist, & ! Variable(s)
-      l_use_thvm_in_bv_freq
-
     implicit none
 
     ! Input Variables
@@ -278,6 +287,11 @@ module advance_helper_module
       p_in_Pa, &  ! Air pressure                       [Pa]
       thvm,    &  ! Virtual potential temperature      [K]
       ice_supersat_frac
+
+    logical, intent(in) :: &
+      l_brunt_vaisala_freq_moist, & ! Use a different formula for the Brunt-Vaisala frequency in
+                                    ! saturated atmospheres (from Durran and Klemp, 1982)
+      l_use_thvm_in_bv_freq         ! Use thvm in the calculation of Brunt-Vaisala frequency
 
     ! Output Variables
     real( kind = core_rknd ), dimension(gr%nz), intent(out) :: &
@@ -395,7 +409,10 @@ module advance_helper_module
 !===============================================================================
   subroutine compute_Cx_fnc_Richardson( thlm, um, vm, em, Lscale, exner, rtm, &
                                         rcm, p_in_Pa, thvm, rho_ds_zm, &
-                                        ice_supersat_frac, Cx_fnc_Richardson )
+                                        ice_supersat_frac, &
+                                        l_brunt_vaisala_freq_moist, &
+                                        l_use_thvm_in_bv_freq, &
+                                        Cx_fnc_Richardson )
 
   ! Description:
   !   Compute Cx as a function of the Richardson number
@@ -462,8 +479,12 @@ module advance_helper_module
       p_in_Pa,   & ! Air pressure                                   [Pa]
       thvm,      & ! Virtual potential temperature                  [K]
       rho_ds_zm, &  ! Dry static density on momentum levels          [kg/m^3]
-      ice_supersat_frac  ! ice cloud fraction 
+      ice_supersat_frac  ! ice cloud fraction
 
+    logical, intent(in) :: &
+      l_brunt_vaisala_freq_moist, & ! Use a different formula for the Brunt-Vaisala frequency in
+                                    ! saturated atmospheres (from Durran and Klemp, 1982)
+      l_use_thvm_in_bv_freq         ! Use thvm in the calculation of Brunt-Vaisala frequency
 
     ! Output Variable
     real( kind = core_rknd), dimension(gr%nz), intent(out) :: &
@@ -490,12 +511,15 @@ module advance_helper_module
 
     !----- Begin Code -----
 
-    call calc_brunt_vaisala_freq_sqd(  thlm, exner, rtm, rcm, p_in_Pa, thvm, &
-                                  ice_supersat_frac, brunt_vaisala_freq_sqd, &
-                                  brunt_vaisala_freq_sqd_mixed,&
-                                  brunt_vaisala_freq_sqd_dry, &
-                                  brunt_vaisala_freq_sqd_moist, &
-                                  brunt_vaisala_freq_sqd_plus )
+    call calc_brunt_vaisala_freq_sqd( thlm, exner, rtm, rcm, p_in_Pa, thvm, &
+                                      ice_supersat_frac, &
+                                      l_brunt_vaisala_freq_moist, &
+                                      l_use_thvm_in_bv_freq, &
+                                      brunt_vaisala_freq_sqd, &
+                                      brunt_vaisala_freq_sqd_mixed,&
+                                      brunt_vaisala_freq_sqd_dry, &
+                                      brunt_vaisala_freq_sqd_moist, &
+                                      brunt_vaisala_freq_sqd_plus )
 
     invrs_min_max_diff = 1.0_core_rknd / ( Richardson_num_max - Richardson_num_min )
     invrs_num_div_thresh = 1.0_core_rknd / Richardson_num_divisor_threshold

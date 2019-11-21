@@ -69,6 +69,8 @@ module advance_wp2_wp3_module
                               wprtp, wpthlp, rtp2, thlp2,              & ! In
                               l_min_wp2_from_corr_wx,                  & ! In
                               l_upwind_xm_ma,                          & ! In
+                              l_tke_aniso,                             & ! In
+                              l_standard_term_ta,                      & ! In
                               l_damp_wp2_using_em,                     & ! In
                               l_use_C11_Richardson,                    & ! In
                               l_damp_wp3_Skw_squared,                  & ! In
@@ -208,6 +210,12 @@ module advance_wp2_wp3_module
                                 ! differencing approximation rather than a centered differencing
                                 ! for turbulent or mean advection terms. It affects rtm, thlm,
                                 ! sclrm, um and vm.
+      l_tke_aniso,            & ! For anisotropic turbulent kinetic energy, i.e. TKE = 1/2
+                                ! (u'^2 + v'^2 + w'^2)
+      l_standard_term_ta,     & ! Use the standard discretization for the turbulent advection
+                                ! terms. Setting to .false. means that a_1 and a_3 are pulled
+                                ! outside of the derivative in advance_wp2_wp3_module.F90 and in
+                                ! advance_xp2_xpyp_module.F90.
       l_damp_wp2_using_em,    & ! In wp2 equation, use a dissipation formula of -(2/3)*em/tau_zm,
                                 ! as in Bougeault (1981)
       l_use_C11_Richardson,   & ! Parameterize C16 based on Richardson number
@@ -357,6 +365,8 @@ module advance_wp2_wp3_module
                      wprtp, wpthlp, rtp2, thlp2,            & ! Intent(in)
                      l_min_wp2_from_corr_wx,                & ! Intent(in)
                      l_upwind_xm_ma,                        & ! Intent(in)
+                     l_tke_aniso,                           & ! Intent(in)
+                     l_standard_term_ta,                    & ! Intent(in)
                      l_damp_wp2_using_em,                   & ! Intent(in)
                      l_damp_wp3_Skw_squared,                & ! Intent(in)
                      wp2, wp3, wp3_zm, wp2_zt )               ! Intent(inout)
@@ -465,6 +475,8 @@ module advance_wp2_wp3_module
                          wprtp, wpthlp, rtp2, thlp2,            & ! Intent(in)
                          l_min_wp2_from_corr_wx,                & ! Intent(in)
                          l_upwind_xm_ma,                        & ! Intent(in)
+                         l_tke_aniso,                           & ! Intent(in)
+                         l_standard_term_ta,                    & ! Intent(in)
                          l_damp_wp2_using_em,                   & ! Intent(in)
                          l_damp_wp3_Skw_squared,                & ! Intent(in)
                          wp2, wp3, wp3_zm, wp2_zt )               ! Intent(inout)
@@ -498,8 +510,7 @@ module advance_wp2_wp3_module
         clubb_fatal_error              ! Constants
 
     use model_flags, only:  & 
-        l_tke_aniso,                  & ! Variable(s)
-        l_hole_fill,                  &
+        l_hole_fill,                  & ! Variable(s)
         l_explicit_turbulent_adv_wp3
 
     use clubb_precision, only:  & 
@@ -657,6 +668,12 @@ module advance_wp2_wp3_module
                                 ! differencing approximation rather than a centered differencing
                                 ! for turbulent or mean advection terms. It affects rtm, thlm,
                                 ! sclrm, um and vm.
+      l_tke_aniso,            & ! For anisotropic turbulent kinetic energy, i.e. TKE = 1/2
+                                ! (u'^2 + v'^2 + w'^2)
+      l_standard_term_ta,     & ! Use the standard discretization for the turbulent advection
+                                ! terms. Setting to .false. means that a_1 and a_3 are pulled
+                                ! outside of the derivative in advance_wp2_wp3_module.F90 and in
+                                ! advance_xp2_xpyp_module.F90.
       l_damp_wp2_using_em,    & ! In wp2 equation, use a dissipation formula of -(2/3)*em/tau_zm,
                                 ! as in Bougeault (1981)
       l_damp_wp3_Skw_squared    ! Set damping on wp3 to use Skw^2 rather than Skw^4
@@ -770,6 +787,8 @@ module advance_wp2_wp3_module
                    C11_Skw_fnc, C16_fnc, rho_ds_zm, invrs_rho_ds_zt, radf, &   ! intent(in)
                    thv_ds_zm, thv_ds_zt, wp2_splat, wp3_splat, &               ! intent(in)
                    l_crank_nich_diff, &                                        ! intent(in)
+                   l_tke_aniso, &                                              ! intent(in)
+                   l_standard_term_ta, &                                       ! intent(in)
                    l_damp_wp2_using_em, &                                      ! intent(in)
                    l_damp_wp3_Skw_squared, &                                   ! intent(in)
                    rhs )                                                       ! intent(out)
@@ -786,6 +805,8 @@ module advance_wp2_wp3_module
                    C11_Skw_fnc, C16_fnc, rho_ds_zm, rho_ds_zt, &
                    invrs_rho_ds_zm, invrs_rho_ds_zt, l_crank_nich_diff, &
                    l_upwind_xm_ma, &
+                   l_tke_aniso, &
+                   l_standard_term_ta, &
                    l_damp_wp3_Skw_squared, &
                    lhs, wp3_pr3_lhs )
 
@@ -1098,6 +1119,8 @@ module advance_wp2_wp3_module
                        C11_Skw_fnc, C16_fnc, rho_ds_zm, rho_ds_zt, &
                        invrs_rho_ds_zm, invrs_rho_ds_zt, l_crank_nich_diff, &
                        l_upwind_xm_ma, &
+                       l_tke_aniso, &
+                       l_standard_term_ta, &
                        l_damp_wp3_Skw_squared, &
                        lhs, wp3_pr3_lhs )
     ! Description:
@@ -1145,9 +1168,8 @@ module advance_wp2_wp3_module
         gamma_over_implicit_ts, &
         zero
 
-    use model_flags, only: & 
-        l_tke_aniso,                  & ! Variable(s)
-        l_explicit_turbulent_adv_wp3, &
+    use model_flags, only: &
+        l_explicit_turbulent_adv_wp3, & ! Variable(s)
         l_use_wp3_pr3
 
     use diffusion, only: & 
@@ -1261,6 +1283,12 @@ module advance_wp2_wp3_module
                                 ! differencing approximation rather than a centered differencing
                                 ! for turbulent or mean advection terms. It affects rtm, thlm,
                                 ! sclrm, um and vm.
+      l_tke_aniso,            & ! For anisotropic turbulent kinetic energy, i.e. TKE = 1/2
+                                ! (u'^2 + v'^2 + w'^2)
+      l_standard_term_ta,     & ! Use the standard discretization for the turbulent advection
+                                ! terms. Setting to .false. means that a_1 and a_3 are pulled
+                                ! outside of the derivative in advance_wp2_wp3_module.F90 and in
+                                ! advance_xp2_xpyp_module.F90.
       l_damp_wp3_Skw_squared    ! Set damping on wp3 to use Skw^2 rather than Skw^4
 
     ! Output Variable
@@ -1541,6 +1569,7 @@ module advance_wp2_wp3_module
                                            rho_ds_zm(:), &
                                            invrs_rho_ds_zt(:), &
                                            gr%invrs_dzt(:), &
+                                           l_standard_term_ta, &
                                            wp3_term_ta_lhs_result(:,:) )
 
         elseif ( iiPDF_type == iiPDF_new &
@@ -1732,6 +1761,8 @@ module advance_wp2_wp3_module
                        C11_Skw_fnc, C16_fnc, rho_ds_zm, invrs_rho_ds_zt, radf, &
                        thv_ds_zm, thv_ds_zt, wp2_splat, wp3_splat, & 
                        l_crank_nich_diff, &
+                       l_tke_aniso, &
+                       l_standard_term_ta, &
                        l_damp_wp2_using_em, &
                        l_damp_wp3_Skw_squared, &
                        rhs )
@@ -1786,9 +1817,8 @@ module advance_wp2_wp3_module
         zero,          &
         gamma_over_implicit_ts
 
-    use model_flags, only:  & 
-        l_tke_aniso,                  & ! Variable(s)
-        l_explicit_turbulent_adv_wp3, &
+    use model_flags, only:  &
+        l_explicit_turbulent_adv_wp3, & ! Variable(s)
         l_use_wp3_pr3
 
     use diffusion, only: & 
@@ -1870,6 +1900,12 @@ module advance_wp2_wp3_module
       l_crank_nich_diff   ! Turns on/off Crank-Nicholson diffusion.
 
     logical, intent(in) :: &
+      l_tke_aniso,         & ! For anisotropic turbulent kinetic energy, i.e. TKE = 1/2
+                             ! (u'^2 + v'^2 + w'^2)
+      l_standard_term_ta,  & ! Use the standard discretization for the turbulent advection terms.
+                             ! Setting to .false. means that a_1 and a_3 are pulled outside of the
+                             ! derivative in advance_wp2_wp3_module.F90 and in
+                             ! advance_xp2_xpyp_module.F90.
       l_damp_wp2_using_em, & ! In wp2 equation, use a dissipation formula of -(2/3)*em/tau_zm,
                              ! as in Bougeault (1981)
       l_damp_wp3_Skw_squared ! Set damping on wp3 to use Skw^2 rather than Skw^4
@@ -2149,6 +2185,7 @@ module advance_wp2_wp3_module
                                            rho_ds_zm(:), &
                                            invrs_rho_ds_zt(:), &
                                            gr%invrs_dzt(:), &
+                                           l_standard_term_ta, &
                                            wp3_term_ta_lhs_result(:,:) )
             ! Add terms
             do k = 2, gr%nz-1
@@ -3653,7 +3690,8 @@ module advance_wp2_wp3_module
                                       wp3_on_wp2, wp3_on_wp2_m1, &
                                       rho_ds_zm, rho_ds_zmm1, &
                                       invrs_rho_ds_zt, &
-                                      invrs_dzt, level ) &
+                                      invrs_dzt, level, &
+                                      l_standard_term_ta ) &
   result( lhs )
 
     ! Description:
@@ -3746,9 +3784,6 @@ module advance_wp2_wp3_module
     use grid_class, only:  &
         gr ! Variable gr%weights_zt2zm
 
-    use model_flags, only:  &
-        l_standard_term_ta
-
     use clubb_precision, only: &
         core_rknd ! Variable(s)
 
@@ -3785,6 +3820,12 @@ module advance_wp2_wp3_module
 
     integer, intent(in) :: & 
       level ! Central thermodynamic level (on which calculation occurs).
+
+    logical, intent(in) :: &
+      l_standard_term_ta ! Use the standard discretization for the turbulent advection terms.
+                         ! Setting to .false. means that a_1 and a_3 are pulled outside of the
+                         ! derivative in advance_wp2_wp3_module.F90 and in
+                         ! advance_xp2_xpyp_module.F90.
 
     ! Return Variable
     real( kind = core_rknd ), dimension(5) :: lhs
@@ -3909,6 +3950,7 @@ module advance_wp2_wp3_module
                                               rho_ds_zm, &
                                               invrs_rho_ds_zt, &
                                               invrs_dzt, &
+                                              l_standard_term_ta, &
                                               lhs_ta_wp3 )
     ! Description:
     !     This subroutine serves the same function as wp3_term_ta_ADG1_lhs (above), but
@@ -3920,9 +3962,6 @@ module advance_wp2_wp3_module
 
         use grid_class, only:  &
             gr ! Variable gr%weights_zt2zm
-
-        use model_flags, only:  &
-            l_standard_term_ta
 
         use clubb_precision, only: &
             core_rknd ! Variable(s)
@@ -3940,6 +3979,12 @@ module advance_wp2_wp3_module
           rho_ds_zm,       & ! Dry, static density at momentum level (k)   [kg/m^3]
           invrs_rho_ds_zt, & ! Inv dry, static density at thermo level (k) [m^3/kg]
           invrs_dzt          ! Inverse of grid spacing (k)                 [1/m]
+
+        logical, intent(in) :: &
+          l_standard_term_ta ! Use the standard discretization for the turbulent advection terms.
+                             ! Setting to .false. means that a_1 and a_3 are pulled outside of the
+                             ! derivative in advance_wp2_wp3_module.F90 and in
+                             ! advance_xp2_xpyp_module.F90.
 
         ! Return Variable
         real( kind = core_rknd ), dimension(5,gr%nz), intent(out) :: lhs_ta_wp3

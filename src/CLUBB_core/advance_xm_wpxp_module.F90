@@ -63,11 +63,15 @@ module advance_xm_wpxp_module
                               um_forcing, vm_forcing, ug, vg, wpthvp, &
                               fcor, um_ref, vm_ref, up2, vp2, &
                               uprcp, vprcp, rc_coef, &
+                              l_predict_upwp_vpwp, &
                               l_diffuse_rtm_and_thlm, &
                               l_stability_correct_Kh_N2_zm, &
                               l_upwind_wpxp_ta, &
                               l_upwind_xm_ma, &
+                              l_tke_aniso, &
                               l_use_C7_Richardson, &
+                              l_brunt_vaisala_freq_moist, &
+                              l_use_thvm_in_bv_freq, &
                               rtm, wprtp, thlm, wpthlp, &
                               sclrm, wpsclrp, um, upwp, vm, vpwp )
 
@@ -134,7 +138,6 @@ module advance_xm_wpxp_module
     use model_flags, only: &
         l_clip_semi_implicit,          & ! Variable(s)
         l_explicit_turbulent_adv_wpxp, &
-        l_predict_upwp_vpwp,           &
         l_uv_nudge
 
     use mono_flux_limiter, only: &
@@ -282,6 +285,12 @@ module advance_xm_wpxp_module
       vp2       ! Variance of the v wind component             [m^2/s^2]
 
     logical, intent(in) :: &
+      l_predict_upwp_vpwp,          & ! Flag to predict <u'w'> and <v'w'> along with <u> and <v>
+                                      ! alongside the advancement of <rt>, <w'rt'>, <thl>,
+                                      ! <wpthlp>, <sclr>, and <w'sclr'> in subroutine
+                                      ! advance_xm_wpxp.  Otherwise, <u'w'> and <v'w'> are still
+                                      ! approximated by eddy diffusivity when <u> and <v> are
+                                      ! advanced in subroutine advance_windm_edsclrm.
       l_diffuse_rtm_and_thlm,       & ! This flag determines whether or not we want CLUBB to do
                                       ! diffusion on rtm and thlm
       l_stability_correct_Kh_N2_zm, & ! This flag determines whether or not we want CLUBB to apply
@@ -294,7 +303,12 @@ module advance_xm_wpxp_module
                                       ! differencing approximation rather than a centered
                                       ! differencing for turbulent or mean advection terms.
                                       ! It affects rtm, thlm, sclrm, um and vm.
-      l_use_C7_Richardson             ! Parameterize C7 based on Richardson number
+      l_tke_aniso,                  & ! For anisotropic turbulent kinetic energy, i.e. TKE = 1/2
+                                      ! (u'^2 + v'^2 + w'^2)
+      l_use_C7_Richardson,          & ! Parameterize C7 based on Richardson number
+      l_brunt_vaisala_freq_moist,   & ! Use a different formula for the Brunt-Vaisala frequency in
+                                      ! saturated atmospheres (from Durran and Klemp, 1982)
+      l_use_thvm_in_bv_freq           ! Use thvm in the calculation of Brunt-Vaisala frequency
 
     ! -------------------- Input/Output Variables --------------------
     
@@ -534,6 +548,8 @@ module advance_xm_wpxp_module
                                  l_diffuse_rtm_and_thlm,                           & ! In
                                  l_stability_correct_Kh_N2_zm,                     & ! In
                                  l_upwind_xm_ma,                                   & ! In
+                                 l_brunt_vaisala_freq_moist,                       & ! In
+                                 l_use_thvm_in_bv_freq,                            & ! In
                                  lhs_diff_zm, lhs_diff_zt, lhs_ma_zt, lhs_ma_zm,   & ! Out
                                  lhs_tp, lhs_ta_xm, lhs_ac_pr2 )                     ! Out
 
@@ -557,8 +573,10 @@ module advance_xm_wpxp_module
                                             rhs_ta_wprtp, rhs_ta_wpthlp, rhs_ta_wpsclrp,    & ! In
                                             lhs_tp, lhs_ta_xm, lhs_ac_pr2, lhs_pr1_wprtp,   & ! In
                                             lhs_pr1_wpthlp, lhs_pr1_wpsclrp,                & ! In
+                                            l_predict_upwp_vpwp,                            & ! In
                                             l_diffuse_rtm_and_thlm,                         & ! In
                                             l_upwind_xm_ma,                                 & ! In
+                                            l_tke_aniso,                                    & ! In
                                             rtm, wprtp, thlm, wpthlp, sclrm, wpsclrp )        ! Out
 
     else
@@ -580,8 +598,10 @@ module advance_xm_wpxp_module
                                           rhs_ta_wpvp, rhs_ta_wpsclrp,                      & ! In
                                           lhs_tp, lhs_ta_xm, lhs_ac_pr2, lhs_pr1_wprtp,     & ! In
                                           lhs_pr1_wpthlp, lhs_pr1_wpsclrp,                  & ! In
+                                          l_predict_upwp_vpwp,                              & ! In
                                           l_diffuse_rtm_and_thlm,                           & ! In
                                           l_upwind_xm_ma,                                   & ! In
+                                          l_tke_aniso,                                      & ! In
                                           rtm, wprtp, thlm, wpthlp,                         & ! Out
                                           sclrm, wpsclrp, um, upwp, vm,vpwp )                 ! Out
 
@@ -614,7 +634,8 @@ module advance_xm_wpxp_module
                                    um, upwp, vm, vpwp, rtm_old, &
                                    wprtp_old, thlm_old, wpthlp_old, &
                                    sclrm_old, wpsclrp_old, um_old, &
-                                   upwp_old, vm_old, vpwp_old )
+                                   upwp_old, vm_old, vpwp_old, &
+                                   l_predict_upwp_vpwp )
       end if
     end if
 
@@ -1135,6 +1156,8 @@ module advance_xm_wpxp_module
                                      l_diffuse_rtm_and_thlm,                            & ! In
                                      l_stability_correct_Kh_N2_zm,                      & ! In
                                      l_upwind_xm_ma,                                    & ! In
+                                     l_brunt_vaisala_freq_moist,                        & ! In
+                                     l_use_thvm_in_bv_freq,                             & ! In
                                      lhs_diff_zm, lhs_diff_zt, lhs_ma_zt, lhs_ma_zm,    & ! Out
                                      lhs_tp, lhs_ta_xm, lhs_ac_pr2 )                      ! Out
     ! Description:
@@ -1201,10 +1224,13 @@ module advance_xm_wpxp_module
                                       ! diffusion on rtm and thlm
       l_stability_correct_Kh_N2_zm, & ! This flag determines whether or not we want CLUBB to apply
                                       ! a stability correction
-      l_upwind_xm_ma                  ! This flag determines whether we want to use an upwind
+      l_upwind_xm_ma,               & ! This flag determines whether we want to use an upwind
                                       ! differencing approximation rather than a centered
                                       ! differencing for turbulent or mean advection terms.
                                       ! It affects rtm, thlm, sclrm, um and vm.
+      l_brunt_vaisala_freq_moist,   & ! Use a different formula for the Brunt-Vaisala frequency in
+                                      ! saturated atmospheres (from Durran and Klemp, 1982)
+      l_use_thvm_in_bv_freq           ! Use thvm in the calculation of Brunt-Vaisala frequency
       
     !------------------- Output Variables -------------------
     real( kind = core_rknd ), dimension(3,gr%nz), intent(out) :: & 
@@ -1268,7 +1294,9 @@ module advance_xm_wpxp_module
         
         if ( l_stability_correct_Kh_N2_zm ) then
           Kh_N2_zm = Kh_zm / calc_stability_correction( thlm, Lscale, em, exner, rtm, rcm, &
-                                                        p_in_Pa, thvm, ice_supersat_frac)
+                                                        p_in_Pa, thvm, ice_supersat_frac, &
+                                                        l_brunt_vaisala_freq_moist, &
+                                                        l_use_thvm_in_bv_freq )
         else
           Kh_N2_zm = Kh_zm
         end if
@@ -2198,8 +2226,10 @@ module advance_xm_wpxp_module
                                             rhs_ta_wpvp, rhs_ta_wpsclrp, &
                                             lhs_tp, lhs_ta_xm, lhs_ac_pr2, lhs_pr1_wprtp, &
                                             lhs_pr1_wpthlp, lhs_pr1_wpsclrp, &
+                                            l_predict_upwp_vpwp, &
                                             l_diffuse_rtm_and_thlm, &
                                             l_upwind_xm_ma, &
+                                            l_tke_aniso, &
                                             rtm, wprtp, thlm, wpthlp, &
                                             sclrm, wpsclrp, um, upwp, vm, vpwp )
     !            
@@ -2216,9 +2246,6 @@ module advance_xm_wpxp_module
       clubb_at_least_debug_level,  & ! Procedure
       err_code,                    & ! Error Indicator
       clubb_fatal_error              ! Constants
-      
-    use model_flags, only: &
-      l_predict_upwp_vpwp
       
     use stats_type_utilities, only: & 
       stat_update_var   ! Procedure(s)
@@ -2363,12 +2390,19 @@ module advance_xm_wpxp_module
       nrhs         ! Number of RHS vectors
 
     logical, intent(in) :: &
+      l_predict_upwp_vpwp,    & ! Flag to predict <u'w'> and <v'w'> along with <u> and <v>
+                                ! alongside the advancement of <rt>, <w'rt'>, <thl>, <wpthlp>,
+                                ! <sclr>, and <w'sclr'> in subroutine advance_xm_wpxp.  Otherwise,
+                                ! <u'w'> and <v'w'> are still approximated by eddy diffusivity when
+                                ! <u> and <v> are advanced in subroutine advance_windm_edsclrm.
       l_diffuse_rtm_and_thlm, & ! This flag determines whether or not we want CLUBB to do diffusion
                                 ! on rtm and thlm
-      l_upwind_xm_ma            ! This flag determines whether we want to use an upwind
+      l_upwind_xm_ma,         & ! This flag determines whether we want to use an upwind
                                 ! differencing approximation rather than a centered differencing
                                 ! for turbulent or mean advection terms. It affects rtm, thlm,
                                 ! sclrm, um and vm.
+      l_tke_aniso               ! For anisotropic turbulent kinetic energy, i.e. TKE = 1/2
+                                ! (u'^2 + v'^2 + w'^2)
       
     ! ------------------- Input/Output Variables -------------------
     
@@ -2648,7 +2682,9 @@ module advance_xm_wpxp_module
            rt_tol**2, rt_tol, rcond, &            ! Intent(in)
            low_lev_effect, high_lev_effect, &     ! Intent(in)
            l_implemented, solution(:,1),  &       ! Intent(in)
+           l_predict_upwp_vpwp, &                 ! Intent(in)
            l_upwind_xm_ma, &                      ! Intent(in)
+           l_tke_aniso, &                         ! Intent(in)
            rtm, rt_tol_mfl, wprtp )               ! Intent(inout)
 
     if ( clubb_at_least_debug_level( 0 ) ) then
@@ -2665,7 +2701,9 @@ module advance_xm_wpxp_module
            thl_tol**2, thl_tol, rcond, &          ! Intent(in)
            low_lev_effect, high_lev_effect, &     ! Intent(in)
            l_implemented, solution(:,2),  &       ! Intent(in)
+           l_predict_upwp_vpwp, &                 ! Intent(in)
            l_upwind_xm_ma, &                      ! Intent(in)
+           l_tke_aniso, &                         ! Intent(in)
            thlm, thl_tol_mfl, wpthlp )            ! Intent(inout)
 
     if ( clubb_at_least_debug_level( 0 ) ) then
@@ -2693,7 +2731,9 @@ module advance_xm_wpxp_module
              sclr_tol(i)**2, sclr_tol(i), rcond, &    ! Intent(in)
              low_lev_effect, high_lev_effect, &       ! Intent(in)
              l_implemented, solution(:,2+i),  &       ! Intent(in)
+             l_predict_upwp_vpwp, &                   ! Intent(in)
              l_upwind_xm_ma, &                        ! Intent(in)
+             l_tke_aniso, &                           ! Intent(in)
              sclrm(:,i), sclr_tol(i), wpsclrp(:,i) )  ! Intent(inout)
 
       if ( clubb_at_least_debug_level( 0 ) ) then
@@ -2716,7 +2756,9 @@ module advance_xm_wpxp_module
               w_tol_sqd, w_tol, rcond,               & ! Intent(in)
               low_lev_effect, high_lev_effect,       & ! Intent(in)
               l_implemented, solution(:,3+sclr_dim), & ! Intent(in)
+              l_predict_upwp_vpwp,                   & ! Intent(in)
               l_upwind_xm_ma,                        & ! Intent(in)
+              l_tke_aniso,                           & ! Intent(in)
               um, w_tol, upwp                        ) ! Intent(inout)
 
        if ( clubb_at_least_debug_level( 0 ) ) then
@@ -2733,7 +2775,9 @@ module advance_xm_wpxp_module
               w_tol_sqd, w_tol, rcond,               & ! Intent(in)
               low_lev_effect, high_lev_effect,       & ! Intent(in)
               l_implemented, solution(:,4+sclr_dim), & ! Intent(in)
+              l_predict_upwp_vpwp,                   & ! Intent(in)
               l_upwind_xm_ma,                        & ! Intent(in)
+              l_tke_aniso,                           & ! Intent(in)
               vm, w_tol, vpwp                        ) ! Intent(inout)
 
        if ( clubb_at_least_debug_level( 0 ) ) then
@@ -2761,8 +2805,10 @@ module advance_xm_wpxp_module
                                             rhs_ta_wprtp, rhs_ta_wpthlp, rhs_ta_wpsclrp, &
                                             lhs_tp, lhs_ta_xm, lhs_ac_pr2, lhs_pr1_wprtp, &
                                             lhs_pr1_wpthlp, lhs_pr1_wpsclrp, &
+                                            l_predict_upwp_vpwp, &
                                             l_diffuse_rtm_and_thlm, &
                                             l_upwind_xm_ma, &
+                                            l_tke_aniso, &
                                             rtm, wprtp, thlm, wpthlp, sclrm, wpsclrp )
     !            
     ! Description: This subroutine solves all xm_wpxp when all the LHS matrices are NOT equal.
@@ -2888,12 +2934,19 @@ module advance_xm_wpxp_module
       nrhs         ! Number of RHS vectors
 
     logical, intent(in) :: &
+      l_predict_upwp_vpwp, &    ! Flag to predict <u'w'> and <v'w'> along with <u> and <v>
+                                ! alongside the advancement of <rt>, <w'rt'>, <thl>, <wpthlp>,
+                                ! <sclr>, and <w'sclr'> in subroutine advance_xm_wpxp.  Otherwise,
+                                ! <u'w'> and <v'w'> are still approximated by eddy diffusivity when
+                                ! <u> and <v> are advanced in subroutine advance_windm_edsclrm.
       l_diffuse_rtm_and_thlm, & ! This flag determines whether or not we want CLUBB to do
                                 ! diffusion on rtm and thlm
-      l_upwind_xm_ma            ! This flag determines whether we want to use an upwind
+      l_upwind_xm_ma,         & ! This flag determines whether we want to use an upwind
                                 ! differencing approximation rather than a centered differencing
                                 ! for turbulent or mean advection terms. It affects rtm, thlm,
                                 ! sclrm, um and vm.
+      l_tke_aniso               ! For anisotropic turbulent kinetic energy, i.e. TKE = 1/2
+                                ! (u'^2 + v'^2 + w'^2)
       
     ! ------------------- Input/Output Variables -------------------
     
@@ -3014,7 +3067,9 @@ module advance_xm_wpxp_module
            rt_tol**2, rt_tol, rcond, &            ! Intent(in)
            low_lev_effect, high_lev_effect, &     ! Intent(in)
            l_implemented, solution(:,1), &        ! Intent(in)
+           l_predict_upwp_vpwp, &                 ! Intent(in)
            l_upwind_xm_ma, &                      ! Intent(in)
+           l_tke_aniso, &                         ! Intent(in)
            rtm, rt_tol_mfl, wprtp )               ! Intent(inout)
 
     if ( clubb_at_least_debug_level( 0 ) ) then
@@ -3095,7 +3150,9 @@ module advance_xm_wpxp_module
            thl_tol**2, thl_tol, rcond, &           ! Intent(in)
            low_lev_effect, high_lev_effect, &      ! Intent(in)
            l_implemented, solution(:,1),  &        ! Intent(in)
+           l_predict_upwp_vpwp, &                  ! Intent(in)
            l_upwind_xm_ma, &                       ! Intent(in)
+           l_tke_aniso, &                          ! Intent(in)
            thlm, thl_tol_mfl, wpthlp )             ! Intent(inout)
 
     if ( clubb_at_least_debug_level( 0 ) ) then
@@ -3188,7 +3245,9 @@ module advance_xm_wpxp_module
              sclr_tol(i)**2, sclr_tol(i), rcond, &    ! Intent(in)
              low_lev_effect, high_lev_effect, &       ! Intent(in)
              l_implemented, solution(:,1),  &         ! Intent(in)
+             l_predict_upwp_vpwp, &                   ! Intent(in)
              l_upwind_xm_ma, &                        ! Intent(in)
+             l_tke_aniso, &                           ! Intent(in)
              sclrm(:,i), sclr_tol(i), wpsclrp(:,i) )  ! Intent(inout)
 
       if ( clubb_at_least_debug_level( 0 ) ) then
@@ -3278,7 +3337,9 @@ module advance_xm_wpxp_module
                xp2_threshold, xm_threshold, rcond, &
                low_lev_effect, high_lev_effect, &
                l_implemented, solution, &
+               l_predict_upwp_vpwp, &
                l_upwind_xm_ma, &
+               l_tke_aniso, &
                xm, xm_tol, wpxp )
 
     ! Description:
@@ -3292,8 +3353,7 @@ module advance_xm_wpxp_module
         gr ! Variable(s)
 
     use model_flags, only: &
-        l_clip_semi_implicit, & ! Variable(s)
-        l_tke_aniso
+        l_clip_semi_implicit    ! Variable(s)
 
     use clubb_precision, only:  & 
         core_rknd ! Variable(s)
@@ -3458,9 +3518,16 @@ module advance_xm_wpxp_module
       solution ! The <t+1> value of xm and wpxp   [units vary]
 
     logical, intent(in) :: &
-      l_upwind_xm_ma ! This flag determines whether we want to use an upwind differencing
-                     ! approximation rather than a centered differencing for turbulent or
-                     ! mean advection terms. It affects rtm, thlm, sclrm, um and vm.
+      l_predict_upwp_vpwp, & ! Flag to predict <u'w'> and <v'w'> along with <u> and <v> alongside
+                             ! the advancement of <rt>, <w'rt'>, <thl>, <wpthlp>, <sclr>, and
+                             ! <w'sclr'> in subroutine advance_xm_wpxp.  Otherwise, <u'w'> and
+                             ! <v'w'> are still approximated by eddy diffusivity when <u> and <v>
+                             ! are advanced in subroutine advance_windm_edsclrm.
+      l_upwind_xm_ma,      & ! This flag determines whether we want to use an upwind differencing
+                             ! approximation rather than a centered differencing for turbulent or
+                             ! mean advection terms. It affects rtm, thlm, sclrm, um and vm.
+      l_tke_aniso            ! For anisotropic turbulent kinetic energy, i.e. TKE = 1/2
+                             ! (u'^2 + v'^2 + w'^2)
 
     ! Input/Output Variables
     real( kind = core_rknd ), intent(inout), dimension(gr%nz) :: & 
@@ -3849,6 +3916,7 @@ module advance_xm_wpxp_module
 
        call clip_covar( solve_type_cl, l_first_clip_ts, &  ! In
                         l_last_clip_ts, dt, wp2, xp2_relaxed, &  ! In
+                        l_predict_upwp_vpwp, & ! In
                         wpxp, wpxp_chnge ) ! In/Out
 
     else ! clipping for upwp or vpwp
@@ -3857,12 +3925,14 @@ module advance_xm_wpxp_module
 
           call clip_covar( solve_type_cl, l_first_clip_ts, &  ! In
                            l_last_clip_ts, dt, wp2, xp2, &  ! In
+                           l_predict_upwp_vpwp, & ! In
                            wpxp, wpxp_chnge ) ! In/Out
 
        else
 
           call clip_covar( solve_type_cl, l_first_clip_ts, &  ! In
                            l_last_clip_ts, dt, wp2, wp2, &  ! In
+                           l_predict_upwp_vpwp, & ! In
                            wpxp, wpxp_chnge ) ! In/Out
 
        endif ! l_tke_aniso
@@ -4773,7 +4843,8 @@ module advance_xm_wpxp_module
                                    sclrm, wpsclrp, um, upwp, vm, vpwp, &
                                    rtm_old, wprtp_old, thlm_old, &
                                    wpthlp_old, sclrm_old, wpsclrp_old, &
-                                   um_old, upwp_old, vm_old, vpwp_old )
+                                   um_old, upwp_old, vm_old, vpwp_old, &
+                                   l_predict_upwp_vpwp )
 
     ! Description:
     ! Prints values of model fields when fatal errors (LU decomp.) occur.
@@ -4786,9 +4857,6 @@ module advance_xm_wpxp_module
 
     use grid_class, only: &
         gr    ! Variable Type(s)
-
-    use model_flags, only: &
-        l_predict_upwp_vpwp    ! Variable(s)
 
     use parameters_model, only: &
         sclr_dim    ! Variable(s)
@@ -4919,6 +4987,13 @@ module advance_xm_wpxp_module
       upwp_old, & ! Saved value of <u'w'>    [m^2/s^2]
       vm_old,   & ! Saved value of <v>       [m/s]
       vpwp_old    ! Saved value of <v'w'>    [m^2/s^2]
+
+    logical, intent(in) :: &
+      l_predict_upwp_vpwp ! Flag to predict <u'w'> and <v'w'> along with <u> and <v> alongside the
+                          ! advancement of <rt>, <w'rt'>, <thl>, <wpthlp>, <sclr>, and <w'sclr'> in
+                          ! subroutine advance_xm_wpxp.  Otherwise, <u'w'> and <v'w'> are still
+                          ! approximated by eddy diffusivity when <u> and <v> are advanced in
+                          ! subroutine advance_windm_edsclrm.
 
 
     write(fstderr,*) "Error in advance_xm_wpxp", new_line('c')

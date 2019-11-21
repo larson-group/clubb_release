@@ -83,11 +83,15 @@ module spurious_source_test
         core_rknd    ! Variable(s)
 
     use model_flags, only: &
-        l_diffuse_rtm_and_thlm, & ! Variable(s)
+        l_predict_upwp_vpwp, & ! Variable(s)
+        l_diffuse_rtm_and_thlm, &
         l_stability_correct_Kh_N2_zm, &
         l_upwind_wpxp_ta, &
         l_upwind_xm_ma, &
-        l_use_C7_Richardson
+        l_tke_aniso, &
+        l_use_C7_Richardson, &
+        l_brunt_vaisala_freq_moist, &
+        l_use_thvm_in_bv_freq
 
     implicit none
 
@@ -667,11 +671,15 @@ module spurious_source_test
                              um_forcing, vm_forcing, ug, vg, wpthvp, &
                              fcor, um_ref, vm_ref, up2, vp2, &
                              uprcp, vprcp, rc_coef, &
+                             l_predict_upwp_vpwp, &
                              l_diffuse_rtm_and_thlm, &
                              l_stability_correct_Kh_N2_zm, &
                              l_upwind_wpxp_ta, &
                              l_upwind_xm_ma, &
+                             l_tke_aniso, &
                              l_use_C7_Richardson, &
+                             l_brunt_vaisala_freq_moist, &
+                             l_use_thvm_in_bv_freq, &
                              rtm, wprtp, thlm, wpthlp, &
                              sclrm, wpsclrp, um, upwp, vm, vpwp )
 

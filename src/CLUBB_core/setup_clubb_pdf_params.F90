@@ -82,6 +82,7 @@ module setup_clubb_pdf_params
 
     use model_flags, only: &
         l_use_precip_frac,   & ! Flag(s)
+        l_predict_upwp_vpwp, &
         l_calc_w_corr
 
     use array_index, only: &
@@ -470,6 +471,7 @@ module setup_clubb_pdf_params
           call clip_covar_level( clip_wphydrometp, k, l_first_clip_ts, &
                                  l_last_clip_ts, dt, wp2_zt(k), &
                                  hydrometp2_zt(k,i), &
+                                 l_predict_upwp_vpwp, &
                                  wphydrometp_zt(k,i), wphydrometp_chnge(k,i) )
 
        enddo ! k = 1, nz, 1

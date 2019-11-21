@@ -36,7 +36,9 @@ module advance_windm_edsclrm_module
                edsclrm_forcing, &
                rho_ds_zm, invrs_rho_ds_zt, &
                fcor, l_implemented, &
+               l_predict_upwp_vpwp, &
                l_upwind_xm_ma, &
+               l_tke_aniso, &
                um, vm, edsclrm, &
                upwp, vpwp, wpedsclrp )
 
@@ -66,9 +68,7 @@ module advance_windm_edsclrm_module
         nu10_vert_res_dep ! Constant
 
     use model_flags, only: &
-        l_predict_upwp_vpwp, & ! Variable(s)
-        l_uv_nudge, &
-        l_tke_aniso
+        l_uv_nudge    ! Variable(s)
 
     use clubb_precision, only:  &
         core_rknd ! Variable(s)
@@ -147,9 +147,16 @@ module advance_windm_edsclrm_module
       l_implemented  ! Flag for CLUBB being implemented in a larger model.
 
     logical, intent(in) :: &
-      l_upwind_xm_ma ! This flag determines whether we want to use an upwind differencing
-                     ! approximation rather than a centered differencing for turbulent or
-                     ! mean advection terms. It affects rtm, thlm, sclrm, um and vm.
+      l_predict_upwp_vpwp, & ! Flag to predict <u'w'> and <v'w'> along with <u> and <v> alongside
+                             ! the advancement of <rt>, <w'rt'>, <thl>, <wpthlp>, <sclr>, and
+                             ! <w'sclr'> in subroutine advance_xm_wpxp.  Otherwise, <u'w'> and
+                             ! <v'w'> are still approximated by eddy diffusivity when <u> and <v>
+                             ! are advanced in subroutine advance_windm_edsclrm.
+      l_upwind_xm_ma,      & ! This flag determines whether we want to use an upwind differencing
+                             ! approximation rather than a centered differencing for turbulent or
+                             ! mean advection terms. It affects rtm, thlm, sclrm, um and vm.
+      l_tke_aniso            ! For anisotropic turbulent kinetic energy, i.e. TKE = 1/2
+                             ! (u'^2 + v'^2 + w'^2)
 
     ! Input/Output Variables
     real( kind = core_rknd ), dimension(gr%nz), intent(inout) ::  &
@@ -408,6 +415,7 @@ module advance_windm_edsclrm_module
           l_last_clip_ts = .true.
           call clip_covar( clip_upwp, l_first_clip_ts,      & ! intent(in)
                            l_last_clip_ts, dt, wp2, up2,    & ! intent(in)
+                           l_predict_upwp_vpwp,             & ! intent(in)
                            upwp, upwp_chnge )                 ! intent(inout)
 
           ! Clipping for v'w'
@@ -426,6 +434,7 @@ module advance_windm_edsclrm_module
           l_last_clip_ts = .true.
           call clip_covar( clip_vpwp, l_first_clip_ts,      & ! intent(in)
                            l_last_clip_ts, dt, wp2, vp2,    & ! intent(in)
+                           l_predict_upwp_vpwp,             & ! intent(in)
                            vpwp, vpwp_chnge )                 ! intent(inout)
 
        else
@@ -437,10 +446,12 @@ module advance_windm_edsclrm_module
           l_last_clip_ts = .true.
           call clip_covar( clip_upwp, l_first_clip_ts,      & ! intent(in)
                            l_last_clip_ts, dt, wp2, wp2,    & ! intent(in)
+                           l_predict_upwp_vpwp,             & ! intent(in)
                            upwp, upwp_chnge )                 ! intent(inout)
 
           call clip_covar( clip_vpwp, l_first_clip_ts,      & ! intent(in)
                            l_last_clip_ts, dt, wp2, wp2,    & ! intent(in)
+                           l_predict_upwp_vpwp,             & ! intent(in)
                            vpwp, vpwp_chnge )                 ! intent(inout)
 
        endif ! l_tke_aniso
