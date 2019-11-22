@@ -381,6 +381,7 @@ def plot_comparison(data_clubb, data_sam, level_clubb, level_sam, xLabel, yLabel
 def get_budgets_from_nc(nc, varname, conversion, n, t):
     logger.info('get_budgets_from_nc:%s', varname)
     """
+    DEPRECATED as name is not fitting. Use equivalent function get_var_from_nc below.
     Input:
       nc         --  Netcdf file object
       varname    --  Variable name string

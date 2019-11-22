@@ -89,7 +89,8 @@ def generate_meshgrids(d, skip):
     return (fullGrid, skipGrid)
 
 
-def plot_3d(plots, cf, data, h, h_limits, h_extent, prm_vars, fps=2, dil_len=1, gif=False):
+#def plot_3d(plots, cf, data, h, h_limits, h_extent, prm_vars, fps=2, dil_len=1, gif=False):
+def plot_3d(plots, cf, data, h, h_limits, h_extent, fps=2, dil_len=1, gif=False):
     """
     Generate horizontal output showing cloud outlines and wind speeds
     TODO: Special handling of RICO, because of huge grid -> split up grid in multiple subgrids?
@@ -318,7 +319,8 @@ def plot_3d(plots, cf, data, h, h_limits, h_extent, prm_vars, fps=2, dil_len=1, 
         x = dims[1],
         y = dims[2],
         z = dims[0],
-        dx = prm_vars['dx'],
+        #dx = prm_vars['dx'],
+        dx = cf.dxy,
         dz = h_extent.mean(),
         t = (cf.time_3d*cf.dt)/60.
         )
@@ -439,14 +441,16 @@ def plot_3d(plots, cf, data, h, h_limits, h_extent, prm_vars, fps=2, dil_len=1, 
         # Format plot
         wt_title = wt.replace('_',' ')
         fig.suptitle(title.format(h=h[framenumber], wt=wt_title), fontsize=fontsizes['title'])
-        #logger.debug("Set ylim to (%f, %f)", -prm_vars['dx'], dims[1]*prm_vars['dx'])
+        #logger.debug("Set ylim to (%f, %f)", -cf.dxy, dims[1]*cf.dxy)
         ax1.set_xlim(-.6, dims[1]-.4)
         ax1.set_ylim(-.6, dims[2]-.4)
         ax2.set_ylim(0, h_limits[-1])
         ax2.yaxis.tick_right()
         ax2.yaxis.set_label_position('right')
-        ax1.set_xlabel(r'Eastward grid dimension $\mathrm{{\left[{:.0f} m\right]}}$'.format(prm_vars['dx']), fontsize=fontsizes['labels'])
-        ax1.set_ylabel(r'Northward grid dimension $\mathrm{{\left[{:.0f} m\right]}}$'.format(prm_vars['dx']), fontsize=fontsizes['labels'])
+        #ax1.set_xlabel(r'Eastward grid dimension $\mathrm{{\left[{:.0f} m\right]}}$'.format(prm_vars['dx']), fontsize=fontsizes['labels'])
+        #ax1.set_ylabel(r'Northward grid dimension $\mathrm{{\left[{:.0f} m\right]}}$'.format(prm_vars['dx']), fontsize=fontsizes['labels'])
+        ax1.set_xlabel(r'Eastward grid dimension $\mathrm{{\left[{:.0f} m\right]}}$'.format(cf.dxy), fontsize=fontsizes['labels'])
+        ax1.set_ylabel(r'Northward grid dimension $\mathrm{{\left[{:.0f} m\right]}}$'.format(cf.dxy), fontsize=fontsizes['labels'])
         ax1.set_title('Cloud cover and {}'.format(wt_title.split('+')[0]), loc ='left', fontsize=fontsizes['title'])
         ax2.set_title('Profile of momentum fluxes', fontsize=fontsizes['title'])
         ax2.set_ylabel(r'Cloud fraction / Height $\mathrm{\left[m\right]}$', fontsize=fontsizes['labels'])
@@ -464,7 +468,7 @@ def plot_3d(plots, cf, data, h, h_limits, h_extent, prm_vars, fps=2, dil_len=1, 
         #logger.debug('xticks old: %s',str(list(ax1.get_xticklabels())))
         #for el in ax1.get_xticks():
             #try:
-                #labels.append(int(el*prm_vars['dx']))
+                #labels.append(int(el*cf.dxy))
             #except ValueError as ve:
                 #labels.append('')
         #ax1.set_xticklabels(labels)
@@ -473,7 +477,7 @@ def plot_3d(plots, cf, data, h, h_limits, h_extent, prm_vars, fps=2, dil_len=1, 
         ##logger.debug('yticks old: %s',str(list(ax1.get_yticklabels())))
         #for el in ax1.get_yticks():
             #try:
-                #labels.append(int(el*prm_vars['dx']))
+                #labels.append(int(el*cf.dxy))
             #except ValueError as ve:
                 #labels.append('')
         #ax1.set_yticklabels(labels)
@@ -696,6 +700,8 @@ def plot_3d(plots, cf, data, h, h_limits, h_extent, prm_vars, fps=2, dil_len=1, 
         '# simulation parameters',
         '(nx, ny, nz) = ({}, {}, {})'.format(dims[1], dims[2], dims[0]),
         't = {}'.format(float(cf.time_3d)*float(cf.dt)),
+        #'dx = {}'.format(prm_vars['dx']),
+        #'dy = {}'.format(prm_vars['dx']),
         'dx = {}'.format(cf.dxy),
         'dy = {}'.format(cf.dxy),
         'dz = {}'.format(cf.dz),
