@@ -93,7 +93,8 @@ module setup_clubb_pdf_params
         iiPDF_eta
 
     use model_flags, only: &
-        l_const_Nc_in_cloud    ! Flag(s)
+        l_const_Nc_in_cloud, & ! Flag(s)
+        l_fix_w_chi_eta_correlations
 
     use precipitation_fraction, only: &
         precip_fraction
@@ -548,6 +549,7 @@ module setup_clubb_pdf_params
                              pdf_params%thl_1,              & ! Intent(in)
                              pdf_params%thl_2,              & ! Intent(in)
                              pdf_dim,                       & ! Intent(in)
+                             l_const_Nc_in_cloud,           & ! Intent(in)
                              mu_x_1, mu_x_2,                & ! Intent(out)
                              sigma_x_1, sigma_x_2,          & ! Intent(out)
                              hm_1, hm_2,                    & ! Intent(out)
@@ -563,6 +565,7 @@ module setup_clubb_pdf_params
                                     sigma_x_1, sigma_x_2,    & ! Intent(in)
                                     sigma2_on_mu2_ip_1,      & ! Intent(in)
                                     sigma2_on_mu2_ip_2,      & ! Intent(in)
+                                    l_const_Nc_in_cloud,     & ! Intent(in)
                                     mu_x_1_n, mu_x_2_n,      & ! Intent(out)
                                     sigma_x_1_n, sigma_x_2_n ) ! Intent(out)
 
@@ -579,17 +582,21 @@ module setup_clubb_pdf_params
           if ( rcm(k) > rc_tol ) then
 
              call diagnose_correlations( pdf_dim, corr_array_n_cloud, & ! In
+                                         l_calc_w_corr, &               ! In
                                          corr_array_1_n(:,:,k) )        ! Out
 
              call diagnose_correlations( pdf_dim, corr_array_n_cloud, & ! In
+                                         l_calc_w_corr, &               ! In
                                          corr_array_2_n(:,:,k) )        ! Out
 
           else
 
              call diagnose_correlations( pdf_dim, corr_array_n_below, & ! In
+                                         l_calc_w_corr, &               ! In
                                          corr_array_1_n(:,:,k) )        ! Out
 
              call diagnose_correlations( pdf_dim, corr_array_n_below, & ! In
+                                         l_calc_w_corr, &               ! In
                                          corr_array_2_n(:,:,k) )        ! Out
 
           endif
@@ -613,6 +620,8 @@ module setup_clubb_pdf_params
                             pdf_params%corr_w_eta_1, &
                             pdf_params%corr_w_eta_2, &
                             pdf_dim, &
+                            l_calc_w_corr, &
+                            l_fix_w_chi_eta_correlations, &
                             corr_array_1_n, corr_array_2_n )
 
     endif ! l_diagnose_correlations
@@ -750,6 +759,7 @@ module setup_clubb_pdf_params
                                  stdev_eta_1, stdev_eta_2,      & ! Intent(in)
                                  thl_1, thl_2,                  & ! Intent(in)
                                  pdf_dim,                       & ! Intent(in)
+                                 l_const_Nc_in_cloud,           & ! Intent(in)
                                  mu_x_1, mu_x_2,                & ! Intent(out)
                                  sigma_x_1, sigma_x_2,          & ! Intent(out)
                                  hm_1, hm_2,                    & ! Intent(out)
@@ -777,9 +787,6 @@ module setup_clubb_pdf_params
         iiPDF_eta,    &
         iiPDF_w,      &
         iiPDF_Ncn
-
-    use model_flags, only: &
-        l_const_Nc_in_cloud ! Variable(s)
 
     use index_mapping, only: &
         pdf2hydromet_idx  ! Procedure(s)
@@ -834,6 +841,9 @@ module setup_clubb_pdf_params
 
     integer, intent(in) :: &
       pdf_dim   ! Number of PDF variables
+
+    logical, intent(in) :: &
+      l_const_Nc_in_cloud ! Use a constant cloud droplet conc. within cloud (K&K)
 
     ! Output Variables
     ! Note:  This code assumes to be these arrays in the same order as the
@@ -1049,6 +1059,8 @@ module setup_clubb_pdf_params
                              corr_w_eta_1, &
                              corr_w_eta_2, &
                              pdf_dim, &
+                             l_calc_w_corr, &
+                             l_fix_w_chi_eta_correlations, &
                              corr_array_1_n, corr_array_2_n )
 
     ! Description:
@@ -1060,9 +1072,6 @@ module setup_clubb_pdf_params
         Ncn_tol,      &
         one,          &
         zero
-
-    use model_flags, only: &
-        l_calc_w_corr
 
     use diagnose_correlations_module, only: &
         calc_mean,        & ! Procedure(s)
@@ -1125,6 +1134,10 @@ module setup_clubb_pdf_params
       corr_w_chi_2, &
       corr_w_eta_1, &
       corr_w_eta_2
+
+    logical, intent(in) :: &
+      l_calc_w_corr, &                ! Calculate the correlations between w and the hydrometeors
+      l_fix_w_chi_eta_correlations    ! Use a fixed correlation for s and t Mellor(chi/eta)
 
     ! Output Variables
     real( kind = core_rknd ), dimension(pdf_dim,pdf_dim,nz), &
@@ -1233,25 +1246,29 @@ module setup_clubb_pdf_params
                               rc_1, cloud_frac_1, &
                               corr_array_n_cloud(iiPDF_eta,iiPDF_chi), &
                               corr_array_n_below(iiPDF_eta,iiPDF_chi), &
-                              l_limit_corr_chi_eta )
+                              l_limit_corr_chi_eta, &
+                              l_fix_w_chi_eta_correlations )
 
     corr_array_2_n(iiPDF_eta,iiPDF_chi,:) &
     = component_corr_chi_eta( nz, corr_chi_eta_2, &
                               rc_2, cloud_frac_2, &
                               corr_array_n_cloud(iiPDF_eta,iiPDF_chi), &
                               corr_array_n_below(iiPDF_eta,iiPDF_chi), &
-                              l_limit_corr_chi_eta )
+                              l_limit_corr_chi_eta, &
+                              l_fix_w_chi_eta_correlations )
 
     ! Correlation of chi (old s) and w
     corr_array_1_n(iiPDF_w,iiPDF_chi,:) &
     = component_corr_w_x( nz, corr_w_chi_1, rc_1, cloud_frac_1, &
                           corr_array_n_cloud(iiPDF_w,iiPDF_chi), &
-                          corr_array_n_below(iiPDF_w,iiPDF_chi) )
+                          corr_array_n_below(iiPDF_w,iiPDF_chi), &
+                          l_fix_w_chi_eta_correlations )
 
     corr_array_2_n(iiPDF_w,iiPDF_chi,:) &
     = component_corr_w_x( nz, corr_w_chi_2, rc_2, cloud_frac_2, &
                           corr_array_n_cloud(iiPDF_w,iiPDF_chi), &
-                          corr_array_n_below(iiPDF_w,iiPDF_chi) )
+                          corr_array_n_below(iiPDF_w,iiPDF_chi), &
+                          l_fix_w_chi_eta_correlations )
 
 
     ! Correlation of chi (old s) and ln Ncn
@@ -1283,12 +1300,14 @@ module setup_clubb_pdf_params
     corr_array_1_n(iiPDF_w,iiPDF_eta,:) &
     = component_corr_w_x( nz, corr_w_eta_1, rc_1, cloud_frac_1, &
                           corr_array_n_cloud(iiPDF_w,iiPDF_eta), &
-                          corr_array_n_below(iiPDF_w,iiPDF_eta) )
+                          corr_array_n_below(iiPDF_w,iiPDF_eta), &
+                          l_fix_w_chi_eta_correlations )
 
     corr_array_2_n(iiPDF_w,iiPDF_eta,:) &
     = component_corr_w_x( nz, corr_w_eta_2, rc_2, cloud_frac_2, &
                           corr_array_n_cloud(iiPDF_w,iiPDF_eta), &
-                          corr_array_n_below(iiPDF_w,iiPDF_eta) )
+                          corr_array_n_below(iiPDF_w,iiPDF_eta), &
+                          l_fix_w_chi_eta_correlations )
 
 
     ! Correlation of eta (old t) and ln Ncn
@@ -1319,12 +1338,14 @@ module setup_clubb_pdf_params
     corr_array_1_n(iiPDF_Ncn,iiPDF_w,:) &
     = component_corr_w_hm_n_ip( nz, corr_w_Ncn_1_n, rc_1, ones_vector, &
                                 corr_array_n_cloud(iiPDF_Ncn,iiPDF_w), &
-                                corr_array_n_below(iiPDF_Ncn,iiPDF_w) )
+                                corr_array_n_below(iiPDF_Ncn,iiPDF_w), &
+                                l_calc_w_corr )
 
     corr_array_2_n(iiPDF_Ncn,iiPDF_w,:) &
     = component_corr_w_hm_n_ip( nz, corr_w_Ncn_2_n, rc_2, ones_vector, &
                                 corr_array_n_cloud(iiPDF_Ncn,iiPDF_w), &
-                                corr_array_n_below(iiPDF_Ncn,iiPDF_w) )
+                                corr_array_n_below(iiPDF_Ncn,iiPDF_w), &
+                                l_calc_w_corr )
 
     ! Correlation of w and the natural logarithm of the hydrometeors
     ivar = iiPDF_w
@@ -1334,13 +1355,15 @@ module setup_clubb_pdf_params
        = component_corr_w_hm_n_ip( nz, corr_w_hm_1_n(jvar,:), &
                                    rc_1, cloud_frac_1, &
                                    corr_array_n_cloud(jvar,ivar), &
-                                   corr_array_n_below(jvar,ivar) )
+                                   corr_array_n_below(jvar,ivar), &
+                                   l_calc_w_corr )
 
        corr_array_2_n(jvar,ivar,:) &
        = component_corr_w_hm_n_ip( nz, corr_w_hm_2_n(jvar,:), &
                                    rc_2, cloud_frac_2, &
                                    corr_array_n_cloud(jvar,ivar), &
-                                   corr_array_n_below(jvar,ivar) )
+                                   corr_array_n_below(jvar,ivar), &
+                                   l_calc_w_corr )
 
     enddo
 
@@ -2165,7 +2188,8 @@ module setup_clubb_pdf_params
 
   !=============================================================================
   function component_corr_w_x( nz, pdf_corr_w_x_i, rc_i, cloud_frac_i, &
-                               corr_w_x_NN_cloud, corr_w_x_NN_below ) &
+                               corr_w_x_NN_cloud, corr_w_x_NN_below, &
+                               l_fix_w_chi_eta_correlations ) &
   result( corr_w_x_i )
 
     ! Description:
@@ -2190,9 +2214,6 @@ module setup_clubb_pdf_params
     use clubb_precision, only: &
         core_rknd  ! Variable(s)
 
-    use model_flags, only: &
-        l_fix_w_chi_eta_correlations  ! Variable(s)
-
     implicit none
 
     ! Input Variables
@@ -2207,6 +2228,9 @@ module setup_clubb_pdf_params
     real( kind = core_rknd ), intent(in) :: &
       corr_w_x_NN_cloud, & ! Corr. of w and x (ith PDF comp.); cloudy levs [-]
       corr_w_x_NN_below    ! Corr. of w and x (ith PDF comp.); clear levs  [-]
+
+    logical, intent(in) :: &
+      l_fix_w_chi_eta_correlations ! Use a fixed correlation for s and t Mellor(chi/eta)
 
     ! Return Variable
     real( kind = core_rknd ), dimension(nz) :: &
@@ -2285,7 +2309,8 @@ module setup_clubb_pdf_params
   function component_corr_chi_eta( nz, pdf_corr_chi_eta_i, rc_i, cloud_frac_i, &
                                    corr_chi_eta_NN_cloud, &
                                    corr_chi_eta_NN_below, &
-                                   l_limit_corr_chi_eta ) &
+                                   l_limit_corr_chi_eta, &
+                                   l_fix_w_chi_eta_correlations ) &
   result( corr_chi_eta_i )
 
     ! Description:
@@ -2299,9 +2324,6 @@ module setup_clubb_pdf_params
         one,    & ! Constant(s)
         rc_tol, &
         max_mag_correlation
-
-    use model_flags, only: &
-        l_fix_w_chi_eta_correlations  ! Variable(s)
 
     use clubb_precision, only: &
         core_rknd  ! Constant
@@ -2327,6 +2349,9 @@ module setup_clubb_pdf_params
                               ! resulting correlation matrix. This is because a
                               ! perfect correlation of chi and eta was found to
                               ! be unrealizable.
+
+    logical, intent(in) :: &
+      l_fix_w_chi_eta_correlations ! Use a fixed correlation for s and t Mellor(chi/eta)
 
     ! Return Variable
     real( kind = core_rknd ), dimension(nz) :: &
@@ -2383,7 +2408,8 @@ module setup_clubb_pdf_params
   !=============================================================================
   function component_corr_w_hm_n_ip( nz, corr_w_hm_i_n_in, rc_i, cloud_frac_i, &
                                      corr_w_hm_n_NL_cloud, &
-                                     corr_w_hm_n_NL_below ) &
+                                     corr_w_hm_n_NL_below, &
+                                     l_calc_w_corr ) &
   result( corr_w_hm_i_n )
 
     ! Description:
@@ -2400,9 +2426,6 @@ module setup_clubb_pdf_params
     use clubb_precision, only: &
         core_rknd  ! Variable(s)
 
-    use model_flags, only: &
-        l_calc_w_corr
-
     implicit none
 
     ! Input Variables
@@ -2417,6 +2440,9 @@ module setup_clubb_pdf_params
     real( kind = core_rknd ), intent(in) :: &
       corr_w_hm_n_NL_cloud, & ! Corr. of w & ln hm (ith PDF comp.) ip; cloud [-]
       corr_w_hm_n_NL_below    ! Corr. of w & ln hm (ith PDF comp.) ip; clear [-]
+
+    logical, intent(in) :: &
+      l_calc_w_corr ! Calculate the correlations between w and the hydrometeors
 
     ! Return Variable
     real( kind = core_rknd ), dimension(nz) :: &
@@ -2606,6 +2632,7 @@ module setup_clubb_pdf_params
                                         sigma_x_1, sigma_x_2, &
                                         sigma2_on_mu2_ip_1, &
                                         sigma2_on_mu2_ip_2, &
+                                        l_const_Nc_in_cloud, &
                                         mu_x_1_n, mu_x_2_n, &
                                         sigma_x_1_n, sigma_x_2_n )
 
@@ -2639,9 +2666,6 @@ module setup_clubb_pdf_params
     use clubb_precision, only: &
         core_rknd  ! Variable(s)
 
-    use model_flags, only: &
-        l_const_Nc_in_cloud ! Variable
-
     implicit none
 
     ! Input Variables
@@ -2667,6 +2691,9 @@ module setup_clubb_pdf_params
     real( kind = core_rknd ), dimension(pdf_dim,nz), intent(in) :: &
       sigma2_on_mu2_ip_1, & ! Prescribed ratio array: sigma_hm_1^2/mu_hm_1^2 [-]
       sigma2_on_mu2_ip_2    ! Prescribed ratio array: sigma_hm_2^2/mu_hm_2^2 [-]
+
+    logical, intent(in) :: &
+      l_const_Nc_in_cloud ! Use a constant cloud droplet conc. within cloud (K&K)
 
     ! Output Variables
     real( kind = core_rknd ), dimension(pdf_dim,nz), intent(out) :: &

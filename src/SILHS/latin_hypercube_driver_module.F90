@@ -67,7 +67,8 @@ module latin_hypercube_driver_module
       output_2D_uniform_dist_file
 
     use model_flags, only: &
-      l_tke_aniso, & ! Variable(s)
+      l_uv_nudge, & ! Variable(s)
+      l_tke_aniso, &
       l_standard_term_ta, &
       l_single_C2_Skw
 
@@ -344,6 +345,7 @@ module latin_hypercube_driver_module
       ! because they are no longer generated in generate_silhs_sample.
       call output_2D_lognormal_dist_file( nz, num_samples, pdf_dim, &
                                           real(X_nl_all_levs, kind = stat_rknd), &
+                                          l_uv_nudge, &
                                           l_tke_aniso, &
                                           l_standard_term_ta, &
                                           l_single_C2_Skw )
@@ -353,6 +355,7 @@ module latin_hypercube_driver_module
                                         X_u_all_levs, &
                                         X_mixt_comp_all_levs, &
                                         lh_sample_point_weights, &
+                                        l_uv_nudge, &
                                         l_tke_aniso, &
                                         l_standard_term_ta, &
                                         l_single_C2_Skw )

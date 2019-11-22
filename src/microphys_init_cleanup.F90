@@ -27,6 +27,9 @@ module microphys_init_cleanup
   !=============================================================================
   subroutine init_microphys( iunit, runtype, namelist_file, case_info_file, &
                              host_dx, host_dy, &
+                             l_diagnose_correlations, &
+                             l_const_Nc_in_cloud, &
+                             l_fix_w_chi_eta_correlations, &
                              hydromet_dim, silhs_config_flags )
 
     ! Description:
@@ -181,11 +184,8 @@ module microphys_init_cleanup
         mirror_lower_triangular_matrix    ! Procedure(s)
 
     use model_flags, only: &
-        l_diagnose_correlations, &
         l_evaporate_cold_rcm, &
-        l_morr_xp2_mc, &
-        l_const_Nc_in_cloud, &  ! Use a constant cloud droplet conc. within cloud (K&K)
-        l_fix_w_chi_eta_correlations  ! Use a fixed correlation for chi/eta(s/t Mellor) (SILHS)
+        l_morr_xp2_mc
 
     use clubb_api_module, only: &
         init_pdf_hydromet_arrays_api
@@ -220,6 +220,14 @@ module microphys_init_cleanup
     real( kind = core_rknd ), intent(in) :: &
       host_dx, &
       host_dy
+
+    logical, intent(in) :: &
+      l_diagnose_correlations ! Diagnose correlations instead of using fixed ones
+
+    ! Input/Output variables
+    logical, intent(inout) :: &
+      l_const_Nc_in_cloud,          & ! Use a constant cloud droplet conc. within cloud (K&K)
+      l_fix_w_chi_eta_correlations    ! Use a fixed correlation for s and t Mellor(chi/eta)
 
     ! Output variables
     integer, intent(out) :: & 

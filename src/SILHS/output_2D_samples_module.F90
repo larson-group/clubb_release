@@ -122,6 +122,7 @@ module output_2D_samples_module
 !-------------------------------------------------------------------------------
   subroutine output_2D_lognormal_dist_file &
              ( nz, num_samples, pdf_dim, X_nl_all_levs, &
+               l_uv_nudge, &
                l_tke_aniso, &
                l_standard_term_ta, &
                l_single_C2_Skw )
@@ -148,6 +149,7 @@ module output_2D_samples_module
       X_nl_all_levs ! Sample that is transformed ultimately to normal-lognormal
 
     logical, intent(in) :: &
+      l_uv_nudge,         & ! For wind speed nudging
       l_tke_aniso,        & ! For anisotropic turbulent kinetic energy, i.e. TKE = 1/2
                             ! (u'^2 + v'^2 + w'^2)
       l_standard_term_ta, & ! Use the standard discretization for the turbulent advection terms.
@@ -171,7 +173,8 @@ module output_2D_samples_module
     end do
 
 #ifdef NETCDF
-    call write_netcdf( l_tke_aniso, &
+    call write_netcdf( l_uv_nudge, &
+                       l_tke_aniso, &
                        l_standard_term_ta, &
                        l_single_C2_Skw, &
                        lognormal_sample_file )
@@ -190,6 +193,7 @@ module output_2D_samples_module
   subroutine output_2D_uniform_dist_file &
              ( nz, num_samples, dp2, X_u_all_levs, X_mixt_comp_all_levs, &
                lh_sample_point_weights, &
+               l_uv_nudge, &
                l_tke_aniso, &
                l_standard_term_ta, &
                l_single_C2_Skw )
@@ -224,6 +228,7 @@ module output_2D_samples_module
       lh_sample_point_weights ! Weight of each sample
 
     logical, intent(in) :: &
+      l_uv_nudge,         & ! For wind speed nudging
       l_tke_aniso,        & ! For anisotropic turbulent kinetic energy, i.e. TKE = 1/2
                             ! (u'^2 + v'^2 + w'^2)
       l_standard_term_ta, & ! Use the standard discretization for the turbulent advection terms.
@@ -254,7 +259,8 @@ module output_2D_samples_module
     end do
 
 #ifdef NETCDF
-    call write_netcdf( l_tke_aniso, &
+    call write_netcdf( l_uv_nudge, &
+                       l_tke_aniso, &
                        l_standard_term_ta, &
                        l_single_C2_Skw, &
                        uniform_sample_file )

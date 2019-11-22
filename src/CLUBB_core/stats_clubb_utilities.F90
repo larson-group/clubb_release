@@ -1613,7 +1613,8 @@ module stats_clubb_utilities
         write_netcdf ! Procedure(s)
 
     use model_flags, only: &
-        l_tke_aniso, & ! Variable(s)
+        l_uv_nudge, & ! Variable(s)
+        l_tke_aniso, &
         l_standard_term_ta, &
         l_single_C2_Skw
 #endif
@@ -1705,35 +1706,42 @@ module stats_clubb_utilities
       else ! l_netcdf
 
 #ifdef NETCDF
-        call write_netcdf( l_tke_aniso, &
+        call write_netcdf( l_uv_nudge, &
+                           l_tke_aniso, &
                            l_standard_term_ta, &
                            l_single_C2_Skw, &
                            stats_zt%file  )
-        call write_netcdf( l_tke_aniso, &
+        call write_netcdf( l_uv_nudge, &
+                           l_tke_aniso, &
                            l_standard_term_ta, &
                            l_single_C2_Skw, &
                            stats_zm%file  )
         if ( l_silhs_out ) then
-          call write_netcdf( l_tke_aniso, &
-                           l_standard_term_ta, &
-                           l_single_C2_Skw, &
-                           stats_lh_zt%file  )
-          call write_netcdf( l_tke_aniso, &
-                           l_standard_term_ta, &
-                           l_single_C2_Skw, &
-                           stats_lh_sfc%file  )
+          call write_netcdf( l_uv_nudge, &
+                             l_tke_aniso, &
+                             l_standard_term_ta, &
+                             l_single_C2_Skw, &
+                             stats_lh_zt%file  )
+          call write_netcdf( l_uv_nudge, &
+                             l_tke_aniso, &
+                             l_standard_term_ta, &
+                             l_single_C2_Skw, &
+                             stats_lh_sfc%file  )
         end if
         if ( l_output_rad_files ) then
-          call write_netcdf( l_tke_aniso, &
-                           l_standard_term_ta, &
-                           l_single_C2_Skw, &
-                           stats_rad_zt%file  )
-          call write_netcdf( l_tke_aniso, &
-                           l_standard_term_ta, &
-                           l_single_C2_Skw, &
-                           stats_rad_zm%file  )
+          call write_netcdf( l_uv_nudge, &
+                             l_tke_aniso, &
+                             l_standard_term_ta, &
+                             l_single_C2_Skw, &
+                             stats_rad_zt%file  )
+          call write_netcdf( l_uv_nudge, &
+                             l_tke_aniso, &
+                             l_standard_term_ta, &
+                             l_single_C2_Skw, &
+                             stats_rad_zm%file  )
         end if
-        call write_netcdf( l_tke_aniso, &
+        call write_netcdf( l_uv_nudge, &
+                           l_tke_aniso, &
                            l_standard_term_ta, &
                            l_single_C2_Skw, &
                            stats_sfc%file  )

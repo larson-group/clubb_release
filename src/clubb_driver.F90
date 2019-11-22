@@ -122,8 +122,7 @@ module clubb_driver
 
     use model_flags, only: & 
       l_pos_def, l_hole_fill, & !-------------------------------------------- Constants
-      l_single_C2_Skw, l_gamma_Skw, l_byteswap_io, &
-      l_calc_thlp2_rad
+      l_single_C2_Skw, l_gamma_Skw, l_byteswap_io
 
     use stats_variables, only: l_stats_last, l_stats_samp, & !--------------- Variable(s)
       l_output_rad_files
@@ -239,8 +238,12 @@ module clubb_driver
         l_diagnose_correlations, &
         l_calc_w_corr, &
         l_silhs_rad, &
+        l_calc_thlp2_rad, &
         l_upwind_xm_ma, &
-        l_tke_aniso
+        l_uv_nudge, &
+        l_tke_aniso, &
+        l_const_Nc_in_cloud, &
+        l_fix_w_chi_eta_correlations
 
     use soil_vegetation, only: &
         l_soil_veg !------------------------------------------------------ Variable(s)
@@ -327,7 +330,6 @@ module clubb_driver
       time_restart    ! Time of model restart run     [s]
 
     logical :: &
-      l_uv_nudge,     & ! Whether to adjust the winds within the timestep
       l_restart,      & ! Flag for restarting from GrADS file
       l_input_fields    ! Whether to set model variables from a file
 
@@ -517,7 +519,7 @@ module clubb_driver
       sclr_tol, sclr_dim, iisclr_thl, iisclr_rt, iisclr_CO2, &
       edsclr_dim, iiedsclr_thl, iiedsclr_rt, iiedsclr_CO2, &
       l_rtm_nudge, rtm_min, rtm_nudge_max_altitude, &
-      l_diagnose_correlations, l_calc_w_corr, l_calc_thlp2_rad
+      l_diagnose_correlations, l_calc_w_corr
 
 
     namelist /stats_setting/ &
@@ -578,14 +580,12 @@ module clubb_driver
     up2_vp2_sponge_damp_settings%tau_sponge_damp_max = 1800._core_rknd
     up2_vp2_sponge_damp_settings%sponge_damp_depth = 0.25_core_rknd
 
-    l_uv_nudge     = .false.
     l_restart      = .false.
     l_input_fields  = .false.
     restart_path_case = "none"
     time_restart  = 0._time_precision
     debug_level   = 2
 
-    l_rtm_nudge = .false.
     rtm_min = 0.0_core_rknd
     rtm_nudge_max_altitude = 0.0_core_rknd
 
@@ -919,11 +919,15 @@ module clubb_driver
 
     ! Setup microphysical fields
     call init_microphys( iunit, trim( runtype ), runfile, case_info_file, & ! Intent(in)
-                         dummy_dx, dummy_dy, &
+                         dummy_dx, dummy_dy, &                              ! Intent(in)
+                         l_diagnose_correlations, &                         ! Intent(in)
+                         l_const_Nc_in_cloud, &                             ! Intent(inout)
+                         l_fix_w_chi_eta_correlations, &                    ! Intent(inout)
                          hydromet_dim, silhs_config_flags )                 ! Intent(out)
 
     ! Setup radiation parameters
-    call init_radiation( iunit, runfile, case_info_file )       ! Intent(in)
+    call init_radiation( iunit, runfile, case_info_file, & ! Intent(in)
+                         l_calc_thlp2_rad )                ! Intent(inout)
 
     if ( trim( rad_scheme ) == "lba" ) then
       call simple_rad_lba_init( iunit, trim( forcings_file_path ) )
@@ -1071,6 +1075,7 @@ module clubb_driver
 
       call initialize_clubb &
            ( iunit, trim( forcings_file_path ), p_sfc, zm_init, & ! Intent(in)
+             l_uv_nudge,                                        & ! Intent(in)
              l_tke_aniso,                                       & ! Intent(in)
              thlm, rtm, um, vm, ug, vg, wp2, up2, vp2, rcm,     & ! Intent(inout)
              wm_zt, wm_zm, em, exner,                           & ! Intent(inout)
@@ -1106,6 +1111,7 @@ module clubb_driver
       ! the initial sounding anyway.
       call initialize_clubb &
            ( iunit, trim( forcings_file_path ), p_sfc, zm_init,  & ! Intent(in)
+             l_uv_nudge,                                         & ! Intent(in)
              l_tke_aniso,                                        & ! Intent(in)
              thlm, rtm, um, vm, ug, vg, wp2, up2, vp2, rcm,      & ! Intent(inout)
              wm_zt, wm_zm, em, exner,                            & ! Intent(inout)
@@ -1695,6 +1701,7 @@ module clubb_driver
   !-----------------------------------------------------------------------
   subroutine initialize_clubb &
              ( iunit, forcings_file_path, p_sfc, zm_init, &
+               l_uv_nudge, &
                l_tke_aniso, &
                thlm, rtm, um, vm, ug, vg, wp2, up2, vp2, rcm, &
                wm_zt, wm_zm, em, exner, &
@@ -1736,9 +1743,6 @@ module clubb_driver
     use grid_class, only: zm2zt, zt2zm !-------------------------------- Procedure(s)
 
     use sounding, only: read_sounding !--------------------------------- Procedure(s)
-
-    use model_flags, only: &
-        l_uv_nudge    !------------------------------------------------ Variable(s)
 
     use time_dependent_input, only: &
       initialize_t_dependent_input, & !-------------------------------- Procedure(s)
@@ -1801,7 +1805,8 @@ module clubb_driver
       zm_init   ! Initial moment. level altitude [m]
 
     logical, intent(in) :: &
-      l_tke_aniso ! For anisotropic turbulent kinetic energy, i.e. TKE = 1/2 (u'^2 + v'^2 + w'^2)
+      l_uv_nudge, & ! For wind speed nudging
+      l_tke_aniso   ! For anisotropic turbulent kinetic energy, i.e. TKE = 1/2 (u'^2 + v'^2 + w'^2)
 
     ! Output
     real( kind = core_rknd ), dimension(gr%nz), intent(inout) ::  & 

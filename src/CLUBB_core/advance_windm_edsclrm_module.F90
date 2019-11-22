@@ -38,6 +38,7 @@ module advance_windm_edsclrm_module
                fcor, l_implemented, &
                l_predict_upwp_vpwp, &
                l_upwind_xm_ma, &
+               l_uv_nudge, &
                l_tke_aniso, &
                um, vm, edsclrm, &
                upwp, vpwp, wpedsclrp )
@@ -66,9 +67,6 @@ module advance_windm_edsclrm_module
 
     use parameters_tunable, only: &
         nu10_vert_res_dep ! Constant
-
-    use model_flags, only: &
-        l_uv_nudge    ! Variable(s)
 
     use clubb_precision, only:  &
         core_rknd ! Variable(s)
@@ -155,6 +153,7 @@ module advance_windm_edsclrm_module
       l_upwind_xm_ma,      & ! This flag determines whether we want to use an upwind differencing
                              ! approximation rather than a centered differencing for turbulent or
                              ! mean advection terms. It affects rtm, thlm, sclrm, um and vm.
+      l_uv_nudge,          & ! For wind speed nudging
       l_tke_aniso            ! For anisotropic turbulent kinetic energy, i.e. TKE = 1/2
                              ! (u'^2 + v'^2 + w'^2)
 

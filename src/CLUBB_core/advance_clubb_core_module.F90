@@ -251,6 +251,8 @@ module advance_clubb_core_module
         l_upwind_wpxp_ta, &
         l_upwind_xpyp_ta, &
         l_upwind_xm_ma, &
+        l_uv_nudge, &
+        l_rtm_nudge, &
         l_trapezoidal_rule_zt, &
         l_trapezoidal_rule_zm, &
         l_standard_term_ta, &
@@ -1003,6 +1005,7 @@ module advance_clubb_core_module
                                 sclrprtp, sclrpthlp, sclrp3,   & ! Intent(in)
                                 l_samp_stats_in_pdf_call,      & ! Intent(in)
                                 l_predict_upwp_vpwp,           & ! Intent(in)
+                                l_rtm_nudge,                   & ! Intent(in)
                                 l_trapezoidal_rule_zt,         & ! Intent(in)
                                 l_trapezoidal_rule_zm,         & ! Intent(in)
                                 l_call_pdf_closure_twice,      & ! Intent(in)
@@ -1503,6 +1506,7 @@ module advance_clubb_core_module
                             l_stability_correct_Kh_N2_zm,                    & ! intent(in)
                             l_upwind_wpxp_ta,                                & ! intent(in)
                             l_upwind_xm_ma,                                  & ! intent(in)
+                            l_uv_nudge,                                      & ! intent(in)
                             l_tke_aniso,                                     & ! intent(in)
                             l_use_C7_Richardson,                             & ! intent(in)
                             l_brunt_vaisala_freq_moist,                      & ! intent(in)
@@ -1771,6 +1775,7 @@ module advance_clubb_core_module
                                   fcor, l_implemented,                          & ! intent(in)
                                   l_predict_upwp_vpwp,                          & ! intent(in)
                                   l_upwind_xm_ma,                               & ! intent(in)
+                                  l_uv_nudge,                                   & ! intent(in)
                                   l_tke_aniso,                                  & ! intent(in)
                                   um, vm, edsclrm,                              & ! intent(inout)
                                   upwp, vpwp, wpedsclrp )                         ! intent(inout)
@@ -1831,6 +1836,7 @@ module advance_clubb_core_module
                                 sclrprtp, sclrpthlp, sclrp3,   & ! Intent(in)
                                 l_samp_stats_in_pdf_call,      & ! Intent(in)
                                 l_predict_upwp_vpwp,           & ! Intent(in)
+                                l_rtm_nudge,                   & ! Intent(in)
                                 l_trapezoidal_rule_zt,         & ! Intent(in)
                                 l_trapezoidal_rule_zm,         & ! Intent(in)
                                 l_call_pdf_closure_twice,      & ! Intent(in)
@@ -2058,6 +2064,7 @@ module advance_clubb_core_module
                                  sclrprtp, sclrpthlp, sclrp3,   & ! Intent(in)
                                  l_samp_stats_in_pdf_call,      & ! Intent(in)
                                  l_predict_upwp_vpwp,           & ! Intent(in)
+                                 l_rtm_nudge,                   & ! Intent(in)
                                  l_trapezoidal_rule_zt,         & ! Intent(in)
                                  l_trapezoidal_rule_zm,         & ! Intent(in)
                                  l_call_pdf_closure_twice,      & ! Intent(in)
@@ -2152,7 +2159,6 @@ module advance_clubb_core_module
 
     use model_flags, only: &
         l_gamma_Skw,                  & ! Variable(s)
-        l_rtm_nudge,                  &
         l_explicit_turbulent_adv_wp3
 
     use error_code, only: &
@@ -2279,6 +2285,7 @@ module advance_clubb_core_module
                                   ! Otherwise, <u'w'> and <v'w'> are still approximated by eddy
                                   ! diffusivity when <u> and <v> are advanced in subroutine
                                   ! advance_windm_edsclrm.
+      l_rtm_nudge,              & ! For rtm nudging
       l_trapezoidal_rule_zt,    & ! If true, the trapezoidal rule is called for the
                                   ! thermodynamic-level variables output from pdf_closure.
       l_trapezoidal_rule_zm,    & ! If true, the trapezoidal rule is called for three

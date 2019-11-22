@@ -68,6 +68,7 @@ module advance_xm_wpxp_module
                               l_stability_correct_Kh_N2_zm, &
                               l_upwind_wpxp_ta, &
                               l_upwind_xm_ma, &
+                              l_uv_nudge, &
                               l_tke_aniso, &
                               l_use_C7_Richardson, &
                               l_brunt_vaisala_freq_moist, &
@@ -137,8 +138,7 @@ module advance_xm_wpxp_module
 
     use model_flags, only: &
         l_clip_semi_implicit,          & ! Variable(s)
-        l_explicit_turbulent_adv_wpxp, &
-        l_uv_nudge
+        l_explicit_turbulent_adv_wpxp
 
     use mono_flux_limiter, only: &
         calc_turb_adv_range ! Procedure(s)
@@ -303,6 +303,7 @@ module advance_xm_wpxp_module
                                       ! differencing approximation rather than a centered
                                       ! differencing for turbulent or mean advection terms.
                                       ! It affects rtm, thlm, sclrm, um and vm.
+      l_uv_nudge,                   & ! For wind speed nudging
       l_tke_aniso,                  & ! For anisotropic turbulent kinetic energy, i.e. TKE = 1/2
                                       ! (u'^2 + v'^2 + w'^2)
       l_use_C7_Richardson,          & ! Parameterize C7 based on Richardson number

@@ -345,7 +345,8 @@ module bugsrad_driver
 !-------------------------------------------------------------------------------
 
 !-------------------------------------------------------------------------------
-  subroutine init_radiation( iunit, namelist_file, case_info_file )
+  subroutine init_radiation( iunit, namelist_file, case_info_file, &
+                             l_calc_thlp2_rad )
 ! Description:
 !   Setup radiation parameters
 
@@ -368,9 +369,6 @@ module bugsrad_driver
       dp, & ! double precision
       core_rknd
 
-    use model_flags, only: &
-      l_calc_thlp2_rad
-
     implicit none
 
     ! Constant parameters
@@ -383,6 +381,10 @@ module bugsrad_driver
     character(len=*), intent(in) :: &
       namelist_file, & ! Filename containing the namelist
       case_info_file   ! Name of simulation info file (plain text)
+
+    ! Input/Output Variables
+    logical, intent(inout) :: &
+      l_calc_thlp2_rad ! Include the contribution of radiation to thlp2
 
     ! Local variables
     integer :: k

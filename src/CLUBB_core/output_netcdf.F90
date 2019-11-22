@@ -177,7 +177,8 @@ module output_netcdf
 
 !-------------------------------------------------------------------------------
 
-  subroutine write_netcdf( l_tke_aniso, &
+  subroutine write_netcdf( l_uv_nudge, &
+                           l_tke_aniso, &
                            l_standard_term_ta, &
                            l_single_C2_Skw, &
                            ncf )
@@ -212,6 +213,7 @@ module output_netcdf
 
     ! Input
     logical, intent(in) :: &
+      l_uv_nudge,         & ! For wind speed nudging
       l_tke_aniso,        & ! For anisotropic turbulent kinetic energy, i.e. TKE = 1/2
                             ! (u'^2 + v'^2 + w'^2)
       l_standard_term_ta, & ! Use the standard discretization for the turbulent advection terms.
@@ -238,7 +240,8 @@ module output_netcdf
     ncf%ntimes = ncf%ntimes + 1
 
     if ( .not. ncf%l_defined ) then
-      call first_write( l_tke_aniso, &
+      call first_write( l_uv_nudge, &
+                        l_tke_aniso, &
                         l_standard_term_ta, &
                         l_single_C2_Skw, &
                         ncf ) ! finalize the variable definitions
@@ -513,7 +516,8 @@ module output_netcdf
   end subroutine close_netcdf
 
 !-------------------------------------------------------------------------------
-  subroutine first_write( l_tke_aniso, &
+  subroutine first_write( l_uv_nudge, &
+                          l_tke_aniso, &
                           l_standard_term_ta, &
                           l_single_C2_Skw, &
                           ncf )
@@ -559,8 +563,7 @@ module output_netcdf
       l_pos_def, &
       l_hole_fill, &
       l_clip_semi_implicit, &
-      l_gamma_Skw, &
-      l_uv_nudge
+      l_gamma_Skw
 
     use clubb_precision, only: &
       core_rknd ! Variable(s)
@@ -585,6 +588,7 @@ module output_netcdf
 
     ! Input Variables
     logical, intent(in) :: &
+      l_uv_nudge,         & ! For wind speed nudging
       l_tke_aniso,        & ! For anisotropic turbulent kinetic energy, i.e. TKE = 1/2
                             ! (u'^2 + v'^2 + w'^2)
       l_standard_term_ta, & ! Use the standard discretization for the turbulent advection terms.

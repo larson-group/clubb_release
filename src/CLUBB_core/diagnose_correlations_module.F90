@@ -22,6 +22,7 @@ module diagnose_correlations_module
 
 !-----------------------------------------------------------------------
   subroutine diagnose_correlations( pdf_dim, corr_array_pre, & ! Intent(in)
+                                    l_calc_w_corr, & ! Intent(in)
                                     corr_array )                   ! Intent(out)
     ! Description:
     !   This subroutine diagnoses the correlation matrix in order to feed it
@@ -41,9 +42,6 @@ module diagnose_correlations_module
     use constants_clubb, only: &
         zero
 
-    use model_flags, only: &
-        l_calc_w_corr ! Flag(s)
-
     implicit none
 
     intrinsic :: max, sqrt, transpose
@@ -54,6 +52,9 @@ module diagnose_correlations_module
 
     real( kind = core_rknd ), dimension(pdf_dim, pdf_dim), intent(in) :: &
       corr_array_pre   ! Prescribed correlations
+
+    logical, intent(in) :: &
+      l_calc_w_corr ! Calculate the correlations between w and the hydrometeors
 
     ! Output variables
     real( kind = core_rknd ), dimension(pdf_dim, pdf_dim), intent(out) :: &
