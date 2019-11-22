@@ -1476,7 +1476,7 @@ module clubb_driver
                rho_ds_zt, mu_x_1_n, mu_x_2_n, sigma_x_1_n, sigma_x_2_n, &   ! In
                corr_cholesky_mtx_1, corr_cholesky_mtx_2, &                  ! In
                hydromet_pdf_params, silhs_config_flags, &                   ! In
-               X_nl_all_levs, X_mixt_comp_all_levs, &                   ! Out
+               X_nl_all_levs, X_mixt_comp_all_levs, &                       ! Out
                lh_sample_point_weights )                                    ! Out
 
         call clip_transform_silhs_output( gr%nz, lh_num_samples, &       ! In

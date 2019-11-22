@@ -717,10 +717,14 @@ module transform_to_pdf_module
     return
   end subroutine multiply_Cholesky
 !-----------------------------------------------------------------------
-  subroutine chi_eta_2_rtthl( rt_1, thl_1, rt_2, thl_2, &
-                              crt_1, cthl_1, crt_2, cthl_2, &
+  subroutine chi_eta_2_rtthl( nz, num_samples, &
+                              rt_1, thl_1, &
+                              rt_2, thl_2, &
+                              crt_1, cthl_1, &
+                              crt_2, cthl_2, &
                               mu_chi_1, mu_chi_2, &
-                              chi, eta, X_mixt_comp_all_levs, &
+                              chi, eta, &
+                              X_mixt_comp_all_levs, &
                               lh_rt, lh_thl )
 ! Description:
 !   Converts from chi(s), eta(t) variables to rt, thl.  Also sets a limit on the value
@@ -744,67 +748,79 @@ module transform_to_pdf_module
     real(kind = core_rknd), parameter :: &
       thl_dev_lim = 5.0_core_rknd ! Max deviation from mean thetal [K]
 
-    ! Input Variables
+    ! ------------------- Input Variables -------------------
+    
+    integer, intent(in) :: &
+      nz, &         ! Vertical grid levels
+      num_samples   ! Number of subcolumn samples
 
-    real( kind = core_rknd ), intent(in) :: &
+    real( kind = core_rknd ), dimension(nz), intent(in) :: &
       rt_1, rt_2,    & ! n dimensional column vector of rt         [kg/kg]
       thl_1, thl_2,  & ! n dimensional column vector of thetal     [K]
       crt_1, crt_2,  & ! Constants from plumes 1 & 2 of rt
       cthl_1, cthl_2   ! Constants from plumes 1 & 2 of thetal
 
-    real( kind = core_rknd ), intent(in) :: &
+    real( kind = core_rknd ), dimension(nz), intent(in) :: &
       mu_chi_1, mu_chi_2 ! Mean for chi_1 and chi_2         [kg/kg]
 
     ! n-dimensional column vector of Mellor's chi(s) and eta(t), including mean and perturbation
-    real( kind = core_rknd ), intent(in) :: &
+    real( kind = core_rknd ), dimension(nz,num_samples), intent(in) :: &
       chi, &  ! [kg/kg]
       eta     ! [-]
 
-    integer, intent(in) :: &
+    integer, dimension(nz,num_samples), intent(in) :: &
       X_mixt_comp_all_levs ! Whether we're in the first or second mixture component
 
-    ! Output variables
+    ! ------------------- Output variables -------------------
 
-    real( kind = core_rknd ), intent(out) :: &
+    real( kind = core_rknd ), dimension(nz,num_samples), intent(out) :: &
       lh_rt, lh_thl ! n-dimensional column vectors of rt and thl, including mean and perturbation
 
-    ! Local Variables
+    ! ------------------- Local Variables -------------------
 
     real( kind= core_rknd ) :: lh_dev_thl_lim ! Limited value of the deviation on thetal [K]
+    
+    integer :: k, sample  ! Loop indices
 
     ! ---- Begin Code ----
+    
+    do sample = 1, num_samples
+      do k = 2, nz
 
-    if ( X_mixt_comp_all_levs == 1 ) then
-      lh_rt  = real( rt_1 + (0.5_core_rknd/crt_1)*(chi-mu_chi_1) +  &
-                             (0.5_core_rknd/crt_1)*eta, kind=core_rknd )
+        if ( X_mixt_comp_all_levs(k,sample) == 1 ) then
+          
+          lh_rt(k,sample)  = rt_1(k) + (0.5_core_rknd/crt_1(k))*(chi(k,sample)-mu_chi_1(k)) +  &
+                                 (0.5_core_rknd/crt_1(k))*eta(k,sample)
 
-      ! Limit the quantity that temperature can vary by (in K)
-      lh_dev_thl_lim = (-0.5_core_rknd/cthl_1)*(chi-mu_chi_1) &
-                     + (0.5_core_rknd/cthl_1)*eta
+          ! Limit the quantity that temperature can vary by (in K)
+          lh_dev_thl_lim = (-0.5_core_rknd/cthl_1(k))*(chi(k,sample)-mu_chi_1(k)) &
+                         + (0.5_core_rknd/cthl_1(k))*eta(k,sample)
 
-      lh_dev_thl_lim = max( min( lh_dev_thl_lim, thl_dev_lim ), -thl_dev_lim )
+          lh_dev_thl_lim = max( min( lh_dev_thl_lim, thl_dev_lim ), -thl_dev_lim )
 
-      lh_thl = real( thl_1 + lh_dev_thl_lim, kind=core_rknd )
+          lh_thl(k,sample) = thl_1(k) + lh_dev_thl_lim
 
-    else if ( X_mixt_comp_all_levs == 2 ) then
-      ! Mixture fraction 2
-      lh_rt = real( rt_2 + (0.5_core_rknd/crt_2)*(chi-mu_chi_2) +  &
-                             (0.5_core_rknd/crt_2)*eta, kind=core_rknd )
+        else 
+          
+          ! Mixture fraction 2
+          lh_rt(k,sample) = rt_2(k) + (0.5_core_rknd/crt_2(k))*(chi(k,sample)-mu_chi_2(k)) +  &
+                                 (0.5_core_rknd/crt_2(k))*eta(k,sample)
 
-      ! Limit the quantity that temperature can vary by (in K)
-      lh_dev_thl_lim = (-0.5_core_rknd/cthl_2)*(chi-mu_chi_2) &
-                     + (0.5_core_rknd/cthl_2)*eta
+          ! Limit the quantity that temperature can vary by (in K)
+          lh_dev_thl_lim = (-0.5_core_rknd/cthl_2(k))*(chi(k,sample)-mu_chi_2(k)) &
+                         + (0.5_core_rknd/cthl_2(k))*eta(k,sample)
 
-      lh_dev_thl_lim = max( min( lh_dev_thl_lim, thl_dev_lim ), -thl_dev_lim )
+          lh_dev_thl_lim = max( min( lh_dev_thl_lim, thl_dev_lim ), -thl_dev_lim )
 
-      lh_thl = real( thl_2 + lh_dev_thl_lim, kind=core_rknd )
+          lh_thl(k,sample) = thl_2(k) + lh_dev_thl_lim
 
-    else
-      stop "Error determining mixture fraction in chi_eta_2_rtthl"
-
-    end if
+        end if
+      
+      end do
+    end do
 
     return
+    
   end subroutine chi_eta_2_rtthl
 
 end module transform_to_pdf_module

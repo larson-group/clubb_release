@@ -853,7 +853,7 @@ module latin_hypercube_driver_module
 
     implicit none
 
-    ! Input Variables
+    ! ------------------- Input Variables -------------------
     logical, intent(in) :: &
       l_use_Ncn_to_Nc  ! Whether to call Ncn_to_Nc (.true.) or not (.false.);
                        ! Ncn_to_Nc might cause problems with the MG microphysics
@@ -872,15 +872,17 @@ module latin_hypercube_driver_module
     type(pdf_parameter), intent(in) :: &
       pdf_params             ! **The** PDF parameters!
 
-    ! Input/Output Variable
+    ! ------------------- Input/Output Variable -------------------
+    
     real( kind = core_rknd ), dimension(nz,num_samples,pdf_dim), intent(inout) :: &
       X_nl_all_levs    ! SILHS sample points    [units vary]
 
-    ! Output Variables
+    ! ------------------- Output Variables -------------------
     type(lh_clipped_variables_type), dimension(nz,num_samples), intent(out) :: &
       lh_clipped_vars        ! SILHS clipped and transformed variables
 
-    ! Local Variables
+    ! ------------------- Local Variables -------------------
+    
     real( kind = core_rknd ), dimension(nz,num_samples) :: &
       lh_rt,   &             ! Total water mixing ratio            [kg/kg]
       lh_thl,  &             ! Liquid potential temperature        [K]
@@ -893,7 +895,7 @@ module latin_hypercube_driver_module
       hydromet_pts_clipped    ! Clipped sample point column of hydromet   [un v]
 
     integer :: &
-      isample, k, hm_idx
+      sample, k, hm_idx
 
     ! Flag to clip sample points of hydrometeor concentrations.
     logical, parameter :: &
@@ -903,77 +905,68 @@ module latin_hypercube_driver_module
 
     ! Calculate (and clip) the SILHS sample point values of rt, thl, rc, rv,
     ! and Nc.
-
-    ! Loop over all thermodynamic levels above the model lower boundary.
-    do k = 2, nz
-
-      do isample = 1, num_samples
         
-        ! Compute lh_rt and lh_thl
-        call chi_eta_2_rtthl( pdf_params%rt_1(k), pdf_params%thl_1(k),    & ! Intent(in)
-                              pdf_params%rt_2(k), pdf_params%thl_2(k),    & ! Intent(in)
-                              pdf_params%crt_1(k), pdf_params%cthl_1(k),  & ! Intent(in)
-                              pdf_params%crt_2(k), pdf_params%cthl_2(k),  & ! Intent(in)
-                              pdf_params%chi_1(k), pdf_params%chi_2(k),   & ! Intent(in)
-                              X_nl_all_levs(k,isample,iiPDF_chi),         & ! Intent(in) 
-                              X_nl_all_levs(k,isample,iiPDF_eta),         & ! Intent(in)
-                              X_mixt_comp_all_levs(k,isample),            & ! Intent(in)
-                              lh_rt(k,isample), lh_thl(k,isample) )         ! Intent(out)
-
-        ! If necessary, clip rt
-        if ( lh_rt(k,isample) < rt_tol ) then
-          lh_rt(k,isample) = rt_tol
-        end if
-
-        ! Compute lh_rc
-        lh_rc(k,isample) = chi_to_rc( X_nl_all_levs(k,isample,iiPDF_chi) )
+    ! Compute lh_rt and lh_thl
+    call chi_eta_2_rtthl( nz, num_samples, &
+                          pdf_params%rt_1(:), pdf_params%thl_1(:),          & ! Intent(in)
+                          pdf_params%rt_2(:), pdf_params%thl_2(:),          & ! Intent(in)
+                          pdf_params%crt_1(:), pdf_params%cthl_1(:),        & ! Intent(in)
+                          pdf_params%crt_2(:), pdf_params%cthl_2(:),        & ! Intent(in)
+                          pdf_params%chi_1(:), pdf_params%chi_2(:),         & ! Intent(in)
+                          X_nl_all_levs(:,:,iiPDF_chi),                     & ! Intent(in) 
+                          X_nl_all_levs(:,:,iiPDF_eta),                     & ! Intent(in)
+                          X_mixt_comp_all_levs(:,:),                        & ! Intent(in)
+                          lh_clipped_vars(:,:)%rt, lh_clipped_vars(:,:)%thl ) ! Intent(out)
+    
+    
+    ! These parameters are not computed at the model lower level.
+    lh_clipped_vars(1,:)%rt = zero
+    lh_clipped_vars(1,:)%thl = zero
+    lh_clipped_vars(1,:)%rc = zero
+    lh_clipped_vars(1,:)%rv = zero
+    lh_clipped_vars(1,:)%Nc = zero
+    
+    do sample = 1, num_samples
+      do k = 2, nz
+    
+        ! If necessary, clip rt      
+        lh_clipped_vars(k,sample)%rt = max( lh_clipped_vars(k,sample)%rt, rt_tol )
+        
+        ! Compute lh_rc, rc = chi * H(chi), where H(x) is the Heaviside step function
+        lh_clipped_vars(k,sample)%rc = max( X_nl_all_levs(k,sample,iiPDF_chi), zero )
         
         ! Clip lh_rc.
-        if ( lh_rc(k,isample) > lh_rt(k,isample) - rt_tol ) then
-          lh_rc(k,isample) = lh_rt(k,isample) - rt_tol
-        end if
-
+        lh_clipped_vars(k,sample)%rc = min( lh_clipped_vars(k,sample)%rc, lh_clipped_vars(k,sample)%rt - rt_tol )
+        
         ! Compute lh_rv
-        lh_rv(k,isample) = lh_rt(k,isample) - lh_rc(k,isample)
-
-        ! Compute lh_Nc
+        lh_clipped_vars(k,sample)%rv = lh_clipped_vars(k,sample)%rt - lh_clipped_vars(k,sample)%rc
+        
         if ( l_use_Ncn_to_Nc ) then
-           lh_Nc(k,isample) = Ncn_to_Nc( X_nl_all_levs(k,isample,iiPDF_Ncn), &
-                                         X_nl_all_levs(k,isample,iiPDF_chi) )
+           ! Compute lh_Nc, Nc = Ncn * H(chi), where H(x) is the Heaviside step function
+           if ( X_nl_all_levs(k,sample,iiPDF_chi) > zero ) then
+             lh_clipped_vars(k,sample)%Nc = X_nl_all_levs(k,sample,iiPDF_Ncn)
+           else
+             lh_clipped_vars(k,sample)%Nc = zero
+           end if
         else
-           lh_Nc(k,isample) = X_nl_all_levs(k,isample,iiPDF_Ncn)
+           lh_clipped_vars(k,sample)%Nc = X_nl_all_levs(k,sample,iiPDF_Ncn)
         endif ! l_use_Ncn_to_Nc
-
-      end do ! isample = 1, num_samples
-
+        
+      end do ! sample = 1, num_samples
     end do ! k = 2, nz
-
-    ! These parameters are not computed at the model lower level.
-    lh_rt(1,:) = zero
-    lh_thl(1,:) = zero
-    lh_rc(1,:) = zero
-    lh_rv(1,:) = zero
-    lh_Nc(1,:) = zero
-
-    ! Pack into output structure
-    lh_clipped_vars(:,:)%rt  = lh_rt(:,:)
-    lh_clipped_vars(:,:)%thl = lh_thl(:,:)
-    lh_clipped_vars(:,:)%rc  = lh_rc(:,:)
-    lh_clipped_vars(:,:)%rv  = lh_rv(:,:)
-    lh_clipped_vars(:,:)%Nc  = lh_Nc(:,:)
 
 
     ! Clip the SILHS sample point values of hydrometeor concentrations.
     if ( l_clip_hydromet_samples ) then
 
        ! Loop over all sample columns.
-       do isample = 1, num_samples, 1
+       do sample = 1, num_samples, 1
 
           ! Pack the SILHS hydrometeor sample points, which are stored in arrays
           ! with the size pdf_dim, into arrays with the size hydromet_dim.
           do hm_idx = 1, hydromet_dim, 1
              hydromet_pts(:,hm_idx) &
-             = X_nl_all_levs(:,isample,hydromet2pdf_idx(hm_idx))
+             = X_nl_all_levs(:,sample,hydromet2pdf_idx(hm_idx))
           enddo ! hm_idx = 1, hydromet_dim, 1
 
           ! Clip the hydrometeor concentration sample points based on
@@ -987,7 +980,7 @@ module latin_hypercube_driver_module
           ! in arrays with the size hydromet_dim, back into arrays with the size
           ! pdf_dim.
           do hm_idx = 1, hydromet_dim, 1
-             X_nl_all_levs(:,isample,hydromet2pdf_idx(hm_idx)) &
+             X_nl_all_levs(:,sample,hydromet2pdf_idx(hm_idx)) &
              = hydromet_pts_clipped(:,hm_idx)
           enddo ! hm_idx = 1, hydromet_dim, 1
 
@@ -2544,94 +2537,6 @@ module latin_hypercube_driver_module
     return
   end subroutine copy_X_nl_into_hydromet_all_pts
   !-----------------------------------------------------------------------------
-
-  !-----------------------------------------------------------------------
-  elemental function Ncn_to_Nc( Ncn, chi ) result ( Nc )
-
-  ! Description:
-  !   Converts a sample of Ncn to a sample of Nc, where
-  !   Nc = Ncn * H(chi)
-  !   and H(x) is the Heaviside step function.
-
-  ! References:
-  !   None
-  !-----------------------------------------------------------------------
-
-    ! Included Modules
-    use clubb_precision, only: &
-      core_rknd    ! Our awesome generalized precision (constant)
-
-    use constants_clubb, only: &
-      zero         ! Constant
-
-    implicit none
-
-    ! Input Variables
-    real( kind = core_rknd ), intent(in) :: &
-      Ncn,  &  ! Simplified cloud nuclei concentration N_cn  [num/kg]
-      chi      ! Extended cloud water mixing ratio           [kg/kg]
-
-    ! Output Variable
-    real( kind = core_rknd ) :: &
-      Nc       ! Cloud droplet concentration                 [num/kg]
-
-  !-----------------------------------------------------------------------
-
-    !----- Begin Code -----
-
-    if ( chi > zero ) then
-      Nc = Ncn
-    else
-      Nc = zero
-    end if
-
-    return
-  end function Ncn_to_Nc
-  !-----------------------------------------------------------------------
-
-  !-----------------------------------------------------------------------
-  elemental function chi_to_rc( chi ) result ( rc )
-
-  ! Description:
-  !   Converts a sample of chi to a sample of rc, where
-  !   rc = chi * H(chi)
-  !   and H(x) is the Heaviside step function.
-
-  ! References:
-  !   None
-  !-----------------------------------------------------------------------
-
-    ! Included Modules
-    use clubb_precision, only: &
-      core_rknd    ! Our awesome generalized precision (constant)
-
-    use constants_clubb, only: &
-      zero         ! Constant
-
-    implicit none
-
-    ! Input Variable
-    real( kind = core_rknd ), intent(in) :: &
-      chi      ! Extended cloud water mixing ratio           [kg/kg]
-
-    ! Output Variable
-    real( kind = core_rknd ) :: &
-      rc       ! Cloud water mixing ratio                    [kg/kg]
-
-  !-----------------------------------------------------------------------
-
-    !----- Begin Code -----
-
-    if ( chi > zero ) then
-      rc = chi
-    else
-      rc = zero
-    end if
-
-    return
-  end function chi_to_rc
-  !-----------------------------------------------------------------------
-
 
 #endif /* SILHS */
 
