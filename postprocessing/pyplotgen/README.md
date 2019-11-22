@@ -7,15 +7,15 @@ Pyplotgen only supports input in the netcdf (.nc) format.
 | *Option Flag* | *Description* |
 | --- | --- |
 | -r --replace | Overwrite the output folder if it already exists |
-| -l --les | Overplot LES output data. The nc files for les output can be overwritten by changing the directory listed for a given case inside the `Case_Definitions.py` file. |
-| -e --e3sm [FOLDER PATHNAME] | Adds lines to plot output. The filenames in the folder must either match the casename intended to run it, e.g. `bomex.nc` (using the lowercase version of the casename as defined in the `Case_definitions.py` file), or rewrite the `'e3sm_file': None,` parameter for the desired case to contain the location of the E3SM file. The second option is not reccomended because it risks pushing invalid directories to the repo. | 
+| -l --les | Overplot LES output data. The path to the nc file(s) for user-generated LES output can be specified by changing the directory listed for a given case inside the `Case_Definitions.py` file. |
+| -e --e3sm [FOLDER PATHNAME] | Adds lines from an E3SM SCM run to a plot.  In order to plot an E3SM line from a particular case, one must specify the E3SM filenames in one of two ways.  First, ensure that the filenames in the E3SM folder match the casenames you want to plot, where the casenames are defined in the `Case_definitions.py` file, e.g. for the bomex case (`BOMEX = {'name': 'bomex' ...}`) you need to use `bomex.nc`.  Alternatively, rewrite the `'e3sm_file': None,` parameter for the desired case to contain the location of the E3SM file.  The second option is not recommended because then you might accidentally push your personal directory name to the repo, confusing other users. | 
 | -b --plot-golaz-best | Plots clubb r408 'best ever' plots |
 | --thin | Plot lines with a thin width |
 | --plot-budgets | Includes budget panels in output |
 | --diff [FOLDER PATHNAME] | (Experimental) Plots the difference between the input folder and the folder specified after --diff instead of plotting a regular profile |
 | --no-legends | Panels are drawn without a line legend |
-| -i --input | Manually specify an input folder. Must be followed by a folder path |
-| -o --output | Manually specify an output folder. If not specified, will automatically output to `pyplotgen/output` |
+| -i --input [list of FOLDER PATHNAME(s)] | Manually specify the folder where CLUBB output files to be plotted are located.  Must be followed by a folder path |
+| -o --output [FOLDER PATHNAME] | Manually specify the folder where pyplotgen output will be saved. If not specified, pyplotgen will automatically output to `pyplotgen/output` |
 
 ## Installing Dependencies
 To install the dependencies necessary for PyPlotgen to run, run the command
@@ -251,7 +251,7 @@ BOMEX = {'name': 'bomex', 'start_time': 181, 'end_time': 360, 'height_min_value'
          'var_groups': [VariableGroupBase, VariableGroupWs]}
 ~~~~~
 
-Creating a new case in pyplotgen is as simple as creating one of these defintions (e.g. example above) and adding it to the `ALL_CASES` list:
+Once you've created one of these definitions, then in order to add your new case to the default set of cases, add the casename to the `ALL_CASES` list:
 ~~~~python
 ALL_CASES = [ARM, ARM_97, ASTEX_A209, ATEX,
              BOMEX,
