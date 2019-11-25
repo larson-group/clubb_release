@@ -229,6 +229,7 @@ class VariableGroup:
                                                   label=Style_definitions.HOC_LABEL,
                                                   line_format=Style_definitions.HOC_LINE_STYLE, fill_zeros=fill_zeros,
                                                   override_panel_type=panel_type, fallback_func=fallback, lines=lines))
+
         if e3sm_dataset is not None:
             all_lines.extend(self.__getVarLines__(aliases, e3sm_dataset, conversion_factor=e3sm_conv_factor,
                                                   label=Style_definitions.E3SM_LABEL,
@@ -250,7 +251,7 @@ class VariableGroup:
         first_input_datasets = self.ncdf_files[next(iter(self.ncdf_files))]
         if 'title' not in variable_def_dict.keys():
             if panel_type == Panel.TYPE_BUDGET:
-                variable_def_dict['title'] = clubb_name
+                variable_def_dict['title'] = label + ' ' + clubb_name
             else:
                 imported_title = data_reader.getLongName(first_input_datasets, clubb_name)
                 variable_def_dict['title'] = imported_title
@@ -440,10 +441,10 @@ class VariableGroup:
                 if varname in dataset.variables.keys():
                     variable = NetCdfVariable(varname, dataset, start_time=self.start_time, end_time=self.end_time,
                                               fill_zeros=fill_zeros)
-                    if 'altitude' in dataset.variables.keys():
-                        z = NetCdfVariable('altitude', dataset, start_time=self.start_time, end_time=self.end_time)
-                    else:
-                        z = NetCdfVariable('z', dataset, start_time=self.start_time, end_time=self.end_time)
+                    # if 'altitude' in dataset.variables.keys():
+                    #     z = NetCdfVariable('altitude', dataset, start_time=self.start_time, end_time=self.end_time)
+                    # else:
+                    z = NetCdfVariable(['z', 'lev', 'altitude'], dataset, start_time=self.start_time, end_time=self.end_time)
                     variable.constrain(self.height_min_value, self.height_max_value, data=z.data)
                     z.constrain(self.height_min_value, self.height_max_value)
                     line_definition = Line(variable, z, label=line_definition['legend_label'],
@@ -459,7 +460,7 @@ class VariableGroup:
                     fallback = line_definition['fallback_func']
                     fallback_output = self.__getVarDataFromFallback__(fallback, varname, {'budget': dataset}, label,
                                                                       line_format)
-                    fallback_output = Line(fallback_output.x, z, line_format="", label=line_definition['legend_label'])
+                    fallback_output = Line(fallback_output.x, fallback_output.y, line_format="", label=line_definition['legend_label'])
                     output_lines.append(fallback_output)
                     return output_lines
 

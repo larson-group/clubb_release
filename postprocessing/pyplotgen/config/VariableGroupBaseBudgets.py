@@ -213,7 +213,7 @@ class VariableGroupBaseBudgets(VariableGroup):
         :return:
         '''
 
-        z = self.getVarForCalculations('altitude', dataset_override, fill_zeros=True)
+        z = self.getVarForCalculations(['z', 'lev', 'altitude'], dataset_override, fill_zeros=True)
         thlm_mfl = self.getVarForCalculations('thlm_mfl', dataset_override, fill_zeros=True)
         thlm_cl = self.getVarForCalculations('thlm_cl', dataset_override, fill_zeros=True)
         thlm_tacl = self.getVarForCalculations('thlm_tacl', dataset_override, fill_zeros=True)
