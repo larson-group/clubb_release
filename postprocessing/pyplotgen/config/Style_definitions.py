@@ -16,17 +16,17 @@ If you wish to change a line color, font size, etc., then this is the place to d
 # Color/style rotations are used on budget plots and for input-folder lines
 
 # Colors are taken from the colorbrewer qualitative 10-color set | http://colorbrewer2.org/#type=qualitative&scheme=Paired&n=10
-# Default option. Not colorblind or print safe.
-COLOR_ROTATION = ['#1f78b4', '#e31a1c', '#ff7f00', '#6a3d9a', '#33a02c', '#a6cee3', '#b2df8a', '#fb9a99', '#fdbf6f', '#cab2d6']
-STYLE_ROTATION = ['-', '--', ':', '-.','-', '--', ':', '-.','-', '--']
+# Not colorblind or print safe but contains the most colors
+# COLOR_ROTATION = ['#1f78b4', '#e31a1c', '#ff7f00', '#6a3d9a', '#33a02c', '#a6cee3', '#b2df8a', '#fb9a99', '#fdbf6f', '#cab2d6']
+# STYLE_ROTATION = ['-', '--', ':', '-.','-', '--', ':', '-.','-', '--']
 
 # Color-blind and print safe color rotation. These requirements only allow up to 4 colors
 # COLOR_ROTATION = ['#1f78b4', '#33a02c', '#a6cee3', '#b2df8a']
 # STYLE_ROTATION = ['-', '--', ':', '-.']
 
 # Print safe colors (not color-blind friendly). From colorbrewer (removed yellow)
-# COLOR_ROTATION = ['#e41a1c', '#377eb8', '#4daf4a', '#984ea3', '#ff7f00', '#a65628', '#f781bf', '#999999']
-# STYLE_ROTATION = ['-', '--', ':', '-.', '-', '--', ':', '-.']
+COLOR_ROTATION = ['#e41a1c', '#377eb8', '#4daf4a', '#984ea3', '#ff7f00', '#a65628', '#f781bf', '#999999']
+STYLE_ROTATION = ['-', '--', ':', '-.', '-', '--', ':', '-.']
 
 # Details on line styles here: https://matplotlib.org/2.1.2/api/_as_gen/matplotlib.pyplot.plot.html
 LES_LINE_STYLE = "k-"
