@@ -188,6 +188,32 @@ class VariableGroupBaseBudgets(VariableGroup):
             {'aliases': ['vpwp_mfl'], 'legend_label': 'vpwp_mfl'},
             {'aliases': ['vpwp_residual'], 'legend_label': 'vpwp_residual', 'fallback_func': self.getVpwpResidual},
         ]
+
+        um_budget_lines = [
+            {'aliases': ['um_bt'], 'legend_label': 'um_bt'},
+            {'aliases': ['um_ma'], 'legend_label': 'um_ma'},
+            {'aliases': ['um_gf'], 'legend_label': 'um_gf'},
+            {'aliases': ['um_cf'], 'legend_label': 'um_cf'},
+            {'aliases': ['um_ta'], 'legend_label': 'um_ta'},
+            {'aliases': ['um_f'], 'legend_label': 'um_f'},
+            {'aliases': ['um_sdmp'], 'legend_label': 'um_sdmp'},
+            {'aliases': ['um_ndg'], 'legend_label': 'um_ndg'},
+            {'aliases': ['um_mfl'], 'legend_label': 'um_mfl'}
+        ]
+
+        vm_budget_lines = [
+            {'aliases': ['vm_bt'], 'legend_label': 'vm_bt'},
+            {'aliases': ['vm_ma'], 'legend_label': 'vm_ma'},
+            {'aliases': ['vm_gf'], 'legend_label': 'vm_gf'},
+            {'aliases': ['vm_cf'], 'legend_label': 'vm_cf'},
+            {'aliases': ['vm_ta'], 'legend_label': 'vm_ta'},
+            {'aliases': ['vm_f'], 'legend_label': 'vm_f'},
+            {'aliases': ['vm_sdmp'], 'legend_label': 'vm_sdmp'},
+            {'aliases': ['vm_ndg'], 'legend_label': 'vm_ndg'},
+            {'aliases': ['vm_mfl'], 'legend_label': 'vm_mfl'}
+        ]
+
+
         
         self.variable_definitions = [
             {'aliases': ['thlm'], 'lines': thlm_budget_lines, 'type': Panel.TYPE_BUDGET, 'fill_zeros': True},
@@ -201,7 +227,8 @@ class VariableGroupBaseBudgets(VariableGroup):
             {'aliases': ['rtpthlp'], 'lines': rtpthlp_budget_lines, 'type': Panel.TYPE_BUDGET, 'fill_zeros': True},
             {'aliases': ['upwp'], 'lines': upwp_budget_lines, 'type': Panel.TYPE_BUDGET, 'fill_zeros': True},
             {'aliases': ['vpwp'], 'lines': vpwp_budget_lines, 'type': Panel.TYPE_BUDGET, 'fill_zeros': True},
-
+            {'aliases': ['um'], 'lines': um_budget_lines, 'type': Panel.TYPE_BUDGET, 'fill_zeros': True},
+            {'aliases': ['vm'], 'lines': vm_budget_lines, 'type': Panel.TYPE_BUDGET, 'fill_zeros': True}
         ]
         super().__init__(ncdf_datasets, case, sam_file=sam_file, coamps_file=coamps_file, r408_dataset=r408_dataset, hoc_dataset=hoc_dataset, e3sm_dataset = e3sm_dataset)
 
