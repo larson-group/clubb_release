@@ -11,6 +11,7 @@ import re
 import shutil
 import sys
 
+from config import Case_definitions
 from python_html_gallery import static
 
 try:
@@ -124,6 +125,18 @@ def GenerateThumbnails(page, jpgs):
     return url_imgs
 
 
+def get_start_end_minutes(casename):
+    """
+    Get the start and end time minutes for a case
+    as defined in Case_definitions.py
+    :param casename: Name of the case as defined by the 'name' parameter of it's entry in ALL_CASES in Case_definitions.py
+    :return: tuple of the order (start_time,end_time)
+    """
+    for case in Case_definitions.ALL_CASES:
+        if case['name'] == casename:
+            return case['start_time'], case['end_time']
+
+
 def WriteGalleryPage(page):
     """Writes a gallery page for jpgs in path.
 
@@ -135,7 +148,9 @@ def WriteGalleryPage(page):
     with open(static.plots, 'a') as plots_file:
         # plots_file.write(static.header % page)
         # plots_file.write(static.case_title % page)
-        plots_file.write(static.a_tag % (page, page))
+        start_time,end_time = get_start_end_minutes(page)
+        case_title = page + " minutes " + str(start_time) + "-" + str(end_time)
+        plots_file.write(static.a_tag % (page, case_title))
 
         # Write case_setup.txt links
         for setup_file in glob.glob(page+'/*.txt'):
