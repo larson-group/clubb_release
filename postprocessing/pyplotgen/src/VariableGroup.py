@@ -463,7 +463,6 @@ class VariableGroup:
                                                                       line_format)
                     fallback_output = Line(fallback_output.x, fallback_output.y, line_format="", label=line_definition['legend_label'])
                     output_lines.append(fallback_output)
-                    return output_lines
 
                 elif not fill_zeros:
                     raise TypeError("Failed to find variable " + varname + " in clubb output for case " +
