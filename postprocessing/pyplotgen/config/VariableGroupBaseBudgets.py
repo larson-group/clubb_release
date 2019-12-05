@@ -257,7 +257,7 @@ class VariableGroupBaseBudgets(VariableGroup):
         thlm_forcing-radht-thlm_mc
         :return:
         '''
-        z = self.getVarForCalculations('altitude', dataset_override, fill_zeros=True)
+        z = self.getVarForCalculations(['z', 'lev', 'altitude'], dataset_override, fill_zeros=True)
         thlm_forcing = self.getVarForCalculations('thlm_forcing', dataset_override, fill_zeros=True)
         radht = self.getVarForCalculations('radht', dataset_override, fill_zeros=True)
         thlm_mc = self.getVarForCalculations('thlm_mc', dataset_override, fill_zeros=True)

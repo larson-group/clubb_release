@@ -257,7 +257,8 @@ class VariableGroup:
                 variable_def_dict['title'] = imported_title
         if 'axis_title' not in variable_def_dict.keys():
             if panel_type == Panel.TYPE_BUDGET:
-                variable_def_dict['axis_title'] = "[" + data_reader.__getUnits__(first_input_datasets, clubb_name) + "]"
+                any_varname_with_budget_units = all_lines[0].label
+                variable_def_dict['axis_title'] = "[" + data_reader.__getUnits__(first_input_datasets, any_varname_with_budget_units) + "]"
             else:
                 imported_axis_title = data_reader.getAxisTitle(first_input_datasets, clubb_name)
                 variable_def_dict['axis_title'] = imported_axis_title

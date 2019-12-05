@@ -45,9 +45,9 @@ class Panel:
         """
         if self.panel_type is Panel.TYPE_PROFILE:
             self.x_title = self.dependant_title
-            self.y_title = "Height, [m]"
+            self.y_title = "Height [m]"
         elif self.panel_type is Panel.TYPE_BUDGET:
-            self.y_title = "Height, [m]"
+            self.y_title = "Height [m]"
             self.x_title = self.dependant_title
         elif self.panel_type is Panel.TYPE_TIMESERIES:
             self.x_title = "Time [min]"
@@ -79,7 +79,6 @@ class Panel:
     #
     #     return start_idx, end_idx
 
-    # TODO add 'output.txt' config file to plots
     def plot(self, output_folder, casename, replace_images = False, no_legends = True, thin_lines = False, alphabetic_id=""):
         """
          Saves a single panel/graph to the output directory specified by the pyplotgen launch parameters
