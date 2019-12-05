@@ -18,11 +18,33 @@ Pyplotgen only supports input in the netcdf (.nc) format.
 | -o --output [FOLDER PATHNAME] | Manually specify the folder where pyplotgen output will be saved. If not specified, pyplotgen will automatically output to `pyplotgen/output` |
 
 ## Installing Dependencies
-To install the dependencies necessary for PyPlotgen to run, run the command
-```
+
+To install the dependencies necessary for PyPlotgen to run, run
+```bash
 pip3 install -r requirements.txt
 ```
-from within the PyPlotGen directory
+from within the PyPlotGen directory.
+
+### Virtual Environments
+
+A virtual environment is a tool that helps to keep dependencies required by different projects separate by creating isolated python virtual environments for them. Using a virtual environment will allow you to keep installed python packages for PyPlotgen separate from the system wide python packages you have installed.
+
+To create a python3 virtual environment named `pyplotgen_venv`, run
+```bash
+python3 -m venv ./pyplotgen_venv
+```
+
+To activate it, run
+```bash
+source ./pyplotgen_venv/bin/activate
+``` 
+
+After it's been activated you should see `(pyplotgen_venv)` to the left of your prompt in the terminal. Now you should run the `pip3` command above to install the dependencies.
+
+To deactivate it after you are done using PyPlotgen, run 
+```bash
+deactivate
+```
 
 ## Example Run Commands
 
