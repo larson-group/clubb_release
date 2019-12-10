@@ -12,10 +12,8 @@ module model_flags
 
   implicit none
 
-  public :: setup_model_flags, read_model_flags_from_file, setup_configurable_model_flags, &
-            get_configurable_model_flags, write_model_flags_to_file, clubb_config_flags_type, &
-            set_default_clubb_config_flags, initialize_clubb_config_flags_type, &
-            print_clubb_config_flags
+  public :: setup_model_flags, clubb_config_flags_type, set_default_clubb_config_flags, &
+            initialize_clubb_config_flags_type, print_clubb_config_flags
 
   private ! Default Scope
 
@@ -40,14 +38,6 @@ module model_flags
                                 ! predictive equations.  The predictive
                                 ! equations are anelastic by default.
 
-  logical, public :: &
-    l_use_precip_frac = .true.  ! Flag to use precipitation fraction in KK
-                                ! microphysics.  The precipitation fraction
-                                ! is automatically set to 1 when this flag
-                                ! is turned off.
-
-!$omp threadprivate( l_use_precip_frac )
-
   logical, parameter, public :: &
     ! Flag to use explicit turbulent advection in the wp3 predictive equation.
     l_explicit_turbulent_adv_wp3 = .false.,  &
@@ -57,50 +47,12 @@ module model_flags
     ! equations.
     l_explicit_turbulent_adv_xpyp = .false.
 
-  ! Flag to predict <u'w'> and <v'w'> along with <u> and <v> alongside the
-  ! advancement of <rt>, <w'rt'>, <thl>, <wpthlp>, <sclr>, and <w'sclr'> in
-  ! subroutine advance_xm_wpxp.  Otherwise, <u'w'> and <v'w'> are still
-  ! approximated by eddy diffusivity when <u> and <v> are advanced in
-  ! subroutine advance_windm_edsclrm.
-  logical, public :: &
-    l_predict_upwp_vpwp = .true.
-
-!$omp threadprivate( l_predict_upwp_vpwp )
-
   ! Flag to advance xp3 using a simplified version of the d(xp3)/dt predictive
   ! equation or calculate it using a steady-state approximation.  When the flag
   ! is turned off, the Larson and Golaz (2005) ansatz to calculate xp3 after
   ! calculating Skx using the ansatz.
   logical, parameter, public :: &
     l_advance_xp3 = .false.
-
-  ! Flag to base the threshold minimum value of wp2 on keeping the overall
-  ! correlation of w and x (w and rt, as well as w and theta-l) within the
-  ! limits of -max_mag_correlation_flux to max_mag_correlation_flux.
-  logical, public :: &
-    l_min_wp2_from_corr_wx = .true.
-
-  ! Flag to base the threshold minimum value of xp2 (rtp2 and thlp2) on
-  ! keeping the overall correlation of w and x within the limits of
-  ! -max_mag_correlation_flux to max_mag_correlation_flux.
-  logical, public :: &
-    l_min_xp2_from_corr_wx = .true.
-
-  ! Flag to use cloud fraction to adjust the value of the turbulent dissipation
-  ! coefficient, C2.
-  logical, public :: &
-    l_C2_cloud_frac = .false.
-
-!$omp threadprivate( l_min_wp2_from_corr_wx, l_min_xp2_from_corr_wx, &
-!$omp                l_C2_cloud_frac )
-
-  ! These flags determine whether or not we want CLUBB to do diffusion
-  !   on thlm and rtm and if a stability correction is applied
-  logical, public :: &
-    l_diffuse_rtm_and_thlm        = .false., & ! Diffuses rtm and thlm
-    l_stability_correct_Kh_N2_zm  = .false.    ! Divides Kh_N2_zm by a stability factor
-
-!$omp threadprivate( l_diffuse_rtm_and_thlm, l_stability_correct_Kh_N2_zm )
 
   logical, parameter, public :: &
     l_morr_xp2_mc = .false. ! Flag to include the effects of rain evaporation
@@ -117,11 +69,6 @@ module model_flags
   logical, parameter, public :: &
     l_cubic_interp = .false.      ! Flag to convert grid points with cubic monotonic
                                   ! spline interpolation as opposed to linear interpolation.
-
-  ! See clubb:ticket:632 for details
-  logical, public :: &
-    l_calc_thlp2_rad = .true.         ! Include the contribution of radiation to thlp2
-!$omp threadprivate( l_calc_thlp2_rad )
 
   ! These are the integer constants that represent the various saturation
   ! formulas. To add a new formula, add an additional constant here,
@@ -145,65 +92,10 @@ module model_flags
 
 !$omp threadprivate(l_high_accuracy_parab_cyl_fnc)
 
-  ! These flags determine whether we want to use an upwind differencing approximation 
-  ! rather than a centered differencing for turbulent or mean advection terms.
-  ! wpxp_ta affects wprtp, wpthlp, & wpsclrp
-  ! xpyp_ta affects rtp2, thlp2, up2, vp2, sclrp2, rtpthlp, sclrprtp, & sclrpthlp
-  ! xm_ma affects rtm, thlm, sclrm, um and vm.
-  logical, public :: & 
-    l_upwind_wpxp_ta = .false., & 
-    l_upwind_xpyp_ta = .true.,  &
-    l_upwind_xm_ma   = .true.
-
-!$omp threadprivate(l_upwind_wpxp_ta, l_upwind_xpyp_ta, l_upwind_xm_ma)
-
   logical, public :: & 
     l_quintic_poly_interp = .false. ! Use a quintic polynomial in mono_cubic_interp
 
 !$omp threadprivate(l_quintic_poly_interp)
-
-
-  logical, public :: & 
-    l_uv_nudge = .false.,  & ! For wind speed nudging. - Michael Falk
-    l_rtm_nudge = .false., & ! For rtm nudging
-    l_tke_aniso = .true.     ! For anisotropic turbulent kinetic energy, 
-                             ! i.e. TKE = 1/2 (u'^2 + v'^2 + w'^2)
-!$omp threadprivate(l_uv_nudge, l_tke_aniso, l_rtm_nudge)
-
-  ! Use 2 calls to pdf_closure and the trapezoidal rule to  compute the 
-  ! varibles that are output from high order closure
-  logical, private :: &
-    l_vert_avg_closure  = .false.
-!$omp threadprivate(l_vert_avg_closure)
-
-  ! These are currently set based on l_vert_avg_closure
-  logical, public :: &
-    l_trapezoidal_rule_zt = .false.,    & ! If true, the trapezoidal rule is called for
-                                          ! the thermodynamic-level variables output 
-                                          ! from pdf_closure.  
-
-    l_trapezoidal_rule_zm = .false.,    & ! If true, the trapezoidal rule is called for
-                                          ! three momentum-level variables - wpthvp,
-                                          ! thlpthvp, and rtpthvp - output from pdf_closure.
-
-    l_call_pdf_closure_twice = .false.    ! This logical flag determines whether or not to
-                                          ! call subroutine pdf_closure twice.  If true,
-                                          ! pdf_closure is called first on thermodynamic levels
-                                          ! and then on momentum levels so that each variable is
-                                          ! computed on its native level.  If false, pdf_closure
-                                          ! is only called on thermodynamic levels, and variables
-                                          ! which belong on momentum levels are interpolated.
-
-!$omp threadprivate(l_trapezoidal_rule_zt, l_trapezoidal_rule_zm, l_call_pdf_closure_twice)
-
-  logical, public :: &
-    l_standard_term_ta = .false.    ! Use the standard discretization for the
-                                    ! turbulent advection terms.  Setting to
-                                    ! .false. means that a_1 and a_3 are pulled
-                                    ! outside of the derivative in advance_wp2_wp3_module.F90
-                                    ! and in advance_xp2_xpyp_module.F90.
-
-!$omp threadprivate(l_standard_term_ta)
 
   ! Use to determine whether a host model has already applied the surface flux,
   ! to avoid double counting.
@@ -212,85 +104,16 @@ module model_flags
 
 !$omp threadprivate(l_host_applies_sfc_fluxes)
 
-  ! Use cloud_cover and rcm_in_layer to help boost cloud_frac and rcm to help increase cloudiness
-  ! at coarser grid resolutions.
-  logical, public :: &
-    l_use_cloud_cover = .false.
-
-!$omp threadprivate(l_use_cloud_cover)
-
   integer, public :: &
     saturation_formula = saturation_flatau ! Integer that stores the saturation formula to be used
 
 !$omp threadprivate(saturation_formula)
 
-  ! See clubb:ticket:514 for details
-  logical, public :: &
-    l_diagnose_correlations = .false., & ! Diagnose correlations instead of using fixed ones
-    l_calc_w_corr = .false.    ! Calculate the correlations between w and the hydrometeors
-
-!$omp threadprivate(l_diagnose_correlations, l_calc_w_corr)
-
   logical, parameter, public :: &
     l_silhs_rad = .false.    ! Resolve radiation over subcolumns using SILHS
 
-  logical, public :: &
-    l_const_Nc_in_cloud = .false.,        & ! Use a constant cloud droplet conc. within cloud (K&K)
-    l_fix_w_chi_eta_correlations = .true.   ! Use a fixed correlation for s and t Mellor(chi/eta)
-
-!$omp threadprivate( l_const_Nc_in_cloud, l_fix_w_chi_eta_correlations )
-
-  logical, public :: &
-    l_stability_correct_tau_zm = .false., & ! Use tau_N2_zm instead of tau_zm in wpxp_pr1
-                                           ! stability correction
-
-    l_damp_wp2_using_em = .true.,       & ! In wp2 equation, use a dissipation
-                                           ! formula of -(2/3)*em/tau_zm, as in Bougeault (1981)
-
-    l_do_expldiff_rtm_thlm = .false.,    & ! Diffuse rtm and thlm explicitly
-    l_Lscale_plume_centered = .false.,   & ! Alternate that uses the PDF to
-                                           ! compute the perturbed values
-
-    l_diag_Lscale_from_tau  = .false.,   & ! First diagnose dissipation time tau, 
-                                           ! and then diagnose the mixing length
-                                           ! scale as Lscale = tau * tke
-
-    l_use_ice_latent = .false.,          & ! Includes the effects of ice latent heating in
-                                           !  turbulence terms
-
-    l_use_C7_Richardson = .true.,       & ! Parameterize C7 based on Richardson number
-    l_use_C11_Richardson = .false.,      & ! Parameterize C16 based on Richardson number
-
-    l_brunt_vaisala_freq_moist = .false.,& ! Use a different formula for the Brunt-Vaisala 
-                                           ! frequency in saturated atmospheres
-                                           ! (from Durran and Klemp, 1982)
-
-    l_use_thvm_in_bv_freq = .false.,     & ! Use thvm in the calculation of Brunt-Vaisala frequency
-    l_rcm_supersat_adj = .true.            ! Add excess supersaturated vapor to cloud water
-
-
-  logical, public :: &
-    l_single_C2_Skw = .false.,  & ! Use a single Skewness dependent C2 for rtp2, thlp2, and rtpthlp
-    l_damp_wp3_Skw_squared = .true. ! Set damping on wp3 to use Skw^2 rather than Skw^4
-
-!$omp threadprivate( l_stability_correct_tau_zm, l_damp_wp2_using_em, &
-!$omp                l_do_expldiff_rtm_thlm, &
-!$omp                l_Lscale_plume_centered, l_diag_Lscale_from_tau, &
-!$omp                l_use_ice_latent, l_use_C7_Richardson, &
-!$omp                l_use_C11_Richardson, l_brunt_vaisala_freq_moist, l_use_thvm_in_bv_freq, &
-!$omp                l_rcm_supersat_adj, l_single_C2_Skw, l_damp_wp3_Skw_squared )
-
   logical, parameter, public :: &
     l_use_wp3_pr3 = .false. ! Include pressure term 3 (pr3) in wp3
-
-  ! used in adj_low_res_nu. If .true., avg_deltaz = deltaz
-#ifdef GFDL
-  logical, public :: l_prescribed_avg_deltaz = .true.
-#else
-  logical, public :: l_prescribed_avg_deltaz = .false.
-#endif
-
-!$omp threadprivate(l_prescribed_avg_deltaz)
 
 #ifdef GFDL
   logical, public :: &
@@ -389,24 +212,12 @@ module model_flags
       l_prescribed_avg_deltaz         ! used in adj_low_res_nu. If .true., avg_deltaz = deltaz
   end type clubb_config_flags_type
 
-  namelist /configurable_clubb_flags_nl/ &
-    l_upwind_wpxp_ta, l_upwind_xpyp_ta, l_upwind_xm_ma, l_quintic_poly_interp, &
-    l_tke_aniso, l_vert_avg_closure, l_single_C2_Skw, l_standard_term_ta, &
-    l_use_cloud_cover, l_rcm_supersat_adj, l_damp_wp3_Skw_squared, &
-    l_min_wp2_from_corr_wx, l_min_xp2_from_corr_wx, l_C2_cloud_frac, &
-    l_predict_upwp_vpwp, l_diag_Lscale_from_tau, l_stability_correct_tau_zm, &
-    l_damp_wp2_using_em, l_use_C7_Richardson, l_use_precip_frac, l_do_expldiff_rtm_thlm, &
-    l_use_C11_Richardson, l_prescribed_avg_deltaz, l_diffuse_rtm_and_thlm, &
-    l_stability_correct_Kh_N2_zm, l_trapezoidal_rule_zt, l_trapezoidal_rule_zm, &
-    l_call_pdf_closure_twice, l_Lscale_plume_centered, l_use_ice_latent, &
-    l_brunt_vaisala_freq_moist, l_use_thvm_in_bv_freq
-
   contains
 
 !===============================================================================
   subroutine setup_model_flags & 
              ( l_host_applies_sfc_fluxes_in, & 
-               l_uv_nudge_in, saturation_formula_in &
+               saturation_formula_in &
 #ifdef GFDL
                ,  I_sat_sphum_in   &  ! h1g, 2010-06-15
 #endif
@@ -426,8 +237,7 @@ module model_flags
 
     ! Input Variables
     logical, intent(in) ::  & 
-      l_host_applies_sfc_fluxes_in, &
-      l_uv_nudge_in
+      l_host_applies_sfc_fluxes_in
 
     character(len=*), intent(in) :: &
       saturation_formula_in
@@ -440,8 +250,6 @@ module model_flags
     !---- Begin Code ----
 
     ! Logicals
-
-    l_uv_nudge  = l_uv_nudge_in
 
     l_host_applies_sfc_fluxes = l_host_applies_sfc_fluxes_in
 
@@ -468,172 +276,6 @@ module model_flags
 #endif
     return
   end subroutine setup_model_flags
-
-!===============================================================================
-  subroutine read_model_flags_from_file( iunit, filename )
-
-! Description:
-!   Read in some of the model flags of interest from a namelist file. If the
-!   variable isn't in the file it will just be the default value.
-!
-! References:
-!   None
-!-------------------------------------------------------------------------------
-
-    implicit none
-
-    integer, intent(in) :: &
-      iunit ! File I/O unit to use
-
-    character(len=*), intent(in) :: &
-      filename ! Name of the file with the namelist
-
-   ! Read the namelist
-    open(unit=iunit, file=filename, status='old', action='read')
-
-    read(unit=iunit, nml=configurable_clubb_flags_nl)
-
-    close(unit=iunit)
-
-    if ( l_vert_avg_closure ) then
-      l_trapezoidal_rule_zt    = .true.
-      l_trapezoidal_rule_zm    = .true.
-      l_call_pdf_closure_twice = .true.
-    else
-      l_trapezoidal_rule_zt    = .false.
-      l_trapezoidal_rule_zm    = .false.
-      l_call_pdf_closure_twice = .false.
-    end if
-
-    return
-  end subroutine read_model_flags_from_file
-
-!===============================================================================
-  subroutine write_model_flags_to_file( iunit, filename )
-
-! Description:
-!   Write a new namelist for the configurable model flags
-!
-! References:
-!   None
-!-------------------------------------------------------------------------------
-
-    implicit none
-
-    integer, intent(in) :: &
-      iunit ! File I/O unit to use
-
-    character(len=*), intent(in) :: &
-      filename ! Name of the file with the namelist
-
-   ! Read the namelist
-    open(unit=iunit, file=filename, status='unknown', action='write')
-
-    write(unit=iunit, nml=configurable_clubb_flags_nl)
-
-    close(unit=iunit)
-
-    return
-  end subroutine write_model_flags_to_file
-!===============================================================================
-  subroutine setup_configurable_model_flags &
-             ( l_upwind_wpxp_ta_in, l_upwind_xpyp_ta_in, & 
-               l_upwind_xm_ma_in, l_quintic_poly_interp_in, &
-               l_vert_avg_closure_in, &
-               l_single_C2_Skw_in, l_standard_term_ta_in, &
-               l_tke_aniso_in, l_use_cloud_cover_in, l_rcm_supersat_adj_in )
-
-! Description:
-!   Set a model flag based on the input arguments for the purposes of trying
-!   all possible combinations in the clubb_tuner.
-!
-! References:
-!   None
-!-------------------------------------------------------------------------------
-
-    implicit none
-
-    ! Input Variables
-    logical, intent(in) :: &
-      l_upwind_wpxp_ta_in, & ! Model flags
-      l_upwind_xpyp_ta_in, & 
-      l_upwind_xm_ma_in, &
-      l_quintic_poly_interp_in, &
-      l_vert_avg_closure_in, &
-      l_single_C2_Skw_in, &
-      l_standard_term_ta_in, &
-      l_tke_aniso_in, &
-      l_use_cloud_cover_in, &
-      l_rcm_supersat_adj_in
-    ! ---- Begin Code ----
-
-    l_upwind_wpxp_ta = l_upwind_wpxp_ta_in
-    l_upwind_xpyp_ta = l_upwind_xpyp_ta_in
-    l_upwind_xm_ma = l_upwind_xm_ma_in
-    l_quintic_poly_interp = l_quintic_poly_interp_in
-    l_vert_avg_closure = l_vert_avg_closure_in
-    l_single_C2_Skw = l_single_C2_Skw_in
-    l_standard_term_ta = l_standard_term_ta_in
-    l_tke_aniso = l_tke_aniso_in
-    l_use_cloud_cover = l_use_cloud_cover_in
-    l_rcm_supersat_adj = l_rcm_supersat_adj_in
-
-    if ( l_vert_avg_closure ) then
-      l_trapezoidal_rule_zt    = .true.
-      l_trapezoidal_rule_zm    = .true.
-      l_call_pdf_closure_twice = .true.
-    else
-      l_trapezoidal_rule_zt    = .false.
-      l_trapezoidal_rule_zm    = .false.
-      l_call_pdf_closure_twice = .false.
-    end if
-
-    return
-  end subroutine setup_configurable_model_flags
-
-!===============================================================================
-  subroutine get_configurable_model_flags &
-             ( l_upwind_wpxp_ta_out, l_upwind_xpyp_ta_out, & 
-               l_upwind_xm_ma_out, l_quintic_poly_interp_out, &
-               l_vert_avg_closure_out, &
-               l_single_C2_Skw_out, l_standard_term_ta_out, &
-               l_tke_aniso_out, l_use_cloud_cover_out, l_rcm_supersat_adj_out )
-
-! Description:
-!   Get the current model flags.
-!
-! References:
-!   None
-!-------------------------------------------------------------------------------
-
-    implicit none
-
-    ! Input Variables
-    logical, intent(out) :: &
-      l_upwind_wpxp_ta_out, & ! Model flags
-      l_upwind_xpyp_ta_out, & 
-      l_upwind_xm_ma_out, &
-      l_quintic_poly_interp_out, &
-      l_vert_avg_closure_out, &
-      l_single_C2_Skw_out, &
-      l_standard_term_ta_out, &
-      l_tke_aniso_out, &
-      l_use_cloud_cover_out, &
-      l_rcm_supersat_adj_out
-    ! ---- Begin Code ----
-
-    l_upwind_wpxp_ta_out = l_upwind_wpxp_ta
-    l_upwind_xpyp_ta_out = l_upwind_xpyp_ta
-    l_upwind_xm_ma_out = l_upwind_xm_ma
-    l_quintic_poly_interp_out = l_quintic_poly_interp
-    l_vert_avg_closure_out = l_vert_avg_closure
-    l_single_C2_Skw_out = l_single_C2_Skw
-    l_standard_term_ta_out = l_standard_term_ta
-    l_tke_aniso_out = l_tke_aniso
-    l_use_cloud_cover_out = l_use_cloud_cover
-    l_rcm_supersat_adj_out = l_rcm_supersat_adj
-    return
-  end subroutine get_configurable_model_flags
 
 !===============================================================================
   subroutine set_default_clubb_config_flags( l_use_precip_frac, &

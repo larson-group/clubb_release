@@ -897,7 +897,8 @@ module microphys_init_cleanup
 
     ! Allocate and set the arrays containing the correlations
     call setup_corr_varnce_array( corr_file_path_cloud, corr_file_path_below, &
-                                  iunit ) ! Intent(in)
+                                  iunit, & ! Intent(in)
+                                  l_fix_w_chi_eta_correlations ) ! Intent(in)
 
     ! Print the in-cloud and below-cloud actual (real-space) correlation arrays.
     ! This should only be done when zeta_vrnce_rat = 0.  Even when this is true,

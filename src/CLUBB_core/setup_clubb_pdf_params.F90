@@ -44,6 +44,12 @@ module setup_clubb_pdf_params
                                    ice_supersat_frac, hydromet, wphydrometp, & ! Intent(in)
                                    corr_array_n_cloud, corr_array_n_below, &   ! Intent(in)
                                    pdf_params, l_stats_samp, &                 ! Intent(in)
+                                   l_use_precip_frac, &                        ! Intent(in)
+                                   l_predict_upwp_vpwp, &                      ! Intent(in)
+                                   l_diagnose_correlations, &                  ! Intent(in)
+                                   l_calc_w_corr, &                            ! Intent(in)
+                                   l_const_Nc_in_cloud, &                      ! Intent(in)
+                                   l_fix_w_chi_eta_correlations, &             ! Intent(in)
                                    hydrometp2, &                               ! Intent(out)
                                    mu_x_1_n, mu_x_2_n, &                       ! Intent(out)
                                    sigma_x_1_n, sigma_x_2_n, &                 ! Intent(out)
@@ -80,21 +86,12 @@ module setup_clubb_pdf_params
     use parameters_model, only: &
         hydromet_dim  ! Variable(s)
 
-    use model_flags, only: &
-        l_use_precip_frac,   & ! Flag(s)
-        l_predict_upwp_vpwp, &
-        l_calc_w_corr
-
     use array_index, only: &
         hydromet_list, &       ! Variable(s)
         hydromet_tol,  &
         iiPDF_Ncn,     & 
         iiPDF_chi,     &
         iiPDF_eta
-
-    use model_flags, only: &
-        l_const_Nc_in_cloud, & ! Flag(s)
-        l_fix_w_chi_eta_correlations
 
     use precipitation_fraction, only: &
         precip_fraction
@@ -143,9 +140,6 @@ module setup_clubb_pdf_params
         stats_zt,             &
         stats_zm
 
-    use model_flags, only: &
-        l_diagnose_correlations ! Variable(s)
-
     use diagnose_correlations_module, only: &
         diagnose_correlations, & ! Procedure(s)
         calc_cholesky_corr_mtx_approx
@@ -190,6 +184,21 @@ module setup_clubb_pdf_params
 
     logical, intent(in) :: &
       l_stats_samp    ! Flag to sample statistics
+
+    logical, intent(in) :: &
+      l_use_precip_frac,            & ! Flag to use precipitation fraction in KK microphysics. The
+                                      ! precipitation fraction is automatically set to 1 when this
+                                      ! flag is turned off.
+      l_predict_upwp_vpwp,          & ! Flag to predict <u'w'> and <v'w'> along with <u> and <v>
+                                      ! alongside the advancement of <rt>, <w'rt'>, <thl>,
+                                      ! <wpthlp>, <sclr>, and <w'sclr'> in subroutine
+                                      ! advance_xm_wpxp.  Otherwise, <u'w'> and <v'w'> are still
+                                      ! approximated by eddy diffusivity when <u> and <v> are
+                                      ! advanced in subroutine advance_windm_edsclrm.
+      l_diagnose_correlations,      & ! Diagnose correlations instead of using fixed ones
+      l_calc_w_corr,                & ! Calculate the correlations between w and the hydrometeors
+      l_const_Nc_in_cloud,          & ! Use a constant cloud droplet conc. within cloud (K&K)
+      l_fix_w_chi_eta_correlations    ! Use a fixed correlation for s and t Mellor(chi/eta)
 
     ! Output Variables
     real( kind = core_rknd ), dimension(nz,hydromet_dim), intent(out) :: &

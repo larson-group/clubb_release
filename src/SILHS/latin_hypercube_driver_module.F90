@@ -45,6 +45,10 @@ module latin_hypercube_driver_module
                rho_ds_zt, mu1, mu2, sigma1, sigma2, &             ! intent(in)
                corr_cholesky_mtx_1, corr_cholesky_mtx_2, &        ! intent(in)
                hydromet_pdf_params, silhs_config_flags, &         ! intent(in)
+               l_uv_nudge, &                                      ! intent(in)
+               l_tke_aniso, &                                     ! intent(in)
+               l_standard_term_ta, &                              ! intent(in)
+               l_single_C2_Skw, &                                 ! intent(in)
                X_nl_all_levs, X_mixt_comp_all_levs, &             ! intent(out)
                lh_sample_point_weights )                          ! intent(out)
 
@@ -65,12 +69,6 @@ module latin_hypercube_driver_module
     use output_2D_samples_module, only: &
       output_2D_lognormal_dist_file, & ! Procedure(s)
       output_2D_uniform_dist_file
-
-    use model_flags, only: &
-      l_uv_nudge, & ! Variable(s)
-      l_tke_aniso, &
-      l_standard_term_ta, &
-      l_single_C2_Skw
 
     use pdf_parameter_module, only: &
       pdf_parameter  ! Type
@@ -160,6 +158,16 @@ module latin_hypercube_driver_module
 
     type(silhs_config_flags_type), intent(in) :: &
       silhs_config_flags ! Flags for the SILHS sampling code [-]
+
+    logical, intent(in) :: &
+      l_uv_nudge,         & ! For wind speed nudging.
+      l_tke_aniso,        & ! For anisotropic turbulent kinetic energy, i.e.
+                            ! TKE = 1/2 (u'^2 + v'^2 + w'^2)
+      l_standard_term_ta, & ! Use the standard discretization for the turbulent advection terms.
+                            ! Setting to .false. means that a_1 and a_3 are pulled outside of the
+                            ! derivative in advance_wp2_wp3_module.F90 and in
+                            ! advance_xp2_xpyp_module.F90.
+      l_single_C2_Skw       ! Use a single Skewness dependent C2 for rtp2, thlp2, and rtpthlp
 
     ! Local variables
     real( kind = core_rknd ), dimension(nz,num_samples,(pdf_dim+d_uniform_extra)) :: &

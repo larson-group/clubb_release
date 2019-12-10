@@ -716,7 +716,8 @@ module corr_varnce_module
 
 !===============================================================================
   subroutine setup_corr_varnce_array( input_file_cloud, input_file_below, &
-                                      iunit )
+                                      iunit, &
+                                      l_fix_w_chi_eta_correlations )
 
 ! Description:
 !   Setup an array with the x'^2/xm^2 variables on the diagonal and the other
@@ -725,9 +726,6 @@ module corr_varnce_module
 ! References:
 !   None.
 !-------------------------------------------------------------------------------
-
-    use model_flags, only: &
-      l_fix_w_chi_eta_correlations    ! Variable(s)
 
     use matrix_operations, only: mirror_lower_triangular_matrix ! Procedure
 
@@ -747,6 +745,9 @@ module corr_varnce_module
     ! Input Variables
     integer, intent(in) :: &
       iunit ! The file unit
+
+    logical, intent(in) :: &
+      l_fix_w_chi_eta_correlations ! Use a fixed correlation for s and t Mellor(chi/eta)
 
     ! Local variables
     logical :: l_warning, l_corr_file_1_exist, l_corr_file_2_exist

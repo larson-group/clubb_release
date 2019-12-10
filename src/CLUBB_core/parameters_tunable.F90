@@ -371,7 +371,8 @@ module parameters_tunable
   !=============================================================================
   subroutine setup_parameters & 
             ( deltaz, params, nzmax, &
-              grid_type, momentum_heights, thermodynamic_heights )
+              grid_type, momentum_heights, thermodynamic_heights, &
+              l_prescribed_avg_deltaz )
 
     ! Description:
     ! Subroutine to setup model parameters
@@ -440,6 +441,9 @@ module parameters_tunable
       momentum_heights,      & ! Momentum level altitudes (input)      [m]
       thermodynamic_heights    ! Thermodynamic level altitudes (input) [m]
 
+    logical, intent(in) :: &
+      l_prescribed_avg_deltaz ! used in adj_low_res_nu. If .true., avg_deltaz = deltaz
+
     integer :: k    ! loop variable
 
     !-------------------- Begin code --------------------
@@ -495,7 +499,8 @@ module parameters_tunable
     ! ### Adjust Constant Diffusivity Coefficients Based On Grid Spacing ###
     call adj_low_res_nu &
            ( nzmax, grid_type, deltaz,  & ! Intent(in)
-             momentum_heights, thermodynamic_heights )   ! Intent(in)
+             momentum_heights, thermodynamic_heights, & ! Intent(in)
+             l_prescribed_avg_deltaz )   ! Intent(in)
 
     if ( beta < zero .or. beta > three ) then
 
@@ -677,7 +682,8 @@ module parameters_tunable
   !=============================================================================
   subroutine adj_low_res_nu &
                ( nzmax, grid_type, deltaz, & ! Intent(in)
-                 momentum_heights, thermodynamic_heights )  ! Intent(in)
+                 momentum_heights, thermodynamic_heights, & ! Intent(in)
+                 l_prescribed_avg_deltaz )  ! Intent(in)
 
     ! Description:
     !   Adjust the values of background eddy diffusivity based on
@@ -694,9 +700,6 @@ module parameters_tunable
 
     use clubb_precision, only: &
       core_rknd ! Variable(s)
-
-    use model_flags, only: &
-      l_prescribed_avg_deltaz ! If .true., avg_deltaz = deltaz
 
     implicit none
 
@@ -751,6 +754,9 @@ module parameters_tunable
     real( kind = core_rknd ), intent(in), dimension(nzmax) :: &
       momentum_heights,      & ! Momentum level altitudes (input)      [m]
       thermodynamic_heights    ! Thermodynamic level altitudes (input) [m]
+
+    logical, intent(in) :: &
+      l_prescribed_avg_deltaz ! used in adj_low_res_nu. If .true., avg_deltaz = deltaz
 
     ! Local Variables
     real( kind = core_rknd ) :: avg_deltaz  ! Average grid box height   [m]

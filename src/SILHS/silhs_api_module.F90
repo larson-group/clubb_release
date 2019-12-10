@@ -117,6 +117,10 @@ contains
     rho_ds_zt, mu1, mu2, sigma1, sigma2, & ! In
     corr_cholesky_mtx_1, corr_cholesky_mtx_2, & ! In
     hydromet_pdf_params, silhs_config_flags, & ! In
+    l_uv_nudge, & ! In
+    l_tke_aniso, & ! In
+    l_standard_term_ta, & ! In
+    l_single_C2_Skw, & ! In
     X_nl_all_levs, X_mixt_comp_all_levs, & ! Out
     lh_sample_point_weights ) ! Out
 
@@ -187,6 +191,16 @@ contains
     type(silhs_config_flags_type), intent(in) :: &
       silhs_config_flags
 
+    logical, intent(in) :: &
+      l_uv_nudge,         & ! For wind speed nudging.
+      l_tke_aniso,        & ! For anisotropic turbulent kinetic energy, i.e.
+                            ! TKE = 1/2 (u'^2 + v'^2 + w'^2)
+      l_standard_term_ta, & ! Use the standard discretization for the turbulent advection terms.
+                            ! Setting to .false. means that a_1 and a_3 are pulled outside of the
+                            ! derivative in advance_wp2_wp3_module.F90 and in
+                            ! advance_xp2_xpyp_module.F90.
+      l_single_C2_Skw       ! Use a single Skewness dependent C2 for rtp2, thlp2, and rtpthlp
+
     call generate_silhs_sample( &
       iter, pdf_dim, num_samples, sequence_length, nz, & ! In
       l_calc_weights_all_levs_itime, & ! In
@@ -194,6 +208,10 @@ contains
       rho_ds_zt, mu1, mu2, sigma1, sigma2, & ! In
       corr_cholesky_mtx_1, corr_cholesky_mtx_2, & ! In
       hydromet_pdf_params, silhs_config_flags, & ! In
+      l_uv_nudge, & ! In
+      l_tke_aniso, & ! In
+      l_standard_term_ta, & ! In
+      l_single_C2_Skw, & ! In
       X_nl_all_levs, X_mixt_comp_all_levs, & ! Out
       lh_sample_point_weights ) ! Out
 
