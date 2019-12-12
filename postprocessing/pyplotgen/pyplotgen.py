@@ -232,6 +232,12 @@ def __process_args__():
     hoc = args.plot_hoc_2005
     e3sm = args.e3sm
 
+    # If the last char in folder path is /, remove it
+    for i in range(len(args.input)):
+        if args.input[i][-1] == "/":
+            args.input[i] = args.input[i][:-1]
+
+
     if args.all_best:
         les = True
         cgbest = True
