@@ -65,8 +65,12 @@ from config.VariableGroupLiquidMP import VariableGroupLiquidMP
 from config.VariableGroupWs import VariableGroupWs
 
 # ---------------------------
-# DO NOT MODIFY THESE PATHS
-BENCHMARK_OUTPUT_ROOT = os.path.dirname(os.path.realpath(__file__)) + "/../les_and_clubb_benchmark_runs/"
+BENCHMARK_OUTPUT_ROOT = "/usr/local/les_and_clubb_benchmark_runs/"
+if not os.path.isdir(BENCHMARK_OUTPUT_ROOT) and \
+        not os.path.islink(BENCHMARK_OUTPUT_ROOT):
+    print("Benchmark output was not found in " + BENCHMARK_OUTPUT_ROOT + ".\n\tChecking local location: " +
+          os.path.dirname(os.path.realpath(__file__)) + "/../les_and_clubb_benchmark_runs/")
+    BENCHMARK_OUTPUT_ROOT = os.path.dirname(os.path.realpath(__file__)) + "/../les_and_clubb_benchmark_runs/"
 SAM_OUTPUT_ROOT = BENCHMARK_OUTPUT_ROOT + "sam_benchmark_runs"
 LES_OUTPUT_ROOT = BENCHMARK_OUTPUT_ROOT + "les_runs"
 ARCHIVED_CLUBB_OUTPUT_ROOT = BENCHMARK_OUTPUT_ROOT + "archived_clubb_runs"
@@ -472,4 +476,4 @@ ALL_CASES = [ARM, ARM_97, ASTEX_A209, ATEX,
              ]
 
 # If uncommented, this line will override the real ALL_CASES given above, forcing pyplotgen to only plot some cases.
-# ALL_CASES = [ARM, DYCOMS2_RF01, RICO, DYCOMS2_RF02_DS]
+# ALL_CASES = [ARM_97]

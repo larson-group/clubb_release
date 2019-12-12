@@ -92,7 +92,8 @@ class PyPlotGen:
         all_cases = Case_definitions.ALL_CASES
 
         # Downloads model output (sam, les, clubb) if it doesn't exist
-        self.__downloadModelOutputs__()
+        if self.__benchmark_files_needed__():
+            self.__downloadModelOutputs__()
 
         if self.replace_images:
             print('###########################################')
@@ -150,6 +151,15 @@ class PyPlotGen:
                     shutil.copy(file, copy_dest_file)
                     print("\tFound setup file " + str(file))
 
+    def __benchmark_files_needed__(self):
+        """
+        Returns true if the user requested to plot model output
+        that needs to be downloaded
+        :return:
+        """
+        return self.les or self.hoc or self.cgbest
+
+
     def __downloadModelOutputs__(self):
         """
         Checks for model output, e.g. sam benchmark runs, and if it
@@ -161,10 +171,10 @@ class PyPlotGen:
 
         # Ensure benchmark output is available
         print("Checking for model benchmark output...")
-        if not os.path.isdir(Case_definitions.BENCHMARK_OUTPUT_ROOT) and not os.path.islink(
-                Case_definitions.BENCHMARK_OUTPUT_ROOT):
-            print("Benchmark output was not found in " + Case_definitions.BENCHMARK_OUTPUT_ROOT + ", downloading now.")
-            subprocess.run(['git', 'clone', 'https://carson.math.uwm.edu/les_and_clubb_benchmark_runs.git'])
+        if not os.path.isdir(Case_definitions.BENCHMARK_OUTPUT_ROOT) and \
+                not os.path.islink(Case_definitions.BENCHMARK_OUTPUT_ROOT):
+            print("\tDownloading the benchmarks to "+ Case_definitions.BENCHMARK_OUTPUT_ROOT)
+            subprocess.run(['git', 'clone', 'https://carson.math.uwm.edu/les_and_clubb_benchmark_runs.git',Case_definitions.BENCHMARK_OUTPUT_ROOT])
         else:
             print("Benchmark output found in " + Case_definitions.BENCHMARK_OUTPUT_ROOT)
 
