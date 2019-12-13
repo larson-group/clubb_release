@@ -306,6 +306,9 @@ module advance_clubb_core_module
       wp3_on_wp2,   & ! Variable(s)
       wp3_on_wp2_zt
 
+    use variables_prognostic_module, only: &
+      pdf_params_frz
+
     use pdf_parameter_module, only: &
         pdf_parameter, &
         implicit_coefs_terms
@@ -723,9 +726,6 @@ module advance_clubb_core_module
       thlm_spur_src
 
     !The following variables are defined for use when l_use_ice_latent = .true.
-    type(pdf_parameter) :: &
-      pdf_params_frz
-
     real( kind = core_rknd ), dimension(gr%nz)  :: &
       rtm_frz, &
       thlm_frz
