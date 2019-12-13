@@ -29,7 +29,7 @@ class PyPlotGen:
 
     def __init__(self, input_folder, output_folder, replace=False, les=False, cgbest=False, hoc=False, plotrefs=False,
                  zip=False, thin=False, no_legends=False, ensemble=False, plot_e3sm="",
-                 budget_moments=False, bu_morr=False, diff=None, show_alphabetic_id=False):
+                 budget_moments=False, bu_morr=False, diff=None, show_alphabetic_id=False,no_clubb=False):
         """
         This creates an instance of PyPlotGen. Each parameter is a command line parameter passed in from the argparser
         below.
@@ -73,6 +73,7 @@ class PyPlotGen:
         self.diff_files_data_reader = DataReader()
         self.sam_data_reader = DataReader()
         self.show_alphabetic_id = show_alphabetic_id
+        self.no_clubb=no_clubb
         if self.output_folder[0] == '.':
             self.output_folder = os.path.dirname(os.path.realpath(__file__)) + "/" + self.output_folder
         if os.path.isdir(self.output_folder) and self.replace_images == False:
@@ -85,7 +86,10 @@ class PyPlotGen:
         Runs PyPlotGen
         :return: None
         """
-        self.nc_datasets = self.data_reader.loadFolder(self.input_folder)
+        if not self.no_clubb:
+            self.nc_datasets = self.data_reader.loadFolder(self.input_folder)
+        else:
+            self.nc_datasets = {}
         diff_datasets = None
         if self.diff is not None:
             diff_datasets = self.diff_files_data_reader.loadFolder(self.diff)
@@ -101,16 +105,18 @@ class PyPlotGen:
             subprocess.run(['rm', '-rf', self.output_folder + '/'])
         num_cases_plotted = 0
         for case_def in all_cases:
-            if case_def['name'] in self.nc_datasets.keys():
+            if self.__dataForCaseExists__(self.no_clubb, case_def, self.nc_datasets.keys()):
                 num_cases_plotted += 1
                 print('###########################################')
                 print("plotting ", case_def['name'])
                 case_diff_datasets = None
                 casename = case_def['name']
+                if self.no_clubb:
+                    self.nc_datasets[casename] = None
                 if self.diff is not None:
                     case_diff_datasets = diff_datasets[casename]
                 case = Case(case_def, self.nc_datasets[casename], plot_les=self.les, plot_budgets=self.plot_budgets,
-                            diff_datasets=case_diff_datasets, plot_r408=self.cgbest, plot_hoc=self.hoc, e3sm_dir=self.e3sm_dir[0])
+                            diff_datasets=case_diff_datasets, plot_r408=self.cgbest, plot_hoc=self.hoc, e3sm_dir=self.e3sm_dir)
                 case.plot(self.output_folder, replace_images=self.replace_images, no_legends=self.no_legends,
                           thin_lines=self.thin, show_alphabetic_id=self.show_alphabetic_id)
                 self.cases_plotted.append(casename)
@@ -126,6 +132,19 @@ class PyPlotGen:
         gallery.main(self.output_folder)
         print('###########################################')
         print("Output can be viewed at file://" + self.output_folder + "/index.html with a web browser")
+
+    def __dataForCaseExists__(self, no_clubb, case_def, all_case_names):
+        """
+        Returns true if there's an input nc file for a given case name.
+
+        :param no_clubb: True/false for whether or not clubb lines are to be plotted
+        :param case_def: The case definition object
+        :param all_case_names: List of all case names that can be plotted
+        :return:
+        """
+        e3sm_has_case = self.e3sm_dir != "" and self.e3sm_dir != None and case_def['e3sm_file'] != None
+        return e3sm_has_case or (not no_clubb and case_def['name'] in all_case_names)
+
 
     def __copySetupFiles__(self):
         """
@@ -219,6 +238,7 @@ def __process_args__():
                         action="store_true")
     parser.add_argument("--thin", help="Plot using thin solid lines.", action="store_true")
     parser.add_argument("--no-legends", help="Plot without legend boxes defining the line types.", action="store_true")
+    parser.add_argument("--no-clubb", help="Do not plot clubb output.", action="store_true")
     parser.add_argument("--ensemble", help="Plot ensemble tuner runs", action="store_true")  # TODO is this needed?
     parser.add_argument("-b", "--plot-budgets", help="Plot all defined budgets of moments", action="store_true")
     parser.add_argument("--bu-morr",
@@ -240,13 +260,15 @@ def __process_args__():
     les = args.les
     cgbest = args.plot_golaz_best
     hoc = args.plot_hoc_2005
-    e3sm = args.e3sm
+    e3sm = args.e3sm[0]
 
     # If the last char in folder path is /, remove it
     for i in range(len(args.input)):
         if args.input[i][-1] == "/":
             args.input[i] = args.input[i][:-1]
 
+    if args.no_clubb:
+        args.input = [""]
 
     if args.all_best:
         les = True
@@ -256,7 +278,7 @@ def __process_args__():
     pyplotgen = PyPlotGen(args.input, args.output, replace=args.replace, les=les, plot_e3sm=e3sm, cgbest=cgbest,
                           hoc=hoc, plotrefs=args.all_best, zip=args.zip, thin=args.thin,
                           no_legends=args.no_legends, ensemble=args.ensemble, budget_moments=args.plot_budgets,
-                          bu_morr=args.bu_morr, diff=args.diff, show_alphabetic_id=args.show_alphabetic_id)
+                          bu_morr=args.bu_morr, diff=args.diff, show_alphabetic_id=args.show_alphabetic_id, no_clubb=args.no_clubb)
     return pyplotgen
 
 

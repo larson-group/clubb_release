@@ -236,24 +236,29 @@ class VariableGroup:
                                                   line_format=Style_definitions.E3SM_LINE_STYLE, fill_zeros=fill_zeros,
                                                   override_panel_type=panel_type, fallback_func=fallback, lines=lines))
 
-        num_folders_plotted = 0
-        for ncdf_files_subfolder in self.ncdf_files:
-            datasets = self.ncdf_files[ncdf_files_subfolder]
-            label = os.path.basename(ncdf_files_subfolder)
-            if num_folders_plotted < len(Style_definitions.CLUBB_LABEL_OVERRIDE):
-                label = Style_definitions.CLUBB_LABEL_OVERRIDE[num_folders_plotted]
-            all_lines.extend(self.__getVarLines__(aliases, datasets, label=label, fill_zeros=fill_zeros,
-                                                  override_panel_type=panel_type, fallback_func=fallback, lines=lines))
-            num_folders_plotted += 1
 
-        clubb_name = variable_def_dict['aliases'][0]
+        num_folders_plotted = 0
+        if self.ncdf_files is not None:
+            for ncdf_files_subfolder in self.ncdf_files:
+                datasets = self.ncdf_files[ncdf_files_subfolder]
+                label = os.path.basename(ncdf_files_subfolder)
+                if num_folders_plotted < len(Style_definitions.CLUBB_LABEL_OVERRIDE):
+                    label = Style_definitions.CLUBB_LABEL_OVERRIDE[num_folders_plotted]
+                all_lines.extend(self.__getVarLines__(aliases, datasets, label=label, fill_zeros=fill_zeros,
+                                                      override_panel_type=panel_type, fallback_func=fallback, lines=lines))
+                num_folders_plotted += 1
+        else:
+            label = ""
+
+        aliases = variable_def_dict['aliases']
+        clubb_name = aliases[0]
         variable_def_dict['plots'] = all_lines
-        first_input_datasets = self.ncdf_files[next(iter(self.ncdf_files))]
+        first_input_datasets = self.getTextDefiningDataset()
         if 'title' not in variable_def_dict.keys():
             if panel_type == Panel.TYPE_BUDGET:
                 variable_def_dict['title'] = label + ' ' + clubb_name
             else:
-                imported_title = data_reader.getLongName(first_input_datasets, clubb_name)
+                imported_title = data_reader.getLongName(first_input_datasets, aliases)
                 variable_def_dict['title'] = imported_title
         if 'axis_title' not in variable_def_dict.keys():
             if panel_type == Panel.TYPE_BUDGET:
@@ -284,7 +289,40 @@ class VariableGroup:
                            label=Style_definitions.E3SM_LABEL)
             variable_def_dict['plots'].append(e3smplot)
 
-        self.variables.append(variable_def_dict)
+        if len(variable_def_dict['plots']) > 0:
+            self.variables.append(variable_def_dict)
+
+
+    def getTextDefiningDataset(self):
+        """
+        Finds a dataset from which text names and descriptions can be pulled from.
+        By default, it is always clubb, however if pyplotgen is not plotting clubb then
+        it will return the first dataset it can find.
+        :return:
+        """
+
+    #     self.coamps_file = coamps_file
+    # self.r408_dataset = r408_dataset
+    # self.hoc_dataset = hoc_dataset
+
+        datasets = []
+        if self.ncdf_files is not None:
+            for input_folder in self.ncdf_files.values():
+                for dataset in input_folder.values():
+                    datasets.append(dataset)
+        if self.e3sm_dataset is not None:
+            datasets.append(self.e3sm_dataset)
+        if self.sam_file is not None:
+            datasets.append(self.sam_file)
+        if self.coamps_file is not None:
+            datasets.extend(self.coamps_file.values())
+        if self.r408_dataset is not None:
+            datasets.extend(self.r408_dataset.values())
+        if self.hoc_dataset is not None:
+            datasets.extend(self.hoc_dataset.values())
+        if len(datasets) == 0:
+            raise FileExistsError("No dataset could be found to pull text descriptions from")
+        return datasets
 
     def generatePanels(self):
         """

@@ -123,8 +123,9 @@ class Case:
                 self.panels[idx].all_plots = diff_lines
 
         if self.plot_budgets:
-            budget_variables = VariableGroupBaseBudgets(self.ncdf_datasets, self)
-            self.panels.extend(budget_variables.panels)
+            if self.ncdf_datasets is not None:
+                budget_variables = VariableGroupBaseBudgets(self.ncdf_datasets, self)
+                self.panels.extend(budget_variables.panels)
             if e3sm_file != None:
                 e3sm_budgets = VariableGroupBaseBudgets({Style_definitions.E3SM_LABEL:{'e3sm': e3sm_file}}, self) # E3SM dataset must be wrapped in the same form as the clubb datasets
                 self.panels.extend(e3sm_budgets.panels)

@@ -287,9 +287,7 @@ class DataReader():
         Output:
           unit as string
         """
-        if not isinstance(datasets, dict):
-            datasets = {'auto dict': datasets}
-        for dataset in datasets.values():
+        for dataset in datasets:
             keys = dataset.variables.keys()
             if varname in keys:
                 unit = "$" + dataset.variables[varname].units + "$" # $'s are used to format equations
@@ -298,7 +296,7 @@ class DataReader():
                 unit = "n/a"
         return unit
 
-    def getLongName(self, ncdf_datasets, varname):
+    def getLongName(self, ncdf_datasets, varnames):
         """
         Input:
           nc         --  Netcdf file object
@@ -310,12 +308,13 @@ class DataReader():
         if isinstance(ncdf_datasets, Dataset):
             ncdf_datasets = {'auto': ncdf_datasets}
 
-        long_name = "longname not found"
-        for dataset in ncdf_datasets.values():
-            keys = dataset.variables.keys()
-            if varname in keys:
-                long_name = dataset.variables[varname].long_name
-                break
+        long_name = "title not found"
+        for varname in varnames:
+            for dataset in ncdf_datasets:
+                keys = dataset.variables.keys()
+                if varname in keys:
+                    long_name = dataset.variables[varname].long_name
+                    return long_name
         return long_name
 
     def getAxisTitle(self, ncdf_datasets, varname):
@@ -330,7 +329,7 @@ class DataReader():
             ncdf_datasets = {'auto': ncdf_datasets}
 
         axis_title = "axis title not found"
-        for dataset in ncdf_datasets.values():
+        for dataset in ncdf_datasets:
             keys = dataset.variables.keys()
             if varname in keys:
                 imported_name = dataset.variables[varname].name
