@@ -620,6 +620,10 @@ module clubb_driver
       l_stability_correct_Kh_N2_zm, l_trapezoidal_rule_zt, l_trapezoidal_rule_zm, &
       l_call_pdf_closure_twice, l_Lscale_plume_centered, l_use_ice_latent, &
       l_brunt_vaisala_freq_moist, l_use_thvm_in_bv_freq
+      
+    integer :: &
+      err_code_dummy ! Host models use an error code that comes out of some API routines, but
+                     ! here we have access to the global version
 
 !-----------------------------------------------------------------------
     ! Begin code
@@ -1150,7 +1154,8 @@ module clubb_driver
            sfc_elevation,                                     & ! Intent(in)
            clubb_config_flags%l_predict_upwp_vpwp,            & ! intent(in)
            clubb_config_flags%l_use_ice_latent,               & ! intent(in)
-           clubb_config_flags%l_prescribed_avg_deltaz )         ! Intent(in)
+           clubb_config_flags%l_prescribed_avg_deltaz,        & ! Intent(in)
+           err_code_dummy )                                     ! Intent(out)
 
     ! Allocate a correctly-sized array for radf and zero it
     allocate( radf(gr%nz) )
@@ -1629,7 +1634,8 @@ module clubb_driver
              pdf_params, pdf_params_zm, &                         ! Intent(inout)
              pdf_implicit_coefs_terms, &                          ! intent(inout)
              wprcp, ice_supersat_frac, &                          ! Intent(out)
-             rcm_in_layer, cloud_cover )                          ! Intent(out)
+             rcm_in_layer, cloud_cover, &                         ! Intent(out)
+             err_code_dummy )                                     ! Intent(out)
 
       if ( clubb_at_least_debug_level( 0 ) ) then
         if ( err_code == clubb_fatal_error ) then

@@ -372,7 +372,8 @@ module parameters_tunable
   subroutine setup_parameters & 
             ( deltaz, params, nzmax, &
               grid_type, momentum_heights, thermodynamic_heights, &
-              l_prescribed_avg_deltaz )
+              l_prescribed_avg_deltaz, &
+              err_code_out )
 
     ! Description:
     ! Subroutine to setup model parameters
@@ -443,6 +444,9 @@ module parameters_tunable
 
     logical, intent(in) :: &
       l_prescribed_avg_deltaz ! used in adj_low_res_nu. If .true., avg_deltaz = deltaz
+
+    integer, intent(out) :: &
+      err_code_out  ! Error code indicator
 
     integer :: k    ! loop variable
 
@@ -674,6 +678,8 @@ module parameters_tunable
         write(fstderr,*) "C_wp2_splat must satisfy C_wp2_splat >= 0"
         err_code = clubb_fatal_error
     end if
+    
+    err_code_out = err_code
 
     return
 

@@ -111,10 +111,10 @@ module clubb_api_module
       hmp2_ip_on_hmm2_ip_intrcpt_type
 
   use error_code, only: &
-        clubb_at_least_debug_level,  & ! Procedure
-        err_code,                    & ! Error Indicator
-        clubb_no_error,              & ! Constants
-        clubb_fatal_error
+      clubb_at_least_debug_level,  & ! Procedure
+      err_code,                    & ! Error Indicator
+      clubb_no_error,              & ! Constants
+      clubb_fatal_error
 
   use grid_class, only : &
     gr
@@ -751,9 +751,8 @@ contains
                qclvar, thlprcp_out, &                         ! intent(out)
 #endif
       wprcp, ice_supersat_frac, &                             ! intent(out)
-      rcm_in_layer, cloud_cover )                             ! intent(out)
-
-    err_code_api = err_code
+      rcm_in_layer, cloud_cover, &                            ! intent(out)
+      err_code_api )                                          ! intent(out)
 
   end subroutine advance_clubb_core_api
 
@@ -898,13 +897,11 @@ contains
       sfc_elevation,                                        & ! intent(in)
       l_predict_upwp_vpwp,                                  & ! intent(in)
       l_use_ice_latent,                                     & ! intent(in)
-      l_prescribed_avg_deltaz                               & ! intent(in)
+      l_prescribed_avg_deltaz,                              & ! intent(in)
 #ifdef GFDL
-      , cloud_frac_min ,                                    & ! intent(in)  h1g, 2010-06-16
+      , cloud_frac_min                                      & ! intent(in)  h1g, 2010-06-16
 #endif
-      )
-
-    err_code_api = err_code
+      err_code_api )                                          ! intent(out)
 
   end subroutine setup_clubb_core_api
 
@@ -1244,7 +1241,6 @@ contains
     use grid_class, only : setup_grid_heights
     
     use error_code, only : &
-        err_code, &             ! Error Indicator
         clubb_fatal_error       ! Constant
 
     implicit none
@@ -1442,9 +1438,8 @@ contains
     call setup_parameters( &
       deltaz, params, nzmax, &
       grid_type, momentum_heights, thermodynamic_heights, &
-      l_prescribed_avg_deltaz )
-
-    err_code_api = err_code
+      l_prescribed_avg_deltaz, &
+      err_code_api )
 
   end subroutine setup_parameters_api
 

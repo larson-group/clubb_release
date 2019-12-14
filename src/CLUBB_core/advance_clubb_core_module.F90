@@ -164,7 +164,8 @@ module advance_clubb_core_module
                qclvar, thlprcp_out, &                               ! intent(out)
 #endif
                wprcp, ice_supersat_frac, &                          ! intent(out)
-               rcm_in_layer, cloud_cover )                          ! intent(out)
+               rcm_in_layer, cloud_cover, &                         ! intent(out)
+               err_code_out )                                       ! intent(out)
 
     ! Description:
     !   Subroutine to advance CLUBB one timestep
@@ -356,6 +357,7 @@ module advance_clubb_core_module
     use error_code, only: &
         clubb_at_least_debug_level,  & ! Procedure
         err_code,                    & ! Error Indicator
+        clubb_no_error, &              ! Constant
         clubb_fatal_error              ! Constant
 
     use Skx_module, only: &
@@ -796,8 +798,13 @@ module advance_clubb_core_module
     !  Km_Skw_thresh = zero_threshold, &  ! Value of Skw at which Skw correction kicks in
     !  Km_Skw_factor_efold = 0.5_core_rknd, & ! E-folding rate of exponential Skw correction
     !  Km_Skw_factor_min   = 0.2_core_rknd    ! Minimum value of Km_Skw_factor
+    
+    integer, intent(out) :: &
+      err_code_out  ! Error code indicator
 
     !----- Begin Code -----
+    
+    err_code_out = clubb_no_error  ! Initialize to no error value
 
     ! Sanity checks
     if ( clubb_at_least_debug_level( 0 ) ) then
@@ -856,7 +863,10 @@ module advance_clubb_core_module
              sclrprtp, sclrpthlp, sclrm_forcing, edsclrm, edsclrm_forcing )       ! intent(in)
 
         if ( clubb_at_least_debug_level( 0 ) ) then
-          if ( err_code == clubb_fatal_error ) return
+          if ( err_code == clubb_fatal_error ) then
+            err_code_out = err_code
+            return
+          end if
         end if
 
     end if
@@ -1323,6 +1333,7 @@ module advance_clubb_core_module
 
         if ( clubb_at_least_debug_level( 0 ) ) then
           if ( err_code == clubb_fatal_error ) then
+            err_code_out = err_code
             write(fstderr,*) "Error calling calc_surface_varnce"
             return
           end if
@@ -1494,6 +1505,7 @@ module advance_clubb_core_module
 
       if ( clubb_at_least_debug_level( 0 ) ) then
           if ( err_code == clubb_fatal_error ) then
+            err_code_out = err_code
             write(fstderr,*) "Error calling advance_xm_wpxp"
             return
           end if
@@ -1550,6 +1562,7 @@ module advance_clubb_core_module
 
       if ( clubb_at_least_debug_level( 0 ) ) then
           if ( err_code == clubb_fatal_error ) then
+            err_code_out = err_code
             write(fstderr,*) "Error calling advance_xp2_xpyp"
             return
           end if
@@ -1608,6 +1621,8 @@ module advance_clubb_core_module
 
       if ( clubb_at_least_debug_level( 0 ) ) then
           if ( err_code == clubb_fatal_error ) then
+            err_code = clubb_fatal_error
+            err_code_out = err_code
             write(fstderr,*) "Error calling advance_wp2_wp3"
             return
           end if
@@ -1955,7 +1970,11 @@ module advance_clubb_core_module
              sclrprtp, sclrpthlp, sclrm_forcing, edsclrm, edsclrm_forcing       ) ! intent(in)
 
         if ( clubb_at_least_debug_level( 0 ) ) then
-          if ( err_code == clubb_fatal_error ) return
+          if ( err_code == clubb_fatal_error ) then
+            err_code = clubb_fatal_error
+            err_code_out = err_code
+            return
+          end if
         end if
 
       end if
@@ -3240,7 +3259,7 @@ module advance_clubb_core_module
 #ifdef GFDL
                  , cloud_frac_min                         & ! intent(in)  h1g, 2010-06-16
 #endif
-                )
+                 , err_code_out )                             ! intent(out)
 
       ! Description:
       !   Subroutine to set up the model for execution.
@@ -3275,6 +3294,7 @@ module advance_clubb_core_module
           clubb_at_least_debug_level,  & ! Procedures
           initialize_error_headers,    &
           err_code,                    & ! Error Indicator
+          clubb_no_error, &              ! Constant
           clubb_fatal_error              ! Constant
 
       use model_flags, only: &
@@ -3390,9 +3410,13 @@ module advance_clubb_core_module
 
       ! Local variables
       integer :: begin_height, end_height
+      
+      integer, intent(out) :: &
+        err_code_out  ! Error code indicator
 
       !----- Begin Code -----
-
+      
+      err_code_out = clubb_no_error ! Initialize to no error value
       call initialize_error_headers
 
       ! Sanity check for the saturation formula
@@ -3413,6 +3437,7 @@ module advance_clubb_core_module
         write(fstderr,*) "Unknown approx. of saturation vapor pressure: "// &
           trim( saturation_formula )
         err_code = clubb_fatal_error
+        err_code_out = clubb_fatal_error
         return
       end select
 
@@ -3423,6 +3448,7 @@ module advance_clubb_core_module
          write(fstderr,*) "Unknown type of double Gaussian PDF selected."
          write(fstderr,*) "iiPDF_type = ", iiPDF_type
          err_code = clubb_fatal_error
+         err_code_out = clubb_fatal_error
          return
       endif ! iiPDF_type < iiPDF_ADG1 or iiPDF_type > iiPDF_lY93
 
@@ -3435,6 +3461,7 @@ module advance_clubb_core_module
             write(fstderr,*) "iiPDF_type = ", iiPDF_type
             write(fstderr,*) "l_input_fields = ", l_input_fields
             err_code = clubb_fatal_error
+            err_code_out = clubb_fatal_error
             return
          endif ! .not. l_input_fields
       endif ! iiPDF_type == iiPDF_ADG2
@@ -3447,6 +3474,7 @@ module advance_clubb_core_module
             write(fstderr,*) "iiPDF_type = ", iiPDF_type
             write(fstderr,*) "l_input_fields = ", l_input_fields
             err_code = clubb_fatal_error
+            err_code_out = clubb_fatal_error
             return
          endif ! .not. l_input_fields
       endif ! iiPDF_type == iiPDF_3D_Luhar
@@ -3461,6 +3489,7 @@ module advance_clubb_core_module
             write(fstderr,*) "iiPDF_type = ", iiPDF_type
             write(fstderr,*) "l_input_fields = ", l_input_fields
             err_code = clubb_fatal_error
+            err_code_out = clubb_fatal_error
             return
          endif ! .not. l_input_fields
       endif ! iiPDF_type == iiPDF_new
@@ -3475,6 +3504,7 @@ module advance_clubb_core_module
             write(fstderr,*) "iiPDF_type = ", iiPDF_type
             write(fstderr,*) "l_input_fields = ", l_input_fields
             err_code = clubb_fatal_error
+            err_code_out = clubb_fatal_error
             return
          endif ! .not. l_input_fields
       endif ! iiPDF_type == iiPDF_TSDADG
@@ -3488,6 +3518,7 @@ module advance_clubb_core_module
             write(fstderr,*) "iiPDF_type = ", iiPDF_type
             write(fstderr,*) "l_input_fields = ", l_input_fields
             err_code = clubb_fatal_error
+            err_code_out = clubb_fatal_error
             return
          endif ! .not. l_input_fields
       endif ! iiPDF_type == iiPDF_LY93
@@ -3497,6 +3528,7 @@ module advance_clubb_core_module
            .or. ipdf_call_placement > ipdf_pre_post_advance_fields ) then
          write(fstderr,*) "Invalid option selected for ipdf_call_placement"
          err_code = clubb_fatal_error
+         err_code_out = clubb_fatal_error
          return
       endif
 
@@ -3511,6 +3543,7 @@ module advance_clubb_core_module
             write(fstderr,*) "The l_use_ice_latent option is incompatible" &
                              // " with the ipdf_post_advance_fields option."
             err_code = clubb_fatal_error
+            err_code_out = clubb_fatal_error
             return
          endif ! l_use_ice_latent
       endif ! ipdf_call_placement == ipdf_post_advance_fields
@@ -3529,6 +3562,7 @@ module advance_clubb_core_module
                              // " is not currently set up for use with the" &
                              // " l_predict_upwp_vpwp code."
             err_code = clubb_fatal_error
+            err_code_out = clubb_fatal_error
             return
          endif ! l_explicit_turbulent_adv_wpxp
 
@@ -3542,6 +3576,7 @@ module advance_clubb_core_module
                              // " PDF are set up for use with the" &
                              // " l_predict_upwp_vpwp code."
             err_code = clubb_fatal_error
+            err_code_out = clubb_fatal_error
             return
          endif ! iiPDF_type /= iiPDF_ADG1
 
@@ -3550,6 +3585,7 @@ module advance_clubb_core_module
                              // " is incompatible with the l_predict_upwp_vpwp code" &
                              // " because uprcp has not been fed through advance_clubb_core."
             err_code = clubb_fatal_error
+            err_code_out = clubb_fatal_error
             return
          endif
 
@@ -3563,7 +3599,8 @@ module advance_clubb_core_module
 
       if ( clubb_at_least_debug_level( 0 ) ) then
         if ( err_code == clubb_fatal_error ) then
-
+          err_code_out = err_code
+          
           write(fstderr,*) "Error in setup_clubb_core"
 
           write(fstderr,*) "Intent(in)"
@@ -3613,7 +3650,8 @@ module advance_clubb_core_module
            ( deltaz, params, gr%nz,                                & ! intent(in)
              grid_type, momentum_heights(begin_height:end_height), & ! intent(in)
              thermodynamic_heights(begin_height:end_height),       & ! intent(in)
-             l_prescribed_avg_deltaz )                               ! intent(in)
+             l_prescribed_avg_deltaz,                              & ! intent(in)                           
+             err_code_out )                                          ! intent(out)
 
       if ( clubb_at_least_debug_level( 0 ) ) then
           if ( err_code == clubb_fatal_error ) then
