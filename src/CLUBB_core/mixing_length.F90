@@ -917,6 +917,14 @@ module mixing_length
 
     use stats_type_utilities, only:   &
         stat_update_var
+        
+    use error_code, only: &
+        clubb_at_least_debug_level,  & ! Procedure
+        err_code,                    & ! Error Indicator
+        clubb_fatal_error              ! Constant
+
+    use constants_clubb, only:  &
+        fstderr  ! Variable(s)
 
     implicit none
 
@@ -985,6 +993,17 @@ module mixing_length
     !point.
 
  ! ---- Begin Code ----
+ 
+      if ( clubb_at_least_debug_level( 0 ) ) then
+
+        if ( l_Lscale_plume_centered .and. .not. l_avg_Lscale ) then
+          write(fstderr,*) "l_Lscale_plume_centered requires l_avg_Lscale"
+          write(fstderr,*) "Fatal error in advance_clubb_core"
+          err_code = clubb_fatal_error
+          return
+        end if
+
+      end if
 
       if ( l_avg_Lscale .and. .not. l_Lscale_plume_centered ) then
 

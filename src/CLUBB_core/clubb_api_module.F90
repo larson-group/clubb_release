@@ -773,9 +773,7 @@ contains
     l_implemented, grid_type, deltaz, zm_init, zm_top,  & ! intent(in)
     momentum_heights, thermodynamic_heights,            & ! intent(in)
     sfc_elevation,                                      & ! intent(in)
-    l_predict_upwp_vpwp,                                & ! intent(in)
-    l_use_ice_latent,                                   & ! intent(in)
-    l_prescribed_avg_deltaz,                            & ! intent(in)
+    clubb_config_flags,                                 & ! intent(in)
 #ifdef GFDL
     cloud_frac_min ,                                    & ! intent(in)  h1g, 2010-06-16
 #endif
@@ -785,6 +783,9 @@ contains
 
     use parameter_indices, only:  &
       nparams ! Variable(s)
+      
+    use model_flags, only: &
+        clubb_config_flags_type  ! Type
 
 ! TODO: This should be called from the api, but all the host models appear to call
 !       it directly or not at all.
@@ -860,15 +861,8 @@ contains
     logical, intent(in) ::  &
       l_input_fields    ! Flag for whether LES input fields are used
 
-    logical, intent(in) :: &
-      l_predict_upwp_vpwp,     & ! Flag to predict <u'w'> and <v'w'> along with <u> and <v>
-                                 ! alongside the advancement of <rt>, <w'rt'>, <thl>, <wpthlp>,
-                                 ! <sclr>, and <w'sclr'> in subroutine advance_xm_wpxp.
-                                 ! Otherwise, <u'w'> and <v'w'> are still approximated by eddy
-                                 ! diffusivity when <u> and <v> are advanced in subroutine
-                                 ! advance_windm_edsclrm.
-      l_use_ice_latent,        & ! Includes the effects of ice latent heating in turbulence terms
-      l_prescribed_avg_deltaz    ! used in adj_low_res_nu. If .true., avg_deltaz = deltaz
+    type(clubb_config_flags_type), intent(in) :: &
+      clubb_config_flags  ! Clubb tpye containing logical flags
 
 #ifdef GFDL
       logical, intent(in) :: &  ! h1g, 2010-06-16 begin mod
@@ -895,9 +889,7 @@ contains
       l_implemented, grid_type, deltaz, zm_init, zm_top,    & ! intent(in)
       momentum_heights, thermodynamic_heights,              & ! intent(in)
       sfc_elevation,                                        & ! intent(in)
-      l_predict_upwp_vpwp,                                  & ! intent(in)
-      l_use_ice_latent,                                     & ! intent(in)
-      l_prescribed_avg_deltaz,                              & ! intent(in)
+      clubb_config_flags,                                   & ! intent(in)
 #ifdef GFDL
       , cloud_frac_min                                      & ! intent(in)  h1g, 2010-06-16
 #endif
