@@ -85,7 +85,7 @@ class NetCdfVariable:
                 if test_value <= start_value and test_value > data[end_idx]:
                     end_idx = i
 
-        return start_idx, end_idx
+        return start_idx, end_idx + 1 # Add 1 to end_idx because python ending index is exclusive while python starting idx is inclusive
 
     def constrain(self, start_value, end_value, data=None):
         """
