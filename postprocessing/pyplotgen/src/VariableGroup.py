@@ -426,14 +426,7 @@ class VariableGroup:
         variable = NetCdfVariable(varname, dataset, start_time=self.start_time, end_time=self.end_time,
                                   avg_axis=avg_axis,
                                   conversion_factor=conversion_factor, fill_zeros=fill_zeros)
-        if 'altitude' in dataset.variables.keys():
-            z = NetCdfVariable('altitude', dataset, start_time=self.start_time, end_time=self.end_time)
-        elif 'z' in dataset.variables.keys():
-            z = NetCdfVariable('z', dataset, start_time=self.start_time, end_time=self.end_time)
-        elif 'Z3' in dataset.variables.keys():
-            z = NetCdfVariable('Z3', dataset, start_time=self.start_time, end_time=self.end_time)
-        else:
-            z = NetCdfVariable('lev', dataset, start_time=self.start_time, end_time=self.end_time)
+        z = NetCdfVariable(Case_definitions.HEIGHT_VAR_NAMES, dataset, start_time=self.start_time, end_time=self.end_time)
 
         variable.constrain(self.height_min_value, self.height_max_value, data=z.data)
         z.constrain(self.height_min_value, self.height_max_value)
@@ -483,7 +476,7 @@ class VariableGroup:
                     # if 'altitude' in dataset.variables.keys():
                     #     z = NetCdfVariable('altitude', dataset, start_time=self.start_time, end_time=self.end_time)
                     # else:
-                    z = NetCdfVariable(['z', 'lev', 'altitude'], dataset, start_time=self.start_time, end_time=self.end_time)
+                    z = NetCdfVariable(Case_definitions.HEIGHT_VAR_NAMES, dataset, start_time=self.start_time, end_time=self.end_time)
                     variable.constrain(self.height_min_value, self.height_max_value, data=z.data)
                     z.constrain(self.height_min_value, self.height_max_value)
                     line_definition = Line(variable, z, label=line_definition['legend_label'],
