@@ -218,6 +218,9 @@ module clubb_api_module
     wp2_zt, & ! w'^2 on thermo. grid     [m^2/s^2]
     wphydrometp ! Covariance of w and hydrometeor (momentum levels) [(m/s)un]
 
+  use variables_prognostic_module, only : &
+    pdf_params_frz ! for use when l_use_ice_latent = .true.
+
   implicit none
 
   private
@@ -273,7 +276,9 @@ module clubb_api_module
         iiedsclr_CO2, &
         l_frozen_hm, &
         l_mix_rat_hm, &
-    cleanup_clubb_core_api
+    cleanup_clubb_core_api, &
+    ! Added for use in SAM's SGS_CLUBB package
+    pdf_params_frz
 
   public &
     ! To Implement SILHS:
