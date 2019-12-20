@@ -3237,7 +3237,12 @@ module advance_clubb_core_module
                  zm_init, zm_top,                         & ! intent(in)
                  momentum_heights, thermodynamic_heights, & ! intent(in)
                  sfc_elevation,                           & ! intent(in)
-                 clubb_config_flags                       & ! intent(in)
+                 l_predict_upwp_vpwp,                     & ! intent(in)
+                 l_use_ice_latent,                        & ! intent(in)
+                 l_prescribed_avg_deltaz,                 & ! intent(in)
+                 l_damp_wp2_using_em,                     & ! intent(in)
+                 l_stability_correct_tau_zm               & ! intent(in)
+
 #ifdef GFDL
                  , cloud_frac_min                         & ! intent(in)  h1g, 2010-06-16
 #endif
@@ -3375,9 +3380,18 @@ module advance_clubb_core_module
       logical, intent(in) ::  &
         l_input_fields    ! Flag for whether LES input fields are being used
 
-      type(clubb_config_flags_type), intent(in) :: &
-        clubb_config_flags  ! Clubb tpye containing logical flags
-
+      logical, intent(in) :: &
+        l_predict_upwp_vpwp,     & ! Flag to predict <u'w'> and <v'w'> along with <u> and <v>
+                                   ! alongside the advancement of <rt>, <w'rt'>, <thl>, <wpthlp>,
+                                   ! <sclr>, and <w'sclr'> in subroutine advance_xm_wpxp.
+                                   ! Otherwise, <u'w'> and <v'w'> are still approximated by eddy
+                                   ! diffusivity when <u> and <v> are advanced in subroutine
+                                   ! advance_windm_edsclrm.
+        l_use_ice_latent,        & ! Includes the effects of ice latent heating in turbulence terms
+        l_prescribed_avg_deltaz, &  ! used in adj_low_res_nu. If .true., avg_deltaz = deltaz
+        l_damp_wp2_using_em,     &
+        l_stability_correct_tau_zm
+        
 #ifdef GFDL
       logical, intent(in) :: &  ! h1g, 2010-06-16 begin mod
          I_sat_sphum
@@ -3400,8 +3414,8 @@ module advance_clubb_core_module
       ! Sanity check
       if ( clubb_at_least_debug_level( 0 ) ) then
 
-        if ( clubb_config_flags%l_damp_wp2_using_em .and. (params(iC1) /= params(iC14) .or. &
-             clubb_config_flags%l_stability_correct_tau_zm) ) then
+        if ( l_damp_wp2_using_em .and. (params(iC1) /= params(iC14) .or. &
+             l_stability_correct_tau_zm) ) then
           write(fstderr,*) "l_damp_wp2_using_em requires C1=C14 and l_stability_correct_tau_zm = F"
           write(fstderr,*) "Fatal error in setup_clubb_core"
           err_code = clubb_fatal_error
@@ -3531,7 +3545,7 @@ module advance_clubb_core_module
       ! options (that are typically turned off anyway) will be disallowed when
       ! ipdf_call_placement = ipdf_post_advance_fields.
       if ( ipdf_call_placement == ipdf_post_advance_fields ) then
-         if ( clubb_config_flags%l_use_ice_latent ) then
+         if ( l_use_ice_latent ) then
             write(fstderr,*) "The l_use_ice_latent option is incompatible" &
                              // " with the ipdf_post_advance_fields option."
             err_code = clubb_fatal_error
@@ -3542,7 +3556,7 @@ module advance_clubb_core_module
 
       ! The l_predict_upwp_vpwp flag requires that the ADG1 PDF is used
       ! implicitly in subroutine advance_xm_wpxp.
-      if ( clubb_config_flags%l_predict_upwp_vpwp ) then
+      if ( l_predict_upwp_vpwp ) then
 
          ! When l_predict_upwp_vpwp is enabled, the
          ! l_explicit_turbulent_adv_wpxp flag must be turned off.
@@ -3642,7 +3656,7 @@ module advance_clubb_core_module
            ( deltaz, params, gr%nz,                                & ! intent(in)
              grid_type, momentum_heights(begin_height:end_height), & ! intent(in)
              thermodynamic_heights(begin_height:end_height),       & ! intent(in)
-             clubb_config_flags%l_prescribed_avg_deltaz,           & ! intent(in)
+             l_prescribed_avg_deltaz,                              & ! intent(in)
              err_code_out )                                          ! intent(out)
 
       if ( clubb_at_least_debug_level( 0 ) ) then

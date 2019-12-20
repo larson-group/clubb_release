@@ -1152,7 +1152,11 @@ module clubb_driver
            l_implemented, grid_type, deltaz, zm_init, zm_top, & ! Intent(in)
            momentum_heights, thermodynamic_heights,           & ! Intent(in)
            sfc_elevation,                                     & ! Intent(in)
-           clubb_config_flags,                                & ! intent(in)
+           l_predict_upwp_vpwp,                               & ! intent(in)
+           l_use_ice_latent,                                  & ! intent(in)
+           l_prescribed_avg_deltaz,                           & ! intent(in)
+           l_damp_wp2_using_em,                               & ! intent(in)
+           l_stability_correct_tau_zm,                        & ! intent(in)
            err_code_dummy )                                     ! Intent(out)
 
     ! Allocate a correctly-sized array for radf and zero it
