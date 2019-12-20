@@ -3642,7 +3642,7 @@ module advance_clubb_core_module
            ( deltaz, params, gr%nz,                                & ! intent(in)
              grid_type, momentum_heights(begin_height:end_height), & ! intent(in)
              thermodynamic_heights(begin_height:end_height),       & ! intent(in)
-             clubb_config_flags%l_prescribed_avg_deltaz,           & ! intent(in)                           
+             clubb_config_flags%l_prescribed_avg_deltaz,           & ! intent(in)
              err_code_out )                                          ! intent(out)
 
       if ( clubb_at_least_debug_level( 0 ) ) then

@@ -944,7 +944,8 @@ module latin_hypercube_driver_module
         lh_clipped_vars(k,sample)%rc = max( X_nl_all_levs(k,sample,iiPDF_chi), zero )
         
         ! Clip lh_rc.
-        lh_clipped_vars(k,sample)%rc = min( lh_clipped_vars(k,sample)%rc, lh_clipped_vars(k,sample)%rt - rt_tol )
+        lh_clipped_vars(k,sample)%rc = min( lh_clipped_vars(k,sample)%rc, &
+                                            lh_clipped_vars(k,sample)%rt - rt_tol )
         
         ! Compute lh_rv
         lh_clipped_vars(k,sample)%rv = lh_clipped_vars(k,sample)%rt - lh_clipped_vars(k,sample)%rc
