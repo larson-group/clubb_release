@@ -24,7 +24,7 @@ class VariableGroupBaseBudgets(VariableGroup):
             {'aliases': ['thlm_mc'], 'legend_label': 'thlm_mc'},
             {'aliases': ['thlm_clipping'], 'legend_label': 'thlm_clipping', 'fallback_func': self.getThlmClipping},
             {'aliases': ['radht'], 'legend_label': 'radht'},
-            {'aliases': ['lsforcing'], 'legend_label': 'lsforcing', 'fallback_func': self.getLsforcing},
+            {'aliases': ['ls_forcing'], 'legend_label': 'ls_forcing', 'fallback_func': self.getLsforcing},
             {'aliases': ['thlm_residual'], 'legend_label': 'thlm_residual', 'fallback_func': self.getThlmResidual},
 
         ]
@@ -36,7 +36,7 @@ class VariableGroupBaseBudgets(VariableGroup):
             {'aliases': ['rtm_mc'], 'legend_label': 'rtm_mc'},
             {'aliases': ['rtm_clipping'], 'legend_label': 'rtm_bt', 'fallback_func': self.getRtmClipping},
             {'aliases': ['rtm_pd'], 'legend_label': 'rtm_pd'},
-            {'aliases': ['rtm_forcing'], 'legend_label': 'rtm_forcing', 'fallback_func': self.getRtmForcing},
+            {'aliases': ['ls_forcing'], 'legend_label': 'ls_forcing', 'fallback_func': self.getRtmForcing},
             {'aliases': ['rtm_residual'], 'legend_label': 'rtm_residual', 'fallback_func': self.getRtmResidual},
 
         ]

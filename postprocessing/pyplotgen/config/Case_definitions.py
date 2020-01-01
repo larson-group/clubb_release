@@ -435,6 +435,18 @@ RICO = {'name': 'rico', 'start_time': 4201, 'end_time': 4320, 'height_min_value'
         'var_groups': [VariableGroupBase, VariableGroupLiquidMP, VariableGroupWs, VariableGroupCorrelations,
                        VariableGroupKKMP]}
 
+RICO_SILHS = {'name': 'rico_silhs', 'start_time': 4201, 'end_time': 4320, 'height_min_value': 0, 'height_max_value': 4500,
+
+        'blacklisted_vars': ['wpNrp'],
+        'sam_file': SAM_OUTPUT_ROOT + "/JULY_2017/RICO_256x256x100_drizzle/RICO_256x256x100_drizzle.nc",
+        'coamps_file': None,
+        'r408_file': None,
+        'hoc_file': None,
+        'e3sm_file': None,
+        'var_groups': [VariableGroupBase, VariableGroupLiquidMP, VariableGroupWs, VariableGroupCorrelations,
+                       VariableGroupKKMP]}
+
+
 TWP_ICE = {'name': 'twp_ice', 'start_time': 1, 'end_time': 9900, 'height_min_value': 0, 'height_max_value': 19000,
            
            'blacklisted_vars': ['rtp3', 'Skrt_zt', 'Skthl_zt', 'rtpthvp', 'thlpthvp', 'Ngm', 'wprrp', 'wpNrp'],
@@ -470,10 +482,10 @@ ALL_CASES = [ARM, ARM_97, ASTEX_A209, ATEX,
              LBA,
              MC3E, MPACE_A, MPACE_B, MPACE_B_SILHS,
              NOV11_ALTOCU,
-             RICO,
+             RICO, RICO_SILHS,
              TWP_ICE,
              WANGARA
              ]
 
 # If uncommented, this line will override the real ALL_CASES given above, forcing pyplotgen to only plot some cases.
-# ALL_CASES = [ARM_97]
+# ALL_CASES = [RICO_SILHS]
