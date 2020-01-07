@@ -175,7 +175,7 @@ module latin_hypercube_driver_module
 
     integer :: &
       k_lh_start, & ! Height for preferentially sampling within cloud
-      k, sample, i  ! Loop iterators
+      k, sample, i, j  ! Loop iterators
 
     logical, dimension(nz,num_samples) :: &
       l_in_precip   ! Whether sample is in precipitation
@@ -269,13 +269,15 @@ module latin_hypercube_driver_module
     end do
     
     ! Calculate possible Sigma_Cholesky values
+    ! Row-wise multiply of the elements of a lower triangular matrix.
     do k = 1, nz
-    
-      call row_mult_lower_tri_matrix( pdf_dim, sigma1(:,k), corr_cholesky_mtx_1(:,:,k), &
-                                      Sigma_Cholesky1(:,:,k) )
-                                      
-      call row_mult_lower_tri_matrix( pdf_dim, sigma2(:,k), corr_cholesky_mtx_2(:,:,k), &
-                                      Sigma_Cholesky2(:,:,k) )
+      do i = 1, pdf_dim
+        do j = 1, i
+          ! Calculate possible Sigma_Cholesky values
+          Sigma_Cholesky1(i,j,k) = corr_cholesky_mtx_1(i,j,k) * sigma1(i,k)
+          Sigma_Cholesky2(i,j,k) = corr_cholesky_mtx_2(i,j,k) * sigma2(i,k)
+        end do
+      end do
     end do
            
            
@@ -289,8 +291,6 @@ module latin_hypercube_driver_module
           X_mixt_comp_all_levs(k,sample) = 1
           
           ! Copy 1st component values
-          mu(:,k,sample) = mu1(:,k)
-          Sigma_Cholesky(:,:,k,sample) = Sigma_Cholesky1(:,:,k)
           cloud_frac(k,sample) = pdf_params%cloud_frac_1(k)
           
           ! Determine precipitation
@@ -302,10 +302,9 @@ module latin_hypercube_driver_module
           
         else
           
-          ! Copy 2nd component values
           X_mixt_comp_all_levs(k,sample) = 2
-          mu(:,k,sample) = mu2(:,k)
-          Sigma_Cholesky(:,:,k,sample) = Sigma_Cholesky2(:,:,k)
+          
+          ! Copy 2nd component values
           cloud_frac(k,sample) = pdf_params%cloud_frac_2(k)
           
           ! Determine precipitation
@@ -337,13 +336,15 @@ module latin_hypercube_driver_module
         end do
       end do
     end do
+  
 
     ! Generate LH sample, represented by X_u and X_nl, for level k
     ! Transform the uniformly distributed samples to
     !   ones distributed according to CLUBB's PDF.
     call transform_uniform_samples_to_pdf &
          ( nz, num_samples, pdf_dim, d_uniform_extra, & ! In
-           mu(:,:,:), Sigma_Cholesky(:,:,:,:), &
+           Sigma_Cholesky1(:,:,:), Sigma_Cholesky2(:,:,:), &
+           mu1(:,:), mu2(:,:), X_mixt_comp_all_levs(:,:), &
            X_u_all_levs(:,:,:), cloud_frac(:,:), & ! In
            l_in_precip(:,:), & ! In
            X_nl_all_levs(:,:,:) ) ! Out
@@ -944,8 +945,7 @@ module latin_hypercube_driver_module
         lh_clipped_vars(k,sample)%rc = max( X_nl_all_levs(k,sample,iiPDF_chi), zero )
         
         ! Clip lh_rc.
-        lh_clipped_vars(k,sample)%rc = min( lh_clipped_vars(k,sample)%rc, &
-                                            lh_clipped_vars(k,sample)%rt - rt_tol )
+        lh_clipped_vars(k,sample)%rc = min( lh_clipped_vars(k,sample)%rc, lh_clipped_vars(k,sample)%rt - rt_tol )
         
         ! Compute lh_rv
         lh_clipped_vars(k,sample)%rv = lh_clipped_vars(k,sample)%rt - lh_clipped_vars(k,sample)%rc

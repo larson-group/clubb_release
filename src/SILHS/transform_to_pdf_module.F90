@@ -16,7 +16,8 @@ module transform_to_pdf_module
 !-------------------------------------------------------------------------------
   subroutine transform_uniform_samples_to_pdf &
              ( nz, num_samples, pdf_dim, d_uniform_extra, & ! In
-               mu, Sigma_Cholesky, & ! In
+               Sigma_Cholesky1, Sigma_Cholesky2, & ! In
+               mu1, mu2, X_mixt_comp_all_levs, & ! In
                X_u_all_levs, cloud_frac, & ! In
                l_in_precip_all_levs, & ! In
                X_nl_all_levs ) ! Out
@@ -58,11 +59,13 @@ module transform_to_pdf_module
       pdf_dim, &  ! `d' Number of variates (normally 3 + microphysics specific variables)
       d_uniform_extra ! Number of variates included in uniform sample only (often 2)
       
-    real( kind = core_rknd ), dimension(pdf_dim,pdf_dim,nz,num_samples), intent(in) :: &
-      Sigma_Cholesky  ! Correlations Cholesky matrix [-]
+    real( kind = core_rknd ), dimension(pdf_dim,pdf_dim,nz), intent(in) :: &
+      Sigma_Cholesky1, & ! Correlations Cholesky matrix, 1st component [-]
+      Sigma_Cholesky2    ! Correlations Cholesky matrix, 2nd component [-]
 
-    real( kind = core_rknd ), dimension(pdf_dim,nz,num_samples), intent(in) :: &
-      mu ! Means of the hydrometeors,(chi, eta, w, <hydrometeors>)  [units vary]
+    real( kind = core_rknd ), dimension(pdf_dim,nz), intent(in) :: &
+      mu1, & ! Means of the hydrometeors,(chi, eta, w, <hydrometeors>), 1st component [units vary]
+      mu2    ! Means of the hydrometeors,(chi, eta, w, <hydrometeors>), 2nd component [units vary]
 
     real( kind = core_rknd ), intent(in), dimension(nz,num_samples,pdf_dim+d_uniform_extra) :: &
       X_u_all_levs ! Sample drawn from uniform distribution from a particular grid level
@@ -72,6 +75,11 @@ module transform_to_pdf_module
       
     logical, intent(in), dimension(nz,num_samples) :: &
       l_in_precip_all_levs ! Whether we are in precipitation (T/F)
+      
+    integer, dimension(nz,num_samples), intent(in) :: &
+      X_mixt_comp_all_levs ! Whether we're in the first or second mixture component
+      
+    ! Output Variable
 
     real( kind = core_rknd ), intent(out), dimension(nz,num_samples,pdf_dim) :: &
       X_nl_all_levs ! Sample that is transformed ultimately to normal-lognormal
@@ -81,13 +89,10 @@ module transform_to_pdf_module
     logical, dimension(pdf_dim) :: &
       l_d_variable_lognormal ! Whether a given variable in X_nl has a lognormal dist.
 
-    real( kind = core_rknd ), dimension(pdf_dim) :: &
-       Sigma_scaling   ! Scaling factors for Sigma for accuracy [units vary]
-
-    logical :: &
-      l_Sigma_scaling ! Whether we're scaling Sigma
-
     integer :: i, k, sample
+    
+    real( kind = core_rknd ), dimension(nz,num_samples,pdf_dim) :: &
+      std_normal ! vector of d-variate standard normal distribution [-]
 
     ! Flag to clip sample point values of chi in extreme situations.
     logical, parameter :: &
@@ -104,22 +109,34 @@ module transform_to_pdf_module
     ! Generate a set of sample points for a microphysics/radiation scheme
     !---------------------------------------------------------------------------
 
-    ! The old code was dealing with Covariance matrices. These were rescaled by
-    ! Sigma'(i,j) = 1/sqrt(Sigma(i,i)) * Sigma(i,j) * 1/Sigma(j,j)
-    ! to reduce the condition number of the matrices. Sigma' is the correlation
-    ! matrix. This code deals directly with the correlation matrix. Hence we don't
-    ! need any rescaling here.
-    l_Sigma_scaling = .false.
-    Sigma_scaling = one
-
-    ! Compute the new set of sample points using the update variance matrices
-    ! for this level
-    call sample_points( nz, num_samples, pdf_dim, d_uniform_extra, &  ! intent(in)
-                        mu(:,:,:), l_d_variable_lognormal, & ! intent(in)
-                        X_u_all_levs(:,:,:), Sigma_Cholesky(:,:,:,:), & ! intent(in)
-                        Sigma_scaling, l_Sigma_scaling, & ! intent(in)
-                        X_nl_all_levs(:,:,:) ) ! intent(out)
-
+    ! Begin ACC code, only X_nl_all_levs needs to be copied off the device
+    !$acc   data create(std_normal) &
+    !$acc&       copyin(X_u_all_levs, Sigma_Cholesky1, Sigma_Cholesky2, &
+    !$acc&              mu1, mu2, cloud_frac, l_in_precip_all_levs, X_mixt_comp_all_levs ) &
+    !$acc&       copyout(X_nl_all_levs)
+              
+    ! From Latin hypercube sample, generate standard normal sample
+    call cdfnorminv( pdf_dim, nz, num_samples, X_u_all_levs, &  ! In
+                     std_normal )                               ! Out   
+    
+    ! Computes the nonstd_normal from the Cholesky factorization of Sigma, std_normal, and mu.
+    call multiply_Cholesky( nz, num_samples, pdf_dim, std_normal, & ! In
+                            Sigma_Cholesky1, Sigma_Cholesky2,     & ! In
+                            mu1, mu2, X_mixt_comp_all_levs,       & ! In
+                            X_nl_all_levs )                         ! Out
+                            
+    !$acc kernels default(present)
+    
+    ! Convert lognormal variates (e.g. Ncn and rr) to lognormal
+    do i = max( iiPDF_chi, iiPDF_eta, iiPDF_w )+1, pdf_dim
+      do sample = 1, num_samples
+        do k = 1, nz
+            ! Convert lognormal variates (e.g. Ncn and rr) to lognormal
+            X_nl_all_levs(k,sample,i) = exp( X_nl_all_levs(k,sample,i) )
+        end do
+      end do
+    end do
+    
     ! Zero precipitation hydrometeors if not in precipitation
     do sample = 1, num_samples
       do k = 1, nz 
@@ -166,182 +183,15 @@ module transform_to_pdf_module
 
    endif ! l_clip_extreme_chi_sample_pts
 
+   !$acc end kernels
+   !$acc end data
 
     return
   end subroutine transform_uniform_samples_to_pdf
 
-!---------------------------------------------------------------------------------------------------
-  subroutine sample_points( nz, num_samples, pdf_dim, d_uniform_extra, &
-                            mu, l_d_variable_lognormal, &
-                            X_u_all_levs, Sigma_Cholesky, &
-                            Sigma_scaling, l_Sigma_scaling, &
-                            X_nl_all_levs )
-
-! Description:
-!   Generates n random samples from a d-dim Gaussian-mixture PDF.
-!   Uses Latin hypercube method.
-
-!   Original formulation takes samples only from the cloudy part of the grid box.
-!   Revised formulation samples in and out of cloud.
-
-!   We use MKS units on all variates.
-
-! References:
-!   None
-!----------------------------------------------------------------------
-
-    use clubb_precision, only: &
-      core_rknd    ! Constant
-
-    implicit none
-
-    ! Input variables
-    integer, intent(in) :: &
-      nz, & ! Number of vertical grid levels
-      num_samples,  & ! Number of subcolumn samples
-      pdf_dim, &    ! Number of variates
-      d_uniform_extra   ! Variates included in uniform sample only
-
-    ! Latin hypercube variables, i.e. chi, eta, w, etc.
-    real( kind = core_rknd ), intent(in), dimension(pdf_dim,nz,num_samples) :: &
-      mu ! d-dimensional column vector of means
-
-    logical, intent(in), dimension(pdf_dim) :: &
-      l_d_variable_lognormal ! Whether a given element of X_nl is lognormal
-
-    real( kind = core_rknd ), intent(in), dimension(nz,num_samples,pdf_dim+d_uniform_extra) :: &
-      X_u_all_levs ! Sample drawn from uniform distribution from particular grid level [-]
-
-    ! Columns of Sigma_Cholesky, X_nl_all_levs:  1   2   3   4 ... pdf_dim
-    !                                           chi eta w   hydrometeors
-    real( kind = core_rknd ), intent(in), dimension(pdf_dim,pdf_dim,nz,num_samples) :: &
-      Sigma_Cholesky
-
-    real( kind = core_rknd ), intent(in), dimension(pdf_dim) :: &
-      Sigma_scaling ! Scaling factors on Sigma [units vary]
-
-    logical, intent(in) :: &
-      l_Sigma_scaling ! Whether we're scaling Sigma
-
-    ! Output Variables
-
-    real( kind = core_rknd ), intent(out), dimension(nz,num_samples,pdf_dim) :: &
-      X_nl_all_levs ! Sample that is transformed ultimately to normal-lognormal
-      
-    ! Local Variables
-    
-    integer :: i, k, sample
-
-    ! ---- Begin Code ----
-
-    ! Generate n samples of a d-variate Gaussian mixture
-    ! by transforming Latin hypercube points, X_u_all_levs.
-    call gaus_mixt_points( nz, num_samples, pdf_dim, d_uniform_extra, & ! intent(in)
-                           mu(:,:,:), Sigma_Cholesky(:,:,:,:), & ! intent(in)
-                           Sigma_scaling, l_Sigma_scaling, & ! intent(in)
-                           X_u_all_levs(:,:,:), & ! intent(in)
-                           X_nl_all_levs(:,:,:) ) ! intent(out)
-
-    ! Convert lognormal variates (e.g. Ncn and rr) to lognormal
-    do i = 1, pdf_dim
-      
-      if ( l_d_variable_lognormal(i) ) then
-      
-        do sample = 1, num_samples
-          do k = 1, nz
-            
-            ! Convert lognormal variates (e.g. Ncn and rr) to lognormal
-              X_nl_all_levs(k,sample,i) = exp( X_nl_all_levs(k,sample,i) )
-
-          end do
-        end do
-        
-      end if
-        
-    end do
-
-    return
-  end subroutine sample_points
-!-------------------------------------------------------------------------------
-
-!----------------------------------------------------------------------
-  subroutine gaus_mixt_points( nz, num_samples, pdf_dim, d_uniform_extra, &
-                               mu, Sigma_Cholesky, & ! Intent(in)
-                               Sigma_scaling, l_Sigma_scaling, & ! Intent(in)
-                               X_u_all_levs, & ! Intent(in)
-                               X_nl_all_levs ) ! Intent(out)
-! Description:
-!   Generates n random samples from a d-dimensional Gaussian-mixture PDF.
-!   Uses Latin hypercube method.
-!
-! References:
-!   None
-!----------------------------------------------------------------------
-
-    use clubb_precision, only: &
-      core_rknd ! double precision
-
-    implicit none
-
-    ! Input Variables
-
-    integer, intent(in) :: &
-      nz, & ! Number of vertical grid levels
-      num_samples,  & ! Number of subcolumn samples
-      pdf_dim, &    ! Number of variates
-      d_uniform_extra   ! Variates included in uniform sample only
-
-    real( kind = core_rknd ), intent(in), dimension(pdf_dim,nz,num_samples) :: &
-      mu ! d-dimensional column vector of means of 1st, 2nd Gaussians
-
-    ! Latin hypercube sample from uniform distribution from a particular grid level
-    real( kind = core_rknd ), intent(in), dimension(nz,num_samples,pdf_dim+d_uniform_extra) :: &
-      X_u_all_levs
-
-    real( kind = core_rknd ), dimension(pdf_dim,pdf_dim,nz,num_samples), intent(in) :: &
-      Sigma_Cholesky ! Cholesky factorization of Sigma
-
-    real( kind = core_rknd ), dimension(pdf_dim), intent(in) :: &
-      Sigma_scaling   ! Scaling factors for Sigma for accuracy [units vary]
-
-    logical, intent(in) :: &
-      l_Sigma_scaling ! Whether we're scaling Sigma
-
-    ! Output Variables
-
-    real( kind = core_rknd ), intent(out), dimension(nz,num_samples,pdf_dim) :: &
-      X_nl_all_levs ! [n by d] matrix, each row of which is a d-dimensional sample
-
-    ! Local Variables
-
-    real( kind = core_rknd ), dimension(pdf_dim,nz,num_samples) :: &
-      std_normal  ! Standard normal multiplied by the factorized Sigma    [-]
-
-    integer :: sample, k, i ! Loop iterators
-
-    ! ---- Begin Code ----
-    
-    ! From Latin hypercube sample, generate standard normal sample
-    do i = 1, pdf_dim
-      do sample = 1, num_samples
-        do k = 1, nz
-          std_normal(i,k,sample) = cdfnorminv( X_u_all_levs(k,sample,i) )
-        end do
-      end do
-    end do
-
-    call multiply_Cholesky &
-        ( nz, num_samples, pdf_dim, std_normal(:,:,:), & ! In
-          mu(:,:,:), Sigma_Cholesky(:,:,:,:), &  ! In
-          Sigma_scaling, l_Sigma_scaling, & ! In
-          X_nl_all_levs(:,:,:) ) ! Out
-
-    return
-  end subroutine gaus_mixt_points
-!-------------------------------------------------------------------------------
-
 !-----------------------------------------------------------------------
-  function cdfnorminv( p_core_rknd )
+  subroutine cdfnorminv( pdf_dim, nz, num_samples, X_u_all_levs, &
+                         std_normal )
 ! Description:
 !     This function computes the inverse of the cumulative normal distribution function.
 !     The return value is the lower tail quantile for the standard normal distribution. 
@@ -370,11 +220,16 @@ module transform_to_pdf_module
 
     ! ---------------- Input Variable(s) ----------------
 
-    real( kind = core_rknd ), intent(in) :: p_core_rknd
+    integer, intent(in) :: &
+      nz,           & ! Number of vertical grid levels
+      num_samples,  & ! Number of subcolumn samples
+      pdf_dim         ! `d' Number of variates (normally 3 + microphysics specific variables)
+
+    real( kind = core_rknd ), intent(in), dimension(nz,num_samples,pdf_dim) :: X_u_all_levs
 
     ! ---------------- Return Variable ----------------
 
-    real( kind = core_rknd ) :: cdfnorminv
+    real( kind = core_rknd ), intent(out), dimension(nz,num_samples,pdf_dim) :: std_normal
 
     ! ---------------- Local Variable(s) ----------------
     
@@ -390,27 +245,40 @@ module transform_to_pdf_module
              
     real( kind = core_rknd ) :: w, x
     
+    integer :: &
+      i, sample, k  ! Loop variables
+    
     ! ---------------- Begin Code ----------------
     
-    x = two * p_core_rknd - one
+    !$acc kernels default(present)
     
-    w = -log( ( one - x ) * ( one + x ) ) 
+    do i = 1, pdf_dim
+      do sample = 1, num_samples
+        do k = 1, nz
     
-    if ( w < 5.0_core_rknd ) then 
-      
-      w = w - 2.5_core_rknd
-      
-      cdfnorminv = sqrt_2 * x * (((((((( a(1) * w + a(2) ) * w + a(3) ) * w + a(4) ) * w &
-                                   + a(5) ) * w + a(6) ) * w + a(7) ) * w + a(8) ) * w + a(9) )
-    else
-      
-      w = sqrt(w) - 3._core_rknd
-      
-      cdfnorminv = sqrt_2 * x * (((((((( b(1) * w + b(2) ) * w + b(3) ) * w + b(4) ) * w &
-                                   + b(5) ) * w + b(6) ) * w + b(7) ) * w + b(8) ) * w + b(9) )
-    end if            
+          x = two * X_u_all_levs(k,sample,i) - one
+          
+          w = -log( ( one - x ) * ( one + x ) ) 
+          
+          if ( w < 5.0 ) then 
+            w = w - 2.5_core_rknd
+            std_normal(k,sample,i) = sqrt_2 * x &
+                                   * (((((((( a(1) * w + a(2) ) * w + a(3) ) * w + a(4) ) * w &
+                                        + a(5) ) * w + a(6) ) * w + a(7) ) * w + a(8) ) * w + a(9) )
+          else
+            w = sqrt(w) - 3._core_rknd
+            std_normal(k,sample,i) = sqrt_2 * x &
+                                   * (((((((( b(1) * w + b(2) ) * w + b(3) ) * w + b(4) ) * w &
+                                        + b(5) ) * w + b(6) ) * w + b(7) ) * w + b(8) ) * w + b(9) )
+          end if                 
+          
+        end do
+      end do
+    end do
+    
+    !$acc end kernels
                 
-  end function cdfnorminv
+  end subroutine cdfnorminv
 
 !-----------------------------------------------------------------------
   function ltqnorm( p_core_rknd )
@@ -617,13 +485,13 @@ module transform_to_pdf_module
 
 !-------------------------------------------------------------------------------
   subroutine multiply_Cholesky( nz, num_samples, pdf_dim, std_normal, &
-                                mu, Sigma_Cholesky, &
-                                Sigma_scaling, l_scaled, &
-                                nonstd_normal )
+                                Sigma_Cholesky1, Sigma_Cholesky2, &
+                                mu1, mu2, X_mixt_comp_all_levs, &
+                                X_nl_all_levs )
 ! Description:
-!   Computes the nonstd_normal from the Cholesky factorization of Sigma,
+!   Computes X_nl_all_levs from the Cholesky factorization of Sigma,
 !   std_normal, and mu.
-!   nonstd_normal = Sigma_Cholesky * std_normal + mu.
+!   X_nl_all_levs = Sigma_Cholesky * std_normal + mu.
 
 ! References:
 !   M. E. Johnson (1987), ``Multivariate Normal and Related Distributions'' p50-55
@@ -633,86 +501,84 @@ module transform_to_pdf_module
       core_rknd
 
     implicit none
-
-    ! Parameters
-    integer, parameter :: &
-      incx = 1 ! Increment for x in dtrmv
-
+    
     ! Input Variables
     integer, intent(in) :: &
       nz,           & ! Number of vertical grid levels
       num_samples,  & ! Number of samples
       pdf_dim         ! Number of variates (normally=5)
 
-    real( kind = core_rknd ), intent(in), dimension(pdf_dim,nz,num_samples) :: &
+    real( kind = core_rknd ), intent(in), dimension(nz,num_samples,pdf_dim) :: &
       std_normal ! vector of d-variate standard normal distribution [-]
 
-    real( kind = core_rknd ), intent(in), dimension(pdf_dim,nz,num_samples) :: &
-      mu ! d-dimensional column vector of means of Gaussian     [units vary]
+    real( kind = core_rknd ), intent(in), dimension(pdf_dim,nz) :: &
+      mu1, & ! d-dimensional column vector of means of Gaussian, 1st component [units vary]
+      mu2    ! d-dimensional column vector of means of Gaussian, 2nd component [units vary]
 
-    real( kind = core_rknd ), intent(in), dimension(pdf_dim,pdf_dim,nz,num_samples) :: &
-      Sigma_Cholesky ! Cholesky factorization of the Sigma matrix [units vary]
-
-    real( kind = core_rknd ), intent(in), dimension(pdf_dim) :: &
-      Sigma_scaling ! Scaling for Sigma / mu    [units vary]
-
-    logical, intent(in) :: l_scaled ! Whether any scaling was done to Sigma
+    real( kind = core_rknd ), intent(in), dimension(pdf_dim,pdf_dim,nz) :: &
+      Sigma_Cholesky1, & ! Cholesky factorization of the Sigma matrix, 1st component [units vary]
+      Sigma_Cholesky2    ! Cholesky factorization of the Sigma matrix, 2nd component [units vary]
+      
+    integer, dimension(nz,num_samples), intent(in) :: &
+      X_mixt_comp_all_levs ! Whether we're in the first or second mixture component
 
     ! Output Variables
 
     ! nxd matrix of n samples from d-variate normal distribution
     !   with mean mu and covariance structure Sigma
     real( kind = core_rknd ), intent(out), dimension(nz,num_samples,pdf_dim) :: &
-      nonstd_normal
-
+      X_nl_all_levs
+      
     ! Local Variables
-    real( kind = core_rknd ), dimension(pdf_dim,nz,num_samples) :: &
-      Sigma_times_std_normal ! Sigma * std_normal [units vary]
 
+    ! Loop iterators
     integer :: i, j, k, sample
 
     ! --- Begin Code ---
+    
+    !$acc kernels default(present)
 
-    Sigma_times_std_normal = 0.0_core_rknd ! Copy std_normal into 'x'
+    do i = 1, pdf_dim
+      do sample = 1, num_samples
+        do k = 1, nz
+          X_nl_all_levs(k,sample,i) = 0.0_core_rknd ! Copy std_normal into 'x'                      
+        end do
+      end do
+    end do
     
     ! Compute Sigma_Cholesky * std_normal
     do sample = 1, num_samples
       do k = 1, nz
-        
         do  i = 1, pdf_dim
           do j = 1, i
-            Sigma_times_std_normal(i,k,sample) = Sigma_times_std_normal(i,k,sample) &
-                                       + Sigma_Cholesky(i,j,k,sample) * std_normal(j,k,sample)
+            
+            if ( X_mixt_comp_all_levs(k,sample) == 1 ) then
+              X_nl_all_levs(k,sample,i) = X_nl_all_levs(k,sample,i) &
+                                        + Sigma_Cholesky1(i,j,k) * std_normal(k,sample,j)
+            else
+              X_nl_all_levs(k,sample,i) = X_nl_all_levs(k,sample,i) &
+                                        + Sigma_Cholesky2(i,j,k) * std_normal(k,sample,j)
+            end if
+             
           end do
         end do
-        
       end do
     end do
     
+    do i = 1, pdf_dim
+      do sample = 1, num_samples
+        do k = 1, nz
+          ! Add mu to Sigma * std_normal
+          if ( X_mixt_comp_all_levs(k,sample) == 1 ) then
+            X_nl_all_levs(k,sample,i) = X_nl_all_levs(k,sample,i) + mu1(i,k)
+          else
+            X_nl_all_levs(k,sample,i) = X_nl_all_levs(k,sample,i) + mu2(i,k)
+          end if
+        end do
+      end do
+    end do
     
-    if ( l_scaled ) then
-      
-      do i = 1, pdf_dim
-        do sample = 1, num_samples
-          do k = 1, nz
-            ! Add mu to Sigma * std_normal (scaled)
-            nonstd_normal(k,sample,i) = Sigma_times_std_normal(i,k,sample) + mu(i,k,sample) &
-                                                                             * Sigma_scaling(i)
-            ! Determine 'y' vector by removing the scaling factors
-            nonstd_normal(k,sample,i) = nonstd_normal(k,sample,i) / Sigma_scaling(i)
-          end do
-        end do
-      end do
-    else
-      do i = 1, pdf_dim
-        do sample = 1, num_samples
-          do k = 1, nz
-            ! Add mu to Sigma * std_normal
-            nonstd_normal(k,sample,i) = Sigma_times_std_normal(i,k,sample) + mu(i,k,sample)
-          end do
-        end do
-      end do
-    end if
+    !$acc end kernels
 
     return
   end subroutine multiply_Cholesky
