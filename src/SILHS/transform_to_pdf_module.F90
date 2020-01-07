@@ -7,8 +7,6 @@ module transform_to_pdf_module
 
   public :: ltqnorm, multiply_Cholesky, transform_uniform_samples_to_pdf, chi_eta_2_rtthl
 
-  private :: sample_points, gaus_mixt_points
-
   private ! Default scope
 
   contains
