@@ -182,15 +182,9 @@ module latin_hypercube_driver_module
 
     logical :: l_error, l_error_in_sub
     
-    real( kind = core_rknd ), dimension(pdf_dim,nz,num_samples) :: &
-      mu   ! Means of the hydrometeors, (chi, eta, w, <hydrometeors>)  [units vary]
-    
     real( kind = core_rknd ), dimension(pdf_dim,pdf_dim,nz) :: &
-      Sigma_Cholesky1, &
-      Sigma_Cholesky2
-      
-    real( kind = core_rknd ), dimension(pdf_dim,pdf_dim,nz,num_samples) :: &
-      Sigma_Cholesky  ! Correlations Cholesky matrix [-]
+      Sigma_Cholesky1, &  ! Correlations Cholesky matrix 1 [-]
+      Sigma_Cholesky2     ! Correlations Cholesky matrix 2 [-]
       
     real( kind = core_rknd ), dimension(nz,num_samples) :: &
       cloud_frac ! Cloud fraction for grid level and sample
@@ -215,7 +209,7 @@ module latin_hypercube_driver_module
                                      silhs_config_flags%l_rcm_in_cloud_k_lh_start, &
                                      silhs_config_flags%l_random_k_lh_start )
                                      
-                                     
+    ! Generate uniform samples and weights with traditional random numbers   
     call generate_uniform_samples_and_weights_CPU( &
                       nz, pdf_dim, d_uniform_extra, num_samples, iter, sequence_length, &
                       k_lh_start, delta_zm, rcm, Lscale, rho_ds_zt, &
@@ -385,6 +379,9 @@ module latin_hypercube_driver_module
     use parameters_silhs, only: &
       silhs_config_flags_type ! Type
 
+    use generate_uniform_sample_module, only: &
+      rand_uniform_real ! Procedure
+
     implicit none
     
     !----------------- Input Variables -----------------
@@ -428,9 +425,21 @@ module latin_hypercube_driver_module
       
     !----------------- Local Variables -----------------
     
-    integer :: k ! Loop variable
+    integer :: k, i, sample ! Loop variable
+    
+    real(kind = core_rknd), dimension(nz,num_samples,pdf_dim+d_uniform_extra) :: &
+      rand_pool ! Array of randomly generated numbers
 
     !----------------- Begin Code -----------------
+    
+    ! Populate rand_pool with random numbers
+    do i=1, pdf_dim+d_uniform_extra
+      do sample=1, num_samples
+        do k = 1, nz
+          rand_pool(k,sample,i) = rand_uniform_real()
+        end do
+      end do
+    end do
     
     
     if ( .not. l_calc_weights_all_levs_itime ) then
@@ -441,6 +450,7 @@ module latin_hypercube_driver_module
              pdf_params%cloud_frac_1(k_lh_start),                               & ! Intent(in)
              pdf_params%cloud_frac_2(k_lh_start),                               & ! Intent(in)
              pdf_params%mixt_frac(k_lh_start), hydromet_pdf_params(k_lh_start), & ! Intent(in)
+             rand_pool(k_lh_start,:,:),                                         & ! Intent(in)
              silhs_config_flags%cluster_allocation_strategy,                    & ! Intent(in)
              silhs_config_flags%l_lh_importance_sampling,                       & ! Intent(in)
              silhs_config_flags%l_lh_straight_mc,                               & ! Intent(in)
@@ -461,6 +471,7 @@ module latin_hypercube_driver_module
              k_lh_start, delta_zm, rcm, Lscale, rho_ds_zt, &      ! Intent(in)
              silhs_config_flags%l_Lscale_vert_avg, &              ! Intent(in)
              silhs_config_flags%l_max_overlap_in_cloud, &         ! Intent(in)
+             rand_pool, &                                         ! Intent(in)
              X_u_all_levs )                                       ! Intent(inout)
     
     end if
@@ -475,6 +486,7 @@ module latin_hypercube_driver_module
                pdf_params%cloud_frac_1(k),                                   & ! Intent(in)
                pdf_params%cloud_frac_2(k),                                   & ! Intent(in)
                pdf_params%mixt_frac(k), hydromet_pdf_params(k),              & ! Intent(in)
+               rand_pool(k_lh_start,:,:),                                    & ! Intent(in)
                silhs_config_flags%cluster_allocation_strategy,               & ! Intent(in)
                silhs_config_flags%l_lh_importance_sampling,                  & ! Intent(in)
                silhs_config_flags%l_lh_straight_mc,                          & ! Intent(in)
@@ -496,6 +508,7 @@ module latin_hypercube_driver_module
                cloud_frac_1,                                                 & ! Intent(in)
                cloud_frac_2,                                                 & ! Intent(in)
                mixt_frac, hydromet_pdf_params,                               & ! Intent(in)
+               rand_pool,                                                    & ! Intent(in)
                cluster_allocation_strategy,                                  & ! Intent(in)
                l_lh_importance_sampling,                                     & ! Intent(in)
                l_lh_straight_mc,                                             & ! Intent(in)
@@ -552,7 +565,7 @@ module latin_hypercube_driver_module
     ! Input Variables
     integer, intent(in) :: &
       iter,              &        ! Model iteration number
-      pdf_dim,       &        ! Number of variates in CLUBB's PDF
+      pdf_dim,           &        ! Number of variates in CLUBB's PDF
       d_uniform_extra,   &        ! Uniform variates included in uniform sample but not
                                   !  in normal/lognormal sample
       num_samples,       &        ! Number of SILHS sample points
@@ -564,6 +577,9 @@ module latin_hypercube_driver_module
 
     type(hydromet_pdf_parameter), intent(in) :: &
       hydromet_pdf_params
+
+    real(kind = core_rknd), dimension(num_samples,pdf_dim+d_uniform_extra), intent(in) :: &
+      rand_pool ! Array of randomly generated numbers
 
     integer, intent(in) :: &
       cluster_allocation_strategy ! Strategy for distributing sample points
@@ -602,16 +618,13 @@ module latin_hypercube_driver_module
       ! Do a straight Monte Carlo sample without LH or importance sampling.
       do i=1, pdf_dim+d_uniform_extra
         do sample=1, num_samples
-          X_u_k_lh_start(sample,i) = rand_uniform_real( )
+          X_u_k_lh_start(sample,i) = max( uniform_sample_thresh, &
+                               min( one - uniform_sample_thresh, rand_pool(sample,i) ) )
         end do
       end do
 
       ! Importance sampling is not performed, so all sample points have the same weight!!
       lh_sample_point_weights(1:num_samples)  =  one
-      
-      ! Clip uniform sample points to expected range
-      X_u_k_lh_start = max( uniform_sample_thresh, &
-                            min( one - uniform_sample_thresh, X_u_k_lh_start ) )
 
     else ! .not. l_lh_straight_mc
 
@@ -671,6 +684,7 @@ module latin_hypercube_driver_module
                k_lh_start, delta_zm, rcm, Lscale, rho_ds_zt, &
                l_Lscale_vert_avg, &
                l_max_overlap_in_cloud, &
+               rand_pool, &
                X_u_all_levs )
 
   ! Description:
@@ -688,13 +702,12 @@ module latin_hypercube_driver_module
     use constants_clubb, only: &
       fstderr, &     ! Constant(s)
       one,     &
-      zero
+      two,     &
+      zero,    &
+      rc_tol
 
     use grid_class, only: &
       gr             ! Variable
-
-    use array_index, only: &
-      iiPDF_chi      ! Variable
 
     use fill_holes, only: &
       vertical_avg  ! Procedure
@@ -702,14 +715,18 @@ module latin_hypercube_driver_module
     use error_code, only: &
         clubb_at_least_debug_level  ! Procedure
 
+    use parameters_silhs, only: &
+      vert_decorr_coef ! Variable(s)
+
     implicit none
 
     ! Input Variables
     integer, intent(in) :: &
-      nz,              &
-      pdf_dim,     &
-      d_uniform_extra, &
-      num_samples,     &
+      nz,               & ! Vertical levels
+      pdf_dim,          & ! Number of variates in CLUBB's PDF
+      d_uniform_extra,  & ! Uniform variates included in uniform sample but not
+                                  !  in normal/lognormal sample
+      num_samples,       & ! Number of SILHS sample points
       k_lh_start
 
     real( kind = core_rknd ), dimension(nz), intent(in) :: &
@@ -721,6 +738,9 @@ module latin_hypercube_driver_module
     logical, intent(in) :: &
       l_Lscale_vert_avg, &   ! Vertically average Lscale in SILHS
       l_max_overlap_in_cloud ! Use maximum vertical overlap in cloud
+      
+    real(kind = core_rknd), dimension(nz,num_samples,pdf_dim+d_uniform_extra), intent(in) :: &
+      rand_pool
 
     ! Input/Output Variables
     real( kind = core_rknd ), dimension(nz,num_samples,pdf_dim+d_uniform_extra), &
@@ -732,7 +752,7 @@ module latin_hypercube_driver_module
       Lscale_vert_avg, &  ! 3pt vertical average of Lscale                    [m]
       X_vert_corr         ! Vertical correlations between height levels       [-]
 
-    integer :: k, km1, kp1, sample, ivar
+    integer :: k, km1, kp1
 
   !-----------------------------------------------------------------------
     !----- Begin Code -----
@@ -748,53 +768,22 @@ module latin_hypercube_driver_module
     else
         Lscale_vert_avg = Lscale 
     end if
+    
+    ! Compute the vertical correlation for arbitrary overlap, using
+    !   density weighted 3pt averaged Lscale and the difference in height levels (delta_zm)
+    X_vert_corr(1:nz) = exp( -vert_decorr_coef * ( delta_zm(1:nz) / Lscale_vert_avg(1:nz) ) )
 
-    X_vert_corr(1:nz) = compute_vert_corr( nz, delta_zm, Lscale_vert_avg, rcm, &
-                                           l_max_overlap_in_cloud )
+    if ( l_max_overlap_in_cloud ) then
+      where ( rcm > rc_tol )
+       X_vert_corr = one
+      end where
+    end if
 
-    ! Assertion check for the vertical correlation
-    if ( clubb_at_least_debug_level( 1 ) ) then
-      if ( any( X_vert_corr > one ) .or. any( X_vert_corr < zero ) ) then
-        write(fstderr,*) "The vertical correlation in latin_hypercube_driver"// &
-          "is not in the correct range"
-        do k = 1, nz
-          write(fstderr,*) "k = ", k,  "Vert. correlation = ", X_vert_corr(k)
-        end do
-        stop "Fatal error in vertical_overlap_driver"
-      end if ! Some correlation isn't between [0,1]
-    end if ! clubb_at_least_debug_level 1
-
-    do sample = 1, num_samples
-      ! Correlate chi vertically
-      call compute_arb_overlap &
-           ( nz, k_lh_start, &  ! In
-             X_vert_corr, & ! In
-             X_u_all_levs(:,sample,iiPDF_chi) ) ! Inout
-      ! Correlate the d+1 variate vertically (used to compute the mixture
-      ! component later)
-      call compute_arb_overlap &
-           ( nz, k_lh_start, &  ! In
-             X_vert_corr, & ! In
-             X_u_all_levs(:,sample,pdf_dim+1) ) ! Inout
-
-      ! Correlate the d+2 variate vertically (used to determine precipitation
-      ! later)
-      call compute_arb_overlap &
-           ( nz, k_lh_start, &  ! In
-             X_vert_corr, & ! In
-             X_u_all_levs(:,sample,pdf_dim+2) ) ! Inout
-
-      ! Use these lines to make all variates vertically correlated, using the
-      ! same correlation we used above for chi and the d+1 variate
-      do ivar = 1, pdf_dim
-        if ( ivar /= iiPDF_chi ) then
-          call compute_arb_overlap &
-               ( nz, k_lh_start, &  ! In
-                 X_vert_corr, & ! In
-                 X_u_all_levs(:,sample,ivar) ) ! Inout
-        end if
-      end do ! 1..pdf_dim
-    end do ! 1..num_samples
+    ! Correlate the variates vertically
+    call compute_arb_overlap( nz, num_samples, pdf_dim, d_uniform_extra, & ! In
+                              k_lh_start, X_vert_corr, rand_pool,        & ! In 
+                              X_u_all_levs )                               ! Out
+    
 
     return
   end subroutine vertical_overlap_driver
@@ -971,13 +960,6 @@ module latin_hypercube_driver_module
       lh_clipped_vars        ! SILHS clipped and transformed variables
 
     ! ------------------- Local Variables -------------------
-    
-    real( kind = core_rknd ), dimension(nz,num_samples) :: &
-      lh_rt,   &             ! Total water mixing ratio            [kg/kg]
-      lh_thl,  &             ! Liquid potential temperature        [K]
-      lh_rc,   &             ! Cloud water mixing ratio            [kg/kg]
-      lh_rv,   &             ! Vapor water mixing ratio            [kg/kg]
-      lh_Nc                  ! Cloud droplet number concentration  [#/kg]
 
     real( kind = core_rknd ), dimension(nz,hydromet_dim) :: &
       hydromet_pts,         & ! Sample point column of hydrometeors    [un vary]
@@ -1025,7 +1007,8 @@ module latin_hypercube_driver_module
         lh_clipped_vars(k,sample)%rc = max( X_nl_all_levs(k,sample,iiPDF_chi), zero )
         
         ! Clip lh_rc.
-        lh_clipped_vars(k,sample)%rc = min( lh_clipped_vars(k,sample)%rc, lh_clipped_vars(k,sample)%rt - rt_tol )
+        lh_clipped_vars(k,sample)%rc = min( lh_clipped_vars(k,sample)%rc, &
+                                            lh_clipped_vars(k,sample)%rt - rt_tol )
         
         ! Compute lh_rv
         lh_clipped_vars(k,sample)%rv = lh_clipped_vars(k,sample)%rt - lh_clipped_vars(k,sample)%rc
@@ -1356,6 +1339,7 @@ module latin_hypercube_driver_module
         ! The uniform sample is in clear air
         if ( X_nl_chi(sample) > error_threshold ) then
           l_error = .true.
+          write(fstderr,*) "X_nl_chi(", sample, ") > ", error_threshold
         end if
 
       else if ( X_u_chi(sample) >= (one - cloud_frac_i) .and. &
@@ -1364,6 +1348,7 @@ module latin_hypercube_driver_module
         ! The uniform sample is in cloud
         if ( X_nl_chi(sample) <= -error_threshold ) then
           l_error = .true.
+          write(fstderr,*) "X_nl_chi(", sample, ") <= ", -error_threshold
         end if
 
       else
@@ -1652,89 +1637,17 @@ module latin_hypercube_driver_module
 
     return
   end subroutine latin_hypercube_2D_close
+
 !-------------------------------------------------------------------------------
-
-!----------------------------------------------------------------------
-  elemental function in_mixt_comp_1( X_u_dp1_element, frac )
-
+  subroutine compute_arb_overlap( nz, num_samples, pdf_dim, d_uniform_extra, &
+                                  k_lh_start, vert_corr, rand_pool, &
+                                  X_u_all_levs )
 ! Description:
-!   Determine if we're in mixture component 1
-
-! References:
-!   None
-!----------------------------------------------------------------------
-
-    use clubb_precision, only: &
-      core_rknd ! Variable(s)
-
-    implicit none
-
-    real(kind=core_rknd), intent(in) :: &
-      X_u_dp1_element, & ! Element of X_u telling us which mixture component we're in
-      frac               ! The mixture fraction
-
-    logical :: in_mixt_comp_1
-
-    ! ---- Begin Code ----
-
-    if ( X_u_dp1_element < frac ) then
-      in_mixt_comp_1 = .true.
-    else
-      in_mixt_comp_1 = .false.
-    end if
-
-    return
-  end function in_mixt_comp_1
-!-------------------------------------------------------------------------------
-
-!-------------------------------------------------------------------------------
-  elemental function in_precipitation( rnd, precip_frac ) result( l_in_precip )
-
-  ! Description:
-  !   Determines if a sample is in precipitation
-
-  ! References:
-  !   None
-  !-----------------------------------------------------------------------------
-
-    use clubb_precision, only: core_rknd
-
-    implicit none
-
-    ! Input Variables
-    real( kind=core_rknd ), intent(in) :: &
-      rnd, &         ! Random number between 0 and 1
-      precip_frac    ! Precipitation fraction
-
-    ! Output Variable
-    logical :: &
-      l_in_precip    ! Whether the sample is in precipitation
-
-  !-----------------------------------------------------------------------
-
-    !----- Begin Code -----
-
-    if ( rnd < precip_frac ) then
-      l_in_precip = .true.
-    else
-      l_in_precip = .false.
-    end if
-
-    return
-  end function in_precipitation
-!-------------------------------------------------------------------------------
-
-!-------------------------------------------------------------------------------
-  subroutine compute_arb_overlap( nz, k_lh_start, &
-                                  vert_corr, &
-                                  X_u_one_var_all_levs )
-! Description:
-!   Re-computes X_u (uniform sample) for a single variate (e.g. chi) using
-!   an arbitrary correlation specified by the input vert_corr variable (which
-!   can vary with height).
+!   Re-computes X_u (uniform sample) using an arbitrary correlation specified 
+!   by X_vert_corr (which can vary with height).
 !   This is an improved algorithm that doesn't require us to convert from a
 !   unifrom distribution to a Gaussian distribution and back again.
-
+!
 ! References:
 !   None
 !-------------------------------------------------------------------------------
@@ -1756,147 +1669,87 @@ module latin_hypercube_driver_module
 
     implicit none
 
-    ! Parameter Constants
-
-    ! Input Variables
+    ! ---------------- Input Variables ----------------
     integer, intent(in) :: &
-      nz,      & ! Number of vertical levels [-]
-      k_lh_start   ! Starting k level          [-]
+      nz,               & ! Vertical levels
+      pdf_dim,          & ! Number of variates in CLUBB's PDF
+      d_uniform_extra,  & ! Uniform variates included in uniform sample but not
+                                  !  in normal/lognormal sample
+      num_samples,       & ! Number of SILHS sample points
+      k_lh_start
 
     real(kind=core_rknd), dimension(nz), intent(in) :: &
       vert_corr ! Vertical correlation between k points in range [0,1]   [-]
+      
+    real(kind = core_rknd), dimension(nz,num_samples,pdf_dim+d_uniform_extra) :: &
+      rand_pool ! Array of randomly generated numbers
 
-    ! Output Variables
-    real(kind=core_rknd), dimension(nz), intent(inout) :: &
-      X_u_one_var_all_levs ! Uniform distribution of 1 variate at all levels [-]
-                           ! The value of this variate at k_lh_start should already be populated
-                           ! in this array and will be used to fill in the other levels.
+    ! ---------------- Output Variables ----------------
+    real(kind=core_rknd), dimension(nz,num_samples,pdf_dim+d_uniform_extra), intent(inout) :: &
+      X_u_all_levs ! Uniform distribution of 1 variate at all levels [-]
+                   ! The value of this variate at k_lh_start should already be populated
+                   ! in this array and will be used to fill in the other levels.
 
-    ! Local Variables
-    real(kind=core_rknd) :: rand, min_val, half_width, offset, unbounded_point
+    ! ---------------- Local Variables ----------------
+    real(kind=core_rknd) :: min_val, half_width, offset
 
-    integer :: k, kp1, km1 ! Loop iterators
+    integer :: k, sample, i ! Loop iterators
 
-    ! ---- Begin Code ----
+    ! ---------------- Begin Code ----------------
 
-    ! Upwards loop
-    do k = k_lh_start, nz-1
+    ! Recompute from k_lh_start to nz-1 for all samples and variates, upward loop
+    do i = 1, pdf_dim + d_uniform_extra                         
+      do sample = 1, num_samples
+        
+         do k = k_lh_start, nz-1
+           
+           half_width = one - vert_corr(k+1)
+           min_val = X_u_all_levs(k,sample,i) - half_width
 
-      kp1 = k+1 ! This is the level we're computing
+           offset = two * half_width * rand_pool(k,sample,i)
 
-      if ( vert_corr(kp1) < zero .or. vert_corr(kp1) > one ) then
-        write(fstderr,*) "vert_corr(kp1) not between 0 and 1"
-        write(fstderr,*) "vert_corr(",kp1,") = ", vert_corr(kp1)
-        stop "Fatal error in compute_arb_overlap (SILHS)"
-      end if
+           X_u_all_levs(k+1,sample,i) = min_val + offset
+           
+           ! If point lies outside the range [0,1],
+           ! fold it back so that it is between [0,1]
+           if ( X_u_all_levs(k+1,sample,i) > one ) then
+             X_u_all_levs(k+1,sample,i) = two - X_u_all_levs(k+1,sample,i)
+           else if ( X_u_all_levs(k+1,sample,i) < zero ) then
+             X_u_all_levs(k+1,sample,i) = - X_u_all_levs(k+1,sample,i)
+           end if
+           
+         end do ! k_lh_start..nz-1
+      end do ! 1..num_samples
+    end do ! 1..pdf_dim
 
-      half_width = one - vert_corr(kp1)
-      min_val = X_u_one_var_all_levs(k) - half_width
 
-      rand = rand_uniform_real( )
-      offset = two * half_width * rand
+    ! Recompute from k_lh_start down to 2 for all samples and variates, downward loop
+    do i = 1, pdf_dim + d_uniform_extra                        
+      do sample = 1, num_samples
+        
+         do k = k_lh_start, 2, -1
 
-      unbounded_point = min_val + offset
+           half_width = one - vert_corr(k-1)
+           min_val = X_u_all_levs(k,sample,i) - half_width
 
-      ! If unbounded_point lies outside the range [uniform_sample_thresh,1-uniform_sample_thresh],
-      ! fold it back so that it is between the valid range
-      if ( unbounded_point > one - uniform_sample_thresh ) then
-        X_u_one_var_all_levs(kp1) = two - unbounded_point - two * uniform_sample_thresh
-      else if ( unbounded_point < uniform_sample_thresh ) then
-        X_u_one_var_all_levs(kp1) = - unbounded_point + two * uniform_sample_thresh
-      else
-        X_u_one_var_all_levs(kp1) = unbounded_point
-      end if
+           offset = two * half_width * rand_pool(k,sample,i)
 
-    end do ! k_lh_start..nz-1
+           X_u_all_levs(k-1,sample,i) = min_val + offset
+           
+           ! If point lies outside the range [0,1],
+           ! fold it back so that it is between [0,1]
+           if ( X_u_all_levs(k-1,sample,i) > one ) then
+             X_u_all_levs(k-1,sample,i) = two - X_u_all_levs(k-1,sample,i)
+           else if ( X_u_all_levs(k-1,sample,i) < zero ) then
+             X_u_all_levs(k-1,sample,i) = - X_u_all_levs(k-1,sample,i)
+           end if
 
-    ! Downwards loop
-    do k = k_lh_start, 2, -1
-
-      km1 = k-1 ! This is the level we're computing
-
-      if ( vert_corr(km1) < zero .or. vert_corr(km1) > one ) then
-        stop "vert_corr(km1) not between 0 and 1"
-      end if
-
-      half_width = one - vert_corr(km1)
-      min_val = X_u_one_var_all_levs(k) - half_width
-
-      rand = rand_uniform_real( )
-      offset = two * half_width * rand
-
-      unbounded_point = min_val + offset
-
-      ! If unbounded_point lies outside the range [uniform_sample_thresh,1-uniform_sample_thresh],
-      ! fold it back so that it is between the valid range
-      if ( unbounded_point > one - uniform_sample_thresh ) then
-        X_u_one_var_all_levs(km1) = two - unbounded_point - two * uniform_sample_thresh
-      else if ( unbounded_point < uniform_sample_thresh ) then
-        X_u_one_var_all_levs(km1) = - unbounded_point + two * uniform_sample_thresh
-      else
-        X_u_one_var_all_levs(km1) = unbounded_point
-      end if
-
-    end do ! k_lh_start..2 decrementing
+         end do ! k_lh_start..2 decrementing
+      end do ! 1..num_samples
+    end do ! 1..pdf_dim
 
     return
   end subroutine compute_arb_overlap
-!-------------------------------------------------------------------------------
-
-!-------------------------------------------------------------------------------
-  function compute_vert_corr( nz, delta_zm, Lscale_vert_avg, rcm, &
-                              l_max_overlap_in_cloud ) result( vert_corr )
-! Description:
-!   This function computes the vertical correlation for arbitrary overlap, using
-!   density weighted 3pt averaged Lscale and the difference in height levels
-!   (delta_zm).
-! References:
-!   None
-!-------------------------------------------------------------------------------
-
-    use clubb_precision, only: &
-      core_rknd ! Constant
-
-    use constants_clubb, only: &
-      rc_tol, &
-      one
-
-    use parameters_silhs, only: &
-      vert_decorr_coef ! Variable(s)
-
-    implicit none
-
-    ! External
-    intrinsic :: exp
-
-    ! Input Variables
-    integer, intent(in) :: &
-      nz ! Number of vertical levels  [-]
-
-    real( kind = core_rknd ), intent(in), dimension(nz) :: &
-      delta_zm, &        ! Difference between altitudes    [m]
-      Lscale_vert_avg, & ! Vertically averaged Lscale      [m]
-      rcm                ! Cloud water mixing ratio        [kg/kg]
-
-    logical, intent(in) :: &
-      l_max_overlap_in_cloud ! Use maximum vertical overlap in cloud
-
-    ! Output Variable
-    real( kind = core_rknd ), dimension(nz) :: &
-      vert_corr ! The vertical correlation      [-]
-
-    ! ---- Begin Code ----
-    vert_corr(1:nz) = exp( -vert_decorr_coef &
-                            * ( delta_zm(1:nz) / Lscale_vert_avg(1:nz) ) )
-
-    if ( l_max_overlap_in_cloud ) then
-      where ( rcm > rc_tol )
-        vert_corr = one
-      end where
-    end if
-
-    return
-  end function compute_vert_corr
 
 !-------------------------------------------------------------------------------
   subroutine stats_accumulate_lh &
