@@ -214,59 +214,15 @@ module latin_hypercube_driver_module
     k_lh_start = compute_k_lh_start( nz, rcm, pdf_params, &
                                      silhs_config_flags%l_rcm_in_cloud_k_lh_start, &
                                      silhs_config_flags%l_random_k_lh_start )
-    if ( .not. l_calc_weights_all_levs_itime ) then
+                                     
+                                     
+    call generate_uniform_samples_and_weights_CPU( &
+                      nz, pdf_dim, d_uniform_extra, num_samples, iter, sequence_length, &
+                      k_lh_start, delta_zm, rcm, Lscale, rho_ds_zt, &
+                      pdf_params, hydromet_pdf_params, silhs_config_flags, &
+                      l_calc_weights_all_levs_itime, &
+                      X_u_all_levs, lh_sample_point_weights )
     
-      ! Generate a uniformly distributed sample at k_lh_start
-      call generate_uniform_sample_at_k_lh_start &
-           ( iter, pdf_dim, d_uniform_extra, num_samples, sequence_length,      & ! Intent(in)
-             pdf_params%cloud_frac_1(k_lh_start),                               & ! Intent(in)
-             pdf_params%cloud_frac_2(k_lh_start),                               & ! Intent(in)
-             pdf_params%mixt_frac(k_lh_start), hydromet_pdf_params(k_lh_start), & ! Intent(in)
-             silhs_config_flags%cluster_allocation_strategy,                    & ! Intent(in)
-             silhs_config_flags%l_lh_importance_sampling,                       & ! Intent(in)
-             silhs_config_flags%l_lh_straight_mc,                               & ! Intent(in)
-             silhs_config_flags%l_lh_clustered_sampling,                        & ! Intent(in)
-             silhs_config_flags%l_lh_limit_weights,                             & ! Intent(in)
-             silhs_config_flags%l_lh_var_frac,                                  & ! Intent(in)
-             silhs_config_flags%l_lh_normalize_weights,                         & ! Intent(in)
-             X_u_all_levs(k_lh_start,:,:), lh_sample_point_weights(1,:) )         ! Intent(out)
-                          
-      forall ( k = 2:nz )
-        lh_sample_point_weights(k,:) = lh_sample_point_weights(1,:)
-      end forall
-      
-      ! Generate uniform sample at other grid levels 
-      !   by vertically correlating them
-      call vertical_overlap_driver &
-           ( nz, pdf_dim, d_uniform_extra, num_samples, &         ! Intent(in)
-             k_lh_start, delta_zm, rcm, Lscale, rho_ds_zt, &      ! Intent(in)
-             silhs_config_flags%l_Lscale_vert_avg, &              ! Intent(in)
-             silhs_config_flags%l_max_overlap_in_cloud, &         ! Intent(in)
-             X_u_all_levs )                                       ! Intent(inout)
-    
-    end if
-    
-    do k = 1, nz
-    
-      if ( l_calc_weights_all_levs_itime ) then
-        ! moved inside the loop to apply importance sampling for each layer
-        ! 
-        call generate_uniform_sample_at_k_lh_start &
-             ( iter, pdf_dim, d_uniform_extra, num_samples, sequence_length, & ! Intent(in)
-               pdf_params%cloud_frac_1(k),                                   & ! Intent(in)
-               pdf_params%cloud_frac_2(k),                                   & ! Intent(in)
-               pdf_params%mixt_frac(k), hydromet_pdf_params(k),              & ! Intent(in)
-               silhs_config_flags%cluster_allocation_strategy,               & ! Intent(in)
-               silhs_config_flags%l_lh_importance_sampling,                  & ! Intent(in)
-               silhs_config_flags%l_lh_straight_mc,                          & ! Intent(in)
-               silhs_config_flags%l_lh_clustered_sampling,                   & ! Intent(in)
-               silhs_config_flags%l_lh_limit_weights,                        & ! Intent(in)
-               silhs_config_flags%l_lh_var_frac,                             & ! Intent(in)
-               silhs_config_flags%l_lh_normalize_weights,                    & ! Intent(in)
-               X_u_all_levs(k,:,:), lh_sample_point_weights(k,:) )             ! Intent(out)
-      end if
-      
-    end do
     
     ! Calculate possible Sigma_Cholesky values
     ! Row-wise multiply of the elements of a lower triangular matrix.
@@ -409,6 +365,130 @@ module latin_hypercube_driver_module
     return
   end subroutine generate_silhs_sample
 !-------------------------------------------------------------------------------
+
+  subroutine generate_uniform_samples_and_weights_CPU( &
+                    nz, pdf_dim, d_uniform_extra, num_samples, iter, sequence_length, &
+                    k_lh_start, delta_zm, rcm, Lscale, rho_ds_zt, &
+                    pdf_params, hydromet_pdf_params, silhs_config_flags, &
+                    l_calc_weights_all_levs_itime, &
+                    X_u_all_levs, lh_sample_point_weights )
+          
+    use clubb_precision, only: &
+      core_rknd      ! Constant          
+                    
+    use pdf_parameter_module, only: &
+      pdf_parameter  ! Type
+
+    use hydromet_pdf_parameter_module, only: &
+      hydromet_pdf_parameter ! Type
+      
+    use parameters_silhs, only: &
+      silhs_config_flags_type ! Type
+
+    implicit none
+    
+    !----------------- Input Variables -----------------
+    
+    integer, intent(in) :: &
+      nz, &
+      pdf_dim, &
+      d_uniform_extra, &
+      num_samples, &
+      iter, &
+      sequence_length
+      
+    integer, intent(in) :: &
+      k_lh_start
+      
+    real( kind = core_rknd ), dimension(nz), intent(in) :: &
+      Lscale,   & ! Turbulent mixing length            [m]
+      delta_zm, & ! Difference in momentum altitudes    [m]
+      rcm,      & ! Liquid water mixing ratio          [kg/kg]
+      rho_ds_zt   ! Dry, static density on thermo. levels    [kg/m^3]
+      
+    type(pdf_parameter), intent(in) :: &
+      pdf_params ! PDF parameters       [units vary]
+      
+    type(hydromet_pdf_parameter), dimension(nz), intent(in) :: &
+      hydromet_pdf_params ! Hydrometeor PDF parameters  [units vary]
+      
+    type(silhs_config_flags_type), intent(in) :: &
+      silhs_config_flags ! Flags for the SILHS sampling code [-]
+      
+    logical, intent(in) :: &
+      l_calc_weights_all_levs_itime ! determines if vertically correlated sample points are needed
+    
+    !----------------- Output Variables -----------------
+    
+    real( kind = core_rknd ), intent(out), dimension(nz,num_samples,(pdf_dim+d_uniform_extra)) :: &
+      X_u_all_levs ! Sample drawn from uniform distribution
+      
+    real( kind = core_rknd ), intent(out), dimension(nz,num_samples) :: &
+      lh_sample_point_weights ! Weight of each sample point
+      
+    !----------------- Local Variables -----------------
+    
+    integer :: k ! Loop variable
+
+    !----------------- Begin Code -----------------
+    
+    
+    if ( .not. l_calc_weights_all_levs_itime ) then
+    
+      ! Generate a uniformly distributed sample at k_lh_start
+      call generate_uniform_sample_at_k_lh_start &
+           ( iter, pdf_dim, d_uniform_extra, num_samples, sequence_length,      & ! Intent(in)
+             pdf_params%cloud_frac_1(k_lh_start),                               & ! Intent(in)
+             pdf_params%cloud_frac_2(k_lh_start),                               & ! Intent(in)
+             pdf_params%mixt_frac(k_lh_start), hydromet_pdf_params(k_lh_start), & ! Intent(in)
+             silhs_config_flags%cluster_allocation_strategy,                    & ! Intent(in)
+             silhs_config_flags%l_lh_importance_sampling,                       & ! Intent(in)
+             silhs_config_flags%l_lh_straight_mc,                               & ! Intent(in)
+             silhs_config_flags%l_lh_clustered_sampling,                        & ! Intent(in)
+             silhs_config_flags%l_lh_limit_weights,                             & ! Intent(in)
+             silhs_config_flags%l_lh_var_frac,                                  & ! Intent(in)
+             silhs_config_flags%l_lh_normalize_weights,                         & ! Intent(in)
+             X_u_all_levs(k_lh_start,:,:), lh_sample_point_weights(1,:) )         ! Intent(out)
+                          
+      forall ( k = 2:nz )
+        lh_sample_point_weights(k,:) = lh_sample_point_weights(1,:)
+      end forall
+      
+      ! Generate uniform sample at other grid levels 
+      !   by vertically correlating them
+      call vertical_overlap_driver &
+           ( nz, pdf_dim, d_uniform_extra, num_samples, &         ! Intent(in)
+             k_lh_start, delta_zm, rcm, Lscale, rho_ds_zt, &      ! Intent(in)
+             silhs_config_flags%l_Lscale_vert_avg, &              ! Intent(in)
+             silhs_config_flags%l_max_overlap_in_cloud, &         ! Intent(in)
+             X_u_all_levs )                                       ! Intent(inout)
+    
+    end if
+    
+    do k = 1, nz
+    
+      if ( l_calc_weights_all_levs_itime ) then
+        ! moved inside the loop to apply importance sampling for each layer
+        ! 
+        call generate_uniform_sample_at_k_lh_start &
+             ( iter, pdf_dim, d_uniform_extra, num_samples, sequence_length, & ! Intent(in)
+               pdf_params%cloud_frac_1(k),                                   & ! Intent(in)
+               pdf_params%cloud_frac_2(k),                                   & ! Intent(in)
+               pdf_params%mixt_frac(k), hydromet_pdf_params(k),              & ! Intent(in)
+               silhs_config_flags%cluster_allocation_strategy,               & ! Intent(in)
+               silhs_config_flags%l_lh_importance_sampling,                  & ! Intent(in)
+               silhs_config_flags%l_lh_straight_mc,                          & ! Intent(in)
+               silhs_config_flags%l_lh_clustered_sampling,                   & ! Intent(in)
+               silhs_config_flags%l_lh_limit_weights,                        & ! Intent(in)
+               silhs_config_flags%l_lh_var_frac,                             & ! Intent(in)
+               silhs_config_flags%l_lh_normalize_weights,                    & ! Intent(in)
+               X_u_all_levs(k,:,:), lh_sample_point_weights(k,:) )             ! Intent(out)
+      end if
+      
+    end do
+    
+    
+  end subroutine generate_uniform_samples_and_weights_CPU
 
 !-------------------------------------------------------------------------------
   subroutine generate_uniform_sample_at_k_lh_start &
