@@ -14,8 +14,8 @@ RUN_CASE="rico"
 RUN_CASE_INPUT="../input/case_setups/${RUN_CASE}_model.in"
 
 # Set the number of sample points for the two runs
-N_SMALL=10
-N_LARGE=100
+N_SMALL=8
+N_LARGE=1000
 
 # Define output directories for both runs
 OUTPUT_SMALL="../output/small"
@@ -62,16 +62,34 @@ from netCDF4 import Dataset;
 import numpy as np;
 import os;
 import sys;
-f = Dataset(os.environ["OUTPUT_SMALL"]+"/"+os.environ["RUN_CASE"]+"_lh_zt.nc", mode="r");
-AKm = np.asarray(np.asmatrix(f.variables["AKm"][:]));
-lh_AKm = np.asarray(np.asmatrix(f.variables["lh_AKm"][:]));
-f.close();
+try:
+    f = Dataset(os.environ["OUTPUT_SMALL"]+"/"+os.environ["RUN_CASE"]+"_lh_zt.nc", mode="r");
+    AKm = np.asarray(np.asmatrix(f.variables["AKm"][:]));
+    lh_AKm = np.asarray(np.asmatrix(f.variables["lh_AKm"][:]));
+    f.close();
+except:
+    sys.exc_info()[0];
+    sys.exit(1);
+if AKm.shape!=lh_AKm.shape or len(AKm.shape)!=2 or AKm.shape[0]==0 or AKm.shape[1]==0:
+    sys.exit(1);
+shape_small = AKm.shape;
 RMSE_small = np.sqrt(1/AKm.shape[1]*sum([(np.mean(lh_AKm[:, k])-np.mean(AKm[:, k]))**2 for k in range(AKm.shape[1])]));
-f = Dataset(os.environ["OUTPUT_LARGE"]+"/"+os.environ["RUN_CASE"]+"_lh_zt.nc", mode="r");
-AKm = np.asarray(np.asmatrix(f.variables["AKm"][:]));
-lh_AKm = np.asarray(np.asmatrix(f.variables["lh_AKm"][:]));
-f.close();
+try:
+    f = Dataset(os.environ["OUTPUT_LARGE"]+"/"+os.environ["RUN_CASE"]+"_lh_zt.nc", mode="r");
+    AKm = np.asarray(np.asmatrix(f.variables["AKm"][:]));
+    lh_AKm = np.asarray(np.asmatrix(f.variables["lh_AKm"][:]));
+    f.close();
+except:
+    sys.exc_info()[0];
+    sys.exit(1);
+if AKm.shape!=lh_AKm.shape or len(AKm.shape)!=2 or AKm.shape[0]==0 or AKm.shape[1]==0:
+    sys.exit(1);
+shape_large = AKm.shape;
 RMSE_large = np.sqrt(1/AKm.shape[1]*sum([(np.mean(lh_AKm[:, k])-np.mean(AKm[:, k]))**2 for k in range(AKm.shape[1])]));
+if shape_small!=shape_large:
+    sys.exit(1);
+if RMSE_small<0 or RMSE_large<0 or RMSE_small>1e-5 or RMSE_large>1e-5:
+    sys.exit(1);
 print("N_small =", os.environ["N_SMALL"]);
 print("N_large =", os.environ["N_LARGE"]);
 print("RMSE_small =", RMSE_small);
