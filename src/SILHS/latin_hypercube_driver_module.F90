@@ -1710,12 +1710,14 @@ module latin_hypercube_driver_module
 
            X_u_all_levs(k+1,sample,i) = min_val + offset
            
-           ! If point lies outside the range [0,1],
-           ! fold it back so that it is between [0,1]
-           if ( X_u_all_levs(k+1,sample,i) > one ) then
-             X_u_all_levs(k+1,sample,i) = two - X_u_all_levs(k+1,sample,i)
-           else if ( X_u_all_levs(k+1,sample,i) < zero ) then
-             X_u_all_levs(k+1,sample,i) = - X_u_all_levs(k+1,sample,i)
+           ! If unbounded_point lies outside [uniform_sample_thresh,1-uniform_sample_thresh],
+           ! fold it back so that it is between the valid range
+           if ( X_u_all_levs(k+1,sample,i) > one - uniform_sample_thresh ) then
+             X_u_all_levs(k+1,sample,i) = two - X_u_all_levs(k+1,sample,i) &
+                                          - two * uniform_sample_thresh
+           else if ( X_u_all_levs(k+1,sample,i) < uniform_sample_thresh ) then
+             X_u_all_levs(k+1,sample,i) = - X_u_all_levs(k+1,sample,i) &
+                                            + two * uniform_sample_thresh
            end if
            
          end do ! k_lh_start..nz-1
@@ -1736,12 +1738,14 @@ module latin_hypercube_driver_module
 
            X_u_all_levs(k-1,sample,i) = min_val + offset
            
-           ! If point lies outside the range [0,1],
-           ! fold it back so that it is between [0,1]
-           if ( X_u_all_levs(k-1,sample,i) > one ) then
-             X_u_all_levs(k-1,sample,i) = two - X_u_all_levs(k-1,sample,i)
-           else if ( X_u_all_levs(k-1,sample,i) < zero ) then
-             X_u_all_levs(k-1,sample,i) = - X_u_all_levs(k-1,sample,i)
+           ! If unbounded_point lies outside [uniform_sample_thresh,1-uniform_sample_thresh],
+           ! fold it back so that it is between the valid range
+           if ( X_u_all_levs(k-1,sample,i) > one - uniform_sample_thresh ) then
+             X_u_all_levs(k-1,sample,i) = two - X_u_all_levs(k-1,sample,i) &
+                                          - two * uniform_sample_thresh
+           else if ( X_u_all_levs(k-1,sample,i) < uniform_sample_thresh ) then
+             X_u_all_levs(k-1,sample,i) = - X_u_all_levs(k-1,sample,i) &
+                                            + two * uniform_sample_thresh
            end if
 
          end do ! k_lh_start..2 decrementing
