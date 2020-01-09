@@ -69,7 +69,7 @@ HL = [\
          ['HLSTOR', True, 'HLSTOR', kg_per_second_to_kg_per_day, 0],\
          ['HL_RES', True, '((HLSTOR)+((-1)*(HLADV+HLDIFF+HLRAD+HLLAT+TTEND)))', g_per_second_to_kg_per_day, 0],\
         ]
-         
+
 QT = [\
          # variables of QTO
          ['QTADV', True, 'QTADV', g_per_second_to_kg_per_day, 0],\
@@ -81,9 +81,9 @@ QT = [\
          ['QV_TNDCY', True, 'QV_TNDCY', g_per_second_to_kg_per_day, 0],\
          ['QT_RES', True, 'QTSTOR+(-1)*(QTADV+QTDIFF+QTSRC+QTSINK+QTEND)', 1, 0],\
         ]
-         
+
 TW = [\
-         # variables of TW
+         # variables of TW (pressure, buoyancy combined)
          ['TWGRAD', True, 'TWGRAD', 1, 0],\
          ['TWADV', True, 'TWADV', 1, 0],\
          ['TWDIFF', True, 'TWDIFF', 1, 0],\
@@ -96,24 +96,52 @@ TW = [\
          ['TWBT', True, 'TWBT', 1, 0],\
          ['TW_RES', True, 'TWBT - (TWGRAD + TWADV + TWDIFF + TWBUOY + TWPRES + TWPREC + TWRAD + TWFORC)', 1, 0],\
         ]
-         
-THLW = [\
-         # variables of THLW
-         ['THLWGRAD', True, 'THLWGRAD', 1, 0],\
-         ['THLWADV', True, 'THLWADV', 1, 0],\
-         ['THLWDIFF', True, 'THLWDIFF', 1, 0],\
-         ['THLWB+P', True, 'THLWBUOY+THLWPRES', 1, 0],\
-         ['THLWBUOY', False, 'THLWBUOY', 1, 0],\
-         ['THLWPRES', False, 'THLWPRES', 1, 0],\
-         ['THLWPREC', True, 'THLWPREC', 1, 0],\
-         ['THLWRAD', True, 'THLWRAD', 1, 0],\
-         ['THLWFORC', True, 'THLWFORC', 1, 0],\
-         ['THLWBT', True, 'THLWBT', 1, 0],\
-         ['THLW_RES', True, 'THLWBT - (THLWGRAD + THLWADV + THLWDIFF + THLWBUOY + THLWPRES + THLWPREC + THLWRAD + THLWFORC)', 1, 0],\
+
+TW_split = [\
+        # variables of TW (pressure, buoyancy split)
+        ['TWGRAD', True, 'TWGRAD', 1, 0],\
+        ['TWADV', True, 'TWADV', 1, 0],\
+        ['TWDIFF', True, 'TWDIFF', 1, 0],\
+        ['TWBUOY', True, 'TWBUOY', 1, 0],\
+        ['TWPRES', True, 'TWPRES', 1, 0],\
+        ['TWPREC', True, 'TWPREC', 1, 0],\
+        ['TWRAD', True, 'TWRAD', 1, 0],\
+        ['TWFORC', True, 'TWFORC', 1, 0],\
+        ['TWBT', True, 'TWBT', 1, 0],\
+        ['TW_RES', True, 'TWBT - (TWGRAD + TWADV + TWDIFF + TWBUOY + TWPRES + TWPREC + TWRAD + TWFORC)', 1, 0],\
         ]
-         
+
+THLW = [\
+        # variables of THLW (pressure, buoyancy combined)
+        ['THLWGRAD', True, 'THLWGRAD', 1, 0],\
+        ['THLWADV', True, 'THLWADV', 1, 0],\
+        ['THLWDIFF', True, 'THLWDIFF', 1, 0],\
+        ['THLWB+P', True, 'THLWBUOY+THLWPRES', 1, 0],\
+        ['THLWBUOY', False, 'THLWBUOY', 1, 0],\
+        ['THLWPRES', False, 'THLWPRES', 1, 0],\
+        ['THLWPREC', True, 'THLWPREC', 1, 0],\
+        ['THLWRAD', True, 'THLWRAD', 1, 0],\
+        ['THLWFORC', True, 'THLWFORC', 1, 0],\
+        ['THLWBT', True, 'THLWBT', 1, 0],\
+        ['THLW_RES', True, 'THLWBT - (THLWGRAD + THLWADV + THLWDIFF + THLWBUOY + THLWPRES + THLWPREC + THLWRAD + THLWFORC)', 1, 0],\
+        ]
+
+THLW_split = [\
+        # variables of THLW (pressure, buoyancy split up)
+        ['THLWGRAD', True, 'THLWGRAD', 1, 0],\
+        ['THLWADV', True, 'THLWADV', 1, 0],\
+        ['THLWDIFF', True, 'THLWDIFF', 1, 0],\
+        ['THLWBUOY', True, 'THLWBUOY', 1, 0],\
+        ['THLWPRES', True, 'THLWPRES', 1, 0],\
+        ['THLWPREC', True, 'THLWPREC', 1, 0],\
+        ['THLWRAD', True, 'THLWRAD', 1, 0],\
+        ['THLWFORC', True, 'THLWFORC', 1, 0],\
+        ['THLWBT', True, 'THLWBT', 1, 0],\
+        ['THLW_RES', True, 'THLWBT - (THLWGRAD + THLWADV + THLWDIFF + THLWBUOY + THLWPRES + THLWPREC + THLWRAD + THLWFORC)', 1, 0],\
+        ]
+
 QW = [\
-         # variables of QW
+        # variables of QW (pressure, buoyancy combined)
          ['QWGRAD', True, 'QWGRAD', 1, 0],\
          ['QWADV', True, 'QWADV', 1, 0],\
          ['QWDIFF', True, 'QWDIFF', 1, 0],\
@@ -125,9 +153,22 @@ QW = [\
          ['QWBT', True, 'QWBT', 1, 0],\
          ['QW_RES', True, 'QWBT - (QWGRAD + QWADV + QWDIFF + QWBUOY + QWPRES + QWPREC + QWFORC)', 1, 0],\
         ]
-         
+
+QW_split = [\
+        # variables of QW (pressure, buoyancy split)
+        ['QWGRAD', True, 'QWGRAD', 1, 0],\
+        ['QWADV', True, 'QWADV', 1, 0],\
+        ['QWDIFF', True, 'QWDIFF', 1, 0],\
+        ['QWBUOY', True, 'QWBUOY', 1, 0],\
+        ['QWPRES', True, 'QWPRES', 1, 0],\
+        ['QWPREC', True, 'QWPREC', 1, 0],\
+        ['QWFORC', True, 'QWFORC', 1, 0],\
+        ['QWBT', True, 'QWBT', 1, 0],\
+        ['QW_RES', True, 'QWBT - (QWGRAD + QWADV + QWDIFF + QWBUOY + QWPRES + QWPREC + QWFORC)', 1, 0],\
+        ]
+
 QTOGW = [\
-         # variables of QTOGW
+        # variables of QTOGW (pressure, buoyancy combined)
          ['QTOGWGRAD', True, 'QTOGWGRAD', 1, 0],\
          ['QTOGWADV', True, 'QTOGWADV', 1, 0],\
          ['QTOGWDIFF', True, 'QTOGWDIFF', 1, 0],\
@@ -138,6 +179,19 @@ QTOGW = [\
          ['QTOGWFORC', True, 'QTOGWFORC', 1, 0],\
          ['QTOGWBT', True, 'QTOGWBT', 1, 0],\
          ['QTOGW_RES', True, 'QTOGWBT - (QTOGWGRAD + QTOGWADV + QTOGWDIFF + QTOGWBUOY + QTOGWPRES + QTOGWPREC + QTOGWFORC)', 1, 0],\
+        ]
+
+QTOGW_split = [\
+        # variables of QTOGW (pressure, buoyancy split)
+        ['QTOGWGRAD', True, 'QTOGWGRAD', 1, 0],\
+        ['QTOGWADV', True, 'QTOGWADV', 1, 0],\
+        ['QTOGWDIFF', True, 'QTOGWDIFF', 1, 0],\
+        ['QTOGWBUOY', True, 'QTOGWBUOY', 1, 0],\
+        ['QTOGWPRES', True, 'QTOGWPRES', 1, 0],\
+        ['QTOGWPREC', True, 'QTOGWPREC', 1, 0],\
+        ['QTOGWFORC', True, 'QTOGWFORC', 1, 0],\
+        ['QTOGWBT', True, 'QTOGWBT', 1, 0],\
+        ['QTOGW_RES', True, 'QTOGWBT - (QTOGWGRAD + QTOGWADV + QTOGWDIFF + QTOGWBUOY + QTOGWPRES + QTOGWPREC + QTOGWFORC)', 1, 0],\
         ]
 
 T2 = [\
@@ -152,7 +206,7 @@ T2 = [\
          ['T2BT', True, 'T2BT', 1, 0],\
          ['T2_RES', True, 'T2BT - (T2ADVTR + T2GRAD + T2DISSIP + T2DIFTR + T2PREC + T2RAD + T2FORC)', 1, 0],\
         ]
-         
+
 THL2 = [\
          # variables of THL2
          ['THL2ADVTR', True, 'THL2ADVTR', 1, 0],\
@@ -165,7 +219,7 @@ THL2 = [\
          ['THL2BT', True, 'THL2BT', 1, 0],\
          ['THL2_RES', True, 'THL2BT - (THL2ADVTR + THL2GRAD + THL2DISSIP + THL2DIFTR + THL2PREC + THL2RAD + THL2FORC)', 1, 0],\
         ]
-         
+
 Q2 = [\
          # variables of Q2
          ['Q2ADVTR', True, 'Q2ADVTR', 1, 0],\
@@ -177,7 +231,7 @@ Q2 = [\
          ['Q2BT', True, 'Q2BT', 1, 0],\
          ['Q2_RES', True, 'Q2BT - (Q2ADVTR + Q2GRAD + Q2DISSIP + Q2DIFTR + Q2PREC + Q2FORC)', 1, 0],\
         ]
-         
+
 QTOG2 = [\
          # variables of QTOG2
          ['QTOG2ADVTR', True, 'QTOG2ADVTR', 1, 0],\
@@ -189,7 +243,7 @@ QTOG2 = [\
          ['QTOG2BT', True, 'QTOG2BT', 1, 0],\
          ['QTOG2_RES', True, 'QTOG2BT - (QTOG2ADVTR + QTOG2GRAD + QTOG2DISSIP + QTOG2DIFTR + QTOG2PREC + QTOG2FORC)', 1, 0],\
         ]
-         
+
 QTHL = [\
          # variables of QTHL
          ['QTHLADV', True, 'QTHLADV', 1, 0],\
@@ -202,7 +256,7 @@ QTHL = [\
          ['QTHLBT', True, 'QTHLBT', 1, 0],\
          ['QTHL_RES', True, 'QTHLBT - (QTHLADV + QTHLGRAD + QTHLDISSIP + QTHLDIFTR + QTHLPREC + QTHLRAD + QTHLFORC)', 1, 0],\
         ]
-        
+
 TKE = [\
         # variables of TKE resolved
         ['ADVTR', True, 'ADVTR', 1, 0],\
@@ -216,7 +270,7 @@ TKE = [\
         ['TKEBT', True, 'BT', 1., 0],\
         ['TKE_RES', True, 'BT - (SHEAR + BUOYA + ADVTR + PRESSTR + DIFTR + SDMP + DISSIP)', 1, 0],\
        ]
-         
+
 TKES = [\
         # variables of TKE SGS
         ['ADVTRS', True, 'ADVTRS', 1, 0],\
@@ -225,7 +279,8 @@ TKES = [\
         ['DISSIPS', True, 'DISSIPS', -1., 0],\
         ['TKE_RES', True, '-(SHEARS + BUOYAS + ADVTRS + DISSIPS)', 1, 0],\
        ]
-       
+
+# Momentum flux budgets
 U2V2 = [\
         # variables of U2 + V2 = 2 * TKE - W2
         ['W2ADV', False, 'W2ADV', 1, 0],\
@@ -255,7 +310,7 @@ U2V2 = [\
         #['U2V2_RES', True, '2 * TKE_RES - W2_RES', 1., 0],\
         ['U2V2_RES', True, '2. * (BT - (ADVTR + BUOYA + PRESSTR + DIFTR + DISSIP + SDMP + SHEAR)) - W2BT + (W2ADV + W2BUOY + W2PRES + W2DIFF + W2SDMP + W2REDIS)', 1., 0],\
        ]
-  
+
 WU = [\
     # variables of WV
         ['WUDIFF', True, 'WUDIFF', 1, 0],\
@@ -281,7 +336,6 @@ WV = [\
         ['WVBT', True, 'WVBT', 1, 0],\
         ['WVSDMP', False, 'WVSDMP', 1, 0],\
      ]
-
 
 U2 = [\
     # variables of U2
@@ -359,6 +413,7 @@ V2_COMP = [\
         ['V2_RES', True, '2. * (BT - (ADVTR + BUOYA + PRESSTR + DIFTR + DISSIP + SDMP + SHEAR)) - W2BT - U2BT + (W2ADV + U2ADV + W2BUOY + W2PRES + W2DIFF + U2DIFF + W2SDMP + W2REDIS + U2REDIS + U2SHEAR)', 1., 0],\
     ]
 
+# Tau plots
 U2_V2_TAU = [\
     [r'U2DIFF', True, 'U2DIFF', 1, 0],\
     [r'V2DIFF', True, 'V2DIFF', 1, 0],\
@@ -367,7 +422,6 @@ U2_V2_TAU = [\
     [r"$\frac{C_{14}}{\tau}\ (u'^2)$", True, '- (3/2) * U2DIFF / np.maximum( TKE + TKES, 1e-6 )', 1, 0],\
     [r"$\frac{C_{14}}{\tau}\ (v'^2)$", True, ' - (3/2) * V2DIFF / np.maximum( TKE + TKES, 1e-6 )', 1, 0],\
     ]
-
 
 QTOG2_TAU = [\
     [r'QTOG2DISSIP', True, 'QTOG2DISSIP', 1, 0],\
@@ -406,7 +460,7 @@ C2_TAU_COMP = [\
     ['TKE', False, 'TKE', 1, 0],\
     [r"$\frac{C_{14}}{\tau}\ (u'^2)$", True, '- (3/2) * U2DIFF / np.maximum( TKE + TKES, 1e-6 )', 1, 0],\
     [r"$\frac{C_{14}}{\tau}\ (v'^2)$", True, ' - (3/2) * V2DIFF / np.maximum( TKE + TKES, 1e-6 )', 1, 0],\
-    [r"$\frac{C_2}{\tau}\ (q_{tog}'^2)$", True, '- ( QTOG2DISSIP + QTOG2DIFTR ) / np.maximum( QTOG2 * 1e-6, 1e-15 )', 1, 0],\
+    [r"$\frac{C_2}{\tau}\ (q_{tog}'^2)$", True, '- ( QTOG2DISSIP + QTOG2DIFTR ) / np.maximum( QTOG2 * 1e-6, 1e-15 )', 1, 1],\
     [r"$\frac{C_2}{\tau}\ (\theta_l'^2)$", True, ' - ( THL2DISSIP + THL2DIFTR ) / np.maximum( THEL2, 1e-6 )', 1, 0],\
     [r"$\frac{C_2}{\tau}\ (q'^2)$", True, '- ( Q2DISSIP + Q2DIFTR ) / np.maximum( QT2 * 1e-6, 1e-15 )', 1, 0],\
     ]
@@ -434,7 +488,7 @@ U2_REDUCED = [\
     ['time tndcy', True, 'U2BT', 1, 0],\
     ['residual', True, 'U2BT - (U2ADV + U2SHEAR + U2REDIS + U2DIFF)', 1, 0],\
     ]
-                    
+
 V2_REDUCED = [\
     # variables of V2
     ['advection', True, 'V2ADV', 1, 0],\
@@ -502,10 +556,14 @@ WV_REDUCED = [\
 plots = [
     ['HL', r"$\mathrm{HL}$", r"$\mathrm{HL}$ budget terms $\mathrm{\left[K\,s^{-1}\right]}$", '', (0.1, 0.9), HL],
     ['QT', r"$\mathrm{QT}$", r"$\mathrm{QT}$ budget terms $\mathrm{\left[kg\,kg^{-1}\,s^{-1}\right]}$", '', (0.1, 0.9), QT],
-    ['TW', r"$\mathrm{TW}$", r"$\mathrm{TW}$ budget terms $\mathrm{\left[m\,K\,s^{-2}\right]}$", '', (0.1, 0.9), TW],
-    ['THLW', r"$\mathrm{THLW}$", r"$\mathrm{THLW}$ budget terms $\mathrm{\left[m\,K\,s^{-2}\right]}$", '', (0.1, 0.9), THLW],
-    ['QW', r"$\mathrm{QW}$", r"$\mathrm{QW}$ budget terms $\mathrm{\left[kg\,kg^{-1}\,m\,s^{-2}\right]}$", '', (0.1, 0.9), QW],
-    ['QTOGW', r"$\mathrm{QTOGW}$", r"$\mathrm{QTOGW}$ budget terms $\mathrm{\left[kg\,kg^{-1}\,m\,s^{-2}\right]}$", '', (0.1, 0.9), QTOGW],
+    ['TW_B+P', r"$\mathrm{TW}$ B+P", r"$\mathrm{TW}$ budget terms $\mathrm{\left[m\,K\,s^{-2}\right]}$", '', (0.1, 0.9), TW],
+    ['TW_COMPLETE', r"$\mathrm{TW}$ complete", r"$\mathrm{TW}$ budget terms $\mathrm{\left[m\,K\,s^{-2}\right]}$", '', (0.1, 0.9), TW_split],
+    ['THLW_B+P', r"$\mathrm{THLW}$ B+P", r"$\mathrm{THLW}$ budget terms $\mathrm{\left[m\,K\,s^{-2}\right]}$", '', (0.1, 0.9), THLW],
+    ['THLW_COMPLETE', r"$\mathrm{THLW}$ complete", r"$\mathrm{THLW}$ budget terms $\mathrm{\left[m\,K\,s^{-2}\right]}$", '', (0.1, 0.9), THLW_split],
+    ['QW_B+P', r"$\mathrm{QW}$ B+P", r"$\mathrm{QW}$ budget terms $\mathrm{\left[kg\,kg^{-1}\,m\,s^{-2}\right]}$", '', (0.1, 0.9), QW],
+    ['QW_COMPLETE', r"$\mathrm{QW}$ complete", r"$\mathrm{QW}$ budget terms $\mathrm{\left[kg\,kg^{-1}\,m\,s^{-2}\right]}$", '', (0.1, 0.9), QW_split],
+    ['QTOGW_B+P', r"$\mathrm{QTOGW}$ B+P", r"$\mathrm{QTOGW}$ budget terms $\mathrm{\left[kg\,kg^{-1}\,m\,s^{-2}\right]}$", '', (0.1, 0.9), QTOGW],
+    ['QTOGW_COMPLETE', r"$\mathrm{QTOGW}$ complete", r"$\mathrm{QTOGW}$ budget terms $\mathrm{\left[kg\,kg^{-1}\,m\,s^{-2}\right]}$", '', (0.1, 0.9), QTOGW_split],
     ['W2', r"$\overline{w'^2}$", r"$\overline{w'^2}$ budget terms $\mathrm{\left[m^2\,s^{-3}\right]}$", '', (0.1, 0.9), W2],
     ['W3', r"$\overline{w'^3}$", r"$\overline{w'^3}$ budget terms $\mathrm{\left[m^3\,s^{-4}\right]}$", '', (0.1, 0.9), W3],
     ['T2', r"$\mathrm{T^2}$", r"$\mathrm{T^2}$ budget terms $\mathrm{\left[K^2\,s^{-1}\right]}$", '', (0.1, 0.9), T2],

@@ -445,7 +445,8 @@ def plot_default(plots, cf, data, h, centering):
     param_file.close()
 
 
-def plot_3d(plots, cf, data, h, h_limits, h_extent, prm_vars, fps=2, dil_len=1, gif=False):
+#def plot_3d(plots, cf, data, h, h_limits, h_extent, prm_vars, fps=2, dil_len=1, gif=False):
+def plot_3d(plots, cf, data, h, h_limits, h_extent, fps=2, dil_len=1, gif=False):
     """
     Generates horizontal output showing cloud outlines and wind speeds
     Additionally, creates cloud conditional profiles
@@ -1374,8 +1375,8 @@ def plotgen_3d(plots, cf):
         logger.error('Too many invalid trials. Exiting...')
         sys.exit()
     nc_std,nc_3d = load_nc(plots, cf)
-    logger.info('Fetching information from prm file')
-    prm_vars = get_values_from_prm(cf)
+    #logger.info('Fetching information from prm file')
+    #prm_vars = get_values_from_prm(cf)
     logger.info('Fetching dimension variables')
     # t not necessarily needed for momentary plot TODO
     t = get_t_dim(nc_std, create=False)

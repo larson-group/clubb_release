@@ -689,7 +689,36 @@ vwall = [\
         ]
 
 cld = [\
-    ['CLD',True,'CLD',1.,0],\
+    ['CLD', True, 'CLD', 1., 0],\
+        ]
+
+# Tracer variables
+tr01 = [\
+    ['TR01', True, 'TR01', 1., 0],\
+        ]
+
+tr01adv = [\
+    ['TR01ADV', True, 'TR01ADV', 1., 0],\
+        ]
+
+tr01diff = [\
+    ['TR01DIFF', True, 'TR01DIFF', 1., 0],\
+        ]
+
+tr01flx = [\
+    ['TR01FLX', True, 'TR01FLX', 1., 0],\
+        ]
+
+tr01flxsgs = [\
+    ['TR01FLXS', True, 'TR01FLXS', 1., 0],\
+        ]
+
+tr01phys = [\
+    ['TR01PHYS', True, 'TR01PHYS', 1., 0],\
+        ]
+
+rho = [\
+    ['RHO', True, 'RHO', 1., 0],\
         ]
 
 # List of combined setup parameters for each single plot
@@ -771,6 +800,7 @@ plots = [
     ['vprtp', r"$\overline{v'r_t'}$", r"Total water flux, $\overline{v'r_t'}\ \mathrm{\left[m^2\,s^{-2}\right]}$", '', (0.1, 0.9), vprtp],
     ['vpthlp', r"$\overline{v'\theta_l'}$", r"Liq. water pot. temp. flux, $\overline{v'\theta_l'}\ \mathrm{\left[m^2\,s^{-2}\right]}$", '', (0.1, 0.9), vpthlp],
     ['vpthvp', r"$\overline{v'\theta_v'}$", r"Virtual pot.temp. flux, $\overline{v'\theta_v'}\ \mathrm{\left[m^2\,s^{-2}\right]}$", '', (0.1, 0.9), vpthvp],
+    # Cloud conditional plots
     ['ucld', r"$\overline{u}^\mathrm{{cld}}$", r"Conditional mean wind, $\overline{u}^\mathrm{{cld}}\ \mathrm{\left[m\,s^{-1}\right]}$", '', (0.1, 0.9), ucld],
     ['vcld', r"$\overline{v}^\mathrm{{cld}}$", r"Conditional mean wind, $\overline{v}^\mathrm{{cld}}\ \ \mathrm{\left[m\,s^{-1}\right]}$", '', (0.1, 0.9), vcld],
     ['wcld', r"$\overline{w}^\mathrm{{cld}}$", r"Conditional mean wind, $\overline{w}^\mathrm{{cld}}\ \ \mathrm{\left[m\,s^{-1}\right]}$", '', (0.1, 0.9), wcld],
@@ -792,4 +822,12 @@ plots = [
     ['uwall', "Eastward 2nd-moments", r"2nd moments $\mathrm{\left[m^2\,s^{-2}\right]}$", '', (0.1, 0.9), uwall],
     ['vwall', "Northward 2nd-moments", r"2nd moments $\mathrm{\left[m^2\,s^{-2}\right]}$", '', (0.1, 0.9), vwall],
     ['cld', "Cloud fraction", r"Cloud fraction [-]", '', (0.1, 0.9), cld],
+    # Tracer variables
+    ['tr01', "Tracer 01", r"Tracer 01 [TR]", '', (0.1, 0.9), tr01],
+    ['tr01adv', "TR01 vert. adv. tend.", r"TR01 tendency due to vert. adv. $\mathrm{\left[TR/day\right]}$", '', (0.1, 0.9), tr01adv],
+    ['tr01diff', "TR01 vert. SGS trans. tend.", r"TR01 tendency due to vert. SGS transport $\mathrm{\left[TR/day\right]}$", '', (0.1, 0.9), tr01diff],
+    ['tr01flx', "Total TR01 flux", r"Total flux of TR01  $\mathrm{\left[TR kg m^{-2} s^{-1}\right]}$", '', (0.1, 0.9), tr01flx],
+    ['tr01flxsgs', "TR01 SGS flux", r"SGS flux of TR01  $\mathrm{\left[TR kg m^{-2} s^{-1}\right]}$", '', (0.1, 0.9), tr01flxsgs],
+    ['tr01phys', "TR01 phys. tend.", r"TR01 tendency due to physics $\mathrm{\left[TR/day\right]}$", '', (0.1, 0.9), tr01phys],
+    ['rho', "Air density", r"Air density $\rho\ \mathrm{\left[kgm^{-3}\right]}$", '', (0.1, 0.9), rho],
     ]
