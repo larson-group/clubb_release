@@ -1739,7 +1739,7 @@ module latin_hypercube_driver_module
            X_u_all_levs(k-1,sample,i) = min_val + offset
            
            ! If unbounded_point lies outside [uniform_sample_thresh,1-uniform_sample_thresh],
-           ! fold it back so that it is between the valid range
+           ! fold it back so that it is between the valid range 
            if ( X_u_all_levs(k-1,sample,i) > one - uniform_sample_thresh ) then
              X_u_all_levs(k-1,sample,i) = two - X_u_all_levs(k-1,sample,i) &
                                           - two * uniform_sample_thresh
