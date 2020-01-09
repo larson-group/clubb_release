@@ -94,11 +94,11 @@ class VariableGroupBase(VariableGroup):
         (THETAL + 2500.4.*(THETA./TABS).*(QI./1000))
         :return: requested variable data in the form of a list. Returned data is already cropped to the appropriate min,max indices
         """
-        z = self.getVarForCalculations('z', self.sam_file)
-        thetal = self.getVarForCalculations('THETAL', self.sam_file)
-        theta = self.getVarForCalculations('THETA', self.sam_file)
-        tabs = self.getVarForCalculations('TABS', self.sam_file)
-        qi = self.getVarForCalculations('QI', self.sam_file, fill_zeros=True)
+        # z,z, dataset = self.getVarForCalculations('z', self.sam_file)
+        thetal,z, dataset = self.getVarForCalculations('THETAL', self.sam_file)
+        theta,z, dataset = self.getVarForCalculations('THETA', self.sam_file)
+        tabs,z, dataset = self.getVarForCalculations('TABS', self.sam_file)
+        qi,z, dataset = self.getVarForCalculations('QI', self.sam_file, fill_zeros=True)
 
         thlm = thetal + (2500.4 * (theta / tabs) * (qi / 1000))
         return thlm, z
@@ -110,8 +110,8 @@ class VariableGroupBase(VariableGroup):
     #     (THETAL + 2500.4.*(THETA./TABS).*(QI./1000))
     #     :return: requested variable data in the form of a list. Returned data is already cropped to the appropriate min,max indices
     #     """
-    #     z = self.getVarForCalculations('Z3', self.e3sm_dataset)
-    #     thlm = self.getVarForCalculations('THETAL', self.e3sm_dataset)
+    #     # z,z, dataset = self.getVarForCalculations('Z3', self.e3sm_dataset)
+    #     thlm,z, dataset = self.getVarForCalculations('THETAL', self.e3sm_dataset)
     #
     #     thlm = thlm - 650.0
     #     return thlm, z
@@ -124,9 +124,9 @@ class VariableGroupBase(VariableGroup):
         (QT-QI) ./ 1000
         :return: requested variable data in the form of a list. Returned data is already cropped to the appropriate min,max indices
         """
-        z = self.getVarForCalculations('z', self.sam_file)
-        qt = self.getVarForCalculations('QT', self.sam_file)
-        qi = self.getVarForCalculations('QI', self.sam_file, fill_zeros=True)
+        # z,z, dataset = self.getVarForCalculations('z', self.sam_file)
+        qt,z, dataset = self.getVarForCalculations('QT', self.sam_file)
+        qi,z, dataset = self.getVarForCalculations('QI', self.sam_file, fill_zeros=True)
 
         rtm = (qt - qi) / 1000
         return rtm,z
@@ -145,9 +145,9 @@ class VariableGroupBase(VariableGroup):
         if self.coamps_file is not None:
             dataset = self.coamps_file['sm']
 
-        z = self.getVarForCalculations(['z', 'lev', 'altitude'], dataset)
-        wp3 = self.getVarForCalculations(['WP3', 'W3', 'wp3'], dataset)
-        wp2 = self.getVarForCalculations(['WP2', 'W2', 'wp2'], dataset)
+        # z,z, dataset = self.getVarForCalculations(['z', 'lev', 'altitude'], dataset)
+        wp3,z, dataset = self.getVarForCalculations(['WP3', 'W3', 'wp3'], dataset)
+        wp2,z, dataset = self.getVarForCalculations(['WP2', 'W2', 'wp2'], dataset)
 
         skw_zt = wp3 / (wp2 + 1.6e-3) ** 1.5
 
@@ -168,9 +168,9 @@ class VariableGroupBase(VariableGroup):
         if self.coamps_file is not None:
             dataset = self.coamps_file['sm']
 
-        z = self.getVarForCalculations(['z', 'lev', 'altitude'], dataset)
-        rtp3 = self.getVarForCalculations(['RTP3', 'qtp3'], dataset)
-        rtp2 = self.getVarForCalculations(['RTP2', 'qtp2'], dataset)
+        # z,z, dataset = self.getVarForCalculations(['z', 'lev', 'altitude'], dataset)
+        rtp3,z, dataset = self.getVarForCalculations(['RTP3', 'qtp3'], dataset)
+        rtp2,z, dataset = self.getVarForCalculations(['RTP2', 'qtp2'], dataset)
         skrtp_zt = rtp3 / (rtp2 + 4e-16) ** 1.5
 
         return skrtp_zt, z
@@ -190,9 +190,9 @@ class VariableGroupBase(VariableGroup):
         if self.coamps_file is not None:
             dataset = self.coamps_file['sm']
 
-        z = self.getVarForCalculations(['z', 'lev', 'altitude'], dataset)
-        thlp3 = self.getVarForCalculations(['THLP3', 'thlp3'], dataset)
-        thlp2 = self.getVarForCalculations(['THLP2', 'thlp2'], dataset)
+        # z,z, dataset = self.getVarForCalculations(['z', 'lev', 'altitude'], dataset)
+        thlp3,z, dataset = self.getVarForCalculations(['THLP3', 'thlp3'], dataset)
+        thlp2,z, dataset = self.getVarForCalculations(['THLP2', 'thlp2'], dataset)
 
         skthl_zt = thlp3 / (thlp2 + 4e-16) ** 1.5
         return skthl_zt, z
@@ -203,9 +203,9 @@ class VariableGroupBase(VariableGroup):
         WPTHLP = (TLFLUX) ./ (RHO * 1004)
         :return:
         """
-        tlflux = self.getVarForCalculations(['TLFLUX'], self.sam_file)
-        rho = self.getVarForCalculations(['RHO'], self.sam_file)
-        z = self.getVarForCalculations(['z', 'lev', 'altitude'], self.sam_file)
+        tlflux,z, dataset = self.getVarForCalculations(['TLFLUX'], self.sam_file)
+        rho,z, dataset = self.getVarForCalculations(['RHO'], self.sam_file)
+        # z,z, dataset = self.getVarForCalculations(['z', 'lev', 'altitude'], self.sam_file)
 
         wpthlp = tlflux / (rho * 1004)
 
@@ -217,10 +217,10 @@ class VariableGroupBase(VariableGroup):
         WPRTP = (QTFLUX) ./ (RHO * 2.5104e+6)
         :return:
         """
-        qtflux = self.getVarForCalculations(['QTFLUX'], self.sam_file)
-        rho = self.getVarForCalculations(['RHO'], self.sam_file)
+        qtflux,z, dataset = self.getVarForCalculations(['QTFLUX'], self.sam_file)
+        rho,z, dataset = self.getVarForCalculations(['RHO'], self.sam_file)
         wprtp = qtflux / (rho * 2.5104e+6)
-        z = self.getVarForCalculations(['z', 'lev', 'altitude'], self.sam_file)
+        # z,z, dataset = self.getVarForCalculations(['z', 'lev', 'altitude'], self.sam_file)
         return wprtp, z
 
     def getWpthvpFallback(self, dataset_override = None):
@@ -229,10 +229,10 @@ class VariableGroupBase(VariableGroup):
         WPTHVP =  (TVFLUX) ./ ( RHO * 1004)
         :return:
         """
-        tvflux = self.getVarForCalculations(['TVFLUX'], self.sam_file)
-        rho = self.getVarForCalculations(['RHO'], self.sam_file)
+        tvflux,z, dataset = self.getVarForCalculations(['TVFLUX'], self.sam_file)
+        rho,z, dataset = self.getVarForCalculations(['RHO'], self.sam_file)
         wpthvp = tvflux / (rho * 1004)
-        z = self.getVarForCalculations(['z', 'lev', 'altitude'], self.sam_file)
+        # z,z, dataset = self.getVarForCalculations(['z', 'lev', 'altitude'], self.sam_file)
         return wpthvp, z
 
     def getRtp2Fallback(self, dataset_override = None):
@@ -241,9 +241,9 @@ class VariableGroupBase(VariableGroup):
         THLP2 = QT2 / 1e+6
         :return:
         """
-        qt2 = self.getVarForCalculations(['QT2'], self.sam_file)
+        qt2,z, dataset = self.getVarForCalculations(['QT2'], self.sam_file)
         rtp2 = qt2 / 1e6
-        z = self.getVarForCalculations(['z', 'lev', 'altitude'], self.sam_file)
+        # z,z, dataset = self.getVarForCalculations(['z', 'lev', 'altitude'], self.sam_file)
         return rtp2, z
 
     def getRtp3Fallback(self, dataset_override=None):
@@ -254,22 +254,24 @@ class VariableGroupBase(VariableGroup):
         :return:
         """
         rtp3 = None
+        z = None
         if dataset_override is not None:
             dataset = dataset_override
         else:
             dataset = self.sam_file
-        if 'rc_coef_zm' in dataset.variables.keys() and 'rtprcp' in dataset.variables.keys():
-            rc_coef_zm = self.getVarForCalculations('rc_coef_zm', dataset)
-            rtprcp = self.getVarForCalculations('rtprcp', dataset)
-            rtp3 = rc_coef_zm * (rtprcp)
+        for dataset in dataset.values():
+            if 'rc_coef_zm' in dataset.variables.keys() and 'rtprcp' in dataset.variables.keys():
+                rc_coef_zm,z, dataset = self.getVarForCalculations('rc_coef_zm', dataset)
+                rtprcp,z, dataset = self.getVarForCalculations('rtprcp', dataset)
+                rtp3 = rc_coef_zm * (rtprcp)
 
-        elif 'QCFLUX' in dataset.variables.keys():
-            QCFLUX = self.getVarForCalculations('QCFLUX', dataset)
-            RHO = self.getVarForCalculations('RHO', dataset)
-            PRES = self.getVarForCalculations('PRES', dataset)
-            THETAV = self.getVarForCalculations('THETAV', dataset)
-            rtp3 = ((QCFLUX) / (RHO * 2.5104e+6)) * (2.5e6 / (1004.67*((PRES / 1000)**(287.04/1004.67))) - 1.61*THETAV)
-        z = self.getVarForCalculations(['z', 'lev', 'altitude'], dataset)
+            elif 'QCFLUX' in dataset.variables.keys():
+                QCFLUX,z, dataset = self.getVarForCalculations('QCFLUX', dataset)
+                RHO,z, dataset = self.getVarForCalculations('RHO', dataset)
+                PRES,z, dataset = self.getVarForCalculations('PRES', dataset)
+                THETAV,z, dataset = self.getVarForCalculations('THETAV', dataset)
+                rtp3 = ((QCFLUX) / (RHO * 2.5104e+6)) * (2.5e6 / (1004.67*((PRES / 1000)**(287.04/1004.67))) - 1.61*THETAV)
+            # z,z, dataset = self.getVarForCalculations(['z', 'lev', 'altitude'], dataset)
         return rtp3, z
 
     def get_rc_coef_zm_X_wprcp_clubb_line(self, dataset_override=None):
@@ -283,9 +285,9 @@ class VariableGroupBase(VariableGroup):
             dataset = dataset_override
         else:
             dataset = self.ncdf_files['zm']
-        rc_coef_zm = self.getVarForCalculations('rc_coef_zm', dataset, fill_zeros=True)
-        wprcp = self.getVarForCalculations('wprcp', dataset, fill_zeros=True)
-        z = self.getVarForCalculations(['z', 'lev', 'altitude'], dataset)
+        rc_coef_zm,z, dataset = self.getVarForCalculations('rc_coef_zm', dataset, fill_zeros=True)
+        wprcp,z, dataset = self.getVarForCalculations('wprcp', dataset, fill_zeros=True)
+        # z,z, dataset = self.getVarForCalculations(['z', 'lev', 'altitude'], dataset)
         output = rc_coef_zm * wprcp
         return output, z
 
@@ -302,10 +304,10 @@ class VariableGroupBase(VariableGroup):
             dataset = dataset_override
         else:
             dataset = self.sam_file
-        z = self.getVarForCalculations(['z', 'lev', 'altitude'], dataset)
-        WPRCP = self.getVarForCalculations('WPRCP', dataset, fill_zeros=True)
-        PRES = self.getVarForCalculations('PRES', dataset, fill_zeros=True)
-        THETAV = self.getVarForCalculations('THETAV', dataset, fill_zeros=True)
+        # z,z, dataset = self.getVarForCalculations(['z', 'lev', 'altitude'], dataset)
+        WPRCP,z, dataset = self.getVarForCalculations('WPRCP', dataset, fill_zeros=True)
+        PRES,z, dataset = self.getVarForCalculations('PRES', dataset, fill_zeros=True)
+        THETAV,z, dataset = self.getVarForCalculations('THETAV', dataset, fill_zeros=True)
 
         output = WPRCP * (2.5e6 / (1004.67*((PRES / 1000)**(287.04/1004.67))) - 1.61*THETAV)
         return output, z
@@ -322,9 +324,9 @@ class VariableGroupBase(VariableGroup):
             dataset = dataset_override
         else:
             dataset = self.ncdf_files['zm']
-        z = self.getVarForCalculations(['z', 'lev', 'altitude'], dataset)
-        rc_coef_zm = self.getVarForCalculations('rc_coef_zm', dataset, fill_zeros=True)
-        thlprcp = self.getVarForCalculations('thlprcp', dataset, fill_zeros=True)
+        # z,z, dataset = self.getVarForCalculations(['z', 'lev', 'altitude'], dataset)
+        rc_coef_zm,z, dataset = self.getVarForCalculations('rc_coef_zm', dataset, fill_zeros=True)
+        thlprcp,z, dataset = self.getVarForCalculations('thlprcp', dataset, fill_zeros=True)
 
         output = rc_coef_zm * thlprcp
         return output, z
@@ -340,9 +342,9 @@ class VariableGroupBase(VariableGroup):
             dataset = dataset_override
         else:
             dataset = self.ncdf_files['zm']
-        z = self.getVarForCalculations(['z', 'lev', 'altitude'], dataset)
-        rc_coef_zm = self.getVarForCalculations('rc_coef_zm', dataset, fill_zeros=True)
-        rtprcp = self.getVarForCalculations('rtprcp', dataset, fill_zeros=True)
+        # z,z, dataset = self.getVarForCalculations(['z', 'lev', 'altitude'], dataset)
+        rc_coef_zm,z, dataset = self.getVarForCalculations('rc_coef_zm', dataset, fill_zeros=True)
+        rtprcp,z, dataset = self.getVarForCalculations('rtprcp', dataset, fill_zeros=True)
 
         output = rc_coef_zm * rtprcp
         return output, z
@@ -357,9 +359,9 @@ class VariableGroupBase(VariableGroup):
             dataset = dataset_override['sw']
         else:
             dataset = self.coamps_file['sw']
-        z = self.getVarForCalculations(['z', 'lev', 'altitude'], dataset)
-        wpup = self.getVarForCalculations('wpup', dataset)
-        wpup_sgs = self.getVarForCalculations('wpup_sgs', dataset)
+        # z,z, dataset = self.getVarForCalculations(['z', 'lev', 'altitude'], dataset)
+        wpup,z, dataset = self.getVarForCalculations('wpup', dataset)
+        wpup_sgs,z, dataset = self.getVarForCalculations('wpup_sgs', dataset)
 
         upwp = wpup + wpup_sgs
         return upwp, z
@@ -374,9 +376,9 @@ class VariableGroupBase(VariableGroup):
             dataset = dataset_override['sw']
         else:
             dataset = self.coamps_file['sw']
-        z = self.getVarForCalculations(['z', 'lev', 'altitude'], dataset)
-        wpvp = self.getVarForCalculations('wpvp', dataset)
-        wpvp_sgs = self.getVarForCalculations('wpvp_sgs', dataset)
+        # z,z, dataset = self.getVarForCalculations(['z', 'lev', 'altitude'], dataset)
+        wpvp,z, dataset = self.getVarForCalculations('wpvp', dataset)
+        wpvp_sgs,z, dataset = self.getVarForCalculations('wpvp_sgs', dataset)
 
         vpwp = wpvp + wpvp_sgs
         return vpwp, z
@@ -388,10 +390,10 @@ class VariableGroupBase(VariableGroup):
         :return:
         """
         dataset = self.coamps_file['sw']
-        z = self.getVarForCalculations(['z', 'lev', 'altitude'], dataset)
-        wpqcp = self.getVarForCalculations('wqpcp', dataset, fill_zeros=True)
-        ex0 = self.getVarForCalculations('ex0', dataset, fill_zeros=True)
-        thvm = self.getVarForCalculations('thvm', dataset, fill_zeros=True)
+        # z,z, dataset = self.getVarForCalculations(['z', 'lev', 'altitude'], dataset)
+        wpqcp,z, dataset = self.getVarForCalculations('wqpcp', dataset, fill_zeros=True)
+        ex0,z, dataset = self.getVarForCalculations('ex0', dataset, fill_zeros=True)
+        thvm,z, dataset = self.getVarForCalculations('thvm', dataset, fill_zeros=True)
 
         output = wpqcp * (2.5e6 / (1004.67 * ex0) - 1.61*thvm)
         return output, z
@@ -403,10 +405,10 @@ class VariableGroupBase(VariableGroup):
         :return:
         """
         dataset = self.coamps_file['sw']
-        z = self.getVarForCalculations(['z', 'lev', 'altitude'], dataset)
-        thlpqcp = self.getVarForCalculations('thlpqcp', dataset, fill_zeros=True)
-        ex0 = self.getVarForCalculations('ex0', dataset, fill_zeros=True)
-        thvm = self.getVarForCalculations('thvm', dataset, fill_zeros=True)
+        # z,z, dataset = self.getVarForCalculations(['z', 'lev', 'altitude'], dataset)
+        thlpqcp,z, dataset = self.getVarForCalculations('thlpqcp', dataset, fill_zeros=True)
+        ex0,z, dataset = self.getVarForCalculations('ex0', dataset, fill_zeros=True)
+        thvm,z, dataset = self.getVarForCalculations('thvm', dataset, fill_zeros=True)
 
         output = thlpqcp * (2.5e6 / (1004.67*ex0) - 1.61*thvm)
         return output, z
@@ -418,10 +420,10 @@ class VariableGroupBase(VariableGroup):
         :return:
         """
         dataset = self.coamps_file['sw']
-        z = self.getVarForCalculations(['z', 'lev', 'altitude'], dataset)
-        qtpqcp = self.getVarForCalculations('qtpqcp', dataset, fill_zeros=True)
-        ex0 = self.getVarForCalculations('ex0', dataset, fill_zeros=True)
-        thvm = self.getVarForCalculations('thvm', dataset, fill_zeros=True)
+        # z,z, dataset = self.getVarForCalculations(['z', 'lev', 'altitude'], dataset)
+        qtpqcp,z, dataset = self.getVarForCalculations('qtpqcp', dataset, fill_zeros=True)
+        ex0,z, dataset = self.getVarForCalculations('ex0', dataset, fill_zeros=True)
+        thvm,z, dataset = self.getVarForCalculations('thvm', dataset, fill_zeros=True)
 
         output = qtpqcp * (2.5e6 / (1004.67*ex0) - 1.61*thvm)
         return output, z

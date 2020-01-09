@@ -515,18 +515,18 @@ class VariableGroup:
         returns varline data, otherwise raises error
         :return:
         """
-        for dataset in datasets.values():
-            try:
-                varline, z = fallback(dataset_override=dataset)
-                varline = Line(varline, z, line_format=line_format, label=label)
-                print("\tFallback for ", varname, " successful")
-                return varline
-            except ValueError as e:
-                # variable wasn't contained in dataset, try next dataset
-                continue
-            except TypeError as e:
-                warn("Fallback failed for variable " + str(varname) + ". Skipping it.\n" + str(e))
-                return None
+        # for dataset in datasets.values():
+        try:
+            vardata, z = fallback(dataset_override=datasets)
+            varline = Line(vardata, z, line_format=line_format, label=label)
+            print("\tFallback for ", varname, " successful")
+            return varline
+        # except ValueError as e:
+        #     # variable wasn't contained in dataset, try next dataset
+        #     continue
+        except TypeError as e:
+            warn("Fallback failed for variable " + str(varname) + ". Skipping it.\n" + str(e))
+            return None
         warn("Fallback failed for variable " + str(varname) + ". Skipping it.\n")
         return None
 
@@ -542,14 +542,33 @@ class VariableGroup:
         :return:
 
         """
+        dataset_used = None
+        var_data = None
+        z = None
         if isinstance(datasets, Dataset):
             datasets = {'auto': datasets}
         for dataset in datasets.values():
-            z_ncdf = NetCdfVariable(Case_definitions.HEIGHT_VAR_NAMES, dataset, 1)
-            var_ncdf = NetCdfVariable(varname, dataset, conversion_factor, start_time=self.start_time,
-                                      end_time=self.end_time, fill_zeros=fill_zeros)
-            var_ncdf.constrain(self.height_min_value, self.height_max_value, data=z_ncdf.data)
-            var_data = var_ncdf.data
-            if np.amax(var_data) != 0:
-                break  # Avoid overwriting vardata with auto-filled zeros
-        return var_data
+            if not self.isSurfaceData(dataset):
+                dataset_used = dataset
+                z_ncdf = NetCdfVariable(Case_definitions.HEIGHT_VAR_NAMES, dataset, 1)
+                var_ncdf = NetCdfVariable(varname, dataset, conversion_factor, start_time=self.start_time,
+                                          end_time=self.end_time, fill_zeros=fill_zeros)
+                var_ncdf.constrain(self.height_min_value, self.height_max_value, data=z_ncdf.data)
+                var_data = var_ncdf.data
+                z_ncdf.constrain(self.height_min_value, self.height_max_value, data=z_ncdf.data)
+                z = z_ncdf.data
+                if len(var_data) > 0 and (np.amax(var_data) != 0 or np.amin(var_data) != 0):
+                    break  # Avoid overwriting vardata with auto-filled zeros
+            else:
+                continue
+        return var_data, z, dataset_used
+
+
+    def isSurfaceData(self, dataset):
+        """
+        Returns False if a dataset contains a height var, True otherwise
+        """
+        for height_var in Case_definitions.HEIGHT_VAR_NAMES:
+            if height_var in dataset.variables.keys():
+                return False
+        return True

@@ -40,9 +40,9 @@ class VariableGroupLiquidMP(VariableGroup):
         (NC * 1e+6) ./ RHO
         :return:
         """
-        nc = self.getVarForCalculations('NC', self.sam_file, fill_zeros=True)
-        rho = self.getVarForCalculations('RHO', self.sam_file)
-        z = self.getVarForCalculations(['z', 'lev', 'altitude'], self.sam_file)
+        nc,z, dataset = self.getVarForCalculations('NC', self.sam_file, fill_zeros=True)
+        rho,z, dataset = self.getVarForCalculations('RHO', self.sam_file)
+       # z,z, dataset = self.getVarForCalculations(['z', 'lev', 'altitude'], self.sam_file)
 
         ncm = (nc * (10 ** 6) / rho)
         return ncm, z
@@ -53,9 +53,9 @@ class VariableGroupLiquidMP(VariableGroup):
         (NR * 1e+6) ./ RHO
         :return:
         """
-        nr = self.getVarForCalculations('NR', self.sam_file, fill_zeros=True)
-        rho = self.getVarForCalculations('RHO', self.sam_file)
-        z = self.getVarForCalculations(['z', 'lev', 'altitude'], self.sam_file)
+        nr,z, dataset = self.getVarForCalculations('NR', self.sam_file, fill_zeros=True)
+        rho,z, dataset = self.getVarForCalculations('RHO', self.sam_file)
+       # z,z, dataset = self.getVarForCalculations(['z', 'lev', 'altitude'], self.sam_file)
 
         nrm = (nr * (10 ** 6) / rho)
 

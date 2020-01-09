@@ -37,9 +37,9 @@ class VariableGroupIceMP(VariableGroup):
         (NI * 1e+6) ./ RHO
         :return:
         """
-        ni = self.getVarForCalculations('NI', self.sam_file, fill_zeros=True)
-        rho = self.getVarForCalculations('RHO', self.sam_file, fill_zeros=True)
-        z = self.getVarForCalculations(['z', 'lev', 'altitude'], self.sam_file)
+        ni,z, dataset = self.getVarForCalculations('NI', self.sam_file, fill_zeros=True)
+        rho,z, dataset = self.getVarForCalculations('RHO', self.sam_file, fill_zeros=True)
+       # z,z, dataset = self.getVarForCalculations(['z', 'lev', 'altitude'], self.sam_file)
 
         nim = (ni * (10 ** 6) / rho)
         return nim, z
@@ -50,9 +50,9 @@ class VariableGroupIceMP(VariableGroup):
         (NS * 1e+6) ./ RHO
         :return:
         """
-        ns = self.getVarForCalculations('NS', self.sam_file, fill_zeros=True)
-        rho = self.getVarForCalculations('RHO', self.sam_file, fill_zeros=True)
-        z = self.getVarForCalculations(['z', 'lev', 'altitude'], self.sam_file)
+        ns,z, dataset = self.getVarForCalculations('NS', self.sam_file, fill_zeros=True)
+        rho,z, dataset = self.getVarForCalculations('RHO', self.sam_file, fill_zeros=True)
+       # z,z, dataset = self.getVarForCalculations(['z', 'lev', 'altitude'], self.sam_file)
 
         nsm = (ns * (10 ** 6) / rho)
         return nsm, z
