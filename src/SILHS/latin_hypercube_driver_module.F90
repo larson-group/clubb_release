@@ -79,13 +79,15 @@ module latin_hypercube_driver_module
     use constants_clubb, only: &
       fstderr, & ! Constant(s)
       zero, &
-      one
+      one, &
+      rc_tol
 
     use clubb_precision, only: &
       core_rknd, &
       stat_rknd
 
     use parameters_silhs, only: &
+      vert_decorr_coef, & ! Variable(s)
       silhs_config_flags_type ! Type
 
     use error_code, only: &
@@ -193,12 +195,15 @@ module latin_hypercube_driver_module
       cloud_frac ! Cloud fraction for grid level and sample
       
     real(kind = core_rknd), dimension(nz) :: &
-      precip_frac_1, &
-      precip_frac_2
+      precip_frac_1, &  ! Array used to store hydromet_pdf_params(:)%precip_frac_1
+      precip_frac_2     ! Array used to store hydromet_pdf_params(:)%precip_frac_2
       
     real( kind = core_rknd ), dimension(nz) :: &
       Lscale_vert_avg, &  ! 3pt vertical average of Lscale                    [m]
       X_vert_corr         ! Vertical correlations between height levels       [-]
+      
+    real(kind = core_rknd), dimension(nz,num_samples,pdf_dim+d_uniform_extra) :: &
+      rand_pool ! Array of randomly generated numbers
 
     ! ---------------- Begin Code ----------------
 
@@ -213,7 +218,13 @@ module latin_hypercube_driver_module
     !--------------------------------------------------------------
     ! Latin hypercube sampling
     !--------------------------------------------------------------
-    
+        
+#ifdef _OPENACC
+    if ( .not. silhs_config_flags%l_lh_straight_mc ) then
+      stop "CLUBB ERROR: Running SILHS with OpenACC requires lh_straight_mc=true"
+    end if
+#endif
+
     ! Copy type arrays to contiguous arrays, so they can be copied to the GPU
     precip_frac_1 = hydromet_pdf_params(:)%precip_frac_1
     precip_frac_2 = hydromet_pdf_params(:)%precip_frac_2
@@ -248,33 +259,61 @@ module latin_hypercube_driver_module
     else
         Lscale_vert_avg = Lscale 
     end if
-                                     
-    ! Generate uniform samples and weights with traditional random numbers   
-    call generate_uniform_samples_and_weights_CPU( &
-                      nz, pdf_dim, d_uniform_extra, num_samples, iter, sequence_length, &
-                      k_lh_start, X_vert_corr, &
-                      pdf_params, hydromet_pdf_params, silhs_config_flags, &
-                      l_calc_weights_all_levs_itime, &
-                      X_u_all_levs, lh_sample_point_weights )
     
+    ! Compute the vertical correlation for arbitrary overlap, using
+    !   density weighted 3pt averaged Lscale and the difference in height levels (delta_zm)
+    X_vert_corr(1:nz) = exp( -vert_decorr_coef * ( delta_zm(1:nz) / Lscale_vert_avg(1:nz) ) )
+
+    if ( silhs_config_flags%l_max_overlap_in_cloud ) then
+      where ( rcm > rc_tol )
+       X_vert_corr = one
+      end where
+    end if
     
+    !$acc data create(rand_pool) &
+    !$acc&     copyin(pdf_params,pdf_params%mixt_frac,pdf_params%cloud_frac_1, &
+    !$acc&            pdf_params%cloud_frac_2, precip_frac_1,precip_frac_2, &
+    !$acc&            Sigma_Cholesky1, Sigma_Cholesky2, mu1, mu2, X_vert_corr ) &
+    !$acc&     copyout(X_mixt_comp_all_levs, X_u_all_levs,cloud_frac, l_in_precip, &
+    !$acc&             X_nl_all_levs) &
+    !$acc& async(1)
+
+    ! Generate pool of random numbers
+    call generate_random_pool( nz, pdf_dim, num_samples, d_uniform_extra, & ! Intent(in)
+                               rand_pool )                                  ! Intent(out)
+                               
+    ! Generate all uniform samples, based on the rand pool
+    call generate_all_uniform_samples( &
+           iter, pdf_dim, d_uniform_extra, num_samples, sequence_length, & ! Intent(in)
+           nz, k_lh_start, X_vert_corr(:), rand_pool(:,:,:),             & ! Intent(in)
+           pdf_params%cloud_frac_1(:),                                   & ! Intent(in)
+           pdf_params%cloud_frac_2(:),                                   & ! Intent(in)
+           pdf_params%mixt_frac(:), hydromet_pdf_params(:),              & ! Intent(in)
+           silhs_config_flags%cluster_allocation_strategy,               & ! Intent(in)
+           silhs_config_flags%l_lh_importance_sampling,                  & ! Intent(in)
+           silhs_config_flags%l_lh_straight_mc,                          & ! Intent(in)
+           silhs_config_flags%l_lh_clustered_sampling,                   & ! Intent(in)
+           silhs_config_flags%l_lh_limit_weights,                        & ! Intent(in)
+           silhs_config_flags%l_lh_var_frac,                             & ! Intent(in)
+           silhs_config_flags%l_lh_normalize_weights,                    & ! Intent(in)
+           l_calc_weights_all_levs_itime,                                & ! Intent(in)
+           X_u_all_levs(:,:,:), lh_sample_point_weights(:,:) )             ! Intent(out)
     
-           
-           
+    !$acc parallel loop collapse(2) default(present) async(1)
     do sample = 1, num_samples 
-      
       do k = 1, nz
             
         ! Determine mixture component for all levels
         if ( X_u_all_levs(k,sample,pdf_dim+1) < pdf_params%mixt_frac(k) ) then
           
+          ! Set pdf component indicator to 1 for this sample and vertical level
           X_mixt_comp_all_levs(k,sample) = 1
           
           ! Copy 1st component values
           cloud_frac(k,sample) = pdf_params%cloud_frac_1(k)
           
           ! Determine precipitation
-          if ( X_u_all_levs(k,sample,pdf_dim+2) < hydromet_pdf_params(k)%precip_frac_1 ) then
+          if ( X_u_all_levs(k,sample,pdf_dim+2) < precip_frac_1(k) ) then
             l_in_precip(k,sample) = .true.
           else
             l_in_precip(k,sample) = .false.
@@ -282,13 +321,14 @@ module latin_hypercube_driver_module
           
         else
           
+          ! Set pdf component indicator to 2 for this sample and vertical level
           X_mixt_comp_all_levs(k,sample) = 2
           
           ! Copy 2nd component values
           cloud_frac(k,sample) = pdf_params%cloud_frac_2(k)
           
           ! Determine precipitation
-          if ( X_u_all_levs(k,sample,pdf_dim+2) < hydromet_pdf_params(k)%precip_frac_2 ) then
+          if ( X_u_all_levs(k,sample,pdf_dim+2) < precip_frac_2(k) ) then
             l_in_precip(k,sample) = .true.
           else
             l_in_precip(k,sample) = .false.
@@ -297,22 +337,7 @@ module latin_hypercube_driver_module
         end if
 
       end do 
-      
     end do
-
-    ! Check to ensure uniform variates are in the appropriate range
-    do sample=1, num_samples
-      do k=1, nz
-        do i=1, pdf_dim+d_uniform_extra
-          if ( X_u_all_levs(k,sample,i) >= one ) then
-            X_u_all_levs(k,sample,i) = one - epsilon( X_u_all_levs(k,sample,i) )
-          else if ( X_u_all_levs(k,sample,i) <= zero ) then
-            X_u_all_levs(k,sample,i) = epsilon( X_u_all_levs(k,sample,i) )
-          end if
-        end do
-      end do
-    end do
-  
 
     ! Generate LH sample, represented by X_u and X_nl, for level k
     ! Transform the uniformly distributed samples to
@@ -324,6 +349,9 @@ module latin_hypercube_driver_module
            X_u_all_levs(:,:,:), cloud_frac(:,:), & ! In
            l_in_precip(:,:), & ! In
            X_nl_all_levs(:,:,:) ) ! Out
+        
+    !$acc end data
+    !$acc wait(1)
            
     call stats_accumulate_uniform_lh( nz, num_samples, l_in_precip, X_mixt_comp_all_levs, &
                                       X_u_all_levs(:,:,iiPDF_chi), pdf_params, &
@@ -390,76 +418,114 @@ module latin_hypercube_driver_module
   end subroutine generate_silhs_sample
 !-------------------------------------------------------------------------------
 
-  subroutine generate_uniform_samples_and_weights_CPU( &
-                    nz, pdf_dim, d_uniform_extra, num_samples, iter, sequence_length, &
-                    k_lh_start, X_vert_corr, &
-                    pdf_params, hydromet_pdf_params, silhs_config_flags, &
-                    l_calc_weights_all_levs_itime, &
-                    X_u_all_levs, lh_sample_point_weights )
-          
+!-------------------------------------------------------------------------------
+  subroutine generate_random_pool( nz, pdf_dim, num_samples, d_uniform_extra, &
+                                   rand_pool )
+  ! Description:
+  !     This subroutine populates rand_pool with random numbers. There are
+  !     different requirements for generating random numbers on a CPU vs a
+  !     GPU, so the operation of this procedure depends on where or not 
+  !     openacc has been specified at compile time.
+  !
+  ! References:
+  !   clubb ticket 869
+  !
+  ! Author: Gunther Huebler
+  !----------------------------------------------------------------------------
+    
     use clubb_precision, only: &
-      core_rknd      ! Constant          
-                    
-    use pdf_parameter_module, only: &
-      pdf_parameter  ! Type
-
-    use hydromet_pdf_parameter_module, only: &
-      hydromet_pdf_parameter ! Type
-      
-    use parameters_silhs, only: &
-      silhs_config_flags_type ! Type
-
+      core_rknd      ! Constant     
+    
     use generate_uniform_sample_module, only: &
       rand_uniform_real ! Procedure
+      
+#ifdef _OPENACC
+    use curand, only: &
+      curandSetPseudoRandomGeneratorSeed, & ! Procedures
+      curandCreateGenerator,              &
+      curandGenerate,                     &
+      curandGenerator,                    & ! Type
+      CURAND_RNG_PSEUDO_DEFAULT             ! Parameter
+#endif
+    
+    implicit none 
+    
+    ! ------------------- Input Variables -------------------
+    
+    integer, intent(in) :: &
+      nz,               & ! Number of vertical levels
+      pdf_dim,          & ! Variates
+      num_samples,      & ! Number of samples
+      d_uniform_extra     ! Uniform variates included in uniform sample but not
+                          !  in normal/lognormal sample
+      
+    ! ------------------- Output Variables -------------------
 
-    implicit none
+    real(kind=core_rknd), dimension(nz,num_samples,pdf_dim+d_uniform_extra), intent(out) :: &
+      rand_pool   ! Pool of random reals, generated from integers
+      
+    ! ------------------- Local Variables -------------------
     
-    !----------------- Input Variables -----------------
-    
-    integer, intent(in) :: &
-      nz, &
-      pdf_dim, &
-      d_uniform_extra, &
-      num_samples, &
-      iter, &
-      sequence_length
-      
-    integer, intent(in) :: &
-      k_lh_start
-      
-    real( kind = core_rknd ), dimension(nz), intent(in) :: &
-      X_vert_corr ! Vertical correlations between height levels
-      
-    type(pdf_parameter), intent(in) :: &
-      pdf_params ! PDF parameters       [units vary]
-      
-    type(hydromet_pdf_parameter), dimension(nz), intent(in) :: &
-      hydromet_pdf_params ! Hydrometeor PDF parameters  [units vary]
-      
-    type(silhs_config_flags_type), intent(in) :: &
-      silhs_config_flags ! Flags for the SILHS sampling code [-]
-      
-    logical, intent(in) :: &
-      l_calc_weights_all_levs_itime ! determines if vertically correlated sample points are needed
-    
-    !----------------- Output Variables -----------------
-    
-    real( kind = core_rknd ), intent(out), dimension(nz,num_samples,(pdf_dim+d_uniform_extra)) :: &
-      X_u_all_levs ! Sample drawn from uniform distribution
-      
-    real( kind = core_rknd ), intent(out), dimension(nz,num_samples) :: &
-      lh_sample_point_weights ! Weight of each sample point
-      
-    !----------------- Local Variables -----------------
-    
-    integer :: k, i, sample ! Loop variable
-    
+#ifdef _OPENACC
     real(kind = core_rknd), dimension(nz,num_samples,pdf_dim+d_uniform_extra) :: &
-      rand_pool ! Array of randomly generated numbers
-
-    !----------------- Begin Code -----------------
+      rand_pool_int ! Random intgers, stored as reals to avoid data conversion
+      
+    integer :: &
+      r_status  ! Integer use to call curand functions
     
-    ! Populate rand_pool with random numbers
+    logical, save :: &
+      l_first_iter = .true.  ! First iteration indicator
+                           ! The curand generator needs to be inialized, but only once
+
+    type(curandGenerator) :: &
+      cu_gen  ! curand generator variable
+    
+    ! Parameters stole from mt90 module, used to convert random integers
+    ! to random reals between [0,1]
+    real(kind=core_rknd), parameter :: p231       = 2147483648.0_core_rknd
+    real(kind=core_rknd), parameter :: p232       = 4294967296.0_core_rknd
+    real(kind=core_rknd), parameter :: pi232      = 1.0_core_rknd / p232
+    real(kind=core_rknd), parameter :: p231_5d232 = ( p231 + 0.5_core_rknd ) / p232
+#endif
+    
+    integer :: k, i, sample ! Loop variables
+      
+    ! ---------------- Begin Code ----------------
+    
+#ifdef _OPENACC
+
+    ! Generate randoms on GPU
+    
+    ! If first iteration, intialize generator
+    if ( l_first_iter ) then
+      l_first_iter = .false.
+      r_status = curandCreateGenerator( cu_gen, CURAND_RNG_PSEUDO_DEFAULT )
+      r_status = curandSetPseudoRandomGeneratorSeed( cu_gen, 252435 )
+    end if
+    
+    !$acc data create( rand_pool_int ) async(1)
+    
+    !$acc host_data use_device(rand_pool_int) 
+    r_status = curandGenerate( cu_gen, rand_pool_int, nz*num_samples*(pdf_dim+d_uniform_extra) )
+    !$acc end host_data
+
+    ! Populate rand_pool with random reals, using random integers
+    !$acc parallel loop collapse(3) default(present) async(1)
+    do i=1, pdf_dim+d_uniform_extra
+      do sample=1, num_samples
+        do k = 1, nz
+          rand_pool(k,sample,i) = rand_pool_int(k,sample,i) * pi232 + p231_5d232
+        end do
+      end do
+    end do
+    
+    !$acc end data
+    
+#else
+
+    ! Generate randoms on CPU
+
+    ! Populate rand_pool with a generator designed for a CPU
     do i=1, pdf_dim+d_uniform_extra
       do sample=1, num_samples
         do k = 1, nz
@@ -467,71 +533,18 @@ module latin_hypercube_driver_module
         end do
       end do
     end do
+
+#endif
     
-    
-    if ( .not. l_calc_weights_all_levs_itime ) then
-    
-      ! Generate a uniformly distributed sample at k_lh_start
-      call generate_uniform_sample_at_k_lh_start &
-           ( iter, pdf_dim, d_uniform_extra, num_samples, sequence_length,      & ! Intent(in)
-             pdf_params%cloud_frac_1(k_lh_start),                               & ! Intent(in)
-             pdf_params%cloud_frac_2(k_lh_start),                               & ! Intent(in)
-             pdf_params%mixt_frac(k_lh_start), hydromet_pdf_params(k_lh_start), & ! Intent(in)
-             rand_pool(k_lh_start,:,:),                                         & ! Intent(in)
-             silhs_config_flags%cluster_allocation_strategy,                    & ! Intent(in)
-             silhs_config_flags%l_lh_importance_sampling,                       & ! Intent(in)
-             silhs_config_flags%l_lh_straight_mc,                               & ! Intent(in)
-             silhs_config_flags%l_lh_clustered_sampling,                        & ! Intent(in)
-             silhs_config_flags%l_lh_limit_weights,                             & ! Intent(in)
-             silhs_config_flags%l_lh_var_frac,                                  & ! Intent(in)
-             silhs_config_flags%l_lh_normalize_weights,                         & ! Intent(in)
-             X_u_all_levs(k_lh_start,:,:), lh_sample_point_weights(1,:) )         ! Intent(out)
-                          
-      forall ( k = 2:nz )
-        lh_sample_point_weights(k,:) = lh_sample_point_weights(1,:)
-      end forall
-      
-      ! Generate uniform sample at other grid levels by vertically correlating them
-      ! https://arxiv.org/pdf/1711.03675v1.pdf#nameddest=url:vert_corr
-      call compute_arb_overlap( nz, num_samples, pdf_dim, d_uniform_extra, & ! In
-                                k_lh_start, X_vert_corr, rand_pool,        & ! In 
-                                X_u_all_levs )                               ! Out
-    
-    end if
-    
-    do k = 1, nz
-    
-      if ( l_calc_weights_all_levs_itime ) then
-        ! moved inside the loop to apply importance sampling for each layer
-        ! 
-        call generate_uniform_sample_at_k_lh_start &
-             ( iter, pdf_dim, d_uniform_extra, num_samples, sequence_length, & ! Intent(in)
-               pdf_params%cloud_frac_1(k),                                   & ! Intent(in)
-               pdf_params%cloud_frac_2(k),                                   & ! Intent(in)
-               pdf_params%mixt_frac(k), hydromet_pdf_params(k),              & ! Intent(in)
-               rand_pool(k_lh_start,:,:),                                    & ! Intent(in)
-               silhs_config_flags%cluster_allocation_strategy,               & ! Intent(in)
-               silhs_config_flags%l_lh_importance_sampling,                  & ! Intent(in)
-               silhs_config_flags%l_lh_straight_mc,                          & ! Intent(in)
-               silhs_config_flags%l_lh_clustered_sampling,                   & ! Intent(in)
-               silhs_config_flags%l_lh_limit_weights,                        & ! Intent(in)
-               silhs_config_flags%l_lh_var_frac,                             & ! Intent(in)
-               silhs_config_flags%l_lh_normalize_weights,                    & ! Intent(in)
-               X_u_all_levs(k,:,:), lh_sample_point_weights(k,:) )             ! Intent(out)
-      end if
-      
-    end do
-    
-    
-  end subroutine generate_uniform_samples_and_weights_CPU
+  end subroutine generate_random_pool
 
 !-------------------------------------------------------------------------------
-  subroutine generate_uniform_sample_at_k_lh_start &
-             ( iter, pdf_dim, d_uniform_extra, num_samples, sequence_length, & ! Intent(in)
+  subroutine generate_all_uniform_samples( &
+               iter, pdf_dim, d_uniform_extra, num_samples, sequence_length, & ! Intent(in)
+               nz, k_lh_start, X_vert_corr, rand_pool,                       & ! Intent(in)
                cloud_frac_1,                                                 & ! Intent(in)
                cloud_frac_2,                                                 & ! Intent(in)
                mixt_frac, hydromet_pdf_params,                               & ! Intent(in)
-               rand_pool,                                                    & ! Intent(in)
                cluster_allocation_strategy,                                  & ! Intent(in)
                l_lh_importance_sampling,                                     & ! Intent(in)
                l_lh_straight_mc,                                             & ! Intent(in)
@@ -539,12 +552,12 @@ module latin_hypercube_driver_module
                l_lh_limit_weights,                                           & ! Intent(in)
                l_lh_var_frac,                                                & ! Intent(in)
                l_lh_normalize_weights,                                       & ! Intent(in)
-               X_u_k_lh_start, lh_sample_point_weights )                       ! Intent(out)
-
+               l_calc_weights_all_levs_itime,                                & ! Intent(in)
+               X_u_all_levs, lh_sample_point_weights )                         ! Intent(out)
   ! Description:
-  !   Generates a uniform sample, X_u, at a single height level, applying Latin
-  !   hypercube and importance sampling where configured.
-
+  !   Generates uniform samples for all vertical levels, samples, and variates.
+  !   Applys Latin Hypercude and importance sampling where conigured
+  !
   ! References:
   !   V. E. Larson and D. P. Schanen, 2013. The Subgrid Importance Latin
   !   Hypercube Sampler (SILHS): a multivariate subcolumn generator
@@ -585,23 +598,26 @@ module latin_hypercube_driver_module
                                          ! places one point in cloud and one point out of
                                          ! cloud
 
-    ! Input Variables
+    ! ------------------ Input Variables ------------------
     integer, intent(in) :: &
       iter,              &        ! Model iteration number
       pdf_dim,           &        ! Number of variates in CLUBB's PDF
       d_uniform_extra,   &        ! Uniform variates included in uniform sample but not
                                   !  in normal/lognormal sample
       num_samples,       &        ! Number of SILHS sample points
-      sequence_length             ! Number of timesteps before new sample points are picked
+      sequence_length,   &        ! Number of timesteps before new sample points are picked
+      k_lh_start,        &
+      nz
 
-    real( kind = core_rknd ), intent(in) :: &
+    real( kind = core_rknd ), dimension(nz), intent(in) :: &
       cloud_frac_1, cloud_frac_2, &     ! The PDF parameters at k_lh_start
-      mixt_frac
+      mixt_frac, &
+      X_vert_corr
 
-    type(hydromet_pdf_parameter), intent(in) :: &
+    type(hydromet_pdf_parameter), dimension(nz), intent(in) :: &
       hydromet_pdf_params
 
-    real(kind = core_rknd), dimension(num_samples,pdf_dim+d_uniform_extra), intent(in) :: &
+    real(kind = core_rknd), dimension(nz,num_samples,pdf_dim+d_uniform_extra), intent(in) :: &
       rand_pool ! Array of randomly generated numbers
 
     integer, intent(in) :: &
@@ -613,92 +629,187 @@ module latin_hypercube_driver_module
       l_lh_clustered_sampling, &  ! Use prescribed probability sampling with clusters (SILHS)
       l_lh_limit_weights, &       ! Ensure weights stay under a given value
       l_lh_var_frac, &            ! Prescribe variance fractions
-      l_lh_normalize_weights      ! Normalize weights to sum to num_samples
+      l_lh_normalize_weights, &   ! Normalize weights to sum to num_samples
+      l_calc_weights_all_levs_itime
 
-    ! Output Variables
-    real( kind = core_rknd ), dimension(num_samples,pdf_dim+d_uniform_extra), intent(out) :: &
-      X_u_k_lh_start              ! Uniform sample at k_lh_start
+    ! ------------------ Output Variables ------------------
+    real( kind = core_rknd ), dimension(nz,num_samples,pdf_dim+d_uniform_extra), intent(out) :: &
+      X_u_all_levs              ! Uniform sample at k_lh_start
 
-    real( kind = core_rknd ), dimension(num_samples), intent(out) :: &
+    real( kind = core_rknd ), dimension(nz,num_samples), intent(out) :: &
       lh_sample_point_weights     ! Weight of each sample point (all equal to one if importance
                                   ! sampling is not used)
 
-    ! Local Variables
+    ! ------------------ Local Variables ------------------
     integer :: &
-      i, sample
+      k, i, sample
 
-  !----------------------------------------------------------------------
-    !----- Begin Code -----
+    !------------------ Begin Code ------------------
 
     ! Sanity check
     if ( l_lh_old_cloud_weighted .and. mod( num_samples, 2 ) /= 0 ) then
       write(fstderr,*) "Old cloud weighted sampling requires num_samples to be divisible by 2."
       stop "Fatal error."
     end if
+    
+    if ( .not. l_calc_weights_all_levs_itime ) then
 
-    if ( l_lh_straight_mc ) then
+      ! Generate random samples at k_lh_start, then use compute_arb_overlap to 
+      ! populate the rest of the uniform samples
 
-      ! Do a straight Monte Carlo sample without LH or importance sampling.
-      do i=1, pdf_dim+d_uniform_extra
-        do sample=1, num_samples
-          X_u_k_lh_start(sample,i) = max( uniform_sample_thresh, &
-                               min( one - uniform_sample_thresh, rand_pool(sample,i) ) )
+      if ( l_lh_straight_mc ) then
+
+        ! Do a straight Monte Carlo sample without LH or importance sampling.
+        
+        !$acc parallel loop collapse(2) default(present) async(1)
+        do i=1, pdf_dim+d_uniform_extra
+          do sample=1, num_samples
+            X_u_all_levs(k_lh_start,sample,i) = max( uniform_sample_thresh, &
+                                                     min( one - uniform_sample_thresh, &
+                                                          rand_pool(k_lh_start,sample,i) ) )
+          end do
         end do
-      end do
 
-      ! Importance sampling is not performed, so all sample points have the same weight!!
-      lh_sample_point_weights(1:num_samples)  =  one
+        ! Importance sampling is not performed, so all sample points have the same weight!!
+        lh_sample_point_weights(:,:)  =  one
 
-    else ! .not. l_lh_straight_mc
+      else ! .not. l_lh_straight_mc
+      
+        ! Generate a uniformly distributed Latin hypercube sample
+        call generate_uniform_lh_sample( iter, num_samples, sequence_length, & ! Intent(in)
+                                         pdf_dim+d_uniform_extra,            & ! Intent(in)
+                                         X_u_all_levs(k_lh_start,:,:) )        ! Intent(out)
+                                
+        ! Clip uniform sample points to expected range                                 
+        X_u_all_levs(k_lh_start,:,:) = max( uniform_sample_thresh, &
+                              min( one - uniform_sample_thresh, X_u_all_levs(k_lh_start,:,:) ) )
 
-      ! Generate a uniformly distributed Latin hypercube sample
-      call generate_uniform_lh_sample( iter, num_samples, sequence_length, &  ! Intent(in)
-                                       pdf_dim+d_uniform_extra, &         ! Intent(in)
-                                       X_u_k_lh_start(:,:) )                  ! Intent(out)
-                              
-      ! Clip uniform sample points to expected range                                 
-      X_u_k_lh_start = max( uniform_sample_thresh, &
-                            min( one - uniform_sample_thresh, X_u_k_lh_start ) )
+        if ( l_lh_importance_sampling ) then
 
-      if ( l_lh_importance_sampling ) then
+          if ( l_lh_old_cloud_weighted ) then
 
-        if ( l_lh_old_cloud_weighted ) then
+            call cloud_weighted_sampling_driver &
+                 ( num_samples, one_height_time_matrix(:,iiPDF_chi), & ! In
+                   one_height_time_matrix(:,pdf_dim+1), & ! In
+                   cloud_frac_1(k_lh_start), cloud_frac_2(k_lh_start), & ! In
+                   mixt_frac(k_lh_start), & ! In
+                   X_u_all_levs(k_lh_start,:,iiPDF_chi), & ! In/Out
+                   X_u_all_levs(k_lh_start,:,pdf_dim+1), & ! In/Out
+                   lh_sample_point_weights(k_lh_start,:) ) ! Out
 
-          call cloud_weighted_sampling_driver &
-               ( num_samples, one_height_time_matrix(:,iiPDF_chi), & ! In
-                 one_height_time_matrix(:,pdf_dim+1), & ! In
-                 cloud_frac_1, cloud_frac_2, & ! In
-                 mixt_frac, & ! In
-                 X_u_k_lh_start(:,iiPDF_chi), & ! In/Out
-                 X_u_k_lh_start(:,pdf_dim+1), & ! In/Out
-                 lh_sample_point_weights ) ! Out
+          else ! .not. l_lh_old_cloud_weighted
 
-        else ! .not. l_lh_old_cloud_weighted
+            call importance_sampling_driver &
+                 ( num_samples,                                               & ! In
+                   cloud_frac_1(k_lh_start), cloud_frac_2(k_lh_start),        & ! In
+                   mixt_frac(k_lh_start), hydromet_pdf_params(k_lh_start),    & ! In
+                   cluster_allocation_strategy, l_lh_clustered_sampling,      & ! In
+                   l_lh_limit_weights, l_lh_var_frac, l_lh_normalize_weights, & ! In
+                   X_u_all_levs(k_lh_start,:,iiPDF_chi),                      & ! In/Out
+                   X_u_all_levs(k_lh_start,:,pdf_dim+1),                      & ! In/Out
+                   X_u_all_levs(k_lh_start,:,pdf_dim+2),                      & ! In/Out
+                   lh_sample_point_weights(k_lh_start,:) )                      ! Out
 
-          call importance_sampling_driver &
-               ( num_samples,                                               & ! In
-                 cloud_frac_1, cloud_frac_2,                                & ! In
-                 mixt_frac, hydromet_pdf_params,                            & ! In
-                 cluster_allocation_strategy, l_lh_clustered_sampling,      & ! In
-                 l_lh_limit_weights, l_lh_var_frac, l_lh_normalize_weights, & ! In
-                 X_u_k_lh_start(:,iiPDF_chi),                               & ! In/Out
-                 X_u_k_lh_start(:,pdf_dim+1),                               & ! In/Out
-                 X_u_k_lh_start(:,pdf_dim+2),                               & ! In/Out
-                 lh_sample_point_weights )                                    ! Out
+          end if ! l_lh_old_cloud_weighted
+          
+          do k = 1, nz
+            lh_sample_point_weights(k,:) = lh_sample_point_weights(k_lh_start,:)
+          end do
 
-        end if ! l_lh_old_cloud_weighted
+        else
 
-      else
+          ! No importance sampling is performed, so all sample points have the same weight.
+          lh_sample_point_weights(:,:) = one
 
-        ! No importance sampling is performed, so all sample points have the same weight.
-        lh_sample_point_weights(1:num_samples) = one
+        end if ! l_lh_importance_sampling
 
-      end if ! l_lh_importance_sampling
 
-    end if ! l_lh_straight_mc
+      end if ! l_lh_straight_mc
+      
+      ! Generate uniform sample at other grid levels by vertically correlating them
+      ! https://arxiv.org/pdf/1711.03675v1.pdf#nameddest=url:vert_corr
+      call compute_arb_overlap( nz, num_samples, pdf_dim, d_uniform_extra, & ! In
+                                k_lh_start, X_vert_corr, rand_pool,        & ! In 
+                                X_u_all_levs )                               ! Out
+                                
+    else 
+      
+      ! Generate random samples for all vertical levels, samples, and variates
+      
+      if ( l_lh_straight_mc ) then
+
+        ! Do a straight Monte Carlo sample without LH or importance sampling.
+        
+        !$acc parallel loop collapse(3) default(present) async(1)
+        do i = 1, pdf_dim+d_uniform_extra
+          do sample = 1, num_samples
+            do k = 1, nz
+              X_u_all_levs(k_lh_start,sample,i) = max( uniform_sample_thresh, &
+                                                       min( one - uniform_sample_thresh, &
+                                                            rand_pool(k_lh_start,sample,i) ) )
+            end do
+          end do
+        end do
+
+        ! Importance sampling is not performed, so all sample points have the same weight!!
+        lh_sample_point_weights(:,:)  =  one
+
+      else ! .not. l_lh_straight_mc
+        
+        do k = 1, nz
+
+          ! Generate a uniformly distributed Latin hypercube sample
+          call generate_uniform_lh_sample( iter, num_samples, sequence_length, & ! Intent(in)
+                                           pdf_dim+d_uniform_extra,            & ! Intent(in)
+                                           X_u_all_levs(k,:,:) )                 ! Intent(out)
+                                  
+          ! Clip uniform sample points to expected range                                 
+          X_u_all_levs(k,:,:) = max( uniform_sample_thresh, &
+                                min( one - uniform_sample_thresh, X_u_all_levs(k,:,:) ) )
+
+          if ( l_lh_importance_sampling ) then
+
+            if ( l_lh_old_cloud_weighted ) then
+
+              call cloud_weighted_sampling_driver &
+                   ( num_samples, one_height_time_matrix(:,iiPDF_chi), & ! In
+                     one_height_time_matrix(:,pdf_dim+1),              & ! In
+                     cloud_frac_1(k), cloud_frac_2(k),                 & ! In
+                     mixt_frac(k),                                     & ! In
+                     X_u_all_levs(k,:,iiPDF_chi),                      & ! In/Out
+                     X_u_all_levs(k,:,pdf_dim+1),                      & ! In/Out
+                     lh_sample_point_weights )                           ! Out
+
+            else ! .not. l_lh_old_cloud_weighted
+
+              call importance_sampling_driver &
+                   ( num_samples,                                               & ! In
+                     cloud_frac_1(k), cloud_frac_2(k),                          & ! In
+                     mixt_frac(k), hydromet_pdf_params(k),                      & ! In
+                     cluster_allocation_strategy, l_lh_clustered_sampling,      & ! In
+                     l_lh_limit_weights, l_lh_var_frac, l_lh_normalize_weights, & ! In
+                     X_u_all_levs(k,:,iiPDF_chi),                               & ! In/Out
+                     X_u_all_levs(k,:,pdf_dim+1),                               & ! In/Out
+                     X_u_all_levs(k,:,pdf_dim+2),                               & ! In/Out
+                     lh_sample_point_weights )                                    ! Out
+
+            end if ! l_lh_old_cloud_weighted
+
+          else
+
+            ! No importance sampling is performed, so all sample points have the same weight.
+            lh_sample_point_weights(k,:) = one
+
+          end if ! l_lh_importance_sampling
+        
+        end do
+
+      end if ! l_lh_straight_mc
+      
+    end if ! .not. l_calc_weights_all_levs_itime
 
     return
-  end subroutine generate_uniform_sample_at_k_lh_start
+  end subroutine generate_all_uniform_samples
 !-------------------------------------------------------------------------------
 
 !-----------------------------------------------------------------------
@@ -1608,8 +1719,11 @@ module latin_hypercube_driver_module
     integer :: k, sample, i ! Loop iterators
 
     ! ---------------- Begin Code ----------------
+    
+    !$acc wait(1)
 
     ! Recompute from k_lh_start to nz-1 for all samples and variates, upward loop
+    !$acc parallel loop collapse(2) default(present) async(1)
     do i = 1, pdf_dim + d_uniform_extra                         
       do sample = 1, num_samples
         
@@ -1637,7 +1751,8 @@ module latin_hypercube_driver_module
     end do ! 1..pdf_dim
 
 
-    ! Recompute from k_lh_start down to 2 for all samples and variates, downward loop
+    ! Recompute from k_lh_start down to 2 for all samples and variates, downward loop 
+    !$acc parallel loop collapse(2) default(present) async(2)
     do i = 1, pdf_dim + d_uniform_extra                        
       do sample = 1, num_samples
         
@@ -1663,6 +1778,8 @@ module latin_hypercube_driver_module
          end do ! k_lh_start..2 decrementing
       end do ! 1..num_samples
     end do ! 1..pdf_dim
+    
+    !$acc wait(2)
 
     return
   end subroutine compute_arb_overlap

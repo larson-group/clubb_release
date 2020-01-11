@@ -107,11 +107,7 @@ module transform_to_pdf_module
     ! Generate a set of sample points for a microphysics/radiation scheme
     !---------------------------------------------------------------------------
 
-    ! Begin ACC code, only X_nl_all_levs needs to be copied off the device
-    !$acc   data create(std_normal) &
-    !$acc&       copyin(X_u_all_levs, Sigma_Cholesky1, Sigma_Cholesky2, &
-    !$acc&              mu1, mu2, cloud_frac, l_in_precip_all_levs, X_mixt_comp_all_levs ) &
-    !$acc&       copyout(X_nl_all_levs)
+    !$acc data create(std_normal) async(1)
               
     ! From Latin hypercube sample, generate standard normal sample
     call cdfnorminv( pdf_dim, nz, num_samples, X_u_all_levs, &  ! In
@@ -123,7 +119,7 @@ module transform_to_pdf_module
                             mu1, mu2, X_mixt_comp_all_levs,       & ! In
                             X_nl_all_levs )                         ! Out
                             
-    !$acc kernels default(present)
+    !$acc kernels default(present) async(1)
     
     ! Convert lognormal variates (e.g. Ncn and rr) to lognormal
     do i = max( iiPDF_chi, iiPDF_eta, iiPDF_w )+1, pdf_dim
@@ -248,8 +244,7 @@ module transform_to_pdf_module
     
     ! ---------------- Begin Code ----------------
     
-    !$acc kernels default(present)
-    
+    !$acc parallel loop collapse(3) async(1)
     do i = 1, pdf_dim
       do sample = 1, num_samples
         do k = 1, nz
@@ -273,8 +268,6 @@ module transform_to_pdf_module
         end do
       end do
     end do
-    
-    !$acc end kernels
                 
   end subroutine cdfnorminv
 
@@ -534,7 +527,7 @@ module transform_to_pdf_module
 
     ! --- Begin Code ---
     
-    !$acc kernels default(present)
+    !$acc kernels default(present) async(1)
 
     do i = 1, pdf_dim
       do sample = 1, num_samples
@@ -562,7 +555,7 @@ module transform_to_pdf_module
         end do
       end do
     end do
-    
+     
     do i = 1, pdf_dim
       do sample = 1, num_samples
         do k = 1, nz
