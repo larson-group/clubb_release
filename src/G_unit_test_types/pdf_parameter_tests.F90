@@ -119,6 +119,13 @@ module pdf_parameter_tests
     use new_pdf_main, only: &
         new_pdf_driver    ! Procedure(s)
 
+    use new_hybrid_pdf, only: &
+        calculate_w_params,          & ! Procedure(s)
+        calculate_coef_wp4_implicit
+
+    use new_hybrid_pdf_main, only: &
+        new_hybrid_pdf_driver    ! Procedure(s)
+
     use adg1_adg2_3d_luhar_pdf, only: &
         ADG1_w_closure,  & ! Procedure(s)
         ADG1_pdf_driver
@@ -136,17 +143,19 @@ module pdf_parameter_tests
         LY93_driver
 
     use pdf_closure_module, only: &
-        iiPDF_new,    & ! Variable(s)
-        iiPDF_ADG1,   &
-        iiPDF_TSDADG, &
-        iiPDF_LY93,   &
-        calc_wp4_pdf    ! Procedure(s)
+        iiPDF_new,        & ! Variable(s)
+        iiPDF_ADG1,       &
+        iiPDF_TSDADG,     &
+        iiPDF_LY93,       &
+        iiPDF_new_hybrid, &
+        calc_wp4_pdf        ! Procedure(s)
 
     use pdf_parameter_module, only: &
         implicit_coefs_terms    ! Variable Type
 
     use model_flags, only: &
-        l_gamma_Skw    ! Variable(s)
+        set_default_clubb_config_flags, & ! Procedure(s)
+        l_gamma_Skw       ! Variable(s)
 
     use parameters_model, only: &
         sclr_dim    ! Variable(s)
@@ -196,6 +205,8 @@ module pdf_parameter_tests
       Skw,     & ! Skewness of w (overall)             [-]
       Skrt,    & ! Skewness of rt (overall)            [-]
       Skthl,   & ! Skewness of thl (overall)           [-]
+      Sku,     & ! Skewness of u (overall)             [-]
+      Skv,     & ! Skewness of v (overall)             [-]
       wprtp,   & ! Covariance of w and rt (overall)    [(m/s)kg/kg]
       wpthlp,  & ! Covariance of w and thl (overall)   [(m/s)K]
       upwp,    & ! Covariance of u and w (overall)     [(m/s)^2]
@@ -271,7 +282,7 @@ module pdf_parameter_tests
       wp4_implicit_calc, & ! <w'^4> calculated by coef_wp4_implicit eq [m^4/s^4]
       wp4_pdf_calc         ! <w'^4> calculated by PDF                  [m^4/s^4]
 
-    type(implicit_coefs_terms), dimension(nz) :: &
+    type(implicit_coefs_terms) :: &
       pdf_implicit_coefs_terms    ! Implicit coefs / explicit terms [units vary]
 
     ! Tiny tolerance for acceptable numerical difference between two results.
@@ -384,6 +395,7 @@ module pdf_parameter_tests
       sclrm,            & ! Mean of passive scalar (overall)        [units vary]
       sclrp2,           & ! Variance of pass. scalar (overall)  [(units vary)^2]
       wpsclrp,          & ! Covariance of w and pass. scalar  [m/s (units vary)]
+      Sksclr,           & ! Skewness of sclr (overall)                       [-]
       mu_sclr_1,        & ! Mean of passive scalar (1st PDF comp.)  [units vary]
       mu_sclr_2,        & ! Mean of passive scalar (2nd PDF comp.)  [units vary]
       sigma_sclr_1_sqd, & ! Variance pass. sclr (1st PDF comp.) [(units vary)^2]
@@ -395,6 +407,134 @@ module pdf_parameter_tests
 
     integer :: idx    ! Loop index
 
+    logical :: &
+      l_use_precip_frac,            & ! Flag to use precipitation fraction in KK microphysics. The
+                                      ! precipitation fraction is automatically set to 1 when this
+                                      ! flag is turned off.
+      l_predict_upwp_vpwp,          & ! Flag to predict <u'w'> and <v'w'> along with <u> and <v>
+                                      ! alongside the advancement of <rt>, <w'rt'>, <thl>,
+                                      ! <wpthlp>, <sclr>, and <w'sclr'> in subroutine
+                                      ! advance_xm_wpxp.  Otherwise, <u'w'> and <v'w'> are still
+                                      ! approximated by eddy diffusivity when <u> and <v> are
+                                      ! advanced in subroutine advance_windm_edsclrm.
+      l_min_wp2_from_corr_wx,       & ! Flag to base the threshold minimum value of wp2 on keeping
+                                      ! the overall correlation of w and x (w and rt, as well as w
+                                      ! and theta-l) within the limits of -max_mag_correlation_flux
+                                      ! to max_mag_correlation_flux.
+      l_min_xp2_from_corr_wx,       & ! Flag to base the threshold minimum value of xp2 (rtp2 and
+                                      ! thlp2) on keeping the overall correlation of w and x within
+                                      ! the limits of -max_mag_correlation_flux to
+                                      ! max_mag_correlation_flux.
+      l_C2_cloud_frac,              & ! Flag to use cloud fraction to adjust the value of the
+                                      ! turbulent dissipation coefficient, C2.
+      l_diffuse_rtm_and_thlm,       & ! Diffuses rtm and thlm
+      l_stability_correct_Kh_N2_zm, & ! Divides Kh_N2_zm by a stability factor
+      l_calc_thlp2_rad,             & ! Include the contribution of radiation to thlp2
+      l_upwind_wpxp_ta,             & ! This flag determines whether we want to use an upwind
+                                      ! differencing approximation rather than a centered
+                                      ! differencing for turbulent or mean advection terms. It
+                                      ! affects wprtp, wpthlp, & wpsclrp.
+      l_upwind_xpyp_ta,             & ! This flag determines whether we want to use an upwind
+                                      ! differencing approximation rather than a centered
+                                      ! differencing for turbulent or mean advection terms. It
+                                      ! affects rtp2, thlp2, up2, vp2, sclrp2, rtpthlp, sclrprtp, &
+                                      ! sclrpthlp.
+      l_upwind_xm_ma,               & ! This flag determines whether we want to use an upwind
+                                      ! differencing approximation rather than a centered
+                                      ! differencing for turbulent or mean advection terms. It
+                                      ! affects rtm, thlm, sclrm, um and vm.
+      l_uv_nudge,                   & ! For wind speed nudging.
+      l_rtm_nudge,                  & ! For rtm nudging
+      l_tke_aniso,                  & ! For anisotropic turbulent kinetic energy, i.e.
+                                      ! TKE = 1/2 (u'^2 + v'^2 + w'^2)
+      l_vert_avg_closure,           & ! Use 2 calls to pdf_closure and the trapezoidal rule to
+                                      ! compute the varibles that are output from high order
+                                      ! closure
+      l_trapezoidal_rule_zt,        & ! If true, the trapezoidal rule is called for the
+                                      ! thermodynamic-level variables output from pdf_closure.
+      l_trapezoidal_rule_zm,        & ! If true, the trapezoidal rule is called for three
+                                      ! momentum-level variables - wpthvp, thlpthvp, and rtpthvp -
+                                      ! output from pdf_closure.
+      l_call_pdf_closure_twice,     & ! This logical flag determines whether or not to call
+                                      ! subroutine pdf_closure twice.  If true, pdf_closure is
+                                      ! called first on thermodynamic levels and then on momentum
+                                      ! levels so that each variable is computed on its native
+                                      ! level.  If false, pdf_closure is only called on
+                                      ! thermodynamic levels, and variables which belong on
+                                      ! momentum levels are interpolated.
+      l_standard_term_ta,           & ! Use the standard discretization for the turbulent advection
+                                      ! terms.  Setting to .false. means that a_1 and a_3 are
+                                      ! pulled outside of the derivative in
+                                      ! advance_wp2_wp3_module.F90 and in
+                                      ! advance_xp2_xpyp_module.F90.
+      l_use_cloud_cover,            & ! Use cloud_cover and rcm_in_layer to help boost cloud_frac
+                                      ! and rcm to help increase cloudiness at coarser grid
+                                      ! resolutions.
+      l_diagnose_correlations,      & ! Diagnose correlations instead of using fixed ones
+      l_calc_w_corr,                & ! Calculate the correlations between w and the hydrometeors
+      l_const_Nc_in_cloud,          & ! Use a constant cloud droplet conc. within cloud (K&K)
+      l_fix_w_chi_eta_correlations, & ! Use a fixed correlation for s and t Mellor(chi/eta)
+      l_stability_correct_tau_zm,   & ! Use tau_N2_zm instead of tau_zm in wpxp_pr1 stability
+                                      ! correction
+      l_damp_wp2_using_em,          & ! In wp2 equation, use a dissipation formula of
+                                      ! -(2/3)*em/tau_zm, as in Bougeault (1981)
+      l_do_expldiff_rtm_thlm,       & ! Diffuse rtm and thlm explicitly
+      l_Lscale_plume_centered,      & ! Alternate that uses the PDF to compute the perturbed values
+      l_diag_Lscale_from_tau,       & ! First diagnose dissipation time tau, and then diagnose the
+                                      ! mixing length scale as Lscale = tau * tke
+      l_use_ice_latent,             & ! Includes the effects of ice latent heating in turbulence
+                                      ! terms
+      l_use_C7_Richardson,          & ! Parameterize C7 based on Richardson number
+      l_use_C11_Richardson,         & ! Parameterize C11 and C16 based on Richardson number
+      l_brunt_vaisala_freq_moist,   & ! Use a different formula for the Brunt-Vaisala frequency in
+                                      ! saturated atmospheres (from Durran and Klemp, 1982)
+      l_use_thvm_in_bv_freq,        & ! Use thvm in the calculation of Brunt-Vaisala frequency
+      l_rcm_supersat_adj,           & ! Add excess supersaturated vapor to cloud water
+      l_single_C2_Skw,              & ! Use a single Skewness dependent C2 for rtp2, thlp2, and
+                                      ! rtpthlp
+      l_damp_wp3_Skw_squared,       & ! Set damping on wp3 to use Skw^2 rather than Skw^4
+      l_prescribed_avg_deltaz         ! used in adj_low_res_nu. If .true., avg_deltaz = deltaz
+
+
+    call set_default_clubb_config_flags( l_use_precip_frac, &
+                                         l_predict_upwp_vpwp, &
+                                         l_min_wp2_from_corr_wx, &
+                                         l_min_xp2_from_corr_wx, &
+                                         l_C2_cloud_frac, &
+                                         l_diffuse_rtm_and_thlm, &
+                                         l_stability_correct_Kh_N2_zm, &
+                                         l_calc_thlp2_rad, &
+                                         l_upwind_wpxp_ta, &
+                                         l_upwind_xpyp_ta, &
+                                         l_upwind_xm_ma, &
+                                         l_uv_nudge, &
+                                         l_rtm_nudge, &
+                                         l_tke_aniso, &
+                                         l_vert_avg_closure, &
+                                         l_trapezoidal_rule_zt, &
+                                         l_trapezoidal_rule_zm, &
+                                         l_call_pdf_closure_twice, &
+                                         l_standard_term_ta, &
+                                         l_use_cloud_cover, &
+                                         l_diagnose_correlations, &
+                                         l_calc_w_corr, &
+                                         l_const_Nc_in_cloud, &
+                                         l_fix_w_chi_eta_correlations, &
+                                         l_stability_correct_tau_zm, &
+                                         l_damp_wp2_using_em, &
+                                         l_do_expldiff_rtm_thlm, &
+                                         l_Lscale_plume_centered, &
+                                         l_diag_Lscale_from_tau, &
+                                         l_use_ice_latent, &
+                                         l_use_C7_Richardson, &
+                                         l_use_C11_Richardson, &
+                                         l_brunt_vaisala_freq_moist, &
+                                         l_use_thvm_in_bv_freq, &
+                                         l_rcm_supersat_adj, &
+                                         l_single_C2_Skw, &
+                                         l_damp_wp3_Skw_squared, &
+                                         l_prescribed_avg_deltaz )
+
 
     write(fstdout,*) ""
     write(fstdout,*) "Performing PDF parameter values unit test"
@@ -404,6 +544,9 @@ module pdf_parameter_tests
 
     if ( test_PDF_type == iiPDF_new ) then
        write(fstdout,*) "Performing PDF parameter unit tests for the new PDF"
+       write(fstdout,*) ""
+    elseif ( test_PDF_type == iiPDF_new_hybrid ) then
+       write(fstdout,*) "Performing PDF parameter unit tests for the new hybrid PDF"
        write(fstdout,*) ""
     elseif ( test_PDF_type == iiPDF_ADG1 ) then
        write(fstdout,*) "Performing PDF parameter unit tests for ADG1"
@@ -662,6 +805,18 @@ module pdf_parameter_tests
           rtpthlp = 0.9_core_rknd * sqrt( rtp2 ) * sqrt( thlp2 )
        endwhere
 
+       where ( sign( one, upwp ) * sign( one, wp3 ) < zero )
+          Sku = -0.5_core_rknd * Skw 
+       elsewhere
+          Sku = 0.5_core_rknd * Skw
+       endwhere
+
+       where ( sign( one, vpwp ) * sign( one, wp3 ) < zero )
+          Skv = -0.5_core_rknd * Skw 
+       elsewhere
+          Skv = 0.5_core_rknd * Skw
+       endwhere
+
        ! Print PDF parameters
        write(fstdout,*) "wm = ", wm
        write(fstdout,*) "rtm = ", rtm
@@ -774,6 +929,156 @@ module pdf_parameter_tests
                 = calc_coef_wp4_implicit( mixt_frac, F_w, &
                                           coef_sigma_w_1_sqd, &
                                           coef_sigma_w_2_sqd )
+
+                wp4_implicit_calc = coef_wp4_implicit * wp2**2
+
+                ! Test 7
+                ! Compare the <w'^4> calculated by the PDF to its value
+                ! calculated by <w'^4> = wp4_implicit_calc * <w'^2>^2 (which was
+                ! derived from the PDF).
+                !    | ( <w'^4>|_pdf - <w'^4>|_impl ) / <w'^4>|_pdf |  <=  tol;
+                ! which can be rewritten as:
+                !    | <w'^4>|_pdf - <w'^4>|_impl |  <=  <w'^4>|_pdf * tol.
+                where ( abs( wp4_pdf_calc - wp4_implicit_calc ) &
+                        <= max( wp4_pdf_calc, w_tol**4 ) * tol )
+                   l_pass_test_7 = .true.
+                elsewhere
+                   l_pass_test_7 = .false.
+                endwhere
+
+                if ( any( .not. l_pass_test_7 ) ) then
+                   do idx = 1, nz, 1
+                      if ( .not. l_pass_test_7(idx) ) then
+                         write(fstderr,*) "Test 7 failed"
+                         !write(fstderr,*) "index = ", idx
+                         write(fstderr,*) "wp4 pdf = ", wp4_pdf_calc(idx)
+                         write(fstderr,*) "wp4 implicit calc = ", &
+                                          wp4_implicit_calc(idx)
+                         write(fstderr,*) ""
+                      endif ! .not. l_pass_test_7(idx)
+                   enddo ! idx = 1, nz, 1
+                endif
+
+                where ( l_pass_test_1 .and. l_pass_test_2 .and. l_pass_test_3 &
+                        .and. l_pass_test_4 .and. l_pass_test_5 &
+                        .and. l_pass_test_6 .and. l_pass_test_7 )
+                   ! All tests pass
+                   num_failed_sets = num_failed_sets
+                   l_failed_sets = .false.
+                elsewhere
+                   ! At least one test failed
+                   num_failed_sets = num_failed_sets + 1
+                   l_failed_sets = .true.
+                endwhere
+
+                if ( any( l_failed_sets ) ) then
+                   do idx = 1, nz, 1
+                      if ( l_failed_sets(idx) ) then
+                         write(fstderr,*) "At least one test or check for " &
+                                          // "the setting variable PDF " &
+                                          // "failed for the following " &
+                                          // "parameter set:  "
+                         write(fstderr,*) "PDF parameter set index = ", &
+                                          iter_param_sets
+                         write(fstderr,*) "F_w = ", F_w(idx)
+                         write(fstderr,*) "zeta_w = ", zeta_w(idx)
+                         write(fstderr,*) ""
+                      endif ! l_failed_sets(idx)
+                   enddo ! idx = 1, nz, 1
+                endif
+
+             enddo ! iter_zeta_w = 1, num_zeta_w, 1
+
+          enddo ! iter_F_w = 1, num_F_w, 1
+
+       elseif ( test_PDF_type == iiPDF_new_hybrid ) then
+
+          write(fstdout,*) "Running tests for the above parameter set for " &
+                           // "all combinations of F_w and zeta_w for the " &
+                           // "setting variable.  F_w values are 0 (or " &
+                           // "1.0 x 10^-5), 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, " &
+                           // "0.7, 0.8, 0.9, and 1.  Zeta_w values are 0, " &
+                           // "-1/2, 1, -1/3, 1/2, -1/5, 1/4, -9/10, 9, " &
+                           // "-3/4, and 3."
+          write(fstdout,*) ""
+
+          do iter_F_w = 1, num_F_w, 1
+
+             ! Set the value of F_w.
+             if ( iter_F_w == 1 ) then
+                where ( abs( Skw ) > zero )
+                   ! The value of F_w needs to be greater than 0 when
+                   ! | Skw | > 0 in order for the PDF to be valid.
+                   F_w = 1.0e-5_core_rknd
+                elsewhere ! Skw = 0
+                   ! F_w can have a value of 0 when Skw = 0.
+                   F_w = zero
+                endwhere ! | Skw | > 0
+             else ! iter_F_w > 1
+                ! F_w ranges from 0 to 1.
+                F_w = 0.1_core_rknd * real( iter_F_w - 1, kind = core_rknd )
+             endif ! iter_F_w
+
+             do iter_zeta_w = 1, num_zeta_w, 1
+
+                ! Set the value of zeta_w.
+                if ( iter_zeta_w == 1 ) then
+                   zeta_w = zero
+                elseif ( iter_zeta_w == 2 ) then
+                   zeta_w = -one_half
+                elseif ( iter_zeta_w == 3 ) then
+                   zeta_w = one
+                elseif ( iter_zeta_w == 4 ) then
+                   zeta_w = -one_third
+                elseif ( iter_zeta_w == 5 ) then
+                   zeta_w = one_half
+                elseif ( iter_zeta_w == 6 ) then
+                   zeta_w = -0.2_core_rknd
+                elseif ( iter_zeta_w == 7 ) then
+                   zeta_w = one_fourth
+                elseif ( iter_zeta_w == 8 ) then
+                   zeta_w = -0.9_core_rknd
+                elseif ( iter_zeta_w == 9 ) then
+                   zeta_w = 9.0_core_rknd
+                elseif ( iter_zeta_w == 10 ) then
+                   zeta_w = -three_fourths
+                elseif ( iter_zeta_w == 11 ) then
+                   zeta_w = three
+                endif
+
+                ! Call the subroutine for calculating mu_w_1, mu_w_2, sigma_w_1,
+                ! sigma_w_2, and mixt_frac.
+                call calculate_w_params( wm, wp2, Skw, F_w, zeta_w, & ! In
+                                         mu_w_1, mu_w_2, sigma_w_1, & ! Out
+                                         sigma_w_2, mixt_frac,      & ! Out
+                                         coef_sigma_w_1_sqd,        & ! Out
+                                         coef_sigma_w_2_sqd         ) ! Out
+
+                sigma_w_1_sqd = sigma_w_1**2
+                sigma_w_2_sqd = sigma_w_2**2
+
+                l_check_mu_w_1_gte_mu_w_2 = .true.
+
+                ! Perform the tests for the "setter" variable, which is the
+                ! variable that is used to set the mixture fraction.
+                call setter_var_tests( nz, wm, wp2, wp3, Skw,        & ! In
+                                       mu_w_1, mu_w_2, sigma_w_1,    & ! In
+                                       sigma_w_2, mixt_frac, tol,    & ! In
+                                       sigma_w_1_sqd, sigma_w_2_sqd, & ! In
+                                       l_pass_test_1, l_pass_test_2, & ! Out
+                                       l_pass_test_3, l_pass_test_4, & ! Out
+                                       l_pass_test_5, l_pass_test_6, & ! Out
+                                       l_check_mu_w_1_gte_mu_w_2     ) ! Out
+
+                ! Calculate <w'^4> by integrating over the PDF.
+                wp4_pdf_calc = calc_wp4_pdf( wm, mu_w_1, mu_w_2, sigma_w_1**2, &
+                                             sigma_w_2**2, mixt_frac )
+
+                ! Calculate <w'^4> by <w'^4> = coef_wp4_implicit * <w'^2>^2.
+                coef_wp4_implicit &
+                = calculate_coef_wp4_implicit( mixt_frac, F_w, &
+                                               coef_sigma_w_1_sqd, &
+                                               coef_sigma_w_2_sqd )
 
                 wp4_implicit_calc = coef_wp4_implicit * wp2**2
 
@@ -1086,6 +1391,38 @@ module pdf_parameter_tests
           rtp3 = Skrt * rtp2**1.5
           thlp3 = Skthl * thlp2**1.5
 
+       elseif ( test_PDF_type == iiPDF_new_hybrid ) then
+
+          write(fstdout,*) "Running tests for the above parameter set for " &
+                           // "the full PDF (the setting of F and zeta " &
+                           // "values is handled internally)."
+          write(fstdout,*) ""
+
+          call new_hybrid_pdf_driver( wm, rtm, thlm, um, vm,              &! In
+                                      wp2, rtp2, thlp2, up2, vp2,         &! In
+                                      Skw, wprtp, wpthlp, upwp, vpwp,     &! In
+                                      sclrm, sclrp2, wpsclrp,             &! In
+                                      Skrt, Skthl, Sku, Skv, Sksclr,      &! I/O
+                                      mu_w_1, mu_w_2,                     &! Out
+                                      mu_rt_1, mu_rt_2,                   &! Out
+                                      mu_thl_1, mu_thl_2,                 &! Out
+                                      mu_u_1, mu_u_2, mu_v_1, mu_v_2,     &! Out
+                                      sigma_w_1_sqd, sigma_w_2_sqd,       &! Out
+                                      sigma_rt_1_sqd, sigma_rt_2_sqd,     &! Out
+                                      sigma_thl_1_sqd, sigma_thl_2_sqd,   &! Out
+                                      sigma_u_1_sqd, sigma_u_2_sqd,       &! Out
+                                      sigma_v_1_sqd, sigma_v_2_sqd,       &! Out
+                                      mu_sclr_1, mu_sclr_2,               &! Out
+                                      sigma_sclr_1_sqd, sigma_sclr_2_sqd, &! Out
+                                      mixt_frac,                          &! Out
+                                      pdf_implicit_coefs_terms,           &! Out
+                                      F_w, min_F_w, max_F_w               )! Out
+
+          ! Recalculate <rt'^3> and <thl'^3> just in case Skrt and Skthl needed
+          ! to be clipped in new_pdf_driver.
+          rtp3 = Skrt * rtp2**1.5
+          thlp3 = Skthl * thlp2**1.5
+
        elseif ( test_PDF_type == iiPDF_ADG1 ) then
 
           write(fstdout,*) "Running tests for the above parameter set for " &
@@ -1103,7 +1440,8 @@ module pdf_parameter_tests
 
           sigma_sqd_w &
           = compute_sigma_sqd_w( gamma_Skw_fnc, wp2, thlp2, rtp2, &
-                                 up2, vp2, wpthlp, wprtp, upwp, vpwp )
+                                 up2, vp2, wpthlp, wprtp, upwp, vpwp, &
+                                 l_predict_upwp_vpwp )
 
           call ADG1_pdf_driver( wm, rtm, thlm, um, vm,                  & ! In 
                                wp2, rtp2, thlp2, up2, vp2,              & ! In 
@@ -1314,6 +1652,7 @@ module pdf_parameter_tests
        endif
 
        if ( ( test_PDF_type == iiPDF_new ) &
+            .or. ( test_PDF_type == iiPDF_new_hybrid ) &
             .or. ( test_PDF_type == iiPDF_LY93 ) ) then
 
           ! Test 14
@@ -1423,6 +1762,7 @@ module pdf_parameter_tests
        endif
 
        if ( ( test_PDF_type == iiPDF_new ) &
+            .or. ( test_PDF_type == iiPDF_new_hybrid ) &
             .or. ( test_PDF_type == iiPDF_LY93 ) ) then
 
           ! Test 18

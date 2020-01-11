@@ -1574,7 +1574,14 @@ module stats_clubb_utilities
   end subroutine stats_begin_timestep
 
   !-----------------------------------------------------------------------
-  subroutine stats_end_timestep( )
+  subroutine stats_end_timestep( &
+#ifdef NETCDF
+                                 l_uv_nudge, &
+                                 l_tke_aniso, &
+                                 l_standard_term_ta, &
+                                 l_single_C2_Skw &
+#endif
+                                  )
 
     ! Description: 
     !   Called when the stats timestep has ended. This subroutine
@@ -1621,6 +1628,19 @@ module stats_clubb_utilities
 
     ! External
     intrinsic :: floor
+
+#ifdef NETCDF
+    ! Input Variables
+    logical, intent(in) :: &
+      l_uv_nudge,         & ! For wind speed nudging.
+      l_tke_aniso,        & ! For anisotropic turbulent kinetic energy, i.e.
+                            ! TKE = 1/2 (u'^2 + v'^2 + w'^2)
+      l_standard_term_ta, & ! Use the standard discretization for the turbulent advection terms.
+                            ! Setting to .false. means that a_1 and a_3 are pulled outside of the
+                            ! derivative in advance_wp2_wp3_module.F90 and in
+                            ! advance_xp2_xpyp_module.F90.
+      l_single_C2_Skw       ! Use a single Skewness dependent C2 for rtp2, thlp2, and rtpthlp
+#endif
 
     ! Local Variables
 
@@ -1700,17 +1720,45 @@ module stats_clubb_utilities
       else ! l_netcdf
 
 #ifdef NETCDF
-        call write_netcdf( stats_zt%file  )
-        call write_netcdf( stats_zm%file  )
+        call write_netcdf( l_uv_nudge, &
+                           l_tke_aniso, &
+                           l_standard_term_ta, &
+                           l_single_C2_Skw, &
+                           stats_zt%file  )
+        call write_netcdf( l_uv_nudge, &
+                           l_tke_aniso, &
+                           l_standard_term_ta, &
+                           l_single_C2_Skw, &
+                           stats_zm%file  )
         if ( l_silhs_out ) then
-          call write_netcdf( stats_lh_zt%file  )
-          call write_netcdf( stats_lh_sfc%file  )
+          call write_netcdf( l_uv_nudge, &
+                             l_tke_aniso, &
+                             l_standard_term_ta, &
+                             l_single_C2_Skw, &
+                             stats_lh_zt%file  )
+          call write_netcdf( l_uv_nudge, &
+                             l_tke_aniso, &
+                             l_standard_term_ta, &
+                             l_single_C2_Skw, &
+                             stats_lh_sfc%file  )
         end if
         if ( l_output_rad_files ) then
-          call write_netcdf( stats_rad_zt%file  )
-          call write_netcdf( stats_rad_zm%file  )
+          call write_netcdf( l_uv_nudge, &
+                             l_tke_aniso, &
+                             l_standard_term_ta, &
+                             l_single_C2_Skw, &
+                             stats_rad_zt%file  )
+          call write_netcdf( l_uv_nudge, &
+                             l_tke_aniso, &
+                             l_standard_term_ta, &
+                             l_single_C2_Skw, &
+                             stats_rad_zm%file  )
         end if
-        call write_netcdf( stats_sfc%file  )
+        call write_netcdf( l_uv_nudge, &
+                           l_tke_aniso, &
+                           l_standard_term_ta, &
+                           l_single_C2_Skw, &
+                           stats_sfc%file  )
             
         if ( err_code == clubb_fatal_error ) return
 #else

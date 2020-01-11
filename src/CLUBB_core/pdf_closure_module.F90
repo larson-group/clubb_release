@@ -16,12 +16,13 @@ module pdf_closure_module
   ! the w, rt, and theta-l (or w, chi, and eta) portion of CLUBB's multivariate,
   ! two-component PDF.
   integer, parameter, public :: &
-    iiPDF_ADG1 = 1,     & ! ADG1 PDF
-    iiPDF_ADG2 = 2,     & ! ADG2 PDF
-    iiPDF_3D_Luhar = 3, & ! 3D Luhar PDF
-    iiPDF_new = 4,      & ! new PDF
-    iiPDF_TSDADG = 5,   & ! new TSDADG PDF
-    iiPDF_LY93 = 6        ! Lewellen and Yoh (1993)
+    iiPDF_ADG1 = 1,       & ! ADG1 PDF
+    iiPDF_ADG2 = 2,       & ! ADG2 PDF
+    iiPDF_3D_Luhar = 3,   & ! 3D Luhar PDF
+    iiPDF_new = 4,        & ! new PDF
+    iiPDF_TSDADG = 5,     & ! new TSDADG PDF
+    iiPDF_LY93 = 6,       & ! Lewellen and Yoh (1993)
+    iiPDF_new_hybrid = 7    ! new hybrid PDF
 
   ! The selected two component normal PDF for w, rt, and theta-l.
   integer, parameter, public :: &
@@ -41,14 +42,14 @@ module pdf_closure_module
   !#######################################################################
   subroutine pdf_closure( hydromet_dim, p_in_Pa, exner, thv_ds,     &
                           wm, wp2, wp3, sigma_sqd_w,                &
-                          Skw, Skthl_in, Skrt_in,                   &
+                          Skw, Skthl_in, Skrt_in, Sku_in, Skv_in,   &
                           rtm, rtp2, wprtp,                         &
                           thlm, thlp2, wpthlp,                      &
                           um, up2, upwp,                            &
                           vm, vp2, vpwp,                            &
                           rtpthlp,                                  &
                           sclrm, wpsclrp, sclrp2,                   &
-                          sclrprtp, sclrpthlp,                      &
+                          sclrprtp, sclrpthlp, Sksclr_in,           &
 #ifdef GFDL
                           RH_crit, do_liquid_only_in_clubb,         & ! h1g, 2010-06-15
 #endif
@@ -130,6 +131,9 @@ module pdf_closure_module
     use new_pdf_main, only: &
         new_pdf_driver    ! Procedure(s)
 
+    use new_hybrid_pdf_main, only: &
+        new_hybrid_pdf_driver    ! Procedure(s)
+
     use adg1_adg2_3d_luhar_pdf, only: &
         ADG1_pdf_driver,     & ! Procedure(s)
         ADG2_pdf_driver,     &
@@ -193,6 +197,8 @@ module pdf_closure_module
       Skw,         & ! Skewness of w                              [-]
       Skthl_in,    & ! Skewness of thl                            [-]
       Skrt_in,     & ! Skewness of rt                             [-]
+      Sku_in,      & ! Skewness of u                              [-]
+      Skv_in,      & ! Skewness of v                              [-]
       rtm,         & ! Mean total water mixing ratio              [kg/kg]
       rtp2,        & ! r_t'^2                                     [(kg/kg)^2]
       wprtp,       & ! w'r_t'                                     [(kg/kg)(m/s)]
@@ -214,7 +220,8 @@ module pdf_closure_module
       wpsclrp,     & ! w' sclr'                   [units vary]
       sclrp2,      & ! sclr'^2                    [units vary]
       sclrprtp,    & ! sclr' r_t'                 [units vary]
-      sclrpthlp      ! sclr' th_l'                [units vary]
+      sclrpthlp,   & ! sclr' th_l'                [units vary]
+      Sksclr_in      ! Skewness of sclr           [-]
 
 #ifdef  GFDL
     ! critial relative humidity for nucleation
@@ -264,7 +271,7 @@ module pdf_closure_module
     type(pdf_parameter), intent(inout) :: & 
       pdf_params     ! pdf paramters         [units vary]
 
-    type(implicit_coefs_terms), dimension(gr%nz), intent(out) :: &
+    type(implicit_coefs_terms), intent(out) :: &
       pdf_implicit_coefs_terms    ! Implicit coefs / explicit terms [units vary]
 
     ! Parameters output only for recording statistics (new PDF).
@@ -338,7 +345,12 @@ module pdf_closure_module
     real( kind = core_rknd ), dimension(gr%nz) :: &
       sqrt_wp2, & ! Square root of wp2          [m/s]
       Skthl,    & ! Skewness of thl             [-]
-      Skrt        ! Skewness of rt              [-]
+      Skrt,     & ! Skewness of rt              [-]
+      Sku,      & ! Skewness of u               [-]
+      Skv         ! Skewness of v               [-]
+
+    real( kind = core_rknd ), dimension(gr%nz,sclr_dim) :: &
+      Sksclr      ! Skewness of rt              [-]
 
     ! Thermodynamic quantity
 
@@ -384,6 +396,12 @@ module pdf_closure_module
     logical, parameter :: &
       l_liq_ice_loading_test = .false. ! Temp. flag liq./ice water loading test
 
+    real( kind = core_rknd ), dimension(gr%nz) :: &
+      zeros    ! Vector of 0s (size gr%nz)    [-]
+
+    real( kind = core_rknd ), dimension(gr%nz,sclr_dim) :: &
+      zero_array    ! Array of 0s (size gr%nz x sclr_dim)    [-]
+
     integer :: k, i, hm_idx   ! Indices
 
     ! Value of chi at saturation for liquid water; always 0
@@ -419,36 +437,60 @@ module pdf_closure_module
         ! value back out.
         Skrt = Skrt_in
         Skthl = Skthl_in
+        Sku = Sku_in
+        Skv = Skv_in
+        Sksclr = Sksclr_in
 
     endif
 
 
     ! Initialize to 0 to prevent a runtime error
-    if ( iiPDF_type /= iiPDF_new ) then
+    if ( iiPDF_type /= iiPDF_new .and. iiPDF_type /= iiPDF_new_hybrid ) then
 
-       do k = 1, gr%nz
+       ! Set up a vector of 0s and an array of 0s to help write results back to
+       ! type variable pdf_implicit_coefs_terms.
+       zeros = zero
+       zero_array = zero
 
-           pdf_implicit_coefs_terms(k)%coef_wp4_implicit = zero
-           pdf_implicit_coefs_terms(k)%coef_wprtp2_implicit = zero
-           pdf_implicit_coefs_terms(k)%coef_wpthlp2_implicit = zero
-           pdf_implicit_coefs_terms(k)%coef_wp2rtp_implicit = zero
-           pdf_implicit_coefs_terms(k)%term_wp2rtp_explicit = zero
-           pdf_implicit_coefs_terms(k)%coef_wp2thlp_implicit = zero
-           pdf_implicit_coefs_terms(k)%term_wp2thlp_explicit = zero
-           pdf_implicit_coefs_terms(k)%coef_wprtpthlp_implicit = zero
-           pdf_implicit_coefs_terms(k)%term_wprtpthlp_explicit = zero
+       pdf_implicit_coefs_terms%coef_wp4_implicit = zeros
+       pdf_implicit_coefs_terms%coef_wp2rtp_implicit = zeros
+       pdf_implicit_coefs_terms%term_wp2rtp_explicit = zeros
+       pdf_implicit_coefs_terms%coef_wp2thlp_implicit = zeros
+       pdf_implicit_coefs_terms%term_wp2thlp_explicit = zeros
+       pdf_implicit_coefs_terms%coef_wp2up_implicit = zeros
+       pdf_implicit_coefs_terms%term_wp2up_explicit = zeros
+       pdf_implicit_coefs_terms%coef_wp2vp_implicit = zeros
+       pdf_implicit_coefs_terms%term_wp2vp_explicit = zeros
+       pdf_implicit_coefs_terms%coef_wprtp2_implicit = zeros
+       pdf_implicit_coefs_terms%term_wprtp2_explicit = zeros
+       pdf_implicit_coefs_terms%coef_wpthlp2_implicit = zeros
+       pdf_implicit_coefs_terms%term_wpthlp2_explicit = zeros
+       pdf_implicit_coefs_terms%coef_wprtpthlp_implicit = zeros
+       pdf_implicit_coefs_terms%term_wprtpthlp_explicit = zeros
+       pdf_implicit_coefs_terms%coef_wpup2_implicit = zeros
+       pdf_implicit_coefs_terms%term_wpup2_explicit = zeros
+       pdf_implicit_coefs_terms%coef_wpvp2_implicit = zeros
+       pdf_implicit_coefs_terms%term_wpvp2_explicit = zeros
+       if ( sclr_dim > 0 ) then
+          pdf_implicit_coefs_terms%coef_wp2sclrp_implicit = zero_array
+          pdf_implicit_coefs_terms%term_wp2sclrp_explicit = zero_array
+          pdf_implicit_coefs_terms%coef_wpsclrp2_implicit = zero_array
+          pdf_implicit_coefs_terms%term_wpsclrp2_explicit = zero_array
+          pdf_implicit_coefs_terms%coef_wprtpsclrp_implicit = zero_array
+          pdf_implicit_coefs_terms%term_wprtpsclrp_explicit = zero_array
+          pdf_implicit_coefs_terms%coef_wpthlpsclrp_implicit = zero_array
+          pdf_implicit_coefs_terms%term_wpthlpsclrp_explicit = zero_array
+       endif ! sclr_dim > 0
 
-        end do
-
-        F_w = zero
-        F_rt = zero
-        F_thl = zero
-        min_F_w = zero
-        max_F_w = zero
-        min_F_rt = zero
-        max_F_rt = zero
-        min_F_thl = zero
-        max_F_thl = zero
+       F_w = zero
+       F_rt = zero
+       F_thl = zero
+       min_F_w = zero
+       max_F_w = zero
+       min_F_rt = zero
+       max_F_rt = zero
+       min_F_thl = zero
+       max_F_thl = zero
 
     endif
 
@@ -551,6 +593,38 @@ module pdf_closure_module
                          pdf_params%varnce_thl_1, pdf_params%varnce_thl_2,  & ! Out
                          pdf_params%mixt_frac )                               ! Out
 
+    elseif ( iiPDF_type == iiPDF_new_hybrid ) then ! use new hybrid PDF
+
+       call new_hybrid_pdf_driver( wm, rtm, thlm, um, vm,              & ! In
+                                   wp2, rtp2, thlp2, up2, vp2,         & ! In
+                                   Skw, wprtp, wpthlp, upwp, vpwp,     & ! In
+                                   sclrm, sclrp2, wpsclrp,             & ! In
+                                   Skrt, Skthl, Sku, Skv, Sksclr,      & ! I/O
+                                   pdf_params%w_1, pdf_params%w_2,     & ! Out
+                                   pdf_params%rt_1, pdf_params%rt_2,   & ! Out
+                                   pdf_params%thl_1, pdf_params%thl_2, & ! Out
+                                   u_1, u_2, v_1, v_2,                 & ! Out
+                                   pdf_params%varnce_w_1,              & ! Out
+                                   pdf_params%varnce_w_2,              & ! Out
+                                   pdf_params%varnce_rt_1,             & ! Out
+                                   pdf_params%varnce_rt_2,             & ! Out
+                                   pdf_params%varnce_thl_1,            & ! Out
+                                   pdf_params%varnce_thl_2,            & ! Out
+                                   varnce_u_1, varnce_u_2,             & ! Out
+                                   varnce_v_1, varnce_v_2,             & ! Out
+                                   sclr1, sclr2,                       & ! Out
+                                   varnce_sclr1, varnce_sclr2,         & ! Out
+                                   pdf_params%mixt_frac,               & ! Out
+                                   pdf_implicit_coefs_terms,           & ! Out
+                                   F_w, min_F_w, max_F_w               ) ! Out
+
+       ! The calculation of skewness of rt, thl, u, v, and scalars is hard-wired
+       ! for use with the ADG1 code, which contains the variable sigma_sqd_w.
+       ! In order to use an equivalent expression for these skewnesses using the
+       ! new hybrid PDF (without doing more recoding), set the value of
+       ! sigma_sqd_w to 1 - F_w.
+       sigma_sqd_w = one - F_w
+
     endif ! iiPDF_type
 
 
@@ -563,14 +637,21 @@ module pdf_closure_module
                                    pdf_params%mixt_frac,                                    & ! In
                                    pdf_params%corr_rt_thl_1, pdf_params%corr_rt_thl_2 )       ! Out
 
-    if ( iiPDF_type == iiPDF_ADG1 .or. iiPDF_type == iiPDF_ADG2 ) then
+    if ( iiPDF_type == iiPDF_ADG1 .or. iiPDF_type == iiPDF_ADG2 &
+         .or. iiPDF_type == iiPDF_new_hybrid ) then
 
-       ! ADG1 and ADG2 define corr_w_rt_1, corr_w_rt_2, corr_w_thl_1, and
+       ! These PDF types define corr_w_rt_1, corr_w_rt_2, corr_w_thl_1, and
        ! corr_w_thl_2 to all have a value of 0, so skip the calculation.
+       ! The values of corr_u_w_1, corr_u_w_2, corr_v_w_1, and corr_v_w_2 are
+       ! all defined to be 0, as well.
        pdf_params%corr_w_rt_1  = zero
        pdf_params%corr_w_rt_2  = zero
        pdf_params%corr_w_thl_1 = zero
        pdf_params%corr_w_thl_2 = zero
+       corr_u_w_1   = zero
+       corr_u_w_2   = zero
+       corr_v_w_1   = zero
+       corr_v_w_2   = zero
 
     else
 
@@ -616,9 +697,10 @@ module pdf_closure_module
                                          pdf_params%mixt_frac,                              & ! In
                                          corr_sclr_rt_1(:,i), corr_sclr_rt_2(:,i) )           ! Out
 
-          if ( iiPDF_type == iiPDF_ADG1 .or. iiPDF_type == iiPDF_ADG2 ) then
+          if ( iiPDF_type == iiPDF_ADG1 .or. iiPDF_type == iiPDF_ADG2 &
+               .or. iiPDF_type == iiPDF_new_hybrid ) then
 
-            ! ADG1 and ADG2 define all PDF component correlations involving w
+            ! These PDF types define all PDF component correlations involving w
             ! to have a value of 0, so skip the calculation.
             corr_w_sclr_1(:,i) = zero
             corr_w_sclr_2(:,i) = zero
@@ -821,9 +903,36 @@ module pdf_closure_module
                                           pdf_params%corr_chi_eta_1 )                         ! Out
     
     ! Calculate cloud fraction component for pdf 1
-    call calc_cloud_frac_component( pdf_params%chi_1, pdf_params%stdev_chi_1,   & ! In
-                                    chi_at_liq_sat,                             & ! In
-                                    pdf_params%cloud_frac_1, pdf_params%rc_1 )    ! Out
+    call calc_liquid_cloud_frac_component( pdf_params%chi_1, pdf_params%stdev_chi_1,    & ! In
+                                           pdf_params%cloud_frac_1, pdf_params%rc_1 )     ! Out
+
+    ! Calc ice_supersat_frac
+    if ( l_calc_ice_supersat_frac ) then
+
+      do i = 1, gr%nz
+
+        if ( tl1(i) <= T_freeze_K ) then
+
+          ! Temperature is freezing, we must compute chi_at_ice_sat and
+          ! calculate the new cloud_frac_component
+          chi_at_ice_sat1 = ( sat_mixrat_ice( p_in_Pa(i), tl1(i) ) - pdf_params%rsatl_1(i) ) &
+                            * pdf_params%crt_1(i)
+
+          call calc_cloud_frac_component( pdf_params%chi_1(i), pdf_params%stdev_chi_1(i), &
+                                          chi_at_ice_sat1, &
+                                          pdf_params%ice_supersat_frac_1(i), rc_1_ice(i) )
+        else
+
+            ! Temperature is warmer than freezing, the ice_supersat_frac calculation is
+            ! the same as cloud_frac
+            pdf_params%ice_supersat_frac_1(i) = pdf_params%cloud_frac_1(i)
+            rc_1_ice(i) = pdf_params%rc_1(i)
+
+        end if
+
+      end do
+
+    end if
 
     
     call transform_pdf_chi_eta_component( tl2, pdf_params%rsatl_2, pdf_params%rt_2, exner,  & ! In
@@ -836,43 +945,18 @@ module pdf_closure_module
 
     
     ! Calculate cloud fraction component for pdf 2
-    call calc_cloud_frac_component( pdf_params%chi_2, pdf_params%stdev_chi_2,               & ! In
-                                    chi_at_liq_sat,                                         & ! In
-                                    pdf_params%cloud_frac_2, pdf_params%rc_2 )                ! Out
+    call calc_liquid_cloud_frac_component( pdf_params%chi_2, pdf_params%stdev_chi_2,    & ! In
+                                           pdf_params%cloud_frac_2, pdf_params%rc_2 )     ! Out
 
     ! Calc ice_supersat_frac
     if ( l_calc_ice_supersat_frac ) then
 
         do i = 1, gr%nz
 
-            if ( tl1(i) <= T_freeze_K ) then
-    
-                ! Temperature is freezing, we must compute chi_at_ice_sat and 
-                ! calculate the a new cloud_frac_component
-                chi_at_ice_sat1 = ( sat_mixrat_ice( p_in_Pa(i), tl1(i) ) - pdf_params%rsatl_1(i) ) &
-                                  * pdf_params%crt_1(i)
-
-                call calc_cloud_frac_component( pdf_params%chi_1(i), pdf_params%stdev_chi_1(i), &
-                                                chi_at_ice_sat1, &
-                                                pdf_params%ice_supersat_frac_1(i), rc_1_ice(i) )
-            else
-
-                ! Temperature is warmer than freezing, the ice_supersat_frac calculation is 
-                ! the same as cloud_frac
-                pdf_params%ice_supersat_frac_1(i) = pdf_params%cloud_frac_1(i)
-                rc_1_ice(i) = pdf_params%rc_1(i)
-
-            end if
-
-        end do
-
-
-        do i = 1, gr%nz
-
             if ( tl2(i) <= T_freeze_K ) then
 
                 ! Temperature is freezing, we must compute chi_at_ice_sat and 
-                ! calculate the a new cloud_frac_component
+                ! calculate the new cloud_frac_component
                 chi_at_ice_sat2 = ( sat_mixrat_ice( p_in_Pa(i), tl2(i) ) - pdf_params%rsatl_2(i) ) &
                                   * pdf_params%crt_2(i)
 
@@ -915,7 +999,8 @@ module pdf_closure_module
     rcm = pdf_params%mixt_frac * pdf_params%rc_1 + ( one - pdf_params%mixt_frac ) * pdf_params%rc_2
     rcm = max( zero_threshold, rcm )
 
-    if ( iiPDF_type == iiPDF_ADG1 .or. iiPDF_type == iiPDF_ADG2 ) then
+    if ( iiPDF_type == iiPDF_ADG1 .or. iiPDF_type == iiPDF_ADG2 &
+         .or. iiPDF_type == iiPDF_new_hybrid ) then
 
         ! corr_w_rt and corr_w_thl are zero for these pdf types so
         ! corr_w_chi and corr_w_eta are zero as well
@@ -923,10 +1008,6 @@ module pdf_closure_module
         pdf_params%corr_w_chi_2 = zero
         pdf_params%corr_w_eta_1 = zero
         pdf_params%corr_w_eta_2 = zero
-        corr_u_w_1   = zero
-        corr_u_w_2   = zero
-        corr_v_w_1   = zero
-        corr_v_w_2   = zero
 
     else 
         
@@ -1436,65 +1517,89 @@ module pdf_closure_module
       corr_chi_eta      ! Correlation of chi and eta for each component.
 
     ! ----------- Local Variables -----------
-    real( kind = core_rknd ), dimension(gr%nz) ::  &
-      beta
-
     real( kind = core_rknd ) :: &
       varnce_rt_term, &
       corr_rt_thl_term, &
-      varnce_thl_term
+      varnce_thl_term, &
+      varnce_chi, &
+      varnce_eta, &
+      beta, &
+      invrs_beta_rsatl_p1
+
+    real( kind = core_rknd ), parameter :: &
+      chi_tol_sqd = chi_tol**2, &
+      eta_tol_sqd = eta_tol**2, &
+      Cp_on_Lv = Cp / Lv
 
     ! Loop variable
-    integer :: i
+    integer :: k
 
     ! ----------- Begin Code -----------
 
-    ! SD's beta (eqn. 8)
-    beta = ep * ( Lv/(Rd*tl) ) * ( Lv/(Cp*tl) )
+    do k = 1, gr%nz
 
-    ! s from Lewellen and Yoh 1993 (LY) eqn. 1
-    chi = ( rt - rsatl ) / ( one + beta * rsatl )
+        ! SD's beta (eqn. 8)
+        beta = ep * Lv**2 / ( Rd * Cp * tl(k)**2 )
 
-    ! For each normal distribution in the sum of two normal distributions,
-    ! s' = crt * rt'  +  cthl * thl';
-    ! therefore, x's' = crt * x'rt'  +  cthl * x'thl'.
-    ! Larson et al. May, 2001.
-    crt  = one / ( one + beta * rsatl )
-    cthl = (one + beta * rt) / ( one + beta * rsatl )**2 * ( Cp/Lv ) * beta * rsatl * exner
+        invrs_beta_rsatl_p1 = one / ( one + beta * rsatl(k) )
+
+        ! s from Lewellen and Yoh 1993 (LY) eqn. 1
+        chi(k) = ( rt(k) - rsatl(k) ) * invrs_beta_rsatl_p1
+
+        ! For each normal distribution in the sum of two normal distributions,
+        ! s' = crt * rt'  +  cthl * thl';
+        ! therefore, x's' = crt * x'rt'  +  cthl * x'thl'.
+        ! Larson et al. May, 2001.
+        crt(k)  = invrs_beta_rsatl_p1
+        cthl(k) = ( one + beta * rt(k) ) * invrs_beta_rsatl_p1**2 &
+                  * Cp_on_Lv * beta * rsatl(k) * exner(k)
+    end do
 
     ! Calculate covariance, correlation, and standard deviation of 
     ! chi and eta for each component
     ! Include subplume correlation of qt, thl
-    do i = 1, gr%nz
+    do k = 1, gr%nz
        
-        varnce_rt_term = crt(i)**2 * varnce_rt(i)
-        varnce_thl_term = cthl(i)**2 * varnce_thl(i)
+        varnce_rt_term = crt(k)**2 * varnce_rt(k)
+        varnce_thl_term = cthl(k)**2 * varnce_thl(k)
 
-        covar_chi_eta(i) = varnce_rt_term - varnce_thl_term
+        covar_chi_eta(k) = varnce_rt_term - varnce_thl_term
 
-        corr_rt_thl_term = two * corr_rt_thl(i) * crt(i) * cthl(i) &
-                           * sqrt( varnce_rt(i) * varnce_thl(i) )
+        corr_rt_thl_term = two * corr_rt_thl(k) * crt(k) * cthl(k) &
+                           * sqrt( varnce_rt(k) * varnce_thl(k) )
 
-        stdev_chi(i) = sqrt( varnce_rt_term - corr_rt_thl_term + varnce_thl_term )
-        stdev_eta(i) = sqrt( varnce_rt_term + corr_rt_thl_term + varnce_thl_term )
-        
+        varnce_chi = varnce_rt_term - corr_rt_thl_term + varnce_thl_term
+        varnce_eta = varnce_rt_term + corr_rt_thl_term + varnce_thl_term
+
+        ! We need to introduce a threshold value for the variance of chi and eta
+        if ( varnce_chi < chi_tol_sqd .or. varnce_eta < eta_tol_sqd ) then
+
+            if ( varnce_chi < chi_tol_sqd ) then
+                stdev_chi(k) = zero  ! Treat chi as a delta function
+            else
+                stdev_chi(k) = sqrt( varnce_chi )
+            end if
+
+            if ( varnce_eta < eta_tol_sqd ) then
+                stdev_eta(k) = zero  ! Treat eta as a delta function
+            else
+                stdev_eta(k) = sqrt( varnce_eta )
+            end if
+
+            corr_chi_eta(k) = zero
+
+        else
+
+            stdev_chi(k) = sqrt( varnce_chi )
+            stdev_eta(k) = sqrt( varnce_eta )
+
+            corr_chi_eta(k) = covar_chi_eta(k) / ( stdev_chi(k) * stdev_eta(k) )
+            corr_chi_eta(k) = min( max_mag_correlation, &
+                                   max( -max_mag_correlation, corr_chi_eta(k) ) )
+
+        end if
+
     end do
-
-    ! We need to introduce a threshold value for the variance of chi and eta
-    where ( stdev_chi < chi_tol .or. stdev_eta < eta_tol )
-
-        where ( stdev_chi < chi_tol ) stdev_chi = zero  ! Treat chi as a delta function
-        where ( stdev_eta < eta_tol ) stdev_eta = zero  ! Treat eta as a delta function
-
-        corr_chi_eta = zero
-
-    elsewhere
-
-        corr_chi_eta = covar_chi_eta / ( stdev_chi * stdev_eta )
-        corr_chi_eta = min( max_mag_correlation, max( -max_mag_correlation, corr_chi_eta ) )
-
-    end where
-
 
   end subroutine transform_pdf_chi_eta_component
   
@@ -1869,9 +1974,8 @@ module pdf_closure_module
   end function calc_wpxpyp_pdf
 
   !=============================================================================
-  elemental subroutine calc_cloud_frac_component( mean_chi_i, stdev_chi_i, &
-                                                  chi_at_sat, &
-                                                  cloud_frac_i, rc_i )
+  subroutine calc_liquid_cloud_frac_component( mean_chi, stdev_chi, &
+                                               cloud_frac, rc )
     ! Description:
     ! Calculates the PDF component cloud water mixing ratio, rc_i, and cloud
     ! fraction, cloud_frac_i, for the ith PDF component.
@@ -1926,6 +2030,175 @@ module pdf_closure_module
     ! References:
     !----------------------------------------------------------------------
 
+    use grid_class, only: &
+        gr
+
+    use constants_clubb, only: &
+        chi_tol,        & ! Tolerance for pdf parameter chi       [kg/kg]
+        sqrt_2pi,       & ! sqrt(2*pi)
+        sqrt_2,       & ! sqrt(2*pi)
+        one,            & ! 1
+        one_half,       & ! 1/2
+        zero,           & ! 0
+        max_num_stdevs, &
+        eps
+
+    use clubb_precision, only: &
+        core_rknd     ! Precision
+
+    implicit none
+
+    !----------- Input Variables -----------
+    real( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
+      mean_chi,  & ! Mean of chi (old s) (ith PDF component)           [kg/kg]
+      stdev_chi    ! Standard deviation of chi (ith PDF component)     [kg/kg]
+
+    !----------- Output Variables -----------
+    real( kind = core_rknd ), dimension(gr%nz), intent(out) :: &
+      cloud_frac, & ! Cloud fraction (ith PDF component)               [-]
+      rc            ! Mean cloud water mixing ratio (ith PDF comp.)    [kg/kg]
+
+    !----------- Local Variables -----------
+    real( kind = core_rknd), parameter :: &
+      invrs_sqrt_2 = one / sqrt_2, &
+      invrs_sqrt_2pi = one / sqrt_2pi
+
+#ifdef MKL
+    real( kind = core_rknd ), dimension(gr%nz) :: &
+      mean_chi_packed,      & ! Values of chi needed in expensive calculation           [kg/kg]
+      stdev_chi_packed,     & ! Values of stdev_chi needed in expensive calculation     [kg/kg]
+      cloud_frac_packed,    & ! Cloud fraction, only calculated values                  [-]
+      rc_packed,            & !  Mean cloud water mixing ratio, only calculated values  [kg/kg]
+      zeta, zeta_sqd,       &
+      exp_cache
+
+    integer, dimension(gr%nz) :: &
+      v_calc_mask    ! Mask to indicate which indicies need vectorizable calculations
+
+    integer :: &
+      v_num_calcs   ! Number of elements needing calculation, can act as an index variable
+#else
+    real( kind = core_rknd ) :: &
+      zeta
+#endif
+
+    integer :: k    ! Vertical loop index
+
+    !----------- Begin Code -----------
+
+#ifdef MKL
+    v_calc_mask(:) = 0
+    v_num_calcs = 0
+#endif
+
+    do k = 1, gr%nz
+
+        if ( ( abs( mean_chi(k) ) <= eps .and. stdev_chi(k) <= chi_tol ) &
+               .or. ( mean_chi(k) < - max_num_stdevs * stdev_chi(k) ) ) then
+
+            ! The mean of chi is at saturation and does not vary in the ith PDF component
+            cloud_frac(k) = zero
+            rc(k)         = zero
+
+        elseif ( mean_chi(k) > max_num_stdevs * stdev_chi(k) ) then
+
+            ! The mean of chi is multiple standard deviations above the saturation point.
+            ! Thus, all cloud in the ith PDF component.
+            cloud_frac(k) = one
+            rc(k)         = mean_chi(k)
+
+        else
+
+            ! The mean of chi is within max_num_stdevs of the saturation point.
+            ! Thus, layer is partly cloudy, requires calculation.
+#ifdef MKL
+            ! MKL functions are available, the calculations will be completed
+            ! over contiguous array sections, simply save needed values here
+
+            ! Increment count of elements needing calculation
+            v_num_calcs = v_num_calcs + 1
+
+            ! Copy values which are needed in calculation into contiguous array section
+            mean_chi_packed(v_num_calcs) = mean_chi(k)
+            stdev_chi_packed(v_num_calcs) = stdev_chi(k)
+
+            ! Keep track of where result goes using this mask, so we can unpack
+            ! the contiguous array back into the output array after calculation
+            v_calc_mask(k) = 1
+#else
+            ! MKL functions are unavailable, use these scalar calculations instead
+
+            zeta = mean_chi(k) / stdev_chi(k)
+
+            cloud_frac(k) = one_half * ( one + erf( zeta * invrs_sqrt_2 )  )
+
+            rc(k) = mean_chi(k) * cloud_frac(k) &
+                    + stdev_chi(k) * exp( - one_half * zeta**2 ) * invrs_sqrt_2pi
+#endif
+
+        end if
+
+    end do
+
+#ifdef MKL
+    ! If there are any calculations to complete, then v_num_calcs > 0, and the values to
+    ! operate on are all stored in contiguous sections in the "packed" arrays. This means the
+    ! packed arrays are only valid on (1:v_num_calcs), and values outside that range may
+    ! be NaN. For more information on Intel's MKL_VML functions, see the Vector Mathematical
+    ! Functions section of the MKL developer reference for Fortran
+    if( v_num_calcs > 0 ) then
+
+        ! zeta = mean_chi_packed / stdev_chi_packed
+        call vddiv( v_num_calcs, mean_chi_packed , stdev_chi_packed, zeta )
+
+        ! Cumulative normal distribution function, erf_cache = 0.5*(1+erf(zeta/sqrt2))
+        call vdcdfnorm( v_num_calcs, zeta, cloud_frac_packed )
+
+        ! zeta_sqd = zeta**2
+        call vdsqr( v_num_calcs, zeta, zeta_sqd )
+
+        ! exp_cache = exp( -0.5*zeta**2 )
+        call vdexp( v_num_calcs, - one_half * zeta_sqd(1:v_num_calcs), exp_cache )
+
+        do k = 1, v_num_calcs
+            rc_packed(k) = mean_chi_packed(k) * cloud_frac_packed(k) &
+                           + stdev_chi_packed(k) * exp_cache(k) * invrs_sqrt_2pi
+        end do
+
+        ! Unpack results from contiguous array sections and put them into output arrays,
+        ! where to put them is defined by v_calc_mask
+        call vdunpackm( gr%nz, cloud_frac_packed, cloud_frac, v_calc_mask )
+        call vdunpackm( gr%nz, rc_packed, rc, v_calc_mask )
+
+    end if
+
+#endif
+
+    return
+
+  end subroutine calc_liquid_cloud_frac_component
+
+  !=============================================================================
+  elemental subroutine calc_cloud_frac_component( mean_chi, stdev_chi, &
+                                                  chi_at_sat, &
+                                                  cloud_frac, rc )
+    ! Description:
+    !   An elemental version of the cloud fraction calculation. This
+    !   procedure takes an extra argument, chi_at_sat, allowing it to
+    !   be used for the ice_supersat_frac calculation as well. This is
+    !   because the saturation point will be non-zero when calculating
+    !   ice_supersat_frac if tl is below freezing on that grid level,
+    !   unlike the calculation of the liquid cloud fraction, where the
+    !   saturation point is always 0. Additionally, the ice_supersat_frac
+    !   only needs to be calculated when tl is below freezing, otherwise
+    !   it is equal to the liquid cloud fraction component, so being
+    !   elemental allows this procedure to be called only for the grid
+    !   levels where tl < T_freeze_K.
+    !
+    !   The description of the equations are located in the description
+    !   of calc_liquid_cloud_frac_component.
+    !----------------------------------------------------------------------
+
     use constants_clubb, only: &
         chi_tol,        & ! Tolerance for pdf parameter chi       [kg/kg]
         sqrt_2pi,       & ! sqrt(2*pi)
@@ -1943,44 +2216,48 @@ module pdf_closure_module
 
     !----------- Input Variables -----------
     real( kind = core_rknd ), intent(in) :: &
-      mean_chi_i,  & ! Mean of chi (old s) (ith PDF component)           [kg/kg]
-      stdev_chi_i, & ! Standard deviation of chi (ith PDF component)     [kg/kg]
+      mean_chi,    & ! Mean of chi (old s) (ith PDF component)           [kg/kg]
+      stdev_chi,   & ! Standard deviation of chi (ith PDF component)     [kg/kg]
       chi_at_sat     ! Value of chi at saturation (0--liquid; neg.--ice) [kg/kg]
 
     !----------- Output Variables -----------
     real( kind = core_rknd ), intent(out) :: &
-      cloud_frac_i, & ! Cloud fraction (ith PDF component)               [-]
-      rc_i            ! Mean cloud water mixing ratio (ith PDF comp.)    [kg/kg]
+      cloud_frac, & ! Cloud fraction (ith PDF component)               [-]
+      rc            ! Mean cloud water mixing ratio (ith PDF comp.)    [kg/kg]
 
     !----------- Local Variables -----------
-    real( kind = core_rknd) :: zeta_i
+    real( kind = core_rknd), parameter :: &
+      invrs_sqrt_2 = one / sqrt_2, &
+      invrs_sqrt_2pi = one / sqrt_2pi
+
+    real( kind = core_rknd) :: zeta
 
     !----------- Begin Code -----------
 
-    if ( ( abs( mean_chi_i - chi_at_sat ) <= eps .and. stdev_chi_i <= chi_tol ) &
-           .or. ( mean_chi_i - chi_at_sat < - max_num_stdevs * stdev_chi_i ) ) then
+    if ( ( abs( mean_chi - chi_at_sat ) <= eps .and. stdev_chi <= chi_tol ) &
+           .or. ( mean_chi - chi_at_sat < - max_num_stdevs * stdev_chi ) ) then
 
         ! The mean of chi is at saturation and does not vary in the ith PDF component
-        cloud_frac_i = zero
-        rc_i         = zero
+        cloud_frac = zero
+        rc         = zero
 
-    elseif ( mean_chi_i - chi_at_sat > max_num_stdevs * stdev_chi_i ) then
+    elseif ( mean_chi - chi_at_sat > max_num_stdevs * stdev_chi ) then
 
         ! The mean of chi is multiple standard deviations above the saturation point.
         ! Thus, all cloud in the ith PDF component.
-        cloud_frac_i = one
-        rc_i         = mean_chi_i - chi_at_sat
+        cloud_frac = one
+        rc         = mean_chi - chi_at_sat
     
     else
 
         ! The mean of chi is within max_num_stdevs of the saturation point.
         ! Thus, layer is partly cloudy, requires calculation.
-        zeta_i = ( mean_chi_i - chi_at_sat ) / stdev_chi_i
+        zeta = ( mean_chi - chi_at_sat ) / stdev_chi
 
-        cloud_frac_i = one_half * ( one + erf( zeta_i / sqrt_2 )  )
+        cloud_frac = one_half * ( one + erf( zeta * invrs_sqrt_2 )  )
 
-        rc_i = ( mean_chi_i - chi_at_sat ) * cloud_frac_i &
-               + stdev_chi_i * exp( - one_half * zeta_i**2 ) / ( sqrt_2pi )
+        rc = ( mean_chi - chi_at_sat ) * cloud_frac &
+             + stdev_chi * exp( - one_half * zeta**2 ) * invrs_sqrt_2pi
 
     end if
 
@@ -2500,9 +2777,10 @@ module pdf_closure_module
 
     vprcp_contrib_comp_i = ( v_i - vm ) * ( rc_i - rcm )
 
-    ! If iiPDF_type isn't iiPDF_ADG1 or iiPDF_ADG2, so corr_w_chi_i /= 0
-    !   (and perhaps corr_u_w_i /= 0).
-    if ( .not. ( iiPDF_type == iiPDF_ADG1 .or. iiPDF_type == iiPDF_ADG2 ) ) then
+    ! If iiPDF_type isn't iiPDF_ADG1, iiPDF_ADG2, or iiPDF_new_hybrid, so
+    ! corr_w_chi_i /= 0 (and perhaps corr_u_w_i /= 0).
+    if ( .not. ( iiPDF_type == iiPDF_ADG1 .or. iiPDF_type == iiPDF_ADG2 &
+                 .or. iiPDF_type == iiPDF_new_hybrid ) ) then
 
         ! Chi varies significantly in the ith PDF component (stdev_chi > chi_tol)
         ! and there is some cloud (0 < cloud_frac <= 1)

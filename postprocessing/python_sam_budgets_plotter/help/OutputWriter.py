@@ -214,7 +214,7 @@ def placeImage(FILE, img):
     imgWidth = '49%'
     imgHeight = 'auto'
     with open(FILE, "a") as myfile:
-        myfile.write("		<img width=\"" + imgWidth + "\" height=\"" + imgHeight + "\" align=\"BOTTOM\" border=\"0\" style=\"padding: 5px;\" src=\"" + img + "\" alt=\"" + img + "\" />\n")
+        myfile.write("		<img width=\"" + imgWidth + "\" height=\"" + imgHeight + "\" align=\"BOTTOM\" border=\"0\" style=\"padding: 5px;\" src=\"" + img + ".png\" alt=\"" + img + "\" />\n")
 
 ###############################################################################
 # Gets a list of all images in a specific directory

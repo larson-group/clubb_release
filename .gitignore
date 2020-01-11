@@ -1,0 +1,7 @@
+output/
+bin/
+lib/
+obj/
+**/.idea
+postprocessing/pyplotgen/les_and_clubb_benchmark_runs
+

@@ -50,7 +50,7 @@ module morrison_microphys_module
         ircm_sd_mg_morr, &
         irrm_auto, &
         irrm_accr, &
-        irrm_cond, &
+        irrm_evap, &
         irsm_sd_morr_int, &
         ihl_on_Cp_residual, &
         iqto_residual
@@ -66,7 +66,7 @@ module morrison_microphys_module
         iprecip_rate_sfc, & !Variables
         imorr_snow_rate, &
         iNrm_auto, &
-        iNrm_cond
+        iNrm_evap
 
     use stats_variables, only: &
         iPSMLT, & ! Variable(s)
@@ -893,10 +893,10 @@ module morrison_microphys_module
     
     call microphys_put_var( irrm_auto, rrm_auto, microphys_stats_zt )
     call microphys_put_var( irrm_accr, rrm_accr, microphys_stats_zt )
-    call microphys_put_var( irrm_cond, rrm_evap, microphys_stats_zt )
+    call microphys_put_var( irrm_evap, rrm_evap, microphys_stats_zt )
 
     call microphys_put_var( iNrm_auto,    Nrm_auto,    microphys_stats_zt )
-    call microphys_put_var( iNrm_cond,    Nrm_evap,    microphys_stats_zt )
+    call microphys_put_var( iNrm_evap,    Nrm_evap,    microphys_stats_zt )
 
     ! Update Morrison budgets
     call microphys_put_var( ihl_on_Cp_residual, hl_on_Cp_residual, microphys_stats_zt )

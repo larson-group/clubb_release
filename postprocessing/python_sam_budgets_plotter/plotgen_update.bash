@@ -50,14 +50,14 @@ done
 
 # Generate horizontal plots
 # Loop over setup cases
-vars=2
-for ((i=1;i<=2;i++ ))
-do
-  for case in ${caseopts[@]}
-  do
-    echo "vars = $vars, case=$case"
-    python plotgen_main.py <<< "$vars
-    $case
-    $i"
-  done
-done
+# vars=2
+# for ((i=1;i<=2;i++ ))
+# do
+#   for case in ${caseopts[@]}
+#   do
+#     echo "vars = $vars, case=$case"
+#     python plotgen_main.py <<< "$vars
+#     $case
+#     $i"
+#   done
+# done

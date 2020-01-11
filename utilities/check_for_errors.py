@@ -137,7 +137,6 @@ if( len(sys.argv) == 2 and
   files_to_check.append("-w")
   files_to_check += glob.glob("../src/*.F90")
   files_to_check += glob.glob("../src/Benchmark_cases/*.F90")
-  files_to_check += glob.glob("../src/Benchmark_cases/Unreleased_cases/*.F90")
   files_to_check += glob.glob("../src/CLUBB_core/*.F90")
   files_to_check += glob.glob("../src/KK_microphys/*.F90")
   files_to_check += glob.glob("../src/Latin_hypercube/*.F90")
@@ -145,7 +144,6 @@ if( len(sys.argv) == 2 and
 elif( len(sys.argv) == 1 ):
   files_to_check += glob.glob("../src/*.F90")
   files_to_check += glob.glob("../src/Benchmark_cases/*.F90")
-  files_to_check += glob.glob("../src/Benchmark_cases/Unreleased_cases/*.F90")
   files_to_check += glob.glob("../src/CLUBB_core/*.F90")
   files_to_check += glob.glob("../src/KK_microphys/*.F90")
   files_to_check += glob.glob("../src/Latin_hypercube/*.F90")

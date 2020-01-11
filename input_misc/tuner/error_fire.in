@@ -1,20 +1,21 @@
 ! $Id$
 
 &stats
-f_tol               = 0.005,
+f_tol               = 0.05,
 l_results_stdout    = .true.,
 l_results_file      = .true.,
 l_stdout_on_invalid = .true.,
 t_variables         = "cloud_frac", "cf", "rcm", "qcm"
 weight_var_nl       = 0.5, 0.5
 anneal_temp         = 10.,
+max_final_temp      = 0.01,
 anneal_iter         = 100,
 tune_type           = 2
 stp_adjst_center_in = 0.6
 stp_adjst_spread_in = 0.8
 /
 
-! clubb_stats_file is the name of clubb stats file;  This should be the same as 
+! clubb_stats_file is the name of clubb stats file;  This should be the same as
 !   fname_zm  or fname_zm in the statsnl namelist.
 ! les_stats_file is the name of LES grads data file
 ! z_i and z_f are levels to look at when tuning. This does not need
@@ -34,7 +35,7 @@ weight_case_nl(1)       = 1.0,
 /
 
 &initmax
-C1                           = 5.
+C1                           = 0.
 C1b                          = 0.
 C1c                          = 0.
 C2rt                         = 0.
@@ -44,14 +45,14 @@ C2                           = 0.
 C2b                          = 0.
 C2c                          = 0.
 C4                           = 0.
-C5                           = 0.
+C5                           = 1.
 C6rt                         = 0.
 C6rtb                        = 0.
 C6rtc                        = 0.
 C6thl                        = 0.
 C6thlb                       = 0.
 C6thlc                       = 0.
-C7                           = 1.
+C7                           = 0.
 C7b                          = 0.
 C7c                          = 0.
 C8                           = 0.
@@ -90,7 +91,7 @@ pdf_component_stdev_factor_w = 0.
 coef_spread_DG_means_rt      = 0.
 coef_spread_DG_means_thl     = 0.
 beta                         = 0.
-gamma_coef                   = 0.
+gamma_coef                   = 0.5
 gamma_coefb                  = 0.
 gamma_coefc                  = 0.
 taumin                       = 0.
@@ -116,4 +117,8 @@ C_invrs_tau_bkgnd            = 0.
 C_invrs_tau_sfc              = 0.
 C_invrs_tau_shear            = 0.
 C_invrs_tau_N2               = 0.
+C_invrs_tau_N2_xp2           = 0.
+C_invrs_tau_N2_wp2           = 0.
+C_invrs_tau_N2_clear_wp3     = 0.
+C_invrs_tau_N2_wpxp          = 0.
 /

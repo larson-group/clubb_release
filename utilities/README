@@ -30,8 +30,8 @@ side of an equals sign. Integers from -6 to +6 are not considered magic numbers,
 and nothing in an if statement is considered a magic number. If the argument -w
 or --show-warnings is provided, warnings will be printed when a variable is set
 by a subroutine or function call. If no files are provided in the argument list,
-the script will check all files in the src, Benchmark_cases, Unreleased_cases,
-CLUBB_core, KK_microphys, and Latin_hypercube directories.
+the script will check all files in the src, Benchmark_cases, CLUBB_core,
+KK_microphys, and Latin_hypercube directories.
 USAGE: "python check_for_errors.py [-w or --show-warnings] <filename>.F90"
 
 check_division.py checks CLUBB source code files for any division that could
@@ -39,7 +39,6 @@ potentially result in a divide-by-zero or divide-by-small-number error. It will
 simply print out any line that contains a division symbol after an equals sign,
 omitting any division that has a max() or has only a constant value in the
 denominator. If no arguments are proficed, the script will check all files in
-the src, Benchmark_cases, Unreleased_cases, CLUBB_core, KK_microphys, and 
-Latin_hypercube directories.
+the src, Benchmark_cases, CLUBB_core, KK_microphys, and Latin_hypercube directories.
 USAGE: "python check_division.py <filename>.F90"
 

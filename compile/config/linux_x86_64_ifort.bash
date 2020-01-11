@@ -32,7 +32,7 @@ OPTIMIZE="-O3"
 #OPTIMIZE="-O3 -ipo" # Interprocedural optimization
 
 # == NetCDF Location ==
-NETCDF="/usr/local/netcdf-intel64"
+NETCDF="/usr/local/NETCDF-Fortran-4.4.5-ifort"
 
 # == LAPACK libraries ==
 # AMD Core Math Library
@@ -44,7 +44,7 @@ LAPACK="-mkl=sequential"
 # == Linking Flags ==
 # Use -s to strip (no debugging); 
 # Use -L<library path> -l<lib> to link in an external library
-LDFLAGS="-L$NETCDF/lib -lnetcdf $LAPACK"
+LDFLAGS="-L$NETCDF/lib -lnetcdff $LAPACK"
 
 FFLAGS="$ARCH $OPTIMIZE $DEBUG -fp-model strict"
 

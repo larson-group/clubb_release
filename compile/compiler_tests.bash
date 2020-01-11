@@ -71,7 +71,7 @@ compile()
 
 	# Change to CLUBB's compile directory
 	cd $clubbSource/compile
-	./compile.bash $compiler > /dev/null 2>> $outputFile
+	./compile.bash -c $compiler > /dev/null 2>> $outputFile
 }
 
 set_args $*

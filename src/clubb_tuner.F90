@@ -10,17 +10,7 @@ program clubb_tuner
 !     References:
 !     _Numerical Recipes in Fortran 90_ (Chapter 10) 
 !     (Amoeba & Amebsa subroutine)
-! 
-!   Advice for anyone attempting changes in the future:
-!       Almost everything in this file and the error.F90 file needs
-!       replacement. The way variables are read in from the error_*.in 
-!       files should be completely different, the way the variables are
-!       set up should be different, these functions should be in modules,
-!       there's a large number of things that straight up don't work and
-!       give no information as to what the error was, and some comments 
-!       are actually just question marks. Hopefully you like
-!       spaghetti and staring at your screen in despair wondering what
-!       could possibly be wrong this time.
+!
 !----------------------------------------------------------------------
   use error, only:  & 
     tuner_init, min_les_clubb_diff,                & ! Subroutines 
@@ -424,6 +414,7 @@ subroutine enhanced_simann_driver
     param_vals_matrix,    & ! The parameters to tune matrix
     param_vals_max,       & ! The maximum values for the parameters
     anneal_temp,          & ! Start annealing temperature
+    max_final_temp,       & ! Maximum final annealing temperature
     min_err,              & ! Minimum value of the cost function
     stp_adjst_center_in,  & 
     stp_adjst_spread_in,  &
@@ -464,7 +455,7 @@ subroutine enhanced_simann_driver
     call esa_driver_siarry( xinit, xmin, xmax, anneal_temp, min_les_clubb_diff, xopt, enopt )
   else 
     call esa_driver( xinit, xmin, xmax,                         & ! intent(in)
-                     anneal_temp,                               & ! intent(inout)
+                     anneal_temp, max_final_temp,               & ! intent(inout)
                      xopt, enopt,                               & ! intent(out)
                      min_les_clubb_diff,                        & ! procedure    
                      stp_adjst_center_in, stp_adjst_spread_in,  & ! optional(in)
@@ -505,9 +496,8 @@ subroutine logical_flags_driver( current_date, current_time )
     Qsort_flags ! Procedure(s)
 
   use model_flags, only: &
-    get_configurable_model_flags, & ! Procedure(s)
-    setup_configurable_model_flags, &
-    write_model_flags_to_file
+    set_default_clubb_config_flags, & ! Procedure(s)
+    l_quintic_poly_interp ! Variable(s)
 
   use clubb_precision, only: &
     core_rknd ! Variable(s)
@@ -551,19 +541,158 @@ subroutine logical_flags_driver( current_date, current_time )
 
   integer :: i, j
 
+  logical :: &
+    l_use_precip_frac,            & ! Flag to use precipitation fraction in KK microphysics. The
+                                    ! precipitation fraction is automatically set to 1 when this
+                                    ! flag is turned off.
+    l_predict_upwp_vpwp,          & ! Flag to predict <u'w'> and <v'w'> along with <u> and <v>
+                                    ! alongside the advancement of <rt>, <w'rt'>, <thl>,
+                                    ! <wpthlp>, <sclr>, and <w'sclr'> in subroutine
+                                    ! advance_xm_wpxp.  Otherwise, <u'w'> and <v'w'> are still
+                                    ! approximated by eddy diffusivity when <u> and <v> are
+                                    ! advanced in subroutine advance_windm_edsclrm.
+    l_min_wp2_from_corr_wx,       & ! Flag to base the threshold minimum value of wp2 on keeping
+                                    ! the overall correlation of w and x (w and rt, as well as w
+                                    ! and theta-l) within the limits of -max_mag_correlation_flux
+                                    ! to max_mag_correlation_flux.
+    l_min_xp2_from_corr_wx,       & ! Flag to base the threshold minimum value of xp2 (rtp2 and
+                                    ! thlp2) on keeping the overall correlation of w and x within
+                                    ! the limits of -max_mag_correlation_flux to
+                                    ! max_mag_correlation_flux.
+    l_C2_cloud_frac,              & ! Flag to use cloud fraction to adjust the value of the
+                                    ! turbulent dissipation coefficient, C2.
+    l_diffuse_rtm_and_thlm,       & ! Diffuses rtm and thlm
+    l_stability_correct_Kh_N2_zm, & ! Divides Kh_N2_zm by a stability factor
+    l_calc_thlp2_rad,             & ! Include the contribution of radiation to thlp2
+    l_upwind_wpxp_ta,             & ! This flag determines whether we want to use an upwind
+                                    ! differencing approximation rather than a centered
+                                    ! differencing for turbulent or mean advection terms. It
+                                    ! affects wprtp, wpthlp, & wpsclrp.
+    l_upwind_xpyp_ta,             & ! This flag determines whether we want to use an upwind
+                                    ! differencing approximation rather than a centered
+                                    ! differencing for turbulent or mean advection terms. It
+                                    ! affects rtp2, thlp2, up2, vp2, sclrp2, rtpthlp, sclrprtp, &
+                                    ! sclrpthlp.
+    l_upwind_xm_ma,               & ! This flag determines whether we want to use an upwind
+                                    ! differencing approximation rather than a centered
+                                    ! differencing for turbulent or mean advection terms. It
+                                    ! affects rtm, thlm, sclrm, um and vm.
+    l_uv_nudge,                   & ! For wind speed nudging.
+    l_rtm_nudge,                  & ! For rtm nudging
+    l_tke_aniso,                  & ! For anisotropic turbulent kinetic energy, i.e.
+                                    ! TKE = 1/2 (u'^2 + v'^2 + w'^2)
+    l_vert_avg_closure,           & ! Use 2 calls to pdf_closure and the trapezoidal rule to
+                                    ! compute the varibles that are output from high order
+                                    ! closure
+    l_trapezoidal_rule_zt,        & ! If true, the trapezoidal rule is called for the
+                                    ! thermodynamic-level variables output from pdf_closure.
+    l_trapezoidal_rule_zm,        & ! If true, the trapezoidal rule is called for three
+                                    ! momentum-level variables - wpthvp, thlpthvp, and rtpthvp -
+                                    ! output from pdf_closure.
+    l_call_pdf_closure_twice,     & ! This logical flag determines whether or not to call
+                                    ! subroutine pdf_closure twice.  If true, pdf_closure is
+                                    ! called first on thermodynamic levels and then on momentum
+                                    ! levels so that each variable is computed on its native
+                                    ! level.  If false, pdf_closure is only called on
+                                    ! thermodynamic levels, and variables which belong on
+                                    ! momentum levels are interpolated.
+    l_standard_term_ta,           & ! Use the standard discretization for the turbulent advection
+                                    ! terms.  Setting to .false. means that a_1 and a_3 are
+                                    ! pulled outside of the derivative in
+                                    ! advance_wp2_wp3_module.F90 and in
+                                    ! advance_xp2_xpyp_module.F90.
+    l_use_cloud_cover,            & ! Use cloud_cover and rcm_in_layer to help boost cloud_frac
+                                    ! and rcm to help increase cloudiness at coarser grid
+                                    ! resolutions.
+    l_diagnose_correlations,      & ! Diagnose correlations instead of using fixed ones
+    l_calc_w_corr,                & ! Calculate the correlations between w and the hydrometeors
+    l_const_Nc_in_cloud,          & ! Use a constant cloud droplet conc. within cloud (K&K)
+    l_fix_w_chi_eta_correlations, & ! Use a fixed correlation for s and t Mellor(chi/eta)
+    l_stability_correct_tau_zm,   & ! Use tau_N2_zm instead of tau_zm in wpxp_pr1 stability
+                                    ! correction
+    l_damp_wp2_using_em,          & ! In wp2 equation, use a dissipation formula of
+                                    ! -(2/3)*em/tau_zm, as in Bougeault (1981)
+    l_do_expldiff_rtm_thlm,       & ! Diffuse rtm and thlm explicitly
+    l_Lscale_plume_centered,      & ! Alternate that uses the PDF to compute the perturbed values
+    l_diag_Lscale_from_tau,       & ! First diagnose dissipation time tau, and then diagnose the
+                                    ! mixing length scale as Lscale = tau * tke
+    l_use_ice_latent,             & ! Includes the effects of ice latent heating in turbulence
+                                    ! terms
+    l_use_C7_Richardson,          & ! Parameterize C7 based on Richardson number
+    l_use_C11_Richardson,         & ! Parameterize C11 and C16 based on Richardson number
+    l_brunt_vaisala_freq_moist,   & ! Use a different formula for the Brunt-Vaisala frequency in
+                                    ! saturated atmospheres (from Durran and Klemp, 1982)
+    l_use_thvm_in_bv_freq,        & ! Use thvm in the calculation of Brunt-Vaisala frequency
+    l_rcm_supersat_adj,           & ! Add excess supersaturated vapor to cloud water
+    l_single_C2_Skw,              & ! Use a single Skewness dependent C2 for rtp2, thlp2, and
+                                    ! rtpthlp
+    l_damp_wp3_Skw_squared,       & ! Set damping on wp3 to use Skw^2 rather than Skw^4
+    l_prescribed_avg_deltaz         ! used in adj_low_res_nu. If .true., avg_deltaz = deltaz
+
+  namelist /configurable_clubb_flags_nl/ &
+    l_upwind_wpxp_ta, l_upwind_xpyp_ta, l_upwind_xm_ma, l_quintic_poly_interp, &
+    l_tke_aniso, l_vert_avg_closure, l_single_C2_Skw, l_standard_term_ta, &
+    l_use_cloud_cover, l_rcm_supersat_adj, l_damp_wp3_Skw_squared, &
+    l_min_wp2_from_corr_wx, l_min_xp2_from_corr_wx, l_C2_cloud_frac, &
+    l_predict_upwp_vpwp, l_diag_Lscale_from_tau, l_stability_correct_tau_zm, &
+    l_damp_wp2_using_em, l_use_C7_Richardson, l_use_precip_frac, l_do_expldiff_rtm_thlm, &
+    l_use_C11_Richardson, l_prescribed_avg_deltaz, l_diffuse_rtm_and_thlm, &
+    l_stability_correct_Kh_N2_zm, l_trapezoidal_rule_zt, l_trapezoidal_rule_zm, &
+    l_call_pdf_closure_twice, l_Lscale_plume_centered, l_use_ice_latent, &
+    l_brunt_vaisala_freq_moist, l_use_thvm_in_bv_freq
+
   ! ---- Begin Code ----
 
+  call set_default_clubb_config_flags( l_use_precip_frac, & ! Intent(out)
+                                       l_predict_upwp_vpwp, & ! Intent(out)
+                                       l_min_wp2_from_corr_wx, & ! Intent(out)
+                                       l_min_xp2_from_corr_wx, & ! Intent(out)
+                                       l_C2_cloud_frac, & ! Intent(out)
+                                       l_diffuse_rtm_and_thlm, & ! Intent(out)
+                                       l_stability_correct_Kh_N2_zm, & ! Intent(out)
+                                       l_calc_thlp2_rad, & ! Intent(out)
+                                       l_upwind_wpxp_ta, & ! Intent(out)
+                                       l_upwind_xpyp_ta, & ! Intent(out)
+                                       l_upwind_xm_ma, & ! Intent(out)
+                                       l_uv_nudge, & ! Intent(out)
+                                       l_rtm_nudge, & ! Intent(out)
+                                       l_tke_aniso, & ! Intent(out)
+                                       l_vert_avg_closure, & ! Intent(out)
+                                       l_trapezoidal_rule_zt, & ! Intent(out)
+                                       l_trapezoidal_rule_zm, & ! Intent(out)
+                                       l_call_pdf_closure_twice, & ! Intent(out)
+                                       l_standard_term_ta, & ! Intent(out)
+                                       l_use_cloud_cover, & ! Intent(out)
+                                       l_diagnose_correlations, & ! Intent(out)
+                                       l_calc_w_corr, & ! Intent(out)
+                                       l_const_Nc_in_cloud, & ! Intent(out)
+                                       l_fix_w_chi_eta_correlations, & ! Intent(out)
+                                       l_stability_correct_tau_zm, & ! Intent(out)
+                                       l_damp_wp2_using_em, & ! Intent(out)
+                                       l_do_expldiff_rtm_thlm, & ! Intent(out)
+                                       l_Lscale_plume_centered, & ! Intent(out)
+                                       l_diag_Lscale_from_tau, & ! Intent(out)
+                                       l_use_ice_latent, & ! Intent(out)
+                                       l_use_C7_Richardson, & ! Intent(out)
+                                       l_use_C11_Richardson, & ! Intent(out)
+                                       l_brunt_vaisala_freq_moist, & ! Intent(out)
+                                       l_use_thvm_in_bv_freq, & ! Intent(out)
+                                       l_rcm_supersat_adj, & ! Intent(out)
+                                       l_single_C2_Skw, & ! Intent(out)
+                                       l_damp_wp3_Skw_squared, & ! Intent(out)
+                                       l_prescribed_avg_deltaz ) ! Intent(out)
+
   ! Determine the current flags
-  call get_configurable_model_flags( model_flags_default(1),  &
-                                model_flags_default(2),  &
-                                model_flags_default(3),  &
-                                model_flags_default(4),  &
-                                model_flags_default(5),  &
-                                model_flags_default(6),  &
-                                model_flags_default(7),  &
-                                model_flags_default(8),  &
-                                model_flags_default(9),  & 
-                                model_flags_default(10) )
+  model_flags_default(1) = l_upwind_wpxp_ta
+  model_flags_default(2) = l_upwind_xpyp_ta
+  model_flags_default(3) = l_upwind_xm_ma
+  model_flags_default(4) = l_quintic_poly_interp
+  model_flags_default(5) = l_vert_avg_closure
+  model_flags_default(6) = l_single_C2_Skw
+  model_flags_default(7) = l_standard_term_ta
+  model_flags_default(8) = l_tke_aniso
+  model_flags_default(9) = l_use_cloud_cover
+  model_flags_default(10) = l_rcm_supersat_adj
 
   ! This should always be 1.0; it's here as a sanity check
   cost_func_default = real( min_les_clubb_diff( real(param_vals_matrix(1,:)) ), kind = core_rknd )
@@ -667,21 +796,34 @@ subroutine logical_flags_driver( current_date, current_time )
 
   ! Generate namelist file of the optimal result
   if ( l_results_file ) then
-   call setup_configurable_model_flags( model_flags_array(1,1), &
-                                   model_flags_array(1,2), &
-                                   model_flags_array(1,3), &
-                                   model_flags_array(1,4), &
-                                   model_flags_array(1,5), &
-                                   model_flags_array(1,6), &
-                                   model_flags_array(1,7), &
-                                   model_flags_array(1,8), &
-                                   model_flags_array(1,9), & 
-                                   model_flags_array(1,10)  )
+    l_upwind_wpxp_ta = model_flags_array(1,1)
+    l_upwind_xpyp_ta = model_flags_array(1,2)
+    l_upwind_xm_ma = model_flags_array(1,3)
+    l_quintic_poly_interp = model_flags_array(1,4)
+    l_vert_avg_closure = model_flags_array(1,5)
+    l_single_C2_Skw = model_flags_array(1,6)
+    l_standard_term_ta = model_flags_array(1,7)
+    l_tke_aniso = model_flags_array(1,8)
+    l_use_cloud_cover = model_flags_array(1,9)
+    l_rcm_supersat_adj = model_flags_array(1,10)
+
+    if ( l_vert_avg_closure ) then
+      l_trapezoidal_rule_zt    = .true.
+      l_trapezoidal_rule_zm    = .true.
+      l_call_pdf_closure_twice = .true.
+    else
+      l_trapezoidal_rule_zt    = .false.
+      l_trapezoidal_rule_zm    = .false.
+      l_call_pdf_closure_twice = .false.
+    end if
 
     filename_nml = "../input/tunable_parameters/configurable_model_flags_"//current_date//'_' & 
       //current_time(1:4)//".in"
 
-    call write_model_flags_to_file( iunit, trim( filename_nml ) )
+    ! Write namelist to file
+    open(unit=iunit, file=trim( filename_nml ), status='unknown', action='write')
+    write(unit=iunit, nml=configurable_clubb_flags_nl)
+    close(unit=iunit)
 
     write(fstdout,*) "New namelist of tuning model flags written to: ", trim( filename_nml )
   end if

@@ -119,10 +119,11 @@ program G_unit_tests
       fstdout  ! Constant(s)
 
   use pdf_closure_module, only: &
-      iiPDF_new,    & ! Variable(s)
-      iiPDF_ADG1,   &
-      iiPDF_TSDADG, &
-      iiPDF_LY93
+      iiPDF_new,        & ! Variable(s)
+      iiPDF_ADG1,       &
+      iiPDF_TSDADG,     &
+      iiPDF_LY93,       &
+      iiPDF_new_hybrid
 
   use KK_integrals_tests, only: &
       KK_integrals_tests_driver  ! Procedure(s)
@@ -151,8 +152,8 @@ program G_unit_tests
   use spurious_source_test, only: &
       spurious_source_unit_test  ! Procedure(s)
 
-  !use tuner_tests, only: &
-  !    tuner_tests_driver        ! Procedure
+  use tuner_tests, only: &
+      tuner_tests_driver        ! Procedure
 
   implicit none
 
@@ -250,6 +251,9 @@ program G_unit_tests
      if ( pdf_parameter_unit_tests( iiPDF_new ) /= 0 ) then
         exit_code = 1
      endif
+     if ( pdf_parameter_unit_tests( iiPDF_new_hybrid ) /= 0 ) then
+        exit_code = 1
+     endif
   endif
 
   if ( l_spurious_source_test ) then
@@ -258,11 +262,11 @@ program G_unit_tests
      endif
   endif
 
-  !if ( l_tuner_tests ) then
-  !   if ( tuner_tests_driver( ) /= 0 ) then
-  !      exit_code = 1
-  !   endif
-  !endif
+  if ( l_tuner_tests ) then
+     if ( tuner_tests_driver( ) /= 0 ) then
+        exit_code = 1
+     endif
+  endif
 
   ! Stop with exit code if error found
   if (exit_code /= 0) then

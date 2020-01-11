@@ -850,6 +850,71 @@ variable = 0.0_core_rknd
 \item
 We should avoid adding new use of command line applications, e.g. mktemp, to our compile or run scripts unless we're certain they're portable between Linux/BSD/MacOS/Unix.  See \url{http://carson.math.uwm.edu/trac/clubb/ticket/531#comment:24}
 
+\item
+There are certain nuances to nested WHERE statements that can cause runtime crashes on certain compilers. The general cause is that the logical evaluation of an inner WHERE statement would cause a runtime error if the code between between the outer and inner WHERE statements is not run. For example, the following code has the potential to cause a runtime error:
+
+\begin{verbatim}
+    where ( a > 0 )    <--- Outer where statement 
+
+        b = 1 / a      <--- Code between outer and inner where statements
+                            This is the first time b is defined 
+
+            where ( b > 5 )        <--- Inner where statement
+                                        b should be defined at this point
+                b = 5
+
+            end where
+
+    end where
+\end{verbatim}
+
+This seems perfectly safe, but compilers may compile this code in a way similiar to the following:
+
+\begin{verbatim}
+    where ( a > 0 .and. b > 5 )     <--- b has NOT been defined yet
+                                    This could cause a floating point exception
+        b = 5
+
+    elsewhere ( a > 0 )	
+
+        b = 1 / a      
+
+    end where
+\end{verbatim}
+    
+The statements are logically equivalent, but because b is defined within the WHERE statement, the evaluation of the logical value may cause a floating point exception. If floating point trapping is not enabled, the output behavior would be exactly as intended, but with floating point trapping the run could stop. It's also possible for the inner WHERE statement to contain a statement that could cause a runtime error regardless of debugging option, which could be even more dangerous. 
+
+It's unclear whether or not this behavior is a bug with certain compilers or if it is the intended behavior as defined by Fortran standards. To be safe, we should avoid this potential error, either by refactoring the WHERE statement in some way, or by replacing the WHERE statement altogether with a DO loop containing IF statements. This issue is explained in more depth in CLUBB issue 859 on github, https://github.com/larson-group/clubb/issues/859.
+
 \end{enumerate}
 
 \end{document}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

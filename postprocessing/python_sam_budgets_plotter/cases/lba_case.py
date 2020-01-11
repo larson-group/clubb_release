@@ -9,12 +9,11 @@ to plot height profiles and budgets for the LBA case
 #-------------------------------------------------------------------------------
 #   G E N E R A L   D E F A U L T   S E T T I N G S
 #-------------------------------------------------------------------------------
-# TODO: check parameters in Heinze/Siebesma and (auto-)rename name,case,out_dir etc
 
 case = 'LBA'
 full_name = case
 case_folder = '/home/sdomke/workspace/clubb/sam_clubb/{case}'.format(case=case)
-enabled = True # not used in plotgen, no idea what this should do
+enabled = True
 #type = 'budget' # not used in plotgen
 nx = 128
 ny = 128
@@ -26,7 +25,7 @@ startTime = 301.0     # [minutes]
 endTime = 360.0       # [minutes]
 startHeight = 0.0     # [m]
 endHeight = 15000.0   # [m]
-time_3d = 3600.0      # dt
+time_3d = 3600.0      # [s]
 
 # run entry for header in html file
 run = '{case}_{nx}x{ny}x{nz}_{dxy}m_{dz}m_{dt}s'.format(case=case, nx=nx, ny=ny, nz=nz, dxy=dxy, dz=dz, dt=dt)

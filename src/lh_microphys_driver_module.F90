@@ -20,6 +20,8 @@ contains
                rcm, delta_zt, cloud_frac, &
                hydromet, X_mixt_comp_all_levs,  &
                lh_clipped_vars, &
+               l_lh_importance_sampling, &
+               l_lh_instant_var_covar_src, &
                lh_hydromet_mc, lh_hydromet_vel, lh_Ncm_mc, &
                lh_rcm_mc, lh_rvm_mc, lh_thlm_mc, &
                lh_rtp2_mc, lh_thlp2_mc, lh_wprtp_mc, &
@@ -110,6 +112,10 @@ contains
     type(lh_clipped_variables_type), dimension(nz,num_samples), intent(in) :: &
       lh_clipped_vars
 
+    logical, intent(in) :: &
+      l_lh_importance_sampling, & ! Do importance sampling (SILHS) [-]
+      l_lh_instant_var_covar_src  ! Produce instantaneous var/covar tendencies [-]
+
     ! Output Variables
     real( kind = core_rknd ), dimension(nz,hydromet_dim), intent(out) :: &
       lh_hydromet_mc, & ! LH estimate of hydrometeor time tendency          [(units vary)/s]
@@ -136,6 +142,7 @@ contains
             ( nz, num_samples, pdf_dim, &                        ! Intent(in)
               X_nl_all_levs, pdf_params, rcm, cloud_frac, &      ! Intent(in)
               X_mixt_comp_all_levs, lh_sample_point_weights, &   ! Intent(in)
+              l_lh_importance_sampling, &                        ! Intent(in)
               lh_AKm, AKm, AKstd, AKstd_cld, &                   ! Intent(out)
               AKm_rcm, AKm_rcc, lh_rcm_avg )                     ! Intent(out)
     end if
@@ -148,6 +155,7 @@ contains
            p_in_Pa, exner, rho, &                                      ! Intent(in)
            delta_zt, hydromet, rcm, &                                  ! Intent(in)
            lh_clipped_vars, &                                          ! Intent(in)
+           l_lh_instant_var_covar_src, &                               ! Intent(in)
            lh_hydromet_mc, lh_hydromet_vel, lh_Ncm_mc, &               ! Intent(out)
            lh_rvm_mc, lh_rcm_mc, lh_thlm_mc, &                         ! Intent(out)
            lh_rtp2_mc, lh_thlp2_mc, lh_wprtp_mc, &                     ! Intent(out)

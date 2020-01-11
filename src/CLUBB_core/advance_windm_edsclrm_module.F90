@@ -36,6 +36,10 @@ module advance_windm_edsclrm_module
                edsclrm_forcing, &
                rho_ds_zm, invrs_rho_ds_zt, &
                fcor, l_implemented, &
+               l_predict_upwp_vpwp, &
+               l_upwind_xm_ma, &
+               l_uv_nudge, &
+               l_tke_aniso, &
                um, vm, edsclrm, &
                upwp, vpwp, wpedsclrp )
 
@@ -63,11 +67,6 @@ module advance_windm_edsclrm_module
 
     use parameters_tunable, only: &
         nu10_vert_res_dep ! Constant
-
-    use model_flags, only: &
-        l_predict_upwp_vpwp, & ! Variable(s)
-        l_uv_nudge, &
-        l_tke_aniso
 
     use clubb_precision, only:  &
         core_rknd ! Variable(s)
@@ -144,6 +143,19 @@ module advance_windm_edsclrm_module
 
     logical, intent(in) ::  &
       l_implemented  ! Flag for CLUBB being implemented in a larger model.
+
+    logical, intent(in) :: &
+      l_predict_upwp_vpwp, & ! Flag to predict <u'w'> and <v'w'> along with <u> and <v> alongside
+                             ! the advancement of <rt>, <w'rt'>, <thl>, <wpthlp>, <sclr>, and
+                             ! <w'sclr'> in subroutine advance_xm_wpxp.  Otherwise, <u'w'> and
+                             ! <v'w'> are still approximated by eddy diffusivity when <u> and <v>
+                             ! are advanced in subroutine advance_windm_edsclrm.
+      l_upwind_xm_ma,      & ! This flag determines whether we want to use an upwind differencing
+                             ! approximation rather than a centered differencing for turbulent or
+                             ! mean advection terms. It affects rtm, thlm, sclrm, um and vm.
+      l_uv_nudge,          & ! For wind speed nudging
+      l_tke_aniso            ! For anisotropic turbulent kinetic energy, i.e. TKE = 1/2
+                             ! (u'^2 + v'^2 + w'^2)
 
     ! Input/Output Variables
     real( kind = core_rknd ), dimension(gr%nz), intent(inout) ::  &
@@ -274,6 +286,7 @@ module advance_windm_edsclrm_module
                                wind_speed, u_star_sqd,                 & ! In
                                rho_ds_zm, invrs_rho_ds_zt,             & ! In
                                l_implemented, l_imp_sfc_momentum_flux, & ! In
+                               l_upwind_xm_ma,                         & ! In
                                lhs )                                     ! Out
 
        ! Decompose and back substitute for um and vm
@@ -401,6 +414,7 @@ module advance_windm_edsclrm_module
           l_last_clip_ts = .true.
           call clip_covar( clip_upwp, l_first_clip_ts,      & ! intent(in)
                            l_last_clip_ts, dt, wp2, up2,    & ! intent(in)
+                           l_predict_upwp_vpwp,             & ! intent(in)
                            upwp, upwp_chnge )                 ! intent(inout)
 
           ! Clipping for v'w'
@@ -419,6 +433,7 @@ module advance_windm_edsclrm_module
           l_last_clip_ts = .true.
           call clip_covar( clip_vpwp, l_first_clip_ts,      & ! intent(in)
                            l_last_clip_ts, dt, wp2, vp2,    & ! intent(in)
+                           l_predict_upwp_vpwp,             & ! intent(in)
                            vpwp, vpwp_chnge )                 ! intent(inout)
 
        else
@@ -430,10 +445,12 @@ module advance_windm_edsclrm_module
           l_last_clip_ts = .true.
           call clip_covar( clip_upwp, l_first_clip_ts,      & ! intent(in)
                            l_last_clip_ts, dt, wp2, wp2,    & ! intent(in)
+                           l_predict_upwp_vpwp,             & ! intent(in)
                            upwp, upwp_chnge )                 ! intent(inout)
 
           call clip_covar( clip_vpwp, l_first_clip_ts,      & ! intent(in)
                            l_last_clip_ts, dt, wp2, wp2,    & ! intent(in)
+                           l_predict_upwp_vpwp,             & ! intent(in)
                            vpwp, vpwp_chnge )                 ! intent(inout)
 
        endif ! l_tke_aniso
@@ -492,6 +509,7 @@ module advance_windm_edsclrm_module
                               wind_speed, u_star_sqd,                 & ! In
                               rho_ds_zm, invrs_rho_ds_zt,             & ! In
                               l_implemented, l_imp_sfc_momentum_flux, & ! In
+                              l_upwind_xm_ma,                         & ! In
                               lhs )                                     ! Out
 
       ! Decompose and back substitute for all eddy-scalar variables
@@ -1406,6 +1424,7 @@ module advance_windm_edsclrm_module
   subroutine windm_edsclrm_lhs( dt, nu, wm_zt, Km_zm, wind_speed, u_star_sqd,  &
                                 rho_ds_zm, invrs_rho_ds_zt,  &
                                 l_implemented, l_imp_sfc_momentum_flux,  &
+                                l_upwind_xm_ma, &
                                 lhs )
     ! Description:
     ! Calculate the implicit portion of the horizontal wind or eddy-scalar
@@ -1476,6 +1495,11 @@ module advance_windm_edsclrm_module
       l_implemented, & ! Flag for CLUBB being implemented in a larger model.
       l_imp_sfc_momentum_flux  ! Flag for implicit momentum surface fluxes.
 
+    logical, intent(in) :: &
+      l_upwind_xm_ma ! This flag determines whether we want to use an upwind differencing
+                     ! approximation rather than a centered differencing for turbulent or
+                     ! mean advection terms. It affects rtm, thlm, sclrm, um and vm.
+
     ! Output Variable
     real( kind = core_rknd ), dimension(3,gr%nz), intent(out) :: &
       lhs           ! Implicit contributions to xm (tridiagonal matrix)
@@ -1537,6 +1561,7 @@ module advance_windm_edsclrm_module
     if ( .not. l_implemented ) then
 
         call term_ma_zt_lhs_all( wm_zt(:), gr%invrs_dzt(:), gr%invrs_dzm(:), &
+                                 l_upwind_xm_ma, &
                                  lhs_ma_zt(:,:) )
 
         do k = 2, gr%nz-1

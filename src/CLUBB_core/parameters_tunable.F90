@@ -2,7 +2,7 @@
 ! $Id$
 !===============================================================================
 module parameters_tunable
-
+ 
   ! Description:
   !   This module contains tunable model parameters.  The purpose of the module is to make it
   !   easier for the clubb_tuner code to use the params vector without "knowing" any information
@@ -191,12 +191,21 @@ module parameters_tunable
 !$omp threadprivate(Skw_max_mag)
 
   real( kind = core_rknd ), public ::  &   
-    C_invrs_tau_bkgnd = 1.0_core_rknd   ,&   ! 
-    C_invrs_tau_sfc   = 0.1_core_rknd ,&   !
-    C_invrs_tau_shear = 0.02_core_rknd,&   !
-    C_invrs_tau_N2    = 0.1_core_rknd      ! 
+    C_invrs_tau_bkgnd         = 1.0_core_rknd,  &   ! 
+    C_invrs_tau_sfc           = 0.1_core_rknd,  &   !
+    C_invrs_tau_shear         = 0.02_core_rknd, &   !
+    C_invrs_tau_N2            = 0.1_core_rknd,  &   ! 
+    C_invrs_tau_N2_wp2        = 0.2_core_rknd,  &   !
+    C_invrs_tau_N2_xp2        = 0.2_core_rknd,  &   !
+    C_invrs_tau_N2_wpxp       = 0.0_core_rknd,  &   !
+    C_invrs_tau_N2_clear_wp3  = 0.0_core_rknd
+
 !$omp threadprivate(C_invrs_tau_bkgnd,C_invrs_tau_sfc)
 !$omp threadprivate(C_invrs_tau_shear,C_invrs_tau_N2)  
+!$omp threadprivate(C_invrs_tau_N2_wp2,C_invrs_tau_N2_xp2) 
+!$omp threadprivate(C_invrs_tau_N2_wpxp)
+!$omp threadprivate(C_invrs_tau_N2_clear_wp3)
+
 
   ! Parameters for the new PDF (w, rt, and theta-l).
   !
@@ -301,15 +310,6 @@ module parameters_tunable
 
 !$omp threadprivate( up2_vp2_factor )
 
-  ! used in adj_low_res_nu. If .true., avg_deltaz = deltaz
-#ifdef GFDL
-  logical, public :: l_prescribed_avg_deltaz = .true.
-#else
-  logical, public :: l_prescribed_avg_deltaz = .false.
-#endif
-
-!$omp threadprivate(l_prescribed_avg_deltaz)
-
   ! Since we lack a devious way to do this just once, this namelist
   ! must be changed as well when a new parameter is added.
   namelist /clubb_params_nl/  & 
@@ -329,7 +329,9 @@ module parameters_tunable
     lambda0_stability_coef, mult_coef, taumin, taumax, mu, Lscale_mu_coef, &
     Lscale_pert_coef, alpha_corr, Skw_denom_coef, c_K10, c_K10h, &
     thlp2_rad_coef, thlp2_rad_cloud_frac_thresh, up2_vp2_factor, Skw_max_mag, &
-    C_invrs_tau_bkgnd, C_invrs_tau_sfc, C_invrs_tau_shear, C_invrs_tau_N2
+    C_invrs_tau_bkgnd, C_invrs_tau_sfc, C_invrs_tau_shear, C_invrs_tau_N2, &
+    C_invrs_tau_N2_wp2, C_invrs_tau_N2_xp2, &
+    C_invrs_tau_N2_wpxp, C_invrs_tau_N2_clear_wp3
 
   ! These are referenced together often enough that it made sense to
   ! make a list of them.  Note that lmin_coef is the input parameter,
@@ -384,7 +386,9 @@ module parameters_tunable
        "thlp2_rad_cloud_frac_thresh ", "up2_vp2_factor              ", &
        "Skw_max_mag                 ", "C_invrs_tau_bkgnd           ", &
        "C_invrs_tau_sfc             ", "C_invrs_tau_shear           ", &
-       "C_invrs_tau_N2              "/)
+       "C_invrs_tau_N2              ", "C_invrs_tau_N2_wp2          ", &
+       "C_invrs_tau_N2_xp2          ", "C_invrs_tau_N2_wpxp         ", &
+       "C_invrs_tau_N2_clear_wp3    "  /)
 
   real( kind = core_rknd ), parameter, private :: &
     init_value = -999._core_rknd ! Initial value for the parameters, used to detect missing values
@@ -502,7 +506,9 @@ module parameters_tunable
   !=============================================================================
   subroutine setup_parameters & 
             ( deltaz, params, nzmax, &
-              grid_type, momentum_heights, thermodynamic_heights )
+              grid_type, momentum_heights, thermodynamic_heights, &
+              l_prescribed_avg_deltaz, &
+              err_code_out )
 
     ! Description:
     ! Subroutine to setup model parameters
@@ -571,6 +577,12 @@ module parameters_tunable
       momentum_heights,      & ! Momentum level altitudes (input)      [m]
       thermodynamic_heights    ! Thermodynamic level altitudes (input) [m]
 
+    logical, intent(in) :: &
+      l_prescribed_avg_deltaz ! used in adj_low_res_nu. If .true., avg_deltaz = deltaz
+
+    integer, intent(out) :: &
+      err_code_out  ! Error code indicator
+
     integer :: k    ! loop variable
 
     !-------------------- Begin code --------------------
@@ -612,7 +624,9 @@ module parameters_tunable
                Skw_denom_coef, c_K10, c_K10h, thlp2_rad_coef, &
                thlp2_rad_cloud_frac_thresh, up2_vp2_factor, Skw_max_mag, &
                C_invrs_tau_bkgnd, C_invrs_tau_sfc, &
-               C_invrs_tau_shear, C_invrs_tau_N2)
+               C_invrs_tau_shear, C_invrs_tau_N2, & 
+               C_invrs_tau_N2_wp2, C_invrs_tau_N2_xp2, &
+               C_invrs_tau_N2_wpxp, C_invrs_tau_N2_clear_wp3 )
 
 
     ! It was decided after some experimentation, that the best
@@ -624,7 +638,8 @@ module parameters_tunable
     ! ### Adjust Constant Diffusivity Coefficients Based On Grid Spacing ###
     call adj_low_res_nu &
            ( nzmax, grid_type, deltaz,  & ! Intent(in)
-             momentum_heights, thermodynamic_heights )   ! Intent(in)
+             momentum_heights, thermodynamic_heights, & ! Intent(in)
+             l_prescribed_avg_deltaz )   ! Intent(in)
 
     if ( beta < zero .or. beta > three ) then
 
@@ -798,6 +813,8 @@ module parameters_tunable
         write(fstderr,*) "C_wp2_splat must satisfy C_wp2_splat >= 0"
         err_code = clubb_fatal_error
     end if
+    
+    err_code_out = err_code
 
     return
 
@@ -806,7 +823,8 @@ module parameters_tunable
   !=============================================================================
   subroutine adj_low_res_nu &
                ( nzmax, grid_type, deltaz, & ! Intent(in)
-                 momentum_heights, thermodynamic_heights )  ! Intent(in)
+                 momentum_heights, thermodynamic_heights, & ! Intent(in)
+                 l_prescribed_avg_deltaz )  ! Intent(in)
 
     ! Description:
     !   Adjust the values of background eddy diffusivity based on
@@ -877,6 +895,9 @@ module parameters_tunable
     real( kind = core_rknd ), intent(in), dimension(nzmax) :: &
       momentum_heights,      & ! Momentum level altitudes (input)      [m]
       thermodynamic_heights    ! Thermodynamic level altitudes (input) [m]
+
+    logical, intent(in) :: &
+      l_prescribed_avg_deltaz ! used in adj_low_res_nu. If .true., avg_deltaz = deltaz
 
     ! Local Variables
     real( kind = core_rknd ) :: avg_deltaz  ! Average grid box height   [m]
@@ -1123,7 +1144,9 @@ module parameters_tunable
                Skw_denom_coef, c_K10, c_K10h, thlp2_rad_coef, &
                thlp2_rad_cloud_frac_thresh, up2_vp2_factor, Skw_max_mag, &
                C_invrs_tau_bkgnd, C_invrs_tau_sfc, &
-               C_invrs_tau_shear, C_invrs_tau_N2, params )
+               C_invrs_tau_shear, C_invrs_tau_N2, &
+               C_invrs_tau_N2_wp2, C_invrs_tau_N2_xp2, &  
+               C_invrs_tau_N2_wpxp, C_invrs_tau_N2_clear_wp3, params )
 
     l_error = .false.
 
@@ -1201,8 +1224,9 @@ module parameters_tunable
       lambda0_stability_coef, mult_coef, taumin, taumax, mu, Lscale_mu_coef, &
       Lscale_pert_coef, alpha_corr, Skw_denom_coef, c_K10, c_K10h, &
       thlp2_rad_coef, thlp2_rad_cloud_frac_thresh, up2_vp2_factor, Skw_max_mag, &
-      C_invrs_tau_bkgnd, C_invrs_tau_sfc,&
-      C_invrs_tau_shear, C_invrs_tau_N2
+      C_invrs_tau_bkgnd, C_invrs_tau_sfc, &
+      C_invrs_tau_shear, C_invrs_tau_N2, &
+      C_invrs_tau_N2_wp2, C_invrs_tau_N2_xp2, C_invrs_tau_N2_wpxp, C_invrs_tau_N2_clear_wp3
 
     ! Initialize values to -999.
     call init_parameters_999( )
@@ -1231,8 +1255,10 @@ module parameters_tunable
                Lscale_mu_coef, Lscale_pert_coef, alpha_corr, &
                Skw_denom_coef, c_K10, c_K10h, thlp2_rad_coef, &
                thlp2_rad_cloud_frac_thresh, up2_vp2_factor, Skw_max_mag, &
-               C_invrs_tau_bkgnd, C_invrs_tau_sfc,&
-               C_invrs_tau_shear, C_invrs_tau_N2, param_max )
+               C_invrs_tau_bkgnd, C_invrs_tau_sfc, &
+               C_invrs_tau_shear, C_invrs_tau_N2, &
+               C_invrs_tau_N2_wp2, C_invrs_tau_N2_xp2, &
+               C_invrs_tau_N2_wpxp, C_invrs_tau_N2_clear_wp3, param_max )
 
     l_error = .false.
 
@@ -1282,7 +1308,9 @@ module parameters_tunable
                Skw_denom_coef, c_K10, c_K10h, thlp2_rad_coef, &
                thlp2_rad_cloud_frac_thresh, up2_vp2_factor, Skw_max_mag,&
                C_invrs_tau_bkgnd, C_invrs_tau_sfc, &
-               C_invrs_tau_shear, C_invrs_tau_N2, params )
+               C_invrs_tau_shear, C_invrs_tau_N2, &
+               C_invrs_tau_N2_wp2, C_invrs_tau_N2_xp2, &
+               C_invrs_tau_N2_wpxp, C_invrs_tau_N2_clear_wp3, params )
 
     ! Description:
     ! Takes the list of scalar variables and puts them into a 1D vector.
@@ -1380,6 +1408,10 @@ module parameters_tunable
       iC_invrs_tau_sfc, &
       iC_invrs_tau_shear, &
       iC_invrs_tau_N2, &
+      iC_invrs_tau_N2_wp2, &
+      iC_invrs_tau_N2_xp2, &
+      iC_invrs_tau_N2_wpxp, &
+      iC_invrs_tau_N2_clear_wp3, &
       nparams
 
     implicit none
@@ -1400,7 +1432,9 @@ module parameters_tunable
       lambda0_stability_coef, mult_coef, taumin, taumax, Lscale_mu_coef, &
       Lscale_pert_coef, alpha_corr, Skw_denom_coef, c_K10, c_K10h, &
       thlp2_rad_coef, thlp2_rad_cloud_frac_thresh, up2_vp2_factor, Skw_max_mag, &
-      C_invrs_tau_bkgnd, C_invrs_tau_sfc, C_invrs_tau_shear, C_invrs_tau_N2
+      C_invrs_tau_bkgnd, C_invrs_tau_sfc, C_invrs_tau_shear, C_invrs_tau_N2, &
+      C_invrs_tau_N2_wp2, C_invrs_tau_N2_xp2, &
+      C_invrs_tau_N2_wpxp, C_invrs_tau_N2_clear_wp3
 
     ! Output variables
     real( kind = core_rknd ), intent(out), dimension(nparams) :: params
@@ -1495,10 +1529,15 @@ module parameters_tunable
     params(ithlp2_rad_cloud_frac_thresh) = thlp2_rad_cloud_frac_thresh
     params(iup2_vp2_factor) = up2_vp2_factor
     params(iSkw_max_mag) = Skw_max_mag
-    params(iC_invrs_tau_bkgnd) = C_invrs_tau_bkgnd
-    params(iC_invrs_tau_sfc)   = C_invrs_tau_sfc
-    params(iC_invrs_tau_shear) = C_invrs_tau_shear
-    params(iC_invrs_tau_N2)    = C_invrs_tau_N2
+    params(iC_invrs_tau_bkgnd)        = C_invrs_tau_bkgnd
+    params(iC_invrs_tau_sfc)          = C_invrs_tau_sfc
+    params(iC_invrs_tau_shear)        = C_invrs_tau_shear
+    params(iC_invrs_tau_N2)           = C_invrs_tau_N2
+    params(iC_invrs_tau_N2_wp2)       = C_invrs_tau_N2_wp2
+    params(iC_invrs_tau_N2_xp2)       = C_invrs_tau_N2_xp2
+    params(iC_invrs_tau_N2_wpxp)      = C_invrs_tau_N2_wpxp
+    params(iC_invrs_tau_N2_clear_wp3) = C_invrs_tau_N2_clear_wp3
+
 
     return
   end subroutine pack_parameters
@@ -1522,7 +1561,9 @@ module parameters_tunable
                Skw_denom_coef, c_K10, c_K10h, thlp2_rad_coef, &
                thlp2_rad_cloud_frac_thresh, up2_vp2_factor, Skw_max_mag, &
                C_invrs_tau_bkgnd, C_invrs_tau_sfc, &
-               C_invrs_tau_shear, C_invrs_tau_N2 )
+               C_invrs_tau_shear, C_invrs_tau_N2, & 
+               C_invrs_tau_N2_wp2, C_invrs_tau_N2_xp2, &
+               C_invrs_tau_N2_wpxp, C_invrs_tau_N2_clear_wp3  )
 
     ! Description:
     ! Takes the 1D vector and returns the list of scalar variables.
@@ -1616,10 +1657,14 @@ module parameters_tunable
       ithlp2_rad_cloud_frac_thresh, &
       iup2_vp2_factor, &
       iSkw_max_mag, &
-      iC_invrs_tau_bkgnd,&
-      iC_invrs_tau_sfc,&
-      iC_invrs_tau_shear,&
-      iC_invrs_tau_N2,&
+      iC_invrs_tau_bkgnd, &
+      iC_invrs_tau_sfc, &
+      iC_invrs_tau_shear, &
+      iC_invrs_tau_N2, &
+      iC_invrs_tau_N2_wp2, &
+      iC_invrs_tau_N2_xp2, &
+      iC_invrs_tau_N2_wpxp, &
+      iC_invrs_tau_N2_clear_wp3, &
       nparams
 
     implicit none
@@ -1643,7 +1688,9 @@ module parameters_tunable
       lambda0_stability_coef, mult_coef, taumin, taumax, Lscale_mu_coef, &
       Lscale_pert_coef, alpha_corr, Skw_denom_coef, c_K10, c_K10h, &
       thlp2_rad_coef, thlp2_rad_cloud_frac_thresh, up2_vp2_factor, Skw_max_mag, &
-      C_invrs_tau_bkgnd, C_invrs_tau_sfc, C_invrs_tau_shear, C_invrs_tau_N2
+      C_invrs_tau_bkgnd, C_invrs_tau_sfc, C_invrs_tau_shear, C_invrs_tau_N2, &
+      C_invrs_tau_N2_wp2, C_invrs_tau_N2_xp2, &
+      C_invrs_tau_N2_wpxp, C_invrs_tau_N2_clear_wp3
 
     C1      = params(iC1)
     C1b     = params(iC1b)
@@ -1735,10 +1782,14 @@ module parameters_tunable
     thlp2_rad_cloud_frac_thresh = params(ithlp2_rad_cloud_frac_thresh)
     up2_vp2_factor = params(iup2_vp2_factor)
     Skw_max_mag = params(iSkw_max_mag)
-    C_invrs_tau_bkgnd = params(iC_invrs_tau_bkgnd)
-    C_invrs_tau_sfc   = params(iC_invrs_tau_sfc )
-    C_invrs_tau_shear = params(iC_invrs_tau_shear)
-    C_invrs_tau_N2    = params(iC_invrs_tau_N2)
+    C_invrs_tau_bkgnd        = params(iC_invrs_tau_bkgnd)
+    C_invrs_tau_sfc          = params(iC_invrs_tau_sfc )
+    C_invrs_tau_shear        = params(iC_invrs_tau_shear)
+    C_invrs_tau_N2           = params(iC_invrs_tau_N2)
+    C_invrs_tau_N2_wp2       = params(iC_invrs_tau_N2_wp2)
+    C_invrs_tau_N2_xp2       = params(iC_invrs_tau_N2_xp2)
+    C_invrs_tau_N2_wpxp      = params(iC_invrs_tau_N2_wpxp)
+    C_invrs_tau_N2_clear_wp3 = params(iC_invrs_tau_N2_clear_wp3)
 
     return
   end subroutine unpack_parameters
@@ -1775,7 +1826,9 @@ module parameters_tunable
                Skw_denom_coef, c_K10, c_K10h, thlp2_rad_coef, &
                thlp2_rad_cloud_frac_thresh, up2_vp2_factor, Skw_max_mag, &
                C_invrs_tau_bkgnd, C_invrs_tau_sfc, &
-               C_invrs_tau_shear, C_invrs_tau_N2, params )
+               C_invrs_tau_shear, C_invrs_tau_N2, &
+               C_invrs_tau_N2_wp2, C_invrs_tau_N2_xp2, &
+               C_invrs_tau_N2_wpxp, C_invrs_tau_N2_clear_wp3, params )
 
     return
 
@@ -1877,6 +1930,10 @@ module parameters_tunable
     C_invrs_tau_sfc              = init_value 
     C_invrs_tau_shear            = init_value 
     C_invrs_tau_N2               = init_value 
+    C_invrs_tau_N2_xp2           = init_value
+    C_invrs_tau_N2_wp2           = init_value
+    C_invrs_tau_N2_wpxp          = init_value
+    C_invrs_tau_N2_clear_wp3     = init_value
 
     return
 

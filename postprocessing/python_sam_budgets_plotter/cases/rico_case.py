@@ -9,24 +9,23 @@ to plot height profiles and budgets for the RICO case
 #-------------------------------------------------------------------------------
 #   G E N E R A L   D E F A U L T   S E T T I N G S
 #-------------------------------------------------------------------------------
-# TODO: check parameters in Heinze/Siebesma and (auto-)rename name,case,out_dir etc
 
 case = 'RICO'
 full_name = case
 case_folder = '/home/sdomke/workspace/clubb/sam_clubb/{case}'.format(case=case)
-enabled = True # not used in plotgen, no idea what this should do
+enabled = True
 #type = 'budget' # not used in plotgen
 nx = 256
 ny = 256
 nz = 100
-dxy = 100             # [m]
-dz = 40               # [m]
-dt = 1                # [s]
-startTime = 181.0     # [minutes]
-endTime = 360.0       # [minutes]
-startHeight = 0.0     # [m]
-endHeight = 2500.0    # [m]
-time_3d = 259200.0    # dt
+dxy = 100              # [m]
+dz = 40                # [m]
+dt = 1                 # [s]
+startTime = 2000.0     # [minutes]
+endTime = 2500.0       # [minutes]
+startHeight = 0.0      # [m]
+endHeight = 4000.0     # [m]
+time_3d = 259200.0     # [s]
 
 # run entry for header in html file
 run = '{case}_{nx}x{ny}x{nz}_{dxy}m_{dz}m_{dt}s'.format(case=case, nx=nx, ny=ny, nz=nz, dxy=dxy, dz=dz, dt=dt)

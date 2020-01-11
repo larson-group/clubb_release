@@ -50,6 +50,24 @@ ntrials = 3 # maximum number of input trials before closing the program
 affirmatives = ['y', 'yes', 'aye', 'yay', 'pos', '1']
 negatives = ['n', 'no', 'nay', 'nope', 'neg', '0']
 
+## CASE FILE DEFINITIONS
+# define constants to use as indexer instead of integers
+PLOT_ID = 0
+PLOT_TITLE = 1
+PLOT_XLABEL = 2
+PLOT_TEXT = 3
+PLOT_TEXTPOS = 4
+PLOT_LINES = 5
+PLOT_LINES_SAM = 5
+PLOT_LINES_CLUBB = 6
+
+# define line list indexer constants
+LINE_NAME = 0
+LINE_VISIB = 1
+LINE_EXPRESSION = 2
+LINE_FACTOR = 3
+LINE_XAX = 4
+
 ## PLOTTING CHOICES
 # List of output types
 # TODO: How to define??
@@ -70,12 +88,16 @@ type_name_template = '{}_variables'
 
 # List of cases
 case_dict = {
-    "BOMEX 64x64" : "bomex_case",
+    "ARM9707"       : "arm9707_case",
+    "BOMEX 64x64"   : "bomex_case",
     "BOMEX 128x128" : "bomex_large_case",
-    "DYCOMS_RF01" : "dycoms2_rf01_case",
-    "DYCOMS_RF02" : "dycoms2_rf02_case",
-    "RICO" : "rico_case",
-    "LBA" : "lba_case",
+    "DYCOMS_RF01"   : "dycoms2_rf01_case",
+    "DYCOMS_RF02"   : "dycoms2_rf02_case",
+    "RICO"          : "rico_case",
+    "LBA"           : "lba_case",
+    "GCSSARM"       : "gcssarm_case",
+    "IOP"           : "iop_case",
+    "GABLS3_night"  : "gabls3_night_case",
     } # list of cases, append as needed
 case_names = case_dict.keys()
 case_modules = case_dict.values()
@@ -98,19 +120,21 @@ prm_patterns = {
 
 ## PLOT FORMATTING
 quiver_scale_factor = {
-    "BOMEX" : 500,
-    "DYCOMS_RF01" : 750,
-    "DYCOMS_RF02" : 750,
-    "RICO" : 1500,      # grid is huge, individual arrows can barely be distinguished
-    "LBA" : 500,
+    "BOMEX"         : 500,
+    "DYCOMS_RF01"   : 750,
+    "DYCOMS_RF02"   : 750,
+    "RICO"          : 1500,      # grid is huge, individual arrows can barely be distinguished
+    "LBA"           : 500,
+    "ARM9707"       : 500,
     } # list of cases, append as needed
 
 figure_scale = {
-    "BOMEX" : 1,
-    "DYCOMS_RF01" : 1,
-    "DYCOMS_RF02" : 1,
-    "RICO" : 2,      # grid is huge, individual arrows can barely be distinguished
-    "LBA" : 1,
+    "BOMEX"         : 1,
+    "DYCOMS_RF01"   : 1,
+    "DYCOMS_RF02"   : 1,
+    "RICO"          : 2,      # grid is huge, individual arrows can barely be distinguished
+    "LBA"           : 1,
+    "ARM9707"       : 1,
     } # list of cases, append as needed
 
 # Power limit for tick floating point formatting

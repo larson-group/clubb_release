@@ -32,7 +32,7 @@ module adg1_adg2_3d_luhar_pdf
   subroutine ADG1_pdf_driver( wm, rtm, thlm, um, vm,                    & ! In
                               wp2, rtp2, thlp2, up2, vp2,               & ! In
                               Skw, wprtp, wpthlp, upwp, vpwp, sqrt_wp2, & ! In
-                              sigma_sqd_w, mixt_frac_max_mag,           & ! In
+                              sigma_sqd_w, mixt_frac_max_mag_in,        & ! In
                               sclrm, sclrp2, wpsclrp, l_scalar_calc,    & ! In
                               w_1, w_2,                                 & ! Out
                               rt_1, rt_2,                               & ! Out
@@ -92,7 +92,7 @@ module adg1_adg2_3d_luhar_pdf
       sigma_sqd_w    ! Width of individual w plumes         [-]
 
     real( kind = core_rknd ), intent(in) ::  &
-      mixt_frac_max_mag    ! Maximum allowable mag. of mixt_frac  [-]
+      mixt_frac_max_mag_in    ! Maximum allowable mag. of mixt_frac  [-]
 
     real( kind = core_rknd ), dimension(gr%nz, sclr_dim), intent(in) ::  &
       sclrm,   & ! Mean of passive scalar (overall)           [units vary]
@@ -142,8 +142,14 @@ module adg1_adg2_3d_luhar_pdf
       w_1_n, & ! Normalized mean of w (1st PDF component)     [-]
       w_2_n    ! Normalized mean of w (2nd PDF component)     [-]
 
+    real( kind = core_rknd ), dimension(gr%nz) ::  &
+      mixt_frac_max_mag    ! Maximum allowable mag. of mixt_frac  [-]
+
     integer :: i  ! Loop index
 
+
+    ! Set mixt_frac_max_mag to mixt_frac_max_mag_in.
+    mixt_frac_max_mag = mixt_frac_max_mag_in
 
     ! Calculate the mixture fraction and the PDF component means and variances
     ! of w.
@@ -561,10 +567,10 @@ module adg1_adg2_3d_luhar_pdf
   end subroutine Luhar_3D_pdf_driver
 
   !=============================================================================
-  subroutine ADG1_w_closure( wm, wp2, Skw, sigma_sqd_w, &        ! In
-                             sqrt_wp2, mixt_frac_max_mag, &      ! In
-                             w_1, w_2, w_1_n, w_2_n, &           ! Out
-                             varnce_w_1, varnce_w_2, mixt_frac ) ! Out
+  elemental subroutine ADG1_w_closure( wm, wp2, Skw, sigma_sqd_w, &        ! In
+                                       sqrt_wp2, mixt_frac_max_mag, &      ! In
+                                       w_1, w_2, w_1_n, w_2_n, &           ! Out
+                                       varnce_w_1, varnce_w_2, mixt_frac ) ! Out
 
     ! Description:
     ! Calculates the mixture fraction, the PDF component means of w, and the PDF
@@ -605,18 +611,16 @@ module adg1_adg2_3d_luhar_pdf
     implicit none
 
     ! Input Variables
-    real( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
-      wm,          & ! Mean of w (overall)                   [m/s]
-      wp2,         & ! Variance of w (overall)               [m^2/s^2]
-      Skw,         & ! Skewness of w                         [-]
-      sigma_sqd_w, & ! Widths of each w Gaussian             [-]
-      sqrt_wp2       ! Square root of the variance of w      [m/s]
-
     real( kind = core_rknd ), intent(in) :: &
+      wm,                & ! Mean of w (overall)                   [m/s]
+      wp2,               & ! Variance of w (overall)               [m^2/s^2]
+      Skw,               & ! Skewness of w                         [-]
+      sigma_sqd_w,       & ! Widths of each w Gaussian             [-]
+      sqrt_wp2,          & ! Square root of the variance of w      [m/s]
       mixt_frac_max_mag    ! Maximum allowable mag. of mixt_frac   [-]
 
     ! Output Variables
-    real( kind = core_rknd ), dimension(gr%nz), intent(out) :: &
+    real( kind = core_rknd ), intent(out) :: &
       w_1,        & ! Mean of w (1st PDF component)                [m/s]
       w_2,        & ! Mean of w (2nd PDF component)                [m/s]
       w_1_n,      & ! Normalized mean of w (1st PDF component)     [-]
@@ -628,7 +632,7 @@ module adg1_adg2_3d_luhar_pdf
 
     !----- Begin Code -----
 
-    where ( wp2 > w_tol_sqd )
+    if ( wp2 > w_tol_sqd ) then
 
        ! Width (standard deviation) parameters are non-zero
 
@@ -641,13 +645,13 @@ module adg1_adg2_3d_luhar_pdf
        ! is negative skewness of w (Sk_w < 0 because w'^3 < 0),
        ! 0.5 < mixt_frac < 1, and the 1st PDF component has greater weight than
        ! does the 2nd PDF component.
-       where ( abs( Skw ) <= 1.0e-5_core_rknd )
+       if ( abs( Skw ) <= 1.0e-5_core_rknd ) then
           mixt_frac = one_half
-       elsewhere
+       else
           mixt_frac &
           = one_half &
             * ( one - Skw / sqrt( four * ( one - sigma_sqd_w )**3 + Skw**2 ) )
-       endwhere
+       endif
 
        ! Clip mixt_frac, and 1 - mixt_frac, to avoid dividing by a small number.
        ! Formula for mixt_frac_max_mag =
@@ -680,7 +684,7 @@ module adg1_adg2_3d_luhar_pdf
        ! The variance in both Gaussian "plumes" is defined to be the same.
        varnce_w_2 = sigma_sqd_w * wp2
 
-    elsewhere
+    else
 
        ! Vertical velocity doesn't vary.
        mixt_frac  = one_half
@@ -691,7 +695,7 @@ module adg1_adg2_3d_luhar_pdf
        varnce_w_1 = zero
        varnce_w_2 = zero
 
-    endwhere  ! Widths non-zero
+    endif  ! Widths non-zero
 
 
     return
@@ -1067,44 +1071,49 @@ module adg1_adg2_3d_luhar_pdf
     ! Local Variables
     ! variables for a generalization of Chris Golaz' closure
     ! varies width of plumes in theta_l, rt
-    real ( kind = core_rknd ), dimension(gr%nz) :: &
-      width_factor_1, & ! Width factor relating to PDF component 1    [-]
-      width_factor_2    ! Width factor relating to PDF component 2    [-]
+    real ( kind = core_rknd ) :: &
+      width_factor_1 ! Width factor relating to PDF component 1    [-]
 
+    integer :: &
+      k     ! Vertical loop index
 
-    where ( wp2 <= w_tol_sqd .or. xp2 <= x_tol**2)
-        
-        ! Vertical velocity doesn't vary.  Variable x is treated as a single
-        ! Gaussian in this situation.
-        x_1        = xm
-        x_2        = xm
-        varnce_x_1 = xp2
-        varnce_x_2 = xp2
-        alpha_x    = one_half
-        
-    elsewhere
-        
-        x_1 = xm - wpxp / ( sqrt_wp2 * w_2_n )
-        x_2 = xm - wpxp / ( sqrt_wp2 * w_1_n )
+    !----- Begin Code -----
 
-        alpha_x = one_half &
-                  * ( one - wpxp * wpxp &
-                            / ( ( one - sigma_sqd_w ) * wp2 * xp2 ) )
+    do k = 1, gr%nz
 
-        alpha_x = max( min( alpha_x, one ), zero_threshold )
-        
-        width_factor_1 = two_thirds * beta &
-                         + two * mixt_frac * ( one - two_thirds * beta )
+        if ( wp2(k) <= w_tol_sqd .or. xp2(k) <= x_tol**2 ) then
 
-        width_factor_2 = two - width_factor_1
-        
-        ! Vince Larson multiplied original expressions by width_factor_1,2
-        !   to generalize scalar skewnesses.  05 Nov 03
-        varnce_x_1 = width_factor_1 * xp2 * alpha_x / mixt_frac
-        varnce_x_2 = width_factor_2 * xp2 * alpha_x / ( one - mixt_frac )
-        
-    endwhere
-    
+            ! Vertical velocity doesn't vary.  Variable x is treated as a single
+            ! Gaussian in this situation.
+            x_1(k)        = xm(k)
+            x_2(k)        = xm(k)
+            varnce_x_1(k) = xp2(k)
+            varnce_x_2(k) = xp2(k)
+            alpha_x(k)    = one_half
+
+        else
+
+            x_1(k) = xm(k) - wpxp(k) / ( sqrt_wp2(k) * w_2_n(k) )
+            x_2(k) = xm(k) - wpxp(k) / ( sqrt_wp2(k) * w_1_n(k) )
+
+            alpha_x(k) = one_half &
+                         * ( one - wpxp(k) * wpxp(k) &
+                                   / ( ( one - sigma_sqd_w(k) ) * wp2(k) * xp2(k) ) )
+
+            alpha_x(k) = max( min( alpha_x(k), one ), zero_threshold )
+
+            width_factor_1 = two_thirds * beta &
+                             + two * mixt_frac(k) * ( one - two_thirds * beta )
+
+            ! Vince Larson multiplied original expressions by width_factor_1,2
+            !   to generalize scalar skewnesses.  05 Nov 03
+            varnce_x_1(k) = width_factor_1 * xp2(k) * alpha_x(k) / mixt_frac(k)
+            varnce_x_2(k) = ( two - width_factor_1 ) * xp2(k) * alpha_x(k) / ( one - mixt_frac(k) )
+
+        end if
+
+    end do
+
     return
 
   end subroutine ADG1_ADG2_responder_params

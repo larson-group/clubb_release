@@ -666,5 +666,7 @@ if __name__ == "__main__":
     # Print resolution to the screen
     if testSuccess == True:
         print "Budgets successfully balance!"
+        sys.exit(0)
     else:
         print "Budgets fail to balance"
+        sys.exit(1)

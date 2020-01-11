@@ -82,6 +82,9 @@ module spurious_source_test
     use clubb_precision, only: &
         core_rknd    ! Variable(s)
 
+    use model_flags, only: &
+        set_default_clubb_config_flags ! Procedure(s)
+
     implicit none
 
     ! Return Variable
@@ -192,9 +195,11 @@ module spurious_source_test
       rcm,               & ! cloud water mixing ratio, r_c             [kg/kg]
       p_in_Pa,           & ! Air pressure                              [Pa]
       thvm,              & ! Virutal potential temperature             [K]
-      Cx_fnc_Richardson    ! Cx_fnc computed from Richardson_num       [-]
+      Cx_fnc_Richardson, & ! Cx_fnc computed from Richardson_num       [-]
+      ice_supersat_frac      
 
-    type(implicit_coefs_terms), dimension(nz) :: &
+
+    type(implicit_coefs_terms) :: &
       pdf_implicit_coefs_terms    ! Implicit coefs / explicit terms [units vary]
 
     ! Variables used to predict <u> and <u'w'>, as well as <v> and <v'w'>.
@@ -296,6 +301,133 @@ module spurious_source_test
 
     integer :: iter, k, i  ! Loop indices
 
+    logical :: &
+      l_use_precip_frac,            & ! Flag to use precipitation fraction in KK microphysics. The
+                                      ! precipitation fraction is automatically set to 1 when this
+                                      ! flag is turned off.
+      l_predict_upwp_vpwp,          & ! Flag to predict <u'w'> and <v'w'> along with <u> and <v>
+                                      ! alongside the advancement of <rt>, <w'rt'>, <thl>,
+                                      ! <wpthlp>, <sclr>, and <w'sclr'> in subroutine
+                                      ! advance_xm_wpxp.  Otherwise, <u'w'> and <v'w'> are still
+                                      ! approximated by eddy diffusivity when <u> and <v> are
+                                      ! advanced in subroutine advance_windm_edsclrm.
+      l_min_wp2_from_corr_wx,       & ! Flag to base the threshold minimum value of wp2 on keeping
+                                      ! the overall correlation of w and x (w and rt, as well as w
+                                      ! and theta-l) within the limits of -max_mag_correlation_flux
+                                      ! to max_mag_correlation_flux.
+      l_min_xp2_from_corr_wx,       & ! Flag to base the threshold minimum value of xp2 (rtp2 and
+                                      ! thlp2) on keeping the overall correlation of w and x within
+                                      ! the limits of -max_mag_correlation_flux to
+                                      ! max_mag_correlation_flux.
+      l_C2_cloud_frac,              & ! Flag to use cloud fraction to adjust the value of the
+                                      ! turbulent dissipation coefficient, C2.
+      l_diffuse_rtm_and_thlm,       & ! Diffuses rtm and thlm
+      l_stability_correct_Kh_N2_zm, & ! Divides Kh_N2_zm by a stability factor
+      l_calc_thlp2_rad,             & ! Include the contribution of radiation to thlp2
+      l_upwind_wpxp_ta,             & ! This flag determines whether we want to use an upwind
+                                      ! differencing approximation rather than a centered
+                                      ! differencing for turbulent or mean advection terms. It
+                                      ! affects wprtp, wpthlp, & wpsclrp.
+      l_upwind_xpyp_ta,             & ! This flag determines whether we want to use an upwind
+                                      ! differencing approximation rather than a centered
+                                      ! differencing for turbulent or mean advection terms. It
+                                      ! affects rtp2, thlp2, up2, vp2, sclrp2, rtpthlp, sclrprtp, &
+                                      ! sclrpthlp.
+      l_upwind_xm_ma,               & ! This flag determines whether we want to use an upwind
+                                      ! differencing approximation rather than a centered
+                                      ! differencing for turbulent or mean advection terms. It
+                                      ! affects rtm, thlm, sclrm, um and vm.
+      l_uv_nudge,                   & ! For wind speed nudging.
+      l_rtm_nudge,                  & ! For rtm nudging
+      l_tke_aniso,                  & ! For anisotropic turbulent kinetic energy, i.e.
+                                      ! TKE = 1/2 (u'^2 + v'^2 + w'^2)
+      l_vert_avg_closure,           & ! Use 2 calls to pdf_closure and the trapezoidal rule to
+                                      ! compute the varibles that are output from high order
+                                      ! closure
+      l_trapezoidal_rule_zt,        & ! If true, the trapezoidal rule is called for the
+                                      ! thermodynamic-level variables output from pdf_closure.
+      l_trapezoidal_rule_zm,        & ! If true, the trapezoidal rule is called for three
+                                      ! momentum-level variables - wpthvp, thlpthvp, and rtpthvp -
+                                      ! output from pdf_closure.
+      l_call_pdf_closure_twice,     & ! This logical flag determines whether or not to call
+                                      ! subroutine pdf_closure twice.  If true, pdf_closure is
+                                      ! called first on thermodynamic levels and then on momentum
+                                      ! levels so that each variable is computed on its native
+                                      ! level.  If false, pdf_closure is only called on
+                                      ! thermodynamic levels, and variables which belong on
+                                      ! momentum levels are interpolated.
+      l_standard_term_ta,           & ! Use the standard discretization for the turbulent advection
+                                      ! terms.  Setting to .false. means that a_1 and a_3 are
+                                      ! pulled outside of the derivative in
+                                      ! advance_wp2_wp3_module.F90 and in
+                                      ! advance_xp2_xpyp_module.F90.
+      l_use_cloud_cover,            & ! Use cloud_cover and rcm_in_layer to help boost cloud_frac
+                                      ! and rcm to help increase cloudiness at coarser grid
+                                      ! resolutions.
+      l_diagnose_correlations,      & ! Diagnose correlations instead of using fixed ones
+      l_calc_w_corr,                & ! Calculate the correlations between w and the hydrometeors
+      l_const_Nc_in_cloud,          & ! Use a constant cloud droplet conc. within cloud (K&K)
+      l_fix_w_chi_eta_correlations, & ! Use a fixed correlation for s and t Mellor(chi/eta)
+      l_stability_correct_tau_zm,   & ! Use tau_N2_zm instead of tau_zm in wpxp_pr1 stability
+                                      ! correction
+      l_damp_wp2_using_em,          & ! In wp2 equation, use a dissipation formula of
+                                      ! -(2/3)*em/tau_zm, as in Bougeault (1981)
+      l_do_expldiff_rtm_thlm,       & ! Diffuse rtm and thlm explicitly
+      l_Lscale_plume_centered,      & ! Alternate that uses the PDF to compute the perturbed values
+      l_diag_Lscale_from_tau,       & ! First diagnose dissipation time tau, and then diagnose the
+                                      ! mixing length scale as Lscale = tau * tke
+      l_use_ice_latent,             & ! Includes the effects of ice latent heating in turbulence
+                                      ! terms
+      l_use_C7_Richardson,          & ! Parameterize C7 based on Richardson number
+      l_use_C11_Richardson,         & ! Parameterize C11 and C16 based on Richardson number
+      l_brunt_vaisala_freq_moist,   & ! Use a different formula for the Brunt-Vaisala frequency in
+                                      ! saturated atmospheres (from Durran and Klemp, 1982)
+      l_use_thvm_in_bv_freq,        & ! Use thvm in the calculation of Brunt-Vaisala frequency
+      l_rcm_supersat_adj,           & ! Add excess supersaturated vapor to cloud water
+      l_single_C2_Skw,              & ! Use a single Skewness dependent C2 for rtp2, thlp2, and
+                                      ! rtpthlp
+      l_damp_wp3_Skw_squared,       & ! Set damping on wp3 to use Skw^2 rather than Skw^4
+      l_prescribed_avg_deltaz         ! used in adj_low_res_nu. If .true., avg_deltaz = deltaz
+
+
+    call set_default_clubb_config_flags( l_use_precip_frac, &
+                                         l_predict_upwp_vpwp, &
+                                         l_min_wp2_from_corr_wx, &
+                                         l_min_xp2_from_corr_wx, &
+                                         l_C2_cloud_frac, &
+                                         l_diffuse_rtm_and_thlm, &
+                                         l_stability_correct_Kh_N2_zm, &
+                                         l_calc_thlp2_rad, &
+                                         l_upwind_wpxp_ta, &
+                                         l_upwind_xpyp_ta, &
+                                         l_upwind_xm_ma, &
+                                         l_uv_nudge, &
+                                         l_rtm_nudge, &
+                                         l_tke_aniso, &
+                                         l_vert_avg_closure, &
+                                         l_trapezoidal_rule_zt, &
+                                         l_trapezoidal_rule_zm, &
+                                         l_call_pdf_closure_twice, &
+                                         l_standard_term_ta, &
+                                         l_use_cloud_cover, &
+                                         l_diagnose_correlations, &
+                                         l_calc_w_corr, &
+                                         l_const_Nc_in_cloud, &
+                                         l_fix_w_chi_eta_correlations, &
+                                         l_stability_correct_tau_zm, &
+                                         l_damp_wp2_using_em, &
+                                         l_do_expldiff_rtm_thlm, &
+                                         l_Lscale_plume_centered, &
+                                         l_diag_Lscale_from_tau, &
+                                         l_use_ice_latent, &
+                                         l_use_C7_Richardson, &
+                                         l_use_C11_Richardson, &
+                                         l_brunt_vaisala_freq_moist, &
+                                         l_use_thvm_in_bv_freq, &
+                                         l_rcm_supersat_adj, &
+                                         l_single_C2_Skw, &
+                                         l_damp_wp3_Skw_squared, &
+                                         l_prescribed_avg_deltaz )
 
     write(*,*)
     write(*,*) "Performing spurious source unit test"
@@ -317,7 +449,8 @@ module spurious_source_test
 
     ! Calculate the value of nu for use in advance_xm_wpxp.
     call adj_low_res_nu( gr%nz, grid_type, deltaz, &
-                         momentum_heights, thermodynamic_heights )
+                         momentum_heights, thermodynamic_heights, &
+                         l_prescribed_avg_deltaz )
 
     dt = 300.0_core_rknd
 
@@ -354,8 +487,10 @@ module spurious_source_test
                           0.76_core_rknd /)
        rtp2_snd = (/ zero, 2.5e-7_core_rknd, 2.5e-7_core_rknd, zero /)
        thlp2_snd = (/ zero, 0.1_core_rknd, 0.1_core_rknd, zero /)
-       Cx_fnc_Richardson_snd = (/ 5.0_core_rknd, 5.0_core_rknd, &
-                                  5.0_core_rknd, 5.0_core_rknd /)
+       ! The value of Cx_fnc_Richardson should be between 0 and 1, as
+       ! the C7_Skw_fnc might be set to the value of Cx_fnc_Richardson.
+       Cx_fnc_Richardson_snd = (/ 0.1_core_rknd, 0.5_core_rknd, &
+                                  0.7_core_rknd, 0.9_core_rknd /)
        Lscale_snd = (/ 200.0_core_rknd, 100.0_core_rknd, 50.0_core_rknd, &
                        10.0_core_rknd /)
        wp2rtp_snd = (/ zero, 1.0e-5_core_rknd, 7.5e-6_core_rknd, zero /)
@@ -651,10 +786,21 @@ module spurious_source_test
                              mixt_frac_zm, l_implemented, em, wp2sclrp, &
                              sclrpthvp, sclrm_forcing, sclrp2, exner, rcm, &
                              p_in_Pa, thvm, Cx_fnc_Richardson, &
+                             ice_supersat_frac, &
                              pdf_implicit_coefs_terms, &
                              um_forcing, vm_forcing, ug, vg, wpthvp, &
                              fcor, um_ref, vm_ref, up2, vp2, &
                              uprcp, vprcp, rc_coef, &
+                             l_predict_upwp_vpwp, &
+                             l_diffuse_rtm_and_thlm, &
+                             l_stability_correct_Kh_N2_zm, &
+                             l_upwind_wpxp_ta, &
+                             l_upwind_xm_ma, &
+                             l_uv_nudge, &
+                             l_tke_aniso, &
+                             l_use_C7_Richardson, &
+                             l_brunt_vaisala_freq_moist, &
+                             l_use_thvm_in_bv_freq, &
                              rtm, wprtp, thlm, wpthlp, &
                              sclrm, wpsclrp, um, upwp, vm, vpwp )
 

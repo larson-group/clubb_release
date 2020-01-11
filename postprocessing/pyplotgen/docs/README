@@ -1,0 +1,6 @@
+This folder contains reference documentation for PyPlotgen. The reference docs are generated used Sphinx,
+to regenerate/update these docs, run the command
+
+sphinx-build -b html ./ ./html
+
+Sphinx must be installed to run this command.

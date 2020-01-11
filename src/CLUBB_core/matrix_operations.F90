@@ -124,12 +124,13 @@ module matrix_operations
 
     use clubb_precision, only: & 
       core_rknd
+      
+    use lapack_interfaces, only: &
+      lapack_potrf, &   ! Procedures
+      lapack_poequ, &
+      lapack_laqsy
 
     implicit none
-
-    ! External
-    external :: dpotrf, dpoequ, dlaqsy, & ! LAPACK subroutines
-                spotrf, spoequ, slaqsy
 
     ! Constant Parameters
     integer, parameter :: itermax = 10 ! Max iterations of the modified method
@@ -161,8 +162,6 @@ module matrix_operations
 
     character :: equed
 
-    logical :: l_dp
-
     ! ---- Begin code ----
 
     a_scaled = a_input ! Copy input array into output array
@@ -177,28 +176,14 @@ module matrix_operations
 
     equed = 'N'
 
-    if ( kind( 0.0_core_rknd ) == kind( 0.0d0 ) ) then
-      l_dp = .true.
-    else if ( kind( 0.0_core_rknd ) == kind( 0.0 ) ) then
-      l_dp = .false.
-    else
-      stop "Precision is not single or double precision in Cholesky_factor"
-    end if
-
-    ! Compute scaling for a_input
-    if ( l_dp ) then
-      call dpoequ( ndim, a_input, ndim, a_scaling, scond, amax, info )
-    else
-      call spoequ( ndim, a_input, ndim, a_scaling, scond, amax, info )
-    end if
+    ! Compute scaling for a_input, using Lapack routine spoequ for single precision,
+    ! or dpoequ for double precision
+    call lapack_poequ( ndim, a_input, ndim, a_scaling, scond, amax, info )
 
     if ( info == 0 ) then
-      ! Apply scaling to a_input
-      if ( l_dp ) then
-        call dlaqsy( 'Lower', ndim, a_scaled, ndim, a_scaling, scond, amax, equed )
-      else
-        call slaqsy( 'Lower', ndim, a_scaled, ndim, a_scaling, scond, amax, equed )
-      end if
+      ! Apply scaling to a_input, using Lapack routine slaqsy for single precision,
+      ! or dlaqsy for double precision
+      call lapack_laqsy( 'Lower', ndim, a_scaled, ndim, a_scaling, scond, amax, equed )
     end if
 
     ! Determine if scaling was necessary
@@ -212,11 +197,8 @@ module matrix_operations
 
     do iter = 1, itermax
 
-      if ( l_dp ) then
-        call dpotrf( 'Lower', ndim, a_Cholesky, ndim, info )
-      else
-        call spotrf( 'Lower', ndim, a_Cholesky, ndim, info )
-      end if
+      ! Lapack Cholesky factorization, spotrf for single or dpotrf for double precision
+      call lapack_potrf( 'Lower', ndim, a_Cholesky, ndim, info )
 
       select case( info )
       case( :-1 )
@@ -346,11 +328,11 @@ module matrix_operations
 
     use clubb_precision, only: &
       core_rknd ! double precision
+      
+    use lapack_interfaces, only: &
+      lapack_syev       ! Procedure
 
     implicit none
-
-    ! External
-    external :: dsyev, ssyev ! LAPACK subroutine(s)
 
     ! Parameters
     integer, parameter :: &
@@ -383,15 +365,10 @@ module matrix_operations
 !   end do
 !   pause
 
-    if ( kind( 0.0_core_rknd ) == kind( 0.0d0 ) ) then
-      call dsyev( 'No eigenvectors', 'Lower', ndim, a_scratch, ndim, &
-                  a_eigenvalues, work, lwork, info )
-    else if ( kind( 0.0_core_rknd ) == kind( 0.0 ) ) then
-      call ssyev( 'No eigenvectors', 'Lower', ndim, a_scratch, ndim, &
-                  a_eigenvalues, work, lwork, info )
-    else
-      stop "Precision is not single or double in Symm_matrix_eigenvalues"
-    end if
+    ! Lapack routine for computing eigenvalues and, optionally, eigenvectors. ssyev for 
+    ! single precision  or dsyev for double precision
+    call lapack_syev( 'No eigenvectors', 'Lower', ndim, a_scratch, ndim, &
+                      a_eigenvalues, work, lwork, info )
 
     select case( info )
     case( :-1 )

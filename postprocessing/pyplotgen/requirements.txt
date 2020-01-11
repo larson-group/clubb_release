@@ -1,1 +1,3 @@
-sigal=1.4.1
+Pillow
+netCDF4
+matplotlib

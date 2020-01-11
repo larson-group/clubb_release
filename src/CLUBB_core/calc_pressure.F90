@@ -35,7 +35,7 @@ module calc_pressure
     !
     ! The value of mean theta_v (thvm) is calculated at each thermodynamic grid
     ! level, and linear interpolation is used in the integral equation for all
-    ! altitude in-between successive thermodynamic levels, such that:
+    ! altitudes in-between successive thermodynamic levels, such that:
     !
     ! thvm(z) = ( ( thvm2 - thvm1 ) / ( z2 - z1 ) ) * ( z - z1 ) + thvm1.
     !
@@ -118,7 +118,8 @@ module calc_pressure
       rvm_nz    ! Water vapor mixing ratio; uppermost thermo. level  [kg/kg]
 
     real( kind = core_rknd ), parameter :: &
-      g_ov_Cp = grav / Cp  ! g / Cp  [K/m]
+      g_ov_Cp = grav / Cp, &     ! g / Cp  [K/m]
+      invrs_kappa = one / kappa  ! 1 / kappa
 
     ! Flag to calculate pressure and exner on momentum levels.  Otherwise,
     ! linear interpolation of exner will be used.
@@ -186,7 +187,7 @@ module calc_pressure
     endif ! l_calc_p_exner_m_levs
 
     ! Calculate pressure on the uppermost momentum level.
-    p_in_Pa_zm(gr%nz) = p0 * exner_zm(gr%nz)**(one/kappa)
+    p_in_Pa_zm(gr%nz) = p0 * exner_zm(gr%nz)**invrs_kappa
 
     ! Calculate exner at all other thermodynamic and momentum grid levels,
     ! which are all located below the uppermost thermodynamic grid level.
@@ -212,9 +213,6 @@ module calc_pressure
           exner(k) = exner(k+1) + g_ov_Cp * ( gr%zt(k+1) - gr%zt(k) ) / thvm(k)
 
        endif
-
-       ! Calculate pressure on thermodynamic levels.
-       p_in_Pa(k) = p0 * exner(k)**(one/kappa)
 
        if ( l_calc_p_exner_m_levs ) then
 
@@ -242,10 +240,27 @@ module calc_pressure
 
        endif ! l_calc_p_exner_m_levs
 
-       ! Calculate pressure on momentum levels.
-       p_in_Pa_zm(k) = p0 * exner_zm(k)**(one/kappa)
-
     enddo ! k = gr%nz-1, 2, -1
+
+#ifdef MKL
+    ! MKL VML functions available. vdpowx(n,a,b,y) computes a(1:n)^b = y(1:n)
+    ! This temporarily store exner(_zm)**invrs_kappa in p_in_Pa(_zm), before
+    ! multiplying p_in_Pa(_zm) by p0 to complete the calculation.
+
+    ! Calculate pressure on thermodynamic levels
+    call vdpowx( gr%nz-2, exner(2:gr%nz-1), invrs_kappa, p_in_Pa(2:gr%nz-1) )
+    p_in_Pa(2:gr%nz-1) =  p_in_Pa(2:gr%nz-1) * p0
+
+    ! Calculate pressure on momentum levels.
+    call vdpowx( gr%nz-2, exner_zm(2:gr%nz-1), invrs_kappa, p_in_Pa_zm(2:gr%nz-1) )
+    p_in_Pa_zm(2:gr%nz-1) =  p_in_Pa_zm(2:gr%nz-1) * p0
+#else
+    ! Calculate pressure on thermodynamic levels.
+    p_in_Pa(2:gr%nz-1) = p0 * exner(2:gr%nz-1)**invrs_kappa
+
+    ! Calculate pressure on momentum levels.
+    p_in_Pa_zm(2:gr%nz-1) = p0 * exner_zm(2:gr%nz-1)**invrs_kappa
+#endif
 
     ! Calculate exner the model lower boundary or surface.
     ! exner1
@@ -270,7 +285,7 @@ module calc_pressure
     endif
 
     ! Calculate pressure at the model lower boundary or surface.
-    p_in_Pa_zm(1) = p0 * exner_zm(1)**(one/kappa)
+    p_in_Pa_zm(1) = p0 * exner_zm(1)**invrs_kappa
 
     ! For the lowest thermodynamic level, which is below the model lower
     ! boundary, set pressure and exner to the pressure and exner found at the
@@ -461,7 +476,7 @@ module calc_pressure
   end subroutine init_pressure
 
   !=============================================================================
-  function calculate_thvm( thlm, rtm, rcm, exner, thv_ds_zt ) &
+  elemental function calculate_thvm( thlm, rtm, rcm, exner, thv_ds_zt ) &
   result( thvm )
 
     ! Description:
@@ -470,9 +485,6 @@ module calc_pressure
 
     ! References:
     !-----------------------------------------------------------------------
-
-    use grid_class, only: &
-        gr    ! Variable Type(s)
 
     use constants_clubb, only: &
         Lv,  & ! Latent Heat of Vaporizaion    [J/kg]
@@ -486,7 +498,7 @@ module calc_pressure
     implicit none
 
     ! Input Variables
-    real( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
+    real( kind = core_rknd ), intent(in) :: &
       thlm,      & ! Mean theta_l (thermodynamic levels)          [K]
       rtm,       & ! Mean total water (thermodynamic levels)      [kg/kg]
       rcm,       & ! Mean cloud water (thermodynamic levels)      [kg/kg]
@@ -494,7 +506,7 @@ module calc_pressure
       thv_ds_zt    ! Reference theta_v on thermodynamic levels    [K]
 
     ! Return Variable
-    real( kind = core_rknd ), dimension(gr%nz) :: &
+    real( kind = core_rknd ) :: &
       thvm    ! Mean theta_v (thermodynamic levels)    [K]
 
 

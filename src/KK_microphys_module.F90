@@ -31,9 +31,9 @@ module KK_microphys_module
 
     real( kind = core_rknd ) :: &
       rrm_src_adj  = zero, & ! Total adj. to rrm source terms    [(kg/kg)/s]
-      rrm_cond_adj = zero, & ! Total adj. to rrm evap terms      [(kg/kg)/s]
+      rrm_evap_adj = zero, & ! Total adj. to rrm evap terms      [(kg/kg)/s]
       Nrm_src_adj  = zero, & ! Total adj. to Nrm source terms    [(num/kg)/s]
-      Nrm_cond_adj = zero    ! Total adj. to Nrm evap terms      [(num/kg)/s]
+      Nrm_evap_adj = zero    ! Total adj. to Nrm evap terms      [(num/kg)/s]
 
   end type KK_microphys_adj_terms_type
 
@@ -93,13 +93,13 @@ module KK_microphys_module
     use stats_variables, only: &
         im_vol_rad_rain, & ! Variables
         iNrm_auto, &
-        iNrm_cond, &
-        iNrm_cond_adj, &
+        iNrm_evap, &
+        iNrm_evap_adj, &
         iNrm_src_adj, &
         irrm_accr, &
         irrm_auto, &
-        irrm_cond, &
-        irrm_cond_adj, &
+        irrm_evap, &
+        irrm_evap_adj, &
         irrm_src_adj, &
         irrm_mc_nonadj
 
@@ -363,19 +363,19 @@ module KK_microphys_module
                               hydromet_mc, hydromet_vel )
 
     !!! Output values for statistics
-    call microphys_put_var( irrm_cond, KK_evap_tndcy, microphys_stats_zt )
+    call microphys_put_var( irrm_evap, KK_evap_tndcy, microphys_stats_zt )
     call microphys_put_var( irrm_auto, KK_auto_tndcy, microphys_stats_zt )
     call microphys_put_var( irrm_accr, KK_accr_tndcy, microphys_stats_zt )
     call microphys_put_var( im_vol_rad_rain, KK_mean_vol_rad, microphys_stats_zt )
-    call microphys_put_var( iNrm_cond, KK_Nrm_evap_tndcy, microphys_stats_zt )
+    call microphys_put_var( iNrm_evap, KK_Nrm_evap_tndcy, microphys_stats_zt )
     call microphys_put_var( iNrm_auto, KK_Nrm_auto_tndcy, microphys_stats_zt )
     if ( l_src_adj_enabled ) then
       call microphys_put_var( irrm_src_adj, adj_terms%rrm_src_adj, microphys_stats_zt )
       call microphys_put_var( iNrm_src_adj, adj_terms%Nrm_src_adj, microphys_stats_zt )
     end if
     if ( l_evap_adj_enabled ) then
-      call microphys_put_var( irrm_cond_adj, adj_terms%rrm_cond_adj, microphys_stats_zt )
-      call microphys_put_var( iNrm_cond_adj, adj_terms%Nrm_cond_adj, microphys_stats_zt )
+      call microphys_put_var( irrm_evap_adj, adj_terms%rrm_evap_adj, microphys_stats_zt )
+      call microphys_put_var( iNrm_evap_adj, adj_terms%Nrm_evap_adj, microphys_stats_zt )
     end if
     call microphys_put_var( irrm_mc_nonadj, KK_auto_tndcy+KK_accr_tndcy+KK_evap_tndcy, &
                             microphys_stats_zt )
@@ -483,8 +483,8 @@ module KK_microphys_module
         stats_zt, &
         irrm_src_adj, &
         iNrm_src_adj, &
-        irrm_cond_adj, &
-        iNrm_cond_adj, &
+        irrm_evap_adj, &
+        iNrm_evap_adj, &
         irrm_mc_nonadj
 
     implicit none
@@ -1047,12 +1047,12 @@ module KK_microphys_module
          call stat_update_var( iNrm_src_adj, adj_terms%Nrm_src_adj, stats_zt )
        end if
 
-       if ( irrm_cond_adj > 0 ) then
-         call stat_update_var( irrm_cond_adj, adj_terms%rrm_cond_adj, stats_zt )
+       if ( irrm_evap_adj > 0 ) then
+         call stat_update_var( irrm_evap_adj, adj_terms%rrm_evap_adj, stats_zt )
        end if
 
-       if ( iNrm_cond_adj > 0 ) then
-         call stat_update_var( iNrm_cond_adj, adj_terms%Nrm_cond_adj, stats_zt )
+       if ( iNrm_evap_adj > 0 ) then
+         call stat_update_var( iNrm_evap_adj, adj_terms%Nrm_evap_adj, stats_zt )
        end if
 
        if ( irrm_mc_nonadj > 0 ) then
@@ -1451,8 +1451,8 @@ module KK_microphys_module
     ! Return adjustment terms
     adj_terms%rrm_src_adj = rrm_src_adj
     adj_terms%Nrm_src_adj = Nrm_src_adj
-    adj_terms%rrm_cond_adj = rrm_evap_net - KK_evap_tndcy
-    adj_terms%Nrm_cond_adj = Nrm_evap_net - KK_Nrm_evap_tndcy
+    adj_terms%rrm_evap_adj = rrm_evap_net - KK_evap_tndcy
+    adj_terms%Nrm_evap_adj = Nrm_evap_net - KK_Nrm_evap_tndcy
 
     return
 
@@ -1575,10 +1575,10 @@ module KK_microphys_module
     use stats_variables, only: &
         stats_zt,              & ! Variable(s)
         im_vol_rad_rain, &
-        irrm_cond,       &
+        irrm_evap,       &
         irrm_auto,       &
         irrm_accr,       &
-        iNrm_cond,       &
+        iNrm_evap,       &
         iNrm_auto
 
     use stats_type_utilities, only: &
@@ -1606,8 +1606,8 @@ module KK_microphys_module
     if ( l_stats_samp ) then
 
        ! Mean rain water mixing ratio microphysics tendencies.
-       if ( irrm_cond > 0 ) then
-          call stat_update_var_pt( irrm_cond, level, KK_evap_tndcy, stats_zt )
+       if ( irrm_evap > 0 ) then
+          call stat_update_var_pt( irrm_evap, level, KK_evap_tndcy, stats_zt )
        endif
 
        if ( irrm_auto > 0 ) then
@@ -1624,8 +1624,8 @@ module KK_microphys_module
        endif
 
        ! Mean rain drop concentration microphysics tendencies.
-       if ( iNrm_cond > 0 ) then
-          call stat_update_var_pt( iNrm_cond, level, KK_Nrm_evap_tndcy, stats_zt )
+       if ( iNrm_evap > 0 ) then
+          call stat_update_var_pt( iNrm_evap, level, KK_Nrm_evap_tndcy, stats_zt )
        endif
 
        if ( iNrm_auto > 0 ) then

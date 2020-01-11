@@ -7,6 +7,7 @@ l_stdout_on_invalid = .true.,
 t_variables       = "wp3", "wp3"
 weight_var_nl     = 1.0,
 anneal_temp       = 100.,
+max_final_temp      = 0.01,
 anneal_iter       = 100,
 tune_type = 2
 stp_adjst_center_in = 0.6
@@ -115,4 +116,8 @@ C_invrs_tau_bkgnd            = 0.
 C_invrs_tau_sfc              = 0.
 C_invrs_tau_shear            = 0.
 C_invrs_tau_N2               = 0.
+C_invrs_tau_N2_xp2           = 0.
+C_invrs_tau_N2_wp2           = 0.
+C_invrs_tau_N2_clear_wp3     = 0.
+C_invrs_tau_N2_wpxp          = 0.
 /

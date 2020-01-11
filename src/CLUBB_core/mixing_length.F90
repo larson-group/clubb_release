@@ -7,7 +7,8 @@ module mixing_length
 
   private ! Default Scope
 
-  public :: compute_mixing_length
+  public :: compute_mixing_length, &
+            calc_Lscale_directly 
 
   contains
 
@@ -874,6 +875,304 @@ module mixing_length
 
     return
   end function compute_rsat_parcel
+
+
+!===============================================================================
+  subroutine calc_Lscale_directly ( l_implemented, p_in_Pa, exner,  rtm,       &
+                  thlm, thvm, newmu, rtm_frz, thlm_frz, rtp2, thlp2,  rtpthlp, &
+                  pdf_params, pdf_params_frz, em, thv_ds_zt, Lscale_max,       &
+                  l_Lscale_plume_centered,                                     &
+                  l_use_ice_latent,                                            &
+                  Lscale, Lscale_up, Lscale_down)
+
+    use constants_clubb, only: &
+        thl_tol, &
+        rt_tol, &
+        one, &
+        unused_var
+
+    use parameters_tunable, only: &
+        mu, &
+        Lscale_mu_coef, &
+        Lscale_pert_coef
+
+    use grid_class, only: &
+        gr   ! Variable(s)
+
+    use clubb_precision, only: &
+        core_rknd
+
+    use stats_variables, only: &
+        l_stats_samp,  &
+        l_stats,       &
+        stats_zt,      &
+        stats_zm
+
+    use pdf_parameter_module, only: &
+        pdf_parameter
+
+    use stats_variables, only: &
+        iLscale_pert_1, & ! Variable(s)
+        iLscale_pert_2
+
+    use stats_type_utilities, only:   &
+        stat_update_var
+        
+    use error_code, only: &
+        clubb_at_least_debug_level,  & ! Procedure
+        err_code,                    & ! Error Indicator
+        clubb_fatal_error              ! Constant
+
+    use constants_clubb, only:  &
+        fstderr  ! Variable(s)
+
+    implicit none
+
+    intrinsic :: sqrt, min, max, exp, real
+
+    logical, intent(in) ::  &
+      l_implemented ! True if CLUBB is being run within a large-scale hostmodel,
+                    !   rather than a standalone single-column model.
+
+    !!! Input Variables
+    real( kind = core_rknd ), dimension(gr%nz), intent(in) ::  &
+      rtm_frz,   &
+      thlm_frz,  &
+      rtp2,      &
+      thlp2,     &
+      rtpthlp,   &
+      thlm,      &
+      thvm,      &
+      rtm,       &
+      em,        &
+      p_in_Pa,   & ! Air pressure (thermodynamic levels)       [Pa]
+      exner,     &
+      thv_ds_zt
+
+    real( kind = core_rknd ), intent(in) ::  &
+     newmu, &
+     Lscale_max
+
+    type (pdf_parameter), intent(in) :: &
+        pdf_params     , &   ! PDF Parameters  [units vary]
+        pdf_params_frz
+
+    logical, intent(in) :: &
+      l_Lscale_plume_centered, & ! Alternate that uses the PDF to compute the perturbed values
+      l_use_ice_latent           ! Includes the effects of ice latent heating in turbulence terms
+
+    real( kind = core_rknd ), dimension(gr%nz), intent(out) ::  &
+      Lscale,    & ! Mixing length      [m]
+      Lscale_up, & ! Mixing length up   [m]
+      Lscale_down  ! Mixing length down [m]
+
+    ! Local Variables
+    integer :: i, k
+
+    logical, parameter :: &
+      l_avg_Lscale = .false.   ! Lscale is calculated in subroutine compute_mixing_length
+    ! if l_avg_Lscale is true, compute_mixing_length is called two additional
+    ! times with
+    ! perturbed values of rtm and thlm.  An average value of Lscale
+    ! from the three calls to compute_mixing_length is then calculated.
+    ! This reduces temporal noise in RICO, BOMEX, LBA, and other cases.
+
+    real( kind = core_rknd ), dimension(gr%nz) :: &
+        sign_rtpthlp,         & ! Sign of the covariance rtpthlp       [-]
+        Lscale_pert_1, Lscale_pert_2, & ! For avg. calculation of Lscale  [m]
+        thlm_pert_1, thlm_pert_2, &     ! For avg. calculation of Lscale  [K]
+        rtm_pert_1, rtm_pert_2,   &     ! For avg. calculation of Lscale  [kg/kg]
+        thlm_pert_pos_rt, thlm_pert_neg_rt, &     ! For avg. calculation of Lscale [K]
+        rtm_pert_pos_rt, rtm_pert_neg_rt     ! For avg. calculation of Lscale [kg/kg]
+
+     real( kind = core_rknd ) :: &
+         mu_pert_1, mu_pert_2, &
+         mu_pert_pos_rt, mu_pert_neg_rt ! For l_Lscale_plume_centered
+
+    !Lscale_weight Uncomment this if you need to use this vairable at some
+    !point.
+
+ ! ---- Begin Code ----
+ 
+      if ( clubb_at_least_debug_level( 0 ) ) then
+
+        if ( l_Lscale_plume_centered .and. .not. l_avg_Lscale ) then
+          write(fstderr,*) "l_Lscale_plume_centered requires l_avg_Lscale"
+          write(fstderr,*) "Fatal error in advance_clubb_core"
+          err_code = clubb_fatal_error
+          return
+        end if
+
+      end if
+
+      if ( l_avg_Lscale .and. .not. l_Lscale_plume_centered ) then
+
+         ! Call compute length two additional times with perturbed values
+         ! of rtm and thlm so that an average value of Lscale may be calculated.
+
+         do k = 1, gr%nz, 1
+            sign_rtpthlp(k) = sign( one, rtpthlp(k) )
+         enddo
+
+         if ( l_use_ice_latent ) then
+
+            ! Include the effects of ice in the length scale calculation
+
+            rtm_pert_1  = rtm_frz &
+                          + Lscale_pert_coef * sqrt( max( rtp2, rt_tol**2 ) )
+            thlm_pert_1 = thlm_frz &
+                          + sign_rtpthlp * Lscale_pert_coef &
+                            * sqrt( max( thlp2, thl_tol**2 ) )
+            mu_pert_1   = newmu / Lscale_mu_coef
+
+            rtm_pert_2  = rtm_frz &
+                          - Lscale_pert_coef * sqrt( max( rtp2, rt_tol**2 ) )
+            thlm_pert_2 = thlm_frz &
+                          - sign_rtpthlp * Lscale_pert_coef &
+                            * sqrt( max( thlp2, thl_tol**2 ) )
+            mu_pert_2   = newmu * Lscale_mu_coef
+
+         else
+            rtm_pert_1  = rtm &
+                          + Lscale_pert_coef * sqrt( max( rtp2, rt_tol**2 ) )
+            thlm_pert_1 = thlm &
+                          + sign_rtpthlp * Lscale_pert_coef &
+                            * sqrt( max( thlp2, thl_tol**2 ) )
+            mu_pert_1   = newmu / Lscale_mu_coef
+
+            rtm_pert_2  = rtm &
+                          - Lscale_pert_coef * sqrt( max( rtp2, rt_tol**2 ) )
+            thlm_pert_2 = thlm &
+                          - sign_rtpthlp * Lscale_pert_coef &
+                            * sqrt( max( thlp2, thl_tol**2 ) )
+            mu_pert_2   = newmu * Lscale_mu_coef
+
+         endif
+
+         call compute_mixing_length( thvm, thlm_pert_1,                   &!intent(in)
+                              rtm_pert_1, em, Lscale_max, p_in_Pa,        & !intent(in)
+                              exner, thv_ds_zt, mu_pert_1, l_implemented, & !intent(in)
+                              Lscale_pert_1, Lscale_up, Lscale_down ) !intent(out)
+
+         call compute_mixing_length( thvm, thlm_pert_2,                   & !intent(in)
+                              rtm_pert_2, em, Lscale_max, p_in_Pa,        & !intent(in)
+                              exner, thv_ds_zt, mu_pert_2, l_implemented, & !intent(in)
+                              Lscale_pert_2, Lscale_up, Lscale_down ) !intent(out)
+
+      else if ( l_avg_Lscale .and. l_Lscale_plume_centered ) then
+        ! Take the values of thl and rt based one 1st or 2nd plume
+
+        do k = 1, gr%nz, 1
+          sign_rtpthlp(k) = sign(1.0_core_rknd, rtpthlp(k))
+        end do
+
+        if ( l_use_ice_latent ) then
+          where ( pdf_params_frz%rt_1 > pdf_params_frz%rt_2 )
+            rtm_pert_pos_rt = pdf_params_frz%rt_1 &
+                       + Lscale_pert_coef * sqrt( max( pdf_params_frz%varnce_rt_1, rt_tol**2 ) )
+            thlm_pert_pos_rt = pdf_params_frz%thl_1 + ( sign_rtpthlp * Lscale_pert_coef &
+                       * sqrt( max( pdf_params_frz%varnce_thl_1, thl_tol**2 ) ) )
+            thlm_pert_neg_rt = pdf_params_frz%thl_2 - ( sign_rtpthlp * Lscale_pert_coef &
+                       * sqrt( max( pdf_params_frz%varnce_thl_2, thl_tol**2 ) ) )
+            rtm_pert_neg_rt = pdf_params_frz%rt_2 &
+                       - Lscale_pert_coef * sqrt( max( pdf_params_frz%varnce_rt_2, rt_tol**2 ) )
+            !Lscale_weight = pdf_params%mixt_frac
+          else where
+            rtm_pert_pos_rt = pdf_params_frz%rt_2 &
+                       + Lscale_pert_coef * sqrt( max( pdf_params_frz%varnce_rt_2, rt_tol**2 ) )
+            thlm_pert_pos_rt = pdf_params_frz%thl_2 + ( sign_rtpthlp * Lscale_pert_coef &
+                       * sqrt( max( pdf_params_frz%varnce_thl_2, thl_tol**2 ) ) )
+            thlm_pert_neg_rt = pdf_params_frz%thl_1 - ( sign_rtpthlp * Lscale_pert_coef &
+                       * sqrt( max( pdf_params_frz%varnce_thl_1, thl_tol**2 ) ) )
+            rtm_pert_neg_rt = pdf_params_frz%rt_1 &
+                       - Lscale_pert_coef * sqrt( max( pdf_params_frz%varnce_rt_1, rt_tol**2 ) )
+            !Lscale_weight = 1.0_core_rknd - pdf_params%mixt_frac
+          end where
+        else
+          where ( pdf_params%rt_1 > pdf_params%rt_2 )
+            rtm_pert_pos_rt = pdf_params%rt_1 &
+                       + Lscale_pert_coef * sqrt( max( pdf_params%varnce_rt_1, rt_tol**2 ) )
+            thlm_pert_pos_rt = pdf_params%thl_1 + ( sign_rtpthlp * Lscale_pert_coef &
+                       * sqrt( max( pdf_params%varnce_thl_1, thl_tol**2 ) ) )
+            thlm_pert_neg_rt = pdf_params%thl_2 - ( sign_rtpthlp * Lscale_pert_coef &
+                       * sqrt( max( pdf_params%varnce_thl_2, thl_tol**2 ) ) )
+            rtm_pert_neg_rt = pdf_params%rt_2 &
+                       - Lscale_pert_coef * sqrt( max( pdf_params%varnce_rt_2, rt_tol**2 ) )
+            !Lscale_weight = pdf_params%mixt_frac
+          else where
+            rtm_pert_pos_rt = pdf_params%rt_2 &
+                       + Lscale_pert_coef * sqrt( max( pdf_params%varnce_rt_2, rt_tol**2 ) )
+            thlm_pert_pos_rt = pdf_params%thl_2 + ( sign_rtpthlp * Lscale_pert_coef &
+                       * sqrt( max( pdf_params%varnce_thl_2, thl_tol**2 ) ) )
+            thlm_pert_neg_rt = pdf_params%thl_1 - ( sign_rtpthlp * Lscale_pert_coef &
+                       * sqrt( max( pdf_params%varnce_thl_1, thl_tol**2 ) ) )
+            rtm_pert_neg_rt = pdf_params%rt_1 &
+                       - Lscale_pert_coef * sqrt( max( pdf_params%varnce_rt_1, rt_tol**2 ) )
+            !Lscale_weight = 1.0_core_rknd - pdf_params%mixt_frac
+          end where
+        end if
+
+        mu_pert_pos_rt  = newmu / Lscale_mu_coef
+        mu_pert_neg_rt  = newmu * Lscale_mu_coef
+
+        ! Call length with perturbed values of thl and rt
+        call compute_mixing_length( thvm, thlm_pert_pos_rt,                    & !intent(in)
+                           rtm_pert_pos_rt, em, Lscale_max, p_in_Pa,           & !intent(in)
+                           exner, thv_ds_zt, mu_pert_pos_rt, l_implemented,    & !intent(in)
+                           Lscale_pert_1, Lscale_up, Lscale_down ) !intent(out)
+
+        call compute_mixing_length( thvm, thlm_pert_neg_rt,                    & !intent(in)
+                           rtm_pert_neg_rt, em, Lscale_max, p_in_Pa,           & !intent(in)
+                           exner, thv_ds_zt, mu_pert_neg_rt, l_implemented,    & !intent(in)
+                           Lscale_pert_2, Lscale_up, Lscale_down ) !intent(out)
+      else
+        Lscale_pert_1 = unused_var ! Undefined
+        Lscale_pert_2 = unused_var ! Undefined
+
+      end if ! l_avg_Lscale
+
+      if ( l_stats_samp ) then
+        call stat_update_var( iLscale_pert_1, Lscale_pert_1, & ! intent(in)
+                              stats_zt )                       ! intent(inout)
+        call stat_update_var( iLscale_pert_2, Lscale_pert_2, & ! intent(in)
+                              stats_zt )                       ! intent(inout)
+      end if ! l_stats_samp
+
+
+      ! ********** NOTE: **********
+      ! This call to compute_mixing_length must be last.  Otherwise, the values
+      ! of
+      ! Lscale_up and Lscale_down in stats will be based on perturbation length
+      ! scales
+      ! rather than the mean length scale.
+
+      ! Diagnose CLUBB's turbulent mixing length scale.
+      call compute_mixing_length( thvm, thlm,                         & !intent(in)
+                           rtm, em, Lscale_max, p_in_Pa,              & !intent(in)
+                           exner, thv_ds_zt, newmu, l_implemented,    & !intent(in)
+                           Lscale, Lscale_up, Lscale_down ) !intent(out)
+
+      if ( l_avg_Lscale ) then
+        if ( l_Lscale_plume_centered ) then
+! Weighted average of mean, pert_1, & pert_2
+!       Lscale = 0.5_core_rknd * ( Lscale + Lscale_weight*Lscale_pert_1 &
+!                                  + (1.0_core_rknd-Lscale_weight)*Lscale_pert_2
+!                                  )
+! Weighted average of just the perturbed values
+!       Lscale = Lscale_weight*Lscale_pert_1 +
+!       (1.0_core_rknd-Lscale_weight)*Lscale_pert_2
+
+          ! Un-weighted average of just the perturbed values
+          Lscale = 0.5_core_rknd*( Lscale_pert_1 + Lscale_pert_2 )
+        else
+          Lscale = (1.0_core_rknd/3.0_core_rknd) * ( Lscale + Lscale_pert_1 + Lscale_pert_2 )
+        end if
+      end if
+
+     return
+ end subroutine  calc_Lscale_directly
+
+
 
 !===============================================================================
 

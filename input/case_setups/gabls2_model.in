@@ -125,7 +125,6 @@ sclr_tol  = 1.e-2, 1.e-8 ! Tolerances below which we consider scalar to be 0.
 edsclr_dim   = 2
 
 iiedsclr_thl = 1 ! Location in the edsclrm array to place a scalar like thetal
-l_prescribed_avg_deltaz = .false.
 
 iiedsclr_rt  = 2 ! Location in the edsclrm array to place a scalar like total water 
 

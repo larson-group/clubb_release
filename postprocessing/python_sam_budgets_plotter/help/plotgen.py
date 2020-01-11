@@ -1,3 +1,6 @@
+# TODO: Hide differences between SAM and CLUBB in functions
+#       -> Generate list of nc files from CLUBB and make variable getter process a list of nc files
+#       -> After that everything else should behave in the sa,e way for CLUBB and SAM
 
 # General imports
 import os
@@ -93,9 +96,9 @@ def load_nc(plots, cf, old_clubb=False):
     if old_clubb:
         logger.info('Loading netcdf for old CLUBB data.')
         try:
-            if plots.sortPlots_zm:
+            if 'clubb_zm' in plots.nc_files:
                 nc_list.append(Dataset(cf.old_clubb_zm_file, 'r'))
-            if plots.sortPlots_zt:
+            if 'clubb_zt' in plots.nc_files:
                 nc_list.append(Dataset(cf.old_clubb_zt_file, 'r'))
         except IOError as e:
             logger.error('The file {}, specified in the {} case file, could not be opened: {}'.format(e.filename, cf.case, e.message))
@@ -120,6 +123,8 @@ def get_t_dim(nc, create=False, dt=None):
 def get_h_dim(nc, model, create=False, cf=None):
     """
     Read from netcdf or generate array for height (z) dimension (In some netcdf files the dimension arrays are invalid)
+    TODO:   - Use grd if reading from nc fails
+            - If both fails, abort
     """
     logger.info('get_h_dim')
     if model=='clubb':
@@ -157,7 +162,7 @@ def get_values_from_prm(cf):
             prm = f.read()
     except IOError as ioe:
         logger.error('The file {}, specified as sam_prm in the {} case file, could not be opened: {}'.format(ioe.filename, cf.case, ioe.message))
-        sys.exit()
+        return None
     prm_vars = {}
     logger.debug(prm)
     for var in prm_patterns:
@@ -173,7 +178,10 @@ def get_values_from_prm(cf):
 
 def get_all_variables(nc, lines, plotLabels, nh, nt, t0, t1, h0, h1, filler=0):
     """
-    TODO: Include pb.get_units in output structure?
+    TODO:   - Include pb.get_units in output structure?
+            - Adapt variable to clubb's multiple nc files: Pass a list of nc files and try each one for the given variable name
+                This would hide the differences between SAM and CLUBB
+            - Use constants to access line elements
     Get variables from netcdf and store in dictionary with the following structure:
     dict entry: 'variable name' : [<plot info>]
     1 entry = 1 plot
@@ -238,6 +246,7 @@ def get_all_variables(nc, lines, plotLabels, nh, nt, t0, t1, h0, h1, filler=0):
         for j,var in enumerate(l):
             logger.info("Getting variable %s", var[0])
             if var[2] is None:
+                # TODO: conversion factor is not applied to function entries!!!
                 logger.debug("Adding dummy line")
                 plot_lines.append([var[0], var[1], var[2], var[4], None])
             elif not isFunction(var[2]):
@@ -266,6 +275,11 @@ def get_all_variables(nc, lines, plotLabels, nh, nt, t0, t1, h0, h1, filler=0):
                             data = pb.mean_profiles(data, t0, t1, h0, h1)
                         else:
                             data = pb.mean_profiles(data, t0, t1, 0, nh)
+                    else:
+                        # Slice here in order to have right dimensions for function calculations
+                        if data.shape[1]>nh:
+                            data = data[t0:t1,h0:h1]
+                        logger.debug(data.shape)
                 else:
                     # No time averaging
                     if data.ndim==2 and data.shape[1]>nh:
@@ -303,6 +317,10 @@ def get_all_variables(nc, lines, plotLabels, nh, nt, t0, t1, h0, h1, filler=0):
                 #logger.debug('Expression after replacement: %s',expression)
                 try:
                     data = eval(expression)
+                    if np.any(np.isnan(data)) or np.any(np.isinf(data)):
+                        # if there are invalid data points in the variable replace by filler value
+                        logger.warning("Invalid data in variable %s of plot %s. The entries will be replaced by the fill value %s", var[0], plotLabels[i], str(filler))
+                        data = np.where(np.isinf(data), filler, data)
                 except Exception as e:
                     logger.error('Expression %s of line %s in plot %s could not be evaluated: %s', expression, plotLabels[i], func[0], e.message)
                     data = np.full(nh, np.nan)
@@ -314,10 +332,11 @@ def get_all_variables(nc, lines, plotLabels, nh, nt, t0, t1, h0, h1, filler=0):
             for i in range(len(plot_lines)):
                 data = plot_lines[i][4]
                 if data is not None:
-                    if data.shape[1]>nh:
-                        plot_lines[i][4] = pb.mean_profiles(data, t0, t1, h0, h1)
-                    else:
-                        plot_lines[i][4] = pb.mean_profiles(data, t0, t1, 0, nh)
+                    plot_lines[i][4] = pb.mean_profiles(data, 0, nt, 0, nh)
+                    #if data.shape[1]>nh:
+                        #plot_lines[i][4] = pb.mean_profiles(data, t0, t1, h0, h1)
+                    #else:
+                        #plot_lines[i][4] = pb.mean_profiles(data, t0, t1, 0, nh)
         plot_data.append(plot_lines)
     
     return dict(zip(plotLabels, plot_data))
@@ -335,22 +354,38 @@ def plot_default(plots, cf, data, h, centering):
     pdf = PdfPages(out_pdf)
     # Loop over plots
     imageNames = []
-    for i,plot_label in enumerate(plots.sortPlots):
-        logger.info('Generating plot %s', plot_label)
-        title, units = plots.plotNames[i]
+    
+    #for i,plot_label in enumerate(plots.sortPlots):
+        #logger.info('Generating plot %s', plot_label)
+        #title, units = plots.plotNames[i]
+        ##title = plots.plots[i][PLOT_TITLE]
+        ##units = plots.plots[i][PLOT_XLABEL]
+        ## pb.get_units() needs nc
+        #name = plot_case_name.format(plot=plot_label)
+        #imageNames.append(name)
+        #if 'budget' in plots.name:
+            #prefix = plots.prefix+', '
+            #else:
+                #prefix = ''
+                #if cf.endTime>cf.startTime:
+                    #title2 = ', {case}, t={startTime:.0f}-{endTime:.0f} min'.format(case=cf.full_name, startTime=cf.startTime, endTime=cf.endTime)
+                    #else:
+                        #title2 = ', {case}, t={startTime:.0f} min'.format(case=cf.full_name, startTime=cf.startTime)
+                        #pb.plot_profiles(data[plot_label], h, units, cf.yLabel, prefix+title+title2, os.path.join(jpg_dir,name), textEntry=plots.plotText, textPos=plots.textPos,startLevel=plots.startLevel, lw=cf.lw, grid=False, centering=centering, pdf=pdf)
+                        ##pb.plot_profiles(data[plot_label], h, units, cf.yLabel, title+title2, os.path.join(jpg_dir,name), startLevel=plots.startLevel, lw=cf.lw, grid=False, centering=np.any([el[3]==1 for el in data[plot_label]]), pdf=pdf)
+    for plot_info in plots.plots:
+        logger.info('Generating plot %s', plot_info[PLOT_ID])
+        title = plot_info[PLOT_TITLE]
+        units = plot_info[PLOT_XLABEL]
         # pb.get_units() needs nc
-        name = plot_case_name.format(plot=plot_label)
+        name = plot_case_name.format(plot=plot_info[PLOT_ID])
         imageNames.append(name)
-        if 'budget' in plots.name:
-            prefix = plots.prefix+', '
-        else:
-            prefix = ''
         if cf.endTime>cf.startTime:
             title2 = ', {case}, t={startTime:.0f}-{endTime:.0f} min'.format(case=cf.full_name, startTime=cf.startTime, endTime=cf.endTime)
         else:
             title2 = ', {case}, t={startTime:.0f} min'.format(case=cf.full_name, startTime=cf.startTime)
-        pb.plot_profiles(data[plot_label], h, units, cf.yLabel, prefix+title+title2, os.path.join(jpg_dir,name), startLevel=plots.startLevel, lw=cf.lw, grid=False, centering=centering, pdf=pdf)
-        #pb.plot_profiles(data[plot_label], h, units, cf.yLabel, title+title2, os.path.join(jpg_dir,name), startLevel=plots.startLevel, lw=cf.lw, grid=False, centering=np.any([el[3]==1 for el in data[plot_label]]), pdf=pdf)
+        #pb.plot_profiles(data[plot_info[PLOT_ID]], h, units, cf.yLabel, plots.prefix+title+title2, os.path.join(jpg_dir,name), textEntry=plot_info[PLOT_TEXT], textPos=plot_info[PLOT_TEXTPOS], startLevel=plots.startLevel, lw=cf.lw, grid=False, centering=centering, pdf=pdf)
+        pb.plot_profiles(data[plot_info[PLOT_ID]], h, units, cf.yLabel, plots.prefix+title+title2, os.path.join(jpg_dir,name), textEntry=plot_info[PLOT_TEXT], textPos=plot_info[PLOT_TEXTPOS], lw=cf.lw, grid=False, centering=centering, pdf=pdf)
     pdf.close()
     
     # write html page
@@ -371,7 +406,8 @@ def plot_default(plots, cf, data, h, centering):
         reader = pdfr(inpdf) # open pdf input class
         writer.appendPagesFromReader(reader) # copy all pages to output
         for i in range(writer.getNumPages()):
-            writer.addBookmark(plots.sortPlots[i], i, parent=None) # add bookmark
+            #writer.addBookmark(plots.sortPlots[i], i, parent=None) # add bookmark
+            writer.addBookmark(plots.plots[i][PLOT_ID], i, parent=None) # add bookmark
         writer.setPageMode("/UseOutlines") # make pdf open bookmarks overview
         with open(os.path.join(out_dir,'tmp.pdf'),'wb') as tmp_pdf: # open output pdf file
             writer.write(tmp_pdf) # write pdf content to output file
@@ -392,17 +428,25 @@ def plot_default(plots, cf, data, h, centering):
     prms = [
         '# simulation parameters',
         '(nx, ny, nz) = ({}, {}, {})'.format(cf.nx, cf.ny, cf.nz),
-        'sampling time = {}-{}min'.format(cf.startTime, cf.endTime),
-        'dx = {}'.format(cf.dxy),
-        'dy = {}'.format(cf.dxy),
-        'dz = {}'.format(cf.dz),
-        'height = {} - {}'.format(cf.startHeight, cf.endHeight)
+        'sampling time = {} - {} min'.format(cf.startTime, cf.endTime),
+        'dx = {} m'.format(cf.dxy),
+        'dy = {} m'.format(cf.dxy),
+        'dz = {} m'.format(cf.dz),
+        'height = {} - {} m'.format(cf.startHeight, cf.endHeight)
         ]
+    if 'clubb' in plots.name.lower():
+        prms.extend([
+            'CLUBB zm input file name = {}'.format(cf.clubb_zm_file),
+            'CLUBB zt input file name = {}'.format(cf.clubb_zt_file)
+            ])
+    else:
+        prms.append('SAM input file name = {}'.format(cf.sam_file))
     param_file.write('\n'.join(prms))
     param_file.close()
 
 
-def plot_3d(plots, cf, data, h, h_limits, h_extent, prm_vars, fps=2, dil_len=1, gif=False):
+#def plot_3d(plots, cf, data, h, h_limits, h_extent, prm_vars, fps=2, dil_len=1, gif=False):
+def plot_3d(plots, cf, data, h, h_limits, h_extent, fps=2, dil_len=1, gif=False):
     """
     Generates horizontal output showing cloud outlines and wind speeds
     Additionally, creates cloud conditional profiles
@@ -716,7 +760,8 @@ def plot_3d(plots, cf, data, h, h_limits, h_extent, prm_vars, fps=2, dil_len=1, 
         x = dims[1],
         y = dims[2],
         z = dims[0],
-        dx = prm_vars['dx'],
+        #dx = prm_vars['dx'],
+        dx = cf.dxy,
         dz = h_extent.mean(),
         t = (cf.time_3d*cf.dt)/60.
         )
@@ -837,14 +882,14 @@ def plot_3d(plots, cf, data, h, h_limits, h_extent, prm_vars, fps=2, dil_len=1, 
         # Format plot
         wt_title = wt.replace('_',' ')
         fig.suptitle(title.format(h=h[framenumber], wt=wt_title), fontsize=fontsizes['title'])
-        #logger.debug("Set ylim to (%f, %f)", -prm_vars['dx'], dims[1]*prm_vars['dx'])
+        #logger.debug("Set ylim to (%f, %f)", -cf.dxy, dims[1]*cf.dxy)
         ax1.set_xlim(-.6, dims[1]-.4)
         ax1.set_ylim(-.6, dims[2]-.4)
         ax2.set_ylim(0, h_limits[-1])
         ax2.yaxis.tick_right()
         ax2.yaxis.set_label_position('right')
-        ax1.set_xlabel(r'Eastward grid dimension $\mathrm{{\left[{:.0f} m\right]}}$'.format(prm_vars['dx']), fontsize=fontsizes['labels'])
-        ax1.set_ylabel(r'Northward grid dimension $\mathrm{{\left[{:.0f} m\right]}}$'.format(prm_vars['dx']), fontsize=fontsizes['labels'])
+        ax1.set_xlabel(r'Eastward grid dimension $\mathrm{{\left[{:.0f} m\right]}}$'.format(cf.dxy), fontsize=fontsizes['labels'])
+        ax1.set_ylabel(r'Northward grid dimension $\mathrm{{\left[{:.0f} m\right]}}$'.format(cf.dxy), fontsize=fontsizes['labels'])
         ax1.set_title('Cloud cover and {}'.format(wt_title.split('+')[0]), loc ='left', fontsize=fontsizes['title'])
         ax2.set_title('Profile of momentum fluxes', fontsize=fontsizes['title'])
         ax2.set_ylabel(r'Cloud fraction / Height $\mathrm{\left[m\right]}$', fontsize=fontsizes['labels'])
@@ -862,7 +907,7 @@ def plot_3d(plots, cf, data, h, h_limits, h_extent, prm_vars, fps=2, dil_len=1, 
         #logger.debug('xticks old: %s',str(list(ax1.get_xticklabels())))
         #for el in ax1.get_xticks():
             #try:
-                #labels.append(int(el*prm_vars['dx']))
+                #labels.append(int(el*cf.dxy))
             #except ValueError as ve:
                 #labels.append('')
         #ax1.set_xticklabels(labels)
@@ -871,7 +916,7 @@ def plot_3d(plots, cf, data, h, h_limits, h_extent, prm_vars, fps=2, dil_len=1, 
         ##logger.debug('yticks old: %s',str(list(ax1.get_yticklabels())))
         #for el in ax1.get_yticks():
             #try:
-                #labels.append(int(el*prm_vars['dx']))
+                #labels.append(int(el*cf.dxy))
             #except ValueError as ve:
                 #labels.append('')
         #ax1.set_yticklabels(labels)
@@ -1019,36 +1064,48 @@ def plot_3d(plots, cf, data, h, h_limits, h_extent, prm_vars, fps=2, dil_len=1, 
                   #]
     # UW plots
     for k in range(len(uw_plots)):
-        pb.plot_profiles([uw_plots[k]], h[:cutoff], r"Cloud Conditional $\mathrm{\overline{u'w'}\ \left[\frac{m^2}{s^2}\right]}$", cf.yLabel, uw_plots[k][0], os.path.join(jpg_dir,'uw_cld{}'.format(k)), startLevel=0, lw=cf.lw, grid=False, centering=False, pdf=uw_pdf)
+        #pb.plot_profiles([uw_plots[k]], h[:cutoff], r"Cloud Conditional $\mathrm{\overline{u'w'}\ \left[\frac{m^2}{s^2}\right]}$", cf.yLabel, uw_plots[k][0], os.path.join(jpg_dir,'uw_cld{}'.format(k)), startLevel=0, lw=cf.lw, grid=False, centering=False, pdf=uw_pdf)
+        pb.plot_profiles([uw_plots[k]], h[:cutoff], r"Cloud Conditional $\mathrm{\overline{u'w'}\ \left[\frac{m^2}{s^2}\right]}$", cf.yLabel, uw_plots[k][0], os.path.join(jpg_dir,'uw_cld{}'.format(k)), lw=cf.lw, grid=False, centering=False, pdf=uw_pdf)
 
-    pb.plot_profiles([["u'^2",True,'dummy',0,np.nanmean(up*up, axis=(1,2))]], h, "u'^2", cf.yLabel, "u'^2", os.path.join(jpg_dir,'up2'), startLevel=0, lw=cf.lw, grid=False, centering=False, pdf=uw_pdf)
+    #pb.plot_profiles([["u'^2",True,'dummy',0,np.nanmean(up*up, axis=(1,2))]], h, "u'^2", cf.yLabel, "u'^2", os.path.join(jpg_dir,'up2'), startLevel=0, lw=cf.lw, grid=False, centering=False, pdf=uw_pdf)
+    pb.plot_profiles([["u'^2",True,'dummy',0,np.nanmean(up*up, axis=(1,2))]], h, "u'^2", cf.yLabel, "u'^2", os.path.join(jpg_dir,'up2'), lw=cf.lw, grid=False, centering=False, pdf=uw_pdf)
     
-    pb.plot_profiles(uw_plots, h[:cutoff], r"Cloud conditional $\mathrm{\overline{u'w'}\ \left[\frac{m^2}{s^2}\right]}$", cf.yLabel, r"Conditional means of $\mathrm{\overline{u'w'}}$", os.path.join(jpg_dir,'uw_cld_all'), startLevel=0, lw=cf.lw, grid=False, centering=True, pdf=uw_pdf)
+    #pb.plot_profiles(uw_plots, h[:cutoff], r"Cloud conditional $\mathrm{\overline{u'w'}\ \left[\frac{m^2}{s^2}\right]}$", cf.yLabel, r"Conditional means of $\mathrm{\overline{u'w'}}$", os.path.join(jpg_dir,'uw_cld_all'), startLevel=0, lw=cf.lw, grid=False, centering=True, pdf=uw_pdf)
+    pb.plot_profiles(uw_plots, h[:cutoff], r"Cloud conditional $\mathrm{\overline{u'w'}\ \left[\frac{m^2}{s^2}\right]}$", cf.yLabel, r"Conditional means of $\mathrm{\overline{u'w'}}$", os.path.join(jpg_dir,'uw_cld_all'), lw=cf.lw, grid=False, centering=True, pdf=uw_pdf)
     
     # TODO: Add standard mean u
-    #pb.plot_profiles([["Extended in-cloud mean of u",True,0,u_cld_mean]], h, r"Extended Cloud Conditional $\mathrm{\bar{u}\ \left[\frac{m}{s}\right]}$", cf.yLabel, "Extended Conditional mean of u", os.path.join(jpg_dir,'u_cld_mean'), startLevel=0, lw=cf.lw, grid=False, centering=False, pdf=uw_pdf)
+    ##pb.plot_profiles([["Extended in-cloud mean of u",True,0,u_cld_mean]], h, r"Extended Cloud Conditional $\mathrm{\bar{u}\ \left[\frac{m}{s}\right]}$", cf.yLabel, "Extended Conditional mean of u", os.path.join(jpg_dir,'u_cld_mean'), startLevel=0, lw=cf.lw, grid=False, centering=False, pdf=uw_pdf)
+    #pb.plot_profiles([["Extended in-cloud mean of u",True,0,u_cld_mean]], h, r"Extended Cloud Conditional $\mathrm{\bar{u}\ \left[\frac{m}{s}\right]}$", cf.yLabel, "Extended Conditional mean of u", os.path.join(jpg_dir,'u_cld_mean'), lw=cf.lw, grid=False, centering=False, pdf=uw_pdf)
     
     # U plots
-    pb.plot_profiles(um_plots, h[:cutoff], r"Cloud conditional $\mathrm{\bar{u}\ \left[\frac{m}{s}\right]}$", cf.yLabel, "Comparison of conditional means of u", os.path.join(jpg_dir, 'u_cld_all'), startLevel=0, lw=cf.lw, grid=False, centering=False, pdf=uw_pdf)
+    #pb.plot_profiles(um_plots, h[:cutoff], r"Cloud conditional $\mathrm{\bar{u}\ \left[\frac{m}{s}\right]}$", cf.yLabel, "Comparison of conditional means of u", os.path.join(jpg_dir, 'u_cld_all'), startLevel=0, lw=cf.lw, grid=False, centering=False, pdf=uw_pdf)
+    pb.plot_profiles(um_plots, h[:cutoff], r"Cloud conditional $\mathrm{\bar{u}\ \left[\frac{m}{s}\right]}$", cf.yLabel, "Comparison of conditional means of u", os.path.join(jpg_dir, 'u_cld_all'), lw=cf.lw, grid=False, centering=False, pdf=uw_pdf)
 
     # VW plots
     for k in range(len(vw_plots)):
-        pb.plot_profiles([vw_plots[k]], h[:cutoff], r"Cloud conditional $\mathrm{\overline{v'w'}\ \left[\frac{m^2}{s^2}\right]}$", cf.yLabel, vw_plots[k][0], os.path.join(jpg_dir,'vw_cld{}'.format(k)), startLevel=0, lw=cf.lw, grid=False, centering=False, pdf=uw_pdf)
-        
-    pb.plot_profiles([["v'^2",True,'dummy', 0,np.nanmean(vp*vp, axis=(1,2))]], h, "v'^2", cf.yLabel, "v'^2", os.path.join(jpg_dir,'vp2'), startLevel=0, lw=cf.lw, grid=False, centering=False, pdf=uw_pdf)
+        #pb.plot_profiles([vw_plots[k]], h[:cutoff], r"Cloud conditional $\mathrm{\overline{v'w'}\ \left[\frac{m^2}{s^2}\right]}$", cf.yLabel, vw_plots[k][0], os.path.join(jpg_dir,'vw_cld{}'.format(k)), startLevel=0, lw=cf.lw, grid=False, centering=False, pdf=uw_pdf)
+        pb.plot_profiles([vw_plots[k]], h[:cutoff], r"Cloud conditional $\mathrm{\overline{v'w'}\ \left[\frac{m^2}{s^2}\right]}$", cf.yLabel, vw_plots[k][0], os.path.join(jpg_dir,'vw_cld{}'.format(k)), lw=cf.lw, grid=False, centering=False, pdf=uw_pdf)
     
-    pb.plot_profiles(vw_plots, h[:cutoff], r"Cloud conditional $\mathrm{\overline{v'w'}\ \left[\frac{m^2}{s^2}\right]}$", cf.yLabel, r"Conditional means of $\mathrm{\overline{v'w'}}$", os.path.join(jpg_dir,'vw_cld_all'), startLevel=0, lw=cf.lw, grid=False, centering=True, pdf=uw_pdf)
+    #pb.plot_profiles([["v'^2",True,'dummy', 0,np.nanmean(vp*vp, axis=(1,2))]], h, "v'^2", cf.yLabel, "v'^2", os.path.join(jpg_dir,'vp2'), startLevel=0, lw=cf.lw, grid=False, centering=False, pdf=uw_pdf)
+    pb.plot_profiles([["v'^2",True,'dummy', 0,np.nanmean(vp*vp, axis=(1,2))]], h, "v'^2", cf.yLabel, "v'^2", os.path.join(jpg_dir,'vp2'), lw=cf.lw, grid=False, centering=False, pdf=uw_pdf)
     
-    pb.plot_profiles(wq_plots, h[:cutoff], r"Cloud conditional $\mathrm{\overline{w'q_n'}\ \left[g\,m\,kg^{-1}\,s^{-1}\right]}$", cf.yLabel, r"Conditional means of $\overline{w'q_n'}}$", os.path.join(jpg_dir,'wq_cld_all'), startLevel=0, lw=cf.lw, grid=False, centering=True, pdf=uw_pdf)
+    #pb.plot_profiles(vw_plots, h[:cutoff], r"Cloud conditional $\mathrm{\overline{v'w'}\ \left[\frac{m^2}{s^2}\right]}$", cf.yLabel, r"Conditional means of $\mathrm{\overline{v'w'}}$", os.path.join(jpg_dir,'vw_cld_all'), startLevel=0, lw=cf.lw, grid=False, centering=True, pdf=uw_pdf)
+    pb.plot_profiles(vw_plots, h[:cutoff], r"Cloud conditional $\mathrm{\overline{v'w'}\ \left[\frac{m^2}{s^2}\right]}$", cf.yLabel, r"Conditional means of $\mathrm{\overline{v'w'}}$", os.path.join(jpg_dir,'vw_cld_all'), lw=cf.lw, grid=False, centering=True, pdf=uw_pdf)
+    
+    #pb.plot_profiles(wq_plots, h[:cutoff], r"Cloud conditional $\mathrm{\overline{w'q_n'}\ \left[g\,m\,kg^{-1}\,s^{-1}\right]}$", cf.yLabel, r"Conditional means of $\overline{w'q_n'}}$", os.path.join(jpg_dir,'wq_cld_all'), startLevel=0, lw=cf.lw, grid=False, centering=True, pdf=uw_pdf)
+    pb.plot_profiles(wq_plots, h[:cutoff], r"Cloud conditional $\mathrm{\overline{w'q_n'}\ \left[g\,m\,kg^{-1}\,s^{-1}\right]}$", cf.yLabel, r"Conditional means of $\overline{w'q_n'}}$", os.path.join(jpg_dir,'wq_cld_all'), lw=cf.lw, grid=False, centering=True, pdf=uw_pdf)
     
     # TODO: Add standard mean v
-    #pb.plot_profiles([["Extended in-cloud mean of v",True,0,v_cld_mean]], h, r"Extended Cloud Conditional $\mathrm{\bar{v}\ \left[\frac{m}{s}\right]}$", cf.yLabel, "Extended Conditional mean of v", os.path.join(jpg_dir,'v_cld_mean'), startLevel=0, lw=cf.lw, grid=False, centering=False, pdf=uw_pdf)
+    ##pb.plot_profiles([["Extended in-cloud mean of v",True,0,v_cld_mean]], h, r"Extended Cloud Conditional $\mathrm{\bar{v}\ \left[\frac{m}{s}\right]}$", cf.yLabel, "Extended Conditional mean of v", os.path.join(jpg_dir,'v_cld_mean'), startLevel=0, lw=cf.lw, grid=False, centering=False, pdf=uw_pdf)
+    #pb.plot_profiles([["Extended in-cloud mean of v",True,0,v_cld_mean]], h, r"Extended Cloud Conditional $\mathrm{\bar{v}\ \left[\frac{m}{s}\right]}$", cf.yLabel, "Extended Conditional mean of v", os.path.join(jpg_dir,'v_cld_mean'), lw=cf.lw, grid=False, centering=False, pdf=uw_pdf)
     
     # V plots
-    pb.plot_profiles(vm_plots, h[:cutoff], r"Cloud conditional $\mathrm{\bar{v}\ \left[\frac{m}{s}\right]}$", cf.yLabel, "Comparison of conditional means of v", os.path.join(jpg_dir, 'v_cld_all'), startLevel=0, lw=cf.lw, grid=False, centering=False, pdf=uw_pdf)
+    #pb.plot_profiles(vm_plots, h[:cutoff], r"Cloud conditional $\mathrm{\bar{v}\ \left[\frac{m}{s}\right]}$", cf.yLabel, "Comparison of conditional means of v", os.path.join(jpg_dir, 'v_cld_all'), startLevel=0, lw=cf.lw, grid=False, centering=False, pdf=uw_pdf)
+    pb.plot_profiles(vm_plots, h[:cutoff], r"Cloud conditional $\mathrm{\bar{v}\ \left[\frac{m}{s}\right]}$", cf.yLabel, "Comparison of conditional means of v", os.path.join(jpg_dir, 'v_cld_all'), lw=cf.lw, grid=False, centering=False, pdf=uw_pdf)
     
     # W plots
-    pb.plot_profiles(wm_plots, h[:cutoff], r"Cloud conditional $\mathrm{\bar{w}\ \left[\frac{m}{s}\right]}$", cf.yLabel, "Comparison of conditional means of w", os.path.join(jpg_dir, 'w_cld_all'), startLevel=0, lw=cf.lw, grid=False, centering=False, pdf=uw_pdf)
+    #pb.plot_profiles(wm_plots, h[:cutoff], r"Cloud conditional $\mathrm{\bar{w}\ \left[\frac{m}{s}\right]}$", cf.yLabel, "Comparison of conditional means of w", os.path.join(jpg_dir, 'w_cld_all'), startLevel=0, lw=cf.lw, grid=False, centering=False, pdf=uw_pdf)
+    pb.plot_profiles(wm_plots, h[:cutoff], r"Cloud conditional $\mathrm{\bar{w}\ \left[\frac{m}{s}\right]}$", cf.yLabel, "Comparison of conditional means of w", os.path.join(jpg_dir, 'w_cld_all'), lw=cf.lw, grid=False, centering=False, pdf=uw_pdf)
     
     ## UTHV plot
     #for k in range(len(upthvp_plots)):
@@ -1096,7 +1153,9 @@ def plot_3d(plots, cf, data, h, h_limits, h_extent, prm_vars, fps=2, dil_len=1, 
         'cloud recognition limit for water vapor = {}'.format(cld_lim),
         'background interpolation method = {}'.format(cloud_interpolation),
         'cloud halo dilation length'.format(dil_len),
-        'convariance percentile cutoff = {}'.format(quant)
+        'convariance percentile cutoff = {}'.format(quant),
+        '3D input file name = {}'.format(cf.sam_3d_file),
+        '2D input file name = {}'.format(cf.sam_file),
         ]
     param_file.write('\n'.join(prms))
     param_file.close()
@@ -1114,24 +1173,58 @@ def plot_comparison(plots, cf, data_clubb, data_sam, h_clubb, h_sam, plot_old_cl
     out_dir, jpg_dir, plot_case_name, out_pdf = init_plotgen(plots, cf)
     # Create  output pdf
     pdf = PdfPages(out_pdf)
+    # Create image name list for html page
+    imageNames = []
+    
     # Loop over plots
-    for i, plot_label in enumerate(plots.sortPlots):
-        logger.info('Generating plot %s', plot_label)
-        title, units = plots.plotNames[i]
-        if 'budget' in plots.name:
-            prefix = plots.prefix+', '
-        else:
-            prefix = ''
+    #for i, plot_label in enumerate(plots.sortPlots):
+        #logger.info('Generating plot %s', plot_label)
+        #title, units = plots.plotNames[i]
+        ##title = plots.plots[i][PLOT_TITLE]
+        ##units = plots.plots[i][PLOT_XLABEL]
+        #if 'budget' in plots.name.lower():
+            #prefix = plots.prefix+', '
+        #else:
+            #prefix = ''
+        #if cf.endTime>cf.startTime:
+            #title2 = ', {case}, t={startTime:.0f}-{endTime:.0f} min'.format(case=cf.full_name, startTime=cf.startTime, endTime=cf.endTime)
+        #else:
+            #title2 = ', {case}, t={startTime:.0f} min'.format(case=cf.full_name, startTime=cf.startTime)
+        #if plot_old_clubb:
+            #pb.plot_comparison(data_clubb[plot_label], data_sam[plot_label], h_clubb, h_sam, units, cf.yLabel, prefix+title+title2, os.path.join(jpg_dir, plot_case_name.format(plot=plot_label)), textEntry=plots.plotText, textPos=plots.textPos, startLevel=plots.startLevel, grid=False, pdf=pdf, plot_old_clubb=plot_old_clubb, data_old=data_old[plot_label], level_old=h_old)
+        #else:
+            #pb.plot_comparison(data_clubb[plot_label], data_sam[plot_label], h_clubb, h_sam, units, cf.yLabel, prefix+title+title2, os.path.join(jpg_dir, plot_case_name.format(plot=plot_label)), textEntry=plots.plotText, textPos=plots.textPos, startLevel=plots.startLevel, grid=False, pdf=pdf)
+    
+    for plot_info in plots.plots:
+        #logger.debug(plot_info)
+        logger.info('Generating plot %s', plot_info[PLOT_ID])
+        #title, units = plots.plotNames[i]
+        title = plot_info[PLOT_TITLE]
+        units = plot_info[PLOT_XLABEL]
+        name = plot_case_name.format(plot=plot_info[PLOT_ID])
+        imageNames.append(name)
         if cf.endTime>cf.startTime:
             title2 = ', {case}, t={startTime:.0f}-{endTime:.0f} min'.format(case=cf.full_name, startTime=cf.startTime, endTime=cf.endTime)
         else:
             title2 = ', {case}, t={startTime:.0f} min'.format(case=cf.full_name, startTime=cf.startTime)
         if plot_old_clubb:
-            pb.plot_comparison(data_clubb[plot_label], data_sam[plot_label], h_clubb, h_sam, units, cf.yLabel, prefix+title+title2, os.path.join(jpg_dir, plot_case_name.format(plot=plot_label)), startLevel=0, grid=False, pdf=pdf, plot_old_clubb=plot_old_clubb, data_old=data_old[plot_label], level_old=h_old)
+            #pb.plot_comparison(data_clubb[plot_info[PLOT_ID]], data_sam[plot_info[PLOT_ID]], h_clubb, h_sam, units, cf.yLabel, plots.prefix+title+title2, os.path.join(jpg_dir, plot_case_name.format(plot=plot_info[PLOT_ID])), textEntry=plot_info[PLOT_TEXT], textPos=plot_info[PLOT_TEXTPOS], startLevel=plots.startLevel, grid=False, pdf=pdf, plot_old_clubb=plot_old_clubb, data_old=data_old[plot_info[PLOT_ID]], level_old=h_old)
+            pb.plot_comparison(data_clubb[plot_info[PLOT_ID]], data_sam[plot_info[PLOT_ID]], h_clubb, h_sam, units, cf.yLabel, plots.prefix+title+title2, os.path.join(jpg_dir, name), textEntry=plot_info[PLOT_TEXT], textPos=plot_info[PLOT_TEXTPOS], grid=False, pdf=pdf, plot_old_clubb=plot_old_clubb, data_old=data_old[plot_info[PLOT_ID]], level_old=h_old)
         else:
-            pb.plot_comparison(data_clubb[plot_label], data_sam[plot_label], h_clubb, h_sam, units, cf.yLabel, prefix+title+title2, os.path.join(jpg_dir, plot_case_name.format(plot=plot_label)), startLevel=plots.startLevel, grid=False, pdf=pdf)
+            #pb.plot_comparison(data_clubb[plot_info[PLOT_ID]], data_sam[plot_info[PLOT_ID]], h_clubb, h_sam, units, cf.yLabel, plots.prefix+title+title2, os.path.join(jpg_dir, plot_case_name.format(plot=plot_info[PLOT_ID])), textEntry=plot_info[PLOT_TEXT], textPos=plot_info[PLOT_TEXTPOS], startLevel=plots.startLevel, grid=False, pdf=pdf)
+            pb.plot_comparison(data_clubb[plot_info[PLOT_ID]], data_sam[plot_info[PLOT_ID]], h_clubb, h_sam, units, cf.yLabel, plots.prefix+title+title2, os.path.join(jpg_dir, name), textEntry=plot_info[PLOT_TEXT], textPos=plot_info[PLOT_TEXTPOS], grid=False, pdf=pdf)
     pdf.close()
-    # TODO: Generate html
+    
+    # write html page
+    logger.info("Writing HTML page")
+    index = out_dir + 'index.html'
+    mode = 'Splotgen'
+    logger.debug("HTML header template: "+cf.headerText)
+    headerText = cf.headerText.format(type=plots.header)
+    logger.debug("HTML header: "+headerText)
+    ow.writeNavPage(out_dir, headerText)
+    ow.writePlotsPage(out_dir, headerText, mode, imageNames)
+    ow.writeIndex(index, mode)
     
     ## Add bookmarks to pdf output:
     logger.info("Add bookmarks to pdf output")
@@ -1140,7 +1233,8 @@ def plot_comparison(plots, cf, data_clubb, data_sam, h_clubb, h_sam, plot_old_cl
         reader = pdfr(inpdf) # open pdf input class
         writer.appendPagesFromReader(reader) # copy all pages to output
         for i in range(writer.getNumPages()):
-            writer.addBookmark(plots.sortPlots[i], i, parent=None) # add bookmark
+            #writer.addBookmark(plots.sortPlots[i], i, parent=None) # add bookmark
+            writer.addBookmark(plots.plots[i][PLOT_ID], i, parent=None) # add bookmark
         writer.setPageMode("/UseOutlines") # make pdf open bookmarks overview
         with open(os.path.join(out_dir,'tmp.pdf'),'wb') as tmp_pdf: # open output pdf file
             writer.write(tmp_pdf) # write pdf content to output file
@@ -1165,7 +1259,12 @@ def plot_comparison(plots, cf, data_clubb, data_sam, h_clubb, h_sam, plot_old_cl
         'dx = {}'.format(cf.dxy),
         'dy = {}'.format(cf.dxy),
         'dz = {}'.format(cf.dz),
-        'height = {} - {}'.format(cf.startHeight, cf.endHeight)
+        'height = {} - {}'.format(cf.startHeight, cf.endHeight),
+        'SAM input file name = {}'.format(cf.sam_file),
+        'New CLUBB zm input file name = {}'.format(cf.clubb_zm_file),
+        'New CLUBB zt input file name = {}'.format(cf.clubb_zt_file),
+        'Old CLUBB zm input file name = {}'.format(cf.old_clubb_zm_file),
+        'Old CLUBB zt input file name = {}'.format(cf.old_clubb_zt_file),
         ]
     param_file.write('\n'.join(prms))
     param_file.close()
@@ -1183,12 +1282,13 @@ def plotgen_default(plots, cf):
     """
     logger.info("plotgen_default")
     ncs = load_nc(plots, cf)
-    if 'clubb' in plots.name:
+    if 'clubb' in plots.name.lower():
         # Separate CLUBB nc files
-        if plots.sortPlots_zm and plots.sortPlots_zt:
+        #if plots.sortPlots_zm and plots.sortPlots_zt:
+        if all([ncfile in plots.nc_files for ncfile in ['clubb_zm', 'clubb_zt']]):
             nc_zm, nc_zt = ncs
             nc = nc_zm
-        elif plots.sortPlots_zm:
+        elif 'clubb_zm' in plots.nc_files:
             nc_zm, = ncs
             nc = nc_zm
             nc_zt = None
@@ -1202,43 +1302,50 @@ def plotgen_default(plots, cf):
     logger.info('Fetching dimension variables')
     t = get_t_dim(nc)
     # Distinguish between CLUBB and SAM, as z dimension variables have different names
-    if 'clubb' in plots.name:
+    if 'clubb' in plots.name.lower():
         h = get_h_dim(nc, model='clubb')
     else:
         h = get_h_dim(nc_sam, model='sam')
     logger.info('Find nearest levels to case setup')
     idx_h0 = (np.abs(h - cf.startHeight)).argmin()
-    idx_h1 = (np.abs(h - cf.endHeight)).argmin()+1
+    idx_h1 = min((np.abs(h - cf.endHeight)).argmin()+1, h.size-1)
     logger.debug("Height indices: %d, %d", idx_h0, idx_h1)
     logger.debug("Height limits: %f, %f", h[idx_h0], h[idx_h1])
     # Times for CLUBB are given in seconds, for SAM in minutes
-    if 'clubb' in plots.name:
+    if 'clubb' in plots.name.lower():
         idx_t0 = (np.abs(t - cf.startTime*60)).argmin()
-        idx_t1 = (np.abs(t - cf.endTime*60)).argmin()+1
+        idx_t1 = min((np.abs(t - cf.endTime*60)).argmin()+1, t.size-1)
     else:
         idx_t0 = (np.abs(t - cf.startTime)).argmin()
-        idx_t1 = (np.abs(t - cf.endTime)).argmin()+1
+        idx_t1 = min((np.abs(t - cf.endTime)).argmin()+1, t.size-1)
     h = h[idx_h0:idx_h1]
-    if 'clubb' in plots.name:
+    nt = idx_t1 - idx_t0
+    logger.debug('t0 = %f, t1 = %f, nt = %d', idx_t0, idx_t1, nt)
+    
+    # TODO: figure out how to adapt this to the new structure in the setup file
+    if 'clubb' in plots.name.lower():
         # Initialize data variables as empty dicts
         data_zm = {}
         data_zt = {}
         if nc_zm:
             logger.info("Fetching clubb_zm data")
-            data_zm = get_all_variables(nc_zm, plots.lines_zm, plots.sortPlots_zm, len(h), len(t), idx_t0, idx_t1, idx_h0, idx_h1, filler=plots.filler)
+            #data_zm = get_all_variables(nc_zm, plots.lines_zm, plots.sortPlots_zm, len(h), len(t), idx_t0, idx_t1, idx_h0, idx_h1, filler=plots.filler)
+            data_zm = get_all_variables(nc_zm, [l[PLOT_LINES] for l in plots.plots_zm], [l[PLOT_ID] for l in plots.plots_zm], len(h), nt, idx_t0, idx_t1, idx_h0, idx_h1, filler=plots.filler)
         if nc_zt:
             logger.info("Fetching clubb_zt data")
-            data_zt = get_all_variables(nc_zt, plots.lines_zt, plots.sortPlots_zt, len(h), len(t), idx_t0, idx_t1, idx_h0, idx_h1, filler=plots.filler)
+            #data_zt = get_all_variables(nc_zt, plots.lines_zt, plots.sortPlots_zt, len(h), len(t), idx_t0, idx_t1, idx_h0, idx_h1, filler=plots.filler)
+            data_zt = get_all_variables(nc_zt, [l[PLOT_LINES] for l in plots.plots_zt], [l[PLOT_ID] for l in plots.plots_zt], len(h), nt, idx_t0, idx_t1, idx_h0, idx_h1, filler=plots.filler)
         # Combine both dictionaries
         data = data_zm.copy()
         data.update(data_zt)
     else:
         logger.info("Fetching sam data")
-        data = get_all_variables(nc_sam, plots.lines, plots.sortPlots, len(h), len(t), idx_t0, idx_t1, idx_h0, idx_h1, filler=plots.filler)
+        #data = get_all_variables(nc_sam, plots.lines, plots.sortPlots, len(h), len(t), idx_t0, idx_t1, idx_h0, idx_h1, filler=plots.filler)
+        data = get_all_variables(nc_sam, [l[PLOT_LINES] for l in plots.plots], [l[PLOT_ID] for l in plots.plots], len(h), nt, idx_t0, idx_t1, idx_h0, idx_h1, filler=plots.filler)
     logger.info("Create plots")
     # Center plots if plotting budgets
     #logger.debug("Centering=%s", str('budget' in plots.name))
-    plot_default(plots, cf, data, h, centering='budget' in plots.name)
+    plot_default(plots, cf, data, h, centering='budget' in plots.name.lower())
     #logger.debug(mpp.rcParams['text.usetex'])
 
 
@@ -1268,13 +1375,14 @@ def plotgen_3d(plots, cf):
         logger.error('Too many invalid trials. Exiting...')
         sys.exit()
     nc_std,nc_3d = load_nc(plots, cf)
-    logger.info('Fetching information from prm file')
-    prm_vars = get_values_from_prm(cf)
+    #logger.info('Fetching information from prm file')
+    #prm_vars = get_values_from_prm(cf)
     logger.info('Fetching dimension variables')
     # t not necessarily needed for momentary plot TODO
     t = get_t_dim(nc_std, create=False)
     idx_t0 = (np.abs(t - cf.startTime)).argmin()
-    idx_t1 = (np.abs(t - cf.endHeight)).argmin()+1
+    idx_t1 = min((np.abs(t - cf.endTime)).argmin()+1, t.size-1)
+    nt = idx_t1 - idx_t0
     h = get_h_dim(nc_std, model='sam', create=False, cf=cf)
     # Calculate height level limits
     h_limits = np.array([0])
@@ -1283,7 +1391,7 @@ def plotgen_3d(plots, cf):
         h_limits = np.append(h_limits, 2*h[i]-h_limits[i])
     # Calculate height indices based on parameters in case file
     idx_h0 = (np.abs(h - cf.startHeight)).argmin()
-    idx_h1 = (np.abs(h - cf.endHeight)).argmin()+1
+    idx_h1 = min((np.abs(h - cf.endHeight)).argmin()+1, h.size-1)
     logger.debug('Height indices: [%d,%d]',idx_h0, idx_h1)
     # Slice arrays
     h = h[idx_h0:idx_h1]
@@ -1293,14 +1401,16 @@ def plotgen_3d(plots, cf):
     h_extent = np.diff(h_limits)
     logger.debug(h_extent)
     logger.info("Fetching sam data")
-    data_std = get_all_variables(nc_std, plots.lines_std, plots.sortPlots_std, len(h), len(t), idx_t0, idx_t1, idx_h0, idx_h1, filler=plots.filler)
+    # TODO: Change structure of 3d setup file as well?
+    data_std = get_all_variables(nc_std, plots.lines_std, plots.sortPlots_std, len(h), nt, idx_t0, idx_t1, idx_h0, idx_h1, filler=plots.filler)
     logger.info("Fetching sam_3d data")
     data_3d = get_all_variables(nc_3d, plots.lines_3d, plots.sortPlots_3d, len(h), 1, 0, 0, idx_h0, idx_h1, filler=plots.filler)
     data = {key:value[0][-1]  for (key,value) in data_3d.iteritems()}
     data.update({key:[value[0][0], value[0][-1]] for (key,value) in data_std.iteritems()})
     #logger.debug("3d data: %s", str(data))
     logger.info("Create plots")
-    plot_3d(plots, cf, data, h, h_limits, h_extent, prm_vars, dil_len=dil_len, gif=gif)
+    #plot_3d(plots, cf, data, h, h_limits, h_extent, prm_vars, dil_len=dil_len, gif=gif)
+    plot_3d(plots, cf, data, h, h_limits, h_extent, dil_len=dil_len, gif=gif)
     
     
 def plotgen_comparison(plots, cf):
@@ -1333,17 +1443,20 @@ def plotgen_comparison(plots, cf):
     nc_zm_old = None
     nc_zt_old = None
     if old_clubb:
-        if plots.sortPlots_zt:
+        if 'clubb_zt' in plots.nc_files:
             nc_zt_old = ncs.pop()
-        if plots.sortPlots_zm:
+        if 'clubb_zm' in plots.nc_files:
             nc_zm_old = ncs.pop()
             nc_clubb_old = nc_zm_old
         else:
             nc_clubb_old = nc_zt_old
-    if plots.sortPlots_zm and plots.sortPlots_zt:
+    # Set variables depending on which nc files are used
+    #if plots.sortPlots_zm and plots.sortPlots_zt:
+    if all([ncfile in plots.nc_files for ncfile in ['clubb_zm', 'clubb_zt']]):
         nc_zm, nc_zt, nc_sam = ncs
         nc_clubb = nc_zm
-    elif plots.sortPlots_zm:
+    #elif plots.sortPlots_zm:
+    elif 'clubb_zm' in plots.nc_files:
         nc_zm, nc_sam = ncs
         nc_clubb = nc_zm
         nc_zt = None
@@ -1356,28 +1469,28 @@ def plotgen_comparison(plots, cf):
     t_clubb = get_t_dim(nc_clubb)
     h_clubb = get_h_dim(nc_clubb, model='clubb')
     idx_h0_clubb = (np.abs(h_clubb - cf.startHeight)).argmin()
-    idx_h1_clubb = (np.abs(h_clubb - cf.endHeight)).argmin()+1
+    idx_h1_clubb = min((np.abs(h_clubb - cf.endHeight)).argmin()+1, h_clubb.size-1)
     # Times for CLUBB are given in seconds, for SAM in minutes
     idx_t0_clubb = (np.abs(t_clubb - cf.startTime*60)).argmin()
-    idx_t1_clubb = (np.abs(t_clubb - cf.endTime*60)).argmin()+1
+    idx_t1_clubb = min((np.abs(t_clubb - cf.endTime*60)).argmin()+1, t_clubb.size-1)
     h_clubb = h_clubb[idx_h0_clubb:idx_h1_clubb]
     logger.info('SAM')
     t_sam = get_t_dim(nc_sam)
     h_sam = get_h_dim(nc_sam, model='sam')
     idx_h0_sam = (np.abs(h_sam - cf.startHeight)).argmin()
-    idx_h1_sam = (np.abs(h_sam - cf.endHeight)).argmin()+1
+    idx_h1_sam = min((np.abs(h_sam - cf.endHeight)).argmin()+1, h_sam.size-1)
     idx_t0_sam = (np.abs(t_sam - cf.startTime)).argmin()
-    idx_t1_sam = (np.abs(t_sam - cf.endTime)).argmin()+1
+    idx_t1_sam = min((np.abs(t_sam - cf.endTime)).argmin()+1, t_sam.size-1)
     h_sam = h_sam[idx_h0_sam:idx_h1_sam]
     h_clubb_old = None
     if old_clubb:
         t_clubb_old = get_t_dim(nc_clubb_old)
         h_clubb_old = get_h_dim(nc_clubb_old, model='clubb')
         idx_h0_clubb_old = (np.abs(h_clubb_old - cf.startHeight)).argmin()
-        idx_h1_clubb_old = (np.abs(h_clubb_old - cf.endHeight)).argmin()+1
+        idx_h1_clubb_old = min((np.abs(h_clubb_old - cf.endHeight)).argmin()+1, h_clubb_old.size-1)
         # Times for CLUBB are given in seconds, for SAM in minutes
         idx_t0_clubb_old = (np.abs(t_clubb_old - cf.startTime*60)).argmin()
-        idx_t1_clubb_old = (np.abs(t_clubb_old - cf.endTime*60)).argmin()+1
+        idx_t1_clubb_old = min((np.abs(t_clubb_old - cf.endTime*60)).argmin()+1, t_clubb_old.size-1)
         h_clubb_old = h_clubb_old[idx_h0_clubb_old:idx_h1_clubb_old]
         logger.debug("h0_clubb_old = %d",idx_h0_clubb)
         logger.debug("h1_clubb_old = %d",idx_h1_clubb)
@@ -1398,19 +1511,25 @@ def plotgen_comparison(plots, cf):
     logger.debug(h_sam.shape)
     logger.debug(h_sam[idx_h0_sam:idx_h1_sam])
     # TODO: distinguish between zm and zt data!!
+    # TODO: Change to new data structure in variables setup file
     logger.info("Fetching SAM data")
-    data_sam = get_all_variables(nc_sam, plots.lines_sam, plots.sortPlots, len(h_sam), len(t_sam), idx_t0_sam, idx_t1_sam, idx_h0_sam, idx_h1_sam, filler=plots.filler)
+    #data_sam = get_all_variables(nc_sam, plots.lines_sam, plots.sortPlots, len(h_sam), len(t_sam), idx_t0_sam, idx_t1_sam, idx_h0_sam, idx_h1_sam, filler=plots.filler)
+    data_sam = get_all_variables(nc_sam, [l[PLOT_LINES_SAM] for l in plots.plots], [l[PLOT_ID] for l in plots.plots], len(h_sam), len(t_sam), idx_t0_sam, idx_t1_sam, idx_h0_sam, idx_h1_sam, filler=plots.filler)
     #logger.debug(data_sam)
     logger.info("Fetching CLUBB data")
     data_zm = None
     data_zt = None
-    if plots.sortPlots_zm:
+    #if plots.sortPlots_zm:
+    if 'clubb_zm' in plots.nc_files:
         logger.info("Fetching clubb_zm data")
-        data_zm = get_all_variables(nc_zm, plots.lines_zm, plots.sortPlots_zm, len(h_clubb), len(t_clubb), idx_t0_clubb, idx_t1_clubb, idx_h0_clubb, idx_h1_clubb, filler=plots.filler)
+        #data_zm = get_all_variables(nc_zm, plots.lines_zm, plots.sortPlots_zm, len(h_clubb), len(t_clubb), idx_t0_clubb, idx_t1_clubb, idx_h0_clubb, idx_h1_clubb, filler=plots.filler)
+        data_zm = get_all_variables(nc_zm, [l[PLOT_LINES_CLUBB] for l in plots.plots_zm], [l[PLOT_ID] for l in plots.plots_zm], len(h_clubb), len(t_clubb), idx_t0_clubb, idx_t1_clubb, idx_h0_clubb, idx_h1_clubb, filler=plots.filler)
         #logger.debug(data_clubb_zm)
-    if plots.sortPlots_zt:
+    #if plots.sortPlots_zt:
+    if 'clubb_zt' in plots.nc_files:
         logger.info("Fetching clubb_zt data")
-        data_zt = get_all_variables(nc_zt, plots.lines_zt, plots.sortPlots_zt, len(h_clubb), len(t_clubb), idx_t0_clubb, idx_t1_clubb, idx_h0_clubb, idx_h1_clubb, filler=plots.filler)
+        #data_zt = get_all_variables(nc_zt, plots.lines_zt, plots.sortPlots_zt, len(h_clubb), len(t_clubb), idx_t0_clubb, idx_t1_clubb, idx_h0_clubb, idx_h1_clubb, filler=plots.filler)
+        data_zt = get_all_variables(nc_zt, [l[PLOT_LINES_CLUBB] for l in plots.plots_zt], [l[PLOT_ID] for l in plots.plots_zt], len(h_clubb), len(t_clubb), idx_t0_clubb, idx_t1_clubb, idx_h0_clubb, idx_h1_clubb, filler=plots.filler)
         #logger.debug(data_clubb_zt)
     # combine both dictionaries
     data_clubb = data_zm.copy()
@@ -1420,13 +1539,17 @@ def plotgen_comparison(plots, cf):
     if old_clubb:
         data_zm_old = None
         data_zt_old = None
-        if plots.sortPlots_zm:
+        #if plots.sortPlots_zm:
+        if 'clubb_zm' in plots.nc_files:
             logger.info("Fetching old clubb_zm data")
-            data_zm_old = get_all_variables(nc_zm_old, plots.lines_zm, plots.sortPlots_zm, len(h_clubb_old), len(t_clubb_old), idx_t0_clubb_old, idx_t1_clubb_old, idx_h0_clubb_old, idx_h1_clubb_old, filler=plots.filler)
+            #data_zm_old = get_all_variables(nc_zm_old, plots.lines_zm, plots.sortPlots_zm, len(h_clubb_old), len(t_clubb_old), idx_t0_clubb_old, idx_t1_clubb_old, idx_h0_clubb_old, idx_h1_clubb_old, filler=plots.filler)
+            data_zm_old = get_all_variables(nc_zm_old, [l[PLOT_LINES_CLUBB] for l in plots.plots_zm], [l[PLOT_ID] for l in plots.plots_zm], len(h_clubb_old), len(t_clubb_old), idx_t0_clubb_old, idx_t1_clubb_old, idx_h0_clubb_old, idx_h1_clubb_old, filler=plots.filler)
             #logger.debug(data_zm_old)
-        if plots.sortPlots_zt:
+        #if plots.sortPlots_zt:
+        if 'clubb_zt' in plots.nc_files:
             logger.info("Fetching old clubb_zt data")
-            data_zt_old = get_all_variables(nc_zt_old, plots.lines_zt, plots.sortPlots_zt, len(h_clubb_old), len(t_clubb_old), idx_t0_clubb_old, idx_t1_clubb_old, idx_h0_clubb_old, idx_h1_clubb_old, filler=plots.filler)
+            #data_zt_old = get_all_variables(nc_zt_old, plots.lines_zt, plots.sortPlots_zt, len(h_clubb_old), len(t_clubb_old), idx_t0_clubb_old, idx_t1_clubb_old, idx_h0_clubb_old, idx_h1_clubb_old, filler=plots.filler)
+            data_zt_old = get_all_variables(nc_zt_old, [l[PLOT_LINES_CLUBB] for l in plots.plots_zt], [l[PLOT_ID] for l in plots.plots_zt], len(h_clubb_old), len(t_clubb_old), idx_t0_clubb_old, idx_t1_clubb_old, idx_h0_clubb_old, idx_h1_clubb_old, filler=plots.filler)
             #logger.debug(data_zt_old)
         # combine both dictionaries
         data_clubb_old = data_zm_old.copy()

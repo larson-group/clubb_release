@@ -252,10 +252,10 @@ module stats_zt_module
         irrm_sd, &
         irrm_ts, &
         irrm_sd_morr, &
-        irrm_cond, & 
+        irrm_evap, & 
         irrm_auto, & 
         irrm_accr, & 
-        irrm_cond_adj, &
+        irrm_evap_adj, &
         irrm_src_adj, &
         irrm_mc_nonadj, &
         irrm_mc, & 
@@ -269,9 +269,9 @@ module stats_zt_module
         iNrm_ta, & 
         iNrm_sd, & 
         iNrm_ts, & 
-        iNrm_cond, & 
+        iNrm_evap, & 
         iNrm_auto, & 
-        iNrm_cond_adj, & 
+        iNrm_evap_adj, & 
         iNrm_src_adj, & 
         iNrm_mc, & 
         iNrm_cl
@@ -1973,10 +1973,10 @@ module stats_zt_module
              var_units="kg kg^{-1} s^{-1}", l_silhs=.false., grid_kind=stats_zt )
         k = k + 1
 
-      case ('rrm_cond')
-        irrm_cond = k
+      case ('rrm_evap')
+        irrm_evap = k
 
-        call stat_assign( var_index=irrm_cond, var_name="rrm_cond", &
+        call stat_assign( var_index=irrm_evap, var_name="rrm_evap", &
              var_description="rrm evaporation rate [kg kg^{-1} s^{-1}]", &
              var_units="kg kg^{-1} s^{-1}", l_silhs=.false., grid_kind=stats_zt )
         k = k + 1
@@ -1996,10 +1996,10 @@ module stats_zt_module
              var_units="kg kg^{-1} s^{-1}", l_silhs=.false., grid_kind=stats_zt )
         k = k + 1
 
-      case ('rrm_cond_adj')
-        irrm_cond_adj = k
+      case ('rrm_evap_adj')
+        irrm_evap_adj = k
 
-        call stat_assign( var_index=irrm_cond_adj, var_name="rrm_cond_adj", &
+        call stat_assign( var_index=irrm_evap_adj, var_name="rrm_evap_adj", &
              var_description="rrm evaporation adjustment due to over-evaporation &
              &[kg kg^{-1} s^{-1}]", &
              var_units="kg kg^{-1} s^{-1}", l_silhs=.false., grid_kind=stats_zt )
@@ -2094,10 +2094,10 @@ module stats_zt_module
 
         k = k + 1
 
-      case ('Nrm_cond')
-        iNrm_cond = k
+      case ('Nrm_evap')
+        iNrm_evap = k
 
-        call stat_assign( var_index=iNrm_cond, var_name="Nrm_cond", &
+        call stat_assign( var_index=iNrm_evap, var_name="Nrm_evap", &
              var_description="Nrm evaporation rate [(num/kg)/s]", var_units="(num/kg)/s", &
              l_silhs=.false., grid_kind=stats_zt )
         k = k + 1
@@ -2111,10 +2111,10 @@ module stats_zt_module
 
         k = k + 1
 
-      case ('Nrm_cond_adj')
-        iNrm_cond_adj = k
+      case ('Nrm_evap_adj')
+        iNrm_evap_adj = k
 
-        call stat_assign( var_index=iNrm_cond_adj, var_name="Nrm_cond_adj", &
+        call stat_assign( var_index=iNrm_evap_adj, var_name="Nrm_evap_adj", &
              var_description="Nrm evaporation adjustment due to over-evaporation [(num/kg)/s]", &
              var_units="(num/kg)/s", l_silhs=.false., grid_kind=stats_zt )
         k = k + 1

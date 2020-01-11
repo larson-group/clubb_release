@@ -69,7 +69,7 @@
        ]},
        {'plotTitle' => 'rrm\_cond', 'axisLabel' => 'rrm\_cond', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => 'rico_silhs_zt.ctl', 'type' => 'les', 'name' => 'analytic', 'expression' => 'rrm_cond', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'rico_silhs_zt.ctl', 'type' => 'les', 'name' => 'analytic', 'expression' => 'rrm_evap', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'rico_silhs_lh_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'lh_rrm_evap', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
        ]},
        {'plotTitle' => 'Nrm\_auto', 'axisLabel' => 'Nrm\_auto', 'type' => 'profile', 'lines' =>
@@ -79,8 +79,8 @@
        ]},
        {'plotTitle' => 'Nrm\_cond', 'axisLabel' => 'Nrm\_cond', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => 'rico_silhs_zt.ctl', 'type' => 'les', 'name' => 'analytic', 'expression' => 'Nrm_cond', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'rico_silhs_lh_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'lh_Nrm_cond', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'rico_silhs_zt.ctl', 'type' => 'les', 'name' => 'analytic', 'expression' => 'Nrm_evap', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'rico_silhs_lh_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'lh_Nrm_evap', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
        ]},
        {'plotTitle' => 'mixt\_frac', 'axisLabel' => 'mixt\_frac', 'type' => 'profile', 'lines' =>
        [

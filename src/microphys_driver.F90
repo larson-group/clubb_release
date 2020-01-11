@@ -39,6 +39,8 @@ module microphys_driver
                                 sigma_x_1_n, sigma_x_2_n, &               ! In
                                 corr_array_1_n, corr_array_2_n, &         ! In
                                 lh_clipped_vars, &                        ! In
+                                l_lh_importance_sampling, &               ! In
+                                l_lh_instant_var_covar_src, &             ! In
                                 Nccnm, &                                  ! Inout
                                 hydromet_mc, Ncm_mc, rcm_mc, rvm_mc, &    ! Out
                                 thlm_mc, hydromet_vel_zt, &               ! Out
@@ -163,7 +165,7 @@ module microphys_driver
         iNcm_act,      & ! Variable(s)
         iNc_activated, &
         iNccnm,        &
-        irrm_cond
+        irrm_evap
 
     use stats_clubb_utilities, only: & 
         stats_accumulate_lh_tend ! Procedure(s)
@@ -249,6 +251,10 @@ module microphys_driver
 
     type(lh_clipped_variables_type), dimension(gr%nz,lh_num_samples), intent(in) :: &
       lh_clipped_vars ! SILHS sample variables
+
+    logical, intent(in) :: &
+      l_lh_importance_sampling, & ! Do importance sampling (SILHS) [-]
+      l_lh_instant_var_covar_src  ! Produce instantaneous var/covar tendencies [-]
 
     ! Input/Output Variables
     ! Note:
@@ -444,6 +450,8 @@ module microphys_driver
                rcm, delta_zt, cloud_frac, & ! In
                hydromet, X_mixt_comp_all_levs,  & !In
                lh_clipped_vars, & ! In
+               l_lh_importance_sampling, & ! In
+               l_lh_instant_var_covar_src, & ! In
                hydromet_mc, hydromet_vel_zt, Ncm_mc, & ! Out
                rcm_mc, rvm_mc, thlm_mc,  & ! Out
                rtp2_mc, thlp2_mc, wprtp_mc, & ! Out
@@ -497,7 +505,7 @@ module microphys_driver
 
         if ( l_morr_xp2_mc) then
 
-          rrm_evap = microphys_get_var( irrm_cond, microphys_stats_zt )
+          rrm_evap = microphys_get_var( irrm_evap, microphys_stats_zt )
 
           call update_xp2_mc( gr%nz, dt, cloud_frac, rcm, rvm, thlm_morr, & ! Intent(in)  
                               wm_zt, exner, rrm_evap, pdf_params,         & ! Intent(in)
@@ -534,6 +542,8 @@ module microphys_driver
                rcm, delta_zt, cloud_frac, & ! In
                hydromet, X_mixt_comp_all_levs,  & !In
                lh_clipped_vars, & ! In
+               l_lh_importance_sampling, & ! In
+               l_lh_instant_var_covar_src, & ! In
                hydromet_mc, hydromet_vel_zt, Ncm_mc, & ! Out
                rcm_mc, rvm_mc, thlm_mc,  & ! Out
                rtp2_mc, thlp2_mc, wprtp_mc, & ! Out

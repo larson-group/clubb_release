@@ -8,7 +8,7 @@ module est_kessler_microphys_module
 
   public :: est_kessler_microphys
 
-  private :: autoconv_estimate, rc_estimate
+  private :: calc_estimate
 
   private ! Default Scope
 
@@ -20,6 +20,7 @@ module est_kessler_microphys_module
              ( nz, num_samples, pdf_dim, &
                X_nl_all_levs, pdf_params, rcm, cloud_frac, &
                X_mixt_comp_all_levs, lh_sample_point_weights, &
+               l_lh_importance_sampling, &
                lh_AKm, AKm, AKstd, AKstd_cld, &
                AKm_rcm, AKm_rcc, lh_rcm_avg )
 ! Description:
@@ -34,7 +35,9 @@ module est_kessler_microphys_module
       pi,  & ! Variables(s)
       chi_tol, &
       zero_threshold, &
-      zero
+      zero, &
+      g_per_kg, &
+      one
 
     use pdf_parameter_module, only:  &
       pdf_parameter  ! Type
@@ -68,6 +71,9 @@ module est_kessler_microphys_module
 
     real( kind = core_rknd ), dimension(nz,num_samples), intent(in) :: &
       lh_sample_point_weights ! Weight for cloud weighted sampling
+
+    logical, intent(in) :: &
+      l_lh_importance_sampling ! Do importance sampling (SILHS) [-]
 
     real( kind = core_rknd ), dimension(nz), intent(out) :: &
       lh_AKm,    & ! Monte Carlo estimate of Kessler autoconversion [kg/kg/s]
@@ -111,6 +117,9 @@ module est_kessler_microphys_module
     ! Variables needed for exact std of Kessler autoconversion, AKstd
     !      and within cloud standard deviation, AKstd_cld
     real( kind = core_rknd ) :: AK1var, AK2var
+
+    ! Variables needed for estimate calculation
+    real( kind = core_rknd ) :: coeff
 
     ! For comparison, compute within-cloud vertical velocity analytically.
     !real C_w_cld1, C_w_cld2, w_cld_avg
@@ -173,19 +182,30 @@ module est_kessler_microphys_module
 
       ! Call microphysics, i.e. Kessler autoconversion.
       ! A_K = (1e-3/s)*(rc-0.5kg/kg)*H(rc-0.5kg/kg)
-      call autoconv_estimate &
-           ( num_samples, mixt_frac, &
-             cloud_frac_1, cloud_frac_2, &
-             rcm_sample, & 
+      coeff = 1.e-3_core_rknd
+      r_crit = 0.2_core_rknd/g_per_kg
+      call calc_estimate &
+           ( num_samples, mixt_frac, &                                          ! Intent(in)
+             cloud_frac_1, cloud_frac_2, &                                      ! Intent(in)
+             rcm_sample, &                                                      ! Intent(in)
              !X_nl(1:n,3), X_nl(1:n,4), X_nl(1:n,5),
-             X_mixt_comp_all_levs(level,:), lh_sample_point_weights(level,:), lh_AKm(level) )
+             X_mixt_comp_all_levs(level,:), lh_sample_point_weights(level,:), & ! Intent(in)
+             l_lh_importance_sampling, &                                        ! Intent(in)
+             coeff, r_crit, &                                                   ! Intent(in)
+             lh_AKm(level) )                                                    ! Intent(out)
 
       ! Compute Monte Carlo estimate of liquid for test purposes.
-      call rc_estimate &
-           ( num_samples, mixt_frac, cloud_frac_1, &
-             cloud_frac_2, rcm_sample, &
-             ! X_nl(1:n,3), X_nl(1:n,4), X_nl(1:n,5),
-             X_mixt_comp_all_levs(level,: ), lh_rcm_avg(level) )
+      coeff = one
+      r_crit = zero
+      call calc_estimate &
+           ( num_samples, mixt_frac, &                                          ! Intent(in)
+             cloud_frac_1, cloud_frac_2, &                                      ! Intent(in)
+             rcm_sample, &                                                      ! Intent(in)
+             !X_nl(1:n,3), X_nl(1:n,4), X_nl(1:n,5),
+             X_mixt_comp_all_levs(level,:), lh_sample_point_weights(level,:), & ! Intent(in)
+             l_lh_importance_sampling, &                                        ! Intent(in)
+             coeff, r_crit, &                                                   ! Intent(in)
+             lh_rcm_avg(level) )                                                ! Intent(out)
 
       ! A test of the scheme:
       ! Compare exact (rcm) and Monte Carlo estimates (lh_rcm_avg) of
@@ -250,13 +270,17 @@ module est_kessler_microphys_module
 
     return
   end subroutine est_kessler_microphys
+
 !-----------------------------------------------------------------------
-  subroutine autoconv_estimate( num_samples, mixt_frac, &
-                              cloud_frac_1, cloud_frac_2, rc, &
-                             !w, Nc, rr, &
-                              X_mixt_comp_one_lev, lh_sample_point_weights, ac_m )
+  subroutine calc_estimate( num_samples, mixt_frac, &
+                                cloud_frac_1, cloud_frac_2, rc, &
+                                !w, Nc, rr, &
+                                X_mixt_comp_one_lev, lh_sample_point_weights, &
+                                l_lh_importance_sampling, &
+                                coeff, r_crit, &
+                                est_m )
 ! Description:
-!   Compute Kessler grid box avg autoconversion (kg/kg)/s.
+!   Compute Monte Carlo estimate.
 ! References:
 !   None
 !-----------------------------------------------------------------------
@@ -266,9 +290,6 @@ module est_kessler_microphys_module
       g_per_kg, &
       zero, &
       one
-
-    use parameters_silhs, only: &
-      l_lh_importance_sampling ! Variable(s)
 
     use clubb_precision, only: &
       core_rknd
@@ -306,51 +327,52 @@ module est_kessler_microphys_module
     real( kind = core_rknd ), dimension(num_samples), intent(in) :: &
        lh_sample_point_weights ! Weight for cloud weighted sampling
 
+    logical, intent(in) :: &
+      l_lh_importance_sampling ! Do importance sampling (SILHS)
+
+    real( kind = core_rknd ), intent(in) :: &
+      coeff, &
+      r_crit
+
     ! Output Variables
 
     ! a scalar representing grid box average autoconversion;
     ! has same units as rc; divide by total cloud fraction to obtain
     ! within-cloud autoconversion
     real( kind = core_rknd ), intent(out) :: &
-      ac_m
+      est_m
 
     ! Local Variables
 
     integer :: sample
     integer :: n1, n2
-    real( kind = core_rknd ) :: ac_m1, ac_m2
-    real( kind = core_rknd ) :: coeff, r_crit
+    real( kind = core_rknd ) :: est_m1, est_m2
 
     ! ---- Begin Code ----
 
     ! Handle some possible errors re: proper ranges of mixt_frac, cloud_frac_1, cloud_frac_2.
     if ( mixt_frac > one .or. mixt_frac < zero ) then
-      write(fstderr,*) 'Error in autoconv_estimate:  ',  &
+      write(fstderr,*) 'Error in calc_estimate:  ',  &
                        'mixture fraction, mixt_frac, does not lie in [0,1].'
       write(fstderr,*) 'mixt_frac = ', mixt_frac
       stop
     end if
     if ( cloud_frac_1 > one .or. cloud_frac_1 < zero ) then
-      write(fstderr,*) 'Error in autoconv_estimate:  ',  &
+      write(fstderr,*) 'Error in calc_estimate:  ',  &
                        'cloud fraction 1, cloud_frac_1, does not lie in [0,1].'
       write(fstderr,*) 'cloud_frac_1 = ', cloud_frac_1
       stop
     end if
     if ( cloud_frac_2 > one .or. cloud_frac_2 < zero ) then
-      write(fstderr,*) 'Error in autoconv_estimate:  ',  &
+      write(fstderr,*) 'Error in calc_estimate:  ',  &
                        'cloud fraction 2, cloud_frac_2, does not lie in [0,1].'
       write(fstderr,*) 'cloud_frac_2 = ', cloud_frac_2
       stop
     end if
 
-    ! Autoconversion formula prefactor and exponent.
-    ! These are for Kessler autoconversion in (kg/kg)/s.
-    coeff  = 1.e-3_core_rknd
-    r_crit = r_crit_g_kg / g_per_kg
-
     ! Initialize autoconversion in each mixture component
-    ac_m1 = zero
-    ac_m2 = zero
+    est_m1 = zero
+    est_m2 = zero
 
     ! Initialize numbers of sample points corresponding
     !    to each mixture component
@@ -379,10 +401,10 @@ module est_kessler_microphys_module
 ! This is the first of two lines where
 !      a user must add a new microphysics scheme.
         if ( l_lh_importance_sampling ) then
-          ac_m1 = ac_m1 + coeff*max(zero,rc(sample)-r_crit)&
+          est_m1 = est_m1 + coeff*max(zero,rc(sample)-r_crit)&
                   * lh_sample_point_weights(sample)
         else
-          ac_m1 = ac_m1 + coeff*max(zero,rc(sample)-r_crit)
+          est_m1 = est_m1 + coeff*max(zero,rc(sample)-r_crit)
         end if
         n1 = n1 + 1
       else
@@ -393,10 +415,10 @@ module est_kessler_microphys_module
 !      a user must add a new microphysics scheme.
 
         if ( l_lh_importance_sampling ) then
-          ac_m2 = ac_m2 + coeff*max(zero,rc(sample)-r_crit) &
+          est_m2 = est_m2 + coeff*max(zero,rc(sample)-r_crit) &
                   * lh_sample_point_weights(sample)
         else
-          ac_m2 = ac_m2 + coeff*max(zero,rc(sample)-r_crit)
+          est_m2 = est_m2 + coeff*max(zero,rc(sample)-r_crit)
         end if
 
         n2 = n2 + 1
@@ -420,7 +442,7 @@ module est_kessler_microphys_module
 !       end if
 
     if ( n1 == 0 .and. n2 == 0 ) then
-      stop 'Error:  no sample points in autoconv_estimate'
+      stop 'Error:  no sample points in calc_estimate'
     end if
 
     if ( l_cloud_weighted_averaging ) then
@@ -429,192 +451,33 @@ module est_kessler_microphys_module
       !    then we estimate the plume liquid water by the
       !    other plume's value.
       if ( .not. (n1 == 0) ) then
-        ac_m1 = ac_m1/ real( n1, kind=core_rknd )
+        est_m1 = est_m1/ real( n1, kind=core_rknd )
       end if
 
       if ( .not. (n2 == 0) ) then
-        ac_m2 = ac_m2/ real( n2, kind=core_rknd )
+        est_m2 = est_m2/ real( n2, kind=core_rknd )
       end if
 
       if ( n1 == 0 ) then
-        ac_m1 = ac_m2
+        est_m1 = est_m2
       end if
 
       if ( n2 == 0 ) then
-        ac_m2 = ac_m1
+        est_m2 = est_m1
       end if
 
       ! Grid box average.
-      ac_m = mixt_frac*cloud_frac_1*ac_m1 + (one-mixt_frac)*cloud_frac_2*ac_m2
+      est_m = mixt_frac*cloud_frac_1*est_m1 + (one-mixt_frac)*cloud_frac_2*est_m2
 
     else
-      ac_m = ( ac_m1 + ac_m2 ) / real( num_samples, kind=core_rknd )
+      est_m = ( est_m1 + est_m2 ) / real( num_samples, kind=core_rknd )
 
     end if
 
 !   print*, 'autoconv_estimate: acm=', ac_m
 
     return
-  end subroutine autoconv_estimate
-
-!----------------------------------------------------------------------
-  subroutine rc_estimate( num_samples, mixt_frac, C1, C2, rc, & ! w,   & 
-                         !N_pts, rr, 
-                           X_mixt_comp_one_lev, rc_m )
-! Description:
-!   Compute an Monte Carlo estimate of grid box avg liquid water.
-! References:
-!   None
-!---------------------------------------------------------------
-
-    use constants_clubb, only:  &
-      fstderr      ! Constant(s)
-
-    use clubb_precision, only: &
-      core_rknd    ! Core precision
-
-    use constants_clubb, only: &
-      one, &       ! Constant(s)
-      zero
-
-    implicit none
-
-    ! Constant parameters
-    logical, parameter :: &
-      l_cloud_weighted_averaging   = .false.
-
-    ! Input Variables
-    integer, intent(in) :: &
-      num_samples ! Number of calls to microphysics (normally=2)
-
-    real( kind = core_rknd ), intent(in) :: &
-      mixt_frac, & ! Mixture fraction of Gaussians
-      C1, C2       ! Cloud fraction associated w/ 1st, 2nd mixture component
-
-    real( kind = core_rknd ), dimension(num_samples), intent(in) :: &
-      rc !, & ! n in-cloud values of spec liq water content [kg/kg].
-!     w,  & ! n in-cloud values of vertical velocity (m/s)
-!     Npts, & ! n in-cloud values of droplet number (#/kg air)
-!     rr    ! n in-cloud values of specific rain content (kg/kg)
-
-    integer, dimension(num_samples), intent(in) :: &
-      X_mixt_comp_one_lev ! Whether we're in the first or second mixture component
-
-    ! Output Variables
-
-    ! A scalar representing grid box avg specific liquid water;
-    ! divide by total cloud fraction to obtain within-cloud liquid water
-    real( kind = core_rknd ), intent(out) :: rc_m
-
-    ! Local Variables
-
-    integer :: sample
-    integer :: n1, n2
-    real( kind = core_rknd ) :: rc_m1, rc_m2
-    real( kind = core_rknd ) :: coeff, expn
-
-    ! ---- Begin Code ----
-
-    ! Handle some possible errors re: proper ranges of mixt_frac, C1, C2.
-    if ( mixt_frac > one .or. mixt_frac < zero ) then
-      write(fstderr,*) 'Error in rc_estimate:  ',  &
-                       'mixture fraction, mixt_frac, does not lie in [0,1].'
-      stop
-    end if
-    if ( C1 > one .or. C1 < zero ) then
-      write(fstderr,*) 'Error in rc_estimate:  ',  &
-                       'cloud fraction 1, C1, does not lie in [0,1].'
-      stop
-    end if
-    if ( C2 > one .or. C2 < zero ) then
-      write(fstderr,*) 'Error in rc_estimate:  ',  &
-                       'cloud fraction 2, C2, does not lie in [0,1].'
-      stop
-    end if
-
-    ! To compute liquid water, need to set coeff=expn=1.
-    coeff = one
-    expn  = one
-
-    ! Initialize liquid in each mixture component
-    rc_m1 = zero
-    rc_m2 = zero
-
-    ! Initialize numbers of sample points corresponding
-    !    to each mixture component
-    n1    = 0
-    n2    = 0
-
-    do sample = 1, num_samples
-
-      ! Choose which mixture fraction we are in.
-      ! Account for cloud fraction.
-      ! Follow M. E. Johnson (1987), p. 56.
-!     fraction_1 = mixt_frac*C1/max( (mixt_frac*C1+(1-mixt_frac)*C2), epsilon( mixt_frac ) )
-      if ( X_mixt_comp_one_lev(sample) == 1 ) then
-        ! Use an idealized formula to compute liquid
-        !      in mixture comp. 1
-        rc_m1 = rc_m1 + coeff*(rc(sample))**expn
-        n1    = n1 + 1
-      else
-        ! Use an idealized formula to compute liquid
-        !      in mixture comp. 2
-        rc_m2 = rc_m2 + coeff*(rc(sample))**expn
-        n2    = n2 + 1
-      end if
-
-      ! Loop to get new sample
-    end do
-
-!! Convert sums to averages.
-!! Old code that underestimates if n1 or n2 = 0.
-!   if ( n1 == 0 ) then
-!     rc_m1 = zero
-!   else
-!     rc_m1 = rc_m1/n1
-!   end if
-
-!   if ( n2 == 0 ) then
-!     rc_m2 = zero
-!   else
-!     rc_m2 = rc_m2/n2
-!   end if
-
-
-    ! Convert sums to averages.
-    ! If we have no sample points for a certain plume,
-    !    then we estimate the plume liquid water by the
-    !    other plume's value.
-    if (n1 == 0 .and. n2 == 0) then
-      stop 'Error:  no sample points in rc_estimate'
-    end if
-
-    if ( l_cloud_weighted_averaging ) then
-      if ( .not. (n1 == 0) ) then
-        rc_m1 = rc_m1/real( n1, kind=core_rknd )
-      end if
-
-      if ( .not. (n2 == 0) ) then
-        rc_m2 = rc_m2/real( n2, kind=core_rknd )
-      end if
-
-      if (n1 == 0) then
-        rc_m1 = rc_m2
-      end if
-
-      if (n2 == 0) then
-        rc_m2 = rc_m1
-      end if
-      ! Grid box average.
-      rc_m = mixt_frac*C1*rc_m1 + (one-mixt_frac)*C2*rc_m2
-
-    end if ! l_cloud_weighted_averaging
-
-    ! Grid box average.
-    rc_m = ( rc_m1 + rc_m2 ) / real(num_samples, kind = core_rknd)
-
-    return
-  end subroutine rc_estimate
+  end subroutine calc_estimate
 !---------------------------------------------------------------
 
 end module est_kessler_microphys_module

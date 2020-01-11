@@ -46,21 +46,21 @@ OPTIMIZE="-O2"
 
 # == NetCDF Location ==
 #NETCDF="/usr" # Ubuntu / Fedora
-NETCDF="/usr/local/netcdf-gfortran" # RHEL5
+NETCDF="/usr/local/NETCDF-Fortran-4.4.5-gfortran" # RHEL5
 
 # == LAPACK libraries ==
 #LAPACK="-llapack -lblas" # The netlib reference LAPACK/BLAS
 #LAPACK="-L/usr/lib64 -llapack -L/usr/local/atlas/lib -lf77blas -lcblas -latlas" # ATLAS BLAS (faster)
 #LAPACK="-L/usr/lib/atlas-sse3 -llapack -lf77blas -lcblas -latlas" # Fedora 11 setup
-ACML="/opt/acml4.4.0/gfortran64/lib"
-LAPACK="-L$ACML -lacml -lacml_mv -Wl,-rpath $ACML" # AMD Core Math Library
+#ACML="/opt/acml4.4.0/gfortran64/lib"
+#LAPACK="-L$ACML -lacml -lacml_mv -Wl,-rpath $ACML" # AMD Core Math Library
 
 # == Linking Flags ==
 # Use -s to strip (no debugging); 
 # Use -L<library path> -l<lib> to link in an external library
 # Use -Wl,-rpath <library path> to set a search path for shared libs
 #LDFLAGS="-L$NETCDF/lib -lnetcdf -lnetcdff $LAPACK" # Ubuntu
-LDFLAGS="$ARCH -L$NETCDF/lib -lnetcdf $LAPACK" # RHEL5
+LDFLAGS="$ARCH -L$NETCDF/lib -lnetcdff $LAPACK" # RHEL5
 
 # == Compiler flags ==
 # You will need to `make clean' if you change these

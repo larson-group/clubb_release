@@ -47,10 +47,7 @@ module Nc_Ncn_test
     integer :: Nc_Ncn_unit_test ! Returns the exit code of the test
 
     ! Local Variables
-    integer, parameter :: &
-      nz = 1
-
-    real( kind = core_rknd ), dimension(nz) :: &
+    real( kind = core_rknd ) :: &
       mu_chi_1,         & ! Mean of chi(s) (1st PDF component)           [kg/kg]
       mu_chi_2,         & ! Mean of chi(s) (2nd PDF component)           [kg/kg]
       mu_Ncn_1,         & ! Mean of Ncn (1st PDF component)             [num/kg]
@@ -67,7 +64,7 @@ module Nc_Ncn_test
       cloud_frac_1,     & ! Cloud fraction (1st PDF component)               [-]
       cloud_frac_2        ! Cloud fraction (2nd PDF component)               [-]
 
-    real( kind = core_rknd ), dimension(nz) :: &
+    real( kind = core_rknd ) :: &
       Ncm,         & ! Mean cloud droplet concentration (overall)       [num/kg]
       Nc_in_cloud, & ! Mean cloud droplet concentration (in-cloud)      [num/kg]
       Ncnm           ! Mean simplified cloud nuclei concentration       [num/kg]
@@ -76,10 +73,10 @@ module Nc_Ncn_test
       const_Ncnp2_on_Ncnm2, & ! Prescribed ratio of <Ncn'^2> to <Ncn>        [-]
       const_corr_chi_Ncn      ! Prescribed correlation of chi(s) and Ncn     [-]
 
-    real( kind = core_rknd ), dimension(nz) :: &
+    real( kind = core_rknd ) :: &
       const_Ncnp2_on_Ncnm2_in    ! Prescribed ratio of <Ncn'^2> to <Ncn>     [-]
 
-    real( kind = core_rknd ), dimension(nz) :: &
+    real( kind = core_rknd ) :: &
       percent_diff    ! Percent difference between Ncnm before and after     [%]
 
     real( kind = core_rknd ), parameter :: &
@@ -283,16 +280,16 @@ module Nc_Ncn_test
 
        const_Ncnp2_on_Ncnm2_in = sigma_Ncn_1**2 / mu_Ncn_1**2
 
-       const_Ncnp2_on_Ncnm2 = const_Ncnp2_on_Ncnm2_in(nz)
+       const_Ncnp2_on_Ncnm2 = const_Ncnp2_on_Ncnm2_in
 
-       sigma_Ncn_1_n = stdev_L2N( nz, const_Ncnp2_on_Ncnm2_in ) 
+       sigma_Ncn_1_n = stdev_L2N( const_Ncnp2_on_Ncnm2_in ) 
 
        sigma_Ncn_2_n = sigma_Ncn_1_n
 
        if ( const_Ncnp2_on_Ncnm2 > zero ) then
 
           corr_chi_Ncn_1_n &
-          = corr_NL2NN( const_corr_chi_Ncn, sigma_Ncn_1_n(nz), &
+          = corr_NL2NN( const_corr_chi_Ncn, sigma_Ncn_1_n, &
                         const_Ncnp2_on_Ncnm2 ) 
 
           corr_chi_Ncn_2_n = corr_chi_Ncn_1_n
@@ -317,7 +314,7 @@ module Nc_Ncn_test
        ! Calculate Ncm and Nc_in_cloud from PDF parameters (Ncn) and cloud
        ! fraction.
        Nc_in_cloud &
-       = Ncnm_to_Nc_in_cloud( nz, mu_chi_1, mu_chi_2, mu_Ncn_1, mu_Ncn_2, &
+       = Ncnm_to_Nc_in_cloud( mu_chi_1, mu_chi_2, mu_Ncn_1, mu_Ncn_2, &
                               sigma_chi_1, sigma_chi_2, sigma_Ncn_1, &
                               sigma_Ncn_2, sigma_Ncn_1_n, sigma_Ncn_2_n, &
                               corr_chi_Ncn_1_n, corr_chi_Ncn_2_n, mixt_frac, &
@@ -325,7 +322,7 @@ module Nc_Ncn_test
 
        write(fstdout,*) "Nc_in_cloud (from Ncn) = ", Nc_in_cloud
 
-       Ncm = Ncnm_to_Ncm( nz, mu_chi_1, mu_chi_2, mu_Ncn_1, mu_Ncn_2, &
+       Ncm = Ncnm_to_Ncm( mu_chi_1, mu_chi_2, mu_Ncn_1, mu_Ncn_2, &
                           sigma_chi_1, sigma_chi_2, sigma_Ncn_1, &
                           sigma_Ncn_2, sigma_Ncn_1_n, sigma_Ncn_2_n, &
                           corr_chi_Ncn_1_n, corr_chi_Ncn_2_n, mixt_frac )
@@ -334,14 +331,14 @@ module Nc_Ncn_test
 
        ! Calculate Ncnm from Ncm, Nc_in_cloud, PDF parameters, and cloud
        ! fraction.
-       Ncnm = Nc_in_cloud_to_Ncnm( nz, mu_chi_1, mu_chi_2, sigma_chi_1, &
+       Ncnm = Nc_in_cloud_to_Ncnm( mu_chi_1, mu_chi_2, sigma_chi_1, &
                                    sigma_chi_2, mixt_frac, Nc_in_cloud, &
                                    cloud_frac_1, cloud_frac_2, &
                                    const_Ncnp2_on_Ncnm2, const_corr_chi_Ncn )
 
        write(fstdout,*) "Ncnm (from Nc_in_cloud) = ", Ncnm
 
-       Ncnm = Ncm_to_Ncnm( nz, mu_chi_1, mu_chi_2, sigma_chi_1, sigma_chi_2, &
+       Ncnm = Ncm_to_Ncnm( mu_chi_1, mu_chi_2, sigma_chi_1, sigma_chi_2, &
                            mixt_frac, Ncm, const_Ncnp2_on_Ncnm2, &
                            const_corr_chi_Ncn, Nc_in_cloud )
 
@@ -352,7 +349,7 @@ module Nc_Ncn_test
        ! calculations).
        percent_diff = one_hundred * abs( ( Ncnm - mu_Ncn_1 ) / mu_Ncn_1 )
 
-       if ( percent_diff(nz) <= tol ) then
+       if ( percent_diff <= tol ) then
 
           ! The percentage difference between Ncnm (here, after back-and-forth
           ! calculations) and mu_Ncn_1 (here, Ncnm before back-and-forth

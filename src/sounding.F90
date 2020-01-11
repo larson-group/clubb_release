@@ -192,7 +192,7 @@ module sounding
                                alt_type, p_in_Pa, subs_type, subs, &
                                sounding_retVars )
     else
-      write(fstderr,*) 'Cannot open ' // trim( runtype ) // '_souding.in file'
+      write(fstderr,*) 'Cannot open ' // trim( runtype ) // '_sounding.in file'
       stop 'Fatal error in read_sounding'
       ! sounding namelist is no longer used.
       ! Joshua Fasching April 2009
@@ -297,7 +297,13 @@ module sounding
     ! Use linear interpolation from two nearest prescribed grid points
     ! (one above and one below) to initialize mean quantities in the model
     ! Modified 27 May 2005 -dschanen: eliminated the goto in favor of a do while( )
-    do i=2, gr%nz
+    do i=1, gr%nz
+      if ( i == 1 .and. gr%zt(i) < z(1) ) then
+         ! Thermodynamic level 1 is below the model lower boundary.
+         ! If it's below the lowest sounding level, just skip setting it,
+         ! since it is already initialized above.
+         cycle
+      endif
       k=1
       do while ( z(k) < gr%zt(i) )
         k=k+1
@@ -394,7 +400,7 @@ module sounding
 
       end do ! do while ( z(k) < gr%zt(i) )
 
-    end do   ! i=2, gr%nz
+    end do   ! i=1, gr%nz
 
 
     ! The sounding will be initialized to thermodynamic grid levels successfully
@@ -461,15 +467,16 @@ module sounding
     return
   end subroutine read_sounding
 
-  !-------------------------------------------------------------------------------------------------
+  !-----------------------------------------------------------------------------
   subroutine read_sounding_file( iunit, runtype, nlevels, p_sfc, zm_init, &
                                  z, theta, theta_type, rt, u, v, ug, vg, &
                                  alt_type, p_in_Pa, subs_type, subs, retVars )
     !
     !  Description: This subroutine reads in a <runtype>_sounding.in file and
     !  returns the values contained in that file.
-    !
-    !-----------------------------------------------------------------------------------------------
+
+    !-----------------------------------------------------------------------
+
     use input_reader, only: &
       read_one_dim_file, read_x_profile, fill_blanks_one_dim_vars ! Procedure(s)
 
@@ -520,7 +527,7 @@ module sounding
     type(one_dim_read_var), intent(out), dimension(n_snd_var) :: &
       retVars ! Structure containing sounding profile
 
-    character(len=*), intent(out) :: & 
+    character(len=*), intent(out) :: &
       theta_type, &     ! Type of temperature sounding
       alt_type, &       ! Type of independent coordinate
       subs_type         ! Type of subsidence
@@ -532,7 +539,8 @@ module sounding
 
     call fill_blanks_one_dim_vars( n_snd_var, retVars )
 
-    call read_z_profile( n_snd_var, nmaxsnd, retVars, p_sfc, zm_init, z, p_in_Pa, alt_type )
+    call read_z_profile( n_snd_var, nmaxsnd, retVars, p_sfc, zm_init, &
+                         z, p_in_Pa, alt_type )
 
     call read_theta_profile( n_snd_var, nmaxsnd, retVars, theta_type, theta )
 

@@ -30,7 +30,8 @@ module mean_adv
 
   !=============================================================================
   pure function term_ma_zt_lhs( wm_zt, invrs_dzt, level, &
-                                invrs_dzm_k, invrs_dzm_km1 ) & 
+                                invrs_dzm_k, invrs_dzm_km1, &
+                                l_upwind_xm_ma ) & 
   result( lhs )
 
     ! Description:
@@ -181,9 +182,6 @@ module mean_adv
         one,  & ! Constant(s)
         zero
 
-    use model_flags, only: &
-        l_upwind_xm_ma ! Variable(s)
-
     use clubb_precision, only: &
         core_rknd ! Variable(s)
 
@@ -209,6 +207,11 @@ module mean_adv
 
     integer, intent(in) :: & 
       level ! Central thermodynamic level (on which calculation occurs).
+
+    logical, intent(in) :: &
+      l_upwind_xm_ma ! This flag determines whether we want to use an upwind differencing
+                     ! approximation rather than a centered differencing for turbulent or
+                     ! mean advection terms. It affects rtm, thlm, sclrm, um and vm.
 
     ! Return Variable
     real( kind = core_rknd ), dimension(3) :: lhs
@@ -400,6 +403,7 @@ module mean_adv
 
     !=============================================================================================
     pure subroutine term_ma_zt_lhs_all( wm_zt, invrs_dzt, invrs_dzm, & ! Intent(in)
+                                        l_upwind_xm_ma,              & ! Intent(in)
                                         lhs_ma                     ) ! Intent(out)
     ! Description:
     !   This subroutine is an optimized version of term_ma_zt_lhs. term_ma_zt_lhs
@@ -418,9 +422,6 @@ module mean_adv
         use clubb_precision, only: &
             core_rknd ! Variable(s)
 
-        use model_flags, only: &
-            l_upwind_xm_ma ! Variable(s)
-
         implicit none
 
         !------------------- Input Variables -------------------
@@ -428,6 +429,11 @@ module mean_adv
           wm_zt,     & ! wm_zt(k)                        [m/s]
           invrs_dzt, & ! Inverse of grid spacing (k)     [1/m]
           invrs_dzm
+
+        logical, intent(in) :: &
+          l_upwind_xm_ma ! This flag determines whether we want to use an upwind differencing
+                         ! approximation rather than a centered differencing for turbulent or
+                         ! mean advection terms. It affects rtm, thlm, sclrm, um and vm.
 
         !------------------- Output Variables -------------------
         real( kind = core_rknd ), dimension(3,gr%nz), intent(out) :: &

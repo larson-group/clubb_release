@@ -17,9 +17,10 @@ module pdf_parameter_module
 
   private ! Default scope
 
-  public :: pdf_parameter,        & ! Variable Type(s)
-            implicit_coefs_terms, &
-            init_pdf_params         ! Procedure(s)
+  public :: pdf_parameter,                 & ! Variable Type(s)
+            implicit_coefs_terms,          &
+            init_pdf_params,               & ! Procedure(s)
+            init_pdf_implicit_coefs_terms
 
   ! CLUBB's PDF parameters.
   type pdf_parameter
@@ -80,25 +81,75 @@ module pdf_parameter_module
   ! from the PDF and the resulting PDF parameters.
   type implicit_coefs_terms
 
-    real ( kind = core_rknd ) :: &
-      coef_wp4_implicit,     & ! <w'^4> = coef_wp4_implicit * <w'^2>^2       [-]
-      coef_wprtp2_implicit,  & ! <w'rt'^2> = coef_wprtp2_implicit*<rt'^2>  [m/s]
-      coef_wpthlp2_implicit    ! <w'thl'^2>=coef_wpthlp2_implicit*<thl'^2> [m/s]
+    real( kind = core_rknd ), dimension(:), allocatable :: &
+      coef_wp4_implicit    ! <w'^4> = coef_wp4_implicit * <w'^2>^2       [-]
 
     ! <w'^2 rt'> = coef_wp2rtp_implicit * <w'rt'> + term_wp2rtp_explicit
-    real ( kind = core_rknd ) :: &
+    real( kind = core_rknd ), dimension(:), allocatable :: &
       coef_wp2rtp_implicit, & ! Coefficient that is multiplied by <w'rt'>  [m/s]
       term_wp2rtp_explicit    ! Term that is on the RHS          [m^2/s^2 kg/kg]
 
     ! <w'^2 thl'> = coef_wp2thlp_implicit * <w'thl'> + term_wp2thlp_explicit
-    real ( kind = core_rknd ) :: &
+    real( kind = core_rknd ), dimension(:), allocatable :: &
       coef_wp2thlp_implicit, & ! Coef. that is multiplied by <w'thl'>      [m/s]
       term_wp2thlp_explicit    ! Term that is on the RHS             [m^2/s^2 K]
 
+    ! <w'^2 u'> = coef_wp2up_implicit * <u'w'> + term_wp2up_explicit
+    real( kind = core_rknd ), dimension(:), allocatable :: &
+      coef_wp2up_implicit, & ! Coefficient that is multiplied by <u'w'>    [m/s]
+      term_wp2up_explicit    ! Term that is on the RHS                 [m^3/s^3]
+
+    ! <w'^2 v'> = coef_wp2vp_implicit * <v'w'> + term_wp2vp_explicit
+    real( kind = core_rknd ), dimension(:), allocatable :: &
+      coef_wp2vp_implicit, & ! Coefficient that is multiplied by <v'w'>    [m/s]
+      term_wp2vp_explicit    ! Term that is on the RHS                 [m^3/s^3]
+
+    ! <w'rt'^2> = coef_wprtp2_implicit * <rt'^2> + term_wprtp2_explicit
+    real( kind = core_rknd ), dimension(:), allocatable :: &
+      coef_wprtp2_implicit, & ! Coefficient that is multiplied by <rt'^2>  [m/s]
+      term_wprtp2_explicit    ! Term that is on the RHS          [m/s kg^2/kg^2]
+
+    ! <w'thl'^2> = coef_wpthlp2_implicit * <thl'^2> + term_wpthlp2_explicit
+    real( kind = core_rknd ), dimension(:), allocatable :: &
+      coef_wpthlp2_implicit, & ! Coef. that is multiplied by <thl'^2>      [m/s]
+      term_wpthlp2_explicit    ! Term that is on the RHS               [m/s K^2]
+
     ! <w'rt'thl'> = coef_wprtpthlp_implicit*<rt'thl'> + term_wprtpthlp_explicit
-    real ( kind = core_rknd ) :: &
+    real( kind = core_rknd ), dimension(:), allocatable :: &
       coef_wprtpthlp_implicit, & ! Coef. that is multiplied by <rt'thl'>   [m/s]
       term_wprtpthlp_explicit    ! Term that is on the RHS         [m/s(kg/kg)K]
+
+    ! <w'u'^2> = coef_wpup2_implicit * <u'^2> + term_wpup2_explicit
+    real( kind = core_rknd ), dimension(:), allocatable :: &
+      coef_wpup2_implicit, & ! Coefficient that is multiplied by <u'^2>    [m/s]
+      term_wpup2_explicit    ! Term that is on the RHS                 [m^3/s^3]
+
+    ! <w'v'^2> = coef_wpvp2_implicit * <v'^2> + term_wpvp2_explicit
+    real( kind = core_rknd ), dimension(:), allocatable :: &
+      coef_wpvp2_implicit, & ! Coefficient that is multiplied by <v'^2>    [m/s]
+      term_wpvp2_explicit    ! Term that is on the RHS                 [m^3/s^3]
+
+    ! <w'^2 sclr'> = coef_wp2sclrp_implicit * <w'sclr'> + term_wp2sclrp_explicit
+    real( kind = core_rknd ), dimension(:,:), allocatable :: &
+      coef_wp2sclrp_implicit, & ! Coef. that is multiplied by <w'sclr'>    [m/s]
+      term_wp2sclrp_explicit    ! Term that is on the RHS   [m^2/s^2 (un. vary)]
+
+    ! <w'sclr'^2> = coef_wpsclrp2_implicit * <sclr'^2> + term_wpsclrp2_explicit
+    real( kind = core_rknd ), dimension(:,:), allocatable :: &
+      coef_wpsclrp2_implicit, & ! Coef. that is multiplied by <sclr'^2>    [m/s]
+      term_wpsclrp2_explicit    ! Term that is on the RHS    [m/s(units vary)^2]
+
+    ! <w'rt'sclr'> = coef_wprtpsclrp_implicit * <sclr'rt'>
+    !                + term_wprtpsclrp_explicit
+    real( kind = core_rknd ), dimension(:,:), allocatable :: &
+      coef_wprtpsclrp_implicit, & ! Coef. that is multiplied by <sclr'rt'> [m/s]
+      term_wprtpsclrp_explicit    ! Term that is on the RHS [m/s(kg/kg)(un. v.)]
+
+    ! <w'thl'sclr'> = coef_wpthlpsclrp_implicit * <sclr'thl'>
+    !                 + term_wpthlpsclrp_explicit
+    real( kind = core_rknd ), dimension(:,:), allocatable :: &
+      coef_wpthlpsclrp_implicit, & ! Coef. that is mult. by <sclr'thl'>    [m/s]
+      term_wpthlpsclrp_explicit    ! Term that is on the RHS  [(m/s)K(un. vary)]
 
   end type implicit_coefs_terms
 
@@ -237,6 +288,101 @@ module pdf_parameter_module
 
   end subroutine init_pdf_params
   
+  !=============================================================================
+  subroutine init_pdf_implicit_coefs_terms( nz, sclr_dim, &
+                                            pdf_implicit_coefs_terms )
+
+    ! Description:
+    ! Initializes all PDF implicit coefficients and explicit terms in the
+    ! variable type implicit_coefs_terms.
+
+    ! References:
+    !--------------------------------------------------------------------
+
+    use constants_clubb, only: &
+        zero    ! Constant(s)
+
+    implicit none
+
+    ! Input Variables
+    integer, intent(in) :: &
+      nz,       & ! Number of vertical grid levels    [-]
+      sclr_dim    ! Number of scalar variables        [-]
+
+    ! Output Variable
+    type(implicit_coefs_terms), intent(out) :: &
+      pdf_implicit_coefs_terms    ! Implicit coefs / explicit terms [units vary]
+
+
+    ! Allocate pdf_implicit_coefs_terms
+    allocate( pdf_implicit_coefs_terms%coef_wp4_implicit(1:nz), &
+              pdf_implicit_coefs_terms%coef_wp2rtp_implicit(1:nz), &
+              pdf_implicit_coefs_terms%term_wp2rtp_explicit(1:nz), &
+              pdf_implicit_coefs_terms%coef_wp2thlp_implicit(1:nz), &
+              pdf_implicit_coefs_terms%term_wp2thlp_explicit(1:nz), &
+              pdf_implicit_coefs_terms%coef_wp2up_implicit(1:nz), &
+              pdf_implicit_coefs_terms%term_wp2up_explicit(1:nz), &
+              pdf_implicit_coefs_terms%coef_wp2vp_implicit(1:nz), &
+              pdf_implicit_coefs_terms%term_wp2vp_explicit(1:nz), &
+              pdf_implicit_coefs_terms%coef_wprtp2_implicit(1:nz), &
+              pdf_implicit_coefs_terms%term_wprtp2_explicit(1:nz), &
+              pdf_implicit_coefs_terms%coef_wpthlp2_implicit(1:nz), &
+              pdf_implicit_coefs_terms%term_wpthlp2_explicit(1:nz), &
+              pdf_implicit_coefs_terms%coef_wprtpthlp_implicit(1:nz), &
+              pdf_implicit_coefs_terms%term_wprtpthlp_explicit(1:nz), &
+              pdf_implicit_coefs_terms%coef_wpup2_implicit(1:nz), &
+              pdf_implicit_coefs_terms%term_wpup2_explicit(1:nz), &
+              pdf_implicit_coefs_terms%coef_wpvp2_implicit(1:nz), &
+              pdf_implicit_coefs_terms%term_wpvp2_explicit(1:nz) )
+
+    if ( sclr_dim > 0 ) then
+       allocate( &
+          pdf_implicit_coefs_terms%coef_wp2sclrp_implicit(1:nz,1:sclr_dim), &
+          pdf_implicit_coefs_terms%term_wp2sclrp_explicit(1:nz,1:sclr_dim), &
+          pdf_implicit_coefs_terms%coef_wpsclrp2_implicit(1:nz,1:sclr_dim), &
+          pdf_implicit_coefs_terms%term_wpsclrp2_explicit(1:nz,1:sclr_dim), &
+          pdf_implicit_coefs_terms%coef_wprtpsclrp_implicit(1:nz,1:sclr_dim), &
+          pdf_implicit_coefs_terms%term_wprtpsclrp_explicit(1:nz,1:sclr_dim), &
+          pdf_implicit_coefs_terms%coef_wpthlpsclrp_implicit(1:nz,1:sclr_dim), &
+          pdf_implicit_coefs_terms%term_wpthlpsclrp_explicit(1:nz,1:sclr_dim) )
+    endif ! sclr_dim > 0
+
+    ! Initialize pdf_implicit_coefs_terms
+    pdf_implicit_coefs_terms%coef_wp4_implicit = zero
+    pdf_implicit_coefs_terms%coef_wp2rtp_implicit = zero
+    pdf_implicit_coefs_terms%term_wp2rtp_explicit = zero
+    pdf_implicit_coefs_terms%coef_wp2thlp_implicit = zero
+    pdf_implicit_coefs_terms%term_wp2thlp_explicit = zero
+    pdf_implicit_coefs_terms%coef_wp2up_implicit = zero
+    pdf_implicit_coefs_terms%term_wp2up_explicit = zero
+    pdf_implicit_coefs_terms%coef_wp2vp_implicit = zero
+    pdf_implicit_coefs_terms%term_wp2vp_explicit = zero
+    pdf_implicit_coefs_terms%coef_wprtp2_implicit = zero
+    pdf_implicit_coefs_terms%term_wprtp2_explicit = zero
+    pdf_implicit_coefs_terms%coef_wpthlp2_implicit = zero
+    pdf_implicit_coefs_terms%term_wpthlp2_explicit = zero
+    pdf_implicit_coefs_terms%coef_wprtpthlp_implicit = zero
+    pdf_implicit_coefs_terms%term_wprtpthlp_explicit = zero
+    pdf_implicit_coefs_terms%coef_wpup2_implicit = zero
+    pdf_implicit_coefs_terms%term_wpup2_explicit = zero
+    pdf_implicit_coefs_terms%coef_wpvp2_implicit = zero
+    pdf_implicit_coefs_terms%term_wpvp2_explicit = zero
+    if ( sclr_dim > 0 ) then
+       pdf_implicit_coefs_terms%coef_wp2sclrp_implicit = zero
+       pdf_implicit_coefs_terms%term_wp2sclrp_explicit = zero
+       pdf_implicit_coefs_terms%coef_wpsclrp2_implicit = zero
+       pdf_implicit_coefs_terms%term_wpsclrp2_explicit = zero
+       pdf_implicit_coefs_terms%coef_wprtpsclrp_implicit = zero
+       pdf_implicit_coefs_terms%term_wprtpsclrp_explicit = zero
+       pdf_implicit_coefs_terms%coef_wpthlpsclrp_implicit = zero
+       pdf_implicit_coefs_terms%term_wpthlpsclrp_explicit = zero
+    endif ! sclr_dim > 0
+
+
+    return
+
+  end subroutine init_pdf_implicit_coefs_terms
+
   !=============================================================================
 
 ! The CLUBB_CAM preprocessor directives are being commented out because this
