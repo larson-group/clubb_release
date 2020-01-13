@@ -679,11 +679,7 @@ module latin_hypercube_driver_module
         call generate_uniform_lh_sample( iter, num_samples, sequence_length, & ! Intent(in)
                                          pdf_dim+d_uniform_extra,            & ! Intent(in)
                                          X_u_all_levs(k_lh_start,:,:) )        ! Intent(out)
-                                
-        ! Clip uniform sample points to expected range                                 
-        X_u_all_levs(k_lh_start,:,:) = max( uniform_sample_thresh, &
-                              min( one - uniform_sample_thresh, X_u_all_levs(k_lh_start,:,:) ) )
-
+                              
         if ( l_lh_importance_sampling ) then
 
           if ( l_lh_old_cloud_weighted ) then
@@ -711,6 +707,11 @@ module latin_hypercube_driver_module
                    lh_sample_point_weights(k_lh_start,:) )                      ! Out
 
           end if ! l_lh_old_cloud_weighted
+          
+          ! Clip uniform sample points to expected range                                 
+          X_u_all_levs(k_lh_start,:,:) = max( uniform_sample_thresh, &
+                                min( one - uniform_sample_thresh, X_u_all_levs(k_lh_start,:,:) ) )
+
           
           do k = 1, nz
             lh_sample_point_weights(k,:) = lh_sample_point_weights(k_lh_start,:)
@@ -744,9 +745,9 @@ module latin_hypercube_driver_module
         do i = 1, pdf_dim+d_uniform_extra
           do sample = 1, num_samples
             do k = 1, nz
-              X_u_all_levs(k_lh_start,sample,i) = max( uniform_sample_thresh, &
-                                                       min( one - uniform_sample_thresh, &
-                                                            rand_pool(k_lh_start,sample,i) ) )
+              X_u_all_levs(k,sample,i) = max( uniform_sample_thresh, &
+                                              min( one - uniform_sample_thresh, &
+                                                   rand_pool(k,sample,i) ) )
             end do
           end do
         end do
@@ -762,10 +763,6 @@ module latin_hypercube_driver_module
           call generate_uniform_lh_sample( iter, num_samples, sequence_length, & ! Intent(in)
                                            pdf_dim+d_uniform_extra,            & ! Intent(in)
                                            X_u_all_levs(k,:,:) )                 ! Intent(out)
-                                  
-          ! Clip uniform sample points to expected range                                 
-          X_u_all_levs(k,:,:) = max( uniform_sample_thresh, &
-                                min( one - uniform_sample_thresh, X_u_all_levs(k,:,:) ) )
 
           if ( l_lh_importance_sampling ) then
 
@@ -801,6 +798,10 @@ module latin_hypercube_driver_module
             lh_sample_point_weights(k,:) = one
 
           end if ! l_lh_importance_sampling
+          
+          ! Clip uniform sample points to expected range                                 
+          X_u_all_levs(k,:,:) = max( uniform_sample_thresh, &
+                                min( one - uniform_sample_thresh, X_u_all_levs(k,:,:) ) )
         
         end do
 
@@ -1732,7 +1733,7 @@ module latin_hypercube_driver_module
            half_width = one - vert_corr(k+1)
            min_val = X_u_all_levs(k,sample,i) - half_width
 
-           offset = two * half_width * rand_pool(k,sample,i)
+           offset = two * half_width * rand_pool(k+1,sample,i)
 
            X_u_all_levs(k+1,sample,i) = min_val + offset
            
@@ -1761,7 +1762,7 @@ module latin_hypercube_driver_module
            half_width = one - vert_corr(k-1)
            min_val = X_u_all_levs(k,sample,i) - half_width
 
-           offset = two * half_width * rand_pool(k,sample,i)
+           offset = two * half_width * rand_pool(k-1,sample,i)
 
            X_u_all_levs(k-1,sample,i) = min_val + offset
            
