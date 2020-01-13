@@ -886,35 +886,9 @@ The statements are logically equivalent, but because b is defined within the WHE
 
 It's unclear whether or not this behavior is a bug with certain compilers or if it is the intended behavior as defined by Fortran standards. To be safe, we should avoid this potential error, either by refactoring the WHERE statement in some way, or by replacing the WHERE statement altogether with a DO loop containing IF statements. This issue is explained in more depth in CLUBB issue 859 on github, https://github.com/larson-group/clubb/issues/859.
 
+\item
+When including the \texttt{clubb\_config\_flags} or the \texttt{silhs\_config\_flags} derived types or any of their components in argument lists only pass the complete \texttt{clubb\_config\_flags} to the subroutine \texttt{advance\_clubb\_core} and only pass the complete \texttt{silhs\_config\_flags} to the subroutine \texttt{generate\_silhs\_sample}. For all other subroutines and functions where any component of one of the derived types is needed just pass the specific components along in the argument list. This increases code readability and makes debugging easier because one can easily see which components are used where.
+
 \end{enumerate}
 
 \end{document}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
