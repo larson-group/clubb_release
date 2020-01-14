@@ -48,7 +48,7 @@ class VariableGroupBase(VariableGroup):
             {'aliases': ['vp2', 'V2']},
             {'aliases': ['rcp2', 'QC2', 'qcp2'], 'sam_conv_factor': 1 / 10 ** 6},
             {'aliases': ['lwp', 'CWP'],	 'type': Panel.TYPE_TIMESERIES, 'sam_conv_factor': 1/1000},
-            {'aliases': ['wp2_vert_avg', 'CWP'], 'type': Panel.TYPE_TIMESERIES,	 'fill_zeros': True},
+            {'aliases': ['wp2_vert_avg', 'W2_VERT_AVG'], 'type': Panel.TYPE_TIMESERIES,	 'fill_zeros': True},
             {'aliases': ['tau_zm'], 'fill_zeros': True},
             {'aliases': ['Lscale'], 'fill_zeros': True},
             {'aliases': ['wpthvp', 'WPTHVP'], 'fallback_func': self.getWpthvpFallback},
