@@ -14,7 +14,7 @@ class VariableGroupBase(VariableGroup):
     """
 
     def __init__(self, ncdf_datasets, case, sam_file=None, coamps_file=None, r408_dataset=None, hoc_dataset=None,
-                 e3sm_dataset=None):
+                 e3sm_datasets=None):
         """
 
         :param ncdf_datasets:
@@ -85,7 +85,7 @@ class VariableGroupBase(VariableGroup):
 
             # TODO corr chi 2's
         ]
-        super().__init__(ncdf_datasets, case, sam_file=sam_file, coamps_file=coamps_file, r408_dataset=r408_dataset, hoc_dataset=hoc_dataset, e3sm_dataset = e3sm_dataset)
+        super().__init__(ncdf_datasets, case, sam_file=sam_file, coamps_file=coamps_file, r408_dataset=r408_dataset, hoc_dataset=hoc_dataset, e3sm_datasets= e3sm_datasets)
 
     def getThlmSamCalc(self, dataset_override = None):
         """
@@ -110,8 +110,8 @@ class VariableGroupBase(VariableGroup):
     #     (THETAL + 2500.4.*(THETA./TABS).*(QI./1000))
     #     :return: requested variable data in the form of a list. Returned data is already cropped to the appropriate min,max indices
     #     """
-    #     # z,z, dataset = self.getVarForCalculations('Z3', self.e3sm_dataset)
-    #     thlm,z, dataset = self.getVarForCalculations('THETAL', self.e3sm_dataset)
+    #     # z,z, dataset = self.getVarForCalculations('Z3', self.e3sm_datasets)
+    #     thlm,z, dataset = self.getVarForCalculations('THETAL', self.e3sm_datasets)
     #
     #     thlm = thlm - 650.0
     #     return thlm, z

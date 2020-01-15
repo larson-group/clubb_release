@@ -26,7 +26,7 @@ class VariableGroup:
     """
 
     def __init__(self, ncdf_datasets, case, sam_file=None, coamps_file=None, r408_dataset=None, hoc_dataset=None,
-                 e3sm_dataset=None):
+                 e3sm_datasets=None):
         """
         Initialize common VariableGroup parameters
         :param ncdf_datasets: A dictionary or Netcdf dataset containing the data to be plotted
@@ -42,7 +42,7 @@ class VariableGroup:
         self.ncdf_files = ncdf_datasets
         self.case = case
         self.sam_file = sam_file
-        self.e3sm_dataset = e3sm_dataset
+        self.e3sm_datasets = e3sm_datasets
         self.coamps_file = coamps_file
         self.r408_dataset = r408_dataset
         self.hoc_dataset = hoc_dataset
@@ -99,7 +99,7 @@ class VariableGroup:
 
         *type*: (optional) Override the default type 'profile' with either 'budget' or 'timeseries'
 
-        *fallback_func*: (optional) If a variable is not found within a dataset and a fallback_func is specified, this
+        *fallback_func*: (optional) If a variable is not found within a dataset_name and a fallback_func is specified, this
         function will be called to attempt retrieving the variable (before filling zeros if fill_zeros=True). Like the
         model_calc option, this is a functional reference to a method that calculates the given variable. E.g. self.getWpthlpFallback
 
@@ -186,7 +186,7 @@ class VariableGroup:
         if 'hoc_conv_factor' in variable_def_dict.keys():
             hoc_conv_factor = variable_def_dict['hoc_conv_factor']
 
-        e3sm_dataset = self.e3sm_dataset
+        e3sm_dataset = self.e3sm_datasets
         e3sm_conv_factor = 1
         if 'e3sm_calc' in variable_def_dict.keys():
             e3sm_dataset = None  # don't try to autoplot e3sm if e3sm is a calculated value
@@ -230,10 +230,16 @@ class VariableGroup:
                                                   line_format=Style_definitions.HOC_LINE_STYLE, fill_zeros=fill_zeros,
                                                   override_panel_type=panel_type, fallback_func=fallback, lines=lines))
 
-        if e3sm_dataset is not None:
-            all_lines.extend(self.__getVarLines__(aliases, e3sm_dataset, conversion_factor=e3sm_conv_factor,
-                                                  label=Style_definitions.E3SM_LABEL,
-                                                  line_format=Style_definitions.E3SM_LINE_STYLE, fill_zeros=fill_zeros,
+        if e3sm_dataset is not None and len(e3sm_dataset) >0:
+            label = Style_definitions.E3SM_LABEL
+            line_style = Style_definitions.E3SM_LINE_STYLE
+            for dataset_name in e3sm_dataset:
+                if len(e3sm_dataset) is not 1:
+                    label = os.path.basename(dataset_name)
+                    line_style =""
+                all_lines.extend(self.__getVarLines__(aliases, e3sm_dataset[dataset_name], conversion_factor=e3sm_conv_factor,
+                                                  label=label,
+                                                  line_format=line_style, fill_zeros=fill_zeros,
                                                   override_panel_type=panel_type, fallback_func=fallback, lines=lines))
 
 
@@ -282,8 +288,8 @@ class VariableGroup:
                               label=Style_definitions.COAMPS_LABEL)
             variable_def_dict['plots'].append(coampsplot)
 
-        if 'e3sm_calc' in variable_def_dict.keys() and self.e3sm_dataset is not None and data_reader.getNcdfSourceModel(
-                self.e3sm_dataset) == 'e3sm':
+        if 'e3sm_calc' in variable_def_dict.keys() and self.e3sm_datasets is not None and data_reader.getNcdfSourceModel(
+                self.e3sm_datasets) == 'e3sm':
             e3smplot_data, z = variable_def_dict['e3sm_calc']()
             e3smplot = Line(e3smplot_data, z, line_format=Style_definitions.E3SM_LINE_STYLE,
                            label=Style_definitions.E3SM_LABEL)
@@ -307,11 +313,18 @@ class VariableGroup:
 
         datasets = []
         if self.ncdf_files is not None:
-            for input_folder in self.ncdf_files.values():
-                for dataset in input_folder.values():
-                    datasets.append(dataset)
-        if self.e3sm_dataset is not None:
-            datasets.append(self.e3sm_dataset)
+            for i in self.ncdf_files.values():
+                if isinstance(i, dict):
+                    for dataset in i.values():
+                        datasets.append(dataset)
+                elif isinstance(i, Dataset):
+                    datasets.append(i)
+                else:
+                    raise TypeError("getTextDefiningDataset recieved an unexpected format of datasets")
+        if self.e3sm_datasets is not None:
+            for dataset in self.e3sm_datasets.values():
+                # for dataset in input_folder.values():
+                datasets.append(dataset)
         if self.sam_file is not None:
             datasets.append(self.sam_file)
         if self.coamps_file is not None:
@@ -398,9 +411,11 @@ class VariableGroup:
         if line is None and panel_type != Panel.TYPE_BUDGET and fill_zeros is False:
             datareader = DataReader()
             src_model = datareader.getNcdfSourceModel(dataset)
-            print("\tFailed to find variable " + str(aliases) + " in " + src_model + " output for " + " case " + str(
-                self.casename) +
-                  ". Attempting to use fallback function.")
+
+            # TODO re-enable this print under a verbose print mode
+            # print("\tFailed to find variable " + str(aliases) + " in " + src_model + " output for " + " case " + str(
+            #     self.casename) +
+            #       ". Attempting to use fallback function.")
             line = self.__getVarDataFromFallback__(fallback_func, aliases, ncdf_datasets, label, line_format)
         if panel_type != Panel.TYPE_BUDGET and line is not None:
             all_lines.append(line)
@@ -486,8 +501,10 @@ class VariableGroup:
                     break
 
             if not line_added:
-                print("\tFailed to find variable " + varname + " in case " + self.casename +
-                      ". Attempting to use fallback function.")
+                # TODO re-enable this print under a verbose print mode
+
+                # print("\tFailed to find variable " + varname + " in case " + self.casename +
+                #       ". Attempting to use fallback function.")
                 if 'fallback_func' in line_definition.keys():
                     fallback = line_definition['fallback_func']
                     fallback_output = self.__getVarDataFromFallback__(fallback, varname, {'budget': dataset}, label,
@@ -519,7 +536,8 @@ class VariableGroup:
         try:
             vardata, z = fallback(dataset_override=datasets)
             varline = Line(vardata, z, line_format=line_format, label=label)
-            print("\tFallback for ", varname, " successful")
+            # TODO Re-enable this under a 'verbose' runmode
+            # print("\tFallback for ", varname, " successful")
             return varline
         # except ValueError as e:
         #     # variable wasn't contained in dataset, try next dataset

@@ -5,7 +5,6 @@
 
 import numpy as np
 
-from config import Style_definitions
 from config.VariableGroupBaseBudgets import VariableGroupBaseBudgets
 from src.DataReader import DataReader
 from src.Panel import Panel
@@ -21,7 +20,7 @@ class Case:
     """
 
     def __init__(self, case_definition, ncdf_datasets, diff_datasets=None,
-                 plot_les=False, plot_budgets=False, plot_r408=False, plot_hoc=False, e3sm_dir =""):
+                 plot_les=False, plot_budgets=False, plot_r408=False, plot_hoc=False, e3sm_dirs =[]):
         """
         Initialize a Case
 
@@ -50,7 +49,7 @@ class Case:
         self.plot_budgets = plot_budgets
         self.plot_r408 = plot_r408
         self.plot_hoc = plot_hoc
-        self.plot_e3sm = e3sm_dir
+        self.plot_e3sm = e3sm_dirs
         self.diff_datasets = diff_datasets
         self.next_panel_alphabetic_id_code = 97
         if 'disable_budgets' in case_definition.keys() and case_definition['disable_budgets'] is True:
@@ -61,11 +60,12 @@ class Case:
             datareader = DataReader()
             sam_file = datareader.__loadNcFile__(case_definition['sam_file'])
 
-        e3sm_file = None
-        if e3sm_dir != "" and e3sm_dir != None and case_definition['e3sm_file'] != None:
+        e3sm_file = {}
+        if len(e3sm_dirs) != 0 and e3sm_dirs != None and case_definition['e3sm_file'] != None:
             datareader = DataReader()
-            e3sm_filename = e3sm_dir + case_definition['e3sm_file']
-            e3sm_file = datareader.__loadNcFile__(e3sm_filename)
+            for foldername in e3sm_dirs:
+                e3sm_filename = foldername + case_definition['e3sm_file']
+                e3sm_file[foldername] = datareader.__loadNcFile__(e3sm_filename)
 
         coamps_datasets = {}
         if plot_les and case_definition['coamps_file'] is not None:
@@ -101,7 +101,7 @@ class Case:
         self.diff_panels = []
         for VarGroup in self.var_groups:
             temp_group = VarGroup(self.ncdf_datasets, self, sam_file=sam_file, coamps_file=coamps_datasets,
-                                  r408_dataset=r408_datasets, hoc_dataset=hoc_datasets, e3sm_dataset = e3sm_file)
+                                  r408_dataset=r408_datasets, hoc_dataset=hoc_datasets, e3sm_datasets = e3sm_file)
 
             for panel in temp_group.panels:
                 self.panels.append(panel)
@@ -110,7 +110,7 @@ class Case:
         if self.diff_datasets is not None:
             for VarGroup in self.var_groups:
                 diff_group = VarGroup(self.diff_datasets, self, sam_file=sam_file, coamps_file=coamps_datasets,
-                                      r408_file=r408_datasets, hoc_dataset=hoc_datasets, e3sm_dataset = e3sm_file)
+                                      r408_file=r408_datasets, hoc_dataset=hoc_datasets, e3sm_datasets = e3sm_file)
                 for panel in diff_group.panels:
                     self.diff_panels.append(panel)
             for idx in range(len(self.panels)):
@@ -123,12 +123,13 @@ class Case:
                 self.panels[idx].all_plots = diff_lines
 
         if self.plot_budgets:
-            if self.ncdf_datasets is not None:
+            if self.ncdf_datasets is not None and len(self.ncdf_datasets) is not 0:
                 budget_variables = VariableGroupBaseBudgets(self.ncdf_datasets, self)
                 self.panels.extend(budget_variables.panels)
-            if e3sm_file != None:
-                e3sm_budgets = VariableGroupBaseBudgets({Style_definitions.E3SM_LABEL:{'e3sm': e3sm_file}}, self) # E3SM dataset must be wrapped in the same form as the clubb datasets
-                self.panels.extend(e3sm_budgets.panels)
+            if e3sm_file != None and len(e3sm_file) is not 0:
+                for dataset_name in e3sm_file:
+                    e3sm_budgets = VariableGroupBaseBudgets({dataset_name:e3sm_file[dataset_name]}, self) # E3SM dataset must be wrapped in the same form as the clubb datasets
+                    self.panels.extend(e3sm_budgets.panels)
 
 
     def getDiffLinesBetweenPanels(self, panelA, panelB, get_y_diff=False):

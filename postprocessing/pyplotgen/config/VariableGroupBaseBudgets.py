@@ -13,7 +13,7 @@ class VariableGroupBaseBudgets(VariableGroup):
     """
 
     def __init__(self, ncdf_datasets, case, sam_file=None, coamps_file=None, r408_dataset=None, hoc_dataset=None,
-                 e3sm_dataset=None):
+                 e3sm_datasets=None):
 
         self.name = "base variables budgets"
         
@@ -24,7 +24,7 @@ class VariableGroupBaseBudgets(VariableGroup):
             {'aliases': ['thlm_mc'], 'legend_label': 'thlm_mc'},
             {'aliases': ['thlm_clipping'], 'legend_label': 'thlm_clipping', 'fallback_func': self.getThlmClipping},
             {'aliases': ['radht'], 'legend_label': 'radht'},
-            {'aliases': ['ls_forcing'], 'legend_label': 'ls_forcing', 'fallback_func': self.getLsforcing},
+            {'aliases': ['ls_forcing'], 'legend_label': 'thlm_ls_forcing', 'fallback_func': self.getLsforcing},
             {'aliases': ['thlm_residual'], 'legend_label': 'thlm_residual', 'fallback_func': self.getThlmResidual},
 
         ]
@@ -230,7 +230,7 @@ class VariableGroupBaseBudgets(VariableGroup):
             {'aliases': ['um'], 'lines': um_budget_lines, 'type': Panel.TYPE_BUDGET, 'fill_zeros': True},
             {'aliases': ['vm'], 'lines': vm_budget_lines, 'type': Panel.TYPE_BUDGET, 'fill_zeros': True}
         ]
-        super().__init__(ncdf_datasets, case, sam_file=sam_file, coamps_file=coamps_file, r408_dataset=r408_dataset, hoc_dataset=hoc_dataset, e3sm_dataset = e3sm_dataset)
+        super().__init__(ncdf_datasets, case, sam_file=sam_file, coamps_file=coamps_file, r408_dataset=r408_dataset, hoc_dataset=hoc_dataset, e3sm_datasets= e3sm_datasets)
 
     def getThlmClipping(self, dataset_override = None):
         '''

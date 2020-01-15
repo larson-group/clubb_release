@@ -116,7 +116,7 @@ class PyPlotGen:
                 if self.diff is not None:
                     case_diff_datasets = diff_datasets[casename]
                 case = Case(case_def, self.nc_datasets[casename], plot_les=self.les, plot_budgets=self.plot_budgets,
-                            diff_datasets=case_diff_datasets, plot_r408=self.cgbest, plot_hoc=self.hoc, e3sm_dir=self.e3sm_dir)
+                            diff_datasets=case_diff_datasets, plot_r408=self.cgbest, plot_hoc=self.hoc, e3sm_dirs=self.e3sm_dir)
                 case.plot(self.output_folder, replace_images=self.replace_images, no_legends=self.no_legends,
                           thin_lines=self.thin, show_alphabetic_id=self.show_alphabetic_id)
                 self.cases_plotted.append(casename)
@@ -226,7 +226,7 @@ def __process_args__():
                                              "where each filename is the name of the clubb case to plot it with. E.g. "
                                              "name a file dycoms2_rfo2_ds.nc to plot it with that clubb case.",
                         action="store",
-                        default=[""], nargs=1)
+                        default=[], nargs='+')
     parser.add_argument("-g", "--plot-golaz-best", help="Plot Chris Golaz Best Ever data for comparison.",
                         action="store_true")
     parser.add_argument("-d", "--plot-hoc-2005", help="Plot !HOC 12/17/2015 data for comparison.", action="store_true")
@@ -260,12 +260,16 @@ def __process_args__():
     les = args.les
     cgbest = args.plot_golaz_best
     hoc = args.plot_hoc_2005
-    e3sm = args.e3sm[0]
+    e3sm = args.e3sm #[0]
 
     # If the last char in folder path is /, remove it
     for i in range(len(args.input)):
         if args.input[i][-1] == "/":
             args.input[i] = args.input[i][:-1]
+
+    for i in range(len(args.e3sm)):
+        if args.e3sm[i][-1] == "/":
+            args.e3sm[i] = args.e3sm[i][:-1]
 
     if args.no_clubb:
         args.input = [""]
