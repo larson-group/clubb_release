@@ -270,6 +270,18 @@ module latin_hypercube_driver_module
       end where
     end if
     
+    ! Assertion check for the vertical correlation
+    if ( clubb_at_least_debug_level( 1 ) ) then
+      if ( any( X_vert_corr > one ) .or. any( X_vert_corr < zero ) ) then
+        write(fstderr,*) "The vertical correlation in latin_hypercube_driver"// &
+          "is not in the correct range"
+        do k = 1, nz
+          write(fstderr,*) "k = ", k,  "Vert. correlation = ", X_vert_corr(k)
+        end do
+        stop "Fatal error in vertical_overlap_driver"
+      end if ! Some correlation isn't between [0,1]
+    end if ! clubb_at_least_debug_level 1
+    
     !$acc data create(rand_pool) &
     !$acc&     copyin(pdf_params,pdf_params%mixt_frac,pdf_params%cloud_frac_1, &
     !$acc&            pdf_params%cloud_frac_2, precip_frac_1,precip_frac_2, &
