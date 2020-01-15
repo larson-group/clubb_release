@@ -2,6 +2,8 @@
 :author: Nicolas Strike
 :date: 2019
 """
+from os import path
+from warnings import warn
 
 import numpy as np
 
@@ -65,7 +67,10 @@ class Case:
             datareader = DataReader()
             for foldername in e3sm_dirs:
                 e3sm_filename = foldername + case_definition['e3sm_file']
-                e3sm_file[foldername] = datareader.__loadNcFile__(e3sm_filename)
+                if path.exists(e3sm_filename):
+                    e3sm_file[foldername] = datareader.__loadNcFile__(e3sm_filename)
+                else:
+                    warn("Failed to find file " + e3sm_filename)
 
         coamps_datasets = {}
         if plot_les and case_definition['coamps_file'] is not None:
