@@ -53,11 +53,11 @@ class VariableGroup:
         self.height_max_value = case.height_max_value
 
         for variable in self.variable_definitions:
-            print("\tProcessing ", variable['aliases'])
+            print("\tProcessing ", variable['var_names'])
 
-            # Only add variable if none of the aliases are blacklisted
-            if len(list(set(variable['aliases']).intersection(
-                    case.blacklisted_variables))) == 0:  # variable['aliases'] not in case.blacklisted_variables:
+            # Only add variable if none of the var_names are blacklisted
+            if len(list(set(variable['var_names']).intersection(
+                    case.blacklisted_variables))) == 0:  # variable['var_names'] not in case.blacklisted_variables:
                 # Skip this variable if it's blacklisted for the case
                 self.addVariable(variable)
         self.generatePanels()
@@ -73,7 +73,7 @@ class VariableGroup:
 
         Valid dict keys/options include:
 
-        *aliases*: A list of names various models refer to this variable as. E.g. ['wprtp', 'WPRTP', 'wpqtp']
+        *var_names*: A list of names various models refer to this variable as. E.g. ['wprtp', 'WPRTP', 'wpqtp']
 
         *sam_calc*: (optional) A functional reference to a method that calculates a sam variable. This is given as the name of the
         function *without*  a set of parenthesis () after the name. E.g. self.getThlmSamCalc
@@ -117,14 +117,14 @@ class VariableGroup:
             :linenos:
 
             thlm_lines = [
-            {'aliases': ['thlm_bt'], 'legend_label': 'thlm_bt'},
-            {'aliases': ['thlm_ma'], 'legend_label': 'thlm_ma'},
-            {'aliases': ['thlm_ta'], 'legend_label': 'thlm_ta'},
-            {'aliases': ['thlm_mc'], 'legend_label': 'thlm_mc'},
-            {'aliases': ['thlm_clipping'], 'legend_label': 'thlm_bt', 'fallback_func': self.getThlmClipping},
-            {'aliases': ['radht'], 'legend_label': 'radht'},
-            {'aliases': ['lsforcing'], 'legend_label': 'lsforcing', 'fallback_func': self.getLsforcing},
-            {'aliases': ['thlm_residual'], 'legend_label': 'thlm_residual', 'fallback_func': self.getThlmResidual},
+            {'var_names': ['thlm_bt'], 'legend_label': 'thlm_bt'},
+            {'var_names': ['thlm_ma'], 'legend_label': 'thlm_ma'},
+            {'var_names': ['thlm_ta'], 'legend_label': 'thlm_ta'},
+            {'var_names': ['thlm_mc'], 'legend_label': 'thlm_mc'},
+            {'var_names': ['thlm_clipping'], 'legend_label': 'thlm_bt', 'fallback_func': self.getThlmClipping},
+            {'var_names': ['radht'], 'legend_label': 'radht'},
+            {'var_names': ['lsforcing'], 'legend_label': 'lsforcing', 'fallback_func': self.getLsforcing},
+            {'var_names': ['thlm_residual'], 'legend_label': 'thlm_residual', 'fallback_func': self.getThlmResidual},
             ]
 
         Here are a couple examples of other (non-budget) variable definitions:
@@ -133,14 +133,14 @@ class VariableGroup:
             :linenos:
 
             {
-            'aliases': ['Skrt_zt'],
+            'var_names': ['Skrt_zt'],
             'sam_calc': self.getSkrtZtLesCalc,
             'coamps_calc': self.getSkrtZtLesCalc,
             'fill_zeros': True
             }
 
             {
-            'aliases': ['lwp', 'CWP'],
+            'var_names': ['lwp', 'CWP'],
             'type': Panel.TYPE_TIMESERIES,
             'sam_conv_factor': 1/1000
             },
@@ -150,7 +150,7 @@ class VariableGroup:
         """
 
         data_reader = DataReader()
-        aliases = variable_def_dict['aliases']
+        var_names = variable_def_dict['var_names']
         fill_zeros = False
         lines = None
 
@@ -204,28 +204,28 @@ class VariableGroup:
 
         all_lines = []
         if sam_file is not None:
-            all_lines.extend(self.__getVarLines__(aliases, sam_file, conversion_factor=sam_conv_factor,
+            all_lines.extend(self.__getVarLines__(var_names, sam_file, conversion_factor=sam_conv_factor,
                                                   label=Style_definitions.SAM_LABEL,
                                                   line_format=Style_definitions.LES_LINE_STYLE, fill_zeros=fill_zeros,
                                                   override_panel_type=panel_type,
                                                   fallback_func=fallback, lines=lines))
 
         if coamps_file is not None:
-            all_lines.extend(self.__getVarLines__(aliases, coamps_file, conversion_factor=coamps_conv_factor,
+            all_lines.extend(self.__getVarLines__(var_names, coamps_file, conversion_factor=coamps_conv_factor,
                                                   label=Style_definitions.COAMPS_LABEL,
                                                   line_format=Style_definitions.LES_LINE_STYLE, fill_zeros=fill_zeros,
                                                   override_panel_type=panel_type,
                                                   fallback_func=fallback, lines=lines))
 
         if r408_dataset is not None:
-            all_lines.extend(self.__getVarLines__(aliases, r408_dataset, conversion_factor=r408_conv_factor,
+            all_lines.extend(self.__getVarLines__(var_names, r408_dataset, conversion_factor=r408_conv_factor,
                                                   label=Style_definitions.GOLAZ_LABEL,
                                                   line_format=Style_definitions.GOLAZ_BEST_R408_LINE_STYLE,
                                                   fill_zeros=fill_zeros,
                                                   override_panel_type=panel_type, fallback_func=fallback, lines=lines))
 
         if hoc_dataset is not None:
-            all_lines.extend(self.__getVarLines__(aliases, hoc_dataset, conversion_factor=hoc_conv_factor,
+            all_lines.extend(self.__getVarLines__(var_names, hoc_dataset, conversion_factor=hoc_conv_factor,
                                                   label=Style_definitions.HOC_LABEL,
                                                   line_format=Style_definitions.HOC_LINE_STYLE, fill_zeros=fill_zeros,
                                                   override_panel_type=panel_type, fallback_func=fallback, lines=lines))
@@ -237,7 +237,7 @@ class VariableGroup:
                 if len(e3sm_dataset) is not 1:
                     label = os.path.basename(dataset_name)
                     line_style =""
-                all_lines.extend(self.__getVarLines__(aliases, e3sm_dataset[dataset_name], conversion_factor=e3sm_conv_factor,
+                all_lines.extend(self.__getVarLines__(var_names, e3sm_dataset[dataset_name], conversion_factor=e3sm_conv_factor,
                                                   label=label,
                                                   line_format=line_style, fill_zeros=fill_zeros,
                                                   override_panel_type=panel_type, fallback_func=fallback, lines=lines))
@@ -250,21 +250,21 @@ class VariableGroup:
                 label = os.path.basename(ncdf_files_subfolder)
                 if num_folders_plotted < len(Style_definitions.CLUBB_LABEL_OVERRIDE):
                     label = Style_definitions.CLUBB_LABEL_OVERRIDE[num_folders_plotted]
-                all_lines.extend(self.__getVarLines__(aliases, datasets, label=label, fill_zeros=fill_zeros,
+                all_lines.extend(self.__getVarLines__(var_names, datasets, label=label, fill_zeros=fill_zeros,
                                                       override_panel_type=panel_type, fallback_func=fallback, lines=lines))
                 num_folders_plotted += 1
         else:
             label = ""
 
-        aliases = variable_def_dict['aliases']
-        clubb_name = aliases[0]
+        var_names = variable_def_dict['var_names']
+        clubb_name = var_names[0]
         variable_def_dict['plots'] = all_lines
         first_input_datasets = self.getTextDefiningDataset()
         if 'title' not in variable_def_dict.keys():
             if panel_type == Panel.TYPE_BUDGET:
                 variable_def_dict['title'] = label + ' ' + clubb_name
             else:
-                imported_title = data_reader.getLongName(first_input_datasets, aliases)
+                imported_title = data_reader.getLongName(first_input_datasets, var_names)
                 variable_def_dict['title'] = imported_title
         if 'axis_title' not in variable_def_dict.keys():
             if panel_type == Panel.TYPE_BUDGET:
@@ -354,7 +354,7 @@ class VariableGroup:
             panel = Panel(plotset, title=title, dependant_title=axis_label, panel_type=panel_type)
             self.panels.append(panel)
 
-    def __getVarLines__(self, aliases, ncdf_datasets, label="", line_format="", avg_axis=0, override_panel_type=None,
+    def __getVarLines__(self, var_names, ncdf_datasets, label="", line_format="", avg_axis=0, override_panel_type=None,
                         fallback_func=None, fill_zeros=False, lines=None, conversion_factor=1):
         """
         Get a list of Line objects for a specific clubb variable. If sam_file is specified it will also
@@ -362,17 +362,17 @@ class VariableGroup:
         VarnameConversions.py. If a SAM variable needs to be calculated (uses an equation) then it will have
         to be created within that variable group's dataset and not here.
 
-        :param aliases: list of strings. Each string is the name of the variable to be plotted, case sensitive
+        :param var_names: list of strings. Each string is the name of the variable to be plotted, case sensitive
         :param ncdf_datasets: List of Dataset objects containing clubb or sam netcdf data
         :param legend_label: Label to give the base-plotAll on the legend. This is normally Style_definitions.CLUBB_LABEL, but not provided as default to help avoid debugging confusion.
         :param line_format: Line formatting string used by matplotlib's PyPlot
         :param avg_axis: Axis over which to average values. 0 - time average, 1 - height average
         :param override_panel_type: Override the VariableGroup's default panel type
-        :param fallback_func: If pyplotgen fails to find a variable by any of its aliases, this function will be called
+        :param fallback_func: If pyplotgen fails to find a variable by any of its var_names, this function will be called
             (if the fuction is provided) as a second attempt at getting the variable. fallback_func takes in a function
             as its data type (i.e. functional programming) and expects it to return data in the format (dependent_data, independent_data)
             where the data is a list of numeric values.
-        :param fill_zeros: If a variable can't be found via it's aliases and any fallback or calc functions defined for that variable have failed,
+        :param fill_zeros: If a variable can't be found via it's var_names and any fallback or calc functions defined for that variable have failed,
         fill_zeros is an optional last resort to simply use a list of 0s in place of the variable for calculations.
         :param lines: Some plots require many lines to be plotted, such as budget plots. The lines parameter allows
         someone to write a dictionary containing a description of each line that needs to be plotted.
@@ -390,7 +390,7 @@ class VariableGroup:
             ncdf_datasets = {'converted_to_dict': ncdf_datasets}
         line = None
         for dataset in ncdf_datasets.values():
-            for varname in aliases:
+            for varname in var_names:
                 if varname not in dataset.variables.keys():
                     continue  # Skip loop if varname isn't in the dataset, this avoids some crashes
                 if panel_type is Panel.TYPE_PROFILE:
@@ -413,10 +413,10 @@ class VariableGroup:
             src_model = datareader.getNcdfSourceModel(dataset)
 
             # TODO re-enable this print under a verbose print mode
-            # print("\tFailed to find variable " + str(aliases) + " in " + src_model + " output for " + " case " + str(
+            # print("\tFailed to find variable " + str(var_names) + " in " + src_model + " output for " + " case " + str(
             #     self.casename) +
             #       ". Attempting to use fallback function.")
-            line = self.__getVarDataFromFallback__(fallback_func, aliases, ncdf_datasets, label, line_format)
+            line = self.__getVarDataFromFallback__(fallback_func, var_names, ncdf_datasets, label, line_format)
         if panel_type != Panel.TYPE_BUDGET and line is not None:
             all_lines.append(line)
         return all_lines
@@ -434,7 +434,7 @@ class VariableGroup:
         :param conversion_factor: This is a numerical value that will be multiplied element-wise to the variable. It's useful for doing
         basic model to model conversions, e.g. SAM -> CLUBB.
         :param avg_axis: Values will be averaged along this axis. This is basically only used for time-averaging profile plots.
-        :param fill_zeros: If a variable can't be found via it's aliases and any fallback or calc functions defined for that variable have failed,
+        :param fill_zeros: If a variable can't be found via it's var_names and any fallback or calc functions defined for that variable have failed,
         fill_zeros is an optional last resort to simply use a list of 0s in place of the variable for calculations.
         :return: Line object representing the given variable for a profile plot
         """
@@ -459,7 +459,7 @@ class VariableGroup:
         Recommended value: emtpy string ""
         :param conversion_factor: This is a numerical value that will be multiplied element-wise to the variable. It's useful for doing
         basic model to model conversions, e.g. SAM -> CLUBB.
-        :param fill_zeros: If a variable can't be found via it's aliases and any fallback or calc functions defined for that variable have failed,
+        :param fill_zeros: If a variable can't be found via it's var_names and any fallback or calc functions defined for that variable have failed,
         fill_zeros is an optional last resort to simply use a list of 0s in place of the variable for calculations.
         :return: Line object representing the given variable for a timeseries plot
         """
@@ -483,7 +483,7 @@ class VariableGroup:
         output_lines = []
         for line_definition in lines:
             line_added = False
-            varnames = line_definition['aliases']
+            varnames = line_definition['var_names']
             for varname in varnames:
                 if varname in dataset.variables.keys():
                     variable = NetCdfVariable(varname, dataset, start_time=self.start_time, end_time=self.end_time,

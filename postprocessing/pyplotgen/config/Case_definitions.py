@@ -160,7 +160,7 @@ BOMEX = {'name': 'bomex', 'start_time': 181, 'end_time': 360, 'height_min_value'
          'hoc_file': {'zm': HOC_OUTPUT_ROOT + '/bomex_zm.nc',
                       'zt': HOC_OUTPUT_ROOT + '/bomex_zt.nc',
                       'sfc': HOC_OUTPUT_ROOT + '/bomex_sfc.nc'},
-         'e3sm_file': e3sm_output_root + 'bomex.nc',
+         'e3sm_file': e3sm_output_root + '/bomex.nc',
          'var_groups': [VariableGroupBase, VariableGroupWs]}
 
 CGILS_S6 = {'name': 'cgils_s6', 'start_time': 12960, 'end_time': 14400, 'height_min_value': 0, 'height_max_value': 5950,

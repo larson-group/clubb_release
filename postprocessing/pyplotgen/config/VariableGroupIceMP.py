@@ -18,16 +18,16 @@ class VariableGroupIceMP(VariableGroup):
         """
         self.name = "ice mp variables"
         self.variable_definitions = [
-            {'aliases': ['rim', 'QI', 'QCI'], 'sam_conv_factor': 1 / 1000},#, 'fallback_func': self.getRimFallback},
-            {'aliases': ['Nim'], 'sam_calc': self.getNimSamLine},
-            {'aliases': ['rsm', 'QS', 'QPI'], 'sam_conv_factor': 1 / 1000},#, 'fallback_func': self.getRsmFallback},
-            {'aliases': ['Nsm'], 'sam_calc': self.getNsmSamLine},
-            {'aliases': ['iwp', 'IWP'], 'type': Panel.TYPE_TIMESERIES, 'sam_conv_factor': 1 / 1000},
-            {'aliases': ['swp', 'SWP'], 'type': Panel.TYPE_TIMESERIES, 'sam_conv_factor': 1 / 1000},
-            {'aliases': ['ice_supersat_frac']},
-            {'aliases': ['Ngm', 'NG'], 'sam_conv_factor': 10 ** 6, 'fill_zeros': True},
-            {'aliases': ['rgm', 'QG'], 'sam_conv_factor': 1 / 1000},
-            {'aliases': ['precip_rate_sfc', 'PREC'], 'type': Panel.TYPE_TIMESERIES}
+            {'var_names': ['rim', 'QI', 'QCI'], 'sam_conv_factor': 1 / 1000},#, 'fallback_func': self.getRimFallback},
+            {'var_names': ['Nim'], 'sam_calc': self.getNimSamLine},
+            {'var_names': ['rsm', 'QS', 'QPI'], 'sam_conv_factor': 1 / 1000},#, 'fallback_func': self.getRsmFallback},
+            {'var_names': ['Nsm'], 'sam_calc': self.getNsmSamLine},
+            {'var_names': ['iwp', 'IWP'], 'type': Panel.TYPE_TIMESERIES, 'sam_conv_factor': 1 / 1000},
+            {'var_names': ['swp', 'SWP'], 'type': Panel.TYPE_TIMESERIES, 'sam_conv_factor': 1 / 1000},
+            {'var_names': ['ice_supersat_frac']},
+            {'var_names': ['Ngm', 'NG'], 'sam_conv_factor': 10 ** 6, 'fill_zeros': True},
+            {'var_names': ['rgm', 'QG'], 'sam_conv_factor': 1 / 1000},
+            {'var_names': ['precip_rate_sfc', 'PREC'], 'type': Panel.TYPE_TIMESERIES}
         ]
         super().__init__(ncdf_datasets, case, sam_file=sam_file, coamps_file=coamps_file, r408_dataset=r408_dataset, hoc_dataset=hoc_dataset, e3sm_datasets= e3sm_datasets)
 

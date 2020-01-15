@@ -18,15 +18,15 @@ class VariableGroupLiquidMP(VariableGroup):
         """
         self.name = "liquid mp variables"
         self.variable_definitions = [
-            {'aliases': ['Ncm'], 'sam_calc': self.getNcmSamLine},
-            {'aliases': ['Nc_in_cloud']},
-            {'aliases': ['precip_frac']},
-            {'aliases': ['rrm', 'QPL'], 'sam_conv_factor': 1 / 1000},
-            {'aliases': ['Nrm'], 'sam_calc': self.getNrmSamLine},
-            {'aliases': ['wprrp', 'WPRRP']},  # Not found in lba case file
-            {'aliases': ['wpNrp', 'WPNRP']},  # Not found in lba case file
-            {'aliases': ['rwp', 'RWP'], 'sam_conv_factor': 1 / 1000, 'type': Panel.TYPE_TIMESERIES},
-            {'aliases': ['precip_rate_sfc'], 'type': Panel.TYPE_TIMESERIES}
+            {'var_names': ['Ncm'], 'sam_calc': self.getNcmSamLine},
+            {'var_names': ['Nc_in_cloud']},
+            {'var_names': ['precip_frac']},
+            {'var_names': ['rrm', 'QPL'], 'sam_conv_factor': 1 / 1000},
+            {'var_names': ['Nrm'], 'sam_calc': self.getNrmSamLine},
+            {'var_names': ['wprrp', 'WPRRP']},  # Not found in lba case file
+            {'var_names': ['wpNrp', 'WPNRP']},  # Not found in lba case file
+            {'var_names': ['rwp', 'RWP'], 'sam_conv_factor': 1 / 1000, 'type': Panel.TYPE_TIMESERIES},
+            {'var_names': ['precip_rate_sfc'], 'type': Panel.TYPE_TIMESERIES}
 
         ]
         #rain_rate_sfc vs time

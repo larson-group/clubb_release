@@ -13,13 +13,13 @@ class VariableGroupCorrelations(VariableGroup):
 
         self.name = "w variables"
         self.variable_definitions = [
-            {'aliases': ['corr_w_rr_1']},
-            {'aliases': ['corr_w_Nr_1']},
-            {'aliases': ['corr_w_Ncn_1']},
-            {'aliases': ['corr_chi_rr_1']},
-            {'aliases': ['corr_chi_Nr_1']},
-            {'aliases': ['corr_chi_Ncn_1']},
-            {'aliases': ['corr_rr_Nr_1']},
+            {'var_names': ['corr_w_rr_1']},
+            {'var_names': ['corr_w_Nr_1']},
+            {'var_names': ['corr_w_Ncn_1']},
+            {'var_names': ['corr_chi_rr_1']},
+            {'var_names': ['corr_chi_Nr_1']},
+            {'var_names': ['corr_chi_Ncn_1']},
+            {'var_names': ['corr_rr_Nr_1']},
 
         ]
         super().__init__(ncdf_datasets, case, sam_file=sam_file, coamps_file=coamps_file, r408_dataset=r408_dataset, hoc_dataset=hoc_dataset, e3sm_datasets= e3sm_datasets)
