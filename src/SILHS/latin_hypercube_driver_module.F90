@@ -787,7 +787,7 @@ module latin_hypercube_driver_module
                      mixt_frac(k),                                     & ! In
                      X_u_all_levs(k,:,iiPDF_chi),                      & ! In/Out
                      X_u_all_levs(k,:,pdf_dim+1),                      & ! In/Out
-                     lh_sample_point_weights )                           ! Out
+                     lh_sample_point_weights(k,:) )                      ! Out
 
             else ! .not. l_lh_old_cloud_weighted
 
@@ -800,7 +800,7 @@ module latin_hypercube_driver_module
                      X_u_all_levs(k,:,iiPDF_chi),                               & ! In/Out
                      X_u_all_levs(k,:,pdf_dim+1),                               & ! In/Out
                      X_u_all_levs(k,:,pdf_dim+2),                               & ! In/Out
-                     lh_sample_point_weights )                                    ! Out
+                     lh_sample_point_weights(k,:) )                               ! Out
 
             end if ! l_lh_old_cloud_weighted
 
@@ -1370,7 +1370,7 @@ module latin_hypercube_driver_module
       if ( X_u_chi(sample) < (one - cloud_frac_i) ) then
 
         ! The uniform sample is in clear air
-        if ( X_nl_chi(sample) > single_prec_thresh ) then
+        if ( X_nl_chi(sample) > 1000._core_rknd * single_prec_thresh ) then
           l_error = .true.
           write(fstderr,*) "X_nl_chi(", sample, ") > ", single_prec_thresh
         end if
@@ -1379,7 +1379,7 @@ module latin_hypercube_driver_module
                 X_u_chi(sample) < one ) then
 
         ! The uniform sample is in cloud
-        if ( X_nl_chi(sample) <= -single_prec_thresh ) then
+        if ( X_nl_chi(sample) <= - 1000._core_rknd * single_prec_thresh ) then
           l_error = .true.
           write(fstderr,*) "X_nl_chi(", sample, ") <= ", -single_prec_thresh
         end if
