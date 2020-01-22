@@ -527,22 +527,27 @@ module transform_to_pdf_module
 
     ! --- Begin Code ---
     
-    !$acc kernels default(present) async(1)
-
+    !$acc parallel loop collapse(3) default(present) async(1)
     do i = 1, pdf_dim
       do sample = 1, num_samples
         do k = 1, nz
-          X_nl_all_levs(k,sample,i) = 0.0_core_rknd ! Copy std_normal into 'x'                      
+          ! Set X_nl_all_levs to appropriate mu
+          if ( X_mixt_comp_all_levs(k,sample) == 1 ) then
+            X_nl_all_levs(k,sample,i) = mu1(i,k)
+          else
+            X_nl_all_levs(k,sample,i) = mu2(i,k)
+          end if
         end do
       end do
     end do
     
-    ! Compute Sigma_Cholesky * std_normal
+    !$acc parallel loop collapse(3) default(present) async(1)
     do sample = 1, num_samples
       do k = 1, nz
         do  i = 1, pdf_dim
           do j = 1, i
             
+            ! Compute Sigma_Cholesky * std_normal
             if ( X_mixt_comp_all_levs(k,sample) == 1 ) then
               X_nl_all_levs(k,sample,i) = X_nl_all_levs(k,sample,i) &
                                         + Sigma_Cholesky1(i,j,k) * std_normal(k,sample,j)
@@ -555,21 +560,6 @@ module transform_to_pdf_module
         end do
       end do
     end do
-     
-    do i = 1, pdf_dim
-      do sample = 1, num_samples
-        do k = 1, nz
-          ! Add mu to Sigma * std_normal
-          if ( X_mixt_comp_all_levs(k,sample) == 1 ) then
-            X_nl_all_levs(k,sample,i) = X_nl_all_levs(k,sample,i) + mu1(i,k)
-          else
-            X_nl_all_levs(k,sample,i) = X_nl_all_levs(k,sample,i) + mu2(i,k)
-          end if
-        end do
-      end do
-    end do
-    
-    !$acc end kernels
 
     return
   end subroutine multiply_Cholesky

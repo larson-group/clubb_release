@@ -287,7 +287,7 @@ module latin_hypercube_driver_module
     !$acc&            pdf_params%cloud_frac_2, precip_frac_1,precip_frac_2, &
     !$acc&            Sigma_Cholesky1, Sigma_Cholesky2, mu1, mu2, X_vert_corr ) &
     !$acc&     copyout(X_mixt_comp_all_levs, X_u_all_levs,cloud_frac, l_in_precip, &
-    !$acc&             X_nl_all_levs) &
+    !$acc&             X_nl_all_levs, lh_sample_point_weights) &
     !$acc& async(1)
 
     ! Generate pool of random numbers
@@ -682,8 +682,13 @@ module latin_hypercube_driver_module
           end do
         end do
 
-        ! Importance sampling is not performed, so all sample points have the same weight!!
-        lh_sample_point_weights(:,:)  =  one
+        !$acc parallel loop collapse(2) default(present) async(1)
+        do sample = 1, num_samples
+          do k = 1, nz
+            ! Importance sampling is not performed, so all sample points have the same weight!!
+            lh_sample_point_weights(k,sample) = one
+          end do
+        end do
 
       else ! .not. l_lh_straight_mc
       
@@ -1730,7 +1735,7 @@ module latin_hypercube_driver_module
 
     ! ---------------- Begin Code ----------------
     
-    !$acc wait(1)
+    !$acc wait(1) async(2)
 
     ! Recompute from k_lh_start to nz-1 for all samples and variates, upward loop
     !$acc parallel loop collapse(2) default(present) async(1)
@@ -1789,7 +1794,7 @@ module latin_hypercube_driver_module
       end do ! 1..num_samples
     end do ! 1..pdf_dim
     
-    !$acc wait(2)
+    !$acc wait(2) async(1)
 
     return
   end subroutine compute_arb_overlap
