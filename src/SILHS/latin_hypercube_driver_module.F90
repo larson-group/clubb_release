@@ -98,6 +98,9 @@ module latin_hypercube_driver_module
       
     use grid_class, only: &
       gr
+      
+    use stats_variables, only: &
+      l_stats_samp      ! Variable(s)
 
     implicit none
 
@@ -282,12 +285,11 @@ module latin_hypercube_driver_module
       end if ! Some correlation isn't between [0,1]
     end if ! clubb_at_least_debug_level 1
     
-    !$acc data create(rand_pool) &
+    !$acc data create(rand_pool, X_u_all_levs, cloud_frac, l_in_precip) &
     !$acc&     copyin(pdf_params,pdf_params%mixt_frac,pdf_params%cloud_frac_1, &
     !$acc&            pdf_params%cloud_frac_2, precip_frac_1,precip_frac_2, &
     !$acc&            Sigma_Cholesky1, Sigma_Cholesky2, mu1, mu2, X_vert_corr ) &
-    !$acc&     copyout(X_mixt_comp_all_levs, X_u_all_levs,cloud_frac, l_in_precip, &
-    !$acc&             X_nl_all_levs, lh_sample_point_weights) &
+    !$acc&     copyout(X_mixt_comp_all_levs, X_nl_all_levs, lh_sample_point_weights) &
     !$acc& async(1)
 
     ! Generate pool of random numbers
@@ -361,15 +363,21 @@ module latin_hypercube_driver_module
            X_u_all_levs(:,:,:), cloud_frac(:,:), & ! In
            l_in_precip(:,:), & ! In
            X_nl_all_levs(:,:,:) ) ! Out
-        
-    !$acc end data
+           
     !$acc wait(1)
            
-    call stats_accumulate_uniform_lh( nz, num_samples, l_in_precip, X_mixt_comp_all_levs, &
-                                      X_u_all_levs(:,:,iiPDF_chi), pdf_params, &
-                                      lh_sample_point_weights, k_lh_start )
+     
+    if ( l_stats_samp ) then
+      !$acc update host(X_u_all_levs,l_in_precip,lh_sample_point_weights)
+      call stats_accumulate_uniform_lh( nz, num_samples, l_in_precip, X_mixt_comp_all_levs, &
+                                        X_u_all_levs(:,:,iiPDF_chi), pdf_params, &
+                                        lh_sample_point_weights, k_lh_start )
+    end if
 
     if ( l_output_2D_lognormal_dist ) then
+      
+      !$acc update host(X_nl_all_levs)
+      
       ! Eric Raut removed lh_rt and lh_thl from call to output_2D_lognormal_dist_file
       ! because they are no longer generated in generate_silhs_sample.
       call output_2D_lognormal_dist_file( nz, num_samples, pdf_dim, &
@@ -379,7 +387,9 @@ module latin_hypercube_driver_module
                                           l_standard_term_ta, &
                                           l_single_C2_Skw )
     end if
+    
     if ( l_output_2D_uniform_dist ) then
+      !$acc update host(X_u_all_levs,X_mixt_comp_all_levs,lh_sample_point_weights)
       call output_2D_uniform_dist_file( nz, num_samples, pdf_dim+2, &
                                         X_u_all_levs, &
                                         X_mixt_comp_all_levs, &
@@ -392,6 +402,8 @@ module latin_hypercube_driver_module
 
     ! Various nefarious assertion checks
     if ( clubb_at_least_debug_level( 2 ) ) then
+      
+      !$acc update host(X_u_all_levs,X_mixt_comp_all_levs,X_nl_all_levs)
 
       ! Simple assertion check to ensure uniform variates are in the appropriate
       ! range
@@ -420,6 +432,8 @@ module latin_hypercube_driver_module
       end do ! k=2, nz
 
     end if ! clubb_at_least_debug_level( 2 )
+    
+    !$acc end data
 
     ! Stop the run if an error occurred
     if ( l_error ) then
@@ -2210,8 +2224,7 @@ module latin_hypercube_driver_module
       stat_update_var_pt
 
     use stats_variables, only: &
-      l_stats_samp, &      ! Variable(s)
-      ilh_precip_frac, &
+      ilh_precip_frac, &  ! Variable(s)
       ilh_mixt_frac, &
       ilh_precip_frac_unweighted, &
       ilh_mixt_frac_unweighted, &
@@ -2295,115 +2308,113 @@ module latin_hypercube_driver_module
   !-----------------------------------------------------------------------
 
     !----- Begin Code -----
-    if ( l_stats_samp ) then
-      ! Estimate of lh_precip_frac
-      if ( ilh_precip_frac > 0 ) then
-        where ( l_in_precip_all_levs )
-          int_in_precip = 1.0_core_rknd
-        else where
-          int_in_precip = 0.0_core_rknd
-        end where
-        lh_precip_frac(:) = compute_sample_mean( nz, num_samples, lh_sample_point_weights, &
-                                                 int_in_precip )
-        call stat_update_var( ilh_precip_frac, lh_precip_frac, stats_lh_zt )
-      end if
+    
+    ! Estimate of lh_precip_frac
+    if ( ilh_precip_frac > 0 ) then
+      where ( l_in_precip_all_levs )
+        int_in_precip = 1.0_core_rknd
+      else where
+        int_in_precip = 0.0_core_rknd
+      end where
+      lh_precip_frac(:) = compute_sample_mean( nz, num_samples, lh_sample_point_weights, &
+                                               int_in_precip )
+      call stat_update_var( ilh_precip_frac, lh_precip_frac, stats_lh_zt )
+    end if
 
-      ! Unweighted estimate of lh_precip_frac
-      if ( ilh_precip_frac_unweighted > 0 ) then
-        where ( l_in_precip_all_levs )
-          int_in_precip = 1.0_core_rknd
-        else where
-          int_in_precip = 0.0_core_rknd
-        end where
-        one_weights = one
-        lh_precip_frac(:) = compute_sample_mean( nz, num_samples, one_weights, &
-                                                 int_in_precip )
-        call stat_update_var( ilh_precip_frac_unweighted, lh_precip_frac, stats_lh_zt )
-      end if
+    ! Unweighted estimate of lh_precip_frac
+    if ( ilh_precip_frac_unweighted > 0 ) then
+      where ( l_in_precip_all_levs )
+        int_in_precip = 1.0_core_rknd
+      else where
+        int_in_precip = 0.0_core_rknd
+      end where
+      one_weights = one
+      lh_precip_frac(:) = compute_sample_mean( nz, num_samples, one_weights, &
+                                               int_in_precip )
+      call stat_update_var( ilh_precip_frac_unweighted, lh_precip_frac, stats_lh_zt )
+    end if
 
-      ! Estimate of lh_mixt_frac
-      if ( ilh_mixt_frac > 0 ) then
-        where ( X_mixt_comp_all_levs == 1 )
-          int_mixt_comp = 1.0_core_rknd
-        else where
-          int_mixt_comp = 0.0_core_rknd
-        end where
-        lh_mixt_frac(:) = compute_sample_mean( nz, num_samples, lh_sample_point_weights, &
-                                               int_mixt_comp )
-        call stat_update_var( ilh_mixt_frac, lh_mixt_frac, stats_lh_zt )
-      end if
+    ! Estimate of lh_mixt_frac
+    if ( ilh_mixt_frac > 0 ) then
+      where ( X_mixt_comp_all_levs == 1 )
+        int_mixt_comp = 1.0_core_rknd
+      else where
+        int_mixt_comp = 0.0_core_rknd
+      end where
+      lh_mixt_frac(:) = compute_sample_mean( nz, num_samples, lh_sample_point_weights, &
+                                             int_mixt_comp )
+      call stat_update_var( ilh_mixt_frac, lh_mixt_frac, stats_lh_zt )
+    end if
 
-      ! Unweighted estimate of lh_mixt_frac
-      if ( ilh_mixt_frac_unweighted > 0 ) then
-        where ( X_mixt_comp_all_levs == 1 )
-          int_mixt_comp = 1.0_core_rknd
-        else where
-          int_mixt_comp = 0.0_core_rknd
-        end where
-        one_weights = one
-        lh_mixt_frac(:) = compute_sample_mean( nz, num_samples, one_weights, &
-                                               int_mixt_comp )
-        call stat_update_var( ilh_mixt_frac_unweighted, lh_mixt_frac, stats_lh_zt )
-      end if
+    ! Unweighted estimate of lh_mixt_frac
+    if ( ilh_mixt_frac_unweighted > 0 ) then
+      where ( X_mixt_comp_all_levs == 1 )
+        int_mixt_comp = 1.0_core_rknd
+      else where
+        int_mixt_comp = 0.0_core_rknd
+      end where
+      one_weights = one
+      lh_mixt_frac(:) = compute_sample_mean( nz, num_samples, one_weights, &
+                                             int_mixt_comp )
+      call stat_update_var( ilh_mixt_frac_unweighted, lh_mixt_frac, stats_lh_zt )
+    end if
 
-      ! k_lh_start is an integer, so it would be more appropriate to sample it
-      ! as an integer, but as far as I can tell our current sampling
-      ! infrastructure mainly supports sampling real numbers.
-      call stat_update_var_pt( ik_lh_start, 1, real( k_lh_start, kind=core_rknd ), stats_lh_sfc )
+    ! k_lh_start is an integer, so it would be more appropriate to sample it
+    ! as an integer, but as far as I can tell our current sampling
+    ! infrastructure mainly supports sampling real numbers.
+    call stat_update_var_pt( ik_lh_start, 1, real( k_lh_start, kind=core_rknd ), stats_lh_sfc )
 
-      if ( allocated( ilh_samp_frac_category ) ) then
-        if ( ilh_samp_frac_category(1) > 0 ) then
+    if ( allocated( ilh_samp_frac_category ) ) then
+      if ( ilh_samp_frac_category(1) > 0 ) then
 
-          importance_categories = define_importance_categories( )
+        importance_categories = define_importance_categories( )
 
-          do k=1, nz
-            category_counts(:) = 0
+        do k=1, nz
+          category_counts(:) = 0
 
-            do isample=1, num_samples
+          do isample=1, num_samples
 
-              if ( X_mixt_comp_all_levs(k,isample) == 1 ) then
-                l_in_comp_1 = .true.
-                cloud_frac_i = pdf_params%cloud_frac_1(k)
-              else
-                l_in_comp_1 = .false.
-                cloud_frac_i = pdf_params%cloud_frac_2(k)
-              end if
+            if ( X_mixt_comp_all_levs(k,isample) == 1 ) then
+              l_in_comp_1 = .true.
+              cloud_frac_i = pdf_params%cloud_frac_1(k)
+            else
+              l_in_comp_1 = .false.
+              cloud_frac_i = pdf_params%cloud_frac_2(k)
+            end if
 
-              l_in_cloud = X_u_chi_all_levs(k,isample) > (one - cloud_frac_i)
-
-              do icategory=1, num_importance_categories
-                if ( (l_in_cloud .eqv. importance_categories(icategory)%l_in_cloud) .and. &
-                     (l_in_precip_all_levs(k,isample) .eqv. importance_categories(icategory)%&
-                                                           l_in_precip) .and. &
-                     (l_in_comp_1 .eqv. importance_categories(icategory)%l_in_component_1) ) then
-
-                  category_counts(icategory) = category_counts(icategory) + 1
-                  exit
-
-                end if
-              end do
-
-            end do ! isample=1, num_samples
+            l_in_cloud = X_u_chi_all_levs(k,isample) > (one - cloud_frac_i)
 
             do icategory=1, num_importance_categories
-              lh_samp_frac(k,icategory) = real( category_counts(icategory), kind=core_rknd ) / &
-                                          real( num_samples, kind=core_rknd )
+              if ( (l_in_cloud .eqv. importance_categories(icategory)%l_in_cloud) .and. &
+                   (l_in_precip_all_levs(k,isample) .eqv. importance_categories(icategory)%&
+                                                         l_in_precip) .and. &
+                   (l_in_comp_1 .eqv. importance_categories(icategory)%l_in_component_1) ) then
+
+                category_counts(icategory) = category_counts(icategory) + 1
+                exit
+
+              end if
             end do
 
-          end do ! k=2, nz
-
-          ! Microphysics is not run at lower level
-          lh_samp_frac(1,:) = zero
+          end do ! isample=1, num_samples
 
           do icategory=1, num_importance_categories
-            call stat_update_var( ilh_samp_frac_category(icategory), lh_samp_frac(:,icategory), &
-                                  stats_lh_zt )
-          end do ! icategory=1, num_importance_categories
+            lh_samp_frac(k,icategory) = real( category_counts(icategory), kind=core_rknd ) / &
+                                        real( num_samples, kind=core_rknd )
+          end do
 
-        end if ! ilh_samp_frac_category(1) > 0
-      end if ! allocated( ilh_samp_frac_category )
+        end do ! k=2, nz
 
-    end if ! l_stats_samp
+        ! Microphysics is not run at lower level
+        lh_samp_frac(1,:) = zero
+
+        do icategory=1, num_importance_categories
+          call stat_update_var( ilh_samp_frac_category(icategory), lh_samp_frac(:,icategory), &
+                                stats_lh_zt )
+        end do ! icategory=1, num_importance_categories
+
+      end if ! ilh_samp_frac_category(1) > 0
+    end if ! allocated( ilh_samp_frac_category )
 
     return
   end subroutine stats_accumulate_uniform_lh
