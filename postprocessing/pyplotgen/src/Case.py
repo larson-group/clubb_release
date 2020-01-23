@@ -209,7 +209,7 @@ class Case:
         :return:
         """
 
-        print("\n")
+        print("\n\tSaving panels to .png images")
         num_plots = len(self.panels)
         curr_panel_num = 0
         for panel in self.panels:

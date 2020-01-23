@@ -56,7 +56,10 @@ class VariableGroup:
             print("\tProcessing ", variable['var_names'])
 
             # Only add variable if none of the var_names are blacklisted
-            if len(list(set(variable['var_names']).intersection(
+            all_var_names = []
+            for model_var_names in variable['var_names'].values():
+                all_var_names.extend(model_var_names)
+            if len(list(set(all_var_names).intersection(
                     case.blacklisted_variables))) == 0:  # variable['var_names'] not in case.blacklisted_variables:
                 # Skip this variable if it's blacklisted for the case
                 self.addVariable(variable)
@@ -204,28 +207,28 @@ class VariableGroup:
 
         all_lines = []
         if sam_file is not None:
-            all_lines.extend(self.__getVarLines__(var_names, sam_file, conversion_factor=sam_conv_factor,
+            all_lines.extend(self.__getVarLines__(var_names['sam'], sam_file, conversion_factor=sam_conv_factor,
                                                   label=Style_definitions.SAM_LABEL,
                                                   line_format=Style_definitions.LES_LINE_STYLE, fill_zeros=fill_zeros,
                                                   override_panel_type=panel_type,
                                                   fallback_func=fallback, lines=lines))
 
         if coamps_file is not None:
-            all_lines.extend(self.__getVarLines__(var_names, coamps_file, conversion_factor=coamps_conv_factor,
+            all_lines.extend(self.__getVarLines__(var_names['coamps'], coamps_file, conversion_factor=coamps_conv_factor,
                                                   label=Style_definitions.COAMPS_LABEL,
                                                   line_format=Style_definitions.LES_LINE_STYLE, fill_zeros=fill_zeros,
                                                   override_panel_type=panel_type,
                                                   fallback_func=fallback, lines=lines))
 
         if r408_dataset is not None:
-            all_lines.extend(self.__getVarLines__(var_names, r408_dataset, conversion_factor=r408_conv_factor,
+            all_lines.extend(self.__getVarLines__(var_names['r408'], r408_dataset, conversion_factor=r408_conv_factor,
                                                   label=Style_definitions.GOLAZ_LABEL,
                                                   line_format=Style_definitions.GOLAZ_BEST_R408_LINE_STYLE,
                                                   fill_zeros=fill_zeros,
                                                   override_panel_type=panel_type, fallback_func=fallback, lines=lines))
 
         if hoc_dataset is not None:
-            all_lines.extend(self.__getVarLines__(var_names, hoc_dataset, conversion_factor=hoc_conv_factor,
+            all_lines.extend(self.__getVarLines__(var_names['hoc'], hoc_dataset, conversion_factor=hoc_conv_factor,
                                                   label=Style_definitions.HOC_LABEL,
                                                   line_format=Style_definitions.HOC_LINE_STYLE, fill_zeros=fill_zeros,
                                                   override_panel_type=panel_type, fallback_func=fallback, lines=lines))
@@ -237,7 +240,7 @@ class VariableGroup:
                 if len(e3sm_dataset) is not 1:
                     label = os.path.basename(dataset_name)
                     line_style =""
-                all_lines.extend(self.__getVarLines__(var_names, e3sm_dataset[dataset_name], conversion_factor=e3sm_conv_factor,
+                all_lines.extend(self.__getVarLines__(var_names['e3sm'], e3sm_dataset[dataset_name], conversion_factor=e3sm_conv_factor,
                                                   label=label,
                                                   line_format=line_style, fill_zeros=fill_zeros,
                                                   override_panel_type=panel_type, fallback_func=fallback, lines=lines))
@@ -250,21 +253,24 @@ class VariableGroup:
                 label = os.path.basename(ncdf_files_subfolder)
                 if num_folders_plotted < len(Style_definitions.CLUBB_LABEL_OVERRIDE):
                     label = Style_definitions.CLUBB_LABEL_OVERRIDE[num_folders_plotted]
-                all_lines.extend(self.__getVarLines__(var_names, datasets, label=label, fill_zeros=fill_zeros,
+                all_lines.extend(self.__getVarLines__(var_names['clubb'], datasets, label=label, fill_zeros=fill_zeros,
                                                       override_panel_type=panel_type, fallback_func=fallback, lines=lines))
                 num_folders_plotted += 1
         else:
             label = ""
 
         var_names = variable_def_dict['var_names']
-        clubb_name = var_names[0]
+        clubb_name = var_names['clubb'][0]
         variable_def_dict['plots'] = all_lines
         first_input_datasets = self.getTextDefiningDataset()
         if 'title' not in variable_def_dict.keys():
             if panel_type == Panel.TYPE_BUDGET:
                 variable_def_dict['title'] = label + ' ' + clubb_name
             else:
-                imported_title = data_reader.getLongName(first_input_datasets, var_names)
+                all_var_names = []
+                for model_var_names in var_names.values():
+                    all_var_names.extend(model_var_names)
+                imported_title = data_reader.getLongName(first_input_datasets, all_var_names)
                 variable_def_dict['title'] = imported_title
         if 'axis_title' not in variable_def_dict.keys():
             if panel_type == Panel.TYPE_BUDGET:
@@ -413,9 +419,9 @@ class VariableGroup:
             src_model = datareader.getNcdfSourceModel(dataset)
 
             # TODO re-enable this print under a verbose print mode
-            # print("\tFailed to find variable " + str(var_names) + " in " + src_model + " output for " + " case " + str(
-            #     self.casename) +
-            #       ". Attempting to use fallback function.")
+            print("\tFailed to find variable " + str(var_names) + " in " + src_model + " output for " + " case " + str(
+                self.casename) +
+                  ". Attempting to use fallback function.")
             line = self.__getVarDataFromFallback__(fallback_func, var_names, ncdf_datasets, label, line_format)
         if panel_type != Panel.TYPE_BUDGET and line is not None:
             all_lines.append(line)
@@ -503,8 +509,8 @@ class VariableGroup:
             if not line_added:
                 # TODO re-enable this print under a verbose print mode
 
-                # print("\tFailed to find variable " + varname + " in case " + self.casename +
-                #       ". Attempting to use fallback function.")
+                print("\tFailed to find variable " + varname + " in case " + self.casename +
+                      ". Attempting to use fallback function.")
                 if 'fallback_func' in line_definition.keys():
                     fallback = line_definition['fallback_func']
                     fallback_output = self.__getVarDataFromFallback__(fallback, varname, {'budget': dataset}, label,
@@ -537,7 +543,7 @@ class VariableGroup:
             vardata, z = fallback(dataset_override=datasets)
             varline = Line(vardata, z, line_format=line_format, label=label)
             # TODO Re-enable this under a 'verbose' runmode
-            # print("\tFallback for ", varname, " successful")
+            print("\tFallback for ", varname, " successful")
             return varline
         # except ValueError as e:
         #     # variable wasn't contained in dataset, try next dataset
