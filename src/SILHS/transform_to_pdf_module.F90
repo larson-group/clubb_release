@@ -479,7 +479,7 @@ module transform_to_pdf_module
                                 Sigma_Cholesky1, Sigma_Cholesky2, &
                                 mu1, mu2, X_mixt_comp_all_levs, &
                                 X_nl_all_levs )
-! Description:
+! Description: 
 !   Computes X_nl_all_levs from the Cholesky factorization of Sigma,
 !   std_normal, and mu.
 !   X_nl_all_levs = Sigma_Cholesky * std_normal + mu.
