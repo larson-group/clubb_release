@@ -521,6 +521,7 @@ module transform_to_pdf_module
       X_nl_all_levs
       
     ! Local Variables
+    real( kind = core_rknd ) :: X_nl_k_sample_i_tmp
 
     ! Loop iterators
     integer :: i, j, k, sample
@@ -528,38 +529,32 @@ module transform_to_pdf_module
     ! --- Begin Code ---
     
     !$acc parallel loop collapse(3) default(present) async(1)
-    do i = 1, pdf_dim
-      do sample = 1, num_samples
-        do k = 1, nz
-          ! Set X_nl_all_levs to appropriate mu
-          if ( X_mixt_comp_all_levs(k,sample) == 1 ) then
-            X_nl_all_levs(k,sample,i) = mu1(i,k)
-          else
-            X_nl_all_levs(k,sample,i) = mu2(i,k)
-          end if
-        end do
-      end do
-    end do
-    
-    !$acc parallel loop collapse(3) default(present) async(1)
     do sample = 1, num_samples
       do k = 1, nz
         do  i = 1, pdf_dim
+          
+          X_nl_k_sample_i_tmp = 0.0_core_rknd
+          
           do j = 1, i
-            
             ! Compute Sigma_Cholesky * std_normal
             if ( X_mixt_comp_all_levs(k,sample) == 1 ) then
-              X_nl_all_levs(k,sample,i) = X_nl_all_levs(k,sample,i) &
-                                        + Sigma_Cholesky1(i,j,k) * std_normal(k,sample,j)
+              X_nl_k_sample_i_tmp = X_nl_k_sample_i_tmp &
+                                    + Sigma_Cholesky1(i,j,k) * std_normal(k,sample,j)
             else
-              X_nl_all_levs(k,sample,i) = X_nl_all_levs(k,sample,i) &
-                                        + Sigma_Cholesky2(i,j,k) * std_normal(k,sample,j)
+              X_nl_k_sample_i_tmp = X_nl_k_sample_i_tmp &
+                                    + Sigma_Cholesky2(i,j,k) * std_normal(k,sample,j)
             end if
-             
           end do
+          
+          if ( X_mixt_comp_all_levs(k,sample) == 1 ) then
+            X_nl_all_levs(k,sample,i) = X_nl_k_sample_i_tmp + mu1(i,k)
+          else
+            X_nl_all_levs(k,sample,i) = X_nl_k_sample_i_tmp + mu2(i,k)
+          end if
+          
         end do
       end do
-    end do
+    end do 
 
     return
   end subroutine multiply_Cholesky
