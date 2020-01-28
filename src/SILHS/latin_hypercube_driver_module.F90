@@ -1743,7 +1743,7 @@ module latin_hypercube_driver_module
                    ! in this array and will be used to fill in the other levels.
 
     ! ---------------- Local Variables ----------------
-    real(kind=core_rknd) :: min_val, half_width, offset
+    real(kind=core_rknd) :: min_val, half_width, offset, unbounded_point
 
     integer :: k, sample, i ! Loop iterators
 
@@ -1756,24 +1756,26 @@ module latin_hypercube_driver_module
     do i = 1, pdf_dim + d_uniform_extra                         
       do sample = 1, num_samples
         
+        unbounded_point = X_u_all_levs(k_lh_start,sample,i)
+        
          do k = k_lh_start, nz-1
            
            half_width = one - vert_corr(k+1)
-           min_val = X_u_all_levs(k,sample,i) - half_width
+           min_val = unbounded_point - half_width
 
            offset = two * half_width * rand_pool(k+1,sample,i)
 
-           X_u_all_levs(k+1,sample,i) = min_val + offset
+           unbounded_point = min_val + offset
            
            ! If unbounded_point lies outside [single_prec_thresh,1-single_prec_thresh],
            ! fold it back so that it is between the valid range
-           if ( X_u_all_levs(k+1,sample,i) > one - single_prec_thresh ) then
-             X_u_all_levs(k+1,sample,i) = two - X_u_all_levs(k+1,sample,i) &
-                                          - two * single_prec_thresh
-           else if ( X_u_all_levs(k+1,sample,i) < single_prec_thresh ) then
-             X_u_all_levs(k+1,sample,i) = - X_u_all_levs(k+1,sample,i) &
-                                            + two * single_prec_thresh
+           if ( unbounded_point > one - single_prec_thresh ) then
+             unbounded_point = two - unbounded_point - two * single_prec_thresh
+           else if ( unbounded_point < single_prec_thresh ) then
+             unbounded_point = - unbounded_point + two * single_prec_thresh
            end if
+           
+           X_u_all_levs(k+1,sample,i) = unbounded_point
            
          end do ! k_lh_start..nz-1
       end do ! 1..num_samples
@@ -1785,24 +1787,26 @@ module latin_hypercube_driver_module
     do i = 1, pdf_dim + d_uniform_extra                        
       do sample = 1, num_samples
         
+        unbounded_point = X_u_all_levs(k_lh_start,sample,i)
+        
          do k = k_lh_start, 2, -1
 
            half_width = one - vert_corr(k-1)
-           min_val = X_u_all_levs(k,sample,i) - half_width
+           min_val = unbounded_point - half_width
 
            offset = two * half_width * rand_pool(k-1,sample,i)
 
-           X_u_all_levs(k-1,sample,i) = min_val + offset
+           unbounded_point = min_val + offset
            
            ! If unbounded_point lies outside [single_prec_thresh,1-single_prec_thresh],
            ! fold it back so that it is between the valid range 
-           if ( X_u_all_levs(k-1,sample,i) > one - single_prec_thresh ) then
-             X_u_all_levs(k-1,sample,i) = two - X_u_all_levs(k-1,sample,i) &
-                                          - two * single_prec_thresh
-           else if ( X_u_all_levs(k-1,sample,i) < single_prec_thresh ) then
-             X_u_all_levs(k-1,sample,i) = - X_u_all_levs(k-1,sample,i) &
-                                            + two * single_prec_thresh
+           if ( unbounded_point > one - single_prec_thresh ) then
+             unbounded_point = two - unbounded_point - two * single_prec_thresh
+           else if ( unbounded_point < single_prec_thresh ) then
+             unbounded_point = - unbounded_point + two * single_prec_thresh
            end if
+           
+           X_u_all_levs(k-1,sample,i) = unbounded_point
 
          end do ! k_lh_start..2 decrementing
       end do ! 1..num_samples
