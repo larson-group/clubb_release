@@ -78,8 +78,6 @@
 module silhs_api_module
 
 #ifdef SILHS
-  use latin_hypercube_driver_module, only: &
-    lh_clipped_variables_type ! Type
 
   use parameters_silhs, only: &
     silhs_config_flags_type ! Type
@@ -97,7 +95,6 @@ module silhs_api_module
     stats_accumulate_lh_api, &
     est_kessler_microphys_api, &
     clip_transform_silhs_output_api, &
-    lh_clipped_variables_type, &
     lh_microphys_var_covar_driver_api, &
     silhs_config_flags_type, &
     set_default_silhs_config_flags_api, &
@@ -224,9 +221,11 @@ contains
   subroutine stats_accumulate_lh_api( &
     nz, num_samples, pdf_dim, rho_ds_zt, &
     lh_sample_point_weights, X_nl_all_levs, &
-    lh_clipped_vars )
+    lh_rt_clipped, lh_thl_clipped, & 
+    lh_rc_clipped, lh_rv_clipped, & 
+    lh_Nc_clipped )
 
-    use latin_hypercube_driver_module, only : stats_accumulate_lh, lh_clipped_variables_type
+    use latin_hypercube_driver_module, only : stats_accumulate_lh
 
     use clubb_precision, only: &
       core_rknd    ! Constant
@@ -248,13 +247,19 @@ contains
     real( kind = core_rknd ), intent(in), dimension(nz,num_samples,pdf_dim) :: &
       X_nl_all_levs ! Sample that is transformed ultimately to normal-lognormal
 
-    type(lh_clipped_variables_type), intent(in), dimension(nz,num_samples) :: &
-      lh_clipped_vars
+    real( kind = core_rknd ), dimension(nz,num_samples), intent(in) :: &
+      lh_rt_clipped,  & ! rt generated from silhs sample points
+      lh_thl_clipped, & ! thl generated from silhs sample points
+      lh_rc_clipped,  & ! rc generated from silhs sample points
+      lh_rv_clipped,  & ! rv generated from silhs sample points
+      lh_Nc_clipped     ! Nc generated from silhs sample points
 
     call stats_accumulate_lh( &
       nz, num_samples, pdf_dim, rho_ds_zt, &
       lh_sample_point_weights, X_nl_all_levs, &
-      lh_clipped_vars )
+      lh_rt_clipped, lh_thl_clipped, & 
+      lh_rc_clipped, lh_rv_clipped, & 
+      lh_Nc_clipped )
 
   end subroutine stats_accumulate_lh_api
 
@@ -334,14 +339,16 @@ contains
   ! clip_transform_silhs_output - Computes extra SILHS sample variables, such as rt and thl.
   !================================================================================================
 
-  subroutine clip_transform_silhs_output_api( nz, num_samples, &             ! In
-                                              pdf_dim, hydromet_dim, &       ! In
-                                              X_mixt_comp_all_levs, &        ! In
-                                              X_nl_all_levs, &               ! Inout
-                                              pdf_params, l_use_Ncn_to_Nc, & ! In
-                                              lh_clipped_vars )              ! Out
+  subroutine clip_transform_silhs_output_api( nz, num_samples,                & ! In
+                                              pdf_dim, hydromet_dim,          & ! In
+                                              X_mixt_comp_all_levs,           & ! In
+                                              X_nl_all_levs,                  & ! Inout
+                                              pdf_params, l_use_Ncn_to_Nc,    & ! In
+                                              lh_rt_clipped, lh_thl_clipped,  & ! Out
+                                              lh_rc_clipped, lh_rv_clipped,   & ! Out
+                                              lh_Nc_clipped                   ) ! Out
 
-    use latin_hypercube_driver_module, only : clip_transform_silhs_output, lh_clipped_variables_type
+    use latin_hypercube_driver_module, only : clip_transform_silhs_output
 
     use clubb_precision, only: &
       core_rknd       ! Our awesome generalized precision (constant)
@@ -370,15 +377,21 @@ contains
       pdf_params             ! **The** PDF parameters!
 
     ! Output Variables
-    type(lh_clipped_variables_type), dimension(nz,num_samples), intent(out) :: &
-      lh_clipped_vars        ! SILHS clipped and transformed variables
+    real( kind = core_rknd ), dimension(nz,num_samples), intent(out) :: &
+      lh_rt_clipped,  & ! rt generated from silhs sample points
+      lh_thl_clipped, & ! thl generated from silhs sample points
+      lh_rc_clipped,  & ! rc generated from silhs sample points
+      lh_rv_clipped,  & ! rv generated from silhs sample points
+      lh_Nc_clipped     ! Nc generated from silhs sample points
 
-    call clip_transform_silhs_output( nz, num_samples, &             ! In
-                                      pdf_dim, hydromet_dim, &       ! In
-                                      X_mixt_comp_all_levs, &        ! In
-                                      X_nl_all_levs, &               ! In
-                                      pdf_params, l_use_Ncn_to_Nc, & ! In
-                                      lh_clipped_vars )              ! Out
+    call clip_transform_silhs_output( nz, num_samples,                & ! In
+                                      pdf_dim, hydromet_dim,          & ! In
+                                      X_mixt_comp_all_levs,           & ! In
+                                      X_nl_all_levs,                  & ! In
+                                      pdf_params, l_use_Ncn_to_Nc,    & ! In
+                                      lh_rt_clipped, lh_thl_clipped,  & ! Out
+                                      lh_rc_clipped, lh_rv_clipped,   & ! Out
+                                      lh_Nc_clipped                   ) ! Out
 
   end subroutine clip_transform_silhs_output_api
 

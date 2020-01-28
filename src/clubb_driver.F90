@@ -195,8 +195,7 @@ module clubb_driver
       generate_silhs_sample, & !--------------------------------------------- Procedure(s)
       stats_accumulate_lh, &
       latin_hypercube_2D_output, &
-      clip_transform_silhs_output, &
-      lh_clipped_variables_type !-------------------------------------------- Type
+      clip_transform_silhs_output
 
     use latin_hypercube_arrays, only: &
       cleanup_latin_hypercube_arrays !-------------------------------------- Procedure(s)
@@ -450,9 +449,13 @@ module clubb_driver
 
     integer, dimension(:,:), allocatable :: &
       X_mixt_comp_all_levs ! Which mixture component a sample is in
-
-    type(lh_clipped_variables_type), dimension(:,:), allocatable :: &
-      lh_clipped_vars ! Samples of rt, thl, rc, rv, and Nc
+      
+    real( kind = core_rknd ), dimension(:,:), allocatable :: &
+      lh_rt_clipped,  & ! rt generated from silhs sample points
+      lh_thl_clipped, & ! thl generated from silhs sample points
+      lh_rc_clipped,  & ! rc generated from silhs sample points
+      lh_rv_clipped,  & ! rv generated from silhs sample points
+      lh_Nc_clipped     ! Nc generated from silhs sample points
 
     real( kind = core_rknd ), dimension(:), allocatable :: &
       Nc_in_cloud        ! Mean (in-cloud) cloud droplet concentration  [num/kg]
@@ -1285,7 +1288,11 @@ module clubb_driver
 
     allocate( X_nl_all_levs(gr%nz,lh_num_samples,pdf_dim), &
               X_mixt_comp_all_levs(gr%nz,lh_num_samples), &
-              lh_clipped_vars(gr%nz,lh_num_samples), &
+              lh_rt_clipped(gr%nz,lh_num_samples), &
+              lh_thl_clipped(gr%nz,lh_num_samples), &
+              lh_rc_clipped(gr%nz,lh_num_samples), &
+              lh_rv_clipped(gr%nz,lh_num_samples), &
+              lh_Nc_clipped(gr%nz,lh_num_samples), &
               lh_sample_point_weights(gr%nz,lh_num_samples), &
               Nc_in_cloud(gr%nz) )
 
@@ -1698,8 +1705,8 @@ module clubb_driver
 
       if ( lh_microphys_type /= lh_microphys_disabled .or. l_silhs_rad ) then
 
-        call generate_silhs_sample &
-             ( itime, pdf_dim, lh_num_samples, lh_sequence_length, gr%nz, & ! In
+        call generate_silhs_sample( &
+               itime, pdf_dim, lh_num_samples, lh_sequence_length, gr%nz, & ! In
                l_calc_weights_all_levs_itime, &                             ! In
                pdf_params, gr%dzt, rcm, Lscale, &                           ! In
                rho_ds_zt, mu_x_1_n, mu_x_2_n, sigma_x_1_n, sigma_x_2_n, &   ! In
@@ -1712,24 +1719,27 @@ module clubb_driver
                X_nl_all_levs, X_mixt_comp_all_levs, &                       ! Out
                lh_sample_point_weights )                                    ! Out
 
-        call clip_transform_silhs_output( gr%nz, lh_num_samples, &       ! In
-                                          pdf_dim, hydromet_dim, &       ! In
-                                          X_mixt_comp_all_levs, &        ! In
-                                          X_nl_all_levs, &               ! Inout
-                                          pdf_params, l_use_Ncn_to_Nc, & ! In
-                                          lh_clipped_vars )              ! Out
-
+        call clip_transform_silhs_output( gr%nz, lh_num_samples,          & ! In
+                                          pdf_dim, hydromet_dim,          & ! In
+                                          X_mixt_comp_all_levs,           & ! In
+                                          X_nl_all_levs,                  & ! Inout
+                                          pdf_params, l_use_Ncn_to_Nc,    & ! In
+                                          lh_rt_clipped, lh_thl_clipped,  & ! Out
+                                          lh_rc_clipped, lh_rv_clipped,   & ! Out
+                                          lh_Nc_clipped                   ) ! Out
+                                          
         call stats_accumulate_lh &
              ( gr%nz, lh_num_samples, pdf_dim, rho_ds_zt, & ! In
-               lh_sample_point_weights,  X_nl_all_levs, &   ! In
-               lh_clipped_vars )                            ! In
+               lh_sample_point_weights,  X_nl_all_levs,   & ! In
+               lh_rt_clipped, lh_thl_clipped,             & ! In
+               lh_rc_clipped, lh_rv_clipped,              & ! In
+               lh_Nc_clipped                              ) ! In
 
       end if ! lh_microphys_enabled
 
 #else
       ! Alleviate compiler warnings
       X_nl_all_levs = -999._core_rknd
-      lh_clipped_vars%rt = -999._core_rknd
       X_mixt_comp_all_levs = -999
       lh_sample_point_weights = -999._core_rknd
       if ( .false. .or. Lscale(1) < 0._core_rknd ) print *, ""
@@ -1755,7 +1765,9 @@ module clubb_driver
                               mu_x_1_n, mu_x_2_n, &                                   ! In
                               sigma_x_1_n, sigma_x_2_n, &                             ! In
                               corr_array_1_n, corr_array_2_n, &                       ! In
-                              lh_clipped_vars, &                                      ! In
+                              lh_rt_clipped, lh_thl_clipped, &                        ! In
+                              lh_rc_clipped, lh_rv_clipped, &                         ! In
+                              lh_Nc_clipped, &                                        ! In
                               silhs_config_flags%l_lh_importance_sampling, &          ! In
                               silhs_config_flags%l_lh_instant_var_covar_src, &        ! In
                               Nccnm, &                                                ! Inout
@@ -1826,7 +1838,8 @@ module clubb_driver
                ( gr%nz, lh_num_samples, pdf_dim, hydromet_dim, &                   !In
                  time_current, time_initial, rho, rho_zm, &                        !In
                  p_in_Pa, exner, cloud_frac, ice_supersat_frac, X_nl_all_levs, &   !In
-                 lh_clipped_vars, lh_sample_point_weights, hydromet, &             !In
+                 lh_rt_clipped, lh_thl_clipped, lh_rc_clipped, &                   !In
+                 lh_sample_point_weights, hydromet, &                              !In
                  radht, Frad, Frad_SW_up, Frad_LW_up, Frad_SW_down, Frad_LW_down ) !out
 
         else
@@ -1931,8 +1944,9 @@ module clubb_driver
                 hydromet_vel_covar_zt_impc, hydromet_vel_covar_zt_expc )
 
     deallocate( radf, rcm_zm, radht_zm, X_nl_all_levs, &
-                X_mixt_comp_all_levs, lh_sample_point_weights, Nc_in_cloud, &
-                lh_clipped_vars )
+                lh_rt_clipped, lh_thl_clipped, lh_rc_clipped, &
+                lh_rv_clipped, lh_Nc_clipped, &
+                X_mixt_comp_all_levs, lh_sample_point_weights, Nc_in_cloud )
 
     return
 
@@ -4631,7 +4645,8 @@ module clubb_driver
              ( nz, lh_num_samples, pdf_dim, hydromet_dim, time_current, &
                time_initial, rho, rho_zm, p_in_Pa, exner, &
                cloud_frac, ice_supersat_frac, X_nl_all_levs, &
-               lh_clipped_vars, lh_sample_point_weights, hydromet, &
+               lh_rt_clipped, lh_thl_clipped, lh_rc_clipped, &
+               lh_sample_point_weights, hydromet, &
                radht, Frad, Frad_SW_up, Frad_LW_up, Frad_SW_down, Frad_LW_down )
 
   ! Description:
@@ -4652,8 +4667,7 @@ module clubb_driver
         clubb_fatal_error              ! Constant
 
     use latin_hypercube_driver_module, only: &
-      copy_X_nl_into_hydromet_all_pts, &   !--------------------- Procedure
-      lh_clipped_variables_type            !--------------------- Type
+      copy_X_nl_into_hydromet_all_pts   !--------------------- Procedure
 
     use constants_clubb, only: &
       fstderr        !------------------------------------------- Constant
@@ -4682,8 +4696,10 @@ module clubb_driver
     real( kind = core_rknd ), dimension(nz,lh_num_samples,pdf_dim), intent(in) :: &
       X_nl_all_levs        ! Normal-lognormal samples                  [units vary]
 
-    type(lh_clipped_variables_type), dimension(nz,lh_num_samples), intent(in) :: &
-      lh_clipped_vars
+    real( kind = core_rknd ), dimension(nz,lh_num_samples), intent(in) :: &
+      lh_rt_clipped,  & ! rt generated from silhs sample points
+      lh_thl_clipped, & ! thl generated from silhs sample points
+      lh_rc_clipped     ! rc generated from silhs sample points
 
     real( kind = core_rknd ), dimension(lh_num_samples), intent(in) :: &
       lh_sample_point_weights ! Weight of each SILHS sample point      [-]
@@ -4733,8 +4749,8 @@ module clubb_driver
       ! Call a radiation scheme
       call advance_clubb_radiation &
            ( time_current, time_initial, rho, rho_zm, p_in_Pa, &                     ! Intent(in)
-             exner, cloud_frac, ice_supersat_frac, lh_clipped_vars(:,isample)%thl, & ! Intent(in)
-             lh_clipped_vars(:,isample)%rt, lh_clipped_vars(:,isample)%rc, &         ! Intent(in)
+             exner, cloud_frac, ice_supersat_frac, lh_thl_clipped(:,isample), & ! Intent(in)
+             lh_rt_clipped(:,isample), lh_rc_clipped(:,isample), &         ! Intent(in)
              hydromet_all_pts(:,isample,:), &                                        ! Intent(in)
              radht_samples(:,isample), Frad_samples(:,isample), &                    ! Intent(out)
              Frad_SW_up_samples(:,isample), Frad_LW_up_samples(:,isample), &         ! Intent(out)

@@ -38,7 +38,9 @@ module microphys_driver
                                 mu_x_1_n, mu_x_2_n, &                     ! In
                                 sigma_x_1_n, sigma_x_2_n, &               ! In
                                 corr_array_1_n, corr_array_2_n, &         ! In
-                                lh_clipped_vars, &                        ! In
+                                lh_rt_clipped, lh_thl_clipped, &          ! In
+                                lh_rc_clipped, lh_rv_clipped, &           ! In
+                                lh_Nc_clipped, &                          ! In
                                 l_lh_importance_sampling, &               ! In
                                 l_lh_instant_var_covar_src, &             ! In
                                 Nccnm, &                                  ! Inout
@@ -82,9 +84,6 @@ module microphys_driver
 
     use morrison_microphys_module, only: &
         morrison_microphys_driver  ! Procedure(s)
-
-    use latin_hypercube_driver_module, only: &
-        lh_clipped_variables_type  ! Type
 
 #ifdef COAMPS_MICRO
     use coamps_microphys_driver_module, only:  & 
@@ -248,9 +247,13 @@ module microphys_driver
     intent(in) :: &
       corr_array_1_n, & ! Corr. array (normal space) of PDF vars. (comp. 1)  [-]
       corr_array_2_n    ! Corr. array (normal space) of PDF vars. (comp. 2)  [-]
-
-    type(lh_clipped_variables_type), dimension(gr%nz,lh_num_samples), intent(in) :: &
-      lh_clipped_vars ! SILHS sample variables
+      
+    real( kind = core_rknd ), dimension(gr%nz,lh_num_samples), intent(in) :: &
+      lh_rt_clipped,  & ! rt generated from silhs sample points
+      lh_thl_clipped, & ! thl generated from silhs sample points
+      lh_rc_clipped,  & ! rc generated from silhs sample points
+      lh_rv_clipped,  & ! rv generated from silhs sample points
+      lh_Nc_clipped     ! Nc generated from silhs sample points
 
     logical, intent(in) :: &
       l_lh_importance_sampling, & ! Do importance sampling (SILHS) [-]
@@ -448,8 +451,10 @@ module microphys_driver
                X_nl_all_levs, lh_sample_point_weights, & ! In
                pdf_params, hydromet_pdf_params, p_in_Pa, exner, rho, & ! In
                rcm, delta_zt, cloud_frac, & ! In
-               hydromet, X_mixt_comp_all_levs,  & !In
-               lh_clipped_vars, & ! In
+               hydromet, X_mixt_comp_all_levs,  & ! In
+               lh_rt_clipped, lh_thl_clipped, & ! In
+               lh_rc_clipped, lh_rv_clipped, & ! In
+               lh_Nc_clipped, & ! In
                l_lh_importance_sampling, & ! In
                l_lh_instant_var_covar_src, & ! In
                hydromet_mc, hydromet_vel_zt, Ncm_mc, & ! Out
@@ -541,7 +546,9 @@ module microphys_driver
                pdf_params, hydromet_pdf_params, p_in_Pa, exner, rho, & ! In
                rcm, delta_zt, cloud_frac, & ! In
                hydromet, X_mixt_comp_all_levs,  & !In
-               lh_clipped_vars, & ! In
+               lh_rt_clipped, lh_thl_clipped, & ! In
+               lh_rc_clipped, lh_rv_clipped, & ! In
+               lh_Nc_clipped, & ! In
                l_lh_importance_sampling, & ! In
                l_lh_instant_var_covar_src, & ! In
                hydromet_mc, hydromet_vel_zt, Ncm_mc, & ! Out

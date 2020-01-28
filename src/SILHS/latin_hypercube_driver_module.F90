@@ -15,19 +15,6 @@ module latin_hypercube_driver_module
 
   private ! Default scope
 
-  type lh_clipped_variables_type
-
-    real( kind = core_rknd ) :: &
-      rt,      & ! Total water mixing ratio            [kg/kg]
-      thl,     & ! Liquid potential temperature        [K]
-      rc,      & ! Cloud water mixing ratio            [kg/kg]
-      rv,      & ! Vapor water mixing ratio            [kg/kg]
-      Nc         ! Cloud droplet number concentration  [#/kg]
-
-  end type lh_clipped_variables_type
-
-  public :: lh_clipped_variables_type
-
 #ifdef SILHS
   public :: latin_hypercube_2D_output, &
     latin_hypercube_2D_close, stats_accumulate_lh, generate_silhs_sample, &
@@ -944,12 +931,14 @@ module latin_hypercube_driver_module
 !-----------------------------------------------------------------------
 
 !-----------------------------------------------------------------------
-  subroutine clip_transform_silhs_output( nz, num_samples, &             ! In
-                                          pdf_dim, hydromet_dim, &       ! In
-                                          X_mixt_comp_all_levs, &        ! In
-                                          X_nl_all_levs, &               ! In
-                                          pdf_params, l_use_Ncn_to_Nc, & ! In
-                                          lh_clipped_vars )              ! Out
+  subroutine clip_transform_silhs_output( nz, num_samples,                & ! In
+                                          pdf_dim, hydromet_dim,          & ! In
+                                          X_mixt_comp_all_levs,           & ! In
+                                          X_nl_all_levs,                  & ! Inout
+                                          pdf_params, l_use_Ncn_to_Nc,    & ! In
+                                          lh_rt_clipped, lh_thl_clipped,  & ! Out
+                                          lh_rc_clipped, lh_rv_clipped,   & ! Out
+                                          lh_Nc_clipped                   ) ! Out
 
   ! Description:
   !   Derives from the SILHS sampling structure X_nl_all_levs the variables
@@ -1011,8 +1000,12 @@ module latin_hypercube_driver_module
       X_nl_all_levs    ! SILHS sample points    [units vary]
 
     ! ------------------- Output Variables -------------------
-    type(lh_clipped_variables_type), dimension(nz,num_samples), intent(out) :: &
-      lh_clipped_vars        ! SILHS clipped and transformed variables
+    real( kind = core_rknd ), dimension(nz,num_samples), intent(out) :: &
+      lh_rt_clipped,  & ! rt generated from silhs sample points
+      lh_thl_clipped, & ! thl generated from silhs sample points
+      lh_rc_clipped,  & ! rc generated from silhs sample points
+      lh_rv_clipped,  & ! rv generated from silhs sample points
+      lh_Nc_clipped     ! Nc generated from silhs sample points
 
     ! ------------------- Local Variables -------------------
 
@@ -1034,49 +1027,49 @@ module latin_hypercube_driver_module
         
     ! Compute lh_rt and lh_thl
     call chi_eta_2_rtthl( nz, num_samples, &
-                          pdf_params%rt_1(:), pdf_params%thl_1(:),          & ! Intent(in)
-                          pdf_params%rt_2(:), pdf_params%thl_2(:),          & ! Intent(in)
-                          pdf_params%crt_1(:), pdf_params%cthl_1(:),        & ! Intent(in)
-                          pdf_params%crt_2(:), pdf_params%cthl_2(:),        & ! Intent(in)
-                          pdf_params%chi_1(:), pdf_params%chi_2(:),         & ! Intent(in)
-                          X_nl_all_levs(:,:,iiPDF_chi),                     & ! Intent(in) 
-                          X_nl_all_levs(:,:,iiPDF_eta),                     & ! Intent(in)
-                          X_mixt_comp_all_levs(:,:),                        & ! Intent(in)
-                          lh_clipped_vars(:,:)%rt, lh_clipped_vars(:,:)%thl ) ! Intent(out)
+                          pdf_params%rt_1(:), pdf_params%thl_1(:),    & ! Intent(in)
+                          pdf_params%rt_2(:), pdf_params%thl_2(:),    & ! Intent(in)
+                          pdf_params%crt_1(:), pdf_params%cthl_1(:),  & ! Intent(in)
+                          pdf_params%crt_2(:), pdf_params%cthl_2(:),  & ! Intent(in)
+                          pdf_params%chi_1(:), pdf_params%chi_2(:),   & ! Intent(in)
+                          X_nl_all_levs(:,:,iiPDF_chi),               & ! Intent(in) 
+                          X_nl_all_levs(:,:,iiPDF_eta),               & ! Intent(in)
+                          X_mixt_comp_all_levs(:,:),                  & ! Intent(in)
+                          lh_rt_clipped, lh_thl_clipped               ) ! Intent(out)
     
     
     ! These parameters are not computed at the model lower level.
-    lh_clipped_vars(1,:)%rt = zero
-    lh_clipped_vars(1,:)%thl = zero
-    lh_clipped_vars(1,:)%rc = zero
-    lh_clipped_vars(1,:)%rv = zero
-    lh_clipped_vars(1,:)%Nc = zero
+    lh_rt_clipped(1,:)  = zero
+    lh_thl_clipped(1,:) = zero
+    lh_rc_clipped(1,:)  = zero
+    lh_rv_clipped(1,:)  = zero
+    lh_Nc_clipped(1,:)  = zero
     
     do sample = 1, num_samples
       do k = 2, nz
     
         ! If necessary, clip rt      
-        lh_clipped_vars(k,sample)%rt = max( lh_clipped_vars(k,sample)%rt, rt_tol )
+        lh_rt_clipped(k,sample) = max( lh_rt_clipped(k,sample), rt_tol )
         
         ! Compute lh_rc, rc = chi * H(chi), where H(x) is the Heaviside step function
-        lh_clipped_vars(k,sample)%rc = max( X_nl_all_levs(k,sample,iiPDF_chi), zero )
+        lh_rc_clipped(k,sample) = max( X_nl_all_levs(k,sample,iiPDF_chi), zero )
         
         ! Clip lh_rc.
-        lh_clipped_vars(k,sample)%rc = min( lh_clipped_vars(k,sample)%rc, &
-                                            lh_clipped_vars(k,sample)%rt - rt_tol )
+        lh_rc_clipped(k,sample) = min( lh_rc_clipped(k,sample), &
+                                            lh_rt_clipped(k,sample) - rt_tol )
         
         ! Compute lh_rv
-        lh_clipped_vars(k,sample)%rv = lh_clipped_vars(k,sample)%rt - lh_clipped_vars(k,sample)%rc
+        lh_rv_clipped(k,sample) = lh_rt_clipped(k,sample) - lh_rc_clipped(k,sample)
         
         if ( l_use_Ncn_to_Nc ) then
            ! Compute lh_Nc, Nc = Ncn * H(chi), where H(x) is the Heaviside step function
            if ( X_nl_all_levs(k,sample,iiPDF_chi) > zero ) then
-             lh_clipped_vars(k,sample)%Nc = X_nl_all_levs(k,sample,iiPDF_Ncn)
+             lh_Nc_clipped(k,sample) = X_nl_all_levs(k,sample,iiPDF_Ncn)
            else
-             lh_clipped_vars(k,sample)%Nc = zero
+             lh_Nc_clipped(k,sample) = zero
            end if
         else
-           lh_clipped_vars(k,sample)%Nc = X_nl_all_levs(k,sample,iiPDF_Ncn)
+           lh_Nc_clipped(k,sample) = X_nl_all_levs(k,sample,iiPDF_Ncn)
         endif ! l_use_Ncn_to_Nc
         
       end do ! sample = 1, num_samples
@@ -1821,7 +1814,9 @@ module latin_hypercube_driver_module
   subroutine stats_accumulate_lh &
              ( nz, num_samples, pdf_dim, rho_ds_zt, &
                lh_sample_point_weights, X_nl_all_levs, &
-               lh_clipped_vars )
+               lh_rt_clipped, lh_thl_clipped, & 
+               lh_rc_clipped, lh_rv_clipped, & 
+               lh_Nc_clipped )
 
 ! Description:
 !   Clip subcolumns from latin hypercube and create stats for diagnostic
@@ -1921,16 +1916,17 @@ module latin_hypercube_driver_module
 
     real( kind = core_rknd ), intent(in), dimension(nz,num_samples,pdf_dim) :: &
       X_nl_all_levs ! Sample that is transformed ultimately to normal-lognormal
-
-    type(lh_clipped_variables_type), dimension(nz,num_samples), intent(in) :: &
-      lh_clipped_vars   ! SILHS variables
+      
+    real( kind = core_rknd ), dimension(nz,num_samples), intent(in) :: &
+      lh_rt_clipped,  & ! rt generated from silhs sample points
+      lh_thl_clipped, & ! thl generated from silhs sample points
+      lh_rc_clipped,  & ! rc generated from silhs sample points
+      lh_rv_clipped,  & ! rv generated from silhs sample points
+      lh_Nc_clipped     ! Nc generated from silhs sample points
 
     ! Local variables
     real( kind = core_rknd ), dimension(nz,num_samples) :: &
-      rc_all_points,  & ! Cloud water mixing ratio for all levels        [kg/kg]
-      Nc_all_points,  & ! Cloud droplet conc. for all levels              [#/kg]
-      Ncn_all_points, & ! Cloud nuclei conc. for all levs.; Nc=Ncn*H(chi) [#/kg]
-      rv_all_points     ! Vapor mixing ratio for all levels              [kg/kg]
+      Ncn_all_points ! Cloud nuclei conc. for all levs.; Nc=Ncn*H(chi) [#/kg]
 
     real( kind = core_rknd ), dimension(nz,num_samples,hydromet_dim) :: &
       hydromet_all_points ! Hydrometeor species    [units vary]
@@ -1965,8 +1961,6 @@ module latin_hypercube_driver_module
 
     ! ---- Begin Code ----
 
-    rc_all_points = lh_clipped_vars%rc
-
     if ( l_stats_samp ) then
 
       ! For all cases where l_lh_importance_sampling is false, the weights
@@ -1974,7 +1968,7 @@ module latin_hypercube_driver_module
 
       if ( ilh_rcm + ilh_rcp2_zt + ilh_lwp > 0 ) then
         lh_rcm = compute_sample_mean( nz, num_samples, lh_sample_point_weights, &
-                                      rc_all_points )
+                                      lh_rc_clipped )
         call stat_update_var( ilh_rcm, lh_rcm, stats_lh_zt )
 
         if ( ilh_lwp > 0 ) then
@@ -1999,14 +1993,13 @@ module latin_hypercube_driver_module
         
       if ( ilh_thlm + ilh_thlp2_zt > 0 ) then
         lh_thlm = compute_sample_mean( nz, num_samples, lh_sample_point_weights, &
-                                       real( lh_clipped_vars%thl, kind = core_rknd ) )
+                                       real( lh_thl_clipped, kind = core_rknd ) )
         call stat_update_var( ilh_thlm, lh_thlm, stats_lh_zt )
       end if
 
       if ( ilh_rvm + ilh_rtp2_zt > 0 ) then
-        rv_all_points = lh_clipped_vars(:,:)%rv
         lh_rvm = compute_sample_mean( nz, num_samples, lh_sample_point_weights, &
-                                      rv_all_points )
+                                      lh_rv_clipped )
         call stat_update_var( ilh_rvm, lh_rvm, stats_lh_zt )
         if ( ilh_vwp > 0 ) then
           xtmp &
@@ -2034,8 +2027,6 @@ module latin_hypercube_driver_module
                                       hydromet_all_points, &  ! Out
                                       Ncn_all_points ) ! Out
 
-        Nc_all_points = lh_clipped_vars%Nc
-
         ! Get rid of an annoying compiler warning.
         ivar = 1
         ivar = ivar
@@ -2055,7 +2046,7 @@ module latin_hypercube_driver_module
 
       if ( ilh_Ncm > 0 ) then
         lh_Ncm = compute_sample_mean( nz, num_samples, lh_sample_point_weights, &
-                                      Nc_all_points(:,:) )
+                                      lh_Nc_clipped(:,:) )
         call stat_update_var( ilh_Ncm, lh_Ncm, stats_lh_zt )
       end if
 
@@ -2122,7 +2113,7 @@ module latin_hypercube_driver_module
       if ( ilh_rcp2_zt  > 0 ) then
         ! Compute the variance of cloud water mixing ratio
         lh_rcp2_zt = compute_sample_variance &
-                     ( nz, num_samples, rc_all_points, &
+                     ( nz, num_samples, lh_rc_clipped, &
                        lh_sample_point_weights, lh_rcm )
         call stat_update_var( ilh_rcp2_zt, lh_rcp2_zt, stats_lh_zt )
       end if
@@ -2131,7 +2122,7 @@ module latin_hypercube_driver_module
         ! Compute the variance of total water
         lh_rtp2_zt = compute_sample_variance &
                      ( nz, num_samples, &
-                       lh_clipped_vars%rt, lh_sample_point_weights, &
+                       lh_rt_clipped, lh_sample_point_weights, &
                        lh_rvm+lh_rcm )
         call stat_update_var( ilh_rtp2_zt, lh_rtp2_zt, stats_lh_zt )
       end if
@@ -2139,7 +2130,7 @@ module latin_hypercube_driver_module
       if ( ilh_thlp2_zt > 0 ) then
         ! Compute the variance of liquid potential temperature
         lh_thlp2_zt = compute_sample_variance( nz, num_samples, &
-                        lh_clipped_vars%thl, lh_sample_point_weights, &
+                        lh_thl_clipped, lh_sample_point_weights, &
                         lh_thlm )
         call stat_update_var( ilh_thlp2_zt, lh_thlp2_zt, stats_lh_zt )
       end if
@@ -2163,7 +2154,7 @@ module latin_hypercube_driver_module
       ! Compute the variance of cloud droplet concentration
       if ( ilh_Ncp2_zt > 0 ) then
         lh_Ncp2_zt = compute_sample_variance &
-                     ( nz, num_samples, Nc_all_points(:,:), &
+                     ( nz, num_samples, lh_Nc_clipped(:,:), &
                        lh_sample_point_weights, lh_Ncm(:) )
         call stat_update_var( ilh_Ncp2_zt, lh_Ncp2_zt, stats_lh_zt )
       end if

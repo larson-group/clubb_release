@@ -19,7 +19,9 @@ contains
                pdf_params, hydromet_pdf_params, p_in_Pa, exner, rho, &
                rcm, delta_zt, cloud_frac, &
                hydromet, X_mixt_comp_all_levs,  &
-               lh_clipped_vars, &
+               lh_rt_clipped, lh_thl_clipped, & ! In
+               lh_rc_clipped, lh_rv_clipped, & ! In
+               lh_Nc_clipped, & ! In
                l_lh_importance_sampling, &
                l_lh_instant_var_covar_src, &
                lh_hydromet_mc, lh_hydromet_vel, lh_Ncm_mc, &
@@ -65,9 +67,6 @@ contains
     use estimate_scm_microphys_module, only: &
       est_single_column_tndcy
 
-    use latin_hypercube_driver_module, only: &
-      lh_clipped_variables_type
-
     implicit none
 
     ! Interface block
@@ -108,9 +107,13 @@ contains
       p_in_Pa,     & ! Pressure                     [Pa]
       exner,       & ! Exner function               [-]
       rho            ! Density on thermo. grid      [kg/m^3]
-
-    type(lh_clipped_variables_type), dimension(nz,num_samples), intent(in) :: &
-      lh_clipped_vars
+      
+    real( kind = core_rknd ), dimension(nz,num_samples), intent(in) :: &
+      lh_rt_clipped,  & ! rt generated from silhs sample points
+      lh_thl_clipped, & ! thl generated from silhs sample points
+      lh_rc_clipped,  & ! rc generated from silhs sample points
+      lh_rv_clipped,  & ! rv generated from silhs sample points
+      lh_Nc_clipped     ! Nc generated from silhs sample points
 
     logical, intent(in) :: &
       l_lh_importance_sampling, & ! Do importance sampling (SILHS) [-]
@@ -154,7 +157,9 @@ contains
            lh_sample_point_weights, pdf_params, hydromet_pdf_params, & ! Intent(in)
            p_in_Pa, exner, rho, &                                      ! Intent(in)
            delta_zt, hydromet, rcm, &                                  ! Intent(in)
-           lh_clipped_vars, &                                          ! Intent(in)
+           lh_rt_clipped, lh_thl_clipped, &                            ! Intent(in)
+           lh_rc_clipped, lh_rv_clipped, &                             ! Intent(in)
+           lh_Nc_clipped, &                                            ! Intent(in)
            l_lh_instant_var_covar_src, &                               ! Intent(in)
            lh_hydromet_mc, lh_hydromet_vel, lh_Ncm_mc, &               ! Intent(out)
            lh_rvm_mc, lh_rcm_mc, lh_thlm_mc, &                         ! Intent(out)

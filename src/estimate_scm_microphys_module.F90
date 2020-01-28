@@ -17,7 +17,9 @@ module estimate_scm_microphys_module
                X_nl_all_levs, X_mixt_comp_all_levs, lh_sample_point_weights, &
                pdf_params, hydromet_pdf_params, p_in_Pa, exner, rho, &
                dzq, hydromet, rcm, &
-               lh_clipped_vars, &
+               lh_rt_clipped, lh_thl_clipped, &
+               lh_rc_clipped, lh_rv_clipped, &
+               lh_Nc_clipped, &
                l_lh_instant_var_covar_src, &
                lh_hydromet_mc, lh_hydromet_vel, lh_Ncm_mc, &
                lh_rvm_mc, lh_rcm_mc, lh_thlm_mc, &
@@ -72,8 +74,7 @@ module estimate_scm_microphys_module
 
     use latin_hypercube_driver_module, only: &
       copy_X_nl_into_hydromet_all_pts, &    ! Procedure(s)
-      clip_transform_silhs_output,     &
-      lh_clipped_variables_type             ! Type
+      clip_transform_silhs_output
 
     use parameters_microphys, only: &
       l_silhs_KK_convergence_adj_mean ! Variable(s)
@@ -141,8 +142,12 @@ module estimate_scm_microphys_module
     real( kind = core_rknd ), dimension(nz,hydromet_dim), intent(in) :: &
       hydromet ! Hydrometeor species    [units vary]
 
-    type(lh_clipped_variables_type), dimension(nz,num_samples), intent(in) :: &
-      lh_clipped_vars   ! Variables from SILHS sample
+    real( kind = core_rknd ), dimension(nz,num_samples), intent(in) :: &
+      lh_rt_clipped,  & ! rt generated from silhs sample points
+      lh_thl_clipped, & ! thl generated from silhs sample points
+      lh_rc_clipped,  & ! rc generated from silhs sample points
+      lh_rv_clipped,  & ! rv generated from silhs sample points
+      lh_Nc_clipped     ! Nc generated from silhs sample points
 
     logical, intent(in) :: &
       l_lh_instant_var_covar_src ! Produce instantaneous var/covar tendencies [-]
@@ -181,13 +186,8 @@ module estimate_scm_microphys_module
 
     real( kind = core_rknd ), dimension(nz,num_samples) :: &
       Ncn_all_points, &    ! Cloud Nuclei conc. (simplified); Nc=Ncn*H(chi) [#/kg]
-      rt_all_points,  &    ! Total water mixing ratio                       [kg/kg]
-      thl_all_points, &    ! Liquid potential temperature                   [K]
       chi_all_points, &    ! 's' (Mellor 1977)                              [kg/kg]
-      rv_all_points,  &    ! Vapor water                                    [kg/kg]
-      rc_all_points,  &    ! Liquid water                                   [kg/kg]
-      w_all_points,   &    ! Vertical velocity                              [m/s]
-      Nc_all_points        ! Cloud droplet concentration                    [#/kg]
+      w_all_points         ! Vertical velocity                              [m/s]
 
     real( kind = core_rknd ), dimension(nz) :: &
       lh_rtp2_mc_zt,    & ! LH microphysics tendency for <rt'^2>                  [(kg/kg)^2/s]
@@ -224,13 +224,6 @@ module estimate_scm_microphys_module
            hydromet_all_points,          & ! Intent(out)
            Ncn_all_points )                ! Intent(out)
 
-    ! Unpack the lh_clipped_vars structure
-    rt_all_points  = lh_clipped_vars%rt
-    thl_all_points = lh_clipped_vars%thl
-    rc_all_points  = lh_clipped_vars%rc
-    rv_all_points  = lh_clipped_vars%rv
-    Nc_all_points  = lh_clipped_vars%Nc
-
     do sample = 1, num_samples
 
       cloud_frac_unused = unused_var
@@ -238,10 +231,10 @@ module estimate_scm_microphys_module
       ! Call the microphysics scheme to obtain a sample point
       call microphys_sub &
            ( dt, nz, & ! In
-             l_latin_hypercube, thl_all_points(:,sample), w_all_points(:,sample), p_in_Pa, & ! In
+             l_latin_hypercube, lh_thl_clipped(:,sample), w_all_points(:,sample), p_in_Pa, & ! In
              exner, rho, cloud_frac_unused, w_std_dev_unused, & ! In
-             dzq, rc_all_points(:,sample), Nc_all_points(:,sample), & ! In
-             chi_all_points(:,sample), rv_all_points(:,sample), & ! In
+             dzq, lh_rc_clipped(:,sample), lh_Nc_clipped(:,sample), & ! In
+             chi_all_points(:,sample), lh_rv_clipped(:,sample), & ! In
              hydromet_all_points(:,sample,:), & ! In
              lh_hydromet_mc_all(:,sample,:), lh_hydromet_vel_all(:,sample,:), & ! Out
              lh_Ncm_mc_all(:,sample), & ! Out
@@ -255,7 +248,7 @@ module estimate_scm_microphys_module
 
       call lh_microphys_var_covar_driver &
            ( nz, num_samples, dt, lh_sample_point_weights,  &  ! Intent(in)
-             pdf_params, rt_all_points, thl_all_points, w_all_points,  &  ! Intent(in)
+             pdf_params, lh_rt_clipped, lh_thl_clipped, w_all_points,  &  ! Intent(in)
              lh_rcm_mc_all, lh_rvm_mc_all, lh_thlm_mc_all,  &  ! Intent(in)
              l_lh_instant_var_covar_src, &                     ! Intent(in)
              lh_rtp2_mc_zt, lh_thlp2_mc_zt, lh_wprtp_mc_zt, &  ! Intent(out)
