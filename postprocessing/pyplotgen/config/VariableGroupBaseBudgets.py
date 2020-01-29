@@ -33,7 +33,7 @@ class VariableGroupBaseBudgets(VariableGroup):
             {'var_names': ['rtm_ma'], 'legend_label': 'rtm_ma'},
             {'var_names': ['rtm_ta'], 'legend_label': 'rtm_ta'},
             {'var_names': ['rtm_mc'], 'legend_label': 'rtm_mc'},
-            {'var_names': ['rtm_clipping'], 'legend_label': 'rtm_bt', 'fallback_func': self.getRtmClipping},
+            {'var_names': ['rtm_clipping'], 'legend_label': 'rtm_clipping', 'fallback_func': self.getRtmClipping},
             {'var_names': ['rtm_pd'], 'legend_label': 'rtm_pd'},
             {'var_names': ['ls_forcing'], 'legend_label': 'ls_forcing', 'fallback_func': self.getRtmForcing},
             {'var_names': ['rtm_residual'], 'legend_label': 'rtm_residual', 'fallback_func': self.getRtmResidual},
@@ -74,6 +74,7 @@ class VariableGroupBaseBudgets(VariableGroup):
             {'var_names': ['wprtp_mfl'], 'legend_label': 'wprtp_mfl'},
             {'var_names': ['wprtp_cl'], 'legend_label': 'wprtp_cl'},
             {'var_names': ['wprtp_sicl'], 'legend_label': 'wprtp_sicl'},
+            {'var_names': ['wprtp_pd'], 'legend_label': 'wprtp_pd'},
             {'var_names': ['wprtp_forcing'], 'legend_label': 'wprtp_forcing'},
             {'var_names': ['wprtp_residual'], 'legend_label': 'wprtp_residual', 'fallback_func': self.getWprtpResidual},
         ]
@@ -214,6 +215,28 @@ class VariableGroupBaseBudgets(VariableGroup):
             {'var_names': ['vm_mfl'], 'legend_label': 'vm_mfl'}
         ]
 
+        rrm_budget_lines = [
+            {'var_names': ['rrm_bt'], 'legend_label': 'rrm_bt'},
+            {'var_names': ['rrm_ma'], 'legend_label': 'rrm_ma'},
+            {'var_names': ['rrm_sd'], 'legend_label': 'rrm_sd'},
+            {'var_names': ['rrm_ta'], 'legend_label': 'rrm_ta'},
+            {'var_names': ['rrm_ts'], 'legend_label': 'rrm_ts'},
+            {'var_names': ['rrm_fill_clip'], 'legend_label': 'rrm_fill_clip', 'fallback_func': self.getRrmFillClip},
+            {'var_names': ['rrm_mc'], 'legend_label': 'rrm_mc'},
+            {'var_names': ['rrm_residual'], 'legend_label': 'rrm_residual', 'fallback_func': self.getRrmResidual},
+        ]
+
+        Nrm_budget_lines = [
+            {'var_names': ['Nrm_bt'], 'legend_label': 'Nrm_bt'},
+            {'var_names': ['Nrm_ma'], 'legend_label': 'Nrm_ma'},
+            {'var_names': ['Nrm_sd'], 'legend_label': 'Nrm_sd'},
+            {'var_names': ['Nrm_ta'], 'legend_label': 'Nrm_ta'},
+            {'var_names': ['Nrm_ts'], 'legend_label': 'Nrm_ts'},
+            {'var_names': ['Nrm_cl'], 'legend_label': 'Nrm_cl'},
+            {'var_names': ['Nrm_mc'], 'legend_label': 'Nrm_mc'},
+            {'var_names': ['Nrm_residual'], 'legend_label': 'Nrm_residual', 'fallback_func': self.getNrmResidual},
+        ]
+
         self.variable_definitions = [
             {'var_names': {
                 'clubb': ['thlm'],
@@ -331,7 +354,27 @@ class VariableGroupBaseBudgets(VariableGroup):
                 'hoc': ['vm'],
                 'e3sm': ['vm']
             },
-                'lines': vm_budget_lines, 'type': Panel.TYPE_BUDGET, 'fill_zeros': True}
+                'lines': vm_budget_lines, 'type': Panel.TYPE_BUDGET, 'fill_zeros': True},
+
+            {'var_names': {
+                'clubb': ['rrm'],
+                'sam': ['rrm'],
+                'coamps': ['rrm'],
+                'r408': ['rrm'],
+                'hoc': ['rrm'],
+                'e3sm': ['rrm']
+            },
+                'lines': rrm_budget_lines, 'type': Panel.TYPE_BUDGET, 'fill_zeros': True},
+
+            {'var_names': {
+                'clubb': ['Nrm'],
+                'sam': ['Nrm'],
+                'coamps': ['Nrm'],
+                'r408': ['Nrm'],
+                'hoc': ['Nrm'],
+                'e3sm': ['Nrm']
+            },
+                'lines': Nrm_budget_lines, 'type': Panel.TYPE_BUDGET, 'fill_zeros': True}
         ]
         super().__init__(ncdf_datasets, case, sam_file=sam_file, coamps_file=coamps_file, r408_dataset=r408_dataset,
                          hoc_dataset=hoc_dataset, e3sm_datasets=e3sm_datasets)
@@ -680,5 +723,62 @@ class VariableGroupBaseBudgets(VariableGroup):
 
         output_data = vpwp_bt - (
                     vpwp_ma + vpwp_ta + vpwp_tp + vpwp_ac + vpwp_bp + vpwp_pr1 + vpwp_pr2 + vpwp_pr3 + vpwp_pr4 + vpwp_dp1 + vpwp_mfl + vpwp_cl)
+
+        return output_data, z
+
+
+    def getRrmFillClip(self, dataset_override=None):
+        '''
+
+
+        rrm_hf + rrm_wvhf + rrm_cl
+        :return:
+        '''
+        # z,z, dataset = self.getVarForCalculations('altitude', dataset_override, fill_zeros=True)
+        rrm_hf, z, dataset = self.getVarForCalculations('rrm_hf', dataset_override, fill_zeros=True)
+        rrm_wvhf, z, dataset = self.getVarForCalculations('rrm_wvhf', dataset_override, fill_zeros=True)
+        rrm_cl, z, dataset = self.getVarForCalculations('rrm_cl', dataset_override, fill_zeros=True)
+
+        output_data = rrm_hf + rrm_wvhf + rrm_cl
+
+        return output_data, z
+
+    def getRrmResidual(self, dataset_override=None):
+        '''
+
+
+        rrm_bt - (rrm_ma + rrm_sd + rrm_ta + rrm_ts + rrm_hf + rrm_wvhf + rrm_cl + rrm_mc)            :return:
+        '''
+        # z,z, dataset = self.getVarForCalculations('altitude', dataset_override, fill_zeros=True)
+        rrm_bt, z, dataset = self.getVarForCalculations('rrm_bt', dataset_override, fill_zeros=True)
+        rrm_ma, z, dataset = self.getVarForCalculations('rrm_ma', dataset_override, fill_zeros=True)
+        rrm_sd, z, dataset = self.getVarForCalculations('rrm_sd', dataset_override, fill_zeros=True)
+        rrm_ta, z, dataset = self.getVarForCalculations('rrm_ta', dataset_override, fill_zeros=True)
+        rrm_ts, z, dataset = self.getVarForCalculations('rrm_ts', dataset_override, fill_zeros=True)
+        rrm_hf, z, dataset = self.getVarForCalculations('rrm_hf', dataset_override, fill_zeros=True)
+        rrm_wvhf, z, dataset = self.getVarForCalculations('rrm_wvhf', dataset_override, fill_zeros=True)
+        rrm_cl, z, dataset = self.getVarForCalculations('rrm_cl', dataset_override, fill_zeros=True)
+        rrm_mc, z, dataset = self.getVarForCalculations('rrm_mc', dataset_override, fill_zeros=True)
+
+        output_data = rrm_bt - (rrm_ma + rrm_sd + rrm_ta + rrm_ts + rrm_hf + rrm_wvhf + rrm_cl + rrm_mc)
+
+        return output_data, z
+
+    def getNrmResidual(self, dataset_override=None):
+        '''
+
+
+        Nrm_bt - (Nrm_ma + Nrm_sd + Nrm_ta + Nrm_ts + Nrm_cl + Nrm_mc)
+        '''
+        # z,z, dataset = self.getVarForCalculations('altitude', dataset_override, fill_zeros=True)
+        Nrm_bt, z, dataset = self.getVarForCalculations('Nrm_bt', dataset_override, fill_zeros=True)
+        Nrm_ma, z, dataset = self.getVarForCalculations('Nrm_ma', dataset_override, fill_zeros=True)
+        Nrm_sd, z, dataset = self.getVarForCalculations('Nrm_sd', dataset_override, fill_zeros=True)
+        Nrm_ta, z, dataset = self.getVarForCalculations('Nrm_ta', dataset_override, fill_zeros=True)
+        Nrm_ts, z, dataset = self.getVarForCalculations('Nrm_ts', dataset_override, fill_zeros=True)
+        Nrm_cl, z, dataset = self.getVarForCalculations('Nrm_cl', dataset_override, fill_zeros=True)
+        Nrm_mc, z, dataset = self.getVarForCalculations('Nrm_mc', dataset_override, fill_zeros=True)
+
+        output_data = Nrm_bt - (Nrm_ma + Nrm_sd + Nrm_ta + Nrm_ts + Nrm_cl + Nrm_mc)
 
         return output_data, z

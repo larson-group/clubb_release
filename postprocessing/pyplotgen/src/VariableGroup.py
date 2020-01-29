@@ -233,7 +233,7 @@ class VariableGroup:
                                                   line_format=Style_definitions.HOC_LINE_STYLE, fill_zeros=fill_zeros,
                                                   override_panel_type=panel_type, fallback_func=fallback, lines=lines))
 
-        if e3sm_dataset is not None and len(e3sm_dataset) >0:
+        if e3sm_dataset is not None and len(e3sm_dataset) >0 and len(var_names['e3sm']) is not 0:
             label = Style_definitions.E3SM_LABEL
             line_style = Style_definitions.E3SM_LINE_STYLE
             for dataset_name in e3sm_dataset:
@@ -273,7 +273,7 @@ class VariableGroup:
                 imported_title = data_reader.getLongName(first_input_datasets, all_var_names)
                 variable_def_dict['title'] = imported_title
         if 'axis_title' not in variable_def_dict.keys():
-            if panel_type == Panel.TYPE_BUDGET:
+            if panel_type == Panel.TYPE_BUDGET and len(all_lines) is not 0:
                 any_varname_with_budget_units = all_lines[0].label
                 variable_def_dict['axis_title'] = "[" + data_reader.__getUnits__(first_input_datasets, any_varname_with_budget_units) + "]"
             else:
