@@ -31,7 +31,7 @@ class VariableGroupBase(VariableGroup):
                 'hoc': ['thlm'],
                 'e3sm': ['thlm']
             },
-                'sam_calc': self.getThlmSamCalc},
+                'sam_calc': self.getThlmSamCalc, 'sci_scale': 0},
             {'var_names': {
                 'clubb': ['rtm'],
                 'sam': [],
@@ -40,7 +40,7 @@ class VariableGroupBase(VariableGroup):
                 'hoc': ['rtm'],
                 'e3sm': ['rtm']
             },
-                'sam_calc': self.getRtmSamCalc},
+                'sam_calc': self.getRtmSamCalc, 'sci_scale': -3},
             {'var_names': {
                 'clubb': ['wpthlp'],
                 'sam': ['WPTHLP'],
@@ -49,7 +49,7 @@ class VariableGroupBase(VariableGroup):
                 'hoc': ['wpthlp'],
                 'e3sm': ['wpthlp']
             },
-                'fallback_func': self.getWpthlpFallback},
+                'fallback_func': self.getWpthlpFallback, 'sci_scale': 0},
             {'var_names': {
                 'clubb': ['wprtp'],
                 'sam': ['WPRTP'],
@@ -58,7 +58,7 @@ class VariableGroupBase(VariableGroup):
                 'hoc': ['wprtp'],
                 'e3sm': ['wprtp']
             },
-                'fallback_func': self.getWprtpFallback},
+                'fallback_func': self.getWprtpFallback, 'sci_scale': -4},
             {'var_names': {
                 'clubb': ['cloud_frac'],
                 'sam': ['CLD'],
@@ -66,7 +66,7 @@ class VariableGroupBase(VariableGroup):
                 'r408': ['cloud_frac', 'cf'],
                 'hoc': ['cloud_frac', 'cf'],
                 'e3sm': ['cloud_frac']
-            }},
+            }, 'sci_scale': 0},
 
             {'var_names': {
                 'clubb': ['rcm'],
@@ -76,7 +76,7 @@ class VariableGroupBase(VariableGroup):
                 'hoc': ['rcm'],
                 'e3sm': ['rcm']
             },
-                'sam_conv_factor': 1 / 1000},
+                'sam_conv_factor': 1 / 1000, 'sci_scale': -5},
             {'var_names': {
                 'clubb': ['wp2', 'W2'],
                 'sam': ['W2', 'WP2'],
@@ -84,7 +84,7 @@ class VariableGroupBase(VariableGroup):
                 'r408': ['wp2'],
                 'hoc': ['wp2'],
                 'e3sm': ['wp2']
-            }},
+            }, 'sci_scale': 0},
 
             {'var_names': {
                 'clubb': ['wp3'],
@@ -94,7 +94,7 @@ class VariableGroupBase(VariableGroup):
                 'hoc': ['wp3'],
                 'e3sm': ['wp3']
             },
-                'sam_name': 'W3'},
+                'sam_name': 'W3', 'sci_scale': 0},
             {'var_names': {
                 'clubb': ['thlp2'],
                 'sam': ['thlp2', 'THLP2', 'TL2'],
@@ -102,7 +102,7 @@ class VariableGroupBase(VariableGroup):
                 'r408': ['thlp2'],
                 'hoc': ['thlp2'],
                 'e3sm': ['thlp2']
-            }},
+            }, 'sci_scale': 0},
 
             {'var_names': {
                 'clubb': ['rtp2'],
@@ -112,7 +112,7 @@ class VariableGroupBase(VariableGroup):
                 'hoc': ['rtp2'],
                 'e3sm': ['rtp2']
             },
-                'fallback_func': self.getRtp2Fallback},
+                'fallback_func': self.getRtp2Fallback, 'sci_scale': -7},
             {'var_names': {
                 'clubb': ['rtpthlp'],
                 'sam': ['RTPTHLP', 'TQ'],
@@ -120,7 +120,7 @@ class VariableGroupBase(VariableGroup):
                 'r408': ['rtpthlp'],
                 'hoc': ['rtpthlp'],
                 'e3sm': ['rtpthlp']
-            }},
+            }, 'sci_scale': -4},
 
             {'var_names': {
                 'clubb': ['rtp3'],
@@ -130,7 +130,7 @@ class VariableGroupBase(VariableGroup):
                 'hoc': ['rtp3'],
                 'e3sm': ['rtp3']
             },
-                'fallback_func': self.getRtp3Fallback},
+                'fallback_func': self.getRtp3Fallback, 'sci_scale': -9},
             {'var_names': {
                 'clubb': ['thlp3'],
                 'sam': ['THLP3'],
@@ -138,7 +138,7 @@ class VariableGroupBase(VariableGroup):
                 'r408': ['thlp3'],
                 'hoc': ['thlp3'],
                 'e3sm': ['thlp3']
-            }},
+            }, 'sci_scale': 0},
 
             {'var_names': {
                 'clubb': ['Skw_zt'],
@@ -148,7 +148,7 @@ class VariableGroupBase(VariableGroup):
                 'hoc': ['Skw_zt'],
                 'e3sm': ['Skw_zt']
             },
-                'sam_calc': self.getSkwZtLesCalc, 'coamps_calc': self.getSkwZtLesCalc, 'fill_zeros': True},
+                'sam_calc': self.getSkwZtLesCalc, 'coamps_calc': self.getSkwZtLesCalc, 'fill_zeros': True, 'sci_scale': 0},
             {'var_names': {
                 'clubb': ['Skrt_zt'],
                 'sam': ['Skrt_zt'],
@@ -157,7 +157,7 @@ class VariableGroupBase(VariableGroup):
                 'hoc': ['Skrt_zt'],
                 'e3sm': ['Skrt_zt']
             },
-                'sam_calc': self.getSkrtZtLesCalc, 'coamps_calc': self.getSkrtZtLesCalc, 'fill_zeros': True},
+                'sam_calc': self.getSkrtZtLesCalc, 'coamps_calc': self.getSkrtZtLesCalc, 'fill_zeros': True, 'sci_scale': 0},
             {'var_names': {
                 'clubb': ['Skthl_zt'],
                 'sam': ['Skthl_zt'],
@@ -166,7 +166,7 @@ class VariableGroupBase(VariableGroup):
                 'hoc': ['Skthl_zt'],
                 'e3sm': ['Skthl_zt']
             },
-                'sam_calc': self.getSkthlZtLesCalc, 'coamps_calc': self.getSkthlZtLesCalc, 'fill_zeros': True},
+                'sam_calc': self.getSkthlZtLesCalc, 'coamps_calc': self.getSkthlZtLesCalc, 'fill_zeros': True, 'sci_scale': 0},
             {'var_names': {
                 'clubb': ['wm', 'wlsm'],
                 'sam': ['wm', 'WOBS'],
@@ -174,7 +174,7 @@ class VariableGroupBase(VariableGroup):
                 'r408': ['wm'],
                 'hoc': ['wm'],
                 'e3sm': ['wm']
-            }},
+            }, 'sci_scale': 0},
 
             {'var_names': {
                 'clubb': ['um'],
@@ -183,7 +183,7 @@ class VariableGroupBase(VariableGroup):
                 'r408': ['um'],
                 'hoc': ['um'],
                 'e3sm': ['um']
-            }},
+            }, 'sci_scale': 0},
 
             {'var_names': {
                 'clubb': ['vm'],
@@ -192,7 +192,7 @@ class VariableGroupBase(VariableGroup):
                 'r408': ['vm'],
                 'hoc': ['vm'],
                 'e3sm': ['vm']
-            }},
+            }, 'sci_scale': 0},
 
             {'var_names': {
                 'clubb': ['upwp'],
@@ -202,7 +202,7 @@ class VariableGroupBase(VariableGroup):
                 'hoc': ['upwp'],
                 'e3sm': ['upwp']
             },
-                'coamps_calc': self.getUwCoampsData},
+                'coamps_calc': self.getUwCoampsData, 'sci_scale': 0},
             {'var_names': {
                 'clubb': ['vpwp',],
                 'sam': ['VW'],
@@ -211,7 +211,7 @@ class VariableGroupBase(VariableGroup):
                 'hoc': ['vpwp'],
                 'e3sm': ['vpwp']
             },
-                'coamps_calc': self.getVwCoampsData},
+                'coamps_calc': self.getVwCoampsData, 'sci_scale': 0},
             {'var_names': {
                 'clubb': ['up2'],
                 'sam': ['U2'],
@@ -219,7 +219,7 @@ class VariableGroupBase(VariableGroup):
                 'r408': ['up2'],
                 'hoc': ['up2'],
                 'e3sm': ['up2']
-            }},
+            }, 'sci_scale': 0},
 
             {'var_names': {
                 'clubb': ['vp2'],
@@ -228,7 +228,7 @@ class VariableGroupBase(VariableGroup):
                 'r408': ['vp2'],
                 'hoc': ['vp2'],
                 'e3sm': ['vp2']
-            }},
+            }, 'sci_scale': 0},
 
             {'var_names': {
                 'clubb': ['rcp2'],
@@ -238,7 +238,7 @@ class VariableGroupBase(VariableGroup):
                 'hoc': ['rcp2'],
                 'e3sm': ['rcp2']
             },
-                'sam_conv_factor': 1 / 10 ** 6},
+                'sam_conv_factor': 1 / 10 ** 6, 'sci_scale': -8},
             {'var_names': {
                 'clubb': ['lwp'],
                 'sam': ['CWP'],
@@ -265,7 +265,7 @@ class VariableGroupBase(VariableGroup):
                 'hoc': ['tau_zm'],
                 'e3sm': ['tau_zm']
             },
-                'fill_zeros': True},
+                'fill_zeros': True, 'sci_scale': 0},
             {'var_names': {
                 'clubb': ['Lscale'],
                 'sam': ['Lscale'],
@@ -274,7 +274,7 @@ class VariableGroupBase(VariableGroup):
                 'hoc': ['Lscale'],
                 'e3sm': ['Lscale']
             },
-                'fill_zeros': True},
+                'fill_zeros': True, 'sci_scale': 0},
             {'var_names': {
                 'clubb': ['wpthvp'],
                 'sam': ['WPTHVP'],
@@ -300,7 +300,7 @@ class VariableGroupBase(VariableGroup):
                 'r408': ['rtpthvp'],
                 'hoc': ['rtpthvp'],
                 'e3sm': ['rtpthvp']
-            }},
+            }, 'sci_scale': -5},
 
             {'var_names': {
                 'clubb': ['corr_w_chi_1'],
@@ -310,7 +310,7 @@ class VariableGroupBase(VariableGroup):
                 'hoc': ['corr_w_chi_1'],
                 'e3sm': ['corr_w_chi_1']
             },
-                'fill_zeros': True},
+                'fill_zeros': True, 'sci_scale': 0},
             {'var_names': {
                 'clubb': ['corr_chi_eta_1'],
                 'sam': ['corr_chi_eta_1'],
@@ -319,7 +319,7 @@ class VariableGroupBase(VariableGroup):
                 'hoc': ['corr_chi_eta_1'],
                 'e3sm': ['corr_chi_eta_1']
             },
-                'fill_zeros': True},
+                'fill_zeros': True, 'sci_scale': 0},
             {'var_names': {
                 'clubb': ['thlpthvp'],
                 'sam': ['thlpthvp', 'THLPTHVP'],
@@ -345,7 +345,8 @@ class VariableGroupBase(VariableGroup):
                 'sam_calc': self.get_rc_coef_zm_X_wprcp_sam_calc,
                 'coamps_calc': self.get_rc_coef_zm_X_wprcp_coamps_calc,
                 'title': 'Contribution of Cloud Water Flux to wpthvp',
-                'axis_title': 'rc_coef_zm * wprcp [K m/s]'},
+                'axis_title': 'rc_coef_zm * wprcp [K m/s]',
+                'sci_scale': 0},
 
             {'var_names': {
                 'clubb': ['rc_coef_zm * thlprcp'],
@@ -359,7 +360,8 @@ class VariableGroupBase(VariableGroup):
                 'coamps_calc': self.get_rc_coef_zm_X_thlprcp_coamps_calc,
                 'fallback_func': self.get_rc_coef_zm_X_thlprcp_clubb_fallback,
                 'title': 'Contribution of Cloud Water Flux to thlprcp',
-                'axis_title': 'rc_coef_zm * thlprcp [K^2]'},
+                'axis_title': 'rc_coef_zm * thlprcp [K^2]',
+                'sci_scale': 0},
 
             {'var_names': {
                 'clubb': ['rc_coef_zm * rtprcp'],
@@ -373,7 +375,8 @@ class VariableGroupBase(VariableGroup):
                 'coamps_calc': self.get_rc_coef_zm_X_rtprcp_coamps_calc,
                 'fallback_func': self.get_rc_coef_zm_X_rtprcp_clubb_fallback,
                 'title': 'Contribution of Cloud Water Flux to rtprcp',
-                'axis_title': 'rc_coef_zm * rtprcp [kg/kg K]'}
+                'axis_title': 'rc_coef_zm * rtprcp [kg/kg K]',
+                'sci_scale': 0}
 
             # TODO rc_coev * wp2rcp
 

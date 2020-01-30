@@ -25,7 +25,7 @@ class VariableGroupWs(VariableGroup):
                 'r408': ['wp4'],
                 'hoc': ['wp4'],
                 'e3sm': ['wp4']
-            }},
+            }, 'sci_scale': 0},
 
             {'var_names': {
                 'clubb': ['wp2thlp'],
@@ -35,7 +35,7 @@ class VariableGroupWs(VariableGroup):
                 'hoc': ['wp2thlp'],
                 'e3sm': ['wp2thlp']
             },
-                'fill_zeros': 'True'},
+                'fill_zeros': 'True', 'sci_scale': 0},
             {'var_names': {
                 'clubb': ['wp2rtp'],
                 'sam': ['WP2RTP'],
@@ -43,7 +43,7 @@ class VariableGroupWs(VariableGroup):
                 'r408': ['wp2rtp'],
                 'hoc': ['wp2rtp'],
                 'e3sm': ['wp2rtp']
-            }},
+            }, 'sci_scale': -4},
 
             {'var_names': {
                 'clubb': ['wpthlp2'],
@@ -52,7 +52,7 @@ class VariableGroupWs(VariableGroup):
                 'r408': ['wpthlp2'],
                 'hoc': ['wpthlp2'],
                 'e3sm': ['wpthlp2']
-            }},
+            }, 'sci_scale': 0},
 
             {'var_names': {
                 'clubb': ['wprtp2'],
@@ -61,7 +61,7 @@ class VariableGroupWs(VariableGroup):
                 'r408': ['wprtp2'],
                 'hoc': ['wprtp2'],
                 'e3sm': ['wprtp2']
-            }},
+            }, 'sci_scale': -7},
 
             {'var_names': {
                 'clubb': ['wprtpthlp'],
@@ -70,7 +70,7 @@ class VariableGroupWs(VariableGroup):
                 'r408': ['wprtpthlp'],
                 'hoc': ['wprtpthlp'],
                 'e3sm': ['wprtpthlp']
-            }},
+            }, 'sci_scale': -4},
 
             {'var_names': {
                 'clubb': ['wp2thvp'],
@@ -79,7 +79,7 @@ class VariableGroupWs(VariableGroup):
                 'r408': ['wp2thvp'],
                 'hoc': ['wp2thvp'],
                 'e3sm': ['wp2thvp']
-            }},
+            }, 'sci_scale': 0},
             # TODO LES
         ]
         super().__init__(ncdf_datasets, case, sam_file, coamps_file=coamps_file, r408_dataset=r408_dataset,

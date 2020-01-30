@@ -357,7 +357,11 @@ class VariableGroup:
             panel_type = self.defualt_panel_type
             if 'type' in variable.keys():
                 panel_type = variable['type']
-            panel = Panel(plotset, title=title, dependant_title=axis_label, panel_type=panel_type)
+            if 'sci_scale' in variable.keys():
+                sci_scale = variable['sci_scale']
+            else:
+                sci_scale = None
+            panel = Panel(plotset, title=title, dependant_title=axis_label, panel_type=panel_type, sci_scale=sci_scale)
             self.panels.append(panel)
 
     def __getVarLines__(self, var_names, ncdf_datasets, label="", line_format="", avg_axis=0, override_panel_type=None,

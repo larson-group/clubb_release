@@ -21,13 +21,15 @@ class Panel:
     TYPE_BUDGET = 'budget'
     TYPE_TIMESERIES = 'timeseries'
 
-    def __init__(self, plots, panel_type="profile", title="Unnamed panel", dependant_title="dependant variable"):
+    def __init__(self, plots, panel_type="profile", title="Unnamed panel", dependant_title="dependant variable", sci_scale = None):
         """
         Creates a new panel
         :param plots: list of Line objects to plot onto the panel
         :param panel_type: Type of panel being plotted (i.e. budget, profile, timeseries)
         :param title: The title of this plot (e.g. 'Liquid water potential tempature')
         :param dependant_title: Label of the dependant axis (labels the x-axis for all panel types except timeseries).
+        :param sci_scale: The scale at which to display the x axis (e.g. to scale to 1e-3 set sci_scale=-3).
+            If not specified, the matplotlib default sci scaling will be used.
         """
 
         self.panel_type = panel_type
@@ -37,6 +39,7 @@ class Panel:
         self.x_title = "x title unassigned"
         self.y_title = "y title unassigned"
         self.__init_axis_titles__()
+        self.sci_scale = sci_scale
 
     def __init_axis_titles__(self):
         """
@@ -106,8 +109,17 @@ class Panel:
         plt.rc('legend', fontsize=Style_definitions.LEGEND_FONT_SIZE)    # legend fontsize
         plt.rc('figure', titlesize=Style_definitions.TITLE_TEXT_SIZE)  # fontsize of the figure title
 
-        # Use scientific numbers
-        plt.ticklabel_format(style='sci', axis='x', scilimits=(0,0))
+        label_scale_factor = ""
+        # Use custom sci scaling
+        if self.sci_scale is not None:
+            scalepower = -1 * self.sci_scale
+            if self.sci_scale is not 0:
+                label_scale_factor = "\t1e" + str(self.sci_scale)
+            math_scale_factor =  10 ** (scalepower)
+            plt.ticklabel_format(style='plain', axis='x')
+        # Use pyplot's default sci scaling
+        else:
+            plt.ticklabel_format(style='sci', axis='x', scilimits=(0,0))
 
         # prevent x-axis label from getting cut off
         plt.gcf().subplots_adjust(bottom=0.15)
@@ -115,6 +127,8 @@ class Panel:
         max_panel_value = 0
         for var in self.all_plots:
             x_data = var.x
+            if self.sci_scale is not None:
+                x_data = x_data * math_scale_factor
             y_data = var.y
 
             max_variable_value = max(abs(np.amin(x_data)),np.amax(x_data))
@@ -142,7 +156,7 @@ class Panel:
         # Set titles
         plt.title(self.title)
         plt.ylabel(self.y_title)
-        plt.xlabel(self.x_title)
+        plt.xlabel(self.x_title + label_scale_factor)
 
         # Show grid if enabled
         ax = plt.gca()
