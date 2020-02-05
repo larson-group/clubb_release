@@ -14,6 +14,8 @@ If you wish to change a line color, font size, etc., then this is the place to d
 # Pyplot requires that style rotation's and color rotation's have the same length, so be sure to properly (un)comment the style rotations according
 # to the desired color scheme.
 # Color/style rotations are used on budget plots and for input-folder lines
+# If paired_plots is True when plotting a panel, the STYLE_ROTATION will be ignored, as it is written to oscillate between
+#   dashed and solid lines. This currently happens by default for non-budget plots.
 
 # Colors are taken from the colorbrewer qualitative 10-color set | http://colorbrewer2.org/#type=qualitative&scheme=Paired&n=10
 # Max amount of colors (includes pastel)
@@ -41,6 +43,9 @@ LES_LINE_THICKNESS = 6
 ARCHIVED_CLUBB_LINE_THICKNESS = 4
 E3SM_LINE_THICKNESS = 4
 THIN_LINE_THICKNESS = 1  # Used if --thin-lines is passed, overrides every other size
+# These are used when pyplotgen is oscillating between flat/dashed lines
+FLAT_LINE_THICKNESS = 2
+DASHED_LINE_THICKNESS = 4
 
 # Line Labels
 # This overrides using foldernames for line input folder line labels. Must be a list of strings.

@@ -82,7 +82,7 @@ class Panel:
     #
     #     return start_idx, end_idx
 
-    def plot(self, output_folder, casename, replace_images = False, no_legends = True, thin_lines = False, alphabetic_id=""):
+    def plot(self, output_folder, casename, replace_images = False, no_legends = True, thin_lines = False, alphabetic_id="", paired_plots = True):
         """
          Saves a single panel/graph to the output directory specified by the pyplotgen launch parameters
 
@@ -124,6 +124,9 @@ class Panel:
         # prevent x-axis label from getting cut off
         plt.gcf().subplots_adjust(bottom=0.15)
 
+        # Plot dashed line. This var will oscillate between true and false
+        plot_dashed = True
+
         max_panel_value = 0
         for var in self.all_plots:
             x_data = var.x
@@ -150,7 +153,18 @@ class Panel:
                 linewidth = Style_definitions.THIN_LINE_THICKNESS
             if var.line_format != "":
                 plt.plot(x_data, y_data, var.line_format, label=var.label, linewidth=linewidth)
-            else: # If format is not specified, use the color/style rotation specified in Style_definitions.py
+            elif paired_plots: # If format is not specified and paired_plots are enabled, use the color/style rotation specified in Style_definitions.py
+                if plot_dashed:
+                    linewidth = Style_definitions.DASHED_LINE_THICKNESS
+                    linestyle = '--'
+                    plot_dashed = False
+                else:
+                    linewidth = Style_definitions.FLAT_LINE_THICKNESS
+                    linestyle = '-'
+                    plot_dashed = True
+
+                plt.plot(x_data, y_data, linestyle=linestyle, label=var.label, linewidth=linewidth)
+            else:
                 plt.plot(x_data, y_data, label=var.label, linewidth=linewidth)
 
         # Set titles
