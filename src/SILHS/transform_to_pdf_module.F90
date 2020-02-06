@@ -118,6 +118,7 @@ module transform_to_pdf_module
                             Sigma_Cholesky1, Sigma_Cholesky2,     & ! In
                             mu1, mu2, X_mixt_comp_all_levs,       & ! In
                             X_nl_all_levs )                         ! Out
+    !$acc end data
                             
     !$acc kernels default(present) async(1)
     
@@ -178,7 +179,6 @@ module transform_to_pdf_module
    endif ! l_clip_extreme_chi_sample_pts
 
    !$acc end kernels
-   !$acc end data
 
     return
   end subroutine transform_uniform_samples_to_pdf
@@ -528,7 +528,9 @@ module transform_to_pdf_module
 
     ! --- Begin Code ---
     
-    !$acc parallel loop collapse(3) default(present) async(1)
+    !$acc data copyin(Sigma_Cholesky1, Sigma_Cholesky2, mu1, mu2) async(2)
+    
+    !$acc parallel loop collapse(3) default(present) async(1) wait(2)
     do sample = 1, num_samples
       do k = 1, nz
         do  i = 1, pdf_dim
@@ -555,6 +557,8 @@ module transform_to_pdf_module
         end do
       end do
     end do 
+    
+    !$acc end data
 
     return
   end subroutine multiply_Cholesky
@@ -628,9 +632,9 @@ module transform_to_pdf_module
     
     !$acc data copyin( rt_1, rt_2, thl_1, thl_2, crt_1, crt_2, cthl_1, cthl_2, mu_chi_1, &
     !$acc&             mu_chi_2, chi, eta ) &
-    !$acc& async(1)
+    !$acc& async(2)
     
-    !$acc parallel loop collapse(2) default(present) async(1)
+    !$acc parallel loop collapse(2) default(present) async(1) wait(2)
     do sample = 1, num_samples
       do k = 2, nz
 

@@ -272,10 +272,8 @@ module latin_hypercube_driver_module
       end if ! Some correlation isn't between [0,1]
     end if ! clubb_at_least_debug_level 1
     
-    !$acc data create(rand_pool, X_u_all_levs, cloud_frac, l_in_precip) &
-    !$acc&     copyin(pdf_params,pdf_params%mixt_frac,pdf_params%cloud_frac_1, &
-    !$acc&            pdf_params%cloud_frac_2, precip_frac_1,precip_frac_2, &
-    !$acc&            Sigma_Cholesky1, Sigma_Cholesky2, mu1, mu2, X_vert_corr ) &
+    !$acc data create( rand_pool, X_u_all_levs ) &
+    !$acc&     copyin( X_vert_corr ) &
     !$acc& async(1)
 
     ! Generate pool of random numbers
@@ -299,7 +297,12 @@ module latin_hypercube_driver_module
            l_calc_weights_all_levs_itime,                                & ! Intent(in)
            X_u_all_levs(:,:,:), lh_sample_point_weights(:,:) )             ! Intent(out)
     
-    !$acc parallel loop collapse(2) default(present) async(1)
+    !$acc data create( cloud_frac, l_in_precip ) &
+    !$acc&     copyin( pdf_params,pdf_params%mixt_frac,pdf_params%cloud_frac_1, &
+    !$acc&             pdf_params%cloud_frac_2, precip_frac_1,precip_frac_2 ) &
+    !$acc& async(3)
+    
+    !$acc parallel loop collapse(2) default(present) async(1) wait(3)
     do sample = 1, num_samples 
       do k = 1, nz
             
@@ -416,6 +419,7 @@ module latin_hypercube_driver_module
 
     end if ! clubb_at_least_debug_level( 2 )
     
+    !$acc end data
     !$acc end data
 
     ! Stop the run if an error occurred
