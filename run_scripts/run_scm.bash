@@ -229,6 +229,7 @@ model_file='../input/case_setups/'${!#}'_model.in'
 run_case=${!#}
 
 
+
 # Check to see if the model file exists
 if [ ! -e "$model_file" ];
 then
