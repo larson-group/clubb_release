@@ -626,6 +626,11 @@ module transform_to_pdf_module
 
     ! ---- Begin Code ----
     
+    !$acc data copyin( rt_1, rt_2, thl_1, thl_2, crt_1, crt_2, cthl_1, cthl_2, mu_chi_1, &
+    !$acc&             mu_chi_2, chi, eta ) &
+    !$acc& async(1)
+    
+    !$acc parallel loop collapse(2) default(present) async(1)
     do sample = 1, num_samples
       do k = 2, nz
 
@@ -660,6 +665,8 @@ module transform_to_pdf_module
       
       end do
     end do
+    
+    !$acc end data
 
     return
     

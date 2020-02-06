@@ -276,7 +276,6 @@ module latin_hypercube_driver_module
     !$acc&     copyin(pdf_params,pdf_params%mixt_frac,pdf_params%cloud_frac_1, &
     !$acc&            pdf_params%cloud_frac_2, precip_frac_1,precip_frac_2, &
     !$acc&            Sigma_Cholesky1, Sigma_Cholesky2, mu1, mu2, X_vert_corr ) &
-    !$acc&     copyout(X_mixt_comp_all_levs, X_nl_all_levs, lh_sample_point_weights) &
     !$acc& async(1)
 
     ! Generate pool of random numbers
@@ -351,19 +350,16 @@ module latin_hypercube_driver_module
            l_in_precip(:,:), & ! In
            X_nl_all_levs(:,:,:) ) ! Out
            
-    !$acc wait(1)
-           
-     
+    
     if ( l_stats_samp ) then
-      !$acc update host(X_u_all_levs,l_in_precip,lh_sample_point_weights)
+      !$acc update host(X_u_all_levs,l_in_precip,lh_sample_point_weights) wait
       call stats_accumulate_uniform_lh( nz, num_samples, l_in_precip, X_mixt_comp_all_levs, &
                                         X_u_all_levs(:,:,iiPDF_chi), pdf_params, &
                                         lh_sample_point_weights, k_lh_start )
     end if
 
     if ( l_output_2D_lognormal_dist ) then
-      
-      !$acc update host(X_nl_all_levs)
+      !$acc update host(X_nl_all_levs) wait
       
       ! Eric Raut removed lh_rt and lh_thl from call to output_2D_lognormal_dist_file
       ! because they are no longer generated in generate_silhs_sample.
@@ -376,7 +372,7 @@ module latin_hypercube_driver_module
     end if
     
     if ( l_output_2D_uniform_dist ) then
-      !$acc update host(X_u_all_levs,X_mixt_comp_all_levs,lh_sample_point_weights)
+      !$acc update host(X_u_all_levs,X_mixt_comp_all_levs,lh_sample_point_weights) wait
       call output_2D_uniform_dist_file( nz, num_samples, pdf_dim+2, &
                                         X_u_all_levs, &
                                         X_mixt_comp_all_levs, &
@@ -390,7 +386,7 @@ module latin_hypercube_driver_module
     ! Various nefarious assertion checks
     if ( clubb_at_least_debug_level( 2 ) ) then
       
-      !$acc update host(X_u_all_levs,X_mixt_comp_all_levs,X_nl_all_levs)
+      !$acc update host(X_u_all_levs,X_mixt_comp_all_levs,X_nl_all_levs) wait
 
       ! Simple assertion check to ensure uniform variates are in the appropriate
       ! range
@@ -1037,14 +1033,17 @@ module latin_hypercube_driver_module
                           X_mixt_comp_all_levs(:,:),                  & ! Intent(in)
                           lh_rt_clipped, lh_thl_clipped               ) ! Intent(out)
     
+    !$acc parallel loop default(present) async(1)
+    do sample = 1, num_samples
+      ! These parameters are not computed at the model lower level.
+      lh_rt_clipped(1,sample)  = zero
+      lh_thl_clipped(1,sample) = zero
+      lh_rc_clipped(1,sample)  = zero
+      lh_rv_clipped(1,sample)  = zero
+      lh_Nc_clipped(1,sample)  = zero
+    end do
     
-    ! These parameters are not computed at the model lower level.
-    lh_rt_clipped(1,:)  = zero
-    lh_thl_clipped(1,:) = zero
-    lh_rc_clipped(1,:)  = zero
-    lh_rv_clipped(1,:)  = zero
-    lh_Nc_clipped(1,:)  = zero
-    
+    !$acc parallel loop collapse(2) default(present) async(1)
     do sample = 1, num_samples
       do k = 2, nz
     
@@ -1078,7 +1077,10 @@ module latin_hypercube_driver_module
 
     ! Clip the SILHS sample point values of hydrometeor concentrations.
     if ( l_clip_hydromet_samples ) then
-
+      
+#ifdef _OPENACC
+       stop "CLUBB ERROR: Running SILHS with OpenACC requires l_clip_hydromet_samples=false"
+#endif
        ! Loop over all sample columns.
        do sample = 1, num_samples, 1
 

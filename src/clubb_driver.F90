@@ -1704,6 +1704,11 @@ module clubb_driver
       !----------------------------------------------------------------
 
       if ( lh_microphys_type /= lh_microphys_disabled .or. l_silhs_rad ) then
+        
+        !$acc data copyout( X_mixt_comp_all_levs, X_nl_all_levs, lh_sample_point_weights, &
+        !$acc&              lh_rt_clipped, lh_thl_clipped, lh_rc_clipped, lh_rv_clipped, &
+        !$acc&              lh_Nc_clipped ) &
+        !$acc& async(1)
 
         call generate_silhs_sample( &
                itime, pdf_dim, lh_num_samples, lh_sequence_length, gr%nz, & ! In
@@ -1718,7 +1723,8 @@ module clubb_driver
                clubb_config_flags%l_single_C2_Skw, &                        ! In
                X_nl_all_levs, X_mixt_comp_all_levs, &                       ! Out
                lh_sample_point_weights )                                    ! Out
-
+       
+       
         call clip_transform_silhs_output( gr%nz, lh_num_samples,          & ! In
                                           pdf_dim, hydromet_dim,          & ! In
                                           X_mixt_comp_all_levs,           & ! In
@@ -1727,6 +1733,8 @@ module clubb_driver
                                           lh_rt_clipped, lh_thl_clipped,  & ! Out
                                           lh_rc_clipped, lh_rv_clipped,   & ! Out
                                           lh_Nc_clipped                   ) ! Out
+        !$acc end data
+        !$acc wait
                                           
         call stats_accumulate_lh &
              ( gr%nz, lh_num_samples, pdf_dim, rho_ds_zt, & ! In
