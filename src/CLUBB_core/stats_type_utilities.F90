@@ -117,13 +117,13 @@ module stats_type_utilities
     ! Input Variable(s) NOTE: Due to the implicit none above, these must
     ! be declared below to allow the use of grid_kind
 
-    real( kind = core_rknd ), dimension(grid_kind%kk), intent(in) :: &
+    real( kind = core_rknd ), dimension(:), intent(in) :: &
       value ! Value of field being added to the statistic    [Units Vary]
 
     integer :: k
 
     if ( var_index > 0 ) then
-      do k = 1, grid_kind%kk
+      do k = 1, size(value)
         grid_kind%accum_field_values(clubb_i,clubb_j,k,var_index) =  &
              grid_kind%accum_field_values(clubb_i,clubb_j,k,var_index) + real( value(k), &
                 kind=stat_rknd )
