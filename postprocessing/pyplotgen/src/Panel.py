@@ -20,6 +20,7 @@ class Panel:
     TYPE_PROFILE = 'profile'
     TYPE_BUDGET = 'budget'
     TYPE_TIMESERIES = 'timeseries'
+    EXTENSION = '.png'
 
     def __init__(self, plots, panel_type="profile", title="Unnamed panel", dependant_title="dependant variable", sci_scale = None):
         """
@@ -108,7 +109,7 @@ class Panel:
         plt.rc('ytick', labelsize=Style_definitions.Y_TICKMARK_FONT_SIZE)    # fontsize of the tick labels
         plt.rc('legend', fontsize=Style_definitions.LEGEND_FONT_SIZE)    # legend fontsize
         plt.rc('figure', titlesize=Style_definitions.TITLE_TEXT_SIZE)  # fontsize of the figure title
-
+        
         label_scale_factor = ""
         # Use custom sci scaling
         if self.sci_scale is not None:
@@ -119,7 +120,7 @@ class Panel:
             plt.ticklabel_format(style='plain', axis='x')
         # Use pyplot's default sci scaling
         else:
-            plt.ticklabel_format(style='sci', axis='x', scilimits=(0,0))
+            plt.ticklabel_format(style='sci', axis='x', scilimits=Style_definitions.POW_LIMS)
 
         # prevent x-axis label from getting cut off
         plt.gcf().subplots_adjust(bottom=0.15)
@@ -214,12 +215,10 @@ class Panel:
             filename = filename + '_' + self.y_title + "_VS_" + self.x_title
         filename = self.__remove_invalid_filename_chars__(filename)
         rel_filename = output_folder + "/" +casename+'/' + filename
-        if os.path.isfile(rel_filename+'.jpg') and replace_images is True:
-            plt.savefig(rel_filename+'.jpg', format='jpeg')
-        if not os.path.isfile(rel_filename+'.png'):
-            plt.savefig(rel_filename+'.jpg', format='jpeg')
-        if os.path.isfile(rel_filename + '.jpg') and replace_images is False:
-            print("\n\tImage " + rel_filename+'.jpg already exists. To overwrite this image during runtime pass in the --replace (-r) parameter.')
+        if replace_images is True or not os.path.isfile(rel_filename+Panel.EXTENSION):
+            plt.savefig(rel_filename+Panel.EXTENSION)
+        if os.path.isfile(rel_filename + Panel.EXTENSION) and replace_images is False:
+            print("\n\tImage " + rel_filename+Panel.EXTENSION+' already exists. To overwrite this image during runtime pass in the --replace (-r) parameter.')
         plt.close()
 
     def __remove_invalid_filename_chars__(self, filename):

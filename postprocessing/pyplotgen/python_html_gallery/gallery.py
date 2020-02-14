@@ -14,6 +14,8 @@ import sys
 from config import Case_definitions
 from python_html_gallery import static
 
+extension = 'png'
+
 try:
     from PIL import Image
 except ImportError:
@@ -47,7 +49,7 @@ def Now(time=True):
 def RandomThumb(page):
     """Returns path to random thumbnail for a given page."""
     return random.choice(
-        glob.glob(os.path.join(page.split('/')[0], '*_thumb.jpg')))
+        glob.glob(os.path.join(page.split('/')[0], '*_thumb.'+extension)))
 
 
 def OrganizeRoot(output_dir):
@@ -60,7 +62,7 @@ def OrganizeRoot(output_dir):
         print('Could not cd into %s' % static.root)
         sys.exit(1)
 
-    fs = ListFiles('*.jpg', '.')
+    fs = ListFiles('*.'+extension, '.')
     if fs:
         for jpg in fs:
             datehour = Now(time=False)
@@ -93,11 +95,11 @@ def GenerateThumbnails(page, jpgs):
         try:
             im = Image.open(jpg)
             if im.size > static.min_size:
-                thumb = '%s_%s.%s' % (jpg.split('.')[0], 'thumb', 'jpg')
+                thumb = '%s_%s.%s' % (jpg.split('.')[0], 'thumb', extension)
                 if not os.path.exists(thumb):
                     # im.thumbnail(static.thumb_size, Image.ANTIALIAS)
                     im = im.resize(static.thumb_size, resample=Image.BILINEAR)
-                    im.save(thumb, 'JPEG')
+                    im.save(thumb, extension)
                     c_save += 1
 
                     if (pc == 100):  # progress counter
@@ -110,7 +112,7 @@ def GenerateThumbnails(page, jpgs):
 
                 url_imgs.append(static.url_img % (jpg, jpg, thumb))
             else:
-                if '_thumb.jpg' not in jpg:
+                if '_thumb.'+extension not in jpg:
                     c_small += 1
         except IOError as e:
             print('Problem with %s: %s, moving to %s' % (jpg, e, static.tmp))
@@ -164,7 +166,7 @@ def WriteGalleryPage(page):
         plots_file.write(static.timestamp % Now())
 
         try:
-            img_paths = '*.jpg'
+            img_paths = '*.'+extension
             case_images = ListFiles(img_paths, page)
             jpgs = sorted(case_images, reverse=True)[::-1]
         except TypeError:

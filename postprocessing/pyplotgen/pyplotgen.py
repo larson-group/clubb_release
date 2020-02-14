@@ -74,12 +74,11 @@ class PyPlotGen:
         self.sam_data_reader = DataReader()
         self.show_alphabetic_id = show_alphabetic_id
         self.no_clubb=no_clubb
-        if self.output_folder[0] == '.':
-            self.output_folder = os.path.dirname(os.path.realpath(__file__)) + "/" + self.output_folder
+        self.output_folder = os.path.abspath(self.output_folder)
         if os.path.isdir(self.output_folder) and self.replace_images == False:
             self.output_folder = self.output_folder + '_generated_on_' + str(datetime.now())
-            self.output_folder = self.__remove_invalid_filename_chars__(self.output_folder)
-            self.output_folder = self.output_folder.replace(' ', '_')
+        self.output_folder = self.__remove_invalid_filename_chars__(self.output_folder)
+        self.output_folder = self.output_folder.replace(' ', '_')
 
     def run(self):
         """
@@ -142,8 +141,9 @@ class PyPlotGen:
         :param all_case_names: List of all case names that can be plotted
         :return:
         """
+        sam_has_case = case_def['sam_file'] != None
         e3sm_has_case = self.e3sm_dir != "" and self.e3sm_dir != None and case_def['e3sm_file'] != None
-        return e3sm_has_case or (not no_clubb and case_def['name'] in all_case_names)
+        return sam_has_case or e3sm_has_case or (not no_clubb and case_def['name'] in all_case_names)
 
 
     def __copySetupFiles__(self):
