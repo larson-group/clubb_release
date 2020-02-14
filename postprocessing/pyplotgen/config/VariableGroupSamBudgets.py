@@ -81,7 +81,7 @@ class VariableGroupSamBudgets(VariableGroup):
             {'var_names': ['THLWGRAD'], 'legend_label': 'THLWGRAD'},
             {'var_names': ['THLWADV'], 'legend_label': 'THLWADV'},
             {'var_names': ['THLWDIFF'], 'legend_label': 'THLWDIFF'},
-            {'var_names': ['THLWB+P'], 'legend_label': 'THLWBUOY+THLWPRES', 'fallback_func': self.getThlwBuoyPlusPres},
+            {'var_names': ['THLWB+P'], 'legend_label': 'THLWBUOY+PRES', 'fallback_func': self.getThlwBuoyPlusPres},
             {'var_names': ['THLWPREC'], 'legend_label': 'THLWPREC'},
             {'var_names': ['THLWRAD'], 'legend_label': 'THLWRAD'},
             {'var_names': ['THLWFORC'], 'legend_label': 'THLWFORC'},
@@ -130,7 +130,7 @@ class VariableGroupSamBudgets(VariableGroup):
             {'var_names': ['QTOGWGRAD'], 'legend_label': 'QTOGWGRAD'},
             {'var_names': ['QTOGWADV'], 'legend_label': 'QTOGWADV'},
             {'var_names': ['QTOGWDIFF'], 'legend_label': 'QTOGWDIFF'},
-            {'var_names': ['QTOGWB+P'], 'legend_label': 'QTOGWBUOY+QTOGWPRES', 'fallback_func': self.getQtogwBuoyPlusPres},
+            {'var_names': ['QTOGWB+P'], 'legend_label': 'QTOGWBUOY+PRES', 'fallback_func': self.getQtogwBuoyPlusPres},
             {'var_names': ['QTOGWPREC'], 'legend_label': 'QTOGWPREC'},
             {'var_names': ['QTOGWFORC'], 'legend_label': 'QTOGWFORC'},
             {'var_names': ['QTOGWBT'], 'legend_label': 'QTOGWBT'},
@@ -412,7 +412,7 @@ class VariableGroupSamBudgets(VariableGroup):
                 'hoc': ['HL'],
                 'e3sm': ['HL'],
                 },
-            'lines': hlp_budget_lines, 'type': Panel.TYPE_BUDGET, 'axis_title': r"$\mathrm{HL}$ budget terms $\mathrm{\left[K\,s^{-1}\right]}$",
+            'lines': hlp_budget_lines, 'type': Panel.TYPE_BUDGET, 'title': 'Liquid-Ice Static Energy Budget, LIMSE', 'axis_title': r"LIMSE budget terms $\mathrm{\left[K\,s^{-1}\right]}$",
             },
             
             {'var_names': {
@@ -423,7 +423,7 @@ class VariableGroupSamBudgets(VariableGroup):
                 'hoc': ['QT'],
                 'e3sm': ['QT'],
                 },
-            'lines': qtp_budget_lines, 'type': Panel.TYPE_BUDGET, 'axis_title': r"$\mathrm{QT}$ budget terms $\mathrm{\left[kg\,kg^{-1}\,s^{-1}\right]}$"},
+            'lines': qtp_budget_lines, 'type': Panel.TYPE_BUDGET, 'title': r'Total Water (No Rain/Snow Included) Budget, $\mathrm{r_t}$', 'axis_title': r"$\mathrm{r_t}$ budget terms $\mathrm{\left[kg\,kg^{-1}\,s^{-1}\right]}$"},
             
             {'var_names': {
                 'clubb': ['TW_B+P'],
@@ -433,7 +433,7 @@ class VariableGroupSamBudgets(VariableGroup):
                 'hoc': ['TW_B+P'],
                 'e3sm': ['TW_B+P'],
                 },
-            'lines': tpwp_budget_lines, 'type': Panel.TYPE_BUDGET, 'axis_title': r"$\mathrm{TW}$ budget terms $\mathrm{\left[m\,K\,s^{-2}\right]}$"},
+            'lines': tpwp_budget_lines, 'type': Panel.TYPE_BUDGET, 'title': r"Liquid Water Static Energy Flux Budget (Reduced), $\mathrm{\overline{s_v'w'}}$", 'axis_title': r"$\mathrm{\overline{s_v'w'}}$ budget terms $\mathrm{\left[m\,K\,s^{-2}\right]}$"},
             
             {'var_names': {
                 'clubb': ['TW_COMPLETE'],
@@ -443,7 +443,7 @@ class VariableGroupSamBudgets(VariableGroup):
                 'hoc': ['TW_COMPLETE'],
                 'e3sm': ['TW_COMPLETE'],
                 },
-            'lines': tpwp_split_budget_lines, 'type': Panel.TYPE_BUDGET, 'axis_title': r"$\mathrm{TW}$ budget terms $\mathrm{\left[m\,K\,s^{-2}\right]}$"},
+            'lines': tpwp_split_budget_lines, 'type': Panel.TYPE_BUDGET, 'title': r"Liquid Water Static Energy Flux Budget, $\mathrm{\overline{s_v'w'}}$", 'axis_title': r"$\mathrm{\overline{s_v'w'}}$ budget terms $\mathrm{\left[m\,K\,s^{-2}\right]}$"},
             
             {'var_names': {
                 'clubb': ['THLW_B+P'],
@@ -453,7 +453,7 @@ class VariableGroupSamBudgets(VariableGroup):
                 'hoc': ['THLW_B+P'],
                 'e3sm': ['THLW_B+P'],
                 },
-            'lines': thlpwp_budget_lines, 'type': Panel.TYPE_BUDGET, 'axis_title': r"$\mathrm{THLW}$ budget terms $\mathrm{\left[m\,K\,s^{-2}\right]}$"},
+            'lines': thlpwp_budget_lines, 'type': Panel.TYPE_BUDGET, 'title': r"Liquid Water Potential Temperature Flux Budget (Reduced), $\mathrm{\overline{\theta_l'w'}}$", 'axis_title': r"$\mathrm{\overline{\theta_l'w'}}$ budget terms $\mathrm{\left[m\,K\,s^{-2}\right]}$"},
             
             {'var_names': {
                 'clubb': ['THLW_COMPLETE'],
@@ -463,7 +463,7 @@ class VariableGroupSamBudgets(VariableGroup):
                 'hoc': ['THLW_COMPLETE'],
                 'e3sm': ['THLW_COMPLETE'],
                 },
-            'lines': thlpwp_split_budget_lines, 'type': Panel.TYPE_BUDGET, 'axis_title': r"$\mathrm{THLW}$ budget terms $\mathrm{\left[m\,K\,s^{-2}\right]}$"},
+            'lines': thlpwp_split_budget_lines, 'type': Panel.TYPE_BUDGET, 'title': r"Liquid Water Potential Temperature Flux Budget, $\mathrm{\overline{\theta_l'w'}}$", 'axis_title': r"$\mathrm{\overline{\theta_l'w'}}$ budget terms $\mathrm{\left[m\,K\,s^{-2}\right]}$"},
             
             {'var_names': {
                 'clubb': ['QW_B+P'],
@@ -473,7 +473,7 @@ class VariableGroupSamBudgets(VariableGroup):
                 'hoc': ['QW_B+P'],
                 'e3sm': ['QW_B+P'],
                 },
-            'lines': qpwp_budget_lines, 'type': Panel.TYPE_BUDGET, 'axis_title': r"$\mathrm{QW}$ budget terms $\mathrm{\left[kg\,kg^{-1}\,m\,s^{-2}\right]}$"},
+            'lines': qpwp_budget_lines, 'type': Panel.TYPE_BUDGET, 'title': r"Total Water Flux Budget (Reduced), $\mathrm{\overline{r_t'w'}}$", 'axis_title': r"$\mathrm{\overline{r_t'w'}}$ budget terms $\mathrm{\left[kg\,kg^{-1}\,m\,s^{-2}\right]}$"},
              
             {'var_names': {
                 'clubb': ['QW_COMPLETE'],
@@ -483,7 +483,7 @@ class VariableGroupSamBudgets(VariableGroup):
                 'hoc': ['QW_COMPLETE'],
                 'e3sm': ['QW_COMPLETE'],
                 },
-            'lines': qpwp_split_budget_lines, 'type': Panel.TYPE_BUDGET, 'axis_title': r"$\mathrm{QW}$ budget terms $\mathrm{\left[kg\,kg^{-1}\,m\,s^{-2}\right]}$"},
+            'lines': qpwp_split_budget_lines, 'type': Panel.TYPE_BUDGET, 'title': r"Total Water Flux Budget, $\mathrm{\overline{r_t'w'}}$", 'axis_title': r"$\mathrm{\overline{r_t'w'}}$ budget terms $\mathrm{\left[kg\,kg^{-1}\,m\,s^{-2}\right]}$"},
             
             {'var_names': {
                 'clubb': ['QTOGW_B+P'],
@@ -493,7 +493,7 @@ class VariableGroupSamBudgets(VariableGroup):
                 'hoc': ['QTOGW_B+P'],
                 'e3sm': ['QTOGW_B+P'],
                 },
-            'lines': qtogpwp_budget_lines, 'type': Panel.TYPE_BUDGET, 'axis_title': r"$\mathrm{QTOGW}$ budget terms $\mathrm{\left[kg\,kg^{-1}\,m\,s^{-2}\right]}$"},
+            'lines': qtogpwp_budget_lines, 'type': Panel.TYPE_BUDGET, 'title': r"Grand Total Water Flux Budget (Reduced), $\mathrm{\overline{q_{tog}'w'}}$", 'axis_title': r"$\mathrm{\overline{q_{tog}'w'}}$ budget terms $\mathrm{\left[kg\,kg^{-1}\,m\,s^{-2}\right]}$"},
             
             {'var_names': {
                 'clubb': ['QTOGW_COMPLETE'],
@@ -503,7 +503,7 @@ class VariableGroupSamBudgets(VariableGroup):
                 'hoc': ['QTOGW_COMPLETE'],
                 'e3sm': ['QTOGW_COMPLETE'],
                 },
-            'lines': qtogpwp_split_budget_lines, 'type': Panel.TYPE_BUDGET, 'axis_title': r"$\mathrm{QTOGW}$ budget terms $\mathrm{\left[kg\,kg^{-1}\,m\,s^{-2}\right]}$"},
+            'lines': qtogpwp_split_budget_lines, 'type': Panel.TYPE_BUDGET, 'title': r"Grand Total Water Flux Budget, $\mathrm{\overline{q_{tog}'w'}}$", 'axis_title': r"$\mathrm{\overline{q_{tog}'w'}}$ budget terms $\mathrm{\left[kg\,kg^{-1}\,m\,s^{-2}\right]}$"},
             
             {'var_names': {
                 'clubb': ['W2'],
@@ -513,7 +513,7 @@ class VariableGroupSamBudgets(VariableGroup):
                 'hoc': ['W2'],
                 'e3sm': ['W2'],
                 },
-            'lines': wp2_budget_lines, 'type': Panel.TYPE_BUDGET, 'axis_title': r"$\overline{w'^2}$ budget terms $\mathrm{\left[m^2\,s^{-3}\right]}$"},
+            'lines': wp2_budget_lines, 'type': Panel.TYPE_BUDGET, 'title': r"Vertical Momentum Variance Budget, $\mathrm{\overline{w'^2}}$", 'axis_title': r"$\mathrm{\overline{w'^2}}$ budget terms $\mathrm{\left[m^2\,s^{-3}\right]}$"},
             
             {'var_names': {
                 'clubb': ['W3'],
@@ -523,7 +523,7 @@ class VariableGroupSamBudgets(VariableGroup):
                 'hoc': ['W3'],
                 'e3sm': ['W3'],
                 },
-            'lines': wp3_budget_lines, 'type': Panel.TYPE_BUDGET, 'axis_title': r"$\overline{w'^3}$ budget terms $\mathrm{\left[m^3\,s^{-4}\right]}$"},
+            'lines': wp3_budget_lines, 'type': Panel.TYPE_BUDGET, 'title': r"Vertical Momentum Skewness Budget, $\mathrm{\overline{w'^3}}$", 'axis_title': r"$\mathrm{\overline{w'^3}}$ budget terms $\mathrm{\left[m^3\,s^{-4}\right]}$"},
             
             {'var_names': {
                 'clubb': ['T2'],
@@ -533,7 +533,7 @@ class VariableGroupSamBudgets(VariableGroup):
                 'hoc': ['T2'],
                 'e3sm': ['T2'],
                 },
-            'lines': tp2_budget_lines, 'type': Panel.TYPE_BUDGET, 'axis_title': r"$\mathrm{T^2}$ budget terms $\mathrm{\left[K^2\,s^{-1}\right]}$"},
+            'lines': tp2_budget_lines, 'type': Panel.TYPE_BUDGET, 'title': r"Liquid Water Static Energy Variance Budget, $\mathrm{\overline{s_v'^2}}$", 'axis_title': r"$\mathrm{\overline{s_v'^2}}$ budget terms $\mathrm{\left[K^2\,s^{-1}\right]}$"},
             
             {'var_names': {
                 'clubb': ['THL2'],
@@ -543,7 +543,7 @@ class VariableGroupSamBudgets(VariableGroup):
                 'hoc': ['THL2'],
                 'e3sm': ['THL2'],
                 },
-            'lines': thlp2_budget_lines, 'type': Panel.TYPE_BUDGET, 'axis_title': r"$\mathrm{THL^2}$ budget terms $\mathrm{\left[K^2\,s^{-1}\right]}$"},
+            'lines': thlp2_budget_lines, 'type': Panel.TYPE_BUDGET, 'title': r"Liquid Water Potential Temperature Variance Budget, $\mathrm{\overline{\theta_l'^2}}$", 'axis_title': r"$\mathrm{\overline{\theta_l'^2}}$ budget terms $\mathrm{\left[K^2\,s^{-1}\right]}$"},
             
             {'var_names': {
                 'clubb': ['Q2'],
@@ -553,7 +553,7 @@ class VariableGroupSamBudgets(VariableGroup):
                 'hoc': ['Q2'],
                 'e3sm': ['Q2'],
                 },
-            'lines': rtp2_budget_lines, 'type': Panel.TYPE_BUDGET, 'axis_title': r"$\mathrm{Q^2}$ budget terms $\mathrm{\left[kg^2\,kg^{-2}\,s^{-1}\right]}$"},
+            'lines': rtp2_budget_lines, 'type': Panel.TYPE_BUDGET, 'title': r"Total Water Variance Budget, $\mathrm{\overline{r_t'^2}}$", 'axis_title': r"$\mathrm{\overline{r_t'^2}}$ budget terms $\mathrm{\left[kg^2\,kg^{-2}\,s^{-1}\right]}$"},
             
             {'var_names': {
                 'clubb': ['QTOG2'],
@@ -563,7 +563,7 @@ class VariableGroupSamBudgets(VariableGroup):
                 'hoc': ['QTOG2'],
                 'e3sm': ['QTOG2'],
                 },
-            'lines': qtogp2_budget_lines, 'type': Panel.TYPE_BUDGET, 'axis_title': r"$\mathrm{QTOG^2}$ budget terms $\mathrm{\left[kg^2\,kg^{-2}\,s^{-1}\right]}$"},
+            'lines': qtogp2_budget_lines, 'type': Panel.TYPE_BUDGET, 'title': r"Grand Total Water Variance Budget, $\mathrm{\overline{q_{tog}'^2}}$", 'axis_title': r"$\mathrm{\overline{q_{tog}'^2}}$ budget terms $\mathrm{\left[kg^2\,kg^{-2}\,s^{-1}\right]}$"},
             
             {'var_names': {
                 'clubb': ['QTHL'],
@@ -573,7 +573,7 @@ class VariableGroupSamBudgets(VariableGroup):
                 'hoc': ['QTHL'],
                 'e3sm': ['QTHL'],
                 },
-            'lines': qpthlp_budget_lines, 'type': Panel.TYPE_BUDGET, 'axis_title': r"$\mathrm{QTHL}$ budget terms $\mathrm{\left[kg\,kg^{-1}\,K\,s^{-1}\right]}$"},
+            'lines': qpthlp_budget_lines, 'type': Panel.TYPE_BUDGET, 'title': r"Total Water, Liquid Water Pot. Temp. Covariance Budget, $\mathrm{\overline{q_t'\theta_l'}}$", 'axis_title': r"$\mathrm{\overline{q_t'\theta_l'}}$ budget terms $\mathrm{\left[kg\,kg^{-1}\,K\,s^{-1}\right]}$"},
             
             {'var_names': {
                 'clubb': ['TKE'],
@@ -583,7 +583,7 @@ class VariableGroupSamBudgets(VariableGroup):
                 'hoc': ['TKE'],
                 'e3sm': ['TKE'],
                 },
-            'lines': tke_budget_lines, 'type': Panel.TYPE_BUDGET, 'axis_title': r"$\mathrm{TKE}$ budget terms $\mathrm{\left[m^2\,s^{-3}\right]}$"},
+            'lines': tke_budget_lines, 'type': Panel.TYPE_BUDGET, 'title': r"Turbulence Kinetic Energy Budget, TKE", 'axis_title': r"TKE budget terms $\mathrm{\left[m^2\,s^{-3}\right]}$"},
             
             {'var_names': {
                 'clubb': ['TKES'],
@@ -593,7 +593,7 @@ class VariableGroupSamBudgets(VariableGroup):
                 'hoc': ['TKES'],
                 'e3sm': ['TKES'],
                 },
-            'lines': tkes_budget_lines, 'type': Panel.TYPE_BUDGET, 'axis_title': r"$\mathrm{TKE}_{SGS}$ budget terms $\mathrm{\left[m^2\,s^{-3}\right]}$"},
+            'lines': tkes_budget_lines, 'type': Panel.TYPE_BUDGET, 'title': r"Sub-Grid Turbulence Kinetic Energy Budget, $\mathrm{TKE_{SGS}}$", 'axis_title': r"$\mathrm{TKE_{SGS}}$ budget terms $\mathrm{\left[m^2\,s^{-3}\right]}$"},
             
             {'var_names': {
                 'clubb': ['U2V2'],
@@ -603,7 +603,7 @@ class VariableGroupSamBudgets(VariableGroup):
                 'hoc': ['U2V2'],
                 'e3sm': ['U2V2'],
                 },
-            'lines': up2_vp2_budget_lines, 'type': Panel.TYPE_BUDGET, 'axis_title': r"$\overline{u'^2}+\overline{v'^2}$ budget terms $\mathrm{\left[m^2\, s^{-3}\right]}$"},
+            'lines': up2_vp2_budget_lines, 'type': Panel.TYPE_BUDGET, 'title': r"Horizontal Turbulence Kinetic Energy Budget, $\mathrm{\overline{u'^2}+\overline{v'^2}}$", 'axis_title': r"$\mathrm{\overline{u'^2}+\overline{v'^2}}$ budget terms $\mathrm{\left[m^2\, s^{-3}\right]}$"},
             
             # TODO: Rename to UW?
             {'var_names': {
@@ -614,7 +614,7 @@ class VariableGroupSamBudgets(VariableGroup):
                 'hoc': ['WU'],
                 'e3sm': ['WU'],
                 },
-            'lines': upwp_budget_lines, 'type': Panel.TYPE_BUDGET, 'axis_title': r"$\overline{u'w'}$ budget terms $\mathrm{\left[m^2\,s^{-3}\right]}$"},
+            'lines': upwp_budget_lines, 'type': Panel.TYPE_BUDGET, 'title': r"Eastward Momentum Flux Budget, $\mathrm{\overline{u'w'}}$", 'axis_title': r"$\mathrm{\overline{u'w'}}$ budget terms $\mathrm{\left[m^2\,s^{-3}\right]}$"},
             
             {'var_names': {
                 'clubb': ['WV'],
@@ -624,7 +624,7 @@ class VariableGroupSamBudgets(VariableGroup):
                 'hoc': ['WV'],
                 'e3sm': ['WV'],
                 },
-            'lines': vpwp_budget_lines, 'type': Panel.TYPE_BUDGET, 'axis_title': r"$\overline{v'w'}$ budget terms $\mathrm{\left[m^2\,s^{-3}\right]}$"},
+            'lines': vpwp_budget_lines, 'type': Panel.TYPE_BUDGET, 'title': r"Northward Momentum Flux Budget, $\mathrm{\overline{v'w'}}$", 'axis_title': r"$\mathrm{\overline{v'w'}}$ budget terms $\mathrm{\left[m^2\,s^{-3}\right]}$"},
             
             {'var_names': {
                 'clubb': ['U2'],
@@ -634,7 +634,7 @@ class VariableGroupSamBudgets(VariableGroup):
                 'hoc': ['U2'],
                 'e3sm': ['U2'],
                 },
-            'lines': up2_budget_lines, 'type': Panel.TYPE_BUDGET, 'axis_title': r"$\overline{u'^2}$ budget terms $\mathrm{\left[m^2\,s^{-3}\right]}$"},
+            'lines': up2_budget_lines, 'type': Panel.TYPE_BUDGET, 'title': r"Eastward Momentum Variance Budget, $\mathrm{\overline{u'^2}}$", 'axis_title': r"$\mathrm{\overline{u'^2}}$ budget terms $\mathrm{\left[m^2\,s^{-3}\right]}$"},
             
             {'var_names': {
                 'clubb': ['V2'],
@@ -644,7 +644,7 @@ class VariableGroupSamBudgets(VariableGroup):
                 'hoc': ['V2'],
                 'e3sm': ['V2'],
                 },
-            'lines': vp2_budget_lines, 'type': Panel.TYPE_BUDGET, 'axis_title': r"$\overline{v'^2}$ budget terms $\mathrm{\left[m^2\,s^{-3}\right]}$"},
+            'lines': vp2_budget_lines, 'type': Panel.TYPE_BUDGET, 'title': r"Northward Momentum Variance Budget, $\mathrm{\overline{v'^2}}$", 'axis_title': r"$\mathrm{\overline{v'^2}}$ budget terms $\mathrm{\left[m^2\,s^{-3}\right]}$"},
             
             #{'var_names': {
                 #'clubb': ['V2_COMP'],
@@ -654,7 +654,7 @@ class VariableGroupSamBudgets(VariableGroup):
                 #'hoc': ['V2_COMP'],
                 #'e3sm': ['V2_COMP'],
                 #},
-            #'lines': vp2_comp_budget_lines, 'type': Panel.TYPE_BUDGET, 'axis_title': r"$\overline{v'^2}$ budget terms $\mathrm{\left[m^2\, s^{-3}\right]}$"},
+            #'lines': vp2_comp_budget_lines, 'type': Panel.TYPE_BUDGET, 'axis_title': r"$\mathrm{\overline{v'^2}}$ budget terms $\mathrm{\left[m^2\, s^{-3}\right]}$"},
             
             #{'var_names': {
                 #'clubb': ['U2_V2_TAU'],
@@ -664,7 +664,7 @@ class VariableGroupSamBudgets(VariableGroup):
                 #'hoc': ['U2_V2_TAU'],
                 #'e3sm': ['U2_V2_TAU'],
                 #},
-            #'lines': up2vp2tau_budget_lines, 'type': Panel.TYPE_BUDGET, 'axis_title': r"$\frac{C_{14}}{\tau}\ \mathrm{\left[s^{-1}\right]}$"},
+            #'lines': up2vp2tau_budget_lines, 'type': Panel.TYPE_BUDGET, 'axis_title': r"$\mathrm{\frac{C_{14}}{\tau}}\ \mathrm{\left[s^{-1}\right]}$"},
             
             #{'var_names': {
                 #'clubb': ['QTOG2_TAU'],
@@ -674,7 +674,7 @@ class VariableGroupSamBudgets(VariableGroup):
                 #'hoc': ['QTOG2_TAU'],
                 #'e3sm': ['QTOG2_TAU'],
                 #},
-            #'lines': qtogp2tau_budget_lines, 'type': Panel.TYPE_BUDGET, 'axis_title': r"$\frac{C_2}{\tau}\ \mathrm{\left[s^{-1}\right]}$"},
+            #'lines': qtogp2tau_budget_lines, 'type': Panel.TYPE_BUDGET, 'axis_title': r"$\mathrm{\frac{C_2}{\tau}}\ \mathrm{\left[s^{-1}\right]}$"},
             
             #{'var_names': {
                 #'clubb': ['Q2_TAU'],
@@ -684,7 +684,7 @@ class VariableGroupSamBudgets(VariableGroup):
                 #'hoc': ['Q2_TAU'],
                 #'e3sm': ['Q2_TAU'],
                 #},
-            #'lines': qp2tau_budget_lines, 'type': Panel.TYPE_BUDGET, 'axis_title': r"$\frac{C_2}{\tau}\ \mathrm{\left[s^{-1}\right]}$"},
+            #'lines': qp2tau_budget_lines, 'type': Panel.TYPE_BUDGET, 'axis_title': r"$\mathrm{\frac{C_2}{\tau}}\ \mathrm{\left[s^{-1}\right]}$"},
             
             #{'var_names': {
                 #'clubb': ['THL2_TAU'],
@@ -694,7 +694,7 @@ class VariableGroupSamBudgets(VariableGroup):
                 #'hoc': ['THL2_TAU'],
                 #'e3sm': ['THL2_TAU'],
                 #},
-            #'lines': qp2tau_budget_lines, 'type': Panel.TYPE_BUDGET, 'axis_title': r"$\frac{C_2}{\tau}\ \mathrm{\left[s^{-1}\right]}$"},
+            #'lines': qp2tau_budget_lines, 'type': Panel.TYPE_BUDGET, 'axis_title': r"$\mathrm{\frac{C_2}{\tau}}\ \mathrm{\left[s^{-1}\right]}$"},
             
             #{'var_names': {
                 #'clubb': ['C2_TAU_COMP'],
@@ -704,7 +704,7 @@ class VariableGroupSamBudgets(VariableGroup):
                 #'hoc': ['C2_TAU_COMP'],
                 #'e3sm': ['C2_TAU_COMP'],
                 #},
-            #'lines': tau_comp_budget_lines, 'type': Panel.TYPE_BUDGET, 'axis_title': r"$\frac{C}{\tau}\ \mathrm{\left[s^{-1}\right]}$"},
+            #'lines': tau_comp_budget_lines, 'type': Panel.TYPE_BUDGET, 'axis_title': r"$\mathrm{\frac{C}{\tau}}\ \mathrm{\left[s^{-1}\right]}$"},
             
             {'var_names': {
                 'clubb': ['U2 REDUCED'],
@@ -714,7 +714,7 @@ class VariableGroupSamBudgets(VariableGroup):
                 'hoc': ['U2 REDUCED'],
                 'e3sm': ['U2 REDUCED'],
                 },
-            'lines': up2_reduced_budget_lines, 'type': Panel.TYPE_BUDGET, 'axis_title': r"$\overline{u'^2}$ budget terms $\mathrm{\left[m^2\,s^{-3}\right]}$"},
+            'lines': up2_reduced_budget_lines, 'type': Panel.TYPE_BUDGET, 'title': r"Eastward Momentum Variance Budget (Reduced), $\mathrm{\overline{u'^2}}$", 'axis_title': r"$\mathrm{\overline{u'^2}}$ budget terms $\mathrm{\left[m^2\,s^{-3}\right]}$"},
             
             {'var_names': {
                 'clubb': ['V2 REDUCED'],
@@ -724,7 +724,7 @@ class VariableGroupSamBudgets(VariableGroup):
                 'hoc': ['V2 REDUCED'],
                 'e3sm': ['V2 REDUCED'],
                 },
-            'lines': vp2_reduced_budget_lines, 'type': Panel.TYPE_BUDGET, 'axis_title': r"$\overline{v'^2}$ budget terms $\mathrm{\left[m^2\,s^{-3}\right]}$"},
+            'lines': vp2_reduced_budget_lines, 'type': Panel.TYPE_BUDGET, 'title': r"Northward Momentum Variance Budget (Reduced), $\mathrm{\overline{v'^2}}$", 'axis_title': r"$\mathrm{\overline{v'^2}}$ budget terms $\mathrm{\left[m^2\,s^{-3}\right]}$"},
             
             {'var_names': {
                 'clubb': ['W2 REDUCED'],
@@ -734,7 +734,7 @@ class VariableGroupSamBudgets(VariableGroup):
                 'hoc': ['W2 REDUCED'],
                 'e3sm': ['W2 REDUCED'],
                 },
-            'lines': wp2_reduced_budget_lines, 'type': Panel.TYPE_BUDGET, 'axis_title': r"$\overline{w'^2}$ budget terms $\mathrm{\left[m^2\,s^{-3}\right]}$"},
+            'lines': wp2_reduced_budget_lines, 'type': Panel.TYPE_BUDGET, 'title': r"Vertical Momentum Variance Budget, $\mathrm{\overline{w'^2}}$", 'axis_title': r"$\mathrm{\overline{w'^2}}$ budget terms $\mathrm{\left[m^2\,s^{-3}\right]}$"},
             
             {'var_names': {
                 'clubb': ['WU REDUCED'],
@@ -744,7 +744,7 @@ class VariableGroupSamBudgets(VariableGroup):
                 'hoc': ['WU REDUCED'],
                 'e3sm': ['WU REDUCED'],
                 },
-            'lines': upwp_reduced_budget_lines, 'type': Panel.TYPE_BUDGET, 'axis_title': r"$\overline{u'w'}$ budget terms $\mathrm{\left[m^2\,s^{-3}\right]}$"},
+            'lines': upwp_reduced_budget_lines, 'type': Panel.TYPE_BUDGET, 'title': r"Eastward Momentum Flux Budget (Reduced), $\mathrm{\overline{u'w'}}$", 'axis_title': r"$\mathrm{\overline{u'w'}}$ budget terms $\mathrm{\left[m^2\,s^{-3}\right]}$"},
             
             {'var_names': {
                 'clubb': ['WV REDUCED'],
@@ -754,7 +754,7 @@ class VariableGroupSamBudgets(VariableGroup):
                 'hoc': ['WV REDUCED'],
                 'e3sm': ['WV REDUCED'],
                 },
-            'lines': vpwp_reduced_budget_lines, 'type': Panel.TYPE_BUDGET, 'axis_title': r"$\overline{v'w'}$ budget terms $\mathrm{\left[m^2\,s^{-3}\right]}$"},
+            'lines': vpwp_reduced_budget_lines, 'type': Panel.TYPE_BUDGET, 'title': r"Northward Momentum Flux Budget (Reduced), $\mathrm{\overline{v'w'}}$", 'axis_title': r"$\mathrm{\overline{v'w'}}$ budget terms $\mathrm{\left[m^2\,s^{-3}\right]}$"},
         ]
         
         super().__init__(ncdf_datasets, case, sam_file=sam_file, coamps_file=coamps_file, r408_dataset=r408_dataset, hoc_dataset=hoc_dataset, e3sm_datasets= e3sm_datasets)
