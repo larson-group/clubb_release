@@ -30,7 +30,8 @@ l_call_pdf_closure_twice     = .false.,
 l_Lscale_plume_centered      = .false.,
 l_use_ice_latent             = .false.,
 l_brunt_vaisala_freq_moist   = .false.,
-l_use_thvm_in_bv_freq        = .false.
+l_use_thvm_in_bv_freq        = .false.,
+l_update_pressure            = .true.
 /
 
 &configurable_silhs_flags_nl

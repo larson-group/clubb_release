@@ -627,7 +627,8 @@ subroutine logical_flags_driver( current_date, current_time )
     l_single_C2_Skw,              & ! Use a single Skewness dependent C2 for rtp2, thlp2, and
                                     ! rtpthlp
     l_damp_wp3_Skw_squared,       & ! Set damping on wp3 to use Skw^2 rather than Skw^4
-    l_prescribed_avg_deltaz         ! used in adj_low_res_nu. If .true., avg_deltaz = deltaz
+    l_prescribed_avg_deltaz,      & ! used in adj_low_res_nu. If .true., avg_deltaz = deltaz
+    l_update_pressure               ! Flag for having CLUBB update pressure and exner
 
   namelist /configurable_clubb_flags_nl/ &
     l_upwind_wpxp_ta, l_upwind_xpyp_ta, l_upwind_xm_ma, l_quintic_poly_interp, &
@@ -639,7 +640,7 @@ subroutine logical_flags_driver( current_date, current_time )
     l_use_C11_Richardson, l_prescribed_avg_deltaz, l_diffuse_rtm_and_thlm, &
     l_stability_correct_Kh_N2_zm, l_trapezoidal_rule_zt, l_trapezoidal_rule_zm, &
     l_call_pdf_closure_twice, l_Lscale_plume_centered, l_use_ice_latent, &
-    l_brunt_vaisala_freq_moist, l_use_thvm_in_bv_freq
+    l_brunt_vaisala_freq_moist, l_use_thvm_in_bv_freq, l_update_pressure
 
   ! ---- Begin Code ----
 
@@ -680,7 +681,8 @@ subroutine logical_flags_driver( current_date, current_time )
                                        l_rcm_supersat_adj, & ! Intent(out)
                                        l_single_C2_Skw, & ! Intent(out)
                                        l_damp_wp3_Skw_squared, & ! Intent(out)
-                                       l_prescribed_avg_deltaz ) ! Intent(out)
+                                       l_prescribed_avg_deltaz, & ! Intent(out)
+                                       l_update_pressure ) ! Intent(out)
 
   ! Determine the current flags
   model_flags_default(1) = l_upwind_wpxp_ta

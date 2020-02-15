@@ -582,7 +582,8 @@ module clubb_driver
       l_single_C2_Skw,              & ! Use a single Skewness dependent C2 for rtp2, thlp2, and
                                       ! rtpthlp
       l_damp_wp3_Skw_squared,       & ! Set damping on wp3 to use Skw^2 rather than Skw^4
-      l_prescribed_avg_deltaz         ! used in adj_low_res_nu. If .true., avg_deltaz = deltaz
+      l_prescribed_avg_deltaz,      & ! used in adj_low_res_nu. If .true., avg_deltaz = deltaz
+      l_update_pressure               ! Flag for having CLUBB update pressure and exner
 
     type(clubb_config_flags_type) :: &
       clubb_config_flags ! Derived type holding all configurable CLUBB flags
@@ -622,7 +623,7 @@ module clubb_driver
       l_use_C11_Richardson, l_prescribed_avg_deltaz, l_diffuse_rtm_and_thlm, &
       l_stability_correct_Kh_N2_zm, l_trapezoidal_rule_zt, l_trapezoidal_rule_zm, &
       l_call_pdf_closure_twice, l_Lscale_plume_centered, l_use_ice_latent, &
-      l_brunt_vaisala_freq_moist, l_use_thvm_in_bv_freq
+      l_brunt_vaisala_freq_moist, l_use_thvm_in_bv_freq, l_update_pressure
       
     integer :: &
       err_code_dummy ! Host models use an error code that comes out of some API routines, but
@@ -761,7 +762,8 @@ module clubb_driver
                                          l_rcm_supersat_adj, & ! Intent(out)
                                          l_single_C2_Skw, & ! Intent(out)
                                          l_damp_wp3_Skw_squared, & ! Intent(out)
-                                         l_prescribed_avg_deltaz ) ! Intent(out)
+                                         l_prescribed_avg_deltaz, & ! Intent(out)
+                                         l_update_pressure ) ! Intent(out)
 
     ! Read namelist file
     open(unit=iunit, file=trim( runfile ), status='old')
@@ -1121,6 +1123,7 @@ module clubb_driver
                                              l_single_C2_Skw, & ! Intent(in)
                                              l_damp_wp3_Skw_squared, & ! Intent(in)
                                              l_prescribed_avg_deltaz, & ! Intent(in)
+                                             l_update_pressure, & ! Intent(in)
                                              clubb_config_flags ) ! Intent(out)
 
     ! Printing configurable CLUBB flags Inputs

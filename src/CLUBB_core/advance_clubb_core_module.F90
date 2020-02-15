@@ -1776,8 +1776,12 @@ module advance_clubb_core_module
 
     ! Update pressure and exner based on the new values of the thermodynamic
     ! predictive fields.
-    call update_pressure( thlm, rtm, rcm, rho_ds_zt, thv_ds_zt, &
-                          p_in_Pa, exner, p_in_Pa_zm, exner_zm )
+    if ( clubb_config_flags%l_update_pressure ) then
+
+       call update_pressure( thlm, rtm, rcm, rho_ds_zt, thv_ds_zt, &
+                             p_in_Pa, exner, p_in_Pa_zm, exner_zm )
+
+    endif ! clubb_config_flags%l_update_pressure
 
     if ( ipdf_call_placement == ipdf_post_advance_fields &
          .or. ipdf_call_placement == ipdf_pre_post_advance_fields ) then
