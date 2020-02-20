@@ -891,7 +891,8 @@ module new_hybrid_pdf_main
       max_corr_w_x_sqd    ! Max. val. of wpxp^2/(wp2*xp2) for all vars. x  [-]
 
     real( kind = core_rknd ) :: &
-      exp_Skw_interp_factor    ! Function to interp. between min. and max.   [-]
+      exp_Skw_interp_factor, & ! Function to interp. between min. and max.   [-]
+      zeta_w_star
 
     real( kind = core_rknd ), parameter :: &
       lambda = 0.5_core_rknd    ! Parameter for Skw dependence    [-]
@@ -957,10 +958,19 @@ module new_hybrid_pdf_main
     ! For now, use a formulation similar to what is used for ADG1.
     ! This can be changed later.  Here, the 0.32 is equivalent to the value
     ! of gamma_Skw_fnc that is used with ADG1.
-    F_w = max_F_w - 0.45_core_rknd * ( max_F_w - min_F_w )
+    F_w = max_F_w - 0.75_core_rknd * ( max_F_w - min_F_w )
 
     ! The value of zeta_w must be greater than -1.
-    zeta_w = pdf_component_stdev_factor_w - one
+    zeta_w_star = pdf_component_stdev_factor_w - one
+
+    ! Make the PDF of w symmetric.  In other words, the PDF at a value of
+    ! positive skewness will look like a mirror image of the PDF at the
+    ! opposite value of negative skewness.
+    if ( Skw >= zero ) then
+       zeta_w = zeta_w_star
+    else ! Skw < 0
+       zeta_w = - zeta_w_star / ( zeta_w_star + one )
+    endif
 
 
     return
