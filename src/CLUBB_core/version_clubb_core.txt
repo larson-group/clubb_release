@@ -1,0 +1,77 @@
+commit b0575cc936312f99dcffe9f1f7bea6932cd1fd4a
+Author: pbroels <56004443+pbroels@users.noreply.github.com>
+Date:   Thu Feb 20 14:08:48 2020 -0600
+
+    Removing blank line to trigger bitten tests. larson-group/sys_admin#680
+
+commit 10c3a3974e3aea4c5c0aa7739f50148ac9b439af
+Merge: cc749d3 ae411ce
+Author: bmg929 <bmg2@uwm.edu>
+Date:   Thu Feb 20 13:49:21 2020 -0600
+
+    Merge branch 'master' of https://github.com/larson-group/clubb
+    
+    Whoops, forgot to git pull first.  Sorry folks.
+
+commit cc749d30b1f3d21677eb1ee06377dfcebe0bf209
+Author: bmg929 <bmg2@uwm.edu>
+Date:   Thu Feb 20 13:47:48 2020 -0600
+
+    I added some code I used in the special input fields branch to make
+    the PDF of w symmetric, so that the PDF at a value of positive skewness
+    of w (for example, +2) looks like a mirror image of the PDF at the opposite
+    value of negative skewness (for example, -2).
+
+commit ae411ce2fd2443fe360ece019732bec493375543
+Author: pbroels <56004443+pbroels@users.noreply.github.com>
+Date:   Thu Feb 20 13:24:12 2020 -0600
+
+    Adding a line to trigger the bitten tests. larson-group/sys_admin#680
+
+commit f6aace9982a06222eb20027b0efe5b0e72f703fd
+Author: bmg929 <bmg2@uwm.edu>
+Date:   Sat Feb 15 08:58:49 2020 -0600
+
+    I added the new l_update_pressure configurable flag to clubb_config_flags.
+    When this flag is enabled (which it is by default), CLUBB updates
+    pressure and exner every timestep.  This new flags allows this feature
+    to easily be turned off within the context of host models, such as
+    CAM and E3SM.
+    
+    The results in GrADS output files from this revision are an exact match
+    to the results in GrADS output files from the previous revision for
+    all cases.
+
+commit 8be0be97456a82711c6945dcb7f4d138cd88788f
+Author: Steffen Domke <sdomke@uwm.edu>
+Date:   Fri Feb 14 17:44:12 2020 -0600
+
+    Added new VariableGroup VariableGroupSamProfiles, changed image files to .png,
+    fixed problem with relative paths in gallery.py,
+    added constant specifying automatic sci limits
+    
+    https://github.com/larson-group/sys_admin/542
+
+commit fbcbd865f97bc8f9b7c16d2c80326368a637a204
+Author: Niklas Selke <nselke@uwm.edu>
+Date:   Fri Feb 14 17:20:11 2020 -0600
+
+    I changed the dummy argument 'value' in the 'stat_update_var' subroutine from explicit to assumed size. #874
+
+commit e7ebb4c73149dbd627f09c21ec4ada1884826ff9
+Author: Steffen Domke <sdomke@uwm.edu>
+Date:   Fri Feb 14 17:15:11 2020 -0600
+
+    Finshed migrating SAM budgets into pyplotgen. Added labels to all budgets listed in VariableGroupSamBudgets.py
+
+commit 200b3f2b11e886962705fa2dd674f16dd4a6dea6
+Author: Gunther Huebler <huebler@uwm.edu>
+Date:   Thu Feb 6 17:14:20 2020 -0600
+
+    Making some data copying regions asyncronous with compute regions, improving performance. This is bit-for-bit. larson-group/clubb#869
+
+commit c255f61b0d0cc2ed8e99db39cd07acb635ba3735
+Author: Gunther Huebler <huebler@uwm.edu>
+Date:   Thu Feb 6 14:51:33 2020 -0600
+
+    GPUizing clip_transform_silhs_output and pushing data directives up call tree. This is all bit-for-bit. larson-group/clubb#869
