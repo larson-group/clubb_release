@@ -33,20 +33,20 @@ class VariableGroupSamBudgets(VariableGroup):
             {'var_names': ['HLRAD'], 'legend_label': 'HLRAD', 'sam_conv_factor': self.kg_per_second_to_kg_per_day},
             {'var_names': ['HLLAT'], 'legend_label': 'HLLAT', 'sam_conv_factor': self.kg_per_second_to_kg_per_day},
             {'var_names': ['TTEND'], 'legend_label': 'TTEND', 'sam_conv_factor': self.kg_per_second_to_kg_per_day},
-            {'var_names': ['T_TNDCY'], 'legend_label': 'T_TNDCY', 'fill_zeros': True},
+            {'var_names': ['T_TNDCY'], 'legend_label': 'T_TNDCY'},
             {'var_names': ['HLSTOR'], 'legend_label': 'HLSTOR', 'sam_conv_factor': self.kg_per_second_to_kg_per_day},
             {'var_names': ['HL_RES'], 'legend_label': 'HL_RES', 'fallback_func': self.getHlResidual},
         ]
         
         # Total water budget (same as rtm) (does not exist in _MICRO_M2005_UWM)
         qtp_budget_lines = [
-            {'var_names': ['QTADV'], 'legend_label': 'QTADV', 'sam_conv_factor': self.g_per_second_to_kg_per_day, 'fill_zeros': True},
-            {'var_names': ['QTDIFF'], 'legend_label': 'QTDIFF', 'sam_conv_factor': self.g_per_second_to_kg_per_day, 'fill_zeros': True},
-            {'var_names': ['QTSRC'], 'legend_label': 'QTSRC', 'sam_conv_factor': self.g_per_second_to_kg_per_day, 'fill_zeros': True},
-            {'var_names': ['QTSINK'], 'legend_label': 'QTSINK', 'sam_conv_factor': self.g_per_second_to_kg_per_day, 'fill_zeros': True},
-            {'var_names': ['QTEND'], 'legend_label': 'QTEND', 'sam_conv_factor': self.g_per_second_to_kg_per_day, 'fill_zeros': True},
-            {'var_names': ['QTSTOR'], 'legend_label': 'QTSTOR', 'sam_conv_factor': self.g_per_second_to_kg_per_day, 'fill_zeros': True},
-            {'var_names': ['QV_TNDCY'], 'legend_label': 'QV_TNDCY', 'sam_conv_factor': self.g_per_second_to_kg_per_day, 'fill_zeros': True},
+            {'var_names': ['QTADV'], 'legend_label': 'QTADV', 'sam_conv_factor': self.g_per_second_to_kg_per_day},
+            {'var_names': ['QTDIFF'], 'legend_label': 'QTDIFF', 'sam_conv_factor': self.g_per_second_to_kg_per_day},
+            {'var_names': ['QTSRC'], 'legend_label': 'QTSRC', 'sam_conv_factor': self.g_per_second_to_kg_per_day},
+            {'var_names': ['QTSINK'], 'legend_label': 'QTSINK', 'sam_conv_factor': self.g_per_second_to_kg_per_day},
+            {'var_names': ['QTEND'], 'legend_label': 'QTEND', 'sam_conv_factor': self.g_per_second_to_kg_per_day},
+            {'var_names': ['QTSTOR'], 'legend_label': 'QTSTOR', 'sam_conv_factor': self.g_per_second_to_kg_per_day},
+            {'var_names': ['QV_TNDCY'], 'legend_label': 'QV_TNDCY', 'sam_conv_factor': self.g_per_second_to_kg_per_day},
             {'var_names': ['QT_RES'], 'legend_label': 'QT_RES', 'fallback_func': self.getQtResidual},
         ]
         
@@ -772,22 +772,22 @@ class VariableGroupSamBudgets(VariableGroup):
         else:
             dataset = self.sam_file
         
-        HLADV, z, dataset = self.getVarForCalculations('HLADV', dataset, fill_zeros=True)
+        HLADV, z, dataset = self.getVarForCalculations('HLADV', dataset)
         HLADV *= self.kg_per_second_to_kg_per_day
         
-        HLDIFF, z, dataset = self.getVarForCalculations('HLDIFF', dataset, fill_zeros=True)
+        HLDIFF, z, dataset = self.getVarForCalculations('HLDIFF', dataset)
         HLDIFF *= self.kg_per_second_to_kg_per_day
         
-        HLLAT, z, dataset = self.getVarForCalculations('HLLAT', dataset, fill_zeros=True)
+        HLLAT, z, dataset = self.getVarForCalculations('HLLAT', dataset)
         HLLAT *= self.kg_per_second_to_kg_per_day
         
-        HLRAD, z, dataset = self.getVarForCalculations('HLRAD', dataset, fill_zeros=True)
+        HLRAD, z, dataset = self.getVarForCalculations('HLRAD', dataset)
         HLRAD *= self.kg_per_second_to_kg_per_day
         
-        HLSTOR, z, dataset = self.getVarForCalculations('HLSTOR', dataset, fill_zeros=True)
+        HLSTOR, z, dataset = self.getVarForCalculations('HLSTOR', dataset)
         HLSTOR *= self.kg_per_second_to_kg_per_day
         
-        TTEND, z, dataset = self.getVarForCalculations('TTEND', dataset, fill_zeros=True)
+        TTEND, z, dataset = self.getVarForCalculations('TTEND', dataset)
         TTEND *= self.kg_per_second_to_kg_per_day
         
         #ALERT: Conversion factor correct?
@@ -806,19 +806,19 @@ class VariableGroupSamBudgets(VariableGroup):
             dataset = dataset_override
         else:
             dataset = self.sam_file
-        QTADV, z, dataset = self.getVarForCalculations('QTADV', dataset, fill_zeros=True)
+        QTADV, z, dataset = self.getVarForCalculations('QTADV', dataset)
         QTADV *=  self.g_per_second_to_kg_per_day
-        QTDIFF, z, dataset = self.getVarForCalculations('QTDIFF', dataset, fill_zeros=True)
+        QTDIFF, z, dataset = self.getVarForCalculations('QTDIFF', dataset)
         QTDIFF *=  self.g_per_second_to_kg_per_day
-        QTEND, z, dataset = self.getVarForCalculations('QTEND', dataset, fill_zeros=True)
+        QTEND, z, dataset = self.getVarForCalculations('QTEND', dataset)
         QTEND*=  self.g_per_second_to_kg_per_day
-        QTSINK, z, dataset = self.getVarForCalculations('QTSINK', dataset, fill_zeros=True)
+        QTSINK, z, dataset = self.getVarForCalculations('QTSINK', dataset)
         QTSINK *=  self.g_per_second_to_kg_per_day
-        QTSRC, z, dataset = self.getVarForCalculations('QTSRC', dataset, fill_zeros=True)
+        QTSRC, z, dataset = self.getVarForCalculations('QTSRC', dataset)
         QTSRC *=  self.g_per_second_to_kg_per_day
-        QTSTOR, z, dataset = self.getVarForCalculations('QTSTOR', dataset, fill_zeros=True)
+        QTSTOR, z, dataset = self.getVarForCalculations('QTSTOR', dataset)
         QTSTOR *=  self.g_per_second_to_kg_per_day
-        QV_TNDCY, z, dataset = self.getVarForCalculations('QV_TNDCY', dataset, fill_zeros=True)
+        QV_TNDCY, z, dataset = self.getVarForCalculations('QV_TNDCY', dataset)
         QV_TNDCY*=  self.g_per_second_to_kg_per_day
         QT_RES = QTSTOR - (QTADV + QTDIFF + QTEND + QTSRC + QTSINK)
         return QT_RES, z
@@ -835,8 +835,8 @@ class VariableGroupSamBudgets(VariableGroup):
             dataset = dataset_override
         else:
             dataset = self.sam_file
-        TWBUOY, z, dataset = self.getVarForCalculations('TWBUOY', dataset, fill_zeros=True)
-        TWPRES, z, dataset = self.getVarForCalculations('TWPRES', dataset, fill_zeros=True)
+        TWBUOY, z, dataset = self.getVarForCalculations('TWBUOY', dataset)
+        TWPRES, z, dataset = self.getVarForCalculations('TWPRES', dataset)
         TW_BUOY_PRES = TWBUOY + TWPRES
         return TW_BUOY_PRES, z
     
@@ -852,15 +852,15 @@ class VariableGroupSamBudgets(VariableGroup):
             dataset = dataset_override
         else:
             dataset = self.sam_file
-        TWADV, z, dataset = self.getVarForCalculations('TWADV', dataset, fill_zeros=True)
-        TWBT, z, dataset = self.getVarForCalculations('TWBT', dataset, fill_zeros=True)
-        TWBUOY, z, dataset = self.getVarForCalculations('TWBUOY', dataset, fill_zeros=True)
-        TWDIFF, z, dataset = self.getVarForCalculations('TWDIFF', dataset, fill_zeros=True)
-        TWFORC, z, dataset = self.getVarForCalculations('TWFORC', dataset, fill_zeros=True)
-        TWGRAD, z, dataset = self.getVarForCalculations('TWGRAD', dataset, fill_zeros=True)
-        TWPREC, z, dataset = self.getVarForCalculations('TWPREC', dataset, fill_zeros=True)
-        TWPRES, z, dataset = self.getVarForCalculations('TWPRES', dataset, fill_zeros=True)
-        TWRAD, z, dataset = self.getVarForCalculations('TWRAD', dataset, fill_zeros=True)
+        TWADV, z, dataset = self.getVarForCalculations('TWADV', dataset)
+        TWBT, z, dataset = self.getVarForCalculations('TWBT', dataset)
+        TWBUOY, z, dataset = self.getVarForCalculations('TWBUOY', dataset)
+        TWDIFF, z, dataset = self.getVarForCalculations('TWDIFF', dataset)
+        TWFORC, z, dataset = self.getVarForCalculations('TWFORC', dataset)
+        TWGRAD, z, dataset = self.getVarForCalculations('TWGRAD', dataset)
+        TWPREC, z, dataset = self.getVarForCalculations('TWPREC', dataset)
+        TWPRES, z, dataset = self.getVarForCalculations('TWPRES', dataset)
+        TWRAD, z, dataset = self.getVarForCalculations('TWRAD', dataset)
         TW_RES = TWBT - (TWADV + TWBUOY + TWDIFF + TWFORC + TWGRAD + TWPREC + TWPRES + TWRAD)
         return TW_RES, z
     
@@ -876,8 +876,8 @@ class VariableGroupSamBudgets(VariableGroup):
             dataset = dataset_override
         else:
             dataset = self.sam_file
-        THLWBUOY, z, dataset = self.getVarForCalculations('THLWBUOY', dataset, fill_zeros=True)
-        THLWPRES, z, dataset = self.getVarForCalculations('THLWPRES', dataset, fill_zeros=True)
+        THLWBUOY, z, dataset = self.getVarForCalculations('THLWBUOY', dataset)
+        THLWPRES, z, dataset = self.getVarForCalculations('THLWPRES', dataset)
         THLW_BUOY_PRES = THLWBUOY + THLWPRES
         return THLW_BUOY_PRES, z
 
@@ -893,15 +893,15 @@ class VariableGroupSamBudgets(VariableGroup):
             dataset = dataset_override
         else:
             dataset = self.sam_file
-        THLWADV, z, dataset = self.getVarForCalculations('THLWADV', dataset, fill_zeros=True);
-        THLWBT, z, dataset = self.getVarForCalculations('THLWBT', dataset, fill_zeros=True)
-        THLWBUOY, z, dataset = self.getVarForCalculations('THLWBUOY', dataset, fill_zeros=True)
-        THLWDIFF, z, dataset = self.getVarForCalculations('THLWDIFF', dataset, fill_zeros=True)
-        THLWFORC, z, dataset = self.getVarForCalculations('THLWFORC', dataset, fill_zeros=True)
-        THLWGRAD, z, dataset = self.getVarForCalculations('THLWGRAD', dataset, fill_zeros=True)
-        THLWPREC, z, dataset = self.getVarForCalculations('THLWPREC', dataset, fill_zeros=True)
-        THLWPRES, z, dataset = self.getVarForCalculations('THLWPRES', dataset, fill_zeros=True)
-        THLWRAD, z, dataset = self.getVarForCalculations('THLWRAD', dataset, fill_zeros=True)
+        THLWADV, z, dataset = self.getVarForCalculations('THLWADV', dataset);
+        THLWBT, z, dataset = self.getVarForCalculations('THLWBT', dataset)
+        THLWBUOY, z, dataset = self.getVarForCalculations('THLWBUOY', dataset)
+        THLWDIFF, z, dataset = self.getVarForCalculations('THLWDIFF', dataset)
+        THLWFORC, z, dataset = self.getVarForCalculations('THLWFORC', dataset)
+        THLWGRAD, z, dataset = self.getVarForCalculations('THLWGRAD', dataset)
+        THLWPREC, z, dataset = self.getVarForCalculations('THLWPREC', dataset)
+        THLWPRES, z, dataset = self.getVarForCalculations('THLWPRES', dataset)
+        THLWRAD, z, dataset = self.getVarForCalculations('THLWRAD', dataset)
         THLW_RES = THLWBT - (THLWADV + THLWBUOY + THLWDIFF + THLWFORC + THLWGRAD + THLWPREC + THLWPRES + THLWRAD)
         return THLW_RES, z
 
@@ -917,8 +917,8 @@ class VariableGroupSamBudgets(VariableGroup):
             dataset = dataset_override
         else:
             dataset = self.sam_file
-        QWBUOY, z, dataset = self.getVarForCalculations('QWBUOY', dataset, fill_zeros=True)
-        QWPRES, z, dataset = self.getVarForCalculations('QWPRES', dataset, fill_zeros=True)
+        QWBUOY, z, dataset = self.getVarForCalculations('QWBUOY', dataset)
+        QWPRES, z, dataset = self.getVarForCalculations('QWPRES', dataset)
         QW_BUOY_PRES = QWBUOY + QWPRES
         return QW_BUOY_PRES, z
 
@@ -934,14 +934,14 @@ class VariableGroupSamBudgets(VariableGroup):
             dataset = dataset_override
         else:
             dataset = self.sam_file
-        QWADV, z, dataset = self.getVarForCalculations('QWADV', dataset, fill_zeros=True)
-        QWBT, z, dataset = self.getVarForCalculations('QWBT', dataset, fill_zeros=True)
-        QWBUOY, z, dataset = self.getVarForCalculations('QWBUOY', dataset, fill_zeros=True)
-        QWDIFF, z, dataset = self.getVarForCalculations('QWDIFF', dataset, fill_zeros=True)
-        QWFORC, z, dataset = self.getVarForCalculations('QWFORC', dataset, fill_zeros=True)
-        QWGRAD, z, dataset = self.getVarForCalculations('QWGRAD', dataset, fill_zeros=True)
-        QWPREC, z, dataset = self.getVarForCalculations('QWPREC', dataset, fill_zeros=True)
-        QWPRES, z, dataset = self.getVarForCalculations('QWPRES', dataset, fill_zeros=True)
+        QWADV, z, dataset = self.getVarForCalculations('QWADV', dataset)
+        QWBT, z, dataset = self.getVarForCalculations('QWBT', dataset)
+        QWBUOY, z, dataset = self.getVarForCalculations('QWBUOY', dataset)
+        QWDIFF, z, dataset = self.getVarForCalculations('QWDIFF', dataset)
+        QWFORC, z, dataset = self.getVarForCalculations('QWFORC', dataset)
+        QWGRAD, z, dataset = self.getVarForCalculations('QWGRAD', dataset)
+        QWPREC, z, dataset = self.getVarForCalculations('QWPREC', dataset)
+        QWPRES, z, dataset = self.getVarForCalculations('QWPRES', dataset)
         QW_RES = QWBT - (QWGRAD + QWADV + QWDIFF + QWBUOY + QWPRES + QWPREC + QWFORC)
         return QW_RES, z
 
@@ -957,8 +957,8 @@ class VariableGroupSamBudgets(VariableGroup):
             dataset = dataset_override
         else:
             dataset = self.sam_file
-        QTOGWBUOY, z, dataset = self.getVarForCalculations('QTOGWBUOY', dataset, fill_zeros=True)
-        QTOGWPRES, z, dataset = self.getVarForCalculations('QTOGWPRES', dataset, fill_zeros=True)
+        QTOGWBUOY, z, dataset = self.getVarForCalculations('QTOGWBUOY', dataset)
+        QTOGWPRES, z, dataset = self.getVarForCalculations('QTOGWPRES', dataset)
         QTOGW_BUOY_PRES = QTOGWBUOY + QTOGWPRES
         return QTOGW_BUOY_PRES, z
 
@@ -974,14 +974,14 @@ class VariableGroupSamBudgets(VariableGroup):
             dataset = dataset_override
         else:
             dataset = self.sam_file
-        QTOGWADV, z, dataset = self.getVarForCalculations('QTOGWADV', dataset, fill_zeros=True)
-        QTOGWBT, z, dataset = self.getVarForCalculations('QTOGWBT', dataset, fill_zeros=True)
-        QTOGWBUOY, z, dataset = self.getVarForCalculations('QTOGWBUOY', dataset, fill_zeros=True)
-        QTOGWDIFF, z, dataset = self.getVarForCalculations('QTOGWDIFF', dataset, fill_zeros=True)
-        QTOGWFORC, z, dataset = self.getVarForCalculations('QTOGWFORC', dataset, fill_zeros=True)
-        QTOGWGRAD, z, dataset = self.getVarForCalculations('QTOGWGRAD', dataset, fill_zeros=True)
-        QTOGWPREC, z, dataset = self.getVarForCalculations('QTOGWPREC', dataset, fill_zeros=True)
-        QTOGWPRES, z, dataset = self.getVarForCalculations('QTOGWPRES', dataset, fill_zeros=True)
+        QTOGWADV, z, dataset = self.getVarForCalculations('QTOGWADV', dataset)
+        QTOGWBT, z, dataset = self.getVarForCalculations('QTOGWBT', dataset)
+        QTOGWBUOY, z, dataset = self.getVarForCalculations('QTOGWBUOY', dataset)
+        QTOGWDIFF, z, dataset = self.getVarForCalculations('QTOGWDIFF', dataset)
+        QTOGWFORC, z, dataset = self.getVarForCalculations('QTOGWFORC', dataset)
+        QTOGWGRAD, z, dataset = self.getVarForCalculations('QTOGWGRAD', dataset)
+        QTOGWPREC, z, dataset = self.getVarForCalculations('QTOGWPREC', dataset)
+        QTOGWPRES, z, dataset = self.getVarForCalculations('QTOGWPRES', dataset)
         QTOGW_RES = QTOGWBT - (QTOGWGRAD + QTOGWADV + QTOGWDIFF + QTOGWBUOY + QTOGWPRES + QTOGWPREC + QTOGWFORC)
         return QTOGW_RES, z
 
@@ -997,14 +997,14 @@ class VariableGroupSamBudgets(VariableGroup):
             dataset = dataset_override
         else:
             dataset = self.sam_file
-        T2ADVTR, z, dataset = self.getVarForCalculations('T2ADVTR', dataset, fill_zeros=True)
-        T2BT, z, dataset = self.getVarForCalculations('T2BT', dataset, fill_zeros=True)
-        T2DISSIP, z, dataset = self.getVarForCalculations('T2DISSIP', dataset, fill_zeros=True)
-        T2DIFTR, z, dataset = self.getVarForCalculations('T2DIFTR', dataset, fill_zeros=True)
-        T2FORC, z, dataset = self.getVarForCalculations('T2FORC', dataset, fill_zeros=True)
-        T2GRAD, z, dataset = self.getVarForCalculations('T2GRAD', dataset, fill_zeros=True)
-        T2PREC, z, dataset = self.getVarForCalculations('T2PREC', dataset, fill_zeros=True)
-        T2RAD, z, dataset = self.getVarForCalculations('T2RAD', dataset, fill_zeros=True)
+        T2ADVTR, z, dataset = self.getVarForCalculations('T2ADVTR', dataset)
+        T2BT, z, dataset = self.getVarForCalculations('T2BT', dataset)
+        T2DISSIP, z, dataset = self.getVarForCalculations('T2DISSIP', dataset)
+        T2DIFTR, z, dataset = self.getVarForCalculations('T2DIFTR', dataset)
+        T2FORC, z, dataset = self.getVarForCalculations('T2FORC', dataset)
+        T2GRAD, z, dataset = self.getVarForCalculations('T2GRAD', dataset)
+        T2PREC, z, dataset = self.getVarForCalculations('T2PREC', dataset)
+        T2RAD, z, dataset = self.getVarForCalculations('T2RAD', dataset)
         T2_RES = T2BT - (T2ADVTR + T2GRAD + T2DISSIP + T2DIFTR + T2PREC + T2RAD + T2FORC)
         return T2_RES, z
 
@@ -1020,14 +1020,14 @@ class VariableGroupSamBudgets(VariableGroup):
             dataset = dataset_override
         else:
             dataset = self.sam_file
-        THL2ADVTR, z, dataset = self.getVarForCalculations('THL2ADVTR', dataset, fill_zeros=True)
-        THL2BT, z, dataset = self.getVarForCalculations('THL2BT', dataset, fill_zeros=True)
-        THL2DISSIP, z, dataset = self.getVarForCalculations('THL2DISSIP', dataset, fill_zeros=True)
-        THL2DIFTR, z, dataset = self.getVarForCalculations('THL2DIFTR', dataset, fill_zeros=True)
-        THL2FORC, z, dataset = self.getVarForCalculations('THL2FORC', dataset, fill_zeros=True)
-        THL2GRAD, z, dataset = self.getVarForCalculations('THL2GRAD', dataset, fill_zeros=True)
-        THL2PREC, z, dataset = self.getVarForCalculations('THL2PREC', dataset, fill_zeros=True)
-        THL2RAD, z, dataset = self.getVarForCalculations('THL2RAD', dataset, fill_zeros=True)
+        THL2ADVTR, z, dataset = self.getVarForCalculations('THL2ADVTR', dataset)
+        THL2BT, z, dataset = self.getVarForCalculations('THL2BT', dataset)
+        THL2DISSIP, z, dataset = self.getVarForCalculations('THL2DISSIP', dataset)
+        THL2DIFTR, z, dataset = self.getVarForCalculations('THL2DIFTR', dataset)
+        THL2FORC, z, dataset = self.getVarForCalculations('THL2FORC', dataset)
+        THL2GRAD, z, dataset = self.getVarForCalculations('THL2GRAD', dataset)
+        THL2PREC, z, dataset = self.getVarForCalculations('THL2PREC', dataset)
+        THL2RAD, z, dataset = self.getVarForCalculations('THL2RAD', dataset)
         THL2_RES = THL2BT - (THL2ADVTR + THL2GRAD + THL2DISSIP + THL2DIFTR + THL2PREC + THL2RAD + THL2FORC)
         return THL2_RES, z
 
@@ -1043,13 +1043,13 @@ class VariableGroupSamBudgets(VariableGroup):
             dataset = dataset_override
         else:
             dataset = self.sam_file
-        Q2ADVTR, z, dataset = self.getVarForCalculations('Q2ADVTR', dataset, fill_zeros=True)
-        Q2BT, z, dataset = self.getVarForCalculations('Q2BT', dataset, fill_zeros=True)
-        Q2DISSIP, z, dataset = self.getVarForCalculations('Q2DISSIP', dataset, fill_zeros=True)
-        Q2DIFTR, z, dataset = self.getVarForCalculations('Q2DIFTR', dataset, fill_zeros=True)
-        Q2FORC, z, dataset = self.getVarForCalculations('Q2FORC', dataset, fill_zeros=True)
-        Q2GRAD, z, dataset = self.getVarForCalculations('Q2GRAD', dataset, fill_zeros=True)
-        Q2PREC, z, dataset = self.getVarForCalculations('Q2PREC', dataset, fill_zeros=True)
+        Q2ADVTR, z, dataset = self.getVarForCalculations('Q2ADVTR', dataset)
+        Q2BT, z, dataset = self.getVarForCalculations('Q2BT', dataset)
+        Q2DISSIP, z, dataset = self.getVarForCalculations('Q2DISSIP', dataset)
+        Q2DIFTR, z, dataset = self.getVarForCalculations('Q2DIFTR', dataset)
+        Q2FORC, z, dataset = self.getVarForCalculations('Q2FORC', dataset)
+        Q2GRAD, z, dataset = self.getVarForCalculations('Q2GRAD', dataset)
+        Q2PREC, z, dataset = self.getVarForCalculations('Q2PREC', dataset)
         Q2_RES = Q2BT - (Q2ADVTR + Q2GRAD + Q2DISSIP + Q2DIFTR + Q2PREC + Q2FORC)
         return Q2_RES, z
 
@@ -1065,13 +1065,13 @@ class VariableGroupSamBudgets(VariableGroup):
             dataset = dataset_override
         else:
             dataset = self.sam_file
-        QTOG2ADVTR, z, dataset = self.getVarForCalculations('QTOG2ADVTR', dataset, fill_zeros=True)
-        QTOG2BT, z, dataset = self.getVarForCalculations('QTOG2BT', dataset, fill_zeros=True)
-        QTOG2DIFTR, z, dataset = self.getVarForCalculations('QTOG2DIFTR', dataset, fill_zeros=True)
-        QTOG2DISSIP, z, dataset = self.getVarForCalculations('QTOG2DISSIP', dataset, fill_zeros=True)
-        QTOG2FORC, z, dataset = self.getVarForCalculations('QTOG2FORC', dataset, fill_zeros=True)
-        QTOG2GRAD, z, dataset = self.getVarForCalculations('QTOG2GRAD', dataset, fill_zeros=True)
-        QTOG2PREC, z, dataset = self.getVarForCalculations('QTOG2PREC', dataset, fill_zeros=True)
+        QTOG2ADVTR, z, dataset = self.getVarForCalculations('QTOG2ADVTR', dataset)
+        QTOG2BT, z, dataset = self.getVarForCalculations('QTOG2BT', dataset)
+        QTOG2DIFTR, z, dataset = self.getVarForCalculations('QTOG2DIFTR', dataset)
+        QTOG2DISSIP, z, dataset = self.getVarForCalculations('QTOG2DISSIP', dataset)
+        QTOG2FORC, z, dataset = self.getVarForCalculations('QTOG2FORC', dataset)
+        QTOG2GRAD, z, dataset = self.getVarForCalculations('QTOG2GRAD', dataset)
+        QTOG2PREC, z, dataset = self.getVarForCalculations('QTOG2PREC', dataset)
         QTOG2_RES = QTOG2BT - (QTOG2ADVTR + QTOG2GRAD + QTOG2DISSIP + QTOG2DIFTR + QTOG2PREC + QTOG2FORC)
         return QTOG2_RES, z
 
@@ -1087,14 +1087,14 @@ class VariableGroupSamBudgets(VariableGroup):
             dataset = dataset_override
         else:
             dataset = self.sam_file
-        QTHLADV, z, dataset = self.getVarForCalculations('QTHLADV', dataset, fill_zeros=True)
-        QTHLBT, z, dataset = self.getVarForCalculations('QTHLBT', dataset, fill_zeros=True)
-        QTHLDIFTR, z, dataset = self.getVarForCalculations('QTHLDIFTR', dataset, fill_zeros=True)
-        QTHLDISSIP, z, dataset = self.getVarForCalculations('QTHLDISSIP', dataset, fill_zeros=True)
-        QTHLFORC, z, dataset = self.getVarForCalculations('QTHLFORC', dataset, fill_zeros=True)
-        QTHLGRAD, z, dataset = self.getVarForCalculations('QTHLGRAD', dataset, fill_zeros=True)
-        QTHLPREC, z, dataset = self.getVarForCalculations('QTHLPREC', dataset, fill_zeros=True)
-        QTHLRAD, z, dataset = self.getVarForCalculations('QTHLRAD', dataset, fill_zeros=True)
+        QTHLADV, z, dataset = self.getVarForCalculations('QTHLADV', dataset)
+        QTHLBT, z, dataset = self.getVarForCalculations('QTHLBT', dataset)
+        QTHLDIFTR, z, dataset = self.getVarForCalculations('QTHLDIFTR', dataset)
+        QTHLDISSIP, z, dataset = self.getVarForCalculations('QTHLDISSIP', dataset)
+        QTHLFORC, z, dataset = self.getVarForCalculations('QTHLFORC', dataset)
+        QTHLGRAD, z, dataset = self.getVarForCalculations('QTHLGRAD', dataset)
+        QTHLPREC, z, dataset = self.getVarForCalculations('QTHLPREC', dataset)
+        QTHLRAD, z, dataset = self.getVarForCalculations('QTHLRAD', dataset)
         QTHLW_RES = QTHLBT - (QTHLADV + QTHLGRAD + QTHLDISSIP + QTHLDIFTR + QTHLPREC + QTHLRAD + QTHLFORC)
         return QTHLW_RES, z
 
@@ -1110,8 +1110,8 @@ class VariableGroupSamBudgets(VariableGroup):
             dataset = dataset_override
         else:
             dataset = self.sam_file
-        DIFTR, z, dataset = self.getVarForCalculations('DIFTR', dataset, fill_zeros=True)
-        DISSIP, z, dataset = self.getVarForCalculations('DISSIP', dataset, fill_zeros=True)
+        DIFTR, z, dataset = self.getVarForCalculations('DIFTR', dataset)
+        DISSIP, z, dataset = self.getVarForCalculations('DISSIP', dataset)
         TKE_DISS_DIFF = DIFTR + DISSIP
         return TKE_DISS_DIFF, z
 
@@ -1127,14 +1127,14 @@ class VariableGroupSamBudgets(VariableGroup):
             dataset = dataset_override
         else:
             dataset = self.sam_file
-        ADVTR, z, dataset = self.getVarForCalculations('ADVTR', dataset, fill_zeros=True)
-        BT, z, dataset = self.getVarForCalculations('BT', dataset, fill_zeros=True)
-        BUOYA, z, dataset = self.getVarForCalculations('BUOYA', dataset, fill_zeros=True)
-        DIFTR, z, dataset = self.getVarForCalculations('DIFTR', dataset, fill_zeros=True)
-        DISSIP, z, dataset = self.getVarForCalculations('DISSIP', dataset, fill_zeros=True)
-        PRESSTR, z, dataset = self.getVarForCalculations('PRESSTR', dataset, fill_zeros=True)
-        SDMP, z, dataset = self.getVarForCalculations('SDMP', dataset, fill_zeros=True)
-        SHEAR, z, dataset = self.getVarForCalculations('SHEAR', dataset, fill_zeros=True)
+        ADVTR, z, dataset = self.getVarForCalculations('ADVTR', dataset)
+        BT, z, dataset = self.getVarForCalculations('BT', dataset)
+        BUOYA, z, dataset = self.getVarForCalculations('BUOYA', dataset)
+        DIFTR, z, dataset = self.getVarForCalculations('DIFTR', dataset)
+        DISSIP, z, dataset = self.getVarForCalculations('DISSIP', dataset)
+        PRESSTR, z, dataset = self.getVarForCalculations('PRESSTR', dataset)
+        SDMP, z, dataset = self.getVarForCalculations('SDMP', dataset)
+        SHEAR, z, dataset = self.getVarForCalculations('SHEAR', dataset)
         TKE_RES = BT - (SHEAR + BUOYA + ADVTR + PRESSTR + DIFTR + SDMP + DISSIP)
         return TKE_RES, z
     
@@ -1150,10 +1150,10 @@ class VariableGroupSamBudgets(VariableGroup):
             dataset = dataset_override
         else:
             dataset = self.sam_file
-        ADVTRS, z, dataset = self.getVarForCalculations('ADVTRS', dataset, fill_zeros=True)
-        BUOYAS, z, dataset = self.getVarForCalculations('BUOYAS', dataset, fill_zeros=True)
-        DISSIPS, z, dataset = self.getVarForCalculations('DISSIPS', dataset, fill_zeros=True)
-        SHEARS, z, dataset = self.getVarForCalculations('SHEARS', dataset, fill_zeros=True)
+        ADVTRS, z, dataset = self.getVarForCalculations('ADVTRS', dataset)
+        BUOYAS, z, dataset = self.getVarForCalculations('BUOYAS', dataset)
+        DISSIPS, z, dataset = self.getVarForCalculations('DISSIPS', dataset)
+        SHEARS, z, dataset = self.getVarForCalculations('SHEARS', dataset)
         TKES_RES = -(SHEARS + BUOYAS + ADVTRS + DISSIPS)
         return TKES_RES, z
     
@@ -1169,11 +1169,11 @@ class VariableGroupSamBudgets(VariableGroup):
             dataset = dataset_override
         else:
             dataset = self.sam_file
-        U2ADV, z, dataset = self.getVarForCalculations('U2ADV', dataset, fill_zeros=True)
-        U2BT, z, dataset = self.getVarForCalculations('U2BT', dataset, fill_zeros=True)
-        U2DIFF, z, dataset = self.getVarForCalculations('U2DIFF', dataset, fill_zeros=True)
-        U2REDIS, z, dataset = self.getVarForCalculations('U2REDIS', dataset, fill_zeros=True)
-        U2SHEAR, z, dataset = self.getVarForCalculations('U2SHEAR', dataset, fill_zeros=True)
+        U2ADV, z, dataset = self.getVarForCalculations('U2ADV', dataset)
+        U2BT, z, dataset = self.getVarForCalculations('U2BT', dataset)
+        U2DIFF, z, dataset = self.getVarForCalculations('U2DIFF', dataset)
+        U2REDIS, z, dataset = self.getVarForCalculations('U2REDIS', dataset)
+        U2SHEAR, z, dataset = self.getVarForCalculations('U2SHEAR', dataset)
         U2_RES = U2BT - (U2ADV + U2SHEAR + U2REDIS + U2DIFF)
         return U2_RES, z
     
@@ -1189,11 +1189,11 @@ class VariableGroupSamBudgets(VariableGroup):
             dataset = dataset_override
         else:
             dataset = self.sam_file
-        V2ADV, z, dataset = self.getVarForCalculations('V2ADV', dataset, fill_zeros=True)
-        V2BT, z, dataset = self.getVarForCalculations('V2BT', dataset, fill_zeros=True)
-        V2DIFF, z, dataset = self.getVarForCalculations('V2DIFF', dataset, fill_zeros=True)
-        V2REDIS, z, dataset = self.getVarForCalculations('V2REDIS', dataset, fill_zeros=True)
-        V2SHEAR, z, dataset = self.getVarForCalculations('V2SHEAR', dataset, fill_zeros=True)
+        V2ADV, z, dataset = self.getVarForCalculations('V2ADV', dataset)
+        V2BT, z, dataset = self.getVarForCalculations('V2BT', dataset)
+        V2DIFF, z, dataset = self.getVarForCalculations('V2DIFF', dataset)
+        V2REDIS, z, dataset = self.getVarForCalculations('V2REDIS', dataset)
+        V2SHEAR, z, dataset = self.getVarForCalculations('V2SHEAR', dataset)
         V2_RES = V2BT - (V2ADV + V2SHEAR + V2REDIS + V2DIFF)
         return V2_RES, z
     
@@ -1209,8 +1209,8 @@ class VariableGroupSamBudgets(VariableGroup):
             dataset = dataset_override
         else:
             dataset = self.sam_file
-        W2PRES, z, dataset = self.getVarForCalculations('W2PRES', dataset, fill_zeros=True)
-        W2REDIS, z, dataset = self.getVarForCalculations('W2REDIS', dataset, fill_zeros=True)
+        W2PRES, z, dataset = self.getVarForCalculations('W2PRES', dataset)
+        W2REDIS, z, dataset = self.getVarForCalculations('W2REDIS', dataset)
         W2_REDIS_PRES = W2REDIS + W2PRES
         return W2_REDIS_PRES, z
     
@@ -1226,13 +1226,13 @@ class VariableGroupSamBudgets(VariableGroup):
             dataset = dataset_override
         else:
             dataset = self.sam_file
-        W2ADV, z, dataset = self.getVarForCalculations('W2ADV', dataset, fill_zeros=True)
-        W2BT, z, dataset = self.getVarForCalculations('W2BT', dataset, fill_zeros=True)
-        W2BUOY, z, dataset = self.getVarForCalculations('W2BUOY', dataset, fill_zeros=True)
-        W2DIFF, z, dataset = self.getVarForCalculations('W2DIFF', dataset, fill_zeros=True)
-        W2PRES, z, dataset = self.getVarForCalculations('W2PRES', dataset, fill_zeros=True)
-        W2REDIS, z, dataset = self.getVarForCalculations('W2REDIS', dataset, fill_zeros=True)
-        W2SDMP, z, dataset = self.getVarForCalculations('W2SDMP', dataset, fill_zeros=True)
+        W2ADV, z, dataset = self.getVarForCalculations('W2ADV', dataset)
+        W2BT, z, dataset = self.getVarForCalculations('W2BT', dataset)
+        W2BUOY, z, dataset = self.getVarForCalculations('W2BUOY', dataset)
+        W2DIFF, z, dataset = self.getVarForCalculations('W2DIFF', dataset)
+        W2PRES, z, dataset = self.getVarForCalculations('W2PRES', dataset)
+        W2REDIS, z, dataset = self.getVarForCalculations('W2REDIS', dataset)
+        W2SDMP, z, dataset = self.getVarForCalculations('W2SDMP', dataset)
         W2_RES = W2BT - (W2ADV + W2PRES + W2REDIS + W2BUOY + W2DIFF + W2SDMP)
         return W2_RES, z
     
@@ -1248,8 +1248,8 @@ class VariableGroupSamBudgets(VariableGroup):
             dataset = dataset_override
         else:
             dataset = self.sam_file
-        ADVTR, z, dataset = self.getVarForCalculations('ADVTR', dataset, fill_zeros=True)
-        W2ADV, z, dataset = self.getVarForCalculations('W2ADV', dataset, fill_zeros=True)
+        ADVTR, z, dataset = self.getVarForCalculations('ADVTR', dataset)
+        W2ADV, z, dataset = self.getVarForCalculations('W2ADV', dataset)
         U2V2_ADV = 2 * ADVTR + W2ADV
         return U2V2_ADV, z
     
@@ -1265,8 +1265,8 @@ class VariableGroupSamBudgets(VariableGroup):
             dataset = dataset_override
         else:
             dataset = self.sam_file
-        BUOYA, z, dataset = self.getVarForCalculations('BUOYA', dataset, fill_zeros=True)
-        W2BUOY, z, dataset = self.getVarForCalculations('W2BUOY', dataset, fill_zeros=True)
+        BUOYA, z, dataset = self.getVarForCalculations('BUOYA', dataset)
+        W2BUOY, z, dataset = self.getVarForCalculations('W2BUOY', dataset)
         U2V2_BUOY = 2 * BUOYA + W2BUOY
         return U2V2_BUOY, z
         
@@ -1283,8 +1283,8 @@ class VariableGroupSamBudgets(VariableGroup):
             dataset = dataset_override
         else:
             dataset = self.sam_file
-        PRESSTR, z, dataset = self.getVarForCalculations('PRESSTR', dataset, fill_zeros=True)
-        W2PRES, z, dataset = self.getVarForCalculations('W2PRES', dataset, fill_zeros=True)
+        PRESSTR, z, dataset = self.getVarForCalculations('PRESSTR', dataset)
+        W2PRES, z, dataset = self.getVarForCalculations('W2PRES', dataset)
         U2V2_PRES = 2 * PRESSTR + W2PRES
         return U2V2_PRES, z
     
@@ -1300,8 +1300,8 @@ class VariableGroupSamBudgets(VariableGroup):
             dataset = dataset_override
         else:
             dataset = self.sam_file
-        DIFTR, z, dataset = self.getVarForCalculations('DIFTR', dataset, fill_zeros=True)
-        W2DIFF, z, dataset = self.getVarForCalculations('W2DIFF', dataset, fill_zeros=True)
+        DIFTR, z, dataset = self.getVarForCalculations('DIFTR', dataset)
+        W2DIFF, z, dataset = self.getVarForCalculations('W2DIFF', dataset)
         U2V2_DIFF = 2 * DIFTR + W2DIFF
         return U2V2_DIFF, z
     
@@ -1317,8 +1317,8 @@ class VariableGroupSamBudgets(VariableGroup):
             dataset = dataset_override
         else:
             dataset = self.sam_file
-        SDMP, z, dataset = self.getVarForCalculations('SDMP', dataset, fill_zeros=True)
-        W2SDMP, z, dataset = self.getVarForCalculations('W2SDMP', dataset, fill_zeros=True)
+        SDMP, z, dataset = self.getVarForCalculations('SDMP', dataset)
+        W2SDMP, z, dataset = self.getVarForCalculations('W2SDMP', dataset)
         U2V2_SDMP = 2 * SDMP + W2SDMP
         return U2V2_SDMP, z
     
@@ -1334,8 +1334,8 @@ class VariableGroupSamBudgets(VariableGroup):
             dataset = dataset_override
         else:
             dataset = self.sam_file
-        BT, z, dataset = self.getVarForCalculations('BT', dataset, fill_zeros=True)
-        W2BT, z, dataset = self.getVarForCalculations('W2BT', dataset, fill_zeros=True)
+        BT, z, dataset = self.getVarForCalculations('BT', dataset)
+        W2BT, z, dataset = self.getVarForCalculations('W2BT', dataset)
         U2V2_BT = 2 * BT + W2BT
         return U2V2_BT, z
     
@@ -1351,21 +1351,21 @@ class VariableGroupSamBudgets(VariableGroup):
             dataset = dataset_override
         else:
             dataset = self.sam_file
-        ADVTR, z, dataset = self.getVarForCalculations('ADVTR', dataset, fill_zeros=True)
-        W2ADV, z, dataset = self.getVarForCalculations('W2ADV', dataset, fill_zeros=True)
-        BT, z, dataset = self.getVarForCalculations('BT', dataset, fill_zeros=True)
-        W2BT, z, dataset = self.getVarForCalculations('W2BT', dataset, fill_zeros=True)
-        BUOYA, z, dataset = self.getVarForCalculations('BUOYA', dataset, fill_zeros=True)
-        W2BUOY, z, dataset = self.getVarForCalculations('W2BUOY', dataset, fill_zeros=True)
-        DIFTR, z, dataset = self.getVarForCalculations('DIFTR', dataset, fill_zeros=True)
-        W2DIFF, z, dataset = self.getVarForCalculations('W2DIFF', dataset, fill_zeros=True)
-        DISSIP, z, dataset = self.getVarForCalculations('DISSIP', dataset, fill_zeros=True)
-        PRESSTR, z, dataset = self.getVarForCalculations('PRESSTR', dataset, fill_zeros=True)
-        W2PRES, z, dataset = self.getVarForCalculations('W2PRES', dataset, fill_zeros=True)
-        W2REDIS, z, dataset = self.getVarForCalculations('W2REDIS', dataset, fill_zeros=True)
-        SDMP, z, dataset = self.getVarForCalculations('SDMP', dataset, fill_zeros=True)
-        W2SDMP, z, dataset = self.getVarForCalculations('W2SDMP', dataset, fill_zeros=True)
-        SHEAR, z, dataset = self.getVarForCalculations('SHEAR', dataset, fill_zeros=True)
+        ADVTR, z, dataset = self.getVarForCalculations('ADVTR', dataset)
+        W2ADV, z, dataset = self.getVarForCalculations('W2ADV', dataset)
+        BT, z, dataset = self.getVarForCalculations('BT', dataset)
+        W2BT, z, dataset = self.getVarForCalculations('W2BT', dataset)
+        BUOYA, z, dataset = self.getVarForCalculations('BUOYA', dataset)
+        W2BUOY, z, dataset = self.getVarForCalculations('W2BUOY', dataset)
+        DIFTR, z, dataset = self.getVarForCalculations('DIFTR', dataset)
+        W2DIFF, z, dataset = self.getVarForCalculations('W2DIFF', dataset)
+        DISSIP, z, dataset = self.getVarForCalculations('DISSIP', dataset)
+        PRESSTR, z, dataset = self.getVarForCalculations('PRESSTR', dataset)
+        W2PRES, z, dataset = self.getVarForCalculations('W2PRES', dataset)
+        W2REDIS, z, dataset = self.getVarForCalculations('W2REDIS', dataset)
+        SDMP, z, dataset = self.getVarForCalculations('SDMP', dataset)
+        W2SDMP, z, dataset = self.getVarForCalculations('W2SDMP', dataset)
+        SHEAR, z, dataset = self.getVarForCalculations('SHEAR', dataset)
         U2V2_RES = 2. * (BT - (ADVTR + BUOYA + PRESSTR + DIFTR + DISSIP + SDMP + SHEAR)) - W2BT + (W2ADV + W2BUOY + W2PRES + W2DIFF + W2SDMP + W2REDIS)
         return U2V2_RES, z
     
@@ -1381,12 +1381,12 @@ class VariableGroupSamBudgets(VariableGroup):
             dataset = dataset_override
         else:
             dataset = self.sam_file
-        W3ADV, z, dataset = self.getVarForCalculations('W3ADV', dataset, fill_zeros=True)
-        W3BT, z, dataset = self.getVarForCalculations('W3BT', dataset, fill_zeros=True)
-        W3BUOY, z, dataset = self.getVarForCalculations('W3BUOY', dataset, fill_zeros=True)
-        W3DIFF, z, dataset = self.getVarForCalculations('W3DIFF', dataset, fill_zeros=True)
-        W3PRES, z, dataset = self.getVarForCalculations('W3PRES', dataset, fill_zeros=True)
-        W3REDIS, z, dataset = self.getVarForCalculations('W3REDIS', dataset, fill_zeros=True)
+        W3ADV, z, dataset = self.getVarForCalculations('W3ADV', dataset)
+        W3BT, z, dataset = self.getVarForCalculations('W3BT', dataset)
+        W3BUOY, z, dataset = self.getVarForCalculations('W3BUOY', dataset)
+        W3DIFF, z, dataset = self.getVarForCalculations('W3DIFF', dataset)
+        W3PRES, z, dataset = self.getVarForCalculations('W3PRES', dataset)
+        W3REDIS, z, dataset = self.getVarForCalculations('W3REDIS', dataset)
         W3_RES = W3BT - (W3ADV + W3PRES + W3REDIS + W3BUOY + W3DIFF)
         return W3_RES, z
     
@@ -1402,8 +1402,8 @@ class VariableGroupSamBudgets(VariableGroup):
             dataset = dataset_override
         else:
             dataset = self.sam_file
-        WUANIZ, z, dataset = self.getVarForCalculations('WUANIZ', dataset, fill_zeros=True)
-        WUPRES, z, dataset = self.getVarForCalculations('WUPRES', dataset, fill_zeros=True)
+        WUANIZ, z, dataset = self.getVarForCalculations('WUANIZ', dataset)
+        WUPRES, z, dataset = self.getVarForCalculations('WUPRES', dataset)
         WU_ANIZ_PRES = WUANIZ + WUPRES
         return WU_ANIZ_PRES, z
     
@@ -1419,14 +1419,14 @@ class VariableGroupSamBudgets(VariableGroup):
             dataset = dataset_override
         else:
             dataset = self.sam_file
-        WUADV, z, dataset = self.getVarForCalculations('WUADV', dataset, fill_zeros=True)
-        WUANIZ, z, dataset = self.getVarForCalculations('WUANIZ', dataset, fill_zeros=True)
-        WUBT, z, dataset = self.getVarForCalculations('WUBT', dataset, fill_zeros=True)
-        WUBUOY, z, dataset = self.getVarForCalculations('WUBUOY', dataset, fill_zeros=True)
-        WUDIFF, z, dataset = self.getVarForCalculations('WUDIFF', dataset, fill_zeros=True)
-        WUPRES, z, dataset = self.getVarForCalculations('WUPRES', dataset, fill_zeros=True)
-        WUSHEAR, z, dataset = self.getVarForCalculations('WUSHEAR', dataset, fill_zeros=True)
-        WUSDMP, z, dataset = self.getVarForCalculations('WUSDMP', dataset, fill_zeros=True)
+        WUADV, z, dataset = self.getVarForCalculations('WUADV', dataset)
+        WUANIZ, z, dataset = self.getVarForCalculations('WUANIZ', dataset)
+        WUBT, z, dataset = self.getVarForCalculations('WUBT', dataset)
+        WUBUOY, z, dataset = self.getVarForCalculations('WUBUOY', dataset)
+        WUDIFF, z, dataset = self.getVarForCalculations('WUDIFF', dataset)
+        WUPRES, z, dataset = self.getVarForCalculations('WUPRES', dataset)
+        WUSHEAR, z, dataset = self.getVarForCalculations('WUSHEAR', dataset)
+        WUSDMP, z, dataset = self.getVarForCalculations('WUSDMP', dataset)
         WU_RES = WUBT - (WUDIFF + WUSHEAR + WUADV + WUPRES + WUANIZ + WUBUOY + WUSDMP)
         return WU_RES, z
     
@@ -1442,8 +1442,8 @@ class VariableGroupSamBudgets(VariableGroup):
             dataset = dataset_override
         else:
             dataset = self.sam_file
-        WVANIZ, z, dataset = self.getVarForCalculations('WVANIZ', dataset, fill_zeros=True)
-        WVPRES, z, dataset = self.getVarForCalculations('WVPRES', dataset, fill_zeros=True)
+        WVANIZ, z, dataset = self.getVarForCalculations('WVANIZ', dataset)
+        WVPRES, z, dataset = self.getVarForCalculations('WVPRES', dataset)
         WV_ANIZ_PRES = WVANIZ + WVPRES
         return WV_ANIZ_PRES, z
     
@@ -1459,14 +1459,14 @@ class VariableGroupSamBudgets(VariableGroup):
             dataset = dataset_override
         else:
             dataset = self.sam_file
-        WVADV, z, dataset = self.getVarForCalculations('WVADV', dataset, fill_zeros=True)
-        WVANIZ, z, dataset = self.getVarForCalculations('WVANIZ', dataset, fill_zeros=True)
-        WVBT, z, dataset = self.getVarForCalculations('WVBT', dataset, fill_zeros=True)
-        WVBUOY, z, dataset = self.getVarForCalculations('WVBUOY', dataset, fill_zeros=True)
-        WVDIFF, z, dataset = self.getVarForCalculations('WVDIFF', dataset, fill_zeros=True)
-        WVPRES, z, dataset = self.getVarForCalculations('WVPRES', dataset, fill_zeros=True)
-        WVSHEAR, z, dataset = self.getVarForCalculations('WVSHEAR', dataset, fill_zeros=True)
-        WVSDMP, z, dataset = self.getVarForCalculations('WVSDMP', dataset, fill_zeros=True)
+        WVADV, z, dataset = self.getVarForCalculations('WVADV', dataset)
+        WVANIZ, z, dataset = self.getVarForCalculations('WVANIZ', dataset)
+        WVBT, z, dataset = self.getVarForCalculations('WVBT', dataset)
+        WVBUOY, z, dataset = self.getVarForCalculations('WVBUOY', dataset)
+        WVDIFF, z, dataset = self.getVarForCalculations('WVDIFF', dataset)
+        WVPRES, z, dataset = self.getVarForCalculations('WVPRES', dataset)
+        WVSHEAR, z, dataset = self.getVarForCalculations('WVSHEAR', dataset)
+        WVSDMP, z, dataset = self.getVarForCalculations('WVSDMP', dataset)
         WV_RES = WVBT - (WVDIFF + WVSHEAR + WVADV + WVPRES + WVANIZ + WVBUOY + WVSDMP)
         return WV_RES, z
     

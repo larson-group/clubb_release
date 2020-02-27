@@ -16,7 +16,7 @@ class NetCdfVariable:
     Class used for conveniently storing the information about a given netcdf variable
     """
 
-    def __init__(self, name, ncdf_data, conversion_factor=1, start_time=0, end_time=-1, avg_axis=0, fill_zeros=False):
+    def __init__(self, name, ncdf_data, conversion_factor=1, start_time=0, end_time=-1, avg_axis=0):
         """
 
         :param name: the name of the variable as defined in the ncdf_data
@@ -25,7 +25,6 @@ class NetCdfVariable:
         :param start_time: The time value to being the averaging period, e.g. 181 minutes. Defaults to 0.
         :param end_time: The time value to stop the averaging period, e.g. 240 minutes. Defaults to -1.
         :param avg_axis: The axis to avg data over. 0 for time-avg, 1 for height avg
-        :param fill_zeros: If a variable is not found, setting fill_zeros to True allows pyplotgen to create a fake variable containing 0 for its values.
         """
 
         # If argument name is a list of aliases, find the correct one and assign it
@@ -49,7 +48,7 @@ class NetCdfVariable:
         self.avg_axis = avg_axis
         if isinstance(ncdf_data, dict):
             self.filter_datasets()
-        self.data = data_reader.getVarData(self.ncdf_data, self, fill_zeros=fill_zeros)
+        self.data = data_reader.getVarData(self.ncdf_data, self)
 
     def __getStartEndIndex__(self, data, start_value, end_value):
         """
@@ -185,15 +184,13 @@ class DataReader():
                         self.nc_datasets[case_key] = {sub_folder: {file_type: self.__loadNcFile__(abs_filename)} }
         return self.nc_datasets
 
-    def getVarData(self, netcdf_dataset, ncdf_variable, fill_zeros=False):
+    def getVarData(self, netcdf_dataset, ncdf_variable):
         """
         Given a Dataset and NetCdfVariable object, this function returns the numerical
         data for the given variable.
 
         :param netcdf_dataset: Dataset containing the given variable
         :param ncdf_variable: NetCdfVariable object to get data values for
-        :param fill_zeros: If the variable is not found in the Dataset, setting fill_zeros = True will allow
-            pyplotgen to autofill 0 for each datapoint.
         :return: The list of numeric values for the given variable
         """
         start_time_value = ncdf_variable.start_time
@@ -214,15 +211,11 @@ class DataReader():
         try:
             values = self.__getValuesFromNc__(netcdf_dataset, variable_name, conv_factor)
         except ValueError:
-            # Auto fill values with zeros if allowed, otherwise propagate the error
-            # if fill_zeros:
             size = 0
             for dimention in netcdf_dataset.dimensions.values():
                 if dimention.size > size:
                     size = dimention.size
             values = np.zeros(size)
-            # else:
-            #     raise
         if values.ndim > 1:  # not ncdf_variable.one_dimensional:
             values = self.__meanProfiles__(values, start_avg_index, end_avg_idx + 1, avg_axis=avg_axis)
 
@@ -366,9 +359,7 @@ class DataReader():
                 var_values = np.array([var_values])
             # break
         if var_values is None:
-            raise ValueError("Variable " + varname + " does not exist in ncdf_data file. If this is expected,"
-                                                     " try passing fill_zeros=True when you create the "
-                                                     "NetCdfVariable for " + varname + ".\nVariables found in dataset: " + str(ncdf_data))
+            raise ValueError("Variable " + varname + " does not exist in ncdf_data file.\nVariables found in dataset: " + str(ncdf_data))
 
 
         hrs_in_day = 24

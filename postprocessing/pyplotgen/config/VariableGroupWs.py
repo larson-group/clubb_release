@@ -34,8 +34,7 @@ class VariableGroupWs(VariableGroup):
                 'r408': ['wp2thlp'],
                 'hoc': ['wp2thlp'],
                 'e3sm': ['wp2thlp']
-            },
-                'fill_zeros': 'True', 'sci_scale': 0},
+            }, 'sci_scale': 0},
             {'var_names': {
                 'clubb': ['wp2rtp'],
                 'sam': ['WP2RTP'],

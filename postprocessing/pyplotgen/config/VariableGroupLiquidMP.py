@@ -116,7 +116,7 @@ class VariableGroupLiquidMP(VariableGroup):
         dataset = self.les_file
         if dataset_override != None:
             dataset = dataset_override
-        nc, z, dataset = self.getVarForCalculations('NC', dataset, fill_zeros=True)
+        nc, z, dataset = self.getVarForCalculations('NC', dataset)
         rho, z, dataset = self.getVarForCalculations('RHO', dataset)
         # z,z, dataset = self.getVarForCalculations(['z', 'lev', 'altitude'], self.les_file)
 
@@ -134,7 +134,7 @@ class VariableGroupLiquidMP(VariableGroup):
         if dataset_override != None:
             dataset = dataset_override
 
-        nr, z, dataset = self.getVarForCalculations('NR', dataset, fill_zeros=True)
+        nr, z, dataset = self.getVarForCalculations('NR', dataset)
         rho, z, dataset = self.getVarForCalculations('RHO', dataset)
         # z,z, dataset = self.getVarForCalculations(['z', 'lev', 'altitude'], self.les_file)
 

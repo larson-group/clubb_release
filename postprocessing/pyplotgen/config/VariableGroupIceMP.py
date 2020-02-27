@@ -89,7 +89,7 @@ class VariableGroupIceMP(VariableGroup):
                 'hoc': ['Ngm'],
                 'e3sm': ['Ngm']
             },
-                'sam_conv_factor': 10 ** 6, 'fill_zeros': True},
+                'sam_conv_factor': 10 ** 6},
             {'var_names': {
                 'clubb': ['rgm'],
                 'sam': ['QG'],
@@ -121,8 +121,8 @@ class VariableGroupIceMP(VariableGroup):
         dataset = self.les_file
         if dataset_override != None:
             dataset = dataset_override
-        ni, z, dataset = self.getVarForCalculations('NI', dataset, fill_zeros=True)
-        rho, z, dataset = self.getVarForCalculations('RHO', dataset, fill_zeros=True)
+        ni, z, dataset = self.getVarForCalculations('NI', dataset)
+        rho, z, dataset = self.getVarForCalculations('RHO', dataset)
         # z,z, dataset = self.getVarForCalculations(['z', 'lev', 'altitude'], self.les_file)
 
         nim = (ni * (10 ** 6) / rho)
@@ -137,8 +137,8 @@ class VariableGroupIceMP(VariableGroup):
         dataset = self.les_file
         if dataset_override != None:
             dataset = dataset_override
-        ns, z, dataset = self.getVarForCalculations('NS', dataset, fill_zeros=True)
-        rho, z, dataset = self.getVarForCalculations('RHO', dataset, fill_zeros=True)
+        ns, z, dataset = self.getVarForCalculations('NS', dataset)
+        rho, z, dataset = self.getVarForCalculations('RHO', dataset)
         # z,z, dataset = self.getVarForCalculations(['z', 'lev', 'altitude'], self.les_file)
 
         nsm = (ns * (10 ** 6) / rho)
