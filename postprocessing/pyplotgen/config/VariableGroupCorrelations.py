@@ -8,8 +8,8 @@ from src.VariableGroup import VariableGroup
 
 class VariableGroupCorrelations(VariableGroup):
 
-    def __init__(self, ncdf_datasets, case, sam_file=None, coamps_file=None, r408_dataset=None, hoc_dataset=None,
-                 e3sm_datasets=None):
+    def __init__(self, ncdf_datasets, case, les_file=None, coamps_file=None, r408_dataset=None, hoc_dataset=None,
+                 e3sm_datasets=None, sam_datasets=None):
         self.name = "w variables"
         self.variable_definitions = [
             {'var_names': {
@@ -76,5 +76,5 @@ class VariableGroupCorrelations(VariableGroup):
             }},
 
         ]
-        super().__init__(ncdf_datasets, case, sam_file=sam_file, coamps_file=coamps_file, r408_dataset=r408_dataset,
-                         hoc_dataset=hoc_dataset, e3sm_datasets=e3sm_datasets)
+        super().__init__(ncdf_datasets, case, les_file=les_file, coamps_file=coamps_file, r408_dataset=r408_dataset,
+                         hoc_dataset=hoc_dataset, e3sm_datasets=e3sm_datasets, sam_datasets=sam_datasets)

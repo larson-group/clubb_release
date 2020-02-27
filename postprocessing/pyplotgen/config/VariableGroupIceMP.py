@@ -8,13 +8,13 @@ from src.VariableGroup import VariableGroup
 
 class VariableGroupIceMP(VariableGroup):
 
-    def __init__(self, ncdf_datasets, case, sam_file=None, coamps_file=None, r408_dataset=None, hoc_dataset=None,
+    def __init__(self, ncdf_datasets, case, les_file=None, sam_datasets=None, coamps_file=None, r408_dataset=None, hoc_dataset=None,
                  e3sm_datasets=None):
         """
 
         :param ncdf_datasets:
         :param case:
-        :param sam_file:
+        :param les_file:
         """
         self.name = "ice mp variables"
         self.variable_definitions = [
@@ -109,31 +109,37 @@ class VariableGroupIceMP(VariableGroup):
             },
                 'type': Panel.TYPE_TIMESERIES}
         ]
-        super().__init__(ncdf_datasets, case, sam_file=sam_file, coamps_file=coamps_file, r408_dataset=r408_dataset,
-                         hoc_dataset=hoc_dataset, e3sm_datasets=e3sm_datasets)
+        super().__init__(ncdf_datasets, case, les_file=les_file, coamps_file=coamps_file, r408_dataset=r408_dataset,
+                         hoc_dataset=hoc_dataset, e3sm_datasets=e3sm_datasets, sam_datasets=sam_datasets)
 
-    def getNimSamLine(self):
+    def getNimSamLine(self, dataset_override=None):
         """
         Caclulates Nim from sam -> clubb using the equation
         (NI * 1e+6) ./ RHO
         :return:
         """
-        ni, z, dataset = self.getVarForCalculations('NI', self.sam_file, fill_zeros=True)
-        rho, z, dataset = self.getVarForCalculations('RHO', self.sam_file, fill_zeros=True)
-        # z,z, dataset = self.getVarForCalculations(['z', 'lev', 'altitude'], self.sam_file)
+        dataset = self.les_file
+        if dataset_override != None:
+            dataset = dataset_override
+        ni, z, dataset = self.getVarForCalculations('NI', dataset, fill_zeros=True)
+        rho, z, dataset = self.getVarForCalculations('RHO', dataset, fill_zeros=True)
+        # z,z, dataset = self.getVarForCalculations(['z', 'lev', 'altitude'], self.les_file)
 
         nim = (ni * (10 ** 6) / rho)
         return nim, z
 
-    def getNsmSamLine(self):
+    def getNsmSamLine(self, dataset_override=None):
         """
         Caclulates Nim from sam -> clubb using the equation
         (NS * 1e+6) ./ RHO
         :return:
         """
-        ns, z, dataset = self.getVarForCalculations('NS', self.sam_file, fill_zeros=True)
-        rho, z, dataset = self.getVarForCalculations('RHO', self.sam_file, fill_zeros=True)
-        # z,z, dataset = self.getVarForCalculations(['z', 'lev', 'altitude'], self.sam_file)
+        dataset = self.les_file
+        if dataset_override != None:
+            dataset = dataset_override
+        ns, z, dataset = self.getVarForCalculations('NS', dataset, fill_zeros=True)
+        rho, z, dataset = self.getVarForCalculations('RHO', dataset, fill_zeros=True)
+        # z,z, dataset = self.getVarForCalculations(['z', 'lev', 'altitude'], self.les_file)
 
         nsm = (ns * (10 ** 6) / rho)
         return nsm, z

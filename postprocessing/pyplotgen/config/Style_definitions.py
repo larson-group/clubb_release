@@ -39,13 +39,13 @@ E3SM_LINE_STYLE = 'c-'
 
 # Line Thicknesses
 CLUBB_LINE_THICKNESS = 2
-LES_LINE_THICKNESS = 6
+LES_LINE_THICKNESS = 3
 ARCHIVED_CLUBB_LINE_THICKNESS = 4
 E3SM_LINE_THICKNESS = 4
 THIN_LINE_THICKNESS = 1  # Used if --thin-lines is passed, overrides every other size
 # These are used when pyplotgen is oscillating between flat/dashed lines
 FLAT_LINE_THICKNESS = 2
-DASHED_LINE_THICKNESS = 4
+DASHED_LINE_THICKNESS = 5
 
 # Line Labels
 # This overrides using foldernames for line input folder line labels. Must be a list of strings.

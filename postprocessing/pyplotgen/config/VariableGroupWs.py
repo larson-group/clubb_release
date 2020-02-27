@@ -8,13 +8,13 @@ from src.VariableGroup import VariableGroup
 
 class VariableGroupWs(VariableGroup):
 
-    def __init__(self, ncdf_datasets, case, sam_file=None, coamps_file=None, r408_dataset=None, hoc_dataset=None,
-                 e3sm_datasets=None):
+    def __init__(self, ncdf_datasets, case, les_file=None, coamps_file=None, r408_dataset=None, hoc_dataset=None,
+                 e3sm_datasets=None, sam_datasets=None):
         """
 
         :param ncdf_datasets:
         :param case:
-        :param sam_file:
+        :param les_file:
         """
         self.name = "w variables"
         self.variable_definitions = [
@@ -82,5 +82,5 @@ class VariableGroupWs(VariableGroup):
             }, 'sci_scale': 0},
             # TODO LES
         ]
-        super().__init__(ncdf_datasets, case, sam_file, coamps_file=coamps_file, r408_dataset=r408_dataset,
-                         hoc_dataset=hoc_dataset, e3sm_datasets=e3sm_datasets)
+        super().__init__(ncdf_datasets, case, les_file, coamps_file=coamps_file, r408_dataset=r408_dataset,
+                         hoc_dataset=hoc_dataset, e3sm_datasets=e3sm_datasets, sam_datasets=sam_datasets)

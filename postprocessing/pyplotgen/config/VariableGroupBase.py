@@ -13,13 +13,13 @@ class VariableGroupBase(VariableGroup):
     of panels.
     """
 
-    def __init__(self, ncdf_datasets, case, sam_file=None, coamps_file=None, r408_dataset=None, hoc_dataset=None,
-                 e3sm_datasets=None):
+    def __init__(self, ncdf_datasets, case, les_file=None, coamps_file=None, r408_dataset=None, hoc_dataset=None,
+                 e3sm_datasets=None, sam_datasets=None):
         """
 
         :param ncdf_datasets:
         :param case:
-        :param sam_file:
+        :param les_file:
         """
         self.name = "base variables"
         self.variable_definitions = [
@@ -94,10 +94,10 @@ class VariableGroupBase(VariableGroup):
                 'hoc': ['wp3'],
                 'e3sm': ['wp3']
             },
-                'sam_name': 'W3', 'sci_scale': 0},
+                'sam_name': 'W3', 'sci_scale': 0, 'axis_title': "wp3"},
             {'var_names': {
                 'clubb': ['thlp2'],
-                'sam': ['thlp2', 'THLP2', 'TL2'],
+                'sam': ['THLP2', 'TL2'],
                 'coamps': ['thlp2'],
                 'r408': ['thlp2'],
                 'hoc': ['thlp2'],
@@ -382,7 +382,7 @@ class VariableGroupBase(VariableGroup):
 
             # TODO corr chi 2's
         ]
-        super().__init__(ncdf_datasets, case, sam_file=sam_file, coamps_file=coamps_file, r408_dataset=r408_dataset,
+        super().__init__(ncdf_datasets,  case, sam_datasets=sam_datasets, les_file=les_file, coamps_file=coamps_file, r408_dataset=r408_dataset,
                          hoc_dataset=hoc_dataset, e3sm_datasets=e3sm_datasets)
 
     def getThlmSamCalc(self, dataset_override=None):
@@ -392,11 +392,14 @@ class VariableGroupBase(VariableGroup):
         (THETAL + 2500.4.*(THETA./TABS).*(QI./1000))
         :return: requested variable data in the form of a list. Returned data is already cropped to the appropriate min,max indices
         """
-        # z,z, dataset = self.getVarForCalculations('z', self.sam_file)
-        thetal, z, dataset = self.getVarForCalculations('THETAL', self.sam_file)
-        theta, z, dataset = self.getVarForCalculations('THETA', self.sam_file)
-        tabs, z, dataset = self.getVarForCalculations('TABS', self.sam_file)
-        qi, z, dataset = self.getVarForCalculations('QI', self.sam_file, fill_zeros=True)
+        # z,z, dataset = self.getVarForCalculations('z', self.les_file)
+        dataset = self.les_file
+        if dataset_override != None:
+            dataset = dataset_override
+        thetal, z, dataset = self.getVarForCalculations('THETAL', dataset)
+        theta, z, dataset = self.getVarForCalculations('THETA', dataset)
+        tabs, z, dataset = self.getVarForCalculations('TABS', dataset)
+        qi, z, dataset = self.getVarForCalculations('QI', dataset, fill_zeros=True)
 
         thlm = thetal + (2500.4 * (theta / tabs) * (qi / 1000))
         return thlm, z
@@ -421,9 +424,12 @@ class VariableGroupBase(VariableGroup):
         (QT-QI) ./ 1000
         :return: requested variable data in the form of a list. Returned data is already cropped to the appropriate min,max indices
         """
-        # z,z, dataset = self.getVarForCalculations('z', self.sam_file)
-        qt, z, dataset = self.getVarForCalculations('QT', self.sam_file)
-        qi, z, dataset = self.getVarForCalculations('QI', self.sam_file, fill_zeros=True)
+        dataset = self.les_file
+        if dataset_override != None:
+            dataset = dataset_override
+        # z,z, dataset = self.getVarForCalculations('z', self.les_file)
+        qt, z, dataset = self.getVarForCalculations('QT', dataset)
+        qi, z, dataset = self.getVarForCalculations('QI', dataset, fill_zeros=True)
 
         rtm = (qt - qi) / 1000
         return rtm, z
@@ -436,13 +442,14 @@ class VariableGroupBase(VariableGroup):
         :return: requested variable data in the form of a list. Returned data is already cropped to the appropriate min,max indices
         """
         dataset = None
-        if self.sam_file is not None:
-            dataset = self.sam_file
-
+        if self.les_file is not None:
+            dataset = self.les_file
         if self.coamps_file is not None:
             dataset = self.coamps_file['sm']
+        if dataset_override != None:
+            dataset = dataset_override
 
-        # z,z, dataset = self.getVarForCalculations(['z', 'lev', 'altitude'], dataset)
+            # z,z, dataset = self.getVarForCalculations(['z', 'lev', 'altitude'], dataset)
         wp3, z, dataset = self.getVarForCalculations(['WP3', 'W3', 'wp3'], dataset)
         wp2, z, dataset = self.getVarForCalculations(['WP2', 'W2', 'wp2'], dataset)
 
@@ -459,15 +466,16 @@ class VariableGroupBase(VariableGroup):
         :return: requested variable data in the form of a list. Returned data is already cropped to the appropriate min,max indices
         """
         dataset = None
-        if self.sam_file is not None:
-            dataset = self.sam_file
+        if self.les_file is not None:
+            dataset = self.les_file
 
         if self.coamps_file is not None:
             dataset = self.coamps_file['sm']
-
-        # z,z, dataset = self.getVarForCalculations(['z', 'lev', 'altitude'], dataset)
-        rtp3, z, dataset = self.getVarForCalculations(['RTP3', 'qtp3'], dataset)
-        rtp2, z, dataset = self.getVarForCalculations(['RTP2', 'qtp2'], dataset)
+        if dataset_override != None:
+            dataset = dataset_override
+            # z,z, dataset = self.getVarForCalculations(['z', 'lev', 'altitude'], dataset)
+        rtp3, z, dataset = self.getVarForCalculations(['RTP3', 'qtp3'], dataset, fill_zeros=True)
+        rtp2, z, dataset = self.getVarForCalculations(['RTP2', 'qtp2'], dataset, fill_zeros=True)
         skrtp_zt = rtp3 / (rtp2 + 4e-16) ** 1.5
 
         return skrtp_zt, z
@@ -481,13 +489,16 @@ class VariableGroupBase(VariableGroup):
         :return: requested variable data in the form of a list. Returned data is already cropped to the appropriate min,max indices
         """
         dataset = None
-        if self.sam_file is not None:
-            dataset = self.sam_file
+        if self.les_file is not None:
+            dataset = self.les_file
 
         if self.coamps_file is not None:
             dataset = self.coamps_file['sm']
 
-        # z,z, dataset = self.getVarForCalculations(['z', 'lev', 'altitude'], dataset)
+        if dataset_override != None:
+            dataset = dataset_override
+
+            # z,z, dataset = self.getVarForCalculations(['z', 'lev', 'altitude'], dataset)
         thlp3, z, dataset = self.getVarForCalculations(['THLP3', 'thlp3'], dataset)
         thlp2, z, dataset = self.getVarForCalculations(['THLP2', 'thlp2'], dataset)
 
@@ -500,9 +511,14 @@ class VariableGroupBase(VariableGroup):
         WPTHLP = (TLFLUX) ./ (RHO * 1004)
         :return:
         """
-        tlflux, z, dataset = self.getVarForCalculations(['TLFLUX'], self.sam_file)
-        rho, z, dataset = self.getVarForCalculations(['RHO'], self.sam_file)
-        # z,z, dataset = self.getVarForCalculations(['z', 'lev', 'altitude'], self.sam_file)
+        dataset = None
+        if self.les_file is not None:
+            dataset = self.les_file
+        if dataset_override != None:
+            dataset = dataset_override
+        tlflux, z, dataset = self.getVarForCalculations(['TLFLUX'], dataset)
+        rho, z, dataset = self.getVarForCalculations(['RHO'], dataset)
+        # z,z, dataset = self.getVarForCalculations(['z', 'lev', 'altitude'], self.les_file)
 
         wpthlp = tlflux / (rho * 1004)
 
@@ -514,10 +530,15 @@ class VariableGroupBase(VariableGroup):
         WPRTP = (QTFLUX) ./ (RHO * 2.5104e+6)
         :return:
         """
-        qtflux, z, dataset = self.getVarForCalculations(['QTFLUX'], self.sam_file)
-        rho, z, dataset = self.getVarForCalculations(['RHO'], self.sam_file)
+        dataset = None
+        if self.les_file is not None:
+            dataset = self.les_file
+        if dataset_override != None:
+            dataset = dataset_override
+        qtflux, z, dataset = self.getVarForCalculations(['QTFLUX'], dataset)
+        rho, z, dataset = self.getVarForCalculations(['RHO'], dataset)
         wprtp = qtflux / (rho * 2.5104e+6)
-        # z,z, dataset = self.getVarForCalculations(['z', 'lev', 'altitude'], self.sam_file)
+        # z,z, dataset = self.getVarForCalculations(['z', 'lev', 'altitude'], self.les_file)
         return wprtp, z
 
     def getWpthvpFallback(self, dataset_override=None):
@@ -526,10 +547,15 @@ class VariableGroupBase(VariableGroup):
         WPTHVP =  (TVFLUX) ./ ( RHO * 1004)
         :return:
         """
-        tvflux, z, dataset = self.getVarForCalculations(['TVFLUX'], self.sam_file)
-        rho, z, dataset = self.getVarForCalculations(['RHO'], self.sam_file)
+        dataset = None
+        if self.les_file is not None:
+            dataset = self.les_file
+        if dataset_override != None:
+            dataset = dataset_override
+        tvflux, z, dataset = self.getVarForCalculations(['TVFLUX'], dataset)
+        rho, z, dataset = self.getVarForCalculations(['RHO'], dataset)
         wpthvp = tvflux / (rho * 1004)
-        # z,z, dataset = self.getVarForCalculations(['z', 'lev', 'altitude'], self.sam_file)
+        # z,z, dataset = self.getVarForCalculations(['z', 'lev', 'altitude'], self.les_file)
         return wpthvp, z
 
     def getRtp2Fallback(self, dataset_override=None):
@@ -538,9 +564,14 @@ class VariableGroupBase(VariableGroup):
         THLP2 = QT2 / 1e+6
         :return:
         """
-        qt2, z, dataset = self.getVarForCalculations(['QT2'], self.sam_file)
+        dataset = None
+        if self.les_file is not None:
+            dataset = self.les_file
+        if dataset_override != None:
+            dataset = dataset_override
+        qt2, z, dataset = self.getVarForCalculations(['QT2'], dataset)
         rtp2 = qt2 / 1e6
-        # z,z, dataset = self.getVarForCalculations(['z', 'lev', 'altitude'], self.sam_file)
+        # z,z, dataset = self.getVarForCalculations(['z', 'lev', 'altitude'], self.les_file)
         return rtp2, z
 
     def getRtp3Fallback(self, dataset_override=None):
@@ -555,7 +586,7 @@ class VariableGroupBase(VariableGroup):
         if dataset_override is not None:
             dataset = dataset_override
         else:
-            dataset = self.sam_file
+            dataset = self.les_file
         for dataset in dataset.values():
             if 'rc_coef_zm' in dataset.variables.keys() and 'rtprcp' in dataset.variables.keys():
                 rc_coef_zm, z, dataset = self.getVarForCalculations('rc_coef_zm', dataset)
@@ -601,7 +632,7 @@ class VariableGroupBase(VariableGroup):
         if dataset_override is not None:
             dataset = dataset_override
         else:
-            dataset = self.sam_file
+            dataset = self.les_file
         # z,z, dataset = self.getVarForCalculations(['z', 'lev', 'altitude'], dataset)
         WPRCP, z, dataset = self.getVarForCalculations('WPRCP', dataset, fill_zeros=True)
         PRES, z, dataset = self.getVarForCalculations('PRES', dataset, fill_zeros=True)

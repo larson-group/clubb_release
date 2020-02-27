@@ -21,7 +21,7 @@ class Case:
     definition to the list ALL_CASES = [...] at the bottom of the file).
     """
 
-    def __init__(self, case_definition, ncdf_datasets, diff_datasets=None,
+    def __init__(self, case_definition, ncdf_datasets, diff_datasets=None, sam_folders = [""],
                  plot_les=False, plot_budgets=False, plot_r408=False, plot_hoc=False, e3sm_dirs =[]):
         """
         Initialize a Case
@@ -52,15 +52,26 @@ class Case:
         self.plot_r408 = plot_r408
         self.plot_hoc = plot_hoc
         self.plot_e3sm = e3sm_dirs
+        self.sam_folders = sam_folders
         self.diff_datasets = diff_datasets
         self.next_panel_alphabetic_id_code = 97
         if 'disable_budgets' in case_definition.keys() and case_definition['disable_budgets'] is True:
             self.plot_budgets = False
 
-        sam_file = None
-        if plot_les and case_definition['sam_file'] is not None:
+        les_file = None
+        if plot_les and case_definition['les_file'] is not None:
             datareader = DataReader()
-            sam_file = datareader.__loadNcFile__(case_definition['sam_file'])
+            les_file = datareader.__loadNcFile__(case_definition['les_file'])
+
+        sam_datasets = {}
+        if len(sam_folders) != 0 and sam_folders != None and case_definition['sam_file'] != None:
+            datareader = DataReader()
+            for foldername in sam_folders:
+                sam_filename = foldername + case_definition['sam_file']
+                if path.exists(sam_filename):
+                    sam_datasets[foldername] = datareader.__loadNcFile__(sam_filename)
+                else:
+                    warn("Failed to find file " + sam_filename)
 
         e3sm_file = {}
         if len(e3sm_dirs) != 0 and e3sm_dirs != None and case_definition['e3sm_file'] != None:
@@ -105,7 +116,7 @@ class Case:
         self.panels = []
         self.diff_panels = []
         for VarGroup in self.var_groups:
-            temp_group = VarGroup(self.ncdf_datasets, self, sam_file=sam_file, coamps_file=coamps_datasets,
+            temp_group = VarGroup(self.ncdf_datasets, self, les_file=les_file, coamps_file=coamps_datasets, sam_datasets=sam_datasets,
                                   r408_dataset=r408_datasets, hoc_dataset=hoc_datasets, e3sm_datasets = e3sm_file)
 
             for panel in temp_group.panels:
@@ -114,7 +125,7 @@ class Case:
         # Convert panels to difference panels if user passed in --diff <<folder>>
         if self.diff_datasets is not None:
             for VarGroup in self.var_groups:
-                diff_group = VarGroup(self.diff_datasets, self, sam_file=sam_file, coamps_file=coamps_datasets,
+                diff_group = VarGroup(self.diff_datasets, self, sam_file=les_file, coamps_file=coamps_datasets,
                                       r408_file=r408_datasets, hoc_dataset=hoc_datasets, e3sm_datasets = e3sm_file)
                 for panel in diff_group.panels:
                     self.diff_panels.append(panel)

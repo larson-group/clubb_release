@@ -37,7 +37,9 @@ class NetCdfVariable:
                     name = tempname
                     break
         if isinstance(name, list):
-            raise NameError("None of the values " + str(name) + " were found in the dataset " + str(ncdf_data))
+            # changed to warn from 'raise NameError'
+            warn("None of the values " + str(name) + " were found in the dataset " + str(ncdf_data))
+            name = name[0]
         data_reader = DataReader()
         self.ncdf_data = ncdf_data
         self.name = name
@@ -213,14 +215,14 @@ class DataReader():
             values = self.__getValuesFromNc__(netcdf_dataset, variable_name, conv_factor)
         except ValueError:
             # Auto fill values with zeros if allowed, otherwise propagate the error
-            if fill_zeros:
-                size = 0
-                for dimention in netcdf_dataset.dimensions.values():
-                    if dimention.size > size:
-                        size = dimention.size
-                values = np.zeros(size)
-            else:
-                raise
+            # if fill_zeros:
+            size = 0
+            for dimention in netcdf_dataset.dimensions.values():
+                if dimention.size > size:
+                    size = dimention.size
+            values = np.zeros(size)
+            # else:
+            #     raise
         if values.ndim > 1:  # not ncdf_variable.one_dimensional:
             values = self.__meanProfiles__(values, start_avg_index, end_avg_idx + 1, avg_axis=avg_axis)
 
@@ -287,14 +289,16 @@ class DataReader():
         Output:
           unit as string
         """
+        units = "units n/a"
         for dataset in datasets:
             keys = dataset.variables.keys()
             if varname in keys:
-                unit = "$" + dataset.variables[varname].units + "$" # $'s are used to format equations
-                break
-            else:
-                unit = "n/a"
-        return unit
+                raw_units = dataset.variables[varname].units
+                raw_units = self.__remove_invalid_unit_chars__(raw_units)
+                if len(raw_units) > 0:
+                    units = "$" + raw_units + "$" # $'s are used to format equations
+                    break
+        return units
 
     def getLongName(self, ncdf_datasets, varnames):
         """
@@ -333,8 +337,9 @@ class DataReader():
             keys = dataset.variables.keys()
             if varname in keys:
                 imported_name = dataset.variables[varname].name
-                units = dataset.variables[varname].units
-                axis_title = imported_name + ' ' + '[$' + units + '$]' # $'s are used to format equations
+                units = self.__getUnits__([dataset], varname)#dataset.variables[varname].units
+                axis_title = imported_name
+                axis_title += ' ' + '[' + units + ']' # $'s are used to format equations
                 break
         return axis_title
 
@@ -453,3 +458,11 @@ class DataReader():
                 return 'e3sm'
             else:
                 return 'unknown-model'
+
+
+    def __remove_invalid_unit_chars__(self, units):
+        """
+        Removes characters from a string that are not valid for mathtext
+        """
+        units = units.replace('#', '')
+        return units

@@ -28,7 +28,7 @@ class PyPlotGen:
     """
 
     def __init__(self, input_folder, output_folder, replace=False, les=False, cgbest=False, hoc=False, plotrefs=False,
-                 zip=False, thin=False, no_legends=False, ensemble=False, plot_e3sm="",
+                 zip=False, thin=False, no_legends=False, ensemble=False, plot_e3sm="", sam_folders = [""],
                  budget_moments=False, bu_morr=False, diff=None, show_alphabetic_id=False,no_clubb=False):
         """
         This creates an instance of PyPlotGen. Each parameter is a command line parameter passed in from the argparser
@@ -56,6 +56,7 @@ class PyPlotGen:
         self.replace_images = replace
         self.les = les
         self.e3sm_dir = plot_e3sm
+        self.sam_folders = sam_folders
         self.cgbest = cgbest
         self.hoc = hoc
         self.plot_diff = diff
@@ -114,14 +115,14 @@ class PyPlotGen:
                     self.nc_datasets[casename] = None
                 if self.diff is not None:
                     case_diff_datasets = diff_datasets[casename]
-                case = Case(case_def, self.nc_datasets[casename], plot_les=self.les, plot_budgets=self.plot_budgets,
+                case = Case(case_def, self.nc_datasets[casename], plot_les=self.les, plot_budgets=self.plot_budgets, sam_folders = self.sam_folders,
                             diff_datasets=case_diff_datasets, plot_r408=self.cgbest, plot_hoc=self.hoc, e3sm_dirs=self.e3sm_dir)
                 case.plot(self.output_folder, replace_images=self.replace_images, no_legends=self.no_legends,
                           thin_lines=self.thin, show_alphabetic_id=self.show_alphabetic_id)
                 self.cases_plotted.append(casename)
         print('###########################################')
         if num_cases_plotted == 0:
-            warn("Warning, no cases were plotted! Make sure the input folder " + self.input_folder +
+            warn("Warning, no cases were plotted! Make sure the input folder " + str(self.input_folder) +
                  " contains .nc files or use the --input (-i) parameter to manually specify an input folder.")
         print("\nGenerating webpage for viewing plots ")
         if not os.path.exists(self.output_folder):
@@ -141,9 +142,9 @@ class PyPlotGen:
         :param all_case_names: List of all case names that can be plotted
         :return:
         """
-        sam_has_case = case_def['sam_file'] != None
         e3sm_has_case = self.e3sm_dir != "" and self.e3sm_dir != None and case_def['e3sm_file'] != None
-        return sam_has_case or e3sm_has_case or (not no_clubb and case_def['name'] in all_case_names)
+        sam_has_case = self.sam_folders != "" and self.sam_folders != None and case_def['sam_file'] != None
+        return e3sm_has_case or sam_has_case or (not no_clubb and case_def['name'] in all_case_names)
 
 
     def __copySetupFiles__(self):
@@ -245,8 +246,10 @@ def __process_args__():
                         help="For morrison microphysics: breaks microphysical source terms into component processes",
                         action="store_true")
     parser.add_argument("--diff", help="Plot the difference between two input folders", action="store")
-    parser.add_argument("-i", "--input", help="Input folder containing netcdf output data.", action="store",
+    parser.add_argument("-i", "--input", help="Input folder(s) containing clubb netcdf output data.", action="store",
                         default=["../../output"], nargs='+')
+    parser.add_argument("-s", "--sam", help="Input folder(s) containing sam netcdf output data.", action="store",
+                        default=[], nargs='+')
     parser.add_argument("-o", "--output", help="Name of folder to create and store plots into.", action="store",
                         default="./output")
     args = parser.parse_args()
@@ -267,6 +270,10 @@ def __process_args__():
         if args.input[i][-1] == "/":
             args.input[i] = args.input[i][:-1]
 
+    for i in range(len(args.sam)):
+        if args.sam[i][-1] == "/":
+            args.sam[i] = args.sam[i][:-1]
+
     for i in range(len(args.e3sm)):
         if args.e3sm[i][-1] == "/":
             args.e3sm[i] = args.e3sm[i][:-1]
@@ -280,7 +287,7 @@ def __process_args__():
         hoc = True
 
     pyplotgen = PyPlotGen(args.input, args.output, replace=args.replace, les=les, plot_e3sm=e3sm, cgbest=cgbest,
-                          hoc=hoc, plotrefs=args.all_best, zip=args.zip, thin=args.thin,
+                          hoc=hoc, plotrefs=args.all_best, zip=args.zip, thin=args.thin, sam_folders = args.sam,
                           no_legends=args.no_legends, ensemble=args.ensemble, budget_moments=args.plot_budgets,
                           bu_morr=args.bu_morr, diff=args.diff, show_alphabetic_id=args.show_alphabetic_id, no_clubb=args.no_clubb)
     return pyplotgen

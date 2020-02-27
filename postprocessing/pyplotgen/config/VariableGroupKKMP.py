@@ -8,13 +8,13 @@ from src.VariableGroup import VariableGroup
 
 class VariableGroupKKMP(VariableGroup):
 
-    def __init__(self, ncdf_datasets, case, sam_file=None, coamps_file=None, r408_dataset=None, hoc_dataset=None,
-                 e3sm_datasets=None):
+    def __init__(self, ncdf_datasets, case, les_file=None, coamps_file=None, r408_dataset=None, hoc_dataset=None,
+                 e3sm_datasets=None, sam_datasets=None):
         """
 
         :param ncdf_datasets:
         :param case:
-        :param sam_file:
+        :param les_file:
         """
         self.name = "kk mp variables"
         self.variable_definitions = [
@@ -46,5 +46,5 @@ class VariableGroupKKMP(VariableGroup):
             }}
 
         ]
-        super().__init__(ncdf_datasets, case, sam_file=sam_file, coamps_file=coamps_file, r408_dataset=r408_dataset,
-                         hoc_dataset=hoc_dataset, e3sm_datasets=e3sm_datasets)
+        super().__init__(ncdf_datasets, case, les_file=les_file, coamps_file=coamps_file, r408_dataset=r408_dataset,
+                         hoc_dataset=hoc_dataset, e3sm_datasets=e3sm_datasets,sam_datasets=sam_datasets)

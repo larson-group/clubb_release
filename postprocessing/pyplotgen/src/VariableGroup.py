@@ -25,24 +25,24 @@ class VariableGroup:
     calculating any 'calculated' variables from netcdf
     """
 
-    def __init__(self, ncdf_datasets, case, sam_file=None, coamps_file=None, r408_dataset=None, hoc_dataset=None,
-                 e3sm_datasets=None):
+    def __init__(self, ncdf_datasets, case, les_file=None, coamps_file=None, r408_dataset=None, hoc_dataset=None,
+                 e3sm_datasets=None, sam_datasets=None):
         """
         Initialize common VariableGroup parameters
         :param ncdf_datasets: A dictionary or Netcdf dataset containing the data to be plotted
         :param case: An instance of a Case object
-        :param sam_file: NetCDF4 Dataset object containing sam ouput
+        :param les_file: NetCDF4 Dataset object containing sam ouput
         :param coamps_file: NetCDF4 Dataset object containing coamps ouput
         :param r408_dataset: NetCDF4 Dataset object containing clubb r408 ('chris golaz') output
         """
-        print("\tGenerating variable-group data")
         self.variables = []
         self.panels = []
         self.defualt_panel_type = Panel.TYPE_PROFILE
         self.ncdf_files = ncdf_datasets
         self.case = case
-        self.sam_file = sam_file
+        self.les_file = les_file
         self.e3sm_datasets = e3sm_datasets
+        self.sam_datasets = sam_datasets
         self.coamps_file = coamps_file
         self.r408_dataset = r408_dataset
         self.hoc_dataset = hoc_dataset
@@ -53,7 +53,7 @@ class VariableGroup:
         self.height_max_value = case.height_max_value
 
         for variable in self.variable_definitions:
-            print("\tProcessing ", variable['var_names'])
+            print("\tProcessing ", variable['var_names']['clubb'])
 
             # Only add variable if none of the var_names are blacklisted
             all_var_names = []
@@ -159,14 +159,15 @@ class VariableGroup:
 
         if 'fill_zeros' in variable_def_dict.keys():
             fill_zeros = variable_def_dict['fill_zeros']
+        fill_zeros = True
 
         # TODO refactor these chunks into method arguments
-        sam_file = self.sam_file
-        sam_conv_factor = 1
+        les_file = self.les_file
+        les_conv_factor = 1
         if 'sam_calc' in variable_def_dict.keys():
-            sam_file = None  # don't try to autoplot sam if sam is a calculated value
+            les_file = None  # don't try to autoplot sam if sam is a calculated value
         if 'sam_conv_factor' in variable_def_dict.keys():
-            sam_conv_factor = variable_def_dict['sam_conv_factor']
+            les_conv_factor = variable_def_dict['sam_conv_factor']
 
         coamps_file = self.coamps_file
         coamps_conv_factor = 1
@@ -189,6 +190,13 @@ class VariableGroup:
         if 'hoc_conv_factor' in variable_def_dict.keys():
             hoc_conv_factor = variable_def_dict['hoc_conv_factor']
 
+        sam_dataset = self.sam_datasets
+        sam_conv_factor = 1
+        # if 'sam_calc' in variable_def_dict.keys():
+        #     sam_dataset = None  # don't try to autoplot sam if sam is a calculated value
+        if 'sam_conv_factor' in variable_def_dict.keys():
+            sam_conv_factor = variable_def_dict['sam_conv_factor']
+
         e3sm_dataset = self.e3sm_datasets
         e3sm_conv_factor = 1
         if 'e3sm_calc' in variable_def_dict.keys():
@@ -206,8 +214,8 @@ class VariableGroup:
             panel_type = variable_def_dict['type']
 
         all_lines = []
-        if sam_file is not None:
-            all_lines.extend(self.__getVarLines__(var_names['sam'], sam_file, conversion_factor=sam_conv_factor,
+        if les_file is not None:
+            all_lines.extend(self.__getVarLines__(var_names['sam'], les_file, conversion_factor=les_conv_factor,
                                                   label=Style_definitions.SAM_LABEL,
                                                   line_format=Style_definitions.LES_LINE_STYLE, fill_zeros=fill_zeros,
                                                   override_panel_type=panel_type,
@@ -233,18 +241,39 @@ class VariableGroup:
                                                   line_format=Style_definitions.HOC_LINE_STYLE, fill_zeros=fill_zeros,
                                                   override_panel_type=panel_type, fallback_func=fallback, lines=lines))
 
-        if e3sm_dataset is not None and len(e3sm_dataset) >0 and len(var_names['e3sm']) is not 0:
+        if sam_dataset is not None and len(sam_dataset) > 0:
+            # label = Style_definitions.E3SM_LABEL
+            # line_style = Style_definitions.E3SM_LINE_STYLE
+            for dataset_name in sam_dataset:
+                # if len(sam_dataset) is not 1:
+                label = os.path.basename(dataset_name)
+                line_style = ""
+
+                sam_data_was_calculated = False
+                if 'sam_calc' in variable_def_dict.keys():
+                    samplot_data, z = variable_def_dict['sam_calc'](dataset_override=sam_dataset)
+                    samplot = Line(samplot_data, z, label=label)
+                    all_lines.append(samplot)
+                    sam_data_was_calculated = True
+
+                if len(var_names['sam']) is not 0 and not sam_data_was_calculated:
+                    all_lines.extend(self.__getVarLines__(var_names['sam'], sam_dataset[dataset_name], conversion_factor=sam_conv_factor,
+                                                          label=label,
+                                                          line_format=line_style, fill_zeros=fill_zeros,
+                                                          override_panel_type=panel_type, fallback_func=fallback, lines=lines))
+
+
+        if e3sm_dataset is not None and len(e3sm_dataset) > 0 and len(var_names['e3sm']) is not 0:
             label = Style_definitions.E3SM_LABEL
             line_style = Style_definitions.E3SM_LINE_STYLE
             for dataset_name in e3sm_dataset:
                 if len(e3sm_dataset) is not 1:
                     label = os.path.basename(dataset_name)
-                    line_style =""
+                    line_style = ""
                 all_lines.extend(self.__getVarLines__(var_names['e3sm'], e3sm_dataset[dataset_name], conversion_factor=e3sm_conv_factor,
-                                                  label=label,
-                                                  line_format=line_style, fill_zeros=fill_zeros,
-                                                  override_panel_type=panel_type, fallback_func=fallback, lines=lines))
-
+                                                      label=label,
+                                                      line_format=line_style, fill_zeros=fill_zeros,
+                                                      override_panel_type=panel_type, fallback_func=fallback, lines=lines))
 
         num_folders_plotted = 0
         if self.ncdf_files is not None:
@@ -260,12 +289,18 @@ class VariableGroup:
             label = ""
 
         var_names = variable_def_dict['var_names']
-        clubb_name = var_names['clubb'][0]
+        plotted_models_varname = "unknown_model_var"
+        if self.ncdf_files is not None:
+            plotted_models_varname = var_names['clubb'][0]
+        elif self.ncdf_files is None and self.sam_datasets is not None and len(var_names['sam']) is not 0:
+            plotted_models_varname = var_names['sam'][0]
+        elif self.ncdf_files is None and self.e3sm_datasets is not None and len(var_names['e3sm']) is not 0:
+            plotted_models_varname = var_names['e3sm'][0]
         variable_def_dict['plots'] = all_lines
         first_input_datasets = self.getTextDefiningDataset()
         if 'title' not in variable_def_dict.keys():
             if panel_type == Panel.TYPE_BUDGET:
-                variable_def_dict['title'] = label + ' ' + clubb_name
+                variable_def_dict['title'] = label + ' ' + plotted_models_varname
             else:
                 all_var_names = []
                 for model_var_names in var_names.values():
@@ -277,11 +312,12 @@ class VariableGroup:
                 any_varname_with_budget_units = all_lines[0].label
                 variable_def_dict['axis_title'] = "[" + data_reader.__getUnits__(first_input_datasets, any_varname_with_budget_units) + "]"
             else:
-                imported_axis_title = data_reader.getAxisTitle(first_input_datasets, clubb_name)
+                imported_axis_title = data_reader.getAxisTitle(first_input_datasets, plotted_models_varname)
                 variable_def_dict['axis_title'] = imported_axis_title
 
-        if 'sam_calc' in variable_def_dict.keys() and self.sam_file is not None and data_reader.getNcdfSourceModel(
-                self.sam_file) == 'sam':
+        # Handle SAM calculations for Benchmark data
+        if 'sam_calc' in variable_def_dict.keys() and self.les_file is not None and data_reader.getNcdfSourceModel(
+                self.les_file) == 'sam':
             samplot_data, z = variable_def_dict['sam_calc']()
             samplot = Line(samplot_data, z, line_format=Style_definitions.LES_LINE_STYLE,
                            label=Style_definitions.SAM_LABEL)
@@ -298,12 +334,11 @@ class VariableGroup:
                 self.e3sm_datasets) == 'e3sm':
             e3smplot_data, z = variable_def_dict['e3sm_calc']()
             e3smplot = Line(e3smplot_data, z, line_format=Style_definitions.E3SM_LINE_STYLE,
-                           label=Style_definitions.E3SM_LABEL)
+                            label=Style_definitions.E3SM_LABEL)
             variable_def_dict['plots'].append(e3smplot)
 
         if len(variable_def_dict['plots']) > 0:
             self.variables.append(variable_def_dict)
-
 
     def getTextDefiningDataset(self):
         """
@@ -313,9 +348,9 @@ class VariableGroup:
         :return:
         """
 
-    #     self.coamps_file = coamps_file
-    # self.r408_dataset = r408_dataset
-    # self.hoc_dataset = hoc_dataset
+        #     self.coamps_file = coamps_file
+        # self.r408_dataset = r408_dataset
+        # self.hoc_dataset = hoc_dataset
 
         datasets = []
         if self.ncdf_files is not None:
@@ -329,10 +364,12 @@ class VariableGroup:
                     raise TypeError("getTextDefiningDataset recieved an unexpected format of datasets")
         if self.e3sm_datasets is not None:
             for dataset in self.e3sm_datasets.values():
-                # for dataset in input_folder.values():
                 datasets.append(dataset)
-        if self.sam_file is not None:
-            datasets.append(self.sam_file)
+        if self.sam_datasets is not None:
+            for dataset in self.sam_datasets.values():
+                datasets.append(dataset)
+        if self.les_file is not None:
+            datasets.append(self.les_file)
         if self.coamps_file is not None:
             datasets.extend(self.coamps_file.values())
         if self.r408_dataset is not None:
@@ -367,7 +404,7 @@ class VariableGroup:
     def __getVarLines__(self, var_names, ncdf_datasets, label="", line_format="", avg_axis=0, override_panel_type=None,
                         fallback_func=None, fill_zeros=False, lines=None, conversion_factor=1):
         """
-        Get a list of Line objects for a specific clubb variable. If sam_file is specified it will also
+        Get a list of Line objects for a specific clubb variable. If les_file is specified it will also
         attempt to generate Lines for the SAM equivalent variables, using the name conversions found in
         VarnameConversions.py. If a SAM variable needs to be calculated (uses an equation) then it will have
         to be created within that variable group's dataset and not here.
@@ -399,33 +436,39 @@ class VariableGroup:
         if isinstance(ncdf_datasets, Dataset):
             ncdf_datasets = {'converted_to_dict': ncdf_datasets}
         line = None
+        var_found = False
+        i = 0
         for dataset in ncdf_datasets.values():
-            for varname in var_names:
-                if varname not in dataset.variables.keys():
-                    continue  # Skip loop if varname isn't in the dataset, this avoids some crashes
-                if panel_type is Panel.TYPE_PROFILE:
-                    line = self.__get_profile_line__(varname, dataset, label, line_format, conversion_factor, avg_axis,
-                                                     fill_zeros)
-                    break
-                elif panel_type is Panel.TYPE_BUDGET:
-                    # for overline in lines:
-                    if varname in dataset.variables.keys():
-                        budget_lines = self.__get_budget_lines__(lines, dataset, fill_zeros, label, line_format)
-                        all_lines.extend(budget_lines)
-                elif panel_type is Panel.TYPE_TIMESERIES:
-                    line = self.__get_timeseries_line__(varname, dataset, self.end_time, conversion_factor, label,
-                                                        line_format, fill_zeros)
-                else:
-                    raise ValueError(
-                        'Invalid panel type ' + panel_type + '. Valid options are profile, budget, timeseries')
-        if line is None and panel_type != Panel.TYPE_BUDGET and fill_zeros is False:
+            i += 1
+            k = 0
+            if not var_found:
+                for varname in var_names:
+                    k += 1
+                    var_found = varname in dataset.variables.keys() or var_found
+                    last_iter = i >= len(ncdf_datasets.values()) and k >= len(var_names)
+                    if not var_found:# and not last_iter:
+                        continue  # Skip loop if varname isn't in the dataset, this avoids some crashes
+                    if panel_type is Panel.TYPE_PROFILE:
+                        line = self.__get_profile_line__(varname, dataset, label, line_format, conversion_factor, avg_axis, fill_zeros)
+                        break
+                    if panel_type is Panel.TYPE_BUDGET:
+                        # for overline in lines:
+                        if varname in dataset.variables.keys():
+                            budget_lines = self.__get_budget_lines__(lines, dataset, fill_zeros, label, line_format)
+                            all_lines.extend(budget_lines)
+                    elif panel_type is Panel.TYPE_TIMESERIES:
+                        line = self.__get_timeseries_line__(varname, dataset, self.end_time, conversion_factor, label, line_format, fill_zeros)
+                    elif panel_type:
+                        raise ValueError(
+                            'Invalid panel type ' + panel_type + '. Valid options are profile, budget, timeseries')
+        no_line_data = False
+        if line is not None:
+            no_line_data = len(line.x) == 0 or len(line.y) ==0
+        if (line is None or no_line_data) and panel_type != Panel.TYPE_BUDGET:# and fill_zeros is False:
             datareader = DataReader()
             src_model = datareader.getNcdfSourceModel(dataset)
-
-            # TODO re-enable this print under a verbose print mode
-            print("\tFailed to find variable " + str(var_names) + " in " + src_model + " output for " + " case " + str(
-                self.casename) +
-                  ". Attempting to use fallback function.")
+            print("\tFailed to find variable " + str(var_names) + " in " + src_model + " output for " + " case " + str(self.casename) + ". Attempting to use "
+                                                                                                                                        "fallback function.")
             line = self.__getVarDataFromFallback__(fallback_func, var_names, ncdf_datasets, label, line_format)
         if panel_type != Panel.TYPE_BUDGET and line is not None:
             all_lines.append(line)
@@ -498,9 +541,6 @@ class VariableGroup:
                 if varname in dataset.variables.keys():
                     variable = NetCdfVariable(varname, dataset, start_time=self.start_time, end_time=self.end_time,
                                               fill_zeros=fill_zeros)
-                    # if 'altitude' in dataset.variables.keys():
-                    #     z = NetCdfVariable('altitude', dataset, start_time=self.start_time, end_time=self.end_time)
-                    # else:
                     z = NetCdfVariable(Case_definitions.HEIGHT_VAR_NAMES, dataset, start_time=self.start_time, end_time=self.end_time)
                     variable.constrain(self.height_min_value, self.height_max_value, data=z.data)
                     z.constrain(self.height_min_value, self.height_max_value)
@@ -511,8 +551,6 @@ class VariableGroup:
                     break
 
             if not line_added:
-                # TODO re-enable this print under a verbose print mode
-
                 print("\tFailed to find variable " + varname + " in case " + self.casename +
                       ". Attempting to use fallback function.")
                 if 'fallback_func' in line_definition.keys():
@@ -546,15 +584,15 @@ class VariableGroup:
         try:
             vardata, z = fallback(dataset_override=datasets)
             varline = Line(vardata, z, line_format=line_format, label=label)
-            # TODO Re-enable this under a 'verbose' runmode
             print("\tFallback for ", varname, " successful")
             return varline
         # except ValueError as e:
         #     # variable wasn't contained in dataset, try next dataset
         #     continue
         except TypeError as e:
-            warn("Fallback failed for variable " + str(varname) + ". Skipping it.\n" + str(e))
-            return None
+            warn("Fallback failed for variable " + str(varname) + ". Replacing with a point at zero.\n" + str(e))
+            varline = Line(np.array([0]), np.array([0]), line_format=line_format, label=label)
+            return varline#None
         warn("Fallback failed for variable " + str(varname) + ". Skipping it.\n")
         return None
 
@@ -590,7 +628,6 @@ class VariableGroup:
             else:
                 continue
         return var_data, z, dataset_used
-
 
     def isSurfaceData(self, dataset):
         """
