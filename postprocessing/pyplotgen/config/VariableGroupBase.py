@@ -392,9 +392,9 @@ class VariableGroupBase(VariableGroup):
         (THETAL + 2500.4.*(THETA./TABS).*(QI./1000))
         :return: requested variable data in the form of a list. Returned data is already cropped to the appropriate min,max indices
         """
-        # z,z, dataset = self.getVarForCalculations('z', self.les_file)
-        dataset = self.les_file
-        if dataset_override != None:
+        # z,z, dataset = self.getVarForCalculations('z', self.les_dataset)
+        dataset = self.les_dataset
+        if dataset_override is not None:
             dataset = dataset_override
         thetal, z, dataset = self.getVarForCalculations('THETAL', dataset)
         theta, z, dataset = self.getVarForCalculations('THETA', dataset)
@@ -424,10 +424,10 @@ class VariableGroupBase(VariableGroup):
         (QT-QI) ./ 1000
         :return: requested variable data in the form of a list. Returned data is already cropped to the appropriate min,max indices
         """
-        dataset = self.les_file
-        if dataset_override != None:
+        dataset = self.les_dataset
+        if dataset_override is not None:
             dataset = dataset_override
-        # z,z, dataset = self.getVarForCalculations('z', self.les_file)
+        # z,z, dataset = self.getVarForCalculations('z', self.les_dataset)
         qt, z, dataset = self.getVarForCalculations('QT', dataset)
         qi, z, dataset = self.getVarForCalculations('QI', dataset)
 
@@ -442,11 +442,11 @@ class VariableGroupBase(VariableGroup):
         :return: requested variable data in the form of a list. Returned data is already cropped to the appropriate min,max indices
         """
         dataset = None
-        if self.les_file is not None:
-            dataset = self.les_file
-        if self.coamps_file is not None:
-            dataset = self.coamps_file['sm']
-        if dataset_override != None:
+        if self.les_dataset is not None:
+            dataset = self.les_dataset
+        if self.coamps_dataset is not None:
+            dataset = self.coamps_dataset['sm']
+        if dataset_override is not None:
             dataset = dataset_override
 
             # z,z, dataset = self.getVarForCalculations(['z', 'lev', 'altitude'], dataset)
@@ -466,12 +466,12 @@ class VariableGroupBase(VariableGroup):
         :return: requested variable data in the form of a list. Returned data is already cropped to the appropriate min,max indices
         """
         dataset = None
-        if self.les_file is not None:
-            dataset = self.les_file
+        if self.les_dataset is not None:
+            dataset = self.les_dataset
 
-        if self.coamps_file is not None:
-            dataset = self.coamps_file['sm']
-        if dataset_override != None:
+        if self.coamps_dataset is not None:
+            dataset = self.coamps_dataset['sm']
+        if dataset_override is not None:
             dataset = dataset_override
             # z,z, dataset = self.getVarForCalculations(['z', 'lev', 'altitude'], dataset)
         rtp3, z, dataset = self.getVarForCalculations(['RTP3', 'qtp3'], dataset)
@@ -489,13 +489,13 @@ class VariableGroupBase(VariableGroup):
         :return: requested variable data in the form of a list. Returned data is already cropped to the appropriate min,max indices
         """
         dataset = None
-        if self.les_file is not None:
-            dataset = self.les_file
+        if self.les_dataset is not None:
+            dataset = self.les_dataset
 
-        if self.coamps_file is not None:
-            dataset = self.coamps_file['sm']
+        if self.coamps_dataset is not None:
+            dataset = self.coamps_dataset['sm']
 
-        if dataset_override != None:
+        if dataset_override is not None:
             dataset = dataset_override
 
             # z,z, dataset = self.getVarForCalculations(['z', 'lev', 'altitude'], dataset)
@@ -512,13 +512,13 @@ class VariableGroupBase(VariableGroup):
         :return:
         """
         dataset = None
-        if self.les_file is not None:
-            dataset = self.les_file
-        if dataset_override != None:
+        if self.les_dataset is not None:
+            dataset = self.les_dataset
+        if dataset_override is not None:
             dataset = dataset_override
         tlflux, z, dataset = self.getVarForCalculations(['TLFLUX'], dataset)
         rho, z, dataset = self.getVarForCalculations(['RHO'], dataset)
-        # z,z, dataset = self.getVarForCalculations(['z', 'lev', 'altitude'], self.les_file)
+        # z,z, dataset = self.getVarForCalculations(['z', 'lev', 'altitude'], self.les_dataset)
 
         wpthlp = tlflux / (rho * 1004)
 
@@ -531,14 +531,14 @@ class VariableGroupBase(VariableGroup):
         :return:
         """
         dataset = None
-        if self.les_file is not None:
-            dataset = self.les_file
-        if dataset_override != None:
+        if self.les_dataset is not None:
+            dataset = self.les_dataset
+        if dataset_override is not None:
             dataset = dataset_override
         qtflux, z, dataset = self.getVarForCalculations(['QTFLUX'], dataset)
         rho, z, dataset = self.getVarForCalculations(['RHO'], dataset)
         wprtp = qtflux / (rho * 2.5104e+6)
-        # z,z, dataset = self.getVarForCalculations(['z', 'lev', 'altitude'], self.les_file)
+        # z,z, dataset = self.getVarForCalculations(['z', 'lev', 'altitude'], self.les_dataset)
         return wprtp, z
 
     def getWpthvpFallback(self, dataset_override=None):
@@ -548,14 +548,14 @@ class VariableGroupBase(VariableGroup):
         :return:
         """
         dataset = None
-        if self.les_file is not None:
-            dataset = self.les_file
-        if dataset_override != None:
+        if self.les_dataset is not None:
+            dataset = self.les_dataset
+        if dataset_override is not None:
             dataset = dataset_override
         tvflux, z, dataset = self.getVarForCalculations(['TVFLUX'], dataset)
         rho, z, dataset = self.getVarForCalculations(['RHO'], dataset)
         wpthvp = tvflux / (rho * 1004)
-        # z,z, dataset = self.getVarForCalculations(['z', 'lev', 'altitude'], self.les_file)
+        # z,z, dataset = self.getVarForCalculations(['z', 'lev', 'altitude'], self.les_dataset)
         return wpthvp, z
 
     def getRtp2Fallback(self, dataset_override=None):
@@ -565,13 +565,13 @@ class VariableGroupBase(VariableGroup):
         :return:
         """
         dataset = None
-        if self.les_file is not None:
-            dataset = self.les_file
-        if dataset_override != None:
+        if self.les_dataset is not None:
+            dataset = self.les_dataset
+        if dataset_override is not None:
             dataset = dataset_override
         qt2, z, dataset = self.getVarForCalculations(['QT2'], dataset)
         rtp2 = qt2 / 1e6
-        # z,z, dataset = self.getVarForCalculations(['z', 'lev', 'altitude'], self.les_file)
+        # z,z, dataset = self.getVarForCalculations(['z', 'lev', 'altitude'], self.les_dataset)
         return rtp2, z
 
     def getRtp3Fallback(self, dataset_override=None):
@@ -586,7 +586,7 @@ class VariableGroupBase(VariableGroup):
         if dataset_override is not None:
             dataset = dataset_override
         else:
-            dataset = self.les_file
+            dataset = self.les_dataset
         for dataset in dataset.values():
             if 'rc_coef_zm' in dataset.variables.keys() and 'rtprcp' in dataset.variables.keys():
                 rc_coef_zm, z, dataset = self.getVarForCalculations('rc_coef_zm', dataset)
@@ -613,7 +613,7 @@ class VariableGroupBase(VariableGroup):
         if dataset_override is not None:
             dataset = dataset_override
         else:
-            dataset = self.ncdf_files['zm']
+            dataset = self.clubb_datasets['zm']
         rc_coef_zm, z, dataset = self.getVarForCalculations('rc_coef_zm', dataset)
         wprcp, z, dataset = self.getVarForCalculations('wprcp', dataset)
         # z,z, dataset = self.getVarForCalculations(['z', 'lev', 'altitude'], dataset)
@@ -632,7 +632,7 @@ class VariableGroupBase(VariableGroup):
         if dataset_override is not None:
             dataset = dataset_override
         else:
-            dataset = self.les_file
+            dataset = self.les_dataset
         # z,z, dataset = self.getVarForCalculations(['z', 'lev', 'altitude'], dataset)
         WPRCP, z, dataset = self.getVarForCalculations('WPRCP', dataset)
         PRES, z, dataset = self.getVarForCalculations('PRES', dataset)
@@ -652,7 +652,7 @@ class VariableGroupBase(VariableGroup):
         if dataset_override is not None:
             dataset = dataset_override
         else:
-            dataset = self.ncdf_files['zm']
+            dataset = self.clubb_datasets['zm']
         # z,z, dataset = self.getVarForCalculations(['z', 'lev', 'altitude'], dataset)
         rc_coef_zm, z, dataset = self.getVarForCalculations('rc_coef_zm', dataset)
         thlprcp, z, dataset = self.getVarForCalculations('thlprcp', dataset)
@@ -670,7 +670,7 @@ class VariableGroupBase(VariableGroup):
         if dataset_override is not None:
             dataset = dataset_override
         else:
-            dataset = self.ncdf_files['zm']
+            dataset = self.clubb_datasets['zm']
         # z,z, dataset = self.getVarForCalculations(['z', 'lev', 'altitude'], dataset)
         rc_coef_zm, z, dataset = self.getVarForCalculations('rc_coef_zm', dataset)
         rtprcp, z, dataset = self.getVarForCalculations('rtprcp', dataset)
@@ -687,7 +687,7 @@ class VariableGroupBase(VariableGroup):
         if dataset_override is not None:
             dataset = dataset_override['sw']
         else:
-            dataset = self.coamps_file['sw']
+            dataset = self.coamps_dataset['sw']
         # z,z, dataset = self.getVarForCalculations(['z', 'lev', 'altitude'], dataset)
         wpup, z, dataset = self.getVarForCalculations('wpup', dataset)
         wpup_sgs, z, dataset = self.getVarForCalculations('wpup_sgs', dataset)
@@ -704,7 +704,7 @@ class VariableGroupBase(VariableGroup):
         if dataset_override is not None:
             dataset = dataset_override['sw']
         else:
-            dataset = self.coamps_file['sw']
+            dataset = self.coamps_dataset['sw']
         # z,z, dataset = self.getVarForCalculations(['z', 'lev', 'altitude'], dataset)
         wpvp, z, dataset = self.getVarForCalculations('wpvp', dataset)
         wpvp_sgs, z, dataset = self.getVarForCalculations('wpvp_sgs', dataset)
@@ -718,7 +718,7 @@ class VariableGroupBase(VariableGroup):
         :param dataset_override:
         :return:
         """
-        dataset = self.coamps_file['sw']
+        dataset = self.coamps_dataset['sw']
         # z,z, dataset = self.getVarForCalculations(['z', 'lev', 'altitude'], dataset)
         wpqcp, z, dataset = self.getVarForCalculations('wqpcp', dataset)
         ex0, z, dataset = self.getVarForCalculations('ex0', dataset)
@@ -733,7 +733,7 @@ class VariableGroupBase(VariableGroup):
         :param dataset_override:
         :return:
         """
-        dataset = self.coamps_file['sw']
+        dataset = self.coamps_dataset['sw']
         # z,z, dataset = self.getVarForCalculations(['z', 'lev', 'altitude'], dataset)
         thlpqcp, z, dataset = self.getVarForCalculations('thlpqcp', dataset)
         ex0, z, dataset = self.getVarForCalculations('ex0', dataset)
@@ -748,7 +748,7 @@ class VariableGroupBase(VariableGroup):
         :param dataset_override:
         :return:
         """
-        dataset = self.coamps_file['sw']
+        dataset = self.coamps_dataset['sw']
         # z,z, dataset = self.getVarForCalculations(['z', 'lev', 'altitude'], dataset)
         qtpqcp, z, dataset = self.getVarForCalculations('qtpqcp', dataset)
         ex0, z, dataset = self.getVarForCalculations('ex0', dataset)

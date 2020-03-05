@@ -3,6 +3,7 @@
 :date: Mid 2019
 """
 import os
+from pathlib import Path
 from warnings import warn
 
 import numpy as np
@@ -38,19 +39,21 @@ class VariableGroup:
         self.variables = []
         self.panels = []
         self.defualt_panel_type = Panel.TYPE_PROFILE
-        self.ncdf_files = ncdf_datasets
+        self.clubb_datasets = ncdf_datasets
         self.case = case
-        self.les_file = les_file
+        self.les_dataset = les_file
         self.e3sm_datasets = e3sm_datasets
         self.sam_datasets = sam_datasets
-        self.coamps_file = coamps_file
-        self.r408_dataset = r408_dataset
-        self.hoc_dataset = hoc_dataset
+        self.coamps_dataset = coamps_file
+        self.r408_datasets = r408_dataset
+        self.hoc_datasets = hoc_dataset
         self.casename = case.name
         self.start_time = case.start_time
         self.end_time = case.end_time
         self.height_min_value = case.height_min_value
         self.height_max_value = case.height_max_value
+
+
 
         for variable in self.variable_definitions:
             print("\tProcessing ", variable['var_names']['clubb'])
@@ -59,10 +62,11 @@ class VariableGroup:
             all_var_names = []
             for model_var_names in variable['var_names'].values():
                 all_var_names.extend(model_var_names)
-            if len(list(set(all_var_names).intersection(
-                    case.blacklisted_variables))) == 0:  # variable['var_names'] not in case.blacklisted_variables:
-                # Skip this variable if it's blacklisted for the case
+
+            variable_is_blacklisted = len(list(set(all_var_names).intersection(case.blacklisted_variables))) != 0
+            if not variable_is_blacklisted:
                 self.addVariable(variable)
+
         self.generatePanels()
 
     def addVariable(self, variable_def_dict):
@@ -149,187 +153,105 @@ class VariableGroup:
 
         """
 
-        data_reader = DataReader()
         var_names = variable_def_dict['var_names']
-        lines = None
 
-        # TODO refactor these chunks into method arguments
-        les_file = self.les_file
-        les_conv_factor = 1
-        if 'sam_calc' in variable_def_dict.keys():
-            les_file = None  # don't try to autoplot sam if sam is a calculated value
-        if 'sam_conv_factor' in variable_def_dict.keys():
-            les_conv_factor = variable_def_dict['sam_conv_factor']
+        plot_les = self.les_dataset is not None #and 'sam_calc' not in variable_def_dict.keys()
+        plot_coamps = self.coamps_dataset is not None #and 'coamps_calc' not in variable_def_dict.keys()
+        plot_r408 = self.r408_datasets is not None #and 'r408_calc' not in variable_def_dict.keys()
+        plot_hoc = self.hoc_datasets is not None #and 'hoc_calc' not in variable_def_dict.keys()
 
-        coamps_file = self.coamps_file
-        coamps_conv_factor = 1
-        if 'coamps_calc' in variable_def_dict.keys():
-            coamps_file = None  # don't try to autoplot coamps if coamps is a calculated value
-        if 'coamps_conv_factor' in variable_def_dict.keys():
-            coamps_conv_factor = variable_def_dict['coamps_conv_factor']
+        plot_sam = self.sam_datasets is not None and len(self.sam_datasets) > 0 and (len(var_names['sam']) is not 0 or 'sam_calc' in variable_def_dict.keys())
+        plot_e3sm = self.e3sm_datasets is not None and len(self.e3sm_datasets) > 0 and (len(var_names['e3sm']) is not 0 or 'e3sm_calc' in variable_def_dict.keys())
+        plot_clubb = self.clubb_datasets is not None
 
-        r408_dataset = self.r408_dataset
-        r408_conv_factor = 1
-        if 'r408_calc' in variable_def_dict.keys():
-            r408_dataset = None  # don't try to autoplot if calculated value
-        if 'r408_conv_factor' in variable_def_dict.keys():
-            r408_conv_factor = variable_def_dict['r408_conv_factor']
-
-        hoc_dataset = self.hoc_dataset
-        hoc_conv_factor = 1
-        if 'hoc_calc' in variable_def_dict.keys():
-            hoc_dataset = None  # don't try to autoplot if calculated value
-        if 'hoc_conv_factor' in variable_def_dict.keys():
-            hoc_conv_factor = variable_def_dict['hoc_conv_factor']
-
-        sam_dataset = self.sam_datasets
-        sam_conv_factor = 1
-        # if 'sam_calc' in variable_def_dict.keys():
-        #     sam_dataset = None  # don't try to autoplot sam if sam is a calculated value
-        if 'sam_conv_factor' in variable_def_dict.keys():
-            sam_conv_factor = variable_def_dict['sam_conv_factor']
-
-        e3sm_dataset = self.e3sm_datasets
-        e3sm_conv_factor = 1
-        if 'e3sm_calc' in variable_def_dict.keys():
-            e3sm_dataset = None  # don't try to autoplot e3sm if e3sm is a calculated value
-        if 'e3sm_conv_factor' in variable_def_dict.keys():
-            e3sm_conv_factor = variable_def_dict['e3sm_conv_factor']
-
-        if 'lines' in variable_def_dict.keys():
-            lines = variable_def_dict['lines']
-        panel_type = self.defualt_panel_type
-        fallback = None
-        if 'fallback_func' in variable_def_dict.keys():
-            fallback = variable_def_dict['fallback_func']
-        if 'type' in variable_def_dict.keys():
-            panel_type = variable_def_dict['type']
 
         all_lines = []
-        if les_file is not None:
-            all_lines.extend(self.__getVarLines__(var_names['sam'], les_file, conversion_factor=les_conv_factor,
-                                                  label=Style_definitions.SAM_LABEL,
-                                                  line_format=Style_definitions.LES_LINE_STYLE,
-                                                  override_panel_type=panel_type,
-                                                  fallback_func=fallback, lines=lines))
+        # Plot benchmarks
+        if plot_les:
+            all_lines.extend(self.__getVarLinesForModel__('sam', variable_def_dict, self.les_dataset))
+        if plot_coamps:
+            all_lines.extend(self.__getVarLinesForModel__('coamps', variable_def_dict, self.coamps_dataset))
+        if plot_r408:
+            all_lines.extend(self.__getVarLinesForModel__('r408', variable_def_dict, self.r408_datasets))
+        if plot_hoc:
+            all_lines.extend(self.__getVarLinesForModel__('hoc', variable_def_dict, self.hoc_datasets))
 
-        if coamps_file is not None:
-            all_lines.extend(self.__getVarLines__(var_names['coamps'], coamps_file, conversion_factor=coamps_conv_factor,
-                                                  label=Style_definitions.COAMPS_LABEL,
-                                                  line_format=Style_definitions.LES_LINE_STYLE,
-                                                  override_panel_type=panel_type,
-                                                  fallback_func=fallback, lines=lines))
-
-        if r408_dataset is not None:
-            all_lines.extend(self.__getVarLines__(var_names['r408'], r408_dataset, conversion_factor=r408_conv_factor,
-                                                  label=Style_definitions.GOLAZ_LABEL,
-                                                  line_format=Style_definitions.GOLAZ_BEST_R408_LINE_STYLE,
-                                                  override_panel_type=panel_type, fallback_func=fallback, lines=lines))
-
-        if hoc_dataset is not None:
-            all_lines.extend(self.__getVarLines__(var_names['hoc'], hoc_dataset, conversion_factor=hoc_conv_factor,
-                                                  label=Style_definitions.HOC_LABEL,
-                                                  line_format=Style_definitions.HOC_LINE_STYLE,
-                                                  override_panel_type=panel_type, fallback_func=fallback, lines=lines))
-
-        if sam_dataset is not None and len(sam_dataset) > 0:
-            # label = Style_definitions.E3SM_LABEL
-            # line_style = Style_definitions.E3SM_LINE_STYLE
-            for dataset_name in sam_dataset:
-                # if len(sam_dataset) is not 1:
-                label = os.path.basename(dataset_name)
-                line_style = ""
-
-                sam_data_was_calculated = False
-                if 'sam_calc' in variable_def_dict.keys():
-                    samplot_data, z = variable_def_dict['sam_calc'](dataset_override=sam_dataset)
-                    samplot = Line(samplot_data, z, label=label)
-                    all_lines.append(samplot)
-                    sam_data_was_calculated = True
-
-                if len(var_names['sam']) is not 0 and not sam_data_was_calculated:
-                    all_lines.extend(self.__getVarLines__(var_names['sam'], sam_dataset[dataset_name], conversion_factor=sam_conv_factor,
-                                                          label=label,
-                                                          line_format=line_style,
-                                                          override_panel_type=panel_type, fallback_func=fallback, lines=lines))
+        # Plot input folders
+        if plot_sam:
+            for input_folder in self.sam_datasets:
+                folder_name = os.path.basename(input_folder)
+                all_lines.extend(self.__getVarLinesForModel__('sam', variable_def_dict, self.sam_datasets[input_folder], label=folder_name))
+        if plot_e3sm:
+            for input_folder in self.e3sm_datasets:
+                folder_name = os.path.basename(input_folder)
+                # TODO e3sm fancy-label is broken
+                all_lines.extend(self.__getVarLinesForModel__('e3sm', variable_def_dict, self.e3sm_datasets[input_folder], label=folder_name))
+        if plot_clubb:
+            for input_folder in self.clubb_datasets:
+                folder_name = os.path.basename(input_folder)
+                # TODO clubb label override is broken
+                all_lines.extend(self.__getVarLinesForModel__('clubb', variable_def_dict, self.clubb_datasets[input_folder], label=folder_name))
 
 
-        if e3sm_dataset is not None and len(e3sm_dataset) > 0 and len(var_names['e3sm']) is not 0:
-            label = Style_definitions.E3SM_LABEL
-            line_style = Style_definitions.E3SM_LINE_STYLE
-            for dataset_name in e3sm_dataset:
-                if len(e3sm_dataset) is not 1:
-                    label = os.path.basename(dataset_name)
-                    line_style = ""
-                all_lines.extend(self.__getVarLines__(var_names['e3sm'], e3sm_dataset[dataset_name], conversion_factor=e3sm_conv_factor,
-                                                      label=label,
-                                                      line_format=line_style,
-                                                      override_panel_type=panel_type, fallback_func=fallback, lines=lines))
-
-        num_folders_plotted = 0
-        if self.ncdf_files is not None:
-            for ncdf_files_subfolder in self.ncdf_files:
-                datasets = self.ncdf_files[ncdf_files_subfolder]
-                label = os.path.basename(ncdf_files_subfolder)
-                if num_folders_plotted < len(Style_definitions.CLUBB_LABEL_OVERRIDE):
-                    label = Style_definitions.CLUBB_LABEL_OVERRIDE[num_folders_plotted]
-                all_lines.extend(self.__getVarLines__(var_names['clubb'], datasets, label=label,
-                                                      override_panel_type=panel_type, fallback_func=fallback, lines=lines))
-                num_folders_plotted += 1
-        else:
-            label = ""
-
-        var_names = variable_def_dict['var_names']
-        plotted_models_varname = "unknown_model_var"
-        if self.ncdf_files is not None:
-            plotted_models_varname = var_names['clubb'][0]
-        elif self.ncdf_files is None and self.sam_datasets is not None and len(var_names['sam']) is not 0:
-            plotted_models_varname = var_names['sam'][0]
-        elif self.ncdf_files is None and self.e3sm_datasets is not None and len(var_names['e3sm']) is not 0:
-            plotted_models_varname = var_names['e3sm'][0]
+        # calculated_plots = self.__processCalculatedValues__(variable_def_dict)
+        # all_lines.extend(calculated_plots)
         variable_def_dict['plots'] = all_lines
-        first_input_datasets = self.getTextDefiningDataset()
-        if 'title' not in variable_def_dict.keys():
-            if panel_type == Panel.TYPE_BUDGET:
-                variable_def_dict['title'] = label + ' ' + plotted_models_varname
-            else:
-                all_var_names = []
-                for model_var_names in var_names.values():
-                    all_var_names.extend(model_var_names)
-                imported_title = data_reader.getLongName(first_input_datasets, all_var_names)
-                variable_def_dict['title'] = imported_title
-        if 'axis_title' not in variable_def_dict.keys():
-            if panel_type == Panel.TYPE_BUDGET and len(all_lines) is not 0:
-                any_varname_with_budget_units = all_lines[0].label
-                variable_def_dict['axis_title'] = "[" + data_reader.__getUnits__(first_input_datasets, any_varname_with_budget_units) + "]"
-            else:
-                imported_axis_title = data_reader.getAxisTitle(first_input_datasets, plotted_models_varname)
-                variable_def_dict['axis_title'] = imported_axis_title
 
-        # Handle SAM calculations for Benchmark data
-        if 'sam_calc' in variable_def_dict.keys() and self.les_file is not None and data_reader.getNcdfSourceModel(
-                self.les_file) == 'sam':
-            samplot_data, z = variable_def_dict['sam_calc']()
-            samplot = Line(samplot_data, z, line_format=Style_definitions.LES_LINE_STYLE,
-                           label=Style_definitions.SAM_LABEL)
-            variable_def_dict['plots'].append(samplot)
-
-        if 'coamps_calc' in variable_def_dict.keys() and self.coamps_file is not None and data_reader.getNcdfSourceModel(
-                self.coamps_file) == 'coamps':
-            coampsplot_data, z = variable_def_dict['coamps_calc']()
-            coampsplot = Line(coampsplot_data, z, line_format=Style_definitions.LES_LINE_STYLE,
-                              label=Style_definitions.COAMPS_LABEL)
-            variable_def_dict['plots'].append(coampsplot)
-
-        if 'e3sm_calc' in variable_def_dict.keys() and self.e3sm_datasets is not None and data_reader.getNcdfSourceModel(
-                self.e3sm_datasets) == 'e3sm':
-            e3smplot_data, z = variable_def_dict['e3sm_calc']()
-            e3smplot = Line(e3smplot_data, z, line_format=Style_definitions.E3SM_LINE_STYLE,
-                            label=Style_definitions.E3SM_LABEL)
-            variable_def_dict['plots'].append(e3smplot)
+        plotted_models_varname = self.__getRelativeVarName__(var_names)
+        title, axis_title = self.__getTitles__(variable_def_dict, plotted_models_varname)
+        variable_def_dict['title'] = title
+        variable_def_dict['axis_title'] = axis_title
 
         if len(variable_def_dict['plots']) > 0:
             self.variables.append(variable_def_dict)
+
+    def __getVarLinesForModel__(self, model_name, variable_def_dict, dataset, label="no label found"):
+        var_names = variable_def_dict['var_names']
+        conv_factors = self.__getConvFactors__(variable_def_dict)
+
+        lines = None
+        if 'lines' in variable_def_dict.keys():
+            lines = variable_def_dict['lines']
+        fallback = None
+        if 'fallback_func' in variable_def_dict.keys():
+            fallback = variable_def_dict['fallback_func']
+
+        panel_type = self.defualt_panel_type
+        if 'type' in variable_def_dict.keys():
+            panel_type = variable_def_dict['type']
+
+        if not isinstance(dataset, dict):
+            dataset = {model_name: dataset}
+
+        line_style = ""
+        if label == "no label found":
+            label = Style_definitions.BENCHMARK_LABELS[model_name]
+            line_style = Style_definitions.BENCHMARK_LINE_STYLES[model_name]
+
+        all_lines = []
+
+        # for dataset_name in dataset:
+        # label = os.path.basename("temp")
+
+        data_was_calculated = False
+        if (model_name + '_calc') in variable_def_dict.keys():
+            plot_data, z = variable_def_dict[(model_name + '_calc')](dataset_override=dataset)
+            plot = Line(plot_data, z, line_format=line_style, label=label)
+            all_lines.append(plot)
+            data_was_calculated = True
+
+        if len(var_names[model_name]) is not 0 and not data_was_calculated:
+            all_lines.extend(self.__getVarLines__(var_names[model_name], dataset,
+                                                  conversion_factor=conv_factors[model_name],
+                                                  label=label,
+                                                  line_format=line_style,
+                                                  override_panel_type=panel_type,
+                                                  fallback_func=fallback,
+                                                  lines=lines))
+        return all_lines
+
+
+
 
     def getTextDefiningDataset(self):
         """
@@ -339,13 +261,9 @@ class VariableGroup:
         :return:
         """
 
-        #     self.coamps_file = coamps_file
-        # self.r408_dataset = r408_dataset
-        # self.hoc_dataset = hoc_dataset
-
         datasets = []
-        if self.ncdf_files is not None:
-            for i in self.ncdf_files.values():
+        if self.clubb_datasets is not None:
+            for i in self.clubb_datasets.values():
                 if isinstance(i, dict):
                     for dataset in i.values():
                         datasets.append(dataset)
@@ -359,14 +277,14 @@ class VariableGroup:
         if self.sam_datasets is not None:
             for dataset in self.sam_datasets.values():
                 datasets.append(dataset)
-        if self.les_file is not None:
-            datasets.append(self.les_file)
-        if self.coamps_file is not None:
-            datasets.extend(self.coamps_file.values())
-        if self.r408_dataset is not None:
-            datasets.extend(self.r408_dataset.values())
-        if self.hoc_dataset is not None:
-            datasets.extend(self.hoc_dataset.values())
+        if self.les_dataset is not None:
+            datasets.append(self.les_dataset)
+        if self.coamps_dataset is not None:
+            datasets.extend(self.coamps_dataset.values())
+        if self.r408_datasets is not None:
+            datasets.extend(self.r408_datasets.values())
+        if self.hoc_datasets is not None:
+            datasets.extend(self.hoc_datasets.values())
         if len(datasets) == 0:
             raise FileExistsError("No dataset could be found to pull text descriptions from")
         return datasets
@@ -392,10 +310,144 @@ class VariableGroup:
             panel = Panel(plotset, title=title, dependant_title=axis_label, panel_type=panel_type, sci_scale=sci_scale)
             self.panels.append(panel)
 
+
+    # def __processCalculatedValues__(self, variable_def_dict):
+    #     """
+    #
+    #     :param variable_def_dict:
+    #     :return:
+    #     """
+    #
+    #     data_reader = DataReader()
+    #     calculated_plots = []
+    #     # Handle SAM calculations for Benchmark data
+    #     if 'sam_calc' in variable_def_dict.keys() and self.les_dataset is not None and data_reader.getNcdfSourceModel(
+    #             self.les_dataset) == 'sam':
+    #         samplot_data, z = variable_def_dict['sam_calc']()
+    #         samplot = Line(samplot_data, z, line_format=Style_definitions.BENCHMARK_LINE_STYLES['sam'],
+    #                        label=Style_definitions.BENCHMARK_LABELS['sam'])
+    #         calculated_plots.append(samplot)
+    #
+    #     if 'coamps_calc' in variable_def_dict.keys() and self.coamps_file is not None and data_reader.getNcdfSourceModel(
+    #             self.coamps_file) == 'coamps':
+    #         coampsplot_data, z = variable_def_dict['coamps_calc']()
+    #         coampsplot = Line(coampsplot_data, z, line_format=Style_definitions.BENCHMARK_LINE_STYLES['coamps'],
+    #                           label=Style_definitions.BENCHMARK_LABELS['coamps'])
+    #         calculated_plots.append(coampsplot)
+    #
+    #     if 'e3sm_calc' in variable_def_dict.keys() and self.e3sm_datasets is not None and data_reader.getNcdfSourceModel(
+    #             self.e3sm_datasets) == 'e3sm':
+    #         e3smplot_data, z = variable_def_dict['e3sm_calc']()
+    #         e3smplot = Line(e3smplot_data, z, line_format=Style_definitions.BENCHMARK_LINE_STYLES['e3sm'],
+    #                         label=Style_definitions.BENCHMARK_LABELS['e3sm'])
+    #         calculated_plots.append(e3smplot)
+    #
+    #     return calculated_plots
+
+    def __getTitles__(self, variable_def_dict, plotted_models_varname):
+        """
+        Returns a desirable title of the panel
+        :param variable_def_dict: Definition of the variable being used
+        :param panel_type:
+        :param title_prefix:
+        :param var_names:
+        :param plotted_models_varname:
+        :return: title, axis_title
+        """
+
+        data_reader = DataReader()
+        var_names = variable_def_dict['var_names']
+        panel_type = self.defualt_panel_type
+        all_lines = variable_def_dict['plots']
+        if 'type' in variable_def_dict.keys():
+            panel_type = variable_def_dict['type']
+        first_input_datasets = self.getTextDefiningDataset()
+        title = "Title not found"
+        if 'title' not in variable_def_dict.keys():
+            if panel_type == Panel.TYPE_BUDGET:
+                source_folder = os.path.basename(Path(first_input_datasets[0].filepath()).parent)
+                title = source_folder + ' ' + plotted_models_varname
+            else:
+                all_var_names = []
+                for model_var_names in var_names.values():
+                    all_var_names.extend(model_var_names)
+                imported_title = data_reader.getLongName(first_input_datasets, all_var_names)
+                title = imported_title
+        else:
+            title = variable_def_dict['title']
+
+        axis_title = "axis_title not found"
+        if 'axis_title' not in variable_def_dict.keys():
+            if panel_type == Panel.TYPE_BUDGET and len(all_lines) is not 0:
+                any_varname_with_budget_units = all_lines[0].label
+                axis_title = "[" + data_reader.__getUnits__(first_input_datasets, any_varname_with_budget_units) + "]"
+            else:
+                imported_axis_title = data_reader.getAxisTitle(first_input_datasets, plotted_models_varname)
+                axis_title = imported_axis_title
+        else:
+            axis_title = variable_def_dict['axis_title']
+
+        return title, axis_title
+
+    def __getRelativeVarName__(self, var_names):
+        """
+        Returns the varname for a variable relative to the models
+        that were being plotted
+
+        :param: The dict of various names for the given variable
+        :return: A relevant name of the given variable
+        """
+        plotted_models_varname = "unknown_model_var"
+        if self.clubb_datasets is not None:
+            plotted_models_varname = var_names['clubb'][0]
+        elif self.clubb_datasets is None and self.sam_datasets is not None and len(var_names['sam']) is not 0:
+            plotted_models_varname = var_names['sam'][0]
+        elif self.clubb_datasets is None and self.e3sm_datasets is not None and len(var_names['e3sm']) is not 0:
+            plotted_models_varname = var_names['e3sm'][0]
+        return plotted_models_varname
+
+
+    def __getConvFactors__(self, variable_def_dict):
+        """
+        This is a helper method that loads parameters from the variables
+        definition and assigns them to python variables accordingly.
+        :return: A dict containing the various conversion factors for the inputed variable
+        """
+
+        conv_factors = {
+            'les': 1,
+            'sam': 1,
+            'coamps': 1,
+            'r408': 1,
+            'hoc': 1,
+            'e3sm': 1,
+            'clubb': 1
+            }
+
+        if 'sam_conv_factor' in variable_def_dict.keys():
+            conv_factors['les'] = variable_def_dict['sam_conv_factor']
+            conv_factors['sam'] = variable_def_dict['sam_conv_factor']
+
+        if 'coamps_conv_factor' in variable_def_dict.keys():
+            conv_factors['coamps'] = variable_def_dict['coamps_conv_factor']
+
+        if 'r408_conv_factor' in variable_def_dict.keys():
+            conv_factors['r408'] = variable_def_dict['r408_conv_factor']
+
+        if 'hoc_conv_factor' in variable_def_dict.keys():
+            conv_factors['hoc'] = variable_def_dict['hoc_conv_factor']
+
+        if 'e3sm_conv_factor' in variable_def_dict.keys():
+            conv_factors['e3sm'] = variable_def_dict['e3sm_conv_factor']
+
+        return conv_factors
+
+
+
     def __getVarLines__(self, var_names, ncdf_datasets, label="", line_format="", avg_axis=0, override_panel_type=None,
                         fallback_func=None, lines=None, conversion_factor=1):
         """
-        Get a list of Line objects for a specific clubb variable. If les_file is specified it will also
+        Get a list of Line objects for a specific clubb variable. If les_dataset is specified it will also
         attempt to generate Lines for the SAM equivalent variables, using the name conversions found in
         VarnameConversions.py. If a SAM variable needs to be calculated (uses an equation) then it will have
         to be created within that variable group's dataset and not here.

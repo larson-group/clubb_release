@@ -32,10 +32,17 @@ COLOR_ROTATION = ['#e41a1c', '#377eb8', '#4daf4a', '#984ea3', '#ff7f00', '#a6562
 STYLE_ROTATION = ['-', '--', ':', '-.', '-', '--', ':', '-.']
 
 # Details on line styles here: https://matplotlib.org/2.1.2/api/_as_gen/matplotlib.pyplot.plot.html
-LES_LINE_STYLE = "k-"
-GOLAZ_BEST_R408_LINE_STYLE = "g-"
-HOC_LINE_STYLE = 'm-.'
-E3SM_LINE_STYLE = 'c-'
+BENCHMARK_LINE_STYLES = {
+    'sam': "k-",
+    'coamps': "k-",
+    'r408': "g-",
+    'hoc': "m-.",
+    'e3sm': "c-"
+}
+# LES_LINE_STYLE = "k-"
+# GOLAZ_BEST_R408_LINE_STYLE = "g-"
+# HOC_LINE_STYLE = 'm-.'
+# E3SM_LINE_STYLE = 'c-'
 
 # Line Thicknesses
 CLUBB_LINE_THICKNESS = 2
@@ -53,12 +60,18 @@ DASHED_LINE_THICKNESS = 5
 CLUBB_LABEL_OVERRIDE = [] # To override names, uncomment the line below
 # CLUBB_LABEL_OVERRIDE = ["current clubb", "previous clubb"] # To use folder names, comment this line out
 
-
-SAM_LABEL = "SAM-LES"
-COAMPS_LABEL = "COAMPS-LES"
-GOLAZ_LABEL = "CLUBB r408 'best ever'"
-HOC_LABEL = 'HOC 12/17/2005'
-E3SM_LABEL = 'E3SM'
+BENCHMARK_LABELS = {
+    'sam': "SAM-LES",
+    'coamps': "COAMPS-LES",
+    'r408': "CLUBB r408 'best ever'",
+    'hoc': 'HOC 12/17/2005',
+    'e3sm': "E3SM"
+}
+# SAM_LABEL = "SAM-LES"
+# COAMPS_LABEL = "COAMPS-LES"
+# GOLAZ_LABEL = "CLUBB r408 'best ever'"
+# HOC_LABEL = 'HOC 12/17/2005'
+# E3SM_LABEL = 'E3SM'
 
 # Text styles
 # -------------

@@ -113,12 +113,12 @@ class VariableGroupLiquidMP(VariableGroup):
         :return:
         """
 
-        dataset = self.les_file
+        dataset = self.les_dataset
         if dataset_override != None:
             dataset = dataset_override
         nc, z, dataset = self.getVarForCalculations('NC', dataset)
         rho, z, dataset = self.getVarForCalculations('RHO', dataset)
-        # z,z, dataset = self.getVarForCalculations(['z', 'lev', 'altitude'], self.les_file)
+        # z,z, dataset = self.getVarForCalculations(['z', 'lev', 'altitude'], self.les_dataset)
 
         ncm = (nc * (10 ** 6) / rho)
         return ncm, z
@@ -130,13 +130,13 @@ class VariableGroupLiquidMP(VariableGroup):
         :return:
         """
 
-        dataset = self.les_file
+        dataset = self.les_dataset
         if dataset_override != None:
             dataset = dataset_override
 
         nr, z, dataset = self.getVarForCalculations('NR', dataset)
         rho, z, dataset = self.getVarForCalculations('RHO', dataset)
-        # z,z, dataset = self.getVarForCalculations(['z', 'lev', 'altitude'], self.les_file)
+        # z,z, dataset = self.getVarForCalculations(['z', 'lev', 'altitude'], self.les_dataset)
 
         nrm = (nr * (10 ** 6) / rho)
 

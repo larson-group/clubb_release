@@ -7,51 +7,30 @@ Pyplotgen only supports input in the netcdf (.nc) format.
 | *Option Flag* | *Description* |
 | --- | --- |
 | -r --replace | Overwrite the output folder if it already exists |
-| -l --les | Overplot LES output data. The path to the nc file(s) for user-generated LES output can be specified by changing the directory listed for a given case inside the `Case_Definitions.py` file. |
-| -e --e3sm [FOLDER PATHNAME] | Adds lines from an E3SM SCM run to a plot.  In order to plot an E3SM line from a particular case, one must specify the E3SM filenames in either one of two ways.  The first way is to ensure that the filenames in the E3SM folder match the casenames you want to plot, where the casenames are defined in the `Case_definitions.py` file.  E.g., for the bomex case (`BOMEX = {'name': 'bomex' ...}`), you need to use `bomex.nc`.  An alternative way is to rewrite the `'e3sm_file': None,` parameter for the desired case to contain the location of the E3SM file.  The second option is not recommended because then you might accidentally push your personal directory name to the repo, confusing other users. | 
+| -l --les | Overplot LES output data. The nc files for les output can be overwritten by changing the directory listed for a given case inside the `Case_Definitions.py` file. |
+| -e --e3sm [FOLDER PATHNAME(S)] | Adds lines from E3SM model output to plot. The filenames in the folder must either match the casename intended to run it, e.g. `bomex.nc` (using the lowercase version of the casename as defined in the `Case_definitions.py` file), or rewrite the `'e3sm_file': None,` parameter for the desired case to contain the location of the SAM file. The second option is not reccomended because it risks pushing invalid directories to the repo. | 
+| -s --sam [FOLDER PATHNAME(S)] | Adds lines from SAM model output to plot. To plot lines in the specified folder for a given case, update the `'sam_file': None,` parameter in the case's definition (`config/Case_Definitions.py`)for the desired case to contain the location of the SAM file. For example, adding SAM output for the ARM case may look like `'sam_file': sam_output_root+ "/GCSSARM_96x96x110_67m_40m_1s.nc",`| 
 | -b --plot-golaz-best | Plots clubb r408 'best ever' plots |
 | --thin | Plot lines with a thin width |
 | --plot-budgets | Includes budget panels in output |
 | --diff [FOLDER PATHNAME] | (Experimental) Plots the difference between the input folder and the folder specified after --diff instead of plotting a regular profile |
 | --no-legends | Panels are drawn without a line legend |
-| -i --input [list of FOLDER PATHNAME(s)] | Manually specify the folder where CLUBB output files to be plotted are located.  Must be followed by a folder path |
-| -o --output [FOLDER PATHNAME] | Manually specify the folder where pyplotgen output will be saved. If not specified, pyplotgen will automatically output to `pyplotgen/output` |
+| -i --input | Manually specify an input folder. Must be followed by a folder path |
+| -o --output | Manually specify an output folder. If not specified, will automatically output to `pyplotgen/output` |
 
 ## Installing Dependencies
-
-To install the dependencies necessary for PyPlotgen to run, run
-```bash
+To install the dependencies necessary for PyPlotgen to run, run the command
+```
 pip3 install -r requirements.txt
 ```
-from within the PyPlotGen directory.
-
-### Virtual Environments
-
-A virtual environment is a tool that helps to keep dependencies required by different projects separate by creating isolated python virtual environments for them. Using a virtual environment will allow you to keep installed python packages for PyPlotgen separate from the system wide python packages you have installed.
-
-To create a python3 virtual environment named `pyplotgen_venv`, run
-```bash
-python3 -m venv ./pyplotgen_venv
-```
-
-To activate it, run
-```bash
-source ./pyplotgen_venv/bin/activate
-``` 
-
-After it's been activated you should see `(pyplotgen_venv)` to the left of your prompt in the terminal. Now you should run the `pip3` command above to install the dependencies.
-
-To deactivate it after you are done using PyPlotgen, run 
-```bash
-deactivate
-```
+from within the PyPlotGen directory
 
 ## Example Run Commands
 
 To do the most basic run of pyplotgen, using default settings and folder paths, run
 `./pyplotgen.py`
 
-To run python on clubb output located in `/home/USERNAME/clubb_nc_ouput` and save the generated panels/graph into `/home/USERNAME/clubb/postprocessing/pyplotgen/output` with budget plots and all model output, run this command:
+To run python on clubb output located in `/home/USERNAME/clubb_nc_output` and save the generated panels/graph into `/home/USERNAME/clubb/postprocessing/pyplotgen/output` with budget plots and all model output, run this command:
 
 `python3 ./pyplotgen.py --plot-budgets -r -a -i /home/USERNAME/clubb_nc_output -o /home/USERNAME/clubb/postprocessing/pyplotgen/output`
 
@@ -263,7 +242,7 @@ Here's an example definition:
 BOMEX = {'name': 'bomex', 'start_time': 181, 'end_time': 360, 'height_min_value': 0, 'height_max_value': 
          'blacklisted_vars': [],
          'sam_file': SAM_OUTPUT_ROOT + "/JULY_2017/BOMEX_64x64x75/BOMEX_64x64x75_100m_40m_1s.nc",
-         'coamps_file': None,
+         coamps_dataset: None,
          'r408_file': {'zm': R408_OUTPUT_ROOT + '/Chris_Golaz_best_ever/bomex_zm.nc',
                        'zt': R408_OUTPUT_ROOT + '/Chris_Golaz_best_ever/bomex_zt.nc',
                        'sfc': R408_OUTPUT_ROOT + '/Chris_Golaz_best_ever/bomex_sfc.nc'},
@@ -273,7 +252,7 @@ BOMEX = {'name': 'bomex', 'start_time': 181, 'end_time': 360, 'height_min_value'
          'var_groups': [VariableGroupBase, VariableGroupWs]}
 ~~~~~
 
-Once you've created one of these definitions, then in order to add your new case to the default set of cases, add the casename to the `ALL_CASES` list:
+Creating a new case in pyplotgen is as simple as creating one of these defintions (e.g. example above) and adding it to the `ALL_CASES` list:
 ~~~~python
 ALL_CASES = [ARM, ARM_97, ASTEX_A209, ATEX,
              BOMEX,
@@ -291,3 +270,29 @@ ALL_CASES = [ARM, ARM_97, ASTEX_A209, ATEX,
              ]
 ~~~~
 Please maintain the list's alphabetical ordering for ease of use.
+
+## Plotting SAM-exclusive VariableGroups
+_Note_: This might not work yet in the master version, as some changes to the code need to be made to actually be able to plot SAM exclusively.  
+The VariableGroups `VariableGroupSamBudgets` and `VariableGroupSamProfiles` were added to recreate the SAM plots done with corplot (python_sam_budgets_plotter). To plot either of those, add them to the `var_groups` list in the definition of the cases to be plotted and, if not wanted, remove or comment out the other VariableGroups. It is not yet possible to specify SAM input NetCDF files through a pyplotgen command line option. Therefore, the input file needs to be specified under the key `sam_file` in the same case defintion.  
+Example for a modified case definition for BOMEX:
+~~~~python
+BOMEX = {'name': 'bomex', 'start_time': 181, 'end_time': 360, 'height_min_value': 0, 'height_max_value': 2500,
+         
+         'blacklisted_vars': [],
+         'sam_file': "path/to/SAM/BOMEX.nc", # Specify SAM NetCDF file here!
+         'coamps_file': None,
+         'r408_file': {'zm': R408_OUTPUT_ROOT + '/Chris_Golaz_best_ever/bomex_zm.nc',
+                       'zt': R408_OUTPUT_ROOT + '/Chris_Golaz_best_ever/bomex_zt.nc',
+                       'sfc': R408_OUTPUT_ROOT + '/Chris_Golaz_best_ever/bomex_sfc.nc'},
+         'hoc_file': {'zm': HOC_OUTPUT_ROOT + '/bomex_zm.nc',
+                      'zt': HOC_OUTPUT_ROOT + '/bomex_zt.nc',
+                      'sfc': HOC_OUTPUT_ROOT + '/bomex_sfc.nc'},
+         'e3sm_file': e3sm_output_root + '/bomex.nc',
+         'var_groups': [#VariableGroupBase, VariableGroupWs,
+				VariableGroupSamBudgets]} # New VariableGroup added and rest commented out
+~~~~
+Then run pyplotgen with the flags `-l` and `--no-clubb` to skip plots for all other models:
+```bash
+./pyplotgen -l --no-clubb
+```
+In the future, the plan is to have an option that works similarly to the E3SM or CLUBB input options, `-e` and `-i`, respectively. With those one can pass multiple paths to folders to be checked for NetCDF files.

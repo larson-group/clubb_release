@@ -119,11 +119,11 @@ class Panel:
                 raise ValueError("X and Y data have different shapes X: "+str(x_data.shape)
                                  + "  Y:" + str(y_data.shape) + ". Attempted to plot " + self.title + " using X: " +
                                  self.x_title + "  Y: " + self.y_title)
-            if var.line_format == Style_definitions.LES_LINE_STYLE:
+            if var.line_format == Style_definitions.BENCHMARK_LINE_STYLES['sam']:
                 linewidth = Style_definitions.LES_LINE_THICKNESS
-            elif var.line_format == Style_definitions.GOLAZ_BEST_R408_LINE_STYLE:
+            elif var.line_format == Style_definitions.BENCHMARK_LINE_STYLES['r408']:
                 linewidth = Style_definitions.ARCHIVED_CLUBB_LINE_THICKNESS
-            elif var.line_format == Style_definitions.E3SM_LINE_STYLE:
+            elif var.line_format == Style_definitions.BENCHMARK_LINE_STYLES['e3sm']:
                 linewidth = Style_definitions.E3SM_LINE_THICKNESS
             else:
                 linewidth = Style_definitions.CLUBB_LINE_THICKNESS

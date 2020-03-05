@@ -59,9 +59,9 @@ class Case:
             self.plot_budgets = False
 
         les_file = None
-        if plot_les and case_definition['les_file'] is not None:
+        if plot_les and case_definition['les_dataset'] is not None:
             datareader = DataReader()
-            les_file = datareader.__loadNcFile__(case_definition['les_file'])
+            les_file = datareader.__loadNcFile__(case_definition['les_dataset'])
 
         sam_datasets = {}
         if len(sam_folders) != 0 and sam_folders != None and case_definition['sam_file'] != None:
@@ -84,9 +84,9 @@ class Case:
                     warn("Failed to find file " + e3sm_filename)
 
         coamps_datasets = {}
-        if plot_les and case_definition['coamps_file'] is not None:
+        if plot_les and case_definition['coamps_dataset'] is not None:
             datareader = DataReader()
-            coamps_filenames = case_definition['coamps_file']
+            coamps_filenames = case_definition['coamps_dataset']
             for type_ext in coamps_filenames:
                 temp_coamps_dataset = datareader.__loadNcFile__(coamps_filenames[type_ext])
                 coamps_datasets[type_ext] = temp_coamps_dataset
@@ -140,8 +140,9 @@ class Case:
 
         if self.plot_budgets:
             if self.ncdf_datasets is not None and len(self.ncdf_datasets) is not 0:
-                budget_variables = VariableGroupBaseBudgets(self.ncdf_datasets, self)
-                self.panels.extend(budget_variables.panels)
+                for ncdataset in self.ncdf_datasets.values():
+                    budget_variables = VariableGroupBaseBudgets(ncdataset, self)
+                    self.panels.extend(budget_variables.panels)
             if e3sm_file != None and len(e3sm_file) is not 0:
                 for dataset_name in e3sm_file:
                     e3sm_budgets = VariableGroupBaseBudgets({dataset_name:e3sm_file[dataset_name]}, self) # E3SM dataset must be wrapped in the same form as the clubb datasets

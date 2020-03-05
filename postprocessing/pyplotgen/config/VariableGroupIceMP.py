@@ -118,12 +118,12 @@ class VariableGroupIceMP(VariableGroup):
         (NI * 1e+6) ./ RHO
         :return:
         """
-        dataset = self.les_file
+        dataset = self.les_dataset
         if dataset_override != None:
             dataset = dataset_override
         ni, z, dataset = self.getVarForCalculations('NI', dataset)
         rho, z, dataset = self.getVarForCalculations('RHO', dataset)
-        # z,z, dataset = self.getVarForCalculations(['z', 'lev', 'altitude'], self.les_file)
+        # z,z, dataset = self.getVarForCalculations(['z', 'lev', 'altitude'], self.les_dataset)
 
         nim = (ni * (10 ** 6) / rho)
         return nim, z
@@ -134,12 +134,12 @@ class VariableGroupIceMP(VariableGroup):
         (NS * 1e+6) ./ RHO
         :return:
         """
-        dataset = self.les_file
+        dataset = self.les_dataset
         if dataset_override != None:
             dataset = dataset_override
         ns, z, dataset = self.getVarForCalculations('NS', dataset)
         rho, z, dataset = self.getVarForCalculations('RHO', dataset)
-        # z,z, dataset = self.getVarForCalculations(['z', 'lev', 'altitude'], self.les_file)
+        # z,z, dataset = self.getVarForCalculations(['z', 'lev', 'altitude'], self.les_dataset)
 
         nsm = (ns * (10 ** 6) / rho)
         return nsm, z
