@@ -75,7 +75,7 @@ while : ; do
     # Clear out any tcpflow for next run
     rm -r ${tcpflow}/* &>/dev/null
   else
-    echo "No new input from tcpflow"
+    echo "No new clubb from tcpflow"
   fi
 
   echo "Sleeping for ${pause} seconds" ; sleep ${pause}

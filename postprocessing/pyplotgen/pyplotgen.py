@@ -4,7 +4,7 @@
 :Date: Jan 2019
 
 This file is the main driver for PyPlotGen. It handles the overall
-process of retrieving the user's input and dictating the loading
+process of retrieving the user's clubb and dictating the loading
 of files, generation of plots, and then the export of plots, though
 these processes are mostly carried out by other classes/files.
 """
@@ -27,9 +27,9 @@ class PyPlotGen:
 
     """
 
-    def __init__(self, input_folder, output_folder, replace=False, les=False, cgbest=False, hoc=False, plotrefs=False,
+    def __init__(self, output_folder, clubb_folders=None, replace=False, les=False, cgbest=False, hoc=False, plotrefs=False,
                  zip=False, thin=False, no_legends=False, ensemble=False, plot_e3sm="", sam_folders = [""],
-                 budget_moments=False, bu_morr=False, diff=None, show_alphabetic_id=False,no_clubb=False):
+                 budget_moments=False, bu_morr=False, diff=None, show_alphabetic_id=False):
         """
         This creates an instance of PyPlotGen. Each parameter is a command line parameter passed in from the argparser
         below.
@@ -51,7 +51,7 @@ class PyPlotGen:
         :param bu_morr:
         :param diff:
         """
-        self.input_folder = input_folder
+        self.clubb_folders = clubb_folders
         self.output_folder = output_folder
         self.replace_images = replace
         self.les = les
@@ -69,12 +69,11 @@ class PyPlotGen:
         self.bu_morr = bu_morr
         self.diff = diff
         self.cases_plotted = []
-        self.nc_datasets = None
+        self.clubb_datasets = None
         self.data_reader = DataReader()
         self.diff_files_data_reader = DataReader()
         self.sam_data_reader = DataReader()
         self.show_alphabetic_id = show_alphabetic_id
-        self.no_clubb=no_clubb
         self.output_folder = os.path.abspath(self.output_folder)
         if os.path.isdir(self.output_folder) and self.replace_images == False:
             self.output_folder = self.output_folder + '_generated_on_' + str(datetime.now())
@@ -86,10 +85,7 @@ class PyPlotGen:
         Runs PyPlotGen
         :return: None
         """
-        if not self.no_clubb:
-            self.nc_datasets = self.data_reader.loadFolder(self.input_folder)
-        else:
-            self.nc_datasets = {}
+        self.clubb_datasets = self.data_reader.loadFolder(self.clubb_folders)
         diff_datasets = None
         if self.diff is not None:
             diff_datasets = self.diff_files_data_reader.loadFolder(self.diff)
@@ -105,25 +101,27 @@ class PyPlotGen:
             subprocess.run(['rm', '-rf', self.output_folder + '/'])
         num_cases_plotted = 0
         for case_def in all_cases:
-            if self.__dataForCaseExists__(self.no_clubb, case_def, self.nc_datasets.keys()):
+            if self.__dataForCaseExists__(case_def):
                 num_cases_plotted += 1
                 print('###########################################')
                 print("plotting ", case_def['name'])
                 case_diff_datasets = None
                 casename = case_def['name']
-                if self.no_clubb:
-                    self.nc_datasets[casename] = None
                 if self.diff is not None:
                     case_diff_datasets = diff_datasets[casename]
-                case = Case(case_def, self.nc_datasets[casename], plot_les=self.les, plot_budgets=self.plot_budgets, sam_folders = self.sam_folders,
+                if casename in self.clubb_datasets.keys():
+                    clubb_case_datasets = self.clubb_datasets[casename]
+                else:
+                    clubb_case_datasets = {}
+                case = Case(case_def, clubb_folders=clubb_case_datasets, plot_les=self.les, plot_budgets=self.plot_budgets, sam_folders = self.sam_folders,
                             diff_datasets=case_diff_datasets, plot_r408=self.cgbest, plot_hoc=self.hoc, e3sm_dirs=self.e3sm_dir)
                 case.plot(self.output_folder, replace_images=self.replace_images, no_legends=self.no_legends,
                           thin_lines=self.thin, show_alphabetic_id=self.show_alphabetic_id)
                 self.cases_plotted.append(casename)
         print('###########################################')
         if num_cases_plotted == 0:
-            warn("Warning, no cases were plotted! Make sure the input folder " + str(self.input_folder) +
-                 " contains .nc files or use the --input (-i) parameter to manually specify an input folder.")
+            warn("Warning, no cases were plotted! Please either specify an input folder for a supported model (e.g. using --sam, --clubb, or --e3sm) or make sure the "
+                 "default clubb output folder contains .nc output. Please run ./pyplotgen.py -h for more information on parameters.")
         print("\nGenerating webpage for viewing plots ")
         if not os.path.exists(self.output_folder):
             os.mkdir(self.output_folder)
@@ -133,29 +131,30 @@ class PyPlotGen:
         print('###########################################')
         print("Output can be viewed at file://" + self.output_folder + "/index.html with a web browser")
 
-    def __dataForCaseExists__(self, no_clubb, case_def, all_case_names):
+    def __dataForCaseExists__(self, case_def):
         """
-        Returns true if there's an input nc file for a given case name.
+        Returns true if there's an clubb nc file for a given case name.
 
         :param no_clubb: True/false for whether or not clubb lines are to be plotted
         :param case_def: The case definition object
         :param all_case_names: List of all case names that can be plotted
         :return:
         """
-        e3sm_has_case = self.e3sm_dir != "" and self.e3sm_dir != None and case_def['e3sm_file'] != None
-        sam_has_case = self.sam_folders != "" and self.sam_folders != None and case_def['sam_file'] != None
-        return e3sm_has_case or sam_has_case or (not no_clubb and case_def['name'] in all_case_names)
+        e3sm_has_case = len(self.e3sm_dir) != 0 and case_def['e3sm_file'] != None
+        sam_has_case = len(self.sam_folders) != 0  and case_def['sam_file'] != None
+        clubb_has_case = self.clubb_datasets is not None and case_def['name'] in self.clubb_datasets.keys()
+        return e3sm_has_case or sam_has_case or clubb_has_case or self.hoc or self.cgbest or self.les
 
 
     def __copySetupFiles__(self):
         """
-        Copies case setup files from the input folder(s)
+        Copies case setup files from the clubb folder(s)
         into the pyplotgen output folders.
 
         :return:
         """
         print("Looking for case_setup.txt files")
-        for folder in self.input_folder:
+        for folder in self.clubb_folders:
             setup_file_search_pattern = folder + '/*_setup.txt'
             folder_basename = os.path.basename(folder)
 
@@ -239,16 +238,15 @@ def __process_args__():
                         action="store_true")
     parser.add_argument("--thin", help="Plot using thin solid lines.", action="store_true")
     parser.add_argument("--no-legends", help="Plot without legend boxes defining the line types.", action="store_true")
-    parser.add_argument("--no-clubb", help="Do not plot clubb output.", action="store_true")
     parser.add_argument("--ensemble", help="Plot ensemble tuner runs", action="store_true")  # TODO is this needed?
     parser.add_argument("-b", "--plot-budgets", help="Plot all defined budgets of moments", action="store_true")
     parser.add_argument("--bu-morr",
                         help="For morrison microphysics: breaks microphysical source terms into component processes",
                         action="store_true")
-    parser.add_argument("--diff", help="Plot the difference between two input folders", action="store")
-    parser.add_argument("-i", "--input", help="Input folder(s) containing clubb netcdf output data.", action="store",
-                        default=["../../output"], nargs='+')
-    parser.add_argument("-s", "--sam", help="Input folder(s) containing sam netcdf output data.", action="store",
+    parser.add_argument("--diff", help="Plot the difference between two clubb folders", action="store")
+    parser.add_argument("-c", "--clubb", help="Input folder(s) containing clubb netcdf data.", action="store",
+                        default=[], nargs='+')
+    parser.add_argument("-s", "--sam", help="Input folder(s) containing sam netcdf data.", action="store",
                         default=[], nargs='+')
     parser.add_argument("-o", "--output", help="Name of folder to create and store plots into.", action="store",
                         default="./output")
@@ -263,12 +261,12 @@ def __process_args__():
     les = args.les
     cgbest = args.plot_golaz_best
     hoc = args.plot_hoc_2005
-    e3sm = args.e3sm #[0]
+    e3sm = args.e3sm
 
     # If the last char in folder path is /, remove it
-    for i in range(len(args.input)):
-        if args.input[i][-1] == "/":
-            args.input[i] = args.input[i][:-1]
+    for i in range(len(args.clubb)):
+        if args.clubb[i][-1] == "/":
+            args.clubb[i] = args.clubb[i][:-1]
 
     for i in range(len(args.sam)):
         if args.sam[i][-1] == "/":
@@ -278,18 +276,19 @@ def __process_args__():
         if args.e3sm[i][-1] == "/":
             args.e3sm[i] = args.e3sm[i][:-1]
 
-    if args.no_clubb:
-        args.input = [""]
+    no_folders_inputed = len(args.e3sm) == 0 and len(args.sam) == 0 and len(args.clubb) == 0
+    if no_folders_inputed:
+        args.clubb = ["../../output"]
 
     if args.all_best:
         les = True
         cgbest = True
         hoc = True
 
-    pyplotgen = PyPlotGen(args.input, args.output, replace=args.replace, les=les, plot_e3sm=e3sm, cgbest=cgbest,
+    pyplotgen = PyPlotGen(args.output, clubb_folders=args.clubb, replace=args.replace, les=les, plot_e3sm=e3sm, cgbest=cgbest,
                           hoc=hoc, plotrefs=args.all_best, zip=args.zip, thin=args.thin, sam_folders = args.sam,
                           no_legends=args.no_legends, ensemble=args.ensemble, budget_moments=args.plot_budgets,
-                          bu_morr=args.bu_morr, diff=args.diff, show_alphabetic_id=args.show_alphabetic_id, no_clubb=args.no_clubb)
+                          bu_morr=args.bu_morr, diff=args.diff, show_alphabetic_id=args.show_alphabetic_id)
     return pyplotgen
 
 

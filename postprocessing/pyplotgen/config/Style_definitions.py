@@ -13,7 +13,7 @@ If you wish to change a line color, font size, etc., then this is the place to d
 # Multiple color options are given, uncomment the one that's most useful and comment out the rest. Feel free to make your own as well.
 # Pyplot requires that style rotation's and color rotation's have the same length, so be sure to properly (un)comment the style rotations according
 # to the desired color scheme.
-# Color/style rotations are used on budget plots and for input-folder lines
+# Color/style rotations are used on budget plots and for clubb-folder lines
 # If paired_plots is True when plotting a panel, the STYLE_ROTATION will be ignored, as it is written to oscillate between
 #   dashed and solid lines. This currently happens by default for non-budget plots.
 
@@ -39,10 +39,6 @@ BENCHMARK_LINE_STYLES = {
     'hoc': "m-.",
     'e3sm': "c-"
 }
-# LES_LINE_STYLE = "k-"
-# GOLAZ_BEST_R408_LINE_STYLE = "g-"
-# HOC_LINE_STYLE = 'm-.'
-# E3SM_LINE_STYLE = 'c-'
 
 # Line Thicknesses
 CLUBB_LINE_THICKNESS = 2
@@ -55,11 +51,6 @@ FLAT_LINE_THICKNESS = 2
 DASHED_LINE_THICKNESS = 5
 
 # Line Labels
-# This overrides using foldernames for line input folder line labels. Must be a list of strings.
-# Labels must be in the same order as the input folders. To use foldernames, remove all elements from the array.
-CLUBB_LABEL_OVERRIDE = [] # To override names, uncomment the line below
-# CLUBB_LABEL_OVERRIDE = ["current clubb", "previous clubb"] # To use folder names, comment this line out
-
 BENCHMARK_LABELS = {
     'sam': "SAM-LES",
     'coamps': "COAMPS-LES",
@@ -67,11 +58,6 @@ BENCHMARK_LABELS = {
     'hoc': 'HOC 12/17/2005',
     'e3sm': "E3SM"
 }
-# SAM_LABEL = "SAM-LES"
-# COAMPS_LABEL = "COAMPS-LES"
-# GOLAZ_LABEL = "CLUBB r408 'best ever'"
-# HOC_LABEL = 'HOC 12/17/2005'
-# E3SM_LABEL = 'E3SM'
 
 # Text styles
 # -------------

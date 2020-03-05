@@ -13,13 +13,13 @@ class VariableGroupBase(VariableGroup):
     of panels.
     """
 
-    def __init__(self, ncdf_datasets, case, les_file=None, coamps_file=None, r408_dataset=None, hoc_dataset=None,
+    def __init__(self, case, clubb_datasets=None, les_dataset=None, coamps_dataset=None, r408_dataset=None, hoc_dataset=None,
                  e3sm_datasets=None, sam_datasets=None):
         """
 
-        :param ncdf_datasets:
+        :param clubb_datasets:
         :param case:
-        :param les_file:
+        :param les_dataset:
         """
         self.name = "base variables"
         self.variable_definitions = [
@@ -382,7 +382,7 @@ class VariableGroupBase(VariableGroup):
 
             # TODO corr chi 2's
         ]
-        super().__init__(ncdf_datasets,  case, sam_datasets=sam_datasets, les_file=les_file, coamps_file=coamps_file, r408_dataset=r408_dataset,
+        super().__init__(case, clubb_datasets=clubb_datasets, sam_datasets=sam_datasets, les_dataset=les_dataset, coamps_dataset=coamps_dataset, r408_dataset=r408_dataset,
                          hoc_dataset=hoc_dataset, e3sm_datasets=e3sm_datasets)
 
     def getThlmSamCalc(self, dataset_override=None):

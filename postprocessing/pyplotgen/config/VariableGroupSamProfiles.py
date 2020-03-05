@@ -14,11 +14,11 @@ from src.VariableGroup import VariableGroup
 
 class VariableGroupSamProfiles(VariableGroup):
     
-    def __init__(self, ncdf_datasets, case, sam_file=None, coamps_file=None, r408_dataset=None, hoc_dataset=None,
+    def __init__(self, case, clubb_datasets=None, sam_file=None, coamps_dataset=None, r408_dataset=None, hoc_dataset=None,
                  e3sm_datasets=None):
         """
         
-        :param ncdf_datasets:
+        :param clubb_datasets:
         :param case:
         :param sam_file:
         """
@@ -1177,7 +1177,7 @@ class VariableGroupSamProfiles(VariableGroup):
             #},
             ]
         # Call ctor of parent class
-        super().__init__(ncdf_datasets, case, sam_file=sam_file, coamps_file=coamps_file, r408_dataset=r408_dataset, hoc_dataset=hoc_dataset, e3sm_datasets= e3sm_datasets)
+        super().__init__(case, clubb_datasets=clubb_datasets, sam_file=sam_file, coamps_dataset=coamps_dataset, r408_dataset=r408_dataset, hoc_dataset=hoc_dataset, e3sm_datasets= e3sm_datasets)
             
     def getThlmSamCalc(self, dataset_override=None):
         """

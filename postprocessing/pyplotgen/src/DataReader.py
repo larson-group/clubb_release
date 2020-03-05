@@ -107,7 +107,7 @@ class NetCdfVariable:
 
     def filter_datasets(self):
         """
-        Looks through the input files for a case and finds the Dataset
+        Looks through the clubb files for a case and finds the Dataset
         containing the requested variable and assigns it to self.ncdf_data
         Assumes self.ncdf_data is a dictionary.
 
@@ -124,7 +124,7 @@ class NetCdfVariable:
 
 class DataReader():
     """
-    This class is responsible for handling input files. Given input
+    This class is responsible for handling clubb files. Given clubb
     files it reads them and returns NetCDF Dataset objects to python. It is
     also responsible for performing the time-averaging calculation at load time.
 
@@ -160,7 +160,7 @@ class DataReader():
         :param ignore_git: Ignore files and paths that contain '.git' in their name
         :return: A 2 dimentional dictionary where a case_key (e.g. gabls3_rad)
         contains a dictionary defining filenames behind a filetype key (e.g. zm)
-        For example: to access the zm data for gabls3_rad, simply call nc_datasets['gabls3']['zm']
+        For example: to access the zm data for gabls3_rad, simply call clubb_datasets['gabls3']['zm']
         :author: Nicolas Strike
         """
         for sub_folder in folder_path:
@@ -285,7 +285,7 @@ class DataReader():
         units = "units n/a"
         for dataset in datasets:
             keys = dataset.variables.keys()
-            if varname in keys:
+            if varname in keys and hasattr(dataset.variables[varname], 'units'):
                 raw_units = dataset.variables[varname].units
                 raw_units = self.__remove_invalid_unit_chars__(raw_units)
                 if len(raw_units) > 0:
@@ -432,7 +432,7 @@ class DataReader():
         contains 'sfc' it will return a generic 'sfc calculations' value.
 
         :param ncdf_dataset: NetCDF Dataset object imported from output file from some supported model (e.g. CLUBB, SAM)
-        :return: the (estimated) name of the model that outputted the input file
+        :return: the (estimated) name of the model that outputted the clubb file
         """
         if isinstance(ncdf_dataset, Dataset):
             ncdf_dataset = {'temp': ncdf_dataset}

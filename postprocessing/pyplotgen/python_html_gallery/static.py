@@ -70,7 +70,7 @@ idx_page = '<html>\n\t' \
 a_tag = '<div align="CENTER"><a name="%s"><font size="+6"><b>%s</b></font></a></div>'
 br = '\n<br>'
 
-setup_file_link = '<a href="%s">Case setup information for input folder %s</a>' + br
+setup_file_link = '<a href="%s">Case setup information for clubb folder %s</a>' + br
 
 br = '\n<br>'
 footer = '\n</div></body></html>'

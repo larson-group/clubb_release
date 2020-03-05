@@ -21,20 +21,20 @@ class Case:
     definition to the list ALL_CASES = [...] at the bottom of the file).
     """
 
-    def __init__(self, case_definition, ncdf_datasets, diff_datasets=None, sam_folders = [""],
+    def __init__(self, case_definition, clubb_folders = [], diff_datasets=None, sam_folders = [""],
                  plot_les=False, plot_budgets=False, plot_r408=False, plot_hoc=False, e3sm_dirs =[]):
         """
         Initialize a Case
 
         :param case_definition: dict containing case specific elements. These are pulled in from Case_definitions.py,
             see Case_definitions.py for details on how to structure the dict
-        :param ncdf_datasets: dict containing Dataset objects holding the data needed for the case. The key for each
+        :param clubb_folders: dict containing Dataset objects holding the data needed for the case. The key for each
             value/Dataset in the dict is set to the ext provided in the filename (e.g. sfc, zt, zm)
         :param plot_les: If True pyplotgen plots LES lines, if False pyplotgen does not plot LES lines
         :param plot_budgets: If True pyplotgen will plot Budgets in addition to the other plots
                 If False (default), pyplotgen will not plot budgets
         :param diff_datasets: Takes in netcdf datasets. If datasets are passed in, pyplotgen will plot the numeric
-            difference between the folder passed in an the input folder.
+            difference between the folder passed in an the clubb folder.
         :param plot_r408: If True, pyplotgen will plot the Chris Golaz 'best ever' clubb r408 data lines
                 If False (default), pyplotgen will not plot the Chris Golaz 'best ever' clubb r408 data lines
         :param plot_hoc: If True, pyplotgen will plot the HOC 2005 data lines
@@ -46,7 +46,7 @@ class Case:
         self.var_groups = case_definition['var_groups']
         self.height_min_value = case_definition['height_min_value']
         self.height_max_value = case_definition['height_max_value']
-        self.ncdf_datasets = ncdf_datasets
+        self.clubb_datasets = clubb_folders
         self.blacklisted_variables = case_definition['blacklisted_vars']
         self.plot_budgets = plot_budgets
         self.plot_r408 = plot_r408
@@ -116,7 +116,7 @@ class Case:
         self.panels = []
         self.diff_panels = []
         for VarGroup in self.var_groups:
-            temp_group = VarGroup(self.ncdf_datasets, self, les_file=les_file, coamps_file=coamps_datasets, sam_datasets=sam_datasets,
+            temp_group = VarGroup(self, clubb_datasets=self.clubb_datasets, les_dataset=les_file, coamps_dataset=coamps_datasets, sam_datasets=sam_datasets,
                                   r408_dataset=r408_datasets, hoc_dataset=hoc_datasets, e3sm_datasets = e3sm_file)
 
             for panel in temp_group.panels:
@@ -125,7 +125,7 @@ class Case:
         # Convert panels to difference panels if user passed in --diff <<folder>>
         if self.diff_datasets is not None:
             for VarGroup in self.var_groups:
-                diff_group = VarGroup(self.diff_datasets, self, sam_file=les_file, coamps_file=coamps_datasets,
+                diff_group = VarGroup(self, clubb_datasets=self.diff_datasets, sam_file=les_file, coamps_file=coamps_datasets,
                                       r408_file=r408_datasets, hoc_dataset=hoc_datasets, e3sm_datasets = e3sm_file)
                 for panel in diff_group.panels:
                     self.diff_panels.append(panel)
@@ -139,13 +139,13 @@ class Case:
                 self.panels[idx].all_plots = diff_lines
 
         if self.plot_budgets:
-            if self.ncdf_datasets is not None and len(self.ncdf_datasets) is not 0:
-                for ncdataset in self.ncdf_datasets.values():
-                    budget_variables = VariableGroupBaseBudgets(ncdataset, self)
+            if self.clubb_datasets is not None and len(self.clubb_datasets) is not 0:
+                for ncdataset in self.clubb_datasets.values():
+                    budget_variables = VariableGroupBaseBudgets(self, clubb_datasets=ncdataset)
                     self.panels.extend(budget_variables.panels)
             if e3sm_file != None and len(e3sm_file) is not 0:
                 for dataset_name in e3sm_file:
-                    e3sm_budgets = VariableGroupBaseBudgets({dataset_name:e3sm_file[dataset_name]}, self) # E3SM dataset must be wrapped in the same form as the clubb datasets
+                    e3sm_budgets = VariableGroupBaseBudgets(self, e3sm_datasets={dataset_name:e3sm_file[dataset_name]}) # E3SM dataset must be wrapped in the same form as the clubb datasets
                     self.panels.extend(e3sm_budgets.panels)
 
 

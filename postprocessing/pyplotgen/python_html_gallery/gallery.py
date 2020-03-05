@@ -157,7 +157,7 @@ def WriteGalleryPage(page):
         # Write case_setup.txt links
         for setup_file in glob.glob(page+'/*.txt'):
             setup_file_tail_len = 10
-            # Find the number of characters that occur in the setupfile's name before the name of the input folder.
+            # Find the number of characters that occur in the setupfile's name before the name of the clubb folder.
             # The format for setup filenames is casename/casename_inputfoldername_setup.txt
             casename_prefix_len = len(page) * 2 + 2 # length is num characters in page/page_  including the '/' and '_'
             setup_file_src_folder = setup_file[casename_prefix_len: -setup_file_tail_len]

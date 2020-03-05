@@ -26,25 +26,25 @@ class VariableGroup:
     calculating any 'calculated' variables from netcdf
     """
 
-    def __init__(self, ncdf_datasets, case, les_file=None, coamps_file=None, r408_dataset=None, hoc_dataset=None,
+    def __init__(self, case, clubb_datasets=None, les_dataset=None, coamps_dataset=None, r408_dataset=None, hoc_dataset=None,
                  e3sm_datasets=None, sam_datasets=None):
         """
         Initialize common VariableGroup parameters
-        :param ncdf_datasets: A dictionary or Netcdf dataset containing the data to be plotted
+        :param clubb_datasets: A dictionary or Netcdf dataset containing the data to be plotted
         :param case: An instance of a Case object
-        :param les_file: NetCDF4 Dataset object containing sam ouput
-        :param coamps_file: NetCDF4 Dataset object containing coamps ouput
+        :param les_dataset: NetCDF4 Dataset object containing sam ouput
+        :param coamps_dataset: NetCDF4 Dataset object containing coamps ouput
         :param r408_dataset: NetCDF4 Dataset object containing clubb r408 ('chris golaz') output
         """
         self.variables = []
         self.panels = []
         self.defualt_panel_type = Panel.TYPE_PROFILE
-        self.clubb_datasets = ncdf_datasets
+        self.clubb_datasets = clubb_datasets
         self.case = case
-        self.les_dataset = les_file
+        self.les_dataset = les_dataset
         self.e3sm_datasets = e3sm_datasets
         self.sam_datasets = sam_datasets
-        self.coamps_dataset = coamps_file
+        self.coamps_dataset = coamps_dataset
         self.r408_datasets = r408_dataset
         self.hoc_datasets = hoc_dataset
         self.casename = case.name
@@ -155,14 +155,14 @@ class VariableGroup:
 
         var_names = variable_def_dict['var_names']
 
-        plot_les = self.les_dataset is not None #and 'sam_calc' not in variable_def_dict.keys()
-        plot_coamps = self.coamps_dataset is not None #and 'coamps_calc' not in variable_def_dict.keys()
-        plot_r408 = self.r408_datasets is not None #and 'r408_calc' not in variable_def_dict.keys()
-        plot_hoc = self.hoc_datasets is not None #and 'hoc_calc' not in variable_def_dict.keys()
+        plot_les = self.les_dataset is not None
+        plot_coamps = self.coamps_dataset is not None
+        plot_r408 = self.r408_datasets is not None
+        plot_hoc = self.hoc_datasets is not None
 
         plot_sam = self.sam_datasets is not None and len(self.sam_datasets) > 0 and (len(var_names['sam']) is not 0 or 'sam_calc' in variable_def_dict.keys())
         plot_e3sm = self.e3sm_datasets is not None and len(self.e3sm_datasets) > 0 and (len(var_names['e3sm']) is not 0 or 'e3sm_calc' in variable_def_dict.keys())
-        plot_clubb = self.clubb_datasets is not None
+        plot_clubb = self.clubb_datasets is not None and len(self.clubb_datasets) > 0 and (len(var_names['clubb']) is not 0 or 'clubb_calc' in variable_def_dict.keys())
 
 
         all_lines = []
@@ -176,7 +176,7 @@ class VariableGroup:
         if plot_hoc:
             all_lines.extend(self.__getVarLinesForModel__('hoc', variable_def_dict, self.hoc_datasets))
 
-        # Plot input folders
+        # Plot clubb folders
         if plot_sam:
             for input_folder in self.sam_datasets:
                 folder_name = os.path.basename(input_folder)
@@ -184,17 +184,12 @@ class VariableGroup:
         if plot_e3sm:
             for input_folder in self.e3sm_datasets:
                 folder_name = os.path.basename(input_folder)
-                # TODO e3sm fancy-label is broken
                 all_lines.extend(self.__getVarLinesForModel__('e3sm', variable_def_dict, self.e3sm_datasets[input_folder], label=folder_name))
         if plot_clubb:
             for input_folder in self.clubb_datasets:
                 folder_name = os.path.basename(input_folder)
-                # TODO clubb label override is broken
                 all_lines.extend(self.__getVarLinesForModel__('clubb', variable_def_dict, self.clubb_datasets[input_folder], label=folder_name))
 
-
-        # calculated_plots = self.__processCalculatedValues__(variable_def_dict)
-        # all_lines.extend(calculated_plots)
         variable_def_dict['plots'] = all_lines
 
         plotted_models_varname = self.__getRelativeVarName__(var_names)
@@ -206,6 +201,24 @@ class VariableGroup:
             self.variables.append(variable_def_dict)
 
     def __getVarLinesForModel__(self, model_name, variable_def_dict, dataset, label="no label found"):
+        """
+        Generates and returns lines for plotting on a Panel for a single model (e.g. sam, clubb, e3sm).
+        This function can produce lines for either benchmarks or user-inputted folders.
+        To get lines for a benchmark, pass in the 3 required parameters. To plot an clubb folder, the label
+        parameter must also be specified, as this is the label that will appear on the panel's legend. Benchmarks
+        do not need the label parameter because their labels are specified in the Style_definitions.py file.
+
+        :param model_name: The name of the model to be plotted. This needs to be the same as the name used to specify the model
+        throughout the various dictionary keys in pyplotgen.
+        E.g. sam output is specified with 'sam', where sam calclulation functions are denoted by 'sam_calc' and Style_definitions.py'
+        uses the key 'sam' to refer to sam configurations such as BENCHMARK_LABLES['sam']
+
+        :param variable_def_dict: This is the variable defining dict, e.g. from VariableGroupBase.py
+        :param dataset: Either a NetCDF Dataset object or a dict of the format {'some key', Dataset}
+        :param label: The label to be used on the panel's legend. This is a required field when getting lines for a user-inputed folder, but
+        not a required field for processing benchmark output
+        :return: And array of lines to be added to a panel's plots (via the extend() function)
+        """
         var_names = variable_def_dict['var_names']
         conv_factors = self.__getConvFactors__(variable_def_dict)
 
@@ -229,9 +242,6 @@ class VariableGroup:
             line_style = Style_definitions.BENCHMARK_LINE_STYLES[model_name]
 
         all_lines = []
-
-        # for dataset_name in dataset:
-        # label = os.path.basename("temp")
 
         data_was_calculated = False
         if (model_name + '_calc') in variable_def_dict.keys():
@@ -311,39 +321,6 @@ class VariableGroup:
             self.panels.append(panel)
 
 
-    # def __processCalculatedValues__(self, variable_def_dict):
-    #     """
-    #
-    #     :param variable_def_dict:
-    #     :return:
-    #     """
-    #
-    #     data_reader = DataReader()
-    #     calculated_plots = []
-    #     # Handle SAM calculations for Benchmark data
-    #     if 'sam_calc' in variable_def_dict.keys() and self.les_dataset is not None and data_reader.getNcdfSourceModel(
-    #             self.les_dataset) == 'sam':
-    #         samplot_data, z = variable_def_dict['sam_calc']()
-    #         samplot = Line(samplot_data, z, line_format=Style_definitions.BENCHMARK_LINE_STYLES['sam'],
-    #                        label=Style_definitions.BENCHMARK_LABELS['sam'])
-    #         calculated_plots.append(samplot)
-    #
-    #     if 'coamps_calc' in variable_def_dict.keys() and self.coamps_file is not None and data_reader.getNcdfSourceModel(
-    #             self.coamps_file) == 'coamps':
-    #         coampsplot_data, z = variable_def_dict['coamps_calc']()
-    #         coampsplot = Line(coampsplot_data, z, line_format=Style_definitions.BENCHMARK_LINE_STYLES['coamps'],
-    #                           label=Style_definitions.BENCHMARK_LABELS['coamps'])
-    #         calculated_plots.append(coampsplot)
-    #
-    #     if 'e3sm_calc' in variable_def_dict.keys() and self.e3sm_datasets is not None and data_reader.getNcdfSourceModel(
-    #             self.e3sm_datasets) == 'e3sm':
-    #         e3smplot_data, z = variable_def_dict['e3sm_calc']()
-    #         e3smplot = Line(e3smplot_data, z, line_format=Style_definitions.BENCHMARK_LINE_STYLES['e3sm'],
-    #                         label=Style_definitions.BENCHMARK_LABELS['e3sm'])
-    #         calculated_plots.append(e3smplot)
-    #
-    #     return calculated_plots
-
     def __getTitles__(self, variable_def_dict, plotted_models_varname):
         """
         Returns a desirable title of the panel
@@ -354,6 +331,8 @@ class VariableGroup:
         :param plotted_models_varname:
         :return: title, axis_title
         """
+        title = "Title not found"
+        axis_title = "axis_title not found"
 
         data_reader = DataReader()
         var_names = variable_def_dict['var_names']
@@ -361,8 +340,11 @@ class VariableGroup:
         all_lines = variable_def_dict['plots']
         if 'type' in variable_def_dict.keys():
             panel_type = variable_def_dict['type']
-        first_input_datasets = self.getTextDefiningDataset()
-        title = "Title not found"
+        try:
+            first_input_datasets = self.getTextDefiningDataset()
+        except FileExistsError as e:
+            warn(str(e))
+            return title, axis_title
         if 'title' not in variable_def_dict.keys():
             if panel_type == Panel.TYPE_BUDGET:
                 source_folder = os.path.basename(Path(first_input_datasets[0].filepath()).parent)
@@ -376,7 +358,6 @@ class VariableGroup:
         else:
             title = variable_def_dict['title']
 
-        axis_title = "axis_title not found"
         if 'axis_title' not in variable_def_dict.keys():
             if panel_type == Panel.TYPE_BUDGET and len(all_lines) is not 0:
                 any_varname_with_budget_units = all_lines[0].label

@@ -89,7 +89,7 @@ HEIGHT_VAR_NAMES = ['z', 'Z3', 'altitude', 'lev']
 
 """
 To plot only a subset of cases, reguardless of what output exists
-in the input folder, uncomment the last line of this file and
+in the clubb folder, uncomment the last line of this file and
 fill that array with the cases you'd like to plot. This overwrites the
 ALL_CASES variable such that pyplotgen will only know about cases in that
 list and ignore all others. The name must match the python variable name
@@ -520,5 +520,5 @@ ALL_CASES = [ARM, ARM_97, ASTEX_A209, ATEX,
              ]
 
 # If uncommented, this line will override the real ALL_CASES given above, forcing pyplotgen to only plot some cases.
-# ALL_CASES = [ARM, RICO]
+# ALL_CASES = [ASTEX_A209]
 
