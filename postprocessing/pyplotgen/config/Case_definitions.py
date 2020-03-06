@@ -404,7 +404,7 @@ MC3E = {'name': 'mc3e', 'start_time': 1, 'end_time': 64800, 'height_min_value': 
 MPACE_A = {'name': 'mpace_a', 'start_time': 4141, 'end_time': 4320, 'height_min_value': 0, 'height_max_value': 10000,
 
            'blacklisted_vars': ['Skrt_zt', 'Skthl_zt', 'rtpthvp', 'thlpthvp', 'Ngm', 'wpNrp'],
-           'les_dataset': None,
+           'les_dataset': SAM_BENCHMARK_OUTPUT_ROOT + "/SAM6.6/MPACE_A/MPACE_A_128x128x69_morr_CEM.nc",
            'coamps_dataset': None,
            'r408_file': None,
            'hoc_file': None,
@@ -417,7 +417,8 @@ MPACE_B = {'name': 'mpace_b', 'start_time': 541, 'end_time': 720, 'height_min_va
            'blacklisted_vars': ['Ngm', 'wpNrp'],
            'les_dataset': None,
            'coamps_dataset': {'sm': LES_OUTPUT_ROOT + "/mpace_b_coamps_sm.nc",
-                           'sw': LES_OUTPUT_ROOT + "/mpace_b_coamps_sw.nc"},
+                           'sw': LES_OUTPUT_ROOT + "/mpace_b_coamps_sw.nc",
+                           'sfc': LES_OUTPUT_ROOT + "/mpace_b_coamps_sfc.nc"},
            'r408_file': None,
            'hoc_file': None,
            'e3sm_file': None,
@@ -456,7 +457,8 @@ RICO = {'name': 'rico', 'start_time': 4201, 'end_time': 4320, 'height_min_value'
 
         'blacklisted_vars': ['wpNrp'],
         'les_dataset': SAM_BENCHMARK_OUTPUT_ROOT + "/JULY_2017/RICO_256x256x100_drizzle/RICO_256x256x100_drizzle.nc",
-        'coamps_dataset': None,
+        'coamps_dataset': {'sm': LES_OUTPUT_ROOT + "/rico_coamps_sm.nc",
+                           'sw': LES_OUTPUT_ROOT + "/rico_coamps_sw.nc"},
         'r408_file': None,
         'hoc_file': None,
         'e3sm_file': e3sm_output_root + "/rico.nc",
@@ -469,7 +471,8 @@ RICO_SILHS = {'name': 'rico_silhs', 'start_time': 4201, 'end_time': 4320, 'heigh
 
               'blacklisted_vars': ['wpNrp'],
               'les_dataset': SAM_BENCHMARK_OUTPUT_ROOT + "/JULY_2017/RICO_256x256x100_drizzle/RICO_256x256x100_drizzle.nc",
-              'coamps_dataset': None,
+              'coamps_dataset': {'sm': LES_OUTPUT_ROOT + "/rico_coamps_sm.nc",
+                                 'sw': LES_OUTPUT_ROOT + "/rico_coamps_sw.nc"},
               'r408_file': None,
               'hoc_file': None,
               'e3sm_file': None,
@@ -492,7 +495,8 @@ WANGARA = {'name': 'wangara', 'start_time': 181, 'end_time': 240, 'height_min_va
 
            'blacklisted_vars': [],
            'les_dataset': None,
-           'coamps_dataset': None,  # uses RAMS-LES /LES_files/wangara_rams.nc
+           'coamps_dataset': {'sw': LES_OUTPUT_ROOT + "/wangara_rams.nc",
+                              'sm': LES_OUTPUT_ROOT + "/wangara_rams.nc"},
            'r408_file': {'zm': R408_OUTPUT_ROOT + '/Chris_Golaz_best_ever/wangara_zm.nc',
                          'zt': R408_OUTPUT_ROOT + '/Chris_Golaz_best_ever/wangara_zt.nc',
                          'sfc': R408_OUTPUT_ROOT + '/Chris_Golaz_best_ever/wangara_sfc.nc'},
@@ -520,5 +524,5 @@ ALL_CASES = [ARM, ARM_97, ASTEX_A209, ATEX,
              ]
 
 # If uncommented, this line will override the real ALL_CASES given above, forcing pyplotgen to only plot some cases.
-# ALL_CASES = [ASTEX_A209]
+# ALL_CASES = [WANGARA]
 

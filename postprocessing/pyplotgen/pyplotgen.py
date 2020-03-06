@@ -243,6 +243,10 @@ def __process_args__():
     parser.add_argument("--bu-morr",
                         help="For morrison microphysics: breaks microphysical source terms into component processes",
                         action="store_true")
+    parser.add_argument("--benchmark-only",
+                        help="Prevents autoplotting of clubb's default output folder when no input folders are specifed. This results in only "
+                             "plotting the benchmark output, though this output doesn't gurantee all text fields or plots are filled.",
+                        action="store_true")
     parser.add_argument("--diff", help="Plot the difference between two clubb folders", action="store")
     parser.add_argument("-c", "--clubb", help="Input folder(s) containing clubb netcdf data.", action="store",
                         default=[], nargs='+')
@@ -277,7 +281,7 @@ def __process_args__():
             args.e3sm[i] = args.e3sm[i][:-1]
 
     no_folders_inputed = len(args.e3sm) == 0 and len(args.sam) == 0 and len(args.clubb) == 0
-    if no_folders_inputed:
+    if no_folders_inputed and not args.benchmark_only:
         args.clubb = ["../../output"]
 
     if args.all_best:
