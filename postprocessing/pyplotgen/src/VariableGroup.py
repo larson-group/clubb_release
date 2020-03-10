@@ -38,7 +38,7 @@ class VariableGroup:
         """
         self.variables = []
         self.panels = []
-        self.defualt_panel_type = Panel.TYPE_PROFILE
+        self.default_panel_type = Panel.TYPE_PROFILE
         self.clubb_datasets = clubb_datasets
         self.case = case
         self.les_dataset = les_dataset
@@ -176,7 +176,7 @@ class VariableGroup:
         if plot_hoc:
             all_lines.extend(self.__getVarLinesForModel__('hoc', variable_def_dict, self.hoc_datasets))
 
-        # Plot clubb folders
+        # Plot input folders
         if plot_sam:
             for input_folder in self.sam_datasets:
                 folder_name = os.path.basename(input_folder)
@@ -229,7 +229,7 @@ class VariableGroup:
         if 'fallback_func' in variable_def_dict.keys():
             fallback = variable_def_dict['fallback_func']
 
-        panel_type = self.defualt_panel_type
+        panel_type = self.default_panel_type
         if 'type' in variable_def_dict.keys():
             panel_type = variable_def_dict['type']
 
@@ -310,7 +310,7 @@ class VariableGroup:
             title = variable['title']
             axis_label = variable['axis_title']
             plotset = variable['plots']
-            panel_type = self.defualt_panel_type
+            panel_type = self.default_panel_type
             if 'type' in variable.keys():
                 panel_type = variable['type']
             if 'sci_scale' in variable.keys():
@@ -336,7 +336,7 @@ class VariableGroup:
 
         data_reader = DataReader()
         var_names = variable_def_dict['var_names']
-        panel_type = self.defualt_panel_type
+        panel_type = self.default_panel_type
         all_lines = variable_def_dict['plots']
         if 'type' in variable_def_dict.keys():
             panel_type = variable_def_dict['type']
@@ -450,7 +450,7 @@ class VariableGroup:
         :return: A list of Line objects containing model data from whatever models were passed in.
         Returns None if requested variable is not found.
         """
-        panel_type = self.defualt_panel_type
+        panel_type = self.default_panel_type
         if override_panel_type is not None:
             panel_type = override_panel_type
         all_lines = []

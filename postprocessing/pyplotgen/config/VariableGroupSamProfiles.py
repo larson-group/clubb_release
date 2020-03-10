@@ -9,13 +9,13 @@ TODO:   - Should invalid variables produce zero lines or none at all?
 '''
 import numpy as np
 
+from src.Panel import Panel
 from src.VariableGroup import VariableGroup
 
 
 class VariableGroupSamProfiles(VariableGroup):
     
-    def __init__(self, case, clubb_datasets=None, sam_file=None, coamps_dataset=None, r408_dataset=None, hoc_dataset=None,
-                 e3sm_datasets=None):
+    def __init__(self, case, clubb_datasets=None, sam_file=None, coamps_dataset=None, r408_dataset=None, hoc_dataset=None, e3sm_datasets=None):
         """
         
         :param clubb_datasets:
@@ -28,11 +28,128 @@ class VariableGroupSamProfiles(VariableGroup):
         
         self.g_per_second_to_kg_per_day = self.kg_per_second_to_kg_per_day / 1000
         
+        u_cld_lines = [
+            {'var_names': ['U'], 'legend_label': r"$\overline{u}$"},
+            {'var_names': ['UCLD'], 'legend_label': r"$\overline{u}^\mathrm{{cld}}$"}
+            ]
+        
+        v_cld_lines = [
+            {'var_names': ['V'], 'legend_label': r"$\overline{v}$"},
+            {'var_names': ['VCLD'], 'legend_label': r"$\overline{v}^\mathrm{{cld}}$"}
+            ]
+        
+        w_cld_lines = [
+            {'var_names': ['WM'], 'legend_label': r"$\overline{w}$"},
+            {'var_names': ['WCLD'], 'legend_label': r"$\overline{w}^\mathrm{{cld}}$"}
+            ]
+        
+        u_cond_lines = [
+            {'var_names': ['U'], 'legend_label': r"$\overline{u}$"},
+            {'var_names': ['UCLD'], 'legend_label': '$\overline{u}^\mathrm{cld}$'},
+            {'var_names': ['UENV'], 'legend_label': r"$\overline{u}^\mathrm{{env}}$", 'fallback_func': self.getUEnvUnweighted}
+            ]
+        
+        u_weight_lines = [
+            {'var_names': ['U'], 'legend_label': r"$\overline{u}$"},
+            {'var_names': ['UCLD'], 'legend_label': r"$\overline{u}^\mathrm{{cld}}$", 'fallback_func': self.getUCldWeighted},
+            {'var_names': ['UENV'], 'legend_label': r"$\overline{u}^\mathrm{{env}}$", 'fallback_func': self.getUEnvWeighted}
+            ]
+        
+        v_cond_lines = [
+            {'var_names': ['V'], 'legend_label': r"$\overline{v}$"},
+            {'var_names': ['VCLD'], 'legend_label': '$\overline{v}^\mathrm{cld}$'},
+            {'var_names': ['VENV'], 'legend_label': r"$\overline{v}^\mathrm{{env}}$", 'fallback_func': self.getVEnvUnweighted}
+            ]
+        
+        v_weight_lines = [
+            {'var_names': ['V'], 'legend_label': r"$\overline{v}$"},
+            {'var_names': ['VCLD'], 'legend_label': r"$\overline{v}^\mathrm{{cld}}$", 'fallback_func': self.getVCldWeighted},
+            {'var_names': ['VENV'], 'legend_label': r"$\overline{v}^\mathrm{{env}}$", 'fallback_func': self.getWEnvWeighted}
+            ]
+        
+        w_cond_lines = [
+            {'var_names': ['WM'], 'legend_label': r"$\overline{w}$"},
+            {'var_names': ['WCLD'], 'legend_label': '$\overline{w}^\mathrm{cld}$'},
+            {'var_names': ['WENV'], 'legend_label': r"$\overline{w}^\mathrm{{env}}$", 'fallback_func': self.getWEnvUnweighted}
+            ]
+        
+        w_weight_lines = [
+            {'var_names': ['WM'], 'legend_label': r"$\overline{w}$"},
+            {'var_names': ['WCLD'], 'legend_label': r"$\overline{w}^\mathrm{{cld}}$", 'fallback_func': self.getWCldWeighted},
+            {'var_names': ['WENV'], 'legend_label': r"$\overline{w}^\mathrm{{env}}$", 'fallback_func': self.getWEnvWeighted}
+            ]
+        
+        uw_cond_lines = [
+            {'var_names': ['UW'], 'legend_label': r"$\overline{u'w'}$"},
+            {'var_names': ['UWCLD'], 'legend_label': r"$\overline{u'w'}^\mathrm{cld}$"},
+            {'var_names': ['UWENV'], 'legend_label': r"$\overline{u'w'}^\mathrm{env}$", 'fallback_func': self.getUWEnvUnweighted},
+            ]
+        
+        uw_weight_lines = [
+            {'var_names': ['UW'], 'legend_label': r"$\overline{u'w'}$"},
+            {'var_names': ['UWCLD'], 'legend_label': r"$\overline{u'w'}^\mathrm{cld}$", 'fallback_func': self.getUWCldWeighted},
+            {'var_names': ['UWENV'], 'legend_label': r"$\overline{u'w'}^\mathrm{env}$", 'fallback_func': self.getUWEnvWeighted},
+            ]
+        
+        vw_cond_lines = [
+            {'var_names': ['VW'], 'legend_label': r"$\overline{v'w'}$"},
+            {'var_names': ['VWCLD'], 'legend_label': r"$\overline{v'w'}^\mathrm{cld}$"},
+            {'var_names': ['VWENV'], 'legend_label': r"$\overline{v'w'}^\mathrm{env}$", 'fallback_func': self.getVWEnvUnweighted},
+            ]
+        
+        vw_weight_lines = [
+            {'var_names': ['VW'], 'legend_label': r"$\overline{v'w'}$"},
+            {'var_names': ['VWCLD'], 'legend_label': r"$\overline{v'w'}^\mathrm{cld}$", 'fallback_func': self.getVWCldWeighted},
+            {'var_names': ['VWENV'], 'legend_label': r"$\overline{v'w'}^\mathrm{env}$", 'fallback_func': self.getVWEnvWeighted},
+            ]
+        
+        thv_cond_lines = [
+            {'var_names': ['THETAV'], 'legend_label': r"$\overline{\theta_v}$"},
+            {'var_names': ['TVCLD'], 'legend_label': r"$\overline{\theta_v}^\mathrm{cld}$"},
+            {'var_names': ['TVENV'], 'legend_label': r"$\overline{\theta_v}^\mathrm{env}$", 'fallback_func': self.getTHVEnvUnweighted},
+            ]
+        
+        thv_weight_lines = [
+            {'var_names': ['THETAV'], 'legend_label': r"$\overline{\theta_v}$"},
+            {'var_names': ['TVCLD'], 'legend_label': r"$\overline{\theta_v}^\mathrm{cld}$", 'fallback_func': self.getTHVCldWeighted},
+            {'var_names': ['TVENV'], 'legend_label': r"$\overline{\theta_v}^\mathrm{env}$", 'fallback_func': self.getTHVEnvWeighted},
+            ]
+        
+        thl_weight_lines = [
+            {'var_names': ['THETAV'], 'legend_label': r"$\overline{\theta_v}$"},
+            {'var_names': ['TVCLD'], 'legend_label': r"$\overline{\theta_v}^\mathrm{cld}$"},
+            {'var_names': ['TVENV'], 'legend_label': r"$\overline{\theta_v}^\mathrm{env}$", 'fallback_func': self.getTHVEnvUnweighted},
+            ]
+        
+        qtw_weight_lines = [
+            {'var_names': ['THETAV'], 'legend_label': r"$\overline{\theta_v}$"},
+            {'var_names': ['TVCLD'], 'legend_label': r"$\overline{\theta_v}^\mathrm{cld}$", 'fallback_func': self.getTHVCldWeighted},
+            {'var_names': ['TVENV'], 'legend_label': r"$\overline{\theta_v}^\mathrm{env}$", 'fallback_func': self.getTHVEnvWeighted},
+            ]
+        
+        qt_cond_lines = [
+            {'var_names': ['THETAV'], 'legend_label': r"$\overline{\theta_v}$"},
+            {'var_names': ['TVCLD'], 'legend_label': r"$\overline{\theta_v}^\mathrm{cld}$", 'fallback_func': self.getTHVCldWeighted},
+            {'var_names': ['TVENV'], 'legend_label': r"$\overline{\theta_v}^\mathrm{env}$", 'fallback_func': self.getTHVEnvWeighted},
+            ]
+        
+        uw_lines = [
+            {'var_names': ['UW'], 'legend_label': r"$\overline{u'w'}$"},
+            {'var_names': ['U2'], 'legend_label': r"$\overline{u'^2}$"},
+            {'var_names': ['W2'], 'legend_label': r"$\overline{w'^2}$"},
+            ]
+        
+        vw_lines = [
+            {'var_names': ['VW'], 'legend_label': r"$\overline{v'w'}$"},
+            {'var_names': ['V2'], 'legend_label': r"$\overline{v'^2}$"},
+            {'var_names': ['W2'], 'legend_label': r"$\overline{w'^2}$"},
+            ]
+        
         self.variable_definitions = [
             # THETA_L
             {'var_names': {
                 'clubb': ['thlm'],
-                'sam': [],
+                'sam': ['THETAL'],
                 'coamps': ['thlm'],
                 'r408': ['thlm'],
                 'hoc': ['thlm'],
@@ -40,10 +157,11 @@ class VariableGroupSamProfiles(VariableGroup):
                 },
             'sam_calc': self.getThlmSamCalc, 'sam_conv_factor': 1, 'title': r"Liquid Water Potential Temperature, $\mathrm{\theta_l}$", 'axis_title': r"$\mathrm{\theta_l}$ $\mathrm{\left[K\right]}$", 'legend_label': r"$\mathrm{\theta_l}$",
             },
+            
             # R_T
             {'var_names': {
                 'clubb': ['rtm'],
-                'sam': [],
+                'sam': ['QT'],
                 'coamps': ['qtm'],
                 'r408': ['rtm'],
                 'hoc': ['rtm'],
@@ -51,10 +169,11 @@ class VariableGroupSamProfiles(VariableGroup):
                 },
             'sam_calc': self.getRtmSamCalc, 'sam_conv_factor': 1, 'title': r"Total Water Mixing Ratio, $\mathrm{r_t}$", 'axis_title': r"$\mathrm{r_t}$ $\mathrm{\left[kg\,kg^{-1}\right]}$", 'legend_label': r'$\mathrm{r_t}$',
             },
+            
             # W'THETA_L'
             {'var_names': {
                 'clubb': ['wpthlp'],
-                'sam': [],
+                'sam': ['TLFLUX'],
                 'coamps': ['wpthlp'],
                 'r408': ['wpthlp'],
                 'hoc': ['wpthlp'],
@@ -62,6 +181,7 @@ class VariableGroupSamProfiles(VariableGroup):
                 },
             'sam_calc': self.getWpthlpCalc, 'sam_conv_factor': 1, 'title': r"Turbulent Flux of $\mathrm{\theta_l}$", 'axis_title': r"$\mathrm{\overline{w'\theta_l'}}$ / thflux(s) $\mathrm{\left[K\,m\,s^{-1}\right]}$", 'legend_label': r"$\mathrm{\overline{w'\theta_l'}}$",
             },
+            
             # CORR(W, THETA_L)
             {'var_names': {
                 'clubb': [],
@@ -73,11 +193,11 @@ class VariableGroupSamProfiles(VariableGroup):
                 },
             'sam_calc': self.getCorrWpThlpCalc, 'sam_conv_factor': 1, 'title': r"Corr(w,$\mathrm{\theta_l}$)", 'axis_title': r"Correlation $\mathrm{\overline{w'\theta_l'} / \sqrt{\overline{w'^2}\;\overline{\theta_l'^2}}}$ $\mathrm{\left[-\right]}$", 'legend_label': r"$\mathrm{Corr(w,\theta_l)}$",
             },
+            
             # W'R_T'
-            # TASK
             {'var_names': {
                 'clubb': ['wprtp'],
-                'sam': [],
+                'sam': ['QTFLUX'],
                 'coamps': ['wpqtp'],
                 'r408': ['wprtp'],
                 'hoc': ['wprtp'],
@@ -85,6 +205,7 @@ class VariableGroupSamProfiles(VariableGroup):
                 },
             'sam_calc': self.getWprtpCalc, 'sam_conv_factor': 1, 'title': r"Turbulent Flux of $\mathrm{r_t}$", 'axis_title': r"$\mathrm{\overline{w'r_t'}}$ / qtflux(s) $\mathrm{\left[kg\,kg^{-1}\,m\,s^{-1}\right]}$", 'legend_label': r"$\mathrm{\overline{w'r_t'}}$",
             },
+            
             # CORR(W, R_T)
             {'var_names': {
                 'clubb': [],
@@ -96,6 +217,7 @@ class VariableGroupSamProfiles(VariableGroup):
                 },
             'sam_calc': self.getCorrWpRtpCalc, 'sam_conv_factor': 1, 'title': r"$\mathrm{Corr(w,r_t)}$", 'axis_title': r"Correlation, $\mathrm{\overline{w'r_t'} / \sqrt{\overline{w'^2}\;\overline{r_t'^2}}}$ $\mathrm{\left[-\right]}$", 'legend_label': r"$\mathrm{Corr(w,r_t)}$",
             },
+            
             # cloudliq_frac_em6
             {'var_names': {
                 'clubb': [],
@@ -107,6 +229,7 @@ class VariableGroupSamProfiles(VariableGroup):
                 },
             'sam_conv_factor': 1, 'title': "Cloud Liquid Fraction", 'axis_title': r"Cloud liquid fraction $\mathrm{\left[\frac{\%}{100}\right]}$", 'legend_label': 'cloudliq_frac_em6',
             },
+            
             # R_C
             {'var_names': {
                 'clubb': [],
@@ -118,10 +241,11 @@ class VariableGroupSamProfiles(VariableGroup):
                 },
             'sam_conv_factor': 1e-3, 'title': r"Cloud Water Mixing Ratio, $\mathrm{r_c}$", 'axis_title': r"$\mathrm{r_c}$ / $\mathrm{q_{cl}}$ $\mathrm{\left[kg\,kg^{-1}\right]}$", 'legend_label': r'$\mathrm{r_c}$',
             },
+            
             # W'^2
             {'var_names': {
                 'clubb': [],
-                'sam': [],
+                'sam': ['W2'],
                 'coamps': [],
                 'r408': [],
                 'hoc': [],
@@ -129,10 +253,11 @@ class VariableGroupSamProfiles(VariableGroup):
                 },
             'sam_calc': self.getWp2Calc, 'sam_conv_factor': 1, 'title': r"Vertical Momentum Variance, $\mathrm{\overline{w'^2}}$", 'axis_title': r"Momentum variance, $\mathrm{\overline{w'^2}}$ $\mathrm{\left[m^2\,s^{-2}\right]}$", 'legend_label': r"$\mathrm{\overline{w'^2}}$",
             },
+            
             # W'^3
             {'var_names': {
                 'clubb': [],
-                'sam': [],
+                'sam': ['W3'],
                 'coamps': [],
                 'r408': [],
                 'hoc': [],
@@ -140,10 +265,11 @@ class VariableGroupSamProfiles(VariableGroup):
                 },
             'sam_calc': self.getWp3Calc, 'sam_conv_factor': 1, 'title': r"Vertical Momentum Skewness, $\mathrm{\overline{w'^3}}$", 'axis_title': r"Momentum Skewness, $\mathrm{\overline{w'^3}}$ $\mathrm{\left[m^3\,s^{-3}\right]}$", 'legend_label': r"$\mathrm{\overline{w'^3}}$",
             },
+            
             #THETA_L'^2
             {'var_names': {
                 'clubb': [],
-                'sam': [],
+                'sam': ['TL2'],
                 'coamps': [],
                 'r408': [],
                 'hoc': [],
@@ -151,10 +277,11 @@ class VariableGroupSamProfiles(VariableGroup):
                 },
             'sam_calc': self.getThetalVarCalc, 'sam_conv_factor': 1, 'title': r"Variance of Liquid Water Potential Temperature, $\mathrm{\overline{\theta_l'^2}}$", 'axis_title': r"$\mathrm{\overline{\theta_l'^2}}$ $\mathrm{\left[K^2\right]}$", 'legend_label': r"$\mathrm{\overline{\theta_l'^2}}$",
             },
+            
             # R_T'^2
             {'var_names': {
                 'clubb': [],
-                'sam': [],
+                'sam': ['QT2'],
                 'coamps': [],
                 'r408': [],
                 'hoc': [],
@@ -162,6 +289,7 @@ class VariableGroupSamProfiles(VariableGroup):
                 },
             'sam_calc': self.getRtVarCalc, 'sam_conv_factor': 1, 'title': r"Variance of Total Water Mixing Ratio, $\mathrm{\overline{r_t'^2}}$", 'axis_title': r"$\mathrm{\overline{r_t'^2}}$ / $\mathrm{\overline{q_t'^2}}$ $\mathrm{\left[kg^2\,kg^{-2}\right]}$", 'legend_label': r"$\mathrm{\overline{r_t'^2}}$",
             },
+            
             # R_T'THETA_L'
             {'var_names': {
                 'clubb': [],
@@ -173,6 +301,7 @@ class VariableGroupSamProfiles(VariableGroup):
                 },
             'sam_conv_factor': 1, 'title': r"Covariance of $\mathrm{r_t}$ & $\mathrm{\theta_l}$", 'axis_title': r"$\mathrm{\overline{r_t'\theta_l'}}$ $\mathrm{\left[kg\,kg^{-1}\,K\right]}$", 'legend_label': r"$\mathrm{\overline{r_t'\theta_l'}}$",
             },
+            
             # W_OBS
             {'var_names': {
                 'clubb': [],
@@ -184,6 +313,7 @@ class VariableGroupSamProfiles(VariableGroup):
                 },
             'sam_conv_factor': 1, 'title': r"$\mathrm{w_{obs}}$", 'axis_title': r"Observed wind, $\mathrm{w_{obs}}\ \mathrm{\left[m\,s^{-1}\right]}$", 'legend_label': r"$\mathrm{w_{obs}}$",
             },
+            
             # U
             {'var_names': {
                 'clubb': [],
@@ -195,6 +325,7 @@ class VariableGroupSamProfiles(VariableGroup):
                 },
             'sam_conv_factor': 1, 'title': r"Zonal Wind Component, $\mathrm{\overline{u}}$", 'axis_title': r"$\mathrm{\overline{u}}\ \mathrm{\left[m\,s^{-1}\right]}$", 'legend_label': r'\mathrm{\overline{u}}',
             },
+            
             # V
             {'var_names': {
                 'clubb': [],
@@ -206,10 +337,11 @@ class VariableGroupSamProfiles(VariableGroup):
                 },
             'sam_conv_factor': 1, 'title': r"Meridonal Wind Component, $\mathrm{\overline{v}}$", 'axis_title': r"$\mathrm{\overline{v}}\ \mathrm{\left[m\,s^{-1}\right]}$", 'legend_label': r"$\mathrm{\overline{v}}$",
             },
+            
             # U'W'
             {'var_names': {
                 'clubb': [],
-                'sam': [],
+                'sam': ['UW'],
                 'coamps': [],
                 'r408': [],
                 'hoc': [],
@@ -217,10 +349,11 @@ class VariableGroupSamProfiles(VariableGroup):
                 },
             'sam_calc': self.getUpWpCalc, 'sam_conv_factor': 1, 'title': r"$\mathrm{\overline{u'w'}}$", 'axis_title': r"Momentum flux, $\mathrm{\overline{u'w'}\ \left[m^2\,s^{-2}\right]}$", 'legend_label': r"$\mathrm{\overline{u'w'}}$",
             },
+            
             # V'W'
             {'var_names': {
                 'clubb': [],
-                'sam': [],
+                'sam': ['VW'],
                 'coamps': [],
                 'r408': [],
                 'hoc': [],
@@ -228,10 +361,11 @@ class VariableGroupSamProfiles(VariableGroup):
                 },
             'sam_calc': self.getVpWpCalc, 'sam_conv_factor': 1, 'title': r"$\mathrm{\overline{v'w'}}$", 'axis_title': r"Momentum flux, $\mathrm{\overline{v'w'}\ \left[m^2\,s^{-2}\right]}$", 'legend_label': r"$\mathrm{\overline{v'w'}}$",
             },
+            
             # U'^2
             {'var_names': {
                 'clubb': [],
-                'sam': [],
+                'sam': ['U2'],
                 'coamps': [],
                 'r408': [],
                 'hoc': [],
@@ -239,10 +373,11 @@ class VariableGroupSamProfiles(VariableGroup):
                 },
             'sam_calc': self.getUp2Calc, 'sam_conv_factor': 1, 'title': r"$\mathrm{\overline{u'^2}}$", 'axis_title': r"Momentum variance, $\mathrm{\overline{u'^2}\ \left[m^2\,s^{-2}\right]}$", 'legend_label': r"$\mathrm{\overline{u'^2}}$",
             },
+            
             # V'^2
             {'var_names': {
                 'clubb': [],
-                'sam': [],
+                'sam': ['V2'],
                 'coamps': [],
                 'r408': [],
                 'hoc': [],
@@ -250,6 +385,7 @@ class VariableGroupSamProfiles(VariableGroup):
                 },
             'sam_calc': self.getVp2Calc, 'sam_conv_factor': 1, 'title': r"$\mathrm{\overline{v'^2}}$", 'axis_title': r"Momentum variance, $\mathrm{\overline{v'^2}\ \left[m^2\,s^{-2}\right]}$", 'legend_label': r"$\mathrm{\overline{v'^2}}$",
             },
+            
             # CORR(U, W)
             {'var_names': {
                 'clubb': [],
@@ -261,6 +397,7 @@ class VariableGroupSamProfiles(VariableGroup):
                 },
             'sam_calc': self.getUpWpCorrCalc, 'sam_conv_factor': 1, 'title': r"Corr(u,w)", 'axis_title': r"Correlation, $\mathrm{\overline{u'w'} / \sqrt{\overline{u'^2}\;\overline{w'^2}}\ \left[-\right]}$", 'legend_label': r"Corr(u,w)",
             },
+            
             # CORR(V, W)
             {'var_names': {
                 'clubb': [],
@@ -779,405 +916,465 @@ class VariableGroupSamProfiles(VariableGroup):
             #'sam_calc': , 'sam_conv_factor': 1/1000, 'title': r"SWP", 'axis_title': r"SWP $\mathrm{\left[bla\right]}$", 'legend_label': r"SWP",
             #},
             
-            ## U'R_C'
-            #{'var_names': {
-                #'clubb': [],
-                #'sam': [],
-                #'coamps': [],
-                #'r408': [],
-                #'hoc': [],
-                #'e3sm': [],
-                #},
-            #'sam_calc': , 'sam_conv_factor': 1, 'title': r"$\overline{u'r_c'}$", 'axis_title': r"Liquid water flux, $\overline{u'r_c'}\ \mathrm{\left[m^2\,s^{-2}\right]}$", 'legend_label': r"$\overline{u'r_c'}$",
-            #},
-            ## U'R_T'
-            #{'var_names': {
-                #'clubb': [],
-                #'sam': [],
-                #'coamps': [],
-                #'r408': [],
-                #'hoc': [],
-                #'e3sm': [],
-                #},
-            #'sam_calc': , 'sam_conv_factor': 1, 'title': r"$\overline{u'r_t'}$", 'axis_title': r"Total water flux, $\overline{u'r_t'}\ \mathrm{\left[m^2\,s^{-2}\right]}$", 'legend_label': r"$\overline{u'r_t'}$",
-            #}, 
-            ## U'THETA_L'
-            #{'var_names': {
-                #'clubb': [],
-                #'sam': [],
-                #'coamps': [],
-                #'r408': [],
-                #'hoc': [],
-                #'e3sm': [],
-                #},
-            #'sam_calc': , 'sam_conv_factor': 1, 'title': r"$\overline{u'\theta_l'}$", 'axis_title': r"Liq. water pot. temp. flux, $\overline{u'\theta_l'}\ \mathrm{\left[m^2\,s^{-2}\right]}$", 'legend_label': r"$\overline{u'\theta_l'}$",
-            #},
-            ## U'THETA_V'
-            #{'var_names': {
-                #'clubb': [],
-                #'sam': [],
-                #'coamps': [],
-                #'r408': [],
-                #'hoc': [],
-                #'e3sm': [],
-                #},
-            #'sam_calc': , 'sam_conv_factor': 1, 'title': r"$\overline{u'\theta_v'}$", 'axis_title': r"Virtual pot. temp. flux, $\overline{u'\theta_v'}\ \mathrm{\left[m^2\,s^{-2}\right]}$", 'legend_label': r"$\overline{u'\theta_v'}$",
-            #},
-            ## V'R_C'
-            #{'var_names': {
-                #'clubb': [],
-                #'sam': [],
-                #'coamps': [],
-                #'r408': [],
-                #'hoc': [],
-                #'e3sm': [],
-                #},
-            #'sam_calc': , 'sam_conv_factor': 1, 'title': r"$\overline{v'r_c'}$", 'axis_title': r"Liquid water flux, $\overline{v'r_c'}\ \mathrm{\left[m^2\,s^{-2}\right]}$", 'legend_label': r"$\overline{v'r_c'}$",
-            #},
-            ## V'R_t'
-            #{'var_names': {
-                #'clubb': [],
-                #'sam': [],
-                #'coamps': [],
-                #'r408': [],
-                #'hoc': [],
-                #'e3sm': [],
-                #},
-            #'sam_calc': , 'sam_conv_factor': 1, 'title': r"$\overline{v'r_t'}$", 'axis_title': r"Total water flux, $\overline{v'r_t'}\ \mathrm{\left[m^2\,s^{-2}\right]}$", 'legend_label': r"$\overline{v'r_t'}$",
-            #},
-            ## V'THETA_L'
-            #{'var_names': {
-                #'clubb': [],
-                #'sam': [],
-                #'coamps': [],
-                #'r408': [],
-                #'hoc': [],
-                #'e3sm': [],
-                #},
-            #'sam_calc': , 'sam_conv_factor': 1, 'title': r"$\overline{v'\theta_l'}$", 'axis_title': r"Liq. water pot. temp. flux, $\overline{v'\theta_l'}\ \mathrm{\left[m^2\,s^{-2}\right]}$", 'legend_label': r"$\overline{v'\theta_l'}$",
-            #},
-            ## V'THETA_V'
-            #{'var_names': {
-                #'clubb': [],
-                #'sam': [],
-                #'coamps': [],
-                #'r408': [],
-                #'hoc': [],
-                #'e3sm': [],
-                #},
-            #'sam_calc': , 'sam_conv_factor': 1, 'title': r"$\overline{v'\theta_v'}$", 'axis_title': r"Virtual pot.temp. flux, $\overline{v'\theta_v'}\ \mathrm{\left[m^2\,s^{-2}\right]}$", 'legend_label': r"$\overline{v'\theta_v'}$",
-            #},
-            #{'var_names': {
-                #'clubb': [],
-                #'sam': [],
-                #'coamps': [],
-                #'r408': [],
-                #'hoc': [],
-                #'e3sm': [],
-                #},
-            #'sam_calc': , 'sam_conv_factor': 1, 'title': , 'axis_title': , 'legend_label': ,
-            #},
+            # U'R_C'
+            {'var_names': {
+                'clubb': [],
+                'sam': ['URCP'],
+                'coamps': [],
+                'r408': [],
+                'hoc': [],
+                'e3sm': [],
+                },
+            'sam_conv_factor': 1, 'title': r"$\overline{u'r_c'}$", 'axis_title': r"Liquid water flux, $\overline{u'r_c'}\ \mathrm{\left[m\,s^{-1}\,kg\,kg^{-1}\right]}$", 'legend_label': r"$\overline{u'r_c'}$",
+            },
+            
+            # U'R_T'
+            {'var_names': {
+                'clubb': [],
+                'sam': ['UPRTP'],
+                'coamps': [],
+                'r408': [],
+                'hoc': [],
+                'e3sm': [],
+                },
+            'sam_conv_factor': 1, 'title': r"$\overline{u'r_t'}$", 'axis_title': r"Total water flux, $\overline{u'r_t'}\ \mathrm{\left[m\,s^{-1}\,kg\,kg^{-1}\right]}$", 'legend_label': r"$\overline{u'r_t'}$",
+            }, 
+            
+            # U'THETA_L'
+            {'var_names': {
+                'clubb': [],
+                'sam': ['UPTHLP'],
+                'coamps': [],
+                'r408': [],
+                'hoc': [],
+                'e3sm': [],
+                },
+            'sam_conv_factor': 1, 'title': r"$\overline{u'\theta_l'}$", 'axis_title': r"Liq. water pot. temp. flux, $\overline{u'\theta_l'}\ \mathrm{\left[K\,m\,s^{-1}\right]}$", 'legend_label': r"$\overline{u'\theta_l'}$",
+            },
+            
+            # U'THETA_V'
+            {'var_names': {
+                'clubb': [],
+                'sam': ['UPTHVP'],
+                'coamps': [],
+                'r408': [],
+                'hoc': [],
+                'e3sm': [],
+                },
+            'sam_conv_factor': 1, 'title': r"$\overline{u'\theta_v'}$", 'axis_title': r"Virtual pot. temp. flux, $\overline{u'\theta_v'}\ \mathrm{\left[K\,m\,s^{-1}\right]}$", 'legend_label': r"$\overline{u'\theta_v'}$",
+            },
+            
+            # V'R_C'
+            {'var_names': {
+                'clubb': [],
+                'sam': ['VPRCP'],
+                'coamps': [],
+                'r408': [],
+                'hoc': [],
+                'e3sm': [],
+                },
+            'sam_conv_factor': 1, 'title': r"$\overline{v'r_c'}$", 'axis_title': r"Liquid water flux, $\overline{v'r_c'}\ \mathrm{\left[m\,s^{-1}\,kg\,kg^{-1}\right]}$", 'legend_label': r"$\overline{v'r_c'}$",
+            },
+            
+            # V'R_t'
+            {'var_names': {
+                'clubb': [],
+                'sam': ['VPRTP'],
+                'coamps': [],
+                'r408': [],
+                'hoc': [],
+                'e3sm': [],
+                },
+            'sam_conv_factor': 1, 'title': r"$\overline{v'r_t'}$", 'axis_title': r"Total water flux, $\overline{v'r_t'}\ \mathrm{\left[m\,s^{-1}\,kg\,kg^{-1}\right]}$", 'legend_label': r"$\overline{v'r_t'}$",
+            },
+            
+            # V'THETA_L'
+            {'var_names': {
+                'clubb': [],
+                'sam': ['VPTHLP'],
+                'coamps': [],
+                'r408': [],
+                'hoc': [],
+                'e3sm': [],
+                },
+            'sam_conv_factor': 1, 'title': r"$\overline{v'\theta_l'}$", 'axis_title': r"Liq. water pot. temp. flux, $\overline{v'\theta_l'}\ \mathrm{\left[K\,m\,s^{-1}\right]}$", 'legend_label': r"$\overline{v'\theta_l'}$",
+            },
+            
+            # V'THETA_V'
+            {'var_names': {
+                'clubb': [],
+                'sam': ['VPTHVP'],
+                'coamps': [],
+                'r408': [],
+                'hoc': [],
+                'e3sm': [],
+                },
+            'sam_conv_factor': 1, 'title': r"$\overline{v'\theta_v'}$", 'axis_title': r"Virtual pot.temp. flux, $\overline{v'\theta_v'}\ \mathrm{\left[K\,m\,s^{-1}\right]}$", 'legend_label': r"$\overline{v'\theta_v'}$",
+            },
             
             ## Cloud conditional plots
-            #['ucld', r"$\overline{u}^\mathrm{{cld}}$", r"Conditional mean wind, $\overline{u}^\mathrm{{cld}}\ \mathrm{\left[m\,s^{-1}\right]}$", '', (0.1, 0.9), ucld],
-            #{'var_names': {
-                #'clubb': [],
-                    #'sam': [],
-                    #'coamps': [],
-                    #'r408': [],
-                    #'hoc': [],
-                    #'e3sm': [],
-                    #},
-            #'sam_calc': , 'sam_conv_factor': 1, 'title': , 'axis_title': , 'legend_label': ,
-            #},
-            #['vcld', r"$\overline{v}^\mathrm{{cld}}$", r"Conditional mean wind, $\overline{v}^\mathrm{{cld}}\ \ \mathrm{\left[m\,s^{-1}\right]}$", '', (0.1, 0.9), vcld],
-            #{'var_names': {
-                #'clubb': [],
-                    #'sam': [],
-                    #'coamps': [],
-                    #'r408': [],
-                    #'hoc': [],
-                    #'e3sm': [],
-                    #},
-            #'sam_calc': , 'sam_conv_factor': 1, 'title': , 'axis_title': , 'legend_label': ,
-            #},
-            #['wcld', r"$\overline{w}^\mathrm{{cld}}$", r"Conditional mean wind, $\overline{w}^\mathrm{{cld}}\ \ \mathrm{\left[m\,s^{-1}\right]}$", '', (0.1, 0.9), wcld],
-            #{'var_names': {
-                #'clubb': [],
-                    #'sam': [],
-                    #'coamps': [],
-                    #'r408': [],
-                    #'hoc': [],
-                    #'e3sm': [],
-                    #},
-            #'sam_calc': , 'sam_conv_factor': 1, 'title': , 'axis_title': , 'legend_label': ,
-            #},
-            #['ucond', r"Condt. $\overline{u}^\mathrm{cld},\ \overline{u}^\mathrm{env}$", r"Conditional mean wind, $\overline{u}\ \mathrm{\left[m\,s^{-1}\right]}$", '', (0.1, 0.9), ucond],
-            #{'var_names': {
-                #'clubb': [],
-                    #'sam': [],
-                    #'coamps': [],
-                    #'r408': [],
-                    #'hoc': [],
-                    #'e3sm': [],
-                    #},
-            #'sam_calc': , 'sam_conv_factor': 1, 'title': , 'axis_title': , 'legend_label': ,
-            #},
-            #['uweight', r"Weighted $\overline{u}^\mathrm{cld},\ \overline{u}^\mathrm{env}$", r"Weighted mean wind, $\overline{u}\ \mathrm{\left[m\,s^{-1}\right]}$", '', (0.1, 0.9), uweight],
-            #{'var_names': {
-                #'clubb': [],
-                    #'sam': [],
-                    #'coamps': [],
-                    #'r408': [],
-                    #'hoc': [],
-                    #'e3sm': [],
-                    #},
-            #'sam_calc': , 'sam_conv_factor': 1, 'title': , 'axis_title': , 'legend_label': ,
-            #},
-            #['vcond', r"Condt. $\overline{v}^\mathrm{cld},\ \overline{v}^\mathrm{env}$", r"Conditional mean wind, $\overline{v}\ \mathrm{\left[m\,s^{-1}\right]}$", '', (0.1, 0.9), vcond],
-            #{'var_names': {
-                #'clubb': [],
-                    #'sam': [],
-                    #'coamps': [],
-                    #'r408': [],
-                    #'hoc': [],
-                    #'e3sm': [],
-                    #},
-            #'sam_calc': , 'sam_conv_factor': 1, 'title': , 'axis_title': , 'legend_label': ,
-            #},
-            #['vweight', r"Weighted $\overline{v}^\mathrm{cld},\ \overline{v}^\mathrm{env}$", r"Weighted mean wind, $\overline{v}\ \mathrm{\left[m\,s^{-1}\right]}$", '', (0.1, 0.9), vweight],
-            #{'var_names': {
-                #'clubb': [],
-                    #'sam': [],
-                    #'coamps': [],
-                    #'r408': [],
-                    #'hoc': [],
-                    #'e3sm': [],
-                    #},
-            #'sam_calc': , 'sam_conv_factor': 1, 'title': , 'axis_title': , 'legend_label': ,
-            #},
-            #['wcond', r"Condt. $\overline{w}^\mathrm{cld},\ \overline{w}^\mathrm{env}$", r"Conditional mean wind, $\overline{w}\ \mathrm{\left[m\,s^{-1}\right]}$", '', (0.1, 0.9), wcond],
-            #{'var_names': {
-                #'clubb': [],
-                    #'sam': [],
-                    #'coamps': [],
-                    #'r408': [],
-                    #'hoc': [],
-                    #'e3sm': [],
-                    #},
-            #'sam_calc': , 'sam_conv_factor': 1, 'title': , 'axis_title': , 'legend_label': ,
-            #},
-            #['wweight', r"Weighted $\overline{w}^\mathrm{cld},\ \overline{w}^\mathrm{env}$", r"Weighted mean wind, $\overline{w}\ \mathrm{\left[m\,s^{-1}\right]}$", '', (0.1, 0.9), wweight],
-            #{'var_names': {
-                #'clubb': [],
-                    #'sam': [],
-                    #'coamps': [],
-                    #'r408': [],
-                    #'hoc': [],
-                    #'e3sm': [],
-                    #},
-            #'sam_calc': , 'sam_conv_factor': 1, 'title': , 'axis_title': , 'legend_label': ,
-            #},
-            #['uwcond', r"Condt. $\overline{u'w'}^\mathrm{cld}, \overline{u'w'}^\mathrm{env}$", r"Conditional flux, $\overline{u'w'}\ \mathrm{\left[m^2\, s^{-2}\right]}$", '', (0.1, 0.9), uwcond],
-            #{'var_names': {
-                #'clubb': [],
-                    #'sam': [],
-                    #'coamps': [],
-                    #'r408': [],
-                    #'hoc': [],
-                    #'e3sm': [],
-                    #},
-            #'sam_calc': , 'sam_conv_factor': 1, 'title': , 'axis_title': , 'legend_label': ,
-            #},
-            #['uwweight', r"Weighted $\overline{u'w'}^\mathrm{cld}, \overline{u'w'}^\mathrm{env}$", r"Weighted flux, $\overline{u'w'}\ \mathrm{\left[m^2\, s^{-2}\right]}$", '', (0.1, 0.9), uwweight],
-            #{'var_names': {
-                #'clubb': [],
-                    #'sam': [],
-                    #'coamps': [],
-                    #'r408': [],
-                    #'hoc': [],
-                    #'e3sm': [],
-                    #},
-            #'sam_calc': , 'sam_conv_factor': 1, 'title': , 'axis_title': , 'legend_label': ,
-            #},
-            #['vwcond', r"Condt. $\overline{v'w'}^\mathrm{cld}, \overline{v'w'}^\mathrm{env}$", r"Conditional flux, $\overline{v'w'}\ \mathrm{\left[m^2\, s^{-2}\right]}$", '', (0.1, 0.9), vwcond],
-            #{'var_names': {
-                #'clubb': [],
-                    #'sam': [],
-                    #'coamps': [],
-                    #'r408': [],
-                    #'hoc': [],
-                    #'e3sm': [],
-                    #},
-            #'sam_calc': , 'sam_conv_factor': 1, 'title': , 'axis_title': , 'legend_label': ,
-            #},
-            #['vwweight', r"Weighted $\overline{v'w'}^\mathrm{cld}, \overline{v'w'}^\mathrm{env}$", r"Weighted flux, $\overline{v'w'}\ \mathrm{\left[m^2\, s^{-2}\right]}$", '', (0.1, 0.9), vwweight],
-            #{'var_names': {
-                #'clubb': [],
-                    #'sam': [],
-                    #'coamps': [],
-                    #'r408': [],
-                    #'hoc': [],
-                    #'e3sm': [],
-                    #},
-            #'sam_calc': , 'sam_conv_factor': 1, 'title': , 'axis_title': , 'legend_label': ,
-            #},
-            #['tvcond', r"Condt. $\overline{\theta}_v^\mathrm{cld}, \overline{\theta}_v^\mathrm{env}$", r"Conditional virt. pot. temp., $\overline{\theta}_v\ \mathrm{\left[K\right]}$", '', (0.1, 0.9), tvcond],
-            #{'var_names': {
-                #'clubb': [],
-                    #'sam': [],
-                    #'coamps': [],
-                    #'r408': [],
-                    #'hoc': [],
-                    #'e3sm': [],
-                    #},
-            #'sam_calc': , 'sam_conv_factor': 1, 'title': , 'axis_title': , 'legend_label': ,
-            #},
-            #['tvweight', r"Weighted $\overline{\theta}_v^\mathrm{cld}, \overline{\theta}_v^\mathrm{env}$", r"Weighted virt. pot. temp., $\overline{\theta}_v\ \mathrm{\left[K\right]}$", '', (0.1, 0.9), tvweight],
-            #{'var_names': {
-                #'clubb': [],
-                    #'sam': [],
-                    #'coamps': [],
-                    #'r408': [],
-                    #'hoc': [],
-                    #'e3sm': [],
-                    #},
-            #'sam_calc': , 'sam_conv_factor': 1, 'title': , 'axis_title': , 'legend_label': ,
-            #},
-            #['tlweight', r"Weighted $\overline{w's_L'}^\mathrm{cld}, \overline{w's_L'}^\mathrm{env}$", r"Weighted flux, $\overline{w's_L'}\ \mathrm{\left[K\,m\, s^{-1}\right]}$", '', (0.1, 0.9), tlweight],
-            #{'var_names': {
-                #'clubb': [],
-                    #'sam': [],
-                    #'coamps': [],
-                    #'r408': [],
-                    #'hoc': [],
-                    #'e3sm': [],
-                    #},
-            #'sam_calc': , 'sam_conv_factor': 1, 'title': , 'axis_title': , 'legend_label': ,
-            #},
-            #['qtwweight', r"Weighted $\overline{w'r_t'}^\mathrm{cld}, \overline{w'r_t'}^\mathrm{env}$", r"Weighted flux, $\overline{w'r_t'}\ \mathrm{\left[kg\,kg^{-1}\, m\,s^{-1}\right]}$", '', (0.1, 0.9), qtwweight],
-            #{'var_names': {
-                #'clubb': [],
-                    #'sam': [],
-                    #'coamps': [],
-                    #'r408': [],
-                    #'hoc': [],
-                    #'e3sm': [],
-                    #},
-            #'sam_calc': , 'sam_conv_factor': 1, 'title': , 'axis_title': , 'legend_label': ,
-            #},
-            #['qtcond', "Condt. QT", r"Conditional water, QT $\mathrm{\left[g\,kg^{-1}\right]}$", '', (0.1, 0.9), qtcond],
-            #{'var_names': {
-                #'clubb': [],
-                    #'sam': [],
-                    #'coamps': [],
-                    #'r408': [],
-                    #'hoc': [],
-                    #'e3sm': [],
-                    #},
-            #'sam_calc': , 'sam_conv_factor': 1, 'title': , 'axis_title': , 'legend_label': ,
-            #},
-            #['uwall', "Eastward 2nd-moments", r"2nd moments $\mathrm{\left[m^2\,s^{-2}\right]}$", '', (0.1, 0.9), uwall],
-            #{'var_names': {
-                #'clubb': [],
-                    #'sam': [],
-                    #'coamps': [],
-                    #'r408': [],
-                    #'hoc': [],
-                    #'e3sm': [],
-                    #},
-            #'sam_calc': , 'sam_conv_factor': 1, 'title': , 'axis_title': , 'legend_label': ,
-            #},
-            #['vwall', "Northward 2nd-moments", r"2nd moments $\mathrm{\left[m^2\,s^{-2}\right]}$", '', (0.1, 0.9), vwall],
-            #{'var_names': {
-                #'clubb': [],
-                    #'sam': [],
-                    #'coamps': [],
-                    #'r408': [],
-                    #'hoc': [],
-                    #'e3sm': [],
-                    #},
-            #'sam_calc': , 'sam_conv_factor': 1, 'title': , 'axis_title': , 'legend_label': ,
-            #},
-            #['cld', "Cloud fraction", r"Cloud fraction [-]", '', (0.1, 0.9), cld],
+            
+            # UCLD
+            {'var_names': {
+                'clubb': [],
+                'sam': ['UCLD'],
+                'coamps': [],
+                'r408': [],
+                'hoc': [],
+                'e3sm': [],
+                },
+            'sam_conv_factor': 1, 'type': Panel.TYPE_BUDGET, 'lines': u_cld_lines, 'title': r"Conditional mean wind, $\overline{u}^\mathrm{{cld}}$", 'axis_title': r"Conditional mean wind, $\overline{u}^\mathrm{{cld}}\ \mathrm{\left[m\,s^{-1}\right]}$",
+            #'legend_label': r"$\overline{u}^\mathrm{{cld}}$",
+            },
+            
+            # VCLD
+            {'var_names': {
+                'clubb': [],
+                'sam': ['VCLD'],
+                'coamps': [],
+                'r408': [],
+                'hoc': [],
+                'e3sm': [],
+                },
+            'sam_conv_factor': 1, 'type': Panel.TYPE_BUDGET, 'lines': v_cld_lines, 'title': r"Conditional mean wind, $\overline{v}^\mathrm{{cld}}$", 'axis_title': r"Conditional mean wind, $\overline{v}^\mathrm{{cld}}\ \mathrm{\left[m\,s^{-1}\right]}$",
+            #'legend_label': r"$\overline{v}^\mathrm{{cld}}$",
+            },
+            
+            # WCLD
+            {'var_names': {
+                'clubb': [],
+                'sam': ['WCLD'],
+                'coamps': [],
+                'r408': [],
+                'hoc': [],
+                'e3sm': [],
+                },
+            'sam_conv_factor': 1, 'type': Panel.TYPE_BUDGET, 'lines': w_cld_lines, 'title': r"Conditional mean wind, $\overline{w}^\mathrm{{cld}}$", 'axis_title': r"Conditional mean wind, $\overline{w}^\mathrm{{cld}}\ \mathrm{\left[m\,s^{-1}\right]}$",
+            #'legend_label': r"$\overline{w}^\mathrm{{cld}}$",
+            },
+            
+            # UCLD unweighted
+            {'var_names': {
+                'clubb': [],
+                'sam': ['UCLD'],
+                'coamps': [],
+                'r408': [],
+                'hoc': [],
+                'e3sm': [],
+                },
+            'sam_conv_factor': 1, 'type': Panel.TYPE_BUDGET, 'lines': u_cond_lines, 'title': r"Conditional mean wind, $\overline{u}$", 'axis_title': r"Conditional mean wind, $\overline{w}^\mathrm{{cld}}\ \mathrm{\left[m\,s^{-1}\right]}$",
+            #'legend_label': r"$\overline{u}^\mathrm{{cld}}$",
+            },
+            
+            # UCLD weighted
+            {'var_names': {
+                'clubb': [],
+                'sam': ['UCLD'],
+                'coamps': [],
+                'r408': [],
+                'hoc': [],
+                'e3sm': [],
+                },
+            'sam_conv_factor': 1, 'type': Panel.TYPE_BUDGET, 'lines': u_weight_lines, 'title': r"Weighted mean wind, $\overline{u}$", 'axis_title': r"Weighted mean wind, $\overline{u}\ \mathrm{\left[m\,s^{-1}\right]}$",
+            #'legend_label': r"$\overline{u}^\mathrm{{cld}}$",
+            },
+            
+            # VCLD unweighted
+            {'var_names': {
+                'clubb': [],
+                'sam': ['VCLD'],
+                'coamps': [],
+                'r408': [],
+                'hoc': [],
+                'e3sm': [],
+                },
+            'sam_conv_factor': 1, 'type': Panel.TYPE_BUDGET, 'lines': v_cond_lines, 'title': r"Conditional mean wind, $\overline{v}$", 'axis_title': r"Conditional mean wind, $\overline{v}\ \mathrm{\left[m\,s^{-1}\right]}$",
+            #'legend_label': r"$\overline{v}^\mathrm{{cld}}$",
+            },
+            
+            # VCLD weighted
+            {'var_names': {
+                'clubb': [],
+                'sam': ['VCLD'],
+                'coamps': [],
+                'r408': [],
+                'hoc': [],
+                'e3sm': [],
+                },
+            'sam_conv_factor': 1, 'type': Panel.TYPE_BUDGET, 'lines': v_weight_lines, 'title': r"Weighted mean wind, $\overline{v}$", 'axis_title': r"Weighted mean wind, $\overline{v}\ \mathrm{\left[m\,s^{-1}\right]}$",
+            #'legend_label': r"$\overline{v}^\mathrm{{cld}}$",
+            },
+            
+            # WCLD unweighted
+            {'var_names': {
+                'clubb': [],
+                'sam': ['WCLD'],
+                'coamps': [],
+                'r408': [],
+                'hoc': [],
+                'e3sm': [],
+                },
+            'sam_conv_factor': 1, 'type': Panel.TYPE_BUDGET, 'lines': w_cond_lines, 'title': r"Conditional mean wind, $\overline{w}$", 'axis_title': r"Conditional mean wind, $\overline{w}\ \mathrm{\left[m\,s^{-1}\right]}$",
+            #'legend_label': r"$\overline{w}^\mathrm{{cld}}$",
+            },
+            
+            # WCLD weighted
+            {'var_names': {
+                'clubb': [],
+                'sam': ['WCLD'],
+                'coamps': [],
+                'r408': [],
+                'hoc': [],
+                'e3sm': [],
+                },
+            'sam_conv_factor': 1, 'type': Panel.TYPE_BUDGET, 'lines': w_weight_lines, 'title': r"Weighted mean wind, $\overline{w}$", 'axis_title': r"Weighted mean wind, $\overline{w}\ \mathrm{\left[m\,s^{-1}\right]}$",
+            #'legend_label': r"$\overline{w}^\mathrm{{cld}}$",
+            },
+            
+            # UWCLD unweighted
+            {'var_names': {
+                'clubb': [],
+                'sam': ['UWCLD'],
+                'coamps': [],
+                'r408': [],
+                'hoc': [],
+                'e3sm': [],
+                },
+            'sam_conv_factor': 1, 'type': Panel.TYPE_BUDGET, 'lines': uw_cond_lines, 'title': r"Cloud-conditonal $\overline{u'w'}$", 'axis_title': r"Conditional flux, $\overline{u'w'}\ \mathrm{\left[m^2\, s^{-2}\right]}$",
+            #'legend_label': r"$\overline{u'w'}^\mathrm{cld}$",
+            },
+            
+            # UWCLD weighted
+            {'var_names': {
+                'clubb': [],
+                'sam': ['UWCLD'],
+                'coamps': [],
+                'r408': [],
+                'hoc': [],
+                'e3sm': [],
+                },
+            'sam_conv_factor': 1, 'type': Panel.TYPE_BUDGET, 'lines': uw_weight_lines, 'title': r"Cloud-weighted $\overline{u'w'}$", 'axis_title': r"Weighted flux, $\overline{u'w'}\ \mathrm{\left[m^2\, s^{-2}\right]}$",
+            #'legend_label': r"$\overline{u'w'}^\mathrm{cld}$",
+            },
+            
+            # VWCLD unweighted
+            {'var_names': {
+                'clubb': [],
+                'sam': ['VWCLD'],
+                'coamps': [],
+                'r408': [],
+                'hoc': [],
+                'e3sm': [],
+                },
+            'sam_conv_factor': 1, 'type': Panel.TYPE_BUDGET, 'lines': vw_cond_lines, 'title': r"Cloud-conditonal $\overline{v'w'}$", 'axis_title': r"Conditional flux, $\overline{v'w'}\ \mathrm{\left[m^2\, s^{-2}\right]}$",
+            #'legend_label': r"$\overline{v'w'}^\mathrm{cld}$",
+            },
+            
+            # VWCLD weighted
+            {'var_names': {
+                'clubb': [],
+                'sam': ['VWCLD'],
+                'coamps': [],
+                'r408': [],
+                'hoc': [],
+                'e3sm': [],
+                },
+            'sam_conv_factor': 1, 'type': Panel.TYPE_BUDGET, 'lines': vw_weight_lines, 'title': r"Cloud-weighted $\overline{v'w'}$", 'axis_title': r"Weighted flux, $\overline{v'w'}\ \mathrm{\left[m^2\, s^{-2}\right]}$",
+            #'legend_label': r"$\overline{v'w'}^\mathrm{cld}$",
+            },
+            
+            # TVCLD unweighted
+            {'var_names': {
+                'clubb': [],
+                'sam': ['TVCLD'],
+                'coamps': [],
+                'r408': [],
+                'hoc': [],
+                'e3sm': [],
+                },
+            'sam_conv_factor': 1, 'type': Panel.TYPE_BUDGET, 'lines': thv_cond_lines, 'title': r"Conditional virt. pot. temp., $\overline{\theta}_v$", 'axis_title': r"Conditional virt. pot. temp., $\overline{\theta}_v\ \mathrm{\left[K\right]}$",
+            #'legend_label': r"$\overline{\theta}_v^\mathrm{cld}",
+            },
+            
+            # TVCLD weighted
+            {'var_names': {
+                'clubb': [],
+                'sam': ['TVCLD'],
+                'coamps': [],
+                'r408': [],
+                'hoc': [],
+                'e3sm': [],
+                },
+            'sam_conv_factor': 1, 'type': Panel.TYPE_BUDGET, 'lines': thv_weight_lines, 'title': r"Weighted virt. pot. temp., $\overline{\theta}_v$", 'axis_title': r"Weighted virt. pot. temp., $\overline{\theta}_v\ \mathrm{\left[K\right]}$",
+            #'legend_label': r"$\overline{\theta}_v^\mathrm{cld}",
+            },
+            
+            # TLCLD weighted
+            {'var_names': {
+                'clubb': [],
+                'sam': ['TLCLD'],
+                'coamps': [],
+                'r408': [],
+                'hoc': [],
+                'e3sm': [],
+                },
+            'sam_conv_factor': 1, 'type': Panel.TYPE_BUDGET, 'lines': thl_weight_lines, 'title': r"Weighted flux, $\overline{w's_L'}$", 'axis_title': r"Weighted flux, $\overline{w's_L'}\ \mathrm{\left[K\,m\, s^{-1}\right]}$",
+            #'legend_label': r"$\overline{w's_L'}^\mathrm{cld}$",
+            },
+            
+            # QTWCLD weighted
+            {'var_names': {
+                'clubb': [],
+                'sam': ['QTWCLD'],
+                'coamps': [],
+                'r408': [],
+                'hoc': [],
+                'e3sm': [],
+                },
+            'sam_conv_factor': 1, 'type': Panel.TYPE_BUDGET, 'lines': qtw_weight_lines, 'title': r"Weighted flux, $\overline{w'r_t'}$", 'axis_title': r"Weighted flux, $\overline{w'r_t'}\ \mathrm{\left[kg\,kg^{-1}\, m\,s^{-1}\right]}$",
+            #'legend_label': r"$\overline{w'r_t'}^\mathrm{cld}$",
+            },
+            
+            # QTCLD unweighted
+            {'var_names': {
+                'clubb': [],
+                'sam': ['QTCLD'],
+                'coamps': [],
+                'r408': [],
+                'hoc': [],
+                'e3sm': [],
+                },
+            'sam_conv_factor': 1, 'type': Panel.TYPE_BUDGET, 'lines': qt_cond_lines, 'title': r"Conditional total water mixing ratio, $\mathrm{r_t}$", 'axis_title': r"Conditional total water mixing ratio, $\mathrm{r_t}\ \mathrm{\left[g\,kg^{-1}\right]}$",
+            #'legend_label': r"$\mathrm{r_t^{cld}}$",
+            },
+            
+            # U 2ND MOMENTS
+            {'var_names': {
+                'clubb': [],
+                'sam': ['UW'],
+                'coamps': [],
+                'r408': [],
+                'hoc': [],
+                'e3sm': [],
+                },
+            'sam_conv_factor': 1, 'type': Panel.TYPE_BUDGET, 'lines': uw_lines, 'title': "Eastward 2nd-moments", 'axis_title': r"2nd moments $\mathrm{\left[m^2\,s^{-2}\right]}$",
+            #'legend_label': '',
+            },
+            
+            # V 2ND MOMENTS
+            {'var_names': {
+                'clubb': [],
+                'sam': ['VW'],
+                'coamps': [],
+                'r408': [],
+                'hoc': [],
+                'e3sm': [],
+                },
+            'sam_conv_factor': 1, 'type': Panel.TYPE_BUDGET, 'lines': vw_lines, 'title': "Northward 2nd-moments", 'axis_title': r"2nd moments $\mathrm{\left[m^2\,s^{-2}\right]}$",
+            #'legend_label': '',
+            },
+            
+            # CLD
+            {'var_names': {
+                'clubb': [],
+                'sam': ['CLD'],
+                'coamps': [],
+                'r408': [],
+                'hoc': [],
+                'e3sm': [],
+                },
+            'sam_conv_factor': 1, 'title': "Cloud fraction", 'axis_title': "Cloud fraction [-]", 'legend_label': 'CLD',
+            },
+            
             ## Tracer variables
-            #{'var_names': {
-                #'clubb': [],
-                    #'sam': [],
-                    #'coamps': [],
-                    #'r408': [],
-                    #'hoc': [],
-                    #'e3sm': [],
-                    #},
-            #'sam_calc': , 'sam_conv_factor': 1, 'title': , 'axis_title': , 'legend_label': ,
-            #},
-            #['tr01', "Tracer 01", r"Tracer 01 [TR]", '', (0.1, 0.9), tr01],
-            #{'var_names': {
-                #'clubb': [],
-                    #'sam': [],
-                    #'coamps': [],
-                    #'r408': [],
-                    #'hoc': [],
-                    #'e3sm': [],
-                    #},
-            #'sam_calc': , 'sam_conv_factor': 1, 'title': , 'axis_title': , 'legend_label': ,
-            #},
-            #['tr01adv', "TR01 vert. adv. tend.", r"TR01 tendency due to vert. adv. $\mathrm{\left[TR/day\right]}$", '', (0.1, 0.9), tr01adv],
-            #{'var_names': {
-                #'clubb': [],
-                    #'sam': [],
-                    #'coamps': [],
-                    #'r408': [],
-                    #'hoc': [],
-                    #'e3sm': [],
-                    #},
-            #'sam_calc': , 'sam_conv_factor': 1, 'title': , 'axis_title': , 'legend_label': ,
-            #},
-            #['tr01diff', "TR01 vert. SGS trans. tend.", r"TR01 tendency due to vert. SGS transport $\mathrm{\left[TR/day\right]}$", '', (0.1, 0.9), tr01diff],
-            #{'var_names': {
-                #'clubb': [],
-                    #'sam': [],
-                    #'coamps': [],
-                    #'r408': [],
-                    #'hoc': [],
-                    #'e3sm': [],
-                    #},
-            #'sam_calc': , 'sam_conv_factor': 1, 'title': , 'axis_title': , 'legend_label': ,
-            #},
-            #['tr01flx', "Total TR01 flux", r"Total flux of TR01  $\mathrm{\left[TR kg m^{-2} s^{-1}\right]}$", '', (0.1, 0.9), tr01flx],
-            #{'var_names': {
-                #'clubb': [],
-                #'sam': ['TR01FLXS'],
-                #'coamps': [],
-                #'r408': [],
-                #'hoc': [],
-                #'e3sm': [],
-                #},
-            #'sam_calc': , 'sam_conv_factor': 1, 'title': "TR01 SGS flux", 'axis_title': r"SGS flux of TR01  $\mathrm{\left[TR kg m^{-2} s^{-1}\right]}$", 'legend_label': 'TR01 SGS flux',
-            #},
-            #{'var_names': {
-                #'clubb': [],
-                #'sam': ['TR01PHYS'],
-                #'coamps': [],
-                #'r408': [],
-                #'hoc': [],
-                #'e3sm': [],
-                #},
-            #'sam_calc': , 'sam_conv_factor': 1, 'title': "TR01 phys. tend.", 'axis_title': r"TR01 tendency due to physics $\mathrm{\left[TR/day\right]}$", 'legend_label': 'TR01 physics',
-            #},
-            #{'var_names': {
-                #'clubb': [],
-                #'sam': ['RHO'],
-                #'coamps': [],
-                #'r408': [],
-                #'hoc': [],
-                #'e3sm': [],
-                #},
-            #'sam_calc': , 'sam_conv_factor': 1, 'title': "Air density", 'axis_title': r"Air density $\rho\ \mathrm{\left[kgm^{-3}\right]}$", 'legend_label': r'\rho',
-            #},
+            
+            # TR01
+            {'var_names': {
+                'clubb': [],
+                'sam': ['TR01'],
+                'coamps': [],
+                'r408': [],
+                'hoc': [],
+                'e3sm': [],
+                },
+            'sam_conv_factor': 1, 'title': "Tracer 01", 'axis_title': "Tracer 01 [TR]", 'legend_label': 'TR01',
+            },
+            
+            # TR01ADV
+            {'var_names': {
+                'clubb': [],
+                'sam': ['TR01ADV'],
+                'coamps': [],
+                'r408': [],
+                'hoc': [],
+                'e3sm': [],
+                },
+            'sam_conv_factor': 1, 'title': "TR01 vert. adv. tend.", 'axis_title': r"TR01 tendency due to vert. adv. $\mathrm{\left[TR/day\right]}$", 'legend_label': 'TR01ADV',
+            },
+            
+            # TR01DIFF
+            {'var_names': {
+                'clubb': [],
+                'sam': ['TR01DIFF'],
+                'coamps': [],
+                'r408': [],
+                'hoc': [],
+                'e3sm': [],
+                },
+            'sam_conv_factor': 1, 'title': "TR01 vert. SGS transp. tend.", 'axis_title': r"TR01 tendency due to vert. SGS transport $\mathrm{\left[TR/day\right]}$", 'legend_label': 'TR01DIFF',
+            },
+            
+            # TR01FLX
+            {'var_names': {
+                'clubb': [],
+                'sam': ['TR01FLX'],
+                'coamps': [],
+                'r408': [],
+                'hoc': [],
+                'e3sm': [],
+                },
+            'sam_conv_factor': 1, 'title': "Total TR01 flux", 'axis_title': r"Total flux of TR01  $\mathrm{\left[TR kg m^{-2} s^{-1}\right]}$", 'legend_label': 'TR01FLX',
+            },
+            
+            # TR01FLXS
+            {'var_names': {
+                'clubb': [],
+                'sam': ['TR01FLXS'],
+                'coamps': [],
+                'r408': [],
+                'hoc': [],
+                'e3sm': [],
+                },
+            'sam_conv_factor': 1, 'title': "TR01 SGS flux", 'axis_title': r"SGS flux of TR01  $\mathrm{\left[TR kg m^{-2} s^{-1}\right]}$", 'legend_label': 'TR01FLXS',
+            },
+            
+            # TR01PHYS
+            {'var_names': {
+                'clubb': [],
+                'sam': ['TR01PHYS'],
+                'coamps': [],
+                'r408': [],
+                'hoc': [],
+                'e3sm': [],
+                },
+            'sam_calc': , 'sam_conv_factor': 1, 'title': "TR01 phys. tend.", 'axis_title': r"TR01 tendency due to physics $\mathrm{\left[TR/day\right]}$", 'legend_label': 'TR01PHYS',
+            },
+            
+            # RHO
+            {'var_names': {
+                'clubb': [],
+                'sam': ['RHO'],
+                'coamps': [],
+                'r408': [],
+                'hoc': [],
+                'e3sm': [],
+                },
+            'sam_conv_factor': 1, 'title': "Air density", 'axis_title': r"Air density $\rho\ \mathrm{\left[kgm^{-3}\right]}$", 'legend_label': r'$\rho$',
+            },
             ]
+        
         # Call ctor of parent class
-        super().__init__(case, clubb_datasets=clubb_datasets, sam_file=sam_file, coamps_dataset=coamps_dataset, r408_dataset=r408_dataset, hoc_dataset=hoc_dataset, e3sm_datasets= e3sm_datasets)
+        super().__init__(ncdf_datasets, case, sam_file=sam_file, coamps_file=coamps_file, r408_dataset=r408_dataset, hoc_dataset=hoc_dataset, e3sm_datasets= e3sm_datasets)
             
     def getThlmSamCalc(self, dataset_override=None):
         """
@@ -1467,3 +1664,261 @@ class VariableGroupSamProfiles(VariableGroup):
         qrainm_ip, z, dataset = self.getVarForCalculations('qrainm_ip', self.sam_file)
         QRP2_QRIP = qrainp2_ip / (np.maximum(np.full(n,1e-5),qrainm_ip)**2)
         return QRP2_QRIP, z
+    
+    ## Conditional average fallback functions
+    def getUEnvUnweighted(self, dataset_override=None):
+        """
+        Calculates the unweighted environment-conditional average of U from SAM output
+        using the following equation:
+        (U - CLD * UCLD)/(1 - CLD)
+        :return: requested variable data in the form of a list. Returned data is already cropped to the appropriate min,max indices
+        """
+        if dataset_override is not None:
+            dataset = dataset_override
+        else:
+            dataset = self.sam_file
+        U, z, dataset = self.getVarForCalculations('U', self.sam_file)
+        UCLD, z, dataset = self.getVarForCalculations('UCLD', self.sam_file)
+        CLD, z, dataset = self.getVarForCalculations('CLD', self.sam_file)
+        UENV = (U - CLD * UCLD)/(1 - CLD)
+        return UENV, z
+    
+    def getUEnvWeighted(self, dataset_override=None):
+        """
+        Calculates the weighted environment-conditional average of U from SAM output
+        using the following equation:
+        (U - CLD * UCLD)
+        :return: requested variable data in the form of a list. Returned data is already cropped to the appropriate min,max indices
+        """
+        if dataset_override is not None:
+            dataset = dataset_override
+        else:
+            dataset = self.sam_file
+        U, z, dataset = self.getVarForCalculations('U', self.sam_file)
+        UCLD, z, dataset = self.getVarForCalculations('UCLD', self.sam_file)
+        CLD, z, dataset = self.getVarForCalculations('CLD', self.sam_file)
+        UENV = (U - CLD * UCLD)
+        return UENV, z
+    
+    def getUCldWeighted(self, dataset_override=None):
+        """
+        Calculates the weighted cloud-conditional average of U from SAM output
+        using the following equation:
+        CLD * UCLD
+        :return: requested variable data in the form of a list. Returned data is already cropped to the appropriate min,max indices
+        """
+        if dataset_override is not None:
+            dataset = dataset_override
+        else:
+            dataset = self.sam_file
+        U, z, dataset = self.getVarForCalculations('U', self.sam_file)
+        UCLD, z, dataset = self.getVarForCalculations('UCLD', self.sam_file)
+        CLD, z, dataset = self.getVarForCalculations('CLD', self.sam_file)
+        UCLDW = CLD * UCLD
+        return UCLDW, z
+    
+    def getVEnvUnweighted(self, dataset_override=None):
+        """
+        Calculates the unweighted environment-conditional average of V from SAM output
+        using the following equation:
+        (V - CLD * VCLD)/(1 - CLD)
+        :return: requested variable data in the form of a list. Returned data is already cropped to the appropriate min,max indices
+        """
+        if dataset_override is not None:
+            dataset = dataset_override
+        else:
+            dataset = self.sam_file
+        V, z, dataset = self.getVarForCalculations('V', self.sam_file)
+        VCLD, z, dataset = self.getVarForCalculations('VCLD', self.sam_file)
+        CLD, z, dataset = self.getVarForCalculations('CLD', self.sam_file)
+        VENV = (V - CLD * VCLD)/(1 - CLD)
+        return VENV, z
+    
+    def getVEnvWeighted(self, dataset_override=None):
+        """
+        Calculates the weighted environment-conditional average of V from SAM output
+        using the following equation:
+        (V - CLD * VCLD)
+        :return: requested variable data in the form of a list. Returned data is already cropped to the appropriate min,max indices
+        """
+        if dataset_override is not None:
+            dataset = dataset_override
+        else:
+            dataset = self.sam_file
+        V, z, dataset = self.getVarForCalculations('V', self.sam_file)
+        VCLD, z, dataset = self.getVarForCalculations('VCLD', self.sam_file)
+        CLD, z, dataset = self.getVarForCalculations('CLD', self.sam_file)
+        VENV = (V - CLD * VCLD)
+        return VENV, z
+    
+    def getVCldWeighted(self, dataset_override=None):
+        """
+        Calculates the weighted cloud-conditional average of V from SAM output
+        using the following equation:
+        CLD * VCLD
+        :return: requested variable data in the form of a list. Returned data is already cropped to the appropriate min,max indices
+        """
+        if dataset_override is not None:
+            dataset = dataset_override
+        else:
+            dataset = self.sam_file
+        V, z, dataset = self.getVarForCalculations('V', self.sam_file)
+        VCLD, z, dataset = self.getVarForCalculations('VCLD', self.sam_file)
+        CLD, z, dataset = self.getVarForCalculations('CLD', self.sam_file)
+        VCLDW = CLD * VCLD
+        return VCLDW, z
+    
+    def getWEnvUnweighted(self, dataset_override=None):
+        """
+        Calculates the unweighted environment-conditional average of W from SAM output
+        using the following equation:
+        (W - CLD * WCLD)/(1 - CLD)
+        :return: requested variable data in the form of a list. Returned data is already cropped to the appropriate min,max indices
+        """
+        if dataset_override is not None:
+            dataset = dataset_override
+        else:
+            dataset = self.sam_file
+        W, z, dataset = self.getVarForCalculations('W', self.sam_file)
+        WCLD, z, dataset = self.getVarForCalculations('WCLD', self.sam_file)
+        CLD, z, dataset = self.getVarForCalculations('CLD', self.sam_file)
+        WENV = (W - CLD * WCLD)/(1 - CLD)
+        return WENV, z
+    
+    def getWEnvWeighted(self, dataset_override=None):
+        """
+        Calculates the weighted environment-conditional average of W from SAM output
+        using the following equation:
+        (W - CLD * WCLD)
+        :return: requested variable data in the form of a list. Returned data is already cropped to the appropriate min,max indices
+        """
+        if dataset_override is not None:
+            dataset = dataset_override
+        else:
+            dataset = self.sam_file
+        W, z, dataset = self.getVarForCalculations('W', self.sam_file)
+        WCLD, z, dataset = self.getVarForCalculations('WCLD', self.sam_file)
+        CLD, z, dataset = self.getVarForCalculations('CLD', self.sam_file)
+        WENV = (W - CLD * WCLD)
+        return WENV, z
+
+    def getWCldWeighted(self, dataset_override=None):
+        """
+        Calculates the weighted cloud-conditional average of W from SAM output
+        using the following equation:
+        CLD * WCLD
+        :return: requested variable data in the form of a list. Returned data is already cropped to the appropriate min,max indices
+        """
+        if dataset_override is not None:
+            dataset = dataset_override
+        else:
+            dataset = self.sam_file
+        W, z, dataset = self.getVarForCalculations('W', self.sam_file)
+        WCLD, z, dataset = self.getVarForCalculations('WCLD', self.sam_file)
+        CLD, z, dataset = self.getVarForCalculations('CLD', self.sam_file)
+        WCLDW = CLD * WCLD
+        return WCLDW, z
+    
+    
+    def getUWEnvUnweighted(self, dataset_override=None):
+        """
+        Calculates the unweighted environment-conditional average of UW from SAM output
+        using the following equation:
+        (UW - CLD * UWCLD)/(1 - CLD)
+        :return: requested variable data in the form of a list. Returned data is already cropped to the appropriate min,max indices
+        """
+        if dataset_override is not None:
+            dataset = dataset_override
+        else:
+            dataset = self.sam_file
+        UW, z, dataset = self.getVarForCalculations('UW', self.sam_file)
+        UWCLD, z, dataset = self.getVarForCalculations('UWCLD', self.sam_file)
+        CLD, z, dataset = self.getVarForCalculations('CLD', self.sam_file)
+        UWENV = (UW - CLD * UWCLD)/(1 - CLD)
+        return UWENV, z
+    
+    def getUWEnvWeighted(self, dataset_override=None):
+        """
+        Calculates the weighted environment-conditional average of UW from SAM output
+        using the following equation:
+        (UW - CLD * UWCLD)
+        :return: requested variable data in the form of a list. Returned data is already cropped to the appropriate min,max indices
+        """
+        if dataset_override is not None:
+            dataset = dataset_override
+        else:
+            dataset = self.sam_file
+        UW, z, dataset = self.getVarForCalculations('UW', self.sam_file)
+        UWCLD, z, dataset = self.getVarForCalculations('UWCLD', self.sam_file)
+        CLD, z, dataset = self.getVarForCalculations('CLD', self.sam_file)
+        UWENV = (UW - CLD * UWCLD)
+        return UWENV, z
+    
+    def getUWCldWeighted(self, dataset_override=None):
+        """
+        Calculates the weighted cloud-conditional average of UW from SAM output
+        using the following equation:
+        CLD * UWCLD
+        :return: requested variable data in the form of a list. Returned data is already cropped to the appropriate min,max indices
+        """
+        if dataset_override is not None:
+            dataset = dataset_override
+        else:
+            dataset = self.sam_file
+        UW, z, dataset = self.getVarForCalculations('UW', self.sam_file)
+        UWCLD, z, dataset = self.getVarForCalculations('UWCLD', self.sam_file)
+        CLD, z, dataset = self.getVarForCalculations('CLD', self.sam_file)
+        UWCLDW = CLD * UWCLD
+        return UWCLDW, z
+    
+    
+    def getVWEnvUnweighted(self, dataset_override=None):
+        """
+        Calculates the unweighted environment-conditional average of VW from SAM output
+        using the following equation:
+        (VW - CLD * VWCLD)/(1 - CLD)
+        :return: requested variable data in the form of a list. Returned data is already cropped to the appropriate min,max indices
+        """
+        if dataset_override is not None:
+            dataset = dataset_override
+        else:
+            dataset = self.sam_file
+        VW, z, dataset = self.getVarForCalculations('VW', self.sam_file)
+        VWCLD, z, dataset = self.getVarForCalculations('VWCLD', self.sam_file)
+        CLD, z, dataset = self.getVarForCalculations('CLD', self.sam_file)
+        VWENV = (VW - CLD * VWCLD)/(1 - CLD)
+        return VWENV, z
+    
+    def getVWEnvWeighted(self, dataset_override=None):
+        """
+        Calculates the weighted environment-conditional average of VW from SAM output
+        using the following equation:
+        (VW - CLD * VWCLD)
+        :return: requested variable data in the form of a list. Returned data is already cropped to the appropriate min,max indices
+        """
+        if dataset_override is not None:
+            dataset = dataset_override
+        else:
+            dataset = self.sam_file
+        VW, z, dataset = self.getVarForCalculations('VW', self.sam_file)
+        VWCLD, z, dataset = self.getVarForCalculations('VWCLD', self.sam_file)
+        CLD, z, dataset = self.getVarForCalculations('CLD', self.sam_file)
+        VWENV = (VW - CLD * VWCLD)
+        return VWENV, z
+    
+    def getVWCldWeighted(self, dataset_override=None):
+        """
+        Calculates the weighted cloud-conditional average of VW from SAM output
+        using the following equation:
+        CLD * VWCLD
+        :return: requested variable data in the form of a list. Returned data is already cropped to the appropriate min,max indices
+        """
+        if dataset_override is not None:
+            dataset = dataset_override
+        else:
+            dataset = self.sam_file
+        VW, z, dataset = self.getVarForCalculations('VW', self.sam_file)
+        VWCLD, z, dataset = self.getVarForCalculations('VWCLD', self.sam_file)
+        CLD, z, dataset = self.getVarForCalculations('CLD', self.sam_file)
+        VWCLDW = CLD * VWCLD
+        return VWCLDW, z
