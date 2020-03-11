@@ -756,7 +756,7 @@ class VariableGroupSamBudgets(VariableGroup):
             'lines': vpwp_reduced_budget_lines, 'type': Panel.TYPE_BUDGET, 'title': r"Northward Momentum Flux Budget (Reduced), $\mathrm{\overline{v'w'}}$", 'axis_title': r"$\mathrm{\overline{v'w'}}$ budget terms $\mathrm{\left[m^2\,s^{-3}\right]}$"},
         ]
             
-            super().__init__(case, clubb_datasets=clubb_datasets, les_dataset=les_dataset, coamps_dataset=coamps_dataset, r408_dataset=r408_dataset, hoc_dataset=hoc_dataset, e3sm_datasets=e3sm_datasets, sam_datasets=sam_datasets)
+        super().__init__(case, clubb_datasets=clubb_datasets, les_dataset=les_dataset, coamps_dataset=coamps_dataset, r408_dataset=r408_dataset, hoc_dataset=hoc_dataset, e3sm_datasets=e3sm_datasets, sam_datasets=sam_datasets)
 
     def getHlResidual(self, dataset_override = None):
         """
