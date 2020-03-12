@@ -17,7 +17,7 @@ class VariableGroupSamBudgets(VariableGroup):
         
         :param clubb_datasets:
         :param case:
-        :param sam_file:
+        :param les_dataset:
         """
         self.name = "sam budget variables"
         
@@ -766,10 +766,9 @@ class VariableGroupSamBudgets(VariableGroup):
         :param dataset_override:
         :return: requested variable data in the form of a list. Returned data is already cropped to the appropriate min,max indices
         """
+        dataset = self.les_dataset
         if dataset_override is not None:
             dataset = dataset_override
-        else:
-            dataset = self.sam_file
         
         HLADV, z, dataset = self.getVarForCalculations('HLADV', dataset)
         HLADV *= self.kg_per_second_to_kg_per_day
@@ -801,10 +800,9 @@ class VariableGroupSamBudgets(VariableGroup):
         :param dataset_override:
         :return: requested variable data in the form of a list. Returned data is already cropped to the appropriate min,max indices
         """
+        dataset = self.les_dataset
         if dataset_override is not None:
             dataset = dataset_override
-        else:
-            dataset = self.sam_file
         QTADV, z, dataset = self.getVarForCalculations('QTADV', dataset)
         QTADV *=  self.g_per_second_to_kg_per_day
         QTDIFF, z, dataset = self.getVarForCalculations('QTDIFF', dataset)
@@ -830,10 +828,9 @@ class VariableGroupSamBudgets(VariableGroup):
         :param dataset_override:
         :return: requested variable data in the form of a list. Returned data is already cropped to the appropriate min,max indices
         """
+        dataset = self.les_dataset
         if dataset_override is not None:
             dataset = dataset_override
-        else:
-            dataset = self.sam_file
         TWBUOY, z, dataset = self.getVarForCalculations('TWBUOY', dataset)
         TWPRES, z, dataset = self.getVarForCalculations('TWPRES', dataset)
         TW_BUOY_PRES = TWBUOY + TWPRES
@@ -847,10 +844,9 @@ class VariableGroupSamBudgets(VariableGroup):
         :param dataset_override:
         :return: requested variable data in the form of a list. Returned data is already cropped to the appropriate min,max indices
         """
+        dataset = self.les_dataset
         if dataset_override is not None:
             dataset = dataset_override
-        else:
-            dataset = self.sam_file
         TWADV, z, dataset = self.getVarForCalculations('TWADV', dataset)
         TWBT, z, dataset = self.getVarForCalculations('TWBT', dataset)
         TWBUOY, z, dataset = self.getVarForCalculations('TWBUOY', dataset)
@@ -871,10 +867,9 @@ class VariableGroupSamBudgets(VariableGroup):
         :param dataset_override:
         :return: requested variable data in the form of a list. Returned data is already cropped to the appropriate min,max indices
         """
+        dataset = self.les_dataset
         if dataset_override is not None:
             dataset = dataset_override
-        else:
-            dataset = self.sam_file
         THLWBUOY, z, dataset = self.getVarForCalculations('THLWBUOY', dataset)
         THLWPRES, z, dataset = self.getVarForCalculations('THLWPRES', dataset)
         THLW_BUOY_PRES = THLWBUOY + THLWPRES
@@ -888,10 +883,9 @@ class VariableGroupSamBudgets(VariableGroup):
         :param dataset_override:
         :return: requested variable data in the form of a list. Returned data is already cropped to the appropriate min,max indices
         """
+        dataset = self.les_dataset
         if dataset_override is not None:
             dataset = dataset_override
-        else:
-            dataset = self.sam_file
         THLWADV, z, dataset = self.getVarForCalculations('THLWADV', dataset);
         THLWBT, z, dataset = self.getVarForCalculations('THLWBT', dataset)
         THLWBUOY, z, dataset = self.getVarForCalculations('THLWBUOY', dataset)
@@ -912,10 +906,9 @@ class VariableGroupSamBudgets(VariableGroup):
         :param dataset_override:
         :return: requested variable data in the form of a list. Returned data is already cropped to the appropriate min,max indices
         """
+        dataset = self.les_dataset
         if dataset_override is not None:
             dataset = dataset_override
-        else:
-            dataset = self.sam_file
         QWBUOY, z, dataset = self.getVarForCalculations('QWBUOY', dataset)
         QWPRES, z, dataset = self.getVarForCalculations('QWPRES', dataset)
         QW_BUOY_PRES = QWBUOY + QWPRES
@@ -929,10 +922,9 @@ class VariableGroupSamBudgets(VariableGroup):
         :param dataset_override:
         :return: requested variable data in the form of a list. Returned data is already cropped to the appropriate min,max indices
         """
+        dataset = self.les_dataset
         if dataset_override is not None:
             dataset = dataset_override
-        else:
-            dataset = self.sam_file
         QWADV, z, dataset = self.getVarForCalculations('QWADV', dataset)
         QWBT, z, dataset = self.getVarForCalculations('QWBT', dataset)
         QWBUOY, z, dataset = self.getVarForCalculations('QWBUOY', dataset)
@@ -952,10 +944,9 @@ class VariableGroupSamBudgets(VariableGroup):
         :param dataset_override:
         :return: requested variable data in the form of a list. Returned data is already cropped to the appropriate min,max indices
         """
+        dataset = self.les_dataset
         if dataset_override is not None:
             dataset = dataset_override
-        else:
-            dataset = self.sam_file
         QTOGWBUOY, z, dataset = self.getVarForCalculations('QTOGWBUOY', dataset)
         QTOGWPRES, z, dataset = self.getVarForCalculations('QTOGWPRES', dataset)
         QTOGW_BUOY_PRES = QTOGWBUOY + QTOGWPRES
@@ -969,10 +960,9 @@ class VariableGroupSamBudgets(VariableGroup):
         :param dataset_override:
         :return: requested variable data in the form of a list. Returned data is already cropped to the appropriate min,max indices
         """
+        dataset = self.les_dataset
         if dataset_override is not None:
             dataset = dataset_override
-        else:
-            dataset = self.sam_file
         QTOGWADV, z, dataset = self.getVarForCalculations('QTOGWADV', dataset)
         QTOGWBT, z, dataset = self.getVarForCalculations('QTOGWBT', dataset)
         QTOGWBUOY, z, dataset = self.getVarForCalculations('QTOGWBUOY', dataset)
@@ -992,10 +982,9 @@ class VariableGroupSamBudgets(VariableGroup):
         :param dataset_override:
         :return: requested variable data in the form of a list. Returned data is already cropped to the appropriate min,max indices
         """
+        dataset = self.les_dataset
         if dataset_override is not None:
             dataset = dataset_override
-        else:
-            dataset = self.sam_file
         T2ADVTR, z, dataset = self.getVarForCalculations('T2ADVTR', dataset)
         T2BT, z, dataset = self.getVarForCalculations('T2BT', dataset)
         T2DISSIP, z, dataset = self.getVarForCalculations('T2DISSIP', dataset)
@@ -1015,10 +1004,9 @@ class VariableGroupSamBudgets(VariableGroup):
         :param dataset_override:
         :return: requested variable data in the form of a list. Returned data is already cropped to the appropriate min,max indices
         """
+        dataset = self.les_dataset
         if dataset_override is not None:
             dataset = dataset_override
-        else:
-            dataset = self.sam_file
         THL2ADVTR, z, dataset = self.getVarForCalculations('THL2ADVTR', dataset)
         THL2BT, z, dataset = self.getVarForCalculations('THL2BT', dataset)
         THL2DISSIP, z, dataset = self.getVarForCalculations('THL2DISSIP', dataset)
@@ -1038,10 +1026,9 @@ class VariableGroupSamBudgets(VariableGroup):
         :param dataset_override:
         :return: requested variable data in the form of a list. Returned data is already cropped to the appropriate min,max indices
         """
+        dataset = self.les_dataset
         if dataset_override is not None:
             dataset = dataset_override
-        else:
-            dataset = self.sam_file
         Q2ADVTR, z, dataset = self.getVarForCalculations('Q2ADVTR', dataset)
         Q2BT, z, dataset = self.getVarForCalculations('Q2BT', dataset)
         Q2DISSIP, z, dataset = self.getVarForCalculations('Q2DISSIP', dataset)
@@ -1060,10 +1047,9 @@ class VariableGroupSamBudgets(VariableGroup):
         :param dataset_override:
         :return: requested variable data in the form of a list. Returned data is already cropped to the appropriate min,max indices
         """
+        dataset = self.les_dataset
         if dataset_override is not None:
             dataset = dataset_override
-        else:
-            dataset = self.sam_file
         QTOG2ADVTR, z, dataset = self.getVarForCalculations('QTOG2ADVTR', dataset)
         QTOG2BT, z, dataset = self.getVarForCalculations('QTOG2BT', dataset)
         QTOG2DIFTR, z, dataset = self.getVarForCalculations('QTOG2DIFTR', dataset)
@@ -1082,10 +1068,9 @@ class VariableGroupSamBudgets(VariableGroup):
         :param dataset_override:
         :return: requested variable data in the form of a list. Returned data is already cropped to the appropriate min,max indices
         """
+        dataset = self.les_dataset
         if dataset_override is not None:
             dataset = dataset_override
-        else:
-            dataset = self.sam_file
         QTHLADV, z, dataset = self.getVarForCalculations('QTHLADV', dataset)
         QTHLBT, z, dataset = self.getVarForCalculations('QTHLBT', dataset)
         QTHLDIFTR, z, dataset = self.getVarForCalculations('QTHLDIFTR', dataset)
@@ -1105,10 +1090,9 @@ class VariableGroupSamBudgets(VariableGroup):
         :param dataset_override:
         :return: requested variable data in the form of a list. Returned data is already cropped to the appropriate min,max indices
         """
+        dataset = self.les_dataset
         if dataset_override is not None:
             dataset = dataset_override
-        else:
-            dataset = self.sam_file
         DIFTR, z, dataset = self.getVarForCalculations('DIFTR', dataset)
         DISSIP, z, dataset = self.getVarForCalculations('DISSIP', dataset)
         TKE_DISS_DIFF = DIFTR + DISSIP
@@ -1122,10 +1106,9 @@ class VariableGroupSamBudgets(VariableGroup):
         :param dataset_override:
         :return: requested variable data in the form of a list. Returned data is already cropped to the appropriate min,max indices
         """
+        dataset = self.les_dataset
         if dataset_override is not None:
             dataset = dataset_override
-        else:
-            dataset = self.sam_file
         ADVTR, z, dataset = self.getVarForCalculations('ADVTR', dataset)
         BT, z, dataset = self.getVarForCalculations('BT', dataset)
         BUOYA, z, dataset = self.getVarForCalculations('BUOYA', dataset)
@@ -1145,10 +1128,9 @@ class VariableGroupSamBudgets(VariableGroup):
         :param dataset_override:
         :return: requested variable data in the form of a list. Returned data is already cropped to the appropriate min,max indices
         """
+        dataset = self.les_dataset
         if dataset_override is not None:
             dataset = dataset_override
-        else:
-            dataset = self.sam_file
         ADVTRS, z, dataset = self.getVarForCalculations('ADVTRS', dataset)
         BUOYAS, z, dataset = self.getVarForCalculations('BUOYAS', dataset)
         DISSIPS, z, dataset = self.getVarForCalculations('DISSIPS', dataset)
@@ -1164,10 +1146,9 @@ class VariableGroupSamBudgets(VariableGroup):
         :param dataset_override:
         :return: requested variable data in the form of a list. Returned data is already cropped to the appropriate min,max indices
         """
+        dataset = self.les_dataset
         if dataset_override is not None:
             dataset = dataset_override
-        else:
-            dataset = self.sam_file
         U2ADV, z, dataset = self.getVarForCalculations('U2ADV', dataset)
         U2BT, z, dataset = self.getVarForCalculations('U2BT', dataset)
         U2DIFF, z, dataset = self.getVarForCalculations('U2DIFF', dataset)
@@ -1184,10 +1165,9 @@ class VariableGroupSamBudgets(VariableGroup):
         :param dataset_override:
         :return: requested variable data in the form of a list. Returned data is already cropped to the appropriate min,max indices
         """
+        dataset = self.les_dataset
         if dataset_override is not None:
             dataset = dataset_override
-        else:
-            dataset = self.sam_file
         V2ADV, z, dataset = self.getVarForCalculations('V2ADV', dataset)
         V2BT, z, dataset = self.getVarForCalculations('V2BT', dataset)
         V2DIFF, z, dataset = self.getVarForCalculations('V2DIFF', dataset)
@@ -1204,10 +1184,9 @@ class VariableGroupSamBudgets(VariableGroup):
         :param dataset_override:
         :return: requested variable data in the form of a list. Returned data is already cropped to the appropriate min,max indices
         """
+        dataset = self.les_dataset
         if dataset_override is not None:
             dataset = dataset_override
-        else:
-            dataset = self.sam_file
         W2PRES, z, dataset = self.getVarForCalculations('W2PRES', dataset)
         W2REDIS, z, dataset = self.getVarForCalculations('W2REDIS', dataset)
         W2_REDIS_PRES = W2REDIS + W2PRES
@@ -1221,10 +1200,9 @@ class VariableGroupSamBudgets(VariableGroup):
         :param dataset_override:
         :return: requested variable data in the form of a list. Returned data is already cropped to the appropriate min,max indices
         """
+        dataset = self.les_dataset
         if dataset_override is not None:
             dataset = dataset_override
-        else:
-            dataset = self.sam_file
         W2ADV, z, dataset = self.getVarForCalculations('W2ADV', dataset)
         W2BT, z, dataset = self.getVarForCalculations('W2BT', dataset)
         W2BUOY, z, dataset = self.getVarForCalculations('W2BUOY', dataset)
@@ -1243,10 +1221,9 @@ class VariableGroupSamBudgets(VariableGroup):
         :param dataset_override:
         :return: requested variable data in the form of a list. Returned data is already cropped to the appropriate min,max indices
         """
+        dataset = self.les_dataset
         if dataset_override is not None:
             dataset = dataset_override
-        else:
-            dataset = self.sam_file
         ADVTR, z, dataset = self.getVarForCalculations('ADVTR', dataset)
         W2ADV, z, dataset = self.getVarForCalculations('W2ADV', dataset)
         U2V2_ADV = 2 * ADVTR + W2ADV
@@ -1260,10 +1237,9 @@ class VariableGroupSamBudgets(VariableGroup):
         :param dataset_override:
         :return: requested variable data in the form of a list. Returned data is already cropped to the appropriate min,max indices
         """
+        dataset = self.les_dataset
         if dataset_override is not None:
             dataset = dataset_override
-        else:
-            dataset = self.sam_file
         BUOYA, z, dataset = self.getVarForCalculations('BUOYA', dataset)
         W2BUOY, z, dataset = self.getVarForCalculations('W2BUOY', dataset)
         U2V2_BUOY = 2 * BUOYA + W2BUOY
@@ -1278,10 +1254,9 @@ class VariableGroupSamBudgets(VariableGroup):
         :param dataset_override:
         :return: requested variable data in the form of a list. Returned data is already cropped to the appropriate min,max indices
         """
+        dataset = self.les_dataset
         if dataset_override is not None:
             dataset = dataset_override
-        else:
-            dataset = self.sam_file
         PRESSTR, z, dataset = self.getVarForCalculations('PRESSTR', dataset)
         W2PRES, z, dataset = self.getVarForCalculations('W2PRES', dataset)
         U2V2_PRES = 2 * PRESSTR + W2PRES
@@ -1295,10 +1270,9 @@ class VariableGroupSamBudgets(VariableGroup):
         :param dataset_override:
         :return: requested variable data in the form of a list. Returned data is already cropped to the appropriate min,max indices
         """
+        dataset = self.les_dataset
         if dataset_override is not None:
             dataset = dataset_override
-        else:
-            dataset = self.sam_file
         DIFTR, z, dataset = self.getVarForCalculations('DIFTR', dataset)
         W2DIFF, z, dataset = self.getVarForCalculations('W2DIFF', dataset)
         U2V2_DIFF = 2 * DIFTR + W2DIFF
@@ -1312,10 +1286,9 @@ class VariableGroupSamBudgets(VariableGroup):
         :param dataset_override:
         :return: requested variable data in the form of a list. Returned data is already cropped to the appropriate min,max indices
         """
+        dataset = self.les_dataset
         if dataset_override is not None:
             dataset = dataset_override
-        else:
-            dataset = self.sam_file
         SDMP, z, dataset = self.getVarForCalculations('SDMP', dataset)
         W2SDMP, z, dataset = self.getVarForCalculations('W2SDMP', dataset)
         U2V2_SDMP = 2 * SDMP + W2SDMP
@@ -1329,10 +1302,9 @@ class VariableGroupSamBudgets(VariableGroup):
         :param dataset_override:
         :return: requested variable data in the form of a list. Returned data is already cropped to the appropriate min,max indices
         """
+        dataset = self.les_dataset
         if dataset_override is not None:
             dataset = dataset_override
-        else:
-            dataset = self.sam_file
         BT, z, dataset = self.getVarForCalculations('BT', dataset)
         W2BT, z, dataset = self.getVarForCalculations('W2BT', dataset)
         U2V2_BT = 2 * BT + W2BT
@@ -1346,10 +1318,9 @@ class VariableGroupSamBudgets(VariableGroup):
         :param dataset_override:
         :return: requested variable data in the form of a list. Returned data is already cropped to the appropriate min,max indices
         """
+        dataset = self.les_dataset
         if dataset_override is not None:
             dataset = dataset_override
-        else:
-            dataset = self.sam_file
         ADVTR, z, dataset = self.getVarForCalculations('ADVTR', dataset)
         W2ADV, z, dataset = self.getVarForCalculations('W2ADV', dataset)
         BT, z, dataset = self.getVarForCalculations('BT', dataset)
@@ -1376,10 +1347,9 @@ class VariableGroupSamBudgets(VariableGroup):
         :param dataset_override:
         :return: requested variable data in the form of a list. Returned data is already cropped to the appropriate min,max indices
         """
+        dataset = self.les_dataset
         if dataset_override is not None:
             dataset = dataset_override
-        else:
-            dataset = self.sam_file
         W3ADV, z, dataset = self.getVarForCalculations('W3ADV', dataset)
         W3BT, z, dataset = self.getVarForCalculations('W3BT', dataset)
         W3BUOY, z, dataset = self.getVarForCalculations('W3BUOY', dataset)
@@ -1397,10 +1367,9 @@ class VariableGroupSamBudgets(VariableGroup):
         :param dataset_override:
         :return: requested variable data in the form of a list. Returned data is already cropped to the appropriate min,max indices
         """
+        dataset = self.les_dataset
         if dataset_override is not None:
             dataset = dataset_override
-        else:
-            dataset = self.sam_file
         WUANIZ, z, dataset = self.getVarForCalculations('WUANIZ', dataset)
         WUPRES, z, dataset = self.getVarForCalculations('WUPRES', dataset)
         WU_ANIZ_PRES = WUANIZ + WUPRES
@@ -1414,10 +1383,9 @@ class VariableGroupSamBudgets(VariableGroup):
         :param dataset_override:
         :return: requested variable data in the form of a list. Returned data is already cropped to the appropriate min,max indices
         """
+        dataset = self.les_dataset
         if dataset_override is not None:
             dataset = dataset_override
-        else:
-            dataset = self.sam_file
         WUADV, z, dataset = self.getVarForCalculations('WUADV', dataset)
         WUANIZ, z, dataset = self.getVarForCalculations('WUANIZ', dataset)
         WUBT, z, dataset = self.getVarForCalculations('WUBT', dataset)
@@ -1437,10 +1405,9 @@ class VariableGroupSamBudgets(VariableGroup):
         :param dataset_override:
         :return: requested variable data in the form of a list. Returned data is already cropped to the appropriate min,max indices
         """
+        dataset = self.les_dataset
         if dataset_override is not None:
             dataset = dataset_override
-        else:
-            dataset = self.sam_file
         WVANIZ, z, dataset = self.getVarForCalculations('WVANIZ', dataset)
         WVPRES, z, dataset = self.getVarForCalculations('WVPRES', dataset)
         WV_ANIZ_PRES = WVANIZ + WVPRES
@@ -1454,10 +1421,9 @@ class VariableGroupSamBudgets(VariableGroup):
         :param dataset_override:
         :return: requested variable data in the form of a list. Returned data is already cropped to the appropriate min,max indices
         """
+        dataset = self.les_dataset
         if dataset_override is not None:
             dataset = dataset_override
-        else:
-            dataset = self.sam_file
         WVADV, z, dataset = self.getVarForCalculations('WVADV', dataset)
         WVANIZ, z, dataset = self.getVarForCalculations('WVANIZ', dataset)
         WVBT, z, dataset = self.getVarForCalculations('WVBT', dataset)

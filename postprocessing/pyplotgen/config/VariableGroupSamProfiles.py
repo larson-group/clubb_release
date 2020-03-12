@@ -15,12 +15,12 @@ from src.VariableGroup import VariableGroup
 
 class VariableGroupSamProfiles(VariableGroup):
     
-    def __init__(self, case, clubb_datasets=None, sam_file=None, coamps_dataset=None, r408_dataset=None, hoc_dataset=None, e3sm_datasets=None):
+    def __init__(self, case, clubb_datasets=None, les_dataset=None, coamps_dataset=None, r408_dataset=None, hoc_dataset=None, e3sm_datasets=None, sam_datasets=None):
         """
         
         :param clubb_datasets:
         :param case:
-        :param sam_file:
+        :param les_dataset:
         """
         self.name = "sam profile variables"
         
@@ -28,20 +28,20 @@ class VariableGroupSamProfiles(VariableGroup):
         
         self.g_per_second_to_kg_per_day = self.kg_per_second_to_kg_per_day / 1000
         
-        u_cld_lines = [
-            {'var_names': ['U'], 'legend_label': r"$\overline{u}$"},
-            {'var_names': ['UCLD'], 'legend_label': r"$\overline{u}^\mathrm{{cld}}$"}
-            ]
+        #u_cld_lines = [
+            #{'var_names': ['U'], 'legend_label': r"$\overline{u}$"},
+            #{'var_names': ['UCLD'], 'legend_label': r"$\overline{u}^\mathrm{{cld}}$"}
+            #]
         
-        v_cld_lines = [
-            {'var_names': ['V'], 'legend_label': r"$\overline{v}$"},
-            {'var_names': ['VCLD'], 'legend_label': r"$\overline{v}^\mathrm{{cld}}$"}
-            ]
+        #v_cld_lines = [
+            #{'var_names': ['V'], 'legend_label': r"$\overline{v}$"},
+            #{'var_names': ['VCLD'], 'legend_label': r"$\overline{v}^\mathrm{{cld}}$"}
+            #]
         
-        w_cld_lines = [
-            {'var_names': ['WM'], 'legend_label': r"$\overline{w}$"},
-            {'var_names': ['WCLD'], 'legend_label': r"$\overline{w}^\mathrm{{cld}}$"}
-            ]
+        #w_cld_lines = [
+            #{'var_names': ['WM'], 'legend_label': r"$\overline{w}$"},
+            #{'var_names': ['WCLD'], 'legend_label': r"$\overline{w}^\mathrm{{cld}}$"}
+            #]
         
         u_cond_lines = [
             {'var_names': ['U'], 'legend_label': r"$\overline{u}$"},
@@ -64,7 +64,7 @@ class VariableGroupSamProfiles(VariableGroup):
         v_weight_lines = [
             {'var_names': ['V'], 'legend_label': r"$\overline{v}$"},
             {'var_names': ['VCLD'], 'legend_label': r"$\overline{v}^\mathrm{{cld}}$", 'fallback_func': self.getVCldWeighted},
-            {'var_names': ['VENV'], 'legend_label': r"$\overline{v}^\mathrm{{env}}$", 'fallback_func': self.getWEnvWeighted}
+            {'var_names': ['VENV'], 'legend_label': r"$\overline{v}^\mathrm{{env}}$", 'fallback_func': self.getVEnvWeighted}
             ]
         
         w_cond_lines = [
@@ -115,22 +115,28 @@ class VariableGroupSamProfiles(VariableGroup):
             {'var_names': ['TVENV'], 'legend_label': r"$\overline{\theta_v}^\mathrm{env}$", 'fallback_func': self.getTHVEnvWeighted},
             ]
         
-        thl_weight_lines = [
-            {'var_names': ['THETAV'], 'legend_label': r"$\overline{\theta_v}$"},
-            {'var_names': ['TVCLD'], 'legend_label': r"$\overline{\theta_v}^\mathrm{cld}$"},
-            {'var_names': ['TVENV'], 'legend_label': r"$\overline{\theta_v}^\mathrm{env}$", 'fallback_func': self.getTHVEnvUnweighted},
+        #thl_weight_lines = [ # Cloud conditional data does not exist. TLCLD is cld cond. liquid water static energy
+            #{'var_names': ['THETAL'], 'legend_label': r"$\overline{\theta_v}$"},
+            #{'var_names': ['TLCLD'], 'legend_label': r"$\overline{\theta_v}^\mathrm{cld}$", 'fallback_func': self.getTHLCldWeighted},
+            #{'var_names': ['TLENV'], 'legend_label': r"$\overline{\theta_v}^\mathrm{env}$", 'fallback_func': self.getTHLEnvWeighted},
+            #]
+        
+        qt_cond_lines = [
+            {'var_names': ['QT'], 'legend_label': r"$\overline{\theta_v}$"},
+            {'var_names': ['QTCLD'], 'legend_label': r"$\overline{\theta_v}^\mathrm{cld}$"},
+            {'var_names': ['QTENV'], 'legend_label': r"$\overline{\theta_v}^\mathrm{env}$", 'fallback_func': self.getQTEnvUnweighted},
             ]
         
         qtw_weight_lines = [
-            {'var_names': ['THETAV'], 'legend_label': r"$\overline{\theta_v}$"},
-            {'var_names': ['TVCLD'], 'legend_label': r"$\overline{\theta_v}^\mathrm{cld}$", 'fallback_func': self.getTHVCldWeighted},
-            {'var_names': ['TVENV'], 'legend_label': r"$\overline{\theta_v}^\mathrm{env}$", 'fallback_func': self.getTHVEnvWeighted},
+            {'var_names': ['QTFLUX'], 'legend_label': r"$\overline{\theta_v}$"}, # only defined in microphysics packages
+            {'var_names': ['QTWCLD'], 'legend_label': r"$\overline{\theta_v}^\mathrm{cld}$", 'fallback_func': self.getQTWCldWeighted},
+            {'var_names': ['QTWENV'], 'legend_label': r"$\overline{\theta_v}^\mathrm{env}$", 'fallback_func': self.getQTWEnvWeighted},
             ]
         
-        qt_cond_lines = [
-            {'var_names': ['THETAV'], 'legend_label': r"$\overline{\theta_v}$"},
-            {'var_names': ['TVCLD'], 'legend_label': r"$\overline{\theta_v}^\mathrm{cld}$", 'fallback_func': self.getTHVCldWeighted},
-            {'var_names': ['TVENV'], 'legend_label': r"$\overline{\theta_v}^\mathrm{env}$", 'fallback_func': self.getTHVEnvWeighted},
+        tlw_weight_lines = [
+            {'var_names': ['TLFLUX'], 'legend_label': r"$\overline{\theta_v}$"},
+            {'var_names': ['TLWCLD'], 'legend_label': r"$\overline{\theta_v}^\mathrm{cld}$", 'fallback_func': self.getTLWCldWeighted},
+            {'var_names': ['TLWENV'], 'legend_label': r"$\overline{\theta_v}^\mathrm{env}$", 'fallback_func': self.getTLWEnvWeighted},
             ]
         
         uw_lines = [
@@ -324,6 +330,30 @@ class VariableGroupSamProfiles(VariableGroup):
                 'e3sm': [],
                 },
             'sam_conv_factor': 1, 'title': r"Zonal Wind Component, $\mathrm{\overline{u}}$", 'axis_title': r"$\mathrm{\overline{u}}\ \mathrm{\left[m\,s^{-1}\right]}$", 'legend_label': r'\mathrm{\overline{u}}',
+            },
+            
+            # UCLD unweighted
+            {'var_names': {
+                'clubb': [],
+                'sam': ['UCLD'],
+                'coamps': [],
+                'r408': [],
+                'hoc': [],
+                'e3sm': [],
+                },
+            'sam_conv_factor': 1, 'title': r"In-cloud mean wind, $\overline{u}^{cld}$", 'axis_title': r"In-cloud mean wind, $\overline{u}^\mathrm{{cld}}\ \mathrm{\left[m\,s^{-1}\right]}$", 'legend_label': r"$\overline{u}^\mathrm{{cld}}$",
+            },
+            
+            # UCLD unweighted
+            {'var_names': {
+                'clubb': [],
+                'sam': ['UENV'],
+                'coamps': [],
+                'r408': [],
+                'hoc': [],
+                'e3sm': [],
+                },
+            'sam_conv_factor': 1, 'title': r"Environmental mean wind, $\overline{u}^{env}$", 'axis_title': r"Environmental mean wind, $\overline{u}^\mathrm{{env}}\ \mathrm{\left[m\,s^{-1}\right]}$", 'legend_label': r"$\overline{u}^\mathrm{{cld}}$", 'sam_calc': self.getUEnvUnweighted,
             },
             
             # V
@@ -919,7 +949,7 @@ class VariableGroupSamProfiles(VariableGroup):
             # U'R_C'
             {'var_names': {
                 'clubb': [],
-                'sam': ['URCP'],
+                'sam': ['UPRCP'],
                 'coamps': [],
                 'r408': [],
                 'hoc': [],
@@ -1014,44 +1044,44 @@ class VariableGroupSamProfiles(VariableGroup):
             
             ## Cloud conditional plots
             
-            # UCLD
-            {'var_names': {
-                'clubb': [],
-                'sam': ['UCLD'],
-                'coamps': [],
-                'r408': [],
-                'hoc': [],
-                'e3sm': [],
-                },
-            'sam_conv_factor': 1, 'type': Panel.TYPE_BUDGET, 'lines': u_cld_lines, 'title': r"Conditional mean wind, $\overline{u}^\mathrm{{cld}}$", 'axis_title': r"Conditional mean wind, $\overline{u}^\mathrm{{cld}}\ \mathrm{\left[m\,s^{-1}\right]}$",
-            #'legend_label': r"$\overline{u}^\mathrm{{cld}}$",
-            },
+            ## UCLD
+            #{'var_names': {
+                #'clubb': [],
+                #'sam': ['UCLD'],
+                #'coamps': [],
+                #'r408': [],
+                #'hoc': [],
+                #'e3sm': [],
+                #},
+            #'sam_conv_factor': 1, 'type': Panel.TYPE_BUDGET, 'lines': u_cld_lines, 'title': r"Conditional mean wind, $\overline{u}^\mathrm{{cld}}$", 'axis_title': r"Conditional mean wind, $\overline{u}^\mathrm{{cld}}\ \mathrm{\left[m\,s^{-1}\right]}$",
+            ##'legend_label': r"$\overline{u}^\mathrm{{cld}}$",
+            #},
             
-            # VCLD
-            {'var_names': {
-                'clubb': [],
-                'sam': ['VCLD'],
-                'coamps': [],
-                'r408': [],
-                'hoc': [],
-                'e3sm': [],
-                },
-            'sam_conv_factor': 1, 'type': Panel.TYPE_BUDGET, 'lines': v_cld_lines, 'title': r"Conditional mean wind, $\overline{v}^\mathrm{{cld}}$", 'axis_title': r"Conditional mean wind, $\overline{v}^\mathrm{{cld}}\ \mathrm{\left[m\,s^{-1}\right]}$",
-            #'legend_label': r"$\overline{v}^\mathrm{{cld}}$",
-            },
+            ## VCLD
+            #{'var_names': {
+                #'clubb': [],
+                #'sam': ['VCLD'],
+                #'coamps': [],
+                #'r408': [],
+                #'hoc': [],
+                #'e3sm': [],
+                #},
+            #'sam_conv_factor': 1, 'type': Panel.TYPE_BUDGET, 'lines': v_cld_lines, 'title': r"Conditional mean wind, $\overline{v}^\mathrm{{cld}}$", 'axis_title': r"Conditional mean wind, $\overline{v}^\mathrm{{cld}}\ \mathrm{\left[m\,s^{-1}\right]}$",
+            ##'legend_label': r"$\overline{v}^\mathrm{{cld}}$",
+            #},
             
-            # WCLD
-            {'var_names': {
-                'clubb': [],
-                'sam': ['WCLD'],
-                'coamps': [],
-                'r408': [],
-                'hoc': [],
-                'e3sm': [],
-                },
-            'sam_conv_factor': 1, 'type': Panel.TYPE_BUDGET, 'lines': w_cld_lines, 'title': r"Conditional mean wind, $\overline{w}^\mathrm{{cld}}$", 'axis_title': r"Conditional mean wind, $\overline{w}^\mathrm{{cld}}\ \mathrm{\left[m\,s^{-1}\right]}$",
-            #'legend_label': r"$\overline{w}^\mathrm{{cld}}$",
-            },
+            ## WCLD
+            #{'var_names': {
+                #'clubb': [],
+                #'sam': ['WCLD'],
+                #'coamps': [],
+                #'r408': [],
+                #'hoc': [],
+                #'e3sm': [],
+                #},
+            #'sam_conv_factor': 1, 'type': Panel.TYPE_BUDGET, 'lines': w_cld_lines, 'title': r"Conditional mean wind, $\overline{w}^\mathrm{{cld}}$", 'axis_title': r"Conditional mean wind, $\overline{w}^\mathrm{{cld}}\ \mathrm{\left[m\,s^{-1}\right]}$",
+            ##'legend_label': r"$\overline{w}^\mathrm{{cld}}$",
+            #},
             
             # UCLD unweighted
             {'var_names': {
@@ -1062,7 +1092,7 @@ class VariableGroupSamProfiles(VariableGroup):
                 'hoc': [],
                 'e3sm': [],
                 },
-            'sam_conv_factor': 1, 'type': Panel.TYPE_BUDGET, 'lines': u_cond_lines, 'title': r"Conditional mean wind, $\overline{u}$", 'axis_title': r"Conditional mean wind, $\overline{w}^\mathrm{{cld}}\ \mathrm{\left[m\,s^{-1}\right]}$",
+            'sam_conv_factor': 1, 'type': Panel.TYPE_BUDGET, 'lines': u_cond_lines, 'title': r"Conditional mean wind, $\overline{u}$", 'axis_title': r"Conditional mean wind, $\overline{u}^\mathrm{{cld}}\ \mathrm{\left[m\,s^{-1}\right]}$",
             #'legend_label': r"$\overline{u}^\mathrm{{cld}}$",
             },
             
@@ -1209,16 +1239,16 @@ class VariableGroupSamProfiles(VariableGroup):
             #'legend_label': r"$\overline{\theta}_v^\mathrm{cld}",
             },
             
-            # TLCLD weighted
+            # TLWCLD weighted
             {'var_names': {
                 'clubb': [],
-                'sam': ['TLCLD'],
+                'sam': ['TLWCLD'],
                 'coamps': [],
                 'r408': [],
                 'hoc': [],
                 'e3sm': [],
                 },
-            'sam_conv_factor': 1, 'type': Panel.TYPE_BUDGET, 'lines': thl_weight_lines, 'title': r"Weighted flux, $\overline{w's_L'}$", 'axis_title': r"Weighted flux, $\overline{w's_L'}\ \mathrm{\left[K\,m\, s^{-1}\right]}$",
+            'sam_conv_factor': 1, 'type': Panel.TYPE_BUDGET, 'lines': tlw_weight_lines, 'title': r"Weighted flux, $\overline{w's_L'}$", 'axis_title': r"Weighted flux, $\overline{w's_L'}\ \mathrm{\left[K\,m\, s^{-1}\right]}$",
             #'legend_label': r"$\overline{w's_L'}^\mathrm{cld}$",
             },
             
@@ -1357,7 +1387,7 @@ class VariableGroupSamProfiles(VariableGroup):
                 'hoc': [],
                 'e3sm': [],
                 },
-            'sam_calc': , 'sam_conv_factor': 1, 'title': "TR01 phys. tend.", 'axis_title': r"TR01 tendency due to physics $\mathrm{\left[TR/day\right]}$", 'legend_label': 'TR01PHYS',
+            'sam_conv_factor': 1, 'title': "TR01 phys. tend.", 'axis_title': r"TR01 tendency due to physics $\mathrm{\left[TR/day\right]}$", 'legend_label': 'TR01PHYS',
             },
             
             # RHO
@@ -1371,10 +1401,10 @@ class VariableGroupSamProfiles(VariableGroup):
                 },
             'sam_conv_factor': 1, 'title': "Air density", 'axis_title': r"Air density $\rho\ \mathrm{\left[kgm^{-3}\right]}$", 'legend_label': r'$\rho$',
             },
-            ]
+        ]
         
         # Call ctor of parent class
-        super().__init__(ncdf_datasets, case, sam_file=sam_file, coamps_file=coamps_file, r408_dataset=r408_dataset, hoc_dataset=hoc_dataset, e3sm_datasets= e3sm_datasets)
+        super().__init__(case, clubb_datasets=clubb_datasets, sam_datasets=sam_datasets, les_dataset=les_dataset, coamps_dataset=coamps_dataset, r408_dataset=r408_dataset, hoc_dataset=hoc_dataset, e3sm_datasets= e3sm_datasets)
             
     def getThlmSamCalc(self, dataset_override=None):
         """
@@ -1383,14 +1413,13 @@ class VariableGroupSamProfiles(VariableGroup):
         (THETAL + 2500.4.*(THETA./TABS).*(QI./1000))
         :return: requested variable data in the form of a list. Returned data is already cropped to the appropriate min,max indices
         """
+        dataset = self.les_dataset
         if dataset_override is not None:
             dataset = dataset_override
-        else:
-            dataset = self.sam_file
-        thetal, z, dataset = self.getVarForCalculations('THETAL', self.sam_file)
-        theta, z, dataset = self.getVarForCalculations('THETA', self.sam_file)
-        tabs, z, dataset = self.getVarForCalculations('TABS', self.sam_file)
-        qi, z, dataset = self.getVarForCalculations('QI', self.sam_file)
+        thetal, z, dataset = self.getVarForCalculations('THETAL', dataset)
+        theta, z, dataset = self.getVarForCalculations('THETA', dataset)
+        tabs, z, dataset = self.getVarForCalculations('TABS', dataset)
+        qi, z, dataset = self.getVarForCalculations('QI', dataset)
         
         thlm = thetal + (2500.4 * (theta / tabs) * (qi / 1000))
         return thlm, z
@@ -1402,12 +1431,11 @@ class VariableGroupSamProfiles(VariableGroup):
         (QT-QI) ./ 1000
         :return: requested variable data in the form of a list. Returned data is already cropped to the appropriate min,max indices
         """
+        dataset = self.les_dataset
         if dataset_override is not None:
             dataset = dataset_override
-        else:
-            dataset = self.sam_file
-        qt, z, dataset = self.getVarForCalculations('QT', self.sam_file)
-        qi, z, dataset = self.getVarForCalculations('QI', self.sam_file)
+        qt, z, dataset = self.getVarForCalculations('QT', dataset)
+        qi, z, dataset = self.getVarForCalculations('QI', dataset)
         
         rtm = (qt - qi) / 1000
         return rtm, z
@@ -1418,13 +1446,12 @@ class VariableGroupSamProfiles(VariableGroup):
         WPTHLP = (TLFLUX) ./ (RHO * 1004) + WPTHLP_SGS (CLUBB variable)
         :return:
         """
+        dataset = self.les_dataset
         if dataset_override is not None:
             dataset = dataset_override
-        else:
-            dataset = self.sam_file
-        tlflux, z, dataset = self.getVarForCalculations(['TLFLUX'], self.sam_file)
-        rho, z, dataset = self.getVarForCalculations(['RHO'], self.sam_file)
-        WPTHLP_SGS, z, dataset = self.getVarForCalculations('WPTHLP_SGS', self.sam_file)
+        tlflux, z, dataset = self.getVarForCalculations(['TLFLUX'], dataset)
+        rho, z, dataset = self.getVarForCalculations(['RHO'], dataset)
+        WPTHLP_SGS, z, dataset = self.getVarForCalculations('WPTHLP_SGS', dataset)
         
         wpthlp = tlflux / (rho * 1004) + WPTHLP_SGS
         
@@ -1437,15 +1464,14 @@ class VariableGroupSamProfiles(VariableGroup):
         (((TLFLUX) / (RHO * 1004.)) + WPTHLP_SGS)/np.sqrt(W2*TL2 + 1e-4)
         :return: requested variable data in the form of a list. Returned data is already cropped to the appropriate min,max indices
         """
+        dataset = self.les_dataset
         if dataset_override is not None:
             dataset = dataset_override
-        else:
-            dataset = self.sam_file
-        TLFLUX, z, dataset = self.getVarForCalculations('TLFLUX', self.sam_file)
-        RHO, z, dataset = self.getVarForCalculations('RHO', self.sam_file)
-        WPTHLP_SGS, z, dataset = self.getVarForCalculations('WPTHLP_SGS', self.sam_file)
-        W2, z, dataset = self.getVarForCalculations('W2', self.sam_file)
-        TL2, z, dataset = self.getVarForCalculations('TL2', self.sam_file)
+        TLFLUX, z, dataset = self.getVarForCalculations('TLFLUX', dataset)
+        RHO, z, dataset = self.getVarForCalculations('RHO', dataset)
+        WPTHLP_SGS, z, dataset = self.getVarForCalculations('WPTHLP_SGS', dataset)
+        W2, z, dataset = self.getVarForCalculations('W2', dataset)
+        TL2, z, dataset = self.getVarForCalculations('TL2', dataset)
         
         CorrWpThlp = ( TLFLUX / (RHO * 1004) + WPTHLP_SGS ) / np.sqrt(W2 * TL2 + 1e-4)
         return CorrWpThlp, z
@@ -1456,13 +1482,12 @@ class VariableGroupSamProfiles(VariableGroup):
         WPRTP = (QTFLUX) / (RHO * 2.5104e+6) + WPRTP_SGS (CLUBB variable)
         :return:
         """
+        dataset = self.les_dataset
         if dataset_override is not None:
             dataset = dataset_override
-        else:
-            dataset = self.sam_file
-        qtflux, z, dataset = self.getVarForCalculations(['QTFLUX'], self.sam_file)
-        rho, z, dataset = self.getVarForCalculations(['RHO'], self.sam_file)
-        WPRTP_SGS, z, dataset = self.getVarForCalculations('WPRTP_SGS', self.sam_file)
+        qtflux, z, dataset = self.getVarForCalculations(['QTFLUX'], dataset)
+        rho, z, dataset = self.getVarForCalculations(['RHO'], dataset)
+        WPRTP_SGS, z, dataset = self.getVarForCalculations('WPRTP_SGS', dataset)
         
         wprtp = qtflux / (rho * 2.5104e+6) + WPRTP_SGS
         return wprtp, z
@@ -1474,15 +1499,14 @@ class VariableGroupSamProfiles(VariableGroup):
         WPRTP/(np.sqrt(W2*QT2*1e-6)+1e-8)
         :return: requested variable data in the form of a list. Returned data is already cropped to the appropriate min,max indices
         """
+        dataset = self.les_dataset
         if dataset_override is not None:
             dataset = dataset_override
-        else:
-            dataset = self.sam_file
-        WPRTP, z, dataset = self.getVarForCalculations('WPRTP', self.sam_file)
-        #RHO, z, dataset = self.getVarForCalculations('RHO', self.sam_file)
-        WPRTP_SGS, z, dataset = self.getVarForCalculations('WPRTP_SGS', self.sam_file)
-        W2, z, dataset = self.getVarForCalculations('W2', self.sam_file)
-        QT2, z, dataset = self.getVarForCalculations('QT2', self.sam_file)
+        WPRTP, z, dataset = self.getVarForCalculations('WPRTP', dataset)
+        #RHO, z, dataset = self.getVarForCalculations('RHO', dataset)
+        WPRTP_SGS, z, dataset = self.getVarForCalculations('WPRTP_SGS', dataset)
+        W2, z, dataset = self.getVarForCalculations('W2', dataset)
+        QT2, z, dataset = self.getVarForCalculations('QT2', dataset)
         
         CorrWpRtp = WPRTP / (np.sqrt(W2*QT2*1e-6)+1e-8)
         return CorrWpRtp, z
@@ -1494,12 +1518,11 @@ class VariableGroupSamProfiles(VariableGroup):
         W2 = W2 + WP2_SGS (CLUBB variable)
         :return: requested variable data in the form of a list. Returned data is already cropped to the appropriate min,max indices
         """
+        dataset = self.les_dataset
         if dataset_override is not None:
             dataset = dataset_override
-        else:
-            dataset = self.sam_file
-        W2, z, dataset = self.getVarForCalculations('W2', self.sam_file)
-        WP2_SGS, z, dataset = self.getVarForCalculations('WP2_SGS', self.sam_file)
+        W2, z, dataset = self.getVarForCalculations('W2', dataset)
+        WP2_SGS, z, dataset = self.getVarForCalculations('WP2_SGS', dataset)
         WP2 = W2 + WP2_SGS
         return WP2, z
     
@@ -1510,12 +1533,11 @@ class VariableGroupSamProfiles(VariableGroup):
         W3 = W3 + WP3_SGS (CLUBB variable)
         :return: requested variable data in the form of a list. Returned data is already cropped to the appropriate min,max indices
         """
+        dataset = self.les_dataset
         if dataset_override is not None:
             dataset = dataset_override
-        else:
-            dataset = self.sam_file
-        W3, z, dataset = self.getVarForCalculations('W3', self.sam_file)
-        WP3_SGS, z, dataset = self.getVarForCalculations('WP3_SGS', self.sam_file)
+        W3, z, dataset = self.getVarForCalculations('W3', dataset)
+        WP3_SGS, z, dataset = self.getVarForCalculations('WP3_SGS', dataset)
         WP3 = W3 + WP3_SGS
         return WP3, z
     
@@ -1526,12 +1548,11 @@ class VariableGroupSamProfiles(VariableGroup):
         THETALVAR = THL2 + THLP2_SGS (CLUBB variable)
         :return: requested variable data in the form of a list. Returned data is already cropped to the appropriate min,max indices
         """
+        dataset = self.les_dataset
         if dataset_override is not None:
             dataset = dataset_override
-        else:
-            dataset = self.sam_file
-        TL2, z, dataset = self.getVarForCalculations('TL2', self.sam_file)
-        THLP2_SGS, z, dataset = self.getVarForCalculations('THLP2_SGS', self.sam_file)
+        TL2, z, dataset = self.getVarForCalculations('TL2', dataset)
+        THLP2_SGS, z, dataset = self.getVarForCalculations('THLP2_SGS', dataset)
         THETALVAR = TL2 + THLP2_SGS
         return THETALVAR, z
     
@@ -1543,12 +1564,11 @@ class VariableGroupSamProfiles(VariableGroup):
         RTVAR = (QT2 * 1e-6) + RTP2_SGS (CLUBB variable)
         :return: requested variable data in the form of a list. Returned data is already cropped to the appropriate min,max indices
         """
+        dataset = self.les_dataset
         if dataset_override is not None:
             dataset = dataset_override
-        else:
-            dataset = self.sam_file
-        QT2, z, dataset = self.getVarForCalculations('QT2', self.sam_file)
-        RTP2_SGS, z, dataset = self.getVarForCalculations('RTP2_SGS', self.sam_file)
+        QT2, z, dataset = self.getVarForCalculations('QT2', dataset)
+        RTP2_SGS, z, dataset = self.getVarForCalculations('RTP2_SGS', dataset)
         RTVAR = (QT2 * 1e-6) + RTP2_SGS
         return RTVAR, z
     
@@ -1559,12 +1579,11 @@ class VariableGroupSamProfiles(VariableGroup):
         UPWP = UW + UPWP_SGS (CLUBB variable)
         :return: requested variable data in the form of a list. Returned data is already cropped to the appropriate min,max indices
         """
+        dataset = self.les_dataset
         if dataset_override is not None:
             dataset = dataset_override
-        else:
-            dataset = self.sam_file
-        UW, z, dataset = self.getVarForCalculations('UW', self.sam_file)
-        UPWP_SGS, z, dataset = self.getVarForCalculations('UPWP_SGS', self.sam_file)
+        UW, z, dataset = self.getVarForCalculations('UW', dataset)
+        UPWP_SGS, z, dataset = self.getVarForCalculations('UPWP_SGS', dataset)
         UPWP = UW + UPWP_SGS
         return UPWP, z
     
@@ -1575,12 +1594,11 @@ class VariableGroupSamProfiles(VariableGroup):
         VPWP = VW + VPWP_SGS (CLUBB variable)
         :return: requested variable data in the form of a list. Returned data is already cropped to the appropriate min,max indices
         """
+        dataset = self.les_dataset
         if dataset_override is not None:
             dataset = dataset_override
-        else:
-            dataset = self.sam_file
-        VW, z, dataset = self.getVarForCalculations('VW', self.sam_file)
-        VPWP_SGS, z, dataset = self.getVarForCalculations('VPWP_SGS', self.sam_file)
+        VW, z, dataset = self.getVarForCalculations('VW', dataset)
+        VPWP_SGS, z, dataset = self.getVarForCalculations('VPWP_SGS', dataset)
         VPWP = VW + VPWP_SGS
         return VPWP, z
     
@@ -1591,12 +1609,11 @@ class VariableGroupSamProfiles(VariableGroup):
         UVAR = U2 + UP2_SGS (CLUBB variable)
         :return: requested variable data in the form of a list. Returned data is already cropped to the appropriate min,max indices
         """
+        dataset = self.les_dataset
         if dataset_override is not None:
             dataset = dataset_override
-        else:
-            dataset = self.sam_file
-        U2, z, dataset = self.getVarForCalculations('U2', self.sam_file)
-        UP2_SGS, z, dataset = self.getVarForCalculations('UP2_SGS', self.sam_file)
+        U2, z, dataset = self.getVarForCalculations('U2', dataset)
+        UP2_SGS, z, dataset = self.getVarForCalculations('UP2_SGS', dataset)
         UVAR = U2 + UP2_SGS
         return UVAR, z
     
@@ -1607,12 +1624,11 @@ class VariableGroupSamProfiles(VariableGroup):
         VVAR = V2 + VP2_SGS (CLUBB variable)
         :return: requested variable data in the form of a list. Returned data is already cropped to the appropriate min,max indices
         """
+        dataset = self.les_dataset
         if dataset_override is not None:
             dataset = dataset_override
-        else:
-            dataset = self.sam_file
-        V2, z, dataset = self.getVarForCalculations('V2', self.sam_file)
-        VP2_SGS, z, dataset = self.getVarForCalculations('VP2_SGS', self.sam_file)
+        V2, z, dataset = self.getVarForCalculations('V2', dataset)
+        VP2_SGS, z, dataset = self.getVarForCalculations('VP2_SGS', dataset)
         VVAR = V2 + VP2_SGS
         return VVAR, z
     
@@ -1623,12 +1639,11 @@ class VariableGroupSamProfiles(VariableGroup):
         (UW+UPWP_SGS)/(np.sqrt((U2+UP2_SGS)*(W2+WP2_SGS)+1e-4))
         :return: requested variable data in the form of a list. Returned data is already cropped to the appropriate min,max indices
         """
+        dataset = self.les_dataset
         if dataset_override is not None:
             dataset = dataset_override
-        else:
-            dataset = self.sam_file
-        UW, z, dataset = self.getVarForCalculations('UW', self.sam_file)
-        UPWP_SGS, z, dataset = self.getVarForCalculations('UPWP_SGS', self.sam_file)
+        UW, z, dataset = self.getVarForCalculations('UW', dataset)
+        UPWP_SGS, z, dataset = self.getVarForCalculations('UPWP_SGS', dataset)
         UPWP = UW + UPWP_SGS
         return UPWP, z
     
@@ -1639,12 +1654,11 @@ class VariableGroupSamProfiles(VariableGroup):
         (VW+VPWP_SGS)/(np.sqrt((V2+VP2_SGS)*(W2+WP2_SGS)+1e-4))
         :return: requested variable data in the form of a list. Returned data is already cropped to the appropriate min,max indices
         """
+        dataset = self.les_dataset
         if dataset_override is not None:
             dataset = dataset_override
-        else:
-            dataset = self.sam_file
-        VW, z, dataset = self.getVarForCalculations('VW', self.sam_file)
-        VPWP_SGS, z, dataset = self.getVarForCalculations('VPWP_SGS', self.sam_file)
+        VW, z, dataset = self.getVarForCalculations('VW', dataset)
+        VPWP_SGS, z, dataset = self.getVarForCalculations('VPWP_SGS', dataset)
         VPWP = VW + VPWP_SGS
         return VPWP, z
     
@@ -1656,31 +1670,30 @@ class VariableGroupSamProfiles(VariableGroup):
         :return: requested variable data in the form of a list. Returned data is already cropped to the appropriate min,max indices
         ALERT: How does this work in the budgets plotter?
         """
+        dataset = self.les_dataset
         if dataset_override is not None:
             dataset = dataset_override
-        else:
-            dataset = self.sam_file
-        qrainp2_ip, z, dataset = self.getVarForCalculations('qrainp2_ip', self.sam_file)
-        qrainm_ip, z, dataset = self.getVarForCalculations('qrainm_ip', self.sam_file)
+        qrainp2_ip, z, dataset = self.getVarForCalculations('qrainp2_ip', dataset)
+        qrainm_ip, z, dataset = self.getVarForCalculations('qrainm_ip', dataset)
         QRP2_QRIP = qrainp2_ip / (np.maximum(np.full(n,1e-5),qrainm_ip)**2)
         return QRP2_QRIP, z
     
     ## Conditional average fallback functions
+    # UCLD
     def getUEnvUnweighted(self, dataset_override=None):
         """
         Calculates the unweighted environment-conditional average of U from SAM output
         using the following equation:
-        (U - CLD * UCLD)/(1 - CLD)
+        (U - CLD * UCLD) / (1 - CLD)
         :return: requested variable data in the form of a list. Returned data is already cropped to the appropriate min,max indices
         """
+        dataset = self.les_dataset
         if dataset_override is not None:
             dataset = dataset_override
-        else:
-            dataset = self.sam_file
-        U, z, dataset = self.getVarForCalculations('U', self.sam_file)
-        UCLD, z, dataset = self.getVarForCalculations('UCLD', self.sam_file)
-        CLD, z, dataset = self.getVarForCalculations('CLD', self.sam_file)
-        UENV = (U - CLD * UCLD)/(1 - CLD)
+        U, z, dataset = self.getVarForCalculations('U', dataset)
+        UCLD, z, dataset = self.getVarForCalculations('UCLD', dataset)
+        CLD, z, dataset = self.getVarForCalculations('CLD', dataset)
+        UENV = (U - CLD * UCLD) / (1 - CLD)
         return UENV, z
     
     def getUEnvWeighted(self, dataset_override=None):
@@ -1690,13 +1703,12 @@ class VariableGroupSamProfiles(VariableGroup):
         (U - CLD * UCLD)
         :return: requested variable data in the form of a list. Returned data is already cropped to the appropriate min,max indices
         """
+        dataset = self.les_dataset
         if dataset_override is not None:
             dataset = dataset_override
-        else:
-            dataset = self.sam_file
-        U, z, dataset = self.getVarForCalculations('U', self.sam_file)
-        UCLD, z, dataset = self.getVarForCalculations('UCLD', self.sam_file)
-        CLD, z, dataset = self.getVarForCalculations('CLD', self.sam_file)
+        U, z, dataset = self.getVarForCalculations('U', dataset)
+        UCLD, z, dataset = self.getVarForCalculations('UCLD', dataset)
+        CLD, z, dataset = self.getVarForCalculations('CLD', dataset)
         UENV = (U - CLD * UCLD)
         return UENV, z
     
@@ -1707,31 +1719,29 @@ class VariableGroupSamProfiles(VariableGroup):
         CLD * UCLD
         :return: requested variable data in the form of a list. Returned data is already cropped to the appropriate min,max indices
         """
+        dataset = self.les_dataset
         if dataset_override is not None:
             dataset = dataset_override
-        else:
-            dataset = self.sam_file
-        U, z, dataset = self.getVarForCalculations('U', self.sam_file)
-        UCLD, z, dataset = self.getVarForCalculations('UCLD', self.sam_file)
-        CLD, z, dataset = self.getVarForCalculations('CLD', self.sam_file)
+        UCLD, z, dataset = self.getVarForCalculations('UCLD', dataset)
+        CLD, z, dataset = self.getVarForCalculations('CLD', dataset)
         UCLDW = CLD * UCLD
         return UCLDW, z
     
+    # VCLD
     def getVEnvUnweighted(self, dataset_override=None):
         """
         Calculates the unweighted environment-conditional average of V from SAM output
         using the following equation:
-        (V - CLD * VCLD)/(1 - CLD)
+        (V - CLD * VCLD) / (1 - CLD)
         :return: requested variable data in the form of a list. Returned data is already cropped to the appropriate min,max indices
         """
+        dataset = self.les_dataset
         if dataset_override is not None:
             dataset = dataset_override
-        else:
-            dataset = self.sam_file
-        V, z, dataset = self.getVarForCalculations('V', self.sam_file)
-        VCLD, z, dataset = self.getVarForCalculations('VCLD', self.sam_file)
-        CLD, z, dataset = self.getVarForCalculations('CLD', self.sam_file)
-        VENV = (V - CLD * VCLD)/(1 - CLD)
+        V, z, dataset = self.getVarForCalculations('V', dataset)
+        VCLD, z, dataset = self.getVarForCalculations('VCLD', dataset)
+        CLD, z, dataset = self.getVarForCalculations('CLD', dataset)
+        VENV = (V - CLD * VCLD) / (1 - CLD)
         return VENV, z
     
     def getVEnvWeighted(self, dataset_override=None):
@@ -1741,13 +1751,12 @@ class VariableGroupSamProfiles(VariableGroup):
         (V - CLD * VCLD)
         :return: requested variable data in the form of a list. Returned data is already cropped to the appropriate min,max indices
         """
+        dataset = self.les_dataset
         if dataset_override is not None:
             dataset = dataset_override
-        else:
-            dataset = self.sam_file
-        V, z, dataset = self.getVarForCalculations('V', self.sam_file)
-        VCLD, z, dataset = self.getVarForCalculations('VCLD', self.sam_file)
-        CLD, z, dataset = self.getVarForCalculations('CLD', self.sam_file)
+        V, z, dataset = self.getVarForCalculations('V', dataset)
+        VCLD, z, dataset = self.getVarForCalculations('VCLD', dataset)
+        CLD, z, dataset = self.getVarForCalculations('CLD', dataset)
         VENV = (V - CLD * VCLD)
         return VENV, z
     
@@ -1758,48 +1767,45 @@ class VariableGroupSamProfiles(VariableGroup):
         CLD * VCLD
         :return: requested variable data in the form of a list. Returned data is already cropped to the appropriate min,max indices
         """
+        dataset = self.les_dataset
         if dataset_override is not None:
             dataset = dataset_override
-        else:
-            dataset = self.sam_file
-        V, z, dataset = self.getVarForCalculations('V', self.sam_file)
-        VCLD, z, dataset = self.getVarForCalculations('VCLD', self.sam_file)
-        CLD, z, dataset = self.getVarForCalculations('CLD', self.sam_file)
+        VCLD, z, dataset = self.getVarForCalculations('VCLD', dataset)
+        CLD, z, dataset = self.getVarForCalculations('CLD', dataset)
         VCLDW = CLD * VCLD
         return VCLDW, z
     
+    # WCLD
     def getWEnvUnweighted(self, dataset_override=None):
         """
         Calculates the unweighted environment-conditional average of W from SAM output
         using the following equation:
-        (W - CLD * WCLD)/(1 - CLD)
+        (WM - CLD * WCLD) / (1 - CLD)
         :return: requested variable data in the form of a list. Returned data is already cropped to the appropriate min,max indices
         """
+        dataset = self.les_dataset
         if dataset_override is not None:
             dataset = dataset_override
-        else:
-            dataset = self.sam_file
-        W, z, dataset = self.getVarForCalculations('W', self.sam_file)
-        WCLD, z, dataset = self.getVarForCalculations('WCLD', self.sam_file)
-        CLD, z, dataset = self.getVarForCalculations('CLD', self.sam_file)
-        WENV = (W - CLD * WCLD)/(1 - CLD)
+        WM, z, dataset = self.getVarForCalculations('WM', dataset)
+        WCLD, z, dataset = self.getVarForCalculations('WCLD', dataset)
+        CLD, z, dataset = self.getVarForCalculations('CLD', dataset)
+        WENV = (WM - CLD * WCLD) / (1 - CLD)
         return WENV, z
     
     def getWEnvWeighted(self, dataset_override=None):
         """
         Calculates the weighted environment-conditional average of W from SAM output
         using the following equation:
-        (W - CLD * WCLD)
+        (WM - CLD * WCLD)
         :return: requested variable data in the form of a list. Returned data is already cropped to the appropriate min,max indices
         """
+        dataset = self.les_dataset
         if dataset_override is not None:
             dataset = dataset_override
-        else:
-            dataset = self.sam_file
-        W, z, dataset = self.getVarForCalculations('W', self.sam_file)
-        WCLD, z, dataset = self.getVarForCalculations('WCLD', self.sam_file)
-        CLD, z, dataset = self.getVarForCalculations('CLD', self.sam_file)
-        WENV = (W - CLD * WCLD)
+        WM, z, dataset = self.getVarForCalculations('WM', dataset)
+        WCLD, z, dataset = self.getVarForCalculations('WCLD', dataset)
+        CLD, z, dataset = self.getVarForCalculations('CLD', dataset)
+        WENV = (WM - CLD * WCLD)
         return WENV, z
 
     def getWCldWeighted(self, dataset_override=None):
@@ -1809,32 +1815,29 @@ class VariableGroupSamProfiles(VariableGroup):
         CLD * WCLD
         :return: requested variable data in the form of a list. Returned data is already cropped to the appropriate min,max indices
         """
+        dataset = self.les_dataset
         if dataset_override is not None:
             dataset = dataset_override
-        else:
-            dataset = self.sam_file
-        W, z, dataset = self.getVarForCalculations('W', self.sam_file)
-        WCLD, z, dataset = self.getVarForCalculations('WCLD', self.sam_file)
-        CLD, z, dataset = self.getVarForCalculations('CLD', self.sam_file)
+        WCLD, z, dataset = self.getVarForCalculations('WCLD', dataset)
+        CLD, z, dataset = self.getVarForCalculations('CLD', dataset)
         WCLDW = CLD * WCLD
         return WCLDW, z
     
-    
+    # UWCLD
     def getUWEnvUnweighted(self, dataset_override=None):
         """
         Calculates the unweighted environment-conditional average of UW from SAM output
         using the following equation:
-        (UW - CLD * UWCLD)/(1 - CLD)
+        (UW - CLD * UWCLD) / (1 - CLD)
         :return: requested variable data in the form of a list. Returned data is already cropped to the appropriate min,max indices
         """
+        dataset = self.les_dataset
         if dataset_override is not None:
             dataset = dataset_override
-        else:
-            dataset = self.sam_file
-        UW, z, dataset = self.getVarForCalculations('UW', self.sam_file)
-        UWCLD, z, dataset = self.getVarForCalculations('UWCLD', self.sam_file)
-        CLD, z, dataset = self.getVarForCalculations('CLD', self.sam_file)
-        UWENV = (UW - CLD * UWCLD)/(1 - CLD)
+        UW, z, dataset = self.getVarForCalculations('UW', dataset)
+        UWCLD, z, dataset = self.getVarForCalculations('UWCLD', dataset)
+        CLD, z, dataset = self.getVarForCalculations('CLD', dataset)
+        UWENV = (UW - CLD * UWCLD) / (1 - CLD)
         return UWENV, z
     
     def getUWEnvWeighted(self, dataset_override=None):
@@ -1844,13 +1847,12 @@ class VariableGroupSamProfiles(VariableGroup):
         (UW - CLD * UWCLD)
         :return: requested variable data in the form of a list. Returned data is already cropped to the appropriate min,max indices
         """
+        dataset = self.les_dataset
         if dataset_override is not None:
             dataset = dataset_override
-        else:
-            dataset = self.sam_file
-        UW, z, dataset = self.getVarForCalculations('UW', self.sam_file)
-        UWCLD, z, dataset = self.getVarForCalculations('UWCLD', self.sam_file)
-        CLD, z, dataset = self.getVarForCalculations('CLD', self.sam_file)
+        UW, z, dataset = self.getVarForCalculations('UW', dataset)
+        UWCLD, z, dataset = self.getVarForCalculations('UWCLD', dataset)
+        CLD, z, dataset = self.getVarForCalculations('CLD', dataset)
         UWENV = (UW - CLD * UWCLD)
         return UWENV, z
     
@@ -1861,32 +1863,29 @@ class VariableGroupSamProfiles(VariableGroup):
         CLD * UWCLD
         :return: requested variable data in the form of a list. Returned data is already cropped to the appropriate min,max indices
         """
+        dataset = self.les_dataset
         if dataset_override is not None:
             dataset = dataset_override
-        else:
-            dataset = self.sam_file
-        UW, z, dataset = self.getVarForCalculations('UW', self.sam_file)
-        UWCLD, z, dataset = self.getVarForCalculations('UWCLD', self.sam_file)
-        CLD, z, dataset = self.getVarForCalculations('CLD', self.sam_file)
+        UWCLD, z, dataset = self.getVarForCalculations('UWCLD', dataset)
+        CLD, z, dataset = self.getVarForCalculations('CLD', dataset)
         UWCLDW = CLD * UWCLD
         return UWCLDW, z
     
-    
+    # VWCLD
     def getVWEnvUnweighted(self, dataset_override=None):
         """
         Calculates the unweighted environment-conditional average of VW from SAM output
         using the following equation:
-        (VW - CLD * VWCLD)/(1 - CLD)
+        (VW - CLD * VWCLD) / (1 - CLD)
         :return: requested variable data in the form of a list. Returned data is already cropped to the appropriate min,max indices
         """
+        dataset = self.les_dataset
         if dataset_override is not None:
             dataset = dataset_override
-        else:
-            dataset = self.sam_file
-        VW, z, dataset = self.getVarForCalculations('VW', self.sam_file)
-        VWCLD, z, dataset = self.getVarForCalculations('VWCLD', self.sam_file)
-        CLD, z, dataset = self.getVarForCalculations('CLD', self.sam_file)
-        VWENV = (VW - CLD * VWCLD)/(1 - CLD)
+        VW, z, dataset = self.getVarForCalculations('VW', dataset)
+        VWCLD, z, dataset = self.getVarForCalculations('VWCLD', dataset)
+        CLD, z, dataset = self.getVarForCalculations('CLD', dataset)
+        VWENV = (VW - CLD * VWCLD) / (1 - CLD)
         return VWENV, z
     
     def getVWEnvWeighted(self, dataset_override=None):
@@ -1896,13 +1895,12 @@ class VariableGroupSamProfiles(VariableGroup):
         (VW - CLD * VWCLD)
         :return: requested variable data in the form of a list. Returned data is already cropped to the appropriate min,max indices
         """
+        dataset = self.les_dataset
         if dataset_override is not None:
             dataset = dataset_override
-        else:
-            dataset = self.sam_file
-        VW, z, dataset = self.getVarForCalculations('VW', self.sam_file)
-        VWCLD, z, dataset = self.getVarForCalculations('VWCLD', self.sam_file)
-        CLD, z, dataset = self.getVarForCalculations('CLD', self.sam_file)
+        VW, z, dataset = self.getVarForCalculations('VW', dataset)
+        VWCLD, z, dataset = self.getVarForCalculations('VWCLD', dataset)
+        CLD, z, dataset = self.getVarForCalculations('CLD', dataset)
         VWENV = (VW - CLD * VWCLD)
         return VWENV, z
     
@@ -1913,12 +1911,143 @@ class VariableGroupSamProfiles(VariableGroup):
         CLD * VWCLD
         :return: requested variable data in the form of a list. Returned data is already cropped to the appropriate min,max indices
         """
+        dataset = self.les_dataset
         if dataset_override is not None:
             dataset = dataset_override
-        else:
-            dataset = self.sam_file
-        VW, z, dataset = self.getVarForCalculations('VW', self.sam_file)
-        VWCLD, z, dataset = self.getVarForCalculations('VWCLD', self.sam_file)
-        CLD, z, dataset = self.getVarForCalculations('CLD', self.sam_file)
+        VWCLD, z, dataset = self.getVarForCalculations('VWCLD', dataset)
+        CLD, z, dataset = self.getVarForCalculations('CLD', dataset)
         VWCLDW = CLD * VWCLD
         return VWCLDW, z
+    
+    # TVCLD
+    def getTHVEnvUnweighted(self, dataset_override=None):
+        """
+        Calculates the unweighted environment-conditional average of THETAV from SAM output
+        using the following equation:
+        (THETAV - CLD * TVCLD) / (1 - CLD)
+        :return: requested variable data in the form of a list. Returned data is already cropped to the appropriate min,max indices
+        """
+        dataset = self.les_dataset
+        if dataset_override is not None:
+            dataset = dataset_override
+        THETAV, z, dataset = self.getVarForCalculations('THETAV', dataset)
+        TVCLD, z, dataset = self.getVarForCalculations('TVCLD', dataset)
+        CLD, z, dataset = self.getVarForCalculations('CLD', dataset)
+        TVENV = (THETAV - CLD * TVCLD) / (1 - CLD)
+        return TVENV, z
+    
+    def getTHVEnvWeighted(self, dataset_override=None):
+        """
+        Calculates the weighted environment-conditional average of THETAV from SAM output
+        using the following equation:
+        (THETAV - CLD * TVCLD)
+        :return: requested variable data in the form of a list. Returned data is already cropped to the appropriate min,max indices
+        """
+        dataset = self.les_dataset
+        if dataset_override is not None:
+            dataset = dataset_override
+        THETAV, z, dataset = self.getVarForCalculations('THETAV', dataset)
+        TVCLD, z, dataset = self.getVarForCalculations('TVCLD', dataset)
+        CLD, z, dataset = self.getVarForCalculations('CLD', dataset)
+        TVENV = (THETAV - CLD * TVCLD)
+        return TVENV, z
+    
+    def getTHVCldWeighted(self, dataset_override=None):
+        """
+        Calculates the weighted cloud-conditional average of THETAV from SAM output
+        using the following equation:
+        CLD * TVCLD
+        :return: requested variable data in the form of a list. Returned data is already cropped to the appropriate min,max indices
+        """
+        dataset = self.les_dataset
+        if dataset_override is not None:
+            dataset = dataset_override
+        TVCLD, z, dataset = self.getVarForCalculations('TVCLD', dataset)
+        CLD, z, dataset = self.getVarForCalculations('CLD', dataset)
+        TVCLDW = CLD * TVCLD
+        return TVCLDW, z
+    
+    # QTCLD
+    # ALERT: Check equations/units of SAM QT variables
+    def getQTEnvUnweighted(self, dataset_override=None):
+        """
+        Calculates the unweighted environment-conditional average of QT from SAM output
+        using the following equation:
+        (QT - CLD * QTCLD) / (1 - CLD)
+        :return: requested variable data in the form of a list. Returned data is already cropped to the appropriate min,max indices
+        """
+        dataset = self.les_dataset
+        if dataset_override is not None:
+            dataset = dataset_override
+        QT, z, dataset = self.getVarForCalculations('QT', dataset)
+        QTCLD, z, dataset = self.getVarForCalculations('QTCLD', dataset)
+        CLD, z, dataset = self.getVarForCalculations('CLD', dataset)
+        QTENV = (QT - CLD * QTCLD) / (1 - CLD)
+        return QTENV, z
+    
+    # QTWCLD
+    # ALERT: Check equations/units of SAM QTW variables
+    def getQTWEnvWeighted(self, dataset_override=None):
+        """
+        Calculates the weighted environment-conditional average of QTW from SAM output
+        using the following equation:
+        (WPRTP - CLD * QTWCLD / 1000)
+        :return: requested variable data in the form of a list. Returned data is already cropped to the appropriate min,max indices
+        """
+        dataset = self.les_dataset
+        if dataset_override is not None:
+            dataset = dataset_override
+        WPRTP, z, dataset = self.getVarForCalculations('WPRTP', dataset)
+        QTWCLD, z, dataset = self.getVarForCalculations('QTWCLD', dataset)
+        CLD, z, dataset = self.getVarForCalculations('CLD', dataset)
+        QTWENV = (WPRTP - CLD * QTWCLD / 1000)
+        return QTWENV, z
+    
+    def getQTWCldWeighted(self, dataset_override=None):
+        """
+        Calculates the weighted cloud-conditional average of QTW from SAM output
+        using the following equation:
+        CLD * QTWCLD / 1000
+        :return: requested variable data in the form of a list. Returned data is already cropped to the appropriate min,max indices
+        """
+        dataset = self.les_dataset
+        if dataset_override is not None:
+            dataset = dataset_override
+        QTWCLD, z, dataset = self.getVarForCalculations('QTWCLD', dataset)
+        CLD, z, dataset = self.getVarForCalculations('CLD', dataset)
+        QTWCLDW = CLD * QTWCLD
+        return QTWCLDW, z
+    
+    # TLWCLD
+    # ALERT: Check equations/units of SAM TLW variables
+    def getTLWEnvWeighted(self, dataset_override=None):
+        """
+        Calculates the weighted environment-conditional average of TL from SAM output
+        using the following equation:
+        (TLFLUX / RHO / 1004 - CDL * TLWCLD)
+        :return: requested variable data in the form of a list. Returned data is already cropped to the appropriate min,max indices
+        """
+        dataset = self.les_dataset
+        if dataset_override is not None:
+            dataset = dataset_override
+        TLFLUX, z, dataset = self.getVarForCalculations('TLFLUX', dataset)
+        TLWCLD, z, dataset = self.getVarForCalculations('TLWCLD', dataset)
+        CLD, z, dataset = self.getVarForCalculations('CLD', dataset)
+        RHO, z, dataset = self.getVarForCalculations('RHO', dataset)
+        TLWENV = (TLFLUX / RHO / 1004 - CLD * TLWCLD)
+        return TLWENV, z
+    
+    def getTLWCldWeighted(self, dataset_override=None):
+        """
+        Calculates the weighted cloud-conditional average of TL from SAM output
+        using the following equation:
+        CLD * TLWCLD
+        :return: requested variable data in the form of a list. Returned data is already cropped to the appropriate min,max indices
+        """
+        dataset = self.les_dataset
+        if dataset_override is not None:
+            dataset = dataset_override
+        TLWCLD, z, dataset = self.getVarForCalculations('TLWCLD', dataset)
+        CLD, z, dataset = self.getVarForCalculations('CLD', dataset)
+        TLWCLDW = CLD * TLWCLD
+        return TLWCLDW, z

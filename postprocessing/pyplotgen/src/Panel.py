@@ -17,7 +17,7 @@ class Panel:
     Represents an individual panel/graph. Each panel contains a number of details
     specific to it, such as a title, axis labels, and lines. Each panel can be plotted/saved to a file.
     """
-    x_title: str
+    #x_title: str
     TYPE_PROFILE = 'profile'
     TYPE_BUDGET = 'budget'
     TYPE_TIMESERIES = 'timeseries'
@@ -104,6 +104,10 @@ class Panel:
 
         # Plot dashed line. This var will oscillate between true and false
         plot_dashed = True
+        
+        # Emphasize 0 line in profile plots
+        if self.panel_type == Panel.TYPE_PROFILE:
+            plt.axvline(x=0, color='grey', ls='-')
 
         max_panel_value = 0
         for var in self.all_plots:
@@ -185,7 +189,7 @@ class Panel:
             pass # do nothing
 
         filename = self.panel_type + "_"+ str(datetime.now())
-
+        
         if self.panel_type == Panel.TYPE_BUDGET:
             filename = filename + "_"+ self.title
         else:
@@ -194,7 +198,7 @@ class Panel:
         rel_filename = output_folder + "/" +casename+'/' + filename
         if replace_images is True or not os.path.isfile(rel_filename+Panel.EXTENSION):
             plt.savefig(rel_filename+Panel.EXTENSION)
-        if os.path.isfile(rel_filename + Panel.EXTENSION) and replace_images is False:
+        else: # os.path.isfile(rel_filename + Panel.EXTENSION) and replace_images is False:
             print("\n\tImage " + rel_filename+Panel.EXTENSION+' already exists. To overwrite this image during runtime pass in the --replace (-r) parameter.')
         plt.close()
 

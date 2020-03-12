@@ -373,13 +373,13 @@ GABLS3_NIGHT = {'name': 'gabls3_night', 'start_time': 421, 'end_time': 480, 'hei
 IOP = {'name': 'iop', 'start_time': 181, 'end_time': 1440, 'height_min_value': 0,
        'height_max_value': 27750,
        'blacklisted_vars': [],
-       'sam_file': None,
-       'coamps_file': None,
+       'clubb_datasets': None,
+       'les_dataset': None,
+       'coamps_dataset': None,
        'r408_file': None,
        'hoc_file': None,
        'e3sm_file': None,
-       'var_groups': [#VariableGroupBase,
-           VariableGroupSamProfiles, VariableGroupSamBudgets]
+       'var_groups': [VariableGroupBase, VariableGroupSamProfiles, VariableGroupSamBudgets]
        }
 
 JUN25_ALTOCU = {'name': 'jun25_altocu', 'start_time': 181, 'end_time': 240, 'height_min_value': 4808,
@@ -529,7 +529,7 @@ ALL_CASES = [ARM, ARM_97, ASTEX_A209, ATEX,
              DYCOMS2_RF01, DYCOMS2_RF01_FIXED_SST, DYCOMS2_RF02_DO, DYCOMS2_RF02_DS, DYCOMS2_RF02_ND, DYCOMS2_RF02_SO,
              FIRE,
              GABLS2, GABLS3, GABLS3_NIGHT,
-             IOP,
+             #IOP,
              JUN25_ALTOCU,
              LBA,
              MC3E, MPACE_A, MPACE_B, MPACE_B_SILHS,
