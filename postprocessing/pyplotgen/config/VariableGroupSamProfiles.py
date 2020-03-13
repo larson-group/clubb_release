@@ -209,7 +209,7 @@ class VariableGroupSamProfiles(VariableGroup):
                 'hoc': ['wprtp'],
                 'e3sm': ['wprtp']
                 },
-            'sam_calc': self.getWprtpCalc, 'sam_conv_factor': 1, 'title': r"Turbulent Flux of $\mathrm{r_t}$", 'axis_title': r"$\mathrm{\overline{w'r_t'}}$ / qtflux(s) $\mathrm{\left[kg\,kg^{-1}\,m\,s^{-1}\right]}$", 'legend_label': r"$\mathrm{\overline{w'r_t'}}$",
+            'sam_calc': self.getWprtpCalc, 'sam_conv_factor': 1, 'title': r"Turbulent Flux of $\mathrm{r_t}$", 'axis_title': r"$\mathrm{\overline{w'r_t'}}$ (QTFLUX) $\mathrm{\left[kg\,kg^{-1}\,m\,s^{-1}\right]}$", 'legend_label': r"$\mathrm{\overline{w'r_t'}}$",
             },
             
             # CORR(W, R_T)

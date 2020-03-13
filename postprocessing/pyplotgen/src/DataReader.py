@@ -220,8 +220,8 @@ class DataReader():
             values = self.__meanProfiles__(values, start_avg_index, end_avg_idx + 1, avg_axis=avg_axis)
         
         # Change all remaining NaN values to 0
-        if 'SAM version' in ncdf_data.ncattrs():
-            values = np.where(np.isnan(values), 0, var_values)
+        if 'SAM version' in netcdf_dataset.ncattrs():
+            values = np.where(np.isnan(values), 0, values)
 
         # E3SM outputs Z3 as it's height variable, which may also contain an offset
         # (e.g. e3sm height = clubb height + 650 for the dycoms2_rf01 case). This eliminates that offset.
