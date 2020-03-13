@@ -104,10 +104,6 @@ class Panel:
 
         # Plot dashed line. This var will oscillate between true and false
         plot_dashed = True
-        
-        # Emphasize 0 line in profile plots
-        if self.panel_type == Panel.TYPE_PROFILE:
-            plt.axvline(x=0, color='grey', ls='-')
 
         max_panel_value = 0
         for var in self.all_plots:
@@ -174,7 +170,12 @@ class Panel:
 
         # Center budgets
         if self.panel_type is Panel.TYPE_BUDGET:
-            plt.xlim(-1 * max_panel_value,max_panel_value)
+            plt.xlim(-1 * max_panel_value * Style_definitions.BUDGET_XAXIS_SCALE_FACTOR,max_panel_value * Style_definitions.BUDGET_XAXIS_SCALE_FACTOR)
+            
+        # Emphasize 0 line in profile plots if 0 is in x-axis range
+        xlim = plt.xlim()
+        if self.panel_type == Panel.TYPE_PROFILE and 0 >= xlim[0] and 0 <= xlim[1]:
+            plt.axvline(x=0, color='grey', ls='-')
 
         # Create folders
         # Because os.mkdir("output") can fail and prevent os.mkdir("output/" + casename) from being called we must

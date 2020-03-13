@@ -379,7 +379,7 @@ class VariableGroup:
         :return: A relevant name of the given variable
         """
         plotted_models_varname = "unknown_model_var"
-        if self.clubb_datasets is not None:
+        if self.clubb_datasets is not None and len(var_names['clubb']) is not 0:
             plotted_models_varname = var_names['clubb'][0]
         elif self.clubb_datasets is None and self.sam_datasets is not None and len(var_names['sam']) is not 0:
             plotted_models_varname = var_names['sam'][0]
