@@ -218,6 +218,10 @@ class DataReader():
             values = np.zeros(size)
         if values.ndim > 1:  # not ncdf_variable.one_dimensional:
             values = self.__meanProfiles__(values, start_avg_index, end_avg_idx + 1, avg_axis=avg_axis)
+        
+        # Change all remaining NaN values to 0
+        if 'SAM version' in ncdf_data.ncattrs():
+            values = np.where(np.isnan(values), 0, var_values)
 
         # E3SM outputs Z3 as it's height variable, which may also contain an offset
         # (e.g. e3sm height = clubb height + 650 for the dycoms2_rf01 case). This eliminates that offset.
@@ -353,6 +357,9 @@ class DataReader():
         if varname in keys:
             var_values = ncdf_data.variables[varname]
             var_values = np.squeeze(var_values)
+            # Check if data comes from SAM and convert -9999 values to NaN
+            if 'SAM version' in ncdf_data.ncattrs():
+                var_values = np.where(np.isclose(var_values, -9999), np.nan, var_values)
             var_values = var_values * conversion
             # Variables with 0-1 data points/values return a float after being 'squeeze()'ed, this converts it back to an array
             if isinstance(var_values, float):

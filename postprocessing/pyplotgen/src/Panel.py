@@ -67,7 +67,6 @@ class Panel:
         :param casename: The name of the case that's plotting this panel
         :return: None
         """
-
         plt.subplot(111)
 
         # Set line color/style. This will cycle through all colors, then once colors run out use a new style and cycle through
@@ -112,7 +111,8 @@ class Panel:
                 x_data = x_data * math_scale_factor
             y_data = var.y
 
-            max_variable_value = max(abs(np.amin(x_data)),np.amax(x_data))
+            max_variable_value = max(abs(np.nanmin(x_data)),np.nanmax(x_data))
+
             max_panel_value = max(max_panel_value,max_variable_value)
 
             if x_data.shape[0] != y_data.shape[0]:

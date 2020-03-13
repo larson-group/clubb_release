@@ -169,12 +169,12 @@ class VariableGroupBase(VariableGroup):
                 'sam_calc': self.getSkthlZtLesCalc, 'coamps_calc': self.getSkthlZtLesCalc, 'sci_scale': 0},
             {'var_names': {
                 'clubb': ['wm', 'wlsm'],
-                'sam': ['wm', 'WOBS'],
+                'sam': ['WM', 'WOBS'],
                 'coamps': ['wlsm'],
                 'r408': ['wm'],
                 'hoc': ['wm'],
                 'e3sm': ['wm']
-            }, 'sci_scale': 0},
+            }},
 
             {'var_names': {
                 'clubb': ['um'],
