@@ -825,10 +825,7 @@ module numerical_check
 
 !------------------------------------------------------------------------
 
-#ifndef __GFORTRAN__
-    use parameters_model, only: &
-      PosInf ! Variable(s)
-#endif
+    use, intrinsic :: ieee_arithmetic 
 
     use clubb_precision, only: &
       core_rknd ! Variable(s)
@@ -838,28 +835,15 @@ module numerical_check
     ! Input Variables
     real( kind = core_rknd ), intent(in) :: xarg
 
-#ifdef __GFORTRAN__  /* if the isnan extension is available, we use it here */
-    is_nan_sclr = isnan( xarg )
-#else
     ! ---- Begin Code ---
 
-    ! This works on compilers with standardized floating point,
-    ! because the IEEE 754 spec defines that subnormals and nans
-    ! should not equal themselves.
-    ! However, all compilers do not seem to follow this.
-    if (xarg /= xarg ) then
+    if (.not. ieee_is_finite(xarg) .or. ieee_is_nan(xarg)) then
+      ! Try ieee_is_finite ieee_is_nan 
       is_nan_sclr = .true.
-
-      ! This a second check, assuming the above does not work as
-      ! expected.
-    else if ( xarg == PosInf ) then
-      is_nan_sclr = .true.
-
     else
-      is_nan_sclr = .false. ! Our result should be a standard float
-
+      is_nan_sclr = .false.
     end if
-#endif
+
 
     return
   end function is_nan_sclr
