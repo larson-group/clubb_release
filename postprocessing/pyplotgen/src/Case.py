@@ -28,17 +28,17 @@ class Case:
 
         :param case_definition: dict containing case specific elements. These are pulled in from Case_definitions.py,
             see Case_definitions.py for details on how to structure the dict
-        :param clubb_folders: dict containing Dataset objects holding the data needed for the case. The key for each
+        :param clubb_folders: dict containing Dataset objects holding the dependent_data needed for the case. The key for each
             value/Dataset in the dict is set to the ext provided in the filename (e.g. sfc, zt, zm)
         :param plot_les: If True pyplotgen plots LES lines, if False pyplotgen does not plot LES lines
         :param plot_budgets: If True pyplotgen will plot Budgets in addition to the other plots
                 If False (default), pyplotgen will not plot budgets
         :param diff_datasets: Takes in netcdf datasets. If datasets are passed in, pyplotgen will plot the numeric
             difference between the folder passed in an the clubb folder.
-        :param plot_r408: If True, pyplotgen will plot the Chris Golaz 'best ever' clubb r408 data lines
-                If False (default), pyplotgen will not plot the Chris Golaz 'best ever' clubb r408 data lines
-        :param plot_hoc: If True, pyplotgen will plot the HOC 2005 data lines
-                If False (default), pyplotgen will not plot the HOC 2005 data lines
+        :param plot_r408: If True, pyplotgen will plot the Chris Golaz 'best ever' clubb r408 dependent_data lines
+                If False (default), pyplotgen will not plot the Chris Golaz 'best ever' clubb r408 dependent_data lines
+        :param plot_hoc: If True, pyplotgen will plot the HOC 2005 dependent_data lines
+                If False (default), pyplotgen will not plot the HOC 2005 dependent_data lines
         """
         self.name = case_definition['name']
         self.start_time = case_definition['start_time']
@@ -155,7 +155,7 @@ class Case:
         difference between each line of the two panels and returns the numerical
         values as a list [] for each line in the panel.
 
-        This function assumes that the data lines are in the same order on each panel
+        This function assumes that the dependent_data lines are in the same order on each panel
         and that each panel has the same number of lines
 
         :param panelA: The first panel for comparison

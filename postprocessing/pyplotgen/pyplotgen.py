@@ -220,20 +220,20 @@ def __process_args__():
     parser = argparse.ArgumentParser()
     parser.add_argument("-r", "--replace", help="If the output folder already exists, replace it with the new one.",
                         action="store_true")
-    parser.add_argument("-l", "--les", help="Plot LES data for comparison.", action="store_true")
-    parser.add_argument("-e", "--e3sm", help="Plot E3SM data for comparison. Pass a folder in with this option. This "
+    parser.add_argument("-l", "--les", help="Plot LES dependent_data for comparison.", action="store_true")
+    parser.add_argument("-e", "--e3sm", help="Plot E3SM dependent_data for comparison. Pass a folder in with this option. This "
                                              "folder must contain the e3sm nc files in the root directory, "
                                              "where each filename is the name of the clubb case to plot it with. E.g. "
                                              "name a file dycoms2_rfo2_ds.nc to plot it with that clubb case.",
                         action="store",
                         default=[], nargs='+')
-    parser.add_argument("-g", "--plot-golaz-best", help="Plot Chris Golaz Best Ever data for comparison.",
+    parser.add_argument("-g", "--plot-golaz-best", help="Plot Chris Golaz Best Ever dependent_data for comparison.",
                         action="store_true")
-    parser.add_argument("-d", "--plot-hoc-2005", help="Plot !HOC 12/17/2015 data for comparison.", action="store_true")
+    parser.add_argument("-d", "--plot-hoc-2005", help="Plot !HOC 12/17/2015 dependent_data for comparison.", action="store_true")
     parser.add_argument("-a", "--all-best",
-                        help="Same as -lbd. Plots LES, Golaz Best Ever, and HOC 2005 data for comparison.",
+                        help="Same as -lbd. Plots LES, Golaz Best Ever, and HOC 2005 dependent_data for comparison.",
                         action="store_true")
-    parser.add_argument("-z", "--zip", help="Output data into a compressed zip file.", action="store_true")
+    parser.add_argument("-z", "--zip", help="Output dependent_data into a compressed zip file.", action="store_true")
     parser.add_argument("--show-alphabetic-id", help="Add an identifying character to the top right of a panel.",
                         action="store_true")
     parser.add_argument("--thin", help="Plot using thin solid lines.", action="store_true")
@@ -248,9 +248,9 @@ def __process_args__():
                              "plotting the benchmark output, though this output doesn't gurantee all text fields or plots are filled.",
                         action="store_true")
     parser.add_argument("--diff", help="Plot the difference between two clubb folders", action="store")
-    parser.add_argument("-c", "--clubb", help="Input folder(s) containing clubb netcdf data.", action="store",
+    parser.add_argument("-c", "--clubb", help="Input folder(s) containing clubb netcdf dependent_data.", action="store",
                         default=[], nargs='+')
-    parser.add_argument("-s", "--sam", help="Input folder(s) containing sam netcdf data.", action="store",
+    parser.add_argument("-s", "--sam", help="Input folder(s) containing sam netcdf dependent_data.", action="store",
                         default=[], nargs='+')
     parser.add_argument("-o", "--output", help="Name of folder to create and store plots into.", action="store",
                         default="./output")

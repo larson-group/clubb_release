@@ -21,10 +21,10 @@ class VariableGroupBaseBudgets(VariableGroup):
             {'var_names': ['thlm_ma'], 'legend_label': 'thlm_ma'},
             {'var_names': ['thlm_ta'], 'legend_label': 'thlm_ta'},
             {'var_names': ['thlm_mc'], 'legend_label': 'thlm_mc'},
-            {'var_names': ['thlm_clipping'], 'legend_label': 'thlm_clipping', 'fallback_func': self.getThlmClipping},
+            {'var_names': ['thlm_clipping'], 'legend_label': 'thlm_clipping', 'clubb_calc': self.getThlmClipping},
             {'var_names': ['radht'], 'legend_label': 'radht'},
-            {'var_names': ['ls_forcing'], 'legend_label': 'thlm_ls_forcing', 'fallback_func': self.getLsforcing},
-            {'var_names': ['thlm_residual'], 'legend_label': 'thlm_residual', 'fallback_func': self.getThlmResidual},
+            {'var_names': ['ls_forcing'], 'legend_label': 'thlm_ls_forcing', 'clubb_calc': self.getLsforcing},
+            {'var_names': ['thlm_residual'], 'legend_label': 'thlm_residual', 'clubb_calc': self.getThlmResidual},
 
         ]
 
@@ -33,10 +33,10 @@ class VariableGroupBaseBudgets(VariableGroup):
             {'var_names': ['rtm_ma'], 'legend_label': 'rtm_ma'},
             {'var_names': ['rtm_ta'], 'legend_label': 'rtm_ta'},
             {'var_names': ['rtm_mc'], 'legend_label': 'rtm_mc'},
-            {'var_names': ['rtm_clipping'], 'legend_label': 'rtm_clipping', 'fallback_func': self.getRtmClipping},
+            {'var_names': ['rtm_clipping'], 'legend_label': 'rtm_clipping', 'clubb_calc': self.getRtmClipping},
             {'var_names': ['rtm_pd'], 'legend_label': 'rtm_pd'},
-            {'var_names': ['ls_forcing'], 'legend_label': 'ls_forcing', 'fallback_func': self.getRtmForcing},
-            {'var_names': ['rtm_residual'], 'legend_label': 'rtm_residual', 'fallback_func': self.getRtmResidual},
+            {'var_names': ['ls_forcing'], 'legend_label': 'ls_forcing', 'clubb_calc': self.getRtmForcing},
+            {'var_names': ['rtm_residual'], 'legend_label': 'rtm_residual', 'clubb_calc': self.getRtmResidual},
 
         ]
 
@@ -56,7 +56,7 @@ class VariableGroupBaseBudgets(VariableGroup):
             {'var_names': ['wpthlp_sicl'], 'legend_label': 'wpthlp_sicl'},
             {'var_names': ['wpthlp_forcing'], 'legend_label': 'wpthlp_forcing'},
             {'var_names': ['wpthlp_residual'], 'legend_label': 'wpthlp_residual',
-             'fallback_func': self.getWpthlpResidual},
+             'clubb_calc': self.getWpthlpResidual},
 
         ]
 
@@ -76,7 +76,7 @@ class VariableGroupBaseBudgets(VariableGroup):
             {'var_names': ['wprtp_sicl'], 'legend_label': 'wprtp_sicl'},
             {'var_names': ['wprtp_pd'], 'legend_label': 'wprtp_pd'},
             {'var_names': ['wprtp_forcing'], 'legend_label': 'wprtp_forcing'},
-            {'var_names': ['wprtp_residual'], 'legend_label': 'wprtp_residual', 'fallback_func': self.getWprtpResidual},
+            {'var_names': ['wprtp_residual'], 'legend_label': 'wprtp_residual', 'clubb_calc': self.getWprtpResidual},
         ]
 
         wp2_budget_lines = [
@@ -94,7 +94,7 @@ class VariableGroupBaseBudgets(VariableGroup):
             {'var_names': ['wp2_pd'], 'legend_label': 'wp2_pd'},
             {'var_names': ['wp2_splat'], 'legend_label': 'wp2_splat'},
             {'var_names': ['wp2_sf'], 'legend_label': 'wp2_sf'},
-            {'var_names': ['wp2_residual'], 'legend_label': 'wp2_residual', 'fallback_func': self.getWp2Residual},
+            {'var_names': ['wp2_residual'], 'legend_label': 'wp2_residual', 'clubb_calc': self.getWp2Residual},
         ]
 
         wp3_budget_lines = [
@@ -111,7 +111,7 @@ class VariableGroupBaseBudgets(VariableGroup):
             {'var_names': ['wp3_tp'], 'legend_label': 'wp3_tp'},
             {'var_names': ['wp3_cl'], 'legend_label': 'wp3_cl'},
             {'var_names': ['wp3_splat'], 'legend_label': 'wp3_splat'},
-            {'var_names': ['wp3_residual'], 'legend_label': 'wp3_residual', 'fallback_func': self.getWp3Residual},
+            {'var_names': ['wp3_residual'], 'legend_label': 'wp3_residual', 'clubb_calc': self.getWp3Residual},
         ]
 
         thlp2_budget_lines = [
@@ -125,7 +125,7 @@ class VariableGroupBaseBudgets(VariableGroup):
             {'var_names': ['thlp2_pd'], 'legend_label': 'thlp2_pd'},
             {'var_names': ['thlp2_sf'], 'legend_label': 'thlp2_sf'},
             {'var_names': ['thlp2_forcing'], 'legend_label': 'thlp2_forcing'},
-            {'var_names': ['thlp2_residual'], 'legend_label': 'thlp2_residual', 'fallback_func': self.getThlp2Residual},
+            {'var_names': ['thlp2_residual'], 'legend_label': 'thlp2_residual', 'clubb_calc': self.getThlp2Residual},
         ]
 
         rtp2_budget_lines = [
@@ -139,7 +139,7 @@ class VariableGroupBaseBudgets(VariableGroup):
             {'var_names': ['rtp2_pd'], 'legend_label': 'rtp2_pd'},
             {'var_names': ['rtp2_sf'], 'legend_label': 'rtp2_sf'},
             {'var_names': ['rtp2_forcing'], 'legend_label': 'rtp2_forcing'},
-            {'var_names': ['rtp2_residual'], 'legend_label': 'rtp2_residual', 'fallback_func': self.getRtp2Residual},
+            {'var_names': ['rtp2_residual'], 'legend_label': 'rtp2_residual', 'clubb_calc': self.getRtp2Residual},
         ]
 
         rtpthlp_budget_lines = [
@@ -154,7 +154,7 @@ class VariableGroupBaseBudgets(VariableGroup):
             {'var_names': ['rtpthlp_sf'], 'legend_label': 'rtpthlp_sf'},
             {'var_names': ['rtpthlp_forcing'], 'legend_label': 'rtpthlp_forcing'},
             {'var_names': ['rtpthlp_residual'], 'legend_label': 'rtpthlp_residual',
-             'fallback_func': self.getRtpthlpResidual},
+             'clubb_calc': self.getRtpthlpResidual},
         ]
 
         upwp_budget_lines = [
@@ -171,7 +171,7 @@ class VariableGroupBaseBudgets(VariableGroup):
             {'var_names': ['upwp_dp1'], 'legend_label': 'upwp_dp1'},
             {'var_names': ['upwp_cl'], 'legend_label': 'upwp_cl'},
             {'var_names': ['upwp_mfl'], 'legend_label': 'upwp_mfl'},
-            {'var_names': ['upwp_residual'], 'legend_label': 'upwp_residual', 'fallback_func': self.getUpwpResidual},
+            {'var_names': ['upwp_residual'], 'legend_label': 'upwp_residual', 'clubb_calc': self.getUpwpResidual},
         ]
 
         vpwp_budget_lines = [
@@ -188,7 +188,7 @@ class VariableGroupBaseBudgets(VariableGroup):
             {'var_names': ['vpwp_dp1'], 'legend_label': 'vpwp_dp1'},
             {'var_names': ['vpwp_cl'], 'legend_label': 'vpwp_cl'},
             {'var_names': ['vpwp_mfl'], 'legend_label': 'vpwp_mfl'},
-            {'var_names': ['vpwp_residual'], 'legend_label': 'vpwp_residual', 'fallback_func': self.getVpwpResidual},
+            {'var_names': ['vpwp_residual'], 'legend_label': 'vpwp_residual', 'clubb_calc': self.getVpwpResidual},
         ]
 
         um_budget_lines = [
@@ -221,9 +221,9 @@ class VariableGroupBaseBudgets(VariableGroup):
             {'var_names': ['rrm_sd'], 'legend_label': 'rrm_sd'},
             {'var_names': ['rrm_ta'], 'legend_label': 'rrm_ta'},
             {'var_names': ['rrm_ts'], 'legend_label': 'rrm_ts'},
-            {'var_names': ['rrm_fill_clip'], 'legend_label': 'rrm_fill_clip', 'fallback_func': self.getRrmFillClip},
+            {'var_names': ['rrm_fill_clip'], 'legend_label': 'rrm_fill_clip', 'clubb_calc': self.getRrmFillClip},
             {'var_names': ['rrm_mc'], 'legend_label': 'rrm_mc'},
-            {'var_names': ['rrm_residual'], 'legend_label': 'rrm_residual', 'fallback_func': self.getRrmResidual},
+            {'var_names': ['rrm_residual'], 'legend_label': 'rrm_residual', 'clubb_calc': self.getRrmResidual},
         ]
 
         Nrm_budget_lines = [
@@ -234,7 +234,7 @@ class VariableGroupBaseBudgets(VariableGroup):
             {'var_names': ['Nrm_ts'], 'legend_label': 'Nrm_ts'},
             {'var_names': ['Nrm_cl'], 'legend_label': 'Nrm_cl'},
             {'var_names': ['Nrm_mc'], 'legend_label': 'Nrm_mc'},
-            {'var_names': ['Nrm_residual'], 'legend_label': 'Nrm_residual', 'fallback_func': self.getNrmResidual},
+            {'var_names': ['Nrm_residual'], 'legend_label': 'Nrm_residual', 'clubb_calc': self.getNrmResidual},
         ]
 
         self.variable_definitions = [

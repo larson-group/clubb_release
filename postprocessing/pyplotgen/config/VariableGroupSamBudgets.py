@@ -764,7 +764,7 @@ class VariableGroupSamBudgets(VariableGroup):
         the following equation:
         (HLSTOR)+((-1)*(HLADV+HLDIFF+HLRAD+HLLAT+TTEND))*g_per_second_to_kg_per_day
         :param dataset_override:
-        :return: requested variable data in the form of a list. Returned data is already cropped to the appropriate min,max indices
+        :return: requested variable dependent_data in the form of a list. Returned dependent_data is already cropped to the appropriate min,max indices
         """
         dataset = self.les_dataset
         if dataset_override is not None:
@@ -798,7 +798,7 @@ class VariableGroupSamBudgets(VariableGroup):
         the following equation:
         QTSTOR+(-1)*(QTADV+QTDIFF+QTSRC+QTSINK+QTEND)
         :param dataset_override:
-        :return: requested variable data in the form of a list. Returned data is already cropped to the appropriate min,max indices
+        :return: requested variable dependent_data in the form of a list. Returned dependent_data is already cropped to the appropriate min,max indices
         """
         dataset = self.les_dataset
         if dataset_override is not None:
@@ -826,7 +826,7 @@ class VariableGroupSamBudgets(VariableGroup):
         of the TW budget using the following equation:
         TWBUOY+TWPRES
         :param dataset_override:
-        :return: requested variable data in the form of a list. Returned data is already cropped to the appropriate min,max indices
+        :return: requested variable dependent_data in the form of a list. Returned dependent_data is already cropped to the appropriate min,max indices
         """
         dataset = self.les_dataset
         if dataset_override is not None:
@@ -842,7 +842,7 @@ class VariableGroupSamBudgets(VariableGroup):
         the following equation:
         TWBT - (TWGRAD + TWADV + TWDIFF + TWBUOY + TWPRES + TWPREC + TWRAD + TWFORC)
         :param dataset_override:
-        :return: requested variable data in the form of a list. Returned data is already cropped to the appropriate min,max indices
+        :return: requested variable dependent_data in the form of a list. Returned dependent_data is already cropped to the appropriate min,max indices
         """
         dataset = self.les_dataset
         if dataset_override is not None:
@@ -865,7 +865,7 @@ class VariableGroupSamBudgets(VariableGroup):
         of the THLW budget using the following equation:
         THLWBUOY + THLWPRES
         :param dataset_override:
-        :return: requested variable data in the form of a list. Returned data is already cropped to the appropriate min,max indices
+        :return: requested variable dependent_data in the form of a list. Returned dependent_data is already cropped to the appropriate min,max indices
         """
         dataset = self.les_dataset
         if dataset_override is not None:
@@ -881,7 +881,7 @@ class VariableGroupSamBudgets(VariableGroup):
         the following equation:
         THLWBT - (THLWGRAD + THLWADV + THLWDIFF + THLWBUOY + THLWPRES + THLWPREC + THLWRAD + THLWFORC)
         :param dataset_override:
-        :return: requested variable data in the form of a list. Returned data is already cropped to the appropriate min,max indices
+        :return: requested variable dependent_data in the form of a list. Returned dependent_data is already cropped to the appropriate min,max indices
         """
         dataset = self.les_dataset
         if dataset_override is not None:
@@ -904,7 +904,7 @@ class VariableGroupSamBudgets(VariableGroup):
         of the QW budget using the following equation:
         QWBUOY+QWPRES
         :param dataset_override:
-        :return: requested variable data in the form of a list. Returned data is already cropped to the appropriate min,max indices
+        :return: requested variable dependent_data in the form of a list. Returned dependent_data is already cropped to the appropriate min,max indices
         """
         dataset = self.les_dataset
         if dataset_override is not None:
@@ -920,7 +920,7 @@ class VariableGroupSamBudgets(VariableGroup):
         the following equation:
         QWBT - (QWGRAD + QWADV + QWDIFF + QWBUOY + QWPRES + QWPREC + QWFORC)
         :param dataset_override:
-        :return: requested variable data in the form of a list. Returned data is already cropped to the appropriate min,max indices
+        :return: requested variable dependent_data in the form of a list. Returned dependent_data is already cropped to the appropriate min,max indices
         """
         dataset = self.les_dataset
         if dataset_override is not None:
@@ -942,7 +942,7 @@ class VariableGroupSamBudgets(VariableGroup):
         of the QTOGW budget using the following equation:
         QTOGWBUOY + QTOGWPRES
         :param dataset_override:
-        :return: requested variable data in the form of a list. Returned data is already cropped to the appropriate min,max indices
+        :return: requested variable dependent_data in the form of a list. Returned dependent_data is already cropped to the appropriate min,max indices
         """
         dataset = self.les_dataset
         if dataset_override is not None:
@@ -958,7 +958,7 @@ class VariableGroupSamBudgets(VariableGroup):
         the following equation:
         QTOGWBT - (QTOGWGRAD + QTOGWADV + QTOGWDIFF + QTOGWBUOY + QTOGWPRES + QTOGWPREC + QTOGWFORC)
         :param dataset_override:
-        :return: requested variable data in the form of a list. Returned data is already cropped to the appropriate min,max indices
+        :return: requested variable dependent_data in the form of a list. Returned dependent_data is already cropped to the appropriate min,max indices
         """
         dataset = self.les_dataset
         if dataset_override is not None:
@@ -980,7 +980,7 @@ class VariableGroupSamBudgets(VariableGroup):
         the following equation:
         T2BT - (T2ADVTR + T2GRAD + T2DISSIP + T2DIFTR + T2PREC + T2RAD + T2FORC)
         :param dataset_override:
-        :return: requested variable data in the form of a list. Returned data is already cropped to the appropriate min,max indices
+        :return: requested variable dependent_data in the form of a list. Returned dependent_data is already cropped to the appropriate min,max indices
         """
         dataset = self.les_dataset
         if dataset_override is not None:
@@ -1002,7 +1002,7 @@ class VariableGroupSamBudgets(VariableGroup):
         the following equation:
         THL2BT - (THL2ADVTR + THL2GRAD + THL2DISSIP + THL2DIFTR + THL2PREC + THL2RAD + THL2FORC)
         :param dataset_override:
-        :return: requested variable data in the form of a list. Returned data is already cropped to the appropriate min,max indices
+        :return: requested variable dependent_data in the form of a list. Returned dependent_data is already cropped to the appropriate min,max indices
         """
         dataset = self.les_dataset
         if dataset_override is not None:
@@ -1024,7 +1024,7 @@ class VariableGroupSamBudgets(VariableGroup):
         the following equation:
         Q2BT - (Q2ADVTR + Q2GRAD + Q2DISSIP + Q2DIFTR + Q2PREC + Q2FORC)
         :param dataset_override:
-        :return: requested variable data in the form of a list. Returned data is already cropped to the appropriate min,max indices
+        :return: requested variable dependent_data in the form of a list. Returned dependent_data is already cropped to the appropriate min,max indices
         """
         dataset = self.les_dataset
         if dataset_override is not None:
@@ -1045,7 +1045,7 @@ class VariableGroupSamBudgets(VariableGroup):
         the following equation:
         QTOG2BT - (QTOG2ADVTR + QTOG2GRAD + QTOG2DISSIP + QTOG2DIFTR + QTOG2PREC + QTOG2FORC)
         :param dataset_override:
-        :return: requested variable data in the form of a list. Returned data is already cropped to the appropriate min,max indices
+        :return: requested variable dependent_data in the form of a list. Returned dependent_data is already cropped to the appropriate min,max indices
         """
         dataset = self.les_dataset
         if dataset_override is not None:
@@ -1066,7 +1066,7 @@ class VariableGroupSamBudgets(VariableGroup):
         the following equation:
         QTHLBT - (QTHLADV + QTHLGRAD + QTHLDISSIP + QTHLDIFTR + QTHLPREC + QTHLRAD + QTHLFORC)
         :param dataset_override:
-        :return: requested variable data in the form of a list. Returned data is already cropped to the appropriate min,max indices
+        :return: requested variable dependent_data in the form of a list. Returned dependent_data is already cropped to the appropriate min,max indices
         """
         dataset = self.les_dataset
         if dataset_override is not None:
@@ -1088,7 +1088,7 @@ class VariableGroupSamBudgets(VariableGroup):
         of the TKE budget using the following equation:
         DISSIP + DIFTR
         :param dataset_override:
-        :return: requested variable data in the form of a list. Returned data is already cropped to the appropriate min,max indices
+        :return: requested variable dependent_data in the form of a list. Returned dependent_data is already cropped to the appropriate min,max indices
         """
         dataset = self.les_dataset
         if dataset_override is not None:
@@ -1104,7 +1104,7 @@ class VariableGroupSamBudgets(VariableGroup):
         the following equation:
         BT - (SHEAR + BUOYA + ADVTR + PRESSTR + DIFTR + SDMP + DISSIP)
         :param dataset_override:
-        :return: requested variable data in the form of a list. Returned data is already cropped to the appropriate min,max indices
+        :return: requested variable dependent_data in the form of a list. Returned dependent_data is already cropped to the appropriate min,max indices
         """
         dataset = self.les_dataset
         if dataset_override is not None:
@@ -1126,7 +1126,7 @@ class VariableGroupSamBudgets(VariableGroup):
         the following equation:
         -(SHEARS + BUOYAS + ADVTRS + DISSIPS)
         :param dataset_override:
-        :return: requested variable data in the form of a list. Returned data is already cropped to the appropriate min,max indices
+        :return: requested variable dependent_data in the form of a list. Returned dependent_data is already cropped to the appropriate min,max indices
         """
         dataset = self.les_dataset
         if dataset_override is not None:
@@ -1144,7 +1144,7 @@ class VariableGroupSamBudgets(VariableGroup):
         the following equation:
         U2BT - (U2ADV + U2SHEAR + U2REDIS + U2DIFF)
         :param dataset_override:
-        :return: requested variable data in the form of a list. Returned data is already cropped to the appropriate min,max indices
+        :return: requested variable dependent_data in the form of a list. Returned dependent_data is already cropped to the appropriate min,max indices
         """
         dataset = self.les_dataset
         if dataset_override is not None:
@@ -1163,7 +1163,7 @@ class VariableGroupSamBudgets(VariableGroup):
         the following equation:
         V2BT - (V2ADV + V2SHEAR + V2REDIS + V2DIFF)
         :param dataset_override:
-        :return: requested variable data in the form of a list. Returned data is already cropped to the appropriate min,max indices
+        :return: requested variable dependent_data in the form of a list. Returned dependent_data is already cropped to the appropriate min,max indices
         """
         dataset = self.les_dataset
         if dataset_override is not None:
@@ -1182,7 +1182,7 @@ class VariableGroupSamBudgets(VariableGroup):
         of the W2 budget using the following equation:
         W2REDIS + W2PRES
         :param dataset_override:
-        :return: requested variable data in the form of a list. Returned data is already cropped to the appropriate min,max indices
+        :return: requested variable dependent_data in the form of a list. Returned dependent_data is already cropped to the appropriate min,max indices
         """
         dataset = self.les_dataset
         if dataset_override is not None:
@@ -1198,7 +1198,7 @@ class VariableGroupSamBudgets(VariableGroup):
         the following equation:
         W2BT - (W2ADV + W2PRES + W2REDIS + W2BUOY + W2DIFF + W2SDMP)
         :param dataset_override:
-        :return: requested variable data in the form of a list. Returned data is already cropped to the appropriate min,max indices
+        :return: requested variable dependent_data in the form of a list. Returned dependent_data is already cropped to the appropriate min,max indices
         """
         dataset = self.les_dataset
         if dataset_override is not None:
@@ -1219,7 +1219,7 @@ class VariableGroupSamBudgets(VariableGroup):
         of the combined U2+V2 budget using the following equation:
         2 * ADVTR - W2ADV
         :param dataset_override:
-        :return: requested variable data in the form of a list. Returned data is already cropped to the appropriate min,max indices
+        :return: requested variable dependent_data in the form of a list. Returned dependent_data is already cropped to the appropriate min,max indices
         """
         dataset = self.les_dataset
         if dataset_override is not None:
@@ -1235,7 +1235,7 @@ class VariableGroupSamBudgets(VariableGroup):
         of the combined U2+V2 budget using the following equation:
         2 * BUOYA - W2BUOY
         :param dataset_override:
-        :return: requested variable data in the form of a list. Returned data is already cropped to the appropriate min,max indices
+        :return: requested variable dependent_data in the form of a list. Returned dependent_data is already cropped to the appropriate min,max indices
         """
         dataset = self.les_dataset
         if dataset_override is not None:
@@ -1252,7 +1252,7 @@ class VariableGroupSamBudgets(VariableGroup):
         of the combined U2+V2 budget using the following equation:
         2 * PRESSTR - W2PRES
         :param dataset_override:
-        :return: requested variable data in the form of a list. Returned data is already cropped to the appropriate min,max indices
+        :return: requested variable dependent_data in the form of a list. Returned dependent_data is already cropped to the appropriate min,max indices
         """
         dataset = self.les_dataset
         if dataset_override is not None:
@@ -1268,7 +1268,7 @@ class VariableGroupSamBudgets(VariableGroup):
         of the combined U2+V2 budget using the following equation:
         2 * DIFTR - W2DIFF
         :param dataset_override:
-        :return: requested variable data in the form of a list. Returned data is already cropped to the appropriate min,max indices
+        :return: requested variable dependent_data in the form of a list. Returned dependent_data is already cropped to the appropriate min,max indices
         """
         dataset = self.les_dataset
         if dataset_override is not None:
@@ -1284,7 +1284,7 @@ class VariableGroupSamBudgets(VariableGroup):
         of the combined U2+V2 budget using the following equation:
         2 * SDMP - W2SDMP
         :param dataset_override:
-        :return: requested variable data in the form of a list. Returned data is already cropped to the appropriate min,max indices
+        :return: requested variable dependent_data in the form of a list. Returned dependent_data is already cropped to the appropriate min,max indices
         """
         dataset = self.les_dataset
         if dataset_override is not None:
@@ -1300,7 +1300,7 @@ class VariableGroupSamBudgets(VariableGroup):
         of the combined U2+V2 budget using the following equation:
         2 * BT - W2BT
         :param dataset_override:
-        :return: requested variable data in the form of a list. Returned data is already cropped to the appropriate min,max indices
+        :return: requested variable dependent_data in the form of a list. Returned dependent_data is already cropped to the appropriate min,max indices
         """
         dataset = self.les_dataset
         if dataset_override is not None:
@@ -1316,7 +1316,7 @@ class VariableGroupSamBudgets(VariableGroup):
         the following equation:
         2 * TKE_RES - W2_RES
         :param dataset_override:
-        :return: requested variable data in the form of a list. Returned data is already cropped to the appropriate min,max indices
+        :return: requested variable dependent_data in the form of a list. Returned dependent_data is already cropped to the appropriate min,max indices
         """
         dataset = self.les_dataset
         if dataset_override is not None:
@@ -1345,7 +1345,7 @@ class VariableGroupSamBudgets(VariableGroup):
         the following equation:
         W3BT - (W3ADV + W3PRES + W3REDIS + W3BUOY + W3DIFF)
         :param dataset_override:
-        :return: requested variable data in the form of a list. Returned data is already cropped to the appropriate min,max indices
+        :return: requested variable dependent_data in the form of a list. Returned dependent_data is already cropped to the appropriate min,max indices
         """
         dataset = self.les_dataset
         if dataset_override is not None:
@@ -1365,7 +1365,7 @@ class VariableGroupSamBudgets(VariableGroup):
         of the UW budget using the following equation:
         WUPRES + WUANIZ
         :param dataset_override:
-        :return: requested variable data in the form of a list. Returned data is already cropped to the appropriate min,max indices
+        :return: requested variable dependent_data in the form of a list. Returned dependent_data is already cropped to the appropriate min,max indices
         """
         dataset = self.les_dataset
         if dataset_override is not None:
@@ -1381,7 +1381,7 @@ class VariableGroupSamBudgets(VariableGroup):
         the following equation:
         WUBT - (WUDIFF + WUSHEAR + WUADV + WUPRES + WUANIZ + WUBUOY + WUSDMP)
         :param dataset_override:
-        :return: requested variable data in the form of a list. Returned data is already cropped to the appropriate min,max indices
+        :return: requested variable dependent_data in the form of a list. Returned dependent_data is already cropped to the appropriate min,max indices
         """
         dataset = self.les_dataset
         if dataset_override is not None:
@@ -1403,7 +1403,7 @@ class VariableGroupSamBudgets(VariableGroup):
         of the VW budget using the following equation:
         WVPRES + WVANIZ
         :param dataset_override:
-        :return: requested variable data in the form of a list. Returned data is already cropped to the appropriate min,max indices
+        :return: requested variable dependent_data in the form of a list. Returned dependent_data is already cropped to the appropriate min,max indices
         """
         dataset = self.les_dataset
         if dataset_override is not None:
@@ -1419,7 +1419,7 @@ class VariableGroupSamBudgets(VariableGroup):
         the following equation:
         WVBT - (WVDIFF + WVSHEAR + WVADV + WVPRES + WVANIZ + WVBUOY + WVSDMP)
         :param dataset_override:
-        :return: requested variable data in the form of a list. Returned data is already cropped to the appropriate min,max indices
+        :return: requested variable dependent_data in the form of a list. Returned dependent_data is already cropped to the appropriate min,max indices
         """
         dataset = self.les_dataset
         if dataset_override is not None:

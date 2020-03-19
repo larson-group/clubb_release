@@ -16,39 +16,56 @@ class NetCdfVariable:
     Class used for conveniently storing the information about a given netcdf variable
     """
 
-    def __init__(self, name, ncdf_data, conversion_factor=1, start_time=0, end_time=-1, avg_axis=0):
+    def __init__(self, names, ncdf_data, independant_var_names=None, conversion_factor=1, start_time=0, end_time=-1, avg_axis=0):
         """
 
-        :param name: the name of the variable as defined in the ncdf_data
-        :param ncdf_data: Accepts either a Dataset object to pull data from, or a dict of Datasets which will automatically be searched for the variable
+        :param names: the name of the variable as defined in the ncdf_data
+        :param ncdf_data: Accepts either a Dataset object to pull dependent_data from, or a dict of Datasets which will automatically be searched for the variable
         :param conversion_factor: A multiplication factor multiplied to every value in the dataset. Defaults to 1
         :param start_time: The time value to being the averaging period, e.g. 181 minutes. Defaults to 0.
         :param end_time: The time value to stop the averaging period, e.g. 240 minutes. Defaults to -1.
-        :param avg_axis: The axis to avg data over. 0 for time-avg, 1 for height avg
+        :param avg_axis: The axis to avg dependent_data over. 0 for time-avg, 1 for height avg
         """
-
-        # If argument name is a list of aliases, find the correct one and assign it
-        # if isinstance(ncdf_data, Dataset):
-        #     ncdf_data = {'temp': ncdf_data}
-        if isinstance(name, list):
-            for tempname in name:
-                if tempname in ncdf_data.variables.keys():
-                    name = tempname
+        dataset_with_var = None
+        varname = ""
+        var_found_in_dataset = False
+        # If argument names is a list of aliases, find the correct one and assign it
+        if isinstance(ncdf_data, Dataset):
+            ncdf_data = {'temp': ncdf_data}
+        if not isinstance(names, list):
+            names = [names]
+        if not isinstance(independant_var_names, list) and independant_var_names is not None:
+            independant_var_names = [independant_var_names]
+        for dataset in ncdf_data.values():
+            for tempname in names:
+                if tempname in dataset.variables.keys():
+                    dataset_with_var = dataset
+                    varname = tempname
+                    var_found_in_dataset = True
                     break
-        if isinstance(name, list):
+            if var_found_in_dataset:
+                break
+        if not var_found_in_dataset:
             # changed to warn from 'raise NameError'
-            warn("None of the values " + str(name) + " were found in the dataset " + str(ncdf_data))
-            name = name[0]
-        data_reader = DataReader()
-        self.ncdf_data = ncdf_data
-        self.name = name
+            dataset_with_var = next(iter(ncdf_data.values()))
+            warn("None of the values " + str(names) + " were found in the dataset " + str(dataset_with_var.filepath()))
+            varname = names[0]
+        indep_var_name_in_dataset = None
+        for tempname in independant_var_names:
+            if tempname in dataset_with_var.variables.keys():
+                indep_var_name_in_dataset = tempname
+                break
+
+        self.ncdf_data = dataset_with_var
+        self.name = varname
+        self.independent_var_name = indep_var_name_in_dataset
         self.start_time = start_time
         self.end_time = end_time
         self.conv_factor = conversion_factor
         self.avg_axis = avg_axis
-        if isinstance(ncdf_data, dict):
-            self.filter_datasets()
-        self.data = data_reader.getVarData(self.ncdf_data, self)
+        data_reader = DataReader()
+        self.dependent_data, self.independent_data = data_reader.getVarData(self.ncdf_data, self)
+
 
     def __getStartEndIndex__(self, data, start_value, end_value):
         """
@@ -62,9 +79,9 @@ class NetCdfVariable:
         :author: Nicolas Strike
         """
 
-        # If data is a an array with 1 element, return 0's
+        # If dependent_data is a an array with 1 element, return 0's
         if(len(data) is 1):
-            return 0, 0
+            return 0, 1
 
         start_idx = 0
         end_idx = len(data) - 1
@@ -78,7 +95,7 @@ class NetCdfVariable:
                 # Check for end index
                 if test_value >= end_value and test_value < data[end_idx]:
                     end_idx = i
-        else: # if data is descending
+        else: # if dependent_data is descending
             for i in range(0, len(data)):
                 test_value = data[i]
                 if test_value >= end_value and test_value < data[start_idx]:
@@ -90,19 +107,21 @@ class NetCdfVariable:
 
     def constrain(self, start_value, end_value, data=None):
         """
-        Remove all data elements from the variable that are not between the start and end value. Assumes
-        the data is always increasing. If the optional data parameter is used, it will restrict to the indices
-        of where the start/end values are in that dataset rather than the variables data itself.
+        Remove all dependent_data elements from the variable that are not between the start and end value. Assumes
+        the dependent_data is always increasing. If the optional dependent_data parameter is used, it will restrict to the indices
+        of where the start/end values are in that dataset rather than the variables dependent_data itself.
 
         :param start_value: The smallest possible value
         :param end_value: The largest possible value
-        :param data: A list of data values to find start/ending indicies for constraining rather than using the NetCdfVariable's data.
+        :param data: A list of dependent_data values to find start/ending indicies for constraining rather than using the NetCdfVariable's dependent_data.
         :return: None, operates in place
         """
         if data is None:
-            data = self.data
+            data = self.dependent_data
         start_idx, end_idx = self.__getStartEndIndex__(data, start_value, end_value)
-        self.data = self.data[start_idx:end_idx]
+        self.dependent_data = self.dependent_data[start_idx:end_idx]
+        if self.independent_data is not None:
+            self.independent_data = self.independent_data[start_idx:end_idx]
 
 
     def filter_datasets(self):
@@ -119,7 +138,7 @@ class NetCdfVariable:
                 break
 
     def __len__(self):
-        return self.data.size
+        return self.dependent_data.size
 
 
 class DataReader():
@@ -129,12 +148,12 @@ class DataReader():
     also responsible for performing the time-averaging calculation at load time.
 
     :author: Nicolas Strike
-    :data: January 2019
+    :dependent_data: January 2019
     """
 
     def __init__(self):
         """
-        This is the object constructor. Initializes class variables and data
+        This is the object constructor. Initializes class variables and dependent_data
         :author: Nicolas Strike
         """
         self.nc_filenames = {}
@@ -160,7 +179,7 @@ class DataReader():
         :param ignore_git: Ignore files and paths that contain '.git' in their name
         :return: A 2 dimentional dictionary where a case_key (e.g. gabls3_rad)
         contains a dictionary defining filenames behind a filetype key (e.g. zm)
-        For example: to access the zm data for gabls3_rad, simply call clubb_datasets['gabls3']['zm']
+        For example: to access the zm dependent_data for gabls3_rad, simply call clubb_datasets['gabls3']['zm']
         :author: Nicolas Strike
         """
         for sub_folder in folder_path:
@@ -187,10 +206,10 @@ class DataReader():
     def getVarData(self, netcdf_dataset, ncdf_variable):
         """
         Given a Dataset and NetCdfVariable object, this function returns the numerical
-        data for the given variable.
+        dependent_data for the given variable.
 
         :param netcdf_dataset: Dataset containing the given variable
-        :param ncdf_variable: NetCdfVariable object to get data values for
+        :param ncdf_variable: NetCdfVariable object to get dependent_data values for
         :return: The list of numeric values for the given variable
         """
         start_time_value = ncdf_variable.start_time
@@ -198,8 +217,8 @@ class DataReader():
         variable_name = ncdf_variable.name
         conv_factor = ncdf_variable.conv_factor
         avg_axis = ncdf_variable.avg_axis
+        independent_var_name = ncdf_variable.independent_var_name
         time_conv_factor = 1
-
         time_values = self.__getValuesFromNc__(netcdf_dataset, "time", time_conv_factor)
         if end_time_value == -1:
             if variable_name != 'time' and variable_name != 'z' and variable_name != 'altitude' and variable_name != 'lev' and variable_name != 'Z3':
@@ -207,28 +226,26 @@ class DataReader():
             end_time_value = time_values[-1]
         # Get the index values that correspond to the desired start/end x values
         start_avg_index, end_avg_idx = self.__getStartEndIndex__(time_values, start_time_value, end_time_value)
+        independent_values = self.__getValuesFromNc__(netcdf_dataset, independent_var_name, 1)
 
         try:
-            values = self.__getValuesFromNc__(netcdf_dataset, variable_name, conv_factor)
+            dependent_values = self.__getValuesFromNc__(netcdf_dataset, variable_name, conv_factor)
         except ValueError:
-            size = 0
-            for dimention in netcdf_dataset.dimensions.values():
-                if dimention.size > size:
-                    size = dimention.size
-            values = np.zeros(size)
-        if values.ndim > 1:  # not ncdf_variable.one_dimensional:
-            values = self.__meanProfiles__(values, start_avg_index, end_avg_idx + 1, avg_axis=avg_axis)
-        
-        # Change all remaining NaN values to 0
-        if 'SAM version' in netcdf_dataset.ncattrs():
-            values = np.where(np.isnan(values), 0, values)
+            dependent_values = np.zeros(len(independent_values))
+
+        if dependent_values.ndim > 1:  # not ncdf_variable.one_dimensional:
+            dependent_values = self.__meanProfiles__(dependent_values, start_avg_index, end_avg_idx + 1, avg_axis=avg_axis)
 
         # E3SM outputs Z3 as it's height variable, which may also contain an offset
         # (e.g. e3sm height = clubb height + 650 for the dycoms2_rf01 case). This eliminates that offset.
         if variable_name == 'Z3':
-            values = values - values[-1]
+            dependent_values = dependent_values - dependent_values[-1]
 
-        return values
+        # Change all remaining NaN values to 0
+        if 'SAM version' in netcdf_dataset.ncattrs():
+            dependent_values = np.where(np.isnan(dependent_values), 0, dependent_values)
+
+        return dependent_values, independent_values
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         """
@@ -245,7 +262,7 @@ class DataReader():
         """
         Load the given NetCDF file
         :param filename: the netcdf file to be loaded
-        :return: a netcdf dataset containing the data from the given file
+        :return: a netcdf dataset containing the dependent_data from the given file
         """
         dataset = Dataset(filename, "r+", format="NETCDF4")
         return dataset
@@ -256,7 +273,7 @@ class DataReader():
           var    -- time x height array of some property
           idx_t0 -- Index corresponding to the beginning of the averaging interval
           idx_t1 -- Index corresponding to the end of the averaging interval, this value is exclusive.
-                    If you want the data at this index to be included in averaging do your index + 1
+                    If you want the dependent_data at this index to be included in averaging do your index + 1
           idx_z0 -- Index corresponding to the lowest model height of the averaging interval
           idx_z1 -- Index corresponding to the highest model height of the averaging interval
 
@@ -342,7 +359,7 @@ class DataReader():
 
     def __getValuesFromNc__(self, ncdf_data, varname, conversion):
         """
-        Get data values out of a netcdf object, returning them as an array
+        Get dependent_data values out of a netcdf object, returning them as an array
 
         :param ncdf_data: Netcdf file object
         :param varname: Variable name string
@@ -361,12 +378,12 @@ class DataReader():
             if 'SAM version' in ncdf_data.ncattrs():
                 var_values = np.where(np.isclose(var_values, -9999), np.nan, var_values)
             var_values = var_values * conversion
-            # Variables with 0-1 data points/values return a float after being 'squeeze()'ed, this converts it back to an array
+            # Variables with 0-1 dependent_data points/values return a float after being 'squeeze()'ed, this converts it back to an array
             if isinstance(var_values, float):
                 var_values = np.array([var_values])
             # break
         if var_values is None:
-            raise ValueError("Variable " + varname + " does not exist in ncdf_data file.\nVariables found in dataset: " + str(ncdf_data))
+            raise ValueError("Variable " + str(varname) + " does not exist in ncdf_data file.\nVariables found in dataset: " + str(ncdf_data))
 
 
         hrs_in_day = 24
@@ -386,7 +403,7 @@ class DataReader():
             var_values = var_values[:] - var_values[0] + 1
 
         elif self.getNcdfSourceModel(ncdf_data) == 'unknown-model' and 'sfc' not in ncdf_data.history:
-            warn("Warning, unknown model detected. PyPlotgen doesn't know where this netcdf data is from." + str(ncdf_data))
+            warn("Warning, unknown model detected. PyPlotgen doesn't know where this netcdf dependent_data is from." + str(ncdf_data))
             if varname == 'time':
                 warn("Attempting to autoshift time values")
                 var_values = var_values[:] - var_values[0] + 1
@@ -408,7 +425,7 @@ class DataReader():
         :author: Nicolas Strike
         """
 
-        # If data is a an array with 1 element, return 0's
+        # If dependent_data is a an array with 1 element, return 0's
         if(len(data) is 1):
             return 0, 0
 

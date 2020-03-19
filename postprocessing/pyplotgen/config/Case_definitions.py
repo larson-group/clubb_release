@@ -271,6 +271,7 @@ DYCOMS2_RF02_DO = {'name': 'dycoms2_rf02_do', 'start_time': 301, 'end_time': 360
                    'var_groups': [VariableGroupBase, VariableGroupWs, VariableGroupLiquidMP, VariableGroupCorrelations,
                                   VariableGroupKKMP]}
 
+
 DYCOMS2_RF02_DS = {'name': 'dycoms2_rf02_ds', 'start_time': 301, 'end_time': 360, 'height_min_value': 0,
                    'height_max_value': 1200,
                    'blacklisted_vars': [],
@@ -540,5 +541,5 @@ ALL_CASES = [ARM, ARM_97, ASTEX_A209, ATEX,
              ]
 
 # If uncommented, this line will override the real ALL_CASES given above, forcing pyplotgen to only plot some cases.
-# ALL_CASES = [WANGARA]
+# ALL_CASES = [ARM]
 

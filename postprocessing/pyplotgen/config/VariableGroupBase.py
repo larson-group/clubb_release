@@ -49,7 +49,7 @@ class VariableGroupBase(VariableGroup):
                 'hoc': ['wpthlp'],
                 'e3sm': ['wpthlp']
             },
-                'fallback_func': self.getWpthlpFallback, 'sci_scale': 0},
+                'sam_calc': self.getWpthlpSamCalc, 'sci_scale': 0},
             {'var_names': {
                 'clubb': ['wprtp'],
                 'sam': ['WPRTP'],
@@ -58,7 +58,7 @@ class VariableGroupBase(VariableGroup):
                 'hoc': ['wprtp'],
                 'e3sm': ['wprtp']
             },
-                'fallback_func': self.getWprtpFallback, 'sci_scale': -4},
+                'sam_calc': self.getWprtpSamCalc, 'sci_scale': -4},
             {'var_names': {
                 'clubb': ['cloud_frac'],
                 'sam': ['CLD'],
@@ -112,7 +112,7 @@ class VariableGroupBase(VariableGroup):
                 'hoc': ['rtp2'],
                 'e3sm': ['rtp2']
             },
-                'fallback_func': self.getRtp2Fallback, 'sci_scale': -7},
+                'sam_calc': self.getRtp2SamCalc, 'sci_scale': -7},
             {'var_names': {
                 'clubb': ['rtpthlp'],
                 'sam': ['RTPTHLP', 'TQ'],
@@ -130,7 +130,7 @@ class VariableGroupBase(VariableGroup):
                 'hoc': ['rtp3'],
                 'e3sm': ['rtp3']
             },
-                'fallback_func': self.getRtp3Fallback, 'sci_scale': -9},
+                'sam_calc': self.getRtp3SamCalc, 'sci_scale': -9},
             {'var_names': {
                 'clubb': ['thlp3'],
                 'sam': ['THLP3'],
@@ -283,7 +283,7 @@ class VariableGroupBase(VariableGroup):
                 'hoc': ['wpthvp'],
                 'e3sm': ['wpthvp']
             },
-                'fallback_func': self.getWpthvpFallback},
+                'sam_calc': self.getWpthvpSamCalc},
             {'var_names': {
                 'clubb': ['radht'],
                 'sam': ['RADQR'],
@@ -341,7 +341,7 @@ class VariableGroupBase(VariableGroup):
                 'e3sm': ['rc_coef_zm * wprcp']
             },
 
-                'fallback_func': self.get_rc_coef_zm_X_wprcp_clubb_line,
+                'clubb_calc': self.get_rc_coef_zm_X_wprcp_clubb_line,
                 'sam_calc': self.get_rc_coef_zm_X_wprcp_sam_calc,
                 'coamps_calc': self.get_rc_coef_zm_X_wprcp_coamps_calc,
                 'title': 'Contribution of Cloud Water Flux to wpthvp',
@@ -358,7 +358,7 @@ class VariableGroupBase(VariableGroup):
             },
 
                 'coamps_calc': self.get_rc_coef_zm_X_thlprcp_coamps_calc,
-                'fallback_func': self.get_rc_coef_zm_X_thlprcp_clubb_fallback,
+                'clubb_calc': self.get_rc_coef_zm_X_thlprcp_clubb_calc,
                 'title': 'Contribution of Cloud Water Flux to thlprcp',
                 'axis_title': 'rc_coef_zm * thlprcp [K^2]',
                 'sci_scale': 0},
@@ -373,7 +373,7 @@ class VariableGroupBase(VariableGroup):
             },
 
                 'coamps_calc': self.get_rc_coef_zm_X_rtprcp_coamps_calc,
-                'fallback_func': self.get_rc_coef_zm_X_rtprcp_clubb_fallback,
+                'clubb_calc': self.get_rc_coef_zm_X_rtprcp_clubb_calc,
                 'title': 'Contribution of Cloud Water Flux to rtprcp',
                 'axis_title': 'rc_coef_zm * rtprcp [kg/kg K]',
                 'sci_scale': 0}
@@ -390,7 +390,7 @@ class VariableGroupBase(VariableGroup):
         Calculates thlm values from sam output using
         the following equation
         (THETAL + 2500.4.*(THETA./TABS).*(QI./1000))
-        :return: requested variable data in the form of a list. Returned data is already cropped to the appropriate min,max indices
+        :return: requested variable dependent_data in the form of a list. Returned dependent_data is already cropped to the appropriate min,max indices
         """
         # z,z, dataset = self.getVarForCalculations('z', self.les_dataset)
         dataset = self.les_dataset
@@ -409,7 +409,7 @@ class VariableGroupBase(VariableGroup):
     #     Calculates thlm values from sam output using
     #     the following equation
     #     (THETAL + 2500.4.*(THETA./TABS).*(QI./1000))
-    #     :return: requested variable data in the form of a list. Returned data is already cropped to the appropriate min,max indices
+    #     :return: requested variable dependent_data in the form of a list. Returned dependent_data is already cropped to the appropriate min,max indices
     #     """
     #     # z,z, dataset = self.getVarForCalculations('Z3', self.e3sm_datasets)
     #     thlm,z, dataset = self.getVarForCalculations('THETAL', self.e3sm_datasets)
@@ -422,7 +422,7 @@ class VariableGroupBase(VariableGroup):
         Calculates rtm values from sam output using
         the following equation
         (QT-QI) ./ 1000
-        :return: requested variable data in the form of a list. Returned data is already cropped to the appropriate min,max indices
+        :return: requested variable dependent_data in the form of a list. Returned dependent_data is already cropped to the appropriate min,max indices
         """
         dataset = self.les_dataset
         if dataset_override is not None:
@@ -439,7 +439,7 @@ class VariableGroupBase(VariableGroup):
         Calculates Skw_zt values from sam output using
         the following equation
         WP3 ./ (WP2 + 1.6e-3).^1.5
-        :return: requested variable data in the form of a list. Returned data is already cropped to the appropriate min,max indices
+        :return: requested variable dependent_data in the form of a list. Returned dependent_data is already cropped to the appropriate min,max indices
         """
         dataset = None
         if self.les_dataset is not None:
@@ -463,7 +463,7 @@ class VariableGroupBase(VariableGroup):
         the following equation
          sam eqn RTP3 ./ (RTP2 + 4e-16).^1.5
          coamps eqn qtp3 ./ (qtp2 + 4e-16).^1.5
-        :return: requested variable data in the form of a list. Returned data is already cropped to the appropriate min,max indices
+        :return: requested variable dependent_data in the form of a list. Returned dependent_data is already cropped to the appropriate min,max indices
         """
         dataset = None
         if self.les_dataset is not None:
@@ -486,7 +486,7 @@ class VariableGroupBase(VariableGroup):
         the following equation
         sam THLP3 ./ (THLP2 + 4e-4).^1.5
         coamps eqn thlp3 ./ (thlp2 + 4e-4).^1.5
-        :return: requested variable data in the form of a list. Returned data is already cropped to the appropriate min,max indices
+        :return: requested variable dependent_data in the form of a list. Returned dependent_data is already cropped to the appropriate min,max indices
         """
         dataset = None
         if self.les_dataset is not None:
@@ -505,9 +505,9 @@ class VariableGroupBase(VariableGroup):
         skthl_zt = thlp3 / (thlp2 + 4e-16) ** 1.5
         return skthl_zt, z
 
-    def getWpthlpFallback(self, dataset_override=None):
+    def getWpthlpSamCalc(self, dataset_override=None):
         """
-        This gets called if WPTHLP isn't outputted in an nc file as a backup way of gathering the data for plotting.
+        This gets called if WPTHLP isn't outputted in an nc file as a backup way of gathering the dependent_data for plotting.
         WPTHLP = (TLFLUX) ./ (RHO * 1004)
         :return:
         """
@@ -524,9 +524,9 @@ class VariableGroupBase(VariableGroup):
 
         return wpthlp, z
 
-    def getWprtpFallback(self, dataset_override=None):
+    def getWprtpSamCalc(self, dataset_override=None):
         """
-        This gets called if WPRTP isn't outputted in an nc file as a backup way of gathering the data for plotting.
+        This gets called if WPRTP isn't outputted in an nc file as a backup way of gathering the dependent_data for plotting.
         WPRTP = (QTFLUX) ./ (RHO * 2.5104e+6)
         :return:
         """
@@ -541,9 +541,9 @@ class VariableGroupBase(VariableGroup):
         # z,z, dataset = self.getVarForCalculations(['z', 'lev', 'altitude'], self.les_dataset)
         return wprtp, z
 
-    def getWpthvpFallback(self, dataset_override=None):
+    def getWpthvpSamCalc(self, dataset_override=None):
         """
-        This gets called if WPTHVP isn't outputted in an nc file as a backup way of gathering the data for plotting.
+        This gets called if WPTHVP isn't outputted in an nc file as a backup way of gathering the dependent_data for plotting.
         WPTHVP =  (TVFLUX) ./ ( RHO * 1004)
         :return:
         """
@@ -558,9 +558,9 @@ class VariableGroupBase(VariableGroup):
         # z,z, dataset = self.getVarForCalculations(['z', 'lev', 'altitude'], self.les_dataset)
         return wpthvp, z
 
-    def getRtp2Fallback(self, dataset_override=None):
+    def getRtp2SamCalc(self, dataset_override=None):
         """
-        This gets called if RTP2 isn't outputted in an nc file as a backup way of gathering the data for plotting.
+        This gets called if RTP2 isn't outputted in an nc file as a backup way of gathering the dependent_data for plotting.
         THLP2 = QT2 / 1e+6
         :return:
         """
@@ -574,7 +574,7 @@ class VariableGroupBase(VariableGroup):
         # z,z, dataset = self.getVarForCalculations(['z', 'lev', 'altitude'], self.les_dataset)
         return rtp2, z
 
-    def getRtp3Fallback(self, dataset_override=None):
+    def getRtp3SamCalc(self, dataset_override=None):
         """
         Caclulates Rtp3 output
         rc_coef_zm .* rtprcp
@@ -642,7 +642,7 @@ class VariableGroupBase(VariableGroup):
         return output, z
 
     # rc_coef_zm. * thlprcp
-    def get_rc_coef_zm_X_thlprcp_clubb_fallback(self, dataset_override=None):
+    def get_rc_coef_zm_X_thlprcp_clubb_calc(self, dataset_override=None):
         """
         Calculates the Contribution of Cloud Water Flux
         to thlprcp using the equation
@@ -660,7 +660,7 @@ class VariableGroupBase(VariableGroup):
         output = rc_coef_zm * thlprcp
         return output, z
 
-    def get_rc_coef_zm_X_rtprcp_clubb_fallback(self, dataset_override=None):
+    def get_rc_coef_zm_X_rtprcp_clubb_calc(self, dataset_override=None):
         """
         Calculates the Contribution of Cloud Water Flux
         to rtprcp using the equation
@@ -682,7 +682,7 @@ class VariableGroupBase(VariableGroup):
         """
         coamps eqn upwp = wpup + wpup_sgs
 
-         :return: requested variable data in the form of a list. Returned data is already cropped to the appropriate min,max indices
+         :return: requested variable dependent_data in the form of a list. Returned dependent_data is already cropped to the appropriate min,max indices
         """
         if dataset_override is not None:
             dataset = dataset_override['sw']
@@ -699,7 +699,7 @@ class VariableGroupBase(VariableGroup):
         """
         coamps eqn vpwp = wpvp + wpvp_sgs
 
-         :return: requested variable data in the form of a list. Returned data is already cropped to the appropriate min,max indices
+         :return: requested variable dependent_data in the form of a list. Returned dependent_data is already cropped to the appropriate min,max indices
         """
         if dataset_override is not None:
             dataset = dataset_override['sw']

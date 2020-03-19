@@ -1411,7 +1411,7 @@ class VariableGroupSamProfiles(VariableGroup):
         Calculates thlm values from sam output using
         the following equation
         (THETAL + 2500.4.*(THETA./TABS).*(QI./1000))
-        :return: requested variable data in the form of a list. Returned data is already cropped to the appropriate min,max indices
+        :return: requested variable dependent_data in the form of a list. Returned dependent_data is already cropped to the appropriate min,max indices
         """
         dataset = self.les_dataset
         if dataset_override is not None:
@@ -1429,7 +1429,7 @@ class VariableGroupSamProfiles(VariableGroup):
         Calculates rtm values from sam output using
         the following equation
         (QT-QI) ./ 1000
-        :return: requested variable data in the form of a list. Returned data is already cropped to the appropriate min,max indices
+        :return: requested variable dependent_data in the form of a list. Returned dependent_data is already cropped to the appropriate min,max indices
         """
         dataset = self.les_dataset
         if dataset_override is not None:
@@ -1442,7 +1442,7 @@ class VariableGroupSamProfiles(VariableGroup):
     
     def getWpthlpCalc(self, dataset_override=None):
         """
-        This gets called if WPTHLP isn't outputted in an nc file as a backup way of gathering the data for plotting.
+        This gets called if WPTHLP isn't outputted in an nc file as a backup way of gathering the dependent_data for plotting.
         WPTHLP = (TLFLUX) ./ (RHO * 1004) + WPTHLP_SGS (CLUBB variable)
         :return:
         """
@@ -1462,7 +1462,7 @@ class VariableGroupSamProfiles(VariableGroup):
         Calculates the correlation of W and THETAL from SAM output
         using the following equation:
         (((TLFLUX) / (RHO * 1004.)) + WPTHLP_SGS)/np.sqrt(W2*TL2 + 1e-4)
-        :return: requested variable data in the form of a list. Returned data is already cropped to the appropriate min,max indices
+        :return: requested variable dependent_data in the form of a list. Returned dependent_data is already cropped to the appropriate min,max indices
         """
         dataset = self.les_dataset
         if dataset_override is not None:
@@ -1478,7 +1478,7 @@ class VariableGroupSamProfiles(VariableGroup):
     
     def getWprtpCalc(self, dataset_override=None):
         """
-        This gets called if WPRTP isn't outputted in an nc file as a backup way of gathering the data for plotting.
+        This gets called if WPRTP isn't outputted in an nc file as a backup way of gathering the dependent_data for plotting.
         WPRTP = (QTFLUX) / (RHO * 2.5104e+6) + WPRTP_SGS (CLUBB variable)
         :return:
         """
@@ -1497,7 +1497,7 @@ class VariableGroupSamProfiles(VariableGroup):
         Calculates the correlation of W and THETAL from SAM output
         using the following equation:
         WPRTP/(np.sqrt(W2*QT2*1e-6)+1e-8)
-        :return: requested variable data in the form of a list. Returned data is already cropped to the appropriate min,max indices
+        :return: requested variable dependent_data in the form of a list. Returned dependent_data is already cropped to the appropriate min,max indices
         """
         dataset = self.les_dataset
         if dataset_override is not None:
@@ -1516,7 +1516,7 @@ class VariableGroupSamProfiles(VariableGroup):
         Calculates the total vertical momentum variance W'^2 from SAM output
         using the following equation:
         W2 = W2 + WP2_SGS (CLUBB variable)
-        :return: requested variable data in the form of a list. Returned data is already cropped to the appropriate min,max indices
+        :return: requested variable dependent_data in the form of a list. Returned dependent_data is already cropped to the appropriate min,max indices
         """
         dataset = self.les_dataset
         if dataset_override is not None:
@@ -1531,7 +1531,7 @@ class VariableGroupSamProfiles(VariableGroup):
         Calculates the total vertical momentum skewness W'^3 from SAM output
         using the following equation:
         W3 = W3 + WP3_SGS (CLUBB variable)
-        :return: requested variable data in the form of a list. Returned data is already cropped to the appropriate min,max indices
+        :return: requested variable dependent_data in the form of a list. Returned dependent_data is already cropped to the appropriate min,max indices
         """
         dataset = self.les_dataset
         if dataset_override is not None:
@@ -1546,7 +1546,7 @@ class VariableGroupSamProfiles(VariableGroup):
         Calculates the total variance of THETAL from SAM output
         using the following equation:
         THETALVAR = THL2 + THLP2_SGS (CLUBB variable)
-        :return: requested variable data in the form of a list. Returned data is already cropped to the appropriate min,max indices
+        :return: requested variable dependent_data in the form of a list. Returned dependent_data is already cropped to the appropriate min,max indices
         """
         dataset = self.les_dataset
         if dataset_override is not None:
@@ -1562,7 +1562,7 @@ class VariableGroupSamProfiles(VariableGroup):
         Calculates the total variance of RT from SAM output
         using the following equation:
         RTVAR = (QT2 * 1e-6) + RTP2_SGS (CLUBB variable)
-        :return: requested variable data in the form of a list. Returned data is already cropped to the appropriate min,max indices
+        :return: requested variable dependent_data in the form of a list. Returned dependent_data is already cropped to the appropriate min,max indices
         """
         dataset = self.les_dataset
         if dataset_override is not None:
@@ -1577,7 +1577,7 @@ class VariableGroupSamProfiles(VariableGroup):
         Calculates the total covariance of U and W from SAM output
         using the following equation:
         UPWP = UW + UPWP_SGS (CLUBB variable)
-        :return: requested variable data in the form of a list. Returned data is already cropped to the appropriate min,max indices
+        :return: requested variable dependent_data in the form of a list. Returned dependent_data is already cropped to the appropriate min,max indices
         """
         dataset = self.les_dataset
         if dataset_override is not None:
@@ -1592,7 +1592,7 @@ class VariableGroupSamProfiles(VariableGroup):
         Calculates the total covariance of V and W from SAM output
         using the following equation:
         VPWP = VW + VPWP_SGS (CLUBB variable)
-        :return: requested variable data in the form of a list. Returned data is already cropped to the appropriate min,max indices
+        :return: requested variable dependent_data in the form of a list. Returned dependent_data is already cropped to the appropriate min,max indices
         """
         dataset = self.les_dataset
         if dataset_override is not None:
@@ -1607,7 +1607,7 @@ class VariableGroupSamProfiles(VariableGroup):
         Calculates the total variance of U from SAM output
         using the following equation:
         UVAR = U2 + UP2_SGS (CLUBB variable)
-        :return: requested variable data in the form of a list. Returned data is already cropped to the appropriate min,max indices
+        :return: requested variable dependent_data in the form of a list. Returned dependent_data is already cropped to the appropriate min,max indices
         """
         dataset = self.les_dataset
         if dataset_override is not None:
@@ -1622,7 +1622,7 @@ class VariableGroupSamProfiles(VariableGroup):
         Calculates the total variance of V from SAM output
         using the following equation:
         VVAR = V2 + VP2_SGS (CLUBB variable)
-        :return: requested variable data in the form of a list. Returned data is already cropped to the appropriate min,max indices
+        :return: requested variable dependent_data in the form of a list. Returned dependent_data is already cropped to the appropriate min,max indices
         """
         dataset = self.les_dataset
         if dataset_override is not None:
@@ -1637,7 +1637,7 @@ class VariableGroupSamProfiles(VariableGroup):
         Calculates the total correlation of U and W from SAM output
         using the following equation:
         (UW+UPWP_SGS)/(np.sqrt((U2+UP2_SGS)*(W2+WP2_SGS)+1e-4))
-        :return: requested variable data in the form of a list. Returned data is already cropped to the appropriate min,max indices
+        :return: requested variable dependent_data in the form of a list. Returned dependent_data is already cropped to the appropriate min,max indices
         """
         dataset = self.les_dataset
         if dataset_override is not None:
@@ -1652,7 +1652,7 @@ class VariableGroupSamProfiles(VariableGroup):
         Calculates the total correlation of V and W from SAM output
         using the following equation:
         (VW+VPWP_SGS)/(np.sqrt((V2+VP2_SGS)*(W2+WP2_SGS)+1e-4))
-        :return: requested variable data in the form of a list. Returned data is already cropped to the appropriate min,max indices
+        :return: requested variable dependent_data in the form of a list. Returned dependent_data is already cropped to the appropriate min,max indices
         """
         dataset = self.les_dataset
         if dataset_override is not None:
@@ -1667,7 +1667,7 @@ class VariableGroupSamProfiles(VariableGroup):
         Calculates the Within-Rain Variance of Rain Water Mixing Ratio from SAM output
         using the following equation:
         '(qrainp2_ip / (np.maximum(np.full(n,1e-5),qrainm_ip)**2))'
-        :return: requested variable data in the form of a list. Returned data is already cropped to the appropriate min,max indices
+        :return: requested variable dependent_data in the form of a list. Returned dependent_data is already cropped to the appropriate min,max indices
         ALERT: How does this work in the budgets plotter?
         """
         dataset = self.les_dataset

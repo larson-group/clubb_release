@@ -116,7 +116,7 @@ class Panel:
             max_panel_value = max(max_panel_value,max_variable_value)
 
             if x_data.shape[0] != y_data.shape[0]:
-                raise ValueError("X and Y data have different shapes X: "+str(x_data.shape)
+                raise ValueError("X and Y dependent_data have different shapes X: "+str(x_data.shape)
                                  + "  Y:" + str(y_data.shape) + ". Attempted to plot " + self.title + " using X: " +
                                  self.x_title + "  Y: " + self.y_title)
             if var.line_format == Style_definitions.BENCHMARK_LINE_STYLES['sam']:
