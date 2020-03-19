@@ -175,7 +175,7 @@ module variables_prognostic_module
 
 !$omp threadprivate(sigma_sqd_w)
 
-  type(pdf_parameter), allocatable, public, save :: &
+  type(pdf_parameter), public, save :: &
     pdf_params, &
     pdf_params_frz !for use when l_use_ice_latent = .true.
 
@@ -314,8 +314,6 @@ module variables_prognostic_module
     allocate( sigma_sqd_w(1:nz) )    ! PDF width parameter (momentum levels)
 
     ! Variables for pdf closure scheme
-    allocate( pdf_params )
-    allocate( pdf_params_frz )
     call init_pdf_params( nz, pdf_params )
     call init_pdf_params( nz, pdf_params_frz )
 
@@ -489,10 +487,6 @@ module variables_prognostic_module
       deallocate( cloud_cover )
 
       deallocate( sigma_sqd_w )    ! PDF width parameter (momentum levels)
-
-      ! Variable for pdf closure scheme
-      deallocate( pdf_params )
-      deallocate( pdf_params_frz )
 
       deallocate( pdf_implicit_coefs_terms )
 
