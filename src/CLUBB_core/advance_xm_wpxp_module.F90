@@ -3841,7 +3841,7 @@ module advance_xm_wpxp_module
         solve_type_str = "scalars"
       end select
 
-      if ( clubb_at_least_debug_level( 1 ) ) then
+      if ( clubb_at_least_debug_level( 3 ) ) then
         do k = 1, gr%nz
           if ( xm(k) < zero ) then
             write(fstderr,*) solve_type_str//" < ", xm_threshold, &
