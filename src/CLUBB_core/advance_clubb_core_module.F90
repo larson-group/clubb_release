@@ -4618,8 +4618,7 @@ module advance_clubb_core_module
 
           if ( clubb_at_least_debug_level( 3 ) ) then
             write(fstderr,*) message, ' at k=', k, 'rcm(k) = ', rcm(k), &
-              'rtm(k) = ', rtm(k), '.',  '  
-              .'
+              'rtm(k) = ', rtm(k), '.',  ' Clipping rcm.'
 
           end if ! clubb_at_least_debug_level( 3 )
 
