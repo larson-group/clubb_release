@@ -4616,11 +4616,12 @@ module advance_clubb_core_module
       do k = 1, gr%nz
         if ( rtm(k) < rcm(k) ) then
 
-          if ( clubb_at_least_debug_level( 1 ) ) then
+          if ( clubb_at_least_debug_level( 3 ) ) then
             write(fstderr,*) message, ' at k=', k, 'rcm(k) = ', rcm(k), &
-              'rtm(k) = ', rtm(k), '.',  '  Clipping rcm.'
+              'rtm(k) = ', rtm(k), '.',  '  
+              .'
 
-          end if ! clubb_at_least_debug_level( 1 )
+          end if ! clubb_at_least_debug_level( 3 )
 
           rcm(k) = max( zero_threshold, rtm(k) - epsilon( rtm(k) ) )
 
