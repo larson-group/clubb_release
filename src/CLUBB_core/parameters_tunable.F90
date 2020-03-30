@@ -643,14 +643,14 @@ module parameters_tunable
 
     endif ! mu < 0.0
 
-    if ( lmin < 4.0_core_rknd ) then
+    if ( lmin < 1.0_core_rknd ) then
 
        ! Constraints on mixing length
        write(fstderr,*) "lmin = ", lmin
-       write(fstderr,*) "lmin is < 4.0_core_rknd"
+       write(fstderr,*) "lmin is < 1.0_core_rknd"
        err_code = clubb_fatal_error
 
-    endif ! lmin < 4.0
+    endif ! lmin < 1.0
 
     if ( .not. l_clip_semi_implicit ) then
 
