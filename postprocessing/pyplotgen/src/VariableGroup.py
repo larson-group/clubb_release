@@ -26,7 +26,7 @@ class VariableGroup:
     """
 
     def __init__(self, case, clubb_datasets=None, les_dataset=None, coamps_dataset=None, r408_dataset=None, hoc_dataset=None,
-                 e3sm_datasets=None, sam_datasets=None):
+                 e3sm_datasets=None, sam_datasets=None, wrf_datasets=None):
         """
         Initialize common VariableGroup parameters
         :param clubb_datasets: A dictionary or Netcdf dataset containing the dependent_data to be plotted
@@ -43,6 +43,7 @@ class VariableGroup:
         self.les_dataset = les_dataset
         self.e3sm_datasets = e3sm_datasets
         self.sam_datasets = sam_datasets
+        self.wrf_datasets = wrf_datasets
         self.coamps_dataset = coamps_dataset
         self.r408_datasets = r408_dataset
         self.hoc_datasets = hoc_dataset
@@ -61,8 +62,8 @@ class VariableGroup:
             all_var_names = []
             for model_var_names in variable['var_names'].values():
                 all_var_names.extend(model_var_names)
-
             variable_is_blacklisted = len(list(set(all_var_names).intersection(case.blacklisted_variables))) != 0
+
             if not variable_is_blacklisted:
                 self.addVariable(variable)
 
@@ -162,6 +163,7 @@ class VariableGroup:
         plot_sam = self.sam_datasets is not None and len(self.sam_datasets) > 0 and (len(var_names['sam']) is not 0 or 'sam_calc' in variable_def_dict.keys())
         plot_e3sm = self.e3sm_datasets is not None and len(self.e3sm_datasets) > 0 and (len(var_names['e3sm']) is not 0 or 'e3sm_calc' in variable_def_dict.keys())
         plot_clubb = self.clubb_datasets is not None and len(self.clubb_datasets) > 0 and (len(var_names['clubb']) is not 0 or 'clubb_calc' in variable_def_dict.keys())
+        plot_wrf = self.wrf_datasets is not None and len(self.wrf_datasets) > 0 and (len(var_names['wrf']) is not 0 or 'wrf_calc' in variable_def_dict.keys())
 
 
         all_lines = []
@@ -184,6 +186,10 @@ class VariableGroup:
             for input_folder in self.e3sm_datasets:
                 folder_name = os.path.basename(input_folder)
                 all_lines.extend(self.__getVarLinesForModel__('e3sm', variable_def_dict, self.e3sm_datasets[input_folder], label=folder_name))
+        if plot_wrf:
+            for input_folder in self.wrf_datasets:
+                folder_name = os.path.basename(input_folder)
+                all_lines.extend(self.__getVarLinesForModel__('wrf', variable_def_dict, self.wrf_datasets[input_folder], label=folder_name))
         if plot_clubb:
             for input_folder in self.clubb_datasets:
                 folder_name = os.path.basename(input_folder)
@@ -246,6 +252,13 @@ class VariableGroup:
             all_lines.append(plot)
             data_was_calculated = True
 
+        if lines is not None:
+            for line in lines:
+                if (model_name + '_calc') in line.keys() and not self.__varnamesInDataset__(line['var_names'], dataset):
+                    plot_data, z = line[(model_name + '_calc')](dataset_override=dataset)
+                    plot = Line(plot_data, z, line_format=line_style, label=line['legend_label'])
+                    all_lines.append(plot)
+
         if len(all_model_var_names[model_name]) is not 0 and not data_was_calculated:
             all_lines.extend(self.__getVarLines__(all_model_var_names[model_name], dataset,
                                                   conversion_factor=conv_factors[model_name],
@@ -282,6 +295,14 @@ class VariableGroup:
         if self.sam_datasets is not None:
             for dataset in self.sam_datasets.values():
                 datasets.append(dataset)
+        if self.wrf_datasets is not None:
+            for i in self.wrf_datasets.values():
+                if isinstance(i, dict):
+                    datasets.extend(i.values())
+                elif isinstance(i, Dataset):
+                    datasets.append(i)
+                else:
+                    raise TypeError("getTextDefiningDataset recieved an unexpected format of datasets")
         if self.les_dataset is not None:
             datasets.append(self.les_dataset)
         if self.coamps_dataset is not None:
@@ -391,6 +412,8 @@ class VariableGroup:
         plotted_models_varname = "unknown_model_var"
         if self.clubb_datasets is not None and len(var_names['clubb']) is not 0:
             plotted_models_varname = var_names['clubb'][0]
+        elif self.clubb_datasets is None and self.wrf_datasets is not None and len(var_names['wrf']) is not 0:
+            plotted_models_varname = var_names['wrf'][0]
         elif self.clubb_datasets is None and self.sam_datasets is not None and len(var_names['sam']) is not 0:
             plotted_models_varname = var_names['sam'][0]
         elif self.clubb_datasets is None and self.e3sm_datasets is not None and len(var_names['e3sm']) is not 0:
@@ -408,6 +431,7 @@ class VariableGroup:
         conv_factors = {
             'les': 1,
             'sam': 1,
+            'wrf': 1,
             'coamps': 1,
             'r408': 1,
             'hoc': 1,
@@ -430,6 +454,9 @@ class VariableGroup:
 
         if 'e3sm_conv_factor' in variable_def_dict.keys():
             conv_factors['e3sm'] = variable_def_dict['e3sm_conv_factor']
+
+        if 'wrf_conv_factor' in variable_def_dict.keys():
+            conv_factors['wrf'] = variable_def_dict['wrf_conv_factor']
 
         return conv_factors
 
@@ -495,10 +522,7 @@ class VariableGroup:
         variable = NetCdfVariable(varname, dataset, independant_var_names=Case_definitions.HEIGHT_VAR_NAMES, start_time=self.start_time, end_time=self.end_time,
                                   avg_axis=avg_axis,
                                   conversion_factor=conversion_factor)
-        # z = NetCdfVariable(Case_definitions.HEIGHT_VAR_NAMES, variable.ncdf_data, start_time=self.start_time, end_time=self.end_time)
-
         variable.constrain(self.height_min_value, self.height_max_value, data=variable.independent_data.data)
-        # z.constrain(self.height_min_value, self.height_max_value)
         line = Line(variable, variable.independent_data, label=label, line_format=line_format)
         return line
 
@@ -516,7 +540,7 @@ class VariableGroup:
         :return: Line object representing the given variable for a timeseries plot
         """
 
-        variable = NetCdfVariable(varname, dataset, independant_var_names='time', start_time=0, end_time=end_time, avg_axis=1,
+        variable = NetCdfVariable(varname, dataset, independant_var_names=Case_definitions.TIME_VAR_NAMES, start_time=0, end_time=end_time, avg_axis=1,
                                   conversion_factor=conversion_factor)
         variable.constrain(0, variable.end_time, data=variable.independent_data.data)
         line = Line(variable.independent_data, variable, label=label, line_format=line_format)
@@ -532,32 +556,15 @@ class VariableGroup:
         """
         output_lines = []
         for line_definition in lines:
-            # line_added = False
             varnames = line_definition['var_names']
             for varname in varnames:
                 if varname in dataset.variables.keys():
                     variable = NetCdfVariable(varname, dataset, independant_var_names=Case_definitions.HEIGHT_VAR_NAMES, start_time=self.start_time, end_time=self.end_time)
-                    # z = NetCdfVariable(Case_definitions.HEIGHT_VAR_NAMES, dataset, start_time=self.start_time, end_time=self.end_time)
                     variable.constrain(self.height_min_value, self.height_max_value, data=variable.independent_data)
-                    # z.constrain(self.height_min_value, self.height_max_value)
                     line_definition = Line(variable, variable.independent_data, label=line_definition['legend_label'],
                                            line_format="")  # uses auto-generating line format
                     output_lines.append(line_definition)
-                    # line_added = True
                     break
-
-            # if not line_added:
-            #     print("\tFailed to find variable " + varname + " in case " + self.casename +
-            #           ". Attempting to use fallback function.")
-            #     if 'fallback_func' in line_definition.keys():
-            #         fallback = line_definition['fallback_func']
-            #         fallback_output = self.__getVarDataFromFallback__(fallback, varname, {'budget': dataset}, label,
-            #                                                           line_format)
-            #         fallback_output = Line(fallback_output.x, fallback_output.y, line_format="", label=line_definition['legend_label'])
-            #         output_lines.append(fallback_output)
-            #
-            #     else:
-            #         print("\t", varname, " fallback function not found. Filling values with zeros instead.")
         return output_lines
 
 

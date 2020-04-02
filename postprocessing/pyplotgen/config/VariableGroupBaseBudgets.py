@@ -12,8 +12,9 @@ class VariableGroupBaseBudgets(VariableGroup):
 
     """
 
-    def __init__(self, case, clubb_datasets=None, les_dataset=None, coamps_dataset=None, r408_dataset=None, hoc_dataset=None,
-                 e3sm_datasets=None):
+    def __init__(self, case, clubb_datasets=None, les_dataset=None, coamps_dataset=None, r408_dataset=None,
+                 hoc_dataset=None,
+                 e3sm_datasets=None, wrf_datasets=None):
         self.name = "base variables budgets"
 
         thlm_budget_lines = [
@@ -21,10 +22,13 @@ class VariableGroupBaseBudgets(VariableGroup):
             {'var_names': ['thlm_ma'], 'legend_label': 'thlm_ma'},
             {'var_names': ['thlm_ta'], 'legend_label': 'thlm_ta'},
             {'var_names': ['thlm_mc'], 'legend_label': 'thlm_mc'},
-            {'var_names': ['thlm_clipping'], 'legend_label': 'thlm_clipping', 'clubb_calc': self.getThlmClipping},
+            {'var_names': ['thlm_clipping'], 'legend_label': 'thlm_clipping', 'clubb_calc': self.getThlmClipping,
+             'e3sm_calc': self.getThlmClipping, 'wrf_calc': self.getThlmClipping},
             {'var_names': ['radht'], 'legend_label': 'radht'},
-            {'var_names': ['ls_forcing'], 'legend_label': 'thlm_ls_forcing', 'clubb_calc': self.getLsforcing},
-            {'var_names': ['thlm_residual'], 'legend_label': 'thlm_residual', 'clubb_calc': self.getThlmResidual},
+            {'var_names': ['ls_forcing'], 'legend_label': 'thlm_ls_forcing', 'clubb_calc': self.getLsforcing,
+             'e3sm_calc': self.getLsforcing, 'wrf_calc': self.getLsforcing},
+            {'var_names': ['thlm_residual'], 'legend_label': 'thlm_residual', 'clubb_calc': self.getThlmResidual,
+             'e3sm_calc': self.getThlmResidual, 'wrf_calc': self.getThlmResidual},
 
         ]
 
@@ -33,10 +37,13 @@ class VariableGroupBaseBudgets(VariableGroup):
             {'var_names': ['rtm_ma'], 'legend_label': 'rtm_ma'},
             {'var_names': ['rtm_ta'], 'legend_label': 'rtm_ta'},
             {'var_names': ['rtm_mc'], 'legend_label': 'rtm_mc'},
-            {'var_names': ['rtm_clipping'], 'legend_label': 'rtm_clipping', 'clubb_calc': self.getRtmClipping},
+            {'var_names': ['rtm_clipping'], 'legend_label': 'rtm_clipping', 'clubb_calc': self.getRtmClipping,
+             'e3sm_calc': self.getRtmClipping, 'wrf_calc': self.getRtmClipping},
             {'var_names': ['rtm_pd'], 'legend_label': 'rtm_pd'},
-            {'var_names': ['ls_forcing'], 'legend_label': 'ls_forcing', 'clubb_calc': self.getRtmForcing},
-            {'var_names': ['rtm_residual'], 'legend_label': 'rtm_residual', 'clubb_calc': self.getRtmResidual},
+            {'var_names': ['ls_forcing'], 'legend_label': 'ls_forcing', 'clubb_calc': self.getRtmForcing,
+             'e3sm_calc': self.getRtmForcing, 'wrf_calc': self.getRtmForcing},
+            {'var_names': ['rtm_residual'], 'legend_label': 'rtm_residual', 'clubb_calc': self.getRtmResidual,
+             'e3sm_calc': self.getRtmResidual, 'wrf_calc': self.getRtmResidual},
 
         ]
 
@@ -56,7 +63,8 @@ class VariableGroupBaseBudgets(VariableGroup):
             {'var_names': ['wpthlp_sicl'], 'legend_label': 'wpthlp_sicl'},
             {'var_names': ['wpthlp_forcing'], 'legend_label': 'wpthlp_forcing'},
             {'var_names': ['wpthlp_residual'], 'legend_label': 'wpthlp_residual',
-             'clubb_calc': self.getWpthlpResidual},
+             'clubb_calc': self.getWpthlpResidual, 'e3sm_calc': self.getWpthlpResidual,
+             'wrf_calc': self.getWpthlpResidual},
 
         ]
 
@@ -76,7 +84,8 @@ class VariableGroupBaseBudgets(VariableGroup):
             {'var_names': ['wprtp_sicl'], 'legend_label': 'wprtp_sicl'},
             {'var_names': ['wprtp_pd'], 'legend_label': 'wprtp_pd'},
             {'var_names': ['wprtp_forcing'], 'legend_label': 'wprtp_forcing'},
-            {'var_names': ['wprtp_residual'], 'legend_label': 'wprtp_residual', 'clubb_calc': self.getWprtpResidual},
+            {'var_names': ['wprtp_residual'], 'legend_label': 'wprtp_residual', 'clubb_calc': self.getWprtpResidual,
+             'e3sm_calc': self.getWprtpResidual, 'wrf_calc': self.getWprtpResidual},
         ]
 
         wp2_budget_lines = [
@@ -94,7 +103,8 @@ class VariableGroupBaseBudgets(VariableGroup):
             {'var_names': ['wp2_pd'], 'legend_label': 'wp2_pd'},
             {'var_names': ['wp2_splat'], 'legend_label': 'wp2_splat'},
             {'var_names': ['wp2_sf'], 'legend_label': 'wp2_sf'},
-            {'var_names': ['wp2_residual'], 'legend_label': 'wp2_residual', 'clubb_calc': self.getWp2Residual},
+            {'var_names': ['wp2_residual'], 'legend_label': 'wp2_residual', 'clubb_calc': self.getWp2Residual,
+             'e3sm_calc': self.getWp2Residual, 'wrf_calc': self.getWp2Residual},
         ]
 
         wp3_budget_lines = [
@@ -111,7 +121,8 @@ class VariableGroupBaseBudgets(VariableGroup):
             {'var_names': ['wp3_tp'], 'legend_label': 'wp3_tp'},
             {'var_names': ['wp3_cl'], 'legend_label': 'wp3_cl'},
             {'var_names': ['wp3_splat'], 'legend_label': 'wp3_splat'},
-            {'var_names': ['wp3_residual'], 'legend_label': 'wp3_residual', 'clubb_calc': self.getWp3Residual},
+            {'var_names': ['wp3_residual'], 'legend_label': 'wp3_residual', 'clubb_calc': self.getWp3Residual,
+             'e3sm_calc': self.getWp3Residual, 'wrf_calc': self.getWp3Residual},
         ]
 
         thlp2_budget_lines = [
@@ -125,7 +136,8 @@ class VariableGroupBaseBudgets(VariableGroup):
             {'var_names': ['thlp2_pd'], 'legend_label': 'thlp2_pd'},
             {'var_names': ['thlp2_sf'], 'legend_label': 'thlp2_sf'},
             {'var_names': ['thlp2_forcing'], 'legend_label': 'thlp2_forcing'},
-            {'var_names': ['thlp2_residual'], 'legend_label': 'thlp2_residual', 'clubb_calc': self.getThlp2Residual},
+            {'var_names': ['thlp2_residual'], 'legend_label': 'thlp2_residual', 'clubb_calc': self.getThlp2Residual,
+             'e3sm_calc': self.getThlp2Residual, 'wrf_calc': self.getThlp2Residual},
         ]
 
         rtp2_budget_lines = [
@@ -139,7 +151,8 @@ class VariableGroupBaseBudgets(VariableGroup):
             {'var_names': ['rtp2_pd'], 'legend_label': 'rtp2_pd'},
             {'var_names': ['rtp2_sf'], 'legend_label': 'rtp2_sf'},
             {'var_names': ['rtp2_forcing'], 'legend_label': 'rtp2_forcing'},
-            {'var_names': ['rtp2_residual'], 'legend_label': 'rtp2_residual', 'clubb_calc': self.getRtp2Residual},
+            {'var_names': ['rtp2_residual'], 'legend_label': 'rtp2_residual', 'clubb_calc': self.getRtp2Residual,
+             'e3sm_calc': self.getRtp2Residual, 'wrf_calc': self.getRtp2Residual},
         ]
 
         rtpthlp_budget_lines = [
@@ -154,7 +167,8 @@ class VariableGroupBaseBudgets(VariableGroup):
             {'var_names': ['rtpthlp_sf'], 'legend_label': 'rtpthlp_sf'},
             {'var_names': ['rtpthlp_forcing'], 'legend_label': 'rtpthlp_forcing'},
             {'var_names': ['rtpthlp_residual'], 'legend_label': 'rtpthlp_residual',
-             'clubb_calc': self.getRtpthlpResidual},
+             'clubb_calc': self.getRtpthlpResidual, 'e3sm_calc': self.getRtpthlpResidual,
+             'wrf_calc': self.getRtpthlpResidual},
         ]
 
         upwp_budget_lines = [
@@ -171,7 +185,8 @@ class VariableGroupBaseBudgets(VariableGroup):
             {'var_names': ['upwp_dp1'], 'legend_label': 'upwp_dp1'},
             {'var_names': ['upwp_cl'], 'legend_label': 'upwp_cl'},
             {'var_names': ['upwp_mfl'], 'legend_label': 'upwp_mfl'},
-            {'var_names': ['upwp_residual'], 'legend_label': 'upwp_residual', 'clubb_calc': self.getUpwpResidual},
+            {'var_names': ['upwp_residual'], 'legend_label': 'upwp_residual', 'clubb_calc': self.getUpwpResidual,
+             'e3sm_calc': self.getUpwpResidual, 'wrf_calc': self.getUpwpResidual},
         ]
 
         vpwp_budget_lines = [
@@ -188,7 +203,8 @@ class VariableGroupBaseBudgets(VariableGroup):
             {'var_names': ['vpwp_dp1'], 'legend_label': 'vpwp_dp1'},
             {'var_names': ['vpwp_cl'], 'legend_label': 'vpwp_cl'},
             {'var_names': ['vpwp_mfl'], 'legend_label': 'vpwp_mfl'},
-            {'var_names': ['vpwp_residual'], 'legend_label': 'vpwp_residual', 'clubb_calc': self.getVpwpResidual},
+            {'var_names': ['vpwp_residual'], 'legend_label': 'vpwp_residual', 'clubb_calc': self.getVpwpResidual,
+             'e3sm_calc': self.getVpwpResidual, 'wrf_calc': self.getVpwpResidual},
         ]
 
         um_budget_lines = [
@@ -221,9 +237,11 @@ class VariableGroupBaseBudgets(VariableGroup):
             {'var_names': ['rrm_sd'], 'legend_label': 'rrm_sd'},
             {'var_names': ['rrm_ta'], 'legend_label': 'rrm_ta'},
             {'var_names': ['rrm_ts'], 'legend_label': 'rrm_ts'},
-            {'var_names': ['rrm_fill_clip'], 'legend_label': 'rrm_fill_clip', 'clubb_calc': self.getRrmFillClip},
+            {'var_names': ['rrm_fill_clip'], 'legend_label': 'rrm_fill_clip', 'clubb_calc': self.getRrmFillClip,
+             'e3sm_calc': self.getRrmFillClip, 'wrf_calc': self.getRrmFillClip},
             {'var_names': ['rrm_mc'], 'legend_label': 'rrm_mc'},
-            {'var_names': ['rrm_residual'], 'legend_label': 'rrm_residual', 'clubb_calc': self.getRrmResidual},
+            {'var_names': ['rrm_residual'], 'legend_label': 'rrm_residual', 'clubb_calc': self.getRrmResidual,
+             'e3sm_calc': self.getRrmResidual, 'wrf_calc': self.getRrmResidual},
         ]
 
         Nrm_budget_lines = [
@@ -234,7 +252,8 @@ class VariableGroupBaseBudgets(VariableGroup):
             {'var_names': ['Nrm_ts'], 'legend_label': 'Nrm_ts'},
             {'var_names': ['Nrm_cl'], 'legend_label': 'Nrm_cl'},
             {'var_names': ['Nrm_mc'], 'legend_label': 'Nrm_mc'},
-            {'var_names': ['Nrm_residual'], 'legend_label': 'Nrm_residual', 'clubb_calc': self.getNrmResidual},
+            {'var_names': ['Nrm_residual'], 'legend_label': 'Nrm_residual', 'clubb_calc': self.getNrmResidual,
+             'e3sm_calc': self.getNrmResidual, 'wrf_calc': self.getNrmResidual},
         ]
 
         self.variable_definitions = [
@@ -244,7 +263,8 @@ class VariableGroupBaseBudgets(VariableGroup):
                 'coamps': ['thlm'],
                 'r408': ['thlm'],
                 'hoc': ['thlm'],
-                'e3sm': ['thlm']
+                'e3sm': ['thlm'],
+                'wrf': ['thlm']
             },
                 'lines': thlm_budget_lines, 'type': Panel.TYPE_BUDGET},
             {'var_names': {
@@ -253,7 +273,8 @@ class VariableGroupBaseBudgets(VariableGroup):
                 'coamps': ['rtm'],
                 'r408': ['rtm'],
                 'hoc': ['rtm'],
-                'e3sm': ['rtm']
+                'e3sm': ['rtm'],
+                'wrf': ['rtm']
             },
                 'lines': rtm_budget_lines, 'type': Panel.TYPE_BUDGET},
             {'var_names': {
@@ -262,7 +283,8 @@ class VariableGroupBaseBudgets(VariableGroup):
                 'coamps': ['wpthlp'],
                 'r408': ['wpthlp'],
                 'hoc': ['wpthlp'],
-                'e3sm': ['wpthlp']
+                'e3sm': ['wpthlp'],
+                'wrf': ['wpthlp']
             },
                 'lines': wpthlp_budget_lines, 'type': Panel.TYPE_BUDGET},
             {'var_names': {
@@ -271,7 +293,8 @@ class VariableGroupBaseBudgets(VariableGroup):
                 'coamps': ['wprtp'],
                 'r408': ['wprtp'],
                 'hoc': ['wprtp'],
-                'e3sm': ['wprtp']
+                'e3sm': ['wprtp'],
+                'wrf': ['wprtp']
             },
                 'lines': wprtp_budget_lines, 'type': Panel.TYPE_BUDGET},
             {'var_names': {
@@ -280,7 +303,8 @@ class VariableGroupBaseBudgets(VariableGroup):
                 'coamps': ['wp2'],
                 'r408': ['wp2'],
                 'hoc': ['wp2'],
-                'e3sm': ['wp2']
+                'e3sm': ['wp2'],
+                'wrf': ['wp2']
             },
                 'lines': wp2_budget_lines, 'type': Panel.TYPE_BUDGET},
             {'var_names': {
@@ -289,7 +313,8 @@ class VariableGroupBaseBudgets(VariableGroup):
                 'coamps': ['wp3'],
                 'r408': ['wp3'],
                 'hoc': ['wp3'],
-                'e3sm': ['wp3']
+                'e3sm': ['wp3'],
+                'wrf': ['wp3']
             },
                 'lines': wp3_budget_lines, 'type': Panel.TYPE_BUDGET},
             {'var_names': {
@@ -298,7 +323,8 @@ class VariableGroupBaseBudgets(VariableGroup):
                 'coamps': ['thlp2'],
                 'r408': ['thlp2'],
                 'hoc': ['thlp2'],
-                'e3sm': ['thlp2']
+                'e3sm': ['thlp2'],
+                'wrf': ['thlp2']
             },
                 'lines': thlp2_budget_lines, 'type': Panel.TYPE_BUDGET},
             {'var_names': {
@@ -307,7 +333,8 @@ class VariableGroupBaseBudgets(VariableGroup):
                 'coamps': ['rtp2'],
                 'r408': ['rtp2'],
                 'hoc': ['rtp2'],
-                'e3sm': ['rtp2']
+                'e3sm': ['rtp2'],
+                'wrf': ['rtp2']
             },
                 'lines': rtp2_budget_lines, 'type': Panel.TYPE_BUDGET},
             {'var_names': {
@@ -316,7 +343,8 @@ class VariableGroupBaseBudgets(VariableGroup):
                 'coamps': ['rtpthlp'],
                 'r408': ['rtpthlp'],
                 'hoc': ['rtpthlp'],
-                'e3sm': ['rtpthlp']
+                'e3sm': ['rtpthlp'],
+                'wrf': ['rtpthlp']
             },
                 'lines': rtpthlp_budget_lines, 'type': Panel.TYPE_BUDGET},
             {'var_names': {
@@ -325,7 +353,8 @@ class VariableGroupBaseBudgets(VariableGroup):
                 'coamps': ['upwp'],
                 'r408': ['upwp'],
                 'hoc': ['upwp'],
-                'e3sm': ['upwp']
+                'e3sm': ['upwp'],
+                'wrf': ['upwp']
             },
                 'lines': upwp_budget_lines, 'type': Panel.TYPE_BUDGET},
             {'var_names': {
@@ -334,7 +363,8 @@ class VariableGroupBaseBudgets(VariableGroup):
                 'coamps': ['vpwp'],
                 'r408': ['vpwp'],
                 'hoc': ['vpwp'],
-                'e3sm': ['vpwp']
+                'e3sm': ['vpwp'],
+                'wrf': ['vpwp']
             },
                 'lines': vpwp_budget_lines, 'type': Panel.TYPE_BUDGET},
             {'var_names': {
@@ -343,7 +373,8 @@ class VariableGroupBaseBudgets(VariableGroup):
                 'coamps': ['um'],
                 'r408': ['um'],
                 'hoc': ['um'],
-                'e3sm': ['um']
+                'e3sm': ['um'],
+                'wrf': ['um']
             },
                 'lines': um_budget_lines, 'type': Panel.TYPE_BUDGET},
             {'var_names': {
@@ -352,7 +383,8 @@ class VariableGroupBaseBudgets(VariableGroup):
                 'coamps': ['vm'],
                 'r408': ['vm'],
                 'hoc': ['vm'],
-                'e3sm': ['vm']
+                'e3sm': ['vm'],
+                'wrf': ['vm']
             },
                 'lines': vm_budget_lines, 'type': Panel.TYPE_BUDGET},
 
@@ -362,7 +394,8 @@ class VariableGroupBaseBudgets(VariableGroup):
                 'coamps': ['rrm'],
                 'r408': ['rrm'],
                 'hoc': ['rrm'],
-                'e3sm': ['rrm']
+                'e3sm': ['rrm'],
+                'wrf': ['rrm']
             },
                 'lines': rrm_budget_lines, 'type': Panel.TYPE_BUDGET},
 
@@ -372,12 +405,14 @@ class VariableGroupBaseBudgets(VariableGroup):
                 'coamps': ['Nrm'],
                 'r408': ['Nrm'],
                 'hoc': ['Nrm'],
-                'e3sm': ['Nrm']
+                'e3sm': ['Nrm'],
+                'wrf': ['Nrm']
             },
                 'lines': Nrm_budget_lines, 'type': Panel.TYPE_BUDGET}
         ]
-        super().__init__(case, clubb_datasets=clubb_datasets, les_dataset=les_dataset, coamps_dataset=coamps_dataset, r408_dataset=r408_dataset,
-                         hoc_dataset=hoc_dataset, e3sm_datasets=e3sm_datasets)
+        super().__init__(case, clubb_datasets=clubb_datasets, les_dataset=les_dataset, coamps_dataset=coamps_dataset,
+                         r408_dataset=r408_dataset,
+                         hoc_dataset=hoc_dataset, e3sm_datasets=e3sm_datasets, wrf_datasets=wrf_datasets)
 
     def getThlmClipping(self, dataset_override=None):
         '''
@@ -512,7 +547,7 @@ class VariableGroupBaseBudgets(VariableGroup):
         wpthlp_ma, z, dataset = self.getVarForCalculations('wpthlp_ma', dataset_override)
 
         output_data = wpthlp_bt - (
-                    wpthlp_ma + wpthlp_ta + wpthlp_tp + wpthlp_ac + wpthlp_bp + wpthlp_pr1 + wpthlp_pr2 + wpthlp_pr3 + wpthlp_dp1 + wpthlp_mfl + wpthlp_cl + wpthlp_sicl + wpthlp_forcing)
+                wpthlp_ma + wpthlp_ta + wpthlp_tp + wpthlp_ac + wpthlp_bp + wpthlp_pr1 + wpthlp_pr2 + wpthlp_pr3 + wpthlp_dp1 + wpthlp_mfl + wpthlp_cl + wpthlp_sicl + wpthlp_forcing)
 
         return output_data, z
 
@@ -541,7 +576,7 @@ class VariableGroupBaseBudgets(VariableGroup):
         wprtp_pd, z, dataset = self.getVarForCalculations('wprtp_pd', dataset_override)
 
         output_data = wprtp_bt - (
-                    wprtp_ma + wprtp_ta + wprtp_tp + wprtp_ac + wprtp_bp + wprtp_pr1 + wprtp_pr2 + wprtp_pr3 + wprtp_dp1 + wprtp_mfl + wprtp_cl + wprtp_sicl + wprtp_pd + wprtp_forcing)
+                wprtp_ma + wprtp_ta + wprtp_tp + wprtp_ac + wprtp_bp + wprtp_pr1 + wprtp_pr2 + wprtp_pr3 + wprtp_dp1 + wprtp_mfl + wprtp_cl + wprtp_sicl + wprtp_pd + wprtp_forcing)
 
         return output_data, z
 
@@ -569,7 +604,7 @@ class VariableGroupBaseBudgets(VariableGroup):
         wp2_pd, z, dataset = self.getVarForCalculations('wp2_pd', dataset_override)
 
         output_data = wp2_bt - (
-                    wp2_ma + wp2_ta + wp2_ac + wp2_bp + wp2_pr1 + wp2_pr2 + wp2_pr3 + wp2_dp1 + wp2_dp2 + wp2_cl + wp2_pd + wp2_sf + wp2_splat)
+                wp2_ma + wp2_ta + wp2_ac + wp2_bp + wp2_pr1 + wp2_pr2 + wp2_pr3 + wp2_dp1 + wp2_dp2 + wp2_cl + wp2_pd + wp2_sf + wp2_splat)
 
         return output_data, z
 
@@ -596,7 +631,7 @@ class VariableGroupBaseBudgets(VariableGroup):
         wp3_tp, z, dataset = self.getVarForCalculations('wp3_tp', dataset_override)
 
         output_data = wp3_bt - (
-                    wp3_ma + wp3_ta + wp3_tp + wp3_ac + wp3_bp1 + wp3_bp2 + wp3_pr1 + wp3_pr2 + wp3_pr3 + wp3_dp1 + wp3_cl + wp3_splat)
+                wp3_ma + wp3_ta + wp3_tp + wp3_ac + wp3_bp1 + wp3_bp2 + wp3_pr1 + wp3_pr2 + wp3_pr3 + wp3_dp1 + wp3_cl + wp3_splat)
 
         return output_data, z
 
@@ -620,7 +655,7 @@ class VariableGroupBaseBudgets(VariableGroup):
         thlp2_tp, z, dataset = self.getVarForCalculations('thlp2_tp', dataset_override)
 
         output_data = thlp2_bt - (
-                    thlp2_ma + thlp2_ta + thlp2_tp + thlp2_dp1 + thlp2_dp2 + thlp2_cl + thlp2_pd + thlp2_sf + thlp2_forcing)
+                thlp2_ma + thlp2_ta + thlp2_tp + thlp2_dp1 + thlp2_dp2 + thlp2_cl + thlp2_pd + thlp2_sf + thlp2_forcing)
 
         return output_data, z
 
@@ -644,7 +679,7 @@ class VariableGroupBaseBudgets(VariableGroup):
         rtp2_tp, z, dataset = self.getVarForCalculations('rtp2_tp', dataset_override)
 
         output_data = rtp2_bt - (
-                    rtp2_ma + rtp2_ta + rtp2_tp + rtp2_dp1 + rtp2_dp2 + rtp2_cl + rtp2_pd + rtp2_sf + rtp2_forcing)
+                rtp2_ma + rtp2_ta + rtp2_tp + rtp2_dp1 + rtp2_dp2 + rtp2_cl + rtp2_pd + rtp2_sf + rtp2_forcing)
 
         return output_data, z
 
@@ -668,7 +703,7 @@ class VariableGroupBaseBudgets(VariableGroup):
         rtpthlp_tp1, z, dataset = self.getVarForCalculations('rtpthlp_tp1', dataset_override)
 
         output_data = rtpthlp_bt - (
-                    rtpthlp_ma + rtpthlp_ta + rtpthlp_tp1 + rtpthlp_tp2 + rtpthlp_dp1 + rtpthlp_dp2 + rtpthlp_cl + rtpthlp_sf + rtpthlp_forcing)
+                rtpthlp_ma + rtpthlp_ta + rtpthlp_tp1 + rtpthlp_tp2 + rtpthlp_dp1 + rtpthlp_dp2 + rtpthlp_cl + rtpthlp_sf + rtpthlp_forcing)
 
         return output_data, z
 
@@ -695,7 +730,7 @@ class VariableGroupBaseBudgets(VariableGroup):
         upwp_ma, z, dataset = self.getVarForCalculations('upwp_ma', dataset_override)
 
         output_data = upwp_bt - (
-                    upwp_ma + upwp_ta + upwp_tp + upwp_ac + upwp_bp + upwp_pr1 + upwp_pr2 + upwp_pr3 + upwp_pr4 + upwp_dp1 + upwp_mfl + upwp_cl)
+                upwp_ma + upwp_ta + upwp_tp + upwp_ac + upwp_bp + upwp_pr1 + upwp_pr2 + upwp_pr3 + upwp_pr4 + upwp_dp1 + upwp_mfl + upwp_cl)
 
         return output_data, z
 
@@ -722,10 +757,9 @@ class VariableGroupBaseBudgets(VariableGroup):
         vpwp_ma, z, dataset = self.getVarForCalculations('vpwp_ma', dataset_override)
 
         output_data = vpwp_bt - (
-                    vpwp_ma + vpwp_ta + vpwp_tp + vpwp_ac + vpwp_bp + vpwp_pr1 + vpwp_pr2 + vpwp_pr3 + vpwp_pr4 + vpwp_dp1 + vpwp_mfl + vpwp_cl)
+                vpwp_ma + vpwp_ta + vpwp_tp + vpwp_ac + vpwp_bp + vpwp_pr1 + vpwp_pr2 + vpwp_pr3 + vpwp_pr4 + vpwp_dp1 + vpwp_mfl + vpwp_cl)
 
         return output_data, z
-
 
     def getRrmFillClip(self, dataset_override=None):
         '''

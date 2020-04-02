@@ -21,7 +21,7 @@ class Case:
     definition to the list ALL_CASES = [...] at the bottom of the file).
     """
 
-    def __init__(self, case_definition, clubb_folders = [], diff_datasets=None, sam_folders = [""],
+    def __init__(self, case_definition, clubb_folders = [], diff_datasets=None, sam_folders = [""], wrf_folders=[""],
                  plot_les=False, plot_budgets=False, plot_r408=False, plot_hoc=False, e3sm_dirs =[]):
         """
         Initialize a Case
@@ -53,6 +53,7 @@ class Case:
         self.plot_hoc = plot_hoc
         self.plot_e3sm = e3sm_dirs
         self.sam_folders = sam_folders
+        self.wrf_folders = wrf_folders
         self.diff_datasets = diff_datasets
         self.next_panel_alphabetic_id_code = 97
         if 'disable_budgets' in case_definition.keys() and case_definition['disable_budgets'] is True:
@@ -73,6 +74,19 @@ class Case:
                 else:
                     warn("Failed to find file " + sam_filename)
 
+        wrf_datasets = {}
+        if len(wrf_folders) != 0 and wrf_folders != None and case_definition['wrf_file'] != None:
+            datareader = DataReader()
+            for foldername in wrf_folders:
+                files_in_folder = {}
+                wrf_filenames = case_definition['wrf_file']
+                for type_ext in wrf_filenames:
+                    filepath = foldername + wrf_filenames[type_ext]
+                    if path.exists(filepath):
+                        files_in_folder[type_ext] = datareader.__loadNcFile__(filepath)
+                    else:
+                        warn("Failed to find file " + filepath)
+                wrf_datasets[foldername] = files_in_folder
         e3sm_file = {}
         if len(e3sm_dirs) != 0 and e3sm_dirs != None and case_definition['e3sm_file'] != None:
             datareader = DataReader()
@@ -114,15 +128,13 @@ class Case:
             hoc_datasets = None
 
         self.panels = []
-        self.diff_panels = []
         for VarGroup in self.var_groups:
             temp_group = VarGroup(self, clubb_datasets=self.clubb_datasets, les_dataset=les_file, coamps_dataset=coamps_datasets, sam_datasets=sam_datasets,
-                                  r408_dataset=r408_datasets, hoc_dataset=hoc_datasets, e3sm_datasets = e3sm_file)
-
-            for panel in temp_group.panels:
-                self.panels.append(panel)
+                                  wrf_datasets=wrf_datasets, r408_dataset=r408_datasets, hoc_dataset=hoc_datasets, e3sm_datasets = e3sm_file)
+            self.panels.extend(temp_group.panels)
 
         # Convert panels to difference panels if user passed in --diff <<folder>>
+        self.diff_panels = []
         if self.diff_datasets is not None:
             for VarGroup in self.var_groups:
                 diff_group = VarGroup(self, clubb_datasets=self.diff_datasets, sam_file=les_file, coamps_file=coamps_datasets,
@@ -140,8 +152,13 @@ class Case:
 
         if self.plot_budgets:
             if self.clubb_datasets is not None and len(self.clubb_datasets) is not 0:
-                for ncdataset in self.clubb_datasets.values():
-                    budget_variables = VariableGroupBaseBudgets(self, clubb_datasets=ncdataset)
+                # for ncdataset in self.clubb_datasets.values():
+                budget_variables = VariableGroupBaseBudgets(self, clubb_datasets=self.clubb_datasets)
+                self.panels.extend(budget_variables.panels)
+            if wrf_datasets is not None and len(wrf_datasets) is not 0:
+                # for ncdataset in self.clubb_datasets.values():
+                for folders_datasets in wrf_datasets.values():
+                    budget_variables = VariableGroupBaseBudgets(self, wrf_datasets=folders_datasets)
                     self.panels.extend(budget_variables.panels)
             if e3sm_file != None and len(e3sm_file) is not 0:
                 for dataset_name in e3sm_file:

@@ -8,8 +8,9 @@ from src.VariableGroup import VariableGroup
 
 class VariableGroupLiquidMP(VariableGroup):
 
-    def __init__(self, case, clubb_datasets=None, les_dataset=None, coamps_dataset=None, r408_dataset=None, hoc_dataset=None,
-                 e3sm_datasets=None, sam_datasets=None):
+    def __init__(self, case, clubb_datasets=None, les_dataset=None, coamps_dataset=None, r408_dataset=None,
+                 hoc_dataset=None,
+                 e3sm_datasets=None, sam_datasets=None, wrf_datasets=None):
         """
 
         :param clubb_datasets:
@@ -24,7 +25,8 @@ class VariableGroupLiquidMP(VariableGroup):
                 'coamps': ['Ncm'],
                 'r408': ['Ncm'],
                 'hoc': ['Ncm'],
-                'e3sm': ['Ncm']
+                'e3sm': ['Ncm'],
+                'wrf': []
             },
                 'sam_calc': self.getNcmSamLine},
             {'var_names': {
@@ -33,7 +35,8 @@ class VariableGroupLiquidMP(VariableGroup):
                 'coamps': ['Nc_in_cloud'],
                 'r408': ['Nc_in_cloud'],
                 'hoc': ['Nc_in_cloud'],
-                'e3sm': ['Nc_in_cloud']
+                'e3sm': ['Nc_in_cloud'],
+                'wrf': []
             }},
 
             {'var_names': {
@@ -42,7 +45,8 @@ class VariableGroupLiquidMP(VariableGroup):
                 'coamps': ['precip_frac'],
                 'r408': ['precip_frac'],
                 'hoc': ['precip_frac'],
-                'e3sm': ['precip_frac']
+                'e3sm': ['precip_frac'],
+                'wrf': []
             }},
 
             {'var_names': {
@@ -51,7 +55,8 @@ class VariableGroupLiquidMP(VariableGroup):
                 'coamps': ['rrm'],
                 'r408': ['rrm'],
                 'hoc': ['rrm'],
-                'e3sm': ['rrm']
+                'e3sm': ['rrm'],
+                'wrf': []
             },
                 'sam_conv_factor': 1 / 1000},
             {'var_names': {
@@ -60,7 +65,8 @@ class VariableGroupLiquidMP(VariableGroup):
                 'coamps': ['Nrm'],
                 'r408': ['Nrm'],
                 'hoc': ['Nrm'],
-                'e3sm': ['Nrm']
+                'e3sm': ['Nrm'],
+                'wrf': []
             },
                 'sam_calc': self.getNrmSamLine},
             {'var_names': {
@@ -69,7 +75,8 @@ class VariableGroupLiquidMP(VariableGroup):
                 'coamps': ['wprrp'],
                 'r408': ['wprrp'],
                 'hoc': ['wprrp'],
-                'e3sm': ['wprrp']
+                'e3sm': ['wprrp'],
+                'wrf': []
             }},
             # Not found in lba case file
             {'var_names': {
@@ -78,7 +85,8 @@ class VariableGroupLiquidMP(VariableGroup):
                 'coamps': ['wpNrp'],
                 'r408': ['wpNrp'],
                 'hoc': ['wpNrp'],
-                'e3sm': ['wpNrp']
+                'e3sm': ['wpNrp'],
+                'wrf': []
             }},
             # Not found in lba case file
             {'var_names': {
@@ -87,7 +95,8 @@ class VariableGroupLiquidMP(VariableGroup):
                 'coamps': ['rwp'],
                 'r408': ['rwp'],
                 'hoc': ['rwp'],
-                'e3sm': ['rwp']
+                'e3sm': ['rwp'],
+                'wrf': []
             },
                 'sam_conv_factor': 1 / 1000, 'type': Panel.TYPE_TIMESERIES},
             {'var_names': {
@@ -96,15 +105,17 @@ class VariableGroupLiquidMP(VariableGroup):
                 'coamps': ['precip_rate_sfc'],
                 'r408': ['precip_rate_sfc'],
                 'hoc': ['precip_rate_sfc'],
-                'e3sm': ['precip_rate_sfc']
+                'e3sm': ['precip_rate_sfc'],
+                'wrf': []
             },
                 'type': Panel.TYPE_TIMESERIES}
 
         ]
         # rain_rate_sfc vs time
 
-        super().__init__(case, clubb_datasets=clubb_datasets, les_dataset=les_dataset, coamps_dataset=coamps_dataset, r408_dataset=r408_dataset,
-                         hoc_dataset=hoc_dataset, e3sm_datasets=e3sm_datasets, sam_datasets=sam_datasets)
+        super().__init__(case, clubb_datasets=clubb_datasets, les_dataset=les_dataset, coamps_dataset=coamps_dataset,
+                         r408_dataset=r408_dataset,
+                         hoc_dataset=hoc_dataset, e3sm_datasets=e3sm_datasets, sam_datasets=sam_datasets, wrf_datasets=wrf_datasets)
 
     def getNcmSamLine(self, dataset_override=None):
         """

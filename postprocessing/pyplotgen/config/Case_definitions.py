@@ -62,9 +62,9 @@ from config.VariableGroupCorrelations import VariableGroupCorrelations
 from config.VariableGroupIceMP import VariableGroupIceMP
 from config.VariableGroupKKMP import VariableGroupKKMP
 from config.VariableGroupLiquidMP import VariableGroupLiquidMP
-from config.VariableGroupWs import VariableGroupWs
 from config.VariableGroupSamBudgets import VariableGroupSamBudgets
 from config.VariableGroupSamProfiles import VariableGroupSamProfiles
+from config.VariableGroupWs import VariableGroupWs
 
 # ---------------------------
 BENCHMARK_OUTPUT_ROOT = "/usr/local/les_and_clubb_benchmark_runs/"
@@ -84,11 +84,12 @@ HOC_OUTPUT_ROOT = BENCHMARK_OUTPUT_ROOT + "HOC_20051217"
 # be final, i.e. is changed depending on the cmd line arg
 e3sm_output_root = ""
 sam_output_root = ""
+wrf_output_root = ""
 # ---------------------------
 
 # These are all the names that represent the height variable within different models
 HEIGHT_VAR_NAMES = ['z', 'Z3', 'altitude', 'lev']
-
+TIME_VAR_NAMES = ['time', 'XTIME']
 """
 To plot only a subset of cases, reguardless of what output exists
 in the clubb folder, uncomment the last line of this file and
@@ -114,7 +115,11 @@ ARM = {'name': 'arm', 'start_time': 481, 'end_time': 540, 'height_min_value': 0,
                     'zt': HOC_OUTPUT_ROOT + '/arm_zt.nc',
                     'sfc': HOC_OUTPUT_ROOT + '/arm_sfc.nc'},
        'e3sm_file': e3sm_output_root + "/arm.nc",
-       'sam_file': sam_output_root+ "/GCSSARM_96x96x110_67m_40m_1s.nc",
+       'sam_file': sam_output_root + "/GCSSARM_96x96x110_67m_40m_1s.nc",
+       'wrf_file': {'zm': wrf_output_root + "/clubb_zm.nc",
+                    'zt': wrf_output_root + "/clubb_zt.nc",
+                    'sfc': wrf_output_root + "/clubb_sfc.nc"
+                    },
        'var_groups': [VariableGroupBase]}
 
 ARM_97 = {'name': 'arm_97', 'start_time': 4321, 'end_time': 5580, 'height_min_value': 0, 'height_max_value': 18000,
@@ -125,7 +130,8 @@ ARM_97 = {'name': 'arm_97', 'start_time': 4321, 'end_time': 5580, 'height_min_va
           'r408_file': None,
           'hoc_file': None,
           'e3sm_file': None,
-          'sam_file': sam_output_root+ "/ARM9707_128x128x128_1km_Morrison_tracers_radCAM_microM2005UWM.nc",
+          'sam_file': sam_output_root + "/ARM9707_128x128x128_1km_Morrison_tracers_radCAM_microM2005UWM.nc",
+          'wrf_file': None,
           'var_groups': [VariableGroupBase, VariableGroupIceMP]}
 
 ASTEX_A209 = {'name': 'astex_a209', 'start_time': 2340, 'end_time': 2400, 'height_min_value': 0,
@@ -137,6 +143,7 @@ ASTEX_A209 = {'name': 'astex_a209', 'start_time': 2340, 'end_time': 2400, 'heigh
               'hoc_file': None,
               'e3sm_file': None,
               'sam_file': None,
+              'wrf_file': None,
               'var_groups': [VariableGroupBase, VariableGroupWs, VariableGroupLiquidMP, VariableGroupCorrelations,
                              VariableGroupKKMP]}
 
@@ -145,7 +152,7 @@ ATEX = {'name': 'atex', 'start_time': 421, 'end_time': 480, 'height_min_value': 
         'blacklisted_vars': [],
         'les_dataset': None,
         'coamps_dataset': {'sm': LES_OUTPUT_ROOT + "/atex_coamps_sm.nc",
-                        'sw': LES_OUTPUT_ROOT + "/atex_coamps_sw.nc"},
+                           'sw': LES_OUTPUT_ROOT + "/atex_coamps_sw.nc"},
         'r408_file': {'zm': R408_OUTPUT_ROOT + '/Chris_Golaz_best_ever/atex_zm.nc',
                       'zt': R408_OUTPUT_ROOT + '/Chris_Golaz_best_ever/atex_zt.nc',
                       'sfc': R408_OUTPUT_ROOT + '/Chris_Golaz_best_ever/atex_sfc.nc'},
@@ -154,6 +161,7 @@ ATEX = {'name': 'atex', 'start_time': 421, 'end_time': 480, 'height_min_value': 
                      'sfc': HOC_OUTPUT_ROOT + '/atex_sfc.nc'},
         'e3sm_file': None,
         'sam_file': None,
+        'wrf_file': None,
         'var_groups': [VariableGroupBase, VariableGroupWs]}
 
 BOMEX = {'name': 'bomex', 'start_time': 181, 'end_time': 360, 'height_min_value': 0, 'height_max_value': 2500,
@@ -169,6 +177,7 @@ BOMEX = {'name': 'bomex', 'start_time': 181, 'end_time': 360, 'height_min_value'
                       'sfc': HOC_OUTPUT_ROOT + '/bomex_sfc.nc'},
          'e3sm_file': e3sm_output_root + '/bomex.nc',
          'sam_file': None,
+         'wrf_file': None,
          'var_groups': [VariableGroupBase, VariableGroupWs]}
 
 CGILS_S6 = {'name': 'cgils_s6', 'start_time': 12960, 'end_time': 14400, 'height_min_value': 0, 'height_max_value': 5950,
@@ -180,6 +189,7 @@ CGILS_S6 = {'name': 'cgils_s6', 'start_time': 12960, 'end_time': 14400, 'height_
             'hoc_file': None,
             'e3sm_file': None,
             'sam_file': None,
+            'wrf_file': None,
             'var_groups': [VariableGroupBase, VariableGroupLiquidMP, VariableGroupIceMP]}
 
 CGILS_S11 = {'name': 'cgils_s11', 'start_time': 12960, 'end_time': 14400, 'height_min_value': 0,
@@ -191,6 +201,7 @@ CGILS_S11 = {'name': 'cgils_s11', 'start_time': 12960, 'end_time': 14400, 'heigh
              'hoc_file': None,
              'e3sm_file': None,
              'sam_file': None,
+             'wrf_file': None,
              'var_groups': [VariableGroupBase, VariableGroupLiquidMP, VariableGroupIceMP]}
 
 CGILS_S12 = {'name': 'cgils_s12', 'start_time': 12960, 'end_time': 14400, 'height_min_value': 0,
@@ -202,6 +213,7 @@ CGILS_S12 = {'name': 'cgils_s12', 'start_time': 12960, 'end_time': 14400, 'heigh
              'hoc_file': None,
              'e3sm_file': None,
              'sam_file': None,
+             'wrf_file': None,
              'var_groups': [VariableGroupBase, VariableGroupLiquidMP, VariableGroupIceMP]}
 
 CLEX9_NOV02 = {'name': 'clex9_nov02', 'start_time': 181, 'end_time': 240, 'height_min_value': 3072,
@@ -209,11 +221,12 @@ CLEX9_NOV02 = {'name': 'clex9_nov02', 'start_time': 181, 'end_time': 240, 'heigh
                'blacklisted_vars': [],
                'les_dataset': None,
                'coamps_dataset': {'sm': LES_OUTPUT_ROOT + "/clex9_nov02_coamps_sm.nc",
-                               'sw': LES_OUTPUT_ROOT + "/clex9_nov02_coamps_sw.nc"},
+                                  'sw': LES_OUTPUT_ROOT + "/clex9_nov02_coamps_sw.nc"},
                'r408_file': None,
                'hoc_file': None,
                'e3sm_file': None,
                'sam_file': None,
+               'wrf_file': None,
                'var_groups': [VariableGroupBase, VariableGroupLiquidMP, VariableGroupIceMP]}
 
 CLEX9_OCT14 = {'name': 'clex9_oct14', 'start_time': 181, 'end_time': 240, 'height_min_value': 2188,
@@ -221,11 +234,12 @@ CLEX9_OCT14 = {'name': 'clex9_oct14', 'start_time': 181, 'end_time': 240, 'heigh
                'blacklisted_vars': [],
                'les_dataset': None,
                'coamps_dataset': {'sm': LES_OUTPUT_ROOT + "/clex9_oct14_coamps_sm.nc",
-                               'sw': LES_OUTPUT_ROOT + "/clex9_oct14_coamps_sw.nc"},
+                                  'sw': LES_OUTPUT_ROOT + "/clex9_oct14_coamps_sw.nc"},
                'r408_file': None,
                'hoc_file': None,
                'e3sm_file': None,
                'sam_file': None,
+               'wrf_file': None,
                'var_groups': [VariableGroupBase, VariableGroupLiquidMP, VariableGroupIceMP]}
 
 DYCOMS2_RF01 = {'name': 'dycoms2_rf01', 'start_time': 181, 'end_time': 240, 'height_min_value': 0,
@@ -241,6 +255,7 @@ DYCOMS2_RF01 = {'name': 'dycoms2_rf01', 'start_time': 181, 'end_time': 240, 'hei
                              'sfc': HOC_OUTPUT_ROOT + '/dycoms2_rf01_sfc.nc'},
                 'e3sm_file': e3sm_output_root + "/dycoms2_rf01.nc",
                 'sam_file': None,
+                'wrf_file': None,
                 'var_groups': [VariableGroupBase, VariableGroupWs]}
 
 DYCOMS2_RF01_FIXED_SST = {'name': 'dycoms2_rf01_fixed_sst', 'start_time': 2520, 'end_time': 2700, 'height_min_value': 0,
@@ -253,6 +268,7 @@ DYCOMS2_RF01_FIXED_SST = {'name': 'dycoms2_rf01_fixed_sst', 'start_time': 2520, 
                           'hoc_file': None,
                           'e3sm_file': None,
                           'sam_file': None,
+                          'wrf_file': None,
                           'var_groups': [VariableGroupBase]}
 
 DYCOMS2_RF02_DO = {'name': 'dycoms2_rf02_do', 'start_time': 301, 'end_time': 360, 'height_min_value': 0,
@@ -268,9 +284,9 @@ DYCOMS2_RF02_DO = {'name': 'dycoms2_rf02_do', 'start_time': 301, 'end_time': 360
                                 'sfc': HOC_OUTPUT_ROOT + '/dycoms2_rf02_do_sfc.nc'},
                    'e3sm_file': None,
                    'sam_file': None,
+                   'wrf_file': None,
                    'var_groups': [VariableGroupBase, VariableGroupWs, VariableGroupLiquidMP, VariableGroupCorrelations,
                                   VariableGroupKKMP]}
-
 
 DYCOMS2_RF02_DS = {'name': 'dycoms2_rf02_ds', 'start_time': 301, 'end_time': 360, 'height_min_value': 0,
                    'height_max_value': 1200,
@@ -285,6 +301,7 @@ DYCOMS2_RF02_DS = {'name': 'dycoms2_rf02_ds', 'start_time': 301, 'end_time': 360
                                 'sfc': HOC_OUTPUT_ROOT + '/dycoms2_rf02_ds_sfc.nc'},
                    'e3sm_file': e3sm_output_root + "/dycoms2_rf02_ds.nc",
                    'sam_file': None,
+                   'wrf_file': None,
                    'var_groups': [VariableGroupBase, VariableGroupWs, VariableGroupLiquidMP, VariableGroupCorrelations,
                                   VariableGroupKKMP]}
 
@@ -301,6 +318,7 @@ DYCOMS2_RF02_ND = {'name': 'dycoms2_rf02_nd', 'start_time': 301, 'end_time': 360
                                 'sfc': HOC_OUTPUT_ROOT + '/dycoms2_rf02_nd_sfc.nc'},
                    'e3sm_file': None,
                    'sam_file': None,
+                   'wrf_file': None,
                    'var_groups': [VariableGroupBase, VariableGroupWs, VariableGroupLiquidMP, VariableGroupKKMP]}
 
 DYCOMS2_RF02_SO = {'name': 'dycoms2_rf02_so', 'start_time': 301, 'end_time': 360, 'height_min_value': 0,
@@ -316,6 +334,7 @@ DYCOMS2_RF02_SO = {'name': 'dycoms2_rf02_so', 'start_time': 301, 'end_time': 360
                                 'sfc': HOC_OUTPUT_ROOT + '/dycoms2_rf02_so_sfc.nc'},
                    'e3sm_file': None,
                    'sam_file': None,
+                   'wrf_file': None,
                    'var_groups': [VariableGroupBase, VariableGroupWs, VariableGroupLiquidMP, VariableGroupKKMP]}
 
 FIRE = {'name': 'fire', 'start_time': 61, 'end_time': 120, 'height_min_value': 0, 'height_max_value': 1000,
@@ -323,7 +342,7 @@ FIRE = {'name': 'fire', 'start_time': 61, 'end_time': 120, 'height_min_value': 0
         'blacklisted_vars': [],
         'les_dataset': None,
         'coamps_dataset': {'sm': LES_OUTPUT_ROOT + "/fire_coamps_sm.nc",
-                        'sw': LES_OUTPUT_ROOT + "/fire_coamps_sw.nc"},
+                           'sw': LES_OUTPUT_ROOT + "/fire_coamps_sw.nc"},
         'r408_file': {'zm': R408_OUTPUT_ROOT + '/Chris_Golaz_best_ever/fire_zm.nc',
                       'zt': R408_OUTPUT_ROOT + '/Chris_Golaz_best_ever/fire_zt.nc',
                       'sfc': R408_OUTPUT_ROOT + '/Chris_Golaz_best_ever/fire_sfc.nc'},
@@ -332,6 +351,7 @@ FIRE = {'name': 'fire', 'start_time': 61, 'end_time': 120, 'height_min_value': 0
                      'sfc': HOC_OUTPUT_ROOT + '/fire_sfc.nc'},
         'e3sm_file': None,
         'sam_file': None,
+        'wrf_file': None,
         'var_groups': [VariableGroupBase, VariableGroupWs]}
 
 # No budgets
@@ -341,11 +361,12 @@ GABLS2 = {'name': 'gabls2', 'start_time': 2101, 'end_time': 2160, 'height_min_va
                                'rcp2', 'thlpthvp', 'rtpthvp'],
           'les_dataset': None,
           'coamps_dataset': {'sm': LES_OUTPUT_ROOT + "/gabls2_coamps_sm.nc",
-                          'sw': LES_OUTPUT_ROOT + "/gabls2_coamps_sw.nc"},
+                             'sw': LES_OUTPUT_ROOT + "/gabls2_coamps_sw.nc"},
           'r408_file': None,
           'hoc_file': None,
           'e3sm_file': None,
           'sam_file': None,
+          'wrf_file': None,
           'var_groups': [VariableGroupBase]}
 
 GABLS3 = {'name': 'gabls3', 'start_time': 1081, 'end_time': 1200, 'height_min_value': 0, 'height_max_value': 4970,
@@ -357,6 +378,7 @@ GABLS3 = {'name': 'gabls3', 'start_time': 1081, 'end_time': 1200, 'height_min_va
           'hoc_file': None,
           'e3sm_file': None,
           'sam_file': None,
+          'wrf_file': None,
           'var_groups': [VariableGroupBase]}
 
 GABLS3_NIGHT = {'name': 'gabls3_night', 'start_time': 421, 'end_time': 480, 'height_min_value': 0,
@@ -368,6 +390,7 @@ GABLS3_NIGHT = {'name': 'gabls3_night', 'start_time': 421, 'end_time': 480, 'hei
                 'hoc_file': None,
                 'e3sm_file': None,
                 'sam_file': None,
+                'wrf_file': None,
                 'var_groups': [VariableGroupBase]}
 
 # Use to plot IOP forced SAM runs
@@ -388,11 +411,12 @@ JUN25_ALTOCU = {'name': 'jun25_altocu', 'start_time': 181, 'end_time': 240, 'hei
                 'blacklisted_vars': ['Ngm', 'wprrp', 'wpNrp'],
                 'les_dataset': None,
                 'coamps_dataset': {'sm': LES_OUTPUT_ROOT + "/jun25_altocu_qc3_coamps_sm.nc",
-                                'sw': LES_OUTPUT_ROOT + "/jun25_altocu_qc3_coamps_sw.nc"},
+                                   'sw': LES_OUTPUT_ROOT + "/jun25_altocu_qc3_coamps_sw.nc"},
                 'r408_file': None,
                 'hoc_file': None,
                 'e3sm_file': None,
                 'sam_file': None,
+                'wrf_file': None,
                 'var_groups': [VariableGroupBase, VariableGroupLiquidMP, VariableGroupIceMP]}
 
 LBA = {'name': 'lba', 'start_time': 300, 'end_time': 360, 'height_min_value': 0, 'height_max_value': 12000,
@@ -404,6 +428,7 @@ LBA = {'name': 'lba', 'start_time': 300, 'end_time': 360, 'height_min_value': 0,
        'hoc_file': None,
        'e3sm_file': None,
        'sam_file': None,
+       'wrf_file': None,
        'var_groups': [VariableGroupBase, VariableGroupLiquidMP, VariableGroupIceMP, VariableGroupWs]}
 
 MC3E = {'name': 'mc3e', 'start_time': 1, 'end_time': 64800, 'height_min_value': 0, 'height_max_value': 18000,
@@ -415,6 +440,7 @@ MC3E = {'name': 'mc3e', 'start_time': 1, 'end_time': 64800, 'height_min_value': 
         'hoc_file': None,
         'e3sm_file': None,
         'sam_file': None,
+        'wrf_file': None,
         'var_groups': [VariableGroupBase, VariableGroupLiquidMP, VariableGroupIceMP]}
 
 MPACE_A = {'name': 'mpace_a', 'start_time': 4141, 'end_time': 4320, 'height_min_value': 0, 'height_max_value': 10000,
@@ -426,6 +452,7 @@ MPACE_A = {'name': 'mpace_a', 'start_time': 4141, 'end_time': 4320, 'height_min_
            'hoc_file': None,
            'e3sm_file': None,
            'sam_file': None,
+           'wrf_file': None,
            'var_groups': [VariableGroupBase, VariableGroupLiquidMP, VariableGroupIceMP]}
 
 MPACE_B = {'name': 'mpace_b', 'start_time': 541, 'end_time': 720, 'height_min_value': 0, 'height_max_value': 2750,
@@ -433,12 +460,13 @@ MPACE_B = {'name': 'mpace_b', 'start_time': 541, 'end_time': 720, 'height_min_va
            'blacklisted_vars': ['Ngm', 'wpNrp'],
            'les_dataset': None,
            'coamps_dataset': {'sm': LES_OUTPUT_ROOT + "/mpace_b_coamps_sm.nc",
-                           'sw': LES_OUTPUT_ROOT + "/mpace_b_coamps_sw.nc",
-                           'sfc': LES_OUTPUT_ROOT + "/mpace_b_coamps_sfc.nc"},
+                              'sw': LES_OUTPUT_ROOT + "/mpace_b_coamps_sw.nc",
+                              'sfc': LES_OUTPUT_ROOT + "/mpace_b_coamps_sfc.nc"},
            'r408_file': None,
            'hoc_file': None,
            'e3sm_file': None,
            'sam_file': None,
+           'wrf_file': None,
            'var_groups': [VariableGroupBase, VariableGroupLiquidMP, VariableGroupIceMP]}
 
 MPACE_B_SILHS = {'name': 'mpace_b_silhs', 'start_time': 541, 'end_time': 720, 'height_min_value': 0,
@@ -446,11 +474,12 @@ MPACE_B_SILHS = {'name': 'mpace_b_silhs', 'start_time': 541, 'end_time': 720, 'h
                  'blacklisted_vars': ['Ngm', 'wpNrp'],
                  'les_dataset': None,
                  'coamps_dataset': {'sm': LES_OUTPUT_ROOT + "/mpace_b_coamps_sm.nc",
-                                 'sw': LES_OUTPUT_ROOT + "/mpace_b_coamps_sw.nc"},
+                                    'sw': LES_OUTPUT_ROOT + "/mpace_b_coamps_sw.nc"},
                  'r408_file': None,
                  'hoc_file': None,
                  'e3sm_file': None,
                  'sam_file': None,
+                 'wrf_file': None,
                  'var_groups': [VariableGroupBase, VariableGroupLiquidMP, VariableGroupIceMP]}
 
 NOV11_ALTOCU = {'name': 'nov11_altocu', 'start_time': 91, 'end_time': 150, 'height_min_value': 4150,
@@ -458,7 +487,7 @@ NOV11_ALTOCU = {'name': 'nov11_altocu', 'start_time': 91, 'end_time': 150, 'heig
                 'blacklisted_vars': ['Ngm'],
                 'les_dataset': None,
                 'coamps_dataset': {'sm': LES_OUTPUT_ROOT + "/nov11_altocu_coamps_sm.nc",
-                                'sw': LES_OUTPUT_ROOT + "/nov11_altocu_coamps_sw.nc"},
+                                   'sw': LES_OUTPUT_ROOT + "/nov11_altocu_coamps_sw.nc"},
                 'r408_file': {'zm': R408_OUTPUT_ROOT + '/Chris_Golaz_best_ever/nov11_altocu_zm.nc',
                               'zt': R408_OUTPUT_ROOT + '/Chris_Golaz_best_ever/nov11_altocu_zt.nc',
                               'sfc': R408_OUTPUT_ROOT + '/Chris_Golaz_best_ever/nov11_altocu_sfc.nc'},
@@ -467,6 +496,7 @@ NOV11_ALTOCU = {'name': 'nov11_altocu', 'start_time': 91, 'end_time': 150, 'heig
                              'sfc': HOC_OUTPUT_ROOT + '/nov11_altocu_sfc.nc'},
                 'e3sm_file': None,
                 'sam_file': None,
+                'wrf_file': None,
                 'var_groups': [VariableGroupBase, VariableGroupLiquidMP, VariableGroupIceMP]}
 
 RICO = {'name': 'rico', 'start_time': 4201, 'end_time': 4320, 'height_min_value': 0, 'height_max_value': 4000,
@@ -478,7 +508,8 @@ RICO = {'name': 'rico', 'start_time': 4201, 'end_time': 4320, 'height_min_value'
         'r408_file': None,
         'hoc_file': None,
         'e3sm_file': e3sm_output_root + "/rico.nc",
-        'sam_file': sam_output_root+ "/RICO_256x256x100_drizzle.nc",
+        'sam_file': sam_output_root + "/RICO_256x256x100_drizzle.nc",
+        'wrf_file': None,
         'var_groups': [VariableGroupBase, VariableGroupLiquidMP, VariableGroupWs, VariableGroupCorrelations,
                        VariableGroupKKMP]}
 
@@ -493,6 +524,7 @@ RICO_SILHS = {'name': 'rico_silhs', 'start_time': 4201, 'end_time': 4320, 'heigh
               'hoc_file': None,
               'e3sm_file': None,
               'sam_file': None,
+              'wrf_file': None,
               'var_groups': [VariableGroupBase, VariableGroupLiquidMP, VariableGroupWs, VariableGroupCorrelations,
                              VariableGroupKKMP]}
 
@@ -505,6 +537,7 @@ TWP_ICE = {'name': 'twp_ice', 'start_time': 1, 'end_time': 9900, 'height_min_val
            'hoc_file': None,
            'e3sm_file': None,
            'sam_file': None,
+           'wrf_file': None,
            'var_groups': [VariableGroupBase, VariableGroupLiquidMP, VariableGroupIceMP]}
 
 WANGARA = {'name': 'wangara', 'start_time': 181, 'end_time': 240, 'height_min_value': 0, 'height_max_value': 1900,
@@ -521,6 +554,7 @@ WANGARA = {'name': 'wangara', 'start_time': 181, 'end_time': 240, 'height_min_va
                         'sfc': HOC_OUTPUT_ROOT + '/wangara_sfc.nc'},
            'e3sm_file': None,
            'sam_file': None,
+           'wrf_file': None,
            'var_groups': [VariableGroupBase, VariableGroupWs]}
 
 # DO NOT EDIT THIS LIST UNLESS YOU ARE ADDING A NEW CASE. NEVER REMOVE CASES FROM THIS LIST. You may define a subset of cases at the end of this file.
@@ -542,4 +576,3 @@ ALL_CASES = [ARM, ARM_97, ASTEX_A209, ATEX,
 
 # If uncommented, this line will override the real ALL_CASES given above, forcing pyplotgen to only plot some cases.
 # ALL_CASES = [ARM]
-

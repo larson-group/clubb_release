@@ -10,6 +10,8 @@ from warnings import warn
 import numpy as np
 from netCDF4 import Dataset
 
+from config import Case_definitions
+
 
 class NetCdfVariable:
     """
@@ -55,7 +57,6 @@ class NetCdfVariable:
             if tempname in dataset_with_var.variables.keys():
                 indep_var_name_in_dataset = tempname
                 break
-
         self.ncdf_data = dataset_with_var
         self.name = varname
         self.independent_var_name = indep_var_name_in_dataset
@@ -219,14 +220,27 @@ class DataReader():
         avg_axis = ncdf_variable.avg_axis
         independent_var_name = ncdf_variable.independent_var_name
         time_conv_factor = 1
-        time_values = self.__getValuesFromNc__(netcdf_dataset, "time", time_conv_factor)
+        time_values = None
+        for time_var in Case_definitions.TIME_VAR_NAMES:
+            if time_var in netcdf_dataset.variables.keys():
+                time_values = self.__getValuesFromNc__(netcdf_dataset, time_var, time_conv_factor)
+        if time_values is None:
+            raise NameError("None of the time variables " + str(Case_definitions.TIME_VAR_NAMES) + " could be found in the dataset " + str(netcdf_dataset.filepath()))
         if end_time_value == -1:
             if variable_name != 'time' and variable_name != 'z' and variable_name != 'altitude' and variable_name != 'lev' and variable_name != 'Z3':
                 warn("End time value was not specified (or was set to -1) for variable "+variable_name+". Automatically using last time in dataset.")
             end_time_value = time_values[-1]
         # Get the index values that correspond to the desired start/end x values
         start_avg_index, end_avg_idx = self.__getStartEndIndex__(time_values, start_time_value, end_time_value)
-        independent_values = self.__getValuesFromNc__(netcdf_dataset, independent_var_name, 1)
+
+        indep_var_not_found = independent_var_name is None
+        if indep_var_not_found:
+            raise NameError("None of the independent variables " + str(independent_var_name) + " could be found in the dataset " + str(ncdf_variable.ncdf_data.filepath()))
+        else:
+            independent_values = self.__getValuesFromNc__(netcdf_dataset, independent_var_name, 1)
+
+        if independent_values.ndim > 1:  # not ncdf_variable.one_dimensional:
+            independent_values = self.__meanProfiles__(independent_values, start_avg_index, end_avg_idx + 1, avg_axis=avg_axis)
 
         try:
             dependent_values = self.__getValuesFromNc__(netcdf_dataset, variable_name, conv_factor)
@@ -240,6 +254,8 @@ class DataReader():
         # (e.g. e3sm height = clubb height + 650 for the dycoms2_rf01 case). This eliminates that offset.
         if variable_name == 'Z3':
             dependent_values = dependent_values - dependent_values[-1]
+        if independent_var_name == 'Z3':
+            independent_values = independent_values - independent_values[-1]
 
         # Change all remaining NaN values to 0
         if 'SAM version' in netcdf_dataset.ncattrs():
@@ -389,22 +405,23 @@ class DataReader():
         hrs_in_day = 24
         min_in_hr = 60
         sec_in_min = 60
-        if varname == 'time' and 'day' in ncdf_data.variables[varname].units:
+        if varname in Case_definitions.TIME_VAR_NAMES and 'day' in ncdf_data.variables[varname].units:
             var_values = var_values[:] * hrs_in_day * min_in_hr
             var_values = var_values[:] - var_values[0] + 1
             # var_values = [i for i in range(1,len(var_values) + 1)]
 
-        if varname == 'time' and 'hour' in ncdf_data.variables[varname].units:
+        if varname in Case_definitions.TIME_VAR_NAMES and 'hour' in ncdf_data.variables[varname].units:
             var_values = var_values[:] * min_in_hr
             var_values = var_values[:] - var_values[0] + 1
 
-        if varname == 'time' and 'sec' in ncdf_data.variables[varname].units:
+        if varname in Case_definitions.TIME_VAR_NAMES and 'sec' in ncdf_data.variables[varname].units:
             var_values = var_values[:] / sec_in_min
             var_values = var_values[:] - var_values[0] + 1
 
-        elif self.getNcdfSourceModel(ncdf_data) == 'unknown-model' and 'sfc' not in ncdf_data.history:
+        src_model = self.getNcdfSourceModel(ncdf_data)
+        if src_model == 'unknown-model':
             warn("Warning, unknown model detected. PyPlotgen doesn't know where this netcdf dependent_data is from." + str(ncdf_data))
-            if varname == 'time':
+            if varname in Case_definitions.TIME_VAR_NAMES:
                 warn("Attempting to autoshift time values")
                 var_values = var_values[:] - var_values[0] + 1
 
@@ -467,9 +484,11 @@ class DataReader():
                 return 'sam'
             elif 'lev' in dataset.variables.keys():
                 return 'coamps'
-            elif 'sfc' in dataset.history:
+            elif hasattr(dataset, 'TITLE') and 'WRF' in dataset.TITLE:
+                return 'wrf'
+            elif hasattr(dataset, 'history') and 'sfc' in dataset.history:
                 return 'sfc calculations'
-            elif 'Z3' in dataset.history:
+            elif hasattr(dataset, 'history') and 'Z3' in dataset.history:
                 return 'e3sm'
             else:
                 return 'unknown-model'

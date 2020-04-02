@@ -168,11 +168,7 @@ Steps:
 2. Include the equation used for the calculation in a pydoc method comment, see example below
 ~~~~python
     def getWpthlpFallback(self, dataset_override = None):
-        """
-        This gets called if WPTHLP isn't outputted in an nc file as a backup way of gathering the data for plotting.
-        WPTHLP = (TLFLUX) ./ (RHO * 1004)
-        :return:
-        """
+        dependent_data
         # code
 ~~~~
 3. Retrieve the variables needed for calculation using `self.getVarForCalculations(['list', 'of', 'aliases'], self.model_file) # self.model_file refers to variables like self.sam_file and self.coamps_file`. See example below
@@ -193,11 +189,7 @@ Steps:
 Here is the full example:
 ~~~~python
     def getWpthlpFallback(self, dataset_override = None):
-        """
-        This gets called if WPTHLP isn't outputted in an nc file as a backup way of gathering the data for plotting.
-        WPTHLP = (TLFLUX) ./ (RHO * 1004)
-        :return:
-        """
+        dependent_data
         tlflux = self.getVarForCalculations(['TLFLUX'], self.sam_file)
         rho = self.getVarForCalculations(['RHO'], self.sam_file)
         z = self.getVarForCalculations(['z', 'lev', 'altitude'], self.sam_file)

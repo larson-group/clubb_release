@@ -27,8 +27,10 @@ class PyPlotGen:
 
     """
 
-    def __init__(self, output_folder, clubb_folders=None, replace=False, les=False, cgbest=False, hoc=False, plotrefs=False,
-                 zip=False, thin=False, no_legends=False, ensemble=False, plot_e3sm="", sam_folders = [""],
+    def __init__(self, output_folder, clubb_folders=None, replace=False, les=False, cgbest=False, hoc=False,
+                 plotrefs=False,
+                 zip=False, thin=False, no_legends=False, ensemble=False, plot_e3sm="", sam_folders=[""],
+                 wrf_folders=[""],
                  budget_moments=False, bu_morr=False, diff=None, show_alphabetic_id=False):
         """
         This creates an instance of PyPlotGen. Each parameter is a command line parameter passed in from the argparser
@@ -57,6 +59,7 @@ class PyPlotGen:
         self.les = les
         self.e3sm_dir = plot_e3sm
         self.sam_folders = sam_folders
+        self.wrf_folders = wrf_folders
         self.cgbest = cgbest
         self.hoc = hoc
         self.plot_diff = diff
@@ -113,15 +116,18 @@ class PyPlotGen:
                     clubb_case_datasets = self.clubb_datasets[casename]
                 else:
                     clubb_case_datasets = {}
-                case = Case(case_def, clubb_folders=clubb_case_datasets, plot_les=self.les, plot_budgets=self.plot_budgets, sam_folders = self.sam_folders,
-                            diff_datasets=case_diff_datasets, plot_r408=self.cgbest, plot_hoc=self.hoc, e3sm_dirs=self.e3sm_dir)
+                case = Case(case_def, clubb_folders=clubb_case_datasets, plot_les=self.les,
+                            plot_budgets=self.plot_budgets, sam_folders=self.sam_folders, wrf_folders=self.wrf_folders,
+                            diff_datasets=case_diff_datasets, plot_r408=self.cgbest, plot_hoc=self.hoc,
+                            e3sm_dirs=self.e3sm_dir)
                 case.plot(self.output_folder, replace_images=self.replace_images, no_legends=self.no_legends,
                           thin_lines=self.thin, show_alphabetic_id=self.show_alphabetic_id)
                 self.cases_plotted.append(casename)
         print('###########################################')
         if num_cases_plotted == 0:
-            warn("Warning, no cases were plotted! Please either specify an input folder for a supported model (e.g. using --sam, --clubb, or --e3sm) or make sure the "
-                 "default clubb output folder contains .nc output. Please run ./pyplotgen.py -h for more information on parameters.")
+            warn(
+                "Warning, no cases were plotted! Please either specify an input folder for a supported model (e.g. using --sam, --clubb, or --e3sm) or make sure the "
+                "default clubb output folder contains .nc output. Please run ./pyplotgen.py -h for more information on parameters.")
         print("\nGenerating webpage for viewing plots ")
         if not os.path.exists(self.output_folder):
             os.mkdir(self.output_folder)
@@ -141,10 +147,10 @@ class PyPlotGen:
         :return:
         """
         e3sm_has_case = len(self.e3sm_dir) != 0 and case_def['e3sm_file'] != None
-        sam_has_case = len(self.sam_folders) != 0  and case_def['sam_file'] != None
+        sam_has_case = len(self.sam_folders) != 0 and case_def['sam_file'] != None
+        wrf_has_case = len(self.wrf_folders) != 0 and case_def['wrf_file'] != None
         clubb_has_case = self.clubb_datasets is not None and case_def['name'] in self.clubb_datasets.keys()
-        return e3sm_has_case or sam_has_case or clubb_has_case or self.hoc or self.cgbest or self.les
-
+        return e3sm_has_case or sam_has_case or wrf_has_case or clubb_has_case or self.hoc or self.cgbest or self.les
 
     def __copySetupFiles__(self):
         """
@@ -178,7 +184,6 @@ class PyPlotGen:
         """
         return self.les or self.hoc or self.cgbest
 
-
     def __downloadModelOutputs__(self):
         """
         Checks for model output, e.g. sam benchmark runs, and if it
@@ -192,8 +197,9 @@ class PyPlotGen:
         print("Checking for model benchmark output...")
         if not os.path.isdir(Case_definitions.BENCHMARK_OUTPUT_ROOT) and \
                 not os.path.islink(Case_definitions.BENCHMARK_OUTPUT_ROOT):
-            print("\tDownloading the benchmarks to "+ Case_definitions.BENCHMARK_OUTPUT_ROOT)
-            subprocess.run(['git', 'clone', 'https://carson.math.uwm.edu/les_and_clubb_benchmark_runs.git',Case_definitions.BENCHMARK_OUTPUT_ROOT])
+            print("\tDownloading the benchmarks to " + Case_definitions.BENCHMARK_OUTPUT_ROOT)
+            subprocess.run(['git', 'clone', 'https://carson.math.uwm.edu/les_and_clubb_benchmark_runs.git',
+                            Case_definitions.BENCHMARK_OUTPUT_ROOT])
         else:
             print("Benchmark output found in " + Case_definitions.BENCHMARK_OUTPUT_ROOT)
 
@@ -221,15 +227,17 @@ def __process_args__():
     parser.add_argument("-r", "--replace", help="If the output folder already exists, replace it with the new one.",
                         action="store_true")
     parser.add_argument("-l", "--les", help="Plot LES dependent_data for comparison.", action="store_true")
-    parser.add_argument("-e", "--e3sm", help="Plot E3SM dependent_data for comparison. Pass a folder in with this option. This "
-                                             "folder must contain the e3sm nc files in the root directory, "
-                                             "where each filename is the name of the clubb case to plot it with. E.g. "
-                                             "name a file dycoms2_rfo2_ds.nc to plot it with that clubb case.",
+    parser.add_argument("-e", "--e3sm",
+                        help="Plot E3SM dependent_data for comparison. Pass a folder in with this option. This "
+                             "folder must contain the e3sm nc files in the root directory, "
+                             "where each filename is the name of the clubb case to plot it with. E.g. "
+                             "name a file dycoms2_rfo2_ds.nc to plot it with that clubb case.",
                         action="store",
                         default=[], nargs='+')
     parser.add_argument("-g", "--plot-golaz-best", help="Plot Chris Golaz Best Ever dependent_data for comparison.",
                         action="store_true")
-    parser.add_argument("-d", "--plot-hoc-2005", help="Plot !HOC 12/17/2015 dependent_data for comparison.", action="store_true")
+    parser.add_argument("-d", "--plot-hoc-2005", help="Plot !HOC 12/17/2015 dependent_data for comparison.",
+                        action="store_true")
     parser.add_argument("-a", "--all-best",
                         help="Same as -lbd. Plots LES, Golaz Best Ever, and HOC 2005 dependent_data for comparison.",
                         action="store_true")
@@ -248,9 +256,11 @@ def __process_args__():
                              "plotting the benchmark output, though this output doesn't gurantee all text fields or plots are filled.",
                         action="store_true")
     parser.add_argument("--diff", help="Plot the difference between two clubb folders", action="store")
-    parser.add_argument("-c", "--clubb", help="Input folder(s) containing clubb netcdf dependent_data.", action="store",
+    parser.add_argument("-c", "--clubb", help="Input folder(s) containing clubb netcdf data.", action="store",
                         default=[], nargs='+')
-    parser.add_argument("-s", "--sam", help="Input folder(s) containing sam netcdf dependent_data.", action="store",
+    parser.add_argument("-s", "--sam", help="Input folder(s) containing sam netcdf data.", action="store",
+                        default=[], nargs='+')
+    parser.add_argument("-w", "--wrf", help="Input folder(s) containing wrf netcdf data.", action="store",
                         default=[], nargs='+')
     parser.add_argument("-o", "--output", help="Name of folder to create and store plots into.", action="store",
                         default="./output")
@@ -280,7 +290,11 @@ def __process_args__():
         if args.e3sm[i][-1] == "/":
             args.e3sm[i] = args.e3sm[i][:-1]
 
-    no_folders_inputed = len(args.e3sm) == 0 and len(args.sam) == 0 and len(args.clubb) == 0
+    for i in range(len(args.wrf)):
+        if args.wrf[i][-1] == "/":
+            args.wrf[i] = args.e3sm[i][:-1]
+
+    no_folders_inputed = len(args.e3sm) == 0 and len(args.sam) == 0 and len(args.clubb) == 0 and len(args.wrf) == 0
     if no_folders_inputed and not args.benchmark_only:
         args.clubb = ["../../output"]
 
@@ -289,8 +303,10 @@ def __process_args__():
         cgbest = True
         hoc = True
 
-    pyplotgen = PyPlotGen(args.output, clubb_folders=args.clubb, replace=args.replace, les=les, plot_e3sm=e3sm, cgbest=cgbest,
-                          hoc=hoc, plotrefs=args.all_best, zip=args.zip, thin=args.thin, sam_folders = args.sam,
+    pyplotgen = PyPlotGen(args.output, clubb_folders=args.clubb, replace=args.replace, les=les, plot_e3sm=e3sm,
+                          cgbest=cgbest,
+                          hoc=hoc, plotrefs=args.all_best, zip=args.zip, thin=args.thin, sam_folders=args.sam,
+                          wrf_folders=args.wrf,
                           no_legends=args.no_legends, ensemble=args.ensemble, budget_moments=args.plot_budgets,
                           bu_morr=args.bu_morr, diff=args.diff, show_alphabetic_id=args.show_alphabetic_id)
     return pyplotgen
