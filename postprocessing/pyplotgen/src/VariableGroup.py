@@ -376,7 +376,7 @@ class VariableGroup:
 
         if 'axis_title' not in variable_def_dict.keys():
             if panel_type == Panel.TYPE_BUDGET and len(all_lines) is not 0:
-                any_varname_with_budget_units = all_lines[0].label
+                any_varname_with_budget_units = [var.label for var in all_lines]
                 axis_title = "[" + data_reader.__getUnits__(first_input_datasets, any_varname_with_budget_units) + "]"
             else:
                 imported_axis_title = data_reader.getAxisTitle(first_input_datasets, plotted_models_varname)

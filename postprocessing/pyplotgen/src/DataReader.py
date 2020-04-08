@@ -311,7 +311,7 @@ class DataReader():
                  "averaging instead.")
         return var_average
 
-    def __getUnits__(self, datasets, varname):
+    def __getUnits__(self, datasets, varnames):
         """
         Input:
           nc         --  Netcdf file object
@@ -320,14 +320,24 @@ class DataReader():
           unit as string
         """
         units = "units n/a"
-        for dataset in datasets:
-            keys = dataset.variables.keys()
-            if varname in keys and hasattr(dataset.variables[varname], 'units'):
-                raw_units = dataset.variables[varname].units
-                raw_units = self.__remove_invalid_unit_chars__(raw_units)
-                if len(raw_units) > 0:
-                    units = "$" + raw_units + "$" # $'s are used to format equations
-                    break
+        if not isinstance(varnames, list):
+            varnames = [varnames]
+
+        for name in varnames:
+            var_found = False
+            for dataset in datasets:
+                keys = dataset.variables.keys()
+                if name in keys and hasattr(dataset.variables[name], 'units'):
+                    var_found = True
+                    raw_units = dataset.variables[name].units
+                    raw_units = self.__remove_invalid_unit_chars__(raw_units)
+                    if len(raw_units) > 0:
+                        units = "$" + raw_units + "$" # $'s are used to format equations
+                        break
+            if var_found:
+                break
+        if units == "units n/a":
+            warn("Failed to find units for variables " + str(varnames))
         return units
 
     def getLongName(self, ncdf_datasets, varnames):
