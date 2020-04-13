@@ -43,12 +43,12 @@ module clubb_driver
 
     use grid_class, only: gr !----------------------------------------------- Variable(s)
 
-    use grid_class, only: read_grid_heights, zt2zm, zm2zt ! ------------------Procedure(s)
+    use grid_class, only: read_grid_heights, zt2zm, zm2zt !------------------ Procedure(s)
 
-    use parameter_indices, only: nparams !----------------------------------- Variable(s)
+    use parameter_indices, only: nparams, ic_K !----------------------------- Variable(s)
 
     use variables_diagnostic_module, only: ug, vg, em,  & !------------------ Variable(s)
-      thvm, Lscale, Skw_zm, thlp3, rtp3, Kh_zm, K_hm, &
+      thvm, Lscale, Skw_zm, thlp3, rtp3, Kh_zm, Kh_zt, K_hm, &
       um_ref, vm_ref, Nccnm, wp2_zt, &
       wpthvp, wp2thvp, rtpthvp, thlpthvp, &
       sclrpthvp, pdf_params_zm, &
@@ -94,8 +94,18 @@ module clubb_driver
       calculate_thlp2_rad
 
     use constants_clubb, only: &
-      fstdout, fstderr, zero, one, & !--------------------------------------- Constant(s)
-      rt_tol, thl_tol, w_tol, w_tol_sqd, eps
+        fstdout, & !--------------------------------------------------------- Constant(s)
+        fstderr, &
+        three_halves, &
+        one, &
+        one_half, &
+        zero, &
+        rt_tol, &
+        thl_tol, &
+        w_tol, &
+        w_tol_sqd, &
+        em_min, &
+        eps
 
     use error_code, only: &
         clubb_at_least_debug_level,  & ! ------------------------------------ Procedures
@@ -1628,6 +1638,7 @@ module clubb_driver
              rtpthlp_forcing, wm_zm, wm_zt, &                     ! Intent(in)
              wpthlp_sfc, wprtp_sfc, upwp_sfc, vpwp_sfc, &         ! Intent(in)
              wpsclrp_sfc, wpedsclrp_sfc,  &                       ! Intent(in)
+             rtm_ref, thlm_ref, um_ref, vm_ref, ug, vg, &         ! Intent(in)
              p_in_Pa, rho_zm, rho, exner, &                       ! Intent(in)
              rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm, &             ! Intent(in)
              invrs_rho_ds_zt, thv_ds_zm, thv_ds_zt, hydromet, &   ! Intent(in)
@@ -1645,6 +1656,7 @@ module clubb_driver
              sclrpthvp, &                                         ! Intent(inout)
              pdf_params, pdf_params_zm, &                         ! Intent(inout)
              pdf_implicit_coefs_terms, &                          ! intent(inout)
+             Kh_zm, Kh_zt, &                                      ! intent(out)
              wprcp, ice_supersat_frac, &                          ! Intent(out)
              rcm_in_layer, cloud_cover, &                         ! Intent(out)
              err_code_dummy )                                     ! Intent(out)
@@ -1712,6 +1724,40 @@ module clubb_driver
         !$acc&              lh_rt_clipped, lh_thl_clipped, lh_rc_clipped, lh_rv_clipped, &
         !$acc&              lh_Nc_clipped ) &
         !$acc& async(1)
+
+        ! The profile of CLUBB's mixing length, Lscale, is passed into
+        ! subroutine generate_silhs_sample for use in calculating the vertical
+        ! correlation coefficient.  Rather than output Lscale directly, its
+        ! value can be calculated from other fields that are already output from
+        ! subroutine advance_clubb_core.  The equation relating Lscale to eddy
+        ! diffusivity is:
+        !
+        ! Kh = c_K * Lscale * sqrt( TKE ).
+        !
+        ! Kh is available, TKE can be calculated from wp2, up2, and vp2, all of
+        ! which are available, and c_K is easily extracted from CLUBB's tunable
+        ! parameters.  The equation for Lscale is:
+        !
+        ! Lscale = Kh / ( c_K * sqrt( TKE ) ).
+        !
+        ! Since Kh and TKE are output on momentum grid levels, the resulting
+        ! calculation of Lscale is also found on momentum levels.  It needs to
+        ! be interpolated back to thermodynamic (midpoint) grid levels for
+        ! further use.
+
+        ! Calculate TKE
+        if ( .not. clubb_config_flags%l_tke_aniso ) then
+           ! tke is assumed to be 3/2 of wp2
+           em = three_halves * wp2
+        else
+           em = one_half * ( wp2 + vp2 + up2 )
+        endif
+
+        ! Calculate Lscale on momentum levels and then interpolate back to
+        ! thermodynamic levels.
+        Lscale &
+        = max( zm2zt( Kh_zm / ( params(ic_K) * sqrt( max( em, em_min ) ) ) ), &
+               0.01_core_rknd )
 
         call generate_silhs_sample( &
                itime, pdf_dim, lh_num_samples, lh_sequence_length, gr%nz, & ! In

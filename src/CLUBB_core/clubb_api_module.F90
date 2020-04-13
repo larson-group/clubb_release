@@ -488,6 +488,7 @@ contains
     rtpthlp_forcing, wm_zm, wm_zt, &                        ! intent(in)
     wpthlp_sfc, wprtp_sfc, upwp_sfc, vpwp_sfc, &            ! intent(in)
     wpsclrp_sfc, wpedsclrp_sfc, &                           ! intent(in)
+    rtm_ref, thlm_ref, um_ref, vm_ref, ug, vg, &            ! Intent(in)
     p_in_Pa, rho_zm, rho, exner, &                          ! intent(in)
     rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm, &                ! intent(in)
     invrs_rho_ds_zt, thv_ds_zm, thv_ds_zt, hydromet, &      ! intent(in)
@@ -516,9 +517,7 @@ contains
                RH_crit, & !h1g, 2010-06-16                  ! intent(inout)
                do_liquid_only_in_clubb, &                   ! intent(in)
 #endif
-#if defined(CLUBB_CAM) || defined(GFDL)
-    khzm, khzt, &                                           ! intent(out)
-#endif
+    Kh_zm, Kh_zt, &                                         ! intent(out)
 #ifdef CLUBB_CAM
     qclvar, thlprcp_out, &                                  ! intent(out)
 #endif
@@ -602,15 +601,24 @@ contains
     real( kind = core_rknd ), intent(in), dimension(gr%nz,sclr_dim) :: &
       sclrm_forcing    ! Passive scalar forcing         [{units vary}/s]
 
-    real( kind = core_rknd ), intent(in),  dimension(sclr_dim) ::  &
+    real( kind = core_rknd ), intent(in), dimension(sclr_dim) ::  &
       wpsclrp_sfc      ! Scalar flux at surface         [{units vary} m/s]
 
     ! Eddy passive scalar variables
     real( kind = core_rknd ), intent(in), dimension(gr%nz,edsclr_dim) :: &
       edsclrm_forcing  ! Eddy passive scalar forcing    [{units vary}/s]
 
-    real( kind = core_rknd ), intent(in),  dimension(edsclr_dim) ::  &
+    real( kind = core_rknd ), intent(in), dimension(edsclr_dim) ::  &
       wpedsclrp_sfc    ! Eddy-Scalar flux at surface    [{units vary} m/s]
+
+    ! Reference profiles (used for nudging, sponge damping, and Coriolis effect)
+    real( kind = core_rknd ), dimension(gr%nz), intent(in) ::  &
+      rtm_ref,  & ! Initial total water mixing ratio             [kg/kg]
+      thlm_ref, & ! Initial liquid water potential temperature   [K]
+      um_ref,   & ! Initial u wind; Michael Falk                 [m/s]
+      vm_ref,   & ! Initial v wind; Michael Falk                 [m/s]
+      ug,       & ! u geostrophic wind                           [m/s]
+      vg          ! v geostrophic wind                           [m/s]
 
     ! Host model horizontal grid spacing, if part of host model.
     real( kind = core_rknd ), intent(in) :: &
@@ -692,11 +700,9 @@ contains
       wprcp,            & ! w'r_c' (momentum levels)                  [(kg/kg) m/s]
       ice_supersat_frac   ! ice cloud fraction (thermodynamic levels) [-]
 
-#if defined(CLUBB_CAM) || defined(GFDL)
-    real( kind = core_rknd ), intent(out), dimension(gr%nz) :: &
-      khzt, &       ! eddy diffusivity on thermo levels
-      khzm          ! eddy diffusivity on momentum levels
-#endif
+    real( kind = core_rknd ), dimension(gr%nz), intent(out) :: &
+      Kh_zt, & ! Eddy diffusivity coefficient on thermodynamic levels   [m^2/s]
+      Kh_zm    ! Eddy diffusivity coefficient on momentum levels        [m^2/s]
 
 #ifdef CLUBB_CAM
     real( kind = core_rknd), intent(out), dimension(gr%nz) :: &
@@ -721,6 +727,7 @@ contains
       rtpthlp_forcing, wm_zm, wm_zt, &                        ! intent(in)
       wpthlp_sfc, wprtp_sfc, upwp_sfc, vpwp_sfc, &            ! intent(in)
       wpsclrp_sfc, wpedsclrp_sfc, &                           ! intent(in)
+      rtm_ref, thlm_ref, um_ref, vm_ref, ug, vg, &            ! Intent(in)
       p_in_Pa, rho_zm, rho, exner, &                          ! intent(in)
       rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm, &                ! intent(in)
       invrs_rho_ds_zt, thv_ds_zm, thv_ds_zt, hydromet, &      ! intent(in)
@@ -749,9 +756,7 @@ contains
                RH_crit, & !h1g, 2010-06-16                    ! intent(inout)
                do_liquid_only_in_clubb, &                     ! intent(in)
 #endif
-#if defined(CLUBB_CAM) || defined(GFDL)
-               khzm, khzt, &                                  ! intent(out)
-#endif
+      Kh_zm, Kh_zt, &                                         ! intent(out)
 #ifdef CLUBB_CAM
                qclvar, thlprcp_out, &                         ! intent(out)
 #endif

@@ -129,6 +129,7 @@ module advance_clubb_core_module
                rtpthlp_forcing, wm_zm, wm_zt, &                     ! intent(in)
                wpthlp_sfc, wprtp_sfc, upwp_sfc, vpwp_sfc, &         ! intent(in)
                wpsclrp_sfc, wpedsclrp_sfc, &                        ! intent(in)
+               rtm_ref, thlm_ref, um_ref, vm_ref, ug, vg, &         ! Intent(in)
                p_in_Pa, rho_zm, rho, exner, &                       ! intent(in)
                rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm, &             ! intent(in)
                invrs_rho_ds_zt, thv_ds_zm, thv_ds_zt, hydromet, &   ! intent(in)
@@ -157,9 +158,7 @@ module advance_clubb_core_module
                RH_crit, & !h1g, 2010-06-16                          ! intent(inout)
                do_liquid_only_in_clubb, &                           ! intent(in)
 #endif
-#if defined(CLUBB_CAM) || defined(GFDL)
-               khzm, khzt, &                                        ! intent(out)
-#endif
+               Kh_zm, Kh_zt, &                                      ! intent(out)
 #ifdef CLUBB_CAM
                qclvar, thlprcp_out, &                               ! intent(out)
 #endif
@@ -246,66 +245,6 @@ module advance_clubb_core_module
     use numerical_check, only: &
         parameterization_check, & ! Procedure(s)
         calculate_spurious_source
-
-    use variables_diagnostic_module, only: &
-      Skw_zt,  & ! Variable(s)
-      Skw_zm, &
-      wp4, &
-      rtprcp, &
-      thlprcp, &
-      rcp2, &
-      rsat, &
-      wprtp2, &
-      wp2rtp, &
-      wpthlp2, &
-      wp2thlp, &
-      wprtpthlp, &
-      wp2rcp
-
-    use variables_diagnostic_module, only: &
-      thvm, &
-      em, &
-      Lscale, &
-      Lscale_up,  &
-      Lscale_down, &
-      tau_zm, &
-      tau_zt, &
-      Kh_zm, &
-      Kh_zt, &
-      vg, &
-      ug, &
-      um_ref, &
-      vm_ref
-
-    use variables_diagnostic_module, only: &
-      wp2_zt, &
-      thlp2_zt, &
-      wpthlp_zt, &
-      wprtp_zt, &
-      rtp2_zt, &
-      rtpthlp_zt, &
-      up2_zt, &
-      vp2_zt, &
-      upwp_zt, &
-      vpwp_zt, &
-      rtm_ref, &
-      thlm_ref
-
-    use variables_diagnostic_module, only: &
-      wpedsclrp, &
-      sclrprcp,     & ! sclr'rc'
-      wp2sclrp,     & ! w'^2 sclr'
-      wpsclrp2,     & ! w'sclr'^2
-      wpsclrprtp,   & ! w'sclr'rt'
-      wpsclrpthlp,  & ! w'sclr'thl'
-      wp3_zm,       & ! wp3 interpolated to momentum levels
-      Skw_velocity, & ! Skewness velocity       [m/s]
-      a3_coef,      & ! The a3 coefficient      [-]
-      a3_coef_zt      ! The a3 coefficient interp. to the zt grid [-]
-
-    use variables_diagnostic_module, only: &
-      wp3_on_wp2,   & ! Variable(s)
-      wp3_on_wp2_zt
 
     use variables_prognostic_module, only: &
       pdf_params_frz
@@ -528,15 +467,24 @@ module advance_clubb_core_module
     real( kind = core_rknd ), intent(in), dimension(gr%nz,sclr_dim) :: &
       sclrm_forcing    ! Passive scalar forcing         [{units vary}/s]
 
-    real( kind = core_rknd ), intent(in),  dimension(sclr_dim) ::  &
+    real( kind = core_rknd ), intent(in), dimension(sclr_dim) ::  &
       wpsclrp_sfc      ! Passive scalar flux at surface         [{units vary} m/s]
 
     ! Eddy passive scalar variables
     real( kind = core_rknd ), intent(in), dimension(gr%nz,edsclr_dim) :: &
       edsclrm_forcing  ! Eddy-diffusion passive scalar forcing    [{units vary}/s]
 
-    real( kind = core_rknd ), intent(in),  dimension(edsclr_dim) ::  &
-      wpedsclrp_sfc    ! Eddy-diffusion passive scalar flux at surface    [{units vary} m/s]
+    real( kind = core_rknd ), intent(in), dimension(edsclr_dim) ::  &
+      wpedsclrp_sfc    ! Eddy-diffusion passive scalar flux at surface    [{units vary} m/s
+
+    ! Reference profiles (used for nudging, sponge damping, and Coriolis effect)
+    real( kind = core_rknd ), dimension(gr%nz), intent(in) ::  &
+      rtm_ref,  & ! Initial total water mixing ratio             [kg/kg]
+      thlm_ref, & ! Initial liquid water potential temperature   [K]
+      um_ref,   & ! Initial u wind; Michael Falk                 [m/s]
+      vm_ref,   & ! Initial v wind; Michael Falk                 [m/s]
+      ug,       & ! u geostrophic wind                           [m/s]
+      vg          ! v geostrophic wind                           [m/s]
 
     ! Host model horizontal grid spacing, if part of host model.
     real( kind = core_rknd ), intent(in) :: &
@@ -625,12 +573,9 @@ module advance_clubb_core_module
       uprcp,              & ! < u' r_c' >              [(m kg)/(s kg)]
       vprcp                 ! < v' r_c' >              [(m kg)/(s kg)]
 
-
-#if defined(CLUBB_CAM) || defined(GFDL)
-    real( kind = core_rknd ), intent(out), dimension(gr%nz) :: &
-      khzt, &       ! eddy diffusivity on thermo levels
-      khzm          ! eddy diffusivity on momentum levels
-#endif
+    real( kind = core_rknd ), dimension(gr%nz), intent(out) :: &
+      Kh_zt, & ! Eddy diffusivity coefficient on thermodynamic levels   [m^2/s]
+      Kh_zm    ! Eddy diffusivity coefficient on momentum levels        [m^2/s]
 
 #ifdef CLUBB_CAM
     real( kind = core_rknd), intent(out), dimension(gr%nz) :: &
@@ -654,6 +599,72 @@ module advance_clubb_core_module
 #ifdef CLUBB_CAM
     integer ::  ixind
 #endif
+
+    real( kind = core_rknd ), dimension(gr%nz) :: &
+      Skw_zm,   & ! Skewness of w on momentum levels             [-]
+      Skw_zt,   & ! Skewness of w on thermodynamic levels        [-]
+      thvm        ! Virtual potential temperature                [K]
+
+    real( kind = core_rknd ), dimension(gr%nz) :: &
+      rsat   ! Saturation mixing ratio  ! Brian
+
+    real( kind = core_rknd ), dimension(gr%nz) :: &
+      thlprcp, & ! thl'rc'              [K kg/kg]
+      rtprcp,  & ! rt'rc'               [kg^2/kg^2]
+      rcp2       ! rc'^2                [kg^2/kg^2]
+
+    real( kind = core_rknd ), dimension(gr%nz) :: &
+      wpthlp2,   & ! w'thl'^2    [m K^2/s]
+      wp2thlp,   & ! w'^2 thl'   [m^2 K/s^2]
+      wprtp2,    & ! w'rt'^2     [m kg^2/kg^2]
+      wp2rtp,    & ! w'^2rt'     [m^2 kg/kg]
+      wprtpthlp, & ! w'rt'thl'   [m kg K/kg s]
+      wp2rcp,    & ! w'^2 rc'    [m^2 kg/kg s^2]
+      wp3_zm       ! w'^3        [m^3/s^3]
+
+    real( kind = core_rknd ), dimension(gr%nz) :: &
+      wp4   ! w'^4      [m^4/s^4]
+
+    real( kind = core_rknd ), dimension(gr%nz) :: &
+      Lscale,      & ! Length scale                          [m]
+      Lscale_up,   & ! Length scale (upwards component)      [m]
+      Lscale_down    ! Length scale (downwards component)    [m]
+
+    real( kind = core_rknd ), dimension(gr%nz) :: &
+      em,     & ! Turbulent Kinetic Energy (TKE)                      [m^2/s^2]
+      tau_zm, & ! Eddy dissipation time scale on momentum levels      [s]
+      tau_zt    ! Eddy dissipation time scale on thermodynamic levels [s]
+
+    real( kind = core_rknd ), dimension(gr%nz,sclr_dim) :: &
+      wpedsclrp   ! w'edsclr'
+
+    real( kind = core_rknd ), dimension(gr%nz,sclr_dim) :: &
+      sclrprcp,    & ! sclr'rc'
+      wp2sclrp,    & ! w'^2 sclr'
+      wpsclrp2,    & ! w'sclr'^2
+      wpsclrprtp,  & ! w'sclr'rt'
+      wpsclrpthlp    ! w'sclr'thl'
+
+    real( kind = core_rknd ), dimension(gr%nz) :: &
+      wp2_zt,     & ! w'^2 on thermo. grid     [m^2/s^2]
+      thlp2_zt,   & ! thl'^2 on thermo. grid   [K^2]
+      wpthlp_zt,  & ! w'thl' on thermo. grid   [m K/s]
+      wprtp_zt,   & ! w'rt' on thermo. grid    [m kg/(kg s)]
+      rtp2_zt,    & ! rt'^2 on therm. grid     [(kg/kg)^2]
+      rtpthlp_zt, & ! rt'thl' on thermo. grid  [kg K/kg]
+      up2_zt,     & ! u'^2 on thermo. grid     [m^2/s^2]
+      vp2_zt,     & ! v'^2 on thermo. grid     [m^2/s^2]
+      upwp_zt,    & ! u'w' on thermo. grid     [m^2/s^2]
+      vpwp_zt       ! v'w' on thermo. grid     [m^2/s^2]
+
+    real( kind = core_rknd ), dimension(gr%nz) :: &
+      Skw_velocity, & ! Skewness velocity    [m/s]
+      a3_coef,      & ! The a3 coefficient from CLUBB eqns                [-]
+      a3_coef_zt      ! The a3 coefficient interpolated to the zt grid    [-]
+
+    real( kind = core_rknd ), dimension(gr%nz) :: &
+      wp3_on_wp2,   &  ! w'^3 / w'^2 on the zm grid [m/s]
+      wp3_on_wp2_zt    ! w'^3 / w'^2 on the zt grid [m/s]
 
     ! Eric Raut declared this variable solely for output to disk
     real( kind = core_rknd ), dimension(gr%nz) :: &
@@ -1260,11 +1271,6 @@ module advance_clubb_core_module
       Kh_zt = c_K * Lscale * sqrt_em_zt
       Kh_zm = c_K * max( zt2zm( Lscale ), zero_threshold )  &
                   * sqrt( max( em, em_min ) )
-
-#if defined(CLUBB_CAM) || defined(GFDL)
-      khzt(:) = Kh_zt(:)
-      khzm(:) = Kh_zm(:)
-#endif
 
       ! Vertical compression of eddies causes gustiness (increase in up2 and vp2)
       call term_wp2_splat( C_wp2_splat, gr%nz, dt, wp2, wp2_zt, tau_zm, & ! Intent(in)
