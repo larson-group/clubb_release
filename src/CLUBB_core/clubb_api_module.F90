@@ -519,9 +519,9 @@ contains
 #endif
     Kh_zm, Kh_zt, &                                         ! intent(out)
 #ifdef CLUBB_CAM
-    qclvar, thlprcp_out, &                                  ! intent(out)
+    qclvar, &                                               ! intent(out)
 #endif
-    wprcp, ice_supersat_frac, &                             ! intent(out)
+    thlprcp, wprcp, ice_supersat_frac, &                    ! intent(out)
     rcm_in_layer, cloud_cover )                             ! intent(out)
 
     use advance_clubb_core_module, only : advance_clubb_core
@@ -706,9 +706,11 @@ contains
 
 #ifdef CLUBB_CAM
     real( kind = core_rknd), intent(out), dimension(gr%nz) :: &
-      qclvar, &     ! cloud water variance
-      thlprcp_out
+      qclvar        ! cloud water variance
 #endif
+
+    real( kind = core_rknd ), dimension(gr%nz), intent(out) :: &
+      thlprcp    ! thl'rc'              [K kg/kg]
 
     !!! Output Variable 
     integer, intent(inout) :: err_code_api ! Diagnostic, for if some calculation goes amiss.
@@ -758,9 +760,9 @@ contains
 #endif
       Kh_zm, Kh_zt, &                                         ! intent(out)
 #ifdef CLUBB_CAM
-               qclvar, thlprcp_out, &                         ! intent(out)
+               qclvar, &                                      ! intent(out)
 #endif
-      wprcp, ice_supersat_frac, &                             ! intent(out)
+      thlprcp, wprcp, ice_supersat_frac, &                    ! intent(out)
       rcm_in_layer, cloud_cover, &                            ! intent(out)
       err_code_api )                                          ! intent(out)
 

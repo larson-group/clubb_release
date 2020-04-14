@@ -160,9 +160,9 @@ module advance_clubb_core_module
 #endif
                Kh_zm, Kh_zt, &                                      ! intent(out)
 #ifdef CLUBB_CAM
-               qclvar, thlprcp_out, &                               ! intent(out)
+               qclvar, &                                            ! intent(out)
 #endif
-               wprcp, ice_supersat_frac, &                          ! intent(out)
+               thlprcp, wprcp, ice_supersat_frac, &                 ! intent(out)
                rcm_in_layer, cloud_cover, &                         ! intent(out)
                err_code_out )                                       ! intent(out)
 
@@ -579,10 +579,11 @@ module advance_clubb_core_module
 
 #ifdef CLUBB_CAM
     real( kind = core_rknd), intent(out), dimension(gr%nz) :: &
-      qclvar, &     ! cloud water variance
-      thlprcp_out   ! thl'rc'
+      qclvar        ! cloud water variance
 #endif
 
+    real( kind = core_rknd ), dimension(gr%nz), intent(out) :: &
+      thlprcp    ! thl'rc'              [K kg/kg]
 
 #ifdef GFDL
     ! hlg, 2010-06-16
@@ -609,9 +610,8 @@ module advance_clubb_core_module
       rsat   ! Saturation mixing ratio  ! Brian
 
     real( kind = core_rknd ), dimension(gr%nz) :: &
-      thlprcp, & ! thl'rc'              [K kg/kg]
-      rtprcp,  & ! rt'rc'               [kg^2/kg^2]
-      rcp2       ! rc'^2                [kg^2/kg^2]
+      rtprcp, & ! rt'rc'               [kg^2/kg^2]
+      rcp2      ! rc'^2                [kg^2/kg^2]
 
     real( kind = core_rknd ), dimension(gr%nz) :: &
       wpthlp2,   & ! w'thl'^2    [m K^2/s]
@@ -1862,7 +1862,6 @@ module advance_clubb_core_module
 
 #ifdef CLUBB_CAM
       qclvar(:) = rcp2_zt(:)
-      thlprcp_out(:) = thlprcp(:)
 #endif
 
 

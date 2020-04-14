@@ -1658,7 +1658,7 @@ module clubb_driver
              pdf_params, pdf_params_zm, &                         ! Intent(inout)
              pdf_implicit_coefs_terms, &                          ! intent(inout)
              Kh_zm, Kh_zt, &                                      ! intent(out)
-             wprcp, ice_supersat_frac, &                          ! Intent(out)
+             thlprcp, wprcp, ice_supersat_frac, &                 ! Intent(out)
              rcm_in_layer, cloud_cover, &                         ! Intent(out)
              err_code_dummy )                                     ! Intent(out)
 
