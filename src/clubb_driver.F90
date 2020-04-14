@@ -156,7 +156,8 @@ module clubb_driver
         iwpthlp_mc,  &
         irtp2_mc,    &
         ithlp2_mc,   &
-        irtpthlp_mc
+        irtpthlp_mc, &
+        iFrad
 
     use stats_variables, only: &
         l_allow_small_stats_tout
@@ -1910,6 +1911,10 @@ module clubb_driver
         end if ! l_silhs_rad
 
       end if ! mod( itime, floor(dt_rad/dt_main) ) == 0 .or. itime == 1
+
+      if ( l_stats_samp ) then
+         call stat_update_var( iFrad, Frad, stats_zm )
+      endif
 
       ! Update the radiation variables here so they are updated every timestep
       call update_radiation_variables( gr%nz )

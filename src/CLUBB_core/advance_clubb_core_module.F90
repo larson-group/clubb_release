@@ -1944,9 +1944,17 @@ module advance_clubb_core_module
              rcm_zm, rtm_zm, thlm_zm, cloud_frac, ice_supersat_frac,& ! intent(in)
              cloud_frac_zm, ice_supersat_frac_zm, rcm_in_layer,     & ! intent(in)
              cloud_cover, rcm_supersat_adj, sigma_sqd_w,            & ! intent(in)
+             thvm, ug, vg, Lscale, wpthlp2, wp2thlp, wprtp2, wp2rtp,& ! intent(in)
+             Lscale_up, Lscale_down, tau_zt, Kh_zt, wp2rcp,         & ! intent(in)
+             wprtpthlp, sigma_sqd_w_zt, rsat, wp2_zt, thlp2_zt,     & ! intent(in)
+             wpthlp_zt, wprtp_zt, rtp2_zt, rtpthlp_zt, up2_zt,      & ! intent(in)
+             vp2_zt, upwp_zt, vpwp_zt, wp4, tau_zm, Kh_zm, thlprcp, & ! intent(in)
+             rtprcp, rcp2, em, a3_coef, a3_coef_zt,                 & ! intent(in)
+             wp3_zm, wp3_on_wp2, wp3_on_wp2_zt, Skw_velocity,       & ! intent(in)
              pdf_params, pdf_params_zm, sclrm, sclrp2,              & ! intent(in)
              sclrprtp, sclrpthlp, sclrm_forcing, sclrpthvp,         & ! intent(in)
-             wpsclrp, edsclrm, edsclrm_forcing                      ) ! intent(in)
+             wpsclrp, sclrprcp, wp2sclrp, wpsclrp2, wpsclrprtp,     & ! intent(in)
+             wpsclrpthlp, wpedsclrp, edsclrm, edsclrm_forcing       ) ! intent(in)
 
 
       if ( clubb_at_least_debug_level( 2 ) ) then
