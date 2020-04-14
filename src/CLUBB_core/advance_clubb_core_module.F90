@@ -971,7 +971,7 @@ module advance_clubb_core_module
                                 um, up2, upwp, up3,                          & ! Intent(in)
                                 vm, vp2, vpwp, vp3,                          & ! Intent(in)
                                 p_in_Pa, exner,                              & ! Intent(in)
-                                thv_ds_zm, thv_ds_zt,                        & ! Intent(in)
+                                thv_ds_zm, thv_ds_zt, rtm_ref,               & ! Intent(in)
                                 rfrzm, hydromet, wphydrometp,                & ! Intent(in)
                                 wp2hmp, rtphmp_zt, thlphmp_zt,               & ! Intent(in)
                                 sclrm, wpsclrp, sclrp2,                      & ! Intent(in)
@@ -1816,7 +1816,7 @@ module advance_clubb_core_module
                                 um, up2, upwp, up3,                          & ! Intent(in)
                                 vm, vp2, vpwp, vp3,                          & ! Intent(in)
                                 p_in_Pa, exner,                              & ! Intent(in)
-                                thv_ds_zm, thv_ds_zt,                        & ! Intent(in)
+                                thv_ds_zm, thv_ds_zt, rtm_ref,               & ! Intent(in)
                                 rfrzm, hydromet, wphydrometp,                & ! Intent(in)
                                 wp2hmp, rtphmp_zt, thlphmp_zt,               & ! Intent(in)
                                 sclrm, wpsclrp, sclrp2,                      & ! Intent(in)
@@ -2056,7 +2056,7 @@ module advance_clubb_core_module
                                  um, up2, upwp, up3,            & ! Intent(in)
                                  vm, vp2, vpwp, vp3,            & ! Intent(in)
                                  p_in_Pa, exner,                & ! Intent(in)
-                                 thv_ds_zm, thv_ds_zt,          & ! Intent(in)
+                                 thv_ds_zm, thv_ds_zt, rtm_ref, & ! Intent(in)
                                  rfrzm, hydromet, wphydrometp,  & ! Intent(in)
                                  wp2hmp, rtphmp_zt, thlphmp_zt, & ! Intent(in)
                                  sclrm, wpsclrp, sclrp2,        & ! Intent(in)
@@ -2165,10 +2165,6 @@ module advance_clubb_core_module
         err_code,                    & ! Error Indicator
         clubb_fatal_error              ! Constant
 
-    use variables_diagnostic_module, only: &
-        sigma_sqd_w_zt, & ! Variable(s)
-        rtm_ref
-
     use stats_type_utilities, only: &
         stat_update_var,    & ! Procedure(s)
         stat_update_var_pt
@@ -2243,6 +2239,7 @@ module advance_clubb_core_module
       exner,     & ! Exner function (thermodynamic levels)          [-]
       thv_ds_zm, & ! Dry, base-state theta_v on momentum levs.      [K]
       thv_ds_zt, & ! Dry, base-state theta_v on thermo. levs.       [K]
+      rtm_ref,   & ! Initial total water mixing ratio               [kg/kg]
       rfrzm        ! Total ice-phase water mixing ratio             [kg/kg]
 
     real( kind = core_rknd ), dimension(gr%nz), intent(in) ::  &
@@ -2385,32 +2382,33 @@ module advance_clubb_core_module
 
     !!! Local Variables
     real( kind = core_rknd ), dimension(gr%nz) :: &
-      wp2_zt,        & ! wp2 interpolated to thermodynamic levels    [m^2/s^2]
-      wp3_zm,        & ! wp3 interpolated to momentum levels         [m^3/s^3]
-      rtp2_zt,       & ! rtp2 interpolated to thermodynamic levels   [kg^2/kg^2]
-      rtp3_zm,       & ! rtp3 interpolated to momentum levels        [kg^3/kg^3]
-      thlp2_zt,      & ! thlp2 interpolated to thermodynamic levels  [K^2]
-      thlp3_zm,      & ! thlp3 interpolated to momentum levels       [K^3]
-      wprtp_zt,      & ! wprtp interpolated to thermodynamic levels  [m/s kg/kg]
-      wpthlp_zt,     & ! wpthlp interpolated to thermodynamic levels [m/s K]
-      rtpthlp_zt,    & ! rtpthlp interp. to thermodynamic levels     [kg/kg K]
-      up2_zt,        & ! up2 interpolated to thermodynamic levels    [m^2/s^2]
-      up3_zm,        & ! up3 interpolated to momentum levels         [m^3/s^3]
-      vp2_zt,        & ! vp2 interpolated to thermodynamic levels    [m^2/s^2]
-      vp3_zm,        & ! vp3 interpolated to momentum levels         [m^3/s^3]
-      upwp_zt,       & ! upwp interpolated to thermodynamic levels   [m^2/s^2]
-      vpwp_zt,       & ! vpwp interpolated to thermodynamic levels   [m^2/s^2]
-      gamma_Skw_fnc, & ! Gamma as a function of skewness             [-]
-      Skw_zt,        & ! Skewness of w on thermodynamic levels       [-]
-      Skw_zm,        & ! Skewness of w on momentum levels            [-]
-      Skrt_zt,       & ! Skewness of rt on thermodynamic levels      [-]
-      Skrt_zm,       & ! Skewness of rt on momentum levels           [-]
-      Skthl_zt,      & ! Skewness of thl on thermodynamic levels     [-]
-      Skthl_zm,      & ! Skewness of thl on momentum levels          [-]
-      Sku_zt,        & ! Skewness of u on thermodynamic levels       [-]
-      Sku_zm,        & ! Skewness of u on momentum levels            [-]
-      Skv_zt,        & ! Skewness of v on thermodynamic levels       [-]
-      Skv_zm           ! Skewness of v on momentum levels            [-]
+      wp2_zt,         & ! wp2 interpolated to thermodynamic levels   [m^2/s^2]
+      wp3_zm,         & ! wp3 interpolated to momentum levels        [m^3/s^3]
+      rtp2_zt,        & ! rtp2 interpolated to thermodynamic levels  [kg^2/kg^2]
+      rtp3_zm,        & ! rtp3 interpolated to momentum levels       [kg^3/kg^3]
+      thlp2_zt,       & ! thlp2 interpolated to thermodynamic levels [K^2]
+      thlp3_zm,       & ! thlp3 interpolated to momentum levels      [K^3]
+      wprtp_zt,       & ! wprtp interpolated to thermodynamic levels [m/s kg/kg]
+      wpthlp_zt,      & ! wpthlp interpolated to thermodynamic levs. [m/s K]
+      rtpthlp_zt,     & ! rtpthlp interp. to thermodynamic levels    [kg/kg K]
+      up2_zt,         & ! up2 interpolated to thermodynamic levels   [m^2/s^2]
+      up3_zm,         & ! up3 interpolated to momentum levels        [m^3/s^3]
+      vp2_zt,         & ! vp2 interpolated to thermodynamic levels   [m^2/s^2]
+      vp3_zm,         & ! vp3 interpolated to momentum levels        [m^3/s^3]
+      upwp_zt,        & ! upwp interpolated to thermodynamic levels  [m^2/s^2]
+      vpwp_zt,        & ! vpwp interpolated to thermodynamic levels  [m^2/s^2]
+      gamma_Skw_fnc,  & ! Gamma as a function of skewness            [-]
+      sigma_sqd_w_zt, & ! PDF width parameter (thermodynamic levels) [-]
+      Skw_zt,         & ! Skewness of w on thermodynamic levels      [-]
+      Skw_zm,         & ! Skewness of w on momentum levels           [-]
+      Skrt_zt,        & ! Skewness of rt on thermodynamic levels     [-]
+      Skrt_zm,        & ! Skewness of rt on momentum levels          [-]
+      Skthl_zt,       & ! Skewness of thl on thermodynamic levels    [-]
+      Skthl_zm,       & ! Skewness of thl on momentum levels         [-]
+      Sku_zt,         & ! Skewness of u on thermodynamic levels      [-]
+      Sku_zm,         & ! Skewness of u on momentum levels           [-]
+      Skv_zt,         & ! Skewness of v on thermodynamic levels      [-]
+      Skv_zm            ! Skewness of v on momentum levels           [-]
 
     ! Interpolated values for optional second call to PDF closure.
     real( kind = core_rknd ), dimension(gr%nz) :: &
