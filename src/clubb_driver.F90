@@ -191,6 +191,10 @@ module clubb_driver
 
     use parameters_radiation, only: rad_scheme !----------------------------- Variable(s)
 
+    use Skx_module, only: Skx_func !----------------------------------------- Procedure(s)
+
+    use calc_pressure, only: calculate_thvm !-------------------------------- Procedure(s)
+
     use clip_explicit, only: clip_skewness_core !---------------------------- Procedure(s)
 
 #ifdef SILHS
@@ -1575,8 +1579,10 @@ module clubb_driver
       
       ! Calculate sample weights separately at all grid levels when radiation is not called
       l_calc_weights_all_levs_itime = l_calc_weights_all_levs .and. .not. l_rad_itime
-                                        
-      
+
+      ! Calculate thvm for use in prescribe_forcings.
+      thvm = calculate_thvm( thlm, rtm, rcm, exner, thv_ds_zt )
+
       ! Set large-scale tendencies and subsidence profiles
       call prescribe_forcings( dt_main )  ! Intent(in)
 
@@ -1840,7 +1846,12 @@ module clubb_driver
       call cpu_time(time_stop)
       time_microphys_scheme = time_microphys_scheme + time_stop - time_start
       call cpu_time(time_start) ! initialize timer for advance_microphys
-      
+
+      ! Calculate Skw_zm for use in advance_microphys.
+      ! This field is smoothed by interpolating to thermodynamic levels and then
+      ! interpolating back to momentum levels.
+      Skw_zm = zt2zm( zm2zt( Skx_func( wp2, zt2zm( wp3 ), w_tol ) ) )
+
       ! Advance predictive microphysics fields one model timestep.
       call advance_microphys( dt_main, time_current, wm_zt, wp2, &       ! In
                               exner, rho, rho_zm, rcm, &                 ! In

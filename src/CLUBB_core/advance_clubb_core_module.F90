@@ -194,6 +194,7 @@ module advance_clubb_core_module
         three_halves, &
         one_fourth, &
         one, &
+        zero, &
         unused_var, &
         grav, &
         vonk, &
@@ -1246,6 +1247,11 @@ module advance_clubb_core_module
 !        tau_zm = max( zero_threshold, zt2zm( tau_zt ) )
 
         Lscale = tau_zt * sqrt_em_zt
+
+        ! Lscale_up and Lscale_down aren't calculated with this option.
+        ! They are set to 0 for stats output.
+        Lscale_up = zero
+        Lscale_down = zero
 
       end if ! l_diag_Lscale_from_tau
 
