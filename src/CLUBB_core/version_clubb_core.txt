@@ -1,0 +1,107 @@
+commit b81057daeb2e338b3c1090edbea2277dafb0ba47
+Author: bmg929 <bmg2@uwm.edu>
+Date:   Wed Apr 15 18:37:53 2020 -0500
+
+    I have resolved all the issues surrounding recent CLUBB commits that
+    remove "use" statements from the code.  The commit 068a7b2 (April 8, 2020) was
+    the commit before these refactorings started.  When Lscale, Skw_zm, and thvm
+    are passed out of CLUBB core, the code returns to a bit-for-bit match to commit
+    068a7b2.  However, rather than pass these variables out of advance_clubb_core,
+    it is more convenient to recalculate them locally in clubb_driver.  This
+    changes results for (a) SILHS cases, owing to the change to Lscale, and (b) all
+    cases that advance microphysics, owing to the change to Skw_zm.  The net result
+    is that this commit is BIT_CHANGING.  For cases that advance microphysics and/or
+    use SILHS, the net result is BIT_CHANGING when compared to 068a7b2.  For all
+    other cases (BOMEX, etc.), the results are an exact match.
+    
+    It is important to note that host models that use CLUBB (without SILHS) will not
+    be affected by these changes.  Host models that use SILHS will only be affected
+    by the change to Lscale.  However, this code has already been applied to CAM and
+    E3SM, so the only changes will to SILHS code in SAM and WRF.
+    
+    Larson Group Issue Reference: #876.
+
+commit 0092b03b7e5eba12433bdbd88326f21bff65d013
+Author: bmg929 <bmg2@uwm.edu>
+Date:   Tue Apr 14 15:20:54 2020 -0500
+
+    Results were changed yesterday for some cases because thlprcp was
+    no longer being output from advance_clubb_core for use in the
+    calculate_thlp2_rad.  This was previously accomplished through a
+    "use" statement.  The variable thlprcp is now output through the
+    argument list of advance_clubb_core.
+    
+    This commit is BIT_CHANGING.
+
+commit a3af3ed24213c58f4e1a16de022a31b03ed35882
+Author: bmg929 <bmg2@uwm.edu>
+Date:   Tue Apr 14 13:29:24 2020 -0500
+
+    Removing the reference to variables_diagnostic_module (sigma_sqd_w_zt and rtm_ref)
+    from subroutine pdf_closure_driver in advance_clubb_core.
+
+commit abb1e3ddeb22361f1a416ac978d8b5bf4c105070
+Author: bmg929 <bmg2@uwm.edu>
+Date:   Mon Apr 13 20:24:50 2020 -0500
+
+    I "brought back the stats" by passing the stats from advance_clubb_core
+    to stats_accumulate, getting rid of the "use" statements.
+    
+    This commit is BIT_CHANGING, since it changes stats output.
+
+commit 9415d2b6b93186c1b8e7891e076486c2e1eeb97d
+Author: bmg929 <bmg2@uwm.edu>
+Date:   Mon Apr 13 16:05:45 2020 -0500
+
+    I am replacing the "use" statements that referenced
+    variables_diagnostic_module from advance_clubb_core and replacing
+    them with local declarations.  This requires that some
+    additional variables are passed into and out of advance_clubb_core.
+    
+    Additionally, Lscale is now recalculated outside of advance_clubb_core
+    using TKE and Kh for use in SILHS code.  This makes this commit
+    BIT_CHANGING.
+    
+    CLUBB GitHub Issue Reference: #876.
+
+commit 068a7b21ab6a5ee8004c42f3d5309e3f4a38c2cd
+Author: strikenp <nchief@gmail.com>
+Date:   Wed Apr 8 14:01:32 2020 -0500
+
+    Fix a bug where budgets wouldn't plot with their x-axis labels
+    
+    https://github.com/larson-group/sys_admin/issues/542
+
+commit e1bee04828de5bc8807d66fbde0a714b58946aed
+Author: Vincent Larson <vlarson@users.noreply.github.com>
+Date:   Fri Apr 3 07:06:57 2020 -0500
+
+    I removed a blank line in order to trigger the nightly tests.
+
+commit 50706313f0a314a875f2cc15d8ccaa57089ef098
+Author: strikenp <nchief@gmail.com>
+Date:   Thu Apr 2 12:38:44 2020 -0500
+
+    * Some further code cleanup
+    * Introductory support for the WRF model, currently only limited testing under ARM case
+    
+    https://github.com/larson-group/sys_admin/issues/542
+
+commit b435d8d7c63d4c386031a4894b57c031546320c4
+Author: strikenp <nchief@gmail.com>
+Date:   Thu Mar 19 14:09:06 2020 -0500
+
+    Major refactoring
+    * -i parameter has been remapped to -c to make pyplotgen more model agnostic from the user's perspective
+    * removed fallback functions
+    * cleaned up various functions
+    * reduced code duplication
+    * minor variable renaming for increased clarity
+    
+    https://github.com/larson-group/sys_admin/issues/542
+
+commit e1f3bcf553226b9a788d15fdcf6df7ff7eae07cb
+Author: pbroels <56004443+pbroels@users.noreply.github.com>
+Date:   Wed Apr 1 08:22:31 2020 -0500
+
+    Adding a blank line to trigger the nightly tests. #687
