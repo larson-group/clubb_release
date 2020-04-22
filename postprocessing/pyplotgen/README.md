@@ -7,16 +7,20 @@ Pyplotgen only supports input in the netcdf (.nc) format.
 | *Option Flag* | *Description* |
 | --- | --- |
 | -r --replace | Overwrite the output folder if it already exists |
-| -l --les | Overplot LES output data. The nc files for les output can be overwritten by changing the directory listed for a given case inside the `Case_Definitions.py` file. |
-| -e --e3sm [FOLDER PATHNAME(S)] | Adds lines from E3SM model output to plot. The filenames in the folder must either match the casename intended to run it, e.g. `bomex.nc` (using the lowercase version of the casename as defined in the `Case_definitions.py` file), or rewrite the `'e3sm_file': None,` parameter for the desired case to contain the location of the SAM file. The second option is not reccomended because it risks pushing invalid directories to the repo. | 
+| -c --clubb [FOLDER PATHNAME(S)] | Adds lines from CLUBB model output to plot. To plot lines in the specified folder for a given case, update the `'clubb_file': None,` parameter in the case's definition (`config/Case_Definitions.py`)for the desired case to contain the location of the clubb file. | 
+| -e --e3sm [FOLDER PATHNAME(S)] | Adds lines from E3SM model output to plot. The filenames in the folder must either match the casename intended to run it, e.g. `bomex.nc` (using the lowercase version of the casename as defined in the `Case_definitions.py` file), or rewrite the `'e3sm_file': None,` parameter for the desired case to contain the location of the e3sm file.| 
 | -s --sam [FOLDER PATHNAME(S)] | Adds lines from SAM model output to plot. To plot lines in the specified folder for a given case, update the `'sam_file': None,` parameter in the case's definition (`config/Case_Definitions.py`)for the desired case to contain the location of the SAM file. For example, adding SAM output for the ARM case may look like `'sam_file': sam_output_root+ "/GCSSARM_96x96x110_67m_40m_1s.nc",`| 
-| -b --plot-golaz-best | Plots clubb r408 'best ever' plots |
+| -w --wrf [FOLDER PATHNAME(S)] | Adds lines from WRF model output to plot. To plot lines in the specified folder for a given case, update the `'wrf_file': None,` parameter in the case's definition (`config/Case_Definitions.py`)for the desired case to contain the location of the WRF file.| 
+| -g --plot-golaz-best | Plots clubb r408 'best ever' plots |
+| -l --les | Overplot LES output data. The nc files for les output can be overwritten by changing the directory listed for a given case inside the `Case_Definitions.py` file. |
+| -d --plot-hoc-2005 | Plots HOC benchmark output |
+| -a --all-best | Identical to -lgd. Adds golaz best, les, and hoc benchmark output to the plots |
 | --thin | Plot lines with a thin width |
-| --plot-budgets | Includes budget panels in output |
+| -b --plot-budgets | Includes budget panels in output |
 | --diff [FOLDER PATHNAME] | (Experimental) Plots the difference between the input folder and the folder specified after --diff instead of plotting a regular profile |
 | --no-legends | Panels are drawn without a line legend |
-| -i --input | Manually specify an input folder. Must be followed by a folder path |
 | -o --output | Manually specify an output folder. If not specified, will automatically output to `pyplotgen/output` |
+| --show-alphabetic-id | Adds an alphanumeric ID to each plot on a perc-case basis (e.g. the first plot will be labeled "a")
 
 ## Installing Dependencies
 To install the dependencies necessary for PyPlotgen to run, run the command
@@ -32,7 +36,7 @@ To do the most basic run of pyplotgen, using default settings and folder paths, 
 
 To run python on clubb output located in `/home/USERNAME/clubb_nc_output` and save the generated panels/graph into `/home/USERNAME/clubb/postprocessing/pyplotgen/output` with budget plots and all model output, run this command:
 
-`python3 ./pyplotgen.py --plot-budgets -r -a -i /home/USERNAME/clubb_nc_output -o /home/USERNAME/clubb/postprocessing/pyplotgen/output`
+`python3 ./pyplotgen.py --plot-budgets -r -a -c /home/USERNAME/clubb_nc_output -o /home/USERNAME/clubb/postprocessing/pyplotgen/output`
 
 
 # Advanced Usage
@@ -90,7 +94,7 @@ ALL_CASES = [BOMEX]
 ALL_CASES = [FIRE, WANGARA]
 ~~~~
 
-## Adding new Variables
+## Adding new Variables (needs updating)
 Note: additional documentation is available in the "Reference Documentation" listed above
 Each variable is included within a _VariableGroup_,and each variable group is included into a case. To add a new variable, it must be added to a variable group. Once a variable is in a variable group, all cases that plot that group will now also plot the new variable. Variables have many properties available to describe them, here they are (pulled from VariableGroup.py src code comments):
 
@@ -147,7 +151,7 @@ A lot of the time the only parameter that is needed will be the list of aliases 
 #### Variable not found in case X
 In the unfortunate event that a variable is exported in most cases except Case X Y Z, there are a few options available for handling this issue. The easy (and dirty) method of resolving this is to simply blacklist the variable and not plot it at all for that case. To do so, simply add the variables name to the `blacklisted_vars` list for that case. For example, to blacklist `thlm` from the Wangara case, the blacklist would go from `'blacklisted_vars': []` to `'blacklisted_vars': ['thlm']. Similarly to blacklisting a variable, a variable can also be describes with `'fill_zeros' = True`. When this parameter is passed pyplotgen will fill a list with 0's in place of the variables data instead of ignoring it. This isn't any better for plotting a variable onto a graph than blacklisting it, but it is quite useful for variables that are used in the calculations of another variable, where the value being filled with 0's may or may not exist, but the calculation must continue. If the missing variable should be plotted for the given case, then you must either create a fallback or model_calc function (please see below).
 
-#### Fallback vs. model_calc functions
+#### Fallback vs. model_calc functions (fallback functions are no longer part of pyplotgen, this section needs to be updated)
 _Note_: Fallback refers to a function defined under `fallback_func` and model_calc refers to a function defined as either `sam_calc` or `coamps_calc`.
 
 Fallback and model_calc functions are similar in both their code structure and use case, however there are subtle difference between them. Fallback functions are used as a form of last resort attempt to find a variable. In the event that pyplotgen searches a dataset and doesn't find any of a given variables aliases, it will check to see if there is a fallback function defined for that variable. If there is, then it will use that to gather the data and then continue plotting. A model_calc function is different in that it tells pyplotgen that this specific variable is always a calculated value for some model output, and so if there is a model_calc function specified for a variable, pyplotgen will skip past searching aliases and go straight to the calculating function. This helps improve efficiency by reducing time wasted on alias searches while also keeping the code cleaner and more readable by making it easy to see that variable X is always calculated for model Y, whereas a fallback can be called for any of the models.  
