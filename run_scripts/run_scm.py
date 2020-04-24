@@ -23,7 +23,7 @@ model_file.close()
 
 # read in parameters to modify from command line
 parameters = {}
-for n in range(2,len(sys.argv)-1):
+for n in range(2,len(sys.argv)-1,2):
   parameters[sys.argv[n]] = sys.argv[n+1]
 
 # create concatenated model file name (and check parameters are valid)
@@ -56,11 +56,10 @@ if ('prefix' not in parameters):
 if ('dt' in parameters and 'dt_output' not in parameters):
   parameters['dt_output'] = parameters['dt']
 
-# if dz specified, set top of uniform computational grid to match stretched grid
+# if dz specified, set other associated options
 if ('dz' in parameters):
   parameters['grid_type'] = '1'
-  parameters['zmax'] = '27500.0'
-  parameters['zt_filename'] = ''
+  parameters['zt_filename'] = "''"
 
 modified_lines = []
 for line in model_config:
@@ -126,4 +125,4 @@ namelist_file.close()
 
 # execute CLUBB
 print('Running CLUBB...')
-#os.system('../bin/clubb_standalone')
+os.system('../bin/clubb_standalone')
