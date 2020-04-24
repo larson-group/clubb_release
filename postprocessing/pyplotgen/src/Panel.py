@@ -10,6 +10,7 @@ import numpy as np
 from cycler import cycler
 
 from config import Style_definitions
+from src.interoperability import clean_path
 
 
 class Panel:
@@ -23,7 +24,7 @@ class Panel:
     TYPE_TIMESERIES = 'timeseries'
     EXTENSION = '.png'
 
-    def __init__(self, plots, panel_type="profile", title="Unnamed panel", dependant_title="dependant variable", sci_scale = None):
+    def __init__(self, plots, panel_type="profile", title="Unnamed panel", dependant_title="dependant variable", sci_scale = None, centered = False):
         """
         Creates a new panel
         :param plots: list of Line objects to plot onto the panel
@@ -42,6 +43,7 @@ class Panel:
         self.y_title = "y title unassigned"
         self.__init_axis_titles__()
         self.sci_scale = sci_scale
+        self.centered = centered
 
     def __init_axis_titles__(self):
         """
@@ -90,7 +92,7 @@ class Panel:
         # Use custom sci scaling
         if self.sci_scale is not None:
             scalepower = -1 * self.sci_scale
-            if self.sci_scale is not 0:
+            if self.sci_scale != 0:
                 label_scale_factor = "\t1e" + str(self.sci_scale)
             math_scale_factor =  10 ** (scalepower)
             plt.ticklabel_format(style='plain', axis='x')
@@ -168,10 +170,10 @@ class Panel:
             # Put a legend to the right of the current axis
             ax.legend(loc='center left', bbox_to_anchor=(1, 0.5))
 
-        # Center budgets
-        if self.panel_type is Panel.TYPE_BUDGET:
-            plt.xlim(-1 * max_panel_value * Style_definitions.BUDGET_XAXIS_SCALE_FACTOR,max_panel_value * Style_definitions.BUDGET_XAXIS_SCALE_FACTOR)
-            
+        # Center plots
+        if self.centered:
+            plt.xlim(-1 * max_panel_value * Style_definitions.BUDGET_XAXIS_SCALE_FACTOR, max_panel_value * Style_definitions.BUDGET_XAXIS_SCALE_FACTOR)
+
         # Emphasize 0 line in profile plots if 0 is in x-axis range
         xlim = plt.xlim()
         if self.panel_type == Panel.TYPE_PROFILE and 0 >= xlim[0] and 0 <= xlim[1]:

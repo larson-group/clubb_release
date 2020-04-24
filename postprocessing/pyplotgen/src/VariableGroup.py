@@ -160,11 +160,30 @@ class VariableGroup:
         plot_r408 = self.r408_datasets is not None
         plot_hoc = self.hoc_datasets is not None
 
-        plot_sam = self.sam_datasets is not None and len(self.sam_datasets) > 0 and (len(var_names['sam']) is not 0 or 'sam_calc' in variable_def_dict.keys())
-        plot_e3sm = self.e3sm_datasets is not None and len(self.e3sm_datasets) > 0 and (len(var_names['e3sm']) is not 0 or 'e3sm_calc' in variable_def_dict.keys())
-        plot_clubb = self.clubb_datasets is not None and len(self.clubb_datasets) > 0 and (len(var_names['clubb']) is not 0 or 'clubb_calc' in variable_def_dict.keys())
-        plot_wrf = self.wrf_datasets is not None and len(self.wrf_datasets) > 0 and (len(var_names['wrf']) is not 0 or 'wrf_calc' in variable_def_dict.keys())
+        plot_sam = self.sam_datasets is not None and len(self.sam_datasets) > 0 and (len(var_names['sam']) > 0 or 'sam_calc' in variable_def_dict.keys())
+        plot_e3sm = self.e3sm_datasets is not None and len(self.e3sm_datasets) > 0 and (len(var_names['e3sm']) > 0 or 'e3sm_calc' in variable_def_dict.keys())
+        plot_clubb = self.clubb_datasets is not None and len(self.clubb_datasets) > 0 and (len(var_names['clubb']) > 0 or 'clubb_calc' in variable_def_dict.keys())
+        plot_wrf = self.wrf_datasets is not None and len(self.wrf_datasets) > 0 and (len(var_names['wrf']) > 0 or 'wrf_calc' in variable_def_dict.keys())
 
+        print('Will plot SAM: {}'.format(plot_sam))
+        print('sam_datasets is None: {}'.format(self.sam_datasets is None))
+        # print('sam_datasets = {}'.format(self.sam_datasets))
+        if self.sam_datasets is not None:
+            print('len(sam_datasets) > 0: {}'.format(len(self.sam_datasets)>0))
+        print('var_names = {}'.format(var_names))
+        print('len(var_names["sam"]) != 0: {}'.format(len(var_names['sam'])!=0))
+        print('"sam_calc" in variable_def_dict.keys(): {}'.format('sam_calc' in variable_def_dict.keys()))
+        
+        
+        
+        print('Will plot CLUBB: {}'.format(plot_clubb))
+        print('clubb_datasets is None: {}'.format(self.clubb_datasets is None))
+        # print('clubb_datasets = {}'.format(self.clubb_datasets))
+        if self.clubb_datasets is not None:
+            print('len(clubb_datasets) > 0: {}'.format(len(self.clubb_datasets)>0))
+        print('var_names = {}'.format(var_names))
+        print('len(var_names["clubb"]) != 0: {}'.format(len(var_names['clubb'])!=0))
+        # print('"sam_calc" in variable_def_dict.keys(): {}'.format('sam_calc' in variable_def_dict.keys()))
 
         all_lines = []
         # Plot benchmarks
@@ -259,7 +278,7 @@ class VariableGroup:
                     plot = Line(plot_data, z, line_format=line_style, label=line['legend_label'])
                     all_lines.append(plot)
 
-        if len(all_model_var_names[model_name]) is not 0 and not data_was_calculated:
+        if len(all_model_var_names[model_name]) > 0 and not data_was_calculated:
             all_lines.extend(self.__getVarLines__(all_model_var_names[model_name], dataset,
                                                   conversion_factor=conv_factors[model_name],
                                                   label=label,
@@ -327,13 +346,16 @@ class VariableGroup:
             axis_label = variable['axis_title']
             plotset = variable['plots']
             panel_type = self.default_panel_type
+            centered = False
             if 'type' in variable.keys():
                 panel_type = variable['type']
             if 'sci_scale' in variable.keys():
                 sci_scale = variable['sci_scale']
             else:
                 sci_scale = None
-            panel = Panel(plotset, title=title, dependant_title=axis_label, panel_type=panel_type, sci_scale=sci_scale)
+            if 'centered' in variable.keys():
+                centered = variable['centered']
+            panel = Panel(plotset, title=title, dependant_title=axis_label, panel_type=panel_type, sci_scale=sci_scale, centered=centered)
             self.panels.append(panel)
 
 
@@ -375,7 +397,7 @@ class VariableGroup:
             title = variable_def_dict['title']
 
         if 'axis_title' not in variable_def_dict.keys():
-            if panel_type == Panel.TYPE_BUDGET and len(all_lines) is not 0:
+            if panel_type == Panel.TYPE_BUDGET and len(all_lines) > 0:
                 any_varname_with_budget_units = [var.label for var in all_lines]
                 axis_title = "[" + data_reader.__getUnits__(first_input_datasets, any_varname_with_budget_units) + "]"
             else:
@@ -410,13 +432,13 @@ class VariableGroup:
         :return: A relevant name of the given variable
         """
         plotted_models_varname = "unknown_model_var"
-        if self.clubb_datasets is not None and len(var_names['clubb']) is not 0:
+        if self.clubb_datasets is not None and len(var_names['clubb']) > 0:
             plotted_models_varname = var_names['clubb'][0]
-        elif self.clubb_datasets is None and self.wrf_datasets is not None and len(var_names['wrf']) is not 0:
+        elif self.clubb_datasets is None and self.wrf_datasets is not None and len(var_names['wrf']) > 0:
             plotted_models_varname = var_names['wrf'][0]
-        elif self.clubb_datasets is None and self.sam_datasets is not None and len(var_names['sam']) is not 0:
+        elif self.clubb_datasets is None and self.sam_datasets is not None and len(var_names['sam']) > 0:
             plotted_models_varname = var_names['sam'][0]
-        elif self.clubb_datasets is None and self.e3sm_datasets is not None and len(var_names['e3sm']) is not 0:
+        elif self.clubb_datasets is None and self.e3sm_datasets is not None and len(var_names['e3sm']) > 0:
             plotted_models_varname = var_names['e3sm'][0]
         return plotted_models_varname
 
