@@ -3,7 +3,7 @@
 import os
 import sys
 
-modifiable_parameters = ['dt', 'dt_output', 'microphysics', 'format', 'prefix']
+modifiable_parameters = ['dt', 'dt_output', 'microphysics', 'format', 'prefix', 'dz']
 
 # TODO: check that this is being run from the run_scripts directory
 os.chdir('../output')
@@ -31,7 +31,7 @@ model_file_name = model_file_name.replace('_model.in', '')
 for parameter in parameters:
   model_file_name += '_' + parameter + '-' + parameters[parameter]
   if (parameter not in modifiable_parameters):
-    print(paramter + ' is not modifiable')
+    print(parameter + ' is not modifiable')
     print('valid options:')
     print(modifiable_parameters)
     sys.exit(1)
@@ -56,41 +56,30 @@ if ('prefix' not in parameters):
 if ('dt' in parameters and 'dt_output' not in parameters):
   parameters['dt_output'] = parameters['dt']
 
+# if dz specified, set top of uniform computational grid to match stretched grid
+if ('dz' in parameters):
+  parameters['grid_type'] = '1'
+  parameters['zmax'] = '27500.0'
+  parameters['zt_filename'] = ''
+
 modified_lines = []
 for line in model_config:
   modified = False
   if (not line.strip().startswith('!')):
     for parameter in parameters:
-      # adjust timestep sizes
-      if (parameter == 'dt'):
-        if (line.startswith('dt_main') or line.startswith('dt_rad')):
-          default_dt = line.split()[2]
-          line = line.replace(default_dt, parameters[parameter])
-          modified = True
-      # adjust output timestep
-      if (parameter == 'dt_output'):
-        if (line.startswith('stats_tsamp') or line.startswith('stats_tout')):
-          default_dt = line.split()[2]
-          line = line.replace(default_dt, parameters[parameter])
-          modified = True
-      # adjust microphysics scheme
-      if (parameter == 'microphysics'):
-        if (line.startswith('microphys_scheme')):
-          default_scheme = line.split()[2]
-          line = line.replace(default_scheme, parameters[parameter])
-          modified = True
-      # adjust output file name prefix
-      if (parameter == 'prefix'):
-        if (line.startswith('fname_prefix')):
-          default_prefix = line.split()[2]
-          line = line.replace(default_prefix, parameters[parameter])
-          modified = True
-      # adjust output file format
-      if (parameter == 'format'):
-        if (line.startswith('stats_fmt')):
-          default_format = line.split()[2]
-          line = line.replace(default_format, parameters[parameter])
-          modified = True
+      # adjust values
+      if (parameter == 'dt' and (line.startswith('dt_main') or line.startswith('dt_rad'))
+        or parameter == 'dt_output' and (line.startswith('stats_tsamp') or line.startswith('stats_tout'))
+        or parameter == 'microphysics' and line.startswith('microphys_scheme')
+        or parameter == 'prefix' and line.startswith('fname_prefix')
+        or parameter == 'format' and line.startswith('stats_fmt')
+        or parameter == 'grid_type' and line.startswith('grid_type')
+        or parameter == 'dz' and line.startswith('deltaz')
+        or parameter == 'zmax' and line.startswith('zm_top')
+        or parameter == 'zt_filename' and line.startswith('zt_grid_fname')):
+        default_value = line.split()[2]
+        line = line.replace(default_value, parameters[parameter])
+        modified = True
 
   # write line to model configuration (and record if modified)
   model_file.write(line)
@@ -137,4 +126,4 @@ namelist_file.close()
 
 # execute CLUBB
 print('Running CLUBB...')
-os.system('../bin/clubb_standalone')
+#os.system('../bin/clubb_standalone')
