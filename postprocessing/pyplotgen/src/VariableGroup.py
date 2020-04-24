@@ -165,26 +165,6 @@ class VariableGroup:
         plot_clubb = self.clubb_datasets is not None and len(self.clubb_datasets) > 0 and (len(var_names['clubb']) > 0 or 'clubb_calc' in variable_def_dict.keys())
         plot_wrf = self.wrf_datasets is not None and len(self.wrf_datasets) > 0 and (len(var_names['wrf']) > 0 or 'wrf_calc' in variable_def_dict.keys())
 
-        print('Will plot SAM: {}'.format(plot_sam))
-        print('sam_datasets is None: {}'.format(self.sam_datasets is None))
-        # print('sam_datasets = {}'.format(self.sam_datasets))
-        if self.sam_datasets is not None:
-            print('len(sam_datasets) > 0: {}'.format(len(self.sam_datasets)>0))
-        print('var_names = {}'.format(var_names))
-        print('len(var_names["sam"]) != 0: {}'.format(len(var_names['sam'])!=0))
-        print('"sam_calc" in variable_def_dict.keys(): {}'.format('sam_calc' in variable_def_dict.keys()))
-        
-        
-        
-        print('Will plot CLUBB: {}'.format(plot_clubb))
-        print('clubb_datasets is None: {}'.format(self.clubb_datasets is None))
-        # print('clubb_datasets = {}'.format(self.clubb_datasets))
-        if self.clubb_datasets is not None:
-            print('len(clubb_datasets) > 0: {}'.format(len(self.clubb_datasets)>0))
-        print('var_names = {}'.format(var_names))
-        print('len(var_names["clubb"]) != 0: {}'.format(len(var_names['clubb'])!=0))
-        # print('"sam_calc" in variable_def_dict.keys(): {}'.format('sam_calc' in variable_def_dict.keys()))
-
         all_lines = []
         # Plot benchmarks
         if plot_les:

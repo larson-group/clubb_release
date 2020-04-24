@@ -199,6 +199,7 @@ class Panel:
             filename = filename + '_' + self.y_title + "_VS_" + self.x_title
         filename = self.__remove_invalid_filename_chars__(filename)
         rel_filename = output_folder + "/" +casename+'/' + filename
+        rel_filename = clean_path(rel_filename)
         if replace_images is True or not os.path.isfile(rel_filename+Panel.EXTENSION):
             plt.savefig(rel_filename+Panel.EXTENSION)
         else: # os.path.isfile(rel_filename + Panel.EXTENSION) and replace_images is False:

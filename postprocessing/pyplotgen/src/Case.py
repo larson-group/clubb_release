@@ -56,6 +56,7 @@ class Case:
         self.wrf_folders = wrf_folders
         self.diff_datasets = diff_datasets
         self.next_panel_alphabetic_id_code = 97
+
         if 'disable_budgets' in case_definition.keys() and case_definition['disable_budgets'] is True:
             self.plot_budgets = False
 
@@ -65,33 +66,34 @@ class Case:
             les_file = datareader.__loadNcFile__(case_definition['les_dataset'])
 
         sam_datasets = {}
-        if len(sam_folders) != 0 and sam_folders != None and case_definition['sam_file'] != None:
+        if sam_folders is not None and len(sam_folders) != 0 and case_definition['sam_file'] is not None:
             datareader = DataReader()
             for foldername in sam_folders:
-                sam_filename = foldername + case_definition['sam_file']
+                sam_filename = foldername + '/' + case_definition['sam_file']
                 if path.exists(sam_filename):
                     sam_datasets[foldername] = datareader.__loadNcFile__(sam_filename)
                 else:
                     warn("Failed to find file " + sam_filename)
 
         wrf_datasets = {}
-        if len(wrf_folders) != 0 and wrf_folders != None and case_definition['wrf_file'] != None:
+        if wrf_folders is not None and len(wrf_folders) != 0 and case_definition['wrf_file'] is not None:
             datareader = DataReader()
             for foldername in wrf_folders:
                 files_in_folder = {}
                 wrf_filenames = case_definition['wrf_file']
                 for type_ext in wrf_filenames:
-                    filepath = foldername + wrf_filenames[type_ext]
+                    filepath = foldername + '/' + wrf_filenames[type_ext]
                     if path.exists(filepath):
                         files_in_folder[type_ext] = datareader.__loadNcFile__(filepath)
                     else:
                         warn("Failed to find file " + filepath)
                 wrf_datasets[foldername] = files_in_folder
+
         e3sm_file = {}
-        if len(e3sm_dirs) != 0 and e3sm_dirs != None and case_definition['e3sm_file'] != None:
+        if e3sm_dirs is not None and len(e3sm_dirs) != 0 and case_definition['e3sm_file'] is not None:
             datareader = DataReader()
             for foldername in e3sm_dirs:
-                e3sm_filename = foldername + case_definition['e3sm_file']
+                e3sm_filename = foldername + '/' + case_definition['e3sm_file']
                 if path.exists(e3sm_filename):
                     e3sm_file[foldername] = datareader.__loadNcFile__(e3sm_filename)
                 else:
@@ -151,16 +153,16 @@ class Case:
                 self.panels[idx].all_plots = diff_lines
 
         if self.plot_budgets:
-            if self.clubb_datasets is not None and len(self.clubb_datasets) is not 0:
+            if self.clubb_datasets is not None and len(self.clubb_datasets) != 0:
                 # for ncdataset in self.clubb_datasets.values():
                 budget_variables = VariableGroupBaseBudgets(self, clubb_datasets=self.clubb_datasets)
                 self.panels.extend(budget_variables.panels)
-            if wrf_datasets is not None and len(wrf_datasets) is not 0:
+            if wrf_datasets is not None and len(wrf_datasets) !=  0:
                 # for ncdataset in self.clubb_datasets.values():
                 for folders_datasets in wrf_datasets.values():
                     budget_variables = VariableGroupBaseBudgets(self, wrf_datasets=folders_datasets)
                     self.panels.extend(budget_variables.panels)
-            if e3sm_file != None and len(e3sm_file) is not 0:
+            if e3sm_file is not None and len(e3sm_file) != 0:
                 for dataset_name in e3sm_file:
                     e3sm_budgets = VariableGroupBaseBudgets(self, e3sm_datasets={dataset_name:e3sm_file[dataset_name]}) # E3SM dataset must be wrapped in the same form as the clubb datasets
                     self.panels.extend(e3sm_budgets.panels)

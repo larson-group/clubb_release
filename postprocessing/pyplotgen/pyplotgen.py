@@ -15,12 +15,13 @@ import shutil
 import subprocess
 from datetime import datetime
 from warnings import warn
+import re
 
 from config import Case_definitions
 from python_html_gallery import gallery
 from src.Case import Case
 from src.DataReader import DataReader
-
+from src.interoperability import clean_path
 
 class PyPlotGen:
     """
@@ -78,10 +79,11 @@ class PyPlotGen:
         self.sam_data_reader = DataReader()
         self.show_alphabetic_id = show_alphabetic_id
         self.output_folder = os.path.abspath(self.output_folder)
+
         if os.path.isdir(self.output_folder) and self.replace_images == False:
             self.output_folder = self.output_folder + '_generated_on_' + str(datetime.now())
-        self.output_folder = self.__remove_invalid_filename_chars__(self.output_folder)
-        self.output_folder = self.output_folder.replace(' ', '_')
+
+        self.output_folder = clean_path(self.output_folder)
 
     def run(self):
         """
@@ -206,15 +208,19 @@ class PyPlotGen:
     def __remove_invalid_filename_chars__(self, string):
         """
         Removes characters from a string that are not valid for a filename
+        DEPRECATED! Moved to src/interoperability.py
+        since this is needed mutiple times throughout a run
 
         :param string: Filename string to have characters removed
         :return: a character stripped version of the filename
         """
         string = string.replace('.', '')
         string = string.replace(',', '')
-        string = string.replace(':', '-')
+        if 'win' in os.name.lower() or 'nt' in os.name.lower():
+            string = re.sub(r'(?<![A-Z]):(?!\\)', '-', string)
+        else:
+            string = string.replace(':', '-')
         return string
-
 
 def __process_args__():
     """
