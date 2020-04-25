@@ -10,10 +10,8 @@ matplotlib.rcParams.update({'font.size': 16})
 
 if (__name__ == '__main__'):
 
-  timestep = 60.0
-
   if (len(sys.argv) < 3):
-    print("usage: python animate.py zm_file zt_file <start_index> <stop_index> <output_file>")
+    print("usage: python animate.py zm_file zt_file <start_index> <stop_index> <animation_step> <output_file>")
     sys.exit(1)
 
   zm_file = sys.argv[1]
@@ -32,7 +30,12 @@ if (__name__ == '__main__'):
     nMax = -1
 
   if (len(sys.argv) > 5):
-    outputFile = sys.argv[5]
+    step = int(sys.argv[5])
+  else:
+    step = 1
+
+  if (len(sys.argv) > 6):
+    outputFile = sys.argv[6]
   else:
     outputFile = None
 
@@ -42,13 +45,15 @@ if (__name__ == '__main__'):
 
   zm = zm_data['altitude'][:]
   zt = zt_data['altitude'][:]
+  time = zm_data['time'][:]
+  dt = time[1]-time[0]
 
   M = 3
   f, ax = plt.subplots(2, M, figsize=(5*M,12),sharey=True)
   data = {}
   # create (wp2(t+dt)-wp2(t))/dt & (wp3(t+dt)-wp3(t))/dt
-  dwp2dt = (zm_data['wp2'][1:,:,:,:]-zm_data['wp2'][0:-1,:,:,:])/timestep
-  dwp3dt = (zt_data['wp3'][1:,:,:,:]-zt_data['wp3'][0:-1,:,:,:])/timestep
+  dwp2dt = (zm_data['wp2'][1:,:,:,:]-zm_data['wp2'][0:-1,:,:,:])/dt
+  dwp3dt = (zt_data['wp3'][1:,:,:,:]-zt_data['wp3'][0:-1,:,:,:])/dt
 
   # ***** wp2 *****
   cax = ax[0,0]
@@ -117,7 +122,6 @@ if (__name__ == '__main__'):
     add_to_axis(dwp3dt, zt, 'dwp3/dt', cax, data, linespec='--k')
     cax.set_xlim(-0.005,0.005)
 
-  time = zm_data['time'][:]
   if (nMax > 0):
     N = nMax-1
   else:
@@ -147,7 +151,7 @@ if (__name__ == '__main__'):
       for line in data:
         line.set_xdata(data[line][n,:,0,0])
 
-  ani = animation.FuncAnimation(f, update, frames=range(n0,N), interval=1)
+  ani = animation.FuncAnimation(f, update, frames=range(n0,N,step), interval=1)
   if (outputFile is None):
     plt.show()
   else:
