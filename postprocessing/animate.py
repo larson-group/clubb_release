@@ -94,7 +94,7 @@ if (__name__ == '__main__'):
   add_to_axis(zm_data['wp3_on_wp2'][:]/10.0, zm, '0.1*wp3/wp2 (zm)', cax, data)
   add_to_axis(zt_data['cloud_frac'][:], zt, 'cld_frac', cax, data)
   add_to_axis(dwp3dt, zt, 'dwp3/dt', cax, data, linespec='--k')
-  cax.set_xlim(-2.0,2.0)
+  cax.set_xlim(-1.0,1.0)
   # significant quantities
   cax = ax[1,1]
   add_to_axis(zt_data['wp3_ta'][:], zt, 'ta', cax, data)
@@ -103,7 +103,7 @@ if (__name__ == '__main__'):
   add_to_axis(zt_data['wp3_bp1'][:], zt, 'bp1', cax, data)
   add_to_axis(zt_data['wp3_tp'][:], zt, 'tp', cax, data)
   add_to_axis(dwp3dt, zt, 'dwp3/dt', cax, data, linespec='--k')
-  cax.set_xlim(-0.05,0.05)
+  cax.set_xlim(-0.01,0.01)
   # insignificant_quantities
   cax = ax[1,2]
   add_to_axis(zt_data['wp3_ma'][:], zt, 'ma', cax, data)
@@ -112,7 +112,7 @@ if (__name__ == '__main__'):
   add_to_axis(zt_data['wp3_dp1'][:], zt, 'dp1', cax, data)
   add_to_axis(zt_data['wp3_bp2'][:], zt, 'bp2', cax, data)
   add_to_axis(dwp3dt, zt, 'dwp3/dt', cax, data, linespec='--k')
-  cax.set_xlim(-0.05,0.05)
+  cax.set_xlim(-0.01,0.01)
   # numerical adjustments
   if 0:
     cax = ac[1,3]
