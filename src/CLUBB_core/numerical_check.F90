@@ -622,7 +622,10 @@ module numerical_check
   end subroutine rad_check
 
 !-----------------------------------------------------------------------
-  logical function invalid_model_arrays( )
+  logical function invalid_model_arrays( um, vm, rtm, wprtp, thlm, wpthlp, &
+                                         rtp2, thlp2, rtpthlp, wp2, wp3, &
+                                         wp2thvp, rtpthvp, thlpthvp, &
+                                         hydromet, sclrm, edsclrm )
 
 !       Description:
 !       Checks for invalid floating point values in select model arrays.
@@ -631,39 +634,49 @@ module numerical_check
 !       None
 !------------------------------------------------------------------------
 
-    use variables_diagnostic_module, only: & 
-      hydromet,  & ! Variable(s)
-      wp2thvp, & 
-      rtpthvp, & 
-      thlpthvp
-
-    use variables_prognostic_module, only: & 
-      um,  & ! Variable(s)
-      vm, & 
-      wp2, & 
-      wp3, & 
-      rtm, & 
-      thlm, & 
-      rtp2, & 
-      thlp2, & 
-      wprtp, & 
-      wpthlp, & 
-      rtpthlp, & 
-      sclrm, & 
-      edsclrm
+    use grid_class, only: &
+        gr    ! Grid Type
 
     use constants_clubb, only: & 
-      fstderr   ! Constant(s)
+        fstderr   ! Constant(s)
 
     use parameters_model, only: & 
-      sclr_dim,  & ! Variable(s)
-      edsclr_dim, &
-      hydromet_dim
+        sclr_dim,  & ! Variable(s)
+        edsclr_dim, &
+        hydromet_dim
 
     use array_index, only: &
-      hydromet_list ! Variable(s)
+        hydromet_list ! Variable(s)
+
+    use clubb_precision, only: &
+        core_rknd    ! Variable(s)
 
     implicit none
+
+    real( kind = core_rknd ), dimension(gr%nz), intent(in) ::  &
+      um,       & ! eastward grid-mean wind comp. (thermo. levs.)  [m/s]
+      vm,       & ! northward grid-mean wind comp. (thermo. levs.) [m/s]
+      rtm,      & ! total water mixing ratio, r_t (thermo. levels) [kg/kg]
+      wprtp,    & ! w' r_t' (momentum levels)                      [(kg/kg) m/s]
+      thlm,     & ! liq. water pot. temp., th_l (thermo. levels)   [K]
+      wpthlp,   & ! w'th_l' (momentum levels)                      [(m/s) K]
+      rtp2,     & ! r_t'^2 (momentum levels)                       [(kg/kg)^2]
+      thlp2,    & ! th_l'^2 (momentum levels)                      [K^2]
+      rtpthlp,  & ! r_t'th_l' (momentum levels)                    [(kg/kg) K]
+      wp2,      & ! w'^2 (momentum levels)                         [m^2/s^2]
+      wp3,      & ! w'^3 (thermodynamic levels)                    [m^3/s^3]
+      wp2thvp,  & ! < w'^2 th_v' > (thermodynamic levels)          [m^2/s^2 K]
+      rtpthvp,  & ! < r_t' th_v' > (momentum levels)               [kg/kg K]
+      thlpthvp    ! < th_l' th_v' > (momentum levels)              [K^2]
+
+    real( kind = core_rknd ), dimension(gr%nz,hydromet_dim), intent(in) :: &
+      hydromet    ! Array of hydrometeors                          [units vary]
+
+    real( kind = core_rknd ), dimension(gr%nz,sclr_dim), intent(in) :: &
+      sclrm    ! Passive scalar mean (thermo. levels)              [units vary]
+
+    real( kind = core_rknd ), dimension(gr%nz,edsclr_dim), intent(in) :: &
+      edsclrm   ! Eddy passive scalar grid-mean (thermo. levels)   [units vary]
 
     ! Local Variables
     integer :: i

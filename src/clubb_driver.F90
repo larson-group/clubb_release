@@ -1568,7 +1568,10 @@ module clubb_driver
       end if
 
       ! Check for NaN values in the model arrays
-      if ( invalid_model_arrays( ) ) then
+      if ( invalid_model_arrays( um, vm, rtm, wprtp, thlm, wpthlp, &
+                                 rtp2, thlp2, rtpthlp, wp2, wp3, &
+                                 wp2thvp, rtpthvp, thlpthvp, &
+                                 hydromet, sclrm, edsclrm ) ) then
         err_code = clubb_fatal_error
         write(fstderr,*) "Fatal error: a CLUBB variable is NaN in main time stepping loop."
         stop
