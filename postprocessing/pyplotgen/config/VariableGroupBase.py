@@ -428,7 +428,8 @@ class VariableGroupBase(VariableGroup):
         Calculates thlm values from sam output using
         the following equation
         (THETAL + 2500.4.*(THETA./TABS).*(QI./1000))
-        :return: requested variable dependent_data in the form of a list. Returned dependent_data is already cropped to the appropriate min,max indices
+        :return: requested variable dependent_data in the form of a list.
+                Returned dependent_data is already cropped to the appropriate min,max indices
         """
         # z,z, dataset = self.getVarForCalculations('z', self.les_dataset)
         dataset = self.les_dataset
@@ -442,25 +443,13 @@ class VariableGroupBase(VariableGroup):
         thlm = thetal + (2500.4 * (theta / tabs) * (qi / 1000))
         return thlm, z
 
-    # def getThlmE3smCalc(self, dataset_override = None):
-    #     """
-    #     Calculates thlm values from sam output using
-    #     the following equation
-    #     (THETAL + 2500.4.*(THETA./TABS).*(QI./1000))
-    #     :return: requested variable dependent_data in the form of a list. Returned dependent_data is already cropped to the appropriate min,max indices
-    #     """
-    #     # z,z, dataset = self.getVarForCalculations('Z3', self.e3sm_datasets)
-    #     thlm,z, dataset = self.getVarForCalculations('THETAL', self.e3sm_datasets)
-    #
-    #     thlm = thlm - 650.0
-    #     return thlm, z
-
     def getRtmSamCalc(self, dataset_override=None):
         """
         Calculates rtm values from sam output using
         the following equation
         (QT-QI) ./ 1000
-        :return: requested variable dependent_data in the form of a list. Returned dependent_data is already cropped to the appropriate min,max indices
+        :return: requested variable dependent_data in the form of a list.
+        Returned dependent_data is already cropped to the appropriate min,max indices
         """
         dataset = self.les_dataset
         if dataset_override is not None:
@@ -477,7 +466,8 @@ class VariableGroupBase(VariableGroup):
         Calculates Skw_zt values from sam output using
         the following equation
         WP3 ./ (WP2 + 1.6e-3).^1.5
-        :return: requested variable dependent_data in the form of a list. Returned dependent_data is already cropped to the appropriate min,max indices
+        :return: requested variable dependent_data in the form of a list.
+                Returned dependent_data is already cropped to the appropriate min,max indices
         """
         dataset = None
         if self.les_dataset is not None:
@@ -501,7 +491,8 @@ class VariableGroupBase(VariableGroup):
         the following equation
          sam eqn RTP3 ./ (RTP2 + 4e-16).^1.5
          coamps eqn qtp3 ./ (qtp2 + 4e-16).^1.5
-        :return: requested variable dependent_data in the form of a list. Returned dependent_data is already cropped to the appropriate min,max indices
+        :return: requested variable dependent_data in the form of a list.
+                Returned dependent_data is already cropped to the appropriate min,max indices
         """
         dataset = None
         if self.les_dataset is not None:
@@ -524,7 +515,8 @@ class VariableGroupBase(VariableGroup):
         the following equation
         sam THLP3 ./ (THLP2 + 4e-4).^1.5
         coamps eqn thlp3 ./ (thlp2 + 4e-4).^1.5
-        :return: requested variable dependent_data in the form of a list. Returned dependent_data is already cropped to the appropriate min,max indices
+        :return: requested variable dependent_data in the form of a list.
+                Returned dependent_data is already cropped to the appropriate min,max indices
         """
         dataset = None
         if self.les_dataset is not None:
@@ -545,7 +537,8 @@ class VariableGroupBase(VariableGroup):
 
     def getWpthlpSamCalc(self, dataset_override=None):
         """
-        This gets called if WPTHLP isn't outputted in an nc file as a backup way of gathering the dependent_data for plotting.
+        This gets called if WPTHLP isn't outputted in an nc file as a backup way of gathering the dependent_data
+        for plotting.
         WPTHLP = (TLFLUX) ./ (RHO * 1004)
         :return:
         """
@@ -564,7 +557,8 @@ class VariableGroupBase(VariableGroup):
 
     def getWprtpSamCalc(self, dataset_override=None):
         """
-        This gets called if WPRTP isn't outputted in an nc file as a backup way of gathering the dependent_data for plotting.
+        This gets called if WPRTP isn't outputted in an nc file as a backup way of gathering the dependent_data
+        for plotting.
         WPRTP = (QTFLUX) ./ (RHO * 2.5104e+6)
         :return:
         """
@@ -581,7 +575,8 @@ class VariableGroupBase(VariableGroup):
 
     def getWpthvpSamCalc(self, dataset_override=None):
         """
-        This gets called if WPTHVP isn't outputted in an nc file as a backup way of gathering the dependent_data for plotting.
+        This gets called if WPTHVP isn't outputted in an nc file as a backup way of gathering the dependent_data
+        for plotting.
         WPTHVP =  (TVFLUX) ./ ( RHO * 1004)
         :return:
         """
@@ -598,7 +593,8 @@ class VariableGroupBase(VariableGroup):
 
     def getRtp2SamCalc(self, dataset_override=None):
         """
-        This gets called if RTP2 isn't outputted in an nc file as a backup way of gathering the dependent_data for plotting.
+        This gets called if RTP2 isn't outputted in an nc file as a backup way of gathering the dependent_data
+        for plotting.
         THLP2 = QT2 / 1e+6
         :return:
         """
@@ -720,7 +716,8 @@ class VariableGroupBase(VariableGroup):
         """
         coamps eqn upwp = wpup + wpup_sgs
 
-         :return: requested variable dependent_data in the form of a list. Returned dependent_data is already cropped to the appropriate min,max indices
+         :return: requested variable dependent_data in the form of a list. Returned dependent_data is already
+         cropped to the appropriate min,max indices
         """
         if dataset_override is not None:
             dataset = dataset_override['sw']
@@ -737,7 +734,8 @@ class VariableGroupBase(VariableGroup):
         """
         coamps eqn vpwp = wpvp + wpvp_sgs
 
-         :return: requested variable dependent_data in the form of a list. Returned dependent_data is already cropped to the appropriate min,max indices
+         :return: requested variable dependent_data in the form of a list. Returned dependent_data is already
+         cropped to the appropriate min,max indices
         """
         if dataset_override is not None:
             dataset = dataset_override['sw']

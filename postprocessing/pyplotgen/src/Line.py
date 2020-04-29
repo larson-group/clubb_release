@@ -22,8 +22,8 @@ class Line:
         :param label: name of the line (e.g. 'current clubb')
         """
         if len(x_data) != len(y_data):
-            raise ValueError("The size of X(" + str(len(x_data)) + ") is not the same as the size of Y(" + str(len(y_data)) +
-                             ") for the \"" + label + "\" line.")
+            raise ValueError("The size of X(" + str(len(x_data)) + ") is not the same as the size of Y(" +
+                             str(len(y_data)) + ") for the \"" + label + "\" line.")
         if isinstance(x_data, NetCdfVariable):
             x_data = x_data.dependent_data
         if isinstance(y_data, NetCdfVariable):
@@ -32,4 +32,3 @@ class Line:
         self.y = y_data
         self.line_format = line_format
         self.label = label
-

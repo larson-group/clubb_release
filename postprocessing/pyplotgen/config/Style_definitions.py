@@ -10,9 +10,10 @@ If you wish to change a line color, font size, etc., then this is the place to d
 # --------------
 
 # Color rotation
-# Multiple color options are given, uncomment the one that's most useful and comment out the rest. Feel free to make your own as well.
-# Pyplot requires that style rotation's and color rotation's have the same length, so be sure to properly (un)comment the style rotations according
-# to the desired color scheme.
+# Multiple color options are given, uncomment the one that's most useful and comment out the rest.
+# Feel free to make your own as well.
+# Pyplot requires that style rotation's and color rotation's have the same length, so be sure to properly
+# (un)comment the style rotations according to the desired color scheme.
 # Color/style rotations are used on budget plots and for clubb-folder lines
 # If paired_plots is True when plotting a panel, the STYLE_ROTATION will be ignored, as it is written to oscillate between
 #   dashed and solid lines. This currently happens by default for non-budget plots.

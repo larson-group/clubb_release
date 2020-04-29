@@ -18,15 +18,20 @@ class NetCdfVariable:
     Class used for conveniently storing the information about a given netcdf variable
     """
 
-    def __init__(self, names, ncdf_data, independant_var_names=None, conversion_factor=1, start_time=0, end_time=-1, avg_axis=0):
+    def __init__(self, names, ncdf_data, independant_var_names=None, conversion_factor=1, start_time=0, end_time=-1,
+                 avg_axis=0):
         """
 
         :param names: the name of the variable as defined in the ncdf_data
-        :param ncdf_data: Accepts either a Dataset object to pull dependent_data from, or a dict of Datasets which will automatically be searched for the variable
-        :param conversion_factor: A multiplication factor multiplied to every value in the dataset. Defaults to 1
+        :param ncdf_data: Accepts either a Dataset
+        object to pull dependent_data from, or a dict of Datasets which will automatically be searched for the
+        variable
+        :param conversion_factor: A multiplication factor multiplied to every value in the dataset. Defaults
+        to 1
         :param start_time: The time value to being the averaging period, e.g. 181 minutes. Defaults to 0.
         :param end_time: The time value to stop the averaging period, e.g. 240 minutes. Defaults to -1.
-        :param avg_axis: The axis to avg dependent_data over. 0 for time-avg, 1 for height avg
+        :param avg_axis: The
+        axis to avg dependent_data over. 0 for time-avg, 1 for height avg
         """
         dataset_with_var = None
         varname = ""
@@ -76,7 +81,8 @@ class NetCdfVariable:
         If neither are found, returns the entire array back
         :param start_value: The first value to be graphed (may return indexes to values smaller than this)
         :param end_value: The last value that needs to be graphed (may return indexes to values larger than this)
-        :return: (tuple) start_idx, end_idx   which contains the starting and ending index representing the start and end time passed into the function
+        :return: (tuple) start_idx, end_idx   which contains the starting and ending index representing the start and
+        end time passed into the function
         :author: Nicolas Strike
         """
 
@@ -109,12 +115,14 @@ class NetCdfVariable:
     def constrain(self, start_value, end_value, data=None):
         """
         Remove all dependent_data elements from the variable that are not between the start and end value. Assumes
-        the dependent_data is always increasing. If the optional dependent_data parameter is used, it will restrict to the indices
+        the dependent_data is always increasing. If the optional dependent_data parameter is used, it will restrict to
+        the indices
         of where the start/end values are in that dataset rather than the variables dependent_data itself.
 
         :param start_value: The smallest possible value
         :param end_value: The largest possible value
-        :param data: A list of dependent_data values to find start/ending indicies for constraining rather than using the NetCdfVariable's dependent_data.
+        :param data: A list of dependent_data values to find start/ending indicies for constraining rather than using
+        the NetCdfVariable's dependent_data.
         :return: None, operates in place
         """
         if data is None:
@@ -190,7 +198,8 @@ class DataReader():
                     file_ext = os.path.splitext(filename)[1]
                     if ignore_git and '.git' in abs_filename or file_ext != '.nc':
                         continue
-                    ext_offset = filename.rindex('_')  # Find offset to eliminate trailing chars like "_zt.nc", "_zm.nc", and "_sfc.nc
+                    # Find offset to eliminate trailing chars like "_zt.nc", "_zm.nc", and "_sfc.nc
+                    ext_offset = filename.rindex('_')
                     file_type = filename[ext_offset + 1:-3]  # Type of current file (zm, zt, or sfc)
                     case_key = filename[:ext_offset]
                     if case_key in self.nc_filenames.keys() and sub_folder in self.nc_filenames[case_key].keys():
@@ -225,22 +234,27 @@ class DataReader():
             if time_var in netcdf_dataset.variables.keys():
                 time_values = self.__getValuesFromNc__(netcdf_dataset, time_var, time_conv_factor)
         if time_values is None:
-            raise NameError("None of the time variables " + str(Case_definitions.TIME_VAR_NAMES) + " could be found in the dataset " + str(netcdf_dataset.filepath()))
+            raise NameError("None of the time variables " + str(Case_definitions.TIME_VAR_NAMES) +
+                            " could be found in the dataset " + str(netcdf_dataset.filepath()))
         if end_time_value == -1:
-            if variable_name != 'time' and variable_name != 'z' and variable_name != 'altitude' and variable_name != 'lev' and variable_name != 'Z3':
-                warn("End time value was not specified (or was set to -1) for variable "+variable_name+". Automatically using last time in dataset.")
+            if variable_name != 'time' and variable_name != 'z' and variable_name != 'altitude' and \
+                    variable_name != 'lev' and variable_name != 'Z3':
+                warn("End time value was not specified (or was set to -1) for variable "+variable_name+
+                     ". Automatically using last time in dataset.")
             end_time_value = time_values[-1]
         # Get the index values that correspond to the desired start/end x values
         start_avg_index, end_avg_idx = self.__getStartEndIndex__(time_values, start_time_value, end_time_value)
 
         indep_var_not_found = independent_var_name is None
         if indep_var_not_found:
-            raise NameError("None of the independent variables " + str(independent_var_name) + " could be found in the dataset " + str(ncdf_variable.ncdf_data.filepath()))
+            raise NameError("None of the independent variables " + str(independent_var_name) +
+                            " could be found in the dataset " + str(ncdf_variable.ncdf_data.filepath()))
         else:
             independent_values = self.__getValuesFromNc__(netcdf_dataset, independent_var_name, 1)
 
         if independent_values.ndim > 1:  # not ncdf_variable.one_dimensional:
-            independent_values = self.__meanProfiles__(independent_values, start_avg_index, end_avg_idx + 1, avg_axis=avg_axis)
+            independent_values = self.__meanProfiles__(independent_values, start_avg_index, end_avg_idx + 1,
+                                                       avg_axis=avg_axis)
 
         try:
             dependent_values = self.__getValuesFromNc__(netcdf_dataset, variable_name, conv_factor)
@@ -248,7 +262,8 @@ class DataReader():
             dependent_values = np.zeros(len(independent_values))
 
         if dependent_values.ndim > 1:  # not ncdf_variable.one_dimensional:
-            dependent_values = self.__meanProfiles__(dependent_values, start_avg_index, end_avg_idx + 1, avg_axis=avg_axis)
+            dependent_values = self.__meanProfiles__(dependent_values, start_avg_index, end_avg_idx + 1,
+                                                     avg_axis=avg_axis)
 
         # E3SM outputs Z3 as it's height variable, which may also contain an offset
         # (e.g. e3sm height = clubb height + 650 for the dycoms2_rf01 case). This eliminates that offset.
@@ -301,7 +316,8 @@ class DataReader():
             idx_t1 = len(var)
             warn("An end index for the time averaging interval was not specified. Automatically using the last index.")
         if idx_t1 - idx_t0 <= 10:
-            warn("Time averaging interval is small (less than or equal to 10): " + str(idx_t1 - idx_t0) + " | (idx_t0 = " + str(idx_t0) + ", idx_t1 = " + str(
+            warn("Time averaging interval is small (less than or equal to 10): " + str(idx_t1 - idx_t0) +
+                 " | (idx_t0 = " + str(idx_t0) + ", idx_t1 = " + str(
                 idx_t1) + ").")
         if avg_axis is 0:  # if time-averaged
             var_average = np.nanmean(var[idx_t0:idx_t1, :], axis=avg_axis)
@@ -394,7 +410,8 @@ class DataReader():
         :return: time x height array of the specified variable, scaled by conversion factor
         """
         if ncdf_data is None:
-            raise ValueError("ncdf_data was passed as None into __getValuesFromNc__ while looking for variable " + varname)
+            raise ValueError("ncdf_data was passed as None into __getValuesFromNc__ while looking for variable " +
+                             varname)
         var_values = None
         keys = ncdf_data.variables.keys()
         if varname in keys:
@@ -404,13 +421,14 @@ class DataReader():
             if 'SAM version' in ncdf_data.ncattrs():
                 var_values = np.where(np.isclose(var_values, -9999), np.nan, var_values)
             var_values = var_values * conversion
-            # Variables with 0-1 dependent_data points/values return a float after being 'squeeze()'ed, this converts it back to an array
+            # Variables with 0-1 dependent_data points/values return a float after being 'squeeze()'ed,
+            # this converts it back to an array
             if isinstance(var_values, float):
                 var_values = np.array([var_values])
             # break
         if var_values is None:
-            raise ValueError("Variable " + str(varname) + " does not exist in ncdf_data file.\nVariables found in dataset: " + str(ncdf_data))
-
+            raise ValueError("Variable " + str(varname) +
+                             " does not exist in ncdf_data file.\nVariables found in dataset: " + str(ncdf_data))
 
         hrs_in_day = 24
         min_in_hr = 60
@@ -436,7 +454,8 @@ class DataReader():
                 var_values = var_values[:] - var_values[0] + 1
 
         if varname == 'time' and var_values[0] != 1:
-            warn("First time value is " + str(var_values[0]) + " instead of 1. Are these time values supposed to be scaled to minutes?")
+            warn("First time value is " + str(var_values[0]) +
+                 " instead of 1. Are these time values supposed to be scaled to minutes?")
 
         return var_values
 
@@ -448,7 +467,8 @@ class DataReader():
         If neither are found, returns the entire array back
         :param start_value: The first value to be graphed (may return indexes to values smaller than this)
         :param end_value: The last value that needs to be graphed (may return indexes to values larger than this)
-        :return: (tuple) start_idx, end_idx   which contains the starting and ending index representing the start and end time passed into the function
+        :return: (tuple) start_idx, end_idx   which contains the starting and ending index representing the start and
+        end time passed into the function
         :author: Nicolas Strike
         """
 
@@ -502,7 +522,6 @@ class DataReader():
                 return 'e3sm'
             else:
                 return 'unknown-model'
-
 
     def __remove_invalid_unit_chars__(self, units):
         """

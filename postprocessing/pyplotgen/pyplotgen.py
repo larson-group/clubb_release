@@ -128,8 +128,10 @@ class PyPlotGen:
         print('###########################################')
         if num_cases_plotted == 0:
             warn(
-                "Warning, no cases were plotted! Please either specify an input folder for a supported model (e.g. using --sam, --clubb, or --e3sm) or make sure the "
-                "default clubb output folder contains .nc output. Please run ./pyplotgen.py -h for more information on parameters.")
+                "Warning, no cases were plotted! Please either specify an input folder for a supported model "
+                "(e.g. using --sam, --clubb, or --e3sm) or make sure the "
+                "default clubb output folder contains .nc output. "
+                "Please run ./pyplotgen.py -h for more information on parameters.")
         print("\nGenerating webpage for viewing plots ")
         if not os.path.exists(self.output_folder):
             os.mkdir(self.output_folder)
@@ -258,8 +260,9 @@ def __process_args__():
                         help="For morrison microphysics: breaks microphysical source terms into component processes",
                         action="store_true")
     parser.add_argument("--benchmark-only",
-                        help="Prevents autoplotting of clubb's default output folder when no input folders are specifed. This results in only "
-                             "plotting the benchmark output, though this output doesn't gurantee all text fields or plots are filled.",
+                        help="Prevents autoplotting of clubb's default output folder when no input folders are "
+                             "specifed. This results in only plotting the benchmark output, though this "
+                             "output doesn't gurantee all text fields or plots are filled.",
                         action="store_true")
     parser.add_argument("--diff", help="Plot the difference between two clubb folders", action="store")
     parser.add_argument("-c", "--clubb", help="Input folder(s) containing clubb netcdf data.", action="store",

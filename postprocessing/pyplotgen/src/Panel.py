@@ -24,7 +24,8 @@ class Panel:
     TYPE_TIMESERIES = 'timeseries'
     EXTENSION = '.png'
 
-    def __init__(self, plots, panel_type="profile", title="Unnamed panel", dependant_title="dependant variable", sci_scale = None, centered = False):
+    def __init__(self, plots, panel_type="profile", title="Unnamed panel", dependant_title="dependant variable",
+                 sci_scale = None, centered = False):
         """
         Creates a new panel
         :param plots: list of Line objects to plot onto the panel
@@ -60,9 +61,11 @@ class Panel:
             self.x_title = "Time [min]"
             self.y_title = self.dependant_title
         else:
-            raise ValueError('Invalid panel type ' + self.panel_type + '. Valid options are profile, budget, timeseries')
+            raise ValueError('Invalid panel type ' + self.panel_type +
+                             '. Valid options are profile, budget, timeseries')
 
-    def plot(self, output_folder, casename, replace_images = False, no_legends = True, thin_lines = False, alphabetic_id="", paired_plots = True):
+    def plot(self, output_folder, casename, replace_images = False, no_legends = True, thin_lines = False,
+             alphabetic_id="", paired_plots = True):
         """
          Saves a single panel/graph to the output directory specified by the pyplotgen launch parameters
 
@@ -71,9 +74,11 @@ class Panel:
         """
         plt.subplot(111)
 
-        # Set line color/style. This will cycle through all colors, then once colors run out use a new style and cycle through
+        # Set line color/style. This will cycle through all colors,
+        # then once colors run out use a new style and cycle through
         # colors again
-        default_cycler = (cycler(linestyle=Style_definitions.STYLE_ROTATION) * cycler(color=Style_definitions.COLOR_ROTATION))
+        default_cycler = (
+                cycler(linestyle=Style_definitions.STYLE_ROTATION) * cycler(color=Style_definitions.COLOR_ROTATION))
         plt.rc('axes', prop_cycle=default_cycler)
 
         # Set graph size
@@ -133,7 +138,9 @@ class Panel:
                 linewidth = Style_definitions.THIN_LINE_THICKNESS
             if var.line_format != "":
                 plt.plot(x_data, y_data, var.line_format, label=var.label, linewidth=linewidth)
-            elif paired_plots: # If format is not specified and paired_plots are enabled, use the color/style rotation specified in Style_definitions.py
+            # If format is not specified and paired_plots are enabled,
+            # use the color/style rotation specified in Style_definitions.py
+            elif paired_plots:
                 if plot_dashed:
                     linewidth = Style_definitions.DASHED_LINE_THICKNESS
                     linestyle = '--'
@@ -160,7 +167,8 @@ class Panel:
 
         # Add alphabetic ID
         if alphabetic_id != "":
-            ax.text(0.9, 0.9, '('+alphabetic_id+')', ha='center', va='center', transform=ax.transAxes, fontsize=Style_definitions.LARGE_FONT_SIZE) # Add letter label to panels
+            ax.text(0.9, 0.9, '('+alphabetic_id+')', ha='center', va='center', transform=ax.transAxes,
+                    fontsize=Style_definitions.LARGE_FONT_SIZE) # Add letter label to panels
 
         # Plot legend
         if no_legends is False:
@@ -172,7 +180,8 @@ class Panel:
 
         # Center plots
         if self.centered:
-            plt.xlim(-1 * max_panel_value * Style_definitions.BUDGET_XAXIS_SCALE_FACTOR, max_panel_value * Style_definitions.BUDGET_XAXIS_SCALE_FACTOR)
+            plt.xlim(-1 * max_panel_value * Style_definitions.BUDGET_XAXIS_SCALE_FACTOR,
+                     max_panel_value * Style_definitions.BUDGET_XAXIS_SCALE_FACTOR)
 
         # Emphasize 0 line in profile plots if 0 is in x-axis range
         xlim = plt.xlim()
@@ -203,7 +212,8 @@ class Panel:
         if replace_images is True or not os.path.isfile(rel_filename+Panel.EXTENSION):
             plt.savefig(rel_filename+Panel.EXTENSION)
         else: # os.path.isfile(rel_filename + Panel.EXTENSION) and replace_images is False:
-            print("\n\tImage " + rel_filename+Panel.EXTENSION+' already exists. To overwrite this image during runtime pass in the --replace (-r) parameter.')
+            print("\n\tImage " + rel_filename+Panel.EXTENSION+
+                  ' already exists. To overwrite this image during runtime pass in the --replace (-r) parameter.')
         plt.close()
 
     def __remove_invalid_filename_chars__(self, filename):

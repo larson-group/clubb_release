@@ -527,7 +527,8 @@ class VariableGroupBaseBudgets(VariableGroup):
         '''
 
 
-        wpthlp_bt - (wpthlp_ma + wpthlp_ta + wpthlp_tp + wpthlp_ac + wpthlp_bp + wpthlp_pr1 + wpthlp_pr2 + wpthlp_pr3 + wpthlp_dp1 + wpthlp_mfl + wpthlp_cl + wpthlp_sicl + wpthlp_forcing)
+        wpthlp_bt - (wpthlp_ma + wpthlp_ta + wpthlp_tp + wpthlp_ac + wpthlp_bp + wpthlp_pr1 + wpthlp_pr2 +
+        wpthlp_pr3 + wpthlp_dp1 + wpthlp_mfl + wpthlp_cl + wpthlp_sicl + wpthlp_forcing)
         :return:
         '''
         # z,z, dataset = self.getVarForCalculations('altitude', dataset_override)
@@ -547,7 +548,8 @@ class VariableGroupBaseBudgets(VariableGroup):
         wpthlp_ma, z, dataset = self.getVarForCalculations('wpthlp_ma', dataset_override)
 
         output_data = wpthlp_bt - (
-                wpthlp_ma + wpthlp_ta + wpthlp_tp + wpthlp_ac + wpthlp_bp + wpthlp_pr1 + wpthlp_pr2 + wpthlp_pr3 + wpthlp_dp1 + wpthlp_mfl + wpthlp_cl + wpthlp_sicl + wpthlp_forcing)
+                wpthlp_ma + wpthlp_ta + wpthlp_tp + wpthlp_ac + wpthlp_bp + wpthlp_pr1 + wpthlp_pr2 + wpthlp_pr3 +
+                wpthlp_dp1 + wpthlp_mfl + wpthlp_cl + wpthlp_sicl + wpthlp_forcing)
 
         return output_data, z
 
@@ -555,7 +557,8 @@ class VariableGroupBaseBudgets(VariableGroup):
         '''
 
 
-        wprtp_bt - (wprtp_ma + wprtp_ta + wprtp_tp + wprtp_ac + wprtp_bp + wprtp_pr1 + wprtp_pr2 + wprtp_pr3 + wprtp_dp1 + wprtp_mfl + wprtp_cl + wprtp_sicl + wprtp_forcing)
+        wprtp_bt - (wprtp_ma + wprtp_ta + wprtp_tp + wprtp_ac + wprtp_bp + wprtp_pr1 + wprtp_pr2 + wprtp_pr3 +
+        wprtp_dp1 + wprtp_mfl + wprtp_cl + wprtp_sicl + wprtp_forcing)
         :return:
         '''
         # z,z, dataset = self.getVarForCalculations('altitude', dataset_override)
@@ -576,7 +579,8 @@ class VariableGroupBaseBudgets(VariableGroup):
         wprtp_pd, z, dataset = self.getVarForCalculations('wprtp_pd', dataset_override)
 
         output_data = wprtp_bt - (
-                wprtp_ma + wprtp_ta + wprtp_tp + wprtp_ac + wprtp_bp + wprtp_pr1 + wprtp_pr2 + wprtp_pr3 + wprtp_dp1 + wprtp_mfl + wprtp_cl + wprtp_sicl + wprtp_pd + wprtp_forcing)
+                wprtp_ma + wprtp_ta + wprtp_tp + wprtp_ac + wprtp_bp + wprtp_pr1 + wprtp_pr2 + wprtp_pr3 +
+                wprtp_dp1 + wprtp_mfl + wprtp_cl + wprtp_sicl + wprtp_pd + wprtp_forcing)
 
         return output_data, z
 
@@ -584,7 +588,8 @@ class VariableGroupBaseBudgets(VariableGroup):
         '''
 
 
-        wp2_bt - (wp2_ma + wp2_ta + wp2_tp + wp2_ac + wp2_bp + wp2_pr1 + wp2_pr2 + wp2_pr3 + wp2_dp1 + wp2_mfl + wp2_cl + wp2_sicl + wp2_forcing)
+        wp2_bt - (wp2_ma + wp2_ta + wp2_tp + wp2_ac + wp2_bp + wp2_pr1 + wp2_pr2 + wp2_pr3 + wp2_dp1 +
+        wp2_mfl + wp2_cl + wp2_sicl + wp2_forcing)
         :return:
         '''
         # z,z, dataset = self.getVarForCalculations('altitude', dataset_override)
@@ -604,7 +609,8 @@ class VariableGroupBaseBudgets(VariableGroup):
         wp2_pd, z, dataset = self.getVarForCalculations('wp2_pd', dataset_override)
 
         output_data = wp2_bt - (
-                wp2_ma + wp2_ta + wp2_ac + wp2_bp + wp2_pr1 + wp2_pr2 + wp2_pr3 + wp2_dp1 + wp2_dp2 + wp2_cl + wp2_pd + wp2_sf + wp2_splat)
+                wp2_ma + wp2_ta + wp2_ac + wp2_bp + wp2_pr1 + wp2_pr2 + wp2_pr3 + wp2_dp1 + wp2_dp2 +
+                wp2_cl + wp2_pd + wp2_sf + wp2_splat)
 
         return output_data, z
 
@@ -612,7 +618,8 @@ class VariableGroupBaseBudgets(VariableGroup):
         '''
 
 
-        wp3_bt - (wp3_ma + wp3_ta + wp3_tp + wp3_ac + wp3_bp1 + wp3_bp2 + wp3_pr1 + wp3_pr2 + wp3_pr3 + wp3_dp1 + wp3_cl+wp3_splat)
+        wp3_bt - (wp3_ma + wp3_ta + wp3_tp + wp3_ac + wp3_bp1 + wp3_bp2 + wp3_pr1 + wp3_pr2 + wp3_pr3 +
+        wp3_dp1 + wp3_cl+wp3_splat)
         :return:
         '''
         # z,z, dataset = self.getVarForCalculations('altitude', dataset_override)
@@ -631,7 +638,8 @@ class VariableGroupBaseBudgets(VariableGroup):
         wp3_tp, z, dataset = self.getVarForCalculations('wp3_tp', dataset_override)
 
         output_data = wp3_bt - (
-                wp3_ma + wp3_ta + wp3_tp + wp3_ac + wp3_bp1 + wp3_bp2 + wp3_pr1 + wp3_pr2 + wp3_pr3 + wp3_dp1 + wp3_cl + wp3_splat)
+                wp3_ma + wp3_ta + wp3_tp + wp3_ac + wp3_bp1 + wp3_bp2 + wp3_pr1 + wp3_pr2 + wp3_pr3 +
+                wp3_dp1 + wp3_cl + wp3_splat)
 
         return output_data, z
 
@@ -639,7 +647,8 @@ class VariableGroupBaseBudgets(VariableGroup):
         '''
 
 
-        thlp2_bt - (thlp2_ma + thlp2_ta + thlp2_tp + thlp2_dp1 + thlp2_dp2 + thlp2_cl + thlp2_pd + thlp2_sf + thlp2_forcing)
+        thlp2_bt - (thlp2_ma + thlp2_ta + thlp2_tp + thlp2_dp1 + thlp2_dp2 + thlp2_cl + thlp2_pd +
+        thlp2_sf + thlp2_forcing)
         :return:
         '''
         # z,z, dataset = self.getVarForCalculations('altitude', dataset_override)
@@ -687,7 +696,8 @@ class VariableGroupBaseBudgets(VariableGroup):
         '''
 
 
-        rtpthlp_bt - (rtpthlp_ma + rtpthlp_ta + rtpthlp_tp + rtpthlp_dp1 + rtpthlp_dp2 + rtpthlp_cl + rtpthlp_pd + rtpthlp_sf + rtpthlp_forcing)
+        rtpthlp_bt - (rtpthlp_ma + rtpthlp_ta + rtpthlp_tp + rtpthlp_dp1 + rtpthlp_dp2 + rtpthlp_cl +
+        rtpthlp_pd + rtpthlp_sf + rtpthlp_forcing)
         :return:
         '''
         # z,z, dataset = self.getVarForCalculations('altitude', dataset_override)
@@ -703,7 +713,8 @@ class VariableGroupBaseBudgets(VariableGroup):
         rtpthlp_tp1, z, dataset = self.getVarForCalculations('rtpthlp_tp1', dataset_override)
 
         output_data = rtpthlp_bt - (
-                rtpthlp_ma + rtpthlp_ta + rtpthlp_tp1 + rtpthlp_tp2 + rtpthlp_dp1 + rtpthlp_dp2 + rtpthlp_cl + rtpthlp_sf + rtpthlp_forcing)
+                rtpthlp_ma + rtpthlp_ta + rtpthlp_tp1 + rtpthlp_tp2 + rtpthlp_dp1 + rtpthlp_dp2 + rtpthlp_cl +
+                rtpthlp_sf + rtpthlp_forcing)
 
         return output_data, z
 
@@ -730,7 +741,8 @@ class VariableGroupBaseBudgets(VariableGroup):
         upwp_ma, z, dataset = self.getVarForCalculations('upwp_ma', dataset_override)
 
         output_data = upwp_bt - (
-                upwp_ma + upwp_ta + upwp_tp + upwp_ac + upwp_bp + upwp_pr1 + upwp_pr2 + upwp_pr3 + upwp_pr4 + upwp_dp1 + upwp_mfl + upwp_cl)
+                upwp_ma + upwp_ta + upwp_tp + upwp_ac + upwp_bp + upwp_pr1 + upwp_pr2 + upwp_pr3 + upwp_pr4 +
+                upwp_dp1 + upwp_mfl + upwp_cl)
 
         return output_data, z
 
@@ -757,7 +769,8 @@ class VariableGroupBaseBudgets(VariableGroup):
         vpwp_ma, z, dataset = self.getVarForCalculations('vpwp_ma', dataset_override)
 
         output_data = vpwp_bt - (
-                vpwp_ma + vpwp_ta + vpwp_tp + vpwp_ac + vpwp_bp + vpwp_pr1 + vpwp_pr2 + vpwp_pr3 + vpwp_pr4 + vpwp_dp1 + vpwp_mfl + vpwp_cl)
+                vpwp_ma + vpwp_ta + vpwp_tp + vpwp_ac + vpwp_bp + vpwp_pr1 + vpwp_pr2 + vpwp_pr3 + vpwp_pr4 +
+                vpwp_dp1 + vpwp_mfl + vpwp_cl)
 
         return output_data, z
 
@@ -781,7 +794,8 @@ class VariableGroupBaseBudgets(VariableGroup):
         '''
 
 
-        rrm_bt - (rrm_ma + rrm_sd + rrm_ta + rrm_ts + rrm_hf + rrm_wvhf + rrm_cl + rrm_mc)            :return:
+        rrm_bt - (rrm_ma + rrm_sd + rrm_ta + rrm_ts + rrm_hf + rrm_wvhf + rrm_cl + rrm_mc)
+        :return:
         '''
         # z,z, dataset = self.getVarForCalculations('altitude', dataset_override)
         rrm_bt, z, dataset = self.getVarForCalculations('rrm_bt', dataset_override)

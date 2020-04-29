@@ -85,5 +85,5 @@ class VariableGroupCorrelations(VariableGroup):
 
         ]
         super().__init__(case, clubb_datasets=clubb_datasets, les_dataset=les_dataset, coamps_dataset=coamps_dataset,
-                         r408_dataset=r408_dataset,
-                         hoc_dataset=hoc_dataset, e3sm_datasets=e3sm_datasets, sam_datasets=sam_datasets, wrf_datasets=wrf_datasets)
+                         r408_dataset=r408_dataset, hoc_dataset=hoc_dataset, e3sm_datasets=e3sm_datasets,
+                         sam_datasets=sam_datasets, wrf_datasets=wrf_datasets)

@@ -25,7 +25,8 @@ class VariableGroup:
     calculating any 'calculated' variables from netcdf
     """
 
-    def __init__(self, case, clubb_datasets=None, les_dataset=None, coamps_dataset=None, r408_dataset=None, hoc_dataset=None,
+    def __init__(self, case, clubb_datasets=None, les_dataset=None, coamps_dataset=None, r408_dataset=None,
+                 hoc_dataset=None,
                  e3sm_datasets=None, sam_datasets=None, wrf_datasets=None):
         """
         Initialize common VariableGroup parameters
@@ -52,8 +53,6 @@ class VariableGroup:
         self.end_time = case.end_time
         self.height_min_value = case.height_min_value
         self.height_max_value = case.height_max_value
-
-
 
         for variable in self.variable_definitions:
             print("\tProcessing ", variable['var_names']['clubb'])
@@ -82,16 +81,20 @@ class VariableGroup:
 
         *var_names*: A list of names various models refer to this variable as. E.g. ['wprtp', 'WPRTP', 'wpqtp']
 
-        *sam_calc*: (optional) A functional reference to a method that calculates a sam variable. This is given as the name of the
+        *sam_calc*: (optional) A functional reference to a method that calculates a sam variable. This is given as the
+        name of the
         function *without*  a set of parenthesis () after the name. E.g. self.getThlmSamCalc
 
-        *coamps_calc*: (optional) A functional reference to a method that calculates a coamps variable. This is given as the name of the
+        *coamps_calc*: (optional) A functional reference to a method that calculates a coamps variable. This is given
+        as the name of the
         function *without* a set of parenthesis () after the name. E.g. self.getThlmCoampsCalc
 
-        *r408_calc*: (optional) A functional reference to a method that calculates a r408 variable. This is given as the name of the
+        *r408_calc*: (optional) A functional reference to a method that calculates a r408 variable. This is given as
+        the name of the
         function *without*  a set of parenthesis () after the name. E.g. self.getR408SamCalc
 
-        *hoc_calc*: (optional) A functional reference to a method that calculates a hoc-2005 variable. This is given as the name of the
+        *hoc_calc*: (optional) A functional reference to a method that calculates a hoc-2005 variable. This is given
+        as the name of the
         function *without* a set of parenthesis () after the name. E.g. self.getThlmHocCalc
 
         *e3sm_calc*: (optional)
@@ -106,16 +109,20 @@ class VariableGroup:
 
         *type*: (optional) Override the default type 'profile' with either 'budget' or 'timeseries'
 
-        *fallback_func*: (optional) If a variable is not found within a dataset_name and a fallback_func is specified, this
+        *fallback_func*: (optional) If a variable is not found within a dataset_name and a fallback_func
+        is specified, this
         function will be called to attempt retrieving the variable. Like the
-        model_calc option, this is a functional reference to a method that calculates the given variable. E.g. self.getWpthlpFallback
+        model_calc option, this is a functional reference to a method that calculates the given variable.
+        E.g. self.getWpthlpFallback
 
         *title*: (optional) Override the default panel title, or provide one if it's not specified in the netcdf file.
 
-        *axis_title*: (optional) Override the default dependant axis title, or provide one if it's not specified in the netcdf file.
+        *axis_title*: (optional) Override the default dependant axis title, or provide one if it's not
+        specified in the netcdf file.
 
 
-        *lines*: * (budget variables only) Defines lines to plot for budget cases. Passed seperately because it's a lot of text.
+        *lines*: * (budget variables only) Defines lines to plot for budget cases. Passed seperately because
+        it's a lot of text.
         This is given in the form of a list of lines, here's an example:
 
         .. code-block:: python
@@ -160,10 +167,14 @@ class VariableGroup:
         plot_r408 = self.r408_datasets is not None
         plot_hoc = self.hoc_datasets is not None
 
-        plot_sam = self.sam_datasets is not None and len(self.sam_datasets) > 0 and (len(var_names['sam']) > 0 or 'sam_calc' in variable_def_dict.keys())
-        plot_e3sm = self.e3sm_datasets is not None and len(self.e3sm_datasets) > 0 and (len(var_names['e3sm']) > 0 or 'e3sm_calc' in variable_def_dict.keys())
-        plot_clubb = self.clubb_datasets is not None and len(self.clubb_datasets) > 0 and (len(var_names['clubb']) > 0 or 'clubb_calc' in variable_def_dict.keys())
-        plot_wrf = self.wrf_datasets is not None and len(self.wrf_datasets) > 0 and (len(var_names['wrf']) > 0 or 'wrf_calc' in variable_def_dict.keys())
+        plot_sam = self.sam_datasets is not None and len(self.sam_datasets) > 0 \
+                   and (len(var_names['sam']) > 0 or 'sam_calc' in variable_def_dict.keys())
+        plot_e3sm = self.e3sm_datasets is not None and len(self.e3sm_datasets) > 0 \
+                    and (len(var_names['e3sm']) > 0 or 'e3sm_calc' in variable_def_dict.keys())
+        plot_clubb = self.clubb_datasets is not None and len(self.clubb_datasets) > 0 \
+                     and (len(var_names['clubb']) > 0 or 'clubb_calc' in variable_def_dict.keys())
+        plot_wrf = self.wrf_datasets is not None and len(self.wrf_datasets) > 0 \
+                   and (len(var_names['wrf']) > 0 or 'wrf_calc' in variable_def_dict.keys())
 
         all_lines = []
         # Plot benchmarks
@@ -180,19 +191,25 @@ class VariableGroup:
         if plot_sam:
             for input_folder in self.sam_datasets:
                 folder_name = os.path.basename(input_folder)
-                all_lines.extend(self.__getVarLinesForModel__('sam', variable_def_dict, self.sam_datasets[input_folder], label=folder_name))
+                all_lines.extend(self.__getVarLinesForModel__('sam', variable_def_dict, self.sam_datasets[input_folder],
+                                                              label=folder_name))
         if plot_e3sm:
             for input_folder in self.e3sm_datasets:
                 folder_name = os.path.basename(input_folder)
-                all_lines.extend(self.__getVarLinesForModel__('e3sm', variable_def_dict, self.e3sm_datasets[input_folder], label=folder_name))
+                all_lines.extend(
+                    self.__getVarLinesForModel__('e3sm', variable_def_dict, self.e3sm_datasets[input_folder],
+                                                 label=folder_name))
         if plot_wrf:
             for input_folder in self.wrf_datasets:
                 folder_name = os.path.basename(input_folder)
-                all_lines.extend(self.__getVarLinesForModel__('wrf', variable_def_dict, self.wrf_datasets[input_folder], label=folder_name))
+                all_lines.extend(self.__getVarLinesForModel__('wrf', variable_def_dict, self.wrf_datasets[input_folder],
+                                                              label=folder_name))
         if plot_clubb:
             for input_folder in self.clubb_datasets:
                 folder_name = os.path.basename(input_folder)
-                all_lines.extend(self.__getVarLinesForModel__('clubb', variable_def_dict, self.clubb_datasets[input_folder], label=folder_name))
+                all_lines.extend(
+                    self.__getVarLinesForModel__('clubb', variable_def_dict, self.clubb_datasets[input_folder],
+                                                 label=folder_name))
 
         variable_def_dict['plots'] = all_lines
 
@@ -212,14 +229,17 @@ class VariableGroup:
         parameter must also be specified, as this is the label that will appear on the panel's legend. Benchmarks
         do not need the label parameter because their labels are specified in the Style_definitions.py file.
 
-        :param model_name: The name of the model to be plotted. This needs to be the same as the name used to specify the model
+        :param model_name: The name of the model to be plotted. This needs to be the same as the name used to specify
+        the model
         throughout the various dictionary keys in pyplotgen.
-        E.g. sam output is specified with 'sam', where sam calclulation functions are denoted by 'sam_calc' and Style_definitions.py'
+        E.g. sam output is specified with 'sam', where sam calclulation functions are denoted by 'sam_calc'
+        and Style_definitions.py'
         uses the key 'sam' to refer to sam configurations such as BENCHMARK_LABLES['sam']
 
         :param variable_def_dict: This is the variable defining dict, e.g. from VariableGroupBase.py
         :param dataset: Either a NetCDF Dataset object or a dict of the format {'some key', Dataset}
-        :param label: The label to be used on the panel's legend. This is a required field when getting lines for a user-inputed folder, but
+        :param label: The label to be used on the panel's legend. This is a required field when getting lines for a
+        user-inputed folder, but
         not a required field for processing benchmark output
         :return: And array of lines to be added to a panel's plots (via the extend() function)
         """
@@ -245,7 +265,8 @@ class VariableGroup:
         all_lines = []
 
         data_was_calculated = False
-        if (model_name + '_calc') in variable_def_dict.keys() and not self.__varnamesInDataset__(all_model_var_names[model_name], dataset):
+        if (model_name + '_calc') in variable_def_dict.keys() and not self.__varnamesInDataset__(
+                all_model_var_names[model_name], dataset):
             plot_data, z = variable_def_dict[(model_name + '_calc')](dataset_override=dataset)
             plot = Line(plot_data, z, line_format=line_style, label=label)
             all_lines.append(plot)
@@ -266,9 +287,6 @@ class VariableGroup:
                                                   override_panel_type=panel_type,
                                                   lines=lines))
         return all_lines
-
-
-
 
     def getTextDefiningDataset(self):
         """
@@ -338,7 +356,6 @@ class VariableGroup:
             panel = Panel(plotset, title=title, dependant_title=axis_label, panel_type=panel_type, sci_scale=sci_scale, centered=centered)
             self.panels.append(panel)
 
-
     def __getTitles__(self, variable_def_dict, plotted_models_varname):
         """
         Returns a desirable title of the panel
@@ -392,7 +409,8 @@ class VariableGroup:
         """
         Returns true if the dataset contains a variable with one of the given varnames, false otherwise
         :param varnames: A list of possible variable names
-        :param datasets: Either the dataset being investigated (NetCDF Dataset object) or a dict of datasets to be compared
+        :param datasets: Either the dataset being investigated (NetCDF Dataset object) or a dict of datasets to be
+         compared
         :return:True if a name is found, False otherwise
         """
         if not isinstance(datasets, dict):
@@ -422,7 +440,6 @@ class VariableGroup:
             plotted_models_varname = var_names['e3sm'][0]
         return plotted_models_varname
 
-
     def __getConvFactors__(self, variable_def_dict):
         """
         This is a helper method that loads parameters from the variables
@@ -439,7 +456,7 @@ class VariableGroup:
             'hoc': 1,
             'e3sm': 1,
             'clubb': 1
-            }
+        }
 
         if 'sam_conv_factor' in variable_def_dict.keys():
             conv_factors['les'] = variable_def_dict['sam_conv_factor']
@@ -462,9 +479,8 @@ class VariableGroup:
 
         return conv_factors
 
-
-
-    def __getVarLines__(self, var_names, ncdf_datasets, label="", line_format="", avg_axis=0, override_panel_type=None, lines=None, conversion_factor=1):
+    def __getVarLines__(self, var_names, ncdf_datasets, label="", line_format="", avg_axis=0, override_panel_type=None,
+                        lines=None, conversion_factor=1):
         """
         Get a list of Line objects for a specific clubb variable. If les_dataset is specified it will also
         attempt to generate Lines for the SAM equivalent variables, using the name conversions found in
@@ -473,13 +489,15 @@ class VariableGroup:
 
         :param var_names: list of strings. Each string is the name of the variable to be plotted, case sensitive
         :param ncdf_datasets: List of Dataset objects containing clubb or sam netcdf dependent_data
-        :param legend_label: Label to give the base-plotAll on the legend. This is normally Style_definitions.CLUBB_LABEL, but not provided as default to help avoid debugging confusion.
+        :param legend_label: Label to give the base-plotAll on the legend. This is normally
+                        Style_definitions.CLUBB_LABEL, but not provided as default to help avoid debugging confusion.
         :param line_format: Line formatting string used by matplotlib's PyPlot
         :param avg_axis: Axis over which to average values. 0 - time average, 1 - height average
         :param override_panel_type: Override the VariableGroup's default panel type
         :param lines: Some plots require many lines to be plotted, such as budget plots. The lines parameter allows
         someone to write a dictionary containing a description of each line that needs to be plotted.
-        For information on how to format the lines parameter, please see the config/VariableGroupBaseBudgets.py file and docs.
+        For information on how to format the lines parameter, please see the config/VariableGroupBaseBudgets.py
+            file and docs.
         :param conversion_factor: A multiplying factor used to scale clubb output. Defaults to 1.
         :return: A list of Line objects containing model dependent_data from whatever models were passed in.
         Returns None if requested variable is not found.
@@ -499,7 +517,8 @@ class VariableGroup:
                 budget_lines = self.__get_budget_lines__(lines, dataset, label, line_format)
                 all_lines.extend(budget_lines)
         elif panel_type is Panel.TYPE_TIMESERIES:
-            line = self.__get_timeseries_line__(var_names, ncdf_datasets, self.end_time, conversion_factor, label, line_format)
+            line = self.__get_timeseries_line__(var_names, ncdf_datasets, self.end_time, conversion_factor, label,
+                                                line_format)
         elif panel_type:
             raise ValueError('Invalid panel type ' + panel_type + '. Valid options are profile, budget, timeseries')
         if panel_type != Panel.TYPE_BUDGET and line is not None:
@@ -516,12 +535,15 @@ class VariableGroup:
         :param label: This is the name that will be shown on the legend for this line
         :param line_format: The pyplot line formated string representing how this line.
         Recommended value: emtpy string ""
-        :param conversion_factor: This is a numerical value that will be multiplied element-wise to the variable. It's useful for doing
+        :param conversion_factor: This is a numerical value that will be multiplied element-wise to the variable.
+        It's useful for doing
         basic model to model conversions, e.g. SAM -> CLUBB.
-        :param avg_axis: Values will be averaged along this axis. This is basically only used for time-averaging profile plots.
+        :param avg_axis: Values will be averaged along this axis. This is basically only used for time-averaging
+        profile plots.
         :return: Line object representing the given variable for a profile plot
         """
-        variable = NetCdfVariable(varname, dataset, independant_var_names=Case_definitions.HEIGHT_VAR_NAMES, start_time=self.start_time, end_time=self.end_time,
+        variable = NetCdfVariable(varname, dataset, independant_var_names=Case_definitions.HEIGHT_VAR_NAMES,
+                                  start_time=self.start_time, end_time=self.end_time,
                                   avg_axis=avg_axis,
                                   conversion_factor=conversion_factor)
         variable.constrain(self.height_min_value, self.height_max_value, data=variable.independent_data.data)
@@ -537,12 +559,14 @@ class VariableGroup:
         :param label: This is the name that will be shown on the legend for this line
         :param line_format: The pyplot line formated string representing how this line.
         Recommended value: emtpy string ""
-        :param conversion_factor: This is a numerical value that will be multiplied element-wise to the variable. It's useful for doing
+        :param conversion_factor: This is a numerical value that will be multiplied element-wise to the variable.
+        It's useful for doing
         basic model to model conversions, e.g. SAM -> CLUBB.
         :return: Line object representing the given variable for a timeseries plot
         """
 
-        variable = NetCdfVariable(varname, dataset, independant_var_names=Case_definitions.TIME_VAR_NAMES, start_time=0, end_time=end_time, avg_axis=1,
+        variable = NetCdfVariable(varname, dataset, independant_var_names=Case_definitions.TIME_VAR_NAMES, start_time=0,
+                                  end_time=end_time, avg_axis=1,
                                   conversion_factor=conversion_factor)
         variable.constrain(0, variable.end_time, data=variable.independent_data.data)
         line = Line(variable.independent_data, variable, label=label, line_format=line_format)
@@ -561,7 +585,8 @@ class VariableGroup:
             varnames = line_definition['var_names']
             for varname in varnames:
                 if varname in dataset.variables.keys():
-                    variable = NetCdfVariable(varname, dataset, independant_var_names=Case_definitions.HEIGHT_VAR_NAMES, start_time=self.start_time, end_time=self.end_time)
+                    variable = NetCdfVariable(varname, dataset, independant_var_names=Case_definitions.HEIGHT_VAR_NAMES,
+                                              start_time=self.start_time, end_time=self.end_time)
                     variable.constrain(self.height_min_value, self.height_max_value, data=variable.independent_data)
                     line_definition = Line(variable, variable.independent_data, label=line_definition['legend_label'],
                                            line_format="")  # uses auto-generating line format
@@ -569,20 +594,21 @@ class VariableGroup:
                     break
         return output_lines
 
-
     def getVarForCalculations(self, varname, datasets, conversion_factor=1):
         """
         This function is used within a fallback function to get the dependent_data of a certain variable,
         constrained between a min/max height.
 
         :param varname:
-        :param include_z: If set to True, getVarForCalculations will return a tuple containing the dependent_data for both the varname
+        :param include_z: If set to True, getVarForCalculations will return a tuple containing the dependent_data
+        for both the varname
         variable and the height variable in a tuple ordered as (varname, z)
 
         :return:
 
         """
-        var_ncdf = NetCdfVariable(varname, datasets, independant_var_names=Case_definitions.HEIGHT_VAR_NAMES, conversion_factor=conversion_factor, start_time=self.start_time,
+        var_ncdf = NetCdfVariable(varname, datasets, independant_var_names=Case_definitions.HEIGHT_VAR_NAMES,
+                                  conversion_factor=conversion_factor, start_time=self.start_time,
                                   end_time=self.end_time)
         var_ncdf.constrain(self.height_min_value, self.height_max_value, data=var_ncdf.independent_data)
         var_data = var_ncdf.dependent_data

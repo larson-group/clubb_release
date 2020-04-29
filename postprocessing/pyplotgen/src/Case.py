@@ -131,15 +131,18 @@ class Case:
 
         self.panels = []
         for VarGroup in self.var_groups:
-            temp_group = VarGroup(self, clubb_datasets=self.clubb_datasets, les_dataset=les_file, coamps_dataset=coamps_datasets, sam_datasets=sam_datasets,
-                                  wrf_datasets=wrf_datasets, r408_dataset=r408_datasets, hoc_dataset=hoc_datasets, e3sm_datasets = e3sm_file)
+            temp_group = VarGroup(self, clubb_datasets=self.clubb_datasets, les_dataset=les_file,
+                                  coamps_dataset=coamps_datasets, sam_datasets=sam_datasets,
+                                  wrf_datasets=wrf_datasets, r408_dataset=r408_datasets, hoc_dataset=hoc_datasets,
+                                  e3sm_datasets = e3sm_file)
             self.panels.extend(temp_group.panels)
 
         # Convert panels to difference panels if user passed in --diff <<folder>>
         self.diff_panels = []
         if self.diff_datasets is not None:
             for VarGroup in self.var_groups:
-                diff_group = VarGroup(self, clubb_datasets=self.diff_datasets, sam_file=les_file, coamps_file=coamps_datasets,
+                diff_group = VarGroup(self, clubb_datasets=self.diff_datasets, sam_file=les_file,
+                                      coamps_file=coamps_datasets,
                                       r408_file=r408_datasets, hoc_dataset=hoc_datasets, e3sm_datasets = e3sm_file)
                 for panel in diff_group.panels:
                     self.diff_panels.append(panel)
@@ -164,7 +167,8 @@ class Case:
                     self.panels.extend(budget_variables.panels)
             if e3sm_file is not None and len(e3sm_file) != 0:
                 for dataset_name in e3sm_file:
-                    e3sm_budgets = VariableGroupBaseBudgets(self, e3sm_datasets={dataset_name:e3sm_file[dataset_name]}) # E3SM dataset must be wrapped in the same form as the clubb datasets
+                    # E3SM dataset must be wrapped in the same form as the clubb datasets
+                    e3sm_budgets = VariableGroupBaseBudgets(self, e3sm_datasets={dataset_name:e3sm_file[dataset_name]})
                     self.panels.extend(e3sm_budgets.panels)
 
 
@@ -224,19 +228,23 @@ class Case:
 
     def plot(self, output_folder, replace_images=False, no_legends=False, thin_lines=False, show_alphabetic_id=False):
         """
-        Plot all panels associated with the case, these will be saved to a .jpg file in the <<output>>/<<casename>> folder
+        Plot all panels associated with the case, these will be saved to a .jpg file in the <<output>>/<<casename>>
+        folder
         :param output_folder: absolute name of the folder to save output into.
-        :param replace_images: If True, pyplotgen will overwrite images with the same name.
-            If False (default), pyplotgen will add a timestamp to the end of every filename (even if there's no filename conflict)
-        :param no_legends: If True, pyplotgen will not include a legend on output graphs.
-        If False (default), legends will be displayed.
-        :param thin_lines: If True, lines plotted will be much thinner than usual.
-        False (default) lines are plotted according to the thickness defined in config/Style_definitions.py
-        :param show_alphabetic_id: If True, pyplotgen will add an alphabetic label to the top right corner of each plot.
-        These labels will rotate through a-z incrementally. If there are more than 26 plots, it will rotate 2 dimentionally,
-        e.g. (aa), (ab), (ac),...,(ba),(bb),(bc) and etc. If show_alphabetic_id is False (default), this label is not displayed. The
-        behavior for rotations greater than zz is not defined, and although pyplotgen won't crash it may start to use
-        weird characters. The rotation resets between each case, e.g. if one case ends on label (ad), the next case will start on (a).
+        :param replace_images: If True,
+        pyplotgen will overwrite images with the same name. If False (default), pyplotgen will add a timestamp to the
+        end of every filename (even if there's no filename conflict)
+        :param no_legends: If True, pyplotgen will not
+        include a legend on output graphs. If False (default), legends will be displayed.
+        :param thin_lines: If True,
+        lines plotted will be much thinner than usual. False (default) lines are plotted according to the thickness
+        defined in config/Style_definitions.py
+        :param show_alphabetic_id: If True, pyplotgen will add an alphabetic
+        label to the top right corner of each plot. These labels will rotate through a-z incrementally. If there are
+        more than 26 plots, it will rotate 2 dimentionally, e.g. (aa), (ab), (ac),...,(ba),(bb),(bc) and etc. If
+        show_alphabetic_id is False (default), this label is not displayed. The behavior for rotations greater than
+        zz is not defined, and although pyplotgen won't crash it may start to use weird characters. The rotation
+        resets between each case, e.g. if one case ends on label (ad), the next case will start on (a).
         :return:
         """
 
@@ -259,12 +267,12 @@ class Case:
 
     def __getNextAlphabeticID(self):
         """
-        When --show-alphabetic-id is passed in as a run parameter, pyplotgen will add an alphabetic label to each plot.
-        These labels are a 1 or 2d rotation through the alphabet (automatically converts to 2d if more than 26 labels are needed).
-        E.g. this method will return 'a' the first time, 'b' the second time, 'aa' the 27th time, 'ab' the 28th time, and etc.
-        This function returns the next label as a string, and keeps track of each call to this method. Call count tracking
-        is specific per case instance, e.g. if one case plots the label 'bb' last the next case will plot 'a' as the first
-        label instead of 'bc'.
+        When --show-alphabetic-id is passed in as a run parameter, pyplotgen will add an alphabetic label to each
+        plot. These labels are a 1 or 2d rotation through the alphabet (automatically converts to 2d if more than 26
+        labels are needed). E.g. this method will return 'a' the first time, 'b' the second time, 'aa' the 27th time,
+        'ab' the 28th time, and etc. This function returns the next label as a string, and keeps track of each call
+        to this method. Call count tracking is specific per case instance, e.g. if one case plots the label 'bb' last
+        the next case will plot 'a' as the first label instead of 'bc'.
         :return:
         """
         a = 97
