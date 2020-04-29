@@ -542,7 +542,7 @@ class VariableGroup:
         profile plots.
         :return: Line object representing the given variable for a profile plot
         """
-        variable = NetCdfVariable(varname, dataset, independant_var_names=Case_definitions.HEIGHT_VAR_NAMES,
+        variable = NetCdfVariable(varname, dataset, independent_var_names=Case_definitions.HEIGHT_VAR_NAMES,
                                   start_time=self.start_time, end_time=self.end_time,
                                   avg_axis=avg_axis,
                                   conversion_factor=conversion_factor)
@@ -565,7 +565,7 @@ class VariableGroup:
         :return: Line object representing the given variable for a timeseries plot
         """
 
-        variable = NetCdfVariable(varname, dataset, independant_var_names=Case_definitions.TIME_VAR_NAMES, start_time=0,
+        variable = NetCdfVariable(varname, dataset, independent_var_names=Case_definitions.TIME_VAR_NAMES, start_time=0,
                                   end_time=end_time, avg_axis=1,
                                   conversion_factor=conversion_factor)
         variable.constrain(0, variable.end_time, data=variable.independent_data.data)
@@ -585,7 +585,7 @@ class VariableGroup:
             varnames = line_definition['var_names']
             for varname in varnames:
                 if varname in dataset.variables.keys():
-                    variable = NetCdfVariable(varname, dataset, independant_var_names=Case_definitions.HEIGHT_VAR_NAMES,
+                    variable = NetCdfVariable(varname, dataset, independent_var_names=Case_definitions.HEIGHT_VAR_NAMES,
                                               start_time=self.start_time, end_time=self.end_time)
                     variable.constrain(self.height_min_value, self.height_max_value, data=variable.independent_data)
                     line_definition = Line(variable, variable.independent_data, label=line_definition['legend_label'],
@@ -607,7 +607,7 @@ class VariableGroup:
         :return:
 
         """
-        var_ncdf = NetCdfVariable(varname, datasets, independant_var_names=Case_definitions.HEIGHT_VAR_NAMES,
+        var_ncdf = NetCdfVariable(varname, datasets, independent_var_names=Case_definitions.HEIGHT_VAR_NAMES,
                                   conversion_factor=conversion_factor, start_time=self.start_time,
                                   end_time=self.end_time)
         var_ncdf.constrain(self.height_min_value, self.height_max_value, data=var_ncdf.independent_data)

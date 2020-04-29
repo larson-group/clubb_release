@@ -1,3 +1,5 @@
+NOTE, these docs are currently not working.
+
 This folder contains reference documentation for PyPlotgen. The reference docs are generated used Sphinx,
 to regenerate/update these docs, run the command
 

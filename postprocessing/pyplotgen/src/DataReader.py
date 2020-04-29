@@ -18,7 +18,7 @@ class NetCdfVariable:
     Class used for conveniently storing the information about a given netcdf variable
     """
 
-    def __init__(self, names, ncdf_data, independant_var_names=None, conversion_factor=1, start_time=0, end_time=-1,
+    def __init__(self, names, ncdf_data, independent_var_names=None, conversion_factor=1, start_time=0, end_time=-1,
                  avg_axis=0):
         """
 
@@ -41,8 +41,8 @@ class NetCdfVariable:
             ncdf_data = {'temp': ncdf_data}
         if not isinstance(names, list):
             names = [names]
-        if not isinstance(independant_var_names, list) and independant_var_names is not None:
-            independant_var_names = [independant_var_names]
+        if not isinstance(independent_var_names, list) and independent_var_names is not None:
+            independent_var_names = [independent_var_names]
         for dataset in ncdf_data.values():
             for tempname in names:
                 if tempname in dataset.variables.keys():
@@ -58,7 +58,7 @@ class NetCdfVariable:
             warn("None of the values " + str(names) + " were found in the dataset " + str(dataset_with_var.filepath()))
             varname = names[0]
         indep_var_name_in_dataset = None
-        for tempname in independant_var_names:
+        for tempname in independent_var_names:
             if tempname in dataset_with_var.variables.keys():
                 indep_var_name_in_dataset = tempname
                 break
