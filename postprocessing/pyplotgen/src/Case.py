@@ -8,6 +8,7 @@ from warnings import warn
 import numpy as np
 
 from config.VariableGroupBaseBudgets import VariableGroupBaseBudgets
+from config.VariableGroupSamBudgets import VariableGroupSamBudgets
 from src.DataReader import DataReader
 from src.Panel import Panel
 
@@ -170,7 +171,10 @@ class Case:
                     # E3SM dataset must be wrapped in the same form as the clubb datasets
                     e3sm_budgets = VariableGroupBaseBudgets(self, e3sm_datasets={dataset_name:e3sm_file[dataset_name]})
                     self.panels.extend(e3sm_budgets.panels)
-
+            if sam_datasets is not None and len(sam_datasets) != 0:
+                # for dataset in sam_datasets.values():
+                sam_budgets = VariableGroupSamBudgets(self, sam_datasets=sam_datasets)
+                self.panels.extend(sam_budgets.panels)
 
     def getDiffLinesBetweenPanels(self, panelA, panelB, get_y_diff=False):
         """
