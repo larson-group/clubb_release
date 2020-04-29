@@ -3,7 +3,7 @@
 # $Id$
 #
 # Desciption:
-#   Script to run the standalone CLUBB program.  We need this because not all 
+#   Script to run the standalone CLUBB program.  We need this because not all
 #   versions of Fortran accept command line arguments (a Fortran 2003 feature).
 # Notes:
 #   This has been tested with GNU Bash v2 & v3. It may work with Ksh.
@@ -45,11 +45,11 @@ run_case()
 	G95_FPU_INVALID=false
 	export G95_MEM_INIT G95_FPU_INVALID
 
-	# This is a kluge for Fortran compilers that the can't handle comments in 
+	# This is a kluge for Fortran compilers that the can't handle comments in
 	# a namelist by using the sed command to remove them.
 	# Since -i is a GNU sed extension the command might be 'gsed' on some systems.
 	sed -i -e 's/\!.*//' $NAMELISTS
-        
+
         # Remove the variables stats_file, parameter_file, and output_directory
         # because they are only used in this script, and not in CLUBB.
         sed -i '/stats_file/d' $NAMELISTS
@@ -59,7 +59,7 @@ run_case()
 
 	# Echo the case name
 	echo "Running $run_case"
-    
+
 	# Run the CLUBB model
 	if [ -e ../bin/clubb_standalone ]; then
 		../bin/clubb_standalone
@@ -79,7 +79,7 @@ run_case()
 	rm -f $NAMELISTS
 }
 
-# Note that we use `"$@"' to let each command-line parameter expand to a 
+# Note that we use `"$@"' to let each command-line parameter expand to a
 # separate word. The quotes around `$@' are essential!
 # We need TEMP as the `eval set --' would nuke the return value of getopt.
 TEMP=`getopt -o z:m:l:t:s:p:o:nhe --long zt_grid:,zm_grid:,levels:,timestep_test:,stats:,parameter_file:,output_directory:,performance_test,nightly,netcdf,help \
@@ -95,7 +95,7 @@ while true ; do
 		-z|--zt_grid) # Set the zt grid
 			ZT_GRID=true
 			grid_path=$2
-            
+
 			# Make sure the file exists
 			if [ ! -f $grid_path ];
 			then
@@ -141,7 +141,7 @@ while true ; do
 			fi
 
 			shift 2 ;;
-		-s|--stats) 
+		-s|--stats)
 			stats_file=$2
 
 			if [ ! -f $stats_file ];
@@ -161,7 +161,7 @@ while true ; do
 			fi
 
 			shift 2 ;;
-		-n|--nightly) 
+		-n|--nightly)
 			NIGHTLY=true
 
 			shift;;
@@ -173,7 +173,7 @@ while true ; do
 			OUTPUT_SPECIFIED=true
 
 			CUSTOM_OUTPUT_DIR=$2
-			
+
 			if [ ! -d $CUSTOM_OUTPUT_DIR ] && [ -n $CUSTOM_OUTPUT_DIR ] ;
 			then
 				if [ ${CUSTOM_OUTPUT_DIR:0:1} = "-" ];
@@ -246,7 +246,7 @@ fi
 # Set defaults if they were not passed in
 if [ -z $parameter_file ];
 then
-	outputgrep=$(sed   's/!.*//' $model_file |grep "parameter_file"  | grep -oP '"\K[^"\047]+(?=["\047])')	
+	outputgrep=$(sed   's/!.*//' $model_file |grep "parameter_file"  | grep -oP '"\K[^"\047]+(?=["\047])')
 	if [ -z "$outputgrep" ]
 	then
 	  parameter_file="../input/tunable_parameters/tunable_parameters.in"
@@ -258,7 +258,7 @@ fi
 if [ -z $stats_file ];
 then
         outputgrep=$(sed   's/!.*//' $model_file |grep "stats_file"  | grep -oP '"\K[^"\047]+(?=["\047])')
-        if [ -z "$outputgrep" ] 
+        if [ -z "$outputgrep" ]
         then
           stats_file="../input/stats/standard_stats.in"
         else
@@ -266,26 +266,26 @@ then
         fi
 fi
 
-if [ $NIGHTLY == true ]; 
+if [ $NIGHTLY == true ];
 then
-#    if [ "$run_case" = gabls2 || "$run_case" = cobra ]; 
-	if [ "$run_case" = gabls2 ]; 
+#    if [ "$run_case" = gabls2 || "$run_case" = cobra ];
+	if [ "$run_case" = gabls2 ];
 	then
 	# GABLS2 uses scalars
 		stats_file='../input/stats/nightly_stats_scalars.in'
-	elif [ "$run_case" = cobra ]; 
+	elif [ "$run_case" = cobra ];
 	then
 		# Cobra uses scalars
 		stats_file='../input/stats/nightly_stats_scalars.in'
 	else
 		stats_file='../input/stats/nightly_stats.in'
-		#stats_file='../stats/nobudgets_stats.in' 
+		#stats_file='../stats/nobudgets_stats.in'
 	fi
 fi
 
 
 
-if [ $NIGHTLY == true ]; 
+if [ $NIGHTLY == true ];
 then
 	cat $parameter_file $SILHS_PARAMS_FILE > $NAMELISTS
 	cat $FLAGS_FILE >> $NAMELISTS
@@ -312,30 +312,42 @@ then
 
 	# Move the ZT and ZM files out of the way
 	if [ "$RESULT" != 0 ]; then
-		rm "../output/$run_case"_zt.ctl
+		rm "../output/$run_case"_zt.
 		rm "../output/$run_case"_zt.dat
+		rm "../output/$run_case"_zt.nc
+
 		rm "../output/$run_case"_zm.ctl
 		rm "../output/$run_case"_zm.dat
+		rm "../output/$run_case"_zm.nc
+
 		rm "../output/$run_case"_sfc.ctl
 		rm "../output/$run_case"_sfc.dat
+		rm "../output/$run_case"_sfc.nc
+
 	else
 		mv "../output/$run_case"_zt.ctl "$OUTPUT_DIR"/CLUBB_current/
 		mv "../output/$run_case"_zt.dat "$OUTPUT_DIR"/CLUBB_current/
+		mv "../output/$run_case"_zt.nc "$OUTPUT_DIR"/CLUBB_current/
+
 		mv "../output/$run_case"_zm.ctl "$OUTPUT_DIR"/CLUBB_current/
 		mv "../output/$run_case"_zm.dat "$OUTPUT_DIR"/CLUBB_current/
+		mv "../output/$run_case"_zm.nc "$OUTPUT_DIR"/CLUBB_current/
+
 		mv "../output/$run_case"_setup.txt "$OUTPUT_DIR"/CLUBB_current/
 		case $run_case in
-			# We only run TWP_ICE, Cloud Feedback, and Dycoms2_rf01_fixed_sst once so we 
+			# We only run TWP_ICE, Cloud Feedback, and Dycoms2_rf01_fixed_sst once so we
 			# want to keep the SFC files.
 			# The other cases are rerun with stats_tout = 1 minute (or 5 minutes for RICO),
 			# and sfc files from the second run are used in the nightly plots for these cases.
 			twp_ice | cloud_feedback* | dycoms2_rf01_fixed_sst )
 				mv "../output/$run_case"_sfc.ctl "$OUTPUT_DIR"/CLUBB_current/
 				mv "../output/$run_case"_sfc.dat "$OUTPUT_DIR"/CLUBB_current/
+				mv "../output/$run_case"_sfc.nc "$OUTPUT_DIR"/CLUBB_current/
 				;;
 			* )
 				rm "../output/$run_case"_sfc.ctl
 				rm "../output/$run_case"_sfc.dat
+				rm "../output/$run_case"_sfc.nc
 				;;
 		esac
 	fi
@@ -345,11 +357,11 @@ then
 	# (the zt and zm files are much smaller when stats_tout = 1 hour).
 	# Note, we do not run TWP_ICE and Cloud Feedback a second time because
 	# they are 25- and 30-day simulations.
-	case $run_case in 
+	case $run_case in
 		twp_ice | cloud_feedback* | dycoms2_rf01_fixed_sst )
 			;;
 		* )
-			case $run_case in 
+			case $run_case in
 				mc3e | rico | rico_silhs | astex_a209 | gabls3_night | cgils* )
 					# This was added because RICO uses a 300 s timestep
 					# and cannot be run with stats_tout = 60.
@@ -373,17 +385,28 @@ then
 			if [ "$RESULT" != 0 ]; then
 				rm "../output/$run_case"_zt.ctl
 				rm "../output/$run_case"_zt.dat
+				rm "../output/$run_case"_zt.nc
+
 				rm "../output/$run_case"_zm.ctl
 				rm "../output/$run_case"_zm.dat
+				rm "../output/$run_case"_zm.nc
+
 				rm "../output/$run_case"_sfc.ctl
 				rm "../output/$run_case"_sfc.dat
+				rm "../output/$run_case"_sfc.nc
 			else
 				rm "../output/$run_case"_zt.ctl
 				rm "../output/$run_case"_zt.dat
+				rm "../output/$run_case"_zt.nc
+
 				rm "../output/$run_case"_zm.ctl
 				rm "../output/$run_case"_zm.dat
+				rm "../output/$run_case"_zm.nc
+
 				mv "../output/$run_case"_sfc.ctl "$OUTPUT_DIR"/CLUBB_current/
 				mv "../output/$run_case"_sfc.dat "$OUTPUT_DIR"/CLUBB_current/
+				mv "../output/$run_case"_sfc.nc "$OUTPUT_DIR"/CLUBB_current/
+
 				mv "../output/$run_case"_setup.txt "$OUTPUT_DIR"/CLUBB_current/
 			fi
 			;;
@@ -394,7 +417,7 @@ else
 	# Create a modified model file that will be edited later
 	MOD_MODEL_FILE="MOD_MODEL_TEMP_$RANDOM"
 	cat $model_file > $MOD_MODEL_FILE
-	if [ $TIMESTEP_TEST == true ]; 
+	if [ $TIMESTEP_TEST == true ];
 	then
 		# Set the model timestep for all cases (and the stats output timestep
 		# unless l_stats is overwritten to .false.) to timestep test_ts.
