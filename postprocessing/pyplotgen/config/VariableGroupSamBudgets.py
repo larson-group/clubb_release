@@ -11,8 +11,9 @@ from src.VariableGroup import VariableGroup
 
 
 class VariableGroupSamBudgets(VariableGroup):
-    
-    def __init__(self, case, clubb_datasets=None, les_dataset=None, coamps_dataset=None, r408_dataset=None, hoc_dataset=None, e3sm_datasets=None, sam_datasets=None):
+
+    def __init__(self, case, clubb_datasets=None, les_dataset=None, coamps_dataset=None, r408_dataset=None,
+                 hoc_dataset=None, e3sm_datasets=None, sam_datasets=None):
         """
         
         :param clubb_datasets:
@@ -20,11 +21,11 @@ class VariableGroupSamBudgets(VariableGroup):
         :param les_dataset:
         """
         self.name = "sam budget variables"
-        
+
         self.kg_per_second_to_kg_per_day = 1. / (24 * 3600)
-        
+
         self.g_per_second_to_kg_per_day = self.kg_per_second_to_kg_per_day / 1000
-        
+
         # ?? Which conversion factors? What is the variable description??
         hlp_budget_lines = [
             {'var_names': ['HLADV'], 'legend_label': 'HLADV', 'sam_conv_factor': self.kg_per_second_to_kg_per_day},
@@ -36,7 +37,7 @@ class VariableGroupSamBudgets(VariableGroup):
             {'var_names': ['HLSTOR'], 'legend_label': 'HLSTOR', 'sam_conv_factor': self.kg_per_second_to_kg_per_day},
             {'var_names': ['HL_RES'], 'legend_label': 'HL_RES', 'fallback_func': self.getHlResidual},
         ]
-        
+
         # Total water budget (same as rtm) (does not exist in _MICRO_M2005_UWM)
         qtp_budget_lines = [
             {'var_names': ['QTADV'], 'legend_label': 'QTADV', 'sam_conv_factor': self.g_per_second_to_kg_per_day},
@@ -48,7 +49,7 @@ class VariableGroupSamBudgets(VariableGroup):
             {'var_names': ['QV_TNDCY'], 'legend_label': 'QV_TNDCY', 'sam_conv_factor': self.g_per_second_to_kg_per_day},
             {'var_names': ['QT_RES'], 'legend_label': 'QT_RES', 'fallback_func': self.getQtResidual},
         ]
-        
+
         # Vertical liquid water static energy flux
         tpwp_budget_lines = [
             {'var_names': ['TWGRAD'], 'legend_label': 'TWGRAD'},
@@ -61,7 +62,7 @@ class VariableGroupSamBudgets(VariableGroup):
             {'var_names': ['TWBT'], 'legend_label': 'TWBT'},
             {'var_names': ['TW_RES'], 'legend_label': 'TW_RES', 'fallback_func': self.getTwResidual},
         ]
-        
+
         tpwp_split_budget_lines = [
             {'var_names': ['TWGRAD'], 'legend_label': 'TWGRAD'},
             {'var_names': ['TWADV'], 'legend_label': 'TWADV'},
@@ -74,7 +75,7 @@ class VariableGroupSamBudgets(VariableGroup):
             {'var_names': ['TWBT'], 'legend_label': 'TWBT'},
             {'var_names': ['TW_RES'], 'legend_label': 'TWRES', 'fallback_func': self.getTwResidual},
         ]
-        
+
         # Exists ? Vertical liquid water pot. temperature flux
         thlpwp_budget_lines = [
             {'var_names': ['THLWGRAD'], 'legend_label': 'THLWGRAD'},
@@ -87,7 +88,7 @@ class VariableGroupSamBudgets(VariableGroup):
             {'var_names': ['THLWBT'], 'legend_label': 'THLWBT'},
             {'var_names': ['THLW_RES'], 'legend_label': 'THLW_RES', 'fallback_func': self.getThlwResidual},
         ]
-        
+
         thlpwp_split_budget_lines = [
             {'var_names': ['THLWGRAD'], 'legend_label': 'THLWGRAD'},
             {'var_names': ['THLWADV'], 'legend_label': 'THLWADV'},
@@ -100,7 +101,7 @@ class VariableGroupSamBudgets(VariableGroup):
             {'var_names': ['THLWBT'], 'legend_label': 'THLWBT'},
             {'var_names': ['THLW_RES'], 'legend_label': 'THLW_RES', 'fallback_func': self.getThlwResidual},
         ]
-        
+
         # Vertical total water flux budget
         qpwp_budget_lines = [
             {'var_names': ['QWGRAD'], 'legend_label': 'QWGRAD'},
@@ -112,7 +113,7 @@ class VariableGroupSamBudgets(VariableGroup):
             {'var_names': ['QWBT'], 'legend_label': 'QWBT'},
             {'var_names': ['QW_RES'], 'legend_label': 'QW_RES', 'fallback_func': self.getQwResidual},
         ]
-        
+
         qpwp_split_budget_lines = [
             {'var_names': ['QWGRAD'], 'legend_label': 'QWGRAD'},
             {'var_names': ['QWADV'], 'legend_label': 'QWADV'},
@@ -124,7 +125,7 @@ class VariableGroupSamBudgets(VariableGroup):
             {'var_names': ['QWBT'], 'legend_label': 'QWBT'},
             {'var_names': ['QW_RES'], 'legend_label': 'QW_RES', 'fallback_func': self.getQwResidual},
         ]
-        
+
         qtogpwp_budget_lines = [
             {'var_names': ['QTOGWGRAD'], 'legend_label': 'QTOGWGRAD'},
             {'var_names': ['QTOGWADV'], 'legend_label': 'QTOGWADV'},
@@ -135,7 +136,7 @@ class VariableGroupSamBudgets(VariableGroup):
             {'var_names': ['QTOGWBT'], 'legend_label': 'QTOGWBT'},
             {'var_names': ['QTOGW_RES'], 'legend_label': 'QTOGW_RES', 'fallback_func': self.getQtogwResidual},
         ]
-        
+
         qtogpwp_split_budget_lines = [
             {'var_names': ['QTOGWGRAD'], 'legend_label': 'QTOGWGRAD'},
             {'var_names': ['QTOGWADV'], 'legend_label': 'QTOGWADV'},
@@ -147,7 +148,7 @@ class VariableGroupSamBudgets(VariableGroup):
             {'var_names': ['QTOGWBT'], 'legend_label': 'QTOGWBT'},
             {'var_names': ['QTOGW_RES'], 'legend_label': 'QTOGW_RES', 'fallback_func': self.getQtogwResidual},
         ]
-        
+
         tp2_budget_lines = [
             {'var_names': ['T2ADVTR'], 'legend_label': 'T2ADVTR'},
             {'var_names': ['T2GRAD'], 'legend_label': 'T2GRAD'},
@@ -159,7 +160,7 @@ class VariableGroupSamBudgets(VariableGroup):
             {'var_names': ['T2BT'], 'legend_label': 'T2BT'},
             {'var_names': ['T2_RES'], 'legend_label': 'T2_RES', 'fallback_func': self.getT2Residual},
         ]
-        
+
         # Exists?
         thlp2_budget_lines = [
             {'var_names': ['THL2ADVTR'], 'legend_label': 'THL2ADVTR'},
@@ -172,7 +173,7 @@ class VariableGroupSamBudgets(VariableGroup):
             {'var_names': ['THL2BT'], 'legend_label': 'THL2BT'},
             {'var_names': ['THL2_RES'], 'legend_label': 'THL2_RES', 'fallback_func': self.getThl2Residual},
         ]
-        
+
         # Exists?
         rtp2_budget_lines = [
             {'var_names': ['Q2ADVTR'], 'legend_label': 'Q2ADVTR'},
@@ -184,7 +185,7 @@ class VariableGroupSamBudgets(VariableGroup):
             {'var_names': ['Q2BT'], 'legend_label': 'Q2BT'},
             {'var_names': ['Q2_RES'], 'legend_label': 'Q2_RES', 'fallback_func': self.getQt2Residual},
         ]
-        
+
         qtogp2_budget_lines = [
             {'var_names': ['QTOG2ADVTR'], 'legend_label': 'QTOG2ADVTR'},
             {'var_names': ['QTOG2GRAD'], 'legend_label': 'QTOG2GRAD'},
@@ -195,7 +196,7 @@ class VariableGroupSamBudgets(VariableGroup):
             {'var_names': ['QTOG2BT'], 'legend_label': 'QTOG2BT'},
             {'var_names': ['QTOG2_RES'], 'legend_label': 'QTOG2_RES', 'fallback_func': self.getQtog2Residual},
         ]
-        
+
         qpthlp_budget_lines = [
             {'var_names': ['QTHLADV'], 'legend_label': 'QTHLADV'},
             {'var_names': ['QTHLGRAD'], 'legend_label': 'QTHLGRAD'},
@@ -207,7 +208,7 @@ class VariableGroupSamBudgets(VariableGroup):
             {'var_names': ['QTHLBT'], 'legend_label': 'QTHLBT'},
             {'var_names': ['QTHL_RES'], 'legend_label': 'QTHL_RES', 'fallback_func': self.getQThlResidual},
         ]
-        
+
         ## Momentum flux budgets ##
         tke_budget_lines = [
             {'var_names': ['ADVTR'], 'legend_label': 'ADVTR'},
@@ -219,7 +220,7 @@ class VariableGroupSamBudgets(VariableGroup):
             {'var_names': ['BT'], 'legend_label': 'BT'},
             {'var_names': ['TKE_RES'], 'legend_label': 'TKE_RES', 'fallback_func': self.getTkeResidual},
         ]
-        
+
         tkes_budget_lines = [
             {'var_names': ['ADVTRS'], 'legend_label': 'ADVTRS'},
             {'var_names': ['SHEARS'], 'legend_label': 'SHEARS'},
@@ -227,7 +228,7 @@ class VariableGroupSamBudgets(VariableGroup):
             {'var_names': ['DISSIPS'], 'legend_label': 'DISSIPS', 'sam_conv_factor': -1.},
             {'var_names': ['TKES_RES'], 'legend_label': 'TKES_RES', 'fallback_func': self.getTkesResidual},
         ]
-        
+
         up2_vp2_budget_lines = [
             {'var_names': ['U2V2ADV'], 'legend_label': 'U2V2ADV', 'fallback_func': self.getU2V2Adv},
             {'var_names': ['U2V2BUOY'], 'legend_label': 'U2V2BUOY', 'fallback_func': self.getU2V2Buoy},
@@ -238,10 +239,10 @@ class VariableGroupSamBudgets(VariableGroup):
             {'var_names': ['U2V2SDMP'], 'legend_label': 'U2V2SDMP', 'fallback_func': self.getU2V2Sdmp},
             {'var_names': ['SHEAR'], 'legend_label': 'U2V2SHEAR', 'sam_conv_factor': 2},
             {'var_names': ['U2V2BT'], 'legend_label': 'U2V2BT', 'fallback_func': self.getU2V2Bt},
-            #{'var_names': ['U2V2_RES'], 'legend_label': '2 * TKE_RES - W2_RES'},
+            # {'var_names': ['U2V2_RES'], 'legend_label': '2 * TKE_RES - W2_RES'},
             {'var_names': ['U2V2_RES'], 'legend_label': 'U2V2_RES', 'fallback_func': self.getU2V2Residual},
         ]
-        
+
         upwp_budget_lines = [
             {'var_names': ['WUDIFF'], 'legend_label': 'WUDIFF'},
             {'var_names': ['WU_RES'], 'legend_label': 'WU_RES', 'fallback_func': self.getUWResidual},
@@ -251,9 +252,9 @@ class VariableGroupSamBudgets(VariableGroup):
             {'var_names': ['WUBUOY'], 'legend_label': 'WUBUOY'},
             {'var_names': ['WUSHEAR'], 'legend_label': 'WUSHEAR'},
             {'var_names': ['WUBT'], 'legend_label': 'WUBT'},
-            #{'var_names': ['WUSDMP'], 'legend_label': 'WUSDMP'},
+            # {'var_names': ['WUSDMP'], 'legend_label': 'WUSDMP'},
         ]
-        
+
         vpwp_budget_lines = [
             {'var_names': ['WVDIFF'], 'legend_label': 'WVDIFF'},
             {'var_names': ['WV_RES'], 'legend_label': 'WV_RES', 'fallback_func': self.getVWResidual},
@@ -263,9 +264,9 @@ class VariableGroupSamBudgets(VariableGroup):
             {'var_names': ['WVBUOY'], 'legend_label': 'WVBUOY'},
             {'var_names': ['WVSHEAR'], 'legend_label': 'WVSHEAR'},
             {'var_names': ['WVBT'], 'legend_label': 'WVBT'},
-            #{'var_names': ['WVSDMP'], 'legend_label': 'WVSDMP'},
+            # {'var_names': ['WVSDMP'], 'legend_label': 'WVSDMP'},
         ]
-        
+
         up2_budget_lines = [
             {'var_names': ['U2ADV'], 'legend_label': 'U2ADV'},
             {'var_names': ['U2SHEAR'], 'legend_label': 'U2SHEAR'},
@@ -274,7 +275,7 @@ class VariableGroupSamBudgets(VariableGroup):
             {'var_names': ['U2BT'], 'legend_label': 'U2BT'},
             {'var_names': ['U2_RES'], 'legend_label': 'U2_RES', 'fallback_func': self.getU2Residual},
         ]
-        
+
         vp2_budget_lines = [
             {'var_names': ['V2ADV'], 'legend_label': 'V2ADV'},
             {'var_names': ['V2SHEAR'], 'legend_label': 'V2SHEAR'},
@@ -283,7 +284,7 @@ class VariableGroupSamBudgets(VariableGroup):
             {'var_names': ['V2BT'], 'legend_label': 'V2BT'},
             {'var_names': ['V2_RES'], 'legend_label': 'V2_RES', 'fallback_func': self.getV2Residual},
         ]
-        
+
         wp2_budget_lines = [
             {'var_names': ['W2ADV'], 'legend_label': 'W2ADV'},
             {'var_names': ['W2PRES'], 'legend_label': 'W2PRES'},
@@ -294,7 +295,7 @@ class VariableGroupSamBudgets(VariableGroup):
             {'var_names': ['W2BT'], 'legend_label': 'W2BT'},
             {'var_names': ['W2_RES'], 'legend_label': 'W2_RES', 'fallback_func': self.getW2Residual},
         ]
-        
+
         wp3_budget_lines = [
             {'var_names': ['W3ADV'], 'legend_label': 'W3ADV'},
             {'var_names': ['W3PRES'], 'legend_label': 'W3PRES'},
@@ -304,55 +305,55 @@ class VariableGroupSamBudgets(VariableGroup):
             {'var_names': ['W3BT'], 'legend_label': 'W3BT'},
             {'var_names': ['W3_RES'], 'legend_label': 'W3_RES', 'fallback_func': self.getW3Residual},
         ]
-        
+
         ## Tau plots showing C_2/tau and C_14/tau ##
         # No support for 2nd axis, not needed
-        #up2vp2tau_budget_lines = [
-            #{'var_names': [r'U2DIFF'], 'legend_label': 'U2DIFF'},
-            #{'var_names': [r'V2DIFF'], 'legend_label': 'V2DIFF'},
-            #{'var_names': [r'TKES'], 'legend_label': 'TKES', 1, 1],
-            #{'var_names': [r'TKE'], 'legend_label': 'TKE', 1, 1],
-            #{'var_names': ['U2_C14_over_tau'], 'legend_label': r"$\frac{C_{14}}{\tau}\ (u'^2)$", 'fallback_func': self.getU2C14OverTau},
-            #{'var_names': ['V2_C14_over_tau'], 'legend_label': r"$\frac{C_{14}}{\tau}\ (v'^2)$", 'fallback_func': self.getV2C14OverTau},
-        #]
-        
-        #qtogp2tau_budget_lines = [
-            #{'var_names': [r'QTOG2DISSIP'], 'legend_label': 'QTOG2DISSIP'},
-            #{'var_names': [r'QTOG2DIFTR'], 'legend_label': 'QTOG2DIFTR'},
-            #{'var_names': [r'QTOG2'], 'legend_label': 'QTOG2', 1, 1],
-            #{'var_names': ['QTOG2_C2_over_tau'], 'legend_label': r"$\frac{C_2}{\tau}\ (q_{tog}'^2)$", 'fallback_func': self.getQtog2C2OverTau},
-        #]
-        
-        #qp2tau_budget_lines = [
-            #{'var_names': [r'Q2DISSIP'], 'legend_label': 'Q2DISSIP'},
-            #{'var_names': [r'Q2DIFTR'], 'legend_label': 'Q2DIFTR'},
-            #{'var_names': [r'QT2'], 'legend_label': 'QT2', 1, 1],
-            #{'var_names': ['QT2_C2_over_tau'], 'legend_label': r"$\frac{C_2}{\tau}\ (q'^2)$", 'fallback_func': self.getQ2C2OverTau},
-        #]
-        
-        #thlp2tau_budget_lines = [
-            #{'var_names': ['THL2DISSIP'], 'legend_label': 'THL2DISSIP'},
-            #{'var_names': ['THL2DIFTR'], 'legend_label': 'THL2DIFTR'},
-            #{'var_names': ['THEL2'], 'legend_label': 'THEL2', 1, 1],
-            #{'var_names': ['THL2_C2_over_tau'], 'legend_label': r"$\frac{C_2}{\tau}\ (\theta_l'^2)$", 'fallback_func': self.getThl2C2OverTau},
-        #]
-        
-        #tau_comp_budget_lines = [
-            #{'var_names': ['U2_C14_over_tau'], 'legend_label': r"$\frac{C_{14}}{\tau}\ (u'^2)$", 'fallback_func': self.getU2C14OverTau},
-            #{'var_names': ['V2_C14_over_tau'], 'legend_label': r"$\frac{C_{14}}{\tau}\ (v'^2)$", 'fallback_func': self.getV2C14OverTau},
-            #{'var_names': [r"$\frac{C_2}{\tau}\ (q_{tog}'^2)$", 'legend_label': '- ( QTOG2DISSIP + QTOG2DIFTR ) / np.maximum( QTOG2 * 1e-6, 1e-15 )'], 1, 1],#??
-            #{'var_names': ['QTOG2_C2_over_tau'], 'legend_label': r"$\frac{C_2}{\tau}\ (q_{tog}'^2)$", 'fallback_func': self.getQtog2C2OverTau},
-            #{'var_names': ['THL2_C2_over_tau'], 'legend_label': r"$\frac{C_2}{\tau}\ (\theta_l'^2)$", 'fallback_func': self.getThl2C2OverTau},
-            #{'var_names': ['QT2_C2_over_tau'], 'legend_label': r"$\frac{C_2}{\tau}\ (q'^2)$", 'fallback_func': self.getQ2C2OverTau},
-        #]
-        
+        # up2vp2tau_budget_lines = [
+        # {'var_names': [r'U2DIFF'], 'legend_label': 'U2DIFF'},
+        # {'var_names': [r'V2DIFF'], 'legend_label': 'V2DIFF'},
+        # {'var_names': [r'TKES'], 'legend_label': 'TKES', 1, 1],
+        # {'var_names': [r'TKE'], 'legend_label': 'TKE', 1, 1],
+        # {'var_names': ['U2_C14_over_tau'], 'legend_label': r"$\frac{C_{14}}{\tau}\ (u'^2)$", 'fallback_func': self.getU2C14OverTau},
+        # {'var_names': ['V2_C14_over_tau'], 'legend_label': r"$\frac{C_{14}}{\tau}\ (v'^2)$", 'fallback_func': self.getV2C14OverTau},
+        # ]
+
+        # qtogp2tau_budget_lines = [
+        # {'var_names': [r'QTOG2DISSIP'], 'legend_label': 'QTOG2DISSIP'},
+        # {'var_names': [r'QTOG2DIFTR'], 'legend_label': 'QTOG2DIFTR'},
+        # {'var_names': [r'QTOG2'], 'legend_label': 'QTOG2', 1, 1],
+        # {'var_names': ['QTOG2_C2_over_tau'], 'legend_label': r"$\frac{C_2}{\tau}\ (q_{tog}'^2)$", 'fallback_func': self.getQtog2C2OverTau},
+        # ]
+
+        # qp2tau_budget_lines = [
+        # {'var_names': [r'Q2DISSIP'], 'legend_label': 'Q2DISSIP'},
+        # {'var_names': [r'Q2DIFTR'], 'legend_label': 'Q2DIFTR'},
+        # {'var_names': [r'QT2'], 'legend_label': 'QT2', 1, 1],
+        # {'var_names': ['QT2_C2_over_tau'], 'legend_label': r"$\frac{C_2}{\tau}\ (q'^2)$", 'fallback_func': self.getQ2C2OverTau},
+        # ]
+
+        # thlp2tau_budget_lines = [
+        # {'var_names': ['THL2DISSIP'], 'legend_label': 'THL2DISSIP'},
+        # {'var_names': ['THL2DIFTR'], 'legend_label': 'THL2DIFTR'},
+        # {'var_names': ['THEL2'], 'legend_label': 'THEL2', 1, 1],
+        # {'var_names': ['THL2_C2_over_tau'], 'legend_label': r"$\frac{C_2}{\tau}\ (\theta_l'^2)$", 'fallback_func': self.getThl2C2OverTau},
+        # ]
+
+        # tau_comp_budget_lines = [
+        # {'var_names': ['U2_C14_over_tau'], 'legend_label': r"$\frac{C_{14}}{\tau}\ (u'^2)$", 'fallback_func': self.getU2C14OverTau},
+        # {'var_names': ['V2_C14_over_tau'], 'legend_label': r"$\frac{C_{14}}{\tau}\ (v'^2)$", 'fallback_func': self.getV2C14OverTau},
+        # {'var_names': [r"$\frac{C_2}{\tau}\ (q_{tog}'^2)$", 'legend_label': '- ( QTOG2DISSIP + QTOG2DIFTR ) / np.maximum( QTOG2 * 1e-6, 1e-15 )'], 1, 1],#??
+        # {'var_names': ['QTOG2_C2_over_tau'], 'legend_label': r"$\frac{C_2}{\tau}\ (q_{tog}'^2)$", 'fallback_func': self.getQtog2C2OverTau},
+        # {'var_names': ['THL2_C2_over_tau'], 'legend_label': r"$\frac{C_2}{\tau}\ (\theta_l'^2)$", 'fallback_func': self.getThl2C2OverTau},
+        # {'var_names': ['QT2_C2_over_tau'], 'legend_label': r"$\frac{C_2}{\tau}\ (q'^2)$", 'fallback_func': self.getQ2C2OverTau},
+        # ]
+
         ## Reduced second moment flux budgets ##TODO: How to sort lines and define colors?
         up2_reduced_budget_lines = [
             {'var_names': ['U2ADV'], 'legend_label': 'advection'},
-            #{'var_names': ['U2BUOY'], 'legend_label': 'buoyancy', 'fallback_func': self.getNothing},
+            # {'var_names': ['U2BUOY'], 'legend_label': 'buoyancy', 'fallback_func': self.getNothing},
             {'var_names': ['U2DIFF'], 'legend_label': 'dissipation'},
             {'var_names': ['U2REDIS'], 'legend_label': 'isotropy'},
-            #{'var_names': ['U2PRES'], 'legend_label': 'pressure', 'fallback_func': self.getNothing},
+            # {'var_names': ['U2PRES'], 'legend_label': 'pressure', 'fallback_func': self.getNothing},
             {'var_names': ['U2SHEAR'], 'legend_label': 'turb. prod.'},
             {'var_names': ['U2BT'], 'legend_label': 'time tndcy'},
             {'var_names': ['U2_RES'], 'legend_label': 'residual', 'fallback_func': self.getU2Residual},
@@ -360,28 +361,28 @@ class VariableGroupSamBudgets(VariableGroup):
 
         vp2_reduced_budget_lines = [
             {'var_names': ['V2ADV'], 'legend_label': 'advection'},
-            #{'var_names': ['V2BUOY'], 'legend_label': 'buoyancy', 'fallback_func': self.getNothing},
+            # {'var_names': ['V2BUOY'], 'legend_label': 'buoyancy', 'fallback_func': self.getNothing},
             {'var_names': ['V2DIFF'], 'legend_label': 'dissipation'},
             {'var_names': ['V2REDIS'], 'legend_label': 'isotropy'},
-            #{'var_names': ['V2PRES'], 'legend_label': 'pressure', 'fallback_func': self.getNothing},
+            # {'var_names': ['V2PRES'], 'legend_label': 'pressure', 'fallback_func': self.getNothing},
             {'var_names': ['V2SHEAR'], 'legend_label': 'turb. prod.'},
             {'var_names': ['V2BT'], 'legend_label': 'time tndcy'},
             {'var_names': ['V2_RES'], 'legend_label': 'residual', 'fallback_func': self.getV2Residual},
         ]
-        
+
         wp2_reduced_budget_lines = [
-            #{'var_names': ['W2SDMP'], 'legend_label': 'damping'},
+            # {'var_names': ['W2SDMP'], 'legend_label': 'damping'},
             {'var_names': ['W2ADV'], 'legend_label': 'advection'},
             {'var_names': ['W2BUOY'], 'legend_label': 'buoyancy'},
             {'var_names': ['W2DIFF'], 'legend_label': 'dissipation'},
             {'var_names': ['W2REDIS+PRES'], 'legend_label': 'pressure', 'fallback_func': self.getW2RedisPlusPres},
-            #{'var_names': ['W2SHEAR'], 'legend_label': 'turb. prod.', 'fallback_func': self.getNothing},
+            # {'var_names': ['W2SHEAR'], 'legend_label': 'turb. prod.', 'fallback_func': self.getNothing},
             {'var_names': ['W2BT'], 'legend_label': 'time tndcy'},
             {'var_names': ['W2_RES'], 'legend_label': 'residual', 'fallback_func': self.getW2Residual},
         ]
 
         upwp_reduced_budget_lines = [
-            #{'var_names': ['WUSDMP'], 'legend_label': 'WUSDMP'},
+            # {'var_names': ['WUSDMP'], 'legend_label': 'WUSDMP'},
             {'var_names': ['WUADV'], 'legend_label': 'advection'},
             {'var_names': ['WUBUOY'], 'legend_label': 'buoyancy'},
             {'var_names': ['WUDIFF'], 'legend_label': 'dissipation'},
@@ -390,9 +391,9 @@ class VariableGroupSamBudgets(VariableGroup):
             {'var_names': ['WUBT'], 'legend_label': 'time tndcy'},
             {'var_names': ['WU_RES'], 'legend_label': 'residual', 'fallback_func': self.getUWResidual},
         ]
-        
+
         vpwp_reduced_budget_lines = [
-            #{'var_names': ['WVSDMP'], 'legend_label': 'WUSDMP'},
+            # {'var_names': ['WVSDMP'], 'legend_label': 'WUSDMP'},
             {'var_names': ['WVADV'], 'legend_label': 'advection'},
             {'var_names': ['WVBUOY'], 'legend_label': 'buoyancy'},
             {'var_names': ['WVDIFF'], 'legend_label': 'dissipation'},
@@ -401,7 +402,7 @@ class VariableGroupSamBudgets(VariableGroup):
             {'var_names': ['WVBT'], 'legend_label': 'time tndcy'},
             {'var_names': ['WV_RES'], 'legend_label': 'residual', 'fallback_func': self.getVWResidual},
         ]
-        
+
         self.variable_definitions = [
             {'var_names': {
                 'clubb': ['HL'],
@@ -410,10 +411,11 @@ class VariableGroupSamBudgets(VariableGroup):
                 'r408': ['HL'],
                 'hoc': ['HL'],
                 'e3sm': ['HL'],
-                },
-            'lines': hlp_budget_lines, 'type': Panel.TYPE_BUDGET, 'title': 'Liquid-Ice Static Energy Budget, LIMSE', 'axis_title': r"LIMSE budget terms $\mathrm{\left[K\,s^{-1}\right]}$", 'centered': True
             },
-            
+                'lines': hlp_budget_lines, 'type': Panel.TYPE_BUDGET, 'title': 'Liquid-Ice Static Energy Budget, LIMSE',
+                'axis_title': r"LIMSE budget terms $\mathrm{\left[K\,s^{-1}\right]}$", 'centered': True
+            },
+
             {'var_names': {
                 'clubb': ['QT'],
                 'sam': ['QT'],
@@ -421,10 +423,13 @@ class VariableGroupSamBudgets(VariableGroup):
                 'r408': ['QT'],
                 'hoc': ['QT'],
                 'e3sm': ['QT'],
-                },
-            'lines': qtp_budget_lines, 'type': Panel.TYPE_BUDGET, 'title': r'Total Water (No Rain/Snow Included) Budget, $\mathrm{r_t}$', 'axis_title': r"$\mathrm{r_t}$ budget terms $\mathrm{\left[kg\,kg^{-1}\,s^{-1}\right]}$", 'centered': True
             },
-            
+                'lines': qtp_budget_lines, 'type': Panel.TYPE_BUDGET,
+                'title': r'Total Water (No Rain/Snow Included) Budget, $\mathrm{r_t}$',
+                'axis_title': r"$\mathrm{r_t}$ budget terms $\mathrm{\left[kg\,kg^{-1}\,s^{-1}\right]}$",
+                'centered': True
+            },
+
             {'var_names': {
                 'clubb': ['TW_B+P'],
                 'sam': ['TW_B+P'],
@@ -432,10 +437,13 @@ class VariableGroupSamBudgets(VariableGroup):
                 'r408': ['TW_B+P'],
                 'hoc': ['TW_B+P'],
                 'e3sm': ['TW_B+P'],
-                },
-            'lines': tpwp_budget_lines, 'type': Panel.TYPE_BUDGET, 'title': r"Liquid Water Static Energy Flux Budget (Reduced), $\mathrm{\overline{s_v'w'}}$", 'axis_title': r"$\mathrm{\overline{s_v'w'}}$ budget terms $\mathrm{\left[m\,K\,s^{-2}\right]}$", 'centered': True
             },
-            
+                'lines': tpwp_budget_lines, 'type': Panel.TYPE_BUDGET,
+                'title': r"Liquid Water Static Energy Flux Budget (Reduced), $\mathrm{\overline{s_v'w'}}$",
+                'axis_title': r"$\mathrm{\overline{s_v'w'}}$ budget terms $\mathrm{\left[m\,K\,s^{-2}\right]}$",
+                'centered': True
+            },
+
             {'var_names': {
                 'clubb': ['TW_COMPLETE'],
                 'sam': ['TW_COMPLETE'],
@@ -443,10 +451,13 @@ class VariableGroupSamBudgets(VariableGroup):
                 'r408': ['TW_COMPLETE'],
                 'hoc': ['TW_COMPLETE'],
                 'e3sm': ['TW_COMPLETE'],
-                },
-            'lines': tpwp_split_budget_lines, 'type': Panel.TYPE_BUDGET, 'title': r"Liquid Water Static Energy Flux Budget, $\mathrm{\overline{s_v'w'}}$", 'axis_title': r"$\mathrm{\overline{s_v'w'}}$ budget terms $\mathrm{\left[m\,K\,s^{-2}\right]}$", 'centered': True
             },
-            
+                'lines': tpwp_split_budget_lines, 'type': Panel.TYPE_BUDGET,
+                'title': r"Liquid Water Static Energy Flux Budget, $\mathrm{\overline{s_v'w'}}$",
+                'axis_title': r"$\mathrm{\overline{s_v'w'}}$ budget terms $\mathrm{\left[m\,K\,s^{-2}\right]}$",
+                'centered': True
+            },
+
             {'var_names': {
                 'clubb': ['THLW_B+P'],
                 'sam': ['THLW_B+P'],
@@ -454,10 +465,13 @@ class VariableGroupSamBudgets(VariableGroup):
                 'r408': ['THLW_B+P'],
                 'hoc': ['THLW_B+P'],
                 'e3sm': ['THLW_B+P'],
-                },
-            'lines': thlpwp_budget_lines, 'type': Panel.TYPE_BUDGET, 'title': r"Liquid Water Potential Temperature Flux Budget (Reduced), $\mathrm{\overline{\theta_l'w'}}$", 'axis_title': r"$\mathrm{\overline{\theta_l'w'}}$ budget terms $\mathrm{\left[m\,K\,s^{-2}\right]}$", 'centered': True
             },
-            
+                'lines': thlpwp_budget_lines, 'type': Panel.TYPE_BUDGET,
+                'title': r"Liquid Water Potential Temperature Flux Budget (Reduced), $\mathrm{\overline{\theta_l'w'}}$",
+                'axis_title': r"$\mathrm{\overline{\theta_l'w'}}$ budget terms $\mathrm{\left[m\,K\,s^{-2}\right]}$",
+                'centered': True
+            },
+
             {'var_names': {
                 'clubb': ['THLW_COMPLETE'],
                 'sam': ['THLW_COMPLETE'],
@@ -465,10 +479,13 @@ class VariableGroupSamBudgets(VariableGroup):
                 'r408': ['THLW_COMPLETE'],
                 'hoc': ['THLW_COMPLETE'],
                 'e3sm': ['THLW_COMPLETE'],
-                },
-            'lines': thlpwp_split_budget_lines, 'type': Panel.TYPE_BUDGET, 'title': r"Liquid Water Potential Temperature Flux Budget, $\mathrm{\overline{\theta_l'w'}}$", 'axis_title': r"$\mathrm{\overline{\theta_l'w'}}$ budget terms $\mathrm{\left[m\,K\,s^{-2}\right]}$", 'centered': True
             },
-            
+                'lines': thlpwp_split_budget_lines, 'type': Panel.TYPE_BUDGET,
+                'title': r"Liquid Water Potential Temperature Flux Budget, $\mathrm{\overline{\theta_l'w'}}$",
+                'axis_title': r"$\mathrm{\overline{\theta_l'w'}}$ budget terms $\mathrm{\left[m\,K\,s^{-2}\right]}$",
+                'centered': True
+            },
+
             {'var_names': {
                 'clubb': ['QW_B+P'],
                 'sam': ['QW_B+P'],
@@ -476,10 +493,13 @@ class VariableGroupSamBudgets(VariableGroup):
                 'r408': ['QW_B+P'],
                 'hoc': ['QW_B+P'],
                 'e3sm': ['QW_B+P'],
-                },
-            'lines': qpwp_budget_lines, 'type': Panel.TYPE_BUDGET, 'title': r"Total Water Flux Budget (Reduced), $\mathrm{\overline{r_t'w'}}$", 'axis_title': r"$\mathrm{\overline{r_t'w'}}$ budget terms $\mathrm{\left[kg\,kg^{-1}\,m\,s^{-2}\right]}$", 'centered': True
             },
-             
+                'lines': qpwp_budget_lines, 'type': Panel.TYPE_BUDGET,
+                'title': r"Total Water Flux Budget (Reduced), $\mathrm{\overline{r_t'w'}}$",
+                'axis_title': r"$\mathrm{\overline{r_t'w'}}$ budget terms $\mathrm{\left[kg\,kg^{-1}\,m\,s^{-2}\right]}$",
+                'centered': True
+            },
+
             {'var_names': {
                 'clubb': ['QW_COMPLETE'],
                 'sam': ['QW_COMPLETE'],
@@ -487,10 +507,13 @@ class VariableGroupSamBudgets(VariableGroup):
                 'r408': ['QW_COMPLETE'],
                 'hoc': ['QW_COMPLETE'],
                 'e3sm': ['QW_COMPLETE'],
-                },
-            'lines': qpwp_split_budget_lines, 'type': Panel.TYPE_BUDGET, 'title': r"Total Water Flux Budget, $\mathrm{\overline{r_t'w'}}$", 'axis_title': r"$\mathrm{\overline{r_t'w'}}$ budget terms $\mathrm{\left[kg\,kg^{-1}\,m\,s^{-2}\right]}$", 'centered': True
             },
-            
+                'lines': qpwp_split_budget_lines, 'type': Panel.TYPE_BUDGET,
+                'title': r"Total Water Flux Budget, $\mathrm{\overline{r_t'w'}}$",
+                'axis_title': r"$\mathrm{\overline{r_t'w'}}$ budget terms $\mathrm{\left[kg\,kg^{-1}\,m\,s^{-2}\right]}$",
+                'centered': True
+            },
+
             {'var_names': {
                 'clubb': ['QTOGW_B+P'],
                 'sam': ['QTOGW_B+P'],
@@ -498,10 +521,13 @@ class VariableGroupSamBudgets(VariableGroup):
                 'r408': ['QTOGW_B+P'],
                 'hoc': ['QTOGW_B+P'],
                 'e3sm': ['QTOGW_B+P'],
-                },
-            'lines': qtogpwp_budget_lines, 'type': Panel.TYPE_BUDGET, 'title': r"Grand Total Water Flux Budget (Reduced), $\mathrm{\overline{q_{tog}'w'}}$", 'axis_title': r"$\mathrm{\overline{q_{tog}'w'}}$ budget terms $\mathrm{\left[kg\,kg^{-1}\,m\,s^{-2}\right]}$", 'centered': True
             },
-            
+                'lines': qtogpwp_budget_lines, 'type': Panel.TYPE_BUDGET,
+                'title': r"Grand Total Water Flux Budget (Reduced), $\mathrm{\overline{q_{tog}'w'}}$",
+                'axis_title': r"$\mathrm{\overline{q_{tog}'w'}}$ budget terms $\mathrm{\left[kg\,kg^{-1}\,m\,s^{-2}\right]}$",
+                'centered': True
+            },
+
             {'var_names': {
                 'clubb': ['QTOGW_COMPLETE'],
                 'sam': ['QTOGW_COMPLETE'],
@@ -509,10 +535,13 @@ class VariableGroupSamBudgets(VariableGroup):
                 'r408': ['QTOGW_COMPLETE'],
                 'hoc': ['QTOGW_COMPLETE'],
                 'e3sm': ['QTOGW_COMPLETE'],
-                },
-            'lines': qtogpwp_split_budget_lines, 'type': Panel.TYPE_BUDGET, 'title': r"Grand Total Water Flux Budget, $\mathrm{\overline{q_{tog}'w'}}$", 'axis_title': r"$\mathrm{\overline{q_{tog}'w'}}$ budget terms $\mathrm{\left[kg\,kg^{-1}\,m\,s^{-2}\right]}$", 'centered': True
             },
-            
+                'lines': qtogpwp_split_budget_lines, 'type': Panel.TYPE_BUDGET,
+                'title': r"Grand Total Water Flux Budget, $\mathrm{\overline{q_{tog}'w'}}$",
+                'axis_title': r"$\mathrm{\overline{q_{tog}'w'}}$ budget terms $\mathrm{\left[kg\,kg^{-1}\,m\,s^{-2}\right]}$",
+                'centered': True
+            },
+
             {'var_names': {
                 'clubb': ['W2'],
                 'sam': ['W2'],
@@ -520,10 +549,13 @@ class VariableGroupSamBudgets(VariableGroup):
                 'r408': ['W2'],
                 'hoc': ['W2'],
                 'e3sm': ['W2'],
-                },
-            'lines': wp2_budget_lines, 'type': Panel.TYPE_BUDGET, 'title': r"Vertical Momentum Variance Budget, $\mathrm{\overline{w'^2}}$", 'axis_title': r"$\mathrm{\overline{w'^2}}$ budget terms $\mathrm{\left[m^2\,s^{-3}\right]}$", 'centered': True
             },
-            
+                'lines': wp2_budget_lines, 'type': Panel.TYPE_BUDGET,
+                'title': r"Vertical Momentum Variance Budget, $\mathrm{\overline{w'^2}}$",
+                'axis_title': r"$\mathrm{\overline{w'^2}}$ budget terms $\mathrm{\left[m^2\,s^{-3}\right]}$",
+                'centered': True
+            },
+
             {'var_names': {
                 'clubb': ['W3'],
                 'sam': ['W3'],
@@ -531,10 +563,13 @@ class VariableGroupSamBudgets(VariableGroup):
                 'r408': ['W3'],
                 'hoc': ['W3'],
                 'e3sm': ['W3'],
-                },
-            'lines': wp3_budget_lines, 'type': Panel.TYPE_BUDGET, 'title': r"Vertical Momentum Skewness Budget, $\mathrm{\overline{w'^3}}$", 'axis_title': r"$\mathrm{\overline{w'^3}}$ budget terms $\mathrm{\left[m^3\,s^{-4}\right]}$", 'centered': True
             },
-            
+                'lines': wp3_budget_lines, 'type': Panel.TYPE_BUDGET,
+                'title': r"Vertical Momentum Skewness Budget, $\mathrm{\overline{w'^3}}$",
+                'axis_title': r"$\mathrm{\overline{w'^3}}$ budget terms $\mathrm{\left[m^3\,s^{-4}\right]}$",
+                'centered': True
+            },
+
             {'var_names': {
                 'clubb': ['T2'],
                 'sam': ['T2'],
@@ -542,10 +577,13 @@ class VariableGroupSamBudgets(VariableGroup):
                 'r408': ['T2'],
                 'hoc': ['T2'],
                 'e3sm': ['T2'],
-                },
-            'lines': tp2_budget_lines, 'type': Panel.TYPE_BUDGET, 'title': r"Liquid Water Static Energy Variance Budget, $\mathrm{\overline{s_v'^2}}$", 'axis_title': r"$\mathrm{\overline{s_v'^2}}$ budget terms $\mathrm{\left[K^2\,s^{-1}\right]}$", 'centered': True
             },
-            
+                'lines': tp2_budget_lines, 'type': Panel.TYPE_BUDGET,
+                'title': r"Liquid Water Static Energy Variance Budget, $\mathrm{\overline{s_v'^2}}$",
+                'axis_title': r"$\mathrm{\overline{s_v'^2}}$ budget terms $\mathrm{\left[K^2\,s^{-1}\right]}$",
+                'centered': True
+            },
+
             {'var_names': {
                 'clubb': ['THL2'],
                 'sam': ['THL2'],
@@ -553,10 +591,13 @@ class VariableGroupSamBudgets(VariableGroup):
                 'r408': ['THL2'],
                 'hoc': ['THL2'],
                 'e3sm': ['THL2'],
-                },
-            'lines': thlp2_budget_lines, 'type': Panel.TYPE_BUDGET, 'title': r"Liquid Water Potential Temperature Variance Budget, $\mathrm{\overline{\theta_l'^2}}$", 'axis_title': r"$\mathrm{\overline{\theta_l'^2}}$ budget terms $\mathrm{\left[K^2\,s^{-1}\right]}$", 'centered': True
             },
-            
+                'lines': thlp2_budget_lines, 'type': Panel.TYPE_BUDGET,
+                'title': r"Liquid Water Potential Temperature Variance Budget, $\mathrm{\overline{\theta_l'^2}}$",
+                'axis_title': r"$\mathrm{\overline{\theta_l'^2}}$ budget terms $\mathrm{\left[K^2\,s^{-1}\right]}$",
+                'centered': True
+            },
+
             {'var_names': {
                 'clubb': ['Q2'],
                 'sam': ['Q2'],
@@ -564,10 +605,13 @@ class VariableGroupSamBudgets(VariableGroup):
                 'r408': ['Q2'],
                 'hoc': ['Q2'],
                 'e3sm': ['Q2'],
-                },
-            'lines': rtp2_budget_lines, 'type': Panel.TYPE_BUDGET, 'title': r"Total Water Variance Budget, $\mathrm{\overline{r_t'^2}}$", 'axis_title': r"$\mathrm{\overline{r_t'^2}}$ budget terms $\mathrm{\left[kg^2\,kg^{-2}\,s^{-1}\right]}$", 'centered': True
             },
-            
+                'lines': rtp2_budget_lines, 'type': Panel.TYPE_BUDGET,
+                'title': r"Total Water Variance Budget, $\mathrm{\overline{r_t'^2}}$",
+                'axis_title': r"$\mathrm{\overline{r_t'^2}}$ budget terms $\mathrm{\left[kg^2\,kg^{-2}\,s^{-1}\right]}$",
+                'centered': True
+            },
+
             {'var_names': {
                 'clubb': ['QTOG2'],
                 'sam': ['QTOG2'],
@@ -575,10 +619,13 @@ class VariableGroupSamBudgets(VariableGroup):
                 'r408': ['QTOG2'],
                 'hoc': ['QTOG2'],
                 'e3sm': ['QTOG2'],
-                },
-            'lines': qtogp2_budget_lines, 'type': Panel.TYPE_BUDGET, 'title': r"Grand Total Water Variance Budget, $\mathrm{\overline{q_{tog}'^2}}$", 'axis_title': r"$\mathrm{\overline{q_{tog}'^2}}$ budget terms $\mathrm{\left[kg^2\,kg^{-2}\,s^{-1}\right]}$", 'centered': True
             },
-            
+                'lines': qtogp2_budget_lines, 'type': Panel.TYPE_BUDGET,
+                'title': r"Grand Total Water Variance Budget, $\mathrm{\overline{q_{tog}'^2}}$",
+                'axis_title': r"$\mathrm{\overline{q_{tog}'^2}}$ budget terms $\mathrm{\left[kg^2\,kg^{-2}\,s^{-1}\right]}$",
+                'centered': True
+            },
+
             {'var_names': {
                 'clubb': ['QTHL'],
                 'sam': ['QTHL'],
@@ -586,10 +633,13 @@ class VariableGroupSamBudgets(VariableGroup):
                 'r408': ['QTHL'],
                 'hoc': ['QTHL'],
                 'e3sm': ['QTHL'],
-                },
-            'lines': qpthlp_budget_lines, 'type': Panel.TYPE_BUDGET, 'title': r"Total Water, Liquid Water Pot. Temp. Covariance Budget, $\mathrm{\overline{q_t'\theta_l'}}$", 'axis_title': r"$\mathrm{\overline{q_t'\theta_l'}}$ budget terms $\mathrm{\left[kg\,kg^{-1}\,K\,s^{-1}\right]}$", 'centered': True
             },
-            
+                'lines': qpthlp_budget_lines, 'type': Panel.TYPE_BUDGET,
+                'title': r"Total Water, Liquid Water Pot. Temp. Covariance Budget, $\mathrm{\overline{q_t'\theta_l'}}$",
+                'axis_title': r"$\mathrm{\overline{q_t'\theta_l'}}$ budget terms $\mathrm{\left[kg\,kg^{-1}\,K\,s^{-1}\right]}$",
+                'centered': True
+            },
+
             {'var_names': {
                 'clubb': ['TKE'],
                 'sam': ['TKE'],
@@ -597,10 +647,11 @@ class VariableGroupSamBudgets(VariableGroup):
                 'r408': ['TKE'],
                 'hoc': ['TKE'],
                 'e3sm': ['TKE'],
-                },
-            'lines': tke_budget_lines, 'type': Panel.TYPE_BUDGET, 'title': r"Turbulence Kinetic Energy Budget, TKE", 'axis_title': r"TKE budget terms $\mathrm{\left[m^2\,s^{-3}\right]}$", 'centered': True
             },
-            
+                'lines': tke_budget_lines, 'type': Panel.TYPE_BUDGET, 'title': r"Turbulence Kinetic Energy Budget, TKE",
+                'axis_title': r"TKE budget terms $\mathrm{\left[m^2\,s^{-3}\right]}$", 'centered': True
+            },
+
             {'var_names': {
                 'clubb': ['TKES'],
                 'sam': ['TKES'],
@@ -608,10 +659,12 @@ class VariableGroupSamBudgets(VariableGroup):
                 'r408': ['TKES'],
                 'hoc': ['TKES'],
                 'e3sm': ['TKES'],
-                },
-            'lines': tkes_budget_lines, 'type': Panel.TYPE_BUDGET, 'title': r"Sub-Grid Turbulence Kinetic Energy Budget, $\mathrm{TKE_{SGS}}$", 'axis_title': r"$\mathrm{TKE_{SGS}}$ budget terms $\mathrm{\left[m^2\,s^{-3}\right]}$", 'centered': True
             },
-            
+                'lines': tkes_budget_lines, 'type': Panel.TYPE_BUDGET,
+                'title': r"Sub-Grid Turbulence Kinetic Energy Budget, $\mathrm{TKE_{SGS}}$",
+                'axis_title': r"$\mathrm{TKE_{SGS}}$ budget terms $\mathrm{\left[m^2\,s^{-3}\right]}$", 'centered': True
+            },
+
             {'var_names': {
                 'clubb': ['U2V2'],
                 'sam': ['U2V2'],
@@ -619,10 +672,13 @@ class VariableGroupSamBudgets(VariableGroup):
                 'r408': ['U2V2'],
                 'hoc': ['U2V2'],
                 'e3sm': ['U2V2'],
-                },
-            'lines': up2_vp2_budget_lines, 'type': Panel.TYPE_BUDGET, 'title': r"Horizontal Turbulence Kinetic Energy Budget, $\mathrm{\overline{u'^2}+\overline{v'^2}}$", 'axis_title': r"$\mathrm{\overline{u'^2}+\overline{v'^2}}$ budget terms $\mathrm{\left[m^2\, s^{-3}\right]}$", 'centered': True
             },
-            
+                'lines': up2_vp2_budget_lines, 'type': Panel.TYPE_BUDGET,
+                'title': r"Horizontal Turbulence Kinetic Energy Budget, $\mathrm{\overline{u'^2}+\overline{v'^2}}$",
+                'axis_title': r"$\mathrm{\overline{u'^2}+\overline{v'^2}}$ budget terms $\mathrm{\left[m^2\, s^{-3}\right]}$",
+                'centered': True
+            },
+
             # TODO: Rename to UW?
             {'var_names': {
                 'clubb': ['WU'],
@@ -631,10 +687,13 @@ class VariableGroupSamBudgets(VariableGroup):
                 'r408': ['WU'],
                 'hoc': ['WU'],
                 'e3sm': ['WU'],
-                },
-            'lines': upwp_budget_lines, 'type': Panel.TYPE_BUDGET, 'title': r"Eastward Momentum Flux Budget, $\mathrm{\overline{u'w'}}$", 'axis_title': r"$\mathrm{\overline{u'w'}}$ budget terms $\mathrm{\left[m^2\,s^{-3}\right]}$", 'centered': True
             },
-            
+                'lines': upwp_budget_lines, 'type': Panel.TYPE_BUDGET,
+                'title': r"Eastward Momentum Flux Budget, $\mathrm{\overline{u'w'}}$",
+                'axis_title': r"$\mathrm{\overline{u'w'}}$ budget terms $\mathrm{\left[m^2\,s^{-3}\right]}$",
+                'centered': True
+            },
+
             {'var_names': {
                 'clubb': ['WV'],
                 'sam': ['WV'],
@@ -642,10 +701,13 @@ class VariableGroupSamBudgets(VariableGroup):
                 'r408': ['WV'],
                 'hoc': ['WV'],
                 'e3sm': ['WV'],
-                },
-            'lines': vpwp_budget_lines, 'type': Panel.TYPE_BUDGET, 'title': r"Northward Momentum Flux Budget, $\mathrm{\overline{v'w'}}$", 'axis_title': r"$\mathrm{\overline{v'w'}}$ budget terms $\mathrm{\left[m^2\,s^{-3}\right]}$", 'centered': True
             },
-            
+                'lines': vpwp_budget_lines, 'type': Panel.TYPE_BUDGET,
+                'title': r"Northward Momentum Flux Budget, $\mathrm{\overline{v'w'}}$",
+                'axis_title': r"$\mathrm{\overline{v'w'}}$ budget terms $\mathrm{\left[m^2\,s^{-3}\right]}$",
+                'centered': True
+            },
+
             {'var_names': {
                 'clubb': ['U2'],
                 'sam': ['U2'],
@@ -653,10 +715,13 @@ class VariableGroupSamBudgets(VariableGroup):
                 'r408': ['U2'],
                 'hoc': ['U2'],
                 'e3sm': ['U2'],
-                },
-            'lines': up2_budget_lines, 'type': Panel.TYPE_BUDGET, 'title': r"Eastward Momentum Variance Budget, $\mathrm{\overline{u'^2}}$", 'axis_title': r"$\mathrm{\overline{u'^2}}$ budget terms $\mathrm{\left[m^2\,s^{-3}\right]}$", 'centered': True
             },
-            
+                'lines': up2_budget_lines, 'type': Panel.TYPE_BUDGET,
+                'title': r"Eastward Momentum Variance Budget, $\mathrm{\overline{u'^2}}$",
+                'axis_title': r"$\mathrm{\overline{u'^2}}$ budget terms $\mathrm{\left[m^2\,s^{-3}\right]}$",
+                'centered': True
+            },
+
             {'var_names': {
                 'clubb': ['V2'],
                 'sam': ['V2'],
@@ -664,70 +729,73 @@ class VariableGroupSamBudgets(VariableGroup):
                 'r408': ['V2'],
                 'hoc': ['V2'],
                 'e3sm': ['V2'],
-                },
-            'lines': vp2_budget_lines, 'type': Panel.TYPE_BUDGET, 'title': r"Northward Momentum Variance Budget, $\mathrm{\overline{v'^2}}$", 'axis_title': r"$\mathrm{\overline{v'^2}}$ budget terms $\mathrm{\left[m^2\,s^{-3}\right]}$", 'centered': True
             },
-            
-            #{'var_names': {
-                #'clubb': ['V2_COMP'],
-                #'sam': ['V2_COMP'],
-                #'coamps': ['V2_COMP'],
-                #'r408': ['V2_COMP'],
-                #'hoc': ['V2_COMP'],
-                #'e3sm': ['V2_COMP'],
-                #},
-            #'lines': vp2_comp_budget_lines, 'type': Panel.TYPE_BUDGET, 'axis_title': r"$\mathrm{\overline{v'^2}}$ budget terms $\mathrm{\left[m^2\, s^{-3}\right]}$"},
-            
-            #{'var_names': {
-                #'clubb': ['U2_V2_TAU'],
-                #'sam': ['U2_V2_TAU'],
-                #'coamps': ['U2_V2_TAU'],
-                #'r408': ['U2_V2_TAU'],
-                #'hoc': ['U2_V2_TAU'],
-                #'e3sm': ['U2_V2_TAU'],
-                #},
-            #'lines': up2vp2tau_budget_lines, 'type': Panel.TYPE_BUDGET, 'axis_title': r"$\mathrm{\frac{C_{14}}{\tau}}\ \mathrm{\left[s^{-1}\right]}$"},
-            
-            #{'var_names': {
-                #'clubb': ['QTOG2_TAU'],
-                #'sam': ['QTOG2_TAU'],
-                #'coamps': ['QTOG2_TAU'],
-                #'r408': ['QTOG2_TAU'],
-                #'hoc': ['QTOG2_TAU'],
-                #'e3sm': ['QTOG2_TAU'],
-                #},
-            #'lines': qtogp2tau_budget_lines, 'type': Panel.TYPE_BUDGET, 'axis_title': r"$\mathrm{\frac{C_2}{\tau}}\ \mathrm{\left[s^{-1}\right]}$"},
-            
-            #{'var_names': {
-                #'clubb': ['Q2_TAU'],
-                #'sam': ['Q2_TAU'],
-                #'coamps': ['Q2_TAU'],
-                #'r408': ['Q2_TAU'],
-                #'hoc': ['Q2_TAU'],
-                #'e3sm': ['Q2_TAU'],
-                #},
-            #'lines': qp2tau_budget_lines, 'type': Panel.TYPE_BUDGET, 'axis_title': r"$\mathrm{\frac{C_2}{\tau}}\ \mathrm{\left[s^{-1}\right]}$"},
-            
-            #{'var_names': {
-                #'clubb': ['THL2_TAU'],
-                #'sam': ['THL2_TAU'],
-                #'coamps': ['THL2_TAU'],
-                #'r408': ['THL2_TAU'],
-                #'hoc': ['THL2_TAU'],
-                #'e3sm': ['THL2_TAU'],
-                #},
-            #'lines': qp2tau_budget_lines, 'type': Panel.TYPE_BUDGET, 'axis_title': r"$\mathrm{\frac{C_2}{\tau}}\ \mathrm{\left[s^{-1}\right]}$"},
-            
-            #{'var_names': {
-                #'clubb': ['C2_TAU_COMP'],
-                #'sam': ['C2_TAU_COMP'],
-                #'coamps': ['C2_TAU_COMP'],
-                #'r408': ['C2_TAU_COMP'],
-                #'hoc': ['C2_TAU_COMP'],
-                #'e3sm': ['C2_TAU_COMP'],
-                #},
-            #'lines': tau_comp_budget_lines, 'type': Panel.TYPE_BUDGET, 'axis_title': r"$\mathrm{\frac{C}{\tau}}\ \mathrm{\left[s^{-1}\right]}$"},
-            
+                'lines': vp2_budget_lines, 'type': Panel.TYPE_BUDGET,
+                'title': r"Northward Momentum Variance Budget, $\mathrm{\overline{v'^2}}$",
+                'axis_title': r"$\mathrm{\overline{v'^2}}$ budget terms $\mathrm{\left[m^2\,s^{-3}\right]}$",
+                'centered': True
+            },
+
+            # {'var_names': {
+            # 'clubb': ['V2_COMP'],
+            # 'sam': ['V2_COMP'],
+            # 'coamps': ['V2_COMP'],
+            # 'r408': ['V2_COMP'],
+            # 'hoc': ['V2_COMP'],
+            # 'e3sm': ['V2_COMP'],
+            # },
+            # 'lines': vp2_comp_budget_lines, 'type': Panel.TYPE_BUDGET, 'axis_title': r"$\mathrm{\overline{v'^2}}$ budget terms $\mathrm{\left[m^2\, s^{-3}\right]}$"},
+
+            # {'var_names': {
+            # 'clubb': ['U2_V2_TAU'],
+            # 'sam': ['U2_V2_TAU'],
+            # 'coamps': ['U2_V2_TAU'],
+            # 'r408': ['U2_V2_TAU'],
+            # 'hoc': ['U2_V2_TAU'],
+            # 'e3sm': ['U2_V2_TAU'],
+            # },
+            # 'lines': up2vp2tau_budget_lines, 'type': Panel.TYPE_BUDGET, 'axis_title': r"$\mathrm{\frac{C_{14}}{\tau}}\ \mathrm{\left[s^{-1}\right]}$"},
+
+            # {'var_names': {
+            # 'clubb': ['QTOG2_TAU'],
+            # 'sam': ['QTOG2_TAU'],
+            # 'coamps': ['QTOG2_TAU'],
+            # 'r408': ['QTOG2_TAU'],
+            # 'hoc': ['QTOG2_TAU'],
+            # 'e3sm': ['QTOG2_TAU'],
+            # },
+            # 'lines': qtogp2tau_budget_lines, 'type': Panel.TYPE_BUDGET, 'axis_title': r"$\mathrm{\frac{C_2}{\tau}}\ \mathrm{\left[s^{-1}\right]}$"},
+
+            # {'var_names': {
+            # 'clubb': ['Q2_TAU'],
+            # 'sam': ['Q2_TAU'],
+            # 'coamps': ['Q2_TAU'],
+            # 'r408': ['Q2_TAU'],
+            # 'hoc': ['Q2_TAU'],
+            # 'e3sm': ['Q2_TAU'],
+            # },
+            # 'lines': qp2tau_budget_lines, 'type': Panel.TYPE_BUDGET, 'axis_title': r"$\mathrm{\frac{C_2}{\tau}}\ \mathrm{\left[s^{-1}\right]}$"},
+
+            # {'var_names': {
+            # 'clubb': ['THL2_TAU'],
+            # 'sam': ['THL2_TAU'],
+            # 'coamps': ['THL2_TAU'],
+            # 'r408': ['THL2_TAU'],
+            # 'hoc': ['THL2_TAU'],
+            # 'e3sm': ['THL2_TAU'],
+            # },
+            # 'lines': qp2tau_budget_lines, 'type': Panel.TYPE_BUDGET, 'axis_title': r"$\mathrm{\frac{C_2}{\tau}}\ \mathrm{\left[s^{-1}\right]}$"},
+
+            # {'var_names': {
+            # 'clubb': ['C2_TAU_COMP'],
+            # 'sam': ['C2_TAU_COMP'],
+            # 'coamps': ['C2_TAU_COMP'],
+            # 'r408': ['C2_TAU_COMP'],
+            # 'hoc': ['C2_TAU_COMP'],
+            # 'e3sm': ['C2_TAU_COMP'],
+            # },
+            # 'lines': tau_comp_budget_lines, 'type': Panel.TYPE_BUDGET, 'axis_title': r"$\mathrm{\frac{C}{\tau}}\ \mathrm{\left[s^{-1}\right]}$"},
+
             {'var_names': {
                 'clubb': ['U2 REDUCED'],
                 'sam': ['U2 REDUCED'],
@@ -735,10 +803,13 @@ class VariableGroupSamBudgets(VariableGroup):
                 'r408': ['U2 REDUCED'],
                 'hoc': ['U2 REDUCED'],
                 'e3sm': ['U2 REDUCED'],
-                },
-            'lines': up2_reduced_budget_lines, 'type': Panel.TYPE_BUDGET, 'title': r"Eastward Momentum Variance Budget (Reduced), $\mathrm{\overline{u'^2}}$", 'axis_title': r"$\mathrm{\overline{u'^2}}$ budget terms $\mathrm{\left[m^2\,s^{-3}\right]}$", 'centered': True
             },
-            
+                'lines': up2_reduced_budget_lines, 'type': Panel.TYPE_BUDGET,
+                'title': r"Eastward Momentum Variance Budget (Reduced), $\mathrm{\overline{u'^2}}$",
+                'axis_title': r"$\mathrm{\overline{u'^2}}$ budget terms $\mathrm{\left[m^2\,s^{-3}\right]}$",
+                'centered': True
+            },
+
             {'var_names': {
                 'clubb': ['V2 REDUCED'],
                 'sam': ['V2 REDUCED'],
@@ -746,10 +817,13 @@ class VariableGroupSamBudgets(VariableGroup):
                 'r408': ['V2 REDUCED'],
                 'hoc': ['V2 REDUCED'],
                 'e3sm': ['V2 REDUCED'],
-                },
-            'lines': vp2_reduced_budget_lines, 'type': Panel.TYPE_BUDGET, 'title': r"Northward Momentum Variance Budget (Reduced), $\mathrm{\overline{v'^2}}$", 'axis_title': r"$\mathrm{\overline{v'^2}}$ budget terms $\mathrm{\left[m^2\,s^{-3}\right]}$", 'centered': True
             },
-            
+                'lines': vp2_reduced_budget_lines, 'type': Panel.TYPE_BUDGET,
+                'title': r"Northward Momentum Variance Budget (Reduced), $\mathrm{\overline{v'^2}}$",
+                'axis_title': r"$\mathrm{\overline{v'^2}}$ budget terms $\mathrm{\left[m^2\,s^{-3}\right]}$",
+                'centered': True
+            },
+
             {'var_names': {
                 'clubb': ['W2 REDUCED'],
                 'sam': ['W2 REDUCED'],
@@ -757,10 +831,13 @@ class VariableGroupSamBudgets(VariableGroup):
                 'r408': ['W2 REDUCED'],
                 'hoc': ['W2 REDUCED'],
                 'e3sm': ['W2 REDUCED'],
-                },
-            'lines': wp2_reduced_budget_lines, 'type': Panel.TYPE_BUDGET, 'title': r"Vertical Momentum Variance Budget, $\mathrm{\overline{w'^2}}$", 'axis_title': r"$\mathrm{\overline{w'^2}}$ budget terms $\mathrm{\left[m^2\,s^{-3}\right]}$", 'centered': True
             },
-            
+                'lines': wp2_reduced_budget_lines, 'type': Panel.TYPE_BUDGET,
+                'title': r"Vertical Momentum Variance Budget, $\mathrm{\overline{w'^2}}$",
+                'axis_title': r"$\mathrm{\overline{w'^2}}$ budget terms $\mathrm{\left[m^2\,s^{-3}\right]}$",
+                'centered': True
+            },
+
             {'var_names': {
                 'clubb': ['WU REDUCED'],
                 'sam': ['WU REDUCED'],
@@ -768,10 +845,13 @@ class VariableGroupSamBudgets(VariableGroup):
                 'r408': ['WU REDUCED'],
                 'hoc': ['WU REDUCED'],
                 'e3sm': ['WU REDUCED'],
-                },
-            'lines': upwp_reduced_budget_lines, 'type': Panel.TYPE_BUDGET, 'title': r"Eastward Momentum Flux Budget (Reduced), $\mathrm{\overline{u'w'}}$", 'axis_title': r"$\mathrm{\overline{u'w'}}$ budget terms $\mathrm{\left[m^2\,s^{-3}\right]}$", 'centered': True
             },
-            
+                'lines': upwp_reduced_budget_lines, 'type': Panel.TYPE_BUDGET,
+                'title': r"Eastward Momentum Flux Budget (Reduced), $\mathrm{\overline{u'w'}}$",
+                'axis_title': r"$\mathrm{\overline{u'w'}}$ budget terms $\mathrm{\left[m^2\,s^{-3}\right]}$",
+                'centered': True
+            },
+
             {'var_names': {
                 'clubb': ['WV REDUCED'],
                 'sam': ['WV REDUCED'],
@@ -779,14 +859,19 @@ class VariableGroupSamBudgets(VariableGroup):
                 'r408': ['WV REDUCED'],
                 'hoc': ['WV REDUCED'],
                 'e3sm': ['WV REDUCED'],
-                },
-            'lines': vpwp_reduced_budget_lines, 'type': Panel.TYPE_BUDGET, 'title': r"Northward Momentum Flux Budget (Reduced), $\mathrm{\overline{v'w'}}$", 'axis_title': r"$\mathrm{\overline{v'w'}}$ budget terms $\mathrm{\left[m^2\,s^{-3}\right]}$", 'centered': True
+            },
+                'lines': vpwp_reduced_budget_lines, 'type': Panel.TYPE_BUDGET,
+                'title': r"Northward Momentum Flux Budget (Reduced), $\mathrm{\overline{v'w'}}$",
+                'axis_title': r"$\mathrm{\overline{v'w'}}$ budget terms $\mathrm{\left[m^2\,s^{-3}\right]}$",
+                'centered': True
             }
         ]
-            
-        super().__init__(case, clubb_datasets=clubb_datasets, les_dataset=les_dataset, coamps_dataset=coamps_dataset, r408_dataset=r408_dataset, hoc_dataset=hoc_dataset, e3sm_datasets=e3sm_datasets, sam_datasets=sam_datasets)
 
-    def getHlResidual(self, dataset_override = None):
+        super().__init__(case, clubb_datasets=clubb_datasets, les_dataset=les_dataset, coamps_dataset=coamps_dataset,
+                         r408_dataset=r408_dataset, hoc_dataset=hoc_dataset, e3sm_datasets=e3sm_datasets,
+                         sam_datasets=sam_datasets)
+
+    def getHlResidual(self, dataset_override=None):
         """
         Calculates the residual for the HL budget using
         the following equation:
@@ -797,30 +882,30 @@ class VariableGroupSamBudgets(VariableGroup):
         dataset = self.les_dataset
         if dataset_override is not None:
             dataset = dataset_override
-        
+
         HLADV, z, dataset = self.getVarForCalculations('HLADV', dataset)
         HLADV *= self.kg_per_second_to_kg_per_day
-        
+
         HLDIFF, z, dataset = self.getVarForCalculations('HLDIFF', dataset)
         HLDIFF *= self.kg_per_second_to_kg_per_day
-        
+
         HLLAT, z, dataset = self.getVarForCalculations('HLLAT', dataset)
         HLLAT *= self.kg_per_second_to_kg_per_day
-        
+
         HLRAD, z, dataset = self.getVarForCalculations('HLRAD', dataset)
         HLRAD *= self.kg_per_second_to_kg_per_day
-        
+
         HLSTOR, z, dataset = self.getVarForCalculations('HLSTOR', dataset)
         HLSTOR *= self.kg_per_second_to_kg_per_day
-        
+
         TTEND, z, dataset = self.getVarForCalculations('TTEND', dataset)
         TTEND *= self.kg_per_second_to_kg_per_day
-        
-        #ALERT: Conversion factor correct?
+
+        # ALERT: Conversion factor correct?
         HL_RES = (HLSTOR - (HLADV + HLDIFF + HLLAT + HLRAD + TTEND)) * self.g_per_second_to_kg_per_day
         return HL_RES, z
-    
-    def getQtResidual(self, dataset_override = None):
+
+    def getQtResidual(self, dataset_override=None):
         """
         Calculates the residual for the QT budget using
         the following equation:
@@ -832,23 +917,23 @@ class VariableGroupSamBudgets(VariableGroup):
         if dataset_override is not None:
             dataset = dataset_override
         QTADV, z, dataset = self.getVarForCalculations('QTADV', dataset)
-        QTADV *=  self.g_per_second_to_kg_per_day
+        QTADV *= self.g_per_second_to_kg_per_day
         QTDIFF, z, dataset = self.getVarForCalculations('QTDIFF', dataset)
-        QTDIFF *=  self.g_per_second_to_kg_per_day
+        QTDIFF *= self.g_per_second_to_kg_per_day
         QTEND, z, dataset = self.getVarForCalculations('QTEND', dataset)
-        QTEND*=  self.g_per_second_to_kg_per_day
+        QTEND *= self.g_per_second_to_kg_per_day
         QTSINK, z, dataset = self.getVarForCalculations('QTSINK', dataset)
-        QTSINK *=  self.g_per_second_to_kg_per_day
+        QTSINK *= self.g_per_second_to_kg_per_day
         QTSRC, z, dataset = self.getVarForCalculations('QTSRC', dataset)
-        QTSRC *=  self.g_per_second_to_kg_per_day
+        QTSRC *= self.g_per_second_to_kg_per_day
         QTSTOR, z, dataset = self.getVarForCalculations('QTSTOR', dataset)
-        QTSTOR *=  self.g_per_second_to_kg_per_day
+        QTSTOR *= self.g_per_second_to_kg_per_day
         QV_TNDCY, z, dataset = self.getVarForCalculations('QV_TNDCY', dataset)
-        QV_TNDCY*=  self.g_per_second_to_kg_per_day
+        QV_TNDCY *= self.g_per_second_to_kg_per_day
         QT_RES = QTSTOR - (QTADV + QTDIFF + QTEND + QTSRC + QTSINK)
         return QT_RES, z
 
-    def getTwBuoyPlusPres(self, dataset_override = None):
+    def getTwBuoyPlusPres(self, dataset_override=None):
         """
         Calculates the combined BUOY and PRES variable value
         of the TW budget using the following equation:
@@ -863,8 +948,8 @@ class VariableGroupSamBudgets(VariableGroup):
         TWPRES, z, dataset = self.getVarForCalculations('TWPRES', dataset)
         TW_BUOY_PRES = TWBUOY + TWPRES
         return TW_BUOY_PRES, z
-    
-    def getTwResidual(self, dataset_override = None):
+
+    def getTwResidual(self, dataset_override=None):
         """
         Calculates the residual for the TW budget using
         the following equation:
@@ -886,8 +971,8 @@ class VariableGroupSamBudgets(VariableGroup):
         TWRAD, z, dataset = self.getVarForCalculations('TWRAD', dataset)
         TW_RES = TWBT - (TWADV + TWBUOY + TWDIFF + TWFORC + TWGRAD + TWPREC + TWPRES + TWRAD)
         return TW_RES, z
-    
-    def getThlwBuoyPlusPres(self, dataset_override = None):
+
+    def getThlwBuoyPlusPres(self, dataset_override=None):
         """
         Calculates the combined BUOY and PRES variable value
         of the THLW budget using the following equation:
@@ -903,7 +988,7 @@ class VariableGroupSamBudgets(VariableGroup):
         THLW_BUOY_PRES = THLWBUOY + THLWPRES
         return THLW_BUOY_PRES, z
 
-    def getThlwResidual(self, dataset_override = None):
+    def getThlwResidual(self, dataset_override=None):
         """
         Calculates the residual for the THLW budget using
         the following equation:
@@ -926,7 +1011,7 @@ class VariableGroupSamBudgets(VariableGroup):
         THLW_RES = THLWBT - (THLWADV + THLWBUOY + THLWDIFF + THLWFORC + THLWGRAD + THLWPREC + THLWPRES + THLWRAD)
         return THLW_RES, z
 
-    def getQwBuoyPlusPres(self, dataset_override = None):
+    def getQwBuoyPlusPres(self, dataset_override=None):
         """
         Calculates the combined BUOY and PRES variable value
         of the QW budget using the following equation:
@@ -942,7 +1027,7 @@ class VariableGroupSamBudgets(VariableGroup):
         QW_BUOY_PRES = QWBUOY + QWPRES
         return QW_BUOY_PRES, z
 
-    def getQwResidual(self, dataset_override = None):
+    def getQwResidual(self, dataset_override=None):
         """
         Calculates the residual for the QW budget using
         the following equation:
@@ -964,7 +1049,7 @@ class VariableGroupSamBudgets(VariableGroup):
         QW_RES = QWBT - (QWGRAD + QWADV + QWDIFF + QWBUOY + QWPRES + QWPREC + QWFORC)
         return QW_RES, z
 
-    def getQtogwBuoyPlusPres(self, dataset_override = None):
+    def getQtogwBuoyPlusPres(self, dataset_override=None):
         """
         Calculates the combined BUOY and PRES variable value
         of the QTOGW budget using the following equation:
@@ -980,7 +1065,7 @@ class VariableGroupSamBudgets(VariableGroup):
         QTOGW_BUOY_PRES = QTOGWBUOY + QTOGWPRES
         return QTOGW_BUOY_PRES, z
 
-    def getQtogwResidual(self, dataset_override = None):
+    def getQtogwResidual(self, dataset_override=None):
         """
         Calculates the residual for the QTOGW budget using
         the following equation:
@@ -1002,7 +1087,7 @@ class VariableGroupSamBudgets(VariableGroup):
         QTOGW_RES = QTOGWBT - (QTOGWGRAD + QTOGWADV + QTOGWDIFF + QTOGWBUOY + QTOGWPRES + QTOGWPREC + QTOGWFORC)
         return QTOGW_RES, z
 
-    def getT2Residual(self, dataset_override = None):
+    def getT2Residual(self, dataset_override=None):
         """
         Calculates the residual for the T2 budget using
         the following equation:
@@ -1024,7 +1109,7 @@ class VariableGroupSamBudgets(VariableGroup):
         T2_RES = T2BT - (T2ADVTR + T2GRAD + T2DISSIP + T2DIFTR + T2PREC + T2RAD + T2FORC)
         return T2_RES, z
 
-    def getThl2Residual(self, dataset_override = None):
+    def getThl2Residual(self, dataset_override=None):
         """
         Calculates the residual for the THL2 budget using
         the following equation:
@@ -1046,7 +1131,7 @@ class VariableGroupSamBudgets(VariableGroup):
         THL2_RES = THL2BT - (THL2ADVTR + THL2GRAD + THL2DISSIP + THL2DIFTR + THL2PREC + THL2RAD + THL2FORC)
         return THL2_RES, z
 
-    def getQt2Residual(self, dataset_override = None):
+    def getQt2Residual(self, dataset_override=None):
         """
         Calculates the residual for the Q2 budget using
         the following equation:
@@ -1067,7 +1152,7 @@ class VariableGroupSamBudgets(VariableGroup):
         Q2_RES = Q2BT - (Q2ADVTR + Q2GRAD + Q2DISSIP + Q2DIFTR + Q2PREC + Q2FORC)
         return Q2_RES, z
 
-    def getQtog2Residual(self, dataset_override = None):
+    def getQtog2Residual(self, dataset_override=None):
         """
         Calculates the residual for the QTOG2 budget using
         the following equation:
@@ -1088,7 +1173,7 @@ class VariableGroupSamBudgets(VariableGroup):
         QTOG2_RES = QTOG2BT - (QTOG2ADVTR + QTOG2GRAD + QTOG2DISSIP + QTOG2DIFTR + QTOG2PREC + QTOG2FORC)
         return QTOG2_RES, z
 
-    def getQThlResidual(self, dataset_override = None):
+    def getQThlResidual(self, dataset_override=None):
         """
         Calculates the residual for the QTHL budget using
         the following equation:
@@ -1110,7 +1195,7 @@ class VariableGroupSamBudgets(VariableGroup):
         QTHLW_RES = QTHLBT - (QTHLADV + QTHLGRAD + QTHLDISSIP + QTHLDIFTR + QTHLPREC + QTHLRAD + QTHLFORC)
         return QTHLW_RES, z
 
-    def getTkeDissPlusDiff(self, dataset_override = None):
+    def getTkeDissPlusDiff(self, dataset_override=None):
         """
         Calculates the combined DISS and DIFTR variable value
         of the TKE budget using the following equation:
@@ -1126,7 +1211,7 @@ class VariableGroupSamBudgets(VariableGroup):
         TKE_DISS_DIFF = DIFTR + DISSIP
         return TKE_DISS_DIFF, z
 
-    def getTkeResidual(self, dataset_override = None):
+    def getTkeResidual(self, dataset_override=None):
         """
         Calculates the residual for the TKE budget using
         the following equation:
@@ -1147,8 +1232,8 @@ class VariableGroupSamBudgets(VariableGroup):
         SHEAR, z, dataset = self.getVarForCalculations('SHEAR', dataset)
         TKE_RES = BT - (SHEAR + BUOYA + ADVTR + PRESSTR + DIFTR + SDMP + DISSIP)
         return TKE_RES, z
-    
-    def getTkesResidual(self, dataset_override = None):
+
+    def getTkesResidual(self, dataset_override=None):
         """
         Calculates the residual for the TKES budget using
         the following equation:
@@ -1165,8 +1250,8 @@ class VariableGroupSamBudgets(VariableGroup):
         SHEARS, z, dataset = self.getVarForCalculations('SHEARS', dataset)
         TKES_RES = -(SHEARS + BUOYAS + ADVTRS + DISSIPS)
         return TKES_RES, z
-    
-    def getU2Residual(self, dataset_override = None):
+
+    def getU2Residual(self, dataset_override=None):
         """
         Calculates the residual for the U2 budget using
         the following equation:
@@ -1184,8 +1269,8 @@ class VariableGroupSamBudgets(VariableGroup):
         U2SHEAR, z, dataset = self.getVarForCalculations('U2SHEAR', dataset)
         U2_RES = U2BT - (U2ADV + U2SHEAR + U2REDIS + U2DIFF)
         return U2_RES, z
-    
-    def getV2Residual(self, dataset_override = None):
+
+    def getV2Residual(self, dataset_override=None):
         """
         Calculates the residual for the V2 budget using
         the following equation:
@@ -1203,8 +1288,8 @@ class VariableGroupSamBudgets(VariableGroup):
         V2SHEAR, z, dataset = self.getVarForCalculations('V2SHEAR', dataset)
         V2_RES = V2BT - (V2ADV + V2SHEAR + V2REDIS + V2DIFF)
         return V2_RES, z
-    
-    def getW2RedisPlusPres(self, dataset_override = None):
+
+    def getW2RedisPlusPres(self, dataset_override=None):
         """
         Calculates the combined REDIS and PRES variable value
         of the W2 budget using the following equation:
@@ -1219,8 +1304,8 @@ class VariableGroupSamBudgets(VariableGroup):
         W2REDIS, z, dataset = self.getVarForCalculations('W2REDIS', dataset)
         W2_REDIS_PRES = W2REDIS + W2PRES
         return W2_REDIS_PRES, z
-    
-    def getW2Residual(self, dataset_override = None):
+
+    def getW2Residual(self, dataset_override=None):
         """
         Calculates the residual for the W2 budget using
         the following equation:
@@ -1240,7 +1325,7 @@ class VariableGroupSamBudgets(VariableGroup):
         W2SDMP, z, dataset = self.getVarForCalculations('W2SDMP', dataset)
         W2_RES = W2BT - (W2ADV + W2PRES + W2REDIS + W2BUOY + W2DIFF + W2SDMP)
         return W2_RES, z
-    
+
     def getU2V2Adv(self, dataset_override):
         """
         Calculates the ADV variable value
@@ -1256,7 +1341,7 @@ class VariableGroupSamBudgets(VariableGroup):
         W2ADV, z, dataset = self.getVarForCalculations('W2ADV', dataset)
         U2V2_ADV = 2 * ADVTR + W2ADV
         return U2V2_ADV, z
-    
+
     def getU2V2Buoy(self, dataset_override):
         """
         Calculates the BUOY variable value
@@ -1272,8 +1357,7 @@ class VariableGroupSamBudgets(VariableGroup):
         W2BUOY, z, dataset = self.getVarForCalculations('W2BUOY', dataset)
         U2V2_BUOY = 2 * BUOYA + W2BUOY
         return U2V2_BUOY, z
-        
-    
+
     def getU2V2Pres(self, dataset_override):
         """
         Calculates the PRES variable value
@@ -1289,7 +1373,7 @@ class VariableGroupSamBudgets(VariableGroup):
         W2PRES, z, dataset = self.getVarForCalculations('W2PRES', dataset)
         U2V2_PRES = 2 * PRESSTR + W2PRES
         return U2V2_PRES, z
-    
+
     def getU2V2Diff(self, dataset_override):
         """
         Calculates the DIFF variable value
@@ -1305,7 +1389,7 @@ class VariableGroupSamBudgets(VariableGroup):
         W2DIFF, z, dataset = self.getVarForCalculations('W2DIFF', dataset)
         U2V2_DIFF = 2 * DIFTR + W2DIFF
         return U2V2_DIFF, z
-    
+
     def getU2V2Sdmp(self, dataset_override):
         """
         Calculates the SDMP variable value
@@ -1321,7 +1405,7 @@ class VariableGroupSamBudgets(VariableGroup):
         W2SDMP, z, dataset = self.getVarForCalculations('W2SDMP', dataset)
         U2V2_SDMP = 2 * SDMP + W2SDMP
         return U2V2_SDMP, z
-    
+
     def getU2V2Bt(self, dataset_override):
         """
         Calculates the BT variable value
@@ -1337,7 +1421,7 @@ class VariableGroupSamBudgets(VariableGroup):
         W2BT, z, dataset = self.getVarForCalculations('W2BT', dataset)
         U2V2_BT = 2 * BT + W2BT
         return U2V2_BT, z
-    
+
     def getU2V2Residual(self, dataset_override):
         """
         Calculates the residual for the W2 budget using
@@ -1364,10 +1448,11 @@ class VariableGroupSamBudgets(VariableGroup):
         SDMP, z, dataset = self.getVarForCalculations('SDMP', dataset)
         W2SDMP, z, dataset = self.getVarForCalculations('W2SDMP', dataset)
         SHEAR, z, dataset = self.getVarForCalculations('SHEAR', dataset)
-        U2V2_RES = 2. * (BT - (ADVTR + BUOYA + PRESSTR + DIFTR + DISSIP + SDMP + SHEAR)) - W2BT + (W2ADV + W2BUOY + W2PRES + W2DIFF + W2SDMP + W2REDIS)
+        U2V2_RES = 2. * (BT - (ADVTR + BUOYA + PRESSTR + DIFTR + DISSIP + SDMP + SHEAR)) - W2BT + (
+                    W2ADV + W2BUOY + W2PRES + W2DIFF + W2SDMP + W2REDIS)
         return U2V2_RES, z
-    
-    def getW3Residual(self, dataset_override = None):
+
+    def getW3Residual(self, dataset_override=None):
         """
         Calculates the residual for the W3 budget using
         the following equation:
@@ -1386,8 +1471,8 @@ class VariableGroupSamBudgets(VariableGroup):
         W3REDIS, z, dataset = self.getVarForCalculations('W3REDIS', dataset)
         W3_RES = W3BT - (W3ADV + W3PRES + W3REDIS + W3BUOY + W3DIFF)
         return W3_RES, z
-    
-    def getUWPresPlusAniz(self, dataset_override = None):
+
+    def getUWPresPlusAniz(self, dataset_override=None):
         """
         Calculates the combined ANIZ and PRES variable value
         of the UW budget using the following equation:
@@ -1402,8 +1487,8 @@ class VariableGroupSamBudgets(VariableGroup):
         WUPRES, z, dataset = self.getVarForCalculations('WUPRES', dataset)
         WU_ANIZ_PRES = WUANIZ + WUPRES
         return WU_ANIZ_PRES, z
-    
-    def getUWResidual(self, dataset_override = None):
+
+    def getUWResidual(self, dataset_override=None):
         """
         Calculates the residual for the UW budget using
         the following equation:
@@ -1424,8 +1509,8 @@ class VariableGroupSamBudgets(VariableGroup):
         WUSDMP, z, dataset = self.getVarForCalculations('WUSDMP', dataset)
         WU_RES = WUBT - (WUDIFF + WUSHEAR + WUADV + WUPRES + WUANIZ + WUBUOY + WUSDMP)
         return WU_RES, z
-    
-    def getVWPresPlusAniz(self, dataset_override = None):
+
+    def getVWPresPlusAniz(self, dataset_override=None):
         """
         Calculates the combined ANIZ and PRES variable value
         of the VW budget using the following equation:
@@ -1440,8 +1525,8 @@ class VariableGroupSamBudgets(VariableGroup):
         WVPRES, z, dataset = self.getVarForCalculations('WVPRES', dataset)
         WV_ANIZ_PRES = WVANIZ + WVPRES
         return WV_ANIZ_PRES, z
-    
-    def getVWResidual(self, dataset_override = None):
+
+    def getVWResidual(self, dataset_override=None):
         """
         Calculates the residual for the VW budget using
         the following equation:
@@ -1462,19 +1547,19 @@ class VariableGroupSamBudgets(VariableGroup):
         WVSDMP, z, dataset = self.getVarForCalculations('WVSDMP', dataset)
         WV_RES = WVBT - (WVDIFF + WVSHEAR + WVADV + WVPRES + WVANIZ + WVBUOY + WVSDMP)
         return WV_RES, z
-    
-    #NOTE: Not needed anymore?
-    #def getU2C14OverTau(self, dataset_override = None):
-    #formula = '- (3/2) * U2DIFF / np.maximum( TKE + TKES, 1e-6 )'
-    
-    #def getV2C14OverTau(self, dataset_override = None):
-    #formula = ' - (3/2) * V2DIFF / np.maximum( TKE + TKES, 1e-6 )'
-    
-    #def getThl2C2OverTau(self, dataset_override = None):
-    #formula = ' - ( THL2DISSIP + THL2DIFTR ) / np.maximum( THEL2, 1e-6 )'
-    
-    #def getQtog2C2OverTau(self, dataset_override = None):
-    #formula = '- ( QTOG2DISSIP + QTOG2DIFTR ) / np.maximum( QTOG2*1e-6, 1e-15 )'
-    
-    #def getQ2C2OverTau(self, dataset_override = None):
-    #formula = '- ( Q2DISSIP + Q2DIFTR ) / np.maximum( QT2 * 1e-6, 1e-15 )'
+
+    # NOTE: Not needed anymore?
+    # def getU2C14OverTau(self, dataset_override = None):
+    # formula = '- (3/2) * U2DIFF / np.maximum( TKE + TKES, 1e-6 )'
+
+    # def getV2C14OverTau(self, dataset_override = None):
+    # formula = ' - (3/2) * V2DIFF / np.maximum( TKE + TKES, 1e-6 )'
+
+    # def getThl2C2OverTau(self, dataset_override = None):
+    # formula = ' - ( THL2DISSIP + THL2DIFTR ) / np.maximum( THEL2, 1e-6 )'
+
+    # def getQtog2C2OverTau(self, dataset_override = None):
+    # formula = '- ( QTOG2DISSIP + QTOG2DIFTR ) / np.maximum( QTOG2*1e-6, 1e-15 )'
+
+    # def getQ2C2OverTau(self, dataset_override = None):
+    # formula = '- ( Q2DISSIP + Q2DIFTR ) / np.maximum( QT2 * 1e-6, 1e-15 )'

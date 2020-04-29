@@ -11,11 +11,11 @@ these processes are mostly carried out by other classes/files.
 import argparse
 import glob
 import os
+import re
 import shutil
 import subprocess
 from datetime import datetime
 from warnings import warn
-import re
 
 from config import Case_definitions
 from python_html_gallery import gallery
@@ -23,13 +23,14 @@ from src.Case import Case
 from src.DataReader import DataReader
 from src.interoperability import clean_path
 
+
 class PyPlotGen:
     """
 
     """
 
     def __init__(self, output_folder, clubb_folders=None, replace=False, les=False, cgbest=False, hoc=False,
-                 plotrefs=False,
+                 plotrefs=False, benchmark_only = False,
                  zip=False, thin=False, no_legends=False, ensemble=False, plot_e3sm="", sam_folders=[""],
                  wrf_folders=[""],
                  budget_moments=False, bu_morr=False, diff=None, show_alphabetic_id=False):
@@ -79,6 +80,7 @@ class PyPlotGen:
         self.sam_data_reader = DataReader()
         self.show_alphabetic_id = show_alphabetic_id
         self.output_folder = os.path.abspath(self.output_folder)
+        self.benchmark_only = benchmark_only
 
         if os.path.isdir(self.output_folder) and self.replace_images == False:
             self.output_folder = self.output_folder + '_generated_on_' + str(datetime.now())
@@ -150,11 +152,21 @@ class PyPlotGen:
         :param all_case_names: List of all case names that can be plotted
         :return:
         """
-        e3sm_has_case = len(self.e3sm_dir) != 0 and case_def['e3sm_file'] != None
-        sam_has_case = len(self.sam_folders) != 0 and case_def['sam_file'] != None
-        wrf_has_case = len(self.wrf_folders) != 0 and case_def['wrf_file'] != None
-        clubb_has_case = self.clubb_datasets is not None and case_def['name'] in self.clubb_datasets.keys()
-        return e3sm_has_case or sam_has_case or wrf_has_case or clubb_has_case or self.hoc or self.cgbest or self.les
+
+        e3sm_given = len(self.e3sm_dir) != 0
+        sam_given = len(self.sam_folders) != 0
+        wrf_given = len(self.wrf_folders) != 0
+        clubb_given = self.clubb_datasets is not None
+
+        e3sm_has_case = e3sm_given and case_def['e3sm_file'] != None
+        sam_has_case = sam_given and case_def['sam_file'] != None
+        wrf_has_case = wrf_given != 0 and case_def['wrf_file'] != None
+        clubb_has_case = clubb_given and case_def['name'] in self.clubb_datasets.keys()
+
+        # benchmark_only = not e3sm_given and not sam_given and not wrf_given \
+        #                  and not clubb_given and (self.hoc or self.cgbest or self.les)
+
+        return e3sm_has_case or sam_has_case or wrf_has_case or clubb_has_case or self.benchmark_only
 
     def __copySetupFiles__(self):
         """
@@ -315,7 +327,7 @@ def __process_args__():
     pyplotgen = PyPlotGen(args.output, clubb_folders=args.clubb, replace=args.replace, les=les, plot_e3sm=e3sm,
                           cgbest=cgbest,
                           hoc=hoc, plotrefs=args.all_best, zip=args.zip, thin=args.thin, sam_folders=args.sam,
-                          wrf_folders=args.wrf,
+                          wrf_folders=args.wrf, benchmark_only = args.benchmark_only,
                           no_legends=args.no_legends, ensemble=args.ensemble, budget_moments=args.plot_budgets,
                           bu_morr=args.bu_morr, diff=args.diff, show_alphabetic_id=args.show_alphabetic_id)
     return pyplotgen
