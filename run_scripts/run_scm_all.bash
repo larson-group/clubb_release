@@ -27,7 +27,7 @@ cd $scriptPath
 
 OPTIONS=$*
 
-# Note that we use `"$@"' to let each command-line parameter expand to a 
+# Note that we use `"$@"' to let each command-line parameter expand to a
 # separate word. The quotes around `$@' are essential!
 # We need TEMP as the `eval set --' would nuke the return value of getopt.
 TEMP=`getopt -o :nhci --long nightly,help,short-cases,priority-cases -n 'run_scm_all.bash' -- "$@"`
@@ -97,7 +97,7 @@ if [ $SHORT_CASES == true ] ; then # Run only short cases
                 ignore=1
             fi
         done
-        
+
         # If the case was found in IGNORE_CASES, don't add it.
         if [ $ignore == 0 ]; then
           RUN_CASE[$a]=$line
@@ -113,7 +113,7 @@ elif [ $PRIORITY_CASES == true ] ; then
     PRIORITY_CASES=true
 
     declare -a PRIORITY_CASE_ARRAY
-    
+
     PRIORITY_CASE_ARRAY[0]="arm"
     PRIORITY_CASE_ARRAY[1]="atex"
     PRIORITY_CASE_ARRAY[2]="bomex"
@@ -143,7 +143,7 @@ elif [ $PRIORITY_CASES == true ] ; then
                 include=1
             fi
         done
-        
+
         # If the case was found in PRIORITY_CASE_ARRAY, add it to the run cases.
         if [ $include == 1 ]; then
           RUN_CASE[$a]=$line
@@ -176,7 +176,7 @@ if [ $NIGHTLY == true ] ; then
     # Make the CLUBB_previous and CLUBB_current directories if they don't exist
     mkdir -p $OUTPUT_DIR"/CLUBB_current"
     mkdir -p $OUTPUT_DIR"/CLUBB_previous"
-  
+
     # Eliminate the previous CLUBB results.
     # This prevents spurious profile generation resulting from
     # previous profiles not getting overwritten
@@ -184,6 +184,7 @@ if [ $NIGHTLY == true ] ; then
 
     mv $OUTPUT_DIR/CLUBB_current/*.ctl $OUTPUT_DIR/CLUBB_previous/
     mv $OUTPUT_DIR/CLUBB_current/*.dat $OUTPUT_DIR/CLUBB_previous/
+    mv $OUTPUT_DIR/CLUBB_current/*.nc $OUTPUT_DIR/CLUBB_previous/
     mv $OUTPUT_DIR/CLUBB_current/*.txt $OUTPUT_DIR/CLUBB_previous/
 elif [ $SHORT_CASES == true ] ; then
     echo -e "\nPerforming short-cases run\n"
