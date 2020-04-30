@@ -636,7 +636,7 @@ module advance_clubb_core_module
       tau_zm, & ! Eddy dissipation time scale on momentum levels      [s]
       tau_zt    ! Eddy dissipation time scale on thermodynamic levels [s]
 
-    real( kind = core_rknd ), dimension(gr%nz,sclr_dim) :: &
+    real( kind = core_rknd ), dimension(gr%nz,edsclr_dim) :: &
       wpedsclrp   ! w'edsclr'
 
     real( kind = core_rknd ), dimension(gr%nz,sclr_dim) :: &
