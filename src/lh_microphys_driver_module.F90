@@ -28,6 +28,8 @@ contains
                lh_rcm_mc, lh_rvm_mc, lh_thlm_mc, &
                lh_rtp2_mc, lh_thlp2_mc, lh_wprtp_mc, &
                lh_wpthlp_mc, lh_rtpthlp_mc, &
+               lh_AKm, AKm, AKstd, AKstd_cld, &
+               lh_rcm_avg, AKm_rcm, AKm_rcc, &
                microphys_sub )
 
     ! Description:
@@ -37,15 +39,6 @@ contains
     ! References:
     !   None
     !---------------------------------------------------------------------------
-
-    use variables_diagnostic_module, only: & 
-      lh_AKm,  & 
-      AKm, & 
-      AKstd, & 
-      AKstd_cld, & 
-      AKm_rcm, & 
-      AKm_rcc, & 
-      lh_rcm_avg
 
     use parameters_model, only: hydromet_dim ! Variable
 
@@ -135,6 +128,15 @@ contains
       lh_wprtp_mc,   & ! LH microphysics tendency for <w'rt'>                  [m*(kg/kg)/s^2]
       lh_wpthlp_mc,  & ! LH microphysics tendency for <w'thl'>                 [m*K/s^2]
       lh_rtpthlp_mc    ! LH microphysics tendency for <rt'thl'>                [K*(kg/kg)/s]
+
+    real( kind = core_rknd ), dimension(nz), intent(out) :: &
+      lh_AKm,     & ! Kessler ac estimate                 [kg/kg/s]
+      AKm,        & ! Exact Kessler ac                    [kg/kg/s]
+      AKstd,      & ! St dev of exact Kessler ac          [kg/kg/s]
+      AKstd_cld,  & ! Stdev of exact w/in cloud ac        [kg/kg/s]
+      lh_rcm_avg, & ! Monte Carlo rcm estimate            [kg/kg]
+      AKm_rcm,    & ! Kessler ac based on rcm             [kg/kg/s]
+      AKm_rcc       ! Kessler ac based on rcm/cloud_frac  [kg/kg/s]
 
     ! ---- Begin Code ----
 

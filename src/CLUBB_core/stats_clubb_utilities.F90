@@ -2705,13 +2705,17 @@ module stats_clubb_utilities
   end subroutine stats_accumulate_hydromet
 !------------------------------------------------------------------------------
   subroutine stats_accumulate_lh_tend( lh_hydromet_mc, lh_Ncm_mc, &
-                                       lh_thlm_mc, lh_rvm_mc, lh_rcm_mc )
+                                       lh_thlm_mc, lh_rvm_mc, lh_rcm_mc, &
+                                       lh_AKm, AKm, AKstd, AKstd_cld, &
+                                       lh_rcm_avg, AKm_rcm, AKm_rcc )
+
 ! Description:
 !   Compute stats for the tendency of latin hypercube sample points.
 
 ! References:
 !   None
 !------------------------------------------------------------------------------
+
     use parameters_model, only: &
       hydromet_dim ! Variable(s)
 
@@ -2745,15 +2749,6 @@ module stats_clubb_utilities
       ilh_AKm, &
       ilh_rcm_avg
 
-     use variables_diagnostic_module, only: &
-      AKm, & ! Variable(s)
-      lh_AKm, &
-      AKstd, & 
-      lh_rcm_avg, &
-      AKstd_cld, &
-      AKm_rcm, &
-      AKm_rcc
-
     use stats_type_utilities, only: & 
         stat_update_var ! Procedure(s)
 
@@ -2775,6 +2770,15 @@ module stats_clubb_utilities
       lh_thlm_mc, & ! Tendency of liquid potential temperature [kg/kg/s]
       lh_rcm_mc,  & ! Tendency of cloud water                  [kg/kg/s]
       lh_rvm_mc     ! Tendency of vapor                        [kg/kg/s]
+
+    real( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
+      lh_AKm,     & ! Kessler ac estimate                 [kg/kg/s]
+      AKm,        & ! Exact Kessler ac                    [kg/kg/s]
+      AKstd,      & ! St dev of exact Kessler ac          [kg/kg/s]
+      AKstd_cld,  & ! Stdev of exact w/in cloud ac        [kg/kg/s]
+      lh_rcm_avg, & ! Monte Carlo rcm estimate            [kg/kg]
+      AKm_rcm,    & ! Kessler ac based on rcm             [kg/kg/s]
+      AKm_rcc       ! Kessler ac based on rcm/cloud_frac  [kg/kg/s]
 
     if ( l_stats_samp ) then
 

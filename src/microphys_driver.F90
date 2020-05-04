@@ -324,6 +324,15 @@ module microphys_driver
     real( kind = core_rknd ), dimension(gr%nz, 4) :: &
       aeromass ! ug/m^3
 
+    real( kind = core_rknd ), dimension(gr%nz) :: &
+      lh_AKm,     & ! Kessler ac estimate                 [kg/kg/s]
+      AKm,        & ! Exact Kessler ac                    [kg/kg/s]
+      AKstd,      & ! St dev of exact Kessler ac          [kg/kg/s]
+      AKstd_cld,  & ! Stdev of exact w/in cloud ac        [kg/kg/s]
+      lh_rcm_avg, & ! Monte Carlo rcm estimate            [kg/kg]
+      AKm_rcm,    & ! Kessler ac based on rcm             [kg/kg/s]
+      AKm_rcc       ! Kessler ac based on rcm/cloud_frac  [kg/kg/s]
+
     type(microphys_stats_vars_type) :: &
       microphys_stats_zt, &   ! Stats. vars. from microphys. on zt and sfc grids
       microphys_stats_sfc
@@ -461,6 +470,8 @@ module microphys_driver
                rcm_mc, rvm_mc, thlm_mc,  & ! Out
                rtp2_mc, thlp2_mc, wprtp_mc, & ! Out
                wpthlp_mc, rtpthlp_mc, & ! Out
+               lh_AKm, AKm, AKstd, AKstd_cld, &
+               lh_rcm_avg, AKm_rcm, AKm_rcc, &
                morrison_microphys_driver )  ! Procedure
 #else
         stop "Latin hypercube was not enabled at compile time"
@@ -471,7 +482,9 @@ module microphys_driver
         endif
 #endif /* SILHS */
         call stats_accumulate_lh_tend( hydromet_mc, Ncm_mc, &
-                                     thlm_mc, rvm_mc, rcm_mc )
+                                       thlm_mc, rvm_mc, rcm_mc, &
+                                       lh_AKm, AKm, AKstd, AKstd_cld, &
+                                       lh_rcm_avg, AKm_rcm, AKm_rcc )
 
       endif ! LH isn't disabled
 
@@ -555,13 +568,17 @@ module microphys_driver
                rcm_mc, rvm_mc, thlm_mc,  & ! Out
                rtp2_mc, thlp2_mc, wprtp_mc, & ! Out
                wpthlp_mc, rtpthlp_mc, & ! Out               
+               lh_AKm, AKm, AKstd, AKstd_cld, &
+               lh_rcm_avg, AKm_rcm, AKm_rcc, &
                KK_local_microphys ) ! Procedure
 #else
         stop "Subgrid Importance Latin Hypercube was not enabled at compile time"
 #endif /* SILHS */
 
         call stats_accumulate_lh_tend( hydromet_mc, Ncm_mc, &
-                                       thlm_mc, rvm_mc, rcm_mc )
+                                       thlm_mc, rvm_mc, rcm_mc, &
+                                       lh_AKm, AKm, AKstd, AKstd_cld, &
+                                       lh_rcm_avg, AKm_rcm, AKm_rcc )
 
         if ( l_stats_samp ) then
           ! Latin hypercube estimate for sedimentation velocities
