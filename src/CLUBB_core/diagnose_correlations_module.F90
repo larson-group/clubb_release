@@ -319,7 +319,7 @@ module diagnose_correlations_module
 
 
   !-----------------------------------------------------------------------
-!  subroutine approx_w_covar( nz, pdf_params, rrm, Nrm, Ncnm, & ! Intent(in)
+!  subroutine approx_w_covar( nz, pdf_params, rrm, Nrm, Ncnm, Kh_zm, &   ! Intent(in)
 !                             wpchip_zt, wprrp_zt, wpNrp_zt, wpNcnp_zt ) ! Intent(out)
 !    ! Description:
 !    ! Approximate the covariances of w with the hydrometeors using Eddy
@@ -349,9 +349,6 @@ module diagnose_correlations_module
 !    use advance_windm_edsclrm_module, only: &
 !        xpwp_fnc ! Procedure(s)
 !
-!    use variables_diagnostic_module, only: &
-!        Kh_zm ! Variable(s)
-!
 !    implicit none
 !
 !    ! Input Variables
@@ -362,9 +359,10 @@ module diagnose_correlations_module
 !      pdf_params    ! PDF parameters                         [units vary]
 !
 !    real( kind = core_rknd ), dimension(nz), intent(in) ::  &
-!      rrm,          & ! Mean rain water mixing ratio, < r_r >      [kg/kg]
-!      Nrm,             & ! Mean rain drop concentration, < N_r >      [num/kg]
-!      Ncnm               ! Mean cloud nuclei concentration, < N_cn >  [num/kg]
+!      rrm,   & ! Mean rain water mixing ratio, < r_r >      [kg/kg]
+!      Nrm,   & ! Mean rain drop concentration, < N_r >      [num/kg]
+!      Ncnm,  & ! Mean cloud nuclei concentration, < N_cn >  [num/kg]
+!      Kh_zm    ! Eddy diffusivity coef. on momentum levels  [m^2/s]
 !
 !    ! Output Variables
 !    real( kind = core_rknd ), dimension(nz), intent(out) ::  &
