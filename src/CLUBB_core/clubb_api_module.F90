@@ -1640,7 +1640,7 @@ contains
 
   subroutine setup_pdf_parameters_api( &
     nz, pdf_dim, dt, &                      ! Intent(in)
-    Nc_in_cloud, rcm, cloud_frac, &             ! Intent(in)
+    Nc_in_cloud, rcm, cloud_frac, Kh_zm, &      ! Intent(in)
     ice_supersat_frac, hydromet, wphydrometp, & ! Intent(in)
     corr_array_n_cloud, corr_array_n_below, &   ! Intent(in)
     pdf_params, l_stats_samp, &                 ! Intent(in)
@@ -1680,6 +1680,7 @@ contains
       Nc_in_cloud,       & ! Mean (in-cloud) cloud droplet conc.       [num/kg]
       rcm,               & ! Mean cloud water mixing ratio, < r_c >    [kg/kg]
       cloud_frac,        & ! Cloud fraction                            [-]
+      Kh_zm,             & ! Eddy diffusivity coef. on momentum levels [m^2/s]
       ice_supersat_frac    ! Ice supersaturation fraction              [-]
 
     real( kind = core_rknd ), dimension(nz,hydromet_dim), intent(in) :: &
@@ -1738,7 +1739,7 @@ contains
 
     call setup_pdf_parameters( &
       nz, pdf_dim, dt, &                          ! Intent(in)
-      Nc_in_cloud, rcm, cloud_frac, &             ! Intent(in)
+      Nc_in_cloud, rcm, cloud_frac, Kh_zm, &      ! Intent(in)
       ice_supersat_frac, hydromet, wphydrometp, & ! Intent(in)
       corr_array_n_cloud, corr_array_n_below, &   ! Intent(in)
       pdf_params, l_stats_samp, &                 ! Intent(in)

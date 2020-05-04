@@ -40,7 +40,7 @@ module setup_clubb_pdf_params
 
   !=============================================================================
   subroutine setup_pdf_parameters( nz, pdf_dim, dt, &                      ! Intent(in)
-                                   Nc_in_cloud, rcm, cloud_frac, &             ! Intent(in)
+                                   Nc_in_cloud, rcm, cloud_frac, Kh_zm, &      ! Intent(in)
                                    ice_supersat_frac, hydromet, wphydrometp, & ! Intent(in)
                                    corr_array_n_cloud, corr_array_n_below, &   ! Intent(in)
                                    pdf_params, l_stats_samp, &                 ! Intent(in)
@@ -101,9 +101,6 @@ module setup_clubb_pdf_params
 
     use advance_windm_edsclrm_module, only: &
         xpwp_fnc
-
-    use variables_diagnostic_module, only: &
-        Kh_zm
 
     use parameters_tunable, only: &
         c_K_hm
@@ -168,6 +165,7 @@ module setup_clubb_pdf_params
       Nc_in_cloud,       & ! Mean (in-cloud) cloud droplet conc.       [num/kg]
       rcm,               & ! Mean cloud water mixing ratio, < r_c >    [kg/kg]
       cloud_frac,        & ! Cloud fraction                            [-]
+      Kh_zm,             & ! Eddy diffusivity coef. on momentum levels [m^2/s]
       ice_supersat_frac    ! Ice supersaturation fraction              [-]
 
     real( kind = core_rknd ), dimension(nz,hydromet_dim), intent(in) :: &
