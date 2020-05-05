@@ -189,9 +189,6 @@ module morrison_microphys_module
     use clubb_precision, only: &
         core_rknd   ! Variable(s)
 
-    use variables_prognostic_module, only: &
-        rho_ds_zt
-
     use error_code, only: &
         clubb_at_least_debug_level   ! Procedure
 
@@ -877,7 +874,7 @@ module morrison_microphys_module
     end do
     
 
-    rsm_sd_morr_int = vertical_integral( (nz - 2 + 1), rho_ds_zt(2:nz), &
+    rsm_sd_morr_int = vertical_integral( (nz - 2 + 1), rho(2:nz), &
                             real( rsm_sten(2:nz), kind=core_rknd ), &
                             gr%dzt(2:nz) )
 
