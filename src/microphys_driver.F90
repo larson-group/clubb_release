@@ -669,7 +669,9 @@ module microphys_driver
           call stat_begin_update( iNcm_act, Ncm_mc, stats_zt )
         endif
 
-        call aer_act_clubb_quadrature_Gauss( aeromass, T_in_K, Ndrop_max )
+        call aer_act_clubb_quadrature_Gauss( pdf_params, p_in_Pa, &
+                                             aeromass, T_in_K, &
+                                             Ndrop_max )
 
         ! Convert to #/kg
         Ndrop_max = Ndrop_max * cm3_per_m3 / rho
