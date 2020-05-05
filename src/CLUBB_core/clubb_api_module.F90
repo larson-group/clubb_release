@@ -213,14 +213,6 @@ module clubb_api_module
   use stats_sfc_module, only : &
     nvarmax_sfc
 
-  use variables_diagnostic_module, only : &
-    Lscale, & ! Mixing lengths
-    wp2_zt, & ! w'^2 on thermo. grid     [m^2/s^2]
-    wphydrometp ! Covariance of w and hydrometeor (momentum levels) [(m/s)un]
-
-  use variables_prognostic_module, only : &
-    pdf_params_frz ! for use when l_use_ice_latent = .true.
-
   implicit none
 
   private
@@ -276,9 +268,7 @@ module clubb_api_module
         iiedsclr_CO2, &
         l_frozen_hm, &
         l_mix_rat_hm, &
-    cleanup_clubb_core_api, &
-    ! Added for use in SAM's SGS_CLUBB package
-    pdf_params_frz
+    cleanup_clubb_core_api
 
   public &
     ! To Implement SILHS:
@@ -421,7 +411,6 @@ module clubb_api_module
     l_netcdf, &
     l_output_rad_files, &
     leap_year_api, &
-    Lscale, &
     nvarmax_rad_zm, &
     nvarmax_rad_zt, &
     nvarmax_sfc, &
@@ -441,8 +430,6 @@ module clubb_api_module
     stats_init_sfc_api, &
     stats_init_zm_api, &
     stats_init_zt_api, &
-    wp2_zt, &
-    wphydrometp, &
     stats_zm, &
     zmscr01, zmscr02, zmscr03, &
     zmscr04, zmscr05, zmscr06, &
