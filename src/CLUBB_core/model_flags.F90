@@ -198,8 +198,6 @@ module model_flags
       l_Lscale_plume_centered,      & ! Alternate that uses the PDF to compute the perturbed values
       l_diag_Lscale_from_tau,       & ! First diagnose dissipation time tau, and then diagnose the
                                       ! mixing length scale as Lscale = tau * tke
-      l_use_ice_latent,             & ! Includes the effects of ice latent heating in turbulence
-                                      ! terms
       l_use_C7_Richardson,          & ! Parameterize C7 based on Richardson number
       l_use_C11_Richardson,         & ! Parameterize C11 and C16 based on Richardson number
       l_brunt_vaisala_freq_moist,   & ! Use a different formula for the Brunt-Vaisala frequency in
@@ -308,7 +306,6 @@ module model_flags
                                              l_do_expldiff_rtm_thlm, &
                                              l_Lscale_plume_centered, &
                                              l_diag_Lscale_from_tau, &
-                                             l_use_ice_latent, &
                                              l_use_C7_Richardson, &
                                              l_use_C11_Richardson, &
                                              l_brunt_vaisala_freq_moist, &
@@ -404,8 +401,6 @@ module model_flags
       l_Lscale_plume_centered,      & ! Alternate that uses the PDF to compute the perturbed values
       l_diag_Lscale_from_tau,       & ! First diagnose dissipation time tau, and then diagnose the
                                       ! mixing length scale as Lscale = tau * tke
-      l_use_ice_latent,             & ! Includes the effects of ice latent heating in turbulence
-                                      ! terms
       l_use_C7_Richardson,          & ! Parameterize C7 based on Richardson number
       l_use_C11_Richardson,         & ! Parameterize C11 and C16 based on Richardson number
       l_brunt_vaisala_freq_moist,   & ! Use a different formula for the Brunt-Vaisala frequency in
@@ -450,7 +445,6 @@ module model_flags
     l_do_expldiff_rtm_thlm = .false.
     l_Lscale_plume_centered = .false.
     l_diag_Lscale_from_tau = .true.
-    l_use_ice_latent = .false.
     l_use_C7_Richardson = .true.
     l_use_C11_Richardson = .false.
     l_brunt_vaisala_freq_moist = .false.
@@ -498,7 +492,6 @@ module model_flags
                                                  l_do_expldiff_rtm_thlm, &
                                                  l_Lscale_plume_centered, &
                                                  l_diag_Lscale_from_tau, &
-                                                 l_use_ice_latent, &
                                                  l_use_C7_Richardson, &
                                                  l_use_C11_Richardson, &
                                                  l_brunt_vaisala_freq_moist, &
@@ -595,8 +588,6 @@ module model_flags
       l_Lscale_plume_centered,      & ! Alternate that uses the PDF to compute the perturbed values
       l_diag_Lscale_from_tau,       & ! First diagnose dissipation time tau, and then diagnose the
                                       ! mixing length scale as Lscale = tau * tke
-      l_use_ice_latent,             & ! Includes the effects of ice latent heating in turbulence
-                                      ! terms
       l_use_C7_Richardson,          & ! Parameterize C7 based on Richardson number
       l_use_C11_Richardson,         & ! Parameterize C11 and C16 based on Richardson number
       l_brunt_vaisala_freq_moist,   & ! Use a different formula for the Brunt-Vaisala frequency in
@@ -645,7 +636,6 @@ module model_flags
     clubb_config_flags%l_do_expldiff_rtm_thlm = l_do_expldiff_rtm_thlm
     clubb_config_flags%l_Lscale_plume_centered = l_Lscale_plume_centered
     clubb_config_flags%l_diag_Lscale_from_tau = l_diag_Lscale_from_tau
-    clubb_config_flags%l_use_ice_latent = l_use_ice_latent
     clubb_config_flags%l_use_C7_Richardson = l_use_C7_Richardson
     clubb_config_flags%l_use_C11_Richardson = l_use_C11_Richardson
     clubb_config_flags%l_brunt_vaisala_freq_moist = l_brunt_vaisala_freq_moist
@@ -712,7 +702,6 @@ module model_flags
     write(iunit,*) "l_do_expldiff_rtm_thlm = ", clubb_config_flags%l_do_expldiff_rtm_thlm
     write(iunit,*) "l_Lscale_plume_centered = ", clubb_config_flags%l_Lscale_plume_centered
     write(iunit,*) "l_diag_Lscale_from_tau = ", clubb_config_flags%l_diag_Lscale_from_tau
-    write(iunit,*) "l_use_ice_latent = ", clubb_config_flags%l_use_ice_latent
     write(iunit,*) "l_use_C7_Richardson = ", clubb_config_flags%l_use_C7_Richardson
     write(iunit,*) "l_use_C11_Richardson = ", clubb_config_flags%l_use_C11_Richardson
     write(iunit,*) "l_brunt_vaisala_freq_moist = ", clubb_config_flags%l_brunt_vaisala_freq_moist

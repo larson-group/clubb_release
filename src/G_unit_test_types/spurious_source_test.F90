@@ -376,8 +376,6 @@ module spurious_source_test
       l_Lscale_plume_centered,      & ! Alternate that uses the PDF to compute the perturbed values
       l_diag_Lscale_from_tau,       & ! First diagnose dissipation time tau, and then diagnose the
                                       ! mixing length scale as Lscale = tau * tke
-      l_use_ice_latent,             & ! Includes the effects of ice latent heating in turbulence
-                                      ! terms
       l_use_C7_Richardson,          & ! Parameterize C7 based on Richardson number
       l_use_C11_Richardson,         & ! Parameterize C11 and C16 based on Richardson number
       l_brunt_vaisala_freq_moist,   & ! Use a different formula for the Brunt-Vaisala frequency in
@@ -420,7 +418,6 @@ module spurious_source_test
                                          l_do_expldiff_rtm_thlm, &
                                          l_Lscale_plume_centered, &
                                          l_diag_Lscale_from_tau, &
-                                         l_use_ice_latent, &
                                          l_use_C7_Richardson, &
                                          l_use_C11_Richardson, &
                                          l_brunt_vaisala_freq_moist, &

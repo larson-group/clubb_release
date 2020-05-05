@@ -773,7 +773,6 @@ contains
     momentum_heights, thermodynamic_heights,            & ! intent(in)
     sfc_elevation,                                      & ! intent(in)
     l_predict_upwp_vpwp,                                & ! intent(in)
-    l_use_ice_latent,                                   & ! intent(in)
     l_prescribed_avg_deltaz,                            & ! intent(in)
     l_damp_wp2_using_em,                                & ! intent(in)
     l_stability_correct_tau_zm,                         & ! intent(in)
@@ -871,7 +870,6 @@ contains
                                  ! Otherwise, <u'w'> and <v'w'> are still approximated by eddy
                                  ! diffusivity when <u> and <v> are advanced in subroutine
                                  ! advance_windm_edsclrm.
-      l_use_ice_latent,        & ! Includes the effects of ice latent heating in turbulence terms
       l_prescribed_avg_deltaz, &  ! used in adj_low_res_nu. If .true., avg_deltaz = deltaz
       l_damp_wp2_using_em,     &
       l_stability_correct_tau_zm
@@ -902,7 +900,6 @@ contains
       momentum_heights, thermodynamic_heights,              & ! intent(in)
       sfc_elevation,                                        & ! intent(in)
       l_predict_upwp_vpwp,                                  & ! intent(in)
-      l_use_ice_latent,                                     & ! intent(in)
       l_prescribed_avg_deltaz,                              & ! intent(in)
       l_damp_wp2_using_em,                                  & ! intent(in)
       l_stability_correct_tau_zm,                           & ! intent(in)
@@ -2537,7 +2534,6 @@ contains
                                                  l_do_expldiff_rtm_thlm, & ! Out
                                                  l_Lscale_plume_centered, & ! Out
                                                  l_diag_Lscale_from_tau, & ! Out
-                                                 l_use_ice_latent, & ! Out
                                                  l_use_C7_Richardson, & ! Out
                                                  l_use_C11_Richardson, & ! Out
                                                  l_brunt_vaisala_freq_moist, & ! Out
@@ -2629,8 +2625,6 @@ contains
       l_Lscale_plume_centered,      & ! Alternate that uses the PDF to compute the perturbed values
       l_diag_Lscale_from_tau,       & ! First diagnose dissipation time tau, and then diagnose the
                                       ! mixing length scale as Lscale = tau * tke
-      l_use_ice_latent,             & ! Includes the effects of ice latent heating in turbulence
-                                      ! terms
       l_use_C7_Richardson,          & ! Parameterize C7 based on Richardson number
       l_use_C11_Richardson,         & ! Parameterize C11 and C16 based on Richardson number
       l_brunt_vaisala_freq_moist,   & ! Use a different formula for the Brunt-Vaisala frequency in
@@ -2672,7 +2666,6 @@ contains
                                          l_do_expldiff_rtm_thlm, & ! Out
                                          l_Lscale_plume_centered, & ! Out
                                          l_diag_Lscale_from_tau, & ! Out
-                                         l_use_ice_latent, & ! Out
                                          l_use_C7_Richardson, & ! Out
                                          l_use_C11_Richardson, & ! Out
                                          l_brunt_vaisala_freq_moist, & ! Out
@@ -2717,7 +2710,6 @@ contains
                                                      l_do_expldiff_rtm_thlm, & ! In
                                                      l_Lscale_plume_centered, & ! In
                                                      l_diag_Lscale_from_tau, & ! In
-                                                     l_use_ice_latent, & ! In
                                                      l_use_C7_Richardson, & ! In
                                                      l_use_C11_Richardson, & ! In
                                                      l_brunt_vaisala_freq_moist, & ! In
@@ -2811,8 +2803,6 @@ contains
       l_Lscale_plume_centered,      & ! Alternate that uses the PDF to compute the perturbed values
       l_diag_Lscale_from_tau,       & ! First diagnose dissipation time tau, and then diagnose the
                                       ! mixing length scale as Lscale = tau * tke
-      l_use_ice_latent,             & ! Includes the effects of ice latent heating in turbulence
-                                      ! terms
       l_use_C7_Richardson,          & ! Parameterize C7 based on Richardson number
       l_use_C11_Richardson,         & ! Parameterize C11 and C16 based on Richardson number
       l_brunt_vaisala_freq_moist,   & ! Use a different formula for the Brunt-Vaisala frequency in
@@ -2858,7 +2848,6 @@ contains
                                              l_do_expldiff_rtm_thlm, & ! In
                                              l_Lscale_plume_centered, & ! In
                                              l_diag_Lscale_from_tau, & ! In
-                                             l_use_ice_latent, & ! In
                                              l_use_C7_Richardson, & ! In
                                              l_use_C11_Richardson, & ! In
                                              l_brunt_vaisala_freq_moist, & ! In

@@ -176,10 +176,9 @@ module variables_prognostic_module
 !$omp threadprivate(sigma_sqd_w)
 
   type(pdf_parameter), public, save :: &
-    pdf_params, &
-    pdf_params_frz !for use when l_use_ice_latent = .true.
+    pdf_params
 
-!$omp threadprivate(pdf_params, pdf_params_frz)
+!$omp threadprivate(pdf_params)
 
   type(implicit_coefs_terms), allocatable, public, save :: &
     pdf_implicit_coefs_terms    ! Implicit coefs / explicit terms [units vary]
@@ -315,7 +314,6 @@ module variables_prognostic_module
 
     ! Variables for pdf closure scheme
     call init_pdf_params( nz, pdf_params )
-    call init_pdf_params( nz, pdf_params_frz )
 
     allocate( pdf_implicit_coefs_terms )
     call init_pdf_implicit_coefs_terms( nz, sclr_dim, &            ! Intent(in)

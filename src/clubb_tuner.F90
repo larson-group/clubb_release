@@ -616,8 +616,6 @@ subroutine logical_flags_driver( current_date, current_time )
     l_Lscale_plume_centered,      & ! Alternate that uses the PDF to compute the perturbed values
     l_diag_Lscale_from_tau,       & ! First diagnose dissipation time tau, and then diagnose the
                                     ! mixing length scale as Lscale = tau * tke
-    l_use_ice_latent,             & ! Includes the effects of ice latent heating in turbulence
-                                    ! terms
     l_use_C7_Richardson,          & ! Parameterize C7 based on Richardson number
     l_use_C11_Richardson,         & ! Parameterize C11 and C16 based on Richardson number
     l_brunt_vaisala_freq_moist,   & ! Use a different formula for the Brunt-Vaisala frequency in
@@ -639,7 +637,7 @@ subroutine logical_flags_driver( current_date, current_time )
     l_damp_wp2_using_em, l_use_C7_Richardson, l_use_precip_frac, l_do_expldiff_rtm_thlm, &
     l_use_C11_Richardson, l_prescribed_avg_deltaz, l_diffuse_rtm_and_thlm, &
     l_stability_correct_Kh_N2_zm, l_trapezoidal_rule_zt, l_trapezoidal_rule_zm, &
-    l_call_pdf_closure_twice, l_Lscale_plume_centered, l_use_ice_latent, &
+    l_call_pdf_closure_twice, l_Lscale_plume_centered, &
     l_brunt_vaisala_freq_moist, l_use_thvm_in_bv_freq, l_update_pressure
 
   ! ---- Begin Code ----
@@ -673,7 +671,6 @@ subroutine logical_flags_driver( current_date, current_time )
                                        l_do_expldiff_rtm_thlm, & ! Intent(out)
                                        l_Lscale_plume_centered, & ! Intent(out)
                                        l_diag_Lscale_from_tau, & ! Intent(out)
-                                       l_use_ice_latent, & ! Intent(out)
                                        l_use_C7_Richardson, & ! Intent(out)
                                        l_use_C11_Richardson, & ! Intent(out)
                                        l_brunt_vaisala_freq_moist, & ! Intent(out)

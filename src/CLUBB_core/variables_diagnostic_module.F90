@@ -56,10 +56,9 @@ module variables_diagnostic_module
 !$omp threadprivate(rsat)
 
   type(pdf_parameter), allocatable, public, save :: &
-    pdf_params_zm, & ! pdf_params on momentum levels  [units vary]
-    pdf_params_zm_frz !used when l_use_ice_latent = .true.
+    pdf_params_zm    ! pdf_params on momentum levels  [units vary]
 
-!$omp threadprivate(pdf_params_zm, pdf_params_zm_frz)
+!$omp threadprivate(pdf_params_zm)
 
   real( kind = core_rknd ), target, allocatable, dimension(:), public :: & 
     Frad,         & ! Radiative flux (momentum point)   [W/m^2]
@@ -283,9 +282,7 @@ module variables_diagnostic_module
 
     ! pdf_params on momentum levels
     allocate( pdf_params_zm )
-    allocate( pdf_params_zm_frz )
     call init_pdf_params( nz, pdf_params_zm )
-    call init_pdf_params( nz, pdf_params_zm_frz )
 
     ! Second order moments
 
@@ -553,7 +550,6 @@ module variables_diagnostic_module
       deallocate( radht )     ! SW + LW heating rate
 
       deallocate( pdf_params_zm )
-      deallocate( pdf_params_zm_frz )
 
       ! Second order moments
 

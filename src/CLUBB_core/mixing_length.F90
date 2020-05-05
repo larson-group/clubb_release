@@ -878,11 +878,10 @@ module mixing_length
 
 
 !===============================================================================
-  subroutine calc_Lscale_directly ( l_implemented, p_in_Pa, exner,  rtm,       &
-                  thlm, thvm, newmu, rtm_frz, thlm_frz, rtp2, thlp2,  rtpthlp, &
-                  pdf_params, pdf_params_frz, em, thv_ds_zt, Lscale_max,       &
+  subroutine calc_Lscale_directly ( l_implemented, p_in_Pa, exner, rtm,        &
+                  thlm, thvm, newmu, rtp2, thlp2, rtpthlp,                     &
+                  pdf_params, em, thv_ds_zt, Lscale_max,                       &
                   l_Lscale_plume_centered,                                     &
-                  l_use_ice_latent,                                            &
                   Lscale, Lscale_up, Lscale_down)
 
     use constants_clubb, only: &
@@ -936,8 +935,6 @@ module mixing_length
 
     !!! Input Variables
     real( kind = core_rknd ), dimension(gr%nz), intent(in) ::  &
-      rtm_frz,   &
-      thlm_frz,  &
       rtp2,      &
       thlp2,     &
       rtpthlp,   &
@@ -954,12 +951,10 @@ module mixing_length
      Lscale_max
 
     type (pdf_parameter), intent(in) :: &
-        pdf_params     , &   ! PDF Parameters  [units vary]
-        pdf_params_frz
+        pdf_params    ! PDF Parameters  [units vary]
 
     logical, intent(in) :: &
-      l_Lscale_plume_centered, & ! Alternate that uses the PDF to compute the perturbed values
-      l_use_ice_latent           ! Includes the effects of ice latent heating in turbulence terms
+      l_Lscale_plume_centered    ! Alternate that uses the PDF to compute the perturbed values
 
     real( kind = core_rknd ), dimension(gr%nz), intent(out) ::  &
       Lscale,    & ! Mixing length      [m]
@@ -1014,40 +1009,20 @@ module mixing_length
             sign_rtpthlp(k) = sign( one, rtpthlp(k) )
          enddo
 
-         if ( l_use_ice_latent ) then
+         rtm_pert_1  = rtm &
+                       + Lscale_pert_coef * sqrt( max( rtp2, rt_tol**2 ) )
+         thlm_pert_1 = thlm &
+                       + sign_rtpthlp * Lscale_pert_coef &
+                         * sqrt( max( thlp2, thl_tol**2 ) )
+         mu_pert_1   = newmu / Lscale_mu_coef
 
-            ! Include the effects of ice in the length scale calculation
+         rtm_pert_2  = rtm &
+                       - Lscale_pert_coef * sqrt( max( rtp2, rt_tol**2 ) )
+         thlm_pert_2 = thlm &
+                       - sign_rtpthlp * Lscale_pert_coef &
+                         * sqrt( max( thlp2, thl_tol**2 ) )
+         mu_pert_2   = newmu * Lscale_mu_coef
 
-            rtm_pert_1  = rtm_frz &
-                          + Lscale_pert_coef * sqrt( max( rtp2, rt_tol**2 ) )
-            thlm_pert_1 = thlm_frz &
-                          + sign_rtpthlp * Lscale_pert_coef &
-                            * sqrt( max( thlp2, thl_tol**2 ) )
-            mu_pert_1   = newmu / Lscale_mu_coef
-
-            rtm_pert_2  = rtm_frz &
-                          - Lscale_pert_coef * sqrt( max( rtp2, rt_tol**2 ) )
-            thlm_pert_2 = thlm_frz &
-                          - sign_rtpthlp * Lscale_pert_coef &
-                            * sqrt( max( thlp2, thl_tol**2 ) )
-            mu_pert_2   = newmu * Lscale_mu_coef
-
-         else
-            rtm_pert_1  = rtm &
-                          + Lscale_pert_coef * sqrt( max( rtp2, rt_tol**2 ) )
-            thlm_pert_1 = thlm &
-                          + sign_rtpthlp * Lscale_pert_coef &
-                            * sqrt( max( thlp2, thl_tol**2 ) )
-            mu_pert_1   = newmu / Lscale_mu_coef
-
-            rtm_pert_2  = rtm &
-                          - Lscale_pert_coef * sqrt( max( rtp2, rt_tol**2 ) )
-            thlm_pert_2 = thlm &
-                          - sign_rtpthlp * Lscale_pert_coef &
-                            * sqrt( max( thlp2, thl_tol**2 ) )
-            mu_pert_2   = newmu * Lscale_mu_coef
-
-         endif
 
          call compute_mixing_length( thvm, thlm_pert_1,                   &!intent(in)
                               rtm_pert_1, em, Lscale_max, p_in_Pa,        & !intent(in)
@@ -1066,51 +1041,27 @@ module mixing_length
           sign_rtpthlp(k) = sign(1.0_core_rknd, rtpthlp(k))
         end do
 
-        if ( l_use_ice_latent ) then
-          where ( pdf_params_frz%rt_1 > pdf_params_frz%rt_2 )
-            rtm_pert_pos_rt = pdf_params_frz%rt_1 &
-                       + Lscale_pert_coef * sqrt( max( pdf_params_frz%varnce_rt_1, rt_tol**2 ) )
-            thlm_pert_pos_rt = pdf_params_frz%thl_1 + ( sign_rtpthlp * Lscale_pert_coef &
-                       * sqrt( max( pdf_params_frz%varnce_thl_1, thl_tol**2 ) ) )
-            thlm_pert_neg_rt = pdf_params_frz%thl_2 - ( sign_rtpthlp * Lscale_pert_coef &
-                       * sqrt( max( pdf_params_frz%varnce_thl_2, thl_tol**2 ) ) )
-            rtm_pert_neg_rt = pdf_params_frz%rt_2 &
-                       - Lscale_pert_coef * sqrt( max( pdf_params_frz%varnce_rt_2, rt_tol**2 ) )
-            !Lscale_weight = pdf_params%mixt_frac
-          else where
-            rtm_pert_pos_rt = pdf_params_frz%rt_2 &
-                       + Lscale_pert_coef * sqrt( max( pdf_params_frz%varnce_rt_2, rt_tol**2 ) )
-            thlm_pert_pos_rt = pdf_params_frz%thl_2 + ( sign_rtpthlp * Lscale_pert_coef &
-                       * sqrt( max( pdf_params_frz%varnce_thl_2, thl_tol**2 ) ) )
-            thlm_pert_neg_rt = pdf_params_frz%thl_1 - ( sign_rtpthlp * Lscale_pert_coef &
-                       * sqrt( max( pdf_params_frz%varnce_thl_1, thl_tol**2 ) ) )
-            rtm_pert_neg_rt = pdf_params_frz%rt_1 &
-                       - Lscale_pert_coef * sqrt( max( pdf_params_frz%varnce_rt_1, rt_tol**2 ) )
-            !Lscale_weight = 1.0_core_rknd - pdf_params%mixt_frac
-          end where
-        else
-          where ( pdf_params%rt_1 > pdf_params%rt_2 )
-            rtm_pert_pos_rt = pdf_params%rt_1 &
-                       + Lscale_pert_coef * sqrt( max( pdf_params%varnce_rt_1, rt_tol**2 ) )
-            thlm_pert_pos_rt = pdf_params%thl_1 + ( sign_rtpthlp * Lscale_pert_coef &
-                       * sqrt( max( pdf_params%varnce_thl_1, thl_tol**2 ) ) )
-            thlm_pert_neg_rt = pdf_params%thl_2 - ( sign_rtpthlp * Lscale_pert_coef &
-                       * sqrt( max( pdf_params%varnce_thl_2, thl_tol**2 ) ) )
-            rtm_pert_neg_rt = pdf_params%rt_2 &
-                       - Lscale_pert_coef * sqrt( max( pdf_params%varnce_rt_2, rt_tol**2 ) )
-            !Lscale_weight = pdf_params%mixt_frac
-          else where
-            rtm_pert_pos_rt = pdf_params%rt_2 &
-                       + Lscale_pert_coef * sqrt( max( pdf_params%varnce_rt_2, rt_tol**2 ) )
-            thlm_pert_pos_rt = pdf_params%thl_2 + ( sign_rtpthlp * Lscale_pert_coef &
-                       * sqrt( max( pdf_params%varnce_thl_2, thl_tol**2 ) ) )
-            thlm_pert_neg_rt = pdf_params%thl_1 - ( sign_rtpthlp * Lscale_pert_coef &
-                       * sqrt( max( pdf_params%varnce_thl_1, thl_tol**2 ) ) )
-            rtm_pert_neg_rt = pdf_params%rt_1 &
-                       - Lscale_pert_coef * sqrt( max( pdf_params%varnce_rt_1, rt_tol**2 ) )
-            !Lscale_weight = 1.0_core_rknd - pdf_params%mixt_frac
-          end where
-        end if
+        where ( pdf_params%rt_1 > pdf_params%rt_2 )
+          rtm_pert_pos_rt = pdf_params%rt_1 &
+                     + Lscale_pert_coef * sqrt( max( pdf_params%varnce_rt_1, rt_tol**2 ) )
+          thlm_pert_pos_rt = pdf_params%thl_1 + ( sign_rtpthlp * Lscale_pert_coef &
+                     * sqrt( max( pdf_params%varnce_thl_1, thl_tol**2 ) ) )
+          thlm_pert_neg_rt = pdf_params%thl_2 - ( sign_rtpthlp * Lscale_pert_coef &
+                     * sqrt( max( pdf_params%varnce_thl_2, thl_tol**2 ) ) )
+          rtm_pert_neg_rt = pdf_params%rt_2 &
+                     - Lscale_pert_coef * sqrt( max( pdf_params%varnce_rt_2, rt_tol**2 ) )
+          !Lscale_weight = pdf_params%mixt_frac
+        else where
+          rtm_pert_pos_rt = pdf_params%rt_2 &
+                     + Lscale_pert_coef * sqrt( max( pdf_params%varnce_rt_2, rt_tol**2 ) )
+          thlm_pert_pos_rt = pdf_params%thl_2 + ( sign_rtpthlp * Lscale_pert_coef &
+                     * sqrt( max( pdf_params%varnce_thl_2, thl_tol**2 ) ) )
+          thlm_pert_neg_rt = pdf_params%thl_1 - ( sign_rtpthlp * Lscale_pert_coef &
+                     * sqrt( max( pdf_params%varnce_thl_1, thl_tol**2 ) ) )
+          rtm_pert_neg_rt = pdf_params%rt_1 &
+                     - Lscale_pert_coef * sqrt( max( pdf_params%varnce_rt_1, rt_tol**2 ) )
+          !Lscale_weight = 1.0_core_rknd - pdf_params%mixt_frac
+        end where
 
         mu_pert_pos_rt  = newmu / Lscale_mu_coef
         mu_pert_neg_rt  = newmu * Lscale_mu_coef
