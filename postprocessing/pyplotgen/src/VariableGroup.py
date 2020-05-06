@@ -26,7 +26,7 @@ class VariableGroup:
     """
 
     def __init__(self, case, clubb_datasets=None, les_dataset=None, coamps_dataset=None, r408_dataset=None,
-                 hoc_dataset=None,
+                 hoc_dataset=None, cam_datasets = None,
                  e3sm_datasets=None, sam_datasets=None, wrf_datasets=None):
         """
         Initialize common VariableGroup parameters
@@ -44,6 +44,7 @@ class VariableGroup:
         self.les_dataset = les_dataset
         self.e3sm_datasets = e3sm_datasets
         self.sam_datasets = sam_datasets
+        self.cam_datasets = cam_datasets
         self.wrf_datasets = wrf_datasets
         self.coamps_dataset = coamps_dataset
         self.r408_datasets = r408_dataset
@@ -175,6 +176,8 @@ class VariableGroup:
                      and (len(var_names['clubb']) > 0 or 'clubb_calc' in variable_def_dict.keys())
         plot_wrf = self.wrf_datasets is not None and len(self.wrf_datasets) > 0 \
                    and (len(var_names['wrf']) > 0 or 'wrf_calc' in variable_def_dict.keys())
+        plot_cam = self.cam_datasets is not None and len(self.cam_datasets) > 0 \
+                    and (len(var_names['cam']) > 0 or 'cam_calc' in variable_def_dict.keys())
 
         all_lines = []
         # Plot benchmarks
@@ -199,6 +202,14 @@ class VariableGroup:
                 all_lines.extend(
                     self.__getVarLinesForModel__('e3sm', variable_def_dict, self.e3sm_datasets[input_folder],
                                                  label=folder_name))
+                
+        if plot_cam:
+            for input_folder in self.cam_datasets:
+                folder_name = os.path.basename(input_folder)
+                all_lines.extend(
+                    self.__getVarLinesForModel__('cam', variable_def_dict, self.cam_datasets[input_folder],
+                                                 label=folder_name))
+                
         if plot_wrf:
             for input_folder in self.wrf_datasets:
                 folder_name = os.path.basename(input_folder)
@@ -308,6 +319,9 @@ class VariableGroup:
                     raise TypeError("getTextDefiningDataset recieved an unexpected format of datasets")
         if self.e3sm_datasets is not None:
             for dataset in self.e3sm_datasets.values():
+                datasets.append(dataset)
+        if self.cam_datasets is not None:
+            for dataset in self.cam_datasets.values():
                 datasets.append(dataset)
         if self.sam_datasets is not None:
             for dataset in self.sam_datasets.values():
@@ -455,6 +469,7 @@ class VariableGroup:
             'r408': 1,
             'hoc': 1,
             'e3sm': 1,
+            'cam': 1,
             'clubb': 1
         }
 
@@ -473,6 +488,9 @@ class VariableGroup:
 
         if 'e3sm_conv_factor' in variable_def_dict.keys():
             conv_factors['e3sm'] = variable_def_dict['e3sm_conv_factor']
+            
+        if 'cam_conv_factor' in variable_def_dict.keys():
+            conv_factors['cam'] = variable_def_dict['cam_conv_factor']
 
         if 'wrf_conv_factor' in variable_def_dict.keys():
             conv_factors['wrf'] = variable_def_dict['wrf_conv_factor']

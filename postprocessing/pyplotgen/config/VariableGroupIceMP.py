@@ -9,7 +9,7 @@ from src.VariableGroup import VariableGroup
 class VariableGroupIceMP(VariableGroup):
 
     def __init__(self, case, clubb_datasets=None, les_dataset=None, sam_datasets=None, coamps_dataset=None,
-                 r408_dataset=None, hoc_dataset=None,
+                 r408_dataset=None, hoc_dataset=None, cam_datasets=None,
                  e3sm_datasets=None, wrf_datasets=None):
         """
 
@@ -26,6 +26,7 @@ class VariableGroupIceMP(VariableGroup):
                 'r408': ['rim'],
                 'hoc': ['rim'],
                 'e3sm': ['rim'],
+                'cam': ['rim'],
                 'wrf': []
             },
                 'sam_conv_factor': 1 / 1000},  # , 'fallback_func': self.getRimFallback},
@@ -36,6 +37,7 @@ class VariableGroupIceMP(VariableGroup):
                 'r408': ['Nim'],
                 'hoc': ['Nim'],
                 'e3sm': ['Nim'],
+                'cam': ['Nim'],
                 'wrf': []
             },
                 'sam_calc': self.getNimSamLine},
@@ -46,6 +48,7 @@ class VariableGroupIceMP(VariableGroup):
                 'r408': ['rsm'],
                 'hoc': ['rsm'],
                 'e3sm': ['rsm'],
+                'cam': ['rsm'],
                 'wrf': []
             },
                 'sam_conv_factor': 1 / 1000},  # , 'fallback_func': self.getRsmFallback},
@@ -56,6 +59,7 @@ class VariableGroupIceMP(VariableGroup):
                 'r408': ['Nsm'],
                 'hoc': ['Nsm'],
                 'e3sm': ['Nsm'],
+                'cam': ['Nsm'],
                 'wrf': []
             },
                 'sam_calc': self.getNsmSamLine},
@@ -66,6 +70,7 @@ class VariableGroupIceMP(VariableGroup):
                 'r408': ['iwp'],
                 'hoc': ['iwp'],
                 'e3sm': ['iwp'],
+                'cam': ['iwp'],
                 'wrf': []
             },
                 'type': Panel.TYPE_TIMESERIES, 'sam_conv_factor': 1 / 1000},
@@ -76,6 +81,7 @@ class VariableGroupIceMP(VariableGroup):
                 'r408': ['swp'],
                 'hoc': ['swp'],
                 'e3sm': ['swp'],
+                'cam': ['swp'],
                 'wrf': []
             },
                 'type': Panel.TYPE_TIMESERIES, 'sam_conv_factor': 1 / 1000},
@@ -86,6 +92,7 @@ class VariableGroupIceMP(VariableGroup):
                 'r408': ['ice_supersat_frac'],
                 'hoc': ['ice_supersat_frac'],
                 'e3sm': ['ice_supersat_frac'],
+                'cam': ['ice_supersat_frac'],
                 'wrf': []
             }},
 
@@ -96,6 +103,7 @@ class VariableGroupIceMP(VariableGroup):
                 'r408': ['Ngm'],
                 'hoc': ['Ngm'],
                 'e3sm': ['Ngm'],
+                'cam': ['Ngm'],
                 'wrf': []
             },
                 'sam_conv_factor': 10 ** 6},
@@ -106,6 +114,7 @@ class VariableGroupIceMP(VariableGroup):
                 'r408': ['rgm'],
                 'hoc': ['rgm'],
                 'e3sm': ['rgm'],
+                'cam': ['rgm'],
                 'wrf': []
             },
                 'sam_conv_factor': 1 / 1000},
@@ -116,13 +125,14 @@ class VariableGroupIceMP(VariableGroup):
                 'r408': ['precip_rate_sfc'],
                 'hoc': ['precip_rate_sfc'],
                 'e3sm': ['precip_rate_sfc'],
+                'cam': ['precip_rate_sfc'],
                 'wrf': []
             },
                 'type': Panel.TYPE_TIMESERIES}
         ]
         super().__init__(case, clubb_datasets=clubb_datasets, les_dataset=les_dataset, coamps_dataset=coamps_dataset,
                          r408_dataset=r408_dataset, hoc_dataset=hoc_dataset, e3sm_datasets=e3sm_datasets,
-                         sam_datasets=sam_datasets, wrf_datasets=wrf_datasets)
+                         cam_datasets=cam_datasets, sam_datasets=sam_datasets, wrf_datasets=wrf_datasets)
 
     def getNimSamLine(self, dataset_override=None):
         """

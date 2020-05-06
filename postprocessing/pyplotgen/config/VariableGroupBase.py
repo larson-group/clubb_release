@@ -14,7 +14,7 @@ class VariableGroupBase(VariableGroup):
     """
 
     def __init__(self, case, clubb_datasets=None, les_dataset=None, coamps_dataset=None, r408_dataset=None,
-                 hoc_dataset=None,
+                 hoc_dataset=None, cam_datasets=None,
                  e3sm_datasets=None, sam_datasets=None, wrf_datasets=None):
         """
 
@@ -31,6 +31,7 @@ class VariableGroupBase(VariableGroup):
                 'r408': ['thlm'],
                 'hoc': ['thlm'],
                 'e3sm': ['thlm'],
+                'cam': ['thlm'],
                 'wrf': ['thlm']
             }, 'sam_calc': self.getThlmSamCalc, 'sci_scale': 0},
             {'var_names': {
@@ -40,6 +41,7 @@ class VariableGroupBase(VariableGroup):
                 'r408': ['rtm'],
                 'hoc': ['rtm'],
                 'e3sm': ['rtm'],
+                'cam': ['rtm'],
                 'wrf': ['rtm']
             },
                 'sam_calc': self.getRtmSamCalc, 'sci_scale': -3},
@@ -50,6 +52,7 @@ class VariableGroupBase(VariableGroup):
                 'r408': ['wpthlp'],
                 'hoc': ['wpthlp'],
                 'e3sm': ['wpthlp'],
+                'cam': ['wpthlp'],
                 'wrf': ['wpthlp']
             },
                 'sam_calc': self.getWpthlpSamCalc, 'sci_scale': 0},
@@ -60,6 +63,7 @@ class VariableGroupBase(VariableGroup):
                 'r408': ['wprtp'],
                 'hoc': ['wprtp'],
                 'e3sm': ['wprtp'],
+                'cam': ['wprtp'],
                 'wrf': ['wprtp']
             },
                 'sam_calc': self.getWprtpSamCalc, 'sci_scale': -4},
@@ -70,6 +74,7 @@ class VariableGroupBase(VariableGroup):
                 'r408': ['cloud_frac', 'cf'],
                 'hoc': ['cloud_frac', 'cf'],
                 'e3sm': ['cloud_frac'],
+                'cam': ['cloud_frac'],
                 'wrf': ['cloud_frac']
             }, 'sci_scale': 0},
 
@@ -80,6 +85,7 @@ class VariableGroupBase(VariableGroup):
                 'r408': ['rcm'],
                 'hoc': ['rcm'],
                 'e3sm': ['rcm'],
+                'cam': ['rcm'],
                 'wrf': ['rcm']
             },
                 'sam_conv_factor': 1 / 1000, 'sci_scale': -5},
@@ -90,6 +96,7 @@ class VariableGroupBase(VariableGroup):
                 'r408': ['wp2'],
                 'hoc': ['wp2'],
                 'e3sm': ['wp2'],
+                'cam': ['wp2'],
                 'wrf': ['wp2']
             }, 'sci_scale': 0},
 
@@ -100,6 +107,7 @@ class VariableGroupBase(VariableGroup):
                 'r408': ['wp3'],
                 'hoc': ['wp3'],
                 'e3sm': ['wp3'],
+                'cam': ['wp3'],
                 'wrf': ['wp3']
             },
                 'sam_name': 'W3', 'sci_scale': 0, 'axis_title': "wp3"},
@@ -110,6 +118,7 @@ class VariableGroupBase(VariableGroup):
                 'r408': ['thlp2'],
                 'hoc': ['thlp2'],
                 'e3sm': ['thlp2'],
+                'cam': ['thlp2'],
                 'wrf': ['thlp2']
             }, 'sci_scale': 0},
 
@@ -120,6 +129,7 @@ class VariableGroupBase(VariableGroup):
                 'r408': ['rtp2'],
                 'hoc': ['rtp2'],
                 'e3sm': ['rtp2'],
+                'cam': ['rtp2'],
                 'wrf': ['rtp2']
             },
                 'sam_calc': self.getRtp2SamCalc, 'sci_scale': -7},
@@ -130,6 +140,7 @@ class VariableGroupBase(VariableGroup):
                 'r408': ['rtpthlp'],
                 'hoc': ['rtpthlp'],
                 'e3sm': ['rtpthlp'],
+                'cam': ['rtpthlp'],
                 'wrf': ['rtpthlp']
             }, 'sci_scale': -4},
 
@@ -140,6 +151,7 @@ class VariableGroupBase(VariableGroup):
                 'r408': ['rtp3'],
                 'hoc': ['rtp3'],
                 'e3sm': ['rtp3'],
+                'cam': ['rtp3'],
                 'wrf': ['rtp3']
             },
                 'sam_calc': self.getRtp3SamCalc, 'sci_scale': -9},
@@ -150,6 +162,7 @@ class VariableGroupBase(VariableGroup):
                 'r408': ['thlp3'],
                 'hoc': ['thlp3'],
                 'e3sm': ['thlp3'],
+                'cam': ['thlp3'],
                 'wrf': ['thlp3']
             }, 'sci_scale': 0},
 
@@ -160,6 +173,7 @@ class VariableGroupBase(VariableGroup):
                 'r408': ['Skw_zt'],
                 'hoc': ['Skw_zt'],
                 'e3sm': ['Skw_zt'],
+                'cam': ['Skw_zt'],
                 'wrf': ['Skw_zt']
             },
                 'sam_calc': self.getSkwZtLesCalc, 'coamps_calc': self.getSkwZtLesCalc, 'sci_scale': 0},
@@ -170,6 +184,7 @@ class VariableGroupBase(VariableGroup):
                 'r408': ['Skrt_zt'],
                 'hoc': ['Skrt_zt'],
                 'e3sm': ['Skrt_zt'],
+                'cam': ['Skrt_zt'],
                 'wrf': ['Skrt_zt']
             },
                 'sam_calc': self.getSkrtZtLesCalc, 'coamps_calc': self.getSkrtZtLesCalc, 'sci_scale': 0},
@@ -180,6 +195,7 @@ class VariableGroupBase(VariableGroup):
                 'r408': ['Skthl_zt'],
                 'hoc': ['Skthl_zt'],
                 'e3sm': ['Skthl_zt'],
+                'cam': ['Skthl_zt'],
                 'wrf': ['Skthl_zt']
             },
                 'sam_calc': self.getSkthlZtLesCalc, 'coamps_calc': self.getSkthlZtLesCalc, 'sci_scale': 0},
@@ -190,6 +206,7 @@ class VariableGroupBase(VariableGroup):
                 'r408': ['wm'],
                 'hoc': ['wm'],
                 'e3sm': ['wm'],
+                'cam': ['wm'],
                 'wrf': ['wm', 'wlsm']
             }, 'sci_scale': 0},
 
@@ -200,6 +217,7 @@ class VariableGroupBase(VariableGroup):
                 'r408': ['um'],
                 'hoc': ['um'],
                 'e3sm': ['um'],
+                'cam': ['um'],
                 'wrf': ['um']
             }, 'sci_scale': 0},
 
@@ -210,6 +228,7 @@ class VariableGroupBase(VariableGroup):
                 'r408': ['vm'],
                 'hoc': ['vm'],
                 'e3sm': ['vm'],
+                'cam': ['vm'],
                 'wrf': ['vm']
             }, 'sci_scale': 0},
 
@@ -220,6 +239,7 @@ class VariableGroupBase(VariableGroup):
                 'r408': ['upwp'],
                 'hoc': ['upwp'],
                 'e3sm': ['upwp'],
+                'cam': ['upwp'],
                 'wrf': ['upwp']
             },
                 'coamps_calc': self.getUwCoampsData, 'sci_scale': 0},
@@ -230,6 +250,7 @@ class VariableGroupBase(VariableGroup):
                 'r408': ['vpwp'],
                 'hoc': ['vpwp'],
                 'e3sm': ['vpwp'],
+                'cam': ['vpwp'],
                 'wrf': ['vpwp']
             },
                 'coamps_calc': self.getVwCoampsData, 'sci_scale': 0},
@@ -240,6 +261,7 @@ class VariableGroupBase(VariableGroup):
                 'r408': ['up2'],
                 'hoc': ['up2'],
                 'e3sm': ['up2'],
+                'cam': ['up2'],
                 'wrf': ['up2']
             }, 'sci_scale': 0},
 
@@ -250,6 +272,7 @@ class VariableGroupBase(VariableGroup):
                 'r408': ['vp2'],
                 'hoc': ['vp2'],
                 'e3sm': ['vp2'],
+                'cam': ['vp2'],
                 'wrf': ['vp2']
             }, 'sci_scale': 0},
 
@@ -260,6 +283,7 @@ class VariableGroupBase(VariableGroup):
                 'r408': ['rcp2'],
                 'hoc': ['rcp2'],
                 'e3sm': ['rcp2'],
+                'cam': ['rcp2'],
                 'wrf': ['rcp2']
             },
                 'sam_conv_factor': 1 / 10 ** 6, 'sci_scale': -8},
@@ -270,6 +294,7 @@ class VariableGroupBase(VariableGroup):
                 'r408': ['lwp'],
                 'hoc': ['lwp'],
                 'e3sm': ['lwp'],
+                'cam': ['lwp'],
                 'wrf': ['lwp']
             },
                 'type': Panel.TYPE_TIMESERIES, 'sam_conv_factor': 1 / 1000},
@@ -280,6 +305,7 @@ class VariableGroupBase(VariableGroup):
                 'r408': ['wp2_vert_avg'],
                 'hoc': ['wp2_vert_avg'],
                 'e3sm': ['wp2_vert_avg'],
+                'cam': ['wp2_vert_avg'],
                 'wrf': ['wp2_vert_avg']
             },
                 'type': Panel.TYPE_TIMESERIES, },
@@ -290,6 +316,7 @@ class VariableGroupBase(VariableGroup):
                 'r408': ['tau_zm'],
                 'hoc': ['tau_zm'],
                 'e3sm': ['tau_zm'],
+                'cam': ['tau_zm'],
                 'wrf': ['tau_zm']
             },
                 'sci_scale': 0},
@@ -300,6 +327,7 @@ class VariableGroupBase(VariableGroup):
                 'r408': ['Lscale'],
                 'hoc': ['Lscale'],
                 'e3sm': ['Lscale'],
+                'cam': ['Lscale'],
                 'wrf': ['Lscale']
             },
                 'sci_scale': 0},
@@ -310,6 +338,7 @@ class VariableGroupBase(VariableGroup):
                 'r408': ['wpthvp'],
                 'hoc': ['wpthvp'],
                 'e3sm': ['wpthvp'],
+                'cam': ['wpthvp'],
                 'wrf': ['wpthvp']
             },
                 'sam_calc': self.getWpthvpSamCalc},
@@ -320,6 +349,7 @@ class VariableGroupBase(VariableGroup):
                 'r408': ['radht'],
                 'hoc': ['radht'],
                 'e3sm': ['radht'],
+                'cam': ['radht'],
                 'wrf': ['radht']
             },
                 'sam_conv_factor': 1 / 86400},
@@ -330,6 +360,7 @@ class VariableGroupBase(VariableGroup):
                 'r408': ['rtpthvp'],
                 'hoc': ['rtpthvp'],
                 'e3sm': ['rtpthvp'],
+                'cam': ['rtpthvp'],
                 'wrf': ['rtpthvp']
             }, 'sci_scale': -5},
 
@@ -340,6 +371,7 @@ class VariableGroupBase(VariableGroup):
                 'r408': ['corr_w_chi_1'],
                 'hoc': ['corr_w_chi_1'],
                 'e3sm': ['corr_w_chi_1'],
+                'cam': ['corr_w_chi_1'],
                 'wrf': ['corr_w_chi_1']
             },
                 'sci_scale': 0},
@@ -350,6 +382,7 @@ class VariableGroupBase(VariableGroup):
                 'r408': ['corr_chi_eta_1'],
                 'hoc': ['corr_chi_eta_1'],
                 'e3sm': ['corr_chi_eta_1'],
+                'cam': ['corr_chi_eta_1'],
                 'wrf': ['corr_chi_eta_1']
             },
                 'sci_scale': 0},
@@ -360,6 +393,7 @@ class VariableGroupBase(VariableGroup):
                 'r408': ['thlpthvp'],
                 'hoc': ['thlpthvp'],
                 'e3sm': ['thlpthvp'],
+                'cam': ['thlpthvp'],
                 'wrf': ['thlpthvp']
             }},
 
@@ -373,6 +407,7 @@ class VariableGroupBase(VariableGroup):
                 'r408': ['rc_coef_zm * wprcp'],
                 'hoc': ['rc_coef_zm * wprcp'],
                 'e3sm': ['rc_coef_zm * wprcp'],
+                'cam': ['rc_coef_zm * wprcp'],
                 'wrf': ['rc_coef_zm * wprcp']
             },
 
@@ -390,6 +425,7 @@ class VariableGroupBase(VariableGroup):
                 'r408': ['rc_coef_zm * thlprcp'],
                 'hoc': ['rc_coef_zm * thlprcp'],
                 'e3sm': ['rc_coef_zm * thlprcp'],
+                'cam': ['rc_coef_zm * thlprcp'],
                 'wrf': ['rc_coef_zm * thlprcp']
             },
 
@@ -406,6 +442,7 @@ class VariableGroupBase(VariableGroup):
                 'r408': ['rc_coef_zm * rtprcp'],
                 'hoc': ['rc_coef_zm * rtprcp'],
                 'e3sm': ['rc_coef_zm * rtprcp'],
+                'cam': ['rc_coef_zm * rtprcp'],
                 'wrf': ['rc_coef_zm * rtprcp']
             },
 
@@ -420,7 +457,7 @@ class VariableGroupBase(VariableGroup):
             # TODO corr chi 2's
         ]
         super().__init__(case, clubb_datasets=clubb_datasets, sam_datasets=sam_datasets, les_dataset=les_dataset,
-                         coamps_dataset=coamps_dataset, r408_dataset=r408_dataset,
+                         coamps_dataset=coamps_dataset, r408_dataset=r408_dataset, cam_datasets=cam_datasets,
                          hoc_dataset=hoc_dataset, e3sm_datasets=e3sm_datasets, wrf_datasets=wrf_datasets)
 
     def getThlmSamCalc(self, dataset_override=None):

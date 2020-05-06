@@ -9,7 +9,7 @@ from src.VariableGroup import VariableGroup
 class VariableGroupKKMP(VariableGroup):
 
     def __init__(self, case, clubb_datasets=None, les_dataset=None, coamps_dataset=None, r408_dataset=None,
-                 hoc_dataset=None,
+                 hoc_dataset=None, cam_datasets=None,
                  e3sm_datasets=None, sam_datasets=None, wrf_datasets=None):
         """
 
@@ -26,6 +26,7 @@ class VariableGroupKKMP(VariableGroup):
                 'r408': ['rrm_evap'],
                 'hoc': ['rrm_evap'],
                 'e3sm': ['rrm_evap'],
+                'cam': ['rrm_evap'],
                 'wrf': []
             }},
 
@@ -36,6 +37,7 @@ class VariableGroupKKMP(VariableGroup):
                 'r408': ['rrm_accr'],
                 'hoc': ['rrm_accr'],
                 'e3sm': ['rrm_accr'],
+                'cam': ['rrm_accr'],
                 'wrf': []
             }},
 
@@ -46,10 +48,11 @@ class VariableGroupKKMP(VariableGroup):
                 'r408': ['rrm_auto'],
                 'hoc': ['rrm_auto'],
                 'e3sm': ['rrm_auto'],
+                'cam': ['rrm_auto'],
                 'wrf': []
             }}
 
         ]
         super().__init__(case, clubb_datasets=clubb_datasets, les_dataset=les_dataset, coamps_dataset=coamps_dataset,
                          r408_dataset=r408_dataset, hoc_dataset=hoc_dataset, e3sm_datasets=e3sm_datasets,
-                         sam_datasets=sam_datasets, wrf_datasets=wrf_datasets)
+                         cam_datasets=cam_datasets, sam_datasets=sam_datasets, wrf_datasets=wrf_datasets)

@@ -9,7 +9,7 @@ from src.VariableGroup import VariableGroup
 class VariableGroupLiquidMP(VariableGroup):
 
     def __init__(self, case, clubb_datasets=None, les_dataset=None, coamps_dataset=None, r408_dataset=None,
-                 hoc_dataset=None,
+                 hoc_dataset=None, cam_datasets=None,
                  e3sm_datasets=None, sam_datasets=None, wrf_datasets=None):
         """
 
@@ -26,6 +26,7 @@ class VariableGroupLiquidMP(VariableGroup):
                 'r408': ['Ncm'],
                 'hoc': ['Ncm'],
                 'e3sm': ['Ncm'],
+                'cam': ['Ncm'],
                 'wrf': []
             },
                 'sam_calc': self.getNcmSamLine},
@@ -36,6 +37,7 @@ class VariableGroupLiquidMP(VariableGroup):
                 'r408': ['Nc_in_cloud'],
                 'hoc': ['Nc_in_cloud'],
                 'e3sm': ['Nc_in_cloud'],
+                'cam': ['Nc_in_cloud'],
                 'wrf': []
             }},
 
@@ -46,6 +48,7 @@ class VariableGroupLiquidMP(VariableGroup):
                 'r408': ['precip_frac'],
                 'hoc': ['precip_frac'],
                 'e3sm': ['precip_frac'],
+                'cam': ['precip_frac'],
                 'wrf': []
             }},
 
@@ -56,6 +59,7 @@ class VariableGroupLiquidMP(VariableGroup):
                 'r408': ['rrm'],
                 'hoc': ['rrm'],
                 'e3sm': ['rrm'],
+                'cam': ['rrm'],
                 'wrf': []
             },
                 'sam_conv_factor': 1 / 1000},
@@ -66,6 +70,7 @@ class VariableGroupLiquidMP(VariableGroup):
                 'r408': ['Nrm'],
                 'hoc': ['Nrm'],
                 'e3sm': ['Nrm'],
+                'cam': ['Nrm'],
                 'wrf': []
             },
                 'sam_calc': self.getNrmSamLine},
@@ -76,6 +81,7 @@ class VariableGroupLiquidMP(VariableGroup):
                 'r408': ['wprrp'],
                 'hoc': ['wprrp'],
                 'e3sm': ['wprrp'],
+                'cam': ['wprrp'],
                 'wrf': []
             }},
             # Not found in lba case file
@@ -86,6 +92,7 @@ class VariableGroupLiquidMP(VariableGroup):
                 'r408': ['wpNrp'],
                 'hoc': ['wpNrp'],
                 'e3sm': ['wpNrp'],
+                'cam': ['wpNrp'],
                 'wrf': []
             }},
             # Not found in lba case file
@@ -96,6 +103,7 @@ class VariableGroupLiquidMP(VariableGroup):
                 'r408': ['rwp'],
                 'hoc': ['rwp'],
                 'e3sm': ['rwp'],
+                'cam': ['rwp'],
                 'wrf': []
             },
                 'sam_conv_factor': 1 / 1000, 'type': Panel.TYPE_TIMESERIES},
@@ -106,6 +114,7 @@ class VariableGroupLiquidMP(VariableGroup):
                 'r408': ['precip_rate_sfc'],
                 'hoc': ['precip_rate_sfc'],
                 'e3sm': ['precip_rate_sfc'],
+                'cam': ['precip_rate_sfc'],
                 'wrf': []
             },
                 'type': Panel.TYPE_TIMESERIES}
@@ -115,7 +124,7 @@ class VariableGroupLiquidMP(VariableGroup):
 
         super().__init__(case, clubb_datasets=clubb_datasets, les_dataset=les_dataset, coamps_dataset=coamps_dataset,
                          r408_dataset=r408_dataset, hoc_dataset=hoc_dataset, e3sm_datasets=e3sm_datasets,
-                         sam_datasets=sam_datasets, wrf_datasets=wrf_datasets)
+                         cam_datasets=cam_datasets, sam_datasets=sam_datasets, wrf_datasets=wrf_datasets)
 
     def getNcmSamLine(self, dataset_override=None):
         """

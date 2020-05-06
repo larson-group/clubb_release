@@ -23,7 +23,7 @@ class Case:
     """
 
     def __init__(self, case_definition, clubb_folders = [], diff_datasets=None, sam_folders = [""], wrf_folders=[""],
-                 plot_les=False, plot_budgets=False, plot_r408=False, plot_hoc=False, e3sm_dirs =[]):
+                 plot_les=False, plot_budgets=False, plot_r408=False, plot_hoc=False, e3sm_dirs =[], cam_folders=[]):
         """
         Initialize a Case
 
@@ -52,8 +52,9 @@ class Case:
         self.plot_budgets = plot_budgets
         self.plot_r408 = plot_r408
         self.plot_hoc = plot_hoc
-        self.plot_e3sm = e3sm_dirs
+        self.e3sm_folders = e3sm_dirs
         self.sam_folders = sam_folders
+        self.cam_folders = cam_folders
         self.wrf_folders = wrf_folders
         self.diff_datasets = diff_datasets
         self.next_panel_alphabetic_id_code = 97
@@ -99,6 +100,16 @@ class Case:
                     e3sm_file[foldername] = datareader.__loadNcFile__(e3sm_filename)
                 else:
                     warn("Failed to find file " + e3sm_filename)
+                    
+        cam_file = {}
+        if cam_folders is not None and len(cam_folders) != 0 and case_definition['cam_file'] is not None:
+            datareader = DataReader()
+            for foldername in cam_folders:
+                cam_filename = foldername + '/' + case_definition['cam_file']
+                if path.exists(cam_filename):
+                    cam_file[foldername] = datareader.__loadNcFile__(cam_filename)
+                else:
+                    warn("Failed to find file " + cam_filename)
 
         coamps_datasets = {}
         if plot_les and case_definition['coamps_dataset'] is not None:
@@ -135,7 +146,7 @@ class Case:
             temp_group = VarGroup(self, clubb_datasets=self.clubb_datasets, les_dataset=les_file,
                                   coamps_dataset=coamps_datasets, sam_datasets=sam_datasets,
                                   wrf_datasets=wrf_datasets, r408_dataset=r408_datasets, hoc_dataset=hoc_datasets,
-                                  e3sm_datasets = e3sm_file)
+                                  e3sm_datasets = e3sm_file, cam_datasets=cam_file)
             self.panels.extend(temp_group.panels)
 
         # Convert panels to difference panels if user passed in --diff <<folder>>
@@ -143,7 +154,7 @@ class Case:
         if self.diff_datasets is not None:
             for VarGroup in self.var_groups:
                 diff_group = VarGroup(self, clubb_datasets=self.diff_datasets, sam_file=les_file,
-                                      coamps_file=coamps_datasets,
+                                      coamps_file=coamps_datasets, cam_file=cam_file,
                                       r408_file=r408_datasets, hoc_dataset=hoc_datasets, e3sm_datasets = e3sm_file)
                 for panel in diff_group.panels:
                     self.diff_panels.append(panel)
