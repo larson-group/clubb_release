@@ -49,6 +49,7 @@ module clubb_driver
 
     use variables_diagnostic_module, only: ug, vg, em,  & !------------------ Variable(s)
       thvm, Lscale, Skw_zm, thlp3, rtp3, Kh_zm, Kh_zt, K_hm, &
+      Lscale_up, Lscale_down, sigma_sqd_w_zt, tau_zm, tau_zt, &
       um_ref, vm_ref, Nccnm, wp2_zt, &
       wpthvp, wp2thvp, rtpthvp, thlpthvp, &
       sclrpthvp, pdf_params_zm, &
@@ -69,7 +70,7 @@ module clubb_driver
       up2, vp2, up3, vp3, wp3, rtp2, pdf_params, &
       pdf_implicit_coefs_terms, &
       thlp2, rtpthlp, cloud_frac, ice_supersat_frac, &
-      rcm_in_layer, cloud_cover
+      rcm_in_layer, cloud_cover, sigma_sqd_w
 
     use variables_prognostic_module, only:  &
       sclrm, sclrp2, sclrp3, sclrprtp, sclrpthlp, sclrm_forcing, & !--------- Variables
@@ -1396,13 +1397,28 @@ module clubb_driver
       iinit = floor( ( time_current - time_initial ) / real(dt_main,kind=time_precision) ) + 1
 
       call restart_clubb &
-           ( iunit, runfile,                  &            ! Intent(in)
-             restart_path_case, time_restart, &            ! Intent(in)
-             upwp, vpwp, wpthlp, wprtp,       &            ! Intent(inout)
-             rcm_mc, rvm_mc, thlm_mc,         &            ! Intent(out)
-             wprtp_mc, wpthlp_mc, rtp2_mc,    &            ! Intent(out)
-             thlp2_mc, rtpthlp_mc,            &            ! Intent(out)
-             wpthlp_sfc, wprtp_sfc, upwp_sfc, vpwp_sfc )   ! Intent(out)
+           ( iunit, runfile,                           & ! Intent(in)
+             restart_path_case, time_restart,          & ! Intent(in)
+             um, upwp, vm, vpwp, up2, vp2, rtm,        & ! Intent(inout)
+             wprtp, thlm, wpthlp, rtp2, rtp3,          & ! Intent(inout)
+             thlp2, thlp3, rtpthlp, wp2, wp3,          & ! Intent(inout)
+             p_in_Pa, exner, rcm, cloud_frac,          & ! Intent(inout)
+             wpthvp, wp2thvp, rtpthvp, thlpthvp,       & ! Intent(inout)
+             wm_zt, rho, rho_zm, rho_ds_zm,            & ! Intent(inout)
+             rho_ds_zt, thv_ds_zm, thv_ds_zt,          & ! Intent(inout)
+             thlm_forcing, rtm_forcing, wprtp_forcing, & ! Intent(inout)
+             wpthlp_forcing, rtp2_forcing,             & ! Intent(inout)
+             thlp2_forcing, rtpthlp_forcing,           & ! Intent(inout)
+             hydromet, hydrometp2, wphydrometp,        & ! Intent(inout)
+             Ncm, Nccnm, thvm, em, tau_zm, tau_zt,     & ! Intent(inout)
+             Kh_zt, Kh_zm, ug, vg, Lscale,             & ! Intent(inout)
+             Lscale_up, Lscale_down, thlprcp,          & ! Intent(inout)
+             sigma_sqd_w, sigma_sqd_w_zt, radht,       & ! Intent(inout)
+             pdf_params, pdf_params_zm,                & ! Intent(inout)
+             rcm_mc, rvm_mc, thlm_mc,                  & ! Intent(out)
+             wprtp_mc, wpthlp_mc, rtp2_mc,             & ! Intent(out)
+             thlp2_mc, rtpthlp_mc,                     & ! Intent(out)
+             wpthlp_sfc, wprtp_sfc, upwp_sfc, vpwp_sfc ) ! Intent(out)
  
       ! Calculate invrs_rho_ds_zm and invrs_rho_ds_zt from the values of
       ! rho_ds_zm and rho_ds_zt, respectively, which were read in from the input
@@ -1554,7 +1570,24 @@ module clubb_driver
              time_current + real(dt_main,kind=time_precision), & ! Intent(in)
              itime_nearest )                                     ! Intent(out)
 
-        call stat_fields_reader( max( itime_nearest, 1 ) )       ! Intent(in)
+        call stat_fields_reader( max( itime_nearest, 1 ), & ! In
+                                 um, upwp, vm, vpwp, up2, vp2, rtm, & ! Inout
+                                 wprtp, thlm, wpthlp, rtp2, rtp3, & ! Inout
+                                 thlp2, thlp3, rtpthlp, wp2, wp3, & ! Inout
+                                 p_in_Pa, exner, rcm, cloud_frac, & ! Inout
+                                 wpthvp, wp2thvp, rtpthvp, thlpthvp, & ! Inout
+                                 wm_zt, rho, rho_zm, rho_ds_zm, & ! Inout
+                                 rho_ds_zt, thv_ds_zm, thv_ds_zt, & ! Inout
+                                 thlm_forcing, rtm_forcing, wprtp_forcing, & !""
+                                 wpthlp_forcing, rtp2_forcing, & ! Inout
+                                 thlp2_forcing, rtpthlp_forcing, & ! Inout
+                                 hydromet, hydrometp2, wphydrometp, & ! Inout
+                                 Ncm, Nccnm, thvm, em, tau_zm, tau_zt, & ! Inout
+                                 Kh_zt, Kh_zm, ug, vg, Lscale, & ! Inout
+                                 Lscale_up, Lscale_down, thlprcp, & ! Inout
+                                 sigma_sqd_w, sigma_sqd_w_zt, radht, & ! Inout
+                                 pdf_params, pdf_params_zm ) ! Inout
+
         ! clip wp3 if it is input from inputfields
         ! this helps restrict the skewness of wp3_on_wp2
         if( l_input_wp3 ) then
@@ -3310,13 +3343,29 @@ module clubb_driver
 
   !-----------------------------------------------------------------------
   subroutine restart_clubb &
-             ( iunit, runfile, &
-               restart_path_case, time_restart, & 
-               upwp, vpwp, wpthlp, wprtp, &
-               rcm_mc, rvm_mc, thlm_mc, & 
-               wprtp_mc, wpthlp_mc, rtp2_mc, &
-               thlp2_mc, rtpthlp_mc, &
-               wpthlp_sfc, wprtp_sfc, upwp_sfc, vpwp_sfc )
+             ( iunit, runfile, & ! In
+               restart_path_case, time_restart, & ! In
+               um, upwp, vm, vpwp, up2, vp2, rtm, & ! Inout
+               wprtp, thlm, wpthlp, rtp2, rtp3, & ! Inout
+               thlp2, thlp3, rtpthlp, wp2, wp3, & ! Inout
+               p_in_Pa, exner, rcm, cloud_frac, & ! Inout
+               wpthvp, wp2thvp, rtpthvp, thlpthvp, & ! Inout
+               wm_zt, rho, rho_zm, rho_ds_zm, & ! Inout
+               rho_ds_zt, thv_ds_zm, thv_ds_zt, & ! Inout
+               thlm_forcing, rtm_forcing, wprtp_forcing, & ! Inout
+               wpthlp_forcing, rtp2_forcing, & ! Inout
+               thlp2_forcing, rtpthlp_forcing, & ! Inout
+               hydromet, hydrometp2, wphydrometp, & ! Inout
+               Ncm, Nccnm, thvm, em, tau_zm, tau_zt, & ! Inout
+               Kh_zt, Kh_zm, ug, vg, Lscale, & ! Inout
+               Lscale_up, Lscale_down, thlprcp, & ! Inout
+               sigma_sqd_w, sigma_sqd_w_zt, radht, & ! Inout
+               pdf_params, pdf_params_zm, & ! Inout
+               rcm_mc, rvm_mc, thlm_mc, & ! Out
+               wprtp_mc, wpthlp_mc, rtp2_mc, & ! Out
+               thlp2_mc, rtpthlp_mc, & ! Out
+               wpthlp_sfc, wprtp_sfc, upwp_sfc, vpwp_sfc ) ! Out
+
     ! Description:
     !   Execute the necessary steps for the initialization of the
     !   CLUBB model to a designated point in the submitted GrADS file.
@@ -3368,6 +3417,10 @@ module clubb_driver
 
     use constants_clubb, only: fstderr !-------------------------- Variables(s)
 
+    use pdf_parameter_module, only: pdf_parameter !--------------- Type(s)
+
+    use parameters_model, only: hydromet_dim ! ------------------- Integer
+
     use clubb_precision, only: time_precision, core_rknd !-------- Variable(s)
 
     use soil_vegetation, only: &
@@ -3394,11 +3447,80 @@ module clubb_driver
       time_restart
 
     ! Input/Output Variables
-    real( kind = core_rknd ), dimension(gr%nz), intent(inout) ::  & 
-      upwp,            & ! u'w'                         [m^2/s^2]
-      vpwp,            & ! v'w'                         [m^2/s^2]
-      wpthlp,          & ! w' th_l'                     [(m K)/s]
-      wprtp              ! w' r_t'                      [(kg m)(kg s)]
+    real( kind = core_rknd ), dimension(gr%nz), intent(inout) :: &
+      um,         & ! eastward grid-mean wind component (thermo. levs.)  [m/s]
+      upwp,       & ! u'w' (momentum levels)                         [m^2/s^2]
+      vm,         & ! northward grid-mean wind component (thermo. levs.) [m/s]
+      vpwp,       & ! v'w' (momentum levels)                         [m^2/s^2]
+      up2,        & ! u'^2 (momentum levels)                         [m^2/s^2]
+      vp2,        & ! v'^2 (momentum levels)                         [m^2/s^2]
+      rtm,        & ! total water mixing ratio, r_t (thermo. levels) [kg/kg]
+      wprtp,      & ! w' r_t' (momentum levels)                      [kg/kg m/s]
+      thlm,       & ! liq. water pot. temp., th_l (thermo. levels)   [K]
+      wpthlp,     & ! w'th_l' (momentum levels)                      [(m/s) K]
+      rtp2,       & ! r_t'^2 (momentum levels)                       [(kg/kg)^2]
+      rtp3,       & ! r_t'^3 (thermodynamic levels)                  [(kg/kg)^3]
+      thlp2,      & ! th_l'^2 (momentum levels)                      [K^2]
+      thlp3,      & ! th_l'^3 (thermodynamic levels)                 [K^3]
+      rtpthlp,    & ! r_t'th_l' (momentum levels)                    [(kg/kg) K]
+      wp2,        & ! w'^2 (momentum levels)                         [m^2/s^2]
+      wp3,        & ! w'^3 (thermodynamic levels)                    [m^3/s^3]
+      p_in_Pa,    & ! Air pressure (thermodynamic levels)            [Pa]
+      exner,      & ! Exner function (thermodynamic levels)          [-]
+      rcm,        & ! cloud water mixing ratio, r_c (thermo. levels) [kg/kg]
+      cloud_frac, & ! cloud fraction (thermodynamic levels)          [-]
+      wpthvp,     & ! < w' th_v' > (momentum levels)                 [kg/kg K]
+      wp2thvp,    & ! < w'^2 th_v' > (thermodynamic levels)          [m^2/s^2 K]
+      rtpthvp,    & ! < r_t' th_v' > (momentum levels)               [kg/kg K]
+      thlpthvp      ! < th_l' th_v' > (momentum levels)              [K^2]
+
+    real( kind = core_rknd ), dimension(gr%nz), intent(inout) :: &
+      wm_zt,     & ! vertical mean wind component on thermo. levels  [m/s]
+      rho,       & ! Air density on thermodynamic levels             [kg/m^3]
+      rho_zm,    & ! Air density on momentum levels                  [kg/m^3]
+      rho_ds_zm, & ! Dry, static density on momentum levels          [kg/m^3]
+      rho_ds_zt, & ! Dry, static density on thermo. levels           [kg/m^3]
+      thv_ds_zm, & ! Dry, base-state theta_v on momentum levels      [K]
+      thv_ds_zt    ! Dry, base-state theta_v on thermo levels        [K]
+
+    real( kind = core_rknd ), dimension(gr%nz), intent(inout) :: &
+      thlm_forcing,    & ! liquid potential temp. forcing (thermo. levels) [K/s]
+      rtm_forcing,     & ! total water forcing (thermo. levels)      [(kg/kg)/s]
+      wprtp_forcing,   & ! total water turbulent flux forcing (m-levs) [m*K/s^2]
+      wpthlp_forcing,  & ! liq pot temp turb flux forcing (m-levs)[m(kg/kg)/s^2]
+      rtp2_forcing,    & ! total water variance forcing (m-levs)   [(kg/kg)^2/s]
+      thlp2_forcing,   & ! liq pot temp variance forcing (m-levs)  [K^2/s]
+      rtpthlp_forcing    ! <r_t'th_l'> covariance forcing (m-levs) [K*(kg/kg)/s]
+
+    real( kind = core_rknd ), dimension(gr%nz,hydromet_dim), intent(inout) :: &
+      hydromet,    & ! Array of hydrometeors                [hm units]
+      hydrometp2,  & ! Variance of a hydrometeor (m-levs.)  [<hm units>^2]
+      wphydrometp    ! Covariance of w and a hydrometeor    [(m/s) <hm units>]
+
+    real( kind = core_rknd ), dimension(gr%nz), intent(inout) :: &
+      Ncm,    & ! Mean cloud droplet concentration, <N_c> (t-levs.)    [num/kg]
+      Nccnm,  & ! Cloud condensation nuclei concentration (COAMPS/MG)  [num/kg]
+      thvm,   & ! Virtual potential temperature                        [K]
+      em,     & ! Turbulent Kinetic Energy (TKE)                       [m^2/s^2]
+      tau_zm, & ! Eddy dissipation time scale on momentum levels       [s]
+      tau_zt, & ! Eddy dissipation time scale on thermodynamic levels  [s]
+      Kh_zt,  & ! Eddy diffusivity coefficient on thermodynamic levels [m^2/s]
+      Kh_zm,  & ! Eddy diffusivity coefficient on momentum levels      [m^2/s]
+      ug,     & ! u geostrophic wind                                   [m/s]
+      vg        ! v geostrophic wind                                   [m/s]
+
+    real( kind = core_rknd ), dimension(gr%nz), intent(inout) :: &
+      Lscale,         & ! Length scale                                 [m]
+      Lscale_up,      & ! Length scale (upwards component)             [m]
+      Lscale_down,    & ! Length scale (downwards component)           [m]
+      thlprcp,        & ! thl'rc'                                      [K kg/kg]
+      sigma_sqd_w,    & ! PDF width parameter (momentum levels)        [-]
+      sigma_sqd_w_zt, & ! PDF width parameter interpolated to t-levs.  [-]
+      radht             ! SW + LW heating rate                         [K/s]
+
+    type(pdf_parameter), intent(inout) :: &
+      pdf_params,    & ! PDF parameters (thermodynamic levels)    [units vary]
+      pdf_params_zm    ! PDF parameters on momentum levels        [units vary]
 
     ! Output
     real( kind = core_rknd ), intent(out) :: & 
@@ -3416,7 +3538,6 @@ module clubb_driver
       rtp2_mc, &   ! Microphysics tendency for <rt'^2>   [(kg/kg)^2/s]
       thlp2_mc, &  ! Microphysics tendency for <thl'^2>  [K^2/s]
       rtpthlp_mc   ! Microphysics tendency for <rt'thl'> [K*(kg/kg)/s]
-
 
     ! Local variables
     integer :: timestep
@@ -3599,8 +3720,23 @@ module clubb_driver
     end if
 
     ! Read data from stats files
-    call stat_fields_reader( timestep )                     ! Intent(in)
-
+    call stat_fields_reader( timestep, & ! In
+                             um, upwp, vm, vpwp, up2, vp2, rtm, & ! Inout
+                             wprtp, thlm, wpthlp, rtp2, rtp3, & ! Inout
+                             thlp2, thlp3, rtpthlp, wp2, wp3, & ! Inout
+                             p_in_Pa, exner, rcm, cloud_frac, & ! Inout
+                             wpthvp, wp2thvp, rtpthvp, thlpthvp, & ! Inout
+                             wm_zt, rho, rho_zm, rho_ds_zm, & ! Inout
+                             rho_ds_zt, thv_ds_zm, thv_ds_zt, & ! Inout
+                             thlm_forcing, rtm_forcing, wprtp_forcing, & ! Inout
+                             wpthlp_forcing, rtp2_forcing, & ! Inout
+                             thlp2_forcing, rtpthlp_forcing, & ! Inout
+                             hydromet, hydrometp2, wphydrometp, & ! Inout
+                             Ncm, Nccnm, thvm, em, tau_zm, tau_zt, & ! Inout
+                             Kh_zt, Kh_zm, ug, vg, Lscale, & ! Inout
+                             Lscale_up, Lscale_down, thlprcp, & ! Inout
+                             sigma_sqd_w, sigma_sqd_w_zt, radht, & ! Inout
+                             pdf_params, pdf_params_zm ) ! Inout
 
       call get_clubb_variable_interpolated &
            ( l_input_rcm_mc, stat_files(1), "rcm_mc", gr%nz, timestep, &

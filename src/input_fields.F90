@@ -208,83 +208,30 @@ module inputfields
 !-----------------------------------------------------------------------
 
 !-----------------------------------------------------------------------
-  subroutine stat_fields_reader( timestep )
+  subroutine stat_fields_reader( timestep, &
+                                 um, upwp, vm, vpwp, up2, vp2, rtm, &
+                                 wprtp, thlm, wpthlp, rtp2, rtp3, &
+                                 thlp2, thlp3, rtpthlp, wp2, wp3, &
+                                 p_in_Pa, exner, rcm, cloud_frac, &
+                                 wpthvp, wp2thvp, rtpthvp, thlpthvp, &
+                                 wm_zt, rho, rho_zm, rho_ds_zm, &
+                                 rho_ds_zt, thv_ds_zm, thv_ds_zt, &
+                                 thlm_forcing, rtm_forcing, wprtp_forcing, &
+                                 wpthlp_forcing, rtp2_forcing, &
+                                 thlp2_forcing, rtpthlp_forcing, &
+                                 hydromet, hydrometp2, wphydrometp, &
+                                 Ncm, Nccnm, thvm, em, tau_zm, tau_zt, &
+                                 Kh_zt, Kh_zm, ug, vg, Lscale, &
+                                 Lscale_up, Lscale_down, thlprcp, &
+                                 sigma_sqd_w, sigma_sqd_w_zt, radht, &
+                                 pdf_params, pdf_params_zm )
+
 ! Description:
 !   Reads in variables for the model from statistical data
 
 ! References:
 !   None
 !-----------------------------------------------------------------------
-
-    use variables_prognostic_module, only: & 
-        um,  & ! Variable(s)
-        vm, & 
-        rtm, & 
-        thlm, & 
-        wp2, & 
-        wp3, & 
-        wprtp, & 
-        wpthlp, & 
-        rtp2, & 
-        thlp2, & 
-        rtpthlp, & 
-        upwp, & 
-        vpwp, & 
-        p_in_Pa, & 
-        exner, & 
-        rcm, & 
-        wm_zt, & 
-        rho, & 
-        rho_zm, & 
-        rho_ds_zm, &
-        rho_ds_zt, &
-        thv_ds_zm, &
-        thv_ds_zt, &
-        thlm_forcing, & 
-        rtm_forcing, & 
-        cloud_frac, & 
-        up2, & 
-        vp2, & 
-        sigma_sqd_w, &
-        wprtp_forcing, &
-        wpthlp_forcing, &
-        rtp2_forcing, &
-        thlp2_forcing, &
-        rtpthlp_forcing
-
-    use variables_diagnostic_module, only: & 
-        hydromet, & ! Variable(s)
-        hydrometp2, &
-        wphydrometp, &
-        Ncm, &
-        tau_zm, &
-        tau_zt, & 
-        ug, & 
-        vg, & 
-        Lscale, & 
-        Lscale_up, & 
-        Lscale_down, & 
-        Kh_zm, & 
-        Kh_zt, &
-        thvm, &
-        wpthvp, &
-        wp2thvp, &
-        rtpthvp, &
-        thlpthvp, &
-        Nccnm, & 
-        sigma_sqd_w_zt, & 
-        em, &
-        radht, &
-        !Frad, &
-        thlprcp, &
-        thlp3, &
-        rtp3
-
-    use variables_prognostic_module, only: & 
-        pdf_params    ! Variable(s)
-
-    use variables_diagnostic_module, only: & 
-        pdf_params_zm    ! Variable(s)
 
     use grid_class, only: & 
         gr,  & ! Variable(s)
@@ -299,6 +246,12 @@ module inputfields
         pascal_per_mb, &
         g_per_kg, &
         sec_per_day
+
+    use pdf_parameter_module, only: &
+        pdf_parameter    ! Type(s)
+
+    use parameters_model, only: &
+        hydromet_dim   ! Integer
 
     use array_index, only:  & 
         iirr, iiNr, iirs, iiri, iirg, iiNi, iiNg, iiNs
@@ -328,6 +281,83 @@ module inputfields
 
     ! Arguments
     integer, intent(in) :: timestep
+
+    real( kind = core_rknd ), dimension(gr%nz), target, intent(inout) :: &
+      um,         & ! eastward grid-mean wind component (thermo. levs.)  [m/s]
+      upwp,       & ! u'w' (momentum levels)                         [m^2/s^2]
+      vm,         & ! northward grid-mean wind component (thermo. levs.) [m/s]
+      vpwp,       & ! v'w' (momentum levels)                         [m^2/s^2]
+      up2,        & ! u'^2 (momentum levels)                         [m^2/s^2]
+      vp2,        & ! v'^2 (momentum levels)                         [m^2/s^2]
+      rtm,        & ! total water mixing ratio, r_t (thermo. levels) [kg/kg]
+      wprtp,      & ! w' r_t' (momentum levels)                      [kg/kg m/s]
+      thlm,       & ! liq. water pot. temp., th_l (thermo. levels)   [K]
+      wpthlp,     & ! w'th_l' (momentum levels)                      [(m/s) K]
+      rtp2,       & ! r_t'^2 (momentum levels)                       [(kg/kg)^2]
+      rtp3,       & ! r_t'^3 (thermodynamic levels)                  [(kg/kg)^3]
+      thlp2,      & ! th_l'^2 (momentum levels)                      [K^2]
+      thlp3,      & ! th_l'^3 (thermodynamic levels)                 [K^3]
+      rtpthlp,    & ! r_t'th_l' (momentum levels)                    [(kg/kg) K]
+      wp2,        & ! w'^2 (momentum levels)                         [m^2/s^2]
+      wp3,        & ! w'^3 (thermodynamic levels)                    [m^3/s^3]
+      p_in_Pa,    & ! Air pressure (thermodynamic levels)            [Pa]
+      exner,      & ! Exner function (thermodynamic levels)          [-]
+      rcm,        & ! cloud water mixing ratio, r_c (thermo. levels) [kg/kg]
+      cloud_frac, & ! cloud fraction (thermodynamic levels)          [-]
+      wpthvp,     & ! < w' th_v' > (momentum levels)                 [kg/kg K]
+      wp2thvp,    & ! < w'^2 th_v' > (thermodynamic levels)          [m^2/s^2 K]
+      rtpthvp,    & ! < r_t' th_v' > (momentum levels)               [kg/kg K]
+      thlpthvp      ! < th_l' th_v' > (momentum levels)              [K^2]
+
+    real( kind = core_rknd ), dimension(gr%nz), target, intent(inout) :: &
+      wm_zt,     & ! vertical mean wind component on thermo. levels  [m/s]
+      rho,       & ! Air density on thermodynamic levels             [kg/m^3]
+      rho_zm,    & ! Air density on momentum levels                  [kg/m^3]
+      rho_ds_zm, & ! Dry, static density on momentum levels          [kg/m^3]
+      rho_ds_zt, & ! Dry, static density on thermo. levels           [kg/m^3]
+      thv_ds_zm, & ! Dry, base-state theta_v on momentum levels      [K]
+      thv_ds_zt    ! Dry, base-state theta_v on thermo levels        [K]
+
+    real( kind = core_rknd ), dimension(gr%nz), target, intent(inout) :: &
+      thlm_forcing,    & ! liquid potential temp. forcing (thermo. levels) [K/s]
+      rtm_forcing,     & ! total water forcing (thermo. levels)      [(kg/kg)/s]
+      wprtp_forcing,   & ! total water turbulent flux forcing (m-levs) [m*K/s^2]
+      wpthlp_forcing,  & ! liq pot temp turb flux forcing (m-levs)[m(kg/kg)/s^2]
+      rtp2_forcing,    & ! total water variance forcing (m-levs)   [(kg/kg)^2/s]
+      thlp2_forcing,   & ! liq pot temp variance forcing (m-levs)  [K^2/s]
+      rtpthlp_forcing    ! <r_t'th_l'> covariance forcing (m-levs) [K*(kg/kg)/s]
+
+    real( kind = core_rknd ), dimension(gr%nz,hydromet_dim), intent(inout) :: &
+      hydromet,    & ! Array of hydrometeors                [hm units]
+      hydrometp2,  & ! Variance of a hydrometeor (m-levs.)  [<hm units>^2]
+      wphydrometp    ! Covariance of w and a hydrometeor    [(m/s) <hm units>]
+
+    real( kind = core_rknd ), dimension(gr%nz), intent(inout) :: &
+      Ncm       ! Mean cloud droplet concentration, <N_c> (t-levs.)    [num/kg]
+
+    real( kind = core_rknd ), dimension(gr%nz), target, intent(inout) :: &
+      Nccnm,  & ! Cloud condensation nuclei concentration (COAMPS/MG)  [num/kg]
+      thvm,   & ! Virtual potential temperature                        [K]
+      em,     & ! Turbulent Kinetic Energy (TKE)                       [m^2/s^2]
+      tau_zm, & ! Eddy dissipation time scale on momentum levels       [s]
+      tau_zt, & ! Eddy dissipation time scale on thermodynamic levels  [s]
+      Kh_zt,  & ! Eddy diffusivity coefficient on thermodynamic levels [m^2/s]
+      Kh_zm,  & ! Eddy diffusivity coefficient on momentum levels      [m^2/s]
+      ug,     & ! u geostrophic wind                                   [m/s]
+      vg        ! v geostrophic wind                                   [m/s]
+
+    real( kind = core_rknd ), dimension(gr%nz), target, intent(inout) :: &
+      Lscale,         & ! Length scale                                 [m]
+      Lscale_up,      & ! Length scale (upwards component)             [m]
+      Lscale_down,    & ! Length scale (downwards component)           [m]
+      thlprcp,        & ! thl'rc'                                      [K kg/kg]
+      sigma_sqd_w,    & ! PDF width parameter (momentum levels)        [-]
+      sigma_sqd_w_zt, & ! PDF width parameter interpolated to t-levs.  [-]
+      radht             ! SW + LW heating rate                         [K/s]
+
+    type(pdf_parameter), intent(inout) :: &
+      pdf_params,    & ! PDF parameters (thermodynamic levels)    [units vary]
+      pdf_params_zm    ! PDF parameters on momentum levels        [units vary]
 
     ! Local Variables
     logical :: l_read_error, l_fatal_error
