@@ -122,9 +122,9 @@ ARM = {'name': 'arm', 'start_time': 481, 'end_time': 540, 'height_min_value': 0,
        'e3sm_file': e3sm_output_root + "/arm.nc",
        'cam_file': None,
        'sam_file': sam_output_root + "/GCSSARM_96x96x110_67m_40m_1s.nc",
-       'wrf_file': {'zm': wrf_output_root + "/clubb_zm.nc",
-                    'zt': wrf_output_root + "/clubb_zt.nc",
-                    'sfc': wrf_output_root + "/clubb_sfc.nc"
+       'wrf_file': {'zm': wrf_output_root + "/arm_zm_wrf.nc",
+                    'zt': wrf_output_root + "/arm_zt_wrf.nc",
+                    'sfc': wrf_output_root + "/arm_sfc_wrf.nc"
                     },
        'var_groups': [VariableGroupBase]}
 
@@ -170,7 +170,10 @@ ATEX = {'name': 'atex', 'start_time': 421, 'end_time': 480, 'height_min_value': 
         'e3sm_file': None,
         'cam_file': cam_output_root + "/atex_cam.nc",
         'sam_file': None,
-        'wrf_file': None,
+        'wrf_file': {'zm': wrf_output_root + "/atex_zm_wrf.nc",
+                     'zt': wrf_output_root + "/atex_zt_wrf.nc",
+                     'sfc': wrf_output_root + "/atex_sfc_wrf.nc"
+                     },
         'var_groups': [VariableGroupBase, VariableGroupWs]}
 
 BOMEX = {'name': 'bomex', 'start_time': 181, 'end_time': 360, 'height_min_value': 0, 'height_max_value': 2500,
@@ -181,9 +184,9 @@ BOMEX = {'name': 'bomex', 'start_time': 181, 'end_time': 360, 'height_min_value'
          'r408_file': {'zm': R408_OUTPUT_ROOT + '/Chris_Golaz_best_ever/bomex_zm.nc',
                        'zt': R408_OUTPUT_ROOT + '/Chris_Golaz_best_ever/bomex_zt.nc',
                        'sfc': R408_OUTPUT_ROOT + '/Chris_Golaz_best_ever/bomex_sfc.nc'},
-         'hoc_file': {'zm': HOC_OUTPUT_ROOT + '/bomex_zm.nc',
-                      'zt': HOC_OUTPUT_ROOT + '/bomex_zt.nc',
-                      'sfc': HOC_OUTPUT_ROOT + '/bomex_sfc.nc'},
+         'hoc_file': {'zm': HOC_OUTPUT_ROOT + '/bomex_zm_wrf.nc',
+                      'zt': HOC_OUTPUT_ROOT + '/bomex_zt_wrf.nc',
+                      'sfc': HOC_OUTPUT_ROOT + '/bomex_sfc_wrf.nc'},
          'e3sm_file': e3sm_output_root + '/bomex.nc',
          'cam_file': None,
          'sam_file': None,
@@ -380,7 +383,10 @@ FIRE = {'name': 'fire', 'start_time': 61, 'end_time': 120, 'height_min_value': 0
         'e3sm_file': None,
         'cam_file': None,
         'sam_file': None,
-        'wrf_file': None,
+        'wrf_file': {'zm': wrf_output_root + "/fire_zm_wrf.nc",
+                     'zt': wrf_output_root + "/fire_zt_wrf.nc",
+                     'sfc': wrf_output_root + "/fire_sfc_wrf.nc"
+                     },
         'var_groups': [VariableGroupBase, VariableGroupWs]}
 
 # No budgets
@@ -600,7 +606,10 @@ WANGARA = {'name': 'wangara', 'start_time': 181, 'end_time': 240, 'height_min_va
            'e3sm_file': None,
            'cam_file': None,
            'sam_file': None,
-           'wrf_file': None,
+           'wrf_file': {'zm': wrf_output_root + "/wangara_zm_wrf.nc",
+                        'zt': wrf_output_root + "/wangara_zt_wrf.nc",
+                        'sfc': wrf_output_root + "/wangara_sfc_wrf.nc"
+                        },
            'var_groups': [VariableGroupBase, VariableGroupWs]}
 
 # DO NOT EDIT THIS LIST UNLESS YOU ARE ADDING A NEW CASE. NEVER REMOVE CASES FROM THIS LIST.
