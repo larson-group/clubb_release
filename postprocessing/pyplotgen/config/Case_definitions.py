@@ -137,7 +137,7 @@ ARM_97 = {'name': 'arm_97', 'start_time': 4321, 'end_time': 5580, 'height_min_va
           'hoc_file': None,
           'e3sm_file': None,
           'cam_file': None,
-          'sam_file': sam_output_root + "/ARM9707_128x128x128_1km_Morrison_tracers_radCAM_microM2005UWM.nc",
+          'sam_file': sam_output_root + "/ARM9707_SAM_CLUBB.nc",
           'wrf_file': None,
           'var_groups': [VariableGroupBase, VariableGroupIceMP]}
 
@@ -189,7 +189,7 @@ BOMEX = {'name': 'bomex', 'start_time': 181, 'end_time': 360, 'height_min_value'
                       'sfc': HOC_OUTPUT_ROOT + '/bomex_sfc_wrf.nc'},
          'e3sm_file': e3sm_output_root + '/bomex.nc',
          'cam_file': None,
-         'sam_file': None,
+         'sam_file': sam_output_root + "/BOMEX_SAM_CLUBB.nc",
          'wrf_file': None,
          'var_groups': [VariableGroupBase, VariableGroupWs]}
 
@@ -364,7 +364,7 @@ DYCOMS2_RF02_SO = {'name': 'dycoms2_rf02_so', 'start_time': 301, 'end_time': 360
                                 'sfc': HOC_OUTPUT_ROOT + '/dycoms2_rf02_so_sfc.nc'},
                    'e3sm_file': None,
                    'cam_file': None,
-                   'sam_file': None,
+                   'sam_file': sam_output_root + "/DYCOMS_RF02_SAM_CLUBB.nc",
                    'wrf_file': None,
                    'var_groups': [VariableGroupBase, VariableGroupWs, VariableGroupLiquidMP, VariableGroupKKMP]}
 
@@ -469,7 +469,7 @@ LBA = {'name': 'lba', 'start_time': 300, 'end_time': 360, 'height_min_value': 0,
        'hoc_file': None,
        'e3sm_file': None,
        'cam_file': None,
-       'sam_file': None,
+       'sam_file': sam_output_root + "/LBA_SAM_CLUBB.nc",
        'wrf_file': None,
        'var_groups': [VariableGroupBase, VariableGroupLiquidMP, VariableGroupIceMP, VariableGroupWs]}
 
