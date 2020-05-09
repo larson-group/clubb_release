@@ -47,37 +47,6 @@ module clubb_driver
 
     use parameter_indices, only: nparams, ic_K !----------------------------- Variable(s)
 
-    use variables_diagnostic_module, only: ug, vg, em,  & !------------------ Variable(s)
-      thvm, Lscale, Skw_zm, thlp3, rtp3, Kh_zm, Kh_zt, K_hm, &
-      Lscale_up, Lscale_down, sigma_sqd_w_zt, tau_zm, tau_zt, &
-      um_ref, vm_ref, Nccnm, wp2_zt, &
-      wpthvp, wp2thvp, rtpthvp, thlpthvp, &
-      sclrpthvp, pdf_params_zm, &
-      hydromet, hydrometp2, wphydrometp, Ncm, wpNcp, thlm_ref, rtm_ref, &
-      Frad, radht, Frad_SW_up, &
-      Frad_LW_up, Frad_SW_down, Frad_LW_down, thlprcp
-
-    use variables_prognostic_module, only:  & 
-      T_sfc, p_sfc, sens_ht, latent_ht, thlm, rtm,     & !------------------- Variable(s)
-      um, vm, wp2, rcm, wm_zt, wm_zm, exner, &
-      p_in_Pa, rho_zm, upwp, vpwp, wpthlp, &
-      wprcp, rho, wprtp, wpthlp_sfc, wprtp_sfc, &
-      upwp_sfc, vpwp_sfc, rho_ds_zm, rho_ds_zt, &
-      invrs_rho_ds_zm, invrs_rho_ds_zt, thv_ds_zm, &
-      thv_ds_zt, thlm_forcing, rtm_forcing, um_forcing, &
-      vm_forcing, wprtp_forcing, wpthlp_forcing, &
-      rtp2_forcing, thlp2_forcing, rtpthlp_forcing, &
-      up2, vp2, up3, vp3, wp3, rtp2, pdf_params, &
-      pdf_implicit_coefs_terms, &
-      thlp2, rtpthlp, cloud_frac, ice_supersat_frac, &
-      rcm_in_layer, cloud_cover, sigma_sqd_w
-
-    use variables_prognostic_module, only:  &
-      sclrm, sclrp2, sclrp3, sclrprtp, sclrpthlp, sclrm_forcing, & !--------- Variables
-      wpsclrp, wpsclrp_sfc,  &
-      edsclrm, edsclrm_forcing, wpedsclrp_sfc
-
-
     use numerical_check, only: invalid_model_arrays !------------------------ Procedure(s)
 
     use inputfields, only: &
@@ -107,6 +76,12 @@ module clubb_driver
         w_tol_sqd, &
         em_min, &
         eps
+
+    use pdf_parameter_module, only: &
+        pdf_parameter,                 & !----------------------------------- Variable Type(s)
+        implicit_coefs_terms,          &
+        init_pdf_params,               & !----------------------------------- Procedure(s)
+        init_pdf_implicit_coefs_terms
 
     use error_code, only: &
         clubb_at_least_debug_level,  & ! ------------------------------------ Procedures
@@ -378,8 +353,8 @@ module clubb_driver
     real( kind = core_rknd ) :: dummy_dx, dummy_dy  ! [m]
 
     integer :: &
-      itime, j, & ! Local Loop Variables
-      iinit       ! initial iteration
+      itime, i, j, & ! Local Loop Variables
+      iinit          ! initial iteration
 
     integer ::  & 
       iunit,           & ! File unit used for I/O
@@ -393,6 +368,110 @@ module clubb_driver
       case_info_file ! The filename for case info
 
     real( kind = core_rknd ), dimension(0) :: rad_dummy ! Dummy variable for radiation levels
+
+    real( kind = core_rknd ), dimension(:), allocatable ::  &
+      um,      & ! eastward grid-mean wind component (thermo. levs.)  [m/s]
+      upwp,    & ! u'w' (momentum levels)                         [m^2/s^2]
+      vm,      & ! northward grid-mean wind component (thermo. levs.) [m/s]
+      vpwp,    & ! v'w' (momentum levels)                         [m^2/s^2]
+      up2,     & ! u'^2 (momentum levels)                         [m^2/s^2]
+      vp2,     & ! v'^2 (momentum levels)                         [m^2/s^2]
+      up3,     & ! u'^3 (thermodynamic levels)                    [m^3/s^3]
+      vp3,     & ! v'^3 (thermodynamic levels)                    [m^3/s^3]
+      rtm,     & ! total water mixing ratio, r_t (thermo. levels) [kg/kg]
+      wprtp,   & ! w' r_t' (momentum levels)                      [(kg/kg) m/s]
+      thlm,    & ! liq. water pot. temp., th_l (thermo. levels)   [K]
+      wpthlp,  & ! w'th_l' (momentum levels)                      [(m/s) K]
+      rtp2,    & ! r_t'^2 (momentum levels)                       [(kg/kg)^2]
+      rtp3,    & ! r_t'^3 (thermodynamic levels)                  [(kg/kg)^3]
+      thlp2,   & ! th_l'^2 (momentum levels)                      [K^2]
+      thlp3,   & ! th_l'^3 (thermodynamic levels)                 [K^3]
+      rtpthlp, & ! r_t'th_l' (momentum levels)                    [(kg/kg) K]
+      wp2,     & ! w'^2 (momentum levels)                         [m^2/s^2]
+      wp3        ! w'^3 (thermodynamic levels)                    [m^3/s^3]
+
+    real( kind = core_rknd ), dimension(:), allocatable :: &
+      p_in_Pa,    & ! Air pressure (thermodynamic levels)            [Pa]
+      exner,      & ! Exner function (thermodynamic levels)          [-]
+      rcm,        & ! cloud water mixing ratio, r_c (thermo. levels) [kg/kg]
+      cloud_frac, & ! cloud fraction (thermodynamic levels)          [-]
+      wpthvp,     & ! < w' th_v' > (momentum levels)                 [kg/kg K]
+      wp2thvp,    & ! < w'^2 th_v' > (thermodynamic levels)          [m^2/s^2 K]
+      rtpthvp,    & ! < r_t' th_v' > (momentum levels)               [kg/kg K]
+      thlpthvp      ! < th_l' th_v' > (momentum levels)              [K^2]
+
+    real( kind = core_rknd ), dimension(:), allocatable ::  &
+      wm_zm,           & ! vertical mean wind comp. on momentum levs  [m/s]
+      wm_zt,           & ! vertical mean wind comp. on thermo. levs   [m/s]
+      rho,             & ! Air density on thermodynamic levels        [kg/m^3]
+      rho_zm,          & ! Air density on momentum levels             [kg/m^3]
+      rho_ds_zm,       & ! Dry, static density on momentum levels     [kg/m^3]
+      rho_ds_zt,       & ! Dry, static density on thermo. levels      [kg/m^3]
+      invrs_rho_ds_zm, & ! Inverse dry, static density on m-levs.     [m^3/kg]
+      invrs_rho_ds_zt, & ! Inverse dry, static density on thermo levs.[m^3/kg]
+      thv_ds_zm,       & ! Dry, base-state theta_v on momentum levs.  [K]
+      thv_ds_zt          ! Dry, base-state theta_v on thermo levs.    [K]
+
+    real( kind = core_rknd ), dimension(:), allocatable ::  &
+      thlm_forcing,    & ! liq. wat. pot. temp. forcing (thermo. levs)[K/s]
+      rtm_forcing,     & ! total water forcing (thermo. levels)       [(kg/kg)/s]
+      um_forcing,      & ! eastward wind forcing (thermo. levels)     [m/s/s]
+      vm_forcing,      & ! northward wind forcing (thermo. levels)    [m/s/s]
+      wprtp_forcing,   & ! total water turbulent flux forcing (m-levs)[m*K/s^2]
+      wpthlp_forcing,  & ! liq pot temp turb flux forcing (m-levs)    [m(kg/kg)/s^2]
+      rtp2_forcing,    & ! total water variance forcing (m-levs)      [(kg/kg)^2/s]
+      thlp2_forcing,   & ! liq pot temp variance forcing (m-levs)     [K^2/s]
+      rtpthlp_forcing    ! <r_t'th_l'> covariance forcing (m-levs)    [K(kg/kg)/s]
+
+    type(pdf_parameter), allocatable :: &
+      pdf_params,    & ! PDF parameters (thermodynamic levels)    [units vary]
+      pdf_params_zm    ! PDF parameters on momentum levels        [units vary]
+
+    type(implicit_coefs_terms), allocatable :: &
+      pdf_implicit_coefs_terms    ! Implicit coefs / explicit terms [units vary]
+
+    real( kind = core_rknd ), dimension(:,:), allocatable :: &
+      hydromet,    & ! Array of hydrometeors                [hm units]
+      hydrometp2,  & ! Variance of a hydrometeor (m-levs.)  [<hm units>^2]
+      wphydrometp    ! Covariance of w and a hydrometeor    [(m/s) <hm units>]
+
+    real( kind = core_rknd ), dimension(:), allocatable :: &
+      Ncm,    & ! Mean cloud droplet concentration, <N_c> (t-levs.)    [num/kg]
+      Nccnm,  & ! Cloud condensation nuclei concentration (COAMPS/MG)  [num/kg]
+      thvm,   & ! Virtual potential temperature                        [K]
+      em,     & ! Turbulent Kinetic Energy (TKE)                       [m^2/s^2]
+      tau_zm, & ! Eddy dissipation time scale on momentum levels       [s]
+      tau_zt, & ! Eddy dissipation time scale on thermodynamic levels  [s]
+      Kh_zt,  & ! Eddy diffusivity coefficient on thermodynamic levels [m^2/s]
+      Kh_zm     ! Eddy diffusivity coefficient on momentum levels      [m^2/s]
+
+    real( kind = core_rknd ), dimension(:), allocatable :: &
+      Lscale,         & ! Length scale                                 [m]
+      Lscale_up,      & ! Length scale (upwards component)             [m]
+      Lscale_down,    & ! Length scale (downwards component)           [m]
+      thlprcp,        & ! thl'rc'                                      [K kg/kg]
+      sigma_sqd_w,    & ! PDF width parameter (momentum levels)        [-]
+      sigma_sqd_w_zt    ! PDF width parameter interpolated to t-levs.  [-]
+
+    real( kind = core_rknd ), dimension(:), allocatable ::  &
+      wprcp,             & ! w'r_c' (momentum levels)              [(kg/kg) m/s]
+      ice_supersat_frac, & ! ice cloud fraction (thermo. levels)   [-]
+      rcm_in_layer,      & ! rcm within cloud layer                [kg/kg]
+      cloud_cover          ! cloud cover                           [-]
+
+    real( kind = core_rknd ), dimension(:), allocatable :: &
+      ug,       & ! u geostrophic wind                           [m/s]
+      vg,       & ! v geostrophic wind                           [m/s]
+      rtm_ref,  & ! Initial total water mixing ratio             [kg/kg]
+      thlm_ref, & ! Initial liquid water potential temperature   [K]
+      um_ref,   & ! Initial u wind                               [m/s]
+      vm_ref      ! Initial v wind                               [m/s]
+
+    real( kind = core_rknd ) ::  &
+      wpthlp_sfc, & ! w' theta_l' at surface   [(m K)/s]
+      wprtp_sfc,  & ! w' r_t' at surface       [(kg m)/( kg s)]
+      upwp_sfc,   & ! u'w' at surface          [m^2/s^2]
+      vpwp_sfc      ! v'w' at surface          [m^2/s^2]
 
     real( kind = core_rknd ), allocatable, dimension(:) :: &
       rcm_mc, & ! Tendency of liquid water due to microphysics      [kg/kg/s]
@@ -425,6 +504,54 @@ module clubb_driver
     real( kind = core_rknd ), allocatable, dimension(:) :: &
       radf     ! Buoyancy production at CL top due to LW radiative cooling [m^2/s^3]
                ! This is currently set to zero for CLUBB standalone
+
+    real( kind = core_rknd ), dimension(:), allocatable :: &
+      Skw_zm, & ! Skewness of w on momentum levels                      [-]
+      wp2_zt, & ! w'^2 on thermo. grid                                  [m^2/s^2]
+      wpNcp     ! Covariance of w and N_c, <w'N_c'> (momentum levels)   [(m/s)(#/kg)]
+
+    real( kind = core_rknd ), allocatable, dimension(:,:) :: &
+      K_hm    ! Eddy diffusivity coef. for hydrometeors on mom. levs. [m^2 s^-1]
+
+    real( kind = core_rknd ) :: &
+      T_sfc,     & ! surface temperature     [K]
+      p_sfc,     & ! surface pressure        [Pa]
+      sens_ht,   & ! sensible heat flux      [K m/s]
+      latent_ht    ! latent heat flux        [m/s]
+
+    real( kind = core_rknd ), dimension(:,:), allocatable :: &
+      sclrm,     & ! Passive scalar mean (thermo. levels) [units vary]
+      wpsclrp,   & ! w'sclr' (momentum levels)            [{units vary} m/s]
+      sclrp2,    & ! sclr'^2 (momentum levels)            [{units vary}^2]
+      sclrp3,    & ! sclr'^3 (thermodynamic levels)       [{units vary}^3]
+      sclrprtp,  & ! sclr'rt' (momentum levels)           [{units vary} (kg/kg)]
+      sclrpthlp    ! sclr'thl' (momentum levels)          [{units vary} K]
+
+    real( kind = core_rknd ), dimension(:,:), allocatable :: &
+      sclrpthvp    ! < sclr' th_v' > (momentum levels)   [units vary]
+
+    real( kind = core_rknd ), dimension(:,:), allocatable :: &
+      sclrm_forcing    ! Passive scalar forcing          [{units vary}/s]
+
+    real( kind = core_rknd ), dimension(:), allocatable ::  &
+      wpsclrp_sfc      ! Passive scalar flux at surface         [{units vary} m/s]
+
+    real( kind = core_rknd ), dimension(:,:), allocatable :: &
+      edsclrm   ! Eddy passive scalar grid-mean (thermo. levels)   [units vary]
+
+    real( kind = core_rknd ), dimension(:,:), allocatable :: &
+      edsclrm_forcing  ! Eddy-diffusion passive scalar forcing    [{units vary}/s]
+
+    real( kind = core_rknd ), dimension(:), allocatable ::  &
+      wpedsclrp_sfc    ! Eddy-diffusion passive scalar flux at surface [{un vary}m/s]
+
+    real( kind = core_rknd ), dimension(:), allocatable :: &
+      radht,        & ! SW + LW heating rate               [K/s]
+      Frad,         & ! Radiative flux (momentum levels)   [W/m^2]
+      Frad_SW_up,   & ! SW radiative upwelling flux        [W/m^2]
+      Frad_LW_up,   & ! LW radiative upwelling flux        [W/m^2]
+      Frad_SW_down, & ! SW radiative downwelling flux      [W/m^2]
+      Frad_LW_down    ! LW radiative downwelling flux      [W/m^2]
 
     logical :: l_restart_input
 
@@ -1176,6 +1303,279 @@ module clubb_driver
            l_stability_correct_tau_zm,                        & ! intent(in)
            err_code_dummy )                                     ! Intent(out)
 
+    ! Allocate and initialize variables
+
+    allocate( um(1:gr%nz) )        ! u wind
+    allocate( vm(1:gr%nz) )        ! v wind
+
+    allocate( upwp(1:gr%nz) )      ! vertical u momentum flux
+    allocate( vpwp(1:gr%nz) )      ! vertical v momentum flux
+
+    allocate( up2(1:gr%nz) )
+    allocate( up3(1:gr%nz) )
+    allocate( vp2(1:gr%nz) )
+    allocate( vp3(1:gr%nz) )
+
+    allocate( thlm(1:gr%nz) )      ! liquid potential temperature
+    allocate( rtm(1:gr%nz) )       ! total water mixing ratio
+    allocate( wprtp(1:gr%nz) )     ! w'rt'
+    allocate( wpthlp(1:gr%nz) )    ! w'thl'
+    allocate( wprcp(1:gr%nz) )     ! w'rc'
+    allocate( wp2(1:gr%nz) )       ! w'^2
+    allocate( wp3(1:gr%nz) )       ! w'^3
+    allocate( rtp2(1:gr%nz) )      ! rt'^2
+    allocate( thlp2(1:gr%nz) )     ! thl'^2
+    allocate( rtpthlp(1:gr%nz) )   ! rt'thlp'
+
+    allocate( p_in_Pa(1:gr%nz) )         ! pressure (pascals)
+    allocate( exner(1:gr%nz) )           ! exner function
+    allocate( rho(1:gr%nz) )             ! density: t points
+    allocate( rho_zm(1:gr%nz) )          ! density: m points
+    allocate( rho_ds_zm(1:gr%nz) )       ! dry, static density: m-levs
+    allocate( rho_ds_zt(1:gr%nz) )       ! dry, static density: t-levs
+    allocate( invrs_rho_ds_zm(1:gr%nz) ) ! inv. dry, static density: m-levs
+    allocate( invrs_rho_ds_zt(1:gr%nz) ) ! inv. dry, static density: t-levs
+    allocate( thv_ds_zm(1:gr%nz) )       ! dry, base-state theta_v: m-levs
+    allocate( thv_ds_zt(1:gr%nz) )       ! dry, base-state theta_v: t-levs
+
+    allocate( thlm_forcing(1:gr%nz) )    ! thlm ls forcing
+    allocate( rtm_forcing(1:gr%nz) )     ! rtm ls forcing
+    allocate( um_forcing(1:gr%nz) )      ! u forcing
+    allocate( vm_forcing(1:gr%nz) )      ! v forcing
+    allocate( wprtp_forcing(1:gr%nz) )   ! <w'r_t'> forcing (microphysics)
+    allocate( wpthlp_forcing(1:gr%nz) )  ! <w'th_l'> forcing (microphysics)
+    allocate( rtp2_forcing(1:gr%nz) )    ! <r_t'^2> forcing (microphysics)
+    allocate( thlp2_forcing(1:gr%nz) )   ! <th_l'^2> forcing (microphysics)
+    allocate( rtpthlp_forcing(1:gr%nz) ) ! <r_t'th_l'> forcing (microphysics)
+
+    ! Imposed large scale w
+    allocate( wm_zm(1:gr%nz) )       ! momentum levels
+    allocate( wm_zt(1:gr%nz) )       ! thermodynamic levels
+
+    ! Cloud water variables
+    allocate( rcm(1:gr%nz) )
+    allocate( cloud_frac(1:gr%nz) )
+    allocate( ice_supersat_frac(1:gr%nz) )
+    allocate( rcm_in_layer(1:gr%nz) )
+    allocate( cloud_cover(1:gr%nz) )
+
+    ! Passive scalar variables
+    ! Note that sclr_dim can be 0
+    allocate( wpsclrp_sfc(1:sclr_dim) )
+    allocate( sclrm(1:gr%nz, 1:sclr_dim) )
+    allocate( sclrp2(1:gr%nz, 1:sclr_dim) )
+    allocate( sclrp3(1:gr%nz, 1:sclr_dim) )
+    allocate( sclrm_forcing(1:gr%nz, 1:sclr_dim) )
+    allocate( sclrprtp(1:gr%nz, 1:sclr_dim) )
+    allocate( sclrpthlp(1:gr%nz, 1:sclr_dim) )
+
+    allocate( wpedsclrp_sfc(1:edsclr_dim) )
+    allocate( edsclrm_forcing(1:gr%nz, 1:edsclr_dim) )
+
+    allocate( edsclrm(1:gr%nz, 1:edsclr_dim) )
+    allocate( wpsclrp(1:gr%nz, 1:sclr_dim) )
+
+    allocate( sigma_sqd_w(1:gr%nz) )    ! PDF width parameter (momentum levels)
+    allocate( sigma_sqd_w_zt(1:gr%nz) ) ! PDF width parameter interp. to t-levs.
+    allocate( Skw_zm(1:gr%nz) )         ! Skewness of w on momentum levels
+    allocate( wp2_zt(1:gr%nz) )         ! wp2 interpolated to thermo. levels
+    allocate( ug(1:gr%nz) )             ! u geostrophic wind
+    allocate( vg(1:gr%nz) )             ! v geostrophic wind
+    allocate( um_ref(1:gr%nz) )         ! Reference u wind for nudging; Michael Falk, 17 Oct 2007
+    allocate( vm_ref(1:gr%nz) )         ! Reference v wind for nudging; Michael Falk, 17 Oct 2007
+    allocate( thlm_ref(1:gr%nz) )       ! Reference liquid water potential for nudging
+    allocate( rtm_ref(1:gr%nz) )        ! Reference total water mixing ratio for nudging
+    allocate( thvm(1:gr%nz) )           ! Virtual potential temperature
+    allocate( radht(1:gr%nz) )          ! SW + LW heating rate
+    allocate( Frad(1:gr%nz) )           ! radiative flux (momentum point)
+    allocate( Frad_SW_up(1:gr%nz) )
+    allocate( Frad_LW_up(1:gr%nz) )
+    allocate( Frad_SW_down(1:gr%nz) )
+    allocate( Frad_LW_down(1:gr%nz) )
+    allocate( thlprcp(1:gr%nz) )   ! thl'rc'
+    allocate( thlp3(1:gr%nz) )     ! thl'^3
+    allocate( rtp3(1:gr%nz) )      ! rt'^3
+
+    ! Buoyancy related moments
+    allocate( rtpthvp(1:gr%nz) )  ! rt'thv'
+    allocate( thlpthvp(1:gr%nz) ) ! thl'thv'
+    allocate( wpthvp(1:gr%nz) )   ! w'thv'
+    allocate( wp2thvp(1:gr%nz) )  ! w'^2thv'
+
+    allocate( Kh_zt(1:gr%nz) )  ! Eddy diffusivity coefficient: thermo. levels
+    allocate( Kh_zm(1:gr%nz) )  ! Eddy diffusivity coefficient: momentum levels
+    allocate( K_hm(1:gr%nz,1:hydromet_dim) ) ! Eddy diff. coef. for hydromets.: mom. levs.
+
+    allocate( em(1:gr%nz) )
+    allocate( Lscale(1:gr%nz) )
+    allocate( Lscale_up(1:gr%nz) )
+    allocate( Lscale_down(1:gr%nz) )
+
+    allocate( tau_zm(1:gr%nz) ) ! Eddy dissipation time scale: momentum levels
+    allocate( tau_zt(1:gr%nz) ) ! Eddy dissipation time scale: thermo. levels
+
+    allocate( Nccnm(1:gr%nz) )
+    allocate( hydromet(1:gr%nz,1:hydromet_dim) )    ! All hydrometeor mean fields
+    allocate( hydrometp2(1:gr%nz,1:hydromet_dim) )  ! All < h_m'^2 > fields
+    allocate( wphydrometp(1:gr%nz,1:hydromet_dim) ) ! All < w'h_m' > fields
+    allocate( Ncm(1:gr%nz) )   ! Mean cloud droplet concentration, < N_c >
+    allocate( wpNcp(1:gr%nz) ) ! < w'N_c' >
+
+    ! High-order passive scalars
+    allocate( sclrpthvp(1:gr%nz, 1:sclr_dim) )
+
+    ! Variables for PDF closure scheme
+    allocate( pdf_params )
+    call init_pdf_params( gr%nz, pdf_params )
+    allocate( pdf_params_zm )
+    call init_pdf_params( gr%nz, pdf_params_zm )
+
+    allocate( pdf_implicit_coefs_terms )
+    call init_pdf_implicit_coefs_terms( gr%nz, sclr_dim, &         ! Intent(in)
+                                        pdf_implicit_coefs_terms ) ! Intent(out)
+
+    um(1:gr%nz)      = zero          ! u wind
+    vm (1:gr%nz)     = zero          ! v wind
+    upwp(1:gr%nz)    = zero          ! vertical u momentum flux
+    vpwp(1:gr%nz)    = zero          ! vertical v momentum flux
+    up2(1:gr%nz)     = w_tol_sqd     ! u'^2
+    up3(1:gr%nz)     = zero          ! u'^3
+    vp2(1:gr%nz)     = w_tol_sqd     ! v'^2
+    vp3(1:gr%nz)     = zero          ! v'^3
+
+    thlm(1:gr%nz)    = zero          ! liquid potential temperature
+    rtm(1:gr%nz)     = zero          ! total water mixing ratio
+    wprtp(1:gr%nz)   = zero          ! w'rt'
+    wpthlp(1:gr%nz)  = zero          ! w'thl'
+    wp2(1:gr%nz)     = w_tol_sqd     ! w'^2
+    wp3(1:gr%nz)     = zero          ! w'^3
+    rtp2(1:gr%nz)    = rt_tol**2     ! rt'^2
+    thlp2(1:gr%nz)   = thl_tol**2    ! thl'^2
+    rtpthlp(1:gr%nz) = zero          ! rt'thl'
+    wprcp(1:gr%nz)   = zero          ! w'rc'
+
+    p_in_Pa(1:gr%nz)= zero           ! pressure (Pa)
+    exner(1:gr%nz) = zero            ! exner
+    rho(1:gr%nz)  = zero             ! density on thermo. levels
+    rho_zm(1:gr%nz)  = zero          ! density on moment. levels
+    rho_ds_zm(1:gr%nz) = zero        ! dry, static density: m-levs
+    rho_ds_zt(1:gr%nz) = zero        ! dry, static density: t-levs
+    invrs_rho_ds_zm(1:gr%nz) = zero  ! inv. dry, static density: m-levs
+    invrs_rho_ds_zt(1:gr%nz) = zero  ! inv. dry, static density: t-levs
+    thv_ds_zm(1:gr%nz) = zero        ! dry, base-state theta_v: m-levs
+    thv_ds_zt(1:gr%nz) = zero        ! dry, base-state theta_v: t-levs
+
+    thlm_forcing(1:gr%nz)    = zero  ! thlm large-scale forcing
+    rtm_forcing(1:gr%nz)     = zero  ! rtm large-scale forcing
+    um_forcing(1:gr%nz)      = zero  ! u forcing
+    vm_forcing(1:gr%nz)      = zero  ! v forcing
+    wprtp_forcing(1:gr%nz)   = zero  ! <w'r_t'> forcing (microphysics)
+    wpthlp_forcing(1:gr%nz)  = zero  ! <w'th_l'> forcing (microphysics)
+    rtp2_forcing(1:gr%nz)    = zero  ! <r_t'^2> forcing (microphysics)
+    thlp2_forcing(1:gr%nz)   = zero  ! <th_l'^2> forcing (microphysics)
+    rtpthlp_forcing(1:gr%nz) = zero  ! <r_t'th_l'> forcing (microphysics)
+
+    ! Imposed large scale w
+    wm_zm(1:gr%nz) = zero      ! Momentum levels
+    wm_zt(1:gr%nz) = zero      ! Thermodynamic levels
+
+    ! Cloud water variables
+    rcm(1:gr%nz)               = zero
+    cloud_frac(1:gr%nz)        = zero
+    ice_supersat_frac(1:gr%nz) = zero
+    rcm_in_layer(1:gr%nz)      = zero
+    cloud_cover(1:gr%nz)       = zero
+
+    sigma_sqd_w    = zero ! PDF width parameter (momentum levels)
+    sigma_sqd_w_zt = zero ! PDF width parameter interp. to t-levs.
+    Skw_zm         = zero ! Skewness of w on momentum levels
+    wp2_zt         = w_tol_sqd ! wp2 interpolated to thermo. levels
+    ug             = zero ! u geostrophic wind
+    vg             = zero ! v geostrophic wind
+    um_ref         = zero
+    vm_ref         = zero
+    thlm_ref       = zero
+    rtm_ref        = zero
+    thvm           = zero ! Virtual potential temperature
+
+    radht = zero ! Heating rate
+    Frad  = zero ! Radiative flux
+    Frad_SW_up = zero
+    Frad_LW_up = zero
+    Frad_SW_down = zero
+    Frad_LW_down = zero
+    thlprcp = zero
+    thlp3   = zero
+    rtp3    = zero
+
+    ! Buoyancy related moments
+    rtpthvp  = zero ! rt'thv'
+    thlpthvp = zero ! thl'thv'
+    wpthvp   = zero ! w'thv'
+    wp2thvp  = zero ! w'^2thv'
+
+    ! Eddy diffusivity
+    Kh_zt = zero  ! Eddy diffusivity coefficient: thermo. levels
+    Kh_zm = zero  ! Eddy diffusivity coefficient: momentum levels
+
+    do i = 1, hydromet_dim, 1
+      K_hm(1:gr%nz,i) = zero ! Eddy diff. coef. for hydromets.: mom. levs.
+    end do
+
+    ! TKE
+    em = em_min
+
+    ! Length scale
+    Lscale      = zero
+    Lscale_up   = zero
+    Lscale_down = zero
+
+    ! Dissipation time
+    tau_zm = zero ! Eddy dissipation time scale: momentum levels
+    tau_zt = zero ! Eddy dissipation time scale: thermo. levels
+
+    ! Hydrometer types
+    Nccnm(1:gr%nz) = zero ! CCN concentration (COAMPS/MG)
+
+    do i = 1, hydromet_dim, 1
+       hydromet(1:gr%nz,i)    = zero
+       hydrometp2(1:gr%nz,i)  = zero
+       wphydrometp(1:gr%nz,i) = zero
+    enddo
+
+    ! Cloud droplet concentration
+    Ncm(1:gr%nz)   = zero
+    wpNcp(1:gr%nz) = zero
+
+    ! Passive scalars
+    if ( sclr_dim > 0 ) then
+      sclrpthvp(:,:) = zero
+    end if
+
+    ! Surface fluxes
+    wpthlp_sfc = zero
+    wprtp_sfc  = zero
+    upwp_sfc   = zero
+    vpwp_sfc   = zero
+
+    ! Passive scalars
+    do i = 1, sclr_dim, 1
+       wpsclrp_sfc(i)           = zero
+       sclrm(1:gr%nz,i)         = zero
+       sclrp2(1:gr%nz,i)        = sclr_tol(i)**2
+       sclrp3(1:gr%nz,i)        = zero
+       sclrprtp(1:gr%nz,i)      = zero
+       sclrpthlp(1:gr%nz,i)     = zero
+       sclrm_forcing(1:gr%nz,i) = zero
+       wpsclrp(1:gr%nz,i)       = zero
+    enddo
+
+    do i = 1, edsclr_dim, 1
+      wpedsclrp_sfc(i)           = zero
+      edsclrm(1:gr%nz,i)         = zero
+      edsclrm_forcing(1:gr%nz,i) = zero
+    end do
+
     ! Allocate a correctly-sized array for radf and zero it
     allocate( radf(gr%nz) )
 
@@ -1591,6 +1991,7 @@ module clubb_driver
         ! clip wp3 if it is input from inputfields
         ! this helps restrict the skewness of wp3_on_wp2
         if( l_input_wp3 ) then
+          wp2_zt = max( zm2zt( wp2 ), w_tol_sqd ) ! Positive definite quantity
           call clip_skewness_core( sfc_elevation, wp2_zt, wp3 )
         end if
       end if
@@ -1615,7 +2016,17 @@ module clubb_driver
       thvm = calculate_thvm( thlm, rtm, rcm, exner, thv_ds_zt )
 
       ! Set large-scale tendencies and subsidence profiles
-      call prescribe_forcings( dt_main )  ! Intent(in)
+      call prescribe_forcings( dt_main, um, vm, thlm, & ! In
+                               p_in_Pa, exner, rho, rho_zm, thvm, & ! In
+                               Frad_SW_up, Frad_SW_down, Frad_LW_down, & ! In
+                               rtm, wm_zm, wm_zt, ug, vg, um_ref, vm_ref, & ! Inout
+                               thlm_forcing, rtm_forcing, um_forcing, & ! Inout
+                               vm_forcing, wprtp_forcing, wpthlp_forcing, & ! Inout
+                               rtp2_forcing, thlp2_forcing, rtpthlp_forcing, & ! Inout
+                               wpsclrp, sclrm_forcing, edsclrm_forcing, & ! Inout
+                               wpthlp_sfc, wprtp_sfc, upwp_sfc, vpwp_sfc, & ! Inout
+                               T_sfc, p_sfc, sens_ht, latent_ht, & ! Inout
+                               wpsclrp_sfc, wpedsclrp_sfc ) ! Inout
 
       if ( clubb_at_least_debug_level( 0 ) ) then
         if ( err_code == clubb_fatal_error ) then
@@ -1959,7 +2370,8 @@ module clubb_driver
       endif
 
       ! Update the radiation variables here so they are updated every timestep
-      call update_radiation_variables( gr%nz )
+      call update_radiation_variables( gr%nz, radht, Frad_SW_up, Frad_LW_up, &
+                                       Frad_SW_down, Frad_LW_down )
 
       ! End statistics timestep
       call stats_end_timestep( &
@@ -2042,6 +2454,130 @@ module clubb_driver
 
     ! Free memory
     call cleanup_clubb( l_input_fields )
+
+    deallocate( um )        ! u wind
+    deallocate( vm )        ! v wind
+
+    deallocate( upwp )      ! vertical u momentum flux
+    deallocate( vpwp )      ! vertical v momentum flux
+
+    deallocate( up2 )
+    deallocate( up3 )
+    deallocate( vp2 )
+    deallocate( vp3 )
+
+    deallocate( thlm )      ! liquid potential temperature
+    deallocate( rtm )       ! total water mixing ratio
+    deallocate( wprtp )     ! w'rt'
+    deallocate( wpthlp )    ! w'thl'
+    deallocate( wprcp )     ! w'rc'
+    deallocate( wp2 )       ! w'^2
+    deallocate( wp3 )       ! w'^3
+    deallocate( rtp2 )      ! rt'^2
+    deallocate( thlp2 )     ! thl'^2
+    deallocate( rtpthlp )   ! rt'thlp'
+
+    deallocate( p_in_Pa )         ! pressure (pascals)
+    deallocate( exner )           ! exner function
+    deallocate( rho )             ! density: t points
+    deallocate( rho_zm )          ! density: m points
+    deallocate( rho_ds_zm )       ! dry, static density: m-levs
+    deallocate( rho_ds_zt )       ! dry, static density: t-levs
+    deallocate( invrs_rho_ds_zm ) ! inv. dry, static density: m-levs
+    deallocate( invrs_rho_ds_zt ) ! inv. dry, static density: t-levs
+    deallocate( thv_ds_zm )       ! dry, base-state theta_v: m-levs
+    deallocate( thv_ds_zt )       ! dry, base-state theta_v: t-levs
+
+    deallocate( thlm_forcing )    ! thlm ls forcing
+    deallocate( rtm_forcing )     ! rtm ls forcing
+    deallocate( um_forcing )      ! u forcing
+    deallocate( vm_forcing )      ! v forcing
+    deallocate( wprtp_forcing )   ! <w'r_t'> forcing (microphysics)
+    deallocate( wpthlp_forcing )  ! <w'th_l'> forcing (microphysics)
+    deallocate( rtp2_forcing )    ! <r_t'^2> forcing (microphysics)
+    deallocate( thlp2_forcing )   ! <th_l'^2> forcing (microphysics)
+    deallocate( rtpthlp_forcing ) ! <r_t'th_l'> forcing (microphysics)
+
+    ! Imposed large scale w
+    deallocate( wm_zm )       ! momentum levels
+    deallocate( wm_zt )       ! thermodynamic levels
+
+    ! Cloud water variables
+    deallocate( rcm )
+    deallocate( cloud_frac )
+    deallocate( ice_supersat_frac )
+    deallocate( rcm_in_layer )
+    deallocate( cloud_cover )
+
+    ! Passive scalar variables
+    ! Note that sclr_dim can be 0
+    deallocate( wpsclrp_sfc )
+    deallocate( sclrm )
+    deallocate( sclrp2 )
+    deallocate( sclrp3 )
+    deallocate( sclrm_forcing )
+    deallocate( sclrprtp )
+    deallocate( sclrpthlp )
+
+    deallocate( wpedsclrp_sfc )
+    deallocate( edsclrm_forcing )
+
+    deallocate( edsclrm )
+    deallocate( wpsclrp )
+
+    deallocate( sigma_sqd_w )    ! PDF width parameter (momentum levels)
+    deallocate( sigma_sqd_w_zt ) ! PDF width parameter interp. to t-levs.
+    deallocate( Skw_zm )         ! Skewness of w on momentum levels
+    deallocate( wp2_zt )         ! wp2 interpolated to thermo. levels
+    deallocate( ug )             ! u geostrophic wind
+    deallocate( vg )             ! v geostrophic wind
+    deallocate( um_ref )         ! Reference u wind for nudging; Michael Falk, 17 Oct 2007
+    deallocate( vm_ref )         ! Reference v wind for nudging; Michael Falk, 17 Oct 2007
+    deallocate( thlm_ref )       ! Reference liquid water potential for nudging
+    deallocate( rtm_ref )        ! Reference total water mixing ratio for nudging
+    deallocate( thvm )           ! Virtual potential temperature
+    deallocate( radht )          ! SW + LW heating rate
+    deallocate( Frad )           ! radiative flux (momentum point)
+    deallocate( Frad_SW_up )
+    deallocate( Frad_LW_up )
+    deallocate( Frad_SW_down )
+    deallocate( Frad_LW_down )
+    deallocate( thlprcp )   ! thl'rc'
+    deallocate( thlp3 )     ! thl'^3
+    deallocate( rtp3 )      ! rt'^3
+
+    ! Buoyancy related moments
+    deallocate( rtpthvp )  ! rt'thv'
+    deallocate( thlpthvp ) ! thl'thv'
+    deallocate( wpthvp )   ! w'thv'
+    deallocate( wp2thvp )  ! w'^2thv'
+
+    deallocate( Kh_zt )  ! Eddy diffusivity coefficient: thermo. levels
+    deallocate( Kh_zm )  ! Eddy diffusivity coefficient: momentum levels
+    deallocate( K_hm ) ! Eddy diff. coef. for hydromets.: mom. levs.
+
+    deallocate( em )
+    deallocate( Lscale )
+    deallocate( Lscale_up )
+    deallocate( Lscale_down )
+
+    deallocate( tau_zm ) ! Eddy dissipation time scale: momentum levels
+    deallocate( tau_zt ) ! Eddy dissipation time scale: thermo. levels
+
+    deallocate( Nccnm )
+    deallocate( hydromet )    ! All hydrometeor mean fields
+    deallocate( hydrometp2 )  ! All < h_m'^2 > fields
+    deallocate( wphydrometp ) ! All < w'h_m' > fields
+    deallocate( Ncm )   ! Mean cloud droplet concentration, < N_c >
+    deallocate( wpNcp ) ! < w'N_c' >
+
+    ! High-order passive scalars
+    deallocate( sclrpthvp )
+
+    ! Variables for PDF closure scheme
+    deallocate( pdf_params )
+    deallocate( pdf_params_zm )
+    deallocate( pdf_implicit_coefs_terms )
 
     deallocate( thlm_mc, rvm_mc, rcm_mc, wprtp_mc, wpthlp_mc, rtp2_mc, &
                 thlp2_mc, rtpthlp_mc, hydromet_mc, Ncm_mc, hydromet_vel_zt, &
@@ -2859,7 +3395,6 @@ module clubb_driver
 
     real( kind = core_rknd ), dimension(gr%nz) ::  &
       thm,          & ! Potential temperature (thermodynamic levels)   [K]
-      thvm_zm,      & ! Theta_v interpolated to momentum levels        [K]
       exner_zm,     & ! Exner on momentum levels                       [-]
       th_dry,       & ! Dry potential temperature (thermo. levels)     [K]
       p_dry,        & ! Dry air pressure (thermodynamic levels)        [Pa]
@@ -3317,7 +3852,7 @@ module clubb_driver
 
     call finalize_extended_atm( )
 
-    call cleanup_clubb_core( l_implemented )
+    call cleanup_clubb_core( )
 
     call cleanup_radiation_variables( )
 
@@ -3796,7 +4331,17 @@ module clubb_driver
   end subroutine restart_clubb
 
   !----------------------------------------------------------------------
-  subroutine prescribe_forcings( dt )
+  subroutine prescribe_forcings( dt, um, vm, thlm, &
+                                 p_in_Pa, exner, rho, rho_zm, thvm, &
+                                 Frad_SW_up, Frad_SW_down, Frad_LW_down, &
+                                 rtm, wm_zm, wm_zt, ug, vg, um_ref, vm_ref, &
+                                 thlm_forcing, rtm_forcing, um_forcing, &
+                                 vm_forcing, wprtp_forcing, wpthlp_forcing, &
+                                 rtp2_forcing, thlp2_forcing, rtpthlp_forcing, &
+                                 wpsclrp, sclrm_forcing, edsclrm_forcing, &
+                                 wpthlp_sfc, wprtp_sfc, upwp_sfc, vpwp_sfc, &
+                                 T_sfc, p_sfc, sens_ht, latent_ht, &
+                                 wpsclrp_sfc, wpedsclrp_sfc )
 
     ! Description:
     !   Calculate tendency and surface variables
@@ -3811,25 +4356,6 @@ module clubb_driver
     use grid_class, only: gr !-------------------------------- Variable(s)
 
     use grid_class, only: zt2zm, zm2zt !---------------------- Procedure(s)
-
-    use variables_diagnostic_module, only: &
-      um_ref,  & !-------------------------------------------- Variable(s)
-      vm_ref, Frad_SW_up,  &
-      Frad_SW_down, Frad_LW_down, thvm, ustar, & 
-      ug, vg, soil_heat_flux
-
-    use variables_diagnostic_module, only: wpedsclrp !-------- Passive scalar variables
-
-    use variables_prognostic_module, only: &
-      rtm_forcing, thlm_forcing,  & !------------------------- Variable(s)
-      wprtp_forcing, wpthlp_forcing, &
-      rtp2_forcing, thlp2_forcing, rtpthlp_forcing, &
-      wm_zt, wm_zm, rho, rtm, thlm, p_in_Pa, & 
-      exner, rho_zm, um, p_sfc, vm, & 
-      upwp_sfc, vpwp_sfc, T_sfc, & 
-      wpthlp_sfc, wprtp_sfc, &
-      um_forcing, vm_forcing, &
-      sens_ht, latent_ht
 
     use stats_variables, only: &
       ish, & !------------------------------------------------ Variable(s)
@@ -3850,12 +4376,9 @@ module clubb_driver
       Cp, Lv, kappa, p0, & !---------------------------------- Variable(s)
       zero, fstderr
 
-    use variables_prognostic_module, only:  & 
-      sclrm_forcing,   & !------------------------------------ Passive scalar variables
-      edsclrm_forcing, & ! 
-      wpsclrp,  & 
-      wpsclrp_sfc,  &
-      wpedsclrp_sfc
+    use parameters_model, only: &
+        sclr_dim,   & !--------------------------------------- Variable(s)
+        edsclr_dim
 
     use clubb_precision, only: core_rknd !-------------------- Variable(s)
 
@@ -3867,8 +4390,7 @@ module clubb_driver
     use soil_vegetation, only: advance_soil_veg, veg_T_in_K
 
     use array_index, only: & 
-      iisclr_rt, iisclr_thl, &  !---------------------------- Variable(s)
-      iiedsclr_rt, iiedsclr_thl
+        iisclr_rt, iisclr_thl !------------------------------ Variable(s)
 
     ! Case specific modules
     use arm, only: arm_sfclyr !------------------------------ Procedure(s)
@@ -3941,6 +4463,62 @@ module clubb_driver
     real(kind=core_rknd), intent(in) :: & 
       dt         ! Model timestep         [s]
 
+    real( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
+      um,           & ! eastward grid-mean wind component (thermo. levs.)  [m/s]
+      vm,           & ! northward grid-mean wind component (thermo. levs.) [m/s]
+      thlm,         & ! liq. water pot. temp., th_l (thermo. levels)       [K]
+      p_in_Pa,      & ! Air pressure (thermodynamic levels)                [Pa]
+      exner,        & ! Exner function (thermodynamic levels)              [-]
+      rho,          & ! Air density on thermodynamic levels                [kg/m^3]
+      rho_zm,       & ! Air density on momentum levels                     [kg/m^3]
+      thvm,         & ! Virtual potential temperature                      [K]
+      Frad_SW_up,   & ! SW radiative upwelling flux                        [W/m^2]
+      Frad_SW_down, & ! SW radiative downwelling flux                      [W/m^2]
+      Frad_LW_down    ! LW radiative downwelling flux                      [W/m^2]
+
+    real( kind = core_rknd ), dimension(gr%nz), intent(inout) :: &
+      rtm,             & ! total water mixing ratio, r_t (thermo. levs.) [kg/kg]
+      wm_zm,           & ! vertical mean wind comp. on momentum levs     [m/s]
+      wm_zt,           & ! vertical mean wind comp. on thermo. levs      [m/s]
+      ug,              & ! u geostrophic wind                            [m/s]
+      vg,              & ! v geostrophic wind                            [m/s]
+      um_ref,          & ! Initial u wind                                [m/s]
+      vm_ref             ! Initial v wind                                [m/s]
+
+    real( kind = core_rknd ), dimension(gr%nz), intent(inout) :: &
+      thlm_forcing,    & ! liquid potential temp. forcing (thermodynamic levels)[K/s]
+      rtm_forcing,     & ! total water forcing (thermodynamic levels)           [(kg/kg)/s]
+      um_forcing,      & ! eastward wind forcing (thermodynamic levels)         [m/s/s]
+      vm_forcing,      & ! northward wind forcing (thermodynamic levels)        [m/s/s]
+      wprtp_forcing,   & ! total water turbulent flux forcing (momentum levels) [m*K/s^2]
+      wpthlp_forcing,  & ! liq pot temp turb flux forcing (momentum levels)     [m(kg/kg)/s^2]
+      rtp2_forcing,    & ! total water variance forcing (momentum levels)       [(kg/kg)^2/s]
+      thlp2_forcing,   & ! liq pot temp variance forcing (momentum levels)      [K^2/s]
+      rtpthlp_forcing    ! <r_t'th_l'> covariance forcing (momentum levels)     [K(kg/kg)/s]
+
+    real( kind = core_rknd ), dimension(gr%nz,sclr_dim), intent(inout) :: &
+      wpsclrp,       & ! w'sclr' (momentum levels)       [{units vary} m/s]
+      sclrm_forcing    ! Passive scalar forcing          [{units vary}/s]
+
+    real( kind = core_rknd ), dimension(gr%nz,edsclr_dim), intent(inout) :: &
+      edsclrm_forcing  ! Eddy-diffusion passive scalar forcing    [{units vary}/s]
+
+    real( kind = core_rknd ), intent(inout) :: &
+      wpthlp_sfc, & ! w' theta_l' at surface   [(m K)/s]
+      wprtp_sfc,  & ! w' r_t' at surface       [(kg m)/( kg s)]
+      upwp_sfc,   & ! u'w' at surface          [m^2/s^2]
+      vpwp_sfc,   & ! v'w' at surface          [m^2/s^2]
+      T_sfc,      & ! surface temperature      [K]
+      p_sfc,      & ! surface pressure         [Pa]
+      sens_ht,    & ! sensible heat flux       [K m/s]
+      latent_ht     ! latent heat flux         [m/s]
+
+    real( kind = core_rknd ), dimension(sclr_dim), intent(inout) :: &
+      wpsclrp_sfc      ! Passive scalar flux at surface         [{units vary} m/s]
+
+    real( kind = core_rknd ), dimension(edsclr_dim), intent(inout) :: &
+      wpedsclrp_sfc    ! Eddy-diffusion passive scalar flux at surface [{un vary}m/s]
+
     ! Local Variables
     real( kind = core_rknd ) :: &
       wpthep  ! w'theta_e'                [m K/s]
@@ -3948,6 +4526,10 @@ module clubb_driver
     real( kind = core_rknd ) :: &
       ubar, &     ! mean sfc wind speed   [m/s]
       rho_sfc     ! Density at zm(1)      [kg/m^3]
+
+    real( kind = core_rknd ) :: &
+      ustar,          & ! Average value of friction velocity [m/s]
+      soil_heat_flux    ! Soil Heat Flux [W/m^2]
 
     ! Flags to help avoid code duplication
     logical :: &
@@ -4321,8 +4903,6 @@ module clubb_driver
       wprtp_sfc  = latent_ht
       if ( iisclr_thl > 0 ) wpsclrp(:,iisclr_thl) = sens_ht
       if ( iisclr_rt > 0 ) wpsclrp(:,iisclr_rt)   = latent_ht
-      if ( iiedsclr_thl > 0 ) wpedsclrp(:,iiedsclr_thl) = sens_ht
-      if ( iiedsclr_rt > 0 ) wpedsclrp(:,iiedsclr_rt)   = latent_ht
     end if
 
     !---------------------------------------------------------------
@@ -4700,7 +5280,8 @@ module clubb_driver
 
 
   !-----------------------------------------------------------------------------
-  subroutine update_radiation_variables( nz )
+  subroutine update_radiation_variables( nz, radht, Frad_SW_up, Frad_LW_up, &
+                                         Frad_SW_down, Frad_LW_down )
 
     ! Description:
     !   Updates the radiation variables using the stat_var_update() subroutine.
@@ -4724,9 +5305,6 @@ module clubb_driver
       radht_SW_2d, p_in_mb, sp_humidity, Frad_uLW, Frad_dLW, Frad_uSW, Frad_dSW, &
       fdswcl, fuswcl, fdlwcl, fulwcl
 
-    use variables_diagnostic_module, only: &
-      radht, Frad_LW_down, Frad_LW_up, Frad_SW_down, Frad_SW_up !----------------------- Variables
-
     use grid_class, only: &
       flip !------------------------------------------------------------------------- Prodecure(s)
 
@@ -4749,6 +5327,13 @@ module clubb_driver
     ! Input Variables
 
     integer, intent(in) :: nz ! Model domain / # of vertical levels     [-]
+
+    real( kind = core_rknd ), dimension(nz), intent(in) :: &
+      radht,        & ! SW + LW heating rate               [K/s]
+      Frad_SW_up,   & ! SW radiative upwelling flux        [W/m^2]
+      Frad_LW_up,   & ! LW radiative upwelling flux        [W/m^2]
+      Frad_SW_down, & ! SW radiative downwelling flux      [W/m^2]
+      Frad_LW_down    ! LW radiative downwelling flux      [W/m^2]
 
     ! Local Variables
 

@@ -3020,12 +3020,6 @@ module advance_clubb_core_module
       use parameters_model, only: &
           setup_parameters_model ! Procedure
 
-      use variables_diagnostic_module, only: &
-          setup_diagnostic_variables ! Procedure
-
-      use variables_prognostic_module, only: &
-          setup_prognostic_variables ! Procedure
-
       use constants_clubb, only:  &
           fstderr  ! Variable(s)
 
@@ -3414,26 +3408,12 @@ module advance_clubb_core_module
           end if
       end if
 
-#ifdef GFDL
-! setup  prognostic_variables
-      call setup_prognostic_variables( gr%nz ) ! intent(in)  h1g, 2010-06-16
-#else
-      if ( .not. l_implemented ) then
-        call setup_prognostic_variables( gr%nz ) ! intent(in)
-      end if
-#endif
-
-      ! The diagnostic variables need to be
-      ! declared, allocated, initialized, and deallocated whether CLUBB
-      ! is part of a larger model or not.
-      call setup_diagnostic_variables( gr%nz )  ! intent(in)
-
       return
     end subroutine setup_clubb_core
 
     !----------------------------------------------------------------------------
-    subroutine cleanup_clubb_core( l_implemented )
-      !
+    subroutine cleanup_clubb_core( )
+
       ! Description:
       !   Frees memory used by the model itself.
       !
@@ -3441,12 +3421,6 @@ module advance_clubb_core_module
       !   None
       !---------------------------------------------------------------------------
       use parameters_model, only: sclr_tol ! Variable
-
-      use variables_diagnostic_module, only: &
-        cleanup_diagnostic_variables ! Procedure
-
-      use variables_prognostic_module, only: &
-        cleanup_prognostic_variables ! Procedure
 
       use grid_class, only: &
         cleanup_grid ! Procedure
@@ -3456,24 +3430,7 @@ module advance_clubb_core_module
 
       implicit none
 
-      ! Flag to see if CLUBB is running on it's own,
-      ! or if it's implemented as part of a host model.
-      logical, intent(in) :: l_implemented   ! (T/F)
-
       !----- Begin Code -----
-#ifdef GFDL
-      ! cleanup  prognostic_variables
-      call  cleanup_prognostic_variables( )  ! h1g, 2010-06-16
-#else
-      if ( .not. l_implemented ) then
-        call cleanup_prognostic_variables( )
-      end if
-#endif
-
-      ! The diagnostic variables need to be
-      ! declared, allocated, initialized, and deallocated whether CLUBB
-      ! is part of a larger model or not.
-      call cleanup_diagnostic_variables( )
 
       ! De-allocate the array for the passive scalar tolerances
       deallocate( sclr_tol )

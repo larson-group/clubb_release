@@ -914,19 +914,14 @@ contains
   ! cleanup_clubb_core_api - Frees memory used by the model.
   !================================================================================================
 
-  subroutine cleanup_clubb_core_api( &
-    l_implemented )
+  subroutine cleanup_clubb_core_api( )
 
     use advance_clubb_core_module, only : cleanup_clubb_core
 
     implicit none
 
-    ! Flag to see if CLUBB is running on it's own,
-    ! or if it's implemented as part of a host model.
-    logical, intent(in) :: l_implemented   ! (T/F)
+    call cleanup_clubb_core( )
 
-    call cleanup_clubb_core( &
-    l_implemented )
   end subroutine cleanup_clubb_core_api
 
   !================================================================================================
