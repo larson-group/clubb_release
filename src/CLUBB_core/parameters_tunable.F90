@@ -415,6 +415,19 @@ module parameters_tunable
     clubb_C_invrs_tau_N2_wpxp,     &
     clubb_C_invrs_tau_N2_clear_wp3,&
     clubb_C_wp2_splat
+    
+!$omp threadprivate(clubb_C1, clubb_C1b, clubb_C1c, &
+!$omp   clubb_C2rt, clubb_C2thl, clubb_C2rtthl, clubb_C4, &
+!$omp   clubb_C5, clubb_C6rt, clubb_C6rtb, clubb_C6rtc, &
+!$omp   clubb_C6thlb, clubb_C6thlc, &
+!$omp   clubb_C7, clubb_C7b, clubb_C8, clubb_C11, clubb_C11b, clubb_C11c, &
+!$omp   clubb_C14, clubb_C15, &
+!$omp   clubb_beta, clubb_gamma_coef, clubb_gamma_coefb, clubb_gamma_coefc, &
+!$omp   clubb_mu, clubb_nu1, clubb_nu2, clubb_c_K2, clubb_c_K10, clubb_wpxp_L_thresh, &
+!$omp   clubb_C_invrs_tau_bkgnd, clubb_C_invrs_tau_sfc, clubb_C_invrs_tau_shear, &
+!$omp   clubb_C_invrs_tau_N2, clubb_C_invrs_tau_N2_wp2, clubb_C_invrs_tau_N2_xp2, &
+!$omp   clubb_C_invrs_tau_N2_wpxp, clubb_C_invrs_tau_N2_clear_wp3, clubb_C_wp2_splat)    
+    
 #endif /*E3SM*/
 
   contains
