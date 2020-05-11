@@ -1,9 +1,8 @@
 $Id$
 
-
 ********************************************************************************
 *                           Copyright Notice
-*                       This code is (C) 2006-2018
+*                       This code is (C) 2006-2020
 *         Jean-Christophe Golaz, Vincent E. Larson, Brian M. Griffin, 
 *            David P. Schanen, Adam J. Smith, and Michael J. Falk.
 *
@@ -171,52 +170,55 @@ output from the case will be placed in the output directory inside the CLUBB
 checkout.
 
 -------------------------------------------------------
-- STEP 4: VIEWING THE RESULTS WITH PLOTGEN
+- STEP 4: VIEWING THE RESULTS WITH PYPLOTGEN
 -------------------------------------------------------
-After a case has been run, the resulting output (whether it be in either GrADS 
-or netCDF format) can be used to create graphs.  One way is to use an 
-included perl script called plotgen. Plotgen interfaces with MATLAB to 
-produce high-quality plots that allow CLUBB's output to be easily visualized.  
-Another option for plotting the output is to use GrADS, described below.
+After a case has been run, the resulting output in netCDF format can be used 
+to create graphs.  One way is to use an included python3 script called pyplotgen.py. 
+Pyplotgen produces plots that allow CLUBB's output to be easily visualized.  
 Other options for plotting the output can be found at 
 http://www.unidata.ucar.edu/software/netcdf/software.html.
 
 **************************************************************************
                                   NOTE:
-MATLAB, ImageMagick, and Ghostscript are required for plotgen to function!
+Required packages to run pyplotgen --- e.g. pillow, netcdf4, and matplotlib ---
+are contained in postprocessing/pyplotgen/requirements.txt.
 **************************************************************************
 
-The plotgen.pl script is located in the postprocessing/plotgen directory
-inside the CLUBB checkout. Plotgen is run by running the plotgen.pl script,
-telling it where the CLUBB output directory is, and specifying the desired
-plots output directory. This must be called from the postprocessing/plotgen
-directory inside the CLUBB checkout.
+The pyplotgen.py script is located in the postprocessing/pyplotgen directory
+inside the CLUBB checkout. Pyplotgen is run by running the pyplotgen.py script,
+after telling it where the CLUBB output directory is and specifying the desired
+plots output directory. pyplotgen.py can be called from the postprocessing/pyplotgen
+directory inside the CLUBB checkout.  For detailed instructions and options,
+please read postprocessing/pyplotgen/README.md in your CLUBB checkout.
 
-Mac users in W434, at the terminal, type in the following command:
-user@computer$ export PATH="/opt/ImageMagick/bin:$PATH"
+Quickstart for Mac users in room W434 at UWM: At the terminal, type in the following command:
+user@computer$ pip3 install -r requirements.txt
 
-Then, to generate a webpage containing plots, type (if your output 
+Then modify the ALL_CASES variable in pyplotgen/config/Case_definitions.py to
+include the CLUBB case(s) that you'd to plot (and only those cases).
+
+To generate a webpage containing plots, type (if your output 
 is in ~/clubb/output and you want the plots to go in directory ~/plots):
 
-user@computer$ cd  ~/clubb/postprocessing/plotgen
+user@computer$ cd  ~/clubb/postprocessing/pyplotgen
 
-user@computer$ ./plotgen.pl ~/clubb/output ~/plots
+user@computer$ python3 ./pyplotgen.py -c ~/clubb/output -o ~/plots
 
 (Here the tilde, ~, tells the OS to look in the user's home directory.)
-The above line will use plotgen to create plots from the simulation output
+The above line will use pyplotgen to create plots from the simulation output
 in ~/clubb/output, and place the resulting plots in the ~/plots directory.  
-plotgen will create the ~/plots directory if it does not exist,
+pyplotgen will create the ~/plots directory if it does not exist,
 and if it does exist, instead use 
 
-user@computer$ ./plotgen.pl -r ~/clubb/output ~/plots
+user@computer$ python3 ./pyplotgen.py -r -c ~/clubb/output -o ~/plots
 
 in order to overwrite what's in the ~\plots directory.
 If you want to overplot two simulations, move each set of output files to 
 its own directory, e.g. ~/clubb/output/sim1 and ~/clubb/output/sim2, and
 type the command
 
-user@computer$ cd  ~/clubb/postprocessing/plotgen
-user@computer plotgen$ ./plotgen.pl ~/clubb/output/sim1 ~/clubb/output/sim2 ~/plots
+user@computer$ cd  ~/clubb/postprocessing/pyplotgen
+user@computer pyplotgen$ python3 ./pyplotgen.py -c ~/clubb/output/sim1 ~/clubb/output/sim2 -o ~/plots
 
 To view the plots, use a web browser to view index.html in the plots directory.
 user@computer ~$ firefox ~/plots/index.html
@@ -229,15 +231,11 @@ MAC Users in W434 use the following command
 user@computer$ /Applications/Firefox.app/Contents/MacOS/firefox-bin ~/plots/index.html
 assuming that the index.html file is in the plots directory.
 
-Plotgen will plot only the test cases that have output; therefore, if only
-the BOMEX case has been run, for example, the resulting plotgen plots will
-only have BOMEX included.
-
 -------------------------------------------------------
 - SUMMARY FOR LINUX
 -------------------------------------------------------
 
-To check out, compile, and run CLUBB, and use plotgen to view the results,
+To check out, compile, and run CLUBB, and use pyplotgen to view the results,
 follow the following steps:
 
 - Become a CLUBB collaborator
@@ -255,12 +253,11 @@ follow the following steps:
 - Run a benchmark case (e.g. BOMEX)
   - ./run_scm.bash bomex
     (in the clubb/run_scripts directory)
-- Run plotgen to create plots of the output from the benchmark case simulation
-  - ./plotgen.pl ~/clubb/output ~/plots
-    (in the clubb/postprocessing/plotgen directory, assuming CLUBB is checked
+- Run pyplotgen to create plots of the output from the benchmark case simulation
+  - python3 ./pyplotgen.py -c ~/clubb/output -o ~/plots
+    (in the clubb/postprocessing/pyplotgen directory, assuming CLUBB is checked
      out to ~/clubb)
-    (NOTE: MATLAB, Imagemagick, and Ghostscript are required to use plotgen!)
-- View the plotgen plots using a web browser
+- View the pyplotgen plots using a web browser
   - firefox ~/plots/index.html
 
 ***********************************************************************
@@ -736,11 +733,8 @@ The randomization files (only needed for the tuner described below):
 - (2.3) Plotting output from a single-column run:
 -----------------------------------------------------------------------
 
-Plotting scripts are contained in the directory postprocessing/plotgen.
-
-If you have MATLAB and Linux, you can conveniently drive this MATLAB 
-script using the bash script postprocessing/plotgen/plotgen.pl
-See postprocessing/plotgen/README for more information on plotgen.pl.
+A plotting script, pyplotgen.py, is contained in the directory postprocessing/pyplotgen.
+See postprocessing/pyplotgen/README.md for more information on pyplotgen.py.
 
 Otherwise, you can view the raw CLUBB output files in GrADS or netCDF
 format using a plotting program such as GrADS (http://www.iges.org/grads/).
@@ -754,7 +748,7 @@ There are 3 major ways to determine if output files are different, each will
 be covered briefly in this section.
 1) run_bindiff_all.bash script: tests for bit-by-bit equivalence
 2) find_grads_differences.m script: tests for differences up to round-off
-3) plotting the outputs using plotgen: tests for visual agreement
+3) plotting the outputs using pyplotgen: tests for visual agreement
 
 - Comparison using run_bindiff_all.bash
 This script takes two output directories as arguments and will compare the
@@ -787,17 +781,13 @@ Note that this script must be run in Matlab while in the directory where the
 file resides.  Also, the path1, path2 and path3 variables will likely need to
 be set to directories corresponding to the local path(s) of the files being compared.
 
-- Comparison using plotgen
-This method requires Matlab as the plots are generated through Matlab.
+- Comparison using pyplotgen
+This method requires python as the plots are generated through python.
 The basic usage below will plot 1 or more (as many as desired) specified
 output directories against other data for comparison.  For more detailed
-information on plotgen, including detailed usage and options see:
-https://github.com/larson-group/sys_admin/wiki/Plotgen3Usage.
+information on pyplotgen, including detailed usage and options see:
+postprocessing/pyplotgen/README.md in your CLUBB checkout.
 
-Usage: plotgen output_directory1 (output_directory2) ... directory_for_plots
-
-Note that if the directory specified for the plots to be written to already
-exists, a -r flag must also be used to delete all contents of that folder.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %
