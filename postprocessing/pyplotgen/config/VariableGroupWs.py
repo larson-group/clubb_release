@@ -19,7 +19,8 @@ class VariableGroupWs(VariableGroup):
         """
         self.name = "w variables"
         self.variable_definitions = [
-            {'var_names': {
+            {'var_names':
+                {
                 'clubb': ['wp4'],
                 'sam': ['WP4'],
                 'coamps': ['wp4'],
@@ -27,10 +28,12 @@ class VariableGroupWs(VariableGroup):
                 'hoc': ['wp4'],
                 'e3sm': ['wp4'],
                 'cam': ['wp4'],
-                'wrf': []
-            }, 'sci_scale': 0},
-
-            {'var_names': {
+                'wrf': [],
+                },
+             'sci_scale': 0,
+            },
+            {'var_names':
+                {
                 'clubb': ['wp2thlp'],
                 'sam': ['WP2THLP'],
                 'coamps': ['wp2thlp'],
@@ -38,9 +41,12 @@ class VariableGroupWs(VariableGroup):
                 'hoc': ['wp2thlp'],
                 'e3sm': ['wp2thlp'],
                 'cam': ['wp2thlp'],
-                'wrf': []
-            }, 'sci_scale': 0},
-            {'var_names': {
+                'wrf': [],
+                },
+             'sci_scale': 0,
+            },
+            {'var_names':
+                {
                 'clubb': ['wp2rtp'],
                 'sam': ['WP2RTP'],
                 'coamps': ['wp2qtp'],
@@ -48,10 +54,12 @@ class VariableGroupWs(VariableGroup):
                 'hoc': ['wp2rtp'],
                 'e3sm': ['wp2rtp'],
                 'cam': ['wp2rtp'],
-                'wrf': []
-            }, 'sci_scale': -4},
-
-            {'var_names': {
+                'wrf': [],
+                },
+             'sci_scale': -4,
+            },
+            {'var_names':
+                {
                 'clubb': ['wpthlp2'],
                 'sam': ['WPTHLP2'],
                 'coamps': ['wpthlp2'],
@@ -59,10 +67,12 @@ class VariableGroupWs(VariableGroup):
                 'hoc': ['wpthlp2'],
                 'e3sm': ['wpthlp2'],
                 'cam': ['wpthlp2'],
-                'wrf': []
-            }, 'sci_scale': 0},
-
-            {'var_names': {
+                'wrf': [],
+                },
+             'sci_scale': 0,
+            },
+            {'var_names':
+                {
                 'clubb': ['wprtp2'],
                 'sam': ['WPRTP2'],
                 'coamps': ['wpqtp2'],
@@ -70,10 +80,12 @@ class VariableGroupWs(VariableGroup):
                 'hoc': ['wprtp2'],
                 'e3sm': ['wprtp2'],
                 'cam': ['wprtp2'],
-                'wrf': []
-            }, 'sci_scale': -7},
-
-            {'var_names': {
+                'wrf': [],
+                },
+             'sci_scale': -7,
+            },
+            {'var_names':
+                {
                 'clubb': ['wprtpthlp'],
                 'sam': ['WPRTPTHLP'],
                 'coamps': ['wpqtpthlp'],
@@ -81,10 +93,12 @@ class VariableGroupWs(VariableGroup):
                 'hoc': ['wprtpthlp'],
                 'e3sm': ['wprtpthlp'],
                 'cam': ['wprtpthlp'],
-                'wrf': []
-            }, 'sci_scale': -4},
-
-            {'var_names': {
+                'wrf': [],
+                },
+             'sci_scale': -4,
+            },
+            {'var_names':
+                {
                 'clubb': ['wp2thvp'],
                 'sam': ['WP2THVP'],
                 'coamps': ['wp2thvp'],
@@ -92,8 +106,10 @@ class VariableGroupWs(VariableGroup):
                 'hoc': ['wp2thvp'],
                 'e3sm': ['wp2thvp'],
                 'cam': ['wp2thvp'],
-                'wrf': []
-            }, 'sci_scale': 0},
+                'wrf': [],
+                },
+             'sci_scale': 0,
+            },
             # TODO LES
         ]
         super().__init__(case, clubb_datasets=clubb_datasets, les_dataset=les_dataset, coamps_dataset=coamps_dataset,

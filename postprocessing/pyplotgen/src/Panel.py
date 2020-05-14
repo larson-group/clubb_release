@@ -10,7 +10,7 @@ import numpy as np
 from cycler import cycler
 
 from config import Style_definitions
-from src.interoperability import clean_path
+from src.interoperability import clean_path, clean_title
 
 
 class Panel:
@@ -72,6 +72,7 @@ class Panel:
         :param casename: The name of the case that's plotting this panel
         :return: None
         """
+        print('Plotting panel {}'.format(self.title))
         plt.subplot(111)
 
         # Set line color/style. This will cycle through all colors,
@@ -223,9 +224,7 @@ class Panel:
         :param filename: Filename string to have characters removed
         :return: a character stripped version of the filename
         """
-        filename = filename.replace('.', '')
         filename = filename.replace('/', '')
-        filename = filename.replace(',', '')
-        filename = filename.replace(':', '-')
-        filename = filename.replace(' ', '_')
+        filename = clean_path(filename)
+        filename = clean_title(filename)
         return filename

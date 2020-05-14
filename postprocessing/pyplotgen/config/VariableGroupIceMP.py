@@ -19,7 +19,8 @@ class VariableGroupIceMP(VariableGroup):
         """
         self.name = "ice mp variables"
         self.variable_definitions = [
-            {'var_names': {
+            {'var_names':
+                {
                 'clubb': ['rim'],
                 'sam': ['QI', 'QCI'],
                 'coamps': ['rim', 'qim'],
@@ -27,10 +28,13 @@ class VariableGroupIceMP(VariableGroup):
                 'hoc': ['rim'],
                 'e3sm': ['rim'],
                 'cam': ['rim'],
-                'wrf': []
+                'wrf': [],
+                },
+             'sam_conv_factor': 1 / 1000,
+             #'fallback_func': self.getRimFallback,
             },
-                'sam_conv_factor': 1 / 1000},  # , 'fallback_func': self.getRimFallback},
-            {'var_names': {
+            {'var_names':
+                {
                 'clubb': ['Nim'],
                 'sam': ['Nim'],
                 'coamps': ['Nim'],
@@ -38,10 +42,12 @@ class VariableGroupIceMP(VariableGroup):
                 'hoc': ['Nim'],
                 'e3sm': ['Nim'],
                 'cam': ['Nim'],
-                'wrf': []
+                'wrf': [],
+                },
+             'sam_calc': self.getNimSamLine,
             },
-                'sam_calc': self.getNimSamLine},
-            {'var_names': {
+            {'var_names':
+                {
                 'clubb': ['rsm'],
                 'sam': ['QS', 'QPI'],
                 'coamps': ['rsm', 'qsm'],
@@ -49,10 +55,13 @@ class VariableGroupIceMP(VariableGroup):
                 'hoc': ['rsm'],
                 'e3sm': ['rsm'],
                 'cam': ['rsm'],
-                'wrf': []
+                'wrf': [],
+                },
+             'sam_conv_factor': 1 / 1000,
+             #'fallback_func': self.getRsmFallback,
             },
-                'sam_conv_factor': 1 / 1000},  # , 'fallback_func': self.getRsmFallback},
-            {'var_names': {
+            {'var_names':
+                {
                 'clubb': ['Nsm'],
                 'sam': ['Nsm'],
                 'coamps': ['Nsm'],
@@ -60,10 +69,12 @@ class VariableGroupIceMP(VariableGroup):
                 'hoc': ['Nsm'],
                 'e3sm': ['Nsm'],
                 'cam': ['Nsm'],
-                'wrf': []
+                'wrf': [],
+                },
+             'sam_calc': self.getNsmSamLine,
             },
-                'sam_calc': self.getNsmSamLine},
-            {'var_names': {
+            {'var_names':
+                {
                 'clubb': ['iwp'],
                 'sam': ['IWP'],
                 'coamps': ['iwp'],
@@ -71,10 +82,12 @@ class VariableGroupIceMP(VariableGroup):
                 'hoc': ['iwp'],
                 'e3sm': ['iwp'],
                 'cam': ['iwp'],
-                'wrf': []
+                'wrf': [],
+                },
+             'type': Panel.TYPE_TIMESERIES, 'sam_conv_factor': 1 / 1000,
             },
-                'type': Panel.TYPE_TIMESERIES, 'sam_conv_factor': 1 / 1000},
-            {'var_names': {
+            {'var_names':
+                {
                 'clubb': ['swp'],
                 'sam': ['SWP'],
                 'coamps': ['swp'],
@@ -82,10 +95,12 @@ class VariableGroupIceMP(VariableGroup):
                 'hoc': ['swp'],
                 'e3sm': ['swp'],
                 'cam': ['swp'],
-                'wrf': []
+                'wrf': [],
+                },
+             'type': Panel.TYPE_TIMESERIES, 'sam_conv_factor': 1 / 1000,
             },
-                'type': Panel.TYPE_TIMESERIES, 'sam_conv_factor': 1 / 1000},
-            {'var_names': {
+            {'var_names':
+                {
                 'clubb': ['ice_supersat_frac'],
                 'sam': ['ice_supersat_frac'],
                 'coamps': ['ice_supersat_frac'],
@@ -93,10 +108,11 @@ class VariableGroupIceMP(VariableGroup):
                 'hoc': ['ice_supersat_frac'],
                 'e3sm': ['ice_supersat_frac'],
                 'cam': ['ice_supersat_frac'],
-                'wrf': []
-            }},
-
-            {'var_names': {
+                'wrf': [],
+                },
+            },
+            {'var_names':
+                {
                 'clubb': ['Ngm'],
                 'sam': ['NG'],
                 'coamps': ['Ngm'],
@@ -104,10 +120,12 @@ class VariableGroupIceMP(VariableGroup):
                 'hoc': ['Ngm'],
                 'e3sm': ['Ngm'],
                 'cam': ['Ngm'],
-                'wrf': []
+                'wrf': [],
+                },
+             'sam_conv_factor': 10 ** 6,
             },
-                'sam_conv_factor': 10 ** 6},
-            {'var_names': {
+            {'var_names':
+                {
                 'clubb': ['rgm'],
                 'sam': ['QG'],
                 'coamps': ['rgm', 'qgm'],
@@ -115,10 +133,12 @@ class VariableGroupIceMP(VariableGroup):
                 'hoc': ['rgm'],
                 'e3sm': ['rgm'],
                 'cam': ['rgm'],
-                'wrf': []
+                'wrf': [],
+                },
+             'sam_conv_factor': 1 / 1000,
             },
-                'sam_conv_factor': 1 / 1000},
-            {'var_names': {
+            {'var_names':
+                {
                 'clubb': ['precip_rate_sfc'],
                 'sam': ['PREC'],
                 'coamps': ['precip_rate_sfc'],
@@ -126,9 +146,10 @@ class VariableGroupIceMP(VariableGroup):
                 'hoc': ['precip_rate_sfc'],
                 'e3sm': ['precip_rate_sfc'],
                 'cam': ['precip_rate_sfc'],
-                'wrf': []
+                'wrf': [],
+                },
+             'type': Panel.TYPE_TIMESERIES
             },
-                'type': Panel.TYPE_TIMESERIES}
         ]
         super().__init__(case, clubb_datasets=clubb_datasets, les_dataset=les_dataset, coamps_dataset=coamps_dataset,
                          r408_dataset=r408_dataset, hoc_dataset=hoc_dataset, e3sm_datasets=e3sm_datasets,

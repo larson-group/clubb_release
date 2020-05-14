@@ -257,7 +257,8 @@ class VariableGroupBaseBudgets(VariableGroup):
         ]
 
         self.variable_definitions = [
-            {'var_names': {
+            {'var_names':
+                {
                 'clubb': ['thlm'],
                 'sam': ['thlm'],
                 'coamps': ['thlm'],
@@ -265,10 +266,12 @@ class VariableGroupBaseBudgets(VariableGroup):
                 'hoc': ['thlm'],
                 'e3sm': ['thlm'],
                 'cam': ['thlm'],
-                'wrf': ['thlm']
+                'wrf': ['thlm'],
+                },
+             'lines': thlm_budget_lines, 'type': Panel.TYPE_BUDGET, 'centered': True,
             },
-                'lines': thlm_budget_lines, 'type': Panel.TYPE_BUDGET, 'centered': True},
-            {'var_names': {
+            {'var_names':
+                {
                 'clubb': ['rtm'],
                 'sam': ['rtm'],
                 'coamps': ['rtm'],
@@ -276,10 +279,12 @@ class VariableGroupBaseBudgets(VariableGroup):
                 'hoc': ['rtm'],
                 'e3sm': ['rtm'],
                 'cam': ['rtm'],
-                'wrf': ['rtm']
+                'wrf': ['rtm'],
+                },
+             'lines': rtm_budget_lines, 'type': Panel.TYPE_BUDGET, 'centered': True,
             },
-                'lines': rtm_budget_lines, 'type': Panel.TYPE_BUDGET, 'centered': True},
-            {'var_names': {
+            {'var_names':
+                {
                 'clubb': ['wpthlp'],
                 'sam': ['wpthlp'],
                 'coamps': ['wpthlp'],
@@ -287,10 +292,12 @@ class VariableGroupBaseBudgets(VariableGroup):
                 'hoc': ['wpthlp'],
                 'e3sm': ['wpthlp'],
                 'cam': ['wpthlp'],
-                'wrf': ['wpthlp']
+                'wrf': ['wpthlp'],
+                },
+             'lines': wpthlp_budget_lines, 'type': Panel.TYPE_BUDGET, 'centered': True,
             },
-                'lines': wpthlp_budget_lines, 'type': Panel.TYPE_BUDGET, 'centered': True},
-            {'var_names': {
+            {'var_names':
+                {
                 'clubb': ['wprtp'],
                 'sam': ['wprtp'],
                 'coamps': ['wprtp'],
@@ -298,10 +305,12 @@ class VariableGroupBaseBudgets(VariableGroup):
                 'hoc': ['wprtp'],
                 'e3sm': ['wprtp'],
                 'cam': ['wprtp'],
-                'wrf': ['wprtp']
+                'wrf': ['wprtp'],
+                },
+             'lines': wprtp_budget_lines, 'type': Panel.TYPE_BUDGET, 'centered': True,
             },
-                'lines': wprtp_budget_lines, 'type': Panel.TYPE_BUDGET, 'centered': True},
-            {'var_names': {
+            {'var_names':
+                {
                 'clubb': ['wp2'],
                 'sam': ['wp2'],
                 'coamps': ['wp2'],
@@ -309,10 +318,12 @@ class VariableGroupBaseBudgets(VariableGroup):
                 'hoc': ['wp2'],
                 'e3sm': ['wp2'],
                 'cam': ['wp2'],
-                'wrf': ['wp2']
+                'wrf': ['wp2'],
+                },
+             'lines': wp2_budget_lines, 'type': Panel.TYPE_BUDGET, 'centered': True,
             },
-                'lines': wp2_budget_lines, 'type': Panel.TYPE_BUDGET, 'centered': True},
-            {'var_names': {
+            {'var_names':
+                {
                 'clubb': ['wp3'],
                 'sam': ['wp3'],
                 'coamps': ['wp3'],
@@ -320,10 +331,12 @@ class VariableGroupBaseBudgets(VariableGroup):
                 'hoc': ['wp3'],
                 'e3sm': ['wp3'],
                 'cam': ['wp3'],
-                'wrf': ['wp3']
+                'wrf': ['wp3'],
+                },
+             'lines': wp3_budget_lines, 'type': Panel.TYPE_BUDGET, 'centered': True,
             },
-                'lines': wp3_budget_lines, 'type': Panel.TYPE_BUDGET, 'centered': True},
-            {'var_names': {
+            {'var_names':
+                {
                 'clubb': ['thlp2'],
                 'sam': ['thlp2'],
                 'coamps': ['thlp2'],
@@ -331,10 +344,12 @@ class VariableGroupBaseBudgets(VariableGroup):
                 'hoc': ['thlp2'],
                 'e3sm': ['thlp2'],
                 'cam': ['thlp2'],
-                'wrf': ['thlp2']
+                'wrf': ['thlp2'],
+                },
+             'lines': thlp2_budget_lines, 'type': Panel.TYPE_BUDGET, 'centered': True,
             },
-                'lines': thlp2_budget_lines, 'type': Panel.TYPE_BUDGET, 'centered': True},
-            {'var_names': {
+            {'var_names':
+                {
                 'clubb': ['rtp2'],
                 'sam': ['rtp2'],
                 'coamps': ['rtp2'],
@@ -342,10 +357,12 @@ class VariableGroupBaseBudgets(VariableGroup):
                 'hoc': ['rtp2'],
                 'e3sm': ['rtp2'],
                 'cam': ['rtp2'],
-                'wrf': ['rtp2']
+                'wrf': ['rtp2'],
+                },
+             'lines': rtp2_budget_lines, 'type': Panel.TYPE_BUDGET, 'centered': True,
             },
-                'lines': rtp2_budget_lines, 'type': Panel.TYPE_BUDGET, 'centered': True},
-            {'var_names': {
+            {'var_names':
+                {
                 'clubb': ['rtpthlp'],
                 'sam': ['rtpthlp'],
                 'coamps': ['rtpthlp'],
@@ -353,10 +370,12 @@ class VariableGroupBaseBudgets(VariableGroup):
                 'hoc': ['rtpthlp'],
                 'e3sm': ['rtpthlp'],
                 'cam': ['rtpthlp'],
-                'wrf': ['rtpthlp']
+                'wrf': ['rtpthlp'],
+                },
+             'lines': rtpthlp_budget_lines, 'type': Panel.TYPE_BUDGET, 'centered': True,
             },
-                'lines': rtpthlp_budget_lines, 'type': Panel.TYPE_BUDGET, 'centered': True},
-            {'var_names': {
+            {'var_names':
+                {
                 'clubb': ['upwp'],
                 'sam': ['upwp'],
                 'coamps': ['upwp'],
@@ -364,10 +383,12 @@ class VariableGroupBaseBudgets(VariableGroup):
                 'hoc': ['upwp'],
                 'e3sm': ['upwp'],
                 'cam': ['upwp'],
-                'wrf': ['upwp']
+                'wrf': ['upwp'],
+                },
+             'lines': upwp_budget_lines, 'type': Panel.TYPE_BUDGET, 'centered': True,
             },
-                'lines': upwp_budget_lines, 'type': Panel.TYPE_BUDGET, 'centered': True},
-            {'var_names': {
+            {'var_names':
+                {
                 'clubb': ['vpwp'],
                 'sam': ['vpwp'],
                 'coamps': ['vpwp'],
@@ -375,10 +396,12 @@ class VariableGroupBaseBudgets(VariableGroup):
                 'hoc': ['vpwp'],
                 'e3sm': ['vpwp'],
                 'cam': ['vpwp'],
-                'wrf': ['vpwp']
+                'wrf': ['vpwp'],
+                },
+             'lines': vpwp_budget_lines, 'type': Panel.TYPE_BUDGET, 'centered': True,
             },
-                'lines': vpwp_budget_lines, 'type': Panel.TYPE_BUDGET, 'centered': True},
-            {'var_names': {
+            {'var_names':
+                {
                 'clubb': ['um'],
                 'sam': ['um'],
                 'coamps': ['um'],
@@ -386,10 +409,12 @@ class VariableGroupBaseBudgets(VariableGroup):
                 'hoc': ['um'],
                 'e3sm': ['um'],
                 'cam': ['um'],
-                'wrf': ['um']
+                'wrf': ['um'],
+                },
+             'lines': um_budget_lines, 'type': Panel.TYPE_BUDGET, 'centered': True,
             },
-                'lines': um_budget_lines, 'type': Panel.TYPE_BUDGET, 'centered': True},
-            {'var_names': {
+            {'var_names':
+                {
                 'clubb': ['vm'],
                 'sam': ['vm'],
                 'coamps': ['vm'],
@@ -397,11 +422,12 @@ class VariableGroupBaseBudgets(VariableGroup):
                 'hoc': ['vm'],
                 'e3sm': ['vm'],
                 'cam': ['vm'],
-                'wrf': ['vm']
+                'wrf': ['vm'],
+                },
+             'lines': vm_budget_lines, 'type': Panel.TYPE_BUDGET, 'centered': True,
             },
-                'lines': vm_budget_lines, 'type': Panel.TYPE_BUDGET, 'centered': True},
-
-            {'var_names': {
+            {'var_names':
+                {
                 'clubb': ['rrm'],
                 'sam': ['rrm'],
                 'coamps': ['rrm'],
@@ -409,11 +435,12 @@ class VariableGroupBaseBudgets(VariableGroup):
                 'hoc': ['rrm'],
                 'e3sm': ['rrm'],
                 'cam': ['rrm'],
-                'wrf': ['rrm']
+                'wrf': ['rrm'],
+                },
+             'lines': rrm_budget_lines, 'type': Panel.TYPE_BUDGET, 'centered': True,
             },
-                'lines': rrm_budget_lines, 'type': Panel.TYPE_BUDGET, 'centered': True},
-
-            {'var_names': {
+            {'var_names':
+                {
                 'clubb': ['Nrm'],
                 'sam': ['Nrm'],
                 'coamps': ['Nrm'],
@@ -421,9 +448,10 @@ class VariableGroupBaseBudgets(VariableGroup):
                 'hoc': ['Nrm'],
                 'e3sm': ['Nrm'],
                 'cam': ['Nrm'],
-                'wrf': ['Nrm']
+                'wrf': ['Nrm'],
+                },
+             'lines': Nrm_budget_lines, 'type': Panel.TYPE_BUDGET, 'centered': True
             },
-                'lines': Nrm_budget_lines, 'type': Panel.TYPE_BUDGET, 'centered': True}
         ]
         super().__init__(case, clubb_datasets=clubb_datasets, les_dataset=les_dataset, coamps_dataset=coamps_dataset,
                          r408_dataset=r408_dataset, cam_datasets=cam_datasets,

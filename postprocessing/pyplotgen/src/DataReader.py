@@ -87,7 +87,7 @@ class NetCdfVariable:
         """
 
         # If dependent_data is a an array with 1 element, return 0's
-        if(len(data) is 1):
+        if(len(data) == 1):
             return 0, 1
 
         start_idx = 0
@@ -319,7 +319,7 @@ class DataReader():
             warn("Time averaging interval is small (less than or equal to 10): " + str(idx_t1 - idx_t0) +
                  " | (idx_t0 = " + str(idx_t0) + ", idx_t1 = " + str(
                 idx_t1) + ").")
-        if avg_axis is 0:  # if time-averaged
+        if avg_axis == 0:  # if time-averaged
             var_average = np.nanmean(var[idx_t0:idx_t1, :], axis=avg_axis)
         else:  # if height averaged
             var_average = np.nanmean(var[:, idx_z0:idx_z1], axis=avg_axis)
@@ -473,7 +473,7 @@ class DataReader():
         """
 
         # If dependent_data is a an array with 1 element, return 0's
-        if(len(data) is 1):
+        if(len(data) == 1):
             return 0, 0
 
         start_idx = 0

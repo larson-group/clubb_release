@@ -19,7 +19,8 @@ class VariableGroupLiquidMP(VariableGroup):
         """
         self.name = "liquid mp variables"
         self.variable_definitions = [
-            {'var_names': {
+            {'var_names':
+                {
                 'clubb': ['Ncm'],
                 'sam': ['Ncm'],
                 'coamps': ['Ncm'],
@@ -27,10 +28,12 @@ class VariableGroupLiquidMP(VariableGroup):
                 'hoc': ['Ncm'],
                 'e3sm': ['Ncm'],
                 'cam': ['Ncm'],
-                'wrf': []
+                'wrf': [],
+                },
+             'sam_calc': self.getNcmSamLine,
             },
-                'sam_calc': self.getNcmSamLine},
-            {'var_names': {
+            {'var_names':
+                {
                 'clubb': ['Nc_in_cloud'],
                 'sam': ['Nc_in_cloud'],
                 'coamps': ['Nc_in_cloud'],
@@ -38,10 +41,11 @@ class VariableGroupLiquidMP(VariableGroup):
                 'hoc': ['Nc_in_cloud'],
                 'e3sm': ['Nc_in_cloud'],
                 'cam': ['Nc_in_cloud'],
-                'wrf': []
-            }},
-
-            {'var_names': {
+                'wrf': [],
+                },
+            },
+            {'var_names':
+                {
                 'clubb': ['precip_frac'],
                 'sam': ['precip_frac'],
                 'coamps': ['precip_frac'],
@@ -49,10 +53,11 @@ class VariableGroupLiquidMP(VariableGroup):
                 'hoc': ['precip_frac'],
                 'e3sm': ['precip_frac'],
                 'cam': ['precip_frac'],
-                'wrf': []
-            }},
-
-            {'var_names': {
+                'wrf': [],
+                },
+            },
+            {'var_names':
+                {
                 'clubb': ['rrm'],
                 'sam': ['QPL'],
                 'coamps': ['rrm'],
@@ -60,10 +65,12 @@ class VariableGroupLiquidMP(VariableGroup):
                 'hoc': ['rrm'],
                 'e3sm': ['rrm'],
                 'cam': ['rrm'],
-                'wrf': []
+                'wrf': [],
+                },
+             'sam_conv_factor': 1 / 1000,
             },
-                'sam_conv_factor': 1 / 1000},
-            {'var_names': {
+            {'var_names':
+                {
                 'clubb': ['Nrm'],
                 'sam': ['Nrm'],
                 'coamps': ['Nrm'],
@@ -71,10 +78,12 @@ class VariableGroupLiquidMP(VariableGroup):
                 'hoc': ['Nrm'],
                 'e3sm': ['Nrm'],
                 'cam': ['Nrm'],
-                'wrf': []
+                'wrf': [],
+                },
+             'sam_calc': self.getNrmSamLine,
             },
-                'sam_calc': self.getNrmSamLine},
-            {'var_names': {
+            {'var_names':
+                {
                 'clubb': ['wprrp'],
                 'sam': ['WPRRP'],
                 'coamps': ['wprrp'],
@@ -82,10 +91,12 @@ class VariableGroupLiquidMP(VariableGroup):
                 'hoc': ['wprrp'],
                 'e3sm': ['wprrp'],
                 'cam': ['wprrp'],
-                'wrf': []
-            }},
+                'wrf': [],
+                },
+            },
             # Not found in lba case file
-            {'var_names': {
+            {'var_names':
+                {
                 'clubb': ['wpNrp'],
                 'sam': ['WPNRP'],
                 'coamps': ['wpNrp'],
@@ -93,10 +104,12 @@ class VariableGroupLiquidMP(VariableGroup):
                 'hoc': ['wpNrp'],
                 'e3sm': ['wpNrp'],
                 'cam': ['wpNrp'],
-                'wrf': []
-            }},
+                'wrf': [],
+                },
+            },
             # Not found in lba case file
-            {'var_names': {
+            {'var_names':
+                {
                 'clubb': ['rwp'],
                 'sam': ['RWP'],
                 'coamps': ['rwp'],
@@ -104,10 +117,12 @@ class VariableGroupLiquidMP(VariableGroup):
                 'hoc': ['rwp'],
                 'e3sm': ['rwp'],
                 'cam': ['rwp'],
-                'wrf': []
+                'wrf': [],
+                },
+             'sam_conv_factor': 1 / 1000, 'type': Panel.TYPE_TIMESERIES,
             },
-                'sam_conv_factor': 1 / 1000, 'type': Panel.TYPE_TIMESERIES},
-            {'var_names': {
+            {'var_names':
+                {
                 'clubb': ['precip_rate_sfc'],
                 'sam': ['precip_rate_sfc'],
                 'coamps': ['precip_rate_sfc'],
@@ -115,10 +130,10 @@ class VariableGroupLiquidMP(VariableGroup):
                 'hoc': ['precip_rate_sfc'],
                 'e3sm': ['precip_rate_sfc'],
                 'cam': ['precip_rate_sfc'],
-                'wrf': []
+                'wrf': [],
+                },
+             'type': Panel.TYPE_TIMESERIES
             },
-                'type': Panel.TYPE_TIMESERIES}
-
         ]
         # rain_rate_sfc vs time
 

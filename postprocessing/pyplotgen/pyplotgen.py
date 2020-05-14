@@ -236,7 +236,6 @@ class PyPlotGen:
             string = string.replace(':', '-')
         return string
 
-
 def __process_args__():
     """
     This method takes arguments in from the command line and feeds them into

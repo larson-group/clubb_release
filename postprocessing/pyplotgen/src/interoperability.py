@@ -28,3 +28,25 @@ def clean_path(string):
     else:
         string = string.replace(':', '-')
     return string
+
+# def delete_folder(path):
+#     """
+#     Delete folder and its contents
+
+#     :param path: Path to folder which should be deleted
+#     """
+#     if 'win' in os.name.lower() or 'nt' in os.name.lower():
+#         subprocess.run(['rmdir', '/s /q', path])
+#     else:
+#         subprocess.run(['rm', '-rf', path])
+
+def clean_title(string):
+    """
+    Cleans plot titles so they can be used as part of a file name.
+    Matplotlib plot titles may contain latex code enclosed in $s.
+    This code should be removed entirely to avoid having invalid characters in file names.
+    
+    :param string: Title of a plot which is used to generate a file name
+    :return: A cleaned version of the input string
+    """
+    return re.sub('\$[^$]*\$','',string)
