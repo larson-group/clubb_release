@@ -36,7 +36,6 @@ module advance_wp2_wp3_module
              wp2_term_dp1_rhs_all, &
              wp2_term_pr3_rhs_all, & 
              wp2_term_pr1_rhs_all, & 
-             wp3_term_ta_new_pdf_lhs_all, &
              wp3_term_ta_ADG1_lhs_all, & 
              wp3_term_tp_lhs_all, & 
              wp3_terms_ac_pr2_lhs_all, & 
@@ -1575,11 +1574,10 @@ module advance_wp2_wp3_module
             ! The new PDF or the new hybrid PDF is used.
 
             ! Calculate terms
-            call wp3_term_ta_new_pdf_lhs_all( coef_wp4_implicit(:), &
-                                              wp2(:), rho_ds_zm(:), &
-                                              invrs_rho_ds_zt(:), &
-                                              gr%invrs_dzt(:), &
-                                              lhs_ta_wp3(:,:) )
+            call wp3_term_ta_new_pdf_lhs( coef_wp4_implicit(:), wp2(:), &
+                                          rho_ds_zm(:), invrs_rho_ds_zt(:), &
+                                          gr%invrs_dzt(:), &
+                                          lhs_ta_wp3(:,:) )
 
             ! Save terms in wp3_term_ta_lhs_result
             wp3_term_ta_lhs_result((/2,4/),:) = lhs_ta_wp3(:,:)
@@ -2203,11 +2201,10 @@ module advance_wp2_wp3_module
             ! The new PDF or the new hybrid PDF is used.
 
             ! Calculate terms
-            call wp3_term_ta_new_pdf_lhs_all( coef_wp4_implicit(:), &
-                                              wp2(:), rho_ds_zm(:), &
-                                              invrs_rho_ds_zt(:), &
-                                              gr%invrs_dzt(:), &
-                                              lhs_ta_wp3(:,:) )
+            call wp3_term_ta_new_pdf_lhs( coef_wp4_implicit(:), wp2(:), &
+                                          rho_ds_zm(:), invrs_rho_ds_zt(:), &
+                                          gr%invrs_dzt(:), &
+                                          lhs_ta_wp3(:,:) )
             ! Add terms
             do k = 2, gr%nz-1
 
@@ -3457,12 +3454,9 @@ module advance_wp2_wp3_module
     end subroutine wp2_term_pr1_rhs_all
 
   !=============================================================================
-  pure function wp3_term_ta_new_pdf_lhs( coef_wp4_implicit, &
-                                         coef_wp4_implicitm1, &
-                                         wp2, wp2m1, rho_ds_zm, &
-                                         rho_ds_zmm1, invrs_rho_ds_zt, &
-                                         invrs_dzt ) &
-  result( lhs )
+  pure subroutine wp3_term_ta_new_pdf_lhs( coef_wp4_implicit, wp2, rho_ds_zm, &
+                                           invrs_rho_ds_zt, invrs_dzt, &
+                                           lhs_ta_wp3 )
 
     ! Description:
     ! Turbulent advection of <w'^3>:  implicit portion of the code.
@@ -3527,7 +3521,7 @@ module advance_wp2_wp3_module
     !
     ! -------coef_wp4_implicit_zt-----dG/dz-----invrs_rho_ds_zt----wp3--- t(k)
     !
-    ! =======coef_wp4_implicitm1(interp)=====wp2m1=======rho_ds_zmm1===== m(k-1)
+    ! =======coef_wp4_implicit(interp)=======wp2=========rho_ds_zm======= m(k-1)
     !
     ! -------coef_wp4_implicit_zt---------------------------------------- t(k-1)
     !
@@ -3541,8 +3535,14 @@ module advance_wp2_wp3_module
     ! References:
     !-----------------------------------------------------------------------
 
+    use constants_clubb, only: &
+        zero
+
+    use grid_class, only:  &
+        gr    ! Variable Type(s)
+
     use clubb_precision, only: &
-        core_rknd ! Variable(s)
+        core_rknd    ! Variable(s)
 
     implicit none
 
@@ -3552,98 +3552,48 @@ module advance_wp2_wp3_module
       km1_mdiag = 2    ! Momentum subdiagonal index. 
 
     ! Input Variables
-    real( kind = core_rknd ), intent(in) :: &
-      coef_wp4_implicit,   & ! <w'^4>=coef_wp4_implicit*<w'^2>^2; m-lev(k)   [-]
-      coef_wp4_implicitm1, & ! <w'^4>=coef_wp4_implicit*<w'^2>^2; m-lev(k-1) [-]
-      wp2,                 & ! w'^2(k)                                 [m^2/s^2]
-      wp2m1,               & ! w'^2(k-1)                               [m^2/s^2]
-      rho_ds_zm,           & ! Dry, static density at mom lev (k)       [kg/m^3]
-      rho_ds_zmm1,         & ! Dry, static density at mom lev (k-1)     [kg/m^3]
-      invrs_rho_ds_zt,     & ! Inv dry, static density @ thermo lev (k) [m^3/kg]
-      invrs_dzt              ! Inverse of grid spacing (k)              [1/m]
+    real( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
+      coef_wp4_implicit, & ! <w'^4>=coef_wp4_implicit*<w'^2>^2; m-levs [-]
+      wp2,               & ! <w'^2>                                    [m^2/s^2]
+      rho_ds_zm,         & ! Dry, static density at momentum levels    [kg/m^3]
+      invrs_rho_ds_zt,   & ! Inv dry, static density at thermo levels  [m^3/kg]
+      invrs_dzt            ! Inverse of grid spacing                   [1/m]
 
     ! Return Variable
-    real( kind = core_rknd ), dimension(2) :: lhs
+    real( kind = core_rknd ), dimension(2,gr%nz), intent(out) :: &
+      lhs_ta_wp3
+
+    ! Local Variable
+    integer :: k    ! Vertical index
 
 
-    ! Momentum superdiagonal: [ x wp2(k,<t+1>) ]
-    lhs(k_mdiag) &
-    = + invrs_rho_ds_zt * invrs_dzt * rho_ds_zm * coef_wp4_implicit * wp2
+    ! Set term at lower boundary to 0
+    lhs_ta_wp3(k_mdiag,1) = zero
+    lhs_ta_wp3(km1_mdiag,1) = zero
 
-    ! Momentum subdiagonal: [ x wp2(k-1,<t+1>) ]
-    lhs(km1_mdiag) &
-    = - invrs_rho_ds_zt * invrs_dzt * rho_ds_zmm1 * coef_wp4_implicitm1 * wp2m1
+    ! Calculate term at interior levels
+    do k = 2, gr%nz-1
+
+       ! Momentum superdiagonal: [ x wp2(k,<t+1>) ]
+       lhs_ta_wp3(k_mdiag,k) &
+       = + invrs_rho_ds_zt(k) * invrs_dzt(k) * rho_ds_zm(k) &
+           * coef_wp4_implicit(k) * wp2(k)
+
+       ! Momentum subdiagonal: [ x wp2(k-1,<t+1>) ]
+       lhs_ta_wp3(km1_mdiag,k) &
+       = - invrs_rho_ds_zt(k) * invrs_dzt(k) * rho_ds_zm(k-1) &
+           * coef_wp4_implicit(k-1) * wp2(k-1)
+
+    enddo ! k = 2, gr%nz-1
+
+    ! Set term at upper boundary to 0
+    lhs_ta_wp3(k_mdiag,gr%nz) = zero
+    lhs_ta_wp3(km1_mdiag,gr%nz) = zero
 
 
     return
 
-  end function wp3_term_ta_new_pdf_lhs
-
-    !======================================================================================
-    pure subroutine wp3_term_ta_new_pdf_lhs_all( coef_wp4_implicit, &
-                                                 wp2, rho_ds_zm, &
-                                                 invrs_rho_ds_zt, &
-                                                 invrs_dzt, &
-                                                 lhs_ta_wp3 )
-    ! Description:
-    !     This subroutine serves the same function as wp3_term_ta_new_pdf_lhs (above), but
-    !     calculates terms for all grid levels at once rather than one at a time.
-    !     This was done so that this code could be vectorized and thereby sped up
-    !     by the compiler. See clubb:ticket:834 for more information.
-    ! 
-    !--------------------------------------------------------------------------------------
-
-        use clubb_precision, only: &
-            core_rknd ! Variable(s)
-
-        use grid_class, only:  &
-            gr      ! Variable
-
-        implicit none
-
-        ! Constant parameters
-        integer, parameter :: & 
-          k_mdiag   = 1, & ! Momentum superdiagonal index.
-          km1_mdiag = 2    ! Momentum subdiagonal index. 
-
-        ! Input Variables
-        real( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
-          coef_wp4_implicit,   & ! <w'^4>=coef_wp4_implicit*<w'^2>^2; m-lev(k)   [-]
-          wp2,                 & ! w'^2(k)                                 [m^2/s^2]
-          rho_ds_zm,           & ! Dry, static density at mom lev (k)       [kg/m^3]
-          invrs_rho_ds_zt,     & ! Inv dry, static density @ thermo lev (k) [m^3/kg]
-          invrs_dzt              ! Inverse of grid spacing (k)              [1/m]
-
-        ! Return Variable
-        real( kind = core_rknd ), dimension(2,gr%nz), intent(out) :: lhs_ta_wp3
-
-        ! Loop variable
-        integer :: k
-
-        ! Set lower boundary to 0
-        lhs_ta_wp3(1,1) = 0.0_core_rknd
-        lhs_ta_wp3(2,1) = 0.0_core_rknd
-
-        ! Calculate non-boundary terms
-        do k = 2, gr%nz-1
-
-            ! Momentum superdiagonal: [ x wp2(k,<t+1>) ]
-            lhs_ta_wp3(1,k) = + invrs_rho_ds_zt(k) * invrs_dzt(k) * rho_ds_zm(k) &
-                              * coef_wp4_implicit(k) * wp2(k)
-
-            ! Momentum subdiagonal: [ x wp2(k-1,<t+1>) ]
-            lhs_ta_wp3(2,k) = - invrs_rho_ds_zt(k) * invrs_dzt(k) * rho_ds_zm(k-1) &
-                              * coef_wp4_implicit(k-1) * wp2(k-1)
-
-        end do
-
-        ! Set upper boundary to 0
-        lhs_ta_wp3(1,gr%nz) = 0.0_core_rknd
-        lhs_ta_wp3(2,gr%nz) = 0.0_core_rknd
-
-        return
-
-    end subroutine wp3_term_ta_new_pdf_lhs_all
+  end subroutine wp3_term_ta_new_pdf_lhs
 
   !=============================================================================
   pure function wp3_term_ta_ADG1_lhs( wp2, wp2m1, &
