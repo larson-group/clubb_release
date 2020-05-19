@@ -29,7 +29,6 @@ module advance_wp2_wp3_module
              wp3_terms_bp1_pr2_rhs, & 
              wp3_term_pr1_rhs, &
              wp3_term_bp2_rhs, &
-             wp2_term_ta_lhs_all, & 
              wp2_terms_ac_pr2_lhs_all, & 
              wp2_term_dp1_lhs_all, & 
              wp2_term_pr1_lhs_all, & 
@@ -1381,10 +1380,8 @@ module advance_wp2_wp3_module
 
 
     ! Calculate turbulent advection terms for wp2
-    call wp2_term_ta_lhs_all( rho_ds_zt(:), &
-                              invrs_rho_ds_zm(:), &
-                              gr%invrs_dzm(:), &
-                              lhs_ta_wp2(:,:) )
+    call wp2_term_ta_lhs( rho_ds_zt(:), invrs_rho_ds_zm(:), gr%invrs_dzm(:), &
+                          lhs_ta_wp2(:,:) )
 
 
     ! Calculate accumulation terms of w'^2 and w'^2 pressure term 2
@@ -2495,9 +2492,8 @@ module advance_wp2_wp3_module
   end subroutine wp23_rhs
 
   !=============================================================================
-  pure function wp2_term_ta_lhs( rho_ds_ztp1, rho_ds_zt, &
-                                 invrs_rho_ds_zm, invrs_dzm ) &
-  result( lhs )
+  pure subroutine wp2_term_ta_lhs( rho_ds_zt, invrs_rho_ds_zm, invrs_dzm, &
+                                   lhs_ta_wp2 )
 
     ! Description:
     ! Turbulent advection term for w'^2:  implicit portion of the code.
@@ -2529,7 +2525,7 @@ module advance_wp2_wp3_module
     ! momentum level, where it is multiplied by invrs_rho_ds_zm, yielding the
     ! desired results.
     !
-    ! -----rho_ds_ztp1--------wp3p1---------------------------- t(k+1)
+    ! -----rho_ds_zt----------wp3------------------------------ t(k+1)
     !
     ! ========invrs_rho_ds_zm==========d(rho_ds*wp3)/dz======== m(k)
     !
@@ -2544,8 +2540,14 @@ module advance_wp2_wp3_module
     ! References:
     !-----------------------------------------------------------------------
 
+    use constants_clubb, only: &
+        zero    ! Constant(s)
+
+    use grid_class, only: & 
+        gr    ! Variable Type(s)
+
     use clubb_precision, only: &
-      core_rknd ! Variable(s)
+        core_rknd    ! Variable(s)
 
     implicit none
 
@@ -2555,84 +2557,44 @@ module advance_wp2_wp3_module
       k_tdiag   = 2       ! Thermodynamic subdiagonal index.
 
     ! Input Variables
-    real( kind = core_rknd ), intent(in) :: &
-      rho_ds_ztp1,     & ! Dry, static density at thermo. level (k+1)  [kg/m^3]
-      rho_ds_zt,       & ! Dry, static density at thermo. level (k)    [kg/m^3]
-      invrs_rho_ds_zm, & ! Inv. dry, static density @ moment. lev. (k) [m^3/kg]
-      invrs_dzm          ! Inverse of grid spacing (k)                 [1/m]
+    real( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
+      rho_ds_zt,       & ! Dry, static density at thermodynamic levels  [kg/m^3]
+      invrs_rho_ds_zm, & ! Inv. dry, static density at momentum levels  [m^3/kg]
+      invrs_dzm          ! Inverse of grid spacing                      [1/m]
 
     ! Return Variable
-    real( kind = core_rknd ), dimension(2) :: lhs
+    real( kind = core_rknd ), dimension(2,gr%nz), intent(out) :: &
+      lhs_ta_wp2
 
-    ! Thermodynamic superdiagonal: [ x wp3(k+1,<t+1>) ]
-    lhs(kp1_tdiag) & 
-    = + invrs_rho_ds_zm * invrs_dzm * rho_ds_ztp1
+    ! Local variables
+    integer :: k    ! Vertical level index
 
-    ! Thermodynamic subdiagonal: [ x wp3(k,<t+1>) ]
-    lhs(k_tdiag) & 
-    = - invrs_rho_ds_zm * invrs_dzm * rho_ds_zt
+
+    ! Set lower boundary to 0
+    lhs_ta_wp2(kp1_tdiag,1) = zero
+    lhs_ta_wp2(k_tdiag,1) = zero
+
+    ! Calculate non-boundary terms
+    do k = 2, gr%nz-1 
+
+       ! Thermodynamic superdiagonal: [ x wp3(k+1,<t+1>) ]
+       lhs_ta_wp2(kp1_tdiag,k) &
+       = + invrs_rho_ds_zm(k) * invrs_dzm(k) * rho_ds_zt(k+1)
+
+       ! Thermodynamic subdiagonal: [ x wp3(k,<t+1>) ]
+       lhs_ta_wp2(k_tdiag,k) &
+       = - invrs_rho_ds_zm(k) * invrs_dzm(k) * rho_ds_zt(k)
+
+    enddo
+
+    ! Set upper boundary to 0
+    lhs_ta_wp2(kp1_tdiag,gr%nz) = zero
+    lhs_ta_wp2(k_tdiag,gr%nz) = zero
+
 
     return
 
-  end function wp2_term_ta_lhs
-
-
-    !=============================================================================
-    pure subroutine wp2_term_ta_lhs_all( rho_ds_zt, &
-                                         invrs_rho_ds_zm, &
-                                         invrs_dzm, &
-                                         lhs_ta_wp2 )
-    ! Description:
-    !     This subroutine serves the same function as wp2_term_ta_lhs (above), but
-    !     calculates terms for all grid levels at once rather than one at a time.
-    !     This was done so that this code could be vectorized and thereby sped up
-    !     by the compiler. See clubb:ticket:834 for more information.
-    ! 
-    !-----------------------------------------------------------------------------
-
-        use clubb_precision, only: &
-          core_rknd ! Variable(s)
-
-        use grid_class, only:  & 
-            gr ! Variable
-
-        implicit none
-
-
-        ! Input Variables
-        real( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
-          rho_ds_zt,       & ! Dry, static density at thermo. level (k)    [kg/m^3]
-          invrs_rho_ds_zm, & ! Inv. dry, static density @ moment. lev. (k) [m^3/kg]
-          invrs_dzm          ! Inverse of grid spacing (k)                 [1/m]
-
-        ! Return Variable
-        real( kind = core_rknd ), dimension(2,gr%nz), intent(out) :: lhs_ta_wp2
-
-        ! Loop variable
-        integer :: k
-
-        ! Set lower boundary to 0
-        lhs_ta_wp2(1,1) = 0.0_core_rknd
-        lhs_ta_wp2(2,1) = 0.0_core_rknd
-
-        ! Calculate non-boundary terms
-        do k = 2, gr%nz-1 
-
-            ! Thermodynamic superdiagonal: [ x wp3(k+1,<t+1>) ]
-            lhs_ta_wp2(1,k) = + invrs_rho_ds_zm(k) * invrs_dzm(k) * rho_ds_zt(k+1)
-
-            ! Thermodynamic subdiagonal: [ x wp3(k,<t+1>) ]
-            lhs_ta_wp2(2,k) = - invrs_rho_ds_zm(k) * invrs_dzm(k) * rho_ds_zt(k)
-
-        end do
-
-        ! Set upper boundary to 0
-        lhs_ta_wp2(1,gr%nz) = 0.0_core_rknd
-        lhs_ta_wp2(2,gr%nz) = 0.0_core_rknd
-
-        return
-
-    end subroutine wp2_term_ta_lhs_all
+  end subroutine wp2_term_ta_lhs
 
   !=============================================================================
   pure function wp2_terms_ac_pr2_lhs( C5, wm_ztp1, wm_zt, invrs_dzm ) & 
