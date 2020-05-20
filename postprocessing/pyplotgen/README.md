@@ -31,13 +31,13 @@ from within the PyPlotGen directory
 
 ## Example Run Commands
 
-To do the most basic run of pyplotgen, using default settings and folder paths, run
-`./pyplotgen.py`
+To plot clubb output located in `/home/USERNAME/clubb_nc_output` and save the generated plots in `/home/USERNAME/clubb/postprocessing/pyplotgen/output`, run this command:
 
-To run python on clubb output located in `/home/USERNAME/clubb_nc_output` and save the generated panels/graph into `/home/USERNAME/clubb/postprocessing/pyplotgen/output` with budget plots and all model output, run this command:
+`python3 ./pyplotgen.py -c /home/USERNAME/clubb_nc_output -o /home/USERNAME/clubb/postprocessing/pyplotgen/output`
 
-`python3 ./pyplotgen.py --plot-budgets -r -a -c /home/USERNAME/clubb_nc_output -o /home/USERNAME/clubb/postprocessing/pyplotgen/output`
+If, in addition, you'd like to overplot LES lines and also separately plot CLUBB budgets, run this command:
 
+`python3 ./pyplotgen.py --plot-budgets -l -c /home/USERNAME/clubb_nc_output -o /home/USERNAME/clubb/postprocessing/pyplotgen/output`
 
 # Advanced Usage
 ## Reference Documentation
