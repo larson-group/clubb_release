@@ -17,7 +17,7 @@ def clean_path(string):
     :param string: Path string to have characters removed
     :return: a cleaned version of the path
     """
-    string = string.replace('.', '')
+    # string = string.replace('.', '')
     string = string.replace(',', '')
     string = string.replace(' ','_')
     string = string.replace('*','x')
