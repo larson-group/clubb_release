@@ -13,7 +13,8 @@ from src.VariableGroup import VariableGroup
 class VariableGroupSamBudgets(VariableGroup):
 
     def __init__(self, case, clubb_datasets=None, les_dataset=None, coamps_dataset=None, r408_dataset=None,
-                 hoc_dataset=None, e3sm_datasets=None, sam_datasets=None):
+                 hoc_dataset=None, cam_datasets=None,
+                 e3sm_datasets=None, sam_datasets=None, wrf_datasets=None):
         """
         
         :param clubb_datasets:
@@ -41,7 +42,7 @@ class VariableGroupSamBudgets(VariableGroup):
             {'var_names': ['T_TNDCY'], 'legend_label': 'T_TNDCY'},
             {'var_names': ['HLSTOR'], 'legend_label': 'HLSTOR',
              'sam_conv_factor': self.kg_per_second_to_kg_per_day},
-            {'var_names': ['HL_RES'], 'legend_label': 'HL_RES', 'fallback_func': self.getHlResidual},
+            {'var_names': ['HL_RES'], 'legend_label': 'HL_RES', 'sam_calc': self.getHlResidual},
         ]
 
         # Total water budget (same as rtm) (does not exist in _MICRO_M2005_UWM)
@@ -60,7 +61,7 @@ class VariableGroupSamBudgets(VariableGroup):
              'sam_conv_factor': self.g_per_second_to_kg_per_day},
             {'var_names': ['QV_TNDCY'], 'legend_label': 'QV_TNDCY',
              'sam_conv_factor': self.g_per_second_to_kg_per_day},
-            {'var_names': ['QT_RES'], 'legend_label': 'QT_RES', 'fallback_func': self.getQtResidual},
+            {'var_names': ['QT_RES'], 'legend_label': 'QT_RES', 'sam_calc': self.getQtResidual},
         ]
 
         # Vertical liquid water static energy flux
@@ -68,12 +69,12 @@ class VariableGroupSamBudgets(VariableGroup):
             {'var_names': ['TWGRAD'], 'legend_label': 'TWGRAD'},
             {'var_names': ['TWADV'], 'legend_label': 'TWADV'},
             {'var_names': ['TWDIFF'], 'legend_label': 'TWDIFF'},
-            {'var_names': ['TWB+P'], 'legend_label': 'TWBUOY+TWPRES', 'fallback_func': self.getTwBuoyPlusPres},
+            {'var_names': ['TWB+P'], 'legend_label': 'TWBUOY+TWPRES', 'sam_calc': self.getTwBuoyPlusPres},
             {'var_names': ['TWPREC'], 'legend_label': 'TWPREC'},
             {'var_names': ['TWRAD'], 'legend_label': 'TWRAD'},
             {'var_names': ['TWFORC'], 'legend_label': 'TWFORC'},
             {'var_names': ['TWBT'], 'legend_label': 'TWBT'},
-            {'var_names': ['TW_RES'], 'legend_label': 'TW_RES', 'fallback_func': self.getTwResidual},
+            {'var_names': ['TW_RES'], 'legend_label': 'TW_RES', 'sam_calc': self.getTwResidual},
         ]
 
         tpwp_split_budget_lines = [
@@ -86,7 +87,7 @@ class VariableGroupSamBudgets(VariableGroup):
             {'var_names': ['TWRAD'], 'legend_label': 'TWRAD'},
             {'var_names': ['TWFORC'], 'legend_label': 'TWFORC'},
             {'var_names': ['TWBT'], 'legend_label': 'TWBT'},
-            {'var_names': ['TW_RES'], 'legend_label': 'TWRES', 'fallback_func': self.getTwResidual},
+            {'var_names': ['TW_RES'], 'legend_label': 'TWRES', 'sam_calc': self.getTwResidual},
         ]
 
         # Exists ? Vertical liquid water pot. temperature flux
@@ -94,12 +95,12 @@ class VariableGroupSamBudgets(VariableGroup):
             {'var_names': ['THLWGRAD'], 'legend_label': 'THLWGRAD'},
             {'var_names': ['THLWADV'], 'legend_label': 'THLWADV'},
             {'var_names': ['THLWDIFF'], 'legend_label': 'THLWDIFF'},
-            {'var_names': ['THLWB+P'], 'legend_label': 'THLWBUOY+PRES', 'fallback_func': self.getThlwBuoyPlusPres},
+            {'var_names': ['THLWB+P'], 'legend_label': 'THLWBUOY+PRES', 'sam_calc': self.getThlwBuoyPlusPres},
             {'var_names': ['THLWPREC'], 'legend_label': 'THLWPREC'},
             {'var_names': ['THLWRAD'], 'legend_label': 'THLWRAD'},
             {'var_names': ['THLWFORC'], 'legend_label': 'THLWFORC'},
             {'var_names': ['THLWBT'], 'legend_label': 'THLWBT'},
-            {'var_names': ['THLW_RES'], 'legend_label': 'THLW_RES', 'fallback_func': self.getThlwResidual},
+            {'var_names': ['THLW_RES'], 'legend_label': 'THLW_RES', 'sam_calc': self.getThlwResidual},
         ]
 
         thlpwp_split_budget_lines = [
@@ -112,7 +113,7 @@ class VariableGroupSamBudgets(VariableGroup):
             {'var_names': ['THLWRAD'], 'legend_label': 'THLWRAD'},
             {'var_names': ['THLWFORC'], 'legend_label': 'THLWFORC'},
             {'var_names': ['THLWBT'], 'legend_label': 'THLWBT'},
-            {'var_names': ['THLW_RES'], 'legend_label': 'THLW_RES', 'fallback_func': self.getThlwResidual},
+            {'var_names': ['THLW_RES'], 'legend_label': 'THLW_RES', 'sam_calc': self.getThlwResidual},
         ]
 
         # Vertical total water flux budget
@@ -120,11 +121,11 @@ class VariableGroupSamBudgets(VariableGroup):
             {'var_names': ['QWGRAD'], 'legend_label': 'QWGRAD'},
             {'var_names': ['QWADV'], 'legend_label': 'QWADV'},
             {'var_names': ['QWDIFF'], 'legend_label': 'QWDIFF'},
-            {'var_names': ['QWB+P'], 'legend_label': 'QWBUOY+QWPRES', 'fallback_func': self.getQwBuoyPlusPres},
+            {'var_names': ['QWB+P'], 'legend_label': 'QWBUOY+QWPRES', 'sam_calc': self.getQwBuoyPlusPres},
             {'var_names': ['QWPREC'], 'legend_label': 'QWPREC'},
             {'var_names': ['QWFORC'], 'legend_label': 'QWFORC'},
             {'var_names': ['QWBT'], 'legend_label': 'QWBT'},
-            {'var_names': ['QW_RES'], 'legend_label': 'QW_RES', 'fallback_func': self.getQwResidual},
+            {'var_names': ['QW_RES'], 'legend_label': 'QW_RES', 'sam_calc': self.getQwResidual},
         ]
 
         qpwp_split_budget_lines = [
@@ -136,7 +137,7 @@ class VariableGroupSamBudgets(VariableGroup):
             {'var_names': ['QWPREC'], 'legend_label': 'QWPREC'},
             {'var_names': ['QWFORC'], 'legend_label': 'QWFORC'},
             {'var_names': ['QWBT'], 'legend_label': 'QWBT'},
-            {'var_names': ['QW_RES'], 'legend_label': 'QW_RES', 'fallback_func': self.getQwResidual},
+            {'var_names': ['QW_RES'], 'legend_label': 'QW_RES', 'sam_calc': self.getQwResidual},
         ]
 
         qtogpwp_budget_lines = [
@@ -144,11 +145,11 @@ class VariableGroupSamBudgets(VariableGroup):
             {'var_names': ['QTOGWADV'], 'legend_label': 'QTOGWADV'},
             {'var_names': ['QTOGWDIFF'], 'legend_label': 'QTOGWDIFF'},
             {'var_names': ['QTOGWB+P'], 'legend_label': 'QTOGWBUOY+PRES',
-             'fallback_func': self.getQtogwBuoyPlusPres},
+             'sam_calc': self.getQtogwBuoyPlusPres},
             {'var_names': ['QTOGWPREC'], 'legend_label': 'QTOGWPREC'},
             {'var_names': ['QTOGWFORC'], 'legend_label': 'QTOGWFORC'},
             {'var_names': ['QTOGWBT'], 'legend_label': 'QTOGWBT'},
-            {'var_names': ['QTOGW_RES'], 'legend_label': 'QTOGW_RES', 'fallback_func': self.getQtogwResidual},
+            {'var_names': ['QTOGW_RES'], 'legend_label': 'QTOGW_RES', 'sam_calc': self.getQtogwResidual},
         ]
 
         qtogpwp_split_budget_lines = [
@@ -160,7 +161,7 @@ class VariableGroupSamBudgets(VariableGroup):
             {'var_names': ['QTOGWPREC'], 'legend_label': 'QTOGWPREC'},
             {'var_names': ['QTOGWFORC'], 'legend_label': 'QTOGWFORC'},
             {'var_names': ['QTOGWBT'], 'legend_label': 'QTOGWBT'},
-            {'var_names': ['QTOGW_RES'], 'legend_label': 'QTOGW_RES', 'fallback_func': self.getQtogwResidual},
+            {'var_names': ['QTOGW_RES'], 'legend_label': 'QTOGW_RES', 'sam_calc': self.getQtogwResidual},
         ]
 
         tp2_budget_lines = [
@@ -172,7 +173,7 @@ class VariableGroupSamBudgets(VariableGroup):
             {'var_names': ['T2RAD'], 'legend_label': 'T2RAD'},
             {'var_names': ['T2FORC'], 'legend_label': 'T2FORC'},
             {'var_names': ['T2BT'], 'legend_label': 'T2BT'},
-            {'var_names': ['T2_RES'], 'legend_label': 'T2_RES', 'fallback_func': self.getT2Residual},
+            {'var_names': ['T2_RES'], 'legend_label': 'T2_RES', 'sam_calc': self.getT2Residual},
         ]
 
         # Exists?
@@ -185,7 +186,7 @@ class VariableGroupSamBudgets(VariableGroup):
             {'var_names': ['THL2RAD'], 'legend_label': 'THL2RAD'},
             {'var_names': ['THL2FORC'], 'legend_label': 'THL2FORC'},
             {'var_names': ['THL2BT'], 'legend_label': 'THL2BT'},
-            {'var_names': ['THL2_RES'], 'legend_label': 'THL2_RES', 'fallback_func': self.getThl2Residual},
+            {'var_names': ['THL2_RES'], 'legend_label': 'THL2_RES', 'sam_calc': self.getThl2Residual},
         ]
 
         # Exists?
@@ -197,7 +198,7 @@ class VariableGroupSamBudgets(VariableGroup):
             {'var_names': ['Q2PREC'], 'legend_label': 'Q2PREC'},
             {'var_names': ['Q2FORC'], 'legend_label': 'Q2FORC'},
             {'var_names': ['Q2BT'], 'legend_label': 'Q2BT'},
-            {'var_names': ['Q2_RES'], 'legend_label': 'Q2_RES', 'fallback_func': self.getQt2Residual},
+            {'var_names': ['Q2_RES'], 'legend_label': 'Q2_RES', 'sam_calc': self.getQt2Residual},
         ]
 
         qtogp2_budget_lines = [
@@ -209,7 +210,7 @@ class VariableGroupSamBudgets(VariableGroup):
             {'var_names': ['QTOG2FORC'], 'legend_label': 'QTOG2FORC'},
             {'var_names': ['QTOG2BT'], 'legend_label': 'QTOG2BT'},
             {'var_names': ['QTOG2_RES'], 'legend_label': 'QTOG2_RES',
-             'fallback_func': self.getQtog2Residual},
+             'sam_calc': self.getQtog2Residual},
         ]
 
         qpthlp_budget_lines = [
@@ -221,7 +222,7 @@ class VariableGroupSamBudgets(VariableGroup):
             {'var_names': ['QTHLRAD'], 'legend_label': 'QTHLRAD'},
             {'var_names': ['QTHLFORC'], 'legend_label': 'QTHLFORC'},
             {'var_names': ['QTHLBT'], 'legend_label': 'QTHLBT'},
-            {'var_names': ['QTHL_RES'], 'legend_label': 'QTHL_RES', 'fallback_func': self.getQThlResidual},
+            {'var_names': ['QTHL_RES'], 'legend_label': 'QTHL_RES', 'sam_calc': self.getQThlResidual},
         ]
 
         ## Momentum flux budgets ##
@@ -232,9 +233,9 @@ class VariableGroupSamBudgets(VariableGroup):
             {'var_names': ['PRESSTR'], 'legend_label': 'PRESSTR'},
             {'var_names': ['SDMP'], 'legend_label': 'SDMP'},
             {'var_names': ['DIFTR+DISS'], 'legend_label': 'DISSIP+DIFTR',
-             'fallback_func': self.getTkeDissPlusDiff},
+             'sam_calc': self.getTkeDissPlusDiff},
             {'var_names': ['BT'], 'legend_label': 'BT'},
-            {'var_names': ['TKE_RES'], 'legend_label': 'TKE_RES', 'fallback_func': self.getTkeResidual},
+            {'var_names': ['TKE_RES'], 'legend_label': 'TKE_RES', 'sam_calc': self.getTkeResidual},
         ]
 
         tkes_budget_lines = [
@@ -242,26 +243,26 @@ class VariableGroupSamBudgets(VariableGroup):
             {'var_names': ['SHEARS'], 'legend_label': 'SHEARS'},
             {'var_names': ['BUOYAS'], 'legend_label': 'BUOYAS'},
             {'var_names': ['DISSIPS'], 'legend_label': 'DISSIPS', 'sam_conv_factor': -1.},
-            {'var_names': ['TKES_RES'], 'legend_label': 'TKES_RES', 'fallback_func': self.getTkesResidual},
+            {'var_names': ['TKES_RES'], 'legend_label': 'TKES_RES', 'sam_calc': self.getTkesResidual},
         ]
 
         up2_vp2_budget_lines = [
-            {'var_names': ['U2V2ADV'], 'legend_label': 'U2V2ADV', 'fallback_func': self.getU2V2Adv},
-            {'var_names': ['U2V2BUOY'], 'legend_label': 'U2V2BUOY', 'fallback_func': self.getU2V2Buoy},
-            {'var_names': ['U2V2PRESS'], 'legend_label': 'U2V2PRES', 'fallback_func': self.getU2V2Pres},
+            {'var_names': ['U2V2ADV'], 'legend_label': 'U2V2ADV', 'sam_calc': self.getU2V2Adv},
+            {'var_names': ['U2V2BUOY'], 'legend_label': 'U2V2BUOY', 'sam_calc': self.getU2V2Buoy},
+            {'var_names': ['U2V2PRESS'], 'legend_label': 'U2V2PRES', 'sam_calc': self.getU2V2Pres},
             {'var_names': ['W2REDIS'], 'legend_label': 'U2V2REDIS', 'sam_conv_factor': -1},
-            {'var_names': ['U2V2DIFF'], 'legend_label': 'U2V2DIFF', 'fallback_func': self.getU2V2Diff},
+            {'var_names': ['U2V2DIFF'], 'legend_label': 'U2V2DIFF', 'sam_calc': self.getU2V2Diff},
             {'var_names': ['DISSIP'], 'legend_label': 'U2V2DISSIP', 'sam_conv_factor': 2},
-            {'var_names': ['U2V2SDMP'], 'legend_label': 'U2V2SDMP', 'fallback_func': self.getU2V2Sdmp},
+            {'var_names': ['U2V2SDMP'], 'legend_label': 'U2V2SDMP', 'sam_calc': self.getU2V2Sdmp},
             {'var_names': ['SHEAR'], 'legend_label': 'U2V2SHEAR', 'sam_conv_factor': 2},
-            {'var_names': ['U2V2BT'], 'legend_label': 'U2V2BT', 'fallback_func': self.getU2V2Bt},
+            {'var_names': ['U2V2BT'], 'legend_label': 'U2V2BT', 'sam_calc': self.getU2V2Bt},
             # {'var_names': ['U2V2_RES'], 'legend_label': '2 * TKE_RES - W2_RES'},
-            {'var_names': ['U2V2_RES'], 'legend_label': 'U2V2_RES', 'fallback_func': self.getU2V2Residual},
+            {'var_names': ['U2V2_RES'], 'legend_label': 'U2V2_RES', 'sam_calc': self.getU2V2Residual},
         ]
 
         upwp_budget_lines = [
             {'var_names': ['WUDIFF'], 'legend_label': 'WUDIFF'},
-            {'var_names': ['WU_RES'], 'legend_label': 'WU_RES', 'fallback_func': self.getUWResidual},
+            {'var_names': ['WU_RES'], 'legend_label': 'WU_RES', 'sam_calc': self.getUWResidual},
             {'var_names': ['WUADV'], 'legend_label': 'WUADV'},
             {'var_names': ['WUPRES'], 'legend_label': 'WUPRES'},
             {'var_names': ['WUANIZ'], 'legend_label': 'WUANIZ'},
@@ -273,7 +274,7 @@ class VariableGroupSamBudgets(VariableGroup):
 
         vpwp_budget_lines = [
             {'var_names': ['WVDIFF'], 'legend_label': 'WVDIFF'},
-            {'var_names': ['WV_RES'], 'legend_label': 'WV_RES', 'fallback_func': self.getVWResidual},
+            {'var_names': ['WV_RES'], 'legend_label': 'WV_RES', 'sam_calc': self.getVWResidual},
             {'var_names': ['WVADV'], 'legend_label': 'WVADV'},
             {'var_names': ['WVPRES'], 'legend_label': 'WVPRES'},
             {'var_names': ['WVANIZ'], 'legend_label': 'WVANIZ'},
@@ -289,7 +290,7 @@ class VariableGroupSamBudgets(VariableGroup):
             {'var_names': ['U2REDIS'], 'legend_label': 'U2REDIS'},
             {'var_names': ['U2DIFF'], 'legend_label': 'U2DIFF'},
             {'var_names': ['U2BT'], 'legend_label': 'U2BT'},
-            {'var_names': ['U2_RES'], 'legend_label': 'U2_RES', 'fallback_func': self.getU2Residual},
+            {'var_names': ['U2_RES'], 'legend_label': 'U2_RES', 'sam_calc': self.getU2Residual},
         ]
 
         vp2_budget_lines = [
@@ -298,7 +299,7 @@ class VariableGroupSamBudgets(VariableGroup):
             {'var_names': ['V2REDIS'], 'legend_label': 'V2REDIS'},
             {'var_names': ['V2DIFF'], 'legend_label': 'V2DIFF'},
             {'var_names': ['V2BT'], 'legend_label': 'V2BT'},
-            {'var_names': ['V2_RES'], 'legend_label': 'V2_RES', 'fallback_func': self.getV2Residual},
+            {'var_names': ['V2_RES'], 'legend_label': 'V2_RES', 'sam_calc': self.getV2Residual},
         ]
 
         wp2_budget_lines = [
@@ -309,7 +310,7 @@ class VariableGroupSamBudgets(VariableGroup):
             {'var_names': ['W2DIFF'], 'legend_label': 'W2DIFF'},
             {'var_names': ['W2SDMP'], 'legend_label': 'W2SDMP'},
             {'var_names': ['W2BT'], 'legend_label': 'W2BT'},
-            {'var_names': ['W2_RES'], 'legend_label': 'W2_RES', 'fallback_func': self.getW2Residual},
+            {'var_names': ['W2_RES'], 'legend_label': 'W2_RES', 'sam_calc': self.getW2Residual},
         ]
 
         wp3_budget_lines = [
@@ -319,7 +320,7 @@ class VariableGroupSamBudgets(VariableGroup):
             {'var_names': ['W3BUOY'], 'legend_label': 'W3BUOY'},
             {'var_names': ['W3DIFF'], 'legend_label': 'W3DIFF'},
             {'var_names': ['W3BT'], 'legend_label': 'W3BT'},
-            {'var_names': ['W3_RES'], 'legend_label': 'W3_RES', 'fallback_func': self.getW3Residual},
+            {'var_names': ['W3_RES'], 'legend_label': 'W3_RES', 'sam_calc': self.getW3Residual},
         ]
 
         ## Tau plots showing C_2/tau and C_14/tau ##
@@ -330,9 +331,9 @@ class VariableGroupSamBudgets(VariableGroup):
         # {'var_names': [r'TKES'], 'legend_label': 'TKES', 1, 1],
         # {'var_names': [r'TKE'], 'legend_label': 'TKE', 1, 1],
         # {'var_names': ['U2_C14_over_tau'], 'legend_label': r"$\frac{C_{14}}{\tau}\ (u'^2)$",
-        #                'fallback_func': self.getU2C14OverTau},
+        #                'sam_calc': self.getU2C14OverTau},
         # {'var_names': ['V2_C14_over_tau'], 'legend_label': r"$\frac{C_{14}}{\tau}\ (v'^2)$",
-        #                'fallback_func': self.getV2C14OverTau},
+        #                'sam_calc': self.getV2C14OverTau},
         # ]
 
         # qtogp2tau_budget_lines = [
@@ -340,7 +341,7 @@ class VariableGroupSamBudgets(VariableGroup):
         # {'var_names': [r'QTOG2DIFTR'], 'legend_label': 'QTOG2DIFTR'},
         # {'var_names': [r'QTOG2'], 'legend_label': 'QTOG2', 1, 1],
         # {'var_names': ['QTOG2_C2_over_tau'], 'legend_label': r"$\frac{C_2}{\tau}\ (q_{tog}'^2)$",
-        #  'fallback_func': self.getQtog2C2OverTau},
+        #  'sam_calc': self.getQtog2C2OverTau},
         # ]
 
         # qp2tau_budget_lines = [
@@ -348,7 +349,7 @@ class VariableGroupSamBudgets(VariableGroup):
         # {'var_names': [r'Q2DIFTR'], 'legend_label': 'Q2DIFTR'},
         # {'var_names': [r'QT2'], 'legend_label': 'QT2', 1, 1],
         # {'var_names': ['QT2_C2_over_tau'], 'legend_label': r"$\frac{C_2}{\tau}\ (q'^2)$",
-        #  'fallback_func': self.getQ2C2OverTau},
+        #  'sam_calc': self.getQ2C2OverTau},
         # ]
 
         # thlp2tau_budget_lines = [
@@ -356,45 +357,45 @@ class VariableGroupSamBudgets(VariableGroup):
         # {'var_names': ['THL2DIFTR'], 'legend_label': 'THL2DIFTR'},
         # {'var_names': ['THEL2'], 'legend_label': 'THEL2', 1, 1],
         # {'var_names': ['THL2_C2_over_tau'], 'legend_label': r"$\frac{C_2}{\tau}\ (\theta_l'^2)$",
-        #  'fallback_func': self.getThl2C2OverTau},
+        #  'sam_calc': self.getThl2C2OverTau},
         # ]
 
         # tau_comp_budget_lines = [
         # {'var_names': ['U2_C14_over_tau'], 'legend_label': r"$\frac{C_{14}}{\tau}\ (u'^2)$",
-        #  'fallback_func': self.getU2C14OverTau},
+        #  'sam_calc': self.getU2C14OverTau},
         # {'var_names': ['V2_C14_over_tau'], 'legend_label': r"$\frac{C_{14}}{\tau}\ (v'^2)$",
-        #  'fallback_func': self.getV2C14OverTau},
+        #  'sam_calc': self.getV2C14OverTau},
         # {'var_names': [r"$\frac{C_2}{\tau}\ (q_{tog}'^2)$",
         #  'legend_label': '- ( QTOG2DISSIP + QTOG2DIFTR ) / np.maximum( QTOG2 * 1e-6, 1e-15 )'], 1, 1],#??
         # {'var_names': ['QTOG2_C2_over_tau'], 'legend_label': r"$\frac{C_2}{\tau}\ (q_{tog}'^2)$",
-        #  'fallback_func': self.getQtog2C2OverTau},
+        #  'sam_calc': self.getQtog2C2OverTau},
         # {'var_names': ['THL2_C2_over_tau'], 'legend_label': r"$\frac{C_2}{\tau}\ (\theta_l'^2)$",
-        #  'fallback_func': self.getThl2C2OverTau},
+        #  'sam_calc': self.getThl2C2OverTau},
         # {'var_names': ['QT2_C2_over_tau'], 'legend_label': r"$\frac{C_2}{\tau}\ (q'^2)$",
-        #  'fallback_func': self.getQ2C2OverTau},
+        #  'sam_calc': self.getQ2C2OverTau},
         # ]
 
         ## Reduced second moment flux budgets ##TODO: How to sort lines and define colors?
         up2_reduced_budget_lines = [
             {'var_names': ['U2ADV'], 'legend_label': 'advection'},
-            # {'var_names': ['U2BUOY'], 'legend_label': 'buoyancy', 'fallback_func': self.getNothing},
+            # {'var_names': ['U2BUOY'], 'legend_label': 'buoyancy', 'sam_calc': self.getNothing},
             {'var_names': ['U2DIFF'], 'legend_label': 'dissipation'},
             {'var_names': ['U2REDIS'], 'legend_label': 'isotropy'},
-            # {'var_names': ['U2PRES'], 'legend_label': 'pressure', 'fallback_func': self.getNothing},
+            # {'var_names': ['U2PRES'], 'legend_label': 'pressure', 'sam_calc': self.getNothing},
             {'var_names': ['U2SHEAR'], 'legend_label': 'turb. prod.'},
             {'var_names': ['U2BT'], 'legend_label': 'time tndcy'},
-            {'var_names': ['U2_RES'], 'legend_label': 'residual', 'fallback_func': self.getU2Residual},
+            {'var_names': ['U2_RES'], 'legend_label': 'residual', 'sam_calc': self.getU2Residual},
         ]
 
         vp2_reduced_budget_lines = [
             {'var_names': ['V2ADV'], 'legend_label': 'advection'},
-            # {'var_names': ['V2BUOY'], 'legend_label': 'buoyancy', 'fallback_func': self.getNothing},
+            # {'var_names': ['V2BUOY'], 'legend_label': 'buoyancy', 'sam_calc': self.getNothing},
             {'var_names': ['V2DIFF'], 'legend_label': 'dissipation'},
             {'var_names': ['V2REDIS'], 'legend_label': 'isotropy'},
-            # {'var_names': ['V2PRES'], 'legend_label': 'pressure', 'fallback_func': self.getNothing},
+            # {'var_names': ['V2PRES'], 'legend_label': 'pressure', 'sam_calc': self.getNothing},
             {'var_names': ['V2SHEAR'], 'legend_label': 'turb. prod.'},
             {'var_names': ['V2BT'], 'legend_label': 'time tndcy'},
-            {'var_names': ['V2_RES'], 'legend_label': 'residual', 'fallback_func': self.getV2Residual},
+            {'var_names': ['V2_RES'], 'legend_label': 'residual', 'sam_calc': self.getV2Residual},
         ]
 
         wp2_reduced_budget_lines = [
@@ -402,10 +403,10 @@ class VariableGroupSamBudgets(VariableGroup):
             {'var_names': ['W2ADV'], 'legend_label': 'advection'},
             {'var_names': ['W2BUOY'], 'legend_label': 'buoyancy'},
             {'var_names': ['W2DIFF'], 'legend_label': 'dissipation'},
-            {'var_names': ['W2REDIS+PRES'], 'legend_label': 'pressure', 'fallback_func': self.getW2RedisPlusPres},
-            # {'var_names': ['W2SHEAR'], 'legend_label': 'turb. prod.', 'fallback_func': self.getNothing},
+            {'var_names': ['W2REDIS+PRES'], 'legend_label': 'pressure', 'sam_calc': self.getW2RedisPlusPres},
+            # {'var_names': ['W2SHEAR'], 'legend_label': 'turb. prod.', 'sam_calc': self.getNothing},
             {'var_names': ['W2BT'], 'legend_label': 'time tndcy'},
-            {'var_names': ['W2_RES'], 'legend_label': 'residual', 'fallback_func': self.getW2Residual},
+            {'var_names': ['W2_RES'], 'legend_label': 'residual', 'sam_calc': self.getW2Residual},
         ]
 
         upwp_reduced_budget_lines = [
@@ -413,10 +414,10 @@ class VariableGroupSamBudgets(VariableGroup):
             {'var_names': ['WUADV'], 'legend_label': 'advection'},
             {'var_names': ['WUBUOY'], 'legend_label': 'buoyancy'},
             {'var_names': ['WUDIFF'], 'legend_label': 'dissipation'},
-            {'var_names': ['WUPRES+ANIZ'], 'legend_label': 'pressure', 'fallback_func': self.getUWPresPlusAniz},
+            {'var_names': ['WUPRES+ANIZ'], 'legend_label': 'pressure', 'sam_calc': self.getUWPresPlusAniz},
             {'var_names': ['WUSHEAR'], 'legend_label': 'turb. prod.'},
             {'var_names': ['WUBT'], 'legend_label': 'time tndcy'},
-            {'var_names': ['WU_RES'], 'legend_label': 'residual', 'fallback_func': self.getUWResidual},
+            {'var_names': ['WU_RES'], 'legend_label': 'residual', 'sam_calc': self.getUWResidual},
         ]
 
         vpwp_reduced_budget_lines = [
@@ -424,10 +425,10 @@ class VariableGroupSamBudgets(VariableGroup):
             {'var_names': ['WVADV'], 'legend_label': 'advection'},
             {'var_names': ['WVBUOY'], 'legend_label': 'buoyancy'},
             {'var_names': ['WVDIFF'], 'legend_label': 'dissipation'},
-            {'var_names': ['WVPRES+ANIZ'], 'legend_label': 'pressure', 'fallback_func': self.getVWPresPlusAniz},
+            {'var_names': ['WVPRES+ANIZ'], 'legend_label': 'pressure', 'sam_calc': self.getVWPresPlusAniz},
             {'var_names': ['WVSHEAR'], 'legend_label': 'turb. prod.'},
             {'var_names': ['WVBT'], 'legend_label': 'time tndcy'},
-            {'var_names': ['WV_RES'], 'legend_label': 'residual', 'fallback_func': self.getVWResidual},
+            {'var_names': ['WV_RES'], 'legend_label': 'residual', 'sam_calc': self.getVWResidual},
         ]
 
         self.variable_definitions = [
@@ -960,9 +961,9 @@ class VariableGroupSamBudgets(VariableGroup):
              },
         ]
 
-        super().__init__(case, clubb_datasets=clubb_datasets, les_dataset=les_dataset,
-                         coamps_dataset=coamps_dataset, r408_dataset=r408_dataset,
-                         hoc_dataset=hoc_dataset, e3sm_datasets=e3sm_datasets, sam_datasets=sam_datasets)
+        super().__init__(case, clubb_datasets=clubb_datasets, sam_datasets=sam_datasets, les_dataset=les_dataset,
+                         coamps_dataset=coamps_dataset, r408_dataset=r408_dataset, cam_datasets=cam_datasets,
+                         hoc_dataset=hoc_dataset, e3sm_datasets=e3sm_datasets, wrf_datasets=wrf_datasets)
 
     def getHlResidual(self, dataset_override=None):
         """

@@ -16,7 +16,8 @@ from src.VariableGroup import VariableGroup
 class VariableGroupSamProfiles(VariableGroup):
     
     def __init__(self, case, clubb_datasets=None, les_dataset=None, coamps_dataset=None, r408_dataset=None,
-                 hoc_dataset=None, e3sm_datasets=None, sam_datasets=None):
+                 hoc_dataset=None, cam_datasets=None,
+                 e3sm_datasets=None, sam_datasets=None, wrf_datasets=None):
         """
         
         :param clubb_datasets:
@@ -28,156 +29,6 @@ class VariableGroupSamProfiles(VariableGroup):
         self.kg_per_second_to_kg_per_day = 1. / (24 * 3600)
         
         self.g_per_second_to_kg_per_day = self.kg_per_second_to_kg_per_day / 1000
-        
-        #u_cld_lines = [
-            #{'var_names': ['U'], 'legend_label': r"$\overline{u}$"},
-            #{'var_names': ['UCLD'], 'legend_label': r"$\overline{u}^\mathrm{{cld}}$"}
-            #]
-        
-        #v_cld_lines = [
-            #{'var_names': ['V'], 'legend_label': r"$\overline{v}$"},
-            #{'var_names': ['VCLD'], 'legend_label': r"$\overline{v}^\mathrm{{cld}}$"}
-            #]
-        
-        #w_cld_lines = [
-            #{'var_names': ['WM'], 'legend_label': r"$\overline{w}$"},
-            #{'var_names': ['WCLD'], 'legend_label': r"$\overline{w}^\mathrm{{cld}}$"}
-            #]
-        
-        u_cond_lines = [
-            {'var_names': ['U'], 'legend_label': r"$\overline{u}$"},
-            {'var_names': ['UCLD'], 'legend_label': '$\overline{u}^\mathrm{cld}$'},
-            {'var_names': ['UENV'], 'legend_label': r"$\overline{u}^\mathrm{{env}}$",
-             'fallback_func': self.getUEnvUnweighted},
-            ]
-        
-        u_weight_lines = [
-            {'var_names': ['U'], 'legend_label': r"$\overline{u}$"},
-            {'var_names': ['UCLD'], 'legend_label': r"$\overline{u}^\mathrm{{cld}}$",
-             'fallback_func': self.getUCldWeighted},
-            {'var_names': ['UENV'], 'legend_label': r"$\overline{u}^\mathrm{{env}}$",
-             'fallback_func': self.getUEnvWeighted},
-            ]
-        
-        v_cond_lines = [
-            {'var_names': ['V'], 'legend_label': r"$\overline{v}$"},
-            {'var_names': ['VCLD'], 'legend_label': '$\overline{v}^\mathrm{cld}$'},
-            {'var_names': ['VENV'], 'legend_label': r"$\overline{v}^\mathrm{{env}}$",
-             'fallback_func': self.getVEnvUnweighted},
-            ]
-        
-        v_weight_lines = [
-            {'var_names': ['V'], 'legend_label': r"$\overline{v}$"},
-            {'var_names': ['VCLD'], 'legend_label': r"$\overline{v}^\mathrm{{cld}}$",
-             'fallback_func': self.getVCldWeighted},
-            {'var_names': ['VENV'], 'legend_label': r"$\overline{v}^\mathrm{{env}}$",
-             'fallback_func': self.getVEnvWeighted},
-            ]
-        
-        w_cond_lines = [
-            {'var_names': ['WM'], 'legend_label': r"$\overline{w}$"},
-            {'var_names': ['WCLD'], 'legend_label': '$\overline{w}^\mathrm{cld}$'},
-            {'var_names': ['WENV'], 'legend_label': r"$\overline{w}^\mathrm{{env}}$",
-             'fallback_func': self.getWEnvUnweighted},
-            ]
-        
-        w_weight_lines = [
-            {'var_names': ['WM'], 'legend_label': r"$\overline{w}$"},
-            {'var_names': ['WCLD'], 'legend_label': r"$\overline{w}^\mathrm{{cld}}$",
-             'fallback_func': self.getWCldWeighted},
-            {'var_names': ['WENV'], 'legend_label': r"$\overline{w}^\mathrm{{env}}$",
-             'fallback_func': self.getWEnvWeighted},
-            ]
-        
-        uw_cond_lines = [
-            {'var_names': ['UW'], 'legend_label': r"$\overline{u'w'}$"},
-            {'var_names': ['UWCLD'], 'legend_label': r"$\overline{u'w'}^\mathrm{cld}$"},
-            {'var_names': ['UWENV'], 'legend_label': r"$\overline{u'w'}^\mathrm{env}$",
-             'fallback_func': self.getUWEnvUnweighted},
-            ]
-        
-        uw_weight_lines = [
-            {'var_names': ['UW'], 'legend_label': r"$\overline{u'w'}$"},
-            {'var_names': ['UWCLD'], 'legend_label': r"$\overline{u'w'}^\mathrm{cld}$",
-             'fallback_func': self.getUWCldWeighted},
-            {'var_names': ['UWENV'], 'legend_label': r"$\overline{u'w'}^\mathrm{env}$",
-             'fallback_func': self.getUWEnvWeighted},
-            ]
-        
-        vw_cond_lines = [
-            {'var_names': ['VW'], 'legend_label': r"$\overline{v'w'}$"},
-            {'var_names': ['VWCLD'], 'legend_label': r"$\overline{v'w'}^\mathrm{cld}$"},
-            {'var_names': ['VWENV'], 'legend_label': r"$\overline{v'w'}^\mathrm{env}$",
-             'fallback_func': self.getVWEnvUnweighted},
-            ]
-        
-        vw_weight_lines = [
-            {'var_names': ['VW'], 'legend_label': r"$\overline{v'w'}$"},
-            {'var_names': ['VWCLD'], 'legend_label': r"$\overline{v'w'}^\mathrm{cld}$",
-             'fallback_func': self.getVWCldWeighted},
-            {'var_names': ['VWENV'], 'legend_label': r"$\overline{v'w'}^\mathrm{env}$",
-             'fallback_func': self.getVWEnvWeighted},
-            ]
-        
-        thv_cond_lines = [
-            {'var_names': ['THETAV'], 'legend_label': r"$\overline{\theta_v}$"},
-            {'var_names': ['TVCLD'], 'legend_label': r"$\overline{\theta_v}^\mathrm{cld}$"},
-            {'var_names': ['TVENV'], 'legend_label': r"$\overline{\theta_v}^\mathrm{env}$",
-             'fallback_func': self.getTHVEnvUnweighted},
-            ]
-        
-        thv_weight_lines = [
-            {'var_names': ['THETAV'], 'legend_label': r"$\overline{\theta_v}$"},
-            {'var_names': ['TVCLD'], 'legend_label': r"$\overline{\theta_v}^\mathrm{cld}$",
-             'fallback_func': self.getTHVCldWeighted},
-            {'var_names': ['TVENV'], 'legend_label': r"$\overline{\theta_v}^\mathrm{env}$",
-             'fallback_func': self.getTHVEnvWeighted},
-            ]
-        
-        #thl_weight_lines = [
-        ## Cloud conditional data does not exist. TLCLD is cld cond. liquid water static energy
-            #{'var_names': ['THETAL'], 'legend_label': r"$\overline{\theta_v}$"},
-            #{'var_names': ['TLCLD'], 'legend_label': r"$\overline{\theta_v}^\mathrm{cld}$",
-            # 'fallback_func': self.getTHLCldWeighted},
-            #{'var_names': ['TLENV'], 'legend_label': r"$\overline{\theta_v}^\mathrm{env}$",
-            # 'fallback_func': self.getTHLEnvWeighted},
-            #]
-        
-        qt_cond_lines = [
-            {'var_names': ['QT'], 'legend_label': r"$\overline{\theta_v}$"},
-            {'var_names': ['QTCLD'], 'legend_label': r"$\overline{\theta_v}^\mathrm{cld}$"},
-            {'var_names': ['QTENV'], 'legend_label': r"$\overline{\theta_v}^\mathrm{env}$",
-             'fallback_func': self.getQTEnvUnweighted},
-            ]
-        
-        qtw_weight_lines = [
-             # QTFLUX is only defined in microphysics packages
-            {'var_names': ['QTFLUX'], 'legend_label': r"$\overline{\theta_v}$"},
-            {'var_names': ['QTWCLD'], 'legend_label': r"$\overline{\theta_v}^\mathrm{cld}$",
-             'fallback_func': self.getQTWCldWeighted},
-            {'var_names': ['QTWENV'], 'legend_label': r"$\overline{\theta_v}^\mathrm{env}$",
-             'fallback_func': self.getQTWEnvWeighted},
-            ]
-        
-        tlw_weight_lines = [
-            {'var_names': ['TLFLUX'], 'legend_label': r"$\overline{\theta_v}$"},
-            {'var_names': ['TLWCLD'], 'legend_label': r"$\overline{\theta_v}^\mathrm{cld}$",
-             'fallback_func': self.getTLWCldWeighted},
-            {'var_names': ['TLWENV'], 'legend_label': r"$\overline{\theta_v}^\mathrm{env}$",
-             'fallback_func': self.getTLWEnvWeighted},
-            ]
-        
-        uw_lines = [
-            {'var_names': ['UW'], 'legend_label': r"$\overline{u'w'}$"},
-            {'var_names': ['U2'], 'legend_label': r"$\overline{u'^2}$"},
-            {'var_names': ['W2'], 'legend_label': r"$\overline{w'^2}$"},
-            ]
-        
-        vw_lines = [
-            {'var_names': ['VW'], 'legend_label': r"$\overline{v'w'}$"},
-            {'var_names': ['V2'], 'legend_label': r"$\overline{v'^2}$"},
-            {'var_names': ['W2'], 'legend_label': r"$\overline{w'^2}$"},
-            ]
         
         self.variable_definitions = [
             # THETA_L
@@ -407,6 +258,23 @@ class VariableGroupSamProfiles(VariableGroup):
              'axis_title': r"Observed wind, $\mathrm{w_{obs}}\ \mathrm{\left[m\,s^{-1}\right]}$",
              'legend_label': r"$\mathrm{w_{obs}}$",
             },
+            # WCLD unweighted
+            {'var_names':
+                {
+                'clubb': [],
+                'sam': ['WCLD'],
+                'coamps': [],
+                'r408': [],
+                'hoc': [],
+                'e3sm': [],
+				'cam': [],
+                },
+             'sam_conv_factor': 1,
+             'title': r"In-cloud mean wind, $\overline{W}^{cld}$",
+             'axis_title': r"In-cloud mean wind, "+
+                           r"$\overline{w}^\mathrm{{cld}}\ \mathrm{\left[m\,s^{-1}\right]}$",
+             'legend_label': r"$\overline{w}^\mathrm{{cld}}$",
+            },
             # U
             {'var_names':
                 {
@@ -440,23 +308,6 @@ class VariableGroupSamProfiles(VariableGroup):
                            r"$\overline{u}^\mathrm{{cld}}\ \mathrm{\left[m\,s^{-1}\right]}$",
              'legend_label': r"$\overline{u}^\mathrm{{cld}}$",
             },
-            # UCLD unweighted
-            {'var_names':
-                {
-                'clubb': [],
-                'sam': ['UENV'],
-                'coamps': [],
-                'r408': [],
-                'hoc': [],
-                'e3sm': [],
-				'cam': [],
-                },
-             'sam_conv_factor': 1,
-             'title': r"Environmental mean wind, $\overline{u}^{env}$",
-             'axis_title': r"Environmental mean wind, "+
-                           r"$\overline{u}^\mathrm{{env}}\ \mathrm{\left[m\,s^{-1}\right]}$",
-             'legend_label': r"$\overline{u}^\mathrm{{cld}}$", 'sam_calc': self.getUEnvUnweighted,
-            },
             # V
             {'var_names':
                 {
@@ -472,6 +323,23 @@ class VariableGroupSamProfiles(VariableGroup):
              'title': r"Meridonal Wind Component, $\mathrm{\overline{v}}$",
              'axis_title': r"$\mathrm{\overline{v}}\ \mathrm{\left[m\,s^{-1}\right]}$",
              'legend_label': r"$\mathrm{\overline{v}}$",
+            },
+            # VCLD unweighted
+            {'var_names':
+                {
+                'clubb': [],
+                'sam': ['VCLD'],
+                'coamps': [],
+                'r408': [],
+                'hoc': [],
+                'e3sm': [],
+				'cam': [],
+                },
+             'sam_conv_factor': 1,
+             'title': r"In-cloud mean wind, $\overline{v}^{cld}$",
+             'axis_title': r"In-cloud mean wind, "+
+                           r"$\overline{v}^\mathrm{{cld}}\ \mathrm{\left[m\,s^{-1}\right]}$",
+             'legend_label': r"$\overline{v}^\mathrm{{cld}}$",
             },
             # U'W'
             {'var_names':
@@ -1406,333 +1274,7 @@ class VariableGroupSamProfiles(VariableGroup):
                            r"$\overline{v'\theta_v'}\ \mathrm{\left[K\,m\,s^{-1}\right]}$",
              'legend_label': r"$\overline{v'\theta_v'}$",
             },
-            ## Cloud conditional plots
-            
-            ## UCLD
-            #{'var_names':
-                #{
-                #'clubb': [],
-                #'sam': ['UCLD'],
-                #'coamps': [],
-                #'r408': [],
-                #'hoc': [],
-                #'e3sm': [],
-				#'cam': [],
-                #},
-            #'sam_conv_factor': 1, 'type': Panel.TYPE_BUDGET, 'lines': u_cld_lines,
-            # 'title': r"Conditional mean wind, $\overline{u}^\mathrm{{cld}}$",
-            # 'axis_title': r"Conditional mean wind, "+
-            #               r"$\overline{u}^\mathrm{{cld}}\ \mathrm{\left[m\,s^{-1}\right]}$",
-            # 'legend_label': r"$\overline{u}^\mathrm{{cld}}$",
-            #},
-            ## VCLD
-            #{'var_names':
-                #{
-                #'clubb': [],
-                #'sam': ['VCLD'],
-                #'coamps': [],
-                #'r408': [],
-                #'hoc': [],
-                #'e3sm': [],
-				#'cam': [],
-                #},
-            #'sam_conv_factor': 1, 'type': Panel.TYPE_BUDGET, 'lines': v_cld_lines,
-            # 'title': r"Conditional mean wind, $\overline{v}^\mathrm{{cld}}$",
-            # 'axis_title': r"Conditional mean wind, "+
-            #               r"$\overline{v}^\mathrm{{cld}}\ \mathrm{\left[m\,s^{-1}\right]}$",
-            # 'legend_label': r"$\overline{v}^\mathrm{{cld}}$",
-            #},
-            ## WCLD
-            #{'var_names':
-                #{
-                #'clubb': [],
-                #'sam': ['WCLD'],
-                #'coamps': [],
-                #'r408': [],
-                #'hoc': [],
-                #'e3sm': [],
-				#'cam': [],
-                #},
-            #'sam_conv_factor': 1, 'type': Panel.TYPE_BUDGET, 'lines': w_cld_lines,
-            # 'title': r"Conditional mean wind, $\overline{w}^\mathrm{{cld}}$",
-            # 'axis_title': r"Conditional mean wind, "+
-            #               r"$\overline{w}^\mathrm{{cld}}\ \mathrm{\left[m\,s^{-1}\right]}$",
-            # 'legend_label': r"$\overline{w}^\mathrm{{cld}}$",
-            #},
-            # UCLD unweighted
-            {'var_names':
-                {
-                'clubb': [],
-                'sam': ['UCLD'],
-                'coamps': [],
-                'r408': [],
-                'hoc': [],
-                'e3sm': [],
-				'cam': [],
-                },
-             'sam_conv_factor': 1, 'type': Panel.TYPE_BUDGET, 'lines': u_cond_lines,
-             'title': r"Conditional mean wind, $\overline{u}$",
-             'axis_title': r"Conditional mean wind, "+
-                           r"$\overline{u}^\mathrm{{cld}}\ \mathrm{\left[m\,s^{-1}\right]}$",
-            # 'legend_label': r"$\overline{u}^\mathrm{{cld}}$",
-            },
-            # UCLD weighted
-            {'var_names':
-                {
-                'clubb': [],
-                'sam': ['UCLD'],
-                'coamps': [],
-                'r408': [],
-                'hoc': [],
-                'e3sm': [],
-				'cam': [],
-                },
-             'sam_conv_factor': 1, 'type': Panel.TYPE_BUDGET, 'lines': u_weight_lines,
-             'title': r"Weighted mean wind, $\overline{u}$",
-             'axis_title': r"Weighted mean wind, $\overline{u}\ \mathrm{\left[m\,s^{-1}\right]}$",
-            # 'legend_label': r"$\overline{u}^\mathrm{{cld}}$",
-            },
-            # VCLD unweighted
-            {'var_names':
-                {
-                'clubb': [],
-                'sam': ['VCLD'],
-                'coamps': [],
-                'r408': [],
-                'hoc': [],
-                'e3sm': [],
-				'cam': [],
-                },
-             'sam_conv_factor': 1, 'type': Panel.TYPE_BUDGET, 'lines': v_cond_lines,
-             'title': r"Conditional mean wind, $\overline{v}$",
-             'axis_title': r"Conditional mean wind, $\overline{v}\ \mathrm{\left[m\,s^{-1}\right]}$",
-            # 'legend_label': r"$\overline{v}^\mathrm{{cld}}$",
-            },
-            # VCLD weighted
-            {'var_names':
-                {
-                'clubb': [],
-                'sam': ['VCLD'],
-                'coamps': [],
-                'r408': [],
-                'hoc': [],
-                'e3sm': [],
-				'cam': [],
-                },
-             'sam_conv_factor': 1, 'type': Panel.TYPE_BUDGET, 'lines': v_weight_lines,
-             'title': r"Weighted mean wind, $\overline{v}$",
-             'axis_title': r"Weighted mean wind, $\overline{v}\ \mathrm{\left[m\,s^{-1}\right]}$",
-            # 'legend_label': r"$\overline{v}^\mathrm{{cld}}$",
-            },
-            # WCLD unweighted
-            {'var_names':
-                {
-                'clubb': [],
-                'sam': ['WCLD'],
-                'coamps': [],
-                'r408': [],
-                'hoc': [],
-                'e3sm': [],
-				'cam': [],
-                },
-             'sam_conv_factor': 1, 'type': Panel.TYPE_BUDGET, 'lines': w_cond_lines,
-             'title': r"Conditional mean wind, $\overline{w}$",
-             'axis_title': r"Conditional mean wind, $\overline{w}\ \mathrm{\left[m\,s^{-1}\right]}$",
-            # 'legend_label': r"$\overline{w}^\mathrm{{cld}}$",
-            },
-            # WCLD weighted
-            {'var_names':
-                {
-                'clubb': [],
-                'sam': ['WCLD'],
-                'coamps': [],
-                'r408': [],
-                'hoc': [],
-                'e3sm': [],
-				'cam': [],
-                },
-             'sam_conv_factor': 1, 'type': Panel.TYPE_BUDGET, 'lines': w_weight_lines,
-             'title': r"Weighted mean wind, $\overline{w}$",
-             'axis_title': r"Weighted mean wind, $\overline{w}\ \mathrm{\left[m\,s^{-1}\right]}$",
-            # 'legend_label': r"$\overline{w}^\mathrm{{cld}}$",
-            },
-            # UWCLD unweighted
-            {'var_names':
-                {
-                'clubb': [],
-                'sam': ['UWCLD'],
-                'coamps': [],
-                'r408': [],
-                'hoc': [],
-                'e3sm': [],
-				'cam': [],
-                },
-             'sam_conv_factor': 1, 'type': Panel.TYPE_BUDGET, 'lines': uw_cond_lines,
-             'title': r"Cloud-conditonal $\overline{u'w'}$",
-             'axis_title': r"Conditional flux, $\overline{u'w'}\ \mathrm{\left[m^2\, s^{-2}\right]}$",
-            # 'legend_label': r"$\overline{u'w'}^\mathrm{cld}$",
-            },
-            # UWCLD weighted
-            {'var_names':
-                {
-                'clubb': [],
-                'sam': ['UWCLD'],
-                'coamps': [],
-                'r408': [],
-                'hoc': [],
-                'e3sm': [],
-				'cam': [],
-                },
-             'sam_conv_factor': 1, 'type': Panel.TYPE_BUDGET, 'lines': uw_weight_lines,
-             'title': r"Cloud-weighted $\overline{u'w'}$",
-             'axis_title': r"Weighted flux, $\overline{u'w'}\ \mathrm{\left[m^2\, s^{-2}\right]}$",
-            # 'legend_label': r"$\overline{u'w'}^\mathrm{cld}$",
-            },
-            # VWCLD unweighted
-            {'var_names':
-                {
-                'clubb': [],
-                'sam': ['VWCLD'],
-                'coamps': [],
-                'r408': [],
-                'hoc': [],
-                'e3sm': [],
-				'cam': [],
-                },
-             'sam_conv_factor': 1, 'type': Panel.TYPE_BUDGET, 'lines': vw_cond_lines,
-             'title': r"Cloud-conditonal $\overline{v'w'}$",
-             'axis_title': r"Conditional flux, $\overline{v'w'}\ \mathrm{\left[m^2\, s^{-2}\right]}$",
-            # 'legend_label': r"$\overline{v'w'}^\mathrm{cld}$",
-            },
-            # VWCLD weighted
-            {'var_names':
-                {
-                'clubb': [],
-                'sam': ['VWCLD'],
-                'coamps': [],
-                'r408': [],
-                'hoc': [],
-                'e3sm': [],
-				'cam': [],
-                },
-             'sam_conv_factor': 1, 'type': Panel.TYPE_BUDGET, 'lines': vw_weight_lines,
-             'title': r"Cloud-weighted $\overline{v'w'}$",
-             'axis_title': r"Weighted flux, $\overline{v'w'}\ \mathrm{\left[m^2\, s^{-2}\right]}$",
-            # 'legend_label': r"$\overline{v'w'}^\mathrm{cld}$",
-            },
-            # TVCLD unweighted
-            {'var_names':
-                {
-                'clubb': [],
-                'sam': ['TVCLD'],
-                'coamps': [],
-                'r408': [],
-                'hoc': [],
-                'e3sm': [],
-				'cam': [],
-                },
-             'sam_conv_factor': 1, 'type': Panel.TYPE_BUDGET, 'lines': thv_cond_lines,
-             'title': r"Conditional virt. pot. temp., $\overline{\theta}_v$",
-             'axis_title': r"Conditional virt. pot. temp., $\overline{\theta}_v\ \mathrm{\left[K\right]}$",
-            # 'legend_label': r"$\overline{\theta}_v^\mathrm{cld}",
-            },
-            # TVCLD weighted
-            {'var_names':
-                {
-                'clubb': [],
-                'sam': ['TVCLD'],
-                'coamps': [],
-                'r408': [],
-                'hoc': [],
-                'e3sm': [],
-				'cam': [],
-                },
-             'sam_conv_factor': 1, 'type': Panel.TYPE_BUDGET, 'lines': thv_weight_lines,
-             'title': r"Weighted virt. pot. temp., $\overline{\theta}_v$",
-             'axis_title': r"Weighted virt. pot. temp., $\overline{\theta}_v\ \mathrm{\left[K\right]}$",
-            # 'legend_label': r"$\overline{\theta}_v^\mathrm{cld}",
-            },
-            # TLWCLD weighted
-            {'var_names':
-                {
-                'clubb': [],
-                'sam': ['TLWCLD'],
-                'coamps': [],
-                'r408': [],
-                'hoc': [],
-                'e3sm': [],
-				'cam': [],
-                },
-             'sam_conv_factor': 1, 'type': Panel.TYPE_BUDGET, 'lines': tlw_weight_lines,
-             'title': r"Weighted flux, $\overline{w's_L'}$",
-             'axis_title': r"Weighted flux, $\overline{w's_L'}\ \mathrm{\left[K\,m\, s^{-1}\right]}$",
-            # 'legend_label': r"$\overline{w's_L'}^\mathrm{cld}$",
-            },
-            # QTWCLD weighted
-            {'var_names':
-                {
-                'clubb': [],
-                'sam': ['QTWCLD'],
-                'coamps': [],
-                'r408': [],
-                'hoc': [],
-                'e3sm': [],
-				'cam': [],
-                },
-             'sam_conv_factor': 1, 'type': Panel.TYPE_BUDGET, 'lines': qtw_weight_lines,
-             'title': r"Weighted flux, $\overline{w'r_t'}$",
-             'axis_title': r"Weighted flux, $\overline{w'r_t'}\ \mathrm{\left[kg\,kg^{-1}\, m\,s^{-1}\right]}$",
-            # 'legend_label': r"$\overline{w'r_t'}^\mathrm{cld}$",
-            },
-            # QTCLD unweighted
-            {'var_names':
-                {
-                'clubb': [],
-                'sam': ['QTCLD'],
-                'coamps': [],
-                'r408': [],
-                'hoc': [],
-                'e3sm': [],
-				'cam': [],
-                },
-             'sam_conv_factor': 1, 'type': Panel.TYPE_BUDGET, 'lines': qt_cond_lines,
-             'title': r"Conditional total water mixing ratio, $\mathrm{r_t}$",
-             'axis_title': r"Conditional total water mixing ratio, "+
-                           r"$\mathrm{r_t}\ \mathrm{\left[g\,kg^{-1}\right]}$",
-            # 'legend_label': r"$\mathrm{r_t^{cld}}$",
-            },
-            # U 2ND MOMENTS
-            {'var_names':
-                {
-                'clubb': [],
-                'sam': ['UW'],
-                'coamps': [],
-                'r408': [],
-                'hoc': [],
-                'e3sm': [],
-				'cam': [],
-                },
-             'sam_conv_factor': 1, 'type': Panel.TYPE_BUDGET, 'lines': uw_lines,
-             'title': "Eastward 2nd-moments",
-             'axis_title': r"2nd moments $\mathrm{\left[m^2\,s^{-2}\right]}$",
-            # 'legend_label': '',
-            },
-            # V 2ND MOMENTS
-            {'var_names':
-                {
-                'clubb': [],
-                'sam': ['VW'],
-                'coamps': [],
-                'r408': [],
-                'hoc': [],
-                'e3sm': [],
-				'cam': [],
-                },
-             'sam_conv_factor': 1, 'type': Panel.TYPE_BUDGET, 'lines': vw_lines,
-             'title': "Northward 2nd-moments",
-             'axis_title': r"2nd moments $\mathrm{\left[m^2\,s^{-2}\right]}$",
-            # 'legend_label': '',
-            },
+
             # CLD
             {'var_names':
                 {
@@ -1868,8 +1410,8 @@ class VariableGroupSamProfiles(VariableGroup):
         
         # Call ctor of parent class
         super().__init__(case, clubb_datasets=clubb_datasets, sam_datasets=sam_datasets, les_dataset=les_dataset,
-                         coamps_dataset=coamps_dataset, r408_dataset=r408_dataset,
-                         hoc_dataset=hoc_dataset, e3sm_datasets= e3sm_datasets)
+                         coamps_dataset=coamps_dataset, r408_dataset=r408_dataset, cam_datasets=cam_datasets,
+                         hoc_dataset=hoc_dataset, e3sm_datasets= e3sm_datasets, wrf_datasets=wrf_datasets)
             
     def getThlmSamCalc(self, dataset_override=None):
         """
@@ -2147,7 +1689,7 @@ class VariableGroupSamProfiles(VariableGroup):
         """
         Calculates the Within-Rain Variance of Rain Water Mixing Ratio from SAM output
         using the following equation:
-        '(qrainp2_ip / (np.maximum(np.full(n,1e-5),qrainm_ip)**2))'
+        '(qrainp2_ip / (np.maximum(qrainm_ip, 1e-5)**2))'
         :return: requested variable dependent_data in the form of a list.
                  Returned dependent_data is already cropped to the appropriate min,max indices
         ALERT: How does this work in the budgets plotter?
@@ -2157,401 +1699,5 @@ class VariableGroupSamProfiles(VariableGroup):
             dataset = dataset_override
         qrainp2_ip, z, dataset = self.getVarForCalculations('qrainp2_ip', dataset)
         qrainm_ip, z, dataset = self.getVarForCalculations('qrainm_ip', dataset)
-        QRP2_QRIP = qrainp2_ip / (np.maximum(np.full(n,1e-5),qrainm_ip)**2)
+        QRP2_QRIP = qrainp2_ip / (np.maximum(qrainm_ip, 1e-5)**2)
         return QRP2_QRIP, z
-    
-    ## Conditional average fallback functions
-    # UCLD
-    def getUEnvUnweighted(self, dataset_override=None):
-        """
-        Calculates the unweighted environment-conditional average of U from SAM output
-        using the following equation:
-        (U - CLD * UCLD) / (1 - CLD)
-        :return: requested variable data in the form of a list.
-                 Returned data is already cropped to the appropriate min,max indices
-        """
-        dataset = self.les_dataset
-        if dataset_override is not None:
-            dataset = dataset_override
-        U, z, dataset = self.getVarForCalculations('U', dataset)
-        UCLD, z, dataset = self.getVarForCalculations('UCLD', dataset)
-        CLD, z, dataset = self.getVarForCalculations('CLD', dataset)
-        UENV = (U - CLD * UCLD) / (1 - CLD)
-        return UENV, z
-    
-    def getUEnvWeighted(self, dataset_override=None):
-        """
-        Calculates the weighted environment-conditional average of U from SAM output
-        using the following equation:
-        (U - CLD * UCLD)
-        :return: requested variable data in the form of a list.
-                 Returned data is already cropped to the appropriate min,max indices
-        """
-        dataset = self.les_dataset
-        if dataset_override is not None:
-            dataset = dataset_override
-        U, z, dataset = self.getVarForCalculations('U', dataset)
-        UCLD, z, dataset = self.getVarForCalculations('UCLD', dataset)
-        CLD, z, dataset = self.getVarForCalculations('CLD', dataset)
-        UENV = (U - CLD * UCLD)
-        return UENV, z
-    
-    def getUCldWeighted(self, dataset_override=None):
-        """
-        Calculates the weighted cloud-conditional average of U from SAM output
-        using the following equation:
-        CLD * UCLD
-        :return: requested variable data in the form of a list.
-                 Returned data is already cropped to the appropriate min,max indices
-        """
-        dataset = self.les_dataset
-        if dataset_override is not None:
-            dataset = dataset_override
-        UCLD, z, dataset = self.getVarForCalculations('UCLD', dataset)
-        CLD, z, dataset = self.getVarForCalculations('CLD', dataset)
-        UCLDW = CLD * UCLD
-        return UCLDW, z
-    
-    # VCLD
-    def getVEnvUnweighted(self, dataset_override=None):
-        """
-        Calculates the unweighted environment-conditional average of V from SAM output
-        using the following equation:
-        (V - CLD * VCLD) / (1 - CLD)
-        :return: requested variable data in the form of a list.
-                 Returned data is already cropped to the appropriate min,max indices
-        """
-        dataset = self.les_dataset
-        if dataset_override is not None:
-            dataset = dataset_override
-        V, z, dataset = self.getVarForCalculations('V', dataset)
-        VCLD, z, dataset = self.getVarForCalculations('VCLD', dataset)
-        CLD, z, dataset = self.getVarForCalculations('CLD', dataset)
-        VENV = (V - CLD * VCLD) / (1 - CLD)
-        return VENV, z
-    
-    def getVEnvWeighted(self, dataset_override=None):
-        """
-        Calculates the weighted environment-conditional average of V from SAM output
-        using the following equation:
-        (V - CLD * VCLD)
-        :return: requested variable data in the form of a list.
-                 Returned data is already cropped to the appropriate min,max indices
-        """
-        dataset = self.les_dataset
-        if dataset_override is not None:
-            dataset = dataset_override
-        V, z, dataset = self.getVarForCalculations('V', dataset)
-        VCLD, z, dataset = self.getVarForCalculations('VCLD', dataset)
-        CLD, z, dataset = self.getVarForCalculations('CLD', dataset)
-        VENV = (V - CLD * VCLD)
-        return VENV, z
-    
-    def getVCldWeighted(self, dataset_override=None):
-        """
-        Calculates the weighted cloud-conditional average of V from SAM output
-        using the following equation:
-        CLD * VCLD
-        :return: requested variable data in the form of a list.
-                 Returned data is already cropped to the appropriate min,max indices
-        """
-        dataset = self.les_dataset
-        if dataset_override is not None:
-            dataset = dataset_override
-        VCLD, z, dataset = self.getVarForCalculations('VCLD', dataset)
-        CLD, z, dataset = self.getVarForCalculations('CLD', dataset)
-        VCLDW = CLD * VCLD
-        return VCLDW, z
-    
-    # WCLD
-    def getWEnvUnweighted(self, dataset_override=None):
-        """
-        Calculates the unweighted environment-conditional average of W from SAM output
-        using the following equation:
-        (WM - CLD * WCLD) / (1 - CLD)
-        :return: requested variable data in the form of a list.
-                 Returned data is already cropped to the appropriate min,max indices
-        """
-        dataset = self.les_dataset
-        if dataset_override is not None:
-            dataset = dataset_override
-        WM, z, dataset = self.getVarForCalculations('WM', dataset)
-        WCLD, z, dataset = self.getVarForCalculations('WCLD', dataset)
-        CLD, z, dataset = self.getVarForCalculations('CLD', dataset)
-        WENV = (WM - CLD * WCLD) / (1 - CLD)
-        return WENV, z
-    
-    def getWEnvWeighted(self, dataset_override=None):
-        """
-        Calculates the weighted environment-conditional average of W from SAM output
-        using the following equation:
-        (WM - CLD * WCLD)
-        :return: requested variable data in the form of a list.
-                 Returned data is already cropped to the appropriate min,max indices
-        """
-        dataset = self.les_dataset
-        if dataset_override is not None:
-            dataset = dataset_override
-        WM, z, dataset = self.getVarForCalculations('WM', dataset)
-        WCLD, z, dataset = self.getVarForCalculations('WCLD', dataset)
-        CLD, z, dataset = self.getVarForCalculations('CLD', dataset)
-        WENV = (WM - CLD * WCLD)
-        return WENV, z
-
-    def getWCldWeighted(self, dataset_override=None):
-        """
-        Calculates the weighted cloud-conditional average of W from SAM output
-        using the following equation:
-        CLD * WCLD
-        :return: requested variable data in the form of a list.
-                 Returned data is already cropped to the appropriate min,max indices
-        """
-        dataset = self.les_dataset
-        if dataset_override is not None:
-            dataset = dataset_override
-        WCLD, z, dataset = self.getVarForCalculations('WCLD', dataset)
-        CLD, z, dataset = self.getVarForCalculations('CLD', dataset)
-        WCLDW = CLD * WCLD
-        return WCLDW, z
-    
-    # UWCLD
-    def getUWEnvUnweighted(self, dataset_override=None):
-        """
-        Calculates the unweighted environment-conditional average of UW from SAM output
-        using the following equation:
-        (UW - CLD * UWCLD) / (1 - CLD)
-        :return: requested variable data in the form of a list.
-                 Returned data is already cropped to the appropriate min,max indices
-        """
-        dataset = self.les_dataset
-        if dataset_override is not None:
-            dataset = dataset_override
-        UW, z, dataset = self.getVarForCalculations('UW', dataset)
-        UWCLD, z, dataset = self.getVarForCalculations('UWCLD', dataset)
-        CLD, z, dataset = self.getVarForCalculations('CLD', dataset)
-        UWENV = (UW - CLD * UWCLD) / (1 - CLD)
-        return UWENV, z
-    
-    def getUWEnvWeighted(self, dataset_override=None):
-        """
-        Calculates the weighted environment-conditional average of UW from SAM output
-        using the following equation:
-        (UW - CLD * UWCLD)
-        :return: requested variable data in the form of a list.
-                 Returned data is already cropped to the appropriate min,max indices
-        """
-        dataset = self.les_dataset
-        if dataset_override is not None:
-            dataset = dataset_override
-        UW, z, dataset = self.getVarForCalculations('UW', dataset)
-        UWCLD, z, dataset = self.getVarForCalculations('UWCLD', dataset)
-        CLD, z, dataset = self.getVarForCalculations('CLD', dataset)
-        UWENV = (UW - CLD * UWCLD)
-        return UWENV, z
-    
-    def getUWCldWeighted(self, dataset_override=None):
-        """
-        Calculates the weighted cloud-conditional average of UW from SAM output
-        using the following equation:
-        CLD * UWCLD
-        :return: requested variable data in the form of a list.
-                 Returned data is already cropped to the appropriate min,max indices
-        """
-        dataset = self.les_dataset
-        if dataset_override is not None:
-            dataset = dataset_override
-        UWCLD, z, dataset = self.getVarForCalculations('UWCLD', dataset)
-        CLD, z, dataset = self.getVarForCalculations('CLD', dataset)
-        UWCLDW = CLD * UWCLD
-        return UWCLDW, z
-    
-    # VWCLD
-    def getVWEnvUnweighted(self, dataset_override=None):
-        """
-        Calculates the unweighted environment-conditional average of VW from SAM output
-        using the following equation:
-        (VW - CLD * VWCLD) / (1 - CLD)
-        :return: requested variable data in the form of a list.
-                 Returned data is already cropped to the appropriate min,max indices
-        """
-        dataset = self.les_dataset
-        if dataset_override is not None:
-            dataset = dataset_override
-        VW, z, dataset = self.getVarForCalculations('VW', dataset)
-        VWCLD, z, dataset = self.getVarForCalculations('VWCLD', dataset)
-        CLD, z, dataset = self.getVarForCalculations('CLD', dataset)
-        VWENV = (VW - CLD * VWCLD) / (1 - CLD)
-        return VWENV, z
-    
-    def getVWEnvWeighted(self, dataset_override=None):
-        """
-        Calculates the weighted environment-conditional average of VW from SAM output
-        using the following equation:
-        (VW - CLD * VWCLD)
-        :return: requested variable data in the form of a list.
-                 Returned data is already cropped to the appropriate min,max indices
-        """
-        dataset = self.les_dataset
-        if dataset_override is not None:
-            dataset = dataset_override
-        VW, z, dataset = self.getVarForCalculations('VW', dataset)
-        VWCLD, z, dataset = self.getVarForCalculations('VWCLD', dataset)
-        CLD, z, dataset = self.getVarForCalculations('CLD', dataset)
-        VWENV = (VW - CLD * VWCLD)
-        return VWENV, z
-    
-    def getVWCldWeighted(self, dataset_override=None):
-        """
-        Calculates the weighted cloud-conditional average of VW from SAM output
-        using the following equation:
-        CLD * VWCLD
-        :return: requested variable data in the form of a list.
-                 Returned data is already cropped to the appropriate min,max indices
-        """
-        dataset = self.les_dataset
-        if dataset_override is not None:
-            dataset = dataset_override
-        VWCLD, z, dataset = self.getVarForCalculations('VWCLD', dataset)
-        CLD, z, dataset = self.getVarForCalculations('CLD', dataset)
-        VWCLDW = CLD * VWCLD
-        return VWCLDW, z
-    
-    # TVCLD
-    def getTHVEnvUnweighted(self, dataset_override=None):
-        """
-        Calculates the unweighted environment-conditional average of THETAV from SAM output
-        using the following equation:
-        (THETAV - CLD * TVCLD) / (1 - CLD)
-        :return: requested variable data in the form of a list.
-                 Returned data is already cropped to the appropriate min,max indices
-        """
-        dataset = self.les_dataset
-        if dataset_override is not None:
-            dataset = dataset_override
-        THETAV, z, dataset = self.getVarForCalculations('THETAV', dataset)
-        TVCLD, z, dataset = self.getVarForCalculations('TVCLD', dataset)
-        CLD, z, dataset = self.getVarForCalculations('CLD', dataset)
-        TVENV = (THETAV - CLD * TVCLD) / (1 - CLD)
-        return TVENV, z
-    
-    def getTHVEnvWeighted(self, dataset_override=None):
-        """
-        Calculates the weighted environment-conditional average of THETAV from SAM output
-        using the following equation:
-        (THETAV - CLD * TVCLD)
-        :return: requested variable data in the form of a list.
-                 Returned data is already cropped to the appropriate min,max indices
-        """
-        dataset = self.les_dataset
-        if dataset_override is not None:
-            dataset = dataset_override
-        THETAV, z, dataset = self.getVarForCalculations('THETAV', dataset)
-        TVCLD, z, dataset = self.getVarForCalculations('TVCLD', dataset)
-        CLD, z, dataset = self.getVarForCalculations('CLD', dataset)
-        TVENV = (THETAV - CLD * TVCLD)
-        return TVENV, z
-    
-    def getTHVCldWeighted(self, dataset_override=None):
-        """
-        Calculates the weighted cloud-conditional average of THETAV from SAM output
-        using the following equation:
-        CLD * TVCLD
-        :return: requested variable data in the form of a list.
-                 Returned data is already cropped to the appropriate min,max indices
-        """
-        dataset = self.les_dataset
-        if dataset_override is not None:
-            dataset = dataset_override
-        TVCLD, z, dataset = self.getVarForCalculations('TVCLD', dataset)
-        CLD, z, dataset = self.getVarForCalculations('CLD', dataset)
-        TVCLDW = CLD * TVCLD
-        return TVCLDW, z
-    
-    # QTCLD
-    # ALERT: Check equations/units of SAM QT variables
-    def getQTEnvUnweighted(self, dataset_override=None):
-        """
-        Calculates the unweighted environment-conditional average of QT from SAM output
-        using the following equation:
-        (QT - CLD * QTCLD) / (1 - CLD)
-        :return: requested variable data in the form of a list.
-                 Returned data is already cropped to the appropriate min,max indices
-        """
-        dataset = self.les_dataset
-        if dataset_override is not None:
-            dataset = dataset_override
-        QT, z, dataset = self.getVarForCalculations('QT', dataset)
-        QTCLD, z, dataset = self.getVarForCalculations('QTCLD', dataset)
-        CLD, z, dataset = self.getVarForCalculations('CLD', dataset)
-        QTENV = (QT - CLD * QTCLD) / (1 - CLD)
-        return QTENV, z
-    
-    # QTWCLD
-    # ALERT: Check equations/units of SAM QTW variables
-    def getQTWEnvWeighted(self, dataset_override=None):
-        """
-        Calculates the weighted environment-conditional average of QTW from SAM output
-        using the following equation:
-        (WPRTP - CLD * QTWCLD / 1000)
-        :return: requested variable data in the form of a list.
-                 Returned data is already cropped to the appropriate min,max indices
-        """
-        dataset = self.les_dataset
-        if dataset_override is not None:
-            dataset = dataset_override
-        WPRTP, z, dataset = self.getVarForCalculations('WPRTP', dataset)
-        QTWCLD, z, dataset = self.getVarForCalculations('QTWCLD', dataset)
-        CLD, z, dataset = self.getVarForCalculations('CLD', dataset)
-        QTWENV = (WPRTP - CLD * QTWCLD / 1000)
-        return QTWENV, z
-    
-    def getQTWCldWeighted(self, dataset_override=None):
-        """
-        Calculates the weighted cloud-conditional average of QTW from SAM output
-        using the following equation:
-        CLD * QTWCLD / 1000
-        :return: requested variable data in the form of a list.
-                 Returned data is already cropped to the appropriate min,max indices
-        """
-        dataset = self.les_dataset
-        if dataset_override is not None:
-            dataset = dataset_override
-        QTWCLD, z, dataset = self.getVarForCalculations('QTWCLD', dataset)
-        CLD, z, dataset = self.getVarForCalculations('CLD', dataset)
-        QTWCLDW = CLD * QTWCLD
-        return QTWCLDW, z
-    
-    # TLWCLD
-    # ALERT: Check equations/units of SAM TLW variables
-    def getTLWEnvWeighted(self, dataset_override=None):
-        """
-        Calculates the weighted environment-conditional average of TL from SAM output
-        using the following equation:
-        (TLFLUX / RHO / 1004 - CDL * TLWCLD)
-        :return: requested variable data in the form of a list.
-                 Returned data is already cropped to the appropriate min,max indices
-        """
-        dataset = self.les_dataset
-        if dataset_override is not None:
-            dataset = dataset_override
-        TLFLUX, z, dataset = self.getVarForCalculations('TLFLUX', dataset)
-        TLWCLD, z, dataset = self.getVarForCalculations('TLWCLD', dataset)
-        CLD, z, dataset = self.getVarForCalculations('CLD', dataset)
-        RHO, z, dataset = self.getVarForCalculations('RHO', dataset)
-        TLWENV = (TLFLUX / RHO / 1004 - CLD * TLWCLD)
-        return TLWENV, z
-    
-    def getTLWCldWeighted(self, dataset_override=None):
-        """
-        Calculates the weighted cloud-conditional average of TL from SAM output
-        using the following equation:
-        CLD * TLWCLD
-        :return: requested variable data in the form of a list.
-                 Returned data is already cropped to the appropriate min,max indices
-        """
-        dataset = self.les_dataset
-        if dataset_override is not None:
-            dataset = dataset_override
-        TLWCLD, z, dataset = self.getVarForCalculations('TLWCLD', dataset)
-        CLD, z, dataset = self.getVarForCalculations('CLD', dataset)
-        TLWCLDW = CLD * TLWCLD

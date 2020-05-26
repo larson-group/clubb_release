@@ -24,14 +24,14 @@ class Panel:
     TYPE_TIMESERIES = 'timeseries'
     EXTENSION = '.png'
 
-    def __init__(self, plots, panel_type="profile", title="Unnamed panel", dependant_title="dependant variable",
+    def __init__(self, plots, panel_type="profile", title="Unnamed panel", dependent_title="dependent variable",
                  sci_scale = None, centered = False):
         """
         Creates a new panel
         :param plots: list of Line objects to plot onto the panel
         :param panel_type: Type of panel being plotted (i.e. budget, profile, timeseries)
         :param title: The title of this plot (e.g. 'Liquid water potential tempature')
-        :param dependant_title: Label of the dependant axis (labels the x-axis for all panel types except timeseries).
+        :param dependent_title: Label of the dependent axis (labels the x-axis for all panel types except timeseries).
         :param sci_scale: The scale at which to display the x axis (e.g. to scale to 1e-3 set sci_scale=-3).
             If not specified, the matplotlib default sci scaling will be used.
         """
@@ -39,7 +39,7 @@ class Panel:
         self.panel_type = panel_type
         self.all_plots = plots
         self.title = title
-        self.dependant_title = dependant_title
+        self.dependent_title = dependent_title
         self.x_title = "x title unassigned"
         self.y_title = "y title unassigned"
         self.__init_axis_titles__()
@@ -52,14 +52,14 @@ class Panel:
         :return:
         """
         if self.panel_type is Panel.TYPE_PROFILE:
-            self.x_title = self.dependant_title
+            self.x_title = self.dependent_title
             self.y_title = "Height [m]"
         elif self.panel_type is Panel.TYPE_BUDGET:
             self.y_title = "Height [m]"
-            self.x_title = self.dependant_title
+            self.x_title = self.dependent_title
         elif self.panel_type is Panel.TYPE_TIMESERIES:
             self.x_title = "Time [min]"
-            self.y_title = self.dependant_title
+            self.y_title = self.dependent_title
         else:
             raise ValueError('Invalid panel type ' + self.panel_type +
                              '. Valid options are profile, budget, timeseries')
@@ -69,7 +69,12 @@ class Panel:
         """
          Saves a single panel/graph to the output directory specified by the pyplotgen launch parameters
 
-        :param casename: The name of the case that's plotting this panel
+        :param casename: The name of the case that's plotted in this panel
+        :param replace_images: Switch to tell pyplotgen if existing files should be overwritten
+        :param no_legends: 
+        :param thin_lines:
+        :param alphabetic_id:
+        :paired_plots:
         :return: None
         """
         print('Plotting panel {}'.format(self.title))
