@@ -16,19 +16,23 @@ if (__name__ == '__main__'):
 
   M = len(sys.argv) - 1
 
-  if (M < 1):
-    print("usage: python plot_tv.py <run 1> [run 2] ...")
+  if (M < 2):
+    print("usage: python plot_tv.py <variable> <run 1> [run 2] ...")
     sys.exit(1)
 
+  var_name = sys.argv[1]
   f, ax = pyplot.subplots()
-  for m in range(M):
-    nc_file = sys.argv[1+m] + '_zm.nc'
+  for m in range(2,M+1):
+    nc_file = sys.argv[m] + '_zm.nc'
     data = Dataset(nc_file)
+    if (var_name not in data.variables):
+      nc_file = sys.argv[m] + '_zt.nc'
+      data = Dataset(nc_file)
     t = data['time'][:]
-    wp2 = data['wp2'][:]
-    plot_tv(t/60.0, wp2, ax, nc_file)
+    var = data[var_name][:]
+    plot_tv(t/60.0, var, ax, nc_file)
 
-  ax.set_title('Total Variation of wp2')
+  ax.set_title('Total Variation of {}'.format(var_name))
   ax.set_xlabel('time (min)')
   ax.set_ylabel('total variation')
   ax.legend(loc='best')
