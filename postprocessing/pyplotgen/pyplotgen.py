@@ -26,7 +26,11 @@ from src.interoperability import clean_path
 
 class PyPlotGen:
     """
-
+    Main class for the pyplotgen program.
+    After processing the command line options in the main function,
+    an instance of this class is created in __process_args__, passing all option parameters.
+    Finally the run function of this class is the actual driver of the pyplotgen program,
+    creating the Case objects and calling their plot functions to generate the images and html output.
     """
 
     def __init__(self, output_folder, clubb_folders=None, replace=False, les=False, cgbest=False, hoc=False,
@@ -37,23 +41,28 @@ class PyPlotGen:
         """
         This creates an instance of PyPlotGen. Each parameter is a command line parameter passed in from the argparser
         below.
-        :param input_folder:
-        :param output_folder:
-        :param replace:
-        :param les:
-        :param cgbest:
-        :param hoc:
-        :param plotrefs:
-        :param nightly:
-        :param hq_imgs:
-        :param eps:
-        :param zip:
-        :param thin:
-        :param no_legends:
-        :param ensemble:
+        
+        :param output_folder: String containing the foldername into which the output files should be put.
+        :param clubb_folders: List of foldernames containing CLUBB netcdf files to be plotted.
+        :param replace: If False, an already existing outout folder will not be overwritten.
+        :param les: If True, plot LES dependent_data for comparison.
+        :param cgbest: If True, plot Chris Golaz Best Ever dependent_data for comparison.
+        :param hoc: If True, plot !HOC 12/17/2015 dependent_data for comparison.
+        :param plotrefs: If True, this is equivalent to les, cgbest, and hoc being set to True.
+        :param benchmark_only: If True, autoplotting of CLUBB's default output folder is shut off.
+            So only benchmark output will be plotted.
+        :param zip: 
+        :param thin: 
+        :param no_legends: 
+        :param ensemble: 
+        :param plot_e3sm: 
+        :param sam_folders: 
+        :param wrf_folders: 
+        :param cam_folders: 
         :param budget_moments:
         :param bu_morr:
         :param diff:
+        :param show_alphabetic_id: 
         """
         self.clubb_folders = clubb_folders
         self.output_folder = output_folder
@@ -259,7 +268,7 @@ def __process_args__():
     parser.add_argument("-d", "--plot-hoc-2005", help="Plot !HOC 12/17/2015 dependent_data for comparison.",
                         action="store_true")
     parser.add_argument("-a", "--all-best",
-                        help="Same as -lbd. Plots LES, Golaz Best Ever, and HOC 2005 dependent_data for comparison.",
+                        help="Same as -lgd. Plots LES, Golaz Best Ever, and HOC 2005 dependent_data for comparison.",
                         action="store_true")
     parser.add_argument("-z", "--zip", help="Output dependent_data into a compressed zip file.", action="store_true")
     parser.add_argument("--show-alphabetic-id", help="Add an identifying character to the top right of a panel.",
@@ -273,8 +282,8 @@ def __process_args__():
                         action="store_true")
     parser.add_argument("--benchmark-only",
                         help="Prevents autoplotting of clubb's default output folder when no input folders are "
-                             "specifed. This results in only plotting the benchmark output, though this "
-                             "output doesn't gurantee all text fields or plots are filled.",
+                             "specified. This results in only plotting the benchmark output, though this "
+                             "output doesn't guarantee all text fields or plots are filled.",
                         action="store_true")
     parser.add_argument("--diff", help="Plot the difference between two clubb folders", action="store")
     parser.add_argument("-c", "--clubb", help="Input folder(s) containing clubb netcdf data.", action="store",

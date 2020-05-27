@@ -186,7 +186,7 @@ class DataReader():
         them using the appropriate helper class.
         :param folder_path: The path of the folder to be loaded
         :param ignore_git: Ignore files and paths that contain '.git' in their name
-        :return: A 2 dimentional dictionary where a case_key (e.g. gabls3_rad)
+        :return: A 2 dimensional dictionary where a case_key (e.g. gabls3_rad)
         contains a dictionary defining filenames behind a filetype key (e.g. zm)
         For example: to access the zm dependent_data for gabls3_rad, simply call clubb_datasets['gabls3']['zm']
         :author: Nicolas Strike

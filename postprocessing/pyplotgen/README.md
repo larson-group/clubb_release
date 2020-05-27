@@ -268,37 +268,12 @@ ALL_CASES = [ARM, ARM_97, ASTEX_A209, ATEX,
 Please maintain the list's alphabetical ordering for ease of use.
 
 ## Plotting SAM-exclusive VariableGroups
-_Note_: This might not work yet in the master version, as some changes to the code need to be made to actually be able to plot SAM exclusively.  
-The VariableGroups `VariableGroupSamBudgets` and `VariableGroupSamProfiles` were added to recreate the SAM plots done with corplot (python_sam_budgets_plotter). To plot either of those, add them to the `var_groups` list in the definition of the cases to be plotted and, if not wanted, remove or comment out the other VariableGroups. It is not yet possible to specify SAM input NetCDF files through a pyplotgen command line option. Therefore, the input file needs to be specified under the key `sam_file` in the same case defintion.  
-Example for a modified case definition for BOMEX:
-~~~~python
-BOMEX = {'name': 'bomex', 'start_time': 181, 'end_time': 360, 'height_min_value': 0, 'height_max_value': 2500,
-         
-         'blacklisted_vars': [],
-         'sam_file': "path/to/SAM/BOMEX.nc", # Specify SAM NetCDF file here!
-         'coamps_file': None,
-         'r408_file': {'zm': R408_OUTPUT_ROOT + '/Chris_Golaz_best_ever/bomex_zm.nc',
-                       'zt': R408_OUTPUT_ROOT + '/Chris_Golaz_best_ever/bomex_zt.nc',
-                       'sfc': R408_OUTPUT_ROOT + '/Chris_Golaz_best_ever/bomex_sfc.nc'},
-         'hoc_file': {'zm': HOC_OUTPUT_ROOT + '/bomex_zm.nc',
-                      'zt': HOC_OUTPUT_ROOT + '/bomex_zt.nc',
-                      'sfc': HOC_OUTPUT_ROOT + '/bomex_sfc.nc'},
-         'e3sm_file': e3sm_output_root + '/bomex.nc',
-         'var_groups': [#VariableGroupBase, VariableGroupWs,
-				VariableGroupSamBudgets]} # New VariableGroup added and rest commented out
-~~~~
-Then run pyplotgen with the flags `-l` and `--no-clubb` to skip plots for all other models:
-```bash
-./pyplotgen -l --no-clubb
-```
-In the future, the plan is to have an option that works similarly to the E3SM or CLUBB input options, `-e` and `-i`, respectively. With those one can pass multiple paths to folders to be checked for NetCDF files.
-
-## Plotting SAM-exclusive VariableGroups
-The VariableGroups `VariableGroupSamBudgets`, `VariableGroupSamProfiles` and `VariableGroupSamMultilineProfiles` were added to recreate the SAM plots done with corplot (python_sam_budgets_plotter).
-Pyplotgen will automatically generate the `VariableGroupSamBudgets` plots when using the `--plot-budgets` flag with SAM input.
-To generate the SAM profile plots, add the VariableGroups to the `var_groups` list in the definition of the cases to be plotted and, if not wanted, remove or comment out the other VariableGroups.
+The VariableGroups `VariableGroupSamBudgets`, `VariableGroupSamProfiles` and `VariableGroupSamMultilineProfiles` were added to recreate the SAM plots done with corplot (python_sam_budgets_plotter).  
+Pyplotgen will automatically generate the `VariableGroupSamBudgets` plots when using the `--plot-budgets` flag with SAM input.  
+To generate the SAM profile plots, add the VariableGroups to the `var_groups` list in the definition of the cases to be plotted and, if not wanted, remove or comment out the other VariableGroups.  
 These specific VariableGroups will only work with SAM input!
-With the '-s' option multiple SAM input folders containing NetCDF files can be specified.
+
+With the '-s' option multiple SAM input folders containing NetCDF files can be specified.  
 To plot SAM data for a specific case the name of the input NetCDF file needs to be the same as the string given under the key `sam_file` in the same case defintion.  
 Example for a modified case definition for BOMEX:
 ~~~~python
@@ -326,5 +301,5 @@ python3 ./pyplotgen -s first/path/to/SAM/folder second/path/to/SAM/folder
 The easiest way to run pyplotgen on Windows at the moment is to install a Linux shell emulator.
 This will take care of most problems concerning interoperability.  
 Running pyplotgen on Windows was tested using Git Bash which is part of the git installation for windows and can be found [here](https://git-scm.com/).  
-Using Git Bash one can simply follow the same procedure as for regular Linux bash to run pyplotgen.
+Using Git Bash one can simply follow the same procedure as for regular Linux bash to run pyplotgen.  
 Paths can be specified using either the Windows (C:\User\testuser\...) or the Unix format (/home/testuser/...).

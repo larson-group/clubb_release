@@ -18,7 +18,6 @@ class Panel:
     Represents an individual panel/graph. Each panel contains a number of details
     specific to it, such as a title, axis labels, and lines. Each panel can be plotted/saved to a file.
     """
-    #x_title: str
     TYPE_PROFILE = 'profile'
     TYPE_BUDGET = 'budget'
     TYPE_TIMESERIES = 'timeseries'
@@ -34,6 +33,8 @@ class Panel:
         :param dependent_title: Label of the dependent axis (labels the x-axis for all panel types except timeseries).
         :param sci_scale: The scale at which to display the x axis (e.g. to scale to 1e-3 set sci_scale=-3).
             If not specified, the matplotlib default sci scaling will be used.
+        :param centered: If True, the Panel will be centered around 0.
+                         Profile plots are usually centered, while budget plots are not.
         """
 
         self.panel_type = panel_type
@@ -48,8 +49,8 @@ class Panel:
 
     def __init_axis_titles__(self):
         """
-
-        :return:
+        Sets the axis titles for this Panel depending on self.panel_type
+        :return: None
         """
         if self.panel_type is Panel.TYPE_PROFILE:
             self.x_title = self.dependent_title
@@ -67,17 +68,19 @@ class Panel:
     def plot(self, output_folder, casename, replace_images = False, no_legends = True, thin_lines = False,
              alphabetic_id="", paired_plots = True):
         """
-         Saves a single panel/graph to the output directory specified by the pyplotgen launch parameters
+         Saves a single panel/graph as image to the output directory specified by the pyplotgen launch parameters
 
         :param casename: The name of the case that's plotted in this panel
         :param replace_images: Switch to tell pyplotgen if existing files should be overwritten
-        :param no_legends: 
-        :param thin_lines:
-        :param alphabetic_id:
-        :paired_plots:
+        :param no_legends: If False, a legend will be generated for this Panel
+        :param thin_lines: If True, the linewidth for this Panel is specified in Style_definitions.THIN_LINE_THICKNESS
+        :param alphabetic_id: A string printed into the Panel at coordinates (.9,.9) as an identifier.
+        :paired_plots: If no format is specified and paired_plots is True,
+                       use the color/style rotation specified in Style_definitions.py
         :return: None
         """
         print('Plotting panel {}'.format(self.title))
+        # Create new figure and axis
         plt.subplot(111)
 
         # Set line color/style. This will cycle through all colors,
@@ -111,7 +114,7 @@ class Panel:
         else:
             plt.ticklabel_format(style='sci', axis='x', scilimits=Style_definitions.POW_LIMS)
 
-        # prevent x-axis label from getting cut off
+        # Prevent x-axis label from getting cut off
         plt.gcf().subplots_adjust(bottom=0.15)
 
         # Plot dashed line. This var will oscillate between true and false
@@ -124,14 +127,15 @@ class Panel:
                 x_data = x_data * math_scale_factor
             y_data = var.y
 
+            # Find absolutely greatest value in x_data in Panel for centering
             max_variable_value = max(abs(np.nanmin(x_data)),np.nanmax(x_data))
-
             max_panel_value = max(max_panel_value,max_variable_value)
 
             if x_data.shape[0] != y_data.shape[0]:
                 raise ValueError("X and Y dependent_data have different shapes X: "+str(x_data.shape)
                                  + "  Y:" + str(y_data.shape) + ". Attempted to plot " + self.title + " using X: " +
                                  self.x_title + "  Y: " + self.y_title)
+            # Set correct line formatting and plot data
             if var.line_format == Style_definitions.BENCHMARK_LINE_STYLES['sam']:
                 linewidth = Style_definitions.LES_LINE_THICKNESS
             elif var.line_format == Style_definitions.BENCHMARK_LINE_STYLES['r408']:
@@ -206,6 +210,7 @@ class Panel:
         except FileExistsError:
             pass # do nothing
 
+        # Generate image filename
         filename = self.panel_type + "_"+ str(datetime.now())
         
         if self.panel_type == Panel.TYPE_BUDGET:
@@ -213,8 +218,10 @@ class Panel:
         else:
             filename = filename + '_' + self.y_title + "_VS_" + self.x_title
         filename = self.__remove_invalid_filename_chars__(filename)
+        # Concatenate with output foldername
         rel_filename = output_folder + "/" +casename+'/' + filename
         rel_filename = clean_path(rel_filename)
+        # Save image file
         if replace_images is True or not os.path.isfile(rel_filename+Panel.EXTENSION):
             plt.savefig(rel_filename+Panel.EXTENSION)
         else: # os.path.isfile(rel_filename + Panel.EXTENSION) and replace_images is False:
