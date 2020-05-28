@@ -118,7 +118,7 @@ class VariableGroup:
 
         *title*: (optional) Override the default panel title, or provide one if it's not specified in the netcdf file.
 
-        *axis_title*: (optional) Override the default dependant axis title, or provide one if it's not
+        *axis_title*: (optional) Override the default dependent axis title, or provide one if it's not
         specified in the netcdf file.
 
 
@@ -367,7 +367,7 @@ class VariableGroup:
                 sci_scale = None
             if 'centered' in variable.keys():
                 centered = variable['centered']
-            panel = Panel(plotset, title=title, dependant_title=axis_label, panel_type=panel_type, sci_scale=sci_scale, centered=centered)
+            panel = Panel(plotset, title=title, dependent_title=axis_label, panel_type=panel_type, sci_scale=sci_scale, centered=centered)
             self.panels.append(panel)
 
     def __getTitles__(self, variable_def_dict, plotted_models_varname):
@@ -488,7 +488,7 @@ class VariableGroup:
 
         if 'e3sm_conv_factor' in variable_def_dict.keys():
             conv_factors['e3sm'] = variable_def_dict['e3sm_conv_factor']
-            
+
         if 'cam_conv_factor' in variable_def_dict.keys():
             conv_factors['cam'] = variable_def_dict['cam_conv_factor']
 

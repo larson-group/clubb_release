@@ -48,33 +48,33 @@ module parameters_tunable
     C1b         = 1.000000_core_rknd,    & ! High Skewness in C1 Skw. Function   [-]
     C1c         = 1.000000_core_rknd,    & ! Degree of Slope of C1 Skw. Function [-]
     C2          = 1.300000_core_rknd,    & ! Low Skewness in C2 Skw. Function    [-]
-    C2rt        = 1.000000_core_rknd,    & ! C2 coef. for the rtp2_dp1 term      [-]
-    C2thl       = 1.000000_core_rknd,    & ! C2 coef. for the thlp2_dp1 term     [-]
+    C2rt        = 2.000000_core_rknd,    & ! C2 coef. for the rtp2_dp1 term      [-]
+    C2thl       = 2.000000_core_rknd,    & ! C2 coef. for the thlp2_dp1 term     [-]
     C2rtthl     = 2.000000_core_rknd,    & ! C2 coef. for the rtpthlp_dp1 term   [-]
     C2b         = 1.300000_core_rknd,    & ! High Skewness in C2 Skw. Function   [-]
     C2c         = 5.000000_core_rknd,    & ! Degree of Slope of C2 Skw. Function [-]
-    C4          = 5.200000_core_rknd,    & ! Used only when l_tke_aniso is true  [-]
+    C4          = 2.000000_core_rknd,    & ! Used only when l_tke_aniso is true  [-]
     C5          = 0.300000_core_rknd,    & ! Coef. in pressure terms: w'^2 eqn   [-]
-    C6rt        = 4.000000_core_rknd,    & ! Low Skewness in C6rt Skw. Function  [-]
-    C6rtb       = 6.000000_core_rknd,    & ! High Skewness in C6rt Skw. Function [-]
+    C6rt        = 2.000000_core_rknd,    & ! Low Skewness in C6rt Skw. Function  [-]
+    C6rtb       = 2.000000_core_rknd,    & ! High Skewness in C6rt Skw. Function [-]
     C6rtc       = 1.000000_core_rknd,    & ! Degree of Slope of C6rt Skw. Fnct.  [-]
-    C6thl       = 4.000000_core_rknd,    & ! Low Skewness in C6thl Skw. Function [-]
-    C6thlb      = 6.000000_core_rknd,    & ! High Skewness in C6thl Skw. Fnct.   [-]
+    C6thl       = 2.000000_core_rknd,    & ! Low Skewness in C6thl Skw. Function [-]
+    C6thlb      = 2.000000_core_rknd,    & ! High Skewness in C6thl Skw. Fnct.   [-]
     C6thlc      = 1.000000_core_rknd,    & ! Degree of Slope of C6thl Skw. Fnct. [-]
     C7          = 0.500000_core_rknd,    & ! Low Skewness in C7 Skw. Function    [-]
-    C7b         = 0.800000_core_rknd,    & ! High Skewness in C7 Skw. Function   [-]
+    C7b         = 0.500000_core_rknd,    & ! High Skewness in C7 Skw. Function   [-]
     C7c         = 0.500000_core_rknd,    & ! Degree of Slope of C7 Skw. Function [-]
-    C8          = 3.000000_core_rknd,    & ! Coef. #1 in C8 Skewness Equation    [-]
+    C8          = 0.500000_core_rknd,    & ! Coef. #1 in C8 Skewness Equation    [-]
     C8b         = 0.020000_core_rknd,    & ! Coef. #2 in C8 Skewness Equation    [-]
     C10         = 3.300000_core_rknd,    & ! Currently Not Used in the Model     [-]
-    C11         = 0.500000_core_rknd,    & ! Low Skewness in C11 Skw. Function   [-]
-    C11b        = 0.500000_core_rknd,    & ! High Skewness in C11 Skw. Function  [-]
+    C11         = 0.400000_core_rknd,    & ! Low Skewness in C11 Skw. Function   [-]
+    C11b        = 0.400000_core_rknd,    & ! High Skewness in C11 Skw. Function  [-]
     C11c        = 0.500000_core_rknd,    & ! Degree of Slope of C11 Skw. Fnct.   [-]
     C12         = 1.000000_core_rknd,    & ! Constant in w'^3 Crank-Nich. diff.  [-]
     C13         = 0.100000_core_rknd,    & ! Not currently used in model         [-]
     C14         = 1.000000_core_rknd,    & ! Constant for u'^2 and v'^2 terms    [-]
-    C15         = 0.4_core_rknd,         & ! Coefficient for the wp3_bp2 term    [-]
-    C_wp2_splat = 0.0_core_rknd            ! Coefficient for gustiness near ground [-]
+    C15         = 0.000000_core_rknd,         & ! Coefficient for the wp3_bp2 term    [-]
+    C_wp2_splat = 2.000000_core_rknd            ! Coefficient for gustiness near ground [-]
 !$omp threadprivate(C1, C1b, C1c, C2, C2b, C2c, &
 !$omp   C2rt, C2thl, C2rtthl, C4, C5, C6rt, C6rtb, C6rtc, &
 !$omp   C6thl, C6thlb, C6thlc, &
@@ -91,16 +91,16 @@ module parameters_tunable
   ! Note: DD 1987 is Duynkerke & Driedonks (1987).
   real( kind = core_rknd ), public :: & 
     c_K         = 0.200000_core_rknd, & ! Constant C_mu^(1/4) in DD 1987 [m^2/s]
-    c_K1        = 0.750000_core_rknd, & ! Coef. of Eddy Diffusion: wp2   [m^2/s]
-    c_K2        = 0.125000_core_rknd, & ! Coef. of Eddy Diffusion: xp2   [m^2/s]
+    c_K1        = 0.200000_core_rknd, & ! Coef. of Eddy Diffusion: wp2   [m^2/s]
+    c_K2        = 0.025000_core_rknd, & ! Coef. of Eddy Diffusion: xp2   [m^2/s]
     c_K6        = 0.375000_core_rknd, & ! Coef. of Eddy Diffusion: wpxp  [m^2/s]
-    c_K8        = 1.250000_core_rknd, & ! Coef. of Eddy Diffusion: wp3   [m^2/s]
-    c_K9        = 0.250000_core_rknd, & ! Coef. of Eddy Diff.: up2/vp2   [m^2/s]
+    c_K8        = 5.000000_core_rknd, & ! Coef. of Eddy Diffusion: wp3   [m^2/s]
+    c_K9        = 0.100000_core_rknd, & ! Coef. of Eddy Diff.: up2/vp2   [m^2/s]
     c_K_hm      = 0.750000_core_rknd, & ! Coef. of Eddy Diffusion: hmm   [m^2/s]
-    c_K_hmb     = 0.10000_core_rknd,  & ! Coef. of Non-Local Factor, Eddy Diffusion: hmm   [m^2/s]
+    c_K_hmb     = 0.750000_core_rknd,  & ! Coef. of Non-Local Factor, Eddy Diffusion: hmm   [m^2/s]
     K_hm_min_coef = 0.10000_core_rknd,& ! Min. of Non-Local Factor, Eddy Diffusion: hmm   [m^2/s]
-    gamma_coef  = 0.320000_core_rknd, & ! Low Skw.: gamma coef. Skw. Fnct.   [-]
-    gamma_coefb = 0.320000_core_rknd, & ! High Skw.: gamma coef. Skw. Fnct.  [-]
+    gamma_coef  = 0.250000_core_rknd, & ! Low Skw.: gamma coef. Skw. Fnct.   [-]
+    gamma_coefb = 0.250000_core_rknd, & ! High Skw.: gamma coef. Skw. Fnct.  [-]
     gamma_coefc = 5.000000_core_rknd, & ! Deg. Slope: gamma coef. Skw. Fnct. [-]
     mu          = 1.000E-3_core_rknd, & ! Fract entrain rate per unit alt  [1/m]
     mult_coef   = 0.500000_core_rknd, & ! Coef. applied to log(avg dz/thresh)[-]
@@ -123,10 +123,10 @@ module parameters_tunable
 
   real( kind = core_rknd ), private :: & 
     nu1   = 20.00000_core_rknd, & ! Bg. Coef. Eddy Diffusion: wp2        [m^2/s]
-    nu2   = 5.000000_core_rknd, & ! Bg. Coef. Eddy Diffusion: xp2        [m^2/s]
+    nu2   = 1.000000_core_rknd, & ! Bg. Coef. Eddy Diffusion: xp2        [m^2/s]
     nu6   = 5.000000_core_rknd, & ! Bg. Coef. Eddy Diffusion: wpxp       [m^2/s]
     nu8   = 20.00000_core_rknd, & ! Bg. Coef. Eddy Diffusion: wp3        [m^2/s]
-    nu9   = 20.00000_core_rknd, & ! Bg. Coef. Eddy Diffusion: up2/vp2    [m^2/s]
+    nu9   = 10.00000_core_rknd, & ! Bg. Coef. Eddy Diffusion: up2/vp2    [m^2/s]
     nu10  = 0.000000_core_rknd, & ! Bg. Coef. Eddy Diffusion: edsclrm    [m^2/s]
     nu_hm = 1.500000_core_rknd    ! Bg. Coef. Eddy Diffusion: hmm        [m^2/s]
 !$omp threadprivate(nu1, nu2, nu6, nu8, nu9, nu10, nu_hm)
@@ -148,7 +148,7 @@ module parameters_tunable
   ! beta should vary between 0 and 3.
 
   real( kind = core_rknd ), public :: &
-    beta = 2.400000_core_rknd    ! Beta coefficient     [-]
+    beta = 1.000000_core_rknd    ! Beta coefficient     [-]
 
 !$omp threadprivate(beta)
 
@@ -164,14 +164,14 @@ module parameters_tunable
 !$omp threadprivate(Skw_max_mag)
 
   real( kind = core_rknd ), public ::  &   
-    C_invrs_tau_bkgnd         = 1.0_core_rknd,  &   ! 
+    C_invrs_tau_bkgnd         = 1.1_core_rknd,  &   ! 
     C_invrs_tau_sfc           = 0.1_core_rknd,  &   !
     C_invrs_tau_shear         = 0.02_core_rknd, &   !
-    C_invrs_tau_N2            = 0.1_core_rknd,  &   ! 
-    C_invrs_tau_N2_wp2        = 0.2_core_rknd,  &   !
-    C_invrs_tau_N2_xp2        = 0.2_core_rknd,  &   !
+    C_invrs_tau_N2            = 0.4_core_rknd,  &   ! 
+    C_invrs_tau_N2_wp2        = 0.1_core_rknd,  &   !
+    C_invrs_tau_N2_xp2        = 0.05_core_rknd,  &   !
     C_invrs_tau_N2_wpxp       = 0.0_core_rknd,  &   !
-    C_invrs_tau_N2_clear_wp3  = 0.0_core_rknd
+    C_invrs_tau_N2_clear_wp3  = 1.0_core_rknd
 
 !$omp threadprivate(C_invrs_tau_bkgnd,C_invrs_tau_sfc)
 !$omp threadprivate(C_invrs_tau_shear,C_invrs_tau_N2)  
@@ -218,7 +218,7 @@ module parameters_tunable
     ! Slope coefficient for the spread between the PDF component means of w.
     slope_coef_spread_DG_means_w = 21.0_core_rknd, &
     ! Parameter to adjust the PDF component standard deviations of w.
-    pdf_component_stdev_factor_w = 6.5_core_rknd, &
+    pdf_component_stdev_factor_w = 1.0_core_rknd, &
     ! Coefficient for the spread between the PDF component means of rt.
     coef_spread_DG_means_rt = 0.8_core_rknd, &
     ! Coefficient for the spread between the PDF component means of thl.
@@ -240,14 +240,14 @@ module parameters_tunable
   ! the value of zeta > 0 (and increasingly so as zeta increases).  Valid values
   ! are zeta > -1.
   real( kind = core_rknd ), public :: &
-    omicron        = 0.8_core_rknd, & ! Hydromet width/spread-of-means param [-]
+    omicron        = 0.5_core_rknd, & ! Hydromet width/spread-of-means param [-]
     zeta_vrnce_rat = 0.0_core_rknd    ! Ratio sigma^2/mu^2 comp. 1 / comp. 2 [-]
 
 !$omp threadprivate( omicron, zeta_vrnce_rat )
 
   real( kind = core_rknd ), public :: &
     ! ratio mixt_frac*precip_frac_1/precip_frac (precip_frac_calc_type=2)    [-]
-    upsilon_precip_frac_rat = 0.9_core_rknd, &
+    upsilon_precip_frac_rat = 0.55_core_rknd, &
     ! Intensity of stability correction applied to C1 and C6 [-]
     lambda0_stability_coef = 0.03_core_rknd
 
@@ -279,7 +279,7 @@ module parameters_tunable
 !$omp threadprivate( thlp2_rad_coef, thlp2_rad_cloud_frac_thresh )
 
   real( kind = core_rknd ), public :: &
-    up2_vp2_factor = 2.0_core_rknd               ! Coefficients of up2 and vp2    [-]
+    up2_vp2_factor = 4.0_core_rknd               ! Coefficients of up2 and vp2    [-]
 
 !$omp threadprivate( up2_vp2_factor )
 

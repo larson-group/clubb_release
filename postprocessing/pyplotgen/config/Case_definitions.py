@@ -55,19 +55,23 @@ alphabetical order.
 
     *var_groups*: These are the groups of variables to be plotted for the given case. var_groups is defined as a
         list of python class names, where the classes use the naming scheme VariableGroup____.py and define a variable
-        group.
+        group. An example would be: 'var_groups': [VariableGroupBase, VariableGroupWs].
+        The variables inside a VariableGroup can be found in the file with the same name,
+        i.e. config/VariableGroupBase.py. An example would be thlm in VariableGroupBase.
 
 """
 
 import os
 
 from config.VariableGroupBase import VariableGroupBase
+from config.VariableGroupBaseBudgets import VariableGroupBaseBudgets
 from config.VariableGroupCorrelations import VariableGroupCorrelations
 from config.VariableGroupIceMP import VariableGroupIceMP
 from config.VariableGroupKKMP import VariableGroupKKMP
 from config.VariableGroupLiquidMP import VariableGroupLiquidMP
 from config.VariableGroupSamBudgets import VariableGroupSamBudgets
 from config.VariableGroupSamProfiles import VariableGroupSamProfiles
+from config.VariableGroupSamMultilineProfiles import VariableGroupSamMultilineProfiles
 from config.VariableGroupWs import VariableGroupWs
 
 # ---------------------------

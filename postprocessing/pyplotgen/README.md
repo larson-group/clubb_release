@@ -111,7 +111,7 @@ Each variable is included within a _VariableGroup_,and each variable group is in
 | *type* | (optional) Override the default type 'profile' with either 'budget' or 'timeseries'|
 | *fallback_func* | (optional) If a variable is not found within a dataset and a `fallback_func` is specified, this function will be called to attempt retrieving the variable (before filling zeros if `fill_zeros=True`). Like the `model_calc` option, this is a functional reference to a method that calculates the given variable. E.g. `self.getWpthlpFallback`|
 | *title* | (optional) Override the default panel title, or provide one if it's not specified in the netcdf file.|
-| *axis_title* | (optional) Override the default dependant axis title, or provide one if it's not specified in the netcdf file.|
+| *axis_title* | (optional) Override the default dependent axis title, or provide one if it's not specified in the netcdf file.|
 | *fill_zeros* | (optional) If a variable isn't found in netcdf output, and there is no `fallback_func` (or the fallback failed) setting this to True allows PyPlotgen to fill all data points with 0 and continue plotting.|
 | *lines* | (budget variables only) Defines lines to plot for budget cases. Passed separately because it's a lot of text. This is given in the form of a list of lines, below's an example:|
 
@@ -268,14 +268,19 @@ ALL_CASES = [ARM, ARM_97, ASTEX_A209, ATEX,
 Please maintain the list's alphabetical ordering for ease of use.
 
 ## Plotting SAM-exclusive VariableGroups
-_Note_: This might not work yet in the master version, as some changes to the code need to be made to actually be able to plot SAM exclusively.  
-The VariableGroups `VariableGroupSamBudgets` and `VariableGroupSamProfiles` were added to recreate the SAM plots done with corplot (python_sam_budgets_plotter). To plot either of those, add them to the `var_groups` list in the definition of the cases to be plotted and, if not wanted, remove or comment out the other VariableGroups. It is not yet possible to specify SAM input NetCDF files through a pyplotgen command line option. Therefore, the input file needs to be specified under the key `sam_file` in the same case defintion.  
+The VariableGroups `VariableGroupSamBudgets`, `VariableGroupSamProfiles` and `VariableGroupSamMultilineProfiles` were added to recreate the SAM plots done with corplot (python_sam_budgets_plotter).  
+Pyplotgen will automatically generate the `VariableGroupSamBudgets` plots when using the `--plot-budgets` flag with SAM input.  
+To generate the SAM profile plots, add the VariableGroups to the `var_groups` list in the definition of the cases to be plotted and, if not wanted, remove or comment out the other VariableGroups.  
+These specific VariableGroups will only work with SAM input!
+
+With the '-s' option multiple SAM input folders containing NetCDF files can be specified.  
+To plot SAM data for a specific case the name of the input NetCDF file needs to be the same as the string given under the key `sam_file` in the same case defintion.  
 Example for a modified case definition for BOMEX:
 ~~~~python
 BOMEX = {'name': 'bomex', 'start_time': 181, 'end_time': 360, 'height_min_value': 0, 'height_max_value': 2500,
          
          'blacklisted_vars': [],
-         'sam_file': "path/to/SAM/BOMEX.nc", # Specify SAM NetCDF file here!
+         'sam_file': "bomex.nc", # Specify SAM NetCDF file here!
          'coamps_file': None,
          'r408_file': {'zm': R408_OUTPUT_ROOT + '/Chris_Golaz_best_ever/bomex_zm.nc',
                        'zt': R408_OUTPUT_ROOT + '/Chris_Golaz_best_ever/bomex_zt.nc',
@@ -285,10 +290,16 @@ BOMEX = {'name': 'bomex', 'start_time': 181, 'end_time': 360, 'height_min_value'
                       'sfc': HOC_OUTPUT_ROOT + '/bomex_sfc.nc'},
          'e3sm_file': e3sm_output_root + '/bomex.nc',
          'var_groups': [#VariableGroupBase, VariableGroupWs,
-				VariableGroupSamBudgets]} # New VariableGroup added and rest commented out
+				VariableGroupSamProfiles]} # New VariableGroup added and rest commented out
 ~~~~
-Then run pyplotgen with the flags `-l` and `--no-clubb` to skip plots for all other models:
+Example command line call for SAM-only plots with two input folders:
 ```bash
-./pyplotgen -l --no-clubb
+python3 ./pyplotgen -s first/path/to/SAM/folder second/path/to/SAM/folder
 ```
-In the future, the plan is to have an option that works similarly to the E3SM or CLUBB input options, `-e` and `-i`, respectively. With those one can pass multiple paths to folders to be checked for NetCDF files.
+
+## Running pyplotgen on a Windows system
+The easiest way to run pyplotgen on Windows at the moment is to install a Linux shell emulator.
+This will take care of most problems concerning interoperability.  
+Running pyplotgen on Windows was tested using Git Bash which is part of the git installation for windows and can be found [here](https://git-scm.com/).  
+Using Git Bash one can simply follow the same procedure as for regular Linux bash to run pyplotgen.  
+Paths can be specified using either the Windows (C:\User\testuser\...) or the Unix format (/home/testuser/...).

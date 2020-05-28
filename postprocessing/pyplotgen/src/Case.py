@@ -26,20 +26,27 @@ class Case:
                  plot_les=False, plot_budgets=False, plot_r408=False, plot_hoc=False, e3sm_dirs =[], cam_folders=[]):
         """
         Initialize a Case
+        
+        TODO:   - Create function for loading NcFiles to reduce redundant code
+                - Bring in line the way CLUBB files are loaded
 
         :param case_definition: dict containing case specific elements. These are pulled in from Case_definitions.py,
             see Case_definitions.py for details on how to structure the dict
-        :param clubb_folders: dict containing Dataset objects holding the dependent_data needed for the case. The key for each
-            value/Dataset in the dict is set to the ext provided in the filename (e.g. sfc, zt, zm)
+        :param clubb_folders: dict containing Dataset objects holding the dependent_data needed for the case.
+            The key for each value/Dataset in the dict is set to the ext provided in the filename (e.g. sfc, zt, zm)
+        :param diff_datasets: Takes in netcdf datasets. If datasets are passed in, pyplotgen will plot the numeric
+            difference between the folder passed in an the clubb folder.
+        :param sam_folders: List of foldernames containing sam netcdf files to be plotted
+        :param wrf_folders: List of foldernames containing wrf netcdf files to be plotted
         :param plot_les: If True pyplotgen plots LES lines, if False pyplotgen does not plot LES lines
         :param plot_budgets: If True pyplotgen will plot Budgets in addition to the other plots
                 If False (default), pyplotgen will not plot budgets
-        :param diff_datasets: Takes in netcdf datasets. If datasets are passed in, pyplotgen will plot the numeric
-            difference between the folder passed in an the clubb folder.
         :param plot_r408: If True, pyplotgen will plot the Chris Golaz 'best ever' clubb r408 dependent_data lines
                 If False (default), pyplotgen will not plot the Chris Golaz 'best ever' clubb r408 dependent_data lines
         :param plot_hoc: If True, pyplotgen will plot the HOC 2005 dependent_data lines
                 If False (default), pyplotgen will not plot the HOC 2005 dependent_data lines
+        :param e3sm_dirs: List of foldernames containing e3sm netcdf files to be plotted
+        :param cam_folders: List of foldernames containing cam netcdf files to be plotted
         """
         self.name = case_definition['name']
         self.start_time = case_definition['start_time']
@@ -62,11 +69,14 @@ class Case:
         if 'disable_budgets' in case_definition.keys() and case_definition['disable_budgets'] is True:
             self.plot_budgets = False
 
+        ## Load nc files for non-clubb models
+        # Load single LES dataset
         les_file = None
         if plot_les and case_definition['les_dataset'] is not None:
             datareader = DataReader()
             les_file = datareader.__loadNcFile__(case_definition['les_dataset'])
 
+        # Load SAM nc files from each folder
         sam_datasets = {}
         if sam_folders is not None and len(sam_folders) != 0 and case_definition['sam_file'] is not None:
             datareader = DataReader()
@@ -75,22 +85,25 @@ class Case:
                 if path.exists(sam_filename):
                     sam_datasets[foldername] = datareader.__loadNcFile__(sam_filename)
                 else:
-                    warn("Failed to find file " + sam_filename)
+                    warn("Failed to find SAM file " + sam_filename)
 
+        # Load WRF nc files from each folder
         wrf_datasets = {}
         if wrf_folders is not None and len(wrf_folders) != 0 and case_definition['wrf_file'] is not None:
             datareader = DataReader()
             for foldername in wrf_folders:
                 files_in_folder = {}
                 wrf_filenames = case_definition['wrf_file']
+                # Load each different WRF output file from foldername
                 for type_ext in wrf_filenames:
                     filepath = foldername + wrf_filenames[type_ext]
                     if path.exists(filepath):
                         files_in_folder[type_ext] = datareader.__loadNcFile__(filepath)
                     else:
-                        warn("Failed to find file " + filepath)
+                        warn("Failed to find WRF file " + filepath)
                 wrf_datasets[foldername] = files_in_folder
 
+        # Load E3SM nc files from each folder
         e3sm_file = {}
         if e3sm_dirs is not None and len(e3sm_dirs) != 0 and case_definition['e3sm_file'] is not None:
             datareader = DataReader()
@@ -99,8 +112,9 @@ class Case:
                 if path.exists(e3sm_filename):
                     e3sm_file[foldername] = datareader.__loadNcFile__(e3sm_filename)
                 else:
-                    warn("Failed to find file " + e3sm_filename)
-                    
+                    warn("Failed to find E3SM file " + e3sm_filename)
+
+        # Load CAM nc files from each folder
         cam_file = {}
         if cam_folders is not None and len(cam_folders) != 0 and case_definition['cam_file'] is not None:
             datareader = DataReader()
@@ -109,32 +123,38 @@ class Case:
                 if path.exists(cam_filename):
                     cam_file[foldername] = datareader.__loadNcFile__(cam_filename)
                 else:
-                    warn("Failed to find file " + cam_filename)
+                    warn("Failed to find CAM file " + cam_filename)
 
+        # Load COAMPS nc files
         coamps_datasets = {}
         if plot_les and case_definition['coamps_dataset'] is not None:
             datareader = DataReader()
             coamps_filenames = case_definition['coamps_dataset']
+                # Load the individual COAMPS output files
             for type_ext in coamps_filenames:
                 temp_coamps_dataset = datareader.__loadNcFile__(coamps_filenames[type_ext])
                 coamps_datasets[type_ext] = temp_coamps_dataset
         else:
             coamps_datasets = None
 
+        # Load r408 nc files
         r408_datasets = {}
         if plot_r408 and case_definition['r408_file'] is not None:
             datareader = DataReader()
             r408_filenames = case_definition['r408_file']
+            # Load the individual r408 output files
             for type_ext in r408_filenames:
                 temp_r408_dataset = datareader.__loadNcFile__(r408_filenames[type_ext])
                 r408_datasets[type_ext] = temp_r408_dataset
         else:
             r408_datasets = None
 
+        # Load HOC nc files
         hoc_datasets = {}
         if plot_hoc and case_definition['hoc_file'] is not None:
             datareader = DataReader()
             hoc_filenames = case_definition['hoc_file']
+            # Load the individual r408 output files
             for type_ext in hoc_filenames:
                 temp_hoc_dataset = datareader.__loadNcFile__(hoc_filenames[type_ext])
                 hoc_datasets[type_ext] = temp_hoc_dataset
@@ -142,7 +162,10 @@ class Case:
             hoc_datasets = None
 
         self.panels = []
+        # Loop over the VariableGroup classes listed in the 'var_groups' entry
+        # for this case in config/Case_definitions.py and create an instance of each of the listed VariableGroups
         for VarGroup in self.var_groups:
+            # Call the __init__ function of the VarGroup class and, by doing this, create an instance of it
             temp_group = VarGroup(self, clubb_datasets=self.clubb_datasets, les_dataset=les_file,
                                   coamps_dataset=coamps_datasets, sam_datasets=sam_datasets,
                                   wrf_datasets=wrf_datasets, r408_dataset=r408_datasets, hoc_dataset=hoc_datasets,
@@ -152,7 +175,10 @@ class Case:
         # Convert panels to difference panels if user passed in --diff <<folder>>
         self.diff_panels = []
         if self.diff_datasets is not None:
+            # Loop over the VariableGroup classes listed in the 'var_groups' entry
+            # for this case in config/Case_definitions.py and create an instance of each of the listed VariableGroups
             for VarGroup in self.var_groups:
+                # Call the __init__ function of the VarGroup class and, by doing this, create an instance of it
                 diff_group = VarGroup(self, clubb_datasets=self.diff_datasets, sam_file=les_file,
                                       coamps_file=coamps_datasets, cam_file=cam_file,
                                       r408_file=r408_datasets, hoc_dataset=hoc_datasets, e3sm_datasets = e3sm_file)
@@ -168,6 +194,11 @@ class Case:
                 self.panels[idx].all_plots = diff_lines
 
         if self.plot_budgets:
+            # Create an instance of a budgets VariableGroup. By default, this is VariableGroupBaseBudgets,
+            # but for SAM data, use VariableGroupSamBudgets
+            # print('Plotting budgets')
+            # print('sam_datasets None?: {}'.format(sam_datasets is None))
+            # print('len(sam_datasets)={}'.format(len(sam_datasets)))
             if self.clubb_datasets is not None and len(self.clubb_datasets) != 0:
                 for folders_datasets in self.clubb_datasets.values():
                     budget_variables = VariableGroupBaseBudgets(self, clubb_datasets=folders_datasets)
@@ -198,8 +229,8 @@ class Case:
 
         :param panelA: The first panel for comparison
         :param panelB: The second panel for comparison
-        :param get_y_diff: Default behavior is to return the difference along the x-axis, setting this to True returns
-            the difference on the y-axis
+        :param get_y_diff: Default behavior is to return the difference along the x-axis,
+            setting this to True returns the difference on the y-axis
         :return: A 2D list containing the numerical values for the difference between each line in the given panels.
         """
         linesA = panelA.all_plots
@@ -245,22 +276,25 @@ class Case:
         """
         Plot all panels associated with the case, these will be saved to a .jpg file in the <<output>>/<<casename>>
         folder
+        
         :param output_folder: absolute name of the folder to save output into.
-        :param replace_images: If True,
-        pyplotgen will overwrite images with the same name. If False (default), pyplotgen will add a timestamp to the
-        end of every filename (even if there's no filename conflict)
-        :param no_legends: If True, pyplotgen will not
-        include a legend on output graphs. If False (default), legends will be displayed.
-        :param thin_lines: If True,
-        lines plotted will be much thinner than usual. False (default) lines are plotted according to the thickness
-        defined in config/Style_definitions.py
+        :param replace_images: If True, pyplotgen will overwrite images with the same name.
+            If False (default), pyplotgen will add a timestamp to the end of every filename
+            (even if there's no filename conflict)
+        :param no_legends: If True, pyplotgen will not include a legend on output graphs.
+            If False (default), legends will be displayed.
+        :param thin_lines: If True, lines plotted will be much thinner than usual.
+        False (default) lines are plotted according to the thickness defined in config/Style_definitions.py
         :param show_alphabetic_id: If True, pyplotgen will add an alphabetic
-        label to the top right corner of each plot. These labels will rotate through a-z incrementally. If there are
-        more than 26 plots, it will rotate 2 dimentionally, e.g. (aa), (ab), (ac),...,(ba),(bb),(bc) and etc. If
-        show_alphabetic_id is False (default), this label is not displayed. The behavior for rotations greater than
-        zz is not defined, and although pyplotgen won't crash it may start to use weird characters. The rotation
-        resets between each case, e.g. if one case ends on label (ad), the next case will start on (a).
-        :return:
+            label to the top right corner of each plot. These labels will rotate through a-z incrementally.
+            If there are more than 26 plots, it will rotate 2 dimensionally,
+            e.g. (aa), (ab), (ac),...,(ba),(bb),(bc) and etc.
+            If show_alphabetic_id is False (default), this label is not displayed.
+            The behavior for rotations greater than zz is not defined,
+            and although pyplotgen won't crash it may start to use weird characters.
+            The rotation resets between each case,
+            e.g. if one case ends on label (ad), the next case will start on (a).
+        :return: None
         """
 
         print("\n\tSaving panels to .png images")
@@ -288,22 +322,29 @@ class Case:
         'ab' the 28th time, and etc. This function returns the next label as a string, and keeps track of each call
         to this method. Call count tracking is specific per case instance, e.g. if one case plots the label 'bb' last
         the next case will plot 'a' as the first label instead of 'bc'.
-        :return:
+        :return: Sequentially next label string for a specific Case object
         """
         a = 97
         z = 122
         num_letters_a_to_z = 26
         if self.next_panel_alphabetic_id_code >= a and self.next_panel_alphabetic_id_code <= z:
+            # Return label with single character
             letter = chr(self.next_panel_alphabetic_id_code)
+            # Increment next label code
             self.next_panel_alphabetic_id_code += 1
             return letter
         else:
+            # Return label with two characters
+            # Find character in first position (Slow rotation)
             first_letter_offset = int((self.next_panel_alphabetic_id_code - a) / num_letters_a_to_z) - 1
             first_letter = chr(a + first_letter_offset)
 
+            # Find character in second position (Fast rotation)
             second_letter_offset = int((self.next_panel_alphabetic_id_code - a * int(
                 self.next_panel_alphabetic_id_code / a)) % num_letters_a_to_z)
             second_letter = chr(a + second_letter_offset)
 
+            # Increment next label code
             self.next_panel_alphabetic_id_code += 1
+            # Append and return characters
             return first_letter + second_letter
