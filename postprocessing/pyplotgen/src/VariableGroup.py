@@ -216,7 +216,7 @@ class VariableGroup:
                 all_lines.extend(self.__getVarLinesForModel__('wrf', variable_def_dict, self.wrf_datasets[input_folder],
                                                               label=folder_name))
         if plot_clubb:
-            for input_folder in self.clubb_datasets:
+            for input_folder in self.clubb_datasets: # TODO this loop is causing extra budget lines
                 folder_name = os.path.basename(input_folder)
                 all_lines.extend(
                     self.__getVarLinesForModel__('clubb', variable_def_dict, self.clubb_datasets[input_folder],

@@ -11,7 +11,6 @@ these processes are mostly carried out by other classes/files.
 import argparse
 import glob
 import os
-import re
 import shutil
 import subprocess
 from datetime import datetime
@@ -219,22 +218,17 @@ class PyPlotGen:
         else:
             print("Benchmark output found in " + Case_definitions.BENCHMARK_OUTPUT_ROOT)
 
-    def __remove_invalid_filename_chars__(self, string):
-        """
-        Removes characters from a string that are not valid for a filename
-        DEPRECATED! Moved to src/interoperability.py
-        since this is needed mutiple times throughout a run
+def __trimTrailingSlash__(args):
+    """
+    Takes in a list filepaths and removes any trailing /'s
+    :param arg: list of string file paths
+    :return: list of filepaths with trailing /'s removed
+    """
+    for i in range(len(args)):
+        if args[i][-1] == "/":
+            args[i] = args[i][:-1]
 
-        :param string: Filename string to have characters removed
-        :return: a character stripped version of the filename
-        """
-        string = string.replace('.', '')
-        string = string.replace(',', '')
-        if 'win' in os.name.lower() or 'nt' in os.name.lower():
-            string = re.sub(r'(?<![A-Z]):(?!\\)', '-', string)
-        else:
-            string = string.replace(':', '-')
-        return string
+    return args
 
 def __process_args__():
     """
@@ -300,26 +294,11 @@ def __process_args__():
     hoc = args.plot_hoc_2005
     e3sm = args.e3sm
 
-    # If the last char in folder path is /, remove it
-    for i in range(len(args.clubb)):
-        if args.clubb[i][-1] == "/":
-            args.clubb[i] = args.clubb[i][:-1]
-
-    for i in range(len(args.sam)):
-        if args.sam[i][-1] == "/":
-            args.sam[i] = args.sam[i][:-1]
-
-    for i in range(len(args.cam)):
-        if args.cam[i][-1] == "/":
-            args.cam[i] = args.cam[i][:-1]
-
-    for i in range(len(args.e3sm)):
-        if args.e3sm[i][-1] == "/":
-            args.e3sm[i] = args.e3sm[i][:-1]
-
-    for i in range(len(args.wrf)):
-        if args.wrf[i][-1] == "/":
-            args.wrf[i] = args.e3sm[i][:-1]
+    args.clubb = __trimTrailingSlash__(args.clubb)
+    args.sam = __trimTrailingSlash__(args.sam)
+    args.cam = __trimTrailingSlash__(args.cam)
+    args.e3sm = __trimTrailingSlash__(args.e3sm)
+    args.wrf = __trimTrailingSlash__(args.wrf)
 
     no_folders_inputed = len(args.e3sm) == 0 and len(args.sam) == 0 and len(args.clubb) == 0 \
                          and len(args.wrf) == 0 and len(args.cam) == 0

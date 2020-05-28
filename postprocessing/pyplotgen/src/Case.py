@@ -71,7 +71,7 @@ class Case:
         if sam_folders is not None and len(sam_folders) != 0 and case_definition['sam_file'] is not None:
             datareader = DataReader()
             for foldername in sam_folders:
-                sam_filename = foldername + '/' + case_definition['sam_file']
+                sam_filename = foldername + case_definition['sam_file']
                 if path.exists(sam_filename):
                     sam_datasets[foldername] = datareader.__loadNcFile__(sam_filename)
                 else:
@@ -84,7 +84,7 @@ class Case:
                 files_in_folder = {}
                 wrf_filenames = case_definition['wrf_file']
                 for type_ext in wrf_filenames:
-                    filepath = foldername + '/' + wrf_filenames[type_ext]
+                    filepath = foldername + wrf_filenames[type_ext]
                     if path.exists(filepath):
                         files_in_folder[type_ext] = datareader.__loadNcFile__(filepath)
                     else:
@@ -95,7 +95,7 @@ class Case:
         if e3sm_dirs is not None and len(e3sm_dirs) != 0 and case_definition['e3sm_file'] is not None:
             datareader = DataReader()
             for foldername in e3sm_dirs:
-                e3sm_filename = foldername + '/' + case_definition['e3sm_file']
+                e3sm_filename = foldername + case_definition['e3sm_file']
                 if path.exists(e3sm_filename):
                     e3sm_file[foldername] = datareader.__loadNcFile__(e3sm_filename)
                 else:
@@ -105,7 +105,7 @@ class Case:
         if cam_folders is not None and len(cam_folders) != 0 and case_definition['cam_file'] is not None:
             datareader = DataReader()
             for foldername in cam_folders:
-                cam_filename = foldername + '/' + case_definition['cam_file']
+                cam_filename = foldername + case_definition['cam_file']
                 if path.exists(cam_filename):
                     cam_file[foldername] = datareader.__loadNcFile__(cam_filename)
                 else:
@@ -169,9 +169,9 @@ class Case:
 
         if self.plot_budgets:
             if self.clubb_datasets is not None and len(self.clubb_datasets) != 0:
-                # for ncdataset in self.clubb_datasets.values():
-                budget_variables = VariableGroupBaseBudgets(self, clubb_datasets=self.clubb_datasets)
-                self.panels.extend(budget_variables.panels)
+                for folders_datasets in self.clubb_datasets.values():
+                    budget_variables = VariableGroupBaseBudgets(self, clubb_datasets=folders_datasets)
+                    self.panels.extend(budget_variables.panels)
             if wrf_datasets is not None and len(wrf_datasets) !=  0:
                 # for ncdataset in self.clubb_datasets.values():
                 for folders_datasets in wrf_datasets.values():

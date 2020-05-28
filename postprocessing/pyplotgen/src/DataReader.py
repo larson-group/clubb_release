@@ -53,6 +53,12 @@ class NetCdfVariable:
             if var_found_in_dataset:
                 break
         if not var_found_in_dataset:
+            if len(ncdf_data.values()) == 0:
+                # TODO patch this bug
+                warn("Some model is missing files for " + names + ". Try either including these files or removing "
+                                                                  "their names from the Case_definitions.py config "
+                                                                  "file. This warning is a temporary notice until a "
+                                                                  "bug related to missing filenames is patched")
             # changed to warn from 'raise NameError'
             dataset_with_var = next(iter(ncdf_data.values()))
             warn("None of the values " + str(names) + " were found in the dataset " + str(dataset_with_var.filepath()))
