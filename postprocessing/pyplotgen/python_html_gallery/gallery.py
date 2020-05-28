@@ -95,7 +95,8 @@ def GenerateThumbnails(page, jpgs):
         try:
             im = Image.open(jpg)
             if im.size > static.min_size:
-                thumb = '%s_%s.%s' % (jpg.split('.')[0], 'thumb', extension)
+                trimIndex = -1*(len(extension) + 1) # position of last char before ".png"
+                thumb = jpg[:trimIndex] + "_thumb." + extension
                 if not os.path.exists(thumb):
                     # im.thumbnail(static.thumb_size, Image.ANTIALIAS)
                     im = im.resize(static.thumb_size, resample=Image.BILINEAR)
