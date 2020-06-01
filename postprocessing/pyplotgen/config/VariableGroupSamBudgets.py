@@ -11,7 +11,9 @@ from src.VariableGroup import VariableGroup
 
 
 class VariableGroupSamBudgets(VariableGroup):
+    """
 
+    """
     def __init__(self, case, clubb_datasets=None, les_dataset=None, coamps_dataset=None, r408_dataset=None,
                  hoc_dataset=None, cam_datasets=None,
                  e3sm_datasets=None, sam_datasets=None, wrf_datasets=None):
@@ -1099,7 +1101,7 @@ class VariableGroupSamBudgets(VariableGroup):
         dataset = self.les_dataset
         if dataset_override is not None:
             dataset = dataset_override
-        THLWADV, z, dataset = self.getVarForCalculations('THLWADV', dataset);
+        THLWADV, z, dataset = self.getVarForCalculations('THLWADV', dataset)
         THLWBT, z, dataset = self.getVarForCalculations('THLWBT', dataset)
         THLWBUOY, z, dataset = self.getVarForCalculations('THLWBUOY', dataset)
         THLWDIFF, z, dataset = self.getVarForCalculations('THLWDIFF', dataset)

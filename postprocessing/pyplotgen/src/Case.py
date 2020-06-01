@@ -22,8 +22,8 @@ class Case:
     definition to the list ALL_CASES = [...] at the bottom of the file).
     """
 
-    def __init__(self, case_definition, clubb_folders = [], diff_datasets=None, sam_folders = [""], wrf_folders=[""],
-                 plot_les=False, plot_budgets=False, plot_r408=False, plot_hoc=False, e3sm_dirs =[], cam_folders=[]):
+    def __init__(self, case_definition, clubb_folders=[], diff_datasets=None, sam_folders=[""], wrf_folders=[""],
+                 plot_les=False, plot_budgets=False, plot_r408=False, plot_hoc=False, e3sm_dirs=[], cam_folders=[]):
         """
         Initialize a Case
         
@@ -130,7 +130,7 @@ class Case:
         if plot_les and case_definition['coamps_dataset'] is not None:
             datareader = DataReader()
             coamps_filenames = case_definition['coamps_dataset']
-                # Load the individual COAMPS output files
+            # Load the individual COAMPS output files
             for type_ext in coamps_filenames:
                 temp_coamps_dataset = datareader.__loadNcFile__(coamps_filenames[type_ext])
                 coamps_datasets[type_ext] = temp_coamps_dataset
@@ -169,7 +169,7 @@ class Case:
             temp_group = VarGroup(self, clubb_datasets=self.clubb_datasets, les_dataset=les_file,
                                   coamps_dataset=coamps_datasets, sam_datasets=sam_datasets,
                                   wrf_datasets=wrf_datasets, r408_dataset=r408_datasets, hoc_dataset=hoc_datasets,
-                                  e3sm_datasets = e3sm_file, cam_datasets=cam_file)
+                                  e3sm_datasets=e3sm_file, cam_datasets=cam_file)
             self.panels.extend(temp_group.panels)
 
         # Convert panels to difference panels if user passed in --diff <<folder>>
@@ -181,7 +181,7 @@ class Case:
                 # Call the __init__ function of the VarGroup class and, by doing this, create an instance of it
                 diff_group = VarGroup(self, clubb_datasets=self.diff_datasets, sam_file=les_file,
                                       coamps_file=coamps_datasets, cam_file=cam_file,
-                                      r408_file=r408_datasets, hoc_dataset=hoc_datasets, e3sm_datasets = e3sm_file)
+                                      r408_file=r408_datasets, hoc_dataset=hoc_datasets, e3sm_datasets=e3sm_file)
                 for panel in diff_group.panels:
                     self.diff_panels.append(panel)
             for idx in range(len(self.panels)):
@@ -203,7 +203,7 @@ class Case:
                 for folders_datasets in self.clubb_datasets.values():
                     budget_variables = VariableGroupBaseBudgets(self, clubb_datasets=folders_datasets)
                     self.panels.extend(budget_variables.panels)
-            if wrf_datasets is not None and len(wrf_datasets) !=  0:
+            if wrf_datasets is not None and len(wrf_datasets) != 0:
                 # for ncdataset in self.clubb_datasets.values():
                 for folders_datasets in wrf_datasets.values():
                     budget_variables = VariableGroupBaseBudgets(self, wrf_datasets=folders_datasets)
@@ -211,7 +211,7 @@ class Case:
             if e3sm_file is not None and len(e3sm_file) != 0:
                 for dataset_name in e3sm_file:
                     # E3SM dataset must be wrapped in the same form as the clubb datasets
-                    e3sm_budgets = VariableGroupBaseBudgets(self, e3sm_datasets={dataset_name:e3sm_file[dataset_name]})
+                    e3sm_budgets = VariableGroupBaseBudgets(self, e3sm_datasets={dataset_name: e3sm_file[dataset_name]})
                     self.panels.extend(e3sm_budgets.panels)
             if sam_datasets is not None and len(sam_datasets) != 0:
                 # for dataset in sam_datasets.values():
@@ -310,7 +310,7 @@ class Case:
             if panel.panel_type == panel.TYPE_BUDGET:
                 plot_paired_lines = False
             panel.plot(output_folder, self.name, replace_images=replace_images, no_legends=no_legends,
-                       thin_lines=thin_lines, alphabetic_id=alphabetic_id, paired_plots = plot_paired_lines)
+                       thin_lines=thin_lines, alphabetic_id=alphabetic_id, paired_plots=plot_paired_lines)
             curr_panel_num += 1
             print("\r\tplotted  ", curr_panel_num, " of ", num_plots, " | ", panel.title)
 
@@ -327,7 +327,7 @@ class Case:
         a = 97
         z = 122
         num_letters_a_to_z = 26
-        if self.next_panel_alphabetic_id_code >= a and self.next_panel_alphabetic_id_code <= z:
+        if a <= self.next_panel_alphabetic_id_code <= z:
             # Return label with single character
             letter = chr(self.next_panel_alphabetic_id_code)
             # Increment next label code

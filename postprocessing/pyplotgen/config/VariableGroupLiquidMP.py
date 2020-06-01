@@ -7,7 +7,9 @@ from src.VariableGroup import VariableGroup
 
 
 class VariableGroupLiquidMP(VariableGroup):
+    """
 
+    """
     def __init__(self, case, clubb_datasets=None, les_dataset=None, coamps_dataset=None, r408_dataset=None,
                  hoc_dataset=None, cam_datasets=None,
                  e3sm_datasets=None, sam_datasets=None, wrf_datasets=None):
@@ -21,118 +23,118 @@ class VariableGroupLiquidMP(VariableGroup):
         self.variable_definitions = [
             {'var_names':
                 {
-                'clubb': ['Ncm'],
-                'sam': ['Ncm'],
-                'coamps': ['Ncm'],
-                'r408': ['Ncm'],
-                'hoc': ['Ncm'],
-                'e3sm': ['Ncm'],
-                'cam': ['Ncm'],
-                'wrf': [],
+                    'clubb': ['Ncm'],
+                    'sam': ['Ncm'],
+                    'coamps': ['Ncm'],
+                    'r408': ['Ncm'],
+                    'hoc': ['Ncm'],
+                    'e3sm': ['Ncm'],
+                    'cam': ['Ncm'],
+                    'wrf': [],
                 },
-             'sam_calc': self.getNcmSamLine,
+                'sam_calc': self.getNcmSamLine,
             },
             {'var_names':
                 {
-                'clubb': ['Nc_in_cloud'],
-                'sam': ['Nc_in_cloud'],
-                'coamps': ['Nc_in_cloud'],
-                'r408': ['Nc_in_cloud'],
-                'hoc': ['Nc_in_cloud'],
-                'e3sm': ['Nc_in_cloud'],
-                'cam': ['Nc_in_cloud'],
-                'wrf': [],
-                },
-            },
-            {'var_names':
-                {
-                'clubb': ['precip_frac'],
-                'sam': ['precip_frac'],
-                'coamps': ['precip_frac'],
-                'r408': ['precip_frac'],
-                'hoc': ['precip_frac'],
-                'e3sm': ['precip_frac'],
-                'cam': ['precip_frac'],
-                'wrf': [],
+                    'clubb': ['Nc_in_cloud'],
+                    'sam': ['Nc_in_cloud'],
+                    'coamps': ['Nc_in_cloud'],
+                    'r408': ['Nc_in_cloud'],
+                    'hoc': ['Nc_in_cloud'],
+                    'e3sm': ['Nc_in_cloud'],
+                    'cam': ['Nc_in_cloud'],
+                    'wrf': [],
                 },
             },
             {'var_names':
                 {
-                'clubb': ['rrm'],
-                'sam': ['QPL'],
-                'coamps': ['rrm'],
-                'r408': ['rrm'],
-                'hoc': ['rrm'],
-                'e3sm': ['rrm'],
-                'cam': ['rrm'],
-                'wrf': [],
+                    'clubb': ['precip_frac'],
+                    'sam': ['precip_frac'],
+                    'coamps': ['precip_frac'],
+                    'r408': ['precip_frac'],
+                    'hoc': ['precip_frac'],
+                    'e3sm': ['precip_frac'],
+                    'cam': ['precip_frac'],
+                    'wrf': [],
                 },
-             'sam_conv_factor': 1 / 1000,
             },
             {'var_names':
                 {
-                'clubb': ['Nrm'],
-                'sam': ['Nrm'],
-                'coamps': ['Nrm'],
-                'r408': ['Nrm'],
-                'hoc': ['Nrm'],
-                'e3sm': ['Nrm'],
-                'cam': ['Nrm'],
-                'wrf': [],
+                    'clubb': ['rrm'],
+                    'sam': ['QPL'],
+                    'coamps': ['rrm'],
+                    'r408': ['rrm'],
+                    'hoc': ['rrm'],
+                    'e3sm': ['rrm'],
+                    'cam': ['rrm'],
+                    'wrf': [],
                 },
-             'sam_calc': self.getNrmSamLine,
+                'sam_conv_factor': 1 / 1000,
             },
             {'var_names':
                 {
-                'clubb': ['wprrp'],
-                'sam': ['WPRRP'],
-                'coamps': ['wprrp'],
-                'r408': ['wprrp'],
-                'hoc': ['wprrp'],
-                'e3sm': ['wprrp'],
-                'cam': ['wprrp'],
-                'wrf': [],
+                    'clubb': ['Nrm'],
+                    'sam': ['Nrm'],
+                    'coamps': ['Nrm'],
+                    'r408': ['Nrm'],
+                    'hoc': ['Nrm'],
+                    'e3sm': ['Nrm'],
+                    'cam': ['Nrm'],
+                    'wrf': [],
                 },
+                'sam_calc': self.getNrmSamLine,
             },
-            # Not found in lba case file
             {'var_names':
                 {
-                'clubb': ['wpNrp'],
-                'sam': ['WPNRP'],
-                'coamps': ['wpNrp'],
-                'r408': ['wpNrp'],
-                'hoc': ['wpNrp'],
-                'e3sm': ['wpNrp'],
-                'cam': ['wpNrp'],
-                'wrf': [],
+                    'clubb': ['wprrp'],
+                    'sam': ['WPRRP'],
+                    'coamps': ['wprrp'],
+                    'r408': ['wprrp'],
+                    'hoc': ['wprrp'],
+                    'e3sm': ['wprrp'],
+                    'cam': ['wprrp'],
+                    'wrf': [],
                 },
             },
             # Not found in lba case file
             {'var_names':
                 {
-                'clubb': ['rwp'],
-                'sam': ['RWP'],
-                'coamps': ['rwp'],
-                'r408': ['rwp'],
-                'hoc': ['rwp'],
-                'e3sm': ['rwp'],
-                'cam': ['rwp'],
-                'wrf': [],
+                    'clubb': ['wpNrp'],
+                    'sam': ['WPNRP'],
+                    'coamps': ['wpNrp'],
+                    'r408': ['wpNrp'],
+                    'hoc': ['wpNrp'],
+                    'e3sm': ['wpNrp'],
+                    'cam': ['wpNrp'],
+                    'wrf': [],
                 },
-             'sam_conv_factor': 1 / 1000, 'type': Panel.TYPE_TIMESERIES,
+            },
+            # Not found in lba case file
+            {'var_names':
+                {
+                    'clubb': ['rwp'],
+                    'sam': ['RWP'],
+                    'coamps': ['rwp'],
+                    'r408': ['rwp'],
+                    'hoc': ['rwp'],
+                    'e3sm': ['rwp'],
+                    'cam': ['rwp'],
+                    'wrf': [],
+                },
+                'sam_conv_factor': 1 / 1000, 'type': Panel.TYPE_TIMESERIES,
             },
             {'var_names':
                 {
-                'clubb': ['precip_rate_sfc'],
-                'sam': ['precip_rate_sfc'],
-                'coamps': ['precip_rate_sfc'],
-                'r408': ['precip_rate_sfc'],
-                'hoc': ['precip_rate_sfc'],
-                'e3sm': ['precip_rate_sfc'],
-                'cam': ['precip_rate_sfc'],
-                'wrf': [],
+                    'clubb': ['precip_rate_sfc'],
+                    'sam': ['precip_rate_sfc'],
+                    'coamps': ['precip_rate_sfc'],
+                    'r408': ['precip_rate_sfc'],
+                    'hoc': ['precip_rate_sfc'],
+                    'e3sm': ['precip_rate_sfc'],
+                    'cam': ['precip_rate_sfc'],
+                    'wrf': [],
                 },
-             'type': Panel.TYPE_TIMESERIES
+                'type': Panel.TYPE_TIMESERIES
             },
         ]
         # rain_rate_sfc vs time
@@ -149,7 +151,7 @@ class VariableGroupLiquidMP(VariableGroup):
         """
 
         dataset = self.les_dataset
-        if dataset_override != None:
+        if dataset_override is not None:
             dataset = dataset_override
         nc, z, dataset = self.getVarForCalculations('NC', dataset)
         rho, z, dataset = self.getVarForCalculations('RHO', dataset)
@@ -166,7 +168,7 @@ class VariableGroupLiquidMP(VariableGroup):
         """
 
         dataset = self.les_dataset
-        if dataset_override != None:
+        if dataset_override is not None:
             dataset = dataset_override
 
         nr, z, dataset = self.getVarForCalculations('NR', dataset)

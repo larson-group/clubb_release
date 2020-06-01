@@ -55,7 +55,7 @@ class NetCdfVariable:
         if not var_found_in_dataset:
             if len(ncdf_data.values()) == 0:
                 # TODO patch this bug
-                warn("Some model is missing files for " + names + ". Try either including these files or removing "
+                warn("Some model is missing files for " + str(names) + ". Try either including these files or removing "
                                                                   "their names from the Case_definitions.py config "
                                                                   "file. This warning is a temporary notice until a "
                                                                   "bug related to missing filenames is patched")
@@ -103,7 +103,7 @@ class NetCdfVariable:
             for i in range(0, len(data)):
                 # Check for start index
                 test_value = data[i]
-                if test_value <= start_value and test_value > data[start_idx]:
+                if start_value >= test_value > data[start_idx]:
                     start_idx = i
                 # Check for end index
                 if test_value >= end_value and test_value < data[end_idx]:
@@ -317,7 +317,6 @@ class DataReader():
         Output:
           var    -- time averaged vertical profile of the specified variable
         """
-        idx_t1 = idx_t1
         if idx_t1 is -1:
             idx_t1 = len(var)
             warn("An end index for the time averaging interval was not specified. Automatically using the last index.")

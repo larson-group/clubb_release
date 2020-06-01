@@ -7,7 +7,9 @@ from src.VariableGroup import VariableGroup
 
 
 class VariableGroupCorrelations(VariableGroup):
+    """
 
+    """
     def __init__(self, case, clubb_datasets=None, les_dataset=None, coamps_dataset=None, r408_dataset=None,
                  hoc_dataset=None, cam_datasets=None,
                  e3sm_datasets=None, sam_datasets=None, wrf_datasets=None):

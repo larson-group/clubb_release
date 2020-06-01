@@ -617,8 +617,9 @@ class VariableGroup:
         This function is used within a fallback function to get the dependent_data of a certain variable,
         constrained between a min/max height.
 
+        :param datasets:
+        :param conversion_factor:
         :param varname:
-        :param include_z: If set to True, getVarForCalculations will return a tuple containing the dependent_data
         for both the varname
         variable and the height variable in a tuple ordered as (varname, z)
 

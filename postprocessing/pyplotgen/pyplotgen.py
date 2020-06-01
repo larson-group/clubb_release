@@ -33,7 +33,7 @@ class PyPlotGen:
     """
 
     def __init__(self, output_folder, clubb_folders=None, replace=False, les=False, cgbest=False, hoc=False,
-                 plotrefs=False, benchmark_only=False,
+                 plotrefs=False, benchmark_only=False, nightly=False,
                  zip=False, thin=False, no_legends=False, ensemble=False, plot_e3sm="", sam_folders=[""],
                  wrf_folders=[""], cam_folders=[""],
                  budget_moments=False, bu_morr=False, diff=None, show_alphabetic_id=False):
@@ -90,6 +90,7 @@ class PyPlotGen:
         self.show_alphabetic_id = show_alphabetic_id
         self.output_folder = os.path.abspath(self.output_folder)
         self.benchmark_only = benchmark_only
+        self.nightly = nightly
 
         if os.path.isdir(self.output_folder) and self.replace_images == False:
             self.output_folder = self.output_folder + '_generated_on_' + str(datetime.now())
@@ -168,13 +169,16 @@ class PyPlotGen:
         cam_given = len(self.cam_folders) != 0
         clubb_given = self.clubb_datasets is not None
 
-        e3sm_has_case = e3sm_given and case_def['e3sm_file'] != None
-        sam_has_case = sam_given and case_def['sam_file'] != None
-        wrf_has_case = wrf_given != 0 and case_def['wrf_file'] != None
-        cam_has_case = cam_given and case_def['cam_file'] != None
+        e3sm_has_case = e3sm_given and case_def['e3sm_file'] is not None
+        sam_has_case = sam_given and case_def['sam_file'] is not None
+        wrf_has_case = wrf_given != 0 and case_def['wrf_file'] is not None
+        cam_has_case = cam_given and case_def['cam_file'] is not None
         clubb_has_case = clubb_given and case_def['name'] in self.clubb_datasets.keys()
 
-        return e3sm_has_case or sam_has_case or cam_has_case or wrf_has_case or clubb_has_case or self.benchmark_only
+        if self.nightly:
+            return clubb_has_case and (e3sm_has_case or sam_has_case or cam_has_case or wrf_has_case) or self.benchmark_only
+        else:
+            return e3sm_has_case or sam_has_case or cam_has_case or wrf_has_case or clubb_has_case or self.benchmark_only
 
     def __copySetupFiles__(self):
         """
@@ -290,6 +294,14 @@ def __process_args__():
                         default=[], nargs='+')
     parser.add_argument("-o", "--output", help="Name of folder to create and store plots into.", action="store",
                         default="./output")
+    parser.add_argument("--nightly", help="Apply special parameters only relevant when running as part of a nightly "
+                                          "test. "
+                                          "This is currently limited to disabling case output if not all models have"
+                                          "data for a given case. E.g. this prevents wrf plots from including cases "
+                                          "that "
+                                          "only have clubb plots and no wrf plots. Do not plot this with clubb-only "
+                                          "plots, just plot clubb normally for clubb nightly tests.",
+                        action="store_true")
     args = parser.parse_args()
 
     if args.zip:
@@ -321,7 +333,7 @@ def __process_args__():
         hoc = True
 
     pyplotgen = PyPlotGen(args.output, clubb_folders=args.clubb, replace=args.replace, les=les, plot_e3sm=e3sm,
-                          cgbest=cgbest, cam_folders = args.cam,
+                          cgbest=cgbest, cam_folders = args.cam, nightly=args.nightly,
                           hoc=hoc, plotrefs=args.all_best, zip=args.zip, thin=args.thin, sam_folders=args.sam,
                           wrf_folders=args.wrf, benchmark_only=args.benchmark_only,
                           no_legends=args.no_legends, ensemble=args.ensemble, budget_moments=args.plot_budgets,

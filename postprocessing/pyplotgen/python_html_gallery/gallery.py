@@ -215,6 +215,9 @@ def WriteNavigation():
         os.path.join(static.root, static.navigation), page_count))
 
 def WriteIndex():
+    """
+
+    """
     os.chdir(static.root)
 
     with open(static.index, 'w') as index_file:

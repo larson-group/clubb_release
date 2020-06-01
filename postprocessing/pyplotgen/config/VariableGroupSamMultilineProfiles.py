@@ -7,14 +7,15 @@ TODO:   - Should invalid variables produce zero lines or none at all?
         - Implement/copy sam calcs
         - Figure out how to include standard plots in VariableGroupBase (labels etc.)
 '''
-import numpy as np
 
 from src.Panel import Panel
 from src.VariableGroup import VariableGroup
 
 
 class VariableGroupSamMultilineProfiles(VariableGroup):
-    
+    """
+
+    """
     def __init__(self, case, clubb_datasets=None, les_dataset=None, coamps_dataset=None, r408_dataset=None,
                  hoc_dataset=None, cam_datasets=None,
                  e3sm_datasets=None, sam_datasets=None, wrf_datasets=None):

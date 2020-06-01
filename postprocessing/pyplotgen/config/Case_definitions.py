@@ -64,14 +64,12 @@ alphabetical order.
 import os
 
 from config.VariableGroupBase import VariableGroupBase
-from config.VariableGroupBaseBudgets import VariableGroupBaseBudgets
 from config.VariableGroupCorrelations import VariableGroupCorrelations
 from config.VariableGroupIceMP import VariableGroupIceMP
 from config.VariableGroupKKMP import VariableGroupKKMP
 from config.VariableGroupLiquidMP import VariableGroupLiquidMP
 from config.VariableGroupSamBudgets import VariableGroupSamBudgets
 from config.VariableGroupSamProfiles import VariableGroupSamProfiles
-from config.VariableGroupSamMultilineProfiles import VariableGroupSamMultilineProfiles
 from config.VariableGroupWs import VariableGroupWs
 
 # ---------------------------
@@ -116,7 +114,8 @@ ARM = {'name': 'arm', 'start_time': 481, 'end_time': 540, 'height_min_value': 0,
 
        'blacklisted_vars': ['radht'],
        'les_dataset': SAM_BENCHMARK_OUTPUT_ROOT + "/JULY_2017/ARM_96x96x110/GCSSARM_96x96x110_67m_40m_1s.nc",
-       'coamps_dataset': None,
+       'coamps_dataset': {'sm': LES_OUTPUT_ROOT + "/arm_coamps_sm.nc",
+                          'sw': LES_OUTPUT_ROOT + "/arm_coamps_sw.nc"},
        'r408_file': {'zm': R408_OUTPUT_ROOT + '/Chris_Golaz_best_ever/arm_zm.nc',
                      'zt': R408_OUTPUT_ROOT + '/Chris_Golaz_best_ever/arm_zt.nc',
                      'sfc': R408_OUTPUT_ROOT + '/Chris_Golaz_best_ever/arm_sfc.nc'},

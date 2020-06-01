@@ -70,6 +70,8 @@ class Panel:
         """
          Saves a single panel/graph as image to the output directory specified by the pyplotgen launch parameters
 
+        :param paired_plots:
+        :param output_folder:
         :param casename: The name of the case that's plotted in this panel
         :param replace_images: Switch to tell pyplotgen if existing files should be overwritten
         :param no_legends: If False, a legend will be generated for this Panel

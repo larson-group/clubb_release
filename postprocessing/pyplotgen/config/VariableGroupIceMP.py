@@ -7,7 +7,9 @@ from src.VariableGroup import VariableGroup
 
 
 class VariableGroupIceMP(VariableGroup):
+    """
 
+    """
     def __init__(self, case, clubb_datasets=None, les_dataset=None, sam_datasets=None, coamps_dataset=None,
                  r408_dataset=None, hoc_dataset=None, cam_datasets=None,
                  e3sm_datasets=None, wrf_datasets=None):
@@ -162,7 +164,7 @@ class VariableGroupIceMP(VariableGroup):
         :return:
         """
         dataset = self.les_dataset
-        if dataset_override != None:
+        if dataset_override is not None:
             dataset = dataset_override
         ni, z, dataset = self.getVarForCalculations('NI', dataset)
         rho, z, dataset = self.getVarForCalculations('RHO', dataset)
@@ -178,7 +180,7 @@ class VariableGroupIceMP(VariableGroup):
         :return:
         """
         dataset = self.les_dataset
-        if dataset_override != None:
+        if dataset_override is not None:
             dataset = dataset_override
         ns, z, dataset = self.getVarForCalculations('NS', dataset)
         rho, z, dataset = self.getVarForCalculations('RHO', dataset)

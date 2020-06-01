@@ -7,6 +7,10 @@ from src.DataReader import DataReader
 
 class DataReaderTest(unittest.TestCase):
     def test_mean_profiles(self):
+        """
+
+        :rtype: object
+        """
         datareader = DataReader()
 
         incremental_array = np.arange(16).reshape(4, 4)

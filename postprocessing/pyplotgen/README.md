@@ -21,6 +21,7 @@ Pyplotgen only supports input in the netcdf (.nc) format.
 | --no-legends | Panels are drawn without a line legend |
 | -o --output | Manually specify an output folder. If not specified, will automatically output to `pyplotgen/output` |
 | --show-alphabetic-id | Adds an alphanumeric ID to each plot on a perc-case basis (e.g. the first plot will be labeled "a")
+| --nightly | Apply special parameters only relevant when running as part of a nightly test. This is currently limited to disabling case output if not all models have data for a given case. E.g. this prevents wrf plots from including cases that only have clubb plots and no wrf plots. Do not plot this with clubb-only plots, just plot clubb normally for clubb nightly tests.
 
 ## Installing Dependencies
 To install the dependencies necessary for PyPlotgen to run, run the command
@@ -172,6 +173,11 @@ Steps:
 2. Include the equation used for the calculation in a pydoc method comment, see example below
 ~~~~python
     def getWpthlpFallback(self, dataset_override = None):
+        """
+
+        :param self: 
+        :param dataset_override: 
+        """
         dependent_data
         # code
 ~~~~
@@ -193,6 +199,12 @@ Steps:
 Here is the full example:
 ~~~~python
     def getWpthlpFallback(self, dataset_override = None):
+        """
+
+        :param self: 
+        :param dataset_override: 
+        :return: 
+        """
         dependent_data
         tlflux = self.getVarForCalculations(['TLFLUX'], self.sam_file)
         rho = self.getVarForCalculations(['RHO'], self.sam_file)
