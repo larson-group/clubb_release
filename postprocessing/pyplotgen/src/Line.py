@@ -15,11 +15,12 @@ class Line:
     """
     def __init__(self, x_data, y_data, line_format = "", label ="Unlabeled plot"):
         """
-        Create a new line
+        Create a new Line object
+        
         :param x_data: list of values to plot along x axis, must have same length as y
         :param y_data: list of values to plot along y axis, must have same length as x
         :param line_format: A str containing the format for the line plot. See pyplot docs for more info.
-        :param label: name of the line (e.g. 'current clubb')
+        :param label: The name of the line (e.g. 'current clubb') which appears in the plot legend
         """
         if len(x_data) != len(y_data):
             raise ValueError("The size of X(" + str(len(x_data)) + ") is not the same as the size of Y(" +

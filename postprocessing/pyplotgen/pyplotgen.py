@@ -33,9 +33,8 @@ class PyPlotGen:
     """
 
     def __init__(self, output_folder, clubb_folders=None, replace=False, les=False, cgbest=False, hoc=False,
-                 plotrefs=False, benchmark_only=False, nightly=False,
-                 zip=False, thin=False, no_legends=False, ensemble=False, plot_e3sm="", sam_folders=[""],
-                 wrf_folders=[""], cam_folders=[""],
+                 benchmark_only=False, nightly=False, zip=False, thin=False, no_legends=False, ensemble=False,
+                 plot_e3sm="", sam_folders=[""], wrf_folders=[""], cam_folders=[""],
                  budget_moments=False, bu_morr=False, diff=None, show_alphabetic_id=False):
         """
         This creates an instance of PyPlotGen. Each parameter is a command line parameter passed in from the argparser
@@ -43,25 +42,39 @@ class PyPlotGen:
         
         :param output_folder: String containing the foldername into which the output files should be put.
         :param clubb_folders: List of foldernames containing CLUBB netcdf files to be plotted.
+            Pass a list of folders in with this option.
+            These folders must contain the CLUBB nc files in the root directory,
+            where each filename is the name of the case to be plotted with the CLUBB-specific suffixes: _zm, _zt
+            E.g. name files dycoms2_rfo2_ds_zm.nc and dycoms2_rfo2_ds_zt.nc
+            to plot the file's data with that case's setup.
         :param replace: If False, an already existing outout folder will not be overwritten.
         :param les: If True, plot LES dependent_data for comparison.
         :param cgbest: If True, plot Chris Golaz Best Ever dependent_data for comparison.
         :param hoc: If True, plot !HOC 12/17/2015 dependent_data for comparison.
-        :param plotrefs: If True, this is equivalent to les, cgbest, and hoc being set to True.
         :param benchmark_only: If True, autoplotting of CLUBB's default output folder is shut off.
             So only benchmark output will be plotted.
-        :param zip: 
-        :param thin: 
-        :param no_legends: 
-        :param ensemble: 
-        :param plot_e3sm: 
-        :param sam_folders: 
-        :param wrf_folders: 
-        :param cam_folders: 
-        :param budget_moments:
-        :param bu_morr:
-        :param diff:
-        :param show_alphabetic_id: 
+        :param nightly: Apply special parameters only relevant when running as part of a nightly test.
+            This is currently limited to disabling case output if not all models have data for a given case.
+            E.g. this prevents wrf plots from including cases that only have clubb plots and no wrf plots.
+            Do not plot this with clubb-only plots, just plot clubb normally for clubb nightly tests.
+        :param zip: If True, output dependent_data into a compressed zip file. Not implemented.
+        :param thin: If True, plot using thin solid lines.
+        :param no_legends: If True, plots will not have legend boxes listing the line types.
+        :param ensemble: If True, plot ensemble tuner runs. Not implemented.
+        :param plot_e3sm: Plot E3SM dependent_data for comparison.
+            This parameter works exactly like the clubb_folders parameter, except E3SM uses only one nc file.
+        :param sam_folders: Plot SAM dependent_data for comparison.
+            This parameter works exactly like the clubb_folders parameter, except SAM uses only one nc file.
+        :param wrf_folders: Plot WRF dependent_data for comparison.
+            This parameter works exactly like the clubb_folders parameter, except WRF uses the following nc files:
+            _zm, _zt, and _sfc
+        :param cam_folders: Plot CAM dependent_data for comparison.
+            This parameter works exactly like the clubb_folders parameter, except CAM uses only one nc file. (CHECK!)
+        :param budget_moments: If True, plot all defined budgets of moments.
+        :param bu_morr: For morrison microphysics: If True, break microphysical source terms into component processes.
+            Not implemented.
+        :param diff: Plot the difference between two clubb folders. (MORE DESCRIPTION)
+        :param show_alphabetic_id: If True, add an identifying character to the top right of a panel.
         """
         self.clubb_folders = clubb_folders
         self.output_folder = output_folder
@@ -74,7 +87,6 @@ class PyPlotGen:
         self.cgbest = cgbest
         self.hoc = hoc
         self.plot_diff = diff
-        self.plotrefs = plotrefs
         self.zip = zip
         self.thin = thin
         self.no_legends = no_legends
@@ -99,11 +111,20 @@ class PyPlotGen:
 
     def run(self):
         """
-        Runs PyPlotGen
+        Main driver of the pyplotgen program executing the following steps:
+        - Download benchmark files if needed
+        - Loop through cases listed in Case_definitions.ALL_CASES
+        - Create instances of these cases
+        - Call plot function on the instances
+        - Create output folder
+        - Generate html page containing plots
+        
         :return: None
         """
+        # Load CLUBB data
         self.clubb_datasets = self.data_reader.loadFolder(self.clubb_folders)
         diff_datasets = None
+        # Load data used for difference plots
         if self.diff is not None:
             diff_datasets = self.diff_files_data_reader.loadFolder(self.diff)
         all_cases = Case_definitions.ALL_CASES
@@ -112,11 +133,15 @@ class PyPlotGen:
         if self.__benchmark_files_needed__():
             self.__downloadModelOutputs__()
 
+        # If --replace flag was set, delete old output folder
         if self.replace_images:
             print('###########################################')
             print("\nDeleting old plots")
             subprocess.run(['rm', '-rf', self.output_folder + '/'])
+            # TODO: Use for Windows
+            # shutil.rmtree(self.output_folder)
         num_cases_plotted = 0
+        # Loop through cases listed in Case_definitions.ALL_CASES
         for case_def in all_cases:
             if self.__dataForCaseExists__(case_def):
                 num_cases_plotted += 1
@@ -130,10 +155,12 @@ class PyPlotGen:
                     clubb_case_datasets = self.clubb_datasets[casename]
                 else:
                     clubb_case_datasets = {}
+                # Call __init__ function of the Case class and store it in case
                 case = Case(case_def, clubb_folders=clubb_case_datasets, plot_les=self.les,
                             plot_budgets=self.plot_budgets, sam_folders=self.sam_folders, wrf_folders=self.wrf_folders,
                             diff_datasets=case_diff_datasets, plot_r408=self.cgbest, plot_hoc=self.hoc,
                             e3sm_dirs=self.e3sm_dir, cam_folders = self.cam_folders)
+                # Call plot function of case instance
                 case.plot(self.output_folder, replace_images=self.replace_images, no_legends=self.no_legends,
                           thin_lines=self.thin, show_alphabetic_id=self.show_alphabetic_id)
                 self.cases_plotted.append(casename)
@@ -145,24 +172,23 @@ class PyPlotGen:
                 "default clubb output folder contains .nc output. "
                 "Please run ./pyplotgen.py -h for more information on parameters.")
         print("\nGenerating webpage for viewing plots ")
+
         if not os.path.exists(self.output_folder):
             os.mkdir(self.output_folder)
 
         self.__copySetupFiles__()
+        # Generate html pages
         gallery.main(self.output_folder)
         print('###########################################')
         print("Output can be viewed at file://" + self.output_folder + "/index.html with a web browser")
 
     def __dataForCaseExists__(self, case_def):
         """
-        Returns true if there's an clubb nc file for a given case name.
+        Returns true if there's an nc file for a given case name and any model that should be plotted.
 
-        :param no_clubb: True/false for whether or not clubb lines are to be plotted
         :param case_def: The case definition object
-        :param all_case_names: List of all case names that can be plotted
-        :return:
+        :return: True if data exists, False if not
         """
-
         e3sm_given = len(self.e3sm_dir) != 0
         sam_given = len(self.sam_folders) != 0
         wrf_given = len(self.wrf_folders) != 0
@@ -185,19 +211,24 @@ class PyPlotGen:
         Copies case setup files from the clubb folder(s)
         into the pyplotgen output folders.
 
-        :return:
+        :return: None
         """
         print("Looking for case_setup.txt files")
         for folder in self.clubb_folders:
             setup_file_search_pattern = folder + '/*_setup.txt'
             folder_basename = os.path.basename(folder)
 
+            # Loop through search results of files in folder matching the given pattern
             for file in glob.glob(setup_file_search_pattern):
+                # Split filename from entire path
                 file_basename = os.path.basename(file)
+                # Removing '_setup.txt' from file_basename gives us the case name
                 casename = file_basename[:-10]
+                # Build destination folder and file names
                 copy_dest_folder = self.output_folder + '/' + casename + '/'
                 copy_dest_file = copy_dest_folder + file_basename[:-10] + '_' + folder_basename + file_basename[-10:]
 
+                # If case is actually plotted, create output folder and copy setup file to destination folder
                 if casename in self.cases_plotted:
                     if not os.path.exists(copy_dest_folder):
                         os.mkdir(copy_dest_folder)
@@ -208,21 +239,22 @@ class PyPlotGen:
         """
         Returns true if the user requested to plot model output
         that needs to be downloaded
-        :return:
+        
+        :return: True if any of self.les or self.hoc or self.cgbest is True, else False 
         """
         return self.les or self.hoc or self.cgbest
 
     def __downloadModelOutputs__(self):
         """
-        Checks for model output, e.g. sam benchmark runs, and if it
-        doesn't exist, downloads it.
+        Checks for model output in the folder specified under Case_definitions.BENCHMARK_OUTPUT_ROOT,
+        e.g. sam benchmark runs, and if it doesn't exist, downloads it.
         Supports: SAM, COAMPS, CLUBB
 
-        :return:
+        :return: None
         """
-
         # Ensure benchmark output is available
         print("Checking for model benchmark output...")
+        # Check if the folder specified in Case_definitions.BENCHMARK_OUTPUT_ROOT exists
         if not os.path.isdir(Case_definitions.BENCHMARK_OUTPUT_ROOT) and \
                 not os.path.islink(Case_definitions.BENCHMARK_OUTPUT_ROOT):
             print("\tDownloading the benchmarks to " + Case_definitions.BENCHMARK_OUTPUT_ROOT)
@@ -310,31 +342,34 @@ def __process_args__():
         print("Ensemble flag detected, but that feature is not yet implemented")
     if args.bu_morr:
         print("Morrison breakdown flag detected, but that feature is not yet implemented")
-    les = args.les
-    cgbest = args.plot_golaz_best
-    hoc = args.plot_hoc_2005
-    e3sm = args.e3sm
 
+    # If the last char in folder path is /, remove it
     args.clubb = __trimTrailingSlash__(args.clubb)
     args.sam = __trimTrailingSlash__(args.sam)
     args.cam = __trimTrailingSlash__(args.cam)
     args.e3sm = __trimTrailingSlash__(args.e3sm)
     args.wrf = __trimTrailingSlash__(args.wrf)
 
+    # If no input is specified at all, use the nc files in the default CLUBB output folder
     no_folders_inputed = len(args.e3sm) == 0 and len(args.sam) == 0 and len(args.clubb) == 0 \
                          and len(args.wrf) == 0 and len(args.cam) == 0
-
     if no_folders_inputed and not args.benchmark_only:
         args.clubb = ["../../output"]
 
+    # Set flags for special dependent_data
     if args.all_best:
         les = True
         cgbest = True
         hoc = True
+    else:
+        les = args.les
+        cgbest = args.plot_golaz_best
+        hoc = args.plot_hoc_2005
 
-    pyplotgen = PyPlotGen(args.output, clubb_folders=args.clubb, replace=args.replace, les=les, plot_e3sm=e3sm,
-                          cgbest=cgbest, cam_folders = args.cam, nightly=args.nightly,
-                          hoc=hoc, plotrefs=args.all_best, zip=args.zip, thin=args.thin, sam_folders=args.sam,
+    # Call __init__ function of PyPlotGen class defined above and store an instance of that class in pyplotgen
+    pyplotgen = PyPlotGen(args.output, clubb_folders=args.clubb, replace=args.replace, les=les, plot_e3sm=args.e3sm,
+                          cgbest=cgbest, cam_folders = args.cam, nightly = args.nightly,
+                          hoc=hoc, zip=args.zip, thin=args.thin, sam_folders=args.sam,
                           wrf_folders=args.wrf, benchmark_only=args.benchmark_only,
                           no_legends=args.no_legends, ensemble=args.ensemble, budget_moments=args.plot_budgets,
                           bu_morr=args.bu_morr, diff=args.diff, show_alphabetic_id=args.show_alphabetic_id)
