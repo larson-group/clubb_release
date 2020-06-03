@@ -776,7 +776,12 @@ module advance_clubb_core_module
        ufmin = 0.01_core_rknd,       & ! minimum value of friction velocity     [m/s]
        z_displace = 20.0_core_rknd   ! displacement of log law profile above ground   [m]
 
-    real( kind = core_rknd ) :: Lscale_max
+    real( kind = core_rknd ) :: &
+      Lscale_max    ! Max. allowable mixing length (based on grid box size) [m]
+
+    real( kind = core_rknd ), dimension(gr%nz) :: &
+      tau_max_zm, & ! Max. allowable eddy dissipation time scale on m-levs  [s]
+      tau_max_zt    ! Max. allowable eddy dissipation time scale on t-levs  [s]
 
     real( kind = core_rknd ) :: newmu
 
@@ -1208,21 +1213,27 @@ module advance_clubb_core_module
              stop  "Lowest zm grid level is below ground in CLUBB."
         end if
 
-        tau_no_N2_zm = one / invrs_tau_no_N2_zm  
-        tau_zm       = one / invrs_tau_zm
-        tau_wp2_zm   = one / invrs_tau_wp2_zm
-        tau_xp2_zm   = one / invrs_tau_xp2_zm
-        tau_wpxp_zm  = one / invrs_tau_wpxp_zm
-        tau_wp3_zm   = one / invrs_tau_wp3_zm
+        ! Calculate the maximum allowable value of time-scale tau,
+        ! which depends of the value of Lscale_max.
+        tau_max_zt = Lscale_max / sqrt_em_zt
+        tau_max_zm = Lscale_max / sqrt( max( em, em_min ) )
 
 
-        tau_zt       = zm2zt( tau_zm )
-        tau_no_N2_zt = zm2zt( tau_no_N2_zm )
-        tau_wp2_zt   = zm2zt( tau_wp2_zm )
-        tau_xp2_zt   = zm2zt( tau_xp2_zm )
-        tau_wpxp_zt  = zm2zt( tau_wpxp_zm )
-        tau_wp3_zt   = zm2zt( tau_wp3_zm )
-        
+        tau_no_N2_zm = min( one / invrs_tau_no_N2_zm, tau_max_zm )
+        tau_zm       = min( one / invrs_tau_zm, tau_max_zm )
+        tau_wp2_zm   = min( one / invrs_tau_wp2_zm, tau_max_zm )
+        tau_xp2_zm   = min( one / invrs_tau_xp2_zm, tau_max_zm )
+        tau_wpxp_zm  = min( one / invrs_tau_wpxp_zm, tau_max_zm )
+        tau_wp3_zm   = min( one / invrs_tau_wp3_zm, tau_max_zm )
+
+
+        tau_zt       = min( zm2zt( tau_zm ), tau_max_zt )
+        tau_no_N2_zt = min( zm2zt( tau_no_N2_zm ), tau_max_zt )
+        tau_wp2_zt   = min( zm2zt( tau_wp2_zm ), tau_max_zt )
+        tau_xp2_zt   = min( zm2zt( tau_xp2_zm ), tau_max_zt )
+        tau_wpxp_zt  = min( zm2zt( tau_wpxp_zm ), tau_max_zt )
+        tau_wp3_zt   = min( zm2zt( tau_wp3_zm ), tau_max_zt )
+
 
 !        invrs_tau_N2_zm = invrs_tau_zm  &
 !                          + C_invrs_tau_N2 * sqrt( max( zero_threshold, brunt_vaisala_freq_sqd ) )
@@ -1523,14 +1534,15 @@ module advance_clubb_core_module
       ! Advance the prognostic equations
       !   for scalar variances and covariances,
       !   plus the horizontal wind variances by one time step, by one time step.
-      call advance_xp2_xpyp( tau_xp2_zm, wm_zm, rtm, wprtp, thlm,       & ! intent(in)
-                             wpthlp, wpthvp, um, vm, wp2, wp2_zt,       & ! intent(in)
-                             wp3, upwp, vpwp, sigma_sqd_w, Skw_zm,      & ! intent(in)
-                             wprtp2, wpthlp2, wprtpthlp,                & ! intent(in)
-                             Kh_zt, rtp2_forcing, thlp2_forcing,        & ! intent(in)
-                             rtpthlp_forcing, rho_ds_zm, rho_ds_zt,     & ! intent(in)
-                             invrs_rho_ds_zm, thv_ds_zm, cloud_frac,    & ! intent(in)
-                             Lscale, wp3_on_wp2, wp3_on_wp2_zt,         & ! intent(in)
+      call advance_xp2_xpyp( tau_xp2_zm, tau_wp2_zm, wm_zm, rtm,        & ! intent(in)
+                             wprtp, thlm, wpthlp, wpthvp, um, vm,       & ! intent(in)
+                             wp2, wp2_zt, wp3, upwp, vpwp,              & ! intent(in)
+                             sigma_sqd_w, Skw_zm, wprtp2, wpthlp2,      & ! intent(in)
+                             wprtpthlp, Kh_zt, rtp2_forcing,            & ! intent(in)
+                             thlp2_forcing, rtpthlp_forcing,            & ! intent(in)
+                             rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm,     & ! intent(in)
+                             thv_ds_zm, cloud_frac, Lscale,             & ! intent(in)
+                             wp3_on_wp2, wp3_on_wp2_zt,                 & ! intent(in)
                              pdf_implicit_coefs_terms,                  & ! intent(in)
                              l_iter_xp2_xpyp, dt,                       & ! intent(in)
                              sclrm, wpsclrp,                            & ! intent(in)
