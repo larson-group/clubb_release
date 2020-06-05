@@ -315,7 +315,7 @@ module parameters_tunable
 
   ! Thermodynamic coefficient of Kh_zm
   real( kind = core_rknd ), public :: &
-    c_K10h = 1.0_core_rknd
+    c_K10h = 0.35_core_rknd
 
 !$omp threadprivate( c_K10h )
 

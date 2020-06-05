@@ -11,7 +11,7 @@ set echo
 ###===================================================================
 
 ### BASIC INFO ABOUT RUN
-set job_name       = alpha22.F2010.clubb_c_K10h_0p4
+set job_name       = alpha22.F2010.clubb_c_K10h_0p35
 set compset        = F2010SC5-CMIP6
 set resolution     = ne30pg2_r05_oECv3
 set machine        = anvil
