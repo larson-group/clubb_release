@@ -3,7 +3,7 @@
 import os
 import sys
 
-modifiable_parameters = ['dt', 'dt_output', 'microphysics', 'format', 'prefix', 'dz']
+modifiable_parameters = ['dt', 'dt_output', 'microphysics', 'format', 'prefix', 'dz', 'Tsfc']
 
 # TODO: check that this is being run from the run_scripts directory
 os.chdir('../output')
@@ -60,6 +60,12 @@ if ('dt' in parameters and 'dt_output' not in parameters):
 if ('dz' in parameters):
   parameters['grid_type'] = '1'
   parameters['zt_filename'] = "''"
+
+# warn about Tsfc parameter
+if ('Tsfc' in parameters):
+  print("WARNING: Specifying Tsfc doesn't change model parammeters...")
+  print("         this needs to be done in " + sys.argv[1] + "_sounding.in")
+  input("Press Enter to acknowledge")
 
 modified_lines = []
 for line in model_config:
