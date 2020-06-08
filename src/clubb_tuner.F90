@@ -512,7 +512,7 @@ subroutine logical_flags_driver( current_date, current_time )
     i8 = selected_int_kind( 15 )
 
   integer, parameter :: &
-    ndim = 10, & ! Temporarily hardwired for a fixed number of flags
+    ndim = 11, & ! Temporarily hardwired for a fixed number of flags
     two_ndim = 2**ndim, &
     iunit = 10
 
@@ -564,6 +564,10 @@ subroutine logical_flags_driver( current_date, current_time )
     l_diffuse_rtm_and_thlm,       & ! Diffuses rtm and thlm
     l_stability_correct_Kh_N2_zm, & ! Divides Kh_N2_zm by a stability factor
     l_calc_thlp2_rad,             & ! Include the contribution of radiation to thlp2
+    l_upwind_wp3_ta,              & ! This flag determines whether we want to use an upwind
+                                    ! differencing approximation rather than a centered
+                                    ! differencing for turbulent advection terms. It
+                                    ! affects wp3 only.
     l_upwind_wpxp_ta,             & ! This flag determines whether we want to use an upwind
                                     ! differencing approximation rather than a centered
                                     ! differencing for turbulent or mean advection terms. It
@@ -631,7 +635,7 @@ subroutine logical_flags_driver( current_date, current_time )
     l_update_pressure               ! Flag for having CLUBB update pressure and exner
 
   namelist /configurable_clubb_flags_nl/ &
-    l_upwind_wpxp_ta, l_upwind_xpyp_ta, l_upwind_xm_ma, l_quintic_poly_interp, &
+    l_upwind_wp3_ta, l_upwind_wpxp_ta, l_upwind_xpyp_ta, l_upwind_xm_ma, l_quintic_poly_interp, &
     l_tke_aniso, l_vert_avg_closure, l_single_C2_Skw, l_standard_term_ta, &
     l_use_cloud_cover, l_rcm_supersat_adj, l_damp_wp3_Skw_squared, &
     l_min_wp2_from_corr_wx, l_min_xp2_from_corr_wx, l_C2_cloud_frac, &
@@ -652,6 +656,7 @@ subroutine logical_flags_driver( current_date, current_time )
                                        l_diffuse_rtm_and_thlm, & ! Intent(out)
                                        l_stability_correct_Kh_N2_zm, & ! Intent(out)
                                        l_calc_thlp2_rad, & ! Intent(out)
+                                       l_upwind_wp3_ta,  & ! Intent(out)
                                        l_upwind_wpxp_ta, & ! Intent(out)
                                        l_upwind_xpyp_ta, & ! Intent(out)
                                        l_upwind_xm_ma, & ! Intent(out)
@@ -685,16 +690,17 @@ subroutine logical_flags_driver( current_date, current_time )
                                        l_update_pressure ) ! Intent(out)
 
   ! Determine the current flags
-  model_flags_default(1) = l_upwind_wpxp_ta
-  model_flags_default(2) = l_upwind_xpyp_ta
-  model_flags_default(3) = l_upwind_xm_ma
-  model_flags_default(4) = l_quintic_poly_interp
-  model_flags_default(5) = l_vert_avg_closure
-  model_flags_default(6) = l_single_C2_Skw
-  model_flags_default(7) = l_standard_term_ta
-  model_flags_default(8) = l_tke_aniso
-  model_flags_default(9) = l_use_cloud_cover
-  model_flags_default(10) = l_rcm_supersat_adj
+  model_flags_default(1)  = l_upwind_wp3_ta
+  model_flags_default(2)  = l_upwind_wpxp_ta
+  model_flags_default(3)  = l_upwind_xpyp_ta
+  model_flags_default(4)  = l_upwind_xm_ma
+  model_flags_default(5)  = l_quintic_poly_interp
+  model_flags_default(6)  = l_vert_avg_closure
+  model_flags_default(7)  = l_single_C2_Skw
+  model_flags_default(8)  = l_standard_term_ta
+  model_flags_default(9)  = l_tke_aniso
+  model_flags_default(10) = l_use_cloud_cover
+  model_flags_default(11) = l_rcm_supersat_adj
 
   ! This should always be 1.0; it's here as a sanity check
   cost_func_default = real( min_les_clubb_diff( real(param_vals_matrix(1,:)) ), kind = core_rknd )
@@ -761,21 +767,23 @@ subroutine logical_flags_driver( current_date, current_time )
     end do
 
     write(fstdout,'(A30)') &
-      "Column 1 = upwind_wpxp_ta     ", &
-      "Column 2 = upwind_xpyp_ta     ", &
-      "Column 3 = upwind_xm_ma       ", &
-      "Column 4 = quintic_poly_interp", &
-      "Column 5 = vert_avg_closure   ", &
-      "Column 6 = single_C2_Skw      ", &
-      "Column 7 = standard_term_ta   ", &
-      "Column 8 = tke_aniso          ", &
-      "Column 9 = use_cloud_cover    "
+      "Column 1  = upwind_wp3_ta     ", &
+      "Column 2  = upwind_wpxp_ta     ", &
+      "Column 3  = upwind_xpyp_ta     ", &
+      "Column 4  = upwind_xm_ma       ", &
+      "Column 5  = quintic_poly_interp", &
+      "Column 6  = vert_avg_closure   ", &
+      "Column 7  = single_C2_Skw      ", &
+      "Column 8  = standard_term_ta   ", &
+      "Column 9  = tke_aniso          ", &
+      "Column 10 = use_cloud_cover    "
   end if ! l_results_stdout
 
   ! Generate CSV file of the results
   filename_csv = "../output/clubb_model_flags_"//current_date//"_"//current_time//".csv"
-  open(unit=iunit,file=trim( filename_csv ))
-  write(iunit,'(10A20)') "upwind_wpxp_ta, ", "upwind_xpyp_ta, ", "upwind_xm_ma, ", &
+  open(unit=iunit,file=trim( filename_csv )) 
+  write(iunit,'(10A20)') "upwind_wp3_ta, ", "upwind_wpxp_ta, ", &
+    "upwind_xpyp_ta, ", "upwind_xm_ma, ", &
     "quintic_poly_interp, ", "vert_avg_closure, ", &
     "single_C2_Skw, ", "standard_term_ta, ", "tke_aniso, ", "use_cloud_cover, ", "Cost func."
   write(iunit,'(A30)') "Default flags:               ,"
@@ -798,16 +806,17 @@ subroutine logical_flags_driver( current_date, current_time )
 
   ! Generate namelist file of the optimal result
   if ( l_results_file ) then
-    l_upwind_wpxp_ta = model_flags_array(1,1)
-    l_upwind_xpyp_ta = model_flags_array(1,2)
-    l_upwind_xm_ma = model_flags_array(1,3)
-    l_quintic_poly_interp = model_flags_array(1,4)
-    l_vert_avg_closure = model_flags_array(1,5)
-    l_single_C2_Skw = model_flags_array(1,6)
-    l_standard_term_ta = model_flags_array(1,7)
-    l_tke_aniso = model_flags_array(1,8)
-    l_use_cloud_cover = model_flags_array(1,9)
-    l_rcm_supersat_adj = model_flags_array(1,10)
+    l_upwind_wp3_ta  = model_flags_array(1,1)
+    l_upwind_wpxp_ta = model_flags_array(1,2)
+    l_upwind_xpyp_ta = model_flags_array(1,3)
+    l_upwind_xm_ma = model_flags_array(1,4)
+    l_quintic_poly_interp = model_flags_array(1,5)
+    l_vert_avg_closure = model_flags_array(1,6)
+    l_single_C2_Skw = model_flags_array(1,7)
+    l_standard_term_ta = model_flags_array(1,8)
+    l_tke_aniso = model_flags_array(1,9)
+    l_use_cloud_cover = model_flags_array(1,10)
+    l_rcm_supersat_adj = model_flags_array(1,11)
 
     if ( l_vert_avg_closure ) then
       l_trapezoidal_rule_zt    = .true.

@@ -1608,6 +1608,7 @@ module advance_clubb_core_module
              wprtp, wpthlp, rtp2, thlp2,                         & ! intent(in)
              clubb_config_flags%l_min_wp2_from_corr_wx,          & ! intent(in)
              clubb_config_flags%l_upwind_xm_ma,                  & ! intent(in)
+             clubb_config_flags%l_upwind_wp3_ta,                 & ! intent(in)
              clubb_config_flags%l_tke_aniso,                     & ! intent(in)
              clubb_config_flags%l_standard_term_ta,              & ! intent(in)
              clubb_config_flags%l_damp_wp2_using_em,             & ! intent(in)

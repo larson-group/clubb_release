@@ -1,4 +1,5 @@
 &configurable_clubb_flags_nl
+l_upwind_wp3_ta              = .false.,
 l_upwind_wpxp_ta             = .false.,
 l_upwind_xpyp_ta             = .true.,
 l_upwind_xm_ma               = .true.,

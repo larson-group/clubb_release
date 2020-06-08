@@ -430,6 +430,10 @@ module pdf_parameter_tests
       l_diffuse_rtm_and_thlm,       & ! Diffuses rtm and thlm
       l_stability_correct_Kh_N2_zm, & ! Divides Kh_N2_zm by a stability factor
       l_calc_thlp2_rad,             & ! Include the contribution of radiation to thlp2
+      l_upwind_wp3_ta,              & ! This flag determines whether we want to use an upwind
+                                      ! differencing approximation rather than a centered
+                                      ! differencing for turbulent advection terms. It
+                                      ! affects wp3 only.
       l_upwind_wpxp_ta,             & ! This flag determines whether we want to use an upwind
                                       ! differencing approximation rather than a centered
                                       ! differencing for turbulent or mean advection terms. It
@@ -505,6 +509,7 @@ module pdf_parameter_tests
                                          l_diffuse_rtm_and_thlm, &
                                          l_stability_correct_Kh_N2_zm, &
                                          l_calc_thlp2_rad, &
+                                         l_upwind_wp3_ta, &
                                          l_upwind_wpxp_ta, &
                                          l_upwind_xpyp_ta, &
                                          l_upwind_xm_ma, &
