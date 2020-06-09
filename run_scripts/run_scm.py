@@ -3,7 +3,7 @@
 import os
 import sys
 
-modifiable_parameters = ['dt', 'dt_output', 'microphysics', 'format', 'prefix', 'dz', 'Tsfc']
+modifiable_parameters = ['dt', 'dt_output', 'microphysics', 'format', 'prefix', 'dz', 'Tsfc', 'godunov']
 
 # TODO: check that this is being run from the run_scripts directory
 os.chdir('../output')
@@ -109,8 +109,16 @@ line_collections.append(input_file.readlines())
 input_file.close()
 # "FLAGS" file
 input_file = open('../input/tunable_parameters/configurable_model_flags.in', 'r')
-line_collections.append(input_file.readlines())
+modified_lines = []
+input_lines = input_file.readlines()
 input_file.close()
+if ('godunov' in parameters):
+  for line in input_lines:
+    if (parameters['godunov'] == 'scalarwp3' and line.startswith('l_upwind_wp3_ta')):
+      line = line.replace('false','true')
+      print('Setting l_upwind_wp3_ta flag to true')
+      print(line)
+    line_collections.append(line)
 # "MOD_MODEL" file
 input_file = open(model_file_name, 'r')
 line_collections.append(input_file.readlines())
@@ -130,5 +138,5 @@ for line_collection in line_collections:
 namelist_file.close()
 
 # execute CLUBB
-print('Running CLUBB...')
+input('Press Enter to run CLUBB...')
 os.system('../bin/clubb_standalone')
