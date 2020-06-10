@@ -259,7 +259,7 @@ class DataReader():
             independent_values = self.__getValuesFromNc__(netcdf_dataset, independent_var_name, 1)
 
         if independent_values.ndim > 1:  # not ncdf_variable.one_dimensional:
-            independent_values = self.__meanProfiles__(independent_values, start_avg_index, end_avg_idx + 1,
+            independent_values = self.__meanProfiles__(independent_values, start_avg_index, end_avg_idx ,
                                                        avg_axis=avg_axis)
 
         try:
@@ -268,7 +268,7 @@ class DataReader():
             dependent_values = np.zeros(len(independent_values))
 
         if dependent_values.ndim > 1:  # not ncdf_variable.one_dimensional:
-            dependent_values = self.__meanProfiles__(dependent_values, start_avg_index, end_avg_idx + 1,
+            dependent_values = self.__meanProfiles__(dependent_values, start_avg_index, end_avg_idx ,
                                                      avg_axis=avg_axis)
 
         # E3SM outputs Z3 as it's height variable, which may also contain an offset
@@ -492,7 +492,11 @@ class DataReader():
                     start_idx = i
                 # Check for end index
                 if test_value >= end_value and test_value < data[end_idx]:
-                    end_idx = i
+                    # add +1 to the index if an exact value match is found since python end indices are exclusive
+                    if test_value == end_value and (i+1) < len(data):
+                        end_idx = i + 1
+                    else:
+                        end_idx = i
         else:
             for i in range(0, len(data)):
                 test_value = data[i]
