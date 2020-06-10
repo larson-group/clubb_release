@@ -15,7 +15,7 @@ def clean_path(string):
     that are not valid for the operating system
 
     :param string: Path string to have characters removed
-    :return: a cleaned version of the path
+    :return: A cleaned version of the path
     """
     # string = string.replace('.', '')
     string = string.replace(',', '')
@@ -43,7 +43,7 @@ def clean_path(string):
 def clean_title(string):
     """
     Cleans plot titles so they can be used as part of a file name.
-    Matplotlib plot titles may contain latex code enclosed in $s.
+    Matplotlib plot titles may contain latex code enclosed in '$' characters.
     This code should be removed entirely to avoid having invalid characters in file names.
     
     :param string: Title of a plot which is used to generate a file name

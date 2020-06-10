@@ -1,4 +1,6 @@
 '''
+TODO: Add new Panel type: time-height plots
+
 :author: Nicolas Strike
 :date: Mid 2019
 '''
@@ -21,6 +23,7 @@ class Panel:
     TYPE_PROFILE = 'profile'
     TYPE_BUDGET = 'budget'
     TYPE_TIMESERIES = 'timeseries'
+    # TYPE_TIMEHEIGHT = 'timeheight'
     EXTENSION = '.png'
 
     def __init__(self, plots, panel_type="profile", title="Unnamed panel", dependent_title="dependent variable",
@@ -34,9 +37,8 @@ class Panel:
         :param sci_scale: The scale at which to display the x axis (e.g. to scale to 1e-3 set sci_scale=-3).
             If not specified, the matplotlib default sci scaling will be used.
         :param centered: If True, the Panel will be centered around 0.
-                         Profile plots are usually centered, while budget plots are not.
+            Profile plots are usually centered, while budget plots are not.
         """
-
         self.panel_type = panel_type
         self.all_plots = plots
         self.title = title
@@ -68,10 +70,9 @@ class Panel:
     def plot(self, output_folder, casename, replace_images = False, no_legends = True, thin_lines = False,
              alphabetic_id="", paired_plots = True):
         """
-         Saves a single panel/graph as image to the output directory specified by the pyplotgen launch parameters
+        Saves a single panel/graph as image to the output directory specified by the pyplotgen launch parameters
 
-        :param paired_plots:
-        :param output_folder:
+        :param output_folder: 
         :param casename: The name of the case that's plotted in this panel
         :param replace_images: Switch to tell pyplotgen if existing files should be overwritten
         :param no_legends: If False, a legend will be generated for this Panel
@@ -202,7 +203,7 @@ class Panel:
 
         # Create folders
         # Because os.mkdir("output") can fail and prevent os.mkdir("output/" + casename) from being called we must
-        # use two separate try blokcs
+        # use two separate try blocks
         try:
             os.mkdir(output_folder)
         except FileExistsError:
@@ -236,7 +237,7 @@ class Panel:
         Removes characters from a string that are not valid for a filename
 
         :param filename: Filename string to have characters removed
-        :return: a character stripped version of the filename
+        :return: A character stripped version of the filename
         """
         filename = filename.replace('/', '')
         filename = clean_path(filename)

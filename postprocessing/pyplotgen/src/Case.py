@@ -25,7 +25,7 @@ class Case:
     def __init__(self, case_definition, clubb_folders=[], diff_datasets=None, sam_folders=[""], wrf_folders=[""],
                  plot_les=False, plot_budgets=False, plot_r408=False, plot_hoc=False, e3sm_dirs=[], cam_folders=[]):
         """
-        Initialize a Case
+        Initialize a Case object with the passed parameters
         
         TODO:   - Create function for loading NcFiles to reduce redundant code
                 - Bring in line the way CLUBB files are loaded
@@ -196,9 +196,6 @@ class Case:
         if self.plot_budgets:
             # Create an instance of a budgets VariableGroup. By default, this is VariableGroupBaseBudgets,
             # but for SAM data, use VariableGroupSamBudgets
-            # print('Plotting budgets')
-            # print('sam_datasets None?: {}'.format(sam_datasets is None))
-            # print('len(sam_datasets)={}'.format(len(sam_datasets)))
             if self.clubb_datasets is not None and len(self.clubb_datasets) != 0:
                 for folders_datasets in self.clubb_datasets.values():
                     budget_variables = VariableGroupBaseBudgets(self, clubb_datasets=folders_datasets)
@@ -258,33 +255,35 @@ class Case:
 
         :param arrA: The first array (usually contains larger values)
         :param arrB: The second array (usually contains smaller values)
-        :return: a numpy array containing arrA - arrB
+        :return: A numpy array containing |arrA - arrB|
         """
+        # Pad shorter array with zeros to match size of longer array and convert to numpy array
+        if len(arrA) < len(arrB):
+            short = arrA
+            long = arrB
+        else:
+            short = arrB
+            long = arrA
+        padType = type(short[0])
+        padding = np.zeros(len(long)-len(short), dtype=padType)
+        short = np.concatenate((short,padding))
 
-        # Fill zeros on smallest array
-        zerosA = [0 for i in range(len(arrA), len(arrB))]
-        zerosB = [0 for i in range(len(arrB), len(arrA))]
-        arrA = np.append(arrA, zerosA)
-        arrB = np.append(arrB, zerosB)
-
-        diff_line = arrA - arrB
-        diff_line = [abs(value) for value in diff_line]  # ensure every difference is positive
-        diff_line = np.asarray(diff_line)
-        return diff_line
+        # Return absolute difference between both arrays
+        return np.abs(long-short)
 
     def plot(self, output_folder, replace_images=False, no_legends=False, thin_lines=False, show_alphabetic_id=False):
         """
-        Plot all panels associated with the case, these will be saved to a .jpg file in the <<output>>/<<casename>>
+        Plot all panels associated with the case, these will be saved to image files in the <<output>>/<<casename>>
         folder
         
-        :param output_folder: absolute name of the folder to save output into.
+        :param output_folder: Absolute name of the folder to save output into.
         :param replace_images: If True, pyplotgen will overwrite images with the same name.
             If False (default), pyplotgen will add a timestamp to the end of every filename
             (even if there's no filename conflict)
         :param no_legends: If True, pyplotgen will not include a legend on output graphs.
             If False (default), legends will be displayed.
         :param thin_lines: If True, lines plotted will be much thinner than usual.
-        False (default) lines are plotted according to the thickness defined in config/Style_definitions.py
+            If False (default), lines are plotted according to the thickness defined in config/Style_definitions.py
         :param show_alphabetic_id: If True, pyplotgen will add an alphabetic
             label to the top right corner of each plot. These labels will rotate through a-z incrementally.
             If there are more than 26 plots, it will rotate 2 dimensionally,

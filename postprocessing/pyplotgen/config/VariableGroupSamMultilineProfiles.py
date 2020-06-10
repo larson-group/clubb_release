@@ -1,9 +1,7 @@
 '''
 :author: Steffen Domke
 :date: Mid 2019
-TODO:   - Should invalid variables produce zero lines or none at all?
-        - fallback <-> calc
-        - Update axis labels at TASK
+TODO:   - Update axis labels at TASK
         - Implement/copy sam calcs
         - Figure out how to include standard plots in VariableGroupBase (labels etc.)
 '''
@@ -514,7 +512,7 @@ class VariableGroupSamMultilineProfiles(VariableGroup):
         VVAR = V2 + VP2_SGS
         return VVAR, z
 
-    ## Conditional average fallback functions
+    ## Conditional average calc functions
     # UCLD
     def getUEnvUnweighted(self, dataset_override=None):
         """

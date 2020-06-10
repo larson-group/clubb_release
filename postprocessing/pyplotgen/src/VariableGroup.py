@@ -29,12 +29,19 @@ class VariableGroup:
                  hoc_dataset=None, cam_datasets = None,
                  e3sm_datasets=None, sam_datasets=None, wrf_datasets=None):
         """
-        Initialize common VariableGroup parameters
-        :param clubb_datasets: A dictionary or Netcdf dataset containing the dependent_data to be plotted
+        Initialize a VariableGroup object with the passed parameters
+
         :param case: An instance of a Case object
+        :param clubb_datasets: A dictionary of or a single NetCDF4 Dataset object
+            containing the dependent_data to be plotted
         :param les_dataset: NetCDF4 Dataset object containing sam ouput
         :param coamps_dataset: NetCDF4 Dataset object containing coamps ouput
         :param r408_dataset: NetCDF4 Dataset object containing clubb r408 ('chris golaz') output
+        :param hoc_dataset: NetCDF4 Dataset object containing hoc output
+        :param cam_datasets: A dictionary of or a single NetCDF4 Dataset object containing cam output
+        :param e3sm_datasets: A dictionary of or a single NetCDF4 Dataset object containing e3sm output
+        :param sam_datasets: A dictionary of or a single NetCDF4 Dataset object containing sam output
+        :param wrf_datasets: A dictionary of or a single NetCDF4 Dataset object containing wrf output
         """
         self.variables = []
         self.panels = []
@@ -55,6 +62,8 @@ class VariableGroup:
         self.height_min_value = case.height_min_value
         self.height_max_value = case.height_max_value
 
+        # Loop over the list self.variable_definitions which is only defined in the subclasses
+        # that can be found in the config folder such as VariableGroupBase
         for variable in self.variable_definitions:
             print("\tProcessing ", variable['var_names']['clubb'])
 
@@ -66,6 +75,8 @@ class VariableGroup:
 
             if not variable_is_blacklisted:
                 self.addVariable(variable)
+            else:
+                print('\tVariable {} is blacklisted and will therefore not be plotted.'.format(variable))
 
         self.generatePanels()
 
@@ -110,11 +121,11 @@ class VariableGroup:
 
         *type*: (optional) Override the default type 'profile' with either 'budget' or 'timeseries'
 
-        *fallback_func*: (optional) If a variable is not found within a dataset_name and a fallback_func
-        is specified, this
-        function will be called to attempt retrieving the variable. Like the
-        model_calc option, this is a functional reference to a method that calculates the given variable.
-        E.g. self.getWpthlpFallback
+        *fallback_func*: (optional) (DEPRECATED: Use the calc parameters instead)
+            If a variable is not found within a dataset_name and a fallback_func is specified, this
+            function will be called to attempt retrieving the variable. Like the
+            model_calc option, this is a functional reference to a method that calculates the given variable.
+            E.g. self.getWpthlpFallback
 
         *title*: (optional) Override the default panel title, or provide one if it's not specified in the netcdf file.
 
@@ -134,10 +145,10 @@ class VariableGroup:
             {'var_names': ['thlm_ma'], 'legend_label': 'thlm_ma'},
             {'var_names': ['thlm_ta'], 'legend_label': 'thlm_ta'},
             {'var_names': ['thlm_mc'], 'legend_label': 'thlm_mc'},
-            {'var_names': ['thlm_clipping'], 'legend_label': 'thlm_bt', 'fallback_func': self.getThlmClipping},
+            {'var_names': ['thlm_clipping'], 'legend_label': 'thlm_bt', 'clubb_calc': self.getThlmClipping},
             {'var_names': ['radht'], 'legend_label': 'radht'},
-            {'var_names': ['lsforcing'], 'legend_label': 'lsforcing', 'fallback_func': self.getLsforcing},
-            {'var_names': ['thlm_residual'], 'legend_label': 'thlm_residual', 'fallback_func': self.getThlmResidual},
+            {'var_names': ['lsforcing'], 'legend_label': 'lsforcing', 'clubb_calc': self.getLsforcing},
+            {'var_names': ['thlm_residual'], 'legend_label': 'thlm_residual', 'clubb_cal': self.getThlmResidual},
             ]
 
         Here are a couple examples of other (non-budget) variable definitions:
@@ -614,17 +625,13 @@ class VariableGroup:
 
     def getVarForCalculations(self, varname, datasets, conversion_factor=1):
         """
-        This function is used within a fallback function to get the dependent_data of a certain variable,
+        This function is used within model_calc functions to get the dependent_data of a certain variable,
         constrained between a min/max height.
 
+        :param varname:
         :param datasets:
         :param conversion_factor:
-        :param varname:
-        for both the varname
-        variable and the height variable in a tuple ordered as (varname, z)
-
         :return:
-
         """
         var_ncdf = NetCdfVariable(varname, datasets, independent_var_names=Case_definitions.HEIGHT_VAR_NAMES,
                                   conversion_factor=conversion_factor, start_time=self.start_time,

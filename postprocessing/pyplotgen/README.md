@@ -103,44 +103,50 @@ Each variable is included within a _VariableGroup_,and each variable group is in
 
 | Parameter | Description |
 | --- | --- |  
-| *aliases* | A list of names various models refer to this variable as. E.g. ['wprtp', 'WPRTP', 'wpqtp']. This list is to include the variable name for any models that Pyplotgen is plotting. It does not matter what order the variables are in; pyplotgen will search the list from left -> right so more frequent names are _preferred_ to go on the left for efficiency.|
-| *sam_calc*| (optional) A functional reference to a method that calculates a sam variable. This is given as the name of the function *without* the () after the name. E.g. `self.getThlmSamLine` |
-| *coamps_calc* | (optional) A functional reference to a method that calculates a coamps variable. This is given as the name of the function *without* the () after the name. E.g. `self.getThlmCoampsLine`|
+| *var_names* | A list of names various models refer to this variable as. E.g. ['wprtp', 'WPRTP', 'wpqtp']. This list is to include the variable name for any models that Pyplotgen is plotting. It does not matter what order the variables are in; pyplotgen will search the list from left -> right so more frequent names are _preferred_ to go on the left for efficiency.|
+| *sam_calc*| (optional) A functional reference to a method that calculates a sam variable. This is given as the name of the function *without* the () after the name. E.g. `self.getThlmSamCalc` |
+| *clubb_calc*| (optional) A functional reference to a method that calculates a clubb variable. This is given as the name of the function *without* the () after the name. E.g. `self.getThlmClubbCalc` |
+| *coamps_calc* | (optional) A functional reference to a method that calculates a coamps variable. This is given as the name of the function *without* the () after the name. E.g. `self.getThlmCoampsCalc`|
+| *cam_calc*| (optional) A functional reference to a method that calculates a cam variable. This is given as the name of the function *without* the () after the name. E.g. `self.getThlmCamCalc` |
+| *hoc_calc*| (optional) A functional reference to a method that calculates an hoc-2005 variable. This is given as the name of the function *without* the () after the name. E.g. `self.getThlmHocCalc` |
+| *r408_calc*| (optional) A functional reference to a method that calculates a r408 variable. This is given as the name of the function *without* the () after the name. E.g. `self.getThlmR408SamCalc` |
+| *e3sm_calc*| (optional) A functional reference to a method that calculates a e3sm variable. This is given as the name of the function *without* the () after the name. E.g. `self.getThlmE3smCalc` |
 | *sam_conv_factor* | (optional) Numeric value to scale a sam variable by. E.g. `1/1000`, or `100`|
 | *coamps_conv_factor*| (optional) Numeric value to scale a coamps variable by. E.g. `1/1000`, or `100`|
 | *r408_conv_factor* | (optional) Numeric value to scale a clubb r408 variable by. E.g. `1/1000`, or `100`|
+| *e3sm_conv_factor* | (optional) Numeric value to scale an e3sm variable by. E.g. `1/1000`, or `100`|
 | *type* | (optional) Override the default type 'profile' with either 'budget' or 'timeseries'|
-| *fallback_func* | (optional) If a variable is not found within a dataset and a `fallback_func` is specified, this function will be called to attempt retrieving the variable (before filling zeros if `fill_zeros=True`). Like the `model_calc` option, this is a functional reference to a method that calculates the given variable. E.g. `self.getWpthlpFallback`|
+| *fallback_func* | (optional) (DEPRECATED: Use model_calc functions instead) If a variable is not found within a dataset and a `fallback_func` is specified, this function will be called to attempt retrieving the variable (before filling zeros if `fill_zeros=True`). Like the `model_calc` option, this is a functional reference to a method that calculates the given variable. E.g. `self.getWpthlpFallback`|
 | *title* | (optional) Override the default panel title, or provide one if it's not specified in the netcdf file.|
 | *axis_title* | (optional) Override the default dependent axis title, or provide one if it's not specified in the netcdf file.|
-| *fill_zeros* | (optional) If a variable isn't found in netcdf output, and there is no `fallback_func` (or the fallback failed) setting this to True allows PyPlotgen to fill all data points with 0 and continue plotting.|
+| *fill_zeros* | (optional) (DEPRECATED: Data arrays by default get filled with zeros now) If a variable isn't found in netcdf output, and there is no `_calc` function (or it failed) setting this to True allows PyPlotgen to fill all data points with 0 and continue plotting.|
 | *lines* | (budget variables only) Defines lines to plot for budget cases. Passed separately because it's a lot of text. This is given in the form of a list of lines, below's an example:|
+| *type* | (optional) Override the default type 'profile' with either 'budget', 'timeseries', or (not implemented) 'timeheight'
 
 ~~~~python
             thlm_lines = [
-            {'aliases': ['thlm_bt'], 'label': 'thlm_bt'},
-            {'aliases': ['thlm_ma'], 'label': 'thlm_ma'},
-            {'aliases': ['thlm_ta'], 'label': 'thlm_ta'},
-            {'aliases': ['thlm_mc'], 'label': 'thlm_mc'},
-            {'aliases': ['thlm_clipping'], 'label': 'thlm_bt', 'fallback_func': self.getThlmClipping},
-            {'aliases': ['radht'], 'label': 'radht'},
-            {'aliases': ['lsforcing'], 'label': 'lsforcing', 'fallback_func': self.getLsforcing},
-            {'aliases': ['thlm_residual'], 'label': 'thlm_residual', 'fallback_func': self.getThlmResidual},
+            {'var_names': ['thlm_bt'], 'label': 'thlm_bt'},
+            {'var_names': ['thlm_ma'], 'label': 'thlm_ma'},
+            {'var_names': ['thlm_ta'], 'label': 'thlm_ta'},
+            {'var_names': ['thlm_mc'], 'label': 'thlm_mc'},
+            {'var_names': ['thlm_clipping'], 'label': 'thlm_bt', 'clubb_calc': self.getThlmClipping},
+            {'var_names': ['radht'], 'label': 'radht'},
+            {'var_names': ['lsforcing'], 'label': 'lsforcing', 'clubb_calc': self.getLsforcing},
+            {'var_names': ['thlm_residual'], 'label': 'thlm_residual', 'clubb_calc': self.getThlmResidual},
             ]
             self.variable_definitions = [
-            {'aliases': ['thlm'], 'lines': thlm_lines, 'type': Panel.TYPE_BUDGET, 'fill_zeros': True}
+            {'var_names': ['thlm'], 'lines': thlm_lines, 'type': Panel.TYPE_BUDGET}
             ]
 ~~~~
 Here are a couple examples of other (non-budget) variable definitions:
 
 ~~~~python{
-            'aliases': ['Skrt_zt'],
+            'var_names': ['Skrt_zt'],
             'sam_calc': self.getSkrtZtLesLine,
             'coamps_calc': self.getSkrtZtLesLine,
-            'fill_zeros': True
             },
             {
-            'aliases': ['lwp', 'CWP'],
+            'var_names': ['lwp', 'CWP'],
             'type': Panel.TYPE_TIMESERIES,
             'sam_conv_factor': 1/1000
             }
@@ -150,7 +156,7 @@ Here are a couple examples of other (non-budget) variable definitions:
 A lot of the time the only parameter that is needed will be the list of aliases for the variable as used by multiple models. However there are times when a more complicated definition is needed, such as when variables must be calculated. For some of these situations, please check out the appropriate sections below.
 
 #### Variable not found in case X
-In the unfortunate event that a variable is exported in most cases except Case X Y Z, there are a few options available for handling this issue. The easy (and dirty) method of resolving this is to simply blacklist the variable and not plot it at all for that case. To do so, simply add the variables name to the `blacklisted_vars` list for that case. For example, to blacklist `thlm` from the Wangara case, the blacklist would go from `'blacklisted_vars': []` to `'blacklisted_vars': ['thlm']. Similarly to blacklisting a variable, a variable can also be describes with `'fill_zeros' = True`. When this parameter is passed pyplotgen will fill a list with 0's in place of the variables data instead of ignoring it. This isn't any better for plotting a variable onto a graph than blacklisting it, but it is quite useful for variables that are used in the calculations of another variable, where the value being filled with 0's may or may not exist, but the calculation must continue. If the missing variable should be plotted for the given case, then you must either create a fallback or model_calc function (please see below).
+In the unfortunate event that a variable is exported in most cases except Case X Y Z, there are a few options available for handling this issue. The easy (and dirty) method of resolving this is to simply blacklist the variable and not plot it at all for that case. To do so, simply add the variable's name to the `blacklisted_vars` list for that case. For example, to blacklist `thlm` from the Wangara case, the blacklist would go from `'blacklisted_vars': []` to `'blacklisted_vars': ['thlm']`. If the missing variable should be plotted for the given case, then you must create a model_calc function (please see below). If neither option is applicable, the data array for the missing variable will be filled with zeros by default and a warning is written to the console.
 
 #### Fallback vs. model_calc functions (fallback functions are no longer part of pyplotgen, this section needs to be updated)
 _Note_: Fallback refers to a function defined under `fallback_func` and model_calc refers to a function defined as either `sam_calc` or `coamps_calc`.
@@ -163,16 +169,17 @@ There is no clubb_calc function, if a clubb value needs calculating the fallback
 
 Technically a fallback _could_ be used to perform the same work as a model_calc, however for the sake of performance and code clarity, this is discouraged.
 
-#### Creating a new fallback function
-Creating a fallback function is relatively simple, but must be done correctly. 
+#### Creating a new calculated function (for calculated variables)
+Creating a new calculator function is relatively simple, but must be done correctly. 
+
 Steps:  
 1. Create a function following the naming scheme and method signature. This function should be created in the same `VariableGroup<Group Name>.py` file as the variable that's being handled.
 ~~~~python
-    def get<VariableName>Fallback(self, dataset_override = None)
+    def get<VariableName><Model>Calc(self, dataset_override = None)
 ~~~~
 2. Include the equation used for the calculation in a pydoc method comment, see example below
 ~~~~python
-    def getWpthlpFallback(self, dataset_override = None):
+    def getWpthlpSamCalc(self, dataset_override = None):
         """
 
         :param self: 
@@ -181,7 +188,7 @@ Steps:
         dependent_data
         # code
 ~~~~
-3. Retrieve the variables needed for calculation using `self.getVarForCalculations(['list', 'of', 'aliases'], self.model_file) # self.model_file refers to variables like self.sam_file and self.coamps_file`. See example below
+3. Retrieve the variables needed for calculation using `self.getVarForCalculations(['list', 'of', 'var_names'], self.model_file) # self.model_file refers to variables like self.sam_file and self.coamps_file`. See example below
 ~~~~python
         tlflux = self.getVarForCalculations(['TLFLUX'], self.sam_file)
         rho = self.getVarForCalculations(['RHO'], self.sam_file)
@@ -198,7 +205,7 @@ Steps:
 
 Here is the full example:
 ~~~~python
-    def getWpthlpFallback(self, dataset_override = None):
+    def getWpthlpSamCalc(self, dataset_override = None):
         """
 
         :param self: 
@@ -213,20 +220,14 @@ Here is the full example:
         return wpthlp, z
 ~~~~
 
-Once this method is created, simply add this function to the variables definition at the top of the file. 
+Once this method is created, simply add this function to the variable's entry in the self.variable_definitions list at the top of the file. 
 Example:
 ~~~~python
-            {'aliases': ['wpthlp', 'WPTHLP'], 'fallback_func': self.getWpthlpFallback},
+            {'var_names': { 'clubb': ['thlm'], ...} , 'sam_calc': self.getWpthlpSamCalc},
 ~~~~
 **Note**: do NOT include () when giving the functions name, here we are using functional programming to pass the method itself as a parameter, not a call to the method, so we must not use the ().  
  
-The variable should now fallback to the new function if a dataset does not contain one of the aliases.
-
-#### Creating a new calculated function (for calculated variables)
-The process for creating a new calculated function is identical to that of a fallback function, except instead of adding the functions name under `fallback_func` it must be added under the model's calc function, the function name uses `Calc` instead of `Fallback`. I.e.
-~~~~python
-            {'aliases': ['thlm'], 'sam_calc': self.getThlmSamCalc},
-~~~~
+The variable data will now be calculated by the new function.
 
 ## Adding new Cases
 Adding a new case is similar to adding a variable in that the process is generally simple, but must be done correctly. All cases are defined in the `pyplotgen/config/Case_definitions.py` file in the form of a dictionary. Copied over from the `Case_definitions.py` code comment, here are the parameters used to describe a case:
