@@ -56,9 +56,9 @@ class NetCdfVariable:
             if len(ncdf_data.values()) == 0:
                 # TODO patch this bug
                 warn("Some model is missing files for " + str(names) + ". Try either including these files or removing "
-                                                                  "their names from the Case_definitions.py config "
-                                                                  "file. This warning is a temporary notice until a "
-                                                                  "bug related to missing filenames is patched")
+                                                                       "their names from the Case_definitions.py config "
+                                                                       "file. This warning is a temporary notice until a "
+                                                                       "bug related to missing filenames is patched")
             # changed to warn from 'raise NameError'
             dataset_with_var = next(iter(ncdf_data.values()))
             warn("None of the values " + str(names) + " were found in the dataset " + str(dataset_with_var.filepath()))
@@ -78,7 +78,6 @@ class NetCdfVariable:
         data_reader = DataReader()
         self.dependent_data, self.independent_data = data_reader.getVarData(self.ncdf_data, self)
 
-
     def __getStartEndIndex__(self, data, start_value, end_value):
         """
         Get the list floor index that contains the value to start graphing at and the
@@ -93,7 +92,7 @@ class NetCdfVariable:
         """
 
         # If dependent_data is a an array with 1 element, return 0's
-        if(len(data) == 1):
+        if (len(data) == 1):
             return 0, 1
 
         start_idx = 0
@@ -106,14 +105,18 @@ class NetCdfVariable:
                 if start_value >= test_value > data[start_idx]:
                     start_idx = i
                 # Check for end index
-                if test_value >= end_value and test_value < data[end_idx]:
+                # Add +1 to index if possible when test_value is an exact match
+                # because python end indices are exclusive while python start indices are inclusive
+                if test_value == end_value and i < len(data):
+                    end_idx = i + 1
+                elif end_value <= test_value < data[end_idx]:
                     end_idx = i
-        else: # if dependent_data is descending
+        else:  # if dependent_data is descending
             for i in range(0, len(data)):
                 test_value = data[i]
-                if test_value >= end_value and test_value < data[start_idx]:
+                if end_value <= test_value < data[start_idx]:
                     start_idx = i
-                if test_value <= start_value and test_value > data[end_idx]:
+                if start_value >= test_value > data[end_idx]:
                     end_idx = i
 
         return start_idx, end_idx
@@ -137,7 +140,6 @@ class NetCdfVariable:
         self.dependent_data = self.dependent_data[start_idx:end_idx]
         if self.independent_data is not None:
             self.independent_data = self.independent_data[start_idx:end_idx]
-
 
     def filter_datasets(self):
         """
@@ -216,7 +218,7 @@ class DataReader():
                         self.nc_datasets[case_key][sub_folder] = {file_type: self.__loadNcFile__(abs_filename)}
                     else:
                         self.nc_filenames[case_key] = {sub_folder: {file_type: abs_filename}}
-                        self.nc_datasets[case_key] = {sub_folder: {file_type: self.__loadNcFile__(abs_filename)} }
+                        self.nc_datasets[case_key] = {sub_folder: {file_type: self.__loadNcFile__(abs_filename)}}
         return self.nc_datasets
 
     def getVarData(self, netcdf_dataset, ncdf_variable):
@@ -245,7 +247,7 @@ class DataReader():
         if end_time_value == -1:
             if variable_name != 'time' and variable_name != 'z' and variable_name != 'altitude' and \
                     variable_name != 'lev' and variable_name != 'Z3':
-                warn("End time value was not specified (or was set to -1) for variable "+variable_name+
+                warn("End time value was not specified (or was set to -1) for variable " + variable_name +
                      ". Automatically using last time in dataset.")
             end_time_value = time_values[-1]
         # Get the index values that correspond to the desired start/end x values
@@ -259,7 +261,7 @@ class DataReader():
             independent_values = self.__getValuesFromNc__(netcdf_dataset, independent_var_name, 1)
 
         if independent_values.ndim > 1:  # not ncdf_variable.one_dimensional:
-            independent_values = self.__meanProfiles__(independent_values, start_avg_index, end_avg_idx + 1,
+            independent_values = self.__meanProfiles__(independent_values, start_avg_index, end_avg_idx,
                                                        avg_axis=avg_axis)
 
         try:
@@ -268,8 +270,7 @@ class DataReader():
             dependent_values = np.zeros(len(independent_values))
 
         if dependent_values.ndim > 1:  # not ncdf_variable.one_dimensional:
-            dependent_values = self.__meanProfiles__(dependent_values, start_avg_index, end_avg_idx + 1,
-                                                     avg_axis=avg_axis)
+            dependent_values = self.__meanProfiles__(dependent_values, start_avg_index, end_avg_idx, avg_axis=avg_axis)
 
         # E3SM outputs Z3 as it's height variable, which may also contain an offset
         # (e.g. e3sm height = clubb height + 650 for the dycoms2_rf01 case). This eliminates that offset.
@@ -353,7 +354,7 @@ class DataReader():
                     raw_units = dataset.variables[name].units
                     raw_units = self.__remove_invalid_unit_chars__(raw_units)
                     if len(raw_units) > 0:
-                        units = "$" + raw_units + "$" # $'s are used to format equations
+                        units = "$" + raw_units + "$"  # $'s are used to format equations
                         break
             if var_found:
                 break
@@ -398,9 +399,9 @@ class DataReader():
             keys = dataset.variables.keys()
             if varname in keys:
                 imported_name = dataset.variables[varname].name
-                units = self.__getUnits__([dataset], varname)#dataset.variables[varname].units
+                units = self.__getUnits__([dataset], varname)  # dataset.variables[varname].units
                 axis_title = imported_name
-                axis_title += ' ' + '[' + units + ']' # $'s are used to format equations
+                axis_title += ' ' + '[' + units + ']'  # $'s are used to format equations
                 break
         return axis_title
 
@@ -441,7 +442,6 @@ class DataReader():
         if varname in Case_definitions.TIME_VAR_NAMES and 'day' in ncdf_data.variables[varname].units:
             var_values = var_values[:] * hrs_in_day * min_in_hr
             var_values = var_values[:] - var_values[0] + 1
-            # var_values = [i for i in range(1,len(var_values) + 1)]
 
         if varname in Case_definitions.TIME_VAR_NAMES and 'hour' in ncdf_data.variables[varname].units:
             var_values = var_values[:] * min_in_hr
@@ -453,7 +453,9 @@ class DataReader():
 
         src_model = self.getNcdfSourceModel(ncdf_data)
         if src_model == 'unknown-model':
-            warn("Warning, unknown model detected. PyPlotgen doesn't know where this netcdf dependent_data is from." + str(ncdf_data))
+            warn(
+                "Warning, unknown model detected. PyPlotgen doesn't know where this netcdf dependent_data is from." + str(
+                    ncdf_data))
             if varname in Case_definitions.TIME_VAR_NAMES:
                 warn("Attempting to autoshift time values")
                 var_values = var_values[:] - var_values[0] + 1
@@ -478,25 +480,28 @@ class DataReader():
         """
 
         # If dependent_data is a an array with 1 element, return 0's
-        if(len(data) == 1):
+        if (len(data) == 1):
             return 0, 0
 
         start_idx = 0
-        end_idx = len(data) - 1
+        end_idx = len(data)
         ascending_data = data[0] < data[1]
         if ascending_data:
             for i in range(0, len(data)):
                 # Check for start index
                 test_value = data[i]
-                if test_value <= start_value and test_value > data[start_idx]:
+                if data[start_idx] < test_value <= start_value:
                     start_idx = i
+                if test_value == end_value:
+                    end_idx = i + 1
                 # Check for end index
-                if test_value >= end_value and test_value < data[end_idx]:
+                # end_idx -1 is in place because this check is inclusive, but the index is compatible with exclusivity
+                if end_value < test_value < data[end_idx -1]:
                     end_idx = i
         else:
             for i in range(0, len(data)):
                 test_value = data[i]
-                if test_value <= end_value and test_value :
+                if test_value <= end_value and test_value:
                     start_idx = i
                 pass
         return start_idx, end_idx

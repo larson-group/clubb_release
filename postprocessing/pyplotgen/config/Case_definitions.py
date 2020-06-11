@@ -183,7 +183,8 @@ BOMEX = {'name': 'bomex', 'start_time': 181, 'end_time': 360, 'height_min_value'
 
          'blacklisted_vars': [],
          'les_dataset': SAM_BENCHMARK_OUTPUT_ROOT + "/JULY_2017/BOMEX_64x64x75/BOMEX_64x64x75_100m_40m_1s.nc",
-         'coamps_dataset': None,
+         'coamps_dataset': {'sm': LES_OUTPUT_ROOT + "/bomex_coamps_sm.nc",
+                           'sw': LES_OUTPUT_ROOT + "/bomex_coamps_sw.nc"},
          'r408_file': {'zm': R408_OUTPUT_ROOT + '/Chris_Golaz_best_ever/bomex_zm.nc',
                        'zt': R408_OUTPUT_ROOT + '/Chris_Golaz_best_ever/bomex_zt.nc',
                        'sfc': R408_OUTPUT_ROOT + '/Chris_Golaz_best_ever/bomex_sfc.nc'},
@@ -636,4 +637,4 @@ ALL_CASES = [ARM, ARM_97, ASTEX_A209, ATEX,
              ]
 
 # If uncommented, this line will override the real ALL_CASES given above, forcing pyplotgen to only plot some cases.
-# ALL_CASES = [ARM]
+# ALL_CASES = [WANGARA]
