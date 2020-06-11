@@ -123,8 +123,12 @@ module clubb_api_module
     hydromet_pdf_parameter
 
   use model_flags, only : &
-    clubb_config_flags_type, & ! Type
-    l_use_boussinesq    ! Use Boussinesq form of predictive equations (default is Anelastic).
+      clubb_config_flags_type, & ! Type
+      iiPDF_ADG1, &
+      iiPDF_new_hybrid, &
+      ipdf_pre_advance_fields, &
+      ipdf_post_advance_fields, &
+      l_use_boussinesq    ! Use Boussinesq form of predictive equations (default is Anelastic).
 
   use parameters_model, only : &
     hydromet_dim    ! Number of hydrometeor species
@@ -222,6 +226,10 @@ module clubb_api_module
     read_parameters_api, &
     setup_clubb_core_api, &
         ! CLUBB can be set more specifically using these flags:
+        iiPDF_ADG1, &
+        iiPDF_new_hybrid, &
+        ipdf_pre_advance_fields, &
+        ipdf_post_advance_fields, &
         l_use_boussinesq, &
         ! The parameters of CLUBB can be retrieved and tuned using these indices:
         iC1, iC1b, iC1c, iC2, iC2b, iC2c,  &
