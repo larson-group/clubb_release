@@ -62,9 +62,10 @@ module advance_wp2_wp3_module
                               rho_ds_zt, invrs_rho_ds_zm,              & ! In
                               invrs_rho_ds_zt, radf, thv_ds_zm,        & ! In
                               thv_ds_zt, mixt_frac, Cx_fnc_Richardson, & ! In
-                              wp2_splat, wp3_splat,                    & ! intent(in)
+                              wp2_splat, wp3_splat,                    & ! In
                               pdf_implicit_coefs_terms,                & ! In
                               wprtp, wpthlp, rtp2, thlp2,              & ! In
+                              iiPDF_type,                              & ! In
                               l_min_wp2_from_corr_wx,                  & ! In
                               l_upwind_xm_ma,                          & ! In
                               l_tke_aniso,                             & ! In
@@ -198,6 +199,12 @@ module advance_wp2_wp3_module
 
     type(implicit_coefs_terms), intent(in) :: &
       pdf_implicit_coefs_terms    ! Implicit coefs / explicit terms [units vary]
+
+    integer, intent(in) :: &
+      iiPDF_type    ! Selected option for the two-component normal (double
+                    ! Gaussian) PDF type to use for the w, rt, and theta-l (or
+                    ! w, chi, and eta) portion of CLUBB's multivariate,
+                    ! two-component PDF.
 
     logical, intent(in) :: &
       l_min_wp2_from_corr_wx, & ! Flag to base the threshold minimum value of wp2 on keeping the
@@ -361,6 +368,7 @@ module advance_wp2_wp3_module
                      wp2_splat, wp3_splat,                  & ! Intent(in)
                      pdf_implicit_coefs_terms,              & ! Intent(in)
                      wprtp, wpthlp, rtp2, thlp2,            & ! Intent(in)
+                     iiPDF_type,                            & ! Intent(in)
                      l_min_wp2_from_corr_wx,                & ! Intent(in)
                      l_upwind_xm_ma,                        & ! Intent(in)
                      l_tke_aniso,                           & ! Intent(in)
@@ -471,6 +479,7 @@ module advance_wp2_wp3_module
                          wp2_splat, wp3_splat,                  & ! Intent(in)
                          pdf_implicit_coefs_terms,              & ! Intent(in)
                          wprtp, wpthlp, rtp2, thlp2,            & ! Intent(in)
+                         iiPDF_type,                            & ! Intent(in)
                          l_min_wp2_from_corr_wx,                & ! Intent(in)
                          l_upwind_xm_ma,                        & ! Intent(in)
                          l_tke_aniso,                           & ! Intent(in)
@@ -508,7 +517,10 @@ module advance_wp2_wp3_module
         clubb_fatal_error              ! Constants
 
     use model_flags, only:  & 
-        l_hole_fill,                  & ! Variable(s)
+        iiPDF_ADG1,                   & ! Variable(s)
+        iiPDF_new,                    &
+        iiPDF_new_hybrid,             &
+        l_hole_fill,                  &
         l_explicit_turbulent_adv_wp3
 
     use clubb_precision, only:  & 
@@ -525,12 +537,6 @@ module advance_wp2_wp3_module
         clip_variance, & ! Procedure(s)
         clip_variance_level, &
         clip_skewness
-
-    use pdf_closure_module, only: &
-        iiPDF_ADG1,       & ! Variable(s)
-        iiPDF_new,        &
-        iiPDF_new_hybrid, &
-        iiPDF_type
 
     use pdf_parameter_module, only: &
         implicit_coefs_terms    ! Variable Type
@@ -656,6 +662,12 @@ module advance_wp2_wp3_module
 
     type(implicit_coefs_terms), intent(in) :: &
       pdf_implicit_coefs_terms    ! Implicit coefs / explicit terms [units vary]
+
+    integer, intent(in) :: &
+      iiPDF_type    ! Selected option for the two-component normal (double
+                    ! Gaussian) PDF type to use for the w, rt, and theta-l (or
+                    ! w, chi, and eta) portion of CLUBB's multivariate,
+                    ! two-component PDF.
 
     logical, intent(in) :: &
       l_min_wp2_from_corr_wx, & ! Flag to base the threshold minimum value of wp2 on keeping the
@@ -785,6 +797,7 @@ module advance_wp2_wp3_module
                    C11_Skw_fnc, C16_fnc, rho_ds_zm, invrs_rho_ds_zt, radf, &   ! intent(in)
                    thv_ds_zm, thv_ds_zt, wp2_splat, wp3_splat, &               ! intent(in)
                    l_crank_nich_diff, &                                        ! intent(in)
+                   iiPDF_type, &                                               ! intent(in)
                    l_tke_aniso, &                                              ! intent(in)
                    l_standard_term_ta, &                                       ! intent(in)
                    l_damp_wp2_using_em, &                                      ! intent(in)
@@ -802,6 +815,7 @@ module advance_wp2_wp3_module
                    Kw1, Kw8, Skw_zt, tau1m, tauw3t, tau_C1_zm, C1_Skw_fnc, &
                    C11_Skw_fnc, C16_fnc, rho_ds_zm, rho_ds_zt, &
                    invrs_rho_ds_zm, invrs_rho_ds_zt, l_crank_nich_diff, &
+                   iiPDF_type, &
                    l_upwind_xm_ma, &
                    l_tke_aniso, &
                    l_standard_term_ta, &
@@ -1116,6 +1130,7 @@ module advance_wp2_wp3_module
                        Kw1, Kw8, Skw_zt, tau1m, tauw3t, tau_C1_zm, C1_Skw_fnc, &
                        C11_Skw_fnc, C16_fnc, rho_ds_zm, rho_ds_zt, &
                        invrs_rho_ds_zm, invrs_rho_ds_zt, l_crank_nich_diff, &
+                       iiPDF_type, &
                        l_upwind_xm_ma, &
                        l_tke_aniso, &
                        l_standard_term_ta, &
@@ -1167,7 +1182,10 @@ module advance_wp2_wp3_module
         zero
 
     use model_flags, only: &
-        l_explicit_turbulent_adv_wp3, & ! Variable(s)
+        iiPDF_ADG1,                   & ! Variable(s)
+        iiPDF_new,                    &
+        iiPDF_new_hybrid,             &
+        l_explicit_turbulent_adv_wp3, &
         l_use_wp3_pr3
 
     use diffusion, only: & 
@@ -1181,12 +1199,6 @@ module advance_wp2_wp3_module
         term_ma_zm_lhs_all, &
         term_ma_zt_lhs, &
         term_ma_zt_lhs_all
-
-    use pdf_closure_module, only: &
-        iiPDF_ADG1,       & ! Variable(s)
-        iiPDF_new,        &
-        iiPDF_new_hybrid, &
-        iiPDF_type
 
     use clubb_precision, only: &
         core_rknd
@@ -1275,6 +1287,12 @@ module advance_wp2_wp3_module
 
     logical, intent(in) :: & 
       l_crank_nich_diff  ! Turns on/off Crank-Nicholson diffusion.
+
+    integer, intent(in) :: &
+      iiPDF_type    ! Selected option for the two-component normal (double
+                    ! Gaussian) PDF type to use for the w, rt, and theta-l (or
+                    ! w, chi, and eta) portion of CLUBB's multivariate,
+                    ! two-component PDF.
 
     logical, intent(in) :: &
       l_upwind_xm_ma,         & ! This flag determines whether we want to use an upwind
@@ -1756,6 +1774,7 @@ module advance_wp2_wp3_module
                        C11_Skw_fnc, C16_fnc, rho_ds_zm, invrs_rho_ds_zt, radf, &
                        thv_ds_zm, thv_ds_zt, wp2_splat, wp3_splat, & 
                        l_crank_nich_diff, &
+                       iiPDF_type, &
                        l_tke_aniso, &
                        l_standard_term_ta, &
                        l_damp_wp2_using_em, &
@@ -1813,7 +1832,10 @@ module advance_wp2_wp3_module
         gamma_over_implicit_ts
 
     use model_flags, only:  &
-        l_explicit_turbulent_adv_wp3, & ! Variable(s)
+        iiPDF_ADG1,                   & ! Variable(s)
+        iiPDF_new,                    &
+        iiPDF_new_hybrid,             &
+        l_explicit_turbulent_adv_wp3, &
         l_use_wp3_pr3
 
     use diffusion, only: & 
@@ -1821,12 +1843,6 @@ module advance_wp2_wp3_module
         diffusion_zm_lhs_all,  &
         diffusion_zt_lhs, &
         diffusion_zt_lhs_all
-
-    use pdf_closure_module, only: &
-        iiPDF_ADG1,       & ! Variable(s)
-        iiPDF_new,        &
-        iiPDF_new_hybrid, &
-        iiPDF_type
 
     use clubb_precision, only:  & 
         core_rknd ! Variable
@@ -1893,6 +1909,12 @@ module advance_wp2_wp3_module
 
     logical, intent(in) :: & 
       l_crank_nich_diff   ! Turns on/off Crank-Nicholson diffusion.
+
+    integer, intent(in) :: &
+      iiPDF_type    ! Selected option for the two-component normal (double
+                    ! Gaussian) PDF type to use for the w, rt, and theta-l (or
+                    ! w, chi, and eta) portion of CLUBB's multivariate,
+                    ! two-component PDF.
 
     logical, intent(in) :: &
       l_tke_aniso,         & ! For anisotropic turbulent kinetic energy, i.e. TKE = 1/2

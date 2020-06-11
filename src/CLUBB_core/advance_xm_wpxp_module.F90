@@ -63,6 +63,7 @@ module advance_xm_wpxp_module
                               um_forcing, vm_forcing, ug, vg, wpthvp, &
                               fcor, um_ref, vm_ref, up2, vp2, &
                               uprcp, vprcp, rc_coef, &
+                              iiPDF_type, &
                               l_predict_upwp_vpwp, &
                               l_diffuse_rtm_and_thlm, &
                               l_stability_correct_Kh_N2_zm, &
@@ -137,16 +138,13 @@ module advance_xm_wpxp_module
         zt2zm
 
     use model_flags, only: &
-        l_clip_semi_implicit,          & ! Variable(s)
+        iiPDF_new,                     & ! Variable(s)
+        iiPDF_ADG1,                    &
+        l_clip_semi_implicit,          &
         l_explicit_turbulent_adv_wpxp
 
     use mono_flux_limiter, only: &
         calc_turb_adv_range ! Procedure(s)
-
-    use pdf_closure_module, only: &
-        iiPDF_new,  & ! Variable(s)
-        iiPDF_ADG1, &
-        iiPDF_type
 
     use pdf_parameter_module, only: &
         implicit_coefs_terms    ! Variable Type
@@ -283,6 +281,12 @@ module advance_xm_wpxp_module
       vm_ref, & ! Reference v wind component for nudging       [m/s]
       up2,    & ! Variance of the u wind component             [m^2/s^2]
       vp2       ! Variance of the v wind component             [m^2/s^2]
+
+    integer, intent(in) :: &
+      iiPDF_type    ! Selected option for the two-component normal (double
+                    ! Gaussian) PDF type to use for the w, rt, and theta-l (or
+                    ! w, chi, and eta) portion of CLUBB's multivariate,
+                    ! two-component PDF.
 
     logical, intent(in) :: &
       l_predict_upwp_vpwp,          & ! Flag to predict <u'w'> and <v'w'> along with <u> and <v>
@@ -531,6 +535,7 @@ module advance_xm_wpxp_module
                                  rho_ds_zt, invrs_rho_ds_zm, rho_ds_zm, &
                                  sigma_sqd_w, wp3_on_wp2, wp3_on_wp2_zt, &
                                  pdf_implicit_coefs_terms, &
+                                 iiPDF_type, &
                                  l_explicit_turbulent_adv_wpxp, l_predict_upwp_vpwp, &
                                  l_scalar_calc, &
                                  l_upwind_wpxp_ta, &
@@ -1678,6 +1683,7 @@ module advance_xm_wpxp_module
                                     rho_ds_zt, invrs_rho_ds_zm, rho_ds_zm, &
                                     sigma_sqd_w, wp3_on_wp2, wp3_on_wp2_zt, &
                                     pdf_implicit_coefs_terms, &
+                                    iiPDF_type, &
                                     l_explicit_turbulent_adv_wpxp, l_predict_upwp_vpwp, &
                                     l_scalar_calc, &
                                     l_upwind_wpxp_ta, &
@@ -1693,49 +1699,46 @@ module advance_xm_wpxp_module
   !---------------------------------------------------------------------------------------------
                                     
     use grid_class, only: &
-      gr,     & ! Variable(s)
-      zt2zm,  & ! Procedure(s)
-      zm2zt
+        gr,     & ! Variable(s)
+        zt2zm,  & ! Procedure(s)
+        zm2zt
       
     use clubb_precision, only: &
-      core_rknd  ! Variable(s)
+        core_rknd  ! Variable(s)
       
     use constants_clubb, only: &
-      one, &
-      one_third, &
-      zero, &
-      zero_threshold
+        one, &
+        one_third, &
+        zero, &
+        zero_threshold
       
     use parameters_model, only: &
-      sclr_dim  ! Number of passive scalar variables
+        sclr_dim  ! Number of passive scalar variables
       
     use pdf_parameter_module, only: &
-      implicit_coefs_terms    ! Variable Type
+        implicit_coefs_terms    ! Variable Type
 
     use turbulent_adv_pdf, only: &
-      xpyp_term_ta_pdf_lhs_all, &  ! Procedures
-      xpyp_term_ta_pdf_rhs_all, &
-      sgn_turbulent_velocity
+        xpyp_term_ta_pdf_lhs_all, &  ! Procedures
+        xpyp_term_ta_pdf_rhs_all, &
+        sgn_turbulent_velocity
       
     use model_flags, only: &
-      l_explicit_turbulent_adv_xpyp     ! Logical constant
+        iiPDF_ADG1,       & ! Integer constants
+        iiPDF_new,        &
+        iiPDF_new_hybrid, &
+        l_explicit_turbulent_adv_xpyp     ! Logical constant
       
     use stats_variables, only: &
-      l_stats_samp,             & ! Logical constant
-      stats_zt,                 & ! Variable(s)
-      icoef_wp2rtp_implicit, &
-      iterm_wp2rtp_explicit, &
-      icoef_wp2thlp_implicit, &
-      iterm_wp2thlp_explicit
+        l_stats_samp,             & ! Logical constant
+        stats_zt,                 & ! Variable(s)
+        icoef_wp2rtp_implicit, &
+        iterm_wp2rtp_explicit, &
+        icoef_wp2thlp_implicit, &
+        iterm_wp2thlp_explicit
       
     use stats_type_utilities, only: & 
-      stat_update_var   ! Procedure(s)
-      
-    use pdf_closure_module, only: &
-      iiPDF_ADG1,       & ! Variable(s)
-      iiPDF_new,        &
-      iiPDF_new_hybrid, &
-      iiPDF_type
+        stat_update_var   ! Procedure(s)
       
     implicit none 
     
@@ -1760,6 +1763,12 @@ module advance_xm_wpxp_module
       wpsclrp, &
       wp2sclrp
       
+    integer, intent(in) :: &
+      iiPDF_type    ! Selected option for the two-component normal (double
+                    ! Gaussian) PDF type to use for the w, rt, and theta-l (or
+                    ! w, chi, and eta) portion of CLUBB's multivariate,
+                    ! two-component PDF.
+
     logical, intent(in) :: &
       l_explicit_turbulent_adv_wpxp, &
       l_scalar_calc, &

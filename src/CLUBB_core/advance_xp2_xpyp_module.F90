@@ -56,6 +56,7 @@ module advance_xp2_xpyp_module
                                sclrm, wpsclrp,                         & ! In
                                wpsclrp2, wpsclrprtp, wpsclrpthlp,      & ! In
                                wp2_splat,                              & ! In
+                               iiPDF_type,                             & ! In
                                l_predict_upwp_vpwp,                    & ! In
                                l_min_xp2_from_corr_wx,                 & ! In
                                l_C2_cloud_frac,                        & ! In
@@ -97,7 +98,10 @@ module advance_xp2_xpyp_module
         zero_threshold
 
     use model_flags, only: & 
-        l_hole_fill, &    ! logical constants
+        iiPDF_ADG1,       & ! integer constants
+        iiPDF_new,        &
+        iiPDF_new_hybrid, &
+        l_hole_fill,      & ! logical constants
         l_explicit_turbulent_adv_xpyp
 
     use parameters_tunable, only: &
@@ -123,12 +127,6 @@ module advance_xp2_xpyp_module
         gr,    & ! Variable(s)
         zm2zt, & ! Procedure(s)
         zt2zm
-
-    use pdf_closure_module, only: &
-        iiPDF_ADG1,       & ! Variable(s)
-        iiPDF_new,        &
-        iiPDF_new_hybrid, &
-        iiPDF_type
 
     use pdf_parameter_module, only: &
         implicit_coefs_terms    ! Variable Type
@@ -248,6 +246,12 @@ module advance_xp2_xpyp_module
 
     real( kind = core_rknd ), dimension(gr%nz), intent(in) :: & 
       wp2_splat    ! Gustiness tendency for wp2 equation
+
+    integer, intent(in) :: &
+      iiPDF_type    ! Selected option for the two-component normal (double
+                    ! Gaussian) PDF type to use for the w, rt, and theta-l (or
+                    ! w, chi, and eta) portion of CLUBB's multivariate,
+                    ! two-component PDF.
 
     logical, intent(in) :: &
       l_predict_upwp_vpwp,    & ! Flag to predict <u'w'> and <v'w'> along with <u> and <v>
@@ -446,7 +450,7 @@ module advance_xp2_xpyp_module
                                  rho_ds_zt, invrs_rho_ds_zm, rho_ds_zm,              & ! In
                                  wp3_on_wp2, wp3_on_wp2_zt, sigma_sqd_w,             & ! In
                                  pdf_implicit_coefs_terms, l_scalar_calc,            & ! In
-                                 l_upwind_xpyp_ta,                                   & ! In
+                                 iiPDF_type, l_upwind_xpyp_ta,                       & ! In
                                  lhs_ta_wprtp2, lhs_ta_wpthlp2, lhs_ta_wprtpthlp,    & ! Out
                                  lhs_ta_wpup2, lhs_ta_wpvp2, lhs_ta_wpsclrp2,        & ! Out
                                  lhs_ta_wprtpsclrp, lhs_ta_wpthlpsclrp,              & ! Out
@@ -495,7 +499,7 @@ module advance_xp2_xpyp_module
                                                rhs_ta_wprtp2, rhs_ta_wpthlp2,                & ! In
                                                rhs_ta_wprtpthlp, rhs_ta_wpsclrp2,            & ! In
                                                rhs_ta_wprtpsclrp, rhs_ta_wpthlpsclrp,        & ! In
-                                               dt, l_iter, l_scalar_calc,                    & ! In
+                                               dt, iiPDF_type, l_iter, l_scalar_calc,        & ! In
                                                rtp2, thlp2, rtpthlp,                         & ! Out
                                                sclrp2, sclrprtp, sclrpthlp )                   ! Out
     end if
@@ -1219,7 +1223,7 @@ module advance_xp2_xpyp_module
                                     lhs_ma, lhs_diff, &
                                     rhs_ta_wprtp2, rhs_ta_wpthlp2, rhs_ta_wprtpthlp, &
                                     rhs_ta_wpsclrp2, rhs_ta_wprtpsclrp, rhs_ta_wpthlpsclrp, &
-                                    dt, l_iter, l_scalar_calc, &
+                                    dt, iiPDF_type, l_iter, l_scalar_calc, &
                                     rtp2, thlp2, rtpthlp, &
                                     sclrp2, sclrprtp, sclrpthlp )
     ! Description:
@@ -1243,9 +1247,8 @@ module advance_xp2_xpyp_module
         sclr_dim, & ! Variable(s)
         sclr_tol
 
-    use pdf_closure_module, only: &
-        iiPDF_ADG1, & ! Variable(s)
-        iiPDF_type
+    use model_flags, only: &
+        iiPDF_ADG1    ! Variable(s)
           
     use array_index, only: &
         iisclr_rt, &
@@ -1265,6 +1268,12 @@ module advance_xp2_xpyp_module
       rtp2_forcing,    & ! <r_t'^2> forcing (momentum levels)    [(kg/kg)^2/s]
       thlp2_forcing,   & ! <th_l'^2> forcing (momentum levels)   [K^2/s]
       rtpthlp_forcing    ! <r_t'th_l'> forcing (momentum levels) [(kg/kg)K/s]
+
+    integer, intent(in) :: &
+      iiPDF_type    ! Selected option for the two-component normal (double
+                    ! Gaussian) PDF type to use for the w, rt, and theta-l (or
+                    ! w, chi, and eta) portion of CLUBB's multivariate,
+                    ! two-component PDF.
 
     logical, intent(in) :: &
       l_iter, & ! Whether variances are prognostic
@@ -2749,7 +2758,7 @@ module advance_xp2_xpyp_module
                                      rho_ds_zt, invrs_rho_ds_zm, rho_ds_zm, &
                                      wp3_on_wp2, wp3_on_wp2_zt, sigma_sqd_w, &
                                      pdf_implicit_coefs_terms, l_scalar_calc, &
-                                     l_upwind_xpyp_ta, &
+                                     iiPDF_type, l_upwind_xpyp_ta, &
                                      lhs_ta_wprtp2, lhs_ta_wpthlp2, lhs_ta_wprtpthlp, &
                                      lhs_ta_wpup2, lhs_ta_wpvp2, lhs_ta_wpsclrp2, &
                                      lhs_ta_wprtpsclrp, lhs_ta_wpthlpsclrp, &
@@ -2768,54 +2777,51 @@ module advance_xp2_xpyp_module
     !-------------------------------------------------------------------------------------------
                                          
     use grid_class, only: &
-      gr,     & ! Variable(s)
-      zt2zm,  & ! Procedure(s)
-      zm2zt
+        gr,     & ! Variable(s)
+        zt2zm,  & ! Procedure(s)
+        zm2zt
       
     use clubb_precision, only: &
-      core_rknd  ! Variable(s)
+        core_rknd  ! Variable(s)
       
     use constants_clubb, only: &
-      one, &
-      one_third, &
-      zero, &
-      zero_threshold
+        one, &
+        one_third, &
+        zero, &
+        zero_threshold
       
     use parameters_tunable, only: &
-      beta
+        beta
       
     use parameters_model, only: &
-      sclr_dim  ! Number of passive scalar variables
+        sclr_dim  ! Number of passive scalar variables
       
     use pdf_parameter_module, only: &
-      implicit_coefs_terms    ! Variable Type
+        implicit_coefs_terms    ! Variable Type
 
     use turbulent_adv_pdf, only: &
-      xpyp_term_ta_pdf_lhs_all, &  ! Procedures
-      xpyp_term_ta_pdf_rhs_all, &
-      sgn_turbulent_velocity
+        xpyp_term_ta_pdf_lhs_all, &  ! Procedures
+        xpyp_term_ta_pdf_rhs_all, &
+        sgn_turbulent_velocity
       
     use model_flags, only: &
-      l_explicit_turbulent_adv_xpyp     ! Logical constant
+        iiPDF_ADG1,       & ! integer constants
+        iiPDF_new,        &
+        iiPDF_new_hybrid, &
+        l_explicit_turbulent_adv_xpyp     ! Logical constant
       
     use stats_variables, only: &
-      l_stats_samp,             & ! Logical constant
-      stats_zt,                 & ! Variable(s)
-      icoef_wprtp2_implicit,    &
-      iterm_wprtp2_explicit,    &
-      icoef_wpthlp2_implicit,   &
-      iterm_wpthlp2_explicit,   &
-      icoef_wprtpthlp_implicit, &
-      iterm_wprtpthlp_explicit
+        l_stats_samp,             & ! Logical constant
+        stats_zt,                 & ! Variable(s)
+        icoef_wprtp2_implicit,    &
+        iterm_wprtp2_explicit,    &
+        icoef_wpthlp2_implicit,   &
+        iterm_wpthlp2_explicit,   &
+        icoef_wprtpthlp_implicit, &
+        iterm_wprtpthlp_explicit
       
     use stats_type_utilities, only: & 
         stat_update_var   ! Procedure(s)
-      
-    use pdf_closure_module, only: &
-        iiPDF_ADG1,       & ! Variable(s)
-        iiPDF_new,        &
-        iiPDF_new_hybrid, &
-        iiPDF_type
       
     implicit none    
     
@@ -2859,6 +2865,12 @@ module advance_xp2_xpyp_module
     
     logical, intent(in) :: &
       l_scalar_calc
+
+    integer, intent(in) :: &
+      iiPDF_type    ! Selected option for the two-component normal (double
+                    ! Gaussian) PDF type to use for the w, rt, and theta-l (or
+                    ! w, chi, and eta) portion of CLUBB's multivariate,
+                    ! two-component PDF.
 
     logical, intent(in) :: &
       l_upwind_xpyp_ta ! This flag determines whether we want to use an upwind differencing

@@ -301,6 +301,14 @@ module spurious_source_test
 
     integer :: iter, k, i  ! Loop indices
 
+    integer :: &
+      iiPDF_type,          & ! Selected option for the two-component normal
+                             ! (double Gaussian) PDF type to use for the w, rt,
+                             ! and theta-l (or w, chi, and eta) portion of
+                             ! CLUBB's multivariate, two-component PDF.
+      ipdf_call_placement    ! Selected option for the placement of the call to
+                             ! CLUBB's PDF.
+
     logical :: &
       l_use_precip_frac,            & ! Flag to use precipitation fraction in KK microphysics. The
                                       ! precipitation fraction is automatically set to 1 when this
@@ -389,7 +397,9 @@ module spurious_source_test
       l_update_pressure               ! Flag for having CLUBB update pressure and exner
 
 
-    call set_default_clubb_config_flags( l_use_precip_frac, &
+    call set_default_clubb_config_flags( iiPDF_type, &
+                                         ipdf_call_placement, &
+                                         l_use_precip_frac, &
                                          l_predict_upwp_vpwp, &
                                          l_min_wp2_from_corr_wx, &
                                          l_min_xp2_from_corr_wx, &
@@ -790,6 +800,7 @@ module spurious_source_test
                              um_forcing, vm_forcing, ug, vg, wpthvp, &
                              fcor, um_ref, vm_ref, up2, vp2, &
                              uprcp, vprcp, rc_coef, &
+                             iiPDF_type, &
                              l_predict_upwp_vpwp, &
                              l_diffuse_rtm_and_thlm, &
                              l_stability_correct_Kh_N2_zm, &

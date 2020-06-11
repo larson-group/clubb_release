@@ -541,6 +541,14 @@ subroutine logical_flags_driver( current_date, current_time )
 
   integer :: i, j
 
+  integer :: &
+    iiPDF_type,          & ! Selected option for the two-component normal
+                           ! (double Gaussian) PDF type to use for the w, rt,
+                           ! and theta-l (or w, chi, and eta) portion of
+                           ! CLUBB's multivariate, two-component PDF.
+    ipdf_call_placement    ! Selected option for the placement of the call to
+                           ! CLUBB's PDF.
+
   logical :: &
     l_use_precip_frac,            & ! Flag to use precipitation fraction in KK microphysics. The
                                     ! precipitation fraction is automatically set to 1 when this
@@ -629,6 +637,7 @@ subroutine logical_flags_driver( current_date, current_time )
     l_update_pressure               ! Flag for having CLUBB update pressure and exner
 
   namelist /configurable_clubb_flags_nl/ &
+    iiPDF_type, ipdf_call_placement, &
     l_upwind_wpxp_ta, l_upwind_xpyp_ta, l_upwind_xm_ma, l_quintic_poly_interp, &
     l_tke_aniso, l_vert_avg_closure, l_single_C2_Skw, l_standard_term_ta, &
     l_use_cloud_cover, l_rcm_supersat_adj, l_damp_wp3_Skw_squared, &
@@ -642,7 +651,9 @@ subroutine logical_flags_driver( current_date, current_time )
 
   ! ---- Begin Code ----
 
-  call set_default_clubb_config_flags( l_use_precip_frac, & ! Intent(out)
+  call set_default_clubb_config_flags( iiPDF_type, & ! Intent(out)
+                                       ipdf_call_placement, & ! Intent(out)
+                                       l_use_precip_frac, & ! Intent(out)
                                        l_predict_upwp_vpwp, & ! Intent(out)
                                        l_min_wp2_from_corr_wx, & ! Intent(out)
                                        l_min_xp2_from_corr_wx, & ! Intent(out)

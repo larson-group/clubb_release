@@ -639,6 +639,14 @@ module clubb_driver
     type(silhs_config_flags_type) :: &
       silhs_config_flags ! Flags for the SILHS sampling code
 
+    integer :: &
+      iiPDF_type,          & ! Selected option for the two-component normal
+                             ! (double Gaussian) PDF type to use for the w, rt,
+                             ! and theta-l (or w, chi, and eta) portion of
+                             ! CLUBB's multivariate, two-component PDF.
+      ipdf_call_placement    ! Selected option for the placement of the call to
+                             ! CLUBB's PDF.
+
     logical :: &
       l_use_precip_frac,            & ! Flag to use precipitation fraction in KK microphysics. The
                                       ! precipitation fraction is automatically set to 1 when this
@@ -755,6 +763,7 @@ module clubb_driver
       l_allow_small_stats_tout
 
     namelist /configurable_clubb_flags_nl/ &
+      iiPDF_type, ipdf_call_placement, &
       l_upwind_wpxp_ta, l_upwind_xpyp_ta, l_upwind_xm_ma, l_quintic_poly_interp, &
       l_tke_aniso, l_vert_avg_closure, l_single_C2_Skw, l_standard_term_ta, &
       l_use_cloud_cover, l_rcm_supersat_adj, l_damp_wp3_Skw_squared, &
@@ -866,7 +875,9 @@ module clubb_driver
     iunit = 10
 #endif
 
-    call set_default_clubb_config_flags( l_use_precip_frac, & ! Intent(out)
+    call set_default_clubb_config_flags( iiPDF_type, & ! Intent(out)
+                                         ipdf_call_placement, & ! Intent(out)
+                                         l_use_precip_frac, & ! Intent(out)
                                          l_predict_upwp_vpwp, & ! Intent(out)
                                          l_min_wp2_from_corr_wx, & ! Intent(out)
                                          l_min_xp2_from_corr_wx, & ! Intent(out)
@@ -1225,7 +1236,9 @@ module clubb_driver
     end if
 
     ! Initialize CLUBB configurable flags type
-    call initialize_clubb_config_flags_type( l_use_precip_frac, & ! Intent(in)
+    call initialize_clubb_config_flags_type( iiPDF_type, & ! Intent(in)
+                                             ipdf_call_placement, & ! Intent(in)
+                                             l_use_precip_frac, & ! Intent(in)
                                              l_predict_upwp_vpwp, & ! Intent(in)
                                              l_min_wp2_from_corr_wx, & ! Intent(in)
                                              l_min_xp2_from_corr_wx, & ! Intent(in)
@@ -1297,6 +1310,8 @@ module clubb_driver
            l_implemented, grid_type, deltaz, zm_init, zm_top, & ! Intent(in)
            momentum_heights, thermodynamic_heights,           & ! Intent(in)
            sfc_elevation,                                     & ! Intent(in)
+           iiPDF_type,                                        & ! intent(in)
+           ipdf_call_placement,                               & ! intent(in)
            l_predict_upwp_vpwp,                               & ! intent(in)
            l_prescribed_avg_deltaz,                           & ! intent(in)
            l_damp_wp2_using_em,                               & ! intent(in)
@@ -2132,6 +2147,7 @@ module clubb_driver
                                     ice_supersat_frac, hydromet, wphydrometp, & ! Intent(in)
                                     corr_array_n_cloud, corr_array_n_below, &   ! Intent(in)
                                     pdf_params, l_stats_samp, &                 ! Intent(in)
+                                    clubb_config_flags%iiPDF_type, &            ! Intent(in)
                                     l_use_precip_frac, &                        ! Intent(in)
                                     clubb_config_flags%l_predict_upwp_vpwp, &          ! Intent(in)
                                     clubb_config_flags%l_diagnose_correlations, &      ! Intent(in)

@@ -118,7 +118,7 @@ program G_unit_tests
   use constants_clubb, only: &
       fstdout  ! Constant(s)
 
-  use pdf_closure_module, only: &
+  use model_flags, only: &
       iiPDF_new,        & ! Variable(s)
       iiPDF_ADG1,       &
       iiPDF_TSDADG,     &

@@ -17,6 +17,25 @@ module model_flags
 
   private ! Default Scope
 
+  ! Options for the two component normal (double Gaussian) PDF type to use for
+  ! the w, rt, and theta-l (or w, chi, and eta) portion of CLUBB's multivariate,
+  ! two-component PDF.
+  integer, parameter, public :: &
+    iiPDF_ADG1 = 1,       & ! ADG1 PDF
+    iiPDF_ADG2 = 2,       & ! ADG2 PDF
+    iiPDF_3D_Luhar = 3,   & ! 3D Luhar PDF
+    iiPDF_new = 4,        & ! new PDF
+    iiPDF_TSDADG = 5,     & ! new TSDADG PDF
+    iiPDF_LY93 = 6,       & ! Lewellen and Yoh (1993)
+    iiPDF_new_hybrid = 7    ! new hybrid PDF
+
+  ! Options for the placement of the call to CLUBB's PDF.
+  integer, parameter, public :: &
+    ipdf_pre_advance_fields   = 1,   & ! Call before advancing predictive fields
+    ipdf_post_advance_fields  = 2,   & ! Call after advancing predictive fields
+    ipdf_pre_post_advance_fields = 3   ! Call both before and after advancing
+                                       ! predictive fields
+
   logical, parameter, public ::  & 
     l_pos_def            = .false., & ! Flux limiting positive definite scheme on rtm
     l_hole_fill          = .true.,  & ! Hole filling pos def scheme on wp2,up2,rtp2,etc
@@ -123,6 +142,15 @@ module model_flags
 
   ! Derived type to hold all configurable CLUBB flags
   type clubb_config_flags_type
+
+    integer :: &
+      iiPDF_type,          & ! Selected option for the two-component normal
+                             ! (double Gaussian) PDF type to use for the w, rt,
+                             ! and theta-l (or w, chi, and eta) portion of
+                             ! CLUBB's multivariate, two-component PDF.
+      ipdf_call_placement    ! Selected option for the placement of the call to
+                             ! CLUBB's PDF.
+
     logical :: &
       l_use_precip_frac,            & ! Flag to use precipitation fraction in KK microphysics. The
                                       ! precipitation fraction is automatically set to 1 when this
@@ -209,6 +237,7 @@ module model_flags
       l_damp_wp3_Skw_squared,       & ! Set damping on wp3 to use Skw^2 rather than Skw^4
       l_prescribed_avg_deltaz,      & ! used in adj_low_res_nu. If .true., avg_deltaz = deltaz
       l_update_pressure               ! Flag for having CLUBB update pressure and exner
+
   end type clubb_config_flags_type
 
   contains
@@ -277,7 +306,9 @@ module model_flags
   end subroutine setup_model_flags
 
 !===============================================================================
-  subroutine set_default_clubb_config_flags( l_use_precip_frac, &
+  subroutine set_default_clubb_config_flags( iiPDF_type, &
+                                             ipdf_call_placement, &
+                                             l_use_precip_frac, &
                                              l_predict_upwp_vpwp, &
                                              l_min_wp2_from_corr_wx, &
                                              l_min_xp2_from_corr_wx, &
@@ -326,6 +357,14 @@ module model_flags
     implicit none
 
     ! Output variables
+    integer, intent(out) :: &
+      iiPDF_type,          & ! Selected option for the two-component normal
+                             ! (double Gaussian) PDF type to use for the w, rt,
+                             ! and theta-l (or w, chi, and eta) portion of
+                             ! CLUBB's multivariate, two-component PDF.
+      ipdf_call_placement    ! Selected option for the placement of the call to
+                             ! CLUBB's PDF.
+
     logical, intent(out) :: &
       l_use_precip_frac,            & ! Flag to use precipitation fraction in KK microphysics. The
                                       ! precipitation fraction is automatically set to 1 when this
@@ -416,6 +455,8 @@ module model_flags
 !-----------------------------------------------------------------------
     ! Begin code
 
+    iiPDF_type = iiPDF_ADG1
+    ipdf_call_placement = ipdf_pre_advance_fields
     l_use_precip_frac = .true.
     l_predict_upwp_vpwp = .true.
     l_min_wp2_from_corr_wx = .true.
@@ -463,7 +504,9 @@ module model_flags
   end subroutine set_default_clubb_config_flags
 
 !===============================================================================
-  subroutine initialize_clubb_config_flags_type( l_use_precip_frac, &
+  subroutine initialize_clubb_config_flags_type( iiPDF_type,          &
+                                                 ipdf_call_placement, &
+                                                 l_use_precip_frac, &
                                                  l_predict_upwp_vpwp, &
                                                  l_min_wp2_from_corr_wx, &
                                                  l_min_xp2_from_corr_wx, &
@@ -513,6 +556,14 @@ module model_flags
     implicit none
 
     ! Input variables
+    integer, intent(in) :: &
+      iiPDF_type,          & ! Selected option for the two-component normal
+                             ! (double Gaussian) PDF type to use for the w, rt,
+                             ! and theta-l (or w, chi, and eta) portion of
+                             ! CLUBB's multivariate, two-component PDF.
+      ipdf_call_placement    ! Selected option for the placement of the call to
+                             ! CLUBB's PDF.
+
     logical, intent(in) :: &
       l_use_precip_frac,            & ! Flag to use precipitation fraction in KK microphysics. The
                                       ! precipitation fraction is automatically set to 1 when this
@@ -607,6 +658,8 @@ module model_flags
 !-----------------------------------------------------------------------
     ! Begin code
 
+    clubb_config_flags%iiPDF_type = iiPDF_type
+    clubb_config_flags%ipdf_call_placement = ipdf_call_placement
     clubb_config_flags%l_use_precip_frac = l_use_precip_frac
     clubb_config_flags%l_predict_upwp_vpwp = l_predict_upwp_vpwp
     clubb_config_flags%l_min_wp2_from_corr_wx = l_min_wp2_from_corr_wx
@@ -671,6 +724,8 @@ module model_flags
 !-----------------------------------------------------------------------
     ! Begin code
 
+    write(iunit,*) "iiPDF_type = ", clubb_config_flags%iiPDF_type
+    write(iunit,*) "ipdf_call_placement = ", clubb_config_flags%ipdf_call_placement
     write(iunit,*) "l_use_precip_frac = ", clubb_config_flags%l_use_precip_frac
     write(iunit,*) "l_predict_upwp_vpwp = ", clubb_config_flags%l_predict_upwp_vpwp
     write(iunit,*) "l_min_wp2_from_corr_wx = ", clubb_config_flags%l_min_wp2_from_corr_wx

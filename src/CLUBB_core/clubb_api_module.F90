@@ -772,6 +772,8 @@ contains
     l_implemented, grid_type, deltaz, zm_init, zm_top,  & ! intent(in)
     momentum_heights, thermodynamic_heights,            & ! intent(in)
     sfc_elevation,                                      & ! intent(in)
+    iiPDF_type,                                         & ! intent(in)
+    ipdf_call_placement,                                & ! intent(in)
     l_predict_upwp_vpwp,                                & ! intent(in)
     l_prescribed_avg_deltaz,                            & ! intent(in)
     l_damp_wp2_using_em,                                & ! intent(in)
@@ -863,6 +865,14 @@ contains
     logical, intent(in) ::  &
       l_input_fields    ! Flag for whether LES input fields are used
 
+    integer, intent(in) :: &
+      iiPDF_type,          & ! Selected option for the two-component normal
+                             ! (double Gaussian) PDF type to use for the w,
+                             ! rt, and theta-l (or w, chi, and eta) portion of
+                             ! CLUBB's multivariate, two-component PDF.
+      ipdf_call_placement    ! Selected option for the placement of the call to
+                             ! CLUBB's PDF.
+
     logical, intent(in) :: &
       l_predict_upwp_vpwp,     & ! Flag to predict <u'w'> and <v'w'> along with <u> and <v>
                                  ! alongside the advancement of <rt>, <w'rt'>, <thl>, <wpthlp>,
@@ -899,6 +909,8 @@ contains
       l_implemented, grid_type, deltaz, zm_init, zm_top,    & ! intent(in)
       momentum_heights, thermodynamic_heights,              & ! intent(in)
       sfc_elevation,                                        & ! intent(in)
+      iiPDF_type,                                           & ! intent(in)
+      ipdf_call_placement,                                  & ! intent(in)
       l_predict_upwp_vpwp,                                  & ! intent(in)
       l_prescribed_avg_deltaz,                              & ! intent(in)
       l_damp_wp2_using_em,                                  & ! intent(in)
@@ -1623,6 +1635,7 @@ contains
     ice_supersat_frac, hydromet, wphydrometp, & ! Intent(in)
     corr_array_n_cloud, corr_array_n_below, &   ! Intent(in)
     pdf_params, l_stats_samp, &                 ! Intent(in)
+    iiPDF_type, &                               ! Intent(in)
     l_use_precip_frac, &                        ! Intent(in)
     l_predict_upwp_vpwp, &                      ! Intent(in)
     l_diagnose_correlations, &                  ! Intent(in)
@@ -1677,6 +1690,12 @@ contains
     logical, intent(in) :: &
       l_stats_samp    ! Flag to sample statistics
 
+    integer, intent(in) :: &
+      iiPDF_type    ! Selected option for the two-component normal (double
+                    ! Gaussian) PDF type to use for the w, rt, and theta-l (or
+                    ! w, chi, and eta) portion of CLUBB's multivariate,
+                    ! two-component PDF.
+
     logical, intent(in) :: &
       l_use_precip_frac,            & ! Flag to use precipitation fraction in KK microphysics. The
                                       ! precipitation fraction is automatically set to 1 when this
@@ -1722,6 +1741,7 @@ contains
       ice_supersat_frac, hydromet, wphydrometp, & ! Intent(in)
       corr_array_n_cloud, corr_array_n_below, &   ! Intent(in)
       pdf_params, l_stats_samp, &                 ! Intent(in)
+      iiPDF_type, &                               ! Intent(in)
       l_use_precip_frac, &                        ! Intent(in)
       l_predict_upwp_vpwp, &                      ! Intent(in)
       l_diagnose_correlations, &                  ! Intent(in)
@@ -2500,7 +2520,9 @@ contains
   !================================================================================================
   ! set_default_clubb_config_flags: Sets all CLUBB flags to a default setting
   !================================================================================================
-  subroutine set_default_clubb_config_flags_api( l_use_precip_frac, & ! Out
+  subroutine set_default_clubb_config_flags_api( iiPDF_type, & ! Out
+                                                 ipdf_call_placement, & ! Out
+                                                 l_use_precip_frac, & ! Out
                                                  l_predict_upwp_vpwp, & ! Out
                                                  l_min_wp2_from_corr_wx, & ! Out
                                                  l_min_xp2_from_corr_wx, & ! Out
@@ -2545,6 +2567,14 @@ contains
     implicit none
 
     ! Output variables
+    integer, intent(out) :: &
+      iiPDF_type,          & ! Selected option for the two-component normal
+                             ! (double Gaussian) PDF type to use for the w, rt,
+                             ! and theta-l (or w, chi, and eta) portion of
+                             ! CLUBB's multivariate, two-component PDF.
+      ipdf_call_placement    ! Selected option for the placement of the call to
+                             ! CLUBB's PDF.
+
     logical, intent(out) :: &
       l_use_precip_frac,            & ! Flag to use precipitation fraction in KK microphysics. The
                                       ! precipitation fraction is automatically set to 1 when this
@@ -2632,7 +2662,9 @@ contains
       l_prescribed_avg_deltaz,      & ! used in adj_low_res_nu. If .true., avg_deltaz = deltaz
       l_update_pressure               ! Flag for having CLUBB update pressure and exner
 
-    call set_default_clubb_config_flags( l_use_precip_frac, & ! Out
+    call set_default_clubb_config_flags( iiPDF_type, & ! Out
+                                         ipdf_call_placement, & ! Out
+                                         l_use_precip_frac, & ! Out
                                          l_predict_upwp_vpwp, & ! Out
                                          l_min_wp2_from_corr_wx, & ! Out
                                          l_min_xp2_from_corr_wx, & ! Out
@@ -2676,7 +2708,9 @@ contains
   !================================================================================================
   ! initialize_clubb_config_flags_type: Initialize the clubb_config_flags_type
   !================================================================================================
-  subroutine initialize_clubb_config_flags_type_api( l_use_precip_frac, & ! In
+  subroutine initialize_clubb_config_flags_type_api( iiPDF_type, & ! In
+                                                     ipdf_call_placement, & ! In
+                                                     l_use_precip_frac, & ! In
                                                      l_predict_upwp_vpwp, & ! In
                                                      l_min_wp2_from_corr_wx, & ! In
                                                      l_min_xp2_from_corr_wx, & ! In
@@ -2723,6 +2757,14 @@ contains
     implicit none
 
     ! Input variables
+    integer, intent(in) :: &
+      iiPDF_type,          & ! Selected option for the two-component normal
+                             ! (double Gaussian) PDF type to use for the w, rt,
+                             ! and theta-l (or w, chi, and eta) portion of
+                             ! CLUBB's multivariate, two-component PDF.
+      ipdf_call_placement    ! Selected option for the placement of the call to
+                             ! CLUBB's PDF.
+
     logical, intent(in) :: &
       l_use_precip_frac,            & ! Flag to use precipitation fraction in KK microphysics. The
                                       ! precipitation fraction is automatically set to 1 when this
@@ -2814,7 +2856,9 @@ contains
     type(clubb_config_flags_type), intent(out) :: &
       clubb_config_flags            ! Derived type holding all configurable CLUBB flags
 
-    call initialize_clubb_config_flags_type( l_use_precip_frac, & ! In
+    call initialize_clubb_config_flags_type( iiPDF_type, & ! In
+                                             ipdf_call_placement, & ! In 
+                                             l_use_precip_frac, & ! In
                                              l_predict_upwp_vpwp, & ! In
                                              l_min_wp2_from_corr_wx, & ! In
                                              l_min_xp2_from_corr_wx, & ! In

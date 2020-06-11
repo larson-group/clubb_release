@@ -143,11 +143,6 @@ module pdf_parameter_tests
         LY93_driver
 
     use pdf_closure_module, only: &
-        iiPDF_new,        & ! Variable(s)
-        iiPDF_ADG1,       &
-        iiPDF_TSDADG,     &
-        iiPDF_LY93,       &
-        iiPDF_new_hybrid, &
         calc_wp4_pdf        ! Procedure(s)
 
     use pdf_parameter_module, only: &
@@ -155,7 +150,12 @@ module pdf_parameter_tests
 
     use model_flags, only: &
         set_default_clubb_config_flags, & ! Procedure(s)
-        l_gamma_Skw       ! Variable(s)
+        iiPDF_new,        & ! Variable(s)
+        iiPDF_ADG1,       &
+        iiPDF_TSDADG,     &
+        iiPDF_LY93,       &
+        iiPDF_new_hybrid, &
+        l_gamma_Skw
 
     use parameters_model, only: &
         sclr_dim    ! Variable(s)
@@ -406,6 +406,14 @@ module pdf_parameter_tests
       l_scalar_calc = .false. ! Flag to perform calculations for passive scalars
 
     integer :: idx    ! Loop index
+  
+    integer :: &
+      iiPDF_type,          & ! Selected option for the two-component normal
+                             ! (double Gaussian) PDF type to use for the w, rt,
+                             ! and theta-l (or w, chi, and eta) portion of
+                             ! CLUBB's multivariate, two-component PDF.
+      ipdf_call_placement    ! Selected option for the placement of the call to
+                             ! CLUBB's PDF.
 
     logical :: &
       l_use_precip_frac,            & ! Flag to use precipitation fraction in KK microphysics. The
@@ -495,7 +503,9 @@ module pdf_parameter_tests
       l_update_pressure               ! Flag for having CLUBB update pressure and exner
 
 
-    call set_default_clubb_config_flags( l_use_precip_frac, &
+    call set_default_clubb_config_flags( iiPDF_type, &
+                                         ipdf_call_placement, &
+                                         l_use_precip_frac, &
                                          l_predict_upwp_vpwp, &
                                          l_min_wp2_from_corr_wx, &
                                          l_min_xp2_from_corr_wx, &
@@ -534,6 +544,7 @@ module pdf_parameter_tests
                                          l_prescribed_avg_deltaz, &
                                          l_update_pressure )
 
+    iiPDF_type = test_pdf_type
 
     write(fstdout,*) ""
     write(fstdout,*) "Performing PDF parameter values unit test"

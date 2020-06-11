@@ -88,6 +88,13 @@ module advance_clubb_core_module
 ! Joshua Fasching, Adam Smith, and Michael Falk).
 !-----------------------------------------------------------------------
 
+  ! Options for the placement of the call to CLUBB's PDF.
+  use model_flags, only: &
+      ipdf_pre_advance_fields, &      ! Call before advancing predictive fields
+      ipdf_post_advance_fields, &     ! Call after advancing predictive fields
+      ipdf_pre_post_advance_fields    ! Call both before and after advancing
+                                      ! predictive fields
+
   implicit none
 
   public ::  &
@@ -96,17 +103,6 @@ module advance_clubb_core_module
     cleanup_clubb_core, &
     set_Lscale_max, &
     calculate_thlp2_rad
-
-  ! Options for the placement of the call to CLUBB's PDF.
-  integer, parameter :: &
-    ipdf_pre_advance_fields   = 1,   & ! Call before advancing predictive fields
-    ipdf_post_advance_fields  = 2,   & ! Call after advancing predictive fields
-    ipdf_pre_post_advance_fields = 3   ! Call both before and after advancing
-                                       ! predictive fields
-
-  ! Select the placement of the call to CLUBB's PDF.
-  integer, parameter :: &
-    ipdf_call_placement = ipdf_pre_advance_fields
 
   private ! Default Scope
 
@@ -945,15 +941,18 @@ module advance_clubb_core_module
     newmu = mu
 #endif
 
-    if ( ipdf_call_placement == ipdf_pre_advance_fields &
-         .or. ipdf_call_placement == ipdf_pre_post_advance_fields ) then
+    if ( clubb_config_flags%ipdf_call_placement == ipdf_pre_advance_fields &
+         .or. clubb_config_flags%ipdf_call_placement &
+              == ipdf_pre_post_advance_fields ) then
 
        ! Sample stats in this call to subroutine pdf_closure_driver for
        ! both of these options (ipdf_pre_advance_fields and
        ! ipdf_pre_post_advance_fields).
-       if ( ipdf_call_placement == ipdf_pre_advance_fields ) then
+       if ( clubb_config_flags%ipdf_call_placement &
+            == ipdf_pre_advance_fields ) then
           l_samp_stats_in_pdf_call = .true.
-       elseif ( ipdf_call_placement == ipdf_pre_post_advance_fields ) then
+       elseif ( clubb_config_flags%ipdf_call_placement &
+                == ipdf_pre_post_advance_fields ) then
           l_samp_stats_in_pdf_call = .true.
        endif
 
@@ -975,6 +974,7 @@ module advance_clubb_core_module
                                 sclrm, wpsclrp, sclrp2,                      & ! Intent(in)
                                 sclrprtp, sclrpthlp, sclrp3,                 & ! Intent(in)
                                 l_samp_stats_in_pdf_call,                    & ! Intent(in)
+                                clubb_config_flags%iiPDF_type,               & ! Intent(in)
                                 clubb_config_flags%l_predict_upwp_vpwp,      & ! Intent(in)
                                 clubb_config_flags%l_rtm_nudge,              & ! Intent(in)
                                 clubb_config_flags%l_trapezoidal_rule_zt,    & ! Intent(in)
@@ -1008,8 +1008,9 @@ module advance_clubb_core_module
                                 pdf_params, pdf_params_zm,                   & ! Intent(out)
                                 pdf_implicit_coefs_terms )                     ! Intent(out)
 
-    endif ! ipdf_call_placement == ipdf_pre_advance_fields
-          ! or ipdf_call_placement == ipdf_pre_post_advance_fields
+    endif ! clubb_config_flags%ipdf_call_placement == ipdf_pre_advance_fields
+          ! or clubb_config_flags%ipdf_call_placement
+          !    == ipdf_pre_post_advance_fields
 
     ! Interpolate wp3 to momentum levels, and wp2 to thermodynamic levels
     ! and then compute Skw for m & t grid.
@@ -1019,7 +1020,8 @@ module advance_clubb_core_module
     Skw_zt(1:gr%nz) = Skx_func( wp2_zt(1:gr%nz), wp3(1:gr%nz), w_tol )
     Skw_zm(1:gr%nz) = Skx_func( wp2(1:gr%nz), wp3_zm(1:gr%nz), w_tol )
 
-    if ( ipdf_call_placement == ipdf_post_advance_fields ) then
+    if ( clubb_config_flags%ipdf_call_placement &
+         == ipdf_post_advance_fields ) then
 
        ! Calculate sigma_sqd_w here in order to avoid having to pass it in
        ! and out of subroutine advance_clubb_core.
@@ -1042,7 +1044,7 @@ module advance_clubb_core_module
        sigma_sqd_w = zt2zm( zm2zt( sigma_sqd_w ) )
        sigma_sqd_w = max( zero_threshold, sigma_sqd_w ) ! Pos. def. quantity
 
-    endif ! ipdf_call_placement == ipdf_post_advance_fields
+    endif ! clubb_config_flags%ipdf_call_placement == ipdf_post_advance_fields
 
     ! Compute the a3 coefficient (formula 25 in `Equations for CLUBB')
     ! Note:  a3 has been modified because the wp3 turbulent advection term is
@@ -1485,6 +1487,7 @@ module advance_clubb_core_module
                             um_forcing, vm_forcing, ug, vg, wpthvp,          & ! intent(in)
                             fcor, um_ref, vm_ref, up2, vp2,                  & ! intent(in)
                             uprcp, vprcp, rc_coef,                           & ! intent(in)
+                            clubb_config_flags%iiPDF_type,                   & ! intent(in)
                             clubb_config_flags%l_predict_upwp_vpwp,          & ! intent(in)
                             clubb_config_flags%l_diffuse_rtm_and_thlm,       & ! intent(in)
                             clubb_config_flags%l_stability_correct_Kh_N2_zm, & ! intent(in)
@@ -1548,6 +1551,7 @@ module advance_clubb_core_module
                              sclrm, wpsclrp,                            & ! intent(in)
                              wpsclrp2, wpsclrprtp, wpsclrpthlp,         & ! intent(in)
                              wp2_splat,                                 & ! intent(in)
+                             clubb_config_flags%iiPDF_type,             & ! intent(in)
                              clubb_config_flags%l_predict_upwp_vpwp,    & ! intent(in)
                              clubb_config_flags%l_min_xp2_from_corr_wx, & ! intent(in)
                              clubb_config_flags%l_C2_cloud_frac,        & ! intent(in)
@@ -1606,6 +1610,7 @@ module advance_clubb_core_module
              wp2_splat, wp3_splat,                               & ! intent(in)
              pdf_implicit_coefs_terms,                           & ! intent(in)
              wprtp, wpthlp, rtp2, thlp2,                         & ! intent(in)
+             clubb_config_flags%iiPDF_type,                      & ! intent(in)
              clubb_config_flags%l_min_wp2_from_corr_wx,          & ! intent(in)
              clubb_config_flags%l_upwind_xm_ma,                  & ! intent(in)
              clubb_config_flags%l_tke_aniso,                     & ! intent(in)
@@ -1795,16 +1800,19 @@ module advance_clubb_core_module
 
     endif ! clubb_config_flags%l_update_pressure
 
-    if ( ipdf_call_placement == ipdf_post_advance_fields &
-         .or. ipdf_call_placement == ipdf_pre_post_advance_fields ) then
+    if ( clubb_config_flags%ipdf_call_placement == ipdf_post_advance_fields &
+         .or. clubb_config_flags%ipdf_call_placement &
+              == ipdf_pre_post_advance_fields ) then
 
        ! Sample stats in this call to subroutine pdf_closure_driver for
        ! ipdf_post_advance_fields, but not for ipdf_pre_post_advance_fields
        ! because stats were sampled during the first call to subroutine
        ! pdf_closure_driver.
-       if ( ipdf_call_placement == ipdf_post_advance_fields ) then
+       if ( clubb_config_flags%ipdf_call_placement &
+            == ipdf_post_advance_fields ) then
           l_samp_stats_in_pdf_call = .true.
-       elseif ( ipdf_call_placement == ipdf_pre_post_advance_fields ) then
+       elseif ( clubb_config_flags%ipdf_call_placement &
+                == ipdf_pre_post_advance_fields ) then
           l_samp_stats_in_pdf_call = .false.
        endif
 
@@ -1828,6 +1836,7 @@ module advance_clubb_core_module
                                 sclrm, wpsclrp, sclrp2,                      & ! Intent(in)
                                 sclrprtp, sclrpthlp, sclrp3,                 & ! Intent(in)
                                 l_samp_stats_in_pdf_call,                    & ! Intent(in)
+                                clubb_config_flags%iiPDF_type,               & ! Intent(in)
                                 clubb_config_flags%l_predict_upwp_vpwp,      & ! Intent(in)
                                 clubb_config_flags%l_rtm_nudge,              & ! Intent(in)
                                 clubb_config_flags%l_trapezoidal_rule_zt,    & ! Intent(in)
@@ -1861,8 +1870,9 @@ module advance_clubb_core_module
                                 pdf_params, pdf_params_zm,                   & ! Intent(out)
                                 pdf_implicit_coefs_terms )                     ! Intent(out)
 
-    endif ! ipdf_call_placement == ipdf_post_advance_fields
-          ! or ipdf_call_placement == ipdf_pre_post_advance_fields
+    endif ! clubb_config_flags%ipdf_call_placement == ipdf_post_advance_fields
+          ! or clubb_config_flags%ipdf_call_placement
+          !    == ipdf_pre_post_advance_fields
 
 #ifdef CLUBB_CAM
       qclvar(:) = rcp2_zt(:)
@@ -2065,6 +2075,7 @@ module advance_clubb_core_module
                                  sclrm, wpsclrp, sclrp2,        & ! Intent(in)
                                  sclrprtp, sclrpthlp, sclrp3,   & ! Intent(in)
                                  l_samp_stats_in_pdf_call,      & ! Intent(in)
+                                 iiPDF_type,                    & ! Intent(in)
                                  l_predict_upwp_vpwp,           & ! Intent(in)
                                  l_rtm_nudge,                   & ! Intent(in)
                                  l_trapezoidal_rule_zt,         & ! Intent(in)
@@ -2274,6 +2285,12 @@ module advance_clubb_core_module
 
     logical, intent(in) :: &
       l_samp_stats_in_pdf_call    ! Sample stats in this call to this subroutine
+
+    integer, intent(in) :: &
+      iiPDF_type    ! Selected option for the two-component normal (double
+                    ! Gaussian) PDF type to use for the w, rt, and theta-l (or
+                    ! w, chi, and eta) portion of CLUBB's multivariate,
+                    ! two-component PDF.
 
     logical, intent(in) :: &
       l_predict_upwp_vpwp,      & ! Flag to predict <u'w'> and <v'w'> along with <u> and <v>
@@ -2653,6 +2670,7 @@ module advance_clubb_core_module
 #endif
            wphydrometp_zt, wp2hmp,                         & ! intent(in)
            rtphmp_zt, thlphmp_zt,                          & ! intent(in)
+           iiPDF_type,                                     & ! intent(in)
            wp4_zt, wprtp2, wp2rtp,                         & ! intent(out)
            wpthlp2, wp2thlp, wprtpthlp,                    & ! intent(out)
            cloud_frac, ice_supersat_frac,                  & ! intent(out)
@@ -2815,6 +2833,7 @@ module advance_clubb_core_module
 #endif
              wphydrometp, wp2hmp_zm,                               & ! intent(in)
              rtphmp, thlphmp,                                      & ! intent(in)
+             iiPDF_type,                                           & ! intent(in)
              wp4, wprtp2_zm, wp2rtp_zm,                            & ! intent(out)
              wpthlp2_zm, wp2thlp_zm, wprtpthlp_zm,                 & ! intent(out)
              cloud_frac_zm, ice_supersat_frac_zm,                  & ! intent(out)
@@ -3000,6 +3019,8 @@ module advance_clubb_core_module
                  zm_init, zm_top,                         & ! intent(in)
                  momentum_heights, thermodynamic_heights, & ! intent(in)
                  sfc_elevation,                           & ! intent(in)
+                 iiPDF_type,                              & ! intent(in)
+                 ipdf_call_placement,                     & ! intent(in)
                  l_predict_upwp_vpwp,                     & ! intent(in)
                  l_prescribed_avg_deltaz,                 & ! intent(in)
                  l_damp_wp2_using_em,                     & ! intent(in)
@@ -3045,9 +3066,6 @@ module advance_clubb_core_module
       use model_flags, only: &
           clubb_config_flags_type, & ! Type
           setup_model_flags, & ! Subroutine
-          l_explicit_turbulent_adv_wpxp   ! Variable(s)
-
-      use pdf_closure_module, only: &
           iiPDF_ADG1,       & ! Variable(s)
           iiPDF_ADG2,       &
           iiPDF_3D_Luhar,   &
@@ -3055,7 +3073,7 @@ module advance_clubb_core_module
           iiPDF_TSDADG,     &
           iiPDF_LY93,       &
           iiPDF_new_hybrid, &
-          iiPDF_type
+          l_explicit_turbulent_adv_wpxp
 
       use clubb_precision, only: &
           core_rknd ! Variable(s)
@@ -3135,6 +3153,14 @@ module advance_clubb_core_module
 
       logical, intent(in) ::  &
         l_input_fields    ! Flag for whether LES input fields are being used
+
+      integer, intent(in) :: &
+        iiPDF_type,          & ! Selected option for the two-component normal
+                               ! (double Gaussian) PDF type to use for the w,
+                               ! rt, and theta-l (or w, chi, and eta) portion of
+                               ! CLUBB's multivariate, two-component PDF.
+        ipdf_call_placement    ! Selected option for the placement of the call to
+                               ! CLUBB's PDF.
 
       logical, intent(in) :: &
         l_predict_upwp_vpwp,     & ! Flag to predict <u'w'> and <v'w'> along with <u> and <v>

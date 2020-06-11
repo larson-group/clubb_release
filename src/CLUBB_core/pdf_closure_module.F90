@@ -3,6 +3,18 @@
 !===============================================================================
 module pdf_closure_module
 
+  ! Options for the two component normal (double Gaussian) PDF type to use for
+  ! the w, rt, and theta-l (or w, chi, and eta) portion of CLUBB's multivariate,
+  ! two-component PDF.
+  use model_flags, only: &
+      iiPDF_ADG1,       & ! ADG1 PDF
+      iiPDF_ADG2,       & ! ADG2 PDF
+      iiPDF_3D_Luhar,   & ! 3D Luhar PDF
+      iiPDF_new,        & ! new PDF
+      iiPDF_TSDADG,     & ! new TSDADG PDF
+      iiPDF_LY93,       & ! Lewellen and Yoh (1993)
+      iiPDF_new_hybrid    ! new hybrid PDF
+
   implicit none
 
   public :: pdf_closure, &
@@ -11,22 +23,6 @@ module pdf_closure_module
             calc_wpxp2_pdf, &
             calc_wpxpyp_pdf, &
             calc_vert_avg_cf_component
-
-  ! Options for the two component normal (double Gaussian) PDF type to use for
-  ! the w, rt, and theta-l (or w, chi, and eta) portion of CLUBB's multivariate,
-  ! two-component PDF.
-  integer, parameter, public :: &
-    iiPDF_ADG1 = 1,       & ! ADG1 PDF
-    iiPDF_ADG2 = 2,       & ! ADG2 PDF
-    iiPDF_3D_Luhar = 3,   & ! 3D Luhar PDF
-    iiPDF_new = 4,        & ! new PDF
-    iiPDF_TSDADG = 5,     & ! new TSDADG PDF
-    iiPDF_LY93 = 6,       & ! Lewellen and Yoh (1993)
-    iiPDF_new_hybrid = 7    ! new hybrid PDF
-
-  ! The selected two component normal PDF for w, rt, and theta-l.
-  integer, parameter, public :: &
-    iiPDF_type = iiPDF_ADG1
 
   private ! Set Default Scope
 
@@ -55,6 +51,7 @@ module pdf_closure_module
 #endif
                           wphydrometp, wp2hmp,                      &
                           rtphmp, thlphmp,                          &
+                          iiPDF_type,                               &
                           wp4, wprtp2, wp2rtp,                      &
                           wpthlp2, wp2thlp, wprtpthlp,              &
                           cloud_frac, ice_supersat_frac,            &
@@ -237,6 +234,12 @@ module pdf_closure_module
       wp2hmp,      & ! Third-order moment:  < w'^2 hm' >    [(m/s)^2 <hm units>]
       rtphmp,      & ! Covariance of rt and a hydrometeor   [(kg/kg) <hm units>]
       thlphmp        ! Covariance of thl and a hydrometeor  [K <hm units>]
+
+    integer, intent(in) :: &
+      iiPDF_type    ! Selected option for the two-component normal (double
+                    ! Gaussian) PDF type to use for the w, rt, and theta-l (or
+                    ! w, chi, and eta) portion of CLUBB's multivariate,
+                    ! two-component PDF.
 
     real( kind = core_rknd ), dimension(gr%nz), intent(inout) :: &
       ! If iiPDF_type == iiPDF_ADG2, this gets overwritten. Therefore,
@@ -1068,7 +1071,7 @@ module pdf_closure_module
                                pdf_params%corr_w_chi_1, pdf_params%corr_chi_eta_1,  & ! In
                                corr_u_w_1, corr_v_w_1,                              & ! In
                                pdf_params%crt_1, pdf_params%cthl_1,                 & ! In
-                               pdf_params%rc_1, pdf_params%cloud_frac_1,            & ! In
+                               pdf_params%rc_1, pdf_params%cloud_frac_1, iiPDF_type,& ! In
                                wprcp_contrib_comp_1, wp2rcp_contrib_comp_1,         & ! Out
                                rtprcp_contrib_comp_1, thlprcp_contrib_comp_1,       & ! Out
                                uprcp_contrib_comp_1, vprcp_contrib_comp_1 )           ! Out
@@ -1081,7 +1084,7 @@ module pdf_closure_module
                                pdf_params%corr_w_chi_2, pdf_params%corr_chi_eta_2,  & ! In
                                corr_u_w_2, corr_v_w_2,                              & ! In
                                pdf_params%crt_2, pdf_params%cthl_2,                 & ! In
-                               pdf_params%rc_2, pdf_params%cloud_frac_2,            & ! In
+                               pdf_params%rc_2, pdf_params%cloud_frac_2, iiPDF_type,& ! In
                                wprcp_contrib_comp_2, wp2rcp_contrib_comp_2,         & ! Out
                                rtprcp_contrib_comp_2, thlprcp_contrib_comp_2,       & ! Out
                                uprcp_contrib_comp_2, vprcp_contrib_comp_2 )           ! Out
@@ -2345,7 +2348,7 @@ module pdf_closure_module
                                    corr_w_chi_i, corr_chi_eta_i,                    & ! In
                                    corr_u_w_i, corr_v_w_i,                          & ! In
                                    crt_i, cthl_i,                                   & ! In
-                                   rc_i, cloud_frac_i,                              & ! In
+                                   rc_i, cloud_frac_i, iiPDF_type,                  & ! In
                                    wprcp_contrib_comp_i, wp2rcp_contrib_comp_i,     & ! Out
                                    rtprcp_contrib_comp_i, thlprcp_contrib_comp_i,   & ! Out
                                    uprcp_contrib_comp_i, vprcp_contrib_comp_i )       ! Out
@@ -2746,6 +2749,12 @@ module pdf_closure_module
       cthl_i,         & ! Coef. on thl: chi/eta eqns. (ith PDF comp.)  [kg/kg/K]
       rc_i,           & ! Mean of rc (ith PDF component)               [kg/kg]
       cloud_frac_i      ! Cloud fraction (ith PDF component)           [-]
+
+    integer, intent(in) :: &
+      iiPDF_type    ! Selected option for the two-component normal (double
+                    ! Gaussian) PDF type to use for the w, rt, and theta-l (or
+                    ! w, chi, and eta) portion of CLUBB's multivariate,
+                    ! two-component PDF.
 
     ! Output Variables
     real( kind = core_rknd ), dimension(gr%nz), intent(out) :: &
