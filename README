@@ -591,7 +591,7 @@ also do make distclean without the need to change directories.
    supports GrADS or netCDF output, but you can only use the clubb_tuner 
    using GrADS, due to some issues with buffered I/O.
 
-4. $ cd <CLUBB BASE DIRECTORY>/input
+4. $ cd <CLUBB BASE DIRECTORY>/input/tunable_parameters
    Edit tunable_parameters.in if you are an expert and wish to try to optimize 
    the solution accuracy.  The file tunable_parameters.in contains values of the
    physical parameters that are embedded in parameterized terms in CLUBB's
@@ -602,7 +602,10 @@ also do make distclean without the need to change directories.
    parameter values in tunable_parameters.in have been tested extensively and
    will work with all the current cases.
 
-5. $ cd <CLUBB BASE DIRECTORY>/run_scripts
+5. Within folder input/tunable_parameters, edit configurable_model_flags.in
+   if you are an expert and you want to try different options within CLUBB.
+
+6. $ cd <CLUBB BASE DIRECTORY>/run_scripts
    $ ./run_scm.bash <CASE NAME> or
    $ ./run_scm.bash <CASE NAME> -p <PARAMETER FILE> -s <STATS FILE>
 
