@@ -41,7 +41,7 @@ class VariableGroupBase(VariableGroup):
                 {
                     'clubb': ['rtm'],
                     'sam': [],
-                    'coamps': ['qtm'],
+                    'coamps': ['qtm', 'rtm'],
                     'r408': ['rtm'],
                     'hoc': ['rtm'],
                     'e3sm': ['rtm'],
@@ -67,7 +67,7 @@ class VariableGroupBase(VariableGroup):
                 {
                     'clubb': ['wprtp'],
                     'sam': ['WPRTP'],
-                    'coamps': ['wpqtp'],
+                    'coamps': ['wpqtp','wprtp'],
                     'r408': ['wprtp'],
                     'hoc': ['wprtp'],
                     'e3sm': ['wprtp'],
@@ -93,7 +93,7 @@ class VariableGroupBase(VariableGroup):
                 {
                     'clubb': ['rcm'],
                     'sam': ['QCL'],
-                    'coamps': ['qcm'],
+                    'coamps': ['qcm', 'rcm'],
                     'r408': ['rcm'],
                     'hoc': ['rcm'],
                     'e3sm': ['rcm'],
@@ -158,7 +158,7 @@ class VariableGroupBase(VariableGroup):
                 {
                     'clubb': ['rtpthlp'],
                     'sam': ['RTPTHLP', 'TQ'],
-                    'coamps': ['qtpthlp'],
+                    'coamps': ['qtpthlp', 'rtpthlp'],
                     'r408': ['rtpthlp'],
                     'hoc': ['rtpthlp'],
                     'e3sm': ['rtpthlp'],
@@ -171,7 +171,7 @@ class VariableGroupBase(VariableGroup):
                 {
                     'clubb': ['rtp3'],
                     'sam': ['RTP3'],
-                    'coamps': ['qtp3'],
+                    'coamps': ['qtp3', 'rtp3'],
                     'r408': ['rtp3'],
                     'hoc': ['rtp3'],
                     'e3sm': ['rtp3'],
@@ -236,7 +236,7 @@ class VariableGroupBase(VariableGroup):
                 {
                     'clubb': ['wm', 'wlsm'],
                     'sam': ['WM', 'WOBS'],
-                    'coamps': ['wlsm'],
+                    'coamps': ['wlsm','wm'],
                     'r408': ['wm'],
                     'hoc': ['wm'],
                     'e3sm': ['wm'],
@@ -327,7 +327,7 @@ class VariableGroupBase(VariableGroup):
                 {
                     'clubb': ['rcp2'],
                     'sam': ['QC2'],
-                    'coamps': ['qcp2'],
+                    'coamps': ['qcp2','rcp2'],
                     'r408': ['rcp2'],
                     'hoc': ['rcp2'],
                     'e3sm': ['rcp2'],
@@ -418,7 +418,7 @@ class VariableGroupBase(VariableGroup):
                 {
                     'clubb': ['rtpthvp'],
                     'sam': ['RTPTHVP'],
-                    'coamps': ['qtpthvp'],
+                    'coamps': ['qtpthvp', 'rtpthvp'],
                     'r408': ['rtpthvp'],
                     'hoc': ['rtpthvp'],
                     'e3sm': ['rtpthvp'],
