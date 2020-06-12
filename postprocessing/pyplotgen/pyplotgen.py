@@ -202,9 +202,11 @@ class PyPlotGen:
         clubb_has_case = clubb_given and case_def['name'] in self.clubb_datasets.keys()
 
         if self.nightly:
-            return clubb_has_case and (e3sm_has_case or sam_has_case or cam_has_case or wrf_has_case) or self.benchmark_only
+            return clubb_has_case and (e3sm_has_case or sam_has_case or cam_has_case or wrf_has_case) \
+                or self.benchmark_only
         else:
-            return e3sm_has_case or sam_has_case or cam_has_case or wrf_has_case or clubb_has_case or self.benchmark_only
+            return e3sm_has_case or sam_has_case or cam_has_case or wrf_has_case \
+                or clubb_has_case or self.benchmark_only
 
     def __copySetupFiles__(self):
         """

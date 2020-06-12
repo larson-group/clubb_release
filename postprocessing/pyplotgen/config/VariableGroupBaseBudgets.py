@@ -706,8 +706,8 @@ class VariableGroupBaseBudgets(VariableGroup):
         thlp2_ma, z, dataset = self.getVarForCalculations('thlp2_ma', dataset_override)
         thlp2_tp, z, dataset = self.getVarForCalculations('thlp2_tp', dataset_override)
 
-        output_data = thlp2_bt - (
-                thlp2_ma + thlp2_ta + thlp2_tp + thlp2_dp1 + thlp2_dp2 + thlp2_cl + thlp2_pd + thlp2_sf + thlp2_forcing)
+        output_data = thlp2_bt - (thlp2_ma + thlp2_ta + thlp2_tp + thlp2_dp1 +
+                                  thlp2_dp2 + thlp2_cl + thlp2_pd + thlp2_sf + thlp2_forcing)
 
         return output_data, z
 

@@ -1,9 +1,7 @@
 '''
 :author: Steffen Domke
 :date: Mid 2019
-TODO:   - Update axis labels at TASK
-        - Implement/copy sam calcs
-        - Figure out how to include standard plots in VariableGroupBase (labels etc.)
+TODO:   - Figure out how to include standard plots in VariableGroupBase (labels etc.)
 '''
 
 from src.Panel import Panel

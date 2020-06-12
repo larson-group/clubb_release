@@ -33,7 +33,7 @@ class NetCdfVariable:
         :param conversion_factor: A multiplication factor applied to every value in the dataset. Defaults to 1
         :param start_time: The time value to begin the averaging period, e.g. 181 minutes. Defaults to 0.
         :param end_time: The time value to stop the averaging period, e.g. 240 minutes. Defaults to -1.
-        :param avg_axis: The axis to avg dependent_data over. 0 for time-avg, 1 for height avg
+        :param avg_axis: The axis to average dependent_data over. 0 for time-avg, 1 for height avg
         """
         dataset_with_var = None
         varname = ""
@@ -41,7 +41,7 @@ class NetCdfVariable:
         # If ncdf_data is an netCDF4.Dataset, wrap it into a dict
         if isinstance(ncdf_data, Dataset):
             ncdf_data = {'temp': ncdf_data}
-        # If names and independent_var_name are not lists, wrap them into a list
+        # If names and independent_var_name are not lists, wrap them into lists
         if not isinstance(names, list):
             names = [names]
         if not isinstance(independent_var_names, list) and independent_var_names is not None:
@@ -61,10 +61,9 @@ class NetCdfVariable:
         if not var_found_in_dataset:
             if len(ncdf_data.values()) == 0:
                 # TODO patch this bug
-                warn("Some model is missing files for " + str(names) + ". Try either including these files or removing "
-                                                                       "their names from the Case_definitions.py config "
-                                                                       "file. This warning is a temporary notice until a "
-                                                                       "bug related to missing filenames is patched")
+                warn("Some model is missing files for " + str(names) +". Try either including these files or "
+                     "removing their names from the Case_definitions.py config file. "
+                     "This warning is a temporary notice until a bug related to missing filenames is patched")
             # changed to warn from 'raise NameError'
             dataset_with_var = next(iter(ncdf_data.values()))
             warn("None of the values " + str(names) + " were found in the dataset " + str(dataset_with_var.filepath()))
@@ -77,7 +76,7 @@ class NetCdfVariable:
                 break
         # Store the dataset in which the variable was found
         self.ncdf_data = dataset_with_var
-        self.name = varname
+        self.varname = varname
         self.independent_var_name = indep_var_name_in_dataset
         self.start_time = start_time
         self.end_time = end_time
@@ -89,8 +88,10 @@ class NetCdfVariable:
 
     def __getStartEndIndex__(self, data, start_value, end_value):
         """
-        Get the list floor index that contains the value to start graphing at and the
-        ceiling index that contains the end value to stop graphing at.
+        Get indices for values from data array corresponding to start_value and end_value.
+        This function is intended to be used to get the indices for array slicing.
+        E.g. given a bottom and top altitude, return the indices of the values in the array corresponding to those altitudes.
+        This function can be used for height and time data.
         The data array MUST be presorted and start_value <= end_value for pyplotgen to work correctly!
         If neither are found, returns 0 and array size - 1.
 
@@ -101,7 +102,7 @@ class NetCdfVariable:
             end time passed into the function
         :author: Nicolas Strike
         """
-        # If dependent_data is a an array with 1 element, return 0's
+        # If data is a an array with 1 element, return 0's
         if (len(data) == 1):
             return 0, 1
 
@@ -109,7 +110,7 @@ class NetCdfVariable:
         end_idx = len(data) - 1
         ascending_data = data[0] < data[1]
         if ascending_data:
-            # dependent_data is ascending
+            # data is ascending
             for i in range(0, len(data)):
                 # Check for start index
                 test_value = data[i]
@@ -123,7 +124,7 @@ class NetCdfVariable:
                 elif end_value <= test_value < data[end_idx]:
                     end_idx = i
         else:
-            # dependent_data is descending
+            # data is descending
             for i in range(0, len(data)):
                 test_value = data[i]
                 if end_value <= test_value < data[start_idx]:
@@ -133,7 +134,7 @@ class NetCdfVariable:
 
         return start_idx, end_idx
 
-    def constrain(self, start_value, end_value, data=None):
+    def trimArray(self, start_value, end_value, data=None):
         """
         Remove all dependent_data elements from the variable that are not between the start and end value. Assumes
         the dependent_data is always increasing. If the optional data parameter is used, it will restrict to
@@ -161,7 +162,7 @@ class NetCdfVariable:
         :return: None
         """
         for subdataset in self.ncdf_data.values():
-            if self.name in subdataset.variables.keys():
+            if self.varname in subdataset.variables.keys():
                 self.ncdf_data = subdataset
                 break
 
@@ -176,7 +177,7 @@ class DataReader():
     It is also responsible for performing the time-averaging calculation at load time.
 
     :author: Nicolas Strike
-    :dependent_data: January 2019
+    :date: January 2019
     """
 
     def __init__(self):
@@ -527,8 +528,10 @@ class DataReader():
 
     def __getStartEndIndex__(self, data, start_value, end_value):
         """
-        Get the list floor index that contains the value to start graphing at and the
-        ceiling index that contains the end value to stop graphing at.
+        Get indices for values from data array corresponding to start_value and end_value.
+        This function is intended to be used to get the indices for array slicing.
+        E.g. given a bottom and top altitude, return the indices of the values in the array corresponding to those altitudes.
+        This function can be used for height and time data.
         The data array MUST be presorted and start_value <= end_value for pyplotgen to work correctly!
         If neither are found, returns 0 and array size - 1.
 
@@ -566,6 +569,7 @@ class DataReader():
                 if test_value <= end_value and test_value:
                     start_idx = i
                 pass
+
 
         return start_idx, end_idx
 

@@ -371,7 +371,8 @@ class VariableGroup:
                 sci_scale = None
             if 'centered' in variable.keys():
                 centered = variable['centered']
-            panel = Panel(plotset, title=title, dependent_title=axis_label, panel_type=panel_type, sci_scale=sci_scale, centered=centered)
+            panel = Panel(plotset, title=title, dependent_title=axis_label,
+                          panel_type=panel_type, sci_scale=sci_scale, centered=centered)
             self.panels.append(panel)
 
     def __getTitles__(self, variable_def_dict, plotted_models_varname):
@@ -516,7 +517,8 @@ class VariableGroup:
         VarnameConversions.py. If a SAM variable needs to be calculated (uses an equation) then it will have
         to be created within that variable group's dataset and not here.
 
-        :param var_names: A list of strings. Each string is the name of the variable to be plotted, case sensitive
+        :param var_names: A string or list of strings.
+            Each string is the name of the variable to be plotted, case sensitive
         :param ncdf_datasets: A list of Dataset objects containing clubb or sam netcdf dependent_data
         :param label: Label to give the base-plotAll on the legend. This is normally
             Style_definitions.CLUBB_LABEL, but not provided as default to help avoid debugging confusion.
@@ -574,7 +576,7 @@ class VariableGroup:
                                   start_time=self.start_time, end_time=self.end_time,
                                   avg_axis=avg_axis,
                                   conversion_factor=conversion_factor)
-        variable.constrain(self.height_min_value, self.height_max_value, data=variable.independent_data.data)
+        variable.trimArray(self.height_min_value, self.height_max_value, data=variable.independent_data.data)
         line = Line(variable, variable.independent_data, label=label, line_format=line_format)
         return line
 
@@ -595,7 +597,7 @@ class VariableGroup:
         variable = NetCdfVariable(varname, dataset, independent_var_names=Case_definitions.TIME_VAR_NAMES, start_time=0,
                                   end_time=end_time, avg_axis=1,
                                   conversion_factor=conversion_factor)
-        variable.constrain(0, variable.end_time, data=variable.independent_data.data)
+        variable.trimArray(0, variable.end_time, data=variable.independent_data.data)
         line = Line(variable.independent_data, variable, label=label, line_format=line_format)
         return line
 
@@ -618,7 +620,7 @@ class VariableGroup:
                 if varname in dataset.variables.keys():
                     variable = NetCdfVariable(varname, dataset, independent_var_names=Case_definitions.HEIGHT_VAR_NAMES,
                                               start_time=self.start_time, end_time=self.end_time)
-                    variable.constrain(self.height_min_value, self.height_max_value, data=variable.independent_data)
+                    variable.trimArray(self.height_min_value, self.height_max_value, data=variable.independent_data)
                     line_definition = Line(variable, variable.independent_data, label=line_definition['legend_label'],
                                            line_format="")  # uses auto-generating line format
                     output_lines.append(line_definition)
@@ -639,7 +641,7 @@ class VariableGroup:
         var_ncdf = NetCdfVariable(varname, datasets, independent_var_names=Case_definitions.HEIGHT_VAR_NAMES,
                                   conversion_factor=conversion_factor, start_time=self.start_time,
                                   end_time=self.end_time)
-        var_ncdf.constrain(self.height_min_value, self.height_max_value, data=var_ncdf.independent_data)
+        var_ncdf.trimArray(self.height_min_value, self.height_max_value, data=var_ncdf.independent_data)
         var_data = var_ncdf.dependent_data
         z_data = var_ncdf.independent_data
         return var_data, z_data, datasets

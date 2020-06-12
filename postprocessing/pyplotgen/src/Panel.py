@@ -138,8 +138,8 @@ class Panel:
 
             if x_data.shape[0] != y_data.shape[0]:
                 raise ValueError("X and Y dependent_data have different shapes X: "+str(x_data.shape)
-                                 + "  Y:" + str(y_data.shape) + ". Attempted to plot " + self.title + " using X: " +
-                                 self.x_title + "  Y: " + self.y_title)
+                                 + "  Y:" + str(y_data.shape) + ". Attempted to plot " + self.title +
+                                 " using X: " + self.x_title + "  Y: " + self.y_title)
             # Set correct line formatting and plot data
             if var.line_format == Style_definitions.BENCHMARK_LINE_STYLES['sam']:
                 linewidth = Style_definitions.LES_LINE_THICKNESS

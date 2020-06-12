@@ -15,13 +15,16 @@ If you wish to change a line color, font size, etc., then this is the place to d
 # Pyplot requires that style rotation's and color rotation's have the same length, so be sure to properly
 # (un)comment the style rotations according to the desired color scheme.
 # Color/style rotations are used on budget plots and for clubb-folder lines
-# If paired_plots is True when plotting a panel, the STYLE_ROTATION will be ignored, as it is written to oscillate between
-#   dashed and solid lines. This currently happens by default for non-budget plots.
+# If paired_plots is True when plotting a panel, the STYLE_ROTATION will be ignored,
+# as it is written to oscillate between dashed and solid lines.
+# This currently happens by default for non-budget plots.
 
-# Colors are taken from the colorbrewer qualitative 10-color set | http://colorbrewer2.org/#type=qualitative&scheme=Paired&n=10
+# Colors are taken from the colorbrewer qualitative 10-color set:
+# http://colorbrewer2.org/#type=qualitative&scheme=Paired&n=10
 # Max amount of colors (includes pastel)
 # Not colorblind or print safe
-# COLOR_ROTATION = ['#1f78b4', '#e31a1c', '#ff7f00', '#6a3d9a', '#33a02c', '#a6cee3', '#b2df8a', '#fb9a99', '#fdbf6f', '#cab2d6']
+# COLOR_ROTATION = ['#1f78b4', '#e31a1c', '#ff7f00', '#6a3d9a', '#33a02c',
+#                   '#a6cee3', '#b2df8a', '#fb9a99', '#fdbf6f', '#cab2d6']
 # STYLE_ROTATION = ['-', '--', ':', '-.','-', '--', ':', '-.','-', '--']
 
 # Color-blind and print safe color rotation. These requirements only allow up to 4 colors

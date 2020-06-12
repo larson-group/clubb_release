@@ -42,16 +42,17 @@ alphabetical order.
 
     *blacklisted_vars*: List of variables to avoid plotting for this case. Names must use the clubb-name version
 
-    *les_dataset*: Path to the SAM .nc file for this case (please use the SAM_BENCHMARK_OUTPUT_ROOT variable as a base).
+    *les_dataset*: Path to the SAM .nc file for this case
+        (please use the SAM_BENCHMARK_OUTPUT_ROOT variable as a base).
 
-    *coamps_dataset*: dict containing paths to the coamps .nc files for this case (please use the LES_OUTPUT_ROOT
-                        variable as a base).
+    *coamps_dataset*: dict containing paths to the coamps .nc files for this case
+        (please use the LES_OUTPUT_ROOT variable as a base).
 
-    *r408_file*: dict containing paths to the r408 .nc files for this case (please use the R408_OUTPUT_ROOT
-                variable as a base).
+    *r408_file*: dict containing paths to the r408 .nc files for this case
+        (please use the R408_OUTPUT_ROOT variable as a base).
 
-    *hoc_file*: dict containing paths to the hod .nc files for this case (please use the HOC_OUTPUT_ROOT variable as a
-                base).
+    *hoc_file*: dict containing paths to the hoc .nc files for this case
+        (please use the HOC_OUTPUT_ROOT variable as a base).
 
     *var_groups*: These are the groups of variables to be plotted for the given case. var_groups is defined as a
         list of python class names, where the classes use the naming scheme VariableGroup____.py and define a variable
@@ -199,10 +200,13 @@ BOMEX = {'name': 'bomex', 'start_time': 181, 'end_time': 360, 'height_min_value'
                       'sfc': wrf_output_root + '/bomex_sfc_wrf.nc'},
          'var_groups': [VariableGroupBase, VariableGroupWs]}
 
-CGILS_S6 = {'name': 'cgils_s6', 'start_time': 12960, 'end_time': 14400, 'height_min_value': 0, 'height_max_value': 5950,
+CGILS_S6 = {'name': 'cgils_s6', 'start_time': 12960, 'end_time': 14400,
+            'height_min_value': 0, 'height_max_value': 5950,
 
-            'blacklisted_vars': ['Ngm', 'rgm', 'Skrt_zt', 'Skthl_zt', 'thlp3', 'rtpthvp', 'thlpthvp', 'wprrp', 'wpNrp'],
-            'les_dataset': SAM_BENCHMARK_OUTPUT_ROOT + "/SAM6.6/CLOUD_FEEDBACK_s6/ctl_s6_96x96x128_100m_DRZ_N100_tqndg.nc",
+            'blacklisted_vars': ['Ngm', 'rgm', 'Skrt_zt', 'Skthl_zt', 'thlp3',
+                                 'rtpthvp', 'thlpthvp', 'wprrp', 'wpNrp'],
+            'les_dataset': SAM_BENCHMARK_OUTPUT_ROOT +
+                "/SAM6.6/CLOUD_FEEDBACK_s6/ctl_s6_96x96x128_100m_DRZ_N100_tqndg.nc",
             'coamps_dataset': None,
             'r408_file': None,
             'hoc_file': None,
@@ -285,8 +289,8 @@ DYCOMS2_RF01 = {'name': 'dycoms2_rf01', 'start_time': 181, 'end_time': 240, 'hei
                 'wrf_file': None,
                 'var_groups': [VariableGroupBase, VariableGroupWs]}
 
-DYCOMS2_RF01_FIXED_SST = {'name': 'dycoms2_rf01_fixed_sst', 'start_time': 2520, 'end_time': 2700, 'height_min_value': 0,
-                          'height_max_value': 1200,
+DYCOMS2_RF01_FIXED_SST = {'name': 'dycoms2_rf01_fixed_sst', 'start_time': 2520, 'end_time': 2700,
+                          'height_min_value': 0, 'height_max_value': 1200,
 
                           'blacklisted_vars': ['rtp3', 'Skrt_zt', 'Skthl_zt', 'rtpthvp', 'thlpthvp'],
                           'les_dataset': SAM_BENCHMARK_OUTPUT_ROOT +
