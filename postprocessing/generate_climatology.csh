@@ -9,7 +9,7 @@ setenv START_YEAR 1
 setenv END_YEAR 7
 
 # Specify the map used for regridded climatology.
-setenv REGRID_MAP /home/zender/data/maps/map_ne30pg2_to_cmip6_180x360_aave.20200201.nc
+setenv REGRID_MAP /home/ac.zender/data/maps/map_ne30pg2_to_cmip6_180x360_aave.20200201.nc
 
 # Specify the case name.
 setenv CASE_NAME default.alpha22.F2010.clubb_c_K10h_0p35.ne30pg2_r05_oECv3.anvil
