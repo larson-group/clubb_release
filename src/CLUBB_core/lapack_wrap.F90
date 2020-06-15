@@ -187,6 +187,14 @@ module lapack_wrap
     use clubb_precision, only: &
       core_rknd ! Variable(s)
 
+#ifdef E3SM
+#ifndef NDEBUG
+#if defined(ARCH_MIC_KNL) && defined(CPRINTEL)
+    use, intrinsic :: ieee_exceptions
+#endif
+#endif
+#endif /*E3SM*/
+
     use error_code, only: &
       err_code,                    & ! Error Indicator
       clubb_fatal_error              ! Constants
@@ -228,10 +236,30 @@ module lapack_wrap
 !       SUBROUTINE DGTSV( N, NRHS, DL, D, DU, B, LDB, INFO )
 !-----------------------------------------------------------------------
 
+#ifdef E3SM
+#ifndef NDEBUG
+#if defined(ARCH_MIC_KNL) && defined(CPRINTEL)
+    ! when floating-point exceptions are turned on, this call was failing with
+    ! a div-by-zero on KNL with Intel/MKL.  Solution was to turn off exceptions
+    ! only here at this call (and only for machine with ARCH_MIC_KNL defined)
+    ! (github 1183)
+    call ieee_set_halting_mode(IEEE_DIVIDE_BY_ZERO, .false.) ! Turn off stopping on div-by-zero only
+#endif
+#endif
+#endif /*E3SM*/
+
     ! Interface for Lapack tridiagonal matrix solver, sgtsv for single 
     ! or dgtsv for double precision
     call lapack_gtsv( ndim, nrhs, subd(2:ndim), diag, supd(1:ndim-1),  & 
                       rhs, ndim, info )
+
+#ifdef E3SM
+#ifndef NDEBUG
+#if defined(ARCH_MIC_KNL) && defined(CPRINTEL)
+    call ieee_set_halting_mode(IEEE_DIVIDE_BY_ZERO, .true.) ! Turn back on stopping on div-by-zero only
+#endif
+#endif
+#endif /*E3SM*/
 
     select case( info )
     case( :-1 )

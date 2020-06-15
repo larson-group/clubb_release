@@ -1051,7 +1051,7 @@ module mixing_length
           rtm_pert_neg_rt = pdf_params%rt_2 &
                      - Lscale_pert_coef * sqrt( max( pdf_params%varnce_rt_2, rt_tol**2 ) )
           !Lscale_weight = pdf_params%mixt_frac
-        else where
+        elsewhere
           rtm_pert_pos_rt = pdf_params%rt_2 &
                      + Lscale_pert_coef * sqrt( max( pdf_params%varnce_rt_2, rt_tol**2 ) )
           thlm_pert_pos_rt = pdf_params%thl_2 + ( sign_rtpthlp * Lscale_pert_coef &
@@ -1061,7 +1061,7 @@ module mixing_length
           rtm_pert_neg_rt = pdf_params%rt_1 &
                      - Lscale_pert_coef * sqrt( max( pdf_params%varnce_rt_1, rt_tol**2 ) )
           !Lscale_weight = 1.0_core_rknd - pdf_params%mixt_frac
-        end where
+        endwhere
 
         mu_pert_pos_rt  = newmu / Lscale_mu_coef
         mu_pert_neg_rt  = newmu * Lscale_mu_coef

@@ -2358,9 +2358,9 @@ module stats_clubb_utilities
       if ( ircm_in_cloud > 0 ) then
         where ( cloud_frac(:) > cloud_frac_min )
             rcm_in_cloud(:) = rcm / cloud_frac
-        else where
+        elsewhere
             rcm_in_cloud(:) = rcm
-        end where
+        endwhere
 
         call stat_update_var( ircm_in_cloud, rcm_in_cloud, stats_zt )
       end if
