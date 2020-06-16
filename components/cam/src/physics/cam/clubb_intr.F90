@@ -745,6 +745,8 @@ end subroutine clubb_init_cnst
        zt_g(k) = ((k-1)*1000._r8)-500._r8  !  this is dummy garbage
        zi_g(k) = (k-1)*1000._r8            !  this is dummy garbage
     enddo
+
+    call init_clubb_config_flags( clubb_config_flags ) ! In/Out
    
     !  Set up CLUBB core.  Note that some of these inputs are overwrote
     !  when clubb_tend_cam is called.  The reason is that heights can change
