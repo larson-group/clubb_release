@@ -137,7 +137,7 @@ class NetCdfVariable:
     def trimArray(self, start_value, end_value, data=None):
         """
         Remove all dependent_data elements from the variable that are not between the start and end value. Assumes
-        the dependent_data is always increasing. If the optional data parameter is used, it will restrict to
+        the dependent_data is sorted. If the optional data parameter is used, it will restrict to
         the indices of where the start/end values are in that dataset rather than the variables dependent_data itself.
 
         :param start_value: The smallest possible value
@@ -198,8 +198,18 @@ class DataReader():
         :return: None
         :author: Nicolas Strike
         """
-        for dataset in self.nc_datasets:
-            dataset.close()
+        # self.nc_datasets is a 3-level dictionary with the following key levels:
+        # 1. case
+        # 2. folder
+        # 3. filetype
+        # So in order to close the Dataset objects we need to cycle through all three levels
+        for case in self.nc_datasets:
+            casedict = self.nc_datasets[case]
+            for folder in casedict:
+                folderdict = casedict[folder]
+                for filetype in folderdict:
+                    dataset = folderdict[filetype]
+                    dataset.close()
 
     def loadFolder(self, folder_path, ignore_git=True):
         """
@@ -258,7 +268,7 @@ class DataReader():
         """
         start_time_value = ncdf_variable.start_time
         end_time_value = ncdf_variable.end_time
-        variable_name = ncdf_variable.name
+        variable_name = ncdf_variable.varname
         conv_factor = ncdf_variable.conv_factor
         avg_axis = ncdf_variable.avg_axis
         independent_var_name = ncdf_variable.independent_var_name
@@ -335,7 +345,7 @@ class DataReader():
         """
         self.cleanup()
 
-    def __del__(self, exc_type, exc_val, exc_tb):
+    def __del__(self):
         """
         Destructor for DataReader class.
         Calls the cleanup and cleanly closes out the object instance
