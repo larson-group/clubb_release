@@ -1574,7 +1574,14 @@ module stats_clubb_utilities
   end subroutine stats_begin_timestep
 
   !-----------------------------------------------------------------------
-  subroutine stats_end_timestep( )
+  subroutine stats_end_timestep( &
+#ifdef NETCDF
+                                 l_uv_nudge, &
+                                 l_tke_aniso, &
+                                 l_standard_term_ta, &
+                                 l_single_C2_Skw &
+#endif
+                                  )
 
     ! Description: 
     !   Called when the stats timestep has ended. This subroutine
@@ -1621,6 +1628,19 @@ module stats_clubb_utilities
 
     ! External
     intrinsic :: floor
+
+#ifdef NETCDF
+    ! Input Variables
+    logical, intent(in) :: &
+      l_uv_nudge,         & ! For wind speed nudging.
+      l_tke_aniso,        & ! For anisotropic turbulent kinetic energy, i.e.
+                            ! TKE = 1/2 (u'^2 + v'^2 + w'^2)
+      l_standard_term_ta, & ! Use the standard discretization for the turbulent advection terms.
+                            ! Setting to .false. means that a_1 and a_3 are pulled outside of the
+                            ! derivative in advance_wp2_wp3_module.F90 and in
+                            ! advance_xp2_xpyp_module.F90.
+      l_single_C2_Skw       ! Use a single Skewness dependent C2 for rtp2, thlp2, and rtpthlp
+#endif
 
     ! Local Variables
 
@@ -1700,17 +1720,45 @@ module stats_clubb_utilities
       else ! l_netcdf
 
 #ifdef NETCDF
-        call write_netcdf( stats_zt%file  )
-        call write_netcdf( stats_zm%file  )
+        call write_netcdf( l_uv_nudge, &
+                           l_tke_aniso, &
+                           l_standard_term_ta, &
+                           l_single_C2_Skw, &
+                           stats_zt%file  )
+        call write_netcdf( l_uv_nudge, &
+                           l_tke_aniso, &
+                           l_standard_term_ta, &
+                           l_single_C2_Skw, &
+                           stats_zm%file  )
         if ( l_silhs_out ) then
-          call write_netcdf( stats_lh_zt%file  )
-          call write_netcdf( stats_lh_sfc%file  )
+          call write_netcdf( l_uv_nudge, &
+                             l_tke_aniso, &
+                             l_standard_term_ta, &
+                             l_single_C2_Skw, &
+                             stats_lh_zt%file  )
+          call write_netcdf( l_uv_nudge, &
+                             l_tke_aniso, &
+                             l_standard_term_ta, &
+                             l_single_C2_Skw, &
+                             stats_lh_sfc%file  )
         end if
         if ( l_output_rad_files ) then
-          call write_netcdf( stats_rad_zt%file  )
-          call write_netcdf( stats_rad_zm%file  )
+          call write_netcdf( l_uv_nudge, &
+                             l_tke_aniso, &
+                             l_standard_term_ta, &
+                             l_single_C2_Skw, &
+                             stats_rad_zt%file  )
+          call write_netcdf( l_uv_nudge, &
+                             l_tke_aniso, &
+                             l_standard_term_ta, &
+                             l_single_C2_Skw, &
+                             stats_rad_zm%file  )
         end if
-        call write_netcdf( stats_sfc%file  )
+        call write_netcdf( l_uv_nudge, &
+                           l_tke_aniso, &
+                           l_standard_term_ta, &
+                           l_single_C2_Skw, &
+                           stats_sfc%file  )
             
         if ( err_code == clubb_fatal_error ) return
 #else
@@ -1761,9 +1809,17 @@ module stats_clubb_utilities
                      rcm_zm, rtm_zm, thlm_zm, cloud_frac, ice_supersat_frac, &
                      cloud_frac_zm, ice_supersat_frac_zm, rcm_in_layer, &
                      cloud_cover, rcm_supersat_adj, sigma_sqd_w, &
+                     thvm, ug, vg, Lscale, wpthlp2, wp2thlp, wprtp2, wp2rtp, &
+                     Lscale_up, Lscale_down, tau_zt, Kh_zt, wp2rcp, &
+                     wprtpthlp, sigma_sqd_w_zt, rsat, wp2_zt, thlp2_zt, &
+                     wpthlp_zt, wprtp_zt, rtp2_zt, rtpthlp_zt, up2_zt, &
+                     vp2_zt, upwp_zt, vpwp_zt, wp4, tau_zm, Kh_zm, thlprcp, &
+                     rtprcp, rcp2, em, a3_coef, a3_coef_zt, &
+                     wp3_zm, wp3_on_wp2, wp3_on_wp2_zt, Skw_velocity, &
                      pdf_params, pdf_params_zm, sclrm, sclrp2, &
                      sclrprtp, sclrpthlp, sclrm_forcing, sclrpthvp, &
-                     wpsclrp, edsclrm, edsclrm_forcing )
+                     wpsclrp, sclrprcp, wp2sclrp, wpsclrp2, wpsclrprtp, &
+                     wpsclrpthlp, wpedsclrp, edsclrm, edsclrm_forcing )
 
     ! Description:
     !   Accumulate those stats variables that are preserved in CLUBB from timestep to
@@ -1923,7 +1979,6 @@ module stats_clubb_utilities
 
     use stats_variables, only: & 
         ishear, &  ! Variable(s)
-        iFrad, & 
         icc, & 
         iz_cloud_base, & 
         ilwp, &
@@ -1984,58 +2039,6 @@ module stats_clubb_utilities
 
     use grid_class, only: & 
         zt2zm ! Procedure(s)
-
-    use variables_diagnostic_module, only: & 
-        thvm, & ! Variable(s)
-        ug, & 
-        vg, & 
-        Lscale, & 
-        wpthlp2, & 
-        wp2thlp, & 
-        wprtp2, & 
-        wp2rtp, & 
-        Lscale_up, & 
-        Lscale_down, & 
-        tau_zt, &
-        Kh_zt, & 
-        wp2rcp, & 
-        wprtpthlp, & 
-        sigma_sqd_w_zt, & 
-        rsat
-
-    use variables_diagnostic_module, only: & 
-        wp2_zt, &  ! Variable(s)
-        thlp2_zt, & 
-        wpthlp_zt, & 
-        wprtp_zt, & 
-        rtp2_zt, & 
-        rtpthlp_zt, &
-        up2_zt, &
-        vp2_zt, &
-        upwp_zt, &
-        vpwp_zt, & 
-        wp4, & 
-        tau_zm, &
-        Kh_zm, & 
-        thlprcp, & 
-        rtprcp, & 
-        rcp2, & 
-        em, & 
-        Frad, & 
-        sclrprcp, & 
-        wp2sclrp, & 
-        wpsclrp2, & 
-        wpsclrprtp, & 
-        wpsclrpthlp, & 
-        wpedsclrp
-
-    use variables_diagnostic_module, only: & 
-        a3_coef, & ! Variable(s)
-        a3_coef_zt, &
-        wp3_zm, &
-        wp3_on_wp2, &
-        wp3_on_wp2_zt, &
-        Skw_velocity
 
     use pdf_parameter_module, only: & 
         pdf_parameter ! Type
@@ -2124,6 +2127,49 @@ module stats_clubb_utilities
     real( kind = core_rknd ), intent(in), dimension(gr%nz) :: &
       sigma_sqd_w    ! PDF width parameter (momentum levels)    [-]
 
+    real( kind = core_rknd ), intent(in), dimension(gr%nz) :: & 
+        thvm,           & ! Virtual potential temperature        [K]
+        ug,             & ! u geostrophic wind                   [m/s]
+        vg,             & ! v geostrophic wind                   [m/s]
+        Lscale,         & ! Length scale                         [m]
+        wpthlp2,        & ! w'thl'^2                             [m K^2/s]
+        wp2thlp,        & ! w'^2 thl'                            [m^2 K/s^2]
+        wprtp2,         & ! w'rt'^2                              [m/s kg^2/kg^2]
+        wp2rtp,         & ! w'^2rt'                              [m^2/s^2 kg/kg]
+        Lscale_up,      & ! Length scale (upwards component)     [m]
+        Lscale_down,    & ! Length scale (downwards component)   [m]
+        tau_zt,         & ! Eddy diss. time scale; thermo. levs. [s]
+        Kh_zt,          & ! Eddy diff. coef. on thermo. levels   [m^2/s]
+        wp2rcp,         & ! w'^2 rc'                             [m^2/s^2 kg/kg]
+        wprtpthlp,      & ! w'rt'thl'                            [m/s kg/kg K]
+        sigma_sqd_w_zt, & ! PDF width parameter (thermo. levels) [-]
+        rsat              ! Saturation mixing ratio              [kg/kg]
+
+    real( kind = core_rknd ), intent(in), dimension(gr%nz) :: & 
+        wp2_zt,        & ! w'^2 on thermo. grid                  [m^2/s^2]
+        thlp2_zt,      & ! thl'^2 on thermo. grid                [K^2]
+        wpthlp_zt,     & ! w'thl' on thermo. grid                [m K/s]
+        wprtp_zt,      & ! w'rt' on thermo. grid                 [m kg/(kg s)]
+        rtp2_zt,       & ! rt'^2 on therm. grid                  [(kg/kg)^2]
+        rtpthlp_zt,    & ! rt'thl' on thermo. grid               [kg K/kg]
+        up2_zt,        & ! u'^2 on thermo. grid                  [m^2/s^2]
+        vp2_zt,        & ! v'^2 on thermo. grid                  [m^2/s^2]
+        upwp_zt,       & ! u'w' on thermo. grid                  [m^2/s^2]
+        vpwp_zt,       & ! v'w' on thermo. grid                  [m^2/s^2]
+        wp4,           & ! < w'^4 > (momentum levels)            [m^4/s^4]
+        tau_zm,        & ! Eddy diss. time scale; momentum levs. [s]
+        Kh_zm,         & ! Eddy diff. coef. on momentum levels   [m^2/s]
+        thlprcp,       & ! thl'rc'                               [K kg/kg]
+        rtprcp,        & ! rt'rc'                                [kg^2/kg^2]
+        rcp2,          & ! rc'^2                                 [kg^2/kg^2]
+        em,            & ! Turbulent Kinetic Energy (TKE)        [m^2/s^2]
+        a3_coef,       & ! The a3 coefficient from CLUBB eqns    [-]
+        a3_coef_zt,    & ! The a3 coef. interp. to the zt grid   [-]
+        wp3_zm,        & ! w'^3 interpolated to momentum levels  [m^3/s^3]
+        wp3_on_wp2,    & ! w'^3 / w'^2 on the zm grid            [m/s]
+        wp3_on_wp2_zt, & ! w'^3 / w'^2 on the zt grid            [m/s]
+        Skw_velocity     ! Skewness velocity                     [m/s]
+
     type(pdf_parameter), intent(in) :: & 
       pdf_params,    & ! PDF parameters (thermodynamic levels)    [units vary]
       pdf_params_zm    ! PDF parameters on momentum levels        [units vary]
@@ -2137,8 +2183,16 @@ module stats_clubb_utilities
       sclrpthvp,       & ! High-order passive scalar covariance [units K]
       wpsclrp            ! w'sclr'                              [units m/s]
 
+    real( kind = core_rknd ), intent(in), dimension(gr%nz,sclr_dim) :: & 
+      sclrprcp,    & ! sclr'rc'     [units vary]
+      wp2sclrp,    & ! w'^2 sclr'   [units vary]
+      wpsclrp2,    & ! w'sclr'^2    [units vary]
+      wpsclrprtp,  & ! w'sclr'rt'   [units vary]
+      wpsclrpthlp    ! w'sclr'thl'  [units vary]
+
     real( kind = core_rknd ), intent(in), dimension(gr%nz,edsclr_dim) :: & 
-      edsclrm,         & ! Eddy-diff passive scalar      [units vary] 
+      wpedsclrp,       & ! w'edsclr'                        [units vary]
+      edsclrm,         & ! Eddy-diff passive scalar         [units vary] 
       edsclrm_forcing    ! Large-scale forcing of edscalar  [units vary]
 
     ! Local Variables
@@ -2306,7 +2360,7 @@ module stats_clubb_utilities
             rcm_in_cloud(:) = rcm / cloud_frac
         elsewhere
             rcm_in_cloud(:) = rcm
-        end where
+        endwhere
 
         call stat_update_var( ircm_in_cloud, rcm_in_cloud, stats_zt )
       end if
@@ -2340,7 +2394,6 @@ module stats_clubb_utilities
       call stat_update_var( irho_ds_zm, rho_ds_zm, stats_zm )
       call stat_update_var( ithv_ds_zm, thv_ds_zm, stats_zm )
       call stat_update_var( iem, em, stats_zm )
-      call stat_update_var( iFrad, Frad, stats_zm )
 
       call stat_update_var( iSkw_velocity, Skw_velocity, stats_zm )
       call stat_update_var( ia3_coef, a3_coef, stats_zm )
@@ -2652,13 +2705,17 @@ module stats_clubb_utilities
   end subroutine stats_accumulate_hydromet
 !------------------------------------------------------------------------------
   subroutine stats_accumulate_lh_tend( lh_hydromet_mc, lh_Ncm_mc, &
-                                       lh_thlm_mc, lh_rvm_mc, lh_rcm_mc )
+                                       lh_thlm_mc, lh_rvm_mc, lh_rcm_mc, &
+                                       lh_AKm, AKm, AKstd, AKstd_cld, &
+                                       lh_rcm_avg, AKm_rcm, AKm_rcc )
+
 ! Description:
 !   Compute stats for the tendency of latin hypercube sample points.
 
 ! References:
 !   None
 !------------------------------------------------------------------------------
+
     use parameters_model, only: &
       hydromet_dim ! Variable(s)
 
@@ -2692,15 +2749,6 @@ module stats_clubb_utilities
       ilh_AKm, &
       ilh_rcm_avg
 
-     use variables_diagnostic_module, only: &
-      AKm, & ! Variable(s)
-      lh_AKm, &
-      AKstd, & 
-      lh_rcm_avg, &
-      AKstd_cld, &
-      AKm_rcm, &
-      AKm_rcc
-
     use stats_type_utilities, only: & 
         stat_update_var ! Procedure(s)
 
@@ -2722,6 +2770,15 @@ module stats_clubb_utilities
       lh_thlm_mc, & ! Tendency of liquid potential temperature [kg/kg/s]
       lh_rcm_mc,  & ! Tendency of cloud water                  [kg/kg/s]
       lh_rvm_mc     ! Tendency of vapor                        [kg/kg/s]
+
+    real( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
+      lh_AKm,     & ! Kessler ac estimate                 [kg/kg/s]
+      AKm,        & ! Exact Kessler ac                    [kg/kg/s]
+      AKstd,      & ! St dev of exact Kessler ac          [kg/kg/s]
+      AKstd_cld,  & ! Stdev of exact w/in cloud ac        [kg/kg/s]
+      lh_rcm_avg, & ! Monte Carlo rcm estimate            [kg/kg]
+      AKm_rcm,    & ! Kessler ac based on rcm             [kg/kg/s]
+      AKm_rcc       ! Kessler ac based on rcm/cloud_frac  [kg/kg/s]
 
     if ( l_stats_samp ) then
 

@@ -1,69 +1,97 @@
-commit 5d29760c18d2ac2209dae94af7bba6439a9b6dd3
-Author: Nicolas Strike <strike@uwm.edu>
-Date:   Wed Jul 10 14:23:09 2019 -0500
+commit 9cc9fa6d3ba6843858d9ec6f67709e00008424c1
+Author: System Administrator <larsongroupgithub@gmail.com>
+Date:   Mon Jun 15 23:17:56 2020 -0500
 
-    Rensure plots match plotgen output. lba plots should now be consistent with plotgen. Added a few missing SAM plots for some panels.
+    Updating the clubb core and silhs version files
+
+commit c5ec3e9d76544adc40e845db3c05067f5afc14e2
+Author: sdomke <sdomke@uwm.edu>
+Date:   Mon Jun 15 22:35:05 2020 -0500
+
+    Fixed errors in src/DataReader.py:
+    Changed attribute name to varname to better reflect its purpose
+    Fixed signature of __del__ function (destructor) of the DataReader class
+    Fixed function cleanup that is called by the destructor of the DataReader class:
+    self.nc_datasets' structure seems to have changed, so the closing loop had to be adjusted.
+    Small change to description of DataReader's __getStartEndIndex__ function.
+    
     https://github.com/larson-group/sys_admin/issues/542
 
-commit 1204d043849de0e5c3dc790f0ef7108a319bc890
-Author: Nicolas Strike <strike@uwm.edu>
-Date:   Tue Jul 9 14:10:59 2019 -0500
+commit 5844bbddfb26b0a57666b4a51a43aa8424ac4f92
+Author: bmg929 <bmg2@uwm.edu>
+Date:   Mon Jun 15 15:34:52 2020 -0500
 
-    Rename Lineplot to Line
+    I added E3SM customizations to CLUBB's master branch.  This is meant
+    for updating CLUBB in the E3SM master branch.
+
+commit 9d6412ea485fc9393a39193281f08df72704ca97
+Author: sdomke <sdomke@uwm.edu>
+Date:   Fri Jun 12 17:06:12 2020 -0500
+
+    Adjusted some lines to stay below the limit of 120 characters per line
+    Removed TODOs from SAM VariableGroups
+    Renamed the constrain function of theNetCdfVariable class to trimArray
+    Rewrote doc string for __getEndStartIndex__ function in src/DataReader.py
+    
     https://github.com/larson-group/sys_admin/issues/542
 
-commit 44946b9a02aaaa6fa7a4318c4a876d01462b6635
-Author: Nicolas Strike <strike@uwm.edu>
-Date:   Tue Jul 9 11:14:48 2019 -0500
+commit e68fb95962ef814ff3efe84c93f6bcc5b4e0c118
+Author: sdomke <sdomke@uwm.edu>
+Date:   Fri Jun 12 13:32:12 2020 -0500
 
-    Add initial version lba case, though the output is not yet identical to plotgen's.
+    Minor changes in pyplotgen.py, src/Panel.py, and src/Case.py
+    Updated inline documentation in src/VariableGroup.py
+    Updated inline documentation in src/DataReader.py,
+    added __del__ function for DataReader class,
+    and added TODOs for new timeheight plots
+    
     https://github.com/larson-group/sys_admin/issues/542
 
-commit 36f0c546d0978cffbee001320e63fc3453f639d6
-Author: Nicolas Strike <strike@uwm.edu>
-Date:   Tue Jul 9 10:04:52 2019 -0500
+commit 5860ee4660b9048aa82c573c87938b481dcf2708
+Merge: 88f474c 57cfe15
+Author: bmg929 <bmg2@uwm.edu>
+Date:   Thu Jun 11 14:50:41 2020 -0500
 
-    Add initial versions of multiple variable groups
+    Merge branch 'master' of https://github.com/larson-group/clubb
+    
+    Forgot to pull before committing ... again.
+
+commit 88f474cc722ce72f931f8af9bdbe5a78f3303e64
+Author: bmg929 <bmg2@uwm.edu>
+Date:   Thu Jun 11 14:49:58 2020 -0500
+
+    I am going to make primary PDF type options and primary PDF call
+    position options available to host models.
+
+commit 57cfe15d797116212871ac5f43a9ddb9d351c0dd
+Author: Nicolas Strike <strike@uwm.edu>
+Date:   Thu Jun 11 14:14:19 2020 -0500
+
+    Update README
+    
+    triggering nightly tests
+
+commit 47a20b77648fcb27a1c9d8da4900bf5ef7316521
+Author: strikenp <nchief@gmail.com>
+Date:   Thu Jun 11 13:40:43 2020 -0500
+
+    Pyplotgen Changes:
+    * Resolved a minor and difficult to reproduce bug where ncdf data that didn't contain the full range of time values (i.e. if time averaging from 181-360, but data only had 181-310) pyplotgen wouldn't average properly (it would skip the last index)
+    * Changed ARM's time from 541 -> 540. This makes it consistent with the clubb cases (uses 540), but makes it inconsistent with the wrf case (uses 541)
+    * Increased clubb's priority when plotting so that clubb would get the red/blue color scheme first
+    * Added additional variable names to some coamps variables (often uses 'q' in place of 'r', but some coamps datasets expect 'r')
+    * This may become Pyplotgen v1.0
+    
     https://github.com/larson-group/sys_admin/issues/542
 
-commit 15f62b1155b133f79af128b8bdcf891dd97a08bb
-Author: Nicolas Strike <strike@uwm.edu>
-Date:   Tue Jul 9 07:55:47 2019 -0500
+commit 7066a787a9887e134814ac5f636f996faedc94b2
+Author: strikenp <nchief@gmail.com>
+Date:   Wed Jun 10 13:44:43 2020 -0500
 
-    Fix time averaging bug that prevented many LES plots from appearing as expected/like their plotgen counterparts.
-    https://github.com/larson-group/sys_admin/issues/542
-
-commit 93326ab89ca144e1bc00cd33e6199a0571b9ea4c
-Author: Nicolas Strike <strike@uwm.edu>
-Date:   Mon Jul 8 15:08:32 2019 -0500
-
-    Fix bug where timeseries were being plotted as profile panels.
-    https://github.com/larson-group/sys_admin/issues/542
-
-commit 6a7474e714a3b47f57d542d7aba8ddf31838f805
-Author: Nicolas Strike <strike@uwm.edu>
-Date:   Mon Jul 8 14:31:19 2019 -0500
-
-    Resolve sam output wasn't being time averaged. Some code cleanup, indluding moving VariableGroupTest.py to VariableGroupBase.py. Removed some old/commented code, cleaned up print statements.
-    https://github.com/larson-group/sys_admin/issues/542
-
-commit f31e1654ea4d2f359a1040674f9d4839dea59bd2
-Merge: aed6ab0 e9dad98
-Author: Nicolas Strike <strike@uwm.edu>
-Date:   Mon Jul 8 12:57:14 2019 -0500
-
-    Merge remote-tracking branch 'origin/master'
-
-commit aed6ab0b3e36c41772bb1ba36e84a662c8442dbd
-Author: Nicolas Strike <strike@uwm.edu>
-Date:   Mon Jul 8 10:16:55 2019 -0500
-
-    Implement output folder command line parameter and general code cleanup. Passing an output folder into the launch parameters will now result in pyplotgen creating that folder (if not exists) and placing output in there.
-    https://github.com/larson-group/sys_admin/issues/542
-
-commit e01ea3f6f6dbffe24c8a7b3f230cbf9b3d0fd2df
-Author: Nicolas Strike <strike@uwm.edu>
-Date:   Mon Jul 8 08:51:44 2019 -0500
-
-    Further generalized variable group creation to make variable groups easier to create. Improved console output to provide useful information during plotting.
+    Pyplotgen Changes:
+    * Synced time average intervals with plotgen clubb cases
+    * Clean up time index determination
+    * Added coamps les output to bomex case
+    * Added wrf variable names to LiquidMP variable group (although wrf seems to only plot them as 0s)
+    
     https://github.com/larson-group/sys_admin/issues/542

@@ -22,6 +22,7 @@ module diagnose_correlations_module
 
 !-----------------------------------------------------------------------
   subroutine diagnose_correlations( pdf_dim, corr_array_pre, & ! Intent(in)
+                                    l_calc_w_corr, & ! Intent(in)
                                     corr_array )                   ! Intent(out)
     ! Description:
     !   This subroutine diagnoses the correlation matrix in order to feed it
@@ -41,9 +42,6 @@ module diagnose_correlations_module
     use constants_clubb, only: &
         zero
 
-    use model_flags, only: &
-        l_calc_w_corr ! Flag(s)
-
     implicit none
 
     intrinsic :: max, sqrt, transpose
@@ -54,6 +52,9 @@ module diagnose_correlations_module
 
     real( kind = core_rknd ), dimension(pdf_dim, pdf_dim), intent(in) :: &
       corr_array_pre   ! Prescribed correlations
+
+    logical, intent(in) :: &
+      l_calc_w_corr ! Calculate the correlations between w and the hydrometeors
 
     ! Output variables
     real( kind = core_rknd ), dimension(pdf_dim, pdf_dim), intent(out) :: &
@@ -318,7 +319,7 @@ module diagnose_correlations_module
 
 
   !-----------------------------------------------------------------------
-!  subroutine approx_w_covar( nz, pdf_params, rrm, Nrm, Ncnm, & ! Intent(in)
+!  subroutine approx_w_covar( nz, pdf_params, rrm, Nrm, Ncnm, Kh_zm, &   ! Intent(in)
 !                             wpchip_zt, wprrp_zt, wpNrp_zt, wpNcnp_zt ) ! Intent(out)
 !    ! Description:
 !    ! Approximate the covariances of w with the hydrometeors using Eddy
@@ -348,9 +349,6 @@ module diagnose_correlations_module
 !    use advance_windm_edsclrm_module, only: &
 !        xpwp_fnc ! Procedure(s)
 !
-!    use variables_diagnostic_module, only: &
-!        Kh_zm ! Variable(s)
-!
 !    implicit none
 !
 !    ! Input Variables
@@ -361,9 +359,10 @@ module diagnose_correlations_module
 !      pdf_params    ! PDF parameters                         [units vary]
 !
 !    real( kind = core_rknd ), dimension(nz), intent(in) ::  &
-!      rrm,          & ! Mean rain water mixing ratio, < r_r >      [kg/kg]
-!      Nrm,             & ! Mean rain drop concentration, < N_r >      [num/kg]
-!      Ncnm               ! Mean cloud nuclei concentration, < N_cn >  [num/kg]
+!      rrm,   & ! Mean rain water mixing ratio, < r_r >      [kg/kg]
+!      Nrm,   & ! Mean rain drop concentration, < N_r >      [num/kg]
+!      Ncnm,  & ! Mean cloud nuclei concentration, < N_cn >  [num/kg]
+!      Kh_zm    ! Eddy diffusivity coef. on momentum levels  [m^2/s]
 !
 !    ! Output Variables
 !    real( kind = core_rknd ), dimension(nz), intent(out) ::  &

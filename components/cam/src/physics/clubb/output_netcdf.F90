@@ -122,21 +122,22 @@ module output_netcdf
 
     ncf%dtwrite = dtwrite
 
-    ! Check to make sure the timestep is appropriate. The GrADS program does not support an
-    ! output timestep less than 1 minute.  Other programs can read netCDF files like this
-    if ( dtwrite < sec_per_min ) then
-      write(fstderr,*) "Warning: GrADS program requires an output timestep of at least &
-                       &one minute, but the requested output timestep &
-                       &(stats_tout) is less than one minute."
-      if ( .not. l_allow_small_stats_tout ) then
-        write(fstderr,*) "To override this warning, set l_allow_small_stats_tout = &
-                         &.true. in the stats_setting namelist in the &
-                         &appropriate *_model.in file."
-        write(fstderr,*) "Fatal error in open_netcdf_for_writing"
-        err_code = clubb_fatal_error
-        return
-      end if
-    end if ! dtwrite < sec_per_min
+! According to Chris Vogl, netcdf can handle time steps < 1 min.  So this check is unneeded.
+!    ! Check to make sure the timestep is appropriate. The GrADS program does not support an
+!    ! output timestep less than 1 minute.  Other programs can read netCDF files like this
+!    if ( dtwrite < sec_per_min ) then
+!      write(fstderr,*) "Warning: GrADS program requires an output timestep of at least &
+!                       &one minute, but the requested output timestep &
+!                       &(stats_tout) is less than one minute."
+!      if ( .not. l_allow_small_stats_tout ) then
+!        write(fstderr,*) "To override this warning, set l_allow_small_stats_tout = &
+!                         &.true. in the stats_setting namelist in the &
+!                         &appropriate *_model.in file."
+!        write(fstderr,*) "Fatal error in open_netcdf_for_writing"
+!        err_code = clubb_fatal_error
+!        return
+!      end if
+!    end if ! dtwrite < sec_per_min
 
     ! From open_grads.
     ! This probably for the case of a reversed grid as in COAMPS
@@ -177,7 +178,11 @@ module output_netcdf
 
 !-------------------------------------------------------------------------------
 
-  subroutine write_netcdf( ncf )
+  subroutine write_netcdf( l_uv_nudge, &
+                           l_tke_aniso, &
+                           l_standard_term_ta, &
+                           l_single_C2_Skw, &
+                           ncf )
 
 ! Description:
 !   Writes some data to the NetCDF dataset, but doesn't close it.
@@ -208,6 +213,16 @@ module output_netcdf
     implicit none
 
     ! Input
+    logical, intent(in) :: &
+      l_uv_nudge,         & ! For wind speed nudging
+      l_tke_aniso,        & ! For anisotropic turbulent kinetic energy, i.e. TKE = 1/2
+                            ! (u'^2 + v'^2 + w'^2)
+      l_standard_term_ta, & ! Use the standard discretization for the turbulent advection terms.
+                            ! Setting to .false. means that a_1 and a_3 are pulled outside of the
+                            ! derivative in advance_wp2_wp3_module.F90 and in
+                            ! advance_xp2_xpyp_module.F90.
+      l_single_C2_Skw       ! Use a single Skewness dependent C2 for rtp2, thlp2, and rtpthlp
+
     type (stat_file), intent(inout) :: ncf    ! The file
 
     ! Local Variables
@@ -226,7 +241,11 @@ module output_netcdf
     ncf%ntimes = ncf%ntimes + 1
 
     if ( .not. ncf%l_defined ) then
-      call first_write( ncf ) ! finalize the variable definitions
+      call first_write( l_uv_nudge, &
+                        l_tke_aniso, &
+                        l_standard_term_ta, &
+                        l_single_C2_Skw, &
+                        ncf ) ! finalize the variable definitions
       call write_grid( ncf )  ! define lat., long., and grid
       ncf%l_defined = .true.
       if ( err_code == clubb_fatal_error ) return
@@ -498,7 +517,11 @@ module output_netcdf
   end subroutine close_netcdf
 
 !-------------------------------------------------------------------------------
-  subroutine first_write( ncf )
+  subroutine first_write( l_uv_nudge, &
+                          l_tke_aniso, &
+                          l_standard_term_ta, &
+                          l_single_C2_Skw, &
+                          ncf )
 
 ! Description:
 !   Used on the first call to write_nc to finalize definitions
@@ -541,11 +564,7 @@ module output_netcdf
       l_pos_def, &
       l_hole_fill, &
       l_clip_semi_implicit, &
-      l_standard_term_ta, &
-      l_single_C2_Skw, &
-      l_gamma_Skw, &
-      l_uv_nudge, &
-      l_tke_aniso
+      l_gamma_Skw
 
     use clubb_precision, only: &
       core_rknd ! Variable(s)
@@ -567,6 +586,17 @@ module output_netcdf
     ! netCDF output files.
     logical, parameter :: &
       l_output_file_run_date = .false.
+
+    ! Input Variables
+    logical, intent(in) :: &
+      l_uv_nudge,         & ! For wind speed nudging
+      l_tke_aniso,        & ! For anisotropic turbulent kinetic energy, i.e. TKE = 1/2
+                            ! (u'^2 + v'^2 + w'^2)
+      l_standard_term_ta, & ! Use the standard discretization for the turbulent advection terms.
+                            ! Setting to .false. means that a_1 and a_3 are pulled outside of the
+                            ! derivative in advance_wp2_wp3_module.F90 and in
+                            ! advance_xp2_xpyp_module.F90.
+      l_single_C2_Skw       ! Use a single Skewness dependent C2 for rtp2, thlp2, and rtpthlp
 
     ! Input/Output Variables
     type (stat_file), intent(inout) :: ncf

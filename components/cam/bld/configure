@@ -1906,11 +1906,15 @@ if ($cam_build) {
 if ($cosp) { $cfg_cppdefs .= ' -DUSE_COSP'; }
 
 # CLUBB, hardcode CLUBB precision to kind=8
+# -DE3SM is a preprocessor flag inside of CLUBB that uses
+# specialized code designed to read in tunable parameter
+# settings for use in only E3SM.
 if ($clubb_sgs == 1) {
     $cfg_cppdefs .= ' -DCLUBB_SGS';
     $cfg_cppdefs .= ' -DCLUBB_CAM';
     $cfg_cppdefs .= ' -DNO_LAPACK_ISNAN';
     $cfg_cppdefs .= " -DCLUBB_REAL_TYPE=dp";
+    $cfg_cppdefs .= ' -DE3SM';
 }
 
 # UNICON

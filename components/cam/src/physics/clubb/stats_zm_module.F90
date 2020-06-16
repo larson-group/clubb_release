@@ -10,7 +10,7 @@ module stats_zm_module
   public :: stats_init_zm
 
   ! Constant parameters
-  integer, parameter, public :: nvarmax_zm = 300  ! Maximum variables allowed
+  integer, parameter, public :: nvarmax_zm = 350  ! Maximum variables allowed
 
   contains
 
@@ -46,7 +46,10 @@ module stats_zm_module
         irtpthvp, & 
         ithlpthvp, & 
         itau_zm, & 
-        itau_zm_simp, &
+        itau_no_N2_zm, &
+        itau_wp2_zm, &
+        itau_wp3_zm, &
+        itau_xp2_zm, &
         iKh_zm, & 
         iK_hm, & 
         iwprcp, & 
@@ -650,11 +653,37 @@ module stats_zm_module
              l_silhs=.false., grid_kind=stats_zm )
         k = k + 1
 
-      case ('tau_zm_simp')
-        itau_zm_simp = k
+      case ('tau_no_N2_zm')
+        itau_no_N2_zm = k
 
-        call stat_assign( var_index=itau_zm_simp, var_name="tau_zm_simp", &
+        call stat_assign( var_index=itau_no_N2_zm, var_name="tau_no_N2_zm", &
              var_description="simple tau on momentum levels [s]", var_units="s", &
+             l_silhs=.false., grid_kind=stats_zm )
+        k = k + 1
+
+
+      case ('tau_wp2_zm')
+        itau_wp2_zm = k
+
+        call stat_assign( var_index=itau_wp2_zm, var_name="tau_wp2_zm", &
+             var_description="tau for wp2 on momentum levels [s]", var_units="s",&
+             l_silhs=.false., grid_kind=stats_zm )
+        k = k + 1
+
+      case ('tau_wp3_zm')
+        itau_wp3_zm = k
+
+        call stat_assign( var_index=itau_wp3_zm, var_name="tau_wp3_zm", &
+             var_description="tau for wp3 on momentum levels [s]", var_units="s",&
+             l_silhs=.false., grid_kind=stats_zm )
+        k = k + 1
+
+
+      case ('tau_xp2_zm')
+        itau_xp2_zm = k
+
+        call stat_assign( var_index=itau_xp2_zm, var_name="tau_xp2_zm", &
+             var_description="tau for xp2 on momentum levels [s]", var_units="s",&
              l_silhs=.false., grid_kind=stats_zm )
         k = k + 1
 
