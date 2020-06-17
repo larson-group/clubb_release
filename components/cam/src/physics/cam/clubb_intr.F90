@@ -536,6 +536,11 @@ end subroutine clubb_init_cnst
     use rad_constituents,       only: rad_cnst_get_info, rad_cnst_get_mode_num_idx, rad_cnst_get_mam_mmr_idx
 
     !  From the CLUBB libraries
+    use clubb_api_module, only: &
+        iC2rtthl, iC4, iC6rt, iC6thl, iC8b, iC15, iC_wp2_splat, &
+        ic_K1, ic_K2, inu2, ic_K8, ic_K9, inu9, ic_K_hmb, &
+        ibeta, ilmin_coef, imult_coef, iSkw_denom_coef, ic_K10h, &
+        iup2_vp2_factor, iSkw_max_mag
 
     !  From the CLUBB libraries
     use clubb_api_module, only: &
@@ -746,8 +751,53 @@ end subroutine clubb_init_cnst
        zi_g(k) = (k-1)*1000._r8            !  this is dummy garbage
     enddo
 
+    ! Overwrite default values of CLUBB tunable parameters with values that have
+    ! been tuned for use in the E3SM model.
+    clubb_params(iC2rtthl) = 2.275_r8
+    clubb_params(iC4) = 5.2_r8
+    clubb_params(iC6rt) = 4.0_r8
+    clubb_params(iC6thl) = clubb_params(iC6rt)
+    clubb_params(iC8b) = 0.0_r8
+    clubb_params(iC15) = 0.4_r8
+    clubb_params(iC_wp2_splat) = 0.0_r8
+    clubb_params(ic_K1) = 0.75_r8
+    clubb_params(ic_K2) = 0.125_r8
+    clubb_params(inu2) = 5.0_r8
+    clubb_params(ic_K8) = 1.25_r8
+    clubb_params(ic_K9) = 0.25_r8
+    clubb_params(inu9) = 20.0_r8
+    clubb_params(ic_K_hmb) = 0.1_r8
+    clubb_params(ibeta) = 2.4_r8
+    clubb_params(ilmin_coef) = 0.1_r8
+    clubb_params(imult_coef) = 1.0_r8
+    clubb_params(iSkw_denom_coef) = 0.0_r8
+    clubb_params(ic_K10h) = 0.35_r8
+    clubb_params(iup2_vp2_factor) = 2.0_r8
+    clubb_params(iSkw_max_mag) = 4.5_r8
+
     call init_clubb_config_flags( clubb_config_flags ) ! In/Out
-   
+
+    ! Overwrite default values of CLUBB configurable model flags with flags
+    ! that are used in the E3SM model.
+    clubb_config_flags%iiPDF_type = 1
+    clubb_config_flags%ipdf_call_placement = 1
+    clubb_config_flags%l_predict_upwp_vpwp = .false.
+    clubb_config_flags%l_min_wp2_from_corr_wx = .false.
+    clubb_config_flags%l_min_xp2_from_corr_wx = .false.
+    clubb_config_flags%l_vert_avg_closure  = .true.
+    clubb_config_flags%l_trapezoidal_rule_zt = .true.
+    clubb_config_flags%l_trapezoidal_rule_zm = .true.
+    clubb_config_flags%l_call_pdf_closure_twice = .true.
+    clubb_config_flags%l_use_cloud_cover = .true.
+    clubb_config_flags%l_stability_correct_tau_zm = .true.
+    clubb_config_flags%l_damp_wp2_using_em = .false.
+    clubb_config_flags%l_do_expldiff_rtm_thlm = .true.
+    clubb_config_flags%l_diag_Lscale_from_tau = .false.
+    clubb_config_flags%l_use_C7_Richardson = .false.
+    clubb_config_flags%l_rcm_supersat_adj = .false.
+    clubb_config_flags%l_damp_wp3_Skw_squared = .false.
+    clubb_config_flags%l_update_pressure = .false.
+
     !  Set up CLUBB core.  Note that some of these inputs are overwrote
     !  when clubb_tend_cam is called.  The reason is that heights can change
     !  at each time step, which is why dummy arrays are read in here for heights
