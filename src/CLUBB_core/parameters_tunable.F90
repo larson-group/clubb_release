@@ -1274,11 +1274,11 @@ module parameters_tunable
     if (clubb_C5 /= init_value) C5 = clubb_C5
     if (clubb_C6rt /= init_value) then
        C6rt = clubb_C6rt
-       C6thl = C6rt
+       if (clubb_C6thl == init_value) C6thl = C6rt
     end if
     if (clubb_C6rtb /= init_value) C6rtb = clubb_C6rtb
     if (clubb_C6rtc /= init_value) C6rtc = clubb_C6rtc
-    if (clubb_C6thl /= init_value) C6thlb = clubb_C6thl
+    if (clubb_C6thl /= init_value) C6thl = clubb_C6thl
     if (clubb_C6thlb /= init_value) C6thlb = clubb_C6thlb
     if (clubb_C6thlc /= init_value) C6thlc = clubb_C6thlc
     if (clubb_C7 /= init_value) C7 = clubb_C7
@@ -1303,16 +1303,16 @@ module parameters_tunable
     if (clubb_pdf_component_stdev_factor_w /= init_value) &
        pdf_component_stdev_factor_w = clubb_pdf_component_stdev_factor_w
     if (clubb_mu /= init_value) mu = clubb_mu
-    if (clubb_c_K1 /= init_value) c_K2 = clubb_c_K1
+    if (clubb_c_K1 /= init_value) c_K1 = clubb_c_K1
     if (clubb_nu1 /= init_value) nu1 = clubb_nu1
     if (clubb_c_K2 /= init_value) c_K2 = clubb_c_K2
     if (clubb_nu2 /= init_value) nu2 = clubb_nu2
-    if (clubb_c_K8 /= init_value) c_K2 = clubb_c_K8
-    if (clubb_c_K9 /= init_value) c_K2 = clubb_c_K9
-    if (clubb_nu9 /= init_value) nu1 = clubb_nu9
+    if (clubb_c_K8 /= init_value) c_K8 = clubb_c_K8
+    if (clubb_c_K9 /= init_value) c_K9 = clubb_c_K9
+    if (clubb_nu9 /= init_value) nu9 = clubb_nu9
     if (clubb_c_K10 /= init_value) c_K10 = clubb_c_K10
-    if (clubb_c_K10h /= init_value) c_K10 = clubb_c_K10h
-    if (clubb_c_K_hmb /= init_value) c_K10 = clubb_c_K_hmb
+    if (clubb_c_K10h /= init_value) c_K10h = clubb_c_K10h
+    if (clubb_c_K_hmb /= init_value) c_K_hmb = clubb_c_K_hmb
     if (clubb_wpxp_L_thresh /= init_value) wpxp_L_thresh = clubb_wpxp_L_thresh
     if (clubb_lmin_coef /= init_value) lmin_coef = clubb_lmin_coef
     if (clubb_mult_coef /= init_value) mult_coef = clubb_mult_coef
