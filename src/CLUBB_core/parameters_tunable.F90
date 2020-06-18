@@ -1284,7 +1284,7 @@ module parameters_tunable
     if (clubb_C7 /= init_value) C7 = clubb_C7
     if (clubb_C7b /= init_value) C7b = clubb_C7b
     if (clubb_C8 /= init_value) C8 = clubb_C8
-    if (clubb_C8b /= init_value) C8 = clubb_C8b
+    if (clubb_C8b /= init_value) C8b = clubb_C8b
     if (clubb_C11 /= init_value) C11 = clubb_C11
     if (clubb_C11b /= init_value) C11b = clubb_C11b
     if (clubb_C11c /= init_value) C11c = clubb_C11c
