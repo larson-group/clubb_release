@@ -374,59 +374,78 @@ module parameters_tunable
   ! If adding more parameters for tuning via namelist, need to insert blocks
   ! accordingly in subroutines read_parameters and clubb_paramm_readnl
   ! (including updating list of nml variables)
-  real( kind = core_rknd ) ::      &
-    clubb_C1,                      &
-    clubb_C1b,                     &
-    clubb_C1c,                     &
-    clubb_C2rt,                    &
-    clubb_C2thl,                   &
-    clubb_C2rtthl,                 &
-    clubb_C4,                      &
-    clubb_C5,                      &
-    clubb_C6rt,                    &
-    clubb_C6rtb,                   &
-    clubb_C6rtc,                   &
-    clubb_C6thlb,                  &
-    clubb_C6thlc,                  &
-    clubb_C7,                      &
-    clubb_C7b,                     &
-    clubb_C8,                      &
-    clubb_C11,                     &
-    clubb_C11b,                    &
-    clubb_C11c,                    &
-    clubb_C14,                     &
-    clubb_C15,                     &
-    clubb_beta,                    &
-    clubb_gamma_coef,              &
-    clubb_gamma_coefb,             &
-    clubb_gamma_coefc,             &
-    clubb_mu,                      &
-    clubb_nu1,                     &
-    clubb_nu2,                     &
-    clubb_c_K2,                    &
-    clubb_c_K10,                   &
-    clubb_wpxp_L_thresh,           &
-    clubb_C_invrs_tau_bkgnd,       &
-    clubb_C_invrs_tau_sfc,         &
-    clubb_C_invrs_tau_shear,       &
-    clubb_C_invrs_tau_N2,          &
-    clubb_C_invrs_tau_N2_wp2,      &
-    clubb_C_invrs_tau_N2_xp2,      &
-    clubb_C_invrs_tau_N2_wpxp,     &
-    clubb_C_invrs_tau_N2_clear_wp3,&
+  real( kind = core_rknd ) ::           &
+    clubb_C1,                           &
+    clubb_C1b,                          &
+    clubb_C1c,                          &
+    clubb_C2rt,                         &
+    clubb_C2thl,                        &
+    clubb_C2rtthl,                      &
+    clubb_C4,                           &
+    clubb_C5,                           &
+    clubb_C6rt,                         &
+    clubb_C6rtb,                        &
+    clubb_C6rtc,                        &
+    clubb_C6thl,                        &
+    clubb_C6thlb,                       &
+    clubb_C6thlc,                       &
+    clubb_C7,                           &
+    clubb_C7b,                          &
+    clubb_C8,                           &
+    clubb_C8b,                          &
+    clubb_C11,                          &
+    clubb_C11b,                         &
+    clubb_C11c,                         &
+    clubb_C14,                          &
+    clubb_C15,                          &
+    clubb_beta,                         &
+    clubb_gamma_coef,                   &
+    clubb_gamma_coefb,                  &
+    clubb_gamma_coefc,                  &
+    clubb_pdf_component_stdev_factor_w, &
+    clubb_mu,                           &
+    clubb_c_K1,                         &
+    clubb_nu1,                          &
+    clubb_c_K2,                         &
+    clubb_nu2,                          &
+    clubb_c_K8,                         &
+    clubb_c_K9,                         &
+    clubb_nu9,                          &
+    clubb_c_K10,                        &
+    clubb_c_K10h,                       &
+    clubb_c_K_hmb,                      &
+    clubb_wpxp_L_thresh,                &
+    clubb_lmin_coef,                    &
+    clubb_mult_coef,                    &
+    clubb_Skw_denom_coef,               &
+    clubb_up2_vp2_factor,               &
+    clubb_Skw_max_mag,                  &
+    clubb_C_invrs_tau_bkgnd,            &
+    clubb_C_invrs_tau_sfc,              &
+    clubb_C_invrs_tau_shear,            &
+    clubb_C_invrs_tau_N2,               &
+    clubb_C_invrs_tau_N2_wp2,           &
+    clubb_C_invrs_tau_N2_xp2,           &
+    clubb_C_invrs_tau_N2_wpxp,          &
+    clubb_C_invrs_tau_N2_clear_wp3,     &
     clubb_C_wp2_splat
     
 !$omp threadprivate(clubb_C1, clubb_C1b, clubb_C1c, &
 !$omp   clubb_C2rt, clubb_C2thl, clubb_C2rtthl, clubb_C4, &
 !$omp   clubb_C5, clubb_C6rt, clubb_C6rtb, clubb_C6rtc, &
-!$omp   clubb_C6thlb, clubb_C6thlc, &
-!$omp   clubb_C7, clubb_C7b, clubb_C8, clubb_C11, clubb_C11b, clubb_C11c, &
-!$omp   clubb_C14, clubb_C15, &
+!$omp   clubb_C6thl, clubb_C6thlb, clubb_C6thlc, &
+!$omp   clubb_C7, clubb_C7b, clubb_C8, clubb_C8b, clubb_C11, clubb_C11b, &
+!$omp   clubb_C11c, clubb_C14, clubb_C15, &
 !$omp   clubb_beta, clubb_gamma_coef, clubb_gamma_coefb, clubb_gamma_coefc, &
-!$omp   clubb_mu, clubb_nu1, clubb_nu2, clubb_c_K2, clubb_c_K10, clubb_wpxp_L_thresh, &
-!$omp   clubb_C_invrs_tau_bkgnd, clubb_C_invrs_tau_sfc, clubb_C_invrs_tau_shear, &
-!$omp   clubb_C_invrs_tau_N2, clubb_C_invrs_tau_N2_wp2, clubb_C_invrs_tau_N2_xp2, &
-!$omp   clubb_C_invrs_tau_N2_wpxp, clubb_C_invrs_tau_N2_clear_wp3, clubb_C_wp2_splat)    
+!$omp   clubb_pdf_component_stdev_factor_w, clubb_mu, clubb_c_K1, clubb_nu1, &
+!$omp   clubb_c_K2, clubb_nu2, clubb_c_K8, clubb_c_K9, clubb_nu9, clubb_c_K10, &
+!$omp   clubb_c_K10h, clubb_c_K_hmb, clubb_wpxp_L_thresh, &
+!$omp   clubb_lmin_coef, clubb_mult_coef, clubb_Skw_denom_coef, &
+!$omp   clubb_up2_vp2_factor, clubb_Skw_max_mag, clubb_C_invrs_tau_bkgnd, &
+!$omp   clubb_C_invrs_tau_sfc, clubb_C_invrs_tau_shear, clubb_C_invrs_tau_N2, &
+!$omp   clubb_C_invrs_tau_N2_wp2, clubb_C_invrs_tau_N2_xp2, &
+!$omp   clubb_C_invrs_tau_N2_wpxp, clubb_C_invrs_tau_N2_clear_wp3, &
+!$omp   clubb_C_wp2_splat)    
     
 #endif /*E3SM*/
 
@@ -998,45 +1017,59 @@ module parameters_tunable
     character(len=*), intent(in) :: filename
 
     namelist /clubb_param_nl/      &
-    clubb_C1,                      &
-    clubb_C1b,                     &
-    clubb_C1c,                     &
-    clubb_C2rt,                    &
-    clubb_C2thl,                   &
-    clubb_C2rtthl,                 &
-    clubb_C4,                      &
-    clubb_C5,                      &
-    clubb_C6rt,                    &
-    clubb_C6rtb,                   &
-    clubb_C6rtc,                   &
-    clubb_C6thlb,                  &
-    clubb_C6thlc,                  &
-    clubb_C7,                      &
-    clubb_C7b,                     &
-    clubb_C8,                      &
-    clubb_C11,                     &
-    clubb_C11b,                    &
-    clubb_C11c,                    &
-    clubb_C14,                     &
-    clubb_C15,                     &
-    clubb_beta,                    &
-    clubb_gamma_coef,              &
-    clubb_gamma_coefb,             &
-    clubb_gamma_coefc,             &
-    clubb_mu,                      &
-    clubb_nu1,                     &
-    clubb_nu2,                     &
-    clubb_c_K2,                    &
-    clubb_c_K10,                   &
-    clubb_wpxp_L_thresh,           &
-    clubb_C_invrs_tau_bkgnd,       &
-    clubb_C_invrs_tau_sfc,         &
-    clubb_C_invrs_tau_shear,       &
-    clubb_C_invrs_tau_N2,          &
-    clubb_C_invrs_tau_N2_wp2,      &
-    clubb_C_invrs_tau_N2_xp2,      &
-    clubb_C_invrs_tau_N2_wpxp,     &
-    clubb_C_invrs_tau_N2_clear_wp3,&
+    clubb_C1,                           &
+    clubb_C1b,                          &
+    clubb_C1c,                          &
+    clubb_C2rt,                         &
+    clubb_C2thl,                        &
+    clubb_C2rtthl,                      &
+    clubb_C4,                           &
+    clubb_C5,                           &
+    clubb_C6rt,                         &
+    clubb_C6rtb,                        &
+    clubb_C6rtc,                        &
+    clubb_C6thl,                        &
+    clubb_C6thlb,                       &
+    clubb_C6thlc,                       &
+    clubb_C7,                           &
+    clubb_C7b,                          &
+    clubb_C8,                           &
+    clubb_C8b,                          &
+    clubb_C11,                          &
+    clubb_C11b,                         &
+    clubb_C11c,                         &
+    clubb_C14,                          &
+    clubb_C15,                          &
+    clubb_beta,                         &
+    clubb_gamma_coef,                   &
+    clubb_gamma_coefb,                  &
+    clubb_gamma_coefc,                  &
+    clubb_pdf_component_stdev_factor_w, &
+    clubb_mu,                           &
+    clubb_c_K1,                         &
+    clubb_nu1,                          &
+    clubb_c_K2,                         &
+    clubb_nu2,                          &
+    clubb_c_K8,                         &
+    clubb_c_K9,                         &
+    clubb_nu9,                          &
+    clubb_c_K10,                        &
+    clubb_c_K10h,                       &
+    clubb_c_K_hmb,                      &
+    clubb_wpxp_L_thresh,                &
+    clubb_lmin_coef,                    &
+    clubb_mult_coef,                    &
+    clubb_Skw_denom_coef,               &
+    clubb_up2_vp2_factor,               &
+    clubb_Skw_max_mag,                  &
+    clubb_C_invrs_tau_bkgnd,            &
+    clubb_C_invrs_tau_sfc,              &
+    clubb_C_invrs_tau_shear,            &
+    clubb_C_invrs_tau_N2,               &
+    clubb_C_invrs_tau_N2_wp2,           &
+    clubb_C_invrs_tau_N2_xp2,           &
+    clubb_C_invrs_tau_N2_wpxp,          &
+    clubb_C_invrs_tau_N2_clear_wp3,     &
     clubb_C_wp2_splat
 
     integer :: read_status
@@ -1058,11 +1091,13 @@ module parameters_tunable
     clubb_C6rt = init_value
     clubb_C6rtb = init_value
     clubb_C6rtc = init_value
+    clubb_C6thl = init_value
     clubb_C6thlb = init_value
     clubb_C6thlc = init_value
     clubb_C7 = init_value
     clubb_C7b = init_value
     clubb_C8 = init_value
+    clubb_C8b = init_value
     clubb_C11 = init_value
     clubb_C11b = init_value
     clubb_C11c = init_value
@@ -1072,12 +1107,24 @@ module parameters_tunable
     clubb_gamma_coef = init_value
     clubb_gamma_coefb = init_value
     clubb_gamma_coefc = init_value
+    clubb_pdf_component_stdev_factor_w = init_value
     clubb_mu = init_value
+    clubb_c_K1 = init_value
     clubb_nu1 = init_value
-    clubb_nu2 = init_value
     clubb_c_K2 = init_value
+    clubb_nu2 = init_value
+    clubb_c_K8 = init_value
+    clubb_c_K9 = init_value
+    clubb_nu9 = init_value
     clubb_c_K10 = init_value
+    clubb_c_K10h = init_value
+    clubb_c_K_hmb = init_value
     clubb_wpxp_L_thresh = init_value
+    clubb_lmin_coef = init_value
+    clubb_mult_coef = init_value
+    clubb_Skw_denom_coef = init_value
+    clubb_up2_vp2_factor = init_value
+    clubb_Skw_max_mag = init_value
     clubb_C_invrs_tau_bkgnd = init_value
     clubb_C_invrs_tau_sfc = init_value
     clubb_C_invrs_tau_shear = init_value
@@ -1114,11 +1161,13 @@ module parameters_tunable
    call mpibcast(clubb_C6rt,       1, mpir8,  0, mpicom)
    call mpibcast(clubb_C6rtb,      1, mpir8,  0, mpicom)
    call mpibcast(clubb_C6rtc,      1, mpir8,  0, mpicom)
+   call mpibcast(clubb_C6thl,      1, mpir8,  0, mpicom)
    call mpibcast(clubb_C6thlb,     1, mpir8,  0, mpicom)
    call mpibcast(clubb_C6thlc,     1, mpir8,  0, mpicom)
    call mpibcast(clubb_C7,         1, mpir8,  0, mpicom)
    call mpibcast(clubb_C7b,        1, mpir8,  0, mpicom)
    call mpibcast(clubb_C8,         1, mpir8,  0, mpicom)
+   call mpibcast(clubb_C8b,        1, mpir8,  0, mpicom)
    call mpibcast(clubb_C11,        1, mpir8,  0, mpicom)
    call mpibcast(clubb_C11b,       1, mpir8,  0, mpicom)
    call mpibcast(clubb_C11c,       1, mpir8,  0, mpicom)
@@ -1128,12 +1177,24 @@ module parameters_tunable
    call mpibcast(clubb_gamma_coef, 1, mpir8,  0, mpicom)
    call mpibcast(clubb_gamma_coefb,1, mpir8,  0, mpicom)
    call mpibcast(clubb_gamma_coefc,1, mpir8,  0, mpicom)
+   call mpibcast(clubb_pdf_component_stdev_factor_w, 1, mpir8,  0, mpicom)
    call mpibcast(clubb_mu,         1, mpir8,  0, mpicom)
+   call mpibcast(clubb_c_K1,       1, mpir8,  0, mpicom)
    call mpibcast(clubb_nu1,        1, mpir8,  0, mpicom)
-   call mpibcast(clubb_nu2,        1, mpir8,  0, mpicom)
    call mpibcast(clubb_c_K2,       1, mpir8,  0, mpicom)
+   call mpibcast(clubb_nu2,        1, mpir8,  0, mpicom)
+   call mpibcast(clubb_c_K8,       1, mpir8,  0, mpicom)
+   call mpibcast(clubb_c_K9,       1, mpir8,  0, mpicom)
+   call mpibcast(clubb_nu9,        1, mpir8,  0, mpicom)
    call mpibcast(clubb_c_K10,      1, mpir8,  0, mpicom)
+   call mpibcast(clubb_c_K10h,     1, mpir8,  0, mpicom)
+   call mpibcast(clubb_c_K_hmb,    1, mpir8,  0, mpicom)
    call mpibcast(clubb_wpxp_L_thresh, 1, mpir8,  0, mpicom)
+   call mpibcast(clubb_lmin_coef,  1, mpir8,  0, mpicom)
+   call mpibcast(clubb_mult_coef,  1, mpir8,  0, mpicom)
+   call mpibcast(clubb_Skw_denom_coef, 1, mpir8,  0, mpicom)
+   call mpibcast(clubb_up2_vp2_factor, 1, mpir8,  0, mpicom)
+   call mpibcast(clubb_Skw_max_mag, 1, mpir8,  0, mpicom)
    call mpibcast(clubb_C_invrs_tau_bkgnd, 1, mpir8,  0, mpicom)
    call mpibcast(clubb_C_invrs_tau_sfc, 1, mpir8,  0, mpicom)
    call mpibcast(clubb_C_invrs_tau_shear, 1, mpir8,  0, mpicom) 
@@ -1217,11 +1278,13 @@ module parameters_tunable
     end if
     if (clubb_C6rtb /= init_value) C6rtb = clubb_C6rtb
     if (clubb_C6rtc /= init_value) C6rtc = clubb_C6rtc
+    if (clubb_C6thl /= init_value) C6thlb = clubb_C6thl
     if (clubb_C6thlb /= init_value) C6thlb = clubb_C6thlb
     if (clubb_C6thlc /= init_value) C6thlc = clubb_C6thlc
     if (clubb_C7 /= init_value) C7 = clubb_C7
     if (clubb_C7b /= init_value) C7b = clubb_C7b
     if (clubb_C8 /= init_value) C8 = clubb_C8
+    if (clubb_C8b /= init_value) C8 = clubb_C8b
     if (clubb_C11 /= init_value) C11 = clubb_C11
     if (clubb_C11b /= init_value) C11b = clubb_C11b
     if (clubb_C11c /= init_value) C11c = clubb_C11c
@@ -1237,12 +1300,28 @@ module parameters_tunable
     ! Allows gamma_coefb to vary separately
     if (clubb_gamma_coefb /= init_value) gamma_coefb = clubb_gamma_coefb
     if (clubb_gamma_coefc /= init_value) gamma_coefc = clubb_gamma_coefc
+    if (clubb_pdf_component_stdev_factor_w /= init_value) &
+       pdf_component_stdev_factor_w = clubb_pdf_component_stdev_factor_w
     if (clubb_mu /= init_value) mu = clubb_mu
+    if (clubb_c_K1 /= init_value) c_K2 = clubb_c_K1
     if (clubb_nu1 /= init_value) nu1 = clubb_nu1
-    if (clubb_nu2 /= init_value) nu2 = clubb_nu2
     if (clubb_c_K2 /= init_value) c_K2 = clubb_c_K2
+    if (clubb_nu2 /= init_value) nu2 = clubb_nu2
+    if (clubb_c_K8 /= init_value) c_K2 = clubb_c_K8
+    if (clubb_c_K9 /= init_value) c_K2 = clubb_c_K9
+    if (clubb_nu9 /= init_value) nu1 = clubb_nu9
     if (clubb_c_K10 /= init_value) c_K10 = clubb_c_K10
+    if (clubb_c_K10h /= init_value) c_K10 = clubb_c_K10h
+    if (clubb_c_K_hmb /= init_value) c_K10 = clubb_c_K_hmb
     if (clubb_wpxp_L_thresh /= init_value) wpxp_L_thresh = clubb_wpxp_L_thresh
+    if (clubb_lmin_coef /= init_value) lmin_coef = clubb_lmin_coef
+    if (clubb_mult_coef /= init_value) mult_coef = clubb_mult_coef
+    if (clubb_Skw_denom_coef /= init_value) &
+       Skw_denom_coef = clubb_Skw_denom_coef
+    if (clubb_up2_vp2_factor /= init_value) &
+       up2_vp2_factor = clubb_up2_vp2_factor
+    if (clubb_Skw_max_mag /= init_value) &
+       Skw_max_mag = clubb_Skw_max_mag
     if (clubb_C_invrs_tau_bkgnd /= init_value) &
        C_invrs_tau_bkgnd = clubb_C_invrs_tau_bkgnd
     if (clubb_C_invrs_tau_sfc /= init_value) &
