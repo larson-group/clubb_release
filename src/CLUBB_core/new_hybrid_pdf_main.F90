@@ -56,7 +56,8 @@ module new_hybrid_pdf_main
         gr    ! Variable type(s)
 
     use constants_clubb, only: &
-        zero,    & ! Constant(s)
+        one_half, & ! Constant(s)
+        zero,     &
         fstderr
 
     use new_hybrid_pdf, only: &
@@ -73,6 +74,11 @@ module new_hybrid_pdf_main
         l_explicit_turbulent_adv_wp3,  & ! Variable(s)
         l_explicit_turbulent_adv_wpxp, &
         l_explicit_turbulent_adv_xpyp
+
+    use parameters_tunable, only: &
+        gamma_coef,  & ! Variable(s)
+        gamma_coefb, &
+        gamma_coefc
 
     use parameters_model, only: &
         sclr_dim
@@ -180,6 +186,16 @@ module new_hybrid_pdf_main
       coef_sigma_sclr_1_sqd, & ! Coefficient that is multiplied by <sclr'^2> [-]
       coef_sigma_sclr_2_sqd    ! Coefficient that is multiplied by <sclr'^2> [-]
 
+    ! Tunable parameter gamma.
+    ! When gamma goes to 0, the standard deviations of w in each PDF component
+    ! become small, and the spread between the two PDF component means of w
+    ! becomes large.  F_w goes to min_F_w.
+    ! When gamma goes to 1, the standard deviations of w in each PDF component
+    ! become large, and the spread between the two PDF component means of w
+    ! becomes small.  F_w goes to max_F_w.
+    real( kind = core_rknd ), dimension(gr%nz) :: &
+      gamma_Skw_fnc    ! Value of parameter gamma from tunable Skw function  [-]
+
     real( kind = core_rknd ), dimension(gr%nz) :: &
       zeta_w    ! Parameter for the PDF component variances of w           [-]
 
@@ -285,6 +301,11 @@ module new_hybrid_pdf_main
     integer :: k, j  ! Loop indices
 
 
+    ! Calculate the value of gamma_Skw_fnc.
+    gamma_Skw_fnc &
+    = gamma_coefb + ( gamma_coef - gamma_coefb ) &
+                    * exp( -one_half * ( Skw / gamma_coefc )**2 )
+
     ! Calculate the maximum value of the square of the correlation of w and a
     ! scalar when scalars are used.
     ! Initialize max_corr_w_sclr_sqd to 0.  It needs to retain this value even
@@ -306,6 +327,7 @@ module new_hybrid_pdf_main
     ! Vertical velocity, w, will always be the setter variable.
     call calc_F_w_zeta_w( Skw, wprtp, wpthlp, upwp, vpwp, & ! In
                           wp2, rtp2, thlp2, up2, vp2,     & ! In
+                          gamma_Skw_fnc,                  & ! In
                           max_corr_w_sclr_sqd,            & ! In
                           F_w, zeta_w, min_F_w, max_F_w   ) ! Out
 
@@ -783,6 +805,7 @@ module new_hybrid_pdf_main
   !=============================================================================
   elemental subroutine calc_F_w_zeta_w( Skw, wprtp, wpthlp, upwp, vpwp, & ! In
                                         wp2, rtp2, thlp2, up2, vp2,     & ! In
+                                        gamma_Skw_fnc,                  & ! In
                                         max_corr_w_sclr_sqd,            & ! In
                                         F_w, zeta_w, min_F_w, max_F_w   ) ! Out
 
@@ -872,6 +895,16 @@ module new_hybrid_pdf_main
       up2,    & ! Variance (overall) of u              [m^2/s^2]
       vp2       ! Variance (overall) of v              [m^2/s^2]
 
+    ! Tunable parameter gamma.
+    ! When gamma goes to 0, the standard deviations of w in each PDF component
+    ! become small, and the spread between the two PDF component means of w
+    ! becomes large.  F_w goes to min_F_w.
+    ! When gamma goes to 1, the standard deviations of w in each PDF component
+    ! become large, and the spread between the two PDF component means of w
+    ! becomes small.  F_w goes to max_F_w.
+    real( kind = core_rknd ), intent(in) :: &
+      gamma_Skw_fnc    ! Value of parameter gamma from tunable Skw function  [-]
+
     real( kind = core_rknd ), intent(in) :: &
       max_corr_w_sclr_sqd    ! Max value of wpsclrp^2 / ( wp2 * sclrp2 )     [-]
 
@@ -956,9 +989,14 @@ module new_hybrid_pdf_main
 !          + max_F_w * ( one - exp_Skw_interp_factor )
 
     ! For now, use a formulation similar to what is used for ADG1.
-    ! This can be changed later.  Here, the 0.32 is equivalent to the value
-    ! of gamma_Skw_fnc that is used with ADG1.
-    F_w = max_F_w - 0.75_core_rknd * ( max_F_w - min_F_w )
+    ! Tunable parameter gamma.
+    ! When gamma goes to 0, the standard deviations of w in each PDF component
+    ! become small, and the spread between the two PDF component means of w
+    ! becomes large.  F_w goes to min_F_w.
+    ! When gamma goes to 1, the standard deviations of w in each PDF component
+    ! become large, and the spread between the two PDF component means of w
+    ! becomes small.  F_w goes to max_F_w.
+    F_w = max_F_w - gamma_Skw_fnc * ( max_F_w - min_F_w )
 
     ! The value of zeta_w must be greater than -1.
     zeta_w_star = pdf_component_stdev_factor_w - one
