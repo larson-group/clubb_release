@@ -28,7 +28,7 @@ for (suffix, var) in (('zm','wp2'),('zt','wp3')):
     f.colorbar(pcr, ax=ax[m])
     ax[m].set_ylabel(sys.argv[1+m])
     ax[m].grid(True, which='major', axis='x')
-  pyplot.setp(ax, xlim=(1000,1440), ylim=(0,5000))
+  pyplot.setp(ax, xlim=(500,1500), ylim=(0,5000))
   ax[0].set_title(var)
   ax[M-1].set_xlabel('time (min)')
   f.tight_layout()

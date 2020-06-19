@@ -10,32 +10,32 @@ matplotlib.rcParams.update({'font.size': 16})
 
 if (__name__ == '__main__'):
 
-  if (len(sys.argv) < 3):
-    print("usage: python animate.py zm_file zt_file <start_index> <stop_index> <animation_step> <output_file>")
+  if (len(sys.argv) < 2):
+    print("usage: python animate.py run_name  <start_index> <stop_index> <animation_step> <output_file>")
     sys.exit(1)
 
-  zm_file = sys.argv[1]
+  zm_file = sys.argv[1] + '_zm.nc'
   zm_data = Dataset(zm_file)
-  zt_file = sys.argv[2]
+  zt_file = sys.argv[1] + '_zt.nc'
   zt_data = Dataset(zt_file)
 
-  if (len(sys.argv) > 3):
-    n0 = int(sys.argv[3])
+  if (len(sys.argv) > 2):
+    n0 = int(sys.argv[2])
   else:
     n0 = 0
 
-  if (len(sys.argv) > 4):
-    nMax = int(sys.argv[4])
+  if (len(sys.argv) > 3):
+    nMax = int(sys.argv[3])
   else:
     nMax = -1
 
-  if (len(sys.argv) > 5):
-    step = int(sys.argv[5])
+  if (len(sys.argv) > 4):
+    step = int(sys.argv[4])
   else:
     step = 1
 
-  if (len(sys.argv) > 6):
-    outputFile = sys.argv[6]
+  if (len(sys.argv) > 5):
+    outputFile = sys.argv[5]
   else:
     outputFile = None
 
