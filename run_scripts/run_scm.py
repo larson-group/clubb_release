@@ -3,7 +3,8 @@
 import os
 import sys
 
-modifiable_parameters = ['dt', 'dt_output', 'microphysics', 'format', 'prefix', 'dz', 'Tsfc', 'godunov']
+modifiable_parameters = ['dt', 'dt_output', 'microphysics', 'format', 'prefix', 'dz',
+                         'Tsfc', 'godunov', 'aterms']
 
 # TODO: check that this is being run from the run_scripts directory
 os.chdir('../output')
@@ -61,6 +62,10 @@ if ('dz' in parameters):
   parameters['grid_type'] = '1'
   parameters['zt_filename'] = "''"
 
+# set l_standard_term_ta to true unless user has specified something else
+if ('aterms' not in parameters):
+  parameters['aterms'] = 'unmodified'
+
 # warn about Tsfc parameter
 if ('Tsfc' in parameters):
   print("WARNING: Specifying Tsfc doesn't change model parammeters...")
@@ -111,15 +116,16 @@ input_file.close()
 input_file = open('../input/tunable_parameters/configurable_model_flags.in', 'r')
 input_lines = input_file.readlines()
 input_file.close()
-if ('godunov' in parameters):
-  for line in input_lines:
-    if (parameters['godunov'] == 'scalarwp3' and line.startswith('l_upwind_wp3_ta')):
-      line = line.replace('false','true')
-      print('Setting l_upwind_wp3_ta flag to true')
-      print(line)
-    line_collections.append(line)
-else:
-  line_collections.append(input_lines)
+for line in input_lines:
+  if (parameters['godunov'] == 'scalarwp3' and line.startswith('l_upwind_wp3_ta')):
+    line = line.replace('false','true')
+    print('Setting l_upwind_wp3_ta flag to true')
+    print(line)
+  elif (parameters['aterms'] == 'unmodified' and line.startswith('l_standard_term_ta')):
+    line = line.replace('false','true')
+    print('Setting l_standard_term_ta flag to true')
+    print(line)
+  line_collections.append(line)
 # "MOD_MODEL" file
 input_file = open(model_file_name, 'r')
 line_collections.append(input_file.readlines())
