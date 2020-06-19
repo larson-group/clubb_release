@@ -4,7 +4,7 @@ import os
 import sys
 
 modifiable_parameters = ['dt', 'dt_output', 'microphysics', 'format', 'prefix', 'dz',
-                         'Tsfc', 'godunov', 'aterms']
+                         'Tsfc', 'godunov', 'aterms', 'levels']
 
 # TODO: check that this is being run from the run_scripts directory
 os.chdir('../output')
@@ -61,6 +61,10 @@ if ('dt' in parameters and 'dt_output' not in parameters):
 if ('dz' in parameters):
   parameters['grid_type'] = '1'
   parameters['zt_filename'] = "''"
+
+# if levels specified, expand number into file name
+if ('levels' in parameters):
+  parameters['zt_filename'] = "'../input/grid/deep_convection_{}lev_27km_zt_grid.grd'".format(parameters['levels'])
 
 # set l_standard_term_ta to true unless user has specified something else
 if ('aterms' not in parameters):
