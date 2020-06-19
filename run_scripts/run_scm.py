@@ -109,7 +109,6 @@ line_collections.append(input_file.readlines())
 input_file.close()
 # "FLAGS" file
 input_file = open('../input/tunable_parameters/configurable_model_flags.in', 'r')
-modified_lines = []
 input_lines = input_file.readlines()
 input_file.close()
 if ('godunov' in parameters):
@@ -119,6 +118,8 @@ if ('godunov' in parameters):
       print('Setting l_upwind_wp3_ta flag to true')
       print(line)
     line_collections.append(line)
+else:
+  line_collections.append(input_lines)
 # "MOD_MODEL" file
 input_file = open(model_file_name, 'r')
 line_collections.append(input_file.readlines())
