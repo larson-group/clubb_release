@@ -1,11 +1,7 @@
 '''
 :author: Steffen Domke
 :date: Mid 2019
-TODO:   - Should invalid variables produce zero lines or none at all?
-        - fallback <-> calc
-        - Update axis labels at TASK
-        - Implement/copy sam calcs
-        - Figure out how to include standard plots in VariableGroupBase (labels etc.)
+TODO:   - Figure out how to include standard plots in VariableGroupBase (labels etc.)
 '''
 import numpy as np
 

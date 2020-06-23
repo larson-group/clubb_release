@@ -30,6 +30,7 @@ class Panel:
                  sci_scale = None, centered = False):
         """
         Creates a new panel
+
         :param plots: list of Line objects to plot onto the panel
         :param panel_type: Type of panel being plotted (i.e. budget, profile, timeseries)
         :param title: The title of this plot (e.g. 'Liquid water potential tempature')
@@ -52,6 +53,7 @@ class Panel:
     def __init_axis_titles__(self):
         """
         Sets the axis titles for this Panel depending on self.panel_type
+
         :return: None
         """
         if self.panel_type is Panel.TYPE_PROFILE:
@@ -72,14 +74,14 @@ class Panel:
         """
         Saves a single panel/graph as image to the output directory specified by the pyplotgen launch parameters
 
-        :param output_folder: 
-        :param casename: The name of the case that's plotted in this panel
+        :param output_folder: String containing path to folder in which the image files should be created
+        :param casename: The name of the case that is plotted in this panel
         :param replace_images: Switch to tell pyplotgen if existing files should be overwritten
         :param no_legends: If False, a legend will be generated for this Panel
         :param thin_lines: If True, the linewidth for this Panel is specified in Style_definitions.THIN_LINE_THICKNESS
         :param alphabetic_id: A string printed into the Panel at coordinates (.9,.9) as an identifier.
         :paired_plots: If no format is specified and paired_plots is True,
-                       use the color/style rotation specified in Style_definitions.py
+            use the color/style rotation specified in Style_definitions.py
         :return: None
         """
         print('Plotting panel {}'.format(self.title))
@@ -136,8 +138,8 @@ class Panel:
 
             if x_data.shape[0] != y_data.shape[0]:
                 raise ValueError("X and Y dependent_data have different shapes X: "+str(x_data.shape)
-                                 + "  Y:" + str(y_data.shape) + ". Attempted to plot " + self.title + " using X: " +
-                                 self.x_title + "  Y: " + self.y_title)
+                                 + "  Y:" + str(y_data.shape) + ". Attempted to plot " + self.title +
+                                 " using X: " + self.x_title + "  Y: " + self.y_title)
             # Set correct line formatting and plot data
             if var.line_format == Style_definitions.BENCHMARK_LINE_STYLES['sam']:
                 linewidth = Style_definitions.LES_LINE_THICKNESS

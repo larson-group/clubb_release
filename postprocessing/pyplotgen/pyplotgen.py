@@ -202,9 +202,11 @@ class PyPlotGen:
         clubb_has_case = clubb_given and case_def['name'] in self.clubb_datasets.keys()
 
         if self.nightly:
-            return clubb_has_case and (e3sm_has_case or sam_has_case or cam_has_case or wrf_has_case) or self.benchmark_only
+            return clubb_has_case and (e3sm_has_case or sam_has_case or cam_has_case or wrf_has_case) \
+                or self.benchmark_only
         else:
-            return e3sm_has_case or sam_has_case or cam_has_case or wrf_has_case or clubb_has_case or self.benchmark_only
+            return e3sm_has_case or sam_has_case or cam_has_case or wrf_has_case \
+                or clubb_has_case or self.benchmark_only
 
     def __copySetupFiles__(self):
         """
@@ -351,9 +353,9 @@ def __process_args__():
     args.wrf = __trimTrailingSlash__(args.wrf)
 
     # If no input is specified at all, use the nc files in the default CLUBB output folder
-    no_folders_inputed = len(args.e3sm) == 0 and len(args.sam) == 0 and len(args.clubb) == 0 \
+    no_folders_inputted = len(args.e3sm) == 0 and len(args.sam) == 0 and len(args.clubb) == 0 \
                          and len(args.wrf) == 0 and len(args.cam) == 0
-    if no_folders_inputed and not args.benchmark_only:
+    if no_folders_inputted and not args.benchmark_only:
         args.clubb = ["../../output"]
 
     # Set flags for special dependent_data

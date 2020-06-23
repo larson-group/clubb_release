@@ -217,7 +217,9 @@ module advance_clubb_core_module
         C_invrs_tau_N2_xp2, &
         C_invrs_tau_N2_wp2, &
         C_invrs_tau_N2_wpxp, &
-        C_invrs_tau_N2_clear_wp3
+        C_invrs_tau_N2_clear_wp3, &
+        xp3_coef_base, &
+        xp3_coef_slope
 
     use parameters_model, only: &
         sclr_dim, & ! Variable(s)
@@ -230,7 +232,8 @@ module advance_clubb_core_module
         l_host_applies_sfc_fluxes, & ! Variable(s)
         l_gamma_Skw, &
         l_advance_xp3, &
-        l_use_wp3_pr3
+        l_use_wp3_pr3, &
+        iiPDF_ADG1
 
     use grid_class, only: &
         gr,  & ! Variable(s)
@@ -298,7 +301,7 @@ module advance_clubb_core_module
         xp3_LG_2005_ansatz
 
     use clip_explicit, only: &
-      clip_covars_denom ! Procedure(s)
+        clip_covars_denom ! Procedure(s)
 
     use T_in_K_module, only: &
         ! Read values from namelist
@@ -596,9 +599,11 @@ module advance_clubb_core_module
 #endif
 
     real( kind = core_rknd ), dimension(gr%nz) :: &
-      Skw_zm,   & ! Skewness of w on momentum levels             [-]
-      Skw_zt,   & ! Skewness of w on thermodynamic levels        [-]
-      thvm        ! Virtual potential temperature                [K]
+      Skw_zm,       & ! Skewness of w on momentum levels                 [-]
+      Skw_zt,       & ! Skewness of w on thermodynamic levels            [-]
+      thvm,         & ! Virtual potential temperature                    [K]
+      thvm_zm,      & ! Virtual potential temperature on momentum levs.  [K]
+      ddzm_thvm_zm    ! d(thvm_zm)/dz, centered over thermodynamic levs. [K/m]
 
     real( kind = core_rknd ), dimension(gr%nz) :: &
       rsat   ! Saturation mixing ratio  ! Brian
@@ -678,10 +683,11 @@ module advance_clubb_core_module
       Km_zm_numerator_term  ! term in numerator of Km_zm [-]
 
     real( kind = core_rknd ), dimension(gr%nz) :: &
-      gamma_Skw_fnc, & ! Gamma as a function of skewness          [-]
-      sigma_sqd_w,   & ! PDF width parameter (momentum levels)    [-]
+      gamma_Skw_fnc,  & ! Gamma as a function of skewness               [-]
+      sigma_sqd_w,    & ! PDF width parameter (momentum levels)         [-]
       sigma_sqd_w_zt, & ! PDF width parameter (thermodynamic levels)    [-]
-      sqrt_em_zt        ! sqrt( em ) on zt levels; where em is TKE [m/s]
+      sqrt_em_zt,     & ! sqrt( em ) on zt levels; where em is TKE      [m/s]
+      xp3_coef_fnc      ! Coefficient in simple xp3 equation            [-]
 !Lscale_weight Uncomment this if you need to use this vairable at some point.
 
     real( kind = core_rknd ), dimension(gr%nz) ::  &
@@ -746,6 +752,7 @@ module advance_clubb_core_module
        brunt_vaisala_freq_sqd_dry,   & ! dry N^2
        brunt_vaisala_freq_sqd_moist, & ! moist N^2
        brunt_vaisala_freq_sqd_plus,  & ! N^2 from another way
+       brunt_vaisala_freq_sqd_zt,    & ! Buoyancy frequency squared on t-levs.        [s^-2]
        brunt_freq_out_cloud,         & !
        invrs_tau_zm,                 & ! One divided by tau on zm levels              [s^-1]
        invrs_tau_xp2_zm,             & ! One divided by tau_xp2                       [s^-1]
@@ -766,8 +773,6 @@ module advance_clubb_core_module
        tau_xp2_zt,                   & ! Tau xp2 at zt levels
        tau_no_N2_zt                    ! 
  
-
-
     real( kind = core_rknd ), parameter :: &
        ufmin = 0.01_core_rknd,       & ! minimum value of friction velocity     [m/s]
        z_displace = 20.0_core_rknd   ! displacement of log law profile above ground   [m]
@@ -1656,7 +1661,8 @@ module advance_clubb_core_module
       ! Advance or otherwise calculate <thl'^3>, <rt'^3>, and
       ! <sclr'^3>.
       !----------------------------------------------------------------
-      if ( l_advance_xp3 ) then
+      if ( l_advance_xp3 &
+           .and. clubb_config_flags%iiPDF_type /= iiPDF_ADG1 ) then
 
          ! Advance <rt'^3>, <thl'^3>, and <sclr'^3> one model timestep using a
          ! simplified form of the <x'^3> predictive equation.  The simplified
@@ -1668,8 +1674,8 @@ module advance_clubb_core_module
                            sclrm, sclrp2, wpsclrp, wpsclrp2,   & ! Intent(in)
                            rtp3, thlp3, sclrp3                 ) ! Intent(inout)
 
-         ! Use the Larson and Golaz (2005) ansatz for the ADG1 PDF to
-         ! calculate <u'^3> and <v'^3>.
+         ! Use a modified form of the Larson and Golaz (2005) ansatz for the
+         ! ADG1 PDF to calculate <u'^3> and <v'^3> for another type of PDF.
          Skw_zt(1:gr%nz) = Skx_func( wp2_zt(1:gr%nz), wp3(1:gr%nz), w_tol )
 
          upwp_zt = zm2zt( upwp )
@@ -1677,18 +1683,30 @@ module advance_clubb_core_module
          up2_zt  = max( zm2zt( up2 ), w_tol_sqd ) ! Positive def. quantity
          vp2_zt  = max( zm2zt( vp2 ), w_tol_sqd ) ! Positive def. quantity
 
-         sigma_sqd_w_zt = max( zm2zt( sigma_sqd_w ), zero_threshold )
+         thvm_zm = zt2zm( thvm )
+         ddzm_thvm_zm = ddzm( thvm_zm )
+         brunt_vaisala_freq_sqd_zt = max( ( grav / thvm ) * ddzm_thvm_zm, zero )
+
+         ! The xp3_coef_fnc is used in place of sigma_sqd_w_zt when the ADG1 PDF
+         ! is not being used.  The xp3_coef_fnc provides some extra tunability to
+         ! the simple xp3 equation.
+         ! When xp3_coef_fnc goes to 0, the value of Skx goes to the smallest
+         ! magnitude permitted by the function.  When xp3_coef_fnc goes to 1, the
+         ! magnitude of Skx becomes huge.
+         xp3_coef_fnc &
+         = xp3_coef_base &
+           + ( one - xp3_coef_base ) &
+             * ( one - exp( brunt_vaisala_freq_sqd_zt / xp3_coef_slope ) )
 
          up3 = xp3_LG_2005_ansatz( Skw_zt, upwp_zt, wp2_zt, &
-                                   up2_zt, sigma_sqd_w_zt, w_tol )
+                                   up2_zt, xp3_coef_fnc, w_tol )
 
          vp3 = xp3_LG_2005_ansatz( Skw_zt, vpwp_zt, wp2_zt, &
-                                   vp2_zt, sigma_sqd_w_zt, w_tol )
+                                   vp2_zt, xp3_coef_fnc, w_tol )
 
-      else
+      else ! .not. l_advance_xp3 .or. clubb_config_flags%iiPDF_type = iiPDF_ADG1
 
-         ! Use the Larson and Golaz (2005) ansatz for the ADG1 PDF to
-         ! calculate <rt'^3>, <thl'^3>, <u'^3>, <v'^3>, and <sclr'^3>.
+         ! The ADG1 PDF must use this option.
          Skw_zt(1:gr%nz) = Skx_func( wp2_zt(1:gr%nz), wp3(1:gr%nz), w_tol )
 
          wpthlp_zt = zm2zt( wpthlp )
@@ -1701,32 +1719,85 @@ module advance_clubb_core_module
          up2_zt  = max( zm2zt( up2 ), w_tol_sqd ) ! Positive def. quantity
          vp2_zt  = max( zm2zt( vp2 ), w_tol_sqd ) ! Positive def. quantity
 
-         sigma_sqd_w_zt = max( zm2zt( sigma_sqd_w ), zero_threshold )
+         if ( clubb_config_flags%iiPDF_type == iiPDF_ADG1 ) then
 
-         thlp3 = xp3_LG_2005_ansatz( Skw_zt, wpthlp_zt, wp2_zt, &
-                                     thlp2_zt, sigma_sqd_w_zt, thl_tol )
+            ! Use the Larson and Golaz (2005) ansatz for the ADG1 PDF to
+            ! calculate <rt'^3>, <thl'^3>, <u'^3>, <v'^3>, and <sclr'^3>.
+            sigma_sqd_w_zt = max( zm2zt( sigma_sqd_w ), zero_threshold )
 
-         rtp3 = xp3_LG_2005_ansatz( Skw_zt, wprtp_zt, wp2_zt, &
-                                    rtp2_zt, sigma_sqd_w_zt, rt_tol )
+            thlp3 = xp3_LG_2005_ansatz( Skw_zt, wpthlp_zt, wp2_zt, &
+                                        thlp2_zt, sigma_sqd_w_zt, thl_tol )
 
-         up3 = xp3_LG_2005_ansatz( Skw_zt, upwp_zt, wp2_zt, &
-                                   up2_zt, sigma_sqd_w_zt, w_tol )
+            rtp3 = xp3_LG_2005_ansatz( Skw_zt, wprtp_zt, wp2_zt, &
+                                       rtp2_zt, sigma_sqd_w_zt, rt_tol )
 
-         vp3 = xp3_LG_2005_ansatz( Skw_zt, vpwp_zt, wp2_zt, &
-                                   vp2_zt, sigma_sqd_w_zt, w_tol )
+            up3 = xp3_LG_2005_ansatz( Skw_zt, upwp_zt, wp2_zt, &
+                                      up2_zt, sigma_sqd_w_zt, w_tol )
 
-         do i = 1, sclr_dim, 1
+            vp3 = xp3_LG_2005_ansatz( Skw_zt, vpwp_zt, wp2_zt, &
+                                      vp2_zt, sigma_sqd_w_zt, w_tol )
 
-            wpsclrp_zt = zm2zt( wpsclrp(:,i) )
-            sclrp2_zt  = max( zm2zt( sclrp2(:,i) ), sclr_tol(i)**2 )
+            do i = 1, sclr_dim, 1
 
-            sclrp3(:,i) = xp3_LG_2005_ansatz( Skw_zt, wpsclrp_zt, wp2_zt, &
-                                              sclrp2_zt, sigma_sqd_w_zt, &
-                                              sclr_tol(i) )
+               wpsclrp_zt = zm2zt( wpsclrp(:,i) )
+               sclrp2_zt  = max( zm2zt( sclrp2(:,i) ), sclr_tol(i)**2 )
 
-         enddo ! i = 1, sclr_dim
+               sclrp3(:,i) = xp3_LG_2005_ansatz( Skw_zt, wpsclrp_zt, wp2_zt, &
+                                                 sclrp2_zt, sigma_sqd_w_zt, &
+                                                 sclr_tol(i) )
 
-      endif ! l_advance_xp3
+            enddo ! i = 1, sclr_dim
+
+         else ! clubb_config_flags%iiPDF_type /= iiPDF_ADG1
+
+            ! Use a modified form of the Larson and Golaz (2005) ansatz for the
+            ! ADG1 PDF to calculate <u'^3> and <v'^3> for another type of PDF.
+            thvm_zm = zt2zm( thvm )
+            ddzm_thvm_zm = ddzm( thvm_zm )
+            brunt_vaisala_freq_sqd_zt &
+            = max( ( grav / thvm ) * ddzm_thvm_zm, zero )
+
+            ! The xp3_coef_fnc is used in place of sigma_sqd_w_zt when the
+            ! ADG1 PDF is not being used.  The xp3_coef_fnc provides some extra
+            ! tunability to the simple xp3 equation.
+            ! When xp3_coef_fnc goes to 0, the value of Skx goes to the smallest
+            ! magnitude permitted by the function.  When xp3_coef_fnc goes to 1,
+            ! the magnitude of Skx becomes huge.
+            ! The value of Skx becomes large near cloud top, where there is a
+            ! higher degree of static stability.  The exp{ } portion of the
+            ! xp3_coef_fnc allows the xp3_coef_fnc to become larger in regions
+            ! of high static stability, producing larger magnitude values of Skx.
+            xp3_coef_fnc &
+            = xp3_coef_base &
+              + ( one - xp3_coef_base ) &
+                * ( one - exp( brunt_vaisala_freq_sqd_zt / xp3_coef_slope ) )
+
+            thlp3 = xp3_LG_2005_ansatz( Skw_zt, wpthlp_zt, wp2_zt, &
+                                        thlp2_zt, xp3_coef_fnc, thl_tol )
+
+            rtp3 = xp3_LG_2005_ansatz( Skw_zt, wprtp_zt, wp2_zt, &
+                                       rtp2_zt, xp3_coef_fnc, rt_tol )
+
+            up3 = xp3_LG_2005_ansatz( Skw_zt, upwp_zt, wp2_zt, &
+                                      up2_zt, xp3_coef_fnc, w_tol )
+
+            vp3 = xp3_LG_2005_ansatz( Skw_zt, vpwp_zt, wp2_zt, &
+                                      vp2_zt, xp3_coef_fnc, w_tol )
+
+            do i = 1, sclr_dim, 1
+
+               wpsclrp_zt = zm2zt( wpsclrp(:,i) )
+               sclrp2_zt  = max( zm2zt( sclrp2(:,i) ), sclr_tol(i)**2 )
+
+               sclrp3(:,i) = xp3_LG_2005_ansatz( Skw_zt, wpsclrp_zt, wp2_zt, &
+                                                 sclrp2_zt, xp3_coef_fnc, &
+                                                 sclr_tol(i) )
+
+            enddo ! i = 1, sclr_dim
+
+         endif ! clubb_config_flags%iiPDF_type == iiPDF_ADG1
+
+      endif ! l_advance_xp3 .and. clubb_config_flags%iiPDF_type /= iiPDF_ADG1
 
       !----------------------------------------------------------------
       ! Advance the horizontal mean winds (um, vm),

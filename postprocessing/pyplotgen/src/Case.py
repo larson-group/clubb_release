@@ -41,11 +41,11 @@ class Case:
         :param wrf_folders: List of foldernames containing wrf netcdf files to be plotted
         :param plot_les: If True pyplotgen plots LES lines, if False pyplotgen does not plot LES lines
         :param plot_budgets: If True pyplotgen will plot Budgets in addition to the other plots
-                If False (default), pyplotgen will not plot budgets
+            If False (default), pyplotgen will not plot budgets
         :param plot_r408: If True, pyplotgen will plot the Chris Golaz 'best ever' clubb r408 dependent_data lines
-                If False (default), pyplotgen will not plot the Chris Golaz 'best ever' clubb r408 dependent_data lines
+            If False (default), pyplotgen will not plot the Chris Golaz 'best ever' clubb r408 dependent_data lines
         :param plot_hoc: If True, pyplotgen will plot the HOC 2005 dependent_data lines
-                If False (default), pyplotgen will not plot the HOC 2005 dependent_data lines
+            If False (default), pyplotgen will not plot the HOC 2005 dependent_data lines
         :param e3sm_dirs: List of foldernames containing e3sm netcdf files to be plotted
         :param cam_folders: List of foldernames containing cam netcdf files to be plotted
         """
@@ -303,7 +303,6 @@ class Case:
             e.g. if one case ends on label (ad), the next case will start on (a).
         :return: None
         """
-
         print("\n\tSaving panels to .png images")
         num_plots = len(self.panels)
         curr_panel_num = 0

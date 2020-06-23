@@ -1,10 +1,7 @@
 '''
 :author: Steffen Domke
 :date: Mid 2019
-TODO:   - Should invalid variables produce zero lines or none at all?
-        - Fallback <-> calc
-        - Arrange lines so that styles match for different panels -> reduced momentum flux budgets
-        - Does not work in the current implementation of pyplotgen, as SAM cannot be plotted alone
+TODO:   - Arrange lines so that styles match for different panels -> reduced momentum flux budgets
 '''
 from src.Panel import Panel
 from src.VariableGroup import VariableGroup
