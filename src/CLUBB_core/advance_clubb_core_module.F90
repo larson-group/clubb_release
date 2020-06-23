@@ -217,7 +217,9 @@ module advance_clubb_core_module
         C_invrs_tau_N2_xp2, &
         C_invrs_tau_N2_wp2, &
         C_invrs_tau_N2_wpxp, &
-        C_invrs_tau_N2_clear_wp3
+        C_invrs_tau_N2_clear_wp3, &
+        xp3_coef_base, &
+        xp3_coef_slope
 
     use parameters_model, only: &
         sclr_dim, & ! Variable(s)
@@ -771,10 +773,6 @@ module advance_clubb_core_module
        tau_xp2_zt,                   & ! Tau xp2 at zt levels
        tau_no_N2_zt                    ! 
  
-    real( kind = core_rknd ), parameter :: &
-       xp3_coef_base  = 0.25_core_rknd, &
-       xp3_coef_slope = 0.01_core_rknd
-
     real( kind = core_rknd ), parameter :: &
        ufmin = 0.01_core_rknd,       & ! minimum value of friction velocity     [m/s]
        z_displace = 20.0_core_rknd   ! displacement of log law profile above ground   [m]

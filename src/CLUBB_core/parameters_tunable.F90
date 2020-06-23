@@ -283,6 +283,12 @@ module parameters_tunable
 
 !$omp threadprivate( up2_vp2_factor )
 
+  real( kind = core_rknd ), public :: &
+    xp3_coef_base  = 0.25_core_rknd, & ! "Base" value of xp3_coef in simple eqn
+    xp3_coef_slope = 0.01_core_rknd    ! Slope in regards to Brunt-Vaisla freq.
+
+!$omp threadprivate( xp3_coef_base, xp3_coef_slope )
+
   ! Since we lack a devious way to do this just once, this namelist
   ! must be changed as well when a new parameter is added.
   namelist /clubb_params_nl/  & 
@@ -301,7 +307,8 @@ module parameters_tunable
     omicron, zeta_vrnce_rat, upsilon_precip_frac_rat, &
     lambda0_stability_coef, mult_coef, taumin, taumax, mu, Lscale_mu_coef, &
     Lscale_pert_coef, alpha_corr, Skw_denom_coef, c_K10, c_K10h, &
-    thlp2_rad_coef, thlp2_rad_cloud_frac_thresh, up2_vp2_factor, Skw_max_mag, &
+    thlp2_rad_coef, thlp2_rad_cloud_frac_thresh, up2_vp2_factor, &
+    Skw_max_mag, xp3_coef_base, xp3_coef_slope, &
     C_invrs_tau_bkgnd, C_invrs_tau_sfc, C_invrs_tau_shear, C_invrs_tau_N2, &
     C_invrs_tau_N2_wp2, C_invrs_tau_N2_xp2, &
     C_invrs_tau_N2_wpxp, C_invrs_tau_N2_clear_wp3
@@ -361,7 +368,8 @@ module parameters_tunable
        "C_invrs_tau_sfc             ", "C_invrs_tau_shear           ", &
        "C_invrs_tau_N2              ", "C_invrs_tau_N2_wp2          ", &
        "C_invrs_tau_N2_xp2          ", "C_invrs_tau_N2_wpxp         ", &
-       "C_invrs_tau_N2_clear_wp3    "  /)
+       "C_invrs_tau_N2_clear_wp3    ", "xp3_coef_base               ", &
+       "xp3_coef_slope              "  /)
 
   real( kind = core_rknd ), parameter, private :: &
     init_value = -999._core_rknd ! Initial value for the parameters, used to detect missing values
@@ -428,7 +436,9 @@ module parameters_tunable
     clubb_C_invrs_tau_N2_xp2,           &
     clubb_C_invrs_tau_N2_wpxp,          &
     clubb_C_invrs_tau_N2_clear_wp3,     &
-    clubb_C_wp2_splat
+    clubb_C_wp2_splat,                  &
+    clubb_xp3_coef_base,                &
+    clubb_xp3_coef_slope
     
 !$omp threadprivate(clubb_C1, clubb_C1b, clubb_C1c, &
 !$omp   clubb_C2rt, clubb_C2thl, clubb_C2rtthl, clubb_C4, &
@@ -445,7 +455,7 @@ module parameters_tunable
 !$omp   clubb_C_invrs_tau_sfc, clubb_C_invrs_tau_shear, clubb_C_invrs_tau_N2, &
 !$omp   clubb_C_invrs_tau_N2_wp2, clubb_C_invrs_tau_N2_xp2, &
 !$omp   clubb_C_invrs_tau_N2_wpxp, clubb_C_invrs_tau_N2_clear_wp3, &
-!$omp   clubb_C_wp2_splat)    
+!$omp   clubb_C_wp2_splat, clubb_xp3_coef_base, clubb_xp3_coef_slope)
     
 #endif /*E3SM*/
 
@@ -570,7 +580,8 @@ module parameters_tunable
                lambda0_stability_coef, mult_coef, taumin, taumax, &
                Lscale_mu_coef, Lscale_pert_coef, alpha_corr, &
                Skw_denom_coef, c_K10, c_K10h, thlp2_rad_coef, &
-               thlp2_rad_cloud_frac_thresh, up2_vp2_factor, Skw_max_mag, &
+               thlp2_rad_cloud_frac_thresh, up2_vp2_factor, &
+               Skw_max_mag, xp3_coef_base, xp3_coef_slope, &
                C_invrs_tau_bkgnd, C_invrs_tau_sfc, &
                C_invrs_tau_shear, C_invrs_tau_N2, & 
                C_invrs_tau_N2_wp2, C_invrs_tau_N2_xp2, &
@@ -1070,7 +1081,9 @@ module parameters_tunable
     clubb_C_invrs_tau_N2_xp2,           &
     clubb_C_invrs_tau_N2_wpxp,          &
     clubb_C_invrs_tau_N2_clear_wp3,     &
-    clubb_C_wp2_splat
+    clubb_C_wp2_splat,                  &
+    clubb_xp3_coef_base,                &
+    clubb_xp3_coef_slope
 
     integer :: read_status
     integer :: iunit
@@ -1134,6 +1147,8 @@ module parameters_tunable
     clubb_C_invrs_tau_N2_wpxp = init_value
     clubb_C_invrs_tau_N2_clear_wp3 = init_value
     clubb_C_wp2_splat = init_value
+    clubb_xp3_coef_base = init_value
+    clubb_xp3_coef_slope = init_value
 
     if (masterproc) then
       iunit = getunit()
@@ -1204,6 +1219,8 @@ module parameters_tunable
    call mpibcast(clubb_C_invrs_tau_N2_wpxp , 1, mpir8,  0, mpicom)
    call mpibcast(clubb_C_invrs_tau_N2_clear_wp3 , 1, mpir8,  0, mpicom)
    call mpibcast(clubb_C_wp2_splat, 1, mpir8,  0, mpicom)
+   call mpibcast(clubb_xp3_coef_base, 1, mpir8,  0, mpicom)
+   call mpibcast(clubb_xp3_coef_slope, 1, mpir8,  0, mpicom)
 #endif
 
 
@@ -1339,6 +1356,9 @@ module parameters_tunable
     if (clubb_C_invrs_tau_N2_clear_wp3 /= init_value) &
        C_invrs_tau_N2_clear_wp3 = clubb_C_invrs_tau_N2_clear_wp3
     if (clubb_C_wp2_splat  /= init_value ) C_wp2_splat = clubb_C_wp2_splat
+    if (clubb_xp3_coef_base /= init_value) xp3_coef_base = clubb_xp3_coef_base
+    if (clubb_xp3_coef_slope /= init_value) &
+       xp3_coef_slope = clubb_xp3_coef_slope
 #endif /*E3SM*/
 
     ! Put the variables in the output array
@@ -1357,7 +1377,8 @@ module parameters_tunable
                lambda0_stability_coef, mult_coef, taumin, taumax, &
                Lscale_mu_coef, Lscale_pert_coef, alpha_corr, &
                Skw_denom_coef, c_K10, c_K10h, thlp2_rad_coef, &
-               thlp2_rad_cloud_frac_thresh, up2_vp2_factor, Skw_max_mag, &
+               thlp2_rad_cloud_frac_thresh, up2_vp2_factor, &
+               Skw_max_mag, xp3_coef_base, xp3_coef_slope, &
                C_invrs_tau_bkgnd, C_invrs_tau_sfc, &
                C_invrs_tau_shear, C_invrs_tau_N2, &
                C_invrs_tau_N2_wp2, C_invrs_tau_N2_xp2, &  
@@ -1438,7 +1459,8 @@ module parameters_tunable
       omicron, zeta_vrnce_rat, upsilon_precip_frac_rat, &
       lambda0_stability_coef, mult_coef, taumin, taumax, mu, Lscale_mu_coef, &
       Lscale_pert_coef, alpha_corr, Skw_denom_coef, c_K10, c_K10h, &
-      thlp2_rad_coef, thlp2_rad_cloud_frac_thresh, up2_vp2_factor, Skw_max_mag, &
+      thlp2_rad_coef, thlp2_rad_cloud_frac_thresh, up2_vp2_factor, &
+      Skw_max_mag, xp3_coef_base, xp3_coef_slope, &
       C_invrs_tau_bkgnd, C_invrs_tau_sfc, &
       C_invrs_tau_shear, C_invrs_tau_N2, &
       C_invrs_tau_N2_wp2, C_invrs_tau_N2_xp2, C_invrs_tau_N2_wpxp, C_invrs_tau_N2_clear_wp3
@@ -1469,7 +1491,8 @@ module parameters_tunable
                lambda0_stability_coef, mult_coef, taumin, taumax, &
                Lscale_mu_coef, Lscale_pert_coef, alpha_corr, &
                Skw_denom_coef, c_K10, c_K10h, thlp2_rad_coef, &
-               thlp2_rad_cloud_frac_thresh, up2_vp2_factor, Skw_max_mag, &
+               thlp2_rad_cloud_frac_thresh, up2_vp2_factor, &
+               Skw_max_mag, xp3_coef_base, xp3_coef_slope, &
                C_invrs_tau_bkgnd, C_invrs_tau_sfc, &
                C_invrs_tau_shear, C_invrs_tau_N2, &
                C_invrs_tau_N2_wp2, C_invrs_tau_N2_xp2, &
@@ -1521,7 +1544,8 @@ module parameters_tunable
                lambda0_stability_coef, mult_coef, taumin, taumax, &
                Lscale_mu_coef, Lscale_pert_coef, alpha_corr, &
                Skw_denom_coef, c_K10, c_K10h, thlp2_rad_coef, &
-               thlp2_rad_cloud_frac_thresh, up2_vp2_factor, Skw_max_mag,&
+               thlp2_rad_cloud_frac_thresh, up2_vp2_factor, &
+               Skw_max_mag, xp3_coef_base, xp3_coef_slope, &
                C_invrs_tau_bkgnd, C_invrs_tau_sfc, &
                C_invrs_tau_shear, C_invrs_tau_N2, &
                C_invrs_tau_N2_wp2, C_invrs_tau_N2_xp2, &
@@ -1619,6 +1643,8 @@ module parameters_tunable
       ithlp2_rad_cloud_frac_thresh, &
       iup2_vp2_factor, &
       iSkw_max_mag, &
+      ixp3_coef_base, &
+      ixp3_coef_slope, &
       iC_invrs_tau_bkgnd, &
       iC_invrs_tau_sfc, &
       iC_invrs_tau_shear, &
@@ -1646,7 +1672,8 @@ module parameters_tunable
       omicron, zeta_vrnce_rat, upsilon_precip_frac_rat, &
       lambda0_stability_coef, mult_coef, taumin, taumax, Lscale_mu_coef, &
       Lscale_pert_coef, alpha_corr, Skw_denom_coef, c_K10, c_K10h, &
-      thlp2_rad_coef, thlp2_rad_cloud_frac_thresh, up2_vp2_factor, Skw_max_mag, &
+      thlp2_rad_coef, thlp2_rad_cloud_frac_thresh, up2_vp2_factor, &
+      Skw_max_mag, xp3_coef_base, xp3_coef_slope, &
       C_invrs_tau_bkgnd, C_invrs_tau_sfc, C_invrs_tau_shear, C_invrs_tau_N2, &
       C_invrs_tau_N2_wp2, C_invrs_tau_N2_xp2, &
       C_invrs_tau_N2_wpxp, C_invrs_tau_N2_clear_wp3
@@ -1744,6 +1771,8 @@ module parameters_tunable
     params(ithlp2_rad_cloud_frac_thresh) = thlp2_rad_cloud_frac_thresh
     params(iup2_vp2_factor) = up2_vp2_factor
     params(iSkw_max_mag) = Skw_max_mag
+    params(ixp3_coef_base) = xp3_coef_base
+    params(ixp3_coef_slope) = xp3_coef_slope
     params(iC_invrs_tau_bkgnd)        = C_invrs_tau_bkgnd
     params(iC_invrs_tau_sfc)          = C_invrs_tau_sfc
     params(iC_invrs_tau_shear)        = C_invrs_tau_shear
@@ -1774,7 +1803,8 @@ module parameters_tunable
                lambda0_stability_coef, mult_coef, taumin, taumax, &
                Lscale_mu_coef, Lscale_pert_coef, alpha_corr, &
                Skw_denom_coef, c_K10, c_K10h, thlp2_rad_coef, &
-               thlp2_rad_cloud_frac_thresh, up2_vp2_factor, Skw_max_mag, &
+               thlp2_rad_cloud_frac_thresh, up2_vp2_factor, &
+               Skw_max_mag, xp3_coef_base, xp3_coef_slope, &
                C_invrs_tau_bkgnd, C_invrs_tau_sfc, &
                C_invrs_tau_shear, C_invrs_tau_N2, & 
                C_invrs_tau_N2_wp2, C_invrs_tau_N2_xp2, &
@@ -1872,6 +1902,8 @@ module parameters_tunable
       ithlp2_rad_cloud_frac_thresh, &
       iup2_vp2_factor, &
       iSkw_max_mag, &
+      ixp3_coef_base, &
+      ixp3_coef_slope, &
       iC_invrs_tau_bkgnd, &
       iC_invrs_tau_sfc, &
       iC_invrs_tau_shear, &
@@ -1902,7 +1934,8 @@ module parameters_tunable
       omicron, zeta_vrnce_rat, upsilon_precip_frac_rat, &
       lambda0_stability_coef, mult_coef, taumin, taumax, Lscale_mu_coef, &
       Lscale_pert_coef, alpha_corr, Skw_denom_coef, c_K10, c_K10h, &
-      thlp2_rad_coef, thlp2_rad_cloud_frac_thresh, up2_vp2_factor, Skw_max_mag, &
+      thlp2_rad_coef, thlp2_rad_cloud_frac_thresh, up2_vp2_factor, &
+      Skw_max_mag, xp3_coef_base, xp3_coef_slope, &
       C_invrs_tau_bkgnd, C_invrs_tau_sfc, C_invrs_tau_shear, C_invrs_tau_N2, &
       C_invrs_tau_N2_wp2, C_invrs_tau_N2_xp2, &
       C_invrs_tau_N2_wpxp, C_invrs_tau_N2_clear_wp3
@@ -1997,6 +2030,8 @@ module parameters_tunable
     thlp2_rad_cloud_frac_thresh = params(ithlp2_rad_cloud_frac_thresh)
     up2_vp2_factor = params(iup2_vp2_factor)
     Skw_max_mag = params(iSkw_max_mag)
+    xp3_coef_base = params(ixp3_coef_base)
+    xp3_coef_slope = params(ixp3_coef_slope)
     C_invrs_tau_bkgnd        = params(iC_invrs_tau_bkgnd)
     C_invrs_tau_sfc          = params(iC_invrs_tau_sfc )
     C_invrs_tau_shear        = params(iC_invrs_tau_shear)
@@ -2039,7 +2074,8 @@ module parameters_tunable
                lambda0_stability_coef, mult_coef, taumin, taumax, &
                Lscale_mu_coef, Lscale_pert_coef, alpha_corr, &
                Skw_denom_coef, c_K10, c_K10h, thlp2_rad_coef, &
-               thlp2_rad_cloud_frac_thresh, up2_vp2_factor, Skw_max_mag, &
+               thlp2_rad_cloud_frac_thresh, up2_vp2_factor, &
+               Skw_max_mag, xp3_coef_base, xp3_coef_slope, &
                C_invrs_tau_bkgnd, C_invrs_tau_sfc, &
                C_invrs_tau_shear, C_invrs_tau_N2, &
                C_invrs_tau_N2_wp2, C_invrs_tau_N2_xp2, &
@@ -2141,6 +2177,8 @@ module parameters_tunable
     thlp2_rad_cloud_frac_thresh  = init_value
     up2_vp2_factor               = init_value
     Skw_max_mag                  = init_value
+    xp3_coef_base                = init_value
+    xp3_coef_slope               = init_value
     C_invrs_tau_bkgnd            = init_value 
     C_invrs_tau_sfc              = init_value 
     C_invrs_tau_shear            = init_value 
