@@ -2,6 +2,7 @@
 :author: Nicolas Strike
 :date: 2019
 """
+import os
 from os import path
 from warnings import warn
 
@@ -180,7 +181,7 @@ class Case:
             for VarGroup in self.var_groups:
                 # Call the __init__ function of the VarGroup class and, by doing this, create an instance of it
                 diff_group = VarGroup(self, clubb_datasets=self.diff_datasets, sam_file=les_file,
-                                      coamps_file=coamps_datasets, cam_file=cam_file,
+                                      coamps_file=coamps_datasets, cam_file=cam_file, sam_datasets=sam_datasets,
                                       r408_file=r408_datasets, hoc_dataset=hoc_datasets, e3sm_datasets=e3sm_file)
                 for panel in diff_group.panels:
                     self.diff_panels.append(panel)
@@ -197,13 +198,17 @@ class Case:
             # Create an instance of a budgets VariableGroup. By default, this is VariableGroupBaseBudgets,
             # but for SAM data, use VariableGroupSamBudgets
             if self.clubb_datasets is not None and len(self.clubb_datasets) != 0:
-                for folders_datasets in self.clubb_datasets.values():
-                    budget_variables = VariableGroupBaseBudgets(self, clubb_datasets=folders_datasets)
+                # for folders_datasets in self.clubb_datasets.values():
+                for input_folder in self.clubb_datasets:
+                    folder_name = os.path.basename(input_folder)
+                    budget_variables = VariableGroupBaseBudgets(self, clubb_datasets={folder_name:self.clubb_datasets[input_folder]})
                     self.panels.extend(budget_variables.panels)
             if wrf_datasets is not None and len(wrf_datasets) != 0:
-                # for ncdataset in self.clubb_datasets.values():
-                for folders_datasets in wrf_datasets.values():
-                    budget_variables = VariableGroupBaseBudgets(self, wrf_datasets=folders_datasets)
+                # for folders_datasets in wrf_datasets.values():
+                #     budget_variables = VariableGroupBaseBudgets(self, wrf_datasets=folders_datasets)
+                for input_folder in wrf_datasets:
+                    folder_name = os.path.basename(input_folder)
+                    budget_variables = VariableGroupBaseBudgets(self, wrf_datasets={folder_name:wrf_datasets[input_folder]})
                     self.panels.extend(budget_variables.panels)
             if e3sm_file is not None and len(e3sm_file) != 0:
                 for dataset_name in e3sm_file:
@@ -212,8 +217,11 @@ class Case:
                     self.panels.extend(e3sm_budgets.panels)
             if sam_datasets is not None and len(sam_datasets) != 0:
                 # for dataset in sam_datasets.values():
-                sam_budgets = VariableGroupSamBudgets(self, sam_datasets=sam_datasets)
-                self.panels.extend(sam_budgets.panels)
+                for input_folder in sam_datasets:
+                    folder_name = os.path.basename(input_folder)
+                    budget_variables = VariableGroupSamBudgets(self, sam_datasets={folder_name:sam_datasets[input_folder]})
+                # sam_budgets = VariableGroupSamBudgets(self, sam_datasets=sam_datasets)
+                    self.panels.extend(budget_variables.panels)
 
     def getDiffLinesBetweenPanels(self, panelA, panelB, get_y_diff=False):
         """

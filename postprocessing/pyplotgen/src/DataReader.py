@@ -2,7 +2,6 @@
 :author: Nicolas Strike
 :date: Early 2019
 """
-
 import os
 import pathlib as pathlib
 from warnings import warn
@@ -60,7 +59,14 @@ class NetCdfVariable:
                                                                        "file. This warning is a temporary notice until a "
                                                                        "bug related to missing filenames is patched")
             # changed to warn from 'raise NameError'
-            dataset_with_var = next(iter(ncdf_data.values()))
+            for dataset in ncdf_data.values():
+                for temp_independent_var in independent_var_names:
+                    if temp_independent_var in dataset.variables.keys():
+                        dataset_with_var = dataset
+            if dataset_with_var is None:
+                raise KeyError("Could not find both ", names, " and ", independent_var_names, " in it in datasets ",
+                               ncdf_data)
+            # dataset_with_var = next(iter(ncdf_data.values()))
             warn("None of the values " + str(names) + " were found in the dataset " + str(dataset_with_var.filepath()))
             varname = names[0]
         indep_var_name_in_dataset = None
@@ -78,49 +84,6 @@ class NetCdfVariable:
         data_reader = DataReader()
         self.dependent_data, self.independent_data = data_reader.getVarData(self.ncdf_data, self)
 
-    def __getStartEndIndex__(self, data, start_value, end_value):
-        """
-        Get the list floor index that contains the value to start graphing at and the
-        ceiling index that contains the end value to stop graphing at
-
-        If neither are found, returns the entire array back
-        :param start_value: The first value to be graphed (may return indexes to values smaller than this)
-        :param end_value: The last value that needs to be graphed (may return indexes to values larger than this)
-        :return: (tuple) start_idx, end_idx   which contains the starting and ending index representing the start and
-        end time passed into the function
-        :author: Nicolas Strike
-        """
-
-        # If dependent_data is a an array with 1 element, return 0's
-        if (len(data) == 1):
-            return 0, 1
-
-        start_idx = 0
-        end_idx = len(data) - 1
-        ascending_data = data[0] < data[1]
-        if ascending_data:
-            for i in range(0, len(data)):
-                # Check for start index
-                test_value = data[i]
-                if start_value >= test_value > data[start_idx]:
-                    start_idx = i
-                # Check for end index
-                # Add +1 to index if possible when test_value is an exact match
-                # because python end indices are exclusive while python start indices are inclusive
-                if test_value == end_value and i < len(data):
-                    end_idx = i + 1
-                elif end_value <= test_value < data[end_idx]:
-                    end_idx = i
-        else:  # if dependent_data is descending
-            for i in range(0, len(data)):
-                test_value = data[i]
-                if end_value <= test_value < data[start_idx]:
-                    start_idx = i
-                if start_value >= test_value > data[end_idx]:
-                    end_idx = i
-
-        return start_idx, end_idx
-
     def constrain(self, start_value, end_value, data=None):
         """
         Remove all dependent_data elements from the variable that are not between the start and end value. Assumes
@@ -136,7 +99,7 @@ class NetCdfVariable:
         """
         if data is None:
             data = self.dependent_data
-        start_idx, end_idx = self.__getStartEndIndex__(data, start_value, end_value)
+        start_idx, end_idx = DataReader.__getStartEndIndex__(data, start_value, end_value)
         self.dependent_data = self.dependent_data[start_idx:end_idx]
         if self.independent_data is not None:
             self.independent_data = self.independent_data[start_idx:end_idx]
@@ -241,6 +204,7 @@ class DataReader():
         for time_var in Case_definitions.TIME_VAR_NAMES:
             if time_var in netcdf_dataset.variables.keys():
                 time_values = self.__getValuesFromNc__(netcdf_dataset, time_var, time_conv_factor)
+                # np.savetxt("time.csv", time_values, delimiter=',', fmt='%f') # occasionally used when debugging
         if time_values is None:
             raise NameError("None of the time variables " + str(Case_definitions.TIME_VAR_NAMES) +
                             " could be found in the dataset " + str(netcdf_dataset.filepath()))
@@ -252,13 +216,13 @@ class DataReader():
             end_time_value = time_values[-1]
         # Get the index values that correspond to the desired start/end x values
         start_avg_index, end_avg_idx = self.__getStartEndIndex__(time_values, start_time_value, end_time_value)
-
         indep_var_not_found = independent_var_name is None
         if indep_var_not_found:
             raise NameError("None of the independent variables " + str(independent_var_name) +
                             " could be found in the dataset " + str(ncdf_variable.ncdf_data.filepath()))
         else:
             independent_values = self.__getValuesFromNc__(netcdf_dataset, independent_var_name, 1)
+            # np.savetxt("" + independent_var_name + ".csv", independent_values,  delimiter=',', fmt='%f')  # occasionally used when debugging
 
         if independent_values.ndim > 1:  # not ncdf_variable.one_dimensional:
             independent_values = self.__meanProfiles__(independent_values, start_avg_index, end_avg_idx,
@@ -266,6 +230,8 @@ class DataReader():
 
         try:
             dependent_values = self.__getValuesFromNc__(netcdf_dataset, variable_name, conv_factor)
+            # np.savetxt("" + variable_name + ".csv", dependent_values,  delimiter=',', fmt='%f')  # occasionally used when debugging
+
         except ValueError:
             dependent_values = np.zeros(len(independent_values))
 
@@ -324,7 +290,7 @@ class DataReader():
         if idx_t1 - idx_t0 <= 10:
             warn("Time averaging interval is small (less than or equal to 10): " + str(idx_t1 - idx_t0) +
                  " | (idx_t0 = " + str(idx_t0) + ", idx_t1 = " + str(
-                idx_t1) + ").")
+                idx_t1) + "). Note, start index is inclusive, end index is exclusive.")
         if avg_axis == 0:  # if time-averaged
             var_average = np.nanmean(var[idx_t0:idx_t1, :], axis=avg_axis)
         else:  # if height averaged
@@ -418,6 +384,11 @@ class DataReader():
         if ncdf_data is None:
             raise ValueError("ncdf_data was passed as None into __getValuesFromNc__ while looking for variable " +
                              varname)
+        src_model = self.getNcdfSourceModel(ncdf_data)
+        if src_model == 'unknown-model':
+            warn("Warning, unknown model detected. PyPlotgen doesn't know where this netcdf dependent_data is from. "
+                 + str(ncdf_data))
+
         var_values = None
         keys = ncdf_data.variables.keys()
         if varname in keys:
@@ -436,37 +407,37 @@ class DataReader():
             raise ValueError("Variable " + str(varname) +
                              " does not exist in ncdf_data file.\nVariables found in dataset: " + str(ncdf_data))
 
-        hrs_in_day = 24
-        min_in_hr = 60
-        sec_in_min = 60
-        if varname in Case_definitions.TIME_VAR_NAMES and 'day' in ncdf_data.variables[varname].units:
-            var_values = var_values[:] * hrs_in_day * min_in_hr
-            var_values = var_values[:] - var_values[0] + 1
+        if varname in Case_definitions.TIME_VAR_NAMES:
+            hrs_in_day = 24
+            min_in_hr = 60
+            sec_in_min = 60
 
-        if varname in Case_definitions.TIME_VAR_NAMES and 'hour' in ncdf_data.variables[varname].units:
-            var_values = var_values[:] * min_in_hr
-            var_values = var_values[:] - var_values[0] + 1
+            if 'day' in ncdf_data.variables[varname].units:
+                var_values = var_values[:] * hrs_in_day * min_in_hr
 
-        if varname in Case_definitions.TIME_VAR_NAMES and 'sec' in ncdf_data.variables[varname].units:
-            var_values = var_values[:] / sec_in_min
-            var_values = var_values[:] - var_values[0] + 1
+            if 'hour' in ncdf_data.variables[varname].units:
+                var_values = var_values[:] * min_in_hr
 
-        src_model = self.getNcdfSourceModel(ncdf_data)
-        if src_model == 'unknown-model':
-            warn(
-                "Warning, unknown model detected. PyPlotgen doesn't know where this netcdf dependent_data is from." + str(
-                    ncdf_data))
-            if varname in Case_definitions.TIME_VAR_NAMES:
-                warn("Attempting to autoshift time values")
-                var_values = var_values[:] - var_values[0] + 1
+            if 'sec' in ncdf_data.variables[varname].units:
+                var_values = var_values[:] / sec_in_min
 
-        if varname == 'time' and var_values[0] != 1:
-            warn("First time value is " + str(var_values[0]) +
-                 " instead of 1. Are these time values supposed to be scaled to minutes?")
+            dt = 1
+            if len(var_values) > 1:
+                dt = var_values[1] - var_values[0]
+
+            # In a lot of cases this loop has no effect, but for some cases (e.g. r408 lines on atex case)
+            # it corrects time data.
+            for i in range(len(var_values)):
+                var_values[i] = dt * (i + 1)
+
+            if var_values[0] > 1:
+                warn("First time value is " + str(var_values[0]) +
+                     " instead of 0-1. Are these time values supposed to be scaled to minutes?")
 
         return var_values
 
-    def __getStartEndIndex__(self, data, start_value, end_value):
+    @staticmethod
+    def __getStartEndIndex__(data, start_value, end_value):
         """
         Get the list floor index that contains the value to start graphing at and the
         ceiling index that contains the end value to stop graphing at
@@ -481,22 +452,27 @@ class DataReader():
 
         # If dependent_data is a an array with 1 element, return 0's
         if (len(data) == 1):
-            return 0, 0
+            return 0, 1
 
         start_idx = 0
         end_idx = len(data)
         ascending_data = data[0] < data[1]
+        start_idx_found = False
         if ascending_data:
+            # dt = data[1] - data[0]
+            # start_idx = math.ceil(start_value / dt)
+            # end_idx = math.ceil(end_value / dt)
             for i in range(0, len(data)):
                 # Check for start index
                 test_value = data[i]
-                if data[start_idx] < test_value <= start_value:
+                if test_value >= start_value and not start_idx_found:
+                    start_idx_found = True
                     start_idx = i
                 if test_value == end_value:
                     end_idx = i + 1
                 # Check for end index
                 # end_idx -1 is in place because this check is inclusive, but the index is compatible with exclusivity
-                if end_value < test_value < data[end_idx -1]:
+                if end_value < test_value < data[end_idx - 1]:
                     end_idx = i
         else:
             for i in range(0, len(data)):

@@ -23,16 +23,18 @@ class VariableGroupLiquidMP(VariableGroup):
         self.variable_definitions = [
             {'var_names':
                 {
-                    'clubb': ['Ncm'],
-                    'sam': ['Ncm'],
-                    'coamps': ['Ncm'],
-                    'r408': ['Ncm'],
-                    'hoc': ['Ncm'],
-                    'e3sm': ['Ncm'],
-                    'cam': ['Ncm'],
-                    'wrf': ['Ncm'],
+                    'clubb': ['Ncm', 'ncm'],
+                    'sam': ['Ncm', 'ncm'],
+                    'coamps': ['Ncm', 'ncm'],
+                    'r408': ['Ncm', 'ncm'],
+                    'hoc': ['Ncm', 'ncm'],
+                    'e3sm': ['Ncm', 'ncm'],
+                    'cam': ['Ncm', 'ncm'],
+                    'wrf': ['Ncm', 'ncm'],
                 },
                 'sam_calc': self.getNcmSamLine,
+                'r408_calc': self.getNcmR408Line,
+                'hoc_calc': self.getNcmHocLine
             },
             {'var_names':
                 {
@@ -70,6 +72,7 @@ class VariableGroupLiquidMP(VariableGroup):
                     'wrf': ['rrm'],
                 },
                 'sam_conv_factor': 1 / 1000,
+                'sci_scale': -6
             },
             {'var_names':
                 {
@@ -126,7 +129,7 @@ class VariableGroupLiquidMP(VariableGroup):
             {'var_names':
                 {
                     'clubb': ['precip_rate_sfc'],
-                    'sam': ['precip_rate_sfc'],
+                    'sam': ['PREC','precip_rate_sfc'],
                     'coamps': ['precip_rate_sfc'],
                     'r408': ['precip_rate_sfc'],
                     'hoc': ['precip_rate_sfc'],
@@ -147,23 +150,30 @@ class VariableGroupLiquidMP(VariableGroup):
         """
         Caclulates Nim from sam -> clubb using the equation
         (NC * 1e+6) ./ RHO
+        (GCSSNC * 1e+6) ./ RHO
+        CLD .* (NC * 1e+6) ./ RHO
+
         :return:
         """
 
         dataset = self.les_dataset
         if dataset_override is not None:
             dataset = dataset_override
-        nc, z, dataset = self.getVarForCalculations('NC', dataset)
+        nc, z, dataset = self.getVarForCalculations(['NC','GCSSNC'], dataset)
         rho, z, dataset = self.getVarForCalculations('RHO', dataset)
-        # z,z, dataset = self.getVarForCalculations(['z', 'lev', 'altitude'], self.les_dataset)
+        cld, z, dataset = self.getVarForCalculations('CLD', dataset)
 
-        ncm = (nc * (10 ** 6) / rho)
-        return ncm, z
+        output1 = (nc * (10 ** 6) / rho)
+        output2 = cld * (nc * (10 ** 6) / rho)
+
+        output = self.pickMostLikelyOutputList(output1, output2)
+        return output, z
 
     def getNrmSamLine(self, dataset_override=None):
         """
         Caclulates Nim from sam -> clubb using the equation
         (NR * 1e+6) ./ RHO
+        (CONP * 1e+6) ./ RHO
         :return:
         """
 
@@ -171,10 +181,33 @@ class VariableGroupLiquidMP(VariableGroup):
         if dataset_override is not None:
             dataset = dataset_override
 
-        nr, z, dataset = self.getVarForCalculations('NR', dataset)
+        nr, z, dataset = self.getVarForCalculations(['NR','CONP'], dataset)
         rho, z, dataset = self.getVarForCalculations('RHO', dataset)
         # z,z, dataset = self.getVarForCalculations(['z', 'lev', 'altitude'], self.les_dataset)
 
         nrm = (nr * (10 ** 6) / rho)
 
         return nrm, z
+
+    def getNcmR408Line(self, dataset_override=None):
+        """
+        Caclulates Ncm line that was used by plotgen
+        Ncm * cf
+        This line seems unintuitive, but it's what plotgen used.
+        :return:
+        """
+
+        dataset = self.r408_datasets['zt']
+        if dataset_override is not None:
+            dataset = dataset_override
+        ncm, z, dataset = self.getVarForCalculations(['Ncm', 'ncm'], dataset)
+        cf, z, dataset = self.getVarForCalculations(['cf'], dataset)
+
+        output = ncm * cf
+        return output, z
+
+    def getNcmHocLine(self, dataset_override=None):
+        dataset = self.hoc_datasets
+        if dataset_override is not None:
+            dataset = dataset_override
+        return self.getNcmR408Line(dataset_override=dataset)

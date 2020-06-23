@@ -2,8 +2,10 @@
 :author: Nicolas Strike
 :date: Mid 2019
 """
+import math
 import os
 from pathlib import Path
+from statistics import mean
 from warnings import warn
 
 from netCDF4._netCDF4 import Dataset
@@ -650,3 +652,44 @@ class VariableGroup:
             if height_var in dataset.variables.keys():
                 return False
         return True
+
+    def pickMostLikelyOutputList(self, output1, output2):
+        """
+        Sometimes there are more than 1 ways to calculate a variable, and
+        it is impossible to know which equation to use before hand. In these
+        cases, all equations should be used and their output given to this
+        function. This function will then attempt to determine which of the
+        outputs from the equations is most likely to be the expected answer.
+
+        This function currenlty works by determining which is furthest from 0 on average.
+
+        Example usage:
+        def get_rc_coef_zm_X_wprcp_coamps_calc(self, dataset_override=None):
+            wprlp, z, dataset = self.getVarForCalculations(['thlpqcp', 'wpqcp', 'wprlp'], dataset)
+            ex0, z, dataset = self.getVarForCalculations(['ex0'], dataset)
+            p, z, dataset = self.getVarForCalculations('p', dataset)
+            thvm, z, dataset = self.getVarForCalculations('thvm', dataset)
+            output1 = wprlp * (2.5e6 / (1004.67 * ex0) - 1.61 * thvm)
+            output2 = wprlp * (2.5e6 / (1004.67 * ((p / 1.0e5) ** (287.04 / 1004.67))) - 1.61 * thvm)
+            output = self.pickMostLikelyOutputList(output1, output2)
+            return output, z
+
+
+        :param output1: An arraylike list of numbers outputted from a variable calculation
+            (e.g.     output1 = wprlp * (2.5e6 / (1004.67 * ex0) - 1.61 * thvm)
+        :param output2: An arraylike list of numbers outputted from a variable calculation
+            (e.g.     output2 = wprlp * (2.5e6 / (1004.67 * ((p / 1.0e5) ** (287.04 / 1004.67))) - 1.61 * thvm)
+        :return: The listlike array of the two datasets most likely to be the correct answer.
+        """
+        output1_mean = mean(output1)
+        output2_mean = mean(output2)
+
+        if math.isnan(output1_mean):
+            return output2
+        if math.isnan(output2_mean):
+            return output1
+        if output1_mean >= output2_mean:
+            return output1
+        elif output1_mean < output2_mean:
+            return output2
+        raise ValueError("Invalid data detected: \nOutput 1:", output1, "\nOutput 2:", output2)
