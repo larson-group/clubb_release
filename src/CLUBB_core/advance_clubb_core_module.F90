@@ -772,8 +772,8 @@ module advance_clubb_core_module
        tau_no_N2_zt                    ! 
  
     real( kind = core_rknd ), parameter :: &
-       xp3_coef_base  = 0.15_core_rknd, &
-       xp3_coef_slope = 0.5_core_rknd
+       xp3_coef_base  = 0.25_core_rknd, &
+       xp3_coef_slope = 0.01_core_rknd
 
     real( kind = core_rknd ), parameter :: &
        ufmin = 0.01_core_rknd,       & ! minimum value of friction velocity     [m/s]
