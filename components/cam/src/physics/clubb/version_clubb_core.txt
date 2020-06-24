@@ -1,8 +1,84 @@
-commit 9cc9fa6d3ba6843858d9ec6f67709e00008424c1
+commit fa05c6cf1a32ecac1ea9a1350883c4cb0b3077c5
 Author: System Administrator <larsongroupgithub@gmail.com>
-Date:   Mon Jun 15 23:17:56 2020 -0500
+Date:   Tue Jun 23 23:17:00 2020 -0500
 
     Updating the clubb core and silhs version files
+
+commit fd0e7c464a3cf6c14815ddbe7e79c30c504eca1d
+Author: bmg929 <bmg2@uwm.edu>
+Date:   Tue Jun 23 13:33:56 2020 -0500
+
+    I added the 2 new parameters in the simple xp3 equation (for PDF
+    types other than ADG1) to the list of CLUBB tunable parameters.
+    
+    The results in GrADS output files from this revision are an exact match
+    to the results in GrADS output files from the previous revision for all
+    cases.
+
+commit ef1f93afa03e97734d807dcdecdcd1eb156bbdf7
+Author: bmg929 <bmg2@uwm.edu>
+Date:   Tue Jun 23 09:32:04 2020 -0500
+
+    This xp3_coef_ parameters produce new hybrid PDF results similar to the old
+    ones for a starting point.
+
+commit f1490375b96c0dc6f0ae6b51e79c364611f6b4ed
+Author: bmg929 <bmg2@uwm.edu>
+Date:   Mon Jun 22 15:27:38 2020 -0500
+
+    I updated the xp3 calculation for PDF types other than ADG1.
+    
+    ADG1 is stuck into using the LG 2005 ansatz, exactly as written.
+    
+    Other PDF types are not stuck using this.  Rather than re-invent the wheel,
+    these other PDF types can still use the LG 2005 ansatz equation, but
+    sigma_sqd_w_zt (specific to ADG1) has been replaced with a tunable function
+    relavant to other PDF types.  This tunable function is called xp3_coef_fnc.
+    
+    The results in GrADS output files from the previous revision are an exact match
+    to the results in GrADS output files from the current revision for all cases
+    for the default ADG1 PDF.
+
+commit df897d6f1c10c2ed0ff8aeba524fe884f4cc782a
+Author: bmg929 <bmg2@uwm.edu>
+Date:   Thu Jun 18 16:52:37 2020 -0500
+
+    I am changing the new hybrid PDF's calculation of F_w to use
+    tunable parameter gamma (technically, the gamma_Skw_fnc).
+    
+    In the ADG1 PDF, when gamma_Skw_fnc goes to 0, the standard
+    deviations of w in each PDF component both go to 0, and the
+    spread between the PDF component means of w is at its maximum.
+    When gamma_Skw_fnc goes to 1, the standard deviations of w in
+    each PDF component become large, and the spread between the PDF
+    component means of w becomes small.
+    
+    The new hybrid PDF is based on the same concept, except that I
+    had been using a hard-wired 0.75 in the place of gamma or the
+    gamma_Skw_fnc.  Re-using the tunable parameters for gamma here
+    makes sense, since it's the same concept and this makes tuning
+    easier.
+
+commit 72b8b9da2e6776de015152273822a4f0b67cb7f0
+Author: bmg929 <bmg2@uwm.edu>
+Date:   Thu Jun 18 12:11:43 2020 -0500
+
+    Fixed more typos
+
+commit 621aa829391c9e3b19f09b2c1724adfd26dfc7e5
+Author: bmg929 <bmg2@uwm.edu>
+Date:   Thu Jun 18 12:06:31 2020 -0500
+
+    Typo
+
+commit 2fbb2291209d7035abcd4e68afbf2e73a9f47942
+Author: bmg929 <bmg2@uwm.edu>
+Date:   Thu Jun 18 12:01:39 2020 -0500
+
+    I am updating the clubb_ list of namelist parameters used in E3SM
+    to include every parameter that E3SM has customized in CLUBB.
+    The goal is to make it so E3SM does not need to customize the
+    CLUBB side of E3SM-CLUBB at all, making future upgrades easier.
 
 commit c5ec3e9d76544adc40e845db3c05067f5afc14e2
 Author: sdomke <sdomke@uwm.edu>
@@ -23,75 +99,3 @@ Date:   Mon Jun 15 15:34:52 2020 -0500
 
     I added E3SM customizations to CLUBB's master branch.  This is meant
     for updating CLUBB in the E3SM master branch.
-
-commit 9d6412ea485fc9393a39193281f08df72704ca97
-Author: sdomke <sdomke@uwm.edu>
-Date:   Fri Jun 12 17:06:12 2020 -0500
-
-    Adjusted some lines to stay below the limit of 120 characters per line
-    Removed TODOs from SAM VariableGroups
-    Renamed the constrain function of theNetCdfVariable class to trimArray
-    Rewrote doc string for __getEndStartIndex__ function in src/DataReader.py
-    
-    https://github.com/larson-group/sys_admin/issues/542
-
-commit e68fb95962ef814ff3efe84c93f6bcc5b4e0c118
-Author: sdomke <sdomke@uwm.edu>
-Date:   Fri Jun 12 13:32:12 2020 -0500
-
-    Minor changes in pyplotgen.py, src/Panel.py, and src/Case.py
-    Updated inline documentation in src/VariableGroup.py
-    Updated inline documentation in src/DataReader.py,
-    added __del__ function for DataReader class,
-    and added TODOs for new timeheight plots
-    
-    https://github.com/larson-group/sys_admin/issues/542
-
-commit 5860ee4660b9048aa82c573c87938b481dcf2708
-Merge: 88f474c 57cfe15
-Author: bmg929 <bmg2@uwm.edu>
-Date:   Thu Jun 11 14:50:41 2020 -0500
-
-    Merge branch 'master' of https://github.com/larson-group/clubb
-    
-    Forgot to pull before committing ... again.
-
-commit 88f474cc722ce72f931f8af9bdbe5a78f3303e64
-Author: bmg929 <bmg2@uwm.edu>
-Date:   Thu Jun 11 14:49:58 2020 -0500
-
-    I am going to make primary PDF type options and primary PDF call
-    position options available to host models.
-
-commit 57cfe15d797116212871ac5f43a9ddb9d351c0dd
-Author: Nicolas Strike <strike@uwm.edu>
-Date:   Thu Jun 11 14:14:19 2020 -0500
-
-    Update README
-    
-    triggering nightly tests
-
-commit 47a20b77648fcb27a1c9d8da4900bf5ef7316521
-Author: strikenp <nchief@gmail.com>
-Date:   Thu Jun 11 13:40:43 2020 -0500
-
-    Pyplotgen Changes:
-    * Resolved a minor and difficult to reproduce bug where ncdf data that didn't contain the full range of time values (i.e. if time averaging from 181-360, but data only had 181-310) pyplotgen wouldn't average properly (it would skip the last index)
-    * Changed ARM's time from 541 -> 540. This makes it consistent with the clubb cases (uses 540), but makes it inconsistent with the wrf case (uses 541)
-    * Increased clubb's priority when plotting so that clubb would get the red/blue color scheme first
-    * Added additional variable names to some coamps variables (often uses 'q' in place of 'r', but some coamps datasets expect 'r')
-    * This may become Pyplotgen v1.0
-    
-    https://github.com/larson-group/sys_admin/issues/542
-
-commit 7066a787a9887e134814ac5f636f996faedc94b2
-Author: strikenp <nchief@gmail.com>
-Date:   Wed Jun 10 13:44:43 2020 -0500
-
-    Pyplotgen Changes:
-    * Synced time average intervals with plotgen clubb cases
-    * Clean up time index determination
-    * Added coamps les output to bomex case
-    * Added wrf variable names to LiquidMP variable group (although wrf seems to only plot them as 0s)
-    
-    https://github.com/larson-group/sys_admin/issues/542
