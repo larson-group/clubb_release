@@ -1,10 +1,11 @@
 #!/usr/bin/python
 
+import numpy as np
 import os
 import sys
 
 modifiable_parameters = ['dt', 'dt_output', 'microphysics', 'format', 'prefix', 'dz',
-                         'Tsfc', 'godunov', 'aterms', 'levels']
+                         'Tsfc', 'godunov', 'aterms', 'levels', 'tfinal', 'refine']
 
 # TODO: check that this is being run from the run_scripts directory
 os.chdir('../output')
@@ -53,9 +54,9 @@ if ('format' not in parameters):
 if ('prefix' not in parameters):
   parameters['prefix'] = '"' + model_file_name.replace('.in','') + '"'
 
-# match dt_output to dt unless it is specifically provided
+# match dt_output to max of dt or 10s unless it is specifically provided
 if ('dt' in parameters and 'dt_output' not in parameters):
-  parameters['dt_output'] = parameters['dt']
+  parameters['dt_output'] = str(max(float(parameters['dt']), 10.0))
 
 # if dz specified, set other associated options
 if ('dz' in parameters):
@@ -66,9 +67,40 @@ if ('dz' in parameters):
 if ('levels' in parameters):
   parameters['zt_filename'] = "'../input/grid/deep_convection_{}lev_27km_zt_grid.grd'".format(parameters['levels'])
 
+# if refinement speficied, create grid file and set appropriate file name
+if ('refine' in parameters):
+  height = 10000.0
+  refine = int(parameters['refine'])
+  parameters['levels'] = str(128*2**refine)
+  grid128 = np.loadtxt('../input/grid/deep_convection_128lev_27km_zt_grid.grd')
+  ind = np.where(grid128 > height)[0][0]
+  grid128 = grid128[:ind]
+  grid128[0] = 0.0
+  size = (len(grid128)-1)*2**refine + 1
+  grid = np.empty((size))
+  coarse_ind = np.arange(len(grid128))
+  refine_ind = np.arange(0,size,2**refine)
+  grid[refine_ind] = grid128[coarse_ind]
+  for level in range(refine):
+    coarse_ind = np.arange(0, size, 2**(refine-level))
+    refine_ind = coarse_ind[:-1] + 2**(refine-level-1)
+    grid[refine_ind] = 0.5*(grid[coarse_ind[1:]] + grid[coarse_ind[:-1]])
+  grid[0] = -grid[1]
+  filename = 'deep_convection_{}lev_27km_zt_grid.grd'.format(parameters['levels'])
+  np.savetxt(filename, grid)
+  parameters['zt_filename'] = "'{}'".format(filename)
+
 # set l_standard_term_ta to true unless user has specified something else
 if ('aterms' not in parameters):
   parameters['aterms'] = 'unmodified'
+
+# set time_final to 10 hours unless user has specified something else
+if ('tfinal' not in parameters):
+  parameters['tfinal'] = str(10*3600.0)
+
+# set centered difference unless user has specified something else
+if ('godunov' not in parameters):
+  parameters['godunov'] = 'none'
 
 # warn about Tsfc parameter
 if ('Tsfc' in parameters):
@@ -90,7 +122,9 @@ for line in model_config:
         or parameter == 'grid_type' and line.startswith('grid_type')
         or parameter == 'dz' and line.startswith('deltaz')
         or parameter == 'zmax' and line.startswith('zm_top')
-        or parameter == 'zt_filename' and line.startswith('zt_grid_fname')):
+        or parameter == 'zt_filename' and line.startswith('zt_grid_fname')
+        or parameter == 'levels' and line.startswith('nzmax')
+        or parameter == 'tfinal' and line.startswith('time_final')):
         default_value = line.split()[2]
         line = line.replace(default_value, parameters[parameter])
         modified = True
