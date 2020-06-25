@@ -251,7 +251,7 @@ class DataReader():
             end_time_value = time_values[-1]
 
         # Get the index values that correspond to the desired start/end x values
-        start_avg_index, end_avg_idx = self.__getStartEndIndex__(time_values, start_time_value, end_time_value)
+        start_avg_idx, end_avg_idx = self.__getStartEndIndex__(time_values, start_time_value, end_time_value)
         # Get independent values from nc file
         indep_var_not_found = independent_var_name is None
         if indep_var_not_found:
