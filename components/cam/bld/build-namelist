@@ -3516,7 +3516,27 @@ if ($clubb_sgs  =~ /$TRUE/io) {
    add_default($nl, 'clubb_ice_sh');
    add_default($nl, 'clubb_tk1');
    add_default($nl, 'clubb_tk2');
+   add_default($nl, 'clubb_C2rtthl');
+   add_default($nl, 'clubb_C4');
+   add_default($nl, 'clubb_C6rt');
+   add_default($nl, 'clubb_C6thl');
+   add_default($nl, 'clubb_C8b');
+   add_default($nl, 'clubb_C15');
+   add_default($nl, 'clubb_C_wp2_splat');
+   add_default($nl, 'clubb_beta');
+   add_default($nl, 'clubb_c_K1');
+   add_default($nl, 'clubb_c_K2');
+   add_default($nl, 'clubb_nu2');
+   add_default($nl, 'clubb_c_K8');
+   add_default($nl, 'clubb_c_K9');
+   add_default($nl, 'clubb_nu9');
+   add_default($nl, 'clubb_c_K10h');
    add_default($nl, 'clubb_wpxp_L_thresh');
+   add_default($nl, 'clubb_lmin_coef');
+   add_default($nl, 'clubb_mult_coef');
+   add_default($nl, 'clubb_Skw_denom_coef');
+   add_default($nl, 'clubb_up2_vp2_factor');
+   add_default($nl, 'clubb_Skw_max_mag');
    add_default($nl, 'relvar_fix');
    add_default($nl, 'clubb_use_sgv');
 }
