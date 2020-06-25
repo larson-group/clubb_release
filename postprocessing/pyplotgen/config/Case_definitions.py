@@ -360,7 +360,7 @@ DYCOMS2_RF02_ND = {'name': 'dycoms2_rf02_nd', 'start_time': 301, 'end_time': 360
                    'wrf_file': None,
                    'var_groups': [VariableGroupBase, VariableGroupWs, VariableGroupLiquidMP, VariableGroupKKMP]}
 
-DYCOMS2_RF02_DS_NIGHTLY = {'name': 'dycoms2_rf02_nd', 'start_time': 181, 'end_time': 240, 'height_min_value': 0,
+DYCOMS2_RF02_DS_NIGHTLY = {'name': 'dycoms2_rf02_ds', 'start_time': 181, 'end_time': 240, 'height_min_value': 0,
                          'height_max_value': 1200,
                          'blacklisted_vars': [],
                          'les_dataset': SAM_BENCHMARK_OUTPUT_ROOT +
@@ -491,7 +491,7 @@ JUN25_ALTOCU = {'name': 'jun25_altocu', 'start_time': 181, 'end_time': 240, 'hei
 
 LBA = {'name': 'lba', 'start_time': 300, 'end_time': 360, 'height_min_value': 0, 'height_max_value': 12000,
 
-       'blacklisted_vars': ['wprrp', 'wpNrp'],
+       'blacklisted_vars': ['wprrp', 'wpNrp', 'Ngm'],
        'les_dataset': SAM_BENCHMARK_OUTPUT_ROOT +
                       "/JULY_2017/LBA_128kmx128kmx128_1km_Morrison/LBA_128kmx128kmx128_1km_Morrison.nc",
        'coamps_dataset': None,
@@ -623,7 +623,7 @@ TWP_ICE = {'name': 'twp_ice', 'start_time': 1, 'end_time': 9900, 'height_min_val
 
 WANGARA = {'name': 'wangara', 'start_time': 181, 'end_time': 240, 'height_min_value': 0, 'height_max_value': 1900,
 
-           'blacklisted_vars': [],
+           'blacklisted_vars': ['Ngm'],
            'les_dataset': None,
            'coamps_dataset': {'sw': LES_OUTPUT_ROOT + "/wangara_rams.nc",
                               'sm': LES_OUTPUT_ROOT + "/wangara_rams.nc"},
@@ -662,5 +662,5 @@ ALL_CASES = [ARM, ARM_97, ASTEX_A209, ATEX,
              ]
 
 # If uncommented, this line will override the real ALL_CASES given above, forcing pyplotgen to only plot some cases.
-# ALL_CASES = [GABLS2]
+# ALL_CASES = [DYCOMS2_RF02_DO, DYCOMS2_RF02_DS, RICO, ASTEX_A209]
 # ALL_CASES = ALL_CASES[:7] # run first X cases

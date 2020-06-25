@@ -28,7 +28,7 @@ class VariableGroup:
     """
 
     def __init__(self, case, clubb_datasets=None, les_dataset=None, coamps_dataset=None, r408_dataset=None,
-                 hoc_dataset=None, cam_datasets = None,
+                 hoc_dataset=None, cam_datasets=None,
                  e3sm_datasets=None, sam_datasets=None, wrf_datasets=None):
         """
         Initialize a VariableGroup object with the passed parameters
@@ -184,7 +184,7 @@ class VariableGroup:
         plot_wrf = self.wrf_datasets is not None and len(self.wrf_datasets) > 0 \
                    and (len(var_names['wrf']) > 0 or 'wrf_calc' in variable_def_dict.keys())
         plot_cam = self.cam_datasets is not None and len(self.cam_datasets) > 0 \
-                    and (len(var_names['cam']) > 0 or 'cam_calc' in variable_def_dict.keys())
+                   and (len(var_names['cam']) > 0 or 'cam_calc' in variable_def_dict.keys())
 
         all_lines = []
         # Plot benchmarks
@@ -216,14 +216,14 @@ class VariableGroup:
                 all_lines.extend(
                     self.__getVarLinesForModel__('e3sm', variable_def_dict, self.e3sm_datasets[input_folder],
                                                  label=folder_name))
-                
+
         if plot_cam:
             for input_folder in self.cam_datasets:
                 folder_name = os.path.basename(input_folder)
                 all_lines.extend(
                     self.__getVarLinesForModel__('cam', variable_def_dict, self.cam_datasets[input_folder],
                                                  label=folder_name))
-                
+
         if plot_wrf:
             for input_folder in self.wrf_datasets:
                 folder_name = os.path.basename(input_folder)
@@ -544,21 +544,25 @@ class VariableGroup:
             ncdf_datasets = {'converted_to_dict': ncdf_datasets}
         line = None
         if panel_type is Panel.TYPE_PROFILE:
-            line = self.__get_profile_line__(var_names, ncdf_datasets, label, line_format, conversion_factor, avg_axis)
+            profile_lines = self.__get_profile_line__(var_names, ncdf_datasets, label, line_format, conversion_factor,
+                                                      avg_axis, lines=lines)
+            if profile_lines is not None:
+                all_lines.extend(profile_lines)
         elif panel_type is Panel.TYPE_BUDGET:
-            for dataset in ncdf_datasets.values():
-                budget_lines = self.__get_budget_lines__(lines, dataset, label, line_format)
-                all_lines.extend(budget_lines)
+            # for dataset in ncdf_datasets.values():
+            budget_lines = self.__get_budget_lines__(lines, ncdf_datasets)
+            all_lines.extend(budget_lines)
         elif panel_type is Panel.TYPE_TIMESERIES:
             line = self.__get_timeseries_line__(var_names, ncdf_datasets, self.end_time, conversion_factor, label,
                                                 line_format)
+            if line is not None:
+                all_lines.append(line)
         elif panel_type:
             raise ValueError('Invalid panel type ' + panel_type + '. Valid options are profile, budget, timeseries')
-        if panel_type != Panel.TYPE_BUDGET and line is not None:
-            all_lines.append(line)
+
         return all_lines
 
-    def __get_profile_line__(self, varname, dataset, label, line_format, conversion_factor, avg_axis):
+    def __get_profile_line__(self, varname, dataset, label, line_format, conversion_factor, avg_axis, lines=None):
         """
         Assumes variable can be plotted as a profile and returns a Line object
         representing the given variable for a profile plot. Profile plots are plots that show Height vs Varname
@@ -574,13 +578,20 @@ class VariableGroup:
             profile plots.
         :return: Line object representing the given variable for a profile plot
         """
+        output_lines = []
         variable = NetCdfVariable(varname, dataset, independent_var_names=Case_definitions.HEIGHT_VAR_NAMES,
                                   start_time=self.start_time, end_time=self.end_time,
                                   avg_axis=avg_axis,
                                   conversion_factor=conversion_factor)
         variable.trimArray(self.height_min_value, self.height_max_value, data=variable.independent_data.data)
-        line = Line(variable, variable.independent_data, label=label, line_format=line_format)
-        return line
+
+        if lines is not None:
+            additional_lines = self.__processLinesParameter__(lines, dataset, line_format=line_format, label_suffix=label)
+            output_lines.extend(additional_lines)
+        else:
+            line = Line(variable, variable.independent_data, label=label, line_format=line_format)
+            output_lines.append(line)
+        return output_lines
 
     def __get_timeseries_line__(self, varname, dataset, end_time, conversion_factor, label, line_format):
         """
@@ -603,7 +614,7 @@ class VariableGroup:
         line = Line(variable.independent_data, variable, label=label, line_format=line_format)
         return line
 
-    def __get_budget_lines__(self, lines, dataset, label, line_format):
+    def __get_budget_lines__(self, lines, dataset):
         """
         Returns a list of Line objects for a budget plot for each variable defined in lines
 
@@ -615,18 +626,7 @@ class VariableGroup:
             Recommended value: emtpy string "" (currently not used here)
         :return: A list of Line objects for a budget plot derived from lines
         """
-        output_lines = []
-        for line_definition in lines:
-            varnames = line_definition['var_names']
-            for varname in varnames:
-                if varname in dataset.variables.keys():
-                    variable = NetCdfVariable(varname, dataset, independent_var_names=Case_definitions.HEIGHT_VAR_NAMES,
-                                              start_time=self.start_time, end_time=self.end_time)
-                    variable.trimArray(self.height_min_value, self.height_max_value, data=variable.independent_data)
-                    line_definition = Line(variable, variable.independent_data, label=line_definition['legend_label'],
-                                           line_format="")  # uses auto-generating line format
-                    output_lines.append(line_definition)
-                    break
+        output_lines = self.__processLinesParameter__(lines, dataset)
         return output_lines
 
     def getVarForCalculations(self, varname, datasets, conversion_factor=1):
@@ -660,7 +660,7 @@ class VariableGroup:
                 return False
         return True
 
-    def pickMostLikelyOutputList(self, output1, output2):
+    def pickNonZeroOutput(self, output1, output2):
         """
         Sometimes there are more than 1 ways to calculate a variable, and
         it is impossible to know which equation to use before hand. In these
@@ -668,7 +668,8 @@ class VariableGroup:
         function. This function will then attempt to determine which of the
         outputs from the equations is most likely to be the expected answer.
 
-        This function currenlty works by determining which is furthest from 0 on average.
+        This function currenlty works by determining picking the non-nan and non-zero array.
+        In the event that both arrays contain non-nan and non-zero output, it will return output1.
 
         Example usage:
         def get_rc_coef_zm_X_wprcp_coamps_calc(self, dataset_override=None):
@@ -695,8 +696,30 @@ class VariableGroup:
             return output2
         if math.isnan(output2_mean):
             return output1
-        if output1_mean >= output2_mean:
-            return output1
-        elif output1_mean < output2_mean:
+        if output1_mean == 0:
             return output2
-        raise ValueError("Invalid data detected: \nOutput 1:", output1, "\nOutput 2:", output2)
+        elif output2_mean == 0:
+            return output1
+        raise UserWarning("Failed to find an easy answer to the best output.")
+        # return output1
+
+    def __processLinesParameter__(self, lines, dataset, label_suffix="", line_format = ""):
+        """
+        This method processes a 'lines' parameter from a variable definition and translates
+        it into a list of Line objects for plotting.
+
+        :param lines: a lines definition. See VariableGroupBaseBudgets.py for examples
+        :param dataset: A netcdf Dataset object or a dict of datasets
+        :return: list of Line objects for plotting
+        """
+        output_lines = []
+        for line_definition in lines:
+            varnames = line_definition['var_names']
+            label = line_definition['legend_label'] + " " + label_suffix
+            variable = NetCdfVariable(varnames, dataset, independent_var_names=Case_definitions.HEIGHT_VAR_NAMES,
+                                      start_time=self.start_time, end_time=self.end_time)
+            variable.trimArray(self.height_min_value, self.height_max_value, data=variable.independent_data)
+            line_definition = Line(variable, variable.independent_data, label=label,
+                                   line_format=line_format)  # uses auto-generating line format
+            output_lines.append(line_definition)
+        return output_lines

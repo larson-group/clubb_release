@@ -400,7 +400,7 @@ class DataReader():
         :return: String containing the long name of the variable that was found, often used as a title
         """
         if isinstance(ncdf_datasets, Dataset):
-            ncdf_datasets = {'auto': ncdf_datasets}
+            ncdf_datasets = [ncdf_datasets]
 
         long_name = "Title not found"
         # Find dataset and with matching variable name,

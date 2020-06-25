@@ -139,19 +139,6 @@ class VariableGroupIceMP(VariableGroup):
                 },
              'sam_conv_factor': 1 / 1000,
             },
-            {'var_names':
-                {
-                'clubb': ['precip_rate_sfc'],
-                'sam': ['PREC'],
-                'coamps': ['precip_rate_sfc'],
-                'r408': ['precip_rate_sfc'],
-                'hoc': ['precip_rate_sfc'],
-                'e3sm': ['precip_rate_sfc'],
-                'cam': ['precip_rate_sfc'],
-                'wrf': ['precip_rate_sfc'],
-                },
-             'type': Panel.TYPE_TIMESERIES
-            },
         ]
         super().__init__(case, clubb_datasets=clubb_datasets, les_dataset=les_dataset, coamps_dataset=coamps_dataset,
                          r408_dataset=r408_dataset, hoc_dataset=hoc_dataset, e3sm_datasets=e3sm_datasets,

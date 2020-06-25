@@ -23,6 +23,17 @@ class VariableGroupBase(VariableGroup):
         :param les_dataset:
         """
         self.name = "base variables"
+
+        corr_w_chi_i_lines = [
+            {'var_names': ['corr_w_chi_1'], 'legend_label': 'PDF comp. 1'},
+            {'var_names': ['corr_w_chi_2'], 'legend_label': 'PDF comp. 2'},
+        ]
+
+        corr_chi_eta_i_lines = [
+            {'var_names': ['corr_chi_eta_1'], 'legend_label': 'corr_chi_eta_1'},
+            {'var_names': ['corr_chi_eta_2'], 'legend_label': 'corr_chi_eta_2'},
+        ]
+
         self.variable_definitions = [
             {'var_names':
                 {
@@ -217,7 +228,9 @@ class VariableGroupBase(VariableGroup):
                     'cam': ['Skrt_zt'],
                     'wrf': ['Skrt_zt'],
                 },
-                'sam_calc': self.getSkrtZtLesCalc, 'coamps_calc': self.getSkrtZtLesCalc, 'sci_scale': 0,
+                'sam_calc': self.getSkrtZtLesCalc,
+                'coamps_calc': self.getSkrtZtLesCalc,
+                'sci_scale': 0,
             },
             {'var_names':
                 {
@@ -429,28 +442,34 @@ class VariableGroupBase(VariableGroup):
             },
             {'var_names':
                 {
-                    'clubb': ['corr_w_chi_1'],
-                    'sam': ['corr_w_chi_1'],
-                    'coamps': ['corr_w_chi_1'],
-                    'r408': ['corr_w_chi_1'],
-                    'hoc': ['corr_w_chi_1'],
-                    'e3sm': ['corr_w_chi_1'],
-                    'cam': ['corr_w_chi_1'],
-                    'wrf': ['corr_w_chi_1'],
+                    'clubb': ['corr_w_chi_i'],
+                    'sam': ['corr_w_chi_i'],
+                    'coamps': ['corr_w_chi_i'],
+                    'r408': ['corr_w_chi_i'],
+                    'hoc': ['corr_w_chi_i'],
+                    'e3sm': ['corr_w_chi_i'],
+                    'cam': ['corr_w_chi_i'],
+                    'wrf': ['corr_w_chi_i'],
                 },
+                'lines': corr_w_chi_i_lines,
+                'title': "Correlation of w and chi",
+                'axis_title': "corr_w_chi_i [-]",
                 'sci_scale': 0,
             },
             {'var_names':
                 {
-                    'clubb': ['corr_chi_eta_1'],
-                    'sam': ['corr_chi_eta_1'],
-                    'coamps': ['corr_chi_eta_1'],
-                    'r408': ['corr_chi_eta_1'],
-                    'hoc': ['corr_chi_eta_1'],
-                    'e3sm': ['corr_chi_eta_1'],
-                    'cam': ['corr_chi_eta_1'],
-                    'wrf': ['corr_chi_eta_1'],
+                    'clubb': ['corr_chi_eta_i'],
+                    'sam': ['corr_chi_eta_i'],
+                    'coamps': ['corr_chi_eta_i'],
+                    'r408': ['corr_chi_eta_i'],
+                    'hoc': ['corr_chi_eta_i'],
+                    'e3sm': ['corr_chi_eta_i'],
+                    'cam': ['corr_chi_eta_i'],
+                    'wrf': ['corr_chi_eta_i'],
                 },
+                'lines': corr_chi_eta_i_lines,
+                'title': "Correlation of chi and eta",
+                'axis_title': "corr_chi_eta_i [-]",
                 'sci_scale': 0,
             },
             {'var_names':
@@ -601,7 +620,6 @@ class VariableGroupBase(VariableGroup):
         if dataset_override is not None:
             dataset = dataset_override
 
-            # z,z, dataset = self.getVarForCalculations(['z', 'lev', 'altitude'], dataset)
         wp3, z, dataset = self.getVarForCalculations(['WP3', 'W3', 'wp3'], dataset)
         wp2, z, dataset = self.getVarForCalculations(['WP2', 'W2', 'wp2'], dataset)
 
@@ -615,6 +633,7 @@ class VariableGroupBase(VariableGroup):
         the following equation
          sam eqn RTP3 ./ (RTP2 + 4e-16).^1.5
          coamps eqn qtp3 ./ (qtp2 + 4e-16).^1.5
+                rtp3 ./ (rtp2 + 4e-16).^1.5
         :return: requested variable dependent_data in the form of a list.
                 Returned dependent_data is already cropped to the appropriate min,max indices
         """
@@ -626,12 +645,11 @@ class VariableGroupBase(VariableGroup):
             dataset = self.coamps_dataset['sm']
         if dataset_override is not None:
             dataset = dataset_override
-            # z,z, dataset = self.getVarForCalculations(['z', 'lev', 'altitude'], dataset)
-        rtp3, z, dataset = self.getVarForCalculations(['RTP3', 'qtp3'], dataset)
-        rtp2, z, dataset = self.getVarForCalculations(['RTP2', 'qtp2'], dataset)
-        skrtp_zt = rtp3 / (rtp2 + 4e-16) ** 1.5
+        rtp3, z, dataset = self.getVarForCalculations(['RTP3', 'qtp3', 'rtp3'], dataset)
+        rtp2, z, dataset = self.getVarForCalculations(['RTP2', 'qtp2', 'rtp2'], dataset)
+        skrt_zt = rtp3 / (rtp2 + 4e-16) ** 1.5
 
-        return skrtp_zt, z
+        return skrt_zt, z
 
     def getSkthlZtLesCalc(self, dataset_override=None):
         """
@@ -799,11 +817,12 @@ class VariableGroupBase(VariableGroup):
         PRES, z, dataset = self.getVarForCalculations('PRES', dataset)
         THETAV, z, dataset = self.getVarForCalculations('THETAV', dataset)
 
-        output1 = WPRCP * (2.5e6 / (1004.67 * ((PRES / 1000) ** (287.04 / 1004.67))) - 1.61 * THETAV)
-        output2 = ((QCFLUX) / (RHO * 2.5104e+6)) * (
-                    2.5e6 / (1004.67 * ((PRES / 1000) ** (287.04 / 1004.67))) - 1.61 * THETAV)
 
-        output = self.pickMostLikelyOutputList(output1, output2)
+        output = WPRCP * (2.5e6 / (1004.67 * ((PRES / 1000) ** (287.04 / 1004.67))) - 1.61 * THETAV)
+        wprcp_is_zeroes = WPRCP.min == 0 and WPRCP.max == 0
+        if wprcp_is_zeroes:
+            output = ((QCFLUX) / (RHO * 2.5104e+6)) * (2.5e6 / (1004.67 * ((PRES / 1000) ** (287.04 / 1004.67))) - 1.61 * THETAV)
+
         return output, z
 
     # rc_coef_zm. * thlprcp
@@ -899,7 +918,7 @@ class VariableGroupBase(VariableGroup):
         thvm, z, dataset = self.getVarForCalculations('thvm', dataset)
         output1 = wprlp * (2.5e6 / (1004.67 * ex0) - 1.61 * thvm)
         output2 = wprlp * (2.5e6 / (1004.67 * ((p / 1.0e5) ** (287.04 / 1004.67))) - 1.61 * thvm)
-        output = self.pickMostLikelyOutputList(output1, output2)
+        output = self.pickNonZeroOutput(output1, output2)
         return output, z
 
     def get_rc_coef_zm_X_thlprcp_sam_calc(self, dataset_override=None):

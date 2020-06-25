@@ -32,9 +32,7 @@ class VariableGroupLiquidMP(VariableGroup):
                     'cam': ['Ncm', 'ncm'],
                     'wrf': ['Ncm', 'ncm'],
                 },
-                'sam_calc': self.getNcmSamLine,
-                'r408_calc': self.getNcmR408Line,
-                'hoc_calc': self.getNcmHocLine
+                'sam_calc': self.getNcmSamLine
             },
             {'var_names':
                 {
@@ -159,14 +157,15 @@ class VariableGroupLiquidMP(VariableGroup):
         dataset = self.les_dataset
         if dataset_override is not None:
             dataset = dataset_override
-        nc, z, dataset = self.getVarForCalculations(['NC','GCSSNC'], dataset)
+        nc, z, dataset = self.getVarForCalculations(['NC'], dataset)
+        gcssnc, z, dataset = self.getVarForCalculations(['GCSSNC'], dataset)
         rho, z, dataset = self.getVarForCalculations('RHO', dataset)
         cld, z, dataset = self.getVarForCalculations('CLD', dataset)
 
-        output1 = (nc * (10 ** 6) / rho)
-        output2 = cld * (nc * (10 ** 6) / rho)
+        output1 = cld * (nc * (10 ** 6) / rho) #ncm
+        output2 = (gcssnc * (10 ** 6) / rho) #nc in cloud
 
-        output = self.pickMostLikelyOutputList(output1, output2)
+        output = self.pickNonZeroOutput(output1, output2)
         return output, z
 
     def getNrmSamLine(self, dataset_override=None):
@@ -196,18 +195,3 @@ class VariableGroupLiquidMP(VariableGroup):
         This line seems unintuitive, but it's what plotgen used.
         :return:
         """
-
-        dataset = self.r408_datasets['zt']
-        if dataset_override is not None:
-            dataset = dataset_override
-        ncm, z, dataset = self.getVarForCalculations(['Ncm', 'ncm'], dataset)
-        cf, z, dataset = self.getVarForCalculations(['cf'], dataset)
-
-        output = ncm * cf
-        return output, z
-
-    def getNcmHocLine(self, dataset_override=None):
-        dataset = self.hoc_datasets
-        if dataset_override is not None:
-            dataset = dataset_override
-        return self.getNcmR408Line(dataset_override=dataset)
