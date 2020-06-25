@@ -92,7 +92,7 @@ class NetCdfVariable:
         # Get dependent and independent data from the chosen dataset
         self.dependent_data, self.independent_data = data_reader.getVarData(self.ncdf_data, self)
 
-    def constrain(self, start_value, end_value, data=None):
+    def trimArray(self, start_value, end_value, data=None):
         """
         Remove all dependent_data elements from the variable that are not between the start and end value. Assumes
         the dependent_data is sorted. If the optional data parameter is used, it will restrict to
