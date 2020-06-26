@@ -122,10 +122,16 @@ module clubb_intr
 
 !  Constant parameters
   logical, parameter, private :: &
-    l_input_fields   = .false.,       &  ! Always false for EAM-CLUBB.
-    l_implemented    = .true.,        &  ! Implemented in a host model (always true)
-    l_host_applies_sfc_fluxes = .false.  ! Whether the host model applies the surface fluxes
-    
+    l_input_fields   = .false.,          & ! Always false for EAM-CLUBB.
+    l_implemented    = .true.,           & ! Implemented in a host model (always true)
+    l_host_applies_sfc_fluxes = .false., & ! Whether the host model applies the surface fluxes
+    l_update_pressure = .false.            ! CLUBB updates pressure (false in a host model)
+
+  ! These are initialized to .false. but can be changed.
+  logical, private :: &
+    l_diffuse_rtm_and_thlm, &
+    l_stability_correct_Kh_N2_zm
+
   logical            :: do_tms
   logical            :: lq(pcnst)
   logical            :: lq2(pcnst)
@@ -140,7 +146,27 @@ module clubb_intr
   integer            :: history_budget_histfile_num
   integer            :: edsclr_dim       ! Number of scalars to transport in CLUBB
   integer            :: offset
- 
+
+  integer :: &
+    clubb_iiPDF_type, &
+    clubb_ipdf_call_placement
+
+  logical :: &
+    clubb_l_predict_upwp_vpwp, &
+    clubb_l_min_wp2_from_corr_wx, &
+    clubb_l_min_xp2_from_corr_wx, &
+    clubb_l_vert_avg_closure, &
+    clubb_l_trapezoidal_rule_zt, &
+    clubb_l_trapezoidal_rule_zm, &
+    clubb_l_call_pdf_closure_twice, &
+    clubb_l_use_cloud_cover, &
+    clubb_l_stability_correct_tau_zm, &
+    clubb_l_damp_wp2_using_em, &
+    clubb_l_diag_Lscale_from_tau, &
+    clubb_l_use_C7_Richardson, &
+    clubb_l_rcm_supersat_adj, &
+    clubb_l_damp_wp3_Skw_squared
+
 !  define physics buffer indicies here       
   integer :: &
     wp2_idx, &          ! vertical velocity variances
@@ -422,7 +448,15 @@ end subroutine clubb_init_cnst
     namelist /clubbpbl_diff_nl/ clubb_cloudtop_cooling, clubb_rainevap_turb, clubb_expldiff, &
                                 clubb_do_adv, clubb_do_deep, clubb_timestep, clubb_stabcorrect, &
                                 clubb_rnevap_effic, clubb_liq_deep, clubb_liq_sh, clubb_ice_deep, &
-                                clubb_ice_sh, clubb_tk1, clubb_tk2, relvar_fix, clubb_use_sgv
+                                clubb_ice_sh, clubb_tk1, clubb_tk2, relvar_fix, clubb_use_sgv, &
+                                clubb_iiPDF_type, clubb_ipdf_call_placement, &
+                                clubb_l_predict_upwp_vpwp, clubb_l_min_wp2_from_corr_wx, &
+                                clubb_l_min_xp2_from_corr_wx, clubb_l_vert_avg_closure, &
+                                clubb_l_trapezoidal_rule_zt, clubb_l_trapezoidal_rule_zm, &
+                                clubb_l_call_pdf_closure_twice, clubb_l_use_cloud_cover, &
+                                clubb_l_stability_correct_tau_zm, clubb_l_damp_wp2_using_em, &
+                                clubb_l_diag_Lscale_from_tau, clubb_l_use_C7_Richardson, &
+                                clubb_l_rcm_supersat_adj, clubb_l_damp_wp3_Skw_squared
 
     !----- Begin Code -----
 
@@ -437,6 +471,8 @@ end subroutine clubb_init_cnst
     clubb_do_adv       = .false.   ! Initialize to false
     clubb_do_deep      = .false.   ! Initialize to false
     use_sgv            = .false.
+    l_diffuse_rtm_and_thlm       = .false. ! Initialize to false
+    l_stability_correct_Kh_N2_zm = .false. ! Initialize to false
 
     !  Read namelist to determine if CLUBB history should be called
     if (masterproc) then
@@ -483,6 +519,22 @@ end subroutine clubb_init_cnst
       call mpibcast(clubb_tk2,                1,   mpir8,   0, mpicom)
       call mpibcast(relvar_fix,               1,   mpilog,  0, mpicom)
       call mpibcast(clubb_use_sgv,            1,   mpilog,   0, mpicom)
+      call mpibcast(clubb_iiPDF_type,          1,   mpiint,   0, mpicom)
+      call mpibcast(clubb_ipdf_call_placement, 1,   mpiint,   0, mpicom)
+      call mpibcast(clubb_l_predict_upwp_vpwp,        1,   mpilog,   0, mpicom)
+      call mpibcast(clubb_l_min_wp2_from_corr_wx,     1,   mpilog,   0, mpicom)
+      call mpibcast(clubb_l_min_xp2_from_corr_wx,     1,   mpilog,   0, mpicom)
+      call mpibcast(clubb_l_vert_avg_closure,         1,   mpilog,   0, mpicom)
+      call mpibcast(clubb_l_trapezoidal_rule_zt,      1,   mpilog,   0, mpicom)
+      call mpibcast(clubb_l_trapezoidal_rule_zm,      1,   mpilog,   0, mpicom)
+      call mpibcast(clubb_l_call_pdf_closure_twice,   1,   mpilog,   0, mpicom)
+      call mpibcast(clubb_l_use_cloud_cover,          1,   mpilog,   0, mpicom)
+      call mpibcast(clubb_l_stability_correct_tau_zm, 1,   mpilog,   0, mpicom)
+      call mpibcast(clubb_l_damp_wp2_using_em,        1,   mpilog,   0, mpicom)
+      call mpibcast(clubb_l_diag_Lscale_from_tau,     1,   mpilog,   0, mpicom)
+      call mpibcast(clubb_l_use_C7_Richardson,        1,   mpilog,   0, mpicom)
+      call mpibcast(clubb_l_rcm_supersat_adj,         1,   mpilog,   0, mpicom)
+      call mpibcast(clubb_l_damp_wp3_Skw_squared,     1,   mpilog,   0, mpicom)
 #endif
 
     !  Overwrite defaults if they are true
@@ -497,8 +549,8 @@ end subroutine clubb_init_cnst
     end if
 
     if (clubb_stabcorrect) then
-     clubb_config_flags%l_diffuse_rtm_and_thlm       = .true.   ! CLUBB flag set to true
-     clubb_config_flags%l_stability_correct_Kh_N2_zm = .true.   ! CLUBB flag set to true
+       l_diffuse_rtm_and_thlm       = .true.   ! CLUBB flag set to true
+       l_stability_correct_Kh_N2_zm = .true.   ! CLUBB flag set to true
     endif
       
     ! read tunable parameters from namelist, handlings of masterproc vs others
@@ -609,10 +661,6 @@ end subroutine clubb_init_cnst
 
 
     !----- Begin Code -----
-    !$OMP PARALLEL
-    clubb_config_flags%l_do_expldiff_rtm_thlm = do_expldiff
-    !$OMP END PARALLEL
-    
     allocate( &
        pdf_params_chnk(pcols,begchunk:endchunk),   &
        pdf_params_zm_chnk(pcols,begchunk:endchunk), &
@@ -748,24 +796,26 @@ end subroutine clubb_init_cnst
 
     ! Overwrite default values of CLUBB configurable model flags with flags
     ! that are used in the E3SM model.
-    clubb_config_flags%iiPDF_type = 1
-    clubb_config_flags%ipdf_call_placement = 1
-    clubb_config_flags%l_predict_upwp_vpwp = .false.
-    clubb_config_flags%l_min_wp2_from_corr_wx = .false.
-    clubb_config_flags%l_min_xp2_from_corr_wx = .false.
-    clubb_config_flags%l_vert_avg_closure  = .true.
-    clubb_config_flags%l_trapezoidal_rule_zt = .true.
-    clubb_config_flags%l_trapezoidal_rule_zm = .true.
-    clubb_config_flags%l_call_pdf_closure_twice = .true.
-    clubb_config_flags%l_use_cloud_cover = .true.
-    clubb_config_flags%l_stability_correct_tau_zm = .true.
-    clubb_config_flags%l_damp_wp2_using_em = .false.
-    clubb_config_flags%l_do_expldiff_rtm_thlm = .true.
-    clubb_config_flags%l_diag_Lscale_from_tau = .false.
-    clubb_config_flags%l_use_C7_Richardson = .false.
-    clubb_config_flags%l_rcm_supersat_adj = .false.
-    clubb_config_flags%l_damp_wp3_Skw_squared = .false.
-    clubb_config_flags%l_update_pressure = .false.
+    clubb_config_flags%iiPDF_type = clubb_iiPDF_type
+    clubb_config_flags%ipdf_call_placement = clubb_ipdf_call_placement
+    clubb_config_flags%l_predict_upwp_vpwp = clubb_l_predict_upwp_vpwp
+    clubb_config_flags%l_min_wp2_from_corr_wx = clubb_l_min_wp2_from_corr_wx
+    clubb_config_flags%l_min_xp2_from_corr_wx = clubb_l_min_xp2_from_corr_wx
+    clubb_config_flags%l_vert_avg_closure = clubb_l_vert_avg_closure
+    clubb_config_flags%l_trapezoidal_rule_zt = clubb_l_trapezoidal_rule_zt
+    clubb_config_flags%l_trapezoidal_rule_zm = clubb_l_trapezoidal_rule_zm
+    clubb_config_flags%l_call_pdf_closure_twice = clubb_l_call_pdf_closure_twice
+    clubb_config_flags%l_use_cloud_cover = clubb_l_use_cloud_cover
+    clubb_config_flags%l_stability_correct_tau_zm = clubb_l_stability_correct_tau_zm
+    clubb_config_flags%l_damp_wp2_using_em = clubb_l_damp_wp2_using_em
+    clubb_config_flags%l_do_expldiff_rtm_thlm = do_expldiff
+    clubb_config_flags%l_diag_Lscale_from_tau = clubb_l_diag_Lscale_from_tau
+    clubb_config_flags%l_use_C7_Richardson = clubb_l_use_C7_Richardson
+    clubb_config_flags%l_rcm_supersat_adj = clubb_l_rcm_supersat_adj
+    clubb_config_flags%l_damp_wp3_Skw_squared = clubb_l_damp_wp3_Skw_squared
+    clubb_config_flags%l_update_pressure = l_update_pressure
+    clubb_config_flags%l_diffuse_rtm_and_thlm = l_diffuse_rtm_and_thlm
+    clubb_config_flags%l_stability_correct_Kh_N2_zm = l_stability_correct_Kh_N2_zm
 
     !  Set up CLUBB core.  Note that some of these inputs are overwrote
     !  when clubb_tend_cam is called.  The reason is that heights can change
