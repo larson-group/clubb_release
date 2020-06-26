@@ -541,12 +541,19 @@ class DataReader():
                 if end_value < test_value < data[end_idx - 1]:
                     end_idx = i
         else:
-            # dependent_data is descending
+            # Check for start index
+            start_idx_found = False
             for i in range(0, len(data)):
                 test_value = data[i]
-                if test_value <= end_value and test_value:
+                if test_value <= end_value and not start_idx_found:
+                    start_idx_found = True
                     start_idx = i
-                pass
+                if test_value == start_value:
+                    end_idx = i + 1
+                # Check for end index
+                # end_idx -1 is in place because this check is inclusive, but the index is compatible with exclusivity
+                if start_value > test_value > data[end_idx - 1]:
+                    end_idx = i
 
         return start_idx, end_idx
 

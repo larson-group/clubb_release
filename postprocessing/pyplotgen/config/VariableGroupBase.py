@@ -30,8 +30,8 @@ class VariableGroupBase(VariableGroup):
         ]
 
         corr_chi_eta_i_lines = [
-            {'var_names': ['corr_chi_eta_1'], 'legend_label': 'corr_chi_eta_1'},
-            {'var_names': ['corr_chi_eta_2'], 'legend_label': 'corr_chi_eta_2'},
+            {'var_names': ['corr_chi_eta_1'], 'legend_label': 'PDF comp. 1'},
+            {'var_names': ['corr_chi_eta_2'], 'legend_label': 'PDF comp. 2'},
         ]
 
         self.variable_definitions = [
@@ -819,7 +819,7 @@ class VariableGroupBase(VariableGroup):
 
 
         output = WPRCP * (2.5e6 / (1004.67 * ((PRES / 1000) ** (287.04 / 1004.67))) - 1.61 * THETAV)
-        wprcp_is_zeroes = WPRCP.min == 0 and WPRCP.max == 0
+        wprcp_is_zeroes = min(WPRCP) == 0.0 and max(WPRCP) == 0.0
         if wprcp_is_zeroes:
             output = ((QCFLUX) / (RHO * 2.5104e+6)) * (2.5e6 / (1004.67 * ((PRES / 1000) ** (287.04 / 1004.67))) - 1.61 * THETAV)
 
