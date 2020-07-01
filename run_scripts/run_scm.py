@@ -54,9 +54,9 @@ if ('format' not in parameters):
 if ('prefix' not in parameters):
   parameters['prefix'] = '"' + model_file_name.replace('.in','') + '"'
 
-# match dt_output to max of dt or 10s unless it is specifically provided
+# match dt_output to max of dt or 60s unless it is specifically provided
 if ('dt' in parameters and 'dt_output' not in parameters):
-  parameters['dt_output'] = str(max(float(parameters['dt']), 10.0))
+  parameters['dt_output'] = str(max(float(parameters['dt']), 60.0))
 
 # if dz specified, set other associated options
 if ('dz' in parameters):
@@ -71,7 +71,6 @@ if ('levels' in parameters):
 if ('refine' in parameters):
   height = 10000.0
   refine = int(parameters['refine'])
-  parameters['levels'] = str(128*2**refine)
   grid128 = np.loadtxt('../input/grid/deep_convection_128lev_27km_zt_grid.grd')
   ind = np.where(grid128 > height)[0][0]
   grid128 = grid128[:ind]
@@ -86,6 +85,7 @@ if ('refine' in parameters):
     refine_ind = coarse_ind[:-1] + 2**(refine-level-1)
     grid[refine_ind] = 0.5*(grid[coarse_ind[1:]] + grid[coarse_ind[:-1]])
   grid[0] = -grid[1]
+  parameters['levels'] = str(len(grid))
   filename = 'deep_convection_{}lev_27km_zt_grid.grd'.format(parameters['levels'])
   np.savetxt(filename, grid)
   parameters['zt_filename'] = "'{}'".format(filename)
@@ -94,9 +94,9 @@ if ('refine' in parameters):
 if ('aterms' not in parameters):
   parameters['aterms'] = 'unmodified'
 
-# set time_final to 10 hours unless user has specified something else
+# set time_final to 3 hours unless user has specified something else
 if ('tfinal' not in parameters):
-  parameters['tfinal'] = str(10*3600.0)
+  parameters['tfinal'] = str(3*3600.0)
 
 # set centered difference unless user has specified something else
 if ('godunov' not in parameters):
