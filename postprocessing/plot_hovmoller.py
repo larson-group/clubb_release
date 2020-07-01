@@ -26,10 +26,10 @@ for (suffix, var) in (('zm','wp2'),('zt','wp3')):
     valmax = min(2.0, np.amax(val))
     pcr = ax[m].contourf(t/60.0, z, np.transpose(val[:,:,0,0]), cmap='gist_stern_r', levels=np.linspace(0.0,valmax,10))
     f.colorbar(pcr, ax=ax[m])
-    ax[m].set_ylabel(sys.argv[1+m])
+    ax[m].set_title(sys.argv[1+m])
+    ax[m].set_ylabel(var)
     ax[m].grid(True, which='major', axis='x')
-  pyplot.setp(ax, xlim=(500,1500), ylim=(0,5000))
-  ax[0].set_title(var)
+  pyplot.setp(ax, ylim=(0,5000))
   ax[M-1].set_xlabel('time (min)')
   f.tight_layout()
 
