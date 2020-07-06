@@ -77,6 +77,7 @@ module namelist_mod
     initial_total_mass,   & ! set > 0 to set the initial_total_mass
     u_perturb,     &        ! J&W baroclinic test perturbation size
     moisture,      &
+    use_moisture,      &
     vform,         &
     vfile_mid,     &
     vfile_int,     &
@@ -782,6 +783,12 @@ module namelist_mod
     call MPI_bcast(use_column_solver, 1, MPIlogical_t, par%root, par%comm, ierr)
 #endif
 
+    ! should we assume Q(:,:,:,1) has water vapor:
+    use_moisture = ( moisture /= "dry") 
+    if (qsize<1) use_moisture = .false.  
+
+
+
     ! use maximum available:
     if (NThreads == -1) NThreads = omp_get_max_threads()
 
@@ -1105,10 +1112,26 @@ module namelist_mod
 #endif
 #endif
 
+      call print_clear_message()
 
 !=======================================================================================================!
     endif
 
   end subroutine readnl
+
+  subroutine print_clear_message()
+    ! Those familiar with Homme can deduce dycore and transport type from
+    ! options. But we should provide friendly message for others.
+#if defined MODEL_THETA_L
+    write(iulog,*) 'Running dycore: theta-l'
+#elif defined _PRIM
+    write(iulog,*) 'Running dycore: preqx'
+#endif
+    if (transport_alg == 0) then
+       write(iulog,*) 'Running tracer transport method: horizonatally Eulerian'
+    else
+       write(iulog,*) 'Running tracer transport method: semi-Lagrangian'
+    end if
+  end subroutine print_clear_message
 
 end module namelist_mod
