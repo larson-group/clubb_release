@@ -6,6 +6,7 @@ TODO: Add new Panel type: time-height plots
 '''
 import os
 from datetime import datetime
+from textwrap import fill
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -127,6 +128,8 @@ class Panel:
 
         max_panel_value = 0
         for var in self.all_plots:
+            legend_char_wrap_length = 20
+            var.label = fill(var.label, width=legend_char_wrap_length)
             x_data = var.x
             if self.sci_scale is not None:
                 x_data = x_data * math_scale_factor
