@@ -360,7 +360,7 @@ DYCOMS2_RF02_ND = {'name': 'dycoms2_rf02_nd', 'start_time': 301, 'end_time': 360
                    'wrf_file': None,
                    'var_groups': [VariableGroupBase, VariableGroupWs, VariableGroupLiquidMP, VariableGroupKKMP]}
 
-DYCOMS2_RF02_DS_NIGHTLY = {'name': 'dycoms2_rf02_ds', 'start_time': 181, 'end_time': 240, 'height_min_value': 0,
+DYCOMS2_RF02_DS_RESTART = {'name': 'dycoms2_rf02_ds_restart', 'start_time': 181, 'end_time': 240, 'height_min_value': 0,
                          'height_max_value': 1200,
                          'blacklisted_vars': [],
                          'les_dataset': SAM_BENCHMARK_OUTPUT_ROOT +
@@ -647,8 +647,8 @@ WANGARA = {'name': 'wangara', 'start_time': 181, 'end_time': 240, 'height_min_va
 ALL_CASES = [ARM, ARM_97, ASTEX_A209, ATEX,
              BOMEX,
              CGILS_S6, CGILS_S11, CGILS_S12, CLEX9_NOV02, CLEX9_OCT14,
-             DYCOMS2_RF01, DYCOMS2_RF01_FIXED_SST, DYCOMS2_RF02_DO, DYCOMS2_RF02_DS, DYCOMS2_RF02_ND,
-             DYCOMS2_RF02_DS_NIGHTLY, DYCOMS2_RF02_SO,
+             DYCOMS2_RF01, DYCOMS2_RF01_FIXED_SST, DYCOMS2_RF02_DO, DYCOMS2_RF02_DS, DYCOMS2_RF02_DS_RESTART,
+             DYCOMS2_RF02_ND, DYCOMS2_RF02_SO,
              FIRE,
              GABLS2, GABLS3, GABLS3_NIGHT,
              # IOP,
@@ -662,5 +662,5 @@ ALL_CASES = [ARM, ARM_97, ASTEX_A209, ATEX,
              ]
 
 # If uncommented, this line will override the real ALL_CASES given above, forcing pyplotgen to only plot some cases.
-# ALL_CASES = [DYCOMS2_RF02_DO, DYCOMS2_RF02_DS, RICO, ASTEX_A209]
-# ALL_CASES = ALL_CASES[:7] # run first X cases
+# ALL_CASES = [ATEX]
+# ALL_CASES = ALL_CASES[:7]
