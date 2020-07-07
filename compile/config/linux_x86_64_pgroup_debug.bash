@@ -33,15 +33,15 @@ OPTIMIZE=""
 
 # == NetCDF Location ==
 #NETCDF="$HOME/netcdf-3.6.3"
-NETCDF="/usr/local/netcdf-pgi"
+NETCDF="/usr/local/NETCDF-Fortran-4.4.5-pgi"
 
 # == LAPACK libraries ==
 # Portland group usually has static versions of these
 #LAPACK="-llapack -lblas"
-LAPACK="-lacml"
+#LAPACK="-lacml"
 
 # == Linking Flags ==
-LDFLAGS="-L$NETCDF/lib -lnetcdf $LAPACK"
+LDFLAGS="-L$NETCDF/lib -lnetcdff $LAPACK"
 
 FFLAGS="$ARCH $OPTIMIZE $DEBUG -Mbackslash"
 

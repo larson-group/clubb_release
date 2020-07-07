@@ -31,17 +31,17 @@ OPTIMIZE="-O2"
 
 # == NetCDF Location ==
 #NETCDF="$HOME/netcdf-3.6.3"
-NETCDF="/usr/local/netcdf-pgi"
+NETCDF="/usr/local/NETCDF-Fortran-4.4.5-pgi"
 
 # == LAPACK libraries ==
 # The PGI directory contains static versions of LAPACK and BLAS
 #LAPACK="-llapack -lblas"
 # This will select the version of ACML that PGI provides, which is generally
 # faster than the reference BLAS and LAPACK (above)
-LAPACK="-lacml"
+#LAPACK="-lacml"
 
 # == Linking Flags ==
-LDFLAGS="$ARCH -L$NETCDF/lib -lnetcdf $LAPACK"
+LDFLAGS="$ARCH -L$NETCDF/lib -lnetcdff $LAPACK"
 
 FFLAGS="$ARCH $OPTIMIZE $DEBUG -Mbackslash -Kieee"
 
