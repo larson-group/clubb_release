@@ -282,6 +282,7 @@ class VariableGroup:
         all_lines = []
 
         data_was_calculated = False
+        # Use _calc function for variable if needed
         if (model_name + '_calc') in variable_def_dict.keys() and not self.__varnamesInDataset__(
                 all_model_var_names[model_name], dataset):
             plot_data, z = variable_def_dict[(model_name + '_calc')](dataset_override=dataset)
@@ -289,12 +290,15 @@ class VariableGroup:
             all_lines.append(plot)
             data_was_calculated = True
 
+        # Process extra variable lines (e.g. budget lines)
         if lines is not None:
             for line in lines:
+                line['calculated'] = False
                 if (model_name + '_calc') in line.keys() and not self.__varnamesInDataset__(line['var_names'], dataset):
                     plot_data, z = line[(model_name + '_calc')](dataset_override=dataset)
                     plot = Line(plot_data, z, line_format=line_style, label=line['legend_label'])
                     all_lines.append(plot)
+                    line['calculated'] = True
 
         if len(all_model_var_names[model_name]) > 0 and not data_was_calculated:
             all_lines.extend(self.__getVarLines__(all_model_var_names[model_name], dataset,
@@ -441,12 +445,23 @@ class VariableGroup:
             a dict of datasets to be compared
         :return: True if a name is found, False otherwise
         """
-        if not isinstance(datasets, dict):
-            datasets = {'auto': datasets}
-        for name in varnames:
-            for dataset in datasets.values():
-                if name in dataset.variables.keys():
+        if isinstance(datasets, list):
+            for name in varnames:
+                for dataset in datasets:
+                    if name in dataset.variables.keys():
+                        return True
+        elif isinstance(datasets, dict):
+            for name in varnames:
+                for dataset in datasets.values():
+                    if name in dataset.variables.keys():
+                        return True
+        elif isinstance(datasets, Dataset):
+            for name in varnames:
+                if name in datasets.variables.keys():
                     return True
+        else:
+            raise ValueError("Unknown data type for dataset")
+
         return False
 
     def __getRelativeVarName__(self, var_names):
@@ -549,7 +564,6 @@ class VariableGroup:
             if profile_lines is not None:
                 all_lines.extend(profile_lines)
         elif panel_type is Panel.TYPE_BUDGET:
-            # for dataset in ncdf_datasets.values():
             budget_lines = self.__get_budget_lines__(lines, ncdf_datasets)
             all_lines.extend(budget_lines)
         elif panel_type is Panel.TYPE_TIMESERIES:
@@ -646,7 +660,7 @@ class VariableGroup:
         var_ncdf.trimArray(self.height_min_value, self.height_max_value, data=var_ncdf.independent_data)
         var_data = var_ncdf.dependent_data
         z_data = var_ncdf.independent_data
-        return var_data, z_data, datasets
+        return var_data, z_data, var_ncdf.ncdf_data # changed datasets to var_ncdf.ncdf_data to fix budget plots
 
     def isSurfaceData(self, dataset):
         """
@@ -714,8 +728,12 @@ class VariableGroup:
         """
         output_lines = []
         for line_definition in lines:
+            if line_definition['calculated'] is True:
+                continue
             varnames = line_definition['var_names']
-            label = line_definition['legend_label'] + " " + label_suffix
+            label = line_definition['legend_label']
+            if label_suffix != "":
+                label = line_definition['legend_label'] + " " + label_suffix
             variable = NetCdfVariable(varnames, dataset, independent_var_names=Case_definitions.HEIGHT_VAR_NAMES,
                                       start_time=self.start_time, end_time=self.end_time)
             variable.trimArray(self.height_min_value, self.height_max_value, data=variable.independent_data)
