@@ -36,7 +36,6 @@ module advance_wp2_wp3_module
              wp2_term_dp1_rhs_all, &
              wp2_term_pr3_rhs_all, & 
              wp2_term_pr1_rhs_all, & 
-             wp3_term_ta_ADG1_lhs_all, & 
              wp3_term_tp_lhs_all, & 
              wp3_terms_ac_pr2_lhs_all, & 
              wp3_term_pr1_lhs_all, & 
@@ -1576,15 +1575,11 @@ module advance_wp2_wp3_module
             ! The ADG1 PDF is used.
 
             ! Calculate terms
-            call wp3_term_ta_ADG1_lhs_all( wp2(:), &
-                                           a1(:), a1_zt(:), &
-                                           a3(:), a3_zt(:), &
-                                           wp3_on_wp2(:), &
-                                           rho_ds_zm(:), &
-                                           invrs_rho_ds_zt(:), &
-                                           gr%invrs_dzt(:), &
-                                           l_standard_term_ta, &
-                                           wp3_term_ta_lhs_result(:,:) )
+            call wp3_term_ta_ADG1_lhs( wp2, a1, a1_zt, a3, a3_zt, &
+                                       wp3_on_wp2, rho_ds_zm, &
+                                       invrs_rho_ds_zt, gr%invrs_dzt, &
+                                       l_standard_term_ta, &
+                                       wp3_term_ta_lhs_result )
 
         elseif ( iiPDF_type == iiPDF_new &
                  .or. iiPDF_type == iiPDF_new_hybrid ) then
@@ -2195,15 +2190,12 @@ module advance_wp2_wp3_module
             ! The ADG1 PDF is used.
 
             ! Calculate terms
-            call wp3_term_ta_ADG1_lhs_all( wp2(:), &
-                                           a1(:), a1_zt(:), &
-                                           a3(:), a3_zt(:), &
-                                           wp3_on_wp2(:), &
-                                           rho_ds_zm(:), &
-                                           invrs_rho_ds_zt(:), &
-                                           gr%invrs_dzt(:), &
-                                           l_standard_term_ta, &
-                                           wp3_term_ta_lhs_result(:,:) )
+            call wp3_term_ta_ADG1_lhs( wp2, a1, a1_zt, a3, a3_zt, &
+                                       wp3_on_wp2, rho_ds_zm, &
+                                       invrs_rho_ds_zt, gr%invrs_dzt, &
+                                       l_standard_term_ta, &
+                                       wp3_term_ta_lhs_result )
+
             ! Add terms
             do k = 2, gr%nz-1
 
@@ -3618,15 +3610,11 @@ module advance_wp2_wp3_module
   end subroutine wp3_term_ta_new_pdf_lhs
 
   !=============================================================================
-  pure function wp3_term_ta_ADG1_lhs( wp2, wp2m1, &
-                                      a1, a1_zt, a1m1, &
-                                      a3, a3_zt, a3m1, &
-                                      wp3_on_wp2, wp3_on_wp2_m1, &
-                                      rho_ds_zm, rho_ds_zmm1, &
-                                      invrs_rho_ds_zt, &
-                                      invrs_dzt, level, &
-                                      l_standard_term_ta ) &
-  result( lhs )
+  pure subroutine wp3_term_ta_ADG1_lhs( wp2, a1, a1_zt, a3, a3_zt, &
+                                        wp3_on_wp2, rho_ds_zm, &
+                                        invrs_rho_ds_zt, invrs_dzt, &
+                                        l_standard_term_ta, &
+                                        lhs_ta_wp3 )
 
     ! Description:
     ! Turbulent advection of w'^3:  implicit portion of the code.
@@ -3718,6 +3706,9 @@ module advance_wp2_wp3_module
     use grid_class, only:  &
         gr ! Variable gr%weights_zt2zm
 
+    use constants_clubb, only: &
+        zero
+
     use clubb_precision, only: &
         core_rknd ! Variable(s)
 
@@ -3736,24 +3727,16 @@ module advance_wp2_wp3_module
       t_below = 2       ! Index for lower thermodynamic level grid weight.
 
     ! Input Variables
-    real( kind = core_rknd ), intent(in) ::  & 
-      wp2,             & ! w'^2(k)                                     [m^2/s^2]
-      wp2m1,           & ! w'^2(k-1)                                   [m^2/s^2]
-      a1,              & ! a_1(k)                                      [-]
-      a1_zt,           & ! a_1 interpolated to thermodynamic level (k) [-]
-      a1m1,            & ! a_1(k-1)                                    [-]
-      a3,              & ! a_3(k)                                      [-]
-      a3_zt,           & ! a_3 interpolated to thermodynamic level (k) [-]
-      a3m1,            & ! a_3(k-1)                                    [-]
-      wp3_on_wp2,      & ! w'^3 / w'^2 at momentum level (k)           [m/s]
-      wp3_on_wp2_m1,   & ! w'^3 / w'^2 at momentum level (k-1)         [m/s]
-      rho_ds_zm,       & ! Dry, static density at momentum level (k)   [kg/m^3]
-      rho_ds_zmm1,     & ! Dry, static density at momentum level (k-1) [kg/m^3]
-      invrs_rho_ds_zt, & ! Inv dry, static density at thermo level (k) [m^3/kg]
-      invrs_dzt          ! Inverse of grid spacing (k)                 [1/m]
-
-    integer, intent(in) :: & 
-      level ! Central thermodynamic level (on which calculation occurs).
+    real( kind = core_rknd ), dimension(gr%nz), intent(in) ::  & 
+      wp2,             & ! w'^2                                     [m^2/s^2]
+      a1,              & ! a_1                                      [-]
+      a1_zt,           & ! a_1 interpolated to thermodynamic levels [-]
+      a3,              & ! a_3                                      [-]
+      a3_zt,           & ! a_3 interpolated to thermodynamic levels [-]
+      wp3_on_wp2,      & ! w'^3 / w'^2 at momentum levels           [m/s]
+      rho_ds_zm,       & ! Dry, static density at momentum levels   [kg/m^3]
+      invrs_rho_ds_zt, & ! Inv dry, static density at thermo levels [m^3/kg]
+      invrs_dzt          ! Inverse of grid spacing                  [1/m]
 
     logical, intent(in) :: &
       l_standard_term_ta ! Use the standard discretization for the turbulent advection terms.
@@ -3761,22 +3744,16 @@ module advance_wp2_wp3_module
                          ! derivative in advance_wp2_wp3_module.F90 and in
                          ! advance_xp2_xpyp_module.F90.
 
-    ! Return Variable
-    real( kind = core_rknd ), dimension(5) :: lhs
+    ! Output Variable
+    real( kind = core_rknd ), dimension(5,gr%nz), intent(out) :: &
+      lhs_ta_wp3
 
-    ! Local Variables
-    integer :: & 
-      mk,    & ! Momentum level directly above central thermodynamic level.
-      mkm1     ! Momentum level directly below central thermodynamic level.
+    ! Loop variable
+    integer :: k
 
 
-    ! Momentum level (k) is between thermodynamic level (k+1)
-    ! and thermodynamic level (k).
-    mk = level
-
-    ! Momentum level (k-1) is between thermodynamic level (k)
-    ! and thermodynamic level (k-1).
-    mkm1 = level - 1
+    ! Set lower boundary to 0
+    lhs_ta_wp3(:,1) = zero
 
     if ( l_standard_term_ta ) then
 
@@ -3784,42 +3761,47 @@ module advance_wp2_wp3_module
        ! with the model equations found in the documentation and the description
        ! listed above.
 
-       ! Thermodynamic superdiagonal: [ x wp3(k+1,<t+1>) ]
-       lhs(kp1_tdiag) &
-       = + invrs_rho_ds_zt &
-           * invrs_dzt &
-             * rho_ds_zm * a1 * wp3_on_wp2 &
-             * gr%weights_zt2zm(t_above,mk)
+       do k = 2, gr%nz-1, 1
 
-       ! Momentum superdiagonal: [ x wp2(k,<t+1>) ]
-       lhs(k_mdiag) &
-       = + invrs_rho_ds_zt * invrs_dzt * rho_ds_zm * a3 * wp2
+          ! Thermodynamic superdiagonal: [ x wp3(k+1,<t+1>) ]
+          lhs_ta_wp3(kp1_tdiag,k) &
+          = + invrs_rho_ds_zt(k) &
+              * invrs_dzt(k) &
+                * rho_ds_zm(k) * a1(k) * wp3_on_wp2(k) &
+                * gr%weights_zt2zm(t_above,k)
 
-       ! Thermodynamic main diagonal: [ x wp3(k,<t+1>) ]
-       lhs(k_tdiag) &
-       = + invrs_rho_ds_zt &
-           * invrs_dzt &
-             * (   rho_ds_zm * a1 * wp3_on_wp2 &
-                   * gr%weights_zt2zm(t_below,mk) &
-                 - rho_ds_zmm1 * a1m1 * wp3_on_wp2_m1 &
-                   * gr%weights_zt2zm(t_above,mkm1) &
-               )
+          ! Momentum superdiagonal: [ x wp2(k,<t+1>) ]
+          lhs_ta_wp3(k_mdiag,k) &
+          = + invrs_rho_ds_zt(k) * invrs_dzt(k) &
+              * rho_ds_zm(k) * a3(k) * wp2(k)
 
-       ! Momentum subdiagonal: [ x wp2(k-1,<t+1>) ]
-       lhs(km1_mdiag) &
-       = - invrs_rho_ds_zt * invrs_dzt * rho_ds_zmm1 * a3m1 * wp2m1
+          ! Thermodynamic main diagonal: [ x wp3(k,<t+1>) ]
+          lhs_ta_wp3(k_tdiag,k) &
+          = + invrs_rho_ds_zt(k) &
+              * invrs_dzt(k) &
+                * ( rho_ds_zm(k) * a1(k) * wp3_on_wp2(k) &
+                    * gr%weights_zt2zm(t_below,k) &
+                    - rho_ds_zm(k-1) * a1(k-1) * wp3_on_wp2(k-1) &
+                      * gr%weights_zt2zm(t_above,k-1) )
 
-       ! Thermodynamic subdiagonal: [ x wp3(k-1,<t+1>) ]
-       lhs(km1_tdiag) &
-       = - invrs_rho_ds_zt &
-           * invrs_dzt &
-             * rho_ds_zmm1 * a1m1 * wp3_on_wp2_m1 &
-             * gr%weights_zt2zm(t_below,mkm1)
+          ! Momentum subdiagonal: [ x wp2(k-1,<t+1>) ]
+          lhs_ta_wp3(km1_mdiag,k) &
+          = - invrs_rho_ds_zt(k) * invrs_dzt(k) &
+              * rho_ds_zm(k-1) * a3(k-1) * wp2(k-1)
+
+          ! Thermodynamic subdiagonal: [ x wp3(k-1,<t+1>) ]
+          lhs_ta_wp3(km1_tdiag,k) &
+          = - invrs_rho_ds_zt(k) &
+              * invrs_dzt(k) &
+                * rho_ds_zm(k-1) * a1(k-1) * wp3_on_wp2(k-1) &
+                * gr%weights_zt2zm(t_below,k-1)
+
+       enddo ! k = 2, gr%nz-1, 1
 
     else
 
-       ! Brian tried a new discretization for the turbulent advection term, 
-       ! which contains the term:
+       ! Alternate discretization for the turbulent advection term, which
+       ! contains the term:
        !  - (1/rho_ds) * d [ rho_ds * a_1 * (w'^3)^2 / w'^2 ] / dz.  In order
        ! to help stabilize w'^3, a_1 has been pulled outside of the derivative. 
        ! On the left-hand side of the equation, this effects the thermodynamic 
@@ -3834,167 +3816,52 @@ module advance_wp2_wp3_module
        ! the momentum superdiagonal (k_mdiag) and the momentum subdiagonal
        ! (km1_mdiag).
 
-       ! Thermodynamic superdiagonal: [ x wp3(k+1,<t+1>) ]
-       lhs(kp1_tdiag) &
-       = + invrs_rho_ds_zt &
-           * a1_zt * invrs_dzt &
-             * rho_ds_zm * wp3_on_wp2 &
-             * gr%weights_zt2zm(t_above,mk)
+       do k = 2, gr%nz-1
 
-       ! Momentum superdiagonal: [ x wp2(k,<t+1>) ]
-       lhs(k_mdiag) &
-       = + invrs_rho_ds_zt * a3_zt * invrs_dzt * rho_ds_zm * wp2
+          ! Thermodynamic superdiagonal: [ x wp3(k+1,<t+1>) ]
+          lhs_ta_wp3(kp1_tdiag,k) &
+          = + invrs_rho_ds_zt(k) &
+              * a1_zt(k) * invrs_dzt(k) &
+              * rho_ds_zm(k) * wp3_on_wp2(k) &
+              * gr%weights_zt2zm(t_above,k)
 
-       ! Thermodynamic main diagonal: [ x wp3(k,<t+1>) ]
-       lhs(k_tdiag) &
-       = + invrs_rho_ds_zt &
-           * a1_zt * invrs_dzt & 
-             * (   rho_ds_zm * wp3_on_wp2 & 
-                   * gr%weights_zt2zm(t_below,mk) & 
-                 - rho_ds_zmm1 * wp3_on_wp2_m1 & 
-                   * gr%weights_zt2zm(t_above,mkm1) & 
-               )
+          ! Momentum superdiagonal: [ x wp2(k,<t+1>) ]
+          lhs_ta_wp3(k_mdiag,k) &
+          = + invrs_rho_ds_zt(k) * a3_zt(k) * invrs_dzt(k) &
+              * rho_ds_zm(k) * wp2(k)
 
-       ! Momentum subdiagonal: [ x wp2(k-1,<t+1>) ]
-       lhs(km1_mdiag) &
-       = - invrs_rho_ds_zt * a3_zt * invrs_dzt * rho_ds_zmm1 * wp2m1
+          ! Thermodynamic main diagonal: [ x wp3(k,<t+1>) ]
+          lhs_ta_wp3(k_tdiag,k) &
+          = + invrs_rho_ds_zt(k) &
+              * a1_zt(k) * invrs_dzt(k) &
+                * ( rho_ds_zm(k) * wp3_on_wp2(k) &
+                    * gr%weights_zt2zm(t_below,k) &
+                    - rho_ds_zm(k-1) * wp3_on_wp2(k-1) &
+                      * gr%weights_zt2zm(t_above,k-1) )
 
-       ! Thermodynamic subdiagonal: [ x wp3(k-1,<t+1>) ]
-       lhs(km1_tdiag) &
-       = - invrs_rho_ds_zt &
-           * a1_zt * invrs_dzt &
-             * rho_ds_zmm1 * wp3_on_wp2_m1 & 
-             * gr%weights_zt2zm(t_below,mkm1)
+          ! Momentum subdiagonal: [ x wp2(k-1,<t+1>) ]
+          lhs_ta_wp3(km1_mdiag,k) &
+          = - invrs_rho_ds_zt(k) * a3_zt(k) * invrs_dzt(k) &
+              * rho_ds_zm(k-1) * wp2(k-1)
 
-       ! End of code that pulls out a3.
-       ! End of Brian's a1 change.  Feb. 14, 2008.
+          ! Thermodynamic subdiagonal: [ x wp3(k-1,<t+1>) ]
+          lhs_ta_wp3(km1_tdiag,k) &
+          = - invrs_rho_ds_zt(k) &
+              * a1_zt(k) * invrs_dzt(k) &
+              * rho_ds_zm(k-1) * wp3_on_wp2(k-1) &
+              * gr%weights_zt2zm(t_below,k-1)
 
-    end if ! l_standard_term_ta
+       enddo ! k = 2, gr%nz-1
+
+    endif ! l_standard_term_ta
+
+    ! Set upper boundary to 0
+    lhs_ta_wp3(:,gr%nz) = zero
 
 
     return
 
-  end function wp3_term_ta_ADG1_lhs
-
-    !=============================================================================
-    pure subroutine wp3_term_ta_ADG1_lhs_all( wp2, &
-                                              a1, a1_zt, &
-                                              a3, a3_zt, &
-                                              wp3_on_wp2, &
-                                              rho_ds_zm, &
-                                              invrs_rho_ds_zt, &
-                                              invrs_dzt, &
-                                              l_standard_term_ta, &
-                                              lhs_ta_wp3 )
-    ! Description:
-    !     This subroutine serves the same function as wp3_term_ta_ADG1_lhs (above), but
-    !     calculates terms for all grid levels at once rather than one at a time.
-    !     This was done so that this code could be vectorized and thereby sped up
-    !     by the compiler. See clubb:ticket:834 for more information.
-    ! 
-    !--------------------------------------------------------------------------------------
-
-        use grid_class, only:  &
-            gr ! Variable gr%weights_zt2zm
-
-        use clubb_precision, only: &
-            core_rknd ! Variable(s)
-
-        implicit none
-
-        ! Input Variables
-        real( kind = core_rknd ), dimension(gr%nz), intent(in) ::  & 
-          wp2,             & ! w'^2(k)                                     [m^2/s^2]
-          a1,              & ! a_1(k)                                      [-]
-          a1_zt,           & ! a_1 interpolated to thermodynamic level (k) [-]
-          a3,              & ! a_3(k)                                      [-]
-          a3_zt,           & ! a_3 interpolated to thermodynamic level (k) [-]
-          wp3_on_wp2,      & ! w'^3 / w'^2 at momentum level (k)           [m/s]
-          rho_ds_zm,       & ! Dry, static density at momentum level (k)   [kg/m^3]
-          invrs_rho_ds_zt, & ! Inv dry, static density at thermo level (k) [m^3/kg]
-          invrs_dzt          ! Inverse of grid spacing (k)                 [1/m]
-
-        logical, intent(in) :: &
-          l_standard_term_ta ! Use the standard discretization for the turbulent advection terms.
-                             ! Setting to .false. means that a_1 and a_3 are pulled outside of the
-                             ! derivative in advance_wp2_wp3_module.F90 and in
-                             ! advance_xp2_xpyp_module.F90.
-
-        ! Return Variable
-        real( kind = core_rknd ), dimension(5,gr%nz), intent(out) :: lhs_ta_wp3
-
-        ! Loop variable
-        integer :: k
-
-        ! Set lower boundary to 0
-        lhs_ta_wp3(:,1) = 0.0_core_rknd
-
-
-        if ( l_standard_term_ta ) then
-
-            do k = 2, gr%nz-1
-
-                ! Thermodynamic superdiagonal: [ x wp3(k+1,<t+1>) ]
-                lhs_ta_wp3(1,k) = + invrs_rho_ds_zt(k) * invrs_dzt(k) * rho_ds_zm(k) &
-                                  * a1(k) * wp3_on_wp2(k) * gr%weights_zt2zm(1,k)
-
-                ! Momentum superdiagonal: [ x wp2(k,<t+1>) ]
-                lhs_ta_wp3(2,k) = + invrs_rho_ds_zt(k) * invrs_dzt(k) &
-                                  * rho_ds_zm(k) * a3(k) * wp2(k)
-
-                ! Thermodynamic main diagonal: [ x wp3(k,<t+1>) ]
-                lhs_ta_wp3(3,k) = + invrs_rho_ds_zt(k) * invrs_dzt(k) * ( rho_ds_zm(k) &
-                                      * a1(k) * wp3_on_wp2(k) * gr%weights_zt2zm(2,k) &
-                                      - rho_ds_zm(k-1) * a1(k-1) * wp3_on_wp2(k-1) &
-                                      * gr%weights_zt2zm(1,k-1) )
-
-                ! Momentum subdiagonal: [ x wp2(k-1,<t+1>) ]
-                lhs_ta_wp3(4,k) = - invrs_rho_ds_zt(k) * invrs_dzt(k) &
-                                  * rho_ds_zm(k-1) * a3(k-1) * wp2(k-1)
-
-                ! Thermodynamic subdiagonal: [ x wp3(k-1,<t+1>) ]
-                lhs_ta_wp3(5,k) = - invrs_rho_ds_zt(k) * invrs_dzt(k) * rho_ds_zm(k-1) &
-                                  * a1(k-1) * wp3_on_wp2(k-1) * gr%weights_zt2zm(2,k-1)
-
-            end do
-
-        else
-
-            do k = 2, gr%nz-1
-
-                ! Thermodynamic superdiagonal: [ x wp3(k+1,<t+1>) ]
-                lhs_ta_wp3(1,k) = + invrs_rho_ds_zt(k) * a1_zt(k) * invrs_dzt(k) &
-                                  * rho_ds_zm(k) * wp3_on_wp2(k) * gr%weights_zt2zm(1,k)
-
-                ! Momentum superdiagonal: [ x wp2(k,<t+1>) ]
-                lhs_ta_wp3(2,k) = + invrs_rho_ds_zt(k) * a3_zt(k) * invrs_dzt(k) &
-                                  * rho_ds_zm(k) * wp2(k)
-
-                ! Thermodynamic main diagonal: [ x wp3(k,<t+1>) ]
-                lhs_ta_wp3(3,k) = + invrs_rho_ds_zt(k) * a1_zt(k) * invrs_dzt(k) & 
-                                  * ( rho_ds_zm(k) * wp3_on_wp2(k) * gr%weights_zt2zm(2,k) &
-                                    - rho_ds_zm(k-1) * wp3_on_wp2(k-1) * gr%weights_zt2zm(1,k-1) )
-
-                ! Momentum subdiagonal: [ x wp2(k-1,<t+1>) ]
-                lhs_ta_wp3(4,k) = - invrs_rho_ds_zt(k) * a3_zt(k) * invrs_dzt(k) &
-                                  * rho_ds_zm(k-1) * wp2(k-1)
-
-                ! Thermodynamic subdiagonal: [ x wp3(k-1,<t+1>) ]
-                lhs_ta_wp3(5,k) = - invrs_rho_ds_zt(k) * a1_zt(k) * invrs_dzt(k) &
-                                  * rho_ds_zm(k-1) * wp3_on_wp2(k-1) * gr%weights_zt2zm(2,k-1)
-
-            end do
-
-
-        end if ! l_standard_term_ta
-
-        ! Set lower boundary to 0
-        lhs_ta_wp3(:,gr%nz) = 0.0_core_rknd
-
-
-        return
-
-    end subroutine wp3_term_ta_ADG1_lhs_all
+  end subroutine wp3_term_ta_ADG1_lhs
 
   !=============================================================================
   pure function wp3_term_tp_lhs( wp2, wp2m1, &
