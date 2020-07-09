@@ -111,19 +111,10 @@ module advance_xm_wpxp_module
 
     use constants_clubb, only:  & 
         fstderr, &  ! Constant
-        rt_tol, &
-        thl_tol, &
-        w_tol, &
-        w_tol_sqd, &
-        thl_tol_mfl, &
-        rt_tol_mfl, &
-        max_mag_correlation, &
         one, &
         one_half, &
         zero, &
-        zero_threshold, &
-        eps, &
-        ep1
+        eps
 
     use parameters_model, only: & 
         sclr_dim, &  ! Variable(s)
@@ -139,7 +130,6 @@ module advance_xm_wpxp_module
 
     use model_flags, only: &
         iiPDF_new,                     & ! Variable(s)
-        iiPDF_ADG1,                    &
         l_clip_semi_implicit,          &
         l_explicit_turbulent_adv_wpxp
 
@@ -1176,10 +1166,6 @@ module advance_xm_wpxp_module
     use grid_class, only:  & 
         gr  ! Variable(s)
 
-    use constants_clubb, only: &
-        one, &
-        zero
-        
     use parameters_tunable, only:  & 
         nu6_vert_res_dep ! Variable(s)
 
@@ -1708,7 +1694,6 @@ module advance_xm_wpxp_module
       
     use constants_clubb, only: &
         one, &
-        one_third, &
         zero, &
         zero_threshold
       
@@ -1726,8 +1711,7 @@ module advance_xm_wpxp_module
     use model_flags, only: &
         iiPDF_ADG1,       & ! Integer constants
         iiPDF_new,        &
-        iiPDF_new_hybrid, &
-        l_explicit_turbulent_adv_xpyp     ! Logical constant
+        iiPDF_new_hybrid
       
     use stats_variables, only: &
         l_stats_samp,             & ! Logical constant
@@ -2299,7 +2283,6 @@ module advance_xm_wpxp_module
       thl_tol_mfl, &
       rt_tol_mfl, &
       zero, &
-      zero_threshold, &
       ep1
   
     implicit none
@@ -2854,13 +2837,9 @@ module advance_xm_wpxp_module
       fstderr, &  ! Constant
       rt_tol, &
       thl_tol, &
-      w_tol, &
-      w_tol_sqd, &
       thl_tol_mfl, &
       rt_tol_mfl, &
       zero, &
-      zero_threshold, &
-      ep1, &
       max_mag_correlation
   
     implicit none

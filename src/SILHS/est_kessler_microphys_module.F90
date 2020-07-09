@@ -287,7 +287,6 @@ module est_kessler_microphys_module
 
     use constants_clubb, only:  &
       fstderr, & ! Constant(s)
-      g_per_kg, &
       zero, &
       one
 

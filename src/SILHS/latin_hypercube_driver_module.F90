@@ -1710,10 +1710,8 @@ module latin_hypercube_driver_module
       core_rknd ! Precision
 
     use constants_clubb, only: &
-      zero, &   ! Constants
       one, &
-      two, &
-      fstderr
+      two
       
     use parameters_silhs, only: &
       single_prec_thresh
