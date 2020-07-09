@@ -280,12 +280,20 @@ class DataReader():
         if dependent_values.ndim > 1:  # not ncdf_variable.one_dimensional:
             dependent_values = self.__averageData__(dependent_values, start_avg_idx, end_avg_idx, avg_axis=avg_axis)
 
+        # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
         # E3SM outputs Z3 as it's height variable, which may also contain an offset
         # (e.g. e3sm height = clubb height + 650 for the dycoms2_rf01 case). This eliminates that offset.
-        if variable_name == 'Z3':
-            dependent_values = dependent_values - dependent_values[-1]
-        if independent_var_name == 'Z3':
-            independent_values = independent_values - independent_values[-1]
+
+        # UPDATE 2020-07-08: These modifications to Z3 have been turned off as they created bugs in the cam case.
+        # After reviewing the bomex, dycoms_rf01, and rico cases, no significant height issues were discovered as
+        # previously seen. It's possible that there was another bug somewhere that has been fixed after this
+        # workaround was originally implemented.
+
+        # if variable_name == 'Z3':
+        #     dependent_values = dependent_values - dependent_values[-1]
+        # if independent_var_name == 'Z3':
+        #     independent_values = independent_values - independent_values[-1]
+        # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
         # SAM data may contain NaNs at this point. Change those to 0
         if 'SAM version' in netcdf_dataset.ncattrs():
@@ -449,6 +457,8 @@ class DataReader():
         if ncdf_data is None:
             raise ValueError("ncdf_data was passed as None into __getValuesFromNc__ while looking for variable " +
                              varname)
+
+        # TODO this model detection method is old and can no longer be trusted
         src_model = self.getNcdfSourceModel(ncdf_data)
         if src_model == 'unknown-model':
             warn("Warning, unknown model detected. PyPlotgen doesn't know where this netcdf dependent_data is from. "
