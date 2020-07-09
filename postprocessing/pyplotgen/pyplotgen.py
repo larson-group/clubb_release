@@ -159,7 +159,7 @@ class PyPlotGen:
                 case = Case(case_def, clubb_folders=clubb_case_datasets, plot_les=self.les,
                             plot_budgets=self.plot_budgets, sam_folders=self.sam_folders, wrf_folders=self.wrf_folders,
                             diff_datasets=case_diff_datasets, plot_r408=self.cgbest, plot_hoc=self.hoc,
-                            e3sm_dirs=self.e3sm_dir, cam_folders = self.cam_folders)
+                            e3sm_dirs=self.e3sm_dir, cam_folders=self.cam_folders)
                 # Call plot function of case instance
                 case.plot(self.output_folder, replace_images=self.replace_images, no_legends=self.no_legends,
                           thin_lines=self.thin, show_alphabetic_id=self.show_alphabetic_id)
@@ -195,18 +195,51 @@ class PyPlotGen:
         cam_given = len(self.cam_folders) != 0
         clubb_given = self.clubb_datasets is not None
 
-        e3sm_has_case = e3sm_given and case_def['e3sm_file'] is not None
-        sam_has_case = sam_given and case_def['sam_file'] is not None
-        wrf_has_case = wrf_given != 0 and case_def['wrf_file'] is not None
-        cam_has_case = cam_given and case_def['cam_file'] is not None
+        e3sm_file_defined = case_def['e3sm_file'] is not None
+        sam_file_defined = case_def['sam_file'] is not None
+        wrf_file_defined = case_def['wrf_file'] is not None
+        cam_file_defined = case_def['cam_file'] is not None
+        # clubb_file_defined = case_def['name'] is not None
+
+        e3sm_file_exists = self.__caseNcFileExists__(self.e3sm_dir, case_def['e3sm_file'])
+        sam_file_exists = self.__caseNcFileExists__(self.sam_folders, case_def['sam_file'])
+        wrf_file_exists = self.__caseNcFileExists__(self.wrf_folders, case_def['wrf_file'])
+        cam_file_exists = self.__caseNcFileExists__(self.cam_folders, case_def['cam_file'])
+        # clubb_file_exists = self.__caseNcFileExists__(self.clubb_dir, case_def['clubb_file'])
+
+        e3sm_has_case = e3sm_given and e3sm_file_defined and e3sm_file_exists
+        sam_has_case = sam_given and sam_file_defined and sam_file_exists
+        wrf_has_case = wrf_given != 0 and wrf_file_defined and wrf_file_exists
+        cam_has_case = cam_given and cam_file_defined and cam_file_exists
         clubb_has_case = clubb_given and case_def['name'] in self.clubb_datasets.keys()
 
         if self.nightly:
             return clubb_has_case and (e3sm_has_case or sam_has_case or cam_has_case or wrf_has_case) \
-                or self.benchmark_only
+                   or self.benchmark_only
         else:
             return e3sm_has_case or sam_has_case or cam_has_case or wrf_has_case \
-                or clubb_has_case or self.benchmark_only
+                   or clubb_has_case or self.benchmark_only
+
+    def __caseNcFileExists__(self, list_of_src_folders, rel_filepath):
+        """
+
+        :param list_of_src_folders:
+        :param rel_filepath:
+        :return:
+        """
+        any_nc_file_found = False
+        if rel_filepath is not None and list_of_src_folders is not None:
+            for folder in list_of_src_folders:
+                if isinstance(rel_filepath, dict):
+                    for temp_filename in rel_filepath.keys():
+                        filename = folder + temp_filename
+                        if os.path.exists(filename):
+                            any_nc_file_found = True
+                else:
+                    filename = folder + rel_filepath
+                    if os.path.exists(filename):
+                        any_nc_file_found = True
+        return any_nc_file_found
 
     def __copySetupFiles__(self):
         """
@@ -265,6 +298,7 @@ class PyPlotGen:
         else:
             print("Benchmark output found in " + Case_definitions.BENCHMARK_OUTPUT_ROOT)
 
+
 def __trimTrailingSlash__(args):
     """
     Takes in a list filepaths and removes any trailing /'s
@@ -276,6 +310,7 @@ def __trimTrailingSlash__(args):
             args[i] = args[i][:-1]
 
     return args
+
 
 def __process_args__():
     """
@@ -354,7 +389,7 @@ def __process_args__():
 
     # If no input is specified at all, use the nc files in the default CLUBB output folder
     no_folders_inputted = len(args.e3sm) == 0 and len(args.sam) == 0 and len(args.clubb) == 0 \
-                         and len(args.wrf) == 0 and len(args.cam) == 0
+                          and len(args.wrf) == 0 and len(args.cam) == 0
     if no_folders_inputted and not args.benchmark_only:
         args.clubb = ["../../output"]
 
@@ -370,7 +405,7 @@ def __process_args__():
 
     # Call __init__ function of PyPlotGen class defined above and store an instance of that class in pyplotgen
     pyplotgen = PyPlotGen(args.output, clubb_folders=args.clubb, replace=args.replace, les=les, plot_e3sm=args.e3sm,
-                          cgbest=cgbest, cam_folders = args.cam, nightly = args.nightly,
+                          cgbest=cgbest, cam_folders=args.cam, nightly=args.nightly,
                           hoc=hoc, zip=args.zip, thin=args.thin, sam_folders=args.sam,
                           wrf_folders=args.wrf, benchmark_only=args.benchmark_only,
                           no_legends=args.no_legends, ensemble=args.ensemble, budget_moments=args.plot_budgets,

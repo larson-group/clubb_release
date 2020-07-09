@@ -29,7 +29,7 @@ class VariableGroupLiquidMP(VariableGroup):
                     'r408': ['Ncm', 'ncm'],
                     'hoc': ['Ncm', 'ncm'],
                     'e3sm': ['Ncm', 'ncm'],
-                    'cam': ['Ncm', 'ncm'],
+                    'cam': ['AWNC', 'Ncm', 'ncm'],
                     'wrf': ['Ncm', 'ncm'],
                 },
                 'sam_calc': self.getNcmSamLine
@@ -66,7 +66,7 @@ class VariableGroupLiquidMP(VariableGroup):
                     'r408': ['rrm'],
                     'hoc': ['rrm'],
                     'e3sm': ['rrm'],
-                    'cam': ['rrm'],
+                    'cam': ['AQRAIN', 'rrm'],
                     'wrf': ['rrm'],
                 },
                 'sam_conv_factor': 1 / 1000,
@@ -80,7 +80,7 @@ class VariableGroupLiquidMP(VariableGroup):
                     'r408': ['Nrm'],
                     'hoc': ['Nrm'],
                     'e3sm': ['Nrm'],
-                    'cam': ['Nrm'],
+                    'cam': ['ANRAIN', 'Nrm'],
                     'wrf': ['Nrm'],
                 },
                 'sam_calc': self.getNrmSamLine,
@@ -132,7 +132,7 @@ class VariableGroupLiquidMP(VariableGroup):
                     'r408': ['precip_rate_sfc'],
                     'hoc': ['precip_rate_sfc'],
                     'e3sm': ['precip_rate_sfc'],
-                    'cam': ['precip_rate_sfc'],
+                    'cam': ['precip_rate_sfc'], # PRECT.*1000.*86400
                     'wrf': ['precip_rate_sfc'],
                 },
                 'type': Panel.TYPE_TIMESERIES

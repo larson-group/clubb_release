@@ -178,7 +178,7 @@ ATEX = {'name': 'atex', 'start_time': 421, 'end_time': 480, 'height_min_value': 
                      'zt': wrf_output_root + "/atex_zt_wrf.nc",
                      'sfc': wrf_output_root + "/atex_sfc_wrf.nc"
                      },
-        'var_groups': [VariableGroupBase, VariableGroupWs]}
+        'var_groups': [VariableGroupBase, VariableGroupLiquidMP, VariableGroupIceMP, VariableGroupWs]}
 
 BOMEX = {'name': 'bomex', 'start_time': 181, 'end_time': 360, 'height_min_value': 0, 'height_max_value': 2500,
 
@@ -329,9 +329,7 @@ DYCOMS2_RF02_DS = {'name': 'dycoms2_rf02_ds', 'start_time': 301, 'end_time': 360
                    'les_dataset': SAM_BENCHMARK_OUTPUT_ROOT +
                                   "/JULY_2017/DYCOMS_RF02_128x128x96_dr_sed/DYCOMS_RF02_128x128x96_dr_sed.nc",
                    'coamps_dataset': None,
-                   'r408_file': {'zm': R408_OUTPUT_ROOT + '/Chris_Golaz_best_ever/dycoms2_rf02_ds_zm.nc',
-                                 'zt': R408_OUTPUT_ROOT + '/Chris_Golaz_best_ever/dycoms2_rf02_ds_zt.nc',
-                                 'sfc': R408_OUTPUT_ROOT + '/Chris_Golaz_best_ever/dycoms2_rf02_ds_sfc.nc'},
+                   'r408_file': None,
                    'hoc_file': {'zm': HOC_OUTPUT_ROOT + '/dycoms2_rf02_ds_zm.nc',
                                 'zt': HOC_OUTPUT_ROOT + '/dycoms2_rf02_ds_zt.nc',
                                 'sfc': HOC_OUTPUT_ROOT + '/dycoms2_rf02_ds_sfc.nc'},
@@ -366,9 +364,7 @@ DYCOMS2_RF02_DS_RESTART = {'name': 'dycoms2_rf02_ds_restart', 'start_time': 181,
                          'les_dataset': SAM_BENCHMARK_OUTPUT_ROOT +
                                         "/JULY_2017/DYCOMS_RF02_128x128x96_dr_sed/DYCOMS_RF02_128x128x96_dr_sed.nc",
                          'coamps_dataset': None,
-                         'r408_file': {'zm': R408_OUTPUT_ROOT + '/Chris_Golaz_best_ever/dycoms2_rf02_ds_zm.nc',
-                                       'zt': R408_OUTPUT_ROOT + '/Chris_Golaz_best_ever/dycoms2_rf02_ds_zt.nc',
-                                       'sfc': R408_OUTPUT_ROOT + '/Chris_Golaz_best_ever/dycoms2_rf02_ds_sfc.nc'},
+                         'r408_file': None,
                          'hoc_file': {'zm': HOC_OUTPUT_ROOT + '/dycoms2_rf02_ds_zm.nc',
                                       'zt': HOC_OUTPUT_ROOT + '/dycoms2_rf02_ds_zt.nc',
                                       'sfc': HOC_OUTPUT_ROOT + '/dycoms2_rf02_ds_sfc.nc'},
@@ -662,5 +658,5 @@ ALL_CASES = [ARM, ARM_97, ASTEX_A209, ATEX,
              ]
 
 # If uncommented, this line will override the real ALL_CASES given above, forcing pyplotgen to only plot some cases.
-# ALL_CASES = [ATEX]
+# ALL_CASES = [BOMEX]
 # ALL_CASES = ALL_CASES[:7]

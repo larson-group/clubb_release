@@ -25,8 +25,8 @@ class VariableGroupBaseBudgets(VariableGroup):
             {'var_names': ['thlm_clipping'], 'legend_label': 'thlm_clipping', 'clubb_calc': self.getThlmClipping,
              'e3sm_calc': self.getThlmClipping, 'wrf_calc': self.getThlmClipping},
             {'var_names': ['radht'], 'legend_label': 'radht'},
-            {'var_names': ['ls_forcing'], 'legend_label': 'thlm_ls_forcing', 'clubb_calc': self.getLsforcing,
-             'e3sm_calc': self.getLsforcing, 'wrf_calc': self.getLsforcing},
+            {'var_names': ['ls_forcing'], 'legend_label': 'thlm_ls_forcing', 'clubb_calc': self.getThlmLsforcing,
+             'e3sm_calc': self.getThlmLsforcing, 'wrf_calc': self.getThlmLsforcing},
             {'var_names': ['thlm_residual'], 'legend_label': 'thlm_residual', 'clubb_calc': self.getThlmResidual,
              'e3sm_calc': self.getThlmResidual, 'wrf_calc': self.getThlmResidual},
 
@@ -465,27 +465,25 @@ class VariableGroupBaseBudgets(VariableGroup):
         :return:
         '''
 
-        # z,z, dataset = self.getVarForCalculations(['z', 'lev', 'altitude'], dataset_override)
         thlm_mfl, z, dataset = self.getVarForCalculations('thlm_mfl', dataset_override)
-        thlm_cl, z, dataset = self.getVarForCalculations('thlm_cl', dataset_override)
-        thlm_tacl, z, dataset = self.getVarForCalculations('thlm_tacl', dataset_override)
-        thlm_sdmp, z, dataset = self.getVarForCalculations('thlm_sdmp', dataset_override)
+        thlm_cl, z, dataset = self.getVarForCalculations('thlm_cl', dataset)
+        thlm_tacl, z, dataset = self.getVarForCalculations('thlm_tacl', dataset)
+        thlm_sdmp, z, dataset = self.getVarForCalculations('thlm_sdmp', dataset)
 
         output_data = thlm_mfl + thlm_cl + thlm_tacl + thlm_sdmp
 
         return output_data, z
 
-    def getLsforcing(self, dataset_override=None):
+    def getThlmLsforcing(self, dataset_override=None):
         '''
 
 
         thlm_forcing-radht-thlm_mc
         :return:
         '''
-        # z,z, dataset = self.getVarForCalculations(['z', 'lev', 'altitude'], dataset_override)
         thlm_forcing, z, dataset = self.getVarForCalculations('thlm_forcing', dataset_override)
-        radht, z, dataset = self.getVarForCalculations('radht', dataset_override)
-        thlm_mc, z, dataset = self.getVarForCalculations('thlm_mc', dataset_override)
+        radht, z, dataset = self.getVarForCalculations('radht', dataset)
+        thlm_mc, z, dataset = self.getVarForCalculations('thlm_mc', dataset)
 
         output_data = thlm_forcing - radht - thlm_mc
 
@@ -498,15 +496,14 @@ class VariableGroupBaseBudgets(VariableGroup):
         thlm_bt-(thlm_ma+thlm_ta+thlm_mfl+thlm_cl+thlm_tacl+thlm_sdmp+thlm_forcing)
         :return:
         '''
-        # z,z, dataset = self.getVarForCalculations('altitude', dataset_override)
         thlm_mfl, z, dataset = self.getVarForCalculations('thlm_mfl', dataset_override)
-        thlm_cl, z, dataset = self.getVarForCalculations('thlm_cl', dataset_override)
-        thlm_tacl, z, dataset = self.getVarForCalculations('thlm_tacl', dataset_override)
-        thlm_sdmp, z, dataset = self.getVarForCalculations('thlm_sdmp', dataset_override)
-        thlm_bt, z, dataset = self.getVarForCalculations('thlm_bt', dataset_override)
-        thlm_ta, z, dataset = self.getVarForCalculations('thlm_ta', dataset_override)
-        thlm_forcing, z, dataset = self.getVarForCalculations('thlm_forcing', dataset_override)
-        thlm_ma, z, dataset = self.getVarForCalculations('thlm_ma', dataset_override)
+        thlm_cl, z, dataset = self.getVarForCalculations('thlm_cl', dataset)
+        thlm_tacl, z, dataset = self.getVarForCalculations('thlm_tacl', dataset)
+        thlm_sdmp, z, dataset = self.getVarForCalculations('thlm_sdmp', dataset)
+        thlm_bt, z, dataset = self.getVarForCalculations('thlm_bt', dataset)
+        thlm_ta, z, dataset = self.getVarForCalculations('thlm_ta', dataset)
+        thlm_forcing, z, dataset = self.getVarForCalculations('thlm_forcing', dataset)
+        thlm_ma, z, dataset = self.getVarForCalculations('thlm_ma', dataset)
 
         output_data = thlm_bt - (thlm_ma + thlm_ta + thlm_mfl + thlm_cl + thlm_tacl + thlm_sdmp + thlm_forcing)
 
@@ -519,11 +516,10 @@ class VariableGroupBaseBudgets(VariableGroup):
         rtm_mfl + rtm_cl + rtm_tacl + rtm_sdmp
         :return:
         '''
-        # z,z, dataset = self.getVarForCalculations('altitude', dataset_override)
         rtm_mfl, z, dataset = self.getVarForCalculations('rtm_mfl', dataset_override)
-        rtm_cl, z, dataset = self.getVarForCalculations('rtm_cl', dataset_override)
-        rtm_tacl, z, dataset = self.getVarForCalculations('rtm_tacl', dataset_override)
-        rtm_sdmp, z, dataset = self.getVarForCalculations('rtm_sdmp', dataset_override)
+        rtm_cl, z, dataset = self.getVarForCalculations('rtm_cl', dataset)
+        rtm_tacl, z, dataset = self.getVarForCalculations('rtm_tacl', dataset)
+        rtm_sdmp, z, dataset = self.getVarForCalculations('rtm_sdmp', dataset)
 
         output_data = rtm_mfl + rtm_cl + rtm_tacl + rtm_sdmp
 
@@ -536,9 +532,8 @@ class VariableGroupBaseBudgets(VariableGroup):
         rtm_forcing - rtm_mc
         :return:
         '''
-        # z,z, dataset = self.getVarForCalculations('altitude', dataset_override)
         rtm_mc, z, dataset = self.getVarForCalculations('rtm_mc', dataset_override)
-        rtm_forcing, z, dataset = self.getVarForCalculations('rtm_forcing', dataset_override)
+        rtm_forcing, z, dataset = self.getVarForCalculations('rtm_forcing', dataset)
 
         output_data = rtm_forcing - rtm_mc
 
@@ -553,14 +548,14 @@ class VariableGroupBaseBudgets(VariableGroup):
         '''
         # z,z, dataset = self.getVarForCalculations('altitude', dataset_override)
         rtm_mfl, z, dataset = self.getVarForCalculations('rtm_mfl', dataset_override)
-        rtm_cl, z, dataset = self.getVarForCalculations('rtm_cl', dataset_override)
-        rtm_tacl, z, dataset = self.getVarForCalculations('rtm_tacl', dataset_override)
-        rtm_sdmp, z, dataset = self.getVarForCalculations('rtm_sdmp', dataset_override)
-        rtm_bt, z, dataset = self.getVarForCalculations('rtm_bt', dataset_override)
-        rtm_ta, z, dataset = self.getVarForCalculations('rtm_ta', dataset_override)
-        rtm_forcing, z, dataset = self.getVarForCalculations('rtm_forcing', dataset_override)
-        rtm_pd, z, dataset = self.getVarForCalculations('rtm_pd', dataset_override)
-        rtm_ma, z, dataset = self.getVarForCalculations('rtm_ma', dataset_override)
+        rtm_cl, z, dataset = self.getVarForCalculations('rtm_cl', dataset)
+        rtm_tacl, z, dataset = self.getVarForCalculations('rtm_tacl', dataset)
+        rtm_sdmp, z, dataset = self.getVarForCalculations('rtm_sdmp', dataset)
+        rtm_bt, z, dataset = self.getVarForCalculations('rtm_bt', dataset)
+        rtm_ta, z, dataset = self.getVarForCalculations('rtm_ta', dataset)
+        rtm_forcing, z, dataset = self.getVarForCalculations('rtm_forcing', dataset)
+        rtm_pd, z, dataset = self.getVarForCalculations('rtm_pd', dataset)
+        rtm_ma, z, dataset = self.getVarForCalculations('rtm_ma', dataset)
 
         output_data = rtm_bt - (rtm_ma + rtm_ta + rtm_mfl + rtm_cl + rtm_tacl + rtm_sdmp + rtm_forcing + rtm_pd)
 
@@ -576,19 +571,19 @@ class VariableGroupBaseBudgets(VariableGroup):
         '''
         # z,z, dataset = self.getVarForCalculations('altitude', dataset_override)
         wpthlp_mfl, z, dataset = self.getVarForCalculations('wpthlp_mfl', dataset_override)
-        wpthlp_cl, z, dataset = self.getVarForCalculations('wpthlp_cl', dataset_override)
-        wpthlp_tp, z, dataset = self.getVarForCalculations('wpthlp_tp', dataset_override)
-        wpthlp_ac, z, dataset = self.getVarForCalculations('wpthlp_ac', dataset_override)
-        wpthlp_pr1, z, dataset = self.getVarForCalculations('wpthlp_pr1', dataset_override)
-        wpthlp_pr3, z, dataset = self.getVarForCalculations('wpthlp_pr3', dataset_override)
-        wpthlp_pr2, z, dataset = self.getVarForCalculations('wpthlp_pr2', dataset_override)
-        wpthlp_dp1, z, dataset = self.getVarForCalculations('wpthlp_dp1', dataset_override)
-        wpthlp_sicl, z, dataset = self.getVarForCalculations('wpthlp_sicl', dataset_override)
-        wpthlp_bt, z, dataset = self.getVarForCalculations('wpthlp_bt', dataset_override)
-        wpthlp_ta, z, dataset = self.getVarForCalculations('wpthlp_ta', dataset_override)
-        wpthlp_forcing, z, dataset = self.getVarForCalculations('wpthlp_forcing', dataset_override)
-        wpthlp_bp, z, dataset = self.getVarForCalculations('wpthlp_bp', dataset_override)
-        wpthlp_ma, z, dataset = self.getVarForCalculations('wpthlp_ma', dataset_override)
+        wpthlp_cl, z, dataset = self.getVarForCalculations('wpthlp_cl', dataset)
+        wpthlp_tp, z, dataset = self.getVarForCalculations('wpthlp_tp', dataset)
+        wpthlp_ac, z, dataset = self.getVarForCalculations('wpthlp_ac', dataset)
+        wpthlp_pr1, z, dataset = self.getVarForCalculations('wpthlp_pr1', dataset)
+        wpthlp_pr3, z, dataset = self.getVarForCalculations('wpthlp_pr3', dataset)
+        wpthlp_pr2, z, dataset = self.getVarForCalculations('wpthlp_pr2', dataset)
+        wpthlp_dp1, z, dataset = self.getVarForCalculations('wpthlp_dp1', dataset)
+        wpthlp_sicl, z, dataset = self.getVarForCalculations('wpthlp_sicl', dataset)
+        wpthlp_bt, z, dataset = self.getVarForCalculations('wpthlp_bt', dataset)
+        wpthlp_ta, z, dataset = self.getVarForCalculations('wpthlp_ta', dataset)
+        wpthlp_forcing, z, dataset = self.getVarForCalculations('wpthlp_forcing', dataset)
+        wpthlp_bp, z, dataset = self.getVarForCalculations('wpthlp_bp', dataset)
+        wpthlp_ma, z, dataset = self.getVarForCalculations('wpthlp_ma', dataset)
 
         output_data = wpthlp_bt - (
                 wpthlp_ma + wpthlp_ta + wpthlp_tp + wpthlp_ac + wpthlp_bp + wpthlp_pr1 + wpthlp_pr2 + wpthlp_pr3 +
@@ -606,20 +601,20 @@ class VariableGroupBaseBudgets(VariableGroup):
         '''
         # z,z, dataset = self.getVarForCalculations('altitude', dataset_override)
         wprtp_mfl, z, dataset = self.getVarForCalculations('wprtp_mfl', dataset_override)
-        wprtp_cl, z, dataset = self.getVarForCalculations('wprtp_cl', dataset_override)
-        wprtp_tp, z, dataset = self.getVarForCalculations('wprtp_tp', dataset_override)
-        wprtp_ac, z, dataset = self.getVarForCalculations('wprtp_ac', dataset_override)
-        wprtp_pr1, z, dataset = self.getVarForCalculations('wprtp_pr1', dataset_override)
-        wprtp_pr3, z, dataset = self.getVarForCalculations('wprtp_pr3', dataset_override)
-        wprtp_pr2, z, dataset = self.getVarForCalculations('wprtp_pr2', dataset_override)
-        wprtp_dp1, z, dataset = self.getVarForCalculations('wprtp_dp1', dataset_override)
-        wprtp_sicl, z, dataset = self.getVarForCalculations('wprtp_sicl', dataset_override)
-        wprtp_bt, z, dataset = self.getVarForCalculations('wprtp_bt', dataset_override)
-        wprtp_ta, z, dataset = self.getVarForCalculations('wprtp_ta', dataset_override)
-        wprtp_forcing, z, dataset = self.getVarForCalculations('wprtp_forcing', dataset_override)
-        wprtp_bp, z, dataset = self.getVarForCalculations('wprtp_bp', dataset_override)
-        wprtp_ma, z, dataset = self.getVarForCalculations('wprtp_ma', dataset_override)
-        wprtp_pd, z, dataset = self.getVarForCalculations('wprtp_pd', dataset_override)
+        wprtp_cl, z, dataset = self.getVarForCalculations('wprtp_cl', dataset)
+        wprtp_tp, z, dataset = self.getVarForCalculations('wprtp_tp', dataset)
+        wprtp_ac, z, dataset = self.getVarForCalculations('wprtp_ac', dataset)
+        wprtp_pr1, z, dataset = self.getVarForCalculations('wprtp_pr1', dataset)
+        wprtp_pr3, z, dataset = self.getVarForCalculations('wprtp_pr3', dataset)
+        wprtp_pr2, z, dataset = self.getVarForCalculations('wprtp_pr2', dataset)
+        wprtp_dp1, z, dataset = self.getVarForCalculations('wprtp_dp1', dataset)
+        wprtp_sicl, z, dataset = self.getVarForCalculations('wprtp_sicl', dataset)
+        wprtp_bt, z, dataset = self.getVarForCalculations('wprtp_bt', dataset)
+        wprtp_ta, z, dataset = self.getVarForCalculations('wprtp_ta', dataset)
+        wprtp_forcing, z, dataset = self.getVarForCalculations('wprtp_forcing', dataset)
+        wprtp_bp, z, dataset = self.getVarForCalculations('wprtp_bp', dataset)
+        wprtp_ma, z, dataset = self.getVarForCalculations('wprtp_ma', dataset)
+        wprtp_pd, z, dataset = self.getVarForCalculations('wprtp_pd', dataset)
 
         output_data = wprtp_bt - (
                 wprtp_ma + wprtp_ta + wprtp_tp + wprtp_ac + wprtp_bp + wprtp_pr1 + wprtp_pr2 + wprtp_pr3 +
@@ -637,19 +632,19 @@ class VariableGroupBaseBudgets(VariableGroup):
         '''
         # z,z, dataset = self.getVarForCalculations('altitude', dataset_override)
         wp2_sf, z, dataset = self.getVarForCalculations('wp2_sf', dataset_override)
-        wp2_cl, z, dataset = self.getVarForCalculations('wp2_cl', dataset_override)
-        wp2_ac, z, dataset = self.getVarForCalculations('wp2_ac', dataset_override)
-        wp2_pr1, z, dataset = self.getVarForCalculations('wp2_pr1', dataset_override)
-        wp2_pr3, z, dataset = self.getVarForCalculations('wp2_pr3', dataset_override)
-        wp2_pr2, z, dataset = self.getVarForCalculations('wp2_pr2', dataset_override)
-        wp2_dp1, z, dataset = self.getVarForCalculations('wp2_dp1', dataset_override)
-        wp2_dp2, z, dataset = self.getVarForCalculations('wp2_dp2', dataset_override)
-        wp2_bt, z, dataset = self.getVarForCalculations('wp2_bt', dataset_override)
-        wp2_ta, z, dataset = self.getVarForCalculations('wp2_ta', dataset_override)
-        wp2_splat, z, dataset = self.getVarForCalculations('wp2_splat', dataset_override)
-        wp2_bp, z, dataset = self.getVarForCalculations('wp2_bp', dataset_override)
-        wp2_ma, z, dataset = self.getVarForCalculations('wp2_ma', dataset_override)
-        wp2_pd, z, dataset = self.getVarForCalculations('wp2_pd', dataset_override)
+        wp2_cl, z, dataset = self.getVarForCalculations('wp2_cl', dataset)
+        wp2_ac, z, dataset = self.getVarForCalculations('wp2_ac', dataset)
+        wp2_pr1, z, dataset = self.getVarForCalculations('wp2_pr1', dataset)
+        wp2_pr3, z, dataset = self.getVarForCalculations('wp2_pr3', dataset)
+        wp2_pr2, z, dataset = self.getVarForCalculations('wp2_pr2', dataset)
+        wp2_dp1, z, dataset = self.getVarForCalculations('wp2_dp1', dataset)
+        wp2_dp2, z, dataset = self.getVarForCalculations('wp2_dp2', dataset)
+        wp2_bt, z, dataset = self.getVarForCalculations('wp2_bt', dataset)
+        wp2_ta, z, dataset = self.getVarForCalculations('wp2_ta', dataset)
+        wp2_splat, z, dataset = self.getVarForCalculations('wp2_splat', dataset)
+        wp2_bp, z, dataset = self.getVarForCalculations('wp2_bp', dataset)
+        wp2_ma, z, dataset = self.getVarForCalculations('wp2_ma', dataset)
+        wp2_pd, z, dataset = self.getVarForCalculations('wp2_pd', dataset)
 
         output_data = wp2_bt - (
                 wp2_ma + wp2_ta + wp2_ac + wp2_bp + wp2_pr1 + wp2_pr2 + wp2_pr3 + wp2_dp1 + wp2_dp2 +
@@ -667,18 +662,18 @@ class VariableGroupBaseBudgets(VariableGroup):
         '''
         # z,z, dataset = self.getVarForCalculations('altitude', dataset_override)
         wp3_bp1, z, dataset = self.getVarForCalculations('wp3_bp1', dataset_override)
-        wp3_bp2, z, dataset = self.getVarForCalculations('wp3_bp2', dataset_override)
-        wp3_cl, z, dataset = self.getVarForCalculations('wp3_cl', dataset_override)
-        wp3_ac, z, dataset = self.getVarForCalculations('wp3_ac', dataset_override)
-        wp3_pr1, z, dataset = self.getVarForCalculations('wp3_pr1', dataset_override)
-        wp3_pr3, z, dataset = self.getVarForCalculations('wp3_pr3', dataset_override)
-        wp3_pr2, z, dataset = self.getVarForCalculations('wp3_pr2', dataset_override)
-        wp3_dp1, z, dataset = self.getVarForCalculations('wp3_dp1', dataset_override)
-        wp3_bt, z, dataset = self.getVarForCalculations('wp3_bt', dataset_override)
-        wp3_ta, z, dataset = self.getVarForCalculations('wp3_ta', dataset_override)
-        wp3_splat, z, dataset = self.getVarForCalculations('wp3_splat', dataset_override)
-        wp3_ma, z, dataset = self.getVarForCalculations('wp3_ma', dataset_override)
-        wp3_tp, z, dataset = self.getVarForCalculations('wp3_tp', dataset_override)
+        wp3_bp2, z, dataset = self.getVarForCalculations('wp3_bp2', dataset)
+        wp3_cl, z, dataset = self.getVarForCalculations('wp3_cl', dataset)
+        wp3_ac, z, dataset = self.getVarForCalculations('wp3_ac', dataset)
+        wp3_pr1, z, dataset = self.getVarForCalculations('wp3_pr1', dataset)
+        wp3_pr3, z, dataset = self.getVarForCalculations('wp3_pr3', dataset)
+        wp3_pr2, z, dataset = self.getVarForCalculations('wp3_pr2', dataset)
+        wp3_dp1, z, dataset = self.getVarForCalculations('wp3_dp1', dataset)
+        wp3_bt, z, dataset = self.getVarForCalculations('wp3_bt', dataset)
+        wp3_ta, z, dataset = self.getVarForCalculations('wp3_ta', dataset)
+        wp3_splat, z, dataset = self.getVarForCalculations('wp3_splat', dataset)
+        wp3_ma, z, dataset = self.getVarForCalculations('wp3_ma', dataset)
+        wp3_tp, z, dataset = self.getVarForCalculations('wp3_tp', dataset)
 
         output_data = wp3_bt - (
                 wp3_ma + wp3_ta + wp3_tp + wp3_ac + wp3_bp1 + wp3_bp2 + wp3_pr1 + wp3_pr2 + wp3_pr3 +
@@ -696,15 +691,15 @@ class VariableGroupBaseBudgets(VariableGroup):
         '''
         # z,z, dataset = self.getVarForCalculations('altitude', dataset_override)
         thlp2_cl, z, dataset = self.getVarForCalculations('thlp2_cl', dataset_override)
-        thlp2_dp2, z, dataset = self.getVarForCalculations('thlp2_dp2', dataset_override)
-        thlp2_forcing, z, dataset = self.getVarForCalculations('thlp2_forcing', dataset_override)
-        thlp2_sf, z, dataset = self.getVarForCalculations('thlp2_sf', dataset_override)
-        thlp2_dp1, z, dataset = self.getVarForCalculations('thlp2_dp1', dataset_override)
-        thlp2_bt, z, dataset = self.getVarForCalculations('thlp2_bt', dataset_override)
-        thlp2_ta, z, dataset = self.getVarForCalculations('thlp2_ta', dataset_override)
-        thlp2_pd, z, dataset = self.getVarForCalculations('thlp2_pd', dataset_override)
-        thlp2_ma, z, dataset = self.getVarForCalculations('thlp2_ma', dataset_override)
-        thlp2_tp, z, dataset = self.getVarForCalculations('thlp2_tp', dataset_override)
+        thlp2_dp2, z, dataset = self.getVarForCalculations('thlp2_dp2', dataset)
+        thlp2_forcing, z, dataset = self.getVarForCalculations('thlp2_forcing', dataset)
+        thlp2_sf, z, dataset = self.getVarForCalculations('thlp2_sf', dataset)
+        thlp2_dp1, z, dataset = self.getVarForCalculations('thlp2_dp1', dataset)
+        thlp2_bt, z, dataset = self.getVarForCalculations('thlp2_bt', dataset)
+        thlp2_ta, z, dataset = self.getVarForCalculations('thlp2_ta', dataset)
+        thlp2_pd, z, dataset = self.getVarForCalculations('thlp2_pd', dataset)
+        thlp2_ma, z, dataset = self.getVarForCalculations('thlp2_ma', dataset)
+        thlp2_tp, z, dataset = self.getVarForCalculations('thlp2_tp', dataset)
 
         output_data = thlp2_bt - (thlp2_ma + thlp2_ta + thlp2_tp + thlp2_dp1 +
                                   thlp2_dp2 + thlp2_cl + thlp2_pd + thlp2_sf + thlp2_forcing)
@@ -720,15 +715,15 @@ class VariableGroupBaseBudgets(VariableGroup):
         '''
         # z,z, dataset = self.getVarForCalculations('altitude', dataset_override)
         rtp2_cl, z, dataset = self.getVarForCalculations('rtp2_cl', dataset_override)
-        rtp2_dp2, z, dataset = self.getVarForCalculations('rtp2_dp2', dataset_override)
-        rtp2_forcing, z, dataset = self.getVarForCalculations('rtp2_forcing', dataset_override)
-        rtp2_sf, z, dataset = self.getVarForCalculations('rtp2_sf', dataset_override)
-        rtp2_dp1, z, dataset = self.getVarForCalculations('rtp2_dp1', dataset_override)
-        rtp2_bt, z, dataset = self.getVarForCalculations('rtp2_bt', dataset_override)
-        rtp2_ta, z, dataset = self.getVarForCalculations('rtp2_ta', dataset_override)
-        rtp2_pd, z, dataset = self.getVarForCalculations('rtp2_pd', dataset_override)
-        rtp2_ma, z, dataset = self.getVarForCalculations('rtp2_ma', dataset_override)
-        rtp2_tp, z, dataset = self.getVarForCalculations('rtp2_tp', dataset_override)
+        rtp2_dp2, z, dataset = self.getVarForCalculations('rtp2_dp2', dataset)
+        rtp2_forcing, z, dataset = self.getVarForCalculations('rtp2_forcing', dataset)
+        rtp2_sf, z, dataset = self.getVarForCalculations('rtp2_sf', dataset)
+        rtp2_dp1, z, dataset = self.getVarForCalculations('rtp2_dp1', dataset)
+        rtp2_bt, z, dataset = self.getVarForCalculations('rtp2_bt', dataset)
+        rtp2_ta, z, dataset = self.getVarForCalculations('rtp2_ta', dataset)
+        rtp2_pd, z, dataset = self.getVarForCalculations('rtp2_pd', dataset)
+        rtp2_ma, z, dataset = self.getVarForCalculations('rtp2_ma', dataset)
+        rtp2_tp, z, dataset = self.getVarForCalculations('rtp2_tp', dataset)
 
         output_data = rtp2_bt - (
                 rtp2_ma + rtp2_ta + rtp2_tp + rtp2_dp1 + rtp2_dp2 + rtp2_cl + rtp2_pd + rtp2_sf + rtp2_forcing)
@@ -745,15 +740,15 @@ class VariableGroupBaseBudgets(VariableGroup):
         '''
         # z,z, dataset = self.getVarForCalculations('altitude', dataset_override)
         rtpthlp_cl, z, dataset = self.getVarForCalculations('rtpthlp_cl', dataset_override)
-        rtpthlp_dp2, z, dataset = self.getVarForCalculations('rtpthlp_dp2', dataset_override)
-        rtpthlp_forcing, z, dataset = self.getVarForCalculations('rtpthlp_forcing', dataset_override)
-        rtpthlp_sf, z, dataset = self.getVarForCalculations('rtpthlp_sf', dataset_override)
-        rtpthlp_dp1, z, dataset = self.getVarForCalculations('rtpthlp_dp1', dataset_override)
-        rtpthlp_bt, z, dataset = self.getVarForCalculations('rtpthlp_bt', dataset_override)
-        rtpthlp_ta, z, dataset = self.getVarForCalculations('rtpthlp_ta', dataset_override)
-        rtpthlp_tp2, z, dataset = self.getVarForCalculations('rtpthlp_tp2', dataset_override)
-        rtpthlp_ma, z, dataset = self.getVarForCalculations('rtpthlp_ma', dataset_override)
-        rtpthlp_tp1, z, dataset = self.getVarForCalculations('rtpthlp_tp1', dataset_override)
+        rtpthlp_dp2, z, dataset = self.getVarForCalculations('rtpthlp_dp2', dataset)
+        rtpthlp_forcing, z, dataset = self.getVarForCalculations('rtpthlp_forcing', dataset)
+        rtpthlp_sf, z, dataset = self.getVarForCalculations('rtpthlp_sf', dataset)
+        rtpthlp_dp1, z, dataset = self.getVarForCalculations('rtpthlp_dp1', dataset)
+        rtpthlp_bt, z, dataset = self.getVarForCalculations('rtpthlp_bt', dataset)
+        rtpthlp_ta, z, dataset = self.getVarForCalculations('rtpthlp_ta', dataset)
+        rtpthlp_tp2, z, dataset = self.getVarForCalculations('rtpthlp_tp2', dataset)
+        rtpthlp_ma, z, dataset = self.getVarForCalculations('rtpthlp_ma', dataset)
+        rtpthlp_tp1, z, dataset = self.getVarForCalculations('rtpthlp_tp1', dataset)
 
         output_data = rtpthlp_bt - (
                 rtpthlp_ma + rtpthlp_ta + rtpthlp_tp1 + rtpthlp_tp2 + rtpthlp_dp1 + rtpthlp_dp2 + rtpthlp_cl +
@@ -770,18 +765,18 @@ class VariableGroupBaseBudgets(VariableGroup):
         '''
         # z,z, dataset = self.getVarForCalculations('altitude', dataset_override)
         upwp_cl, z, dataset = self.getVarForCalculations('upwp_cl', dataset_override)
-        upwp_tp, z, dataset = self.getVarForCalculations('upwp_tp', dataset_override)
-        upwp_ac, z, dataset = self.getVarForCalculations('upwp_ac', dataset_override)
-        upwp_bp, z, dataset = self.getVarForCalculations('upwp_bp', dataset_override)
-        upwp_dp1, z, dataset = self.getVarForCalculations('upwp_dp1', dataset_override)
-        upwp_bt, z, dataset = self.getVarForCalculations('upwp_bt', dataset_override)
-        upwp_ta, z, dataset = self.getVarForCalculations('upwp_ta', dataset_override)
-        upwp_pr1, z, dataset = self.getVarForCalculations('upwp_pr1', dataset_override)
-        upwp_pr2, z, dataset = self.getVarForCalculations('upwp_pr2', dataset_override)
-        upwp_pr3, z, dataset = self.getVarForCalculations('upwp_pr3', dataset_override)
-        upwp_pr4, z, dataset = self.getVarForCalculations('upwp_pr4', dataset_override)
-        upwp_mfl, z, dataset = self.getVarForCalculations('upwp_mfl', dataset_override)
-        upwp_ma, z, dataset = self.getVarForCalculations('upwp_ma', dataset_override)
+        upwp_tp, z, dataset = self.getVarForCalculations('upwp_tp', dataset)
+        upwp_ac, z, dataset = self.getVarForCalculations('upwp_ac', dataset)
+        upwp_bp, z, dataset = self.getVarForCalculations('upwp_bp', dataset)
+        upwp_dp1, z, dataset = self.getVarForCalculations('upwp_dp1', dataset)
+        upwp_bt, z, dataset = self.getVarForCalculations('upwp_bt', dataset)
+        upwp_ta, z, dataset = self.getVarForCalculations('upwp_ta', dataset)
+        upwp_pr1, z, dataset = self.getVarForCalculations('upwp_pr1', dataset)
+        upwp_pr2, z, dataset = self.getVarForCalculations('upwp_pr2', dataset)
+        upwp_pr3, z, dataset = self.getVarForCalculations('upwp_pr3', dataset)
+        upwp_pr4, z, dataset = self.getVarForCalculations('upwp_pr4', dataset)
+        upwp_mfl, z, dataset = self.getVarForCalculations('upwp_mfl', dataset)
+        upwp_ma, z, dataset = self.getVarForCalculations('upwp_ma', dataset)
 
         output_data = upwp_bt - (
                 upwp_ma + upwp_ta + upwp_tp + upwp_ac + upwp_bp + upwp_pr1 + upwp_pr2 + upwp_pr3 + upwp_pr4 +
@@ -798,18 +793,18 @@ class VariableGroupBaseBudgets(VariableGroup):
         '''
         # z,z, dataset = self.getVarForCalculations('altitude', dataset_override)
         vpwp_cl, z, dataset = self.getVarForCalculations('vpwp_cl', dataset_override)
-        vpwp_tp, z, dataset = self.getVarForCalculations('vpwp_tp', dataset_override)
-        vpwp_ac, z, dataset = self.getVarForCalculations('vpwp_ac', dataset_override)
-        vpwp_bp, z, dataset = self.getVarForCalculations('vpwp_bp', dataset_override)
-        vpwp_dp1, z, dataset = self.getVarForCalculations('vpwp_dp1', dataset_override)
-        vpwp_bt, z, dataset = self.getVarForCalculations('vpwp_bt', dataset_override)
-        vpwp_ta, z, dataset = self.getVarForCalculations('vpwp_ta', dataset_override)
-        vpwp_pr1, z, dataset = self.getVarForCalculations('vpwp_pr1', dataset_override)
-        vpwp_pr2, z, dataset = self.getVarForCalculations('vpwp_pr2', dataset_override)
-        vpwp_pr3, z, dataset = self.getVarForCalculations('vpwp_pr3', dataset_override)
-        vpwp_pr4, z, dataset = self.getVarForCalculations('vpwp_pr4', dataset_override)
-        vpwp_mfl, z, dataset = self.getVarForCalculations('vpwp_mfl', dataset_override)
-        vpwp_ma, z, dataset = self.getVarForCalculations('vpwp_ma', dataset_override)
+        vpwp_tp, z, dataset = self.getVarForCalculations('vpwp_tp', dataset)
+        vpwp_ac, z, dataset = self.getVarForCalculations('vpwp_ac', dataset)
+        vpwp_bp, z, dataset = self.getVarForCalculations('vpwp_bp', dataset)
+        vpwp_dp1, z, dataset = self.getVarForCalculations('vpwp_dp1', dataset)
+        vpwp_bt, z, dataset = self.getVarForCalculations('vpwp_bt', dataset)
+        vpwp_ta, z, dataset = self.getVarForCalculations('vpwp_ta', dataset)
+        vpwp_pr1, z, dataset = self.getVarForCalculations('vpwp_pr1', dataset)
+        vpwp_pr2, z, dataset = self.getVarForCalculations('vpwp_pr2', dataset)
+        vpwp_pr3, z, dataset = self.getVarForCalculations('vpwp_pr3', dataset)
+        vpwp_pr4, z, dataset = self.getVarForCalculations('vpwp_pr4', dataset)
+        vpwp_mfl, z, dataset = self.getVarForCalculations('vpwp_mfl', dataset)
+        vpwp_ma, z, dataset = self.getVarForCalculations('vpwp_ma', dataset)
 
         output_data = vpwp_bt - (
                 vpwp_ma + vpwp_ta + vpwp_tp + vpwp_ac + vpwp_bp + vpwp_pr1 + vpwp_pr2 + vpwp_pr3 + vpwp_pr4 +
@@ -826,8 +821,8 @@ class VariableGroupBaseBudgets(VariableGroup):
         '''
         # z,z, dataset = self.getVarForCalculations('altitude', dataset_override)
         rrm_hf, z, dataset = self.getVarForCalculations('rrm_hf', dataset_override)
-        rrm_wvhf, z, dataset = self.getVarForCalculations('rrm_wvhf', dataset_override)
-        rrm_cl, z, dataset = self.getVarForCalculations('rrm_cl', dataset_override)
+        rrm_wvhf, z, dataset = self.getVarForCalculations('rrm_wvhf', dataset)
+        rrm_cl, z, dataset = self.getVarForCalculations('rrm_cl', dataset)
 
         output_data = rrm_hf + rrm_wvhf + rrm_cl
 
@@ -842,14 +837,14 @@ class VariableGroupBaseBudgets(VariableGroup):
         '''
         # z,z, dataset = self.getVarForCalculations('altitude', dataset_override)
         rrm_bt, z, dataset = self.getVarForCalculations('rrm_bt', dataset_override)
-        rrm_ma, z, dataset = self.getVarForCalculations('rrm_ma', dataset_override)
-        rrm_sd, z, dataset = self.getVarForCalculations('rrm_sd', dataset_override)
-        rrm_ta, z, dataset = self.getVarForCalculations('rrm_ta', dataset_override)
-        rrm_ts, z, dataset = self.getVarForCalculations('rrm_ts', dataset_override)
-        rrm_hf, z, dataset = self.getVarForCalculations('rrm_hf', dataset_override)
-        rrm_wvhf, z, dataset = self.getVarForCalculations('rrm_wvhf', dataset_override)
-        rrm_cl, z, dataset = self.getVarForCalculations('rrm_cl', dataset_override)
-        rrm_mc, z, dataset = self.getVarForCalculations('rrm_mc', dataset_override)
+        rrm_ma, z, dataset = self.getVarForCalculations('rrm_ma', dataset)
+        rrm_sd, z, dataset = self.getVarForCalculations('rrm_sd', dataset)
+        rrm_ta, z, dataset = self.getVarForCalculations('rrm_ta', dataset)
+        rrm_ts, z, dataset = self.getVarForCalculations('rrm_ts', dataset)
+        rrm_hf, z, dataset = self.getVarForCalculations('rrm_hf', dataset)
+        rrm_wvhf, z, dataset = self.getVarForCalculations('rrm_wvhf', dataset)
+        rrm_cl, z, dataset = self.getVarForCalculations('rrm_cl', dataset)
+        rrm_mc, z, dataset = self.getVarForCalculations('rrm_mc', dataset)
 
         output_data = rrm_bt - (rrm_ma + rrm_sd + rrm_ta + rrm_ts + rrm_hf + rrm_wvhf + rrm_cl + rrm_mc)
 
@@ -863,12 +858,12 @@ class VariableGroupBaseBudgets(VariableGroup):
         '''
         # z,z, dataset = self.getVarForCalculations('altitude', dataset_override)
         Nrm_bt, z, dataset = self.getVarForCalculations('Nrm_bt', dataset_override)
-        Nrm_ma, z, dataset = self.getVarForCalculations('Nrm_ma', dataset_override)
-        Nrm_sd, z, dataset = self.getVarForCalculations('Nrm_sd', dataset_override)
-        Nrm_ta, z, dataset = self.getVarForCalculations('Nrm_ta', dataset_override)
-        Nrm_ts, z, dataset = self.getVarForCalculations('Nrm_ts', dataset_override)
-        Nrm_cl, z, dataset = self.getVarForCalculations('Nrm_cl', dataset_override)
-        Nrm_mc, z, dataset = self.getVarForCalculations('Nrm_mc', dataset_override)
+        Nrm_ma, z, dataset = self.getVarForCalculations('Nrm_ma', dataset)
+        Nrm_sd, z, dataset = self.getVarForCalculations('Nrm_sd', dataset)
+        Nrm_ta, z, dataset = self.getVarForCalculations('Nrm_ta', dataset)
+        Nrm_ts, z, dataset = self.getVarForCalculations('Nrm_ts', dataset)
+        Nrm_cl, z, dataset = self.getVarForCalculations('Nrm_cl', dataset)
+        Nrm_mc, z, dataset = self.getVarForCalculations('Nrm_mc', dataset)
 
         output_data = Nrm_bt - (Nrm_ma + Nrm_sd + Nrm_ta + Nrm_ts + Nrm_cl + Nrm_mc)
 
