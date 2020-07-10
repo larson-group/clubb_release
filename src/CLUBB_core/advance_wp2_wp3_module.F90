@@ -225,6 +225,7 @@ module advance_wp2_wp3_module
                                 ! than a centered discretization for the portion
                                 ! of the wp3 turbulent advection term for ADG1
                                 ! that is linearized in terms of wp3<t+1>.
+                                ! (Requires ADG1 PDF and l_standard_term_ta).
       l_damp_wp2_using_em,    & ! In wp2 equation, use a dissipation formula of -(2/3)*em/tau_zm,
                                 ! as in Bougeault (1981)
       l_use_C11_Richardson,   & ! Parameterize C16 based on Richardson number
@@ -694,6 +695,7 @@ module advance_wp2_wp3_module
                                 ! than a centered discretization for the portion
                                 ! of the wp3 turbulent advection term for ADG1
                                 ! that is linearized in terms of wp3<t+1>.
+                                ! (Requires ADG1 PDF and l_standard_term_ta).
       l_damp_wp2_using_em,    & ! In wp2 equation, use a dissipation formula of -(2/3)*em/tau_zm,
                                 ! as in Bougeault (1981)
       l_damp_wp3_Skw_squared    ! Set damping on wp3 to use Skw^2 rather than Skw^4
@@ -1323,6 +1325,7 @@ module advance_wp2_wp3_module
                                 ! than a centered discretization for the portion
                                 ! of the wp3 turbulent advection term for ADG1
                                 ! that is linearized in terms of wp3<t+1>.
+                                ! (Requires ADG1 PDF and l_standard_term_ta).
       l_damp_wp3_Skw_squared    ! Set damping on wp3 to use Skw^2 rather than Skw^4
 
     ! Output Variable
@@ -1945,7 +1948,7 @@ module advance_wp2_wp3_module
                               ! than a centered discretization for the portion
                               ! of the wp3 turbulent advection term for ADG1
                               ! that is linearized in terms of wp3<t+1>.
-
+                              ! (Requires ADG1 PDF and l_standard_term_ta).
       l_damp_wp2_using_em,  & ! In wp2 equation, use a dissipation formula of -(2/3)*em/tau_zm,
                               ! as in Bougeault (1981)
       l_damp_wp3_Skw_squared  ! Set damping on wp3 to use Skw^2 rather than Skw^4
@@ -3777,6 +3780,7 @@ module advance_wp2_wp3_module
                               ! than a centered discretization for the portion
                               ! of the wp3 turbulent advection term for ADG1
                               ! that is linearized in terms of wp3<t+1>.
+                              ! (Requires ADG1 PDF and l_standard_term_ta).
 
     ! Output Variable
     real( kind = core_rknd ), dimension(5,gr%nz), intent(out) :: &
@@ -3846,7 +3850,7 @@ module advance_wp2_wp3_module
           ! but the portion of the term that is linearized in terms of wp3<t+1>
           ! is handled using an "upwind" discretization that also takes into
           ! "winds" that converge or diverge around the central thermodynamic
-          ! grid level.  Provided by Chris Vogl.
+          ! grid level.  Provided by Chris Vogl and Shixuan Zhang.
 
           do k = 2, gr%nz-1, 1
 
