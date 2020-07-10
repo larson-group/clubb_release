@@ -806,6 +806,11 @@ module advance_clubb_core_module
     integer, intent(out) :: &
       err_code_out  ! Error code indicator
 
+    ! Brian:  to be added to clubb_config_flags later.
+    logical, parameter :: &
+      l_partial_upwind_wp3 = .false.
+
+
     !----- Begin Code -----
     
     err_code_out = clubb_no_error  ! Initialize to no error value
@@ -1620,6 +1625,7 @@ module advance_clubb_core_module
              clubb_config_flags%l_upwind_xm_ma,                  & ! intent(in)
              clubb_config_flags%l_tke_aniso,                     & ! intent(in)
              clubb_config_flags%l_standard_term_ta,              & ! intent(in)
+             l_partial_upwind_wp3,                               & ! intent(in)
              clubb_config_flags%l_damp_wp2_using_em,             & ! intent(in)
              clubb_config_flags%l_use_C11_Richardson,            & ! intent(in)
              clubb_config_flags%l_damp_wp3_Skw_squared,          & ! intent(in)
