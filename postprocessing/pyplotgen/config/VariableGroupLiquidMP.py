@@ -45,6 +45,7 @@ class VariableGroupLiquidMP(VariableGroup):
                     'cam': ['Nc_in_cloud'],
                     'wrf': ['Nc_in_cloud'],
                 },
+                'sam_calc': self.getNcInCloudSamLine
             },
             {'var_names':
                 {
@@ -188,10 +189,17 @@ class VariableGroupLiquidMP(VariableGroup):
 
         return nrm, z
 
-    def getNcmR408Line(self, dataset_override=None):
+    def getNcInCloudSamLine(self, dataset_override=None):
         """
-        Caclulates Ncm line that was used by plotgen
-        Ncm * cf
-        This line seems unintuitive, but it's what plotgen used.
+        (NC * 1e+6) ./ RHO
         :return:
         """
+        dataset = self.les_dataset
+        if dataset_override is not None:
+            dataset = dataset_override
+        nc, z, dataset = self.getVarForCalculations(['NC'], dataset)
+        rho, z, dataset = self.getVarForCalculations('RHO', dataset)
+
+        output = (nc * (10 ** 6) / rho)
+
+        return output, z

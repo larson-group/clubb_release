@@ -38,7 +38,7 @@ class VariableGroupBase(VariableGroup):
             {'var_names':
                 {
                     'clubb': ['thlm'],
-                    'sam': ['THETAL'],
+                    'sam': ['THETAL', 'THETA'],
                     'coamps': ['thlm'],
                     'r408': ['thlm'],
                     'hoc': ['thlm'],
@@ -256,7 +256,7 @@ class VariableGroupBase(VariableGroup):
                     'cam': ['wm'], # -OMEGA ./(9.81.*1)
                     'wrf': ['wm', 'wlsm'],
                 },
-                'sci_scale': 0,
+                'sci_scale': -4,
             },
             {'var_names':
                 {
@@ -803,6 +803,7 @@ class VariableGroupBase(VariableGroup):
         sam eqn
         WPRCP                          * (2.5e6 / (1004.67*((PRES / 1000)**(287.04/1004.67))) - 1.61*THETAV)
         ((QCFLUX) / (RHO * 2.5104e+6)) * (2.5e6 / (1004.67*((PRES / 1000)**(287.04/1004.67))) - 1.61*THETAV)
+
         :return:
         """
 
@@ -904,6 +905,7 @@ class VariableGroupBase(VariableGroup):
         thlpqcp * (2.5e6 / (1004.67 * ex0)                             - 1.61 * thvm)
         wpqcp   * (2.5e6 / (1004.67 * ex0)                             - 1.61 * thvm)
         wprlp   * (2.5e6 / (1004.67 * (( p /1.0e5)**(287.04/1004.67))) - 1.61 * thvm)
+        wprlp   * (2.5e6 / (1004.67 * (( p /1.0e5)**(287.04/1004.67))) - 1.61 * thvm)
 
         :param dataset_override:
         :return:
@@ -940,25 +942,34 @@ class VariableGroupBase(VariableGroup):
     def get_rc_coef_zm_X_thlprcp_coamps_calc(self, dataset_override=None):
         """
         coamps eqn
-        thlpqcp * (2.5e6 / (1004.67*ex0) - 1.61*thvm)
+        thlpqcp * (2.5e6 / (1004.67 * ex0)                             - 1.61*thvm)
+        thlprlp * (2.5e6 / (1004.67 * (( p /1.0e5)**(287.04/1004.67))) - 1.61*thvm)
+
         :param dataset_override:
         :return:
         """
         dataset = self.coamps_dataset['sw']
         if dataset_override is not None:
             dataset = dataset_override
-        thlpqcp, z, dataset = self.getVarForCalculations(['thlpqcp', 'thlprcp'], dataset)
+        thlpqcp, z, dataset = self.getVarForCalculations(['thlpqcp'], dataset)
         ex0, z, dataset = self.getVarForCalculations('ex0', dataset)
         thvm, z, dataset = self.getVarForCalculations('thvm', dataset)
 
-        output = thlpqcp * (2.5e6 / (1004.67 * ex0) - 1.61 * thvm)
+        thlprlp, z, dataset = self.getVarForCalculations(['thlprlp'], dataset)
+        p, z, dataset = self.getVarForCalculations('p', dataset)
+
+        output1 = thlpqcp * (2.5e6 / (1004.67 * ex0) - 1.61 * thvm)
+        output2 = thlprlp * (2.5e6 / (1004.67 * (( p /1.0e5)**(287.04/1004.67))) - 1.61*thvm)
+        output = self.pickNonZeroOutput(output1, output2)
+
         return output, z
 
     def get_rc_coef_zm_X_rtprcp_coamps_calc(self, dataset_override=None):
         """
         coamp eqn
-        qtpqcp .* (2.5e6 ./ (1004.67*ex0) - 1.61*thvm)
-        qtpqcp .* (2.5e6 ./ (1004.67*ex0) - 1.61*thvm)
+        qtpqcp * (2.5e6 / (1004.67*ex0)                           - 1.61*thvm)
+        qtpqcp * (2.5e6 / (1004.67*ex0)                           - 1.61*thvm)
+        rtprlp * (2.5e6 / (1004.67*((p/1.0e5)**(287.04/1004.67))) - 1.61*thvm)
         :param dataset_override:
         :return:
         """
@@ -970,7 +981,13 @@ class VariableGroupBase(VariableGroup):
         ex0, z, dataset = self.getVarForCalculations('ex0', dataset)
         thvm, z, dataset = self.getVarForCalculations('thvm', dataset)
 
-        output = qtpqcp * (2.5e6 / (1004.67 * ex0) - 1.61 * thvm)
+        rtprlp, z, dataset = self.getVarForCalculations('rtprlp', dataset)
+        p, z, dataset = self.getVarForCalculations('p', dataset)
+
+        output1 = qtpqcp * (2.5e6 / (1004.67 * ex0) - 1.61 * thvm)
+        output2 = rtprlp * (2.5e6 / (1004.67*((p/1.0e5)**(287.04/1004.67))) - 1.61*thvm)
+        output = self.pickNonZeroOutput(output1, output2)
+
         return output, z
 
     def get_rc_coef_zm_X_rtprcp_sam_calc(self, dataset_override=None):
@@ -1025,7 +1042,8 @@ class VariableGroupBase(VariableGroup):
 
     def get_rc_coef_X_wp2rcp_coamps_calc(self, dataset_override=None):
         """
-        wp2qcp * (2.5e6 / (1004.67*ex0) - 1.61*thvm)
+        wp2qcp * (2.5e6 / (1004.67 * ex0)                             - 1.61 * thvm)
+        wp2rlp * (2.5e6 / (1004.67 * (( p /1.0e5)**(287.04/1004.67))) - 1.61 * thvm)
         :param dataset_override:
         :return:
         """
@@ -1037,5 +1055,12 @@ class VariableGroupBase(VariableGroup):
         ex0, z, dataset = self.getVarForCalculations('ex0', dataset)
         thvm, z, dataset = self.getVarForCalculations('thvm', dataset)
 
-        output = wp2qcp * (2.5e6 / (1004.67 * ex0) - 1.61 * thvm)
+        wp2rlp, z, dataset = self.getVarForCalculations('wp2rlp', dataset)
+        p, z, dataset = self.getVarForCalculations('p', dataset)
+
+        output1 = wp2qcp * (2.5e6 / (1004.67 * ex0) - 1.61 * thvm)
+        output2 = wp2rlp * (2.5e6 / (1004.67 * (( p /1.0e5)**(287.04/1004.67))) - 1.61 * thvm)
+
+        output = self.pickNonZeroOutput(output1, output2)
+
         return output, z

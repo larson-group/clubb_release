@@ -126,6 +126,7 @@ class VariableGroupIceMP(VariableGroup):
                     'wrf': ['Ngm'],
                 },
                 'sam_conv_factor': 10 ** 6,
+                'axis_title': "Ngm [num/kg]"
             },
             {'var_names':
                 {

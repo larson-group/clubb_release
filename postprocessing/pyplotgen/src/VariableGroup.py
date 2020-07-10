@@ -706,9 +706,9 @@ class VariableGroup:
         output1_mean = mean(output1)
         output2_mean = mean(output2)
 
-        if math.isnan(output1_mean):
+        if math.isnan(output1_mean) and not math.isnan(output2_mean):
             return output2
-        if math.isnan(output2_mean):
+        if math.isnan(output2_mean) and not math.isnan(output1_mean):
             return output1
         if output1_mean == 0:
             return output2
