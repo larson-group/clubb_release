@@ -51,7 +51,7 @@ module output_netcdf
       core_rknd
 
     use constants_clubb, only:  & 
-      fstderr, ! Variable(s)
+      fstderr ! Variable(s)
 
     use error_code, only: &
       err_code, &           ! Error Indicator
