@@ -168,7 +168,7 @@ class PyPlotGen:
         if num_cases_plotted == 0:
             warn(
                 "Warning, no cases were plotted! Please either specify an input folder for a supported model "
-                "(e.g. using --sam, --clubb, or --e3sm) or make sure the "
+                "(e.g. using --sam, --clubb, --e3sm, --wrf, --cam) or make sure the "
                 "default clubb output folder contains .nc output. "
                 "Please run ./pyplotgen.py -h for more information on parameters.")
         print("\nGenerating webpage for viewing plots ")
@@ -231,7 +231,7 @@ class PyPlotGen:
         if rel_filepath is not None and list_of_src_folders is not None:
             for folder in list_of_src_folders:
                 if isinstance(rel_filepath, dict):
-                    for temp_filename in rel_filepath.keys():
+                    for temp_filename in rel_filepath.values():
                         filename = folder + temp_filename
                         if os.path.exists(filename):
                             any_nc_file_found = True
