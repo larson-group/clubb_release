@@ -181,10 +181,6 @@ module advance_clubb_core_module
         rt_tol, &
         w_tol, &
         w_tol_sqd, &
-        ep2, &
-        Cp, &
-        Lv, &
-        ep1, &
         fstderr, &
         zero_threshold, &
         three_halves, &
@@ -368,10 +364,6 @@ module advance_clubb_core_module
     use stats_variables, only: &
       irfrzm, & ! Variable(s)
       istability_correction
-
-    use stats_variables, only: &
-      iLscale_pert_1, & ! Variable(s)
-      iLscale_pert_2
 
     use fill_holes, only: &
       vertical_integral, & ! Procedure(s)
@@ -2192,9 +2184,6 @@ module advance_clubb_core_module
         w_tol_sqd,      &
         rt_tol,         &
         thl_tol,        &
-        Cp,             &
-        Lv,             &
-        Ls,             &
         p0,             &
         kappa,          &
         fstderr,        &
@@ -2237,9 +2226,6 @@ module advance_clubb_core_module
 
     use saturation, only:  &
         sat_mixrat_liq    ! Procedure(s)
-
-    use array_index, only: &
-        iirr    ! Variable(s)
 
     use model_flags, only: &
         l_gamma_Skw,                  & ! Variable(s)

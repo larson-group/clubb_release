@@ -1025,8 +1025,7 @@ module microphys_init_cleanup
     !-----------------------------------------------------------------------
 
     use parameters_microphys, only: &
-        l_hydromet_sed, &
-        microphys_scheme
+        l_hydromet_sed
 
     use array_index, only: &
         hydromet_list,  & ! Variable(s)

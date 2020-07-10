@@ -171,7 +171,7 @@ module error
 ! References:
 !   None
 !-----------------------------------------------------------------------
-    use constants_clubb, only: fstdout, fstderr ! Variable(s)
+    use constants_clubb, only: fstderr ! Variable(s)
 
     use error_code, only: &
         clubb_at_least_debug_level,  & ! Procedure

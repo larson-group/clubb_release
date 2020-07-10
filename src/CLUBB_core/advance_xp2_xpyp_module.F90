@@ -94,12 +94,10 @@ module advance_xp2_xpyp_module
         two_thirds, &
         one_half, &
         one_third, &
-        zero, &
-        zero_threshold
+        zero
 
     use model_flags, only: & 
         iiPDF_ADG1,       & ! integer constants
-        iiPDF_new,        &
         iiPDF_new_hybrid, &
         l_hole_fill,      & ! logical constants
         l_explicit_turbulent_adv_xpyp
@@ -1611,8 +1609,7 @@ module advance_xp2_xpyp_module
 
     use constants_clubb, only:  &
         gamma_over_implicit_ts, & ! Constant(s)
-        one, &
-        zero
+        one
 
     use mean_adv, only:  & 
         term_ma_zm_lhs_all, & ! Procedure(s)

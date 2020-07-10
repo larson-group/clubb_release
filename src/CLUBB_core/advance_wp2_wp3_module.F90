@@ -1193,9 +1193,7 @@ module advance_wp2_wp3_module
 
     use constants_clubb, only:  & 
         one, &
-        one_half, &
-        gamma_over_implicit_ts, &
-        zero
+        gamma_over_implicit_ts
 
     use model_flags, only: &
         iiPDF_ADG1,                   & ! Variable(s)

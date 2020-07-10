@@ -93,14 +93,11 @@ module pdf_closure_module
 
     use constants_clubb, only: &  ! Constants
         three,          & ! 3
-        two,            & ! 2
         one,            & ! 1
         one_half,       & ! 1/2
         zero,           & ! 0
         Cp,             & ! Dry air specific heat at constant p [J/kg/K]
         Lv,             & ! Latent heat of vaporization         [J/kg]
-        Rd,             & ! Dry air gas constant                [J/kg/K]
-        ep,             & ! Rd / Rv;     ep  = 0.622            [-]
         ep1,            & ! (1.0-ep)/ep; ep1 = 0.61             [-]
         ep2,            & ! 1.0/ep;      ep2 = 1.61             [-]
         rt_tol,         & ! Tolerance for r_t                   [kg/kg]
@@ -108,9 +105,6 @@ module pdf_closure_module
         T_freeze_K,     & ! Freezing point of water             [K]
         fstderr,        &
         zero_threshold, &
-        chi_tol, &
-        eta_tol, &
-        max_mag_correlation, &
         eps, &
         w_tol
 
@@ -2716,8 +2710,7 @@ module pdf_closure_module
         sqrt_2pi,       & ! Variable(s)
         two,            &
         zero,           &
-        chi_tol,        &
-        cloud_frac_min
+        chi_tol
 
     use clubb_precision, only: &
         core_rknd    ! Variable(s)
