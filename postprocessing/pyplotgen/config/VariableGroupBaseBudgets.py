@@ -231,6 +231,38 @@ class VariableGroupBaseBudgets(VariableGroup):
             {'var_names': ['vm_mfl'], 'legend_label': 'vm_mfl'}
         ]
 
+        up2_budget_lines = [
+            {'var_names': ['up2_bt'], 'legend_label': 'up2_bt'},
+            {'var_names': ['up2_ma'], 'legend_label': 'up2_ma'},
+            {'var_names': ['up2_ta'], 'legend_label': 'up2_ta'},
+            {'var_names': ['up2_tp'], 'legend_label': 'up2_tp'},
+            {'var_names': ['up2_dp1'], 'legend_label': 'up2_dp1'},
+            {'var_names': ['up2_dp2'], 'legend_label': 'up2_dp2'},
+            {'var_names': ['up2_pr1'], 'legend_label': 'up2_pr1'},
+            {'var_names': ['up2_pr2'], 'legend_label': 'up2_pr2'},
+            {'var_names': ['up2_sdmp'], 'legend_label': 'up2_sdmp'},
+            {'var_names': ['up2_cl'], 'legend_label': 'up2_cl'},
+            {'var_names': ['up2_pd'], 'legend_label': 'up2_pd'},
+            {'var_names': ['up2_sf'], 'legend_label': 'up2_sf'},
+            {'var_names': ['up2_splat'], 'legend_label': 'up2_splat'}
+        ]
+
+        vp2_budget_lines = [
+            {'var_names': ['vp2_bt'], 'legend_label': 'vp2_bt'},
+            {'var_names': ['vp2_ma'], 'legend_label': 'vp2_ma'},
+            {'var_names': ['vp2_ta'], 'legend_label': 'vp2_ta'},
+            {'var_names': ['vp2_tp'], 'legend_label': 'vp2_tp'},
+            {'var_names': ['vp2_dp1'], 'legend_label': 'vp2_dp1'},
+            {'var_names': ['vp2_dp2'], 'legend_label': 'vp2_dp2'},
+            {'var_names': ['vp2_pr1'], 'legend_label': 'vp2_pr1'},
+            {'var_names': ['vp2_pr2'], 'legend_label': 'vp2_pr2'},
+            {'var_names': ['vp2_sdmp'], 'legend_label': 'vp2_sdmp'},
+            {'var_names': ['vp2_cl'], 'legend_label': 'vp2_cl'},
+            {'var_names': ['vp2_pd'], 'legend_label': 'vp2_pd'},
+            {'var_names': ['vp2_sf'], 'legend_label': 'vp2_sf'},
+            {'var_names': ['vp2_splat'], 'legend_label': 'vp2_splat'}
+        ]
+
         rrm_budget_lines = [
             {'var_names': ['rrm_bt'], 'legend_label': 'rrm_bt'},
             {'var_names': ['rrm_ma'], 'legend_label': 'rrm_ma'},
@@ -426,6 +458,28 @@ class VariableGroupBaseBudgets(VariableGroup):
                 },
              'lines': vm_budget_lines, 'type': Panel.TYPE_BUDGET, 'centered': True,
             },
+           {'var_names': {
+                'clubb': ['up2'],
+                'sam': ['up2'],
+                'coamps': ['up2'],
+                'r408': ['up2'],
+                'hoc': ['up2'],
+                'e3sm': ['up2'],
+                'wrf': ['up2']
+            },
+                'lines': up2_budget_lines, 'type': Panel.TYPE_BUDGET, 'centered': True,
+            },
+            {'var_names': {
+                'clubb': ['vp2'],
+                'sam': ['vp2'],
+                'coamps': ['vp2'],
+                'r408': ['vp2'],
+                'hoc': ['vp2'],
+                'e3sm': ['vp2'],
+                'wrf': ['vp2']
+            },
+                'lines': vp2_budget_lines, 'type': Panel.TYPE_BUDGET, 'centered': True,
+	    },
             {'var_names':
                 {
                 'clubb': ['rrm'],
@@ -438,7 +492,7 @@ class VariableGroupBaseBudgets(VariableGroup):
                 'wrf': ['rrm'],
                 },
              'lines': rrm_budget_lines, 'type': Panel.TYPE_BUDGET, 'centered': True,
-            },
+             },
             {'var_names':
                 {
                 'clubb': ['Nrm'],
