@@ -239,13 +239,14 @@ module latin_hypercube_driver_module
     
     ! Determine 3pt vertically averaged Lscale
     if ( silhs_config_flags%l_Lscale_vert_avg ) then
-      do k = 1, nz, 1
-        kp1 = min( k+1, nz )
-        km1 = max( k-1, 1 )
-        Lscale_vert_avg(k) = vertical_avg &
-                             ( (kp1-km1+1), rho_ds_zt(km1:kp1), &
-                               Lscale(km1:kp1), gr%dzt(km1:kp1) )
-      end do
+      !do k = 1, nz, 1
+      !  kp1 = min( k+1, nz )
+      !  km1 = max( k-1, 1 )
+      !  Lscale_vert_avg(k) = vertical_avg &
+      !                       ( (kp1-km1+1), rho_ds_zt(km1:kp1), &
+      !                         Lscale(km1:kp1), gr%dzt(km1:kp1) )
+      !end do
+      stop "CLUBB ERROR: l_Lscale_vert_avg has been depricated"
     else
         Lscale_vert_avg = Lscale 
     end if
