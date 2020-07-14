@@ -138,6 +138,22 @@ class Case:
         else:
             coamps_datasets = None
 
+        # Load clubb nc files
+        clubb_datasets = {}
+        if clubb_folders is not None and len(clubb_folders) != 0 and case_definition['clubb_file'] is not None:
+            datareader = DataReader()
+            for foldername in clubb_folders:
+                files_in_folder = {}
+                clubb_filenames = case_definition['clubb_file']
+                # Load each different WRF output file from foldername
+                for type_ext in clubb_filenames:
+                    filepath = foldername + clubb_filenames[type_ext]
+                    if path.exists(filepath):
+                        files_in_folder[type_ext] = datareader.__loadNcFile__(filepath)
+                    else:
+                        warn("Failed to find WRF file " + filepath)
+                clubb_datasets[foldername] = files_in_folder
+
         # Load r408 nc files
         r408_datasets = {}
         if plot_r408 and case_definition['r408_file'] is not None:
@@ -167,7 +183,7 @@ class Case:
         # for this case in config/Case_definitions.py and create an instance of each of the listed VariableGroups
         for VarGroup in self.var_groups:
             # Call the __init__ function of the VarGroup class and, by doing this, create an instance of it
-            temp_group = VarGroup(self, clubb_datasets=self.clubb_datasets, les_dataset=les_file,
+            temp_group = VarGroup(self, clubb_datasets=clubb_datasets, les_dataset=les_file,
                                   coamps_dataset=coamps_datasets, sam_datasets=sam_datasets,
                                   wrf_datasets=wrf_datasets, r408_dataset=r408_datasets, hoc_dataset=hoc_datasets,
                                   e3sm_datasets=e3sm_file, cam_datasets=cam_file)
@@ -201,7 +217,7 @@ class Case:
                 # for folders_datasets in self.clubb_datasets.values():
                 for input_folder in self.clubb_datasets:
                     folder_name = os.path.basename(input_folder)
-                    budget_variables = VariableGroupBaseBudgets(self, clubb_datasets={folder_name:self.clubb_datasets[input_folder]})
+                    budget_variables = VariableGroupBaseBudgets(self, clubb_datasets={folder_name:clubb_datasets[input_folder]})
                     self.panels.extend(budget_variables.panels)
             if wrf_datasets is not None and len(wrf_datasets) != 0:
                 # for folders_datasets in wrf_datasets.values():

@@ -13,7 +13,8 @@ using python dictionaries (values surrounded with < > must have the < > removed 
        
        'blacklisted_vars': ['list', 'of', 'variable', 'names', 'to', 'exclude', 'from', 'plotting'],
        'les_dataset': <path to sam file>",
-       'coamps_dataset': <path to coamps file>,
+       'clubb_file': None,
+		'coamps_dataset': <path to coamps file>,
        'r408_file': {'zm': <path to r408 file>,
                      'zt': <path to r408 file>,
                      'sfc': <path to r408 file>},
@@ -71,6 +72,7 @@ from config.VariableGroupKKMP import VariableGroupKKMP
 from config.VariableGroupLiquidMP import VariableGroupLiquidMP
 from config.VariableGroupSamBudgets import VariableGroupSamBudgets
 from config.VariableGroupSamProfiles import VariableGroupSamProfiles
+from config.VariableGroupScalars import VariableGroupScalars
 from config.VariableGroupWs import VariableGroupWs
 
 # ---------------------------
@@ -93,6 +95,7 @@ e3sm_output_root = ""
 sam_output_root = ""
 wrf_output_root = ""
 cam_output_root = ""
+clubb_output_root = ""
 # ---------------------------
 
 # These are all the names that represent the height variable within different models
@@ -115,6 +118,9 @@ ARM = {'name': 'arm', 'start_time': 481, 'end_time': 540, 'height_min_value': 0,
 
        'blacklisted_vars': ['radht'],
        'les_dataset': SAM_BENCHMARK_OUTPUT_ROOT + "/JULY_2017/ARM_96x96x110/GCSSARM_96x96x110_67m_40m_1s.nc",
+       'clubb_file': {'zm': clubb_output_root + '/arm_zm.nc',
+                      'zt': clubb_output_root + '/arm_zt.nc',
+                      'sfc': clubb_output_root + '/arm_sfc.nc'},
        'coamps_dataset': {'sm': LES_OUTPUT_ROOT + "/arm_coamps_sm.nc",
                           'sw': LES_OUTPUT_ROOT + "/arm_coamps_sw.nc"},
        'r408_file': {'zm': R408_OUTPUT_ROOT + '/Chris_Golaz_best_ever/arm_zm.nc',
@@ -136,6 +142,9 @@ ARM_97 = {'name': 'arm_97', 'start_time': 4321, 'end_time': 5580, 'height_min_va
 
           'blacklisted_vars': ['rtp3', 'Skrt_zt', 'Skthl_zt', 'thlp3', 'rtpthvp', 'thlpthvp'],
           'les_dataset': SAM_BENCHMARK_OUTPUT_ROOT + "/ARM97_r1315_128x128x128_1km_Morrison/ARM9707.nc",
+          'clubb_file': {'zm': clubb_output_root + '/arm_97_zm.nc',
+                         'zt': clubb_output_root + '/arm_97_zt.nc',
+                         'sfc': clubb_output_root + '/arm_97_sfc.nc'},
           'coamps_dataset': None,
           'r408_file': None,
           'hoc_file': None,
@@ -149,6 +158,9 @@ ASTEX_A209 = {'name': 'astex_a209', 'start_time': 2340, 'end_time': 2400, 'heigh
               'height_max_value': 6000,
               'blacklisted_vars': [],
               'les_dataset': None,
+              'clubb_file': {'zm': clubb_output_root + '/astex_a209_zm.nc',
+                             'zt': clubb_output_root + '/astex_a209_zt.nc',
+                             'sfc': clubb_output_root + '/astex_a209_sfc.nc'},
               'coamps_dataset': None,
               'r408_file': None,
               'hoc_file': None,
@@ -163,6 +175,9 @@ ATEX = {'name': 'atex', 'start_time': 421, 'end_time': 480, 'height_min_value': 
 
         'blacklisted_vars': [],
         'les_dataset': None,
+        'clubb_file': {'zm': clubb_output_root + '/atex_zm.nc',
+                       'zt': clubb_output_root + '/atex_zt.nc',
+                       'sfc': clubb_output_root + '/atex_sfc.nc'},
         'coamps_dataset': {'sm': LES_OUTPUT_ROOT + "/atex_coamps_sm.nc",
                            'sw': LES_OUTPUT_ROOT + "/atex_coamps_sw.nc"},
         'r408_file': {'zm': R408_OUTPUT_ROOT + '/Chris_Golaz_best_ever/atex_zm.nc',
@@ -184,6 +199,9 @@ BOMEX = {'name': 'bomex', 'start_time': 181, 'end_time': 360, 'height_min_value'
 
          'blacklisted_vars': [],
          'les_dataset': SAM_BENCHMARK_OUTPUT_ROOT + "/JULY_2017/BOMEX_64x64x75/BOMEX_64x64x75_100m_40m_1s.nc",
+         'clubb_file': {'zm': clubb_output_root + '/bomex_zm.nc',
+                        'zt': clubb_output_root + '/bomex_zt.nc',
+                        'sfc': clubb_output_root + '/bomex_sfc.nc'},
          'coamps_dataset': {'sm': LES_OUTPUT_ROOT + "/bomex_coamps_sm.nc",
                             'sw': LES_OUTPUT_ROOT + "/bomex_coamps_sw.nc"},
          'r408_file': {'zm': R408_OUTPUT_ROOT + '/Chris_Golaz_best_ever/bomex_zm.nc',
@@ -206,7 +224,10 @@ CGILS_S6 = {'name': 'cgils_s6', 'start_time': 12960, 'end_time': 14400,
             'blacklisted_vars': ['Ngm', 'rgm', 'Skrt_zt', 'Skthl_zt', 'thlp3',
                                  'rtpthvp', 'thlpthvp', 'wprrp', 'wpNrp'],
             'les_dataset': SAM_BENCHMARK_OUTPUT_ROOT +
-                "/SAM6.6/CLOUD_FEEDBACK_s6/ctl_s6_96x96x128_100m_DRZ_N100_tqndg.nc",
+                           "/SAM6.6/CLOUD_FEEDBACK_s6/ctl_s6_96x96x128_100m_DRZ_N100_tqndg.nc",
+            'clubb_file': {'zm': clubb_output_root + '/cgils_s6_zm.nc',
+                           'zt': clubb_output_root + '/cgils_s6_zt.nc',
+                           'sfc': clubb_output_root + '/cgils_s6_sfc.nc'},
             'coamps_dataset': None,
             'r408_file': None,
             'hoc_file': None,
@@ -221,6 +242,9 @@ CGILS_S11 = {'name': 'cgils_s11', 'start_time': 12960, 'end_time': 14400, 'heigh
              'blacklisted_vars': ['Ngm', 'rgm', 'Skthl_zt', 'Skrt_zt', 'rtpthvp', 'thlpthvp', 'wprrp', 'wpNrp'],
              'les_dataset': SAM_BENCHMARK_OUTPUT_ROOT +
                             "/SAM6.6/CLOUD_FEEDBACK_s11/ctl_s11_96x96x320_50m_DRZ_N100_ref.nc",
+             'clubb_file': {'zm': clubb_output_root + '/cgils_s11_zm.nc',
+                            'zt': clubb_output_root + '/cgils_s11_zt.nc',
+                            'sfc': clubb_output_root + '/cgils_s11_sfc.nc'},
              'coamps_dataset': None,
              'r408_file': None,
              'hoc_file': None,
@@ -235,6 +259,9 @@ CGILS_S12 = {'name': 'cgils_s12', 'start_time': 12960, 'end_time': 14400, 'heigh
              'blacklisted_vars': ['Ngm', 'rgm', 'Skrt_zt', 'Skthl_zt', 'rtpthvp', 'thlpthvp', 'wprrp', 'wpNrp'],
              'les_dataset': SAM_BENCHMARK_OUTPUT_ROOT +
                             "/SAM6.6/CLOUD_FEEDBACK_s12/ctl_s12_96x96x192_25m_DRZ_N100_fixnudge.nc",
+             'clubb_file': {'zm': clubb_output_root + '/cgils_s12_zm.nc',
+                            'zt': clubb_output_root + '/cgils_s12_zt.nc',
+                            'sfc': clubb_output_root + '/cgils_s12_sfc.nc'},
              'coamps_dataset': None,
              'r408_file': None,
              'hoc_file': None,
@@ -248,6 +275,9 @@ CLEX9_NOV02 = {'name': 'clex9_nov02', 'start_time': 181, 'end_time': 240, 'heigh
                'height_max_value': 6072,
                'blacklisted_vars': ['Ngm'],
                'les_dataset': None,
+               'clubb_file': {'zm': clubb_output_root + '/clex9_nov02_zm.nc',
+                              'zt': clubb_output_root + '/clex9_nov02_zt.nc',
+                              'sfc': clubb_output_root + '/clex9_nov02_sfc.nc'},
                'coamps_dataset': {'sm': LES_OUTPUT_ROOT + "/clex9_nov02_coamps_sm.nc",
                                   'sw': LES_OUTPUT_ROOT + "/clex9_nov02_coamps_sw.nc"},
                'r408_file': None,
@@ -262,6 +292,9 @@ CLEX9_OCT14 = {'name': 'clex9_oct14', 'start_time': 181, 'end_time': 240, 'heigh
                'height_max_value': 6688,
                'blacklisted_vars': ['Ngm'],
                'les_dataset': None,
+               'clubb_file': {'zm': clubb_output_root + '/clex9_oct14_zm.nc',
+                              'zt': clubb_output_root + '/clex9_oct14_zt.nc',
+                              'sfc': clubb_output_root + '/clex9_oct14_sfc.nc'},
                'coamps_dataset': {'sm': LES_OUTPUT_ROOT + "/clex9_oct14_coamps_sm.nc",
                                   'sw': LES_OUTPUT_ROOT + "/clex9_oct14_coamps_sw.nc"},
                'r408_file': None,
@@ -276,6 +309,9 @@ DYCOMS2_RF01 = {'name': 'dycoms2_rf01', 'start_time': 181, 'end_time': 240, 'hei
                 'height_max_value': 1200,
                 'blacklisted_vars': [],
                 'les_dataset': SAM_BENCHMARK_OUTPUT_ROOT + "/JULY_2017/DYCOMS_RF01_96x96x320/DYCOMS_RF01_96x96x320.nc",
+                'clubb_file': {'zm': clubb_output_root + '/dycoms2_rf01_zm.nc',
+                               'zt': clubb_output_root + '/dycoms2_rf01_zt.nc',
+                               'sfc': clubb_output_root + '/dycoms2_rf01_sfc.nc'},
                 'coamps_dataset': None,
                 'r408_file': {'zm': R408_OUTPUT_ROOT + '/Chris_Golaz_best_ever/dycoms2_rf01_zm.nc',
                               'zt': R408_OUTPUT_ROOT + '/Chris_Golaz_best_ever/dycoms2_rf01_zt.nc',
@@ -295,6 +331,9 @@ DYCOMS2_RF01_FIXED_SST = {'name': 'dycoms2_rf01_fixed_sst', 'start_time': 2520, 
                           'blacklisted_vars': ['rtp3', 'Skrt_zt', 'Skthl_zt', 'rtpthvp', 'thlpthvp'],
                           'les_dataset': SAM_BENCHMARK_OUTPUT_ROOT +
                                          "/SAM6.6/DYCOMS_RF01_fixed_sst/DYCOMS_RF01_96x96x320_LES_fixed_sst.nc",
+                          'clubb_file': {'zm': clubb_output_root + '/dycoms2_rf01_fixed_sst_zm.nc',
+                                         'zt': clubb_output_root + '/dycoms2_rf01_fixed_sst_zt.nc',
+                                         'sfc': clubb_output_root + '/dycoms2_rf01_fixed_sst_sfc.nc'},
                           'coamps_dataset': None,
                           'r408_file': None,
                           'hoc_file': None,
@@ -309,6 +348,9 @@ DYCOMS2_RF02_DO = {'name': 'dycoms2_rf02_do', 'start_time': 301, 'end_time': 360
                    'blacklisted_vars': [],
                    'les_dataset': SAM_BENCHMARK_OUTPUT_ROOT +
                                   "/JULY_2017/DYCOMS_RF02_128x128x96_dr_nosed/DYCOMS_RF02_128x128x96_dr_nosed.nc",
+                   'clubb_file': {'zm': clubb_output_root + '/dycoms2_rf02_do_zm.nc',
+                                  'zt': clubb_output_root + '/dycoms2_rf02_do_zt.nc',
+                                  'sfc': clubb_output_root + '/dycoms2_rf02_do_sfc.nc'},
                    'coamps_dataset': None,
                    'r408_file': {'zm': R408_OUTPUT_ROOT + '/Chris_Golaz_best_ever/dycoms2_rf02_do_zm.nc',
                                  'zt': R408_OUTPUT_ROOT + '/Chris_Golaz_best_ever/dycoms2_rf02_do_zt.nc',
@@ -328,6 +370,9 @@ DYCOMS2_RF02_DS = {'name': 'dycoms2_rf02_ds', 'start_time': 301, 'end_time': 360
                    'blacklisted_vars': [],
                    'les_dataset': SAM_BENCHMARK_OUTPUT_ROOT +
                                   "/JULY_2017/DYCOMS_RF02_128x128x96_dr_sed/DYCOMS_RF02_128x128x96_dr_sed.nc",
+                   'clubb_file': {'zm': clubb_output_root + '/dycoms2_rf02_ds_zm.nc',
+                                  'zt': clubb_output_root + '/dycoms2_rf02_ds_zt.nc',
+                                  'sfc': clubb_output_root + '/dycoms2_rf02_ds_sfc.nc'},
                    'coamps_dataset': None,
                    'r408_file': None,
                    'hoc_file': {'zm': HOC_OUTPUT_ROOT + '/dycoms2_rf02_ds_zm.nc',
@@ -345,6 +390,9 @@ DYCOMS2_RF02_ND = {'name': 'dycoms2_rf02_nd', 'start_time': 301, 'end_time': 360
                    'blacklisted_vars': ['wprrp', 'wpNrp', 'corr_w_rr_1', 'corr_w_Nr_1'],
                    'les_dataset': SAM_BENCHMARK_OUTPUT_ROOT +
                                   "/JULY_2017/DYCOMS_RF02_128x128x96_nodr_nosed/DYCOMS_RF02_128x128x96_nodr_nosed.nc",
+                   'clubb_file': {'zm': clubb_output_root + '/dycoms2_rf02_nd_zm.nc',
+                                  'zt': clubb_output_root + '/dycoms2_rf02_nd_zt.nc',
+                                  'sfc': clubb_output_root + '/dycoms2_rf02_nd_sfc.nc'},
                    'coamps_dataset': None,
                    'r408_file': {'zm': R408_OUTPUT_ROOT + '/Chris_Golaz_best_ever/dycoms2_rf02_nd_zm.nc',
                                  'zt': R408_OUTPUT_ROOT + '/Chris_Golaz_best_ever/dycoms2_rf02_nd_zt.nc',
@@ -359,15 +407,18 @@ DYCOMS2_RF02_ND = {'name': 'dycoms2_rf02_nd', 'start_time': 301, 'end_time': 360
                    'var_groups': [VariableGroupBase, VariableGroupWs, VariableGroupLiquidMP, VariableGroupKKMP]}
 
 DYCOMS2_RF02_DS_RESTART = {'name': 'dycoms2_rf02_ds_restart', 'start_time': 181, 'end_time': 240, 'height_min_value': 0,
-                         'height_max_value': 1200,
-                         'blacklisted_vars': [],
-                         'les_dataset': SAM_BENCHMARK_OUTPUT_ROOT +
-                                        "/JULY_2017/DYCOMS_RF02_128x128x96_dr_sed/DYCOMS_RF02_128x128x96_dr_sed.nc",
-                         'coamps_dataset': None,
-                         'r408_file': None,
-                         'hoc_file': {'zm': HOC_OUTPUT_ROOT + '/dycoms2_rf02_ds_zm.nc',
-                                      'zt': HOC_OUTPUT_ROOT + '/dycoms2_rf02_ds_zt.nc',
-                                      'sfc': HOC_OUTPUT_ROOT + '/dycoms2_rf02_ds_sfc.nc'},
+                           'height_max_value': 1200,
+                           'blacklisted_vars': [],
+                           'les_dataset': SAM_BENCHMARK_OUTPUT_ROOT +
+                                          "/JULY_2017/DYCOMS_RF02_128x128x96_dr_sed/DYCOMS_RF02_128x128x96_dr_sed.nc",
+                           'clubb_file': {'zm': clubb_output_root + '/dycoms2_rf02_ds_restart_zm.nc',
+                                          'zt': clubb_output_root + '/dycoms2_rf02_ds_restart_zt.nc',
+                                          'sfc': clubb_output_root + '/dycoms2_rf02_ds_restart_sfc.nc'},
+                           'coamps_dataset': None,
+                           'r408_file': None,
+                           'hoc_file': {'zm': HOC_OUTPUT_ROOT + '/dycoms2_rf02_ds_zm.nc',
+                                        'zt': HOC_OUTPUT_ROOT + '/dycoms2_rf02_ds_zt.nc',
+                                        'sfc': HOC_OUTPUT_ROOT + '/dycoms2_rf02_ds_sfc.nc'},
                            'e3sm_file': None,
                            'cam_file': None,
                            'sam_file': None,
@@ -380,6 +431,9 @@ DYCOMS2_RF02_SO = {'name': 'dycoms2_rf02_so', 'start_time': 301, 'end_time': 360
                    'blacklisted_vars': ['wprrp', 'wpNrp'],
                    'les_dataset': SAM_BENCHMARK_OUTPUT_ROOT +
                                   "/JULY_2017/DYCOMS_RF02_128x128x96_nodr_sed/DYCOMS_RF02_128x128x96_nodr_sed.nc",
+                   'clubb_file': {'zm': clubb_output_root + '/dycoms2_rf02_so_zm.nc',
+                                  'zt': clubb_output_root + '/dycoms2_rf02_so_zt.nc',
+                                  'sfc': clubb_output_root + '/dycoms2_rf02_so_sfc.nc'},
                    'coamps_dataset': None,
                    'r408_file': {'zm': R408_OUTPUT_ROOT + '/Chris_Golaz_best_ever/dycoms2_rf02_so_zm.nc',
                                  'zt': R408_OUTPUT_ROOT + '/Chris_Golaz_best_ever/dycoms2_rf02_so_zt.nc',
@@ -397,6 +451,9 @@ FIRE = {'name': 'fire', 'start_time': 61, 'end_time': 120, 'height_min_value': 0
 
         'blacklisted_vars': [],
         'les_dataset': None,
+        'clubb_file': {'zm': clubb_output_root + '/fire_zm.nc',
+                       'zt': clubb_output_root + '/fire_zt.nc',
+                       'sfc': clubb_output_root + '/fire_sfc.nc'},
         'coamps_dataset': {'sm': LES_OUTPUT_ROOT + "/fire_coamps_sm.nc",
                            'sw': LES_OUTPUT_ROOT + "/fire_coamps_sw.nc"},
         'r408_file': {'zm': R408_OUTPUT_ROOT + '/Chris_Golaz_best_ever/fire_zm.nc',
@@ -420,6 +477,9 @@ GABLS2 = {'name': 'gabls2', 'start_time': 2101, 'end_time': 2160, 'height_min_va
           'blacklisted_vars': ['tau_zm', 'radht', 'Skw_zt', 'Skrt_zt', 'Skthl_zt', 'corr_w_chi_1', 'corr_chi_eta_1',
                                'rcp2', 'thlpthvp', 'rtpthvp'],
           'les_dataset': None,
+          'clubb_file': {'zm': clubb_output_root + '/gabls2_zm.nc',
+                         'zt': clubb_output_root + '/gabls2_zt.nc',
+                         'sfc': clubb_output_root + '/gabls2_sfc.nc'},
           'coamps_dataset': {'sfc': LES_OUTPUT_ROOT + "/gabls2_coamps_sfc.nc",
                              'sm': LES_OUTPUT_ROOT + "/gabls2_coamps_sm.nc",
                              'sw': LES_OUTPUT_ROOT + "/gabls2_coamps_sw.nc"},
@@ -431,10 +491,32 @@ GABLS2 = {'name': 'gabls2', 'start_time': 2101, 'end_time': 2160, 'height_min_va
           'wrf_file': None,
           'var_groups': [VariableGroupBase]}
 
+GABLS2_NIGHTLY = {'name': 'gabls2_nightly', 'start_time': 2101, 'end_time': 2160, 'height_min_value': 0,
+                  'height_max_value': 2500,
+
+                  'blacklisted_vars': [],
+                  'les_dataset': None,
+                  'clubb_file': {'zm': clubb_output_root + '/gabls2_zm.nc',
+                                 'zt': clubb_output_root + '/gabls2_zt.nc',
+                                 'sfc': clubb_output_root + '/gabls2_sfc.nc'},
+                  'coamps_dataset': {'sfc': LES_OUTPUT_ROOT + "/gabls2_coamps_sfc.nc",
+                                     'sm': LES_OUTPUT_ROOT + "/gabls2_coamps_sm.nc",
+                                     'sw': LES_OUTPUT_ROOT + "/gabls2_coamps_sw.nc"},
+                  'r408_file': None,
+                  'hoc_file': None,
+                  'e3sm_file': None,
+                  'cam_file': None,
+                  'sam_file': None,
+                  'wrf_file': None,
+                  'var_groups': [VariableGroupScalars]}
+
 GABLS3 = {'name': 'gabls3', 'start_time': 1081, 'end_time': 1200, 'height_min_value': 0, 'height_max_value': 4970,
 
           'blacklisted_vars': [],
           'les_dataset': None,
+          'clubb_file': {'zm': clubb_output_root + '/gabls3_zm.nc',
+                         'zt': clubb_output_root + '/gabls3_zt.nc',
+                         'sfc': clubb_output_root + '/gabls3_sfc.nc'},
           'coamps_dataset': None,
           'r408_file': None,
           'hoc_file': None,
@@ -448,6 +530,9 @@ GABLS3_NIGHT = {'name': 'gabls3_night', 'start_time': 421, 'end_time': 480, 'hei
                 'height_max_value': 800,
                 'blacklisted_vars': [],
                 'les_dataset': SAM_BENCHMARK_OUTPUT_ROOT + "/SAM6.6/GABLS3_NIGHT/gabls3_night.nc",
+                'clubb_file': {'zm': clubb_output_root + '/gabls3_night_zm.nc',
+                               'zt': clubb_output_root + '/gabls3_night_zt.nc',
+                               'sfc': clubb_output_root + '/gabls3_night_sfc.nc'},
                 'coamps_dataset': None,
                 'r408_file': None,
                 'hoc_file': None,
@@ -463,6 +548,7 @@ IOP = {'name': 'iop', 'start_time': 181, 'end_time': 1440, 'height_min_value': 0
        'blacklisted_vars': [],
        'clubb_datasets': None,
        'les_dataset': None,
+       'clubb_file': None,
        'coamps_dataset': None,
        'r408_file': None,
        'hoc_file': None,
@@ -475,6 +561,9 @@ JUN25_ALTOCU = {'name': 'jun25_altocu', 'start_time': 181, 'end_time': 240, 'hei
                 'height_max_value': 7308,
                 'blacklisted_vars': ['Ngm', 'wprrp', 'wpNrp'],
                 'les_dataset': None,
+                'clubb_file': {'zm': clubb_output_root + '/jun25_altocu_zm.nc',
+                               'zt': clubb_output_root + '/jun25_altocu_zt.nc',
+                               'sfc': clubb_output_root + '/jun25_altocu_sfc.nc'},
                 'coamps_dataset': {'sm': LES_OUTPUT_ROOT + "/jun25_altocu_qc3_coamps_sm.nc",
                                    'sw': LES_OUTPUT_ROOT + "/jun25_altocu_qc3_coamps_sw.nc"},
                 'r408_file': None,
@@ -490,6 +579,9 @@ LBA = {'name': 'lba', 'start_time': 300, 'end_time': 360, 'height_min_value': 0,
        'blacklisted_vars': ['wprrp', 'wpNrp', 'Ngm'],
        'les_dataset': SAM_BENCHMARK_OUTPUT_ROOT +
                       "/JULY_2017/LBA_128kmx128kmx128_1km_Morrison/LBA_128kmx128kmx128_1km_Morrison.nc",
+       'clubb_file': {'zm': clubb_output_root + '/lba_zm.nc',
+                      'zt': clubb_output_root + '/lba_zt.nc',
+                      'sfc': clubb_output_root + '/lba_sfc.nc'},
        'coamps_dataset': None,
        'r408_file': None,
        'hoc_file': None,
@@ -503,6 +595,9 @@ MC3E = {'name': 'mc3e', 'start_time': 1, 'end_time': 64800, 'height_min_value': 
 
         'blacklisted_vars': ['rtp3', 'Skrt_zt', 'Skthl_zt', 'rtpthvp', 'thlpthvp', 'wprrp', 'wpNrp'],
         'les_dataset': SAM_BENCHMARK_OUTPUT_ROOT + "/MC3E_r1359_128x128x128_1km_Morrison/MC3E.nc",
+        'clubb_file': {'zm': clubb_output_root + '/mc3e_zm.nc',
+                       'zt': clubb_output_root + '/mc3e_zt.nc',
+                       'sfc': clubb_output_root + '/mc3e_sfc.nc'},
         'coamps_dataset': None,
         'r408_file': None,
         'hoc_file': None,
@@ -516,6 +611,9 @@ MPACE_A = {'name': 'mpace_a', 'start_time': 4141, 'end_time': 4320, 'height_min_
 
            'blacklisted_vars': ['Skrt_zt', 'Skthl_zt', 'rtpthvp', 'thlpthvp', 'Ngm', 'wpNrp'],
            'les_dataset': SAM_BENCHMARK_OUTPUT_ROOT + "/SAM6.6/MPACE_A/MPACE_A_128x128x69_morr_CEM.nc",
+           'clubb_file': {'zm': clubb_output_root + '/mpace_a_zm.nc',
+                          'zt': clubb_output_root + '/mpace_a_zt.nc',
+                          'sfc': clubb_output_root + '/mpace_a_sfc.nc'},
            'coamps_dataset': None,
            'r408_file': None,
            'hoc_file': None,
@@ -529,6 +627,9 @@ MPACE_B = {'name': 'mpace_b', 'start_time': 541, 'end_time': 720, 'height_min_va
 
            'blacklisted_vars': ['Ngm', 'wpNrp'],
            'les_dataset': None,
+           'clubb_file': {'zm': clubb_output_root + '/mpace_b_zm.nc',
+                          'zt': clubb_output_root + '/mpace_b_zt.nc',
+                          'sfc': clubb_output_root + '/mpace_b_sfc.nc'},
            'coamps_dataset': {'sm': LES_OUTPUT_ROOT + "/mpace_b_coamps_sm.nc",
                               'sw': LES_OUTPUT_ROOT + "/mpace_b_coamps_sw.nc",
                               'sfc': LES_OUTPUT_ROOT + "/mpace_b_coamps_sfc.nc"},
@@ -544,6 +645,9 @@ MPACE_B_SILHS = {'name': 'mpace_b_silhs', 'start_time': 541, 'end_time': 720, 'h
                  'height_max_value': 2750,
                  'blacklisted_vars': ['Ngm', 'wpNrp'],
                  'les_dataset': None,
+                 'clubb_file': {'zm': clubb_output_root + '/mpace_b_silhs_zm.nc',
+                                'zt': clubb_output_root + '/mpace_b_silhs_zt.nc',
+                                'sfc': clubb_output_root + '/mpace_b_silhs_sfc.nc'},
                  'coamps_dataset': {'sm': LES_OUTPUT_ROOT + "/mpace_b_coamps_sm.nc",
                                     'sw': LES_OUTPUT_ROOT + "/mpace_b_coamps_sw.nc"},
                  'r408_file': None,
@@ -558,6 +662,9 @@ NOV11_ALTOCU = {'name': 'nov11_altocu', 'start_time': 91, 'end_time': 150, 'heig
                 'height_max_value': 6150,
                 'blacklisted_vars': ['Ngm'],
                 'les_dataset': None,
+                'clubb_file': {'zm': clubb_output_root + '/nov11_altocu_zm.nc',
+                               'zt': clubb_output_root + '/nov11_altocu_zt.nc',
+                               'sfc': clubb_output_root + '/nov11_altocu_sfc.nc'},
                 'coamps_dataset': {'sm': LES_OUTPUT_ROOT + "/nov11_altocu_coamps_sm.nc",
                                    'sw': LES_OUTPUT_ROOT + "/nov11_altocu_coamps_sw.nc"},
                 'r408_file': {'zm': R408_OUTPUT_ROOT + '/Chris_Golaz_best_ever/nov11_altocu_zm.nc',
@@ -576,6 +683,9 @@ RICO = {'name': 'rico', 'start_time': 4201, 'end_time': 4320, 'height_min_value'
 
         'blacklisted_vars': [],
         'les_dataset': SAM_BENCHMARK_OUTPUT_ROOT + "/JULY_2017/RICO_256x256x100_drizzle/RICO_256x256x100_drizzle.nc",
+        'clubb_file': {'zm': clubb_output_root + '/rico_zm.nc',
+                       'zt': clubb_output_root + '/rico_zt.nc',
+                       'sfc': clubb_output_root + '/rico_sfc.nc'},
         'coamps_dataset': {'sm': LES_OUTPUT_ROOT + "/rico_coamps_sm.nc",
                            'sw': LES_OUTPUT_ROOT + "/rico_coamps_sw.nc"},
         'r408_file': None,
@@ -593,6 +703,9 @@ RICO_SILHS = {'name': 'rico_silhs', 'start_time': 4201, 'end_time': 4320, 'heigh
               'blacklisted_vars': ['wpNrp'],
               'les_dataset': SAM_BENCHMARK_OUTPUT_ROOT +
                              "/JULY_2017/RICO_256x256x100_drizzle/RICO_256x256x100_drizzle.nc",
+              'clubb_file': {'zm': clubb_output_root + '/rico_silhs_zm.nc',
+                             'zt': clubb_output_root + '/rico_silhs_zt.nc',
+                             'sfc': clubb_output_root + '/rico_silhs_sfc.nc'},
               'coamps_dataset': {'sm': LES_OUTPUT_ROOT + "/rico_coamps_sm.nc",
                                  'sw': LES_OUTPUT_ROOT + "/rico_coamps_sw.nc"},
               'r408_file': None,
@@ -608,6 +721,9 @@ TWP_ICE = {'name': 'twp_ice', 'start_time': 1, 'end_time': 9900, 'height_min_val
 
            'blacklisted_vars': ['rtp3', 'Skrt_zt', 'Skthl_zt', 'rtpthvp', 'thlpthvp', 'wprrp', 'wpNrp'],
            'les_dataset': SAM_BENCHMARK_OUTPUT_ROOT + "/TWP_ICE_r1315_128x128x128_1km_Morrison/TWP_ICE.nc",
+           'clubb_file': {'zm': clubb_output_root + '/twp_ice_zm.nc',
+                          'zt': clubb_output_root + '/twp_ice_zt.nc',
+                          'sfc': clubb_output_root + '/twp_ice_sfc.nc'},
            'coamps_dataset': None,
            'r408_file': None,
            'hoc_file': None,
@@ -621,6 +737,9 @@ WANGARA = {'name': 'wangara', 'start_time': 181, 'end_time': 240, 'height_min_va
 
            'blacklisted_vars': ['Ngm'],
            'les_dataset': None,
+           'clubb_file': {'zm': clubb_output_root + '/wangara_zm.nc',
+                          'zt': clubb_output_root + '/wangara_zt.nc',
+                          'sfc': clubb_output_root + '/wangara_sfc.nc'},
            'coamps_dataset': {'sw': LES_OUTPUT_ROOT + "/wangara_rams.nc",
                               'sm': LES_OUTPUT_ROOT + "/wangara_rams.nc"},
            'r408_file': {'zm': R408_OUTPUT_ROOT + '/Chris_Golaz_best_ever/wangara_zm.nc',
@@ -646,7 +765,7 @@ ALL_CASES = [ARM, ARM_97, ASTEX_A209, ATEX,
              DYCOMS2_RF01, DYCOMS2_RF01_FIXED_SST, DYCOMS2_RF02_DO, DYCOMS2_RF02_DS, DYCOMS2_RF02_DS_RESTART,
              DYCOMS2_RF02_ND, DYCOMS2_RF02_SO,
              FIRE,
-             GABLS2, GABLS3, GABLS3_NIGHT,
+             GABLS2, GABLS2_NIGHTLY, GABLS3, GABLS3_NIGHT,
              # IOP,
              JUN25_ALTOCU,
              LBA,
@@ -658,5 +777,5 @@ ALL_CASES = [ARM, ARM_97, ASTEX_A209, ATEX,
              ]
 
 # If uncommented, this line will override the real ALL_CASES given above, forcing pyplotgen to only plot some cases.
-# ALL_CASES = [BOMEX]
+# ALL_CASES = [GABLS2_NIGHTLY]
 # ALL_CASES = ALL_CASES[:7]

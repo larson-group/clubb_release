@@ -121,8 +121,6 @@ class PyPlotGen:
         
         :return: None
         """
-        # Load CLUBB data
-        self.clubb_datasets = self.data_reader.loadFolder(self.clubb_folders)
         diff_datasets = None
         # Load data used for difference plots
         if self.diff is not None:
@@ -151,12 +149,7 @@ class PyPlotGen:
                 casename = case_def['name']
                 if self.diff is not None:
                     case_diff_datasets = diff_datasets[casename]
-                if casename in self.clubb_datasets.keys():
-                    clubb_case_datasets = self.clubb_datasets[casename]
-                else:
-                    clubb_case_datasets = {}
-                # Call __init__ function of the Case class and store it in case
-                case = Case(case_def, clubb_folders=clubb_case_datasets, plot_les=self.les,
+                case = Case(case_def, clubb_folders=self.clubb_folders, plot_les=self.les,
                             plot_budgets=self.plot_budgets, sam_folders=self.sam_folders, wrf_folders=self.wrf_folders,
                             diff_datasets=case_diff_datasets, plot_r408=self.cgbest, plot_hoc=self.hoc,
                             e3sm_dirs=self.e3sm_dir, cam_folders=self.cam_folders)
@@ -193,25 +186,25 @@ class PyPlotGen:
         sam_given = len(self.sam_folders) != 0
         wrf_given = len(self.wrf_folders) != 0
         cam_given = len(self.cam_folders) != 0
-        clubb_given = self.clubb_datasets is not None
+        clubb_given = len(self.clubb_folders) != 0
 
         e3sm_file_defined = case_def['e3sm_file'] is not None
         sam_file_defined = case_def['sam_file'] is not None
         wrf_file_defined = case_def['wrf_file'] is not None
         cam_file_defined = case_def['cam_file'] is not None
-        # clubb_file_defined = case_def['name'] is not None
+        clubb_file_defined = case_def['clubb_file'] is not None
 
         e3sm_file_exists = self.__caseNcFileExists__(self.e3sm_dir, case_def['e3sm_file'])
         sam_file_exists = self.__caseNcFileExists__(self.sam_folders, case_def['sam_file'])
         wrf_file_exists = self.__caseNcFileExists__(self.wrf_folders, case_def['wrf_file'])
         cam_file_exists = self.__caseNcFileExists__(self.cam_folders, case_def['cam_file'])
-        # clubb_file_exists = self.__caseNcFileExists__(self.clubb_dir, case_def['clubb_file'])
+        clubb_file_exists = self.__caseNcFileExists__(self.clubb_folders, case_def['clubb_file'])
 
         e3sm_has_case = e3sm_given and e3sm_file_defined and e3sm_file_exists
         sam_has_case = sam_given and sam_file_defined and sam_file_exists
         wrf_has_case = wrf_given != 0 and wrf_file_defined and wrf_file_exists
         cam_has_case = cam_given and cam_file_defined and cam_file_exists
-        clubb_has_case = clubb_given and case_def['name'] in self.clubb_datasets.keys()
+        clubb_has_case = clubb_given and clubb_file_defined and clubb_file_exists #case_def['name'] in self.clubb_datasets.keys()
 
         if self.nightly:
             return clubb_has_case and (e3sm_has_case or sam_has_case or cam_has_case or wrf_has_case) \
