@@ -29,8 +29,6 @@ module advance_wp2_wp3_module
              wp3_terms_bp1_pr2_rhs, & 
              wp3_term_pr1_rhs, &
              wp3_term_bp2_rhs, &
-             wp2_term_dp1_lhs_all, & 
-             wp2_term_pr1_lhs_all, & 
              wp2_terms_bp_pr2_rhs_all, & 
              wp2_term_dp1_rhs_all, &
              wp2_term_pr3_rhs_all, & 
@@ -1428,8 +1426,8 @@ module advance_wp2_wp3_module
 
 
     ! Calculate dissipation terms 1 for w'^2
-    call wp2_term_dp1_lhs_all( C1_Skw_fnc(:), tau_C1_zm(:), &
-                               lhs_dp1_wp2(:) )
+    call wp2_term_dp1_lhs( C1_Skw_fnc(:), tau_C1_zm(:), &
+                           lhs_dp1_wp2(:) )
 
 
     ! Calculate turbulent production terms of w'^3
@@ -1559,8 +1557,8 @@ module advance_wp2_wp3_module
         ! https://arxiv.org/pdf/1711.03675v1.pdf#nameddest=url:wp2_pr 
 
         ! Calculate terms
-        call wp2_term_pr1_lhs_all( C4, tau1m(:), &
-                                   lhs_pr1_wp2(:) )
+        call wp2_term_pr1_lhs( C4, tau1m(:), &
+                               lhs_pr1_wp2(:) )
 
         ! Add terms to lhs
         do k = 2, gr%nz-1
@@ -2086,8 +2084,8 @@ module advance_wp2_wp3_module
         !        A weighting factor of greater than 1 may be used to make the
         !        term more numerically stable (see note below for w'^3 RHS
         !        turbulent advection (ta) term).
-        call wp2_term_pr1_lhs_all( C4, tau1m(:), &
-                                   lhs_pr1_wp2(:) )
+        call wp2_term_pr1_lhs( C4, tau1m(:), &
+                               lhs_pr1_wp2(:) )
 
         ! Add pressure terms and splat terms
         do k = 2, gr%nz-1
@@ -2119,8 +2117,8 @@ module advance_wp2_wp3_module
                                lhs_pr1_wp3(:) )
 
     ! Calculate dissipation terms 1 for w'^2
-    call wp2_term_dp1_lhs_all( C1_Skw_fnc(:), tau_C1_zm(:), &
-                               lhs_dp1_wp2(:) )
+    call wp2_term_dp1_lhs( C1_Skw_fnc(:), tau_C1_zm(:), &
+                           lhs_dp1_wp2(:) )
 
     ! Calculate buoyancy production of w'^2 and w'^2 pressure term 2
     call wp2_terms_bp_pr2_rhs_all( C5, thv_ds_zm(:), wpthvp(:), &
@@ -2746,8 +2744,8 @@ module advance_wp2_wp3_module
   end subroutine wp2_terms_ac_pr2_lhs
 
   !=============================================================================
-  pure function wp2_term_dp1_lhs( C1_Skw_fnc, tau1m ) & 
-  result( lhs )
+  pure subroutine wp2_term_dp1_lhs( C1_Skw_fnc, tau1m, &
+                                    lhs_dp1_wp2 )
 
     ! Description:
     ! Dissipation term 1 for w'^2:  implicit portion of the code.
@@ -2781,76 +2779,51 @@ module advance_wp2_wp3_module
     ! References:
     !-----------------------------------------------------------------------
 
+    use grid_class, only:  & 
+        gr ! Variable
+
+    use constants_clubb, only: &
+        zero    ! Constant(s) 
+
     use clubb_precision, only: &
         core_rknd ! Variable(s)
 
     implicit none
 
     ! Input Variables
-    real( kind = core_rknd ), intent(in) :: & 
-      C1_Skw_fnc,  & ! C_1 parameter with Sk_w applied (k)   [-]
-      tau1m          ! Time-scale tau at momentum levels (k) [s]
+    real( kind = core_rknd ), dimension(gr%nz), intent(in) :: & 
+      C1_Skw_fnc,  & ! C_1 parameter with Sk_w applied    [-]
+      tau1m          ! Time-scale tau at momentum levels  [s]
 
     ! Return Variable
-    real( kind = core_rknd ) :: lhs
+    real( kind = core_rknd ), dimension(gr%nz), intent(out) :: &
+      lhs_dp1_wp2
 
-    ! Momentum main diagonal: [ x wp2(k,<t+1>) ]
-    lhs & 
-    = + C1_Skw_fnc / tau1m
+    ! Loop variable
+    integer :: k
+
+
+    ! Set lower boundary to 0
+    lhs_dp1_wp2(1) = zero
+
+    do k = 2, gr%nz-1
+
+       ! Momentum main diagonal: [ x wp2(k,<t+1>) ]
+       lhs_dp1_wp2(k) = + C1_Skw_fnc(k) / tau1m(k)
+
+    enddo ! k = 2, gr%nz-1
+
+    ! Set upper boundary to 0
+    lhs_dp1_wp2(gr%nz) = zero
+
 
     return
-  end function wp2_term_dp1_lhs
 
-    !==================================================================================
-    pure subroutine wp2_term_dp1_lhs_all( C1_Skw_fnc, tau1m, &
-                                          lhs_dp1_wp2 )
-    ! Description:
-    !     This subroutine serves the same function as wp2_term_dp1_lhs (above), but
-    !     calculates terms for all grid levels at once rather than one at a time.
-    !     This was done so that this code could be vectorized and thereby sped up
-    !     by the compiler. See clubb:ticket:834 for more information.
-    ! 
-    !----------------------------------------------------------------------------------
-
-        use clubb_precision, only: &
-            core_rknd ! Variable(s)
-
-        use grid_class, only:  & 
-            gr ! Variable
-
-        implicit none
-
-        ! Input Variables
-        real( kind = core_rknd ), dimension(gr%nz), intent(in) :: & 
-          C1_Skw_fnc,  & ! C_1 parameter with Sk_w applied (k)   [-]
-          tau1m          ! Time-scale tau at momentum levels (k) [s]
-
-        ! Return Variable
-        real( kind = core_rknd ), dimension(gr%nz), intent(out) :: lhs_dp1_wp2
-
-        ! Loop variable
-        integer :: k
-
-        ! Set lower boundary to 0
-        lhs_dp1_wp2(1) = 0.0_core_rknd
-
-        ! Calculate non-boundary values
-        do k = 2, gr%nz-1
-
-            ! Momentum main diagonal: [ x wp2(k,<t+1>) ]
-            lhs_dp1_wp2(k) = + C1_Skw_fnc(k) / tau1m(k)
-
-        end do
-
-        ! Set upper boundary to 0
-        lhs_dp1_wp2(gr%nz) = 0.0_core_rknd
-
-        return
-    end subroutine wp2_term_dp1_lhs_all
+  end subroutine wp2_term_dp1_lhs
 
   !=============================================================================
-  pure function wp2_term_pr1_lhs( C4, tau1m ) & 
-  result( lhs )
+  pure subroutine wp2_term_pr1_lhs( C4, tau1m, &
+                                    lhs_pr1_wp2 )
 
     ! Description
     ! Pressure term 1 for w'^2:  implicit portion of the code.
@@ -2886,9 +2859,13 @@ module advance_wp2_wp3_module
     ! References:
     !-----------------------------------------------------------------------
 
+    use grid_class, only:  &
+        gr      ! Variable
+
     use constants_clubb, only: &
         three, & ! Variable(s)
-        two
+        two,   &
+        zero
 
     use clubb_precision, only: &
         core_rknd ! Variable(s)
@@ -2896,74 +2873,37 @@ module advance_wp2_wp3_module
     implicit none
 
     ! Input Variables
+    real( kind = core_rknd ), dimension(gr%nz), intent(in) :: & 
+      tau1m    ! Time-scale tau at momentum levels  [s]
+
     real( kind = core_rknd ), intent(in) :: & 
-      C4,   & ! Model parameter C_4                   [-]
-      tau1m   ! Time-scale tau at momentum levels (k) [s]
+      C4    ! Model parameter C_4                [-]
 
     ! Return Variable
-    real( kind = core_rknd ) :: lhs
+    real( kind = core_rknd ), dimension(gr%nz), intent(out) :: &
+      lhs_pr1_wp2
+    
+    ! Loop variable
+    integer :: k
 
-    ! Momentum main diagonal: [ x wp2(k,<t+1>) ]
-    lhs & 
-    = + ( two * C4 ) / ( three * tau1m )
+
+    ! Set lower boundary to 0
+    lhs_pr1_wp2(1) = zero
+
+    do k = 2, gr%nz-1
+
+        ! Momentum main diagonal: [ x wp2(k,<t+1>) ]
+        lhs_pr1_wp2(k) = + ( two * C4 ) / ( three * tau1m(k) )
+    
+    enddo ! k = 2, gr%nz-1
+
+    ! Set upper boundary to 0
+    lhs_pr1_wp2(gr%nz) = zero
+
 
     return
-  end function wp2_term_pr1_lhs
 
-    !==================================================================================
-    pure subroutine wp2_term_pr1_lhs_all( C4, tau1m, &
-                                          lhs_pr1_wp2 )
-    ! Description:
-    !     This subroutine serves the same function as wp2_term_pr1_lhs (above), but
-    !     calculates terms for all grid levels at once rather than one at a time.
-    !     This was done so that this code could be vectorized and thereby sped up
-    !     by the compiler. See clubb:ticket:834 for more information.
-    ! 
-    !----------------------------------------------------------------------------------
-
-        use constants_clubb, only: &
-            three, & ! Variable(s)
-            two
-
-        use clubb_precision, only: &
-            core_rknd ! Variable(s)
-
-        use grid_class, only:  &
-            gr      ! Variable 
-
-        implicit none
-
-        ! Input Variables
-        real( kind = core_rknd ), dimension(gr%nz), intent(in) :: & 
-          tau1m   ! Time-scale tau at momentum levels (k) [s]
-
-        real( kind = core_rknd ), intent(in) :: & 
-          C4      ! Model parameter C_4                   [-]
-
-        ! Return Variable
-        real( kind = core_rknd ), dimension(gr%nz), intent(out) :: &
-            lhs_pr1_wp2
-    
-        ! Loop variable
-        integer :: k
-
-        ! Set lower boundary to 0
-        lhs_pr1_wp2(1) = 0.0_core_rknd
-
-        ! Calculate non-boundary values
-        do k = 2, gr%nz-1
-
-            ! Momentum main diagonal: [ x wp2(k,<t+1>) ]
-            lhs_pr1_wp2(k) = + ( two * C4 ) / ( three * tau1m(k) )
-    
-        end do
-
-        ! Set upper boundary to 0
-        lhs_pr1_wp2(gr%nz) = 0.0_core_rknd
-
-        return
-
-    end subroutine wp2_term_pr1_lhs_all
+  end subroutine wp2_term_pr1_lhs
 
   !=============================================================================
   pure function wp2_terms_bp_pr2_rhs( C5, thv_ds_zm, wpthvp ) & 
