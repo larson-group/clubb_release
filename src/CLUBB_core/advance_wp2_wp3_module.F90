@@ -29,7 +29,6 @@ module advance_wp2_wp3_module
              wp3_terms_bp1_pr2_rhs, & 
              wp3_term_pr1_rhs, &
              wp3_term_bp2_rhs, &
-             wp2_terms_bp_pr2_rhs_all, & 
              wp2_term_dp1_rhs_all, &
              wp2_term_pr3_rhs_all, & 
              wp2_term_pr1_rhs_all, & 
@@ -1969,33 +1968,36 @@ module advance_wp2_wp3_module
     integer :: k, k_wp2, k_wp3
 
     real( kind = core_rknd ), dimension(5,gr%nz) :: &
-        wp3_term_ta_lhs_result
+      wp3_term_ta_lhs_result
 
     real( kind = core_rknd ), dimension(3,gr%nz) :: &
-        rhs_diff_zm, &
-        rhs_diff_zt
+      rhs_diff_zm, &
+      rhs_diff_zt
 
     real( kind = core_rknd ), dimension(2,gr%nz) :: &
-        lhs_tp_wp3, &
-        lhs_ta_wp3
+      lhs_tp_wp3, &
+      lhs_ta_wp3
 
     real( kind = core_rknd ), dimension(gr%nz) :: &
-        lhs_dp1_wp2, &          ! wp2 "over-implicit" dissipation term
-        rhs_dp1_wp2, &          ! wp2 rhs dissipation term
-        lhs_pr1_wp2, &          ! wp2 "over-implicit" pressure term 1
-        rhs_pr1_wp2, &          ! wp2 rhs pressure term 1
-        lhs_pr1_wp3, &          ! wp3 "over-implicit" pressure term 1
-        rhs_pr1_wp3, &          ! wp3 rhs pressure term 1
-        rhs_bp_pr2_wp2, &       ! wp2 bouyancy production and pressure term 2
-        rhs_bp1_pr2_wp3, &      ! wp3 bouyancy production 1 and pressure term 2
-        rhs_pr3_wp2, &          ! wp2 pressure term 3
-        rhs_pr3_wp3, &          ! wp3 pressure term 3
-        rhs_ta_wp3, &           ! wp3 turbulent advection term
-        rhs_bp2_wp3             ! wp3 bouyancy production term 2 !--EXPERIMENTAL--!
+      lhs_dp1_wp2, &          ! wp2 "over-implicit" dissipation term
+      rhs_dp1_wp2, &          ! wp2 rhs dissipation term
+      lhs_pr1_wp2, &          ! wp2 "over-implicit" pressure term 1
+      rhs_pr1_wp2, &          ! wp2 rhs pressure term 1
+      lhs_pr1_wp3, &          ! wp3 "over-implicit" pressure term 1
+      rhs_pr1_wp3, &          ! wp3 rhs pressure term 1
+      rhs_bp_pr2_wp2, &       ! wp2 bouyancy production and pressure term 2
+      rhs_bp1_pr2_wp3, &      ! wp3 bouyancy production 1 and pressure term 2
+      rhs_pr3_wp2, &          ! wp2 pressure term 3
+      rhs_pr3_wp3, &          ! wp3 pressure term 3
+      rhs_ta_wp3, &           ! wp3 turbulent advection term
+      rhs_bp2_wp3             ! wp3 bouyancy production term 2 !--EXPERIMENTAL--!
 
+    real( kind = core_rknd ), dimension(gr%nz) :: &
+      rhs_bp_wp2, &     ! wp2 bouyancy production (stats only)
+      rhs_pr2_wp2       ! wp2 pressure term 2 (stats only)
     
     real( kind = core_rknd ) :: &
-        invrs_dt        ! Inverse of dt, 1/dt, used for computational efficiency
+      invrs_dt        ! Inverse of dt, 1/dt, used for computational efficiency
 
     ! --------------- Begin Code ---------------
         
@@ -2121,8 +2123,8 @@ module advance_wp2_wp3_module
                            lhs_dp1_wp2(:) )
 
     ! Calculate buoyancy production of w'^2 and w'^2 pressure term 2
-    call wp2_terms_bp_pr2_rhs_all( C5, thv_ds_zm(:), wpthvp(:), &
-                                   rhs_bp_pr2_wp2(:) )
+    call wp2_terms_bp_pr2_rhs( C5, thv_ds_zm(:), wpthvp(:), &
+                               rhs_bp_pr2_wp2(:) )
 
     ! Calculate pressure terms 3 for w'^2
     call wp2_term_pr3_rhs_all( C5, thv_ds_zm(:), wpthvp(:), upwp(:), &
@@ -2329,8 +2331,22 @@ module advance_wp2_wp3_module
     ! --------- Statistics output ---------
     if ( l_stats_samp ) then
 
-        do k = 2, gr%nz-1
+        ! w'^2 term bp is completely explicit; call stat_update_var_pt.
+        ! Note:  To find the contribution of w'^2 term bp, substitute 0 for the
+        !        C_5 input to function wp2_terms_bp_pr2_rhs.
+        call wp2_terms_bp_pr2_rhs( zero, thv_ds_zm(:), wpthvp(:), &
+                                   rhs_bp_wp2(:) )
 
+        ! w'^2 term pr2 has both implicit and explicit components; call
+        ! stat_begin_update_pt.  Since stat_begin_update_pt automatically
+        ! subtracts the value sent in, reverse the sign on wp2_terms_bp_pr2_rhs.
+        ! Note:  To find the contribution of w'^2 term pr2, add 1 to the
+        !        C_5 input to function wp2_terms_bp_pr2_rhs.
+        call wp2_terms_bp_pr2_rhs( (one+C5), thv_ds_zm(:), wpthvp(:), &
+                                   rhs_pr2_wp2(:) )
+
+        do k = 2, gr%nz-1
+ 
             ! ----------- w'2 -----------
 
             ! w'^2 term dp2 has both implicit and explicit components (if the
@@ -2350,8 +2366,7 @@ module advance_wp2_wp3_module
             ! w'^2 term bp is completely explicit; call stat_update_var_pt.
             ! Note:  To find the contribution of w'^2 term bp, substitute 0 for the
             !        C_5 input to function wp2_terms_bp_pr2_rhs.
-            call stat_update_var_pt( iwp2_bp, k, & 
-              wp2_terms_bp_pr2_rhs( 0.0_core_rknd, thv_ds_zm(k), wpthvp(k) ), stats_zm )
+            call stat_update_var_pt( iwp2_bp, k, rhs_bp_wp2(k), stats_zm )
 
 
             ! Include effect of vertical compression of eddies in wp2 budget
@@ -2379,8 +2394,7 @@ module advance_wp2_wp3_module
             ! subtracts the value sent in, reverse the sign on wp2_terms_bp_pr2_rhs.
             ! Note:  To find the contribution of w'^2 term pr2, add 1 to the
             !        C_5 input to function wp2_terms_bp_pr2_rhs.
-            call stat_begin_update_pt( iwp2_pr2, k, & 
-              -wp2_terms_bp_pr2_rhs( (one+C5), thv_ds_zm(k), wpthvp(k) ), stats_zm )
+            call stat_begin_update_pt( iwp2_pr2, k, -rhs_pr2_wp2(k), stats_zm )
 
             ! w'^2 term dp1 has both implicit and explicit components; call
             ! stat_begin_update_pt.  Since stat_begin_update_pt automatically
@@ -2906,8 +2920,8 @@ module advance_wp2_wp3_module
   end subroutine wp2_term_pr1_lhs
 
   !=============================================================================
-  pure function wp2_terms_bp_pr2_rhs( C5, thv_ds_zm, wpthvp ) & 
-  result( rhs )
+  pure subroutine wp2_terms_bp_pr2_rhs( C5, thv_ds_zm, wpthvp, &
+                                        rhs_bp_pr2_wp2 )
 
     ! Description:
     ! Buoyancy production of w'^2 and w'^2 pressure term 2:  explicit portion of
@@ -2931,82 +2945,51 @@ module advance_wp2_wp3_module
     ! References:
     !-----------------------------------------------------------------------
 
-    use clubb_precision, only: &
-        core_rknd ! Variable(s)
+    use grid_class, only: &
+        gr    ! Grid type(s)
 
     use constants_clubb, only:  & ! Variable(s)        
         grav, & ! Gravitational acceleration [m/s^2]
         two,  &
-        one
+        one,  &
+        zero
+
+    use clubb_precision, only: &
+        core_rknd    ! Variable(s)
 
     implicit none
 
     ! Input Variables
     real( kind = core_rknd ), intent(in) :: & 
-      C5,        & ! Model parameter C_5                             [-]
+      C5    ! Model parameter C_5                             [-]
+
+    real( kind = core_rknd ), dimension(gr%nz), intent(in) :: & 
       thv_ds_zm, & ! Dry, base-state theta_v at momentum level (k)   [K]
       wpthvp       ! w'th_v'(k)                                      [K m/s]
 
     ! Return Variable
-    real( kind = core_rknd ) :: rhs
+    real( kind = core_rknd ), dimension(gr%nz), intent(out) :: &
+      rhs_bp_pr2_wp2
 
-    rhs & 
-    = + ( one - C5 ) * two * ( grav / thv_ds_zm ) * wpthvp
+    ! Loop variable
+    integer :: k
+
+
+    ! Set lower boundary to 0
+    rhs_bp_pr2_wp2(1) = zero
+
+    do k = 2, gr%nz-1
+       rhs_bp_pr2_wp2(k) &
+       = + ( one - C5 ) * two * ( grav / thv_ds_zm(k) ) * wpthvp(k)
+    enddo ! k = 2, gr%nz-1
+
+    ! Set upper boundary to 0
+    rhs_bp_pr2_wp2(gr%nz) = zero
+
 
     return
-  end function wp2_terms_bp_pr2_rhs
 
-    !==================================================================================
-    pure subroutine wp2_terms_bp_pr2_rhs_all( C5, thv_ds_zm, wpthvp, &
-                                              rhs_bp_pr2_wp2 )
-    ! Description:
-    !     This subroutine serves the same function as wp2_terms_bp_pr2_rhs (above), but
-    !     calculates terms for all grid levels at once rather than one at a time.
-    !     This was done so that this code could be vectorized and thereby sped up
-    !     by the compiler. See clubb:ticket:834 for more information.
-    ! 
-    !----------------------------------------------------------------------------------
-
-        use clubb_precision, only: &
-            core_rknd ! Variable(s)
-
-        use grid_class, only: &
-            gr
-
-        use constants_clubb, only:  & ! Variable(s)        
-            grav, & ! Gravitational acceleration [m/s^2]
-            two,  &
-            one
-
-        implicit none
-
-        ! Input Variables
-        real( kind = core_rknd ), intent(in) :: & 
-          C5           ! Model parameter C_5                             [-]
-
-        real( kind = core_rknd ), dimension(gr%nz), intent(in) :: & 
-          thv_ds_zm, & ! Dry, base-state theta_v at momentum level (k)   [K]
-          wpthvp       ! w'th_v'(k)                                      [K m/s]
-
-        ! Return Variable
-        real( kind = core_rknd ), dimension(gr%nz), intent(out) :: rhs_bp_pr2_wp2
-
-        ! Loop variable
-        integer :: k
-
-        ! Set lower boundary to 0
-        rhs_bp_pr2_wp2(1) = 0.0_core_rknd
-
-        ! Calculate non-boundary values
-        do k = 2, gr%nz-1
-            rhs_bp_pr2_wp2(k) = + ( one - C5 ) * two * ( grav / thv_ds_zm(k) ) * wpthvp(k)
-        end do
-
-        ! Set upper boundary to 0
-        rhs_bp_pr2_wp2(gr%nz) = 0.0_core_rknd
-
-        return
-    end subroutine wp2_terms_bp_pr2_rhs_all
+  end subroutine wp2_terms_bp_pr2_rhs
 
   !=============================================================================
   pure function wp2_term_dp1_rhs( C1_Skw_fnc, tau1m, threshold, up2, vp2, &
