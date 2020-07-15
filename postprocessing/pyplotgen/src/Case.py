@@ -70,6 +70,8 @@ class Case:
         if 'disable_budgets' in case_definition.keys() and case_definition['disable_budgets'] is True:
             self.plot_budgets = False
 
+        # TODO loading in these files should be refactored
+
         ## Load nc files for non-clubb models
         # Load single LES dataset
         les_file = None
@@ -100,9 +102,9 @@ class Case:
                     filepath = foldername + wrf_filenames[type_ext]
                     if path.exists(filepath):
                         files_in_folder[type_ext] = datareader.__loadNcFile__(filepath)
+                        wrf_datasets[foldername] = files_in_folder
                     else:
                         warn("Failed to find WRF file " + filepath)
-                wrf_datasets[foldername] = files_in_folder
 
         # Load E3SM nc files from each folder
         e3sm_file = {}
@@ -150,9 +152,9 @@ class Case:
                     filepath = foldername + clubb_filenames[type_ext]
                     if path.exists(filepath):
                         files_in_folder[type_ext] = datareader.__loadNcFile__(filepath)
+                        clubb_datasets[foldername] = files_in_folder
                     else:
-                        warn("Failed to find WRF file " + filepath)
-                clubb_datasets[foldername] = files_in_folder
+                        warn("Failed to find CLUBB file " + filepath)
 
         # Load r408 nc files
         r408_datasets = {}
@@ -325,7 +327,7 @@ class Case:
         for panel in self.panels:
             print("\r\tplotting ", curr_panel_num, " of ", num_plots, " | ", panel.title)
             if show_alphabetic_id:
-                alphabetic_id = self.__getNextAlphabeticID()
+                alphabetic_id = self.__getNextAlphabeticID__()
             else:
                 alphabetic_id = ""
             plot_paired_lines = True
@@ -336,7 +338,7 @@ class Case:
             curr_panel_num += 1
             print("\r\tplotted  ", curr_panel_num, " of ", num_plots, " | ", panel.title)
 
-    def __getNextAlphabeticID(self):
+    def __getNextAlphabeticID__(self):
         """
         When --show-alphabetic-id is passed in as a run parameter, pyplotgen will add an alphabetic label to each
         plot. These labels are a 1 or 2d rotation through the alphabet (automatically converts to 2d if more than 26
