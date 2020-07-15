@@ -69,7 +69,7 @@ class VariableGroupBase(VariableGroup):
                     'r408': ['wpthlp'],
                     'hoc': ['wpthlp'],
                     'e3sm': ['wpthlp'],
-                    'cam': ['wpthlp'], # WPTHLP_CLUBB ./ (1 .* 1004)
+                    'cam': ['wpthlp'], # WPTHLP_CLUBB / (1 .* 1004)
                     'wrf': ['wpthlp'],
                 },
                 'sam_calc': self.getWpthlpSamCalc, 'sci_scale': 0,
@@ -253,7 +253,7 @@ class VariableGroupBase(VariableGroup):
                     'r408': ['wm'],
                     'hoc': ['wm'],
                     'e3sm': ['wm'],
-                    'cam': ['wm'], # -OMEGA ./(9.81.*1)
+                    'cam': ['wm'], # -OMEGA /(9.81.*1)
                     'wrf': ['wm', 'wlsm'],
                 },
                 'sci_scale': -4,
@@ -340,7 +340,7 @@ class VariableGroupBase(VariableGroup):
                 {
                     'clubb': ['rcp2'],
                     'sam': ['QC2'],
-                    'coamps': ['qcp2', 'rcp2'],
+                    'coamps': ['qcp2', 'rcp2', 'rlp2'],
                     'r408': ['rcp2'],
                     'hoc': ['rcp2'],
                     'e3sm': ['rcp2'],
@@ -570,7 +570,7 @@ class VariableGroupBase(VariableGroup):
         """
         Calculates thlm values from sam output using
         the following equation
-        (THETAL + 2500.4.*(THETA./TABS).*(QI./1000))
+        (THETAL + 2500.4.*(THETA/TABS).*(QI/1000))
         :return: requested variable dependent_data in the form of a list.
                 Returned dependent_data is already cropped to the appropriate min,max indices
         """
@@ -590,7 +590,7 @@ class VariableGroupBase(VariableGroup):
         """
         Calculates rtm values from sam output using
         the following equation
-        (QT-QI) ./ 1000
+        (QT-QI) / 1000
         :return: requested variable dependent_data in the form of a list.
         Returned dependent_data is already cropped to the appropriate min,max indices
         """
@@ -608,7 +608,7 @@ class VariableGroupBase(VariableGroup):
         """
         Calculates Skw_zt values from sam output using
         the following equation
-        WP3 ./ (WP2 + 1.6e-3).^1.5
+        WP3 / (WP2 + 1.6e-3)**1.5
         :return: requested variable dependent_data in the form of a list.
                 Returned dependent_data is already cropped to the appropriate min,max indices
         """
@@ -631,9 +631,11 @@ class VariableGroupBase(VariableGroup):
         """
         Calculates Skrt_zt values from sam output using
         the following equation
-         sam eqn RTP3 ./ (RTP2 + 4e-16).^1.5
-         coamps eqn qtp3 ./ (qtp2 + 4e-16).^1.5
-                rtp3 ./ (rtp2 + 4e-16).^1.5
+         sam eqn 
+            RTP3 / (RTP2 + 4e-16)**1.5
+         coamps eqn 
+            qtp3 / (qtp2 + 4e-16)**1.5
+            rtp3 / (rtp2 + 4e-16)**1.5
         :return: requested variable dependent_data in the form of a list.
                 Returned dependent_data is already cropped to the appropriate min,max indices
         """
@@ -646,7 +648,8 @@ class VariableGroupBase(VariableGroup):
         if dataset_override is not None:
             dataset = dataset_override
         rtp3, z, dataset = self.getVarForCalculations(['RTP3', 'qtp3', 'rtp3'], dataset)
-        rtp2, z, dataset = self.getVarForCalculations(['RTP2', 'qtp2', 'rtp2'], dataset)
+        rtp2, z, dataset = self.getVarForCalculations(['RTP2', 'qtp2', 'rtp2', 'rlp2'], dataset)
+
         skrt_zt = rtp3 / (rtp2 + 4e-16) ** 1.5
 
         return skrt_zt, z
@@ -655,8 +658,8 @@ class VariableGroupBase(VariableGroup):
         """
         Calculates Skthl_zt values from sam output using
         the following equation
-        sam THLP3 ./ (THLP2 + 4e-4).^1.5
-        coamps eqn thlp3 ./ (thlp2 + 4e-4).^1.5
+        sam THLP3 / (THLP2 + 4e-4)**1.5
+        coamps eqn thlp3 / (thlp2 + 4e-4)**1.5
         :return: requested variable dependent_data in the form of a list.
                 Returned dependent_data is already cropped to the appropriate min,max indices
         """
@@ -674,14 +677,14 @@ class VariableGroupBase(VariableGroup):
         thlp3, z, dataset = self.getVarForCalculations(['THLP3', 'thlp3'], dataset)
         thlp2, z, dataset = self.getVarForCalculations(['THLP2', 'thlp2'], dataset)
 
-        skthl_zt = thlp3 / (thlp2 + 4e-16) ** 1.5
+        skthl_zt = thlp3 / (thlp2 + 4e-4)**1.5
         return skthl_zt, z
 
     def getWpthlpSamCalc(self, dataset_override=None):
         """
         This gets called if WPTHLP isn't outputted in an nc file as a backup way of gathering the dependent_data
         for plotting.
-        WPTHLP = (TLFLUX) ./ (RHO * 1004)
+        WPTHLP = (TLFLUX) / (RHO * 1004)
         :return:
         """
         dataset = None
@@ -701,7 +704,7 @@ class VariableGroupBase(VariableGroup):
         """
         This gets called if WPRTP isn't outputted in an nc file as a backup way of gathering the dependent_data
         for plotting.
-        WPRTP = (QTFLUX) ./ (RHO * 2.5104e+6)
+        WPRTP = (QTFLUX) / (RHO * 2.5104e+6)
         :return:
         """
         dataset = None
@@ -719,7 +722,7 @@ class VariableGroupBase(VariableGroup):
         """
         This gets called if WPTHVP isn't outputted in an nc file as a backup way of gathering the dependent_data
         for plotting.
-        WPTHVP =  (TVFLUX) ./ ( RHO * 1004)
+        WPTHVP =  (TVFLUX) / ( RHO * 1004)
         :return:
         """
         dataset = None
@@ -926,7 +929,7 @@ class VariableGroupBase(VariableGroup):
     def get_rc_coef_zm_X_thlprcp_sam_calc(self, dataset_override=None):
         """
         sam eqn
-        THLPRCP .* (2.5e6 ./ (1004.67*((PRES / 1000).^(287.04/1004.67))) - 1.61*THETAV)        :param dataset_override:
+        THLPRCP .* (2.5e6 / (1004.67*((PRES / 1000)**(287.04/1004.67))) - 1.61*THETAV)        :param dataset_override:
         :return:
         """
         dataset = self.sam_datasets

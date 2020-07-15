@@ -90,7 +90,7 @@ class VariableGroupWs(VariableGroup):
                 {
                 'clubb': ['wprtpthlp'],
                 'sam': ['WPRTPTHLP'],
-                'coamps': ['wpqtpthlp', 'wprtp'],
+                'coamps': ['wpqtpthlp','wprtpthlp', 'wprtp'],
                 'r408': ['wprtpthlp'],
                 'hoc': ['wprtpthlp'],
                 'e3sm': ['wprtpthlp'],

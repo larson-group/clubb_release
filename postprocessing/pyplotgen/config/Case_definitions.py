@@ -499,9 +499,7 @@ GABLS2_NIGHTLY = {'name': 'gabls2_nightly', 'start_time': 2101, 'end_time': 2160
                   'clubb_file': {'zm': clubb_output_root + '/gabls2_zm.nc',
                                  'zt': clubb_output_root + '/gabls2_zt.nc',
                                  'sfc': clubb_output_root + '/gabls2_sfc.nc'},
-                  'coamps_dataset': {'sfc': LES_OUTPUT_ROOT + "/gabls2_coamps_sfc.nc",
-                                     'sm': LES_OUTPUT_ROOT + "/gabls2_coamps_sm.nc",
-                                     'sw': LES_OUTPUT_ROOT + "/gabls2_coamps_sw.nc"},
+                  'coamps_dataset': None,
                   'r408_file': None,
                   'hoc_file': None,
                   'e3sm_file': None,
@@ -526,7 +524,7 @@ GABLS3 = {'name': 'gabls3', 'start_time': 1081, 'end_time': 1200, 'height_min_va
           'wrf_file': None,
           'var_groups': [VariableGroupBase]}
 
-GABLS3_NIGHT = {'name': 'gabls3_night', 'start_time': 421, 'end_time': 480, 'height_min_value': 0,
+GABLS3_NIGHTLY = {'name': 'gabls3_nightly', 'start_time': 421, 'end_time': 480, 'height_min_value': 0,
                 'height_max_value': 800,
                 'blacklisted_vars': [],
                 'les_dataset': SAM_BENCHMARK_OUTPUT_ROOT + "/SAM6.6/GABLS3_NIGHT/gabls3_night.nc",
@@ -537,10 +535,10 @@ GABLS3_NIGHT = {'name': 'gabls3_night', 'start_time': 421, 'end_time': 480, 'hei
                 'r408_file': None,
                 'hoc_file': None,
                 'e3sm_file': None,
-                'cam_file': None,
-                'sam_file': None,
-                'wrf_file': None,
-                'var_groups': [VariableGroupBase]}
+                  'cam_file': None,
+                  'sam_file': None,
+                  'wrf_file': None,
+                  'var_groups': [VariableGroupBase]}
 
 # Use to plot IOP forced SAM runs
 IOP = {'name': 'iop', 'start_time': 181, 'end_time': 1440, 'height_min_value': 0,
@@ -740,8 +738,8 @@ WANGARA = {'name': 'wangara', 'start_time': 181, 'end_time': 240, 'height_min_va
            'clubb_file': {'zm': clubb_output_root + '/wangara_zm.nc',
                           'zt': clubb_output_root + '/wangara_zt.nc',
                           'sfc': clubb_output_root + '/wangara_sfc.nc'},
-           'coamps_dataset': {'sw': LES_OUTPUT_ROOT + "/wangara_rams.nc",
-                              'sm': LES_OUTPUT_ROOT + "/wangara_rams.nc"},
+           'coamps_dataset': {'sw': "/home/randomranger/Desktop/wangara_rams.nc", #LES_OUTPUT_ROOT + "/wangara_rams.nc",
+                              'sm': "/home/randomranger/Desktop/wangara_rams.nc"},# LES_OUTPUT_ROOT + "/wangara_rams.nc"},
            'r408_file': {'zm': R408_OUTPUT_ROOT + '/Chris_Golaz_best_ever/wangara_zm.nc',
                          'zt': R408_OUTPUT_ROOT + '/Chris_Golaz_best_ever/wangara_zt.nc',
                          'sfc': R408_OUTPUT_ROOT + '/Chris_Golaz_best_ever/wangara_sfc.nc'},
@@ -765,7 +763,7 @@ ALL_CASES = [ARM, ARM_97, ASTEX_A209, ATEX,
              DYCOMS2_RF01, DYCOMS2_RF01_FIXED_SST, DYCOMS2_RF02_DO, DYCOMS2_RF02_DS, DYCOMS2_RF02_DS_RESTART,
              DYCOMS2_RF02_ND, DYCOMS2_RF02_SO,
              FIRE,
-             GABLS2, GABLS2_NIGHTLY, GABLS3, GABLS3_NIGHT,
+             GABLS2, GABLS2_NIGHTLY, GABLS3, GABLS3_NIGHTLY,
              # IOP,
              JUN25_ALTOCU,
              LBA,
@@ -777,5 +775,5 @@ ALL_CASES = [ARM, ARM_97, ASTEX_A209, ATEX,
              ]
 
 # If uncommented, this line will override the real ALL_CASES given above, forcing pyplotgen to only plot some cases.
-# ALL_CASES = [GABLS2_NIGHTLY]
+# ALL_CASES = [ATEX]
 # ALL_CASES = ALL_CASES[:7]
