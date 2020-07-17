@@ -29,8 +29,6 @@ module advance_wp2_wp3_module
              wp3_terms_bp1_pr2_rhs, & 
              wp3_term_pr1_rhs, &
              wp3_term_bp2_rhs, &
-             wp2_term_dp1_rhs_all, &
-             wp2_term_pr3_rhs_all, & 
              wp2_term_pr1_rhs_all, & 
              wp3_term_tp_lhs_all, & 
              wp3_term_pr1_lhs_all, & 
@@ -2127,14 +2125,14 @@ module advance_wp2_wp3_module
                                rhs_bp_pr2_wp2(:) )
 
     ! Calculate pressure terms 3 for w'^2
-    call wp2_term_pr3_rhs_all( C5, thv_ds_zm(:), wpthvp(:), upwp(:), &
-                               um(:), vpwp(:), vm(:), gr%invrs_dzm(:), &
-                               rhs_pr3_wp2(:) )
+    call wp2_term_pr3_rhs( C5, thv_ds_zm(:), wpthvp(:), upwp(:), &
+                           um(:), vpwp(:), vm(:), gr%invrs_dzm(:), &
+                           rhs_pr3_wp2(:) )
 
     ! Calculate dissipation terms 1 for w'^2
-    call wp2_term_dp1_rhs_all( C1_Skw_fnc(:), tau_C1_zm(:), w_tol_sqd, up2(:), vp2(:), &
-                               l_damp_wp2_using_em, &
-                               rhs_dp1_wp2(:) )
+    call wp2_term_dp1_rhs( C1_Skw_fnc(:), tau_C1_zm(:), w_tol_sqd, up2(:), vp2(:), &
+                           l_damp_wp2_using_em, &
+                           rhs_dp1_wp2(:) )
 
     ! Calculate buoyancy production of w'^3 and w'^3 pressure term 2
     call wp3_terms_bp1_pr2_rhs_all( C11_Skw_fnc(:), thv_ds_zt(:), wp2thvp(:), &
@@ -2992,9 +2990,9 @@ module advance_wp2_wp3_module
   end subroutine wp2_terms_bp_pr2_rhs
 
   !=============================================================================
-  pure function wp2_term_dp1_rhs( C1_Skw_fnc, tau1m, threshold, up2, vp2, &
-                                  l_damp_wp2_using_em ) & 
-  result( rhs )
+  pure subroutine wp2_term_dp1_rhs( C1_Skw_fnc, tau1m, threshold, up2, vp2, &
+                                    l_damp_wp2_using_em, &
+                                    rhs_dp1_wp2 )
 
     ! Description:
     ! When l_damp_wp2_using_em == .false., then
@@ -3027,111 +3025,68 @@ module advance_wp2_wp3_module
     ! References:
     !-----------------------------------------------------------------------
 
+    use grid_class, only: &
+        gr    ! Grid type(s)
+
+    use constants_clubb, only: &
+        zero    ! Constant(s)
+
     use clubb_precision, only: &
         core_rknd ! Variable(s)
 
     implicit none
 
     ! Input Variables
+    real( kind = core_rknd ), dimension(gr%nz), intent(in) :: & 
+      C1_Skw_fnc, & ! C_1 parameter with Sk_w applied                  [-]
+      tau1m,      & ! Time-scale tau at momentum levels                [s]
+      up2,        & ! Horizontal (east-west) velocity variance, u'^2   [m^2/s^2]
+      vp2           ! Horizontal (north-south) velocity variance, v'^2 [m^2/s^2]
+
     real( kind = core_rknd ), intent(in) :: & 
-      C1_Skw_fnc,  & ! C_1 parameter with Sk_w applied (k)   [-]
-      tau1m,       & ! Time-scale tau at momentum levels (k) [s]
-      threshold,   & ! Minimum allowable value of w'^2       [m^2/s^2]
-      up2,         & ! Horizontal (east-west) velocity variance, u'^2 [m^2/s^2]
-      vp2            ! Horizontal (north-south) velocity variance, v'^2 [m^2/s^2]
+      threshold    ! Minimum allowable value of w'^2       [m^2/s^2]
 
     logical, intent(in) :: &
       l_damp_wp2_using_em ! In wp2 equation, use a dissipation formula of -(2/3)*em/tau_zm,
                           ! as in Bougeault (1981)
 
     ! Return Variable
-    real( kind = core_rknd ) :: rhs
+    real( kind = core_rknd ), dimension(gr%nz), intent(out) :: &
+      rhs_dp1_wp2
 
+    ! Loop variable
+    integer :: k
+
+
+    ! Set lower boundary to 0
+    rhs_dp1_wp2(1) = zero
 
     if ( l_damp_wp2_using_em ) then
 
-      rhs & 
-      = - ( C1_Skw_fnc / tau1m ) * ( up2 + vp2 )
+       do k = 2, gr%nz-1
+          rhs_dp1_wp2(k) = - ( C1_Skw_fnc(k) / tau1m(k) ) * ( up2(k) + vp2(k) )
+       enddo ! k = 2, gr%nz-1
 
     else
 
-      rhs & 
-      = + ( C1_Skw_fnc / tau1m ) * threshold
+       do k = 2, gr%nz-1
+          rhs_dp1_wp2(k) = + ( C1_Skw_fnc(k) / tau1m(k) ) * threshold
+       enddo ! k = 2, gr%nz-1
 
-    end if
+    endif ! l_damp_wp2_using_em
+
+    ! Set upper boundary to 0
+    rhs_dp1_wp2(gr%nz) = zero
+
 
     return
-  end function wp2_term_dp1_rhs
 
-    !==================================================================================
-    pure subroutine wp2_term_dp1_rhs_all( C1_Skw_fnc, tau1m, threshold, up2, vp2, &
-                                          l_damp_wp2_using_em, &
-                                          rhs_dp1_wp2 )
-    ! Description:
-    !     This subroutine serves the same function as wp2_term_dp1_rhs (above), but
-    !     calculates terms for all grid levels at once rather than one at a time.
-    !     This was done so that this code could be vectorized and thereby sped up
-    !     by the compiler. See clubb:ticket:834 for more information.
-    ! 
-    !----------------------------------------------------------------------------------
-
-        use clubb_precision, only: &
-            core_rknd ! Variable(s)
-
-        use grid_class, only: &
-            gr
-
-        implicit none
-
-        ! Input Variables
-        real( kind = core_rknd ), intent(in) :: & 
-          threshold      ! Minimum allowable value of w'^2       [m^2/s^2]
-
-        real( kind = core_rknd ), dimension(gr%nz), intent(in) :: & 
-          C1_Skw_fnc,  & ! C_1 parameter with Sk_w applied (k)   [-]
-          tau1m,       & ! Time-scale tau at momentum levels (k) [s]
-          up2,         & ! Horizontal (east-west) velocity variance, u'^2 [m^2/s^2]
-          vp2            ! Horizontal (north-south) velocity variance, v'^2 [m^2/s^2]
-
-        logical, intent(in) :: &
-          l_damp_wp2_using_em ! In wp2 equation, use a dissipation formula of -(2/3)*em/tau_zm,
-                              ! as in Bougeault (1981)
-
-        ! Return Variable
-        real( kind = core_rknd ), dimension(gr%nz), intent(out) :: &
-            rhs_dp1_wp2
-
-        ! Loop variable
-        integer :: k
-
-        ! Set lower boundary to 0
-        rhs_dp1_wp2(1) = 0.0_core_rknd
-
-        ! Calculate non-boundary values
-        if ( l_damp_wp2_using_em ) then
-
-            do k = 2, gr%nz-1
-                rhs_dp1_wp2(k) = - ( C1_Skw_fnc(k) / tau1m(k) ) * ( up2(k) + vp2(k) )
-            end do
-
-        else
-
-            do k = 2, gr%nz-1
-                rhs_dp1_wp2(k) = + ( C1_Skw_fnc(k) / tau1m(k) ) * threshold
-            end do
-
-        end if
-
-        ! Set upper boundary to 0
-        rhs_dp1_wp2(gr%nz) = 0.0_core_rknd
-
-        return
-    end subroutine wp2_term_dp1_rhs_all
+  end subroutine wp2_term_dp1_rhs
 
   !=============================================================================
-  pure function wp2_term_pr3_rhs( C5, thv_ds_zm, wpthvp, upwp, ump1, &
-                                  um, vpwp, vmp1, vm, invrs_dzm ) &
-  result( rhs )
+  pure subroutine wp2_term_pr3_rhs( C5, thv_ds_zm, wpthvp, upwp, &
+                                    um, vpwp, vm, invrs_dzm, &
+                                    rhs_pr3_wp2 )
 
     ! Description:
     ! Pressure term 3 for w'^2:  explicit portion of the code.
@@ -3165,125 +3120,77 @@ module advance_wp2_wp3_module
     ! References:
     !-----------------------------------------------------------------------
 
-    use clubb_precision, only: &
-        core_rknd ! Variable(s)
+    use grid_class, only: &
+        gr    ! Grid type(s)
 
     use constants_clubb, only: & ! Variables 
-        grav,       & ! Gravitational acceleration [m/s^2]
-        two_thirds, &
+        grav,           & ! Gravitational acceleration [m/s^2]
+        two_thirds,     &
+        zero,           &
         zero_threshold
+
+    use clubb_precision, only: &
+        core_rknd    ! Variable(s)
 
     implicit none
 
     ! Input Variables
     real( kind = core_rknd ), intent(in) :: & 
-      C5,        & ! Model parameter C_5                            [-]
+      C5           ! Model parameter C_5                            [-]
+
+    real( kind = core_rknd ), dimension(gr%nz), intent(in) :: & 
       thv_ds_zm, & ! Dry, base-state theta_v at momentum level (k)  [K]
       wpthvp,    & ! w'th_v'(k)                                     [K m/s]
       upwp,      & ! u'w'(k)                                        [m^2/s^2]
-      ump1,      & ! um(k+1)                                        [m/s]
       um,        & ! um(k)                                          [m/s]
       vpwp,      & ! v'w'(k)                                        [m^2/s^2]
-      vmp1,      & ! vm(k+1)                                        [m/s]
       vm,        & ! vm(k)                                          [m/s]
       invrs_dzm    ! Inverse of grid spacing (k)                    [1/m]
 
     ! Return Variable
-    real( kind = core_rknd ) :: rhs
+    real( kind = core_rknd ), dimension(gr%nz), intent(out) :: &
+      rhs_pr3_wp2
 
-    rhs & 
-    ! Michael Falk, 2 August 2007
-    ! Use the following code for standard mixing, with c_k=0.548:
-    = + two_thirds * C5 & 
-                   * ( ( grav / thv_ds_zm ) * wpthvp & 
-                       - upwp * invrs_dzm * ( ump1 - um ) & 
-                       - vpwp * invrs_dzm * ( vmp1 - vm ) & 
-                     )
-     ! Use the following code for alternate mixing, with c_k=0.1 or 0.2
-!    = + two_thirds * C5 &
-!                   * ( ( grav / thv_ds_zm ) * wpthvp &
-!                       - 0. * upwp * invrs_dzm * ( ump1 - um ) &
-!                       - 0. * vpwp * invrs_dzm * ( vmp1 - vm ) &
-!                     )
-!    eMFc
+    ! Loop variable
+    integer :: k
+
+
+    ! Set lower boundary to 0
+    rhs_pr3_wp2(1) = zero
+
+    do k = 2, gr%nz-1
+
+       rhs_pr3_wp2(k) &
+       ! Michael Falk, 2 August 2007
+       ! Use the following code for standard mixing, with c_k=0.548:
+       = + two_thirds * C5 &
+                      * ( ( grav / thv_ds_zm(k) ) * wpthvp(k) &
+                          - upwp(k) * invrs_dzm(k) * ( um(k+1) - um(k) ) &
+                          - vpwp(k) * invrs_dzm(k) * ( vm(k+1) - vm(k) ) &
+                        )
+        ! Use the following code for alternate mixing, with c_k=0.1 or 0.2
+!       = + two_thirds * C5 &
+!                      * ( ( grav / thv_ds_zm(k) ) * wpthvp(k) &
+!                          - 0. * upwp(k) * invrs_dzm(k) * ( um(k+1) - um(k) ) &
+!                          - 0. * vpwp(k) * invrs_dzm(k) * ( vm(k+1) - vm(k) ) &
+!                        )
+!       eMFc
+
+    enddo ! k = 2, gr%nz-1
+
+    ! Set upper boundary to 0
+    rhs_pr3_wp2(gr%nz) = zero
 
     ! Added by dschanen for ticket #36
     ! We have found that when shear generation is zero this term will only be
     ! offset by hole-filling (wp2_pd) and reduces turbulence 
     ! unrealistically at lower altitudes to make up the difference.
-    rhs = max( rhs, zero_threshold )
+    rhs_pr3_wp2 = max( rhs_pr3_wp2, zero_threshold )
+
 
     return
-  end function wp2_term_pr3_rhs
 
-    !==================================================================================
-    pure subroutine wp2_term_pr3_rhs_all( C5, thv_ds_zm, wpthvp, upwp, &
-                                          um, vpwp, vm, invrs_dzm, &
-                                          rhs_pr3_wp2 )
-    ! Description:
-    !     This subroutine serves the same function as wp2_term_pr3_rhs (above), but
-    !     calculates terms for all grid levels at once rather than one at a time.
-    !     This was done so that this code could be vectorized and thereby sped up
-    !     by the compiler. See clubb:ticket:834 for more information.
-    ! 
-    !--------------------------------------------------------------------------------------
-
-        use clubb_precision, only: &
-            core_rknd ! Variable(s)
-
-        use constants_clubb, only: & ! Variables 
-            grav,       & ! Gravitational acceleration [m/s^2]
-            two_thirds, &
-            zero_threshold
-
-        use grid_class, only: &
-            gr
-
-        implicit none
-
-        
-        ! Input Variables
-        real( kind = core_rknd ), intent(in) :: & 
-          C5           ! Model parameter C_5                            [-]
-
-        real( kind = core_rknd ), dimension(gr%nz), intent(in) :: & 
-          thv_ds_zm, & ! Dry, base-state theta_v at momentum level (k)  [K]
-          wpthvp,    & ! w'th_v'(k)                                     [K m/s]
-          upwp,      & ! u'w'(k)                                        [m^2/s^2]
-          um,        & ! um(k)                                          [m/s]
-          vpwp,      & ! v'w'(k)                                        [m^2/s^2]
-          vm,        & ! vm(k)                                          [m/s]
-          invrs_dzm    ! Inverse of grid spacing (k)                    [1/m]
-
-        ! Return Variable
-        real( kind = core_rknd ), dimension(gr%nz), intent(out) :: rhs_pr3_wp2
-
-        ! Loop variable
-        integer :: k
-
-        ! Set lower boundary to 0
-        rhs_pr3_wp2(1) = 0.0_core_rknd
-
-        ! Calculate non-boundary value
-        do k = 2, gr%nz-1
-
-            rhs_pr3_wp2(k) = + two_thirds * C5 & 
-                             * ( ( grav / thv_ds_zm(k) ) * wpthvp(k) & 
-                                 - upwp(k) * invrs_dzm(k) * ( um(k+1) - um(k) ) & 
-                                 - vpwp(k) * invrs_dzm(k) * ( vm(k+1) - vm(k) ) )
-        end do
-
-        ! Set upper boundary to 0
-        rhs_pr3_wp2(gr%nz) = 0.0_core_rknd
-
-        ! Added by dschanen for ticket #36
-        ! We have found that when shear generation is zero this term will only be
-        ! offset by hole-filling (wp2_pd) and reduces turbulence 
-        ! unrealistically at lower altitudes to make up the difference.
-        rhs_pr3_wp2 = max( rhs_pr3_wp2, zero_threshold )
-
-        return
-    end subroutine wp2_term_pr3_rhs_all
+  end subroutine wp2_term_pr3_rhs
 
   !=============================================================================
   pure function wp2_term_pr1_rhs( C4, up2, vp2, tau1m ) & 
