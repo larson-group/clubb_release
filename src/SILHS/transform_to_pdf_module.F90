@@ -13,7 +13,7 @@ module transform_to_pdf_module
 
 !-------------------------------------------------------------------------------
   subroutine transform_uniform_samples_to_pdf &
-             ( nz, num_samples, pdf_dim, d_uniform_extra, & ! In
+             ( nz, ngrdcol, num_samples, pdf_dim, d_uniform_extra, & ! In
                Sigma_Cholesky1, Sigma_Cholesky2, & ! In
                mu1, mu2, X_mixt_comp_all_levs, & ! In
                X_u_all_levs, cloud_frac, & ! In
@@ -53,33 +53,34 @@ module transform_to_pdf_module
     ! Input Variables
     integer, intent(in) :: &
       nz, & ! Number of vertical grid levels
+      ngrdcol, & ! Number of grid columns
       num_samples,  & ! Number of subcolumn samples
       pdf_dim, &  ! `d' Number of variates (normally 3 + microphysics specific variables)
       d_uniform_extra ! Number of variates included in uniform sample only (often 2)
       
-    real( kind = core_rknd ), dimension(pdf_dim,pdf_dim,nz), intent(in) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,pdf_dim,pdf_dim,nz), intent(in) :: &
       Sigma_Cholesky1, & ! Correlations Cholesky matrix, 1st component [-]
       Sigma_Cholesky2    ! Correlations Cholesky matrix, 2nd component [-]
 
-    real( kind = core_rknd ), dimension(pdf_dim,nz), intent(in) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,pdf_dim,nz), intent(in) :: &
       mu1, & ! Means of the hydrometeors,(chi, eta, w, <hydrometeors>), 1st component [units vary]
       mu2    ! Means of the hydrometeors,(chi, eta, w, <hydrometeors>), 2nd component [units vary]
 
-    real( kind = core_rknd ), intent(in), dimension(nz,num_samples,pdf_dim+d_uniform_extra) :: &
+    real( kind = core_rknd ),intent(in),dimension(ngrdcol,nz,num_samples,pdf_dim+d_uniform_extra)::&
       X_u_all_levs ! Sample drawn from uniform distribution from a particular grid level
 
-    real( kind = core_rknd ), intent(in), dimension(nz,num_samples) :: &
+    real( kind = core_rknd ), intent(in), dimension(ngrdcol,nz,num_samples) :: &
       cloud_frac   ! Cloud fraction [-]
       
-    logical, intent(in), dimension(nz,num_samples) :: &
+    logical, intent(in), dimension(ngrdcol,nz,num_samples) :: &
       l_in_precip_all_levs ! Whether we are in precipitation (T/F)
       
-    integer, dimension(nz,num_samples), intent(in) :: &
+    integer, dimension(ngrdcol,nz,num_samples), intent(in) :: &
       X_mixt_comp_all_levs ! Whether we're in the first or second mixture component
       
     ! Output Variable
 
-    real( kind = core_rknd ), intent(out), dimension(nz,num_samples,pdf_dim) :: &
+    real( kind = core_rknd ), intent(out), dimension(ngrdcol,nz,num_samples,pdf_dim) :: &
       X_nl_all_levs ! Sample that is transformed ultimately to normal-lognormal
 
     ! Local Variables
@@ -87,9 +88,9 @@ module transform_to_pdf_module
     logical, dimension(pdf_dim) :: &
       l_d_variable_lognormal ! Whether a given variable in X_nl has a lognormal dist.
 
-    integer :: i, k, sample
+    integer :: i, k, sample, p
     
-    real( kind = core_rknd ), dimension(nz,num_samples,pdf_dim) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nz,num_samples,pdf_dim) :: &
       std_normal ! vector of d-variate standard normal distribution [-]
 
     ! Flag to clip sample point values of chi in extreme situations.
@@ -99,9 +100,9 @@ module transform_to_pdf_module
     ! ---- Begin Code ----
 
     ! Determine which variables are a lognormal distribution
-    i = max( iiPDF_chi, iiPDF_eta, iiPDF_w )
-    l_d_variable_lognormal(1:i) = .false. ! The 1st 3 variates
-    l_d_variable_lognormal(i+1:pdf_dim) = .true.  ! Hydrometeors
+    p = max( iiPDF_chi, iiPDF_eta, iiPDF_w )
+    l_d_variable_lognormal(1:p) = .false. ! The 1st 3 variates
+    l_d_variable_lognormal(p+1:pdf_dim) = .true.  ! Hydrometeors
 
     !---------------------------------------------------------------------------
     ! Generate a set of sample points for a microphysics/radiation scheme
@@ -110,39 +111,44 @@ module transform_to_pdf_module
     !$acc data create(std_normal) async(1)
               
     ! From Latin hypercube sample, generate standard normal sample
-    call cdfnorminv( pdf_dim, nz, num_samples, X_u_all_levs, &  ! In
-                     std_normal )                               ! Out   
+    call cdfnorminv( pdf_dim, nz, ngrdcol, num_samples, X_u_all_levs, &  ! In
+                     std_normal )                                        ! Out   
     
     ! Computes the nonstd_normal from the Cholesky factorization of Sigma, std_normal, and mu.
-    call multiply_Cholesky( nz, num_samples, pdf_dim, std_normal, & ! In
-                            Sigma_Cholesky1, Sigma_Cholesky2,     & ! In
-                            mu1, mu2, X_mixt_comp_all_levs,       & ! In
-                            X_nl_all_levs )                         ! Out
+    call multiply_Cholesky( nz, ngrdcol, num_samples, pdf_dim, std_normal, & ! In
+                            Sigma_Cholesky1, Sigma_Cholesky2,              & ! In
+                            mu1, mu2, X_mixt_comp_all_levs,                & ! In
+                            X_nl_all_levs )                                  ! Out
     !$acc end data
-                            
-    !$acc kernels default(present) async(1)
+                          
     
-    ! Convert lognormal variates (e.g. Ncn and rr) to lognormal
-    do i = max( iiPDF_chi, iiPDF_eta, iiPDF_w )+1, pdf_dim
+    !$acc parallel loop collapse(4) default(present) async(1)
+    do p = max( iiPDF_chi, iiPDF_eta, iiPDF_w )+1, pdf_dim
       do sample = 1, num_samples
         do k = 1, nz
+          do i = 1, ngrdcol
             ! Convert lognormal variates (e.g. Ncn and rr) to lognormal
-            X_nl_all_levs(k,sample,i) = exp( X_nl_all_levs(k,sample,i) )
+            X_nl_all_levs(i,k,sample,p) = exp( X_nl_all_levs(i,k,sample,p) )
+          end do
         end do
       end do
     end do
     
-    ! Zero precipitation hydrometeors if not in precipitation
-    do sample = 1, num_samples
-      do k = 1, nz 
-        
-        ! Zero precipitation hydrometeors if not in precipitation
-        if ( .not. l_in_precip_all_levs(k,sample) ) then
-          
-          X_nl_all_levs(k,sample,iiPDF_Ncn+1:pdf_dim) = zero
-                  
-        end if            
+    !$acc parallel loop collapse(4) default(present) async(1)
+    do p = iiPDF_Ncn+1, pdf_dim
+      do sample = 1, num_samples
+        do k = 1, nz 
+          do i = 1, ngrdcol
+            
+            ! Zero precipitation hydrometeors if not in precipitation
+            if ( .not. l_in_precip_all_levs(i,k,sample) ) then
               
+              X_nl_all_levs(i,k,sample,p) = zero
+                      
+            end if            
+                
+          end do  
+        end do
       end do
     end do
 
@@ -153,38 +159,39 @@ module transform_to_pdf_module
     ! enforced by the clipping of PDF component cloud fraction.
     if ( l_clip_extreme_chi_sample_pts ) then
       
+      !$acc parallel loop collapse(3) default(present) async(1)
       do sample = 1, num_samples
         do k = 1, nz 
+          do i = 1, ngrdcol
 
-          if ( cloud_frac(k,sample) < epsilon( cloud_frac(k,sample) ) ) then
+            if ( cloud_frac(i,k,sample) < epsilon( cloud_frac(i,k,sample) ) ) then
 
-             ! Cloud fraction in the 1st PDF component is 0.
-             ! All sample point values of chi must be <= 0.
-             ! Clip the sample point value of chi back to 0.
-             X_nl_all_levs(k,sample,iiPDF_chi) = min( X_nl_all_levs(k,sample,iiPDF_chi), zero )
+              ! Cloud fraction in the 1st PDF component is 0.
+              ! All sample point values of chi must be <= 0.
+              ! Clip the sample point value of chi back to 0.
+              X_nl_all_levs(i,k,sample,iiPDF_chi) = min(X_nl_all_levs(i,k,sample,iiPDF_chi), zero)
 
-          elseif ( cloud_frac(k,sample) > ( one - epsilon( cloud_frac(k,sample) ) ) ) then
+            elseif ( cloud_frac(i,k,sample) > ( one - epsilon( cloud_frac(i,k,sample) ) ) ) then
 
-             ! Cloud fraction in the 1st PDF component is 1.
-             ! All sample point values of chi must be > 0.
-             ! Clip the sample point value of chi to epsilon.
-             X_nl_all_levs(k,sample,iiPDF_chi) = max( X_nl_all_levs(k,sample,iiPDF_chi), &
-                                                      epsilon( zero ) )
+              ! Cloud fraction in the 1st PDF component is 1.
+              ! All sample point values of chi must be > 0.
+              ! Clip the sample point value of chi to epsilon.
+              X_nl_all_levs(i,k,sample,iiPDF_chi) = max( X_nl_all_levs(i,k,sample,iiPDF_chi), &
+                                                         epsilon( zero ) )
 
-          endif ! cloud_frac_1
+            endif ! cloud_frac_1
 
-       end do
-     end do
+          end do
+        end do
+      end do
 
-   endif ! l_clip_extreme_chi_sample_pts
-
-   !$acc end kernels
+    endif ! l_clip_extreme_chi_sample_pts
 
     return
   end subroutine transform_uniform_samples_to_pdf
 
 !-----------------------------------------------------------------------
-  subroutine cdfnorminv( pdf_dim, nz, num_samples, X_u_all_levs, &
+  subroutine cdfnorminv( pdf_dim, nz, ngrdcol, num_samples, X_u_all_levs, &
                          std_normal )
 ! Description:
 !     This function computes the inverse of the cumulative normal distribution function.
@@ -216,14 +223,15 @@ module transform_to_pdf_module
 
     integer, intent(in) :: &
       nz,           & ! Number of vertical grid levels
+      ngrdcol,           & ! Number of grid columns
       num_samples,  & ! Number of subcolumn samples
       pdf_dim         ! `d' Number of variates (normally 3 + microphysics specific variables)
 
-    real( kind = core_rknd ), intent(in), dimension(nz,num_samples,pdf_dim) :: X_u_all_levs
+    real( kind = core_rknd ), intent(in), dimension(ngrdcol,nz,num_samples,pdf_dim) :: X_u_all_levs
 
     ! ---------------- Return Variable ----------------
 
-    real( kind = core_rknd ), intent(out), dimension(nz,num_samples,pdf_dim) :: std_normal
+    real( kind = core_rknd ), intent(out), dimension(ngrdcol,nz,num_samples,pdf_dim) :: std_normal
 
     ! ---------------- Local Variable(s) ----------------
     
@@ -240,31 +248,33 @@ module transform_to_pdf_module
     real( kind = core_rknd ) :: w, x
     
     integer :: &
-      i, sample, k  ! Loop variables
+      p, sample, k, i  ! Loop variables
     
     ! ---------------- Begin Code ----------------
     
-    !$acc parallel loop collapse(3) async(1)
-    do i = 1, pdf_dim
+    !$acc parallel loop collapse(4) async(1)
+    do p = 1, pdf_dim
       do sample = 1, num_samples
         do k = 1, nz
+          do i = 1, ngrdcol
     
-          x = two * X_u_all_levs(k,sample,i) - one
-          
-          w = -log( ( one - x ) * ( one + x ) ) 
-          
-          if ( w < 5.0 ) then 
-            w = w - 2.5_core_rknd
-            std_normal(k,sample,i) = sqrt_2 * x &
-                                   * (((((((( a(1) * w + a(2) ) * w + a(3) ) * w + a(4) ) * w &
+            x = two * X_u_all_levs(i,k,sample,p) - one
+            
+            w = -log( ( one - x ) * ( one + x ) ) 
+            
+            if ( w < 5.0 ) then 
+              w = w - 2.5_core_rknd
+              std_normal(i,k,sample,p) = sqrt_2 * x &
+                                       * (((((((( a(1) * w + a(2) ) * w + a(3) ) * w + a(4) ) * w &
                                         + a(5) ) * w + a(6) ) * w + a(7) ) * w + a(8) ) * w + a(9) )
-          else
-            w = sqrt(w) - 3._core_rknd
-            std_normal(k,sample,i) = sqrt_2 * x &
-                                   * (((((((( b(1) * w + b(2) ) * w + b(3) ) * w + b(4) ) * w &
+            else
+              w = sqrt(w) - 3._core_rknd
+              std_normal(i,k,sample,p) = sqrt_2 * x &
+                                       * (((((((( b(1) * w + b(2) ) * w + b(3) ) * w + b(4) ) * w &
                                         + b(5) ) * w + b(6) ) * w + b(7) ) * w + b(8) ) * w + b(9) )
-          end if                 
-          
+            end if                 
+            
+          end do
         end do
       end do
     end do
@@ -475,7 +485,7 @@ module transform_to_pdf_module
   end function ltqnorm
 
 !-------------------------------------------------------------------------------
-  subroutine multiply_Cholesky( nz, num_samples, pdf_dim, std_normal, &
+  subroutine multiply_Cholesky( nz, ngrdcol, num_samples, pdf_dim, std_normal, &
                                 Sigma_Cholesky1, Sigma_Cholesky2, &
                                 mu1, mu2, X_mixt_comp_all_levs, &
                                 X_nl_all_levs )
@@ -496,64 +506,67 @@ module transform_to_pdf_module
     ! Input Variables
     integer, intent(in) :: &
       nz,           & ! Number of vertical grid levels
+      ngrdcol,           & ! Number of grid columns
       num_samples,  & ! Number of samples
       pdf_dim         ! Number of variates (normally=5)
 
-    real( kind = core_rknd ), intent(in), dimension(nz,num_samples,pdf_dim) :: &
+    real( kind = core_rknd ), intent(in), dimension(ngrdcol,nz,num_samples,pdf_dim) :: &
       std_normal ! vector of d-variate standard normal distribution [-]
 
-    real( kind = core_rknd ), intent(in), dimension(pdf_dim,nz) :: &
+    real( kind = core_rknd ), intent(in), dimension(ngrdcol,pdf_dim,nz) :: &
       mu1, & ! d-dimensional column vector of means of Gaussian, 1st component [units vary]
       mu2    ! d-dimensional column vector of means of Gaussian, 2nd component [units vary]
 
-    real( kind = core_rknd ), intent(in), dimension(pdf_dim,pdf_dim,nz) :: &
+    real( kind = core_rknd ), intent(in), dimension(ngrdcol,pdf_dim,pdf_dim,nz) :: &
       Sigma_Cholesky1, & ! Cholesky factorization of the Sigma matrix, 1st component [units vary]
       Sigma_Cholesky2    ! Cholesky factorization of the Sigma matrix, 2nd component [units vary]
       
-    integer, dimension(nz,num_samples), intent(in) :: &
+    integer, dimension(ngrdcol,nz,num_samples), intent(in) :: &
       X_mixt_comp_all_levs ! Whether we're in the first or second mixture component
 
     ! Output Variables
 
     ! nxd matrix of n samples from d-variate normal distribution
     !   with mean mu and covariance structure Sigma
-    real( kind = core_rknd ), intent(out), dimension(nz,num_samples,pdf_dim) :: &
+    real( kind = core_rknd ), intent(out), dimension(ngrdcol,nz,num_samples,pdf_dim) :: &
       X_nl_all_levs
       
     ! Local Variables
     real( kind = core_rknd ) :: X_nl_k_sample_i_tmp
 
     ! Loop iterators
-    integer :: i, j, k, sample
+    integer :: p, j, k, sample, i
 
     ! --- Begin Code ---
     
     !$acc data copyin(Sigma_Cholesky1, Sigma_Cholesky2, mu1, mu2) async(2)
     
-    !$acc parallel loop collapse(3) default(present) async(1) wait(2)
+    !$acc parallel loop collapse(4) default(present) async(1) wait(2)
     do sample = 1, num_samples
       do k = 1, nz
-        do  i = 1, pdf_dim
+        do  p = 1, pdf_dim
+          do i = 1, ngrdcol
           
-          X_nl_k_sample_i_tmp = 0.0_core_rknd
-          
-          do j = 1, i
-            ! Compute Sigma_Cholesky * std_normal
-            if ( X_mixt_comp_all_levs(k,sample) == 1 ) then
-              X_nl_k_sample_i_tmp = X_nl_k_sample_i_tmp &
-                                    + Sigma_Cholesky1(i,j,k) * std_normal(k,sample,j)
+            X_nl_k_sample_i_tmp = 0.0_core_rknd
+            
+            do j = 1, p
+              ! Compute Sigma_Cholesky * std_normal
+              if ( X_mixt_comp_all_levs(i,k,sample) == 1 ) then
+                X_nl_k_sample_i_tmp = X_nl_k_sample_i_tmp &
+                                      + Sigma_Cholesky1(i,p,j,k) * std_normal(i,k,sample,j)
+              else
+                X_nl_k_sample_i_tmp = X_nl_k_sample_i_tmp &
+                                      + Sigma_Cholesky2(i,p,j,k) * std_normal(i,k,sample,j)
+              end if
+            end do
+            
+            if ( X_mixt_comp_all_levs(i,k,sample) == 1 ) then
+              X_nl_all_levs(i,k,sample,p) = X_nl_k_sample_i_tmp + mu1(i,p,k)
             else
-              X_nl_k_sample_i_tmp = X_nl_k_sample_i_tmp &
-                                    + Sigma_Cholesky2(i,j,k) * std_normal(k,sample,j)
+              X_nl_all_levs(i,k,sample,p) = X_nl_k_sample_i_tmp + mu2(i,p,k)
             end if
+          
           end do
-          
-          if ( X_mixt_comp_all_levs(k,sample) == 1 ) then
-            X_nl_all_levs(k,sample,i) = X_nl_k_sample_i_tmp + mu1(i,k)
-          else
-            X_nl_all_levs(k,sample,i) = X_nl_k_sample_i_tmp + mu2(i,k)
-          end if
-          
         end do
       end do
     end do 
@@ -563,7 +576,7 @@ module transform_to_pdf_module
     return
   end subroutine multiply_Cholesky
 !-----------------------------------------------------------------------
-  subroutine chi_eta_2_rtthl( nz, num_samples, &
+  subroutine chi_eta_2_rtthl( nz, ngrdcol, num_samples, &
                               rt_1, thl_1, &
                               rt_2, thl_2, &
                               crt_1, cthl_1, &
@@ -598,35 +611,34 @@ module transform_to_pdf_module
     
     integer, intent(in) :: &
       nz, &         ! Vertical grid levels
+      ngrdcol, &         ! Columns
       num_samples   ! Number of subcolumn samples
 
-    real( kind = core_rknd ), dimension(nz), intent(in) :: &
-      rt_1, rt_2,    & ! n dimensional column vector of rt         [kg/kg]
-      thl_1, thl_2,  & ! n dimensional column vector of thetal     [K]
-      crt_1, crt_2,  & ! Constants from plumes 1 & 2 of rt
-      cthl_1, cthl_2   ! Constants from plumes 1 & 2 of thetal
-
-    real( kind = core_rknd ), dimension(nz), intent(in) :: &
-      mu_chi_1, mu_chi_2 ! Mean for chi_1 and chi_2         [kg/kg]
+    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: &
+      rt_1, rt_2,         & ! n dimensional column vector of rt         [kg/kg]
+      thl_1, thl_2,       & ! n dimensional column vector of thetal     [K]
+      crt_1, crt_2,       & ! Constants from plumes 1 & 2 of rt
+      cthl_1, cthl_2,     & ! Constants from plumes 1 & 2 of thetal
+      mu_chi_1, mu_chi_2    ! Mean for chi_1 and chi_2         [kg/kg]
 
     ! n-dimensional column vector of Mellor's chi(s) and eta(t), including mean and perturbation
-    real( kind = core_rknd ), dimension(nz,num_samples), intent(in) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nz,num_samples), intent(in) :: &
       chi, &  ! [kg/kg]
       eta     ! [-]
 
-    integer, dimension(nz,num_samples), intent(in) :: &
+    integer, dimension(ngrdcol,nz,num_samples), intent(in) :: &
       X_mixt_comp_all_levs ! Whether we're in the first or second mixture component
 
     ! ------------------- Output variables -------------------
 
-    real( kind = core_rknd ), dimension(nz,num_samples), intent(out) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nz,num_samples), intent(out) :: &
       lh_rt, lh_thl ! n-dimensional column vectors of rt and thl, including mean and perturbation
 
     ! ------------------- Local Variables -------------------
 
     real( kind= core_rknd ) :: lh_dev_thl_lim ! Limited value of the deviation on thetal [K]
     
-    integer :: k, sample  ! Loop indices
+    integer :: k, sample, i  ! Loop indices
 
     ! ---- Begin Code ----
     
@@ -634,39 +646,43 @@ module transform_to_pdf_module
     !$acc&             mu_chi_2, chi, eta ) &
     !$acc& async(2)
     
-    !$acc parallel loop collapse(2) default(present) async(1) wait(2)
+    !$acc parallel loop collapse(3) default(present) async(1) wait(2)
     do sample = 1, num_samples
       do k = 2, nz
+        do i = 1, ngrdcol
 
-        if ( X_mixt_comp_all_levs(k,sample) == 1 ) then
-          
-          lh_rt(k,sample)  = rt_1(k) + (0.5_core_rknd/crt_1(k))*(chi(k,sample)-mu_chi_1(k)) +  &
-                                 (0.5_core_rknd/crt_1(k))*eta(k,sample)
+          if ( X_mixt_comp_all_levs(i,k,sample) == 1 ) then
+            
+            lh_rt(i,k,sample)  = rt_1(i,k) &
+                                 + (0.5_core_rknd/crt_1(i,k)) * (chi(i,k,sample)-mu_chi_1(i,k)) &
+                                 + (0.5_core_rknd/crt_1(i,k)) * eta(i,k,sample)
 
-          ! Limit the quantity that temperature can vary by (in K)
-          lh_dev_thl_lim = (-0.5_core_rknd/cthl_1(k))*(chi(k,sample)-mu_chi_1(k)) &
-                         + (0.5_core_rknd/cthl_1(k))*eta(k,sample)
+            ! Limit the quantity that temperature can vary by (in K)
+            lh_dev_thl_lim = (-0.5_core_rknd/cthl_1(i,k))  * (chi(i,k,sample)-mu_chi_1(i,k)) &
+                             + (0.5_core_rknd/cthl_1(i,k)) * eta(i,k,sample)
 
-          lh_dev_thl_lim = max( min( lh_dev_thl_lim, thl_dev_lim ), -thl_dev_lim )
+            lh_dev_thl_lim = max( min( lh_dev_thl_lim, thl_dev_lim ), -thl_dev_lim )
 
-          lh_thl(k,sample) = thl_1(k) + lh_dev_thl_lim
+            lh_thl(i,k,sample) = thl_1(i,k) + lh_dev_thl_lim
 
-        else 
-          
-          ! Mixture fraction 2
-          lh_rt(k,sample) = rt_2(k) + (0.5_core_rknd/crt_2(k))*(chi(k,sample)-mu_chi_2(k)) +  &
-                                 (0.5_core_rknd/crt_2(k))*eta(k,sample)
+          else 
+            
+            ! Mixture fraction 2
+            lh_rt(i,k,sample) = rt_2(i,k) &
+                                + (0.5_core_rknd/crt_2(i,k)) * (chi(i,k,sample)-mu_chi_2(i,k)) &
+                                + (0.5_core_rknd/crt_2(i,k)) * eta(i,k,sample)
 
-          ! Limit the quantity that temperature can vary by (in K)
-          lh_dev_thl_lim = (-0.5_core_rknd/cthl_2(k))*(chi(k,sample)-mu_chi_2(k)) &
-                         + (0.5_core_rknd/cthl_2(k))*eta(k,sample)
+            ! Limit the quantity that temperature can vary by (in K)
+            lh_dev_thl_lim = (-0.5_core_rknd/cthl_2(i,k)) * (chi(i,k,sample)-mu_chi_2(i,k)) &
+                             + (0.5_core_rknd/cthl_2(i,k)) * eta(i,k,sample)
 
-          lh_dev_thl_lim = max( min( lh_dev_thl_lim, thl_dev_lim ), -thl_dev_lim )
+            lh_dev_thl_lim = max( min( lh_dev_thl_lim, thl_dev_lim ), -thl_dev_lim )
 
-          lh_thl(k,sample) = thl_2(k) + lh_dev_thl_lim
+            lh_thl(i,k,sample) = thl_2(i,k) + lh_dev_thl_lim
 
-        end if
+          end if
       
+        end do
       end do
     end do
     
