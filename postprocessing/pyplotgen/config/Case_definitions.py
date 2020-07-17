@@ -415,7 +415,9 @@ DYCOMS2_RF02_DS_RESTART = {'name': 'dycoms2_rf02_ds_restart', 'start_time': 181,
                                           'zt': clubb_output_root + '/dycoms2_rf02_ds_restart_zt.nc',
                                           'sfc': clubb_output_root + '/dycoms2_rf02_ds_restart_sfc.nc'},
                            'coamps_dataset': None,
-                           'r408_file': None,
+                           'r408_file': {'zm': R408_OUTPUT_ROOT + '/Chris_Golaz_best_ever/dycoms2_rf02_ds_zm.nc',
+                                 'zt': R408_OUTPUT_ROOT + '/Chris_Golaz_best_ever/dycoms2_rf02_ds_zt.nc',
+                                 'sfc': R408_OUTPUT_ROOT + '/Chris_Golaz_best_ever/dycoms2_rf02_ds_sfc.nc'},
                            'hoc_file': {'zm': HOC_OUTPUT_ROOT + '/dycoms2_rf02_ds_zm.nc',
                                         'zt': HOC_OUTPUT_ROOT + '/dycoms2_rf02_ds_zt.nc',
                                         'sfc': HOC_OUTPUT_ROOT + '/dycoms2_rf02_ds_sfc.nc'},
@@ -506,7 +508,7 @@ GABLS2_NIGHTLY = {'name': 'gabls2_nightly', 'start_time': 2101, 'end_time': 2160
                   'cam_file': None,
                   'sam_file': None,
                   'wrf_file': None,
-                  'var_groups': [VariableGroupScalars]}
+                  'var_groups': [VariableGroupBase, VariableGroupScalars]}
 
 GABLS3 = {'name': 'gabls3', 'start_time': 1081, 'end_time': 1200, 'height_min_value': 0, 'height_max_value': 4970,
 
@@ -775,5 +777,5 @@ ALL_CASES = [ARM, ARM_97, ASTEX_A209, ATEX,
              ]
 
 # If uncommented, this line will override the real ALL_CASES given above, forcing pyplotgen to only plot some cases.
-# ALL_CASES = [ATEX]
+# ALL_CASES = [DYCOMS2_RF02_DS_RESTART]
 # ALL_CASES = ALL_CASES[:7]

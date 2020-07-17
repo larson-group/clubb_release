@@ -539,7 +539,7 @@ class VariableGroupBase(VariableGroup):
                 'clubb_calc': self.get_rc_coef_zm_X_rtprcp_clubb_calc,
                 'title': 'Contribution of Cloud Water Flux to rtprcp',
                 'axis_title': 'rc_coef_zm * rtprcp [kg/kg K]',
-                'sci_scale': 0
+                'sci_scale': -4
             },
             {'var_names':
                 {
