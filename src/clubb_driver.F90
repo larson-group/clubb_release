@@ -193,8 +193,6 @@ module clubb_driver
 
     use simple_rad_module, only: simple_rad_lba_init !---------------------- Procedure(s)
 
-    use mt95, only: genrand_init !------------------------------------------ Procedure(s)
-
 #endif
 
     use variables_radiation_module, only: &
@@ -1760,12 +1758,6 @@ module clubb_driver
               return
           end if
       end if
-
-#ifdef SILHS
-      if ( lh_microphys_type /= lh_microphys_disabled .or. l_silhs_rad ) then
-        call genrand_init( put=lh_seed )
-      end if
-#endif
 
     else  ! restart
 

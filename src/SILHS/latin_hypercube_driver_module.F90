@@ -453,6 +453,9 @@ module latin_hypercube_driver_module
     use generate_uniform_sample_module, only: &
       rand_uniform_real ! Procedure
       
+    use mt95, only: &
+      genrand_init  ! Procedure
+      
 #ifdef _OPENACC
     use curand, only: &
       curandSetPseudoRandomGeneratorSeed, & ! Procedures
@@ -486,10 +489,6 @@ module latin_hypercube_driver_module
       
     integer :: &
       r_status  ! Integer use to call curand functions
-    
-    logical, save :: &
-      l_first_iter = .true.  ! First iteration indicator
-                           ! The curand generator needs to be inialized, but only once
 
     type(curandGenerator) :: &
       cu_gen  ! curand generator variable
@@ -501,6 +500,9 @@ module latin_hypercube_driver_module
     real(kind=core_rknd), parameter :: pi232      = 1.0_core_rknd / p232
     real(kind=core_rknd), parameter :: p231_5d232 = ( p231 + 0.5_core_rknd ) / p232
 #endif
+
+    logical, save :: &
+      l_first_iter = .true.  ! First iteration indicator
     
     integer :: k, i, sample ! Loop variables
       
@@ -538,6 +540,12 @@ module latin_hypercube_driver_module
 #else
 
     ! Generate randoms on CPU
+    
+    ! If first iteration, intialize generator
+    if ( l_first_iter ) then
+      l_first_iter = .false.
+      call genrand_init( put=252435 )
+    end if
 
     ! Populate rand_pool with a generator designed for a CPU
     do i=1, pdf_dim+d_uniform_extra
