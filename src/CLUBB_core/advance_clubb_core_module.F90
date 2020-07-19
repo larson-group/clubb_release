@@ -17,7 +17,7 @@ module advance_clubb_core_module
 !
 !                         Copyright Notice:
 !
-!   This code and the source code it references are (C) 2006-2018.
+!   This code and the source code it references are (C) 2006-2020.
 !
 !   The distribution of this code and derived works thereof
 !                   should include this notice.
