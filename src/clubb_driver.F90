@@ -181,12 +181,14 @@ module clubb_driver
       microphys_scheme,      &
       lh_num_samples,    &
       lh_sequence_length
+      
+    use silhs_api_module, only: &
+      generate_silhs_sample_api, & !----------------------------------------- Procedure(s)
+      clip_transform_silhs_output_api
 
     use latin_hypercube_driver_module, only: &
-      generate_silhs_sample, & !--------------------------------------------- Procedure(s)
       stats_accumulate_lh, &
-      latin_hypercube_2D_output, &
-      clip_transform_silhs_output
+      latin_hypercube_2D_output
 
     use latin_hypercube_arrays, only: &
       cleanup_latin_hypercube_arrays !-------------------------------------- Procedure(s)
@@ -389,7 +391,8 @@ module clubb_driver
       wp3        ! w'^3 (thermodynamic levels)                    [m^3/s^3]
 
     real( kind = core_rknd ), dimension(:,:), allocatable :: &
-      rcm  ! cloud water mixing ratio, r_c (thermo. levels) [kg/kg]
+      rcm,      & ! cloud water mixing ratio, r_c (thermo. levels) [kg/kg]
+      delta_zm
     
     real( kind = core_rknd ), dimension(:), allocatable :: &
       p_in_Pa,    & ! Air pressure (thermodynamic levels)            [Pa]
@@ -1384,6 +1387,7 @@ module clubb_driver
 
     ! Cloud water variables
     allocate( rcm(1,1:gr%nz) )
+    allocate( delta_zm(1,1:gr%nz) )
     allocate( cloud_frac(1:gr%nz) )
     allocate( ice_supersat_frac(1:gr%nz) )
     allocate( rcm_in_layer(1:gr%nz) )
@@ -2227,16 +2231,19 @@ module clubb_driver
         Lscale(1,:) &
         = max( zm2zt( Kh_zm / ( params(ic_K) * sqrt( max( em, em_min ) ) ) ), &
                0.01_core_rknd )
+               
+        ! Copy grid dzt to variable with column index as 1
+        delta_zm(1,:) = gr%dzt
                  
         !$acc data copyout( X_mixt_comp_all_levs, X_nl_all_levs, lh_sample_point_weights, &
         !$acc&              lh_rt_clipped, lh_thl_clipped, lh_rc_clipped, lh_rv_clipped, &
         !$acc&              lh_Nc_clipped ) &
         !$acc& async(1)
 
-        call generate_silhs_sample( &
+        call generate_silhs_sample_api( &
                itime, pdf_dim, lh_num_samples, lh_sequence_length, gr%nz, 1, & ! In
                l_calc_weights_all_levs_itime,                                & ! In
-               pdf_params, gr%dzt, rcm, Lscale,                              & ! In
+               pdf_params, delta_zm, rcm, Lscale,                            & ! In
                rho_ds_zt, mu_x_1_n, mu_x_2_n, sigma_x_1_n, sigma_x_2_n,      & ! In
                corr_cholesky_mtx_1, corr_cholesky_mtx_2,                     & ! In
                hydromet_pdf_params, silhs_config_flags,                      & ! In
@@ -2248,14 +2255,14 @@ module clubb_driver
                lh_sample_point_weights ) ! Out
        
        
-        call clip_transform_silhs_output( gr%nz, 1, lh_num_samples,       & ! In
-                                          pdf_dim, hydromet_dim,          & ! In
-                                          X_mixt_comp_all_levs,           & ! In
-                                          X_nl_all_levs,                  & ! Inout
-                                          pdf_params, l_use_Ncn_to_Nc,    & ! In
-                                          lh_rt_clipped, lh_thl_clipped,  & ! Out
-                                          lh_rc_clipped, lh_rv_clipped,   & ! Out
-                                          lh_Nc_clipped                   ) ! Out
+        call clip_transform_silhs_output_api( gr%nz, 1, lh_num_samples,       & ! In
+                                              pdf_dim, hydromet_dim,          & ! In
+                                              X_mixt_comp_all_levs,           & ! In
+                                              X_nl_all_levs,                  & ! Inout
+                                              pdf_params, l_use_Ncn_to_Nc,    & ! In
+                                              lh_rt_clipped, lh_thl_clipped,  & ! Out
+                                              lh_rc_clipped, lh_rv_clipped,   & ! Out
+                                              lh_Nc_clipped                   ) ! Out
         !$acc end data
         !$acc wait
                                           

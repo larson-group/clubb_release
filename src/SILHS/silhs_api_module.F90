@@ -100,14 +100,195 @@ module silhs_api_module
     set_default_silhs_config_flags_api, &
     initialize_silhs_config_flags_type_api, &
     print_silhs_config_flags_api
+    
+  private &
+    generate_silhs_sample_api_single_col, &
+    generate_silhs_sample_api_multi_col, &
+    clip_transform_silhs_output_api_single_col, &
+    clip_transform_silhs_output_api_multi_col
+    
+  interface generate_silhs_sample_api
+    module procedure generate_silhs_sample_api_single_col
+    module procedure generate_silhs_sample_api_multi_col
+  end interface
+  
+  interface clip_transform_silhs_output_api
+    module procedure clip_transform_silhs_output_api_single_col
+    module procedure clip_transform_silhs_output_api_multi_col
+  end interface
 
 contains
 
   !================================================================================================
   ! generate_silhs_sample - Generates sample points of moisture, temperature, et cetera.
   !================================================================================================
+  
+  subroutine generate_silhs_sample_api_single_col( &
+    iter, pdf_dim, num_samples, sequence_length, nz, & ! In
+    l_calc_weights_all_levs_itime, &
+    pdf_params, delta_zm, rcm, Lscale, & ! In
+    rho_ds_zt, mu1, mu2, sigma1, sigma2, & ! In
+    corr_cholesky_mtx_1, corr_cholesky_mtx_2, & ! In
+    hydromet_pdf_params, silhs_config_flags, & ! In
+    l_uv_nudge, & ! In
+    l_tke_aniso, & ! In
+    l_standard_term_ta, & ! In
+    l_single_C2_Skw, & ! In
+    X_nl_all_levs, X_mixt_comp_all_levs, & ! Out
+    lh_sample_point_weights ) ! Out
 
-  subroutine generate_silhs_sample_api( &
+    use latin_hypercube_driver_module, only : generate_silhs_sample
+
+    use pdf_parameter_module, only: &
+      pdf_parameter  ! Type
+
+    use hydromet_pdf_parameter_module, only: &
+      hydromet_pdf_parameter ! Type
+
+    use parameters_silhs, only: &
+      silhs_config_flags_type ! Type
+
+    use clubb_precision, only: &
+      core_rknd
+
+    implicit none
+
+    ! Input Variables
+    integer, intent(in) :: &
+      iter,            & ! Model iteration number
+      pdf_dim,     & ! Number of variables to sample
+      num_samples,     & ! Number of samples per variable
+      sequence_length, & ! nt_repeat/num_samples; number of timesteps before sequence repeats.
+      nz                 ! Number of vertical model levels
+
+    type(pdf_parameter), intent(in) :: &
+      pdf_params ! PDF parameters       [units vary]
+
+    real( kind = core_rknd ), dimension(nz), intent(in) :: &
+      delta_zm, &  ! Difference in moment. altitudes    [m]
+      rcm          ! Liquid water mixing ratio          [kg/kg]
+
+    real( kind = core_rknd ), dimension(nz), intent(in) :: &
+      rho_ds_zt    ! Dry, static density on thermo. levels    [kg/m^3]
+
+    real( kind = core_rknd ), dimension(nz), intent(in) :: &
+      Lscale       ! Turbulent Mixing Length  [m]
+
+    ! Output Variables
+    real( kind = core_rknd ), intent(out), dimension(nz,num_samples,pdf_dim) :: &
+      X_nl_all_levs ! Sample that is transformed ultimately to normal-lognormal
+
+    integer, intent(out), dimension(nz,num_samples) :: &
+      X_mixt_comp_all_levs ! Which mixture component we're in
+
+    real( kind = core_rknd ), intent(out), dimension(nz,num_samples) :: &
+      lh_sample_point_weights
+
+    ! More Input Variables!
+    real( kind = core_rknd ), dimension(pdf_dim,pdf_dim,nz), intent(in) :: &
+      corr_cholesky_mtx_1, & ! Correlations Cholesky matrix (1st comp.)  [-]
+      corr_cholesky_mtx_2    ! Correlations Cholesky matrix (2nd comp.)  [-]
+
+    real( kind = core_rknd ), dimension(pdf_dim,nz), intent(in) :: &
+      mu1,    & ! Means of the hydrometeors, 1st comp. (chi, eta, w, <hydrometeors>)  [units vary]
+      mu2,    & ! Means of the hydrometeors, 2nd comp. (chi, eta, w, <hydrometeors>)  [units vary]
+      sigma1, & ! Stdevs of the hydrometeors, 1st comp. (chi, eta, w, <hydrometeors>) [units vary]
+      sigma2    ! Stdevs of the hydrometeors, 2nd comp. (chi, eta, w, <hydrometeors>) [units vary]
+
+    logical, intent(in) :: &
+      l_calc_weights_all_levs_itime ! determines if vertically correlated sample points are needed
+      
+    type(hydromet_pdf_parameter), dimension(nz), intent(in) :: &
+      hydromet_pdf_params
+
+    type(silhs_config_flags_type), intent(in) :: &
+      silhs_config_flags
+
+    logical, intent(in) :: &
+      l_uv_nudge,         & ! For wind speed nudging.
+      l_tke_aniso,        & ! For anisotropic turbulent kinetic energy, i.e.
+                            ! TKE = 1/2 (u'^2 + v'^2 + w'^2)
+      l_standard_term_ta, & ! Use the standard discretization for the turbulent advection terms.
+                            ! Setting to .false. means that a_1 and a_3 are pulled outside of the
+                            ! derivative in advance_wp2_wp3_module.F90 and in
+                            ! advance_xp2_xpyp_module.F90.
+      l_single_C2_Skw       ! Use a single Skewness dependent C2 for rtp2, thlp2, and rtpthlp
+
+    ! -------------- Local Variables --------------
+    
+    type(pdf_parameter), dimension(1) :: &
+      pdf_params_col ! PDF parameters, with column dimension 1       [units vary]
+      
+    real( kind = core_rknd ), dimension(1,nz) :: &
+      delta_zm_col, &  ! Difference in moment. altitudes, with column dimension 1    [m]
+      rcm_col          ! Liquid water mixing ratio, with column dimension 1          [kg/kg]
+      
+    real( kind = core_rknd ), dimension(1,nz) :: &
+      rho_ds_zt_col    ! Dry, static density on thermo. levels, with column dimension 1    [kg/m^3]
+      
+    real( kind = core_rknd ), dimension(1,nz) :: &
+      Lscale_col       ! Turbulent Mixing Length, with column dimension 1  [m]
+
+    ! More Input Variables!
+    real( kind = core_rknd ), dimension(1,pdf_dim,pdf_dim,nz) :: &
+      corr_cholesky_mtx_1_col, & ! Correlations Cholesky matrix, with column dimension 1
+      corr_cholesky_mtx_2_col    ! Correlations Cholesky matrix, with column dimension 1
+
+    real( kind = core_rknd ), dimension(1,pdf_dim,nz) :: &
+      mu1_col,    & ! Means of the hydrometeors, with column dimension 1
+      mu2_col,    & ! Means of the hydrometeors, with column dimension 1
+      sigma1_col, & ! Stdevs of the hydrometeors, with column dimension 1
+      sigma2_col    ! Stdevs of the hydrometeors, with column dimension 1
+
+    type(hydromet_pdf_parameter), dimension(1,nz) :: &
+      hydromet_pdf_params_col
+      
+    ! Output Variables
+    real( kind = core_rknd ), dimension(1,nz,num_samples,pdf_dim) :: &
+      X_nl_all_levs_col ! Sample that is transformed ultimately to normal-lognormal
+
+    integer, dimension(1,nz,num_samples) :: &
+      X_mixt_comp_all_levs_col ! Which mixture component we're in
+
+    real( kind = core_rknd ), dimension(1,nz,num_samples) :: &
+      lh_sample_point_weights_col
+
+    ! -------------- Begin Code --------------
+
+    pdf_params_col(1)                 = pdf_params
+    delta_zm_col(1,:)                 = delta_zm
+    rcm_col(1,:)                      = rcm
+    rho_ds_zt_col(1,:)                = rho_ds_zt
+    Lscale_col(1,:)                   = Lscale
+    corr_cholesky_mtx_1_col(1,:,:,:)  = corr_cholesky_mtx_1
+    corr_cholesky_mtx_2_col(1,:,:,:)  = corr_cholesky_mtx_2
+    mu1_col(1,:,:)                    = mu1
+    mu2_col(1,:,:)                    = mu2
+    sigma1_col(1,:,:)                 = sigma1
+    sigma2_col(1,:,:)                 = sigma2
+    hydromet_pdf_params_col(1,:)      = hydromet_pdf_params
+
+    call generate_silhs_sample( &
+      iter, pdf_dim, num_samples, sequence_length, nz, 1, & ! In
+      l_calc_weights_all_levs_itime, & ! In
+      pdf_params_col, delta_zm_col, rcm_col, Lscale_col, & ! In
+      rho_ds_zt_col, mu1_col, mu2_col, sigma1_col, sigma2_col, & ! In
+      corr_cholesky_mtx_1_col, corr_cholesky_mtx_2_col, & ! In
+      hydromet_pdf_params_col, silhs_config_flags, & ! In
+      l_uv_nudge, & ! In
+      l_tke_aniso, & ! In
+      l_standard_term_ta, & ! In
+      l_single_C2_Skw, & ! In
+      X_nl_all_levs_col, X_mixt_comp_all_levs_col, & ! Out
+      lh_sample_point_weights_col ) ! Out
+      
+    X_nl_all_levs = X_nl_all_levs_col(1,:,:,:)
+    X_mixt_comp_all_levs = X_mixt_comp_all_levs_col(1,:,:)
+    lh_sample_point_weights = lh_sample_point_weights_col(1,:,:)
+
+  end subroutine generate_silhs_sample_api_single_col
+  
+  subroutine generate_silhs_sample_api_multi_col( &
     iter, pdf_dim, num_samples, sequence_length, nz, ngrdcol, & ! In
     l_calc_weights_all_levs_itime, &
     pdf_params, delta_zm, rcm, Lscale, & ! In
@@ -213,7 +394,7 @@ contains
       X_nl_all_levs, X_mixt_comp_all_levs, & ! Out
       lh_sample_point_weights ) ! Out
 
-  end subroutine generate_silhs_sample_api
+  end subroutine generate_silhs_sample_api_multi_col
 
   !================================================================================================
   ! stats_accumulate_lh - Clips subcolumns from latin hypercube and creates stats.
@@ -340,7 +521,97 @@ contains
   ! clip_transform_silhs_output - Computes extra SILHS sample variables, such as rt and thl.
   !================================================================================================
 
-  subroutine clip_transform_silhs_output_api( nz, ngrdcol, num_samples,       & ! In
+  subroutine clip_transform_silhs_output_api_single_col( &
+                                              nz, num_samples,                & ! In
+                                              pdf_dim, hydromet_dim,          & ! In
+                                              X_mixt_comp_all_levs,           & ! In
+                                              X_nl_all_levs,                  & ! Inout
+                                              pdf_params, l_use_Ncn_to_Nc,    & ! In
+                                              lh_rt_clipped, lh_thl_clipped,  & ! Out
+                                              lh_rc_clipped, lh_rv_clipped,   & ! Out
+                                              lh_Nc_clipped                   ) ! Out
+
+    use latin_hypercube_driver_module, only : clip_transform_silhs_output
+
+    use clubb_precision, only: &
+      core_rknd       ! Our awesome generalized precision (constant)
+
+    use pdf_parameter_module, only: &
+      pdf_parameter
+
+    implicit none
+
+    ! Input Variables
+    logical, intent(in) :: l_use_Ncn_to_Nc
+
+    integer, intent(in) :: &
+      nz,           & ! Number of vertical levels
+      num_samples,  & ! Number of SILHS sample points
+      pdf_dim,      & ! Number of variates in X_nl_one_lev
+      hydromet_dim    ! Number of hydrometeor species
+
+    integer, dimension(nz,num_samples), intent(in) :: &
+      X_mixt_comp_all_levs   ! Which component this sample is in (1 or 2)
+
+    real( kind = core_rknd ), dimension(nz,num_samples,pdf_dim), intent(inout) :: &
+      X_nl_all_levs         ! SILHS sample points    [units vary]
+
+    type(pdf_parameter), intent(in) :: &
+      pdf_params             ! **The** PDF parameters!
+
+    ! Output Variables
+    real( kind = core_rknd ), dimension(nz,num_samples), intent(out) :: &
+      lh_rt_clipped,  & ! rt generated from silhs sample points
+      lh_thl_clipped, & ! thl generated from silhs sample points
+      lh_rc_clipped,  & ! rc generated from silhs sample points
+      lh_rv_clipped,  & ! rv generated from silhs sample points
+      lh_Nc_clipped     ! Nc generated from silhs sample points
+      
+    ! -------------- Local Variables --------------
+    
+    integer, dimension(1,nz,num_samples) :: &
+      X_mixt_comp_all_levs_col   ! Which component this sample is in (1 or 2)
+
+    real( kind = core_rknd ), dimension(1,nz,num_samples,pdf_dim) :: &
+      X_nl_all_levs_col         ! SILHS sample points    [units vary]
+
+    type(pdf_parameter), dimension(1) :: &
+      pdf_params_col             ! **The** PDF parameters!
+
+    ! Output Variables
+    real( kind = core_rknd ), dimension(1,nz,num_samples) :: &
+      lh_rt_clipped_col,  & ! rt generated from silhs sample points
+      lh_thl_clipped_col, & ! thl generated from silhs sample points
+      lh_rc_clipped_col,  & ! rc generated from silhs sample points
+      lh_rv_clipped_col,  & ! rv generated from silhs sample points
+      lh_Nc_clipped_col     ! Nc generated from silhs sample points
+    
+    ! -------------- Begin Code --------------
+    
+    pdf_params_col(1)               = pdf_params
+    X_mixt_comp_all_levs_col(1,:,:) = X_mixt_comp_all_levs
+    X_nl_all_levs_col(1,:,:,:)      = X_nl_all_levs
+
+
+    call clip_transform_silhs_output( nz, 1, num_samples,                     & ! In
+                                      pdf_dim, hydromet_dim,                  & ! In
+                                      X_mixt_comp_all_levs_col,               & ! In
+                                      X_nl_all_levs_col,                      & ! In
+                                      pdf_params_col, l_use_Ncn_to_Nc,        & ! In
+                                      lh_rt_clipped_col, lh_thl_clipped_col,  & ! Out
+                                      lh_rc_clipped_col, lh_rv_clipped_col,   & ! Out
+                                      lh_Nc_clipped_col                       ) ! Out
+                                      
+    lh_rt_clipped     = lh_rt_clipped_col(1,:,:)
+    lh_thl_clipped    = lh_thl_clipped_col(1,:,:)
+    lh_rc_clipped     = lh_rc_clipped_col(1,:,:)
+    lh_rv_clipped     = lh_rv_clipped_col(1,:,:)
+    lh_Nc_clipped     = lh_Nc_clipped_col(1,:,:)
+                                      
+  end subroutine clip_transform_silhs_output_api_single_col
+  
+  subroutine clip_transform_silhs_output_api_multi_col( &
+                                              nz, ngrdcol, num_samples,       & ! In
                                               pdf_dim, hydromet_dim,          & ! In
                                               X_mixt_comp_all_levs,           & ! In
                                               X_nl_all_levs,                  & ! Inout
@@ -395,7 +666,7 @@ contains
                                       lh_rc_clipped, lh_rv_clipped,   & ! Out
                                       lh_Nc_clipped                   ) ! Out
 
-  end subroutine clip_transform_silhs_output_api
+  end subroutine clip_transform_silhs_output_api_multi_col
 
   !-----------------------------------------------------------------
   ! lh_microphys_var_covar_driver: Computes the effect of microphysics on gridbox covariances
