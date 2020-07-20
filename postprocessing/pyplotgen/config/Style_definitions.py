@@ -82,3 +82,11 @@ LEGEND_FONT_SIZE = SMALL_FONT_SIZE
 SHOW_GRID = True
 POW_LIMS = (-2,3)
 BUDGET_XAXIS_SCALE_FACTOR = 1.1 # THIS VALUE MUST BE >= 1 !
+
+# Time-height plot settings
+# An overview of all colormaps available in matplotlib can be found here:
+# https://matplotlib.org/1.4.2/examples/color/colormaps_reference.html
+CONTOUR_CMAP = 'viridis' # Default cmap used in matplotlib
+
+# Animation settings
+ANIM_OUTPUT_FORMAT = 'gif' # or 'mp4'

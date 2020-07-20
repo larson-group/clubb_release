@@ -11,6 +11,7 @@ from warnings import warn
 
 import numpy as np
 from netCDF4 import Dataset
+from collections.abc import Iterable
 
 from config import Case_definitions
 
@@ -24,6 +25,8 @@ class NetCdfVariable:
                  avg_axis=0):
         """
         Initialize a new instance of this class and return it.
+        
+        TODO: Test with multidimensional variables!
 
         :param names: The name of the variable as defined in the ncdf_data
         :param ncdf_data: Accepts either a Dataset object to pull dependent_data from,
@@ -32,19 +35,51 @@ class NetCdfVariable:
         :param conversion_factor: A multiplication factor applied to every value in the dataset. Defaults to 1
         :param start_time: The time value to begin the averaging period, e.g. 181 minutes. Defaults to 0.
         :param end_time: The time value to stop the averaging period, e.g. 240 minutes. Defaults to -1.
-        :param avg_axis: The axis to average dependent_data over. 0 for time-avg, 1 for height avg
+        :param avg_axis: The axis to average dependent_data over. 0 for time-avg, 1 for height avg, 2 for no averaging
         """
         dataset_with_var = None
         varname = ""
         var_found_in_dataset = False
+        indep_var_name_in_dataset = {}
+        indep_keys = ['time', 'height']
         # If ncdf_data is an netCDF4.Dataset, wrap it into a dict
         if isinstance(ncdf_data, Dataset):
             ncdf_data = {'temp': ncdf_data}
         # If names and independent_var_name are not lists, wrap them into lists
         if not isinstance(names, list):
             names = [names]
-        if not isinstance(independent_var_names, list) and independent_var_names is not None:
-            independent_var_names = [independent_var_names]
+
+        # TODO: Figure out the best way to implement independent_var_names for time-height plots
+        if isinstance(independent_var_names, dict):
+            # if avg_axis != 2:
+            #     raise ValueError('Error in parameter independent_var_names: Dict type only valid if avg_axis==2.')
+            if any([key not in independent_var_names.keys() for key in indep_keys]):
+                raise KeyError('Error in parameter independent_var_names: Dict keys must include "time" and "height".')
+            # time_vars = independent_var_names['time']
+            # height_vars = independent_var_names['height']
+        elif isinstance(independent_var_names, Iterable):
+                # If independent_var_names is iterable, split it up into time and height varnames
+                time_vars = list(set(independent_var_names).intersection(set(Case_definitions.TIME_VAR_NAMES)))
+                height_vars = list(set(independent_var_names).intersection(set(Case_definitions.HEIGHT_VAR_NAMES)))
+                independent_var_names = {'time': time_vars, 'height': height_vars}
+        else:
+            # Asssume passed value is a string and either a valid time or height varname
+            if independent_var_names in Case_definitions.TIME_VAR_NAMES:
+                time_vars = [independent_var_names]
+                height_vars = []
+            else:
+                time_vars = []
+                height_vars = [independent_var_names]
+            independent_var_names = {'time': time_vars, 'height': height_vars}
+        # Check if indep varnames are given
+        # if avg_axis == 2:
+        #     if len(time_vars)==0:
+        #         raise ValueError('Error in parameter independent_var_names:'+
+        #                          'Parameter did not contain a time variable name.')
+        #     if len(height_vars)==0:
+        #         raise ValueError('Error in parameter independent_var_names:'+
+        #                          'Parameter did not contain a height variable name.')
+
 
         # Find a variable with a name listed in <<names>> in any of the datasets
         # and save both its variable name and the dataset
@@ -64,22 +99,63 @@ class NetCdfVariable:
                      "removing their names from the Case_definitions.py config file. "
                      "This warning is a temporary notice until a bug related to missing filenames is patched")
             # changed to warn from 'raise NameError'
+            # If variable was not found, select a valid dataset by looking for a matching independent variable name
+            # Extension for multiple dimensions:
+            # In each dataset, find an independent varname for each dimension
+            # Check for success depending on averaging mode
             for dataset in ncdf_data.values():
-                for temp_independent_var in independent_var_names:
-                    if temp_independent_var in dataset.variables.keys():
-                        dataset_with_var = dataset
+                keys = dataset.variables.keys()
+                for indep_key in independent_var_names:
+                    varnames = independent_var_names[indep_key]
+                    for temp_independent_var in varnames:
+                        if temp_independent_var in keys:
+                            dataset_with_var = dataset
+                            indep_var_name_in_dataset[indep_key] = temp_independent_var
+                            break
+                # Check if for each independent dimension a variable was found
+                key_test = [key not in indep_var_name_in_dataset.keys() for key in indep_keys]
+                if avg_axis == 2: # non-averaged case (time-height plots)
+                    # For both time and height an independent variable must be found, otherwise try the next dataset
+                    if any(key_test):
+                        dataset_with_var = None
+                        indep_var_name_in_dataset = {}
+                    else:
+                        break
+                else: # averaged case
+                    # TODO: differentiate between time and height averaged variables!
+                    # (Depending on avg_axis, only one of either time or height independent variables must be found)
+                    if all(key_test):
+                        dataset_with_var = None
+                        indep_var_name_in_dataset = {}
+                    else:
+                        break
             if dataset_with_var is None:
                 raise KeyError("Could not find both ", names, " and ", independent_var_names, " in it in datasets ",
                                ncdf_data)
             # dataset_with_var = next(iter(ncdf_data.values()))
             warn("None of the values " + str(names) + " were found in the dataset " + str(dataset_with_var.filepath()))
             varname = names[0]
-        # Find a matching independent variable in the same dataset
-        indep_var_name_in_dataset = None
-        for tempname in independent_var_names:
-            if tempname in dataset_with_var.variables.keys():
-                indep_var_name_in_dataset = tempname
-                break
+        # If not already found, find a matching independent variable in the same dataset
+        # TODO: Accomodate finding time AND height variables
+        if not indep_var_name_in_dataset: # Check if indep_var_name_in_dataset is still empty
+            # If empty, try and find independent variable(s) in dataset_with_var
+            for indep_key in independent_var_names:
+                varnames = independent_var_names[indep_key]
+                for tempname in varnames:
+                    if tempname in dataset_with_var.variables.keys():
+                        indep_var_name_in_dataset[indep_key] = tempname
+                        break
+            # Check if independent variables were found
+            key_test = [key not in indep_var_name_in_dataset.keys() for key in indep_keys]
+            if avg_axis == 2: # non-averaged case (time-height plots)
+                # For both time and height an independent variable must be found, otherwise try the next dataset
+                if any(key_test):
+                    indep_var_name_in_dataset = None
+            else: # averaged case
+                # Depending on avg_axis, only one of either time or height independent variables must be found
+                if avg_axis == 0 and 'height' not in indep_var_name_in_dataset.keys() \
+                or avg_axis == 1 and 'time' not in indep_var_name_in_dataset.keys():
+                    indep_var_name_in_dataset == None
         # Store the dataset in which the variable was found
         self.ncdf_data = dataset_with_var
         self.varname = varname
@@ -92,24 +168,39 @@ class NetCdfVariable:
         # Get dependent and independent data from the chosen dataset
         self.dependent_data, self.independent_data = data_reader.getVarData(self.ncdf_data, self)
 
-    def trimArray(self, start_value, end_value, data=None):
+    def trimArray(self, start_value, end_value, data=None, axis=0):
         """
         Remove all dependent_data elements from the variable that are not between the start and end value. Assumes
         the dependent_data is sorted. If the optional data parameter is used, it will restrict to
         the indices of where the start/end values are in that dataset rather than the variables dependent_data itself.
 
+        TODO: Test with multiple dimensions!
+
         :param start_value: The smallest possible value
         :param end_value: The largest possible value
         :param data: A list of dependent_data values to find start/ending indices for constraining rather than using
-            the NetCdfVariable's dependent_data.
+            the NetCdfVariable's dependent_data. Must be specified if called on a multidimensional variable.
+        :param axis: The index for the axis to be trimmed (0=time, 1=height). Only needed for multidimensional data.
         :return: None, operates in place
         """
         if data is None:
             data = self.dependent_data
+            if len(data.shape)>1:
+                warn('Warning! trimArray was called on a multidimensional array without specifying data.')
+                return None
+        
         start_idx, end_idx = DataReader.__getStartEndIndex__(data, start_value, end_value)
-        self.dependent_data = self.dependent_data[start_idx:end_idx]
-        if self.independent_data is not None:
-            self.independent_data = self.independent_data[start_idx:end_idx]
+        if len(self.dependent_data.shape)>1: # multiple dimensions
+            if axis==0:
+                # Trim 1st coordinate -> time dimension
+                self.dependent_data = self.dependent_data[start_idx:end_idx]
+                if self.independent_data is not None:
+                    self.independent_data['time'] = self.independent_data['time'][start_idx:end_idx]
+            else:
+                # Trim 2nd coordinate -> height dimension
+                self.dependent_data = self.dependent_data[:,start_idx:end_idx]
+                if self.independent_data is not None:
+                    self.independent_data['height'] = self.independent_data['height'][start_idx:end_idx]
 
     def filter_datasets(self):
         """
@@ -242,30 +333,40 @@ class DataReader():
             raise NameError("None of the time variables " + str(Case_definitions.TIME_VAR_NAMES) +
                             " could be found in the dataset " + str(netcdf_dataset.filepath()))
 
-        # If end_time_value was set to its default value, get end time to last time value
+        # If end_time_value was set to its default value, set to last time value
         if end_time_value == -1:
-            if variable_name != 'time' and variable_name != 'z' and variable_name != 'altitude' and \
-                    variable_name != 'lev' and variable_name != 'Z3':
+            if variable_name not in ['time', 'z', 'altitude', 'lev', 'Z3']:
+            # if variable_name != 'time' and variable_name != 'z' and variable_name != 'altitude' and \
+                    # variable_name != 'lev' and variable_name != 'Z3':
                 warn("End time value was not specified (or was set to -1) for variable " + variable_name +
                      ". Automatically using last time in dataset.")
             end_time_value = time_values[-1]
 
         # Get the index values that correspond to the desired start/end x values
-        start_avg_idx, end_avg_idx = self.__getStartEndIndex__(time_values, start_time_value, end_time_value)
+        start_avg_idx, end_avg_idx = 0,-1
+        if ncdf_variable.avg_axis==0:
+            start_avg_idx, end_avg_idx = self.__getStartEndIndex__(time_values, start_time_value, end_time_value)
+        elif ncdf_variable.avg_axis==1:
+            warn('Warning! Averaging over heights is not yet implemented.')
+            # start_avg_idx, end_avg_idx = self.__getStartEndIndex__(time_values, start_time_value, end_time_value)
         # Get independent values from nc file
-        indep_var_not_found = independent_var_name is None
-        if indep_var_not_found:
+        # indep_var_not_found = independent_var_name is None
+        # if indep_var_not_found:
+        if independent_var_name is None:
             raise NameError("None of the independent variables " + str(independent_var_name) +
                             " could be found in the dataset " + str(ncdf_variable.ncdf_data.filepath()))
         else:
-            independent_values = self.__getValuesFromNc__(netcdf_dataset, independent_var_name, 1)
+            independent_values = dict()
+            if ncdf_variable.avg_axis == 0:
+                independent_values = self.__getValuesFromNc__(netcdf_dataset, independent_var_name['height'],
+                                                                        1)
+            elif ncdf_variable.avg_axis == 1:
+                independent_values = self.__getValuesFromNc__(netcdf_dataset, independent_var_name['time'], 1)
+            elif ncdf_variable.avg_axis == 2:
+                independent_values['height'] = self.__getValuesFromNc__(netcdf_dataset, independent_var_name['height'],
+                                                                        1)
+                independent_values['time'] = self.__getValuesFromNc__(netcdf_dataset, independent_var_name['time'], 1)
             # np.savetxt("" + independent_var_name + ".csv", independent_values,  delimiter=',', fmt='%f')  # occasionally used when debugging
-
-        # If independent_data is more than 1-dimensional, average over avg_axis
-        # TODO: Only average if needed! (time-height plots)
-        if independent_values.ndim > 1:  # not ncdf_variable.one_dimensional:
-            independent_values = self.__averageData__(independent_values, start_avg_idx, end_avg_idx,
-                                                       avg_axis=avg_axis)
 
         # Try and get dependent_data from nc file
         try:
@@ -275,9 +376,8 @@ class DataReader():
         except ValueError:
             dependent_values = np.zeros(len(independent_values))
 
-        # If dependent_data is more than 1-dimensional, average over avg_axis
-        # TODO: only average if needed! (time-height plots)
-        if dependent_values.ndim > 1:  # not ncdf_variable.one_dimensional:
+        # If dependent_data is more than 1-dimensional, average over avg_axis if needed
+        if dependent_values.ndim > 1 and avg_axis in [0,1]:  # not ncdf_variable.one_dimensional:
             dependent_values = self.__averageData__(dependent_values, start_avg_idx, end_avg_idx, avg_axis=avg_axis)
 
         # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
@@ -304,7 +404,6 @@ class DataReader():
     def __exit__(self, exc_type, exc_val, exc_tb):
         """
         Calls the cleanup and cleanly closes out the object instance
-        TODO: Use __del__ instead?
 
         :param exc_type:
         :param exc_val:
@@ -350,16 +449,22 @@ class DataReader():
         :return: 1d data, averaged over the interval [idx_t0:idx_t1] or [idx_z0:idx_z1],
             depending on the averaging axis
         """
-        if idx_t1 is -1:
-            idx_t1 = len(var)
-            warn("An end index for the time averaging interval was not specified. Automatically using the last index.")
+        if avg_axis not in [0,1]:
+            raise ValueError('An invalid value for avg_axis was specified. '+
+                             'Only 0 (time) and 1 (height) are valid values.')
         if idx_t1 - idx_t0 <= 10:
             warn("Time averaging interval is small (less than or equal to 10): " + str(idx_t1 - idx_t0) +
                  " | (idx_t0 = " + str(idx_t0) + ", idx_t1 = " + str(
                 idx_t1) + "). Note, start index is inclusive, end index is exclusive.")
         if avg_axis == 0:  # if time-averaged
+            if idx_t1 == -1:
+                idx_t1 = len(var)
+                warn("An end index for the time averaging interval was not specified. Automatically using the last index.")
             var_average = np.nanmean(var[idx_t0:idx_t1, :], axis=avg_axis)
-        else:  # if height averaged
+        elif avg_axis == 1:  # if height averaged
+            if idx_z1 == -1:
+                idx_z1 = len(var)
+                warn("An end index for the height averaging interval was not specified. Automatically using the last index.")
             var_average = np.nanmean(var[:, idx_z0:idx_z1], axis=avg_axis)
             warn("Using height averaging. If this is not desirable, change your averaging axis from 1 to 0 for time "
                  "averaging instead.")
@@ -482,6 +587,7 @@ class DataReader():
             raise ValueError("Variable " + str(varname) +
                              " does not exist in ncdf_data file.\nVariables found in dataset: " + str(ncdf_data))
 
+        # If variable contains time data, convert to minutes
         if varname in Case_definitions.TIME_VAR_NAMES:
             hrs_in_day = 24
             min_in_hr = 60

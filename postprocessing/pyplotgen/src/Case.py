@@ -24,10 +24,11 @@ class Case:
     """
 
     def __init__(self, case_definition, clubb_folders=[], diff_datasets=None, sam_folders=[""], wrf_folders=[""],
-                 plot_les=False, plot_budgets=False, plot_r408=False, plot_hoc=False, e3sm_dirs=[], cam_folders=[]):
+                 plot_les=False, plot_budgets=False, plot_r408=False, plot_hoc=False, e3sm_dirs=[], cam_folders=[],
+                 time_height=False, anim=None):
         """
         Initialize a Case object with the passed parameters
-        
+
         TODO:   - Create function for loading NcFiles to reduce redundant code
                 - Bring in line the way CLUBB files are loaded
 
@@ -48,6 +49,8 @@ class Case:
             If False (default), pyplotgen will not plot the HOC 2005 dependent_data lines
         :param e3sm_dirs: List of foldernames containing e3sm netcdf files to be plotted
         :param cam_folders: List of foldernames containing cam netcdf files to be plotted
+        :param plot_timeheight: TODO
+        :param movies: TODO
         """
         self.name = case_definition['name']
         self.start_time = case_definition['start_time']
@@ -66,6 +69,8 @@ class Case:
         self.wrf_folders = wrf_folders
         self.diff_datasets = diff_datasets
         self.next_panel_alphabetic_id_code = 97
+        self.time_height = time_height
+        self.anim = anim
 
         if 'disable_budgets' in case_definition.keys() and case_definition['disable_budgets'] is True:
             self.plot_budgets = False
@@ -188,7 +193,8 @@ class Case:
             temp_group = VarGroup(self, clubb_datasets=clubb_datasets, les_dataset=les_file,
                                   coamps_dataset=coamps_datasets, sam_datasets=sam_datasets,
                                   wrf_datasets=wrf_datasets, r408_dataset=r408_datasets, hoc_dataset=hoc_datasets,
-                                  e3sm_datasets=e3sm_file, cam_datasets=cam_file)
+                                  e3sm_datasets=e3sm_file, cam_datasets=cam_file,
+                                  time_height=self.time_height, anim=self.anim)
             self.panels.extend(temp_group.panels)
 
         # Convert panels to difference panels if user passed in --diff <<folder>>
@@ -219,26 +225,30 @@ class Case:
                 # for folders_datasets in self.clubb_datasets.values():
                 for input_folder in self.clubb_datasets:
                     folder_name = os.path.basename(input_folder)
-                    budget_variables = VariableGroupBaseBudgets(self, clubb_datasets={folder_name:clubb_datasets[input_folder]})
+                    budget_variables = VariableGroupBaseBudgets(self,
+                                       clubb_datasets={folder_name:clubb_datasets[input_folder]}, anim=self.anim)
                     self.panels.extend(budget_variables.panels)
             if wrf_datasets is not None and len(wrf_datasets) != 0:
                 # for folders_datasets in wrf_datasets.values():
                 #     budget_variables = VariableGroupBaseBudgets(self, wrf_datasets=folders_datasets)
                 for input_folder in wrf_datasets:
                     folder_name = os.path.basename(input_folder)
-                    budget_variables = VariableGroupBaseBudgets(self, wrf_datasets={folder_name:wrf_datasets[input_folder]})
+                    budget_variables = VariableGroupBaseBudgets(self,
+                                       wrf_datasets={folder_name:wrf_datasets[input_folder]}, anim=self.anim)
                     self.panels.extend(budget_variables.panels)
             if e3sm_file is not None and len(e3sm_file) != 0:
                 for dataset_name in e3sm_file:
                     # E3SM dataset must be wrapped in the same form as the clubb datasets
-                    e3sm_budgets = VariableGroupBaseBudgets(self, e3sm_datasets={dataset_name: e3sm_file[dataset_name]})
+                    e3sm_budgets = VariableGroupBaseBudgets(self,
+                                   e3sm_datasets={dataset_name: e3sm_file[dataset_name]}, anim=self.anim)
                     self.panels.extend(e3sm_budgets.panels)
             if sam_datasets is not None and len(sam_datasets) != 0:
                 # for dataset in sam_datasets.values():
                 for input_folder in sam_datasets:
                     folder_name = os.path.basename(input_folder)
-                    budget_variables = VariableGroupSamBudgets(self, sam_datasets={folder_name:sam_datasets[input_folder]})
-                # sam_budgets = VariableGroupSamBudgets(self, sam_datasets=sam_datasets)
+                    budget_variables = VariableGroupSamBudgets(self,
+                                       sam_datasets={folder_name:sam_datasets[input_folder]}, anim=self.anim)
+                # sam_budgets = VariableGroupSamBudgets(self, sam_datasets=sam_datasets, anim=self.anim)
                     self.panels.extend(budget_variables.panels)
 
     def getDiffLinesBetweenPanels(self, panelA, panelB, get_y_diff=False):

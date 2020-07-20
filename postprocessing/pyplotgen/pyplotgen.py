@@ -35,7 +35,8 @@ class PyPlotGen:
     def __init__(self, output_folder, clubb_folders=None, replace=False, les=False, cgbest=False, hoc=False,
                  benchmark_only=False, nightly=False, zip=False, thin=False, no_legends=False, ensemble=False,
                  plot_e3sm="", sam_folders=[""], wrf_folders=[""], cam_folders=[""],
-                 budget_moments=False, bu_morr=False, diff=None, show_alphabetic_id=False):
+                 budget_moments=False, bu_morr=False, diff=None, show_alphabetic_id=False,
+                 time_height=False, anim=None):
         """
         This creates an instance of PyPlotGen. Each parameter is a command line parameter passed in from the argparser
         below.
@@ -75,6 +76,8 @@ class PyPlotGen:
             Not implemented.
         :param diff: Plot the difference between two clubb folders. (MORE DESCRIPTION)
         :param show_alphabetic_id: If True, add an identifying character to the top right of a panel.
+        :param time_height: TODO
+        :param anim: TODO
         """
         self.clubb_folders = clubb_folders
         self.output_folder = output_folder
@@ -103,6 +106,8 @@ class PyPlotGen:
         self.output_folder = os.path.abspath(self.output_folder)
         self.benchmark_only = benchmark_only
         self.nightly = nightly
+        self.time_height = time_height
+        self.anim = anim
 
         if os.path.isdir(self.output_folder) and self.replace_images == False:
             self.output_folder = self.output_folder + '_generated_on_' + str(datetime.now())
@@ -152,7 +157,8 @@ class PyPlotGen:
                 case = Case(case_def, clubb_folders=self.clubb_folders, plot_les=self.les,
                             plot_budgets=self.plot_budgets, sam_folders=self.sam_folders, wrf_folders=self.wrf_folders,
                             diff_datasets=case_diff_datasets, plot_r408=self.cgbest, plot_hoc=self.hoc,
-                            e3sm_dirs=self.e3sm_dir, cam_folders=self.cam_folders)
+                            e3sm_dirs=self.e3sm_dir, cam_folders=self.cam_folders,
+                            time_height=self.time_height, anim=self.anim)
                 # Call plot function of case instance
                 case.plot(self.output_folder, replace_images=self.replace_images, no_legends=self.no_legends,
                           thin_lines=self.thin, show_alphabetic_id=self.show_alphabetic_id)
@@ -216,9 +222,9 @@ class PyPlotGen:
     def __caseNcFileExists__(self, list_of_src_folders, rel_filepath):
         """
 
-        :param list_of_src_folders:
-        :param rel_filepath:
-        :return:
+        :param list_of_src_folders: TODO
+        :param rel_filepath: TODO
+        :return: TODO
         """
         any_nc_file_found = False
         if rel_filepath is not None and list_of_src_folders is not None:
@@ -295,6 +301,7 @@ class PyPlotGen:
 def __trimTrailingSlash__(args):
     """
     Takes in a list filepaths and removes any trailing /'s
+
     :param arg: list of string file paths
     :return: list of filepaths with trailing /'s removed
     """
@@ -307,10 +314,9 @@ def __trimTrailingSlash__(args):
 
 def __process_args__():
     """
-    This method takes arguments in from the command line and feeds them into
-    a PyPlotGen object
+    This method takes arguments in from the command line and feeds them into a PyPlotGen object
 
-    :return: a PyPlotGen object containing the parameters as given from the commandline.
+    :return: A PyPlotGen object containing the parameters as given from the commandline.
     """
     parser = argparse.ArgumentParser()
     parser.add_argument("-r", "--replace", help="If the output folder already exists, replace it with the new one.",
@@ -336,7 +342,16 @@ def __process_args__():
     parser.add_argument("--thin", help="Plot using thin solid lines.", action="store_true")
     parser.add_argument("--no-legends", help="Plot without legend boxes defining the line types.", action="store_true")
     parser.add_argument("--ensemble", help="Plot ensemble tuner runs", action="store_true")  # TODO is this needed?
-    parser.add_argument("-b", "--plot-budgets", help="Plot all defined budgets of moments", action="store_true")
+    parser.add_argument("-b", "--plot-budgets", help="Plot all defined budgets of moments.",
+                        action="store_true")
+    parser.add_argument("-t", "--time-height-plots",
+                        help="Instead of averaged profiles, create contour plots from 2d data."+
+                        " Cannot be used with -m.",
+                        action="store_true")
+    parser.add_argument("-m", "--movies",
+                        help="Instead of averaged profiles, plot animations of time steps. Cannot be used with -t."+
+                        " Valid arguments: 'gif' or 'mp4'",
+                        action="store", choices=['gif','mp4'])
     parser.add_argument("--bu-morr",
                         help="For morrison microphysics: breaks microphysical source terms into component processes",
                         action="store_true")
@@ -396,13 +411,17 @@ def __process_args__():
         cgbest = args.plot_golaz_best
         hoc = args.plot_hoc_2005
 
+    if args.time_height_plots and args.movies is not None:
+        raise ValueError('Error: Command line parameter -t and -m cannot be used in conjunction.')
+
     # Call __init__ function of PyPlotGen class defined above and store an instance of that class in pyplotgen
     pyplotgen = PyPlotGen(args.output, clubb_folders=args.clubb, replace=args.replace, les=les, plot_e3sm=args.e3sm,
                           cgbest=cgbest, cam_folders=args.cam, nightly=args.nightly,
                           hoc=hoc, zip=args.zip, thin=args.thin, sam_folders=args.sam,
                           wrf_folders=args.wrf, benchmark_only=args.benchmark_only,
                           no_legends=args.no_legends, ensemble=args.ensemble, budget_moments=args.plot_budgets,
-                          bu_morr=args.bu_morr, diff=args.diff, show_alphabetic_id=args.show_alphabetic_id)
+                          bu_morr=args.bu_morr, diff=args.diff, show_alphabetic_id=args.show_alphabetic_id,
+                          time_height=args.time_height_plots, anim=args.movies)
     return pyplotgen
 
 

@@ -7,6 +7,7 @@ import os
 from pathlib import Path
 from statistics import mean
 from warnings import warn
+import numpy as np
 
 from netCDF4._netCDF4 import Dataset
 
@@ -14,6 +15,7 @@ from config import Case_definitions
 from config import Style_definitions
 from src.DataReader import DataReader, NetCdfVariable
 from src.Line import Line
+from src.Contour import Contour
 from src.Panel import Panel
 
 
@@ -29,7 +31,8 @@ class VariableGroup:
 
     def __init__(self, case, clubb_datasets=None, les_dataset=None, coamps_dataset=None, r408_dataset=None,
                  hoc_dataset=None, cam_datasets=None,
-                 e3sm_datasets=None, sam_datasets=None, wrf_datasets=None):
+                 e3sm_datasets=None, sam_datasets=None, wrf_datasets=None,
+                 time_height=False, anim=None):
         """
         Initialize a VariableGroup object with the passed parameters
 
@@ -44,6 +47,8 @@ class VariableGroup:
         :param e3sm_datasets: A dictionary of or a single NetCDF4 Dataset object containing e3sm output
         :param sam_datasets: A dictionary of or a single NetCDF4 Dataset object containing sam output
         :param wrf_datasets: A dictionary of or a single NetCDF4 Dataset object containing wrf output
+        :param time_height: TODO
+        :param anim: TODO
         """
         self.variables = []
         self.panels = []
@@ -571,6 +576,10 @@ class VariableGroup:
                                                 line_format)
             if line is not None:
                 all_lines.append(line)
+        elif panel_type is Panel.TYPE_TIMEHEIGHT:
+            contour = self.__get_time_height_contours__(var_names, ncdf_datasets, label, conversion_factor)
+            if contour is not None:
+                all_lines.append(contour)
         elif panel_type:
             raise ValueError('Invalid panel type ' + panel_type + '. Valid options are profile, budget, timeseries')
 
@@ -597,7 +606,7 @@ class VariableGroup:
                                   start_time=self.start_time, end_time=self.end_time,
                                   avg_axis=avg_axis,
                                   conversion_factor=conversion_factor)
-        variable.trimArray(self.height_min_value, self.height_max_value, data=variable.independent_data.data)
+        variable.trimArray(self.height_min_value, self.height_max_value, data=variable.independent_data)
 
         if lines is not None:
             additional_lines = self.__processLinesParameter__(lines, dataset, line_format=line_format, label_suffix=label)
@@ -624,7 +633,7 @@ class VariableGroup:
         variable = NetCdfVariable(varname, dataset, independent_var_names=Case_definitions.TIME_VAR_NAMES, start_time=0,
                                   end_time=end_time, avg_axis=1,
                                   conversion_factor=conversion_factor)
-        variable.trimArray(0, variable.end_time, data=variable.independent_data.data)
+        variable.trimArray(0, variable.end_time, data=variable.independent_data)
         line = Line(variable.independent_data, variable, label=label, line_format=line_format)
         return line
 
@@ -642,6 +651,28 @@ class VariableGroup:
         """
         output_lines = self.__processLinesParameter__(lines, dataset)
         return output_lines
+
+    def __get_time_height_contours__(self, varname, dataset, label, conversion_factor):
+        """
+        Return a Contour object for a time-height plot,
+        plotting a 2-dimensional contour plot with time as x axis and height as y axis.
+
+        :param varname: 
+        :param dataset: 
+        :return: A Contour object that can be used to create a time-height plot.
+        """
+        # This does not yet work since we need to different independent_data arrays
+        variable = NetCdfVariable(varname, dataset,
+                          independent_var_names={'time':Case_definitions.TIME_VAR_NAMES,
+                                                 'height':Case_definitions.HEIGHT_VAR_NAMES},
+                          start_time=self.start_time, end_time=self.end_time, avg_axis=2, conversion_factor=conversion_factor)
+        variable.trimArray(self.start_time, self.end_time, data=variable.independent_data['time'], axis=0)
+        variable.trimArray(self.height_min_value, self.height_max_value, data=variable.independent_data['height'], axis=1)
+
+        # Create Contour instance to return
+        contour = Contour(x_data=variable.independent_data['time'], y_data=variable.independent_data['height'],
+                          c_data=variable, colors=Style_definitions.CONTOUR_CMAP, label=label)
+        return contour
 
     def getVarForCalculations(self, varname, datasets, conversion_factor=1):
         """
@@ -682,7 +713,7 @@ class VariableGroup:
         function. This function will then attempt to determine which of the
         outputs from the equations is most likely to be the expected answer.
 
-        This function currenlty works by determining picking the non-nan and non-zero array.
+        This function currently works by determining picking the non-nan and non-zero array.
         In the event that both arrays contain non-nan and non-zero output, it will return output1.
 
         Example usage:
@@ -703,19 +734,24 @@ class VariableGroup:
             (e.g.     output2 = wprlp * (2.5e6 / (1004.67 * ((p / 1.0e5) ** (287.04 / 1004.67))) - 1.61 * thvm)
         :return: The listlike array of the two datasets most likely to be the correct answer.
         """
-        output1_mean = mean(output1)
-        output2_mean = mean(output2)
+        out1_is_zero = np.all(np.isclose(output1, 0))
+        out2_is_zero = np.all(np.isclose(output2, 0))
 
-        if math.isnan(output1_mean) and not math.isnan(output2_mean):
+        # if math.isnan(output1_mean) and not math.isnan(output2_mean):
+        #     return output2
+        # if math.isnan(output2_mean) and not math.isnan(output1_mean):
+        #     return output1
+        # if output1_mean == 0:
+        #     return output2
+        # elif output2_mean == 0:
+        #     return output1
+
+        if out1_is_zero:
             return output2
-        if math.isnan(output2_mean) and not math.isnan(output1_mean):
-            return output1
-        if output1_mean == 0:
-            return output2
-        elif output2_mean == 0:
+        elif out2_is_zero:
             return output1
         raise UserWarning("Failed to find an easy answer to the best output.")
-        # return output1
+        return output1
 
     def __processLinesParameter__(self, lines, dataset, label_suffix="", line_format = ""):
         """

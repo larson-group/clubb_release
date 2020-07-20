@@ -1,39 +1,29 @@
 """
-:author: Nicolas Strike
+NOTE: Should be obsolete soon(TM) by Panel subclassing
+:author: Steffen Domke
 :date: Mid 2019
 """
 from src.Panel import Panel
 from src.VariableGroup import VariableGroup
 
 
-class VariableGroupBase(VariableGroup):
+class VariableGroupTimeHeight(VariableGroup):
     """
-    This is a panel group used for testing the functionality of pyplotgen.
-    It contains a set of common panels being used for representing the majority
-    of panels.
+    This is a panel group used for testing the functionality of pyplotgen's timeheight plots.
+    It contains a set of common panels being used for representing the majority of panels.
     """
 
     def __init__(self, case, clubb_datasets=None, les_dataset=None, coamps_dataset=None, r408_dataset=None,
                  hoc_dataset=None, cam_datasets=None,
                  e3sm_datasets=None, sam_datasets=None, wrf_datasets=None,
-                 time_height=False, anim=None):
+                 time_height=False, anim=False):
         """
 
         :param clubb_datasets:
         :param case:
         :param les_dataset:
         """
-        self.name = "base variables"
-
-        corr_w_chi_i_lines = [
-            {'var_names': ['corr_w_chi_1'], 'legend_label': 'PDF comp. 1'},
-            {'var_names': ['corr_w_chi_2'], 'legend_label': 'PDF comp. 2'},
-        ]
-
-        corr_chi_eta_i_lines = [
-            {'var_names': ['corr_chi_eta_1'], 'legend_label': 'PDF comp. 1'},
-            {'var_names': ['corr_chi_eta_2'], 'legend_label': 'PDF comp. 2'},
-        ]
+        self.name = "Time-height plots"
 
         self.variable_definitions = [
             {'var_names':
@@ -47,7 +37,7 @@ class VariableGroupBase(VariableGroup):
                     'cam': ['thlm'],
                     'wrf': ['thlm'],
                 },
-                'sam_calc': self.getThlmSamCalc, 'sci_scale': 0,
+                'sam_calc': self.getThlmSamCalc, 'type': Panel.TYPE_TIMEHEIGHT,
             },
             {'var_names':
                 {
@@ -60,7 +50,7 @@ class VariableGroupBase(VariableGroup):
                     'cam': ['rtm'],
                     'wrf': ['rtm'],
                 },
-                'sam_calc': self.getRtmSamCalc, 'sci_scale': -3,
+                'sam_calc': self.getRtmSamCalc, 'type': Panel.TYPE_TIMEHEIGHT,
             },
             {'var_names':
                 {
@@ -73,7 +63,7 @@ class VariableGroupBase(VariableGroup):
                     'cam': ['wpthlp'], # WPTHLP_CLUBB / (1 .* 1004)
                     'wrf': ['wpthlp'],
                 },
-                'sam_calc': self.getWpthlpSamCalc, 'sci_scale': 0,
+                'sam_calc': self.getWpthlpSamCalc, 'type': Panel.TYPE_TIMEHEIGHT,
             },
             {'var_names':
                 {
@@ -86,7 +76,7 @@ class VariableGroupBase(VariableGroup):
                     'cam': ['WPRTP_clubb', 'wprtp'],
                     'wrf': ['wprtp'],
                 },
-                'sam_calc': self.getWprtpSamCalc, 'sci_scale': -4,
+                'sam_calc': self.getWprtpSamCalc, 'type': Panel.TYPE_TIMEHEIGHT,
             },
             {'var_names':
                 {
@@ -99,7 +89,7 @@ class VariableGroupBase(VariableGroup):
                     'cam': ['CLOUD', 'cloud_frac'],
                     'wrf': ['cloud_frac'],
                 },
-                'sci_scale': 0,
+                'type': Panel.TYPE_TIMEHEIGHT,
             },
             {'var_names':
                 {
@@ -112,7 +102,7 @@ class VariableGroupBase(VariableGroup):
                     'cam': ['CLDLIQ', 'rcm'],
                     'wrf': ['rcm'],
                 },
-                'sam_conv_factor': 1 / 1000, 'sci_scale': -5,
+                'sam_conv_factor': 1 / 1000, 'type': Panel.TYPE_TIMEHEIGHT,
             },
             {'var_names':
                 {
@@ -125,7 +115,7 @@ class VariableGroupBase(VariableGroup):
                     'cam': ['WP2_CLUBB', 'wp2'],
                     'wrf': ['wp2'],
                 },
-                'sci_scale': 0,
+                'type': Panel.TYPE_TIMEHEIGHT,
             },
             {'var_names':
                 {
@@ -138,7 +128,7 @@ class VariableGroupBase(VariableGroup):
                     'cam': ['WP3_CLUBB', 'wp3'],
                     'wrf': ['wp3'],
                 },
-                'sam_name': 'W3', 'sci_scale': 0, 'axis_title': "wp3",
+                'sam_name': 'W3', 'axis_title': "wp3", 'type': Panel.TYPE_TIMEHEIGHT,
             },
             {'var_names':
                 {
@@ -151,7 +141,7 @@ class VariableGroupBase(VariableGroup):
                     'cam': ['THLP2_CLUBB', 'thlp2'],
                     'wrf': ['thlp2'],
                 },
-                'sci_scale': 0,
+                'type': Panel.TYPE_TIMEHEIGHT,
             },
             {'var_names':
                 {
@@ -164,7 +154,7 @@ class VariableGroupBase(VariableGroup):
                     'cam': ['RTP2_CLUBB', 'rtp2'],
                     'wrf': ['rtp2'],
                 },
-                'sam_calc': self.getRtp2SamCalc, 'sci_scale': -7,
+                'sam_calc': self.getRtp2SamCalc, 'type': Panel.TYPE_TIMEHEIGHT,
             },
             {'var_names':
                 {
@@ -177,74 +167,7 @@ class VariableGroupBase(VariableGroup):
                     'cam': ['rtpthlp'],
                     'wrf': ['rtpthlp'],
                 },
-                'sci_scale': -4,
-            },
-            {'var_names':
-                {
-                    'clubb': ['rtp3'],
-                    'sam': ['RTP3'],
-                    'coamps': ['qtp3', 'rtp3'],
-                    'r408': ['rtp3'],
-                    'hoc': ['rtp3'],
-                    'e3sm': ['rtp3'],
-                    'cam': ['rtp3'],
-                    'wrf': ['rtp3'],
-                },
-                'sam_calc': self.getRtp3SamCalc, 'sci_scale': -9,
-            },
-            {'var_names':
-                {
-                    'clubb': ['thlp3'],
-                    'sam': ['THLP3'],
-                    'coamps': ['thlp3'],
-                    'r408': ['thlp3'],
-                    'hoc': ['thlp3'],
-                    'e3sm': ['thlp3'],
-                    'cam': ['thlp3'],
-                    'wrf': ['thlp3'],
-                },
-                'sci_scale': 0,
-            },
-            {'var_names':
-                {
-                    'clubb': ['Skw_zt'],
-                    'sam': ['Skw_zt'],
-                    'coamps': ['Skw_zt'],
-                    'r408': ['Skw_zt'],
-                    'hoc': ['Skw_zt'],
-                    'e3sm': ['Skw_zt'],
-                    'cam': ['Skw_zt'],
-                    'wrf': ['Skw_zt'],
-                },
-                'sam_calc': self.getSkwZtLesCalc, 'coamps_calc': self.getSkwZtLesCalc, 'sci_scale': 0,
-            },
-            {'var_names':
-                {
-                    'clubb': ['Skrt_zt'],
-                    'sam': ['Skrt_zt'],
-                    'coamps': ['Skrt_zt'],
-                    'r408': ['Skrt_zt'],
-                    'hoc': ['Skrt_zt'],
-                    'e3sm': ['Skrt_zt'],
-                    'cam': ['Skrt_zt'],
-                    'wrf': ['Skrt_zt'],
-                },
-                'sam_calc': self.getSkrtZtLesCalc,
-                'coamps_calc': self.getSkrtZtLesCalc,
-                'sci_scale': 0,
-            },
-            {'var_names':
-                {
-                    'clubb': ['Skthl_zt'],
-                    'sam': ['Skthl_zt'],
-                    'coamps': ['Skthl_zt'],
-                    'r408': ['Skthl_zt'],
-                    'hoc': ['Skthl_zt'],
-                    'e3sm': ['Skthl_zt'],
-                    'cam': ['Skthl_zt'],
-                    'wrf': ['Skthl_zt'],
-                },
-                'sam_calc': self.getSkthlZtLesCalc, 'coamps_calc': self.getSkthlZtLesCalc, 'sci_scale': 0,
+                'type': Panel.TYPE_TIMEHEIGHT,
             },
             {'var_names':
                 {
@@ -257,7 +180,7 @@ class VariableGroupBase(VariableGroup):
                     'cam': ['wm'], # -OMEGA /(9.81.*1)
                     'wrf': ['wm', 'wlsm'],
                 },
-                'sci_scale': -4,
+                'type': Panel.TYPE_TIMEHEIGHT,
             },
             {'var_names':
                 {
@@ -270,7 +193,7 @@ class VariableGroupBase(VariableGroup):
                     'cam': ['U','um'],
                     'wrf': ['um'],
                 },
-                'sci_scale': 0,
+                'type': Panel.TYPE_TIMEHEIGHT,
             },
             {'var_names':
                 {
@@ -283,7 +206,7 @@ class VariableGroupBase(VariableGroup):
                     'cam': ['V', 'vm'],
                     'wrf': ['vm'],
                 },
-                'sci_scale': 0,
+                'type': Panel.TYPE_TIMEHEIGHT,
             },
             {'var_names':
                 {
@@ -296,7 +219,7 @@ class VariableGroupBase(VariableGroup):
                     'cam': ['UPWP_CLUBB', 'upwp'],
                     'wrf': ['upwp'],
                 },
-                'coamps_calc': self.getUwCoampsData, 'sci_scale': 0,
+                'coamps_calc': self.getUwCoampsData, 'type': Panel.TYPE_TIMEHEIGHT,
             },
             {'var_names':
                 {
@@ -309,7 +232,7 @@ class VariableGroupBase(VariableGroup):
                     'cam': ['VPWP_CLUBB', 'vpwp'],
                     'wrf': ['vpwp'],
                 },
-                'coamps_calc': self.getVwCoampsData, 'sci_scale': 0,
+                'coamps_calc': self.getVwCoampsData, 'type': Panel.TYPE_TIMEHEIGHT,
             },
             {'var_names':
                 {
@@ -322,7 +245,7 @@ class VariableGroupBase(VariableGroup):
                     'cam': ['UU', 'up2'],
                     'wrf': ['up2'],
                 },
-                'sci_scale': 0,
+                'type': Panel.TYPE_TIMEHEIGHT,
             },
             {'var_names':
                 {
@@ -335,7 +258,7 @@ class VariableGroupBase(VariableGroup):
                     'cam': ['VV', 'vp2'],
                     'wrf': ['vp2'],
                 },
-                'sci_scale': 0,
+                'type': Panel.TYPE_TIMEHEIGHT,
             },
             {'var_names':
                 {
@@ -348,225 +271,12 @@ class VariableGroupBase(VariableGroup):
                     'cam': ['rcp2'],
                     'wrf': ['rcp2'],
                 },
-                'sam_conv_factor': 1 / 10 ** 6, 'sci_scale': -8,
+                'sam_conv_factor': 1 / 10 ** 6, 'type': Panel.TYPE_TIMEHEIGHT,
             },
-            {'var_names':
-                {
-                    'clubb': ['lwp'],
-                    'sam': ['CWP'],
-                    'coamps': ['lwp'],
-                    'r408': ['lwp'],
-                    'hoc': ['lwp'],
-                    'e3sm': ['lwp'],
-                    'cam': ['TGCLDLWP', 'lwp'],
-                    'wrf': ['lwp'],
-                },
-                'type': Panel.TYPE_TIMESERIES, 'sam_conv_factor': 1 / 1000,
-            },
-            {'var_names':
-                {
-                    'clubb': ['wp2_vert_avg'],
-                    'sam': ['W2_VERT_AVG'],
-                    'coamps': ['wp2_vert_avg'],
-                    'r408': ['wp2_vert_avg'],
-                    'hoc': ['wp2_vert_avg'],
-                    'e3sm': ['wp2_vert_avg'],
-                    'cam': ['wp2_vert_avg'],
-                    'wrf': ['wp2_vert_avg'],
-                },
-                'type': Panel.TYPE_TIMESERIES,
-            },
-            {'var_names':
-                {
-                    'clubb': ['tau_zm'],
-                    'sam': ['tau_zm'],
-                    'coamps': ['tau_zm'],
-                    'r408': ['tau_zm'],
-                    'hoc': ['tau_zm'],
-                    'e3sm': ['tau_zm'],
-                    'cam': ['tau_zm'],
-                    'wrf': ['tau_zm'],
-                },
-                'sci_scale': 0,
-            },
-            {'var_names':
-                {
-                    'clubb': ['Lscale'],
-                    'sam': ['Lscale'],
-                    'coamps': ['Lscale'],
-                    'r408': ['Lscale'],
-                    'hoc': ['Lscale'],
-                    'e3sm': ['Lscale'],
-                    'cam': ['Lscale'],
-                    'wrf': ['Lscale'],
-                },
-                'sci_scale': 0,
-            },
-            {'var_names':
-                {
-                    'clubb': ['wpthvp'],
-                    'sam': ['WPTHVP'],
-                    'coamps': ['wpthvp'],
-                    'r408': ['wpthvp'],
-                    'hoc': ['wpthvp'],
-                    'e3sm': ['wpthvp'],
-                    'cam': ['WPTHVP_CLUBB', 'wpthvp'],
-                    'wrf': ['wpthvp'],
-                },
-                'sam_calc': self.getWpthvpSamCalc,
-            },
-            {'var_names':
-                {
-                    'clubb': ['radht'],
-                    'sam': ['RADQR'],
-                    'coamps': ['radht'],
-                    'r408': ['radht'],
-                    'hoc': ['radht'],
-                    'e3sm': ['radht'],
-                    'cam': ['radht'],
-                    'wrf': ['radht'],
-                },
-                'sam_conv_factor': 1 / 86400,
-            },
-            {'var_names':
-                {
-                    'clubb': ['rtpthvp'],
-                    'sam': ['RTPTHVP'],
-                    'coamps': ['qtpthvp', 'rtpthvp'],
-                    'r408': ['rtpthvp'],
-                    'hoc': ['rtpthvp'],
-                    'e3sm': ['rtpthvp'],
-                    'cam': ['rtpthvp'],
-                    'wrf': ['rtpthvp'],
-                },
-                'sci_scale': -5,
-            },
-            {'var_names':
-                {
-                    'clubb': ['corr_w_chi_i'],
-                    'sam': ['corr_w_chi_i'],
-                    'coamps': ['corr_w_chi_i'],
-                    'r408': ['corr_w_chi_i'],
-                    'hoc': ['corr_w_chi_i'],
-                    'e3sm': ['corr_w_chi_i'],
-                    'cam': ['corr_w_chi_i'],
-                    'wrf': ['corr_w_chi_i'],
-                },
-                'lines': corr_w_chi_i_lines,
-                'title': "Correlation of w and chi",
-                'axis_title': "corr_w_chi_i [-]",
-                'sci_scale': 0,
-            },
-            {'var_names':
-                {
-                    'clubb': ['corr_chi_eta_i'],
-                    'sam': ['corr_chi_eta_i'],
-                    'coamps': ['corr_chi_eta_i'],
-                    'r408': ['corr_chi_eta_i'],
-                    'hoc': ['corr_chi_eta_i'],
-                    'e3sm': ['corr_chi_eta_i'],
-                    'cam': ['corr_chi_eta_i'],
-                    'wrf': ['corr_chi_eta_i'],
-                },
-                'lines': corr_chi_eta_i_lines,
-                'title': "Correlation of chi and eta",
-                'axis_title': "corr_chi_eta_i [-]",
-                'sci_scale': 0,
-            },
-            {'var_names':
-                {
-                    'clubb': ['thlpthvp'],
-                    'sam': ['thlpthvp', 'THLPTHVP'],
-                    'coamps': ['thlpthvp'],
-                    'r408': ['thlpthvp'],
-                    'hoc': ['thlpthvp'],
-                    'e3sm': ['thlpthvp'],
-                    'cam': ['thlpthvp'],
-                    'wrf': ['thlpthvp'],
-                },
-            },
-            # TODO SAM output for these variables
-            # TODO validate coamps output
-            # TODO Fix output for these vars in some cases
-            {'var_names':
-                {
-                    'clubb': ['rc_coef_zm * wprcp'],
-                    'sam': ['rc_coef_zm * wprcp'],
-                    'coamps': ['rc_coef_zm * wprcp'],
-                    'r408': ['rc_coef_zm * wprcp'],
-                    'hoc': ['rc_coef_zm * wprcp'],
-                    'e3sm': ['rc_coef_zm * wprcp'],
-                    'cam': ['rc_coef_zm * wprcp'],
-                    'wrf': ['rc_coef_zm * wprcp'],
-                },
-                'clubb_calc': self.get_rc_coef_zm_X_wprcp_clubb_line,
-                'sam_calc': self.get_rc_coef_zm_X_wprcp_sam_calc,
-                'coamps_calc': self.get_rc_coef_zm_X_wprcp_coamps_calc,
-                'title': 'Contribution of Cloud Water Flux to wpthvp',
-                'axis_title': 'rc_coef_zm * wprcp [K m/s]',
-                'sci_scale': 0,
-            },
-            {'var_names':
-                {
-                    'clubb': ['rc_coef_zm * thlprcp'],
-                    'sam': ['rc_coef_zm * thlprcp'],
-                    'coamps': ['rc_coef_zm * thlprcp'],
-                    'r408': ['rc_coef_zm * thlprcp'],
-                    'hoc': ['rc_coef_zm * thlprcp'],
-                    'e3sm': ['rc_coef_zm * thlprcp'],
-                    'cam': ['rc_coef_zm * thlprcp'],
-                    'wrf': ['rc_coef_zm * thlprcp'],
-                },
-                'sam_calc': self.get_rc_coef_zm_X_thlprcp_sam_calc,
-                'coamps_calc': self.get_rc_coef_zm_X_thlprcp_coamps_calc,
-                'clubb_calc': self.get_rc_coef_zm_X_thlprcp_clubb_calc,
-                'title': 'Contribution of Cloud Water Flux to thlprcp',
-                'axis_title': 'rc_coef_zm * thlprcp [K^2]',
-                'sci_scale': 0,
-            },
-            {'var_names':
-                {
-                    'clubb': ['rc_coef_zm * rtprcp'],
-                    'sam': ['rc_coef_zm * rtprcp'],
-                    'coamps': ['rc_coef_zm * rtprcp'],
-                    'r408': ['rc_coef_zm * rtprcp'],
-                    'hoc': ['rc_coef_zm * rtprcp'],
-                    'e3sm': ['rc_coef_zm * rtprcp'],
-                    'cam': ['rc_coef_zm * rtprcp'],
-                    'wrf': ['rc_coef_zm * rtprcp'],
-                },
-                'sam_calc': self.get_rc_coef_zm_X_rtprcp_sam_calc,
-                'coamps_calc': self.get_rc_coef_zm_X_rtprcp_coamps_calc,
-                'clubb_calc': self.get_rc_coef_zm_X_rtprcp_clubb_calc,
-                'title': 'Contribution of Cloud Water Flux to rtprcp',
-                'axis_title': 'rc_coef_zm * rtprcp [kg/kg K]',
-                'sci_scale': -4
-            },
-            {'var_names':
-                {
-                    'clubb': ['rc_coef_zm * wp2rcp'],
-                    'sam': ['rc_coef_zm * wp2rcp'],
-                    'coamps': ['rc_coef_zm * wp2rcp'],
-                    'r408': ['rc_coef_zm * wp2rcp'],
-                    'hoc': ['rc_coef_zm * wp2rcp'],
-                    'e3sm': ['rc_coef_zm * wp2rcp'],
-                    'cam': ['rc_coef_zm * wp2rcp'],
-                    'wrf': ['rc_coef_zm * wp2rcp'],
-                },
-                'sam_calc': self.get_rc_coef_X_wp2rcp_sam_calc,
-                'coamps_calc': self.get_rc_coef_X_wp2rcp_coamps_calc,
-                'clubb_calc': self.get_rc_coef_X_wp2rcp_clubb_calc,
-                'title': 'Cloud water contribution to wp2thvp',
-                'axis_title': 'rc_coef * wp2rcp [m^2/s^2 K]',
-                'sci_scale': 0
-            },
-
-            # TODO corr chi 2's,
         ]
         super().__init__(case, clubb_datasets=clubb_datasets, sam_datasets=sam_datasets, les_dataset=les_dataset,
                          coamps_dataset=coamps_dataset, r408_dataset=r408_dataset, cam_datasets=cam_datasets,
-                         hoc_dataset=hoc_dataset, e3sm_datasets=e3sm_datasets, wrf_datasets=wrf_datasets,
-                         time_height=time_height, anim=anim)
+                         hoc_dataset=hoc_dataset, e3sm_datasets=e3sm_datasets, wrf_datasets=wrf_datasets)
 
     def getThlmSamCalc(self, dataset_override=None):
         """
