@@ -7,15 +7,15 @@ import os
 from pathlib import Path
 from statistics import mean
 from warnings import warn
-import numpy as np
 
+import numpy as np
 from netCDF4._netCDF4 import Dataset
 
 from config import Case_definitions
 from config import Style_definitions
+from src.Contour import Contour
 from src.DataReader import DataReader, NetCdfVariable
 from src.Line import Line
-from src.Contour import Contour
 from src.Panel import Panel
 
 
@@ -734,24 +734,21 @@ class VariableGroup:
             (e.g.     output2 = wprlp * (2.5e6 / (1004.67 * ((p / 1.0e5) ** (287.04 / 1004.67))) - 1.61 * thvm)
         :return: The listlike array of the two datasets most likely to be the correct answer.
         """
+
+        out1_is_nan = math.isnan(mean(output1))
+        out2_is_nan = math.isnan(mean(output2))
+
         out1_is_zero = np.all(np.isclose(output1, 0))
         out2_is_zero = np.all(np.isclose(output2, 0))
 
-        # if math.isnan(output1_mean) and not math.isnan(output2_mean):
-        #     return output2
-        # if math.isnan(output2_mean) and not math.isnan(output1_mean):
-        #     return output1
-        # if output1_mean == 0:
-        #     return output2
-        # elif output2_mean == 0:
-        #     return output1
+        return_out_1 = (out2_is_zero or out2_is_nan) and not out1_is_nan
+        return_out_2 = (out1_is_zero or out1_is_nan) and not out2_is_nan
 
-        if out1_is_zero:
+        if return_out_2:
             return output2
-        elif out2_is_zero:
+        elif return_out_1:
             return output1
         raise UserWarning("Failed to find an easy answer to the best output.")
-        return output1
 
     def __processLinesParameter__(self, lines, dataset, label_suffix="", line_format = ""):
         """
