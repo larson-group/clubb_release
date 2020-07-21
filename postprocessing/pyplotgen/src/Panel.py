@@ -121,7 +121,7 @@ class Panel:
         if self.sci_scale is not None:
             scalepower = -1 * self.sci_scale
             if self.sci_scale != 0:
-                label_scale_factor = "\t1e" + str(self.sci_scale)
+                label_scale_factor = "\t\t x 1e" + str(self.sci_scale)
             math_scale_factor =  10 ** (scalepower)
             plt.ticklabel_format(style='plain', axis='x')
         # Use pyplot's default sci scaling
@@ -152,7 +152,9 @@ class Panel:
                                  + "  Y:" + str(y_data.shape) + ". Attempted to plot " + self.title +
                                  " using X: " + self.x_title + "  Y: " + self.y_title)
             # Set correct line formatting and plot data
-            if var.line_format == Style_definitions.BENCHMARK_LINE_STYLES['sam']:
+            if var.line_format == Style_definitions.BENCHMARK_LINE_STYLES['coamps']:
+                linewidth = Style_definitions.LES_LINE_THICKNESS
+            elif var.line_format == Style_definitions.BENCHMARK_LINE_STYLES['sam']:
                 linewidth = Style_definitions.LES_LINE_THICKNESS
             elif var.line_format == Style_definitions.BENCHMARK_LINE_STYLES['r408']:
                 linewidth = Style_definitions.ARCHIVED_CLUBB_LINE_THICKNESS

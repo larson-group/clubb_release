@@ -8,7 +8,9 @@ using python dictionaries (values surrounded with < > must have the < > removed 
 .. code-block:: python
     :linenos:
 
-    CASENAME = {'name': 'casename', 'start_time': <numeric value>, 'end_time': <numeric value>,
+    CASENAME = {'name': 'casename',
+'description': "",
+ 'start_time': <numeric value>, 'end_time': <numeric value>,
        'height_min_value': <numeric value>, 'height_max_value': <numeric value>,
        
        'blacklisted_vars': ['list', 'of', 'variable', 'names', 'to', 'exclude', 'from', 'plotting'],
@@ -70,12 +72,10 @@ from config.VariableGroupCorrelations import VariableGroupCorrelations
 from config.VariableGroupIceMP import VariableGroupIceMP
 from config.VariableGroupKKMP import VariableGroupKKMP
 from config.VariableGroupLiquidMP import VariableGroupLiquidMP
-from config.VariableGroupScalars import VariableGroupScalars
-from config.VariableGroupWs import VariableGroupWs
-from config.VariableGroupTimeHeight import VariableGroupTimeHeight
 from config.VariableGroupSamBudgets import VariableGroupSamBudgets
 from config.VariableGroupSamProfiles import VariableGroupSamProfiles
-from config.VariableGroupSamMultilineProfiles import VariableGroupSamMultilineProfiles
+from config.VariableGroupScalars import VariableGroupScalars
+from config.VariableGroupWs import VariableGroupWs
 
 # ---------------------------
 BENCHMARK_OUTPUT_ROOT = "/usr/local/les_and_clubb_benchmark_runs/"
@@ -116,7 +116,10 @@ For example, to plot only bomex and fire:
 ALL_CASES = [BOMEX, FIRE]
 """
 
-ARM = {'name': 'arm', 'start_time': 481, 'end_time': 540, 'height_min_value': 0, 'height_max_value': 3500,
+ARM = {'name': 'arm',
+       'description': "Output may differ from some models (e.g. WRF) due to a difference in the time averaging "
+                      "interval.",
+       'start_time': 481, 'end_time': 540, 'height_min_value': 0, 'height_max_value': 3500,
 
        'blacklisted_vars': ['radht'],
        'les_dataset': SAM_BENCHMARK_OUTPUT_ROOT + "/JULY_2017/ARM_96x96x110/GCSSARM_96x96x110_67m_40m_1s.nc",
@@ -140,7 +143,9 @@ ARM = {'name': 'arm', 'start_time': 481, 'end_time': 540, 'height_min_value': 0,
                     },
        'var_groups': [VariableGroupBase, VariableGroupWs]}
 
-ARM_97 = {'name': 'arm_97', 'start_time': 4321, 'end_time': 5580, 'height_min_value': 0, 'height_max_value': 18000,
+ARM_97 = {'name': 'arm_97',
+          'description': "",
+          'start_time': 4321, 'end_time': 5580, 'height_min_value': 0, 'height_max_value': 18000,
 
           'blacklisted_vars': ['rtp3', 'Skrt_zt', 'Skthl_zt', 'thlp3', 'rtpthvp', 'thlpthvp'],
           'les_dataset': SAM_BENCHMARK_OUTPUT_ROOT + "/ARM97_r1315_128x128x128_1km_Morrison/ARM9707.nc",
@@ -156,7 +161,9 @@ ARM_97 = {'name': 'arm_97', 'start_time': 4321, 'end_time': 5580, 'height_min_va
           'wrf_file': None,
           'var_groups': [VariableGroupBase, VariableGroupLiquidMP, VariableGroupIceMP]}
 
-ASTEX_A209 = {'name': 'astex_a209', 'start_time': 2340, 'end_time': 2400, 'height_min_value': 0,
+ASTEX_A209 = {'name': 'astex_a209',
+              'description': "",
+              'start_time': 2340, 'end_time': 2400, 'height_min_value': 0,
               'height_max_value': 6000,
               'blacklisted_vars': [],
               'les_dataset': None,
@@ -173,7 +180,9 @@ ASTEX_A209 = {'name': 'astex_a209', 'start_time': 2340, 'end_time': 2400, 'heigh
               'var_groups': [VariableGroupBase, VariableGroupWs, VariableGroupLiquidMP, VariableGroupCorrelations,
                              VariableGroupKKMP]}
 
-ATEX = {'name': 'atex', 'start_time': 421, 'end_time': 480, 'height_min_value': 0, 'height_max_value': 2500,
+ATEX = {'name': 'atex',
+        'description': "",
+        'start_time': 421, 'end_time': 480, 'height_min_value': 0, 'height_max_value': 2500,
 
         'blacklisted_vars': [],
         'les_dataset': None,
@@ -197,7 +206,9 @@ ATEX = {'name': 'atex', 'start_time': 421, 'end_time': 480, 'height_min_value': 
                      },
         'var_groups': [VariableGroupBase, VariableGroupLiquidMP, VariableGroupIceMP, VariableGroupWs]}
 
-BOMEX = {'name': 'bomex', 'start_time': 181, 'end_time': 360, 'height_min_value': 0, 'height_max_value': 2500,
+BOMEX = {'name': 'bomex',
+         'description': "",
+         'start_time': 181, 'end_time': 360, 'height_min_value': 0, 'height_max_value': 2500,
 
          'blacklisted_vars': [],
          'les_dataset': SAM_BENCHMARK_OUTPUT_ROOT + "/JULY_2017/BOMEX_64x64x75/BOMEX_64x64x75_100m_40m_1s.nc",
@@ -220,7 +231,9 @@ BOMEX = {'name': 'bomex', 'start_time': 181, 'end_time': 360, 'height_min_value'
                       'sfc': wrf_output_root + '/bomex_sfc_wrf.nc'},
          'var_groups': [VariableGroupBase, VariableGroupWs]}
 
-CGILS_S6 = {'name': 'cgils_s6', 'start_time': 12960, 'end_time': 14400,
+CGILS_S6 = {'name': 'cgils_s6',
+            'description': "",
+            'start_time': 12960, 'end_time': 14400,
             'height_min_value': 0, 'height_max_value': 5950,
 
             'blacklisted_vars': ['Ngm', 'rgm', 'Skrt_zt', 'Skthl_zt', 'thlp3',
@@ -239,7 +252,9 @@ CGILS_S6 = {'name': 'cgils_s6', 'start_time': 12960, 'end_time': 14400,
             'wrf_file': None,
             'var_groups': [VariableGroupBase, VariableGroupLiquidMP, VariableGroupIceMP]}
 
-CGILS_S11 = {'name': 'cgils_s11', 'start_time': 12960, 'end_time': 14400, 'height_min_value': 0,
+CGILS_S11 = {'name': 'cgils_s11',
+             'description': "",
+             'start_time': 12960, 'end_time': 14400, 'height_min_value': 0,
              'height_max_value': 5950,
              'blacklisted_vars': ['Ngm', 'rgm', 'Skthl_zt', 'Skrt_zt', 'rtpthvp', 'thlpthvp', 'wprrp', 'wpNrp'],
              'les_dataset': SAM_BENCHMARK_OUTPUT_ROOT +
@@ -256,7 +271,9 @@ CGILS_S11 = {'name': 'cgils_s11', 'start_time': 12960, 'end_time': 14400, 'heigh
              'wrf_file': None,
              'var_groups': [VariableGroupBase, VariableGroupLiquidMP, VariableGroupIceMP]}
 
-CGILS_S12 = {'name': 'cgils_s12', 'start_time': 12960, 'end_time': 14400, 'height_min_value': 0,
+CGILS_S12 = {'name': 'cgils_s12',
+             'description': "",
+             'start_time': 12960, 'end_time': 14400, 'height_min_value': 0,
              'height_max_value': 5950,
              'blacklisted_vars': ['Ngm', 'rgm', 'Skrt_zt', 'Skthl_zt', 'rtpthvp', 'thlpthvp', 'wprrp', 'wpNrp'],
              'les_dataset': SAM_BENCHMARK_OUTPUT_ROOT +
@@ -273,7 +290,9 @@ CGILS_S12 = {'name': 'cgils_s12', 'start_time': 12960, 'end_time': 14400, 'heigh
              'wrf_file': None,
              'var_groups': [VariableGroupBase, VariableGroupLiquidMP, VariableGroupIceMP]}
 
-CLEX9_NOV02 = {'name': 'clex9_nov02', 'start_time': 181, 'end_time': 240, 'height_min_value': 3072,
+CLEX9_NOV02 = {'name': 'clex9_nov02',
+               'description': "",
+               'start_time': 181, 'end_time': 240, 'height_min_value': 3072,
                'height_max_value': 6072,
                'blacklisted_vars': ['Ngm'],
                'les_dataset': None,
@@ -290,7 +309,9 @@ CLEX9_NOV02 = {'name': 'clex9_nov02', 'start_time': 181, 'end_time': 240, 'heigh
                'wrf_file': None,
                'var_groups': [VariableGroupBase, VariableGroupLiquidMP, VariableGroupIceMP]}
 
-CLEX9_OCT14 = {'name': 'clex9_oct14', 'start_time': 181, 'end_time': 240, 'height_min_value': 2188,
+CLEX9_OCT14 = {'name': 'clex9_oct14',
+               'description': "",
+               'start_time': 181, 'end_time': 240, 'height_min_value': 2188,
                'height_max_value': 6688,
                'blacklisted_vars': ['Ngm'],
                'les_dataset': None,
@@ -307,7 +328,9 @@ CLEX9_OCT14 = {'name': 'clex9_oct14', 'start_time': 181, 'end_time': 240, 'heigh
                'wrf_file': None,
                'var_groups': [VariableGroupBase, VariableGroupLiquidMP, VariableGroupIceMP]}
 
-DYCOMS2_RF01 = {'name': 'dycoms2_rf01', 'start_time': 181, 'end_time': 240, 'height_min_value': 0,
+DYCOMS2_RF01 = {'name': 'dycoms2_rf01',
+                'description': "",
+                'start_time': 181, 'end_time': 240, 'height_min_value': 0,
                 'height_max_value': 1200,
                 'blacklisted_vars': [],
                 'les_dataset': SAM_BENCHMARK_OUTPUT_ROOT + "/JULY_2017/DYCOMS_RF01_96x96x320/DYCOMS_RF01_96x96x320.nc",
@@ -327,7 +350,9 @@ DYCOMS2_RF01 = {'name': 'dycoms2_rf01', 'start_time': 181, 'end_time': 240, 'hei
                 'wrf_file': None,
                 'var_groups': [VariableGroupBase, VariableGroupWs]}
 
-DYCOMS2_RF01_FIXED_SST = {'name': 'dycoms2_rf01_fixed_sst', 'start_time': 2520, 'end_time': 2700,
+DYCOMS2_RF01_FIXED_SST = {'name': 'dycoms2_rf01_fixed_sst',
+                          'description': "Copied from plotgen: Ran with a 5 min timestep and a 48-level grid",
+                          'start_time': 2520, 'end_time': 2700,
                           'height_min_value': 0, 'height_max_value': 1200,
 
                           'blacklisted_vars': ['rtp3', 'Skrt_zt', 'Skthl_zt', 'rtpthvp', 'thlpthvp'],
@@ -345,7 +370,9 @@ DYCOMS2_RF01_FIXED_SST = {'name': 'dycoms2_rf01_fixed_sst', 'start_time': 2520, 
                           'wrf_file': None,
                           'var_groups': [VariableGroupBase]}
 
-DYCOMS2_RF02_DO = {'name': 'dycoms2_rf02_do', 'start_time': 301, 'end_time': 360, 'height_min_value': 0,
+DYCOMS2_RF02_DO = {'name': 'dycoms2_rf02_do',
+                   'description': "",
+                   'start_time': 301, 'end_time': 360, 'height_min_value': 0,
                    'height_max_value': 1200,
                    'blacklisted_vars': [],
                    'les_dataset': SAM_BENCHMARK_OUTPUT_ROOT +
@@ -367,7 +394,10 @@ DYCOMS2_RF02_DO = {'name': 'dycoms2_rf02_do', 'start_time': 301, 'end_time': 360
                    'var_groups': [VariableGroupBase, VariableGroupWs, VariableGroupLiquidMP, VariableGroupCorrelations,
                                   VariableGroupKKMP]}
 
-DYCOMS2_RF02_DS = {'name': 'dycoms2_rf02_ds', 'start_time': 301, 'end_time': 360, 'height_min_value': 0,
+DYCOMS2_RF02_DS = {'name': 'dycoms2_rf02_ds',
+                   'description': "Copied from plotgen: ** Generated by doing a restart run after 7200 seconds. Note: "
+                                  "t = 0 corresponds to start time of the restart run, not the original run. ** ",
+                   'start_time': 301, 'end_time': 360, 'height_min_value': 0,
                    'height_max_value': 1200,
                    'blacklisted_vars': [],
                    'les_dataset': SAM_BENCHMARK_OUTPUT_ROOT +
@@ -387,7 +417,9 @@ DYCOMS2_RF02_DS = {'name': 'dycoms2_rf02_ds', 'start_time': 301, 'end_time': 360
                    'var_groups': [VariableGroupBase, VariableGroupWs, VariableGroupLiquidMP, VariableGroupCorrelations,
                                   VariableGroupKKMP]}
 
-DYCOMS2_RF02_ND = {'name': 'dycoms2_rf02_nd', 'start_time': 301, 'end_time': 360, 'height_min_value': 0,
+DYCOMS2_RF02_ND = {'name': 'dycoms2_rf02_nd',
+                   'description': "Copied from plotgen: ** Uniform, coarse verticle grid spacing of 40 m. **",
+                   'start_time': 301, 'end_time': 360, 'height_min_value': 0,
                    'height_max_value': 1200,
                    'blacklisted_vars': ['wprrp', 'wpNrp', 'corr_w_rr_1', 'corr_w_Nr_1'],
                    'les_dataset': SAM_BENCHMARK_OUTPUT_ROOT +
@@ -408,7 +440,9 @@ DYCOMS2_RF02_ND = {'name': 'dycoms2_rf02_nd', 'start_time': 301, 'end_time': 360
                    'wrf_file': None,
                    'var_groups': [VariableGroupBase, VariableGroupWs, VariableGroupLiquidMP, VariableGroupKKMP]}
 
-DYCOMS2_RF02_DS_RESTART = {'name': 'dycoms2_rf02_ds_restart', 'start_time': 181, 'end_time': 240, 'height_min_value': 0,
+DYCOMS2_RF02_DS_RESTART = {'name': 'dycoms2_rf02_ds_restart',
+                           'description': "",
+                           'start_time': 181, 'end_time': 240, 'height_min_value': 0,
                            'height_max_value': 1200,
                            'blacklisted_vars': [],
                            'les_dataset': SAM_BENCHMARK_OUTPUT_ROOT +
@@ -430,7 +464,9 @@ DYCOMS2_RF02_DS_RESTART = {'name': 'dycoms2_rf02_ds_restart', 'start_time': 181,
                            'var_groups': [VariableGroupBase, VariableGroupWs, VariableGroupLiquidMP,
                                           VariableGroupCorrelations, VariableGroupKKMP]}
 
-DYCOMS2_RF02_SO = {'name': 'dycoms2_rf02_so', 'start_time': 301, 'end_time': 360, 'height_min_value': 0,
+DYCOMS2_RF02_SO = {'name': 'dycoms2_rf02_so',
+                   'description': "Copied from plotgen: ** WRF-type stretched (unevenly spaced) grid (grid_type = 3) ** ",
+                   'start_time': 301, 'end_time': 360, 'height_min_value': 0,
                    'height_max_value': 1200,
                    'blacklisted_vars': ['wprrp', 'wpNrp'],
                    'les_dataset': SAM_BENCHMARK_OUTPUT_ROOT +
@@ -451,7 +487,9 @@ DYCOMS2_RF02_SO = {'name': 'dycoms2_rf02_so', 'start_time': 301, 'end_time': 360
                    'wrf_file': None,
                    'var_groups': [VariableGroupBase, VariableGroupWs, VariableGroupLiquidMP, VariableGroupKKMP]}
 
-FIRE = {'name': 'fire', 'start_time': 61, 'end_time': 120, 'height_min_value': 0, 'height_max_value': 1000,
+FIRE = {'name': 'fire',
+        'description': "",
+        'start_time': 61, 'end_time': 120, 'height_min_value': 0, 'height_max_value': 1000,
 
         'blacklisted_vars': [],
         'les_dataset': None,
@@ -476,7 +514,9 @@ FIRE = {'name': 'fire', 'start_time': 61, 'end_time': 120, 'height_min_value': 0
         'var_groups': [VariableGroupBase, VariableGroupWs]}
 
 # No budgets
-GABLS2 = {'name': 'gabls2', 'start_time': 2101, 'end_time': 2160, 'height_min_value': 0, 'height_max_value': 2500,
+GABLS2 = {'name': 'gabls2',
+          'description': "",
+          'start_time': 2101, 'end_time': 2160, 'height_min_value': 0, 'height_max_value': 2500,
 
           'blacklisted_vars': ['tau_zm', 'radht', 'Skw_zt', 'Skrt_zt', 'Skthl_zt', 'corr_w_chi_1', 'corr_chi_eta_1',
                                'rcp2', 'thlpthvp', 'rtpthvp'],
@@ -495,7 +535,9 @@ GABLS2 = {'name': 'gabls2', 'start_time': 2101, 'end_time': 2160, 'height_min_va
           'wrf_file': None,
           'var_groups': [VariableGroupBase]}
 
-GABLS2_NIGHTLY = {'name': 'gabls2_nightly', 'start_time': 2101, 'end_time': 2160, 'height_min_value': 0,
+GABLS2_NIGHTLY = {'name': 'gabls2_nightly',
+                  'description': "",
+                  'start_time': 2101, 'end_time': 2160, 'height_min_value': 0,
                   'height_max_value': 2500,
 
                   'blacklisted_vars': [],
@@ -512,7 +554,9 @@ GABLS2_NIGHTLY = {'name': 'gabls2_nightly', 'start_time': 2101, 'end_time': 2160
                   'wrf_file': None,
                   'var_groups': [VariableGroupBase, VariableGroupScalars]}
 
-GABLS3 = {'name': 'gabls3', 'start_time': 1081, 'end_time': 1200, 'height_min_value': 0, 'height_max_value': 4970,
+GABLS3 = {'name': 'gabls3',
+          'description': "",
+          'start_time': 1081, 'end_time': 1200, 'height_min_value': 0, 'height_max_value': 4970,
 
           'blacklisted_vars': [],
           'les_dataset': None,
@@ -528,24 +572,28 @@ GABLS3 = {'name': 'gabls3', 'start_time': 1081, 'end_time': 1200, 'height_min_va
           'wrf_file': None,
           'var_groups': [VariableGroupBase]}
 
-GABLS3_NIGHT = {'name': 'gabls3_night', 'start_time': 421, 'end_time': 480, 'height_min_value': 0,
-                'height_max_value': 800,
-                'blacklisted_vars': [],
-                'les_dataset': SAM_BENCHMARK_OUTPUT_ROOT + "/SAM6.6/GABLS3_NIGHT/gabls3_night.nc",
-                'clubb_file': {'zm': clubb_output_root + '/gabls3_night_zm.nc',
-                               'zt': clubb_output_root + '/gabls3_night_zt.nc',
-                               'sfc': clubb_output_root + '/gabls3_night_sfc.nc'},
-                'coamps_dataset': None,
-                'r408_file': None,
-                'hoc_file': None,
-                'e3sm_file': None,
-                'cam_file': None,
-                'sam_file': None,
-                'wrf_file': None,
-                'var_groups': [VariableGroupBase]}
+GABLS3_NIGHTLY = {'name': 'gabls3_nightly',
+                  'description': "Copied from plotgen: Uses a 5-min timestep with 48 levels",
+                  'start_time': 421, 'end_time': 480, 'height_min_value': 0,
+                  'height_max_value': 800,
+                  'blacklisted_vars': [],
+                  'les_dataset': SAM_BENCHMARK_OUTPUT_ROOT + "/SAM6.6/GABLS3_NIGHT/gabls3_night.nc",
+                  'clubb_file': {'zm': clubb_output_root + '/gabls3_night_zm.nc',
+                                 'zt': clubb_output_root + '/gabls3_night_zt.nc',
+                                 'sfc': clubb_output_root + '/gabls3_night_sfc.nc'},
+                  'coamps_dataset': None,
+                  'r408_file': None,
+                  'hoc_file': None,
+                  'e3sm_file': None,
+                  'cam_file': None,
+                  'sam_file': None,
+                  'wrf_file': None,
+                  'var_groups': [VariableGroupBase]}
 
 # Use to plot IOP forced SAM runs
-IOP = {'name': 'iop', 'start_time': 181, 'end_time': 1440, 'height_min_value': 0,
+IOP = {'name': 'iop',
+       'description': "",
+       'start_time': 181, 'end_time': 1440, 'height_min_value': 0,
        'height_max_value': 27750,
        'blacklisted_vars': [],
        'clubb_datasets': None,
@@ -559,7 +607,9 @@ IOP = {'name': 'iop', 'start_time': 181, 'end_time': 1440, 'height_min_value': 0
        'var_groups': [VariableGroupBase, VariableGroupSamProfiles, VariableGroupSamBudgets]
        }
 
-JUN25_ALTOCU = {'name': 'jun25_altocu', 'start_time': 181, 'end_time': 240, 'height_min_value': 4808,
+JUN25_ALTOCU = {'name': 'jun25_altocu',
+                'description': "",
+                'start_time': 181, 'end_time': 240, 'height_min_value': 4808,
                 'height_max_value': 7308,
                 'blacklisted_vars': ['Ngm', 'wprrp', 'wpNrp'],
                 'les_dataset': None,
@@ -576,7 +626,9 @@ JUN25_ALTOCU = {'name': 'jun25_altocu', 'start_time': 181, 'end_time': 240, 'hei
                 'wrf_file': None,
                 'var_groups': [VariableGroupBase, VariableGroupLiquidMP, VariableGroupIceMP]}
 
-LBA = {'name': 'lba', 'start_time': 300, 'end_time': 360, 'height_min_value': 0, 'height_max_value': 12000,
+LBA = {'name': 'lba',
+       'description': "Copied from plotgen: SAM-LES uses Morrison microphysics and CLUBB standalone uses COAMPS microphysics",
+       'start_time': 300, 'end_time': 360, 'height_min_value': 0, 'height_max_value': 12000,
 
        'blacklisted_vars': ['wprrp', 'wpNrp', 'Ngm'],
        'les_dataset': SAM_BENCHMARK_OUTPUT_ROOT +
@@ -593,7 +645,9 @@ LBA = {'name': 'lba', 'start_time': 300, 'end_time': 360, 'height_min_value': 0,
        'wrf_file': None,
        'var_groups': [VariableGroupBase, VariableGroupLiquidMP, VariableGroupIceMP, VariableGroupWs]}
 
-MC3E = {'name': 'mc3e', 'start_time': 1, 'end_time': 64800, 'height_min_value': 0, 'height_max_value': 18000,
+MC3E = {'name': 'mc3e',
+        'description': "",
+        'start_time': 1, 'end_time': 64800, 'height_min_value': 0, 'height_max_value': 18000,
 
         'blacklisted_vars': ['rtp3', 'Skrt_zt', 'Skthl_zt', 'rtpthvp', 'thlpthvp', 'wprrp', 'wpNrp'],
         'les_dataset': SAM_BENCHMARK_OUTPUT_ROOT + "/MC3E_r1359_128x128x128_1km_Morrison/MC3E.nc",
@@ -609,7 +663,9 @@ MC3E = {'name': 'mc3e', 'start_time': 1, 'end_time': 64800, 'height_min_value': 
         'wrf_file': None,
         'var_groups': [VariableGroupBase, VariableGroupLiquidMP, VariableGroupIceMP]}
 
-MPACE_A = {'name': 'mpace_a', 'start_time': 4141, 'end_time': 4320, 'height_min_value': 0, 'height_max_value': 10000,
+MPACE_A = {'name': 'mpace_a',
+           'description': "Copied from plotgen: SAM-LES and CLUBB standalone use Morrison microphysics",
+           'start_time': 4141, 'end_time': 4320, 'height_min_value': 0, 'height_max_value': 10000,
 
            'blacklisted_vars': ['Skrt_zt', 'Skthl_zt', 'rtpthvp', 'thlpthvp', 'Ngm', 'wpNrp'],
            'les_dataset': SAM_BENCHMARK_OUTPUT_ROOT + "/SAM6.6/MPACE_A/MPACE_A_128x128x69_morr_CEM.nc",
@@ -625,7 +681,9 @@ MPACE_A = {'name': 'mpace_a', 'start_time': 4141, 'end_time': 4320, 'height_min_
            'wrf_file': None,
            'var_groups': [VariableGroupBase, VariableGroupLiquidMP, VariableGroupIceMP]}
 
-MPACE_B = {'name': 'mpace_b', 'start_time': 541, 'end_time': 720, 'height_min_value': 0, 'height_max_value': 2750,
+MPACE_B = {'name': 'mpace_b',
+           'description': "Copied from plotgen: **The nightly simulation uses COAMPS microphysics**",
+           'start_time': 541, 'end_time': 720, 'height_min_value': 0, 'height_max_value': 2750,
 
            'blacklisted_vars': ['Ngm', 'wpNrp'],
            'les_dataset': None,
@@ -643,7 +701,9 @@ MPACE_B = {'name': 'mpace_b', 'start_time': 541, 'end_time': 720, 'height_min_va
            'wrf_file': None,
            'var_groups': [VariableGroupBase, VariableGroupLiquidMP, VariableGroupIceMP]}
 
-MPACE_B_SILHS = {'name': 'mpace_b_silhs', 'start_time': 541, 'end_time': 720, 'height_min_value': 0,
+MPACE_B_SILHS = {'name': 'mpace_b_silhs',
+                 'description': "",
+                 'start_time': 541, 'end_time': 720, 'height_min_value': 0,
                  'height_max_value': 2750,
                  'blacklisted_vars': ['Ngm', 'wpNrp'],
                  'les_dataset': None,
@@ -660,7 +720,9 @@ MPACE_B_SILHS = {'name': 'mpace_b_silhs', 'start_time': 541, 'end_time': 720, 'h
                  'wrf_file': None,
                  'var_groups': [VariableGroupBase, VariableGroupLiquidMP, VariableGroupIceMP]}
 
-NOV11_ALTOCU = {'name': 'nov11_altocu', 'start_time': 91, 'end_time': 150, 'height_min_value': 4150,
+NOV11_ALTOCU = {'name': 'nov11_altocu',
+                'description': "",
+                'start_time': 91, 'end_time': 150, 'height_min_value': 4150,
                 'height_max_value': 6150,
                 'blacklisted_vars': ['Ngm'],
                 'les_dataset': None,
@@ -681,7 +743,9 @@ NOV11_ALTOCU = {'name': 'nov11_altocu', 'start_time': 91, 'end_time': 150, 'heig
                 'wrf_file': None,
                 'var_groups': [VariableGroupBase, VariableGroupLiquidMP, VariableGroupIceMP]}
 
-RICO = {'name': 'rico', 'start_time': 4201, 'end_time': 4320, 'height_min_value': 0, 'height_max_value': 4000,
+RICO = {'name': 'rico',
+        'description': "Copied from plotgen: CLUBB and SAM use Khairoutdinov-Kogan microphysics",
+        'start_time': 4201, 'end_time': 4320, 'height_min_value': 0, 'height_max_value': 4000,
 
         'blacklisted_vars': [],
         'les_dataset': SAM_BENCHMARK_OUTPUT_ROOT + "/JULY_2017/RICO_256x256x100_drizzle/RICO_256x256x100_drizzle.nc",
@@ -699,7 +763,9 @@ RICO = {'name': 'rico', 'start_time': 4201, 'end_time': 4320, 'height_min_value'
         'var_groups': [VariableGroupBase, VariableGroupLiquidMP, VariableGroupWs, VariableGroupCorrelations,
                        VariableGroupKKMP]}
 
-RICO_SILHS = {'name': 'rico_silhs', 'start_time': 4201, 'end_time': 4320, 'height_min_value': 0,
+RICO_SILHS = {'name': 'rico_silhs',
+              'description': "",
+              'start_time': 4201, 'end_time': 4320, 'height_min_value': 0,
               'height_max_value': 4500,
 
               'blacklisted_vars': ['wpNrp'],
@@ -719,7 +785,11 @@ RICO_SILHS = {'name': 'rico_silhs', 'start_time': 4201, 'end_time': 4320, 'heigh
               'var_groups': [VariableGroupBase, VariableGroupLiquidMP, VariableGroupWs, VariableGroupCorrelations,
                              VariableGroupKKMP]}
 
-TWP_ICE = {'name': 'twp_ice', 'start_time': 1, 'end_time': 9900, 'height_min_value': 0, 'height_max_value': 19000,
+TWP_ICE = {'name': 'twp_ice',
+           'description': "Copied from plotgen: Both vertical and horizontal fluxes applied to THLM and RTM for LES. "
+                          "LES nudged U, V, RTM and THLM toward observed values. Forcings for LES derived from 10mb "
+                          "forcing data.",
+           'start_time': 1, 'end_time': 9900, 'height_min_value': 0, 'height_max_value': 19000,
 
            'blacklisted_vars': ['rtp3', 'Skrt_zt', 'Skthl_zt', 'rtpthvp', 'thlpthvp', 'wprrp', 'wpNrp'],
            'les_dataset': SAM_BENCHMARK_OUTPUT_ROOT + "/TWP_ICE_r1315_128x128x128_1km_Morrison/TWP_ICE.nc",
@@ -735,7 +805,9 @@ TWP_ICE = {'name': 'twp_ice', 'start_time': 1, 'end_time': 9900, 'height_min_val
            'wrf_file': None,
            'var_groups': [VariableGroupBase, VariableGroupLiquidMP, VariableGroupIceMP]}
 
-WANGARA = {'name': 'wangara', 'start_time': 181, 'end_time': 240, 'height_min_value': 0, 'height_max_value': 1900,
+WANGARA = {'name': 'wangara',
+           'description': "",
+           'start_time': 181, 'end_time': 240, 'height_min_value': 0, 'height_max_value': 1900,
 
            'blacklisted_vars': ['Ngm'],
            'les_dataset': None,
@@ -767,7 +839,7 @@ ALL_CASES = [ARM, ARM_97, ASTEX_A209, ATEX,
              DYCOMS2_RF01, DYCOMS2_RF01_FIXED_SST, DYCOMS2_RF02_DO, DYCOMS2_RF02_DS, DYCOMS2_RF02_DS_RESTART,
              DYCOMS2_RF02_ND, DYCOMS2_RF02_SO,
              FIRE,
-             GABLS2, GABLS2_NIGHTLY, GABLS3, GABLS3_NIGHT,
+             GABLS2, GABLS2_NIGHTLY, GABLS3, GABLS3_NIGHTLY,
              # IOP,
              JUN25_ALTOCU,
              LBA,
@@ -779,5 +851,5 @@ ALL_CASES = [ARM, ARM_97, ASTEX_A209, ATEX,
              ]
 
 # If uncommented, this line will override the real ALL_CASES given above, forcing pyplotgen to only plot some cases.
-# ALL_CASES = [DYCOMS2_RF02_DS_RESTART]
+ALL_CASES = [ARM ]
 # ALL_CASES = ALL_CASES[:7]

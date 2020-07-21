@@ -139,6 +139,16 @@ def get_start_end_minutes(casename):
         if case['name'] == casename:
             return case['start_time'], case['end_time']
 
+def get_description(casename):
+    """
+    Get the description from the case definintion
+    :param casename: Name of the case as defined by the 'name' parameter of it's entry in ALL_CASES in Case_definitions.py
+    :return: The case's description text
+    """
+    for case in Case_definitions.ALL_CASES:
+        if case['name'] == casename:
+            return case['description']
+
 
 def WriteGalleryPage(page):
     """Writes a gallery page for jpgs in path.
@@ -154,6 +164,8 @@ def WriteGalleryPage(page):
         start_time,end_time = get_start_end_minutes(page)
         case_title = page + " minutes " + str(start_time) + "-" + str(end_time)
         plots_file.write(static.a_tag % (page, case_title))
+        case_description = get_description(page)
+        plots_file.write(static.case_description % (case_description))
 
         # Write case_setup.txt links
         for setup_file in glob.glob(page+'/*.txt'):
