@@ -3844,9 +3844,6 @@ module clubb_driver
 
     implicit none
 
-    logical, parameter :: &
-      l_implemented = .false.
-
     ! Input Variables
     logical, intent(in) :: &
       l_input_fields

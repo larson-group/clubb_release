@@ -302,9 +302,6 @@ module est_kessler_microphys_module
     logical, parameter :: &
       l_cloud_weighted_averaging = .false.
 
-    real(kind=core_rknd), parameter :: &
-      r_crit_g_kg = 0.2_core_rknd
-
     ! Input Variables
 
     integer, intent(in) :: &

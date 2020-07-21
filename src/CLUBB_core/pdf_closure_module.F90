@@ -401,9 +401,6 @@ module pdf_closure_module
 
     integer :: k, i, hm_idx   ! Indices
 
-    ! Value of chi at saturation for liquid water; always 0
-    real ( kind = core_rknd ), parameter :: chi_at_liq_sat = 0.0_core_rknd
-
 #ifdef GFDL
     real ( kind = core_rknd ), parameter :: t1_combined = 273.16, &
                                             t2_combined = 268.16, &
