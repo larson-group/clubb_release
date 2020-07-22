@@ -793,7 +793,8 @@ module precipitation_fraction
        if ( any( hydromet(k,:) >= hydromet_tol(:) ) ) then
 
           ! There are hydrometeors found at this grid level.
-          if ( abs(upsilon_precip_frac_rat - one) < abs(upsilon_precip_frac_rat + one) / 2 * eps ) then
+          if ( abs(upsilon_precip_frac_rat - one) < &
+                abs(upsilon_precip_frac_rat + one) / 2 * eps ) then
 
              if ( precip_frac(k) <= mixt_frac(k) ) then
 
@@ -850,7 +851,8 @@ module precipitation_fraction
              endif ! precip_frac(k) <= mixt_frac(k)
 
 
-          elseif ( abs(upsilon_precip_frac_rat - zero) < abs(upsilon_precip_frac_rat + zero) / 2 * eps ) then
+          elseif ( abs(upsilon_precip_frac_rat - zero) < &
+                abs(upsilon_precip_frac_rat + zero) / 2 * eps ) then
 
              if ( precip_frac(k) <= ( one - mixt_frac(k) ) ) then
 

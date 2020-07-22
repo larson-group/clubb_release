@@ -872,8 +872,10 @@ module error
             day /= netcdf_file%day &
             .or. month /= netcdf_file%month &
             .or. year /= netcdf_file%year &
-            .or. abs(time_initial - netcdf_file%time) > abs(time_initial + netcdf_file%time) / 2 * eps &
-            .or. abs(stats_tout - netcdf_file%dtwrite) > abs(stats_tout + netcdf_file%dtwrite) / 2 * eps ) then
+            .or. abs(time_initial - netcdf_file%time) > &
+                abs(time_initial + netcdf_file%time) / 2 * eps &
+            .or. abs(stats_tout - netcdf_file%dtwrite) > &
+                abs(stats_tout + netcdf_file%dtwrite) / 2 * eps ) then
               write(*,*) "Error: The CLUBB run and LES run do not start at the same time &
                   &or have different stat output intervals. Here are the currently set &
                   &start times and stat output intervals."

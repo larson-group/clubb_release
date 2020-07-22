@@ -496,7 +496,8 @@ module bugsrad_driver
     end if ! clubb_at_least_debug_level( 1 )
 
     do k = 1, size( cos_solar_zen_values )
-      if ( abs(cos_solar_zen_values(k) - (-999._core_rknd)) < abs(cos_solar_zen_values(k) + (-999._core_rknd)) / 2 * eps ) then
+      if ( abs(cos_solar_zen_values(k) - (-999._core_rknd)) &
+        < abs(cos_solar_zen_values(k) + (-999._core_rknd)) / 2 * eps ) then
         exit
       else
         nparam = k
