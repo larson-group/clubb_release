@@ -9,6 +9,8 @@ module time_dependent_input
 !    None
 !--------------------------------------------------------------------------------------------------
 
+  use constants_clubb, only: eps
+
   use input_reader, only: &
     two_dim_read_var, &
     one_dim_read_var
@@ -583,7 +585,7 @@ module time_dependent_input
       ! Check to see if temp_array is an actual profile or a dummy profile
       ! If it is a dummy profile we dont want it to apply itself as it may
       ! overwrite legitimate information from another source.
-      if( .not. any( temp_array == -999.9_core_rknd ) ) then
+      if( .not. any( abs(temp_array - (-999.9_core_rknd)) < abs(temp_array + (-999.9_core_rknd)) / 2 * eps ) ) then
         select case (t_dependent_forcing_data(i)%name)
         case(temperature_f_name, theta_f_name, thetal_f_name)
 

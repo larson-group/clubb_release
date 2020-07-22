@@ -3113,7 +3113,8 @@ module advance_clubb_core_module
           setup_parameters_model ! Procedure
 
       use constants_clubb, only:  &
-          fstderr  ! Variable(s)
+          fstderr, &  ! Variable(s)
+          eps
 
       use error_code, only: &
           clubb_at_least_debug_level,  & ! Procedures
@@ -3254,7 +3255,8 @@ module advance_clubb_core_module
       ! Sanity check
       if ( clubb_at_least_debug_level( 0 ) ) then
 
-        if ( l_damp_wp2_using_em .and. (params(iC1) /= params(iC14) .or. &
+        if ( l_damp_wp2_using_em .and. &
+           (abs(params(iC1) - params(iC14)) > abs(params(iC1) + params(iC14)) / 2 * eps .or. &
              l_stability_correct_tau_zm) ) then
           write(fstderr,*) "l_damp_wp2_using_em requires C1=C14 and l_stability_correct_tau_zm = F"
           write(fstderr,*) "Fatal error in setup_clubb_core"

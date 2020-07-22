@@ -42,6 +42,8 @@ module enhanced_simann
     !   None
     !-----------------------------------------------------------------------------
 
+        use constants_clubb, only: eps
+
         use clubb_precision, only: &
           core_rknd ! Variable(s)
 
@@ -195,7 +197,7 @@ module enhanced_simann
             end do
 
             ! use all at first
-            where( attempted == 0._core_rknd ) xpartition = .true.
+            where( abs(attempted) < eps) xpartition = .true.
 
             ! if none selected, select all
             if ( .not. any( xpartition(:) ) ) xpartition(:) = .true.

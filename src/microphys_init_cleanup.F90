@@ -109,7 +109,8 @@ module microphys_init_cleanup
 
     use constants_clubb, only: &
         cm3_per_m3, &
-        zero
+        zero,           &
+        eps
 
     ! The version of the Morrison 2005 microphysics that is in SAM.
     use module_mp_GRAUPEL, only: &
@@ -909,7 +910,7 @@ module microphys_init_cleanup
     ! hmp2_ip_on_hmm2_ip * omicron.  These printed arrays should be used as a
     ! GUIDE.  I still recommend using the GrADS or netCDF output file.
     if ( clubb_at_least_debug_level( 1 ) &
-         .and. zeta_vrnce_rat == zero &
+         .and. abs(zeta_vrnce_rat) < eps &
          .and. trim( microphys_scheme ) /= "none" ) then
 
        ! Allocate variables.

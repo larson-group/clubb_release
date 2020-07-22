@@ -33,6 +33,8 @@ module error
 
   use mt95, only: genrand_real ! Constant
 
+  use constants_clubb, only: eps
+
   use clubb_precision, only: &
     core_rknd ! Variable(s)
 
@@ -870,8 +872,8 @@ module error
             day /= netcdf_file%day &
             .or. month /= netcdf_file%month &
             .or. year /= netcdf_file%year &
-            .or. time_initial /= netcdf_file%time &
-            .or. stats_tout /= netcdf_file%dtwrite ) then
+            .or. abs(time_initial - netcdf_file%time) > abs(time_initial + netcdf_file%time) / 2 * eps &
+            .or. abs(stats_tout - netcdf_file%dtwrite) > abs(stats_tout + netcdf_file%dtwrite) / 2 * eps ) then
               write(*,*) "Error: The CLUBB run and LES run do not start at the same time &
                   &or have different stat output intervals. Here are the currently set &
                   &start times and stat output intervals."
@@ -952,7 +954,7 @@ module error
         les_minmax = maxval( les_zl(z_i(c_run):z_f(c_run)) ) &
           - minval( les_zl(z_i(c_run):z_f(c_run)) )
 
-        if ( les_minmax == 0.0_core_rknd ) then
+        if ( abs(les_minmax) < eps) then
           stop "An LES variable was 0 from z_i to z_f."
         end if
 

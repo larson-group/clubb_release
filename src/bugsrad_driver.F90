@@ -39,7 +39,8 @@ module bugsrad_driver
 !-------------------------------------------------------------------------------
 
     use constants_clubb, only: fstderr, grav, Cp, cloud_frac_min, &
-                               pascal_per_mb, g_per_kg ! Variable(s)
+                               pascal_per_mb, g_per_kg, & ! Variable(s)
+                                eps
 
     use clubb_precision, only: dp, core_rknd ! Variable(s)
 
@@ -365,6 +366,8 @@ module bugsrad_driver
     use text_writer, only: &
       write_text   ! Used to write radiation settings to setup.txt file
 
+    use constants_clubb, only: eps
+
     use clubb_precision, only: &
       dp, & ! double precision
       core_rknd
@@ -494,7 +497,7 @@ module bugsrad_driver
     end if ! clubb_at_least_debug_level( 1 )
 
     do k = 1, size( cos_solar_zen_values )
-      if ( cos_solar_zen_values(k) == -999._core_rknd ) then
+      if ( abs(cos_solar_zen_values(k) - (-999._core_rknd)) < abs(cos_solar_zen_values(k) + (-999._core_rknd)) / 2 * eps ) then
         exit
       else
         nparam = k
