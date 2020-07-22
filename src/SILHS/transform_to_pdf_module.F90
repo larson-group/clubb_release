@@ -37,8 +37,7 @@ module transform_to_pdf_module
 
     use constants_clubb, only:  &
       one, &
-      zero, &
-      eps
+      zero
 
     use clubb_precision, only: &
       core_rknd

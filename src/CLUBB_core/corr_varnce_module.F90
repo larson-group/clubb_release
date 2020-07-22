@@ -731,7 +731,6 @@ module corr_varnce_module
 
     use constants_clubb, only: &
       fstderr, &  ! Constant(s)
-      zero,     &
       eps
 
     implicit none
