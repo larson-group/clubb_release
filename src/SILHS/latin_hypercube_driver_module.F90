@@ -702,13 +702,15 @@ module latin_hypercube_driver_module
 
         ! Do a straight Monte Carlo sample without LH or importance sampling.
         
-        !$acc parallel loop collapse(3) default(present) async(1)
-        do p=1, pdf_dim+d_uniform_extra
-          do sample=1, num_samples
-            do i = 1, ngrdcol
-              X_u_all_levs(i,k_lh_start(i),sample,p) = max( single_prec_thresh, &
-                                                       min( one - single_prec_thresh, &
-                                                            rand_pool(i,k_lh_start(i),sample,p) ) )
+        !$acc parallel loop collapse(4) default(present) async(1)
+        do p = 1, pdf_dim+d_uniform_extra
+          do sample = 1, num_samples
+            do k = 1, nz
+              do i = 1, ngrdcol
+                X_u_all_levs(i,k,sample,p) = max( single_prec_thresh, &
+                                                min( one - single_prec_thresh, &
+                                                     rand_pool(i,k,sample,p) ) )
+              end do
             end do
           end do
         end do
@@ -807,8 +809,15 @@ module latin_hypercube_driver_module
           end do
         end do
 
-        ! Importance sampling is not performed, so all sample points have the same weight!!
-        lh_sample_point_weights(:,:,:)  =  one
+        !$acc parallel loop collapse(3) default(present) async(1)
+        do sample = 1, num_samples
+          do k = 1, nz
+            do i = 1, ngrdcol
+              ! Importance sampling is not performed, so all sample points have the same weight!!
+              lh_sample_point_weights(i,k,sample) = one
+            end do
+          end do
+        end do
 
       else ! .not. l_lh_straight_mc
 
