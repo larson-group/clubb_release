@@ -620,16 +620,16 @@ module coamps_microphys_driver_module
       ex7g = 0.31 * gmbov2g ! Known magic number
       ex4  = aprpr/visair
       ex4g = abar/visair
-      ex5  = real(pi)*aprpr*snzero*gmbp3/4.0
+      ex5  = real(pi*aprpr*snzero*gmbp3/4.0)
 
 !     Lf     = Ls - Lv   ! Latent heat of fusion (occurs in constants)
       hlvoka = real(Lv)/therco
       hkaolf = therco/real(Lf)
       hlsoka = real(Ls)/therco
-      hlvorv = real(Lv/Rv)
-      hlsorv = real(Ls/Rv)
+      hlvorv = real(Lv)/real(Rv)
+      hlsorv = real(Ls)/real(Rv)
       rvochi = real(Rv)/difvap
-      cpor   = real(Cp / Rd)
+      cpor   = real(Cp/Rd)
       lfocp  = real(Lf/Cp)
       lvocp  = real(Lv/Cp)
       lsocp  = real(Ls/Cp)
@@ -698,9 +698,9 @@ module coamps_microphys_driver_module
         icomp(i) = 1
       end do
 
-      sloper = real(pi) * rholiq * rnzero * 1.0e-8
-      slopes = real(pi) * rhosno * snzero * 1.0e-8
-      slopeg = real(pi) * rhogrp * gnzero * 1.0e-8
+      sloper = real(pi * rholiq * rnzero * 1.0e-8)
+      slopes = real(pi * rhosno * snzero * 1.0e-8)
+      slopeg = real(pi * rhogrp * gnzero * 1.0e-8)
 
 ! Michael Falk, 17 Jul 2007, is initializing fallspeed arrays
       do k=1,kk+1
