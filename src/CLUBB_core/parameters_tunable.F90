@@ -1519,7 +1519,7 @@ module parameters_tunable
     ! Determine how many variables are being changed
     do i = 1, nparams, 1
 
-      if ( abs(param_max(i)) < eps) then
+      if ( abs(param_max(i)) > eps) then
         ndim = ndim + 1   ! Increase the total
         nindex(ndim) = i  ! Set the next array index
       endif
