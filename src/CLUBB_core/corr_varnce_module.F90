@@ -731,7 +731,7 @@ module corr_varnce_module
 
     use constants_clubb, only: &
       fstderr, &  ! Constant(s)
-      zero
+      eps
 
     implicit none
 
@@ -792,8 +792,8 @@ module corr_varnce_module
       if ( .not. l_fix_w_chi_eta_correlations .and. iiPDF_Ncn > 0 ) then
         l_warning = .false.
         do i = 1, pdf_dim
-          if ( ( corr_array_n_cloud(i,iiPDF_Ncn) /= zero .or.  &
-                 corr_array_n_below(i,iiPDF_Ncn) /= zero ) .and. &
+          if ( ( (abs(corr_array_n_cloud(i,iiPDF_Ncn)) > eps) .or.  &
+                 (abs(corr_array_n_below(i,iiPDF_Ncn))) > eps) .and. &
                i /= iiPDF_Ncn ) then
             l_warning = .true.
           end if

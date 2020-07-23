@@ -317,7 +317,8 @@ module transform_to_pdf_module
       sqrt_2pi_dp, &
       two_dp,      &
       one_dp,      &
-      one_half_dp
+      one_half_dp, &
+      eps
 
 #ifdef CLUBB_CAM
     ! Some compilers cannot handle 1.0/0.0, so in CAM we import their
@@ -440,12 +441,12 @@ module transform_to_pdf_module
 !  Case when P = 0: z = -inf, to create inf z =-1.0.
 !     to create NaN's inf*inf.
     z1 = 0._dp
-    if (p == 0._dp) then
+    if (abs(p) < eps) then
       z = (-1._dp)/z1
     end if
 
 ! Case when P = 1:, z=inf
-    if(p == 1._dp)then
+    if(abs(p - 1._dp) < abs(p + 1._dp) / 2 * eps)then
       z = 1._dp/z1
     end if
 

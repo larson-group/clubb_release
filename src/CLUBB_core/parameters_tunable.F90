@@ -22,6 +22,8 @@ module parameters_tunable
   !   module should be declared threadprivate because of the CLUBB tuner.
   !-----------------------------------------------------------------------
 
+  use constants_clubb, only: eps ! Epsilon
+
   use parameter_indices, only: nparams ! Variable(s)
 
   use grid_class, only: gr ! Variable(s)
@@ -701,7 +703,7 @@ module parameters_tunable
        ! the C6rt parameters must be set equal to the C6thl parameters.
        ! Otherwise, the wpthlp pr1 term will be calculated inconsistently.
 
-       if ( C6rt /= C6thl ) then
+       if ( abs(C6rt - C6thl) > abs(C6rt + C6thl) / 2 * eps ) then
           write(fstderr,*) "C6rt = ", C6rt
           write(fstderr,*) "C6thl = ", C6thl
           write(fstderr,*) "C6rt and C6thl must be equal when" &
@@ -709,7 +711,7 @@ module parameters_tunable
           err_code = clubb_fatal_error
        endif ! C6rt /= C6thl
 
-       if ( C6rtb /= C6thlb ) then
+       if ( abs(C6rtb - C6thlb) > abs(C6rtb + C6thlb) / 2 * eps ) then
           write(fstderr,*) "C6rtb = ", C6rtb
           write(fstderr,*) "C6thlb = ", C6thlb
           write(fstderr,*) "C6rtb and C6thlb must be equal when" &
@@ -717,7 +719,7 @@ module parameters_tunable
           err_code = clubb_fatal_error
        endif ! C6rtb /= C6thlb
 
-       if ( C6rtc /= C6thlc ) then
+       if ( abs(C6rtc - C6thlc) > abs(C6rtc + C6thlc) / 2 * eps ) then
           write(fstderr,*) "C6rtc = ", C6rtc
           write(fstderr,*) "C6thlc = ", C6thlc
           write(fstderr,*) "C6rtc and C6thlc must be equal when" &
@@ -725,7 +727,7 @@ module parameters_tunable
           err_code = clubb_fatal_error
        endif ! C6rtc /= C6thlc
 
-       if ( C6rt_Lscale0 /= C6thl_Lscale0 ) then
+       if ( abs(C6rt_Lscale0 - C6thl_Lscale0) > abs(C6rt_Lscale0 + C6thl_Lscale0) / 2 * eps ) then
           write(fstderr,*) "C6rt_Lscale0 = ", C6rt_Lscale0
           write(fstderr,*) "C6thl_Lscale0 = ", C6thl_Lscale0
           write(fstderr,*) "C6rt_Lscale0 and C6thl_Lscale0 must be equal" &
@@ -1387,7 +1389,7 @@ module parameters_tunable
     l_error = .false.
 
     do i = 1, nparams
-      if ( params(i) == init_value ) then
+      if ( abs(params(i)-init_value) < abs(params(i)+init_value) / 2 * eps) then
         write(fstderr,*) "Tuning parameter "//trim( params_list(i) )// &
           " was missing from "//trim( filename )
         l_error = .true.
@@ -1501,7 +1503,7 @@ module parameters_tunable
     l_error = .false.
 
     do i = 1, nparams
-      if ( param_max(i) == init_value ) then
+      if ( abs(param_max(i)-init_value) < abs(param_max(i)+init_value) / 2 * eps) then
         write(fstderr,*) "A max value for parameter "//trim( params_list(i) )// &
           " was missing from "//trim( filename )
         l_error = .true.
@@ -1517,7 +1519,7 @@ module parameters_tunable
     ! Determine how many variables are being changed
     do i = 1, nparams, 1
 
-      if ( param_max(i) /= 0.0_core_rknd ) then
+      if ( abs(param_max(i)) > eps) then
         ndim = ndim + 1   ! Increase the total
         nindex(ndim) = i  ! Set the next array index
       endif

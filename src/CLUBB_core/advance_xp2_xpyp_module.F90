@@ -94,7 +94,8 @@ module advance_xp2_xpyp_module
         two_thirds, &
         one_half, &
         one_third, &
-        zero
+        zero,   &
+        eps
 
     use model_flags, only: & 
         iiPDF_ADG1,       & ! integer constants
@@ -467,7 +468,8 @@ module advance_xp2_xpyp_module
                              lhs_ma(:,:)                ) ! Out
                              
                              
-    if ( ( C2rt == C2thl .and. C2rt == C2rtthl ) .and. &
+    if ( ( abs(C2rt - C2thl) < abs(C2rt + C2thl) / 2 * eps .and. &
+         abs(C2rt - C2rtthl) < abs(C2rt + C2rtthl) / 2 * eps ) .and. &
          ( l_explicit_turbulent_adv_xpyp .or. &
            .not. l_explicit_turbulent_adv_xpyp .and. iiPDF_type == iiPDF_ADG1 ) ) then
            
