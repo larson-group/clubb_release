@@ -29,7 +29,8 @@ module latin_hypercube_driver_module
              ( iter, pdf_dim, num_samples, sequence_length, nz, ngrdcol, & ! intent(in)
                l_calc_weights_all_levs_itime, &                            ! intent(in)
                pdf_params, delta_zm, rcm, Lscale, &                        ! intent(in)
-               rho_ds_zt, mu1, mu2, sigma1, sigma2, &                      ! intent(in)
+!              rho_ds_zt, &
+               mu1, mu2, sigma1, sigma2, &                                 ! intent(in)
                corr_cholesky_mtx_1, corr_cholesky_mtx_2, &                 ! intent(in)
                hydromet_pdf_params, silhs_config_flags, &                  ! intent(in)
                l_uv_nudge, &                                               ! intent(in)
@@ -122,8 +123,8 @@ module latin_hypercube_driver_module
     real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: &
       Lscale       ! Turbulent mixing length            [m]
 
-    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: &
-      rho_ds_zt    ! Dry, static density on thermo. levels    [kg/m^3]
+!   real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: &
+!     rho_ds_zt    ! Dry, static density on thermo. levels    [kg/m^3]
 
     logical, intent(in) :: &
       l_calc_weights_all_levs_itime ! determines if vertically correlated sample points are needed

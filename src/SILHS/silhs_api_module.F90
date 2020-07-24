@@ -272,7 +272,8 @@ contains
       iter, pdf_dim, num_samples, sequence_length, nz, 1, & ! In
       l_calc_weights_all_levs_itime, & ! In
       pdf_params_col, delta_zm_col, rcm_col, Lscale_col, & ! In
-      rho_ds_zt_col, mu1_col, mu2_col, sigma1_col, sigma2_col, & ! In
+!     rho_ds_zt_col, &
+      mu1_col, mu2_col, sigma1_col, sigma2_col, & ! In
       corr_cholesky_mtx_1_col, corr_cholesky_mtx_2_col, & ! In
       hydromet_pdf_params_col, silhs_config_flags, & ! In
       l_uv_nudge, & ! In
@@ -292,7 +293,8 @@ contains
     iter, pdf_dim, num_samples, sequence_length, nz, ngrdcol, & ! In
     l_calc_weights_all_levs_itime, &
     pdf_params, delta_zm, rcm, Lscale, & ! In
-    rho_ds_zt, mu1, mu2, sigma1, sigma2, & ! In
+!   rho_ds_zt, &
+    mu1, mu2, sigma1, sigma2, & ! In
     corr_cholesky_mtx_1, corr_cholesky_mtx_2, & ! In
     hydromet_pdf_params, silhs_config_flags, & ! In
     l_uv_nudge, & ! In
@@ -334,8 +336,8 @@ contains
       delta_zm, &  ! Difference in moment. altitudes    [m]
       rcm          ! Liquid water mixing ratio          [kg/kg]
 
-    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: &
-      rho_ds_zt    ! Dry, static density on thermo. levels    [kg/m^3]
+!   real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: &
+!     rho_ds_zt    ! Dry, static density on thermo. levels    [kg/m^3]
 
     real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: &
       Lscale       ! Turbulent Mixing Length  [m]
@@ -384,7 +386,8 @@ contains
       iter, pdf_dim, num_samples, sequence_length, nz, ngrdcol, & ! In
       l_calc_weights_all_levs_itime, & ! In
       pdf_params, delta_zm, rcm, Lscale, & ! In
-      rho_ds_zt, mu1, mu2, sigma1, sigma2, & ! In
+!     rho_ds_zt, &
+      mu1, mu2, sigma1, sigma2, & ! In
       corr_cholesky_mtx_1, corr_cholesky_mtx_2, & ! In
       hydromet_pdf_params, silhs_config_flags, & ! In
       l_uv_nudge, & ! In
