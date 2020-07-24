@@ -1865,7 +1865,7 @@ module advance_xp2_xpyp_module
     
     logical :: l_single_lhs_solve
 
-    character(len=10) :: &
+    character(len=20) :: &
       solve_type_str ! solve_type in string format for debug output purposes
 
     ! --- Begin Code ---
