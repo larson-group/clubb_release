@@ -283,7 +283,8 @@ module numerical_check
                thv_ds_zm, thv_ds_zt, wpthlp_sfc, wprtp_sfc, upwp_sfc,       & ! intent(in)
                vpwp_sfc, um, upwp, vm, vpwp, up2, vp2,                      & ! intent(in)
                rtm, wprtp, thlm, wpthlp, wp2, wp3,                          & ! intent(in)
-               rtp2, thlp2, rtpthlp, rcm,                                   & ! intent(in)
+               rtp2, thlp2, rtpthlp,                                        & ! intent(in)
+!              rcm,                                                         &
                prefix,                                                      & ! intent(in)
                wpsclrp_sfc, wpedsclrp_sfc, sclrm, wpsclrp, sclrp2,          & ! intent(in)
                sclrprtp, sclrpthlp, sclrm_forcing, edsclrm, edsclrm_forcing ) ! intent(in)
@@ -341,8 +342,8 @@ module numerical_check
       invrs_rho_ds_zm, & ! Inv. dry, static density @ momentum levs. [m^3/kg]
       invrs_rho_ds_zt, & ! Inv. dry, static density @ thermo. levs.  [m^3/kg]
       thv_ds_zm,       & ! Dry, base-state theta_v on momentum levs. [K]
-      thv_ds_zt,       & ! Dry, base-state theta_v on thermo. levs.  [K]
-      rcm                ! Cloud water mixing ratio  [kg/kg]
+      thv_ds_zt!,      & ! Dry, base-state theta_v on thermo. levs.  [K]
+!     rcm                ! Cloud water mixing ratio  [kg/kg] - Unused
 
     real( kind = core_rknd ), intent(in) ::  & 
       wpthlp_sfc,   & ! w' theta_l' at surface.   [(m K)/s]

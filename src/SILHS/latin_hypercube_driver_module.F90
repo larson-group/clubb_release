@@ -29,7 +29,8 @@ module latin_hypercube_driver_module
              ( iter, pdf_dim, num_samples, sequence_length, nz, ngrdcol, & ! intent(in)
                l_calc_weights_all_levs_itime, &                            ! intent(in)
                pdf_params, delta_zm, rcm, Lscale, &                        ! intent(in)
-               rho_ds_zt, mu1, mu2, sigma1, sigma2, &                      ! intent(in)
+!              rho_ds_zt, &
+               mu1, mu2, sigma1, sigma2, &                                 ! intent(in)
                corr_cholesky_mtx_1, corr_cholesky_mtx_2, &                 ! intent(in)
                hydromet_pdf_params, silhs_config_flags, &                  ! intent(in)
                l_uv_nudge, &                                               ! intent(in)
@@ -122,8 +123,8 @@ module latin_hypercube_driver_module
     real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: &
       Lscale       ! Turbulent mixing length            [m]
 
-    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: &
-      rho_ds_zt    ! Dry, static density on thermo. levels    [kg/m^3]
+!   real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: &
+!     rho_ds_zt    ! Dry, static density on thermo. levels    [kg/m^3]
 
     logical, intent(in) :: &
       l_calc_weights_all_levs_itime ! determines if vertically correlated sample points are needed
@@ -702,13 +703,15 @@ module latin_hypercube_driver_module
 
         ! Do a straight Monte Carlo sample without LH or importance sampling.
         
-        !$acc parallel loop collapse(3) default(present) async(1)
-        do p=1, pdf_dim+d_uniform_extra
-          do sample=1, num_samples
-            do i = 1, ngrdcol
-              X_u_all_levs(i,k_lh_start(i),sample,p) = max( single_prec_thresh, &
-                                                       min( one - single_prec_thresh, &
-                                                            rand_pool(i,k_lh_start(i),sample,p) ) )
+        !$acc parallel loop collapse(4) default(present) async(1)
+        do p = 1, pdf_dim+d_uniform_extra
+          do sample = 1, num_samples
+            do k = 1, nz
+              do i = 1, ngrdcol
+                X_u_all_levs(i,k,sample,p) = max( single_prec_thresh, &
+                                                min( one - single_prec_thresh, &
+                                                     rand_pool(i,k,sample,p) ) )
+              end do
             end do
           end do
         end do
@@ -807,8 +810,15 @@ module latin_hypercube_driver_module
           end do
         end do
 
-        ! Importance sampling is not performed, so all sample points have the same weight!!
-        lh_sample_point_weights(:,:,:)  =  one
+        !$acc parallel loop collapse(3) default(present) async(1)
+        do sample = 1, num_samples
+          do k = 1, nz
+            do i = 1, ngrdcol
+              ! Importance sampling is not performed, so all sample points have the same weight!!
+              lh_sample_point_weights(i,k,sample) = one
+            end do
+          end do
+        end do
 
       else ! .not. l_lh_straight_mc
 

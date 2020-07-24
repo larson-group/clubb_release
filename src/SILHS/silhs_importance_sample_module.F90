@@ -393,8 +393,7 @@ module silhs_importance_sample_module
     use clubb_precision, only: &
       core_rknd     ! Constant
 
-    use constants_clubb, only: &
-      zero, &       ! Constant
+    use constants_clubb, only: & ! Constant
       unused_var
 
     implicit none
@@ -419,7 +418,7 @@ module silhs_importance_sample_module
 
     do icategory=1, num_importance_categories
 
-      if ( category_prescribed_probs(icategory) == zero ) then
+      if ( abs(category_prescribed_probs(icategory)) < epsilon(category_sample_weights) ) then
         ! If a category has no probability of being sampled, then its weight is irrevelant.
         category_sample_weights(icategory) = unused_var
       else

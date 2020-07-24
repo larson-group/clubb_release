@@ -1060,7 +1060,7 @@ module pdf_closure_module
                                pdf_params%varnce_w_1, pdf_params%chi_1,             & ! In
                                pdf_params%stdev_chi_1, pdf_params%stdev_eta_1,      & ! In
                                pdf_params%corr_w_chi_1, pdf_params%corr_chi_eta_1,  & ! In
-                               corr_u_w_1, corr_v_w_1,                              & ! In
+!                              corr_u_w_1, corr_v_w_1,                              & ! In
                                pdf_params%crt_1, pdf_params%cthl_1,                 & ! In
                                pdf_params%rc_1, pdf_params%cloud_frac_1, iiPDF_type,& ! In
                                wprcp_contrib_comp_1, wp2rcp_contrib_comp_1,         & ! Out
@@ -1073,7 +1073,7 @@ module pdf_closure_module
                                pdf_params%varnce_w_2, pdf_params%chi_2,             & ! In
                                pdf_params%stdev_chi_2, pdf_params%stdev_eta_2,      & ! In
                                pdf_params%corr_w_chi_2, pdf_params%corr_chi_eta_2,  & ! In
-                               corr_u_w_2, corr_v_w_2,                              & ! In
+!                              corr_u_w_2, corr_v_w_2,                              & ! In
                                pdf_params%crt_2, pdf_params%cthl_2,                 & ! In
                                pdf_params%rc_2, pdf_params%cloud_frac_2, iiPDF_type,& ! In
                                wprcp_contrib_comp_2, wp2rcp_contrib_comp_2,         & ! Out
@@ -2337,7 +2337,7 @@ module pdf_closure_module
                                    varnce_w_i, chi_i,                               & ! In
                                    stdev_chi_i, stdev_eta_i,                        & ! In
                                    corr_w_chi_i, corr_chi_eta_i,                    & ! In
-                                   corr_u_w_i, corr_v_w_i,                          & ! In
+!                                  corr_u_w_i, corr_v_w_i,                          & ! In
                                    crt_i, cthl_i,                                   & ! In
                                    rc_i, cloud_frac_i, iiPDF_type,                  & ! In
                                    wprcp_contrib_comp_i, wp2rcp_contrib_comp_i,     & ! Out
@@ -2733,8 +2733,8 @@ module pdf_closure_module
       stdev_eta_i,    & ! Standard deviation of eta (ith PDF comp.)    [kg/kg]
       corr_w_chi_i,   & ! Correlation of w and chi (ith PDF component) [-]
       corr_chi_eta_i, & ! Correlation of chi and eta (ith PDF comp.)   [-]
-      corr_u_w_i,     & ! Correlation of u and w (ith PDF component)   [-]
-      corr_v_w_i,     & ! Correlation of v and w (ith PDF component)   [-]
+!     corr_u_w_i,     & ! Correlation of u and w (ith PDF component)   [-]
+!     corr_v_w_i,     & ! Correlation of v and w (ith PDF component)   [-]
       crt_i,          & ! Coef. on rt in chi/eta eqns. (ith PDF comp.) [-]
       cthl_i,         & ! Coef. on thl: chi/eta eqns. (ith PDF comp.)  [kg/kg/K]
       rc_i,           & ! Mean of rc (ith PDF component)               [kg/kg]
