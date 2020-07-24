@@ -673,7 +673,7 @@ module coamps_microphys_driver_module
         if ( .not. l_ice_microphys ) then
           sat = qv3_flip(1,1,k)/qsatv3d_flip(1,1,k)-1.0
         else
-          if ( temp3d_flip(1,1,k) >= real(T_freeze_K) ) then
+          if ( temp3d_flip(1,1,k) >= T_freeze_K ) then
             sat = qv3_flip(1,1,k)/qsatv3d_flip(1,1,k)-1.0
           else
             sat = qv3_flip(1,1,k)/qsati3d_flip(1,1,k)-1.0
