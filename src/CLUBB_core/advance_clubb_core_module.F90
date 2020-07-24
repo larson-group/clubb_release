@@ -751,7 +751,6 @@ module advance_clubb_core_module
        invrs_tau_wp2_zm,             & ! One divided by tau_wp2                       [s^-1]
        invrs_tau_wpxp_zm,            & ! One divided by tau_wpxp                      [s^-1]
        invrs_tau_wp3_zm,             & ! One divided by tau_wp3                       [s^-1]
-       invrs_tau_N2_zm,              & ! One divided by tau with stability effects    [s^-1]
        invrs_tau_no_N2_zm,           & ! One divided by tau (without N2) on zm levels [s^-1] 
        ustar,                        & ! Friction velocity  [m/s]
        tau_no_N2_zm,                 & ! Tau without Brunt Freq
@@ -2582,7 +2581,6 @@ module advance_clubb_core_module
       rcm_refined             ! rcm gridbox mean on refined grid
 
     real( kind = core_rknd ), dimension(gr%nz) :: &
-      rrm,              & ! Rain water mixing ratio
       rsat,             & ! Saturation mixing ratio from mean rt and thl.
       rel_humidity        ! Relative humidity after PDF closure [-]
 
