@@ -117,8 +117,8 @@ ALL_CASES = [BOMEX, FIRE]
 """
 
 ARM = {'name': 'arm',
-       'description': "Output may differ from some models (e.g. WRF) due to a difference in the time averaging "
-                      "interval.",
+       'description': "Output may differ from plotgen in some models (e.g. WRF) due to a difference in the time "
+                      "averaging interval.",
        'start_time': 481, 'end_time': 540, 'height_min_value': 0, 'height_max_value': 3500,
 
        'blacklisted_vars': ['radht'],
@@ -418,7 +418,7 @@ DYCOMS2_RF02_DS = {'name': 'dycoms2_rf02_ds',
                                   VariableGroupKKMP]}
 
 DYCOMS2_RF02_ND = {'name': 'dycoms2_rf02_nd',
-                   'description': "Copied from plotgen: ** Uniform, coarse verticle grid spacing of 40 m. **",
+                   'description': "",
                    'start_time': 301, 'end_time': 360, 'height_min_value': 0,
                    'height_max_value': 1200,
                    'blacklisted_vars': ['wprrp', 'wpNrp', 'corr_w_rr_1', 'corr_w_Nr_1'],
@@ -441,7 +441,7 @@ DYCOMS2_RF02_ND = {'name': 'dycoms2_rf02_nd',
                    'var_groups': [VariableGroupBase, VariableGroupWs, VariableGroupLiquidMP, VariableGroupKKMP]}
 
 DYCOMS2_RF02_DS_RESTART = {'name': 'dycoms2_rf02_ds_restart',
-                           'description': "",
+                           'description': "Copied from plotgen: ** Uniform, coarse verticle grid spacing of 40 m. **",
                            'start_time': 181, 'end_time': 240, 'height_min_value': 0,
                            'height_max_value': 1200,
                            'blacklisted_vars': [],
@@ -744,7 +744,7 @@ NOV11_ALTOCU = {'name': 'nov11_altocu',
                 'var_groups': [VariableGroupBase, VariableGroupLiquidMP, VariableGroupIceMP]}
 
 RICO = {'name': 'rico',
-        'description': "Copied from plotgen: CLUBB and SAM use Khairoutdinov-Kogan microphysics",
+        'description': "",
         'start_time': 4201, 'end_time': 4320, 'height_min_value': 0, 'height_max_value': 4000,
 
         'blacklisted_vars': [],
@@ -764,7 +764,7 @@ RICO = {'name': 'rico',
                        VariableGroupKKMP]}
 
 RICO_SILHS = {'name': 'rico_silhs',
-              'description': "",
+              'description': "Copied from plotgen: CLUBB and SAM use Khairoutdinov-Kogan microphysics",
               'start_time': 4201, 'end_time': 4320, 'height_min_value': 0,
               'height_max_value': 4500,
 
@@ -851,5 +851,5 @@ ALL_CASES = [ARM, ARM_97, ASTEX_A209, ATEX,
              ]
 
 # If uncommented, this line will override the real ALL_CASES given above, forcing pyplotgen to only plot some cases.
-# ALL_CASES = [ARM ]
+# ALL_CASES = [ATEX]
 # ALL_CASES = ALL_CASES[:7]
