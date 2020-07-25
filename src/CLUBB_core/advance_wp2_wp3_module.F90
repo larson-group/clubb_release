@@ -2644,7 +2644,7 @@ module advance_wp2_wp3_module
 
     ! Return Variable
     real( kind = core_rknd ), dimension(2,gr%nz), intent(out) :: &
-      lhs_ta_wp2
+      lhs_ta_wp2    ! LHS coefficient of wp2 turbulent advection  [1/m]
 
     ! Local variables
     integer :: k    ! Vertical level index
@@ -2654,7 +2654,7 @@ module advance_wp2_wp3_module
     lhs_ta_wp2(kp1_tdiag,1) = zero
     lhs_ta_wp2(k_tdiag,1) = zero
 
-    ! Calculate non-boundary terms
+    ! Calculate term at all interior grid levels.
     do k = 2, gr%nz-1 
 
        ! Thermodynamic superdiagonal: [ x wp3(k+1,<t+1>) ]
@@ -2716,7 +2716,7 @@ module advance_wp2_wp3_module
     ! (implicitly calculated at timestep (t+1)) and the coefficients to yield 
     ! the desired results.
     !
-    ! -------wm_ztp1------------------------------------------- t(k+1)
+    ! -------wm_zt--------------------------------------------- t(k+1)
     !
     ! ===============d(wm_zt)/dz============wp2================ m(k)
     !
@@ -2732,7 +2732,7 @@ module advance_wp2_wp3_module
     !-----------------------------------------------------------------------
 
     use grid_class, only: &
-        gr    ! grid types(s)
+        gr    ! Variable types(s)
 
     use constants_clubb, only: &
         two,  & ! Variable(s)
@@ -2754,14 +2754,16 @@ module advance_wp2_wp3_module
 
     ! Return Variable
     real( kind = core_rknd ), dimension(gr%nz), intent(out) :: &
-      lhs_ac_pr2_wp2
+      lhs_ac_pr2_wp2    ! LHS coefficient of wp2 ac and pr2 terms [1/s]
 
+    ! Local Variables
     integer :: k ! Vertical level index
 
 
     ! Set lower boundary to 0
     lhs_ac_pr2_wp2(1) = zero
 
+    ! Calculate term at all interior grid levels.
     do k = 2, gr%nz-1
 
        ! Momentum main diagonal: [ x wp2(k,<t+1>) ]
@@ -2815,7 +2817,7 @@ module advance_wp2_wp3_module
     !-----------------------------------------------------------------------
 
     use grid_class, only:  & 
-        gr ! Variable
+        gr    ! Variable type(s)
 
     use constants_clubb, only: &
         zero    ! Constant(s) 
@@ -2827,20 +2829,21 @@ module advance_wp2_wp3_module
 
     ! Input Variables
     real( kind = core_rknd ), dimension(gr%nz), intent(in) :: & 
-      C1_Skw_fnc,  & ! C_1 parameter with Sk_w applied    [-]
-      tau1m          ! Time-scale tau at momentum levels  [s]
+      C1_Skw_fnc, & ! C_1 parameter with Sk_w applied    [-]
+      tau1m         ! Time-scale tau at momentum levels  [s]
 
     ! Return Variable
     real( kind = core_rknd ), dimension(gr%nz), intent(out) :: &
-      lhs_dp1_wp2
+      lhs_dp1_wp2    ! LHS coefficient of wp2 dissipation term 1  [1/s]
 
-    ! Loop variable
-    integer :: k
+    ! Local Variable
+    integer :: k    ! Vertical level index
 
 
     ! Set lower boundary to 0
     lhs_dp1_wp2(1) = zero
 
+    ! Calculate term at all interior grid levels.
     do k = 2, gr%nz-1
 
        ! Momentum main diagonal: [ x wp2(k,<t+1>) ]
@@ -2889,13 +2892,14 @@ module advance_wp2_wp3_module
     ! the next timestep, which is being advanced to in solving the d(w'^2)/dt 
     ! equation.
     !
-    ! The values of w'^2 are found on momentum levels, as are the values of tau1m.
+    ! The values of w'^2 are found on momentum levels, as are the values of
+    ! tau1m.
 
     ! References:
     !-----------------------------------------------------------------------
 
     use grid_class, only:  &
-        gr      ! Variable
+        gr      ! Variable type(s)
 
     use constants_clubb, only: &
         three, & ! Variable(s)
@@ -2903,7 +2907,7 @@ module advance_wp2_wp3_module
         zero
 
     use clubb_precision, only: &
-        core_rknd ! Variable(s)
+        core_rknd    ! Variable(s)
 
     implicit none
 
@@ -2916,15 +2920,16 @@ module advance_wp2_wp3_module
 
     ! Return Variable
     real( kind = core_rknd ), dimension(gr%nz), intent(out) :: &
-      lhs_pr1_wp2
+      lhs_pr1_wp2    ! LHS coefficient of wp2 pressure term 1  [1/s]
     
-    ! Loop variable
+    ! Local Variables
     integer :: k
 
 
     ! Set lower boundary to 0
     lhs_pr1_wp2(1) = zero
 
+    ! Calculate term at all interior grid levels.
     do k = 2, gr%nz-1
 
         ! Momentum main diagonal: [ x wp2(k,<t+1>) ]
@@ -2967,7 +2972,7 @@ module advance_wp2_wp3_module
     !-----------------------------------------------------------------------
 
     use grid_class, only: &
-        gr    ! Grid type(s)
+        gr    ! Variable type(s)
 
     use constants_clubb, only:  & ! Variable(s)        
         grav, & ! Gravitational acceleration [m/s^2]
@@ -2985,23 +2990,26 @@ module advance_wp2_wp3_module
       C5    ! Model parameter C_5                             [-]
 
     real( kind = core_rknd ), dimension(gr%nz), intent(in) :: & 
-      thv_ds_zm, & ! Dry, base-state theta_v at momentum level (k)   [K]
-      wpthvp       ! w'th_v'(k)                                      [K m/s]
+      thv_ds_zm, & ! Dry, base-state theta_v at momentum levels   [K]
+      wpthvp       ! w'th_v'                                      [K m/s]
 
     ! Return Variable
     real( kind = core_rknd ), dimension(gr%nz), intent(out) :: &
-      rhs_bp_pr2_wp2
+      rhs_bp_pr2_wp2    ! RHS portion of wp2 from terms bp and pr2  [m^2/s^3]
 
-    ! Loop variable
-    integer :: k
+    ! Local variables
+    integer :: k    ! Vertical level index
 
 
     ! Set lower boundary to 0
     rhs_bp_pr2_wp2(1) = zero
 
+    ! Calculate term at all interior grid levels.
     do k = 2, gr%nz-1
+
        rhs_bp_pr2_wp2(k) &
        = + ( one - C5 ) * two * ( grav / thv_ds_zm(k) ) * wpthvp(k)
+
     enddo ! k = 2, gr%nz-1
 
     ! Set upper boundary to 0
@@ -3049,7 +3057,7 @@ module advance_wp2_wp3_module
     !-----------------------------------------------------------------------
 
     use grid_class, only: &
-        gr    ! Grid type(s)
+        gr    ! Variable type(s)
 
     use constants_clubb, only: &
         zero    ! Constant(s)
@@ -3075,15 +3083,16 @@ module advance_wp2_wp3_module
 
     ! Return Variable
     real( kind = core_rknd ), dimension(gr%nz), intent(out) :: &
-      rhs_dp1_wp2
+      rhs_dp1_wp2    ! RHS portion of wp2 from dissipation term 1  [m^2/s^3]
 
-    ! Loop variable
-    integer :: k
+    ! Local variables
+    integer :: k    ! Vertical level index
 
 
     ! Set lower boundary to 0
     rhs_dp1_wp2(1) = zero
 
+    ! Calculate term at all interior grid levels.
     if ( l_damp_wp2_using_em ) then
 
        do k = 2, gr%nz-1
@@ -3128,7 +3137,7 @@ module advance_wp2_wp3_module
     ! (central) momentum level.  All the remaining mathematical operations take
     ! place at the central momentum level, yielding the desired result.
     !
-    ! -----ump1------------vmp1-------------------------------------- t(k+1)
+    ! -----um--------------vm---------------------------------------- t(k+1)
     !
     ! =upwp====d(um)/dz========d(vm)/dz==vpwp===thv_ds_zm==wpthvp==== m(k)
     !
@@ -3144,7 +3153,7 @@ module advance_wp2_wp3_module
     !-----------------------------------------------------------------------
 
     use grid_class, only: &
-        gr    ! Grid type(s)
+        gr    ! Variable type(s)
 
     use constants_clubb, only: & ! Variables 
         grav,           & ! Gravitational acceleration [m/s^2]
@@ -3172,15 +3181,16 @@ module advance_wp2_wp3_module
 
     ! Return Variable
     real( kind = core_rknd ), dimension(gr%nz), intent(out) :: &
-      rhs_pr3_wp2
+      rhs_pr3_wp2    ! RHS portion of wp2 from pressure term 3  [m^2/s^3]
 
-    ! Loop variable
-    integer :: k
+    ! Local variables
+    integer :: k    ! Vertical level index
 
 
     ! Set lower boundary to 0
     rhs_pr3_wp2(1) = zero
 
+    ! Calculate term at all interior grid levels.
     do k = 2, gr%nz-1
 
        rhs_pr3_wp2(k) &
@@ -3247,7 +3257,7 @@ module advance_wp2_wp3_module
     !-----------------------------------------------------------------------
 
     use grid_class, only: &
-        gr    ! Grid type(s)
+        gr    ! Variable type(s)
 
     use constants_clubb, only: &
         three, & ! Constant9(s)
@@ -3269,15 +3279,16 @@ module advance_wp2_wp3_module
 
     ! Return Variable
     real( kind = core_rknd ), dimension(gr%nz), intent(out) :: &
-      rhs_pr1_wp2
+      rhs_pr1_wp2    ! RHS portion of wp2 from pressure term 1  [m^2/s^3]
 
-    ! Loop Variable
-    integer :: k
+    ! Local Variables
+    integer :: k    ! Vertical level index
 
 
     ! Set lower bounadry to 0
     rhs_pr1_wp2(1) = zero
 
+    ! Calculate term at all interior grid levels.
     do k = 2, gr%nz-1
 
       rhs_pr1_wp2(k) = + ( C4 * ( up2(k) + vp2(k) ) ) / ( three * tau1m(k) )
@@ -3374,11 +3385,11 @@ module advance_wp2_wp3_module
     ! References:
     !-----------------------------------------------------------------------
 
-    use constants_clubb, only: &
-        zero
-
     use grid_class, only:  &
         gr    ! Variable Type(s)
+
+    use constants_clubb, only: &
+        zero
 
     use clubb_precision, only: &
         core_rknd    ! Variable(s)
@@ -3400,7 +3411,7 @@ module advance_wp2_wp3_module
 
     ! Return Variable
     real( kind = core_rknd ), dimension(2,gr%nz), intent(out) :: &
-      lhs_ta_wp3
+      lhs_ta_wp3   ! LHS coefficient of wp3 turbulent advection  [m/s^2]
 
     ! Local Variable
     integer :: k    ! Vertical index
@@ -3410,7 +3421,7 @@ module advance_wp2_wp3_module
     lhs_ta_wp3(k_mdiag,1) = zero
     lhs_ta_wp3(km1_mdiag,1) = zero
 
-    ! Calculate term at interior levels
+    ! Calculate term at all interior grid levels.
     do k = 2, gr%nz-1
 
        ! Momentum superdiagonal: [ x wp2(k,<t+1>) ]
@@ -3509,15 +3520,15 @@ module advance_wp2_wp3_module
     !
     ! G = rho_ds_zm * a_1(t) * w'^3(t) * w'^3(t+1) / w'^2(t).
     !
-    ! ------------------------------------------------wp3p1-------------- t(k+1)
+    ! ------------------------------------------------wp3---------------- t(k+1)
     !
     ! ===a3====wp2====rho_ds_zm====a1======================wp3(interp)=== m(k)
     !
     ! -----------dF/dz----invrs_rho_ds_zt----dG/dz----wp3---------------- t(k)
     !
-    ! ===a3m1==wp2m1==rho_ds_zmm1==a1m1====================wp3(interp)=== m(k-1)
+    ! ===a3====wp2====rho_ds_zm====a1======================wp3(interp)=== m(k-1)
     !
-    ! ------------------------------------------------wp3m1-------------- t(k-1)
+    ! ------------------------------------------------wp3---------------- t(k-1)
     !
     ! The vertical indices t(k+1), m(k), t(k), m(k-1), and t(k-1) correspond 
     ! with altitudes zt(k+1), zm(k), zt(k), zm(k-1), and zt(k-1), respectively. 
@@ -3536,7 +3547,7 @@ module advance_wp2_wp3_module
         zero
 
     use clubb_precision, only: &
-        core_rknd ! Variable(s)
+        core_rknd  ! Variable(s)
 
     implicit none
 
@@ -3579,15 +3590,16 @@ module advance_wp2_wp3_module
 
     ! Output Variable
     real( kind = core_rknd ), dimension(5,gr%nz), intent(out) :: &
-      lhs_ta_wp3
+      lhs_ta_wp3    ! LHS coefficient of wp3 turbulent advection
 
-    ! Loop variable
-    integer :: k
+    ! Local variables
+    integer :: k    ! Vertical level index
 
 
     ! Set lower boundary to 0
     lhs_ta_wp3(:,1) = zero
 
+    ! Calculate term at all interior grid levels.
     if ( l_standard_term_ta ) then
 
        ! The turbulent advection term is discretized normally, in accordance
@@ -3806,7 +3818,7 @@ module advance_wp2_wp3_module
     !
     ! -----------dF/dz----invrs_rho_ds_zt----dG/dz----wp3---------------- t(k)
     !
-    ! ====wp2m1=======rho_ds_zmm1======================================== m(k-1)
+    ! ====wp2=========rho_ds_zm========================================== m(k-1)
     !
     ! The vertical indices m(k), t(k), and m(k-1) correspond with altitudes
     ! zm(k), zt(k), and zm(k-1), respectively.  The letter "t" is used for
@@ -3844,16 +3856,17 @@ module advance_wp2_wp3_module
 
     ! Return Variable
     real( kind = core_rknd ), dimension(2,gr%nz), intent(out) :: &
-      lhs_tp_wp3
+      lhs_tp_wp3    ! LHS coefficient of wp3 turbulent production  [1/s]
 
-    ! Loop variable
-    integer :: k
+    ! Local variables
+    integer :: k    ! Vertical level index
 
 
     ! Set lower boundary to 0
     lhs_tp_wp3(k_mdiag,1) = zero
     lhs_tp_wp3(km1_mdiag,1) = zero
-        
+
+    ! Calculate term at all interior grid levels.
     do k = 2, gr%nz-1
 
        ! Momentum superdiagonal: [ x wp2(k,<t+1>) ]
@@ -3923,7 +3936,7 @@ module advance_wp2_wp3_module
     !
     ! ---------------d(wm_zm)/dz------------wp3---------------- t(k)
     !
-    ! =======wm_zmm1=========================================== m(k-1)
+    ! =======wm_zm============================================= m(k-1)
     !
     ! The vertical indices m(k), t(k), and m(k-1) correspond with altitudes 
     ! zm(k), zt(k), and zm(k-1), respectively.  The letter "t" is used for 
@@ -3955,15 +3968,16 @@ module advance_wp2_wp3_module
 
     ! Return Variable
     real( kind = core_rknd ), dimension(gr%nz), intent(out) :: & 
-      lhs_ac_pr2_wp3
+      lhs_ac_pr2_wp3     ! LHS coefficient of wp3 from terms ac and pr2 [1/s]
 
-    ! Loop variable
-    integer :: k
+    ! Local variable
+    integer :: k    ! Vertical level index
 
 
     ! Set lower boundary to 0
     lhs_ac_pr2_wp3(1) = zero
 
+    ! Calculate term at all interior grid levels.
     do k = 2, gr%nz-1
 
        ! Thermodynamic main diagonal: [ x wp3(k,<t+1>) ]
@@ -4030,7 +4044,7 @@ module advance_wp2_wp3_module
     !-----------------------------------------------------------------------
 
     use grid_class, only: &
-        gr    ! Grid types(s)
+        gr    ! Variable types(s)
 
     use constants_clubb, only: &
         one, & ! Variable(s)
@@ -4039,7 +4053,7 @@ module advance_wp2_wp3_module
         zero
 
     use clubb_precision, only: &
-        core_rknd ! Variable(s)
+        core_rknd    ! Variable(s)
 
     implicit none
 
@@ -4057,21 +4071,22 @@ module advance_wp2_wp3_module
 
     ! Return Variable
     real( kind = core_rknd ), dimension(gr%nz), intent(out) :: &
-      lhs_pr1_wp3
+      lhs_pr1_wp3    ! LHS coefficient of wp3 from pressure term 1  [1/s]
 
-    ! Loop variable
-    integer :: k
+    ! Local variables
+    integer :: k    ! Vertical level index
 
 
     ! Set lower boundary to 0
     lhs_pr1_wp3(1) = zero
 
 
-    ! Thermodynamic main diagonal: [ x wp3(k,<t+1>) ]
+    ! Calculate term at all interior grid levels.
     if ( l_damp_wp3_Skw_squared ) then
  
        do k = 2, gr%nz-1
 
+          ! Thermodynamic main diagonal: [ x wp3(k,<t+1>) ]
           lhs_pr1_wp3(k) &
           = + ( C8 / tauw3t(k) ) * ( three * C8b * Skw_zt(k)**2 + one )
 
@@ -4081,6 +4096,7 @@ module advance_wp2_wp3_module
 
        do k = 2, gr%nz-1
 
+          ! Thermodynamic main diagonal: [ x wp3(k,<t+1>) ]
           lhs_pr1_wp3(k) &
           = + ( C8 / tauw3t(k) ) * ( five * C8b * Skw_zt(k)**4 + one )
 
@@ -4135,7 +4151,7 @@ module advance_wp2_wp3_module
     !
     ! ---------wp4_zt-----d( rho_ds_zm * wp4 )/dz-----invrs_rho_ds_zt---- t(k)
     !
-    ! =========wp4m1(interp)=========rho_ds_zmm1========================= m(k-1)
+    ! =========wp4(interp)===========rho_ds_zm=========================== m(k-1)
     !
     ! ---------wp4_zt---------------------------------------------------- t(k-1)
     !
@@ -4150,13 +4166,13 @@ module advance_wp2_wp3_module
     !-----------------------------------------------------------------------
 
     use grid_class, only: &
-        gr    ! Grid types(s)
+        gr    ! Variable types(s)
 
     use constants_clubb, only: &
         zero    ! Constant(s)
 
     use clubb_precision, only: &
-        core_rknd ! Variable(s)
+        core_rknd    ! Variable(s)
 
     implicit none
 
@@ -4169,15 +4185,16 @@ module advance_wp2_wp3_module
 
     ! Return Variable
     real( kind = core_rknd ), dimension(gr%nz), intent(out) :: &
-      rhs_ta_wp3
+      rhs_ta_wp3    ! Rate of change of wp3 from turbulent advection  [m^3/s^4]
 
-    ! Loop variable
-    integer :: k
+    ! Local variables
+    integer :: k    ! Vertical level index
 
 
     ! Set lower boundary to 0
     rhs_ta_wp3(1) = zero
 
+    ! Calculate term at all interior grid levels.
     do k = 2, gr%nz
 
        rhs_ta_wp3(k) &
@@ -4242,15 +4259,16 @@ module advance_wp2_wp3_module
 
     ! Return Variable
     real( kind = core_rknd ),  dimension(gr%nz), intent(out) :: &
-      rhs_bp1_pr2_wp3
+      rhs_bp1_pr2_wp3   ! RHS portion of wp3 from terms bp1 and pr2 [m^3/s^4]
 
-    ! Loop variable
-    integer :: k
+    ! Local Variables
+    integer :: k    ! Vertical loop index
 
 
     ! Set lower boundary to 0
     rhs_bp1_pr2_wp3(1) = zero
 
+    ! Calculate term at all interior grid levels.
     do k = 2, gr%nz-1
 
        rhs_bp1_pr2_wp3(k) &
@@ -4289,14 +4307,14 @@ module advance_wp2_wp3_module
     !-----------------------------------------------------------------------
 
     use grid_class, only: &
-        gr    ! Grid type(s)
+        gr    ! Variable type(s)
 
     use constants_clubb, only: & ! Constant(s) 
         grav, & ! Gravitational acceleration [m/s^2]
         zero
 
     use clubb_precision, only: &
-        core_rknd ! Variable(s)
+        core_rknd    ! Variable(s)
 
     implicit none
 
@@ -4316,10 +4334,10 @@ module advance_wp2_wp3_module
 
     ! Return Variable
     real( kind = core_rknd ), dimension(gr%nz), intent(out) :: &
-      rhs_bp2_wp3
+      rhs_bp2_wp3    ! RHS portion of wp3 from buoyancy prod term 2 [m^3/s^4]
 
-    ! Loop variable
-    integer :: k
+    ! Local Variables
+    integer :: k   ! Vertical level index 
 
     ! ---- Begin Code ----
 
@@ -4393,7 +4411,7 @@ module advance_wp2_wp3_module
     !-----------------------------------------------------------------------
 
     use grid_class, only: &
-        gr    ! Grid type(s)
+        gr    ! Variable type(s)
 
     use constants_clubb, only: &
         two,  & ! Constant(s)
@@ -4420,15 +4438,16 @@ module advance_wp2_wp3_module
 
     ! Return Variable
     real( kind = core_rknd ), dimension(gr%nz), intent(out) :: &
-      rhs_pr1_wp3
+      rhs_pr1_wp3    ! RHS portion of wp3 from pressure term 1  [m^3/s^4]
 
-    ! Loop variable
-    integer :: k
+    ! Local Variables
+    integer :: k    ! Vertical level index
 
 
     ! Set lower boundary to 0
     rhs_pr1_wp3(1) = zero
 
+    ! Calculate term at all interior grid levels.
     if ( l_damp_wp3_Skw_squared ) then
 
        do k = 2, gr%nz-1

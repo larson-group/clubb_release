@@ -21,14 +21,10 @@ module advance_xm_wpxp_module
              xm_wpxp_solve, & 
              xm_wpxp_clipping_and_stats, &
              xm_term_ta_lhs, & 
-             xm_term_ta_lhs_all, & 
              wpxp_term_tp_lhs, & 
-             wpxp_term_tp_lhs_all, & 
              wpxp_terms_ac_pr2_lhs, & 
-             wpxp_terms_ac_pr2_lhs_all, &
-             wpxp_term_pr1_lhs_all, & 
+             wpxp_term_pr1_lhs, & 
              wpxp_terms_bp_pr3_rhs, &
-             wpxp_terms_bp_pr3_rhs_all, &
              xm_correction_wpxp_cl, &
              damp_coefficient, &
              diagnose_upxp, &
@@ -516,9 +512,9 @@ module advance_xm_wpxp_module
                               low_lev_effect, high_lev_effect ) ! Out
 
     ! Calculate 1st pressure terms for w'r_t', w'thl', and w'sclr'. 
-    call wpxp_term_pr1_lhs_all( C6rt_Skw_fnc, C6thl_Skw_fnc, C7_Skw_fnc,        & ! Intent(in)
-                                tau_C6_zm, l_scalar_calc,                       & ! Intent(in)
-                                lhs_pr1_wprtp, lhs_pr1_wpthlp, lhs_pr1_wpsclrp  ) ! Intent(out)
+    call wpxp_term_pr1_lhs( C6rt_Skw_fnc, C6thl_Skw_fnc, C7_Skw_fnc,        & ! Intent(in)
+                            tau_C6_zm, l_scalar_calc,                       & ! Intent(in)
+                            lhs_pr1_wprtp, lhs_pr1_wpthlp, lhs_pr1_wpsclrp  ) ! Intent(out)
                                 
                     
     call  calc_xm_wpxp_ta_terms( wprtp, wp2rtp, wpthlp, wp2thlp, wpsclrp, wp2sclrp, &
@@ -921,6 +917,9 @@ module advance_xm_wpxp_module
     real (kind = core_rknd) :: &
       invrs_dt
         
+    real( kind = core_rknd ), dimension(gr%nz) :: &
+      zero_vector    ! Vector of 0s
+
     !------------------- Begin Code -------------------
     
     ! Initializations/precalculations
@@ -1032,6 +1031,8 @@ module advance_xm_wpxp_module
     ! Statistics contributions
     if ( l_stats_samp ) then
 
+        zero_vector = zero
+
         ! Statistics: implicit contributions for wprtp or wpthlp.
 
         if ( iwprtp_ma > 0 .or. iwpthlp_ma > 0 ) then
@@ -1063,12 +1064,12 @@ module advance_xm_wpxp_module
 
 
         if ( iwprtp_ac > 0 .or. iwpthlp_ac > 0 ) then
-            ! Note:  To find the contribution of w'x' term ac, substitute 0 for the
-            !        C_7 skewness function input to function wpxp_terms_ac_pr2_lhs.
-            do k = 2, gr%nz-1
-                zmscr09(k) = - wpxp_terms_ac_pr2_lhs( zero, wm_zt(k+1), &
-                                                      wm_zt(k), gr%invrs_dzm(k) )
-            end do
+           ! Note:  To find the contribution of w'x' term ac,
+           !        substitute 0 for the C_7 skewness function input
+           !        to function wpxp_terms_ac_pr2_lhs.
+           call wpxp_terms_ac_pr2_lhs( zero_vector, wm_zt, gr%invrs_dzm, &
+                                       zmscr09 )
+           zmscr09 = - zmscr09
         endif
 
 
@@ -1084,12 +1085,12 @@ module advance_xm_wpxp_module
 
 
         if ( iwprtp_pr2 > 0 .or. iwpthlp_pr2 > 0 ) then
-            ! Note:  To find the contribution of w'x' term pr2, add 1 to the
-            !        C_7 skewness function input to function wpxp_terms_ac_pr2_lhs.
-            do k = 2, gr%nz-1
-                zmscr11(k) = - wpxp_terms_ac_pr2_lhs( (one+C7_Skw_fnc(k)), wm_zt(k+1), &
-                                                       wm_zt(k), gr%invrs_dzm(k) )
-            end do
+           ! Note:  To find the contribution of w'x' term pr2,
+           !        add 1 to the C_7 skewness function input
+           !        to function wpxp_terms_ac_pr2_lhs.
+           call wpxp_terms_ac_pr2_lhs( (one+C7_Skw_fnc), wm_zt, gr%invrs_dzm, &
+                                       zmscr11 )
+           zmscr11 = - zmscr11
         endif
 
         if ( iwprtp_dp1 > 0 .or. iwpthlp_dp1 > 0 ) then
@@ -1254,23 +1255,20 @@ module advance_xm_wpxp_module
     constant_nu  = 0.1_core_rknd
     
     ! Calculate turbulent advection terms of xm for all grid levels
-    call xm_term_ta_lhs_all( rho_ds_zm(:),       & ! Intent(in)
-                             invrs_rho_ds_zt(:), & ! Intent(in)
-                             gr%invrs_dzt(:),    & ! Intent(in)
-                             lhs_ta_xm(:,:)      ) ! Intent(out)         
+    call xm_term_ta_lhs( rho_ds_zm(:),       & ! Intent(in)
+                         invrs_rho_ds_zt(:), & ! Intent(in)
+                         gr%invrs_dzt(:),    & ! Intent(in)
+                         lhs_ta_xm(:,:)      ) ! Intent(out)         
     
                                    
     ! Calculate turbulent production terms of w'x' for all grid level
-    call wpxp_term_tp_lhs_all( wp2(:),          & ! Intent(in)
-                               gr%invrs_dzm(:), & ! Intent(in)
-                               lhs_tp(:,:) )      ! Intent(out)
+    call wpxp_term_tp_lhs( wp2(:), gr%invrs_dzm(:), & ! Intent(in)
+                           lhs_tp(:,:) )              ! Intent(out)
 
     ! Calculate accumulation of w'x' and w'x' pressure term 2 of w'x' for all grid level
     ! https://arxiv.org/pdf/1711.03675v1.pdf#nameddest=url:wpxp_pr
-    call wpxp_terms_ac_pr2_lhs_all( C7_Skw_fnc(:),   & ! Intent(in)
-                                    wm_zt(:),        & ! Intent(in)
-                                    gr%invrs_dzm(:), & ! Intent(in)
-                                    lhs_ac_pr2(:)    ) ! Intent(out)
+    call wpxp_terms_ac_pr2_lhs( C7_Skw_fnc, wm_zt, gr%invrs_dzm, & ! Intent(in)
+                                lhs_ac_pr2                       ) ! Intent(out)
 
     ! Calculate diffusion terms for all momentum grid level
     call diffusion_zm_lhs_all( Kw6(:), nu6_vert_res_dep(:),      & ! Intent(in)
@@ -1371,6 +1369,7 @@ module advance_xm_wpxp_module
         clip_semi_imp_rhs ! Procedure(s)
 
     use stats_type_utilities, only: & 
+        stat_update_var,      & ! Procedure(s)
         stat_update_var_pt,   & 
         stat_begin_update_pt, &
         stat_modify_pt
@@ -1446,10 +1445,15 @@ module advance_xm_wpxp_module
     !------------------- Local Variables -------------------
 
     real( kind = core_rknd ), dimension(gr%nz) :: &
-        rhs_bp_pr3    ! Buoyancy production of w'x' and w'x' pressure term 3
+        rhs_bp_pr3, & ! Buoyancy production of w'x' and w'x' pressure term 3
+        rhs_bp,     & ! Buoyancy production of w'x' (stats only)
+        rhs_pr3       ! w'x' pressure term 3 (stats only)
       
     real( kind = core_rknd ) :: &
         invrs_dt
+
+    real( kind = core_rknd ), dimension(gr%nz) :: &
+      zero_vector    ! Vector of 0s
 
     ! Indices
     integer :: k, k_xm, k_wpxp
@@ -1471,8 +1475,8 @@ module advance_xm_wpxp_module
     invrs_dt = 1.0_core_rknd / dt    
                                   
     ! Calculate buoyancy production of w'x' and w'x' pressure term 3
-    call wpxp_terms_bp_pr3_rhs_all( C7_Skw_fnc(:), thv_ds_zm(:), xpthvp(:), &
-                                    rhs_bp_pr3(:) )
+    call wpxp_terms_bp_pr3_rhs( C7_Skw_fnc(:), thv_ds_zm(:), xpthvp(:), &
+                                rhs_bp_pr3(:) )
                             
     ! Set lower boundary for xm
     rhs(1) = xm(1)
@@ -1535,6 +1539,8 @@ module advance_xm_wpxp_module
 
     if ( l_stats_samp ) then
 
+        zero_vector = zero
+
         select case ( solve_type )
             case ( xm_wpxp_rtm )  ! rtm/wprtp budget terms
               ixm_f      = irtm_forcing
@@ -1578,24 +1584,23 @@ module advance_xm_wpxp_module
               iwpxp_pr1  = 0
         end select
 
+        ! Statistics: explicit contributions for wpxp.
+
+        ! w'x' term bp is completely explicit; call stat_update_var.
+        ! Note:  To find the contribution of w'x' term bp, substitute 0 for the
+        !        C_7 skewness function input to function wpxp_terms_bp_pr3_rhs.
+        call wpxp_terms_bp_pr3_rhs( zero_vector, thv_ds_zm, xpthvp, &
+                                    rhs_bp )
+        call stat_update_var( iwpxp_bp, rhs_bp, stats_zm )
+
+        ! w'x' term pr3 is completely explicit; call stat_update_var.
+        ! Note:  To find the contribution of w'x' term pr3, add 1 to the
+        !        C_7 skewness function input to function wpxp_terms_bp_pr2_rhs.
+        call wpxp_terms_bp_pr3_rhs( (one+C7_Skw_fnc), thv_ds_zm, xpthvp, &
+                                    rhs_pr3 )
+        call stat_update_var( iwpxp_pr3, rhs_pr3, stats_zm )
+
         do k = 2, gr%nz-1
-
-            ! Statistics: explicit contributions for wpxp.
-
-            ! w'x' term bp is completely explicit; call stat_update_var_pt.
-            ! Note:  To find the contribution of w'x' term bp, substitute 0 for the
-            !        C_7 skewness function input to function wpxp_terms_bp_pr3_rhs.
-            call stat_update_var_pt( iwpxp_bp, k, & 
-                wpxp_terms_bp_pr3_rhs( zero, thv_ds_zm(k), xpthvp(k) ), stats_zm )
-
-
-            ! w'x' term pr3 is completely explicit; call stat_update_var_pt.
-            ! Note:  To find the contribution of w'x' term pr3, add 1 to the
-            !        C_7 skewness function input to function wpxp_terms_bp_pr2_rhs.
-            call stat_update_var_pt( iwpxp_pr3, k, & 
-                wpxp_terms_bp_pr3_rhs( (one+C7_Skw_fnc(k)), thv_ds_zm(k), &
-                                       xpthvp(k) ), &
-                                     stats_zm )
 
             ! w'x' forcing term is completely explicit; call stat_update_var_pt.
             call stat_update_var_pt( iwpxp_f, k, wpxp_forcing(k), stats_zm )
@@ -3939,9 +3944,10 @@ module advance_xm_wpxp_module
   end subroutine xm_wpxp_clipping_and_stats
 
   !=============================================================================
-  pure function xm_term_ta_lhs( rho_ds_zm, rho_ds_zmm1, &
-                                invrs_rho_ds_zt, invrs_dzt ) &
-  result( lhs )
+  pure subroutine xm_term_ta_lhs( rho_ds_zm, &
+                                  invrs_rho_ds_zt, &
+                                  invrs_dzt, &
+                                  lhs_ta_xm )
 
     ! Description:
     ! Turbulent advection of xm:  implicit portion of the code.
@@ -3977,7 +3983,7 @@ module advance_xm_wpxp_module
     !
     ! ------invrs_rho_ds_zt--------d(rho_ds*wpxp)/dz----------- t(k)
     !
-    ! =====rho_ds_zmm1===wpxpm1================================ m(k-1)
+    ! =====rho_ds_zm=====wpxp================================== m(k-1)
     !
     ! The vertical indices m(k), t(k), and m(k-1) correspond with altitudes
     ! zm(k), zt(k), and zm(k-1), respectively.  The letter "t" is used for
@@ -3988,8 +3994,14 @@ module advance_xm_wpxp_module
     ! References:
     !-----------------------------------------------------------------------
 
+    use grid_class, only:  & 
+        gr    ! Variable type(s)
+
+    use constants_clubb, only: &
+        zero    ! Constant(s)
+
     use clubb_precision, only: &
-        core_rknd ! Variable(s)
+        core_rknd    ! Variable(s)
 
     implicit none
 
@@ -3999,84 +4011,44 @@ module advance_xm_wpxp_module
       km1_mdiag = 2       ! Momentum subdiagonal index.
 
     ! Input Variables
-    real( kind = core_rknd ), intent(in) :: &
-      rho_ds_zm,       & ! Dry, static density at momentum level (k)    [kg/m^3]
-      rho_ds_zmm1,     & ! Dry, static density at momentum level (k+1)  [kg/m^3]
-      invrs_rho_ds_zt, & ! Inverse dry, static density @ thermo lev (k) [m^3/kg]
-      invrs_dzt          ! Inverse of grid spacing (k)                  [1/m]
-
-    ! Return Variable
-    real( kind = core_rknd ), dimension(2) :: lhs
-
-
-    ! Momentum superdiagonal [ x wpxp(k,<t+1>) ]
-    lhs(k_mdiag) & 
-    = + invrs_rho_ds_zt * invrs_dzt * rho_ds_zm
-
-    ! Momentum subdiagonal [ x wpxp(k-1,<t+1>) ]
-    lhs(km1_mdiag) & 
-    = - invrs_rho_ds_zt * invrs_dzt * rho_ds_zmm1
-
-
-    return
-  end function xm_term_ta_lhs
-
-  !=============================================================================
-  pure subroutine xm_term_ta_lhs_all( rho_ds_zm, &
-                                      invrs_rho_ds_zt, &
-                                      invrs_dzt, &
-                                      lhs_ta_xm )
-  ! Description:
-  !     This subroutine serves the same function as xm_term_ta_lhs (above), but
-  !     calculated terms for all grid levels at once rather than one at a time.
-  !     This was done so that this code could be vectorized and thereby sped up
-  !     by the compiler. See clubb:ticket:834 for more information.
-  ! 
-  !-----------------------------------------------------------------------------
-
-    use clubb_precision, only: &
-        core_rknd ! Variable(s)
-
-    use grid_class, only:  & 
-        gr
-
-    implicit none
-
-    ! Input Variables
     real( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
-      rho_ds_zm,       & ! Dry, static density at momentum level (k)    [kg/m^3]
-      invrs_rho_ds_zt, & ! Inverse dry, static density @ thermo lev (k) [m^3/kg]
-      invrs_dzt          ! Inverse of grid spacing (k)                  [1/m]
+      rho_ds_zm,       & ! Dry, static density at momentum levels     [kg/m^3]
+      invrs_rho_ds_zt, & ! Inverse dry, static density at thermo levs [m^3/kg]
+      invrs_dzt          ! Inverse of grid spacing                    [1/m]
 
     ! Return Variable
     real( kind = core_rknd ), dimension(2,gr%nz), intent(out) :: &
-        lhs_ta_xm
+      lhs_ta_xm    ! LHS coefficient of xm turbulent advection  [1/m]
 
     ! Local Variable
-    integer :: k
+    integer :: k    ! Vertical level index
+
 
     ! Set lower boundary condition to 0
-    lhs_ta_xm(1,1) = 0.0_core_rknd
-    lhs_ta_xm(2,1) = 0.0_core_rknd
+    lhs_ta_xm(k_mdiag,1) = zero
+    lhs_ta_xm(km1_mdiag,1) = zero
 
-    ! Calculate all other grid levels
+    ! Calculate term at all other grid levels.
     do k = 2, gr%nz 
 
-        ! Momentum superdiagonal [ x wpxp(k,<t+1>) ]
-        lhs_ta_xm(1,k) = + invrs_rho_ds_zt(k) * invrs_dzt(k) * rho_ds_zm(k)
+       ! Momentum superdiagonal [ x wpxp(k,<t+1>) ]
+       lhs_ta_xm(k_mdiag,k) & 
+       = + invrs_rho_ds_zt(k) * invrs_dzt(k) * rho_ds_zm(k)
 
-        ! Momentum subdiagonal [ x wpxp(k-1,<t+1>) ]
-        lhs_ta_xm(2,k) = - invrs_rho_ds_zt(k) * invrs_dzt(k) * rho_ds_zm(k-1)
+       ! Momentum subdiagonal [ x wpxp(k-1,<t+1>) ]
+       lhs_ta_xm(km1_mdiag,k) & 
+       = - invrs_rho_ds_zt(k) * invrs_dzt(k) * rho_ds_zm(k-1)
 
-    end do
+    enddo ! k = 2, gr%nz 
+
 
     return
 
-  end subroutine xm_term_ta_lhs_all
+  end subroutine xm_term_ta_lhs
 
   !=============================================================================
-  pure function wpxp_term_tp_lhs( wp2, invrs_dzm ) & 
-  result( lhs )
+  pure subroutine wpxp_term_tp_lhs( wp2, invrs_dzm, & 
+                                    lhs_tp )
 
     ! Description:
     ! Turbulent production of w'x':  implicit portion of the code.
@@ -4104,7 +4076,7 @@ module advance_xm_wpxp_module
     ! intermediate (central) momentum level, where it is multiplied by w'^2,
     ! yielding the desired result.
     !
-    ! ---------------------------xmp1-------------------------- t(k+1)
+    ! ---------------------------xm---------------------------- t(k+1)
     !
     ! ==========wp2=====================d(xm)/dz=============== m(k)
     !
@@ -4119,6 +4091,12 @@ module advance_xm_wpxp_module
     ! References:
     !-----------------------------------------------------------------------
 
+    use grid_class, only:  & 
+        gr    ! Variable type(s)
+
+    use constants_clubb, only: &
+        zero    ! Constant(s)
+
     use clubb_precision, only: &
         core_rknd ! Variable(s)
 
@@ -4130,72 +4108,34 @@ module advance_xm_wpxp_module
       k_tdiag = 2         ! Thermodynamic subdiagonal index.
 
     ! Input Variables
-    real( kind = core_rknd ), intent(in) :: & 
-      wp2,      & ! w'^2(k)                       [m^2/s^2]
-      invrs_dzm   ! Inverse of grid spacing (k)   [1/m]
-
-    ! Return Variable
-    real( kind = core_rknd ), dimension(2) :: lhs
-
-
-    ! Thermodynamic superdiagonal [ x xm(k+1,<t+1>) ]
-    lhs(kp1_tdiag) & 
-    = + wp2 * invrs_dzm
-
-    ! Thermodynamic subdiagonal [ x xm(k,<t+1>) ]
-    lhs(k_tdiag) & 
-    = - wp2 * invrs_dzm
-
-
-    return
-  end function wpxp_term_tp_lhs
-    
-  !=============================================================================
-  pure subroutine wpxp_term_tp_lhs_all( wp2, &
-                                        invrs_dzm, & 
-                                        lhs_tp )
-  ! Description:
-  !     This subroutine serves the same function as wpxp_term_tp_lhs (above), but
-  !     calculated terms for all grid levels at once rather than one at a time.
-  !     This was done so that this code could be vectorized and thereby sped up
-  !     by the compiler. See clubb:ticket:834 for more information.
-  ! 
-  !-----------------------------------------------------------------------------
-
-    use clubb_precision, only: &
-        core_rknd ! Variable(s)
-
-    use grid_class, only:  & 
-        gr
-
-    implicit none
-
-    ! Input Variables
     real( kind = core_rknd ), dimension(gr%nz), intent(in) :: & 
-      wp2,      & ! w'^2(k)                       [m^2/s^2]
-      invrs_dzm   ! Inverse of grid spacing (k)   [1/m]
+      wp2,       & ! w'^2                       [m^2/s^2]
+      invrs_dzm    ! Inverse of grid spacing    [1/m]
 
     ! Return Variable
     real( kind = core_rknd ), dimension(2,gr%nz), intent(out) :: &
-        lhs_tp
+        lhs_tp    ! LHS coefficient of xm for turbulent production  [1/s]
 
     ! Local Variable
-    integer :: k
+    integer :: k  ! Vertical level index
+
 
     ! Set lower boundary to 0
-    lhs_tp(1,1) = 0.0_core_rknd
-    lhs_tp(2,1) = 0.0_core_rknd
+    lhs_tp(1,1) = zero
+    lhs_tp(2,1) = zero
 
-    ! Calculate all other grid levels
+    ! Calculate term at all interior grid levels.
     do k = 2, gr%nz-1
 
-        ! Thermodynamic superdiagonal [ x xm(k+1,<t+1>) ]
-        lhs_tp(1,k) = + wp2(k) * invrs_dzm(k)
+       ! Thermodynamic superdiagonal [ x xm(k+1,<t+1>) ]
+       lhs_tp(kp1_tdiag,k) & 
+       = + wp2(k) * invrs_dzm(k)
 
-        ! Thermodynamic subdiagonal [ x xm(k,<t+1>) ]
-        lhs_tp(2,k) = - wp2(k) * invrs_dzm(k)
+       ! Thermodynamic subdiagonal [ x xm(k,<t+1>) ]
+       lhs_tp(k_tdiag,k) & 
+       = - wp2(k) * invrs_dzm(k)
 
-    end do
+    enddo ! k = 2, gr%nz-1
 
     ! Set upper boundary to 0
     lhs_tp(1,gr%nz) = 0.0_core_rknd
@@ -4203,12 +4143,12 @@ module advance_xm_wpxp_module
 
 
     return
-  end subroutine wpxp_term_tp_lhs_all
 
+  end subroutine wpxp_term_tp_lhs
+    
   !=============================================================================
-  pure function wpxp_terms_ac_pr2_lhs( C7_Skw_fnc,  & 
-                                       wm_ztp1, wm_zt, invrs_dzm ) & 
-  result( lhs )
+  pure subroutine wpxp_terms_ac_pr2_lhs( C7_Skw_fnc, wm_zt, invrs_dzm, &
+                                         lhs_ac_pr2  ) 
 
     ! Description:
     ! Accumulation of w'x' and w'x' pressure term 2:  implicit portion of the
@@ -4245,7 +4185,7 @@ module advance_xm_wpxp_module
     ! (implicitly calculated at timestep (t+1)) and the coefficients to yield
     ! the desired results.
     !
-    ! -------wm_ztp1------------------------------------------- t(k+1)
+    ! -------wm_zt--------------------------------------------- t(k+1)
     !
     ! ===============d(wm_zt)/dz============wpxp=============== m(k)
     !
@@ -4260,89 +4200,58 @@ module advance_xm_wpxp_module
     ! References:
     !-----------------------------------------------------------------------
 
-    use constants_clubb, only: &
-        one  ! Constant(s)
-
-    use clubb_precision, only: &
-        core_rknd ! Variable(s)
-
-    implicit none
-
-    ! Input Variables
-    real( kind = core_rknd ), intent(in) :: & 
-      C7_Skw_fnc,  & ! C_7 parameter with Sk_w applied (k)             [-]
-      wm_ztp1,     & ! w wind component on thermodynamic level (k+1)   [m/s]
-      wm_zt,       & ! w wind component on thermodynamic level (k)     [m/s]
-      invrs_dzm      ! Inverse of grid spacing (k)                     [1/m]
-
-
-    ! Return Variable
-    real( kind = core_rknd ) :: lhs
-
-
-    ! Momentum main diagonal: [ x wpxp(k,<t+1>) ]
-    lhs = ( one - C7_Skw_fnc ) * invrs_dzm * ( wm_ztp1 - wm_zt )
-
-
-    return
-  end function wpxp_terms_ac_pr2_lhs
-
-  !====================================================================================
-  pure subroutine wpxp_terms_ac_pr2_lhs_all( C7_Skw_fnc, & 
-                                             wm_zt,      &
-                                             invrs_dzm,  &
-                                             lhs_ac_pr2  ) 
-  ! Description:
-  !     This subroutine serves the same function as wpxp_terms_ac_pr2_lhs (above), but
-  !     calculated terms for all grid levels at once rather than one at a time.
-  !     This was done so that this code could be vectorized and thereby sped up
-  !     by the compiler. See clubb:ticket:834 for more information.
-  ! 
-  !-------------------------------------------------------------------------------------
-
-    use clubb_precision, only: &
-        core_rknd ! Variable(s)
-
     use grid_class, only:  & 
-        gr
+        gr    ! Variable type(s)
+
+    use constants_clubb, only: &
+        one,  & ! Constant(s)
+        zero
+
+    use clubb_precision, only: &
+        core_rknd ! Variable(s)
 
     implicit none
 
     ! Input Variables
     real( kind = core_rknd ), dimension(gr%nz), intent(in) :: & 
-      C7_Skw_fnc,  & ! C_7 parameter with Sk_w applied (k)             [-]
-      wm_zt,       & ! w wind component on thermodynamic level (k)     [m/s]
-      invrs_dzm      ! Inverse of grid spacing (k)                     [1/m]
+      C7_Skw_fnc,  & ! C_7 parameter with Sk_w applied              [-]
+      wm_zt,       & ! w wind component on thermodynamic levels     [m/s]
+      invrs_dzm      ! Inverse of grid spacing                      [1/m]
 
     ! Return Variable
     real( kind = core_rknd ), dimension(gr%nz), intent(out) :: &
-      lhs_ac_pr2
+      lhs_ac_pr2    ! LHS coefficient of accumulation and pressure term 2 [1/s]
 
     ! Local Variable
-    integer :: k
+    integer :: k    ! Vertical level index
 
 
     ! Set lower boundary to 0
-    lhs_ac_pr2(1) = 0.0_core_rknd
+    lhs_ac_pr2(1) = zero
 
-    do k = 2, gr%nz-1 
+    ! Calculate term at all interior grid levels.
+    do k = 2, gr%nz-1
 
-        ! Momentum main diagonal: [ x wpxp(k,<t+1>) ]
-        lhs_ac_pr2(k) = ( 1.0_core_rknd - C7_Skw_fnc(k) ) * invrs_dzm(k) * ( wm_zt(k+1) - wm_zt(k) )
+       ! Momentum main diagonal: [ x wpxp(k,<t+1>) ]
+       lhs_ac_pr2(k) &
+       = ( one - C7_Skw_fnc(k) ) * invrs_dzm(k) * ( wm_zt(k+1) - wm_zt(k) )
 
-    end do
+    enddo ! k = 2, gr%nz-1 
 
-    lhs_ac_pr2(gr%nz) = 0.0_core_rknd
+    ! Set upper boundary to 0
+    lhs_ac_pr2(gr%nz) = zero
 
 
     return
 
-  end subroutine wpxp_terms_ac_pr2_lhs_all
+  end subroutine wpxp_terms_ac_pr2_lhs
 
-  !=====================================================================================
-  pure subroutine wpxp_term_pr1_lhs_all( C6rt_Skw_fnc, C6thl_Skw_fnc, C7_Skw_fnc, &
-                                         tau_C6_zm, l_scalar_calc, &
-                                         lhs_pr1_wprtp, lhs_pr1_wpthlp, lhs_pr1_wpsclrp )
+  !=============================================================================
+  pure subroutine wpxp_term_pr1_lhs( C6rt_Skw_fnc, C6thl_Skw_fnc, C7_Skw_fnc, &
+                                     tau_C6_zm, l_scalar_calc, &
+                                     lhs_pr1_wprtp, lhs_pr1_wpthlp, &
+                                     lhs_pr1_wpsclrp )
+
     ! Description
     ! Pressure term 1 for w'x':  implicit portion of the code.
     !
@@ -4368,68 +4277,83 @@ module advance_xm_wpxp_module
     !
     !-----------------------------------------------------------------------
 
-    use clubb_precision, only: &
-        core_rknd ! Variable(s)
-
     use grid_class, only:  & 
-        gr
+        gr    ! Variable type(s)
+
+    use constants_clubb, only: &
+        one,  & ! Constant(s)
+        zero
+
+    use clubb_precision, only: &
+        core_rknd    ! Variable(s)
 
     implicit none
 
-    !------------------- Input Variables -------------------
+    ! Input Variables
     real( kind = core_rknd ), dimension(gr%nz), intent(in) :: & 
-      C6rt_Skw_fnc,     & ! C_6rt parameter with Sk_w applied (k)                   [-]
-      C6thl_Skw_fnc,    & ! C_6thl parameter with Sk_w applied (k)                  [-]
-      C7_Skw_fnc,       & ! C_7 parameter with Sk_w applied (k)                     [-]
-      tau_C6_zm           ! Time-scale tau at momentum level (k) applied to C6 term [s]
+      C6rt_Skw_fnc,  & ! C_6rt parameter with Sk_w applied        [-]
+      C6thl_Skw_fnc, & ! C_6thl parameter with Sk_w applied       [-]
+      C7_Skw_fnc,    & ! C_7 parameter with Sk_w applied          [-]
+      tau_C6_zm        ! Time-scale tau at momentum levels        [s]
 
     logical, intent(in) :: &
       l_scalar_calc   ! True if sclr_dim > 0
 
-    !------------------- Output Variables -------------------
+    ! Output Variables
     real( kind = core_rknd ), dimension(gr%nz), intent(out) :: & 
-      lhs_pr1_wprtp,  & ! Pressure term 1 for w'r_t' for all grid levels
-      lhs_pr1_wpthlp, & ! Pressure term 1 for w'thl' for all grid levels
-      lhs_pr1_wpsclrp   ! Pressure term 1 for w'sclr' for all grid levels
+      lhs_pr1_wprtp,   & ! LHS coefficient for w'r_t' pressure term 1   [1/s]
+      lhs_pr1_wpthlp,  & ! LHS coefficient for w'thl' pressure term 1   [1/s]
+      lhs_pr1_wpsclrp    ! LHS coefficient for w'sclr' pressure term 1  [1/s]
 
-    !------------------- Local Variables -------------------
+    ! Local Variables
     real( kind = core_rknd ), dimension(gr%nz) :: &
       invrs_tau_C6_zm   ! Inverse of tau_C6_zm
 
-    !------------------- Begin Code -------------------
     
-    invrs_tau_C6_zm = 1.0_core_rknd / tau_C6_zm
+    invrs_tau_C6_zm = one / tau_C6_zm
 
     ! Set lower boundary to 0
-    lhs_pr1_wprtp(1) = 0.0_core_rknd
+    lhs_pr1_wprtp(1) = zero
+
     ! Momentum main diagonals: [ x wpxp(k,<t+1>) ]
-    lhs_pr1_wprtp(2:gr%nz-1) = C6rt_Skw_fnc(2:gr%nz-1) * invrs_tau_C6_zm(2:gr%nz-1)
+    lhs_pr1_wprtp(2:gr%nz-1) &
+    = C6rt_Skw_fnc(2:gr%nz-1) * invrs_tau_C6_zm(2:gr%nz-1)
+
     ! Set upper boundary to 0
-    lhs_pr1_wprtp(gr%nz) = 0.0_core_rknd
+    lhs_pr1_wprtp(gr%nz) = zero
     
     ! Set lower boundary to 0
-    lhs_pr1_wpthlp(1) = 0.0_core_rknd
+    lhs_pr1_wpthlp(1) = zero
+
     ! Momentum main diagonals: [ x wpxp(k,<t+1>) ]
-    lhs_pr1_wpthlp(2:gr%nz-1) = C6thl_Skw_fnc(2:gr%nz-1) * invrs_tau_C6_zm(2:gr%nz-1)
+    lhs_pr1_wpthlp(2:gr%nz-1) &
+    = C6thl_Skw_fnc(2:gr%nz-1) * invrs_tau_C6_zm(2:gr%nz-1)
+
     ! Set upper boundary to 0
-    lhs_pr1_wpthlp(gr%nz) = 0.0_core_rknd
+    lhs_pr1_wpthlp(gr%nz) = zero
         
     if ( l_scalar_calc ) then
-        ! Set lower boundary to 0
-        lhs_pr1_wpsclrp(1) = 0.0_core_rknd
-        ! Momentum main diagonals: [ x wpxp(k,<t+1>) ]
-        lhs_pr1_wpsclrp(2:gr%nz-1) = C7_Skw_fnc(2:gr%nz-1) * invrs_tau_C6_zm(2:gr%nz-1)
-        ! Set upper boundary to 0
-        lhs_pr1_wpsclrp(gr%nz) = 0.0_core_rknd
-    end if
+
+       ! Set lower boundary to 0
+       lhs_pr1_wpsclrp(1) = zero
+
+       ! Momentum main diagonals: [ x wpxp(k,<t+1>) ]
+       lhs_pr1_wpsclrp(2:gr%nz-1) &
+       = C7_Skw_fnc(2:gr%nz-1) * invrs_tau_C6_zm(2:gr%nz-1)
+
+       ! Set upper boundary to 0
+       lhs_pr1_wpsclrp(gr%nz) = zero
+
+    endif ! l_scalar_calc
+
 
     return
 
-  end subroutine wpxp_term_pr1_lhs_all
+  end subroutine wpxp_term_pr1_lhs
 
   !=============================================================================
-  pure function wpxp_terms_bp_pr3_rhs( C7_Skw_fnc, thv_ds_zm, xpthvp ) &
-  result( rhs )
+  pure subroutine wpxp_terms_bp_pr3_rhs( C7_Skw_fnc, thv_ds_zm, xpthvp, &
+                                         rhs_bp_pr3 )
 
     ! Description:
     ! Buoyancy production of w'x' and w'x' pressure term 3:  explicit portion of
@@ -4452,81 +4376,51 @@ module advance_xm_wpxp_module
     ! References:
     !-----------------------------------------------------------------------
 
-    use clubb_precision, only: &
-        core_rknd ! Variable(s)
+    use grid_class, only:  & 
+        gr    ! Variable type(s)
 
     use constants_clubb, only: & ! Constants(s) 
         grav, & ! Gravitational acceleration [m/s^2]
-        one
-
-    implicit none
-
-    ! Input Variables
-    real( kind = core_rknd ), intent(in) :: & 
-      C7_Skw_fnc,  & ! C_7 parameter with Sk_w applied (k)      [-]
-      thv_ds_zm,   & ! Dry, base-state theta_v on mom. lev. (k) [K]
-      xpthvp         ! x'th_v'(k)                               [K {xm units}]
-
-    ! Return Variable
-    real( kind = core_rknd ) :: rhs
-
-
-    rhs = ( grav / thv_ds_zm ) * ( one - C7_Skw_fnc ) * xpthvp
-
-
-    return
-  end function wpxp_terms_bp_pr3_rhs
-
-  !=====================================================================================
-  pure subroutine wpxp_terms_bp_pr3_rhs_all( C7_Skw_fnc, thv_ds_zm, xpthvp, &
-                                             rhs_bp_pr3 )
-  ! Description:
-  !     This subroutine serves the same function as wpxp_term_pr1_lhs (above), but
-  !     calculated terms for all grid levels at once rather than one at a time.
-  !     This was done so that this code could be vectorized and thereby sped up
-  !     by the compiler. See clubb:ticket:834 for more information.
-  ! 
-  !-------------------------------------------------------------------------------------
+        one,  &
+        zero
 
     use clubb_precision, only: &
         core_rknd ! Variable(s)
-
-    use constants_clubb, only: & ! Constants(s) 
-        grav     ! Gravitational acceleration [m/s^2]
-
-    use grid_class, only:  & 
-        gr
 
     implicit none
 
     ! Input Variables
     real( kind = core_rknd ), dimension(gr%nz), intent(in) :: & 
-      C7_Skw_fnc,  & ! C_7 parameter with Sk_w applied (k)      [-]
-      thv_ds_zm,   & ! Dry, base-state theta_v on mom. lev. (k) [K]
-      xpthvp         ! x'th_v'(k)                               [K {xm units}]
+      C7_Skw_fnc,  & ! C_7 parameter with Sk_w applied       [-]
+      thv_ds_zm,   & ! Dry, base-state theta_v on mom. levs. [K]
+      xpthvp         ! x'th_v'                               [K {xm units}]
 
     ! Return Variable
     real( kind = core_rknd ), dimension(gr%nz), intent(out) :: &
-        rhs_bp_pr3
+        rhs_bp_pr3    ! RHS portion of bouyancy prod and pressure term 3
 
     ! Local Variable
-    integer :: k
+    integer :: k    ! Vertical level index
     
 
     ! Set lower boundary to 0
-    rhs_bp_pr3(1) = 0.0_core_rknd
+    rhs_bp_pr3(1) = zero
 
-    ! Calculate for all other grid levels
+    ! Calculate term at all interior grid levels.
     do k = 2, gr%nz-1
-        rhs_bp_pr3(k) = ( grav / thv_ds_zm(k) ) * ( 1.0_core_rknd - C7_Skw_fnc(k) ) * xpthvp(k)
-    end do
-    
+
+       rhs_bp_pr3(k) &
+       = ( grav / thv_ds_zm(k) ) * ( one - C7_Skw_fnc(k) ) * xpthvp(k)
+
+    enddo ! k = 2, gr%nz-1
+
     ! Set upper boundary to 0
-    rhs_bp_pr3(gr%nz) = 0.0_core_rknd
+    rhs_bp_pr3(gr%nz) = zero
+
 
     return
 
-  end subroutine wpxp_terms_bp_pr3_rhs_all
+  end subroutine wpxp_terms_bp_pr3_rhs
 
   !=============================================================================
   subroutine xm_correction_wpxp_cl( solve_type, dt, wpxp_chnge, invrs_dzt, &
@@ -4622,7 +4516,7 @@ module advance_xm_wpxp_module
     !
     ! -----------------------------d(wpxp_amount_clipped)/dz--- t(k)
     !
-    ! =======wpxpm1_amount_clipped============================= m(k-1)
+    ! =======wpxp_amount_clipped=============================== m(k-1)
     !
     ! The vertical indices m(k), t(k), and m(k-1) correspond with altitudes
     ! zm(k), zt(k), and zm(k-1), respectively.  The letter "t" is used for
