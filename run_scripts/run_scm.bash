@@ -82,7 +82,7 @@ run_case()
 # Note that we use `"$@"' to let each command-line parameter expand to a
 # separate word. The quotes around `$@' are essential!
 # We need TEMP as the `eval set --' would nuke the return value of getopt.
-TEMP=`getopt -o z:m:l:t:s:p:o:nheg --long zt_grid:,zm_grid:,levels:,timestep_test:,stats:,parameter_file:,output_directory:,performance_test,nightly,netcdf,help,grads \
+TEMP=`getopt -o z:m:l:t:s:p:o:nhe --long zt_grid:,zm_grid:,levels:,timestep_test:,stats:,parameter_file:,output_directory:,performance_test,nightly,netcdf,help,grads \
      -n 'run_scm.bash' -- "$@"`
 
 if [ $? != 0 ] ; then echo "Terminating..." >&2 ; exit 1 ; fi
