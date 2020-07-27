@@ -158,17 +158,6 @@ A lot of the time the only parameter that is needed will be the list of aliases 
 #### Variable not found in case X
 In the unfortunate event that a variable is exported in most cases except Case X Y Z, there are a few options available for handling this issue. The easy (and dirty) method of resolving this is to simply blacklist the variable and not plot it at all for that case. To do so, simply add the variable's name to the `blacklisted_vars` list for that case. For example, to blacklist `thlm` from the Wangara case, the blacklist would go from `'blacklisted_vars': []` to `'blacklisted_vars': ['thlm']`. If the missing variable should be plotted for the given case, then you must create a model_calc function (please see below). If neither option is applicable, the data array for the missing variable will be filled with zeros by default and a warning is written to the console.
 
-#### Fallback vs. model_calc functions (fallback functions are no longer part of pyplotgen, this section needs to be updated)
-_Note_: Fallback refers to a function defined under `fallback_func` and model_calc refers to a function defined as either `sam_calc` or `coamps_calc`.
-
-Fallback and model_calc functions are similar in both their code structure and use case, however there are subtle difference between them. Fallback functions are used as a form of last resort attempt to find a variable. In the event that pyplotgen searches a dataset and doesn't find any of a given variables aliases, it will check to see if there is a fallback function defined for that variable. If there is, then it will use that to gather the data and then continue plotting. A model_calc function is different in that it tells pyplotgen that this specific variable is always a calculated value for some model output, and so if there is a model_calc function specified for a variable, pyplotgen will skip past searching aliases and go straight to the calculating function. This helps improve efficiency by reducing time wasted on alias searches while also keeping the code cleaner and more readable by making it easy to see that variable X is always calculated for model Y, whereas a fallback can be called for any of the models.  
-
-Sometimes a variable is outputted in a model for some cases, but not others. In these situations it is preferable to use the fallback function. If one were to use the model_calc function in this situation, then the cases where the variable _is_ outputted would be skipped over, as model_calc function tells pyplotgen to skip the aliases search.
-
-There is no clubb_calc function, if a clubb value needs calculating the fallback_func must be used.
-
-Technically a fallback _could_ be used to perform the same work as a model_calc, however for the sake of performance and code clarity, this is discouraged.
-
 #### Creating a new calculated function (for calculated variables)
 Creating a new calculator function is relatively simple, but must be done correctly. 
 
@@ -307,7 +296,7 @@ BOMEX = {'name': 'bomex', 'start_time': 181, 'end_time': 360, 'height_min_value'
 ~~~~
 Example command line call for SAM-only plots with two input folders:
 ```bash
-python3 ./pyplotgen -s first/path/to/SAM/folder second/path/to/SAM/folder
+python3 ./pyplotgen.py -s first/path/to/SAM/folder second/path/to/SAM/folder
 ```
 
 ## Running pyplotgen on a Windows system
@@ -316,3 +305,13 @@ This will take care of most problems concerning interoperability.
 Running pyplotgen on Windows was tested using Git Bash which is part of the git installation for windows and can be found [here](https://git-scm.com/).  
 Using Git Bash one can simply follow the same procedure as for regular Linux bash to run pyplotgen.  
 Paths can be specified using either the Windows (C:\User\testuser\...) or the Unix format (/home/testuser/...).
+
+# Pyplotgen code convention
+These conventions build from, and may modify, the existing CLUBB naming convention.
+
+### Naming
+* **`UPPER_SNAKE_CASE`**: This naing scheme is used to represent "final" variables. These are variables that **not** changed during the runtime of pyplotgen. Python does not enforce this, as it is only a naming convention, so _please_ do not introduce any code that modifies these variables. The one and only exception to this is the `ALL_CASES` variable in `Case_definitions.py`. The variable is rewritten there IMMEDIATELY after it was originally written only because it allows us to run a small sample of cases without having to rewrite the true ALL_CASES variable.
+    *  **Naming case definitions**: When naming a case definition, the convention is to set the 'name' parameter equal to a lower case version of the variable name used.
+* **`lower_snake_case`**: This is the accepted norm for python variable names. Please use this for any regular use variables. Python notation is infamous for its heavy use of acronyms and shorthand, however due to the nature of our work it is recommended to spell variable names out if possible.
+* **`\_\_underScoredCamelCase\_\_()`**: Two underscores around a camelcased method name represents a "helper method". In other langauges this is refered to as a private method. These methods help write clean code, but are not intended for use outside of the code within the class they've been written. E.g. `Foo.__bar__()` should only be written within the `Foo.py` file/ within the `Foo` class if the file contains multiple classes.
+* **`lowerCamelCase()`**: This is used for normal function names. For non-helper functions (see previous), use this naming convention. This deviates from the typical python convention. There is no strong reason behind this other than it's what's been done and it was the format for pyplotgen's legacy code. It may be desireable to switch to a `lower_snake_case()` in the future. This would be a simple yet large refactor.
