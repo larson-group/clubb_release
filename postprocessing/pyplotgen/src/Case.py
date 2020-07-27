@@ -25,7 +25,7 @@ class Case:
 
     def __init__(self, case_definition, clubb_folders=[], diff_datasets=None, sam_folders=[""], wrf_folders=[""],
                  plot_les=False, plot_budgets=False, plot_r408=False, plot_hoc=False, e3sm_dirs=[], cam_folders=[],
-                 time_height=False, anim=None):
+                 time_height=False, animation=None):
         """
         Initialize a Case object with the passed parameters
 
@@ -70,7 +70,7 @@ class Case:
         self.diff_datasets = diff_datasets
         self.next_panel_alphabetic_id_code = 97
         self.time_height = time_height
-        self.anim = anim
+        self.animation = animation
 
         if 'disable_budgets' in case_definition.keys() and case_definition['disable_budgets'] is True:
             self.plot_budgets = False
@@ -194,7 +194,7 @@ class Case:
                                   coamps_dataset=coamps_datasets, sam_datasets=sam_datasets,
                                   wrf_datasets=wrf_datasets, r408_dataset=r408_datasets, hoc_dataset=hoc_datasets,
                                   e3sm_datasets=e3sm_file, cam_datasets=cam_file,
-                                  time_height=self.time_height, anim=self.anim)
+                                  time_height=self.time_height, anim=self.animation)
             self.panels.extend(temp_group.panels)
 
         # Convert panels to difference panels if user passed in --diff <<folder>>
@@ -226,7 +226,7 @@ class Case:
                 for input_folder in self.clubb_datasets:
                     folder_name = os.path.basename(input_folder)
                     budget_variables = VariableGroupBaseBudgets(self,
-                                       clubb_datasets={folder_name:clubb_datasets[input_folder]}, anim=self.anim)
+                                                                clubb_datasets={folder_name:clubb_datasets[input_folder]}, anim=self.animation)
                     self.panels.extend(budget_variables.panels)
             if wrf_datasets is not None and len(wrf_datasets) != 0:
                 # for folders_datasets in wrf_datasets.values():
@@ -234,20 +234,20 @@ class Case:
                 for input_folder in wrf_datasets:
                     folder_name = os.path.basename(input_folder)
                     budget_variables = VariableGroupBaseBudgets(self,
-                                       wrf_datasets={folder_name:wrf_datasets[input_folder]}, anim=self.anim)
+                                                                wrf_datasets={folder_name:wrf_datasets[input_folder]}, anim=self.animation)
                     self.panels.extend(budget_variables.panels)
             if e3sm_file is not None and len(e3sm_file) != 0:
                 for dataset_name in e3sm_file:
                     # E3SM dataset must be wrapped in the same form as the clubb datasets
                     e3sm_budgets = VariableGroupBaseBudgets(self,
-                                   e3sm_datasets={dataset_name: e3sm_file[dataset_name]}, anim=self.anim)
+                                                            e3sm_datasets={dataset_name: e3sm_file[dataset_name]}, anim=self.animation)
                     self.panels.extend(e3sm_budgets.panels)
             if sam_datasets is not None and len(sam_datasets) != 0:
                 # for dataset in sam_datasets.values():
                 for input_folder in sam_datasets:
                     folder_name = os.path.basename(input_folder)
                     budget_variables = VariableGroupSamBudgets(self,
-                                       sam_datasets={folder_name:sam_datasets[input_folder]}, anim=self.anim)
+                                                               sam_datasets={folder_name:sam_datasets[input_folder]}, anim=self.animation)
                 # sam_budgets = VariableGroupSamBudgets(self, sam_datasets=sam_datasets, anim=self.anim)
                     self.panels.extend(budget_variables.panels)
 
@@ -268,19 +268,19 @@ class Case:
         """
         linesA = panelA.all_plots
         linesB = panelB.all_plots
-        newLines = linesA
+        new_lines = linesA
         for idx in range(len(linesA)):
             if get_y_diff:
                 a_data = linesA[idx].y
                 b_data = linesB[idx].y
                 diff_line_data = self.__getArrayDiff__(a_data, b_data)
-                newLines[idx].y = (diff_line_data)
+                new_lines[idx].y = (diff_line_data)
             else:
                 a_data = linesA[idx].x
                 b_data = linesB[idx].x
                 diff_line_data = self.__getArrayDiff__(a_data, b_data)
-                newLines[idx].x = (diff_line_data)
-        return newLines
+                new_lines[idx].x = (diff_line_data)
+        return new_lines
 
     def __getArrayDiff__(self, arrA, arrB):
         """
@@ -300,8 +300,8 @@ class Case:
         else:
             short = arrB
             long = arrA
-        padType = type(short[0])
-        padding = np.zeros(len(long)-len(short), dtype=padType)
+        pad_type = type(short[0])
+        padding = np.zeros(len(long)-len(short), dtype=pad_type)
         short = np.concatenate((short,padding))
 
         # Return absolute difference between both arrays

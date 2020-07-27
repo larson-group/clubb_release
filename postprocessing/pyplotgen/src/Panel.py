@@ -83,7 +83,7 @@ class Panel:
         :param casename: The name of the case that is plotted in this panel
         :param replace_images: Switch to tell pyplotgen if existing files should be overwritten
         :param no_legends: If False, a legend will be generated for this Panel
-        :param thin_lines: If True, the linewidth for this Panel is specified in Style_definitions.THIN_LINE_THICKNESS
+        :param thin_lines: If True, the line_width for this Panel is specified in Style_definitions.THIN_LINE_THICKNESS
         :param alphabetic_id: A string printed into the Panel at coordinates (.9,.9) as an identifier.
         :paired_plots: If no format is specified and paired_plots is True,
             use the color/style rotation specified in Style_definitions.py
@@ -153,34 +153,34 @@ class Panel:
                                  " using X: " + self.x_title + "  Y: " + self.y_title)
             # Set correct line formatting and plot data
             if var.line_format == Style_definitions.BENCHMARK_LINE_STYLES['coamps']:
-                linewidth = Style_definitions.LES_LINE_THICKNESS
+                line_width = Style_definitions.LES_LINE_THICKNESS
             elif var.line_format == Style_definitions.BENCHMARK_LINE_STYLES['sam']:
-                linewidth = Style_definitions.LES_LINE_THICKNESS
+                line_width = Style_definitions.LES_LINE_THICKNESS
             elif var.line_format == Style_definitions.BENCHMARK_LINE_STYLES['r408']:
-                linewidth = Style_definitions.ARCHIVED_CLUBB_LINE_THICKNESS
+                line_width = Style_definitions.ARCHIVED_CLUBB_LINE_THICKNESS
             elif var.line_format == Style_definitions.BENCHMARK_LINE_STYLES['e3sm']:
-                linewidth = Style_definitions.E3SM_LINE_THICKNESS
+                line_width = Style_definitions.E3SM_LINE_THICKNESS
             else:
-                linewidth = Style_definitions.CLUBB_LINE_THICKNESS
+                line_width = Style_definitions.CLUBB_LINE_THICKNESS
             if thin_lines:
-                linewidth = Style_definitions.THIN_LINE_THICKNESS
+                line_width = Style_definitions.THIN_LINE_THICKNESS
             if var.line_format != "":
-                plt.plot(x_data, y_data, var.line_format, label=var.label, linewidth=linewidth)
+                plt.plot(x_data, y_data, var.line_format, label=var.label, linewidth=line_width)
             # If format is not specified and paired_plots are enabled,
             # use the color/style rotation specified in Style_definitions.py
             elif paired_plots:
                 if plot_dashed:
-                    linewidth = Style_definitions.DASHED_LINE_THICKNESS
-                    linestyle = '--'
+                    line_width = Style_definitions.DASHED_LINE_THICKNESS
+                    line_style = '--'
                     plot_dashed = False
                 else:
-                    linewidth = Style_definitions.FLAT_LINE_THICKNESS
-                    linestyle = '-'
+                    line_width = Style_definitions.FLAT_LINE_THICKNESS
+                    line_style = '-'
                     plot_dashed = True
 
-                plt.plot(x_data, y_data, linestyle=linestyle, label=var.label, linewidth=linewidth)
+                plt.plot(x_data, y_data, linestyle=line_style, label=var.label, linewidth=line_width)
             else:
-                plt.plot(x_data, y_data, label=var.label, linewidth=linewidth)
+                plt.plot(x_data, y_data, label=var.label, linewidth=line_width)
 
         # Set titles
         plt.title(self.title)
@@ -235,7 +235,7 @@ class Panel:
             filename = filename + "_"+ self.title
         else:
             filename = filename + '_' + self.y_title + "_VS_" + self.x_title
-        filename = self.__remove_invalid_filename_chars__(filename)
+        filename = self.__removeInvalidFilenameChars__(filename)
         # Concatenate with output foldername
         rel_filename = output_folder + "/" +casename+'/' + filename
         rel_filename = clean_path(rel_filename)
@@ -247,7 +247,7 @@ class Panel:
                   ' already exists. To overwrite this image during runtime pass in the --replace (-r) parameter.')
         plt.close()
 
-    def __remove_invalid_filename_chars__(self, filename):
+    def __removeInvalidFilenameChars__(self, filename):
         """
         Removes characters from a string that are not valid for a filename
 
@@ -322,14 +322,14 @@ class Panel:
         # Generate image filename
         filename = "timeheight_"+ str(datetime.now())
 
-        filename = self.__remove_invalid_filename_chars__(filename)
+        filename = self.__removeInvalidFilenameChars__(filename)
         # Concatenate with output foldername
-        rel_filename = output_folder + "/" +casename+'/' + filename
-        rel_filename = clean_path(rel_filename)
+        relative_filename = output_folder + "/" +casename+'/' + filename
+        relative_filename = clean_path(relative_filename)
         # Save image file
-        if replace_images is True or not os.path.isfile(rel_filename+Panel.EXTENSION):
-            plt.savefig(rel_filename+Panel.EXTENSION)
-        else: # os.path.isfile(rel_filename + Panel.EXTENSION) and replace_images is False:
-            print("\n\tImage " + rel_filename+Panel.EXTENSION+
+        if replace_images is True or not os.path.isfile(relative_filename+Panel.EXTENSION):
+            plt.savefig(relative_filename+Panel.EXTENSION)
+        else: # os.path.isfile(relative_filename + Panel.EXTENSION) and replace_images is False:
+            print("\n\tImage " + relative_filename+Panel.EXTENSION+
                   ' already exists. To overwrite this image during runtime pass in the --replace (-r) parameter.')
         plt.close()

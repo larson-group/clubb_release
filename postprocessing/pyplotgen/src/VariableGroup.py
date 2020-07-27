@@ -266,7 +266,7 @@ class VariableGroup:
         :return: An array of lines to be added to a panel's plots (via the extend() function)
         """
         all_model_var_names = variable_def_dict['var_names']
-        conv_factors = self.__getConvFactors__(variable_def_dict)
+        conversion_factors = self.__getConversionFactors__(variable_def_dict)
 
         lines = None
         if 'lines' in variable_def_dict.keys():
@@ -307,7 +307,7 @@ class VariableGroup:
 
         if len(all_model_var_names[model_name]) > 0 and not data_was_calculated:
             all_lines.extend(self.__getVarLines__(all_model_var_names[model_name], dataset,
-                                                  conversion_factor=conv_factors[model_name],
+                                                  conversion_factor=conversion_factors[model_name],
                                                   label=label,
                                                   line_format=line_style,
                                                   override_panel_type=panel_type,
@@ -487,7 +487,7 @@ class VariableGroup:
             plotted_models_varname = var_names['e3sm'][0]
         return plotted_models_varname
 
-    def __getConvFactors__(self, variable_def_dict):
+    def __getConversionFactors__(self, variable_def_dict):
         """
         This is a helper method that loads parameters from the variables
         definition and assigns them to python variables accordingly.
@@ -564,20 +564,20 @@ class VariableGroup:
             ncdf_datasets = {'converted_to_dict': ncdf_datasets}
         line = None
         if panel_type is Panel.TYPE_PROFILE:
-            profile_lines = self.__get_profile_line__(var_names, ncdf_datasets, label, line_format, conversion_factor,
-                                                      avg_axis, lines=lines)
+            profile_lines = self.__getProfileLine__(var_names, ncdf_datasets, label, line_format, conversion_factor,
+                                                    avg_axis, lines=lines)
             if profile_lines is not None:
                 all_lines.extend(profile_lines)
         elif panel_type is Panel.TYPE_BUDGET:
-            budget_lines = self.__get_budget_lines__(lines, ncdf_datasets)
+            budget_lines = self.__getBudgetLines__(lines, ncdf_datasets)
             all_lines.extend(budget_lines)
         elif panel_type is Panel.TYPE_TIMESERIES:
-            line = self.__get_timeseries_line__(var_names, ncdf_datasets, self.end_time, conversion_factor, label,
-                                                line_format)
+            line = self.__getTimeseriesLine__(var_names, ncdf_datasets, self.end_time, conversion_factor, label,
+                                              line_format)
             if line is not None:
                 all_lines.append(line)
         elif panel_type is Panel.TYPE_TIMEHEIGHT:
-            contour = self.__get_time_height_contours__(var_names, ncdf_datasets, label, conversion_factor)
+            contour = self.__getTimeHeightContours__(var_names, ncdf_datasets, label, conversion_factor)
             if contour is not None:
                 all_lines.append(contour)
         elif panel_type:
@@ -585,7 +585,7 @@ class VariableGroup:
 
         return all_lines
 
-    def __get_profile_line__(self, varname, dataset, label, line_format, conversion_factor, avg_axis, lines=None):
+    def __getProfileLine__(self, varname, dataset, label, line_format, conversion_factor, avg_axis, lines=None):
         """
         Assumes variable can be plotted as a profile and returns a Line object
         representing the given variable for a profile plot. Profile plots are plots that show Height vs Varname
@@ -616,7 +616,7 @@ class VariableGroup:
             output_lines.append(line)
         return output_lines
 
-    def __get_timeseries_line__(self, varname, dataset, end_time, conversion_factor, label, line_format):
+    def __getTimeseriesLine__(self, varname, dataset, end_time, conversion_factor, label, line_format):
         """
         Returns a Line object for a timeseries plot of the variable varname in dataset.
 
@@ -637,7 +637,7 @@ class VariableGroup:
         line = Line(variable.independent_data, variable, label=label, line_format=line_format)
         return line
 
-    def __get_budget_lines__(self, lines, dataset):
+    def __getBudgetLines__(self, lines, dataset):
         """
         Returns a list of Line objects for a budget plot for each variable defined in lines
 
@@ -652,7 +652,7 @@ class VariableGroup:
         output_lines = self.__processLinesParameter__(lines, dataset)
         return output_lines
 
-    def __get_time_height_contours__(self, varname, dataset, label, conversion_factor):
+    def __getTimeHeightContours__(self, varname, dataset, label, conversion_factor):
         """
         Return a Contour object for a time-height plot,
         plotting a 2-dimensional contour plot with time as x axis and height as y axis.

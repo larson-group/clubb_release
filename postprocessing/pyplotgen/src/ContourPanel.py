@@ -10,11 +10,13 @@ The changed plot routine outputs contour plots instead of profile plots.
 '''
 import os
 from datetime import datetime
-import matplotlib.pyplot as plt
-from Panel import Panel
 
+import matplotlib.pyplot as plt
+
+from Panel import Panel
 from config import Style_definitions
-from src.interoperability import clean_path, clean_title
+from src.interoperability import clean_path
+
 
 class ContourPanel(Panel):
     """
@@ -87,7 +89,7 @@ class ContourPanel(Panel):
         # Generate image filename
         filename = "timeheight_"+ str(datetime.now())
 
-        filename = self.__remove_invalid_filename_chars__(filename)
+        filename = self.__removeInvalidFilenameChars__(filename)
         # Concatenate with output foldername
         rel_filename = output_folder + "/" +casename+'/' + filename
         rel_filename = clean_path(rel_filename)

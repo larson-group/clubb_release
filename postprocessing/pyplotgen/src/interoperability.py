@@ -9,36 +9,25 @@ different operating systems.
 import os
 import re
 
-def clean_path(string):
+def clean_path(input_string):
     """
     Removes characters from a path string
     that are not valid for the operating system
 
-    :param string: Path string to have characters removed
+    :param input_string: Path string to have characters removed
     :return: A cleaned version of the path
     """
     # string = string.replace('.', '')
-    string = string.replace(',', '')
-    string = string.replace(' ','_')
-    string = string.replace('*','x')
+    input_string = input_string.replace(',', '')
+    input_string = input_string.replace(' ', '_')
+    input_string = input_string.replace('*', 'x')
     if 'win' in os.name.lower() or 'nt' in os.name.lower():
         # Replace all ':' except the one specifying the drive
         # (Uses look ahead and look back patterns)
-        string = re.sub(r'(?<![A-Z]):(?!\\)', '-', string)
+        input_string = re.sub(r'(?<![A-Z]):(?!\\)', '-', input_string)
     else:
-        string = string.replace(':', '-')
-    return string
-
-# def delete_folder(path):
-#     """
-#     Delete folder and its contents
-
-#     :param path: Path to folder which should be deleted
-#     """
-#     if 'win' in os.name.lower() or 'nt' in os.name.lower():
-#         subprocess.run(['rmdir', '/s /q', path])
-#     else:
-#         subprocess.run(['rm', '-rf', path])
+        input_string = input_string.replace(':', '-')
+    return input_string
 
 def clean_title(string):
     """

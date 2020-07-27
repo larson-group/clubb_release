@@ -29,9 +29,9 @@ class Contour:
             y_data = y_data.dependent_data
         if isinstance(c_data, NetCdfVariable):
             c_data = c_data.dependent_data
-        xlen = len(x_data)
-        ylen = len(y_data)
-        if c_data.shape != (xlen,ylen):
+        x_len = len(x_data)
+        y_len = len(y_data)
+        if c_data.shape != (x_len,y_len):
             raise ValueError("The size of data(" + str(c_data.shape) + ") is not the same as the size of XxY(" +
                              str(len(x_data)) + 'x' + str(len(y_data)) + ") for the \"" + label + "\" contour.")
         self.x = x_data

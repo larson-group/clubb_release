@@ -133,7 +133,7 @@ class PyPlotGen:
         all_cases = Case_definitions.ALL_CASES
 
         # Downloads model output (sam, les, clubb) if it doesn't exist
-        if self.__benchmark_files_needed__():
+        if self.__benchmarkFilesNeeded__():
             self.__downloadModelOutputs__()
 
         # If --replace flag was set, delete old output folder
@@ -158,7 +158,7 @@ class PyPlotGen:
                             plot_budgets=self.plot_budgets, sam_folders=self.sam_folders, wrf_folders=self.wrf_folders,
                             diff_datasets=case_diff_datasets, plot_r408=self.cgbest, plot_hoc=self.hoc,
                             e3sm_dirs=self.e3sm_dir, cam_folders=self.cam_folders,
-                            time_height=self.time_height, anim=self.anim)
+                            time_height=self.time_height, animation=self.anim)
                 # Call plot function of case instance
                 case.plot(self.output_folder, replace_images=self.replace_images, no_legends=self.no_legends,
                           thin_lines=self.thin, show_alphabetic_id=self.show_alphabetic_id)
@@ -269,7 +269,7 @@ class PyPlotGen:
                     shutil.copy(file, copy_dest_file)
                     print("\tFound setup file " + str(file))
 
-    def __benchmark_files_needed__(self):
+    def __benchmarkFilesNeeded__(self):
         """
         Returns true if the user requested to plot model output
         that needs to be downloaded
@@ -312,7 +312,7 @@ def __trimTrailingSlash__(args):
     return args
 
 
-def __process_args__():
+def __processArguments__():
     """
     This method takes arguments in from the command line and feeds them into a PyPlotGen object
 
@@ -426,5 +426,5 @@ def __process_args__():
 
 
 if __name__ == "__main__":
-    pyplotgen = __process_args__()
+    pyplotgen = __processArguments__()
     pyplotgen.run()
