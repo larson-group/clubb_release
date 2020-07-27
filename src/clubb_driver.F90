@@ -177,7 +177,6 @@ module clubb_driver
     use parameters_microphys, only: &
       lh_microphys_type,     & !--------------------------------------------- Variable(s)
       lh_microphys_disabled, &
-      lh_seed,               &
       microphys_scheme,      &
       lh_num_samples,    &
       lh_sequence_length
