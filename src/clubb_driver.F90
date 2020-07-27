@@ -2244,7 +2244,7 @@ module clubb_driver
                itime, pdf_dim, lh_num_samples, lh_sequence_length, gr%nz, 1, & ! In
                l_calc_weights_all_levs_itime,                                & ! In
                pdf_params, delta_zm, rcm, Lscale,                            & ! In
-!              rho_ds_zt,                                                    &
+               rho_ds_zt,                                                    &
                mu_x_1_n, mu_x_2_n, sigma_x_1_n, sigma_x_2_n,      & ! In
                corr_cholesky_mtx_1, corr_cholesky_mtx_2,                     & ! In
                hydromet_pdf_params, silhs_config_flags,                      & ! In

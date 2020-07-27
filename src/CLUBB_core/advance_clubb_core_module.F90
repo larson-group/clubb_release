@@ -797,12 +797,6 @@ module advance_clubb_core_module
     integer, intent(out) :: &
       err_code_out  ! Error code indicator
 
-    ! Stop Wunused-dummy-argument warning without editing input parameters
-    ! Added by IsenfireLDC
-    
-    if ( size(hydromet) > zero ) then
-        continue
-    end if
 
     !----- Begin Code -----
     
