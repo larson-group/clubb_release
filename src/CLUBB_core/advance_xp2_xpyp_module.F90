@@ -2799,8 +2799,8 @@ module advance_xp2_xpyp_module
         implicit_coefs_terms    ! Variable Type
 
     use turbulent_adv_pdf, only: &
-        xpyp_term_ta_pdf_lhs_all, &  ! Procedures
-        xpyp_term_ta_pdf_rhs_all, &
+        xpyp_term_ta_pdf_lhs, &  ! Procedures
+        xpyp_term_ta_pdf_rhs, &
         sgn_turbulent_velocity
       
     use model_flags, only: &
@@ -3067,16 +3067,16 @@ module advance_xp2_xpyp_module
       end if
             
       ! Calculate the RHS turbulent advection term for <w'rt'^2>
-      call xpyp_term_ta_pdf_rhs_all( term_wprtp2_explicit(:),       & ! Intent(in)
-                                     rho_ds_zt(:),                  & ! Intent(in)
-                                     invrs_rho_ds_zm(:),            & ! Intent(in)
-                                     gr%invrs_dzm(:),               & ! Intent(in)
-                                     l_upwind_xpyp_ta,              & ! Intent(in)
-                                     sgn_t_vel_rtp2(:),             & ! Intent(in)
-                                     term_wprtp2_explicit_zm(:),    & ! Intent(in)
-                                     rho_ds_zm(:),                  & ! Intent(in)
-                                     gr%invrs_dzt(:),               & ! Intent(in)
-                                     rhs_ta_wprtp2(:)               ) ! Intent(out)
+      call xpyp_term_ta_pdf_rhs( term_wprtp2_explicit(:),       & ! Intent(in)
+                                 rho_ds_zt(:),                  & ! Intent(in)
+                                 invrs_rho_ds_zm(:),            & ! Intent(in)
+                                 gr%invrs_dzm(:),               & ! Intent(in)
+                                 l_upwind_xpyp_ta,              & ! Intent(in)
+                                 sgn_t_vel_rtp2(:),             & ! Intent(in)
+                                 term_wprtp2_explicit_zm(:),    & ! Intent(in)
+                                 rho_ds_zm(:),                  & ! Intent(in)
+                                 gr%invrs_dzt(:),               & ! Intent(in)
+                                 rhs_ta_wprtp2(:)               ) ! Intent(out)
         
       ! Interpolate wpthlp2 to momentum levels, and calculate the sign of vertical velocity
       if ( l_upwind_xpyp_ta ) then
@@ -3085,16 +3085,16 @@ module advance_xp2_xpyp_module
       end if
     
       ! Calculate the RHS turbulent advection term for <w'thl'^2>
-      call xpyp_term_ta_pdf_rhs_all( term_wpthlp2_explicit(:),      & ! Intent(in)
-                                     rho_ds_zt(:),                  & ! Intent(in)
-                                     invrs_rho_ds_zm(:),            & ! Intent(in)
-                                     gr%invrs_dzm(:),               & ! Intent(in)
-                                     l_upwind_xpyp_ta,              & ! Intent(in)
-                                     sgn_t_vel_thlp2(:),            & ! Intent(in)
-                                     term_wpthlp2_explicit_zm(:),   & ! Intent(in)
-                                     rho_ds_zm(:),                  & ! Intent(in)
-                                     gr%invrs_dzt(:),               & ! Intent(in)
-                                     rhs_ta_wpthlp2(:)              ) ! Intent(out)
+      call xpyp_term_ta_pdf_rhs( term_wpthlp2_explicit(:),      & ! Intent(in)
+                                 rho_ds_zt(:),                  & ! Intent(in)
+                                 invrs_rho_ds_zm(:),            & ! Intent(in)
+                                 gr%invrs_dzm(:),               & ! Intent(in)
+                                 l_upwind_xpyp_ta,              & ! Intent(in)
+                                 sgn_t_vel_thlp2(:),            & ! Intent(in)
+                                 term_wpthlp2_explicit_zm(:),   & ! Intent(in)
+                                 rho_ds_zm(:),                  & ! Intent(in)
+                                 gr%invrs_dzt(:),               & ! Intent(in)
+                                 rhs_ta_wpthlp2(:)              ) ! Intent(out)
                                      
       ! Interpolate wprtpthlp to momentum levels, and calculate the sign of vertical velocity
       if ( l_upwind_xpyp_ta ) then
@@ -3103,16 +3103,16 @@ module advance_xp2_xpyp_module
       end if    
     
       ! Calculate the RHS turbulent advection term for <w'rt'thl'>
-      call xpyp_term_ta_pdf_rhs_all( term_wprtpthlp_explicit(:),        & ! Intent(in)
-                                     rho_ds_zt(:),                      & ! Intent(in)
-                                     invrs_rho_ds_zm(:),                & ! Intent(in)
-                                     gr%invrs_dzm(:),                   & ! Intent(in)
-                                     l_upwind_xpyp_ta,                  & ! Intent(in)
-                                     sgn_t_vel_rtpthlp(:),              & ! Intent(in)
-                                     term_wprtpthlp_explicit_zm(:),     & ! Intent(in)
-                                     rho_ds_zm(:),                      & ! Intent(in)
-                                     gr%invrs_dzt(:),                   & ! Intent(in)
-                                     rhs_ta_wprtpthlp(:)                ) ! Intent(out)
+      call xpyp_term_ta_pdf_rhs( term_wprtpthlp_explicit(:),    & ! Intent(in)
+                                 rho_ds_zt(:),                  & ! Intent(in)
+                                 invrs_rho_ds_zm(:),            & ! Intent(in)
+                                 gr%invrs_dzm(:),               & ! Intent(in)
+                                 l_upwind_xpyp_ta,              & ! Intent(in)
+                                 sgn_t_vel_rtpthlp(:),          & ! Intent(in)
+                                 term_wprtpthlp_explicit_zm(:), & ! Intent(in)
+                                 rho_ds_zm(:),                  & ! Intent(in)
+                                 gr%invrs_dzt(:),               & ! Intent(in)
+                                 rhs_ta_wprtpthlp(:)            ) ! Intent(out)
     
     
       if ( l_scalar_calc ) then
@@ -3133,16 +3133,16 @@ module advance_xp2_xpyp_module
           end if
         
           ! Calculate the RHS turbulent advection term for <w'sclr'^2>
-          call xpyp_term_ta_pdf_rhs_all( term_wpsclrp2_explicit(:),         & ! Intent(in)
-                                         rho_ds_zt(:),                      & ! Intent(in)
-                                         invrs_rho_ds_zm(:),                & ! Intent(in)
-                                         gr%invrs_dzm(:),                   & ! Intent(in)
-                                         l_upwind_xpyp_ta,                  & ! Intent(in)
-                                         sgn_t_vel_sclrp2(:),               & ! Intent(in)
-                                         term_wpsclrp2_explicit_zm(:),      & ! Intent(in)
-                                         rho_ds_zm(:),                      & ! Intent(in)
-                                         gr%invrs_dzt(:),                   & ! Intent(in)
-                                         rhs_ta_wpsclrp2(:,i)               ) ! Intent(out)
+          call xpyp_term_ta_pdf_rhs( term_wpsclrp2_explicit(:),    & ! Intent(in)
+                                     rho_ds_zt(:),                 & ! Intent(in)
+                                     invrs_rho_ds_zm(:),           & ! Intent(in)
+                                     gr%invrs_dzm(:),              & ! Intent(in)
+                                     l_upwind_xpyp_ta,             & ! Intent(in)
+                                     sgn_t_vel_sclrp2(:),          & ! Intent(in)
+                                     term_wpsclrp2_explicit_zm(:), & ! Intent(in)
+                                     rho_ds_zm(:),                 & ! Intent(in)
+                                     gr%invrs_dzt(:),              & ! Intent(in)
+                                     rhs_ta_wpsclrp2(:,i)          ) ! Intent(out)
         end do
         
         ! Interpolate wpsclrprtp to momentum levels and calculate the sign of 
@@ -3158,16 +3158,16 @@ module advance_xp2_xpyp_module
           end if
             
           ! Calculate the RHS turbulent advection term for <w'sclr'rt'>
-          call xpyp_term_ta_pdf_rhs_all( term_wprtpsclrp_explicit(:),       & ! Intent(in)
-                                         rho_ds_zt(:),                      & ! Intent(in)
-                                         invrs_rho_ds_zm(:),                & ! Intent(in)
-                                         gr%invrs_dzm(:),                   & ! Intent(in)
-                                         l_upwind_xpyp_ta,                  & ! Intent(in)
-                                         sgn_t_vel_sclrprtp(:),             & ! Intent(in)
-                                         term_wprtpsclrp_explicit_zm(:),    & ! Intent(in)
-                                         rho_ds_zm(:),                      & ! Intent(in)
-                                         gr%invrs_dzt(:),                   & ! Intent(in)
-                                         rhs_ta_wprtpsclrp(:,i)             ) ! Intent(out)
+          call xpyp_term_ta_pdf_rhs( term_wprtpsclrp_explicit(:),    & ! Intent(in)
+                                     rho_ds_zt(:),                   & ! Intent(in)
+                                     invrs_rho_ds_zm(:),             & ! Intent(in)
+                                     gr%invrs_dzm(:),                & ! Intent(in)
+                                     l_upwind_xpyp_ta,               & ! Intent(in)
+                                     sgn_t_vel_sclrprtp(:),          & ! Intent(in)
+                                     term_wprtpsclrp_explicit_zm(:), & ! Intent(in)
+                                     rho_ds_zm(:),                   & ! Intent(in)
+                                     gr%invrs_dzt(:),                & ! Intent(in)
+                                     rhs_ta_wprtpsclrp(:,i)          ) ! Intent(out)
           
         end do
         
@@ -3183,16 +3183,16 @@ module advance_xp2_xpyp_module
           end if
     
           ! Calculate the RHS turbulent advection term for <w'sclr'thl'>
-          call xpyp_term_ta_pdf_rhs_all( term_wpthlpsclrp_explicit(:),      & ! Intent(in)
-                                         rho_ds_zt(:),                      & ! Intent(in)
-                                         invrs_rho_ds_zm(:),                & ! Intent(in)
-                                         gr%invrs_dzm(:),                   & ! Intent(in)
-                                         l_upwind_xpyp_ta,                  & ! Intent(in)
-                                         sgn_t_vel_sclrpthlp(:),            & ! Intent(in)
-                                         term_wpthlpsclrp_explicit_zm(:),   & ! Intent(in)
-                                         rho_ds_zm(:),                      & ! Intent(in)
-                                         gr%invrs_dzt(:),                   & ! Intent(in)
-                                         rhs_ta_wpthlpsclrp(:,i)            ) ! Intent(out)
+          call xpyp_term_ta_pdf_rhs( term_wpthlpsclrp_explicit(:),    & ! Intent(in)
+                                     rho_ds_zt(:),                    & ! Intent(in)
+                                     invrs_rho_ds_zm(:),              & ! Intent(in)
+                                     gr%invrs_dzm(:),                 & ! Intent(in)
+                                     l_upwind_xpyp_ta,                & ! Intent(in)
+                                     sgn_t_vel_sclrpthlp(:),          & ! Intent(in)
+                                     term_wpthlpsclrp_explicit_zm(:), & ! Intent(in)
+                                     rho_ds_zm(:),                    & ! Intent(in)
+                                     gr%invrs_dzt(:),                 & ! Intent(in)
+                                     rhs_ta_wpthlpsclrp(:,i)          ) ! Intent(out)
           
         end do
         
@@ -3227,16 +3227,16 @@ module advance_xp2_xpyp_module
         end if
 
         ! Calculate the LHS turbulent advection term for <w'rt'^2>
-        call xpyp_term_ta_pdf_lhs_all( coef_wprtp2_implicit(:),     & ! Intent(in)
-                                       rho_ds_zt(:),                & ! Intent(in)
-                                       invrs_rho_ds_zm(:),          & ! Intent(in)
-                                       gr%invrs_dzm(:),             & ! Intent(in)
-                                       l_upwind_xpyp_ta,            & ! Intent(in)
-                                       sgn_t_vel_rtp2(:),           & ! Intent(in)
-                                       coef_wprtp2_implicit_zm(:),  & ! Intent(in)
-                                       rho_ds_zm(:),                & ! Intent(in)
-                                       gr%invrs_dzt(:),             & ! Intent(in)
-                                       lhs_ta_wprtp2(:,:)           ) ! Intent(out)
+        call xpyp_term_ta_pdf_lhs( coef_wprtp2_implicit(:),     & ! Intent(in)
+                                   rho_ds_zt(:),                & ! Intent(in)
+                                   invrs_rho_ds_zm(:),          & ! Intent(in)
+                                   gr%invrs_dzm(:),             & ! Intent(in)
+                                   l_upwind_xpyp_ta,            & ! Intent(in)
+                                   sgn_t_vel_rtp2(:),           & ! Intent(in)
+                                   coef_wprtp2_implicit_zm(:),  & ! Intent(in)
+                                   rho_ds_zm(:),                & ! Intent(in)
+                                   gr%invrs_dzt(:),             & ! Intent(in)
+                                   lhs_ta_wprtp2(:,:)           ) ! Intent(out)
 
         ! For ADG1, the LHS turbulent advection terms for 
         ! <w'rt'^2>, <w'thl'^2>, <w'rt'thl'>, and <w'sclr'x'> are all equal
@@ -3283,16 +3283,16 @@ module advance_xp2_xpyp_module
         end if
             
         ! Calculate the RHS turbulent advection term for <w'rt'^2>
-        call xpyp_term_ta_pdf_rhs_all( term_wprtp2_explicit(:),     & ! Intent(in)
-                                       rho_ds_zt(:),                & ! Intent(in)
-                                       invrs_rho_ds_zm(:),          & ! Intent(in)
-                                       gr%invrs_dzm(:),             & ! Intent(in)
-                                       l_upwind_xpyp_ta,            & ! Intent(in)
-                                       sgn_t_vel_rtp2(:),           & ! Intent(in)
-                                       term_wprtp2_explicit_zm(:),  & ! Intent(in)
-                                       rho_ds_zm(:),                & ! Intent(in)
-                                       gr%invrs_dzt(:),             & ! Intent(in)
-                                       rhs_ta_wprtp2(:)             ) ! Intent(out)
+        call xpyp_term_ta_pdf_rhs( term_wprtp2_explicit(:),     & ! Intent(in)
+                                   rho_ds_zt(:),                & ! Intent(in)
+                                   invrs_rho_ds_zm(:),          & ! Intent(in)
+                                   gr%invrs_dzm(:),             & ! Intent(in)
+                                   l_upwind_xpyp_ta,            & ! Intent(in)
+                                   sgn_t_vel_rtp2(:),           & ! Intent(in)
+                                   term_wprtp2_explicit_zm(:),  & ! Intent(in)
+                                   rho_ds_zm(:),                & ! Intent(in)
+                                   gr%invrs_dzt(:),             & ! Intent(in)
+                                   rhs_ta_wprtp2(:)             ) ! Intent(out)
             
         ! Calculate the momentum level terms and sign of vertical velocity if
         ! l_upwind_xpyp_ta is true
@@ -3306,16 +3306,16 @@ module advance_xp2_xpyp_module
         end if
 
         ! Calculate the RHS turbulent advection term for <w'thl'^2>
-        call xpyp_term_ta_pdf_rhs_all( term_wpthlp2_explicit(:),    & ! Intent(in)
-                                       rho_ds_zt(:),                & ! Intent(in)
-                                       invrs_rho_ds_zm(:),          & ! Intent(in)
-                                       gr%invrs_dzm(:),             & ! Intent(in)
-                                       l_upwind_xpyp_ta,            & ! Intent(in)
-                                       sgn_t_vel_thlp2(:),          & ! Intent(in)
-                                       term_wpthlp2_explicit_zm(:), & ! Intent(in)
-                                       rho_ds_zm(:),                & ! Intent(in)
-                                       gr%invrs_dzt(:),             & ! Intent(in)
-                                       rhs_ta_wpthlp2(:)            ) ! Intent(out)
+        call xpyp_term_ta_pdf_rhs( term_wpthlp2_explicit(:),    & ! Intent(in)
+                                   rho_ds_zt(:),                & ! Intent(in)
+                                   invrs_rho_ds_zm(:),          & ! Intent(in)
+                                   gr%invrs_dzm(:),             & ! Intent(in)
+                                   l_upwind_xpyp_ta,            & ! Intent(in)
+                                   sgn_t_vel_thlp2(:),          & ! Intent(in)
+                                   term_wpthlp2_explicit_zm(:), & ! Intent(in)
+                                   rho_ds_zm(:),                & ! Intent(in)
+                                   gr%invrs_dzt(:),             & ! Intent(in)
+                                   rhs_ta_wpthlp2(:)            ) ! Intent(out)
 
         ! Calculate the momentum level terms and sign of vertical velocity if
         ! l_upwind_xpyp_ta is true
@@ -3329,16 +3329,16 @@ module advance_xp2_xpyp_module
         end if    
         
         ! Calculate the RHS turbulent advection term for <w'rt'thl'>
-        call xpyp_term_ta_pdf_rhs_all( term_wprtpthlp_explicit(:),      & ! Intent(in)
-                                       rho_ds_zt(:),                    & ! Intent(in)
-                                       invrs_rho_ds_zm(:),              & ! Intent(in)
-                                       gr%invrs_dzm(:),                 & ! Intent(in)
-                                       l_upwind_xpyp_ta,                & ! Intent(in)
-                                       sgn_t_vel_rtpthlp(:),            & ! Intent(in)
-                                       term_wprtpthlp_explicit_zm(:),   & ! Intent(in)
-                                       rho_ds_zm(:),                    & ! Intent(in)
-                                       gr%invrs_dzt(:),                 & ! Intent(in)
-                                       rhs_ta_wprtpthlp(:)              ) ! Intent(out)
+        call xpyp_term_ta_pdf_rhs( term_wprtpthlp_explicit(:),    & ! Intent(in)
+                                   rho_ds_zt(:),                  & ! Intent(in)
+                                   invrs_rho_ds_zm(:),            & ! Intent(in)
+                                   gr%invrs_dzm(:),               & ! Intent(in)
+                                   l_upwind_xpyp_ta,              & ! Intent(in)
+                                   sgn_t_vel_rtpthlp(:),          & ! Intent(in)
+                                   term_wprtpthlp_explicit_zm(:), & ! Intent(in)
+                                   rho_ds_zm(:),                  & ! Intent(in)
+                                   gr%invrs_dzt(:),               & ! Intent(in)
+                                   rhs_ta_wprtpthlp(:)            ) ! Intent(out)
 
         if ( l_scalar_calc ) then
             
@@ -3370,16 +3370,16 @@ module advance_xp2_xpyp_module
             end if
           
             ! Calculate the RHS turbulent advection term for <w'sclr'^2>
-            call xpyp_term_ta_pdf_rhs_all( term_wpsclrp2_explicit(:),       & ! Intent(in)
-                                           rho_ds_zt(:),                    & ! Intent(in)
-                                           invrs_rho_ds_zm(:),              & ! Intent(in)
-                                           gr%invrs_dzm(:),                 & ! Intent(in)
-                                           l_upwind_xpyp_ta,                & ! Intent(in)
-                                           sgn_t_vel_sclrp2(:),             & ! Intent(in)
-                                           term_wpsclrp2_explicit_zm(:),    & ! Intent(in)
-                                           rho_ds_zm(:),                    & ! Intent(in)
-                                           gr%invrs_dzt(:),                 & ! Intent(in)
-                                           rhs_ta_wpsclrp2(:,i)             ) ! Intent(out)
+            call xpyp_term_ta_pdf_rhs( term_wpsclrp2_explicit(:),    & ! Intent(in)
+                                       rho_ds_zt(:),                 & ! Intent(in)
+                                       invrs_rho_ds_zm(:),           & ! Intent(in)
+                                       gr%invrs_dzm(:),              & ! Intent(in)
+                                       l_upwind_xpyp_ta,             & ! Intent(in)
+                                       sgn_t_vel_sclrp2(:),          & ! Intent(in)
+                                       term_wpsclrp2_explicit_zm(:), & ! Intent(in)
+                                       rho_ds_zm(:),                 & ! Intent(in)
+                                       gr%invrs_dzt(:),              & ! Intent(in)
+                                       rhs_ta_wpsclrp2(:,i)          ) ! Intent(out)
             
           end do
         
@@ -3403,16 +3403,16 @@ module advance_xp2_xpyp_module
             end if
             
             ! Calculate the RHS turbulent advection term for <w'sclr'rt'>
-            call xpyp_term_ta_pdf_rhs_all( term_wprtpsclrp_explicit(:),     & ! Intent(in)
-                                           rho_ds_zt(:),                    & ! Intent(in)
-                                           invrs_rho_ds_zm(:),              & ! Intent(in)
-                                           gr%invrs_dzm(:),                 & ! Intent(in)
-                                           l_upwind_xpyp_ta,                & ! Intent(in)
-                                           sgn_t_vel_sclrprtp(:),           & ! Intent(in)
-                                           term_wprtpsclrp_explicit_zm(:),  & ! Intent(in)
-                                           rho_ds_zm(:),                    & ! Intent(in)
-                                           gr%invrs_dzt(:),                 & ! Intent(in)
-                                           rhs_ta_wprtpsclrp(:,i)           ) ! Intent(out)
+            call xpyp_term_ta_pdf_rhs( term_wprtpsclrp_explicit(:),    & ! Intent(in)
+                                       rho_ds_zt(:),                   & ! Intent(in)
+                                       invrs_rho_ds_zm(:),             & ! Intent(in)
+                                       gr%invrs_dzm(:),                & ! Intent(in)
+                                       l_upwind_xpyp_ta,               & ! Intent(in)
+                                       sgn_t_vel_sclrprtp(:),          & ! Intent(in)
+                                       term_wprtpsclrp_explicit_zm(:), & ! Intent(in)
+                                       rho_ds_zm(:),                   & ! Intent(in)
+                                       gr%invrs_dzt(:),                & ! Intent(in)
+                                       rhs_ta_wprtpsclrp(:,i)          ) ! Intent(out)
             
           end do
           
@@ -3436,16 +3436,16 @@ module advance_xp2_xpyp_module
             end if
           
             ! Calculate the RHS turbulent advection term for <w'sclr'thl'>
-            call xpyp_term_ta_pdf_rhs_all( term_wpthlpsclrp_explicit(:),    & ! Intent(in)
-                                           rho_ds_zt(:),                    & ! Intent(in)
-                                           invrs_rho_ds_zm(:),              & ! Intent(in)
-                                           gr%invrs_dzm(:),                 & ! Intent(in)
-                                           l_upwind_xpyp_ta,                & ! Intent(in)
-                                           sgn_t_vel_sclrpthlp(:),          & ! Intent(in)
-                                           term_wpthlpsclrp_explicit_zm(:), & ! Intent(in)
-                                           rho_ds_zm(:),                    & ! Intent(in)
-                                           gr%invrs_dzt(:),                 & ! Intent(in)
-                                           rhs_ta_wpthlpsclrp(:,i)          ) ! Intent(out)
+            call xpyp_term_ta_pdf_rhs( term_wpthlpsclrp_explicit(:),    & ! Intent(in)
+                                       rho_ds_zt(:),                    & ! Intent(in)
+                                       invrs_rho_ds_zm(:),              & ! Intent(in)
+                                       gr%invrs_dzm(:),                 & ! Intent(in)
+                                       l_upwind_xpyp_ta,                & ! Intent(in)
+                                       sgn_t_vel_sclrpthlp(:),          & ! Intent(in)
+                                       term_wpthlpsclrp_explicit_zm(:), & ! Intent(in)
+                                       rho_ds_zm(:),                    & ! Intent(in)
+                                       gr%invrs_dzt(:),                 & ! Intent(in)
+                                       rhs_ta_wpthlpsclrp(:,i)          ) ! Intent(out)
             
           end do
             
@@ -3471,16 +3471,16 @@ module advance_xp2_xpyp_module
         end if
 
         ! Calculate the LHS turbulent advection term for <w'rt'^2>
-        call xpyp_term_ta_pdf_lhs_all( coef_wprtp2_implicit(:),     & ! Intent(in)
-                                       rho_ds_zt(:),                & ! Intent(in)
-                                       invrs_rho_ds_zm(:),          & ! Intent(in)
-                                       gr%invrs_dzm(:),             & ! Intent(in)
-                                       l_upwind_xpyp_ta,            & ! Intent(in)
-                                       sgn_t_vel_rtp2(:),           & ! Intent(in)
-                                       coef_wprtp2_implicit_zm(:),  & ! Intent(in)
-                                       rho_ds_zm(:),                & ! Intent(in)
-                                       gr%invrs_dzt(:),             & ! Intent(in)
-                                       lhs_ta_wprtp2(:,:)           ) ! Intent(out)   
+        call xpyp_term_ta_pdf_lhs( coef_wprtp2_implicit(:),     & ! Intent(in)
+                                   rho_ds_zt(:),                & ! Intent(in)
+                                   invrs_rho_ds_zm(:),          & ! Intent(in)
+                                   gr%invrs_dzm(:),             & ! Intent(in)
+                                   l_upwind_xpyp_ta,            & ! Intent(in)
+                                   sgn_t_vel_rtp2(:),           & ! Intent(in)
+                                   coef_wprtp2_implicit_zm(:),  & ! Intent(in)
+                                   rho_ds_zm(:),                & ! Intent(in)
+                                   gr%invrs_dzt(:),             & ! Intent(in)
+                                   lhs_ta_wprtp2(:,:)           ) ! Intent(out)   
     
        ! Calculate the momentum level terms and sign of vertical velocity if
        ! l_upwind_xpyp_ta is true
@@ -3490,16 +3490,16 @@ module advance_xp2_xpyp_module
         end if
         
         ! Calculate the LHS turbulent advection term for <w'thl'^2>
-        call xpyp_term_ta_pdf_lhs_all( coef_wpthlp2_implicit(:),    & ! Intent(in)
-                                       rho_ds_zt(:),                & ! Intent(in)
-                                       invrs_rho_ds_zm(:),          & ! Intent(in)
-                                       gr%invrs_dzm(:),             & ! Intent(in)
-                                       l_upwind_xpyp_ta,            & ! Intent(in)
-                                       sgn_t_vel_thlp2(:),          & ! Intent(in)
-                                       coef_wpthlp2_implicit_zm(:), & ! Intent(in)
-                                       rho_ds_zm(:),                & ! Intent(in)
-                                       gr%invrs_dzt(:),             & ! Intent(in)
-                                       lhs_ta_wpthlp2(:,:)          ) ! Intent(out)   
+        call xpyp_term_ta_pdf_lhs( coef_wpthlp2_implicit(:),    & ! Intent(in)
+                                   rho_ds_zt(:),                & ! Intent(in)
+                                   invrs_rho_ds_zm(:),          & ! Intent(in)
+                                   gr%invrs_dzm(:),             & ! Intent(in)
+                                   l_upwind_xpyp_ta,            & ! Intent(in)
+                                   sgn_t_vel_thlp2(:),          & ! Intent(in)
+                                   coef_wpthlp2_implicit_zm(:), & ! Intent(in)
+                                   rho_ds_zm(:),                & ! Intent(in)
+                                   gr%invrs_dzt(:),             & ! Intent(in)
+                                   lhs_ta_wpthlp2(:,:)          ) ! Intent(out)   
     
         ! Calculate the momentum level terms and sign of vertical velocity if
         ! l_upwind_xpyp_ta is true
@@ -3511,16 +3511,16 @@ module advance_xp2_xpyp_module
         end if
         
         ! Calculate the LHS turbulent advection term for <w'rt'thl'>
-        call xpyp_term_ta_pdf_lhs_all( coef_wprtpthlp_implicit(:),      & ! Intent(in)
-                                       rho_ds_zt(:),                    & ! Intent(in)
-                                       invrs_rho_ds_zm(:),              & ! Intent(in)
-                                       gr%invrs_dzm(:),                 & ! Intent(in)
-                                       l_upwind_xpyp_ta,                & ! Intent(in)
-                                       sgn_t_vel_rtpthlp(:),            & ! Intent(in)
-                                       coef_wprtpthlp_implicit_zm(:),   & ! Intent(in)
-                                       rho_ds_zm(:),                    & ! Intent(in)
-                                       gr%invrs_dzt(:),                 & ! Intent(in)
-                                       lhs_ta_wprtpthlp(:,:)            ) ! Intent(out) 
+        call xpyp_term_ta_pdf_lhs( coef_wprtpthlp_implicit(:),    & ! Intent(in)
+                                   rho_ds_zt(:),                  & ! Intent(in)
+                                   invrs_rho_ds_zm(:),            & ! Intent(in)
+                                   gr%invrs_dzm(:),               & ! Intent(in)
+                                   l_upwind_xpyp_ta,              & ! Intent(in)
+                                   sgn_t_vel_rtpthlp(:),          & ! Intent(in)
+                                   coef_wprtpthlp_implicit_zm(:), & ! Intent(in)
+                                   rho_ds_zm(:),                  & ! Intent(in)
+                                   gr%invrs_dzt(:),               & ! Intent(in)
+                                   lhs_ta_wprtpthlp(:,:)          ) ! Intent(out) 
     
         if ( l_scalar_calc ) then
           ! The code for the scalar variables will be set up later.
@@ -3539,16 +3539,16 @@ module advance_xp2_xpyp_module
         end if
     
         ! Calculate the RHS turbulent advection term for <w'rt'thl'>
-        call xpyp_term_ta_pdf_rhs_all( term_wprtpthlp_explicit(:),      & ! Intent(in)
-                                       rho_ds_zt(:),                    & ! Intent(in)
-                                       invrs_rho_ds_zm(:),              & ! Intent(in)
-                                       gr%invrs_dzm(:),                 & ! Intent(in)
-                                       l_upwind_xpyp_ta,                & ! Intent(in)
-                                       sgn_t_vel_rtpthlp(:),            & ! Intent(in)
-                                       term_wprtpthlp_explicit_zm(:),   & ! Intent(in)
-                                       rho_ds_zm(:),                    & ! Intent(in)
-                                       gr%invrs_dzt(:),                 & ! Intent(in)
-                                       rhs_ta_wprtpthlp(:)              ) ! Intent(out)
+        call xpyp_term_ta_pdf_rhs( term_wprtpthlp_explicit(:),    & ! Intent(in)
+                                   rho_ds_zt(:),                  & ! Intent(in)
+                                   invrs_rho_ds_zm(:),            & ! Intent(in)
+                                   gr%invrs_dzm(:),               & ! Intent(in)
+                                   l_upwind_xpyp_ta,              & ! Intent(in)
+                                   sgn_t_vel_rtpthlp(:),          & ! Intent(in)
+                                   term_wprtpthlp_explicit_zm(:), & ! Intent(in)
+                                   rho_ds_zm(:),                  & ! Intent(in)
+                                   gr%invrs_dzt(:),               & ! Intent(in)
+                                   rhs_ta_wprtpthlp(:)            ) ! Intent(out)
     
         ! The <rt'^2> and <thl'^2> turbulent advection terms are entirely implicit, as
         ! <w'rt'^2> = coef_wprtp2_implicit * <rt'^2>, and 
@@ -3584,28 +3584,28 @@ module advance_xp2_xpyp_module
         endif
 
         ! Calculate the LHS turbulent advection term for <w'rt'^2>
-        call xpyp_term_ta_pdf_lhs_all( coef_wprtp2_implicit(:),    & ! Intent(in)
-                                       rho_ds_zt(:),               & ! Intent(in)
-                                       invrs_rho_ds_zm(:),         & ! Intent(in)
-                                       gr%invrs_dzm(:),            & ! Intent(in)
-                                       l_upwind_xpyp_ta,           & ! Intent(in)
-                                       sgn_t_vel_rtp2(:),          & ! Intent(in)
-                                       coef_wprtp2_implicit_zm(:), & ! Intent(in)
-                                       rho_ds_zm(:),               & ! Intent(in)
-                                       gr%invrs_dzt(:),            & ! Intent(in)
-                                       lhs_ta_wprtp2(:,:)          ) ! Intent(out)   
+        call xpyp_term_ta_pdf_lhs( coef_wprtp2_implicit(:),    & ! Intent(in)
+                                   rho_ds_zt(:),               & ! Intent(in)
+                                   invrs_rho_ds_zm(:),         & ! Intent(in)
+                                   gr%invrs_dzm(:),            & ! Intent(in)
+                                   l_upwind_xpyp_ta,           & ! Intent(in)
+                                   sgn_t_vel_rtp2(:),          & ! Intent(in)
+                                   coef_wprtp2_implicit_zm(:), & ! Intent(in)
+                                   rho_ds_zm(:),               & ! Intent(in)
+                                   gr%invrs_dzt(:),            & ! Intent(in)
+                                   lhs_ta_wprtp2(:,:)          ) ! Intent(out)   
 
         ! Calculate the RHS turbulent advection term for <w'rt'^2>
-        call xpyp_term_ta_pdf_rhs_all( term_wprtp2_explicit(:),    & ! Intent(in)
-                                       rho_ds_zt(:),               & ! Intent(in)
-                                       invrs_rho_ds_zm(:),         & ! Intent(in)
-                                       gr%invrs_dzm(:),            & ! Intent(in)
-                                       l_upwind_xpyp_ta,           & ! Intent(in)
-                                       sgn_t_vel_rtp2(:),          & ! Intent(in)
-                                       term_wprtp2_explicit_zm(:), & ! Intent(in)
-                                       rho_ds_zm(:),               & ! Intent(in)
-                                       gr%invrs_dzt(:),            & ! Intent(in)
-                                       rhs_ta_wprtp2(:)            ) ! Intent(out)
+        call xpyp_term_ta_pdf_rhs( term_wprtp2_explicit(:),    & ! Intent(in)
+                                   rho_ds_zt(:),               & ! Intent(in)
+                                   invrs_rho_ds_zm(:),         & ! Intent(in)
+                                   gr%invrs_dzm(:),            & ! Intent(in)
+                                   l_upwind_xpyp_ta,           & ! Intent(in)
+                                   sgn_t_vel_rtp2(:),          & ! Intent(in)
+                                   term_wprtp2_explicit_zm(:), & ! Intent(in)
+                                   rho_ds_zm(:),               & ! Intent(in)
+                                   gr%invrs_dzt(:),            & ! Intent(in)
+                                   rhs_ta_wprtp2(:)            ) ! Intent(out)
 
         if ( .not. l_upwind_xpyp_ta .or. l_stats_samp ) then
            coef_wpthlp2_implicit &
@@ -3627,27 +3627,27 @@ module advance_xp2_xpyp_module
         endif
 
         ! Calculate the LHS turbulent advection term for <w'thl'^2>
-        call xpyp_term_ta_pdf_lhs_all( coef_wpthlp2_implicit(:),    & ! Intent(in)
-                                       rho_ds_zt(:),                & ! Intent(in)
-                                       invrs_rho_ds_zm(:),          & ! Intent(in)
-                                       gr%invrs_dzm(:),             & ! Intent(in)
-                                       l_upwind_xpyp_ta,            & ! Intent(in)
-                                       sgn_t_vel_thlp2(:),          & ! Intent(in)
-                                       coef_wpthlp2_implicit_zm(:), & ! Intent(in)
-                                       rho_ds_zm(:),                & ! Intent(in)
-                                       gr%invrs_dzt(:),             & ! Intent(in)
-                                       lhs_ta_wpthlp2(:,:)          ) ! Intent(out)   
+        call xpyp_term_ta_pdf_lhs( coef_wpthlp2_implicit(:),    & ! Intent(in)
+                                   rho_ds_zt(:),                & ! Intent(in)
+                                   invrs_rho_ds_zm(:),          & ! Intent(in)
+                                   gr%invrs_dzm(:),             & ! Intent(in)
+                                   l_upwind_xpyp_ta,            & ! Intent(in)
+                                   sgn_t_vel_thlp2(:),          & ! Intent(in)
+                                   coef_wpthlp2_implicit_zm(:), & ! Intent(in)
+                                   rho_ds_zm(:),                & ! Intent(in)
+                                   gr%invrs_dzt(:),             & ! Intent(in)
+                                   lhs_ta_wpthlp2(:,:)          ) ! Intent(out)   
 
       ! Calculate the RHS turbulent advection term for <w'thl'^2>
-      call xpyp_term_ta_pdf_rhs_all( term_wpthlp2_explicit(:),    & ! Intent(in)
-                                     rho_ds_zt(:),                & ! Intent(in)
-                                     invrs_rho_ds_zm(:),          & ! Intent(in)
-                                     gr%invrs_dzm(:),             & ! Intent(in)
-                                     l_upwind_xpyp_ta,            & ! Intent(in)
-                                     sgn_t_vel_thlp2(:),          & ! Intent(in)
-                                     term_wpthlp2_explicit_zm(:), & ! Intent(in)
-                                     rho_ds_zm(:),                & ! Intent(in)
-                                     gr%invrs_dzt(:),             & ! Intent(in)
+      call xpyp_term_ta_pdf_rhs( term_wpthlp2_explicit(:),    & ! Intent(in)
+                                 rho_ds_zt(:),                & ! Intent(in)
+                                 invrs_rho_ds_zm(:),          & ! Intent(in)
+                                 gr%invrs_dzm(:),             & ! Intent(in)
+                                 l_upwind_xpyp_ta,            & ! Intent(in)
+                                 sgn_t_vel_thlp2(:),          & ! Intent(in)
+                                 term_wpthlp2_explicit_zm(:), & ! Intent(in)
+                                 rho_ds_zm(:),                & ! Intent(in)
+                                 gr%invrs_dzt(:),             & ! Intent(in)
                                      rhs_ta_wpthlp2(:)            ) ! Intent(out)
 
         if ( .not. l_upwind_xpyp_ta .or. l_stats_samp ) then
@@ -3670,28 +3670,28 @@ module advance_xp2_xpyp_module
         endif
 
         ! Calculate the LHS turbulent advection term for <w'rt'thl'>
-        call xpyp_term_ta_pdf_lhs_all( coef_wprtpthlp_implicit(:),    & ! Intent(in)
-                                       rho_ds_zt(:),                  & ! Intent(in)
-                                       invrs_rho_ds_zm(:),            & ! Intent(in)
-                                       gr%invrs_dzm(:),               & ! Intent(in)
-                                       l_upwind_xpyp_ta,              & ! Intent(in)
-                                       sgn_t_vel_rtpthlp(:),          & ! Intent(in)
-                                       coef_wprtpthlp_implicit_zm(:), & ! Intent(in)
-                                       rho_ds_zm(:),                  & ! Intent(in)
-                                       gr%invrs_dzt(:),               & ! Intent(in)
-                                       lhs_ta_wprtpthlp(:,:)          ) ! Intent(out) 
+        call xpyp_term_ta_pdf_lhs( coef_wprtpthlp_implicit(:),    & ! Intent(in)
+                                   rho_ds_zt(:),                  & ! Intent(in)
+                                   invrs_rho_ds_zm(:),            & ! Intent(in)
+                                   gr%invrs_dzm(:),               & ! Intent(in)
+                                   l_upwind_xpyp_ta,              & ! Intent(in)
+                                   sgn_t_vel_rtpthlp(:),          & ! Intent(in)
+                                   coef_wprtpthlp_implicit_zm(:), & ! Intent(in)
+                                   rho_ds_zm(:),                  & ! Intent(in)
+                                   gr%invrs_dzt(:),               & ! Intent(in)
+                                   lhs_ta_wprtpthlp(:,:)          ) ! Intent(out) 
 
         ! Calculate the RHS turbulent advection term for <w'rt'thl'>
-        call xpyp_term_ta_pdf_rhs_all( term_wprtpthlp_explicit(:),    & ! Intent(in)
-                                       rho_ds_zt(:),                  & ! Intent(in)
-                                       invrs_rho_ds_zm(:),            & ! Intent(in)
-                                       gr%invrs_dzm(:),               & ! Intent(in)
-                                       l_upwind_xpyp_ta,              & ! Intent(in)
-                                       sgn_t_vel_rtpthlp(:),          & ! Intent(in)
-                                       term_wprtpthlp_explicit_zm(:), & ! Intent(in)
-                                       rho_ds_zm(:),                  & ! Intent(in)
-                                       gr%invrs_dzt(:),               & ! Intent(in)
-                                       rhs_ta_wprtpthlp(:)            ) ! Intent(out)
+        call xpyp_term_ta_pdf_rhs( term_wprtpthlp_explicit(:),    & ! Intent(in)
+                                   rho_ds_zt(:),                  & ! Intent(in)
+                                   invrs_rho_ds_zm(:),            & ! Intent(in)
+                                   gr%invrs_dzm(:),               & ! Intent(in)
+                                   l_upwind_xpyp_ta,              & ! Intent(in)
+                                   sgn_t_vel_rtpthlp(:),          & ! Intent(in)
+                                   term_wprtpthlp_explicit_zm(:), & ! Intent(in)
+                                   rho_ds_zm(:),                  & ! Intent(in)
+                                   gr%invrs_dzt(:),               & ! Intent(in)
+                                   rhs_ta_wprtpthlp(:)            ) ! Intent(out)
 
         if ( .not. l_upwind_xpyp_ta .or. l_stats_samp ) then
            coef_wpup2_implicit = pdf_implicit_coefs_terms%coef_wpup2_implicit
@@ -3711,28 +3711,28 @@ module advance_xp2_xpyp_module
         endif
 
         ! Calculate the LHS turbulent advection term for <w'u'^2>
-        call xpyp_term_ta_pdf_lhs_all( coef_wpup2_implicit(:),    & ! Intent(in)
-                                       rho_ds_zt(:),              & ! Intent(in)
-                                       invrs_rho_ds_zm(:),        & ! Intent(in)
-                                       gr%invrs_dzm(:),           & ! Intent(in)
-                                       l_upwind_xpyp_ta,          & ! Intent(in)
-                                       sgn_t_vel_up2(:),          & ! Intent(in)
-                                       coef_wpup2_implicit_zm(:), & ! Intent(in)
-                                       rho_ds_zm(:),              & ! Intent(in)
-                                       gr%invrs_dzt(:),           & ! Intent(in)
-                                       lhs_ta_wpup2(:,:)          ) ! Intent(out)   
+        call xpyp_term_ta_pdf_lhs( coef_wpup2_implicit(:),    & ! Intent(in)
+                                   rho_ds_zt(:),              & ! Intent(in)
+                                   invrs_rho_ds_zm(:),        & ! Intent(in)
+                                   gr%invrs_dzm(:),           & ! Intent(in)
+                                   l_upwind_xpyp_ta,          & ! Intent(in)
+                                   sgn_t_vel_up2(:),          & ! Intent(in)
+                                   coef_wpup2_implicit_zm(:), & ! Intent(in)
+                                   rho_ds_zm(:),              & ! Intent(in)
+                                   gr%invrs_dzt(:),           & ! Intent(in)
+                                   lhs_ta_wpup2(:,:)          ) ! Intent(out)   
 
         ! Calculate the RHS turbulent advection term for <w'u'^2>
-        call xpyp_term_ta_pdf_rhs_all( term_wpup2_explicit(:),    & ! Intent(in)
-                                       rho_ds_zt(:),              & ! Intent(in)
-                                       invrs_rho_ds_zm(:),        & ! Intent(in)
-                                       gr%invrs_dzm(:),           & ! Intent(in)
-                                       l_upwind_xpyp_ta,          & ! Intent(in)
-                                       sgn_t_vel_up2(:),          & ! Intent(in)
-                                       term_wpup2_explicit_zm(:), & ! Intent(in)
-                                       rho_ds_zm(:),              & ! Intent(in)
-                                       gr%invrs_dzt(:),           & ! Intent(in)
-                                       rhs_ta_wpup2(:)            ) ! Intent(out)
+        call xpyp_term_ta_pdf_rhs( term_wpup2_explicit(:),    & ! Intent(in)
+                                   rho_ds_zt(:),              & ! Intent(in)
+                                   invrs_rho_ds_zm(:),        & ! Intent(in)
+                                   gr%invrs_dzm(:),           & ! Intent(in)
+                                   l_upwind_xpyp_ta,          & ! Intent(in)
+                                   sgn_t_vel_up2(:),          & ! Intent(in)
+                                   term_wpup2_explicit_zm(:), & ! Intent(in)
+                                   rho_ds_zm(:),              & ! Intent(in)
+                                   gr%invrs_dzt(:),           & ! Intent(in)
+                                   rhs_ta_wpup2(:)            ) ! Intent(out)
 
         if ( .not. l_upwind_xpyp_ta .or. l_stats_samp ) then
            coef_wpvp2_implicit = pdf_implicit_coefs_terms%coef_wpvp2_implicit
@@ -3752,28 +3752,28 @@ module advance_xp2_xpyp_module
         endif
 
         ! Calculate the LHS turbulent advection term for <w'v'^2>
-        call xpyp_term_ta_pdf_lhs_all( coef_wpvp2_implicit(:),    & ! Intent(in)
-                                       rho_ds_zt(:),              & ! Intent(in)
-                                       invrs_rho_ds_zm(:),        & ! Intent(in)
-                                       gr%invrs_dzm(:),           & ! Intent(in)
-                                       l_upwind_xpyp_ta,          & ! Intent(in)
-                                       sgn_t_vel_vp2(:),          & ! Intent(in)
-                                       coef_wpvp2_implicit_zm(:), & ! Intent(in)
-                                       rho_ds_zm(:),              & ! Intent(in)
-                                       gr%invrs_dzt(:),           & ! Intent(in)
-                                       lhs_ta_wpvp2(:,:)          ) ! Intent(out)   
+        call xpyp_term_ta_pdf_lhs( coef_wpvp2_implicit(:),    & ! Intent(in)
+                                   rho_ds_zt(:),              & ! Intent(in)
+                                   invrs_rho_ds_zm(:),        & ! Intent(in)
+                                   gr%invrs_dzm(:),           & ! Intent(in)
+                                   l_upwind_xpyp_ta,          & ! Intent(in)
+                                   sgn_t_vel_vp2(:),          & ! Intent(in)
+                                   coef_wpvp2_implicit_zm(:), & ! Intent(in)
+                                   rho_ds_zm(:),              & ! Intent(in)
+                                   gr%invrs_dzt(:),           & ! Intent(in)
+                                   lhs_ta_wpvp2(:,:)          ) ! Intent(out)   
 
         ! Calculate the RHS turbulent advection term for <w'v'^2>
-        call xpyp_term_ta_pdf_rhs_all( term_wpvp2_explicit(:),    & ! Intent(in)
-                                       rho_ds_zt(:),              & ! Intent(in)
-                                       invrs_rho_ds_zm(:),        & ! Intent(in)
-                                       gr%invrs_dzm(:),           & ! Intent(in)
-                                       l_upwind_xpyp_ta,          & ! Intent(in)
-                                       sgn_t_vel_vp2(:),          & ! Intent(in)
-                                       term_wpvp2_explicit_zm(:), & ! Intent(in)
-                                       rho_ds_zm(:),              & ! Intent(in)
-                                       gr%invrs_dzt(:),           & ! Intent(in)
-                                       rhs_ta_wpvp2(:)            ) ! Intent(out)
+        call xpyp_term_ta_pdf_rhs( term_wpvp2_explicit(:),    & ! Intent(in)
+                                   rho_ds_zt(:),              & ! Intent(in)
+                                   invrs_rho_ds_zm(:),        & ! Intent(in)
+                                   gr%invrs_dzm(:),           & ! Intent(in)
+                                   l_upwind_xpyp_ta,          & ! Intent(in)
+                                   sgn_t_vel_vp2(:),          & ! Intent(in)
+                                   term_wpvp2_explicit_zm(:), & ! Intent(in)
+                                   rho_ds_zm(:),              & ! Intent(in)
+                                   gr%invrs_dzt(:),           & ! Intent(in)
+                                   rhs_ta_wpvp2(:)            ) ! Intent(out)
 
         if ( l_scalar_calc ) then
 
@@ -3799,28 +3799,28 @@ module advance_xp2_xpyp_module
             endif
 
             ! Calculate the LHS turbulent advection term for <w'sclr'^2>
-            call xpyp_term_ta_pdf_lhs_all( coef_wpsclrp2_implicit(:),    & ! In
-                                           rho_ds_zt(:),                 & ! In
-                                           invrs_rho_ds_zm(:),           & ! In
-                                           gr%invrs_dzm(:),              & ! In
-                                           l_upwind_xpyp_ta,             & ! In
-                                           sgn_t_vel_sclrp2(:),          & ! In
-                                           coef_wpsclrp2_implicit_zm(:), & ! In
-                                           rho_ds_zm(:),                 & ! In
-                                           gr%invrs_dzt(:),              & ! In
-                                           lhs_ta_wpsclrp2(:,:,i)        ) ! Out
+            call xpyp_term_ta_pdf_lhs( coef_wpsclrp2_implicit(:),    & ! In
+                                       rho_ds_zt(:),                 & ! In
+                                       invrs_rho_ds_zm(:),           & ! In
+                                       gr%invrs_dzm(:),              & ! In
+                                       l_upwind_xpyp_ta,             & ! In
+                                       sgn_t_vel_sclrp2(:),          & ! In
+                                       coef_wpsclrp2_implicit_zm(:), & ! In
+                                       rho_ds_zm(:),                 & ! In
+                                       gr%invrs_dzt(:),              & ! In
+                                       lhs_ta_wpsclrp2(:,:,i)        ) ! Out
 
             ! Calculate the RHS turbulent advection term for <w'sclr'^2>
-            call xpyp_term_ta_pdf_rhs_all( term_wpsclrp2_explicit(:),    & ! In
-                                           rho_ds_zt(:),                 & ! In
-                                           invrs_rho_ds_zm(:),           & ! In
-                                           gr%invrs_dzm(:),              & ! In
-                                           l_upwind_xpyp_ta,             & ! In
-                                           sgn_t_vel_sclrp2(:),          & ! In
-                                           term_wpsclrp2_explicit_zm(:), & ! In
-                                           rho_ds_zm(:),                 & ! In
-                                           gr%invrs_dzt(:),              & ! In
-                                           rhs_ta_wpsclrp2(:,i)          ) ! Out
+            call xpyp_term_ta_pdf_rhs( term_wpsclrp2_explicit(:),    & ! In
+                                       rho_ds_zt(:),                 & ! In
+                                       invrs_rho_ds_zm(:),           & ! In
+                                       gr%invrs_dzm(:),              & ! In
+                                       l_upwind_xpyp_ta,             & ! In
+                                       sgn_t_vel_sclrp2(:),          & ! In
+                                       term_wpsclrp2_explicit_zm(:), & ! In
+                                       rho_ds_zm(:),                 & ! In
+                                       gr%invrs_dzt(:),              & ! In
+                                       rhs_ta_wpsclrp2(:,i)          ) ! Out
 
             if ( .not. l_upwind_xpyp_ta .or. l_stats_samp ) then
               coef_wprtpsclrp_implicit &
@@ -3842,28 +3842,28 @@ module advance_xp2_xpyp_module
             endif
 
             ! Calculate the LHS turbulent advection term for <w'rt'sclr'>
-            call xpyp_term_ta_pdf_lhs_all( coef_wprtpsclrp_implicit(:),    & ! In
-                                           rho_ds_zt(:),                   & ! In
-                                           invrs_rho_ds_zm(:),             & ! In
-                                           gr%invrs_dzm(:),                & ! In
-                                           l_upwind_xpyp_ta,               & ! In
-                                           sgn_t_vel_sclrprtp(:),          & ! In
-                                           coef_wprtpsclrp_implicit_zm(:), & ! In
-                                           rho_ds_zm(:),                   & ! In
-                                           gr%invrs_dzt(:),                & ! In
-                                           lhs_ta_wprtpsclrp(:,:,i)        ) ! Out
+            call xpyp_term_ta_pdf_lhs( coef_wprtpsclrp_implicit(:),    & ! In
+                                       rho_ds_zt(:),                   & ! In
+                                       invrs_rho_ds_zm(:),             & ! In
+                                       gr%invrs_dzm(:),                & ! In
+                                       l_upwind_xpyp_ta,               & ! In
+                                       sgn_t_vel_sclrprtp(:),          & ! In
+                                       coef_wprtpsclrp_implicit_zm(:), & ! In
+                                       rho_ds_zm(:),                   & ! In
+                                       gr%invrs_dzt(:),                & ! In
+                                       lhs_ta_wprtpsclrp(:,:,i)        ) ! Out
 
             ! Calculate the RHS turbulent advection term for <w'rt'sclr'>
-            call xpyp_term_ta_pdf_rhs_all( term_wprtpsclrp_explicit(:),    & ! In
-                                           rho_ds_zt(:),                   & ! In
-                                           invrs_rho_ds_zm(:),             & ! In
-                                           gr%invrs_dzm(:),                & ! In
-                                           l_upwind_xpyp_ta,               & ! In
-                                           sgn_t_vel_sclrprtp(:),          & ! In
-                                           term_wprtpsclrp_explicit_zm(:), & ! In
-                                           rho_ds_zm(:),                   & ! In
-                                           gr%invrs_dzt(:),                & ! In
-                                           rhs_ta_wprtpsclrp(:,i)          ) ! In
+            call xpyp_term_ta_pdf_rhs( term_wprtpsclrp_explicit(:),    & ! In
+                                       rho_ds_zt(:),                   & ! In
+                                       invrs_rho_ds_zm(:),             & ! In
+                                       gr%invrs_dzm(:),                & ! In
+                                       l_upwind_xpyp_ta,               & ! In
+                                       sgn_t_vel_sclrprtp(:),          & ! In
+                                       term_wprtpsclrp_explicit_zm(:), & ! In
+                                       rho_ds_zm(:),                   & ! In
+                                       gr%invrs_dzt(:),                & ! In
+                                       rhs_ta_wprtpsclrp(:,i)          ) ! In
 
             if ( .not. l_upwind_xpyp_ta .or. l_stats_samp ) then
               coef_wpthlpsclrp_implicit &
@@ -3885,28 +3885,28 @@ module advance_xp2_xpyp_module
             endif
 
             ! Calculate the LHS turbulent advection term for <w'thl'sclr'>
-            call xpyp_term_ta_pdf_lhs_all( coef_wpthlpsclrp_implicit(:),    & ! In
-                                           rho_ds_zt(:),                    & ! In
-                                           invrs_rho_ds_zm(:),              & ! In
-                                           gr%invrs_dzm(:),                 & ! In
-                                           l_upwind_xpyp_ta,                & ! In
-                                           sgn_t_vel_sclrpthlp(:),          & ! In
-                                           coef_wpthlpsclrp_implicit_zm(:), & ! In
-                                           rho_ds_zm(:),                    & ! In
-                                           gr%invrs_dzt(:),                 & ! In
-                                           lhs_ta_wpthlpsclrp(:,:,i)        ) ! Out
+            call xpyp_term_ta_pdf_lhs( coef_wpthlpsclrp_implicit(:),    & ! In
+                                       rho_ds_zt(:),                    & ! In
+                                       invrs_rho_ds_zm(:),              & ! In
+                                       gr%invrs_dzm(:),                 & ! In
+                                       l_upwind_xpyp_ta,                & ! In
+                                       sgn_t_vel_sclrpthlp(:),          & ! In
+                                       coef_wpthlpsclrp_implicit_zm(:), & ! In
+                                       rho_ds_zm(:),                    & ! In
+                                       gr%invrs_dzt(:),                 & ! In
+                                       lhs_ta_wpthlpsclrp(:,:,i)        ) ! Out
 
             ! Calculate the RHS turbulent advection term for <w'thl'sclr'>
-            call xpyp_term_ta_pdf_rhs_all( term_wpthlpsclrp_explicit(:),    & ! In
-                                           rho_ds_zt(:),                    & ! In
-                                           invrs_rho_ds_zm(:),              & ! In
-                                           gr%invrs_dzm(:),                 & ! In
-                                           l_upwind_xpyp_ta,                & ! In
-                                           sgn_t_vel_sclrpthlp(:),          & ! In
-                                           term_wpthlpsclrp_explicit_zm(:), & ! In
-                                           rho_ds_zm(:),                    & ! In
-                                           gr%invrs_dzt(:),                 & ! In
-                                           rhs_ta_wpthlpsclrp(:,i)          ) ! Out
+            call xpyp_term_ta_pdf_rhs( term_wpthlpsclrp_explicit(:),    & ! In
+                                       rho_ds_zt(:),                    & ! In
+                                       invrs_rho_ds_zm(:),              & ! In
+                                       gr%invrs_dzm(:),                 & ! In
+                                       l_upwind_xpyp_ta,                & ! In
+                                       sgn_t_vel_sclrpthlp(:),          & ! In
+                                       term_wpthlpsclrp_explicit_zm(:), & ! In
+                                       rho_ds_zm(:),                    & ! In
+                                       gr%invrs_dzt(:),                 & ! In
+                                       rhs_ta_wpthlpsclrp(:,i)          ) ! Out
 
           enddo ! i = 1, sclr_dim, 1
 
@@ -3974,43 +3974,43 @@ module advance_xp2_xpyp_module
        end if
         
        ! Calculate the LHS turbulent advection term for <w'u'^2> and <w'v'^2>
-       call xpyp_term_ta_pdf_lhs_all( coef_wpup2_implicit(:),    & ! Intent(in)
-                                      rho_ds_zt(:),              & ! Intent(in)
-                                      invrs_rho_ds_zm(:),        & ! Intent(in)
-                                      gr%invrs_dzm(:),           & ! Intent(in)
-                                      l_upwind_xpyp_ta,          & ! Intent(in)
-                                      sgn_t_vel_up2(:),          & ! Intent(in)
-                                      coef_wpup2_implicit_zm(:), & ! Intent(in)
-                                      rho_ds_zm(:),              & ! Intent(in)
-                                      gr%invrs_dzt(:),           & ! Intent(in)
-                                      lhs_ta_wpup2(:,:)          ) ! Intent(out)
+       call xpyp_term_ta_pdf_lhs( coef_wpup2_implicit(:),    & ! Intent(in)
+                                  rho_ds_zt(:),              & ! Intent(in)
+                                  invrs_rho_ds_zm(:),        & ! Intent(in)
+                                  gr%invrs_dzm(:),           & ! Intent(in)
+                                  l_upwind_xpyp_ta,          & ! Intent(in)
+                                  sgn_t_vel_up2(:),          & ! Intent(in)
+                                  coef_wpup2_implicit_zm(:), & ! Intent(in)
+                                  rho_ds_zm(:),              & ! Intent(in)
+                                  gr%invrs_dzt(:),           & ! Intent(in)
+                                  lhs_ta_wpup2(:,:)          ) ! Intent(out)
 
        ! The same LHS is used for <w'u'^2> and <w'v'^2>
        lhs_ta_wpvp2 = lhs_ta_wpup2
                                    
        ! Calculate the RHS turbulent advection term for <w'u'^2>
-       call xpyp_term_ta_pdf_rhs_all( term_wpup2_explicit(:),    & ! Intent(in)
-                                      rho_ds_zt(:),              & ! Intent(in)
-                                      invrs_rho_ds_zm(:),        & ! Intent(in)
-                                      gr%invrs_dzm(:),           & ! Intent(in)
-                                      l_upwind_xpyp_ta,          & ! Intent(in)
-                                      sgn_t_vel_up2(:),          & ! Intent(in)
-                                      term_wpup2_explicit_zm(:), & ! Intent(in)
-                                      rho_ds_zm(:),              & ! Intent(in)
-                                      gr%invrs_dzt(:),           & ! Intent(in)
-                                      rhs_ta_wpup2(:)            ) ! Intent(out)
+       call xpyp_term_ta_pdf_rhs( term_wpup2_explicit(:),    & ! Intent(in)
+                                  rho_ds_zt(:),              & ! Intent(in)
+                                  invrs_rho_ds_zm(:),        & ! Intent(in)
+                                  gr%invrs_dzm(:),           & ! Intent(in)
+                                  l_upwind_xpyp_ta,          & ! Intent(in)
+                                  sgn_t_vel_up2(:),          & ! Intent(in)
+                                  term_wpup2_explicit_zm(:), & ! Intent(in)
+                                  rho_ds_zm(:),              & ! Intent(in)
+                                  gr%invrs_dzt(:),           & ! Intent(in)
+                                  rhs_ta_wpup2(:)            ) ! Intent(out)
     
        ! Calculate the RHS turbulent advection term for <w'v'^2>
-       call xpyp_term_ta_pdf_rhs_all( term_wpvp2_explicit(:),    & ! Intent(in)
-                                      rho_ds_zt(:),              & ! Intent(in)
-                                      invrs_rho_ds_zm(:),        & ! Intent(in)
-                                      gr%invrs_dzm(:),           & ! Intent(in)
-                                      l_upwind_xpyp_ta,          & ! Intent(in)
-                                      sgn_t_vel_vp2(:),          & ! Intent(in)
-                                      term_wpvp2_explicit_zm(:), & ! Intent(in)
-                                      rho_ds_zm(:),              & ! Intent(in)
-                                      gr%invrs_dzt(:),           & ! Intent(in)
-                                      rhs_ta_wpvp2(:)            ) ! Intent(out)
+       call xpyp_term_ta_pdf_rhs( term_wpvp2_explicit(:),    & ! Intent(in)
+                                  rho_ds_zt(:),              & ! Intent(in)
+                                  invrs_rho_ds_zm(:),        & ! Intent(in)
+                                  gr%invrs_dzm(:),           & ! Intent(in)
+                                  l_upwind_xpyp_ta,          & ! Intent(in)
+                                  sgn_t_vel_vp2(:),          & ! Intent(in)
+                                  term_wpvp2_explicit_zm(:), & ! Intent(in)
+                                  rho_ds_zm(:),              & ! Intent(in)
+                                  gr%invrs_dzt(:),           & ! Intent(in)
+                                  rhs_ta_wpvp2(:)            ) ! Intent(out)
      
     endif ! iiPDF_type /= iiPDF_new_hybrid
 
