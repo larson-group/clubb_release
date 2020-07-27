@@ -7,11 +7,11 @@ TODO: Change independent <-> dependent, since independent data are the dimension
 """
 import os
 import pathlib as pathlib
+from collections.abc import Iterable
 from warnings import warn
 
 import numpy as np
 from netCDF4 import Dataset
-from collections.abc import Iterable
 
 from config import Case_definitions
 
@@ -22,10 +22,10 @@ class NetCdfVariable:
     """
 
     def __init__(self, names, ncdf_data, independent_var_names=None, conversion_factor=1, start_time=0, end_time=-1,
-                 avg_axis=0):
+                 min_height=0, max_height=-1, avg_axis=0):
         """
         Initialize a new instance of this class and return it.
-        
+
         TODO: Test with multidimensional variables!
 
         :param names: The name of the variable as defined in the ncdf_data
@@ -109,6 +109,8 @@ class NetCdfVariable:
                     varnames = independent_var_names[indep_key]
                     for temp_independent_var in varnames:
                         if temp_independent_var in keys:
+                            if temp_independent_var == "lev" and "Z3" in keys:
+                                continue
                             dataset_with_var = dataset
                             indep_var_name_in_dataset[indep_key] = temp_independent_var
                             break
@@ -143,7 +145,18 @@ class NetCdfVariable:
                 varnames = independent_var_names[indep_key]
                 for tempname in varnames:
                     if tempname in dataset_with_var.variables.keys():
-                        indep_var_name_in_dataset[indep_key] = tempname
+                        # Attempt to determine whether or not the height var is actually a height var (e.g. cam "lev"
+                        # var is not)
+                        if indep_key == "height" and hasattr(dataset_with_var.variables[tempname], 'long_name') :
+                            # and if that title contains "height", then it's a height var
+                            if "height" in dataset_with_var.variables[tempname].long_name.lower():
+                                indep_var_name_in_dataset[indep_key] = tempname
+                            # skip varname matches that aren't height vars if we know they're not height vars
+                            else:
+                                continue
+                        # assume it actually is a height var if we can't prove it's not or a time var
+                        else:
+                            indep_var_name_in_dataset[indep_key] = tempname
                         break
             # Check if independent variables were found
             key_test = [key not in indep_var_name_in_dataset.keys() for key in indep_keys]
@@ -162,6 +175,8 @@ class NetCdfVariable:
         self.independent_var_name = indep_var_name_in_dataset
         self.start_time = start_time
         self.end_time = end_time
+        self.min_height = min_height
+        self.max_height = max_height
         self.conv_factor = conversion_factor
         self.avg_axis = avg_axis
         data_reader = DataReader()
@@ -188,7 +203,7 @@ class NetCdfVariable:
             if len(data.shape)>1:
                 warn('Warning! trimArray was called on a multidimensional array without specifying data.')
                 return None
-        
+
         start_idx, end_idx = DataReader.__getStartEndIndex__(data, start_value, end_value)
         if len(self.dependent_data.shape)>1: # multiple dimensions
             if axis==0:
@@ -201,6 +216,10 @@ class NetCdfVariable:
                 self.dependent_data = self.dependent_data[:,start_idx:end_idx]
                 if self.independent_data is not None:
                     self.independent_data['height'] = self.independent_data['height'][start_idx:end_idx]
+        else:
+            self.dependent_data = self.dependent_data[start_idx:end_idx]
+            if self.independent_data is not None:
+                self.independent_data = self.independent_data[start_idx:end_idx]
 
     def filter_datasets(self):
         """
@@ -317,25 +336,36 @@ class DataReader():
         """
         start_time_value = ncdf_variable.start_time
         end_time_value = ncdf_variable.end_time
+        # min_height = ncdf_variable.min_height
+        # max_height = ncdf_variable.max_height
         variable_name = ncdf_variable.varname
         conv_factor = ncdf_variable.conv_factor
         avg_axis = ncdf_variable.avg_axis
         independent_var_name = ncdf_variable.independent_var_name
         time_conv_factor = 1
+        # height_conv_factor = 1
         time_values = None
-
+        # height_values = None
         # Get time dimension from netcdf_dataset
         for time_var in Case_definitions.TIME_VAR_NAMES:
             if time_var in netcdf_dataset.variables.keys():
                 time_values = self.__getValuesFromNc__(netcdf_dataset, time_var, time_conv_factor)
                 # np.savetxt("time.csv", time_values, delimiter=',', fmt='%f') # occasionally used when debugging
+
+        # Get height dimension from netcdf_dataset
+        # for height_var in Case_definitions.HEIGHT_VAR_NAMES:
+        #     if height_var in netcdf_dataset.variables.keys():
+        #         height_values = self.__getValuesFromNc__(netcdf_dataset, height_var, height_conv_factor)
+        #         break
+
         if time_values is None:
             raise NameError("None of the time variables " + str(Case_definitions.TIME_VAR_NAMES) +
                             " could be found in the dataset " + str(netcdf_dataset.filepath()))
 
         # If end_time_value was set to its default value, set to last time value
         if end_time_value == -1:
-            if variable_name not in ['time', 'z', 'altitude', 'lev', 'Z3']:
+            if variable_name not in Case_definitions.HEIGHT_VAR_NAMES \
+                    and variable_name not in Case_definitions.TIME_VAR_NAMES:
             # if variable_name != 'time' and variable_name != 'z' and variable_name != 'altitude' and \
                     # variable_name != 'lev' and variable_name != 'Z3':
                 warn("End time value was not specified (or was set to -1) for variable " + variable_name +
@@ -348,7 +378,7 @@ class DataReader():
             start_avg_idx, end_avg_idx = self.__getStartEndIndex__(time_values, start_time_value, end_time_value)
         elif ncdf_variable.avg_axis==1:
             warn('Warning! Averaging over heights is not yet implemented.')
-            # start_avg_idx, end_avg_idx = self.__getStartEndIndex__(time_values, start_time_value, end_time_value)
+            start_avg_idx, end_avg_idx = self.__getStartEndIndex__(time_values, start_time_value, end_time_value)
         # Get independent values from nc file
         # indep_var_not_found = independent_var_name is None
         # if indep_var_not_found:
@@ -358,8 +388,14 @@ class DataReader():
         else:
             independent_values = dict()
             if ncdf_variable.avg_axis == 0:
-                independent_values = self.__getValuesFromNc__(netcdf_dataset, independent_var_name['height'],
-                                                                        1)
+                independent_values = self.__getValuesFromNc__(netcdf_dataset, independent_var_name['height'],1)
+                if independent_var_name['height'] == 'Z3':
+                    # start_avg_idx_height, end_avg_idx_height = self.__getStartEndIndex__(height_values, min_height, max_height)
+                    # independent_values = self.__averageData__(independent_values, idx_z0=0, idx_z1=-1, avg_axis=1)
+                    # if independent_values.ndim > 1:  # not ncdf_variable.one_dimensional:
+                    independent_values = self.__averageData__(independent_values,idx_t0=start_avg_idx, idx_t1=end_avg_idx, avg_axis=0)
+
+
             elif ncdf_variable.avg_axis == 1:
                 independent_values = self.__getValuesFromNc__(netcdf_dataset, independent_var_name['time'], 1)
             elif ncdf_variable.avg_axis == 2:
@@ -367,6 +403,8 @@ class DataReader():
                                                                         1)
                 independent_values['time'] = self.__getValuesFromNc__(netcdf_dataset, independent_var_name['time'], 1)
             # np.savetxt("" + independent_var_name + ".csv", independent_values,  delimiter=',', fmt='%f')  # occasionally used when debugging
+
+
 
         # Try and get dependent_data from nc file
         try:
@@ -379,26 +417,14 @@ class DataReader():
         # If dependent_data is more than 1-dimensional, average over avg_axis if needed
         if dependent_values.ndim > 1 and avg_axis in [0,1]:  # not ncdf_variable.one_dimensional:
             dependent_values = self.__averageData__(dependent_values, start_avg_idx, end_avg_idx, avg_axis=avg_axis)
-
-        # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-        # E3SM outputs Z3 as it's height variable, which may also contain an offset
-        # (e.g. e3sm height = clubb height + 650 for the dycoms2_rf01 case). This eliminates that offset.
-
-        # UPDATE 2020-07-08: These modifications to Z3 have been turned off as they created bugs in the cam case.
-        # After reviewing the bomex, dycoms_rf01, and rico cases, no significant height issues were discovered as
-        # previously seen. It's possible that there was another bug somewhere that has been fixed after this
-        # workaround was originally implemented.
-
-        # if variable_name == 'Z3':
-        #     dependent_values = dependent_values - dependent_values[-1]
-        # if independent_var_name == 'Z3':
-        #     independent_values = independent_values - independent_values[-1]
-        # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-
         # SAM data may contain NaNs at this point. Change those to 0
         if 'SAM version' in netcdf_dataset.ncattrs():
             dependent_values = np.where(np.isnan(dependent_values), 0, dependent_values)
 
+        if dependent_values.ndim > 1:
+            raise ValueError("Number of dependent dimentions is greater than 1")
+        if independent_values.ndim > 1:
+            raise ValueError("Number of independent dimentions is greater than 1")
         return dependent_values, independent_values
 
     def __exit__(self, exc_type, exc_val, exc_tb):
@@ -641,6 +667,7 @@ class DataReader():
         start_idx = 0
         end_idx = len(data)
         ascending_data = data[0] < data[1]
+
         start_idx_found = False
         if ascending_data:
             # dependent_data is ascending

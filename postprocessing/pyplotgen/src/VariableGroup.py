@@ -603,8 +603,8 @@ class VariableGroup:
         """
         output_lines = []
         variable = NetCdfVariable(varname, dataset, independent_var_names=Case_definitions.HEIGHT_VAR_NAMES,
-                                  start_time=self.start_time, end_time=self.end_time,
-                                  avg_axis=avg_axis,
+                                  start_time=self.start_time, end_time=self.end_time, min_height=self.height_min_value,
+                                  max_height=self.height_max_value, avg_axis=avg_axis,
                                   conversion_factor=conversion_factor)
         variable.trimArray(self.height_min_value, self.height_max_value, data=variable.independent_data)
 
