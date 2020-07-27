@@ -84,9 +84,6 @@ module latin_hypercube_driver_module
     use fill_holes, only: &
       vertical_avg  ! Procedure
       
-    use grid_class, only: &
-      gr
-      
     use stats_variables, only: &
       l_stats_samp      ! Variable(s)
 
@@ -174,7 +171,7 @@ module latin_hypercube_driver_module
       k_lh_start ! Height for preferentially sampling within cloud
       
     integer :: &
-      k, sample, p, i, j, km1, kp1  ! Loop iterators
+      k, sample, p, i, j  ! Loop iterators
 
     logical, dimension(ngrdcol,nz,num_samples) :: &
       l_in_precip   ! Whether sample is in precipitation
@@ -1077,11 +1074,6 @@ module latin_hypercube_driver_module
       cthl_1, cthl_2,     & ! Constants from plumes 1 & 2 of thetal
       mu_chi_1, mu_chi_2    ! Mean for chi_1 and chi_2         [kg/kg]
       
-    ! n-dimensional column vector of Mellor's chi(s) and eta(t), including mean and perturbation
-    real( kind = core_rknd ), dimension(ngrdcol,nz,num_samples) :: &
-      chi, &  ! [kg/kg]
-      eta     ! [-]
-
   !-----------------------------------------------------------------------
 
     ! Calculate (and clip) the SILHS sample point values of rt, thl, rc, rv,
