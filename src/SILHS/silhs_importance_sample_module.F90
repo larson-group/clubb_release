@@ -420,7 +420,7 @@ module silhs_importance_sample_module
 
       if ( abs(category_prescribed_probs(icategory)) < epsilon(category_sample_weights) ) then
         ! If a category has no probability of being sampled, then its weight is irrevelant.
-        category_sample_weights(icategory) = unused_var
+        category_sample_weights(icategory) = 1.0_core_rknd
       else
         category_sample_weights(icategory) = &
           category_real_probs(icategory) / category_prescribed_probs(icategory)
