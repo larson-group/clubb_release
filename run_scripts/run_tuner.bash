@@ -39,7 +39,7 @@ while true ; do
 		echo "nightly"
 		shift;;
 	-h|--help) # Print the help message
-		echo -e "Usage: run_scm.bash [OPTION]"
+		echo -e "Usage: run_tuner.bash [OPTION]"
 		echo -e "\t-n, --nightly\t\tRun in a nightly test configuration"
 		echo -e "\t-h, --help\t\t\tPrints this help message"
 

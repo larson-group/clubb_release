@@ -38,9 +38,9 @@ model equations and finer details on how the discretization was done.
 
 The single column model executable ("clubb_standalone") runs a particular 
 case (e.g. BOMEX shallow nonprecipitating cumulus case) 
-and outputs statistical data in either Grid Analysis and
-Display System (GrADS) format or Network Common Data Form (netCDF) format
-(if the --netcdf flag is used with the run script run_scm.bash).
+and outputs statistical data in either Network Common Data Form (netCDF)
+format or Grid Analysis and Display System (GrADS) format
+(if the --grads flag is used with the run script run_scm.bash).
 GrADS is both a data file format and a plotting program.  See
 <http://www.iges.org/grads/> for a description of GrADS.  NetCDF is a self 
 describing data file format that can be read by the GrADS plotting program, 
@@ -160,7 +160,7 @@ which can be specified on the command line. For example, to run the BOMEX case:
 user@computer run_scripts$ ./run_scm.bash bomex
 
 To list various run-time options --- such as settings for grid spacing,
-time step, stats output, and netcdf format --- type
+time step, stats output, and grads format --- type
 user@computer run_scripts$ ./run_scm.bash --help
 
 Other cases that you may run are listed in run_scripts/RUN_CASES.  The command
@@ -757,7 +757,7 @@ This script takes two output directories as arguments and will compare the
 contents of those directories to determine if the binary outputs differ.  
 Note that
 run_scm_all.bash must be run prior to this script to create the ouput to be
-compared.  The script will compare the .ctl files and .dat file for each
+compared.  The script will compare the .nc files for each
 case specified in run_scm_all.bash.  This is the most exact way to detect
 differences between two output directories.
 
