@@ -139,6 +139,9 @@ def main():
     silhsFileNames = findFiles(sys.argv[2])
     fileNames = clubbFileNames + silhsFileNames
 
+    # Removes .swp files from the file list
+    fileNames = [x for x in fileNames if not x.endswith(".swp")]
+
     # outputFile = open("/home/vlarson/Downloads/threadprivate_output.txt","w+")
     failedFiles = []
     passedTest = True
