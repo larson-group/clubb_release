@@ -27,7 +27,7 @@ NAMELISTS="clubb.in"
 FLAGS_FILE="../input/tunable_parameters/configurable_model_flags.in"
 SILHS_PARAMS_FILE="../input/tunable_parameters/silhs_parameters.in"
 CUSTOM_OUTPUT_DIR=""
-NETCDF=true
+GRADS=false
 
 # Figure out the directory where the script is located
 scriptPath=`dirname $0`
@@ -186,10 +186,10 @@ while true ; do
 			fi
 			shift 2 ;;
                 --netcdf)
-                        NETCDF=true
+                        GRADS=false
                         shift;;
 		--grads)
-			NETCDF=false
+			GRADS=true
 			shift;;
 		-h|--help) # Print the help message
 			echo -e "Usage: run_scm.bash [OPTION]... case_name"
@@ -241,10 +241,10 @@ then
 	exit 1
 fi
 
-# If NetCDF output is enabled, modify model file
-if [ $NETCDF == true ]
+# If GRADS output is enabled, modify model file
+if [ $GRADS == true ]
 then
-        sed -i 's/= "grads"/= "netcdf"/g' $model_file
+        sed -i 's/= "netcdf"/= "grads"/g' $model_file
 fi
 
 # Set defaults if they were not passed in
@@ -501,9 +501,9 @@ then
 fi
 
 # Revert model file
-if [ $NETCDF == true ]
+if [ $GRADS == true ]
 then
-        sed -i 's/= "netcdf"/= "grads"/g' $model_file
+        sed -i 's/= "grads"/= "netcdf"/g' $model_file
 fi
 
 
