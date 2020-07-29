@@ -889,7 +889,6 @@ module mixing_length
         unused_var
 
     use parameters_tunable, only: &
-        mu, &
         Lscale_mu_coef, &
         Lscale_pert_coef
 

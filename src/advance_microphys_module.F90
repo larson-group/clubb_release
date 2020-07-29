@@ -57,9 +57,7 @@ module advance_microphys_module
         zt2zm    ! Procedure(s)
 
     use parameters_tunable, only: & 
-        c_K_hm,  & ! Variable(s) 
-        c_K_hmb, &  
-        K_hm_min_coef    
+        c_K_hm ! Variable(s) 
 
     use parameters_model, only: & 
         hydromet_dim   ! Integer

@@ -128,7 +128,8 @@ module advance_clubb_core_module
                rtm_ref, thlm_ref, um_ref, vm_ref, ug, vg, &         ! Intent(in)
                p_in_Pa, rho_zm, rho, exner, &                       ! intent(in)
                rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm, &             ! intent(in)
-               invrs_rho_ds_zt, thv_ds_zm, thv_ds_zt, hydromet, &   ! intent(in)
+               invrs_rho_ds_zt, thv_ds_zm, thv_ds_zt, &             ! intent(in)
+               hydromet, &                                          ! Unused
                rfrzm, radf, &                                       ! intent(in)
 #ifdef CLUBBND_CAM
                varmu, &                                             ! intent(in)
@@ -196,14 +197,11 @@ module advance_clubb_core_module
         taumax, & ! Variable(s)
         c_K, &
         mu, &
-        Lscale_mu_coef, &
-        Lscale_pert_coef, &
         gamma_coef,  &
         gamma_coefb, &
         gamma_coefc, &
         c_K10, &
         c_K10h, &
-        C1, C14, &
         C5, C4, &
         C_wp2_splat, &
         C_invrs_tau_bkgnd, &
