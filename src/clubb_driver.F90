@@ -12,6 +12,9 @@ module clubb_driver
   use clubb_precision, only: time_precision ! Variable(s)
   use text_writer, only: write_text
 
+  use mt95, only: &
+    genrand_intg
+
   implicit none
 
   ! Setup run_clubb() as the sole external interface
@@ -177,6 +180,7 @@ module clubb_driver
     use parameters_microphys, only: &
       lh_microphys_type,     & !--------------------------------------------- Variable(s)
       lh_microphys_disabled, &
+      lh_seed,               &
       microphys_scheme,      &
       lh_num_samples,    &
       lh_sequence_length
@@ -2243,8 +2247,9 @@ module clubb_driver
                itime, pdf_dim, lh_num_samples, lh_sequence_length, gr%nz, 1, & ! In
                l_calc_weights_all_levs_itime,                                & ! In
                pdf_params, delta_zm, rcm, Lscale,                            & ! In
-               rho_ds_zt,                                                    &
-               mu_x_1_n, mu_x_2_n, sigma_x_1_n, sigma_x_2_n,      & ! In
+               lh_seed,                                                      & ! In
+               rho_ds_zt,                                                    & ! In
+               mu_x_1_n, mu_x_2_n, sigma_x_1_n, sigma_x_2_n,                 & ! In
                corr_cholesky_mtx_1, corr_cholesky_mtx_2,                     & ! In
                hydromet_pdf_params, silhs_config_flags,                      & ! In
                clubb_config_flags%l_uv_nudge,                                & ! In

@@ -29,6 +29,7 @@ module latin_hypercube_driver_module
              ( iter, pdf_dim, num_samples, sequence_length, nz, ngrdcol, & ! intent(in)
                l_calc_weights_all_levs_itime, &                            ! intent(in)
                pdf_params, delta_zm, rcm, Lscale, &                        ! intent(in)
+               lh_seed, &                                                  ! intent(in)
 !              rho_ds_zt, &
                mu1, mu2, sigma1, sigma2, &                                 ! intent(in)
                corr_cholesky_mtx_1, corr_cholesky_mtx_2, &                 ! intent(in)
@@ -86,6 +87,9 @@ module latin_hypercube_driver_module
       
     use stats_variables, only: &
       l_stats_samp      ! Variable(s)
+      
+    use mt95, only: &
+      genrand_intg  ! Type
 
     implicit none
 
@@ -119,6 +123,9 @@ module latin_hypercube_driver_module
 
     real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: &
       Lscale       ! Turbulent mixing length            [m]
+      
+    integer( kind = genrand_intg ), intent(in) :: &
+      lh_seed      ! Random number generator seed
 
 !   real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: &
 !     rho_ds_zt    ! Dry, static density on thermo. levels    [kg/m^3]
@@ -295,6 +302,7 @@ module latin_hypercube_driver_module
 
     ! Generate pool of random numbers
     call generate_random_pool( nz, ngrdcol, pdf_dim, num_samples, d_uniform_extra, & ! Intent(in)
+                               lh_seed,                                            & ! Intent(in)
                                rand_pool )                                           ! Intent(out)
                                
     ! Generate all uniform samples, based on the rand pool
@@ -466,6 +474,7 @@ module latin_hypercube_driver_module
 
 !-------------------------------------------------------------------------------
   subroutine generate_random_pool( nz, ngrdcol, pdf_dim, num_samples, d_uniform_extra, &
+                                   lh_seed, &
                                    rand_pool )
   ! Description:
   !     This subroutine populates rand_pool with random numbers. There are
@@ -486,6 +495,7 @@ module latin_hypercube_driver_module
       rand_uniform_real ! Procedure
       
     use mt95, only: &
+      genrand_intg, &
       genrand_init  ! Procedure
       
 #ifdef _OPENACC
@@ -508,6 +518,9 @@ module latin_hypercube_driver_module
       num_samples,      & ! Number of samples
       d_uniform_extra     ! Uniform variates included in uniform sample but not
                           !  in normal/lognormal sample
+                          
+    integer( kind = genrand_intg ), intent(in) :: &
+      lh_seed
       
     ! ------------------- Output Variables -------------------
 
@@ -523,11 +536,11 @@ module latin_hypercube_driver_module
 
     type(curandGenerator) :: &
       cu_gen  ! curand generator variable
-      
-#endif
 
     logical, save :: &
       l_first_iter = .true.  ! First iteration indicator
+      
+#endif
     
     integer :: k, p, i, sample ! Loop variables
       
@@ -541,7 +554,7 @@ module latin_hypercube_driver_module
     if ( l_first_iter ) then
       l_first_iter = .false.
       r_status = curandCreateGenerator( cu_gen, CURAND_RNG_PSEUDO_DEFAULT )
-      r_status = curandSetPseudoRandomGeneratorSeed( cu_gen, 252435 )
+      r_status = curandSetPseudoRandomGeneratorSeed( cu_gen, lh_seed )
     end if
     
     !$acc host_data use_device(rand_pool) 
@@ -554,11 +567,9 @@ module latin_hypercube_driver_module
 
     ! Generate randoms on CPU
     
-    ! If first iteration, intialize generator
-    if ( l_first_iter ) then
-      l_first_iter = .false.
-      call genrand_init( put=252435 )
-    end if
+    ! Intialize generator, this is required every timestep to enable restart runs to 
+    ! produce bit-for-bit results
+    call genrand_init( lh_seed )
 
     ! Populate rand_pool with a generator designed for a CPU
     do p=1, pdf_dim+d_uniform_extra

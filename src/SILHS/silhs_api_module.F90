@@ -127,7 +127,9 @@ contains
     iter, pdf_dim, num_samples, sequence_length, nz, & ! In
     l_calc_weights_all_levs_itime, &
     pdf_params, delta_zm, rcm, Lscale, & ! In
-    rho_ds_zt, mu1, mu2, sigma1, sigma2, & ! In
+    lh_seed, & ! In
+    rho_ds_zt, & ! In
+    mu1, mu2, sigma1, sigma2, & ! In
     corr_cholesky_mtx_1, corr_cholesky_mtx_2, & ! In
     hydromet_pdf_params, silhs_config_flags, & ! In
     l_uv_nudge, & ! In
@@ -150,6 +152,9 @@ contains
 
     use clubb_precision, only: &
       core_rknd
+      
+    use mt95, only: &
+      genrand_intg
 
     implicit none
 
@@ -173,6 +178,9 @@ contains
 
     real( kind = core_rknd ), dimension(nz), intent(in) :: &
       Lscale       ! Turbulent Mixing Length  [m]
+      
+    integer( kind = genrand_intg ), intent(in) :: &
+      lh_seed      ! Random number generator seed
 
     ! Output Variables
     real( kind = core_rknd ), intent(out), dimension(nz,num_samples,pdf_dim) :: &
@@ -272,7 +280,8 @@ contains
       iter, pdf_dim, num_samples, sequence_length, nz, 1, & ! In
       l_calc_weights_all_levs_itime, & ! In
       pdf_params_col, delta_zm_col, rcm_col, Lscale_col, & ! In
-!     rho_ds_zt_col, &
+      lh_seed, & ! In
+!     rho_ds_zt_col, & ! Unused
       mu1_col, mu2_col, sigma1_col, sigma2_col, & ! In
       corr_cholesky_mtx_1_col, corr_cholesky_mtx_2_col, & ! In
       hydromet_pdf_params_col, silhs_config_flags, & ! In
@@ -293,6 +302,7 @@ contains
     iter, pdf_dim, num_samples, sequence_length, nz, ngrdcol, & ! In
     l_calc_weights_all_levs_itime, &
     pdf_params, delta_zm, rcm, Lscale, & ! In
+    lh_seed, & ! In
     rho_ds_zt, & ! Unused
     mu1, mu2, sigma1, sigma2, & ! In
     corr_cholesky_mtx_1, corr_cholesky_mtx_2, & ! In
@@ -317,6 +327,9 @@ contains
 
     use clubb_precision, only: &
       core_rknd
+      
+    use mt95, only: &
+      genrand_intg
 
     implicit none
 
@@ -341,6 +354,9 @@ contains
 
     real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: &
       Lscale       ! Turbulent Mixing Length  [m]
+      
+    integer( kind = genrand_intg ), intent(in) :: &
+      lh_seed      ! Random number generator seed
 
     ! Output Variables
     real( kind = core_rknd ), intent(out), dimension(ngrdcol,nz,num_samples,pdf_dim) :: &
@@ -386,6 +402,7 @@ contains
       iter, pdf_dim, num_samples, sequence_length, nz, ngrdcol, & ! In
       l_calc_weights_all_levs_itime, & ! In
       pdf_params, delta_zm, rcm, Lscale, & ! In
+      lh_seed, & ! In
 !     rho_ds_zt, &
       mu1, mu2, sigma1, sigma2, & ! In
       corr_cholesky_mtx_1, corr_cholesky_mtx_2, & ! In
