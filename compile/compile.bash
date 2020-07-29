@@ -308,7 +308,7 @@ $mkmf -t $bindir/mkmf_template \
   -e $all_files_list "$generated_lists_dir"/silhs_files
 
 $mkmf -t $bindir/mkmf_template -p $libdir/libclubb_other.a -m Make.clubb_other -c "${CPPDEFS}" \
-  -o "${WARNINGS}" -e $all_files_list $dir/file_list/clubb_model_files
+  -o "${WARNINGS} -Wno-conversion" -e $all_files_list $dir/file_list/clubb_model_files
 
 $mkmf -t $bindir/mkmf_template -p $bindir/clubb_standalone \
   -m Make.clubb_standalone -c "${CPPDEFS}" -o "${WARNINGS}" $clubb_standalone_mods \
