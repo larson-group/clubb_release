@@ -29,6 +29,7 @@ DEBUG="-g -fbounds-check -mieee-fp -ffpe-trap=invalid,zero,overflow -finit-real=
 
 # == Warnings ==
 WARNINGS="-Wall -Wextra -Wconversion -Wunderflow -Wcharacter-truncation -std=f2003 -pedantic"
+NO_CONV="-Wno-conversion" #Added to remove conversion warnings from clubb_model_files
 
 # == Machine specific flags ==
 ARCH="-march=native -msse3 -mfpmath=sse -fopenmp"
