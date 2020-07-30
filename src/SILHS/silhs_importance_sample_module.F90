@@ -393,9 +393,6 @@ module silhs_importance_sample_module
     use clubb_precision, only: &
       core_rknd     ! Constant
 
-    use constants_clubb, only: & ! Constant
-      unused_var
-
     implicit none
 
     ! Input Variables
