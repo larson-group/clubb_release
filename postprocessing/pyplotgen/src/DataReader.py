@@ -433,7 +433,7 @@ class DataReader():
         :param filename: The netcdf file to be loaded
         :return: A netCDF4 Dataset object containing the data from the given file
         """
-        dataset = Dataset(filename, "r+", format="NETCDF4")
+        dataset = Dataset(filename, "r", format="NETCDF4")
         return dataset
 
     def __averageData__(self, var, idx_t0=0, idx_t1=-1, idx_z0=0, idx_z1=-1, avg_axis=0):
