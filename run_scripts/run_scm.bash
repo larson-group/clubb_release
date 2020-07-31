@@ -202,8 +202,8 @@ while true ; do
 			echo -e "\t-e, --performance_test\t\tDisable statistics output and set debug"
 			echo -e "\t\t\t\t\tlevel to 0 for performance testing"
 			echo -e "\t-o, --output_directory\t\tSpecify an output directory"
-                        echo -e "\t--netcdf\t\tEnable NetCDF output (default)"
-			echo -e "\t--grads\t\tEnable GRADS output"
+                        echo -e "\t--netcdf\t\t\tEnable NetCDF output (default)"
+			echo -e "\t--grads\t\t\t\tEnable GRADS output"
 			echo -e "\t-h, --help\t\t\tPrints this help message"
 
 			exit 1 ;;
