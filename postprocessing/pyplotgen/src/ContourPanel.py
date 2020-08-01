@@ -28,7 +28,7 @@ class ContourPanel(Panel):
                  sci_scale = None, centered = False):
         """
         Init, pretty much same as Panel init
-        
+
         :param bla:
         :return: New object
         """
@@ -46,7 +46,7 @@ class ContourPanel(Panel):
         :return: None
         """
         plt.subplot(111)
-        
+
         # Set font sizes
         plt.rc('font', size=Style_definitions.DEFAULT_TEXT_SIZE)          # controls default text sizes
         plt.rc('axes', titlesize=Style_definitions.AXES_TITLE_FONT_SIZE)     # fontsize of the axes title
@@ -68,7 +68,7 @@ class ContourPanel(Panel):
         plt.title(self.title)
         plt.xlabel(self.x_title)
         plt.ylabel(self.y_title)
-        
+
         if alphabetic_id != '':
             ax = plt.gca() 
             ax.text(0.9, 0.9, '('+alphabetic_id+')', ha='center', va='center', transform=ax.transAxes,

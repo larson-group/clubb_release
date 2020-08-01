@@ -12,10 +12,9 @@ class VariableGroupCorrelations(VariableGroup):
     """
     def __init__(self, case, clubb_datasets=None, les_dataset=None, coamps_dataset=None, r408_dataset=None,
                  hoc_dataset=None, cam_datasets=None,
-                 e3sm_datasets=None, sam_datasets=None, wrf_datasets=None,
-                 time_height=False, anim=None):
+                 e3sm_datasets=None, sam_datasets=None, wrf_datasets=None):
         self.name = "corr variables"
-        
+
         corr_w_rr_i_lines = [
             {'var_names': ['corr_w_rr_1'], 'legend_label': 'PDF comp. 1'},
             {'var_names': ['corr_w_rr_2'], 'legend_label': 'PDF comp. 2'},
@@ -44,7 +43,7 @@ class VariableGroupCorrelations(VariableGroup):
             {'var_names': ['corr_rr_Nr_1'], 'legend_label': 'PDF comp. 1'},
             {'var_names': ['corr_rr_Nr_2'], 'legend_label': 'PDF comp. 2'},
         ]
-        
+
         self.variable_definitions = [
             {'var_names':
                 {
@@ -152,7 +151,8 @@ class VariableGroupCorrelations(VariableGroup):
                 'axis_title': "corr_rr_Nr_i [-]"
             },
         ]
+
+        # Call ctor of parent class
         super().__init__(case, clubb_datasets=clubb_datasets, les_dataset=les_dataset, coamps_dataset=coamps_dataset,
                          r408_dataset=r408_dataset, hoc_dataset=hoc_dataset, e3sm_datasets=e3sm_datasets,
-                         cam_datasets=cam_datasets, sam_datasets=sam_datasets, wrf_datasets=wrf_datasets,
-                         time_height=time_height, anim=anim)
+                         cam_datasets=cam_datasets, sam_datasets=sam_datasets, wrf_datasets=wrf_datasets)

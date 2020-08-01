@@ -25,7 +25,7 @@ class Panel:
     TYPE_BUDGET = 'budget'
     TYPE_TIMESERIES = 'timeseries'
     TYPE_TIMEHEIGHT = 'timeheight'
-    TYPE_ANIM = 'animation'
+    TYPE_ANIMATION = 'animation'
     EXTENSION = '.png'
 
     def __init__(self, plots, panel_type="profile", title="Unnamed panel", dependent_title="dependent variable",
@@ -115,7 +115,7 @@ class Panel:
         plt.rc('ytick', labelsize=Style_definitions.Y_TICKMARK_FONT_SIZE)    # fontsize of the tick labels
         plt.rc('legend', fontsize=Style_definitions.LEGEND_FONT_SIZE)    # legend fontsize
         plt.rc('figure', titlesize=Style_definitions.TITLE_TEXT_SIZE)  # fontsize of the figure title
-        
+
         label_scale_factor = ""
         # Use custom sci scaling
         if self.sci_scale is not None:
@@ -230,7 +230,7 @@ class Panel:
 
         # Generate image filename
         filename = self.panel_type + "_"+ str(datetime.now())
-        
+
         if self.panel_type == Panel.TYPE_BUDGET:
             filename = filename + "_"+ self.title
         else:
@@ -270,7 +270,7 @@ class Panel:
         :return: None
         """
         plt.subplot(111)
-        
+
         # Set font sizes
         plt.rc('font', size=Style_definitions.DEFAULT_TEXT_SIZE)          # controls default text sizes
         plt.rc('axes', titlesize=Style_definitions.AXES_TITLE_FONT_SIZE)     # fontsize of the axes title
@@ -280,56 +280,59 @@ class Panel:
         plt.rc('legend', fontsize=Style_definitions.LEGEND_FONT_SIZE)    # legend fontsize
         plt.rc('figure', titlesize=Style_definitions.TITLE_TEXT_SIZE)  # fontsize of the figure title
 
-        # Get Contour object
-        var = self.all_plots[0]
-        x_data = var.x
-        y_data = var.y
-        c_data = var.data
-        x_data, y_data = np.meshgrid(y_data, x_data)
-        cmap = var.colors
+        # For each Contour object stored in self.all_plots generate an individual contourf plot
+        # print(self.all_plots)
+        for var in self.all_plots:
+            # print(var)
+            # print(self.title, var.label)
+            # print(type(var))
+            x_data = var.x
+            y_data = var.y
+            c_data = var.data
+            x_data, y_data = np.meshgrid(x_data, y_data)
+            cmap = var.colors
+            label = var.label
 
-        # Set graph size
-        plt.figure(figsize=(10,6))
+            # Set graph size
+            plt.figure(figsize=(10,6))
 
-        # Prevent x-axis label from getting cut off
-        # plt.gcf().subplots_adjust(bottom=0.15)
+            # Prevent x-axis label from getting cut off
+            # plt.gcf().subplots_adjust(bottom=0.15)
 
-        print('Panel {}: x={}, y={}, c={}'.format(self.title, x_data.shape, y_data.shape, c_data.shape))
+            cs = plt.contourf(x_data, y_data, c_data.T, cmap=cmap)
+            plt.colorbar(cs)
+            plt.title(label + ' - ' + self.title, pad=10)
+            plt.xlabel(self.x_title)
+            plt.ylabel(self.y_title)
 
-        cs = plt.contourf(x_data, y_data, c_data, cmap=cmap)
-        plt.colorbar(cs)
-        plt.title(self.title, pad=10)
-        plt.xlabel(self.x_title)
-        plt.ylabel(self.y_title)
-        
-        if alphabetic_id != '':
-            ax = plt.gca() 
-            ax.text(0.9, 0.9, '('+alphabetic_id+')', ha='center', va='center', transform=ax.transAxes,
-                           fontsize=Style_definitions.LARGE_FONT_SIZE) # Add letter label to panels
+            if alphabetic_id != '':
+                ax = plt.gca()
+                ax.text(0.9, 0.9, '('+alphabetic_id+')', ha='center', va='center', transform=ax.transAxes,
+                               fontsize=Style_definitions.LARGE_FONT_SIZE) # Add letter label to panels
 
-        # Create folders
-        # Because os.mkdir("output") can fail and prevent os.mkdir("output/" + casename) from being called we must
-        # use two separate try blocks
-        try:
-            os.mkdir(output_folder)
-        except FileExistsError:
-            pass # do nothing
-        try:
-            os.mkdir(output_folder + "/" + casename)
-        except FileExistsError:
-            pass # do nothing
+            # Create folders
+            # Because os.mkdir("output") can fail and prevent os.mkdir("output/" + casename) from being called we must
+            # use two separate try blocks
+            try:
+                os.mkdir(output_folder)
+            except FileExistsError:
+                pass # do nothing
+            try:
+                os.mkdir(output_folder + "/" + casename)
+            except FileExistsError:
+                pass # do nothing
 
-        # Generate image filename
-        filename = "timeheight_"+ str(datetime.now())
+            # Generate image filename
+            filename = label + "_timeheight_"+ str(datetime.now())
 
-        filename = self.__removeInvalidFilenameChars__(filename)
-        # Concatenate with output foldername
-        relative_filename = output_folder + "/" +casename+'/' + filename
-        relative_filename = clean_path(relative_filename)
-        # Save image file
-        if replace_images is True or not os.path.isfile(relative_filename+Panel.EXTENSION):
-            plt.savefig(relative_filename+Panel.EXTENSION)
-        else: # os.path.isfile(relative_filename + Panel.EXTENSION) and replace_images is False:
-            print("\n\tImage " + relative_filename+Panel.EXTENSION+
-                  ' already exists. To overwrite this image during runtime pass in the --replace (-r) parameter.')
-        plt.close()
+            filename = self.__removeInvalidFilenameChars__(filename)
+            # Concatenate with output foldername
+            relative_filename = output_folder + '/' + casename + '/' + filename
+            relative_filename = clean_path(relative_filename)
+            # Save image file
+            if replace_images is True or not os.path.isfile(relative_filename+Panel.EXTENSION):
+                plt.savefig(relative_filename+Panel.EXTENSION)
+            else: # os.path.isfile(relative_filename + Panel.EXTENSION) and replace_images is False:
+                print("\n\tImage " + relative_filename+Panel.EXTENSION+
+                      ' already exists. To overwrite this image during runtime pass in the --replace (-r) parameter.')
+            plt.close()

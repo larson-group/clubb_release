@@ -14,8 +14,7 @@ class VariableGroupSamProfiles(VariableGroup):
     """
     def __init__(self, case, clubb_datasets=None, les_dataset=None, coamps_dataset=None, r408_dataset=None,
                  hoc_dataset=None, cam_datasets=None,
-                 e3sm_datasets=None, sam_datasets=None, wrf_datasets=None,
-                 time_height=False, anim=None):
+                 e3sm_datasets=None, sam_datasets=None, wrf_datasets=None):
         """
         
         :param clubb_datasets:
@@ -1405,12 +1404,11 @@ class VariableGroupSamProfiles(VariableGroup):
              'legend_label': r'$\rho$',
              },
         ]
-        
+
         # Call ctor of parent class
         super().__init__(case, clubb_datasets=clubb_datasets, sam_datasets=sam_datasets, les_dataset=les_dataset,
                          coamps_dataset=coamps_dataset, r408_dataset=r408_dataset, cam_datasets=cam_datasets,
-                         hoc_dataset=hoc_dataset, e3sm_datasets= e3sm_datasets, wrf_datasets=wrf_datasets,
-                         time_height=time_height, anim=anim)
+                         hoc_dataset=hoc_dataset, e3sm_datasets= e3sm_datasets, wrf_datasets=wrf_datasets)
             
     def getThlmSamCalc(self, dataset_override=None):
         """
@@ -1423,13 +1421,13 @@ class VariableGroupSamProfiles(VariableGroup):
         dataset = self.les_dataset
         if dataset_override is not None:
             dataset = dataset_override
-        thetal, z, dataset = self.getVarForCalculations('THETAL', dataset)
-        theta, z, dataset = self.getVarForCalculations('THETA', dataset)
-        tabs, z, dataset = self.getVarForCalculations('TABS', dataset)
-        qi, z, dataset = self.getVarForCalculations('QI', dataset)
+        thetal, indep, dataset = self.getVarForCalculations('THETAL', dataset)
+        theta, indep, dataset = self.getVarForCalculations('THETA', dataset)
+        tabs, indep, dataset = self.getVarForCalculations('TABS', dataset)
+        qi, indep, dataset = self.getVarForCalculations('QI', dataset)
         
         thlm = thetal + (2500.4 * (theta / tabs) * (qi / 1000))
-        return thlm, z
+        return thlm, indep
     
     def getRtmSamCalc(self, dataset_override=None):
         """
@@ -1442,11 +1440,11 @@ class VariableGroupSamProfiles(VariableGroup):
         dataset = self.les_dataset
         if dataset_override is not None:
             dataset = dataset_override
-        qt, z, dataset = self.getVarForCalculations('QT', dataset)
-        qi, z, dataset = self.getVarForCalculations('QI', dataset)
+        qt, indep, dataset = self.getVarForCalculations('QT', dataset)
+        qi, indep, dataset = self.getVarForCalculations('QI', dataset)
         
         rtm = (qt - qi) / 1000
-        return rtm, z
+        return rtm, indep
     
     def getWpthlpCalc(self, dataset_override=None):
         """
@@ -1458,13 +1456,13 @@ class VariableGroupSamProfiles(VariableGroup):
         dataset = self.les_dataset
         if dataset_override is not None:
             dataset = dataset_override
-        tlflux, z, dataset = self.getVarForCalculations(['TLFLUX'], dataset)
-        rho, z, dataset = self.getVarForCalculations(['RHO'], dataset)
-        WPTHLP_SGS, z, dataset = self.getVarForCalculations('WPTHLP_SGS', dataset)
+        tlflux, indep, dataset = self.getVarForCalculations(['TLFLUX'], dataset)
+        rho, indep, dataset = self.getVarForCalculations(['RHO'], dataset)
+        WPTHLP_SGS, indep, dataset = self.getVarForCalculations('WPTHLP_SGS', dataset)
         
         wpthlp = tlflux / (rho * 1004) + WPTHLP_SGS
         
-        return wpthlp, z
+        return wpthlp, indep
     
     def getCorrWpThlpCalc(self, dataset_override=None):
         """
@@ -1477,14 +1475,14 @@ class VariableGroupSamProfiles(VariableGroup):
         dataset = self.les_dataset
         if dataset_override is not None:
             dataset = dataset_override
-        TLFLUX, z, dataset = self.getVarForCalculations('TLFLUX', dataset)
-        RHO, z, dataset = self.getVarForCalculations('RHO', dataset)
-        WPTHLP_SGS, z, dataset = self.getVarForCalculations('WPTHLP_SGS', dataset)
-        W2, z, dataset = self.getVarForCalculations('W2', dataset)
-        TL2, z, dataset = self.getVarForCalculations('TL2', dataset)
+        TLFLUX, indep, dataset = self.getVarForCalculations('TLFLUX', dataset)
+        RHO, indep, dataset = self.getVarForCalculations('RHO', dataset)
+        WPTHLP_SGS, indep, dataset = self.getVarForCalculations('WPTHLP_SGS', dataset)
+        W2, indep, dataset = self.getVarForCalculations('W2', dataset)
+        TL2, indep, dataset = self.getVarForCalculations('TL2', dataset)
         
         CorrWpThlp = ( TLFLUX / (RHO * 1004) + WPTHLP_SGS ) / np.sqrt(W2 * TL2 + 1e-4)
-        return CorrWpThlp, z
+        return CorrWpThlp, indep
     
     def getWprtpCalc(self, dataset_override=None):
         """
@@ -1496,12 +1494,12 @@ class VariableGroupSamProfiles(VariableGroup):
         dataset = self.les_dataset
         if dataset_override is not None:
             dataset = dataset_override
-        qtflux, z, dataset = self.getVarForCalculations(['QTFLUX'], dataset)
-        rho, z, dataset = self.getVarForCalculations(['RHO'], dataset)
-        WPRTP_SGS, z, dataset = self.getVarForCalculations('WPRTP_SGS', dataset)
+        qtflux, indep, dataset = self.getVarForCalculations(['QTFLUX'], dataset)
+        rho, indep, dataset = self.getVarForCalculations(['RHO'], dataset)
+        WPRTP_SGS, indep, dataset = self.getVarForCalculations('WPRTP_SGS', dataset)
         
         wprtp = qtflux / (rho * 2.5104e+6) + WPRTP_SGS
-        return wprtp, z
+        return wprtp, indep
     
     def getCorrWpRtpCalc(self, dataset_override=None):
         """
@@ -1514,14 +1512,14 @@ class VariableGroupSamProfiles(VariableGroup):
         dataset = self.les_dataset
         if dataset_override is not None:
             dataset = dataset_override
-        WPRTP, z, dataset = self.getVarForCalculations('WPRTP', dataset)
-        #RHO, z, dataset = self.getVarForCalculations('RHO', dataset)
-        WPRTP_SGS, z, dataset = self.getVarForCalculations('WPRTP_SGS', dataset)
-        W2, z, dataset = self.getVarForCalculations('W2', dataset)
-        QT2, z, dataset = self.getVarForCalculations('QT2', dataset)
+        WPRTP, indep, dataset = self.getVarForCalculations('WPRTP', dataset)
+        #RHO, indep, dataset = self.getVarForCalculations('RHO', dataset)
+        WPRTP_SGS, indep, dataset = self.getVarForCalculations('WPRTP_SGS', dataset)
+        W2, indep, dataset = self.getVarForCalculations('W2', dataset)
+        QT2, indep, dataset = self.getVarForCalculations('QT2', dataset)
         
         CorrWpRtp = WPRTP / (np.sqrt(W2*QT2*1e-6)+1e-8)
-        return CorrWpRtp, z
+        return CorrWpRtp, indep
     
     def getWp2Calc(self, dataset_override = None):
         """
@@ -1534,10 +1532,10 @@ class VariableGroupSamProfiles(VariableGroup):
         dataset = self.les_dataset
         if dataset_override is not None:
             dataset = dataset_override
-        W2, z, dataset = self.getVarForCalculations('W2', dataset)
-        WP2_SGS, z, dataset = self.getVarForCalculations('WP2_SGS', dataset)
+        W2, indep, dataset = self.getVarForCalculations('W2', dataset)
+        WP2_SGS, indep, dataset = self.getVarForCalculations('WP2_SGS', dataset)
         WP2 = W2 + WP2_SGS
-        return WP2, z
+        return WP2, indep
     
     def getWp3Calc(self, dataset_override = None):
         """
@@ -1550,10 +1548,10 @@ class VariableGroupSamProfiles(VariableGroup):
         dataset = self.les_dataset
         if dataset_override is not None:
             dataset = dataset_override
-        W3, z, dataset = self.getVarForCalculations('W3', dataset)
-        WP3_SGS, z, dataset = self.getVarForCalculations('WP3_SGS', dataset)
+        W3, indep, dataset = self.getVarForCalculations('W3', dataset)
+        WP3_SGS, indep, dataset = self.getVarForCalculations('WP3_SGS', dataset)
         WP3 = W3 + WP3_SGS
-        return WP3, z
+        return WP3, indep
     
     def getThetalVarCalc(self, dataset_override = None):
         """
@@ -1566,10 +1564,10 @@ class VariableGroupSamProfiles(VariableGroup):
         dataset = self.les_dataset
         if dataset_override is not None:
             dataset = dataset_override
-        TL2, z, dataset = self.getVarForCalculations('TL2', dataset)
-        THLP2_SGS, z, dataset = self.getVarForCalculations('THLP2_SGS', dataset)
+        TL2, indep, dataset = self.getVarForCalculations('TL2', dataset)
+        THLP2_SGS, indep, dataset = self.getVarForCalculations('THLP2_SGS', dataset)
         THETALVAR = TL2 + THLP2_SGS
-        return THETALVAR, z
+        return THETALVAR, indep
     
     def getRtVarCalc(self, dataset_override = None):
         """
@@ -1583,10 +1581,10 @@ class VariableGroupSamProfiles(VariableGroup):
         dataset = self.les_dataset
         if dataset_override is not None:
             dataset = dataset_override
-        QT2, z, dataset = self.getVarForCalculations('QT2', dataset)
-        RTP2_SGS, z, dataset = self.getVarForCalculations('RTP2_SGS', dataset)
+        QT2, indep, dataset = self.getVarForCalculations('QT2', dataset)
+        RTP2_SGS, indep, dataset = self.getVarForCalculations('RTP2_SGS', dataset)
         RTVAR = (QT2 * 1e-6) + RTP2_SGS
-        return RTVAR, z
+        return RTVAR, indep
     
     def getUpWpCalc(self, dataset_override = None):
         """
@@ -1599,10 +1597,10 @@ class VariableGroupSamProfiles(VariableGroup):
         dataset = self.les_dataset
         if dataset_override is not None:
             dataset = dataset_override
-        UW, z, dataset = self.getVarForCalculations('UW', dataset)
-        UPWP_SGS, z, dataset = self.getVarForCalculations('UPWP_SGS', dataset)
+        UW, indep, dataset = self.getVarForCalculations('UW', dataset)
+        UPWP_SGS, indep, dataset = self.getVarForCalculations('UPWP_SGS', dataset)
         UPWP = UW + UPWP_SGS
-        return UPWP, z
+        return UPWP, indep
     
     def getVpWpCalc(self, dataset_override = None):
         """
@@ -1615,10 +1613,10 @@ class VariableGroupSamProfiles(VariableGroup):
         dataset = self.les_dataset
         if dataset_override is not None:
             dataset = dataset_override
-        VW, z, dataset = self.getVarForCalculations('VW', dataset)
-        VPWP_SGS, z, dataset = self.getVarForCalculations('VPWP_SGS', dataset)
+        VW, indep, dataset = self.getVarForCalculations('VW', dataset)
+        VPWP_SGS, indep, dataset = self.getVarForCalculations('VPWP_SGS', dataset)
         VPWP = VW + VPWP_SGS
-        return VPWP, z
+        return VPWP, indep
     
     def getUp2Calc(self, dataset_override = None):
         """
@@ -1631,10 +1629,10 @@ class VariableGroupSamProfiles(VariableGroup):
         dataset = self.les_dataset
         if dataset_override is not None:
             dataset = dataset_override
-        U2, z, dataset = self.getVarForCalculations('U2', dataset)
-        UP2_SGS, z, dataset = self.getVarForCalculations('UP2_SGS', dataset)
+        U2, indep, dataset = self.getVarForCalculations('U2', dataset)
+        UP2_SGS, indep, dataset = self.getVarForCalculations('UP2_SGS', dataset)
         UVAR = U2 + UP2_SGS
-        return UVAR, z
+        return UVAR, indep
     
     def getVp2Calc(self, dataset_override = None):
         """
@@ -1647,10 +1645,10 @@ class VariableGroupSamProfiles(VariableGroup):
         dataset = self.les_dataset
         if dataset_override is not None:
             dataset = dataset_override
-        V2, z, dataset = self.getVarForCalculations('V2', dataset)
-        VP2_SGS, z, dataset = self.getVarForCalculations('VP2_SGS', dataset)
+        V2, indep, dataset = self.getVarForCalculations('V2', dataset)
+        VP2_SGS, indep, dataset = self.getVarForCalculations('VP2_SGS', dataset)
         VVAR = V2 + VP2_SGS
-        return VVAR, z
+        return VVAR, indep
     
     def getUpWpCorrCalc(self, dataset_override = None):
         """
@@ -1663,10 +1661,10 @@ class VariableGroupSamProfiles(VariableGroup):
         dataset = self.les_dataset
         if dataset_override is not None:
             dataset = dataset_override
-        UW, z, dataset = self.getVarForCalculations('UW', dataset)
-        UPWP_SGS, z, dataset = self.getVarForCalculations('UPWP_SGS', dataset)
+        UW, indep, dataset = self.getVarForCalculations('UW', dataset)
+        UPWP_SGS, indep, dataset = self.getVarForCalculations('UPWP_SGS', dataset)
         UPWP = UW + UPWP_SGS
-        return UPWP, z
+        return UPWP, indep
     
     def getVpWpCorrCalc(self, dataset_override = None):
         """
@@ -1679,10 +1677,10 @@ class VariableGroupSamProfiles(VariableGroup):
         dataset = self.les_dataset
         if dataset_override is not None:
             dataset = dataset_override
-        VW, z, dataset = self.getVarForCalculations('VW', dataset)
-        VPWP_SGS, z, dataset = self.getVarForCalculations('VPWP_SGS', dataset)
+        VW, indep, dataset = self.getVarForCalculations('VW', dataset)
+        VPWP_SGS, indep, dataset = self.getVarForCalculations('VPWP_SGS', dataset)
         VPWP = VW + VPWP_SGS
-        return VPWP, z
+        return VPWP, indep
     
     def getQRP2_QRIP(self, dataset_override=None):
         """
@@ -1696,7 +1694,7 @@ class VariableGroupSamProfiles(VariableGroup):
         dataset = self.les_dataset
         if dataset_override is not None:
             dataset = dataset_override
-        qrainp2_ip, z, dataset = self.getVarForCalculations('qrainp2_ip', dataset)
-        qrainm_ip, z, dataset = self.getVarForCalculations('qrainm_ip', dataset)
+        qrainp2_ip, indep, dataset = self.getVarForCalculations('qrainp2_ip', dataset)
+        qrainm_ip, indep, dataset = self.getVarForCalculations('qrainm_ip', dataset)
         QRP2_QRIP = qrainp2_ip / (np.maximum(qrainm_ip, 1e-5)**2)
-        return QRP2_QRIP, z
+        return QRP2_QRIP, indep

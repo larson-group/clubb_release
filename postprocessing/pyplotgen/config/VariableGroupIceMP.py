@@ -13,8 +13,7 @@ class VariableGroupIceMP(VariableGroup):
 
     def __init__(self, case, clubb_datasets=None, les_dataset=None, sam_datasets=None, coamps_dataset=None,
                  r408_dataset=None, hoc_dataset=None, cam_datasets=None,
-                 e3sm_datasets=None, wrf_datasets=None,
-                 time_height=False, anim=None):
+                 e3sm_datasets=None, wrf_datasets=None):
         """
 
         :param clubb_datasets:
@@ -143,10 +142,11 @@ class VariableGroupIceMP(VariableGroup):
                 'sam_conv_factor': 1 / 1000,
             },
         ]
+
+        # Call ctor of parent class
         super().__init__(case, clubb_datasets=clubb_datasets, les_dataset=les_dataset, coamps_dataset=coamps_dataset,
                          r408_dataset=r408_dataset, hoc_dataset=hoc_dataset, e3sm_datasets=e3sm_datasets,
-                         cam_datasets=cam_datasets, sam_datasets=sam_datasets, wrf_datasets=wrf_datasets,
-                         time_height=time_height, anim=anim)
+                         cam_datasets=cam_datasets, sam_datasets=sam_datasets, wrf_datasets=wrf_datasets)
 
     def getNimSamLine(self, dataset_override=None):
         """
@@ -157,12 +157,12 @@ class VariableGroupIceMP(VariableGroup):
         dataset = self.les_dataset
         if dataset_override is not None:
             dataset = dataset_override
-        ni, z, dataset = self.getVarForCalculations('NI', dataset)
-        rho, z, dataset = self.getVarForCalculations('RHO', dataset)
-        # z,z, dataset = self.getVarForCalculations(['z', 'lev', 'altitude'], self.les_dataset)
+        ni, indep, dataset = self.getVarForCalculations('NI', dataset)
+        rho, indep, dataset = self.getVarForCalculations('RHO', dataset)
+        # indep, indep, dataset = self.getVarForCalculations(['z', 'lev', 'altitude'], self.les_dataset)
 
         nim = (ni * (10 ** 6) / rho)
-        return nim, z
+        return nim, indep
 
     def getNsmSamLine(self, dataset_override=None):
         """
@@ -173,9 +173,9 @@ class VariableGroupIceMP(VariableGroup):
         dataset = self.les_dataset
         if dataset_override is not None:
             dataset = dataset_override
-        ns, z, dataset = self.getVarForCalculations('NS', dataset)
-        rho, z, dataset = self.getVarForCalculations('RHO', dataset)
-        # z,z, dataset = self.getVarForCalculations(['z', 'lev', 'altitude'], self.les_dataset)
+        ns, indep, dataset = self.getVarForCalculations('NS', dataset)
+        rho, indep, dataset = self.getVarForCalculations('RHO', dataset)
+        # indep, indep, dataset = self.getVarForCalculations(['z', 'lev', 'altitude'], self.les_dataset)
 
         nsm = (ns * (10 ** 6) / rho)
-        return nsm, z
+        return nsm, indep

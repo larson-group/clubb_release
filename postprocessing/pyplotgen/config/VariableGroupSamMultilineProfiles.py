@@ -14,7 +14,7 @@ class VariableGroupSamMultilineProfiles(VariableGroup):
     """
     def __init__(self, case, clubb_datasets=None, les_dataset=None, coamps_dataset=None, r408_dataset=None,
                  hoc_dataset=None, cam_datasets=None,
-                 e3sm_datasets=None, sam_datasets=None, wrf_datasets=None, anim=None):
+                 e3sm_datasets=None, sam_datasets=None, wrf_datasets=None):
         """
         
         :param clubb_datasets:
@@ -440,13 +440,11 @@ class VariableGroupSamMultilineProfiles(VariableGroup):
              'axis_title': r"2nd moments $\mathrm{\left[m^2\,s^{-2}\right]}$",
             },
         ]
-        
+
         # Call ctor of parent class
-        # We NEVER want time_height plots with multiple variables, so time_height=False here
         super().__init__(case, clubb_datasets=clubb_datasets, sam_datasets=sam_datasets, les_dataset=les_dataset,
                          coamps_dataset=coamps_dataset, r408_dataset=r408_dataset, cam_datasets=cam_datasets,
-                         hoc_dataset=hoc_dataset, e3sm_datasets=e3sm_datasets, wrf_datasets=wrf_datasets,
-                         time_height=False, anim=anim)
+                         hoc_dataset=hoc_dataset, e3sm_datasets=e3sm_datasets, wrf_datasets=wrf_datasets)
 
     def getUpWpCalc(self, dataset_override = None):
         """
@@ -459,10 +457,10 @@ class VariableGroupSamMultilineProfiles(VariableGroup):
         dataset = self.les_dataset
         if dataset_override is not None:
             dataset = dataset_override
-        UW, z, dataset = self.getVarForCalculations('UW', dataset)
-        UPWP_SGS, z, dataset = self.getVarForCalculations('UPWP_SGS', dataset)
+        UW, indep, dataset = self.getVarForCalculations('UW', dataset)
+        UPWP_SGS, indep, dataset = self.getVarForCalculations('UPWP_SGS', dataset)
         UPWP = UW + UPWP_SGS
-        return UPWP, z
+        return UPWP, indep
     
     def getVpWpCalc(self, dataset_override = None):
         """
@@ -475,10 +473,10 @@ class VariableGroupSamMultilineProfiles(VariableGroup):
         dataset = self.les_dataset
         if dataset_override is not None:
             dataset = dataset_override
-        VW, z, dataset = self.getVarForCalculations('VW', dataset)
-        VPWP_SGS, z, dataset = self.getVarForCalculations('VPWP_SGS', dataset)
+        VW, indep, dataset = self.getVarForCalculations('VW', dataset)
+        VPWP_SGS, indep, dataset = self.getVarForCalculations('VPWP_SGS', dataset)
         VPWP = VW + VPWP_SGS
-        return VPWP, z
+        return VPWP, indep
     
     def getUp2Calc(self, dataset_override = None):
         """
@@ -491,10 +489,10 @@ class VariableGroupSamMultilineProfiles(VariableGroup):
         dataset = self.les_dataset
         if dataset_override is not None:
             dataset = dataset_override
-        U2, z, dataset = self.getVarForCalculations('U2', dataset)
-        UP2_SGS, z, dataset = self.getVarForCalculations('UP2_SGS', dataset)
+        U2, indep, dataset = self.getVarForCalculations('U2', dataset)
+        UP2_SGS, indep, dataset = self.getVarForCalculations('UP2_SGS', dataset)
         UVAR = U2 + UP2_SGS
-        return UVAR, z
+        return UVAR, indep
     
     def getVp2Calc(self, dataset_override = None):
         """
@@ -507,10 +505,10 @@ class VariableGroupSamMultilineProfiles(VariableGroup):
         dataset = self.les_dataset
         if dataset_override is not None:
             dataset = dataset_override
-        V2, z, dataset = self.getVarForCalculations('V2', dataset)
-        VP2_SGS, z, dataset = self.getVarForCalculations('VP2_SGS', dataset)
+        V2, indep, dataset = self.getVarForCalculations('V2', dataset)
+        VP2_SGS, indep, dataset = self.getVarForCalculations('VP2_SGS', dataset)
         VVAR = V2 + VP2_SGS
-        return VVAR, z
+        return VVAR, indep
 
     ## Conditional average calc functions
     # UCLD
@@ -525,11 +523,11 @@ class VariableGroupSamMultilineProfiles(VariableGroup):
         dataset = self.les_dataset
         if dataset_override is not None:
             dataset = dataset_override
-        U, z, dataset = self.getVarForCalculations('U', dataset)
-        UCLD, z, dataset = self.getVarForCalculations('UCLD', dataset)
-        CLD, z, dataset = self.getVarForCalculations('CLD', dataset)
+        U, indep, dataset = self.getVarForCalculations('U', dataset)
+        UCLD, indep, dataset = self.getVarForCalculations('UCLD', dataset)
+        CLD, indep, dataset = self.getVarForCalculations('CLD', dataset)
         UENV = (U - CLD * UCLD) / (1 - CLD)
-        return UENV, z
+        return UENV, indep
     
     def getUEnvWeighted(self, dataset_override=None):
         """
@@ -542,11 +540,11 @@ class VariableGroupSamMultilineProfiles(VariableGroup):
         dataset = self.les_dataset
         if dataset_override is not None:
             dataset = dataset_override
-        U, z, dataset = self.getVarForCalculations('U', dataset)
-        UCLD, z, dataset = self.getVarForCalculations('UCLD', dataset)
-        CLD, z, dataset = self.getVarForCalculations('CLD', dataset)
+        U, indep, dataset = self.getVarForCalculations('U', dataset)
+        UCLD, indep, dataset = self.getVarForCalculations('UCLD', dataset)
+        CLD, indep, dataset = self.getVarForCalculations('CLD', dataset)
         UENV = (U - CLD * UCLD)
-        return UENV, z
+        return UENV, indep
     
     def getUCldWeighted(self, dataset_override=None):
         """
@@ -559,10 +557,10 @@ class VariableGroupSamMultilineProfiles(VariableGroup):
         dataset = self.les_dataset
         if dataset_override is not None:
             dataset = dataset_override
-        UCLD, z, dataset = self.getVarForCalculations('UCLD', dataset)
-        CLD, z, dataset = self.getVarForCalculations('CLD', dataset)
+        UCLD, indep, dataset = self.getVarForCalculations('UCLD', dataset)
+        CLD, indep, dataset = self.getVarForCalculations('CLD', dataset)
         UCLDW = CLD * UCLD
-        return UCLDW, z
+        return UCLDW, indep
     
     # VCLD
     def getVEnvUnweighted(self, dataset_override=None):
@@ -576,11 +574,11 @@ class VariableGroupSamMultilineProfiles(VariableGroup):
         dataset = self.les_dataset
         if dataset_override is not None:
             dataset = dataset_override
-        V, z, dataset = self.getVarForCalculations('V', dataset)
-        VCLD, z, dataset = self.getVarForCalculations('VCLD', dataset)
-        CLD, z, dataset = self.getVarForCalculations('CLD', dataset)
+        V, indep, dataset = self.getVarForCalculations('V', dataset)
+        VCLD, indep, dataset = self.getVarForCalculations('VCLD', dataset)
+        CLD, indep, dataset = self.getVarForCalculations('CLD', dataset)
         VENV = (V - CLD * VCLD) / (1 - CLD)
-        return VENV, z
+        return VENV, indep
     
     def getVEnvWeighted(self, dataset_override=None):
         """
@@ -593,11 +591,11 @@ class VariableGroupSamMultilineProfiles(VariableGroup):
         dataset = self.les_dataset
         if dataset_override is not None:
             dataset = dataset_override
-        V, z, dataset = self.getVarForCalculations('V', dataset)
-        VCLD, z, dataset = self.getVarForCalculations('VCLD', dataset)
-        CLD, z, dataset = self.getVarForCalculations('CLD', dataset)
+        V, indep, dataset = self.getVarForCalculations('V', dataset)
+        VCLD, indep, dataset = self.getVarForCalculations('VCLD', dataset)
+        CLD, indep, dataset = self.getVarForCalculations('CLD', dataset)
         VENV = (V - CLD * VCLD)
-        return VENV, z
+        return VENV, indep
     
     def getVCldWeighted(self, dataset_override=None):
         """
@@ -610,10 +608,10 @@ class VariableGroupSamMultilineProfiles(VariableGroup):
         dataset = self.les_dataset
         if dataset_override is not None:
             dataset = dataset_override
-        VCLD, z, dataset = self.getVarForCalculations('VCLD', dataset)
-        CLD, z, dataset = self.getVarForCalculations('CLD', dataset)
+        VCLD, indep, dataset = self.getVarForCalculations('VCLD', dataset)
+        CLD, indep, dataset = self.getVarForCalculations('CLD', dataset)
         VCLDW = CLD * VCLD
-        return VCLDW, z
+        return VCLDW, indep
     
     # WCLD
     def getWEnvUnweighted(self, dataset_override=None):
@@ -627,11 +625,11 @@ class VariableGroupSamMultilineProfiles(VariableGroup):
         dataset = self.les_dataset
         if dataset_override is not None:
             dataset = dataset_override
-        WM, z, dataset = self.getVarForCalculations('WM', dataset)
-        WCLD, z, dataset = self.getVarForCalculations('WCLD', dataset)
-        CLD, z, dataset = self.getVarForCalculations('CLD', dataset)
+        WM, indep, dataset = self.getVarForCalculations('WM', dataset)
+        WCLD, indep, dataset = self.getVarForCalculations('WCLD', dataset)
+        CLD, indep, dataset = self.getVarForCalculations('CLD', dataset)
         WENV = (WM - CLD * WCLD) / (1 - CLD)
-        return WENV, z
+        return WENV, indep
     
     def getWEnvWeighted(self, dataset_override=None):
         """
@@ -644,11 +642,11 @@ class VariableGroupSamMultilineProfiles(VariableGroup):
         dataset = self.les_dataset
         if dataset_override is not None:
             dataset = dataset_override
-        WM, z, dataset = self.getVarForCalculations('WM', dataset)
-        WCLD, z, dataset = self.getVarForCalculations('WCLD', dataset)
-        CLD, z, dataset = self.getVarForCalculations('CLD', dataset)
+        WM, indep, dataset = self.getVarForCalculations('WM', dataset)
+        WCLD, indep, dataset = self.getVarForCalculations('WCLD', dataset)
+        CLD, indep, dataset = self.getVarForCalculations('CLD', dataset)
         WENV = (WM - CLD * WCLD)
-        return WENV, z
+        return WENV, indep
 
     def getWCldWeighted(self, dataset_override=None):
         """
@@ -661,10 +659,10 @@ class VariableGroupSamMultilineProfiles(VariableGroup):
         dataset = self.les_dataset
         if dataset_override is not None:
             dataset = dataset_override
-        WCLD, z, dataset = self.getVarForCalculations('WCLD', dataset)
-        CLD, z, dataset = self.getVarForCalculations('CLD', dataset)
+        WCLD, indep, dataset = self.getVarForCalculations('WCLD', dataset)
+        CLD, indep, dataset = self.getVarForCalculations('CLD', dataset)
         WCLDW = CLD * WCLD
-        return WCLDW, z
+        return WCLDW, indep
     
     # UWCLD
     def getUWEnvUnweighted(self, dataset_override=None):
@@ -678,11 +676,11 @@ class VariableGroupSamMultilineProfiles(VariableGroup):
         dataset = self.les_dataset
         if dataset_override is not None:
             dataset = dataset_override
-        UW, z, dataset = self.getVarForCalculations('UW', dataset)
-        UWCLD, z, dataset = self.getVarForCalculations('UWCLD', dataset)
-        CLD, z, dataset = self.getVarForCalculations('CLD', dataset)
+        UW, indep, dataset = self.getVarForCalculations('UW', dataset)
+        UWCLD, indep, dataset = self.getVarForCalculations('UWCLD', dataset)
+        CLD, indep, dataset = self.getVarForCalculations('CLD', dataset)
         UWENV = (UW - CLD * UWCLD) / (1 - CLD)
-        return UWENV, z
+        return UWENV, indep
     
     def getUWEnvWeighted(self, dataset_override=None):
         """
@@ -695,11 +693,11 @@ class VariableGroupSamMultilineProfiles(VariableGroup):
         dataset = self.les_dataset
         if dataset_override is not None:
             dataset = dataset_override
-        UW, z, dataset = self.getVarForCalculations('UW', dataset)
-        UWCLD, z, dataset = self.getVarForCalculations('UWCLD', dataset)
-        CLD, z, dataset = self.getVarForCalculations('CLD', dataset)
+        UW, indep, dataset = self.getVarForCalculations('UW', dataset)
+        UWCLD, indep, dataset = self.getVarForCalculations('UWCLD', dataset)
+        CLD, indep, dataset = self.getVarForCalculations('CLD', dataset)
         UWENV = (UW - CLD * UWCLD)
-        return UWENV, z
+        return UWENV, indep
     
     def getUWCldWeighted(self, dataset_override=None):
         """
@@ -712,10 +710,10 @@ class VariableGroupSamMultilineProfiles(VariableGroup):
         dataset = self.les_dataset
         if dataset_override is not None:
             dataset = dataset_override
-        UWCLD, z, dataset = self.getVarForCalculations('UWCLD', dataset)
-        CLD, z, dataset = self.getVarForCalculations('CLD', dataset)
+        UWCLD, indep, dataset = self.getVarForCalculations('UWCLD', dataset)
+        CLD, indep, dataset = self.getVarForCalculations('CLD', dataset)
         UWCLDW = CLD * UWCLD
-        return UWCLDW, z
+        return UWCLDW, indep
     
     # VWCLD
     def getVWEnvUnweighted(self, dataset_override=None):
@@ -729,11 +727,11 @@ class VariableGroupSamMultilineProfiles(VariableGroup):
         dataset = self.les_dataset
         if dataset_override is not None:
             dataset = dataset_override
-        VW, z, dataset = self.getVarForCalculations('VW', dataset)
-        VWCLD, z, dataset = self.getVarForCalculations('VWCLD', dataset)
-        CLD, z, dataset = self.getVarForCalculations('CLD', dataset)
+        VW, indep, dataset = self.getVarForCalculations('VW', dataset)
+        VWCLD, indep, dataset = self.getVarForCalculations('VWCLD', dataset)
+        CLD, indep, dataset = self.getVarForCalculations('CLD', dataset)
         VWENV = (VW - CLD * VWCLD) / (1 - CLD)
-        return VWENV, z
+        return VWENV, indep
     
     def getVWEnvWeighted(self, dataset_override=None):
         """
@@ -746,11 +744,11 @@ class VariableGroupSamMultilineProfiles(VariableGroup):
         dataset = self.les_dataset
         if dataset_override is not None:
             dataset = dataset_override
-        VW, z, dataset = self.getVarForCalculations('VW', dataset)
-        VWCLD, z, dataset = self.getVarForCalculations('VWCLD', dataset)
-        CLD, z, dataset = self.getVarForCalculations('CLD', dataset)
+        VW, indep, dataset = self.getVarForCalculations('VW', dataset)
+        VWCLD, indep, dataset = self.getVarForCalculations('VWCLD', dataset)
+        CLD, indep, dataset = self.getVarForCalculations('CLD', dataset)
         VWENV = (VW - CLD * VWCLD)
-        return VWENV, z
+        return VWENV, indep
     
     def getVWCldWeighted(self, dataset_override=None):
         """
@@ -763,10 +761,10 @@ class VariableGroupSamMultilineProfiles(VariableGroup):
         dataset = self.les_dataset
         if dataset_override is not None:
             dataset = dataset_override
-        VWCLD, z, dataset = self.getVarForCalculations('VWCLD', dataset)
-        CLD, z, dataset = self.getVarForCalculations('CLD', dataset)
+        VWCLD, indep, dataset = self.getVarForCalculations('VWCLD', dataset)
+        CLD, indep, dataset = self.getVarForCalculations('CLD', dataset)
         VWCLDW = CLD * VWCLD
-        return VWCLDW, z
+        return VWCLDW, indep
     
     # TVCLD
     def getTHVEnvUnweighted(self, dataset_override=None):
@@ -780,11 +778,11 @@ class VariableGroupSamMultilineProfiles(VariableGroup):
         dataset = self.les_dataset
         if dataset_override is not None:
             dataset = dataset_override
-        THETAV, z, dataset = self.getVarForCalculations('THETAV', dataset)
-        TVCLD, z, dataset = self.getVarForCalculations('TVCLD', dataset)
-        CLD, z, dataset = self.getVarForCalculations('CLD', dataset)
+        THETAV, indep, dataset = self.getVarForCalculations('THETAV', dataset)
+        TVCLD, indep, dataset = self.getVarForCalculations('TVCLD', dataset)
+        CLD, indep, dataset = self.getVarForCalculations('CLD', dataset)
         TVENV = (THETAV - CLD * TVCLD) / (1 - CLD)
-        return TVENV, z
+        return TVENV, indep
     
     def getTHVEnvWeighted(self, dataset_override=None):
         """
@@ -797,11 +795,11 @@ class VariableGroupSamMultilineProfiles(VariableGroup):
         dataset = self.les_dataset
         if dataset_override is not None:
             dataset = dataset_override
-        THETAV, z, dataset = self.getVarForCalculations('THETAV', dataset)
-        TVCLD, z, dataset = self.getVarForCalculations('TVCLD', dataset)
-        CLD, z, dataset = self.getVarForCalculations('CLD', dataset)
+        THETAV, indep, dataset = self.getVarForCalculations('THETAV', dataset)
+        TVCLD, indep, dataset = self.getVarForCalculations('TVCLD', dataset)
+        CLD, indep, dataset = self.getVarForCalculations('CLD', dataset)
         TVENV = (THETAV - CLD * TVCLD)
-        return TVENV, z
+        return TVENV, indep
     
     def getTHVCldWeighted(self, dataset_override=None):
         """
@@ -814,10 +812,10 @@ class VariableGroupSamMultilineProfiles(VariableGroup):
         dataset = self.les_dataset
         if dataset_override is not None:
             dataset = dataset_override
-        TVCLD, z, dataset = self.getVarForCalculations('TVCLD', dataset)
-        CLD, z, dataset = self.getVarForCalculations('CLD', dataset)
+        TVCLD, indep, dataset = self.getVarForCalculations('TVCLD', dataset)
+        CLD, indep, dataset = self.getVarForCalculations('CLD', dataset)
         TVCLDW = CLD * TVCLD
-        return TVCLDW, z
+        return TVCLDW, indep
     
     # QTCLD
     # ALERT: Check equations/units of SAM QT variables
@@ -832,11 +830,11 @@ class VariableGroupSamMultilineProfiles(VariableGroup):
         dataset = self.les_dataset
         if dataset_override is not None:
             dataset = dataset_override
-        QT, z, dataset = self.getVarForCalculations('QT', dataset)
-        QTCLD, z, dataset = self.getVarForCalculations('QTCLD', dataset)
-        CLD, z, dataset = self.getVarForCalculations('CLD', dataset)
+        QT, indep, dataset = self.getVarForCalculations('QT', dataset)
+        QTCLD, indep, dataset = self.getVarForCalculations('QTCLD', dataset)
+        CLD, indep, dataset = self.getVarForCalculations('CLD', dataset)
         QTENV = (QT - CLD * QTCLD) / (1 - CLD)
-        return QTENV, z
+        return QTENV, indep
     
     # QTWCLD
     # ALERT: Check equations/units of SAM QTW variables
@@ -851,11 +849,11 @@ class VariableGroupSamMultilineProfiles(VariableGroup):
         dataset = self.les_dataset
         if dataset_override is not None:
             dataset = dataset_override
-        WPRTP, z, dataset = self.getVarForCalculations('WPRTP', dataset)
-        QTWCLD, z, dataset = self.getVarForCalculations('QTWCLD', dataset)
-        CLD, z, dataset = self.getVarForCalculations('CLD', dataset)
+        WPRTP, indep, dataset = self.getVarForCalculations('WPRTP', dataset)
+        QTWCLD, indep, dataset = self.getVarForCalculations('QTWCLD', dataset)
+        CLD, indep, dataset = self.getVarForCalculations('CLD', dataset)
         QTWENV = (WPRTP - CLD * QTWCLD / 1000)
-        return QTWENV, z
+        return QTWENV, indep
     
     def getQTWCldWeighted(self, dataset_override=None):
         """
@@ -868,10 +866,10 @@ class VariableGroupSamMultilineProfiles(VariableGroup):
         dataset = self.les_dataset
         if dataset_override is not None:
             dataset = dataset_override
-        QTWCLD, z, dataset = self.getVarForCalculations('QTWCLD', dataset)
-        CLD, z, dataset = self.getVarForCalculations('CLD', dataset)
+        QTWCLD, indep, dataset = self.getVarForCalculations('QTWCLD', dataset)
+        CLD, indep, dataset = self.getVarForCalculations('CLD', dataset)
         QTWCLDW = CLD * QTWCLD
-        return QTWCLDW, z
+        return QTWCLDW, indep
     
     # TLWCLD
     # ALERT: Check equations/units of SAM TLW variables
@@ -886,12 +884,12 @@ class VariableGroupSamMultilineProfiles(VariableGroup):
         dataset = self.les_dataset
         if dataset_override is not None:
             dataset = dataset_override
-        TLFLUX, z, dataset = self.getVarForCalculations('TLFLUX', dataset)
-        TLWCLD, z, dataset = self.getVarForCalculations('TLWCLD', dataset)
-        CLD, z, dataset = self.getVarForCalculations('CLD', dataset)
-        RHO, z, dataset = self.getVarForCalculations('RHO', dataset)
+        TLFLUX, indep, dataset = self.getVarForCalculations('TLFLUX', dataset)
+        TLWCLD, indep, dataset = self.getVarForCalculations('TLWCLD', dataset)
+        CLD, indep, dataset = self.getVarForCalculations('CLD', dataset)
+        RHO, indep, dataset = self.getVarForCalculations('RHO', dataset)
         TLWENV = (TLFLUX / RHO / 1004 - CLD * TLWCLD)
-        return TLWENV, z
+        return TLWENV, indep
     
     def getTLWCldWeighted(self, dataset_override=None):
         """
@@ -904,7 +902,7 @@ class VariableGroupSamMultilineProfiles(VariableGroup):
         dataset = self.les_dataset
         if dataset_override is not None:
             dataset = dataset_override
-        TLWCLD, z, dataset = self.getVarForCalculations('TLWCLD', dataset)
-        CLD, z, dataset = self.getVarForCalculations('CLD', dataset)
+        TLWCLD, indep, dataset = self.getVarForCalculations('TLWCLD', dataset)
+        CLD, indep, dataset = self.getVarForCalculations('CLD', dataset)
         TLWCLDW = CLD * TLWCLD
-        return TLWCLDW, z
+        return TLWCLDW, indep

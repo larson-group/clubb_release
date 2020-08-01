@@ -16,7 +16,7 @@ class Contour:
     def __init__(self, x_data, y_data, c_data, colors = "", label ="Unlabeled plot"):
         """
         Create a new Contour object
-        
+
         :param x_data: List of values to plot along x axis
         :param y_data: List of values to plot along y axis
         :param c_data: 2-dimensional array of values to plot as contours, must have shape as (len(x_data), len(y_data))

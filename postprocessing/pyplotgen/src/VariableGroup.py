@@ -31,8 +31,7 @@ class VariableGroup:
 
     def __init__(self, case, clubb_datasets=None, les_dataset=None, coamps_dataset=None, r408_dataset=None,
                  hoc_dataset=None, cam_datasets=None,
-                 e3sm_datasets=None, sam_datasets=None, wrf_datasets=None,
-                 time_height=False, anim=None):
+                 e3sm_datasets=None, sam_datasets=None, wrf_datasets=None):
         """
         Initialize a VariableGroup object with the passed parameters
 
@@ -47,11 +46,10 @@ class VariableGroup:
         :param e3sm_datasets: A dictionary of or a single NetCDF4 Dataset object containing e3sm output
         :param sam_datasets: A dictionary of or a single NetCDF4 Dataset object containing sam output
         :param wrf_datasets: A dictionary of or a single NetCDF4 Dataset object containing wrf output
-        :param time_height: TODO
-        :param anim: TODO
         """
         self.variables = []
         self.panels = []
+        # TODO: Figure out better way to pass the correct panel type into functions
         self.default_panel_type = Panel.TYPE_PROFILE
         self.clubb_datasets = clubb_datasets
         self.case = case
@@ -68,6 +66,8 @@ class VariableGroup:
         self.end_time = case.end_time
         self.height_min_value = case.height_min_value
         self.height_max_value = case.height_max_value
+        self.time_height = case.time_height
+        self.animation = case.animation
 
         # Loop over the list self.variable_definitions which is only defined in the subclasses
         # that can be found in the config folder such as VariableGroupBase
@@ -273,7 +273,9 @@ class VariableGroup:
             lines = variable_def_dict['lines']
 
         panel_type = self.default_panel_type
-        if 'type' in variable_def_dict.keys():
+        if self.time_height:
+            panel_type = Panel.TYPE_TIMEHEIGHT
+        elif 'type' in variable_def_dict.keys():
             panel_type = variable_def_dict['type']
 
         if not isinstance(dataset, dict):
@@ -290,20 +292,42 @@ class VariableGroup:
         # Use _calc function for variable if needed
         if (model_name + '_calc') in variable_def_dict.keys() and not self.__varnamesInDataset__(
                 all_model_var_names[model_name], dataset):
-            plot_data, z = variable_def_dict[(model_name + '_calc')](dataset_override=dataset)
-            plot = Line(plot_data, z, line_format=line_style, label=label)
-            all_lines.append(plot)
-            data_was_calculated = True
+            if panel_type == Panel.TYPE_TIMEHEIGHT:
+                plot_data, indep_data = variable_def_dict[(model_name + '_calc')](dataset_override=dataset)
+                # data array has to be 2-dimensional to be plotted as time-height plot
+                if plot_data.ndim == 2:
+                    plot = Contour(indep_data['time'], indep_data['height'], plot_data,
+                                   colors=Style_definitions.CONTOUR_CMAP, label=label)
+                else:
+                    plot = None
+            else:
+                plot_data, z = variable_def_dict[(model_name + '_calc')](dataset_override=dataset)
+                plot = Line(plot_data, z, line_format=line_style, label=label)
+            if plot is not None:
+                all_lines.append(plot)
+                data_was_calculated = True
 
         # Process extra variable lines (e.g. budget lines)
+        # Time-height plots can only display one variable each.
+        # So a line parameter is incompatible.
         if lines is not None:
-            for line in lines:
-                line['calculated'] = False
-                if (model_name + '_calc') in line.keys() and not self.__varnamesInDataset__(line['var_names'], dataset):
-                    plot_data, z = line[(model_name + '_calc')](dataset_override=dataset)
-                    plot = Line(plot_data, z, line_format=line_style, label=line['legend_label'])
-                    all_lines.append(plot)
-                    line['calculated'] = True
+            if panel_type == Panel.TYPE_TIMEHEIGHT:
+                warn('Warning. Panel type is time-height but a lines argument was found in for variable '+
+                     str(all_model_var_names[model_name])+'. Those are not compatible. Ignoring lines.')
+            else:
+                for line in lines:
+                    line['calculated'] = False
+                    if (model_name + '_calc') in line.keys() and \
+                        not self.__varnamesInDataset__(line['var_names'], dataset):
+                        if panel_type == Panel.TYPE_ANIMATION:
+                            plot_data, indep_data = variable_def_dict[(model_name + '_calc')](dataset_override=dataset)
+                            # Create new Line equivalent for anim or rename Contour
+                            plot = Contour(indep_data['time'], indep_data['height'], plot_data, colors=Style_definitions.CONTOUR_CMAP, label=label)
+                        else:
+                            plot_data, z = line[(model_name + '_calc')](dataset_override=dataset)
+                            plot = Line(plot_data, z, line_format=line_style, label=line['legend_label'])
+                        all_lines.append(plot)
+                        line['calculated'] = True
 
         if len(all_model_var_names[model_name]) > 0 and not data_was_calculated:
             all_lines.extend(self.__getVarLines__(all_model_var_names[model_name], dataset,
@@ -372,9 +396,11 @@ class VariableGroup:
             title = variable['title']
             axis_label = variable['axis_title']
             plotset = variable['plots']
-            panel_type = self.default_panel_type
             centered = False
-            if 'type' in variable.keys():
+            panel_type = self.default_panel_type
+            if self.time_height:
+                panel_type = Panel.TYPE_TIMEHEIGHT
+            elif 'type' in variable.keys():
                 panel_type = variable['type']
             if 'sci_scale' in variable.keys():
                 sci_scale = variable['sci_scale']
@@ -400,9 +426,11 @@ class VariableGroup:
 
         data_reader = DataReader()
         var_names = variable_def_dict['var_names']
-        panel_type = self.default_panel_type
         all_lines = variable_def_dict['plots']
-        if 'type' in variable_def_dict.keys():
+        panel_type = self.default_panel_type
+        if self.time_height:
+            panel_type = Panel.TYPE_TIMEHEIGHT
+        elif 'type' in variable_def_dict.keys():
             panel_type = variable_def_dict['type']
         try:
             first_input_datasets = self.getTextDefiningDataset()
@@ -661,12 +689,18 @@ class VariableGroup:
         :param dataset: 
         :return: A Contour object that can be used to create a time-height plot.
         """
-        # This does not yet work since we need to different independent_data arrays
+        # This does not yet work since we need two different independent_data arrays
         variable = NetCdfVariable(varname, dataset,
                           independent_var_names={'time':Case_definitions.TIME_VAR_NAMES,
                                                  'height':Case_definitions.HEIGHT_VAR_NAMES},
                           start_time=self.start_time, end_time=self.end_time, avg_axis=2, conversion_factor=conversion_factor)
+        if variable.dependent_data.ndim != 2:
+            warn("Warning! Variable {} can not be plotted as time-height plot as the data ".format(varname)+
+                 "array's dimension is {} and not 2. Returning no data.".format(variable.dependent_data.ndim))
+            return None
+        # From here on: variable.dependent_data.ndim == 2
         variable.trimArray(self.start_time, self.end_time, data=variable.independent_data['time'], axis=0)
+        # Do we want to trim height?
         variable.trimArray(self.height_min_value, self.height_max_value, data=variable.independent_data['height'], axis=1)
 
         # Create Contour instance to return
@@ -685,13 +719,23 @@ class VariableGroup:
             It's useful for doing basic model to model conversions, e.g. SAM -> CLUBB.
         :return: A tuple containing the dependent_data for the variable, the height data, and the datasets
         """
-        var_ncdf = NetCdfVariable(varname, datasets, independent_var_names=Case_definitions.HEIGHT_VAR_NAMES,
-                                  conversion_factor=conversion_factor, start_time=self.start_time,
-                                  end_time=self.end_time)
-        var_ncdf.trimArray(self.height_min_value, self.height_max_value, data=var_ncdf.independent_data)
+        if self.time_height:
+            var_ncdf = NetCdfVariable(varname, datasets,
+                                      independent_var_names={'time': Case_definitions.TIME_VAR_NAMES,
+                                                             'height':Case_definitions.HEIGHT_VAR_NAMES},
+                                      conversion_factor=conversion_factor, start_time=self.start_time,
+                                      end_time=self.end_time, avg_axis=2)
+            var_ncdf.trimArray(self.start_time, self.end_time, data=var_ncdf.independent_data['time'], axis=0)
+            # Do we want to trim height?
+            var_ncdf.trimArray(self.height_min_value, self.height_max_value, data=var_ncdf.independent_data['height'], axis=1)
+        else:
+            var_ncdf = NetCdfVariable(varname, datasets, independent_var_names=Case_definitions.HEIGHT_VAR_NAMES,
+                                      conversion_factor=conversion_factor, start_time=self.start_time,
+                                      end_time=self.end_time)
+            var_ncdf.trimArray(self.height_min_value, self.height_max_value, data=var_ncdf.independent_data)
         var_data = var_ncdf.dependent_data
-        z_data = var_ncdf.independent_data
-        return var_data, z_data, var_ncdf.ncdf_data # changed datasets to var_ncdf.ncdf_data to fix budget plots
+        indep_data = var_ncdf.independent_data
+        return var_data, indep_data, var_ncdf.ncdf_data # changed datasets to var_ncdf.ncdf_data to fix budget plots
 
     def isSurfaceData(self, dataset):
         """
@@ -734,7 +778,6 @@ class VariableGroup:
             (e.g.     output2 = wprlp * (2.5e6 / (1004.67 * ((p / 1.0e5) ** (287.04 / 1004.67))) - 1.61 * thvm)
         :return: The listlike array of the two datasets most likely to be the correct answer.
         """
-
         out1_is_nan = math.isnan(mean(output1))
         out2_is_nan = math.isnan(mean(output2))
 

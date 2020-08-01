@@ -36,7 +36,7 @@ class PyPlotGen:
                  benchmark_only=False, nightly=False, zip=False, thin=False, no_legends=False, ensemble=False,
                  plot_e3sm="", sam_folders=[""], wrf_folders=[""], cam_folders=[""],
                  budget_moments=False, bu_morr=False, diff=None, show_alphabetic_id=False,
-                 time_height=False, anim=None):
+                 time_height=False, animation=None):
         """
         This creates an instance of PyPlotGen. Each parameter is a command line parameter passed in from the argparser
         below.
@@ -76,8 +76,9 @@ class PyPlotGen:
             Not implemented.
         :param diff: Plot the difference between two clubb folders. (MORE DESCRIPTION)
         :param show_alphabetic_id: If True, add an identifying character to the top right of a panel.
-        :param time_height: TODO
-        :param anim: TODO
+        :param time_height: If True, plot time-height (contourf) plots instead of profile-like plots
+        :param animation: If True, create time animations instead of time-averaged plots
+            (works with profile and budget plots) (Not yet implemented).
         """
         self.clubb_folders = clubb_folders
         self.output_folder = output_folder
@@ -107,7 +108,7 @@ class PyPlotGen:
         self.benchmark_only = benchmark_only
         self.nightly = nightly
         self.time_height = time_height
-        self.anim = anim
+        self.animation = animation
 
         if os.path.isdir(self.output_folder) and self.replace_images == False:
             self.output_folder = self.output_folder + '_generated_on_' + str(datetime.now())
@@ -158,7 +159,7 @@ class PyPlotGen:
                             plot_budgets=self.plot_budgets, sam_folders=self.sam_folders, wrf_folders=self.wrf_folders,
                             diff_datasets=case_diff_datasets, plot_r408=self.cgbest, plot_hoc=self.hoc,
                             e3sm_dirs=self.e3sm_dir, cam_folders=self.cam_folders,
-                            time_height=self.time_height, animation=self.anim)
+                            time_height=self.time_height, animation=self.animation)
                 # Call plot function of case instance
                 case.plot(self.output_folder, replace_images=self.replace_images, no_legends=self.no_legends,
                           thin_lines=self.thin, show_alphabetic_id=self.show_alphabetic_id)
@@ -235,7 +236,7 @@ class PyPlotGen:
                         if os.path.exists(filename):
                             any_nc_file_found = True
                 else:
-                    filename = folder + rel_filepath
+                    filename = folder + '/' + rel_filepath
                     if os.path.exists(filename):
                         any_nc_file_found = True
         return any_nc_file_found
@@ -308,7 +309,6 @@ def __trimTrailingSlash__(args):
     for i in range(len(args)):
         if args[i][-1] == "/":
             args[i] = args[i][:-1]
-
     return args
 
 
@@ -421,7 +421,7 @@ def __processArguments__():
                           wrf_folders=args.wrf, benchmark_only=args.benchmark_only,
                           no_legends=args.no_legends, ensemble=args.ensemble, budget_moments=args.plot_budgets,
                           bu_morr=args.bu_morr, diff=args.diff, show_alphabetic_id=args.show_alphabetic_id,
-                          time_height=args.time_height_plots, anim=args.movies)
+                          time_height=args.time_height_plots, animation=args.movies)
     return pyplotgen
 
 

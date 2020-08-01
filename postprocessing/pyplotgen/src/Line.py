@@ -16,7 +16,7 @@ class Line:
     def __init__(self, x_data, y_data, line_format = "", label ="Unlabeled plot"):
         """
         Create a new Line object
-        
+
         :param x_data: list of values to plot along x axis, must have same length as y
         :param y_data: list of values to plot along y axis, must have same length as x
         :param line_format: A str containing the format for the line plot. See pyplot docs for more info.

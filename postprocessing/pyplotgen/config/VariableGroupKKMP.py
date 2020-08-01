@@ -12,8 +12,7 @@ class VariableGroupKKMP(VariableGroup):
     """
     def __init__(self, case, clubb_datasets=None, les_dataset=None, coamps_dataset=None, r408_dataset=None,
                  hoc_dataset=None, cam_datasets=None,
-                 e3sm_datasets=None, sam_datasets=None, wrf_datasets=None,
-                 time_height=False, anim=None):
+                 e3sm_datasets=None, sam_datasets=None, wrf_datasets=None):
         """
 
         :param clubb_datasets:
@@ -59,7 +58,8 @@ class VariableGroupKKMP(VariableGroup):
                 },
             },
         ]
+
+        # Call ctor of parent class
         super().__init__(case, clubb_datasets=clubb_datasets, les_dataset=les_dataset, coamps_dataset=coamps_dataset,
                          r408_dataset=r408_dataset, hoc_dataset=hoc_dataset, e3sm_datasets=e3sm_datasets,
-                         cam_datasets=cam_datasets, sam_datasets=sam_datasets, wrf_datasets=wrf_datasets,
-                         time_height=time_height, anim=anim)
+                         cam_datasets=cam_datasets, sam_datasets=sam_datasets, wrf_datasets=wrf_datasets)

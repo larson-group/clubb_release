@@ -2,6 +2,8 @@
 :author: Nicolas Strike
 :date: Mid 2019
 """
+import numpy as np
+
 from src.Panel import Panel
 from src.VariableGroup import VariableGroup
 
@@ -15,8 +17,7 @@ class VariableGroupBase(VariableGroup):
 
     def __init__(self, case, clubb_datasets=None, les_dataset=None, coamps_dataset=None, r408_dataset=None,
                  hoc_dataset=None, cam_datasets=None,
-                 e3sm_datasets=None, sam_datasets=None, wrf_datasets=None,
-                 time_height=False, anim=None):
+                 e3sm_datasets=None, sam_datasets=None, wrf_datasets=None):
         """
 
         :param clubb_datasets:
@@ -520,7 +521,7 @@ class VariableGroupBase(VariableGroup):
                 'sam_calc': self.get_rc_coef_zm_X_thlprcp_sam_calc,
                 'coamps_calc': self.get_rc_coef_zm_X_thlprcp_coamps_calc,
                 'clubb_calc': self.get_rc_coef_zm_X_thlprcp_clubb_calc,
-                'title': 'Contribution of Cloud Water Flux to thlprcp',
+                'title': 'Contribution of Cloud Water Flux to thlpthvp',
                 'axis_title': 'rc_coef_zm * thlprcp [K^2]',
                 'sci_scale': 0,
             },
@@ -538,7 +539,7 @@ class VariableGroupBase(VariableGroup):
                 'sam_calc': self.get_rc_coef_zm_X_rtprcp_sam_calc,
                 'coamps_calc': self.get_rc_coef_zm_X_rtprcp_coamps_calc,
                 'clubb_calc': self.get_rc_coef_zm_X_rtprcp_clubb_calc,
-                'title': 'Contribution of Cloud Water Flux to rtprcp',
+                'title': 'Contribution of Cloud Water Flux to rtpthvp',
                 'axis_title': 'rc_coef_zm * rtprcp [kg/kg K]',
                 'sci_scale': -4
             },
@@ -563,10 +564,11 @@ class VariableGroupBase(VariableGroup):
 
             # TODO corr chi 2's,
         ]
+
+        # Call ctor of parent class
         super().__init__(case, clubb_datasets=clubb_datasets, sam_datasets=sam_datasets, les_dataset=les_dataset,
                          coamps_dataset=coamps_dataset, r408_dataset=r408_dataset, cam_datasets=cam_datasets,
-                         hoc_dataset=hoc_dataset, e3sm_datasets=e3sm_datasets, wrf_datasets=wrf_datasets,
-                         time_height=time_height, anim=anim)
+                         hoc_dataset=hoc_dataset, e3sm_datasets=e3sm_datasets, wrf_datasets=wrf_datasets)
 
     def getThlmSamCalc(self, dataset_override=None):
         """
@@ -580,13 +582,13 @@ class VariableGroupBase(VariableGroup):
         dataset = self.les_dataset
         if dataset_override is not None:
             dataset = dataset_override
-        thetal, z, dataset = self.getVarForCalculations('THETAL', dataset)
-        theta, z, dataset = self.getVarForCalculations('THETA', dataset)
-        tabs, z, dataset = self.getVarForCalculations('TABS', dataset)
-        qi, z, dataset = self.getVarForCalculations('QI', dataset)
+        thetal, indep, dataset = self.getVarForCalculations('THETAL', dataset)
+        theta, indep, dataset = self.getVarForCalculations('THETA', dataset)
+        tabs, indep, dataset = self.getVarForCalculations('TABS', dataset)
+        qi, indep, dataset = self.getVarForCalculations('QI', dataset)
 
         thlm = thetal + (2500.4 * (theta / tabs) * (qi / 1000))
-        return thlm, z
+        return thlm, indep
 
     def getRtmSamCalc(self, dataset_override=None):
         """
@@ -600,11 +602,11 @@ class VariableGroupBase(VariableGroup):
         if dataset_override is not None:
             dataset = dataset_override
         # z,z, dataset = self.getVarForCalculations('z', self.les_dataset)
-        qt, z, dataset = self.getVarForCalculations('QT', dataset)
-        qi, z, dataset = self.getVarForCalculations('QI', dataset)
+        qt, indep, dataset = self.getVarForCalculations('QT', dataset)
+        qi, indep, dataset = self.getVarForCalculations('QI', dataset)
 
         rtm = (qt - qi) / 1000
-        return rtm, z
+        return rtm, indep
 
     def getSkwZtLesCalc(self, dataset_override=None):
         """
@@ -622,12 +624,12 @@ class VariableGroupBase(VariableGroup):
         if dataset_override is not None:
             dataset = dataset_override
 
-        wp3, z, dataset = self.getVarForCalculations(['WP3', 'W3', 'wp3'], dataset)
-        wp2, z, dataset = self.getVarForCalculations(['WP2', 'W2', 'wp2'], dataset)
+        wp3, indep, dataset = self.getVarForCalculations(['WP3', 'W3', 'wp3'], dataset)
+        wp2, indep, dataset = self.getVarForCalculations(['WP2', 'W2', 'wp2'], dataset)
 
         skw_zt = wp3 / (wp2 + 1.6e-3) ** 1.5
 
-        return skw_zt, z
+        return skw_zt, indep
 
     def getSkrtZtLesCalc(self, dataset_override=None):
         """
@@ -649,12 +651,12 @@ class VariableGroupBase(VariableGroup):
             dataset = self.coamps_dataset['sm']
         if dataset_override is not None:
             dataset = dataset_override
-        rtp3, z, dataset = self.getVarForCalculations(['RTP3', 'qtp3', 'rtp3'], dataset)
-        rtp2, z, dataset = self.getVarForCalculations(['RTP2', 'qtp2', 'rtp2', 'rlp2'], dataset)
+        rtp3, indep, dataset = self.getVarForCalculations(['RTP3', 'qtp3', 'rtp3'], dataset)
+        rtp2, indep, dataset = self.getVarForCalculations(['RTP2', 'qtp2', 'rtp2', 'rlp2'], dataset)
 
         skrt_zt = rtp3 / (rtp2 + 4e-16) ** 1.5
 
-        return skrt_zt, z
+        return skrt_zt, indep
 
     def getSkthlZtLesCalc(self, dataset_override=None):
         """
@@ -676,11 +678,11 @@ class VariableGroupBase(VariableGroup):
             dataset = dataset_override
 
             # z,z, dataset = self.getVarForCalculations(['z', 'lev', 'altitude'], dataset)
-        thlp3, z, dataset = self.getVarForCalculations(['THLP3', 'thlp3'], dataset)
-        thlp2, z, dataset = self.getVarForCalculations(['THLP2', 'thlp2'], dataset)
+        thlp3, indep, dataset = self.getVarForCalculations(['THLP3', 'thlp3'], dataset)
+        thlp2, indep, dataset = self.getVarForCalculations(['THLP2', 'thlp2'], dataset)
 
         skthl_zt = thlp3 / (thlp2 + 4e-4)**1.5
-        return skthl_zt, z
+        return skthl_zt, indep
 
     def getWpthlpSamCalc(self, dataset_override=None):
         """
@@ -694,13 +696,13 @@ class VariableGroupBase(VariableGroup):
             dataset = self.les_dataset
         if dataset_override is not None:
             dataset = dataset_override
-        tlflux, z, dataset = self.getVarForCalculations(['TLFLUX'], dataset)
-        rho, z, dataset = self.getVarForCalculations(['RHO'], dataset)
+        tlflux, indep, dataset = self.getVarForCalculations(['TLFLUX'], dataset)
+        rho, indep, dataset = self.getVarForCalculations(['RHO'], dataset)
         # z,z, dataset = self.getVarForCalculations(['z', 'lev', 'altitude'], self.les_dataset)
 
         wpthlp = tlflux / (rho * 1004)
 
-        return wpthlp, z
+        return wpthlp, indep
 
     def getWprtpSamCalc(self, dataset_override=None):
         """
@@ -714,11 +716,11 @@ class VariableGroupBase(VariableGroup):
             dataset = self.les_dataset
         if dataset_override is not None:
             dataset = dataset_override
-        qtflux, z, dataset = self.getVarForCalculations(['QTFLUX'], dataset)
-        rho, z, dataset = self.getVarForCalculations(['RHO'], dataset)
+        qtflux, indep, dataset = self.getVarForCalculations(['QTFLUX'], dataset)
+        rho, indep, dataset = self.getVarForCalculations(['RHO'], dataset)
         wprtp = qtflux / (rho * 2.5104e+6)
         # z,z, dataset = self.getVarForCalculations(['z', 'lev', 'altitude'], self.les_dataset)
-        return wprtp, z
+        return wprtp, indep
 
     def getWpthvpSamCalc(self, dataset_override=None):
         """
@@ -732,11 +734,11 @@ class VariableGroupBase(VariableGroup):
             dataset = self.les_dataset
         if dataset_override is not None:
             dataset = dataset_override
-        tvflux, z, dataset = self.getVarForCalculations(['TVFLUX'], dataset)
-        rho, z, dataset = self.getVarForCalculations(['RHO'], dataset)
+        tvflux, indep, dataset = self.getVarForCalculations(['TVFLUX'], dataset)
+        rho, indep, dataset = self.getVarForCalculations(['RHO'], dataset)
         wpthvp = tvflux / (rho * 1004)
         # z,z, dataset = self.getVarForCalculations(['z', 'lev', 'altitude'], self.les_dataset)
-        return wpthvp, z
+        return wpthvp, indep
 
     def getRtp2SamCalc(self, dataset_override=None):
         """
@@ -750,10 +752,10 @@ class VariableGroupBase(VariableGroup):
             dataset = self.les_dataset
         if dataset_override is not None:
             dataset = dataset_override
-        qt2, z, dataset = self.getVarForCalculations(['QT2'], dataset)
+        qt2, indep, dataset = self.getVarForCalculations(['QT2'], dataset)
         rtp2 = qt2 / 1e6
         # z,z, dataset = self.getVarForCalculations(['z', 'lev', 'altitude'], self.les_dataset)
-        return rtp2, z
+        return rtp2, indep
 
     def getRtp3SamCalc(self, dataset_override=None):
         """
@@ -770,19 +772,19 @@ class VariableGroupBase(VariableGroup):
             dataset = self.les_dataset
         for dataset in dataset.values():
             if 'rc_coef_zm' in dataset.variables.keys() and 'rtprcp' in dataset.variables.keys():
-                rc_coef_zm, z, dataset = self.getVarForCalculations('rc_coef_zm', dataset)
-                rtprcp, z, dataset = self.getVarForCalculations('rtprcp', dataset)
+                rc_coef_zm, indep, dataset = self.getVarForCalculations('rc_coef_zm', dataset)
+                rtprcp, indep, dataset = self.getVarForCalculations('rtprcp', dataset)
                 rtp3 = rc_coef_zm * (rtprcp)
 
             elif 'QCFLUX' in dataset.variables.keys():
-                QCFLUX, z, dataset = self.getVarForCalculations('QCFLUX', dataset)
-                RHO, z, dataset = self.getVarForCalculations('RHO', dataset)
-                PRES, z, dataset = self.getVarForCalculations('PRES', dataset)
-                THETAV, z, dataset = self.getVarForCalculations('THETAV', dataset)
+                QCFLUX, indep, dataset = self.getVarForCalculations('QCFLUX', dataset)
+                RHO, indep, dataset = self.getVarForCalculations('RHO', dataset)
+                PRES, indep, dataset = self.getVarForCalculations('PRES', dataset)
+                THETAV, indep, dataset = self.getVarForCalculations('THETAV', dataset)
                 rtp3 = ((QCFLUX) / (RHO * 2.5104e+6)) * (
                         2.5e6 / (1004.67 * ((PRES / 1000) ** (287.04 / 1004.67))) - 1.61 * THETAV)
             # z,z, dataset = self.getVarForCalculations(['z', 'lev', 'altitude'], dataset)
-        return rtp3, z
+        return rtp3, indep
 
     def get_rc_coef_zm_X_wprcp_clubb_line(self, dataset_override=None):
         """
@@ -795,11 +797,11 @@ class VariableGroupBase(VariableGroup):
             dataset = dataset_override
         else:
             dataset = self.clubb_datasets['zm']
-        rc_coef_zm, z, dataset = self.getVarForCalculations('rc_coef_zm', dataset)
-        wprcp, z, dataset = self.getVarForCalculations('wprcp', dataset)
+        rc_coef_zm, indep, dataset = self.getVarForCalculations('rc_coef_zm', dataset)
+        wprcp, indep, dataset = self.getVarForCalculations('wprcp', dataset)
         # z,z, dataset = self.getVarForCalculations(['z', 'lev', 'altitude'], dataset)
         output = rc_coef_zm * wprcp
-        return output, z
+        return output, indep
 
     def get_rc_coef_zm_X_wprcp_sam_calc(self, dataset_override=None):
         """
@@ -817,19 +819,21 @@ class VariableGroupBase(VariableGroup):
         else:
             dataset = self.les_dataset
         # z,z, dataset = self.getVarForCalculations(['z', 'lev', 'altitude'], dataset)
-        WPRCP, z, dataset = self.getVarForCalculations('WPRCP', dataset)
-        QCFLUX, z, dataset = self.getVarForCalculations('QCFLUX', dataset)
-        RHO, z, dataset = self.getVarForCalculations('RHO', dataset)
-        PRES, z, dataset = self.getVarForCalculations('PRES', dataset)
-        THETAV, z, dataset = self.getVarForCalculations('THETAV', dataset)
+        WPRCP, indep, dataset = self.getVarForCalculations('WPRCP', dataset)
+        QCFLUX, indep, dataset = self.getVarForCalculations('QCFLUX', dataset)
+        RHO, indep, dataset = self.getVarForCalculations('RHO', dataset)
+        PRES, indep, dataset = self.getVarForCalculations('PRES', dataset)
+        THETAV, indep, dataset = self.getVarForCalculations('THETAV', dataset)
 
 
-        output = WPRCP * (2.5e6 / (1004.67 * ((PRES / 1000) ** (287.04 / 1004.67))) - 1.61 * THETAV)
-        wprcp_is_zeroes = min(WPRCP) == 0.0 and max(WPRCP) == 0.0
+        # Check if WPRCP contains non-zero values
+        wprcp_is_zeroes = (np.nanmin(WPRCP) == 0.0 and np.nanmax(WPRCP) == 0.0)
         if wprcp_is_zeroes:
             output = ((QCFLUX) / (RHO * 2.5104e+6)) * (2.5e6 / (1004.67 * ((PRES / 1000) ** (287.04 / 1004.67))) - 1.61 * THETAV)
+        else:
+            output = WPRCP * (2.5e6 / (1004.67 * ((PRES / 1000) ** (287.04 / 1004.67))) - 1.61 * THETAV)
 
-        return output, z
+        return output, indep
 
     # rc_coef_zm. * thlprcp
     def get_rc_coef_zm_X_thlprcp_clubb_calc(self, dataset_override=None):
@@ -844,11 +848,11 @@ class VariableGroupBase(VariableGroup):
         else:
             dataset = self.clubb_datasets['zm']
         # z,z, dataset = self.getVarForCalculations(['z', 'lev', 'altitude'], dataset)
-        rc_coef_zm, z, dataset = self.getVarForCalculations('rc_coef_zm', dataset)
-        thlprcp, z, dataset = self.getVarForCalculations('thlprcp', dataset)
+        rc_coef_zm, indep, dataset = self.getVarForCalculations('rc_coef_zm', dataset)
+        thlprcp, indep, dataset = self.getVarForCalculations('thlprcp', dataset)
 
         output = rc_coef_zm * thlprcp
-        return output, z
+        return output, indep
 
     def get_rc_coef_zm_X_rtprcp_clubb_calc(self, dataset_override=None):
         """
@@ -862,11 +866,11 @@ class VariableGroupBase(VariableGroup):
         else:
             dataset = self.clubb_datasets['zm']
         # z,z, dataset = self.getVarForCalculations(['z', 'lev', 'altitude'], dataset)
-        rc_coef_zm, z, dataset = self.getVarForCalculations('rc_coef_zm', dataset)
-        rtprcp, z, dataset = self.getVarForCalculations('rtprcp', dataset)
+        rc_coef_zm, indep, dataset = self.getVarForCalculations('rc_coef_zm', dataset)
+        rtprcp, indep, dataset = self.getVarForCalculations('rtprcp', dataset)
 
         output = rc_coef_zm * rtprcp
-        return output, z
+        return output, indep
 
     def getUwCoampsData(self, dataset_override=None):
         """
@@ -880,11 +884,11 @@ class VariableGroupBase(VariableGroup):
         else:
             dataset = self.coamps_dataset['sw']
         # z,z, dataset = self.getVarForCalculations(['z', 'lev', 'altitude'], dataset)
-        wpup, z, dataset = self.getVarForCalculations('wpup', dataset)
-        wpup_sgs, z, dataset = self.getVarForCalculations('wpup_sgs', dataset)
+        wpup, indep, dataset = self.getVarForCalculations('wpup', dataset)
+        wpup_sgs, indep, dataset = self.getVarForCalculations('wpup_sgs', dataset)
 
         upwp = wpup + wpup_sgs
-        return upwp, z
+        return upwp, indep
 
     def getVwCoampsData(self, dataset_override=None):
         """
@@ -898,11 +902,11 @@ class VariableGroupBase(VariableGroup):
         else:
             dataset = self.coamps_dataset['sw']
         # z,z, dataset = self.getVarForCalculations(['z', 'lev', 'altitude'], dataset)
-        wpvp, z, dataset = self.getVarForCalculations('wpvp', dataset)
-        wpvp_sgs, z, dataset = self.getVarForCalculations('wpvp_sgs', dataset)
+        wpvp, indep, dataset = self.getVarForCalculations('wpvp', dataset)
+        wpvp_sgs, indep, dataset = self.getVarForCalculations('wpvp_sgs', dataset)
 
         vpwp = wpvp + wpvp_sgs
-        return vpwp, z
+        return vpwp, indep
 
     def get_rc_coef_zm_X_wprcp_coamps_calc(self, dataset_override=None):
         """
@@ -919,14 +923,14 @@ class VariableGroupBase(VariableGroup):
         if dataset_override is not None:
             dataset = dataset_override['sw']
 
-        wprlp, z, dataset = self.getVarForCalculations(['thlpqcp', 'wpqcp', 'wprlp'], dataset)
-        ex0, z, dataset = self.getVarForCalculations(['ex0'], dataset)
-        p, z, dataset = self.getVarForCalculations('p', dataset)
-        thvm, z, dataset = self.getVarForCalculations('thvm', dataset)
+        wprlp, indep, dataset = self.getVarForCalculations(['thlpqcp', 'wpqcp', 'wprlp'], dataset)
+        ex0, indep, dataset = self.getVarForCalculations(['ex0'], dataset)
+        p, indep, dataset = self.getVarForCalculations('p', dataset)
+        thvm, indep, dataset = self.getVarForCalculations('thvm', dataset)
         output1 = wprlp * (2.5e6 / (1004.67 * ex0) - 1.61 * thvm)
         output2 = wprlp * (2.5e6 / (1004.67 * ((p / 1.0e5) ** (287.04 / 1004.67))) - 1.61 * thvm)
         output = self.pickNonZeroOutput(output1, output2)
-        return output, z
+        return output, indep
 
     def get_rc_coef_zm_X_thlprcp_sam_calc(self, dataset_override=None):
         """
@@ -937,12 +941,12 @@ class VariableGroupBase(VariableGroup):
         dataset = self.sam_datasets
         if dataset_override is not None:
             dataset = dataset_override
-        THLPRCP, z, dataset = self.getVarForCalculations(['THLPRCP'], dataset)
-        PRES, z, dataset = self.getVarForCalculations('PRES', dataset)
-        THETAV, z, dataset = self.getVarForCalculations('THETAV', dataset)
+        THLPRCP, indep, dataset = self.getVarForCalculations(['THLPRCP'], dataset)
+        PRES, indep, dataset = self.getVarForCalculations('PRES', dataset)
+        THETAV, indep, dataset = self.getVarForCalculations('THETAV', dataset)
 
         output = THLPRCP * (2.5e6 / (1004.67 * ((PRES / 1000) ** (287.04 / 1004.67))) - 1.61 * THETAV)
-        return output, z
+        return output, indep
 
     def get_rc_coef_zm_X_thlprcp_coamps_calc(self, dataset_override=None):
         """
@@ -956,18 +960,18 @@ class VariableGroupBase(VariableGroup):
         dataset = self.coamps_dataset['sw']
         if dataset_override is not None:
             dataset = dataset_override
-        thlpqcp, z, dataset = self.getVarForCalculations(['thlpqcp'], dataset)
-        ex0, z, dataset = self.getVarForCalculations('ex0', dataset)
-        thvm, z, dataset = self.getVarForCalculations('thvm', dataset)
+        thlpqcp, indep, dataset = self.getVarForCalculations(['thlpqcp'], dataset)
+        ex0, indep, dataset = self.getVarForCalculations('ex0', dataset)
+        thvm, indep, dataset = self.getVarForCalculations('thvm', dataset)
 
-        thlprlp, z, dataset = self.getVarForCalculations(['thlprlp'], dataset)
-        p, z, dataset = self.getVarForCalculations('p', dataset)
+        thlprlp, indep, dataset = self.getVarForCalculations(['thlprlp'], dataset)
+        p, indep, dataset = self.getVarForCalculations('p', dataset)
 
         output1 = thlpqcp * (2.5e6 / (1004.67 * ex0) - 1.61 * thvm)
         output2 = thlprlp * (2.5e6 / (1004.67 * (( p /1.0e5)**(287.04/1004.67))) - 1.61*thvm)
         output = self.pickNonZeroOutput(output1, output2)
 
-        return output, z
+        return output, indep
 
     def get_rc_coef_zm_X_rtprcp_coamps_calc(self, dataset_override=None):
         """
@@ -982,18 +986,18 @@ class VariableGroupBase(VariableGroup):
         if dataset_override is not None:
             dataset = dataset_override['sm']
         # z,z, dataset = self.getVarForCalculations(['z', 'lev', 'altitude'], dataset)
-        qtpqcp, z, dataset = self.getVarForCalculations(['qtpqcp', 'rtprcp'], dataset)
-        ex0, z, dataset = self.getVarForCalculations('ex0', dataset)
-        thvm, z, dataset = self.getVarForCalculations('thvm', dataset)
+        qtpqcp, indep, dataset = self.getVarForCalculations(['qtpqcp', 'rtprcp'], dataset)
+        ex0, indep, dataset = self.getVarForCalculations('ex0', dataset)
+        thvm, indep, dataset = self.getVarForCalculations('thvm', dataset)
 
-        rtprlp, z, dataset = self.getVarForCalculations('rtprlp', dataset)
-        p, z, dataset = self.getVarForCalculations('p', dataset)
+        rtprlp, indep, dataset = self.getVarForCalculations('rtprlp', dataset)
+        p, indep, dataset = self.getVarForCalculations('p', dataset)
 
         output1 = qtpqcp * (2.5e6 / (1004.67 * ex0) - 1.61 * thvm)
         output2 = rtprlp * (2.5e6 / (1004.67*((p/1.0e5)**(287.04/1004.67))) - 1.61*thvm)
         output = self.pickNonZeroOutput(output1, output2)
 
-        return output, z
+        return output, indep
 
     def get_rc_coef_zm_X_rtprcp_sam_calc(self, dataset_override=None):
         """
@@ -1006,12 +1010,12 @@ class VariableGroupBase(VariableGroup):
         if dataset_override is not None:
             dataset = dataset_override
         # z,z, dataset = self.getVarForCalculations(['z', 'lev', 'altitude'], dataset)
-        RTPRCP, z, dataset = self.getVarForCalculations('RTPRCP', dataset)
-        PRES, z, dataset = self.getVarForCalculations('PRES', dataset)
-        THETAV, z, dataset = self.getVarForCalculations('THETAV', dataset)
+        RTPRCP, indep, dataset = self.getVarForCalculations('RTPRCP', dataset)
+        PRES, indep, dataset = self.getVarForCalculations('PRES', dataset)
+        THETAV, indep, dataset = self.getVarForCalculations('THETAV', dataset)
 
         output = RTPRCP * (2.5e6 / (1004.67 * ((PRES / 1000) ** (287.04 / 1004.67))) - 1.61 * THETAV)
-        return output, z
+        return output, indep
 
     def get_rc_coef_X_wp2rcp_sam_calc(self, dataset_override=None):
         """
@@ -1022,12 +1026,12 @@ class VariableGroupBase(VariableGroup):
         dataset = self.sam_datasets
         if dataset_override is not None:
             dataset = dataset_override['sam']
-        WP2RCP, z, dataset = self.getVarForCalculations('WP2RCP', dataset)
-        PRES, z, dataset = self.getVarForCalculations('PRES', dataset)
-        THETAV, z, dataset = self.getVarForCalculations('THETAV', dataset)
+        WP2RCP, indep, dataset = self.getVarForCalculations('WP2RCP', dataset)
+        PRES, indep, dataset = self.getVarForCalculations('PRES', dataset)
+        THETAV, indep, dataset = self.getVarForCalculations('THETAV', dataset)
 
         output = WP2RCP * (2.5e6 / (1004.67 * ((PRES / 1000) ** (287.04 / 1004.67))) - 1.61 * THETAV)
-        return output, z
+        return output, indep
 
     def get_rc_coef_X_wp2rcp_clubb_calc(self, dataset_override=None):
         """
@@ -1039,11 +1043,11 @@ class VariableGroupBase(VariableGroup):
             dataset = dataset_override
         else:
             dataset = self.clubb_datasets['zm']
-        rc_coef, z, dataset = self.getVarForCalculations('rc_coef', dataset)
-        wp2rcp, z, dataset = self.getVarForCalculations('wp2rcp', dataset)
+        rc_coef, indep, dataset = self.getVarForCalculations('rc_coef', dataset)
+        wp2rcp, indep, dataset = self.getVarForCalculations('wp2rcp', dataset)
 
         output = rc_coef * wp2rcp
-        return output, z
+        return output, indep
 
     def get_rc_coef_X_wp2rcp_coamps_calc(self, dataset_override=None):
         """
@@ -1056,16 +1060,16 @@ class VariableGroupBase(VariableGroup):
             dataset = dataset_override
         else:
             dataset = self.clubb_datasets['zm']
-        wp2qcp, z, dataset = self.getVarForCalculations('wp2qcp', dataset)
-        ex0, z, dataset = self.getVarForCalculations('ex0', dataset)
-        thvm, z, dataset = self.getVarForCalculations('thvm', dataset)
+        wp2qcp, indep, dataset = self.getVarForCalculations('wp2qcp', dataset)
+        ex0, indep, dataset = self.getVarForCalculations('ex0', dataset)
+        thvm, indep, dataset = self.getVarForCalculations('thvm', dataset)
 
-        wp2rlp, z, dataset = self.getVarForCalculations('wp2rlp', dataset)
-        p, z, dataset = self.getVarForCalculations('p', dataset)
+        wp2rlp, indep, dataset = self.getVarForCalculations('wp2rlp', dataset)
+        p, indep, dataset = self.getVarForCalculations('p', dataset)
 
         output1 = wp2qcp * (2.5e6 / (1004.67 * ex0) - 1.61 * thvm)
         output2 = wp2rlp * (2.5e6 / (1004.67 * (( p /1.0e5)**(287.04/1004.67))) - 1.61 * thvm)
 
         output = self.pickNonZeroOutput(output1, output2)
 
-        return output, z
+        return output, indep

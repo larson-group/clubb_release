@@ -49,8 +49,8 @@ class Case:
             If False (default), pyplotgen will not plot the HOC 2005 dependent_data lines
         :param e3sm_dirs: List of foldernames containing e3sm netcdf files to be plotted
         :param cam_folders: List of foldernames containing cam netcdf files to be plotted
-        :param plot_timeheight: TODO
-        :param movies: TODO
+        :param time_height: TODO
+        :param animation: TODO
         """
         self.name = case_definition['name']
         self.start_time = case_definition['start_time']
@@ -193,8 +193,7 @@ class Case:
             temp_group = VarGroup(self, clubb_datasets=clubb_datasets, les_dataset=les_file,
                                   coamps_dataset=coamps_datasets, sam_datasets=sam_datasets,
                                   wrf_datasets=wrf_datasets, r408_dataset=r408_datasets, hoc_dataset=hoc_datasets,
-                                  e3sm_datasets=e3sm_file, cam_datasets=cam_file,
-                                  time_height=self.time_height, anim=self.animation)
+                                  e3sm_datasets=e3sm_file, cam_datasets=cam_file)
             self.panels.extend(temp_group.panels)
 
         # Convert panels to difference panels if user passed in --diff <<folder>>
@@ -226,7 +225,7 @@ class Case:
                 for input_folder in self.clubb_datasets:
                     folder_name = os.path.basename(input_folder)
                     budget_variables = VariableGroupBaseBudgets(self,
-                                                                clubb_datasets={folder_name:clubb_datasets[input_folder]}, anim=self.animation)
+                                                                clubb_datasets={folder_name:clubb_datasets[input_folder]})
                     self.panels.extend(budget_variables.panels)
             if wrf_datasets is not None and len(wrf_datasets) != 0:
                 # for folders_datasets in wrf_datasets.values():
@@ -234,21 +233,21 @@ class Case:
                 for input_folder in wrf_datasets:
                     folder_name = os.path.basename(input_folder)
                     budget_variables = VariableGroupBaseBudgets(self,
-                                                                wrf_datasets={folder_name:wrf_datasets[input_folder]}, anim=self.animation)
+                                                                wrf_datasets={folder_name:wrf_datasets[input_folder]})
                     self.panels.extend(budget_variables.panels)
             if e3sm_file is not None and len(e3sm_file) != 0:
                 for dataset_name in e3sm_file:
                     # E3SM dataset must be wrapped in the same form as the clubb datasets
                     e3sm_budgets = VariableGroupBaseBudgets(self,
-                                                            e3sm_datasets={dataset_name: e3sm_file[dataset_name]}, anim=self.animation)
+                                                            e3sm_datasets={dataset_name: e3sm_file[dataset_name]})
                     self.panels.extend(e3sm_budgets.panels)
             if sam_datasets is not None and len(sam_datasets) != 0:
                 # for dataset in sam_datasets.values():
                 for input_folder in sam_datasets:
                     folder_name = os.path.basename(input_folder)
                     budget_variables = VariableGroupSamBudgets(self,
-                                                               sam_datasets={folder_name:sam_datasets[input_folder]}, anim=self.animation)
-                # sam_budgets = VariableGroupSamBudgets(self, sam_datasets=sam_datasets, anim=self.anim)
+                                                               sam_datasets={folder_name:sam_datasets[input_folder]})
+                # sam_budgets = VariableGroupSamBudgets(self, sam_datasets=sam_datasets)
                     self.panels.extend(budget_variables.panels)
 
     def getDiffLinesBetweenPanels(self, panelA, panelB, get_y_diff=False):
@@ -311,7 +310,7 @@ class Case:
         """
         Plot all panels associated with the case, these will be saved to image files in the <<output>>/<<casename>>
         folder
-        
+
         :param output_folder: Absolute name of the folder to save output into.
         :param replace_images: If True, pyplotgen will overwrite images with the same name.
             If False (default), pyplotgen will add a timestamp to the end of every filename
@@ -346,7 +345,7 @@ class Case:
             panel.plot(output_folder, self.name, replace_images=replace_images, no_legends=no_legends,
                        thin_lines=thin_lines, alphabetic_id=alphabetic_id, paired_plots=plot_paired_lines)
             curr_panel_num += 1
-            print("\r\tplotted  ", curr_panel_num, " of ", num_plots, " | ", panel.title)
+            print("\r\tplotted  ", curr_panel_num, " of ", num_plots, " | ", panel.title, '\n')
 
     def __getNextAlphabeticID__(self):
         """
