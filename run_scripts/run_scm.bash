@@ -204,6 +204,7 @@ while true ; do
 			echo -e "\t-o, --output_directory\t\tSpecify an output directory"
                         echo -e "\t--netcdf\t\t\tEnable NetCDF output (default)"
 			echo -e "\t--grads\t\t\t\tEnable GRADS output"
+			echo -e "\t\t\t\t\tOutput formats are mutually exclusive"
 			echo -e "\t-h, --help\t\t\tPrints this help message"
 
 			exit 1 ;;
