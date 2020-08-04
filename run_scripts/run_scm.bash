@@ -27,7 +27,8 @@ NAMELISTS="clubb.in"
 FLAGS_FILE="../input/tunable_parameters/configurable_model_flags.in"
 SILHS_PARAMS_FILE="../input/tunable_parameters/silhs_parameters.in"
 CUSTOM_OUTPUT_DIR=""
-GRADS=false
+GRADS=false		#Determines whether output is NetCDF or GrADS
+FILETYPE_CHANGED=false	#Used to ensure that both filetypes are not inadvertantly specified
 
 # Figure out the directory where the script is located
 scriptPath=`dirname $0`
@@ -77,6 +78,32 @@ run_case()
 
 	# Remove the namelists
 	rm -f $NAMELISTS
+}
+
+check_filetype() {
+	chosen_filetype=""
+
+	if [[ $FILETYPE_CHANGED == true ]]; then
+
+		if [[ $GRADS == true ]]; then
+			chosen_filetype="GrADS"
+		else
+			chosen_filetype="NetCDF"
+		fi
+
+		echo Two filetypes specified, running with $chosen_filetype
+		echo Would you like to continue the run? \(y/n\)
+
+		while read -n 1 answer; do
+			if [[ $answer == "y" ]]; then
+				echo
+				break
+			elif [[ $answer == "n" ]]; then
+				echo
+				exit 1
+			fi
+		done
+	fi
 }
 
 # Note that we use `"$@"' to let each command-line parameter expand to a
@@ -187,9 +214,19 @@ while true ; do
 			shift 2 ;;
                 --netcdf)
                         GRADS=false
+
+			check_filetype
+
+			FILETYPE_CHANGED=true
+
                         shift;;
 		--grads)
 			GRADS=true
+
+			check_filetype
+
+			FILETYPE_CHANGED=true
+
 			shift;;
 		-h|--help) # Print the help message
 			echo -e "Usage: run_scm.bash [OPTION]... case_name"
