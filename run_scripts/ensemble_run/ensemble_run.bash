@@ -25,7 +25,7 @@ do
 	rm -f ../../output/"$caseName"_sfc.dat
 
 	#Run CLUBB
-	../../run_scripts/run_scm.bash $caseName
+	../../run_scripts/run_scm.bash $caseName --grads
 
 	#Harvest the output files
 	cp ../../output/twp_ice_zt.ctl output/"$folderName"

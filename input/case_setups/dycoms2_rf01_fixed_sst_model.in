@@ -175,7 +175,7 @@ stats_tsamp  = 300.          ! Frequency of statistical sampling [s]
                             ! stats_tsamp = dt_main
                             ! (stats_tsamp must multiply evenly into stats_tout)
 stats_tout   = 300.             ! Frequency of statistical output.  [s]
-stats_fmt    = "grads"         ! Type of statistical output file ("grads" or "netcdf").
+stats_fmt    = "netcdf"         ! Type of statistical output file ("grads" or "netcdf").
 
 /
 
