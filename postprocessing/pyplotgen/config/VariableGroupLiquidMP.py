@@ -24,7 +24,7 @@ class VariableGroupLiquidMP(VariableGroup):
             {'var_names':
                 {
                     'clubb': ['Ncm', 'ncm'],
-                    'sam': ['Ncm', 'ncm'],
+                    'sam': [self.getNcmSamLine, 'Ncm', 'ncm'],
                     'coamps': ['Ncm', 'ncm'],
                     'r408': ['Ncm', 'ncm'],
                     'hoc': ['Ncm', 'ncm'],
@@ -32,12 +32,12 @@ class VariableGroupLiquidMP(VariableGroup):
                     'cam': ['AWNC', 'Ncm', 'ncm'],
                     'wrf': ['Ncm', 'ncm'],
                 },
-                'sam_calc': self.getNcmSamLine
+                # 'sam_calc': self.getNcmSamLine
             },
             {'var_names':
                 {
                     'clubb': ['Nc_in_cloud'],
-                    'sam': ['Nc_in_cloud'],
+                    'sam': [self.getNcInCloudSamLine, 'Nc_in_cloud'],
                     'coamps': ['Nc_in_cloud'],
                     'r408': ['Nc_in_cloud'],
                     'hoc': ['Nc_in_cloud'],
@@ -45,7 +45,7 @@ class VariableGroupLiquidMP(VariableGroup):
                     'cam': ['Nc_in_cloud'],
                     'wrf': ['Nc_in_cloud'],
                 },
-                'sam_calc': self.getNcInCloudSamLine
+                # 'sam_calc': self.getNcInCloudSamLine
             },
             {'var_names':
                 {
@@ -76,7 +76,7 @@ class VariableGroupLiquidMP(VariableGroup):
             {'var_names':
                 {
                     'clubb': ['Nrm'],
-                    'sam': ['Nrm'],
+                    'sam': [self.getNrmSamLine, 'Nrm'],
                     'coamps': ['Nrm'],
                     'r408': ['Nrm'],
                     'hoc': ['Nrm'],
@@ -84,7 +84,7 @@ class VariableGroupLiquidMP(VariableGroup):
                     'cam': ['ANRAIN', 'Nrm'],
                     'wrf': ['Nrm'],
                 },
-                'sam_calc': self.getNrmSamLine,
+                # 'sam_calc': self.getNrmSamLine,
             },
             {'var_names':
                 {

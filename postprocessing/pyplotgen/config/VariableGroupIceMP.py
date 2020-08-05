@@ -34,12 +34,11 @@ class VariableGroupIceMP(VariableGroup):
                     'wrf': ['rim'],
                 },
                 'sam_conv_factor': 1 / 1000,
-                # 'fallback_func': self.getRimFallback,
             },
             {'var_names':
                 {
                     'clubb': ['Nim'],
-                    'sam': ['Nim'],
+                    'sam': [self.getNimSamLine, 'Nim'],
                     'coamps': ['Nim', 'nim'],
                     'r408': ['Nim'],
                     'hoc': ['Nim'],
@@ -47,7 +46,7 @@ class VariableGroupIceMP(VariableGroup):
                     'cam': ['AWNI', 'Nim'],
                     'wrf': ['Nim'],
                 },
-                'sam_calc': self.getNimSamLine,
+                # 'sam_calc': self.getNimSamLine,
             },
             {'var_names':
                 {
@@ -61,12 +60,11 @@ class VariableGroupIceMP(VariableGroup):
                     'wrf': ['rsm'],
                 },
                 'sam_conv_factor': 1 / 1000,
-                # 'fallback_func': self.getRsmFallback,
             },
             {'var_names':
                 {
                     'clubb': ['Nsm'],
-                    'sam': ['Nsm'],
+                    'sam': [self.getNsmSamLine, 'Nsm'],
                     'coamps': ['Nsm'],
                     'r408': ['Nsm'],
                     'hoc': ['Nsm'],
@@ -74,7 +72,7 @@ class VariableGroupIceMP(VariableGroup):
                     'cam': ['ANSNOW', 'Nsm'],
                     'wrf': ['Nsm'],
                 },
-                'sam_calc': self.getNsmSamLine,
+                # 'sam_calc': self.getNsmSamLine,
             },
             {'var_names':
                 {

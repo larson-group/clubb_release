@@ -335,7 +335,7 @@ class VariableGroup:
                                                   label=label,
                                                   line_format=line_style,
                                                   override_panel_type=panel_type,
-                                                  lines=lines))
+                                                  lines=lines, model_name=model_name))
         return all_lines
 
     def getTextDefiningDataset(self):
@@ -560,7 +560,7 @@ class VariableGroup:
         return conv_factors
 
     def __getVarLines__(self, var_names, ncdf_datasets, label="", line_format="", avg_axis=0, override_panel_type=None,
-                        lines=None, conversion_factor=1):
+                        lines=None, conversion_factor=1, model_name="unknown"):
         """
         Get a list of Line objects for a specific clubb variable. If les_dataset is specified it will also
         attempt to generate Lines for the SAM equivalent variables, using the name conversions found in
@@ -590,10 +590,9 @@ class VariableGroup:
 
         if isinstance(ncdf_datasets, Dataset):
             ncdf_datasets = {'converted_to_dict': ncdf_datasets}
-        line = None
         if panel_type is Panel.TYPE_PROFILE:
             profile_lines = self.__getProfileLine__(var_names, ncdf_datasets, label, line_format, conversion_factor,
-                                                    avg_axis, lines=lines)
+                                                    avg_axis, lines=lines, model_name=model_name)
             if profile_lines is not None:
                 all_lines.extend(profile_lines)
         elif panel_type is Panel.TYPE_BUDGET:
@@ -613,12 +612,13 @@ class VariableGroup:
 
         return all_lines
 
-    def __getProfileLine__(self, varname, dataset, label, line_format, conversion_factor, avg_axis, lines=None):
+    def __getProfileLine__(self, varnames, dataset, label, line_format, conversion_factor, avg_axis, lines=None,
+                           model_name="unknown"):
         """
         Assumes variable can be plotted as a profile and returns a Line object
         representing the given variable for a profile plot. Profile plots are plots that show Height vs Varname
 
-        :param varname: The name of the variable as a string
+        :param varnames: A list of variable names
         :param dataset: NetCdf4 Dataset object containing the model output being plotted
         :param label: This is the name that will be shown on the legend for this line
         :param line_format: A string representing how this line should be formatted using pyplot formatting.
@@ -630,10 +630,10 @@ class VariableGroup:
         :return: Line object representing the given variable for a profile plot
         """
         output_lines = []
-        variable = NetCdfVariable(varname, dataset, independent_var_names=Case_definitions.HEIGHT_VAR_NAMES,
+        variable = NetCdfVariable(varnames, dataset, independent_var_names=Case_definitions.HEIGHT_VAR_NAMES,
                                   start_time=self.start_time, end_time=self.end_time, min_height=self.height_min_value,
                                   max_height=self.height_max_value, avg_axis=avg_axis,
-                                  conversion_factor=conversion_factor)
+                                  conversion_factor=conversion_factor, model_name=model_name)
         variable.trimArray(self.height_min_value, self.height_max_value, data=variable.independent_data)
 
         if lines is not None:

@@ -2,6 +2,8 @@
 :author: Nicolas Strike
 :date: Mid 2019
 """
+from netCDF4 import Dataset
+
 import numpy as np
 
 from src.Panel import Panel
@@ -40,7 +42,7 @@ class VariableGroupBase(VariableGroup):
             {'var_names':
                 {
                     'clubb': ['thlm'],
-                    'sam': ['THETAL', 'THETA'],
+                    'sam': [self.getThlmSamCalc, 'THETAL', 'THETA'],
                     'coamps': ['thlm'],
                     'r408': ['thlm'],
                     'hoc': ['thlm'],
@@ -48,12 +50,13 @@ class VariableGroupBase(VariableGroup):
                     'cam': ['thlm'],
                     'wrf': ['thlm'],
                 },
-                'sam_calc': self.getThlmSamCalc, 'sci_scale': 0,
+                # 'sam_calc': self.getThlmSamCalc,
+                'sci_scale': 0,
             },
             {'var_names':
                 {
                     'clubb': ['rtm'],
-                    'sam': [],
+                    'sam': [self.getRtmSamCalc],
                     'coamps': ['qtm', 'rtm'],
                     'r408': ['rtm'],
                     'hoc': ['rtm'],
@@ -61,12 +64,13 @@ class VariableGroupBase(VariableGroup):
                     'cam': ['rtm'],
                     'wrf': ['rtm'],
                 },
-                'sam_calc': self.getRtmSamCalc, 'sci_scale': -3,
+                # 'sam_calc': self.getRtmSamCalc,
+                'sci_scale': -3,
             },
             {'var_names':
                 {
                     'clubb': ['wpthlp'],
-                    'sam': ['WPTHLP'],
+                    'sam': [self.getWpthlpSamCalc, 'WPTHLP'],
                     'coamps': ['wpthlp'],
                     'r408': ['wpthlp'],
                     'hoc': ['wpthlp'],
@@ -74,12 +78,13 @@ class VariableGroupBase(VariableGroup):
                     'cam': ['wpthlp'], # WPTHLP_CLUBB / (1 .* 1004)
                     'wrf': ['wpthlp'],
                 },
-                'sam_calc': self.getWpthlpSamCalc, 'sci_scale': 0,
+                # 'sam_calc': self.getWpthlpSamCalc,
+                'sci_scale': 0,
             },
             {'var_names':
                 {
                     'clubb': ['wprtp'],
-                    'sam': ['WPRTP'],
+                    'sam': [self.getWprtpSamCalc, 'WPRTP'],
                     'coamps': ['wpqtp', 'wprtp'],
                     'r408': ['wprtp'],
                     'hoc': ['wprtp'],
@@ -87,12 +92,13 @@ class VariableGroupBase(VariableGroup):
                     'cam': ['WPRTP_clubb', 'wprtp'],
                     'wrf': ['wprtp'],
                 },
-                'sam_calc': self.getWprtpSamCalc, 'sci_scale': -4,
+                # 'sam_calc': self.getWprtpSamCalc,
+                'sci_scale': -4,
             },
             {'var_names':
                 {
                     'clubb': ['cloud_frac'],
-                    'sam': ['CLD'],
+                    'sam': ['CLD_FRAC_CLUBB', 'CLD'],
                     'coamps': ['cf'],
                     'r408': ['cloud_frac', 'cf'],
                     'hoc': ['cloud_frac', 'cf'],
@@ -113,12 +119,13 @@ class VariableGroupBase(VariableGroup):
                     'cam': ['CLDLIQ', 'rcm'],
                     'wrf': ['rcm'],
                 },
-                'sam_conv_factor': 1 / 1000, 'sci_scale': -5,
+                'sam_conv_factor': 1 / 1000,
+                'sci_scale': -5,
             },
             {'var_names':
                 {
                     'clubb': ['wp2', 'W2'],
-                    'sam': ['W2', 'WP2'],
+                    'sam': [self.get_wp2_sam_calc, 'W2', 'WP2'],
                     'coamps': ['wp2', 'W2'],
                     'r408': ['wp2'],
                     'hoc': ['wp2'],
@@ -131,7 +138,7 @@ class VariableGroupBase(VariableGroup):
             {'var_names':
                 {
                     'clubb': ['wp3'],
-                    'sam': ['wp3', 'W3', 'WP3'],
+                    'sam': [self.get_wp3_sam_calc, 'wp3', 'W3', 'WP3'],
                     'coamps': ['wp3', 'W3', 'WP3'],
                     'r408': ['wp3'],
                     'hoc': ['wp3'],
@@ -139,12 +146,13 @@ class VariableGroupBase(VariableGroup):
                     'cam': ['WP3_CLUBB', 'wp3'],
                     'wrf': ['wp3'],
                 },
-                'sam_name': 'W3', 'sci_scale': 0, 'axis_title': "wp3",
+                'sci_scale': 0,
+                'axis_title': "wp3",
             },
             {'var_names':
                 {
                     'clubb': ['thlp2'],
-                    'sam': ['THLP2', 'TL2'],
+                    'sam': [self.get_thlp2_sam_calc, 'THLP2', 'TL2'],
                     'coamps': ['thlp2'],
                     'r408': ['thlp2'],
                     'hoc': ['thlp2'],
@@ -157,7 +165,7 @@ class VariableGroupBase(VariableGroup):
             {'var_names':
                 {
                     'clubb': ['rtp2'],
-                    'sam': ['RTP2'],
+                    'sam': [self.getRtp2SamCalc, 'RTP2'],
                     'coamps': ['qtp2'],
                     'r408': ['rtp2'],
                     'hoc': ['rtp2'],
@@ -165,12 +173,13 @@ class VariableGroupBase(VariableGroup):
                     'cam': ['RTP2_CLUBB', 'rtp2'],
                     'wrf': ['rtp2'],
                 },
-                'sam_calc': self.getRtp2SamCalc, 'sci_scale': -7,
+                # 'sam_calc': self.getRtp2SamCalc,
+                'sci_scale': -7,
             },
             {'var_names':
                 {
                     'clubb': ['rtpthlp'],
-                    'sam': ['RTPTHLP', 'TQ'],
+                    'sam': ['RTPTHLP_SGS', 'RTPTHLP', 'TQ'],
                     'coamps': ['qtpthlp', 'rtpthlp'],
                     'r408': ['rtpthlp'],
                     'hoc': ['rtpthlp'],
@@ -183,7 +192,7 @@ class VariableGroupBase(VariableGroup):
             {'var_names':
                 {
                     'clubb': ['rtp3'],
-                    'sam': ['RTP3'],
+                    'sam': [self.getRtp3SamCalc, 'RTP3'],
                     'coamps': ['qtp3', 'rtp3'],
                     'r408': ['rtp3'],
                     'hoc': ['rtp3'],
@@ -191,7 +200,8 @@ class VariableGroupBase(VariableGroup):
                     'cam': ['rtp3'],
                     'wrf': ['rtp3'],
                 },
-                'sam_calc': self.getRtp3SamCalc, 'sci_scale': -9,
+                # 'sam_calc': self.getRtp3SamCalc,
+                'sci_scale': -9,
             },
             {'var_names':
                 {
@@ -209,43 +219,46 @@ class VariableGroupBase(VariableGroup):
             {'var_names':
                 {
                     'clubb': ['Skw_zt'],
-                    'sam': ['Skw_zt'],
-                    'coamps': ['Skw_zt'],
+                    'sam': [self.getSkwZtLesCalc,'Skw_zt'],
+                    'coamps': [self.getSkwZtLesCalc, 'Skw_zt'],
                     'r408': ['Skw_zt'],
                     'hoc': ['Skw_zt'],
                     'e3sm': ['Skw_zt'],
                     'cam': ['Skw_zt'],
                     'wrf': ['Skw_zt'],
                 },
-                'sam_calc': self.getSkwZtLesCalc, 'coamps_calc': self.getSkwZtLesCalc, 'sci_scale': 0,
+                # 'sam_calc': self.getSkwZtLesCalc,
+                # 'coamps_calc': self.getSkwZtLesCalc,
+                'sci_scale': 0,
             },
             {'var_names':
                 {
                     'clubb': ['Skrt_zt'],
-                    'sam': ['Skrt_zt'],
-                    'coamps': ['Skrt_zt'],
+                    'sam': [self.getSkrtZtLesCalc,'Skrt_zt'],
+                    'coamps': [self.getSkrtZtLesCalc, 'Skrt_zt'],
                     'r408': ['Skrt_zt'],
                     'hoc': ['Skrt_zt'],
                     'e3sm': ['Skrt_zt'],
                     'cam': ['Skrt_zt'],
                     'wrf': ['Skrt_zt'],
                 },
-                'sam_calc': self.getSkrtZtLesCalc,
-                'coamps_calc': self.getSkrtZtLesCalc,
+                # 'sam_calc': self.getSkrtZtLesCalc,
+                # 'coamps_calc': self.getSkrtZtLesCalc,
                 'sci_scale': 0,
             },
             {'var_names':
                 {
                     'clubb': ['Skthl_zt'],
-                    'sam': ['Skthl_zt'],
-                    'coamps': ['Skthl_zt'],
+                    'sam': [self.getSkthlZtLesCalc,'Skthl_zt'],
+                    'coamps': [self.getSkthlZtLesCalc, 'Skthl_zt'],
                     'r408': ['Skthl_zt'],
                     'hoc': ['Skthl_zt'],
                     'e3sm': ['Skthl_zt'],
                     'cam': ['Skthl_zt'],
                     'wrf': ['Skthl_zt'],
                 },
-                'sam_calc': self.getSkthlZtLesCalc, 'coamps_calc': self.getSkthlZtLesCalc, 'sci_scale': 0,
+                # 'sam_calc': self.getSkthlZtLesCalc, 'coamps_calc': self.getSkthlZtLesCalc,
+                'sci_scale': 0,
             },
             {'var_names':
                 {
@@ -289,33 +302,35 @@ class VariableGroupBase(VariableGroup):
             {'var_names':
                 {
                     'clubb': ['upwp'],
-                    'sam': ['UW'],
-                    'coamps': ['upwp'],
+                    'sam': [self.get_upwp_sam_calc, 'UW'],
+                    'coamps': [self.getUwCoampsData, 'upwp'],
                     'r408': ['upwp'],
                     'hoc': ['upwp'],
                     'e3sm': ['upwp'],
                     'cam': ['UPWP_CLUBB', 'upwp'],
                     'wrf': ['upwp'],
                 },
-                'coamps_calc': self.getUwCoampsData, 'sci_scale': 0,
+                # 'coamps_calc': self.getUwCoampsData,
+                'sci_scale': 0,
             },
             {'var_names':
                 {
                     'clubb': ['vpwp'],
-                    'sam': ['VW'],
-                    'coamps': ['vpwp'],
+                    'sam': [self.get_vpwp_sam_calc, 'VW'],
+                    'coamps': [self.getVwCoampsData, 'vpwp'],
                     'r408': ['vpwp'],
                     'hoc': ['vpwp'],
                     'e3sm': ['vpwp'],
                     'cam': ['VPWP_CLUBB', 'vpwp'],
                     'wrf': ['vpwp'],
                 },
-                'coamps_calc': self.getVwCoampsData, 'sci_scale': 0,
+                # 'coamps_calc': self.getVwCoampsData,
+                'sci_scale': 0,
             },
             {'var_names':
                 {
                     'clubb': ['up2'],
-                    'sam': ['U2'],
+                    'sam': [self.get_up2_sam_calc, 'U2'],
                     'coamps': ['up2'],
                     'r408': ['up2'],
                     'hoc': ['up2'],
@@ -328,7 +343,7 @@ class VariableGroupBase(VariableGroup):
             {'var_names':
                 {
                     'clubb': ['vp2'],
-                    'sam': ['V2'],
+                    'sam': [self.get_vp2_sam_calc, 'V2'],
                     'coamps': ['vp2'],
                     'r408': ['vp2'],
                     'hoc': ['vp2'],
@@ -349,7 +364,8 @@ class VariableGroupBase(VariableGroup):
                     'cam': ['rcp2'],
                     'wrf': ['rcp2'],
                 },
-                'sam_conv_factor': 1 / 10 ** 6, 'sci_scale': -8,
+                'sam_conv_factor': 1 / 10 ** 6,
+                'sci_scale': -8,
             },
             {'var_names':
                 {
@@ -362,7 +378,8 @@ class VariableGroupBase(VariableGroup):
                     'cam': ['TGCLDLWP', 'lwp'],
                     'wrf': ['lwp'],
                 },
-                'type': Panel.TYPE_TIMESERIES, 'sam_conv_factor': 1 / 1000,
+                'type': Panel.TYPE_TIMESERIES,
+                'sam_conv_factor': 1 / 1000,
             },
             {'var_names':
                 {
@@ -406,7 +423,7 @@ class VariableGroupBase(VariableGroup):
             {'var_names':
                 {
                     'clubb': ['wpthvp'],
-                    'sam': ['WPTHVP'],
+                    'sam': [self.getWpthvpSamCalc,'WPTHVP'],
                     'coamps': ['wpthvp'],
                     'r408': ['wpthvp'],
                     'hoc': ['wpthvp'],
@@ -414,7 +431,7 @@ class VariableGroupBase(VariableGroup):
                     'cam': ['WPTHVP_CLUBB', 'wpthvp'],
                     'wrf': ['wpthvp'],
                 },
-                'sam_calc': self.getWpthvpSamCalc,
+                # 'sam_calc': self.getWpthvpSamCalc,
             },
             {'var_names':
                 {
@@ -491,9 +508,9 @@ class VariableGroupBase(VariableGroup):
             # TODO Fix output for these vars in some cases
             {'var_names':
                 {
-                    'clubb': ['rc_coef_zm * wprcp'],
-                    'sam': ['rc_coef_zm * wprcp'],
-                    'coamps': ['rc_coef_zm * wprcp'],
+                    'clubb': [self.get_rc_coef_zm_X_wprcp_clubb_line, 'rc_coef_zm * wprcp'],
+                    'sam': [self.get_rc_coef_zm_X_wprcp_sam_calc, 'rc_coef_zm * wprcp'],
+                    'coamps': [self.get_rc_coef_zm_X_wprcp_coamps_calc, 'rc_coef_zm * wprcp'],
                     'r408': ['rc_coef_zm * wprcp'],
                     'hoc': ['rc_coef_zm * wprcp'],
                     'e3sm': ['rc_coef_zm * wprcp'],
@@ -509,9 +526,9 @@ class VariableGroupBase(VariableGroup):
             },
             {'var_names':
                 {
-                    'clubb': ['rc_coef_zm * thlprcp'],
-                    'sam': ['rc_coef_zm * thlprcp'],
-                    'coamps': ['rc_coef_zm * thlprcp'],
+                    'clubb': [self.get_rc_coef_zm_X_thlprcp_clubb_calc, 'rc_coef_zm * thlprcp'],
+                    'sam': [self.get_rc_coef_zm_X_thlprcp_sam_calc,'rc_coef_zm * thlprcp'],
+                    'coamps': [self.get_rc_coef_zm_X_thlprcp_coamps_calc, 'rc_coef_zm * thlprcp'],
                     'r408': ['rc_coef_zm * thlprcp'],
                     'hoc': ['rc_coef_zm * thlprcp'],
                     'e3sm': ['rc_coef_zm * thlprcp'],
@@ -527,9 +544,9 @@ class VariableGroupBase(VariableGroup):
             },
             {'var_names':
                 {
-                    'clubb': ['rc_coef_zm * rtprcp'],
-                    'sam': ['rc_coef_zm * rtprcp'],
-                    'coamps': ['rc_coef_zm * rtprcp'],
+                    'clubb': [self.get_rc_coef_zm_X_rtprcp_clubb_calc, 'rc_coef_zm * rtprcp'],
+                    'sam': [self.get_rc_coef_zm_X_rtprcp_sam_calc,'rc_coef_zm * rtprcp'],
+                    'coamps': [self.get_rc_coef_zm_X_rtprcp_coamps_calc, 'rc_coef_zm * rtprcp'],
                     'r408': ['rc_coef_zm * rtprcp'],
                     'hoc': ['rc_coef_zm * rtprcp'],
                     'e3sm': ['rc_coef_zm * rtprcp'],
@@ -545,9 +562,9 @@ class VariableGroupBase(VariableGroup):
             },
             {'var_names':
                 {
-                    'clubb': ['rc_coef_zm * wp2rcp'],
-                    'sam': ['rc_coef_zm * wp2rcp'],
-                    'coamps': ['rc_coef_zm * wp2rcp'],
+                    'clubb': [self.get_rc_coef_X_wp2rcp_clubb_calc, 'rc_coef_zm * wp2rcp'],
+                    'sam': [self.get_rc_coef_X_wp2rcp_sam_calc,'rc_coef_zm * wp2rcp'],
+                    'coamps': [self.get_rc_coef_X_wp2rcp_coamps_calc, 'rc_coef_zm * wp2rcp'],
                     'r408': ['rc_coef_zm * wp2rcp'],
                     'hoc': ['rc_coef_zm * wp2rcp'],
                     'e3sm': ['rc_coef_zm * wp2rcp'],
@@ -688,7 +705,7 @@ class VariableGroupBase(VariableGroup):
         """
         This gets called if WPTHLP isn't outputted in an nc file as a backup way of gathering the dependent_data
         for plotting.
-        WPTHLP = (TLFLUX) / (RHO * 1004)
+        WPTHLP = (TLFLUX) / (RHO * 1004) + WPTHLP_SGS
         :return:
         """
         dataset = None
@@ -698,9 +715,9 @@ class VariableGroupBase(VariableGroup):
             dataset = dataset_override
         tlflux, indep, dataset = self.getVarForCalculations(['TLFLUX'], dataset)
         rho, indep, dataset = self.getVarForCalculations(['RHO'], dataset)
-        # z,z, dataset = self.getVarForCalculations(['z', 'lev', 'altitude'], self.les_dataset)
+        wpthlp_sgs, indep, dataset = self.getVarForCalculations(['WPTHLP_SGS'], dataset)
 
-        wpthlp = tlflux / (rho * 1004)
+        wpthlp = (tlflux / (rho * 1004)) + wpthlp_sgs
 
         return wpthlp, indep
 
@@ -708,6 +725,7 @@ class VariableGroupBase(VariableGroup):
         """
         This gets called if WPRTP isn't outputted in an nc file as a backup way of gathering the dependent_data
         for plotting.
+        WPRTP = (QTFLUX) / (RHO * 2.5104e+6) + WPRTP_SGS
         WPRTP = (QTFLUX) / (RHO * 2.5104e+6)
         :return:
         """
@@ -718,7 +736,9 @@ class VariableGroupBase(VariableGroup):
             dataset = dataset_override
         qtflux, indep, dataset = self.getVarForCalculations(['QTFLUX'], dataset)
         rho, indep, dataset = self.getVarForCalculations(['RHO'], dataset)
-        wprtp = qtflux / (rho * 2.5104e+6)
+        wprtp_sgs, indep, dataset = self.getVarForCalculations(['WPRTP_SGS'], dataset)
+
+        wprtp = qtflux / (rho * 2.5104e+6) + wprtp_sgs
         # z,z, dataset = self.getVarForCalculations(['z', 'lev', 'altitude'], self.les_dataset)
         return wprtp, indep
 
@@ -744,6 +764,7 @@ class VariableGroupBase(VariableGroup):
         """
         This gets called if RTP2 isn't outputted in an nc file as a backup way of gathering the dependent_data
         for plotting.
+                (QT2 / 1e+6) + RTP2_SGS
         THLP2 = QT2 / 1e+6
         :return:
         """
@@ -752,8 +773,9 @@ class VariableGroupBase(VariableGroup):
             dataset = self.les_dataset
         if dataset_override is not None:
             dataset = dataset_override
-        qt2, indep, dataset = self.getVarForCalculations(['QT2'], dataset)
-        rtp2 = qt2 / 1e6
+        QT2, indep, dataset = self.getVarForCalculations(['QT2'], dataset)
+        RTP2_SGS, indep, dataset = self.getVarForCalculations(['RTP2_SGS'], dataset)
+        rtp2 = (QT2 / 1e+6) + RTP2_SGS
         # z,z, dataset = self.getVarForCalculations(['z', 'lev', 'altitude'], self.les_dataset)
         return rtp2, indep
 
@@ -770,6 +792,8 @@ class VariableGroupBase(VariableGroup):
             dataset = dataset_override
         else:
             dataset = self.les_dataset
+        if isinstance(dataset, Dataset):
+            dataset = {'temp': dataset}
         for dataset in dataset.values():
             if 'rc_coef_zm' in dataset.variables.keys() and 'rtprcp' in dataset.variables.keys():
                 rc_coef_zm, indep, dataset = self.getVarForCalculations('rc_coef_zm', dataset)
@@ -883,7 +907,6 @@ class VariableGroupBase(VariableGroup):
             dataset = dataset_override['sw']
         else:
             dataset = self.coamps_dataset['sw']
-        # z,z, dataset = self.getVarForCalculations(['z', 'lev', 'altitude'], dataset)
         wpup, indep, dataset = self.getVarForCalculations('wpup', dataset)
         wpup_sgs, indep, dataset = self.getVarForCalculations('wpup_sgs', dataset)
 
@@ -1073,3 +1096,123 @@ class VariableGroupBase(VariableGroup):
         output = self.pickNonZeroOutput(output1, output2)
 
         return output, indep
+
+
+    def get_wp2_sam_calc(self, dataset_override=None):
+        """
+        WP2_SGS + W2
+        :param dataset_override:
+        :return:
+        """
+        if dataset_override is not None:
+            dataset = dataset_override
+        else:
+            dataset = self.sam_datasets
+        WP2_SGS, z, dataset = self.getVarForCalculations('WP2_SGS', dataset)
+        W2, z, dataset = self.getVarForCalculations('W2', dataset)
+
+        output = WP2_SGS + W2
+
+        return output, z
+
+    def get_wp3_sam_calc(self, dataset_override=None):
+        """
+        WP3_SGS + W3
+        :param dataset_override:
+        :return:
+        """
+        if dataset_override is not None:
+            dataset = dataset_override
+        else:
+            dataset = self.sam_datasets
+        WP3_SGS, z, dataset = self.getVarForCalculations('WP3_SGS', dataset)
+        W3, z, dataset = self.getVarForCalculations('W3', dataset)
+
+        output = WP3_SGS + W3
+
+        return output, z
+
+    def get_thlp2_sam_calc(self, dataset_override=None):
+        """
+        TL2 + THLP2_SGS
+        :param dataset_override:
+        :return:
+        """
+        if dataset_override is not None:
+            dataset = dataset_override
+        else:
+            dataset = self.sam_datasets
+        TL2, z, dataset = self.getVarForCalculations('TL2', dataset)
+        THLP2_SGS, z, dataset = self.getVarForCalculations('THLP2_SGS', dataset)
+
+        output = TL2 + THLP2_SGS
+
+        return output, z
+
+    def get_upwp_sam_calc(self, dataset_override=None):
+        """
+        UW + UPWP_SGS
+        :param dataset_override:
+        :return:
+        """
+        if dataset_override is not None:
+            dataset = dataset_override
+        else:
+            dataset = self.sam_datasets
+        UW, z, dataset = self.getVarForCalculations('UW', dataset)
+        UPWP_SGS, z, dataset = self.getVarForCalculations('UPWP_SGS', dataset)
+
+        output = UW + UPWP_SGS
+
+        return output, z
+
+    def get_vpwp_sam_calc(self, dataset_override=None):
+        """
+        VW + VPWP_SGS
+        :param dataset_override:
+        :return:
+        """
+        if dataset_override is not None:
+            dataset = dataset_override
+        else:
+            dataset = self.sam_datasets
+        VW, z, dataset = self.getVarForCalculations('VW', dataset)
+        VPWP_SGS, z, dataset = self.getVarForCalculations('VPWP_SGS', dataset)
+
+        output = VW + VPWP_SGS
+
+        return output, z
+
+    def get_up2_sam_calc(self, dataset_override=None):
+        """
+        UP2_SGS + U2
+        :param dataset_override:
+        :return:
+        """
+        if dataset_override is not None:
+            dataset = dataset_override
+        else:
+            dataset = self.sam_datasets
+        U2, z, dataset = self.getVarForCalculations('U2', dataset)
+        UP2_SGS, z, dataset = self.getVarForCalculations('UP2_SGS', dataset)
+
+        output = UP2_SGS + U2
+
+        return output, z
+
+    def get_vp2_sam_calc(self, dataset_override=None):
+        """
+        VP2_SGS + V2
+        :param dataset_override:
+        :return:
+        """
+        if dataset_override is not None:
+            dataset = dataset_override
+        else:
+            dataset = self.sam_datasets
+        V2, z, dataset = self.getVarForCalculations('V2', dataset)
+        VP2_SGS, z, dataset = self.getVarForCalculations('VP2_SGS', dataset)
+
+        output = VP2_SGS + V2
+
+        return output, z

@@ -19,7 +19,7 @@ class NetCdfVariable:
     """
 
     def __init__(self, names, ncdf_data, independent_var_names=None, conversion_factor=1, start_time=0, end_time=-1,
-                 min_height=0, max_height=-1, avg_axis=0):
+                 min_height=0, max_height=-1, avg_axis=0, model_name="unknown"):
         """
         Initialize a new instance of this class and return it.
 
@@ -36,14 +36,12 @@ class NetCdfVariable:
         :param avg_axis: The axis to average dependent_data over. 0 for time-avg, 1 for height avg, 2 for no averaging
         """
         dataset_with_var = None
-        varname = ""
+        dependent_varname = ""
         var_found_in_dataset = False
         independent_var_name_in_dataset = {}
         independent_keys = ['time', 'height']
-        # If ncdf_data is an netCDF4.Dataset, wrap it into a dict
         if isinstance(ncdf_data, Dataset):
             ncdf_data = {'temp': ncdf_data}
-        # If names and independent_var_name are not lists, wrap them into lists
         if not isinstance(names, list):
             names = [names]
 
@@ -70,67 +68,49 @@ class NetCdfVariable:
                 height_vars = [independent_var_names]
             independent_var_names = {'time': time_vars, 'height': height_vars}
 
-        # Find a variable with a name listed in <<names>> in any of the datasets
-        # and save both its variable name and the dataset
-        for dataset in ncdf_data.values():
-            for tempname in names:
-                if tempname in dataset.variables.keys():
-                    dataset_with_var = dataset
-                    varname = tempname
-                    var_found_in_dataset = True
-                    break
-            if var_found_in_dataset:
-                break
+        dependent_varname, dataset_with_var = self.__findNameAndDatasetMatch__(names, ncdf_data.values(), model_name=model_name)
+        if dependent_varname is None and dependent_varname is None:
+            var_found_in_dataset = False
+        else:
+            var_found_in_dataset = True
+
         if not var_found_in_dataset:
             if len(ncdf_data.values()) == 0:
                 # TODO patch this bug
                 warn("Some model is missing files for " + str(names) +". Try either including these files or "
                      "removing their names from the Case_definitions.py config file. "
                      "This warning is a temporary notice until a bug related to missing filenames is patched")
-            # changed to warn from 'raise NameError'
-            # If variable was not found, select a valid dataset by looking for a matching independent variable name
-            # Extension for multiple dimensions:
-            # In each dataset, try to find an independent varname for each dimension.
-            # Check for success depends on averaging mode
-            for dataset in ncdf_data.values():
-                keys = dataset.variables.keys()
-                for independent_key, varnames in independent_var_names.items():
-                    for temp_independent_var in varnames:
-                        if temp_independent_var in keys:
-                            if temp_independent_var == "lev" and "Z3" in keys:
-                                continue
-                            dataset_with_var = dataset
-                            independent_var_name_in_dataset[independent_key] = temp_independent_var
-                            break
+
+            independent_var_name, dataset_with_var = self.__findNameAndDatasetMatch__(
+                independent_var_names['height'] + independent_var_names['time'], ncdf_data.values(), model_name=model_name)
+
+
+                # TODO This code was in a for loop and has been temporarily commented out for refactoring
                 # Check if for each independent dimension a variable was found
-                # key_test will have a boolean entry for each given dimension
-                # with value False if a corresponding independent variable was found
-                key_test = [key not in independent_var_name_in_dataset.keys() for key in independent_keys]
-                if avg_axis == 2: # non-averaged case (time-height plots)
-                    # For both time and height an independent variable must be found, otherwise try the next dataset
-                    # If any entry in key_test is True, the current dataset can not be used for plotting
-                    # -> Reset and try next dataset
-                    if any(key_test):
-                        dataset_with_var = None
-                        independent_var_name_in_dataset = {}
-                    else:
-                        break
-                else: # averaged case
-                    # TODO: differentiate between time and height averaged variables!
-                    # (Depending on avg_axis, only one of either time or height independent variables must be found)
-                    # If all entries in key_test are True, we could not find a variable for any dimension
-                    # -> Reset and try next dataset
-                    if all(key_test):
-                        dataset_with_var = None
-                        independent_var_name_in_dataset = {}
-                    else:
-                        break
+                # key_test = [key not in independent_var_name_in_dataset.keys() for key in independent_keys]
+                # if avg_axis == 2: # non-averaged case (time-height plots)
+                #     # For both time and height an independent variable must be found, otherwise try the next dataset
+                #     if any(key_test):
+                #         dataset_with_var = None
+                #         independent_var_name_in_dataset = {}
+                #     else:
+                #         break
+                # else: # averaged case
+                #     # TODO: differentiate between time and height averaged variables!
+                #     # (Depending on avg_axis, only one of either time or height independent variables must be found)
+                #     if all(key_test):
+                #         dataset_with_var = None
+                #         independent_var_name_in_dataset = {}
+                #     else:
+                #         break
             if dataset_with_var is None:
                 raise KeyError("Could not find both ", names, " and ", independent_var_names, " in it in datasets ",
                                ncdf_data)
             # dataset_with_var = next(iter(ncdf_data.values()))
             warn("None of the values " + str(names) + " were found in the dataset " + str(dataset_with_var.filepath()))
-            varname = names[0]
+            dependent_varname = names[0]
+        # If not already found, find a matching independent variable in the same dataset
+            #varname = names[0]
         # If not already found, find a (set of) matching independent variable(s)
         # in the same dataset in which the dependent variable was found
         # TODO: Accomodate finding time AND height variables
@@ -166,7 +146,7 @@ class NetCdfVariable:
                     independent_var_name_in_dataset = None
         # Store the dataset in which the variable was found
         self.ncdf_data = dataset_with_var
-        self.varname = varname
+        self.varname = dependent_varname
         self.independent_var_name = independent_var_name_in_dataset
         self.start_time = start_time
         self.end_time = end_time
@@ -174,20 +154,9 @@ class NetCdfVariable:
         self.max_height = max_height
         self.conversion_factor = conversion_factor
         self.avg_axis = avg_axis
-        data_reader = DataReader()
         # Get dependent and independent data from the chosen dataset
-        self.dependent_data, self.independent_data = data_reader.getVarData(self.ncdf_data, self)
-        if isinstance(self.independent_data, dict):
-            for key, val in self.independent_data.items():
-                if val.ndim > 1:
-                    warn('Warning: {} independent data for variable {} is of shape {}'.format(key, varname, val.shape)+
-                         ' -> Reduce to 1d by extracting the first row.')
-                    self.independent_data[key] = data_reader.__averageData__(val,avg_axis=0)
-        else:
-            if self.independent_data.ndim > 1:
-                    warn('Warning: Independent data for variable {} is of shape {}'.format(varname, val.shape)+
-                         ' -> Reduce to 1d by extracting the first row.')
-                    self.independent_data = self.independent_data[0]
+        self.dependent_data, self.independent_data = self.__getDependentAndIndependentData__(names, ncdf_data)
+        # self.dependent_data, self.independent_data = data_reader.getVarData(self.ncdf_data, self)
 
     def trimArray(self, start_value, end_value, data=None, axis=0):
         """
@@ -252,6 +221,52 @@ class NetCdfVariable:
     def __len__(self):
         return self.dependent_data.size
 
+    def __findNameAndDatasetMatch__(self, varnames, datasets, model_name="not given"):
+        """
+        Searches datasets for the variable names in varnames. Returns the first match.
+        If varnames contains an element that's not a string, it gets skipped over.
+        :param varnames: List of varname strings (non strings are skipped)
+        :param datasets: List of NC Datasets
+        :return:
+        """
+        for temp_dataset in datasets:
+            for temp_name in varnames:
+                if isinstance(temp_name, str) and temp_name in temp_dataset.variables.keys():
+                    # Skip lev when looking for cam's height var, as it contains a non-height var with the same
+                    # name as other model's height vars.
+                    if model_name == "cam" and temp_name == "lev" and "Z3" in varnames:
+                        continue
+                    return temp_name, temp_dataset
+        return  None, None
+
+
+    def __getDependentAndIndependentData__(self, all_varnames, all_datasets):
+
+        if all_varnames is None or len(all_varnames) == 0:
+            raise ValueError("Invalid varname given. Must contain at least 1 element.")
+        if all_datasets is None or len(all_datasets) == 0:
+            raise ValueError("Invalid datasets given. Must contain at least 1 element.")
+
+        data_reader = DataReader()
+        dependent_data = None
+        independent_data = None
+        for i in range(0,len(all_varnames)):
+            varname_element = all_varnames[i]
+            if isinstance(varname_element, str):
+                dependent_data, independent_data = data_reader.getVarData(self.ncdf_data, self)
+                break
+
+            # if it's not a string, then it's a function
+            else:
+                dependent_data, independent_data = varname_element(dataset_override=all_datasets)
+                break
+
+        if dependent_data is None:
+            raise ValueError("Dependent data could not be found/set and is None.")
+        if independent_data is None:
+            raise ValueError("Independent data could not be found/set and is None.")
+
+        return dependent_data, independent_data
 
 class DataReader():
     """
@@ -470,7 +485,7 @@ class DataReader():
         """
         Averages 2d data with one time and one height dimension and returns the averaged data
 
-        TODO: Change avg_axis to receive string instead of int -> 'time'/'height'/...?
+        TODO: Change avg_axis to receive string instead of  int -> 'time'/'height'/...?
 
         :param var: 2d data array with one time and one height dimension
         :param idx_t0: Index corresponding to the beginning of the averaging interval
