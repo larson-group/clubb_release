@@ -129,9 +129,9 @@ mv ../output/*.* $PARALLEL
 
 echo -n "Diffing the output... "
 for (( x=0;  x < "${#RUN_CASES[@]}"; x++ )); do
-	diff $SERIAL/"${RUN_CASES[$x]}"_zt.dat $PARALLEL/"${RUN_CASES[$x]}"_zt.dat &>> 'diff.txt'
-	diff $SERIAL/"${RUN_CASES[$x]}"_zm.dat $PARALLEL/"${RUN_CASES[$x]}"_zm.dat &>> 'diff.txt'
-	diff $SERIAL/"${RUN_CASES[$x]}"_sfc.dat $PARALLEL/"${RUN_CASES[$x]}"_sfc.dat &>> 'diff.txt'
+	diff $SERIAL/"${RUN_CASES[$x]}"_zt.nc $PARALLEL/"${RUN_CASES[$x]}"_zt.nc &>> 'diff.txt'
+	diff $SERIAL/"${RUN_CASES[$x]}"_zm.nc $PARALLEL/"${RUN_CASES[$x]}"_zm.nc &>> 'diff.txt'
+	diff $SERIAL/"${RUN_CASES[$x]}"_sfc.nc $PARALLEL/"${RUN_CASES[$x]}"_sfc.nc &>> 'diff.txt'
 done
 echo -n "Done"
 echo '!'
