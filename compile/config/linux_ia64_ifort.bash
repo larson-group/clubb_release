@@ -31,7 +31,8 @@ NETCDF="/usr/local/netcdf-intel64"
 
 # == LAPACK libraries ==
 # Intel Math Kernel Library (v8)
-MKLPATH="/opt/intel/Compiler/11.0/081/mkl/lib/em64t"
+#MKLPATH="/opt/intel/Compiler/11.0/081/mkl/lib/em64t"
+MKLPATH="/opt/intel/compilers_and_libraries_2019.4.243/linux/mkl/lib/em64t"
 LAPACK="-L$MKLPATH -Wl,-rpath,$MKLPATH -lmkl_intel_lp64 -lmkl_sequential -lmkl_lapack -lmkl_solver_lp64 -lmkl_core -lguide -lpthread" 
 # Generic library
 # LAPACK = -llapack -lblas -lg2c

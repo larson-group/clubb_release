@@ -34,7 +34,8 @@ NETCDF="/sharedapps/LS/vlarson_group/local/netcdf-intel64"
 # == LAPACK libraries ==
 # Intel Math Kernel Library (v10.1)
 #MKLPATH="/sharedapps/uwm/common/intel-fortran-compiler/11.1.072-v1/mkl/lib/em64t"
-MKLPATH="/sharedapps/uwm/common/intel-compiler/composerxe-2011.2.137-v1/mkl/lib/intel64"
+#MKLPATH="/sharedapps/uwm/common/intel-compiler/composerxe-2011.2.137-v1/mkl/lib/intel64"
+MKLPATH="/opt/intel/compilers_and_libraries_2019.4.243/licensing/mkl/lib/intel64"
 
 
 LAPACK="-L$MKLPATH -Wl,-rpath,$MKLPATH -lmkl_intel_lp64 -lmkl_sequential -lmkl_solver_lp64 -lmkl_core -lpthread"
