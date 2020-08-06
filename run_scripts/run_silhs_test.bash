@@ -94,7 +94,7 @@ print("N_small =", os.environ["N_SMALL"]);
 print("N_large =", os.environ["N_LARGE"]);
 print("RMSE_small =", RMSE_small);
 print("RMSE_large =", RMSE_large);
-if RMSE_large/RMSE_small<2*np.sqrt(int(os.environ["N_SMALL"]))/np.sqrt(int(os.environ["N_LARGE"])):
+if RMSE_large/RMSE_small<3*np.sqrt(int(os.environ["N_SMALL"]))/np.sqrt(int(os.environ["N_LARGE"])):
     sys.exit(0);
 else:
     sys.exit(1)
