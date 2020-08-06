@@ -25,7 +25,7 @@ stp_adjst_spread_in = 0.8
 
 &cases
 ! GCSS FIRE
-hoc_stats_file_nl(1)    = "../output/fire_zt.ctl"
+hoc_stats_file_nl(1)    = "../output/fire_zt.nc"
 les_stats_file_nl(1)    = "../les_data/fire_coamps_sm.ctl"
 run_file_nl(1)          = "fire_hoc.in"
 z_i_nl(1)               = 2
