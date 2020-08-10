@@ -10,10 +10,14 @@ these processes are mostly carried out by other classes/files.
 """
 import argparse
 import glob
+import multiprocessing
 import os
 import shutil
 import subprocess
+import time
 from datetime import datetime
+from multiprocessing import Pool
+from multiprocessing import freeze_support
 from warnings import warn
 
 from config import Case_definitions
@@ -36,7 +40,7 @@ class PyPlotGen:
                  benchmark_only=False, nightly=False, zip=False, thin=False, no_legends=False, ensemble=False,
                  plot_e3sm="", sam_folders=[""], wrf_folders=[""], cam_folders=[""],
                  budget_moments=False, bu_morr=False, diff=None, show_alphabetic_id=False,
-                 time_height=False, animation=None):
+                 time_height=False, animation=None, disable_multithreading=False):
         """
         This creates an instance of PyPlotGen. Each parameter is a command line parameter passed in from the argparser
         below.
@@ -109,6 +113,7 @@ class PyPlotGen:
         self.nightly = nightly
         self.time_height = time_height
         self.animation = animation
+        self.multithreaded = not disable_multithreading
 
         if os.path.isdir(self.output_folder) and self.replace_images == False:
             self.output_folder = self.output_folder + '_generated_on_' + str(datetime.now())
@@ -127,10 +132,11 @@ class PyPlotGen:
         
         :return: None
         """
-        diff_datasets = None
+        self.start_time = time.time()
+        self.diff_datasets = None
         # Load data used for difference plots
         if self.diff is not None:
-            diff_datasets = self.diff_files_data_reader.loadFolder(self.diff)
+            self.diff_datasets = self.diff_files_data_reader.loadFolder(self.diff)
         all_cases = Case_definitions.ALL_CASES
 
         # Downloads model output (sam, les, clubb) if it doesn't exist
@@ -144,28 +150,20 @@ class PyPlotGen:
             subprocess.run(['rm', '-rf', self.output_folder + '/'])
             # TODO: Use for Windows
             # shutil.rmtree(self.output_folder)
-        num_cases_plotted = 0
+        self.num_cases_plotted = 0
         # Loop through cases listed in Case_definitions.ALL_CASES
-        for case_def in all_cases:
-            if self.__dataForCaseExists__(case_def):
-                num_cases_plotted += 1
-                print('###########################################')
-                print("plotting ", case_def['name'])
-                case_diff_datasets = None
-                casename = case_def['name']
-                if self.diff is not None:
-                    case_diff_datasets = diff_datasets[casename]
-                case = Case(case_def, clubb_folders=self.clubb_folders, plot_les=self.les,
-                            plot_budgets=self.plot_budgets, sam_folders=self.sam_folders, wrf_folders=self.wrf_folders,
-                            diff_datasets=case_diff_datasets, plot_r408=self.cgbest, plot_hoc=self.hoc,
-                            e3sm_dirs=self.e3sm_dir, cam_folders=self.cam_folders,
-                            time_height=self.time_height, animation=self.animation)
-                # Call plot function of case instance
-                case.plot(self.output_folder, replace_images=self.replace_images, no_legends=self.no_legends,
-                          thin_lines=self.thin, show_alphabetic_id=self.show_alphabetic_id)
-                self.cases_plotted.append(casename)
+        # for case_def in all_cases:
+        if self.multithreaded:
+            freeze_support() # Required for multithreading
+            n_processors = multiprocessing.cpu_count()
+            with Pool(processes=n_processors) as pool:
+                pool.map(self.__plotCase__, all_cases)
+        else:
+            for case_def in all_cases:
+                self.__plotCase__(case_def)
+
         print('###########################################')
-        if num_cases_plotted == 0:
+        if self.num_cases_plotted == 0:
             warn(
                 "Warning, no cases were plotted! Please either specify an input folder for a supported model "
                 "(e.g. using --sam, --clubb, --e3sm, --wrf, --cam) or make sure the "
@@ -178,9 +176,34 @@ class PyPlotGen:
 
         self.__copySetupFiles__()
         # Generate html pages
-        gallery.main(self.output_folder)
+        gallery.main(self.output_folder, multithreaded=self.multithreaded)
         print('###########################################')
         print("Output can be viewed at file://" + self.output_folder + "/index.html with a web browser")
+        total_runtime = round(time.time() - self.start_time)
+        print("Pyplotgen ran in: ", total_runtime, " seconds.")
+    def __plotCase__(self, case_def):
+        """
+        Plots the given case. Pulled out into it's own function to help move towards multithreading
+        :param case_def:
+        :return:
+        """
+        print('###########################################')
+        print("plotting ", case_def['name'])
+        self.case_diff_datasets = None
+        casename = case_def['name']
+        if self.__dataForCaseExists__(case_def):
+            self.num_cases_plotted += 1
+        if self.diff is not None:
+            self.case_diff_datasets = self.diff_datasets[casename]
+        case = Case(case_def, clubb_folders=self.clubb_folders, plot_les=self.les,
+                    plot_budgets=self.plot_budgets, sam_folders=self.sam_folders, wrf_folders=self.wrf_folders,
+                    diff_datasets=self.case_diff_datasets, plot_r408=self.cgbest, plot_hoc=self.hoc,
+                    e3sm_dirs=self.e3sm_dir, cam_folders=self.cam_folders,
+                    time_height=self.time_height, animation=self.animation)
+        # Call plot function of case instance
+        case.plot(self.output_folder, replace_images=self.replace_images, no_legends=self.no_legends,
+                  thin_lines=self.thin, show_alphabetic_id=self.show_alphabetic_id)
+        self.cases_plotted.append(casename)
 
     def __dataForCaseExists__(self, case_def):
         """
@@ -379,6 +402,11 @@ def __processArguments__():
                                           "only have clubb plots and no wrf plots. Do not plot this with clubb-only "
                                           "plots, just plot clubb normally for clubb nightly tests.",
                         action="store_true")
+    parser.add_argument("--disable-multithreading", help="This forces pyplotgen to run on a single thread. This isn't "
+                                                         "recommended, but if you're having issues with multithreading "
+                                                         "or want text output to appear sequentially and don't care"
+                                                         "about performance, use this option.",
+                        action="store_true")
     args = parser.parse_args()
 
     if args.zip:
@@ -421,7 +449,8 @@ def __processArguments__():
                           wrf_folders=args.wrf, benchmark_only=args.benchmark_only,
                           no_legends=args.no_legends, ensemble=args.ensemble, budget_moments=args.plot_budgets,
                           bu_morr=args.bu_morr, diff=args.diff, show_alphabetic_id=args.show_alphabetic_id,
-                          time_height=args.time_height_plots, animation=args.movies)
+                          time_height=args.time_height_plots, animation=args.movies,
+                          disable_multithreading = args.disable_multithreading)
     return pyplotgen
 
 

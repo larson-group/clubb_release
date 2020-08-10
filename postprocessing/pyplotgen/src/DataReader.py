@@ -254,11 +254,15 @@ class NetCdfVariable:
             varname_element = all_varnames[i]
             if isinstance(varname_element, str):
                 dependent_data, independent_data = data_reader.getVarData(self.ncdf_data, self)
-                break
-
             # if it's not a string, then it's a function
             else:
                 dependent_data, independent_data = varname_element(dataset_override=all_datasets)
+                break
+
+            # If failed to find/calculate variable, try again with the next name/equation, otherwise stop looping
+            if np.isnan(dependent_data[0]) or np.isnan(independent_data[0]):
+                continue
+            else:
                 break
 
         if dependent_data is None:
@@ -366,16 +370,12 @@ class DataReader():
         """
         start_time_value = ncdf_variable.start_time
         end_time_value = ncdf_variable.end_time
-        # min_height = ncdf_variable.min_height
-        # max_height = ncdf_variable.max_height
         variable_name = ncdf_variable.varname
         conv_factor = ncdf_variable.conversion_factor
         avg_axis = ncdf_variable.avg_axis
         independent_var_name = ncdf_variable.independent_var_name
         time_conv_factor = 1
-        # height_conv_factor = 1
         time_values = None
-        # height_values = None
 
         # Get time dimension from netcdf_dataset
         for time_var in Case_definitions.TIME_VAR_NAMES:
@@ -439,7 +439,8 @@ class DataReader():
                 shape = (time_shape, height_shape)
             else:
                 shape = len(independent_values)
-            dependent_values = np.zeros(shape)
+            dependent_values = np.zeros(shape) #create an array of the same shape
+            dependent_values[:] = np.NaN # fill this array with nans since 0's imply the variable was 0 when instead it doesn't exist
 
         # If dependent_data is more than 1-dimensional, average over avg_axis if needed
         if dependent_values.ndim > 1 and avg_axis in [0,1]:  # not ncdf_variable.one_dimensional:

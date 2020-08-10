@@ -5,11 +5,14 @@
 import datetime
 import fnmatch
 import glob
+import multiprocessing
 import os
 import random
 import re
 import shutil
 import sys
+from multiprocessing import Pool
+from multiprocessing import freeze_support
 
 from config import Case_definitions
 from python_html_gallery import static
@@ -192,13 +195,21 @@ def WriteGalleryPage(page):
         # plots_file.write(static.footer)
 
 
-def WriteGalleryPages():
+def WriteGalleryPages(multithreaded=False):
     """Write gallery pages for directories in root path."""
     with open(static.plots, 'w') as index_file:
         index_file.write(static.header)
 
-    for page in sorted(ListDirs(static.root)):
-        WriteGalleryPage(page)
+    all_pages = sorted(ListDirs(static.root))
+
+    if multithreaded:
+        freeze_support()  # Required for multithreading
+        n_processors = multiprocessing.cpu_count()
+        with Pool(processes=n_processors) as pool:
+            pool.map(WriteGalleryPage, all_pages)
+    else:
+        for page in all_pages:
+            WriteGalleryPage(page)
 
     with open(static.plots, 'a') as index_file:
         index_file.write(static.footer)
@@ -237,10 +248,10 @@ def WriteIndex():
 
     print("Wrote index.html")
 
-def main(output_dir):
+def main(output_dir, multithreaded=False):
     """Main function."""
     OrganizeRoot(output_dir)
-    WriteGalleryPages()
+    WriteGalleryPages(multithreaded=multithreaded)
     WriteNavigation()
     WriteIndex()
 

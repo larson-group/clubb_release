@@ -100,21 +100,6 @@ class VariableGroup:
 
         *var_names*: A list of names various models refer to this variable as. E.g. ['wprtp', 'WPRTP', 'wpqtp']
 
-        *sam_calc*: (optional) A functional reference to a method that calculates a sam variable. This is given as the
-            name of the function *without*  a set of parenthesis () after the name. E.g. self.getThlmSamCalc
-
-        *coamps_calc*: (optional) A functional reference to a method that calculates a coamps variable. This is given
-            as the name of the function *without* a set of parenthesis () after the name. E.g. self.getThlmCoampsCalc
-
-        *r408_calc*: (optional) A functional reference to a method that calculates a r408 variable. This is given as
-            the name of the function *without*  a set of parenthesis () after the name. E.g. self.getTHlmR408Calc
-
-        *hoc_calc*: (optional) A functional reference to a method that calculates a hoc-2005 variable. This is given
-            as the name of the function *without* a set of parenthesis () after the name. E.g. self.getThlmHocCalc
-
-        *e3sm_calc*: (optional) A functional reference to a method that calculates an e3sm variable. This is given
-            as the name of the function *without* a set of parenthesis () after the name. E.g. self.getThlmE3smCalc
-
         *sam_conv_factor*: (optional) Numeric value to scale a sam variable by. E.g. 1/1000, or 100
 
         *coamps_conv_factor*: (optional) Numeric value to scale a coamps variable by. E.g. 1/1000, or 100
@@ -125,51 +110,32 @@ class VariableGroup:
 
         *type*: (optional) Override the default type 'profile' with either 'budget' or 'timeseries'
 
-        *fallback_func*: (optional) (DEPRECATED: Use the calc parameters instead)
-            If a variable is not found within a dataset_name and a fallback_func is specified, this
-            function will be called to attempt retrieving the variable. Like the
-            model_calc option, this is a functional reference to a method that calculates the given variable.
-            E.g. self.getWpthlpFallback
-
         *title*: (optional) Override the default panel title, or provide one if it's not specified in the netcdf file.
 
         *axis_title*: (optional) Override the default dependent axis title, or provide one if it's not
             specified in the netcdf file.
 
         *lines*: * (budget variables only) Defines lines to plot for budget cases. Passed seperately because
-            it's a lot of text.
+            it's a lot of text. The lines parameter currently does not support defining model-specific names/functions
             This is given in the form of a list of lines, here's an example:
 
         .. code-block:: python
             :linenos:
 
-            thlm_lines = [
+        thlm_budget_lines = [
             {'var_names': ['thlm_bt'], 'legend_label': 'thlm_bt'},
             {'var_names': ['thlm_ma'], 'legend_label': 'thlm_ma'},
             {'var_names': ['thlm_ta'], 'legend_label': 'thlm_ta'},
             {'var_names': ['thlm_mc'], 'legend_label': 'thlm_mc'},
-            {'var_names': ['thlm_clipping'], 'legend_label': 'thlm_bt', 'clubb_calc': self.getThlmClipping},
+            {'var_names': ['thlm_clipping'], 'legend_label': 'thlm_clipping', 'clubb_calc': self.getThlmClipping,
+             'e3sm_calc': self.getThlmClipping, 'wrf_calc': self.getThlmClipping},
             {'var_names': ['radht'], 'legend_label': 'radht'},
-            {'var_names': ['lsforcing'], 'legend_label': 'lsforcing', 'clubb_calc': self.getLsforcing},
-            {'var_names': ['thlm_residual'], 'legend_label': 'thlm_residual', 'clubb_cal': self.getThlmResidual},
-            ]
+            {'var_names': ['ls_forcing'], 'legend_label': 'thlm_ls_forcing', 'clubb_calc': self.getThlmLsforcing,
+             'e3sm_calc': self.getThlmLsforcing, 'wrf_calc': self.getThlmLsforcing},
+            {'var_names': ['thlm_residual'], 'legend_label': 'thlm_residual', 'clubb_calc': self.getThlmResidual,
+             'e3sm_calc': self.getThlmResidual, 'wrf_calc': self.getThlmResidual},
 
-        Here are a couple examples of other (non-budget) variable definitions:
-
-        .. code-block:: python
-            :linenos:
-
-            {
-            'var_names': ['Skrt_zt'],
-            'sam_calc': self.getSkrtZtLesCalc,
-            'coamps_calc': self.getSkrtZtLesCalc,
-            }
-
-            {
-            'var_names': ['lwp', 'CWP'],
-            'type': Panel.TYPE_TIMESERIES,
-            'sam_conv_factor': 1/1000
-            },
+        ]
 
         :return: None
         """
@@ -289,23 +255,6 @@ class VariableGroup:
         all_lines = []
 
         data_was_calculated = False
-        # Use _calc function for variable if needed
-        if (model_name + '_calc') in variable_def_dict.keys() and not self.__varnamesInDataset__(
-                all_model_var_names[model_name], dataset):
-            if panel_type == Panel.TYPE_TIMEHEIGHT:
-                plot_data, indep_data = variable_def_dict[(model_name + '_calc')](dataset_override=dataset)
-                # data array has to be 2-dimensional to be plotted as time-height plot
-                if plot_data.ndim == 2:
-                    plot = Contour(indep_data['time'], indep_data['height'], plot_data,
-                                   colors=Style_definitions.CONTOUR_CMAP, label=label)
-                else:
-                    plot = None
-            else:
-                plot_data, z = variable_def_dict[(model_name + '_calc')](dataset_override=dataset)
-                plot = Line(plot_data, z, line_format=line_style, label=label)
-            if plot is not None:
-                all_lines.append(plot)
-                data_was_calculated = True
 
         # Process extra variable lines (e.g. budget lines)
         # Time-height plots can only display one variable each.
@@ -596,7 +545,7 @@ class VariableGroup:
             if profile_lines is not None:
                 all_lines.extend(profile_lines)
         elif panel_type is Panel.TYPE_BUDGET:
-            budget_lines = self.__getBudgetLines__(lines, ncdf_datasets)
+            budget_lines = self.__getBudgetLines__(lines, ncdf_datasets, model_name=model_name)
             all_lines.extend(budget_lines)
         elif panel_type is Panel.TYPE_TIMESERIES:
             line = self.__getTimeseriesLine__(var_names, ncdf_datasets, self.end_time, conversion_factor, label,
@@ -637,7 +586,8 @@ class VariableGroup:
         variable.trimArray(self.height_min_value, self.height_max_value, data=variable.independent_data)
 
         if lines is not None:
-            additional_lines = self.__processLinesParameter__(lines, dataset, line_format=line_format, label_suffix=label)
+            additional_lines = self.__processLinesParameter__(lines, dataset, line_format=line_format,
+                                                              label_suffix=label, model_name=model_name)
             output_lines.extend(additional_lines)
         else:
             line = Line(variable, variable.independent_data, label=label, line_format=line_format)
@@ -665,7 +615,7 @@ class VariableGroup:
         line = Line(variable.independent_data, variable, label=label, line_format=line_format)
         return line
 
-    def __getBudgetLines__(self, lines, dataset):
+    def __getBudgetLines__(self, lines, dataset, model_name="unknown"):
         """
         Returns a list of Line objects for a budget plot for each variable defined in lines
 
@@ -677,7 +627,7 @@ class VariableGroup:
             Recommended value: emtpy string "" (currently not used here)
         :return: A list of Line objects for a budget plot derived from lines
         """
-        output_lines = self.__processLinesParameter__(lines, dataset)
+        output_lines = self.__processLinesParameter__(lines, dataset, model_name=model_name)
         return output_lines
 
     def __getTimeHeightContours__(self, varname, dataset, label, conversion_factor):
@@ -760,6 +710,8 @@ class VariableGroup:
         This function currently works by determining picking the non-nan and non-zero array.
         In the event that both arrays contain non-nan and non-zero output, it will return output1.
 
+        If both arrays are zero or nan, then it will return the first array arbitrarily.
+
         Example usage:
         def get_rc_coef_zm_X_wprcp_coamps_calc(self, dataset_override=None):
             wprlp, z, dataset = self.getVarForCalculations(['thlpqcp', 'wpqcp', 'wprlp'], dataset)
@@ -787,13 +739,17 @@ class VariableGroup:
         return_out_1 = (out2_is_zero or out2_is_nan) and not out1_is_nan
         return_out_2 = (out1_is_zero or out1_is_nan) and not out2_is_nan
 
+        return_any = (out1_is_zero and out2_is_zero) or (out1_is_nan and out2_is_nan)
+
         if return_out_2:
             return output2
         elif return_out_1:
             return output1
+        elif return_any:
+            return output1
         raise UserWarning("Failed to find an easy answer to the best output.")
 
-    def __processLinesParameter__(self, lines, dataset, label_suffix="", line_format = ""):
+    def __processLinesParameter__(self, lines, dataset, label_suffix="", line_format = "", model_name = "unknown"):
         """
         This method processes a 'lines' parameter from a variable definition and translates
         it into a list of Line objects for plotting.
@@ -802,6 +758,8 @@ class VariableGroup:
         :param dataset: A netcdf Dataset object or a dict of datasets
         :return: list of Line objects for plotting
         """
+        if isinstance(lines, dict):
+            lines = lines[model_name]
         output_lines = []
         for line_definition in lines:
             if line_definition['calculated'] is True:

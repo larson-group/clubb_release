@@ -223,10 +223,13 @@ class Case:
             if self.clubb_datasets is not None and len(self.clubb_datasets) != 0:
                 # for folders_datasets in self.clubb_datasets.values():
                 for input_folder in self.clubb_datasets:
-                    folder_name = os.path.basename(input_folder)
-                    budget_variables = VariableGroupBaseBudgets(self,
-                                                                clubb_datasets={folder_name:clubb_datasets[input_folder]})
-                    self.panels.extend(budget_variables.panels)
+                    if input_folder in clubb_datasets.keys():
+                        folder_name = os.path.basename(input_folder)
+                        budget_variables = VariableGroupBaseBudgets(self,
+                                                                    clubb_datasets={folder_name:clubb_datasets[input_folder]})
+                        self.panels.extend(budget_variables.panels)
+                    else:
+                        warn("" + foldername + " does not seem to contain data for case" + self.name)
             if wrf_datasets is not None and len(wrf_datasets) != 0:
                 # for folders_datasets in wrf_datasets.values():
                 #     budget_variables = VariableGroupBaseBudgets(self, wrf_datasets=folders_datasets)

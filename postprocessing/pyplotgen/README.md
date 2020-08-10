@@ -22,6 +22,7 @@ Pyplotgen only supports input in the netcdf (.nc) format.
 | -o --output | Manually specify an output folder. If not specified, will automatically output to `pyplotgen/output` |
 | --show-alphabetic-id | Adds an alphanumeric ID to each plot on a perc-case basis (e.g. the first plot will be labeled "a")
 | --nightly | Apply special parameters only relevant when running as part of a nightly test. This is currently limited to disabling case output if not all models have data for a given case. E.g. this prevents wrf plots from including cases that only have clubb plots and no wrf plots. Do not plot this with clubb-only plots, just plot clubb normally for clubb nightly tests.
+| --disable-multithreading | Turns off multithreading support. Useful for debugging as it ensures text is printed sequentially. |
 
 ## Installing Dependencies
 To install the dependencies necessary for PyPlotgen to run, run the command
