@@ -176,7 +176,9 @@ class PyPlotGen:
 
         self.__copySetupFiles__()
         # Generate html pages
-        gallery.main(self.output_folder, multithreaded=self.multithreaded)
+        # Multithreading changes the order the cases are plotted on the webpage, so it has been disabled.
+        # The capability is being left here as a demo.
+        gallery.main(self.output_folder, multithreaded=False)
         print('###########################################')
         print("Output can be viewed at file://" + self.output_folder + "/index.html with a web browser")
         total_runtime = round(time.time() - self.start_time)
@@ -193,17 +195,17 @@ class PyPlotGen:
         casename = case_def['name']
         if self.__dataForCaseExists__(case_def):
             self.num_cases_plotted += 1
-        if self.diff is not None:
-            self.case_diff_datasets = self.diff_datasets[casename]
-        case = Case(case_def, clubb_folders=self.clubb_folders, plot_les=self.les,
-                    plot_budgets=self.plot_budgets, sam_folders=self.sam_folders, wrf_folders=self.wrf_folders,
-                    diff_datasets=self.case_diff_datasets, plot_r408=self.cgbest, plot_hoc=self.hoc,
-                    e3sm_dirs=self.e3sm_dir, cam_folders=self.cam_folders,
-                    time_height=self.time_height, animation=self.animation)
-        # Call plot function of case instance
-        case.plot(self.output_folder, replace_images=self.replace_images, no_legends=self.no_legends,
-                  thin_lines=self.thin, show_alphabetic_id=self.show_alphabetic_id)
-        self.cases_plotted.append(casename)
+            if self.diff is not None:
+                self.case_diff_datasets = self.diff_datasets[casename]
+            case = Case(case_def, clubb_folders=self.clubb_folders, plot_les=self.les,
+                        plot_budgets=self.plot_budgets, sam_folders=self.sam_folders, wrf_folders=self.wrf_folders,
+                        diff_datasets=self.case_diff_datasets, plot_r408=self.cgbest, plot_hoc=self.hoc,
+                        e3sm_dirs=self.e3sm_dir, cam_folders=self.cam_folders,
+                        time_height=self.time_height, animation=self.animation)
+            # Call plot function of case instance
+            case.plot(self.output_folder, replace_images=self.replace_images, no_legends=self.no_legends,
+                      thin_lines=self.thin, show_alphabetic_id=self.show_alphabetic_id)
+            self.cases_plotted.append(casename)
 
     def __dataForCaseExists__(self, case_def):
         """
