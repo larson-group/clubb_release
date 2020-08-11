@@ -1002,6 +1002,13 @@ module error
       end do
     end if
 
+    print*, "c_total=",c_total," v_total=",v_total
+    do, i=1,c_total
+        do, j=1,v_total
+            print*, err_sums(i, j)
+        end do
+    end do
+
     !---------------------------------------------------------------
     ! Compute normalized error
     !---------------------------------------------------------------
