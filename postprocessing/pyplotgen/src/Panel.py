@@ -164,8 +164,15 @@ class Panel:
                 line_width = Style_definitions.CLUBB_LINE_THICKNESS
             if thin_lines:
                 line_width = Style_definitions.THIN_LINE_THICKNESS
-            if var.line_format != "":
+            plotting_benchmark = var.line_format != ""
+            if plotting_benchmark:
                 plt.plot(x_data, y_data, var.line_format, label=var.label, linewidth=line_width)
+                # If a benchmark defines a custom color (e.g. "gray" or "#404040) this messes up the color rotation.
+                # Setting the prop cycle to None and then redefining it fixes the color rotation.
+                # This fix may be dependent on benchmarks being plotted first. If this stops being the case, colors may
+                # repeat themselves sooner than expected.
+                plt.gca().set_prop_cycle(None)
+                plt.rc('axes', prop_cycle=default_cycler)
             # If format is not specified and paired_plots are enabled,
             # use the color/style rotation specified in Style_definitions.py
             elif paired_plots:

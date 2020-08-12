@@ -38,7 +38,7 @@ STYLE_ROTATION = ['-', '--', ':', '-.', '-', '--', ':', '-.']
 # Details on line styles here: https://matplotlib.org/2.1.2/api/_as_gen/matplotlib.pyplot.plot.html
 BENCHMARK_LINE_STYLES = {
     'sam': "k-",
-    'coamps': "#404040", # dark grey = #404040
+    'coamps': "grey", # dark grey = #404040
     'r408': "g-",
     'hoc': "m-.",
     'e3sm': "c-"
