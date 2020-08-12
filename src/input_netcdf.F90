@@ -110,6 +110,10 @@ module input_netcdf
       return 
     end if
 
+! Error is here
+print*,"input_netcdf@error_is_here(L 117)"
+print*,"file=",path
+print*,"ncid=",ncf%iounit,"name=",test_variable,"varid=",varid
     ierr = nf90_inq_varid( ncid=ncf%iounit, name=test_variable, varid=varid )
 
     if ( ierr /= NF90_NOERR ) then
@@ -291,6 +295,7 @@ module input_netcdf
       if ( ierr /= NF90_NOERR ) then
         write(fstderr,*) nf90_strerror( ierr )
         l_error = .true.
+print*,"@getvar2",l_error
         return
       end if
 

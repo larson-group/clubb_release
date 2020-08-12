@@ -844,13 +844,14 @@ module error
       ! Start with first CLUBB & LES variables, then loop through and
       ! calculate the mean squared difference for all the variables
       do i=1, v_total, 1  
-
+print*,"error@do",l_error
         ! Read in LES grads data for one variable, averaged
         ! over specified time intervals
         les_zl =  & 
         stat_file_average_interval &
         ( les_stats_file(c_run), clubb_nz,  & 
           timestep_intvls(c_run,:), les_v(i), clubb_grid_heights, 1, l_error )
+print*,"error@sfai",l_error
 
 #ifdef NETCDF
         ! Verify that the CLUBB and LES runs start at the same time and
@@ -859,7 +860,7 @@ module error
         ! First, be sure we are dealing with a netCDF file
         len_file = LEN_TRIM(les_stats_file(c_run))
         if (les_stats_file(c_run)(len_file-2: len_file) == ".nc") then
-          call open_netcdf_read( 'PRES', les_stats_file(c_run), netcdf_file, l_file_error);
+          call open_netcdf_read( les_v(i), les_stats_file(c_run), netcdf_file, l_file_error);
         else
           l_file_error = .true. ! This will cause the following assertion check to be skipped
         end if
