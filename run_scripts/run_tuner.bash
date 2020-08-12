@@ -175,7 +175,7 @@ if [ $RUN_TYPE = 'single' ] ; then # Single Case.
    fi
 
 	# Concatenate *_model.in and *_stats.in into *_hoc.in
-	cat $MODEL_FILE $STATS_TUNE_IN $FLAGS_FILE $SILHS_PARAMS_FILE > $RUN_CASE'_hoc.in'
+	cat $MODEL_FILE $STATS_TUNE_IN $FLAGS_FILE $SILHS_PARAMS_FILE | sed -e 's/= "netcdf"/= "grads"/g' > $RUN_CASE'_hoc.in'
 	sed -i -e 's/\!.*//' $RUN_CASE'_hoc.in'
 
 elif [ $RUN_TYPE = 'multiple' ] ; then # Multiple Cases.
@@ -265,7 +265,7 @@ FLAGS_FILE=`ls -t ../input/tunable_parameters/configurable_model_flags* | head -
 if [ $RUN_TYPE = 'single' ] ; then # Single Case.
 
    # Concatenate *_model.in and *_stats.in into clubb.in
-   cat $STATS_OPT_IN $PARAMS_FILE $SILHS_PARAMS_FILE $MODEL_FILE $FLAGS_FILE | sed -e 's/\!.*//' > 'clubb.in'
+   cat $STATS_OPT_IN $PARAMS_FILE $SILHS_PARAMS_FILE $MODEL_FILE $FLAGS_FILE | sed -e 's/\!.*//' | sed -e 's/= "netcdf"/= "grads"/g' > 'clubb.in'
     ../bin/clubb_standalone 2>&1 | tee -a $logFile
 
 elif [ $RUN_TYPE = 'multiple' ] ; then # Multiple Cases.
@@ -273,7 +273,7 @@ elif [ $RUN_TYPE = 'multiple' ] ; then # Multiple Cases.
    for EACH_CASE in "${MODEL_MULT[@]}"; do
 		MODEL_FILE=$MODEL_DIR$EACH_CASE'_model.in'
 		# Concatenate *_model.in and *_stats.in into clubb.in
-        cat $STATS_OPT_IN $PARAMS_FILE $MODEL_FILE $FLAGS_FILE | sed -e 's/\!.*//' > 'clubb.in'
+        cat $STATS_OPT_IN $PARAMS_FILE $MODEL_FILE $FLAGS_FILE | sed -e 's/\!.*//' | sed -e 's/= "netcdf"/= "grads"/g' > 'clubb.in'
 		../bin/clubb_standalone 2>&1 | tee -a $logFile
    done
 
