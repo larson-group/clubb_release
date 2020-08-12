@@ -107,18 +107,16 @@ module input_netcdf
       write(fstderr,*) "Error opening netCDF file: "//trim( path )
       write(fstderr,*) nf90_strerror( ierr )
       l_error = .true.
+print*,"input_netcdf@open",l_error
       return 
     end if
 
-! Error is here
-print*,"input_netcdf@error_is_here(L 117)"
-print*,"file=",path
-print*,"ncid=",ncf%iounit,"name=",test_variable,"varid=",varid
     ierr = nf90_inq_varid( ncid=ncf%iounit, name=test_variable, varid=varid )
 
     if ( ierr /= NF90_NOERR ) then
       write(fstderr,*) nf90_strerror( ierr )
       l_error = .true.
+print*,"input_netcdf@varid",l_error
       return
     end if
 
@@ -130,6 +128,7 @@ print*,"ncid=",ncf%iounit,"name=",test_variable,"varid=",varid
             write(fstderr,*) "input_netcdf.open_netcdf_read : The netCDF data doesn't "// &
             "conform to expected precision, shape, or dimensions"
       l_error = .true.
+print*,"input_netcdf@var",l_error
       return
 
     end if
@@ -142,22 +141,24 @@ print*,"ncid=",ncf%iounit,"name=",test_variable,"varid=",varid
     do i = 1, ndims
 
       ierr = nf90_inquire_dimension( ncid=ncf%iounit, dimId=dimIds(i), name=dim_name, len=itmp )
+
       if ( ierr /= NF90_NOERR ) then
         write(fstderr,*) nf90_strerror( ierr )
         l_error = .true.
+print*,"input_netcdf@dim",l_error
         return
       end if
 
       select case ( trim( dim_name ) )
-      case ( "Z", "z", "altitude", "height" )
+      case ( "Z", "z", "altitude", "height", "lev" )
         ncf%ia = 1
         ncf%iz = itmp
         ncf%AltDimId = dimIds(i)
         zname = dim_name
-      case ( "X", "x", "longitude" )
+      case ( "X", "x", "longitude", "lon" )
         xdim = itmp
         ncf%LongDimId = dimIds(i)
-      case ( "Y", "y", "latitude" )
+      case ( "Y", "y", "latitude", "lat" )
         ydim = itmp
         ncf%LatDimId = dimIds(i)
       case ( "T", "t", "time" )
@@ -166,6 +167,7 @@ print*,"ncid=",ncf%iounit,"name=",test_variable,"varid=",varid
         time_name = dim_name
       case default
         l_error = .true.
+print*,"input_netcdf@catch",l_error
         return
       end select
 
@@ -175,6 +177,7 @@ print*,"ncid=",ncf%iounit,"name=",test_variable,"varid=",varid
       write(fstderr,*) "input_netcdf.open_netcdf_read : The netCDF data doesn't "// &
         "conform to the expected X or Y dimension"
       l_error = .true.
+print*,"input_netcdf@dimmerr",l_error
       return
     end if
       
@@ -189,6 +192,7 @@ print*,"ncid=",ncf%iounit,"name=",test_variable,"varid=",varid
       if ( ierr /= NF90_NOERR ) then
         write(fstderr,*) nf90_strerror( ierr )
         l_error = .true.
+print*,"input_netcdf@alt",l_error
         return
       end if
 
@@ -208,6 +212,7 @@ print*,"ncid=",ncf%iounit,"name=",test_variable,"varid=",varid
       if ( ierr /= NF90_NOERR ) then
         write(fstderr,*) nf90_strerror( ierr )
         l_error = .true.
+print*,"input_netcdf@getvar",l_error
         return
       end if
 
@@ -215,6 +220,7 @@ print*,"ncid=",ncf%iounit,"name=",test_variable,"varid=",varid
       if ( ierr /= NF90_NOERR ) then
         write(fstderr,*) nf90_strerror( ierr )
         l_error = .true.
+print*,"input_netcdf@time",l_error
         return
       end if
 
@@ -227,6 +233,7 @@ print*,"ncid=",ncf%iounit,"name=",test_variable,"varid=",varid
       if ( ierr /= NF90_NOERR ) then
         write(fstderr,*) nf90_strerror( ierr )
         l_error = .true.
+print*,"input_netcdf@att",l_error
         return
       end if
 
@@ -239,8 +246,12 @@ print*,"ncid=",ncf%iounit,"name=",test_variable,"varid=",varid
                          &time variable must be in the form:"
         write(fstderr,*) "TIMEUNITS since YYYY-MM-DD HH:MM:SS.S"
         l_error = .true.
+print*,"input_netcdf@unit",l_error
         return
       end if
+
+print*,"input_netcdf@error_is_here"
+print*,"length=",length,"time=",time
 
       read(time( length-20:length-17), *) netcdf_year
       read(time( length-15:length-14), *) netcdf_month
@@ -284,6 +295,7 @@ print*,"ncid=",ncf%iounit,"name=",test_variable,"varid=",varid
       case default
         multiplier = 0._time_precision  ! Initialized to eliminate g95 compiler warning -meyern
         l_error = .true.
+print*,"input_netcdf@time",l_error
         return
 
       end select
@@ -302,6 +314,7 @@ print*,"@getvar2",l_error
       ncf%dtwrite =  (write_times(2) - write_times(1)) * real(multiplier,kind=core_rknd)
 
     end if
+print*,"input_netcdf@end",l_error
 
     return
   end subroutine open_netcdf_read

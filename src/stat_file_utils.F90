@@ -124,6 +124,10 @@ module stat_file_utils
     logical :: &
       l_convert_to_MKS ! convert inputs to MKS units
 
+    integer::i
+    real, dimension(:,:), pointer::ar2
+    real, dimension(:), pointer::ar3
+
 !-----------------------------------------------------------------------
 
     ! Initialize variables
@@ -134,6 +138,8 @@ module stat_file_utils
 
     ! Determine file type
     l_grads_file = .not. l_netcdf_file( filename ) 
+print*,"stat_file_utils@start",l_error
+print*,"variable_name=",variable_name,"filename=",filename
     
     ! Open GraDS file
     if ( l_grads_file ) then
@@ -153,8 +159,8 @@ module stat_file_utils
       write(fstderr,*) "This version of CLUBB was not compiled with netCDF support"
       l_error = .true.
 #endif
-
     end if ! l_grads_file
+print*,"stat_file_utils@onr",l_error
 
     if ( l_error ) return
 
@@ -197,6 +203,9 @@ module stat_file_utils
                              file_variable(1:file_nz), l_error )
 #endif
       end if
+
+      open(unit=42,file="/home/klempb/dev/testing/out.txt")
+      write(42,*) "stat_file_average called on file ",trim(filename),"(",trim(faverage%fname),")"
 
 
       if ( l_error ) then
@@ -340,6 +349,8 @@ module stat_file_utils
     logical :: l_spec_bound_cond ! special boundary condition for stat_file_average
 
 !-------------------------------------------------------------------------
+    open(unit=42,file="/home/klempb/dev/testing/out.txt")
+    write(42,*) "stat_file_average_interval called on file ",filename
     l_error = .false.
 
     ! Sanity check
@@ -356,12 +367,14 @@ module stat_file_utils
       tdim = i
     end do
 
+print*,"stat_file_utils@presfa",l_error
     l_spec_bound_cond = .false.
     stat_file_average_interval & 
     = stat_file_average( filename, nz, &
                          t(1), t(2), out_heights, variable_name, &
                          npower, l_spec_bound_cond, l_error )  & 
           * real( t(2) - t(1), kind = core_rknd )
+print*,"stat_file_utils@sfa",l_error
 
     divisor = t(2) - t(1)
 
