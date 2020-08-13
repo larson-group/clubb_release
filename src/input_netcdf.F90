@@ -240,7 +240,9 @@ print*,"input_netcdf@att",l_error
       ! Read starting time from the "units" attribute of the netcdf file
       time = trim( time )
       length = len( trim( time ) )
-      if ( length < 21 ) then
+print*,"input_netcdf@error_is_here"
+print*,"file=",trim(path),"  length=",length,"time=",time
+      if ( length < 29 ) then
         write(fstderr,*) "The NetCDF file does not have a proper time unit &
                          &specification. The ""units"" attribute for the &
                          &time variable must be in the form:"
@@ -250,8 +252,6 @@ print*,"input_netcdf@unit",l_error
         return
       end if
 
-print*,"input_netcdf@error_is_here"
-print*,"length=",length,"time=",time
 
       read(time( length-20:length-17), *) netcdf_year
       read(time( length-15:length-14), *) netcdf_month
