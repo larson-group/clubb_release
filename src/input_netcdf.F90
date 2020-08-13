@@ -303,6 +303,7 @@ print*,"input_netcdf@time",l_error
       ierr = nf90_get_var( ncid=ncf%iounit, varid=ncf%TimeVarId, & ! In
                            start=(/1/), count=(/2/), & ! In
                            values=write_times ) ! Out
+print*,"write_times=",write_times
 
       if ( ierr /= NF90_NOERR ) then
         write(fstderr,*) nf90_strerror( ierr )
