@@ -28,7 +28,7 @@ srcdir="$dir/../src"  # dir where the source files reside
 DEBUG="-g -fbounds-check -mieee-fp -ffpe-trap=invalid,zero,overflow -finit-real=nan -finit-integer=-99999 -finit-logical=false -fall-intrinsics -fbacktrace" # Floating point trapping enabled for invalid operations, divide-by-zero, and overflow
 
 # == Warnings ==
-WARNINGS="-Wall -Wextra -Wconversion -Wunderflow -Wcharacter-truncation -std=f2003 -pedantic"
+WARNINGS="-Wall -Wextra -Wconversion -Wunderflow -Wcharacter-truncation -std=f2008 -pedantic"
 NO_CONV="-Wno-conversion" #Added to remove conversion warnings from clubb_model_files
 
 # == Machine specific flags ==
