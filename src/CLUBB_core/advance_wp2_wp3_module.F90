@@ -1190,10 +1190,8 @@ module advance_wp2_wp3_module
         l_use_wp3_pr3
 
     use diffusion, only: & 
-        diffusion_zm_lhs,  & ! Procedures
-        diffusion_zm_lhs_all, &
-        diffusion_zt_lhs, &
-        diffusion_zt_lhs_all
+        diffusion_zm_lhs, & ! Procedures
+        diffusion_zt_lhs
 
     use mean_adv, only: & 
         term_ma_zm_lhs,  & ! Procedures
@@ -1374,15 +1372,15 @@ module advance_wp2_wp3_module
 
 
     ! Calculate diffusion term for w'2 using a completely implicit time step
-    call diffusion_zm_lhs_all( Kw1(:), nu1_vert_res_dep(:), & 
-                               gr%invrs_dzt(:), gr%invrs_dzm(:), &
-                               lhs_diff_zm(:,:) )
+    call diffusion_zm_lhs( Kw1(:), nu1_vert_res_dep(:), & 
+                           gr%invrs_dzt(:), gr%invrs_dzm(:), &
+                           lhs_diff_zm(:,:) )
 
 
     ! Calculate diffusion term for w'3 using a completely implicit time step
-    call diffusion_zt_lhs_all( Kw8(:), nu8_vert_res_dep(:), & 
-                               gr%invrs_dzm(:), gr%invrs_dzt(:), &
-                               lhs_diff_zt(:,:) )
+    call diffusion_zt_lhs( Kw8(:), nu8_vert_res_dep(:), & 
+                           gr%invrs_dzm(:), gr%invrs_dzt(:), &
+                           lhs_diff_zt(:,:) )
 
     lhs_diff_zt(:,:) = lhs_diff_zt(:,:) * C12
 
@@ -1854,9 +1852,7 @@ module advance_wp2_wp3_module
 
     use diffusion, only: & 
         diffusion_zm_lhs,  & ! Procedures
-        diffusion_zm_lhs_all,  &
-        diffusion_zt_lhs, &
-        diffusion_zt_lhs_all
+        diffusion_zt_lhs
 
     use clubb_precision, only:  & 
         core_rknd ! Variable
@@ -2036,13 +2032,13 @@ module advance_wp2_wp3_module
 
         ! Calculate RHS eddy diffusion terms for w'2 and w'3
         
-        call diffusion_zm_lhs_all( Kw1(:), nu1_vert_res_dep(:), & 
-                                  gr%invrs_dzt(:), gr%invrs_dzm(:), &
-                                  rhs_diff_zm(:,:) )
+        call diffusion_zm_lhs( Kw1(:), nu1_vert_res_dep(:), & 
+                               gr%invrs_dzt(:), gr%invrs_dzm(:), &
+                               rhs_diff_zm(:,:) )
 
-        call diffusion_zt_lhs_all( Kw8(:), nu8_vert_res_dep(:), & 
-                                   gr%invrs_dzm(:), gr%invrs_dzt(:), &
-                                   rhs_diff_zt(:,:) )
+        call diffusion_zt_lhs( Kw8(:), nu8_vert_res_dep(:), & 
+                               gr%invrs_dzm(:), gr%invrs_dzt(:), &
+                               rhs_diff_zt(:,:) )
         ! Add diffusion terms
         do k = 2, gr%nz-1
 

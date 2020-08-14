@@ -1636,16 +1636,18 @@ module advance_microphys_module
                      ! mean advection terms. It affects rtm, thlm, sclrm, um and vm.
 
     real( kind = core_rknd ), intent(out), dimension(3,gr%nz) :: & 
-      lhs      ! Left hand side of tridiagonal matrix.
+      lhs    ! Left hand side of tridiagonal matrix
 
     ! Local Variables
+    real( kind = core_rknd ), dimension(3,gr%nz) :: & 
+      lhs_ta    ! LHS corresponding to contribution from turbulent advection
+
     real( kind = core_rknd ), dimension(3) :: tmp
 
     real( kind = core_rknd ), dimension(gr%nz) :: &
       Vhmphmp_impc    ! Implicit comp. <V_hm'h_m'>: interp. m-levs  [units(m/s)]
 
     integer :: k, km1, kp1  ! Array indices
-    integer :: diff_k_in
 
     integer :: & 
       ihmm_ma, & ! Mean advection budget stats toggle
@@ -1723,6 +1725,42 @@ module advance_microphys_module
     ! Reset LHS Matrix for current timestep.
     lhs = zero
 
+    ! LHS turbulent advection term.
+    ! - (1/rho_ds) * d( rho_ds * <w'h_m'> ) / dz.
+    ! Note:  a down gradient closure approximation is made for < w'h_m' >, so
+    !        the turbulent advection term is solved as an eddy-diffusion
+    !        term:  + (1/rho_ds) * d( rho_ds * K_hm * (dh_m/dz) ) / dz.
+    ! A Crank-Nicholson time-stepping scheme is used for this term.
+    call diffusion_zt_lhs( rho_ds_zm * K_hm, nu, gr%invrs_dzm, gr%invrs_dzt, &
+                           lhs_ta )
+
+    do k = 2, gr%nz, 1
+       lhs_ta(:,k) = one_half * invrs_rho_ds_zt(k) * lhs_ta(:,k)
+    enddo ! k = 1, gr%nz, 1
+
+    ! The lower boundary condition needs to be applied here at level 2.  The
+    ! lower boundary condition is a zero-flux boundary condition.  A hydrometeor
+    ! is not allowed to be fluxed through the model lower boundary by the
+    ! processes of mean or turbulent advection.  Only mean or turbulent
+    ! sedimentation can flux a hydrometeor through the lower boundary.
+    ! The lower boundary condition needs to be applied here at level 2.
+
+    ! Thermodynamic superdiagonal: [ x xm(k+1,<t+1>) ]
+    lhs_ta(kp1_tdiag,2) &
+    = - one_half * invrs_rho_ds_zt(2) &
+        * ( gr%invrs_dzt(2) * ( K_hm(2) + nu(1) ) * gr%invrs_dzm(2) )
+
+    ! Thermodynamic main diagonal: [ x xm(k,<t+1>) ]
+    lhs_ta(k_tdiag,2) &
+    = + one_half * invrs_rho_ds_zt(2) &
+        * ( gr%invrs_dzt(2) * ( K_hm(2) + nu(1) ) * gr%invrs_dzm(2) )
+
+    ! Thermodynamic subdiagonal: [ x xm(k-1,<t+1>) ]
+    lhs_ta(km1_tdiag,2) = zero
+
+    lhs_ta(:,1) = zero
+
+
     ! Setup LHS Matrix
     do k = 2, gr%nz, 1
 
@@ -1732,35 +1770,7 @@ module advance_microphys_module
        ! LHS time tendency.
        lhs(k_tdiag,k) = lhs(k_tdiag,k) + ( one / dt )
 
-       ! LHS turbulent advection term.
-       ! - (1/rho_ds) * d( rho_ds * <w'h_m'> ) / dz.
-       ! Note:  a down gradient closure approximation is made for < w'h_m' >, so
-       !        the turbulent advection term is solved as an eddy-diffusion
-       !        term:  + (1/rho_ds) * d( rho_ds * K_hm * (dh_m/dz) ) / dz.
-       ! A Crank-Nicholson time-stepping scheme is used for this term.
-       if ( k == 2 ) then
-          ! The lower boundary condition needs to be applied here at level 2.
-          ! The lower boundary condition is a zero-flux boundary condition.
-          ! A hydrometeor is not allowed to be fluxed through the model lower
-          ! boundary by the processes of mean or turbulent advection.  Only
-          ! mean or turbulent sedimentation can flux a hydrometeor through the
-          ! lower boundary.  Subroutine diffusion_zt_lhs is set-up to apply a
-          ! zero-flux boundary condition at thermodynamic level 1.  In order to
-          ! apply the same boundary condition code here at level 2, an adjuster
-          ! needs to be used to tell diffusion_zt_lhs to use the code at level 2
-          ! that it normally uses at level 1.
-          diff_k_in = 1
-       else
-          diff_k_in = k
-       endif
-       lhs(kp1_tdiag:km1_tdiag,k) & 
-       = lhs(kp1_tdiag:km1_tdiag,k) &
-         + one_half &
-           * invrs_rho_ds_zt(k) &
-           * diffusion_zt_lhs( rho_ds_zm(k) * K_hm(k), &
-                               rho_ds_zm(km1) * K_hm(km1), nu, & 
-                               gr%invrs_dzm(km1), gr%invrs_dzm(k), &
-                               gr%invrs_dzt(k), diff_k_in )
+       lhs(:,k) = lhs(:,k) + lhs_ta(:,k)
 
        ! LHS mean advection term.
        lhs(kp1_tdiag:km1_tdiag,k) & 
@@ -1856,13 +1866,7 @@ module advance_microphys_module
           endif
 
           if ( ihmm_ta > 0 ) then
-             tmp(1:3) &
-             = one_half &
-               * invrs_rho_ds_zt(k) & 
-               * diffusion_zt_lhs( rho_ds_zm(k) * K_hm(k), &
-                                   rho_ds_zm(km1) * K_hm(km1), nu,  & 
-                                   gr%invrs_dzm(km1), gr%invrs_dzm(k), &
-                                   gr%invrs_dzt(k), diff_k_in )
+             tmp(1:3) = lhs_ta(:,k)
              ztscr10(k) = -tmp(3)
              ztscr11(k) = -tmp(2)
              ztscr12(k) = -tmp(1)
@@ -1944,6 +1948,12 @@ module advance_microphys_module
 
     implicit none
 
+    ! Constant parameters
+    integer, parameter :: & 
+      kp1_tdiag = 1, & ! Thermodynamic superdiagonal index.
+      k_tdiag   = 2, & ! Thermodynamic main diagonal index.
+      km1_tdiag = 3    ! Thermodynamic subdiagonal index.
+
     ! Input Variables
     character(len=*), intent(in) :: &
       solve_type  ! Description of which hydrometeor is being solved for.
@@ -1973,11 +1983,11 @@ module advance_microphys_module
     real( kind = core_rknd ), dimension(gr%nz) :: &
       Vhmphmp_expc    ! Explicit comp. <V_hm'h_m'>: interp. m-levs  [units(m/s)]
 
-    real( kind = core_rknd ), dimension(3) :: &
-      rhs_diff    ! For use in Crank-Nicholson eddy diffusion
+    real( kind = core_rknd ), dimension(3,gr%nz) :: & 
+      lhs_ta    ! LHS corresponding to contribution from turbulent advection
+
 
     integer :: k, kp1, km1  ! Array indices
-    integer :: diff_k_in
 
     integer :: ihmm_ta, & ! Turbulent advection budget toggle.
                ihmm_ts    ! Turbulent sedimentation budget toggle.
@@ -2029,6 +2039,41 @@ module advance_microphys_module
     ! Initialize right-hand side vector to 0.
     rhs = zero
 
+    ! LHS turbulent advection term.
+    ! - (1/rho_ds) * d( rho_ds * <w'h_m'> ) / dz.
+    ! Note:  a down gradient closure approximation is made for < w'h_m' >, so
+    !        the turbulent advection term is solved as an eddy-diffusion
+    !        term:  + (1/rho_ds) * d( rho_ds * K_hm * (dh_m/dz) ) / dz.
+    ! A Crank-Nicholson time-stepping scheme is used for this term.
+    call diffusion_zt_lhs( rho_ds_zm * K_hm, nu, gr%invrs_dzm, gr%invrs_dzt, &
+                           lhs_ta )
+
+    do k = 2, gr%nz, 1
+       lhs_ta(:,k) = one_half * invrs_rho_ds_zt(k) * lhs_ta(:,k)
+    enddo ! k = 1, gr%nz, 1
+
+    ! The lower boundary condition needs to be applied here at level 2.  The
+    ! lower boundary condition is a zero-flux boundary condition.  A hydrometeor
+    ! is not allowed to be fluxed through the model lower boundary by the
+    ! processes of mean or turbulent advection.  Only mean or turbulent
+    ! sedimentation can flux a hydrometeor through the lower boundary.
+    ! The lower boundary condition needs to be applied here at level 2.
+
+    ! Thermodynamic superdiagonal: [ x xm(k+1,<t+1>) ]
+    lhs_ta(kp1_tdiag,2) &
+    = - one_half * invrs_rho_ds_zt(2) &
+        * ( gr%invrs_dzt(2) * ( K_hm(2) + nu(1) ) * gr%invrs_dzm(2) )
+
+    ! Thermodynamic main diagonal: [ x xm(k,<t+1>) ]
+    lhs_ta(k_tdiag,2) &
+    = + one_half * invrs_rho_ds_zt(2) &
+        * ( gr%invrs_dzt(2) * ( K_hm(2) + nu(1) ) * gr%invrs_dzm(2) )
+
+    ! Thermodynamic subdiagonal: [ x xm(k-1,<t+1>) ]
+    lhs_ta(km1_tdiag,2) = zero
+
+    lhs_ta(:,1) = zero
+
     ! Hydrometeor right-hand side (explicit portion of the code).
     do k = 2, gr%nz, 1
 
@@ -2042,40 +2087,11 @@ module advance_microphys_module
        ! etc.).
        rhs(k) = rhs(k) + hmm_tndcy(k)
 
-       ! RHS turbulent advection term.
-       ! - (1/rho_ds) * d( rho_ds * <w'h_m'> ) / dz.
-       ! Note:  a down gradient closure approximation is made for < w'h_m' >, so
-       !        the turbulent advection term is solved as an eddy-diffusion
-       !        term:  + (1/rho_ds) * d( rho_ds * K_hm * (dh_m/dz) ) / dz.
-       ! A Crank-Nicholson time-stepping scheme is used for this term.
-       if ( k == 2 ) then
-          ! The lower boundary condition needs to be applied here at level 2.
-          ! The lower boundary condition is a zero-flux boundary condition.
-          ! A hydrometeor is not allowed to be fluxed through the model lower
-          ! boundary by the processes of mean or turbulent advection.  Only
-          ! mean or turbulent sedimentation can flux a hydrometeor through the
-          ! lower boundary.  Subroutine diffusion_zt_lhs is set-up to apply a
-          ! zero-flux boundary condition at thermodynamic level 1.  In order to
-          ! apply the same boundary condition code here at level 2, an adjuster
-          ! needs to be used to tell diffusion_zt_lhs to use the code at level 2
-          ! that it normally uses at level 1.
-          diff_k_in = 1
-       else
-          diff_k_in = k
-       endif
-       rhs_diff(1:3) &
-       = one_half &
-         * invrs_rho_ds_zt(k) &
-         * diffusion_zt_lhs( rho_ds_zm(k) * K_hm(k), &
-                             rho_ds_zm(km1) * K_hm(km1), nu, & 
-                             gr%invrs_dzm(km1), gr%invrs_dzm(k), &
-                             gr%invrs_dzt(k), diff_k_in )
-
        rhs(k) &
        = rhs(k) &
-         - rhs_diff(3) * hmm(km1) &
-         - rhs_diff(2) * hmm(k) &
-         - rhs_diff(1) * hmm(kp1)
+         - lhs_ta(km1_tdiag,k) * hmm(km1) &
+         - lhs_ta(k_tdiag,k) * hmm(k) &
+         - lhs_ta(kp1_tdiag,k) * hmm(kp1)
 
        ! RHS turbulent sedimentation term.
        if ( l_sed ) then
@@ -2106,17 +2122,17 @@ module advance_microphys_module
                 ! but do not multiply until we return from the subroutine, so we
                 ! must account for this here for the budget to balance.
                 call stat_begin_update_pt( ihmm_ta, k, & 
-              rhs_diff(3) * hmm(km1) * max( cloud_frac(k), cloud_frac_min ) & 
-              + rhs_diff(2) * hmm(k) * max( cloud_frac(k), cloud_frac_min ) & 
-              + rhs_diff(1) * hmm(kp1) * max( cloud_frac(k), cloud_frac_min ), &
+              lhs_ta(3,k) * hmm(km1) * max( cloud_frac(k), cloud_frac_min ) & 
+              + lhs_ta(2,k) * hmm(k) * max( cloud_frac(k), cloud_frac_min ) & 
+              + lhs_ta(1,k) * hmm(kp1) * max( cloud_frac(k), cloud_frac_min ), &
                                            stats_zt )
 
              else
 
                 call stat_begin_update_pt( ihmm_ta, k, & 
-                                           rhs_diff(3) * hmm(km1) &
-                                           + rhs_diff(2) * hmm(k)   &
-                                           + rhs_diff(1) * hmm(kp1), stats_zt )
+                                           lhs_ta(3,k) * hmm(km1) &
+                                           + lhs_ta(2,k) * hmm(k)   &
+                                           + lhs_ta(1,k) * hmm(kp1), stats_zt )
 
              endif
 

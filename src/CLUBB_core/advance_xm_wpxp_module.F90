@@ -1184,8 +1184,8 @@ module advance_xm_wpxp_module
         xpyp_term_ta_pdf_lhs
 
     use diffusion, only:  & 
-        diffusion_zt_lhs_all, &
-        diffusion_zm_lhs_all
+        diffusion_zt_lhs, &
+        diffusion_zm_lhs
 
     implicit none
 
@@ -1271,9 +1271,9 @@ module advance_xm_wpxp_module
                                 lhs_ac_pr2                       ) ! Intent(out)
 
     ! Calculate diffusion terms for all momentum grid level
-    call diffusion_zm_lhs_all( Kw6(:), nu6_vert_res_dep(:),      & ! Intent(in)
-                               gr%invrs_dzt(:), gr%invrs_dzm(:), & ! Intent(in)
-                               lhs_diff_zm(:,:)                  ) ! Intent(out)    
+    call diffusion_zm_lhs( Kw6(:), nu6_vert_res_dep(:),      & ! Intent(in)
+                           gr%invrs_dzt(:), gr%invrs_dzm(:), & ! Intent(in)
+                           lhs_diff_zm(:,:)                  ) ! Intent(out)    
                               
     ! Calculate mean advection terms for all momentum grid level
     call term_ma_zm_lhs_all( wm_zm(:), gr%invrs_dzm(:), & ! Intent(in)
@@ -1294,9 +1294,9 @@ module advance_xm_wpxp_module
         K_zm(:) = rho_ds_zm(:) * ( Kh_N2_zm(:) + constant_nu )
         zero_nu(:) = 0.0_core_rknd
 
-        call diffusion_zt_lhs_all( K_zm(:), zero_nu(:),              & ! Intent(in)
-                                   gr%invrs_dzm(:), gr%invrs_dzt(:), & ! Intent(in)
-                                   lhs_diff_zt(:,:)                  ) ! Intent(out)
+        call diffusion_zt_lhs( K_zm(:), zero_nu(:),              & ! Intent(in)
+                               gr%invrs_dzm(:), gr%invrs_dzt(:), & ! Intent(in)
+                               lhs_diff_zt(:,:)                  ) ! Intent(out)
         
     end if        
                              
