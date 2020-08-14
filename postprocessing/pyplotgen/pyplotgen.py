@@ -22,7 +22,7 @@ from warnings import warn
 
 from config import Case_definitions
 from python_html_gallery import gallery
-from src.Case import Case
+from src.CaseGallerySetup import CaseGallerySetup
 from src.DataReader import DataReader
 from src.interoperability import clean_path
 
@@ -33,7 +33,7 @@ class PyPlotGen:
     After processing the command line options in the main function,
     an instance of this class is created in __process_args__, passing all option parameters.
     Finally the run function of this class is the actual driver of the pyplotgen program,
-    creating the Case objects and calling their plot functions to generate the images and html output.
+    creating the CaseGallerySetup objects and calling their plot functions to generate the images and html output.
     """
 
     def __init__(self, output_folder, clubb_folders=None, replace=False, les=False, cgbest=False, hoc=False,
@@ -197,11 +197,12 @@ class PyPlotGen:
             self.num_cases_plotted += 1
             if self.diff is not None:
                 self.case_diff_datasets = self.diff_datasets[casename]
-            case = Case(case_def, clubb_folders=self.clubb_folders, plot_les=self.les,
-                        plot_budgets=self.plot_budgets, sam_folders=self.sam_folders, wrf_folders=self.wrf_folders,
-                        diff_datasets=self.case_diff_datasets, plot_r408=self.cgbest, plot_hoc=self.hoc,
-                        e3sm_dirs=self.e3sm_dir, cam_folders=self.cam_folders,
-                        time_height=self.time_height, animation=self.animation)
+            case = CaseGallerySetup(case_def, clubb_folders=self.clubb_folders, plot_les=self.les,
+                                    plot_budgets=self.plot_budgets, sam_folders=self.sam_folders,
+                                    wrf_folders=self.wrf_folders, diff_datasets=self.case_diff_datasets,
+                                    plot_r408=self.cgbest, plot_hoc=self.hoc, e3sm_dirs=self.e3sm_dir,
+                                    cam_folders=self.cam_folders, time_height=self.time_height,
+                                    animation=self.animation)
             # Call plot function of case instance
             case.plot(self.output_folder, replace_images=self.replace_images, no_legends=self.no_legends,
                       thin_lines=self.thin, show_alphabetic_id=self.show_alphabetic_id)

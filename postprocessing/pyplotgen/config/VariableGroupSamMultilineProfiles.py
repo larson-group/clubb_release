@@ -16,24 +16,24 @@ class VariableGroupSamMultilineProfiles(VariableGroup):
                  hoc_dataset=None, cam_datasets=None,
                  e3sm_datasets=None, sam_datasets=None, wrf_datasets=None):
         """
-        
+
         :param clubb_datasets:
         :param case:
         :param les_dataset:
         """
         self.name = "sam multiline profile variables"
-        
+
         self.kg_per_second_to_kg_per_day = 1. / (24 * 3600)
-        
+
         self.g_per_second_to_kg_per_day = self.kg_per_second_to_kg_per_day / 1000
-        
+
         u_cond_lines = [
             {'var_names': ['U'], 'legend_label': r"$\overline{u}$"},
             {'var_names': ['UCLD'], 'legend_label': '$\overline{u}^\mathrm{cld}$'},
             {'var_names': ['UENV'], 'legend_label': r"$\overline{u}^\mathrm{{env}}$",
              'sam_calc': self.getUEnvUnweighted},
             ]
-        
+
         u_weight_lines = [
             {'var_names': ['U'], 'legend_label': r"$\overline{u}$"},
             {'var_names': ['UCLD'], 'legend_label': r"$\overline{u}^\mathrm{{cld}}$",
@@ -41,14 +41,14 @@ class VariableGroupSamMultilineProfiles(VariableGroup):
             {'var_names': ['UENV'], 'legend_label': r"$\overline{u}^\mathrm{{env}}$",
              'sam_calc': self.getUEnvWeighted},
             ]
-        
+
         v_cond_lines = [
             {'var_names': ['V'], 'legend_label': r"$\overline{v}$"},
             {'var_names': ['VCLD'], 'legend_label': '$\overline{v}^\mathrm{cld}$'},
             {'var_names': ['VENV'], 'legend_label': r"$\overline{v}^\mathrm{{env}}$",
              'sam_calc': self.getVEnvUnweighted},
             ]
-        
+
         v_weight_lines = [
             {'var_names': ['V'], 'legend_label': r"$\overline{v}$"},
             {'var_names': ['VCLD'], 'legend_label': r"$\overline{v}^\mathrm{{cld}}$",
@@ -56,14 +56,14 @@ class VariableGroupSamMultilineProfiles(VariableGroup):
             {'var_names': ['VENV'], 'legend_label': r"$\overline{v}^\mathrm{{env}}$",
              'sam_calc': self.getVEnvWeighted},
             ]
-        
+
         w_cond_lines = [
             {'var_names': ['WM'], 'legend_label': r"$\overline{w}$"},
             {'var_names': ['WCLD'], 'legend_label': '$\overline{w}^\mathrm{cld}$'},
             {'var_names': ['WENV'], 'legend_label': r"$\overline{w}^\mathrm{{env}}$",
              'sam_calc': self.getWEnvUnweighted},
             ]
-        
+
         w_weight_lines = [
             {'var_names': ['WM'], 'legend_label': r"$\overline{w}$"},
             {'var_names': ['WCLD'], 'legend_label': r"$\overline{w}^\mathrm{{cld}}$",
@@ -71,14 +71,14 @@ class VariableGroupSamMultilineProfiles(VariableGroup):
             {'var_names': ['WENV'], 'legend_label': r"$\overline{w}^\mathrm{{env}}$",
              'sam_calc': self.getWEnvWeighted},
             ]
-        
+
         uw_cond_lines = [
             {'var_names': ['UW'], 'legend_label': r"$\overline{u'w'}$"},
             {'var_names': ['UWCLD'], 'legend_label': r"$\overline{u'w'}^\mathrm{cld}$"},
             {'var_names': ['UWENV'], 'legend_label': r"$\overline{u'w'}^\mathrm{env}$",
              'sam_calc': self.getUWEnvUnweighted},
             ]
-        
+
         uw_weight_lines = [
             {'var_names': ['UW'], 'legend_label': r"$\overline{u'w'}$"},
             {'var_names': ['UWCLD'], 'legend_label': r"$\overline{u'w'}^\mathrm{cld}$",
@@ -86,14 +86,14 @@ class VariableGroupSamMultilineProfiles(VariableGroup):
             {'var_names': ['UWENV'], 'legend_label': r"$\overline{u'w'}^\mathrm{env}$",
              'sam_calc': self.getUWEnvWeighted},
             ]
-        
+
         vw_cond_lines = [
             {'var_names': ['VW'], 'legend_label': r"$\overline{v'w'}$"},
             {'var_names': ['VWCLD'], 'legend_label': r"$\overline{v'w'}^\mathrm{cld}$"},
             {'var_names': ['VWENV'], 'legend_label': r"$\overline{v'w'}^\mathrm{env}$",
              'sam_calc': self.getVWEnvUnweighted},
             ]
-        
+
         vw_weight_lines = [
             {'var_names': ['VW'], 'legend_label': r"$\overline{v'w'}$"},
             {'var_names': ['VWCLD'], 'legend_label': r"$\overline{v'w'}^\mathrm{cld}$",
@@ -101,14 +101,14 @@ class VariableGroupSamMultilineProfiles(VariableGroup):
             {'var_names': ['VWENV'], 'legend_label': r"$\overline{v'w'}^\mathrm{env}$",
              'sam_calc': self.getVWEnvWeighted},
             ]
-        
+
         thv_cond_lines = [
             {'var_names': ['THETAV'], 'legend_label': r"$\overline{\theta_v}$"},
             {'var_names': ['TVCLD'], 'legend_label': r"$\overline{\theta_v}^\mathrm{cld}$"},
             {'var_names': ['TVENV'], 'legend_label': r"$\overline{\theta_v}^\mathrm{env}$",
              'sam_calc': self.getTHVEnvUnweighted},
             ]
-        
+
         thv_weight_lines = [
             {'var_names': ['THETAV'], 'legend_label': r"$\overline{\theta_v}$"},
             {'var_names': ['TVCLD'], 'legend_label': r"$\overline{\theta_v}^\mathrm{cld}$",
@@ -116,7 +116,7 @@ class VariableGroupSamMultilineProfiles(VariableGroup):
             {'var_names': ['TVENV'], 'legend_label': r"$\overline{\theta_v}^\mathrm{env}$",
              'sam_calc': self.getTHVEnvWeighted},
             ]
-        
+
         #thl_weight_lines = [
         ## Cloud conditional data does not exist. TLCLD is cld cond. liquid water static energy
             #{'var_names': ['THETAL'], 'legend_label': r"$\overline{\theta_v}$"},
@@ -125,14 +125,14 @@ class VariableGroupSamMultilineProfiles(VariableGroup):
             #{'var_names': ['TLENV'], 'legend_label': r"$\overline{\theta_v}^\mathrm{env}$",
             # 'sam_calc': self.getTHLEnvWeighted},
             #]
-        
+
         qt_cond_lines = [
             {'var_names': ['QT'], 'legend_label': r"$\overline{\theta_v}$"},
             {'var_names': ['QTCLD'], 'legend_label': r"$\overline{\theta_v}^\mathrm{cld}$"},
             {'var_names': ['QTENV'], 'legend_label': r"$\overline{\theta_v}^\mathrm{env}$",
              'sam_calc': self.getQTEnvUnweighted},
             ]
-        
+
         qtw_weight_lines = [
              # QTFLUX is only defined in microphysics packages
             {'var_names': ['QTFLUX'], 'legend_label': r"$\overline{\theta_v}$"},
@@ -141,7 +141,7 @@ class VariableGroupSamMultilineProfiles(VariableGroup):
             {'var_names': ['QTWENV'], 'legend_label': r"$\overline{\theta_v}^\mathrm{env}$",
              'sam_calc': self.getQTWEnvWeighted},
             ]
-        
+
         tlw_weight_lines = [
             {'var_names': ['TLFLUX'], 'legend_label': r"$\overline{\theta_v}$"},
             {'var_names': ['TLWCLD'], 'legend_label': r"$\overline{\theta_v}^\mathrm{cld}$",
@@ -149,22 +149,22 @@ class VariableGroupSamMultilineProfiles(VariableGroup):
             {'var_names': ['TLWENV'], 'legend_label': r"$\overline{\theta_v}^\mathrm{env}$",
              'sam_calc': self.getTLWEnvWeighted},
             ]
-        
+
         uw_lines = [
             {'var_names': ['UW'], 'legend_label': r"$\overline{u'w'}$"},
             {'var_names': ['U2'], 'legend_label': r"$\overline{u'^2}$"},
             {'var_names': ['W2'], 'legend_label': r"$\overline{w'^2}$"},
             ]
-        
+
         vw_lines = [
             {'var_names': ['VW'], 'legend_label': r"$\overline{v'w'}$"},
             {'var_names': ['V2'], 'legend_label': r"$\overline{v'^2}$"},
             {'var_names': ['W2'], 'legend_label': r"$\overline{w'^2}$"},
             ]
-        
+
         self.variable_definitions = [
             ## Cloud conditional plots
-            
+
             # UCLD unweighted
             # Display U, unweighted UCLD, and unweighted calculated UENV
             {'var_names':
@@ -461,7 +461,7 @@ class VariableGroupSamMultilineProfiles(VariableGroup):
         UPWP_SGS, indep, dataset = self.getVarForCalculations('UPWP_SGS', dataset)
         UPWP = UW + UPWP_SGS
         return UPWP, indep
-    
+
     def getVpWpCalc(self, dataset_override = None):
         """
         Calculates the total covariance of V and W from SAM output
@@ -477,7 +477,7 @@ class VariableGroupSamMultilineProfiles(VariableGroup):
         VPWP_SGS, indep, dataset = self.getVarForCalculations('VPWP_SGS', dataset)
         VPWP = VW + VPWP_SGS
         return VPWP, indep
-    
+
     def getUp2Calc(self, dataset_override = None):
         """
         Calculates the total variance of U from SAM output
@@ -493,7 +493,7 @@ class VariableGroupSamMultilineProfiles(VariableGroup):
         UP2_SGS, indep, dataset = self.getVarForCalculations('UP2_SGS', dataset)
         UVAR = U2 + UP2_SGS
         return UVAR, indep
-    
+
     def getVp2Calc(self, dataset_override = None):
         """
         Calculates the total variance of V from SAM output
@@ -528,7 +528,7 @@ class VariableGroupSamMultilineProfiles(VariableGroup):
         CLD, indep, dataset = self.getVarForCalculations('CLD', dataset)
         UENV = (U - CLD * UCLD) / (1 - CLD)
         return UENV, indep
-    
+
     def getUEnvWeighted(self, dataset_override=None):
         """
         Calculates the weighted environment-conditional average of U from SAM output
@@ -545,7 +545,7 @@ class VariableGroupSamMultilineProfiles(VariableGroup):
         CLD, indep, dataset = self.getVarForCalculations('CLD', dataset)
         UENV = (U - CLD * UCLD)
         return UENV, indep
-    
+
     def getUCldWeighted(self, dataset_override=None):
         """
         Calculates the weighted cloud-conditional average of U from SAM output
@@ -561,7 +561,7 @@ class VariableGroupSamMultilineProfiles(VariableGroup):
         CLD, indep, dataset = self.getVarForCalculations('CLD', dataset)
         UCLDW = CLD * UCLD
         return UCLDW, indep
-    
+
     # VCLD
     def getVEnvUnweighted(self, dataset_override=None):
         """
@@ -579,7 +579,7 @@ class VariableGroupSamMultilineProfiles(VariableGroup):
         CLD, indep, dataset = self.getVarForCalculations('CLD', dataset)
         VENV = (V - CLD * VCLD) / (1 - CLD)
         return VENV, indep
-    
+
     def getVEnvWeighted(self, dataset_override=None):
         """
         Calculates the weighted environment-conditional average of V from SAM output
@@ -596,7 +596,7 @@ class VariableGroupSamMultilineProfiles(VariableGroup):
         CLD, indep, dataset = self.getVarForCalculations('CLD', dataset)
         VENV = (V - CLD * VCLD)
         return VENV, indep
-    
+
     def getVCldWeighted(self, dataset_override=None):
         """
         Calculates the weighted cloud-conditional average of V from SAM output
@@ -612,7 +612,7 @@ class VariableGroupSamMultilineProfiles(VariableGroup):
         CLD, indep, dataset = self.getVarForCalculations('CLD', dataset)
         VCLDW = CLD * VCLD
         return VCLDW, indep
-    
+
     # WCLD
     def getWEnvUnweighted(self, dataset_override=None):
         """
@@ -630,7 +630,7 @@ class VariableGroupSamMultilineProfiles(VariableGroup):
         CLD, indep, dataset = self.getVarForCalculations('CLD', dataset)
         WENV = (WM - CLD * WCLD) / (1 - CLD)
         return WENV, indep
-    
+
     def getWEnvWeighted(self, dataset_override=None):
         """
         Calculates the weighted environment-conditional average of W from SAM output
@@ -663,7 +663,7 @@ class VariableGroupSamMultilineProfiles(VariableGroup):
         CLD, indep, dataset = self.getVarForCalculations('CLD', dataset)
         WCLDW = CLD * WCLD
         return WCLDW, indep
-    
+
     # UWCLD
     def getUWEnvUnweighted(self, dataset_override=None):
         """
@@ -681,7 +681,7 @@ class VariableGroupSamMultilineProfiles(VariableGroup):
         CLD, indep, dataset = self.getVarForCalculations('CLD', dataset)
         UWENV = (UW - CLD * UWCLD) / (1 - CLD)
         return UWENV, indep
-    
+
     def getUWEnvWeighted(self, dataset_override=None):
         """
         Calculates the weighted environment-conditional average of UW from SAM output
@@ -698,7 +698,7 @@ class VariableGroupSamMultilineProfiles(VariableGroup):
         CLD, indep, dataset = self.getVarForCalculations('CLD', dataset)
         UWENV = (UW - CLD * UWCLD)
         return UWENV, indep
-    
+
     def getUWCldWeighted(self, dataset_override=None):
         """
         Calculates the weighted cloud-conditional average of UW from SAM output
@@ -714,7 +714,7 @@ class VariableGroupSamMultilineProfiles(VariableGroup):
         CLD, indep, dataset = self.getVarForCalculations('CLD', dataset)
         UWCLDW = CLD * UWCLD
         return UWCLDW, indep
-    
+
     # VWCLD
     def getVWEnvUnweighted(self, dataset_override=None):
         """
@@ -732,7 +732,7 @@ class VariableGroupSamMultilineProfiles(VariableGroup):
         CLD, indep, dataset = self.getVarForCalculations('CLD', dataset)
         VWENV = (VW - CLD * VWCLD) / (1 - CLD)
         return VWENV, indep
-    
+
     def getVWEnvWeighted(self, dataset_override=None):
         """
         Calculates the weighted environment-conditional average of VW from SAM output
@@ -749,7 +749,7 @@ class VariableGroupSamMultilineProfiles(VariableGroup):
         CLD, indep, dataset = self.getVarForCalculations('CLD', dataset)
         VWENV = (VW - CLD * VWCLD)
         return VWENV, indep
-    
+
     def getVWCldWeighted(self, dataset_override=None):
         """
         Calculates the weighted cloud-conditional average of VW from SAM output
@@ -765,7 +765,7 @@ class VariableGroupSamMultilineProfiles(VariableGroup):
         CLD, indep, dataset = self.getVarForCalculations('CLD', dataset)
         VWCLDW = CLD * VWCLD
         return VWCLDW, indep
-    
+
     # TVCLD
     def getTHVEnvUnweighted(self, dataset_override=None):
         """
@@ -783,7 +783,7 @@ class VariableGroupSamMultilineProfiles(VariableGroup):
         CLD, indep, dataset = self.getVarForCalculations('CLD', dataset)
         TVENV = (THETAV - CLD * TVCLD) / (1 - CLD)
         return TVENV, indep
-    
+
     def getTHVEnvWeighted(self, dataset_override=None):
         """
         Calculates the weighted environment-conditional average of THETAV from SAM output
@@ -800,7 +800,7 @@ class VariableGroupSamMultilineProfiles(VariableGroup):
         CLD, indep, dataset = self.getVarForCalculations('CLD', dataset)
         TVENV = (THETAV - CLD * TVCLD)
         return TVENV, indep
-    
+
     def getTHVCldWeighted(self, dataset_override=None):
         """
         Calculates the weighted cloud-conditional average of THETAV from SAM output
@@ -816,7 +816,7 @@ class VariableGroupSamMultilineProfiles(VariableGroup):
         CLD, indep, dataset = self.getVarForCalculations('CLD', dataset)
         TVCLDW = CLD * TVCLD
         return TVCLDW, indep
-    
+
     # QTCLD
     # ALERT: Check equations/units of SAM QT variables
     def getQTEnvUnweighted(self, dataset_override=None):
@@ -835,7 +835,7 @@ class VariableGroupSamMultilineProfiles(VariableGroup):
         CLD, indep, dataset = self.getVarForCalculations('CLD', dataset)
         QTENV = (QT - CLD * QTCLD) / (1 - CLD)
         return QTENV, indep
-    
+
     # QTWCLD
     # ALERT: Check equations/units of SAM QTW variables
     def getQTWEnvWeighted(self, dataset_override=None):
@@ -854,7 +854,7 @@ class VariableGroupSamMultilineProfiles(VariableGroup):
         CLD, indep, dataset = self.getVarForCalculations('CLD', dataset)
         QTWENV = (WPRTP - CLD * QTWCLD / 1000)
         return QTWENV, indep
-    
+
     def getQTWCldWeighted(self, dataset_override=None):
         """
         Calculates the weighted cloud-conditional average of QTW from SAM output
@@ -870,7 +870,7 @@ class VariableGroupSamMultilineProfiles(VariableGroup):
         CLD, indep, dataset = self.getVarForCalculations('CLD', dataset)
         QTWCLDW = CLD * QTWCLD
         return QTWCLDW, indep
-    
+
     # TLWCLD
     # ALERT: Check equations/units of SAM TLW variables
     def getTLWEnvWeighted(self, dataset_override=None):
@@ -890,7 +890,7 @@ class VariableGroupSamMultilineProfiles(VariableGroup):
         RHO, indep, dataset = self.getVarForCalculations('RHO', dataset)
         TLWENV = (TLFLUX / RHO / 1004 - CLD * TLWCLD)
         return TLWENV, indep
-    
+
     def getTLWCldWeighted(self, dataset_override=None):
         """
         Calculates the weighted cloud-conditional average of TL from SAM output

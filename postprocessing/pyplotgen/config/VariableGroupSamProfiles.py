@@ -16,7 +16,7 @@ class VariableGroupSamProfiles(VariableGroup):
                  hoc_dataset=None, cam_datasets=None,
                  e3sm_datasets=None, sam_datasets=None, wrf_datasets=None):
         """
-        
+
         :param clubb_datasets:
         :param case:
         :param les_dataset:

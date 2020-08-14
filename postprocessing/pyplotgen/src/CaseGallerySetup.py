@@ -14,7 +14,7 @@ from src.DataReader import DataReader
 from src.Panel import Panel
 
 
-class Case:
+class CaseGallerySetup:
     """
     A case is basically a collection of variable groups and
     panels that share attributes like start/end time and get plotted together.
@@ -27,7 +27,7 @@ class Case:
                  plot_les=False, plot_budgets=False, plot_r408=False, plot_hoc=False, e3sm_dirs=[], cam_folders=[],
                  time_height=False, animation=None):
         """
-        Initialize a Case object with the passed parameters
+        Initialize a CaseGallerySetup object with the passed parameters
 
         TODO:   - Create function for loading NcFiles to reduce redundant code
                 - Bring in line the way CLUBB files are loaded

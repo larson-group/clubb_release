@@ -35,7 +35,7 @@ class VariableGroup:
         """
         Initialize a VariableGroup object with the passed parameters
 
-        :param case: An instance of a Case object
+        :param case: An instance of a CaseGallerySetup object
         :param clubb_datasets: A dictionary of or a single NetCDF4 Dataset object
             containing the dependent_data to be plotted
         :param les_dataset: NetCDF4 Dataset object containing sam ouput
