@@ -177,7 +177,7 @@ module advance_xp2_xpyp_module
         term_ma_zm_lhs_all      ! Procedure(s)
 
     use diffusion, only:  & 
-        diffusion_zm_lhs_all    ! Procedure(s)
+        diffusion_zm_lhs    ! Procedure(s)
 
     implicit none
 
@@ -459,9 +459,9 @@ module advance_xp2_xpyp_module
                                  
     ! Calculate LHS eddy diffusion term: dissipation term 2 (dp2). This is the 
     ! diffusion term for all LHS matrices except <w'u'^2> and <w'v'^2>
-    call diffusion_zm_lhs_all( Kw2(:), nu2_vert_res_dep(:),      & ! In
-                               gr%invrs_dzt(:), gr%invrs_dzm(:), & ! In
-                               lhs_diff(:,:)                     ) ! Out
+    call diffusion_zm_lhs( Kw2(:), nu2_vert_res_dep(:),      & ! In
+                           gr%invrs_dzt(:), gr%invrs_dzm(:), & ! In
+                           lhs_diff(:,:)                     ) ! Out
                                
     ! Calculate LHS mean advection (ma) term, this term is equal for all LHS matrices
     call term_ma_zm_lhs_all( wm_zm(:), gr%invrs_dzm(:), & ! In
@@ -513,9 +513,9 @@ module advance_xp2_xpyp_module
     !!!!!***** u'^2 / v'^2 *****!!!!!
     
     ! Calculate LHS eddy diffusion term: dissipation term 2 (dp2), for <w'u'^2> and <w'v'^2>
-    call diffusion_zm_lhs_all( Kw9(:), nu9_vert_res_dep(:),      & ! In
-                               gr%invrs_dzt(:), gr%invrs_dzm(:), & ! In
-                               lhs_diff_uv(:,:)                  ) ! Out
+    call diffusion_zm_lhs( Kw9(:), nu9_vert_res_dep(:),      & ! In
+                           gr%invrs_dzt(:), gr%invrs_dzm(:), & ! In
+                           lhs_diff_uv(:,:)                  ) ! Out
 
     if ( iiPDF_type == iiPDF_new_hybrid ) then
 
@@ -1618,7 +1618,6 @@ module advance_xp2_xpyp_module
         term_ma_zm_lhs
 
     use diffusion, only:  & 
-        diffusion_zm_lhs_all, & ! Procedure(s)
         diffusion_zm_lhs
 
     use clubb_precision, only:  & 
