@@ -1,11 +1,12 @@
 # Quickstart
-Pyplotgen takes parameters in the form `python3 ./PyPlotGen.py [OPTIONS]`
-Pyplotgen only supports input in the netcdf (.nc) format.
+PyPlotgen takes parameters in the form `python3 ./pyplotgen.py [OPTIONS]`
+PyPlotgen only supports input in the netcdf (.nc) format.
 
 ## Valid options
 
 | *Option Flag* | *Description* |
 | --- | --- |
+| -h --help | Does not execute the plotting program but shows the usage (call signature and description of options) of the PyPlotgen program.
 | -r --replace | Overwrite the output folder if it already exists |
 | -c --clubb [FOLDER PATHNAME(S)] | Adds lines from CLUBB model output to plot. To plot lines in the specified folder for a given case, update the `'clubb_file': None,` parameter in the case's definition (`config/Case_Definitions.py`)for the desired case to contain the location of the clubb file. | 
 | -e --e3sm [FOLDER PATHNAME(S)] | Adds lines from E3SM model output to plot. The filenames in the folder must either match the casename intended to run it, e.g. `bomex.nc` (using the lowercase version of the casename as defined in the `Case_definitions.py` file), or rewrite the `'e3sm_file': None,` parameter for the desired case to contain the location of the e3sm file.| 
@@ -23,13 +24,15 @@ Pyplotgen only supports input in the netcdf (.nc) format.
 | --show-alphabetic-id | Adds an alphanumeric ID to each plot on a perc-case basis (e.g. the first plot will be labeled "a")
 | --nightly | Apply special parameters only relevant when running as part of a nightly test. This is currently limited to disabling case output if not all models have data for a given case. E.g. this prevents wrf plots from including cases that only have clubb plots and no wrf plots. Do not plot this with clubb-only plots, just plot clubb normally for clubb nightly tests.
 | --disable-multithreading | Turns off multithreading support. Useful for debugging as it ensures text is printed sequentially. |
+| -t --time-height-plots | Plot single variable plots as time-height plots, matplotlib contourf plots with the time axis as x- and the height axis as y-axis.
+| -m --movies {gif, mp4} | (Not yet implemented) Plot animated versions of profile or budget plots where the individual frames show the plots at progressing timesteps. |
 
 ## Installing Dependencies
 To install the dependencies necessary for PyPlotgen to run, run the command
 ```
 pip3 install -r requirements.txt
 ```
-from within the PyPlotGen directory
+from within the PyPlotgen directory
 
 ## Example Run Commands
 
@@ -104,7 +107,7 @@ Each variable is included within a _VariableGroup_,and each variable group is in
 
 | Parameter | Description |
 | --- | --- |  
-| *var_names* | A list of names various models refer to this variable as. E.g. ['wprtp', 'WPRTP', 'wpqtp']. This list is to include the variable name for any models that Pyplotgen is plotting. It does not matter what order the variables are in; pyplotgen will search the list from left -> right so more frequent names are _preferred_ to go on the left for efficiency.|
+| *var_names* | A list of names various models refer to this variable as. E.g. ['wprtp', 'WPRTP', 'wpqtp']. This list is to include the variable name for any models that PyPlotgen is plotting. It does not matter what order the variables are in; PyPlotgen will search the list from left -> right so more frequent names are _preferred_ to go on the left for efficiency.|
 | *sam_calc*| (optional) A functional reference to a method that calculates a sam variable. This is given as the name of the function *without* the () after the name. E.g. `self.getThlmSamCalc` |
 | *clubb_calc*| (optional) A functional reference to a method that calculates a clubb variable. This is given as the name of the function *without* the () after the name. E.g. `self.getThlmClubbCalc` |
 | *coamps_calc* | (optional) A functional reference to a method that calculates a coamps variable. This is given as the name of the function *without* the () after the name. E.g. `self.getThlmCoampsCalc`|
@@ -251,7 +254,7 @@ BOMEX = {'name': 'bomex', 'start_time': 181, 'end_time': 360, 'height_min_value'
          'var_groups': [VariableGroupBase, VariableGroupWs]}
 ~~~~~
 
-Creating a new case in pyplotgen is as simple as creating one of these defintions (e.g. example above) and adding it to the `ALL_CASES` list:
+Creating a new case in PyPlotgen is as simple as creating one of these defintions (e.g. example above) and adding it to the `ALL_CASES` list:
 ~~~~python
 ALL_CASES = [ARM, ARM_97, ASTEX_A209, ATEX,
              BOMEX,
@@ -270,9 +273,22 @@ ALL_CASES = [ARM, ARM_97, ASTEX_A209, ATEX,
 ~~~~
 Please maintain the list's alphabetical ordering for ease of use.
 
+## Plotting Variables in non-traditional plots
+
+### Time-height plots
+To produce time-height plots, the user must specify the option `-t` or `--time-height-plots`.
+This will result in area plots of the unaveraged 2-dimensional data of a variable instead of the usual profile plots containing lines.
+Two conditions have to be met that a variable can be plotted in this manner:
+- The corresponding data in the NetCDF file must be 2-dimensional with one time and one height dimension.
+- The variable_definitions entry must not have a `lines` parameter.
+If it does, the parameter will be ignored and the `var_names` parameter will be used to obtain data from the NetCDF file.
+
+### Animations
+Will be added soon.
+
 ## Plotting SAM-exclusive VariableGroups
 The VariableGroups `VariableGroupSamBudgets`, `VariableGroupSamProfiles` and `VariableGroupSamMultilineProfiles` were added to recreate the SAM plots done with corplot (python_sam_budgets_plotter).  
-Pyplotgen will automatically generate the `VariableGroupSamBudgets` plots when using the `--plot-budgets` flag with SAM input.  
+PyPlotgen will automatically generate the `VariableGroupSamBudgets` plots when using the `--plot-budgets` flag with SAM input.  
 To generate the SAM profile plots, add the VariableGroups to the `var_groups` list in the definition of the cases to be plotted and, if not wanted, remove or comment out the other VariableGroups.  
 These specific VariableGroups will only work with SAM input!
 
@@ -300,20 +316,20 @@ Example command line call for SAM-only plots with two input folders:
 python3 ./pyplotgen.py -s first/path/to/SAM/folder second/path/to/SAM/folder
 ```
 
-## Running pyplotgen on a Windows system
-The easiest way to run pyplotgen on Windows at the moment is to install a Linux shell emulator.
+## Running PyPlotgen on a Windows system
+The easiest way to run PyPlotgen on Windows at the moment is to install a Linux shell emulator.
 This will take care of most problems concerning interoperability.  
-Running pyplotgen on Windows was tested using Git Bash which is part of the git installation for windows and can be found [here](https://git-scm.com/).  
-Using Git Bash one can simply follow the same procedure as for regular Linux bash to run pyplotgen.  
+Running PyPlotgen on Windows was tested using Git Bash which is part of the git installation for windows and can be found [here](https://git-scm.com/).  
+Using Git Bash one can simply follow the same procedure as for regular Linux bash to run PyPlotgen.  
 Paths can be specified using either the Windows (C:\User\testuser\...) or the Unix format (/home/testuser/...).
 
-# Pyplotgen code convention
+# PyPlotgen code convention
 These conventions build from, and may modify, the existing CLUBB naming convention.
 
 ### Naming
-* **`UPPER_SNAKE_CASE`**: This naing scheme is used to represent "final" variables. These are variables that **not** changed during the runtime of pyplotgen. Python does not enforce this, as it is only a naming convention, so _please_ do not introduce any code that modifies these variables. The one and only exception to this is the `ALL_CASES` variable in `Case_definitions.py`. The variable is rewritten there IMMEDIATELY after it was originally written only because it allows us to run a small sample of cases without having to rewrite the true ALL_CASES variable.
+* **`UPPER_SNAKE_CASE`**: This naing scheme is used to represent "final" variables. These are variables that **not** changed during the runtime of PyPlotgen. Python does not enforce this, as it is only a naming convention, so _please_ do not introduce any code that modifies these variables. The one and only exception to this is the `ALL_CASES` variable in `Case_definitions.py`. The variable is rewritten there IMMEDIATELY after it was originally written only because it allows us to run a small sample of cases without having to rewrite the true ALL_CASES variable.
     *  **Naming case definitions**: When naming a case definition, the convention is to set the 'name' parameter equal to a lower case version of the variable name used.
 * **`lower_snake_case`**: This is the accepted norm for python variable names. Please use this for any regular use variables. Python notation is infamous for its heavy use of acronyms and shorthand, however due to the nature of our work it is recommended to spell variable names out if possible.
 * **`\_\_underScoredCamelCase\_\_()`**: Two underscores around a camelcased method name represents a "helper method". In other langauges this is refered to as a private method. These methods help write clean code, but are not intended for use outside of the code within the class they've been written. E.g. `Foo.__bar__()` should only be written within the `Foo.py` file/ within the `Foo` class if the file contains multiple classes.
-* **`lowerCamelCase()`**: This is used for normal function names. For non-helper functions (see previous), use this naming convention. This deviates from the typical python convention. There is no strong reason behind this other than it's what's been done and it was the format for pyplotgen's legacy code. It may be desireable to switch to a `lower_snake_case()` in the future. This would be a simple yet large refactor.
+* **`lowerCamelCase()`**: This is used for normal function names. For non-helper functions (see previous), use this naming convention. This deviates from the typical python convention. There is no strong reason behind this other than it's what's been done and it was the format for PyPlotgen's legacy code. It may be desireable to switch to a `lower_snake_case()` in the future. This would be a simple yet large refactor.
     * `UpperCamelCase()` is to be used when declaring a class name.
