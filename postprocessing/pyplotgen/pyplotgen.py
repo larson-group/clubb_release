@@ -197,15 +197,15 @@ class PyPlotGen:
             self.num_cases_plotted += 1
             if self.diff is not None:
                 self.case_diff_datasets = self.diff_datasets[casename]
-            case = CaseGallerySetup(case_def, clubb_folders=self.clubb_folders, plot_les=self.les,
-                                    plot_budgets=self.plot_budgets, sam_folders=self.sam_folders,
-                                    wrf_folders=self.wrf_folders, diff_datasets=self.case_diff_datasets,
-                                    plot_r408=self.cgbest, plot_hoc=self.hoc, e3sm_dirs=self.e3sm_dir,
-                                    cam_folders=self.cam_folders, time_height=self.time_height,
-                                    animation=self.animation)
+            case_gallery_setup = CaseGallerySetup(case_def, clubb_folders=self.clubb_folders, plot_les=self.les,
+                                                  plot_budgets=self.plot_budgets, sam_folders=self.sam_folders,
+                                                  wrf_folders=self.wrf_folders, diff_datasets=self.case_diff_datasets,
+                                                  plot_r408=self.cgbest, plot_hoc=self.hoc, e3sm_dirs=self.e3sm_dir,
+                                                  cam_folders=self.cam_folders, time_height=self.time_height,
+                                                  animation=self.animation)
             # Call plot function of case instance
-            case.plot(self.output_folder, replace_images=self.replace_images, no_legends=self.no_legends,
-                      thin_lines=self.thin, show_alphabetic_id=self.show_alphabetic_id)
+            case_gallery_setup.plot(self.output_folder, replace_images=self.replace_images, no_legends=self.no_legends,
+                                    thin_lines=self.thin, show_alphabetic_id=self.show_alphabetic_id)
             self.cases_plotted.append(casename)
 
     def __dataForCaseExists__(self, case_def):
