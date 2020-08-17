@@ -138,8 +138,6 @@ module stat_file_utils
 
     ! Determine file type
     l_grads_file = .not. l_netcdf_file( filename ) 
-print*,"stat_file_utils@start",l_error
-print*,"variable_name=",variable_name,"filename=",filename
     
     ! Open GraDS file
     if ( l_grads_file ) then
@@ -160,7 +158,6 @@ print*,"variable_name=",variable_name,"filename=",filename
       l_error = .true.
 #endif
     end if ! l_grads_file
-print*,"stat_file_utils@onr",l_error
 
     if ( l_error ) return
 
@@ -367,14 +364,12 @@ print*,"stat_file_utils@onr",l_error
       tdim = i
     end do
 
-print*,"stat_file_utils@presfa",l_error
     l_spec_bound_cond = .false.
     stat_file_average_interval & 
     = stat_file_average( filename, nz, &
                          t(1), t(2), out_heights, variable_name, &
                          npower, l_spec_bound_cond, l_error )  & 
           * real( t(2) - t(1), kind = core_rknd )
-print*,"stat_file_utils@sfa",l_error
 
     divisor = t(2) - t(1)
 

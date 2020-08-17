@@ -107,7 +107,6 @@ module input_netcdf
       write(fstderr,*) "Error opening netCDF file: "//trim( path )
       write(fstderr,*) nf90_strerror( ierr )
       l_error = .true.
-print*,"input_netcdf@open",l_error
       return 
     end if
 
@@ -116,7 +115,6 @@ print*,"input_netcdf@open",l_error
     if ( ierr /= NF90_NOERR ) then
       write(fstderr,*) nf90_strerror( ierr )
       l_error = .true.
-print*,"input_netcdf@varid",l_error
       return
     end if
 
@@ -128,7 +126,6 @@ print*,"input_netcdf@varid",l_error
             write(fstderr,*) "input_netcdf.open_netcdf_read : The netCDF data doesn't "// &
             "conform to expected precision, shape, or dimensions"
       l_error = .true.
-print*,"input_netcdf@var",l_error
       return
 
     end if
@@ -145,7 +142,6 @@ print*,"input_netcdf@var",l_error
       if ( ierr /= NF90_NOERR ) then
         write(fstderr,*) nf90_strerror( ierr )
         l_error = .true.
-print*,"input_netcdf@dim",l_error
         return
       end if
 
@@ -167,7 +163,6 @@ print*,"input_netcdf@dim",l_error
         time_name = dim_name
       case default
         l_error = .true.
-print*,"input_netcdf@catch",l_error
         return
       end select
 
@@ -177,7 +172,6 @@ print*,"input_netcdf@catch",l_error
       write(fstderr,*) "input_netcdf.open_netcdf_read : The netCDF data doesn't "// &
         "conform to the expected X or Y dimension"
       l_error = .true.
-print*,"input_netcdf@dimmerr",l_error
       return
     end if
       
@@ -192,7 +186,6 @@ print*,"input_netcdf@dimmerr",l_error
       if ( ierr /= NF90_NOERR ) then
         write(fstderr,*) nf90_strerror( ierr )
         l_error = .true.
-print*,"input_netcdf@alt",l_error
         return
       end if
 
@@ -212,7 +205,6 @@ print*,"input_netcdf@alt",l_error
       if ( ierr /= NF90_NOERR ) then
         write(fstderr,*) nf90_strerror( ierr )
         l_error = .true.
-print*,"input_netcdf@getvar",l_error
         return
       end if
 
@@ -220,7 +212,6 @@ print*,"input_netcdf@getvar",l_error
       if ( ierr /= NF90_NOERR ) then
         write(fstderr,*) nf90_strerror( ierr )
         l_error = .true.
-print*,"input_netcdf@time",l_error
         return
       end if
 
@@ -233,22 +224,18 @@ print*,"input_netcdf@time",l_error
       if ( ierr /= NF90_NOERR ) then
         write(fstderr,*) nf90_strerror( ierr )
         l_error = .true.
-print*,"input_netcdf@att",l_error
         return
       end if
 
       ! Read starting time from the "units" attribute of the netcdf file
       time = trim( time )
       length = len( trim( time ) )
-print*,"input_netcdf@error_is_here"
-print*,"file=",trim(path),"  length=",length,"time=",time
       if ( length < 29 ) then
         write(fstderr,*) "The NetCDF file does not have a proper time unit &
                          &specification. The ""units"" attribute for the &
                          &time variable must be in the form:"
         write(fstderr,*) "TIMEUNITS since YYYY-MM-DD HH:MM:SS.S"
         l_error = .true.
-print*,"input_netcdf@unit",l_error
         return
       end if
 
@@ -295,7 +282,6 @@ print*,"input_netcdf@unit",l_error
       case default
         multiplier = 0._time_precision  ! Initialized to eliminate g95 compiler warning -meyern
         l_error = .true.
-print*,"input_netcdf@time",l_error
         return
 
       end select
@@ -303,7 +289,6 @@ print*,"input_netcdf@time",l_error
       ierr = nf90_get_var( ncid=ncf%iounit, varid=ncf%TimeVarId, & ! In
                            start=(/1/), count=(/2/), & ! In
                            values=write_times ) ! Out
-print*,"write_times=",write_times
 
       if ( ierr /= NF90_NOERR ) then
         write(fstderr,*) nf90_strerror( ierr )
@@ -315,7 +300,6 @@ print*,"@getvar2",l_error
       ncf%dtwrite =  (write_times(2) - write_times(1)) * real(multiplier,kind=core_rknd)
 
     end if
-print*,"input_netcdf@end",l_error
 
     return
   end subroutine open_netcdf_read

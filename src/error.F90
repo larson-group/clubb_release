@@ -844,14 +844,12 @@ module error
       ! Start with first CLUBB & LES variables, then loop through and
       ! calculate the mean squared difference for all the variables
       do i=1, v_total, 1  
-print*,"error@do",l_error
         ! Read in LES grads data for one variable, averaged
         ! over specified time intervals
         les_zl =  & 
         stat_file_average_interval &
         ( les_stats_file(c_run), clubb_nz,  & 
           timestep_intvls(c_run,:), les_v(i), clubb_grid_heights, 1, l_error )
-print*,"error@sfai",l_error
 
 #ifdef NETCDF
         ! Verify that the CLUBB and LES runs start at the same time and
@@ -1002,13 +1000,6 @@ print*,"error@sfai",l_error
         end do
       end do
     end if
-
-    print*, "c_total=",c_total," v_total=",v_total
-    do, i=1,c_total
-        do, j=1,v_total
-            print*, err_sums(i, j)
-        end do
-    end do
 
     !---------------------------------------------------------------
     ! Compute normalized error
