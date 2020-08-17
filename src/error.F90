@@ -1011,9 +1011,7 @@ module error
     ! Save total error and error contributions breakdown
     !---------------------------------------------------------------
     err_terms = err_sums
-    write(fstderr,*) "Returning err_sum ", err_sum
     min_les_clubb_diff = real(err_sum)
-    write(fstderr,*) "Value of err_sum is ", err_sum
 
     deallocate( err_sums )
 
