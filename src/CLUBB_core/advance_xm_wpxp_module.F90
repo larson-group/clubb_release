@@ -4613,14 +4613,15 @@ module advance_xm_wpxp_module
     ! Damps a given coefficient linearly based on the value of Lscale.
     ! For additional information see CLUBB ticket #431.
 
-    use constants_clubb, only: &
-        one_hundred  ! Constant(s)
+    use grid_class, only: & 
+        gr    ! Variable type(s)
+
+    ! Added to prevent large damping at low altitudes where Lscale is small
+    use parameters_tunable, only: &
+        altitude_threshold    ! Variable(s)
 
     use clubb_precision, only: &
         core_rknd ! Variable(s)
-
-    use grid_class, only: & 
-        gr ! Variable(s)
 
     implicit none
 
@@ -4633,11 +4634,6 @@ module advance_xm_wpxp_module
     real( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
       Lscale,           &   ! Current value of Lscale
       Cx_Skw_fnc            ! Initial skewness function before damping
-
-    ! Local variables
-    real( kind = core_rknd ), parameter :: &
-      ! Added to prevent large damping at low altitudes where Lscale is small
-      altitude_threshold = one_hundred  ! Altitude above which damping should occur
 
     ! Return Variable
     real( kind = core_rknd ), dimension(gr%nz) :: damped_value

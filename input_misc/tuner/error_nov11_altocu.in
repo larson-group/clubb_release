@@ -121,4 +121,5 @@ C_invrs_tau_N2_clear_wp3     = 0.
 C_invrs_tau_N2_wpxp          = 0.
 xp3_coef_base                = 0.
 xp3_coef_slope               = 0.
+altitude_threshold           = 0.
 /

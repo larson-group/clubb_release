@@ -982,6 +982,8 @@ module clubb_driver
     ! Set debug level
     call set_clubb_debug_level( debug_level ) ! Intent(in)
 
+    stats_fmt = 'grads'
+
     ! Printing Model Inputs
     if ( clubb_at_least_debug_level( 1 ) ) then
 
