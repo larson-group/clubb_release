@@ -1640,7 +1640,8 @@ module advance_microphys_module
 
     ! Local Variables
     real( kind = core_rknd ), dimension(3,gr%nz) :: & 
-      lhs_ta    ! LHS corresponding to contribution from turbulent advection
+      lhs_ta, & ! LHS corresponding to contribution from turbulent adv.  [1/s]
+      lhs_ma    ! LHS corresponding to contribution from mean advection  [1/s]
 
     real( kind = core_rknd ), dimension(3) :: tmp
 
@@ -1761,6 +1762,11 @@ module advance_microphys_module
     lhs_ta(:,1) = zero
 
 
+    ! LHS mean advection term.
+    call term_ma_zt_lhs( wm_zt, gr%invrs_dzt, gr%invrs_dzm, &
+                         l_upwind_xm_ma, &
+                         lhs_ma )
+
     ! Setup LHS Matrix
     do k = 2, gr%nz, 1
 
@@ -1773,10 +1779,8 @@ module advance_microphys_module
        lhs(:,k) = lhs(:,k) + lhs_ta(:,k)
 
        ! LHS mean advection term.
-       lhs(kp1_tdiag:km1_tdiag,k) & 
-       = lhs(kp1_tdiag:km1_tdiag,k) & 
-         + term_ma_zt_lhs( wm_zt(k), gr%invrs_dzt(k), k, gr%invrs_dzm(k), &
-                           gr%invrs_dzm(km1), l_upwind_xm_ma )
+       lhs(kp1_tdiag:km1_tdiag,k) &
+       = lhs(kp1_tdiag:km1_tdiag,k) + lhs_ma(kp1_tdiag:km1_tdiag,k)
 
        if ( l_sed ) then
 
@@ -1822,17 +1826,6 @@ module advance_microphys_module
        if ( l_stats_samp ) then
 
           ! Statistics:  implicit contributions to hydrometeor hmm.
-
-          if ( ihmm_ma > 0 ) then
-             tmp(1:3) &
-             = term_ma_zt_lhs( wm_zt(k), gr%invrs_dzt(k), k, gr%invrs_dzm(k), &
-                               gr%invrs_dzm(km1), l_upwind_xm_ma )
-
-             ztscr01(k) = -tmp(3)
-             ztscr02(k) = -tmp(2)
-             ztscr03(k) = -tmp(1)
-          endif
-
           if ( ihmm_sd > 0 .and. l_sed ) then
              if ( .not. l_upwind_diff_sed ) then
                 tmp(1:3) &
@@ -1876,6 +1869,14 @@ module advance_microphys_module
 
     enddo ! 2..gr%nz-1
 
+    if ( l_stats_samp ) then
+       ! Statistics:  implicit contributions to hydrometeor hmm.
+       if ( ihmm_ma > 0 ) then
+          ztscr01 = -lhs_ma(3,:)
+          ztscr02 = -lhs_ma(2,:)
+          ztscr03 = -lhs_ma(1,:)
+       endif
+    endif ! l_stats_samp
 
     ! Boundary Conditions
 

@@ -1177,8 +1177,8 @@ module advance_xm_wpxp_module
         calc_stability_correction
       
     use mean_adv, only: & 
-        term_ma_zt_lhs_all, &
-        term_ma_zm_lhs_all
+        term_ma_zt_lhs, &
+        term_ma_zm_lhs
 
     use turbulent_adv_pdf, only: &
         xpyp_term_ta_pdf_lhs
@@ -1276,8 +1276,8 @@ module advance_xm_wpxp_module
                            lhs_diff_zm(:,:)                  ) ! Intent(out)    
                               
     ! Calculate mean advection terms for all momentum grid level
-    call term_ma_zm_lhs_all( wm_zm(:), gr%invrs_dzm(:), & ! Intent(in)
-                             lhs_ma_zm(:,:)           ) ! Intent(out) 
+    call term_ma_zm_lhs( wm_zm(:), gr%invrs_dzm(:), & ! Intent(in)
+                         lhs_ma_zm(:,:)             ) ! Intent(out) 
                                
     ! Calculate diffusion terms for all thermodynamic grid level
     if ( l_diffuse_rtm_and_thlm ) then
@@ -1303,9 +1303,9 @@ module advance_xm_wpxp_module
     ! Calculate mean advection terms for all thermodynamic grid level
     if ( .not. l_implemented ) then
 
-        call term_ma_zt_lhs_all( wm_zt(:), gr%invrs_dzt(:), gr%invrs_dzm(:), & ! Intent(in)
-                                 l_upwind_xm_ma,                             & ! Intent(in)
-                                  lhs_ma_zt(:,:)                            ) ! Intent(out)
+        call term_ma_zt_lhs( wm_zt(:), gr%invrs_dzt(:), gr%invrs_dzm(:), & ! Intent(in)
+                             l_upwind_xm_ma,                             & ! Intent(in)
+                             lhs_ma_zt(:,:)                              ) ! Intent(out)
     endif    
      
     return

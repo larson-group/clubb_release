@@ -174,7 +174,7 @@ module advance_xp2_xpyp_module
         iisclr_thl
         
     use mean_adv, only:  & 
-        term_ma_zm_lhs_all      ! Procedure(s)
+        term_ma_zm_lhs      ! Procedure(s)
 
     use diffusion, only:  & 
         diffusion_zm_lhs    ! Procedure(s)
@@ -464,8 +464,8 @@ module advance_xp2_xpyp_module
                            lhs_diff(:,:)                     ) ! Out
                                
     ! Calculate LHS mean advection (ma) term, this term is equal for all LHS matrices
-    call term_ma_zm_lhs_all( wm_zm(:), gr%invrs_dzm(:), & ! In
-                             lhs_ma(:,:)                ) ! Out
+    call term_ma_zm_lhs( wm_zm(:), gr%invrs_dzm(:), & ! In
+                         lhs_ma(:,:)                ) ! Out
                              
                              
     if ( ( abs(C2rt - C2thl) < abs(C2rt + C2thl) / 2 * eps .and. &
@@ -1612,10 +1612,6 @@ module advance_xp2_xpyp_module
     use constants_clubb, only:  &
         gamma_over_implicit_ts, & ! Constant(s)
         one
-
-    use mean_adv, only:  & 
-        term_ma_zm_lhs_all, & ! Procedure(s)
-        term_ma_zm_lhs
 
     use diffusion, only:  & 
         diffusion_zm_lhs

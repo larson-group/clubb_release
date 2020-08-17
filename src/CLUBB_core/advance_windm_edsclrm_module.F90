@@ -1458,8 +1458,7 @@ module advance_windm_edsclrm_module
         diffusion_zt_lhs   ! Procedure(s)
 
     use mean_adv, only: & 
-        term_ma_zt_lhs,     & ! Procedures
-        term_ma_zt_lhs_all
+        term_ma_zt_lhs    ! Procedures
 
     use stats_variables, only: &
         ium_ma,  & ! Variable(s)
@@ -1576,9 +1575,9 @@ module advance_windm_edsclrm_module
     ! LHS mean advection term.
     if ( .not. l_implemented ) then
 
-        call term_ma_zt_lhs_all( wm_zt(:), gr%invrs_dzt(:), gr%invrs_dzm(:), &
-                                 l_upwind_xm_ma, &
-                                 lhs_ma_zt(:,:) )
+        call term_ma_zt_lhs( wm_zt(:), gr%invrs_dzt(:), gr%invrs_dzm(:), &
+                             l_upwind_xm_ma, &
+                             lhs_ma_zt(:,:) )
 
         do k = 2, gr%nz-1
             lhs(1:3,k) = lhs(1:3,k) + lhs_ma_zt(:,k)

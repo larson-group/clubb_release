@@ -1194,10 +1194,8 @@ module advance_wp2_wp3_module
         diffusion_zt_lhs
 
     use mean_adv, only: & 
-        term_ma_zm_lhs,  & ! Procedures
-        term_ma_zm_lhs_all, &
-        term_ma_zt_lhs, &
-        term_ma_zt_lhs_all
+        term_ma_zm_lhs, & ! Procedures
+        term_ma_zt_lhs
 
     use clubb_precision, only: &
         core_rknd
@@ -1361,14 +1359,14 @@ module advance_wp2_wp3_module
 
 
     ! Calculated mean advection term for w'2
-    call term_ma_zm_lhs_all( wm_zm(:), gr%invrs_dzm(:), &
-                             lhs_ma_zm(:,:) )
+    call term_ma_zm_lhs( wm_zm(:), gr%invrs_dzm(:), &
+                         lhs_ma_zm(:,:) )
 
 
     ! Calculated mean advection term for w'3
-    call term_ma_zt_lhs_all( wm_zt(:), gr%invrs_dzt(:), gr%invrs_dzm(:), &
-                             l_upwind_xm_ma, &
-                             lhs_ma_zt(:,:) )
+    call term_ma_zt_lhs( wm_zt(:), gr%invrs_dzt(:), gr%invrs_dzm(:), &
+                         l_upwind_xm_ma, &
+                         lhs_ma_zt(:,:) )
 
 
     ! Calculate diffusion term for w'2 using a completely implicit time step
