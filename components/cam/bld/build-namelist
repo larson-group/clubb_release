@@ -3685,6 +3685,7 @@ if ($clubb_sgs  =~ /$TRUE/io) {
    add_default($nl, 'clubb_Skw_denom_coef');
    add_default($nl, 'clubb_up2_vp2_factor');
    add_default($nl, 'clubb_Skw_max_mag');
+   add_default($nl, 'clubb_altitude_threshold');
    add_default($nl, 'clubb_iiPDF_type');
    add_default($nl, 'clubb_ipdf_call_placement');
    add_default($nl, 'clubb_l_predict_upwp_vpwp');

@@ -3186,6 +3186,12 @@ Maximum magnitude of skewness allowed.
 Slope in regards to Brunt-Vaisla freq. in simple equation for xp3 (rtp3, thlp3, etc.)
 </entry>
 
+<entry id="clubb_altitude_threshold" type="real" category="pblrad"
+       group="clubb_param_nl" valid_values="" >
+Altitude above which damping should occur for turbulent fluxes (wpxp)
+Default: 100.0
+</entry>
+
 <entry id="clubb_iiPDF_type" type="integer"  category="pblrad"
        group="clubbpbl_diff_nl" valid_values="" >
 Selected option for the two-component normal (double Gaussian) PDF type to use

@@ -970,6 +970,7 @@
 <clubb_Skw_denom_coef                             > 0.0 </clubb_Skw_denom_coef>
 <clubb_up2_vp2_factor                             > 2.0 </clubb_up2_vp2_factor>
 <clubb_Skw_max_mag                                > 4.5 </clubb_Skw_max_mag>
+<clubb_altitude_threshold                         > 100.0 </clubb_altitude_threshold>
 <clubb_iiPDF_type                                 > 1 </clubb_iiPDF_type>
 <clubb_ipdf_call_placement                        > 1 </clubb_ipdf_call_placement>
 <clubb_l_predict_upwp_vpwp                        > .false. </clubb_l_predict_upwp_vpwp>
