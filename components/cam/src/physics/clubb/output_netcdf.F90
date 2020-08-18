@@ -51,15 +51,11 @@ module output_netcdf
       core_rknd
 
     use constants_clubb, only:  & 
-      fstderr, & ! Variable(s)
-      sec_per_min
+      fstderr ! Variable(s)
 
     use error_code, only: &
       err_code, &           ! Error Indicator
       clubb_fatal_error     ! Constant
-
-    use stats_variables, only: &
-      l_allow_small_stats_tout
 
     implicit none
 

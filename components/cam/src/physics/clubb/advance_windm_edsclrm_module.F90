@@ -1118,9 +1118,9 @@ module advance_windm_edsclrm_module
     ! Constant parameters
 
     integer, parameter :: &
-      kp1_tdiag = 1,    & ! Thermodynamic superdiagonal index.
-      k_tdiag   = 2,    & ! Thermodynamic main diagonal index.
-      km1_tdiag = 3       ! Thermodynamic subdiagonal index.
+      kp1_tdiag = 1, & ! Thermodynamic superdiagonal index.
+      k_tdiag   = 2, & ! Thermodynamic main diagonal index.
+      km1_tdiag = 3    ! Thermodynamic subdiagonal index.
 
     ! Input Variables
 
@@ -1448,16 +1448,17 @@ module advance_windm_edsclrm_module
     use grid_class, only:  & 
         gr  ! Variable(s)
 
+    use constants_clubb, only: &
+        zero    ! Procedure(s)
+
     use clubb_precision, only:  & 
         core_rknd ! Variable(s)
 
     use diffusion, only:  & 
-        diffusion_zt_lhs,   & ! Procedure(s)
-        diffusion_zt_lhs_all
+        diffusion_zt_lhs   ! Procedure(s)
 
     use mean_adv, only: & 
-        term_ma_zt_lhs,     & ! Procedures
-        term_ma_zt_lhs_all
+        term_ma_zt_lhs    ! Procedures
 
     use stats_variables, only: &
         ium_ma,  & ! Variable(s)
@@ -1473,6 +1474,11 @@ module advance_windm_edsclrm_module
         l_stats_samp
 
     implicit none
+
+    integer, parameter :: &
+      kp1_tdiag = 1, & ! Thermodynamic superdiagonal index.
+      k_tdiag   = 2, & ! Thermodynamic main diagonal index.
+      km1_tdiag = 3    ! Thermodynamic subdiagonal index.
 
     ! Input Variables
     real( kind = core_rknd ), intent(in) :: & 
@@ -1527,14 +1533,23 @@ module advance_windm_edsclrm_module
     invrs_dt = 1.0_core_rknd / dt
 
     ! Calculate diffusion terms
-    call diffusion_zt_lhs_all( K_zm(:), nu(:),  &
-                               gr%invrs_dzm(:), gr%invrs_dzt(:), &
-                               lhs_diff(:,:) )
+    call diffusion_zt_lhs( K_zm(:), nu(:),  &
+                           gr%invrs_dzm(:), gr%invrs_dzt(:), &
+                           lhs_diff(:,:) )
 
     ! The lower boundary condition needs to be applied here at level 2.
-    lhs_diff(:,2) = diffusion_zt_lhs( K_zm(2), K_zm(1), nu,  &
-                                      gr%invrs_dzm(1), gr%invrs_dzm(2),  &
-                                      gr%invrs_dzt(2), 1 )
+
+    ! Thermodynamic superdiagonal: [ x xm(k+1,<t+1>) ]
+    lhs_diff(kp1_tdiag,2) &
+    = - gr%invrs_dzt(2) * ( K_zm(2) + nu(1) ) * gr%invrs_dzm(2)
+
+    ! Thermodynamic main diagonal: [ x xm(k,<t+1>) ]
+    lhs_diff(k_tdiag,2) &
+    = + gr%invrs_dzt(2) * ( K_zm(2) + nu(1) ) * gr%invrs_dzm(2)
+
+    ! Thermodynamic subdiagonal: [ x xm(k-1,<t+1>) ]
+    lhs_diff(km1_tdiag,2) = zero
+
 
     ! Set lower boundary, see notes 
     lhs(1,1) = 0.0_core_rknd
@@ -1560,9 +1575,9 @@ module advance_windm_edsclrm_module
     ! LHS mean advection term.
     if ( .not. l_implemented ) then
 
-        call term_ma_zt_lhs_all( wm_zt(:), gr%invrs_dzt(:), gr%invrs_dzm(:), &
-                                 l_upwind_xm_ma, &
-                                 lhs_ma_zt(:,:) )
+        call term_ma_zt_lhs( wm_zt(:), gr%invrs_dzt(:), gr%invrs_dzm(:), &
+                             l_upwind_xm_ma, &
+                             lhs_ma_zt(:,:) )
 
         do k = 2, gr%nz-1
             lhs(1:3,k) = lhs(1:3,k) + lhs_ma_zt(:,k)
@@ -1659,9 +1674,11 @@ module advance_windm_edsclrm_module
     use clubb_precision, only:  & 
         core_rknd ! Variable(s)
 
+    use constants_clubb, only: &
+        zero    ! Procedure(s)
+
     use diffusion, only:  & 
-        diffusion_zt_lhs, & ! Procedure(s)
-        diffusion_zt_lhs_all
+        diffusion_zt_lhs    ! Procedure(s)
 
     use stats_variables, only: &
         ium_ta,  & ! Variable(s)
@@ -1680,6 +1697,11 @@ module advance_windm_edsclrm_module
 
     ! External
     intrinsic :: max, min, real, trim
+
+    integer, parameter :: &
+      kp1_tdiag = 1, & ! Thermodynamic superdiagonal index.
+      k_tdiag   = 2, & ! Thermodynamic main diagonal index.
+      km1_tdiag = 3    ! Thermodynamic subdiagonal index.
 
     !------------------- Input Variables -------------------
     integer, intent(in) :: &
@@ -1737,15 +1759,23 @@ module advance_windm_edsclrm_module
     K_zm(1:gr%nz) = rho_ds_zm(1:gr%nz) * Km_zm(1:gr%nz)   ! Calculate coefs of eddy diffusivity
     
     ! RHS turbulent advection term, for grid level 3 - gr%nz
-    call diffusion_zt_lhs_all( K_zm(1:gr%nz), nu(1:gr%nz),                   & ! Intent(in)
-                               gr%invrs_dzm(1:gr%nz), gr%invrs_dzt(1:gr%nz), & ! Intent(in)
-                               lhs_diff(1:3,1:gr%nz)                         ) ! Intent(out)
+    call diffusion_zt_lhs( K_zm(1:gr%nz), nu(1:gr%nz),                   & ! Intent(in)
+                           gr%invrs_dzm(1:gr%nz), gr%invrs_dzt(1:gr%nz), & ! Intent(in)
+                           lhs_diff(1:3,1:gr%nz)                         ) ! Intent(out)
 
-    ! RHS turbulent advection term (solved as an eddy-diffusion term), for grid level 2
-    ! lower boundary condition applied at this level, see notes above
-    lhs_diff(:,2) = diffusion_zt_lhs( K_zm(2), K_zm(1), nu,              &
-                                      gr%invrs_dzm(1), gr%invrs_dzm(2),  &
-                                      gr%invrs_dzt(2), level = 1 )
+    ! RHS turbulent advection term (solved as an eddy-diffusion term), for grid
+    ! level 2 lower boundary condition applied at this level; see notes above.
+
+    ! Thermodynamic superdiagonal: [ x xm(k+1,<t+1>) ]
+    lhs_diff(kp1_tdiag,2) &
+    = - gr%invrs_dzt(2) * ( K_zm(2) + nu(1) ) * gr%invrs_dzm(2)
+
+    ! Thermodynamic main diagonal: [ x xm(k,<t+1>) ]
+    lhs_diff(k_tdiag,2) &
+    = + gr%invrs_dzt(2) * ( K_zm(2) + nu(1) ) * gr%invrs_dzm(2)
+
+    ! Thermodynamic subdiagonal: [ x xm(k-1,<t+1>) ]
+    lhs_diff(km1_tdiag,2) = zero
 
 
     ! For purposes of the matrix equation, rhs(1) is simply set to 0.

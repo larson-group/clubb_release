@@ -748,7 +748,8 @@ module precipitation_fraction
 
     use constants_clubb, only: &
         one,  & ! Constant(s)
-        zero
+        zero, &
+        eps
 
     use parameters_tunable, only: &
         upsilon_precip_frac_rat  ! Variable(s)
@@ -792,7 +793,8 @@ module precipitation_fraction
        if ( any( hydromet(k,:) >= hydromet_tol(:) ) ) then
 
           ! There are hydrometeors found at this grid level.
-          if ( upsilon_precip_frac_rat == one ) then
+          if ( abs(upsilon_precip_frac_rat - one) < &
+                abs(upsilon_precip_frac_rat + one) / 2 * eps ) then
 
              if ( precip_frac(k) <= mixt_frac(k) ) then
 
@@ -808,7 +810,7 @@ module precipitation_fraction
                                    / ( one - mixt_frac(k) )
 
                 if ( precip_frac_2(k) > one &
-                     .and. precip_frac(k) == one ) then
+                     .and. abs(precip_frac(k) - one) < abs(precip_frac(k) + one) / 2 * eps ) then
 
                    ! Set precip_frac_2 = 1.
                    precip_frac_2(k) = one
@@ -849,7 +851,8 @@ module precipitation_fraction
              endif ! precip_frac(k) <= mixt_frac(k)
 
 
-          elseif ( upsilon_precip_frac_rat == zero ) then
+          elseif ( abs(upsilon_precip_frac_rat - zero) < &
+                abs(upsilon_precip_frac_rat + zero) / 2 * eps ) then
 
              if ( precip_frac(k) <= ( one - mixt_frac(k) ) ) then
 
@@ -865,7 +868,7 @@ module precipitation_fraction
                 precip_frac_2(k) = one
 
                 if ( precip_frac_1(k) > one &
-                     .and. precip_frac(k) == one ) then
+                     .and. abs(precip_frac(k) - one) < abs(precip_frac(k) + one) / 2 * eps ) then
 
                    ! Set precip_frac_1 = 1.
                    precip_frac_1(k) = one
@@ -1018,7 +1021,8 @@ module precipitation_fraction
     use constants_clubb, only: &
         one,     & ! Constant(s)
         zero,    &
-        fstderr
+        fstderr, &
+        eps
 
     use array_index, only: &
         hydromet_tol  ! Variable(s)
@@ -1151,7 +1155,7 @@ module precipitation_fraction
 
           ! Overall precipitation fraction must be 0 when no hydrometeors are
           ! found at a grid level.
-          if ( precip_frac(k) /= zero ) then
+          if ( abs(precip_frac(k)) > eps) then
              write(fstderr,*) "precip_frac /= 0 when no hydrometeors are found"
              write(fstderr,*) "level = ", k
              write(fstderr,*) "precip_frac = ", precip_frac(k)
@@ -1161,7 +1165,7 @@ module precipitation_fraction
 
           ! Precipitation fraction in the 1st PDF component must be 0 when no
           ! hydrometeors are found at a grid level.
-          if ( precip_frac_1(k) /= zero ) then
+          if ( abs(precip_frac_1(k)) > eps) then
              write(fstderr,*) "precip_frac_1 /= 0 when no hydrometeors " &
                               // "are found"
              write(fstderr,*) "level = ", k
@@ -1172,7 +1176,7 @@ module precipitation_fraction
 
           ! Precipitation fraction in the 2nd PDF component must be 0 when no
           ! hydrometeors are found at a grid level.
-          if ( precip_frac_2(k) /= zero ) then
+          if ( abs(precip_frac_2(k)) > eps) then
              write(fstderr,*) "precip_frac_2 /= 0 when no hydrometeors " &
                               // "are found"
              write(fstderr,*) "level = ", k

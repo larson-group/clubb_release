@@ -256,7 +256,8 @@ module lapack_wrap
 #ifdef E3SM
 #ifndef NDEBUG
 #if defined(ARCH_MIC_KNL) && defined(CPRINTEL)
-    call ieee_set_halting_mode(IEEE_DIVIDE_BY_ZERO, .true.) ! Turn back on stopping on div-by-zero only
+    ! Turn back on stopping on div-by-zero only 
+    call ieee_set_halting_mode(IEEE_DIVIDE_BY_ZERO, .true.)
 #endif
 #endif
 #endif /*E3SM*/

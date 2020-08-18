@@ -886,9 +886,7 @@ module mono_flux_limiter
 
     ! Constant parameters
     integer, parameter :: & 
-      kp1_tdiag = 1,    & ! Thermodynamic superdiagonal index.
-      k_tdiag   = 2,    & ! Thermodynamic main diagonal index.
-      km1_tdiag = 3       ! Thermodynamic subdiagonal index.
+      k_tdiag = 2    ! Thermodynamic main diagonal index.
 
     ! Input Variables
     real( kind = core_rknd ), intent(in) ::  &
@@ -910,7 +908,7 @@ module mono_flux_limiter
       lhs    ! Left hand side of tridiagonal matrix
 
     ! Local Variables
-    integer :: k, km1  ! Array index
+    integer :: k    ! Array index
 
 
     !-----------------------------------------------------------------------
@@ -924,24 +922,21 @@ module mono_flux_limiter
     ! value of xm at level k = 2 after the solve has been completed.
 
     ! Setup LHS of the tridiagonal system
+
+    ! LHS xm mean advection (ma) term.
+    if ( .not. l_implemented ) then
+
+       call term_ma_zt_lhs( wm_zt, gr%invrs_dzt, gr%invrs_dzm, &
+                            l_upwind_xm_ma, &
+                            lhs )
+
+    else
+
+       lhs = 0.0_core_rknd
+
+    endif
+
     do k = 2, gr%nz, 1
-
-       km1 = max( k-1,1 )
-
-       ! LHS xm mean advection (ma) term.
-       if ( .not. l_implemented ) then
-
-          lhs(kp1_tdiag:km1_tdiag,k) & 
-          = lhs(kp1_tdiag:km1_tdiag,k) &
-          + term_ma_zt_lhs( wm_zt(k), gr%invrs_dzt(k), k, gr%invrs_dzm(k), gr%invrs_dzm(km1), &
-                            l_upwind_xm_ma )
-
-       else
-
-          lhs(kp1_tdiag:km1_tdiag,k) & 
-          = lhs(kp1_tdiag:km1_tdiag,k) + 0.0_core_rknd
-
-       endif
 
        ! LHS xm time tendency.
        lhs(k_tdiag,k) &
@@ -1795,8 +1790,7 @@ module mono_flux_limiter
       use constants_clubb, only: &
           sqrt_2pi, &  ! Constant(s)
           sqrt_2, &
-          one, &
-          one_half
+          one
 
       use clubb_precision, only: &
         core_rknd ! Variable(s)

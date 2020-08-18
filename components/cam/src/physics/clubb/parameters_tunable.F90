@@ -22,6 +22,8 @@ module parameters_tunable
   !   module should be declared threadprivate because of the CLUBB tuner.
   !-----------------------------------------------------------------------
 
+  use constants_clubb, only: eps ! Epsilon
+
   use parameter_indices, only: nparams ! Variable(s)
 
   use grid_class, only: gr ! Variable(s)
@@ -289,6 +291,11 @@ module parameters_tunable
 
 !$omp threadprivate( xp3_coef_base, xp3_coef_slope )
 
+  real( kind = core_rknd ), public :: &
+    altitude_threshold = 100.0_core_rknd ! Altitude above which damping should occur for wpxp
+
+!$omp threadprivate( altitude_threshold )
+
   ! Since we lack a devious way to do this just once, this namelist
   ! must be changed as well when a new parameter is added.
   namelist /clubb_params_nl/  & 
@@ -308,7 +315,7 @@ module parameters_tunable
     lambda0_stability_coef, mult_coef, taumin, taumax, mu, Lscale_mu_coef, &
     Lscale_pert_coef, alpha_corr, Skw_denom_coef, c_K10, c_K10h, &
     thlp2_rad_coef, thlp2_rad_cloud_frac_thresh, up2_vp2_factor, &
-    Skw_max_mag, xp3_coef_base, xp3_coef_slope, &
+    Skw_max_mag, xp3_coef_base, xp3_coef_slope, altitude_threshold, &
     C_invrs_tau_bkgnd, C_invrs_tau_sfc, C_invrs_tau_shear, C_invrs_tau_N2, &
     C_invrs_tau_N2_wp2, C_invrs_tau_N2_xp2, &
     C_invrs_tau_N2_wpxp, C_invrs_tau_N2_clear_wp3
@@ -369,7 +376,7 @@ module parameters_tunable
        "C_invrs_tau_N2              ", "C_invrs_tau_N2_wp2          ", &
        "C_invrs_tau_N2_xp2          ", "C_invrs_tau_N2_wpxp         ", &
        "C_invrs_tau_N2_clear_wp3    ", "xp3_coef_base               ", &
-       "xp3_coef_slope              "  /)
+       "xp3_coef_slope              ", "altitude_threshold          "  /)
 
   real( kind = core_rknd ), parameter, private :: &
     init_value = -999._core_rknd ! Initial value for the parameters, used to detect missing values
@@ -438,7 +445,8 @@ module parameters_tunable
     clubb_C_invrs_tau_N2_clear_wp3,     &
     clubb_C_wp2_splat,                  &
     clubb_xp3_coef_base,                &
-    clubb_xp3_coef_slope
+    clubb_xp3_coef_slope,               &
+    clubb_altitude_threshold
     
 !$omp threadprivate(clubb_C1, clubb_C1b, clubb_C1c, &
 !$omp   clubb_C2rt, clubb_C2thl, clubb_C2rtthl, clubb_C4, &
@@ -455,7 +463,8 @@ module parameters_tunable
 !$omp   clubb_C_invrs_tau_sfc, clubb_C_invrs_tau_shear, clubb_C_invrs_tau_N2, &
 !$omp   clubb_C_invrs_tau_N2_wp2, clubb_C_invrs_tau_N2_xp2, &
 !$omp   clubb_C_invrs_tau_N2_wpxp, clubb_C_invrs_tau_N2_clear_wp3, &
-!$omp   clubb_C_wp2_splat, clubb_xp3_coef_base, clubb_xp3_coef_slope)
+!$omp   clubb_C_wp2_splat, clubb_xp3_coef_base, clubb_xp3_coef_slope, &
+!$omp   clubb_altitude_threshold)
     
 #endif /*E3SM*/
 
@@ -582,7 +591,7 @@ module parameters_tunable
                Skw_denom_coef, c_K10, c_K10h, thlp2_rad_coef, &
                thlp2_rad_cloud_frac_thresh, up2_vp2_factor, &
                Skw_max_mag, xp3_coef_base, xp3_coef_slope, &
-               C_invrs_tau_bkgnd, C_invrs_tau_sfc, &
+               altitude_threshold, C_invrs_tau_bkgnd, C_invrs_tau_sfc, &
                C_invrs_tau_shear, C_invrs_tau_N2, & 
                C_invrs_tau_N2_wp2, C_invrs_tau_N2_xp2, &
                C_invrs_tau_N2_wpxp, C_invrs_tau_N2_clear_wp3 )
@@ -701,7 +710,7 @@ module parameters_tunable
        ! the C6rt parameters must be set equal to the C6thl parameters.
        ! Otherwise, the wpthlp pr1 term will be calculated inconsistently.
 
-       if ( C6rt /= C6thl ) then
+       if ( abs(C6rt - C6thl) > abs(C6rt + C6thl) / 2 * eps ) then
           write(fstderr,*) "C6rt = ", C6rt
           write(fstderr,*) "C6thl = ", C6thl
           write(fstderr,*) "C6rt and C6thl must be equal when" &
@@ -709,7 +718,7 @@ module parameters_tunable
           err_code = clubb_fatal_error
        endif ! C6rt /= C6thl
 
-       if ( C6rtb /= C6thlb ) then
+       if ( abs(C6rtb - C6thlb) > abs(C6rtb + C6thlb) / 2 * eps ) then
           write(fstderr,*) "C6rtb = ", C6rtb
           write(fstderr,*) "C6thlb = ", C6thlb
           write(fstderr,*) "C6rtb and C6thlb must be equal when" &
@@ -717,7 +726,7 @@ module parameters_tunable
           err_code = clubb_fatal_error
        endif ! C6rtb /= C6thlb
 
-       if ( C6rtc /= C6thlc ) then
+       if ( abs(C6rtc - C6thlc) > abs(C6rtc + C6thlc) / 2 * eps ) then
           write(fstderr,*) "C6rtc = ", C6rtc
           write(fstderr,*) "C6thlc = ", C6thlc
           write(fstderr,*) "C6rtc and C6thlc must be equal when" &
@@ -725,7 +734,7 @@ module parameters_tunable
           err_code = clubb_fatal_error
        endif ! C6rtc /= C6thlc
 
-       if ( C6rt_Lscale0 /= C6thl_Lscale0 ) then
+       if ( abs(C6rt_Lscale0 - C6thl_Lscale0) > abs(C6rt_Lscale0 + C6thl_Lscale0) / 2 * eps ) then
           write(fstderr,*) "C6rt_Lscale0 = ", C6rt_Lscale0
           write(fstderr,*) "C6thl_Lscale0 = ", C6thl_Lscale0
           write(fstderr,*) "C6rt_Lscale0 and C6thl_Lscale0 must be equal" &
@@ -1019,7 +1028,7 @@ module parameters_tunable
     use namelist_utils,  only: find_group_name
     use units,           only: getunit, freeunit
     use cam_abortutils,  only: endrun
-    use mpishorthand
+    use mpishorthand, only: mpicom, mpir8
 
     implicit none
 
@@ -1083,7 +1092,8 @@ module parameters_tunable
     clubb_C_invrs_tau_N2_clear_wp3,     &
     clubb_C_wp2_splat,                  &
     clubb_xp3_coef_base,                &
-    clubb_xp3_coef_slope
+    clubb_xp3_coef_slope,               &
+    clubb_altitude_threshold
 
     integer :: read_status
     integer :: iunit
@@ -1149,6 +1159,7 @@ module parameters_tunable
     clubb_C_wp2_splat = init_value
     clubb_xp3_coef_base = init_value
     clubb_xp3_coef_slope = init_value
+    clubb_altitude_threshold = init_value
 
     if (masterproc) then
       iunit = getunit()
@@ -1221,6 +1232,7 @@ module parameters_tunable
    call mpibcast(clubb_C_wp2_splat, 1, mpir8,  0, mpicom)
    call mpibcast(clubb_xp3_coef_base, 1, mpir8,  0, mpicom)
    call mpibcast(clubb_xp3_coef_slope, 1, mpir8,  0, mpicom)
+   call mpibcast(clubb_altitude_threshold, 1, mpir8,  0, mpicom)
 #endif
 
 
@@ -1359,6 +1371,8 @@ module parameters_tunable
     if (clubb_xp3_coef_base /= init_value) xp3_coef_base = clubb_xp3_coef_base
     if (clubb_xp3_coef_slope /= init_value) &
        xp3_coef_slope = clubb_xp3_coef_slope
+    if (clubb_altitude_threshold /= init_value) &
+       altitude_threshold = clubb_altitude_threshold
 #endif /*E3SM*/
 
     ! Put the variables in the output array
@@ -1379,7 +1393,7 @@ module parameters_tunable
                Skw_denom_coef, c_K10, c_K10h, thlp2_rad_coef, &
                thlp2_rad_cloud_frac_thresh, up2_vp2_factor, &
                Skw_max_mag, xp3_coef_base, xp3_coef_slope, &
-               C_invrs_tau_bkgnd, C_invrs_tau_sfc, &
+               altitude_threshold, C_invrs_tau_bkgnd, C_invrs_tau_sfc, &
                C_invrs_tau_shear, C_invrs_tau_N2, &
                C_invrs_tau_N2_wp2, C_invrs_tau_N2_xp2, &  
                C_invrs_tau_N2_wpxp, C_invrs_tau_N2_clear_wp3, params )
@@ -1387,7 +1401,7 @@ module parameters_tunable
     l_error = .false.
 
     do i = 1, nparams
-      if ( params(i) == init_value ) then
+      if ( abs(params(i)-init_value) < abs(params(i)+init_value) / 2 * eps) then
         write(fstderr,*) "Tuning parameter "//trim( params_list(i) )// &
           " was missing from "//trim( filename )
         l_error = .true.
@@ -1460,7 +1474,7 @@ module parameters_tunable
       lambda0_stability_coef, mult_coef, taumin, taumax, mu, Lscale_mu_coef, &
       Lscale_pert_coef, alpha_corr, Skw_denom_coef, c_K10, c_K10h, &
       thlp2_rad_coef, thlp2_rad_cloud_frac_thresh, up2_vp2_factor, &
-      Skw_max_mag, xp3_coef_base, xp3_coef_slope, &
+      Skw_max_mag, xp3_coef_base, xp3_coef_slope, altitude_threshold, &
       C_invrs_tau_bkgnd, C_invrs_tau_sfc, &
       C_invrs_tau_shear, C_invrs_tau_N2, &
       C_invrs_tau_N2_wp2, C_invrs_tau_N2_xp2, C_invrs_tau_N2_wpxp, C_invrs_tau_N2_clear_wp3
@@ -1493,7 +1507,7 @@ module parameters_tunable
                Skw_denom_coef, c_K10, c_K10h, thlp2_rad_coef, &
                thlp2_rad_cloud_frac_thresh, up2_vp2_factor, &
                Skw_max_mag, xp3_coef_base, xp3_coef_slope, &
-               C_invrs_tau_bkgnd, C_invrs_tau_sfc, &
+               altitude_threshold, C_invrs_tau_bkgnd, C_invrs_tau_sfc, &
                C_invrs_tau_shear, C_invrs_tau_N2, &
                C_invrs_tau_N2_wp2, C_invrs_tau_N2_xp2, &
                C_invrs_tau_N2_wpxp, C_invrs_tau_N2_clear_wp3, param_max )
@@ -1501,7 +1515,7 @@ module parameters_tunable
     l_error = .false.
 
     do i = 1, nparams
-      if ( param_max(i) == init_value ) then
+      if ( abs(param_max(i)-init_value) < abs(param_max(i)+init_value) / 2 * eps) then
         write(fstderr,*) "A max value for parameter "//trim( params_list(i) )// &
           " was missing from "//trim( filename )
         l_error = .true.
@@ -1517,7 +1531,7 @@ module parameters_tunable
     ! Determine how many variables are being changed
     do i = 1, nparams, 1
 
-      if ( param_max(i) /= 0.0_core_rknd ) then
+      if ( abs(param_max(i)) > eps) then
         ndim = ndim + 1   ! Increase the total
         nindex(ndim) = i  ! Set the next array index
       endif
@@ -1546,7 +1560,7 @@ module parameters_tunable
                Skw_denom_coef, c_K10, c_K10h, thlp2_rad_coef, &
                thlp2_rad_cloud_frac_thresh, up2_vp2_factor, &
                Skw_max_mag, xp3_coef_base, xp3_coef_slope, &
-               C_invrs_tau_bkgnd, C_invrs_tau_sfc, &
+               altitude_threshold, C_invrs_tau_bkgnd, C_invrs_tau_sfc, &
                C_invrs_tau_shear, C_invrs_tau_N2, &
                C_invrs_tau_N2_wp2, C_invrs_tau_N2_xp2, &
                C_invrs_tau_N2_wpxp, C_invrs_tau_N2_clear_wp3, params )
@@ -1645,6 +1659,7 @@ module parameters_tunable
       iSkw_max_mag, &
       ixp3_coef_base, &
       ixp3_coef_slope, &
+      ialtitude_threshold, &
       iC_invrs_tau_bkgnd, &
       iC_invrs_tau_sfc, &
       iC_invrs_tau_shear, &
@@ -1673,7 +1688,7 @@ module parameters_tunable
       lambda0_stability_coef, mult_coef, taumin, taumax, Lscale_mu_coef, &
       Lscale_pert_coef, alpha_corr, Skw_denom_coef, c_K10, c_K10h, &
       thlp2_rad_coef, thlp2_rad_cloud_frac_thresh, up2_vp2_factor, &
-      Skw_max_mag, xp3_coef_base, xp3_coef_slope, &
+      Skw_max_mag, xp3_coef_base, xp3_coef_slope, altitude_threshold, &
       C_invrs_tau_bkgnd, C_invrs_tau_sfc, C_invrs_tau_shear, C_invrs_tau_N2, &
       C_invrs_tau_N2_wp2, C_invrs_tau_N2_xp2, &
       C_invrs_tau_N2_wpxp, C_invrs_tau_N2_clear_wp3
@@ -1773,6 +1788,7 @@ module parameters_tunable
     params(iSkw_max_mag) = Skw_max_mag
     params(ixp3_coef_base) = xp3_coef_base
     params(ixp3_coef_slope) = xp3_coef_slope
+    params(ialtitude_threshold) = altitude_threshold
     params(iC_invrs_tau_bkgnd)        = C_invrs_tau_bkgnd
     params(iC_invrs_tau_sfc)          = C_invrs_tau_sfc
     params(iC_invrs_tau_shear)        = C_invrs_tau_shear
@@ -1805,7 +1821,7 @@ module parameters_tunable
                Skw_denom_coef, c_K10, c_K10h, thlp2_rad_coef, &
                thlp2_rad_cloud_frac_thresh, up2_vp2_factor, &
                Skw_max_mag, xp3_coef_base, xp3_coef_slope, &
-               C_invrs_tau_bkgnd, C_invrs_tau_sfc, &
+               altitude_threshold, C_invrs_tau_bkgnd, C_invrs_tau_sfc, &
                C_invrs_tau_shear, C_invrs_tau_N2, & 
                C_invrs_tau_N2_wp2, C_invrs_tau_N2_xp2, &
                C_invrs_tau_N2_wpxp, C_invrs_tau_N2_clear_wp3  )
@@ -1904,6 +1920,7 @@ module parameters_tunable
       iSkw_max_mag, &
       ixp3_coef_base, &
       ixp3_coef_slope, &
+      ialtitude_threshold, &
       iC_invrs_tau_bkgnd, &
       iC_invrs_tau_sfc, &
       iC_invrs_tau_shear, &
@@ -1935,7 +1952,7 @@ module parameters_tunable
       lambda0_stability_coef, mult_coef, taumin, taumax, Lscale_mu_coef, &
       Lscale_pert_coef, alpha_corr, Skw_denom_coef, c_K10, c_K10h, &
       thlp2_rad_coef, thlp2_rad_cloud_frac_thresh, up2_vp2_factor, &
-      Skw_max_mag, xp3_coef_base, xp3_coef_slope, &
+      Skw_max_mag, xp3_coef_base, xp3_coef_slope, altitude_threshold, &
       C_invrs_tau_bkgnd, C_invrs_tau_sfc, C_invrs_tau_shear, C_invrs_tau_N2, &
       C_invrs_tau_N2_wp2, C_invrs_tau_N2_xp2, &
       C_invrs_tau_N2_wpxp, C_invrs_tau_N2_clear_wp3
@@ -2032,6 +2049,7 @@ module parameters_tunable
     Skw_max_mag = params(iSkw_max_mag)
     xp3_coef_base = params(ixp3_coef_base)
     xp3_coef_slope = params(ixp3_coef_slope)
+    altitude_threshold = params(ialtitude_threshold)
     C_invrs_tau_bkgnd        = params(iC_invrs_tau_bkgnd)
     C_invrs_tau_sfc          = params(iC_invrs_tau_sfc )
     C_invrs_tau_shear        = params(iC_invrs_tau_shear)
@@ -2076,7 +2094,7 @@ module parameters_tunable
                Skw_denom_coef, c_K10, c_K10h, thlp2_rad_coef, &
                thlp2_rad_cloud_frac_thresh, up2_vp2_factor, &
                Skw_max_mag, xp3_coef_base, xp3_coef_slope, &
-               C_invrs_tau_bkgnd, C_invrs_tau_sfc, &
+               altitude_threshold, C_invrs_tau_bkgnd, C_invrs_tau_sfc, &
                C_invrs_tau_shear, C_invrs_tau_N2, &
                C_invrs_tau_N2_wp2, C_invrs_tau_N2_xp2, &
                C_invrs_tau_N2_wpxp, C_invrs_tau_N2_clear_wp3, params )
@@ -2179,6 +2197,7 @@ module parameters_tunable
     Skw_max_mag                  = init_value
     xp3_coef_base                = init_value
     xp3_coef_slope               = init_value
+    altitude_threshold           = init_value
     C_invrs_tau_bkgnd            = init_value 
     C_invrs_tau_sfc              = init_value 
     C_invrs_tau_shear            = init_value 

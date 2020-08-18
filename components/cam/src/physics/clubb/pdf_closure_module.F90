@@ -93,14 +93,11 @@ module pdf_closure_module
 
     use constants_clubb, only: &  ! Constants
         three,          & ! 3
-        two,            & ! 2
         one,            & ! 1
         one_half,       & ! 1/2
         zero,           & ! 0
         Cp,             & ! Dry air specific heat at constant p [J/kg/K]
         Lv,             & ! Latent heat of vaporization         [J/kg]
-        Rd,             & ! Dry air gas constant                [J/kg/K]
-        ep,             & ! Rd / Rv;     ep  = 0.622            [-]
         ep1,            & ! (1.0-ep)/ep; ep1 = 0.61             [-]
         ep2,            & ! 1.0/ep;      ep2 = 1.61             [-]
         rt_tol,         & ! Tolerance for r_t                   [kg/kg]
@@ -108,9 +105,6 @@ module pdf_closure_module
         T_freeze_K,     & ! Freezing point of water             [K]
         fstderr,        &
         zero_threshold, &
-        chi_tol, &
-        eta_tol, &
-        max_mag_correlation, &
         eps, &
         w_tol
 
@@ -406,9 +400,6 @@ module pdf_closure_module
       zero_array    ! Array of 0s (size gr%nz x sclr_dim)    [-]
 
     integer :: k, i, hm_idx   ! Indices
-
-    ! Value of chi at saturation for liquid water; always 0
-    real ( kind = core_rknd ), parameter :: chi_at_liq_sat = 0.0_core_rknd
 
 #ifdef GFDL
     real ( kind = core_rknd ), parameter :: t1_combined = 273.16, &
@@ -1069,7 +1060,7 @@ module pdf_closure_module
                                pdf_params%varnce_w_1, pdf_params%chi_1,             & ! In
                                pdf_params%stdev_chi_1, pdf_params%stdev_eta_1,      & ! In
                                pdf_params%corr_w_chi_1, pdf_params%corr_chi_eta_1,  & ! In
-                               corr_u_w_1, corr_v_w_1,                              & ! In
+!                              corr_u_w_1, corr_v_w_1,                              & ! In
                                pdf_params%crt_1, pdf_params%cthl_1,                 & ! In
                                pdf_params%rc_1, pdf_params%cloud_frac_1, iiPDF_type,& ! In
                                wprcp_contrib_comp_1, wp2rcp_contrib_comp_1,         & ! Out
@@ -1082,7 +1073,7 @@ module pdf_closure_module
                                pdf_params%varnce_w_2, pdf_params%chi_2,             & ! In
                                pdf_params%stdev_chi_2, pdf_params%stdev_eta_2,      & ! In
                                pdf_params%corr_w_chi_2, pdf_params%corr_chi_eta_2,  & ! In
-                               corr_u_w_2, corr_v_w_2,                              & ! In
+!                              corr_u_w_2, corr_v_w_2,                              & ! In
                                pdf_params%crt_2, pdf_params%cthl_2,                 & ! In
                                pdf_params%rc_2, pdf_params%cloud_frac_2, iiPDF_type,& ! In
                                wprcp_contrib_comp_2, wp2rcp_contrib_comp_2,         & ! Out
@@ -2269,84 +2260,13 @@ module pdf_closure_module
   end subroutine calc_cloud_frac_component
 
   !=============================================================================
-  function calc_cloud_frac( cloud_frac_1, cloud_frac_2, mixt_frac ) &
-  result( cloud_frac )
-
-  ! Description:
-  !   Given the the two pdf components of a cloud fraction, and the weight
-  !   of the first component, this fuction calculates the cloud fraction,
-  !   cloud_frac
-  !
-  ! References:
-  !-----------------------------------------------------------------------
- 
-    use grid_class, only: &
-        gr    ! Variable type(s)
-
-    use constants_clubb, only: & ! Constant(s)
-        one,            & ! 1
-        fstderr,        & ! Standard error output
-        zero_threshold    ! A physical quantity equal to zero
-    
-    use clubb_precision, only: &
-        core_rknd        ! Precision
-
-    use error_code, only: &
-        clubb_at_least_debug_level  ! Procedure
-      
-    implicit none
-    
-    ! Input Variables
-    real( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
-      cloud_frac_1, & ! First PDF component of cloud_frac               [-]
-      cloud_frac_2, & ! Second PDF component of cloud_frac              [-]
-      mixt_frac       ! Weight of 1st PDF component (Sk_w dependent)    [-]
-    
-    ! Output Variables
-    real( kind = core_rknd), dimension(gr%nz) :: &
-      cloud_frac    ! Cloud fraction    [-]
-
-    ! Local Variable
-    integer :: k    ! Vertical level loop index
-
-    !----- Begin Code -----
-
-    cloud_frac = mixt_frac * cloud_frac_1 + ( one - mixt_frac ) * cloud_frac_2
-    
-    ! Note: Brian added the following lines to ensure that there
-    ! are never any negative liquid water values (or any negative
-    ! cloud fraction values, for that matter).  According to
-    ! Vince Larson, the analytic formula should not produce any
-    ! negative results, but such computer-induced errors such as
-    ! round-off error may produce such a value.  This has been
-    ! corrected because Brian found a small negative value of
-    ! rcm in the first timestep of the FIRE case.
-
-    cloud_frac = max( zero_threshold, cloud_frac )
-
-    if ( clubb_at_least_debug_level( 2 ) ) then
-       do k = 1, gr%nz, 1
-          if ( cloud_frac(k) > one ) then
-             write(fstderr,*) "Cloud fraction > 1 at k = ", k
-          endif
-       enddo ! k = 1, gr%nz, 1
-    endif
-
-    cloud_frac = min( one, cloud_frac )
-
-
-    return
-    
-  end function calc_cloud_frac
-
-  !=============================================================================
   subroutine calc_xprcp_component( wm, rtm, thlm, um, vm, rcm,                      & ! In
                                    w_i, rt_i,                                       & ! In
                                    thl_i, u_i, v_i,                                 & ! In
                                    varnce_w_i, chi_i,                               & ! In
                                    stdev_chi_i, stdev_eta_i,                        & ! In
                                    corr_w_chi_i, corr_chi_eta_i,                    & ! In
-                                   corr_u_w_i, corr_v_w_i,                          & ! In
+!                                  corr_u_w_i, corr_v_w_i,                          & ! In
                                    crt_i, cthl_i,                                   & ! In
                                    rc_i, cloud_frac_i, iiPDF_type,                  & ! In
                                    wprcp_contrib_comp_i, wp2rcp_contrib_comp_i,     & ! Out
@@ -2716,8 +2636,7 @@ module pdf_closure_module
         sqrt_2pi,       & ! Variable(s)
         two,            &
         zero,           &
-        chi_tol,        &
-        cloud_frac_min
+        chi_tol
 
     use clubb_precision, only: &
         core_rknd    ! Variable(s)
@@ -2743,8 +2662,8 @@ module pdf_closure_module
       stdev_eta_i,    & ! Standard deviation of eta (ith PDF comp.)    [kg/kg]
       corr_w_chi_i,   & ! Correlation of w and chi (ith PDF component) [-]
       corr_chi_eta_i, & ! Correlation of chi and eta (ith PDF comp.)   [-]
-      corr_u_w_i,     & ! Correlation of u and w (ith PDF component)   [-]
-      corr_v_w_i,     & ! Correlation of v and w (ith PDF component)   [-]
+!     corr_u_w_i,     & ! Correlation of u and w (ith PDF component)   [-]
+!     corr_v_w_i,     & ! Correlation of v and w (ith PDF component)   [-]
       crt_i,          & ! Coef. on rt in chi/eta eqns. (ith PDF comp.) [-]
       cthl_i,         & ! Coef. on thl: chi/eta eqns. (ith PDF comp.)  [kg/kg/K]
       rc_i,           & ! Mean of rc (ith PDF component)               [kg/kg]

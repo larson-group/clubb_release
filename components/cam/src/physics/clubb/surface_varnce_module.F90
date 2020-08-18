@@ -42,7 +42,6 @@ module surface_varnce_module
         one_third,  &
         one_fourth, &
         zero,       &
-        ten,        &
         grav,       &
         eps,        &
         w_tol_sqd,  &

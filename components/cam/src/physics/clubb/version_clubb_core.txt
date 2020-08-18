@@ -1,101 +1,94 @@
-commit fa05c6cf1a32ecac1ea9a1350883c4cb0b3077c5
+commit 4757d0169721c9c53630856f17db2a604d34b503
 Author: System Administrator <larsongroupgithub@gmail.com>
-Date:   Tue Jun 23 23:17:00 2020 -0500
+Date:   Mon Aug 17 23:19:07 2020 -0500
 
     Updating the clubb core and silhs version files
 
-commit fd0e7c464a3cf6c14815ddbe7e79c30c504eca1d
+commit 6c4cfc703f392c3839e6f24038c8e9fa023ec2f8
 Author: bmg929 <bmg2@uwm.edu>
-Date:   Tue Jun 23 13:33:56 2020 -0500
+Date:   Mon Aug 17 13:43:26 2020 -0500
 
-    I added the 2 new parameters in the simple xp3 equation (for PDF
-    types other than ADG1) to the list of CLUBB tunable parameters.
+    I accidentally committed a "stats_fmt = 'grads'" overwrite with the
+    last commit.  That was purely meant to double check for bit-for-bitness
+    (since netCDF doesn't work to that effect since the new parameter is
+    written to the output files), and wasn't meant to be permanently committed.
+
+commit c37eb11d3dd5a7b2994814a4fb10ec8ffe5229cb
+Author: bmg929 <bmg2@uwm.edu>
+Date:   Mon Aug 17 13:39:03 2020 -0500
+
+    I added altitude_threshold to the list of CLUBB's tunable parameters.
     
-    The results in GrADS output files from this revision are an exact match
-    to the results in GrADS output files from the previous revision for all
-    cases.
-
-commit ef1f93afa03e97734d807dcdecdcd1eb156bbdf7
-Author: bmg929 <bmg2@uwm.edu>
-Date:   Tue Jun 23 09:32:04 2020 -0500
-
-    This xp3_coef_ parameters produce new hybrid PDF results similar to the old
-    ones for a starting point.
-
-commit f1490375b96c0dc6f0ae6b51e79c364611f6b4ed
-Author: bmg929 <bmg2@uwm.edu>
-Date:   Mon Jun 22 15:27:38 2020 -0500
-
-    I updated the xp3 calculation for PDF types other than ADG1.
+    The results in GrADS output files from this revision are an exact match to the
+    results in GrADS output files from the previous revision for all cases.
     
-    ADG1 is stuck into using the LG 2005 ansatz, exactly as written.
-    
-    Other PDF types are not stuck using this.  Rather than re-invent the wheel,
-    these other PDF types can still use the LG 2005 ansatz equation, but
-    sigma_sqd_w_zt (specific to ADG1) has been replaced with a tunable function
-    relavant to other PDF types.  This tunable function is called xp3_coef_fnc.
-    
-    The results in GrADS output files from the previous revision are an exact match
-    to the results in GrADS output files from the current revision for all cases
-    for the default ADG1 PDF.
+    However, NetCDF output files are not an exact match, owing to the presence
+    of the new tunable parameter listed in the output files.  That technically
+    makes this revision BIT_CHANGING.
 
-commit df897d6f1c10c2ed0ff8aeba524fe884f4cc782a
+commit 1be229ce7476118e5e0c3efa45cc54fc32065e5f
 Author: bmg929 <bmg2@uwm.edu>
-Date:   Thu Jun 18 16:52:37 2020 -0500
+Date:   Mon Aug 17 11:58:54 2020 -0500
 
-    I am changing the new hybrid PDF's calculation of F_w to use
-    tunable parameter gamma (technically, the gamma_Skw_fnc).
+    I pared down subprogram pairs again, this time for mean advection.
     
-    In the ADG1 PDF, when gamma_Skw_fnc goes to 0, the standard
-    deviations of w in each PDF component both go to 0, and the
-    spread between the PDF component means of w is at its maximum.
-    When gamma_Skw_fnc goes to 1, the standard deviations of w in
-    each PDF component become large, and the spread between the PDF
-    component means of w becomes small.
+    The results from this revision are an exact match to the result from
+    the previous revision for all cases.
     
-    The new hybrid PDF is based on the same concept, except that I
-    had been using a hard-wired 0.75 in the place of gamma or the
-    gamma_Skw_fnc.  Re-using the tunable parameters for gamma here
-    makes sense, since it's the same concept and this makes tuning
-    easier.
+    Larson Group Issue Reference: #878.
 
-commit 72b8b9da2e6776de015152273822a4f0b67cb7f0
-Author: bmg929 <bmg2@uwm.edu>
-Date:   Thu Jun 18 12:11:43 2020 -0500
-
-    Fixed more typos
-
-commit 621aa829391c9e3b19f09b2c1724adfd26dfc7e5
-Author: bmg929 <bmg2@uwm.edu>
-Date:   Thu Jun 18 12:06:31 2020 -0500
-
-    Typo
-
-commit 2fbb2291209d7035abcd4e68afbf2e73a9f47942
-Author: bmg929 <bmg2@uwm.edu>
-Date:   Thu Jun 18 12:01:39 2020 -0500
-
-    I am updating the clubb_ list of namelist parameters used in E3SM
-    to include every parameter that E3SM has customized in CLUBB.
-    The goal is to make it so E3SM does not need to customize the
-    CLUBB side of E3SM-CLUBB at all, making future upgrades easier.
-
-commit c5ec3e9d76544adc40e845db3c05067f5afc14e2
+commit 9a0eb04beefad6b0ac68936fbb88c597ebfbd1b0
 Author: sdomke <sdomke@uwm.edu>
-Date:   Mon Jun 15 22:35:05 2020 -0500
+Date:   Sun Aug 16 10:19:36 2020 -0500
 
-    Fixed errors in src/DataReader.py:
-    Changed attribute name to varname to better reflect its purpose
-    Fixed signature of __del__ function (destructor) of the DataReader class
-    Fixed function cleanup that is called by the destructor of the DataReader class:
-    self.nc_datasets' structure seems to have changed, so the closing loop had to be adjusted.
-    Small change to description of DataReader's __getStartEndIndex__ function.
+    Renamed CaseGallerySetup object to 'case_gallery_setup' to reflect change in class name
     
     https://github.com/larson-group/sys_admin/issues/542
 
-commit 5844bbddfb26b0a57666b4a51a43aa8424ac4f92
-Author: bmg929 <bmg2@uwm.edu>
-Date:   Mon Jun 15 15:34:52 2020 -0500
+commit b4c1ab5fac5e32e06aca8bcee16657b5ada8440c
+Author: sdomke <sdomke@uwm.edu>
+Date:   Fri Aug 14 15:17:03 2020 -0500
 
-    I added E3SM customizations to CLUBB's master branch.  This is meant
-    for updating CLUBB in the E3SM master branch.
+    Fixed 'sam_file' entry in BOMEX case in config/Case_definitions.py
+    
+    https://github.com/larson-group/sys_admin/issues/542
+
+commit 8113cc282f06b3cd1ee17f0fc74b28454b0b8a87
+Author: sdomke <sdomke@uwm.edu>
+Date:   Fri Aug 14 13:31:56 2020 -0500
+
+    Updated README.md to contain description for generating time-height plots.
+    Simultaneously, the sys_admin repo's PyPlotgen Usage wiki entry now merely links to the CLUBB repo's pylotgen page where the README.md content is diplayed.
+    
+    https://github.com/larson-group/sys_admin/issues/542
+
+commit 1ebec26dec0ff1ccb8363db867ae5e193b59c972
+Merge: bd349be 231c208
+Author: sdomke <sdomke@uwm.edu>
+Date:   Fri Aug 14 12:59:18 2020 -0500
+
+    Merge branch 'master' of github.com:larson-group/clubb into master
+
+commit bd349be2ea48ef36eeb5753dafc70092265c1d7d
+Author: sdomke <sdomke@uwm.edu>
+Date:   Fri Aug 14 12:58:52 2020 -0500
+
+    Renamed Case class and file to CaseGallerySetup in order to better reflect its function
+    
+    https://github.com/larson-group/sys_admin/issues/542
+
+commit 231c208c5afc2960928a2b290d0ff9d397c325a2
+Author: bmg929 <bmg2@uwm.edu>
+Date:   Fri Aug 14 12:53:28 2020 -0500
+
+    I have pared two subprograms down to one again, this time for the
+    subprograms found in module diffusion.
+    
+    As part of this, the calls to diffusion (for turbulent advection)
+    in advance_microphys_module.F90 needed to be upgraded to use the
+    fully optimized version of the code. As a result, this revision
+    is BIT_CHANGING, but only for cases that use microphysics. A print
+    out of the LHS array from the call to diffusion shows that numbers
+    are in agreement until you reach the point of numerical roundoff.
+    
+    CLUBB Git Issue Reference: #878.

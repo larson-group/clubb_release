@@ -17,7 +17,7 @@ module advance_clubb_core_module
 !
 !                         Copyright Notice:
 !
-!   This code and the source code it references are (C) 2006-2018.
+!   This code and the source code it references are (C) 2006-2020.
 !
 !   The distribution of this code and derived works thereof
 !                   should include this notice.
@@ -128,7 +128,8 @@ module advance_clubb_core_module
                rtm_ref, thlm_ref, um_ref, vm_ref, ug, vg, &         ! Intent(in)
                p_in_Pa, rho_zm, rho, exner, &                       ! intent(in)
                rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm, &             ! intent(in)
-               invrs_rho_ds_zt, thv_ds_zm, thv_ds_zt, hydromet, &   ! intent(in)
+               invrs_rho_ds_zt, thv_ds_zm, thv_ds_zt, &             ! intent(in)
+               hydromet, &                                          ! Unused
                rfrzm, radf, &                                       ! intent(in)
 #ifdef CLUBBND_CAM
                varmu, &                                             ! intent(in)
@@ -181,10 +182,6 @@ module advance_clubb_core_module
         rt_tol, &
         w_tol, &
         w_tol_sqd, &
-        ep2, &
-        Cp, &
-        Lv, &
-        ep1, &
         fstderr, &
         zero_threshold, &
         three_halves, &
@@ -200,14 +197,11 @@ module advance_clubb_core_module
         taumax, & ! Variable(s)
         c_K, &
         mu, &
-        Lscale_mu_coef, &
-        Lscale_pert_coef, &
         gamma_coef,  &
         gamma_coefb, &
         gamma_coefc, &
         c_K10, &
         c_K10h, &
-        C1, C14, &
         C5, C4, &
         C_wp2_splat, &
         C_invrs_tau_bkgnd, &
@@ -368,10 +362,6 @@ module advance_clubb_core_module
     use stats_variables, only: &
       irfrzm, & ! Variable(s)
       istability_correction
-
-    use stats_variables, only: &
-      iLscale_pert_1, & ! Variable(s)
-      iLscale_pert_2
 
     use fill_holes, only: &
       vertical_integral, & ! Procedure(s)
@@ -759,7 +749,6 @@ module advance_clubb_core_module
        invrs_tau_wp2_zm,             & ! One divided by tau_wp2                       [s^-1]
        invrs_tau_wpxp_zm,            & ! One divided by tau_wpxp                      [s^-1]
        invrs_tau_wp3_zm,             & ! One divided by tau_wp3                       [s^-1]
-       invrs_tau_N2_zm,              & ! One divided by tau with stability effects    [s^-1]
        invrs_tau_no_N2_zm,           & ! One divided by tau (without N2) on zm levels [s^-1] 
        ustar,                        & ! Friction velocity  [m/s]
        tau_no_N2_zm,                 & ! Tau without Brunt Freq
@@ -806,6 +795,7 @@ module advance_clubb_core_module
     integer, intent(out) :: &
       err_code_out  ! Error code indicator
 
+
     !----- Begin Code -----
     
     err_code_out = clubb_no_error  ! Initialize to no error value
@@ -843,7 +833,8 @@ module advance_clubb_core_module
              thv_ds_zm, thv_ds_zt, wpthlp_sfc, wprtp_sfc, upwp_sfc,             & ! intent(in)
              vpwp_sfc, um, upwp, vm, vpwp, up2, vp2,                            & ! intent(in)
              rtm, wprtp, thlm, wpthlp, wp2, wp3,                                & ! intent(in)
-             rtp2, thlp2, rtpthlp, rcm,                                         & ! intent(in)
+             rtp2, thlp2, rtpthlp,                                              & ! intent(in)
+!            rcm,                                                               &
              "beginning of ",                                                   & ! intent(in)
              wpsclrp_sfc, wpedsclrp_sfc, sclrm, wpsclrp, sclrp2,                & ! intent(in)
              sclrprtp, sclrpthlp, sclrm_forcing, edsclrm, edsclrm_forcing )       ! intent(in)
@@ -974,7 +965,8 @@ module advance_clubb_core_module
                                 vm, vp2, vpwp, vp3,                          & ! Intent(in)
                                 p_in_Pa, exner,                              & ! Intent(in)
                                 thv_ds_zm, thv_ds_zt, rtm_ref,               & ! Intent(in)
-                                rfrzm, hydromet, wphydrometp,                & ! Intent(in)
+!                               rfrzm, hydromet,                             &
+                                wphydrometp,                                 & ! Intent(in)
                                 wp2hmp, rtphmp_zt, thlphmp_zt,               & ! Intent(in)
                                 sclrm, wpsclrp, sclrp2,                      & ! Intent(in)
                                 sclrprtp, sclrpthlp, sclrp3,                 & ! Intent(in)
@@ -1620,6 +1612,7 @@ module advance_clubb_core_module
              clubb_config_flags%l_upwind_xm_ma,                  & ! intent(in)
              clubb_config_flags%l_tke_aniso,                     & ! intent(in)
              clubb_config_flags%l_standard_term_ta,              & ! intent(in)
+             clubb_config_flags%l_partial_upwind_wp3,            & ! intent(in)
              clubb_config_flags%l_damp_wp2_using_em,             & ! intent(in)
              clubb_config_flags%l_use_C11_Richardson,            & ! intent(in)
              clubb_config_flags%l_damp_wp3_Skw_squared,          & ! intent(in)
@@ -1902,7 +1895,8 @@ module advance_clubb_core_module
                                 vm, vp2, vpwp, vp3,                          & ! Intent(in)
                                 p_in_Pa, exner,                              & ! Intent(in)
                                 thv_ds_zm, thv_ds_zt, rtm_ref,               & ! Intent(in)
-                                rfrzm, hydromet, wphydrometp,                & ! Intent(in)
+!                               rfrzm, hydromet,                             &
+                                wphydrometp,                                 & ! Intent(in)
                                 wp2hmp, rtphmp_zt, thlphmp_zt,               & ! Intent(in)
                                 sclrm, wpsclrp, sclrp2,                      & ! Intent(in)
                                 sclrprtp, sclrpthlp, sclrp3,                 & ! Intent(in)
@@ -2050,7 +2044,8 @@ module advance_clubb_core_module
              thv_ds_zm, thv_ds_zt, wpthlp_sfc, wprtp_sfc, upwp_sfc,             & ! intent(in)
              vpwp_sfc, um, upwp, vm, vpwp, up2, vp2,                            & ! intent(in)
              rtm, wprtp, thlm, wpthlp, wp2, wp3,                                & ! intent(in)
-             rtp2, thlp2, rtpthlp, rcm,                                         & ! intent(in)
+             rtp2, thlp2, rtpthlp,                                              & ! intent(in)
+!            rcm,                                                               &
             "end of ",                                                          & ! intent(in)
              wpsclrp_sfc, wpedsclrp_sfc, sclrm, wpsclrp, sclrp2,                & ! intent(in)
              sclrprtp, sclrpthlp, sclrm_forcing, edsclrm, edsclrm_forcing       ) ! intent(in)
@@ -2141,7 +2136,8 @@ module advance_clubb_core_module
                                  vm, vp2, vpwp, vp3,            & ! Intent(in)
                                  p_in_Pa, exner,                & ! Intent(in)
                                  thv_ds_zm, thv_ds_zt, rtm_ref, & ! Intent(in)
-                                 rfrzm, hydromet, wphydrometp,  & ! Intent(in)
+!                                rfrzm, hydromet,               &
+                                 wphydrometp,                   & ! Intent(in)
                                  wp2hmp, rtphmp_zt, thlphmp_zt, & ! Intent(in)
                                  sclrm, wpsclrp, sclrp2,        & ! Intent(in)
                                  sclrprtp, sclrpthlp, sclrp3,   & ! Intent(in)
@@ -2190,9 +2186,6 @@ module advance_clubb_core_module
         w_tol_sqd,      &
         rt_tol,         &
         thl_tol,        &
-        Cp,             &
-        Lv,             &
-        Ls,             &
         p0,             &
         kappa,          &
         fstderr,        &
@@ -2235,9 +2228,6 @@ module advance_clubb_core_module
 
     use saturation, only:  &
         sat_mixrat_liq    ! Procedure(s)
-
-    use array_index, only: &
-        iirr    ! Variable(s)
 
     use model_flags, only: &
         l_gamma_Skw,                  & ! Variable(s)
@@ -2322,8 +2312,8 @@ module advance_clubb_core_module
       exner,     & ! Exner function (thermodynamic levels)          [-]
       thv_ds_zm, & ! Dry, base-state theta_v on momentum levs.      [K]
       thv_ds_zt, & ! Dry, base-state theta_v on thermo. levs.       [K]
-      rtm_ref,   & ! Initial total water mixing ratio               [kg/kg]
-      rfrzm        ! Total ice-phase water mixing ratio             [kg/kg]
+      rtm_ref!,  & ! Initial total water mixing ratio               [kg/kg]
+!     rfrzm        ! Total ice-phase water mixing ratio             [kg/kg]
 
     real( kind = core_rknd ), dimension(gr%nz), intent(in) ::  &
       um,          & ! Grid-mean eastward wind     [m/s]
@@ -2336,8 +2326,8 @@ module advance_clubb_core_module
       vp3            ! v'^3                        [(m/s)^3]
 
     ! Hydrometeor variables
-    real( kind = core_rknd ), dimension(gr%nz,hydromet_dim), intent(in) :: &
-      hydromet       ! Mean of hydrometeor fields               [units vary]
+!   real( kind = core_rknd ), dimension(gr%nz,hydromet_dim), intent(in) :: &
+!     hydromet       ! Mean of hydrometeor fields               [units vary]
 
     real( kind = core_rknd ), dimension(gr%nz, hydromet_dim), intent(in) :: &
       wphydrometp, & ! Covariance of w and a hydrometeor      [(m/s) <hm units>]
@@ -2583,7 +2573,6 @@ module advance_clubb_core_module
       rcm_refined             ! rcm gridbox mean on refined grid
 
     real( kind = core_rknd ), dimension(gr%nz) :: &
-      rrm,              & ! Rain water mixing ratio
       rsat,             & ! Saturation mixing ratio from mean rt and thl.
       rel_humidity        ! Relative humidity after PDF closure [-]
 
@@ -3125,7 +3114,8 @@ module advance_clubb_core_module
           setup_parameters_model ! Procedure
 
       use constants_clubb, only:  &
-          fstderr  ! Variable(s)
+          fstderr, &  ! Variable(s)
+          eps
 
       use error_code, only: &
           clubb_at_least_debug_level,  & ! Procedures
@@ -3266,7 +3256,8 @@ module advance_clubb_core_module
       ! Sanity check
       if ( clubb_at_least_debug_level( 0 ) ) then
 
-        if ( l_damp_wp2_using_em .and. (params(iC1) /= params(iC14) .or. &
+        if ( l_damp_wp2_using_em .and. &
+           (abs(params(iC1) - params(iC14)) > abs(params(iC1) + params(iC14)) / 2 * eps .or. &
              l_stability_correct_tau_zm) ) then
           write(fstderr,*) "l_damp_wp2_using_em requires C1=C14 and l_stability_correct_tau_zm = F"
           write(fstderr,*) "Fatal error in setup_clubb_core"

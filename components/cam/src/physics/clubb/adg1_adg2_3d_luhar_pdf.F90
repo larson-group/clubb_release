@@ -595,9 +595,6 @@ module adg1_adg2_3d_luhar_pdf
     ! Higher-Order Moments. Mon. Wea. Rev., 133, 1023–1042.
     !-----------------------------------------------------------------------
 
-    use grid_class, only: &
-        gr    ! Variable type(s)
-
     use constants_clubb, only: &
         four,      & ! Constant(s)
         one,       &
@@ -1033,7 +1030,6 @@ module adg1_adg2_3d_luhar_pdf
         one,            &
         two_thirds,     &
         one_half,       &
-        zero,           &
         zero_threshold, &
         w_tol_sqd
 

@@ -112,8 +112,7 @@ module mixing_length
         grav,           & ! Gravitational acceleration                 [m/s^2]
         fstderr,        &
         zero_threshold, &
-        eps,            &
-        em_min
+        eps
 
     use parameters_tunable, only:  &  ! Variable(s)
         lmin    ! Minimum value for Lscale                         [m]
@@ -807,8 +806,7 @@ module mixing_length
     use constants_clubb, only: &
       zero, &
       one, &
-      T_freeze_K, &
-      fstderr
+      T_freeze_K
 
     use error_code, only: &
       clubb_at_least_debug_level
@@ -891,7 +889,6 @@ module mixing_length
         unused_var
 
     use parameters_tunable, only: &
-        mu, &
         Lscale_mu_coef, &
         Lscale_pert_coef
 
@@ -903,9 +900,7 @@ module mixing_length
 
     use stats_variables, only: &
         l_stats_samp,  &
-        l_stats,       &
-        stats_zt,      &
-        stats_zm
+        stats_zt
 
     use pdf_parameter_module, only: &
         pdf_parameter
@@ -962,7 +957,7 @@ module mixing_length
       Lscale_down  ! Mixing length down [m]
 
     ! Local Variables
-    integer :: i, k
+    integer :: k
 
     logical, parameter :: &
       l_avg_Lscale = .false.   ! Lscale is calculated in subroutine compute_mixing_length
