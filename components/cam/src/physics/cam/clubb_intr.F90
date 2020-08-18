@@ -4085,6 +4085,11 @@ end function diag_ustar
                                       ! pulled outside of the derivative in
                                       ! advance_wp2_wp3_module.F90 and in
                                       ! advance_xp2_xpyp_module.F90.
+      l_partial_upwind_wp3,         & ! Flag to use an "upwind" discretization rather
+                                      ! than a centered discretization for the portion
+                                      ! of the wp3 turbulent advection term for ADG1
+                                      ! that is linearized in terms of wp3<t+1>.
+                                      ! (Requires ADG1 PDF and l_standard_term_ta).
       l_use_cloud_cover,            & ! Use cloud_cover and rcm_in_layer to help boost cloud_frac
                                       ! and rcm to help increase cloudiness at coarser grid
                                       ! resolutions.
@@ -4137,6 +4142,7 @@ end function diag_ustar
                                                l_trapezoidal_rule_zm, & ! Out
                                                l_call_pdf_closure_twice, & ! Out
                                                l_standard_term_ta, & ! Out
+                                               l_partial_upwind_wp3, & ! Out
                                                l_use_cloud_cover, & ! Out
                                                l_diagnose_correlations, & ! Out
                                                l_calc_w_corr, & ! Out
@@ -4178,6 +4184,7 @@ end function diag_ustar
                                                    l_trapezoidal_rule_zm, & ! In
                                                    l_call_pdf_closure_twice, & ! In
                                                    l_standard_term_ta, & ! In
+                                                   l_partial_upwind_wp3, & ! In
                                                    l_use_cloud_cover, & ! In
                                                    l_diagnose_correlations, & ! In
                                                    l_calc_w_corr, & ! In
