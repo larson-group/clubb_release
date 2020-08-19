@@ -1073,24 +1073,37 @@ module advance_clubb_core_module
     rtp2_zt    = max( zm2zt( rtp2 ), rt_tol**2 )   ! Positive def. quantity
     rtpthlp_zt = zm2zt( rtpthlp )
 
-    ! Compute wp3 / wp2 on zt levels.  Always use the interpolated value in the
-    ! denominator since it's less likely to create spikes
-    wp3_on_wp2_zt = ( wp3(1:gr%nz) / max( wp2_zt(1:gr%nz), w_tol_sqd ) )
+    if( .not. clubb_config_flags%l_smooth_wp3_on_wp2)then 
 
-    ! Clip wp3_on_wp2_zt if it's too large
-    do k=1, gr%nz
-      if( wp3_on_wp2_zt(k) < 0._core_rknd ) then
-        wp3_on_wp2_zt = max( -1000._core_rknd, wp3_on_wp2_zt )
-      else
-        wp3_on_wp2_zt = min( 1000._core_rknd, wp3_on_wp2_zt )
-      end if
-    end do
+      ! Compute wp3 / wp2 on zt levels.  Always use the interpolated value in
+      ! the
+      ! denominator since it's less likely to create spikes
+      wp3_on_wp2_zt = ( wp3(1:gr%nz) / max( wp2_zt(1:gr%nz), w_tol_sqd ) )
 
-    ! Compute wp3_on_wp2 by interpolating wp3_on_wp2_zt
-    wp3_on_wp2 = zt2zm( wp3_on_wp2_zt )
+      wp3_on_wp2    = ( wp3_zm(1:gr%nz) / max(wp2(1:gr%nz), w_tol_sqd ) )
 
-    ! Smooth again as above
-    wp3_on_wp2_zt = zm2zt( wp3_on_wp2 )
+    else
+
+      ! Compute wp3 / wp2 on zt levels.  Always use the interpolated value in the
+      ! denominator since it's less likely to create spikes
+      wp3_on_wp2_zt = ( wp3(1:gr%nz) / max( wp2_zt(1:gr%nz), w_tol_sqd ) )
+
+      ! Clip wp3_on_wp2_zt if it's too large
+      do k=1, gr%nz
+        if( wp3_on_wp2_zt(k) < 0._core_rknd ) then
+          wp3_on_wp2_zt = max( -1000._core_rknd, wp3_on_wp2_zt )
+        else
+          wp3_on_wp2_zt = min( 1000._core_rknd, wp3_on_wp2_zt )
+        end if
+      end do
+
+      ! Compute wp3_on_wp2 by interpolating wp3_on_wp2_zt
+      wp3_on_wp2 = zt2zm( wp3_on_wp2_zt )
+
+      ! Smooth again as above
+      wp3_on_wp2_zt = zm2zt( wp3_on_wp2 )
+ 
+    end if 
 
       !----------------------------------------------------------------
       ! Compute thvm
@@ -1608,7 +1621,7 @@ module advance_clubb_core_module
              wprtp, wpthlp, rtp2, thlp2,                         & ! intent(in)
              clubb_config_flags%l_min_wp2_from_corr_wx,          & ! intent(in)
              clubb_config_flags%l_upwind_xm_ma,                  & ! intent(in)
-             clubb_config_flags%l_upwind_wp3_ta,                 & ! intent(in)
+             clubb_config_flags%l_upwind_wp3_ta,                 & !intent(in)
              clubb_config_flags%l_tke_aniso,                     & ! intent(in)
              clubb_config_flags%l_standard_term_ta,              & ! intent(in)
              clubb_config_flags%l_damp_wp2_using_em,             & ! intent(in)

@@ -392,7 +392,12 @@ module spurious_source_test
                                       ! rtpthlp
       l_damp_wp3_Skw_squared,       & ! Set damping on wp3 to use Skw^2 rather than Skw^4
       l_prescribed_avg_deltaz,      & ! used in adj_low_res_nu. If .true., avg_deltaz = deltaz
-      l_update_pressure               ! Flag for having CLUBB update pressure and exner
+      l_update_pressure,            & ! Flag for having CLUBB update pressure and exner
+      l_smooth_wp3_on_wp2,          & ! Flag for applying smoothing on calculated wp3/wp2
+      l_constant_surflx,            & ! Flag for having CLUBB use constant surface flux (rico only)
+      l_fixed_level_for_surflx,     & ! Flag for having CLUBB calculate surface flux using a fixed model height
+      l_fixed_level_for_momentum_surflx, & ! Flag for having CLUBB calculate surface momentum flux at a fixed model height
+      l_perturb_IC_at_rounding_level  ! Flag for pergro test 
 
 
     call set_default_clubb_config_flags( l_use_precip_frac, &
@@ -434,7 +439,12 @@ module spurious_source_test
                                          l_single_C2_Skw, &
                                          l_damp_wp3_Skw_squared, &
                                          l_prescribed_avg_deltaz, &
-                                         l_update_pressure )
+                                         l_update_pressure, & 
+                                         l_smooth_wp3_on_wp2, &
+                                         l_constant_surflx, & 
+                                         l_fixed_level_for_surflx, &
+                                         l_fixed_level_for_momentum_surflx, &
+                                         l_perturb_IC_at_rounding_level ) 
 
     write(*,*)
     write(*,*) "Performing spurious source unit test"

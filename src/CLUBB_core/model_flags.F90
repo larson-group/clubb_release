@@ -214,7 +214,13 @@ module model_flags
                                       ! rtpthlp
       l_damp_wp3_Skw_squared,       & ! Set damping on wp3 to use Skw^2 rather than Skw^4
       l_prescribed_avg_deltaz,      & ! used in adj_low_res_nu. If .true., avg_deltaz = deltaz
-      l_update_pressure               ! Flag for having CLUBB update pressure and exner
+      l_update_pressure,            & ! Flag for having CLUBB update pressure and exner
+      l_smooth_wp3_on_wp2,          & ! Flag for appling smoothing on calculated wp3/wp2 
+      l_constant_surflx,            & ! Flag for having CLUBB use constant surface flux (Rico only)
+      l_fixed_level_for_surflx,     & ! Flag for having CLUBB calculate surface flux at a fixed model height
+      l_fixed_level_for_momentum_surflx, & ! Flag for having CLUBB calculate momentum flux at a fixed model height
+      l_perturb_IC_at_rounding_level  ! Flag for pergro test 
+
   end type clubb_config_flags_type
 
   contains
@@ -322,7 +328,12 @@ module model_flags
                                              l_single_C2_Skw, &
                                              l_damp_wp3_Skw_squared, &
                                              l_prescribed_avg_deltaz, &
-                                             l_update_pressure )
+                                             l_update_pressure, & 
+                                             l_smooth_wp3_on_wp2, &
+                                             l_constant_surflx, &
+                                             l_fixed_level_for_surflx, &
+                                             l_fixed_level_for_momentum_surflx, &
+                                             l_perturb_IC_at_rounding_level )
 
 ! Description:
 !   Sets all CLUBB flags to a default setting.
@@ -425,7 +436,12 @@ module model_flags
                                       ! rtpthlp
       l_damp_wp3_Skw_squared,       & ! Set damping on wp3 to use Skw^2 rather than Skw^4
       l_prescribed_avg_deltaz,      & ! used in adj_low_res_nu. If .true., avg_deltaz = deltaz
-      l_update_pressure               ! Flag for having CLUBB update pressure and exner
+      l_update_pressure,            & ! Flag for having CLUBB update pressure and exner
+      l_smooth_wp3_on_wp2,          & ! Flag for appling smoothing on calculated wp3/wp2
+      l_constant_surflx,            & ! Flag for having CLUBB use constant surface flux (Rico only)
+      l_fixed_level_for_surflx,     & ! Flag for having CLUBB calculate surface flux at a fixed model height
+      l_fixed_level_for_momentum_surflx, & ! Flag for having CLUBB calculate surface momentum flux at a fixed model height
+      l_perturb_IC_at_rounding_level  ! Flag for pergro test 
 
 !-----------------------------------------------------------------------
     ! Begin code
@@ -474,6 +490,11 @@ module model_flags
     l_prescribed_avg_deltaz = .false.
 #endif
     l_update_pressure = .true.
+    l_smooth_wp3_on_wp2 = .true.
+    l_constant_surflx = .false.
+    l_fixed_level_for_surflx = .false.
+    l_fixed_level_for_momentum_surflx = .false.
+    l_perturb_IC_at_rounding_level = .false.
 
     return
   end subroutine set_default_clubb_config_flags
@@ -519,6 +540,11 @@ module model_flags
                                                  l_damp_wp3_Skw_squared, &
                                                  l_prescribed_avg_deltaz, &
                                                  l_update_pressure, &
+                                                 l_smooth_wp3_on_wp2, & 
+                                                 l_constant_surflx, &
+                                                 l_fixed_level_for_surflx, &
+                                                 l_fixed_level_for_momentum_surflx, &
+                                                 l_perturb_IC_at_rounding_level, &
                                                  clubb_config_flags )
 
 ! Description:
@@ -622,7 +648,12 @@ module model_flags
                                       ! rtpthlp
       l_damp_wp3_Skw_squared,       & ! Set damping on wp3 to use Skw^2 rather than Skw^4
       l_prescribed_avg_deltaz,      & ! used in adj_low_res_nu. If .true., avg_deltaz = deltaz
-      l_update_pressure               ! Flag for having CLUBB update pressure and exner
+      l_update_pressure,            & ! Flag for having CLUBB update pressure and exner
+      l_smooth_wp3_on_wp2,          & ! Flag for applying smoothing on calculated wp3/wp2
+      l_constant_surflx,            & ! Flag for having CLUBB use constant surface flux (Rico only)
+      l_fixed_level_for_surflx,     & ! Flag for having CLUBB calculate surface flux at a fixed model height
+      l_fixed_level_for_momentum_surflx, & ! Flag for having CLUBB calculate surface flux at a fixed model height
+      l_perturb_IC_at_rounding_level  ! Flag for pergro test 
 
     ! Output variables
     type(clubb_config_flags_type), intent(out) :: &
@@ -671,6 +702,11 @@ module model_flags
     clubb_config_flags%l_damp_wp3_Skw_squared = l_damp_wp3_Skw_squared
     clubb_config_flags%l_prescribed_avg_deltaz = l_prescribed_avg_deltaz
     clubb_config_flags%l_update_pressure = l_update_pressure
+    clubb_config_flags%l_smooth_wp3_on_wp2 = l_smooth_wp3_on_wp2
+    clubb_config_flags%l_constant_surflx = l_constant_surflx
+    clubb_config_flags%l_fixed_level_for_surflx = l_fixed_level_for_surflx
+    clubb_config_flags%l_fixed_level_for_momentum_surflx = l_fixed_level_for_momentum_surflx
+    clubb_config_flags%l_perturb_IC_at_rounding_level = l_perturb_IC_at_rounding_level 
 
     return
   end subroutine initialize_clubb_config_flags_type
@@ -739,7 +775,11 @@ module model_flags
     write(iunit,*) "l_damp_wp3_Skw_squared = ", clubb_config_flags%l_damp_wp3_Skw_squared
     write(iunit,*) "l_prescribed_avg_deltaz = ", clubb_config_flags%l_prescribed_avg_deltaz
     write(iunit,*) "l_update_pressure = ", clubb_config_flags%l_update_pressure
-
+    write(iunit,*) "l_smooth_wp3_on_wp2 = ", clubb_config_flags%l_smooth_wp3_on_wp2
+    write(iunit,*) "l_constant_surflx = ", clubb_config_flags%l_constant_surflx 
+    write(iunit,*) "l_fixed_level_for_surflx = ", clubb_config_flags%l_fixed_level_for_surflx 
+    write(iunit,*) "l_fixed_level_for_momentum_surflx= ", clubb_config_flags%l_fixed_level_for_momentum_surflx
+    write(iunit,*) "l_perturb_IC_at_rounding_level = ", clubb_config_flags%l_perturb_IC_at_rounding_level 
     return
   end subroutine print_clubb_config_flags
 

@@ -98,6 +98,15 @@ module clubb_model_settings
     dt_rad      ! Closure model timestep                 [s]
 !$omp threadprivate(dt_main, dt_rad)
 
+  real(kind = core_rknd ), public ::  &
+    zt_surflx,  &       ! Model height for the surface flux calculation     [m]
+    f_scale_surflx      ! scale factors applied on the surface fluxes       [1]
+!$omp threadprivate(zt_surflx, f_scale_surflx)
+
+  real(kind = core_rknd ), public ::  &
+   perturb_factor
+!$omp threadprivate(perturb_factor)
+
   contains
 
 !-------------------------------------------------------------------------------
@@ -145,6 +154,11 @@ module clubb_model_settings
 
     dt_main = 60._core_rknd
     dt_rad  = 600._core_rknd
+
+    zt_surflx = 25._core_rknd
+    f_scale_surflx = 1._core_rknd
+
+    perturb_factor = 10._core_rknd
 
     return
   end subroutine initialize_clubb_model_settings

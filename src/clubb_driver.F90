@@ -249,7 +249,11 @@ module clubb_driver
       runtype, &
       sfctype, &
       dt_rad, &
-      dt_main
+      dt_main, &
+      zt_surflx, &
+      f_scale_surflx,&
+      perturb_factor  
+
 
     use soil_vegetation, only: &
         l_soil_veg !------------------------------------------------------ Variable(s)
@@ -602,8 +606,14 @@ module clubb_driver
                                       ! rtpthlp
       l_damp_wp3_Skw_squared,       & ! Set damping on wp3 to use Skw^2 rather than Skw^4
       l_prescribed_avg_deltaz,      & ! used in adj_low_res_nu. If .true., avg_deltaz = deltaz
-      l_update_pressure               ! Flag for having CLUBB update pressure and exner
-
+      l_update_pressure,            & ! Flag for having CLUBB update pressure and exner
+      l_smooth_wp3_on_wp2,          & ! Flag for applying smoothing on calculated wp3/wp2
+      l_constant_surflx,            & ! Flag for having CLUBB use constant surface flux (rico only)
+      l_fixed_level_for_surflx,     & ! Flag for having CLUBB calculate surface flux using a fixed model height 
+      l_fixed_level_for_momentum_surflx, & ! Flag for having CLUBB calculate surface momentum flux at a fixed model height
+      l_perturb_IC_at_rounding_level  ! Flag for pergro test 
+     
+      
     type(clubb_config_flags_type) :: &
       clubb_config_flags ! Derived type holding all configurable CLUBB flags
     
@@ -615,6 +625,8 @@ module clubb_driver
       time_initial, time_final, &
       dt_main, dt_rad, &
       sfctype, T_sfc, p_sfc, sens_ht, latent_ht, fcor, T0, ts_nudge, &
+      zt_surflx, f_scale_surflx, &
+      perturb_factor, &
       forcings_file_path, l_t_dependent, l_input_xpwp_sfc, &
       l_ignore_forcings, saturation_formula, &
       thlm_sponge_damp_settings, rtm_sponge_damp_settings, &
@@ -625,7 +637,11 @@ module clubb_driver
       sclr_tol, sclr_dim, iisclr_thl, iisclr_rt, iisclr_CO2, &
       edsclr_dim, iiedsclr_thl, iiedsclr_rt, iiedsclr_CO2, &
       l_rtm_nudge, rtm_min, rtm_nudge_max_altitude, &
-      l_diagnose_correlations, l_calc_w_corr
+      l_diagnose_correlations, l_calc_w_corr, &
+      l_smooth_wp3_on_wp2, &
+      l_constant_surflx, l_fixed_level_for_surflx, &
+      l_fixed_level_for_momentum_surflx, & 
+      l_perturb_IC_at_rounding_level
 
 
     namelist /stats_setting/ &
@@ -783,7 +799,12 @@ module clubb_driver
                                          l_single_C2_Skw, & ! Intent(out)
                                          l_damp_wp3_Skw_squared, & ! Intent(out)
                                          l_prescribed_avg_deltaz, & ! Intent(out)
-                                         l_update_pressure ) ! Intent(out)
+                                         l_update_pressure,& ! Intent(out)      
+                                         l_smooth_wp3_on_wp2,& ! Intent (out)
+                                         l_constant_surflx,& !  Intent(out) 
+                                         l_fixed_level_for_surflx, & ! Intent(out)
+                                         l_fixed_level_for_momentum_surflx, & !Intent(out)
+                                         l_perturb_IC_at_rounding_level ) ! Intent(out)
 
     ! Read namelist file
     open(unit=iunit, file=trim( runfile ), status='old')
@@ -927,6 +948,10 @@ module clubb_driver
 
       call write_text( "dt_main = ", dt_main, l_write_to_file, iunit )
       call write_text( "dt_rad = ",  dt_rad, l_write_to_file, iunit )
+
+      call write_text( "zt_surflx = ", zt_surflx, l_write_to_file, iunit )
+      call write_text( "f_scale_surflx = ", f_scale_surflx, l_write_to_file, iunit )
+      call write_text( "perturb_factor = ", perturb_factor, l_write_to_file, iunit )
 
       call write_text( "sfctype = ", sfctype, l_write_to_file, iunit )
       call write_text( "T_sfc = ", T_sfc, l_write_to_file, iunit )
@@ -1145,6 +1170,11 @@ module clubb_driver
                                              l_damp_wp3_Skw_squared, & ! Intent(in)
                                              l_prescribed_avg_deltaz, & ! Intent(in)
                                              l_update_pressure, & ! Intent(in)
+                                             l_smooth_wp3_on_wp2, & ! Intent (in)
+                                             l_constant_surflx,& !  Intent(in) 
+                                             l_fixed_level_for_surflx, & ! Intent(in)
+                                             l_fixed_level_for_momentum_surflx, & ! Intent (in) 
+                                             l_perturb_IC_at_rounding_level, & ! Intent(in)
                                              clubb_config_flags ) ! Intent(out)
 
     ! Printing configurable CLUBB flags Inputs
@@ -1330,6 +1360,8 @@ module clubb_driver
            ( iunit, trim( forcings_file_path ), p_sfc, zm_init, & ! Intent(in)
              clubb_config_flags%l_uv_nudge,                     & ! Intent(in)
              clubb_config_flags%l_tke_aniso,                    & ! Intent(in)
+             clubb_config_flags%l_perturb_IC_at_rounding_level, & ! Intent(in) 
+             perturb_factor,                                    & ! Intent(in) 
              thlm, rtm, um, vm, ug, vg, wp2, up2, vp2, rcm,     & ! Intent(inout)
              wm_zt, wm_zm, em, exner,                           & ! Intent(inout)
              thvm, p_in_Pa,                                     & ! Intent(inout)
@@ -1366,6 +1398,8 @@ module clubb_driver
            ( iunit, trim( forcings_file_path ), p_sfc, zm_init,  & ! Intent(in)
              clubb_config_flags%l_uv_nudge,                      & ! Intent(in)
              clubb_config_flags%l_tke_aniso,                     & ! Intent(in)
+             clubb_config_flags%l_perturb_IC_at_rounding_level,  & ! Intent(in) 
+             perturb_factor,                                     & ! Intent(in) 
              thlm, rtm, um, vm, ug, vg, wp2, up2, vp2, rcm,      & ! Intent(inout)
              wm_zt, wm_zm, em, exner,                            & ! Intent(inout)
              thvm, p_in_Pa,                                      & ! Intent(inout)
@@ -1591,7 +1625,10 @@ module clubb_driver
       thvm = calculate_thvm( thlm, rtm, rcm, exner, thv_ds_zt )
 
       ! Set large-scale tendencies and subsidence profiles
-      call prescribe_forcings( dt_main )  ! Intent(in)
+      call prescribe_forcings( dt_main, zt_surflx, f_scale_surflx, &                  ! Intent(in)
+                               clubb_config_flags%l_constant_surflx, &                ! Intent(in)
+                               clubb_config_flags%l_fixed_level_for_surflx, &         ! Intent(in)
+                               clubb_config_flags%l_fixed_level_for_momentum_surflx ) ! Intent(in)
 
       if ( clubb_at_least_debug_level( 0 ) ) then
         if ( err_code == clubb_fatal_error ) then
@@ -2037,6 +2074,8 @@ module clubb_driver
              ( iunit, forcings_file_path, p_sfc, zm_init, &
                l_uv_nudge, &
                l_tke_aniso, &
+               l_perturb_IC_at_rounding_level,&
+               perturb_factor,&
                thlm, rtm, um, vm, ug, vg, wp2, up2, vp2, rcm, &
                wm_zt, wm_zm, em, exner, &
                thvm, p_in_Pa, &
@@ -2141,6 +2180,12 @@ module clubb_driver
     logical, intent(in) :: &
       l_uv_nudge, & ! For wind speed nudging
       l_tke_aniso   ! For anisotropic turbulent kinetic energy, i.e. TKE = 1/2 (u'^2 + v'^2 + w'^2)
+     
+     logical, intent(in) :: &
+      l_perturb_IC_at_rounding_level ! For pergro test 
+      
+     real( kind = core_rknd ), intent(in) :: &
+       perturb_factor  ! For pergro test, amplification fator of perturbation
 
     ! Output
     real( kind = core_rknd ), dimension(gr%nz), intent(inout) ::  & 
@@ -2211,6 +2256,18 @@ module clubb_driver
                         thlm, theta_type, rtm, um, vm, ug, vg, & ! Intent(out)
                         alt_type, p_in_Pa, subs_type, wm_zt, &   ! Intent(out)
                         rtm_sfc, thlm_sfc, sclrm, edsclrm )      ! Intent(out)
+
+    if(l_perturb_IC_at_rounding_level) then
+      thlm     =  thlm*(1._core_rknd+  perturb_factor*epsilon(1._core_rknd))
+      rtm      =   rtm*(1._core_rknd+  perturb_factor*epsilon(1._core_rknd))
+      um       =    um*(1._core_rknd+  perturb_factor*epsilon(1._core_rknd))
+      vm       =    vm*(1._core_rknd+  perturb_factor*epsilon(1._core_rknd))
+      !wm_zt    = wm_zt*(1._core_rknd+  perturb_factor*epsilon(1._core_rknd))
+      !rtm_sfc  = rtm_sfc*(1._core_rknd+  perturb_factor*epsilon(1._core_rknd))
+      !thlm_sfc = thlm_sfc*(1._core_rknd+  perturb_factor*epsilon(1._core_rknd))
+      !ug       = ug*(1._core_rknd+  perturb_factor*epsilon(1._core_rknd))
+      !vg       = vg*(1._core_rknd+  perturb_factor*epsilon(1._core_rknd))
+    end if 
 
     ! Covert sounding input to CLUBB compatible input
     call initialize_clubb_variables( alt_type, theta_type,         & ! Intent(in)
@@ -3669,7 +3726,9 @@ module clubb_driver
   end subroutine restart_clubb
 
   !----------------------------------------------------------------------
-  subroutine prescribe_forcings( dt )
+  subroutine prescribe_forcings( dt, ztsfc, fsurflx, l_constant_surflx, &
+                                 l_fixed_level_for_surflx, &
+                                 l_fixed_level_for_momentum_surflx)
 
     ! Description:
     !   Calculate tendency and surface variables
@@ -3721,7 +3780,7 @@ module clubb_driver
 
     use constants_clubb, only: & 
       Cp, Lv, kappa, p0, & !---------------------------------- Variable(s)
-      zero, fstderr
+      zero, fstdout, fstderr
 
     use variables_prognostic_module, only:  & 
       sclrm_forcing,   & !------------------------------------ Passive scalar variables
@@ -3812,8 +3871,15 @@ module clubb_driver
 
     ! Input Variables
     real(kind=core_rknd), intent(in) :: & 
-      dt         ! Model timestep         [s]
-
+      dt, &         ! Model timestep         [s]
+      ztsfc,&       ! Model height for the surface flux calculation
+      fsurflx       ! Scale factor applied on surface flux
+    
+    logical, intent(in) :: &
+      l_constant_surflx, & 
+      l_fixed_level_for_surflx, &
+      l_fixed_level_for_momentum_surflx
+      
     ! Local Variables
     real( kind = core_rknd ) :: &
       wpthep  ! w'theta_e'                [m K/s]
@@ -3821,6 +3887,8 @@ module clubb_driver
     real( kind = core_rknd ) :: &
       ubar, &     ! mean sfc wind speed   [m/s]
       rho_sfc     ! Density at zm(1)      [kg/m^3]
+
+    integer :: k, kk
 
     ! Flags to help avoid code duplication
     logical :: &
@@ -3959,29 +4027,64 @@ module clubb_driver
 
     ! Boundary conditions for the second order moments
 
-    ubar = compute_ubar( um(2), vm(2) )
+    !!specify the model level used for the calculation of surface fluxes!!
+    if(l_fixed_level_for_surflx .or. l_fixed_level_for_momentum_surflx )then
+       do k = 2, gr%nz, 1
+        if (gr%zt(k) >= ztsfc ) then
+          kk = k
+          exit
+        end if
+       end do
+
+       if ( abs(gr%zt(kk) - ztsfc) >= abs(gr%zt(kk-1) - ztsfc)) kk = kk -1
+
+    else
+
+       kk = 2  !! default  
+
+    end if
+
+    write(unit=fstdout, fmt='(a,f10.4)') 'Model height for surface flux calculation = ', gr%zt(kk)
+
+
+    ubar = compute_ubar( um(kk), vm(kk) )
 
     select case ( trim( runtype ) )
 
     case ( "rico" )
       l_set_sclr_sfc_rtm_thlm = .true.
-      call rico_sfclyr( time_current, um(2), vm(2), thlm(2), rtm(2),  & ! Intent(in)
+
+      call rico_sfclyr( time_current, um(kk), vm(kk), thlm(kk), rtm(kk),  & ! Intent(in)
                           ! 299.8_core_rknd K is the RICO T_sfc;
                           ! 101540 Pa is the sfc pressure.
                           !gr%zt(2), 299.8_core_rknd, 101540._core_rknd,  &           ! Intent(in)
-                        gr%zt(2), p_sfc, exner(1), &                    ! Intent(in)
+                        gr%zt(kk), p_sfc, exner(1), &                   ! Intent(in)
                         upwp_sfc, vpwp_sfc, wpthlp_sfc, &               ! Intent(out)
                         wprtp_sfc, ustar, T_sfc )                       ! Intent(out)
-
+      
+      if(l_constant_surflx) then
+       upwp_sfc   = 0.2_core_rknd
+       vpwp_sfc   = 0.08_core_rknd
+       wpthlp_sfc = 0.01_core_rknd
+       wprtp_sfc  = 1.5e-4_core_rknd
+      else
+      !!apply a scale factor on the surface fluxes!!!
+       upwp_sfc   = upwp_sfc   * fsurflx 
+       vpwp_sfc   = vpwp_sfc   * fsurflx
+       wpthlp_sfc = wpthlp_sfc * fsurflx
+       wprtp_sfc  = wprtp_sfc  * fsurflx
+      end if 
+    
     case ( "gabls3" )
+
       l_compute_momentum_flux = .true.
       call gabls3_sfclyr( ubar, veg_T_in_K,      &               ! Intent(in)
-                          thlm(2), rtm(2), gr%zt(2), exner(1), & ! Intent(in)
+                          thlm(kk), rtm(kk), gr%zt(kk), exner(1), & ! Intent(in)
                           wpthlp_sfc, wprtp_sfc, ustar )         ! Intent(out)
 
     case ( "gabls3_night" )
-      call gabls3_night_sfclyr( time_current, um(2), vm(2),    & ! Intent(in)
-                          thlm(2), rtm(2), gr%zt(2),           & ! Intent(in)
+      call gabls3_night_sfclyr( time_current, um(kk), vm(kk),    & ! Intent(in)
+                          thlm(kk), rtm(kk), gr%zt(kk),           & ! Intent(in)
                           upwp_sfc, vpwp_sfc,                  & ! Intent(out)
                           wpthlp_sfc, wprtp_sfc, ustar )         ! Intent(out)
     case ( "jun25_altocu" )
@@ -3997,8 +4100,8 @@ module clubb_driver
 
     case ( "cobra" )
       l_compute_momentum_flux = .true.
-      call cobra_sfclyr( time_current, gr%zt(2), rho_zm(1), &      ! Intent(in)
-                         thlm(2), ubar,                     &      ! Intent(in)
+      call cobra_sfclyr( time_current, gr%zt(kk), rho_zm(1), &      ! Intent(in)
+                         thlm(kk), ubar,                     &      ! Intent(in)
                          wpthlp_sfc, wprtp_sfc, ustar,      &      ! Intent(out)
                          wpsclrp_sfc, wpedsclrp_sfc, T_sfc )       ! Intent(out)
     case ( "clex9_nov02" )
@@ -4025,8 +4128,8 @@ module clubb_driver
 
     case ( "astex_a209" )
       l_compute_momentum_flux = .true.
-      call astex_a209_sfclyr( time_current, ubar, rtm(2), &     ! Intent(in)
-                          thlm(2), gr%zt(2), exner(1), p_sfc, & ! Intent(in)
+      call astex_a209_sfclyr( time_current, ubar, rtm(kk), &     ! Intent(in)
+                          thlm(kk), gr%zt(kk), exner(1), p_sfc, & ! Intent(in)
                           wpthlp_sfc, wprtp_sfc, ustar, T_sfc ) ! Intent(out)
 
     case ( "nov11_altocu" )
@@ -4055,7 +4158,7 @@ module clubb_driver
       l_set_sclr_sfc_rtm_thlm = .true.
       l_fixed_flux            = .true.
       call fire_sfclyr( time_current, ubar, p_sfc,            &       ! Intent(in)
-                        thlm(2), rtm(2), exner(1),   &                ! Intent(in)
+                        thlm(kk), rtm(kk), exner(1),   &                ! Intent(in)
                         wpthlp_sfc, wprtp_sfc, ustar, T_sfc )         ! Intent(out)
 
     case ( "cloud_feedback_s6", "cloud_feedback_s6_p2k",   &
@@ -4067,7 +4170,7 @@ module clubb_driver
       l_set_sclr_sfc_rtm_thlm = .true.
       l_fixed_flux            = .true.
       call cloud_feedback_sfclyr( time_current, sfctype, &  ! Intent(in)
-                                  thlm(2), rtm(2), gr%zt(2),   &     ! Intent(in)
+                                  thlm(kk), rtm(kk), gr%zt(kk),   &     ! Intent(in)
                                   ubar, p_sfc, T_sfc,            &   ! Intent(in)
                                   wpthlp_sfc, wprtp_sfc, ustar)      ! Intent(out)
 
@@ -4075,34 +4178,34 @@ module clubb_driver
       l_compute_momentum_flux = .true.
       l_set_sclr_sfc_rtm_thlm = .true.
       rho_sfc = 1.1_core_rknd
-      call arm_sfclyr( time_current, gr%zt(2), rho_sfc,  &   ! Intent(in)
-                        thlm(2), ubar,               &       ! Intent(in)
+      call arm_sfclyr( time_current, gr%zt(kk), rho_sfc,  &   ! Intent(in)
+                        thlm(kk), ubar,               &       ! Intent(in)
                         wpthlp_sfc, wprtp_sfc, ustar )       ! Intent(out)
 
     case ( "arm_0003" )
       l_compute_momentum_flux = .true.
       l_set_sclr_sfc_rtm_thlm = .true.
-      call arm_0003_sfclyr( time_current, gr%zt(2), rho_zm(1), &  ! Intent(in)
-                            thlm(2), ubar,                     &  ! Intent(in)
+      call arm_0003_sfclyr( time_current, gr%zt(kk), rho_zm(1), &  ! Intent(in)
+                            thlm(kk), ubar,                     &  ! Intent(in)
                             wpthlp_sfc, wprtp_sfc, ustar )        ! Intent(out)
     case ( "arm_3year" )
       l_compute_momentum_flux = .true.
       l_set_sclr_sfc_rtm_thlm = .true.
-      call arm_3year_sfclyr( time_current, gr%zt(2), rho_zm(1), & ! Intent(in)
-                              thlm(2), ubar,                    & ! Intent(in)
+      call arm_3year_sfclyr( time_current, gr%zt(kk), rho_zm(1), & ! Intent(in)
+                              thlm(kk), ubar,                    & ! Intent(in)
                               wpthlp_sfc, wprtp_sfc, ustar) ! Intent(out)
     case ( "mc3e" )
       l_compute_momentum_flux = .true.
       l_set_sclr_sfc_rtm_thlm = .true.
-      call arm_97_sfclyr( time_current, gr%zt(2), rho_zm(1), &   ! Intent(in)
-                          thlm(2), ubar,                     &   ! Intent(in)
+      call arm_97_sfclyr( time_current, gr%zt(kk), rho_zm(1), &   ! Intent(in)
+                          thlm(kk), ubar,                     &   ! Intent(in)
                           wpthlp_sfc, wprtp_sfc, ustar )         ! Intent(out)
 
     case ( "arm_97" )
       l_compute_momentum_flux = .true.
       l_set_sclr_sfc_rtm_thlm = .true.
-      call arm_97_sfclyr( time_current, gr%zt(2), rho_zm(1), &   ! Intent(in)
-                          thlm(2), ubar,                     &   ! Intent(in)
+      call arm_97_sfclyr( time_current, gr%zt(kk), rho_zm(1), &   ! Intent(in)
+                          thlm(kk), ubar,                     &   ! Intent(in)
                           wpthlp_sfc, wprtp_sfc, ustar )         ! Intent(out)
 
 
@@ -4110,13 +4213,13 @@ module clubb_driver
       l_compute_momentum_flux = .true.
       l_set_sclr_sfc_rtm_thlm = .true.
       call atex_sfclyr( time_current, ubar,          &         ! Intent(in)
-                        thlm(2), rtm(2), exner(1),   &         ! Intent(in)
+                        thlm(kk), rtm(kk), exner(1),   &         ! Intent(in)
                         wpthlp_sfc, wprtp_sfc, ustar, T_sfc )  ! Intent(out)
 
     case ( "bomex" )
       l_compute_momentum_flux = .true.
       l_set_sclr_sfc_rtm_thlm = .true.
-      call bomex_sfclyr( time_current, rtm(2),                      &  ! Intent(in) 
+      call bomex_sfclyr( time_current, rtm(kk),                      &  ! Intent(in) 
                          wpthlp_sfc, wprtp_sfc, ustar )                ! Intent(out)
 
     case ( "dycoms2_rf01" )
@@ -4124,7 +4227,7 @@ module clubb_driver
       l_set_sclr_sfc_rtm_thlm = .true.
       call dycoms2_rf01_sfclyr( time_current, sfctype, p_sfc, &       ! Intent(in)
                                 exner(1), ubar,              &        ! Intent(in)
-                                thlm(2), rtm(2), rho_zm(1),  &        ! Intent(in)
+                                thlm(kk), rtm(kk), rho_zm(1),  &        ! Intent(in)
                                 wpthlp_sfc, wprtp_sfc, ustar, T_sfc ) ! Intent(out)
     case ( "dycoms2_rf02" )
       l_compute_momentum_flux = .true.
@@ -4136,15 +4239,15 @@ module clubb_driver
       l_compute_momentum_flux = .true.
       l_set_sclr_sfc_rtm_thlm = .true.
       call gabls2_sfclyr( time_current, time_initial, &              ! Intent(in)
-                          gr%zt(2), p_sfc, &                         ! Intent(in)
-                          ubar, thlm(2), rtm(2), exner(1), &         ! Intent(in)
+                          gr%zt(kk), p_sfc, &                         ! Intent(in)
+                          ubar, thlm(kk), rtm(kk), exner(1), &         ! Intent(in)
                           wpthlp_sfc, wprtp_sfc, ustar, T_sfc )      ! Intent(out)
 
     case ( "lba" )
       l_compute_momentum_flux = .true.
       l_set_sclr_sfc_rtm_thlm = .true.
-      call lba_sfclyr( time_current, time_initial, gr%zt(2), &  ! Intent(in)
-                       rho_zm(1), thlm(2), ubar, &              ! Intent(in)
+      call lba_sfclyr( time_current, time_initial, gr%zt(kk), &  ! Intent(in)
+                       rho_zm(1), thlm(kk), ubar, &              ! Intent(in)
                        wpthlp_sfc, wprtp_sfc, ustar )           ! Intent(out)
 
     case ( "mpace_a" )
@@ -4161,8 +4264,8 @@ module clubb_driver
     case ( "twp_ice" )
       l_compute_momentum_flux = .true.
       l_set_sclr_sfc_rtm_thlm = .true.
-      call twp_ice_sfclyr( time_current, gr%zt(2), exner(1), thlm(2), & ! Intent(in)
-                            ubar, rtm(2), p_sfc,               &        ! Intent(in)
+      call twp_ice_sfclyr( time_current, gr%zt(kk), exner(1), thlm(kk), & ! Intent(in)
+                            ubar, rtm(kk), p_sfc,               &        ! Intent(in)
                             wpthlp_sfc, wprtp_sfc, ustar, T_sfc )       ! Intent(out)
 
     case ( "wangara" )
@@ -4179,8 +4282,14 @@ module clubb_driver
 
     ! These have been placed here to help avoid repetition in the cases
     if( l_compute_momentum_flux ) then
-      call compute_momentum_flux( um(2), vm(2), ubar, ustar, &   ! Intent(in)
+
+      call compute_momentum_flux( um(kk), vm(kk), ubar, ustar, &   ! Intent(in)
                                   upwp_sfc, vpwp_sfc )           ! Intent(out)
+
+      !amplify the momentum fluxes by a factor of fsurflx
+      upwp_sfc = upwp_sfc * fsurflx
+      vpwp_sfc = vpwp_sfc * fsurflx
+
     end if
 
     if( l_set_sclr_sfc_rtm_thlm ) then

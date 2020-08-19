@@ -632,7 +632,12 @@ subroutine logical_flags_driver( current_date, current_time )
                                     ! rtpthlp
     l_damp_wp3_Skw_squared,       & ! Set damping on wp3 to use Skw^2 rather than Skw^4
     l_prescribed_avg_deltaz,      & ! used in adj_low_res_nu. If .true., avg_deltaz = deltaz
-    l_update_pressure               ! Flag for having CLUBB update pressure and exner
+    l_update_pressure,            & ! Flag for having CLUBB update pressure and exner
+    l_smooth_wp3_on_wp2,          & ! Flag for applying smoothing on calculated wp3/wp2
+    l_constant_surflx,            & ! Flag for having CLUBB use constant surface flux (rico only)
+    l_fixed_level_for_surflx,     & ! Flag for having CLUBB calculate surface flux using a fixed model height
+    l_fixed_level_for_momentum_surflx, & ! Flag for having CLUBB calculate surface momentum  flux at a fixed model height
+    l_perturb_IC_at_rounding_level  ! Flag for pergro test 
 
   namelist /configurable_clubb_flags_nl/ &
     l_upwind_wp3_ta, l_upwind_wpxp_ta, l_upwind_xpyp_ta, l_upwind_xm_ma, l_quintic_poly_interp, &
@@ -687,7 +692,13 @@ subroutine logical_flags_driver( current_date, current_time )
                                        l_single_C2_Skw, & ! Intent(out)
                                        l_damp_wp3_Skw_squared, & ! Intent(out)
                                        l_prescribed_avg_deltaz, & ! Intent(out)
-                                       l_update_pressure ) ! Intent(out)
+                                       l_update_pressure, & !  Intent(out)  
+                                       l_smooth_wp3_on_wp2, & ! Intent(out)
+                                       l_constant_surflx,& !  Intent(out) 
+                                       l_fixed_level_for_surflx,& !Intent(out)
+                                       l_fixed_level_for_momentum_surflx, & ! Intent (out)
+                                       l_perturb_IC_at_rounding_level ) ! Intent(out)
+
 
   ! Determine the current flags
   model_flags_default(1)  = l_upwind_wp3_ta
