@@ -91,6 +91,7 @@ module input_netcdf
     integer :: clubb_day, clubb_month, clubb_year
 
 !-----------------------------------------------------------------------
+print*,"input_netcdf@open_read"
 
     ! ---- Begin Code ----
     ! Initialize clubb_day, month, and year
@@ -450,6 +451,7 @@ print*,"@getvar2",l_error
       end if ! ierr /= NF90_NOERR
 
     end if ! l_convert_to_MKS
+write(42,*)x
 
     return
   end subroutine get_netcdf_var
@@ -476,6 +478,7 @@ print*,"@getvar2",l_error
 
     integer :: ierr
 !-----------------------------------------------------------------------
+print*,"input_netcdf@close_read"
     ! Close file
     ierr = nf90_close( ncid=ncf%iounit )
 
