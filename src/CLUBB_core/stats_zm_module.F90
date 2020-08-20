@@ -834,7 +834,7 @@ module stats_zm_module
       case ('thv_ds_zm')
         ithv_ds_zm = k
         call stat_assign( var_index=ithv_ds_zm, var_name="thv_ds_zm", &
-             var_description="thv_ds_zm, Dry, base-state theta_v", var_units="K", l_silhs=.false., &
+             var_description="thv_ds_zm, Dry, base-state theta_v", var_units="K", l_silhs=.false.,&
              grid_kind=stats_zm )
         k = k + 1
       case ('em')
@@ -884,28 +884,32 @@ module stats_zm_module
       case ('Frad_LW_up')    ! Brian
         iFrad_LW_up = k
         call stat_assign( var_index=iFrad_LW_up, var_name="Frad_LW_up", &
-             var_description="Frad_LW_up, Long-wave upwelling radiative flux", var_units="W/m^2", &
+             var_description="Frad_LW_up, Long-wave upwelling radiative flux", &
+             var_units="W/m^2", &
              l_silhs=.false., grid_kind=stats_zm )
         k = k + 1
       case ('Frad_SW_up')    ! Brian
         iFrad_SW_up = k
 
         call stat_assign( var_index=iFrad_SW_up, var_name="Frad_SW_up", &
-             var_description="Frad_SW_up, Short-wave upwelling radiative flux", var_units="W/m^2", &
+             var_description="Frad_SW_up, Short-wave upwelling radiative flux", &
+             var_units="W/m^2", &
              l_silhs=.false., grid_kind=stats_zm )
         k = k + 1
 
       case ('Frad_LW_down')    ! Brian
         iFrad_LW_down = k
         call stat_assign( var_index=iFrad_LW_down, var_name="Frad_LW_down", &
-             var_description="Frad_LW_down, Long-wave downwelling radiative flux", var_units="W/m^2", &
+             var_description="Frad_LW_down, Long-wave downwelling radiative flux", &
+             var_units="W/m^2", &
              l_silhs=.false., grid_kind=stats_zm )
         k = k + 1
       case ('Frad_SW_down')    ! Brian
         iFrad_SW_down = k
 
         call stat_assign( var_index=iFrad_SW_down, var_name="Frad_SW_down", &
-             var_description="Frad_SW_down, Short-wave downwelling radiative flux", var_units="W/m^2", &
+             var_description="Frad_SW_down, Short-wave downwelling radiative flux", &
+             var_units="W/m^2", &
              l_silhs=.false., grid_kind=stats_zm )
         k = k + 1
 
@@ -1308,14 +1312,16 @@ module stats_zm_module
       case ('wp2_dp1')
         iwp2_dp1 = k
         call stat_assign( var_index=iwp2_dp1, var_name="wp2_dp1", &
-             var_description="w'^2_dp1, wp2 budget: wp2 dissipation term 1", var_units="m^2/s^3", &
+             var_description="w'^2_dp1, wp2 budget: wp2 dissipation term 1", &
+             var_units="m^2/s^3", &
              l_silhs=.false., grid_kind=stats_zm )
         k = k + 1
 
       case ('wp2_dp2')
         iwp2_dp2 = k
         call stat_assign( var_index=iwp2_dp2, var_name="wp2_dp2", &
-             var_description="w'^2_d'^2, wp2 budget: wp2 dissipation term 2", var_units="m^2/s^3", &
+             var_description="w'^2_d'^2, wp2 budget: wp2 dissipation term 2", &
+             var_units="m^2/s^3", &
              l_silhs=.false., grid_kind=stats_zm )
 
         k = k + 1
@@ -1323,7 +1329,8 @@ module stats_zm_module
       case ('wp2_sdmp')
         iwp2_sdmp = k
         call stat_assign( var_index=iwp2_sdmp, var_name="wp2_sdmp", &
-             var_description="w'^2_sdmp, wp2 budget: wp2 sponge damping term", var_units="m^2/s^3", &
+             var_description="w'^2_sdmp, wp2 budget: wp2 sponge damping term", &
+             var_units="m^2/s^3", &
              l_silhs=.false., grid_kind=stats_zm )
         k = k + 1
 
@@ -1478,7 +1485,8 @@ module stats_zm_module
         iwprtp_forcing = k
 
         call stat_assign( var_index=iwprtp_forcing, var_name="wprtp_forcing", &
-             var_description="w'rt'_forcing, wprtp budget: wprtp forcing (includes microphysics tendency)", &
+             var_description="w'rt'_forcing, wprtp budget: wprtp forcing " &
+             // "(includes microphysics tendency)", &
              var_units="(m kg/kg)/s^2", l_silhs=.false., grid_kind=stats_zm )
         k = k + 1
 
@@ -1592,7 +1600,8 @@ module stats_zm_module
         iwpthlp_forcing = k
 
         call stat_assign( var_index=iwpthlp_forcing, var_name="wpthlp_forcing", &
-             var_description="w'thl'_forcing, wpthlp budget: wpthlp forcing (includes microphysics tendency)", &
+             var_description="w'thl'_forcing, wpthlp budget: wpthlp forcing " &
+             // "(includes microphysics tendency)", &
              var_units="(m K)/s^2", l_silhs=.false., grid_kind=stats_zm )
         k = k + 1
 
@@ -1848,7 +1857,8 @@ module stats_zm_module
         irtp2_forcing = k
 
         call stat_assign( var_index=irtp2_forcing, var_name="rtp2_forcing", &
-             var_description="rt'^2_forcing, rtp2 budget: rtp2 forcing (includes microphysics tendency)", &
+             var_description="rt'^2_forcing, rtp2 budget: rtp2 forcing " &
+             // "(includes microphysics tendency)", &
              var_units="(kg/kg)^2/s", l_silhs=.false., grid_kind=stats_zm )
         k = k + 1
 
@@ -1863,13 +1873,15 @@ module stats_zm_module
       case ('thlp2_bt')
         ithlp2_bt = k
         call stat_assign( var_index=ithlp2_bt, var_name="thlp2_bt", &
-             var_description="thl'^2_bt, thlp2 budget: thlp2 time tendency", var_units="(K^2)/s", &
+             var_description="thl'^2_bt, thlp2 budget: thlp2 time tendency", &
+             var_units="(K^2)/s", &
              l_silhs=.false., grid_kind=stats_zm )
         k = k + 1
       case ('thlp2_ma')
         ithlp2_ma = k
         call stat_assign( var_index=ithlp2_ma, var_name="thlp2_ma", &
-             var_description="thl'^2_ma, thlp2 budget: thlp2 mean advection", var_units="(K^2)/s", &
+             var_description="thl'^2_ma, thlp2 budget: thlp2 mean advection", &
+             var_units="(K^2)/s", &
              l_silhs=.false., grid_kind=stats_zm )
         k = k + 1
       case ('thlp2_ta')
@@ -1899,7 +1911,8 @@ module stats_zm_module
       case ('thlp2_cl')
         ithlp2_cl = k
         call stat_assign( var_index=ithlp2_cl, var_name="thlp2_cl", &
-             var_description="thl'^2_cl, thlp2 budget: thlp2 clipping term", var_units="(K^2)/s", &
+             var_description="thl'^2_cl, thlp2 budget: thlp2 clipping term", &
+             var_units="(K^2)/s", &
              l_silhs=.false., grid_kind=stats_zm )
         k = k + 1
 
@@ -1913,7 +1926,8 @@ module stats_zm_module
       case ('thlp2_sf')
         ithlp2_sf = k
         call stat_assign( var_index=ithlp2_sf, var_name="thlp2_sf", &
-             var_description="thl'^2_sf, thl'^2 budget: thlp2 surface variance", var_units="K^2/s", &
+             var_description="thl'^2_sf, thl'^2 budget: thlp2 surface variance", &
+             var_units="K^2/s", &
              l_silhs=.false., grid_kind=stats_zm )
         k = k + 1
       case ('thlp2_forcing')
@@ -1987,7 +2001,8 @@ module stats_zm_module
       case ('rtpthlp_forcing')
         irtpthlp_forcing = k
         call stat_assign( var_index=irtpthlp_forcing, var_name="rtpthlp_forcing", &
-             var_description="rt'thl'_forcing, rtpthlp budget: rtpthlp forcing (includes microphysics tendency)", &
+             var_description="rt'thl'_forcing, rtpthlp budget: rtpthlp forcing "&
+             // "(includes microphysics tendency)", &
              var_units="(K kg/kg)/s", l_silhs=.false., grid_kind=stats_zm )
         k = k + 1
       case ('rtpthlp_mc')
@@ -2042,14 +2057,16 @@ module stats_zm_module
       case ('up2_dp1')
         iup2_dp1 = k
         call stat_assign( var_index=iup2_dp1, var_name="up2_dp1", &
-             var_description="u'^2_dp1, up2 budget: up2 dissipation term 1", var_units="m^2/s^3", &
+             var_description="u'^2_dp1, up2 budget: up2 dissipation term 1", &
+             var_units="m^2/s^3", &
              l_silhs=.false., grid_kind=stats_zm )
         k = k + 1
 
       case ('up2_dp2')
         iup2_dp2 = k
         call stat_assign( var_index=iup2_dp2, var_name="up2_dp2", &
-             var_description="u'^2_d'^2, up2 budget: up2 dissipation term 2", var_units="m^2/s^3", &
+             var_description="u'^2_d'^2, up2 budget: up2 dissipation term 2", &
+             var_units="m^2/s^3", &
              l_silhs=.false., grid_kind=stats_zm )
         k = k + 1
 
@@ -2070,7 +2087,8 @@ module stats_zm_module
       case ('up2_sdmp')
         iup2_sdmp = k
         call stat_assign( var_index=iup2_sdmp, var_name="up2_sdmp", &
-             var_description="u'^2_sdmp, up2 budget: up2 sponge damping term", var_units="m^2/s^3", &
+             var_description="u'^2_sdmp, up2 budget: up2 sponge damping term", &
+             var_units="m^2/s^3", &
              l_silhs=.false., grid_kind=stats_zm )
         k = k + 1
 
@@ -2133,14 +2151,16 @@ module stats_zm_module
       case ('vp2_dp1')
         ivp2_dp1 = k
         call stat_assign( var_index=ivp2_dp1, var_name="vp2_dp1", &
-             var_description="v'^2_dp1, vp2 budget: vp2 dissipation term 1", var_units="m^2/s^3", &
+             var_description="v'^2_dp1, vp2 budget: vp2 dissipation term 1", &
+             var_units="m^2/s^3", &
              l_silhs=.false., grid_kind=stats_zm )
         k = k + 1
 
       case ('vp2_dp2')
         ivp2_dp2 = k
         call stat_assign( var_index=ivp2_dp2, var_name="vp2_dp2", &
-             var_description="v'^2_dp2, vp2 budget: vp2 dissipation term 2", var_units="m^2/s^3", &
+             var_description="v'^2_dp2, vp2 budget: vp2 dissipation term 2", &
+             var_units="m^2/s^3", &
              l_silhs=.false., grid_kind=stats_zm )
         k = k + 1
 
@@ -2161,7 +2181,8 @@ module stats_zm_module
       case ('vp2_sdmp')
         ivp2_sdmp = k
         call stat_assign( var_index=ivp2_sdmp, var_name="vp2_sdmp", &
-             var_description="v'^2_sdmp, vp2 budget: vp2 sponge damping term", var_units="m^2/s^3", &
+             var_description="v'^2_sdmp, vp2 budget: vp2 sponge damping term", &
+             var_units="m^2/s^3", &
              l_silhs=.false., grid_kind=stats_zm )
         k = k + 1
 
@@ -2196,14 +2217,16 @@ module stats_zm_module
       case ('wpthlp_entermfl')
         iwpthlp_entermfl = k
         call stat_assign( var_index=iwpthlp_entermfl, var_name="wpthlp_entermfl", &
-             var_description="w'thl'_entermfl, Wpthlp entering flux limiter", var_units="(m K)/s", &
+             var_description="w'thl'_entermfl, Wpthlp entering flux limiter", &
+             var_units="(m K)/s", &
              l_silhs=.false., grid_kind=stats_zm )
         k = k + 1
 
       case ('wpthlp_exit_mfl')
         iwpthlp_exit_mfl = k
         call stat_assign( var_index=iwpthlp_exit_mfl, var_name="wpthlp_exit_mfl", &
-             var_description="w'thl'_exit_mfl, Wpthlp exiting flux limiter", var_units="(m K)/s", &
+             var_description="w'thl'_exit_mfl, Wpthlp exiting flux limiter", &
+             var_units="(m K)/s", &
              l_silhs=.false., grid_kind=stats_zm )
         k = k + 1
 
@@ -2259,13 +2282,15 @@ module stats_zm_module
       case ('cloud_frac_zm')
         icloud_frac_zm = k
         call stat_assign( var_index=icloud_frac_zm, var_name="cloud_frac_zm", &
-          var_description="cloud_frac_zm, Cloud fraction", var_units="-", l_silhs=.false., grid_kind=stats_zm)
+          var_description="cloud_frac_zm, Cloud fraction", &
+          var_units="-", l_silhs=.false., grid_kind=stats_zm)
         k = k + 1
 
       case ('ice_supersat_frac_zm')
         iice_supersat_frac_zm = k
         call stat_assign( var_index=iice_supersat_frac_zm, var_name="ice_supersat_frac_zm", &
-             var_description="ice_supersat_frac_zm, Ice cloud fraction", var_units="count", l_silhs=.false., &
+             var_description="ice_supersat_frac_zm, Ice cloud fraction", &
+             var_units="count", l_silhs=.false., &
              grid_kind=stats_zm )
         k = k + 1
 
@@ -2286,7 +2311,8 @@ module stats_zm_module
       case ('thlm_zm')
         ithlm_zm = k
         call stat_assign( var_index=ithlm_zm, var_name="thlm_zm", &
-             var_description="thlm_zm, Liquid potential temperature", var_units="K", l_silhs=.false., &
+             var_description="thlm_zm, Liquid potential temperature", &
+             var_units="K", l_silhs=.false., &
              grid_kind=stats_zm )
         k = k + 1
 
@@ -2328,7 +2354,8 @@ module stats_zm_module
       case ( 'Skw_velocity' )
         iSkw_velocity = k
         call stat_assign( var_index=iSkw_velocity, var_name="Skw_velocity", &
-             var_description="Skw_velocity, Skewness velocity", var_units="m/s", l_silhs=.false., &
+             var_description="Skw_velocity, Skewness velocity", &
+             var_units="m/s", l_silhs=.false., &
              grid_kind=stats_zm )
         k = k + 1
 
@@ -2379,7 +2406,8 @@ module stats_zm_module
       case ( 'brunt_vaisala_freq_sqd' )
         ibrunt_vaisala_freq_sqd = k
         call stat_assign( var_index=ibrunt_vaisala_freq_sqd, var_name="brunt_vaisala_freq_sqd", &
-             var_description="brunt_vaisala_freq_sqd, Brunt-Vaisala freqency squared", var_units="1/s^2", &
+             var_description="brunt_vaisala_freq_sqd, Brunt-Vaisala freqency squared", &
+             var_units="1/s^2", &
              l_silhs=.false., grid_kind=stats_zm )
         k = k + 1
 
@@ -2435,14 +2463,16 @@ module stats_zm_module
       case ( 'stability_correction' )
         istability_correction = k
         call stat_assign( var_index=istability_correction, var_name="stability_correction", &
-             var_description="stability_correction, Stability applied to diffusion of rtm and thlm", var_units="-", &
+             var_description="stability_correction, Stability applied to "&
+             // "diffusion of rtm and thlm", var_units="-", &
              l_silhs=.false., grid_kind=stats_zm )
         k = k + 1
 
       case ( 'rtp2_from_chi' )
         irtp2_from_chi = k
         call stat_assign( var_index=irtp2_from_chi, var_name="rtp2_from_chi", &
-             var_description="rtp2_from_chi, Variance of rt, computed from the chi/eta distribution", &
+             var_description="rtp2_from_chi, Variance of rt, computed from the " &
+             // "chi/eta distribution", &
              var_units="(kg/kg)^2", l_silhs=.false., grid_kind=stats_zm )
         k = k + 1
 
@@ -2585,7 +2615,8 @@ module stats_zm_module
           write( sclr_idx, * ) j
           sclr_idx = adjustl(sclr_idx)
           iwpsclrpthlp(j) = k
-          call stat_assign( var_index=iwpsclrpthlp(j), var_name="wpsclr"//trim(sclr_idx)//"pthlp", &
+          call stat_assign( var_index=iwpsclrpthlp(j), &
+            var_name="wpsclr"//trim(sclr_idx)//"pthlp", &
             var_description="'w' scalar("//trim(sclr_idx)//")'th_l'", var_units="unknown", &
             l_silhs=.false., grid_kind=stats_zm )
           k = k + 1

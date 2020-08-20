@@ -115,7 +115,8 @@ module stats_sfc_module
         isoil_heat_flux = k
 
         call stat_assign( var_index=isoil_heat_flux, var_name="soil_heat_flux", &
-             var_description="soil_heat_flux, soil_heat_flux", var_units="W/m^2", l_silhs=.false., &
+             var_description="soil_heat_flux, soil_heat_flux", &
+             var_units="W/m^2", l_silhs=.false., &
              grid_kind=stats_sfc )
         k = k + 1
       case ('ustar')
@@ -136,14 +137,16 @@ module stats_sfc_module
         isfc_soil_T_in_K = k
 
         call stat_assign( var_index=isfc_soil_T_in_K, var_name="sfc_soil_T_in_K", &
-             var_description="sfc_soil_T_in_K, Surface soil temperature", var_units="K", l_silhs=.false., &
+             var_description="sfc_soil_T_in_K, Surface soil temperature", &
+             var_units="K", l_silhs=.false., &
              grid_kind=stats_sfc )
         k = k + 1
       case ('deep_soil_T_in_K')
         ideep_soil_T_in_K = k
 
         call stat_assign( var_index=ideep_soil_T_in_K, var_name="deep_soil_T_in_K", &
-             var_description="deep_soil_T_in_K, Deep soil Temperature", var_units="K", l_silhs=.false., &
+             var_description="deep_soil_T_in_K, Deep soil Temperature", &
+             var_units="K", l_silhs=.false., &
              grid_kind=stats_sfc )
         k = k + 1
 
@@ -163,7 +166,7 @@ module stats_sfc_module
 
       case ('cc')
         icc = k
-        call stat_assign( var_index=icc, var_name="cc", var_description="Cloud cover [count]", &
+        call stat_assign( var_index=icc, var_name="cc", var_description="cc, Cloud cover", &
              var_units="count", l_silhs=.false., grid_kind=stats_sfc )
         k = k + 1
 
@@ -205,7 +208,8 @@ module stats_sfc_module
       case ('z_cloud_base')
         iz_cloud_base = k
         call stat_assign( var_index=iz_cloud_base, var_name="z_cloud_base", &
-             var_description="z_cloud_base, Cloud base altitude", var_units="m", l_silhs=.false., &
+             var_description="z_cloud_base, Cloud base altitude", &
+             var_units="m", l_silhs=.false., &
              grid_kind=stats_sfc )
         k = k + 1
 
@@ -227,7 +231,8 @@ module stats_sfc_module
         irain_flux_sfc = k
 
         call stat_assign( var_index=irain_flux_sfc, var_name="rain_flux_sfc, ", &
-             var_description="rain_flux_sfc, Surface rain flux", var_units="W/m^2", l_silhs=.false., &
+             var_description="rain_flux_sfc, Surface rain flux", &
+             var_units="W/m^2", l_silhs=.false., &
              grid_kind=stats_sfc )
         k = k + 1
 
@@ -253,7 +258,8 @@ module stats_sfc_module
       case ( 'morr_snow_rate' )
         imorr_snow_rate = k
         call stat_assign( var_index=imorr_snow_rate, var_name="morr_snow_rate", &
-             var_description="morr_snow_rate, Snow+Ice+Graupel fallout rate from Morrison scheme", &
+             var_description="morr_snow_rate, Snow+Ice+Graupel fallout rate " &
+             // "from Morrison scheme", &
              var_units="mm/day", l_silhs=.false., grid_kind=stats_sfc )
         k = k + 1
 
@@ -261,7 +267,8 @@ module stats_sfc_module
         iwpthlp_sfc = k
 
         call stat_assign( var_index=iwpthlp_sfc, var_name="wpthlp_sfc", &
-             var_description="w'thl'_sfc, wpthlp surface flux", var_units="K m/s", l_silhs=.false., &
+             var_description="w'thl'_sfc, wpthlp surface flux", &
+             var_units="K m/s", l_silhs=.false., &
              grid_kind=stats_sfc )
         k = k + 1
 
@@ -277,7 +284,8 @@ module stats_sfc_module
         iupwp_sfc = k
 
         call stat_assign( var_index=iupwp_sfc, var_name="upwp_sfc", &
-             var_description="u'w'_sfc, upwp surface flux", var_units="m^2/s^2", l_silhs=.false., &
+             var_description="u'w'_sfc, upwp surface flux", &
+             var_units="m^2/s^2", l_silhs=.false., &
              grid_kind=stats_sfc )
         k = k + 1
 
@@ -285,7 +293,8 @@ module stats_sfc_module
         ivpwp_sfc = k
 
         call stat_assign( var_index=ivpwp_sfc, var_name="vpwp_sfc", &
-             var_description="v'w'_sfc, vpwp surface flux", var_units="m^2/s^2", l_silhs=.false., &
+             var_description="v'w'_sfc, vpwp surface flux", &
+             var_units="m^2/s^2", l_silhs=.false., &
              grid_kind=stats_sfc )
         k = k + 1
 
@@ -293,7 +302,8 @@ module stats_sfc_module
         ithlm_vert_avg = k
 
         call stat_assign( var_index=ithlm_vert_avg, var_name="thlm_vert_avg", &
-             var_description="thlm_vert_avg, Vertical average (density-weighted) of thlm", var_units="K", &
+             var_description="thlm_vert_avg, Vertical average (density-weighted) of thlm", &
+             var_units="K", &
              l_silhs=.false., grid_kind=stats_sfc )
         k = k + 1
 
@@ -309,7 +319,8 @@ module stats_sfc_module
         ium_vert_avg = k
 
         call stat_assign( var_index=ium_vert_avg, var_name="um_vert_avg", &
-             var_description="um_vert_avg, Vertical average (density-weighted) of um", var_units="m/s", &
+             var_description="um_vert_avg, Vertical average (density-weighted) of um", &
+             var_units="m/s", &
              l_silhs=.false., grid_kind=stats_sfc )
         k = k + 1
 
@@ -317,7 +328,8 @@ module stats_sfc_module
         ivm_vert_avg = k
 
         call stat_assign( var_index=ivm_vert_avg, var_name="vm_vert_avg", &
-             var_description="vm_vert_avg, Vertical average (density-weighted) of vm", var_units="m/s", &
+             var_description="vm_vert_avg, Vertical average (density-weighted) of vm", &
+             var_units="m/s", &
              l_silhs=.false., grid_kind=stats_sfc )
         k = k + 1
 
@@ -379,7 +391,8 @@ module stats_sfc_module
       case ('thlm_matrix_condt_num')
         ithlm_matrix_condt_num = k
         call stat_assign( var_index=ithlm_matrix_condt_num, var_name="thlm_matrix_condt_num", &
-             var_description="thlm_matrix_condt_num, Estimate of the condition number for thlm/wpthlp", &
+             var_description="thlm_matrix_condt_num, Estimate of the condition " &
+             // "number for thlm/wpthlp", &
              var_units="count", l_silhs=.false., grid_kind=stats_sfc )
         k = k + 1
 
@@ -387,7 +400,8 @@ module stats_sfc_module
         irtm_matrix_condt_num = k
 
         call stat_assign( var_index=irtm_matrix_condt_num, var_name="rtm_matrix_condt_num", &
-             var_description="rtm_matrix_condt_num, Estimate of the condition number for rtm/wprtp", &
+             var_description="rtm_matrix_condt_num, Estimate of the condition number " &
+             // "for rtm/wprtp", &
              var_units="count", l_silhs=.false., grid_kind=stats_sfc )
         k = k + 1
 
@@ -395,14 +409,16 @@ module stats_sfc_module
         ithlp2_matrix_condt_num = k
 
         call stat_assign( var_index=ithlp2_matrix_condt_num, var_name="thlp2_matrix_condt_num", &
-             var_description="thl'^2_matrix_condt_num, Estimate of the condition number for thlp2", &
+             var_description="thl'^2_matrix_condt_num, Estimate of the condition " &
+             // "number for thlp2", &
              var_units="count", l_silhs=.false., grid_kind=stats_sfc )
         k = k + 1
 
       case ('rtp2_matrix_condt_num')
         irtp2_matrix_condt_num = k
         call stat_assign( var_index=irtp2_matrix_condt_num, var_name="rtp2_matrix_condt_num", &
-             var_description="rt'^2_matrix_condt_num, Estimate of the condition number for rtp2", &
+             var_description="rt'^2_matrix_condt_num, Estimate of the condition " &
+             // "number for rtp2", &
              var_units="count", l_silhs=.false., grid_kind=stats_sfc )
         k = k + 1
 
@@ -410,7 +426,8 @@ module stats_sfc_module
         irtpthlp_matrix_condt_num = k
         call stat_assign( var_index=irtpthlp_matrix_condt_num, &
              var_name="rtpthlp_matrix_condt_num", &
-             var_description="rt'thl'_matrix_condt_num, Estimate of the condition number for rtpthlp", &
+             var_description="rt'thl'_matrix_condt_num, Estimate of the condition " &
+             // "number for rtpthlp", &
              var_units="count", l_silhs=.false., grid_kind=stats_sfc )
         k = k + 1
 
@@ -418,14 +435,16 @@ module stats_sfc_module
         iup2_vp2_matrix_condt_num = k
         call stat_assign( var_index=iup2_vp2_matrix_condt_num, &
              var_name="up2_vp2_matrix_condt_num", &
-             var_description="u'^2_v'^2_matrix_condt_num, Estimate of the condition number for up2/vp2", &
+             var_description="u'^2_v'^2_matrix_condt_num, Estimate of the condition " &
+             // "number for up2/vp2", &
              var_units="count", l_silhs=.false., grid_kind=stats_sfc )
         k = k + 1
 
       case ('windm_matrix_condt_num')
         iwindm_matrix_condt_num = k
         call stat_assign( var_index=iwindm_matrix_condt_num, var_name="windm_matrix_condt_num", &
-             var_description="windm_matrix_condt_num, Estimate of the condition number for the mean wind", &
+             var_description="windm_matrix_condt_num, Estimate of the condition " &
+             // "number for the mean wind", &
              var_units="count", l_silhs=.false., grid_kind=stats_sfc )
 
         k = k + 1

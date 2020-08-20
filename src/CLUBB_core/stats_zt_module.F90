@@ -982,7 +982,8 @@ module stats_zt_module
       case ('thvm')
         ithvm = k
         call stat_assign( var_index=ithvm, var_name="thvm", &
-             var_description="thvm, Virtual potential temperature", var_units="K", l_silhs=.false., &
+             var_description="thvm, Virtual potential temperature", &
+             var_units="K", l_silhs=.false., &
              grid_kind=stats_zt )
         k = k + 1
 
@@ -1073,14 +1074,16 @@ module stats_zt_module
       case ('ice_supersat_frac')
         iice_supersat_frac = k
         call stat_assign( var_index=iice_supersat_frac, var_name="ice_supersat_frac", &
-             var_description="ice_supersat_frac, Ice cloud fraction (between 0 and 1)", var_units="count", &
+             var_description="ice_supersat_frac, Ice cloud fraction (between 0 and 1)", &
+             var_units="count", &
              l_silhs=.false., grid_kind=stats_zt )
         k = k + 1
 
       case ('rcm_in_layer')
         ircm_in_layer = k
         call stat_assign( var_index=ircm_in_layer, var_name="rcm_in_layer", &
-             var_description="rcm_in_layer, rcm in cloud layer", var_units="kg/kg", l_silhs=.false., &
+             var_description="rcm_in_layer, rcm in cloud layer", &
+             var_units="kg/kg", l_silhs=.false., &
              grid_kind=stats_zt )
         k = k + 1
 
@@ -1100,7 +1103,8 @@ module stats_zt_module
       case ('p_in_Pa')
         ip_in_Pa = k
         call stat_assign( var_index=ip_in_Pa, var_name="p_in_Pa", &
-             var_description="p_in_Pa, Pressure", var_units="Pa", l_silhs=.false., grid_kind=stats_zt )
+             var_description="p_in_Pa, Pressure", &
+             var_units="Pa", l_silhs=.false., grid_kind=stats_zt )
         k = k + 1
       case ('exner')
         iexner = k
@@ -1117,18 +1121,21 @@ module stats_zt_module
       case ('thv_ds_zt')
         ithv_ds_zt = k
         call stat_assign( var_index=ithv_ds_zt, var_name="thv_ds_zt", &
-             var_description="thv_ds_zt, Dry base-state theta_v", var_units="K", l_silhs=.false., &
+             var_description="thv_ds_zt, Dry base-state theta_v", &
+             var_units="K", l_silhs=.false., &
              grid_kind=stats_zt )
         k = k + 1
       case ('Lscale')
         iLscale = k
         call stat_assign( var_index=iLscale, var_name="Lscale", &
-          var_description="Lscale, Mixing length", var_units="m", l_silhs=.false., grid_kind=stats_zt )
+          var_description="Lscale, Mixing length", &
+          var_units="m", l_silhs=.false., grid_kind=stats_zt )
         k = k + 1
       case ('thlm_forcing')
         ithlm_forcing = k
         call stat_assign( var_index=ithlm_forcing, var_name="thlm_forcing", &
-             var_description="thlm_forcing, thlm budget: thetal forcing (includes thlm_mc and radht)",&
+             var_description="thlm_forcing, thlm budget: thetal forcing " &
+             // "(includes thlm_mc and radht)",&
              var_units="K s^{-1}", l_silhs=.false., grid_kind=stats_zt )
         k = k + 1
       case ('thlm_mc')
@@ -1161,57 +1168,64 @@ module stats_zt_module
       case ('rcm_mc')
         ircm_mc = k
         call stat_assign( var_index=ircm_mc, var_name="rcm_mc", &
-             var_description="rcm_mc, Time tendency of liquid water mixing ratio due microphysics", &
+             var_description="rcm_mc, Time tendency of liquid water mixing ratio " &
+             // "due microphysics",&
              var_units="kg/kg/s", l_silhs=.false., grid_kind=stats_zt )
         k = k + 1
 
       case ('rcm_sd_mg_morr')
         ircm_sd_mg_morr = k
         call stat_assign( var_index=ircm_sd_mg_morr, var_name="rcm_sd_mg_morr", &
-             var_description="rcm_sd_mg_morr, rcm sedimentation when using morrision or MG microphysics &
-             &(not in budget, included in rcm_mc)", &
+             var_description="rcm_sd_mg_morr, rcm sedimentation when using morrision or MG " &
+             // "microphysics (not in budget, included in rcm_mc)", &
              var_units="kg kg^{-1} s^{-1}", l_silhs=.true., grid_kind=stats_zt )
         k = k + 1
 
       case ('thlm_mfl_min')
         ithlm_mfl_min = k
         call stat_assign( var_index=ithlm_mfl_min, var_name="thlm_mfl_min", &
-             var_description="thlm_mfl_min, Minimum allowable thlm", var_units="K", l_silhs=.false., &
+             var_description="thlm_mfl_min, Minimum allowable thlm", var_units="K", &
+             l_silhs=.false., &
              grid_kind=stats_zt )
         k = k + 1
 
       case ('thlm_mfl_max')
         ithlm_mfl_max = k
         call stat_assign( var_index=ithlm_mfl_max, var_name="thlm_mfl_max", &
-             var_description="thlm_mfl_max, Maximum allowable thlm", var_units="K", l_silhs=.false., &
+             var_description="thlm_mfl_max, Maximum allowable thlm", var_units="K", &
+             l_silhs=.false., &
              grid_kind=stats_zt )
         k = k + 1
 
       case ('thlm_enter_mfl')
         ithlm_enter_mfl = k
         call stat_assign( var_index=ithlm_enter_mfl, var_name="thlm_enter_mfl", &
-             var_description="thlm_enter_mfl, Thlm before flux-limiter", var_units="K", l_silhs=.false., &
+             var_description="thlm_enter_mfl, Thlm before flux-limiter", var_units="K", &
+             l_silhs=.false., &
              grid_kind=stats_zt )
         k = k + 1
 
       case ('thlm_exit_mfl')
         ithlm_exit_mfl = k
         call stat_assign( var_index=ithlm_exit_mfl, var_name="thlm_exit_mfl", &
-             var_description="thlm_exit_mfl, Thlm exiting flux-limiter", var_units="K", l_silhs=.false., &
+             var_description="thlm_exit_mfl, Thlm exiting flux-limiter", var_units="K", &
+             l_silhs=.false., &
              grid_kind=stats_zt )
         k = k + 1
 
       case ('thlm_old')
         ithlm_old = k
         call stat_assign( var_index=ithlm_old, var_name="thlm_old", &
-             var_description="thlm_old, Thlm at previous timestep", var_units="K", l_silhs=.false., &
+             var_description="thlm_old, Thlm at previous timestep", var_units="K", &
+             l_silhs=.false., &
              grid_kind=stats_zt )
         k = k + 1
 
       case ('thlm_without_ta')
         ithlm_without_ta = k
         call stat_assign( var_index=ithlm_without_ta, var_name="thlm_without_ta", &
-             var_description="thlm_without_ta, Thlm without turbulent advection contribution", var_units="K", &
+             var_description="thlm_without_ta, Thlm without turbulent advection contribution", &
+             var_units="K", &
              l_silhs=.false., grid_kind=stats_zt )
         k = k + 1
 
@@ -1316,7 +1330,8 @@ module stats_zt_module
       case ('Lscale_down')
         iLscale_down = k
         call stat_assign( var_index=iLscale_down, var_name="Lscale_down", &
-             var_description="Lscale_down, Downward mixing length", var_units="m", l_silhs=.false., &
+             var_description="Lscale_down, Downward mixing length", var_units="m", &
+             l_silhs=.false.,&
              grid_kind=stats_zt )
         k = k + 1
 
@@ -1379,7 +1394,8 @@ module stats_zt_module
       case ('sigma_sqd_w_zt')
         isigma_sqd_w_zt = k
         call stat_assign( var_index=isigma_sqd_w_zt, var_name="sigma_sqd_w_zt", &
-             var_description="sigma_sqd_w_zt, Nondimensionalized w variance of Gaussian component", &
+             var_description="sigma_sqd_w_zt, Nondimensionalized w variance of " &
+             // "Gaussian component",&
              var_units="-", l_silhs=.false., grid_kind=stats_zt )
         k = k + 1
 
@@ -1431,7 +1447,8 @@ module stats_zt_module
       case ('snowslope')     ! Adam Smith, 22 April 2008
         isnowslope = k
         call stat_assign( var_index=isnowslope, var_name="snowslope", &
-             var_description="snowslope, COAMPS microphysics snow slope parameter", var_units="1/m", &
+             var_description="snowslope, COAMPS microphysics snow slope parameter", &
+             var_units="1/m", &
              l_silhs=.false., grid_kind=stats_zt )
         k = k + 1
 
@@ -1508,21 +1525,24 @@ module stats_zt_module
       case ('m_vol_rad_rain')  ! Brian
         im_vol_rad_rain = k
         call stat_assign( var_index=im_vol_rad_rain, var_name="mvrr", &
-             var_description="mvrr, Rain drop mean volume radius", var_units="m", l_silhs=.false., &
+             var_description="mvrr, Rain drop mean volume radius", &
+             var_units="m", l_silhs=.false.,&
              grid_kind=stats_zt )
         k = k + 1
 
       case ('m_vol_rad_cloud')
         im_vol_rad_cloud = k
         call stat_assign( var_index=im_vol_rad_cloud, var_name="m_vol_rad_cloud", &
-             var_description="m_vol_rad_cloud, Cloud drop mean volume radius", var_units="m", l_silhs=.false., &
+             var_description="m_vol_rad_cloud, Cloud drop mean volume radius", var_units="m", &
+             l_silhs=.false., &
              grid_kind=stats_zt )
         k = k + 1
 
       case ('eff_rad_cloud')
         ieff_rad_cloud = k
         call stat_assign( var_index=ieff_rad_cloud, var_name="eff_rad_cloud", &
-             var_description="eff_rad_cloud, Cloud drop effective volume radius", var_units="microns", &
+             var_description="eff_rad_cloud, Cloud drop effective volume radius", &
+             var_units="microns", &
              l_silhs=.false., grid_kind=stats_zt )
         k = k + 1
 
@@ -1537,21 +1557,24 @@ module stats_zt_module
       case ('eff_rad_snow')
         ieff_rad_snow = k
         call stat_assign( var_index=ieff_rad_snow, var_name="eff_rad_snow", &
-             var_description="eff_rad_snow, Snow effective volume radius", var_units="microns", &
+             var_description="eff_rad_snow, Snow effective volume radius", &
+             var_units="microns", &
              l_silhs=.false., grid_kind=stats_zt )
         k = k + 1
 
       case ('eff_rad_rain')
         ieff_rad_rain = k
         call stat_assign( var_index=ieff_rad_rain, var_name="eff_rad_rain", &
-             var_description="eff_rad_rain, Rain drop effective volume radius", var_units="microns", &
+             var_description="eff_rad_rain, Rain drop effective volume radius", &
+             var_units="microns", &
              l_silhs=.false., grid_kind=stats_zt )
         k = k + 1
 
       case ('eff_rad_graupel')
         ieff_rad_graupel = k
         call stat_assign( var_index=ieff_rad_graupel, var_name="eff_rad_graupel", &
-             var_description="eff_rad_graupel, Graupel effective volume radius", var_units="microns", &
+             var_description="eff_rad_graupel, Graupel effective volume radius", &
+             var_units="microns", &
              l_silhs=.false., grid_kind=stats_zt )
         k = k + 1
 
@@ -1653,7 +1676,8 @@ module stats_zt_module
         irtm_tacl = k
 
         call stat_assign( var_index=irtm_tacl, var_name="rtm_tacl", &
-          var_description="rtm_tacl, rtm budget: rtm correction due to ta term (wprtp) clipping", &
+          var_description="rtm_tacl, rtm budget: rtm correction due to ta term" &
+          // " (wprtp) clipping", &
           var_units="kg kg^{-1} s^{-1}", l_silhs=.false., grid_kind=stats_zt)
 
         k = k + 1
@@ -1721,7 +1745,8 @@ module stats_zt_module
         ithlm_mfl = k
 
         call stat_assign( var_index=ithlm_mfl, var_name="thlm_mfl", &
-             var_description="thlm_mfl, thlm budget: thlm correction due to monotonic flux limiter", &
+             var_description="thlm_mfl, thlm budget: thlm correction due to monotonic " &
+             // "flux limiter", &
              var_units="K s^{-1}", l_silhs=.false., grid_kind=stats_zt )
         k = k + 1
 
@@ -1729,7 +1754,8 @@ module stats_zt_module
         ithlm_tacl = k
 
         call stat_assign( var_index=ithlm_tacl, var_name="thlm_tacl", &
-             var_description="thlm_tacl, thlm budget: thlm correction due to ta term (wpthlp) clipping", &
+             var_description="thlm_tacl, thlm budget: thlm correction due to ta term " &
+             // "(wpthlp) clipping", &
              var_units="K s^{-1}", l_silhs=.false., grid_kind=stats_zt )
         k = k + 1
 
@@ -2128,7 +2154,8 @@ module stats_zt_module
       case ('Nrm_mc')
         iNrm_mc = k
         call stat_assign( var_index=iNrm_mc, var_name="Nrm_mc", &
-             var_description="Nrm_mc, Nrm budget: Change in Nrm due to microphysics (Not in budget)", &
+             var_description="Nrm_mc, Nrm budget: Change in Nrm due to microphysics " &
+             // "(Not in budget)", &
              var_units="(num/kg)/s", l_silhs=.false., grid_kind=stats_zt )
         k = k + 1
 
@@ -2281,8 +2308,9 @@ module stats_zt_module
         irim_sd_mg_morr = k
 
         call stat_assign( var_index=irim_sd_mg_morr, var_name="rim_sd_mg_morr", &
-             var_description="rim_sd_mg_morr, rim sedimentation when using morrison or MG microphysics &
-             &(not in budget, included in rim_mc)", &
+             var_description="rim_sd_mg_morr, rim sedimentation when using morrison or MG " &
+             // "microphysics" &
+             // "(not in budget, included in rim_mc)", &
              var_units="(kg/kg)/s", l_silhs=.true., grid_kind=stats_zt )
         k = k + 1
 
@@ -2622,7 +2650,8 @@ module stats_zt_module
         iQMULTS = k
 
         call stat_assign( var_index=iQMULTS, var_name="QMULTS", &
-             var_description="QMULTS, Splintering from cloud droplets accreted onto snow, +rim, -rcm", &
+             var_description="QMULTS, Splintering from cloud droplets accreted onto snow, " &
+             // "+rim, -rcm", &
              var_units="(kg/kg)/s", l_silhs=.true., grid_kind=stats_zt )
         k = k + 1
 
@@ -2630,7 +2659,8 @@ module stats_zt_module
         iQMULTG = k
 
         call stat_assign( var_index=iQMULTG, var_name="QMULTG", &
-             var_description="QMULTG, Splintering from droplets accreted onto graupel, +rim, -rcm", &
+             var_description="QMULTG, Splintering from droplets accreted onto graupel, " &
+             // "+rim, -rcm", &
              var_units="(kg/kg)/s", l_silhs=.true., grid_kind=stats_zt )
         k = k + 1
 
@@ -2678,7 +2708,8 @@ module stats_zt_module
         iQMULTR = k
 
         call stat_assign( var_index=iQMULTR, var_name="QMULTR", &
-             var_description="QMULTR, Splintering from rain droplets accreted onto snow, +rim, -rrm", &
+             var_description="QMULTR, Splintering from rain droplets accreted onto snow, " &
+             // "+rim, -rrm", &
              var_units="(kg/kg)/s", l_silhs=.true., grid_kind=stats_zt )
         k = k + 1
 
@@ -2686,7 +2717,8 @@ module stats_zt_module
         iQMULTRG = k
 
         call stat_assign( var_index=iQMULTRG, var_name="QMULTRG", &
-             var_description="QMULTRG, Splintering from rain droplets accreted onto graupel, +rim, -rrm", &
+             var_description="QMULTRG, Splintering from rain droplets accreted onto graupel, " &
+             // "+rim, -rrm", &
              var_units="(kg/kg)/s", l_silhs=.true., grid_kind=stats_zt )
         k = k + 1
 
@@ -3055,7 +3087,8 @@ module stats_zt_module
         iNMULTS= k
 
         call stat_assign( var_index=iNMULTS, var_name="NMULTS", &
-             var_description="NMULTS, Ice multiplication due to riming of cloud droplets by snow, +Nim", &
+             var_description="NMULTS, Ice multiplication due to riming of cloud droplets " &
+             // "by snow, +Nim", &
              var_units="(#/kg/s)", l_silhs=.true., grid_kind=stats_zt )
         k = k + 1
 
@@ -3063,7 +3096,8 @@ module stats_zt_module
         iNMULTG= k
 
         call stat_assign( var_index=iNMULTG, var_name="NMULTG", &
-             var_description="NMULTG, Ice multiplication due to accretion of droplets by graupel, +Nim", &
+             var_description="NMULTG, Ice multiplication due to accretion of droplets " &
+             // "by graupel, +Nim", &
              var_units="(#/kg/s)", l_silhs=.true., grid_kind=stats_zt )
         k = k + 1
 
@@ -3079,7 +3113,8 @@ module stats_zt_module
         iNMULTRG= k
 
         call stat_assign( var_index=iNMULTRG, var_name="NMULTRG", &
-             var_description="NMULTR, Ice multiplication due to accretion of rain by graupel, +Nim", &
+             var_description="NMULTR, Ice multiplication due to accretion of rain by " &
+             // "graupel, +Nim", &
              var_units="(#/kg/s)", l_silhs=.true., grid_kind=stats_zt )
         k = k + 1
 
@@ -3215,7 +3250,8 @@ module stats_zt_module
         iQC_INST= k
 
         call stat_assign( var_index=iQC_INST, var_name="QC_INST", &
-             var_description="QC_INST, Change in mixing ratio due to instantaneous processes +rcm", &
+             var_description="QC_INST, Change in mixing ratio due to instantaneous " &
+             // "processes +rcm", &
              var_units="(kg/kg/s)", l_silhs=.true., grid_kind=stats_zt )
         k = k + 1
 
@@ -3223,7 +3259,7 @@ module stats_zt_module
         iQR_INST= k
 
         call stat_assign( var_index=iQR_INST, var_name="QR_INST", &
-             var_description="QR_INST, Change in mixing ratio from instantaneous processes, +rrm", &
+             var_description="QR_INST, Change in mixing ratio from instantaneous processes, +rrm",&
              var_units="(kg/kg/s)", l_silhs=.true., grid_kind=stats_zt )
         k = k + 1
 
@@ -3231,7 +3267,7 @@ module stats_zt_module
         iQI_INST= k
 
         call stat_assign( var_index=iQI_INST, var_name="QI_INST", &
-             var_description="QI_INST, Change in mixing ratio from instantaneous processes +rim", &
+             var_description="QI_INST, Change in mixing ratio from instantaneous processes +rim",&
              var_units="(kg/kg/s)", l_silhs=.true., grid_kind=stats_zt )
         k = k + 1
 
@@ -3239,7 +3275,7 @@ module stats_zt_module
         iQS_INST= k
 
         call stat_assign( var_index=iQS_INST, var_name="QS_INST", &
-             var_description="QS_INST, Change in mixing ratio from instantaneous processes +rsm", &
+             var_description="QS_INST, Change in mixing ratio from instantaneous processes +rsm",&
              var_units="(kg/kg/s)", l_silhs=.true., grid_kind=stats_zt )
         k = k + 1
 
@@ -3247,7 +3283,7 @@ module stats_zt_module
         iQG_INST= k
 
         call stat_assign( var_index=iQG_INST, var_name="QG_INST", &
-             var_description="QG_INST, Change in mixing ratio from instantaneous processes +rgm", &
+             var_description="QG_INST, Change in mixing ratio from instantaneous processes +rgm",&
              var_units="(kg/kg/s)", l_silhs=.true., grid_kind=stats_zt )
         k = k + 1
 
@@ -3320,7 +3356,8 @@ module stats_zt_module
        ithl_KK_evap_covar_zt = k
 
         call stat_assign( var_index=ithl_KK_evap_covar_zt, var_name="thl_KK_evap_covar_zt", &
-             var_description="thl_KK_evap_covar_zt, Covariance of theta_l and KK evaporation rate", &
+             var_description="thl_KK_evap_covar_zt, Covariance of theta_l and KK " &
+             // "evaporation rate", &
              var_units="K*(kg/kg)/s", l_silhs=.false., grid_kind=stats_zt )
        k = k + 1
 
@@ -3336,7 +3373,7 @@ module stats_zt_module
        irt_KK_auto_covar_zt = k
 
         call stat_assign( var_index=irt_KK_auto_covar_zt, var_name="rt_KK_auto_covar_zt", &
-             var_description="rt_KK_auto_covar_zt, Covariance of r_t and KK autoconversion rate", &
+             var_description="rt_KK_auto_covar_zt, Covariance of r_t and KK autoconversion rate",&
              var_units="(kg/kg)^2/s", l_silhs=.false., grid_kind=stats_zt )
        k = k + 1
 
@@ -3344,7 +3381,8 @@ module stats_zt_module
        ithl_KK_auto_covar_zt = k
 
         call stat_assign( var_index=ithl_KK_auto_covar_zt, var_name="thl_KK_auto_covar_zt", &
-             var_description="thl_KK_auto_covar_zt, Covariance of theta_l and KK autoconversion rate", &
+             var_description="thl_KK_auto_covar_zt, Covariance of theta_l and " &
+             // "KK autoconversion rate", &
              var_units="K*(kg/kg)/s", l_silhs=.false., grid_kind=stats_zt )
        k = k + 1
 
@@ -3352,7 +3390,8 @@ module stats_zt_module
        iw_KK_accr_covar_zt = k
 
         call stat_assign( var_index=iw_KK_accr_covar_zt, var_name="w_KK_accr_covar_zt", &
-             var_description="w_KK_accr_covar_zt, Covariance of w and KK accretion rate", var_units="m*(kg/kg)/s^2", &
+             var_description="w_KK_accr_covar_zt, Covariance of w and KK accretion rate", &
+             var_units="m*(kg/kg)/s^2", &
              l_silhs=.false., grid_kind=stats_zt )
        k = k + 1
 
@@ -3360,7 +3399,8 @@ module stats_zt_module
        irt_KK_accr_covar_zt = k
 
         call stat_assign( var_index=irt_KK_accr_covar_zt, var_name="rt_KK_accr_covar_zt", &
-             var_description="rt_KK_accr_covar_zt, Covariance of r_t and KK accretion rate", var_units="(kg/kg)^2/s", &
+             var_description="rt_KK_accr_covar_zt, Covariance of r_t and KK accretion rate", &
+             var_units="(kg/kg)^2/s", &
              l_silhs=.false., grid_kind=stats_zt )
        k = k + 1
 
@@ -3368,7 +3408,7 @@ module stats_zt_module
        ithl_KK_accr_covar_zt = k
 
         call stat_assign( var_index=ithl_KK_accr_covar_zt, var_name="thl_KK_accr_covar_zt", &
-             var_description="thl_KK_accr_covar_zt, Covariance of theta_l and KK accretion rate", &
+             var_description="thl_KK_accr_covar_zt, Covariance of theta_l and KK accretion rate",&
              var_units="K*(kg/kg)/s", l_silhs=.false., grid_kind=stats_zt )
        k = k + 1
 
@@ -3376,7 +3416,8 @@ module stats_zt_module
        irr_KK_mvr_covar_zt = k
 
         call stat_assign( var_index=irr_KK_mvr_covar_zt, var_name="rr_KK_mvr_covar_zt", &
-             var_description="rr_KK_mvr_covar_zt, Covariance of r_r and KK rain drop mean volume radius", &
+             var_description="rr_KK_mvr_covar_zt, Covariance of r_r and KK rain drop mean " &
+             // "volume radius", &
              var_units="(kg/kg)m", l_silhs=.false., grid_kind=stats_zt )
        k = k + 1
 
@@ -3384,7 +3425,8 @@ module stats_zt_module
        iNr_KK_mvr_covar_zt = k
 
         call stat_assign( var_index=iNr_KK_mvr_covar_zt, var_name="Nr_KK_mvr_covar_zt", &
-             var_description="Nr_KK_mvr_covar_zt, Covariance of N_r and KK rain drop mean volume radius", &
+             var_description="Nr_KK_mvr_covar_zt, Covariance of N_r and KK rain drop mean " &
+             // "volume radius", &
              var_units="(num/kg)m", l_silhs=.false., grid_kind=stats_zt )
        k = k + 1
 
@@ -3459,7 +3501,8 @@ module stats_zt_module
       case ('vm_mfl')
         ivm_mfl = k
         call stat_assign( var_index=ivm_mfl, var_name="vm_mfl", &
-             var_description="vm_mfl, vm budget: vm monotonic flux limiter", var_units="m s^{-2}", &
+             var_description="vm_mfl, vm budget: vm monotonic flux limiter", &
+             var_units="m s^{-2}", &
              l_silhs=.false., grid_kind=stats_zt )
         k = k + 1
 
@@ -3524,7 +3567,8 @@ module stats_zt_module
       case ('um_mfl')
         ium_mfl = k
         call stat_assign( var_index=ium_mfl, var_name="um_mfl", &
-             var_description="um_mfl, um budget: um monotonic flux limiter", var_units="m s^{-2}", &
+             var_description="um_mfl, um budget: um monotonic flux limiter", &
+             var_units="m s^{-2}",&
              l_silhs=.false., grid_kind=stats_zt )
         k = k + 1
 
@@ -3588,7 +3632,8 @@ module stats_zt_module
         ivarnce_thl_1 = k
 
         call stat_assign( var_index=ivarnce_thl_1, var_name="varnce_thl_1", &
-             var_description="varnce_thl_1, pdf parameter: thl variance of component 1", var_units="K^2", &
+             var_description="varnce_thl_1, pdf parameter: thl variance of component 1", &
+             var_units="K^2", &
              l_silhs=.false., grid_kind=stats_zt )
 
         k = k + 1
@@ -3596,7 +3641,8 @@ module stats_zt_module
       case ('varnce_thl_2')
         ivarnce_thl_2 = k
         call stat_assign( var_index=ivarnce_thl_2, var_name="varnce_thl_2", &
-             var_description="varnce_thl_2, pdf parameter: thl variance of component 2", var_units="K^2", &
+             var_description="varnce_thl_2, pdf parameter: thl variance of component 2", &
+             var_units="K^2", &
              l_silhs=.false., grid_kind=stats_zt )
 
         k = k + 1
@@ -3738,7 +3784,8 @@ module stats_zt_module
         icovar_chi_eta_1 = k
 
         call stat_assign( var_index=icovar_chi_eta_1, var_name="covar_chi_eta_1", &
-             var_description="covar_chi_eta_1, Covariance of chi(s) and eta(t) (1st PDF component)", &
+             var_description="covar_chi_eta_1, Covariance of chi(s) and eta(t) " &
+             // "(1st PDF component)", &
              var_units="kg^2/kg^2", l_silhs=.false., grid_kind=stats_zt )
         k = k + 1
 
@@ -3746,7 +3793,8 @@ module stats_zt_module
         icovar_chi_eta_2 = k
 
         call stat_assign( var_index=icovar_chi_eta_2, var_name="covar_chi_eta_2", &
-             var_description="covar_chi_eta_2, Covariance of chi(s) and eta(t) (2nd PDF component)", &
+             var_description="covar_chi_eta_2, Covariance of chi(s) and eta(t) " &
+             // "(2nd PDF component)", &
              var_units="kg^2/kg^2", l_silhs=.false., grid_kind=stats_zt )
         k = k + 1
 
@@ -4438,7 +4486,8 @@ module stats_zt_module
 
          call stat_assign( var_index=imu_Ncn_2, &
                            var_name="mu_Ncn_2", &
-                           var_description="mu_Ncn_2, Mean of N_cn (2nd PDF component)", var_units="num/kg", &
+                           var_description="mu_Ncn_2, Mean of N_cn (2nd PDF component)", &
+                           var_units="num/kg", &
                            l_silhs=.false., grid_kind=stats_zt )
 
          k = k + 1
@@ -5337,21 +5386,24 @@ module stats_zt_module
       case ('cloud_frac_refined')
         icloud_frac_refined = k
         call stat_assign( var_index=icloud_frac_refined, var_name="cloud_frac_refined", &
-                          var_description="cloud_frac_refined, Cloud fraction computed on refined grid", &
+                          var_description="cloud_frac_refined, Cloud fraction computed on " &
+                          // "refined grid", &
                           var_units="-", l_silhs=.false., grid_kind=stats_zt )
         k = k + 1
 
       case ('rcm_refined')
         ircm_refined = k
         call stat_assign( var_index=ircm_refined, var_name="rcm_refined", &
-                          var_description="rcm_refined, Cloud water mixing ratio computed on refined grid &
+                          var_description="rcm_refined, Cloud water mixing ratio computed on " &
+                          // "refined grid &
                           &[kg/kg]", var_units="kg/kg", l_silhs=.false., grid_kind=stats_zt)
         k = k + 1
 
       case ('hl_on_Cp_residual')
         ihl_on_Cp_residual = k
         call stat_assign( var_index=ihl_on_Cp_residual, var_name="hl_on_Cp_residual", &
-                          var_description="hl_on_Cp_residual, Residual change in HL/Cp from Morrison microphysics &
+                          var_description="hl_on_Cp_residual, Residual change in HL/Cp from " &
+                          // "Morrison microphysics &
                           &not due to sedimentation", &
                           var_units="K", l_silhs=.true., grid_kind=stats_zt)
         k = k + 1
@@ -5359,7 +5411,8 @@ module stats_zt_module
       case ('qto_residual')
         iqto_residual = k
         call stat_assign( var_index=iqto_residual, var_name="qto_residual", &
-                          var_description="qto_residual, Residual change in total water from Morrison &
+                          var_description="qto_residual, Residual change in total water " &
+                          // "from Morrison &
                           &microphysics not due to sedimentation", &
                           var_units="kg/kg", l_silhs=.true., grid_kind=stats_zt)
         k = k + 1
