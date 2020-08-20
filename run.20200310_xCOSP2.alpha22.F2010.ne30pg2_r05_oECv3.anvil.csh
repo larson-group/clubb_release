@@ -11,7 +11,7 @@ set echo
 ###===================================================================
 
 ### BASIC INFO ABOUT RUN
-set job_name       = alpha22.F2010.clubb_c_K10h_0p35
+set job_name       = new_config_altitude_threshold_200
 set compset        = F2010SC5-CMIP6
 set resolution     = ne30pg2_r05_oECv3
 set machine        = anvil
@@ -1015,16 +1015,23 @@ cat <<EOF >> user_nl_cam
  clubb_c6rtc		= 0.50
  clubb_c6thlb		= 7.50
  clubb_c6thlc		= 0.50
- clubb_c8		= 5.2    
- clubb_c_k10		= 0.35    
+ clubb_c8		= 4.75
+ clubb_c_k10		= 0.5
+ clubb_c_k10h		= 0.15
  clubb_gamma_coef	= 0.12D0   
  clubb_gamma_coefb	= 0.28D0
  clubb_gamma_coefc	= 1.2
  clubb_mu		= 0.0005
  clubb_wpxp_l_thresh	= 100.0D0
+ clubb_altitude_threshold = 200.0
  clubb_ice_deep		= 14.e-6 
  clubb_use_sgv		= .true. 
- dust_emis_fact		= 1.6D0 
+ dust_emis_fact		= 1.6D0
+ clubb_ipdf_call_placement = 2
+ clubb_l_vert_avg_closure  = .false.
+ clubb_l_trapezoidal_rule_zt = .false.
+ clubb_l_trapezoidal_rule_zm = .false.
+ clubb_l_call_pdf_closure_twice = .false.
 EOF
 
 ### NOTES ON COMMON NAMELIST OPTIONS ###
