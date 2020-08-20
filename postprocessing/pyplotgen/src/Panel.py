@@ -288,11 +288,7 @@ class Panel:
         plt.rc('figure', titlesize=Style_definitions.TITLE_TEXT_SIZE)  # fontsize of the figure title
 
         # For each Contour object stored in self.all_plots generate an individual contourf plot
-        # print(self.all_plots)
         for var in self.all_plots:
-            # print(var)
-            # print(self.title, var.label)
-            # print(type(var))
             x_data = var.x
             y_data = var.y
             c_data = var.data

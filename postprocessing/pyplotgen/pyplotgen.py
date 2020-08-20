@@ -183,6 +183,7 @@ class PyPlotGen:
         print("Output can be viewed at file://" + self.output_folder + "/index.html with a web browser")
         total_runtime = round(time.time() - self.start_time)
         print("Pyplotgen ran in: ", total_runtime, " seconds.")
+
     def __plotCase__(self, case_def):
         """
         Plots the given case. Pulled out into it's own function to help move towards multithreading
