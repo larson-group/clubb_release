@@ -286,6 +286,14 @@ If it does, the parameter will be ignored and the `var_names` parameter will be 
 ### Animations
 Will be added soon.
 
+### New structures of data for non-traditional plots
+Since both of the plot variants mentioned above need 2-dimensional variable data,
+the structure and import process for NetCDF data in PyPlotgen has been modified.  
+If possible, the data structures for these types of plots will be as follows:
+- Dependent data: 2-dimensional numpy array. Usually the time axis will represent the first dimension and the height axis the second.
+- Independent data: Now that we have 2-dimensional variable data, we need two corresponding independent variables.
+Their data will be stored as two 1-dimensional numpy arrays contained in a dictionary with the keys `'time'` and `'height'`.
+
 ## Plotting SAM-exclusive VariableGroups
 The VariableGroups `VariableGroupSamBudgets`, `VariableGroupSamProfiles` and `VariableGroupSamMultilineProfiles` were added to recreate the SAM plots done with corplot (python_sam_budgets_plotter).  
 PyPlotgen will automatically generate the `VariableGroupSamBudgets` plots when using the `--plot-budgets` flag with SAM input.  
