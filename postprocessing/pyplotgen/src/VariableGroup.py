@@ -17,6 +17,7 @@ from src.Contour import Contour
 from src.DataReader import DataReader, NetCdfVariable
 from src.Line import Line
 from src.Panel import Panel
+from src.ContourPanel import ContourPanel
 
 
 class VariableGroup:
@@ -357,8 +358,11 @@ class VariableGroup:
                 sci_scale = None
             if 'centered' in variable.keys():
                 centered = variable['centered']
-            panel = Panel(plotset, title=title, dependent_title=axis_label,
-                          panel_type=panel_type, sci_scale=sci_scale, centered=centered)
+            if panel_type == Panel.TYPE_TIMEHEIGHT:
+                panel = ContourPanel(plotset, title=title, dependent_title=axis_label, panel_type=panel_type)
+            else:
+                panel = Panel(plotset, title=title, dependent_title=axis_label, panel_type=panel_type,
+                              sci_scale=sci_scale, centered=centered)
             self.panels.append(panel)
 
     def __getTitles__(self, variable_def_dict, plotted_models_varname):

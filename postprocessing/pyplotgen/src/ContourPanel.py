@@ -12,8 +12,9 @@ import os
 from datetime import datetime
 
 import matplotlib.pyplot as plt
+import numpy as np
 
-from Panel import Panel
+from src.Panel import Panel
 from config import Style_definitions
 from src.interoperability import clean_path
 
@@ -24,15 +25,21 @@ class ContourPanel(Panel):
     The difference is that the plot routine will generate a timeheight plot instead of a standard profile plot.
     """
 
-    def __init__(self, plots, panel_type="profile", title="Unnamed panel", dependent_title="dependent variable",
-                 sci_scale = None, centered = False):
+    def __init__(self, plots, panel_type=Panel.TYPE_TIMEHEIGHT, title="Unnamed panel",
+                 dependent_title="dependent variable"):
         """
-        Init, pretty much same as Panel init
+        Constructor of the ContourPanel subclass. Will call the constructor of the Panel superclass.
 
-        :param bla:
-        :return: New object
+        :param plots: List containing exactly one Contour object to plot onto the panel
+        :param panel_type: Type of panel being plotted (must be Panel.TYPE_TIMEHEIGHT for this class)
+        :param title: The title of this plot (e.g. 'Liquid water potential tempature')
+        :param dependent_title: Label of the dependent axis (labels the x-axis for all panel types except timeseries).
+        :param sci_scale: The scale at which to display the x axis (e.g. to scale to 1e-3 set sci_scale=-3).
+            If not specified, the matplotlib default sci scaling will be used.
+        :param centered: If True, the Panel will be centered around 0.
+            Profile plots are usually centered, while budget plots are not.
         """
-        super(self, plots, Panel.TYPE_TIMEHEIGHT, title, dependent_title, sci_scale, centered)
+        super().__init__(plots, panel_type, title, dependent_title, sci_scale=None, centered=False)
 
     def plot(self, output_folder, casename, replace_images = False, no_legends = True, thin_lines = False,
              alphabetic_id = '', paired_plots = True):
@@ -56,47 +63,55 @@ class ContourPanel(Panel):
         plt.rc('legend', fontsize=Style_definitions.LEGEND_FONT_SIZE)    # legend fontsize
         plt.rc('figure', titlesize=Style_definitions.TITLE_TEXT_SIZE)  # fontsize of the figure title
 
-        # Get Contour object
-        var = self.all_plots[0]
-        x_data = var.x
-        y_data = var.y
-        c_data = var.data
-        cmap = var.colors
+        # For each Contour object stored in self.all_plots generate an individual contourf plot
+        for var in self.all_plots:
+            x_data = var.x
+            y_data = var.y
+            c_data = var.data
+            x_data, y_data = np.meshgrid(x_data, y_data)
+            cmap = var.colors
+            label = var.label
 
-        cs = plt.contourf(x_data, y_data, c_data, cmap=cmap)
-        plt.colorbar(cs)
-        plt.title(self.title)
-        plt.xlabel(self.x_title)
-        plt.ylabel(self.y_title)
+            # Set graph size
+            plt.figure(figsize=(10,6))
 
-        if alphabetic_id != '':
-            ax = plt.gca() 
-            ax.text(0.9, 0.9, '('+alphabetic_id+')', ha='center', va='center', transform=ax.transAxes,
-                           fontsize=Style_definitions.LARGE_FONT_SIZE) # Add letter label to panels
+            # Prevent x-axis label from getting cut off
+            # plt.gcf().subplots_adjust(bottom=0.15)
 
-        # Create folders
-        # Because os.mkdir("output") can fail and prevent os.mkdir("output/" + casename) from being called we must
-        # use two separate try blocks
-        try:
-            os.mkdir(output_folder)
-        except FileExistsError:
-            pass # do nothing
-        try:
-            os.mkdir(output_folder + "/" + casename)
-        except FileExistsError:
-            pass # do nothing
+            cs = plt.contourf(x_data, y_data, c_data.T, cmap=cmap)
+            plt.colorbar(cs)
+            plt.title(label + ' - ' + self.title, pad=10)
+            plt.xlabel(self.x_title)
+            plt.ylabel(self.y_title)
 
-        # Generate image filename
-        filename = "timeheight_"+ str(datetime.now())
+            if alphabetic_id != '':
+                ax = plt.gca()
+                ax.text(0.9, 0.9, '('+alphabetic_id+')', ha='center', va='center', transform=ax.transAxes,
+                               fontsize=Style_definitions.LARGE_FONT_SIZE) # Add letter label to panels
 
-        filename = self.__removeInvalidFilenameChars__(filename)
-        # Concatenate with output foldername
-        rel_filename = output_folder + "/" +casename+'/' + filename
-        rel_filename = clean_path(rel_filename)
-        # Save image file
-        if replace_images is True or not os.path.isfile(rel_filename+Panel.EXTENSION):
-            plt.savefig(rel_filename+Panel.EXTENSION)
-        else: # os.path.isfile(rel_filename + Panel.EXTENSION) and replace_images is False:
-            print("\n\tImage " + rel_filename+Panel.EXTENSION+
-                  ' already exists. To overwrite this image during runtime pass in the --replace (-r) parameter.')
-        plt.close()
+            # Create folders
+            # Because os.mkdir("output") can fail and prevent os.mkdir("output/" + casename) from being called we must
+            # use two separate try blocks
+            try:
+                os.mkdir(output_folder)
+            except FileExistsError:
+                pass # do nothing
+            try:
+                os.mkdir(output_folder + "/" + casename)
+            except FileExistsError:
+                pass # do nothing
+
+            # Generate image filename
+            filename = label + "_timeheight_"+ str(datetime.now())
+
+            filename = self.__removeInvalidFilenameChars__(filename)
+            # Concatenate with output foldername
+            relative_filename = output_folder + '/' + casename + '/' + filename
+            relative_filename = clean_path(relative_filename)
+            # Save image file
+            if replace_images is True or not os.path.isfile(relative_filename+Panel.EXTENSION):
+                plt.savefig(relative_filename+Panel.EXTENSION)
+            else: # os.path.isfile(relative_filename + Panel.EXTENSION) and replace_images is False:
+                print("\n\tImage " + relative_filename+Panel.EXTENSION+
+                      ' already exists. To overwrite this image during runtime pass in the --replace (-r) parameter.')
+            plt.close()

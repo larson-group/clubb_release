@@ -243,7 +243,7 @@ class NetCdfVariable:
     def __getDependentAndIndependentData__(self, all_varnames, all_datasets):
         """
         Get data from netcdf file
-        
+
         :param all_varnames: 
         :param all_datasets: 
         :return: dependent and independent data for variable connected to variable names passed in all_varnames

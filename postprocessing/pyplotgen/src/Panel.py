@@ -1,6 +1,4 @@
 '''
-TODO: Add new Panel type: time-height plots
-
 :author: Nicolas Strike
 :date: Mid 2019
 '''
@@ -89,11 +87,6 @@ class Panel:
             use the color/style rotation specified in Style_definitions.py
         :return: None
         """
-        print('Plotting panel {}'.format(self.title))
-        if self.panel_type == Panel.TYPE_TIMEHEIGHT:
-            self.__plotContourf__(output_folder, casename, replace_images, alphabetic_id)
-            return None
-
         # Create new figure and axis
         plt.subplot(111)
 
