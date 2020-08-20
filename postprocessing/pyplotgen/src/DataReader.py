@@ -241,7 +241,13 @@ class NetCdfVariable:
 
 
     def __getDependentAndIndependentData__(self, all_varnames, all_datasets):
-
+        """
+        Get data from netcdf file
+        
+        :param all_varnames: 
+        :param all_datasets: 
+        :return: dependent and independent data for variable connected to variable names passed in all_varnames
+        """
         if all_varnames is None or len(all_varnames) == 0:
             raise ValueError("Invalid varname given. Must contain at least 1 element.")
         if all_datasets is None or len(all_datasets) == 0:
@@ -260,7 +266,15 @@ class NetCdfVariable:
                 break
 
             # If failed to find/calculate variable, try again with the next name/equation, otherwise stop looping
-            if np.isnan(dependent_data[0]) or np.isnan(independent_data[0]):
+            if isinstance(independent_data, dict):
+                # Check each individual entry's array for NaNs
+                independent_has_nan = [np.any(np.isnan(arr)) for arr in independent_data.values()]
+                # Combine the previous results
+                independent_has_nan = np.any(independent_has_nan)
+            else:
+                # independent_data is an array -> check all values with any
+                independent_has_nan = np.any(np.isnan(independent_data))
+            if np.any(np.isnan(dependent_data)) or independent_has_nan:
                 continue
             else:
                 break
