@@ -76,6 +76,15 @@ p_sfc = 1015.4e2     ! Pressure at model base              [Pa]
 fcor = 4.506704e-5  ! Coriolis parameter                  [s^-1]
 T0   = 300.         ! Reference temperature (usually 300) [K]
 
+!!settings for the surface flux calculation 
+l_constant_surflx = .false.
+l_fixed_level_for_surflx = .false.
+zt_surflx = 25.0 
+f_scale_surflx = 1.0
+
+!!settings for the pergro test
+l_perturb_IC_at_rounding_level = .false.
+perturb_factor = 10.0
 
 ! Sponge Damping
 !
