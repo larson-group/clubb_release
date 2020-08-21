@@ -80,6 +80,8 @@ run_case()
 	rm -f $NAMELISTS
 }
 
+#Notifies the user if two different filetypes have been selected and states which one will
+#be used (both filetypes cannot be used simultaneously)
 check_filetype() {
 	chosen_filetype=""
 

@@ -127,6 +127,7 @@ module stat_file_utils
     integer::i
     real, dimension(:,:), pointer::ar2
     real, dimension(:), pointer::ar3
+    character(len=10)::ctime,infile
 
 !-----------------------------------------------------------------------
 
@@ -189,10 +190,16 @@ module stat_file_utils
 
 print"(A, A, A1, I0, A1, L)","stat_file_utils@stat_file_average:get_var:",trim(variable_name),"(",t2-t1,")", &
 l_grads_file
-if (l_grads_file) then
-  open(unit=42,file="/home/klempb/dev/testing/grads_coamps.txt",position='append')
+write(ctime, "(I0)") time()
+if (variable_name == "cf" .or. variable_name == "qcm") then
+  infile = "coamps"
 else
-  open(unit=42,file="/home/klempb/dev/testing/netcdf.txt",position='append')
+  infile = "clubb"
+end if
+if (l_grads_file) then
+  open(unit=42,file="/home/klempb/dev/testing/inputs/grads"//ctime//"_"//trim(infile)//".txt",position='append')
+else
+  open(unit=42,file="/home/klempb/dev/testing/inputs/netcdf"//ctime//"_"//trim(infile)//".txt",position='append')
 end if
 write(42,"(2A, I0)")trim(variable_name),":",t2-t1
     ! Read in variables from GrADS file
