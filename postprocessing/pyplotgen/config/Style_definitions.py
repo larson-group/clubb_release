@@ -6,6 +6,9 @@ Style_definitions.py contains the style formatting parameters used by Pyplotgen 
 If you wish to change a line color, font size, etc., then this is the place to do it.
 """
 
+# For information on making plots "publish ready" see the `Making Publish Ready Plots` portion of the README.md
+# https://github.com/larson-group/clubb/blob/master/postprocessing/pyplotgen/README.md#making-publish-ready-plots
+
 # Line Styles
 # --------------
 
