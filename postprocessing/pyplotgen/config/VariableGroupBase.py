@@ -2,9 +2,8 @@
 :author: Nicolas Strike
 :date: Mid 2019
 """
-from netCDF4 import Dataset
-
 import numpy as np
+from netCDF4 import Dataset
 
 from src.Panel import Panel
 from src.VariableGroup import VariableGroup
@@ -242,8 +241,6 @@ class VariableGroupBase(VariableGroup):
                     'cam': ['Skrt_zt'],
                     'wrf': ['Skrt_zt'],
                 },
-                # 'sam_calc': self.getSkrtZtLesCalc,
-                # 'coamps_calc': self.getSkrtZtLesCalc,
                 'sci_scale': 0,
             },
             {'var_names':

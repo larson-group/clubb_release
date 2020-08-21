@@ -129,7 +129,8 @@ class Panel:
 
         max_panel_value = 0
         for var in self.all_plots:
-            legend_char_wrap_length = 20
+            legend_char_wrap_length = 17
+            var.label = var.label.replace('_', ' ') # replace _'s in foldernames with spaces for the legend label
             var.label = fill(var.label, width=legend_char_wrap_length)
             x_data = var.x
             if self.sci_scale is not None:

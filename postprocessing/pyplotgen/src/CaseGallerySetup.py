@@ -80,9 +80,9 @@ class CaseGallerySetup:
         ## Load nc files for non-clubb models
         # Load single LES dataset
         les_file = None
-        if plot_les and case_definition['les_dataset'] is not None:
+        if plot_les and case_definition['sam_benchmark_file'] is not None:
             datareader = DataReader()
-            les_file = datareader.__loadNcFile__(case_definition['les_dataset'])
+            les_file = datareader.__loadNcFile__(case_definition['sam_benchmark_file'])
 
         # Load SAM nc files from each folder
         sam_datasets = {}
@@ -135,9 +135,9 @@ class CaseGallerySetup:
 
         # Load COAMPS nc files
         coamps_datasets = {}
-        if plot_les and case_definition['coamps_dataset'] is not None:
+        if plot_les and case_definition['coamps_benchmark_file'] is not None:
             datareader = DataReader()
-            coamps_filenames = case_definition['coamps_dataset']
+            coamps_filenames = case_definition['coamps_benchmark_file']
             # Load the individual COAMPS output files
             for type_ext in coamps_filenames:
                 temp_coamps_dataset = datareader.__loadNcFile__(coamps_filenames[type_ext])
@@ -163,9 +163,9 @@ class CaseGallerySetup:
 
         # Load r408 nc files
         r408_datasets = {}
-        if plot_r408 and case_definition['r408_file'] is not None:
+        if plot_r408 and case_definition['clubb_r408_file'] is not None:
             datareader = DataReader()
-            r408_filenames = case_definition['r408_file']
+            r408_filenames = case_definition['clubb_r408_file']
             # Load the individual r408 output files
             for type_ext in r408_filenames:
                 temp_r408_dataset = datareader.__loadNcFile__(r408_filenames[type_ext])
@@ -175,9 +175,9 @@ class CaseGallerySetup:
 
         # Load HOC nc files
         hoc_datasets = {}
-        if plot_hoc and case_definition['hoc_file'] is not None:
+        if plot_hoc and case_definition['clubb_hoc_file'] is not None:
             datareader = DataReader()
-            hoc_filenames = case_definition['hoc_file']
+            hoc_filenames = case_definition['clubb_hoc_file']
             # Load the individual r408 output files
             for type_ext in hoc_filenames:
                 temp_hoc_dataset = datareader.__loadNcFile__(hoc_filenames[type_ext])
