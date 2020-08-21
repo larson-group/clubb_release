@@ -102,7 +102,7 @@ module input_grads
       ihour, imin
 
 !-------------------------------------------------------------------------------
-print*,"input_grads@open_read"
+!print*,"input_grads@open_read"
 
     ! ---- Begin Code ----
 
@@ -490,7 +490,7 @@ write(42,*)variable
 !-------------------------------------------------------------------------------
 
     ! ---- Begin Code ----
-print*,"input_grads@close_read"
+!print*,"input_grads@close_read"
 
     ! Close file
     close( unit=grads_file%iounit )

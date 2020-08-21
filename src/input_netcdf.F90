@@ -91,7 +91,7 @@ module input_netcdf
     integer :: clubb_day, clubb_month, clubb_year
 
 !-----------------------------------------------------------------------
-print*,"input_netcdf@open_read"
+!print*,"input_netcdf@open_read"
 
     ! ---- Begin Code ----
     ! Initialize clubb_day, month, and year
@@ -478,7 +478,7 @@ write(42,*)x
 
     integer :: ierr
 !-----------------------------------------------------------------------
-print*,"input_netcdf@close_read"
+!print*,"input_netcdf@close_read"
     ! Close file
     ierr = nf90_close( ncid=ncf%iounit )
 

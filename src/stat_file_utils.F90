@@ -188,8 +188,8 @@ module stat_file_utils
                                    upper_lev_idx(k), l_lin_int(k) )
     end do
 
-print"(A, A, A1, I0, A1, L)","stat_file_utils@stat_file_average:get_var:",trim(variable_name),"(",t2-t1,")", &
-l_grads_file
+!print"(A, A, A1, I0, A1, L)","stat_file_utils@stat_file_average:get_var:",trim(variable_name),"(",t2-t1,")", &
+!l_grads_file
 write(ctime, "(I0)") time()
 if (variable_name == "cf" .or. variable_name == "qcm") then
   infile = "coamps"
