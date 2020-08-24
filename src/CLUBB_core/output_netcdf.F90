@@ -93,6 +93,7 @@ module output_netcdf
     integer :: k     ! Array index
 
     ! ---- Begin Code ----
+print*,"output_netcdf@open_netcdf_for_writing"
 
     ncf%nvar    = nvar
 
@@ -228,6 +229,7 @@ module output_netcdf
     integer :: i ! Array index
 
     ! ---- Begin Code ----
+print*,"output_netcdf@write_netcdf"
 
     ! If there is no data to write, then return
     if ( ncf%nvar == 0 ) then
@@ -496,6 +498,7 @@ module output_netcdf
     integer :: stat
 
     ! ---- Begin Code ----
+print*,"output_netcdf@close_netcdf"
 
     ! If there is no data to write, then return
     if ( ncf%nvar == 0 ) then
