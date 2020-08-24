@@ -110,7 +110,6 @@ module output_grads
     logical :: l_ctl, l_dat, l_error
 
     ! ---- Begin Code ----
-print*,"output_grads@open_grads"
 
     ! Define parameters for the GrADS ctl and dat files
 
@@ -523,7 +522,6 @@ print*,"output_grads@open_grads"
 
     ! ---- Begin Code ----
     ! Check number of variables and write nothing if less than 1
-print*,"output_grads@write_grads"
 
     if ( grads_file%nvar < 1 ) return
 
