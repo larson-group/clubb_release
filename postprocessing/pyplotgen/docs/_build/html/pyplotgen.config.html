@@ -1,0 +1,2025 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>config package &mdash; PyPlotgen 1.1 documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+
+  
+  
+  
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/doctools.js"></script>
+        <script src="_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="python_html_gallery package" href="pyplotgen.python_html_gallery.html" />
+    <link rel="prev" title="pyplotgen package" href="pyplotgen.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="index.html" class="icon icon-home" alt="Documentation Home"> PyPlotgen
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="pyplotgen.html">pyplotgen package</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="pyplotgen.html#subpackages">Subpackages</a><ul class="current">
+<li class="toctree-l3 current"><a class="current reference internal" href="#">config package</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#submodules">Submodules</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-config.Case_definitions">config.Case_definitions module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-config.Style_definitions">config.Style_definitions module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-config.VariableGroupBase">config.VariableGroupBase module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-config.VariableGroupBaseBudgets">config.VariableGroupBaseBudgets module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-config.VariableGroupCorrelations">config.VariableGroupCorrelations module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-config.VariableGroupIceMP">config.VariableGroupIceMP module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-config.VariableGroupKKMP">config.VariableGroupKKMP module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-config.VariableGroupLiquidMP">config.VariableGroupLiquidMP module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-config.VariableGroupSamBudgets">config.VariableGroupSamBudgets module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-config.VariableGroupSamMultilineProfiles">config.VariableGroupSamMultilineProfiles module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-config.VariableGroupSamProfiles">config.VariableGroupSamProfiles module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-config.VariableGroupScalars">config.VariableGroupScalars module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-config.VariableGroupWs">config.VariableGroupWs module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-config">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="pyplotgen.python_html_gallery.html">python_html_gallery package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pyplotgen.src.html">pyplotgen.src package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pyplotgen.tests.html">tests package</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="pyplotgen.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pyplotgen.html#module-pyplotgen">pyplotgen.pyplotgen module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pyplotgen.html#module-0">Module contents</a></li>
+</ul>
+</li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">PyPlotgen</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
+        
+          <li><a href="pyplotgen.html">pyplotgen package</a> &raquo;</li>
+        
+      <li>config package</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="_sources/pyplotgen.config.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="config-package">
+<h1>config package<a class="headerlink" href="#config-package" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="module-config.Case_definitions">
+<span id="config-case-definitions-module"></span><h2>config.Case_definitions module<a class="headerlink" href="#module-config.Case_definitions" title="Permalink to this headline">¶</a></h2>
+<dl class="field-list simple">
+<dt class="field-odd">author</dt>
+<dd class="field-odd"><p>Nicolas Strike</p>
+</dd>
+<dt class="field-even">date</dt>
+<dd class="field-even"><p>Early 2019</p>
+</dd>
+</dl>
+<p>This file is mostly a definition of Cases. Each case is defined in the following format
+using python dictionaries (values surrounded with &lt; &gt; must have the &lt; &gt; removed to be valid).</p>
+<div class="highlight-python notranslate"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre> 1
+ 2
+ 3
+ 4
+ 5
+ 6
+ 7
+ 8
+ 9
+10
+11
+12
+13</pre></div></td><td class="code"><div class="highlight"><pre><span></span><span class="n">CASENAME</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;name&#39;</span><span class="p">:</span> <span class="s1">&#39;casename&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;description&#39;</span><span class="p">:</span> <span class="s2">&quot;&quot;</span><span class="p">,</span>
+    <span class="s1">&#39;start_time&#39;</span><span class="p">:</span> <span class="o">&lt;</span><span class="n">numeric</span> <span class="n">value</span><span class="o">&gt;</span><span class="p">,</span> <span class="s1">&#39;end_time&#39;</span><span class="p">:</span> <span class="o">&lt;</span><span class="n">numeric</span> <span class="n">value</span><span class="o">&gt;</span><span class="p">,</span>
+    <span class="s1">&#39;height_min_value&#39;</span><span class="p">:</span> <span class="o">&lt;</span><span class="n">numeric</span> <span class="n">value</span><span class="o">&gt;</span><span class="p">,</span> <span class="s1">&#39;height_max_value&#39;</span><span class="p">:</span> <span class="o">&lt;</span><span class="n">numeric</span> <span class="n">value</span><span class="o">&gt;</span><span class="p">,</span>
+
+    <span class="s1">&#39;blacklisted_vars&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;list&#39;</span><span class="p">,</span> <span class="s1">&#39;of&#39;</span><span class="p">,</span> <span class="s1">&#39;variable&#39;</span><span class="p">,</span> <span class="s1">&#39;names&#39;</span><span class="p">,</span> <span class="s1">&#39;to&#39;</span><span class="p">,</span> <span class="s1">&#39;exclude&#39;</span><span class="p">,</span> <span class="s1">&#39;from&#39;</span><span class="p">,</span> <span class="s1">&#39;plotting&#39;</span><span class="p">],</span>
+    <span class="s1">&#39;sam_benchmark_file&#39;</span><span class="p">:</span> <span class="o">&lt;</span><span class="n">path</span> <span class="n">to</span> <span class="n">sam</span> <span class="n">file</span><span class="o">&gt;</span><span class="s2">&quot;,</span>
+    <span class="s1">&#39;clubb_file&#39;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="s1">&#39;coamps_benchmark_file&#39;</span><span class="p">:</span> <span class="o">&lt;</span><span class="n">path</span> <span class="n">to</span> <span class="n">coamps</span> <span class="n">file</span><span class="o">&gt;</span><span class="p">,</span>
+    <span class="s1">&#39;clubb_r408_file&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;zm&#39;</span><span class="p">:</span> <span class="o">&lt;</span><span class="n">path</span> <span class="n">to</span> <span class="n">r408</span> <span class="n">file</span><span class="o">&gt;</span><span class="p">,</span>
+                  <span class="s1">&#39;zt&#39;</span><span class="p">:</span> <span class="o">&lt;</span><span class="n">path</span> <span class="n">to</span> <span class="n">r408</span> <span class="n">file</span><span class="o">&gt;</span><span class="p">,</span>
+                  <span class="s1">&#39;sfc&#39;</span><span class="p">:</span> <span class="o">&lt;</span><span class="n">path</span> <span class="n">to</span> <span class="n">r408</span> <span class="n">file</span><span class="o">&gt;</span><span class="p">},</span>
+    <span class="s1">&#39;var_groups&#39;</span><span class="p">:</span> <span class="p">[</span><span class="n">VariableGroupBase</span><span class="p">,</span> <span class="o">&lt;</span><span class="n">other</span> <span class="n">variable</span> <span class="n">groups</span> <span class="n">to</span> <span class="n">plot</span><span class="o">&gt;</span><span class="p">]}</span>
+</pre></div>
+</td></tr></table></div>
+<p><strong>Important note</strong>:
+When creating a new case, add it to the ALL_CASES list at the bottom of the file. Additionally, please add it in
+alphabetical order.</p>
+<p><strong>Case Definition values explained</strong>:</p>
+<blockquote>
+<div><dl class="simple">
+<dt><em>name</em>: must be the same as the filename without the extention.</dt><dd><p>E.g. to use lba_zt.nc and lba_zm.nc the case’s name must be ‘lba’. Extensions are determined
+by the last instance of _</p>
+</dd>
+<dt><em>start_time</em>: An integer value representing which timestep to begin the time-averaging interval.</dt><dd><p>Valid options are from 1 -&gt; list minute value. Give in terms of clubb minutes.</p>
+</dd>
+<dt><em>end_time</em>: An integer value representing which timestep to end the time-averaging interval.</dt><dd><p>Valid options are from 1 -&gt; list minute value. Give in terms of clubb minutes.
+Also used to determine where to stop timeseries plots</p>
+</dd>
+</dl>
+<p><em>height_min_value</em>: The elevation to begin height plots at</p>
+<p><em>height_max_value</em>: The elevation to end height plots at</p>
+<p><em>blacklisted_vars</em>: List of variables to avoid plotting for this case. Names must use the clubb-name version</p>
+<dl class="simple">
+<dt><em>sam_benchmark_file</em>: Path to the SAM .nc file for this case</dt><dd><p>(please use the SAM_BENCHMARK_OUTPUT_ROOT variable as a base).</p>
+</dd>
+<dt><em>coamps_benchmark_file</em>: dict containing paths to the coamps .nc files for this case</dt><dd><p>(please use the COAMPS_BENCHMARK_OUTPUT_ROOT variable as a base).</p>
+</dd>
+<dt><em>clubb_r408_file</em>: dict containing paths to the r408 .nc files for this case</dt><dd><p>(please use the R408_OUTPUT_ROOT variable as a base).</p>
+</dd>
+<dt><em>clubb_hoc_file</em>: dict containing paths to the hoc .nc files for this case</dt><dd><p>(please use the HOC_OUTPUT_ROOT variable as a base).</p>
+</dd>
+<dt><em>var_groups</em>: These are the groups of variables to be plotted for the given case. var_groups is defined as a</dt><dd><p>list of python class names, where the classes use the naming scheme VariableGroup____.py and define a variable
+group. An example would be: ‘var_groups’: [VariableGroupBase, VariableGroupWs].
+The variables inside a VariableGroup can be found in the file with the same name,
+i.e. config/VariableGroupBase.py. An example would be thlm in VariableGroupBase.</p>
+</dd>
+</dl>
+</div></blockquote>
+<dl class="py data">
+<dt id="config.Case_definitions.TIME_VAR_NAMES">
+<code class="sig-prename descclassname">config.Case_definitions.</code><code class="sig-name descname">TIME_VAR_NAMES</code><em class="property"> = ['time', 'XTIME']</em><a class="headerlink" href="#config.Case_definitions.TIME_VAR_NAMES" title="Permalink to this definition">¶</a></dt>
+<dd><p>To plot only a subset of cases, reguardless of what output exists
+in the clubb folder, uncomment the last line of this file and
+fill that array with the cases you’d like to plot. This overwrites the
+ALL_CASES variable such that pyplotgen will only know about cases in that
+list and ignore all others. The name must match the python variable name
+below (all caps).</p>
+<p>For example, to plot only bomex and fire:</p>
+<p>ALL_CASES = [BOMEX, FIRE]</p>
+</dd></dl>
+
+</div>
+<div class="section" id="module-config.Style_definitions">
+<span id="config-style-definitions-module"></span><h2>config.Style_definitions module<a class="headerlink" href="#module-config.Style_definitions" title="Permalink to this headline">¶</a></h2>
+<dl class="field-list simple">
+<dt class="field-odd">author</dt>
+<dd class="field-odd"><p>Nicolas Strike</p>
+</dd>
+<dt class="field-even">date</dt>
+<dd class="field-even"><p>Late 2019</p>
+</dd>
+</dl>
+<p>Style_definitions.py contains the style formatting parameters used by Pyplotgen throughout the source code.
+If you wish to change a line color, font size, etc., then this is the place to do it.</p>
+</div>
+<div class="section" id="module-config.VariableGroupBase">
+<span id="config-variablegroupbase-module"></span><h2>config.VariableGroupBase module<a class="headerlink" href="#module-config.VariableGroupBase" title="Permalink to this headline">¶</a></h2>
+<dl class="field-list simple">
+<dt class="field-odd">author</dt>
+<dd class="field-odd"><p>Nicolas Strike</p>
+</dd>
+<dt class="field-even">date</dt>
+<dd class="field-even"><p>Mid 2019</p>
+</dd>
+</dl>
+<dl class="py class">
+<dt id="config.VariableGroupBase.VariableGroupBase">
+<em class="property">class </em><code class="sig-prename descclassname">config.VariableGroupBase.</code><code class="sig-name descname">VariableGroupBase</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">case</span></em>, <em class="sig-param"><span class="n">clubb_datasets</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">les_dataset</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">coamps_dataset</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">r408_dataset</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">hoc_dataset</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">cam_datasets</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">e3sm_datasets</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">sam_datasets</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">wrf_datasets</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#config.VariableGroupBase.VariableGroupBase" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="pyplotgen.src.html#src.VariableGroup.VariableGroup" title="src.VariableGroup.VariableGroup"><code class="xref py py-class docutils literal notranslate"><span class="pre">src.VariableGroup.VariableGroup</span></code></a></p>
+<p>This is a panel group used for testing the functionality of pyplotgen.
+It contains a set of common panels being used for representing the majority
+of panels.</p>
+<dl class="py method">
+<dt id="config.VariableGroupBase.VariableGroupBase.getRtmSamCalc">
+<code class="sig-name descname">getRtmSamCalc</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">dataset_override</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#config.VariableGroupBase.VariableGroupBase.getRtmSamCalc" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates rtm values from sam output using
+the following equation
+(QT-QI) / 1000
+:return: requested variable dependent_data in the form of a list.
+Returned dependent_data is already cropped to the appropriate min,max indices</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="config.VariableGroupBase.VariableGroupBase.getRtp2SamCalc">
+<code class="sig-name descname">getRtp2SamCalc</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">dataset_override</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#config.VariableGroupBase.VariableGroupBase.getRtp2SamCalc" title="Permalink to this definition">¶</a></dt>
+<dd><p>This gets called if RTP2 isn’t outputted in an nc file as a backup way of gathering the dependent_data
+for plotting.</p>
+<blockquote>
+<div><p>(QT2 / 1e+6) + RTP2_SGS</p>
+</div></blockquote>
+<p>THLP2 = QT2 / 1e+6
+:return:</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="config.VariableGroupBase.VariableGroupBase.getRtp3SamCalc">
+<code class="sig-name descname">getRtp3SamCalc</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">dataset_override</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#config.VariableGroupBase.VariableGroupBase.getRtp3SamCalc" title="Permalink to this definition">¶</a></dt>
+<dd><p>Caclulates Rtp3 output
+rc_coef_zm .* rtprcp</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="config.VariableGroupBase.VariableGroupBase.getSkrtZtLesCalc">
+<code class="sig-name descname">getSkrtZtLesCalc</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">dataset_override</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#config.VariableGroupBase.VariableGroupBase.getSkrtZtLesCalc" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates Skrt_zt values from sam output using
+the following equation</p>
+<blockquote>
+<div><dl class="simple">
+<dt>sam eqn </dt><dd><p>RTP3 / (RTP2 + 4e-16)**1.5</p>
+</dd>
+<dt>coamps eqn </dt><dd><p>qtp3 / (qtp2 + 4e-16)**1.5
+rtp3 / (rtp2 + 4e-16)**1.5</p>
+</dd>
+</dl>
+</div></blockquote>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>requested variable dependent_data in the form of a list.
+Returned dependent_data is already cropped to the appropriate min,max indices</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="config.VariableGroupBase.VariableGroupBase.getSkthlZtLesCalc">
+<code class="sig-name descname">getSkthlZtLesCalc</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">dataset_override</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#config.VariableGroupBase.VariableGroupBase.getSkthlZtLesCalc" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates Skthl_zt values from sam output using
+the following equation
+sam THLP3 / (THLP2 + 4e-4)**1.5
+coamps eqn thlp3 / (thlp2 + 4e-4)**1.5
+:return: requested variable dependent_data in the form of a list.</p>
+<blockquote>
+<div><p>Returned dependent_data is already cropped to the appropriate min,max indices</p>
+</div></blockquote>
+</dd></dl>
+
+<dl class="py method">
+<dt id="config.VariableGroupBase.VariableGroupBase.getSkwZtLesCalc">
+<code class="sig-name descname">getSkwZtLesCalc</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">dataset_override</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#config.VariableGroupBase.VariableGroupBase.getSkwZtLesCalc" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates Skw_zt values from sam output using
+the following equation
+WP3 / (WP2 + 1.6e-3)**1.5
+:return: requested variable dependent_data in the form of a list.</p>
+<blockquote>
+<div><p>Returned dependent_data is already cropped to the appropriate min,max indices</p>
+</div></blockquote>
+</dd></dl>
+
+<dl class="py method">
+<dt id="config.VariableGroupBase.VariableGroupBase.getThlmSamCalc">
+<code class="sig-name descname">getThlmSamCalc</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">dataset_override</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#config.VariableGroupBase.VariableGroupBase.getThlmSamCalc" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates thlm values from sam output using
+the following equation
+(THETAL + 2500.4.*(THETA/TABS).*(QI/1000))
+:return: requested variable dependent_data in the form of a list.</p>
+<blockquote>
+<div><p>Returned dependent_data is already cropped to the appropriate min,max indices</p>
+</div></blockquote>
+</dd></dl>
+
+<dl class="py method">
+<dt id="config.VariableGroupBase.VariableGroupBase.getUwCoampsData">
+<code class="sig-name descname">getUwCoampsData</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">dataset_override</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#config.VariableGroupBase.VariableGroupBase.getUwCoampsData" title="Permalink to this definition">¶</a></dt>
+<dd><p>coamps eqn upwp = wpup + wpup_sgs</p>
+<blockquote>
+<div><dl class="field-list simple">
+<dt class="field-odd">return</dt>
+<dd class="field-odd"><p>requested variable dependent_data in the form of a list. Returned dependent_data is already</p>
+</dd>
+</dl>
+<p>cropped to the appropriate min,max indices</p>
+</div></blockquote>
+</dd></dl>
+
+<dl class="py method">
+<dt id="config.VariableGroupBase.VariableGroupBase.getVwCoampsData">
+<code class="sig-name descname">getVwCoampsData</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">dataset_override</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#config.VariableGroupBase.VariableGroupBase.getVwCoampsData" title="Permalink to this definition">¶</a></dt>
+<dd><p>coamps eqn vpwp = wpvp + wpvp_sgs</p>
+<blockquote>
+<div><dl class="field-list simple">
+<dt class="field-odd">return</dt>
+<dd class="field-odd"><p>requested variable dependent_data in the form of a list. Returned dependent_data is already</p>
+</dd>
+</dl>
+<p>cropped to the appropriate min,max indices</p>
+</div></blockquote>
+</dd></dl>
+
+<dl class="py method">
+<dt id="config.VariableGroupBase.VariableGroupBase.getWprtpSamCalc">
+<code class="sig-name descname">getWprtpSamCalc</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">dataset_override</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#config.VariableGroupBase.VariableGroupBase.getWprtpSamCalc" title="Permalink to this definition">¶</a></dt>
+<dd><p>This gets called if WPRTP isn’t outputted in an nc file as a backup way of gathering the dependent_data
+for plotting.
+WPRTP = (QTFLUX) / (RHO * 2.5104e+6) + WPRTP_SGS
+WPRTP = (QTFLUX) / (RHO * 2.5104e+6)
+:return:</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="config.VariableGroupBase.VariableGroupBase.getWpthlpSamCalc">
+<code class="sig-name descname">getWpthlpSamCalc</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">dataset_override</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#config.VariableGroupBase.VariableGroupBase.getWpthlpSamCalc" title="Permalink to this definition">¶</a></dt>
+<dd><p>This gets called if WPTHLP isn’t outputted in an nc file as a backup way of gathering the dependent_data
+for plotting.
+WPTHLP = (TLFLUX) / (RHO * 1004) + WPTHLP_SGS
+:return:</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="config.VariableGroupBase.VariableGroupBase.getWpthvpSamCalc">
+<code class="sig-name descname">getWpthvpSamCalc</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">dataset_override</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#config.VariableGroupBase.VariableGroupBase.getWpthvpSamCalc" title="Permalink to this definition">¶</a></dt>
+<dd><p>This gets called if WPTHVP isn’t outputted in an nc file as a backup way of gathering the dependent_data
+for plotting.
+WPTHVP =  (TVFLUX) / ( RHO * 1004)
+:return:</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="config.VariableGroupBase.VariableGroupBase.get_rc_coef_X_wp2rcp_clubb_calc">
+<code class="sig-name descname">get_rc_coef_X_wp2rcp_clubb_calc</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">dataset_override</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#config.VariableGroupBase.VariableGroupBase.get_rc_coef_X_wp2rcp_clubb_calc" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>dataset_override</strong> – </p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="config.VariableGroupBase.VariableGroupBase.get_rc_coef_X_wp2rcp_coamps_calc">
+<code class="sig-name descname">get_rc_coef_X_wp2rcp_coamps_calc</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">dataset_override</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#config.VariableGroupBase.VariableGroupBase.get_rc_coef_X_wp2rcp_coamps_calc" title="Permalink to this definition">¶</a></dt>
+<dd><p>wp2qcp * (2.5e6 / (1004.67 * ex0)                             - 1.61 * thvm)
+wp2rlp * (2.5e6 / (1004.67 * (( p /1.0e5)**(287.04/1004.67))) - 1.61 * thvm)
+:param dataset_override:
+:return:</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="config.VariableGroupBase.VariableGroupBase.get_rc_coef_X_wp2rcp_sam_calc">
+<code class="sig-name descname">get_rc_coef_X_wp2rcp_sam_calc</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">dataset_override</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#config.VariableGroupBase.VariableGroupBase.get_rc_coef_X_wp2rcp_sam_calc" title="Permalink to this definition">¶</a></dt>
+<dd><p>WP2RCP * (2.5e6 / (1004.67*((PRES / 1000)^(287.04/1004.67))) - 1.61*THETAV)
+:param dataset_override:
+:return:</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="config.VariableGroupBase.VariableGroupBase.get_rc_coef_zm_X_rtprcp_clubb_calc">
+<code class="sig-name descname">get_rc_coef_zm_X_rtprcp_clubb_calc</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">dataset_override</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#config.VariableGroupBase.VariableGroupBase.get_rc_coef_zm_X_rtprcp_clubb_calc" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates the Contribution of Cloud Water Flux
+to rtprcp using the equation
+rc_coef_zm * rtprcp
+:return: Line representing rc_coef_zm .* rtprcp</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="config.VariableGroupBase.VariableGroupBase.get_rc_coef_zm_X_rtprcp_coamps_calc">
+<code class="sig-name descname">get_rc_coef_zm_X_rtprcp_coamps_calc</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">dataset_override</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#config.VariableGroupBase.VariableGroupBase.get_rc_coef_zm_X_rtprcp_coamps_calc" title="Permalink to this definition">¶</a></dt>
+<dd><p>coamp eqn
+qtpqcp * (2.5e6 / (1004.67*ex0)                           - 1.61*thvm)
+qtpqcp * (2.5e6 / (1004.67*ex0)                           - 1.61*thvm)
+rtprlp * (2.5e6 / (1004.67*((p/1.0e5)**(287.04/1004.67))) - 1.61*thvm)
+:param dataset_override:
+:return:</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="config.VariableGroupBase.VariableGroupBase.get_rc_coef_zm_X_rtprcp_sam_calc">
+<code class="sig-name descname">get_rc_coef_zm_X_rtprcp_sam_calc</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">dataset_override</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#config.VariableGroupBase.VariableGroupBase.get_rc_coef_zm_X_rtprcp_sam_calc" title="Permalink to this definition">¶</a></dt>
+<dd><p>sam eqn
+RTPRCP * (2.5e6 / (1004.67*((PRES / 1000)**(287.04/1004.67))) - 1.61*THETAV)m)
+:param dataset_override:
+:return:</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="config.VariableGroupBase.VariableGroupBase.get_rc_coef_zm_X_thlprcp_clubb_calc">
+<code class="sig-name descname">get_rc_coef_zm_X_thlprcp_clubb_calc</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">dataset_override</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#config.VariableGroupBase.VariableGroupBase.get_rc_coef_zm_X_thlprcp_clubb_calc" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates the Contribution of Cloud Water Flux
+to thlprcp using the equation
+rc_coef_zm * thlprcp
+:return: Line representing rc_coef_zm .* thlprcp</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="config.VariableGroupBase.VariableGroupBase.get_rc_coef_zm_X_thlprcp_coamps_calc">
+<code class="sig-name descname">get_rc_coef_zm_X_thlprcp_coamps_calc</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">dataset_override</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#config.VariableGroupBase.VariableGroupBase.get_rc_coef_zm_X_thlprcp_coamps_calc" title="Permalink to this definition">¶</a></dt>
+<dd><p>coamps eqn
+thlpqcp * (2.5e6 / (1004.67 * ex0)                             - 1.61*thvm)
+thlprlp * (2.5e6 / (1004.67 * (( p /1.0e5)**(287.04/1004.67))) - 1.61*thvm)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>dataset_override</strong> – </p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="config.VariableGroupBase.VariableGroupBase.get_rc_coef_zm_X_thlprcp_sam_calc">
+<code class="sig-name descname">get_rc_coef_zm_X_thlprcp_sam_calc</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">dataset_override</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#config.VariableGroupBase.VariableGroupBase.get_rc_coef_zm_X_thlprcp_sam_calc" title="Permalink to this definition">¶</a></dt>
+<dd><p>sam eqn
+THLPRCP .* (2.5e6 / (1004.67*((PRES / 1000)**(287.04/1004.67))) - 1.61*THETAV)        :param dataset_override:
+:return:</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="config.VariableGroupBase.VariableGroupBase.get_rc_coef_zm_X_wprcp_clubb_line">
+<code class="sig-name descname">get_rc_coef_zm_X_wprcp_clubb_line</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">dataset_override</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#config.VariableGroupBase.VariableGroupBase.get_rc_coef_zm_X_wprcp_clubb_line" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates the Contribution of Cloud Water Flux
+to wpthvp using the equation
+rc_coef_zm .* wprcp
+:return: Line representing rc_coef_zm .* wprcp</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="config.VariableGroupBase.VariableGroupBase.get_rc_coef_zm_X_wprcp_coamps_calc">
+<code class="sig-name descname">get_rc_coef_zm_X_wprcp_coamps_calc</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">dataset_override</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#config.VariableGroupBase.VariableGroupBase.get_rc_coef_zm_X_wprcp_coamps_calc" title="Permalink to this definition">¶</a></dt>
+<dd><p>coamps eqn’s
+thlpqcp * (2.5e6 / (1004.67 * ex0)                             - 1.61 * thvm)
+wpqcp   * (2.5e6 / (1004.67 * ex0)                             - 1.61 * thvm)
+wprlp   * (2.5e6 / (1004.67 * (( p /1.0e5)**(287.04/1004.67))) - 1.61 * thvm)
+wprlp   * (2.5e6 / (1004.67 * (( p /1.0e5)**(287.04/1004.67))) - 1.61 * thvm)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>dataset_override</strong> – </p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="config.VariableGroupBase.VariableGroupBase.get_rc_coef_zm_X_wprcp_sam_calc">
+<code class="sig-name descname">get_rc_coef_zm_X_wprcp_sam_calc</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">dataset_override</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#config.VariableGroupBase.VariableGroupBase.get_rc_coef_zm_X_wprcp_sam_calc" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates the Contribution of Cloud Water Flux
+to wpthvp for SAM using the equation
+sam eqn
+WPRCP                          * (2.5e6 / (1004.67*((PRES / 1000)**(287.04/1004.67))) - 1.61*THETAV)
+((QCFLUX) / (RHO * 2.5104e+6)) * (2.5e6 / (1004.67*((PRES / 1000)**(287.04/1004.67))) - 1.61*THETAV)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="config.VariableGroupBase.VariableGroupBase.get_thlp2_sam_calc">
+<code class="sig-name descname">get_thlp2_sam_calc</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">dataset_override</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#config.VariableGroupBase.VariableGroupBase.get_thlp2_sam_calc" title="Permalink to this definition">¶</a></dt>
+<dd><p>TL2 + THLP2_SGS
+:param dataset_override:
+:return:</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="config.VariableGroupBase.VariableGroupBase.get_up2_sam_calc">
+<code class="sig-name descname">get_up2_sam_calc</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">dataset_override</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#config.VariableGroupBase.VariableGroupBase.get_up2_sam_calc" title="Permalink to this definition">¶</a></dt>
+<dd><p>UP2_SGS + U2
+:param dataset_override:
+:return:</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="config.VariableGroupBase.VariableGroupBase.get_upwp_sam_calc">
+<code class="sig-name descname">get_upwp_sam_calc</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">dataset_override</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#config.VariableGroupBase.VariableGroupBase.get_upwp_sam_calc" title="Permalink to this definition">¶</a></dt>
+<dd><p>UW + UPWP_SGS
+:param dataset_override:
+:return:</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="config.VariableGroupBase.VariableGroupBase.get_vp2_sam_calc">
+<code class="sig-name descname">get_vp2_sam_calc</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">dataset_override</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#config.VariableGroupBase.VariableGroupBase.get_vp2_sam_calc" title="Permalink to this definition">¶</a></dt>
+<dd><p>VP2_SGS + V2
+:param dataset_override:
+:return:</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="config.VariableGroupBase.VariableGroupBase.get_vpwp_sam_calc">
+<code class="sig-name descname">get_vpwp_sam_calc</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">dataset_override</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#config.VariableGroupBase.VariableGroupBase.get_vpwp_sam_calc" title="Permalink to this definition">¶</a></dt>
+<dd><p>VW + VPWP_SGS
+:param dataset_override:
+:return:</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="config.VariableGroupBase.VariableGroupBase.get_wp2_sam_calc">
+<code class="sig-name descname">get_wp2_sam_calc</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">dataset_override</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#config.VariableGroupBase.VariableGroupBase.get_wp2_sam_calc" title="Permalink to this definition">¶</a></dt>
+<dd><p>WP2_SGS + W2
+:param dataset_override:
+:return:</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="config.VariableGroupBase.VariableGroupBase.get_wp3_sam_calc">
+<code class="sig-name descname">get_wp3_sam_calc</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">dataset_override</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#config.VariableGroupBase.VariableGroupBase.get_wp3_sam_calc" title="Permalink to this definition">¶</a></dt>
+<dd><p>WP3_SGS + W3
+:param dataset_override:
+:return:</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-config.VariableGroupBaseBudgets">
+<span id="config-variablegroupbasebudgets-module"></span><h2>config.VariableGroupBaseBudgets module<a class="headerlink" href="#module-config.VariableGroupBaseBudgets" title="Permalink to this headline">¶</a></h2>
+<dl class="field-list simple">
+<dt class="field-odd">author</dt>
+<dd class="field-odd"><p>Nicolas Strike</p>
+</dd>
+<dt class="field-even">date</dt>
+<dd class="field-even"><p>Mid 2019</p>
+</dd>
+</dl>
+<dl class="py class">
+<dt id="config.VariableGroupBaseBudgets.VariableGroupBaseBudgets">
+<em class="property">class </em><code class="sig-prename descclassname">config.VariableGroupBaseBudgets.</code><code class="sig-name descname">VariableGroupBaseBudgets</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">case</span></em>, <em class="sig-param"><span class="n">clubb_datasets</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">les_dataset</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">coamps_dataset</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">r408_dataset</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">hoc_dataset</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">cam_datasets</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">e3sm_datasets</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">wrf_datasets</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#config.VariableGroupBaseBudgets.VariableGroupBaseBudgets" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="pyplotgen.src.html#src.VariableGroup.VariableGroup" title="src.VariableGroup.VariableGroup"><code class="xref py py-class docutils literal notranslate"><span class="pre">src.VariableGroup.VariableGroup</span></code></a></p>
+<dl class="py method">
+<dt id="config.VariableGroupBaseBudgets.VariableGroupBaseBudgets.getNrmResidual">
+<code class="sig-name descname">getNrmResidual</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">dataset_override</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#config.VariableGroupBaseBudgets.VariableGroupBaseBudgets.getNrmResidual" title="Permalink to this definition">¶</a></dt>
+<dd><p>Nrm_bt - (Nrm_ma + Nrm_sd + Nrm_ta + Nrm_ts + Nrm_cl + Nrm_mc)</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="config.VariableGroupBaseBudgets.VariableGroupBaseBudgets.getRrmFillClip">
+<code class="sig-name descname">getRrmFillClip</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">dataset_override</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#config.VariableGroupBaseBudgets.VariableGroupBaseBudgets.getRrmFillClip" title="Permalink to this definition">¶</a></dt>
+<dd><p>rrm_hf + rrm_wvhf + rrm_cl
+:return:</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="config.VariableGroupBaseBudgets.VariableGroupBaseBudgets.getRrmResidual">
+<code class="sig-name descname">getRrmResidual</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">dataset_override</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#config.VariableGroupBaseBudgets.VariableGroupBaseBudgets.getRrmResidual" title="Permalink to this definition">¶</a></dt>
+<dd><p>rrm_bt - (rrm_ma + rrm_sd + rrm_ta + rrm_ts + rrm_hf + rrm_wvhf + rrm_cl + rrm_mc)
+:return:</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="config.VariableGroupBaseBudgets.VariableGroupBaseBudgets.getRtmClipping">
+<code class="sig-name descname">getRtmClipping</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">dataset_override</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#config.VariableGroupBaseBudgets.VariableGroupBaseBudgets.getRtmClipping" title="Permalink to this definition">¶</a></dt>
+<dd><p>rtm_mfl + rtm_cl + rtm_tacl + rtm_sdmp
+:return:</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="config.VariableGroupBaseBudgets.VariableGroupBaseBudgets.getRtmForcing">
+<code class="sig-name descname">getRtmForcing</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">dataset_override</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#config.VariableGroupBaseBudgets.VariableGroupBaseBudgets.getRtmForcing" title="Permalink to this definition">¶</a></dt>
+<dd><p>rtm_forcing - rtm_mc
+:return:</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="config.VariableGroupBaseBudgets.VariableGroupBaseBudgets.getRtmResidual">
+<code class="sig-name descname">getRtmResidual</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">dataset_override</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#config.VariableGroupBaseBudgets.VariableGroupBaseBudgets.getRtmResidual" title="Permalink to this definition">¶</a></dt>
+<dd><p>rtm_bt - (rtm_ma + rtm_ta + rtm_mfl + rtm_cl + rtm_tacl + rtm_sdmp + rtm_forcing + rtm_pd)
+:return:</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="config.VariableGroupBaseBudgets.VariableGroupBaseBudgets.getRtp2Residual">
+<code class="sig-name descname">getRtp2Residual</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">dataset_override</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#config.VariableGroupBaseBudgets.VariableGroupBaseBudgets.getRtp2Residual" title="Permalink to this definition">¶</a></dt>
+<dd><p>rtp2_bt - (rtp2_ma + rtp2_ta + rtp2_tp + rtp2_dp1 + rtp2_dp2 + rtp2_cl + rtp2_pd + rtp2_sf + rtp2_forcing)
+:return:</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="config.VariableGroupBaseBudgets.VariableGroupBaseBudgets.getRtpthlpResidual">
+<code class="sig-name descname">getRtpthlpResidual</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">dataset_override</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#config.VariableGroupBaseBudgets.VariableGroupBaseBudgets.getRtpthlpResidual" title="Permalink to this definition">¶</a></dt>
+<dd><p>rtpthlp_bt - (rtpthlp_ma + rtpthlp_ta + rtpthlp_tp + rtpthlp_dp1 + rtpthlp_dp2 + rtpthlp_cl +
+rtpthlp_pd + rtpthlp_sf + rtpthlp_forcing)
+:return:</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="config.VariableGroupBaseBudgets.VariableGroupBaseBudgets.getThlmClipping">
+<code class="sig-name descname">getThlmClipping</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">dataset_override</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#config.VariableGroupBaseBudgets.VariableGroupBaseBudgets.getThlmClipping" title="Permalink to this definition">¶</a></dt>
+<dd><p>thlm_mfl+thlm_cl+thlm_tacl+thlm_sdmp
+:return:</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="config.VariableGroupBaseBudgets.VariableGroupBaseBudgets.getThlmLsforcing">
+<code class="sig-name descname">getThlmLsforcing</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">dataset_override</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#config.VariableGroupBaseBudgets.VariableGroupBaseBudgets.getThlmLsforcing" title="Permalink to this definition">¶</a></dt>
+<dd><p>thlm_forcing-radht-thlm_mc
+:return:</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="config.VariableGroupBaseBudgets.VariableGroupBaseBudgets.getThlmResidual">
+<code class="sig-name descname">getThlmResidual</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">dataset_override</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#config.VariableGroupBaseBudgets.VariableGroupBaseBudgets.getThlmResidual" title="Permalink to this definition">¶</a></dt>
+<dd><p>thlm_bt-(thlm_ma+thlm_ta+thlm_mfl+thlm_cl+thlm_tacl+thlm_sdmp+thlm_forcing)
+:return:</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="config.VariableGroupBaseBudgets.VariableGroupBaseBudgets.getThlp2Residual">
+<code class="sig-name descname">getThlp2Residual</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">dataset_override</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#config.VariableGroupBaseBudgets.VariableGroupBaseBudgets.getThlp2Residual" title="Permalink to this definition">¶</a></dt>
+<dd><p>thlp2_bt - (thlp2_ma + thlp2_ta + thlp2_tp + thlp2_dp1 + thlp2_dp2 + thlp2_cl + thlp2_pd +
+thlp2_sf + thlp2_forcing)
+:return:</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="config.VariableGroupBaseBudgets.VariableGroupBaseBudgets.getUpwpResidual">
+<code class="sig-name descname">getUpwpResidual</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">dataset_override</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#config.VariableGroupBaseBudgets.VariableGroupBaseBudgets.getUpwpResidual" title="Permalink to this definition">¶</a></dt>
+<dd><p>upwp_bt - (upwp_ma + upwp_ta + upwp_tp + upwp_dp1 + upwp_dp2 + upwp_cl + upwp_pd + upwp_sf + upwp_forcing)
+:return:</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="config.VariableGroupBaseBudgets.VariableGroupBaseBudgets.getVpwpResidual">
+<code class="sig-name descname">getVpwpResidual</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">dataset_override</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#config.VariableGroupBaseBudgets.VariableGroupBaseBudgets.getVpwpResidual" title="Permalink to this definition">¶</a></dt>
+<dd><p>vpwp_bt - (vpwp_ma + vpwp_ta + vpwp_tp + vpwp_dp1 + vpwp_dp2 + vpwp_cl + vpwp_pd + vpwp_sf + vpwp_forcing)
+:return:</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="config.VariableGroupBaseBudgets.VariableGroupBaseBudgets.getWp2Residual">
+<code class="sig-name descname">getWp2Residual</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">dataset_override</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#config.VariableGroupBaseBudgets.VariableGroupBaseBudgets.getWp2Residual" title="Permalink to this definition">¶</a></dt>
+<dd><p>wp2_bt - (wp2_ma + wp2_ta + wp2_tp + wp2_ac + wp2_bp + wp2_pr1 + wp2_pr2 + wp2_pr3 + wp2_dp1 +
+wp2_mfl + wp2_cl + wp2_sicl + wp2_forcing)
+:return:</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="config.VariableGroupBaseBudgets.VariableGroupBaseBudgets.getWp3Residual">
+<code class="sig-name descname">getWp3Residual</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">dataset_override</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#config.VariableGroupBaseBudgets.VariableGroupBaseBudgets.getWp3Residual" title="Permalink to this definition">¶</a></dt>
+<dd><p>wp3_bt - (wp3_ma + wp3_ta + wp3_tp + wp3_ac + wp3_bp1 + wp3_bp2 + wp3_pr1 + wp3_pr2 + wp3_pr3 +
+wp3_dp1 + wp3_cl+wp3_splat)
+:return:</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="config.VariableGroupBaseBudgets.VariableGroupBaseBudgets.getWprtpResidual">
+<code class="sig-name descname">getWprtpResidual</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">dataset_override</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#config.VariableGroupBaseBudgets.VariableGroupBaseBudgets.getWprtpResidual" title="Permalink to this definition">¶</a></dt>
+<dd><p>wprtp_bt - (wprtp_ma + wprtp_ta + wprtp_tp + wprtp_ac + wprtp_bp + wprtp_pr1 + wprtp_pr2 + wprtp_pr3 +
+wprtp_dp1 + wprtp_mfl + wprtp_cl + wprtp_sicl + wprtp_forcing)
+:return:</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="config.VariableGroupBaseBudgets.VariableGroupBaseBudgets.getWpthlpResidual">
+<code class="sig-name descname">getWpthlpResidual</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">dataset_override</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#config.VariableGroupBaseBudgets.VariableGroupBaseBudgets.getWpthlpResidual" title="Permalink to this definition">¶</a></dt>
+<dd><p>wpthlp_bt - (wpthlp_ma + wpthlp_ta + wpthlp_tp + wpthlp_ac + wpthlp_bp + wpthlp_pr1 + wpthlp_pr2 +
+wpthlp_pr3 + wpthlp_dp1 + wpthlp_mfl + wpthlp_cl + wpthlp_sicl + wpthlp_forcing)
+:return:</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-config.VariableGroupCorrelations">
+<span id="config-variablegroupcorrelations-module"></span><h2>config.VariableGroupCorrelations module<a class="headerlink" href="#module-config.VariableGroupCorrelations" title="Permalink to this headline">¶</a></h2>
+<dl class="field-list simple">
+<dt class="field-odd">author</dt>
+<dd class="field-odd"><p>Nicolas Strike</p>
+</dd>
+<dt class="field-even">date</dt>
+<dd class="field-even"><p>Mid 2019</p>
+</dd>
+</dl>
+<dl class="py class">
+<dt id="config.VariableGroupCorrelations.VariableGroupCorrelations">
+<em class="property">class </em><code class="sig-prename descclassname">config.VariableGroupCorrelations.</code><code class="sig-name descname">VariableGroupCorrelations</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">case</span></em>, <em class="sig-param"><span class="n">clubb_datasets</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">les_dataset</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">coamps_dataset</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">r408_dataset</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">hoc_dataset</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">cam_datasets</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">e3sm_datasets</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">sam_datasets</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">wrf_datasets</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#config.VariableGroupCorrelations.VariableGroupCorrelations" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="pyplotgen.src.html#src.VariableGroup.VariableGroup" title="src.VariableGroup.VariableGroup"><code class="xref py py-class docutils literal notranslate"><span class="pre">src.VariableGroup.VariableGroup</span></code></a></p>
+</dd></dl>
+
+</div>
+<div class="section" id="module-config.VariableGroupIceMP">
+<span id="config-variablegroupicemp-module"></span><h2>config.VariableGroupIceMP module<a class="headerlink" href="#module-config.VariableGroupIceMP" title="Permalink to this headline">¶</a></h2>
+<dl class="field-list simple">
+<dt class="field-odd">author</dt>
+<dd class="field-odd"><p>Nicolas Strike</p>
+</dd>
+<dt class="field-even">date</dt>
+<dd class="field-even"><p>Mid 2019</p>
+</dd>
+</dl>
+<dl class="py class">
+<dt id="config.VariableGroupIceMP.VariableGroupIceMP">
+<em class="property">class </em><code class="sig-prename descclassname">config.VariableGroupIceMP.</code><code class="sig-name descname">VariableGroupIceMP</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">case</span></em>, <em class="sig-param"><span class="n">clubb_datasets</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">les_dataset</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">sam_datasets</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">coamps_dataset</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">r408_dataset</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">hoc_dataset</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">cam_datasets</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">e3sm_datasets</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">wrf_datasets</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#config.VariableGroupIceMP.VariableGroupIceMP" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="pyplotgen.src.html#src.VariableGroup.VariableGroup" title="src.VariableGroup.VariableGroup"><code class="xref py py-class docutils literal notranslate"><span class="pre">src.VariableGroup.VariableGroup</span></code></a></p>
+<dl class="py method">
+<dt id="config.VariableGroupIceMP.VariableGroupIceMP.getNimSamLine">
+<code class="sig-name descname">getNimSamLine</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">dataset_override</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#config.VariableGroupIceMP.VariableGroupIceMP.getNimSamLine" title="Permalink to this definition">¶</a></dt>
+<dd><p>Caclulates Nim from sam -&gt; clubb using the equation
+(NI * 1e+6) ./ RHO
+:return:</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="config.VariableGroupIceMP.VariableGroupIceMP.getNsmSamLine">
+<code class="sig-name descname">getNsmSamLine</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">dataset_override</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#config.VariableGroupIceMP.VariableGroupIceMP.getNsmSamLine" title="Permalink to this definition">¶</a></dt>
+<dd><p>Caclulates Nim from sam -&gt; clubb using the equation
+(NS * 1e+6) ./ RHO
+:return:</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-config.VariableGroupKKMP">
+<span id="config-variablegroupkkmp-module"></span><h2>config.VariableGroupKKMP module<a class="headerlink" href="#module-config.VariableGroupKKMP" title="Permalink to this headline">¶</a></h2>
+<dl class="field-list simple">
+<dt class="field-odd">author</dt>
+<dd class="field-odd"><p>Nicolas Strike</p>
+</dd>
+<dt class="field-even">date</dt>
+<dd class="field-even"><p>Mid 2019</p>
+</dd>
+</dl>
+<dl class="py class">
+<dt id="config.VariableGroupKKMP.VariableGroupKKMP">
+<em class="property">class </em><code class="sig-prename descclassname">config.VariableGroupKKMP.</code><code class="sig-name descname">VariableGroupKKMP</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">case</span></em>, <em class="sig-param"><span class="n">clubb_datasets</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">les_dataset</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">coamps_dataset</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">r408_dataset</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">hoc_dataset</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">cam_datasets</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">e3sm_datasets</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">sam_datasets</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">wrf_datasets</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#config.VariableGroupKKMP.VariableGroupKKMP" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="pyplotgen.src.html#src.VariableGroup.VariableGroup" title="src.VariableGroup.VariableGroup"><code class="xref py py-class docutils literal notranslate"><span class="pre">src.VariableGroup.VariableGroup</span></code></a></p>
+</dd></dl>
+
+</div>
+<div class="section" id="module-config.VariableGroupLiquidMP">
+<span id="config-variablegroupliquidmp-module"></span><h2>config.VariableGroupLiquidMP module<a class="headerlink" href="#module-config.VariableGroupLiquidMP" title="Permalink to this headline">¶</a></h2>
+<dl class="field-list simple">
+<dt class="field-odd">author</dt>
+<dd class="field-odd"><p>Nicolas Strike</p>
+</dd>
+<dt class="field-even">date</dt>
+<dd class="field-even"><p>Mid 2019</p>
+</dd>
+</dl>
+<dl class="py class">
+<dt id="config.VariableGroupLiquidMP.VariableGroupLiquidMP">
+<em class="property">class </em><code class="sig-prename descclassname">config.VariableGroupLiquidMP.</code><code class="sig-name descname">VariableGroupLiquidMP</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">case</span></em>, <em class="sig-param"><span class="n">clubb_datasets</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">les_dataset</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">coamps_dataset</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">r408_dataset</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">hoc_dataset</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">cam_datasets</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">e3sm_datasets</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">sam_datasets</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">wrf_datasets</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#config.VariableGroupLiquidMP.VariableGroupLiquidMP" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="pyplotgen.src.html#src.VariableGroup.VariableGroup" title="src.VariableGroup.VariableGroup"><code class="xref py py-class docutils literal notranslate"><span class="pre">src.VariableGroup.VariableGroup</span></code></a></p>
+<dl class="py method">
+<dt id="config.VariableGroupLiquidMP.VariableGroupLiquidMP.getNcInCloudSamLine">
+<code class="sig-name descname">getNcInCloudSamLine</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">dataset_override</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#config.VariableGroupLiquidMP.VariableGroupLiquidMP.getNcInCloudSamLine" title="Permalink to this definition">¶</a></dt>
+<dd><p>(NC * 1e+6) ./ RHO
+:return:</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="config.VariableGroupLiquidMP.VariableGroupLiquidMP.getNcmSamLine">
+<code class="sig-name descname">getNcmSamLine</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">dataset_override</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#config.VariableGroupLiquidMP.VariableGroupLiquidMP.getNcmSamLine" title="Permalink to this definition">¶</a></dt>
+<dd><p>Caclulates Nim from sam -&gt; clubb using the equation
+(NC * 1e+6) ./ RHO
+(GCSSNC * 1e+6) ./ RHO
+CLD .* (NC * 1e+6) ./ RHO</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="config.VariableGroupLiquidMP.VariableGroupLiquidMP.getNrmSamLine">
+<code class="sig-name descname">getNrmSamLine</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">dataset_override</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#config.VariableGroupLiquidMP.VariableGroupLiquidMP.getNrmSamLine" title="Permalink to this definition">¶</a></dt>
+<dd><p>Caclulates Nim from sam -&gt; clubb using the equation
+(NR * 1e+6) ./ RHO
+(CONP * 1e+6) ./ RHO
+:return:</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-config.VariableGroupSamBudgets">
+<span id="config-variablegroupsambudgets-module"></span><h2>config.VariableGroupSamBudgets module<a class="headerlink" href="#module-config.VariableGroupSamBudgets" title="Permalink to this headline">¶</a></h2>
+<dl class="field-list simple">
+<dt class="field-odd">author</dt>
+<dd class="field-odd"><p>Steffen Domke</p>
+</dd>
+<dt class="field-even">date</dt>
+<dd class="field-even"><p>Mid 2019</p>
+</dd>
+</dl>
+<p>TODO:   - Arrange lines so that styles match for different panels -&gt; reduced momentum flux budgets</p>
+<dl class="py class">
+<dt id="config.VariableGroupSamBudgets.VariableGroupSamBudgets">
+<em class="property">class </em><code class="sig-prename descclassname">config.VariableGroupSamBudgets.</code><code class="sig-name descname">VariableGroupSamBudgets</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">case</span></em>, <em class="sig-param"><span class="n">clubb_datasets</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">les_dataset</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">coamps_dataset</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">r408_dataset</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">hoc_dataset</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">cam_datasets</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">e3sm_datasets</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">sam_datasets</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">wrf_datasets</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#config.VariableGroupSamBudgets.VariableGroupSamBudgets" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="pyplotgen.src.html#src.VariableGroup.VariableGroup" title="src.VariableGroup.VariableGroup"><code class="xref py py-class docutils literal notranslate"><span class="pre">src.VariableGroup.VariableGroup</span></code></a></p>
+<dl class="py method">
+<dt id="config.VariableGroupSamBudgets.VariableGroupSamBudgets.getHlResidual">
+<code class="sig-name descname">getHlResidual</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">dataset_override</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#config.VariableGroupSamBudgets.VariableGroupSamBudgets.getHlResidual" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates the residual for the HL budget using
+the following equation:
+(HLSTOR)+((-1)*(HLADV+HLDIFF+HLRAD+HLLAT+TTEND))*g_per_second_to_kg_per_day
+:param dataset_override:
+:return: requested variable dependent_data in the form of a list.</p>
+<blockquote>
+<div><p>Returned dependent_data is already cropped to the appropriate min,max indices</p>
+</div></blockquote>
+</dd></dl>
+
+<dl class="py method">
+<dt id="config.VariableGroupSamBudgets.VariableGroupSamBudgets.getQThlResidual">
+<code class="sig-name descname">getQThlResidual</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">dataset_override</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#config.VariableGroupSamBudgets.VariableGroupSamBudgets.getQThlResidual" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates the residual for the QTHL budget using
+the following equation:
+QTHLBT - (QTHLADV + QTHLGRAD + QTHLDISSIP + QTHLDIFTR + QTHLPREC + QTHLRAD + QTHLFORC)
+:param dataset_override:
+:return: requested variable dependent_data in the form of a list.</p>
+<blockquote>
+<div><p>Returned dependent_data is already cropped to the appropriate min,max indices</p>
+</div></blockquote>
+</dd></dl>
+
+<dl class="py method">
+<dt id="config.VariableGroupSamBudgets.VariableGroupSamBudgets.getQt2Residual">
+<code class="sig-name descname">getQt2Residual</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">dataset_override</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#config.VariableGroupSamBudgets.VariableGroupSamBudgets.getQt2Residual" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates the residual for the Q2 budget using
+the following equation:
+Q2BT - (Q2ADVTR + Q2GRAD + Q2DISSIP + Q2DIFTR + Q2PREC + Q2FORC)
+:param dataset_override:
+:return: requested variable dependent_data in the form of a list.</p>
+<blockquote>
+<div><p>Returned dependent_data is already cropped to the appropriate min,max indices</p>
+</div></blockquote>
+</dd></dl>
+
+<dl class="py method">
+<dt id="config.VariableGroupSamBudgets.VariableGroupSamBudgets.getQtResidual">
+<code class="sig-name descname">getQtResidual</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">dataset_override</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#config.VariableGroupSamBudgets.VariableGroupSamBudgets.getQtResidual" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates the residual for the QT budget using
+the following equation:
+QTSTOR+(-1)*(QTADV+QTDIFF+QTSRC+QTSINK+QTEND)
+:param dataset_override:
+:return: requested variable dependent_data in the form of a list.</p>
+<blockquote>
+<div><p>Returned dependent_data is already cropped to the appropriate min,max indices</p>
+</div></blockquote>
+</dd></dl>
+
+<dl class="py method">
+<dt id="config.VariableGroupSamBudgets.VariableGroupSamBudgets.getQtog2Residual">
+<code class="sig-name descname">getQtog2Residual</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">dataset_override</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#config.VariableGroupSamBudgets.VariableGroupSamBudgets.getQtog2Residual" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates the residual for the QTOG2 budget using
+the following equation:
+QTOG2BT - (QTOG2ADVTR + QTOG2GRAD + QTOG2DISSIP + QTOG2DIFTR + QTOG2PREC + QTOG2FORC)
+:param dataset_override:
+:return: requested variable dependent_data in the form of a list.</p>
+<blockquote>
+<div><p>Returned dependent_data is already cropped to the appropriate min,max indices</p>
+</div></blockquote>
+</dd></dl>
+
+<dl class="py method">
+<dt id="config.VariableGroupSamBudgets.VariableGroupSamBudgets.getQtogwBuoyPlusPres">
+<code class="sig-name descname">getQtogwBuoyPlusPres</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">dataset_override</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#config.VariableGroupSamBudgets.VariableGroupSamBudgets.getQtogwBuoyPlusPres" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates the combined BUOY and PRES variable value
+of the QTOGW budget using the following equation:
+QTOGWBUOY + QTOGWPRES
+:param dataset_override:
+:return: requested variable dependent_data in the form of a list.</p>
+<blockquote>
+<div><p>Returned dependent_data is already cropped to the appropriate min,max indices</p>
+</div></blockquote>
+</dd></dl>
+
+<dl class="py method">
+<dt id="config.VariableGroupSamBudgets.VariableGroupSamBudgets.getQtogwResidual">
+<code class="sig-name descname">getQtogwResidual</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">dataset_override</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#config.VariableGroupSamBudgets.VariableGroupSamBudgets.getQtogwResidual" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates the residual for the QTOGW budget using
+the following equation:
+QTOGWBT - (QTOGWGRAD + QTOGWADV + QTOGWDIFF + QTOGWBUOY + QTOGWPRES + QTOGWPREC + QTOGWFORC)
+:param dataset_override:
+:return: requested variable dependent_data in the form of a list.</p>
+<blockquote>
+<div><p>Returned dependent_data is already cropped to the appropriate min,max indices</p>
+</div></blockquote>
+</dd></dl>
+
+<dl class="py method">
+<dt id="config.VariableGroupSamBudgets.VariableGroupSamBudgets.getQwBuoyPlusPres">
+<code class="sig-name descname">getQwBuoyPlusPres</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">dataset_override</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#config.VariableGroupSamBudgets.VariableGroupSamBudgets.getQwBuoyPlusPres" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates the combined BUOY and PRES variable value
+of the QW budget using the following equation:
+QWBUOY+QWPRES
+:param dataset_override:
+:return: requested variable dependent_data in the form of a list.</p>
+<blockquote>
+<div><p>Returned dependent_data is already cropped to the appropriate min,max indices</p>
+</div></blockquote>
+</dd></dl>
+
+<dl class="py method">
+<dt id="config.VariableGroupSamBudgets.VariableGroupSamBudgets.getQwResidual">
+<code class="sig-name descname">getQwResidual</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">dataset_override</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#config.VariableGroupSamBudgets.VariableGroupSamBudgets.getQwResidual" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates the residual for the QW budget using
+the following equation:
+QWBT - (QWGRAD + QWADV + QWDIFF + QWBUOY + QWPRES + QWPREC + QWFORC)
+:param dataset_override:
+:return: requested variable dependent_data in the form of a list.</p>
+<blockquote>
+<div><p>Returned dependent_data is already cropped to the appropriate min,max indices</p>
+</div></blockquote>
+</dd></dl>
+
+<dl class="py method">
+<dt id="config.VariableGroupSamBudgets.VariableGroupSamBudgets.getT2Residual">
+<code class="sig-name descname">getT2Residual</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">dataset_override</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#config.VariableGroupSamBudgets.VariableGroupSamBudgets.getT2Residual" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates the residual for the T2 budget using
+the following equation:
+T2BT - (T2ADVTR + T2GRAD + T2DISSIP + T2DIFTR + T2PREC + T2RAD + T2FORC)
+:param dataset_override:
+:return: requested variable dependent_data in the form of a list.</p>
+<blockquote>
+<div><p>Returned dependent_data is already cropped to the appropriate min,max indices</p>
+</div></blockquote>
+</dd></dl>
+
+<dl class="py method">
+<dt id="config.VariableGroupSamBudgets.VariableGroupSamBudgets.getThl2Residual">
+<code class="sig-name descname">getThl2Residual</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">dataset_override</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#config.VariableGroupSamBudgets.VariableGroupSamBudgets.getThl2Residual" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates the residual for the THL2 budget using
+the following equation:
+THL2BT - (THL2ADVTR + THL2GRAD + THL2DISSIP + THL2DIFTR + THL2PREC + THL2RAD + THL2FORC)
+:param dataset_override:
+:return: requested variable dependent_data in the form of a list.</p>
+<blockquote>
+<div><p>Returned dependent_data is already cropped to the appropriate min,max indices</p>
+</div></blockquote>
+</dd></dl>
+
+<dl class="py method">
+<dt id="config.VariableGroupSamBudgets.VariableGroupSamBudgets.getThlwBuoyPlusPres">
+<code class="sig-name descname">getThlwBuoyPlusPres</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">dataset_override</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#config.VariableGroupSamBudgets.VariableGroupSamBudgets.getThlwBuoyPlusPres" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates the combined BUOY and PRES variable value
+of the THLW budget using the following equation:
+THLWBUOY + THLWPRES
+:param dataset_override:
+:return: requested variable dependent_data in the form of a list.</p>
+<blockquote>
+<div><p>Returned dependent_data is already cropped to the appropriate min,max indices</p>
+</div></blockquote>
+</dd></dl>
+
+<dl class="py method">
+<dt id="config.VariableGroupSamBudgets.VariableGroupSamBudgets.getThlwResidual">
+<code class="sig-name descname">getThlwResidual</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">dataset_override</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#config.VariableGroupSamBudgets.VariableGroupSamBudgets.getThlwResidual" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates the residual for the THLW budget using
+the following equation:
+THLWBT - (THLWGRAD + THLWADV + THLWDIFF + THLWBUOY + THLWPRES + THLWPREC + THLWRAD + THLWFORC)
+:param dataset_override:
+:return: requested variable dependent_data in the form of a list.</p>
+<blockquote>
+<div><p>Returned dependent_data is already cropped to the appropriate min,max indices</p>
+</div></blockquote>
+</dd></dl>
+
+<dl class="py method">
+<dt id="config.VariableGroupSamBudgets.VariableGroupSamBudgets.getTkeDissPlusDiff">
+<code class="sig-name descname">getTkeDissPlusDiff</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">dataset_override</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#config.VariableGroupSamBudgets.VariableGroupSamBudgets.getTkeDissPlusDiff" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates the combined DISS and DIFTR variable value
+of the TKE budget using the following equation:
+DISSIP + DIFTR
+:param dataset_override:
+:return: requested variable dependent_data in the form of a list.</p>
+<blockquote>
+<div><p>Returned dependent_data is already cropped to the appropriate min,max indices</p>
+</div></blockquote>
+</dd></dl>
+
+<dl class="py method">
+<dt id="config.VariableGroupSamBudgets.VariableGroupSamBudgets.getTkeResidual">
+<code class="sig-name descname">getTkeResidual</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">dataset_override</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#config.VariableGroupSamBudgets.VariableGroupSamBudgets.getTkeResidual" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates the residual for the TKE budget using
+the following equation:
+BT - (SHEAR + BUOYA + ADVTR + PRESSTR + DIFTR + SDMP + DISSIP)
+:param dataset_override:
+:return: requested variable dependent_data in the form of a list.</p>
+<blockquote>
+<div><p>Returned dependent_data is already cropped to the appropriate min,max indices</p>
+</div></blockquote>
+</dd></dl>
+
+<dl class="py method">
+<dt id="config.VariableGroupSamBudgets.VariableGroupSamBudgets.getTkesResidual">
+<code class="sig-name descname">getTkesResidual</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">dataset_override</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#config.VariableGroupSamBudgets.VariableGroupSamBudgets.getTkesResidual" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates the residual for the TKES budget using
+the following equation:
+-(SHEARS + BUOYAS + ADVTRS + DISSIPS)
+:param dataset_override:
+:return: requested variable dependent_data in the form of a list.</p>
+<blockquote>
+<div><p>Returned dependent_data is already cropped to the appropriate min,max indices</p>
+</div></blockquote>
+</dd></dl>
+
+<dl class="py method">
+<dt id="config.VariableGroupSamBudgets.VariableGroupSamBudgets.getTwBuoyPlusPres">
+<code class="sig-name descname">getTwBuoyPlusPres</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">dataset_override</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#config.VariableGroupSamBudgets.VariableGroupSamBudgets.getTwBuoyPlusPres" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates the combined BUOY and PRES variable value
+of the TW budget using the following equation:
+TWBUOY+TWPRES
+:param dataset_override:
+:return: requested variable dependent_data in the form of a list.</p>
+<blockquote>
+<div><p>Returned dependent_data is already cropped to the appropriate min,max indices</p>
+</div></blockquote>
+</dd></dl>
+
+<dl class="py method">
+<dt id="config.VariableGroupSamBudgets.VariableGroupSamBudgets.getTwResidual">
+<code class="sig-name descname">getTwResidual</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">dataset_override</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#config.VariableGroupSamBudgets.VariableGroupSamBudgets.getTwResidual" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates the residual for the TW budget using
+the following equation:
+TWBT - (TWGRAD + TWADV + TWDIFF + TWBUOY + TWPRES + TWPREC + TWRAD + TWFORC)
+:param dataset_override:
+:return: requested variable dependent_data in the form of a list.</p>
+<blockquote>
+<div><p>Returned dependent_data is already cropped to the appropriate min,max indices</p>
+</div></blockquote>
+</dd></dl>
+
+<dl class="py method">
+<dt id="config.VariableGroupSamBudgets.VariableGroupSamBudgets.getU2Residual">
+<code class="sig-name descname">getU2Residual</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">dataset_override</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#config.VariableGroupSamBudgets.VariableGroupSamBudgets.getU2Residual" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates the residual for the U2 budget using
+the following equation:
+U2BT - (U2ADV + U2SHEAR + U2REDIS + U2DIFF)
+:param dataset_override:
+:return: requested variable dependent_data in the form of a list.</p>
+<blockquote>
+<div><p>Returned dependent_data is already cropped to the appropriate min,max indices</p>
+</div></blockquote>
+</dd></dl>
+
+<dl class="py method">
+<dt id="config.VariableGroupSamBudgets.VariableGroupSamBudgets.getU2V2Adv">
+<code class="sig-name descname">getU2V2Adv</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">dataset_override</span></em><span class="sig-paren">)</span><a class="headerlink" href="#config.VariableGroupSamBudgets.VariableGroupSamBudgets.getU2V2Adv" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates the ADV variable value
+of the combined U2+V2 budget using the following equation:
+2 * ADVTR - W2ADV
+:param dataset_override:
+:return: requested variable dependent_data in the form of a list.</p>
+<blockquote>
+<div><p>Returned dependent_data is already cropped to the appropriate min,max indices</p>
+</div></blockquote>
+</dd></dl>
+
+<dl class="py method">
+<dt id="config.VariableGroupSamBudgets.VariableGroupSamBudgets.getU2V2Bt">
+<code class="sig-name descname">getU2V2Bt</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">dataset_override</span></em><span class="sig-paren">)</span><a class="headerlink" href="#config.VariableGroupSamBudgets.VariableGroupSamBudgets.getU2V2Bt" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates the BT variable value
+of the combined U2+V2 budget using the following equation:
+2 * BT - W2BT
+:param dataset_override:
+:return: requested variable dependent_data in the form of a list.</p>
+<blockquote>
+<div><p>Returned dependent_data is already cropped to the appropriate min,max indices</p>
+</div></blockquote>
+</dd></dl>
+
+<dl class="py method">
+<dt id="config.VariableGroupSamBudgets.VariableGroupSamBudgets.getU2V2Buoy">
+<code class="sig-name descname">getU2V2Buoy</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">dataset_override</span></em><span class="sig-paren">)</span><a class="headerlink" href="#config.VariableGroupSamBudgets.VariableGroupSamBudgets.getU2V2Buoy" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates the BUOY variable value
+of the combined U2+V2 budget using the following equation:
+2 * BUOYA - W2BUOY
+:param dataset_override:
+:return: requested variable dependent_data in the form of a list.</p>
+<blockquote>
+<div><p>Returned dependent_data is already cropped to the appropriate min,max indices</p>
+</div></blockquote>
+</dd></dl>
+
+<dl class="py method">
+<dt id="config.VariableGroupSamBudgets.VariableGroupSamBudgets.getU2V2Diff">
+<code class="sig-name descname">getU2V2Diff</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">dataset_override</span></em><span class="sig-paren">)</span><a class="headerlink" href="#config.VariableGroupSamBudgets.VariableGroupSamBudgets.getU2V2Diff" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates the DIFF variable value
+of the combined U2+V2 budget using the following equation:
+2 * DIFTR - W2DIFF
+:param dataset_override:
+:return: requested variable dependent_data in the form of a list.</p>
+<blockquote>
+<div><p>Returned dependent_data is already cropped to the appropriate min,max indices</p>
+</div></blockquote>
+</dd></dl>
+
+<dl class="py method">
+<dt id="config.VariableGroupSamBudgets.VariableGroupSamBudgets.getU2V2Pres">
+<code class="sig-name descname">getU2V2Pres</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">dataset_override</span></em><span class="sig-paren">)</span><a class="headerlink" href="#config.VariableGroupSamBudgets.VariableGroupSamBudgets.getU2V2Pres" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates the PRES variable value
+of the combined U2+V2 budget using the following equation:
+2 * PRESSTR - W2PRES
+:param dataset_override:
+:return: requested variable dependent_data in the form of a list.</p>
+<blockquote>
+<div><p>Returned dependent_data is already cropped to the appropriate min,max indices</p>
+</div></blockquote>
+</dd></dl>
+
+<dl class="py method">
+<dt id="config.VariableGroupSamBudgets.VariableGroupSamBudgets.getU2V2Residual">
+<code class="sig-name descname">getU2V2Residual</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">dataset_override</span></em><span class="sig-paren">)</span><a class="headerlink" href="#config.VariableGroupSamBudgets.VariableGroupSamBudgets.getU2V2Residual" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates the residual for the W2 budget using
+the following equation:
+2 * TKE_RES - W2_RES
+:param dataset_override:
+:return: requested variable dependent_data in the form of a list.</p>
+<blockquote>
+<div><p>Returned dependent_data is already cropped to the appropriate min,max indices</p>
+</div></blockquote>
+</dd></dl>
+
+<dl class="py method">
+<dt id="config.VariableGroupSamBudgets.VariableGroupSamBudgets.getU2V2Sdmp">
+<code class="sig-name descname">getU2V2Sdmp</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">dataset_override</span></em><span class="sig-paren">)</span><a class="headerlink" href="#config.VariableGroupSamBudgets.VariableGroupSamBudgets.getU2V2Sdmp" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates the SDMP variable value
+of the combined U2+V2 budget using the following equation:
+2 * SDMP - W2SDMP
+:param dataset_override:
+:return: requested variable dependent_data in the form of a list.</p>
+<blockquote>
+<div><p>Returned dependent_data is already cropped to the appropriate min,max indices</p>
+</div></blockquote>
+</dd></dl>
+
+<dl class="py method">
+<dt id="config.VariableGroupSamBudgets.VariableGroupSamBudgets.getUWPresPlusAniz">
+<code class="sig-name descname">getUWPresPlusAniz</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">dataset_override</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#config.VariableGroupSamBudgets.VariableGroupSamBudgets.getUWPresPlusAniz" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates the combined ANIZ and PRES variable value
+of the UW budget using the following equation:
+WUPRES + WUANIZ
+:param dataset_override:
+:return: requested variable dependent_data in the form of a list.</p>
+<blockquote>
+<div><p>Returned dependent_data is already cropped to the appropriate min,max indices</p>
+</div></blockquote>
+</dd></dl>
+
+<dl class="py method">
+<dt id="config.VariableGroupSamBudgets.VariableGroupSamBudgets.getUWResidual">
+<code class="sig-name descname">getUWResidual</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">dataset_override</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#config.VariableGroupSamBudgets.VariableGroupSamBudgets.getUWResidual" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates the residual for the UW budget using
+the following equation:
+WUBT - (WUDIFF + WUSHEAR + WUADV + WUPRES + WUANIZ + WUBUOY + WUSDMP)
+:param dataset_override:
+:return: requested variable dependent_data in the form of a list.</p>
+<blockquote>
+<div><p>Returned dependent_data is already cropped to the appropriate min,max indices</p>
+</div></blockquote>
+</dd></dl>
+
+<dl class="py method">
+<dt id="config.VariableGroupSamBudgets.VariableGroupSamBudgets.getV2Residual">
+<code class="sig-name descname">getV2Residual</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">dataset_override</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#config.VariableGroupSamBudgets.VariableGroupSamBudgets.getV2Residual" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates the residual for the V2 budget using
+the following equation:
+V2BT - (V2ADV + V2SHEAR + V2REDIS + V2DIFF)
+:param dataset_override:
+:return: requested variable dependent_data in the form of a list.</p>
+<blockquote>
+<div><p>Returned dependent_data is already cropped to the appropriate min,max indices</p>
+</div></blockquote>
+</dd></dl>
+
+<dl class="py method">
+<dt id="config.VariableGroupSamBudgets.VariableGroupSamBudgets.getVWPresPlusAniz">
+<code class="sig-name descname">getVWPresPlusAniz</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">dataset_override</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#config.VariableGroupSamBudgets.VariableGroupSamBudgets.getVWPresPlusAniz" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates the combined ANIZ and PRES variable value
+of the VW budget using the following equation:
+WVPRES + WVANIZ
+:param dataset_override:
+:return: requested variable dependent_data in the form of a list.</p>
+<blockquote>
+<div><p>Returned dependent_data is already cropped to the appropriate min,max indices</p>
+</div></blockquote>
+</dd></dl>
+
+<dl class="py method">
+<dt id="config.VariableGroupSamBudgets.VariableGroupSamBudgets.getVWResidual">
+<code class="sig-name descname">getVWResidual</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">dataset_override</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#config.VariableGroupSamBudgets.VariableGroupSamBudgets.getVWResidual" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates the residual for the VW budget using
+the following equation:
+WVBT - (WVDIFF + WVSHEAR + WVADV + WVPRES + WVANIZ + WVBUOY + WVSDMP)
+:param dataset_override:
+:return: requested variable dependent_data in the form of a list.</p>
+<blockquote>
+<div><p>Returned dependent_data is already cropped to the appropriate min,max indices</p>
+</div></blockquote>
+</dd></dl>
+
+<dl class="py method">
+<dt id="config.VariableGroupSamBudgets.VariableGroupSamBudgets.getW2RedisPlusPres">
+<code class="sig-name descname">getW2RedisPlusPres</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">dataset_override</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#config.VariableGroupSamBudgets.VariableGroupSamBudgets.getW2RedisPlusPres" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates the combined REDIS and PRES variable value
+of the W2 budget using the following equation:
+W2REDIS + W2PRES
+:param dataset_override:
+:return: requested variable dependent_data in the form of a list.</p>
+<blockquote>
+<div><p>Returned dependent_data is already cropped to the appropriate min,max indices</p>
+</div></blockquote>
+</dd></dl>
+
+<dl class="py method">
+<dt id="config.VariableGroupSamBudgets.VariableGroupSamBudgets.getW2Residual">
+<code class="sig-name descname">getW2Residual</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">dataset_override</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#config.VariableGroupSamBudgets.VariableGroupSamBudgets.getW2Residual" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates the residual for the W2 budget using
+the following equation:
+W2BT - (W2ADV + W2PRES + W2REDIS + W2BUOY + W2DIFF + W2SDMP)
+:param dataset_override:
+:return: requested variable dependent_data in the form of a list.</p>
+<blockquote>
+<div><p>Returned dependent_data is already cropped to the appropriate min,max indices</p>
+</div></blockquote>
+</dd></dl>
+
+<dl class="py method">
+<dt id="config.VariableGroupSamBudgets.VariableGroupSamBudgets.getW3Residual">
+<code class="sig-name descname">getW3Residual</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">dataset_override</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#config.VariableGroupSamBudgets.VariableGroupSamBudgets.getW3Residual" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates the residual for the W3 budget using
+the following equation:
+W3BT - (W3ADV + W3PRES + W3REDIS + W3BUOY + W3DIFF)
+:param dataset_override:
+:return: requested variable dependent_data in the form of a list.</p>
+<blockquote>
+<div><p>Returned dependent_data is already cropped to the appropriate min,max indices</p>
+</div></blockquote>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-config.VariableGroupSamMultilineProfiles">
+<span id="config-variablegroupsammultilineprofiles-module"></span><h2>config.VariableGroupSamMultilineProfiles module<a class="headerlink" href="#module-config.VariableGroupSamMultilineProfiles" title="Permalink to this headline">¶</a></h2>
+<dl class="field-list simple">
+<dt class="field-odd">author</dt>
+<dd class="field-odd"><p>Steffen Domke</p>
+</dd>
+<dt class="field-even">date</dt>
+<dd class="field-even"><p>Mid 2019</p>
+</dd>
+</dl>
+<p>TODO:   - Figure out how to include standard plots in VariableGroupBase (labels etc.)</p>
+<dl class="py class">
+<dt id="config.VariableGroupSamMultilineProfiles.VariableGroupSamMultilineProfiles">
+<em class="property">class </em><code class="sig-prename descclassname">config.VariableGroupSamMultilineProfiles.</code><code class="sig-name descname">VariableGroupSamMultilineProfiles</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">case</span></em>, <em class="sig-param"><span class="n">clubb_datasets</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">les_dataset</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">coamps_dataset</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">r408_dataset</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">hoc_dataset</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">cam_datasets</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">e3sm_datasets</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">sam_datasets</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">wrf_datasets</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#config.VariableGroupSamMultilineProfiles.VariableGroupSamMultilineProfiles" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="pyplotgen.src.html#src.VariableGroup.VariableGroup" title="src.VariableGroup.VariableGroup"><code class="xref py py-class docutils literal notranslate"><span class="pre">src.VariableGroup.VariableGroup</span></code></a></p>
+<dl class="py method">
+<dt id="config.VariableGroupSamMultilineProfiles.VariableGroupSamMultilineProfiles.getQTEnvUnweighted">
+<code class="sig-name descname">getQTEnvUnweighted</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">dataset_override</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#config.VariableGroupSamMultilineProfiles.VariableGroupSamMultilineProfiles.getQTEnvUnweighted" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates the unweighted environment-conditional average of QT from SAM output
+using the following equation:
+(QT - CLD * QTCLD) / (1 - CLD)
+:return: requested variable data in the form of a list.</p>
+<blockquote>
+<div><p>Returned data is already cropped to the appropriate min,max indices</p>
+</div></blockquote>
+</dd></dl>
+
+<dl class="py method">
+<dt id="config.VariableGroupSamMultilineProfiles.VariableGroupSamMultilineProfiles.getQTWCldWeighted">
+<code class="sig-name descname">getQTWCldWeighted</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">dataset_override</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#config.VariableGroupSamMultilineProfiles.VariableGroupSamMultilineProfiles.getQTWCldWeighted" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates the weighted cloud-conditional average of QTW from SAM output
+using the following equation:
+CLD * QTWCLD / 1000
+:return: requested variable data in the form of a list.</p>
+<blockquote>
+<div><p>Returned data is already cropped to the appropriate min,max indices</p>
+</div></blockquote>
+</dd></dl>
+
+<dl class="py method">
+<dt id="config.VariableGroupSamMultilineProfiles.VariableGroupSamMultilineProfiles.getQTWEnvWeighted">
+<code class="sig-name descname">getQTWEnvWeighted</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">dataset_override</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#config.VariableGroupSamMultilineProfiles.VariableGroupSamMultilineProfiles.getQTWEnvWeighted" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates the weighted environment-conditional average of QTW from SAM output
+using the following equation:
+(WPRTP - CLD * QTWCLD / 1000)
+:return: requested variable data in the form of a list.</p>
+<blockquote>
+<div><p>Returned data is already cropped to the appropriate min,max indices</p>
+</div></blockquote>
+</dd></dl>
+
+<dl class="py method">
+<dt id="config.VariableGroupSamMultilineProfiles.VariableGroupSamMultilineProfiles.getTHVCldWeighted">
+<code class="sig-name descname">getTHVCldWeighted</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">dataset_override</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#config.VariableGroupSamMultilineProfiles.VariableGroupSamMultilineProfiles.getTHVCldWeighted" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates the weighted cloud-conditional average of THETAV from SAM output
+using the following equation:
+CLD * TVCLD
+:return: requested variable data in the form of a list.</p>
+<blockquote>
+<div><p>Returned data is already cropped to the appropriate min,max indices</p>
+</div></blockquote>
+</dd></dl>
+
+<dl class="py method">
+<dt id="config.VariableGroupSamMultilineProfiles.VariableGroupSamMultilineProfiles.getTHVEnvUnweighted">
+<code class="sig-name descname">getTHVEnvUnweighted</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">dataset_override</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#config.VariableGroupSamMultilineProfiles.VariableGroupSamMultilineProfiles.getTHVEnvUnweighted" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates the unweighted environment-conditional average of THETAV from SAM output
+using the following equation:
+(THETAV - CLD * TVCLD) / (1 - CLD)
+:return: requested variable data in the form of a list.</p>
+<blockquote>
+<div><p>Returned data is already cropped to the appropriate min,max indices</p>
+</div></blockquote>
+</dd></dl>
+
+<dl class="py method">
+<dt id="config.VariableGroupSamMultilineProfiles.VariableGroupSamMultilineProfiles.getTHVEnvWeighted">
+<code class="sig-name descname">getTHVEnvWeighted</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">dataset_override</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#config.VariableGroupSamMultilineProfiles.VariableGroupSamMultilineProfiles.getTHVEnvWeighted" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates the weighted environment-conditional average of THETAV from SAM output
+using the following equation:
+(THETAV - CLD * TVCLD)
+:return: requested variable data in the form of a list.</p>
+<blockquote>
+<div><p>Returned data is already cropped to the appropriate min,max indices</p>
+</div></blockquote>
+</dd></dl>
+
+<dl class="py method">
+<dt id="config.VariableGroupSamMultilineProfiles.VariableGroupSamMultilineProfiles.getTLWCldWeighted">
+<code class="sig-name descname">getTLWCldWeighted</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">dataset_override</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#config.VariableGroupSamMultilineProfiles.VariableGroupSamMultilineProfiles.getTLWCldWeighted" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates the weighted cloud-conditional average of TL from SAM output
+using the following equation:
+CLD * TLWCLD
+:return: requested variable data in the form of a list.</p>
+<blockquote>
+<div><p>Returned data is already cropped to the appropriate min,max indices</p>
+</div></blockquote>
+</dd></dl>
+
+<dl class="py method">
+<dt id="config.VariableGroupSamMultilineProfiles.VariableGroupSamMultilineProfiles.getTLWEnvWeighted">
+<code class="sig-name descname">getTLWEnvWeighted</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">dataset_override</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#config.VariableGroupSamMultilineProfiles.VariableGroupSamMultilineProfiles.getTLWEnvWeighted" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates the weighted environment-conditional average of TL from SAM output
+using the following equation:
+(TLFLUX / RHO / 1004 - CDL * TLWCLD)
+:return: requested variable data in the form of a list.</p>
+<blockquote>
+<div><p>Returned data is already cropped to the appropriate min,max indices</p>
+</div></blockquote>
+</dd></dl>
+
+<dl class="py method">
+<dt id="config.VariableGroupSamMultilineProfiles.VariableGroupSamMultilineProfiles.getUCldWeighted">
+<code class="sig-name descname">getUCldWeighted</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">dataset_override</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#config.VariableGroupSamMultilineProfiles.VariableGroupSamMultilineProfiles.getUCldWeighted" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates the weighted cloud-conditional average of U from SAM output
+using the following equation:
+CLD * UCLD
+:return: requested variable data in the form of a list.</p>
+<blockquote>
+<div><p>Returned data is already cropped to the appropriate min,max indices</p>
+</div></blockquote>
+</dd></dl>
+
+<dl class="py method">
+<dt id="config.VariableGroupSamMultilineProfiles.VariableGroupSamMultilineProfiles.getUEnvUnweighted">
+<code class="sig-name descname">getUEnvUnweighted</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">dataset_override</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#config.VariableGroupSamMultilineProfiles.VariableGroupSamMultilineProfiles.getUEnvUnweighted" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates the unweighted environment-conditional average of U from SAM output
+using the following equation:
+(U - CLD * UCLD) / (1 - CLD)
+:return: requested variable data in the form of a list.</p>
+<blockquote>
+<div><p>Returned data is already cropped to the appropriate min,max indices</p>
+</div></blockquote>
+</dd></dl>
+
+<dl class="py method">
+<dt id="config.VariableGroupSamMultilineProfiles.VariableGroupSamMultilineProfiles.getUEnvWeighted">
+<code class="sig-name descname">getUEnvWeighted</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">dataset_override</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#config.VariableGroupSamMultilineProfiles.VariableGroupSamMultilineProfiles.getUEnvWeighted" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates the weighted environment-conditional average of U from SAM output
+using the following equation:
+(U - CLD * UCLD)
+:return: requested variable data in the form of a list.</p>
+<blockquote>
+<div><p>Returned data is already cropped to the appropriate min,max indices</p>
+</div></blockquote>
+</dd></dl>
+
+<dl class="py method">
+<dt id="config.VariableGroupSamMultilineProfiles.VariableGroupSamMultilineProfiles.getUWCldWeighted">
+<code class="sig-name descname">getUWCldWeighted</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">dataset_override</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#config.VariableGroupSamMultilineProfiles.VariableGroupSamMultilineProfiles.getUWCldWeighted" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates the weighted cloud-conditional average of UW from SAM output
+using the following equation:
+CLD * UWCLD
+:return: requested variable data in the form of a list.</p>
+<blockquote>
+<div><p>Returned data is already cropped to the appropriate min,max indices</p>
+</div></blockquote>
+</dd></dl>
+
+<dl class="py method">
+<dt id="config.VariableGroupSamMultilineProfiles.VariableGroupSamMultilineProfiles.getUWEnvUnweighted">
+<code class="sig-name descname">getUWEnvUnweighted</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">dataset_override</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#config.VariableGroupSamMultilineProfiles.VariableGroupSamMultilineProfiles.getUWEnvUnweighted" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates the unweighted environment-conditional average of UW from SAM output
+using the following equation:
+(UW - CLD * UWCLD) / (1 - CLD)
+:return: requested variable data in the form of a list.</p>
+<blockquote>
+<div><p>Returned data is already cropped to the appropriate min,max indices</p>
+</div></blockquote>
+</dd></dl>
+
+<dl class="py method">
+<dt id="config.VariableGroupSamMultilineProfiles.VariableGroupSamMultilineProfiles.getUWEnvWeighted">
+<code class="sig-name descname">getUWEnvWeighted</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">dataset_override</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#config.VariableGroupSamMultilineProfiles.VariableGroupSamMultilineProfiles.getUWEnvWeighted" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates the weighted environment-conditional average of UW from SAM output
+using the following equation:
+(UW - CLD * UWCLD)
+:return: requested variable data in the form of a list.</p>
+<blockquote>
+<div><p>Returned data is already cropped to the appropriate min,max indices</p>
+</div></blockquote>
+</dd></dl>
+
+<dl class="py method">
+<dt id="config.VariableGroupSamMultilineProfiles.VariableGroupSamMultilineProfiles.getUp2Calc">
+<code class="sig-name descname">getUp2Calc</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">dataset_override</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#config.VariableGroupSamMultilineProfiles.VariableGroupSamMultilineProfiles.getUp2Calc" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates the total variance of U from SAM output
+using the following equation:
+UVAR = U2 + UP2_SGS (CLUBB variable)
+:return: requested variable dependent_data in the form of a list.</p>
+<blockquote>
+<div><p>Returned dependent_data is already cropped to the appropriate min,max indices</p>
+</div></blockquote>
+</dd></dl>
+
+<dl class="py method">
+<dt id="config.VariableGroupSamMultilineProfiles.VariableGroupSamMultilineProfiles.getUpWpCalc">
+<code class="sig-name descname">getUpWpCalc</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">dataset_override</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#config.VariableGroupSamMultilineProfiles.VariableGroupSamMultilineProfiles.getUpWpCalc" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates the total covariance of U and W from SAM output
+using the following equation:
+UPWP = UW + UPWP_SGS (CLUBB variable)
+:return: requested variable dependent_data in the form of a list.</p>
+<blockquote>
+<div><p>Returned dependent_data is already cropped to the appropriate min,max indices</p>
+</div></blockquote>
+</dd></dl>
+
+<dl class="py method">
+<dt id="config.VariableGroupSamMultilineProfiles.VariableGroupSamMultilineProfiles.getVCldWeighted">
+<code class="sig-name descname">getVCldWeighted</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">dataset_override</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#config.VariableGroupSamMultilineProfiles.VariableGroupSamMultilineProfiles.getVCldWeighted" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates the weighted cloud-conditional average of V from SAM output
+using the following equation:
+CLD * VCLD
+:return: requested variable data in the form of a list.</p>
+<blockquote>
+<div><p>Returned data is already cropped to the appropriate min,max indices</p>
+</div></blockquote>
+</dd></dl>
+
+<dl class="py method">
+<dt id="config.VariableGroupSamMultilineProfiles.VariableGroupSamMultilineProfiles.getVEnvUnweighted">
+<code class="sig-name descname">getVEnvUnweighted</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">dataset_override</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#config.VariableGroupSamMultilineProfiles.VariableGroupSamMultilineProfiles.getVEnvUnweighted" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates the unweighted environment-conditional average of V from SAM output
+using the following equation:
+(V - CLD * VCLD) / (1 - CLD)
+:return: requested variable data in the form of a list.</p>
+<blockquote>
+<div><p>Returned data is already cropped to the appropriate min,max indices</p>
+</div></blockquote>
+</dd></dl>
+
+<dl class="py method">
+<dt id="config.VariableGroupSamMultilineProfiles.VariableGroupSamMultilineProfiles.getVEnvWeighted">
+<code class="sig-name descname">getVEnvWeighted</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">dataset_override</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#config.VariableGroupSamMultilineProfiles.VariableGroupSamMultilineProfiles.getVEnvWeighted" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates the weighted environment-conditional average of V from SAM output
+using the following equation:
+(V - CLD * VCLD)
+:return: requested variable data in the form of a list.</p>
+<blockquote>
+<div><p>Returned data is already cropped to the appropriate min,max indices</p>
+</div></blockquote>
+</dd></dl>
+
+<dl class="py method">
+<dt id="config.VariableGroupSamMultilineProfiles.VariableGroupSamMultilineProfiles.getVWCldWeighted">
+<code class="sig-name descname">getVWCldWeighted</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">dataset_override</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#config.VariableGroupSamMultilineProfiles.VariableGroupSamMultilineProfiles.getVWCldWeighted" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates the weighted cloud-conditional average of VW from SAM output
+using the following equation:
+CLD * VWCLD
+:return: requested variable data in the form of a list.</p>
+<blockquote>
+<div><p>Returned data is already cropped to the appropriate min,max indices</p>
+</div></blockquote>
+</dd></dl>
+
+<dl class="py method">
+<dt id="config.VariableGroupSamMultilineProfiles.VariableGroupSamMultilineProfiles.getVWEnvUnweighted">
+<code class="sig-name descname">getVWEnvUnweighted</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">dataset_override</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#config.VariableGroupSamMultilineProfiles.VariableGroupSamMultilineProfiles.getVWEnvUnweighted" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates the unweighted environment-conditional average of VW from SAM output
+using the following equation:
+(VW - CLD * VWCLD) / (1 - CLD)
+:return: requested variable data in the form of a list.</p>
+<blockquote>
+<div><p>Returned data is already cropped to the appropriate min,max indices</p>
+</div></blockquote>
+</dd></dl>
+
+<dl class="py method">
+<dt id="config.VariableGroupSamMultilineProfiles.VariableGroupSamMultilineProfiles.getVWEnvWeighted">
+<code class="sig-name descname">getVWEnvWeighted</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">dataset_override</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#config.VariableGroupSamMultilineProfiles.VariableGroupSamMultilineProfiles.getVWEnvWeighted" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates the weighted environment-conditional average of VW from SAM output
+using the following equation:
+(VW - CLD * VWCLD)
+:return: requested variable data in the form of a list.</p>
+<blockquote>
+<div><p>Returned data is already cropped to the appropriate min,max indices</p>
+</div></blockquote>
+</dd></dl>
+
+<dl class="py method">
+<dt id="config.VariableGroupSamMultilineProfiles.VariableGroupSamMultilineProfiles.getVp2Calc">
+<code class="sig-name descname">getVp2Calc</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">dataset_override</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#config.VariableGroupSamMultilineProfiles.VariableGroupSamMultilineProfiles.getVp2Calc" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates the total variance of V from SAM output
+using the following equation:
+VVAR = V2 + VP2_SGS (CLUBB variable)
+:return: requested variable dependent_data in the form of a list.</p>
+<blockquote>
+<div><p>Returned dependent_data is already cropped to the appropriate min,max indices</p>
+</div></blockquote>
+</dd></dl>
+
+<dl class="py method">
+<dt id="config.VariableGroupSamMultilineProfiles.VariableGroupSamMultilineProfiles.getVpWpCalc">
+<code class="sig-name descname">getVpWpCalc</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">dataset_override</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#config.VariableGroupSamMultilineProfiles.VariableGroupSamMultilineProfiles.getVpWpCalc" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates the total covariance of V and W from SAM output
+using the following equation:
+VPWP = VW + VPWP_SGS (CLUBB variable)
+:return: requested variable dependent_data in the form of a list.</p>
+<blockquote>
+<div><p>Returned dependent_data is already cropped to the appropriate min,max indices</p>
+</div></blockquote>
+</dd></dl>
+
+<dl class="py method">
+<dt id="config.VariableGroupSamMultilineProfiles.VariableGroupSamMultilineProfiles.getWCldWeighted">
+<code class="sig-name descname">getWCldWeighted</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">dataset_override</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#config.VariableGroupSamMultilineProfiles.VariableGroupSamMultilineProfiles.getWCldWeighted" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates the weighted cloud-conditional average of W from SAM output
+using the following equation:
+CLD * WCLD
+:return: requested variable data in the form of a list.</p>
+<blockquote>
+<div><p>Returned data is already cropped to the appropriate min,max indices</p>
+</div></blockquote>
+</dd></dl>
+
+<dl class="py method">
+<dt id="config.VariableGroupSamMultilineProfiles.VariableGroupSamMultilineProfiles.getWEnvUnweighted">
+<code class="sig-name descname">getWEnvUnweighted</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">dataset_override</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#config.VariableGroupSamMultilineProfiles.VariableGroupSamMultilineProfiles.getWEnvUnweighted" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates the unweighted environment-conditional average of W from SAM output
+using the following equation:
+(WM - CLD * WCLD) / (1 - CLD)
+:return: requested variable data in the form of a list.</p>
+<blockquote>
+<div><p>Returned data is already cropped to the appropriate min,max indices</p>
+</div></blockquote>
+</dd></dl>
+
+<dl class="py method">
+<dt id="config.VariableGroupSamMultilineProfiles.VariableGroupSamMultilineProfiles.getWEnvWeighted">
+<code class="sig-name descname">getWEnvWeighted</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">dataset_override</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#config.VariableGroupSamMultilineProfiles.VariableGroupSamMultilineProfiles.getWEnvWeighted" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates the weighted environment-conditional average of W from SAM output
+using the following equation:
+(WM - CLD * WCLD)
+:return: requested variable data in the form of a list.</p>
+<blockquote>
+<div><p>Returned data is already cropped to the appropriate min,max indices</p>
+</div></blockquote>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-config.VariableGroupSamProfiles">
+<span id="config-variablegroupsamprofiles-module"></span><h2>config.VariableGroupSamProfiles module<a class="headerlink" href="#module-config.VariableGroupSamProfiles" title="Permalink to this headline">¶</a></h2>
+<dl class="field-list simple">
+<dt class="field-odd">author</dt>
+<dd class="field-odd"><p>Steffen Domke</p>
+</dd>
+<dt class="field-even">date</dt>
+<dd class="field-even"><p>Mid 2019</p>
+</dd>
+</dl>
+<p>TODO:   - Figure out how to include standard plots in VariableGroupBase (labels etc.)</p>
+<dl class="py class">
+<dt id="config.VariableGroupSamProfiles.VariableGroupSamProfiles">
+<em class="property">class </em><code class="sig-prename descclassname">config.VariableGroupSamProfiles.</code><code class="sig-name descname">VariableGroupSamProfiles</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">case</span></em>, <em class="sig-param"><span class="n">clubb_datasets</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">les_dataset</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">coamps_dataset</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">r408_dataset</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">hoc_dataset</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">cam_datasets</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">e3sm_datasets</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">sam_datasets</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">wrf_datasets</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#config.VariableGroupSamProfiles.VariableGroupSamProfiles" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="pyplotgen.src.html#src.VariableGroup.VariableGroup" title="src.VariableGroup.VariableGroup"><code class="xref py py-class docutils literal notranslate"><span class="pre">src.VariableGroup.VariableGroup</span></code></a></p>
+<dl class="py method">
+<dt id="config.VariableGroupSamProfiles.VariableGroupSamProfiles.getCorrWpRtpCalc">
+<code class="sig-name descname">getCorrWpRtpCalc</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">dataset_override</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#config.VariableGroupSamProfiles.VariableGroupSamProfiles.getCorrWpRtpCalc" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates the correlation of W and THETAL from SAM output
+using the following equation:
+WPRTP/(np.sqrt(W2*QT2*1e-6)+1e-8)
+:return: requested variable dependent_data in the form of a list.</p>
+<blockquote>
+<div><p>Returned dependent_data is already cropped to the appropriate min,max indices</p>
+</div></blockquote>
+</dd></dl>
+
+<dl class="py method">
+<dt id="config.VariableGroupSamProfiles.VariableGroupSamProfiles.getCorrWpThlpCalc">
+<code class="sig-name descname">getCorrWpThlpCalc</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">dataset_override</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#config.VariableGroupSamProfiles.VariableGroupSamProfiles.getCorrWpThlpCalc" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates the correlation of W and THETAL from SAM output
+using the following equation:
+(((TLFLUX) / (RHO * 1004.)) + WPTHLP_SGS)/np.sqrt(W2*TL2 + 1e-4)
+:return: requested variable dependent_data in the form of a list.</p>
+<blockquote>
+<div><p>Returned dependent_data is already cropped to the appropriate min,max indices</p>
+</div></blockquote>
+</dd></dl>
+
+<dl class="py method">
+<dt id="config.VariableGroupSamProfiles.VariableGroupSamProfiles.getQRP2_QRIP">
+<code class="sig-name descname">getQRP2_QRIP</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">dataset_override</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#config.VariableGroupSamProfiles.VariableGroupSamProfiles.getQRP2_QRIP" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates the Within-Rain Variance of Rain Water Mixing Ratio from SAM output
+using the following equation:
+‘(qrainp2_ip / (np.maximum(qrainm_ip, 1e-5)**2))’
+:return: requested variable dependent_data in the form of a list.</p>
+<blockquote>
+<div><p>Returned dependent_data is already cropped to the appropriate min,max indices</p>
+</div></blockquote>
+<p>ALERT: How does this work in the budgets plotter?</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="config.VariableGroupSamProfiles.VariableGroupSamProfiles.getRtVarCalc">
+<code class="sig-name descname">getRtVarCalc</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">dataset_override</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#config.VariableGroupSamProfiles.VariableGroupSamProfiles.getRtVarCalc" title="Permalink to this definition">¶</a></dt>
+<dd><p>TODO
+Calculates the total variance of RT from SAM output
+using the following equation:
+RTVAR = (QT2 * 1e-6) + RTP2_SGS (CLUBB variable)
+:return: requested variable dependent_data in the form of a list.</p>
+<blockquote>
+<div><p>Returned dependent_data is already cropped to the appropriate min,max indices</p>
+</div></blockquote>
+</dd></dl>
+
+<dl class="py method">
+<dt id="config.VariableGroupSamProfiles.VariableGroupSamProfiles.getRtmSamCalc">
+<code class="sig-name descname">getRtmSamCalc</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">dataset_override</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#config.VariableGroupSamProfiles.VariableGroupSamProfiles.getRtmSamCalc" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates rtm values from sam output using
+the following equation
+(QT-QI) ./ 1000
+:return: requested variable dependent_data in the form of a list.</p>
+<blockquote>
+<div><p>Returned dependent_data is already cropped to the appropriate min,max indices</p>
+</div></blockquote>
+</dd></dl>
+
+<dl class="py method">
+<dt id="config.VariableGroupSamProfiles.VariableGroupSamProfiles.getThetalVarCalc">
+<code class="sig-name descname">getThetalVarCalc</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">dataset_override</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#config.VariableGroupSamProfiles.VariableGroupSamProfiles.getThetalVarCalc" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates the total variance of THETAL from SAM output
+using the following equation:
+THETALVAR = THL2 + THLP2_SGS (CLUBB variable)
+:return: requested variable dependent_data in the form of a list.</p>
+<blockquote>
+<div><p>Returned dependent_data is already cropped to the appropriate min,max indices</p>
+</div></blockquote>
+</dd></dl>
+
+<dl class="py method">
+<dt id="config.VariableGroupSamProfiles.VariableGroupSamProfiles.getThlmSamCalc">
+<code class="sig-name descname">getThlmSamCalc</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">dataset_override</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#config.VariableGroupSamProfiles.VariableGroupSamProfiles.getThlmSamCalc" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates thlm values from sam output using
+the following equation
+(THETAL + 2500.4.*(THETA./TABS).*(QI./1000))
+:return: requested variable dependent_data in the form of a list.</p>
+<blockquote>
+<div><p>Returned dependent_data is already cropped to the appropriate min,max indices</p>
+</div></blockquote>
+</dd></dl>
+
+<dl class="py method">
+<dt id="config.VariableGroupSamProfiles.VariableGroupSamProfiles.getUp2Calc">
+<code class="sig-name descname">getUp2Calc</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">dataset_override</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#config.VariableGroupSamProfiles.VariableGroupSamProfiles.getUp2Calc" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates the total variance of U from SAM output
+using the following equation:
+UVAR = U2 + UP2_SGS (CLUBB variable)
+:return: requested variable dependent_data in the form of a list.</p>
+<blockquote>
+<div><p>Returned dependent_data is already cropped to the appropriate min,max indices</p>
+</div></blockquote>
+</dd></dl>
+
+<dl class="py method">
+<dt id="config.VariableGroupSamProfiles.VariableGroupSamProfiles.getUpWpCalc">
+<code class="sig-name descname">getUpWpCalc</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">dataset_override</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#config.VariableGroupSamProfiles.VariableGroupSamProfiles.getUpWpCalc" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates the total covariance of U and W from SAM output
+using the following equation:
+UPWP = UW + UPWP_SGS (CLUBB variable)
+:return: requested variable dependent_data in the form of a list.</p>
+<blockquote>
+<div><p>Returned dependent_data is already cropped to the appropriate min,max indices</p>
+</div></blockquote>
+</dd></dl>
+
+<dl class="py method">
+<dt id="config.VariableGroupSamProfiles.VariableGroupSamProfiles.getUpWpCorrCalc">
+<code class="sig-name descname">getUpWpCorrCalc</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">dataset_override</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#config.VariableGroupSamProfiles.VariableGroupSamProfiles.getUpWpCorrCalc" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates the total correlation of U and W from SAM output
+using the following equation:
+(UW+UPWP_SGS)/(np.sqrt((U2+UP2_SGS)*(W2+WP2_SGS)+1e-4))
+:return: requested variable dependent_data in the form of a list.</p>
+<blockquote>
+<div><p>Returned dependent_data is already cropped to the appropriate min,max indices</p>
+</div></blockquote>
+</dd></dl>
+
+<dl class="py method">
+<dt id="config.VariableGroupSamProfiles.VariableGroupSamProfiles.getVp2Calc">
+<code class="sig-name descname">getVp2Calc</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">dataset_override</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#config.VariableGroupSamProfiles.VariableGroupSamProfiles.getVp2Calc" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates the total variance of V from SAM output
+using the following equation:
+VVAR = V2 + VP2_SGS (CLUBB variable)
+:return: requested variable dependent_data in the form of a list.</p>
+<blockquote>
+<div><p>Returned dependent_data is already cropped to the appropriate min,max indices</p>
+</div></blockquote>
+</dd></dl>
+
+<dl class="py method">
+<dt id="config.VariableGroupSamProfiles.VariableGroupSamProfiles.getVpWpCalc">
+<code class="sig-name descname">getVpWpCalc</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">dataset_override</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#config.VariableGroupSamProfiles.VariableGroupSamProfiles.getVpWpCalc" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates the total covariance of V and W from SAM output
+using the following equation:
+VPWP = VW + VPWP_SGS (CLUBB variable)
+:return: requested variable dependent_data in the form of a list.</p>
+<blockquote>
+<div><p>Returned dependent_data is already cropped to the appropriate min,max indices</p>
+</div></blockquote>
+</dd></dl>
+
+<dl class="py method">
+<dt id="config.VariableGroupSamProfiles.VariableGroupSamProfiles.getVpWpCorrCalc">
+<code class="sig-name descname">getVpWpCorrCalc</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">dataset_override</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#config.VariableGroupSamProfiles.VariableGroupSamProfiles.getVpWpCorrCalc" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates the total correlation of V and W from SAM output
+using the following equation:
+(VW+VPWP_SGS)/(np.sqrt((V2+VP2_SGS)*(W2+WP2_SGS)+1e-4))
+:return: requested variable dependent_data in the form of a list.</p>
+<blockquote>
+<div><p>Returned dependent_data is already cropped to the appropriate min,max indices</p>
+</div></blockquote>
+</dd></dl>
+
+<dl class="py method">
+<dt id="config.VariableGroupSamProfiles.VariableGroupSamProfiles.getWp2Calc">
+<code class="sig-name descname">getWp2Calc</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">dataset_override</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#config.VariableGroupSamProfiles.VariableGroupSamProfiles.getWp2Calc" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates the total vertical momentum variance W’^2 from SAM output
+using the following equation:
+W2 = W2 + WP2_SGS (CLUBB variable)
+:return: requested variable dependent_data in the form of a list.</p>
+<blockquote>
+<div><p>Returned dependent_data is already cropped to the appropriate min,max indices</p>
+</div></blockquote>
+</dd></dl>
+
+<dl class="py method">
+<dt id="config.VariableGroupSamProfiles.VariableGroupSamProfiles.getWp3Calc">
+<code class="sig-name descname">getWp3Calc</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">dataset_override</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#config.VariableGroupSamProfiles.VariableGroupSamProfiles.getWp3Calc" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates the total vertical momentum skewness W’^3 from SAM output
+using the following equation:
+W3 = W3 + WP3_SGS (CLUBB variable)
+:return: requested variable dependent_data in the form of a list.</p>
+<blockquote>
+<div><p>Returned dependent_data is already cropped to the appropriate min,max indices</p>
+</div></blockquote>
+</dd></dl>
+
+<dl class="py method">
+<dt id="config.VariableGroupSamProfiles.VariableGroupSamProfiles.getWprtpCalc">
+<code class="sig-name descname">getWprtpCalc</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">dataset_override</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#config.VariableGroupSamProfiles.VariableGroupSamProfiles.getWprtpCalc" title="Permalink to this definition">¶</a></dt>
+<dd><p>This gets called if WPRTP isn’t outputted in an nc file
+as a backup way of gathering the dependent_data for plotting.
+WPRTP = (QTFLUX) / (RHO * 2.5104e+6) + WPRTP_SGS (CLUBB variable)
+:return:</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="config.VariableGroupSamProfiles.VariableGroupSamProfiles.getWpthlpCalc">
+<code class="sig-name descname">getWpthlpCalc</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">dataset_override</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#config.VariableGroupSamProfiles.VariableGroupSamProfiles.getWpthlpCalc" title="Permalink to this definition">¶</a></dt>
+<dd><p>This gets called if WPTHLP isn’t outputted in an nc file
+as a backup way of gathering the dependent_data for plotting.
+WPTHLP = (TLFLUX) ./ (RHO * 1004) + WPTHLP_SGS (CLUBB variable)
+:return:</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-config.VariableGroupScalars">
+<span id="config-variablegroupscalars-module"></span><h2>config.VariableGroupScalars module<a class="headerlink" href="#module-config.VariableGroupScalars" title="Permalink to this headline">¶</a></h2>
+<dl class="field-list simple">
+<dt class="field-odd">author</dt>
+<dd class="field-odd"><p>Nicolas Strike</p>
+</dd>
+<dt class="field-even">date</dt>
+<dd class="field-even"><p>Mid 2020</p>
+</dd>
+</dl>
+<dl class="py class">
+<dt id="config.VariableGroupScalars.VariableGroupScalars">
+<em class="property">class </em><code class="sig-prename descclassname">config.VariableGroupScalars.</code><code class="sig-name descname">VariableGroupScalars</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">case</span></em>, <em class="sig-param"><span class="n">clubb_datasets</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">les_dataset</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">coamps_dataset</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">r408_dataset</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">hoc_dataset</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">cam_datasets</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">e3sm_datasets</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">sam_datasets</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">wrf_datasets</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#config.VariableGroupScalars.VariableGroupScalars" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="pyplotgen.src.html#src.VariableGroup.VariableGroup" title="src.VariableGroup.VariableGroup"><code class="xref py py-class docutils literal notranslate"><span class="pre">src.VariableGroup.VariableGroup</span></code></a></p>
+</dd></dl>
+
+</div>
+<div class="section" id="module-config.VariableGroupWs">
+<span id="config-variablegroupws-module"></span><h2>config.VariableGroupWs module<a class="headerlink" href="#module-config.VariableGroupWs" title="Permalink to this headline">¶</a></h2>
+<dl class="field-list simple">
+<dt class="field-odd">author</dt>
+<dd class="field-odd"><p>Nicolas Strike</p>
+</dd>
+<dt class="field-even">date</dt>
+<dd class="field-even"><p>Mid 2019</p>
+</dd>
+</dl>
+<dl class="py class">
+<dt id="config.VariableGroupWs.VariableGroupWs">
+<em class="property">class </em><code class="sig-prename descclassname">config.VariableGroupWs.</code><code class="sig-name descname">VariableGroupWs</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">case</span></em>, <em class="sig-param"><span class="n">clubb_datasets</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">les_dataset</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">coamps_dataset</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">r408_dataset</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">hoc_dataset</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">cam_datasets</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">e3sm_datasets</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">sam_datasets</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">wrf_datasets</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#config.VariableGroupWs.VariableGroupWs" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="pyplotgen.src.html#src.VariableGroup.VariableGroup" title="src.VariableGroup.VariableGroup"><code class="xref py py-class docutils literal notranslate"><span class="pre">src.VariableGroup.VariableGroup</span></code></a></p>
+</dd></dl>
+
+</div>
+<div class="section" id="module-config">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-config" title="Permalink to this headline">¶</a></h2>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="pyplotgen.python_html_gallery.html" class="btn btn-neutral float-right" title="python_html_gallery package" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="pyplotgen.html" class="btn btn-neutral float-left" title="pyplotgen package" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        
+        &copy; Copyright 2020, Nicolas Strike
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>
