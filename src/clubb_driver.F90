@@ -801,6 +801,7 @@ module clubb_driver
 print*,"params=",params
 print*,"runfile=",runfile
 print*,"l_stdout=",l_stdout
+call system("/home/klempb/dev/scripts/dump_hoc.bash")
 !-----------------------------------------------------------------------
     ! Begin code
 
