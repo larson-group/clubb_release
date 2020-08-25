@@ -228,6 +228,7 @@ module output_netcdf
     integer :: i ! Array index
 
     ! ---- Begin Code ----
+print*,"time=",ncf%time
 
     ! If there is no data to write, then return
     if ( ncf%nvar == 0 ) then

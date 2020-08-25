@@ -798,6 +798,10 @@ module clubb_driver
       err_code_dummy ! Host models use an error code that comes out of some API routines, but
                      ! here we have access to the global version
 
+print*,"params=",params
+print*,"runfile=",runfile
+print*,"l_stdout=",l_stdout
+print*,"model_flags_array=",model_flags_array
 !-----------------------------------------------------------------------
     ! Begin code
 
