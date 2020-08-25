@@ -801,7 +801,6 @@ module clubb_driver
 print*,"params=",params
 print*,"runfile=",runfile
 print*,"l_stdout=",l_stdout
-print*,"model_flags_array=",model_flags_array
 !-----------------------------------------------------------------------
     ! Begin code
 
