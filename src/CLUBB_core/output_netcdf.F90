@@ -257,7 +257,6 @@ module output_netcdf
       time = real( ncf%ntimes, kind=time_precision ) &
            * real( ncf%dtwrite, kind=time_precision )  ! seconds
     end if
-print*,"time=",time,"ncid=",ncf%iounit
 
     stat(1) = nf90_put_var( ncid=ncf%iounit, varid=ncf%TimeVarId,  & 
                             values=time(1), start=(/ncf%ntimes/) )
