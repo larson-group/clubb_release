@@ -188,20 +188,6 @@ module stat_file_utils
                                    upper_lev_idx(k), l_lin_int(k) )
     end do
 
-!print"(A, A, A1, I0, A1, L)","stat_file_utils@stat_file_average:get_var:",trim(variable_name),"(",t2-t1,")", &
-!l_grads_file
-write(ctime, "(I0)") time()
-if (variable_name == "cf" .or. variable_name == "qcm") then
-  infile = "coamps"
-else
-  infile = "clubb"
-end if
-if (l_grads_file) then
-  open(unit=42,file="/home/klempb/dev/testing/inputs/grads"//ctime//"_"//trim(infile)//".txt",position='append')
-else
-  open(unit=42,file="/home/klempb/dev/testing/inputs/netcdf"//ctime//"_"//trim(infile)//".txt",position='append')
-end if
-write(42,"(2A, I0)")trim(variable_name),":",t2-t1
     ! Read in variables from GrADS file
     do t = t1, t2
 
@@ -277,7 +263,6 @@ write(42,"(2A, I0)")trim(variable_name),":",t2-t1
       end if
 
     end do ! t = t1, t2
-close(42)
 
     if ( l_grads_file ) then
       ! Close the GrADS file
