@@ -117,6 +117,7 @@ module output_netcdf
     ncf%time   = time
 
     ncf%dtwrite = dtwrite
+    ncf%ntimes = 0
 
 ! According to Chris Vogl, netcdf can handle time steps < 1 min.  So this check is unneeded.
 !    ! Check to make sure the timestep is appropriate. The GrADS program does not support an
