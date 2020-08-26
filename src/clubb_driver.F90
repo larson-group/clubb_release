@@ -801,7 +801,6 @@ module clubb_driver
 print*,"params=",params
 print*,"runfile=",runfile
 print*,"l_stdout=",l_stdout
-call system("/home/klempb/dev/scripts/dump_hoc.bash")
 !-----------------------------------------------------------------------
     ! Begin code
 
@@ -2629,6 +2628,7 @@ call system("/home/klempb/dev/scripts/dump_hoc.bash")
                 lh_rv_clipped, lh_Nc_clipped, &
                 X_mixt_comp_all_levs, lh_sample_point_weights, Nc_in_cloud )
 
+call system("/home/klempb/dev/scripts/dump_hoc.bash")
     return
 
   end subroutine run_clubb
