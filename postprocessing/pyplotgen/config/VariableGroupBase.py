@@ -13,7 +13,7 @@ class VariableGroupBase(VariableGroup):
     """
     This is a panel group used for testing the functionality of pyplotgen.
     It contains a set of common panels being used for representing the majority
-    of panels.
+    of cases.
     """
 
     def __init__(self, case, clubb_datasets=None, les_dataset=None, coamps_dataset=None, r408_dataset=None,

@@ -20,7 +20,7 @@ class CaseGallerySetup:
     panels that share attributes like start/end time and get plotted together.
     This is a generic class used by Case_Definitions.py to provide functionality.
     In order to create a new case, please add the case's definition to Case_Definitions.py (don't forget to add the
-    definition to the list ALL_CASES = [...] at the bottom of the file).
+    definition to the list ALL_CASES = [...] at the bottom of the Case_Definitions.py file).
     """
 
     def __init__(self, case_definition, clubb_folders=[], diff_datasets=None, sam_folders=[""], wrf_folders=[""],
@@ -358,6 +358,7 @@ class CaseGallerySetup:
         'ab' the 28th time, and etc. This function returns the next label as a string, and keeps track of each call
         to this method. Call count tracking is specific per case instance, e.g. if one case plots the label 'bb' last
         the next case will plot 'a' as the first label instead of 'bc'.
+
         :return: Sequentially next label string for a specific Case object
         """
         a = 97

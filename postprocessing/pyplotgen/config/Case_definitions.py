@@ -12,14 +12,25 @@ using python dictionaries (values surrounded with < > must have the < > removed 
         'description': "",
         'start_time': <numeric value>, 'end_time': <numeric value>,
         'height_min_value': <numeric value>, 'height_max_value': <numeric value>,
-
         'blacklisted_vars': ['list', 'of', 'variable', 'names', 'to', 'exclude', 'from', 'plotting'],
         'sam_benchmark_file': <path to sam file>",
-        'clubb_file': None,
-        'coamps_benchmark_file': <path to coamps file>,
-        'clubb_r408_file': {'zm': <path to r408 file>,
-                      'zt': <path to r408 file>,
-                      'sfc': <path to r408 file>},
+        'clubb_file': {'zm': <path to file>,
+                      'zt': <path to file>,
+                      'sfc': <path to file>},
+        'coamps_benchmark_file': {'sm': <path to file>,
+                          'sw': <path to file>},
+        'clubb_r408_file': {'zm': <path to file>,
+                      'zt': <path to file>,
+                      'sfc': <path to file>},
+       'clubb_hoc_file': {'zm': <path to file>',
+                    'zt': <path to file>',
+                    'sfc': <path to file>},
+       'e3sm_file': <path to file>,
+       'cam_file': <path to file>,
+       'sam_file': <path to file>,
+       'wrf_file': {'zm': <path to file>,
+                    'zt': <path to file>,
+                    'sfc': <path to file>},
         'var_groups': [VariableGroupBase, <other variable groups to plot>]}
 
 **Important note**:
@@ -45,17 +56,8 @@ alphabetical order.
 
     *blacklisted_vars*: List of variables to avoid plotting for this case. Names must use the clubb-name version
 
-    *sam_benchmark_file*: Path to the SAM .nc file for this case
-        (please use the SAM_BENCHMARK_OUTPUT_ROOT variable as a base).
-
-    *coamps_benchmark_file*: dict containing paths to the coamps .nc files for this case
-        (please use the COAMPS_BENCHMARK_OUTPUT_ROOT variable as a base).
-
-    *clubb_r408_file*: dict containing paths to the r408 .nc files for this case
-        (please use the R408_OUTPUT_ROOT variable as a base).
-
-    *clubb_hoc_file*: dict containing paths to the hoc .nc files for this case
-        (please use the HOC_OUTPUT_ROOT variable as a base).
+    *<model name>_file*: The path(s) to nc files for the given model.
+        (please use the <model name>_OUTPUT_ROOT variables as the beginning of the path).
 
     *var_groups*: These are the groups of variables to be plotted for the given case. var_groups is defined as a
         list of python class names, where the classes use the naming scheme VariableGroup____.py and define a variable

@@ -31,9 +31,12 @@ class NetCdfVariable:
         :param independent_var_names: List of or single name of independent variable to be used for this object
             TODO: Explain structure for multidimensional data!s
         :param conversion_factor: A multiplication factor applied to every value in the dataset. Defaults to 1
-        :param start_time: The time value to begin the averaging period, e.g. 181 minutes. Defaults to 0.
-        :param end_time: The time value to stop the averaging period, e.g. 240 minutes. Defaults to -1.
+        :param start_time: (number) The time value to begin the averaging period, e.g. 181 minutes. Defaults to 0.
+        :param end_time: (number) The time value to stop the averaging period, e.g. 240 minutes. Defaults to -1.
+        :param min_height: (number) The minimum elevation to display on the panel. Defaults to 0
+        :param max_height: (number) The maximum elevation to display on the panel. Defaults to -1 (all values)
         :param avg_axis: The axis to average dependent_data over. 0 for time-avg, 1 for height avg, 2 for no averaging
+        :param model_name: The string name of the model being plotted. E.g. clubb, hoc, r408, sam, cam, wrf, e3sm
         """
         dataset_with_var = None
         dependent_varname = ""
@@ -84,33 +87,13 @@ class NetCdfVariable:
             independent_var_name, dataset_with_var = self.__findNameAndDatasetMatch__(
                 independent_var_names['height'] + independent_var_names['time'], ncdf_data.values(), model_name=model_name)
 
-
-                # TODO This code was in a for loop and has been temporarily commented out for refactoring
-                # Check if for each independent dimension a variable was found
-                # key_test = [key not in independent_var_name_in_dataset.keys() for key in independent_keys]
-                # if avg_axis == 2: # non-averaged case (time-height plots)
-                #     # For both time and height an independent variable must be found, otherwise try the next dataset
-                #     if any(key_test):
-                #         dataset_with_var = None
-                #         independent_var_name_in_dataset = {}
-                #     else:
-                #         break
-                # else: # averaged case
-                #     # TODO: differentiate between time and height averaged variables!
-                #     # (Depending on avg_axis, only one of either time or height independent variables must be found)
-                #     if all(key_test):
-                #         dataset_with_var = None
-                #         independent_var_name_in_dataset = {}
-                #     else:
-                #         break
             if dataset_with_var is None:
                 raise KeyError("Could not find both ", names, " and ", independent_var_names, " in it in datasets ",
                                ncdf_data)
             # dataset_with_var = next(iter(ncdf_data.values()))
             warn("None of the values " + str(names) + " were found in the dataset " + str(dataset_with_var.filepath()))
             dependent_varname = names[0]
-        # If not already found, find a matching independent variable in the same dataset
-            #varname = names[0]
+
         # If not already found, find a (set of) matching independent variable(s)
         # in the same dataset in which the dependent variable was found
         # TODO: Accomodate finding time AND height variables
@@ -156,7 +139,6 @@ class NetCdfVariable:
         self.avg_axis = avg_axis
         # Get dependent and independent data from the chosen dataset
         self.dependent_data, self.independent_data = self.__getDependentAndIndependentData__(names, ncdf_data)
-        # self.dependent_data, self.independent_data = data_reader.getVarData(self.ncdf_data, self)
 
     def trimArray(self, start_value, end_value, data=None, axis=0):
         """
@@ -227,7 +209,10 @@ class NetCdfVariable:
         If varnames contains an element that's not a string, it gets skipped over.
         :param varnames: List of varname strings (non strings are skipped)
         :param datasets: List of NC Datasets
-        :return:
+        :param model_name: String of model name. E.g. clubb, hoc, r408, sam, cam, wrf, e3sm
+
+        :return: A tuple containing either (name_found, dataset_with_name) or (None, None) depending on if a match is
+        found.
         """
         for temp_dataset in datasets:
             for temp_name in varnames:
@@ -244,8 +229,8 @@ class NetCdfVariable:
         """
         Get data from netcdf file
 
-        :param all_varnames: 
-        :param all_datasets: 
+        :param all_varnames: A list of all the variable's names.
+        :param all_datasets: A list of all datasets that might contain this variable
         :return: dependent and independent data for variable connected to variable names passed in all_varnames
         """
         if all_varnames is None or len(all_varnames) == 0:

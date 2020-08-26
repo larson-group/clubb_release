@@ -14,10 +14,10 @@ from netCDF4._netCDF4 import Dataset
 from config import Case_definitions
 from config import Style_definitions
 from src.Contour import Contour
+from src.ContourPanel import ContourPanel
 from src.DataReader import DataReader, NetCdfVariable
 from src.Line import Line
 from src.Panel import Panel
-from src.ContourPanel import ContourPanel
 
 
 class VariableGroup:
@@ -31,8 +31,7 @@ class VariableGroup:
     """
 
     def __init__(self, case, clubb_datasets=None, les_dataset=None, coamps_dataset=None, r408_dataset=None,
-                 hoc_dataset=None, cam_datasets=None,
-                 e3sm_datasets=None, sam_datasets=None, wrf_datasets=None):
+                 hoc_dataset=None, cam_datasets=None, e3sm_datasets=None, sam_datasets=None, wrf_datasets=None):
         """
         Initialize a VariableGroup object with the passed parameters
 
@@ -99,24 +98,17 @@ class VariableGroup:
 
         Valid dict keys/options include:
 
-        *var_names*: A list of names various models refer to this variable as. E.g. ['wprtp', 'WPRTP', 'wpqtp']
-
-        *sam_conv_factor*: (optional) Numeric value to scale a sam variable by. E.g. 1/1000, or 100
-
-        *coamps_conv_factor*: (optional) Numeric value to scale a coamps variable by. E.g. 1/1000, or 100
-
-        *r408_conv_factor*: (optional) Numeric value to scale a clubb r408 variable by. E.g. 1/1000, or 100
-
-        *e3sm_conv_factor*: (optional) Numeric value to scale an e3sm variable by. E.g. 1/1000, or 100
-
+        *var_names*: A list of names various models refer to this variable as. E.g. ['wprtp', 'WPRTP', 'wpqtp']. This
+            parameter can also take in references to calc functions. Names/functions are prioritized left -> right.
+        *[model name]_conv_factor*: (optional) Numeric value to scale a model's variable by. E.g. 1/1000, or 100
+            Valid models are: clubb, hoc, r408, sam, cam, wrf, e3sm. E.g. "clubb_conv_factor"
         *type*: (optional) Override the default type 'profile' with either 'budget' or 'timeseries'
-
         *title*: (optional) Override the default panel title, or provide one if it's not specified in the netcdf file.
-
+        *sci_scale*: (optional) A numerical power of ten to scale the panel axis to. E.g. a value of "4" results in the
+                axis being scaled to x 1e4
         *axis_title*: (optional) Override the default dependent axis title, or provide one if it's not
             specified in the netcdf file.
-
-        *lines*: * (budget variables only) Defines lines to plot for budget cases. Passed seperately because
+        *lines*: * Defines lines to plot for budget cases. Passed seperately because
             it's a lot of text. The lines parameter currently does not support defining model-specific names/functions
             This is given in the form of a list of lines, here's an example:
 
@@ -128,13 +120,10 @@ class VariableGroup:
             {'var_names': ['thlm_ma'], 'legend_label': 'thlm_ma'},
             {'var_names': ['thlm_ta'], 'legend_label': 'thlm_ta'},
             {'var_names': ['thlm_mc'], 'legend_label': 'thlm_mc'},
-            {'var_names': ['thlm_clipping'], 'legend_label': 'thlm_clipping', 'clubb_calc': self.getThlmClipping,
-             'e3sm_calc': self.getThlmClipping, 'wrf_calc': self.getThlmClipping},
+            {'var_names': ['thlm_clipping',self.getThlmClipping], 'legend_label': 'thlm_clipping'},
             {'var_names': ['radht'], 'legend_label': 'radht'},
-            {'var_names': ['ls_forcing'], 'legend_label': 'thlm_ls_forcing', 'clubb_calc': self.getThlmLsforcing,
-             'e3sm_calc': self.getThlmLsforcing, 'wrf_calc': self.getThlmLsforcing},
-            {'var_names': ['thlm_residual'], 'legend_label': 'thlm_residual', 'clubb_calc': self.getThlmResidual,
-             'e3sm_calc': self.getThlmResidual, 'wrf_calc': self.getThlmResidual},
+            {'var_names': ['ls_forcing', self.getThlmLsforcing], 'legend_label': 'thlm_ls_forcing'},
+            {'var_names': ['thlm_residual',self.getThlmResidual], 'legend_label': 'thlm_residual'},
 
         ]
 
@@ -454,7 +443,8 @@ class VariableGroup:
         """
         Returns the varname for a variable relative to the models that were being plotted
 
-        :param var_names: The dict of various names for the given variable
+        :param var_names: The dict of various names for the given variable. More info found in the addVariable() docstring
+
         :return: A relevant name of the given variable
         """
         plotted_models_varname = "unknown_model_var"
@@ -473,7 +463,7 @@ class VariableGroup:
         This is a helper method that loads parameters from the variables
         definition and assigns them to python variables accordingly.
 
-        :param variable_def_dict: Definition of the variable being used
+        :param variable_def_dict: Definition of the variable being used. More info found in the addVariable() docstring
         :return: A dict containing the various conversion factors for the inputted variable
         """
         conv_factors = {
@@ -520,7 +510,7 @@ class VariableGroup:
         VarnameConversions.py. If a SAM variable needs to be calculated (uses an equation) then it will have
         to be created within that variable group's dataset and not here.
 
-        :param var_names: A string or list of strings.
+        :param var_names: A string or list of strings. More info found in the addVariable() docstring
             Each string is the name of the variable to be plotted, case sensitive
         :param ncdf_datasets: A list of Dataset objects containing clubb or sam netcdf dependent_data
         :param label: Label to give the base-plotAll on the legend. This is normally
@@ -533,6 +523,7 @@ class VariableGroup:
             For information on how to format the lines parameter,
             please see the config/VariableGroupBaseBudgets.py file and docs.
         :param conversion_factor: A multiplying factor used to scale clubb output. Defaults to 1.
+        :param model_name: The name of the model being plotted.
         :return: A list of Line objects containing model dependent_data from whatever models were passed in.
             Returns None if requested variable is not found.
         """
@@ -580,6 +571,7 @@ class VariableGroup:
             It's useful for doing basic model to model conversions, e.g. SAM -> CLUBB.
         :param avg_axis: Values will be averaged along this axis. This is basically only used for time-averaging
             profile plots.
+        :param lines: A lines parameter definition as found in a VariableGroup___.py. See addVariable() for more details.
         :return: Line object representing the given variable for a profile plot
         """
         output_lines = []
@@ -626,9 +618,7 @@ class VariableGroup:
         :param lines: A list of line definitions containing the variable names, legend labels etc.
             See the addVariable documentation above for a complete description
         :param dataset: NetCdf4 Dataset object containing the model output being plotted
-        :param label: This is the name that will be shown on the legend for this line (currently not used here)
-        :param line_format: A string representing how this line should be formatted using pyplot formatting.
-            Recommended value: emtpy string "" (currently not used here)
+        :param model_name: A string name of the model being plotted. I.e. clubb, hoc, r408, sam, cam, wrf, e3sm
         :return: A list of Line objects for a budget plot derived from lines
         """
         output_lines = self.__processLinesParameter__(lines, dataset, model_name=model_name)
@@ -639,8 +629,10 @@ class VariableGroup:
         Return a Contour object for a time-height plot,
         plotting a 2-dimensional contour plot with time as x axis and height as y axis.
 
-        :param varname: 
-        :param dataset: 
+        :param varname: name of the variable being plotted
+        :param dataset: dataset containing the variable
+        :param label: The legend label for this variable
+        :param conversion_factor: A conversion factor to apply to the variable (usually 1.0)
         :return: A Contour object that can be used to create a time-height plot.
         """
         # This does not yet work since we need two different independent_data arrays
@@ -760,6 +752,9 @@ class VariableGroup:
 
         :param lines: a lines definition. See VariableGroupBaseBudgets.py for examples
         :param dataset: A netcdf Dataset object or a dict of datasets
+        :param label_suffix: String. Optional suffix to add to the end of legend label.
+        :param line_format: matplotlib line formating string. A blank "" string results in auto formatting
+        :param model_name: String name of the model. I.e.  clubb, hoc, r408, sam, cam, wrf, e3sm
         :return: list of Line objects for plotting
         """
         if isinstance(lines, dict):
