@@ -635,7 +635,8 @@ module error
 
 #ifdef NETCDF
     use input_netcdf, only: &
-      open_netcdf_read ! Procedure(s)
+      open_netcdf_read, & ! Procedure(s)
+      close_netcdf_read
 #endif /* NETCDF */
 
     use clubb_model_settings, only: &
@@ -860,6 +861,7 @@ module error
         len_file = LEN_TRIM(les_stats_file(c_run))
         if (les_stats_file(c_run)(len_file-2: len_file) == ".nc") then
           call open_netcdf_read( les_v(i), les_stats_file(c_run), netcdf_file, l_file_error);
+          call close_netcdf_read(netcdf_file);
         else
           l_file_error = .true. ! This will cause the following assertion check to be skipped
         end if
