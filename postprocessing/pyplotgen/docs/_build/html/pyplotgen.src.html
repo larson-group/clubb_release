@@ -203,7 +203,7 @@
 panels that share attributes like start/end time and get plotted together.
 This is a generic class used by Case_Definitions.py to provide functionality.
 In order to create a new case, please add the case’s definition to Case_Definitions.py (don’t forget to add the
-definition to the list ALL_CASES = […] at the bottom of the file).</p>
+definition to the list ALL_CASES = […] at the bottom of the Case_Definitions.py file).</p>
 <dl class="py method">
 <dt id="src.CaseGallerySetup.CaseGallerySetup.getDiffLinesBetweenPanels">
 <code class="sig-name descname">getDiffLinesBetweenPanels</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">panelA</span></em>, <em class="sig-param"><span class="n">panelB</span></em>, <em class="sig-param"><span class="n">get_y_diff</span><span class="o">=</span><span class="default_value">False</span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.CaseGallerySetup.CaseGallerySetup.getDiffLinesBetweenPanels" title="Permalink to this definition">¶</a></dt>
@@ -632,41 +632,37 @@ inside a VariableGroup child class, e.g. VariableGroupBase.</p>
 </dd>
 </dl>
 <p>Valid dict keys/options include:</p>
-<p><em>var_names</em>: A list of names various models refer to this variable as. E.g. [‘wprtp’, ‘WPRTP’, ‘wpqtp’]</p>
-<p><em>sam_conv_factor</em>: (optional) Numeric value to scale a sam variable by. E.g. 1/1000, or 100</p>
-<p><em>coamps_conv_factor</em>: (optional) Numeric value to scale a coamps variable by. E.g. 1/1000, or 100</p>
-<p><em>r408_conv_factor</em>: (optional) Numeric value to scale a clubb r408 variable by. E.g. 1/1000, or 100</p>
-<p><em>e3sm_conv_factor</em>: (optional) Numeric value to scale an e3sm variable by. E.g. 1/1000, or 100</p>
-<p><em>type</em>: (optional) Override the default type ‘profile’ with either ‘budget’ or ‘timeseries’</p>
-<p><em>title</em>: (optional) Override the default panel title, or provide one if it’s not specified in the netcdf file.</p>
+<dl class="simple">
+<dt><em>var_names</em>: A list of names various models refer to this variable as. E.g. [‘wprtp’, ‘WPRTP’, ‘wpqtp’]. This</dt><dd><p>parameter can also take in references to calc functions. Names/functions are prioritized left -&gt; right.</p>
+</dd>
+<dt><em>[model name]_conv_factor</em>: (optional) Numeric value to scale a model’s variable by. E.g. 1/1000, or 100</dt><dd><p>Valid models are: clubb, hoc, r408, sam, cam, wrf, e3sm. E.g. “clubb_conv_factor”</p>
+</dd>
+</dl>
+<p><em>type</em>: (optional) Override the default type ‘profile’ with either ‘budget’ or ‘timeseries’
+<em>title</em>: (optional) Override the default panel title, or provide one if it’s not specified in the netcdf file.
+<em>sci_scale</em>: (optional) A numerical power of ten to scale the panel axis to. E.g. a value of “4” results in the</p>
+<blockquote>
+<div><p>axis being scaled to x 1e4</p>
+</div></blockquote>
 <dl class="simple">
 <dt><em>axis_title</em>: (optional) Override the default dependent axis title, or provide one if it’s not</dt><dd><p>specified in the netcdf file.</p>
 </dd>
-<dt><em>lines</em>: * (budget variables only) Defines lines to plot for budget cases. Passed seperately because</dt><dd><p>it’s a lot of text. The lines parameter currently does not support defining model-specific names/functions
+<dt><em>lines</em>: * Defines lines to plot for budget cases. Passed seperately because</dt><dd><p>it’s a lot of text. The lines parameter currently does not support defining model-specific names/functions
 This is given in the form of a list of lines, here’s an example:</p>
 </dd>
 </dl>
 <div class="highlight-python notranslate"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre>1</pre></div></td><td class="code"><div class="highlight"><pre><span></span>
 </pre></div>
 </td></tr></table></div>
-<dl>
+<dl class="simple">
 <dt>thlm_budget_lines = [</dt><dd><p>{‘var_names’: [‘thlm_bt’], ‘legend_label’: ‘thlm_bt’},
 {‘var_names’: [‘thlm_ma’], ‘legend_label’: ‘thlm_ma’},
 {‘var_names’: [‘thlm_ta’], ‘legend_label’: ‘thlm_ta’},
 {‘var_names’: [‘thlm_mc’], ‘legend_label’: ‘thlm_mc’},
-{‘var_names’: [‘thlm_clipping’], ‘legend_label’: ‘thlm_clipping’, ‘clubb_calc’: self.getThlmClipping,</p>
-<blockquote>
-<div><p>‘e3sm_calc’: self.getThlmClipping, ‘wrf_calc’: self.getThlmClipping},</p>
-</div></blockquote>
-<p>{‘var_names’: [‘radht’], ‘legend_label’: ‘radht’},
-{‘var_names’: [‘ls_forcing’], ‘legend_label’: ‘thlm_ls_forcing’, ‘clubb_calc’: self.getThlmLsforcing,</p>
-<blockquote>
-<div><p>‘e3sm_calc’: self.getThlmLsforcing, ‘wrf_calc’: self.getThlmLsforcing},</p>
-</div></blockquote>
-<dl class="simple">
-<dt>{‘var_names’: [‘thlm_residual’], ‘legend_label’: ‘thlm_residual’, ‘clubb_calc’: self.getThlmResidual,</dt><dd><p>‘e3sm_calc’: self.getThlmResidual, ‘wrf_calc’: self.getThlmResidual},</p>
-</dd>
-</dl>
+{‘var_names’: [‘thlm_clipping’,self.getThlmClipping], ‘legend_label’: ‘thlm_clipping’},
+{‘var_names’: [‘radht’], ‘legend_label’: ‘radht’},
+{‘var_names’: [‘ls_forcing’, self.getThlmLsforcing], ‘legend_label’: ‘thlm_ls_forcing’},
+{‘var_names’: [‘thlm_residual’,self.getThlmResidual], ‘legend_label’: ‘thlm_residual’},</p>
 </dd>
 </dl>
 <p>]</p>

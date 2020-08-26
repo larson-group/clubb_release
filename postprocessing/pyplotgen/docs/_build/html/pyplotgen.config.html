@@ -210,18 +210,40 @@ using python dictionaries (values surrounded with &lt; &gt; must have the &lt; &
 10
 11
 12
-13</pre></div></td><td class="code"><div class="highlight"><pre><span></span><span class="n">CASENAME</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;name&#39;</span><span class="p">:</span> <span class="s1">&#39;casename&#39;</span><span class="p">,</span>
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24</pre></div></td><td class="code"><div class="highlight"><pre><span></span><span class="n">CASENAME</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;name&#39;</span><span class="p">:</span> <span class="s1">&#39;casename&#39;</span><span class="p">,</span>
     <span class="s1">&#39;description&#39;</span><span class="p">:</span> <span class="s2">&quot;&quot;</span><span class="p">,</span>
     <span class="s1">&#39;start_time&#39;</span><span class="p">:</span> <span class="o">&lt;</span><span class="n">numeric</span> <span class="n">value</span><span class="o">&gt;</span><span class="p">,</span> <span class="s1">&#39;end_time&#39;</span><span class="p">:</span> <span class="o">&lt;</span><span class="n">numeric</span> <span class="n">value</span><span class="o">&gt;</span><span class="p">,</span>
     <span class="s1">&#39;height_min_value&#39;</span><span class="p">:</span> <span class="o">&lt;</span><span class="n">numeric</span> <span class="n">value</span><span class="o">&gt;</span><span class="p">,</span> <span class="s1">&#39;height_max_value&#39;</span><span class="p">:</span> <span class="o">&lt;</span><span class="n">numeric</span> <span class="n">value</span><span class="o">&gt;</span><span class="p">,</span>
-
     <span class="s1">&#39;blacklisted_vars&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;list&#39;</span><span class="p">,</span> <span class="s1">&#39;of&#39;</span><span class="p">,</span> <span class="s1">&#39;variable&#39;</span><span class="p">,</span> <span class="s1">&#39;names&#39;</span><span class="p">,</span> <span class="s1">&#39;to&#39;</span><span class="p">,</span> <span class="s1">&#39;exclude&#39;</span><span class="p">,</span> <span class="s1">&#39;from&#39;</span><span class="p">,</span> <span class="s1">&#39;plotting&#39;</span><span class="p">],</span>
     <span class="s1">&#39;sam_benchmark_file&#39;</span><span class="p">:</span> <span class="o">&lt;</span><span class="n">path</span> <span class="n">to</span> <span class="n">sam</span> <span class="n">file</span><span class="o">&gt;</span><span class="s2">&quot;,</span>
-    <span class="s1">&#39;clubb_file&#39;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
-    <span class="s1">&#39;coamps_benchmark_file&#39;</span><span class="p">:</span> <span class="o">&lt;</span><span class="n">path</span> <span class="n">to</span> <span class="n">coamps</span> <span class="n">file</span><span class="o">&gt;</span><span class="p">,</span>
-    <span class="s1">&#39;clubb_r408_file&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;zm&#39;</span><span class="p">:</span> <span class="o">&lt;</span><span class="n">path</span> <span class="n">to</span> <span class="n">r408</span> <span class="n">file</span><span class="o">&gt;</span><span class="p">,</span>
-                  <span class="s1">&#39;zt&#39;</span><span class="p">:</span> <span class="o">&lt;</span><span class="n">path</span> <span class="n">to</span> <span class="n">r408</span> <span class="n">file</span><span class="o">&gt;</span><span class="p">,</span>
-                  <span class="s1">&#39;sfc&#39;</span><span class="p">:</span> <span class="o">&lt;</span><span class="n">path</span> <span class="n">to</span> <span class="n">r408</span> <span class="n">file</span><span class="o">&gt;</span><span class="p">},</span>
+    <span class="s1">&#39;clubb_file&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;zm&#39;</span><span class="p">:</span> <span class="o">&lt;</span><span class="n">path</span> <span class="n">to</span> <span class="n">file</span><span class="o">&gt;</span><span class="p">,</span>
+                  <span class="s1">&#39;zt&#39;</span><span class="p">:</span> <span class="o">&lt;</span><span class="n">path</span> <span class="n">to</span> <span class="n">file</span><span class="o">&gt;</span><span class="p">,</span>
+                  <span class="s1">&#39;sfc&#39;</span><span class="p">:</span> <span class="o">&lt;</span><span class="n">path</span> <span class="n">to</span> <span class="n">file</span><span class="o">&gt;</span><span class="p">},</span>
+    <span class="s1">&#39;coamps_benchmark_file&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;sm&#39;</span><span class="p">:</span> <span class="o">&lt;</span><span class="n">path</span> <span class="n">to</span> <span class="n">file</span><span class="o">&gt;</span><span class="p">,</span>
+                      <span class="s1">&#39;sw&#39;</span><span class="p">:</span> <span class="o">&lt;</span><span class="n">path</span> <span class="n">to</span> <span class="n">file</span><span class="o">&gt;</span><span class="p">},</span>
+    <span class="s1">&#39;clubb_r408_file&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;zm&#39;</span><span class="p">:</span> <span class="o">&lt;</span><span class="n">path</span> <span class="n">to</span> <span class="n">file</span><span class="o">&gt;</span><span class="p">,</span>
+                  <span class="s1">&#39;zt&#39;</span><span class="p">:</span> <span class="o">&lt;</span><span class="n">path</span> <span class="n">to</span> <span class="n">file</span><span class="o">&gt;</span><span class="p">,</span>
+                  <span class="s1">&#39;sfc&#39;</span><span class="p">:</span> <span class="o">&lt;</span><span class="n">path</span> <span class="n">to</span> <span class="n">file</span><span class="o">&gt;</span><span class="p">},</span>
+   <span class="s1">&#39;clubb_hoc_file&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;zm&#39;</span><span class="p">:</span> <span class="o">&lt;</span><span class="n">path</span> <span class="n">to</span> <span class="n">file</span><span class="o">&gt;</span><span class="s1">&#39;,</span>
+                <span class="s1">&#39;zt&#39;</span><span class="p">:</span> <span class="o">&lt;</span><span class="n">path</span> <span class="n">to</span> <span class="n">file</span><span class="o">&gt;</span><span class="s1">&#39;,</span>
+                <span class="s1">&#39;sfc&#39;</span><span class="p">:</span> <span class="o">&lt;</span><span class="n">path</span> <span class="n">to</span> <span class="n">file</span><span class="o">&gt;</span><span class="p">},</span>
+   <span class="s1">&#39;e3sm_file&#39;</span><span class="p">:</span> <span class="o">&lt;</span><span class="n">path</span> <span class="n">to</span> <span class="n">file</span><span class="o">&gt;</span><span class="p">,</span>
+   <span class="s1">&#39;cam_file&#39;</span><span class="p">:</span> <span class="o">&lt;</span><span class="n">path</span> <span class="n">to</span> <span class="n">file</span><span class="o">&gt;</span><span class="p">,</span>
+   <span class="s1">&#39;sam_file&#39;</span><span class="p">:</span> <span class="o">&lt;</span><span class="n">path</span> <span class="n">to</span> <span class="n">file</span><span class="o">&gt;</span><span class="p">,</span>
+   <span class="s1">&#39;wrf_file&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;zm&#39;</span><span class="p">:</span> <span class="o">&lt;</span><span class="n">path</span> <span class="n">to</span> <span class="n">file</span><span class="o">&gt;</span><span class="p">,</span>
+                <span class="s1">&#39;zt&#39;</span><span class="p">:</span> <span class="o">&lt;</span><span class="n">path</span> <span class="n">to</span> <span class="n">file</span><span class="o">&gt;</span><span class="p">,</span>
+                <span class="s1">&#39;sfc&#39;</span><span class="p">:</span> <span class="o">&lt;</span><span class="n">path</span> <span class="n">to</span> <span class="n">file</span><span class="o">&gt;</span><span class="p">},</span>
     <span class="s1">&#39;var_groups&#39;</span><span class="p">:</span> <span class="p">[</span><span class="n">VariableGroupBase</span><span class="p">,</span> <span class="o">&lt;</span><span class="n">other</span> <span class="n">variable</span> <span class="n">groups</span> <span class="n">to</span> <span class="n">plot</span><span class="o">&gt;</span><span class="p">]}</span>
 </pre></div>
 </td></tr></table></div>
@@ -244,13 +266,7 @@ Also used to determine where to stop timeseries plots</p>
 <p><em>height_max_value</em>: The elevation to end height plots at</p>
 <p><em>blacklisted_vars</em>: List of variables to avoid plotting for this case. Names must use the clubb-name version</p>
 <dl class="simple">
-<dt><em>sam_benchmark_file</em>: Path to the SAM .nc file for this case</dt><dd><p>(please use the SAM_BENCHMARK_OUTPUT_ROOT variable as a base).</p>
-</dd>
-<dt><em>coamps_benchmark_file</em>: dict containing paths to the coamps .nc files for this case</dt><dd><p>(please use the COAMPS_BENCHMARK_OUTPUT_ROOT variable as a base).</p>
-</dd>
-<dt><em>clubb_r408_file</em>: dict containing paths to the r408 .nc files for this case</dt><dd><p>(please use the R408_OUTPUT_ROOT variable as a base).</p>
-</dd>
-<dt><em>clubb_hoc_file</em>: dict containing paths to the hoc .nc files for this case</dt><dd><p>(please use the HOC_OUTPUT_ROOT variable as a base).</p>
+<dt><em>&lt;model name&gt;_file</em>: The path(s) to nc files for the given model.</dt><dd><p>(please use the &lt;model name&gt;_OUTPUT_ROOT variables as the beginning of the path).</p>
 </dd>
 <dt><em>var_groups</em>: These are the groups of variables to be plotted for the given case. var_groups is defined as a</dt><dd><p>list of python class names, where the classes use the naming scheme VariableGroup____.py and define a variable
 group. An example would be: ‘var_groups’: [VariableGroupBase, VariableGroupWs].
@@ -302,7 +318,7 @@ If you wish to change a line color, font size, etc., then this is the place to d
 <dd><p>Bases: <a class="reference internal" href="pyplotgen.src.html#src.VariableGroup.VariableGroup" title="src.VariableGroup.VariableGroup"><code class="xref py py-class docutils literal notranslate"><span class="pre">src.VariableGroup.VariableGroup</span></code></a></p>
 <p>This is a panel group used for testing the functionality of pyplotgen.
 It contains a set of common panels being used for representing the majority
-of panels.</p>
+of cases.</p>
 <dl class="py method">
 <dt id="config.VariableGroupBase.VariableGroupBase.getRtmSamCalc">
 <code class="sig-name descname">getRtmSamCalc</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">dataset_override</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#config.VariableGroupBase.VariableGroupBase.getRtmSamCalc" title="Permalink to this definition">¶</a></dt>
