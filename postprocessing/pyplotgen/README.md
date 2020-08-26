@@ -43,7 +43,7 @@ If, in addition, you'd like to overplot LES lines and also separately plot CLUBB
 
 # Advanced Usage
 ## Reference Documentation
-Reference documentation is available in the `pyplotgen/docs/html` folder. Open `pyplotgen/docs/html/index.html` in a web browser for easy viewing.
+Reference documentation is available in the `pyplotgen/docs/html` folder. Open `pyplotgen/docs/html/index.html` in a web browser for easy viewing. More information is available in the `pyplotgen/docs/README.md` file.
 
 ## Running subsets of cases
 If someone wants to run only a few cases, reguardless of how many datasets were outputted to a folder, they can do so by editing the last line of the `pyplotgen/config/Case_definitions.py` file such that it defines `ALL_CASES` to contain only the cases they wish to plot.  
