@@ -124,11 +124,6 @@ module stat_file_utils
     logical :: &
       l_convert_to_MKS ! convert inputs to MKS units
 
-    integer::i
-    real, dimension(:,:), pointer::ar2
-    real, dimension(:), pointer::ar3
-    character(len=10)::ctime,infile
-
 !-----------------------------------------------------------------------
 
     ! Initialize variables
