@@ -33,7 +33,7 @@ module stat_file_module
 
      character(len = 30) :: name        ! Variable name
      character(len = 100) :: description ! Variable description
-     character(len = 20) :: units       ! Variable units
+     character(len = 25) :: units       ! Variable units
 
      integer :: indx ! NetCDF module Id for var / GrADS index
 
