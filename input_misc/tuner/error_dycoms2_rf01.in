@@ -24,7 +24,7 @@ stp_adjst_spread_in = 0.8
 
 &cases
 ! GCSS DYCOMS II RF 1
-hoc_stats_file_nl(1)    = "../output/dycoms2_rf01_zt.ctl"
+hoc_stats_file_nl(1)    = "../output/dycoms2_rf01_zt.nc"
 les_stats_file_nl(1)    = "../sam_benchmark_runs/JULY_2017/DYCOMS_RF01_96x96x320/DYCOMS_RF01_96x96x320.nc"
 run_file_nl(1)          = "dycoms2_rf01_hoc.in"
 z_i_nl(1)               = 3

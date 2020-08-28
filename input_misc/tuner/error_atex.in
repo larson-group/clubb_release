@@ -25,8 +25,8 @@ stp_adjst_spread_in = 0.8
 
 &cases
 ! GCSS ATEX
-hoc_stats_file_nl(1)    = "../output/atex_zt.ctl" 
-les_stats_file_nl(1)    = "../les_data/atex_coamps_sm.ctl" 
+hoc_stats_file_nl(1)    = "../output/atex_zt.nc" 
+les_stats_file_nl(1)    = "../les_data/atex_coamps_sm.nc" 
 run_file_nl(1)          = "atex_hoc.in"
 z_i_nl(1)               = 2
 z_f_nl(1)               = 149

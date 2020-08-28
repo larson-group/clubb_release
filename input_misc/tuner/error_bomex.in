@@ -25,7 +25,7 @@ stp_adjst_spread_in = 0.8
 
 !  GCSS BOMEX
 &cases
-hoc_stats_file_nl(1)    = "../output/bomex_zt.ctl",
+hoc_stats_file_nl(1)    = "../output/bomex_zt.nc",
 les_stats_file_nl(1)    = "../sam_benchmark_runs/JULY_2017/BOMEX_64x64x75/BOMEX_64x64x75_100m_40m_1s.nc",
 run_file_nl(1)          = "bomex_hoc.in",
 z_i_nl(1)               = 2,
