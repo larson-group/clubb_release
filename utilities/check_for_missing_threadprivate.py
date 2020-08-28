@@ -140,7 +140,7 @@ def main():
     fileNames = clubbFileNames + silhsFileNames
 
     # Removes .swp files from the file list
-    fileNames = [x for x in fileNames if not x.endswith(".swp")]
+    fileNames = [x for x in fileNames if not x.endswith(".swp") and not x.endswith(".txt")]
 
     # outputFile = open("/home/vlarson/Downloads/threadprivate_output.txt","w+")
     failedFiles = []
