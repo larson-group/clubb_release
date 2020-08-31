@@ -25,7 +25,7 @@ stp_adjst_spread_in = 0.8
 
 &cases
 ! RICO
-hoc_stats_file_nl(1)    = "../output/rico_zt.ctl"
+hoc_stats_file_nl(1)    = "../output/rico_zt.nc"
 les_stats_file_nl(1)    = "../sam_benchmark_runs/JULY_2017/RICO_256x256x100_drizzle/RICO_256x256x100_drizzle.nc"
 run_file_nl(1)          = "rico_hoc.in"
 z_i_nl(1)               = 2

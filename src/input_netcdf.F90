@@ -138,6 +138,7 @@ module input_netcdf
     do i = 1, ndims
 
       ierr = nf90_inquire_dimension( ncid=ncf%iounit, dimId=dimIds(i), name=dim_name, len=itmp )
+
       if ( ierr /= NF90_NOERR ) then
         write(fstderr,*) nf90_strerror( ierr )
         l_error = .true.
@@ -145,15 +146,15 @@ module input_netcdf
       end if
 
       select case ( trim( dim_name ) )
-      case ( "Z", "z", "altitude", "height" )
+      case ( "Z", "z", "altitude", "height", "lev" )
         ncf%ia = 1
         ncf%iz = itmp
         ncf%AltDimId = dimIds(i)
         zname = dim_name
-      case ( "X", "x", "longitude" )
+      case ( "X", "x", "longitude", "lon" )
         xdim = itmp
         ncf%LongDimId = dimIds(i)
-      case ( "Y", "y", "latitude" )
+      case ( "Y", "y", "latitude", "lat" )
         ydim = itmp
         ncf%LatDimId = dimIds(i)
       case ( "T", "t", "time" )
@@ -229,7 +230,7 @@ module input_netcdf
       ! Read starting time from the "units" attribute of the netcdf file
       time = trim( time )
       length = len( trim( time ) )
-      if ( length < 21 ) then
+      if ( length < 29 ) then
         write(fstderr,*) "The NetCDF file does not have a proper time unit &
                          &specification. The ""units"" attribute for the &
                          &time variable must be in the form:"
@@ -237,6 +238,7 @@ module input_netcdf
         l_error = .true.
         return
       end if
+
 
       read(time( length-20:length-17), *) netcdf_year
       read(time( length-15:length-14), *) netcdf_month

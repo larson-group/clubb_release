@@ -24,7 +24,7 @@ stp_adjst_spread_in = 0.8
 
 &cases
 ! Wangara Day 33
-hoc_stats_file_nl(1)    = "../output/wangara_zt.ctl"
+hoc_stats_file_nl(1)    = "../output/wangara_zt.nc"
 les_stats_file_nl(1)    = "../les_data/wangara_rams.ctl"
 run_file_nl(1)          = "wangara_hoc.in"
 z_i_nl(1)               = 1

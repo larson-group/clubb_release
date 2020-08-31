@@ -635,7 +635,8 @@ module error
 
 #ifdef NETCDF
     use input_netcdf, only: &
-      open_netcdf_read ! Procedure(s)
+      open_netcdf_read, & ! Procedure(s)
+      close_netcdf_read
 #endif /* NETCDF */
 
     use clubb_model_settings, only: &
@@ -716,6 +717,7 @@ module error
       i, j, c_run ! looping variables
 
     !-----------------------------------------------------------------------
+!print*,"error@minlesdiff"
 
     param_vals_vector = real(param_vals_vector_r4, kind = core_rknd)
 
@@ -844,7 +846,6 @@ module error
       ! Start with first CLUBB & LES variables, then loop through and
       ! calculate the mean squared difference for all the variables
       do i=1, v_total, 1  
-
         ! Read in LES grads data for one variable, averaged
         ! over specified time intervals
         les_zl =  & 
@@ -859,7 +860,8 @@ module error
         ! First, be sure we are dealing with a netCDF file
         len_file = LEN_TRIM(les_stats_file(c_run))
         if (les_stats_file(c_run)(len_file-2: len_file) == ".nc") then
-          call open_netcdf_read( 'PRES', les_stats_file(c_run), netcdf_file, l_file_error);
+          call open_netcdf_read( les_v(i), les_stats_file(c_run), netcdf_file, l_file_error);
+          call close_netcdf_read(netcdf_file);
         else
           l_file_error = .true. ! This will cause the following assertion check to be skipped
         end if

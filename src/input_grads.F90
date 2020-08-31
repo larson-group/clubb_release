@@ -102,6 +102,7 @@ module input_grads
       ihour, imin
 
 !-------------------------------------------------------------------------------
+!print*,"input_grads@open_read"
 
     ! ---- Begin Code ----
 
@@ -466,6 +467,7 @@ module input_grads
     end do
 
     variable = real( grads_variable, kind = core_rknd ) ! Convert to default precision
+write(42,*)variable
 
     return
   end subroutine get_grads_var
@@ -488,6 +490,7 @@ module input_grads
 !-------------------------------------------------------------------------------
 
     ! ---- Begin Code ----
+!print*,"input_grads@close_read"
 
     ! Close file
     close( unit=grads_file%iounit )

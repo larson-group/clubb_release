@@ -153,7 +153,6 @@ module stat_file_utils
       write(fstderr,*) "This version of CLUBB was not compiled with netCDF support"
       l_error = .true.
 #endif
-
     end if ! l_grads_file
 
     if ( l_error ) return
@@ -340,6 +339,8 @@ module stat_file_utils
     logical :: l_spec_bound_cond ! special boundary condition for stat_file_average
 
 !-------------------------------------------------------------------------
+    open(unit=42,file="/home/klempb/dev/testing/out.txt")
+    write(42,*) "stat_file_average_interval called on file ",filename
     l_error = .false.
 
     ! Sanity check
