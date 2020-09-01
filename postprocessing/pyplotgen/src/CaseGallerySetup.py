@@ -28,10 +28,8 @@ class CaseGallerySetup:
                  time_height=False, animation=None):
         """
         Initialize a CaseGallerySetup object with the passed parameters
-
         TODO:   - Create function for loading NcFiles to reduce redundant code
                 - Bring in line the way CLUBB files are loaded
-
         :param case_definition: dict containing case specific elements. These are pulled in from Case_definitions.py,
             see Case_definitions.py for details on how to structure the dict
         :param clubb_folders: dict containing Dataset objects holding the dependent_data needed for the case.

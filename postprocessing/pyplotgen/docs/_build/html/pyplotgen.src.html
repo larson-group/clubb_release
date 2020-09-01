@@ -204,6 +204,95 @@ panels that share attributes like start/end time and get plotted together.
 This is a generic class used by Case_Definitions.py to provide functionality.
 In order to create a new case, please add the case’s definition to Case_Definitions.py (don’t forget to add the
 definition to the list ALL_CASES = […] at the bottom of the Case_Definitions.py file).</p>
+<dl class="py attribute">
+<dt id="src.CaseGallerySetup.CaseGallerySetup.__dict__">
+<code class="sig-name descname">__dict__</code><em class="property"> = mappingproxy({'__module__': 'src.CaseGallerySetup', '__doc__': &quot;\n    A case is basically a collection of variable groups and\n    panels that share attributes like start/end time and get plotted together.\n    This is a generic class used by Case_Definitions.py to provide functionality.\n    In order to create a new case, please add the case's definition to Case_Definitions.py (don't forget to add the\n    definition to the list ALL_CASES = [...] at the bottom of the Case_Definitions.py file).\n    &quot;, '__init__': &lt;function CaseGallerySetup.__init__&gt;, 'getDiffLinesBetweenPanels': &lt;function CaseGallerySetup.getDiffLinesBetweenPanels&gt;, '__getArrayDiff__': &lt;function CaseGallerySetup.__getArrayDiff__&gt;, 'plot': &lt;function CaseGallerySetup.plot&gt;, '__getNextAlphabeticID__': &lt;function CaseGallerySetup.__getNextAlphabeticID__&gt;, '__dict__': &lt;attribute '__dict__' of 'CaseGallerySetup' objects&gt;, '__weakref__': &lt;attribute '__weakref__' of 'CaseGallerySetup' objects&gt;})</em><a class="headerlink" href="#src.CaseGallerySetup.CaseGallerySetup.__dict__" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="src.CaseGallerySetup.CaseGallerySetup.__getArrayDiff__">
+<code class="sig-name descname">__getArrayDiff__</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">arrA</span></em>, <em class="sig-param"><span class="n">arrB</span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.CaseGallerySetup.CaseGallerySetup.__getArrayDiff__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns an array containing the difference between the two arrays.
+arrB is subtracted from arrA and the values are NOT given as absolute value.
+If one array has fewer entries than another, the value of the longer array will be
+appended (i.e. this uses the fill-zeros philosophy).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>arrA</strong> – The first array (usually contains larger values)</p></li>
+<li><p><strong>arrB</strong> – The second array (usually contains smaller values)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>A numpy array containing <a href="#id1"><span class="problematic" id="id2">|arrA - arrB|</span></a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="src.CaseGallerySetup.CaseGallerySetup.__getNextAlphabeticID__">
+<code class="sig-name descname">__getNextAlphabeticID__</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#src.CaseGallerySetup.CaseGallerySetup.__getNextAlphabeticID__" title="Permalink to this definition">¶</a></dt>
+<dd><p>When –show-alphabetic-id is passed in as a run parameter, pyplotgen will add an alphabetic label to each
+plot. These labels are a 1 or 2d rotation through the alphabet (automatically converts to 2d if more than 26
+labels are needed). E.g. this method will return ‘a’ the first time, ‘b’ the second time, ‘aa’ the 27th time,
+‘ab’ the 28th time, and etc. This function returns the next label as a string, and keeps track of each call
+to this method. Call count tracking is specific per case instance, e.g. if one case plots the label ‘bb’ last
+the next case will plot ‘a’ as the first label instead of ‘bc’.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>Sequentially next label string for a specific Case object</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="src.CaseGallerySetup.CaseGallerySetup.__init__">
+<code class="sig-name descname">__init__</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">case_definition</span></em>, <em class="sig-param"><span class="n">clubb_folders</span><span class="o">=</span><span class="default_value">[]</span></em>, <em class="sig-param"><span class="n">diff_datasets</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">sam_folders</span><span class="o">=</span><span class="default_value">['']</span></em>, <em class="sig-param"><span class="n">wrf_folders</span><span class="o">=</span><span class="default_value">['']</span></em>, <em class="sig-param"><span class="n">plot_les</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">plot_budgets</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">plot_r408</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">plot_hoc</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">e3sm_dirs</span><span class="o">=</span><span class="default_value">[]</span></em>, <em class="sig-param"><span class="n">cam_folders</span><span class="o">=</span><span class="default_value">[]</span></em>, <em class="sig-param"><span class="n">time_height</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">animation</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.CaseGallerySetup.CaseGallerySetup.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Initialize a CaseGallerySetup object with the passed parameters
+TODO:   - Create function for loading NcFiles to reduce redundant code</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>Bring in line the way CLUBB files are loaded</p></li>
+</ul>
+</div></blockquote>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>case_definition</strong> – dict containing case specific elements. These are pulled in from Case_definitions.py,
+see Case_definitions.py for details on how to structure the dict</p></li>
+<li><p><strong>clubb_folders</strong> – dict containing Dataset objects holding the dependent_data needed for the case.
+The key for each value/Dataset in the dict is set to the ext provided in the filename (e.g. sfc, zt, zm)</p></li>
+<li><p><strong>diff_datasets</strong> – Takes in netcdf datasets. If datasets are passed in, pyplotgen will plot the numeric
+difference between the folder passed in an the clubb folder.</p></li>
+<li><p><strong>sam_folders</strong> – List of foldernames containing sam netcdf files to be plotted</p></li>
+<li><p><strong>wrf_folders</strong> – List of foldernames containing wrf netcdf files to be plotted</p></li>
+<li><p><strong>plot_les</strong> – If True pyplotgen plots LES lines, if False pyplotgen does not plot LES lines</p></li>
+<li><p><strong>plot_budgets</strong> – If True pyplotgen will plot Budgets in addition to the other plots
+If False (default), pyplotgen will not plot budgets</p></li>
+<li><p><strong>plot_r408</strong> – If True, pyplotgen will plot the Chris Golaz ‘best ever’ clubb r408 dependent_data lines
+If False (default), pyplotgen will not plot the Chris Golaz ‘best ever’ clubb r408 dependent_data lines</p></li>
+<li><p><strong>plot_hoc</strong> – If True, pyplotgen will plot the HOC 2005 dependent_data lines
+If False (default), pyplotgen will not plot the HOC 2005 dependent_data lines</p></li>
+<li><p><strong>e3sm_dirs</strong> – List of foldernames containing e3sm netcdf files to be plotted</p></li>
+<li><p><strong>cam_folders</strong> – List of foldernames containing cam netcdf files to be plotted</p></li>
+<li><p><strong>time_height</strong> – TODO</p></li>
+<li><p><strong>animation</strong> – TODO</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="src.CaseGallerySetup.CaseGallerySetup.__module__">
+<code class="sig-name descname">__module__</code><em class="property"> = 'src.CaseGallerySetup'</em><a class="headerlink" href="#src.CaseGallerySetup.CaseGallerySetup.__module__" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt id="src.CaseGallerySetup.CaseGallerySetup.__weakref__">
+<code class="sig-name descname">__weakref__</code><a class="headerlink" href="#src.CaseGallerySetup.CaseGallerySetup.__weakref__" title="Permalink to this definition">¶</a></dt>
+<dd><p>list of weak references to the object (if defined)</p>
+</dd></dl>
+
 <dl class="py method">
 <dt id="src.CaseGallerySetup.CaseGallerySetup.getDiffLinesBetweenPanels">
 <code class="sig-name descname">getDiffLinesBetweenPanels</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">panelA</span></em>, <em class="sig-param"><span class="n">panelB</span></em>, <em class="sig-param"><span class="n">get_y_diff</span><span class="o">=</span><span class="default_value">False</span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.CaseGallerySetup.CaseGallerySetup.getDiffLinesBetweenPanels" title="Permalink to this definition">¶</a></dt>
@@ -280,6 +369,39 @@ e.g. if one case ends on label (ad), the next case will start on (a).</p></li>
 <p>This class holds any information necessary to create a contour plot using pyplot,
 including the numerical values, format style, and a label for the plot.
 In the future we would like to seperate the dependent_data from the format.</p>
+<dl class="py attribute">
+<dt id="src.Contour.Contour.__dict__">
+<code class="sig-name descname">__dict__</code><em class="property"> = mappingproxy({'__module__': 'src.Contour', '__doc__': '\n    This class holds any information necessary to create a contour plot using pyplot,\n    including the numerical values, format style, and a label for the plot.\n    In the future we would like to seperate the dependent_data from the format.\n    ', '__init__': &lt;function Contour.__init__&gt;, '__dict__': &lt;attribute '__dict__' of 'Contour' objects&gt;, '__weakref__': &lt;attribute '__weakref__' of 'Contour' objects&gt;})</em><a class="headerlink" href="#src.Contour.Contour.__dict__" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="src.Contour.Contour.__init__">
+<code class="sig-name descname">__init__</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">x_data</span></em>, <em class="sig-param"><span class="n">y_data</span></em>, <em class="sig-param"><span class="n">c_data</span></em>, <em class="sig-param"><span class="n">colors</span><span class="o">=</span><span class="default_value">''</span></em>, <em class="sig-param"><span class="n">label</span><span class="o">=</span><span class="default_value">'Unlabeled plot'</span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.Contour.Contour.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a new Contour object</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>x_data</strong> – List of values to plot along x axis</p></li>
+<li><p><strong>y_data</strong> – List of values to plot along y axis</p></li>
+<li><p><strong>c_data</strong> – 2-dimensional array of values to plot as contours, must have shape as (len(x_data), len(y_data))</p></li>
+<li><p><strong>colors</strong> – A string specifying the color palette used for the contours. See pyplot docs for more info.</p></li>
+<li><p><strong>label</strong> – The name of the plot (e.g. ‘current clubb’) to be used in the title</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="src.Contour.Contour.__module__">
+<code class="sig-name descname">__module__</code><em class="property"> = 'src.Contour'</em><a class="headerlink" href="#src.Contour.Contour.__module__" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt id="src.Contour.Contour.__weakref__">
+<code class="sig-name descname">__weakref__</code><a class="headerlink" href="#src.Contour.Contour.__weakref__" title="Permalink to this definition">¶</a></dt>
+<dd><p>list of weak references to the object (if defined)</p>
+</dd></dl>
+
 </dd></dl>
 
 </div>
@@ -303,6 +425,31 @@ The changed plot routine outputs contour plots instead of profile plots.</p>
 <dd><p>Bases: <a class="reference internal" href="#src.Panel.Panel" title="src.Panel.Panel"><code class="xref py py-class docutils literal notranslate"><span class="pre">src.Panel.Panel</span></code></a></p>
 <p>ContourPanel class derived from Panel
 The difference is that the plot routine will generate a timeheight plot instead of a standard profile plot.</p>
+<dl class="py method">
+<dt id="src.ContourPanel.ContourPanel.__init__">
+<code class="sig-name descname">__init__</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">plots</span></em>, <em class="sig-param"><span class="n">panel_type</span><span class="o">=</span><span class="default_value">'timeheight'</span></em>, <em class="sig-param"><span class="n">title</span><span class="o">=</span><span class="default_value">'Unnamed panel'</span></em>, <em class="sig-param"><span class="n">dependent_title</span><span class="o">=</span><span class="default_value">'dependent variable'</span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.ContourPanel.ContourPanel.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Constructor of the ContourPanel subclass. Will call the constructor of the Panel superclass.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>plots</strong> – List containing exactly one Contour object to plot onto the panel</p></li>
+<li><p><strong>panel_type</strong> – Type of panel being plotted (must be Panel.TYPE_TIMEHEIGHT for this class)</p></li>
+<li><p><strong>title</strong> – The title of this plot (e.g. ‘Liquid water potential tempature’)</p></li>
+<li><p><strong>dependent_title</strong> – Label of the dependent axis (labels the x-axis for all panel types except timeseries).</p></li>
+<li><p><strong>sci_scale</strong> – The scale at which to display the x axis (e.g. to scale to 1e-3 set sci_scale=-3).
+If not specified, the matplotlib default sci scaling will be used.</p></li>
+<li><p><strong>centered</strong> – If True, the Panel will be centered around 0.
+Profile plots are usually centered, while budget plots are not.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="src.ContourPanel.ContourPanel.__module__">
+<code class="sig-name descname">__module__</code><em class="property"> = 'src.ContourPanel'</em><a class="headerlink" href="#src.ContourPanel.ContourPanel.__module__" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
 <dl class="py method">
 <dt id="src.ContourPanel.ContourPanel.plot">
 <code class="sig-name descname">plot</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">output_folder</span></em>, <em class="sig-param"><span class="n">casename</span></em>, <em class="sig-param"><span class="n">replace_images</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">no_legends</span><span class="o">=</span><span class="default_value">True</span></em>, <em class="sig-param"><span class="n">thin_lines</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">alphabetic_id</span><span class="o">=</span><span class="default_value">''</span></em>, <em class="sig-param"><span class="n">paired_plots</span><span class="o">=</span><span class="default_value">True</span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.ContourPanel.ContourPanel.plot" title="Permalink to this definition">¶</a></dt>
@@ -350,6 +497,178 @@ It is also responsible for performing the time-averaging calculation at load tim
 <dd class="field-even"><p>January 2019</p>
 </dd>
 </dl>
+<dl class="py method">
+<dt id="src.DataReader.DataReader.__averageData__">
+<code class="sig-name descname">__averageData__</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">var</span></em>, <em class="sig-param"><span class="n">idx_t0</span><span class="o">=</span><span class="default_value">0</span></em>, <em class="sig-param"><span class="n">idx_t1</span><span class="o">=</span><span class="default_value">- 1</span></em>, <em class="sig-param"><span class="n">idx_z0</span><span class="o">=</span><span class="default_value">0</span></em>, <em class="sig-param"><span class="n">idx_z1</span><span class="o">=</span><span class="default_value">- 1</span></em>, <em class="sig-param"><span class="n">avg_axis</span><span class="o">=</span><span class="default_value">0</span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.DataReader.DataReader.__averageData__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Averages 2d data with one time and one height dimension and returns the averaged data</p>
+<p>TODO: Change avg_axis to receive string instead of  int -&gt; ‘time’/’height’/…?</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>var</strong> – 2d data array with one time and one height dimension</p></li>
+<li><p><strong>idx_t0</strong> – Index corresponding to the beginning of the averaging interval</p></li>
+<li><p><strong>idx_t1</strong> – Index corresponding to the end of the averaging interval, this value is exclusive.
+If you want the dependent_data at this index to be included in averaging do your index + 1</p></li>
+<li><p><strong>idx_z0</strong> – Index corresponding to the lowest model height of the averaging interval</p></li>
+<li><p><strong>idx_z1</strong> – Index corresponding to the highest model height of the averaging interval</p></li>
+<li><p><strong>avg_axis</strong> – If 0, the data will be averaged over axis 0, the time axis;
+If 1, the data will be averaged over axis 1, the height axis</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>1d data, averaged over the interval [idx_t0:idx_t1] or [idx_z0:idx_z1],
+depending on the averaging axis</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="src.DataReader.DataReader.__del__">
+<code class="sig-name descname">__del__</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#src.DataReader.DataReader.__del__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Destructor for DataReader class.
+Calls the cleanup and cleanly closes out the object instance</p>
+<dl class="field-list simple">
+<dt class="field-odd">Author</dt>
+<dd class="field-odd"><p>Nicolas Strike</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="src.DataReader.DataReader.__dict__">
+<code class="sig-name descname">__dict__</code><em class="property"> = mappingproxy({'__module__': 'src.DataReader', '__doc__': '\n    This class is responsible for handling nc files.\n    Given nc files it reads them and returns NetCDF Dataset objects to python.\n    It is also responsible for performing the time-averaging calculation at load time.\n\n    :author: Nicolas Strike\n    :date: January 2019\n    ', '__init__': &lt;function DataReader.__init__&gt;, 'cleanup': &lt;function DataReader.cleanup&gt;, 'loadFolder': &lt;function DataReader.loadFolder&gt;, 'getVarData': &lt;function DataReader.getVarData&gt;, '__exit__': &lt;function DataReader.__exit__&gt;, '__del__': &lt;function DataReader.__del__&gt;, '__loadNcFile__': &lt;function DataReader.__loadNcFile__&gt;, '__averageData__': &lt;function DataReader.__averageData__&gt;, '__getUnits__': &lt;function DataReader.__getUnits__&gt;, 'getLongName': &lt;function DataReader.getLongName&gt;, 'getAxisTitle': &lt;function DataReader.getAxisTitle&gt;, '__getValuesFromNc__': &lt;function DataReader.__getValuesFromNc__&gt;, '__getStartEndIndex__': &lt;staticmethod object&gt;, 'getNcdfSourceModel': &lt;function DataReader.getNcdfSourceModel&gt;, '__remove_invalid_unit_chars__': &lt;function DataReader.__remove_invalid_unit_chars__&gt;, '__dict__': &lt;attribute '__dict__' of 'DataReader' objects&gt;, '__weakref__': &lt;attribute '__weakref__' of 'DataReader' objects&gt;})</em><a class="headerlink" href="#src.DataReader.DataReader.__dict__" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="src.DataReader.DataReader.__exit__">
+<code class="sig-name descname">__exit__</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">exc_type</span></em>, <em class="sig-param"><span class="n">exc_val</span></em>, <em class="sig-param"><span class="n">exc_tb</span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.DataReader.DataReader.__exit__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calls the cleanup and cleanly closes out the object instance</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>exc_type</strong> – </p></li>
+<li><p><strong>exc_val</strong> – </p></li>
+<li><p><strong>exc_tb</strong> – </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p></p>
+</dd>
+<dt class="field-odd">Author</dt>
+<dd class="field-odd"><p>Nicolas Strike</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="src.DataReader.DataReader.__getStartEndIndex__">
+<em class="property">static </em><code class="sig-name descname">__getStartEndIndex__</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">data</span></em>, <em class="sig-param"><span class="n">start_value</span></em>, <em class="sig-param"><span class="n">end_value</span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.DataReader.DataReader.__getStartEndIndex__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get indices for values from data array corresponding to start_value and end_value.
+This function is intended to be used to get the indices for array slicing.
+E.g. given a bottom and top altitude, return the indices of the values in the array
+corresponding to those altitudes.
+This function can be used for height and time data.
+The data array MUST be presorted and start_value &lt;= end_value for pyplotgen to work correctly!
+If neither are found, returns 0 and array size - 1.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>data</strong> – Array of numerical values. Must be presorted!</p></li>
+<li><p><strong>start_value</strong> – The first value to be graphed (may return indexes to values smaller than this)</p></li>
+<li><p><strong>end_value</strong> – The last value that needs to be graphed (may return indexes to values larger than this)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>(tuple) start_idx, end_idx which contains the starting and ending index representing the start and
+end time passed into the function</p>
+</dd>
+<dt class="field-odd">Author</dt>
+<dd class="field-odd"><p>Nicolas Strike</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="src.DataReader.DataReader.__getUnits__">
+<code class="sig-name descname">__getUnits__</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">datasets</span></em>, <em class="sig-param"><span class="n">varnames</span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.DataReader.DataReader.__getUnits__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Find netcdf variable in datasets matching any name in varnames and get its units attribute</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>datasets</strong> – List of datasets</p></li>
+<li><p><strong>varnames</strong> – List of variable names</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>String containing the physical units of the variable that was found</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="src.DataReader.DataReader.__getValuesFromNc__">
+<code class="sig-name descname">__getValuesFromNc__</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">ncdf_data</span></em>, <em class="sig-param"><span class="n">varname</span></em>, <em class="sig-param"><span class="n">conversion</span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.DataReader.DataReader.__getValuesFromNc__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get dependent_data values out of a netcdf object, returning them as an array</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>ncdf_data</strong> – Netcdf file object</p></li>
+<li><p><strong>varname</strong> – Variable name string</p></li>
+<li><p><strong>conversion</strong> – Conversion factor</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Data array of the specified variable, scaled by conversion factor</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="src.DataReader.DataReader.__init__">
+<code class="sig-name descname">__init__</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#src.DataReader.DataReader.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>This is the object constructor. Initializes class variables and dependent_data
+:author: Nicolas Strike</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="src.DataReader.DataReader.__loadNcFile__">
+<code class="sig-name descname">__loadNcFile__</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">filename</span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.DataReader.DataReader.__loadNcFile__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Load the given NetCDF file</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>filename</strong> – The netcdf file to be loaded</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>A netCDF4 Dataset object containing the data from the given file</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="src.DataReader.DataReader.__module__">
+<code class="sig-name descname">__module__</code><em class="property"> = 'src.DataReader'</em><a class="headerlink" href="#src.DataReader.DataReader.__module__" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="src.DataReader.DataReader.__remove_invalid_unit_chars__">
+<code class="sig-name descname">__remove_invalid_unit_chars__</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">units</span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.DataReader.DataReader.__remove_invalid_unit_chars__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Removes characters from a string that are not valid for mathtext</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>units</strong> – String to be used as unit label in plot</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Cleaned string in which any invalid character has been removed or replaced</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="src.DataReader.DataReader.__weakref__">
+<code class="sig-name descname">__weakref__</code><a class="headerlink" href="#src.DataReader.DataReader.__weakref__" title="Permalink to this definition">¶</a></dt>
+<dd><p>list of weak references to the object (if defined)</p>
+</dd></dl>
+
 <dl class="py method">
 <dt id="src.DataReader.DataReader.cleanup">
 <code class="sig-name descname">cleanup</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#src.DataReader.DataReader.cleanup" title="Permalink to this definition">¶</a></dt>
@@ -466,6 +785,85 @@ For example: to access the zm dependent_data for gabls3_rad, simply call clubb_d
 <em class="property">class </em><code class="sig-prename descclassname">src.DataReader.</code><code class="sig-name descname">NetCdfVariable</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">names</span></em>, <em class="sig-param"><span class="n">ncdf_data</span></em>, <em class="sig-param"><span class="n">independent_var_names</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">conversion_factor</span><span class="o">=</span><span class="default_value">1</span></em>, <em class="sig-param"><span class="n">start_time</span><span class="o">=</span><span class="default_value">0</span></em>, <em class="sig-param"><span class="n">end_time</span><span class="o">=</span><span class="default_value">- 1</span></em>, <em class="sig-param"><span class="n">min_height</span><span class="o">=</span><span class="default_value">0</span></em>, <em class="sig-param"><span class="n">max_height</span><span class="o">=</span><span class="default_value">- 1</span></em>, <em class="sig-param"><span class="n">avg_axis</span><span class="o">=</span><span class="default_value">0</span></em>, <em class="sig-param"><span class="n">model_name</span><span class="o">=</span><span class="default_value">'unknown'</span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.DataReader.NetCdfVariable" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 <p>Class used for conveniently storing the information about a given netcdf variable</p>
+<dl class="py attribute">
+<dt id="src.DataReader.NetCdfVariable.__dict__">
+<code class="sig-name descname">__dict__</code><em class="property"> = mappingproxy({'__module__': 'src.DataReader', '__doc__': '\n    Class used for conveniently storing the information about a given netcdf variable\n    ', '__init__': &lt;function NetCdfVariable.__init__&gt;, 'trimArray': &lt;function NetCdfVariable.trimArray&gt;, 'filterDatasets': &lt;function NetCdfVariable.filterDatasets&gt;, '__len__': &lt;function NetCdfVariable.__len__&gt;, '__findNameAndDatasetMatch__': &lt;function NetCdfVariable.__findNameAndDatasetMatch__&gt;, '__getDependentAndIndependentData__': &lt;function NetCdfVariable.__getDependentAndIndependentData__&gt;, '__dict__': &lt;attribute '__dict__' of 'NetCdfVariable' objects&gt;, '__weakref__': &lt;attribute '__weakref__' of 'NetCdfVariable' objects&gt;})</em><a class="headerlink" href="#src.DataReader.NetCdfVariable.__dict__" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="src.DataReader.NetCdfVariable.__findNameAndDatasetMatch__">
+<code class="sig-name descname">__findNameAndDatasetMatch__</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">varnames</span></em>, <em class="sig-param"><span class="n">datasets</span></em>, <em class="sig-param"><span class="n">model_name</span><span class="o">=</span><span class="default_value">'not given'</span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.DataReader.NetCdfVariable.__findNameAndDatasetMatch__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Searches datasets for the variable names in varnames. Returns the first match.
+If varnames contains an element that’s not a string, it gets skipped over.
+:param varnames: List of varname strings (non strings are skipped)
+:param datasets: List of NC Datasets
+:param model_name: String of model name. E.g. clubb, hoc, r408, sam, cam, wrf, e3sm</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>A tuple containing either (name_found, dataset_with_name) or (None, None) depending on if a match is</p>
+</dd>
+</dl>
+<p>found.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="src.DataReader.NetCdfVariable.__getDependentAndIndependentData__">
+<code class="sig-name descname">__getDependentAndIndependentData__</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">all_varnames</span></em>, <em class="sig-param"><span class="n">all_datasets</span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.DataReader.NetCdfVariable.__getDependentAndIndependentData__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get data from netcdf file</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>all_varnames</strong> – A list of all the variable’s names.</p></li>
+<li><p><strong>all_datasets</strong> – A list of all datasets that might contain this variable</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>dependent and independent data for variable connected to variable names passed in all_varnames</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="src.DataReader.NetCdfVariable.__init__">
+<code class="sig-name descname">__init__</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">names</span></em>, <em class="sig-param"><span class="n">ncdf_data</span></em>, <em class="sig-param"><span class="n">independent_var_names</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">conversion_factor</span><span class="o">=</span><span class="default_value">1</span></em>, <em class="sig-param"><span class="n">start_time</span><span class="o">=</span><span class="default_value">0</span></em>, <em class="sig-param"><span class="n">end_time</span><span class="o">=</span><span class="default_value">- 1</span></em>, <em class="sig-param"><span class="n">min_height</span><span class="o">=</span><span class="default_value">0</span></em>, <em class="sig-param"><span class="n">max_height</span><span class="o">=</span><span class="default_value">- 1</span></em>, <em class="sig-param"><span class="n">avg_axis</span><span class="o">=</span><span class="default_value">0</span></em>, <em class="sig-param"><span class="n">model_name</span><span class="o">=</span><span class="default_value">'unknown'</span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.DataReader.NetCdfVariable.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Initialize a new instance of this class and return it.</p>
+<p>TODO: Test with multidimensional variables!</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>names</strong> – The name of the variable as defined in the ncdf_data</p></li>
+<li><p><strong>ncdf_data</strong> – Accepts either a Dataset object to pull dependent_data from,
+or a dict of Datasets which will automatically be searched for the variable</p></li>
+<li><p><strong>independent_var_names</strong> – List of or single name of independent variable to be used for this object
+TODO: Explain structure for multidimensional data!s</p></li>
+<li><p><strong>conversion_factor</strong> – A multiplication factor applied to every value in the dataset. Defaults to 1</p></li>
+<li><p><strong>start_time</strong> – (number) The time value to begin the averaging period, e.g. 181 minutes. Defaults to 0.</p></li>
+<li><p><strong>end_time</strong> – (number) The time value to stop the averaging period, e.g. 240 minutes. Defaults to -1.</p></li>
+<li><p><strong>min_height</strong> – (number) The minimum elevation to display on the panel. Defaults to 0</p></li>
+<li><p><strong>max_height</strong> – (number) The maximum elevation to display on the panel. Defaults to -1 (all values)</p></li>
+<li><p><strong>avg_axis</strong> – The axis to average dependent_data over. 0 for time-avg, 1 for height avg, 2 for no averaging</p></li>
+<li><p><strong>model_name</strong> – The string name of the model being plotted. E.g. clubb, hoc, r408, sam, cam, wrf, e3sm</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="src.DataReader.NetCdfVariable.__len__">
+<code class="sig-name descname">__len__</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#src.DataReader.NetCdfVariable.__len__" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt id="src.DataReader.NetCdfVariable.__module__">
+<code class="sig-name descname">__module__</code><em class="property"> = 'src.DataReader'</em><a class="headerlink" href="#src.DataReader.NetCdfVariable.__module__" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt id="src.DataReader.NetCdfVariable.__weakref__">
+<code class="sig-name descname">__weakref__</code><a class="headerlink" href="#src.DataReader.NetCdfVariable.__weakref__" title="Permalink to this definition">¶</a></dt>
+<dd><p>list of weak references to the object (if defined)</p>
+</dd></dl>
+
 <dl class="py method">
 <dt id="src.DataReader.NetCdfVariable.filterDatasets">
 <code class="sig-name descname">filterDatasets</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#src.DataReader.NetCdfVariable.filterDatasets" title="Permalink to this definition">¶</a></dt>
@@ -523,6 +921,38 @@ the NetCdfVariable’s dependent_data. Must be specified if called on a multidim
 Data included is anything necessary to graph a line using pyplot, including the
 numerical values, line format style, and a label for the plot. In the future we
 would like to seperate the dependent_data from the format.</p>
+<dl class="py attribute">
+<dt id="src.Line.Line.__dict__">
+<code class="sig-name descname">__dict__</code><em class="property"> = mappingproxy({'__module__': 'src.Line', '__doc__': '\n    This class holds information commonly passed around when using plot dependent_data.\n    Data included is anything necessary to graph a line using pyplot, including the\n    numerical values, line format style, and a label for the plot. In the future we\n    would like to seperate the dependent_data from the format.\n    ', '__init__': &lt;function Line.__init__&gt;, '__dict__': &lt;attribute '__dict__' of 'Line' objects&gt;, '__weakref__': &lt;attribute '__weakref__' of 'Line' objects&gt;})</em><a class="headerlink" href="#src.Line.Line.__dict__" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="src.Line.Line.__init__">
+<code class="sig-name descname">__init__</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">x_data</span></em>, <em class="sig-param"><span class="n">y_data</span></em>, <em class="sig-param"><span class="n">line_format</span><span class="o">=</span><span class="default_value">''</span></em>, <em class="sig-param"><span class="n">label</span><span class="o">=</span><span class="default_value">'Unlabeled plot'</span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.Line.Line.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a new Line object</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>x_data</strong> – list of values to plot along x axis, must have same length as y</p></li>
+<li><p><strong>y_data</strong> – list of values to plot along y axis, must have same length as x</p></li>
+<li><p><strong>line_format</strong> – A str containing the format for the line plot. See pyplot docs for more info.</p></li>
+<li><p><strong>label</strong> – The name of the line (e.g. ‘current clubb’) which appears in the plot legend</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="src.Line.Line.__module__">
+<code class="sig-name descname">__module__</code><em class="property"> = 'src.Line'</em><a class="headerlink" href="#src.Line.Line.__module__" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt id="src.Line.Line.__weakref__">
+<code class="sig-name descname">__weakref__</code><a class="headerlink" href="#src.Line.Line.__weakref__" title="Permalink to this definition">¶</a></dt>
+<dd><p>list of weak references to the object (if defined)</p>
+</dd></dl>
+
 </dd></dl>
 
 </div>
@@ -572,6 +1002,86 @@ specific to it, such as a title, axis labels, and lines. Each panel can be plott
 <code class="sig-name descname">TYPE_TIMESERIES</code><em class="property"> = 'timeseries'</em><a class="headerlink" href="#src.Panel.Panel.TYPE_TIMESERIES" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
+<dl class="py attribute">
+<dt id="src.Panel.Panel.__dict__">
+<code class="sig-name descname">__dict__</code><em class="property"> = mappingproxy({'__module__': 'src.Panel', '__doc__': '\n    Represents an individual panel/graph. Each panel contains a number of details\n    specific to it, such as a title, axis labels, and lines. Each panel can be plotted/saved to a file.\n    ', 'TYPE_PROFILE': 'profile', 'TYPE_BUDGET': 'budget', 'TYPE_TIMESERIES': 'timeseries', 'TYPE_TIMEHEIGHT': 'timeheight', 'TYPE_ANIMATION': 'animation', 'EXTENSION': '.png', '__init__': &lt;function Panel.__init__&gt;, '__init_axis_titles__': &lt;function Panel.__init_axis_titles__&gt;, 'plot': &lt;function Panel.plot&gt;, '__removeInvalidFilenameChars__': &lt;function Panel.__removeInvalidFilenameChars__&gt;, '__plotContourf__': &lt;function Panel.__plotContourf__&gt;, '__dict__': &lt;attribute '__dict__' of 'Panel' objects&gt;, '__weakref__': &lt;attribute '__weakref__' of 'Panel' objects&gt;})</em><a class="headerlink" href="#src.Panel.Panel.__dict__" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="src.Panel.Panel.__init__">
+<code class="sig-name descname">__init__</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">plots</span></em>, <em class="sig-param"><span class="n">panel_type</span><span class="o">=</span><span class="default_value">'profile'</span></em>, <em class="sig-param"><span class="n">title</span><span class="o">=</span><span class="default_value">'Unnamed panel'</span></em>, <em class="sig-param"><span class="n">dependent_title</span><span class="o">=</span><span class="default_value">'dependent variable'</span></em>, <em class="sig-param"><span class="n">sci_scale</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">centered</span><span class="o">=</span><span class="default_value">False</span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.Panel.Panel.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates a new panel</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>plots</strong> – list of Line objects to plot onto the panel</p></li>
+<li><p><strong>panel_type</strong> – Type of panel being plotted (i.e. budget, profile, timeseries)</p></li>
+<li><p><strong>title</strong> – The title of this plot (e.g. ‘Liquid water potential tempature’)</p></li>
+<li><p><strong>dependent_title</strong> – Label of the dependent axis (labels the x-axis for all panel types except timeseries).</p></li>
+<li><p><strong>sci_scale</strong> – The scale at which to display the x axis (e.g. to scale to 1e-3 set sci_scale=-3).
+If not specified, the matplotlib default sci scaling will be used.</p></li>
+<li><p><strong>centered</strong> – If True, the Panel will be centered around 0.
+Profile plots are usually centered, while budget plots are not.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="src.Panel.Panel.__init_axis_titles__">
+<code class="sig-name descname">__init_axis_titles__</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#src.Panel.Panel.__init_axis_titles__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sets the axis titles for this Panel depending on self.panel_type</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="src.Panel.Panel.__module__">
+<code class="sig-name descname">__module__</code><em class="property"> = 'src.Panel'</em><a class="headerlink" href="#src.Panel.Panel.__module__" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="src.Panel.Panel.__plotContourf__">
+<code class="sig-name descname">__plotContourf__</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">output_folder</span></em>, <em class="sig-param"><span class="n">casename</span></em>, <em class="sig-param"><span class="n">replace_images</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">alphabetic_id</span><span class="o">=</span><span class="default_value">''</span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.Panel.Panel.__plotContourf__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate a single contourf plot from the given data</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>output_folder</strong> – String containing path to folder in which the image files should be created</p></li>
+<li><p><strong>casename</strong> – The name of the case that is plotted in this panel</p></li>
+<li><p><strong>replace_images</strong> – Switch to tell pyplotgen if existing files should be overwritten</p></li>
+<li><p><strong>alphabetic_id</strong> – A string printed into the Panel at coordinates (.9,.9) as an identifier.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="src.Panel.Panel.__removeInvalidFilenameChars__">
+<code class="sig-name descname">__removeInvalidFilenameChars__</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">filename</span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.Panel.Panel.__removeInvalidFilenameChars__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Removes characters from a string that are not valid for a filename</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>filename</strong> – Filename string to have characters removed</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>A character stripped version of the filename</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="src.Panel.Panel.__weakref__">
+<code class="sig-name descname">__weakref__</code><a class="headerlink" href="#src.Panel.Panel.__weakref__" title="Permalink to this definition">¶</a></dt>
+<dd><p>list of weak references to the object (if defined)</p>
+</dd></dl>
+
 <dl class="py method">
 <dt id="src.Panel.Panel.plot">
 <code class="sig-name descname">plot</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">output_folder</span></em>, <em class="sig-param"><span class="n">casename</span></em>, <em class="sig-param"><span class="n">replace_images</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">no_legends</span><span class="o">=</span><span class="default_value">True</span></em>, <em class="sig-param"><span class="n">thin_lines</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">alphabetic_id</span><span class="o">=</span><span class="default_value">''</span></em>, <em class="sig-param"><span class="n">paired_plots</span><span class="o">=</span><span class="default_value">True</span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.Panel.Panel.plot" title="Permalink to this definition">¶</a></dt>
@@ -619,56 +1129,331 @@ should be created as a subclass of this one. Properties and
 methods common to each PanelGroup can be found here.</p>
 <p>A VariableGroup child defines Lines, Panels, etc., and is responsible for
 calculating any ‘calculated’ variables from netcdf</p>
+<dl class="py attribute">
+<dt id="src.VariableGroup.VariableGroup.__dict__">
+<code class="sig-name descname">__dict__</code><em class="property"> = mappingproxy({'__module__': 'src.VariableGroup', '__doc__': &quot;\n    This is the parent VariableGroup class. All other panel groups\n    should be created as a subclass of this one. Properties and\n    methods common to each PanelGroup can be found here.\n\n    A VariableGroup child defines Lines, Panels, etc., and is responsible for\n    calculating any 'calculated' variables from netcdf\n    &quot;, '__init__': &lt;function VariableGroup.__init__&gt;, 'addVariable': &lt;function VariableGroup.addVariable&gt;, '__getVarLinesForModel__': &lt;function VariableGroup.__getVarLinesForModel__&gt;, 'getTextDefiningDataset': &lt;function VariableGroup.getTextDefiningDataset&gt;, 'generatePanels': &lt;function VariableGroup.generatePanels&gt;, '__getTitles__': &lt;function VariableGroup.__getTitles__&gt;, '__varnamesInDataset__': &lt;function VariableGroup.__varnamesInDataset__&gt;, '__getRelativeVarName__': &lt;function VariableGroup.__getRelativeVarName__&gt;, '__getConversionFactors__': &lt;function VariableGroup.__getConversionFactors__&gt;, '__getVarLines__': &lt;function VariableGroup.__getVarLines__&gt;, '__getProfileLine__': &lt;function VariableGroup.__getProfileLine__&gt;, '__getTimeseriesLine__': &lt;function VariableGroup.__getTimeseriesLine__&gt;, '__getBudgetLines__': &lt;function VariableGroup.__getBudgetLines__&gt;, '__getTimeHeightContours__': &lt;function VariableGroup.__getTimeHeightContours__&gt;, 'getVarForCalculations': &lt;function VariableGroup.getVarForCalculations&gt;, 'isSurfaceData': &lt;function VariableGroup.isSurfaceData&gt;, 'pickNonZeroOutput': &lt;function VariableGroup.pickNonZeroOutput&gt;, '__processLinesParameter__': &lt;function VariableGroup.__processLinesParameter__&gt;, '__dict__': &lt;attribute '__dict__' of 'VariableGroup' objects&gt;, '__weakref__': &lt;attribute '__weakref__' of 'VariableGroup' objects&gt;})</em><a class="headerlink" href="#src.VariableGroup.VariableGroup.__dict__" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="src.VariableGroup.VariableGroup.__getBudgetLines__">
+<code class="sig-name descname">__getBudgetLines__</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">lines</span></em>, <em class="sig-param"><span class="n">dataset</span></em>, <em class="sig-param"><span class="n">model_name</span><span class="o">=</span><span class="default_value">'unknown'</span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.VariableGroup.VariableGroup.__getBudgetLines__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a list of Line objects for a budget plot for each variable defined in lines</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>lines</strong> – A list of line definitions containing the variable names, legend labels etc.
+See the addVariable documentation above for a complete description</p></li>
+<li><p><strong>dataset</strong> – NetCdf4 Dataset object containing the model output being plotted</p></li>
+<li><p><strong>model_name</strong> – A string name of the model being plotted. I.e. clubb, hoc, r408, sam, cam, wrf, e3sm</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>A list of Line objects for a budget plot derived from lines</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="src.VariableGroup.VariableGroup.__getConversionFactors__">
+<code class="sig-name descname">__getConversionFactors__</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">variable_def_dict</span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.VariableGroup.VariableGroup.__getConversionFactors__" title="Permalink to this definition">¶</a></dt>
+<dd><p>This is a helper method that loads parameters from the variables
+definition and assigns them to python variables accordingly.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>variable_def_dict</strong> – Definition of the variable being used. More info found in the addVariable() docstring</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>A dict containing the various conversion factors for the inputted variable</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="src.VariableGroup.VariableGroup.__getProfileLine__">
+<code class="sig-name descname">__getProfileLine__</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">varnames</span></em>, <em class="sig-param"><span class="n">dataset</span></em>, <em class="sig-param"><span class="n">label</span></em>, <em class="sig-param"><span class="n">line_format</span></em>, <em class="sig-param"><span class="n">conversion_factor</span></em>, <em class="sig-param"><span class="n">avg_axis</span></em>, <em class="sig-param"><span class="n">lines</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">model_name</span><span class="o">=</span><span class="default_value">'unknown'</span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.VariableGroup.VariableGroup.__getProfileLine__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Assumes variable can be plotted as a profile and returns a Line object
+representing the given variable for a profile plot. Profile plots are plots that show Height vs Varname</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>varnames</strong> – A list of variable names</p></li>
+<li><p><strong>dataset</strong> – NetCdf4 Dataset object containing the model output being plotted</p></li>
+<li><p><strong>label</strong> – This is the name that will be shown on the legend for this line</p></li>
+<li><p><strong>line_format</strong> – A string representing how this line should be formatted using pyplot formatting.
+Recommended value: emtpy string “”</p></li>
+<li><p><strong>conversion_factor</strong> – This is a numerical value that will be multiplied element-wise to the variable.
+It’s useful for doing basic model to model conversions, e.g. SAM -&gt; CLUBB.</p></li>
+<li><p><strong>avg_axis</strong> – Values will be averaged along this axis. This is basically only used for time-averaging
+profile plots.</p></li>
+<li><p><strong>lines</strong> – A lines parameter definition as found in a VariableGroup___.py. See addVariable() for more details.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Line object representing the given variable for a profile plot</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="src.VariableGroup.VariableGroup.__getRelativeVarName__">
+<code class="sig-name descname">__getRelativeVarName__</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">var_names</span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.VariableGroup.VariableGroup.__getRelativeVarName__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the varname for a variable relative to the models that were being plotted</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>var_names</strong> – The dict of various names for the given variable. More info found in the addVariable() docstring</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>A relevant name of the given variable</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="src.VariableGroup.VariableGroup.__getTimeHeightContours__">
+<code class="sig-name descname">__getTimeHeightContours__</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">varname</span></em>, <em class="sig-param"><span class="n">dataset</span></em>, <em class="sig-param"><span class="n">label</span></em>, <em class="sig-param"><span class="n">conversion_factor</span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.VariableGroup.VariableGroup.__getTimeHeightContours__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a Contour object for a time-height plot,
+plotting a 2-dimensional contour plot with time as x axis and height as y axis.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>varname</strong> – name of the variable being plotted</p></li>
+<li><p><strong>dataset</strong> – dataset containing the variable</p></li>
+<li><p><strong>label</strong> – The legend label for this variable</p></li>
+<li><p><strong>conversion_factor</strong> – A conversion factor to apply to the variable (usually 1.0)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>A Contour object that can be used to create a time-height plot.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="src.VariableGroup.VariableGroup.__getTimeseriesLine__">
+<code class="sig-name descname">__getTimeseriesLine__</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">varname</span></em>, <em class="sig-param"><span class="n">dataset</span></em>, <em class="sig-param"><span class="n">end_time</span></em>, <em class="sig-param"><span class="n">conversion_factor</span></em>, <em class="sig-param"><span class="n">label</span></em>, <em class="sig-param"><span class="n">line_format</span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.VariableGroup.VariableGroup.__getTimeseriesLine__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a Line object for a timeseries plot of the variable varname in dataset.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>varname</strong> – The name of the variable as a string</p></li>
+<li><p><strong>dataset</strong> – NetCdf4 Dataset object containing the model output being plotted</p></li>
+<li><p><strong>end_time</strong> – This is the last time value to plot. Timeseries plots always start at 0.</p></li>
+<li><p><strong>conversion_factor</strong> – This is a numerical value that will be multiplied element-wise to the variable.
+It’s useful for doing basic model to model conversions, e.g. SAM -&gt; CLUBB.</p></li>
+<li><p><strong>label</strong> – This is the name that will be shown on the legend for this line</p></li>
+<li><p><strong>line_format</strong> – A string representing how this line should be formatted using pyplot formatting.
+Recommended value: emtpy string “”</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Line object representing the given variable for a timeseries plot</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="src.VariableGroup.VariableGroup.__getTitles__">
+<code class="sig-name descname">__getTitles__</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">variable_def_dict</span></em>, <em class="sig-param"><span class="n">plotted_models_varname</span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.VariableGroup.VariableGroup.__getTitles__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates and returns figure and axis titles of the panel based on panel type and
+panel definition in variable_def_dict</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>variable_def_dict</strong> – Definition of the variable being used</p></li>
+<li><p><strong>plotted_models_varname</strong> – String containing the name of the plotted variable</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>title, axis_title</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="src.VariableGroup.VariableGroup.__getVarLinesForModel__">
+<code class="sig-name descname">__getVarLinesForModel__</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">model_name</span></em>, <em class="sig-param"><span class="n">variable_def_dict</span></em>, <em class="sig-param"><span class="n">dataset</span></em>, <em class="sig-param"><span class="n">label</span><span class="o">=</span><span class="default_value">'no label found'</span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.VariableGroup.VariableGroup.__getVarLinesForModel__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generates and returns lines for plotting on a Panel for a single model (e.g. sam, clubb, e3sm).
+This function can produce lines for either benchmarks or user-inputted folders.
+To get lines for a benchmark, pass in the 3 required parameters. To plot an clubb folder, the label
+parameter must also be specified, as this is the label that will appear on the panel’s legend. Benchmarks
+do not need the label parameter because their labels are specified in the Style_definitions.py file.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>model_name</strong> – The name of the model to be plotted.
+This needs to be the same as the name used to specify
+the model throughout the various dictionary keys in pyplotgen.
+E.g. sam output is specified with ‘sam’, where sam calclulation functions are denoted by ‘sam_calc’
+and Style_definitions.py’ uses the key ‘sam’ to refer to sam configurations such as BENCHMARK_LABELS[‘sam’]</p></li>
+<li><p><strong>variable_def_dict</strong> – This is the variable defining dict, e.g. from VariableGroupBase.py</p></li>
+<li><p><strong>dataset</strong> – Either a NetCDF Dataset object or a dict of the format {‘some key’, Dataset}</p></li>
+<li><p><strong>label</strong> – The label to be used on the panel’s legend.
+This is a required field when getting lines for a user-inputted folder,
+but not a required field for processing benchmark output.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>An array of lines to be added to a panel’s plots (via the extend() function)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="src.VariableGroup.VariableGroup.__getVarLines__">
+<code class="sig-name descname">__getVarLines__</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">var_names</span></em>, <em class="sig-param"><span class="n">ncdf_datasets</span></em>, <em class="sig-param"><span class="n">label</span><span class="o">=</span><span class="default_value">''</span></em>, <em class="sig-param"><span class="n">line_format</span><span class="o">=</span><span class="default_value">''</span></em>, <em class="sig-param"><span class="n">avg_axis</span><span class="o">=</span><span class="default_value">0</span></em>, <em class="sig-param"><span class="n">override_panel_type</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">lines</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">conversion_factor</span><span class="o">=</span><span class="default_value">1</span></em>, <em class="sig-param"><span class="n">model_name</span><span class="o">=</span><span class="default_value">'unknown'</span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.VariableGroup.VariableGroup.__getVarLines__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get a list of Line objects for a specific clubb variable. If les_dataset is specified it will also
+attempt to generate Lines for the SAM equivalent variables, using the name conversions found in
+VarnameConversions.py. If a SAM variable needs to be calculated (uses an equation) then it will have
+to be created within that variable group’s dataset and not here.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>var_names</strong> – A string or list of strings. More info found in the addVariable() docstring
+Each string is the name of the variable to be plotted, case sensitive</p></li>
+<li><p><strong>ncdf_datasets</strong> – A list of Dataset objects containing clubb or sam netcdf dependent_data</p></li>
+<li><p><strong>label</strong> – Label to give the base-plotAll on the legend. This is normally
+Style_definitions.CLUBB_LABEL, but not provided as default to help avoid debugging confusion.</p></li>
+<li><p><strong>line_format</strong> – Line formatting string used by matplotlib’s PyPlot</p></li>
+<li><p><strong>avg_axis</strong> – Axis over which to average values. 0 - time average, 1 - height average</p></li>
+<li><p><strong>override_panel_type</strong> – Override the VariableGroup’s default panel type</p></li>
+<li><p><strong>lines</strong> – Some plots require many lines to be plotted, such as budget plots. The lines parameter allows
+someone to write a dictionary containing a description of each line that needs to be plotted.
+For information on how to format the lines parameter,
+please see the config/VariableGroupBaseBudgets.py file and docs.</p></li>
+<li><p><strong>conversion_factor</strong> – A multiplying factor used to scale clubb output. Defaults to 1.</p></li>
+<li><p><strong>model_name</strong> – The name of the model being plotted.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>A list of Line objects containing model dependent_data from whatever models were passed in.
+Returns None if requested variable is not found.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="src.VariableGroup.VariableGroup.__init__">
+<code class="sig-name descname">__init__</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">case</span></em>, <em class="sig-param"><span class="n">clubb_datasets</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">les_dataset</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">coamps_dataset</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">r408_dataset</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">hoc_dataset</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">cam_datasets</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">e3sm_datasets</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">sam_datasets</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">wrf_datasets</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.VariableGroup.VariableGroup.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Initialize a VariableGroup object with the passed parameters</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>case</strong> – An instance of a CaseGallerySetup object</p></li>
+<li><p><strong>clubb_datasets</strong> – A dictionary of or a single NetCDF4 Dataset object
+containing the dependent_data to be plotted</p></li>
+<li><p><strong>les_dataset</strong> – NetCDF4 Dataset object containing sam ouput</p></li>
+<li><p><strong>coamps_dataset</strong> – NetCDF4 Dataset object containing coamps ouput</p></li>
+<li><p><strong>r408_dataset</strong> – NetCDF4 Dataset object containing clubb r408 (‘chris golaz’) output</p></li>
+<li><p><strong>hoc_dataset</strong> – NetCDF4 Dataset object containing hoc output</p></li>
+<li><p><strong>cam_datasets</strong> – A dictionary of or a single NetCDF4 Dataset object containing cam output</p></li>
+<li><p><strong>e3sm_datasets</strong> – A dictionary of or a single NetCDF4 Dataset object containing e3sm output</p></li>
+<li><p><strong>sam_datasets</strong> – A dictionary of or a single NetCDF4 Dataset object containing sam output</p></li>
+<li><p><strong>wrf_datasets</strong> – A dictionary of or a single NetCDF4 Dataset object containing wrf output</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="src.VariableGroup.VariableGroup.__module__">
+<code class="sig-name descname">__module__</code><em class="property"> = 'src.VariableGroup'</em><a class="headerlink" href="#src.VariableGroup.VariableGroup.__module__" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt id="src.VariableGroup.VariableGroup.__processLinesParameter__">
+<code class="sig-name descname">__processLinesParameter__</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">lines</span></em>, <em class="sig-param"><span class="n">dataset</span></em>, <em class="sig-param"><span class="n">label_suffix</span><span class="o">=</span><span class="default_value">''</span></em>, <em class="sig-param"><span class="n">line_format</span><span class="o">=</span><span class="default_value">''</span></em>, <em class="sig-param"><span class="n">model_name</span><span class="o">=</span><span class="default_value">'unknown'</span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.VariableGroup.VariableGroup.__processLinesParameter__" title="Permalink to this definition">¶</a></dt>
+<dd><p>This method processes a ‘lines’ parameter from a variable definition and translates
+it into a list of Line objects for plotting.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>lines</strong> – a lines definition. See VariableGroupBaseBudgets.py for examples</p></li>
+<li><p><strong>dataset</strong> – A netcdf Dataset object or a dict of datasets</p></li>
+<li><p><strong>label_suffix</strong> – String. Optional suffix to add to the end of legend label.</p></li>
+<li><p><strong>line_format</strong> – matplotlib line formating string. A blank “” string results in auto formatting</p></li>
+<li><p><strong>model_name</strong> – String name of the model. I.e.  clubb, hoc, r408, sam, cam, wrf, e3sm</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>list of Line objects for plotting</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="src.VariableGroup.VariableGroup.__varnamesInDataset__">
+<code class="sig-name descname">__varnamesInDataset__</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">varnames</span></em>, <em class="sig-param"><span class="n">datasets</span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.VariableGroup.VariableGroup.__varnamesInDataset__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns True if the dataset contains a variable with one of the given varnames, False otherwise</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>varnames</strong> – A list of possible variable names</p></li>
+<li><p><strong>datasets</strong> – Either the dataset being investigated (NetCDF Dataset object) or
+a dict of datasets to be compared</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>True if a name is found, False otherwise</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="src.VariableGroup.VariableGroup.__weakref__">
+<code class="sig-name descname">__weakref__</code><a class="headerlink" href="#src.VariableGroup.VariableGroup.__weakref__" title="Permalink to this definition">¶</a></dt>
+<dd><p>list of weak references to the object (if defined)</p>
+</dd></dl>
+
 <dl class="py method">
 <dt id="src.VariableGroup.VariableGroup.addVariable">
 <code class="sig-name descname">addVariable</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">variable_def_dict</span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.VariableGroup.VariableGroup.addVariable" title="Permalink to this definition">¶</a></dt>
 <dd><p>Given basic details about a variable, this
 creates lines/panels for the variable and then adds that
 variable to the list of all variables for this VariableGroup</p>
+<p><strong>Valid dict keys/options include:</strong></p>
+<ul class="simple">
+<li><p><em>var_names</em>: A list of names various models refer to this variable as. E.g. [‘wprtp’, ‘WPRTP’, ‘wpqtp’]. This
+parameter can also take in references to calc functions. Names/functions are prioritized left -&gt; right.</p></li>
+<li><p><em>[model name]_conv_factor</em>: (optional) Numeric value to scale a model’s variable by. E.g. 1/1000, or 100
+Valid models are: clubb, hoc, r408, sam, cam, wrf, e3sm. E.g. “clubb_conv_factor”</p></li>
+<li><p><em>type</em>: (optional) Override the default type ‘profile’ with either ‘budget’ or ‘timeseries’</p></li>
+<li><p><em>title</em>: (optional) Override the default panel title, or provide one if it’s not specified in the netcdf file.</p></li>
+<li><p><em>sci_scale</em>: (optional) A numerical power of ten to scale the panel axis to. E.g. a value of “4” results in the
+axis being scaled to x 1e4</p></li>
+<li><p><em>axis_title</em>: (optional) Override the default dependent axis title, or provide one if it’s not
+specified in the netcdf file.</p></li>
+<li><p><em>lines</em>: (optional) Defines lines to plot for budget cases. Passed separately because
+it’s a lot of text. The lines parameter currently does not support defining model-specific names/functions
+This is given in the form of a list of lines, here’s an example:</p></li>
+</ul>
+<div class="highlight-python notranslate"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre> 1
+ 2
+ 3
+ 4
+ 5
+ 6
+ 7
+ 8
+ 9
+10</pre></div></td><td class="code"><div class="highlight"><pre><span></span><span class="n">thlm_budget_lines</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="p">{</span><span class="s1">&#39;var_names&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;thlm_bt&#39;</span><span class="p">],</span> <span class="s1">&#39;legend_label&#39;</span><span class="p">:</span> <span class="s1">&#39;thlm_bt&#39;</span><span class="p">},</span>
+    <span class="p">{</span><span class="s1">&#39;var_names&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;thlm_ma&#39;</span><span class="p">],</span> <span class="s1">&#39;legend_label&#39;</span><span class="p">:</span> <span class="s1">&#39;thlm_ma&#39;</span><span class="p">},</span>
+    <span class="p">{</span><span class="s1">&#39;var_names&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;thlm_ta&#39;</span><span class="p">],</span> <span class="s1">&#39;legend_label&#39;</span><span class="p">:</span> <span class="s1">&#39;thlm_ta&#39;</span><span class="p">},</span>
+    <span class="p">{</span><span class="s1">&#39;var_names&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;thlm_mc&#39;</span><span class="p">],</span> <span class="s1">&#39;legend_label&#39;</span><span class="p">:</span> <span class="s1">&#39;thlm_mc&#39;</span><span class="p">},</span>
+    <span class="p">{</span><span class="s1">&#39;var_names&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;thlm_clipping&#39;</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">getThlmClipping</span><span class="p">],</span> <span class="s1">&#39;legend_label&#39;</span><span class="p">:</span> <span class="s1">&#39;thlm_clipping&#39;</span><span class="p">},</span>
+    <span class="p">{</span><span class="s1">&#39;var_names&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;radht&#39;</span><span class="p">],</span> <span class="s1">&#39;legend_label&#39;</span><span class="p">:</span> <span class="s1">&#39;radht&#39;</span><span class="p">},</span>
+    <span class="p">{</span><span class="s1">&#39;var_names&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;ls_forcing&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">getThlmLsforcing</span><span class="p">],</span> <span class="s1">&#39;legend_label&#39;</span><span class="p">:</span> <span class="s1">&#39;thlm_ls_forcing&#39;</span><span class="p">},</span>
+    <span class="p">{</span><span class="s1">&#39;var_names&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;thlm_residual&#39;</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">getThlmResidual</span><span class="p">],</span> <span class="s1">&#39;legend_label&#39;</span><span class="p">:</span> <span class="s1">&#39;thlm_residual&#39;</span><span class="p">},</span>
+<span class="p">]</span>
+</pre></div>
+</td></tr></table></div>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><p><strong>variable_def_dict</strong> – A dict containing the information defining a variable. These definitions are declared
 inside a VariableGroup child class, e.g. VariableGroupBase.</p>
 </dd>
-</dl>
-<p>Valid dict keys/options include:</p>
-<dl class="simple">
-<dt><em>var_names</em>: A list of names various models refer to this variable as. E.g. [‘wprtp’, ‘WPRTP’, ‘wpqtp’]. This</dt><dd><p>parameter can also take in references to calc functions. Names/functions are prioritized left -&gt; right.</p>
-</dd>
-<dt><em>[model name]_conv_factor</em>: (optional) Numeric value to scale a model’s variable by. E.g. 1/1000, or 100</dt><dd><p>Valid models are: clubb, hoc, r408, sam, cam, wrf, e3sm. E.g. “clubb_conv_factor”</p>
-</dd>
-</dl>
-<p><em>type</em>: (optional) Override the default type ‘profile’ with either ‘budget’ or ‘timeseries’
-<em>title</em>: (optional) Override the default panel title, or provide one if it’s not specified in the netcdf file.
-<em>sci_scale</em>: (optional) A numerical power of ten to scale the panel axis to. E.g. a value of “4” results in the</p>
-<blockquote>
-<div><p>axis being scaled to x 1e4</p>
-</div></blockquote>
-<dl class="simple">
-<dt><em>axis_title</em>: (optional) Override the default dependent axis title, or provide one if it’s not</dt><dd><p>specified in the netcdf file.</p>
-</dd>
-<dt><em>lines</em>: * Defines lines to plot for budget cases. Passed seperately because</dt><dd><p>it’s a lot of text. The lines parameter currently does not support defining model-specific names/functions
-This is given in the form of a list of lines, here’s an example:</p>
-</dd>
-</dl>
-<div class="highlight-python notranslate"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre>1</pre></div></td><td class="code"><div class="highlight"><pre><span></span>
-</pre></div>
-</td></tr></table></div>
-<dl class="simple">
-<dt>thlm_budget_lines = [</dt><dd><p>{‘var_names’: [‘thlm_bt’], ‘legend_label’: ‘thlm_bt’},
-{‘var_names’: [‘thlm_ma’], ‘legend_label’: ‘thlm_ma’},
-{‘var_names’: [‘thlm_ta’], ‘legend_label’: ‘thlm_ta’},
-{‘var_names’: [‘thlm_mc’], ‘legend_label’: ‘thlm_mc’},
-{‘var_names’: [‘thlm_clipping’,self.getThlmClipping], ‘legend_label’: ‘thlm_clipping’},
-{‘var_names’: [‘radht’], ‘legend_label’: ‘radht’},
-{‘var_names’: [‘ls_forcing’, self.getThlmLsforcing], ‘legend_label’: ‘thlm_ls_forcing’},
-{‘var_names’: [‘thlm_residual’,self.getThlmResidual], ‘legend_label’: ‘thlm_residual’},</p>
-</dd>
-</dl>
-<p>]</p>
-<dl class="field-list simple">
-<dt class="field-odd">Returns</dt>
-<dd class="field-odd"><p>None</p>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>None</p>
 </dd>
 </dl>
 </dd></dl>
@@ -743,18 +1528,26 @@ outputs from the equations is most likely to be the expected answer.</p>
 <p>This function currently works by determining picking the non-nan and non-zero array.
 In the event that both arrays contain non-nan and non-zero output, it will return output1.</p>
 <p>If both arrays are zero or nan, then it will return the first array arbitrarily.</p>
-<p>Example usage:
-def get_rc_coef_zm_X_wprcp_coamps_calc(self, dataset_override=None):</p>
-<blockquote>
-<div><p>wprlp, z, dataset = self.getVarForCalculations([‘thlpqcp’, ‘wpqcp’, ‘wprlp’], dataset)
-ex0, z, dataset = self.getVarForCalculations([‘ex0’], dataset)
-p, z, dataset = self.getVarForCalculations(‘p’, dataset)
-thvm, z, dataset = self.getVarForCalculations(‘thvm’, dataset)
-output1 = wprlp * (2.5e6 / (1004.67 * ex0) - 1.61 * thvm)
-output2 = wprlp * (2.5e6 / (1004.67 * ((p / 1.0e5) ** (287.04 / 1004.67))) - 1.61 * thvm)
-output = self.pickMostLikelyOutputList(output1, output2)
-return output, z</p>
-</div></blockquote>
+<p>Example usage:</p>
+<div class="highlight-python notranslate"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre>1
+2
+3
+4
+5
+6
+7
+8
+9</pre></div></td><td class="code"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">get_rc_coef_zm_X_wprcp_coamps_calc</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dataset_override</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="n">wprlp</span><span class="p">,</span> <span class="n">z</span><span class="p">,</span> <span class="n">dataset</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getVarForCalculations</span><span class="p">([</span><span class="s1">&#39;thlpqcp&#39;</span><span class="p">,</span> <span class="s1">&#39;wpqcp&#39;</span><span class="p">,</span> <span class="s1">&#39;wprlp&#39;</span><span class="p">],</span> <span class="n">dataset</span><span class="p">)</span>
+    <span class="n">ex0</span><span class="p">,</span> <span class="n">z</span><span class="p">,</span> <span class="n">dataset</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getVarForCalculations</span><span class="p">([</span><span class="s1">&#39;ex0&#39;</span><span class="p">],</span> <span class="n">dataset</span><span class="p">)</span>
+    <span class="n">p</span><span class="p">,</span> <span class="n">z</span><span class="p">,</span> <span class="n">dataset</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getVarForCalculations</span><span class="p">(</span><span class="s1">&#39;p&#39;</span><span class="p">,</span> <span class="n">dataset</span><span class="p">)</span>
+    <span class="n">thvm</span><span class="p">,</span> <span class="n">z</span><span class="p">,</span> <span class="n">dataset</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getVarForCalculations</span><span class="p">(</span><span class="s1">&#39;thvm&#39;</span><span class="p">,</span> <span class="n">dataset</span><span class="p">)</span>
+    <span class="n">output1</span> <span class="o">=</span> <span class="n">wprlp</span> <span class="o">*</span> <span class="p">(</span><span class="mf">2.5e6</span> <span class="o">/</span> <span class="p">(</span><span class="mf">1004.67</span> <span class="o">*</span> <span class="n">ex0</span><span class="p">)</span> <span class="o">-</span> <span class="mf">1.61</span> <span class="o">*</span> <span class="n">thvm</span><span class="p">)</span>
+    <span class="n">output2</span> <span class="o">=</span> <span class="n">wprlp</span> <span class="o">*</span> <span class="p">(</span><span class="mf">2.5e6</span> <span class="o">/</span> <span class="p">(</span><span class="mf">1004.67</span> <span class="o">*</span> <span class="p">((</span><span class="n">p</span> <span class="o">/</span> <span class="mf">1.0e5</span><span class="p">)</span> <span class="o">**</span> <span class="p">(</span><span class="mf">287.04</span> <span class="o">/</span> <span class="mf">1004.67</span><span class="p">)))</span> <span class="o">-</span> <span class="mf">1.61</span> <span class="o">*</span> <span class="n">thvm</span><span class="p">)</span>
+    <span class="n">output</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pickMostLikelyOutputList</span><span class="p">(</span><span class="n">output1</span><span class="p">,</span> <span class="n">output2</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">output</span><span class="p">,</span> <span class="n">z</span>
+</pre></div>
+</td></tr></table></div>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">

@@ -967,12 +967,28 @@ class VariableGroupSamBudgets(VariableGroup):
 
     def getHlResidual(self, dataset_override=None):
         """
+        This is a "calculate function". Calculate functions are intended to be written by the user in the event that
+        they need a variable that is not output by their atmospheric model. The general format for these functions
+        is:
+            1. Get the proper dataset. This is either passed in as dataset_override, or some benchmark dataset
+            2. Get the equations needed variables from the dataset using ``self.getVarForCalculations()``
+            3. Calculate the new variable
+            4. (optional) If there are multiple valid equations, pick the one that worked using
+               ``self.pickNonZeroOutput()``
+            5. Return the data as (dependent,independent)
+
+        For more information on calculate functions, see the "Creating a new calculated function (for calculated
+        variables)" section of the README.md
+
         Calculates the residual for the HL budget using
         the following equation:
-        (HLSTOR)+((-1)*(HLADV+HLDIFF+HLRAD+HLLAT+TTEND))*g_per_second_to_kg_per_day
-        :param dataset_override:
-        :return: requested variable dependent_data in the form of a list.
-                 Returned dependent_data is already cropped to the appropriate min,max indices
+        ``(HLSTOR)+((-1)*(HLADV+HLDIFF+HLRAD+HLLAT+TTEND))*g_per_second_to_kg_per_day``
+
+        :param dataset_override: If passed, this netcdf dataset will be used to gather the data needed to calculate the
+          given variable. if not passed, this function should attempt to find the best source for the data, e.g.
+          the benchmark data for the given model
+        :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
+          Lists will be filled with NaN's if the variable could not be calculated.
         """
         dataset = self.les_dataset
         if dataset_override is not None:
@@ -1002,12 +1018,31 @@ class VariableGroupSamBudgets(VariableGroup):
 
     def getQtResidual(self, dataset_override=None):
         """
-        Calculates the residual for the QT budget using
-        the following equation:
-        QTSTOR+(-1)*(QTADV+QTDIFF+QTSRC+QTSINK+QTEND)
-        :param dataset_override:
-        :return: requested variable dependent_data in the form of a list.
-                 Returned dependent_data is already cropped to the appropriate min,max indices
+        This is a "calculate function". Calculate functions are intended to be written by the user in the event that
+        they need a variable that is not output by their atmospheric model. The general format for these functions
+        is:
+            1. Get the proper dataset. This is either passed in as dataset_override, or some benchmark dataset
+            2. Get the equations needed variables from the dataset using ``self.getVarForCalculations()``
+            3. Calculate the new variable
+            4. (optional) If there are multiple valid equations, pick the one that worked using
+               ``self.pickNonZeroOutput()``
+            5. Return the data as (dependent,independent)
+
+        For more information on calculate functions, see the "Creating a new calculated function (for calculated
+        variables)" section of the README.md
+
+        Caclulates Nim from sam -> clubb using the equation
+
+        .. code-block:: python
+            :linenos:
+
+            QTSTOR+(-1)*(QTADV+QTDIFF+QTSRC+QTSINK+QTEND)
+
+        :param dataset_override: If passed, this netcdf dataset will be used to gather the data needed to calculate the
+          given variable. if not passed, this function should attempt to find the best source for the data, e.g.
+          the benchmark data for the given model
+        :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
+          Lists will be filled with NaN's if the variable could not be calculated.
         """
         dataset = self.les_dataset
         if dataset_override is not None:
@@ -1031,12 +1066,28 @@ class VariableGroupSamBudgets(VariableGroup):
 
     def getTwBuoyPlusPres(self, dataset_override=None):
         """
+        This is a "calculate function". Calculate functions are intended to be written by the user in the event that
+        they need a variable that is not output by their atmospheric model. The general format for these functions
+        is:
+            1. Get the proper dataset. This is either passed in as dataset_override, or some benchmark dataset
+            2. Get the equations needed variables from the dataset using ``self.getVarForCalculations()``
+            3. Calculate the new variable
+            4. (optional) If there are multiple valid equations, pick the one that worked using
+               ``self.pickNonZeroOutput()``
+            5. Return the data as (dependent,independent)
+
+        For more information on calculate functions, see the "Creating a new calculated function (for calculated
+        variables)" section of the README.md
+
         Calculates the combined BUOY and PRES variable value
         of the TW budget using the following equation:
-        TWBUOY+TWPRES
-        :param dataset_override:
-        :return: requested variable dependent_data in the form of a list.
-                 Returned dependent_data is already cropped to the appropriate min,max indices
+        ``TWBUOY+TWPRES``
+
+        :param dataset_override: If passed, this netcdf dataset will be used to gather the data needed to calculate the
+          given variable. if not passed, this function should attempt to find the best source for the data, e.g.
+          the benchmark data for the given model
+        :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
+          Lists will be filled with NaN's if the variable could not be calculated.
         """
         dataset = self.les_dataset
         if dataset_override is not None:
@@ -1048,12 +1099,28 @@ class VariableGroupSamBudgets(VariableGroup):
 
     def getTwResidual(self, dataset_override=None):
         """
+        This is a "calculate function". Calculate functions are intended to be written by the user in the event that
+        they need a variable that is not output by their atmospheric model. The general format for these functions
+        is:
+            1. Get the proper dataset. This is either passed in as dataset_override, or some benchmark dataset
+            2. Get the equations needed variables from the dataset using ``self.getVarForCalculations()``
+            3. Calculate the new variable
+            4. (optional) If there are multiple valid equations, pick the one that worked using
+               ``self.pickNonZeroOutput()``
+            5. Return the data as (dependent,independent)
+
+        For more information on calculate functions, see the "Creating a new calculated function (for calculated
+        variables)" section of the README.md
+
         Calculates the residual for the TW budget using
         the following equation:
-        TWBT - (TWGRAD + TWADV + TWDIFF + TWBUOY + TWPRES + TWPREC + TWRAD + TWFORC)
-        :param dataset_override:
-        :return: requested variable dependent_data in the form of a list.
-                 Returned dependent_data is already cropped to the appropriate min,max indices
+        ``TWBT - (TWGRAD + TWADV + TWDIFF + TWBUOY + TWPRES + TWPREC + TWRAD + TWFORC)``
+
+        :param dataset_override: If passed, this netcdf dataset will be used to gather the data needed to calculate the
+          given variable. if not passed, this function should attempt to find the best source for the data, e.g.
+          the benchmark data for the given model
+        :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
+          Lists will be filled with NaN's if the variable could not be calculated.
         """
         dataset = self.les_dataset
         if dataset_override is not None:
@@ -1072,12 +1139,28 @@ class VariableGroupSamBudgets(VariableGroup):
 
     def getThlwBuoyPlusPres(self, dataset_override=None):
         """
+        This is a "calculate function". Calculate functions are intended to be written by the user in the event that
+        they need a variable that is not output by their atmospheric model. The general format for these functions
+        is:
+            1. Get the proper dataset. This is either passed in as dataset_override, or some benchmark dataset
+            2. Get the equations needed variables from the dataset using ``self.getVarForCalculations()``
+            3. Calculate the new variable
+            4. (optional) If there are multiple valid equations, pick the one that worked using
+               ``self.pickNonZeroOutput()``
+            5. Return the data as (dependent,independent)
+
+        For more information on calculate functions, see the "Creating a new calculated function (for calculated
+        variables)" section of the README.md
+
         Calculates the combined BUOY and PRES variable value
         of the THLW budget using the following equation:
-        THLWBUOY + THLWPRES
-        :param dataset_override:
-        :return: requested variable dependent_data in the form of a list.
-                 Returned dependent_data is already cropped to the appropriate min,max indices
+        ``THLWBUOY + THLWPRES``
+
+        :param dataset_override: If passed, this netcdf dataset will be used to gather the data needed to calculate the
+          given variable. if not passed, this function should attempt to find the best source for the data, e.g.
+          the benchmark data for the given model
+        :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
+          Lists will be filled with NaN's if the variable could not be calculated.
         """
         dataset = self.les_dataset
         if dataset_override is not None:
@@ -1089,12 +1172,28 @@ class VariableGroupSamBudgets(VariableGroup):
 
     def getThlwResidual(self, dataset_override=None):
         """
+        This is a "calculate function". Calculate functions are intended to be written by the user in the event that
+        they need a variable that is not output by their atmospheric model. The general format for these functions
+        is:
+            1. Get the proper dataset. This is either passed in as dataset_override, or some benchmark dataset
+            2. Get the equations needed variables from the dataset using ``self.getVarForCalculations()``
+            3. Calculate the new variable
+            4. (optional) If there are multiple valid equations, pick the one that worked using
+               ``self.pickNonZeroOutput()``
+            5. Return the data as (dependent,independent)
+
+        For more information on calculate functions, see the "Creating a new calculated function (for calculated
+        variables)" section of the README.md
+
         Calculates the residual for the THLW budget using
         the following equation:
-        THLWBT - (THLWGRAD + THLWADV + THLWDIFF + THLWBUOY + THLWPRES + THLWPREC + THLWRAD + THLWFORC)
-        :param dataset_override:
-        :return: requested variable dependent_data in the form of a list.
-                 Returned dependent_data is already cropped to the appropriate min,max indices
+        ``THLWBT - (THLWGRAD + THLWADV + THLWDIFF + THLWBUOY + THLWPRES + THLWPREC + THLWRAD + THLWFORC)``
+
+        :param dataset_override: If passed, this netcdf dataset will be used to gather the data needed to calculate the
+          given variable. if not passed, this function should attempt to find the best source for the data, e.g.
+          the benchmark data for the given model
+        :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
+          Lists will be filled with NaN's if the variable could not be calculated.
         """
         dataset = self.les_dataset
         if dataset_override is not None:
@@ -1113,12 +1212,28 @@ class VariableGroupSamBudgets(VariableGroup):
 
     def getQwBuoyPlusPres(self, dataset_override=None):
         """
+        This is a "calculate function". Calculate functions are intended to be written by the user in the event that
+        they need a variable that is not output by their atmospheric model. The general format for these functions
+        is:
+            1. Get the proper dataset. This is either passed in as dataset_override, or some benchmark dataset
+            2. Get the equations needed variables from the dataset using ``self.getVarForCalculations()``
+            3. Calculate the new variable
+            4. (optional) If there are multiple valid equations, pick the one that worked using
+               ``self.pickNonZeroOutput()``
+            5. Return the data as (dependent,independent)
+
+        For more information on calculate functions, see the "Creating a new calculated function (for calculated
+        variables)" section of the README.md
+
         Calculates the combined BUOY and PRES variable value
         of the QW budget using the following equation:
-        QWBUOY+QWPRES
-        :param dataset_override:
-        :return: requested variable dependent_data in the form of a list.
-                 Returned dependent_data is already cropped to the appropriate min,max indices
+        ``QWBUOY+QWPRES``
+
+        :param dataset_override: If passed, this netcdf dataset will be used to gather the data needed to calculate the
+          given variable. if not passed, this function should attempt to find the best source for the data, e.g.
+          the benchmark data for the given model
+        :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
+          Lists will be filled with NaN's if the variable could not be calculated.
         """
         dataset = self.les_dataset
         if dataset_override is not None:
@@ -1130,12 +1245,28 @@ class VariableGroupSamBudgets(VariableGroup):
 
     def getQwResidual(self, dataset_override=None):
         """
+        This is a "calculate function". Calculate functions are intended to be written by the user in the event that
+        they need a variable that is not output by their atmospheric model. The general format for these functions
+        is:
+            1. Get the proper dataset. This is either passed in as dataset_override, or some benchmark dataset
+            2. Get the equations needed variables from the dataset using ``self.getVarForCalculations()``
+            3. Calculate the new variable
+            4. (optional) If there are multiple valid equations, pick the one that worked using
+               ``self.pickNonZeroOutput()``
+            5. Return the data as (dependent,independent)
+
+        For more information on calculate functions, see the "Creating a new calculated function (for calculated
+        variables)" section of the README.md
+
         Calculates the residual for the QW budget using
         the following equation:
-        QWBT - (QWGRAD + QWADV + QWDIFF + QWBUOY + QWPRES + QWPREC + QWFORC)
-        :param dataset_override:
-        :return: requested variable dependent_data in the form of a list.
-                 Returned dependent_data is already cropped to the appropriate min,max indices
+        ``QWBT - (QWGRAD + QWADV + QWDIFF + QWBUOY + QWPRES + QWPREC + QWFORC)``
+
+        :param dataset_override: If passed, this netcdf dataset will be used to gather the data needed to calculate the
+          given variable. if not passed, this function should attempt to find the best source for the data, e.g.
+          the benchmark data for the given model
+        :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
+          Lists will be filled with NaN's if the variable could not be calculated.
         """
         dataset = self.les_dataset
         if dataset_override is not None:
@@ -1153,12 +1284,28 @@ class VariableGroupSamBudgets(VariableGroup):
 
     def getQtogwBuoyPlusPres(self, dataset_override=None):
         """
+        This is a "calculate function". Calculate functions are intended to be written by the user in the event that
+        they need a variable that is not output by their atmospheric model. The general format for these functions
+        is:
+            1. Get the proper dataset. This is either passed in as dataset_override, or some benchmark dataset
+            2. Get the equations needed variables from the dataset using ``self.getVarForCalculations()``
+            3. Calculate the new variable
+            4. (optional) If there are multiple valid equations, pick the one that worked using
+               ``self.pickNonZeroOutput()``
+            5. Return the data as (dependent,independent)
+
+        For more information on calculate functions, see the "Creating a new calculated function (for calculated
+        variables)" section of the README.md
+
         Calculates the combined BUOY and PRES variable value
         of the QTOGW budget using the following equation:
-        QTOGWBUOY + QTOGWPRES
-        :param dataset_override:
-        :return: requested variable dependent_data in the form of a list.
-                 Returned dependent_data is already cropped to the appropriate min,max indices
+        ``QTOGWBUOY + QTOGWPRES``
+
+        :param dataset_override: If passed, this netcdf dataset will be used to gather the data needed to calculate the
+          given variable. if not passed, this function should attempt to find the best source for the data, e.g.
+          the benchmark data for the given model
+        :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
+          Lists will be filled with NaN's if the variable could not be calculated.
         """
         dataset = self.les_dataset
         if dataset_override is not None:
@@ -1170,12 +1317,28 @@ class VariableGroupSamBudgets(VariableGroup):
 
     def getQtogwResidual(self, dataset_override=None):
         """
+        This is a "calculate function". Calculate functions are intended to be written by the user in the event that
+        they need a variable that is not output by their atmospheric model. The general format for these functions
+        is:
+            1. Get the proper dataset. This is either passed in as dataset_override, or some benchmark dataset
+            2. Get the equations needed variables from the dataset using ``self.getVarForCalculations()``
+            3. Calculate the new variable
+            4. (optional) If there are multiple valid equations, pick the one that worked using
+               ``self.pickNonZeroOutput()``
+            5. Return the data as (dependent,independent)
+
+        For more information on calculate functions, see the "Creating a new calculated function (for calculated
+        variables)" section of the README.md
+
         Calculates the residual for the QTOGW budget using
         the following equation:
-        QTOGWBT - (QTOGWGRAD + QTOGWADV + QTOGWDIFF + QTOGWBUOY + QTOGWPRES + QTOGWPREC + QTOGWFORC)
-        :param dataset_override:
-        :return: requested variable dependent_data in the form of a list.
-                 Returned dependent_data is already cropped to the appropriate min,max indices
+        ``QTOGWBT - (QTOGWGRAD + QTOGWADV + QTOGWDIFF + QTOGWBUOY + QTOGWPRES + QTOGWPREC + QTOGWFORC)``
+
+        :param dataset_override: If passed, this netcdf dataset will be used to gather the data needed to calculate the
+          given variable. if not passed, this function should attempt to find the best source for the data, e.g.
+          the benchmark data for the given model
+        :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
+          Lists will be filled with NaN's if the variable could not be calculated.
         """
         dataset = self.les_dataset
         if dataset_override is not None:
@@ -1193,12 +1356,28 @@ class VariableGroupSamBudgets(VariableGroup):
 
     def getT2Residual(self, dataset_override=None):
         """
+        This is a "calculate function". Calculate functions are intended to be written by the user in the event that
+        they need a variable that is not output by their atmospheric model. The general format for these functions
+        is:
+            1. Get the proper dataset. This is either passed in as dataset_override, or some benchmark dataset
+            2. Get the equations needed variables from the dataset using ``self.getVarForCalculations()``
+            3. Calculate the new variable
+            4. (optional) If there are multiple valid equations, pick the one that worked using
+               ``self.pickNonZeroOutput()``
+            5. Return the data as (dependent,independent)
+
+        For more information on calculate functions, see the "Creating a new calculated function (for calculated
+        variables)" section of the README.md
+
         Calculates the residual for the T2 budget using
         the following equation:
-        T2BT - (T2ADVTR + T2GRAD + T2DISSIP + T2DIFTR + T2PREC + T2RAD + T2FORC)
-        :param dataset_override:
-        :return: requested variable dependent_data in the form of a list.
-                 Returned dependent_data is already cropped to the appropriate min,max indices
+        ``T2BT - (T2ADVTR + T2GRAD + T2DISSIP + T2DIFTR + T2PREC + T2RAD + T2FORC)``
+
+        :param dataset_override: If passed, this netcdf dataset will be used to gather the data needed to calculate the
+          given variable. if not passed, this function should attempt to find the best source for the data, e.g.
+          the benchmark data for the given model
+        :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
+          Lists will be filled with NaN's if the variable could not be calculated.
         """
         dataset = self.les_dataset
         if dataset_override is not None:
@@ -1216,12 +1395,28 @@ class VariableGroupSamBudgets(VariableGroup):
 
     def getThl2Residual(self, dataset_override=None):
         """
+        This is a "calculate function". Calculate functions are intended to be written by the user in the event that
+        they need a variable that is not output by their atmospheric model. The general format for these functions
+        is:
+            1. Get the proper dataset. This is either passed in as dataset_override, or some benchmark dataset
+            2. Get the equations needed variables from the dataset using ``self.getVarForCalculations()``
+            3. Calculate the new variable
+            4. (optional) If there are multiple valid equations, pick the one that worked using
+               ``self.pickNonZeroOutput()``
+            5. Return the data as (dependent,independent)
+
+        For more information on calculate functions, see the "Creating a new calculated function (for calculated
+        variables)" section of the README.md
+
         Calculates the residual for the THL2 budget using
         the following equation:
-        THL2BT - (THL2ADVTR + THL2GRAD + THL2DISSIP + THL2DIFTR + THL2PREC + THL2RAD + THL2FORC)
-        :param dataset_override:
-        :return: requested variable dependent_data in the form of a list.
-                 Returned dependent_data is already cropped to the appropriate min,max indices
+        ``THL2BT - (THL2ADVTR + THL2GRAD + THL2DISSIP + THL2DIFTR + THL2PREC + THL2RAD + THL2FORC)``
+
+        :param dataset_override: If passed, this netcdf dataset will be used to gather the data needed to calculate the
+          given variable. if not passed, this function should attempt to find the best source for the data, e.g.
+          the benchmark data for the given model
+        :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
+          Lists will be filled with NaN's if the variable could not be calculated.
         """
         dataset = self.les_dataset
         if dataset_override is not None:
@@ -1239,12 +1434,28 @@ class VariableGroupSamBudgets(VariableGroup):
 
     def getQt2Residual(self, dataset_override=None):
         """
+        This is a "calculate function". Calculate functions are intended to be written by the user in the event that
+        they need a variable that is not output by their atmospheric model. The general format for these functions
+        is:
+            1. Get the proper dataset. This is either passed in as dataset_override, or some benchmark dataset
+            2. Get the equations needed variables from the dataset using ``self.getVarForCalculations()``
+            3. Calculate the new variable
+            4. (optional) If there are multiple valid equations, pick the one that worked using
+               ``self.pickNonZeroOutput()``
+            5. Return the data as (dependent,independent)
+
+        For more information on calculate functions, see the "Creating a new calculated function (for calculated
+        variables)" section of the README.md
+
         Calculates the residual for the Q2 budget using
         the following equation:
-        Q2BT - (Q2ADVTR + Q2GRAD + Q2DISSIP + Q2DIFTR + Q2PREC + Q2FORC)
-        :param dataset_override:
-        :return: requested variable dependent_data in the form of a list.
-                 Returned dependent_data is already cropped to the appropriate min,max indices
+        ``Q2BT - (Q2ADVTR + Q2GRAD + Q2DISSIP + Q2DIFTR + Q2PREC + Q2FORC)``
+
+        :param dataset_override: If passed, this netcdf dataset will be used to gather the data needed to calculate the
+          given variable. if not passed, this function should attempt to find the best source for the data, e.g.
+          the benchmark data for the given model
+        :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
+          Lists will be filled with NaN's if the variable could not be calculated.
         """
         dataset = self.les_dataset
         if dataset_override is not None:
@@ -1261,12 +1472,28 @@ class VariableGroupSamBudgets(VariableGroup):
 
     def getQtog2Residual(self, dataset_override=None):
         """
+        This is a "calculate function". Calculate functions are intended to be written by the user in the event that
+        they need a variable that is not output by their atmospheric model. The general format for these functions
+        is:
+            1. Get the proper dataset. This is either passed in as dataset_override, or some benchmark dataset
+            2. Get the equations needed variables from the dataset using ``self.getVarForCalculations()``
+            3. Calculate the new variable
+            4. (optional) If there are multiple valid equations, pick the one that worked using
+               ``self.pickNonZeroOutput()``
+            5. Return the data as (dependent,independent)
+
+        For more information on calculate functions, see the "Creating a new calculated function (for calculated
+        variables)" section of the README.md
+
         Calculates the residual for the QTOG2 budget using
         the following equation:
-        QTOG2BT - (QTOG2ADVTR + QTOG2GRAD + QTOG2DISSIP + QTOG2DIFTR + QTOG2PREC + QTOG2FORC)
-        :param dataset_override:
-        :return: requested variable dependent_data in the form of a list.
-                 Returned dependent_data is already cropped to the appropriate min,max indices
+        ``QTOG2BT - (QTOG2ADVTR + QTOG2GRAD + QTOG2DISSIP + QTOG2DIFTR + QTOG2PREC + QTOG2FORC)``
+
+        :param dataset_override: If passed, this netcdf dataset will be used to gather the data needed to calculate the
+          given variable. if not passed, this function should attempt to find the best source for the data, e.g.
+          the benchmark data for the given model
+        :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
+          Lists will be filled with NaN's if the variable could not be calculated.
         """
         dataset = self.les_dataset
         if dataset_override is not None:
@@ -1283,12 +1510,28 @@ class VariableGroupSamBudgets(VariableGroup):
 
     def getQThlResidual(self, dataset_override=None):
         """
+        This is a "calculate function". Calculate functions are intended to be written by the user in the event that
+        they need a variable that is not output by their atmospheric model. The general format for these functions
+        is:
+            1. Get the proper dataset. This is either passed in as dataset_override, or some benchmark dataset
+            2. Get the equations needed variables from the dataset using ``self.getVarForCalculations()``
+            3. Calculate the new variable
+            4. (optional) If there are multiple valid equations, pick the one that worked using
+               ``self.pickNonZeroOutput()``
+            5. Return the data as (dependent,independent)
+
+        For more information on calculate functions, see the "Creating a new calculated function (for calculated
+        variables)" section of the README.md
+
         Calculates the residual for the QTHL budget using
         the following equation:
-        QTHLBT - (QTHLADV + QTHLGRAD + QTHLDISSIP + QTHLDIFTR + QTHLPREC + QTHLRAD + QTHLFORC)
-        :param dataset_override:
-        :return: requested variable dependent_data in the form of a list.
-                 Returned dependent_data is already cropped to the appropriate min,max indices
+        ``QTHLBT - (QTHLADV + QTHLGRAD + QTHLDISSIP + QTHLDIFTR + QTHLPREC + QTHLRAD + QTHLFORC)``
+
+        :param dataset_override: If passed, this netcdf dataset will be used to gather the data needed to calculate the
+          given variable. if not passed, this function should attempt to find the best source for the data, e.g.
+          the benchmark data for the given model
+        :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
+          Lists will be filled with NaN's if the variable could not be calculated.
         """
         dataset = self.les_dataset
         if dataset_override is not None:
@@ -1306,12 +1549,28 @@ class VariableGroupSamBudgets(VariableGroup):
 
     def getTkeDissPlusDiff(self, dataset_override=None):
         """
+        This is a "calculate function". Calculate functions are intended to be written by the user in the event that
+        they need a variable that is not output by their atmospheric model. The general format for these functions
+        is:
+            1. Get the proper dataset. This is either passed in as dataset_override, or some benchmark dataset
+            2. Get the equations needed variables from the dataset using ``self.getVarForCalculations()``
+            3. Calculate the new variable
+            4. (optional) If there are multiple valid equations, pick the one that worked using
+               ``self.pickNonZeroOutput()``
+            5. Return the data as (dependent,independent)
+
+        For more information on calculate functions, see the "Creating a new calculated function (for calculated
+        variables)" section of the README.md
+
         Calculates the combined DISS and DIFTR variable value
         of the TKE budget using the following equation:
-        DISSIP + DIFTR
-        :param dataset_override:
-        :return: requested variable dependent_data in the form of a list.
-                 Returned dependent_data is already cropped to the appropriate min,max indices
+        ``DISSIP + DIFTR``
+
+        :param dataset_override: If passed, this netcdf dataset will be used to gather the data needed to calculate the
+          given variable. if not passed, this function should attempt to find the best source for the data, e.g.
+          the benchmark data for the given model
+        :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
+          Lists will be filled with NaN's if the variable could not be calculated.
         """
         dataset = self.les_dataset
         if dataset_override is not None:
@@ -1323,12 +1582,28 @@ class VariableGroupSamBudgets(VariableGroup):
 
     def getTkeResidual(self, dataset_override=None):
         """
+        This is a "calculate function". Calculate functions are intended to be written by the user in the event that
+        they need a variable that is not output by their atmospheric model. The general format for these functions
+        is:
+            1. Get the proper dataset. This is either passed in as dataset_override, or some benchmark dataset
+            2. Get the equations needed variables from the dataset using ``self.getVarForCalculations()``
+            3. Calculate the new variable
+            4. (optional) If there are multiple valid equations, pick the one that worked using
+               ``self.pickNonZeroOutput()``
+            5. Return the data as (dependent,independent)
+
+        For more information on calculate functions, see the "Creating a new calculated function (for calculated
+        variables)" section of the README.md
+
         Calculates the residual for the TKE budget using
         the following equation:
-        BT - (SHEAR + BUOYA + ADVTR + PRESSTR + DIFTR + SDMP + DISSIP)
-        :param dataset_override:
-        :return: requested variable dependent_data in the form of a list.
-                 Returned dependent_data is already cropped to the appropriate min,max indices
+        ``BT - (SHEAR + BUOYA + ADVTR + PRESSTR + DIFTR + SDMP + DISSIP)``
+
+        :param dataset_override: If passed, this netcdf dataset will be used to gather the data needed to calculate the
+          given variable. if not passed, this function should attempt to find the best source for the data, e.g.
+          the benchmark data for the given model
+        :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
+          Lists will be filled with NaN's if the variable could not be calculated.
         """
         dataset = self.les_dataset
         if dataset_override is not None:
@@ -1346,12 +1621,28 @@ class VariableGroupSamBudgets(VariableGroup):
 
     def getTkesResidual(self, dataset_override=None):
         """
+        This is a "calculate function". Calculate functions are intended to be written by the user in the event that
+        they need a variable that is not output by their atmospheric model. The general format for these functions
+        is:
+            1. Get the proper dataset. This is either passed in as dataset_override, or some benchmark dataset
+            2. Get the equations needed variables from the dataset using ``self.getVarForCalculations()``
+            3. Calculate the new variable
+            4. (optional) If there are multiple valid equations, pick the one that worked using
+               ``self.pickNonZeroOutput()``
+            5. Return the data as (dependent,independent)
+
+        For more information on calculate functions, see the "Creating a new calculated function (for calculated
+        variables)" section of the README.md
+
         Calculates the residual for the TKES budget using
         the following equation:
-        -(SHEARS + BUOYAS + ADVTRS + DISSIPS)
-        :param dataset_override:
-        :return: requested variable dependent_data in the form of a list.
-                 Returned dependent_data is already cropped to the appropriate min,max indices
+        ``-(SHEARS + BUOYAS + ADVTRS + DISSIPS)``
+
+        :param dataset_override: If passed, this netcdf dataset will be used to gather the data needed to calculate the
+          given variable. if not passed, this function should attempt to find the best source for the data, e.g.
+          the benchmark data for the given model
+        :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
+          Lists will be filled with NaN's if the variable could not be calculated.
         """
         dataset = self.les_dataset
         if dataset_override is not None:
@@ -1365,12 +1656,28 @@ class VariableGroupSamBudgets(VariableGroup):
 
     def getU2Residual(self, dataset_override=None):
         """
+        This is a "calculate function". Calculate functions are intended to be written by the user in the event that
+        they need a variable that is not output by their atmospheric model. The general format for these functions
+        is:
+            1. Get the proper dataset. This is either passed in as dataset_override, or some benchmark dataset
+            2. Get the equations needed variables from the dataset using ``self.getVarForCalculations()``
+            3. Calculate the new variable
+            4. (optional) If there are multiple valid equations, pick the one that worked using
+               ``self.pickNonZeroOutput()``
+            5. Return the data as (dependent,independent)
+
+        For more information on calculate functions, see the "Creating a new calculated function (for calculated
+        variables)" section of the README.md
+
         Calculates the residual for the U2 budget using
         the following equation:
-        U2BT - (U2ADV + U2SHEAR + U2REDIS + U2DIFF)
-        :param dataset_override:
-        :return: requested variable dependent_data in the form of a list.
-                 Returned dependent_data is already cropped to the appropriate min,max indices
+        ``U2BT - (U2ADV + U2SHEAR + U2REDIS + U2DIFF)``
+
+        :param dataset_override: If passed, this netcdf dataset will be used to gather the data needed to calculate the
+          given variable. if not passed, this function should attempt to find the best source for the data, e.g.
+          the benchmark data for the given model
+        :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
+          Lists will be filled with NaN's if the variable could not be calculated.
         """
         dataset = self.les_dataset
         if dataset_override is not None:
@@ -1385,12 +1692,28 @@ class VariableGroupSamBudgets(VariableGroup):
 
     def getV2Residual(self, dataset_override=None):
         """
+        This is a "calculate function". Calculate functions are intended to be written by the user in the event that
+        they need a variable that is not output by their atmospheric model. The general format for these functions
+        is:
+            1. Get the proper dataset. This is either passed in as dataset_override, or some benchmark dataset
+            2. Get the equations needed variables from the dataset using ``self.getVarForCalculations()``
+            3. Calculate the new variable
+            4. (optional) If there are multiple valid equations, pick the one that worked using
+               ``self.pickNonZeroOutput()``
+            5. Return the data as (dependent,independent)
+
+        For more information on calculate functions, see the "Creating a new calculated function (for calculated
+        variables)" section of the README.md
+
         Calculates the residual for the V2 budget using
         the following equation:
-        V2BT - (V2ADV + V2SHEAR + V2REDIS + V2DIFF)
-        :param dataset_override:
-        :return: requested variable dependent_data in the form of a list.
-                 Returned dependent_data is already cropped to the appropriate min,max indices
+        ``V2BT - (V2ADV + V2SHEAR + V2REDIS + V2DIFF)``
+
+        :param dataset_override: If passed, this netcdf dataset will be used to gather the data needed to calculate the
+          given variable. if not passed, this function should attempt to find the best source for the data, e.g.
+          the benchmark data for the given model
+        :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
+          Lists will be filled with NaN's if the variable could not be calculated.
         """
         dataset = self.les_dataset
         if dataset_override is not None:
@@ -1405,12 +1728,28 @@ class VariableGroupSamBudgets(VariableGroup):
 
     def getW2RedisPlusPres(self, dataset_override=None):
         """
+        This is a "calculate function". Calculate functions are intended to be written by the user in the event that
+        they need a variable that is not output by their atmospheric model. The general format for these functions
+        is:
+            1. Get the proper dataset. This is either passed in as dataset_override, or some benchmark dataset
+            2. Get the equations needed variables from the dataset using ``self.getVarForCalculations()``
+            3. Calculate the new variable
+            4. (optional) If there are multiple valid equations, pick the one that worked using
+               ``self.pickNonZeroOutput()``
+            5. Return the data as (dependent,independent)
+
+        For more information on calculate functions, see the "Creating a new calculated function (for calculated
+        variables)" section of the README.md
+
         Calculates the combined REDIS and PRES variable value
         of the W2 budget using the following equation:
-        W2REDIS + W2PRES
-        :param dataset_override:
-        :return: requested variable dependent_data in the form of a list.
-                 Returned dependent_data is already cropped to the appropriate min,max indices
+        ``W2REDIS + W2PRES``
+
+        :param dataset_override: If passed, this netcdf dataset will be used to gather the data needed to calculate the
+          given variable. if not passed, this function should attempt to find the best source for the data, e.g.
+          the benchmark data for the given model
+        :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
+          Lists will be filled with NaN's if the variable could not be calculated.
         """
         dataset = self.les_dataset
         if dataset_override is not None:
@@ -1422,12 +1761,28 @@ class VariableGroupSamBudgets(VariableGroup):
 
     def getW2Residual(self, dataset_override=None):
         """
+        This is a "calculate function". Calculate functions are intended to be written by the user in the event that
+        they need a variable that is not output by their atmospheric model. The general format for these functions
+        is:
+            1. Get the proper dataset. This is either passed in as dataset_override, or some benchmark dataset
+            2. Get the equations needed variables from the dataset using ``self.getVarForCalculations()``
+            3. Calculate the new variable
+            4. (optional) If there are multiple valid equations, pick the one that worked using
+               ``self.pickNonZeroOutput()``
+            5. Return the data as (dependent,independent)
+
+        For more information on calculate functions, see the "Creating a new calculated function (for calculated
+        variables)" section of the README.md
+
         Calculates the residual for the W2 budget using
         the following equation:
-        W2BT - (W2ADV + W2PRES + W2REDIS + W2BUOY + W2DIFF + W2SDMP)
-        :param dataset_override:
-        :return: requested variable dependent_data in the form of a list.
-                 Returned dependent_data is already cropped to the appropriate min,max indices
+        ``W2BT - (W2ADV + W2PRES + W2REDIS + W2BUOY + W2DIFF + W2SDMP)``
+
+        :param dataset_override: If passed, this netcdf dataset will be used to gather the data needed to calculate the
+          given variable. if not passed, this function should attempt to find the best source for the data, e.g.
+          the benchmark data for the given model
+        :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
+          Lists will be filled with NaN's if the variable could not be calculated.
         """
         dataset = self.les_dataset
         if dataset_override is not None:
@@ -1444,12 +1799,28 @@ class VariableGroupSamBudgets(VariableGroup):
 
     def getU2V2Adv(self, dataset_override):
         """
+        This is a "calculate function". Calculate functions are intended to be written by the user in the event that
+        they need a variable that is not output by their atmospheric model. The general format for these functions
+        is:
+            1. Get the proper dataset. This is either passed in as dataset_override, or some benchmark dataset
+            2. Get the equations needed variables from the dataset using ``self.getVarForCalculations()``
+            3. Calculate the new variable
+            4. (optional) If there are multiple valid equations, pick the one that worked using
+               ``self.pickNonZeroOutput()``
+            5. Return the data as (dependent,independent)
+
+        For more information on calculate functions, see the "Creating a new calculated function (for calculated
+        variables)" section of the README.md
+
         Calculates the ADV variable value
         of the combined U2+V2 budget using the following equation:
-        2 * ADVTR - W2ADV
-        :param dataset_override:
-        :return: requested variable dependent_data in the form of a list.
-                 Returned dependent_data is already cropped to the appropriate min,max indices
+        ``2 * ADVTR - W2ADV``
+
+        :param dataset_override: If passed, this netcdf dataset will be used to gather the data needed to calculate the
+          given variable. if not passed, this function should attempt to find the best source for the data, e.g.
+          the benchmark data for the given model
+        :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
+          Lists will be filled with NaN's if the variable could not be calculated.
         """
         dataset = self.les_dataset
         if dataset_override is not None:
@@ -1461,12 +1832,28 @@ class VariableGroupSamBudgets(VariableGroup):
 
     def getU2V2Buoy(self, dataset_override):
         """
+        This is a "calculate function". Calculate functions are intended to be written by the user in the event that
+        they need a variable that is not output by their atmospheric model. The general format for these functions
+        is:
+            1. Get the proper dataset. This is either passed in as dataset_override, or some benchmark dataset
+            2. Get the equations needed variables from the dataset using ``self.getVarForCalculations()``
+            3. Calculate the new variable
+            4. (optional) If there are multiple valid equations, pick the one that worked using
+               ``self.pickNonZeroOutput()``
+            5. Return the data as (dependent,independent)
+
+        For more information on calculate functions, see the "Creating a new calculated function (for calculated
+        variables)" section of the README.md
+
         Calculates the BUOY variable value
         of the combined U2+V2 budget using the following equation:
-        2 * BUOYA - W2BUOY
-        :param dataset_override:
-        :return: requested variable dependent_data in the form of a list.
-                 Returned dependent_data is already cropped to the appropriate min,max indices
+        ``2 * BUOYA - W2BUOY``
+
+        :param dataset_override: If passed, this netcdf dataset will be used to gather the data needed to calculate the
+          given variable. if not passed, this function should attempt to find the best source for the data, e.g.
+          the benchmark data for the given model
+        :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
+          Lists will be filled with NaN's if the variable could not be calculated.
         """
         dataset = self.les_dataset
         if dataset_override is not None:
@@ -1478,12 +1865,28 @@ class VariableGroupSamBudgets(VariableGroup):
 
     def getU2V2Pres(self, dataset_override):
         """
+        This is a "calculate function". Calculate functions are intended to be written by the user in the event that
+        they need a variable that is not output by their atmospheric model. The general format for these functions
+        is:
+            1. Get the proper dataset. This is either passed in as dataset_override, or some benchmark dataset
+            2. Get the equations needed variables from the dataset using ``self.getVarForCalculations()``
+            3. Calculate the new variable
+            4. (optional) If there are multiple valid equations, pick the one that worked using
+               ``self.pickNonZeroOutput()``
+            5. Return the data as (dependent,independent)
+
+        For more information on calculate functions, see the "Creating a new calculated function (for calculated
+        variables)" section of the README.md
+
         Calculates the PRES variable value
         of the combined U2+V2 budget using the following equation:
-        2 * PRESSTR - W2PRES
-        :param dataset_override:
-        :return: requested variable dependent_data in the form of a list.
-                 Returned dependent_data is already cropped to the appropriate min,max indices
+        ``2 * PRESSTR - W2PRES``
+
+        :param dataset_override: If passed, this netcdf dataset will be used to gather the data needed to calculate the
+          given variable. if not passed, this function should attempt to find the best source for the data, e.g.
+          the benchmark data for the given model
+        :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
+          Lists will be filled with NaN's if the variable could not be calculated.
         """
         dataset = self.les_dataset
         if dataset_override is not None:
@@ -1495,12 +1898,28 @@ class VariableGroupSamBudgets(VariableGroup):
 
     def getU2V2Diff(self, dataset_override):
         """
+        This is a "calculate function". Calculate functions are intended to be written by the user in the event that
+        they need a variable that is not output by their atmospheric model. The general format for these functions
+        is:
+            1. Get the proper dataset. This is either passed in as dataset_override, or some benchmark dataset
+            2. Get the equations needed variables from the dataset using ``self.getVarForCalculations()``
+            3. Calculate the new variable
+            4. (optional) If there are multiple valid equations, pick the one that worked using
+               ``self.pickNonZeroOutput()``
+            5. Return the data as (dependent,independent)
+
+        For more information on calculate functions, see the "Creating a new calculated function (for calculated
+        variables)" section of the README.md
+
         Calculates the DIFF variable value
         of the combined U2+V2 budget using the following equation:
-        2 * DIFTR - W2DIFF
-        :param dataset_override:
-        :return: requested variable dependent_data in the form of a list.
-                 Returned dependent_data is already cropped to the appropriate min,max indices
+        ``2 * DIFTR - W2DIFF``
+
+        :param dataset_override: If passed, this netcdf dataset will be used to gather the data needed to calculate the
+          given variable. if not passed, this function should attempt to find the best source for the data, e.g.
+          the benchmark data for the given model
+        :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
+          Lists will be filled with NaN's if the variable could not be calculated.
         """
         dataset = self.les_dataset
         if dataset_override is not None:
@@ -1512,12 +1931,28 @@ class VariableGroupSamBudgets(VariableGroup):
 
     def getU2V2Sdmp(self, dataset_override):
         """
+        This is a "calculate function". Calculate functions are intended to be written by the user in the event that
+        they need a variable that is not output by their atmospheric model. The general format for these functions
+        is:
+            1. Get the proper dataset. This is either passed in as dataset_override, or some benchmark dataset
+            2. Get the equations needed variables from the dataset using ``self.getVarForCalculations()``
+            3. Calculate the new variable
+            4. (optional) If there are multiple valid equations, pick the one that worked using
+               ``self.pickNonZeroOutput()``
+            5. Return the data as (dependent,independent)
+
+        For more information on calculate functions, see the "Creating a new calculated function (for calculated
+        variables)" section of the README.md
+
         Calculates the SDMP variable value
         of the combined U2+V2 budget using the following equation:
-        2 * SDMP - W2SDMP
-        :param dataset_override:
-        :return: requested variable dependent_data in the form of a list.
-                 Returned dependent_data is already cropped to the appropriate min,max indices
+        ``2 * SDMP - W2SDMP``
+
+        :param dataset_override: If passed, this netcdf dataset will be used to gather the data needed to calculate the
+          given variable. if not passed, this function should attempt to find the best source for the data, e.g.
+          the benchmark data for the given model
+        :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
+          Lists will be filled with NaN's if the variable could not be calculated.
         """
         dataset = self.les_dataset
         if dataset_override is not None:
@@ -1529,12 +1964,28 @@ class VariableGroupSamBudgets(VariableGroup):
 
     def getU2V2Bt(self, dataset_override):
         """
+        This is a "calculate function". Calculate functions are intended to be written by the user in the event that
+        they need a variable that is not output by their atmospheric model. The general format for these functions
+        is:
+            1. Get the proper dataset. This is either passed in as dataset_override, or some benchmark dataset
+            2. Get the equations needed variables from the dataset using ``self.getVarForCalculations()``
+            3. Calculate the new variable
+            4. (optional) If there are multiple valid equations, pick the one that worked using
+               ``self.pickNonZeroOutput()``
+            5. Return the data as (dependent,independent)
+
+        For more information on calculate functions, see the "Creating a new calculated function (for calculated
+        variables)" section of the README.md
+
         Calculates the BT variable value
         of the combined U2+V2 budget using the following equation:
-        2 * BT - W2BT
-        :param dataset_override:
-        :return: requested variable dependent_data in the form of a list.
-                 Returned dependent_data is already cropped to the appropriate min,max indices
+        ``2 * BT - W2BT``
+
+        :param dataset_override: If passed, this netcdf dataset will be used to gather the data needed to calculate the
+          given variable. if not passed, this function should attempt to find the best source for the data, e.g.
+          the benchmark data for the given model
+        :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
+          Lists will be filled with NaN's if the variable could not be calculated.
         """
         dataset = self.les_dataset
         if dataset_override is not None:
@@ -1546,12 +1997,28 @@ class VariableGroupSamBudgets(VariableGroup):
 
     def getU2V2Residual(self, dataset_override):
         """
+        This is a "calculate function". Calculate functions are intended to be written by the user in the event that
+        they need a variable that is not output by their atmospheric model. The general format for these functions
+        is:
+            1. Get the proper dataset. This is either passed in as dataset_override, or some benchmark dataset
+            2. Get the equations needed variables from the dataset using ``self.getVarForCalculations()``
+            3. Calculate the new variable
+            4. (optional) If there are multiple valid equations, pick the one that worked using
+               ``self.pickNonZeroOutput()``
+            5. Return the data as (dependent,independent)
+
+        For more information on calculate functions, see the "Creating a new calculated function (for calculated
+        variables)" section of the README.md
+
         Calculates the residual for the W2 budget using
         the following equation:
-        2 * TKE_RES - W2_RES
-        :param dataset_override:
-        :return: requested variable dependent_data in the form of a list.
-                 Returned dependent_data is already cropped to the appropriate min,max indices
+        ``2 * TKE_RES - W2_RES``
+
+        :param dataset_override: If passed, this netcdf dataset will be used to gather the data needed to calculate the
+          given variable. if not passed, this function should attempt to find the best source for the data, e.g.
+          the benchmark data for the given model
+        :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
+          Lists will be filled with NaN's if the variable could not be calculated.
         """
         dataset = self.les_dataset
         if dataset_override is not None:
@@ -1577,12 +2044,28 @@ class VariableGroupSamBudgets(VariableGroup):
 
     def getW3Residual(self, dataset_override=None):
         """
+        This is a "calculate function". Calculate functions are intended to be written by the user in the event that
+        they need a variable that is not output by their atmospheric model. The general format for these functions
+        is:
+            1. Get the proper dataset. This is either passed in as dataset_override, or some benchmark dataset
+            2. Get the equations needed variables from the dataset using ``self.getVarForCalculations()``
+            3. Calculate the new variable
+            4. (optional) If there are multiple valid equations, pick the one that worked using
+               ``self.pickNonZeroOutput()``
+            5. Return the data as (dependent,independent)
+
+        For more information on calculate functions, see the "Creating a new calculated function (for calculated
+        variables)" section of the README.md
+
         Calculates the residual for the W3 budget using
         the following equation:
-        W3BT - (W3ADV + W3PRES + W3REDIS + W3BUOY + W3DIFF)
-        :param dataset_override:
-        :return: requested variable dependent_data in the form of a list.
-                 Returned dependent_data is already cropped to the appropriate min,max indices
+        ``W3BT - (W3ADV + W3PRES + W3REDIS + W3BUOY + W3DIFF)``
+
+        :param dataset_override: If passed, this netcdf dataset will be used to gather the data needed to calculate the
+          given variable. if not passed, this function should attempt to find the best source for the data, e.g.
+          the benchmark data for the given model
+        :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
+          Lists will be filled with NaN's if the variable could not be calculated.
         """
         dataset = self.les_dataset
         if dataset_override is not None:
@@ -1598,12 +2081,28 @@ class VariableGroupSamBudgets(VariableGroup):
 
     def getUWPresPlusAniz(self, dataset_override=None):
         """
+        This is a "calculate function". Calculate functions are intended to be written by the user in the event that
+        they need a variable that is not output by their atmospheric model. The general format for these functions
+        is:
+            1. Get the proper dataset. This is either passed in as dataset_override, or some benchmark dataset
+            2. Get the equations needed variables from the dataset using ``self.getVarForCalculations()``
+            3. Calculate the new variable
+            4. (optional) If there are multiple valid equations, pick the one that worked using
+               ``self.pickNonZeroOutput()``
+            5. Return the data as (dependent,independent)
+
+        For more information on calculate functions, see the "Creating a new calculated function (for calculated
+        variables)" section of the README.md
+
         Calculates the combined ANIZ and PRES variable value
         of the UW budget using the following equation:
-        WUPRES + WUANIZ
-        :param dataset_override:
-        :return: requested variable dependent_data in the form of a list.
-                 Returned dependent_data is already cropped to the appropriate min,max indices
+        ``WUPRES + WUANIZ``
+
+        :param dataset_override: If passed, this netcdf dataset will be used to gather the data needed to calculate the
+          given variable. if not passed, this function should attempt to find the best source for the data, e.g.
+          the benchmark data for the given model
+        :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
+          Lists will be filled with NaN's if the variable could not be calculated.
         """
         dataset = self.les_dataset
         if dataset_override is not None:
@@ -1615,12 +2114,28 @@ class VariableGroupSamBudgets(VariableGroup):
 
     def getUWResidual(self, dataset_override=None):
         """
+        This is a "calculate function". Calculate functions are intended to be written by the user in the event that
+        they need a variable that is not output by their atmospheric model. The general format for these functions
+        is:
+            1. Get the proper dataset. This is either passed in as dataset_override, or some benchmark dataset
+            2. Get the equations needed variables from the dataset using ``self.getVarForCalculations()``
+            3. Calculate the new variable
+            4. (optional) If there are multiple valid equations, pick the one that worked using
+               ``self.pickNonZeroOutput()``
+            5. Return the data as (dependent,independent)
+
+        For more information on calculate functions, see the "Creating a new calculated function (for calculated
+        variables)" section of the README.md
+
         Calculates the residual for the UW budget using
         the following equation:
-        WUBT - (WUDIFF + WUSHEAR + WUADV + WUPRES + WUANIZ + WUBUOY + WUSDMP)
-        :param dataset_override:
-        :return: requested variable dependent_data in the form of a list.
-                 Returned dependent_data is already cropped to the appropriate min,max indices
+        ``WUBT - (WUDIFF + WUSHEAR + WUADV + WUPRES + WUANIZ + WUBUOY + WUSDMP)``
+
+        :param dataset_override: If passed, this netcdf dataset will be used to gather the data needed to calculate the
+          given variable. if not passed, this function should attempt to find the best source for the data, e.g.
+          the benchmark data for the given model
+        :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
+          Lists will be filled with NaN's if the variable could not be calculated.
         """
         dataset = self.les_dataset
         if dataset_override is not None:
@@ -1638,12 +2153,28 @@ class VariableGroupSamBudgets(VariableGroup):
 
     def getVWPresPlusAniz(self, dataset_override=None):
         """
+        This is a "calculate function". Calculate functions are intended to be written by the user in the event that
+        they need a variable that is not output by their atmospheric model. The general format for these functions
+        is:
+            1. Get the proper dataset. This is either passed in as dataset_override, or some benchmark dataset
+            2. Get the equations needed variables from the dataset using ``self.getVarForCalculations()``
+            3. Calculate the new variable
+            4. (optional) If there are multiple valid equations, pick the one that worked using
+               ``self.pickNonZeroOutput()``
+            5. Return the data as (dependent,independent)
+
+        For more information on calculate functions, see the "Creating a new calculated function (for calculated
+        variables)" section of the README.md
+
         Calculates the combined ANIZ and PRES variable value
         of the VW budget using the following equation:
-        WVPRES + WVANIZ
-        :param dataset_override:
-        :return: requested variable dependent_data in the form of a list.
-                 Returned dependent_data is already cropped to the appropriate min,max indices
+        ``WVPRES + WVANIZ``
+
+        :param dataset_override: If passed, this netcdf dataset will be used to gather the data needed to calculate the
+          given variable. if not passed, this function should attempt to find the best source for the data, e.g.
+          the benchmark data for the given model
+        :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
+          Lists will be filled with NaN's if the variable could not be calculated.
         """
         dataset = self.les_dataset
         if dataset_override is not None:
@@ -1655,12 +2186,28 @@ class VariableGroupSamBudgets(VariableGroup):
 
     def getVWResidual(self, dataset_override=None):
         """
+        This is a "calculate function". Calculate functions are intended to be written by the user in the event that
+        they need a variable that is not output by their atmospheric model. The general format for these functions
+        is:
+            1. Get the proper dataset. This is either passed in as dataset_override, or some benchmark dataset
+            2. Get the equations needed variables from the dataset using ``self.getVarForCalculations()``
+            3. Calculate the new variable
+            4. (optional) If there are multiple valid equations, pick the one that worked using
+               ``self.pickNonZeroOutput()``
+            5. Return the data as (dependent,independent)
+
+        For more information on calculate functions, see the "Creating a new calculated function (for calculated
+        variables)" section of the README.md
+
         Calculates the residual for the VW budget using
         the following equation:
-        WVBT - (WVDIFF + WVSHEAR + WVADV + WVPRES + WVANIZ + WVBUOY + WVSDMP)
-        :param dataset_override:
-        :return: requested variable dependent_data in the form of a list.
-                 Returned dependent_data is already cropped to the appropriate min,max indices
+        ``WVBT - (WVDIFF + WVSHEAR + WVADV + WVPRES + WVANIZ + WVBUOY + WVSDMP)``
+
+        :param dataset_override: If passed, this netcdf dataset will be used to gather the data needed to calculate the
+          given variable. if not passed, this function should attempt to find the best source for the data, e.g.
+          the benchmark data for the given model
+        :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
+          Lists will be filled with NaN's if the variable could not be calculated.
         """
         dataset = self.les_dataset
         if dataset_override is not None:

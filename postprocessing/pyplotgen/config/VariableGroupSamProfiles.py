@@ -1412,11 +1412,28 @@ class VariableGroupSamProfiles(VariableGroup):
             
     def getThlmSamCalc(self, dataset_override=None):
         """
+        This is a "calculate function". Calculate functions are intended to be written by the user in the event that
+        they need a variable that is not output by their atmospheric model. The general format for these functions
+        is:
+            1. Get the proper dataset. This is either passed in as dataset_override, or some benchmark dataset
+            2. Get the equations needed variables from the dataset using ``self.getVarForCalculations()``
+            3. Calculate the new variable
+            4. (optional) If there are multiple valid equations, pick the one that worked using
+               ``self.pickNonZeroOutput()``
+            5. Return the data as (dependent,independent)
+
+        For more information on calculate functions, see the "Creating a new calculated function (for calculated
+        variables)" section of the README.md
+
         Calculates thlm values from sam output using
         the following equation
-        (THETAL + 2500.4.*(THETA./TABS).*(QI./1000))
-        :return: requested variable dependent_data in the form of a list.
-                 Returned dependent_data is already cropped to the appropriate min,max indices
+        ``(THETAL + 2500.4.*(THETA./TABS).*(QI./1000))``
+
+        :param dataset_override: If passed, this netcdf dataset will be used to gather the data needed to calculate the
+          given variable. if not passed, this function should attempt to find the best source for the data, e.g.
+          the benchmark data for the given model
+        :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
+          Lists will be filled with NaN's if the variable could not be calculated.
         """
         dataset = self.les_dataset
         if dataset_override is not None:
@@ -1431,11 +1448,28 @@ class VariableGroupSamProfiles(VariableGroup):
     
     def getRtmSamCalc(self, dataset_override=None):
         """
+        This is a "calculate function". Calculate functions are intended to be written by the user in the event that
+        they need a variable that is not output by their atmospheric model. The general format for these functions
+        is:
+            1. Get the proper dataset. This is either passed in as dataset_override, or some benchmark dataset
+            2. Get the equations needed variables from the dataset using ``self.getVarForCalculations()``
+            3. Calculate the new variable
+            4. (optional) If there are multiple valid equations, pick the one that worked using
+               ``self.pickNonZeroOutput()``
+            5. Return the data as (dependent,independent)
+
+        For more information on calculate functions, see the "Creating a new calculated function (for calculated
+        variables)" section of the README.md
+
         Calculates rtm values from sam output using
         the following equation
-        (QT-QI) ./ 1000
-        :return: requested variable dependent_data in the form of a list.
-                 Returned dependent_data is already cropped to the appropriate min,max indices
+        ``(QT-QI) ./ 1000``
+
+        :param dataset_override: If passed, this netcdf dataset will be used to gather the data needed to calculate the
+          given variable. if not passed, this function should attempt to find the best source for the data, e.g.
+          the benchmark data for the given model
+        :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
+          Lists will be filled with NaN's if the variable could not be calculated.
         """
         dataset = self.les_dataset
         if dataset_override is not None:
@@ -1448,10 +1482,28 @@ class VariableGroupSamProfiles(VariableGroup):
     
     def getWpthlpCalc(self, dataset_override=None):
         """
+        This is a "calculate function". Calculate functions are intended to be written by the user in the event that
+        they need a variable that is not output by their atmospheric model. The general format for these functions
+        is:
+            1. Get the proper dataset. This is either passed in as dataset_override, or some benchmark dataset
+            2. Get the equations needed variables from the dataset using ``self.getVarForCalculations()``
+            3. Calculate the new variable
+            4. (optional) If there are multiple valid equations, pick the one that worked using
+               ``self.pickNonZeroOutput()``
+            5. Return the data as (dependent,independent)
+
+        For more information on calculate functions, see the "Creating a new calculated function (for calculated
+        variables)" section of the README.md
+
         This gets called if WPTHLP isn't outputted in an nc file
         as a backup way of gathering the dependent_data for plotting.
-        WPTHLP = (TLFLUX) ./ (RHO * 1004) + WPTHLP_SGS (CLUBB variable)
-        :return:
+        ``WPTHLP = (TLFLUX) ./ (RHO * 1004) + WPTHLP_SGS (CLUBB variable)``
+
+        :param dataset_override: If passed, this netcdf dataset will be used to gather the data needed to calculate the
+          given variable. if not passed, this function should attempt to find the best source for the data, e.g.
+          the benchmark data for the given model
+        :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
+          Lists will be filled with NaN's if the variable could not be calculated.
         """
         dataset = self.les_dataset
         if dataset_override is not None:
@@ -1466,11 +1518,28 @@ class VariableGroupSamProfiles(VariableGroup):
     
     def getCorrWpThlpCalc(self, dataset_override=None):
         """
+        This is a "calculate function". Calculate functions are intended to be written by the user in the event that
+        they need a variable that is not output by their atmospheric model. The general format for these functions
+        is:
+            1. Get the proper dataset. This is either passed in as dataset_override, or some benchmark dataset
+            2. Get the equations needed variables from the dataset using ``self.getVarForCalculations()``
+            3. Calculate the new variable
+            4. (optional) If there are multiple valid equations, pick the one that worked using
+               ``self.pickNonZeroOutput()``
+            5. Return the data as (dependent,independent)
+
+        For more information on calculate functions, see the "Creating a new calculated function (for calculated
+        variables)" section of the README.md
+
         Calculates the correlation of W and THETAL from SAM output
         using the following equation:
-        (((TLFLUX) / (RHO * 1004.)) + WPTHLP_SGS)/np.sqrt(W2*TL2 + 1e-4)
-        :return: requested variable dependent_data in the form of a list.
-                 Returned dependent_data is already cropped to the appropriate min,max indices
+        ``(((TLFLUX) / (RHO * 1004.)) + WPTHLP_SGS)/np.sqrt(W2*TL2 + 1e-4)``
+
+        :param dataset_override: If passed, this netcdf dataset will be used to gather the data needed to calculate the
+          given variable. if not passed, this function should attempt to find the best source for the data, e.g.
+          the benchmark data for the given model
+        :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
+          Lists will be filled with NaN's if the variable could not be calculated.
         """
         dataset = self.les_dataset
         if dataset_override is not None:
@@ -1486,10 +1555,28 @@ class VariableGroupSamProfiles(VariableGroup):
     
     def getWprtpCalc(self, dataset_override=None):
         """
+        This is a "calculate function". Calculate functions are intended to be written by the user in the event that
+        they need a variable that is not output by their atmospheric model. The general format for these functions
+        is:
+            1. Get the proper dataset. This is either passed in as dataset_override, or some benchmark dataset
+            2. Get the equations needed variables from the dataset using ``self.getVarForCalculations()``
+            3. Calculate the new variable
+            4. (optional) If there are multiple valid equations, pick the one that worked using
+               ``self.pickNonZeroOutput()``
+            5. Return the data as (dependent,independent)
+
+        For more information on calculate functions, see the "Creating a new calculated function (for calculated
+        variables)" section of the README.md
+
         This gets called if WPRTP isn't outputted in an nc file
         as a backup way of gathering the dependent_data for plotting.
-        WPRTP = (QTFLUX) / (RHO * 2.5104e+6) + WPRTP_SGS (CLUBB variable)
-        :return:
+        ``WPRTP = (QTFLUX) / (RHO * 2.5104e+6) + WPRTP_SGS (CLUBB variable)``
+
+        :param dataset_override: If passed, this netcdf dataset will be used to gather the data needed to calculate the
+          given variable. if not passed, this function should attempt to find the best source for the data, e.g.
+          the benchmark data for the given model
+        :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
+          Lists will be filled with NaN's if the variable could not be calculated.
         """
         dataset = self.les_dataset
         if dataset_override is not None:
@@ -1503,17 +1590,33 @@ class VariableGroupSamProfiles(VariableGroup):
     
     def getCorrWpRtpCalc(self, dataset_override=None):
         """
+        This is a "calculate function". Calculate functions are intended to be written by the user in the event that
+        they need a variable that is not output by their atmospheric model. The general format for these functions
+        is:
+            1. Get the proper dataset. This is either passed in as dataset_override, or some benchmark dataset
+            2. Get the equations needed variables from the dataset using ``self.getVarForCalculations()``
+            3. Calculate the new variable
+            4. (optional) If there are multiple valid equations, pick the one that worked using
+               ``self.pickNonZeroOutput()``
+            5. Return the data as (dependent,independent)
+
+        For more information on calculate functions, see the "Creating a new calculated function (for calculated
+        variables)" section of the README.md
+
         Calculates the correlation of W and THETAL from SAM output
         using the following equation:
-        WPRTP/(np.sqrt(W2*QT2*1e-6)+1e-8)
-        :return: requested variable dependent_data in the form of a list.
-                 Returned dependent_data is already cropped to the appropriate min,max indices
+        ``WPRTP/(np.sqrt(W2*QT2*1e-6)+1e-8)``
+
+        :param dataset_override: If passed, this netcdf dataset will be used to gather the data needed to calculate the
+          given variable. if not passed, this function should attempt to find the best source for the data, e.g.
+          the benchmark data for the given model
+        :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
+          Lists will be filled with NaN's if the variable could not be calculated.
         """
         dataset = self.les_dataset
         if dataset_override is not None:
             dataset = dataset_override
         WPRTP, indep, dataset = self.getVarForCalculations('WPRTP', dataset)
-        #RHO, indep, dataset = self.getVarForCalculations('RHO', dataset)
         WPRTP_SGS, indep, dataset = self.getVarForCalculations('WPRTP_SGS', dataset)
         W2, indep, dataset = self.getVarForCalculations('W2', dataset)
         QT2, indep, dataset = self.getVarForCalculations('QT2', dataset)
@@ -1523,11 +1626,28 @@ class VariableGroupSamProfiles(VariableGroup):
     
     def getWp2Calc(self, dataset_override = None):
         """
+        This is a "calculate function". Calculate functions are intended to be written by the user in the event that
+        they need a variable that is not output by their atmospheric model. The general format for these functions
+        is:
+            1. Get the proper dataset. This is either passed in as dataset_override, or some benchmark dataset
+            2. Get the equations needed variables from the dataset using ``self.getVarForCalculations()``
+            3. Calculate the new variable
+            4. (optional) If there are multiple valid equations, pick the one that worked using
+               ``self.pickNonZeroOutput()``
+            5. Return the data as (dependent,independent)
+
+        For more information on calculate functions, see the "Creating a new calculated function (for calculated
+        variables)" section of the README.md
+
         Calculates the total vertical momentum variance W'^2 from SAM output
         using the following equation:
-        W2 = W2 + WP2_SGS (CLUBB variable)
-        :return: requested variable dependent_data in the form of a list.
-                 Returned dependent_data is already cropped to the appropriate min,max indices
+        ``W2 = W2 + WP2_SGS`` (CLUBB variable)
+
+        :param dataset_override: If passed, this netcdf dataset will be used to gather the data needed to calculate the
+          given variable. if not passed, this function should attempt to find the best source for the data, e.g.
+          the benchmark data for the given model
+        :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
+          Lists will be filled with NaN's if the variable could not be calculated.
         """
         dataset = self.les_dataset
         if dataset_override is not None:
@@ -1539,11 +1659,28 @@ class VariableGroupSamProfiles(VariableGroup):
     
     def getWp3Calc(self, dataset_override = None):
         """
+        This is a "calculate function". Calculate functions are intended to be written by the user in the event that
+        they need a variable that is not output by their atmospheric model. The general format for these functions
+        is:
+            1. Get the proper dataset. This is either passed in as dataset_override, or some benchmark dataset
+            2. Get the equations needed variables from the dataset using ``self.getVarForCalculations()``
+            3. Calculate the new variable
+            4. (optional) If there are multiple valid equations, pick the one that worked using
+               ``self.pickNonZeroOutput()``
+            5. Return the data as (dependent,independent)
+
+        For more information on calculate functions, see the "Creating a new calculated function (for calculated
+        variables)" section of the README.md
+
         Calculates the total vertical momentum skewness W'^3 from SAM output
         using the following equation:
-        W3 = W3 + WP3_SGS (CLUBB variable)
-        :return: requested variable dependent_data in the form of a list.
-                 Returned dependent_data is already cropped to the appropriate min,max indices
+        ``W3 = W3 + WP3_SGS (CLUBB variable)``
+
+        :param dataset_override: If passed, this netcdf dataset will be used to gather the data needed to calculate the
+          given variable. if not passed, this function should attempt to find the best source for the data, e.g.
+          the benchmark data for the given model
+        :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
+          Lists will be filled with NaN's if the variable could not be calculated.
         """
         dataset = self.les_dataset
         if dataset_override is not None:
@@ -1555,11 +1692,28 @@ class VariableGroupSamProfiles(VariableGroup):
     
     def getThetalVarCalc(self, dataset_override = None):
         """
+        This is a "calculate function". Calculate functions are intended to be written by the user in the event that
+        they need a variable that is not output by their atmospheric model. The general format for these functions
+        is:
+            1. Get the proper dataset. This is either passed in as dataset_override, or some benchmark dataset
+            2. Get the equations needed variables from the dataset using ``self.getVarForCalculations()``
+            3. Calculate the new variable
+            4. (optional) If there are multiple valid equations, pick the one that worked using
+               ``self.pickNonZeroOutput()``
+            5. Return the data as (dependent,independent)
+
+        For more information on calculate functions, see the "Creating a new calculated function (for calculated
+        variables)" section of the README.md
+
         Calculates the total variance of THETAL from SAM output
         using the following equation:
-        THETALVAR = THL2 + THLP2_SGS (CLUBB variable)
-        :return: requested variable dependent_data in the form of a list.
-                 Returned dependent_data is already cropped to the appropriate min,max indices
+        ``THETALVAR = THL2 + THLP2_SGS`` (CLUBB variable)
+
+        :param dataset_override: If passed, this netcdf dataset will be used to gather the data needed to calculate the
+          given variable. if not passed, this function should attempt to find the best source for the data, e.g.
+          the benchmark data for the given model
+        :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
+          Lists will be filled with NaN's if the variable could not be calculated.
         """
         dataset = self.les_dataset
         if dataset_override is not None:
@@ -1571,12 +1725,28 @@ class VariableGroupSamProfiles(VariableGroup):
     
     def getRtVarCalc(self, dataset_override = None):
         """
-        TODO
+        This is a "calculate function". Calculate functions are intended to be written by the user in the event that
+        they need a variable that is not output by their atmospheric model. The general format for these functions
+        is:
+            1. Get the proper dataset. This is either passed in as dataset_override, or some benchmark dataset
+            2. Get the equations needed variables from the dataset using ``self.getVarForCalculations()``
+            3. Calculate the new variable
+            4. (optional) If there are multiple valid equations, pick the one that worked using
+               ``self.pickNonZeroOutput()``
+            5. Return the data as (dependent,independent)
+
+        For more information on calculate functions, see the "Creating a new calculated function (for calculated
+        variables)" section of the README.md
+
         Calculates the total variance of RT from SAM output
         using the following equation:
-        RTVAR = (QT2 * 1e-6) + RTP2_SGS (CLUBB variable)
-        :return: requested variable dependent_data in the form of a list.
-                 Returned dependent_data is already cropped to the appropriate min,max indices
+        ``RTVAR = (QT2 * 1e-6) + RTP2_SGS`` (CLUBB variable)
+
+        :param dataset_override: If passed, this netcdf dataset will be used to gather the data needed to calculate the
+          given variable. if not passed, this function should attempt to find the best source for the data, e.g.
+          the benchmark data for the given model
+        :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
+          Lists will be filled with NaN's if the variable could not be calculated.
         """
         dataset = self.les_dataset
         if dataset_override is not None:
@@ -1588,11 +1758,28 @@ class VariableGroupSamProfiles(VariableGroup):
     
     def getUpWpCalc(self, dataset_override = None):
         """
+        This is a "calculate function". Calculate functions are intended to be written by the user in the event that
+        they need a variable that is not output by their atmospheric model. The general format for these functions
+        is:
+            1. Get the proper dataset. This is either passed in as dataset_override, or some benchmark dataset
+            2. Get the equations needed variables from the dataset using ``self.getVarForCalculations()``
+            3. Calculate the new variable
+            4. (optional) If there are multiple valid equations, pick the one that worked using
+               ``self.pickNonZeroOutput()``
+            5. Return the data as (dependent,independent)
+
+        For more information on calculate functions, see the "Creating a new calculated function (for calculated
+        variables)" section of the README.md
+
         Calculates the total covariance of U and W from SAM output
         using the following equation:
-        UPWP = UW + UPWP_SGS (CLUBB variable)
-        :return: requested variable dependent_data in the form of a list.
-                 Returned dependent_data is already cropped to the appropriate min,max indices
+        ``UPWP = UW + UPWP_SGS`` (CLUBB variable)
+
+        :param dataset_override: If passed, this netcdf dataset will be used to gather the data needed to calculate the
+          given variable. if not passed, this function should attempt to find the best source for the data, e.g.
+          the benchmark data for the given model
+        :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
+          Lists will be filled with NaN's if the variable could not be calculated.
         """
         dataset = self.les_dataset
         if dataset_override is not None:
@@ -1604,11 +1791,28 @@ class VariableGroupSamProfiles(VariableGroup):
     
     def getVpWpCalc(self, dataset_override = None):
         """
+        This is a "calculate function". Calculate functions are intended to be written by the user in the event that
+        they need a variable that is not output by their atmospheric model. The general format for these functions
+        is:
+            1. Get the proper dataset. This is either passed in as dataset_override, or some benchmark dataset
+            2. Get the equations needed variables from the dataset using ``self.getVarForCalculations()``
+            3. Calculate the new variable
+            4. (optional) If there are multiple valid equations, pick the one that worked using
+               ``self.pickNonZeroOutput()``
+            5. Return the data as (dependent,independent)
+
+        For more information on calculate functions, see the "Creating a new calculated function (for calculated
+        variables)" section of the README.md
+
         Calculates the total covariance of V and W from SAM output
         using the following equation:
-        VPWP = VW + VPWP_SGS (CLUBB variable)
-        :return: requested variable dependent_data in the form of a list.
-                 Returned dependent_data is already cropped to the appropriate min,max indices
+        ``VPWP = VW + VPWP_SGS`` (CLUBB variable)
+
+        :param dataset_override: If passed, this netcdf dataset will be used to gather the data needed to calculate the
+          given variable. if not passed, this function should attempt to find the best source for the data, e.g.
+          the benchmark data for the given model
+        :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
+          Lists will be filled with NaN's if the variable could not be calculated.
         """
         dataset = self.les_dataset
         if dataset_override is not None:
@@ -1620,11 +1824,28 @@ class VariableGroupSamProfiles(VariableGroup):
     
     def getUp2Calc(self, dataset_override = None):
         """
+        This is a "calculate function". Calculate functions are intended to be written by the user in the event that
+        they need a variable that is not output by their atmospheric model. The general format for these functions
+        is:
+            1. Get the proper dataset. This is either passed in as dataset_override, or some benchmark dataset
+            2. Get the equations needed variables from the dataset using ``self.getVarForCalculations()``
+            3. Calculate the new variable
+            4. (optional) If there are multiple valid equations, pick the one that worked using
+               ``self.pickNonZeroOutput()``
+            5. Return the data as (dependent,independent)
+
+        For more information on calculate functions, see the "Creating a new calculated function (for calculated
+        variables)" section of the README.md
+
         Calculates the total variance of U from SAM output
         using the following equation:
-        UVAR = U2 + UP2_SGS (CLUBB variable)
-        :return: requested variable dependent_data in the form of a list.
-                 Returned dependent_data is already cropped to the appropriate min,max indices
+        ``UVAR = U2 + UP2_SGS`` (CLUBB variable)
+
+        :param dataset_override: If passed, this netcdf dataset will be used to gather the data needed to calculate the
+          given variable. if not passed, this function should attempt to find the best source for the data, e.g.
+          the benchmark data for the given model
+        :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
+          Lists will be filled with NaN's if the variable could not be calculated.
         """
         dataset = self.les_dataset
         if dataset_override is not None:
@@ -1636,11 +1857,28 @@ class VariableGroupSamProfiles(VariableGroup):
     
     def getVp2Calc(self, dataset_override = None):
         """
+        This is a "calculate function". Calculate functions are intended to be written by the user in the event that
+        they need a variable that is not output by their atmospheric model. The general format for these functions
+        is:
+            1. Get the proper dataset. This is either passed in as dataset_override, or some benchmark dataset
+            2. Get the equations needed variables from the dataset using ``self.getVarForCalculations()``
+            3. Calculate the new variable
+            4. (optional) If there are multiple valid equations, pick the one that worked using
+               ``self.pickNonZeroOutput()``
+            5. Return the data as (dependent,independent)
+
+        For more information on calculate functions, see the "Creating a new calculated function (for calculated
+        variables)" section of the README.md
+
         Calculates the total variance of V from SAM output
         using the following equation:
-        VVAR = V2 + VP2_SGS (CLUBB variable)
-        :return: requested variable dependent_data in the form of a list.
-                 Returned dependent_data is already cropped to the appropriate min,max indices
+        ``VVAR = V2 + VP2_SGS`` (CLUBB variable)
+
+        :param dataset_override: If passed, this netcdf dataset will be used to gather the data needed to calculate the
+          given variable. if not passed, this function should attempt to find the best source for the data, e.g.
+          the benchmark data for the given model
+        :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
+          Lists will be filled with NaN's if the variable could not be calculated.
         """
         dataset = self.les_dataset
         if dataset_override is not None:
@@ -1649,14 +1887,31 @@ class VariableGroupSamProfiles(VariableGroup):
         VP2_SGS, indep, dataset = self.getVarForCalculations('VP2_SGS', dataset)
         VVAR = V2 + VP2_SGS
         return VVAR, indep
-    
+
     def getUpWpCorrCalc(self, dataset_override = None):
         """
+        This is a "calculate function". Calculate functions are intended to be written by the user in the event that
+        they need a variable that is not output by their atmospheric model. The general format for these functions
+        is:
+            1. Get the proper dataset. This is either passed in as dataset_override, or some benchmark dataset
+            2. Get the equations needed variables from the dataset using ``self.getVarForCalculations()``
+            3. Calculate the new variable
+            4. (optional) If there are multiple valid equations, pick the one that worked using
+               ``self.pickNonZeroOutput()``
+            5. Return the data as (dependent,independent)
+
+        For more information on calculate functions, see the "Creating a new calculated function (for calculated
+        variables)" section of the README.md
+
         Calculates the total correlation of U and W from SAM output
         using the following equation:
-        (UW+UPWP_SGS)/(np.sqrt((U2+UP2_SGS)*(W2+WP2_SGS)+1e-4))
-        :return: requested variable dependent_data in the form of a list.
-                 Returned dependent_data is already cropped to the appropriate min,max indices
+        ``(UW+UPWP_SGS)/(np.sqrt((U2+UP2_SGS)*(W2+WP2_SGS)+1e-4))``
+
+        :param dataset_override: If passed, this netcdf dataset will be used to gather the data needed to calculate the
+          given variable. if not passed, this function should attempt to find the best source for the data, e.g.
+          the benchmark data for the given model
+        :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
+          Lists will be filled with NaN's if the variable could not be calculated.
         """
         dataset = self.les_dataset
         if dataset_override is not None:
@@ -1668,11 +1923,28 @@ class VariableGroupSamProfiles(VariableGroup):
     
     def getVpWpCorrCalc(self, dataset_override = None):
         """
+        This is a "calculate function". Calculate functions are intended to be written by the user in the event that
+        they need a variable that is not output by their atmospheric model. The general format for these functions
+        is:
+            1. Get the proper dataset. This is either passed in as dataset_override, or some benchmark dataset
+            2. Get the equations needed variables from the dataset using ``self.getVarForCalculations()``
+            3. Calculate the new variable
+            4. (optional) If there are multiple valid equations, pick the one that worked using
+               ``self.pickNonZeroOutput()``
+            5. Return the data as (dependent,independent)
+
+        For more information on calculate functions, see the "Creating a new calculated function (for calculated
+        variables)" section of the README.md
+
         Calculates the total correlation of V and W from SAM output
         using the following equation:
-        (VW+VPWP_SGS)/(np.sqrt((V2+VP2_SGS)*(W2+WP2_SGS)+1e-4))
-        :return: requested variable dependent_data in the form of a list.
-                 Returned dependent_data is already cropped to the appropriate min,max indices
+        ``(VW+VPWP_SGS)/(np.sqrt((V2+VP2_SGS)*(W2+WP2_SGS)+1e-4))``
+
+        :param dataset_override: If passed, this netcdf dataset will be used to gather the data needed to calculate the
+          given variable. if not passed, this function should attempt to find the best source for the data, e.g.
+          the benchmark data for the given model
+        :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
+          Lists will be filled with NaN's if the variable could not be calculated.
         """
         dataset = self.les_dataset
         if dataset_override is not None:
@@ -1684,12 +1956,28 @@ class VariableGroupSamProfiles(VariableGroup):
     
     def getQRP2_QRIP(self, dataset_override=None):
         """
+        This is a "calculate function". Calculate functions are intended to be written by the user in the event that
+        they need a variable that is not output by their atmospheric model. The general format for these functions
+        is:
+            1. Get the proper dataset. This is either passed in as dataset_override, or some benchmark dataset
+            2. Get the equations needed variables from the dataset using ``self.getVarForCalculations()``
+            3. Calculate the new variable
+            4. (optional) If there are multiple valid equations, pick the one that worked using
+               ``self.pickNonZeroOutput()``
+            5. Return the data as (dependent,independent)
+
+        For more information on calculate functions, see the "Creating a new calculated function (for calculated
+        variables)" section of the README.md
+
         Calculates the Within-Rain Variance of Rain Water Mixing Ratio from SAM output
         using the following equation:
-        '(qrainp2_ip / (np.maximum(qrainm_ip, 1e-5)**2))'
-        :return: requested variable dependent_data in the form of a list.
-                 Returned dependent_data is already cropped to the appropriate min,max indices
-        ALERT: How does this work in the budgets plotter?
+        ``(qrainp2_ip / (np.maximum(qrainm_ip, 1e-5)**2))``
+
+        :param dataset_override: If passed, this netcdf dataset will be used to gather the data needed to calculate the
+          given variable. if not passed, this function should attempt to find the best source for the data, e.g.
+          the benchmark data for the given model
+        :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
+          Lists will be filled with NaN's if the variable could not be calculated.
         """
         dataset = self.les_dataset
         if dataset_override is not None:

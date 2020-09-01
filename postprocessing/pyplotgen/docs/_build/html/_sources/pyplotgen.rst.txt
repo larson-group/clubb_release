@@ -5,7 +5,7 @@ Subpackages
 -----------
 
 .. toctree::
-   :maxdepth: 4
+   :maxdepth: 5
 
    pyplotgen.config
    pyplotgen.python_html_gallery
@@ -22,6 +22,8 @@ pyplotgen.pyplotgen module
    :members:
    :undoc-members:
    :show-inheritance:
+   :private-members:
+   :special-members:
 
 Module contents
 ---------------
@@ -30,3 +32,5 @@ Module contents
    :members:
    :undoc-members:
    :show-inheritance:
+   :private-members:
+   :special-members:

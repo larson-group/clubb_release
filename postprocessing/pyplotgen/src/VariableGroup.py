@@ -93,39 +93,44 @@ class VariableGroup:
         creates lines/panels for the variable and then adds that
         variable to the list of all variables for this VariableGroup
 
-        :param variable_def_dict: A dict containing the information defining a variable. These definitions are declared
-            inside a VariableGroup child class, e.g. VariableGroupBase.
+        **Valid dict keys/options include:**
 
-        Valid dict keys/options include:
+        * *var_names*: A list of names various models refer to this variable as. E.g. ['wprtp', 'WPRTP', 'wpqtp']. This
+          parameter can also take in references to calc functions. Names/functions are prioritized left -> right.
 
-        *var_names*: A list of names various models refer to this variable as. E.g. ['wprtp', 'WPRTP', 'wpqtp']. This
-            parameter can also take in references to calc functions. Names/functions are prioritized left -> right.
-        *[model name]_conv_factor*: (optional) Numeric value to scale a model's variable by. E.g. 1/1000, or 100
-            Valid models are: clubb, hoc, r408, sam, cam, wrf, e3sm. E.g. "clubb_conv_factor"
-        *type*: (optional) Override the default type 'profile' with either 'budget' or 'timeseries'
-        *title*: (optional) Override the default panel title, or provide one if it's not specified in the netcdf file.
-        *sci_scale*: (optional) A numerical power of ten to scale the panel axis to. E.g. a value of "4" results in the
-                axis being scaled to x 1e4
-        *axis_title*: (optional) Override the default dependent axis title, or provide one if it's not
-            specified in the netcdf file.
-        *lines*: * Defines lines to plot for budget cases. Passed seperately because
-            it's a lot of text. The lines parameter currently does not support defining model-specific names/functions
-            This is given in the form of a list of lines, here's an example:
+        * *[model name]_conv_factor*: (optional) Numeric value to scale a model's variable by. E.g. 1/1000, or 100
+          Valid models are: clubb, hoc, r408, sam, cam, wrf, e3sm. E.g. "clubb_conv_factor"
+
+        * *type*: (optional) Override the default type 'profile' with either 'budget' or 'timeseries'
+
+        * *title*: (optional) Override the default panel title, or provide one if it's not specified in the netcdf file.
+
+        * *sci_scale*: (optional) A numerical power of ten to scale the panel axis to. E.g. a value of "4" results in the
+          axis being scaled to x 1e4
+
+        * *axis_title*: (optional) Override the default dependent axis title, or provide one if it's not
+          specified in the netcdf file.
+
+        * *lines*: (optional) Defines lines to plot for budget cases. Passed separately because
+          it's a lot of text. The lines parameter currently does not support defining model-specific names/functions
+          This is given in the form of a list of lines, here's an example:
 
         .. code-block:: python
             :linenos:
 
-        thlm_budget_lines = [
-            {'var_names': ['thlm_bt'], 'legend_label': 'thlm_bt'},
-            {'var_names': ['thlm_ma'], 'legend_label': 'thlm_ma'},
-            {'var_names': ['thlm_ta'], 'legend_label': 'thlm_ta'},
-            {'var_names': ['thlm_mc'], 'legend_label': 'thlm_mc'},
-            {'var_names': ['thlm_clipping',self.getThlmClipping], 'legend_label': 'thlm_clipping'},
-            {'var_names': ['radht'], 'legend_label': 'radht'},
-            {'var_names': ['ls_forcing', self.getThlmLsforcing], 'legend_label': 'thlm_ls_forcing'},
-            {'var_names': ['thlm_residual',self.getThlmResidual], 'legend_label': 'thlm_residual'},
+            thlm_budget_lines = [
+                {'var_names': ['thlm_bt'], 'legend_label': 'thlm_bt'},
+                {'var_names': ['thlm_ma'], 'legend_label': 'thlm_ma'},
+                {'var_names': ['thlm_ta'], 'legend_label': 'thlm_ta'},
+                {'var_names': ['thlm_mc'], 'legend_label': 'thlm_mc'},
+                {'var_names': ['thlm_clipping',self.getThlmClipping], 'legend_label': 'thlm_clipping'},
+                {'var_names': ['radht'], 'legend_label': 'radht'},
+                {'var_names': ['ls_forcing', self.getThlmLsforcing], 'legend_label': 'thlm_ls_forcing'},
+                {'var_names': ['thlm_residual',self.getThlmResidual], 'legend_label': 'thlm_residual'},
+            ]
 
-        ]
+        :param variable_def_dict: A dict containing the information defining a variable. These definitions are declared
+            inside a VariableGroup child class, e.g. VariableGroupBase.
 
         :return: None
         """
@@ -709,15 +714,19 @@ class VariableGroup:
         If both arrays are zero or nan, then it will return the first array arbitrarily.
 
         Example usage:
-        def get_rc_coef_zm_X_wprcp_coamps_calc(self, dataset_override=None):
-            wprlp, z, dataset = self.getVarForCalculations(['thlpqcp', 'wpqcp', 'wprlp'], dataset)
-            ex0, z, dataset = self.getVarForCalculations(['ex0'], dataset)
-            p, z, dataset = self.getVarForCalculations('p', dataset)
-            thvm, z, dataset = self.getVarForCalculations('thvm', dataset)
-            output1 = wprlp * (2.5e6 / (1004.67 * ex0) - 1.61 * thvm)
-            output2 = wprlp * (2.5e6 / (1004.67 * ((p / 1.0e5) ** (287.04 / 1004.67))) - 1.61 * thvm)
-            output = self.pickMostLikelyOutputList(output1, output2)
-            return output, z
+
+        .. code-block:: python
+            :linenos:
+
+            def get_rc_coef_zm_X_wprcp_coamps_calc(self, dataset_override=None):
+                wprlp, z, dataset = self.getVarForCalculations(['thlpqcp', 'wpqcp', 'wprlp'], dataset)
+                ex0, z, dataset = self.getVarForCalculations(['ex0'], dataset)
+                p, z, dataset = self.getVarForCalculations('p', dataset)
+                thvm, z, dataset = self.getVarForCalculations('thvm', dataset)
+                output1 = wprlp * (2.5e6 / (1004.67 * ex0) - 1.61 * thvm)
+                output2 = wprlp * (2.5e6 / (1004.67 * ((p / 1.0e5) ** (287.04 / 1004.67))) - 1.61 * thvm)
+                output = self.pickMostLikelyOutputList(output1, output2)
+                return output, z
 
 
         :param output1: An arraylike list of numbers outputted from a variable calculation

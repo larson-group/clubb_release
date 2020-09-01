@@ -611,6 +611,23 @@ GABLS3_NIGHT = {'name': 'gabls3_night',
                 'wrf_file': None,
                 'var_groups': [VariableGroupBase]}
 
+GATE_SHEAR_RLSF = {'name': 'GATE_shear_rlsf',
+                'description': "",
+                'start_time': 540, 'end_time': 720,
+                'height_min_value': 0, 'height_max_value': 24000,
+
+                'blacklisted_vars': [],
+                'sam_benchmark_file': SAM_BENCHMARK_OUTPUT_ROOT + "/SAM6.6/GATE_shear_rlsf/GATE_shear_rlsf_64x64x128_1km_5s.nc",
+                'clubb_file': None,
+                'coamps_benchmark_file': None,
+                'clubb_r408_file': None,
+                'clubb_hoc_file': None,
+                'e3sm_file': None,
+                'cam_file': None,
+                'sam_file': sam_output_root + "/GATE_SAM_CLUBB.nc",
+                'wrf_file': None,
+                'var_groups': [VariableGroupBase]}
+
 # Use to plot IOP forced SAM runs
 IOP = {'name': 'iop',
        'description': "",
@@ -873,7 +890,7 @@ ALL_CASES = [ARM, ARM_97, ASTEX_A209, ATEX,
              DYCOMS2_RF01, DYCOMS2_RF01_FIXED_SST, DYCOMS2_RF02_DO, DYCOMS2_RF02_DS, DYCOMS2_RF02_DS_RESTART,
              DYCOMS2_RF02_ND, DYCOMS2_RF02_SO,
              FIRE,
-             GABLS2, GABLS2_NIGHTLY, GABLS3, GABLS3_NIGHT,
+             GABLS2, GABLS2_NIGHTLY, GABLS3, GABLS3_NIGHT, GATE_SHEAR_RLSF,
              # IOP,
              JUN25_ALTOCU,
              LBA,
@@ -885,5 +902,5 @@ ALL_CASES = [ARM, ARM_97, ASTEX_A209, ATEX,
              ]
 
 # If uncommented, this line will override the real ALL_CASES given above, forcing pyplotgen to only plot some cases.
-# ALL_CASES = [ASTEX_A209]
+# ALL_CASES = [GATE_SHEAR_RLSF]
 # ALL_CASES = ALL_CASES[:7]

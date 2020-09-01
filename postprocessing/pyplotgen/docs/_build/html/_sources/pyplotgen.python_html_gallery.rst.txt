@@ -11,6 +11,8 @@ python\_html\_gallery.gallery module
    :members:
    :undoc-members:
    :show-inheritance:
+   :private-members:
+   :special-members:
 
 python\_html\_gallery.static module
 ---------------------------------------------
@@ -19,6 +21,8 @@ python\_html\_gallery.static module
    :members:
    :undoc-members:
    :show-inheritance:
+   :private-members:
+   :special-members:
 
 Module contents
 ---------------
@@ -27,3 +31,5 @@ Module contents
    :members:
    :undoc-members:
    :show-inheritance:
+   :private-members:
+   :special-members:

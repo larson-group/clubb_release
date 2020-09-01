@@ -11,6 +11,8 @@ pyplotgen.src.AnimationPanel module
    :members:
    :undoc-members:
    :show-inheritance:
+   :special-members:
+   :private-members:
 
 pyplotgen.src.CaseGallerySetup module
 -------------------------------------
@@ -19,6 +21,8 @@ pyplotgen.src.CaseGallerySetup module
    :members:
    :undoc-members:
    :show-inheritance:
+   :special-members:
+   :private-members:
 
 pyplotgen.src.Contour module
 ----------------------------
@@ -27,6 +31,8 @@ pyplotgen.src.Contour module
    :members:
    :undoc-members:
    :show-inheritance:
+   :special-members:
+   :private-members:
 
 pyplotgen.src.ContourPanel module
 ---------------------------------
@@ -35,6 +41,8 @@ pyplotgen.src.ContourPanel module
    :members:
    :undoc-members:
    :show-inheritance:
+   :special-members:
+   :private-members:
 
 pyplotgen.src.DataReader module
 -------------------------------
@@ -43,6 +51,8 @@ pyplotgen.src.DataReader module
    :members:
    :undoc-members:
    :show-inheritance:
+   :special-members:
+   :private-members:
 
 pyplotgen.src.Line module
 -------------------------
@@ -51,6 +61,8 @@ pyplotgen.src.Line module
    :members:
    :undoc-members:
    :show-inheritance:
+   :special-members:
+   :private-members:
 
 pyplotgen.src.Panel module
 --------------------------
@@ -59,6 +71,8 @@ pyplotgen.src.Panel module
    :members:
    :undoc-members:
    :show-inheritance:
+   :special-members:
+   :private-members:
 
 pyplotgen.src.VariableGroup module
 ----------------------------------
@@ -67,6 +81,8 @@ pyplotgen.src.VariableGroup module
    :members:
    :undoc-members:
    :show-inheritance:
+   :private-members:
+   :special-members:
 
 pyplotgen.src.interoperability module
 -------------------------------------
@@ -75,6 +91,8 @@ pyplotgen.src.interoperability module
    :members:
    :undoc-members:
    :show-inheritance:
+   :private-members:
+   :special-members:
 
 Module contents
 ---------------
@@ -83,3 +101,5 @@ Module contents
    :members:
    :undoc-members:
    :show-inheritance:
+   :private-members:
+   :special-members:

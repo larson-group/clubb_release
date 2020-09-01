@@ -11,6 +11,8 @@ config.Case\_definitions module
    :members:
    :undoc-members:
    :show-inheritance:
+   :special-members:
+   :private-members:
 
 config.Style\_definitions module
 ------------------------------------------
@@ -19,6 +21,8 @@ config.Style\_definitions module
    :members:
    :undoc-members:
    :show-inheritance:
+   :special-members:
+   :private-members:
 
 config.VariableGroupBase module
 -----------------------------------------
@@ -27,6 +31,8 @@ config.VariableGroupBase module
    :members:
    :undoc-members:
    :show-inheritance:
+   :private-members:
+   :special-members:
 
 config.VariableGroupBaseBudgets module
 ------------------------------------------------
@@ -35,6 +41,8 @@ config.VariableGroupBaseBudgets module
    :members:
    :undoc-members:
    :show-inheritance:
+   :private-members:
+   :special-members:
 
 config.VariableGroupCorrelations module
 -------------------------------------------------
@@ -43,6 +51,8 @@ config.VariableGroupCorrelations module
    :members:
    :undoc-members:
    :show-inheritance:
+   :private-members:
+   :special-members:
 
 config.VariableGroupIceMP module
 ------------------------------------------
@@ -51,6 +61,8 @@ config.VariableGroupIceMP module
    :members:
    :undoc-members:
    :show-inheritance:
+   :private-members:
+   :special-members:
 
 config.VariableGroupKKMP module
 -----------------------------------------
@@ -59,6 +71,8 @@ config.VariableGroupKKMP module
    :members:
    :undoc-members:
    :show-inheritance:
+   :private-members:
+   :special-members:
 
 config.VariableGroupLiquidMP module
 ---------------------------------------------
@@ -67,6 +81,8 @@ config.VariableGroupLiquidMP module
    :members:
    :undoc-members:
    :show-inheritance:
+   :private-members:
+   :special-members:
 
 config.VariableGroupSamBudgets module
 -----------------------------------------------
@@ -75,6 +91,8 @@ config.VariableGroupSamBudgets module
    :members:
    :undoc-members:
    :show-inheritance:
+   :private-members:
+   :special-members:
 
 config.VariableGroupSamMultilineProfiles module
 ---------------------------------------------------------
@@ -83,6 +101,8 @@ config.VariableGroupSamMultilineProfiles module
    :members:
    :undoc-members:
    :show-inheritance:
+   :private-members:
+   :special-members:
 
 config.VariableGroupSamProfiles module
 ------------------------------------------------
@@ -91,6 +111,8 @@ config.VariableGroupSamProfiles module
    :members:
    :undoc-members:
    :show-inheritance:
+   :private-members:
+   :special-members:
 
 config.VariableGroupScalars module
 --------------------------------------------
@@ -99,6 +121,8 @@ config.VariableGroupScalars module
    :members:
    :undoc-members:
    :show-inheritance:
+   :private-members:
+   :special-members:
 
 config.VariableGroupWs module
 ---------------------------------------
@@ -107,6 +131,8 @@ config.VariableGroupWs module
    :members:
    :undoc-members:
    :show-inheritance:
+   :private-members:
+   :special-members:
 
 Module contents
 ---------------
@@ -115,3 +141,5 @@ Module contents
    :members:
    :undoc-members:
    :show-inheritance:
+   :private-members:
+   :special-members:

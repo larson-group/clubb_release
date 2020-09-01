@@ -522,9 +522,26 @@ class VariableGroupBaseBudgets(VariableGroup):
     def getThlmClipping(self, dataset_override=None):
         '''
 
+        This is a "calculate function". Calculate functions are intended to be written by the user in the event that
+        they need a variable that is not output by their atmospheric model. The general format for these functions
+        is:
+            1. Get the proper dataset. This is either passed in as dataset_override, or some benchmark dataset
+            2. Get the equations needed variables from the dataset using ``self.getVarForCalculations()``
+            3. Calculate the new variable
+            4. (optional) If there are multiple valid equations, pick the one that worked using
+               ``self.pickNonZeroOutput()``
+            5. Return the data as (dependent,independent)
 
-        thlm_mfl+thlm_cl+thlm_tacl+thlm_sdmp
-        :return:
+        For more information on calculate functions, see the "Creating a new calculated function (for calculated
+        variables)" section of the README.md
+
+        ``thlm_mfl+thlm_cl+thlm_tacl+thlm_sdmp``
+
+        :param dataset_override: If passed, this netcdf dataset will be used to gather the data needed to calculate the
+          given variable. if not passed, this function should attempt to find the best source for the data, e.g.
+          the benchmark data for the given model
+        :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
+          Lists will be filled with NaN's if the variable could not be calculated.
         '''
 
         thlm_mfl, indep, dataset = self.getVarForCalculations('thlm_mfl', dataset_override)
@@ -539,9 +556,26 @@ class VariableGroupBaseBudgets(VariableGroup):
     def getThlmLsforcing(self, dataset_override=None):
         '''
 
+        This is a "calculate function". Calculate functions are intended to be written by the user in the event that
+        they need a variable that is not output by their atmospheric model. The general format for these functions
+        is:
+            1. Get the proper dataset. This is either passed in as dataset_override, or some benchmark dataset
+            2. Get the equations needed variables from the dataset using ``self.getVarForCalculations()``
+            3. Calculate the new variable
+            4. (optional) If there are multiple valid equations, pick the one that worked using
+               ``self.pickNonZeroOutput()``
+            5. Return the data as (dependent,independent)
 
-        thlm_forcing-radht-thlm_mc
-        :return:
+        For more information on calculate functions, see the "Creating a new calculated function (for calculated
+        variables)" section of the README.md
+
+        ``thlm_forcing-radht-thlm_mc``
+
+        :param dataset_override: If passed, this netcdf dataset will be used to gather the data needed to calculate the
+          given variable. if not passed, this function should attempt to find the best source for the data, e.g.
+          the benchmark data for the given model
+        :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
+          Lists will be filled with NaN's if the variable could not be calculated.
         '''
         thlm_forcing, indep, dataset = self.getVarForCalculations('thlm_forcing', dataset_override)
         radht, indep, dataset = self.getVarForCalculations('radht', dataset)
@@ -554,9 +588,26 @@ class VariableGroupBaseBudgets(VariableGroup):
     def getThlmResidual(self, dataset_override=None):
         '''
 
+        This is a "calculate function". Calculate functions are intended to be written by the user in the event that
+        they need a variable that is not output by their atmospheric model. The general format for these functions
+        is:
+            1. Get the proper dataset. This is either passed in as dataset_override, or some benchmark dataset
+            2. Get the equations needed variables from the dataset using ``self.getVarForCalculations()``
+            3. Calculate the new variable
+            4. (optional) If there are multiple valid equations, pick the one that worked using
+               ``self.pickNonZeroOutput()``
+            5. Return the data as (dependent,independent)
 
-        thlm_bt-(thlm_ma+thlm_ta+thlm_mfl+thlm_cl+thlm_tacl+thlm_sdmp+thlm_forcing)
-        :return:
+        For more information on calculate functions, see the "Creating a new calculated function (for calculated
+        variables)" section of the README.md
+
+        ``thlm_bt-(thlm_ma+thlm_ta+thlm_mfl+thlm_cl+thlm_tacl+thlm_sdmp+thlm_forcing)``
+
+        :param dataset_override: If passed, this netcdf dataset will be used to gather the data needed to calculate the
+          given variable. if not passed, this function should attempt to find the best source for the data, e.g.
+          the benchmark data for the given model
+        :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
+          Lists will be filled with NaN's if the variable could not be calculated.
         '''
         thlm_mfl, indep, dataset = self.getVarForCalculations('thlm_mfl', dataset_override)
         thlm_cl, indep, dataset = self.getVarForCalculations('thlm_cl', dataset)
@@ -574,9 +625,26 @@ class VariableGroupBaseBudgets(VariableGroup):
     def getRtmClipping(self, dataset_override=None):
         '''
 
+        This is a "calculate function". Calculate functions are intended to be written by the user in the event that
+        they need a variable that is not output by their atmospheric model. The general format for these functions
+        is:
+            1. Get the proper dataset. This is either passed in as dataset_override, or some benchmark dataset
+            2. Get the equations needed variables from the dataset using ``self.getVarForCalculations()``
+            3. Calculate the new variable
+            4. (optional) If there are multiple valid equations, pick the one that worked using
+               ``self.pickNonZeroOutput()``
+            5. Return the data as (dependent,independent)
 
-        rtm_mfl + rtm_cl + rtm_tacl + rtm_sdmp
-        :return:
+        For more information on calculate functions, see the "Creating a new calculated function (for calculated
+        variables)" section of the README.md
+
+        ``rtm_mfl + rtm_cl + rtm_tacl + rtm_sdmp``
+
+        :param dataset_override: If passed, this netcdf dataset will be used to gather the data needed to calculate the
+          given variable. if not passed, this function should attempt to find the best source for the data, e.g.
+          the benchmark data for the given model
+        :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
+          Lists will be filled with NaN's if the variable could not be calculated.
         '''
         rtm_mfl, indep, dataset = self.getVarForCalculations('rtm_mfl', dataset_override)
         rtm_cl, indep, dataset = self.getVarForCalculations('rtm_cl', dataset)
@@ -590,9 +658,26 @@ class VariableGroupBaseBudgets(VariableGroup):
     def getRtmForcing(self, dataset_override=None):
         '''
 
+        This is a "calculate function". Calculate functions are intended to be written by the user in the event that
+        they need a variable that is not output by their atmospheric model. The general format for these functions
+        is:
+            1. Get the proper dataset. This is either passed in as dataset_override, or some benchmark dataset
+            2. Get the equations needed variables from the dataset using ``self.getVarForCalculations()``
+            3. Calculate the new variable
+            4. (optional) If there are multiple valid equations, pick the one that worked using
+               ``self.pickNonZeroOutput()``
+            5. Return the data as (dependent,independent)
 
-        rtm_forcing - rtm_mc
-        :return:
+        For more information on calculate functions, see the "Creating a new calculated function (for calculated
+        variables)" section of the README.md
+
+        ``rtm_forcing - rtm_mc``
+
+        :param dataset_override: If passed, this netcdf dataset will be used to gather the data needed to calculate the
+          given variable. if not passed, this function should attempt to find the best source for the data, e.g.
+          the benchmark data for the given model
+        :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
+          Lists will be filled with NaN's if the variable could not be calculated.
         '''
         rtm_mc, indep, dataset = self.getVarForCalculations('rtm_mc', dataset_override)
         rtm_forcing, indep, dataset = self.getVarForCalculations('rtm_forcing', dataset)
@@ -604,9 +689,26 @@ class VariableGroupBaseBudgets(VariableGroup):
     def getRtmResidual(self, dataset_override=None):
         '''
 
+        This is a "calculate function". Calculate functions are intended to be written by the user in the event that
+        they need a variable that is not output by their atmospheric model. The general format for these functions
+        is:
+            1. Get the proper dataset. This is either passed in as dataset_override, or some benchmark dataset
+            2. Get the equations needed variables from the dataset using ``self.getVarForCalculations()``
+            3. Calculate the new variable
+            4. (optional) If there are multiple valid equations, pick the one that worked using
+               ``self.pickNonZeroOutput()``
+            5. Return the data as (dependent,independent)
 
-        rtm_bt - (rtm_ma + rtm_ta + rtm_mfl + rtm_cl + rtm_tacl + rtm_sdmp + rtm_forcing + rtm_pd)
-        :return:
+        For more information on calculate functions, see the "Creating a new calculated function (for calculated
+        variables)" section of the README.md
+
+        ``rtm_bt - (rtm_ma + rtm_ta + rtm_mfl + rtm_cl + rtm_tacl + rtm_sdmp + rtm_forcing + rtm_pd)``
+
+        :param dataset_override: If passed, this netcdf dataset will be used to gather the data needed to calculate the
+          given variable. if not passed, this function should attempt to find the best source for the data, e.g.
+          the benchmark data for the given model
+        :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
+          Lists will be filled with NaN's if the variable could not be calculated.
         '''
         # z,z, dataset = self.getVarForCalculations('altitude', dataset_override)
         rtm_mfl, indep, dataset = self.getVarForCalculations('rtm_mfl', dataset_override)
@@ -626,10 +728,30 @@ class VariableGroupBaseBudgets(VariableGroup):
     def getWpthlpResidual(self, dataset_override=None):
         '''
 
+        This is a "calculate function". Calculate functions are intended to be written by the user in the event that
+        they need a variable that is not output by their atmospheric model. The general format for these functions
+        is:
+            1. Get the proper dataset. This is either passed in as dataset_override, or some benchmark dataset
+            2. Get the equations needed variables from the dataset using ``self.getVarForCalculations()``
+            3. Calculate the new variable
+            4. (optional) If there are multiple valid equations, pick the one that worked using
+               ``self.pickNonZeroOutput()``
+            5. Return the data as (dependent,independent)
 
-        wpthlp_bt - (wpthlp_ma + wpthlp_ta + wpthlp_tp + wpthlp_ac + wpthlp_bp + wpthlp_pr1 + wpthlp_pr2 +
-        wpthlp_pr3 + wpthlp_dp1 + wpthlp_mfl + wpthlp_cl + wpthlp_sicl + wpthlp_forcing)
-        :return:
+        For more information on calculate functions, see the "Creating a new calculated function (for calculated
+        variables)" section of the README.md
+
+        .. code-block:: python
+            :linenos:
+
+            wpthlp_bt - (wpthlp_ma + wpthlp_ta + wpthlp_tp + wpthlp_ac + wpthlp_bp + wpthlp_pr1 + wpthlp_pr2 +
+            wpthlp_pr3 + wpthlp_dp1 + wpthlp_mfl + wpthlp_cl + wpthlp_sicl + wpthlp_forcing)
+
+        :param dataset_override: If passed, this netcdf dataset will be used to gather the data needed to calculate the
+          given variable. if not passed, this function should attempt to find the best source for the data, e.g.
+          the benchmark data for the given model
+        :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
+          Lists will be filled with NaN's if the variable could not be calculated.
         '''
         # z,z, dataset = self.getVarForCalculations('altitude', dataset_override)
         wpthlp_mfl, indep, dataset = self.getVarForCalculations('wpthlp_mfl', dataset_override)
@@ -656,10 +778,30 @@ class VariableGroupBaseBudgets(VariableGroup):
     def getWprtpResidual(self, dataset_override=None):
         '''
 
+        This is a "calculate function". Calculate functions are intended to be written by the user in the event that
+        they need a variable that is not output by their atmospheric model. The general format for these functions
+        is:
+            1. Get the proper dataset. This is either passed in as dataset_override, or some benchmark dataset
+            2. Get the equations needed variables from the dataset using ``self.getVarForCalculations()``
+            3. Calculate the new variable
+            4. (optional) If there are multiple valid equations, pick the one that worked using
+               ``self.pickNonZeroOutput()``
+            5. Return the data as (dependent,independent)
 
-        wprtp_bt - (wprtp_ma + wprtp_ta + wprtp_tp + wprtp_ac + wprtp_bp + wprtp_pr1 + wprtp_pr2 + wprtp_pr3 +
-        wprtp_dp1 + wprtp_mfl + wprtp_cl + wprtp_sicl + wprtp_forcing)
-        :return:
+        For more information on calculate functions, see the "Creating a new calculated function (for calculated
+        variables)" section of the README.md
+
+        .. code-block:: python
+            :linenos:
+
+            wprtp_bt - (wprtp_ma + wprtp_ta + wprtp_tp + wprtp_ac + wprtp_bp + wprtp_pr1 + wprtp_pr2 + wprtp_pr3 +
+            wprtp_dp1 + wprtp_mfl + wprtp_cl + wprtp_sicl + wprtp_forcing)
+
+        :param dataset_override: If passed, this netcdf dataset will be used to gather the data needed to calculate the
+          given variable. if not passed, this function should attempt to find the best source for the data, e.g.
+          the benchmark data for the given model
+        :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
+          Lists will be filled with NaN's if the variable could not be calculated.
         '''
         # z,z, dataset = self.getVarForCalculations('altitude', dataset_override)
         wprtp_mfl, indep, dataset = self.getVarForCalculations('wprtp_mfl', dataset_override)
@@ -687,10 +829,30 @@ class VariableGroupBaseBudgets(VariableGroup):
     def getWp2Residual(self, dataset_override=None):
         '''
 
+        This is a "calculate function". Calculate functions are intended to be written by the user in the event that
+        they need a variable that is not output by their atmospheric model. The general format for these functions
+        is:
+            1. Get the proper dataset. This is either passed in as dataset_override, or some benchmark dataset
+            2. Get the equations needed variables from the dataset using ``self.getVarForCalculations()``
+            3. Calculate the new variable
+            4. (optional) If there are multiple valid equations, pick the one that worked using
+               ``self.pickNonZeroOutput()``
+            5. Return the data as (dependent,independent)
 
-        wp2_bt - (wp2_ma + wp2_ta + wp2_tp + wp2_ac + wp2_bp + wp2_pr1 + wp2_pr2 + wp2_pr3 + wp2_dp1 +
-        wp2_mfl + wp2_cl + wp2_sicl + wp2_forcing)
-        :return:
+        For more information on calculate functions, see the "Creating a new calculated function (for calculated
+        variables)" section of the README.md
+
+        .. code-block:: python
+            :linenos:
+
+            wp2_bt - (wp2_ma + wp2_ta + wp2_tp + wp2_ac + wp2_bp + wp2_pr1 + wp2_pr2 + wp2_pr3 + wp2_dp1 +
+            wp2_mfl + wp2_cl + wp2_sicl + wp2_forcing)
+
+        :param dataset_override: If passed, this netcdf dataset will be used to gather the data needed to calculate the
+          given variable. if not passed, this function should attempt to find the best source for the data, e.g.
+          the benchmark data for the given model
+        :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
+          Lists will be filled with NaN's if the variable could not be calculated.
         '''
         # z,z, dataset = self.getVarForCalculations('altitude', dataset_override)
         wp2_sf, indep, dataset = self.getVarForCalculations('wp2_sf', dataset_override)
@@ -717,10 +879,30 @@ class VariableGroupBaseBudgets(VariableGroup):
     def getWp3Residual(self, dataset_override=None):
         '''
 
+        This is a "calculate function". Calculate functions are intended to be written by the user in the event that
+        they need a variable that is not output by their atmospheric model. The general format for these functions
+        is:
+            1. Get the proper dataset. This is either passed in as dataset_override, or some benchmark dataset
+            2. Get the equations needed variables from the dataset using ``self.getVarForCalculations()``
+            3. Calculate the new variable
+            4. (optional) If there are multiple valid equations, pick the one that worked using
+               ``self.pickNonZeroOutput()``
+            5. Return the data as (dependent,independent)
 
-        wp3_bt - (wp3_ma + wp3_ta + wp3_tp + wp3_ac + wp3_bp1 + wp3_bp2 + wp3_pr1 + wp3_pr2 + wp3_pr3 +
-        wp3_dp1 + wp3_cl+wp3_splat)
-        :return:
+        For more information on calculate functions, see the "Creating a new calculated function (for calculated
+        variables)" section of the README.md
+
+        .. code-block:: python
+            :linenos:
+
+            wp3_bt - (wp3_ma + wp3_ta + wp3_tp + wp3_ac + wp3_bp1 + wp3_bp2 + wp3_pr1 + wp3_pr2 + wp3_pr3 +
+            wp3_dp1 + wp3_cl+wp3_splat)
+
+        :param dataset_override: If passed, this netcdf dataset will be used to gather the data needed to calculate the
+          given variable. if not passed, this function should attempt to find the best source for the data, e.g.
+          the benchmark data for the given model
+        :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
+          Lists will be filled with NaN's if the variable could not be calculated.
         '''
         # z,z, dataset = self.getVarForCalculations('altitude', dataset_override)
         wp3_bp1, indep, dataset = self.getVarForCalculations('wp3_bp1', dataset_override)
@@ -746,10 +928,30 @@ class VariableGroupBaseBudgets(VariableGroup):
     def getThlp2Residual(self, dataset_override=None):
         '''
 
+        This is a "calculate function". Calculate functions are intended to be written by the user in the event that
+        they need a variable that is not output by their atmospheric model. The general format for these functions
+        is:
+            1. Get the proper dataset. This is either passed in as dataset_override, or some benchmark dataset
+            2. Get the equations needed variables from the dataset using ``self.getVarForCalculations()``
+            3. Calculate the new variable
+            4. (optional) If there are multiple valid equations, pick the one that worked using
+               ``self.pickNonZeroOutput()``
+            5. Return the data as (dependent,independent)
 
-        thlp2_bt - (thlp2_ma + thlp2_ta + thlp2_tp + thlp2_dp1 + thlp2_dp2 + thlp2_cl + thlp2_pd +
-        thlp2_sf + thlp2_forcing)
-        :return:
+        For more information on calculate functions, see the "Creating a new calculated function (for calculated
+        variables)" section of the README.md
+
+        .. code-block:: python
+            :linenos:
+
+            thlp2_bt - (thlp2_ma + thlp2_ta + thlp2_tp + thlp2_dp1 + thlp2_dp2 + thlp2_cl + thlp2_pd +
+            thlp2_sf + thlp2_forcing)
+
+        :param dataset_override: If passed, this netcdf dataset will be used to gather the data needed to calculate the
+          given variable. if not passed, this function should attempt to find the best source for the data, e.g.
+          the benchmark data for the given model
+        :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
+          Lists will be filled with NaN's if the variable could not be calculated.
         '''
         # z,z, dataset = self.getVarForCalculations('altitude', dataset_override)
         thlp2_cl, indep, dataset = self.getVarForCalculations('thlp2_cl', dataset_override)
@@ -771,9 +973,29 @@ class VariableGroupBaseBudgets(VariableGroup):
     def getRtp2Residual(self, dataset_override=None):
         '''
 
+        This is a "calculate function". Calculate functions are intended to be written by the user in the event that
+        they need a variable that is not output by their atmospheric model. The general format for these functions
+        is:
+            1. Get the proper dataset. This is either passed in as dataset_override, or some benchmark dataset
+            2. Get the equations needed variables from the dataset using ``self.getVarForCalculations()``
+            3. Calculate the new variable
+            4. (optional) If there are multiple valid equations, pick the one that worked using
+               ``self.pickNonZeroOutput()``
+            5. Return the data as (dependent,independent)
 
-        rtp2_bt - (rtp2_ma + rtp2_ta + rtp2_tp + rtp2_dp1 + rtp2_dp2 + rtp2_cl + rtp2_pd + rtp2_sf + rtp2_forcing)
-        :return:
+        For more information on calculate functions, see the "Creating a new calculated function (for calculated
+        variables)" section of the README.md
+
+        .. code-block:: python
+            :linenos:
+
+            rtp2_bt - (rtp2_ma + rtp2_ta + rtp2_tp + rtp2_dp1 + rtp2_dp2 + rtp2_cl + rtp2_pd + rtp2_sf + rtp2_forcing)
+
+        :param dataset_override: If passed, this netcdf dataset will be used to gather the data needed to calculate the
+          given variable. if not passed, this function should attempt to find the best source for the data, e.g.
+          the benchmark data for the given model
+        :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
+          Lists will be filled with NaN's if the variable could not be calculated.
         '''
         # z,z, dataset = self.getVarForCalculations('altitude', dataset_override)
         rtp2_cl, indep, dataset = self.getVarForCalculations('rtp2_cl', dataset_override)
@@ -795,10 +1017,30 @@ class VariableGroupBaseBudgets(VariableGroup):
     def getRtpthlpResidual(self, dataset_override=None):
         '''
 
+        This is a "calculate function". Calculate functions are intended to be written by the user in the event that
+        they need a variable that is not output by their atmospheric model. The general format for these functions
+        is:
+            1. Get the proper dataset. This is either passed in as dataset_override, or some benchmark dataset
+            2. Get the equations needed variables from the dataset using ``self.getVarForCalculations()``
+            3. Calculate the new variable
+            4. (optional) If there are multiple valid equations, pick the one that worked using
+               ``self.pickNonZeroOutput()``
+            5. Return the data as (dependent,independent)
 
-        rtpthlp_bt - (rtpthlp_ma + rtpthlp_ta + rtpthlp_tp + rtpthlp_dp1 + rtpthlp_dp2 + rtpthlp_cl +
-        rtpthlp_pd + rtpthlp_sf + rtpthlp_forcing)
-        :return:
+        For more information on calculate functions, see the "Creating a new calculated function (for calculated
+        variables)" section of the README.md
+
+        .. code-block:: python
+            :linenos:
+
+            rtpthlp_bt - (rtpthlp_ma + rtpthlp_ta + rtpthlp_tp + rtpthlp_dp1 + rtpthlp_dp2 + rtpthlp_cl +
+            rtpthlp_pd + rtpthlp_sf + rtpthlp_forcing)
+
+        :param dataset_override: If passed, this netcdf dataset will be used to gather the data needed to calculate the
+          given variable. if not passed, this function should attempt to find the best source for the data, e.g.
+          the benchmark data for the given model
+        :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
+          Lists will be filled with NaN's if the variable could not be calculated.
         '''
         # z,z, dataset = self.getVarForCalculations('altitude', dataset_override)
         rtpthlp_cl, indep, dataset = self.getVarForCalculations('rtpthlp_cl', dataset_override)
@@ -821,9 +1063,29 @@ class VariableGroupBaseBudgets(VariableGroup):
     def getUpwpResidual(self, dataset_override=None):
         '''
 
+        This is a "calculate function". Calculate functions are intended to be written by the user in the event that
+        they need a variable that is not output by their atmospheric model. The general format for these functions
+        is:
+            1. Get the proper dataset. This is either passed in as dataset_override, or some benchmark dataset
+            2. Get the equations needed variables from the dataset using ``self.getVarForCalculations()``
+            3. Calculate the new variable
+            4. (optional) If there are multiple valid equations, pick the one that worked using
+               ``self.pickNonZeroOutput()``
+            5. Return the data as (dependent,independent)
 
-        upwp_bt - (upwp_ma + upwp_ta + upwp_tp + upwp_dp1 + upwp_dp2 + upwp_cl + upwp_pd + upwp_sf + upwp_forcing)
-        :return:
+        For more information on calculate functions, see the "Creating a new calculated function (for calculated
+        variables)" section of the README.md
+
+        .. code-block:: python
+            :linenos:
+
+            upwp_bt - (upwp_ma + upwp_ta + upwp_tp + upwp_dp1 + upwp_dp2 + upwp_cl + upwp_pd + upwp_sf + upwp_forcing)
+
+        :param dataset_override: If passed, this netcdf dataset will be used to gather the data needed to calculate the
+          given variable. if not passed, this function should attempt to find the best source for the data, e.g.
+          the benchmark data for the given model
+        :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
+          Lists will be filled with NaN's if the variable could not be calculated.
         '''
         # z,z, dataset = self.getVarForCalculations('altitude', dataset_override)
         upwp_cl, indep, dataset = self.getVarForCalculations('upwp_cl', dataset_override)
@@ -849,9 +1111,29 @@ class VariableGroupBaseBudgets(VariableGroup):
     def getVpwpResidual(self, dataset_override=None):
         '''
 
+        This is a "calculate function". Calculate functions are intended to be written by the user in the event that
+        they need a variable that is not output by their atmospheric model. The general format for these functions
+        is:
+            1. Get the proper dataset. This is either passed in as dataset_override, or some benchmark dataset
+            2. Get the equations needed variables from the dataset using ``self.getVarForCalculations()``
+            3. Calculate the new variable
+            4. (optional) If there are multiple valid equations, pick the one that worked using
+               ``self.pickNonZeroOutput()``
+            5. Return the data as (dependent,independent)
 
-        vpwp_bt - (vpwp_ma + vpwp_ta + vpwp_tp + vpwp_dp1 + vpwp_dp2 + vpwp_cl + vpwp_pd + vpwp_sf + vpwp_forcing)
-        :return:
+        For more information on calculate functions, see the "Creating a new calculated function (for calculated
+        variables)" section of the README.md
+
+        .. code-block:: python
+            :linenos:
+
+            vpwp_bt - (vpwp_ma + vpwp_ta + vpwp_tp + vpwp_dp1 + vpwp_dp2 + vpwp_cl + vpwp_pd + vpwp_sf + vpwp_forcing)
+
+        :param dataset_override: If passed, this netcdf dataset will be used to gather the data needed to calculate the
+          given variable. if not passed, this function should attempt to find the best source for the data, e.g.
+          the benchmark data for the given model
+        :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
+          Lists will be filled with NaN's if the variable could not be calculated.
         '''
         # z,z, dataset = self.getVarForCalculations('altitude', dataset_override)
         vpwp_cl, indep, dataset = self.getVarForCalculations('vpwp_cl', dataset_override)
@@ -877,9 +1159,29 @@ class VariableGroupBaseBudgets(VariableGroup):
     def getRrmFillClip(self, dataset_override=None):
         '''
 
+        This is a "calculate function". Calculate functions are intended to be written by the user in the event that
+        they need a variable that is not output by their atmospheric model. The general format for these functions
+        is:
+            1. Get the proper dataset. This is either passed in as dataset_override, or some benchmark dataset
+            2. Get the equations needed variables from the dataset using ``self.getVarForCalculations()``
+            3. Calculate the new variable
+            4. (optional) If there are multiple valid equations, pick the one that worked using
+               ``self.pickNonZeroOutput()``
+            5. Return the data as (dependent,independent)
 
-        rrm_hf + rrm_wvhf + rrm_cl
-        :return:
+        For more information on calculate functions, see the "Creating a new calculated function (for calculated
+        variables)" section of the README.md
+
+        .. code-block:: python
+            :linenos:
+
+            rrm_hf + rrm_wvhf + rrm_cl
+
+        :param dataset_override: If passed, this netcdf dataset will be used to gather the data needed to calculate the
+          given variable. if not passed, this function should attempt to find the best source for the data, e.g.
+          the benchmark data for the given model
+        :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
+          Lists will be filled with NaN's if the variable could not be calculated.
         '''
         # z,z, dataset = self.getVarForCalculations('altitude', dataset_override)
         rrm_hf, indep, dataset = self.getVarForCalculations('rrm_hf', dataset_override)
@@ -893,9 +1195,29 @@ class VariableGroupBaseBudgets(VariableGroup):
     def getRrmResidual(self, dataset_override=None):
         '''
 
+        This is a "calculate function". Calculate functions are intended to be written by the user in the event that
+        they need a variable that is not output by their atmospheric model. The general format for these functions
+        is:
+            1. Get the proper dataset. This is either passed in as dataset_override, or some benchmark dataset
+            2. Get the equations needed variables from the dataset using ``self.getVarForCalculations()``
+            3. Calculate the new variable
+            4. (optional) If there are multiple valid equations, pick the one that worked using
+               ``self.pickNonZeroOutput()``
+            5. Return the data as (dependent,independent)
 
-        rrm_bt - (rrm_ma + rrm_sd + rrm_ta + rrm_ts + rrm_hf + rrm_wvhf + rrm_cl + rrm_mc)
-        :return:
+        For more information on calculate functions, see the "Creating a new calculated function (for calculated
+        variables)" section of the README.md
+
+        .. code-block:: python
+            :linenos:
+
+            rrm_bt - (rrm_ma + rrm_sd + rrm_ta + rrm_ts + rrm_hf + rrm_wvhf + rrm_cl + rrm_mc)
+
+        :param dataset_override: If passed, this netcdf dataset will be used to gather the data needed to calculate the
+          given variable. if not passed, this function should attempt to find the best source for the data, e.g.
+          the benchmark data for the given model
+        :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
+          Lists will be filled with NaN's if the variable could not be calculated.
         '''
         # z,z, dataset = self.getVarForCalculations('altitude', dataset_override)
         rrm_bt, indep, dataset = self.getVarForCalculations('rrm_bt', dataset_override)
@@ -915,8 +1237,29 @@ class VariableGroupBaseBudgets(VariableGroup):
     def getNrmResidual(self, dataset_override=None):
         '''
 
+        This is a "calculate function". Calculate functions are intended to be written by the user in the event that
+        they need a variable that is not output by their atmospheric model. The general format for these functions
+        is:
+            1. Get the proper dataset. This is either passed in as dataset_override, or some benchmark dataset
+            2. Get the equations needed variables from the dataset using ``self.getVarForCalculations()``
+            3. Calculate the new variable
+            4. (optional) If there are multiple valid equations, pick the one that worked using
+               ``self.pickNonZeroOutput()``
+            5. Return the data as (dependent,independent)
 
-        Nrm_bt - (Nrm_ma + Nrm_sd + Nrm_ta + Nrm_ts + Nrm_cl + Nrm_mc)
+        For more information on calculate functions, see the "Creating a new calculated function (for calculated
+        variables)" section of the README.md
+
+        .. code-block:: python
+            :linenos:
+
+            Nrm_bt - (Nrm_ma + Nrm_sd + Nrm_ta + Nrm_ts + Nrm_cl + Nrm_mc)
+
+        :param dataset_override: If passed, this netcdf dataset will be used to gather the data needed to calculate the
+          given variable. if not passed, this function should attempt to find the best source for the data, e.g.
+          the benchmark data for the given model
+        :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
+          Lists will be filled with NaN's if the variable could not be calculated.
         '''
         # z,z, dataset = self.getVarForCalculations('altitude', dataset_override)
         Nrm_bt, indep, dataset = self.getVarForCalculations('Nrm_bt', dataset_override)

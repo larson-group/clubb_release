@@ -7,4 +7,20 @@ The latest version of docs are available at `_build/html/index.html`
 ## Updating the docs
 Updating the docs should be as easy running `updateDocs.sh`.  
 These docs are built on Sphinx. If the update script fails, make sure pip3 (a python package manager) 
-is installed on the machine. If that does not fix the issue, new troubleshooting steps will be needed. 
+is installed on the machine. If that does not fix the issue, new troubleshooting steps will be needed.
+
+### Adding a new class
+If a new class/`.py` file has been added, it will need to have it's module defined in a `.rst` file.  
+Doing so is simple. For example, to add the `src/VariableGroup.py` file, we add the following text 
+to `pyplotgen.src.rst`, and then rerun the `updateDocs.sh`, and that's it!
+```
+pyplotgen.src.VariableGroup module
+----------------------------------
+
+.. automodule:: src.VariableGroup
+   :members:
+   :undoc-members:
+   :show-inheritance:
+   :private-members:
+   :special-members:
+```  

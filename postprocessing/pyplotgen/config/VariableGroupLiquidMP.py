@@ -148,12 +148,33 @@ class VariableGroupLiquidMP(VariableGroup):
 
     def getNcmSamLine(self, dataset_override=None):
         """
-        Caclulates Nim from sam -> clubb using the equation
-        (NC * 1e+6) ./ RHO
-        (GCSSNC * 1e+6) ./ RHO
-        CLD .* (NC * 1e+6) ./ RHO
+        This is a "calculate function". Calculate functions are intended to be written by the user in the event that
+        they need a variable that is not output by their atmospheric model. The general format for these functions
+        is:
+            1. Get the proper dataset. This is either passed in as dataset_override, or some benchmark dataset
+            2. Get the equations needed variables from the dataset using ``self.getVarForCalculations()``
+            3. Calculate the new variable
+            4. (optional) If there are multiple valid equations, pick the one that worked using
+               ``self.pickNonZeroOutput()``
+            5. Return the data as (dependent,independent)
 
-        :return:
+        For more information on calculate functions, see the "Creating a new calculated function (for calculated
+        variables)" section of the README.md
+
+        Caclulates Nim from sam -> clubb using the equation
+
+        .. code-block:: python
+            :linenos:
+
+            (NC * 1e+6) ./ RHO
+            (GCSSNC * 1e+6) ./ RHO
+            CLD .* (NC * 1e+6) ./ RHO
+
+        :param dataset_override: If passed, this netcdf dataset will be used to gather the data needed to calculate the
+          given variable. if not passed, this function should attempt to find the best source for the data, e.g.
+          the benchmark data for the given model
+        :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
+          Lists will be filled with NaN's if the variable could not be calculated.
         """
 
         dataset = self.les_dataset
@@ -172,10 +193,32 @@ class VariableGroupLiquidMP(VariableGroup):
 
     def getNrmSamLine(self, dataset_override=None):
         """
+        This is a "calculate function". Calculate functions are intended to be written by the user in the event that
+        they need a variable that is not output by their atmospheric model. The general format for these functions
+        is:
+            1. Get the proper dataset. This is either passed in as dataset_override, or some benchmark dataset
+            2. Get the equations needed variables from the dataset using ``self.getVarForCalculations()``
+            3. Calculate the new variable
+            4. (optional) If there are multiple valid equations, pick the one that worked using
+               ``self.pickNonZeroOutput()``
+            5. Return the data as (dependent,independent)
+
+        For more information on calculate functions, see the "Creating a new calculated function (for calculated
+        variables)" section of the README.md
+
         Caclulates Nim from sam -> clubb using the equation
-        (NR * 1e+6) ./ RHO
-        (CONP * 1e+6) ./ RHO
-        :return:
+
+        .. code-block:: python
+            :linenos:
+
+            (NR * 1e+6) ./ RHO
+            (CONP * 1e+6) ./ RHO
+
+        :param dataset_override: If passed, this netcdf dataset will be used to gather the data needed to calculate the
+          given variable. if not passed, this function should attempt to find the best source for the data, e.g.
+          the benchmark data for the given model
+        :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
+          Lists will be filled with NaN's if the variable could not be calculated.
         """
 
         dataset = self.les_dataset
@@ -192,8 +235,23 @@ class VariableGroupLiquidMP(VariableGroup):
 
     def getNcInCloudSamLine(self, dataset_override=None):
         """
-        (NC * 1e+6) ./ RHO
-        :return:
+        This is a "calculate function". Calculate functions are intended to be written by the user in the event that
+        they need a variable that is not output by their atmospheric model. The general format for these functions
+        is:
+            1. Get the proper dataset. This is either passed in as dataset_override, or some benchmark dataset
+            2. Get the equations needed variables from the dataset using ``self.getVarForCalculations()``
+            3. Calculate the new variable
+            4. (optional) If there are multiple valid equations, pick the one that worked using
+               ``self.pickNonZeroOutput()``
+            5. Return the data as (dependent,independent)
+
+        ``(NC * 1e+6) ./ RHO``
+
+        :param dataset_override: If passed, this netcdf dataset will be used to gather the data needed to calculate the
+          given variable. if not passed, this function should attempt to find the best source for the data, e.g.
+          the benchmark data for the given model
+        :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
+          Lists will be filled with NaN's if the variable could not be calculated.
         """
         dataset = self.les_dataset
         if dataset_override is not None:

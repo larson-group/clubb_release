@@ -448,11 +448,32 @@ class VariableGroupSamMultilineProfiles(VariableGroup):
 
     def getUpWpCalc(self, dataset_override = None):
         """
+        This is a "calculate function". Calculate functions are intended to be written by the user in the event that
+        they need a variable that is not output by their atmospheric model. The general format for these functions
+        is:
+            1. Get the proper dataset. This is either passed in as dataset_override, or some benchmark dataset
+            2. Get the equations needed variables from the dataset using ``self.getVarForCalculations()``
+            3. Calculate the new variable
+            4. (optional) If there are multiple valid equations, pick the one that worked using
+               ``self.pickNonZeroOutput()``
+            5. Return the data as (dependent,independent)
+
+        For more information on calculate functions, see the "Creating a new calculated function (for calculated
+        variables)" section of the README.md
+
+        Calculates the residual for the HL budget using
+        the following equation:
+        ``(HLSTOR)+((-1)*(HLADV+HLDIFF+HLRAD+HLLAT+TTEND))*g_per_second_to_kg_per_day``
+
         Calculates the total covariance of U and W from SAM output
         using the following equation:
-        UPWP = UW + UPWP_SGS (CLUBB variable)
-        :return: requested variable dependent_data in the form of a list.
-                 Returned dependent_data is already cropped to the appropriate min,max indices
+        ``UPWP = UW + UPWP_SGS (CLUBB variable)``
+
+        :param dataset_override: If passed, this netcdf dataset will be used to gather the data needed to calculate the
+          given variable. if not passed, this function should attempt to find the best source for the data, e.g.
+          the benchmark data for the given model
+        :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
+          Lists will be filled with NaN's if the variable could not be calculated.
         """
         dataset = self.les_dataset
         if dataset_override is not None:
@@ -464,11 +485,28 @@ class VariableGroupSamMultilineProfiles(VariableGroup):
 
     def getVpWpCalc(self, dataset_override = None):
         """
+        This is a "calculate function". Calculate functions are intended to be written by the user in the event that
+        they need a variable that is not output by their atmospheric model. The general format for these functions
+        is:
+            1. Get the proper dataset. This is either passed in as dataset_override, or some benchmark dataset
+            2. Get the equations needed variables from the dataset using ``self.getVarForCalculations()``
+            3. Calculate the new variable
+            4. (optional) If there are multiple valid equations, pick the one that worked using
+               ``self.pickNonZeroOutput()``
+            5. Return the data as (dependent,independent)
+
+        For more information on calculate functions, see the "Creating a new calculated function (for calculated
+        variables)" section of the README.md
+
         Calculates the total covariance of V and W from SAM output
         using the following equation:
-        VPWP = VW + VPWP_SGS (CLUBB variable)
-        :return: requested variable dependent_data in the form of a list.
-                 Returned dependent_data is already cropped to the appropriate min,max indices
+        ``VPWP = VW + VPWP_SGS (CLUBB variable)``
+
+        :param dataset_override: If passed, this netcdf dataset will be used to gather the data needed to calculate the
+          given variable. if not passed, this function should attempt to find the best source for the data, e.g.
+          the benchmark data for the given model
+        :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
+          Lists will be filled with NaN's if the variable could not be calculated.
         """
         dataset = self.les_dataset
         if dataset_override is not None:
@@ -480,11 +518,28 @@ class VariableGroupSamMultilineProfiles(VariableGroup):
 
     def getUp2Calc(self, dataset_override = None):
         """
+        This is a "calculate function". Calculate functions are intended to be written by the user in the event that
+        they need a variable that is not output by their atmospheric model. The general format for these functions
+        is:
+            1. Get the proper dataset. This is either passed in as dataset_override, or some benchmark dataset
+            2. Get the equations needed variables from the dataset using ``self.getVarForCalculations()``
+            3. Calculate the new variable
+            4. (optional) If there are multiple valid equations, pick the one that worked using
+               ``self.pickNonZeroOutput()``
+            5. Return the data as (dependent,independent)
+
+        For more information on calculate functions, see the "Creating a new calculated function (for calculated
+        variables)" section of the README.md
+
         Calculates the total variance of U from SAM output
         using the following equation:
-        UVAR = U2 + UP2_SGS (CLUBB variable)
-        :return: requested variable dependent_data in the form of a list.
-                 Returned dependent_data is already cropped to the appropriate min,max indices
+        ``UVAR = U2 + UP2_SGS (CLUBB variable)``
+
+        :param dataset_override: If passed, this netcdf dataset will be used to gather the data needed to calculate the
+          given variable. if not passed, this function should attempt to find the best source for the data, e.g.
+          the benchmark data for the given model
+        :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
+          Lists will be filled with NaN's if the variable could not be calculated.
         """
         dataset = self.les_dataset
         if dataset_override is not None:
@@ -496,11 +551,28 @@ class VariableGroupSamMultilineProfiles(VariableGroup):
 
     def getVp2Calc(self, dataset_override = None):
         """
+        This is a "calculate function". Calculate functions are intended to be written by the user in the event that
+        they need a variable that is not output by their atmospheric model. The general format for these functions
+        is:
+            1. Get the proper dataset. This is either passed in as dataset_override, or some benchmark dataset
+            2. Get the equations needed variables from the dataset using ``self.getVarForCalculations()``
+            3. Calculate the new variable
+            4. (optional) If there are multiple valid equations, pick the one that worked using
+               ``self.pickNonZeroOutput()``
+            5. Return the data as (dependent,independent)
+
+        For more information on calculate functions, see the "Creating a new calculated function (for calculated
+        variables)" section of the README.md
+
         Calculates the total variance of V from SAM output
         using the following equation:
-        VVAR = V2 + VP2_SGS (CLUBB variable)
-        :return: requested variable dependent_data in the form of a list.
-                 Returned dependent_data is already cropped to the appropriate min,max indices
+        ``VVAR = V2 + VP2_SGS (CLUBB variable)``
+
+        :param dataset_override: If passed, this netcdf dataset will be used to gather the data needed to calculate the
+          given variable. if not passed, this function should attempt to find the best source for the data, e.g.
+          the benchmark data for the given model
+        :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
+          Lists will be filled with NaN's if the variable could not be calculated.
         """
         dataset = self.les_dataset
         if dataset_override is not None:
@@ -514,11 +586,28 @@ class VariableGroupSamMultilineProfiles(VariableGroup):
     # UCLD
     def getUEnvUnweighted(self, dataset_override=None):
         """
+        This is a "calculate function". Calculate functions are intended to be written by the user in the event that
+        they need a variable that is not output by their atmospheric model. The general format for these functions
+        is:
+            1. Get the proper dataset. This is either passed in as dataset_override, or some benchmark dataset
+            2. Get the equations needed variables from the dataset using ``self.getVarForCalculations()``
+            3. Calculate the new variable
+            4. (optional) If there are multiple valid equations, pick the one that worked using
+               ``self.pickNonZeroOutput()``
+            5. Return the data as (dependent,independent)
+
+        For more information on calculate functions, see the "Creating a new calculated function (for calculated
+        variables)" section of the README.md
+
         Calculates the unweighted environment-conditional average of U from SAM output
         using the following equation:
-        (U - CLD * UCLD) / (1 - CLD)
-        :return: requested variable data in the form of a list.
-                 Returned data is already cropped to the appropriate min,max indices
+        ``(U - CLD * UCLD) / (1 - CLD)``
+
+        :param dataset_override: If passed, this netcdf dataset will be used to gather the data needed to calculate the
+          given variable. if not passed, this function should attempt to find the best source for the data, e.g.
+          the benchmark data for the given model
+        :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
+          Lists will be filled with NaN's if the variable could not be calculated.
         """
         dataset = self.les_dataset
         if dataset_override is not None:
@@ -531,11 +620,28 @@ class VariableGroupSamMultilineProfiles(VariableGroup):
 
     def getUEnvWeighted(self, dataset_override=None):
         """
+        This is a "calculate function". Calculate functions are intended to be written by the user in the event that
+        they need a variable that is not output by their atmospheric model. The general format for these functions
+        is:
+            1. Get the proper dataset. This is either passed in as dataset_override, or some benchmark dataset
+            2. Get the equations needed variables from the dataset using ``self.getVarForCalculations()``
+            3. Calculate the new variable
+            4. (optional) If there are multiple valid equations, pick the one that worked using
+               ``self.pickNonZeroOutput()``
+            5. Return the data as (dependent,independent)
+
+        For more information on calculate functions, see the "Creating a new calculated function (for calculated
+        variables)" section of the README.md
+
         Calculates the weighted environment-conditional average of U from SAM output
         using the following equation:
-        (U - CLD * UCLD)
-        :return: requested variable data in the form of a list.
-                 Returned data is already cropped to the appropriate min,max indices
+        ``(U - CLD * UCLD)``
+
+        :param dataset_override: If passed, this netcdf dataset will be used to gather the data needed to calculate the
+          given variable. if not passed, this function should attempt to find the best source for the data, e.g.
+          the benchmark data for the given model
+        :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
+          Lists will be filled with NaN's if the variable could not be calculated.
         """
         dataset = self.les_dataset
         if dataset_override is not None:
@@ -548,11 +654,28 @@ class VariableGroupSamMultilineProfiles(VariableGroup):
 
     def getUCldWeighted(self, dataset_override=None):
         """
+        This is a "calculate function". Calculate functions are intended to be written by the user in the event that
+        they need a variable that is not output by their atmospheric model. The general format for these functions
+        is:
+            1. Get the proper dataset. This is either passed in as dataset_override, or some benchmark dataset
+            2. Get the equations needed variables from the dataset using ``self.getVarForCalculations()``
+            3. Calculate the new variable
+            4. (optional) If there are multiple valid equations, pick the one that worked using
+               ``self.pickNonZeroOutput()``
+            5. Return the data as (dependent,independent)
+
+        For more information on calculate functions, see the "Creating a new calculated function (for calculated
+        variables)" section of the README.md
+
         Calculates the weighted cloud-conditional average of U from SAM output
         using the following equation:
-        CLD * UCLD
-        :return: requested variable data in the form of a list.
-                 Returned data is already cropped to the appropriate min,max indices
+        ``CLD * UCLD``
+
+        :param dataset_override: If passed, this netcdf dataset will be used to gather the data needed to calculate the
+          given variable. if not passed, this function should attempt to find the best source for the data, e.g.
+          the benchmark data for the given model
+        :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
+          Lists will be filled with NaN's if the variable could not be calculated.
         """
         dataset = self.les_dataset
         if dataset_override is not None:
@@ -565,11 +688,28 @@ class VariableGroupSamMultilineProfiles(VariableGroup):
     # VCLD
     def getVEnvUnweighted(self, dataset_override=None):
         """
+        This is a "calculate function". Calculate functions are intended to be written by the user in the event that
+        they need a variable that is not output by their atmospheric model. The general format for these functions
+        is:
+            1. Get the proper dataset. This is either passed in as dataset_override, or some benchmark dataset
+            2. Get the equations needed variables from the dataset using ``self.getVarForCalculations()``
+            3. Calculate the new variable
+            4. (optional) If there are multiple valid equations, pick the one that worked using
+               ``self.pickNonZeroOutput()``
+            5. Return the data as (dependent,independent)
+
+        For more information on calculate functions, see the "Creating a new calculated function (for calculated
+        variables)" section of the README.md
+
         Calculates the unweighted environment-conditional average of V from SAM output
         using the following equation:
-        (V - CLD * VCLD) / (1 - CLD)
-        :return: requested variable data in the form of a list.
-                 Returned data is already cropped to the appropriate min,max indices
+        ``(V - CLD * VCLD) / (1 - CLD)``
+
+        :param dataset_override: If passed, this netcdf dataset will be used to gather the data needed to calculate the
+          given variable. if not passed, this function should attempt to find the best source for the data, e.g.
+          the benchmark data for the given model
+        :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
+          Lists will be filled with NaN's if the variable could not be calculated.
         """
         dataset = self.les_dataset
         if dataset_override is not None:
@@ -582,11 +722,28 @@ class VariableGroupSamMultilineProfiles(VariableGroup):
 
     def getVEnvWeighted(self, dataset_override=None):
         """
+        This is a "calculate function". Calculate functions are intended to be written by the user in the event that
+        they need a variable that is not output by their atmospheric model. The general format for these functions
+        is:
+            1. Get the proper dataset. This is either passed in as dataset_override, or some benchmark dataset
+            2. Get the equations needed variables from the dataset using ``self.getVarForCalculations()``
+            3. Calculate the new variable
+            4. (optional) If there are multiple valid equations, pick the one that worked using
+               ``self.pickNonZeroOutput()``
+            5. Return the data as (dependent,independent)
+
+        For more information on calculate functions, see the "Creating a new calculated function (for calculated
+        variables)" section of the README.md
+
         Calculates the weighted environment-conditional average of V from SAM output
         using the following equation:
-        (V - CLD * VCLD)
-        :return: requested variable data in the form of a list.
-                 Returned data is already cropped to the appropriate min,max indices
+        ``(V - CLD * VCLD)``
+
+        :param dataset_override: If passed, this netcdf dataset will be used to gather the data needed to calculate the
+          given variable. if not passed, this function should attempt to find the best source for the data, e.g.
+          the benchmark data for the given model
+        :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
+          Lists will be filled with NaN's if the variable could not be calculated.
         """
         dataset = self.les_dataset
         if dataset_override is not None:
@@ -599,11 +756,28 @@ class VariableGroupSamMultilineProfiles(VariableGroup):
 
     def getVCldWeighted(self, dataset_override=None):
         """
+        This is a "calculate function". Calculate functions are intended to be written by the user in the event that
+        they need a variable that is not output by their atmospheric model. The general format for these functions
+        is:
+            1. Get the proper dataset. This is either passed in as dataset_override, or some benchmark dataset
+            2. Get the equations needed variables from the dataset using ``self.getVarForCalculations()``
+            3. Calculate the new variable
+            4. (optional) If there are multiple valid equations, pick the one that worked using
+               ``self.pickNonZeroOutput()``
+            5. Return the data as (dependent,independent)
+
+        For more information on calculate functions, see the "Creating a new calculated function (for calculated
+        variables)" section of the README.md
+
         Calculates the weighted cloud-conditional average of V from SAM output
         using the following equation:
-        CLD * VCLD
-        :return: requested variable data in the form of a list.
-                 Returned data is already cropped to the appropriate min,max indices
+        ``CLD * VCLD``
+
+        :param dataset_override: If passed, this netcdf dataset will be used to gather the data needed to calculate the
+          given variable. if not passed, this function should attempt to find the best source for the data, e.g.
+          the benchmark data for the given model
+        :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
+          Lists will be filled with NaN's if the variable could not be calculated.
         """
         dataset = self.les_dataset
         if dataset_override is not None:
@@ -616,11 +790,29 @@ class VariableGroupSamMultilineProfiles(VariableGroup):
     # WCLD
     def getWEnvUnweighted(self, dataset_override=None):
         """
+        This is a "calculate function". Calculate functions are intended to be written by the user in the event that
+        they need a variable that is not output by their atmospheric model. The general format for these functions
+        is:
+            1. Get the proper dataset. This is either passed in as dataset_override, or some benchmark dataset
+            2. Get the equations needed variables from the dataset using ``self.getVarForCalculations()``
+            3. Calculate the new variable
+            4. (optional) If there are multiple valid equations, pick the one that worked using
+               ``self.pickNonZeroOutput()``
+            5. Return the data as (dependent,independent)
+
+        For more information on calculate functions, see the "Creating a new calculated function (for calculated
+        variables)" section of the README.md
+
         Calculates the unweighted environment-conditional average of W from SAM output
         using the following equation:
-        (WM - CLD * WCLD) / (1 - CLD)
-        :return: requested variable data in the form of a list.
-                 Returned data is already cropped to the appropriate min,max indices
+
+        ``(WM - CLD * WCLD) / (1 - CLD)``
+
+        :param dataset_override: If passed, this netcdf dataset will be used to gather the data needed to calculate the
+          given variable. if not passed, this function should attempt to find the best source for the data, e.g.
+          the benchmark data for the given model
+        :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
+          Lists will be filled with NaN's if the variable could not be calculated.
         """
         dataset = self.les_dataset
         if dataset_override is not None:
@@ -633,11 +825,28 @@ class VariableGroupSamMultilineProfiles(VariableGroup):
 
     def getWEnvWeighted(self, dataset_override=None):
         """
+        This is a "calculate function". Calculate functions are intended to be written by the user in the event that
+        they need a variable that is not output by their atmospheric model. The general format for these functions
+        is:
+            1. Get the proper dataset. This is either passed in as dataset_override, or some benchmark dataset
+            2. Get the equations needed variables from the dataset using ``self.getVarForCalculations()``
+            3. Calculate the new variable
+            4. (optional) If there are multiple valid equations, pick the one that worked using
+               ``self.pickNonZeroOutput()``
+            5. Return the data as (dependent,independent)
+
+        For more information on calculate functions, see the "Creating a new calculated function (for calculated
+        variables)" section of the README.md
+
         Calculates the weighted environment-conditional average of W from SAM output
         using the following equation:
-        (WM - CLD * WCLD)
-        :return: requested variable data in the form of a list.
-                 Returned data is already cropped to the appropriate min,max indices
+        ``(WM - CLD * WCLD)``
+
+        :param dataset_override: If passed, this netcdf dataset will be used to gather the data needed to calculate the
+          given variable. if not passed, this function should attempt to find the best source for the data, e.g.
+          the benchmark data for the given model
+        :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
+          Lists will be filled with NaN's if the variable could not be calculated.
         """
         dataset = self.les_dataset
         if dataset_override is not None:
@@ -650,11 +859,28 @@ class VariableGroupSamMultilineProfiles(VariableGroup):
 
     def getWCldWeighted(self, dataset_override=None):
         """
+        This is a "calculate function". Calculate functions are intended to be written by the user in the event that
+        they need a variable that is not output by their atmospheric model. The general format for these functions
+        is:
+            1. Get the proper dataset. This is either passed in as dataset_override, or some benchmark dataset
+            2. Get the equations needed variables from the dataset using ``self.getVarForCalculations()``
+            3. Calculate the new variable
+            4. (optional) If there are multiple valid equations, pick the one that worked using
+               ``self.pickNonZeroOutput()``
+            5. Return the data as (dependent,independent)
+
+        For more information on calculate functions, see the "Creating a new calculated function (for calculated
+        variables)" section of the README.md
+
         Calculates the weighted cloud-conditional average of W from SAM output
         using the following equation:
-        CLD * WCLD
-        :return: requested variable data in the form of a list.
-                 Returned data is already cropped to the appropriate min,max indices
+        ``CLD * WCLD``
+
+        :param dataset_override: If passed, this netcdf dataset will be used to gather the data needed to calculate the
+          given variable. if not passed, this function should attempt to find the best source for the data, e.g.
+          the benchmark data for the given model
+        :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
+          Lists will be filled with NaN's if the variable could not be calculated.
         """
         dataset = self.les_dataset
         if dataset_override is not None:
@@ -667,11 +893,28 @@ class VariableGroupSamMultilineProfiles(VariableGroup):
     # UWCLD
     def getUWEnvUnweighted(self, dataset_override=None):
         """
+        This is a "calculate function". Calculate functions are intended to be written by the user in the event that
+        they need a variable that is not output by their atmospheric model. The general format for these functions
+        is:
+            1. Get the proper dataset. This is either passed in as dataset_override, or some benchmark dataset
+            2. Get the equations needed variables from the dataset using ``self.getVarForCalculations()``
+            3. Calculate the new variable
+            4. (optional) If there are multiple valid equations, pick the one that worked using
+               ``self.pickNonZeroOutput()``
+            5. Return the data as (dependent,independent)
+
+        For more information on calculate functions, see the "Creating a new calculated function (for calculated
+        variables)" section of the README.md
+
         Calculates the unweighted environment-conditional average of UW from SAM output
         using the following equation:
-        (UW - CLD * UWCLD) / (1 - CLD)
-        :return: requested variable data in the form of a list.
-                 Returned data is already cropped to the appropriate min,max indices
+        ``(UW - CLD * UWCLD) / (1 - CLD)``
+
+        :param dataset_override: If passed, this netcdf dataset will be used to gather the data needed to calculate the
+          given variable. if not passed, this function should attempt to find the best source for the data, e.g.
+          the benchmark data for the given model
+        :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
+          Lists will be filled with NaN's if the variable could not be calculated.
         """
         dataset = self.les_dataset
         if dataset_override is not None:
@@ -684,11 +927,28 @@ class VariableGroupSamMultilineProfiles(VariableGroup):
 
     def getUWEnvWeighted(self, dataset_override=None):
         """
+        This is a "calculate function". Calculate functions are intended to be written by the user in the event that
+        they need a variable that is not output by their atmospheric model. The general format for these functions
+        is:
+            1. Get the proper dataset. This is either passed in as dataset_override, or some benchmark dataset
+            2. Get the equations needed variables from the dataset using ``self.getVarForCalculations()``
+            3. Calculate the new variable
+            4. (optional) If there are multiple valid equations, pick the one that worked using
+               ``self.pickNonZeroOutput()``
+            5. Return the data as (dependent,independent)
+
+        For more information on calculate functions, see the "Creating a new calculated function (for calculated
+        variables)" section of the README.md
+
         Calculates the weighted environment-conditional average of UW from SAM output
         using the following equation:
-        (UW - CLD * UWCLD)
-        :return: requested variable data in the form of a list.
-                 Returned data is already cropped to the appropriate min,max indices
+        ``(UW - CLD * UWCLD)``
+
+        :param dataset_override: If passed, this netcdf dataset will be used to gather the data needed to calculate the
+          given variable. if not passed, this function should attempt to find the best source for the data, e.g.
+          the benchmark data for the given model
+        :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
+          Lists will be filled with NaN's if the variable could not be calculated.
         """
         dataset = self.les_dataset
         if dataset_override is not None:
@@ -701,11 +961,28 @@ class VariableGroupSamMultilineProfiles(VariableGroup):
 
     def getUWCldWeighted(self, dataset_override=None):
         """
+        This is a "calculate function". Calculate functions are intended to be written by the user in the event that
+        they need a variable that is not output by their atmospheric model. The general format for these functions
+        is:
+            1. Get the proper dataset. This is either passed in as dataset_override, or some benchmark dataset
+            2. Get the equations needed variables from the dataset using ``self.getVarForCalculations()``
+            3. Calculate the new variable
+            4. (optional) If there are multiple valid equations, pick the one that worked using
+               ``self.pickNonZeroOutput()``
+            5. Return the data as (dependent,independent)
+
+        For more information on calculate functions, see the "Creating a new calculated function (for calculated
+        variables)" section of the README.md
+
         Calculates the weighted cloud-conditional average of UW from SAM output
         using the following equation:
-        CLD * UWCLD
-        :return: requested variable data in the form of a list.
-                 Returned data is already cropped to the appropriate min,max indices
+        ``CLD * UWCLD``
+
+        :param dataset_override: If passed, this netcdf dataset will be used to gather the data needed to calculate the
+          given variable. if not passed, this function should attempt to find the best source for the data, e.g.
+          the benchmark data for the given model
+        :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
+          Lists will be filled with NaN's if the variable could not be calculated.
         """
         dataset = self.les_dataset
         if dataset_override is not None:
@@ -718,11 +995,28 @@ class VariableGroupSamMultilineProfiles(VariableGroup):
     # VWCLD
     def getVWEnvUnweighted(self, dataset_override=None):
         """
+        This is a "calculate function". Calculate functions are intended to be written by the user in the event that
+        they need a variable that is not output by their atmospheric model. The general format for these functions
+        is:
+            1. Get the proper dataset. This is either passed in as dataset_override, or some benchmark dataset
+            2. Get the equations needed variables from the dataset using ``self.getVarForCalculations()``
+            3. Calculate the new variable
+            4. (optional) If there are multiple valid equations, pick the one that worked using
+               ``self.pickNonZeroOutput()``
+            5. Return the data as (dependent,independent)
+
+        For more information on calculate functions, see the "Creating a new calculated function (for calculated
+        variables)" section of the README.md
+
         Calculates the unweighted environment-conditional average of VW from SAM output
         using the following equation:
-        (VW - CLD * VWCLD) / (1 - CLD)
-        :return: requested variable data in the form of a list.
-                 Returned data is already cropped to the appropriate min,max indices
+        ``(VW - CLD * VWCLD) / (1 - CLD)``
+
+        :param dataset_override: If passed, this netcdf dataset will be used to gather the data needed to calculate the
+          given variable. if not passed, this function should attempt to find the best source for the data, e.g.
+          the benchmark data for the given model
+        :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
+          Lists will be filled with NaN's if the variable could not be calculated.
         """
         dataset = self.les_dataset
         if dataset_override is not None:
@@ -735,11 +1029,28 @@ class VariableGroupSamMultilineProfiles(VariableGroup):
 
     def getVWEnvWeighted(self, dataset_override=None):
         """
+        This is a "calculate function". Calculate functions are intended to be written by the user in the event that
+        they need a variable that is not output by their atmospheric model. The general format for these functions
+        is:
+            1. Get the proper dataset. This is either passed in as dataset_override, or some benchmark dataset
+            2. Get the equations needed variables from the dataset using ``self.getVarForCalculations()``
+            3. Calculate the new variable
+            4. (optional) If there are multiple valid equations, pick the one that worked using
+               ``self.pickNonZeroOutput()``
+            5. Return the data as (dependent,independent)
+
+        For more information on calculate functions, see the "Creating a new calculated function (for calculated
+        variables)" section of the README.md
+
         Calculates the weighted environment-conditional average of VW from SAM output
         using the following equation:
-        (VW - CLD * VWCLD)
-        :return: requested variable data in the form of a list.
-                 Returned data is already cropped to the appropriate min,max indices
+        ``(VW - CLD * VWCLD)``
+
+        :param dataset_override: If passed, this netcdf dataset will be used to gather the data needed to calculate the
+          given variable. if not passed, this function should attempt to find the best source for the data, e.g.
+          the benchmark data for the given model
+        :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
+          Lists will be filled with NaN's if the variable could not be calculated.
         """
         dataset = self.les_dataset
         if dataset_override is not None:
@@ -752,11 +1063,28 @@ class VariableGroupSamMultilineProfiles(VariableGroup):
 
     def getVWCldWeighted(self, dataset_override=None):
         """
+        This is a "calculate function". Calculate functions are intended to be written by the user in the event that
+        they need a variable that is not output by their atmospheric model. The general format for these functions
+        is:
+            1. Get the proper dataset. This is either passed in as dataset_override, or some benchmark dataset
+            2. Get the equations needed variables from the dataset using ``self.getVarForCalculations()``
+            3. Calculate the new variable
+            4. (optional) If there are multiple valid equations, pick the one that worked using
+               ``self.pickNonZeroOutput()``
+            5. Return the data as (dependent,independent)
+
+        For more information on calculate functions, see the "Creating a new calculated function (for calculated
+        variables)" section of the README.md
+
         Calculates the weighted cloud-conditional average of VW from SAM output
         using the following equation:
-        CLD * VWCLD
-        :return: requested variable data in the form of a list.
-                 Returned data is already cropped to the appropriate min,max indices
+        ``CLD * VWCLD``
+
+        :param dataset_override: If passed, this netcdf dataset will be used to gather the data needed to calculate the
+          given variable. if not passed, this function should attempt to find the best source for the data, e.g.
+          the benchmark data for the given model
+        :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
+          Lists will be filled with NaN's if the variable could not be calculated.
         """
         dataset = self.les_dataset
         if dataset_override is not None:
@@ -769,11 +1097,28 @@ class VariableGroupSamMultilineProfiles(VariableGroup):
     # TVCLD
     def getTHVEnvUnweighted(self, dataset_override=None):
         """
+        This is a "calculate function". Calculate functions are intended to be written by the user in the event that
+        they need a variable that is not output by their atmospheric model. The general format for these functions
+        is:
+            1. Get the proper dataset. This is either passed in as dataset_override, or some benchmark dataset
+            2. Get the equations needed variables from the dataset using ``self.getVarForCalculations()``
+            3. Calculate the new variable
+            4. (optional) If there are multiple valid equations, pick the one that worked using
+               ``self.pickNonZeroOutput()``
+            5. Return the data as (dependent,independent)
+
+        For more information on calculate functions, see the "Creating a new calculated function (for calculated
+        variables)" section of the README.md
+
         Calculates the unweighted environment-conditional average of THETAV from SAM output
         using the following equation:
-        (THETAV - CLD * TVCLD) / (1 - CLD)
-        :return: requested variable data in the form of a list.
-                 Returned data is already cropped to the appropriate min,max indices
+        ``(THETAV - CLD * TVCLD) / (1 - CLD)``
+
+        :param dataset_override: If passed, this netcdf dataset will be used to gather the data needed to calculate the
+          given variable. if not passed, this function should attempt to find the best source for the data, e.g.
+          the benchmark data for the given model
+        :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
+          Lists will be filled with NaN's if the variable could not be calculated.s
         """
         dataset = self.les_dataset
         if dataset_override is not None:
@@ -786,11 +1131,28 @@ class VariableGroupSamMultilineProfiles(VariableGroup):
 
     def getTHVEnvWeighted(self, dataset_override=None):
         """
+        This is a "calculate function". Calculate functions are intended to be written by the user in the event that
+        they need a variable that is not output by their atmospheric model. The general format for these functions
+        is:
+            1. Get the proper dataset. This is either passed in as dataset_override, or some benchmark dataset
+            2. Get the equations needed variables from the dataset using ``self.getVarForCalculations()``
+            3. Calculate the new variable
+            4. (optional) If there are multiple valid equations, pick the one that worked using
+               ``self.pickNonZeroOutput()``
+            5. Return the data as (dependent,independent)
+
+        For more information on calculate functions, see the "Creating a new calculated function (for calculated
+        variables)" section of the README.md
+
         Calculates the weighted environment-conditional average of THETAV from SAM output
         using the following equation:
-        (THETAV - CLD * TVCLD)
-        :return: requested variable data in the form of a list.
-                 Returned data is already cropped to the appropriate min,max indices
+        ``(THETAV - CLD * TVCLD)``
+
+        :param dataset_override: If passed, this netcdf dataset will be used to gather the data needed to calculate the
+          given variable. if not passed, this function should attempt to find the best source for the data, e.g.
+          the benchmark data for the given model
+        :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
+          Lists will be filled with NaN's if the variable could not be calculated.
         """
         dataset = self.les_dataset
         if dataset_override is not None:
@@ -803,11 +1165,28 @@ class VariableGroupSamMultilineProfiles(VariableGroup):
 
     def getTHVCldWeighted(self, dataset_override=None):
         """
+        This is a "calculate function". Calculate functions are intended to be written by the user in the event that
+        they need a variable that is not output by their atmospheric model. The general format for these functions
+        is:
+            1. Get the proper dataset. This is either passed in as dataset_override, or some benchmark dataset
+            2. Get the equations needed variables from the dataset using ``self.getVarForCalculations()``
+            3. Calculate the new variable
+            4. (optional) If there are multiple valid equations, pick the one that worked using
+               ``self.pickNonZeroOutput()``
+            5. Return the data as (dependent,independent)
+
+        For more information on calculate functions, see the "Creating a new calculated function (for calculated
+        variables)" section of the README.md
+
         Calculates the weighted cloud-conditional average of THETAV from SAM output
         using the following equation:
-        CLD * TVCLD
-        :return: requested variable data in the form of a list.
-                 Returned data is already cropped to the appropriate min,max indices
+        ``CLD * TVCLD``
+
+        :param dataset_override: If passed, this netcdf dataset will be used to gather the data needed to calculate the
+          given variable. if not passed, this function should attempt to find the best source for the data, e.g.
+          the benchmark data for the given model
+        :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
+          Lists will be filled with NaN's if the variable could not be calculated.
         """
         dataset = self.les_dataset
         if dataset_override is not None:
@@ -821,11 +1200,28 @@ class VariableGroupSamMultilineProfiles(VariableGroup):
     # ALERT: Check equations/units of SAM QT variables
     def getQTEnvUnweighted(self, dataset_override=None):
         """
+        This is a "calculate function". Calculate functions are intended to be written by the user in the event that
+        they need a variable that is not output by their atmospheric model. The general format for these functions
+        is:
+            1. Get the proper dataset. This is either passed in as dataset_override, or some benchmark dataset
+            2. Get the equations needed variables from the dataset using ``self.getVarForCalculations()``
+            3. Calculate the new variable
+            4. (optional) If there are multiple valid equations, pick the one that worked using
+               ``self.pickNonZeroOutput()``
+            5. Return the data as (dependent,independent)
+
+        For more information on calculate functions, see the "Creating a new calculated function (for calculated
+        variables)" section of the README.md
+
         Calculates the unweighted environment-conditional average of QT from SAM output
         using the following equation:
-        (QT - CLD * QTCLD) / (1 - CLD)
-        :return: requested variable data in the form of a list.
-                 Returned data is already cropped to the appropriate min,max indices
+        ``(QT - CLD * QTCLD) / (1 - CLD)``
+
+        :param dataset_override: If passed, this netcdf dataset will be used to gather the data needed to calculate the
+          given variable. if not passed, this function should attempt to find the best source for the data, e.g.
+          the benchmark data for the given model
+        :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
+          Lists will be filled with NaN's if the variable could not be calculated.
         """
         dataset = self.les_dataset
         if dataset_override is not None:
@@ -840,11 +1236,28 @@ class VariableGroupSamMultilineProfiles(VariableGroup):
     # ALERT: Check equations/units of SAM QTW variables
     def getQTWEnvWeighted(self, dataset_override=None):
         """
+        This is a "calculate function". Calculate functions are intended to be written by the user in the event that
+        they need a variable that is not output by their atmospheric model. The general format for these functions
+        is:
+            1. Get the proper dataset. This is either passed in as dataset_override, or some benchmark dataset
+            2. Get the equations needed variables from the dataset using ``self.getVarForCalculations()``
+            3. Calculate the new variable
+            4. (optional) If there are multiple valid equations, pick the one that worked using
+               ``self.pickNonZeroOutput()``
+            5. Return the data as (dependent,independent)
+
+        For more information on calculate functions, see the "Creating a new calculated function (for calculated
+        variables)" section of the README.md
+
         Calculates the weighted environment-conditional average of QTW from SAM output
         using the following equation:
-        (WPRTP - CLD * QTWCLD / 1000)
-        :return: requested variable data in the form of a list.
-                 Returned data is already cropped to the appropriate min,max indices
+        ``(WPRTP - CLD * QTWCLD / 1000)``
+
+        :param dataset_override: If passed, this netcdf dataset will be used to gather the data needed to calculate the
+          given variable. if not passed, this function should attempt to find the best source for the data, e.g.
+          the benchmark data for the given model
+        :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
+          Lists will be filled with NaN's if the variable could not be calculated.
         """
         dataset = self.les_dataset
         if dataset_override is not None:
@@ -857,11 +1270,28 @@ class VariableGroupSamMultilineProfiles(VariableGroup):
 
     def getQTWCldWeighted(self, dataset_override=None):
         """
+        This is a "calculate function". Calculate functions are intended to be written by the user in the event that
+        they need a variable that is not output by their atmospheric model. The general format for these functions
+        is:
+            1. Get the proper dataset. This is either passed in as dataset_override, or some benchmark dataset
+            2. Get the equations needed variables from the dataset using ``self.getVarForCalculations()``
+            3. Calculate the new variable
+            4. (optional) If there are multiple valid equations, pick the one that worked using
+               ``self.pickNonZeroOutput()``
+            5. Return the data as (dependent,independent)
+
+        For more information on calculate functions, see the "Creating a new calculated function (for calculated
+        variables)" section of the README.md
+
         Calculates the weighted cloud-conditional average of QTW from SAM output
         using the following equation:
-        CLD * QTWCLD / 1000
-        :return: requested variable data in the form of a list.
-                 Returned data is already cropped to the appropriate min,max indices
+        ``CLD * QTWCLD / 1000``
+
+        :param dataset_override: If passed, this netcdf dataset will be used to gather the data needed to calculate the
+          given variable. if not passed, this function should attempt to find the best source for the data, e.g.
+          the benchmark data for the given model
+        :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
+          Lists will be filled with NaN's if the variable could not be calculated.
         """
         dataset = self.les_dataset
         if dataset_override is not None:
@@ -875,11 +1305,28 @@ class VariableGroupSamMultilineProfiles(VariableGroup):
     # ALERT: Check equations/units of SAM TLW variables
     def getTLWEnvWeighted(self, dataset_override=None):
         """
+        This is a "calculate function". Calculate functions are intended to be written by the user in the event that
+        they need a variable that is not output by their atmospheric model. The general format for these functions
+        is:
+            1. Get the proper dataset. This is either passed in as dataset_override, or some benchmark dataset
+            2. Get the equations needed variables from the dataset using ``self.getVarForCalculations()``
+            3. Calculate the new variable
+            4. (optional) If there are multiple valid equations, pick the one that worked using
+               ``self.pickNonZeroOutput()``
+            5. Return the data as (dependent,independent)
+
+        For more information on calculate functions, see the "Creating a new calculated function (for calculated
+        variables)" section of the README.md
+
         Calculates the weighted environment-conditional average of TL from SAM output
         using the following equation:
-        (TLFLUX / RHO / 1004 - CDL * TLWCLD)
-        :return: requested variable data in the form of a list.
-                 Returned data is already cropped to the appropriate min,max indices
+        ``(TLFLUX / RHO / 1004 - CDL * TLWCLD)``
+
+        :param dataset_override: If passed, this netcdf dataset will be used to gather the data needed to calculate the
+          given variable. if not passed, this function should attempt to find the best source for the data, e.g.
+          the benchmark data for the given model
+        :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
+          Lists will be filled with NaN's if the variable could not be calculated.
         """
         dataset = self.les_dataset
         if dataset_override is not None:
@@ -893,11 +1340,28 @@ class VariableGroupSamMultilineProfiles(VariableGroup):
 
     def getTLWCldWeighted(self, dataset_override=None):
         """
+        This is a "calculate function". Calculate functions are intended to be written by the user in the event that
+        they need a variable that is not output by their atmospheric model. The general format for these functions
+        is:
+            1. Get the proper dataset. This is either passed in as dataset_override, or some benchmark dataset
+            2. Get the equations needed variables from the dataset using ``self.getVarForCalculations()``
+            3. Calculate the new variable
+            4. (optional) If there are multiple valid equations, pick the one that worked using
+               ``self.pickNonZeroOutput()``
+            5. Return the data as (dependent,independent)
+
+        For more information on calculate functions, see the "Creating a new calculated function (for calculated
+        variables)" section of the README.md
+
         Calculates the weighted cloud-conditional average of TL from SAM output
         using the following equation:
-        CLD * TLWCLD
-        :return: requested variable data in the form of a list.
-                 Returned data is already cropped to the appropriate min,max indices
+        ``CLD * TLWCLD``
+
+        :param dataset_override: If passed, this netcdf dataset will be used to gather the data needed to calculate the
+          given variable. if not passed, this function should attempt to find the best source for the data, e.g.
+          the benchmark data for the given model
+        :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
+          Lists will be filled with NaN's if the variable could not be calculated.
         """
         dataset = self.les_dataset
         if dataset_override is not None:

@@ -116,7 +116,9 @@ class PyPlotGen:
         self.multithreaded = not disable_multithreading
 
         if os.path.isdir(self.output_folder) and self.replace_images == False:
-            self.output_folder = self.output_folder + '_generated_on_' + str(datetime.now())
+            current_date_time = datetime.now()
+            rounded_down_datetime = current_date_time.replace(microsecond=0)
+            self.output_folder = self.output_folder + '_generated_on_' + str(rounded_down_datetime)
 
         self.output_folder = clean_path(self.output_folder)
 
@@ -164,11 +166,17 @@ class PyPlotGen:
 
         print('###########################################')
         if self.num_cases_plotted == 0:
+            all_cases_casenames = []
+            for case in Case_definitions.ALL_CASES:
+                all_cases_casenames.append(case["name"])
+
             warn(
                 "Warning, no cases were plotted! Please either specify an input folder for a supported model "
-                "(e.g. using --sam, --clubb, --e3sm, --wrf, --cam) or make sure the "
-                "default clubb output folder contains .nc output. "
-                "Please run ./pyplotgen.py -h for more information on parameters.")
+                "(e.g. using --sam, --clubb, --e3sm, --wrf, --cam). \nMake sure the "
+                "default clubb output folder contains .nc output, and check that the ALL_CASES variable in "
+                "config/Case_Defintions.py lists all of the cases you expected to plot.\n"
+                "ALL_CASES = " + str(all_cases_casenames) +
+                "\nPlease run ./pyplotgen.py -h for more information on parameters.")
         print("\nGenerating webpage for viewing plots ")
 
         if not os.path.exists(self.output_folder):
@@ -241,7 +249,8 @@ class PyPlotGen:
         clubb_has_case = clubb_given and clubb_file_defined and clubb_file_exists #case_def['name'] in self.clubb_datasets.keys()
 
         if self.nightly:
-            return clubb_has_case and (e3sm_has_case or sam_has_case or cam_has_case or wrf_has_case) \
+            return (clubb_has_case or not clubb_file_defined) \
+                   and (e3sm_has_case or sam_has_case or cam_has_case or wrf_has_case) \
                    or self.benchmark_only
         else:
             return e3sm_has_case or sam_has_case or cam_has_case or wrf_has_case \

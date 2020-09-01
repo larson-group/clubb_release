@@ -48,8 +48,8 @@ class VariableGroupCorrelations(VariableGroup):
             {'var_names':
                 {
                 'clubb': ['corr_w_rr_i'],
-                'sam': ['corr_w_rr_i'],
-                'coamps': ['corr_w_rr_i'],
+                'sam': [],
+                'coamps': [],
                 'r408': ['corr_w_rr_i'],
                 'hoc': ['corr_w_rr_i'],
                 'e3sm': ['corr_w_rr_i'],
@@ -63,8 +63,8 @@ class VariableGroupCorrelations(VariableGroup):
             {'var_names':
                 {
                 'clubb': ['corr_w_Nr_i'],
-                'sam': ['corr_w_Nr_i'],
-                'coamps': ['corr_w_Nr_i'],
+                'sam': [],
+                'coamps': [],
                 'r408': ['corr_w_Nr_i'],
                 'hoc': ['corr_w_Nr_i'],
                 'e3sm': ['corr_w_Nr_i'],
@@ -78,8 +78,8 @@ class VariableGroupCorrelations(VariableGroup):
             {'var_names':
                 {
                 'clubb': ['corr_w_Ncn_i'],
-                'sam': ['corr_w_Ncn_i'],
-                'coamps': ['corr_w_Ncn_i'],
+                'sam': [],
+                'coamps': [],
                 'r408': ['corr_w_Ncn_i'],
                 'hoc': ['corr_w_Ncn_i'],
                 'e3sm': ['corr_w_Ncn_i'],
@@ -93,8 +93,8 @@ class VariableGroupCorrelations(VariableGroup):
             {'var_names':
                 {
                 'clubb': ['corr_chi_rr_i'],
-                'sam': ['corr_chi_rr_i'],
-                'coamps': ['corr_chi_rr_i'],
+                'sam': [],
+                'coamps': [],
                 'r408': ['corr_chi_rr_i'],
                 'hoc': ['corr_chi_rr_i'],
                 'e3sm': ['corr_chi_rr_i'],
@@ -108,8 +108,8 @@ class VariableGroupCorrelations(VariableGroup):
             {'var_names':
                 {
                 'clubb': ['corr_chi_Nr_i'],
-                'sam': ['corr_chi_Nr_i'],
-                'coamps': ['corr_chi_Nr_i'],
+                'sam': [],
+                'coamps': [],
                 'r408': ['corr_chi_Nr_i'],
                 'hoc': ['corr_chi_Nr_i'],
                 'e3sm': ['corr_chi_Nr_i'],
@@ -123,8 +123,8 @@ class VariableGroupCorrelations(VariableGroup):
             {'var_names':
                 {
                 'clubb': ['corr_chi_Ncn_i'],
-                'sam': ['corr_chi_Ncn_i'],
-                'coamps': ['corr_chi_Ncn_i'],
+                'sam': [],
+                'coamps': [],
                 'r408': ['corr_chi_Ncn_i'],
                 'hoc': ['corr_chi_Ncn_i'],
                 'e3sm': ['corr_chi_Ncn_i'],
@@ -138,8 +138,8 @@ class VariableGroupCorrelations(VariableGroup):
             {'var_names':
                 {
                 'clubb': ['corr_rr_Nr_i'],
-                'sam': ['corr_rr_Nr_i'],
-                'coamps': ['corr_rr_Nr_i'],
+                'sam': [],
+                'coamps': [],
                 'r408': ['corr_rr_Nr_i'],
                 'hoc': ['corr_rr_Nr_i'],
                 'e3sm': ['corr_rr_Nr_i'],
