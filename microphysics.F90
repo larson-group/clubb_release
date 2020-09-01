@@ -299,7 +299,7 @@ subroutine micro_setparm()
   !----------------------------------
   !  Read namelist for microphysics options from prm file:
   !------------
-  open(55,file='./'//trim(case)//'/prm', status='old',form='formatted') 
+  open(55,file='./'//trim(cloudcase)//'/prm', status='old',form='formatted') 
   
   !bloss: get error code for missing namelist (by giving the name for
   !       a namelist that doesn't exist in the prm file).
@@ -332,7 +332,7 @@ subroutine micro_setparm()
 #ifndef CLUBB /* Disable this for UWM simulations */
    ! write namelist values out to file for documentation
    if(masterproc) then
-      open(unit=55,file='./'//trim(case)//'/'//trim(case)//'_'//trim(caseid)//'.namelists', form='formatted', position='append')
+      open(unit=55,file='./'//trim(cloudcase)//'/'//trim(cloudcase)//'_'//trim(caseid)//'.namelists', form='formatted', position='append')
       write (unit=55,nml=MICRO_M2005,IOSTAT=ios)
       write(55,*) ' '
       close(unit=55)
@@ -8953,7 +8953,7 @@ use grid, only:  &
     nstep,       &
     RUN3D,       &
     save3Dbin,   &
-    case,        &
+    cloudcase,        &
     caseid,      &
     save3Dsep,   &
     nrestart,    &
@@ -9024,7 +9024,7 @@ if(masterproc.or.output_sep) then
       filetype = '_micro.com3D'
     end if
     
-    filename='./OUT_3D/'//trim(case)//'_'//trim(caseid)//'_'// &
+    filename='./OUT_3D/'//trim(cloudcase)//'_'//trim(caseid)//'_'// &
         rankchar(5-lenstr(rankchar):4)//'_'//timechar(1:10)//filetype//sepchar
     
     open(46,file=filename,status='unknown',form='unformatted')
@@ -9046,11 +9046,11 @@ if(masterproc.or.output_sep) then
     end if
   
     if(save3Dsep) then
-      filename='./OUT_3D/'//trim(case)//'_'//trim(caseid)//'_'// &
+      filename='./OUT_3D/'//trim(cloudcase)//'_'//trim(caseid)//'_'// &
       rankchar(5-lenstr(rankchar):4)//'_'//timechar(1:10)//filetype//sepchar
       open(46,file=filename,status='unknown',form='unformatted')        
     else
-      filename='./OUT_3D/'//trim(case)//'_'//trim(caseid)//'_'// &
+      filename='./OUT_3D/'//trim(cloudcase)//'_'//trim(caseid)//'_'// &
       rankchar(5-lenstr(rankchar):4)//filetype//sepchar
       if(nrestart.eq.0.and.notopened3D) then
         open(46,file=filename,status='unknown',form='unformatted')     
