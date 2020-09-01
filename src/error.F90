@@ -717,7 +717,6 @@ module error
       i, j, c_run ! looping variables
 
     !-----------------------------------------------------------------------
-!print*,"error@minlesdiff"
 
     param_vals_vector = real(param_vals_vector_r4, kind = core_rknd)
 
