@@ -155,16 +155,19 @@ class PyPlotGen:
         self.num_cases_plotted = 0
         # Loop through cases listed in Case_definitions.ALL_CASES
         # for case_def in all_cases:
+        cases_plotted = []
         if self.multithreaded:
             freeze_support() # Required for multithreading
             n_processors = multiprocessing.cpu_count()
             with Pool(processes=n_processors) as pool:
-                pool.map(self.__plotCase__, all_cases)
+                cases_plotted = pool.map(self.__plotCase__, all_cases)
         else:
             for case_def in all_cases:
-                self.__plotCase__(case_def)
-
+                cases_plotted.append(self.__plotCase__(case_def))
         print('###########################################')
+
+        self.num_cases_plotted = self.__extractNumCasesPlotted__(cases_plotted)
+
         if self.num_cases_plotted == 0:
             all_cases_casenames = []
             for case in Case_definitions.ALL_CASES:
@@ -192,18 +195,36 @@ class PyPlotGen:
         total_runtime = round(time.time() - self.start_time)
         print("Pyplotgen ran in: ", total_runtime, " seconds.")
 
+    def __extractNumCasesPlotted__(self, plotCaseDataArray):
+        """
+        The __plotCase__() function is often called via a pooling map.
+        As such, the data returned from the pool map is an array of True/False values
+        where each True represents a case being plotted and each False represents a case
+        not being plotted. This function counts the number of True's and retuns that.
+
+        :param plotCaseDataArray: Array of True/False values
+        :return: number of True's in the given list.
+        """
+        num_true = 0
+        for element in plotCaseDataArray:
+            if element is True:
+                num_true += 1
+        return num_true
+
     def __plotCase__(self, case_def):
         """
         Plots the given case. Pulled out into it's own function to help move towards multithreading
         :param case_def:
-        :return:
+        :return: True if case was plotted, False if case was not plotted
         """
-        print('###########################################')
-        print("plotting ", case_def['name'])
         self.case_diff_datasets = None
         casename = case_def['name']
         if self.__dataForCaseExists__(case_def):
-            self.num_cases_plotted += 1
+            print('###########################################')
+            print("plotting ", case_def['name'])
+            lock = multiprocessing.Lock()
+            lock.acquire()
+            lock.release()
             if self.diff is not None:
                 self.case_diff_datasets = self.diff_datasets[casename]
             case_gallery_setup = CaseGallerySetup(case_def, clubb_folders=self.clubb_folders, plot_les=self.les,
@@ -216,6 +237,9 @@ class PyPlotGen:
             case_gallery_setup.plot(self.output_folder, replace_images=self.replace_images, no_legends=self.no_legends,
                                     thin_lines=self.thin, show_alphabetic_id=self.show_alphabetic_id)
             self.cases_plotted.append(casename)
+            return True
+        else:
+            return False
 
     def __dataForCaseExists__(self, case_def):
         """
