@@ -24,7 +24,7 @@ stp_adjst_spread_in = 0.8
 
 &cases
 ! GABLS2
-hoc_stats_file_nl(1)    = "../output/gabls2_zm.ctl"
+hoc_stats_file_nl(1)    = "../output/gabls2_zm.nc"
 les_stats_file_nl(1)    = "../les_data/gabls2_coamps_sm.nc"
 run_file_nl(1)          = "gabls2_hoc.in"
 z_i_nl(1)               = 2
