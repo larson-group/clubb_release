@@ -112,7 +112,6 @@ class VariableGroupWs(VariableGroup):
                 },
              'sci_scale': 0,
             },
-            # TODO LES
         ]
 
         # Call ctor of parent class

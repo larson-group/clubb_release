@@ -12,6 +12,9 @@ class Contour:
     This class holds any information necessary to create a contour plot using pyplot,
     including the numerical values, format style, and a label for the plot.
     In the future we would like to seperate the dependent_data from the format.
+
+    For information on the input parameters of this class, please see the documentation for the
+    ``__init__()`` method.
     """
     def __init__(self, x_data, y_data, c_data, colors = "", label ="Unlabeled plot"):
         """

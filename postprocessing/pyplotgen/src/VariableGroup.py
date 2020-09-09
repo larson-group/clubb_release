@@ -28,6 +28,9 @@ class VariableGroup:
 
     A VariableGroup child defines Lines, Panels, etc., and is responsible for
     calculating any 'calculated' variables from netcdf
+
+    For information on the input parameters of this class, please see the documentation for the
+    ``__init__()`` method.
     """
 
     def __init__(self, case, clubb_datasets=None, les_dataset=None, coamps_dataset=None, r408_dataset=None,
@@ -53,7 +56,7 @@ class VariableGroup:
         self.default_panel_type = Panel.TYPE_PROFILE
         self.clubb_datasets = clubb_datasets
         self.case = case
-        self.les_dataset = les_dataset
+        self.sam_benchmark_dataset = les_dataset
         self.e3sm_datasets = e3sm_datasets
         self.sam_datasets = sam_datasets
         self.cam_datasets = cam_datasets
@@ -136,10 +139,10 @@ class VariableGroup:
         """
         var_names = variable_def_dict['var_names']
 
-        plot_les = self.les_dataset is not None
-        plot_coamps = self.coamps_dataset is not None
-        plot_r408 = self.r408_datasets is not None
-        plot_hoc = self.hoc_datasets is not None
+        plot_sam_benchmark = self.sam_benchmark_dataset is not None and len(self.sam_benchmark_dataset) > 0
+        plot_coamps = self.coamps_dataset is not None and len(self.coamps_dataset) > 0
+        plot_r408 = self.r408_datasets is not None and len(self.r408_datasets) > 0
+        plot_hoc = self.hoc_datasets is not None and len(self.hoc_datasets) > 0
 
         plot_sam = self.sam_datasets is not None and len(self.sam_datasets) > 0 \
                    and (len(var_names['sam']) > 0 or 'sam_calc' in variable_def_dict.keys())
@@ -154,8 +157,8 @@ class VariableGroup:
 
         all_lines = []
         # Plot benchmarks
-        if plot_les:
-            all_lines.extend(self.__getVarLinesForModel__('sam', variable_def_dict, self.les_dataset))
+        if plot_sam_benchmark:
+            all_lines.extend(self.__getVarLinesForModel__('sam', variable_def_dict, self.sam_benchmark_dataset))
         if plot_coamps:
             all_lines.extend(self.__getVarLinesForModel__('coamps', variable_def_dict, self.coamps_dataset))
         if plot_r408:
@@ -165,7 +168,7 @@ class VariableGroup:
 
         # Plot input folders
         if plot_clubb:
-            for input_folder in self.clubb_datasets:  # TODO this loop is causing extra budget lines
+            for input_folder in self.clubb_datasets:
                 folder_name = os.path.basename(input_folder)
                 all_lines.extend(
                     self.__getVarLinesForModel__('clubb', variable_def_dict, self.clubb_datasets[input_folder],
@@ -256,17 +259,18 @@ class VariableGroup:
         # So a line parameter is incompatible.
         if lines is not None:
             if panel_type == Panel.TYPE_TIMEHEIGHT:
-                warn('Warning. Panel type is time-height but a lines argument was found in for variable '+
-                     str(all_model_var_names[model_name])+'. Those are not compatible. Ignoring lines.')
+                warn('Warning. Panel type is time-height but a lines argument was found in for variable ' +
+                     str(all_model_var_names[model_name]) + '. Those are not compatible. Ignoring lines.')
             else:
                 for line in lines:
                     line['calculated'] = False
                     if (model_name + '_calc') in line.keys() and \
-                        not self.__varnamesInDataset__(line['var_names'], dataset):
+                            not self.__varnamesInDataset__(line['var_names'], dataset):
                         if panel_type == Panel.TYPE_ANIMATION:
                             plot_data, indep_data = variable_def_dict[(model_name + '_calc')](dataset_override=dataset)
                             # Create new Line equivalent for anim or rename Contour
-                            plot = Contour(indep_data['time'], indep_data['height'], plot_data, colors=Style_definitions.CONTOUR_CMAP, label=label)
+                            plot = Contour(indep_data['time'], indep_data['height'], plot_data,
+                                           colors=Style_definitions.CONTOUR_CMAP, label=label)
                         else:
                             plot_data, z = line[(model_name + '_calc')](dataset_override=dataset)
                             plot = Line(plot_data, z, line_format=line_style, label=line['legend_label'])
@@ -301,14 +305,14 @@ class VariableGroup:
                 else:
                     raise TypeError("getTextDefiningDataset received an unexpected format of datasets")
         if self.e3sm_datasets is not None:
-            for dataset in self.e3sm_datasets.values():
-                datasets.append(dataset)
+            for dict_of_datasets in self.e3sm_datasets.values():
+                datasets.extend(dict_of_datasets.values())
         if self.cam_datasets is not None:
-            for dataset in self.cam_datasets.values():
-                datasets.append(dataset)
+            for dict_of_datasets in self.cam_datasets.values():
+                datasets.extend(dict_of_datasets.values())
         if self.sam_datasets is not None:
-            for dataset in self.sam_datasets.values():
-                datasets.append(dataset)
+            for dict_of_datasets in self.sam_datasets.values():
+                datasets.extend(dict_of_datasets.values())
         if self.wrf_datasets is not None:
             for i in self.wrf_datasets.values():
                 if isinstance(i, dict):
@@ -317,8 +321,8 @@ class VariableGroup:
                     datasets.append(i)
                 else:
                     raise TypeError("getTextDefiningDataset recieved an unexpected format of datasets")
-        if self.les_dataset is not None:
-            datasets.append(self.les_dataset)
+        if self.sam_benchmark_dataset is not None:
+            datasets.extend(self.sam_benchmark_dataset.values())
         if self.coamps_dataset is not None:
             datasets.extend(self.coamps_dataset.values())
         if self.r408_datasets is not None:
@@ -510,7 +514,7 @@ class VariableGroup:
     def __getVarLines__(self, var_names, ncdf_datasets, label="", line_format="", avg_axis=0, override_panel_type=None,
                         lines=None, conversion_factor=1, model_name="unknown"):
         """
-        Get a list of Line objects for a specific clubb variable. If les_dataset is specified it will also
+        Get a list of Line objects for a specific clubb variable. If sam_benchmark_dataset is specified it will also
         attempt to generate Lines for the SAM equivalent variables, using the name conversions found in
         VarnameConversions.py. If a SAM variable needs to be calculated (uses an equation) then it will have
         to be created within that variable group's dataset and not here.
@@ -642,17 +646,19 @@ class VariableGroup:
         """
         # This does not yet work since we need two different independent_data arrays
         variable = NetCdfVariable(varname, dataset,
-                          independent_var_names={'time':Case_definitions.TIME_VAR_NAMES,
-                                                 'height':Case_definitions.HEIGHT_VAR_NAMES},
-                          start_time=self.start_time, end_time=self.end_time, avg_axis=2, conversion_factor=conversion_factor)
+                                  independent_var_names={'time': Case_definitions.TIME_VAR_NAMES,
+                                                         'height': Case_definitions.HEIGHT_VAR_NAMES},
+                                  start_time=self.start_time, end_time=self.end_time, avg_axis=2,
+                                  conversion_factor=conversion_factor)
         if variable.dependent_data.ndim != 2:
-            warn("Warning! Variable {} can not be plotted as time-height plot as the data ".format(varname)+
+            warn("Warning! Variable {} can not be plotted as time-height plot as the data ".format(varname) +
                  "array's dimension is {} and not 2. Returning no data.".format(variable.dependent_data.ndim))
             return None
         # From here on: variable.dependent_data.ndim == 2
         variable.trimArray(self.start_time, self.end_time, data=variable.independent_data['time'], axis=0)
         # Do we want to trim height?
-        variable.trimArray(self.height_min_value, self.height_max_value, data=variable.independent_data['height'], axis=1)
+        variable.trimArray(self.height_min_value, self.height_max_value, data=variable.independent_data['height'],
+                           axis=1)
 
         # Create Contour instance to return
         contour = Contour(x_data=variable.independent_data['time'], y_data=variable.independent_data['height'],
@@ -673,12 +679,13 @@ class VariableGroup:
         if self.time_height:
             var_ncdf = NetCdfVariable(varname, datasets,
                                       independent_var_names={'time': Case_definitions.TIME_VAR_NAMES,
-                                                             'height':Case_definitions.HEIGHT_VAR_NAMES},
+                                                             'height': Case_definitions.HEIGHT_VAR_NAMES},
                                       conversion_factor=conversion_factor, start_time=self.start_time,
                                       end_time=self.end_time, avg_axis=2)
             var_ncdf.trimArray(self.start_time, self.end_time, data=var_ncdf.independent_data['time'], axis=0)
             # Do we want to trim height?
-            var_ncdf.trimArray(self.height_min_value, self.height_max_value, data=var_ncdf.independent_data['height'], axis=1)
+            var_ncdf.trimArray(self.height_min_value, self.height_max_value, data=var_ncdf.independent_data['height'],
+                               axis=1)
         else:
             var_ncdf = NetCdfVariable(varname, datasets, independent_var_names=Case_definitions.HEIGHT_VAR_NAMES,
                                       conversion_factor=conversion_factor, start_time=self.start_time,
@@ -686,7 +693,7 @@ class VariableGroup:
             var_ncdf.trimArray(self.height_min_value, self.height_max_value, data=var_ncdf.independent_data)
         var_data = var_ncdf.dependent_data
         indep_data = var_ncdf.independent_data
-        return var_data, indep_data, var_ncdf.ncdf_data # changed datasets to var_ncdf.ncdf_data to fix budget plots
+        return var_data, indep_data, var_ncdf.ncdf_data  # changed datasets to var_ncdf.ncdf_data to fix budget plots
 
     def isSurfaceData(self, dataset):
         """
@@ -700,7 +707,7 @@ class VariableGroup:
                 return False
         return True
 
-    def pickNonZeroOutput(self, output1, output2):
+    def pickNonZeroOutput(self, output1, output2, favor_output=None):
         """
         Sometimes there are more than 1 ways to calculate a variable, and
         it is impossible to know which equation to use before hand. In these
@@ -710,6 +717,7 @@ class VariableGroup:
 
         This function currently works by determining picking the non-nan and non-zero array.
         In the event that both arrays contain non-nan and non-zero output, it will return output1.
+        In the event both arrays are identical w/in tolerance, it will return output1.
 
         If both arrays are zero or nan, then it will return the first array arbitrarily.
 
@@ -733,6 +741,9 @@ class VariableGroup:
             (e.g.     output1 = wprlp * (2.5e6 / (1004.67 * ex0) - 1.61 * thvm)
         :param output2: An arraylike list of numbers outputted from a variable calculation
             (e.g.     output2 = wprlp * (2.5e6 / (1004.67 * ((p / 1.0e5) ** (287.04 / 1004.67))) - 1.61 * thvm)
+        :param favor_output: (optional) If an array cannot easily be picked by looking at whether they are zeros/NaN's,
+            use this return the data from this array. I.e. if both output1 and output2 contain unique data, the data in
+            favor_output will be returned. This array should be identical to either output1 or output2.
         :return: The listlike array of the two datasets most likely to be the correct answer.
         """
         out1_is_nan = math.isnan(mean(output1))
@@ -744,7 +755,8 @@ class VariableGroup:
         return_out_1 = (out2_is_zero or out2_is_nan) and not out1_is_nan
         return_out_2 = (out1_is_zero or out1_is_nan) and not out2_is_nan
 
-        return_any = (out1_is_zero and out2_is_zero) or (out1_is_nan and out2_is_nan)
+        output1_close_to_output2 = np.allclose(output1, output2)
+        return_any = (out1_is_zero and out2_is_zero) or (out1_is_nan and out2_is_nan) or output1_close_to_output2
 
         if return_out_2:
             return output2
@@ -752,9 +764,11 @@ class VariableGroup:
             return output1
         elif return_any:
             return output1
+        elif favor_output is not None:
+            return favor_output
         raise UserWarning("Failed to find an easy answer to the best output.")
 
-    def __processLinesParameter__(self, lines, dataset, label_suffix="", line_format = "", model_name = "unknown"):
+    def __processLinesParameter__(self, lines, dataset, label_suffix="", line_format="", model_name="unknown"):
         """
         This method processes a 'lines' parameter from a variable definition and translates
         it into a list of Line objects for plotting.

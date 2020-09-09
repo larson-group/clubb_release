@@ -5,6 +5,8 @@
 import os
 import pathlib as pathlib
 from collections.abc import Iterable
+from os import path
+from sys import path
 from warnings import warn
 
 import numpy as np
@@ -16,6 +18,9 @@ from config import Case_definitions
 class NetCdfVariable:
     """
     Class used for conveniently storing the information about a given netcdf variable
+
+    For information on the input parameters of this class, please see the documentation for the
+    ``__init__()`` method.
     """
 
     def __init__(self, names, ncdf_data, independent_var_names=None, conversion_factor=1, start_time=0, end_time=-1,
@@ -222,7 +227,7 @@ class NetCdfVariable:
                     if model_name == "cam" and temp_name == "lev" and "Z3" in varnames:
                         continue
                     return temp_name, temp_dataset
-        return  None, None
+        return None, None
 
 
     def __getDependentAndIndependentData__(self, all_varnames, all_datasets):
@@ -248,6 +253,10 @@ class NetCdfVariable:
             # if it's not a string, then it's a function
             else:
                 dependent_data, independent_data = varname_element(dataset_override=all_datasets)
+
+            if np.isnan(dependent_data[0]) or np.isnan(independent_data[0]):
+                continue
+            else:
                 break
 
             # If failed to find/calculate variable, try again with the next name/equation, otherwise stop looping
@@ -276,6 +285,9 @@ class DataReader():
     This class is responsible for handling nc files.
     Given nc files it reads them and returns NetCDF Dataset objects to python.
     It is also responsible for performing the time-averaging calculation at load time.
+
+    For information on the input parameters of this class, please see the documentation for the
+    ``__init__()`` method.
 
     :author: Nicolas Strike
     :date: January 2019
@@ -478,7 +490,12 @@ class DataReader():
         :param filename: The netcdf file to be loaded
         :return: A netCDF4 Dataset object containing the data from the given file
         """
-        dataset = Dataset(filename, "r", format="NETCDF4")
+        dataset = None
+        if path.exists(filename):
+            dataset = Dataset(filename, "r", format="NETCDF4")
+        else:
+            warn("Failed to find file " + filename)
+
         return dataset
 
     def __averageData__(self, var, idx_t0=0, idx_t1=-1, idx_z0=0, idx_z1=-1, avg_axis=0):

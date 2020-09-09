@@ -13,7 +13,7 @@ class VariableGroupSamBudgets(VariableGroup):
     """
     def __init__(self, case, clubb_datasets=None, les_dataset=None, coamps_dataset=None, r408_dataset=None,
                  hoc_dataset=None, cam_datasets=None,
-                 e3sm_datasets=None, sam_datasets=None, wrf_datasets=None):
+                 e3sm_datasets=None, sam_datasets=None, wrf_datasets=None, verbose=False):
         """
 
         :param clubb_datasets:
@@ -990,7 +990,7 @@ class VariableGroupSamBudgets(VariableGroup):
         :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
           Lists will be filled with NaN's if the variable could not be calculated.
         """
-        dataset = self.les_dataset
+        dataset = self.sam_benchmark_dataset
         if dataset_override is not None:
             dataset = dataset_override
 
@@ -1044,7 +1044,7 @@ class VariableGroupSamBudgets(VariableGroup):
         :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
           Lists will be filled with NaN's if the variable could not be calculated.
         """
-        dataset = self.les_dataset
+        dataset = self.sam_benchmark_dataset
         if dataset_override is not None:
             dataset = dataset_override
         QTADV, indep, dataset = self.getVarForCalculations('QTADV', dataset,
@@ -1089,7 +1089,7 @@ class VariableGroupSamBudgets(VariableGroup):
         :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
           Lists will be filled with NaN's if the variable could not be calculated.
         """
-        dataset = self.les_dataset
+        dataset = self.sam_benchmark_dataset
         if dataset_override is not None:
             dataset = dataset_override
         TWBUOY, indep, dataset = self.getVarForCalculations('TWBUOY', dataset)
@@ -1122,7 +1122,7 @@ class VariableGroupSamBudgets(VariableGroup):
         :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
           Lists will be filled with NaN's if the variable could not be calculated.
         """
-        dataset = self.les_dataset
+        dataset = self.sam_benchmark_dataset
         if dataset_override is not None:
             dataset = dataset_override
         TWADV, indep, dataset = self.getVarForCalculations('TWADV', dataset)
@@ -1162,7 +1162,7 @@ class VariableGroupSamBudgets(VariableGroup):
         :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
           Lists will be filled with NaN's if the variable could not be calculated.
         """
-        dataset = self.les_dataset
+        dataset = self.sam_benchmark_dataset
         if dataset_override is not None:
             dataset = dataset_override
         THLWBUOY, indep, dataset = self.getVarForCalculations('THLWBUOY', dataset)
@@ -1195,7 +1195,7 @@ class VariableGroupSamBudgets(VariableGroup):
         :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
           Lists will be filled with NaN's if the variable could not be calculated.
         """
-        dataset = self.les_dataset
+        dataset = self.sam_benchmark_dataset
         if dataset_override is not None:
             dataset = dataset_override
         THLWADV, indep, dataset = self.getVarForCalculations('THLWADV', dataset)
@@ -1235,7 +1235,7 @@ class VariableGroupSamBudgets(VariableGroup):
         :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
           Lists will be filled with NaN's if the variable could not be calculated.
         """
-        dataset = self.les_dataset
+        dataset = self.sam_benchmark_dataset
         if dataset_override is not None:
             dataset = dataset_override
         QWBUOY, indep, dataset = self.getVarForCalculations('QWBUOY', dataset)
@@ -1268,7 +1268,7 @@ class VariableGroupSamBudgets(VariableGroup):
         :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
           Lists will be filled with NaN's if the variable could not be calculated.
         """
-        dataset = self.les_dataset
+        dataset = self.sam_benchmark_dataset
         if dataset_override is not None:
             dataset = dataset_override
         QWADV, indep, dataset = self.getVarForCalculations('QWADV', dataset)
@@ -1307,7 +1307,7 @@ class VariableGroupSamBudgets(VariableGroup):
         :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
           Lists will be filled with NaN's if the variable could not be calculated.
         """
-        dataset = self.les_dataset
+        dataset = self.sam_benchmark_dataset
         if dataset_override is not None:
             dataset = dataset_override
         QTOGWBUOY, indep, dataset = self.getVarForCalculations('QTOGWBUOY', dataset)
@@ -1340,7 +1340,7 @@ class VariableGroupSamBudgets(VariableGroup):
         :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
           Lists will be filled with NaN's if the variable could not be calculated.
         """
-        dataset = self.les_dataset
+        dataset = self.sam_benchmark_dataset
         if dataset_override is not None:
             dataset = dataset_override
         QTOGWADV, indep, dataset = self.getVarForCalculations('QTOGWADV', dataset)
@@ -1379,7 +1379,7 @@ class VariableGroupSamBudgets(VariableGroup):
         :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
           Lists will be filled with NaN's if the variable could not be calculated.
         """
-        dataset = self.les_dataset
+        dataset = self.sam_benchmark_dataset
         if dataset_override is not None:
             dataset = dataset_override
         T2ADVTR, indep, dataset = self.getVarForCalculations('T2ADVTR', dataset)
@@ -1418,7 +1418,7 @@ class VariableGroupSamBudgets(VariableGroup):
         :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
           Lists will be filled with NaN's if the variable could not be calculated.
         """
-        dataset = self.les_dataset
+        dataset = self.sam_benchmark_dataset
         if dataset_override is not None:
             dataset = dataset_override
         THL2ADVTR, indep, dataset = self.getVarForCalculations('THL2ADVTR', dataset)
@@ -1457,7 +1457,7 @@ class VariableGroupSamBudgets(VariableGroup):
         :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
           Lists will be filled with NaN's if the variable could not be calculated.
         """
-        dataset = self.les_dataset
+        dataset = self.sam_benchmark_dataset
         if dataset_override is not None:
             dataset = dataset_override
         Q2ADVTR, indep, dataset = self.getVarForCalculations('Q2ADVTR', dataset)
@@ -1495,7 +1495,7 @@ class VariableGroupSamBudgets(VariableGroup):
         :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
           Lists will be filled with NaN's if the variable could not be calculated.
         """
-        dataset = self.les_dataset
+        dataset = self.sam_benchmark_dataset
         if dataset_override is not None:
             dataset = dataset_override
         QTOG2ADVTR, indep, dataset = self.getVarForCalculations('QTOG2ADVTR', dataset)
@@ -1533,7 +1533,7 @@ class VariableGroupSamBudgets(VariableGroup):
         :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
           Lists will be filled with NaN's if the variable could not be calculated.
         """
-        dataset = self.les_dataset
+        dataset = self.sam_benchmark_dataset
         if dataset_override is not None:
             dataset = dataset_override
         QTHLADV, indep, dataset = self.getVarForCalculations('QTHLADV', dataset)
@@ -1572,7 +1572,7 @@ class VariableGroupSamBudgets(VariableGroup):
         :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
           Lists will be filled with NaN's if the variable could not be calculated.
         """
-        dataset = self.les_dataset
+        dataset = self.sam_benchmark_dataset
         if dataset_override is not None:
             dataset = dataset_override
         DIFTR, indep, dataset = self.getVarForCalculations('DIFTR', dataset)
@@ -1605,7 +1605,7 @@ class VariableGroupSamBudgets(VariableGroup):
         :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
           Lists will be filled with NaN's if the variable could not be calculated.
         """
-        dataset = self.les_dataset
+        dataset = self.sam_benchmark_dataset
         if dataset_override is not None:
             dataset = dataset_override
         ADVTR, indep, dataset = self.getVarForCalculations('ADVTR', dataset)
@@ -1644,7 +1644,7 @@ class VariableGroupSamBudgets(VariableGroup):
         :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
           Lists will be filled with NaN's if the variable could not be calculated.
         """
-        dataset = self.les_dataset
+        dataset = self.sam_benchmark_dataset
         if dataset_override is not None:
             dataset = dataset_override
         ADVTRS, indep, dataset = self.getVarForCalculations('ADVTRS', dataset)
@@ -1679,7 +1679,7 @@ class VariableGroupSamBudgets(VariableGroup):
         :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
           Lists will be filled with NaN's if the variable could not be calculated.
         """
-        dataset = self.les_dataset
+        dataset = self.sam_benchmark_dataset
         if dataset_override is not None:
             dataset = dataset_override
         U2ADV, indep, dataset = self.getVarForCalculations('U2ADV', dataset)
@@ -1715,7 +1715,7 @@ class VariableGroupSamBudgets(VariableGroup):
         :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
           Lists will be filled with NaN's if the variable could not be calculated.
         """
-        dataset = self.les_dataset
+        dataset = self.sam_benchmark_dataset
         if dataset_override is not None:
             dataset = dataset_override
         V2ADV, indep, dataset = self.getVarForCalculations('V2ADV', dataset)
@@ -1751,7 +1751,7 @@ class VariableGroupSamBudgets(VariableGroup):
         :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
           Lists will be filled with NaN's if the variable could not be calculated.
         """
-        dataset = self.les_dataset
+        dataset = self.sam_benchmark_dataset
         if dataset_override is not None:
             dataset = dataset_override
         W2PRES, indep, dataset = self.getVarForCalculations('W2PRES', dataset)
@@ -1784,7 +1784,7 @@ class VariableGroupSamBudgets(VariableGroup):
         :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
           Lists will be filled with NaN's if the variable could not be calculated.
         """
-        dataset = self.les_dataset
+        dataset = self.sam_benchmark_dataset
         if dataset_override is not None:
             dataset = dataset_override
         W2ADV, indep, dataset = self.getVarForCalculations('W2ADV', dataset)
@@ -1822,7 +1822,7 @@ class VariableGroupSamBudgets(VariableGroup):
         :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
           Lists will be filled with NaN's if the variable could not be calculated.
         """
-        dataset = self.les_dataset
+        dataset = self.sam_benchmark_dataset
         if dataset_override is not None:
             dataset = dataset_override
         ADVTR, indep, dataset = self.getVarForCalculations('ADVTR', dataset)
@@ -1855,7 +1855,7 @@ class VariableGroupSamBudgets(VariableGroup):
         :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
           Lists will be filled with NaN's if the variable could not be calculated.
         """
-        dataset = self.les_dataset
+        dataset = self.sam_benchmark_dataset
         if dataset_override is not None:
             dataset = dataset_override
         BUOYA, indep, dataset = self.getVarForCalculations('BUOYA', dataset)
@@ -1888,7 +1888,7 @@ class VariableGroupSamBudgets(VariableGroup):
         :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
           Lists will be filled with NaN's if the variable could not be calculated.
         """
-        dataset = self.les_dataset
+        dataset = self.sam_benchmark_dataset
         if dataset_override is not None:
             dataset = dataset_override
         PRESSTR, indep, dataset = self.getVarForCalculations('PRESSTR', dataset)
@@ -1921,7 +1921,7 @@ class VariableGroupSamBudgets(VariableGroup):
         :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
           Lists will be filled with NaN's if the variable could not be calculated.
         """
-        dataset = self.les_dataset
+        dataset = self.sam_benchmark_dataset
         if dataset_override is not None:
             dataset = dataset_override
         DIFTR, indep, dataset = self.getVarForCalculations('DIFTR', dataset)
@@ -1954,7 +1954,7 @@ class VariableGroupSamBudgets(VariableGroup):
         :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
           Lists will be filled with NaN's if the variable could not be calculated.
         """
-        dataset = self.les_dataset
+        dataset = self.sam_benchmark_dataset
         if dataset_override is not None:
             dataset = dataset_override
         SDMP, indep, dataset = self.getVarForCalculations('SDMP', dataset)
@@ -1987,7 +1987,7 @@ class VariableGroupSamBudgets(VariableGroup):
         :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
           Lists will be filled with NaN's if the variable could not be calculated.
         """
-        dataset = self.les_dataset
+        dataset = self.sam_benchmark_dataset
         if dataset_override is not None:
             dataset = dataset_override
         BT, indep, dataset = self.getVarForCalculations('BT', dataset)
@@ -2020,7 +2020,7 @@ class VariableGroupSamBudgets(VariableGroup):
         :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
           Lists will be filled with NaN's if the variable could not be calculated.
         """
-        dataset = self.les_dataset
+        dataset = self.sam_benchmark_dataset
         if dataset_override is not None:
             dataset = dataset_override
         ADVTR, indep, dataset = self.getVarForCalculations('ADVTR', dataset)
@@ -2067,7 +2067,7 @@ class VariableGroupSamBudgets(VariableGroup):
         :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
           Lists will be filled with NaN's if the variable could not be calculated.
         """
-        dataset = self.les_dataset
+        dataset = self.sam_benchmark_dataset
         if dataset_override is not None:
             dataset = dataset_override
         W3ADV, indep, dataset = self.getVarForCalculations('W3ADV', dataset)
@@ -2104,7 +2104,7 @@ class VariableGroupSamBudgets(VariableGroup):
         :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
           Lists will be filled with NaN's if the variable could not be calculated.
         """
-        dataset = self.les_dataset
+        dataset = self.sam_benchmark_dataset
         if dataset_override is not None:
             dataset = dataset_override
         WUANIZ, indep, dataset = self.getVarForCalculations('WUANIZ', dataset)
@@ -2137,7 +2137,7 @@ class VariableGroupSamBudgets(VariableGroup):
         :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
           Lists will be filled with NaN's if the variable could not be calculated.
         """
-        dataset = self.les_dataset
+        dataset = self.sam_benchmark_dataset
         if dataset_override is not None:
             dataset = dataset_override
         WUADV, indep, dataset = self.getVarForCalculations('WUADV', dataset)
@@ -2176,7 +2176,7 @@ class VariableGroupSamBudgets(VariableGroup):
         :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
           Lists will be filled with NaN's if the variable could not be calculated.
         """
-        dataset = self.les_dataset
+        dataset = self.sam_benchmark_dataset
         if dataset_override is not None:
             dataset = dataset_override
         WVANIZ, indep, dataset = self.getVarForCalculations('WVANIZ', dataset)
@@ -2209,7 +2209,7 @@ class VariableGroupSamBudgets(VariableGroup):
         :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
           Lists will be filled with NaN's if the variable could not be calculated.
         """
-        dataset = self.les_dataset
+        dataset = self.sam_benchmark_dataset
         if dataset_override is not None:
             dataset = dataset_override
         WVADV, indep, dataset = self.getVarForCalculations('WVADV', dataset)

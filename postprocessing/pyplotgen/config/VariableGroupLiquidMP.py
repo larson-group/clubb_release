@@ -177,7 +177,7 @@ class VariableGroupLiquidMP(VariableGroup):
           Lists will be filled with NaN's if the variable could not be calculated.
         """
 
-        dataset = self.les_dataset
+        dataset = self.sam_benchmark_dataset
         if dataset_override is not None:
             dataset = dataset_override
         nc, indep, dataset = self.getVarForCalculations(['NC'], dataset)
@@ -221,13 +221,13 @@ class VariableGroupLiquidMP(VariableGroup):
           Lists will be filled with NaN's if the variable could not be calculated.
         """
 
-        dataset = self.les_dataset
+        dataset = self.sam_benchmark_dataset
         if dataset_override is not None:
             dataset = dataset_override
 
         nr, indep, dataset = self.getVarForCalculations(['NR','CONP'], dataset)
         rho, indep, dataset = self.getVarForCalculations('RHO', dataset)
-        # indep, indep, dataset = self.getVarForCalculations(['z', 'lev', 'altitude'], self.les_dataset)
+        # indep, indep, dataset = self.getVarForCalculations(['z', 'lev', 'altitude'], self.sam_benchmark_dataset)
 
         nrm = (nr * (10 ** 6) / rho)
 
@@ -253,7 +253,7 @@ class VariableGroupLiquidMP(VariableGroup):
         :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
           Lists will be filled with NaN's if the variable could not be calculated.
         """
-        dataset = self.les_dataset
+        dataset = self.sam_benchmark_dataset
         if dataset_override is not None:
             dataset = dataset_override
         nc, indep, dataset = self.getVarForCalculations(['NC'], dataset)

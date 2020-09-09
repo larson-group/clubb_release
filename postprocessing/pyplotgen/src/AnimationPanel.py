@@ -8,18 +8,16 @@ The changed plot routine outputs animations of profile plots instead of simple p
 :author: Steffen Domke
 :date: July 2020
 '''
-import os
-from datetime import datetime
-import matplotlib.pyplot as plt
 from Panel import Panel
 
-from config import Style_definitions
-from src.interoperability import clean_path, clean_title
 
 class AnimationPanel(Panel):
     """
     ContourPanel class derived from Panel
     The difference is that the plot routine will generate a timeheight plot instead of a standard profile plot.
+
+    For information on the input parameters of this class, please see the documentation for the
+    ``__init__()`` method.
     """
 
     def __init__(bla):

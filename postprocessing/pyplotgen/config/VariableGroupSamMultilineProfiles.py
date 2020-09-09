@@ -475,7 +475,7 @@ class VariableGroupSamMultilineProfiles(VariableGroup):
         :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
           Lists will be filled with NaN's if the variable could not be calculated.
         """
-        dataset = self.les_dataset
+        dataset = self.sam_benchmark_dataset
         if dataset_override is not None:
             dataset = dataset_override
         UW, indep, dataset = self.getVarForCalculations('UW', dataset)
@@ -508,7 +508,7 @@ class VariableGroupSamMultilineProfiles(VariableGroup):
         :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
           Lists will be filled with NaN's if the variable could not be calculated.
         """
-        dataset = self.les_dataset
+        dataset = self.sam_benchmark_dataset
         if dataset_override is not None:
             dataset = dataset_override
         VW, indep, dataset = self.getVarForCalculations('VW', dataset)
@@ -541,7 +541,7 @@ class VariableGroupSamMultilineProfiles(VariableGroup):
         :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
           Lists will be filled with NaN's if the variable could not be calculated.
         """
-        dataset = self.les_dataset
+        dataset = self.sam_benchmark_dataset
         if dataset_override is not None:
             dataset = dataset_override
         U2, indep, dataset = self.getVarForCalculations('U2', dataset)
@@ -574,7 +574,7 @@ class VariableGroupSamMultilineProfiles(VariableGroup):
         :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
           Lists will be filled with NaN's if the variable could not be calculated.
         """
-        dataset = self.les_dataset
+        dataset = self.sam_benchmark_dataset
         if dataset_override is not None:
             dataset = dataset_override
         V2, indep, dataset = self.getVarForCalculations('V2', dataset)
@@ -609,7 +609,7 @@ class VariableGroupSamMultilineProfiles(VariableGroup):
         :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
           Lists will be filled with NaN's if the variable could not be calculated.
         """
-        dataset = self.les_dataset
+        dataset = self.sam_benchmark_dataset
         if dataset_override is not None:
             dataset = dataset_override
         U, indep, dataset = self.getVarForCalculations('U', dataset)
@@ -643,7 +643,7 @@ class VariableGroupSamMultilineProfiles(VariableGroup):
         :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
           Lists will be filled with NaN's if the variable could not be calculated.
         """
-        dataset = self.les_dataset
+        dataset = self.sam_benchmark_dataset
         if dataset_override is not None:
             dataset = dataset_override
         U, indep, dataset = self.getVarForCalculations('U', dataset)
@@ -677,7 +677,7 @@ class VariableGroupSamMultilineProfiles(VariableGroup):
         :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
           Lists will be filled with NaN's if the variable could not be calculated.
         """
-        dataset = self.les_dataset
+        dataset = self.sam_benchmark_dataset
         if dataset_override is not None:
             dataset = dataset_override
         UCLD, indep, dataset = self.getVarForCalculations('UCLD', dataset)
@@ -711,7 +711,7 @@ class VariableGroupSamMultilineProfiles(VariableGroup):
         :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
           Lists will be filled with NaN's if the variable could not be calculated.
         """
-        dataset = self.les_dataset
+        dataset = self.sam_benchmark_dataset
         if dataset_override is not None:
             dataset = dataset_override
         V, indep, dataset = self.getVarForCalculations('V', dataset)
@@ -745,7 +745,7 @@ class VariableGroupSamMultilineProfiles(VariableGroup):
         :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
           Lists will be filled with NaN's if the variable could not be calculated.
         """
-        dataset = self.les_dataset
+        dataset = self.sam_benchmark_dataset
         if dataset_override is not None:
             dataset = dataset_override
         V, indep, dataset = self.getVarForCalculations('V', dataset)
@@ -779,7 +779,7 @@ class VariableGroupSamMultilineProfiles(VariableGroup):
         :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
           Lists will be filled with NaN's if the variable could not be calculated.
         """
-        dataset = self.les_dataset
+        dataset = self.sam_benchmark_dataset
         if dataset_override is not None:
             dataset = dataset_override
         VCLD, indep, dataset = self.getVarForCalculations('VCLD', dataset)
@@ -814,7 +814,7 @@ class VariableGroupSamMultilineProfiles(VariableGroup):
         :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
           Lists will be filled with NaN's if the variable could not be calculated.
         """
-        dataset = self.les_dataset
+        dataset = self.sam_benchmark_dataset
         if dataset_override is not None:
             dataset = dataset_override
         WM, indep, dataset = self.getVarForCalculations('WM', dataset)
@@ -848,7 +848,7 @@ class VariableGroupSamMultilineProfiles(VariableGroup):
         :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
           Lists will be filled with NaN's if the variable could not be calculated.
         """
-        dataset = self.les_dataset
+        dataset = self.sam_benchmark_dataset
         if dataset_override is not None:
             dataset = dataset_override
         WM, indep, dataset = self.getVarForCalculations('WM', dataset)
@@ -882,7 +882,7 @@ class VariableGroupSamMultilineProfiles(VariableGroup):
         :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
           Lists will be filled with NaN's if the variable could not be calculated.
         """
-        dataset = self.les_dataset
+        dataset = self.sam_benchmark_dataset
         if dataset_override is not None:
             dataset = dataset_override
         WCLD, indep, dataset = self.getVarForCalculations('WCLD', dataset)
@@ -916,7 +916,7 @@ class VariableGroupSamMultilineProfiles(VariableGroup):
         :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
           Lists will be filled with NaN's if the variable could not be calculated.
         """
-        dataset = self.les_dataset
+        dataset = self.sam_benchmark_dataset
         if dataset_override is not None:
             dataset = dataset_override
         UW, indep, dataset = self.getVarForCalculations('UW', dataset)
@@ -950,7 +950,7 @@ class VariableGroupSamMultilineProfiles(VariableGroup):
         :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
           Lists will be filled with NaN's if the variable could not be calculated.
         """
-        dataset = self.les_dataset
+        dataset = self.sam_benchmark_dataset
         if dataset_override is not None:
             dataset = dataset_override
         UW, indep, dataset = self.getVarForCalculations('UW', dataset)
@@ -984,7 +984,7 @@ class VariableGroupSamMultilineProfiles(VariableGroup):
         :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
           Lists will be filled with NaN's if the variable could not be calculated.
         """
-        dataset = self.les_dataset
+        dataset = self.sam_benchmark_dataset
         if dataset_override is not None:
             dataset = dataset_override
         UWCLD, indep, dataset = self.getVarForCalculations('UWCLD', dataset)
@@ -1018,7 +1018,7 @@ class VariableGroupSamMultilineProfiles(VariableGroup):
         :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
           Lists will be filled with NaN's if the variable could not be calculated.
         """
-        dataset = self.les_dataset
+        dataset = self.sam_benchmark_dataset
         if dataset_override is not None:
             dataset = dataset_override
         VW, indep, dataset = self.getVarForCalculations('VW', dataset)
@@ -1052,7 +1052,7 @@ class VariableGroupSamMultilineProfiles(VariableGroup):
         :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
           Lists will be filled with NaN's if the variable could not be calculated.
         """
-        dataset = self.les_dataset
+        dataset = self.sam_benchmark_dataset
         if dataset_override is not None:
             dataset = dataset_override
         VW, indep, dataset = self.getVarForCalculations('VW', dataset)
@@ -1086,7 +1086,7 @@ class VariableGroupSamMultilineProfiles(VariableGroup):
         :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
           Lists will be filled with NaN's if the variable could not be calculated.
         """
-        dataset = self.les_dataset
+        dataset = self.sam_benchmark_dataset
         if dataset_override is not None:
             dataset = dataset_override
         VWCLD, indep, dataset = self.getVarForCalculations('VWCLD', dataset)
@@ -1120,7 +1120,7 @@ class VariableGroupSamMultilineProfiles(VariableGroup):
         :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
           Lists will be filled with NaN's if the variable could not be calculated.s
         """
-        dataset = self.les_dataset
+        dataset = self.sam_benchmark_dataset
         if dataset_override is not None:
             dataset = dataset_override
         THETAV, indep, dataset = self.getVarForCalculations('THETAV', dataset)
@@ -1154,7 +1154,7 @@ class VariableGroupSamMultilineProfiles(VariableGroup):
         :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
           Lists will be filled with NaN's if the variable could not be calculated.
         """
-        dataset = self.les_dataset
+        dataset = self.sam_benchmark_dataset
         if dataset_override is not None:
             dataset = dataset_override
         THETAV, indep, dataset = self.getVarForCalculations('THETAV', dataset)
@@ -1188,7 +1188,7 @@ class VariableGroupSamMultilineProfiles(VariableGroup):
         :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
           Lists will be filled with NaN's if the variable could not be calculated.
         """
-        dataset = self.les_dataset
+        dataset = self.sam_benchmark_dataset
         if dataset_override is not None:
             dataset = dataset_override
         TVCLD, indep, dataset = self.getVarForCalculations('TVCLD', dataset)
@@ -1223,7 +1223,7 @@ class VariableGroupSamMultilineProfiles(VariableGroup):
         :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
           Lists will be filled with NaN's if the variable could not be calculated.
         """
-        dataset = self.les_dataset
+        dataset = self.sam_benchmark_dataset
         if dataset_override is not None:
             dataset = dataset_override
         QT, indep, dataset = self.getVarForCalculations('QT', dataset)
@@ -1259,7 +1259,7 @@ class VariableGroupSamMultilineProfiles(VariableGroup):
         :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
           Lists will be filled with NaN's if the variable could not be calculated.
         """
-        dataset = self.les_dataset
+        dataset = self.sam_benchmark_dataset
         if dataset_override is not None:
             dataset = dataset_override
         WPRTP, indep, dataset = self.getVarForCalculations('WPRTP', dataset)
@@ -1293,7 +1293,7 @@ class VariableGroupSamMultilineProfiles(VariableGroup):
         :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
           Lists will be filled with NaN's if the variable could not be calculated.
         """
-        dataset = self.les_dataset
+        dataset = self.sam_benchmark_dataset
         if dataset_override is not None:
             dataset = dataset_override
         QTWCLD, indep, dataset = self.getVarForCalculations('QTWCLD', dataset)
@@ -1328,7 +1328,7 @@ class VariableGroupSamMultilineProfiles(VariableGroup):
         :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
           Lists will be filled with NaN's if the variable could not be calculated.
         """
-        dataset = self.les_dataset
+        dataset = self.sam_benchmark_dataset
         if dataset_override is not None:
             dataset = dataset_override
         TLFLUX, indep, dataset = self.getVarForCalculations('TLFLUX', dataset)
@@ -1363,7 +1363,7 @@ class VariableGroupSamMultilineProfiles(VariableGroup):
         :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
           Lists will be filled with NaN's if the variable could not be calculated.
         """
-        dataset = self.les_dataset
+        dataset = self.sam_benchmark_dataset
         if dataset_override is not None:
             dataset = dataset_override
         TLWCLD, indep, dataset = self.getVarForCalculations('TLWCLD', dataset)

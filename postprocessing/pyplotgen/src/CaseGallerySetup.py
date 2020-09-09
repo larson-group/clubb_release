@@ -3,7 +3,6 @@
 :date: 2019
 """
 import os
-from os import path
 from warnings import warn
 
 import numpy as np
@@ -21,6 +20,9 @@ class CaseGallerySetup:
     This is a generic class used by Case_Definitions.py to provide functionality.
     In order to create a new case, please add the case's definition to Case_Definitions.py (don't forget to add the
     definition to the list ALL_CASES = [...] at the bottom of the Case_Definitions.py file).
+
+    For information on the input parameters of this class, please see the documentation for the
+    ``__init__()`` method.
     """
 
     def __init__(self, case_definition, clubb_folders=[], diff_datasets=None, sam_folders=[""], wrf_folders=[""],
@@ -28,8 +30,6 @@ class CaseGallerySetup:
                  time_height=False, animation=None):
         """
         Initialize a CaseGallerySetup object with the passed parameters
-        TODO:   - Create function for loading NcFiles to reduce redundant code
-                - Bring in line the way CLUBB files are loaded
         :param case_definition: dict containing case specific elements. These are pulled in from Case_definitions.py,
             see Case_definitions.py for details on how to structure the dict
         :param clubb_folders: dict containing Dataset objects holding the dependent_data needed for the case.
@@ -69,141 +69,90 @@ class CaseGallerySetup:
         self.next_panel_alphabetic_id_code = 97
         self.time_height = time_height
         self.animation = animation
+        self.panels = []
+        self.diff_panels = []
+
+        self.VALID_MODEL_NAMES = ['clubb', 'clubb_hoc','clubb_r408', 'e3sm', 'sam', 'cam', 'wrf', 'coamps']
 
         if 'disable_budgets' in case_definition.keys() and case_definition['disable_budgets'] is True:
             self.plot_budgets = False
 
-        # TODO loading in these files should be refactored
+        # Load benchmark files
+        self.sam_benchmark_file = self.__loadModelFiles__(None,case_definition,"sam")
+        self.coamps_datasets = self.__loadModelFiles__(None, case_definition, "coamps")
+        self.r408_datasets = self.__loadModelFiles__(None, case_definition, "clubb_r408")
+        self.hoc_datasets = self.__loadModelFiles__(None, case_definition, "clubb_hoc")
 
-        ## Load nc files for non-clubb models
-        # Load single LES dataset
-        les_file = None
-        if plot_les and case_definition['sam_benchmark_file'] is not None:
-            datareader = DataReader()
-            les_file = datareader.__loadNcFile__(case_definition['sam_benchmark_file'])
+        # Load datasets imported via command line parameters
+        self.clubb_datasets = self.__loadModelFiles__(clubb_folders, case_definition, "clubb")
+        self.sam_datasets = self.__loadModelFiles__(sam_folders, case_definition, "sam")
+        self.wrf_datasets = self.__loadModelFiles__(wrf_folders, case_definition, "wrf")
+        self.e3sm_file = self.__loadModelFiles__(e3sm_dirs, case_definition, "e3sm")
+        self.cam_file = self.__loadModelFiles__(cam_folders, case_definition, "cam")
 
-        # Load SAM nc files from each folder
-        sam_datasets = {}
-        if sam_folders is not None and len(sam_folders) != 0 and case_definition['sam_file'] is not None:
-            datareader = DataReader()
-            for foldername in sam_folders:
-                sam_filename = foldername + case_definition['sam_file']
-                if path.exists(sam_filename):
-                    sam_datasets[foldername] = datareader.__loadNcFile__(sam_filename)
-                else:
-                    warn("Failed to find SAM file " + sam_filename)
+        self.__generateVariableGroupPanels__()
+        self.__generateDiffPanels__()
+        self.__generateBudgetPanels__()
 
-        # Load WRF nc files from each folder
-        wrf_datasets = {}
-        if wrf_folders is not None and len(wrf_folders) != 0 and case_definition['wrf_file'] is not None:
-            datareader = DataReader()
-            for foldername in wrf_folders:
-                files_in_folder = {}
-                wrf_filenames = case_definition['wrf_file']
-                # Load each different WRF output file from foldername
-                for type_ext in wrf_filenames:
-                    filepath = foldername + wrf_filenames[type_ext]
-                    if path.exists(filepath):
-                        files_in_folder[type_ext] = datareader.__loadNcFile__(filepath)
-                        wrf_datasets[foldername] = files_in_folder
+    def __generateBudgetPanels__(self):
+        """
+        This function creates the budget panels and adds them into self.panels.
+        This function takes no parameters and will only work if self.plot_budgets is True, otherwise it will do nothing
+
+        :return: None. This function operates in-place
+        """
+        if self.plot_budgets:
+            # Create an instance of a budgets VariableGroup. By default, this is VariableGroupBaseBudgets,
+            # but for SAM data, use VariableGroupSamBudgets
+            if self.clubb_datasets is not None and len(self.clubb_datasets) != 0:
+                # for folders_datasets in self.clubb_datasets.values():
+                for input_folder in self.clubb_datasets:
+                    folder_name = os.path.basename(input_folder)
+                    if input_folder in self.clubb_datasets.keys():
+                        budget_variables = VariableGroupBaseBudgets(self,
+                                                                    clubb_datasets={folder_name:self.clubb_datasets[input_folder]})
+                        self.panels.extend(budget_variables.panels)
                     else:
-                        warn("Failed to find WRF file " + filepath)
+                        warn("" + folder_name + " does not seem to contain data for case" + self.name)
+            if self.wrf_datasets is not None and len(self.wrf_datasets) != 0:
+                # for folders_datasets in wrf_datasets.values():
+                #     budget_variables = VariableGroupBaseBudgets(self, wrf_datasets=folders_datasets)
+                for input_folder in self.wrf_datasets:
+                    folder_name = os.path.basename(input_folder)
+                    budget_variables = VariableGroupBaseBudgets(self,
+                                                                wrf_datasets={folder_name:self.wrf_datasets[input_folder]})
+                    self.panels.extend(budget_variables.panels)
+            if self.e3sm_file is not None and len(self.e3sm_file) != 0:
+                for dataset_name in self.e3sm_file:
+                    # E3SM dataset must be wrapped in the same form as the clubb datasets
+                    e3sm_budgets = VariableGroupBaseBudgets(self,
+                                                            e3sm_datasets={dataset_name: self.e3sm_file[dataset_name]})
+                    self.panels.extend(e3sm_budgets.panels)
+            if self.sam_datasets is not None and len(self.sam_datasets) != 0:
+                # for dataset in sam_datasets.values():
+                for input_folder in self.sam_datasets:
+                    folder_name = os.path.basename(input_folder)
+                    budget_variables = VariableGroupSamBudgets(self,
+                                                               sam_datasets={folder_name:self.sam_datasets[input_folder]})
+                # sam_budgets = VariableGroupSamBudgets(self, sam_datasets=sam_datasets)
+                    self.panels.extend(budget_variables.panels)
 
-        # Load E3SM nc files from each folder
-        e3sm_file = {}
-        if e3sm_dirs is not None and len(e3sm_dirs) != 0 and case_definition['e3sm_file'] is not None:
-            datareader = DataReader()
-            for foldername in e3sm_dirs:
-                e3sm_filename = foldername + case_definition['e3sm_file']
-                if path.exists(e3sm_filename):
-                    e3sm_file[foldername] = datareader.__loadNcFile__(e3sm_filename)
-                else:
-                    warn("Failed to find E3SM file " + e3sm_filename)
+    def __generateDiffPanels__(self):
+        """
+        If self.diff_datasets is true (i.e. --diff passed in via command line) then this will generate panels that
+        represents the difference of two input folders.
 
-        # Load CAM nc files from each folder
-        cam_file = {}
-        if cam_folders is not None and len(cam_folders) != 0 and case_definition['cam_file'] is not None:
-            datareader = DataReader()
-            for foldername in cam_folders:
-                cam_filename = foldername + case_definition['cam_file']
-                if path.exists(cam_filename):
-                    cam_file[foldername] = datareader.__loadNcFile__(cam_filename)
-                else:
-                    warn("Failed to find CAM file " + cam_filename)
-
-        # Load COAMPS nc files
-        coamps_datasets = {}
-        if plot_les and case_definition['coamps_benchmark_file'] is not None:
-            datareader = DataReader()
-            coamps_filenames = case_definition['coamps_benchmark_file']
-            # Load the individual COAMPS output files
-            for type_ext in coamps_filenames:
-                temp_coamps_dataset = datareader.__loadNcFile__(coamps_filenames[type_ext])
-                coamps_datasets[type_ext] = temp_coamps_dataset
-        else:
-            coamps_datasets = None
-
-        # Load clubb nc files
-        clubb_datasets = {}
-        if clubb_folders is not None and len(clubb_folders) != 0 and case_definition['clubb_file'] is not None:
-            datareader = DataReader()
-            for foldername in clubb_folders:
-                files_in_folder = {}
-                clubb_filenames = case_definition['clubb_file']
-                # Load each different WRF output file from foldername
-                for type_ext in clubb_filenames:
-                    filepath = foldername + clubb_filenames[type_ext]
-                    if path.exists(filepath):
-                        files_in_folder[type_ext] = datareader.__loadNcFile__(filepath)
-                        clubb_datasets[foldername] = files_in_folder
-                    else:
-                        warn("Failed to find CLUBB file " + filepath)
-
-        # Load r408 nc files
-        r408_datasets = {}
-        if plot_r408 and case_definition['clubb_r408_file'] is not None:
-            datareader = DataReader()
-            r408_filenames = case_definition['clubb_r408_file']
-            # Load the individual r408 output files
-            for type_ext in r408_filenames:
-                temp_r408_dataset = datareader.__loadNcFile__(r408_filenames[type_ext])
-                r408_datasets[type_ext] = temp_r408_dataset
-        else:
-            r408_datasets = None
-
-        # Load HOC nc files
-        hoc_datasets = {}
-        if plot_hoc and case_definition['clubb_hoc_file'] is not None:
-            datareader = DataReader()
-            hoc_filenames = case_definition['clubb_hoc_file']
-            # Load the individual r408 output files
-            for type_ext in hoc_filenames:
-                temp_hoc_dataset = datareader.__loadNcFile__(hoc_filenames[type_ext])
-                hoc_datasets[type_ext] = temp_hoc_dataset
-        else:
-            hoc_datasets = None
-
-        self.panels = []
-        # Loop over the VariableGroup classes listed in the 'var_groups' entry
-        # for this case in config/Case_definitions.py and create an instance of each of the listed VariableGroups
-        for VarGroup in self.var_groups:
-            # Call the __init__ function of the VarGroup class and, by doing this, create an instance of it
-            temp_group = VarGroup(self, clubb_datasets=clubb_datasets, les_dataset=les_file,
-                                  coamps_dataset=coamps_datasets, sam_datasets=sam_datasets,
-                                  wrf_datasets=wrf_datasets, r408_dataset=r408_datasets, hoc_dataset=hoc_datasets,
-                                  e3sm_datasets=e3sm_file, cam_datasets=cam_file)
-            self.panels.extend(temp_group.panels)
-
+        :return: None. Operates in-place
+        """
         # Convert panels to difference panels if user passed in --diff <<folder>>
-        self.diff_panels = []
         if self.diff_datasets is not None:
             # Loop over the VariableGroup classes listed in the 'var_groups' entry
             # for this case in config/Case_definitions.py and create an instance of each of the listed VariableGroups
             for VarGroup in self.var_groups:
                 # Call the __init__ function of the VarGroup class and, by doing this, create an instance of it
-                diff_group = VarGroup(self, clubb_datasets=self.diff_datasets, sam_file=les_file,
-                                      coamps_file=coamps_datasets, cam_file=cam_file, sam_datasets=sam_datasets,
-                                      r408_file=r408_datasets, hoc_dataset=hoc_datasets, e3sm_datasets=e3sm_file)
+                diff_group = VarGroup(self, clubb_datasets=self.diff_datasets, sam_file=self.sam_benchmark_file,
+                                      coamps_file=self.coamps_datasets, cam_file=self.cam_file, sam_datasets=self.sam_datasets,
+                                      r408_file=self.r408_datasets, hoc_dataset=self.hoc_datasets, e3sm_datasets=self.e3sm_file)
                 for panel in diff_group.panels:
                     self.diff_panels.append(panel)
             for idx in range(len(self.panels)):
@@ -215,41 +164,52 @@ class CaseGallerySetup:
                 diff_lines = self.getDiffLinesBetweenPanels(regular_panel, diff_panel, get_y_diff=diff_on_y)
                 self.panels[idx].all_plots = diff_lines
 
-        if self.plot_budgets:
-            # Create an instance of a budgets VariableGroup. By default, this is VariableGroupBaseBudgets,
-            # but for SAM data, use VariableGroupSamBudgets
-            if self.clubb_datasets is not None and len(self.clubb_datasets) != 0:
-                # for folders_datasets in self.clubb_datasets.values():
-                for input_folder in self.clubb_datasets:
-                    if input_folder in clubb_datasets.keys():
-                        folder_name = os.path.basename(input_folder)
-                        budget_variables = VariableGroupBaseBudgets(self,
-                                                                    clubb_datasets={folder_name:clubb_datasets[input_folder]})
-                        self.panels.extend(budget_variables.panels)
-                    else:
-                        warn("" + foldername + " does not seem to contain data for case" + self.name)
-            if wrf_datasets is not None and len(wrf_datasets) != 0:
-                # for folders_datasets in wrf_datasets.values():
-                #     budget_variables = VariableGroupBaseBudgets(self, wrf_datasets=folders_datasets)
-                for input_folder in wrf_datasets:
-                    folder_name = os.path.basename(input_folder)
-                    budget_variables = VariableGroupBaseBudgets(self,
-                                                                wrf_datasets={folder_name:wrf_datasets[input_folder]})
-                    self.panels.extend(budget_variables.panels)
-            if e3sm_file is not None and len(e3sm_file) != 0:
-                for dataset_name in e3sm_file:
-                    # E3SM dataset must be wrapped in the same form as the clubb datasets
-                    e3sm_budgets = VariableGroupBaseBudgets(self,
-                                                            e3sm_datasets={dataset_name: e3sm_file[dataset_name]})
-                    self.panels.extend(e3sm_budgets.panels)
-            if sam_datasets is not None and len(sam_datasets) != 0:
-                # for dataset in sam_datasets.values():
-                for input_folder in sam_datasets:
-                    folder_name = os.path.basename(input_folder)
-                    budget_variables = VariableGroupSamBudgets(self,
-                                                               sam_datasets={folder_name:sam_datasets[input_folder]})
-                # sam_budgets = VariableGroupSamBudgets(self, sam_datasets=sam_datasets)
-                    self.panels.extend(budget_variables.panels)
+    def __generateVariableGroupPanels__(self):
+        """
+        This function generates the normal profile plots and adds them to self.panels
+
+        :return: None. Operates in-place
+        """
+        # Loop over the VariableGroup classes listed in the 'var_groups' entry
+        for VarGroup in self.var_groups:
+            # Calls the __init__ function of the VarGroup class and, by doing this, create an instance of it
+            temp_group = VarGroup(self, clubb_datasets=self.clubb_datasets, les_dataset=self.sam_benchmark_file,
+                                  coamps_dataset=self.coamps_datasets, sam_datasets=self.sam_datasets,
+                                  wrf_datasets=self.wrf_datasets, r408_dataset=self.r408_datasets, hoc_dataset=self.hoc_datasets,
+                                  e3sm_datasets=self.e3sm_file, cam_datasets=self.cam_file)
+            self.panels.extend(temp_group.panels)
+
+    def __loadModelFiles__(self, folders, case_definition, model_name):
+        if model_name not in self.VALID_MODEL_NAMES:
+            raise ValueError("Model name " + model_name + " is not a valid model name. Valid model names are: " +
+                             str(self.VALID_MODEL_NAMES))
+        datareader = DataReader()
+
+        # Load clubb nc files
+        model_datasets = {}
+        if folders is not None and len(folders) != 0 and case_definition[model_name +'_file'] is not None:
+            for foldername in folders:
+                files_in_folder = {}
+                filenames = case_definition[model_name +'_file']
+                for type_ext in filenames:
+                    filepath = foldername + filenames[type_ext]
+                    ncdf_file = datareader.__loadNcFile__(filepath)
+                    if ncdf_file is not None:
+                        files_in_folder[type_ext] = ncdf_file
+                        model_datasets[foldername] = files_in_folder
+        # If is a benchmark
+        elif folders is None and case_definition[model_name +'_benchmark_file'] is not None:
+            filename_dict = case_definition[model_name +'_benchmark_file']
+            for key in filename_dict:
+                filename = filename_dict[key]
+                ncdf_file = datareader.__loadNcFile__(filename)
+                if ncdf_file is not None:
+                    model_datasets[key] = ncdf_file
+
+        if len(model_datasets) == 0:
+            model_datasets = None
+        return model_datasets
+
 
     def getDiffLinesBetweenPanels(self, panelA, panelB, get_y_diff=False):
         """

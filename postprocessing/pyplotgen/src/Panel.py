@@ -3,6 +3,7 @@
 :date: Mid 2019
 '''
 import os
+import warnings
 from datetime import datetime
 from textwrap import fill
 
@@ -18,6 +19,9 @@ class Panel:
     """
     Represents an individual panel/graph. Each panel contains a number of details
     specific to it, such as a title, axis labels, and lines. Each panel can be plotted/saved to a file.
+
+    For information on the input parameters of this class, please see the documentation for the
+    ``__init__()`` method.
     """
     TYPE_PROFILE = 'profile'
     TYPE_BUDGET = 'budget'
@@ -87,8 +91,11 @@ class Panel:
             use the color/style rotation specified in Style_definitions.py
         :return: None
         """
-        # Create new figure and axis
-        plt.subplot(111)
+        # Suppress deprecation warnings
+        with warnings.catch_warnings():
+            # Create new figure and axis
+            warnings.simplefilter("ignore")
+            plt.subplot(111)
 
         # Set line color/style. This will cycle through all colors,
         # then once colors run out use a new style and cycle through
@@ -138,7 +145,10 @@ class Panel:
             y_data = var.y
 
             # Find absolutely greatest value in x_data in Panel for centering
-            max_variable_value = max(abs(np.nanmin(x_data)),np.nanmax(x_data))
+            # Suppress "All-NaN slice encountered" warning
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore")
+                max_variable_value = max(abs(np.nanmin(x_data)),np.nanmax(x_data))
             max_panel_value = max(max_panel_value,max_variable_value)
 
             if x_data.shape[0] != y_data.shape[0]:

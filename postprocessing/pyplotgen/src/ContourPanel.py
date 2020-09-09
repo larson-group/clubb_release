@@ -14,8 +14,8 @@ from datetime import datetime
 import matplotlib.pyplot as plt
 import numpy as np
 
-from src.Panel import Panel
 from config import Style_definitions
+from src.Panel import Panel
 from src.interoperability import clean_path
 
 
@@ -23,6 +23,9 @@ class ContourPanel(Panel):
     """
     ContourPanel class derived from Panel
     The difference is that the plot routine will generate a timeheight plot instead of a standard profile plot.
+
+    For information on the input parameters of this class, please see the documentation for the
+    ``__init__()`` method.
     """
 
     def __init__(self, plots, panel_type=Panel.TYPE_TIMEHEIGHT, title="Unnamed panel",

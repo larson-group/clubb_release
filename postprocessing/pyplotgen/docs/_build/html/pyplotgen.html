@@ -298,7 +298,7 @@ into the pyplotgen output folders.</p>
 
 <dl class="py attribute">
 <dt id="pyplotgen.PyPlotGen.__dict__">
-<code class="sig-name descname">__dict__</code><em class="property"> = mappingproxy({'__module__': 'pyplotgen', '__doc__': '\n    Main class for the pyplotgen program.\n    After processing the command line options in the main function,\n    an instance of this class is created in __process_args__, passing all option parameters.\n    Finally the run function of this class is the actual driver of the pyplotgen program,\n    creating the CaseGallerySetup objects and calling their plot functions to generate the images and html output.\n    ', '__init__': &lt;function PyPlotGen.__init__&gt;, 'run': &lt;function PyPlotGen.run&gt;, '__plotCase__': &lt;function PyPlotGen.__plotCase__&gt;, '__dataForCaseExists__': &lt;function PyPlotGen.__dataForCaseExists__&gt;, '__caseNcFileExists__': &lt;function PyPlotGen.__caseNcFileExists__&gt;, '__copySetupFiles__': &lt;function PyPlotGen.__copySetupFiles__&gt;, '__benchmarkFilesNeeded__': &lt;function PyPlotGen.__benchmarkFilesNeeded__&gt;, '__downloadModelOutputs__': &lt;function PyPlotGen.__downloadModelOutputs__&gt;, '__dict__': &lt;attribute '__dict__' of 'PyPlotGen' objects&gt;, '__weakref__': &lt;attribute '__weakref__' of 'PyPlotGen' objects&gt;})</em><a class="headerlink" href="#pyplotgen.PyPlotGen.__dict__" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">__dict__</code><em class="property"> = mappingproxy({'__module__': 'pyplotgen', '__doc__': '\n    Main class for the pyplotgen program.\n    After processing the command line options in the main function,\n    an instance of this class is created in __process_args__, passing all option parameters.\n    Finally the run function of this class is the actual driver of the pyplotgen program,\n    creating the CaseGallerySetup objects and calling their plot functions to generate the images and html output.\n    ', '__init__': &lt;function PyPlotGen.__init__&gt;, 'run': &lt;function PyPlotGen.run&gt;, '__extractNumCasesPlotted__': &lt;function PyPlotGen.__extractNumCasesPlotted__&gt;, '__plotCase__': &lt;function PyPlotGen.__plotCase__&gt;, '__dataForCaseExists__': &lt;function PyPlotGen.__dataForCaseExists__&gt;, '__caseNcFileExists__': &lt;function PyPlotGen.__caseNcFileExists__&gt;, '__copySetupFiles__': &lt;function PyPlotGen.__copySetupFiles__&gt;, '__benchmarkFilesNeeded__': &lt;function PyPlotGen.__benchmarkFilesNeeded__&gt;, '__downloadModelOutputs__': &lt;function PyPlotGen.__downloadModelOutputs__&gt;, '__dict__': &lt;attribute '__dict__' of 'PyPlotGen' objects&gt;, '__weakref__': &lt;attribute '__weakref__' of 'PyPlotGen' objects&gt;})</em><a class="headerlink" href="#pyplotgen.PyPlotGen.__dict__" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
@@ -310,6 +310,23 @@ Supports: SAM, COAMPS, CLUBB</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns</dt>
 <dd class="field-odd"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="pyplotgen.PyPlotGen.__extractNumCasesPlotted__">
+<code class="sig-name descname">__extractNumCasesPlotted__</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">plotCaseDataArray</span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyplotgen.PyPlotGen.__extractNumCasesPlotted__" title="Permalink to this definition">¶</a></dt>
+<dd><p>The __plotCase__() function is often called via a pooling map.
+As such, the data returned from the pool map is an array of True/False values
+where each True represents a case being plotted and each False represents a case
+not being plotted. This function counts the number of True’s and retuns that.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>plotCaseDataArray</strong> – Array of True/False values</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>number of True’s in the given list.</p>
 </dd>
 </dl>
 </dd></dl>
@@ -375,7 +392,7 @@ Not implemented.</p></li>
 <code class="sig-name descname">__plotCase__</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">case_def</span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyplotgen.PyPlotGen.__plotCase__" title="Permalink to this definition">¶</a></dt>
 <dd><p>Plots the given case. Pulled out into it’s own function to help move towards multithreading
 :param case_def:
-:return:</p>
+:return: True if case was plotted, False if case was not plotted</p>
 </dd></dl>
 
 <dl class="py attribute">
@@ -508,7 +525,7 @@ into the pyplotgen output folders.</p>
 
 <dl class="py attribute">
 <dt id="id5">
-<code class="sig-name descname">__dict__</code><em class="property"> = mappingproxy({'__module__': 'pyplotgen', '__doc__': '\n    Main class for the pyplotgen program.\n    After processing the command line options in the main function,\n    an instance of this class is created in __process_args__, passing all option parameters.\n    Finally the run function of this class is the actual driver of the pyplotgen program,\n    creating the CaseGallerySetup objects and calling their plot functions to generate the images and html output.\n    ', '__init__': &lt;function PyPlotGen.__init__&gt;, 'run': &lt;function PyPlotGen.run&gt;, '__plotCase__': &lt;function PyPlotGen.__plotCase__&gt;, '__dataForCaseExists__': &lt;function PyPlotGen.__dataForCaseExists__&gt;, '__caseNcFileExists__': &lt;function PyPlotGen.__caseNcFileExists__&gt;, '__copySetupFiles__': &lt;function PyPlotGen.__copySetupFiles__&gt;, '__benchmarkFilesNeeded__': &lt;function PyPlotGen.__benchmarkFilesNeeded__&gt;, '__downloadModelOutputs__': &lt;function PyPlotGen.__downloadModelOutputs__&gt;, '__dict__': &lt;attribute '__dict__' of 'PyPlotGen' objects&gt;, '__weakref__': &lt;attribute '__weakref__' of 'PyPlotGen' objects&gt;})</em><a class="headerlink" href="#id5" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">__dict__</code><em class="property"> = mappingproxy({'__module__': 'pyplotgen', '__doc__': '\n    Main class for the pyplotgen program.\n    After processing the command line options in the main function,\n    an instance of this class is created in __process_args__, passing all option parameters.\n    Finally the run function of this class is the actual driver of the pyplotgen program,\n    creating the CaseGallerySetup objects and calling their plot functions to generate the images and html output.\n    ', '__init__': &lt;function PyPlotGen.__init__&gt;, 'run': &lt;function PyPlotGen.run&gt;, '__extractNumCasesPlotted__': &lt;function PyPlotGen.__extractNumCasesPlotted__&gt;, '__plotCase__': &lt;function PyPlotGen.__plotCase__&gt;, '__dataForCaseExists__': &lt;function PyPlotGen.__dataForCaseExists__&gt;, '__caseNcFileExists__': &lt;function PyPlotGen.__caseNcFileExists__&gt;, '__copySetupFiles__': &lt;function PyPlotGen.__copySetupFiles__&gt;, '__benchmarkFilesNeeded__': &lt;function PyPlotGen.__benchmarkFilesNeeded__&gt;, '__downloadModelOutputs__': &lt;function PyPlotGen.__downloadModelOutputs__&gt;, '__dict__': &lt;attribute '__dict__' of 'PyPlotGen' objects&gt;, '__weakref__': &lt;attribute '__weakref__' of 'PyPlotGen' objects&gt;})</em><a class="headerlink" href="#id5" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
@@ -526,7 +543,24 @@ Supports: SAM, COAMPS, CLUBB</p>
 
 <dl class="py method">
 <dt id="id7">
-<code class="sig-name descname">__init__</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">output_folder</span></em>, <em class="sig-param"><span class="n">clubb_folders</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">replace</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">les</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">cgbest</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">hoc</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">benchmark_only</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">nightly</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">zip</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">thin</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">no_legends</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">ensemble</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">plot_e3sm</span><span class="o">=</span><span class="default_value">''</span></em>, <em class="sig-param"><span class="n">sam_folders</span><span class="o">=</span><span class="default_value">['']</span></em>, <em class="sig-param"><span class="n">wrf_folders</span><span class="o">=</span><span class="default_value">['']</span></em>, <em class="sig-param"><span class="n">cam_folders</span><span class="o">=</span><span class="default_value">['']</span></em>, <em class="sig-param"><span class="n">budget_moments</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">bu_morr</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">diff</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">show_alphabetic_id</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">time_height</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">animation</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">disable_multithreading</span><span class="o">=</span><span class="default_value">False</span></em><span class="sig-paren">)</span><a class="headerlink" href="#id7" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">__extractNumCasesPlotted__</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">plotCaseDataArray</span></em><span class="sig-paren">)</span><a class="headerlink" href="#id7" title="Permalink to this definition">¶</a></dt>
+<dd><p>The __plotCase__() function is often called via a pooling map.
+As such, the data returned from the pool map is an array of True/False values
+where each True represents a case being plotted and each False represents a case
+not being plotted. This function counts the number of True’s and retuns that.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>plotCaseDataArray</strong> – Array of True/False values</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>number of True’s in the given list.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="id8">
+<code class="sig-name descname">__init__</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">output_folder</span></em>, <em class="sig-param"><span class="n">clubb_folders</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">replace</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">les</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">cgbest</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">hoc</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">benchmark_only</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">nightly</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">zip</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">thin</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">no_legends</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">ensemble</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">plot_e3sm</span><span class="o">=</span><span class="default_value">''</span></em>, <em class="sig-param"><span class="n">sam_folders</span><span class="o">=</span><span class="default_value">['']</span></em>, <em class="sig-param"><span class="n">wrf_folders</span><span class="o">=</span><span class="default_value">['']</span></em>, <em class="sig-param"><span class="n">cam_folders</span><span class="o">=</span><span class="default_value">['']</span></em>, <em class="sig-param"><span class="n">budget_moments</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">bu_morr</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">diff</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">show_alphabetic_id</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">time_height</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">animation</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">disable_multithreading</span><span class="o">=</span><span class="default_value">False</span></em><span class="sig-paren">)</span><a class="headerlink" href="#id8" title="Permalink to this definition">¶</a></dt>
 <dd><p>This creates an instance of PyPlotGen. Each parameter is a command line parameter passed in from the argparser
 below.</p>
 <dl class="field-list simple">
@@ -576,27 +610,27 @@ Not implemented.</p></li>
 </dd></dl>
 
 <dl class="py attribute">
-<dt id="id8">
-<code class="sig-name descname">__module__</code><em class="property"> = 'pyplotgen'</em><a class="headerlink" href="#id8" title="Permalink to this definition">¶</a></dt>
+<dt id="id9">
+<code class="sig-name descname">__module__</code><em class="property"> = 'pyplotgen'</em><a class="headerlink" href="#id9" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
-<dt id="id9">
-<code class="sig-name descname">__plotCase__</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">case_def</span></em><span class="sig-paren">)</span><a class="headerlink" href="#id9" title="Permalink to this definition">¶</a></dt>
+<dt id="id10">
+<code class="sig-name descname">__plotCase__</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">case_def</span></em><span class="sig-paren">)</span><a class="headerlink" href="#id10" title="Permalink to this definition">¶</a></dt>
 <dd><p>Plots the given case. Pulled out into it’s own function to help move towards multithreading
 :param case_def:
-:return:</p>
+:return: True if case was plotted, False if case was not plotted</p>
 </dd></dl>
 
 <dl class="py attribute">
-<dt id="id10">
-<code class="sig-name descname">__weakref__</code><a class="headerlink" href="#id10" title="Permalink to this definition">¶</a></dt>
+<dt id="id11">
+<code class="sig-name descname">__weakref__</code><a class="headerlink" href="#id11" title="Permalink to this definition">¶</a></dt>
 <dd><p>list of weak references to the object (if defined)</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="id11">
-<code class="sig-name descname">run</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#id11" title="Permalink to this definition">¶</a></dt>
+<dt id="id12">
+<code class="sig-name descname">run</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#id12" title="Permalink to this definition">¶</a></dt>
 <dd><p>Main driver of the pyplotgen program executing the following steps:
 - Download benchmark files if needed
 - Loop through cases listed in Case_definitions.ALL_CASES
@@ -614,8 +648,8 @@ Not implemented.</p></li>
 </dd></dl>
 
 <dl class="py function">
-<dt id="id12">
-<code class="sig-prename descclassname">pyplotgen.</code><code class="sig-name descname">__processArguments__</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#id12" title="Permalink to this definition">¶</a></dt>
+<dt id="id13">
+<code class="sig-prename descclassname">pyplotgen.</code><code class="sig-name descname">__processArguments__</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#id13" title="Permalink to this definition">¶</a></dt>
 <dd><p>This method takes arguments in from the command line and feeds them into a PyPlotGen object</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns</dt>
@@ -625,8 +659,8 @@ Not implemented.</p></li>
 </dd></dl>
 
 <dl class="py function">
-<dt id="id13">
-<code class="sig-prename descclassname">pyplotgen.</code><code class="sig-name descname">__trimTrailingSlash__</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">args</span></em><span class="sig-paren">)</span><a class="headerlink" href="#id13" title="Permalink to this definition">¶</a></dt>
+<dt id="id14">
+<code class="sig-prename descclassname">pyplotgen.</code><code class="sig-name descname">__trimTrailingSlash__</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">args</span></em><span class="sig-paren">)</span><a class="headerlink" href="#id14" title="Permalink to this definition">¶</a></dt>
 <dd><p>Takes in a list filepaths and removes any trailing /’s</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>

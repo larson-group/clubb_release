@@ -204,10 +204,47 @@ panels that share attributes like start/end time and get plotted together.
 This is a generic class used by Case_Definitions.py to provide functionality.
 In order to create a new case, please add the case’s definition to Case_Definitions.py (don’t forget to add the
 definition to the list ALL_CASES = […] at the bottom of the Case_Definitions.py file).</p>
+<p>For information on the input parameters of this class, please see the documentation for the
+<code class="docutils literal notranslate"><span class="pre">__init__()</span></code> method.</p>
 <dl class="py attribute">
 <dt id="src.CaseGallerySetup.CaseGallerySetup.__dict__">
-<code class="sig-name descname">__dict__</code><em class="property"> = mappingproxy({'__module__': 'src.CaseGallerySetup', '__doc__': &quot;\n    A case is basically a collection of variable groups and\n    panels that share attributes like start/end time and get plotted together.\n    This is a generic class used by Case_Definitions.py to provide functionality.\n    In order to create a new case, please add the case's definition to Case_Definitions.py (don't forget to add the\n    definition to the list ALL_CASES = [...] at the bottom of the Case_Definitions.py file).\n    &quot;, '__init__': &lt;function CaseGallerySetup.__init__&gt;, 'getDiffLinesBetweenPanels': &lt;function CaseGallerySetup.getDiffLinesBetweenPanels&gt;, '__getArrayDiff__': &lt;function CaseGallerySetup.__getArrayDiff__&gt;, 'plot': &lt;function CaseGallerySetup.plot&gt;, '__getNextAlphabeticID__': &lt;function CaseGallerySetup.__getNextAlphabeticID__&gt;, '__dict__': &lt;attribute '__dict__' of 'CaseGallerySetup' objects&gt;, '__weakref__': &lt;attribute '__weakref__' of 'CaseGallerySetup' objects&gt;})</em><a class="headerlink" href="#src.CaseGallerySetup.CaseGallerySetup.__dict__" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">__dict__</code><em class="property"> = mappingproxy({'__module__': 'src.CaseGallerySetup', '__doc__': &quot;\n    A case is basically a collection of variable groups and\n    panels that share attributes like start/end time and get plotted together.\n    This is a generic class used by Case_Definitions.py to provide functionality.\n    In order to create a new case, please add the case's definition to Case_Definitions.py (don't forget to add the\n    definition to the list ALL_CASES = [...] at the bottom of the Case_Definitions.py file).\n\n    For information on the input parameters of this class, please see the documentation for the\n    ``__init__()`` method.\n    &quot;, '__init__': &lt;function CaseGallerySetup.__init__&gt;, '__generateBudgetPanels__': &lt;function CaseGallerySetup.__generateBudgetPanels__&gt;, '__generateDiffPanels__': &lt;function CaseGallerySetup.__generateDiffPanels__&gt;, '__generateVariableGroupPanels__': &lt;function CaseGallerySetup.__generateVariableGroupPanels__&gt;, '__loadModelFiles__': &lt;function CaseGallerySetup.__loadModelFiles__&gt;, 'getDiffLinesBetweenPanels': &lt;function CaseGallerySetup.getDiffLinesBetweenPanels&gt;, '__getArrayDiff__': &lt;function CaseGallerySetup.__getArrayDiff__&gt;, 'plot': &lt;function CaseGallerySetup.plot&gt;, '__getNextAlphabeticID__': &lt;function CaseGallerySetup.__getNextAlphabeticID__&gt;, '__dict__': &lt;attribute '__dict__' of 'CaseGallerySetup' objects&gt;, '__weakref__': &lt;attribute '__weakref__' of 'CaseGallerySetup' objects&gt;})</em><a class="headerlink" href="#src.CaseGallerySetup.CaseGallerySetup.__dict__" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
+
+<dl class="py method">
+<dt id="src.CaseGallerySetup.CaseGallerySetup.__generateBudgetPanels__">
+<code class="sig-name descname">__generateBudgetPanels__</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#src.CaseGallerySetup.CaseGallerySetup.__generateBudgetPanels__" title="Permalink to this definition">¶</a></dt>
+<dd><p>This function creates the budget panels and adds them into self.panels.
+This function takes no parameters and will only work if self.plot_budgets is True, otherwise it will do nothing</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>None. This function operates in-place</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="src.CaseGallerySetup.CaseGallerySetup.__generateDiffPanels__">
+<code class="sig-name descname">__generateDiffPanels__</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#src.CaseGallerySetup.CaseGallerySetup.__generateDiffPanels__" title="Permalink to this definition">¶</a></dt>
+<dd><p>If self.diff_datasets is true (i.e. –diff passed in via command line) then this will generate panels that
+represents the difference of two input folders.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>None. Operates in-place</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="src.CaseGallerySetup.CaseGallerySetup.__generateVariableGroupPanels__">
+<code class="sig-name descname">__generateVariableGroupPanels__</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#src.CaseGallerySetup.CaseGallerySetup.__generateVariableGroupPanels__" title="Permalink to this definition">¶</a></dt>
+<dd><p>This function generates the normal profile plots and adds them to self.panels</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>None. Operates in-place</p>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py method">
 <dt id="src.CaseGallerySetup.CaseGallerySetup.__getArrayDiff__">
@@ -249,17 +286,13 @@ the next case will plot ‘a’ as the first label instead of ‘bc’.</p>
 <dt id="src.CaseGallerySetup.CaseGallerySetup.__init__">
 <code class="sig-name descname">__init__</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">case_definition</span></em>, <em class="sig-param"><span class="n">clubb_folders</span><span class="o">=</span><span class="default_value">[]</span></em>, <em class="sig-param"><span class="n">diff_datasets</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">sam_folders</span><span class="o">=</span><span class="default_value">['']</span></em>, <em class="sig-param"><span class="n">wrf_folders</span><span class="o">=</span><span class="default_value">['']</span></em>, <em class="sig-param"><span class="n">plot_les</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">plot_budgets</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">plot_r408</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">plot_hoc</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">e3sm_dirs</span><span class="o">=</span><span class="default_value">[]</span></em>, <em class="sig-param"><span class="n">cam_folders</span><span class="o">=</span><span class="default_value">[]</span></em>, <em class="sig-param"><span class="n">time_height</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">animation</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.CaseGallerySetup.CaseGallerySetup.__init__" title="Permalink to this definition">¶</a></dt>
 <dd><p>Initialize a CaseGallerySetup object with the passed parameters
-TODO:   - Create function for loading NcFiles to reduce redundant code</p>
+:param case_definition: dict containing case specific elements. These are pulled in from Case_definitions.py,</p>
 <blockquote>
-<div><ul class="simple">
-<li><p>Bring in line the way CLUBB files are loaded</p></li>
-</ul>
+<div><p>see Case_definitions.py for details on how to structure the dict</p>
 </div></blockquote>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>case_definition</strong> – dict containing case specific elements. These are pulled in from Case_definitions.py,
-see Case_definitions.py for details on how to structure the dict</p></li>
 <li><p><strong>clubb_folders</strong> – dict containing Dataset objects holding the dependent_data needed for the case.
 The key for each value/Dataset in the dict is set to the ext provided in the filename (e.g. sfc, zt, zm)</p></li>
 <li><p><strong>diff_datasets</strong> – Takes in netcdf datasets. If datasets are passed in, pyplotgen will plot the numeric
@@ -281,6 +314,11 @@ If False (default), pyplotgen will not plot the HOC 2005 dependent_data lines</p
 </dd>
 </dl>
 </dd></dl>
+
+<dl class="py method">
+<dt id="src.CaseGallerySetup.CaseGallerySetup.__loadModelFiles__">
+<code class="sig-name descname">__loadModelFiles__</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">folders</span></em>, <em class="sig-param"><span class="n">case_definition</span></em>, <em class="sig-param"><span class="n">model_name</span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.CaseGallerySetup.CaseGallerySetup.__loadModelFiles__" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
 
 <dl class="py attribute">
 <dt id="src.CaseGallerySetup.CaseGallerySetup.__module__">
@@ -369,9 +407,11 @@ e.g. if one case ends on label (ad), the next case will start on (a).</p></li>
 <p>This class holds any information necessary to create a contour plot using pyplot,
 including the numerical values, format style, and a label for the plot.
 In the future we would like to seperate the dependent_data from the format.</p>
+<p>For information on the input parameters of this class, please see the documentation for the
+<code class="docutils literal notranslate"><span class="pre">__init__()</span></code> method.</p>
 <dl class="py attribute">
 <dt id="src.Contour.Contour.__dict__">
-<code class="sig-name descname">__dict__</code><em class="property"> = mappingproxy({'__module__': 'src.Contour', '__doc__': '\n    This class holds any information necessary to create a contour plot using pyplot,\n    including the numerical values, format style, and a label for the plot.\n    In the future we would like to seperate the dependent_data from the format.\n    ', '__init__': &lt;function Contour.__init__&gt;, '__dict__': &lt;attribute '__dict__' of 'Contour' objects&gt;, '__weakref__': &lt;attribute '__weakref__' of 'Contour' objects&gt;})</em><a class="headerlink" href="#src.Contour.Contour.__dict__" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">__dict__</code><em class="property"> = mappingproxy({'__module__': 'src.Contour', '__doc__': '\n    This class holds any information necessary to create a contour plot using pyplot,\n    including the numerical values, format style, and a label for the plot.\n    In the future we would like to seperate the dependent_data from the format.\n\n    For information on the input parameters of this class, please see the documentation for the\n    ``__init__()`` method.\n    ', '__init__': &lt;function Contour.__init__&gt;, '__dict__': &lt;attribute '__dict__' of 'Contour' objects&gt;, '__weakref__': &lt;attribute '__weakref__' of 'Contour' objects&gt;})</em><a class="headerlink" href="#src.Contour.Contour.__dict__" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
@@ -425,6 +465,8 @@ The changed plot routine outputs contour plots instead of profile plots.</p>
 <dd><p>Bases: <a class="reference internal" href="#src.Panel.Panel" title="src.Panel.Panel"><code class="xref py py-class docutils literal notranslate"><span class="pre">src.Panel.Panel</span></code></a></p>
 <p>ContourPanel class derived from Panel
 The difference is that the plot routine will generate a timeheight plot instead of a standard profile plot.</p>
+<p>For information on the input parameters of this class, please see the documentation for the
+<code class="docutils literal notranslate"><span class="pre">__init__()</span></code> method.</p>
 <dl class="py method">
 <dt id="src.ContourPanel.ContourPanel.__init__">
 <code class="sig-name descname">__init__</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">plots</span></em>, <em class="sig-param"><span class="n">panel_type</span><span class="o">=</span><span class="default_value">'timeheight'</span></em>, <em class="sig-param"><span class="n">title</span><span class="o">=</span><span class="default_value">'Unnamed panel'</span></em>, <em class="sig-param"><span class="n">dependent_title</span><span class="o">=</span><span class="default_value">'dependent variable'</span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.ContourPanel.ContourPanel.__init__" title="Permalink to this definition">¶</a></dt>
@@ -489,6 +531,8 @@ Profile plots are usually centered, while budget plots are not.</p></li>
 <p>This class is responsible for handling nc files.
 Given nc files it reads them and returns NetCDF Dataset objects to python.
 It is also responsible for performing the time-averaging calculation at load time.</p>
+<p>For information on the input parameters of this class, please see the documentation for the
+<code class="docutils literal notranslate"><span class="pre">__init__()</span></code> method.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Author</dt>
 <dd class="field-odd"><p>Nicolas Strike</p>
@@ -536,7 +580,7 @@ Calls the cleanup and cleanly closes out the object instance</p>
 
 <dl class="py attribute">
 <dt id="src.DataReader.DataReader.__dict__">
-<code class="sig-name descname">__dict__</code><em class="property"> = mappingproxy({'__module__': 'src.DataReader', '__doc__': '\n    This class is responsible for handling nc files.\n    Given nc files it reads them and returns NetCDF Dataset objects to python.\n    It is also responsible for performing the time-averaging calculation at load time.\n\n    :author: Nicolas Strike\n    :date: January 2019\n    ', '__init__': &lt;function DataReader.__init__&gt;, 'cleanup': &lt;function DataReader.cleanup&gt;, 'loadFolder': &lt;function DataReader.loadFolder&gt;, 'getVarData': &lt;function DataReader.getVarData&gt;, '__exit__': &lt;function DataReader.__exit__&gt;, '__del__': &lt;function DataReader.__del__&gt;, '__loadNcFile__': &lt;function DataReader.__loadNcFile__&gt;, '__averageData__': &lt;function DataReader.__averageData__&gt;, '__getUnits__': &lt;function DataReader.__getUnits__&gt;, 'getLongName': &lt;function DataReader.getLongName&gt;, 'getAxisTitle': &lt;function DataReader.getAxisTitle&gt;, '__getValuesFromNc__': &lt;function DataReader.__getValuesFromNc__&gt;, '__getStartEndIndex__': &lt;staticmethod object&gt;, 'getNcdfSourceModel': &lt;function DataReader.getNcdfSourceModel&gt;, '__remove_invalid_unit_chars__': &lt;function DataReader.__remove_invalid_unit_chars__&gt;, '__dict__': &lt;attribute '__dict__' of 'DataReader' objects&gt;, '__weakref__': &lt;attribute '__weakref__' of 'DataReader' objects&gt;})</em><a class="headerlink" href="#src.DataReader.DataReader.__dict__" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">__dict__</code><em class="property"> = mappingproxy({'__module__': 'src.DataReader', '__doc__': '\n    This class is responsible for handling nc files.\n    Given nc files it reads them and returns NetCDF Dataset objects to python.\n    It is also responsible for performing the time-averaging calculation at load time.\n\n    For information on the input parameters of this class, please see the documentation for the\n    ``__init__()`` method.\n\n    :author: Nicolas Strike\n    :date: January 2019\n    ', '__init__': &lt;function DataReader.__init__&gt;, 'cleanup': &lt;function DataReader.cleanup&gt;, 'loadFolder': &lt;function DataReader.loadFolder&gt;, 'getVarData': &lt;function DataReader.getVarData&gt;, '__exit__': &lt;function DataReader.__exit__&gt;, '__del__': &lt;function DataReader.__del__&gt;, '__loadNcFile__': &lt;function DataReader.__loadNcFile__&gt;, '__averageData__': &lt;function DataReader.__averageData__&gt;, '__getUnits__': &lt;function DataReader.__getUnits__&gt;, 'getLongName': &lt;function DataReader.getLongName&gt;, 'getAxisTitle': &lt;function DataReader.getAxisTitle&gt;, '__getValuesFromNc__': &lt;function DataReader.__getValuesFromNc__&gt;, '__getStartEndIndex__': &lt;staticmethod object&gt;, 'getNcdfSourceModel': &lt;function DataReader.getNcdfSourceModel&gt;, '__remove_invalid_unit_chars__': &lt;function DataReader.__remove_invalid_unit_chars__&gt;, '__dict__': &lt;attribute '__dict__' of 'DataReader' objects&gt;, '__weakref__': &lt;attribute '__weakref__' of 'DataReader' objects&gt;})</em><a class="headerlink" href="#src.DataReader.DataReader.__dict__" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
@@ -785,9 +829,11 @@ For example: to access the zm dependent_data for gabls3_rad, simply call clubb_d
 <em class="property">class </em><code class="sig-prename descclassname">src.DataReader.</code><code class="sig-name descname">NetCdfVariable</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">names</span></em>, <em class="sig-param"><span class="n">ncdf_data</span></em>, <em class="sig-param"><span class="n">independent_var_names</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">conversion_factor</span><span class="o">=</span><span class="default_value">1</span></em>, <em class="sig-param"><span class="n">start_time</span><span class="o">=</span><span class="default_value">0</span></em>, <em class="sig-param"><span class="n">end_time</span><span class="o">=</span><span class="default_value">- 1</span></em>, <em class="sig-param"><span class="n">min_height</span><span class="o">=</span><span class="default_value">0</span></em>, <em class="sig-param"><span class="n">max_height</span><span class="o">=</span><span class="default_value">- 1</span></em>, <em class="sig-param"><span class="n">avg_axis</span><span class="o">=</span><span class="default_value">0</span></em>, <em class="sig-param"><span class="n">model_name</span><span class="o">=</span><span class="default_value">'unknown'</span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.DataReader.NetCdfVariable" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 <p>Class used for conveniently storing the information about a given netcdf variable</p>
+<p>For information on the input parameters of this class, please see the documentation for the
+<code class="docutils literal notranslate"><span class="pre">__init__()</span></code> method.</p>
 <dl class="py attribute">
 <dt id="src.DataReader.NetCdfVariable.__dict__">
-<code class="sig-name descname">__dict__</code><em class="property"> = mappingproxy({'__module__': 'src.DataReader', '__doc__': '\n    Class used for conveniently storing the information about a given netcdf variable\n    ', '__init__': &lt;function NetCdfVariable.__init__&gt;, 'trimArray': &lt;function NetCdfVariable.trimArray&gt;, 'filterDatasets': &lt;function NetCdfVariable.filterDatasets&gt;, '__len__': &lt;function NetCdfVariable.__len__&gt;, '__findNameAndDatasetMatch__': &lt;function NetCdfVariable.__findNameAndDatasetMatch__&gt;, '__getDependentAndIndependentData__': &lt;function NetCdfVariable.__getDependentAndIndependentData__&gt;, '__dict__': &lt;attribute '__dict__' of 'NetCdfVariable' objects&gt;, '__weakref__': &lt;attribute '__weakref__' of 'NetCdfVariable' objects&gt;})</em><a class="headerlink" href="#src.DataReader.NetCdfVariable.__dict__" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">__dict__</code><em class="property"> = mappingproxy({'__module__': 'src.DataReader', '__doc__': '\n    Class used for conveniently storing the information about a given netcdf variable\n\n    For information on the input parameters of this class, please see the documentation for the\n    ``__init__()`` method.\n    ', '__init__': &lt;function NetCdfVariable.__init__&gt;, 'trimArray': &lt;function NetCdfVariable.trimArray&gt;, 'filterDatasets': &lt;function NetCdfVariable.filterDatasets&gt;, '__len__': &lt;function NetCdfVariable.__len__&gt;, '__findNameAndDatasetMatch__': &lt;function NetCdfVariable.__findNameAndDatasetMatch__&gt;, '__getDependentAndIndependentData__': &lt;function NetCdfVariable.__getDependentAndIndependentData__&gt;, '__dict__': &lt;attribute '__dict__' of 'NetCdfVariable' objects&gt;, '__weakref__': &lt;attribute '__weakref__' of 'NetCdfVariable' objects&gt;})</em><a class="headerlink" href="#src.DataReader.NetCdfVariable.__dict__" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
@@ -921,9 +967,11 @@ the NetCdfVariable’s dependent_data. Must be specified if called on a multidim
 Data included is anything necessary to graph a line using pyplot, including the
 numerical values, line format style, and a label for the plot. In the future we
 would like to seperate the dependent_data from the format.</p>
+<p>For information on the input parameters of this class, please see the documentation for the
+<code class="docutils literal notranslate"><span class="pre">__init__()</span></code> method.</p>
 <dl class="py attribute">
 <dt id="src.Line.Line.__dict__">
-<code class="sig-name descname">__dict__</code><em class="property"> = mappingproxy({'__module__': 'src.Line', '__doc__': '\n    This class holds information commonly passed around when using plot dependent_data.\n    Data included is anything necessary to graph a line using pyplot, including the\n    numerical values, line format style, and a label for the plot. In the future we\n    would like to seperate the dependent_data from the format.\n    ', '__init__': &lt;function Line.__init__&gt;, '__dict__': &lt;attribute '__dict__' of 'Line' objects&gt;, '__weakref__': &lt;attribute '__weakref__' of 'Line' objects&gt;})</em><a class="headerlink" href="#src.Line.Line.__dict__" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">__dict__</code><em class="property"> = mappingproxy({'__module__': 'src.Line', '__doc__': '\n    This class holds information commonly passed around when using plot dependent_data.\n    Data included is anything necessary to graph a line using pyplot, including the\n    numerical values, line format style, and a label for the plot. In the future we\n    would like to seperate the dependent_data from the format.\n\n    For information on the input parameters of this class, please see the documentation for the\n    ``__init__()`` method.\n    ', '__init__': &lt;function Line.__init__&gt;, '__dict__': &lt;attribute '__dict__' of 'Line' objects&gt;, '__weakref__': &lt;attribute '__weakref__' of 'Line' objects&gt;})</em><a class="headerlink" href="#src.Line.Line.__dict__" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
@@ -972,6 +1020,8 @@ would like to seperate the dependent_data from the format.</p>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 <p>Represents an individual panel/graph. Each panel contains a number of details
 specific to it, such as a title, axis labels, and lines. Each panel can be plotted/saved to a file.</p>
+<p>For information on the input parameters of this class, please see the documentation for the
+<code class="docutils literal notranslate"><span class="pre">__init__()</span></code> method.</p>
 <dl class="py attribute">
 <dt id="src.Panel.Panel.EXTENSION">
 <code class="sig-name descname">EXTENSION</code><em class="property"> = '.png'</em><a class="headerlink" href="#src.Panel.Panel.EXTENSION" title="Permalink to this definition">¶</a></dt>
@@ -1004,7 +1054,7 @@ specific to it, such as a title, axis labels, and lines. Each panel can be plott
 
 <dl class="py attribute">
 <dt id="src.Panel.Panel.__dict__">
-<code class="sig-name descname">__dict__</code><em class="property"> = mappingproxy({'__module__': 'src.Panel', '__doc__': '\n    Represents an individual panel/graph. Each panel contains a number of details\n    specific to it, such as a title, axis labels, and lines. Each panel can be plotted/saved to a file.\n    ', 'TYPE_PROFILE': 'profile', 'TYPE_BUDGET': 'budget', 'TYPE_TIMESERIES': 'timeseries', 'TYPE_TIMEHEIGHT': 'timeheight', 'TYPE_ANIMATION': 'animation', 'EXTENSION': '.png', '__init__': &lt;function Panel.__init__&gt;, '__init_axis_titles__': &lt;function Panel.__init_axis_titles__&gt;, 'plot': &lt;function Panel.plot&gt;, '__removeInvalidFilenameChars__': &lt;function Panel.__removeInvalidFilenameChars__&gt;, '__plotContourf__': &lt;function Panel.__plotContourf__&gt;, '__dict__': &lt;attribute '__dict__' of 'Panel' objects&gt;, '__weakref__': &lt;attribute '__weakref__' of 'Panel' objects&gt;})</em><a class="headerlink" href="#src.Panel.Panel.__dict__" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">__dict__</code><em class="property"> = mappingproxy({'__module__': 'src.Panel', '__doc__': '\n    Represents an individual panel/graph. Each panel contains a number of details\n    specific to it, such as a title, axis labels, and lines. Each panel can be plotted/saved to a file.\n\n    For information on the input parameters of this class, please see the documentation for the\n    ``__init__()`` method.\n    ', 'TYPE_PROFILE': 'profile', 'TYPE_BUDGET': 'budget', 'TYPE_TIMESERIES': 'timeseries', 'TYPE_TIMEHEIGHT': 'timeheight', 'TYPE_ANIMATION': 'animation', 'EXTENSION': '.png', '__init__': &lt;function Panel.__init__&gt;, '__init_axis_titles__': &lt;function Panel.__init_axis_titles__&gt;, 'plot': &lt;function Panel.plot&gt;, '__removeInvalidFilenameChars__': &lt;function Panel.__removeInvalidFilenameChars__&gt;, '__plotContourf__': &lt;function Panel.__plotContourf__&gt;, '__dict__': &lt;attribute '__dict__' of 'Panel' objects&gt;, '__weakref__': &lt;attribute '__weakref__' of 'Panel' objects&gt;})</em><a class="headerlink" href="#src.Panel.Panel.__dict__" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
@@ -1129,9 +1179,11 @@ should be created as a subclass of this one. Properties and
 methods common to each PanelGroup can be found here.</p>
 <p>A VariableGroup child defines Lines, Panels, etc., and is responsible for
 calculating any ‘calculated’ variables from netcdf</p>
+<p>For information on the input parameters of this class, please see the documentation for the
+<code class="docutils literal notranslate"><span class="pre">__init__()</span></code> method.</p>
 <dl class="py attribute">
 <dt id="src.VariableGroup.VariableGroup.__dict__">
-<code class="sig-name descname">__dict__</code><em class="property"> = mappingproxy({'__module__': 'src.VariableGroup', '__doc__': &quot;\n    This is the parent VariableGroup class. All other panel groups\n    should be created as a subclass of this one. Properties and\n    methods common to each PanelGroup can be found here.\n\n    A VariableGroup child defines Lines, Panels, etc., and is responsible for\n    calculating any 'calculated' variables from netcdf\n    &quot;, '__init__': &lt;function VariableGroup.__init__&gt;, 'addVariable': &lt;function VariableGroup.addVariable&gt;, '__getVarLinesForModel__': &lt;function VariableGroup.__getVarLinesForModel__&gt;, 'getTextDefiningDataset': &lt;function VariableGroup.getTextDefiningDataset&gt;, 'generatePanels': &lt;function VariableGroup.generatePanels&gt;, '__getTitles__': &lt;function VariableGroup.__getTitles__&gt;, '__varnamesInDataset__': &lt;function VariableGroup.__varnamesInDataset__&gt;, '__getRelativeVarName__': &lt;function VariableGroup.__getRelativeVarName__&gt;, '__getConversionFactors__': &lt;function VariableGroup.__getConversionFactors__&gt;, '__getVarLines__': &lt;function VariableGroup.__getVarLines__&gt;, '__getProfileLine__': &lt;function VariableGroup.__getProfileLine__&gt;, '__getTimeseriesLine__': &lt;function VariableGroup.__getTimeseriesLine__&gt;, '__getBudgetLines__': &lt;function VariableGroup.__getBudgetLines__&gt;, '__getTimeHeightContours__': &lt;function VariableGroup.__getTimeHeightContours__&gt;, 'getVarForCalculations': &lt;function VariableGroup.getVarForCalculations&gt;, 'isSurfaceData': &lt;function VariableGroup.isSurfaceData&gt;, 'pickNonZeroOutput': &lt;function VariableGroup.pickNonZeroOutput&gt;, '__processLinesParameter__': &lt;function VariableGroup.__processLinesParameter__&gt;, '__dict__': &lt;attribute '__dict__' of 'VariableGroup' objects&gt;, '__weakref__': &lt;attribute '__weakref__' of 'VariableGroup' objects&gt;})</em><a class="headerlink" href="#src.VariableGroup.VariableGroup.__dict__" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">__dict__</code><em class="property"> = mappingproxy({'__module__': 'src.VariableGroup', '__doc__': &quot;\n    This is the parent VariableGroup class. All other panel groups\n    should be created as a subclass of this one. Properties and\n    methods common to each PanelGroup can be found here.\n\n    A VariableGroup child defines Lines, Panels, etc., and is responsible for\n    calculating any 'calculated' variables from netcdf\n\n    For information on the input parameters of this class, please see the documentation for the\n    ``__init__()`` method.\n    &quot;, '__init__': &lt;function VariableGroup.__init__&gt;, 'addVariable': &lt;function VariableGroup.addVariable&gt;, '__getVarLinesForModel__': &lt;function VariableGroup.__getVarLinesForModel__&gt;, 'getTextDefiningDataset': &lt;function VariableGroup.getTextDefiningDataset&gt;, 'generatePanels': &lt;function VariableGroup.generatePanels&gt;, '__getTitles__': &lt;function VariableGroup.__getTitles__&gt;, '__varnamesInDataset__': &lt;function VariableGroup.__varnamesInDataset__&gt;, '__getRelativeVarName__': &lt;function VariableGroup.__getRelativeVarName__&gt;, '__getConversionFactors__': &lt;function VariableGroup.__getConversionFactors__&gt;, '__getVarLines__': &lt;function VariableGroup.__getVarLines__&gt;, '__getProfileLine__': &lt;function VariableGroup.__getProfileLine__&gt;, '__getTimeseriesLine__': &lt;function VariableGroup.__getTimeseriesLine__&gt;, '__getBudgetLines__': &lt;function VariableGroup.__getBudgetLines__&gt;, '__getTimeHeightContours__': &lt;function VariableGroup.__getTimeHeightContours__&gt;, 'getVarForCalculations': &lt;function VariableGroup.getVarForCalculations&gt;, 'isSurfaceData': &lt;function VariableGroup.isSurfaceData&gt;, 'pickNonZeroOutput': &lt;function VariableGroup.pickNonZeroOutput&gt;, '__processLinesParameter__': &lt;function VariableGroup.__processLinesParameter__&gt;, '__dict__': &lt;attribute '__dict__' of 'VariableGroup' objects&gt;, '__weakref__': &lt;attribute '__weakref__' of 'VariableGroup' objects&gt;})</em><a class="headerlink" href="#src.VariableGroup.VariableGroup.__dict__" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
@@ -1301,7 +1353,7 @@ but not a required field for processing benchmark output.</p></li>
 <dl class="py method">
 <dt id="src.VariableGroup.VariableGroup.__getVarLines__">
 <code class="sig-name descname">__getVarLines__</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">var_names</span></em>, <em class="sig-param"><span class="n">ncdf_datasets</span></em>, <em class="sig-param"><span class="n">label</span><span class="o">=</span><span class="default_value">''</span></em>, <em class="sig-param"><span class="n">line_format</span><span class="o">=</span><span class="default_value">''</span></em>, <em class="sig-param"><span class="n">avg_axis</span><span class="o">=</span><span class="default_value">0</span></em>, <em class="sig-param"><span class="n">override_panel_type</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">lines</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">conversion_factor</span><span class="o">=</span><span class="default_value">1</span></em>, <em class="sig-param"><span class="n">model_name</span><span class="o">=</span><span class="default_value">'unknown'</span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.VariableGroup.VariableGroup.__getVarLines__" title="Permalink to this definition">¶</a></dt>
-<dd><p>Get a list of Line objects for a specific clubb variable. If les_dataset is specified it will also
+<dd><p>Get a list of Line objects for a specific clubb variable. If sam_benchmark_dataset is specified it will also
 attempt to generate Lines for the SAM equivalent variables, using the name conversions found in
 VarnameConversions.py. If a SAM variable needs to be calculated (uses an equation) then it will have
 to be created within that variable group’s dataset and not here.</p>
@@ -1519,14 +1571,15 @@ It’s useful for doing basic model to model conversions, e.g. SAM -&gt; CLUBB.<
 
 <dl class="py method">
 <dt id="src.VariableGroup.VariableGroup.pickNonZeroOutput">
-<code class="sig-name descname">pickNonZeroOutput</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">output1</span></em>, <em class="sig-param"><span class="n">output2</span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.VariableGroup.VariableGroup.pickNonZeroOutput" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">pickNonZeroOutput</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">output1</span></em>, <em class="sig-param"><span class="n">output2</span></em>, <em class="sig-param"><span class="n">favor_output</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.VariableGroup.VariableGroup.pickNonZeroOutput" title="Permalink to this definition">¶</a></dt>
 <dd><p>Sometimes there are more than 1 ways to calculate a variable, and
 it is impossible to know which equation to use before hand. In these
 cases, all equations should be used and their output given to this
 function. This function will then attempt to determine which of the
 outputs from the equations is most likely to be the expected answer.</p>
 <p>This function currently works by determining picking the non-nan and non-zero array.
-In the event that both arrays contain non-nan and non-zero output, it will return output1.</p>
+In the event that both arrays contain non-nan and non-zero output, it will return output1.
+In the event both arrays are identical w/in tolerance, it will return output1.</p>
 <p>If both arrays are zero or nan, then it will return the first array arbitrarily.</p>
 <p>Example usage:</p>
 <div class="highlight-python notranslate"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre>1
@@ -1555,6 +1608,9 @@ In the event that both arrays contain non-nan and non-zero output, it will retur
 (e.g.     output1 = wprlp * (2.5e6 / (1004.67 * ex0) - 1.61 * thvm)</p></li>
 <li><p><strong>output2</strong> – An arraylike list of numbers outputted from a variable calculation
 (e.g.     output2 = wprlp * (2.5e6 / (1004.67 * ((p / 1.0e5) ** (287.04 / 1004.67))) - 1.61 * thvm)</p></li>
+<li><p><strong>favor_output</strong> – (optional) If an array cannot easily be picked by looking at whether they are zeros/NaN’s,
+use this return the data from this array. I.e. if both output1 and output2 contain unique data, the data in
+favor_output will be returned. This array should be identical to either output1 or output2.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns</dt>
