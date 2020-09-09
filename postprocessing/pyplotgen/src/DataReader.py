@@ -6,7 +6,6 @@ import os
 import pathlib as pathlib
 from collections.abc import Iterable
 from os import path
-from sys import path
 from warnings import warn
 
 import numpy as np
