@@ -20,7 +20,7 @@ from multiprocessing import Pool
 from multiprocessing import freeze_support
 from warnings import warn
 
-from config import Case_definitions
+from config import Case_definitions, Style_definitions
 from python_html_gallery import gallery
 from src.CaseGallerySetup import CaseGallerySetup
 from src.DataReader import DataReader
@@ -444,6 +444,9 @@ def __processArguments__():
                                                          "or want text output to appear sequentially and don't care"
                                                          "about performance, use this option.",
                         action="store_true")
+    parser.add_argument("--high-quality", "--hq", help="Outputs higher resolution images. The dpi used for hi resolution images"
+                                               " can be customized in Style_definitions.py",
+                        action="store_true")
     args = parser.parse_args()
 
     if args.zip:
@@ -475,6 +478,9 @@ def __processArguments__():
         les = args.les
         cgbest = args.plot_golaz_best
         hoc = args.plot_hoc_2005
+
+    if args.high_quality:
+        Style_definitions.JPG_OUTPUT_DPI = Style_definitions.HQ_DPI
 
     if args.time_height_plots and args.movies is not None:
         raise ValueError('Error: Command line parameter -t and -m cannot be used in conjunction.')

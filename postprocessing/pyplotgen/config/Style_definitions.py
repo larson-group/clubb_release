@@ -69,9 +69,9 @@ BENCHMARK_LABELS = {
 # Text styles
 # -------------
 # Text/Font
-SMALL_FONT_SIZE = 12
-MEDIUM_FONT_SIZE = 14
-LARGE_FONT_SIZE = 18
+SMALL_FONT_SIZE = 14
+MEDIUM_FONT_SIZE = 16
+LARGE_FONT_SIZE = 20
 
 DEFAULT_TEXT_SIZE = SMALL_FONT_SIZE
 TITLE_TEXT_SIZE = LARGE_FONT_SIZE
@@ -85,6 +85,11 @@ LEGEND_FONT_SIZE = SMALL_FONT_SIZE
 SHOW_GRID = True
 POW_LIMS = (-2,3)
 BUDGET_XAXIS_SCALE_FACTOR = 1.1 # THIS VALUE MUST BE >= 1 !
+
+# Image output configuration
+HQ_DPI = 100 # This value overwrites the default JPG_OUTPUT_DPI when --high-quality is passed in via command line
+JPG_OUTPUT_DPI = 45
+FIGSIZE = (10,6) # The x,y proportions to pass into matplotlib
 
 # Time-height plot settings
 # An overview of all colormaps available in matplotlib can be found here:

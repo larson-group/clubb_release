@@ -78,8 +78,9 @@ def OrganizeRoot(output_dir):
                 print('%s already exists' % os.path.join(datehour, jpg))
 
 
-def GenerateThumbnails(page, jpgs):
-    """Generates thumbnails for gallery pages.
+def GenerateHtmlImages(page, jpgs):
+    """
+    Creates HTML image elements
 
   Args:
     page: str, name of page for thumbnails.
@@ -87,47 +88,10 @@ def GenerateThumbnails(page, jpgs):
   Returns:
     url_imgs: list, image links to write.
   """
-    c_exist = 0
-    c_save = 0
-    c_small = 0
-    pc = 0
     url_imgs = []
-
     for jpg in jpgs:
         jpg = page + '/' + jpg
-        try:
-            im = Image.open(jpg)
-            if im.size > static.min_size:
-                trimIndex = -1*(len(extension) + 1) # position of last char before ".png"
-                thumb = jpg[:trimIndex] + "_thumb." + extension
-                if not os.path.exists(thumb):
-                    # im.thumbnail(static.thumb_size, Image.ANTIALIAS)
-                    im = im.resize(static.thumb_size, resample=Image.BILINEAR)
-                    im.save(thumb, extension)
-                    c_save += 1
-
-                    if (pc == 100):  # progress counter
-                        print('%s: wrote 100 thumbnails, continuing' % page)
-                        pc = 0
-                    pc += 1
-
-                else:
-                    c_exist += 1
-
-                url_imgs.append(static.url_img % (jpg, jpg, thumb))
-            else:
-                if '_thumb.'+extension not in jpg:
-                    c_small += 1
-        except IOError as e:
-            print('Problem with %s: %s, moving to %s' % (jpg, e, static.tmp))
-            try:
-                shutil.move(jpg, static.tmp)
-            except shutil.Error:
-                print('Could not move %s' % jpg)
-                pass
-
-    print('%s: %d new thumbnails, %d already exist, %d too small' % (
-        page, c_save, c_exist, c_small))
+        url_imgs.append(static.url_img % (jpg, jpg, jpg))
     return url_imgs
 
 
@@ -189,7 +153,7 @@ def WriteGalleryPage(page):
             print('%s: No images found' % page)
             return
 
-        for e in GenerateThumbnails(page, jpgs):
+        for e in GenerateHtmlImages(page, jpgs):
             plots_file.write(e)
 
         # plots_file.write(static.footer)
