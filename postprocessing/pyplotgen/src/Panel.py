@@ -121,7 +121,7 @@ class Panel:
         if self.sci_scale is not None:
             scalepower = -1 * self.sci_scale
             if self.sci_scale != 0:
-                label_scale_factor = "\t\t x 1e" + str(self.sci_scale)
+                label_scale_factor = "x 1e" + str(self.sci_scale)
             math_scale_factor =  10 ** (scalepower)
             plt.ticklabel_format(style='plain', axis='x')
         # Use pyplot's default sci scaling
@@ -193,16 +193,19 @@ class Panel:
             else:
                 plt.plot(x_data, y_data, label=var.label, linewidth=line_width)
 
-        # Set titles
-        plt.title(self.title)
-        plt.ylabel(self.y_title)
-        plt.xlabel(self.x_title + label_scale_factor)
-
         # Show grid if enabled
         ax = plt.gca()
         ax.grid(Style_definitions.SHOW_GRID)
 
         ax.set_prop_cycle(default_cycler)
+
+
+        # Set titles
+        plt.title(self.title)
+        plt.ylabel(self.y_title)
+        plt.text(1, -0.15, label_scale_factor, transform=ax.transAxes, fontsize=Style_definitions.MEDIUM_FONT_SIZE)
+        plt.xlabel(self.x_title)
+
 
         # Add alphabetic ID
         if alphabetic_id != "":
