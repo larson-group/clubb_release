@@ -88,7 +88,7 @@ BUDGET_XAXIS_SCALE_FACTOR = 1.1 # THIS VALUE MUST BE >= 1 !
 
 # Image output configuration
 HQ_DPI = 100 # This value overwrites the default JPG_OUTPUT_DPI when --high-quality is passed in via command line
-JPG_OUTPUT_DPI = 45
+JPG_OUTPUT_DPI = 45 # Recommended default value: 45
 FIGSIZE = (10,6) # The x,y proportions to pass into matplotlib
 
 # Time-height plot settings

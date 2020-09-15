@@ -22,6 +22,7 @@ from warnings import warn
 
 from config import Case_definitions, Style_definitions
 from python_html_gallery import gallery
+from src import Panel
 from src.CaseGallerySetup import CaseGallerySetup
 from src.DataReader import DataReader
 from src.interoperability import clean_path
@@ -401,7 +402,6 @@ def __processArguments__():
                         action="store_true")
     parser.add_argument("--thin", help="Plot using thin solid lines.", action="store_true")
     parser.add_argument("--no-legends", help="Plot without legend boxes defining the line types.", action="store_true")
-    parser.add_argument("--ensemble", help="Plot ensemble tuner runs", action="store_true")  # TODO is this needed?
     parser.add_argument("-b", "--plot-budgets", help="Plot all defined budgets of moments.",
                         action="store_true")
     parser.add_argument("-t", "--time-height-plots",
@@ -447,12 +447,14 @@ def __processArguments__():
     parser.add_argument("--high-quality", "--hq", help="Outputs higher resolution images. The dpi used for hi resolution images"
                                                " can be customized in Style_definitions.py",
                         action="store_true")
+    parser.add_argument("--svg",
+                        help="Outputs images to a lossless vector-graphics format .svg  instead of a rasterized image "
+                             "like png.",
+                        action="store_true")
     args = parser.parse_args()
 
     if args.zip:
         print("Zip flag detected, but that feature is not yet implemented")
-    if args.ensemble:
-        print("Ensemble flag detected, but that feature is not yet implemented")
     if args.bu_morr:
         print("Morrison breakdown flag detected, but that feature is not yet implemented")
 
@@ -479,6 +481,9 @@ def __processArguments__():
         cgbest = args.plot_golaz_best
         hoc = args.plot_hoc_2005
 
+    if args.svg:
+        Panel.EXTENSION = ".svg"
+
     if args.high_quality:
         Style_definitions.JPG_OUTPUT_DPI = Style_definitions.HQ_DPI
 
@@ -490,7 +495,7 @@ def __processArguments__():
                           cgbest=cgbest, cam_folders=args.cam, nightly=args.nightly,
                           hoc=hoc, zip=args.zip, thin=args.thin, sam_folders=args.sam,
                           wrf_folders=args.wrf, benchmark_only=args.benchmark_only,
-                          no_legends=args.no_legends, ensemble=args.ensemble, budget_moments=args.plot_budgets,
+                          no_legends=args.no_legends, budget_moments=args.plot_budgets,
                           bu_morr=args.bu_morr, diff=args.diff, show_alphabetic_id=args.show_alphabetic_id,
                           time_height=args.time_height_plots, animation=args.movies,
                           disable_multithreading = args.disable_multithreading)

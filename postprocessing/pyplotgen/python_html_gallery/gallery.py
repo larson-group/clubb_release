@@ -16,8 +16,7 @@ from multiprocessing import freeze_support
 
 from config import Case_definitions
 from python_html_gallery import static
-
-extension = 'png'
+from src import Panel
 
 try:
     from PIL import Image
@@ -52,7 +51,7 @@ def Now(time=True):
 def RandomThumb(page):
     """Returns path to random thumbnail for a given page."""
     return random.choice(
-        glob.glob(os.path.join(page.split('/')[0], '*_thumb.'+extension)))
+        glob.glob(os.path.join(page.split('/')[0], '*_thumb'+Panel.EXTENSION)))
 
 
 def OrganizeRoot(output_dir):
@@ -65,7 +64,7 @@ def OrganizeRoot(output_dir):
         print('Could not cd into %s' % static.root)
         sys.exit(1)
 
-    fs = ListFiles('*.'+extension, '.')
+    fs = ListFiles('*'+Panel.EXTENSION, '.')
     if fs:
         for jpg in fs:
             datehour = Now(time=False)
@@ -146,7 +145,7 @@ def WriteGalleryPage(page):
         plots_file.write(static.timestamp % Now())
 
         try:
-            img_paths = '*.'+extension
+            img_paths = '*'+Panel.EXTENSION
             case_images = ListFiles(img_paths, page)
             jpgs = sorted(case_images, reverse=True)[::-1]
         except TypeError:

@@ -24,6 +24,7 @@ Pyplotgen only supports input in the netcdf (.nc) format.
 | --nightly | Apply special parameters only relevant when running as part of a nightly test. This is currently limited to disabling case output if not all models have data for a given case. E.g. this prevents wrf plots from including cases that only have clubb plots and no wrf plots. Do not plot this with clubb-only plots, just plot clubb normally for clubb nightly tests.
 | --disable-multithreading | Turns off multithreading support. Useful for debugging as it ensures text is printed sequentially. |
 | --hq --high-quality | Outputs higher resolution images. The dpi used for hi resolution images can be customized in Style_definitions.py |
+| --svg | Output images to .svg lossless format instead of .png |
 
 ## Installing Dependencies
 To install the dependencies necessary for PyPlotgen to run, run the command
