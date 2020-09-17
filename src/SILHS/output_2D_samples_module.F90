@@ -92,7 +92,6 @@ module output_2D_samples_module
     nlat = num_samples
     nlon = 1
 
-    allocate( sample_file%rlat(num_samples), sample_file%rlon(1) )
     allocate( sample_file%var(n_2D_variables) )
     allocate( sample_file%z(nz) )
 
@@ -137,6 +136,8 @@ module output_2D_samples_module
 
     use clubb_precision, only: stat_rknd ! Constant(s)
 
+    use stats_variables, only: l_stats_last !Time-to-print flag
+
     implicit none
 
     ! Input Variables
@@ -161,6 +162,8 @@ module output_2D_samples_module
     integer :: sample, j
 
     ! ---- Begin Code ----
+
+    if ( .not. l_stats_last ) return
 
     do j = 1, pdf_dim
       allocate( lognormal_sample_file%var(j)%ptr(num_samples,1,nz) )
@@ -210,6 +213,8 @@ module output_2D_samples_module
       core_rknd, &          ! Precision(s)
       stat_rknd
 
+    use stats_variables, only: l_stats_last !Time-to-print flag
+
     implicit none
 
     ! Input Variables
@@ -240,6 +245,8 @@ module output_2D_samples_module
     integer :: sample, j, k
 
     ! ---- Begin Code ----
+
+    if ( .not. l_stats_last ) return
 
     do j = 1, dp2+2
       allocate( uniform_sample_file%var(j)%ptr(num_samples,1,nz) )
