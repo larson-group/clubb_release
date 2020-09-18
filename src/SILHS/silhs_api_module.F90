@@ -100,6 +100,10 @@ module silhs_api_module
     set_default_silhs_config_flags_api, &
     initialize_silhs_config_flags_type_api, &
     print_silhs_config_flags_api
+
+  public  & ! to print 2D lh samples
+    latin_hypercube_2D_output_api, &
+    latin_hypercube_2D_close_api
     
   private &
     generate_silhs_sample_api_single_col, &
@@ -909,6 +913,61 @@ contains
     call print_silhs_config_flags( iunit, silhs_config_flags ) ! In
 
   end subroutine print_silhs_config_flags_api
+
+  !================================================================================================
+  ! latin_hypercube_2D_output - Creates and opens the SILHS 2D output files.
+  !================================================================================================
+
+  subroutine latin_hypercube_2D_output_api &
+             ( fname_prefix, fdir, stats_tout, nz, &
+               stats_zt, time_initial, num_samples )
+
+    use latin_hypercube_driver_module, only: latin_hypercube_2D_output
+
+    use clubb_precision, only: &
+      time_precision, & ! Constant
+      core_rknd
+
+    implicit none
+
+    ! Input Variables
+    character(len=*), intent(in) :: &
+      fname_prefix, & ! Prefix for file name
+      fdir            ! Directory for output
+
+    real(kind=core_rknd), intent(in) :: &
+      stats_tout    ! Frequency to write to disk        [s]
+
+    real(kind=time_precision), intent(in) :: &
+      time_initial  ! Initial time                      [s]
+
+    integer, intent(in) :: &
+      nz ! Number of vertical levels
+
+    real( kind = core_rknd ), dimension(nz), intent(in) :: &
+      stats_zt ! Altitudes [m]
+
+    integer, intent(in) :: num_samples
+
+    call latin_hypercube_2D_output &
+             ( fname_prefix, fdir, stats_tout, nz, &
+               stats_zt, time_initial, num_samples )
+
+    end subroutine latin_hypercube_2D_output_api
+
+  !================================================================================================
+  ! latin_hypercube_2D_close - Closes the SILHS 2D output files.
+  !================================================================================================
+
+  subroutine latin_hypercube_2D_close_api( )
+
+    use latin_hypercube_driver_module, only: latin_hypercube_2D_close
+
+    implicit none
+
+    call latin_hypercube_2D_close( )
+
+  end subroutine latin_hypercube_2D_close_api
 
 #endif
 

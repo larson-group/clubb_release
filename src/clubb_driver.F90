@@ -187,11 +187,11 @@ module clubb_driver
       
     use silhs_api_module, only: &
       generate_silhs_sample_api, & !----------------------------------------- Procedure(s)
-      clip_transform_silhs_output_api
+      clip_transform_silhs_output_api, &
+      latin_hypercube_2D_output_api
 
     use latin_hypercube_driver_module, only: &
-      stats_accumulate_lh, &
-      latin_hypercube_2D_output
+      stats_accumulate_lh
 
     use latin_hypercube_arrays, only: &
       cleanup_latin_hypercube_arrays !-------------------------------------- Procedure(s)
@@ -1909,7 +1909,7 @@ module clubb_driver
     if ( lh_microphys_type /= lh_microphys_disabled ) then
 
       ! Setup 2D output of all subcolumns (if enabled)
-      call latin_hypercube_2D_output &
+      call latin_hypercube_2D_output_api &
            ( fname_prefix, fdir, stats_tout, gr%nz, &
              gr%zt, time_initial, lh_num_samples )
 
@@ -3840,8 +3840,8 @@ module clubb_driver
         lh_microphys_type,     & !------------------------ Variable(s)
         lh_microphys_disabled
 
-    use latin_hypercube_driver_module, only: &
-        latin_hypercube_2D_close
+    use silhs_api_module, only: &
+        latin_hypercube_2D_close_api
 
     use latin_hypercube_arrays, only: &
         cleanup_latin_hypercube_arrays !------------------ Procedure(s)
@@ -3902,7 +3902,7 @@ module clubb_driver
 
 #ifdef SILHS
     if ( lh_microphys_type /= lh_microphys_disabled ) then
-      call latin_hypercube_2D_close( )
+      call latin_hypercube_2D_close_api( )
       call cleanup_latin_hypercube_arrays( )
     end if
 #endif
