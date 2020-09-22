@@ -87,9 +87,9 @@ POW_LIMS = (-2,3)
 BUDGET_XAXIS_SCALE_FACTOR = 1.1 # THIS VALUE MUST BE >= 1 !
 
 # Image output configuration
-HQ_DPI = 100 # This value overwrites the default JPG_OUTPUT_DPI when --high-quality is passed in via command line
-JPG_OUTPUT_DPI = 45 # Recommended default value: 45
-FIGSIZE = (10,6) # The x,y proportions to pass into matplotlib
+HQ_DPI = 100 # This value overwrites the default IMG_OUTPUT_DPI when --high-quality is passed in via command line
+IMG_OUTPUT_DPI = 45 # Recommended default value: 45
+FIGSIZE = (10,6) # The x,y proportions (in inches) to pass into matplotlib. It's not recommended to change this.
 
 # Time-height plot settings
 # An overview of all colormaps available in matplotlib can be found here:

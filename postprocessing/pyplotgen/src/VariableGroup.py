@@ -52,7 +52,6 @@ class VariableGroup:
         """
         self.variables = []
         self.panels = []
-        # TODO: Figure out better way to pass the correct panel type into functions
         self.default_panel_type = Panel.TYPE_PROFILE
         self.clubb_datasets = clubb_datasets
         self.case = case

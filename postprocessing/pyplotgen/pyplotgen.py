@@ -16,9 +16,12 @@ import shutil
 import subprocess
 import time
 from datetime import datetime
+from difflib import SequenceMatcher
 from multiprocessing import Pool
 from multiprocessing import freeze_support
 from warnings import warn
+
+import pdfkit as pdfkit
 
 from config import Case_definitions, Style_definitions
 from python_html_gallery import gallery
@@ -41,7 +44,8 @@ class PyPlotGen:
                  benchmark_only=False, nightly=False, zip=False, thin=False, no_legends=False, ensemble=False,
                  plot_e3sm="", sam_folders=[""], wrf_folders=[""], cam_folders=[""],
                  budget_moments=False, bu_morr=False, diff=None, show_alphabetic_id=False,
-                 time_height=False, animation=None, disable_multithreading=False):
+                 time_height=False, animation=None, disable_multithreading=False, pdf=False,
+                          pdf_filesize_limit=None):
         """
         This creates an instance of PyPlotGen. Each parameter is a command line parameter passed in from the argparser
         below.
@@ -115,6 +119,8 @@ class PyPlotGen:
         self.time_height = time_height
         self.animation = animation
         self.multithreaded = not disable_multithreading
+        self.pdf = pdf
+        self.pdf_filesize_limit =pdf_filesize_limit
 
         if os.path.isdir(self.output_folder) and self.replace_images == False:
             current_date_time = datetime.now()
@@ -127,7 +133,7 @@ class PyPlotGen:
         """
         Main driver of the pyplotgen program executing the following steps:
         - Download benchmark files if needed
-        - Loop through cases listed in Case_definitions.ALL_CASES
+        - Loop through cases listed in Case_definitions.CASES_TO_PLOT
         - Create instances of these cases
         - Call plot function on the instances
         - Create output folder
@@ -135,12 +141,11 @@ class PyPlotGen:
         
         :return: None
         """
-        self.start_time = time.time()
         self.diff_datasets = None
         # Load data used for difference plots
         if self.diff is not None:
             self.diff_datasets = self.diff_files_data_reader.loadFolder(self.diff)
-        all_cases = Case_definitions.ALL_CASES
+        all_enabled_cases = Case_definitions.CASES_TO_PLOT
 
         # Downloads model output (sam, les, clubb) if it doesn't exist
         if self.__benchmarkFilesNeeded__():
@@ -154,16 +159,16 @@ class PyPlotGen:
             # TODO: Use for Windows
             # shutil.rmtree(self.output_folder)
         self.num_cases_plotted = 0
-        # Loop through cases listed in Case_definitions.ALL_CASES
-        # for case_def in all_cases:
+        # Loop through cases listed in Case_definitions.CASES_TO_PLOT
+        # for case_def in all_enabled_cases:
         cases_plotted = []
         if self.multithreaded:
             freeze_support() # Required for multithreading
             n_processors = multiprocessing.cpu_count()
             with Pool(processes=n_processors) as pool:
-                cases_plotted = pool.map(self.__plotCase__, all_cases)
+                cases_plotted = pool.map(self.__plotCase__, all_enabled_cases)
         else:
-            for case_def in all_cases:
+            for case_def in all_enabled_cases:
                 cases_plotted.append(self.__plotCase__(case_def))
         print('###########################################')
 
@@ -171,15 +176,15 @@ class PyPlotGen:
 
         if self.num_cases_plotted == 0:
             all_cases_casenames = []
-            for case in Case_definitions.ALL_CASES:
+            for case in Case_definitions.CASES_TO_PLOT:
                 all_cases_casenames.append(case["name"])
 
             warn(
                 "Warning, no cases were plotted! Please either specify an input folder for a supported model "
                 "(e.g. using --sam, --clubb, --e3sm, --wrf, --cam). \nMake sure the "
-                "default clubb output folder contains .nc output, and check that the ALL_CASES variable in "
+                "default clubb output folder contains .nc output, and check that the CASES_TO_PLOT variable in "
                 "config/Case_Defintions.py lists all of the cases you expected to plot.\n"
-                "ALL_CASES = " + str(all_cases_casenames) +
+                "CASES_TO_PLOT = " + str(all_cases_casenames) +
                 "\nPlease run ./pyplotgen.py -h for more information on parameters.")
         print("\nGenerating webpage for viewing plots ")
 
@@ -193,8 +198,91 @@ class PyPlotGen:
         gallery.main(self.output_folder, multithreaded=False)
         print('###########################################')
         print("Output can be viewed at file://" + self.output_folder + "/index.html with a web browser")
-        total_runtime = round(time.time() - self.start_time)
-        print("Pyplotgen ran in: ", total_runtime, " seconds.")
+
+    def __printToPDF__(self):
+        """
+        If --pdf was specified, this prints a pdf. Otherwise, this does nothing.
+        If --pdf and --pdf-filesize-limit were specified, this will loop over the run() method, reducing image size on
+        each loop, until a pdf is output less than or equal to the specified target pdf filesize.
+
+        :return: None
+        """
+        html_input_filename = self.output_folder+'/plots.html'
+        pdf_output_filename = self.output_folder + '/pyplotgen_output.pdf'
+        if self.pdf and self.pdf_filesize_limit is None:
+            print('###########################################')
+            print('Generating PDF file ' + pdf_output_filename)
+            # config = pdfkit.configuration(wkhtmltopdf='/usr/bin/')
+            pdfkit.from_file(html_input_filename, pdf_output_filename)
+            print("PDF Output can be viewed at file://" + pdf_output_filename + " with a web browser/ pdf viewer")
+            print('###########################################')
+        if self.pdf_filesize_limit is not None:
+            output_dpi = Style_definitions.IMG_OUTPUT_DPI
+            pdf_too_large = True
+            filesize_impossible = False
+            print('###########################################')
+            print('Generating PDF file ' + pdf_output_filename)
+            print('Searching for minimum viable DPI for output images to print within '
+                  + str(self.pdf_filesize_limit) + 'MB')
+            while pdf_too_large and not filesize_impossible:
+                Style_definitions.IMG_OUTPUT_DPI = output_dpi
+                bytes_to_mb = 1/1000000
+                try:
+                    pdfkit.from_file(html_input_filename, pdf_output_filename)
+                except OSError as e:
+                    warn("\nWhile attempting to print pyplotgen output to a pdf, a fatal error was encountered. Please "
+                         "make sure you have installed wkhtmltopdf on your machine (not included with pip), e.g. by "
+                         "using `sudo apt install wkhtmltopdf`. For more information see here: "
+                         "https://github.com/JazzCore/python-pdfkit/wiki/Installing-wkhtmltopdf\n"
+                         "If you have already installed wkhtmltopdf and still encountered this error, it may be because"
+                         " you tried running from either an IDE (e.g. pycharm) or using an init.d script. "
+                         "There is currently a bug in PDFKit that doesn't allow pdf's to be created in this manner. "
+                         "For more information on this bug, see here: "
+                         "https://github.com/JazzCore/python-pdfkit/issues/170. \n"
+                         "As a temporary work around, try running the same command via command line.")
+                    raise(e)
+                pdf_filesize = os.path.getsize(pdf_output_filename) * bytes_to_mb
+                if pdf_filesize < self.pdf_filesize_limit:
+                    pdf_too_large = False
+                    print("PDF generated using a dpi of ", output_dpi, " with a filesize of ", pdf_filesize, "MB.")
+                    print("PDF output can be found at: file://"+pdf_output_filename)
+                else:
+                    # Decrease dpi by 10%, or 1, which ever's larger
+                    output_dpi = self.__getDecreasedDpiValue__(output_dpi, pdf_filesize)
+                    print("Attempting to print pdf with dpi of ", Style_definitions.IMG_OUTPUT_DPI)
+                    print("Attempted to print but the file was too large (", pdf_filesize, "MB insead of <",
+                          self.pdf_filesize_limit, "MB). Reducing DPI and trying again.")
+                    self.run()
+                if output_dpi <= 1:
+                    print("There is no possible dpi that fits within ", self.pdf_filesize_limit,
+                          "MB. The closest pdf is linked above.")
+                    filesize_impossible = True
+
+    def __getDecreasedDpiValue__(self, previous_dpi, previous_filesize):
+        """
+        When printing files to PDF, dpi lowering the dpi is useful for fitting the pdf's filesize under a certain value.
+        This method returns a suggested dpi value to print the pdf to that's more likely to fit within a given filesize.
+        Note, it is not guranteed that this function will return a dpi that DOES fit within a certain file size. This
+        function is intended to be used multiple times throughout a loop as it gets closer to an optimal dpi.
+        This function takes an incremental methodology to approaching an optimal dpi.
+
+        Since the relationship between dpi and pdf filesize is mostly linear, the algorithm used to calculate the next
+        recommended dpi is:    previous_dpi - (previous_filesize / self.pdf_filesize_limit)
+        An optional step_multiplier can be modified in the code to increase or decrease the strength of the dpi change.
+
+
+        :param previous_dpi: A dpi value that was larger than desired. The dpi value returend will be less than this one
+        :param previous_filesize: The filesize of the pdf generated by the previous_dpi
+        :return: A recommended dpi value that is closer to an optimal dpi value for the target filesize
+        """
+        # Values >1 make run faster, but may not find the best dpi, values <1 are slower but are more likely to find the
+        # best dpi. Default value: 1
+        step_multiplier = 1
+        filesize_ratio = previous_filesize / self.pdf_filesize_limit
+        dpi_reduction_amount = max(filesize_ratio * step_multiplier, 1)
+        print("Filesize ratio:", filesize_ratio)
+        new_dpi = round(previous_dpi - dpi_reduction_amount)
+        return new_dpi
 
     def __extractNumCasesPlotted__(self, plotCaseDataArray):
         """
@@ -360,6 +448,39 @@ class PyPlotGen:
             print("Benchmark output found in " + Case_definitions.BENCHMARK_OUTPUT_ROOT)
 
 
+def __convertCasenamesToCaseInstances__(casenames_list):
+    converted_cases = []
+    cases_not_found = []
+    for casename in casenames_list:
+        case_found = False
+        for case_def in Case_definitions.ALL_CASES:
+            if case_def['name'] == casename:
+                case_found = True
+                converted_cases.append(case_def)
+                break
+        if not case_found:
+            cases_not_found.append(casename)
+
+    return converted_cases, cases_not_found
+
+def __getSimilarCasenames__(invalid_casenames):
+    valid_casenames = []
+    suggested_casenames = []
+    for case_def in Case_definitions.ALL_CASES:
+        valid_casenames.append(case_def['name'])
+    for invalid_casename in invalid_casenames:
+        best_probability = 0
+        best_name_match = "unknown"
+        for valid_casename in valid_casenames:
+            test_probability = SequenceMatcher(None, invalid_casename, valid_casename).ratio()
+            if test_probability > best_probability:
+                best_probability = test_probability
+                best_name_match = valid_casename
+        suggested_casenames.append(best_name_match)
+
+    return suggested_casenames
+
+
 def __trimTrailingSlash__(args):
     """
     Takes in a list filepaths and removes any trailing /'s
@@ -449,8 +570,27 @@ def __processArguments__():
                         action="store_true")
     parser.add_argument("--svg",
                         help="Outputs images to a lossless vector-graphics format .svg  instead of a rasterized image "
-                             "like png.",
+                             "like png. Note that some browsers may have difficulty displaying this format.",
                         action="store_true")
+    parser.add_argument("--eps",
+                        help="Outputs images to Encapsulated PostScript eps  instead of a rasterized image "
+                             "like png. Note that some browsers may have difficulty displaying this format.",
+                        action="store_true")
+    parser.add_argument("--pdf",
+                        help="In addition to pyplotgen's regular output, this also generates a pdf file from the "
+                             "plots.html output. Note that this argument depends on wkhtmltopdf. To install wkhtmltopdf"
+                             " please visit this page: "
+                             "https://github.com/JazzCore/python-pdfkit/wiki/Installing-wkhtmltopdf",
+                        action="store_true")
+    parser.add_argument("--pdf-filesize-limit", help="Adjust pdf filesize so that it is no larger than the given size "
+                                                     "in MB. Note that this argument only works if --pdf is also "
+                                                     "specified",
+                        action="store", type=int)
+    parser.add_argument("--cases", help="A set of case name(s) to be ran. Cases not listed here will not be ran. The "
+                                        "casename specified must match the 'name' parameter of the case's definition "
+                                        "Case_definitions.py. E.g. --cases bomex arm wangara",
+                        action="store",
+                        default=[], nargs='+')
     args = parser.parse_args()
 
     if args.zip:
@@ -484,11 +624,23 @@ def __processArguments__():
     if args.svg:
         Panel.EXTENSION = ".svg"
 
+    if args.eps:
+        Panel.EXTENSION = ".eps"
+
     if args.high_quality:
-        Style_definitions.JPG_OUTPUT_DPI = Style_definitions.HQ_DPI
+        Style_definitions.IMG_OUTPUT_DPI = Style_definitions.HQ_DPI
 
     if args.time_height_plots and args.movies is not None:
         raise ValueError('Error: Command line parameter -t and -m cannot be used in conjunction.')
+
+    if len(args.cases) > 0:
+        cases_to_plot, cases_not_found = __convertCasenamesToCaseInstances__(args.cases)
+        Case_definitions.CASES_TO_PLOT = cases_to_plot
+        suggested_casenames = __getSimilarCasenames__(cases_not_found)
+        if len(cases_not_found) > 0:
+            raise NameError("Error. The following cases could not be found in Case_definitions.py: " +
+                            str(cases_not_found) + ".\n"
+                            "Perhaps you meant " + str(suggested_casenames) + "?")
 
     # Call __init__ function of PyPlotGen class defined above and store an instance of that class in pyplotgen
     pyplotgen = PyPlotGen(args.output, clubb_folders=args.clubb, replace=args.replace, les=les, plot_e3sm=args.e3sm,
@@ -498,10 +650,15 @@ def __processArguments__():
                           no_legends=args.no_legends, budget_moments=args.plot_budgets,
                           bu_morr=args.bu_morr, diff=args.diff, show_alphabetic_id=args.show_alphabetic_id,
                           time_height=args.time_height_plots, animation=args.movies,
-                          disable_multithreading = args.disable_multithreading)
+                          disable_multithreading = args.disable_multithreading, pdf=args.pdf,
+                          pdf_filesize_limit=args.pdf_filesize_limit)
     return pyplotgen
 
 
 if __name__ == "__main__":
     pyplotgen = __processArguments__()
+    start_time = time.time()
     pyplotgen.run()
+    pyplotgen.__printToPDF__()
+    total_runtime = round(time.time() - start_time)
+    print("Pyplotgen ran in: ", total_runtime, " seconds.")

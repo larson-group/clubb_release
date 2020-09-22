@@ -16,6 +16,7 @@ header = ("""<!doctype html>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style type="text/css">
     body {
+      background-color: white;
       font-family: "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
       margin: 0;
       padding: 0;

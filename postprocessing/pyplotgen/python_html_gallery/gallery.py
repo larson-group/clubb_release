@@ -98,20 +98,20 @@ def get_start_end_minutes(casename):
     """
     Get the start and end time minutes for a case
     as defined in Case_definitions.py
-    :param casename: Name of the case as defined by the 'name' parameter of it's entry in ALL_CASES in Case_definitions.py
+    :param casename: Name of the case as defined by the 'name' parameter of it's entry in CASES_TO_PLOT in Case_definitions.py
     :return: tuple of the order (start_time,end_time)
     """
-    for case in Case_definitions.ALL_CASES:
+    for case in Case_definitions.CASES_TO_PLOT:
         if case['name'] == casename:
             return case['start_time'], case['end_time']
 
 def get_description(casename):
     """
     Get the description from the case definintion
-    :param casename: Name of the case as defined by the 'name' parameter of it's entry in ALL_CASES in Case_definitions.py
+    :param casename: Name of the case as defined by the 'name' parameter of it's entry in CASES_TO_PLOT in Case_definitions.py
     :return: The case's description text
     """
-    for case in Case_definitions.ALL_CASES:
+    for case in Case_definitions.CASES_TO_PLOT:
         if case['name'] == casename:
             return case['description']
 

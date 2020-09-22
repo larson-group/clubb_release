@@ -34,7 +34,7 @@ using python dictionaries (values surrounded with < > must have the < > removed 
         'var_groups': [VariableGroupBase, <other variable groups to plot>]}
 
 **Important note**:
-When creating a new case, add it to the ALL_CASES list at the bottom of the file. Additionally, please add it in
+When creating a new case, add it to the CASES_TO_PLOT list at the bottom of the file. Additionally, please add it in
 alphabetical order.
 
 **Case Definition values explained**:
@@ -108,13 +108,13 @@ TIME_VAR_NAMES = ['time', 'XTIME']
 To plot only a subset of cases, reguardless of what output exists
 in the clubb folder, uncomment the last line of this file and
 fill that array with the cases you'd like to plot. This overwrites the
-ALL_CASES variable such that pyplotgen will only know about cases in that
+CASES_TO_PLOT variable such that pyplotgen will only know about cases in that
 list and ignore all others. The name must match the python variable name
 below (all caps).
 
 For example, to plot only bomex and fire:
 
-ALL_CASES = [BOMEX, FIRE]
+CASES_TO_PLOT = [BOMEX, FIRE]
 """
 
 ARM = {'name': 'arm',
@@ -894,22 +894,23 @@ WANGARA = {'name': 'wangara',
 # DO NOT EDIT THIS LIST UNLESS YOU ARE ADDING A NEW CASE. NEVER REMOVE CASES FROM THIS LIST.
 # You may define a subset of cases at the end of this file.
 ALL_CASES = [ARM, ARM_97, ASTEX_A209, ATEX,
-             BOMEX,
-             CGILS_S6, CGILS_S11, CGILS_S12, CLEX9_NOV02, CLEX9_OCT14,
-             DYCOMS2_RF01, DYCOMS2_RF01_FIXED_SST, DYCOMS2_RF02_DO, DYCOMS2_RF02_DS, DYCOMS2_RF02_DS_RESTART,
-             DYCOMS2_RF02_ND, DYCOMS2_RF02_SO,
-             FIRE,
-             GABLS2, GABLS2_NIGHTLY, GABLS3, GABLS3_NIGHT, GATE_SHEAR_RLSF,
-             # IOP,
-             JUN25_ALTOCU,
-             LBA,
-             MC3E, MPACE_A, MPACE_B, MPACE_B_SILHS,
-             NOV11_ALTOCU,
-             RICO, RICO_SILHS,
-             TWP_ICE,
-             WANGARA
-             ]
+                 BOMEX,
+                 CGILS_S6, CGILS_S11, CGILS_S12, CLEX9_NOV02, CLEX9_OCT14,
+                 DYCOMS2_RF01, DYCOMS2_RF01_FIXED_SST, DYCOMS2_RF02_DO, DYCOMS2_RF02_DS, DYCOMS2_RF02_DS_RESTART,
+                 DYCOMS2_RF02_ND, DYCOMS2_RF02_SO,
+                 FIRE,
+                 GABLS2, GABLS2_NIGHTLY, GABLS3, GABLS3_NIGHT, GATE_SHEAR_RLSF,
+                 # IOP,
+                 JUN25_ALTOCU,
+                 LBA,
+                 MC3E, MPACE_A, MPACE_B, MPACE_B_SILHS,
+                 NOV11_ALTOCU,
+                 RICO, RICO_SILHS,
+                 TWP_ICE,
+                 WANGARA
+                 ]
 
-# If uncommented, this line will override the real ALL_CASES given above, forcing pyplotgen to only plot some cases.
-# ALL_CASES = [ARM]
-# ALL_CASES = ALL_CASES[:7]
+CASES_TO_PLOT = ALL_CASES
+# If uncommented, this line will override the real CASES_TO_PLOT given above, forcing pyplotgen to only plot some cases.
+# CASES_TO_PLOT = [ARM]
+# CASES_TO_PLOT = CASES_TO_PLOT[:3]

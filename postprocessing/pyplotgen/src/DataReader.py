@@ -631,7 +631,7 @@ class DataReader():
                              varname)
 
         # TODO this model detection method is old and can no longer be trusted
-        src_model = self.getNcdfSourceModel(ncdf_data)
+        src_model = self.guessNcdfSourceModel(ncdf_data)
         if src_model == 'unknown-model':
             warn("Warning, unknown model detected. PyPlotgen doesn't know where this netcdf dependent_data is from. "
                  + str(ncdf_data))
@@ -742,7 +742,7 @@ class DataReader():
 
         return start_idx, end_idx
 
-    def getNcdfSourceModel(self, ncdf_dataset):
+    def guessNcdfSourceModel(self, ncdf_dataset):
         """
         Guesses the model that outputted a given ncdf file. Currently does this by investigating which type of
         elevation is outputted (e.g. altitude, z, lev). If there is not elevation parameter found, and the filename

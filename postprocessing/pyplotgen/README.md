@@ -25,6 +25,7 @@ Pyplotgen only supports input in the netcdf (.nc) format.
 | --disable-multithreading | Turns off multithreading support. Useful for debugging as it ensures text is printed sequentially. |
 | --hq --high-quality | Outputs higher resolution images. The dpi used for hi resolution images can be customized in Style_definitions.py |
 | --svg | Output images to .svg lossless format instead of .png |
+| --eps | Output images to .eps format instead of .png |
 
 ## Installing Dependencies
 To install the dependencies necessary for PyPlotgen to run, run the command
@@ -67,8 +68,8 @@ ALL_CASES = [ARM, ARM_97, ASTEX_A209, ATEX,
              WANGARA
              ]
 
-# If uncommented, this line will override the real ALL_CASES given above, forcing pyplotgen to only plot some cases.
-# ALL_CASES = [BOMEX]
+# If uncommented, this line will override the real CASES_TO_PLOT given above, forcing pyplotgen to only plot some cases.
+# CASES_TO_PLOT = [BOMEX]
 ~~~~
 
 If someone wanted to plot _just_ the bomex case, even if other cases are in the same input folder, they can uncomment the last line to do so.
@@ -90,7 +91,7 @@ ALL_CASES = [ARM, ARM_97, ASTEX_A209, ATEX,
              WANGARA
              ]
 
-# If uncommented, this line will override the real ALL_CASES given above, forcing pyplotgen to only plot some cases.
+# If uncommented, this line will override the real CASES_TO_PLOT given above, forcing pyplotgen to only plot some cases.
 ALL_CASES = [BOMEX]
 ~~~~
 `BOMEX` can be replaced with the name of any valid case, so long as it is one of the variables defined within this file. For example, to plot the fire and wangara case, one would do

@@ -19,7 +19,7 @@ class CaseGallerySetup:
     panels that share attributes like start/end time and get plotted together.
     This is a generic class used by Case_Definitions.py to provide functionality.
     In order to create a new case, please add the case's definition to Case_Definitions.py (don't forget to add the
-    definition to the list ALL_CASES = [...] at the bottom of the Case_Definitions.py file).
+    definition to the list CASES_TO_PLOT = [...] at the bottom of the Case_Definitions.py file).
 
     For information on the input parameters of this class, please see the documentation for the
     ``__init__()`` method.

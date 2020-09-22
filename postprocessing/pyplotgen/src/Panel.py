@@ -255,7 +255,7 @@ class Panel:
         rel_filename = clean_path(rel_filename)
         # Save image file
         if replace_images is True or not os.path.isfile(rel_filename+EXTENSION):
-            plt.savefig(rel_filename+EXTENSION, dpi=Style_definitions.JPG_OUTPUT_DPI)
+            plt.savefig(rel_filename + EXTENSION, dpi=Style_definitions.IMG_OUTPUT_DPI)
         else: # os.path.isfile(rel_filename + Panel.EXTENSION) and replace_images is False:
             print("\n\tImage " + rel_filename+EXTENSION+
                   ' already exists. To overwrite this image during runtime pass in the --replace (-r) parameter.')
@@ -304,7 +304,7 @@ class Panel:
             label = var.label
 
             # Set graph size
-            plt.figure(figsize=(10,6), dpi=Style_definitions.JPG_OUTPUT_DPI)
+            plt.figure(figsize=(10,6), dpi=Style_definitions.IMG_OUTPUT_DPI)
 
             # Prevent x-axis label from getting cut off
             # plt.gcf().subplots_adjust(bottom=0.15)
@@ -339,10 +339,10 @@ class Panel:
             # Concatenate with output foldername
             relative_filename = output_folder + '/' + casename + '/' + filename
             relative_filename = clean_path(relative_filename)
-            plt.figure(dpi=Style_definitions.JPG_OUTPUT_DPI)
+            plt.figure(dpi=Style_definitions.IMG_OUTPUT_DPI)
             # Save image file
             if replace_images is True or not os.path.isfile(relative_filename+Panel.EXTENSION):
-                plt.savefig(relative_filename+Panel.EXTENSION, dpi=Style_definitions.JPG_OUTPUT_DPI)
+                plt.savefig(relative_filename + Panel.EXTENSION, dpi=Style_definitions.IMG_OUTPUT_DPI)
             else: # os.path.isfile(relative_filename + Panel.EXTENSION) and replace_images is False:
                 print("\n\tImage " + relative_filename+Panel.EXTENSION+
                       ' already exists. To overwrite this image during runtime pass in the --replace (-r) parameter.')
