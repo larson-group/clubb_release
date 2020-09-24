@@ -13,6 +13,7 @@
 NIGHTLY=false
 SHORT_CASES=false
 PRIORITY_CASES=false
+MIN_CASES=false
 
 OUTPUT_DIR=$nightlyOut
 
@@ -30,7 +31,7 @@ OPTIONS=$*
 # Note that we use `"$@"' to let each command-line parameter expand to a
 # separate word. The quotes around `$@' are essential!
 # We need TEMP as the `eval set --' would nuke the return value of getopt.
-TEMP=`getopt -o :nhci --long nightly,help,short-cases,priority-cases -n 'run_scm_all.bash' -- "$@"`
+TEMP=`getopt -o :nhcij --long nightly,help,short-cases,priority-cases,min-cases -n 'run_scm_all.bash' -- "$@"`
 
 # Note the quotes around `$TEMP': they are essential!
 eval set -- "$TEMP"
@@ -45,6 +46,7 @@ while true ; do
             echo -e "\t-n, --nightly\t\t\tRun in nightly mode"
             echo -e "\t-c, --short-cases\t\tRun short cases. This will omit\n\t\tthe gabls2, cloud_feedback_s6, cloud_feedback_s11,\n\t\tcloud_feedback_s12, and twp_ice cases"
             echo -e "\t-i, --priority-cases\t\tRun priority cases. This will include\n\t\tonly the following cases if they are in RUN_CASES: arm, atex,\n\t\tbomex, dycoms2_rf01, dycoms2_rf01_fixed_sst, dycoms2_rf02_ds,\n\t\tdycoms2_rf02_nd, mpace_b, rico, wangara, arm_97,\n\t\tcloud_feedback_s6, cloud_feedback_s11, cloud_feedback_s12,\n\t\tgabls3_night, lba, and twp_ice."
+            echo -e "\t-j, --min-cases\t\t\tRun a minimal set of cases (e.g. to\n\t\teconomize on output). This will include only the following\n\t\tcases if they are in RUN_CASES: arm, atex, bomex, dycoms2_rf01,\n\t\tdycoms2_rf02_ds, rico, wangara, arm_97, gabls3_night, lba,\n\t\tand twp_ice."
             echo -e "\t-h, --help\t\t\tPrints this help message"
 
             # Since the options for run_scm.bash are also valid, print those too:
@@ -57,6 +59,9 @@ while true ; do
       shift ;;
   -i|--priority-cases) # Include only priority cases to filter unneeded data
       PRIORITY_CASES=true
+      shift ;;
+  -j|--min-cases) # A subset of priority cases
+      MIN_CASES=true
       shift ;;
   --) shift ; break ;;
   *) echo "Something bad happened!" ; exit 1 ;;
@@ -151,6 +156,44 @@ elif [ $PRIORITY_CASES == true ] ; then
         fi
       fi
     done < "RUN_CASES"
+elif [ $MIN_CASES == true ] ; then
+    OPTIONS=${OPTIONS#-j}
+    OPTIONS=${OPTIONS#--min-cases}
+    MIN_CASES=true
+   
+    declare -a MIN_CASE_ARRAY
+
+    MIN_CASE_ARRAY[0]="arm"
+    MIN_CASE_ARRAY[1]="atex"
+    MIN_CASE_ARRAY[2]="bomex"
+    MIN_CASE_ARRAY[3]="dycoms2_rf01"
+    MIN_CASE_ARRAY[4]="dycoms2_rf02_ds"
+    MIN_CASE_ARRAY[5]="rico"
+    MIN_CASE_ARRAY[6]="wangara"
+    MIN_CASE_ARRAY[7]="arm_97"
+    MIN_CASE_ARRAY[8]="gabls3_night"
+    MIN_CASE_ARRAY[9]="lba"
+    MIN_CASE_ARRAY[10]="twp_ice"
+
+    a=0
+    while read line
+    do  # If the line is not commented out (does not start with '!')
+      if [[ $line != !* ]] && [[ ! -z $line ]] ; then
+        # Check to see if this case should be included
+        include=0
+        for (( x=0; x<${#MIN_CASE_ARRAY[@]}; x++ )); do
+            if [ $line == ${MIN_CASE_ARRAY[$x]} ] ; then
+                include=1
+            fi
+        done
+
+        # If the case was found in MIN_CASE_ARRAY, add it to the run cases.
+        if [ $include == 1 ]; then
+          RUN_CASE[$a]=$line
+          a=$(($a+1));
+        fi
+      fi
+    done < "RUN_CASES"
 else # Populate the RUN_CASE array normally
     a=0
     while read line
@@ -190,6 +233,8 @@ elif [ $SHORT_CASES == true ] ; then
     echo -e "\nPerforming short-cases run\n"
 elif [ $PRIORITY_CASES == true ] ; then
     echo -e "\nPerforming priority-cases run\n"
+elif [ $MIN_CASES == true ] ; then
+    echo -e "\nPerforming min-cases run\n"
 else
     echo -e "\nPerforming standard run\n"
 fi

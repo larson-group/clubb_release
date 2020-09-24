@@ -30,9 +30,14 @@ run_scm_all.bash:
   gabls2, cloud_feedback_s6, cloud_feedback_s11, cloud_feedback_s12, and twp_ice cases.
 
   You can specify to run the priority cases using --priority-cases (or -i). This will include
-  only the following cases if they are in RUN_CASES: arm, atex,bomex, dycoms2_rf01, 
+  only the following cases if they are in RUN_CASES: arm, atex, bomex, dycoms2_rf01,
   dycoms2_rf01_fixed_sst, dycoms2_rf02_ds,dycoms2_rf02_nd, mpace_b, rico, wangara, arm_97,
   cloud_feedback_s6, cloud_feedback_s11, cloud_feedback_s12, gabls3_night, lba, and twp_ice.
+
+  You can opt to run a minimal set of cases (e.g. for the purpose of minimizing output
+  size) using --min-cases (or -j). This will include only the following cases if they are
+  in RUN_CASES: arm, atex, bomex, dycoms2_rf01, dycoms2_rf02_ds, rico, wangara, arm_97,
+  gabls3_night, lba, and twp_ice.
 
   You can specify a manual grid for the runs. This is done
   with the command line options --zt_grid (or -z) and --zm_grid (or -m).
