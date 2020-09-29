@@ -20,7 +20,7 @@ module stats_clubb_utilities
                          stats_fmt_in, stats_tsamp_in, stats_tout_in, fnamelist, &
                          nzmax, nlon, nlat, gzt, gzm, nnrad_zt, &
                          grad_zt, nnrad_zm, grad_zm, day, month, year, &
-                         rlon, rlat, time_current, delt, l_silhs_out_in )
+                         lon_vals, lat_vals, time_current, delt, l_silhs_out_in )
     !
     ! Description:
     !   Initializes the statistics saving functionality of the CLUBB model.
@@ -196,10 +196,10 @@ module stats_clubb_utilities
     integer, intent(in) :: day, month, year  ! Time of year
 
     real( kind = core_rknd ), dimension(nlon), intent(in) ::  & 
-      rlon  ! Longitude(s) [Degrees E]
+      lon_vals  ! Longitude values [Degrees E]
 
     real( kind = core_rknd ), dimension(nlat), intent(in) ::  & 
-      rlat  ! Latitude(s)  [Degrees N]
+      lat_vals  ! Latitude values  [Degrees N]
 
     real( kind = time_precision ), intent(in) ::  & 
       time_current ! Model time                         [s]
@@ -720,7 +720,7 @@ module stats_clubb_utilities
     call stats_zero( stats_zt%ii, stats_zt%jj, stats_zt%kk, stats_zt%num_output_fields, &
       stats_zt%accum_field_values, stats_zt%accum_num_samples, stats_zt%l_in_update )
 
-    allocate( stats_zt%file%var( stats_zt%num_output_fields ) )
+    allocate( stats_zt%file%grid_avg_var( stats_zt%num_output_fields ) )
     allocate( stats_zt%file%z( stats_zt%kk ) )
 
     ! Allocate scratch space
@@ -776,14 +776,14 @@ module stats_clubb_utilities
       ! Open GrADS file
       call open_grads( iunit, fdir, fname,  & 
                        1, stats_zt%kk, nlat, nlon, stats_zt%z, & 
-                       day, month, year, rlat, rlon, & 
+                       day, month, year, lat_vals, lon_vals, & 
                        time_current+real(stats_tout,kind=time_precision), stats_tout, & 
                        stats_zt%num_output_fields, stats_zt%file )
 
     else ! Open NetCDF file
 #ifdef NETCDF
       call open_netcdf_for_writing( nlat, nlon, fdir, fname, 1, stats_zt%kk, stats_zt%z, &  ! In
-                        day, month, year, rlat, rlon, &  ! In
+                        day, month, year, lat_vals, lon_vals, &  ! In
                         time_current, stats_tout, stats_zt%num_output_fields, &  ! In
                         stats_zt%file ) ! InOut
 
@@ -858,7 +858,7 @@ module stats_clubb_utilities
         stats_lh_zt%num_output_fields, &
         stats_lh_zt%accum_field_values, stats_lh_zt%accum_num_samples, stats_lh_zt%l_in_update )
 
-      allocate( stats_lh_zt%file%var( stats_lh_zt%num_output_fields ) )
+      allocate( stats_lh_zt%file%grid_avg_var( stats_lh_zt%num_output_fields ) )
       allocate( stats_lh_zt%file%z( stats_lh_zt%kk ) )
 
 
@@ -869,14 +869,14 @@ module stats_clubb_utilities
         ! Open GrADS file
         call open_grads( iunit, fdir, fname,  & 
                          1, stats_lh_zt%kk, nlat, nlon, stats_lh_zt%z, & 
-                         day, month, year, rlat, rlon, & 
+                         day, month, year, lat_vals, lon_vals, & 
                          time_current+real(stats_tout,kind=time_precision), stats_tout, & 
                          stats_lh_zt%num_output_fields, stats_lh_zt%file )
 
       else ! Open NetCDF file
 #ifdef NETCDF
         call open_netcdf_for_writing( nlat, nlon, fdir, fname, 1, stats_lh_zt%kk, &  ! In
-                          stats_lh_zt%z, day, month, year, rlat, rlon, &  ! In
+                          stats_lh_zt%z, day, month, year, lat_vals, lon_vals, &  ! In
                           time_current, stats_tout, stats_lh_zt%num_output_fields, &  ! In
                           stats_lh_zt%file ) ! InOut
 
@@ -927,7 +927,7 @@ module stats_clubb_utilities
           stats_lh_sfc%num_output_fields, stats_lh_sfc%accum_field_values, &
           stats_lh_sfc%accum_num_samples, stats_lh_sfc%l_in_update )
 
-      allocate( stats_lh_sfc%file%var( stats_lh_sfc%num_output_fields ) )
+      allocate( stats_lh_sfc%file%grid_avg_var( stats_lh_sfc%num_output_fields ) )
       allocate( stats_lh_sfc%file%z( stats_lh_sfc%kk ) )
 
       fname = trim( fname_lh_sfc )
@@ -937,14 +937,14 @@ module stats_clubb_utilities
         ! Open GrADS file
         call open_grads( iunit, fdir, fname,  & 
                          1, stats_lh_sfc%kk, nlat, nlon, stats_lh_sfc%z, & 
-                         day, month, year, rlat, rlon, & 
+                         day, month, year, lat_vals, lon_vals, & 
                          time_current+real(stats_tout,kind=time_precision), stats_tout, & 
                          stats_lh_sfc%num_output_fields, stats_lh_sfc%file )
 
       else ! Open NetCDF file
 #ifdef NETCDF
         call open_netcdf_for_writing( nlat, nlon, fdir, fname, 1, stats_lh_sfc%kk, &  ! In
-                          stats_lh_sfc%z, day, month, year, rlat, rlon, &  ! In
+                          stats_lh_sfc%z, day, month, year, lat_vals, lon_vals, &  ! In
                           time_current, stats_tout, stats_lh_sfc%num_output_fields, &  ! In
                           stats_lh_sfc%file ) ! InOut
 
@@ -1148,7 +1148,7 @@ module stats_clubb_utilities
     call stats_zero( stats_zm%ii, stats_zm%jj, stats_zm%kk, stats_zm%num_output_fields, &
       stats_zm%accum_field_values, stats_zm%accum_num_samples, stats_zm%l_in_update )
 
-    allocate( stats_zm%file%var( stats_zm%num_output_fields ) )
+    allocate( stats_zm%file%grid_avg_var( stats_zm%num_output_fields ) )
     allocate( stats_zm%file%z( stats_zm%kk ) )
 
     ! Allocate scratch space
@@ -1197,14 +1197,14 @@ module stats_clubb_utilities
       ! Open GrADS files
       call open_grads( iunit, fdir, fname,  & 
                        1, stats_zm%kk, nlat, nlon, stats_zm%z, & 
-                       day, month, year, rlat, rlon, & 
+                       day, month, year, lat_vals, lon_vals, & 
                        time_current+real(stats_tout,kind=time_precision), stats_tout, & 
                        stats_zm%num_output_fields, stats_zm%file )
 
     else ! Open NetCDF file
 #ifdef NETCDF
       call open_netcdf_for_writing( nlat, nlon, fdir, fname, 1, stats_zm%kk, stats_zm%z, &  ! In
-                        day, month, year, rlat, rlon, &  ! In
+                        day, month, year, lat_vals, lon_vals, &  ! In
                         time_current, stats_tout, stats_zm%num_output_fields, &  ! In
                         stats_zm%file ) ! InOut
 
@@ -1257,7 +1257,7 @@ module stats_clubb_utilities
         stats_rad_zt%num_output_fields, stats_rad_zt%accum_field_values, &
                        stats_rad_zt%accum_num_samples, stats_rad_zt%l_in_update )
 
-      allocate( stats_rad_zt%file%var( stats_rad_zt%num_output_fields ) )
+      allocate( stats_rad_zt%file%grid_avg_var( stats_rad_zt%num_output_fields ) )
       allocate( stats_rad_zt%file%z( stats_rad_zt%kk ) )
 
       fname = trim( fname_rad_zt )
@@ -1266,7 +1266,7 @@ module stats_clubb_utilities
         ! Open GrADS files
         call open_grads( iunit, fdir, fname,  & 
                          1, stats_rad_zt%kk, nlat, nlon, stats_rad_zt%z, & 
-                         day, month, year, rlat, rlon, & 
+                         day, month, year, lat_vals, lon_vals, & 
                          time_current+real(stats_tout, kind=time_precision), stats_tout, & 
                          stats_rad_zt%num_output_fields, stats_rad_zt%file )
 
@@ -1274,7 +1274,7 @@ module stats_clubb_utilities
 #ifdef NETCDF
         call open_netcdf_for_writing( nlat, nlon, fdir, fname,  & 
                           1, stats_rad_zt%kk, stats_rad_zt%z, & 
-                          day, month, year, rlat, rlon, & 
+                          day, month, year, lat_vals, lon_vals, & 
                           time_current, stats_tout, & 
                           stats_rad_zt%num_output_fields, stats_rad_zt%file )
 
@@ -1326,7 +1326,7 @@ module stats_clubb_utilities
         stats_rad_zm%num_output_fields, stats_rad_zm%accum_field_values, &
         stats_rad_zm%accum_num_samples, stats_rad_zm%l_in_update )
 
-      allocate( stats_rad_zm%file%var( stats_rad_zm%num_output_fields ) )
+      allocate( stats_rad_zm%file%grid_avg_var( stats_rad_zm%num_output_fields ) )
       allocate( stats_rad_zm%file%z( stats_rad_zm%kk ) )
 
       fname = trim( fname_rad_zm )
@@ -1335,7 +1335,7 @@ module stats_clubb_utilities
         ! Open GrADS files
         call open_grads( iunit, fdir, fname,  & 
                          1, stats_rad_zm%kk, nlat, nlon, stats_rad_zm%z, & 
-                         day, month, year, rlat, rlon, & 
+                         day, month, year, lat_vals, lon_vals, & 
                          time_current+real(stats_tout,kind=time_precision), stats_tout, & 
                          stats_rad_zm%num_output_fields, stats_rad_zm%file )
 
@@ -1343,7 +1343,7 @@ module stats_clubb_utilities
 #ifdef NETCDF
         call open_netcdf_for_writing( nlat, nlon, fdir, fname,  & 
                           1, stats_rad_zm%kk, stats_rad_zm%z, & 
-                          day, month, year, rlat, rlon, & 
+                          day, month, year, lat_vals, lon_vals, & 
                           time_current, stats_tout, & 
                           stats_rad_zm%num_output_fields, stats_rad_zm%file )
 
@@ -1397,7 +1397,7 @@ module stats_clubb_utilities
     call stats_zero( stats_sfc%ii, stats_sfc%jj, stats_sfc%kk, stats_sfc%num_output_fields, &
       stats_sfc%accum_field_values, stats_sfc%accum_num_samples, stats_sfc%l_in_update )
 
-    allocate( stats_sfc%file%var( stats_sfc%num_output_fields ) )
+    allocate( stats_sfc%file%grid_avg_var( stats_sfc%num_output_fields ) )
     allocate( stats_sfc%file%z( stats_sfc%kk ) )
 
     fname = trim( fname_sfc )
@@ -1407,14 +1407,14 @@ module stats_clubb_utilities
       ! Open GrADS files
       call open_grads( iunit, fdir, fname,  & 
                        1, stats_sfc%kk, nlat, nlon, stats_sfc%z, & 
-                       day, month, year, rlat, rlon, & 
+                       day, month, year, lat_vals, lon_vals, & 
                        time_current+real(stats_tout,kind=time_precision), stats_tout, & 
                        stats_sfc%num_output_fields, stats_sfc%file )
 
     else ! Open NetCDF files
 #ifdef NETCDF
       call open_netcdf_for_writing( nlat, nlon, fdir, fname, 1, stats_sfc%kk, stats_sfc%z, &  ! In
-                        day, month, year, rlat, rlon, &  ! In
+                        day, month, year, lat_vals, lon_vals, &  ! In
                         time_current, stats_tout, stats_sfc%num_output_fields, &  ! In
                         stats_sfc%file ) ! InOut
 
@@ -2988,15 +2988,15 @@ module stats_clubb_utilities
         deallocate( stats_zt%accum_num_samples )
         deallocate( stats_zt%l_in_update )
 
-        deallocate( stats_zt%file%var )
+        deallocate( stats_zt%file%grid_avg_var )
         deallocate( stats_zt%file%z )
                
         ! Check if pointer is allocated to prevent crash in netcdf (ticket 765)
-        if ( allocated( stats_zt%file%rlat ) ) then
-          deallocate( stats_zt%file%rlat )
+        if ( allocated( stats_zt%file%lat_vals ) ) then
+          deallocate( stats_zt%file%lat_vals )
         end if
-        if ( allocated( stats_zt%file%rlon ) ) then
-          deallocate( stats_zt%file%rlon )
+        if ( allocated( stats_zt%file%lon_vals ) ) then
+          deallocate( stats_zt%file%lon_vals )
         end if
 
         deallocate ( ztscr01 )
@@ -3030,15 +3030,15 @@ module stats_clubb_utilities
         deallocate( stats_lh_zt%accum_num_samples )
         deallocate( stats_lh_zt%l_in_update )
 
-        deallocate( stats_lh_zt%file%var )
+        deallocate( stats_lh_zt%file%grid_avg_var )
         deallocate( stats_lh_zt%file%z )
         
         ! Check if pointer is allocated to prevent crash in netcdf (ticket 765)
-        if ( allocated(stats_lh_zt%file%rlat ) ) then
-          deallocate( stats_lh_zt%file%rlat )
+        if ( allocated(stats_lh_zt%file%lat_vals ) ) then
+          deallocate( stats_lh_zt%file%lat_vals )
         end if
-        if ( allocated(stats_lh_zt%file%rlon ) ) then
-          deallocate( stats_lh_zt%file%rlon )
+        if ( allocated(stats_lh_zt%file%lon_vals ) ) then
+          deallocate( stats_lh_zt%file%lon_vals )
         end if
 
         ! De-allocate all stats_lh_sfc variables
@@ -3048,15 +3048,15 @@ module stats_clubb_utilities
         deallocate( stats_lh_sfc%accum_num_samples )
         deallocate( stats_lh_sfc%l_in_update )
 
-        deallocate( stats_lh_sfc%file%var )
+        deallocate( stats_lh_sfc%file%grid_avg_var )
         deallocate( stats_lh_sfc%file%z )
              
         ! Check if pointer is allocated to prevent crash in netcdf (ticket 765)
-        if ( allocated( stats_lh_sfc%file%rlat ) ) then
-          deallocate( stats_lh_sfc%file%rlat )
+        if ( allocated( stats_lh_sfc%file%lat_vals ) ) then
+          deallocate( stats_lh_sfc%file%lat_vals )
         end if
-        if ( allocated( stats_lh_sfc%file%rlon ) ) then
-          deallocate( stats_lh_sfc%file%rlon )
+        if ( allocated( stats_lh_sfc%file%lon_vals ) ) then
+          deallocate( stats_lh_sfc%file%lon_vals )
         end if
       end if ! l_silhs_out
 
@@ -3068,15 +3068,15 @@ module stats_clubb_utilities
         deallocate( stats_zm%accum_num_samples )
         deallocate( stats_zm%l_in_update )
 
-        deallocate( stats_zm%file%var )
+        deallocate( stats_zm%file%grid_avg_var )
         deallocate( stats_zm%file%z )
              
         ! Check if pointer is allocated to prevent crash in netcdf (ticket 765)
-        if ( allocated( stats_zm%file%rlat ) ) then
-          deallocate( stats_zm%file%rlat )
+        if ( allocated( stats_zm%file%lat_vals ) ) then
+          deallocate( stats_zm%file%lat_vals )
         end if
-        if ( allocated( stats_zm%file%rlon ) ) then
-          deallocate( stats_zm%file%rlon )
+        if ( allocated( stats_zm%file%lon_vals ) ) then
+          deallocate( stats_zm%file%lon_vals )
         end if
 
         deallocate ( zmscr01 )
@@ -3107,15 +3107,15 @@ module stats_clubb_utilities
           deallocate( stats_rad_zt%accum_num_samples )
           deallocate( stats_rad_zt%l_in_update )
 
-          deallocate( stats_rad_zt%file%var )
+          deallocate( stats_rad_zt%file%grid_avg_var )
           deallocate( stats_rad_zt%file%z )
                
           ! Check if pointer is allocated to prevent crash in netcdf (ticket 765)
-          if ( allocated( stats_rad_zt%file%rlat ) ) then
-            deallocate( stats_rad_zt%file%rlat )
+          if ( allocated( stats_rad_zt%file%lat_vals ) ) then
+            deallocate( stats_rad_zt%file%lat_vals )
           end if
-          if ( allocated( stats_rad_zt%file%rlon ) ) then
-            deallocate( stats_rad_zt%file%rlon )
+          if ( allocated( stats_rad_zt%file%lon_vals ) ) then
+            deallocate( stats_rad_zt%file%lon_vals )
           end if
 
           ! De-allocate all stats_rad_zm variables
@@ -3125,15 +3125,15 @@ module stats_clubb_utilities
           deallocate( stats_rad_zm%accum_num_samples )
           deallocate( stats_rad_zm%l_in_update )
 
-          deallocate( stats_rad_zm%file%var )
+          deallocate( stats_rad_zm%file%grid_avg_var )
           deallocate( stats_rad_zm%file%z )
 
           ! Check if pointer is allocated to prevent crash in netcdf (ticket 765)
-          if ( allocated( stats_rad_zm%file%rlat ) ) then
-            deallocate( stats_rad_zm%file%rlat )
+          if ( allocated( stats_rad_zm%file%lat_vals ) ) then
+            deallocate( stats_rad_zm%file%lat_vals )
           end if
-          if ( allocated( stats_rad_zm%file%rlon ) ) then
-            deallocate( stats_rad_zm%file%rlon )
+          if ( allocated( stats_rad_zm%file%lon_vals ) ) then
+            deallocate( stats_rad_zm%file%lon_vals )
           end if
 
         end if
@@ -3148,16 +3148,16 @@ module stats_clubb_utilities
         deallocate( stats_sfc%accum_num_samples )
         deallocate( stats_sfc%l_in_update )
 
-        deallocate( stats_sfc%file%var )
+        deallocate( stats_sfc%file%grid_avg_var )
         deallocate( stats_sfc%file%z )
       end if
              
       ! Check if pointer is allocated to prevent crash in netcdf (ticket 765)
-      if ( allocated( stats_sfc%file%rlat ) ) then
-        deallocate( stats_sfc%file%rlat )
+      if ( allocated( stats_sfc%file%lat_vals ) ) then
+        deallocate( stats_sfc%file%lat_vals )
       end if
-      if ( allocated( stats_sfc%file%rlon ) ) then
-        deallocate( stats_sfc%file%rlon )
+      if ( allocated( stats_sfc%file%lon_vals ) ) then
+        deallocate( stats_sfc%file%lon_vals )
       end if
 
       ! De-allocate scalar indices
@@ -3290,7 +3290,7 @@ subroutine stats_check_num_samples( stats_grid, l_error )
 
         if ( clubb_at_least_debug_level( 1 ) ) then
           write(fstderr,*) 'Possible sampling error for variable ',  &
-                           trim(stats_grid%file%var(ivar)%name), ' in stats_grid ',  &
+                           trim(stats_grid%file%grid_avg_var(ivar)%name), ' in stats_grid ',  &
                            'at k = ', kvar,  &
                            '; stats_grid%accum_num_samples(',kvar,',',ivar,') = ', &
                             stats_grid%accum_num_samples(1,1,kvar,ivar)

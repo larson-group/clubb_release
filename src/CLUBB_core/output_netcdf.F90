@@ -28,8 +28,9 @@ module output_netcdf
   contains
 !-------------------------------------------------------------------------------
   subroutine open_netcdf_for_writing( nlat, nlon, fdir, fname, ia, iz, zgrid,  & 
-                          day, month, year, rlat, rlon, & 
-                          time, dtwrite, nvar, ncf )
+                          day, month, year, lat_vals, lon_vals, & 
+                          time, dtwrite, nvar, ncf, &
+                          nsamp) ! optional
 
 ! Description:
 !   Defines the structure used to reference the file `ncf'
@@ -71,10 +72,10 @@ module output_netcdf
       nvar                ! Number of variables
 
     real( kind = core_rknd ), dimension(nlat), intent(in) ::  & 
-      rlat ! Latitudes   [degrees_E]
+      lat_vals ! Latitudes   [degrees_E]
 
     real( kind = core_rknd ), dimension(nlon), intent(in) ::  & 
-      rlon ! Longitudes  [degrees_N]
+      lon_vals ! Longitudes  [degrees_N]
 
     real( kind = core_rknd ), intent(in) :: & 
       dtwrite ! Time between write intervals   [s]
@@ -87,6 +88,9 @@ module output_netcdf
 
     ! Input/output Variables
     type (stat_file), intent(inout) :: ncf
+
+    ! Number of SILHS samples, used only for SILHS sample outputting
+    integer, optional, intent(in) :: nsamp
 
     ! Local Variables
     integer :: stat  ! Error status
@@ -148,10 +152,20 @@ module output_netcdf
       end do
     end if
 
-    allocate( ncf%rlat(1:nlat), ncf%rlon(1:nlon) )
+    allocate( ncf%lat_vals(1:nlat), ncf%lon_vals(1:nlon) )
 
-    ncf%rlat = rlat
-    ncf%rlon = rlon
+    ncf%lat_vals = lat_vals
+    ncf%lon_vals = lon_vals
+
+    ! If nsamp is present, SILHS samples are being handled.  Therefore set
+    ! ncf%nsamp and ncf%samp_idx.  samp_idx holds the SILHS sample indices.
+    if ( present(nsamp) ) then
+      ncf%nsamp = nsamp
+      allocate( ncf%samp_idx(1:nsamp) )
+      forall( k=1:nsamp )
+        ncf%samp_idx(k) = real( k, kind = core_rknd )
+      end forall
+    endif
 
     ! Create NetCDF dataset: enter define mode
     stat = nf90_create( path = trim( fdir )//trim( fname )//'.nc',  & 
@@ -165,10 +179,10 @@ module output_netcdf
       return
     end if
 
-    call define_netcdf( ncf%iounit, ncf%nlat, ncf%nlon, ncf%iz, & ! In
-                        ncf%day, ncf%month, ncf%year, ncf%time, & ! In 
-                        ncf%LatDimId, ncf%LongDimId, ncf%AltDimId, ncf%TimeDimId, &  ! Out
-                        ncf%LatVarId, ncf%LongVarId, ncf%AltVarId, ncf%TimeVarId ) ! Out
+    call define_netcdf( ncf%iounit, ncf%nlat, ncf%nlon, ncf%iz, ncf%nsamp, & ! In
+                  ncf%day, ncf%month, ncf%year, ncf%time, & ! In
+                  ncf%SampDimId, ncf%LatDimId, ncf%LongDimId, ncf%AltDimId, ncf%TimeDimId, &  ! Out
+                  ncf%SampVarId, ncf%LatVarId, ncf%LongVarId, ncf%AltVarId, ncf%TimeVarId ) ! Out
 
     return
   end subroutine open_netcdf_for_writing
@@ -266,20 +280,34 @@ module output_netcdf
       return
     end if
 
+    ! If the grid_avg_var are allocated, then print to 4d netcdf.
+    ! Otherwise, if the samples_of_var are allocated, print to 5d
     do i = 1, ncf%nvar, 1
-      stat(i)  & 
-      = nf90_put_var( ncid=ncf%iounit, varid=ncf%var(i)%indx,  & 
-                      values=ncf%var(i)%ptr(:,:,ncf%ia:ncf%iz),  & 
-                      start=(/1,1,1,ncf%ntimes/), & 
-                      count=(/ncf%nlon,ncf%nlat,ncf%iz,1/) )
-
-    end do ! i=1..nvar
+      if ( allocated(ncf%grid_avg_var) ) then
+         stat(i)  &
+         = nf90_put_var( ncid=ncf%iounit, varid=ncf%grid_avg_var(i)%indx,  &
+                         values=ncf%grid_avg_var(i)%ptr(:,:,ncf%ia:ncf%iz),  &
+                         start=(/1,1,1,ncf%ntimes/), &
+                         count=(/ncf%nlon,ncf%nlat,ncf%iz,1/) )
+      elseif ( allocated(ncf%samples_of_var) ) then
+        stat(i)  &
+        = nf90_put_var( ncid=ncf%iounit, varid=ncf%samples_of_var(i)%indx,  &
+                        values=ncf%samples_of_var(i)%ptr(:,:,:,ncf%ia:ncf%iz),  &
+                        start=(/1,1,1,1,ncf%ntimes/), &
+                        count=(/ncf%nsamp,ncf%nlon,ncf%nlat,ncf%iz,1/) )
+      endif
+    enddo ! i=1..nvar
 
     if ( any (stat /= NF90_NOERR ) ) then
       do i=1,ncf%nvar,1
         if( stat(i) /= NF90_NOERR ) then
-          write(unit=fstderr,fmt=*) ncf%var(i)%name,  & 
-            trim( nf90_strerror( stat(i) ) )
+          if ( allocated(ncf%grid_avg_var) ) then
+            write(unit=fstderr,fmt=*) ncf%grid_avg_var(i)%name,  &
+              trim( nf90_strerror( stat(i) ) )
+          elseif ( allocated(ncf%samples_of_var) ) then
+            write(unit=fstderr,fmt=*) ncf%samples_of_var(i)%name,  &
+              trim( nf90_strerror( stat(i) ) )
+          endif
         end if
       end do
       write(fstderr,*) "nf90_put_var error"
@@ -287,17 +315,16 @@ module output_netcdf
       return
     end if
 
-
     deallocate( stat )
 
     return
   end subroutine write_netcdf
 
 !-------------------------------------------------------------------------------
-  subroutine define_netcdf( ncid, nlat, nlon, iz, &
+  subroutine define_netcdf( ncid, nlat, nlon, iz, nsamp, &
                             day, month, year, time, & 
-                            LatDimId, LongDimId, AltDimId, TimeDimId, & 
-                            LatVarId, LongVarId, AltVarId, TimeVarId )
+                            SampDimId, LatDimId, LongDimId, AltDimId, TimeDimId, &
+                            SampVarId, LatVarId, LongVarId, AltVarId, TimeVarId )
 
 ! Description:
 !   Used internally to create a definition for the NetCDF dataset
@@ -330,7 +357,8 @@ module output_netcdf
 
     integer, intent(in) ::  & 
       nlat,   & ! Number of points in the N/S direction
-      nlon      ! Number of points in the E/W direction
+      nlon,   & ! Number of points in the E/W direction
+      nsamp     ! Number of SILHS samples
 
     ! Input Variables
     integer, intent(in) ::  & 
@@ -342,12 +370,14 @@ module output_netcdf
       time    ! Current model time [s]
 
     ! Output Variables
-    integer, intent(out) ::  & 
-      LatDimId, LongDimId, AltDimId, TimeDimId  ! NetCDF id's for dimensions
+    integer, intent(out) ::  &
+    ! NetCDF id's for dimensions, including for SILHS samples if needed
+      SampDimId, LatDimId, LongDimId, AltDimId, TimeDimId
 
-    ! NetCDF id's for data (e.g. longitude) associated with each dimension
+    ! NetCDF id's for data (e.g. longitude) associated with each dimension,
+    ! including for SILHS samples if needed
     integer, intent(out) ::  & 
-      LatVarId, LongVarId, AltVarId, TimeVarId
+      SampVarId, LatVarId, LongVarId, AltVarId, TimeVarId
 
     ! Local variables
     integer :: stat
@@ -355,9 +385,28 @@ module output_netcdf
 
     ! ---- Begin Code ----
 
-    ! Define the dimensions for the variables
-    stat = nf90_def_dim( ncid, "longitude", nlon, LongDimId )
+    ! Define the dimensions for the variables.
+    ! Start with SILHS samples so this dimension is listed first in the netCDF
+    ! file.  Since ncf not present to test allocation, test using nsamp. nsamp
+    ! is initialized to zero, will only be nonzero if printing SILHS samples.
+    if ( nsamp > 0 ) then
+      ! Define SILHS sample dimension
+      stat =  nf90_def_dim( ncid, "lh_sample_number", nsamp, SampDimId )
+      if ( stat /= NF90_NOERR ) then
+        write(fstderr,*) "Error defining lh_sample_number: ", &
+          trim( nf90_strerror( stat ) )
+        err_code = clubb_fatal_error
+        return
+      end if
+      ! Define SILHS sample number variable
+      stat = nf90_def_var( ncid, "lh_sample_number", NF90_DOUBLE, &
+                          (/SampDimId/), SampVarId )
+      ! Attributes for SILHS sample number variable
+      stat = nf90_put_att( ncid, SampVarId, "description", "SILHS sample (i.e. subcolumn) index" )
+      stat = nf90_put_att( ncid, SampVarId, "units", "number" )
+    endif !if nsamp>0
 
+    stat = nf90_def_dim( ncid, "longitude", nlon, LongDimId )
     if ( stat /= NF90_NOERR ) then
       write(fstderr,*) "Error defining longitude: ", & 
         trim( nf90_strerror( stat ) )
@@ -613,8 +662,7 @@ module output_netcdf
     real( kind = core_rknd ), dimension(2) :: var_range
 
     ! Dimensions for variables
-    integer, dimension(4) :: var_dim
-
+    integer, allocatable, dimension(:) :: var_dim
 
 !-------------------------------------------------------------------------------
 !      Typical valid ranges (IEEE 754)
@@ -638,10 +686,20 @@ module output_netcdf
 !   dimensions are all in the opposite order of this in the file.
 !   -dschanen
 
-    var_dim(1) = ncf%LongDimId ! X
-    var_dim(2) = ncf%LatDimId  ! Y
-    var_dim(3) = ncf%AltDimId  ! Z
-    var_dim(4) = ncf%TimeDimId ! The NF90_UNLIMITED dimension
+    ! If samples_of_var is allocated, print to 5d netcdf, otherwise 4d.
+    if ( allocated(ncf%samples_of_var) ) then
+      allocate( var_dim(1:5) )
+      var_dim(1) = ncf%SampDimId
+      i = 1
+    else
+      allocate( var_dim(1:4) )
+      i = 0
+    endif
+
+    var_dim(i+1) = ncf%LongDimId ! X
+    var_dim(i+2) = ncf%LatDimId  ! Y
+    var_dim(i+3) = ncf%AltDimId  ! Z
+    var_dim(i+4) = ncf%TimeDimId ! The NF90_UNLIMITED dimension
 
     allocate( stat( ncf%nvar ) )
 
@@ -654,21 +712,29 @@ module output_netcdf
         netcdf_precision = NF90_DOUBLE
     end select
 
+    ! Specify whether "grid_avg_var" or "samples_of_var"
     do i = 1, ncf%nvar, 1
-!     stat(i) = nf90_def_var( ncf%iounit, trim( ncf%var(i)%name ), &
-!                  NF90_FLOAT, (/ncf%TimeDimId, ncf%AltDimId, &
-!                  ncf%LatDimId, ncf%LongDimId/), ncf%var(i)%indx )
-      stat(i) = nf90_def_var( ncf%iounit, trim( ncf%var(i)%name ), & 
-                netcdf_precision, var_dim(:), ncf%var(i)%indx )
+      if ( allocated(ncf%grid_avg_var) ) then
+        stat(i) = nf90_def_var( ncf%iounit, trim( ncf%grid_avg_var(i)%name ), &
+                    netcdf_precision, var_dim(:), ncf%grid_avg_var(i)%indx )
+      elseif ( allocated(ncf%samples_of_var) ) then
+        stat(i) = nf90_def_var( ncf%iounit, trim( ncf%samples_of_var(i)%name ), &
+                    netcdf_precision, var_dim(:), ncf%samples_of_var(i)%indx )
+      endif
       if ( stat(i) /= NF90_NOERR ) then
         write(fstderr,*) "Error defining variable ",  & 
-          ncf%var(i)%name //": ", trim( nf90_strerror( stat(i) ) )
+          ncf%grid_avg_var(i)%name //": ", trim( nf90_strerror( stat(i) ) )
         err_code = clubb_fatal_error
         return
       end if
 
-      stat(i) = nf90_put_att( ncf%iounit, ncf%var(i)%indx, & 
-                "valid_range", var_range(1:2) )
+      if ( allocated(ncf%grid_avg_var) ) then
+        stat(i) = nf90_put_att( ncf%iounit, ncf%grid_avg_var(i)%indx, &
+                    "valid_range", var_range(1:2) )
+      elseif ( allocated(ncf%samples_of_var) ) then
+        stat(i) = nf90_put_att( ncf%iounit, ncf%samples_of_var(i)%indx, &
+                    "valid_range", var_range(1:2) )
+      endif
       if ( stat(i) /= NF90_NOERR ) then
         write(fstderr,*) "Error defining valid range", & 
           trim( nf90_strerror( stat(i) ) )
@@ -676,8 +742,13 @@ module output_netcdf
         return
       end if
 
-      stat(i) = nf90_put_att( ncf%iounit, ncf%var(i)%indx, "long_name",  & 
-                trim( ncf%var(i)%description ) )
+      if ( allocated(ncf%grid_avg_var) ) then
+        stat(i) = nf90_put_att( ncf%iounit, ncf%grid_avg_var(i)%indx, "long_name",  &
+                  trim( ncf%grid_avg_var(i)%description ) )
+      elseif ( allocated(ncf%samples_of_var) ) then
+        stat(i) = nf90_put_att( ncf%iounit, ncf%samples_of_var(i)%indx, "long_name",  &
+                  trim( ncf%samples_of_var(i)%description ) )
+      endif
       if ( stat(i) /= NF90_NOERR ) then
         write(fstderr,*) "Error in description", & 
           trim( nf90_strerror( stat(i) ) )
@@ -685,8 +756,13 @@ module output_netcdf
         return
       end if
 
-      stat(i) = nf90_put_att( ncf%iounit, ncf%var(i)%indx, "units",  & 
-                trim( ncf%var(i)%units ) )
+      if ( allocated(ncf%grid_avg_var) ) then
+        stat(i) = nf90_put_att( ncf%iounit, ncf%grid_avg_var(i)%indx, "units",  &
+                  trim( ncf%grid_avg_var(i)%units ) )
+      elseif ( allocated(ncf%samples_of_var) ) then
+        stat(i) = nf90_put_att( ncf%iounit, ncf%samples_of_var(i)%indx, "units",  &
+                  trim( ncf%samples_of_var(i)%units ) )
+      endif
       if ( stat(i) /= NF90_NOERR ) then
         write(fstderr,*) "Error in units", & 
           trim( nf90_strerror( stat(i) ) )
@@ -840,7 +916,7 @@ module output_netcdf
     end if
 
     stat = nf90_put_var( ncid=ncf%iounit, varid=ncf%LongVarId,  & 
-                         values=ncf%rlon )
+                         values=ncf%lon_vals )
     if ( stat /= NF90_NOERR ) then
       write(fstderr,*) "Error entering longitude: ",  & 
         trim( nf90_strerror( stat ) )
@@ -849,13 +925,25 @@ module output_netcdf
     end if
 
     stat = nf90_put_var( ncid=ncf%iounit, varid=ncf%LatVarId,  & 
-                         values=ncf%rlat )
+                         values=ncf%lat_vals )
     if ( stat /= NF90_NOERR ) then
       write(fstderr,*) "Error entering latitude: ",  & 
         trim( nf90_strerror( stat ) )
       err_code = clubb_fatal_error
       return
     end if
+
+    ! Write the SILHS sample indices if samples_of_var allocated
+    if ( allocated(ncf%samples_of_var) ) then
+      stat = nf90_put_var( ncid=ncf%iounit, varid=ncf%SampVarId,  &
+                           values=ncf%samp_idx )
+      if ( stat /= NF90_NOERR ) then
+        write(fstderr,*) "Error entering grid: ",  &
+          trim( nf90_strerror( stat ) )
+        err_code = clubb_fatal_error
+        return
+      end if
+    endif
 
     return
   end subroutine write_grid

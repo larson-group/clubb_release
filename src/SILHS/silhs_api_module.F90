@@ -920,7 +920,8 @@ contains
 
   subroutine latin_hypercube_2D_output_api &
              ( fname_prefix, fdir, stats_tout, nz, &
-               stats_zt, time_initial, num_samples )
+               stats_zt, time_initial, num_samples, &
+               nlon, nlat, lon_vals, lat_vals )
 
     use latin_hypercube_driver_module, only: latin_hypercube_2D_output
 
@@ -949,9 +950,20 @@ contains
 
     integer, intent(in) :: num_samples
 
+    integer, intent(in) :: &
+      nlon, & ! Number of points in the X direction [-]
+      nlat    ! Number of points in the Y direction [-]
+
+    real( kind = core_rknd ), dimension(nlon), intent(in) ::  &
+      lon_vals  ! Longitude values [Degrees E]
+
+    real( kind = core_rknd ), dimension(nlat), intent(in) ::  &
+      lat_vals  ! Latitude values  [Degrees N]
+
     call latin_hypercube_2D_output &
              ( fname_prefix, fdir, stats_tout, nz, &
-               stats_zt, time_initial, num_samples )
+               stats_zt, time_initial, num_samples, &
+               nlon, nlat, lon_vals, lat_vals )
 
     end subroutine latin_hypercube_2D_output_api
 

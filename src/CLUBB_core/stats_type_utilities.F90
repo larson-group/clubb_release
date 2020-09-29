@@ -59,12 +59,12 @@ module stats_type_utilities
     ! Which grid the variable is located on (e.g., zt, zm, sfc)
     type(stats), target, intent(inout) :: grid_kind
 
-    grid_kind%file%var(var_index)%ptr => grid_kind%accum_field_values(:,:,:,var_index)
-    grid_kind%file%var(var_index)%name = var_name
-    grid_kind%file%var(var_index)%description = var_description
-    grid_kind%file%var(var_index)%units = var_units
+    grid_kind%file%grid_avg_var(var_index)%ptr => grid_kind%accum_field_values(:,:,:,var_index)
+    grid_kind%file%grid_avg_var(var_index)%name = var_name
+    grid_kind%file%grid_avg_var(var_index)%description = var_description
+    grid_kind%file%grid_avg_var(var_index)%units = var_units
 
-    grid_kind%file%var(var_index)%l_silhs = l_silhs
+    grid_kind%file%grid_avg_var(var_index)%l_silhs = l_silhs
 
     !Example of the old format
     !changed by Joshua Fasching 23 August 2007
@@ -303,7 +303,7 @@ module stats_type_utilities
       else if ( clubb_at_least_debug_level( 1 ) ) then
 
             write(fstderr,*) "Beginning an update before finishing previous for variable: "// &
-                              trim( grid_kind%file%var(var_index)%name ) 
+                              trim( grid_kind%file%grid_avg_var(var_index)%name )
       endif
 
     endif
@@ -426,7 +426,7 @@ module stats_type_utilities
       else if ( clubb_at_least_debug_level( 1 ) ) then
 
         write(fstderr,*) "Ending before beginning update. For variable "// &
-                          grid_kind%file%var(var_index)%name 
+                          grid_kind%file%grid_avg_var(var_index)%name
       endif
 
     endif

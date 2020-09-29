@@ -56,10 +56,10 @@ month | integer
 year | integer
   Year of model start.
 
-rlat | real, default precision
+lat_vals | real, default precision
   Latitude (0 to 90 for north lat.; 0 to -90 for south lat.) [degrees].
 
-rlon | real, default precision
+lon_vals | real, default precision
   Longitude (0 to 180 for east long.; 0 to -180 for west long.) [degrees].
 
 time_initial | real, minimum of 12 digits of precision
