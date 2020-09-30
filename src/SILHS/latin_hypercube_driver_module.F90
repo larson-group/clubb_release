@@ -1632,7 +1632,7 @@ module latin_hypercube_driver_module
         variable_units(iiPDF_Ncn)        = "count/kg"
       end if
       if ( iiPDF_Ni > 0 ) then
-        variable_names(iiPDF_Ni)        = "ngrdcol"
+        variable_names(iiPDF_Ni)        = "Ni"
         variable_descriptions(iiPDF_Ni) = "Ice number concentration"
         variable_units(iiPDF_Ni)        = "count/kg"
       end if
@@ -1708,7 +1708,7 @@ module latin_hypercube_driver_module
         variable_units(iiPDF_Ncn)        = "count/kg"
       end if
       if ( iiPDF_Ni > 0 ) then
-        variable_names(iiPDF_Ni)        = "ngrdcol"
+        variable_names(iiPDF_Ni)        = "Ni"
         variable_descriptions(iiPDF_Ni) = "Ice number concentration"
         variable_units(iiPDF_Ni)        = "count/kg"
       end if
