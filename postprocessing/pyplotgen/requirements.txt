@@ -3,4 +3,4 @@ netCDF4~=1.5.3
 matplotlib~=3.2.1
 numpy~=1.18.2
 cycler~=0.10.0
-pdfkit~=0.6.1
+fpdf~=1.7.2

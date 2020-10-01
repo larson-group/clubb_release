@@ -203,12 +203,12 @@
 panels that share attributes like start/end time and get plotted together.
 This is a generic class used by Case_Definitions.py to provide functionality.
 In order to create a new case, please add the case’s definition to Case_Definitions.py (don’t forget to add the
-definition to the list ALL_CASES = […] at the bottom of the Case_Definitions.py file).</p>
+definition to the list CASES_TO_PLOT = […] at the bottom of the Case_Definitions.py file).</p>
 <p>For information on the input parameters of this class, please see the documentation for the
 <code class="docutils literal notranslate"><span class="pre">__init__()</span></code> method.</p>
 <dl class="py attribute">
 <dt id="src.CaseGallerySetup.CaseGallerySetup.__dict__">
-<code class="sig-name descname">__dict__</code><em class="property"> = mappingproxy({'__module__': 'src.CaseGallerySetup', '__doc__': &quot;\n    A case is basically a collection of variable groups and\n    panels that share attributes like start/end time and get plotted together.\n    This is a generic class used by Case_Definitions.py to provide functionality.\n    In order to create a new case, please add the case's definition to Case_Definitions.py (don't forget to add the\n    definition to the list ALL_CASES = [...] at the bottom of the Case_Definitions.py file).\n\n    For information on the input parameters of this class, please see the documentation for the\n    ``__init__()`` method.\n    &quot;, '__init__': &lt;function CaseGallerySetup.__init__&gt;, '__generateBudgetPanels__': &lt;function CaseGallerySetup.__generateBudgetPanels__&gt;, '__generateDiffPanels__': &lt;function CaseGallerySetup.__generateDiffPanels__&gt;, '__generateVariableGroupPanels__': &lt;function CaseGallerySetup.__generateVariableGroupPanels__&gt;, '__loadModelFiles__': &lt;function CaseGallerySetup.__loadModelFiles__&gt;, 'getDiffLinesBetweenPanels': &lt;function CaseGallerySetup.getDiffLinesBetweenPanels&gt;, '__getArrayDiff__': &lt;function CaseGallerySetup.__getArrayDiff__&gt;, 'plot': &lt;function CaseGallerySetup.plot&gt;, '__getNextAlphabeticID__': &lt;function CaseGallerySetup.__getNextAlphabeticID__&gt;, '__dict__': &lt;attribute '__dict__' of 'CaseGallerySetup' objects&gt;, '__weakref__': &lt;attribute '__weakref__' of 'CaseGallerySetup' objects&gt;})</em><a class="headerlink" href="#src.CaseGallerySetup.CaseGallerySetup.__dict__" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">__dict__</code><em class="property"> = mappingproxy({'__module__': 'src.CaseGallerySetup', '__doc__': &quot;\n    A case is basically a collection of variable groups and\n    panels that share attributes like start/end time and get plotted together.\n    This is a generic class used by Case_Definitions.py to provide functionality.\n    In order to create a new case, please add the case's definition to Case_Definitions.py (don't forget to add the\n    definition to the list CASES_TO_PLOT = [...] at the bottom of the Case_Definitions.py file).\n\n    For information on the input parameters of this class, please see the documentation for the\n    ``__init__()`` method.\n    &quot;, '__init__': &lt;function CaseGallerySetup.__init__&gt;, '__generateBudgetPanels__': &lt;function CaseGallerySetup.__generateBudgetPanels__&gt;, '__generateDiffPanels__': &lt;function CaseGallerySetup.__generateDiffPanels__&gt;, '__generateVariableGroupPanels__': &lt;function CaseGallerySetup.__generateVariableGroupPanels__&gt;, '__loadModelFiles__': &lt;function CaseGallerySetup.__loadModelFiles__&gt;, 'getDiffLinesBetweenPanels': &lt;function CaseGallerySetup.getDiffLinesBetweenPanels&gt;, '__getArrayDiff__': &lt;function CaseGallerySetup.__getArrayDiff__&gt;, 'plot': &lt;function CaseGallerySetup.plot&gt;, '__getNextAlphabeticID__': &lt;function CaseGallerySetup.__getNextAlphabeticID__&gt;, '__dict__': &lt;attribute '__dict__' of 'CaseGallerySetup' objects&gt;, '__weakref__': &lt;attribute '__weakref__' of 'CaseGallerySetup' objects&gt;})</em><a class="headerlink" href="#src.CaseGallerySetup.CaseGallerySetup.__dict__" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
@@ -580,7 +580,7 @@ Calls the cleanup and cleanly closes out the object instance</p>
 
 <dl class="py attribute">
 <dt id="src.DataReader.DataReader.__dict__">
-<code class="sig-name descname">__dict__</code><em class="property"> = mappingproxy({'__module__': 'src.DataReader', '__doc__': '\n    This class is responsible for handling nc files.\n    Given nc files it reads them and returns NetCDF Dataset objects to python.\n    It is also responsible for performing the time-averaging calculation at load time.\n\n    For information on the input parameters of this class, please see the documentation for the\n    ``__init__()`` method.\n\n    :author: Nicolas Strike\n    :date: January 2019\n    ', '__init__': &lt;function DataReader.__init__&gt;, 'cleanup': &lt;function DataReader.cleanup&gt;, 'loadFolder': &lt;function DataReader.loadFolder&gt;, 'getVarData': &lt;function DataReader.getVarData&gt;, '__exit__': &lt;function DataReader.__exit__&gt;, '__del__': &lt;function DataReader.__del__&gt;, '__loadNcFile__': &lt;function DataReader.__loadNcFile__&gt;, '__averageData__': &lt;function DataReader.__averageData__&gt;, '__getUnits__': &lt;function DataReader.__getUnits__&gt;, 'getLongName': &lt;function DataReader.getLongName&gt;, 'getAxisTitle': &lt;function DataReader.getAxisTitle&gt;, '__getValuesFromNc__': &lt;function DataReader.__getValuesFromNc__&gt;, '__getStartEndIndex__': &lt;staticmethod object&gt;, 'getNcdfSourceModel': &lt;function DataReader.getNcdfSourceModel&gt;, '__remove_invalid_unit_chars__': &lt;function DataReader.__remove_invalid_unit_chars__&gt;, '__dict__': &lt;attribute '__dict__' of 'DataReader' objects&gt;, '__weakref__': &lt;attribute '__weakref__' of 'DataReader' objects&gt;})</em><a class="headerlink" href="#src.DataReader.DataReader.__dict__" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">__dict__</code><em class="property"> = mappingproxy({'__module__': 'src.DataReader', '__doc__': '\n    This class is responsible for handling nc files.\n    Given nc files it reads them and returns NetCDF Dataset objects to python.\n    It is also responsible for performing the time-averaging calculation at load time.\n\n    For information on the input parameters of this class, please see the documentation for the\n    ``__init__()`` method.\n\n    :author: Nicolas Strike\n    :date: January 2019\n    ', '__init__': &lt;function DataReader.__init__&gt;, 'cleanup': &lt;function DataReader.cleanup&gt;, 'loadFolder': &lt;function DataReader.loadFolder&gt;, 'getVarData': &lt;function DataReader.getVarData&gt;, '__exit__': &lt;function DataReader.__exit__&gt;, '__del__': &lt;function DataReader.__del__&gt;, '__loadNcFile__': &lt;function DataReader.__loadNcFile__&gt;, '__averageData__': &lt;function DataReader.__averageData__&gt;, '__getUnits__': &lt;function DataReader.__getUnits__&gt;, 'getLongName': &lt;function DataReader.getLongName&gt;, 'getAxisTitle': &lt;function DataReader.getAxisTitle&gt;, '__getValuesFromNc__': &lt;function DataReader.__getValuesFromNc__&gt;, '__getStartEndIndex__': &lt;staticmethod object&gt;, 'guessNcdfSourceModel': &lt;function DataReader.guessNcdfSourceModel&gt;, '__remove_invalid_unit_chars__': &lt;function DataReader.__remove_invalid_unit_chars__&gt;, '__dict__': &lt;attribute '__dict__' of 'DataReader' objects&gt;, '__weakref__': &lt;attribute '__weakref__' of 'DataReader' objects&gt;})</em><a class="headerlink" href="#src.DataReader.DataReader.__dict__" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
@@ -763,22 +763,6 @@ to deallocate resources that may be held (e.g. dataset files).</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="src.DataReader.DataReader.getNcdfSourceModel">
-<code class="sig-name descname">getNcdfSourceModel</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">ncdf_dataset</span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.DataReader.DataReader.getNcdfSourceModel" title="Permalink to this definition">¶</a></dt>
-<dd><p>Guesses the model that outputted a given ncdf file. Currently does this by investigating which type of
-elevation is outputted (e.g. altitude, z, lev). If there is not elevation parameter found, and the filename
-contains ‘sfc’ it will return a generic ‘sfc calculations’ value.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>ncdf_dataset</strong> – A netCDF4 Dataset object containing data from some supported model (e.g. CLUBB, SAM)</p>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p>The (estimated) name of the model that outputted the nc file</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
 <dt id="src.DataReader.DataReader.getVarData">
 <code class="sig-name descname">getVarData</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">netcdf_dataset</span></em>, <em class="sig-param"><span class="n">ncdf_variable</span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.DataReader.DataReader.getVarData" title="Permalink to this definition">¶</a></dt>
 <dd><p>Given a Dataset and NetCdfVariable object, this function returns the numerical
@@ -796,6 +780,22 @@ dependent_data and independent_data for the given variable.</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><p>The list of numeric values for the given variable</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="src.DataReader.DataReader.guessNcdfSourceModel">
+<code class="sig-name descname">guessNcdfSourceModel</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">ncdf_dataset</span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.DataReader.DataReader.guessNcdfSourceModel" title="Permalink to this definition">¶</a></dt>
+<dd><p>Guesses the model that outputted a given ncdf file. Currently does this by investigating which type of
+elevation is outputted (e.g. altitude, z, lev). If there is not elevation parameter found, and the filename
+contains ‘sfc’ it will return a generic ‘sfc calculations’ value.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>ncdf_dataset</strong> – A netCDF4 Dataset object containing data from some supported model (e.g. CLUBB, SAM)</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>The (estimated) name of the model that outputted the nc file</p>
 </dd>
 </dl>
 </dd></dl>
@@ -1023,11 +1023,6 @@ specific to it, such as a title, axis labels, and lines. Each panel can be plott
 <p>For information on the input parameters of this class, please see the documentation for the
 <code class="docutils literal notranslate"><span class="pre">__init__()</span></code> method.</p>
 <dl class="py attribute">
-<dt id="src.Panel.Panel.EXTENSION">
-<code class="sig-name descname">EXTENSION</code><em class="property"> = '.png'</em><a class="headerlink" href="#src.Panel.Panel.EXTENSION" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
 <dt id="src.Panel.Panel.TYPE_ANIMATION">
 <code class="sig-name descname">TYPE_ANIMATION</code><em class="property"> = 'animation'</em><a class="headerlink" href="#src.Panel.Panel.TYPE_ANIMATION" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
@@ -1054,7 +1049,7 @@ specific to it, such as a title, axis labels, and lines. Each panel can be plott
 
 <dl class="py attribute">
 <dt id="src.Panel.Panel.__dict__">
-<code class="sig-name descname">__dict__</code><em class="property"> = mappingproxy({'__module__': 'src.Panel', '__doc__': '\n    Represents an individual panel/graph. Each panel contains a number of details\n    specific to it, such as a title, axis labels, and lines. Each panel can be plotted/saved to a file.\n\n    For information on the input parameters of this class, please see the documentation for the\n    ``__init__()`` method.\n    ', 'TYPE_PROFILE': 'profile', 'TYPE_BUDGET': 'budget', 'TYPE_TIMESERIES': 'timeseries', 'TYPE_TIMEHEIGHT': 'timeheight', 'TYPE_ANIMATION': 'animation', 'EXTENSION': '.png', '__init__': &lt;function Panel.__init__&gt;, '__init_axis_titles__': &lt;function Panel.__init_axis_titles__&gt;, 'plot': &lt;function Panel.plot&gt;, '__removeInvalidFilenameChars__': &lt;function Panel.__removeInvalidFilenameChars__&gt;, '__plotContourf__': &lt;function Panel.__plotContourf__&gt;, '__dict__': &lt;attribute '__dict__' of 'Panel' objects&gt;, '__weakref__': &lt;attribute '__weakref__' of 'Panel' objects&gt;})</em><a class="headerlink" href="#src.Panel.Panel.__dict__" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">__dict__</code><em class="property"> = mappingproxy({'__module__': 'src.Panel', '__doc__': '\n    Represents an individual panel/graph. Each panel contains a number of details\n    specific to it, such as a title, axis labels, and lines. Each panel can be plotted/saved to a file.\n\n    For information on the input parameters of this class, please see the documentation for the\n    ``__init__()`` method.\n    ', 'TYPE_PROFILE': 'profile', 'TYPE_BUDGET': 'budget', 'TYPE_TIMESERIES': 'timeseries', 'TYPE_TIMEHEIGHT': 'timeheight', 'TYPE_ANIMATION': 'animation', '__init__': &lt;function Panel.__init__&gt;, '__init_axis_titles__': &lt;function Panel.__init_axis_titles__&gt;, 'plot': &lt;function Panel.plot&gt;, '__removeInvalidFilenameChars__': &lt;function Panel.__removeInvalidFilenameChars__&gt;, '__plotContourf__': &lt;function Panel.__plotContourf__&gt;, '__dict__': &lt;attribute '__dict__' of 'Panel' objects&gt;, '__weakref__': &lt;attribute '__weakref__' of 'Panel' objects&gt;})</em><a class="headerlink" href="#src.Panel.Panel.__dict__" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="py method">

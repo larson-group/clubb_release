@@ -248,7 +248,7 @@ using python dictionaries (values surrounded with &lt; &gt; must have the &lt; &
 </pre></div>
 </td></tr></table></div>
 <p><strong>Important note</strong>:
-When creating a new case, add it to the ALL_CASES list at the bottom of the file. Additionally, please add it in
+When creating a new case, add it to the CASES_TO_PLOT list at the bottom of the file. Additionally, please add it in
 alphabetical order.</p>
 <p><strong>Case Definition values explained</strong>:</p>
 <blockquote>
@@ -281,11 +281,11 @@ i.e. config/VariableGroupBase.py. An example would be thlm in VariableGroupBase.
 <dd><p>To plot only a subset of cases, reguardless of what output exists
 in the clubb folder, uncomment the last line of this file and
 fill that array with the cases you’d like to plot. This overwrites the
-ALL_CASES variable such that pyplotgen will only know about cases in that
+CASES_TO_PLOT variable such that pyplotgen will only know about cases in that
 list and ignore all others. The name must match the python variable name
 below (all caps).</p>
 <p>For example, to plot only bomex and fire:</p>
-<p>ALL_CASES = [BOMEX, FIRE]</p>
+<p>CASES_TO_PLOT = [BOMEX, FIRE]</p>
 </dd></dl>
 
 </div>

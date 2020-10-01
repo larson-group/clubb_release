@@ -26,6 +26,8 @@ Pyplotgen only supports input in the netcdf (.nc) format.
 | --hq --high-quality | Outputs higher resolution images. The dpi used for hi resolution images can be customized in Style_definitions.py |
 | --svg | Output images to .svg lossless format instead of .png |
 | --eps | Output images to .eps format instead of .png |
+| --pdf | This will generate a pdf from pyplotgen's output. Note that --svg and --eps are not compatible with this option |
+| --pdf-filesize-limit [NUMERICAL VALUE IN MB] | This parameter will run --pdf multiple times, with each iteration lowering pyplotgens output image quality until the resulting pdf fits within the given file size in MB. Note: --pdf is required for this parameter to do anything. |
 
 ## Installing Dependencies
 To install the dependencies necessary for PyPlotgen to run, run the command
