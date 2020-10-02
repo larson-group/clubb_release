@@ -1025,19 +1025,22 @@ module stats_zt_module
       case ('um')
         ium = k
         call stat_assign( var_index=ium, var_name="um", &
-             var_description="um, East-west (u) wind", var_units="m/s", l_silhs=.false., &
+             var_description="u_bar, Grid-mean eastward (u) wind", &
+             var_units="m/s", l_silhs=.false., &
              grid_kind=stats_zt )
         k = k + 1
       case ('vm')
         ivm = k
         call stat_assign( var_index=ivm, var_name="vm", &
-             var_description="vm, North-south (v) wind", var_units="m/s", l_silhs=.false., &
+             var_description="v_bar, Grid-mean northward (v) wind", &
+             var_units="m/s", l_silhs=.false., &
              grid_kind=stats_zt )
         k = k + 1
       case ('wm_zt')
         iwm_zt = k
         call stat_assign( var_index=iwm_zt, var_name="wm", &
-             var_description="wm, Vertical (w) wind", var_units="m/s", l_silhs=.false., &
+             var_description="w_bar, Grid-mean upward (w) wind", &
+             var_units="m/s", l_silhs=.false., &
              grid_kind=stats_zt )
         k = k + 1
       case ('um_ref')
@@ -1128,7 +1131,7 @@ module stats_zt_module
       case ('Lscale')
         iLscale = k
         call stat_assign( var_index=iLscale, var_name="Lscale", &
-          var_description="Lscale, Mixing length", &
+          var_description="L, Turbulent mixing length", &
           var_units="m", l_silhs=.false., grid_kind=stats_zt )
         k = k + 1
       case ('thlm_forcing')
@@ -1274,49 +1277,54 @@ module stats_zt_module
       case ('wp3')
         iwp3 = k
         call stat_assign( var_index=iwp3, var_name="wp3", &
-             var_description="w'^3, w third order moment", var_units="m^3/s^3", &
+             var_description="w'^3, Third-order moment of vertical air velocity", &
+             var_units="m^3/s^3", &
              l_silhs=.false., grid_kind=stats_zt )
         k = k + 1
 
       case ('thlp3')
         ithlp3 = k
         call stat_assign( var_index=ithlp3, var_name="thlp3", &
-             var_description="thl'^3, thl third order moment", var_units="m^3/s^3", &
+             var_description="thl'^3, Third-order moment of theta_l", var_units="m^3/s^3", &
              l_silhs=.false., grid_kind=stats_zt )
         k = k + 1
 
       case ('rtp3')
         irtp3 = k
         call stat_assign( var_index=irtp3, var_name="rtp3", &
-             var_description="rt'^3, rt third order moment", var_units="m^3/s^3", &
+             var_description="rt'^3, Third-order moment of total water, rt", var_units="m^3/s^3", &
              l_silhs=.false., grid_kind=stats_zt )
         k = k + 1
 
       case ('wpthlp2')
         iwpthlp2 = k
         call stat_assign( var_index=iwpthlp2, var_name="wpthlp2", &
-             var_description="w'thl'^2", var_units="(m K^2)/s", l_silhs=.false., &
+             var_description="w'theta_l'^2, Vertical turbulent flux of theta_l'^2", &
+             var_units="(m K^2)/s", l_silhs=.false., &
              grid_kind=stats_zt )
         k = k + 1
 
       case ('wp2thlp')
         iwp2thlp = k
         call stat_assign( var_index=iwp2thlp, var_name="wp2thlp", &
-             var_description="w'^2thl'", var_units="(m^2 K)/s^2", l_silhs=.false., &
+             var_description="w'^2theta_l', Vertical turbulent flux of w'theta_l'", &
+             var_units="(m^2 K)/s^2", l_silhs=.false., &
              grid_kind=stats_zt )
         k = k + 1
 
       case ('wprtp2')
         iwprtp2 = k
         call stat_assign( var_index=iwprtp2, var_name="wprtp2", &
-             var_description="w'rt'^2", var_units="(m kg)/(s kg)", &
+             var_description="w'rt'^2, Vertical turbulent flux of rt'^2", &
+             var_units="(m kg)/(s kg)", &
              l_silhs=.false., grid_kind=stats_zt )
         k = k + 1
 
       case ('wp2rtp')
         iwp2rtp = k
         call stat_assign( var_index=iwp2rtp, var_name="wp2rtp", &
-             var_description="w'^2rt'", var_units="(m^2 kg)/(s^2 kg)", &
+             var_description=w'^2rt', Vertical turbulent flux of w'rt'", &
+             var_units="(m^2 kg)/(s^2 kg)", &
              l_silhs=.false., grid_kind=stats_zt )
         k = k + 1
 
@@ -1366,7 +1374,8 @@ module stats_zt_module
       case ('wp2thvp')
         iwp2thvp = k
         call stat_assign( var_index=iwp2thvp, var_name="wp2thvp", &
-             var_description="w'^2thv'", var_units="K m^2/s^2", l_silhs=.false., &
+             var_description="w'^2theta_v', Vertical turbulent flux of w'theta_v'", &
+             var_units="K m^2/s^2", l_silhs=.false., &
              grid_kind=stats_zt )
         k = k + 1
 
@@ -1380,7 +1389,8 @@ module stats_zt_module
       case ('wprtpthlp')
         iwprtpthlp = k
         call stat_assign( var_index=iwprtpthlp, var_name="wprtpthlp", &
-             var_description="w'rt'thl'", var_units="(m kg K)/(s kg)", &
+             var_description="w'rt'theta_l', Vertical turbulent flux of rt'theta_l'", &
+             var_units="(m kg K)/(s kg)", &
              l_silhs=.false., grid_kind=stats_zt )
         k = k + 1
 
@@ -5479,4 +5489,3 @@ module stats_zt_module
 !===============================================================================
 
 end module stats_zt_module
-

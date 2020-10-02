@@ -572,7 +572,19 @@ class VariableGroupBase(VariableGroup):
                 'axis_title': 'rc_coef * wp2rcp [m^2/s^2 K]',
                 'sci_scale': 0
             },
-
+            {'var_names':
+                {
+                    'clubb': ['wp2thvp'],
+                    'sam': ['WP2THVP'],
+                    'coamps': ['wp2thvp'],
+                    'r408': ['wp2thvp'],
+                    'hoc': ['wp2thvp'],
+                    'e3sm': ['wp2thvp'],
+                    'cam': ['wp2thvp'],
+                    'wrf': ['wp2thvp'],
+                },
+                'sci_scale': 0,
+            },
         ]
 
         # Call ctor of parent class

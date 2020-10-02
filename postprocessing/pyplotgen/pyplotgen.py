@@ -257,7 +257,7 @@ class PyPlotGen:
                     self.run()
                 if output_dpi <= 1:
                     print("There is no possible dpi that fits within ", self.pdf_filesize_limit,
-                          "MB. The closest pdf is linked above.")
+                          "MB.")
                     print("The most recent PDF output attempt can be found at: file://" + pdf_output_filename)
                     filesize_impossible = True
 
