@@ -1323,7 +1323,7 @@ module stats_zt_module
       case ('wp2rtp')
         iwp2rtp = k
         call stat_assign( var_index=iwp2rtp, var_name="wp2rtp", &
-             var_description=w'^2rt', Vertical turbulent flux of w'rt'", &
+             var_description="w'^2rt', Vertical turbulent flux of w'rt'", &
              var_units="(m^2 kg)/(s^2 kg)", &
              l_silhs=.false., grid_kind=stats_zt )
         k = k + 1
