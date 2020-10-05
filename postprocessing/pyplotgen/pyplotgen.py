@@ -323,10 +323,14 @@ class PyPlotGen:
         :return: A recommended dpi value that is closer to an optimal dpi value for the target filesize
         """
         # Values >1 make run faster, but may not find the best dpi, values <1 are slower but are more likely to find the
-        # best dpi. Recommended value: 0.5
-        step_multiplier = 0.5
-        filesize_ratio = (previous_filesize / self.pdf_filesize_limit) - 1
-        dpi_reduction_amount = max(previous_dpi * filesize_ratio * step_multiplier, 1)
+        # best dpi. It's recommended to use values from 0->1. Recommended value: 0.25.
+        # General rule of thumb:
+        #   1.0 takes ~2-3 iterations, 0.75 takes ~3 iterations, 0.5 takes ~4 iterations, 0.25 takes ~5 iterations
+        # Note: A step size of 0 or close to 0 will result in dpi reductions of 1 per iteration. This is the slowest
+        #       option but it's guaranteed to find the best dpi.
+        step_multiplier = 0.25
+        filesize_ratio = (previous_filesize / self.pdf_filesize_limit)
+        dpi_reduction_amount = max(previous_dpi * step_multiplier / filesize_ratio, 1)
         new_dpi = round(previous_dpi - dpi_reduction_amount)
         return new_dpi
 
