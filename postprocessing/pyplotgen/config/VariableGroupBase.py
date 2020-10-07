@@ -17,7 +17,7 @@ class VariableGroupBase(VariableGroup):
     """
 
     def __init__(self, case, clubb_datasets=None, les_dataset=None, coamps_dataset=None, r408_dataset=None,
-                 hoc_dataset=None, cam_datasets=None,
+                 hoc_dataset=None, cam_datasets=None, silhs_datasets=None,
                  e3sm_datasets=None, sam_datasets=None, wrf_datasets=None):
         """
 
@@ -42,6 +42,7 @@ class VariableGroupBase(VariableGroup):
                 {
                     'clubb': ['thlm'],
                     'sam': [self.getThlmSamCalc, 'THETAL', 'THETA'],
+                    'silhs': [],
                     'coamps': ['thlm'],
                     'r408': ['thlm'],
                     'hoc': ['thlm'],
@@ -56,6 +57,7 @@ class VariableGroupBase(VariableGroup):
                 {
                     'clubb': ['rtm'],
                     'sam': [self.getRtmSamCalc],
+                    'silhs': [],
                     'coamps': ['qtm', 'rtm'],
                     'r408': ['rtm'],
                     'hoc': ['rtm'],
@@ -70,11 +72,12 @@ class VariableGroupBase(VariableGroup):
                 {
                     'clubb': ['wpthlp'],
                     'sam': [self.getWpthlpSamCalc, 'WPTHLP'],
+                    'silhs': [],
                     'coamps': ['wpthlp'],
                     'r408': ['wpthlp'],
                     'hoc': ['wpthlp'],
                     'e3sm': ['wpthlp'],
-                    'cam': ['wpthlp'], # WPTHLP_CLUBB / (1 .* 1004)
+                    'cam': ['wpthlp'],  # WPTHLP_CLUBB / (1 .* 1004)
                     'wrf': ['wpthlp'],
                 },
                 # 'sam_calc': self.getWpthlpSamCalc,
@@ -84,6 +87,7 @@ class VariableGroupBase(VariableGroup):
                 {
                     'clubb': ['wprtp'],
                     'sam': [self.getWprtpSamCalc, 'WPRTP'],
+                    'silhs': [],
                     'coamps': ['wpqtp', 'wprtp'],
                     'r408': ['wprtp'],
                     'hoc': ['wprtp'],
@@ -98,6 +102,7 @@ class VariableGroupBase(VariableGroup):
                 {
                     'clubb': ['cloud_frac'],
                     'sam': ['CLD_FRAC_CLUBB', 'CLD'],
+                    'silhs': [],
                     'coamps': ['cf'],
                     'r408': ['cloud_frac', 'cf'],
                     'hoc': ['cloud_frac', 'cf'],
@@ -111,6 +116,7 @@ class VariableGroupBase(VariableGroup):
                 {
                     'clubb': ['rcm'],
                     'sam': ['QCL', 'QC'],
+                    'silhs': [],
                     'coamps': ['qcm', 'rcm'],
                     'r408': ['rcm'],
                     'hoc': ['rcm'],
@@ -125,6 +131,7 @@ class VariableGroupBase(VariableGroup):
                 {
                     'clubb': ['wp2', 'W2'],
                     'sam': [self.get_wp2_sam_calc, 'W2', 'WP2'],
+                    'silhs': [],
                     'coamps': ['wp2', 'W2'],
                     'r408': ['wp2'],
                     'hoc': ['wp2'],
@@ -138,6 +145,7 @@ class VariableGroupBase(VariableGroup):
                 {
                     'clubb': ['wp3'],
                     'sam': [self.get_wp3_sam_calc, 'wp3', 'W3', 'WP3'],
+                    'silhs': [],
                     'coamps': ['wp3', 'W3', 'WP3'],
                     'r408': ['wp3'],
                     'hoc': ['wp3'],
@@ -152,6 +160,7 @@ class VariableGroupBase(VariableGroup):
                 {
                     'clubb': ['thlp2'],
                     'sam': [self.get_thlp2_sam_calc, 'THLP2', 'TL2'],
+                    'silhs': [],
                     'coamps': ['thlp2'],
                     'r408': ['thlp2'],
                     'hoc': ['thlp2'],
@@ -165,6 +174,7 @@ class VariableGroupBase(VariableGroup):
                 {
                     'clubb': ['rtp2'],
                     'sam': [self.getRtp2SamCalc, 'RTP2', 'QT2'],
+                    'silhs': [],
                     'coamps': ['qtp2'],
                     'r408': ['rtp2'],
                     'hoc': ['rtp2'],
@@ -179,6 +189,7 @@ class VariableGroupBase(VariableGroup):
                 {
                     'clubb': ['rtpthlp'],
                     'sam': ['RTPTHLP_SGS', 'RTPTHLP', 'TQ'],
+                    'silhs': [],
                     'coamps': ['qtpthlp', 'rtpthlp'],
                     'r408': ['rtpthlp'],
                     'hoc': ['rtpthlp'],
@@ -191,7 +202,8 @@ class VariableGroupBase(VariableGroup):
             {'var_names':
                 {
                     'clubb': ['rtp3'],
-                    'sam': [ 'RTP3', self.getRtp3SamCalc],
+                    'sam': ['RTP3', self.getRtp3SamCalc],
+                    'silhs': [],
                     'coamps': ['qtp3', 'rtp3'],
                     'r408': ['rtp3'],
                     'hoc': ['rtp3'],
@@ -206,6 +218,7 @@ class VariableGroupBase(VariableGroup):
                 {
                     'clubb': ['thlp3'],
                     'sam': ['THLP3'],
+                    'silhs': [],
                     'coamps': ['thlp3'],
                     'r408': ['thlp3'],
                     'hoc': ['thlp3'],
@@ -218,7 +231,8 @@ class VariableGroupBase(VariableGroup):
             {'var_names':
                 {
                     'clubb': ['Skw_zt'],
-                    'sam': [self.getSkwZtLesCalc,'Skw_zt'],
+                    'sam': [self.getSkwZtLesCalc, 'Skw_zt'],
+                    'silhs': [],
                     'coamps': [self.getSkwZtLesCalc, 'Skw_zt'],
                     'r408': ['Skw_zt'],
                     'hoc': ['Skw_zt'],
@@ -233,7 +247,8 @@ class VariableGroupBase(VariableGroup):
             {'var_names':
                 {
                     'clubb': ['Skrt_zt'],
-                    'sam': [self.getSkrtZtLesCalc,'Skrt_zt'],
+                    'sam': [self.getSkrtZtLesCalc, 'Skrt_zt'],
+                    'silhs': [],
                     'coamps': [self.getSkrtZtLesCalc, 'Skrt_zt'],
                     'r408': ['Skrt_zt'],
                     'hoc': ['Skrt_zt'],
@@ -246,7 +261,8 @@ class VariableGroupBase(VariableGroup):
             {'var_names':
                 {
                     'clubb': ['Skthl_zt'],
-                    'sam': [self.getSkthlZtLesCalc,'Skthl_zt'],
+                    'sam': [self.getSkthlZtLesCalc, 'Skthl_zt'],
+                    'silhs': [],
                     'coamps': [self.getSkthlZtLesCalc, 'Skthl_zt'],
                     'r408': ['Skthl_zt'],
                     'hoc': ['Skthl_zt'],
@@ -261,11 +277,12 @@ class VariableGroupBase(VariableGroup):
                 {
                     'clubb': ['wm', 'wlsm'],
                     'sam': ['WOBS', 'WM'],
+                    'silhs': ['w'],
                     'coamps': ['wlsm', 'wm'],
                     'r408': ['wm'],
                     'hoc': ['wm'],
                     'e3sm': ['wm'],
-                    'cam': ['wm'], # -OMEGA /(9.81.*1)
+                    'cam': ['wm'],  # -OMEGA /(9.81.*1)
                     'wrf': ['wm', 'wlsm'],
                 },
                 'sci_scale': -4,
@@ -274,11 +291,12 @@ class VariableGroupBase(VariableGroup):
                 {
                     'clubb': ['um'],
                     'sam': ['U'],
+                    'silhs': [],
                     'coamps': ['um'],
                     'r408': ['um'],
                     'hoc': ['um'],
                     'e3sm': ['um'],
-                    'cam': ['U','um'],
+                    'cam': ['U', 'um'],
                     'wrf': ['um'],
                 },
                 'sci_scale': 0,
@@ -287,6 +305,7 @@ class VariableGroupBase(VariableGroup):
                 {
                     'clubb': ['vm'],
                     'sam': ['V'],
+                    'silhs': [],
                     'coamps': ['vm'],
                     'r408': ['vm'],
                     'hoc': ['vm'],
@@ -300,6 +319,7 @@ class VariableGroupBase(VariableGroup):
                 {
                     'clubb': ['upwp'],
                     'sam': [self.get_upwp_sam_calc, 'UW'],
+                    'silhs': [],
                     'coamps': [self.getUwCoampsData, 'upwp'],
                     'r408': ['upwp'],
                     'hoc': ['upwp'],
@@ -314,6 +334,7 @@ class VariableGroupBase(VariableGroup):
                 {
                     'clubb': ['vpwp'],
                     'sam': [self.get_vpwp_sam_calc, 'VW'],
+                    'silhs': [],
                     'coamps': [self.getVwCoampsData, 'vpwp'],
                     'r408': ['vpwp'],
                     'hoc': ['vpwp'],
@@ -328,6 +349,7 @@ class VariableGroupBase(VariableGroup):
                 {
                     'clubb': ['up2'],
                     'sam': [self.get_up2_sam_calc, 'U2'],
+                    'silhs': [],
                     'coamps': ['up2'],
                     'r408': ['up2'],
                     'hoc': ['up2'],
@@ -341,6 +363,7 @@ class VariableGroupBase(VariableGroup):
                 {
                     'clubb': ['vp2'],
                     'sam': [self.get_vp2_sam_calc, 'V2'],
+                    'silhs': [],
                     'coamps': ['vp2'],
                     'r408': ['vp2'],
                     'hoc': ['vp2'],
@@ -354,6 +377,7 @@ class VariableGroupBase(VariableGroup):
                 {
                     'clubb': ['rcp2'],
                     'sam': ['QC2'],
+                    'silhs': [],
                     'coamps': ['qcp2', 'rcp2', 'rlp2'],
                     'r408': ['rcp2'],
                     'hoc': ['rcp2'],
@@ -368,6 +392,7 @@ class VariableGroupBase(VariableGroup):
                 {
                     'clubb': ['lwp'],
                     'sam': ['CWP'],
+                    'silhs': [],
                     'coamps': ['lwp'],
                     'r408': ['lwp'],
                     'hoc': ['lwp'],
@@ -382,6 +407,7 @@ class VariableGroupBase(VariableGroup):
                 {
                     'clubb': ['wp2_vert_avg'],
                     'sam': ['W2_VERT_AVG'],
+                    'silhs': [],
                     'coamps': ['wp2_vert_avg'],
                     'r408': ['wp2_vert_avg'],
                     'hoc': ['wp2_vert_avg'],
@@ -395,6 +421,7 @@ class VariableGroupBase(VariableGroup):
                 {
                     'clubb': ['tau_zm'],
                     'sam': ['tau_zm'],
+                    'silhs': [],
                     'coamps': ['tau_zm'],
                     'r408': ['tau_zm'],
                     'hoc': ['tau_zm'],
@@ -408,6 +435,7 @@ class VariableGroupBase(VariableGroup):
                 {
                     'clubb': ['Lscale'],
                     'sam': ['Lscale'],
+                    'silhs': [],
                     'coamps': ['Lscale'],
                     'r408': ['Lscale'],
                     'hoc': ['Lscale'],
@@ -420,7 +448,8 @@ class VariableGroupBase(VariableGroup):
             {'var_names':
                 {
                     'clubb': ['wpthvp'],
-                    'sam': [self.getWpthvpSamCalc,'WPTHVP'],
+                    'sam': [self.getWpthvpSamCalc, 'WPTHVP'],
+                    'silhs': [],
                     'coamps': ['wpthvp'],
                     'r408': ['wpthvp'],
                     'hoc': ['wpthvp'],
@@ -434,6 +463,7 @@ class VariableGroupBase(VariableGroup):
                 {
                     'clubb': ['radht'],
                     'sam': ['RADQR'],
+                    'silhs': [],
                     'coamps': ['radht'],
                     'r408': ['radht'],
                     'hoc': ['radht'],
@@ -447,6 +477,7 @@ class VariableGroupBase(VariableGroup):
                 {
                     'clubb': ['rtpthvp'],
                     'sam': ['RTPTHVP'],
+                    'silhs': [],
                     'coamps': ['qtpthvp', 'rtpthvp'],
                     'r408': ['rtpthvp'],
                     'hoc': ['rtpthvp'],
@@ -460,6 +491,7 @@ class VariableGroupBase(VariableGroup):
                 {
                     'clubb': ['corr_w_chi_i'],
                     'sam': ['corr_w_chi_i'],
+                    'silhs': ['chi'],
                     'coamps': ['corr_w_chi_i'],
                     'r408': ['corr_w_chi_i'],
                     'hoc': ['corr_w_chi_i'],
@@ -476,6 +508,7 @@ class VariableGroupBase(VariableGroup):
                 {
                     'clubb': ['corr_chi_eta_i'],
                     'sam': ['corr_chi_eta_i'],
+                    'silhs': ['eta'],
                     'coamps': ['corr_chi_eta_i'],
                     'r408': ['corr_chi_eta_i'],
                     'hoc': ['corr_chi_eta_i'],
@@ -492,6 +525,7 @@ class VariableGroupBase(VariableGroup):
                 {
                     'clubb': ['thlpthvp'],
                     'sam': ['thlpthvp', 'THLPTHVP'],
+                    'silhs': [],
                     'coamps': ['thlpthvp'],
                     'r408': ['thlpthvp'],
                     'hoc': ['thlpthvp'],
@@ -504,6 +538,7 @@ class VariableGroupBase(VariableGroup):
                 {
                     'clubb': [self.get_rc_coef_zm_X_wprcp_clubb_line, 'rc_coef_zm * wprcp'],
                     'sam': [self.get_rc_coef_zm_X_wprcp_sam_calc, 'rc_coef_zm * wprcp'],
+                    'silhs': [],
                     'coamps': [self.get_rc_coef_zm_X_wprcp_coamps_calc, 'rc_coef_zm * wprcp'],
                     'r408': ['rc_coef_zm * wprcp'],
                     'hoc': ['rc_coef_zm * wprcp'],
@@ -521,7 +556,8 @@ class VariableGroupBase(VariableGroup):
             {'var_names':
                 {
                     'clubb': [self.get_rc_coef_zm_X_thlprcp_clubb_calc, 'rc_coef_zm * thlprcp'],
-                    'sam': [self.get_rc_coef_zm_X_thlprcp_sam_calc,'rc_coef_zm * thlprcp'],
+                    'sam': [self.get_rc_coef_zm_X_thlprcp_sam_calc, 'rc_coef_zm * thlprcp'],
+                    'silhs': [],
                     'coamps': [self.get_rc_coef_zm_X_thlprcp_coamps_calc, 'rc_coef_zm * thlprcp'],
                     'r408': ['rc_coef_zm * thlprcp'],
                     'hoc': ['rc_coef_zm * thlprcp'],
@@ -539,7 +575,8 @@ class VariableGroupBase(VariableGroup):
             {'var_names':
                 {
                     'clubb': [self.get_rc_coef_zm_X_rtprcp_clubb_calc, 'rc_coef_zm * rtprcp'],
-                    'sam': [self.get_rc_coef_zm_X_rtprcp_sam_calc,'rc_coef_zm * rtprcp'],
+                    'sam': [self.get_rc_coef_zm_X_rtprcp_sam_calc, 'rc_coef_zm * rtprcp'],
+                    'silhs': [],
                     'coamps': [self.get_rc_coef_zm_X_rtprcp_coamps_calc, 'rc_coef_zm * rtprcp'],
                     'r408': ['rc_coef_zm * rtprcp'],
                     'hoc': ['rc_coef_zm * rtprcp'],
@@ -557,7 +594,8 @@ class VariableGroupBase(VariableGroup):
             {'var_names':
                 {
                     'clubb': [self.get_rc_coef_X_wp2rcp_clubb_calc, 'rc_coef_zm * wp2rcp'],
-                    'sam': [self.get_rc_coef_X_wp2rcp_sam_calc,'rc_coef_zm * wp2rcp'],
+                    'sam': [self.get_rc_coef_X_wp2rcp_sam_calc, 'rc_coef_zm * wp2rcp'],
+                    'silhs': [],
                     'coamps': [self.get_rc_coef_X_wp2rcp_coamps_calc, 'rc_coef_zm * wp2rcp'],
                     'r408': ['rc_coef_zm * wp2rcp'],
                     'hoc': ['rc_coef_zm * wp2rcp'],
@@ -576,6 +614,7 @@ class VariableGroupBase(VariableGroup):
                 {
                     'clubb': ['wp2thvp'],
                     'sam': ['WP2THVP'],
+                    'silhs': [],
                     'coamps': ['wp2thvp'],
                     'r408': ['wp2thvp'],
                     'hoc': ['wp2thvp'],
@@ -590,7 +629,8 @@ class VariableGroupBase(VariableGroup):
         # Call ctor of parent class
         super().__init__(case, clubb_datasets=clubb_datasets, sam_datasets=sam_datasets, les_dataset=les_dataset,
                          coamps_dataset=coamps_dataset, r408_dataset=r408_dataset, cam_datasets=cam_datasets,
-                         hoc_dataset=hoc_dataset, e3sm_datasets=e3sm_datasets, wrf_datasets=wrf_datasets)
+                         hoc_dataset=hoc_dataset, e3sm_datasets=e3sm_datasets, wrf_datasets=wrf_datasets,
+                         silhs_datasets=silhs_datasets)
 
     def getThlmSamCalc(self, dataset_override=None):
         """
@@ -792,11 +832,10 @@ class VariableGroupBase(VariableGroup):
         if dataset_override is not None:
             dataset = dataset_override
 
-
         thlp3, indep, dataset = self.getVarForCalculations(['THLP3', 'thlp3'], dataset)
         thlp2, indep, dataset = self.getVarForCalculations(['THLP2', 'thlp2'], dataset)
 
-        skthl_zt = thlp3 / (thlp2 + 4e-4)**1.5
+        skthl_zt = thlp3 / (thlp2 + 4e-4) ** 1.5
         return skthl_zt, indep
 
     def getWpthlpSamCalc(self, dataset_override=None):
@@ -1087,7 +1126,8 @@ class VariableGroupBase(VariableGroup):
         PRES, indep, dataset = self.getVarForCalculations('PRES', dataset)
         THETAV, indep, dataset = self.getVarForCalculations('THETAV', dataset)
 
-        output1 = ((QCFLUX) / (RHO * 2.5104e+6)) * (2.5e6 / (1004.67 * ((PRES / 1000) ** (287.04 / 1004.67))) - 1.61 * THETAV)
+        output1 = ((QCFLUX) / (RHO * 2.5104e+6)) * (
+                    2.5e6 / (1004.67 * ((PRES / 1000) ** (287.04 / 1004.67))) - 1.61 * THETAV)
         output2 = WPRCP * (2.5e6 / (1004.67 * ((PRES / 1000) ** (287.04 / 1004.67))) - 1.61 * THETAV)
 
         output = self.pickNonZeroOutput(output1, output2, favor_output=output2)
@@ -1353,7 +1393,7 @@ class VariableGroupBase(VariableGroup):
         p, indep, dataset = self.getVarForCalculations('p', dataset)
 
         output1 = thlpqcp * (2.5e6 / (1004.67 * ex0) - 1.61 * thvm)
-        output2 = thlprlp * (2.5e6 / (1004.67 * (( p /1.0e5)**(287.04/1004.67))) - 1.61*thvm)
+        output2 = thlprlp * (2.5e6 / (1004.67 * ((p / 1.0e5) ** (287.04 / 1004.67))) - 1.61 * thvm)
         output = self.pickNonZeroOutput(output1, output2)
 
         return output, indep
@@ -1398,7 +1438,7 @@ class VariableGroupBase(VariableGroup):
         p, indep, dataset = self.getVarForCalculations('p', dataset)
 
         output1 = qtpqcp * (2.5e6 / (1004.67 * ex0) - 1.61 * thvm)
-        output2 = rtprlp * (2.5e6 / (1004.67*((p/1.0e5)**(287.04/1004.67))) - 1.61*thvm)
+        output2 = rtprlp * (2.5e6 / (1004.67 * ((p / 1.0e5) ** (287.04 / 1004.67))) - 1.61 * thvm)
         output = self.pickNonZeroOutput(output1, output2)
 
         return output, indep
@@ -1462,7 +1502,7 @@ class VariableGroupBase(VariableGroup):
         """
         dataset = self.sam_datasets
         if dataset_override is not None:
-            dataset = dataset_override#['sam']
+            dataset = dataset_override  # ['sam']
         WP2RCP, indep, dataset = self.getVarForCalculations('WP2RCP', dataset)
         PRES, indep, dataset = self.getVarForCalculations('PRES', dataset)
         THETAV, indep, dataset = self.getVarForCalculations('THETAV', dataset)
@@ -1541,12 +1581,11 @@ class VariableGroupBase(VariableGroup):
         p, indep, dataset = self.getVarForCalculations('p', dataset)
 
         output1 = wp2qcp * (2.5e6 / (1004.67 * ex0) - 1.61 * thvm)
-        output2 = wp2rlp * (2.5e6 / (1004.67 * (( p /1.0e5)**(287.04/1004.67))) - 1.61 * thvm)
+        output2 = wp2rlp * (2.5e6 / (1004.67 * ((p / 1.0e5) ** (287.04 / 1004.67))) - 1.61 * thvm)
 
         output = self.pickNonZeroOutput(output1, output2)
 
         return output, indep
-
 
     def get_wp2_sam_calc(self, dataset_override=None):
         """
