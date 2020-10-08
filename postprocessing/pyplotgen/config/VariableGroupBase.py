@@ -49,7 +49,6 @@ class VariableGroupBase(VariableGroup):
                     'cam': ['thlm'],
                     'wrf': ['thlm'],
                 },
-                # 'sam_calc': self.getThlmSamCalc,
                 'sci_scale': 0,
             },
             {'var_names':
@@ -63,7 +62,6 @@ class VariableGroupBase(VariableGroup):
                     'cam': ['rtm'],
                     'wrf': ['rtm'],
                 },
-                # 'sam_calc': self.getRtmSamCalc,
                 'sci_scale': -3,
             },
             {'var_names':
@@ -74,10 +72,9 @@ class VariableGroupBase(VariableGroup):
                     'r408': ['wpthlp'],
                     'hoc': ['wpthlp'],
                     'e3sm': ['wpthlp'],
-                    'cam': ['wpthlp'], # WPTHLP_CLUBB / (1 .* 1004)
+                    'cam': ['wpthlp'],
                     'wrf': ['wpthlp'],
                 },
-                # 'sam_calc': self.getWpthlpSamCalc,
                 'sci_scale': 0,
             },
             {'var_names':
@@ -91,7 +88,6 @@ class VariableGroupBase(VariableGroup):
                     'cam': ['WPRTP_clubb', 'wprtp'],
                     'wrf': ['wprtp'],
                 },
-                # 'sam_calc': self.getWprtpSamCalc,
                 'sci_scale': -4,
             },
             {'var_names':
@@ -172,7 +168,6 @@ class VariableGroupBase(VariableGroup):
                     'cam': ['RTP2_CLUBB', 'rtp2'],
                     'wrf': ['rtp2'],
                 },
-                # 'sam_calc': self.getRtp2SamCalc,
                 'sci_scale': -7,
             },
             {'var_names':
@@ -199,7 +194,6 @@ class VariableGroupBase(VariableGroup):
                     'cam': ['rtp3'],
                     'wrf': ['rtp3'],
                 },
-                # 'sam_calc': self.getRtp3SamCalc,
                 'sci_scale': -9,
             },
             {'var_names':
@@ -226,8 +220,6 @@ class VariableGroupBase(VariableGroup):
                     'cam': ['Skw_zt'],
                     'wrf': ['Skw_zt'],
                 },
-                # 'sam_calc': self.getSkwZtLesCalc,
-                # 'coamps_calc': self.getSkwZtLesCalc,
                 'sci_scale': 0,
             },
             {'var_names':
@@ -254,7 +246,6 @@ class VariableGroupBase(VariableGroup):
                     'cam': ['Skthl_zt'],
                     'wrf': ['Skthl_zt'],
                 },
-                # 'sam_calc': self.getSkthlZtLesCalc, 'coamps_calc': self.getSkthlZtLesCalc,
                 'sci_scale': 0,
             },
             {'var_names':
@@ -307,7 +298,6 @@ class VariableGroupBase(VariableGroup):
                     'cam': ['UPWP_CLUBB', 'upwp'],
                     'wrf': ['upwp'],
                 },
-                # 'coamps_calc': self.getUwCoampsData,
                 'sci_scale': 0,
             },
             {'var_names':
@@ -321,7 +311,6 @@ class VariableGroupBase(VariableGroup):
                     'cam': ['VPWP_CLUBB', 'vpwp'],
                     'wrf': ['vpwp'],
                 },
-                # 'coamps_calc': self.getVwCoampsData,
                 'sci_scale': 0,
             },
             {'var_names':
@@ -428,7 +417,6 @@ class VariableGroupBase(VariableGroup):
                     'cam': ['WPTHVP_CLUBB', 'wpthvp'],
                     'wrf': ['wpthvp'],
                 },
-                # 'sam_calc': self.getWpthvpSamCalc,
             },
             {'var_names':
                 {
@@ -511,9 +499,6 @@ class VariableGroupBase(VariableGroup):
                     'cam': ['rc_coef_zm * wprcp'],
                     'wrf': ['rc_coef_zm * wprcp'],
                 },
-                'clubb_calc': self.get_rc_coef_zm_X_wprcp_clubb_line,
-                'sam_calc': self.get_rc_coef_zm_X_wprcp_sam_calc,
-                'coamps_calc': self.get_rc_coef_zm_X_wprcp_coamps_calc,
                 'title': 'Contribution of Cloud Water Flux to wpthvp',
                 'axis_title': 'rc_coef_zm * wprcp [K m/s]',
                 'sci_scale': 0,
@@ -529,9 +514,6 @@ class VariableGroupBase(VariableGroup):
                     'cam': ['rc_coef_zm * thlprcp'],
                     'wrf': ['rc_coef_zm * thlprcp'],
                 },
-                'sam_calc': self.get_rc_coef_zm_X_thlprcp_sam_calc,
-                'coamps_calc': self.get_rc_coef_zm_X_thlprcp_coamps_calc,
-                'clubb_calc': self.get_rc_coef_zm_X_thlprcp_clubb_calc,
                 'title': 'Contribution of Cloud Water Flux to thlpthvp',
                 'axis_title': 'rc_coef_zm * thlprcp [K^2]',
                 'sci_scale': 0,
@@ -547,9 +529,6 @@ class VariableGroupBase(VariableGroup):
                     'cam': ['rc_coef_zm * rtprcp'],
                     'wrf': ['rc_coef_zm * rtprcp'],
                 },
-                'sam_calc': self.get_rc_coef_zm_X_rtprcp_sam_calc,
-                'coamps_calc': self.get_rc_coef_zm_X_rtprcp_coamps_calc,
-                'clubb_calc': self.get_rc_coef_zm_X_rtprcp_clubb_calc,
                 'title': 'Contribution of Cloud Water Flux to rtpthvp',
                 'axis_title': 'rc_coef_zm * rtprcp [kg/kg K]',
                 'sci_scale': -4
@@ -565,9 +544,6 @@ class VariableGroupBase(VariableGroup):
                     'cam': ['rc_coef_zm * wp2rcp'],
                     'wrf': ['rc_coef_zm * wp2rcp'],
                 },
-                'sam_calc': self.get_rc_coef_X_wp2rcp_sam_calc,
-                'coamps_calc': self.get_rc_coef_X_wp2rcp_coamps_calc,
-                'clubb_calc': self.get_rc_coef_X_wp2rcp_clubb_calc,
                 'title': 'Cloud water contribution to wp2thvp',
                 'axis_title': 'rc_coef * wp2rcp [m^2/s^2 K]',
                 'sci_scale': 0

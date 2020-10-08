@@ -29,7 +29,7 @@ class VariableGroupSubcolumns(VariableGroup):
                     'cam': [],
                     'wrf': [],
                 },
-                'type': Panel.TYPE_SUBCOLUMN, 'legend_label': 'w'
+                'type': Panel.TYPE_SUBCOLUMN,
             },
             {'var_names':
                 {
@@ -42,7 +42,7 @@ class VariableGroupSubcolumns(VariableGroup):
                     'cam': [],
                     'wrf': [],
                 },
-                'type': Panel.TYPE_SUBCOLUMN, 'legend_label': 'chi'
+                'type': Panel.TYPE_SUBCOLUMN,
             },
             {'var_names':
                 {
@@ -55,7 +55,7 @@ class VariableGroupSubcolumns(VariableGroup):
                     'cam': [],
                     'wrf': [],
                 },
-                'type': Panel.TYPE_SUBCOLUMN, 'legend_label': 'eta'
+                'type': Panel.TYPE_SUBCOLUMN,
             },
             {'var_names':
                 {
@@ -68,7 +68,7 @@ class VariableGroupSubcolumns(VariableGroup):
                     'cam': [],
                     'wrf': [],
                 },
-                'type': Panel.TYPE_SUBCOLUMN, 'legend_label': 'Ncn'
+                'type': Panel.TYPE_SUBCOLUMN,
             },
 
             {'var_names':
@@ -82,7 +82,7 @@ class VariableGroupSubcolumns(VariableGroup):
                     'cam': [],
                     'wrf': [],
                 },
-                'type': Panel.TYPE_SUBCOLUMN, 'legend_label': 'rr'
+                'type': Panel.TYPE_SUBCOLUMN,
             },
             {'var_names':
                 {
@@ -95,7 +95,7 @@ class VariableGroupSubcolumns(VariableGroup):
                     'cam': [],
                     'wrf': [],
                 },
-                'type': Panel.TYPE_SUBCOLUMN, 'legend_label': 'Nr'
+                'type': Panel.TYPE_SUBCOLUMN,
             },
             {'var_names':
                 {
@@ -108,7 +108,7 @@ class VariableGroupSubcolumns(VariableGroup):
                     'cam': [],
                     'wrf': [],
                 },
-                'type': Panel.TYPE_SUBCOLUMN, 'legend_label': 'ri'
+                'type': Panel.TYPE_SUBCOLUMN,
             },
             {'var_names':
                 {
@@ -121,7 +121,7 @@ class VariableGroupSubcolumns(VariableGroup):
                     'cam': [],
                     'wrf': [],
                 },
-                'type': Panel.TYPE_SUBCOLUMN, 'legend_label': 'Ni'
+                'type': Panel.TYPE_SUBCOLUMN,
             },
             {'var_names':
                 {
@@ -134,7 +134,7 @@ class VariableGroupSubcolumns(VariableGroup):
                     'cam': [],
                     'wrf': [],
                 },
-                'type': Panel.TYPE_SUBCOLUMN, 'legend_label': 'rg'
+                'type': Panel.TYPE_SUBCOLUMN,
             },
             {'var_names':
                 {
@@ -147,7 +147,7 @@ class VariableGroupSubcolumns(VariableGroup):
                     'cam': [],
                     'wrf': [],
                 },
-                'type': Panel.TYPE_SUBCOLUMN, 'legend_label': 'Ng'
+                'type': Panel.TYPE_SUBCOLUMN,
             },
             {'var_names':
                 {
@@ -160,7 +160,7 @@ class VariableGroupSubcolumns(VariableGroup):
                     'cam': [],
                     'wrf': [],
                 },
-                'type': Panel.TYPE_SUBCOLUMN, 'legend_label': 'rs'
+                'type': Panel.TYPE_SUBCOLUMN,
             },
             {'var_names':
                 {
@@ -173,7 +173,7 @@ class VariableGroupSubcolumns(VariableGroup):
                     'cam': [],
                     'wrf': [],
                 },
-                'type': Panel.TYPE_SUBCOLUMN, 'legend_label': 'Ns'
+                'type': Panel.TYPE_SUBCOLUMN,
             },
 
         ]

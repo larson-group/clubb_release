@@ -48,10 +48,13 @@ If, in addition, you'd like to overplot LES lines and also separately plot CLUBB
 `python3 ./pyplotgen.py --plot-budgets -l -c /home/USERNAME/clubb_nc_output -o /home/USERNAME/clubb/postprocessing/pyplotgen/output`
 
 # Advanced Usage
-## Reference Documentation
+## Reference Documentation for Developers
 Reference documentation is available in the `pyplotgen/docs/html` folder. Open `pyplotgen/docs/html/index.html` in a web browser for easy viewing. More information is available in the `pyplotgen/docs/README.md` file.
 
-## Running subsets of cases
+## Running subsets of cases (obsolete)
+_Note: This process has become obsolete. While this is still possible, it is better to use the `--cases` command line parameter
+described above._ 
+
 If someone wants to run only a few cases, reguardless of how many datasets were outputted to a folder, they can do so by editing the last line of the `pyplotgen/config/Case_definitions.py` file such that it defines `ALL_CASES` to contain only the cases they wish to plot.  
 This is what the bottom of `Case_definitions.py` normally looks like:
 ~~~~python
@@ -95,11 +98,11 @@ ALL_CASES = [ARM, ARM_97, ASTEX_A209, ATEX,
              ]
 
 # If uncommented, this line will override the real CASES_TO_PLOT given above, forcing pyplotgen to only plot some cases.
-ALL_CASES = [BOMEX]
+CASES_TO_PLOT = [BOMEX]
 ~~~~
 `BOMEX` can be replaced with the name of any valid case, so long as it is one of the variables defined within this file. For example, to plot the fire and wangara case, one would do
 ~~~~python
-ALL_CASES = [FIRE, WANGARA]
+CASES_TO_PLOT = [FIRE, WANGARA]
 ~~~~
 
 ## Making Publish Ready Plots
@@ -108,13 +111,13 @@ There are a few aspects to making a plot publish ready.
 2. Using math text formatting
 3. Cleaning legend labels
 
-### Changing color pallet
+### 1. Changing color pallet
 In the `config/Style_definitions.py` file there are two relavent variables: `COLOR_ROTATION` and `STYLE_ROTATION`. 
 There are suggested presets available for use defined in comments. Only 1 set of definitions should be active at a given
 time. All others should be commented out. For publication, it is suggested to use the print-safe definitions. Using a set 
 of color/style's is as easy as uncommenting the desired set and commenting out all others.
 
-### Using Math Text Formatting
+### 2. Using Math Text Formatting
 Matplotlib (the plotting engine used in the background of pyplotgen) allows for LaTeX style math text formatting. 
 Pyplotgen allows for titles and dependent axis labels to be overriden. To create a custom title/axis label, simply 
 include a 'title' or 'axis_title' parameter in the variables definition. Additionally, these custom titles can utilize 
@@ -139,12 +142,12 @@ Example:
     'sci_scale': 0,
 },
 ~~~~
-### Cleaning legend labels
+### 3. Cleaning legend labels
 Changing the text on a legend label is easy. To do so, simply change the foldername of the data being imported. Note 
 that underscores (`_`) will be replaced with spaces automatically. This is done to make the legends more readable, as it 
 allows python to know how to split up new lines for longer legend labels.
 
-## Adding new Variables (needs updating)
+## Adding new Variables
 Note: additional documentation is available in the "Reference Documentation" listed above
 Each variable is included within a _VariableGroup_,and each variable group is included into a case. To add a new variable, it must be added to a variable group. Once a variable is in a variable group, all cases that plot that group will now also plot the new variable. Variables have many properties available to describe them, here they are (pulled from VariableGroup.py src code comments):
 
@@ -152,52 +155,53 @@ Each variable is included within a _VariableGroup_,and each variable group is in
 
 | Parameter | Description |
 | --- | --- |  
-| *var_names* | A list of names various models refer to this variable as. E.g. ['wprtp', 'WPRTP', 'wpqtp']. This list is to include the variable name for any models that Pyplotgen is plotting. It does not matter what order the variables are in; pyplotgen will search the list from left -> right so more frequent names are _preferred_ to go on the left for efficiency.|
-| *sam_calc*| (optional) A functional reference to a method that calculates a sam variable. This is given as the name of the function *without* the () after the name. E.g. `self.getThlmSamCalc` |
-| *clubb_calc*| (optional) A functional reference to a method that calculates a clubb variable. This is given as the name of the function *without* the () after the name. E.g. `self.getThlmClubbCalc` |
-| *coamps_calc* | (optional) A functional reference to a method that calculates a coamps variable. This is given as the name of the function *without* the () after the name. E.g. `self.getThlmCoampsCalc`|
-| *cam_calc*| (optional) A functional reference to a method that calculates a cam variable. This is given as the name of the function *without* the () after the name. E.g. `self.getThlmCamCalc` |
-| *hoc_calc*| (optional) A functional reference to a method that calculates an hoc-2005 variable. This is given as the name of the function *without* the () after the name. E.g. `self.getThlmHocCalc` |
-| *r408_calc*| (optional) A functional reference to a method that calculates a r408 variable. This is given as the name of the function *without* the () after the name. E.g. `self.getThlmR408SamCalc` |
-| *e3sm_calc*| (optional) A functional reference to a method that calculates a e3sm variable. This is given as the name of the function *without* the () after the name. E.g. `self.getThlmE3smCalc` |
-| *sam_conv_factor* | (optional) Numeric value to scale a sam variable by. E.g. `1/1000`, or `100`|
-| *coamps_conv_factor*| (optional) Numeric value to scale a coamps variable by. E.g. `1/1000`, or `100`|
-| *r408_conv_factor* | (optional) Numeric value to scale a clubb r408 variable by. E.g. `1/1000`, or `100`|
-| *e3sm_conv_factor* | (optional) Numeric value to scale an e3sm variable by. E.g. `1/1000`, or `100`|
-| *type* | (optional) Override the default type 'profile' with either 'budget' or 'timeseries'|
-| *fallback_func* | (optional) (DEPRECATED: Use model_calc functions instead) If a variable is not found within a dataset and a `fallback_func` is specified, this function will be called to attempt retrieving the variable (before filling zeros if `fill_zeros=True`). Like the `model_calc` option, this is a functional reference to a method that calculates the given variable. E.g. `self.getWpthlpFallback`|
+| *[model_name]* | A list of names various models refer to this variable as. E.g. ['wprtp', 'WPRTP', 'wpqtp', self.backupCalcFunction]. This list is to include the variable name for any models that Pyplotgen is plotting. Items in this list will be evaluated from left to right. This parameter can accept functional references to calculating functions. See below on `calc functions`. |
+| `calc functions`| (optional) A functional reference to a method that calculates a model's variable. This is given as the name of the function *without* the () after the name. To specify a calc function for a given variable and model, add it to the model's list of names.  |
+| *[model-name]_conv_factor* | (optional) Numeric value to scale a model's variable by. E.g. `'clubb_conv_factor': 1/1000`, or `'clubb_conv_factor': 100`|
+| *type* | (optional) Override the default type 'profile' with a valid panel type. E.g. 'budget' 'timeseries'. The complete list of valid panel types can be found in src/Panel.VALID_PANEL_TYPES|
 | *title* | (optional) Override the default panel title, or provide one if it's not specified in the netcdf file.|
 | *axis_title* | (optional) Override the default dependent axis title, or provide one if it's not specified in the netcdf file.|
-| *fill_zeros* | (optional) (DEPRECATED: Data arrays by default get filled with zeros now) If a variable isn't found in netcdf output, and there is no `_calc` function (or it failed) setting this to True allows PyPlotgen to fill all data points with 0 and continue plotting.|
-| *lines* | (budget variables only) Defines lines to plot for budget cases. Passed separately because it's a lot of text. This is given in the form of a list of lines, below's an example:|
-| *type* | (optional) Override the default type 'profile' with either 'budget', 'timeseries', or (not implemented) 'timeheight'
+| *lines* | (usually used for budgets) Defines extra lines to plot. Passed separately because it's a lot of text. This is given in the form of a list of lines, there's an exmaple below. Note that the lines parameter does use the `'[model name]'` to specify variable names, uses `'var_names'` to specify variable names for all models.|
+| *label* | (used within the optional lines parameter) When specifying additional lines to plot (e.g. for budgets) this parameter is used to define the label that shows up on the legend. |
+| *sci_scale* | (optional) This will force pyplotgen to plot the given variable at a certain scientific scale. This parameter expects just the numerber of the exponent. For example, to force a 1e-7 scale enter `'sci_scale': -7`
+| *centered* | (optional) Takes a boolean value, e.g. `'centered': True`. This results in the plot being horizontally centered. If this is not specified the default value of False is used. This is most often used for budget lines. |
 
+
+Example for `lines` parameter:
 ~~~~python
-            thlm_lines = [
-            {'var_names': ['thlm_bt'], 'label': 'thlm_bt'},
-            {'var_names': ['thlm_ma'], 'label': 'thlm_ma'},
-            {'var_names': ['thlm_ta'], 'label': 'thlm_ta'},
-            {'var_names': ['thlm_mc'], 'label': 'thlm_mc'},
-            {'var_names': ['thlm_clipping'], 'label': 'thlm_bt', 'clubb_calc': self.getThlmClipping},
-            {'var_names': ['radht'], 'label': 'radht'},
-            {'var_names': ['lsforcing'], 'label': 'lsforcing', 'clubb_calc': self.getLsforcing},
-            {'var_names': ['thlm_residual'], 'label': 'thlm_residual', 'clubb_calc': self.getThlmResidual},
-            ]
-            self.variable_definitions = [
-            {'var_names': ['thlm'], 'lines': thlm_lines, 'type': Panel.TYPE_BUDGET}
-            ]
+        thlm_budget_lines = [
+            {'var_names': ['thlm_bt'], 'legend_label': 'thlm_bt'},
+            {'var_names': ['thlm_ma'], 'legend_label': 'thlm_ma'},
+            {'var_names': ['thlm_ta'], 'legend_label': 'thlm_ta'},
+            {'var_names': ['thlm_mc'], 'legend_label': 'thlm_mc'},
+            {'var_names': ['thlm_clipping', self.getThlmClipping],
+                 'legend_label': 'thlm_clipping',
+             },
+            {'var_names': ['radht'], 'legend_label': 'radht'},
+            {'var_names': ['ls_forcing', self.getThlmLsforcing],
+             'legend_label': 'thlm_ls_forcing',
+             },
+            {'var_names': ['thlm_residual', self.getThlmResidual],
+             'legend_label': 'thlm_residual',
+             },
+
+        ]
 ~~~~
-Here are a couple examples of other (non-budget) variable definitions:
+Here is another example of a non-budget variable definitions:
 
 ~~~~python{
-            'var_names': ['Skrt_zt'],
-            'sam_calc': self.getSkrtZtLesLine,
-            'coamps_calc': self.getSkrtZtLesLine,
-            },
-            {
-            'var_names': ['lwp', 'CWP'],
-            'type': Panel.TYPE_TIMESERIES,
-            'sam_conv_factor': 1/1000
+            {'var_names':
+                {
+                    'clubb': ['thlm'],
+                    'sam': [self.getThlmSamCalc, 'THETAL', 'THETA'],
+                    'coamps': ['thlm'],
+                    'r408': ['thlm'],
+                    'hoc': ['thlm'],
+                    'e3sm': ['thlm'],
+                    'cam': ['thlm'],
+                    'wrf': ['thlm'],
+                },
+                'sci_scale': 0,
             }
 ~~~~
 
@@ -261,7 +265,12 @@ Here is the full example:
 Once this method is created, simply add this function to the variable's entry in the self.variable_definitions list at the top of the file. 
 Example:
 ~~~~python
-            {'var_names': { 'clubb': ['thlm'], ...} , 'sam_calc': self.getWpthlpSamCalc},
+            {'var_names': { 
+                            'clubb': ['thlm'],
+                            'sam': [self.getWpthlpSamCalc],
+                             ...
+                          } 
+            },
 ~~~~
 **Note**: do NOT include () when giving the functions name, here we are using functional programming to pass the method itself as a parameter, not a call to the method, so we must not use the ().  
  
@@ -273,29 +282,42 @@ Adding a new case is similar to adding a variable in that the process is general
 | **Parameter** | **Description** |
 |---|---|
 |*name*| must be the same as the filename without the extention. Eg. to use lba_zt.nc and lba_zm.nc the case's name must be 'lba'. Extensions are determined by the last instance of `_`|
+| *description* | A textual descritption of the case. This appears under the case's name in the pyplotgen output. |
 |*start_time*| An integer value representing which timestep to begin the time-averaging interval. Valid options are from 1 -> list minute value. Give in terms of clubb minutes.|
 |*end_time*| An integer value representing which timestep to end the time-averaging interval. Valid options are from 1 -> list minute value. Give in terms of clubb minutes. Also used to determine where to stop timeseries plots|
 |*height_min_value*| The elevation to begin height plots at|
 |*height_max_value*| The elevation to end height plots at|
 |*blacklisted_vars*| List of variables to avoid plotting for this case. Names must use the clubb-name version|
-|*sam_file*| Path to the SAM .nc file for this case (please use the SAM_OUTPUT_ROOT variable as a base).|
-|*coamps_file*| dict containing paths to the coamps .nc files for this case (please use the LES_OUTPUT_ROOT variable as a base).|
-|*r408_file*| dict containing paths to the r408 .nc files for this case (please use the R408_OUTPUT_ROOT variable as a base).|
-|*hoc_file* | dict containing paths to the hod .nc files for this case (please use the HOC_OUTPUT_ROOT variable as a base).|
+|*[model name]_file*| Path to a model's .nc file for this case. Please see examples in the code for best practices.|
 |*var_groups*| list of python class names, where the classes use the naming scheme VariableGroup____.py and define a variable group.|
 
 Here's an example definition:
 ~~~~python
-BOMEX = {'name': 'bomex', 'start_time': 181, 'end_time': 360, 'height_min_value': 0, 'height_max_value': 
+BOMEX = {'name': 'bomex',
+         'description': "",
+         'start_time': 181, 'end_time': 360,
+         'height_min_value': 0, 'height_max_value': 2500,
+
          'blacklisted_vars': [],
-         'sam_file': SAM_OUTPUT_ROOT + "/JULY_2017/BOMEX_64x64x75/BOMEX_64x64x75_100m_40m_1s.nc",
-         coamps_dataset: None,
-         'r408_file': {'zm': R408_OUTPUT_ROOT + '/Chris_Golaz_best_ever/bomex_zm.nc',
-                       'zt': R408_OUTPUT_ROOT + '/Chris_Golaz_best_ever/bomex_zt.nc',
-                       'sfc': R408_OUTPUT_ROOT + '/Chris_Golaz_best_ever/bomex_sfc.nc'},
-         'hoc_file': {'zm': HOC_OUTPUT_ROOT + '/bomex_zm.nc',
-                      'zt': HOC_OUTPUT_ROOT + '/bomex_zt.nc',
-                      'sfc': HOC_OUTPUT_ROOT + '/bomex_sfc.nc'},
+         'sam_benchmark_file': {'sam_benchmark': SAM_BENCHMARK_OUTPUT_ROOT +
+                                                 "/JULY_2017/BOMEX_64x64x75/BOMEX_64x64x75_100m_40m_1s.nc"},
+         'clubb_file': {'zm': clubb_output_root + '/bomex_zm.nc',
+                        'zt': clubb_output_root + '/bomex_zt.nc',
+                        'sfc': clubb_output_root + '/bomex_sfc.nc'},
+         'coamps_benchmark_file': {'sm': COAMPS_BENCHMARK_OUTPUT_ROOT + "/bomex_coamps_sm.nc",
+                                   'sw': COAMPS_BENCHMARK_OUTPUT_ROOT + "/bomex_coamps_sw.nc"},
+         'clubb_r408_benchmark_file': {'zm': R408_OUTPUT_ROOT + '/Chris_Golaz_best_ever/bomex_zm.nc',
+                             'zt': R408_OUTPUT_ROOT + '/Chris_Golaz_best_ever/bomex_zt.nc',
+                             'sfc': R408_OUTPUT_ROOT + '/Chris_Golaz_best_ever/bomex_sfc.nc'},
+         'clubb_hoc_benchmark_file': {'zm': HOC_OUTPUT_ROOT + '/bomex_zm.nc',
+                            'zt': HOC_OUTPUT_ROOT + '/bomex_zt.nc',
+                            'sfc': HOC_OUTPUT_ROOT + '/bomex_sfc.nc'},
+         'e3sm_file': { 'e3sm': e3sm_output_root + '/bomex.nc'},
+         'cam_file': None,
+         'sam_file': {'sam': sam_output_root + "/BOMEX_SAM_CLUBB.nc"},
+         'wrf_file': {'zm': wrf_output_root + '/bomex_zm_wrf.nc',
+                      'zt': wrf_output_root + '/bomex_zt_wrf.nc',
+                      'sfc': wrf_output_root + '/bomex_sfc_wrf.nc'},
          'var_groups': [VariableGroupBase, VariableGroupWs]}
 ~~~~~
 
