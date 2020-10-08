@@ -173,12 +173,18 @@ class NetCdfVariable:
                 # Trim 1st coordinate -> time dimension
                 self.dependent_data = self.dependent_data[start_idx:end_idx]
                 if self.independent_data is not None:
-                    self.independent_data['time'] = self.independent_data['time'][start_idx:end_idx]
+                    if isinstance(self.independent_data, dict):
+                        self.independent_data['time'] = self.independent_data['time'][start_idx:end_idx]
+                    else:
+                        self.independent_data = self.independent_data[start_idx:end_idx]
             else:
                 # Trim 2nd coordinate -> height dimension
-                self.dependent_data = self.dependent_data[:,start_idx:end_idx]
+                self.dependent_data = self.dependent_data[:, start_idx:end_idx]
                 if self.independent_data is not None:
-                    self.independent_data['height'] = self.independent_data['height'][start_idx:end_idx]
+                    if isinstance(self.independent_data, dict):
+                        self.independent_data['height'] = self.independent_data['height'][start_idx:end_idx]
+                    else:
+                        self.independent_data = self.independent_data[start_idx:end_idx]
         else:
             self.dependent_data = self.dependent_data[start_idx:end_idx]
             if self.independent_data is not None:
@@ -253,7 +259,7 @@ class NetCdfVariable:
             else:
                 dependent_data, independent_data = varname_element(dataset_override=all_datasets)
 
-            if np.isnan(dependent_data[0]) or np.isnan(independent_data[0]):
+            if np.isnan(dependent_data.any()) or np.isnan(independent_data.any()):
                 continue
             else:
                 break

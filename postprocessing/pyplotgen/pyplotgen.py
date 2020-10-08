@@ -45,7 +45,7 @@ class PyPlotGen:
                  plot_e3sm="", sam_folders=[""], wrf_folders=[""], cam_folders=[""],
                  budget_moments=False, bu_morr=False, diff=None, show_alphabetic_id=False,
                  time_height=False, animation=None, disable_multithreading=False, pdf=False,
-                 pdf_filesize_limit=None):
+                 pdf_filesize_limit=None, plot_subcolumns=False):
         """
         This creates an instance of PyPlotGen. Each parameter is a command line parameter passed in from the argparser
         below.
@@ -105,6 +105,7 @@ class PyPlotGen:
         self.no_legends = no_legends
         self.ensemble = ensemble
         self.plot_budgets = budget_moments
+        self.plot_subcolumns = plot_subcolumns
         self.bu_morr = bu_morr
         self.diff = diff
         self.cases_plotted = []
@@ -369,7 +370,7 @@ class PyPlotGen:
                                                   wrf_folders=self.wrf_folders, diff_datasets=self.case_diff_datasets,
                                                   plot_r408=self.cgbest, plot_hoc=self.hoc, e3sm_dirs=self.e3sm_dir,
                                                   cam_folders=self.cam_folders, time_height=self.time_height,
-                                                  animation=self.animation)
+                                                  animation=self.animation, plot_subcolumns=self.plot_subcolumns)
             # Call plot function of case instance
             case_gallery_setup.plot(self.output_folder, replace_images=self.replace_images, no_legends=self.no_legends,
                                     thin_lines=self.thin, show_alphabetic_id=self.show_alphabetic_id)
@@ -591,6 +592,8 @@ def __processArguments__():
     parser.add_argument("--no-legends", help="Plot without legend boxes defining the line types.", action="store_true")
     parser.add_argument("-b", "--plot-budgets", help="Plot all defined budgets of moments.",
                         action="store_true")
+    parser.add_argument("--plot-subcolumns", help="Plot all defined subcolumns.",
+                        action="store_true")
     parser.add_argument("-t", "--time-height-plots",
                         help="Instead of averaged profiles, create contour plots from 2d data." +
                              " Cannot be used with -m.",
@@ -730,7 +733,7 @@ def __processArguments__():
                           bu_morr=args.bu_morr, diff=args.diff, show_alphabetic_id=args.show_alphabetic_id,
                           time_height=args.time_height_plots, animation=args.movies,
                           disable_multithreading=args.disable_multithreading, pdf=args.pdf,
-                          pdf_filesize_limit=args.pdf_filesize_limit)
+                          pdf_filesize_limit=args.pdf_filesize_limit, plot_subcolumns=args.plot_subcolumns)
     return pyplotgen
 
 

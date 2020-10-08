@@ -9,6 +9,7 @@ import numpy as np
 
 from config.VariableGroupBaseBudgets import VariableGroupBaseBudgets
 from config.VariableGroupSamBudgets import VariableGroupSamBudgets
+from config.VariableGroupSubcolumns import VariableGroupSubcolumns
 from src.DataReader import DataReader
 from src.Panel import Panel
 
@@ -27,7 +28,7 @@ class CaseGallerySetup:
 
     def __init__(self, case_definition, clubb_folders=[], diff_datasets=None, sam_folders=[""], wrf_folders=[""],
                  plot_les=False, plot_budgets=False, plot_r408=False, plot_hoc=False, e3sm_dirs=[], cam_folders=[],
-                 time_height=False, animation=None):
+                 time_height=False, animation=None, plot_subcolumns=False):
         """
         Initialize a CaseGallerySetup object with the passed parameters
         :param case_definition: dict containing case specific elements. These are pulled in from Case_definitions.py,
@@ -71,6 +72,7 @@ class CaseGallerySetup:
         self.animation = animation
         self.panels = []
         self.diff_panels = []
+        self.plot_subcolumns = plot_subcolumns
 
         self.VALID_MODEL_NAMES = ['clubb', 'clubb_hoc','clubb_r408', 'e3sm', 'sam', 'cam', 'wrf', 'coamps']
 
@@ -90,9 +92,33 @@ class CaseGallerySetup:
         self.e3sm_file = self.__loadModelFiles__(e3sm_dirs, case_definition, "e3sm")
         self.cam_file = self.__loadModelFiles__(cam_folders, case_definition, "cam")
 
+
+        self.__generateSubcolumnPanels__()
         self.__generateVariableGroupPanels__()
         self.__generateDiffPanels__()
         self.__generateBudgetPanels__()
+
+    def __generateSubcolumnPanels__(self):
+        """
+        This function creates the subcolumn panels and adds them into self.panels.
+        This function takes no parameters and will only work if both self.plot_subcolumns is True, and
+        the model, case, and input folder contain defined data for subcolumn output. Otherwise it will do nothing.
+
+        :return: None. Operates in-place
+        """
+        # Only attempt subcolumns if enabled and the case defines an output file
+        if self.plot_subcolumns and self.clubb_datasets is not None and len(self.clubb_datasets) != 0:
+            # for folders_datasets in self.clubb_datasets.values():
+            for input_folder in self.clubb_datasets:
+                if "subcolumns" in self.clubb_datasets[input_folder].keys():
+                    folder_name = os.path.basename(input_folder)
+                    subcols_defined_for_this_folder = "subcolumns" in self.clubb_datasets[input_folder]
+                    if input_folder in self.clubb_datasets.keys() and subcols_defined_for_this_folder:
+                        subcolumn_variables = VariableGroupSubcolumns(self,
+                                                    clubb_datasets={folder_name:self.clubb_datasets[input_folder]})
+                        self.panels.extend(subcolumn_variables.panels)
+                    else:
+                        warn("" + folder_name + " does not seem to contain data for case" + self.name)
 
     def __generateBudgetPanels__(self):
         """
@@ -301,7 +327,7 @@ class CaseGallerySetup:
             else:
                 alphabetic_id = ""
             plot_paired_lines = True
-            if panel.panel_type == panel.TYPE_BUDGET:
+            if panel.panel_type == panel.TYPE_BUDGET or panel.panel_type == panel.TYPE_SUBCOLUMN:
                 plot_paired_lines = False
             panel.plot(output_folder, self.name, replace_images=replace_images, no_legends=no_legends,
                        thin_lines=thin_lines, alphabetic_id=alphabetic_id, paired_plots=plot_paired_lines)

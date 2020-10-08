@@ -124,6 +124,16 @@ config.VariableGroupScalars module
    :private-members:
    :special-members:
 
+config.VariableGroupSubcolumns module
+------------------------------------------------
+
+.. automodule:: config.VariableGroupSubcolumns
+   :members:
+   :undoc-members:
+   :show-inheritance:
+   :private-members:
+   :special-members:
+
 config.VariableGroupWs module
 ---------------------------------------
 

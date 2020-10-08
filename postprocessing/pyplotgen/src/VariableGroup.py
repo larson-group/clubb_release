@@ -559,6 +559,10 @@ class VariableGroup:
             contour = self.__getTimeHeightContours__(var_names, ncdf_datasets, label, conversion_factor)
             if contour is not None:
                 all_lines.append(contour)
+        elif panel_type is Panel.TYPE_SUBCOLUMN:
+            lines = self.__getSubcolumnLines__(var_names, ncdf_datasets, label, line_format, conversion_factor,
+                                                    avg_axis, lines=lines, model_name=model_name)
+            all_lines.extend(lines)
         elif panel_type:
             raise ValueError('Invalid panel type ' + panel_type + '. Valid options are profile, budget, timeseries')
 
@@ -597,6 +601,43 @@ class VariableGroup:
             line = Line(variable, variable.independent_data, label=label, line_format=line_format)
             output_lines.append(line)
         return output_lines
+
+    def __getSubcolumnLines__(self, varnames, dataset, label, line_format, conversion_factor, avg_axis, lines=None,
+                           model_name="unknown"):
+        """
+        Generate Line objects for subcolumn panels.
+
+        :param varnames: A list of variable names
+        :param dataset: NetCdf4 Dataset object containing the model output being plotted
+        :param label: This is the name that will be shown on the legend for this line
+        :param line_format: A string representing how this line should be formatted using pyplot formatting.
+            Recommended value: emtpy string ""
+        :param conversion_factor: This is a numerical value that will be multiplied element-wise to the variable.
+            It's useful for doing basic model to model conversions, e.g. SAM -> CLUBB.
+        :param avg_axis: Values will be averaged along this axis. This is basically only used for time-averaging
+            profile plots.
+        :param lines: A lines parameter definition as found in a VariableGroup___.py. See addVariable() for more details.
+        :return: Line objects representing the given variable for a subcolumn plot
+        """
+        output_lines = []
+        variable = NetCdfVariable(varnames, dataset["subcolumns"], independent_var_names=Case_definitions.HEIGHT_VAR_NAMES,
+                                  start_time=self.start_time, end_time=self.end_time, min_height=self.height_min_value,
+                                  max_height=self.height_max_value, avg_axis=avg_axis,
+                                  conversion_factor=conversion_factor, model_name=model_name)
+        variable.trimArray(self.height_min_value, self.height_max_value, data=variable.independent_data, axis=0)
+        for i in range(len(variable.dependent_data[0])):
+            label_with_offset = label + "_" + str(i+1)
+            x_data_i = variable.dependent_data[:,i]
+            line = Line(x_data_i, variable.independent_data, label=label_with_offset)
+            output_lines.append(line)
+
+        if lines is not None:
+            additional_lines = self.__processLinesParameter__(lines, dataset, line_format=line_format,
+                                                              label_suffix=label, model_name=model_name)
+            output_lines.extend(additional_lines)
+
+        return output_lines
+
 
     def __getTimeseriesLine__(self, varname, dataset, end_time, conversion_factor, label, line_format):
         """

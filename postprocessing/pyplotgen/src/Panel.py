@@ -29,6 +29,9 @@ class Panel:
     TYPE_TIMESERIES = 'timeseries'
     TYPE_TIMEHEIGHT = 'timeheight'
     TYPE_ANIMATION = 'animation'
+    TYPE_SUBCOLUMN = 'subcolumn'
+
+    VALID_PANEL_TYPES = [TYPE_PROFILE, TYPE_BUDGET, TYPE_TIMESERIES, TYPE_TIMEHEIGHT, TYPE_ANIMATION, TYPE_SUBCOLUMN]
 
     def __init__(self, plots, panel_type="profile", title="Unnamed panel", dependent_title="dependent variable",
                  sci_scale = None, centered = False):
@@ -66,6 +69,9 @@ class Panel:
         elif self.panel_type is Panel.TYPE_BUDGET:
             self.y_title = "Height [m]"
             self.x_title = self.dependent_title
+        elif self.panel_type is Panel.TYPE_SUBCOLUMN:
+            self.x_title = self.dependent_title
+            self.y_title = "Height [m]"
         elif self.panel_type is Panel.TYPE_TIMESERIES:
             self.x_title = "Time [min]"
             self.y_title = self.dependent_title
@@ -74,7 +80,7 @@ class Panel:
             self.y_title = "Height [m]"
         else:
             raise ValueError('Invalid panel type ' + self.panel_type +
-                             '. Valid options are profile, budget, timeseries')
+                             '. Valid options are: ' + str(Panel.VALID_PANEL_TYPES))
 
     def plot(self, output_folder, casename, replace_images = False, no_legends = True, thin_lines = False,
              alphabetic_id="", paired_plots = True):
@@ -244,7 +250,9 @@ class Panel:
 
         # Generate image filename
         filename = self.panel_type + "_"+ str(datetime.now())
-
+        # Force subcolumn plots to show up on top
+        if self.panel_type == Panel.TYPE_SUBCOLUMN:
+            filename = 'aaa' + filename
         if self.panel_type == Panel.TYPE_BUDGET:
             filename = filename + "_"+ self.title
         else:
@@ -334,7 +342,6 @@ class Panel:
 
             # Generate image filename
             filename = label + "_timeheight_"+ str(datetime.now())
-
             filename = self.__removeInvalidFilenameChars__(filename)
             # Concatenate with output foldername
             relative_filename = output_folder + '/' + casename + '/' + filename
