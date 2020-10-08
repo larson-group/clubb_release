@@ -45,7 +45,7 @@ class PyPlotGen:
                  plot_e3sm="", sam_folders=[""], wrf_folders=[""], cam_folders=[""],
                  budget_moments=False, bu_morr=False, diff=None, show_alphabetic_id=False,
                  time_height=False, animation=None, disable_multithreading=False, pdf=False,
-                 pdf_filesize_limit=None, silhs_folders=None):
+                 pdf_filesize_limit=None):
         """
         This creates an instance of PyPlotGen. Each parameter is a command line parameter passed in from the argparser
         below.
@@ -97,7 +97,6 @@ class PyPlotGen:
         self.sam_folders = sam_folders
         self.cam_folders = cam_folders
         self.wrf_folders = wrf_folders
-        self.silhs_folders = silhs_folders
         self.cgbest = cgbest
         self.hoc = hoc
         self.plot_diff = diff
@@ -235,15 +234,14 @@ class PyPlotGen:
                 bytes_to_mb = 1 / 1000000
                 self.__writePdfToDisk__(pdf_output_filename, case_descriptions)
                 pdf_filesize = os.path.getsize(pdf_output_filename) * bytes_to_mb
-                print("PDF generated using a dpi of ", Style_definitions.IMG_OUTPUT_DPI, " with a filesize of ",
-                      pdf_filesize, "MB.")
+                print("PDF generated using a dpi of ", Style_definitions.IMG_OUTPUT_DPI, " with a filesize of ", pdf_filesize, "MB.")
                 Style_definitions.IMG_OUTPUT_DPI = output_dpi
 
                 if pdf_filesize < self.pdf_filesize_limit:
                     pdf_too_large = False
                     print("PDF output can be found at: file://" + pdf_output_filename)
                     print("Printing PDF to the target filesize took ", attempted_prints, " attempts to find the right "
-                                                                                         "dpi.")
+                          "dpi.")
                 else:
                     # output downscaled images to a new folder so that the original quality ones can still be referenced
                     # via the web page
@@ -371,7 +369,7 @@ class PyPlotGen:
                                                   wrf_folders=self.wrf_folders, diff_datasets=self.case_diff_datasets,
                                                   plot_r408=self.cgbest, plot_hoc=self.hoc, e3sm_dirs=self.e3sm_dir,
                                                   cam_folders=self.cam_folders, time_height=self.time_height,
-                                                  animation=self.animation, silhs_folders=self.silhs_folders)
+                                                  animation=self.animation)
             # Call plot function of case instance
             case_gallery_setup.plot(self.output_folder, replace_images=self.replace_images, no_legends=self.no_legends,
                                     thin_lines=self.thin, show_alphabetic_id=self.show_alphabetic_id)
@@ -392,34 +390,31 @@ class PyPlotGen:
         wrf_given = len(self.wrf_folders) != 0
         cam_given = len(self.cam_folders) != 0
         clubb_given = len(self.clubb_folders) != 0
-        silhs_given = len(self.silhs_folders) != 0
 
         e3sm_file_defined = case_def['e3sm_file'] is not None
         sam_file_defined = case_def['sam_file'] is not None
         wrf_file_defined = case_def['wrf_file'] is not None
         cam_file_defined = case_def['cam_file'] is not None
         clubb_file_defined = case_def['clubb_file'] is not None
-        silhs_file_defined = case_def['silhs_file'] is not None
 
         e3sm_file_exists = self.__caseNcFileExists__(self.e3sm_dir, case_def['e3sm_file'])
         sam_file_exists = self.__caseNcFileExists__(self.sam_folders, case_def['sam_file'])
         wrf_file_exists = self.__caseNcFileExists__(self.wrf_folders, case_def['wrf_file'])
         cam_file_exists = self.__caseNcFileExists__(self.cam_folders, case_def['cam_file'])
         clubb_file_exists = self.__caseNcFileExists__(self.clubb_folders, case_def['clubb_file'])
-        silhs_file_exists = self.__caseNcFileExists__(self.silhs_folders, case_def['silhs_file'])
 
         e3sm_has_case = e3sm_given and e3sm_file_defined and e3sm_file_exists
         sam_has_case = sam_given and sam_file_defined and sam_file_exists
         wrf_has_case = wrf_given != 0 and wrf_file_defined and wrf_file_exists
         cam_has_case = cam_given and cam_file_defined and cam_file_exists
-        clubb_has_case = clubb_given and clubb_file_defined and clubb_file_exists
-        silhs_has_case = silhs_given and silhs_file_defined and silhs_file_exists
+        clubb_has_case = clubb_given and clubb_file_defined and clubb_file_exists  # case_def['name'] in self.clubb_datasets.keys()
 
         if self.nightly:
-            return (e3sm_has_case or sam_has_case or cam_has_case or wrf_has_case or silhs_has_case) \
+            return (clubb_has_case or not clubb_file_defined) \
+                   and (e3sm_has_case or sam_has_case or cam_has_case or wrf_has_case) \
                    or self.benchmark_only
         else:
-            return e3sm_has_case or sam_has_case or cam_has_case or wrf_has_case or silhs_has_case \
+            return e3sm_has_case or sam_has_case or cam_has_case or wrf_has_case \
                    or clubb_has_case or self.benchmark_only
 
     def __caseNcFileExists__(self, list_of_src_folders, rel_filepath):
@@ -434,7 +429,7 @@ class PyPlotGen:
             for folder in list_of_src_folders:
                 if isinstance(rel_filepath, dict):
                     for temp_filename in rel_filepath.values():
-                        filename = folder + str(temp_filename)
+                        filename = folder + temp_filename
                         if os.path.exists(filename):
                             any_nc_file_found = True
                 else:
@@ -621,8 +616,6 @@ def __processArguments__():
                         default=[], nargs='+')
     parser.add_argument("-w", "--wrf", help="Input folder(s) containing wrf netcdf data.", action="store",
                         default=[], nargs='+')
-    parser.add_argument("--silhs", help="Input folder(s) containing silhs netcdf data.", action="store",
-                        default=[], nargs='+')
     parser.add_argument("-o", "--output", help="Name of folder to create and store plots into.", action="store",
                         default="./output")
     parser.add_argument("--nightly", help="Apply special parameters only relevant when running as part of a nightly "
@@ -683,7 +676,7 @@ def __processArguments__():
 
     # If no input is specified at all, use the nc files in the default CLUBB output folder
     no_folders_inputted = len(args.e3sm) == 0 and len(args.sam) == 0 and len(args.clubb) == 0 \
-                          and len(args.wrf) == 0 and len(args.cam) == 0 and len(args.silhs) == 0
+                          and len(args.wrf) == 0 and len(args.cam) == 0
     if no_folders_inputted and not args.benchmark_only:
         args.clubb = ["../../output"]
 
@@ -704,9 +697,8 @@ def __processArguments__():
         Panel.EXTENSION = ".eps"
 
     if args.eps and args.svg:
-        raise RuntimeError(
-            "The --svg and --eps options are not compatible with one another. Please select either --eps "
-            "or --svg but not both.")
+        raise RuntimeError("The --svg and --eps options are not compatible with one another. Please select either --eps "
+                           "or --svg but not both.")
 
     if (args.eps or args.svg) and args.pdf:
         raise RuntimeError("SVG and EPS are not supported alongside the pdf parameter. This is due to a limitation of "
@@ -738,7 +730,7 @@ def __processArguments__():
                           bu_morr=args.bu_morr, diff=args.diff, show_alphabetic_id=args.show_alphabetic_id,
                           time_height=args.time_height_plots, animation=args.movies,
                           disable_multithreading=args.disable_multithreading, pdf=args.pdf,
-                          pdf_filesize_limit=args.pdf_filesize_limit, silhs_folders=args.silhs)
+                          pdf_filesize_limit=args.pdf_filesize_limit)
     return pyplotgen
 
 

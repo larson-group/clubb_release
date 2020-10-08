@@ -13,7 +13,7 @@ class VariableGroupBaseBudgets(VariableGroup):
     """
 
     def __init__(self, case, clubb_datasets=None, les_dataset=None, coamps_dataset=None, r408_dataset=None,
-                 hoc_dataset=None, cam_datasets=None, e3sm_datasets=None, wrf_datasets=None, silhs_datasets=None):
+                 hoc_dataset=None, cam_datasets=None, e3sm_datasets=None, wrf_datasets=None):
         self.name = "base variables budgets"
 
         thlm_budget_lines = [
@@ -22,7 +22,7 @@ class VariableGroupBaseBudgets(VariableGroup):
             {'var_names': ['thlm_ta'], 'legend_label': 'thlm_ta'},
             {'var_names': ['thlm_mc'], 'legend_label': 'thlm_mc'},
             {'var_names': ['thlm_clipping', self.getThlmClipping],
-             'legend_label': 'thlm_clipping',
+                 'legend_label': 'thlm_clipping',
              },
             {'var_names': ['radht'], 'legend_label': 'radht'},
             {'var_names': ['ls_forcing', self.getThlmLsforcing],
@@ -40,16 +40,16 @@ class VariableGroupBaseBudgets(VariableGroup):
             {'var_names': ['rtm_ta'], 'legend_label': 'rtm_ta'},
             {'var_names': ['rtm_mc'], 'legend_label': 'rtm_mc'},
             {'var_names': ['rtm_clipping', self.getRtmClipping],
-             'legend_label': 'rtm_clipping',
+                 'legend_label': 'rtm_clipping',
              },
             {'var_names': ['rtm_pd'],
-             'legend_label': 'rtm_pd'
+                'legend_label': 'rtm_pd'
              },
             {'var_names': ['ls_forcing', self.getRtmForcing],
-             'legend_label': 'ls_forcing',
+                 'legend_label': 'ls_forcing',
              },
             {'var_names': ['rtm_residual', self.getRtmResidual],
-             'legend_label': 'rtm_residual',
+                 'legend_label': 'rtm_residual',
              },
 
         ]
@@ -298,7 +298,6 @@ class VariableGroupBaseBudgets(VariableGroup):
                 {
                     'clubb': ['thlm'],
                     'sam': ['thlm'],
-                    'silhs': [],
                     'coamps': ['thlm'],
                     'r408': ['thlm'],
                     'hoc': ['thlm'],
@@ -312,7 +311,6 @@ class VariableGroupBaseBudgets(VariableGroup):
                 {
                     'clubb': ['rtm'],
                     'sam': ['rtm'],
-                    'silhs': [],
                     'coamps': ['rtm'],
                     'r408': ['rtm'],
                     'hoc': ['rtm'],
@@ -326,7 +324,6 @@ class VariableGroupBaseBudgets(VariableGroup):
                 {
                     'clubb': ['wpthlp'],
                     'sam': ['wpthlp'],
-                    'silhs': [],
                     'coamps': ['wpthlp'],
                     'r408': ['wpthlp'],
                     'hoc': ['wpthlp'],
@@ -340,7 +337,6 @@ class VariableGroupBaseBudgets(VariableGroup):
                 {
                     'clubb': ['wprtp'],
                     'sam': ['wprtp'],
-                    'silhs': [],
                     'coamps': ['wprtp'],
                     'r408': ['wprtp'],
                     'hoc': ['wprtp'],
@@ -354,7 +350,6 @@ class VariableGroupBaseBudgets(VariableGroup):
                 {
                     'clubb': ['wp2'],
                     'sam': ['wp2'],
-                    'silhs': [],
                     'coamps': ['wp2'],
                     'r408': ['wp2'],
                     'hoc': ['wp2'],
@@ -368,7 +363,6 @@ class VariableGroupBaseBudgets(VariableGroup):
                 {
                     'clubb': ['wp3'],
                     'sam': ['wp3'],
-                    'silhs': [],
                     'coamps': ['wp3'],
                     'r408': ['wp3'],
                     'hoc': ['wp3'],
@@ -382,7 +376,6 @@ class VariableGroupBaseBudgets(VariableGroup):
                 {
                     'clubb': ['thlp2'],
                     'sam': ['thlp2'],
-                    'silhs': [],
                     'coamps': ['thlp2'],
                     'r408': ['thlp2'],
                     'hoc': ['thlp2'],
@@ -396,7 +389,6 @@ class VariableGroupBaseBudgets(VariableGroup):
                 {
                     'clubb': ['rtp2'],
                     'sam': ['rtp2'],
-                    'silhs': [],
                     'coamps': ['rtp2'],
                     'r408': ['rtp2'],
                     'hoc': ['rtp2'],
@@ -410,7 +402,6 @@ class VariableGroupBaseBudgets(VariableGroup):
                 {
                     'clubb': ['rtpthlp'],
                     'sam': ['rtpthlp'],
-                    'silhs': [],
                     'coamps': ['rtpthlp'],
                     'r408': ['rtpthlp'],
                     'hoc': ['rtpthlp'],
@@ -424,7 +415,6 @@ class VariableGroupBaseBudgets(VariableGroup):
                 {
                     'clubb': ['upwp'],
                     'sam': ['upwp'],
-                    'silhs': [],
                     'coamps': ['upwp'],
                     'r408': ['upwp'],
                     'hoc': ['upwp'],
@@ -438,7 +428,6 @@ class VariableGroupBaseBudgets(VariableGroup):
                 {
                     'clubb': ['vpwp'],
                     'sam': ['vpwp'],
-                    'silhs': [],
                     'coamps': ['vpwp'],
                     'r408': ['vpwp'],
                     'hoc': ['vpwp'],
@@ -452,7 +441,6 @@ class VariableGroupBaseBudgets(VariableGroup):
                 {
                     'clubb': ['um'],
                     'sam': ['um'],
-                    'silhs': [],
                     'coamps': ['um'],
                     'r408': ['um'],
                     'hoc': ['um'],
@@ -466,7 +454,6 @@ class VariableGroupBaseBudgets(VariableGroup):
                 {
                     'clubb': ['vm'],
                     'sam': ['vm'],
-                    'silhs': [],
                     'coamps': ['vm'],
                     'r408': ['vm'],
                     'hoc': ['vm'],
@@ -479,7 +466,6 @@ class VariableGroupBaseBudgets(VariableGroup):
             {'var_names': {
                 'clubb': ['up2'],
                 'sam': ['up2'],
-                'silhs': [],
                 'coamps': ['up2'],
                 'r408': ['up2'],
                 'hoc': ['up2'],
@@ -491,7 +477,6 @@ class VariableGroupBaseBudgets(VariableGroup):
             {'var_names': {
                 'clubb': ['vp2'],
                 'sam': ['vp2'],
-                'silhs': [],
                 'coamps': ['vp2'],
                 'r408': ['vp2'],
                 'hoc': ['vp2'],
@@ -504,7 +489,6 @@ class VariableGroupBaseBudgets(VariableGroup):
                 {
                     'clubb': ['rrm'],
                     'sam': ['rrm'],
-                    'silhs': [],
                     'coamps': ['rrm'],
                     'r408': ['rrm'],
                     'hoc': ['rrm'],
@@ -518,7 +502,6 @@ class VariableGroupBaseBudgets(VariableGroup):
                 {
                     'clubb': ['Nrm'],
                     'sam': ['Nrm'],
-                    'silhs': [],
                     'coamps': ['Nrm'],
                     'r408': ['Nrm'],
                     'hoc': ['Nrm'],
@@ -532,7 +515,7 @@ class VariableGroupBaseBudgets(VariableGroup):
 
         # Call ctor of parent class
         super().__init__(case, clubb_datasets=clubb_datasets, les_dataset=les_dataset, coamps_dataset=coamps_dataset,
-                         r408_dataset=r408_dataset, cam_datasets=cam_datasets, silhs_datasets=None,
+                         r408_dataset=r408_dataset, cam_datasets=cam_datasets,
                          hoc_dataset=hoc_dataset, e3sm_datasets=e3sm_datasets, wrf_datasets=wrf_datasets)
 
     def getThlmClipping(self, dataset_override=None):

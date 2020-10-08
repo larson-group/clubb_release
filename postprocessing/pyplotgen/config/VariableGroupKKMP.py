@@ -10,9 +10,8 @@ class VariableGroupKKMP(VariableGroup):
     """
 
     """
-
     def __init__(self, case, clubb_datasets=None, les_dataset=None, coamps_dataset=None, r408_dataset=None,
-                 hoc_dataset=None, cam_datasets=None, silhs_datasets=None,
+                 hoc_dataset=None, cam_datasets=None,
                  e3sm_datasets=None, sam_datasets=None, wrf_datasets=None):
         """
 
@@ -24,41 +23,38 @@ class VariableGroupKKMP(VariableGroup):
         self.variable_definitions = [
             {'var_names':
                 {
-                    'clubb': ['rrm_evap'],
-                    'sam': ['EVAPM'],
-                    'silhs': [],
-                    'coamps': ['rrm_evap'],
-                    'r408': ['rrm_evap'],
-                    'hoc': ['rrm_evap'],
-                    'e3sm': ['rrm_evap'],
-                    'cam': ['rrm_evap'],
-                    'wrf': [],
+                'clubb': ['rrm_evap'],
+                'sam': ['EVAPM'],
+                'coamps': ['rrm_evap'],
+                'r408': ['rrm_evap'],
+                'hoc': ['rrm_evap'],
+                'e3sm': ['rrm_evap'],
+                'cam': ['rrm_evap'],
+                'wrf': [],
                 },
             },
             {'var_names':
                 {
-                    'clubb': ['rrm_accr'],
-                    'sam': ['ACCRM'],
-                    'silhs': [],
-                    'coamps': ['rrm_accr'],
-                    'r408': ['rrm_accr'],
-                    'hoc': ['rrm_accr'],
-                    'e3sm': ['rrm_accr'],
-                    'cam': ['rrm_accr'],
-                    'wrf': [],
+                'clubb': ['rrm_accr'],
+                'sam': ['ACCRM'],
+                'coamps': ['rrm_accr'],
+                'r408': ['rrm_accr'],
+                'hoc': ['rrm_accr'],
+                'e3sm': ['rrm_accr'],
+                'cam': ['rrm_accr'],
+                'wrf': [],
                 },
             },
             {'var_names':
                 {
-                    'clubb': ['rrm_auto'],
-                    'sam': ['AUTOM'],
-                    'silhs': [],
-                    'coamps': ['rrm_auto'],
-                    'r408': ['rrm_auto'],
-                    'hoc': ['rrm_auto'],
-                    'e3sm': ['rrm_auto'],
-                    'cam': ['rrm_auto'],
-                    'wrf': [],
+                'clubb': ['rrm_auto'],
+                'sam': ['AUTOM'],
+                'coamps': ['rrm_auto'],
+                'r408': ['rrm_auto'],
+                'hoc': ['rrm_auto'],
+                'e3sm': ['rrm_auto'],
+                'cam': ['rrm_auto'],
+                'wrf': [],
                 },
             },
         ]
@@ -66,5 +62,4 @@ class VariableGroupKKMP(VariableGroup):
         # Call ctor of parent class
         super().__init__(case, clubb_datasets=clubb_datasets, les_dataset=les_dataset, coamps_dataset=coamps_dataset,
                          r408_dataset=r408_dataset, hoc_dataset=hoc_dataset, e3sm_datasets=e3sm_datasets,
-                         cam_datasets=cam_datasets, sam_datasets=sam_datasets, wrf_datasets=wrf_datasets,
-                         silhs_datasets=silhs_datasets)
+                         cam_datasets=cam_datasets, sam_datasets=sam_datasets, wrf_datasets=wrf_datasets)

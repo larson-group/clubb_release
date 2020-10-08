@@ -12,7 +12,7 @@ class VariableGroupIceMP(VariableGroup):
     """
 
     def __init__(self, case, clubb_datasets=None, les_dataset=None, sam_datasets=None, coamps_dataset=None,
-                 r408_dataset=None, hoc_dataset=None, cam_datasets=None, silhs_datasets=None,
+                 r408_dataset=None, hoc_dataset=None, cam_datasets=None,
                  e3sm_datasets=None, wrf_datasets=None):
         """
 
@@ -26,7 +26,6 @@ class VariableGroupIceMP(VariableGroup):
                 {
                     'clubb': ['rim'],
                     'sam': ['QI', 'QCI'],
-                    'silhs': ['ri'],
                     'coamps': ['rim', 'qim'],
                     'r408': ['rim'],
                     'hoc': ['rim'],
@@ -40,7 +39,6 @@ class VariableGroupIceMP(VariableGroup):
                 {
                     'clubb': ['Nim'],
                     'sam': [self.getNimSamLine, 'Nim'],
-                    'silhs': ['Ni'],
                     'coamps': ['Nim', 'nim'],
                     'r408': ['Nim'],
                     'hoc': ['Nim'],
@@ -54,7 +52,6 @@ class VariableGroupIceMP(VariableGroup):
                 {
                     'clubb': ['rsm'],
                     'sam': ['QS', 'QPI'],
-                    'silhs': ['rs'],
                     'coamps': ['rsm', 'qsm'],
                     'r408': ['rsm'],
                     'hoc': ['rsm'],
@@ -68,7 +65,6 @@ class VariableGroupIceMP(VariableGroup):
                 {
                     'clubb': ['Nsm'],
                     'sam': [self.getNsmSamLine, 'Nsm'],
-                    'silhs': ['Ns'],
                     'coamps': ['Nsm'],
                     'r408': ['Nsm'],
                     'hoc': ['Nsm'],
@@ -82,7 +78,6 @@ class VariableGroupIceMP(VariableGroup):
                 {
                     'clubb': ['iwp'],
                     'sam': ['IWP'],
-                    'silhs': [],
                     'coamps': ['iwp'],
                     'r408': ['iwp'],
                     'hoc': ['iwp'],
@@ -96,7 +91,6 @@ class VariableGroupIceMP(VariableGroup):
                 {
                     'clubb': ['swp'],
                     'sam': ['SWP'],
-                    'silhs': [],
                     'coamps': ['swp'],
                     'r408': ['swp'],
                     'hoc': ['swp'],
@@ -110,7 +104,6 @@ class VariableGroupIceMP(VariableGroup):
                 {
                     'clubb': ['ice_supersat_frac'],
                     'sam': ['ice_supersat_frac'],
-                    'silhs': [],
                     'coamps': ['ice_supersat_frac'],
                     'r408': ['ice_supersat_frac'],
                     'hoc': ['ice_supersat_frac'],
@@ -123,7 +116,6 @@ class VariableGroupIceMP(VariableGroup):
                 {
                     'clubb': ['Ngm'],
                     'sam': ['NG'],
-                    'silhs': ['Ng'],
                     'coamps': ['Ngm'],
                     'r408': ['Ngm'],
                     'hoc': ['Ngm'],
@@ -138,7 +130,6 @@ class VariableGroupIceMP(VariableGroup):
                 {
                     'clubb': ['rgm'],
                     'sam': ['QG'],
-                    'silhs': ['rg'],
                     'coamps': ['rgm', 'qgm'],
                     'r408': ['rgm'],
                     'hoc': ['rgm'],
@@ -153,8 +144,7 @@ class VariableGroupIceMP(VariableGroup):
         # Call ctor of parent class
         super().__init__(case, clubb_datasets=clubb_datasets, les_dataset=les_dataset, coamps_dataset=coamps_dataset,
                          r408_dataset=r408_dataset, hoc_dataset=hoc_dataset, e3sm_datasets=e3sm_datasets,
-                         cam_datasets=cam_datasets, sam_datasets=sam_datasets, wrf_datasets=wrf_datasets,
-                         silhs_datasets=silhs_datasets)
+                         cam_datasets=cam_datasets, sam_datasets=sam_datasets, wrf_datasets=wrf_datasets)
 
     def getNimSamLine(self, dataset_override=None):
         """

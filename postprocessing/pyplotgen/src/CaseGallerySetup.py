@@ -25,9 +25,9 @@ class CaseGallerySetup:
     ``__init__()`` method.
     """
 
-    def __init__(self, case_definition, clubb_folders=[], diff_datasets=None, sam_folders=[], wrf_folders=[],
+    def __init__(self, case_definition, clubb_folders=[], diff_datasets=None, sam_folders=[""], wrf_folders=[""],
                  plot_les=False, plot_budgets=False, plot_r408=False, plot_hoc=False, e3sm_dirs=[], cam_folders=[],
-                 time_height=False, animation=None, silhs_folders=[""]):
+                 time_height=False, animation=None):
         """
         Initialize a CaseGallerySetup object with the passed parameters
         :param case_definition: dict containing case specific elements. These are pulled in from Case_definitions.py,
@@ -60,7 +60,6 @@ class CaseGallerySetup:
         self.blacklisted_variables = case_definition['blacklisted_vars']
         self.plot_budgets = plot_budgets
         self.plot_r408 = plot_r408
-        self.plot_les = plot_les
         self.plot_hoc = plot_hoc
         self.e3sm_folders = e3sm_dirs
         self.sam_folders = sam_folders
@@ -72,25 +71,17 @@ class CaseGallerySetup:
         self.animation = animation
         self.panels = []
         self.diff_panels = []
-        self.sam_benchmark_file = None
-        self.r408_datasets = None
-        self.hoc_datasets = None
-        self.coamps_datasets = None
 
-        self.VALID_MODEL_NAMES = ['clubb', 'clubb_hoc', 'clubb_r408', 'e3sm', 'sam', 'cam', 'wrf', 'coamps', 'silhs']
+        self.VALID_MODEL_NAMES = ['clubb', 'clubb_hoc','clubb_r408', 'e3sm', 'sam', 'cam', 'wrf', 'coamps']
 
         if 'disable_budgets' in case_definition.keys() and case_definition['disable_budgets'] is True:
             self.plot_budgets = False
 
         # Load benchmark files
-        if self.plot_les:
-            self.sam_benchmark_file = self.__loadModelFiles__(None, case_definition, "sam")
-        if self.plot_les:
-            self.coamps_datasets = self.__loadModelFiles__(None, case_definition, "coamps")
-        if self.plot_r408:
-            self.r408_datasets = self.__loadModelFiles__(None, case_definition, "clubb_r408")
-        if self.plot_hoc:
-            self.hoc_datasets = self.__loadModelFiles__(None, case_definition, "clubb_hoc")
+        self.sam_benchmark_file = self.__loadModelFiles__(None,case_definition,"sam")
+        self.coamps_datasets = self.__loadModelFiles__(None, case_definition, "coamps")
+        self.r408_datasets = self.__loadModelFiles__(None, case_definition, "clubb_r408")
+        self.hoc_datasets = self.__loadModelFiles__(None, case_definition, "clubb_hoc")
 
         # Load datasets imported via command line parameters
         self.clubb_datasets = self.__loadModelFiles__(clubb_folders, case_definition, "clubb")
@@ -98,7 +89,6 @@ class CaseGallerySetup:
         self.wrf_datasets = self.__loadModelFiles__(wrf_folders, case_definition, "wrf")
         self.e3sm_file = self.__loadModelFiles__(e3sm_dirs, case_definition, "e3sm")
         self.cam_file = self.__loadModelFiles__(cam_folders, case_definition, "cam")
-        self.silhs_file = self.__loadModelFiles__(silhs_folders, case_definition, "silhs")
 
         self.__generateVariableGroupPanels__()
         self.__generateDiffPanels__()
@@ -120,8 +110,7 @@ class CaseGallerySetup:
                     folder_name = os.path.basename(input_folder)
                     if input_folder in self.clubb_datasets.keys():
                         budget_variables = VariableGroupBaseBudgets(self,
-                                                                    clubb_datasets={
-                                                                        folder_name: self.clubb_datasets[input_folder]})
+                                                                    clubb_datasets={folder_name:self.clubb_datasets[input_folder]})
                         self.panels.extend(budget_variables.panels)
                     else:
                         warn("" + folder_name + " does not seem to contain data for case" + self.name)
@@ -131,8 +120,7 @@ class CaseGallerySetup:
                 for input_folder in self.wrf_datasets:
                     folder_name = os.path.basename(input_folder)
                     budget_variables = VariableGroupBaseBudgets(self,
-                                                                wrf_datasets={
-                                                                    folder_name: self.wrf_datasets[input_folder]})
+                                                                wrf_datasets={folder_name:self.wrf_datasets[input_folder]})
                     self.panels.extend(budget_variables.panels)
             if self.e3sm_file is not None and len(self.e3sm_file) != 0:
                 for dataset_name in self.e3sm_file:
@@ -145,9 +133,8 @@ class CaseGallerySetup:
                 for input_folder in self.sam_datasets:
                     folder_name = os.path.basename(input_folder)
                     budget_variables = VariableGroupSamBudgets(self,
-                                                               sam_datasets={
-                                                                   folder_name: self.sam_datasets[input_folder]})
-                    # sam_budgets = VariableGroupSamBudgets(self, sam_datasets=sam_datasets)
+                                                               sam_datasets={folder_name:self.sam_datasets[input_folder]})
+                # sam_budgets = VariableGroupSamBudgets(self, sam_datasets=sam_datasets)
                     self.panels.extend(budget_variables.panels)
 
     def __generateDiffPanels__(self):
@@ -164,10 +151,8 @@ class CaseGallerySetup:
             for VarGroup in self.var_groups:
                 # Call the __init__ function of the VarGroup class and, by doing this, create an instance of it
                 diff_group = VarGroup(self, clubb_datasets=self.diff_datasets, sam_file=self.sam_benchmark_file,
-                                      coamps_file=self.coamps_datasets, cam_file=self.cam_file,
-                                      sam_datasets=self.sam_datasets,
-                                      r408_file=self.r408_datasets, hoc_dataset=self.hoc_datasets,
-                                      e3sm_datasets=self.e3sm_file)
+                                      coamps_file=self.coamps_datasets, cam_file=self.cam_file, sam_datasets=self.sam_datasets,
+                                      r408_file=self.r408_datasets, hoc_dataset=self.hoc_datasets, e3sm_datasets=self.e3sm_file)
                 for panel in diff_group.panels:
                     self.diff_panels.append(panel)
             for idx in range(len(self.panels)):
@@ -190,10 +175,8 @@ class CaseGallerySetup:
             # Calls the __init__ function of the VarGroup class and, by doing this, create an instance of it
             temp_group = VarGroup(self, clubb_datasets=self.clubb_datasets, les_dataset=self.sam_benchmark_file,
                                   coamps_dataset=self.coamps_datasets, sam_datasets=self.sam_datasets,
-                                  wrf_datasets=self.wrf_datasets, r408_dataset=self.r408_datasets,
-                                  hoc_dataset=self.hoc_datasets,
-                                  e3sm_datasets=self.e3sm_file, cam_datasets=self.cam_file,
-                                  silhs_datasets=self.silhs_file)
+                                  wrf_datasets=self.wrf_datasets, r408_dataset=self.r408_datasets, hoc_dataset=self.hoc_datasets,
+                                  e3sm_datasets=self.e3sm_file, cam_datasets=self.cam_file)
             self.panels.extend(temp_group.panels)
 
     def __loadModelFiles__(self, folders, case_definition, model_name):
@@ -204,10 +187,10 @@ class CaseGallerySetup:
 
         # Load clubb nc files
         model_datasets = {}
-        if folders is not None and len(folders) != 0 and case_definition[model_name + '_file'] is not None:
+        if folders is not None and len(folders) != 0 and case_definition[model_name +'_file'] is not None:
             for foldername in folders:
                 files_in_folder = {}
-                filenames = case_definition[model_name + '_file']
+                filenames = case_definition[model_name +'_file']
                 for type_ext in filenames:
                     filepath = foldername + filenames[type_ext]
                     ncdf_file = datareader.__loadNcFile__(filepath)
@@ -215,8 +198,8 @@ class CaseGallerySetup:
                         files_in_folder[type_ext] = ncdf_file
                         model_datasets[foldername] = files_in_folder
         # If is a benchmark
-        elif folders is None and case_definition[model_name + '_benchmark_file'] is not None:
-            filename_dict = case_definition[model_name + '_benchmark_file']
+        elif folders is None and case_definition[model_name +'_benchmark_file'] is not None:
+            filename_dict = case_definition[model_name +'_benchmark_file']
             for key in filename_dict:
                 filename = filename_dict[key]
                 ncdf_file = datareader.__loadNcFile__(filename)
@@ -226,6 +209,7 @@ class CaseGallerySetup:
         if len(model_datasets) == 0:
             model_datasets = None
         return model_datasets
+
 
     def getDiffLinesBetweenPanels(self, panelA, panelB, get_y_diff=False):
         """
@@ -277,11 +261,11 @@ class CaseGallerySetup:
             short = arrB
             long = arrA
         pad_type = type(short[0])
-        padding = np.zeros(len(long) - len(short), dtype=pad_type)
-        short = np.concatenate((short, padding))
+        padding = np.zeros(len(long)-len(short), dtype=pad_type)
+        short = np.concatenate((short,padding))
 
         # Return absolute difference between both arrays
-        return np.abs(long - short)
+        return np.abs(long-short)
 
     def plot(self, output_folder, replace_images=False, no_legends=False, thin_lines=False, show_alphabetic_id=False):
         """

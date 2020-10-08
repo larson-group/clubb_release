@@ -10,9 +10,8 @@ class VariableGroupScalars(VariableGroup):
     """
 
     """
-
     def __init__(self, case, clubb_datasets=None, les_dataset=None, coamps_dataset=None, r408_dataset=None,
-                 hoc_dataset=None, cam_datasets=None, silhs_datasets=None,
+                 hoc_dataset=None, cam_datasets=None,
                  e3sm_datasets=None, sam_datasets=None, wrf_datasets=None):
         """
 
@@ -24,22 +23,20 @@ class VariableGroupScalars(VariableGroup):
         self.variable_definitions = [
             {'var_names':
                 {
-                    'clubb': ['sclr1m'],
-                    'sam': [],
-                    'silhs': [],
-                    'coamps': ['sclr1m'],
-                    'r408': ['sclr1m'],
-                    'hoc': ['sclr1m'],
-                    'e3sm': ['sclr1m'],
-                    'cam': ['sclr1m'],
-                    'wrf': ['sclr1m'],
+                'clubb': ['sclr1m'],
+                'sam': [],
+                'coamps': ['sclr1m'],
+                'r408': ['sclr1m'],
+                'hoc': ['sclr1m'],
+                'e3sm': ['sclr1m'],
+                'cam': ['sclr1m'],
+                'wrf': ['sclr1m'],
                 },
             },
             {'var_names':
                 {
                     'clubb': ['sclr2m'],
                     'sam': [],
-                    'silhs': [],
                     'coamps': ['sclr2m'],
                     'r408': ['sclr2m'],
                     'hoc': ['sclr2m'],
@@ -52,7 +49,6 @@ class VariableGroupScalars(VariableGroup):
                 {
                     'clubb': ['sclr1p2'],
                     'sam': [],
-                    'silhs': [],
                     'coamps': ['sclr1p2'],
                     'r408': ['sclr1p2'],
                     'hoc': ['sclr1p2'],
@@ -65,7 +61,6 @@ class VariableGroupScalars(VariableGroup):
                 {
                     'clubb': ['sclr2p2'],
                     'sam': [],
-                    'silhs': [],
                     'coamps': ['sclr2p2'],
                     'r408': ['sclr2p2'],
                     'hoc': ['sclr2p2'],
@@ -79,5 +74,4 @@ class VariableGroupScalars(VariableGroup):
         # Call ctor of parent class
         super().__init__(case, clubb_datasets=clubb_datasets, les_dataset=les_dataset, coamps_dataset=coamps_dataset,
                          r408_dataset=r408_dataset, hoc_dataset=hoc_dataset, e3sm_datasets=e3sm_datasets,
-                         cam_datasets=cam_datasets, sam_datasets=sam_datasets, wrf_datasets=wrf_datasets,
-                         silhs_datasets=silhs_datasets)
+                         cam_datasets=cam_datasets, sam_datasets=sam_datasets, wrf_datasets=wrf_datasets)

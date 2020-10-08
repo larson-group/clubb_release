@@ -10,9 +10,8 @@ class VariableGroupLiquidMP(VariableGroup):
     """
 
     """
-
     def __init__(self, case, clubb_datasets=None, les_dataset=None, coamps_dataset=None, r408_dataset=None,
-                 hoc_dataset=None, cam_datasets=None, silhs_datasets=None,
+                 hoc_dataset=None, cam_datasets=None,
                  e3sm_datasets=None, sam_datasets=None, wrf_datasets=None):
         """
 
@@ -26,7 +25,6 @@ class VariableGroupLiquidMP(VariableGroup):
                 {
                     'clubb': ['Ncm', 'ncm'],
                     'sam': [self.getNcmSamLine, 'Ncm', 'ncm'],
-                    'silhs': ['Nc'],
                     'coamps': ['Ncm', 'ncm'],
                     'r408': ['Ncm', 'ncm'],
                     'hoc': ['Ncm', 'ncm'],
@@ -40,7 +38,6 @@ class VariableGroupLiquidMP(VariableGroup):
                 {
                     'clubb': ['Nc_in_cloud'],
                     'sam': [self.getNcInCloudSamLine, 'Nc_in_cloud'],
-                    'silhs': [],
                     'coamps': ['Nc_in_cloud'],
                     'r408': ['Nc_in_cloud'],
                     'hoc': ['Nc_in_cloud'],
@@ -54,7 +51,6 @@ class VariableGroupLiquidMP(VariableGroup):
                 {
                     'clubb': ['precip_frac'],
                     'sam': ['precip_frac'],
-                    'silhs': [],
                     'coamps': ['precip_frac'],
                     'r408': ['precip_frac'],
                     'hoc': ['precip_frac'],
@@ -67,7 +63,6 @@ class VariableGroupLiquidMP(VariableGroup):
                 {
                     'clubb': ['rrm'],
                     'sam': ['QPL'],
-                    'silhs': ['rr'],
                     'coamps': ['rrm'],
                     'r408': ['rrm'],
                     'hoc': ['rrm'],
@@ -82,7 +77,6 @@ class VariableGroupLiquidMP(VariableGroup):
                 {
                     'clubb': ['Nrm'],
                     'sam': [self.getNrmSamLine, 'Nrm'],
-                    'silhs': ['Nr'],
                     'coamps': ['Nrm'],
                     'r408': ['Nrm'],
                     'hoc': ['Nrm'],
@@ -96,7 +90,6 @@ class VariableGroupLiquidMP(VariableGroup):
                 {
                     'clubb': ['wprrp'],
                     'sam': ['WPRRP'],
-                    'silhs': [],
                     'coamps': ['wprrp'],
                     'r408': ['wprrp'],
                     'hoc': ['wprrp'],
@@ -110,7 +103,6 @@ class VariableGroupLiquidMP(VariableGroup):
                 {
                     'clubb': ['wpNrp'],
                     'sam': ['WPNRP'],
-                    'silhs': [],
                     'coamps': ['wpNrp'],
                     'r408': ['wpNrp'],
                     'hoc': ['wpNrp'],
@@ -124,7 +116,6 @@ class VariableGroupLiquidMP(VariableGroup):
                 {
                     'clubb': ['rwp'],
                     'sam': ['RWP'],
-                    'silhs': [],
                     'coamps': ['rwp'],
                     'r408': ['rwp'],
                     'hoc': ['rwp'],
@@ -137,13 +128,12 @@ class VariableGroupLiquidMP(VariableGroup):
             {'var_names':
                 {
                     'clubb': ['precip_rate_sfc'],
-                    'sam': ['PREC', 'precip_rate_sfc'],
-                    'silhs': [],
+                    'sam': ['PREC','precip_rate_sfc'],
                     'coamps': ['precip_rate_sfc'],
                     'r408': ['precip_rate_sfc'],
                     'hoc': ['precip_rate_sfc'],
                     'e3sm': ['precip_rate_sfc'],
-                    'cam': ['precip_rate_sfc'],  # PRECT.*1000.*86400
+                    'cam': ['precip_rate_sfc'], # PRECT.*1000.*86400
                     'wrf': ['precip_rate_sfc'],
                 },
                 'type': Panel.TYPE_TIMESERIES
@@ -154,8 +144,7 @@ class VariableGroupLiquidMP(VariableGroup):
         # Call ctor of parent class
         super().__init__(case, clubb_datasets=clubb_datasets, les_dataset=les_dataset, coamps_dataset=coamps_dataset,
                          r408_dataset=r408_dataset, hoc_dataset=hoc_dataset, e3sm_datasets=e3sm_datasets,
-                         cam_datasets=cam_datasets, sam_datasets=sam_datasets, wrf_datasets=wrf_datasets,
-                         silhs_datasets=silhs_datasets)
+                         cam_datasets=cam_datasets, sam_datasets=sam_datasets, wrf_datasets=wrf_datasets)
 
     def getNcmSamLine(self, dataset_override=None):
         """
@@ -196,8 +185,8 @@ class VariableGroupLiquidMP(VariableGroup):
         rho, indep, dataset = self.getVarForCalculations('RHO', dataset)
         cld, indep, dataset = self.getVarForCalculations('CLD', dataset)
 
-        output1 = cld * (nc * (10 ** 6) / rho)  # ncm
-        output2 = (gcssnc * (10 ** 6) / rho)  # nc in cloud
+        output1 = cld * (nc * (10 ** 6) / rho) #ncm
+        output2 = (gcssnc * (10 ** 6) / rho) #nc in cloud
 
         output = self.pickNonZeroOutput(output1, output2)
         return output, indep
@@ -236,7 +225,7 @@ class VariableGroupLiquidMP(VariableGroup):
         if dataset_override is not None:
             dataset = dataset_override
 
-        nr, indep, dataset = self.getVarForCalculations(['NR', 'CONP'], dataset)
+        nr, indep, dataset = self.getVarForCalculations(['NR','CONP'], dataset)
         rho, indep, dataset = self.getVarForCalculations('RHO', dataset)
         # indep, indep, dataset = self.getVarForCalculations(['z', 'lev', 'altitude'], self.sam_benchmark_dataset)
 

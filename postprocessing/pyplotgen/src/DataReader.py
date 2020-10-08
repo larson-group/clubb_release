@@ -173,18 +173,12 @@ class NetCdfVariable:
                 # Trim 1st coordinate -> time dimension
                 self.dependent_data = self.dependent_data[start_idx:end_idx]
                 if self.independent_data is not None:
-                    if isinstance(self.independent_data, dict):
-                        self.independent_data['time'] = self.independent_data['time'][start_idx:end_idx]
-                    else:
-                        self.independent_data = self.independent_data[start_idx:end_idx]
+                    self.independent_data['time'] = self.independent_data['time'][start_idx:end_idx]
             else:
                 # Trim 2nd coordinate -> height dimension
                 self.dependent_data = self.dependent_data[:,start_idx:end_idx]
                 if self.independent_data is not None:
-                    if isinstance(self.independent_data, dict):
-                        self.independent_data['height'] = self.independent_data['height'][start_idx:end_idx]
-                    else:
-                        self.independent_data = self.independent_data[start_idx:end_idx]
+                    self.independent_data['height'] = self.independent_data['height'][start_idx:end_idx]
         else:
             self.dependent_data = self.dependent_data[start_idx:end_idx]
             if self.independent_data is not None:
@@ -259,7 +253,7 @@ class NetCdfVariable:
             else:
                 dependent_data, independent_data = varname_element(dataset_override=all_datasets)
 
-            if np.isnan(dependent_data.all()) or np.isnan(independent_data.all()):
+            if np.isnan(dependent_data[0]) or np.isnan(independent_data[0]):
                 continue
             else:
                 break
@@ -603,9 +597,6 @@ class DataReader():
         """
         Find netcdf variable in ncdf_datasets matching varname and generate the axis title from its attributes
 
-        If the axis title cannot be found in the netcdf data, it will attempt to fill the axis title with
-            the varname given in the variable's definition for the model's being plotted.
-
         :param ncdf_datasets: List of datasets
         :param varname: Variable name
         :return: String containing units and variable name to be used as axis title
@@ -619,21 +610,11 @@ class DataReader():
         for dataset in ncdf_datasets:
             keys = dataset.variables.keys()
             if varname in keys:
-                varname_to_use_on_panel = varname
-                if hasattr(dataset.variables[varname], "name"):
-                    varname_to_use_on_panel = dataset.variables[varname].name
+                imported_name = dataset.variables[varname].name
                 units = self.__getUnits__([dataset], varname)  # dataset.variables[varname].units
-                axis_title = varname_to_use_on_panel
-                axis_title += ' ' + '[' + units + ']'
+                axis_title = imported_name
+                axis_title += ' ' + '[' + units + ']'  # $'s are used to format equations
                 break
-
-        if axis_title == "Axis title not found":
-            if isinstance(varname, str):
-                axis_title = varname
-            for dataset in ncdf_datasets:
-                if varname in keys:
-                    units = self.__getUnits__([dataset], varname)  # dataset.variables[varname].units
-                    axis_title += ' ' + '[' + units + ']'
         return axis_title
 
     def __getValuesFromNc__(self, ncdf_data, varname, conversion):

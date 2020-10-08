@@ -34,8 +34,7 @@ class VariableGroup:
     """
 
     def __init__(self, case, clubb_datasets=None, les_dataset=None, coamps_dataset=None, r408_dataset=None,
-                 hoc_dataset=None, cam_datasets=None, e3sm_datasets=None, sam_datasets=None, wrf_datasets=None, \
-                 silhs_datasets=None):
+                 hoc_dataset=None, cam_datasets=None, e3sm_datasets=None, sam_datasets=None, wrf_datasets=None):
         """
         Initialize a VariableGroup object with the passed parameters
 
@@ -61,7 +60,6 @@ class VariableGroup:
         self.sam_datasets = sam_datasets
         self.cam_datasets = cam_datasets
         self.wrf_datasets = wrf_datasets
-        self.silhs_datasets = silhs_datasets
         self.coamps_dataset = coamps_dataset
         self.r408_datasets = r408_dataset
         self.hoc_datasets = hoc_dataset
@@ -155,9 +153,6 @@ class VariableGroup:
                    and (len(var_names['wrf']) > 0 or 'wrf_calc' in variable_def_dict.keys())
         plot_cam = self.cam_datasets is not None and len(self.cam_datasets) > 0 \
                    and (len(var_names['cam']) > 0 or 'cam_calc' in variable_def_dict.keys())
-        plot_silhs = self.silhs_datasets is not None and len(self.silhs_datasets) > 0 \
-                   and (len(var_names['silhs']) > 0 or 'silhs_calc' in variable_def_dict.keys())
-
 
         all_lines = []
         # Plot benchmarks
@@ -201,12 +196,6 @@ class VariableGroup:
             for input_folder in self.wrf_datasets:
                 folder_name = os.path.basename(input_folder)
                 all_lines.extend(self.__getVarLinesForModel__('wrf', variable_def_dict, self.wrf_datasets[input_folder],
-                                                              label=folder_name))
-                
-        if plot_silhs:
-            for input_folder in self.silhs_datasets:
-                folder_name = os.path.basename(input_folder)
-                all_lines.extend(self.__getVarLinesForModel__('silhs', variable_def_dict, self.silhs_datasets[input_folder],
                                                               label=folder_name))
 
         variable_def_dict['plots'] = all_lines
@@ -316,9 +305,6 @@ class VariableGroup:
                     raise TypeError("getTextDefiningDataset received an unexpected format of datasets")
         if self.e3sm_datasets is not None:
             for dict_of_datasets in self.e3sm_datasets.values():
-                datasets.extend(dict_of_datasets.values())
-        if self.silhs_datasets is not None:
-            for dict_of_datasets in self.silhs_datasets.values():
                 datasets.extend(dict_of_datasets.values())
         if self.cam_datasets is not None:
             for dict_of_datasets in self.cam_datasets.values():
@@ -472,15 +458,12 @@ class VariableGroup:
         plotted_models_varname = "unknown_model_var"
         if self.clubb_datasets is not None and len(var_names['clubb']) > 0:
             plotted_models_varname = var_names['clubb'][0]
-        elif self.clubb_datasets is None and self.silhs_datasets is not None and len(var_names['silhs']) > 0:
-            plotted_models_varname = var_names['silhs'][0]
         elif self.clubb_datasets is None and self.wrf_datasets is not None and len(var_names['wrf']) > 0:
             plotted_models_varname = var_names['wrf'][0]
         elif self.clubb_datasets is None and self.sam_datasets is not None and len(var_names['sam']) > 0:
             plotted_models_varname = var_names['sam'][0]
         elif self.clubb_datasets is None and self.e3sm_datasets is not None and len(var_names['e3sm']) > 0:
             plotted_models_varname = var_names['e3sm'][0]
-
         return plotted_models_varname
 
     def __getConversionFactors__(self, variable_def_dict):
@@ -500,8 +483,7 @@ class VariableGroup:
             'hoc': 1,
             'e3sm': 1,
             'cam': 1,
-            'clubb': 1,
-            'silhs': 1
+            'clubb': 1
         }
 
         if 'sam_conv_factor' in variable_def_dict.keys():
@@ -525,9 +507,6 @@ class VariableGroup:
 
         if 'wrf_conv_factor' in variable_def_dict.keys():
             conv_factors['wrf'] = variable_def_dict['wrf_conv_factor']
-
-        if 'silhs_conv_factor' in variable_def_dict.keys():
-            conv_factors['silhs'] = variable_def_dict['silhs_conv_factor']
 
         return conv_factors
 
@@ -608,23 +587,15 @@ class VariableGroup:
                                   start_time=self.start_time, end_time=self.end_time, min_height=self.height_min_value,
                                   max_height=self.height_max_value, avg_axis=avg_axis,
                                   conversion_factor=conversion_factor, model_name=model_name)
-        if variable.dependent_data.ndim == 2:
-            variable.trimArray(self.height_min_value, self.height_max_value, data=variable.independent_data, axis=0)
-            for i in range(len(variable.dependent_data[0])):
-                label_with_offset = label + "_" + str(i)
-                x_data_i = variable.dependent_data[:,i]
-                line = Line(x_data_i, variable.independent_data, label=label_with_offset, line_format=line_format)
-                output_lines.append(line)
-        else:
-            variable.trimArray(self.height_min_value, self.height_max_value, data=variable.independent_data)
-            line = Line(variable.dependent_data, variable.independent_data, label=label, line_format=line_format)
-            output_lines.append(line)
+        variable.trimArray(self.height_min_value, self.height_max_value, data=variable.independent_data)
 
         if lines is not None:
             additional_lines = self.__processLinesParameter__(lines, dataset, line_format=line_format,
                                                               label_suffix=label, model_name=model_name)
             output_lines.extend(additional_lines)
-
+        else:
+            line = Line(variable, variable.independent_data, label=label, line_format=line_format)
+            output_lines.append(line)
         return output_lines
 
     def __getTimeseriesLine__(self, varname, dataset, end_time, conversion_factor, label, line_format):
