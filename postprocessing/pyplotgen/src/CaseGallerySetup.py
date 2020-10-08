@@ -62,6 +62,7 @@ class CaseGallerySetup:
         self.plot_budgets = plot_budgets
         self.plot_r408 = plot_r408
         self.plot_hoc = plot_hoc
+        self.plot_les = plot_les
         self.e3sm_folders = e3sm_dirs
         self.sam_folders = sam_folders
         self.cam_folders = cam_folders
@@ -73,6 +74,10 @@ class CaseGallerySetup:
         self.panels = []
         self.diff_panels = []
         self.plot_subcolumns = plot_subcolumns
+        self.sam_benchmark_file = None
+        self.coamps_datasets = None
+        self.r408_datasets = None
+        self.hoc_datasets = None
 
         self.VALID_MODEL_NAMES = ['clubb', 'clubb_hoc','clubb_r408', 'e3sm', 'sam', 'cam', 'wrf', 'coamps']
 
@@ -80,10 +85,13 @@ class CaseGallerySetup:
             self.plot_budgets = False
 
         # Load benchmark files
-        self.sam_benchmark_file = self.__loadModelFiles__(None,case_definition,"sam")
-        self.coamps_datasets = self.__loadModelFiles__(None, case_definition, "coamps")
-        self.r408_datasets = self.__loadModelFiles__(None, case_definition, "clubb_r408")
-        self.hoc_datasets = self.__loadModelFiles__(None, case_definition, "clubb_hoc")
+        if self.plot_les:
+            self.sam_benchmark_file = self.__loadModelFiles__(None,case_definition,"sam")
+            self.coamps_datasets = self.__loadModelFiles__(None, case_definition, "coamps")
+        if self.plot_r408:
+            self.r408_datasets = self.__loadModelFiles__(None, case_definition, "clubb_r408")
+        if self.plot_hoc:
+            self.hoc_datasets = self.__loadModelFiles__(None, case_definition, "clubb_hoc")
 
         # Load datasets imported via command line parameters
         self.clubb_datasets = self.__loadModelFiles__(clubb_folders, case_definition, "clubb")
