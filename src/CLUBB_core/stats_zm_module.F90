@@ -50,6 +50,8 @@ module stats_zm_module
         itau_wp2_zm, &
         itau_wp3_zm, &
         itau_xp2_zm, &
+        itau_wpxp_zm,&
+        iRi_zm, &
         iKh_zm, &
         iK_hm, &
         iwprcp, &
@@ -59,7 +61,11 @@ module stats_zm_module
         ircp2,   &
         iSkw_zm, &
         iSkthl_zm, &
-        iSkrt_zm
+        iSkrt_zm,  &
+        iinvrs_tau_bkgnd, &
+        iinvrs_tau_sfc, &
+        iinvrs_tau_shear, &
+        iC6_term
 
     use stats_variables, only: &
         iupwp, &
@@ -653,6 +659,31 @@ module stats_zm_module
              l_silhs=.false., grid_kind=stats_zm )
         k = k + 1
 
+      case ('invrs_tau_bkgnd')
+        iinvrs_tau_bkgnd = k
+
+        call stat_assign( var_index=iinvrs_tau_bkgnd, var_name="invrs_tau_bkgnd", &
+             var_description="invrs tau of bkgnd on momentum levels [s-1]", &
+             var_units="s^-1", l_silhs=.false., grid_kind=stats_zm )
+        k = k + 1
+
+      case ('invrs_tau_sfc')
+        iinvrs_tau_sfc = k
+
+        call stat_assign( var_index=iinvrs_tau_sfc, var_name="invrs_tau_sfc", &
+             var_description="invrs tau of surface on momentum levels [s-1]", &
+             var_units="s^-1", l_silhs=.false., grid_kind=stats_zm )
+        k = k + 1
+
+      case ('invrs_tau_shear')
+        iinvrs_tau_shear = k
+
+        call stat_assign( var_index=iinvrs_tau_shear, var_name="invrs_tau_shear", &
+             var_description="invrs tau of shear on momentum levels [s-1]", &
+             var_units="s^-1", l_silhs=.false., grid_kind=stats_zm )
+        k = k + 1
+
+
       case ('tau_no_N2_zm')
         itau_no_N2_zm = k
 
@@ -687,13 +718,21 @@ module stats_zm_module
              l_silhs=.false., grid_kind=stats_zm )
         k = k + 1
 
+      case ('tau_wpxp_zm')
+        itau_wpxp_zm = k
+
+        call stat_assign( var_index=itau_wpxp_zm, var_name="tau_wpxp_zm", &
+             var_description="tau for wpxp on momentum levels [s]", &
+             var_units="s", l_silhs=.false., grid_kind=stats_zm )
+        k = k + 1
+
 
       case ('Kh_zm')
         iKh_zm = k
 
         call stat_assign( var_index=iKh_zm, var_name="Kh_zm", &
-             var_description="Kh_zm, Eddy diffusivity on momentum levels", var_units="m^2/s", &
-             l_silhs=.false., grid_kind=stats_zm )
+             var_description="Kh_zm, Eddy diffusivity on momentum levels", &
+             var_units="m^2/s", l_silhs=.false., grid_kind=stats_zm )
         k = k + 1
 
       case ('K_hm')
@@ -2380,6 +2419,13 @@ module stats_zm_module
              l_silhs=.false., grid_kind=stats_zm )
         k = k + 1
 
+      case ( 'C6_term' )
+        iC6_term = k
+        call stat_assign( var_index=iC6_term, var_name="C6_term", &
+             var_description="C6 term [-]", var_units="-", &
+             l_silhs=.false., grid_kind=stats_zm )
+        k = k + 1
+
       case ( 'C7_Skw_fnc' )
         iC7_Skw_fnc = k
         call stat_assign( var_index=iC7_Skw_fnc, var_name="C7_Skw_fnc", &
@@ -2403,11 +2449,18 @@ module stats_zm_module
                           var_units="-", l_silhs=.false., grid_kind=stats_zm )
         k = k + 1
 
-      case ( 'brunt_vaisala_freq_sqd' )
+      case ( 'bv_freq_sqd' )
         ibrunt_vaisala_freq_sqd = k
-        call stat_assign( var_index=ibrunt_vaisala_freq_sqd, var_name="brunt_vaisala_freq_sqd", &
-             var_description="brunt_vaisala_freq_sqd, Brunt-Vaisala freqency squared", &
+        call stat_assign( var_index=ibrunt_vaisala_freq_sqd, var_name="bv_freq_sqd", &
+             var_description="Brunt-Vaisala freqency squared [1/s^2]", &
              var_units="1/s^2", &
+             l_silhs=.false., grid_kind=stats_zm )
+        k = k + 1
+
+      case ( 'Ri_zm' )
+        iRi_zm = k
+        call stat_assign( var_index=iRi_zm,var_name="Ri_zm", &
+             var_description="Richardson number [-]", var_units="-", &
              l_silhs=.false., grid_kind=stats_zm )
         k = k + 1
 

@@ -160,7 +160,7 @@ module advance_clubb_core_module
                qclvar, &                                            ! intent(out)
 #endif
                thlprcp, wprcp, ice_supersat_frac, &                 ! intent(out)
-               rcm_in_layer, cloud_cover, &                         ! intent(out)
+               rcm_in_layer, cloud_cover, invrs_tau_zm, &           ! intent(out)
                err_code_out )                                       ! intent(out)
 
     ! Description:
@@ -213,7 +213,8 @@ module advance_clubb_core_module
         C_invrs_tau_N2_wpxp, &
         C_invrs_tau_N2_clear_wp3, &
         xp3_coef_base, &
-        xp3_coef_slope
+        xp3_coef_slope, &
+        altitude_threshold
 
     use parameters_model, only: &
         sclr_dim, & ! Variable(s)
@@ -333,11 +334,19 @@ module advance_clubb_core_module
         ium_bt,        &
         irvm,          &
         irel_humidity, &
-        iwpthlp_zt,    &
-        itau_no_N2_zm, &
-        itau_xp2_zm,   &
-        itau_wp2_zm,   &
-        itau_wp3_zm   
+        iwpthlp_zt
+
+    use stats_variables, only: &
+        iinvrs_tau_bkgnd,        & ! Variable(s)
+        iinvrs_tau_sfc,          &
+        iinvrs_tau_shear,        &
+        itau_no_N2_zm,           &
+        itau_xp2_zm,             &
+        itau_wp2_zm,             &
+        itau_wp3_zm,             &
+        itau_wpxp_zm,            &
+        ibrunt_vaisala_freq_sqd, &
+        iRi_zm
 
     use stats_variables, only: &
         iwprtp_zt,     &
@@ -553,8 +562,9 @@ module advance_clubb_core_module
 
     ! Variables that need to be output for use in host models
     real( kind = core_rknd ), intent(out), dimension(gr%nz) ::  &
-      wprcp,            & ! w'r_c' (momentum levels)                  [(kg/kg) m/s]
-      ice_supersat_frac   ! ice cloud fraction (thermodynamic levels) [-]
+      wprcp,             & ! w'r_c' (momentum levels)                  [(kg/kg) m/s]
+      ice_supersat_frac, & ! ice cloud fraction (thermodynamic levels) [-]
+      invrs_tau_zm         ! One divided by tau on zm levels           [1/s]
 
     real( kind = core_rknd ), dimension(gr%nz) ::  &
       uprcp,              & ! < u' r_c' >              [(m kg)/(s kg)]
@@ -738,18 +748,22 @@ module advance_clubb_core_module
        Cx_fnc_Richardson,            & ! Cx_fnc computed from Richardson_num          [-]
        brunt_vaisala_freq_sqd,       & ! Buoyancy frequency squared, N^2              [s^-2]
        brunt_vaisala_freq_sqd_smth,  & ! smoothed Buoyancy frequency squared, N^2     [s^-2]
+       brunt_freq_pos,               & !
        brunt_vaisala_freq_sqd_mixed, & ! A mixture of dry and moist N^2
        brunt_vaisala_freq_sqd_dry,   & ! dry N^2
        brunt_vaisala_freq_sqd_moist, & ! moist N^2
        brunt_vaisala_freq_sqd_plus,  & ! N^2 from another way
        brunt_vaisala_freq_sqd_zt,    & ! Buoyancy frequency squared on t-levs.        [s^-2]
        brunt_freq_out_cloud,         & !
-       invrs_tau_zm,                 & ! One divided by tau on zm levels              [s^-1]
+       Ri_zm,                        & ! Richardson number
        invrs_tau_xp2_zm,             & ! One divided by tau_xp2                       [s^-1]
        invrs_tau_wp2_zm,             & ! One divided by tau_wp2                       [s^-1]
        invrs_tau_wpxp_zm,            & ! One divided by tau_wpxp                      [s^-1]
        invrs_tau_wp3_zm,             & ! One divided by tau_wp3                       [s^-1]
        invrs_tau_no_N2_zm,           & ! One divided by tau (without N2) on zm levels [s^-1] 
+       invrs_tau_bkgnd,              & ! One divided by tau_wp3                       [s^-1]
+       invrs_tau_shear,              & ! One divided by tau with stability effects    [s^-1]
+       invrs_tau_sfc,                & ! One divided by tau (without N2) on zm levels [s^-1]
        ustar,                        & ! Friction velocity  [m/s]
        tau_no_N2_zm,                 & ! Tau without Brunt Freq
        tau_wp2_zm,                   & ! Tau values used for advance_wp2_wpxp
@@ -764,7 +778,7 @@ module advance_clubb_core_module
  
     real( kind = core_rknd ), parameter :: &
        ufmin = 0.01_core_rknd,       & ! minimum value of friction velocity     [m/s]
-       z_displace = 20.0_core_rknd   ! displacement of log law profile above ground   [m]
+       z_displace = 10.0_core_rknd   ! displacement of log law profile above ground   [m]
 
     real( kind = core_rknd ) :: &
       Lscale_max    ! Max. allowable mixing length (based on grid box size) [m]
@@ -779,9 +793,9 @@ module advance_clubb_core_module
     ! pdf_closure_driver.
     logical :: l_samp_stats_in_pdf_call
 
-   real( kind = core_rknd ), dimension(gr%nz) :: &
-     wp2_splat, &   ! Tendency of <w'2> due to eddies compressing  [m^2/s^3]
-     wp3_splat      ! Tendency of <w'3> due to eddies compressing  [m^3/s^4]
+    real( kind = core_rknd ), dimension(gr%nz) :: &
+       wp2_splat, &   ! Tendency of <w'2> due to eddies compressing  [m^2/s^3]
+       wp3_splat      ! Tendency of <w'3> due to eddies compressing  [m^3/s^4]
 
     ! Variables associated with upgradient momentum contributions due to cumuli
     !real( kind = core_rknd ), dimension(gr%nz) :: &
@@ -1165,9 +1179,17 @@ module advance_clubb_core_module
 
         ustar = max( ( upwp_sfc**2 + vpwp_sfc**2 )**(one_fourth), ufmin )
 
-        invrs_tau_no_N2_zm = C_invrs_tau_bkgnd  / tau_const &
-         + C_invrs_tau_sfc * ( ustar / vonk ) / ( gr%zm - sfc_elevation + z_displace ) &
-         + C_invrs_tau_shear * zt2zm( zm2zt( sqrt( (ddzt( um ))**2 + (ddzt( vm ))**2 ) ) )
+        invrs_tau_bkgnd = C_invrs_tau_bkgnd / tau_const
+
+        invrs_tau_shear &
+        = C_invrs_tau_shear &
+          * zt2zm( zm2zt( sqrt( (ddzt( um ))**2 + (ddzt( vm ))**2 ) ) )
+
+        invrs_tau_sfc &
+        = C_invrs_tau_sfc * ( ustar / vonk ) / ( gr%zm - sfc_elevation + z_displace )
+         !C_invrs_tau_sfc * ( wp2 / vonk /ustar ) / ( gr%zm -sfc_elevation + z_displace )
+
+        invrs_tau_no_N2_zm = invrs_tau_bkgnd + invrs_tau_sfc + invrs_tau_shear
 
 !        brunt_vaisala_freq_sqd_smth = zt2zm( zm2zt( brunt_vaisala_freq_sqd ) )
 !       The min function below smooths the slope discontinuity in brunt freq
@@ -1177,36 +1199,52 @@ module advance_clubb_core_module
         brunt_vaisala_freq_sqd_smth = zt2zm( zm2zt( &
               min( brunt_vaisala_freq_sqd, 1.e8_core_rknd * abs(brunt_vaisala_freq_sqd)**3 ) ) )
 
-        brunt_freq_out_cloud = sqrt( max( zero_threshold, &
-                brunt_vaisala_freq_sqd_smth ) ) &
+        Ri_zm &
+        = sqrt( max( 1.0e-7_core_rknd, brunt_vaisala_freq_sqd_smth ) &
+                / max( ( ddzt(um)**2 + ddzt(vm)**2 ), 1.0e-7_core_rknd ) )
+
+        brunt_freq_pos = sqrt( max( zero_threshold, brunt_vaisala_freq_sqd_smth ) )
+
+        brunt_freq_out_cloud =  brunt_freq_pos &
               * min(one, max(zero_threshold,&
               one - ( (zt2zm(ice_supersat_frac) / 0.007_core_rknd) )))
 
-        invrs_tau_zm = invrs_tau_no_N2_zm & 
-              + C_invrs_tau_N2 * sqrt( max( zero_threshold, &
-              brunt_vaisala_freq_sqd_smth ) )
+        where ( gr%zt < altitude_threshold )
+           brunt_freq_out_cloud = 0.0_core_rknd
+        end where
+
+        invrs_tau_zm = 0.5_core_rknd * invrs_tau_no_N2_zm &
+              + C_invrs_tau_N2 * brunt_freq_pos !* (1.0-5.0* cloud_frac*(1.0-cloud_frac)**4 )
 
         invrs_tau_wp2_zm = invrs_tau_no_N2_zm &
-              + C_invrs_tau_N2_wp2 * sqrt( max( zero_threshold, &
-              brunt_vaisala_freq_sqd_smth ) )
+              + C_invrs_tau_N2_wp2 * brunt_freq_pos
 
-        invrs_tau_xp2_zm =  0.1 * C_invrs_tau_bkgnd  / tau_const &
-              + C_invrs_tau_sfc * ( ustar / vonk ) / ( gr%zm - sfc_elevation + z_displace ) &
-              + C_invrs_tau_shear * zt2zm( zm2zt( sqrt( (ddzt( um ))**2 + (ddzt( vm ))**2 ) ) )& 
-              + C_invrs_tau_N2_xp2 &
-              * sqrt( max( zero_threshold, &
-              brunt_vaisala_freq_sqd_smth ) )!,0.002_core_rknd )
+        invrs_tau_xp2_zm &
+        = invrs_tau_bkgnd + invrs_tau_sfc + invrs_tau_shear &
+          + C_invrs_tau_N2_xp2 * brunt_freq_pos & ! 0
+          + C_invrs_tau_sfc * 2.0_core_rknd &
+            * sqrt(em) / ( gr%zm - sfc_elevation + z_displace )  ! small
 
-        invrs_tau_xp2_zm = merge(0.003_core_rknd, invrs_tau_xp2_zm, &
-              zt2zm(ice_supersat_frac) <= 0.01_core_rknd &
-              .and. invrs_tau_xp2_zm  >= 0.003_core_rknd)
-
-        invrs_tau_wpxp_zm = invrs_tau_zm & 
-              + C_invrs_tau_N2_wpxp * brunt_freq_out_cloud 
+        invrs_tau_xp2_zm &
+        = min( max( sqrt( ( ddzt(um)**2 + ddzt(vm)**2 ) &
+                          / max( 1.0e-7_core_rknd, brunt_vaisala_freq_sqd_smth ) ), &
+                    0.3_core_rknd ), &
+               1.0_core_rknd ) * invrs_tau_xp2_zm
 
         invrs_tau_wp3_zm = invrs_tau_wp2_zm &
               + C_invrs_tau_N2_clear_wp3 * brunt_freq_out_cloud
 
+        invrs_tau_wpxp_zm = 2.0_core_rknd * invrs_tau_zm &
+              + C_invrs_tau_N2_wpxp * brunt_freq_out_cloud
+
+        where( gr%zt > altitude_threshold &
+               .and. brunt_vaisala_freq_sqd_smth > 3.3E-4_core_rknd )
+           invrs_tau_wpxp_zm &
+           = invrs_tau_wpxp_zm &
+             * ( 1.0_core_rknd &
+                 + 3.0_core_rknd * min( max( Ri_zm, 0.0_core_rknd ), &
+                                        12.0_core_rknd ) )
+        end where
 
         if ( gr%zm(1) - sfc_elevation + z_displace < eps ) then
              stop  "Lowest zm grid level is below ground in CLUBB."
@@ -1443,10 +1481,17 @@ module advance_clubb_core_module
       end if ! l_stability_correction
 
       if ( l_stats_samp ) then
-      call stat_update_var( itau_no_N2_zm,tau_no_N2_zm , stats_zm)
-      call stat_update_var( itau_xp2_zm,tau_xp2_zm , stats_zm)
-      call stat_update_var( itau_wp2_zm,tau_wp2_zm , stats_zm)
-      call stat_update_var( itau_wp3_zm,tau_wp3_zm , stats_zm)
+         call stat_update_var(iinvrs_tau_bkgnd, invrs_tau_bkgnd, stats_zm)
+         call stat_update_var(iinvrs_tau_sfc, invrs_tau_sfc, stats_zm)
+         call stat_update_var(iinvrs_tau_shear, invrs_tau_shear, stats_zm)
+         call stat_update_var(itau_no_N2_zm, tau_no_N2_zm, stats_zm)
+         call stat_update_var(itau_xp2_zm, tau_xp2_zm, stats_zm)
+         call stat_update_var(itau_wp2_zm, tau_wp2_zm, stats_zm)
+         call stat_update_var(itau_wp3_zm, tau_wp3_zm, stats_zm)
+         call stat_update_var(itau_wpxp_zm, tau_wpxp_zm, stats_zm)
+         call stat_update_var(ibrunt_vaisala_freq_sqd, brunt_vaisala_freq_sqd, &
+                              stats_zm)
+         call stat_update_var(iRi_zm, Ri_zm, stats_zm)
       end if
 
       ! Cx_fnc_Richardson is only used if one of these flags is true,
@@ -1492,6 +1537,7 @@ module advance_clubb_core_module
                             clubb_config_flags%l_upwind_xm_ma,               & ! intent(in)
                             clubb_config_flags%l_uv_nudge,                   & ! intent(in)
                             clubb_config_flags%l_tke_aniso,                  & ! intent(in)
+                            clubb_config_flags%l_diag_Lscale_from_tau,       & ! intent(in)
                             clubb_config_flags%l_use_C7_Richardson,          & ! intent(in)
                             clubb_config_flags%l_brunt_vaisala_freq_moist,   & ! intent(in)
                             clubb_config_flags%l_use_thvm_in_bv_freq,        & ! intent(in)

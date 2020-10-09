@@ -119,12 +119,17 @@ module stats_variables
 !$omp   isigma_sqd_w_zt, irho )
 
   integer, public :: &
+     iinvrs_tau_bkgnd = 0,  &
+     iinvrs_tau_sfc   = 0,  &
+     iinvrs_tau_shear = 0,  &
      itau_no_N2_zm = 0,     & 
      itau_xp2_zm   = 0,     &
      itau_wp2_zm   = 0,     &
-     itau_wp3_zm   = 0
-!$omp threadprivate( itau_no_N2_zm,itau_wp2_zm, itau_xp2_zm, itau_wp3_zm )
-
+     itau_wp3_zm   = 0,     &
+     itau_wpxp_zm  = 0
+!$omp threadprivate( iinvrs_tau_bkgnd, iinvrs_tau_sfc, iinvrs_tau_shear, &
+!$omp                itau_no_N2_zm, itau_xp2_zm, itau_wp2_zm, itau_wp3_zm, &
+!$omp                itau_wpxp_zm )
 
 
   integer, dimension(:), allocatable, public :: & 
@@ -1060,11 +1065,13 @@ module stats_variables
     iC7_Skw_fnc = 0,     &
     iC1_Skw_fnc = 0,     &
     ibrunt_vaisala_freq_sqd = 0, &
+    iRi_zm = 0, &
     iRichardson_num = 0, &
-    ishear_sqd = 0
+    ishear_sqd = 0,      &
+    iC6_term
 
-!$omp   threadprivate(igamma_Skw_fnc, iC6rt_Skw_fnc, iC6thl_Skw_fnc)
-!$omp   threadprivate(iC7_Skw_fnc, iC1_Skw_fnc)
+!$omp   threadprivate(igamma_Skw_fnc, iC6rt_Skw_fnc, iC6thl_Skw_fnc, iC6_term)
+!$omp   threadprivate(iC7_Skw_fnc, iC1_Skw_fnc, iRi_zm)
 !$omp   threadprivate(ibrunt_vaisala_freq_sqd, iRichardson_num, ishear_sqd)
 
   integer, public :: &

@@ -430,8 +430,7 @@ module advance_helper_module
       zt2zm
 
     use constants_clubb, only: &
-      one_fourth, &     ! Constant(s)
-      one_third,  &
+!      one_third,  & ! Constant(s)
       one
 
     use interpolation, only: &
@@ -439,7 +438,6 @@ module advance_helper_module
 
     use stats_variables, only: &
       iRichardson_num, &    ! Variable(s)
-      ibrunt_vaisala_freq_sqd, &
       ishear_sqd, &
       stats_zm,       &
       l_stats_samp
@@ -452,10 +450,10 @@ module advance_helper_module
     ! Constant Parameters
     real( kind = core_rknd ), parameter :: &
       Richardson_num_divisor_threshold = 1.0e-6_core_rknd, &
-      Richardson_num_min = one_fourth, &
+      Richardson_num_min = 100._core_rknd, &
       Richardson_num_max = 400._core_rknd,       &
-      Cx_min            = one_third,   &
-      Cx_max            = 0.95_core_rknd,         &
+      Cx_min            = 0.95_core_rknd,& !one_third,   &
+      Cx_max            = 0.6_core_rknd,         &
       Cx_fnc_Richardson_below_ground_value = one
 
     logical, parameter :: &
@@ -498,6 +496,7 @@ module advance_helper_module
       brunt_vaisala_freq_sqd_moist, &
       brunt_vaisala_freq_sqd_plus, &
       Richardson_num, &
+      Ri_zm, &
       dum_dz, dvm_dz, &
       shear_sqd, &
       turb_freq_sqd, &
@@ -524,18 +523,6 @@ module advance_helper_module
     invrs_min_max_diff = 1.0_core_rknd / ( Richardson_num_max - Richardson_num_min )
     invrs_num_div_thresh = 1.0_core_rknd / Richardson_num_divisor_threshold
 
-    ! Statistics sampling
-    if ( l_stats_samp ) then
-
-      ! NOTE: This is a kludgy place to sample brunt_vaisala_freq_sqd, because
-      ! it is used in multiple places, and depending on CLUBB parameters, it
-      ! could be computed in another place and not here. In the future, we
-      ! should compute brunt_vaisala_freq_sqd once, and pass it around
-      ! everywhere. This will save on computational expense as well.
-      call stat_update_var( ibrunt_vaisala_freq_sqd, brunt_vaisala_freq_sqd, stats_zm )
-
-    end if ! l_stats_samp
-
     Lscale_zm = zt2zm( Lscale )
 
     if ( l_use_shear_turb_freq_sqd ) then
@@ -551,7 +538,11 @@ module advance_helper_module
       if ( l_stats_samp ) &
         call stat_update_var( ishear_sqd, shear_sqd, stats_zm )
     else
-      Richardson_num = brunt_vaisala_freq_sqd * invrs_num_div_thresh
+      Richardson_num = brunt_vaisala_freq_sqd_mixed * invrs_num_div_thresh
+      Ri_zm &
+      = max( 1.0e-7_core_rknd, brunt_vaisala_freq_sqd_mixed ) &
+        / max( ( ddzt(um)**2 + ddzt(vm)**2 ), 1.0e-7_core_rknd )
+
     end if
 
     if ( l_Richardson_vert_avg ) then
@@ -566,7 +557,7 @@ module advance_helper_module
     ! The min function ensures that Cx does not exceed Cx_max, regardless of the
     !     value of Richardson_num_max.
     Cx_fnc_Richardson = linear_interp_factor( &
-                    ( max(min(Richardson_num_max,Richardson_num),Richardson_num_min) &
+                    ( max(min(Richardson_num_max,Ri_zm),Richardson_num_min) &
                     - Richardson_num_min )  * invrs_min_max_diff, Cx_max, Cx_min )
 
     if ( l_Cx_fnc_Richardson_vert_avg ) then

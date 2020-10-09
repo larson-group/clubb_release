@@ -814,6 +814,7 @@ module spurious_source_test
                              l_upwind_xm_ma, &
                              l_uv_nudge, &
                              l_tke_aniso, &
+                             l_diag_Lscale_from_tau, &
                              l_use_C7_Richardson, &
                              l_brunt_vaisala_freq_moist, &
                              l_use_thvm_in_bv_freq, &

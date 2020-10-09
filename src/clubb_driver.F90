@@ -470,7 +470,8 @@ module clubb_driver
       wprcp,             & ! w'r_c' (momentum levels)              [(kg/kg) m/s]
       ice_supersat_frac, & ! ice cloud fraction (thermo. levels)   [-]
       rcm_in_layer,      & ! rcm within cloud layer                [kg/kg]
-      cloud_cover          ! cloud cover                           [-]
+      cloud_cover,       & ! cloud cover                           [-]
+      invrs_tau_zm         ! One divided by tau on zm levels       [1/s]
 
     real( kind = core_rknd ), dimension(:), allocatable :: &
       ug,       & ! u geostrophic wind                           [m/s]
@@ -1395,6 +1396,7 @@ module clubb_driver
     allocate( ice_supersat_frac(1:gr%nz) )
     allocate( rcm_in_layer(1:gr%nz) )
     allocate( cloud_cover(1:gr%nz) )
+    allocate( invrs_tau_zm(1:gr%nz) )
 
     ! Passive scalar variables
     ! Note that sclr_dim can be 0
@@ -1517,11 +1519,12 @@ module clubb_driver
     wm_zt(1:gr%nz) = zero      ! Thermodynamic levels
 
     ! Cloud water variables
-    rcm(1,1:gr%nz)               = zero
+    rcm(1,1:gr%nz)             = zero
     cloud_frac(1:gr%nz)        = zero
     ice_supersat_frac(1:gr%nz) = zero
     rcm_in_layer(1:gr%nz)      = zero
     cloud_cover(1:gr%nz)       = zero
+    invrs_tau_zm(1:gr%nz)      = zero
 
     sigma_sqd_w    = zero ! PDF width parameter (momentum levels)
     sigma_sqd_w_zt = zero ! PDF width parameter interp. to t-levs.
@@ -2138,7 +2141,7 @@ module clubb_driver
              pdf_implicit_coefs_terms, &                          ! intent(inout)
              Kh_zm, Kh_zt, &                                      ! intent(out)
              thlprcp, wprcp, ice_supersat_frac, &                 ! Intent(out)
-             rcm_in_layer, cloud_cover, &                         ! Intent(out)
+             rcm_in_layer, cloud_cover, invrs_tau_zm, &           ! Intent(out)
              err_code_dummy )                                     ! Intent(out)
 
       if ( clubb_at_least_debug_level( 0 ) ) then
@@ -2545,6 +2548,7 @@ module clubb_driver
     deallocate( ice_supersat_frac )
     deallocate( rcm_in_layer )
     deallocate( cloud_cover )
+    deallocate( invrs_tau_zm )
 
     ! Passive scalar variables
     ! Note that sclr_dim can be 0

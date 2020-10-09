@@ -67,6 +67,7 @@ module advance_xm_wpxp_module
                               l_upwind_xm_ma, &
                               l_uv_nudge, &
                               l_tke_aniso, &
+                              l_diag_Lscale_from_tau, &
                               l_use_C7_Richardson, &
                               l_brunt_vaisala_freq_moist, &
                               l_use_thvm_in_bv_freq, &
@@ -165,6 +166,7 @@ module advance_xm_wpxp_module
         iC7_Skw_fnc, &
         iC6rt_Skw_fnc, &
         iC6thl_Skw_fnc, &
+        iC6_term, &
         l_stats_samp
 
     use sponge_layer_damping, only: &
@@ -296,6 +298,8 @@ module advance_xm_wpxp_module
       l_uv_nudge,                   & ! For wind speed nudging
       l_tke_aniso,                  & ! For anisotropic turbulent kinetic energy, i.e. TKE = 1/2
                                       ! (u'^2 + v'^2 + w'^2)
+      l_diag_Lscale_from_tau,       & ! First diagnose dissipation time tau, and then diagnose the
+                                      ! mixing length scale as Lscale = tau * tke
       l_use_C7_Richardson,          & ! Parameterize C7 based on Richardson number
       l_brunt_vaisala_freq_moist,   & ! Use a different formula for the Brunt-Vaisala frequency in
                                       ! saturated atmospheres (from Durran and Klemp, 1982)
@@ -323,7 +327,7 @@ module advance_xm_wpxp_module
     ! -------------------- Local Variables --------------------
 
     real( kind = core_rknd ), dimension(gr%nz) ::  & 
-      C6rt_Skw_fnc, C6thl_Skw_fnc, C7_Skw_fnc
+      C6rt_Skw_fnc, C6thl_Skw_fnc, C7_Skw_fnc, C6_term
 
     ! Eddy Diffusion for wpthlp and wprtp.
     real( kind = core_rknd ), dimension(gr%nz) :: Kw6  ! wpxp eddy diff. [m^2/s]
@@ -435,21 +439,37 @@ module advance_xm_wpxp_module
        vpwp_old = vpwp
     endif ! l_predict_upwp_vpwp
 
-    ! Compute C6 and C7 as a function of Skw
-    ! The if...then is just here to save compute time
-    if ( abs(C6rt-C6rtb) > abs(C6rt+C6rtb)*eps/2 ) then
-      C6rt_Skw_fnc(1:gr%nz) = C6rtb + (C6rt-C6rtb) & 
-        *EXP( -one_half * (Skw_zm(1:gr%nz)/C6rtc)**2 )
-    else
-      C6rt_Skw_fnc(1:gr%nz) = C6rtb
-    endif
+    if ( .not. l_diag_Lscale_from_tau ) then
 
-    if ( abs(C6thl-C6thlb) > abs(C6thl+C6thlb)*eps/2 ) then
-      C6thl_Skw_fnc(1:gr%nz) = C6thlb + (C6thl-C6thlb) & 
-        *EXP( -one_half * (Skw_zm(1:gr%nz)/C6thlc)**2 )
-    else
-      C6thl_Skw_fnc(1:gr%nz) = C6thlb
-    endif
+       ! Compute C6 and C7 as a function of Skw
+       ! The if...then is just here to save compute time
+       if ( abs(C6rt-C6rtb) > abs(C6rt+C6rtb)*eps/2 ) then
+         C6rt_Skw_fnc(1:gr%nz) = C6rtb + (C6rt-C6rtb) & 
+           *EXP( -one_half * (Skw_zm(1:gr%nz)/C6rtc)**2 )
+       else
+         C6rt_Skw_fnc(1:gr%nz) = C6rtb
+       endif
+
+       if ( abs(C6thl-C6thlb) > abs(C6thl+C6thlb)*eps/2 ) then
+         C6thl_Skw_fnc(1:gr%nz) = C6thlb + (C6thl-C6thlb) & 
+           *EXP( -one_half * (Skw_zm(1:gr%nz)/C6thlc)**2 )
+       else
+         C6thl_Skw_fnc(1:gr%nz) = C6thlb
+       endif
+
+       ! Damp C6 as a function of Lscale in stably stratified regions
+       C6rt_Skw_fnc = damp_coefficient( C6rt, C6rt_Skw_fnc, &
+                                        C6rt_Lscale0, wpxp_L_thresh, Lscale )
+
+       C6thl_Skw_fnc = damp_coefficient( C6thl, C6thl_Skw_fnc, &
+                                         C6thl_Lscale0, wpxp_L_thresh, Lscale )
+
+    else ! l_diag_Lscale_from_tau
+
+       C6rt_Skw_fnc = C6rt
+       C6thl_Skw_fnc = C6thl
+
+    endif ! .not. l_diag_Lscale_from_tau
 
     ! Compute C7_Skw_fnc
     if ( l_use_C7_Richardson ) then
@@ -468,16 +488,7 @@ module advance_xm_wpxp_module
                                      C7_Lscale0, wpxp_L_thresh, Lscale )
     end if ! l_use_C7_Richardson
 
-    ! Damp C6 as a function of Lscale in stably stratified regions
-    C6rt_Skw_fnc = damp_coefficient( C6rt, C6rt_Skw_fnc, &
-                                     C6rt_Lscale0, wpxp_L_thresh, Lscale )
-
-    C6thl_Skw_fnc = damp_coefficient( C6thl, C6thl_Skw_fnc, &
-                                      C6thl_Lscale0, wpxp_L_thresh, Lscale )
-
-    !        C6rt_Skw_fnc = C6rt
-    !        C6thl_Skw_fnc = C6thl
-    !        C7_Skw_fnc = C7
+!   C7_Skw_fnc = C7
 
     if ( l_stats_samp ) then
 
@@ -516,6 +527,12 @@ module advance_xm_wpxp_module
                             tau_C6_zm, l_scalar_calc,                       & ! Intent(in)
                             lhs_pr1_wprtp, lhs_pr1_wpthlp, lhs_pr1_wpsclrp  ) ! Intent(out)
                                 
+    C6_term = C6rt_Skw_fnc / tau_C6_zm
+
+    if ( l_stats_samp ) then
+      call stat_update_var( iC6_term, C6_term, stats_zm )
+    end if
+
                     
     call  calc_xm_wpxp_ta_terms( wprtp, wp2rtp, wpthlp, wp2thlp, wpsclrp, wp2sclrp, &
                                  rho_ds_zt, invrs_rho_ds_zm, rho_ds_zm, &

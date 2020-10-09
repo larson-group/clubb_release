@@ -116,7 +116,8 @@ module advance_xp2_xpyp_module
         C5,       &
         C2,       &
         C2b,      &
-        C2c
+        C2c,      &
+        rtp2_clip_coef
 
     use parameters_model, only: &
         sclr_dim, & ! Variable(s)
@@ -188,9 +189,6 @@ module advance_xp2_xpyp_module
     ! Constant parameters
     logical, parameter :: &
       l_clip_large_rtp2 = .true. ! Clip rtp2 to be < rtm^2 * coef
-
-    real( kind = core_rknd ), parameter :: &
-      rtp2_clip_coef = one_half ! Coefficient appled the clipping threshold on rtp2 [-]
 
     ! Input variables
     real( kind = core_rknd ), intent(in), dimension(gr%nz) ::  & 

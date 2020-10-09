@@ -292,9 +292,10 @@ module parameters_tunable
 !$omp threadprivate( xp3_coef_base, xp3_coef_slope )
 
   real( kind = core_rknd ), public :: &
-    altitude_threshold = 100.0_core_rknd ! Altitude above which damping should occur for wpxp
+    altitude_threshold = 100.0_core_rknd, & ! Altitude above which damping should occur for wpxp
+    rtp2_clip_coef = 0.5_core_rknd          ! Coef. appled the clipping threshold on rtp2
 
-!$omp threadprivate( altitude_threshold )
+!$omp threadprivate( altitude_threshold, rtp2_clip_coef )
 
   ! Since we lack a devious way to do this just once, this namelist
   ! must be changed as well when a new parameter is added.
@@ -316,9 +317,9 @@ module parameters_tunable
     Lscale_pert_coef, alpha_corr, Skw_denom_coef, c_K10, c_K10h, &
     thlp2_rad_coef, thlp2_rad_cloud_frac_thresh, up2_vp2_factor, &
     Skw_max_mag, xp3_coef_base, xp3_coef_slope, altitude_threshold, &
-    C_invrs_tau_bkgnd, C_invrs_tau_sfc, C_invrs_tau_shear, C_invrs_tau_N2, &
-    C_invrs_tau_N2_wp2, C_invrs_tau_N2_xp2, &
-    C_invrs_tau_N2_wpxp, C_invrs_tau_N2_clear_wp3
+    rtp2_clip_coef, C_invrs_tau_bkgnd, C_invrs_tau_sfc, &
+    C_invrs_tau_shear, C_invrs_tau_N2, C_invrs_tau_N2_wp2, &
+    C_invrs_tau_N2_xp2, C_invrs_tau_N2_wpxp, C_invrs_tau_N2_clear_wp3
 
   ! These are referenced together often enough that it made sense to
   ! make a list of them.  Note that lmin_coef is the input parameter,
@@ -376,7 +377,8 @@ module parameters_tunable
        "C_invrs_tau_N2              ", "C_invrs_tau_N2_wp2          ", &
        "C_invrs_tau_N2_xp2          ", "C_invrs_tau_N2_wpxp         ", &
        "C_invrs_tau_N2_clear_wp3    ", "xp3_coef_base               ", &
-       "xp3_coef_slope              ", "altitude_threshold          "  /)
+       "xp3_coef_slope              ", "altitude_threshold          ", &
+       "rtp2_clip_coef              "  /)
 
   real( kind = core_rknd ), parameter, private :: &
     init_value = -999._core_rknd ! Initial value for the parameters, used to detect missing values
@@ -424,6 +426,7 @@ module parameters_tunable
     clubb_c_K2,                         &
     clubb_nu2,                          &
     clubb_c_K8,                         &
+    clubb_nu8,                          &
     clubb_c_K9,                         &
     clubb_nu9,                          &
     clubb_c_K10,                        &
@@ -446,7 +449,8 @@ module parameters_tunable
     clubb_C_wp2_splat,                  &
     clubb_xp3_coef_base,                &
     clubb_xp3_coef_slope,               &
-    clubb_altitude_threshold
+    clubb_altitude_threshold,           &
+    clubb_rtp2_clip_coef
     
 !$omp threadprivate(clubb_C1, clubb_C1b, clubb_C1c, &
 !$omp   clubb_C2rt, clubb_C2thl, clubb_C2rtthl, clubb_C4, &
@@ -456,15 +460,15 @@ module parameters_tunable
 !$omp   clubb_C11c, clubb_C14, clubb_C15, &
 !$omp   clubb_beta, clubb_gamma_coef, clubb_gamma_coefb, clubb_gamma_coefc, &
 !$omp   clubb_pdf_component_stdev_factor_w, clubb_mu, clubb_c_K1, clubb_nu1, &
-!$omp   clubb_c_K2, clubb_nu2, clubb_c_K8, clubb_c_K9, clubb_nu9, clubb_c_K10, &
-!$omp   clubb_c_K10h, clubb_c_K_hmb, clubb_wpxp_L_thresh, &
+!$omp   clubb_c_K2, clubb_nu2, clubb_c_K8, clubb_nu8, clubb_c_K9, clubb_nu9, &
+!$omp   clubb_c_K10, clubb_c_K10h, clubb_c_K_hmb, clubb_wpxp_L_thresh, &
 !$omp   clubb_lmin_coef, clubb_mult_coef, clubb_Skw_denom_coef, &
 !$omp   clubb_up2_vp2_factor, clubb_Skw_max_mag, clubb_C_invrs_tau_bkgnd, &
 !$omp   clubb_C_invrs_tau_sfc, clubb_C_invrs_tau_shear, clubb_C_invrs_tau_N2, &
 !$omp   clubb_C_invrs_tau_N2_wp2, clubb_C_invrs_tau_N2_xp2, &
 !$omp   clubb_C_invrs_tau_N2_wpxp, clubb_C_invrs_tau_N2_clear_wp3, &
 !$omp   clubb_C_wp2_splat, clubb_xp3_coef_base, clubb_xp3_coef_slope, &
-!$omp   clubb_altitude_threshold)
+!$omp   clubb_altitude_threshold, clubb_rtp2_clip_coef)
     
 #endif /*E3SM*/
 
@@ -591,8 +595,8 @@ module parameters_tunable
                Skw_denom_coef, c_K10, c_K10h, thlp2_rad_coef, &
                thlp2_rad_cloud_frac_thresh, up2_vp2_factor, &
                Skw_max_mag, xp3_coef_base, xp3_coef_slope, &
-               altitude_threshold, C_invrs_tau_bkgnd, C_invrs_tau_sfc, &
-               C_invrs_tau_shear, C_invrs_tau_N2, & 
+               altitude_threshold, rtp2_clip_coef, C_invrs_tau_bkgnd, &
+               C_invrs_tau_sfc, C_invrs_tau_shear, C_invrs_tau_N2, &
                C_invrs_tau_N2_wp2, C_invrs_tau_N2_xp2, &
                C_invrs_tau_N2_wpxp, C_invrs_tau_N2_clear_wp3 )
 
@@ -1071,6 +1075,7 @@ module parameters_tunable
     clubb_c_K2,                         &
     clubb_nu2,                          &
     clubb_c_K8,                         &
+    clubb_nu8,                          &
     clubb_c_K9,                         &
     clubb_nu9,                          &
     clubb_c_K10,                        &
@@ -1093,7 +1098,8 @@ module parameters_tunable
     clubb_C_wp2_splat,                  &
     clubb_xp3_coef_base,                &
     clubb_xp3_coef_slope,               &
-    clubb_altitude_threshold
+    clubb_altitude_threshold,           &
+    clubb_rtp2_clip_coef
 
     integer :: read_status
     integer :: iunit
@@ -1137,6 +1143,7 @@ module parameters_tunable
     clubb_c_K2 = init_value
     clubb_nu2 = init_value
     clubb_c_K8 = init_value
+    clubb_nu8 = init_value
     clubb_c_K9 = init_value
     clubb_nu9 = init_value
     clubb_c_K10 = init_value
@@ -1160,6 +1167,7 @@ module parameters_tunable
     clubb_xp3_coef_base = init_value
     clubb_xp3_coef_slope = init_value
     clubb_altitude_threshold = init_value
+    clubb_rtp2_clip_coef = init_value
 
     if (masterproc) then
       iunit = getunit()
@@ -1210,6 +1218,7 @@ module parameters_tunable
    call mpibcast(clubb_c_K2,       1, mpir8,  0, mpicom)
    call mpibcast(clubb_nu2,        1, mpir8,  0, mpicom)
    call mpibcast(clubb_c_K8,       1, mpir8,  0, mpicom)
+   call mpibcast(clubb_nu8,        1, mpir8,  0, mpicom)
    call mpibcast(clubb_c_K9,       1, mpir8,  0, mpicom)
    call mpibcast(clubb_nu9,        1, mpir8,  0, mpicom)
    call mpibcast(clubb_c_K10,      1, mpir8,  0, mpicom)
@@ -1233,6 +1242,7 @@ module parameters_tunable
    call mpibcast(clubb_xp3_coef_base, 1, mpir8,  0, mpicom)
    call mpibcast(clubb_xp3_coef_slope, 1, mpir8,  0, mpicom)
    call mpibcast(clubb_altitude_threshold, 1, mpir8,  0, mpicom)
+   call mpibcast(clubb_rtp2_clip_coef, 1, mpir8,  0, mpicom)
 #endif
 
 
@@ -1337,6 +1347,7 @@ module parameters_tunable
     if (clubb_c_K2 /= init_value) c_K2 = clubb_c_K2
     if (clubb_nu2 /= init_value) nu2 = clubb_nu2
     if (clubb_c_K8 /= init_value) c_K8 = clubb_c_K8
+    if (clubb_nu8 /= init_value) nu8 = clubb_nu8
     if (clubb_c_K9 /= init_value) c_K9 = clubb_c_K9
     if (clubb_nu9 /= init_value) nu9 = clubb_nu9
     if (clubb_c_K10 /= init_value) c_K10 = clubb_c_K10
@@ -1373,6 +1384,8 @@ module parameters_tunable
        xp3_coef_slope = clubb_xp3_coef_slope
     if (clubb_altitude_threshold /= init_value) &
        altitude_threshold = clubb_altitude_threshold
+    if (clubb_rtp2_clip_coef /= init_value) &
+       rtp2_clip_coef = clubb_rtp2_clip_coef
 #endif /*E3SM*/
 
     ! Put the variables in the output array
@@ -1393,8 +1406,8 @@ module parameters_tunable
                Skw_denom_coef, c_K10, c_K10h, thlp2_rad_coef, &
                thlp2_rad_cloud_frac_thresh, up2_vp2_factor, &
                Skw_max_mag, xp3_coef_base, xp3_coef_slope, &
-               altitude_threshold, C_invrs_tau_bkgnd, C_invrs_tau_sfc, &
-               C_invrs_tau_shear, C_invrs_tau_N2, &
+               altitude_threshold, rtp2_clip_coef, C_invrs_tau_bkgnd, &
+               C_invrs_tau_sfc, C_invrs_tau_shear, C_invrs_tau_N2, &
                C_invrs_tau_N2_wp2, C_invrs_tau_N2_xp2, &  
                C_invrs_tau_N2_wpxp, C_invrs_tau_N2_clear_wp3, params )
 
@@ -1475,9 +1488,9 @@ module parameters_tunable
       Lscale_pert_coef, alpha_corr, Skw_denom_coef, c_K10, c_K10h, &
       thlp2_rad_coef, thlp2_rad_cloud_frac_thresh, up2_vp2_factor, &
       Skw_max_mag, xp3_coef_base, xp3_coef_slope, altitude_threshold, &
-      C_invrs_tau_bkgnd, C_invrs_tau_sfc, &
-      C_invrs_tau_shear, C_invrs_tau_N2, &
-      C_invrs_tau_N2_wp2, C_invrs_tau_N2_xp2, C_invrs_tau_N2_wpxp, C_invrs_tau_N2_clear_wp3
+      rtp2_clip_coef, C_invrs_tau_bkgnd, C_invrs_tau_sfc, &
+      C_invrs_tau_shear, C_invrs_tau_N2, C_invrs_tau_N2_wp2, &
+      C_invrs_tau_N2_xp2, C_invrs_tau_N2_wpxp, C_invrs_tau_N2_clear_wp3
 
     ! Initialize values to -999.
     call init_parameters_999( )
@@ -1507,8 +1520,8 @@ module parameters_tunable
                Skw_denom_coef, c_K10, c_K10h, thlp2_rad_coef, &
                thlp2_rad_cloud_frac_thresh, up2_vp2_factor, &
                Skw_max_mag, xp3_coef_base, xp3_coef_slope, &
-               altitude_threshold, C_invrs_tau_bkgnd, C_invrs_tau_sfc, &
-               C_invrs_tau_shear, C_invrs_tau_N2, &
+               altitude_threshold, rtp2_clip_coef, C_invrs_tau_bkgnd, &
+               C_invrs_tau_sfc, C_invrs_tau_shear, C_invrs_tau_N2, &
                C_invrs_tau_N2_wp2, C_invrs_tau_N2_xp2, &
                C_invrs_tau_N2_wpxp, C_invrs_tau_N2_clear_wp3, param_max )
 
@@ -1560,8 +1573,8 @@ module parameters_tunable
                Skw_denom_coef, c_K10, c_K10h, thlp2_rad_coef, &
                thlp2_rad_cloud_frac_thresh, up2_vp2_factor, &
                Skw_max_mag, xp3_coef_base, xp3_coef_slope, &
-               altitude_threshold, C_invrs_tau_bkgnd, C_invrs_tau_sfc, &
-               C_invrs_tau_shear, C_invrs_tau_N2, &
+               altitude_threshold, rtp2_clip_coef, C_invrs_tau_bkgnd, &
+               C_invrs_tau_sfc, C_invrs_tau_shear, C_invrs_tau_N2, &
                C_invrs_tau_N2_wp2, C_invrs_tau_N2_xp2, &
                C_invrs_tau_N2_wpxp, C_invrs_tau_N2_clear_wp3, params )
 
@@ -1660,6 +1673,7 @@ module parameters_tunable
       ixp3_coef_base, &
       ixp3_coef_slope, &
       ialtitude_threshold, &
+      irtp2_clip_coef, &
       iC_invrs_tau_bkgnd, &
       iC_invrs_tau_sfc, &
       iC_invrs_tau_shear, &
@@ -1689,9 +1703,9 @@ module parameters_tunable
       Lscale_pert_coef, alpha_corr, Skw_denom_coef, c_K10, c_K10h, &
       thlp2_rad_coef, thlp2_rad_cloud_frac_thresh, up2_vp2_factor, &
       Skw_max_mag, xp3_coef_base, xp3_coef_slope, altitude_threshold, &
-      C_invrs_tau_bkgnd, C_invrs_tau_sfc, C_invrs_tau_shear, C_invrs_tau_N2, &
-      C_invrs_tau_N2_wp2, C_invrs_tau_N2_xp2, &
-      C_invrs_tau_N2_wpxp, C_invrs_tau_N2_clear_wp3
+      rtp2_clip_coef, C_invrs_tau_bkgnd, C_invrs_tau_sfc, &
+      C_invrs_tau_shear, C_invrs_tau_N2, C_invrs_tau_N2_wp2, &
+      C_invrs_tau_N2_xp2, C_invrs_tau_N2_wpxp, C_invrs_tau_N2_clear_wp3
 
     ! Output variables
     real( kind = core_rknd ), intent(out), dimension(nparams) :: params
@@ -1789,6 +1803,7 @@ module parameters_tunable
     params(ixp3_coef_base) = xp3_coef_base
     params(ixp3_coef_slope) = xp3_coef_slope
     params(ialtitude_threshold) = altitude_threshold
+    params(irtp2_clip_coef) = rtp2_clip_coef
     params(iC_invrs_tau_bkgnd)        = C_invrs_tau_bkgnd
     params(iC_invrs_tau_sfc)          = C_invrs_tau_sfc
     params(iC_invrs_tau_shear)        = C_invrs_tau_shear
@@ -1821,8 +1836,8 @@ module parameters_tunable
                Skw_denom_coef, c_K10, c_K10h, thlp2_rad_coef, &
                thlp2_rad_cloud_frac_thresh, up2_vp2_factor, &
                Skw_max_mag, xp3_coef_base, xp3_coef_slope, &
-               altitude_threshold, C_invrs_tau_bkgnd, C_invrs_tau_sfc, &
-               C_invrs_tau_shear, C_invrs_tau_N2, & 
+               altitude_threshold, rtp2_clip_coef, C_invrs_tau_bkgnd, &
+               C_invrs_tau_sfc, C_invrs_tau_shear, C_invrs_tau_N2, & 
                C_invrs_tau_N2_wp2, C_invrs_tau_N2_xp2, &
                C_invrs_tau_N2_wpxp, C_invrs_tau_N2_clear_wp3  )
 
@@ -1921,6 +1936,7 @@ module parameters_tunable
       ixp3_coef_base, &
       ixp3_coef_slope, &
       ialtitude_threshold, &
+      irtp2_clip_coef, &
       iC_invrs_tau_bkgnd, &
       iC_invrs_tau_sfc, &
       iC_invrs_tau_shear, &
@@ -1953,9 +1969,9 @@ module parameters_tunable
       Lscale_pert_coef, alpha_corr, Skw_denom_coef, c_K10, c_K10h, &
       thlp2_rad_coef, thlp2_rad_cloud_frac_thresh, up2_vp2_factor, &
       Skw_max_mag, xp3_coef_base, xp3_coef_slope, altitude_threshold, &
-      C_invrs_tau_bkgnd, C_invrs_tau_sfc, C_invrs_tau_shear, C_invrs_tau_N2, &
-      C_invrs_tau_N2_wp2, C_invrs_tau_N2_xp2, &
-      C_invrs_tau_N2_wpxp, C_invrs_tau_N2_clear_wp3
+      rtp2_clip_coef, C_invrs_tau_bkgnd, C_invrs_tau_sfc, &
+      C_invrs_tau_shear, C_invrs_tau_N2, C_invrs_tau_N2_wp2, &
+      C_invrs_tau_N2_xp2, C_invrs_tau_N2_wpxp, C_invrs_tau_N2_clear_wp3
 
     C1      = params(iC1)
     C1b     = params(iC1b)
@@ -1992,7 +2008,7 @@ module parameters_tunable
     C6rt_Lscale0       = params(iC6rt_Lscale0)
     C6thl_Lscale0      = params(iC6thl_Lscale0)
     C7_Lscale0         = params(iC7_Lscale0)
-    wpxp_L_thresh    = params(iwpxp_L_thresh)
+    wpxp_L_thresh      = params(iwpxp_L_thresh)
 
     c_K       = params(ic_K)
     c_K1      = params(ic_K1)
@@ -2050,6 +2066,7 @@ module parameters_tunable
     xp3_coef_base = params(ixp3_coef_base)
     xp3_coef_slope = params(ixp3_coef_slope)
     altitude_threshold = params(ialtitude_threshold)
+    rtp2_clip_coef = params(irtp2_clip_coef)
     C_invrs_tau_bkgnd        = params(iC_invrs_tau_bkgnd)
     C_invrs_tau_sfc          = params(iC_invrs_tau_sfc )
     C_invrs_tau_shear        = params(iC_invrs_tau_shear)
@@ -2094,8 +2111,8 @@ module parameters_tunable
                Skw_denom_coef, c_K10, c_K10h, thlp2_rad_coef, &
                thlp2_rad_cloud_frac_thresh, up2_vp2_factor, &
                Skw_max_mag, xp3_coef_base, xp3_coef_slope, &
-               altitude_threshold, C_invrs_tau_bkgnd, C_invrs_tau_sfc, &
-               C_invrs_tau_shear, C_invrs_tau_N2, &
+               altitude_threshold, rtp2_clip_coef, C_invrs_tau_bkgnd, &
+               C_invrs_tau_sfc, C_invrs_tau_shear, C_invrs_tau_N2, &
                C_invrs_tau_N2_wp2, C_invrs_tau_N2_xp2, &
                C_invrs_tau_N2_wpxp, C_invrs_tau_N2_clear_wp3, params )
 
@@ -2198,6 +2215,7 @@ module parameters_tunable
     xp3_coef_base                = init_value
     xp3_coef_slope               = init_value
     altitude_threshold           = init_value
+    rtp2_clip_coef               = init_value
     C_invrs_tau_bkgnd            = init_value 
     C_invrs_tau_sfc              = init_value 
     C_invrs_tau_shear            = init_value 
