@@ -290,7 +290,7 @@ class PyPlotGen:
                 for filename in sorted(os.listdir(self.output_folder + "/" + foldername)):
                     filename = self.output_folder + '/' + foldername + '/' + filename
 
-                    if "html" not in filename and os.path.isfile(filename):
+                    if "html" not in filename and "txt" not in filename and os.path.isfile(filename):
                         x_coord = 20 + loop_counter * 60
                         pdf.set_x(x_coord)
                         pdf.image(filename, w=50, h=30)
