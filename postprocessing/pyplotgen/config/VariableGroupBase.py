@@ -635,11 +635,13 @@ class VariableGroupBase(VariableGroup):
         dataset = self.sam_benchmark_dataset
         if dataset_override is not None:
             dataset = dataset_override
-        # z,z, dataset = self.getVarForCalculations('z', self.sam_benchmark_dataset)
         qt, indep, dataset = self.getVarForCalculations('QT', dataset)
         qi, indep, dataset = self.getVarForCalculations('QI', dataset)
 
         rtm = (qt - qi) / 1000
+        if np.any(np.isnan(qi)):
+            rtm = qt / 1000
+
         return rtm, indep
 
     def getSkwZtLesCalc(self, dataset_override=None):
@@ -859,7 +861,6 @@ class VariableGroupBase(VariableGroup):
         if not np.isnan(wprtp_sgs[0]):
             wprtp += wprtp_sgs
 
-        # z,z, dataset = self.getVarForCalculations(['z', 'lev', 'altitude'], self.sam_benchmark_dataset)
         return wprtp, indep
 
     def getWpthvpSamCalc(self, dataset_override=None):

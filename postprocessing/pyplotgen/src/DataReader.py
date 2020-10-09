@@ -259,7 +259,11 @@ class NetCdfVariable:
             else:
                 dependent_data, independent_data = varname_element(dataset_override=all_datasets)
 
-            if np.isnan(dependent_data.any()) or np.isnan(independent_data.any()):
+            # When plotting subcolumns, dependent_data can be multidimentional. This accounts for that.
+            if dependent_data.ndim > 1:
+                if (np.isnan(dependent_data[0,0])) or np.isnan(np.isnan(dependent_data[0,0])):
+                    continue
+            elif dependent_data.ndim == 1 and (np.isnan(dependent_data[0]) or (np.isnan(dependent_data[0]))):
                 continue
             else:
                 break
