@@ -17,6 +17,7 @@ Pyplotgen only supports input in the netcdf (.nc) format.
 | -a --all-best | Identical to -lgd. Adds golaz best, les, and hoc benchmark output to the plots |
 | --thin | Plot lines with a thin width |
 | -b --plot-budgets | Includes budget panels in output |
+| -t --time-height-plots | Instead of time-averaged profiles, create contour plots from 2d data |
 | --diff [FOLDER PATHNAME] | (Experimental) Plots the difference between the input folder and the folder specified after --diff instead of plotting a regular profile |
 | --no-legends | Panels are drawn without a line legend |
 | -o --output | Manually specify an output folder. If not specified, will automatically output to `pyplotgen/output` |
