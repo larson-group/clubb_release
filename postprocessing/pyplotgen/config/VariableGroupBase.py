@@ -49,7 +49,6 @@ class VariableGroupBase(VariableGroup):
                     'cam': ['thlm'],
                     'wrf': ['thlm'],
                 },
-                # 'sam_calc': self.getThlmSamCalc,
                 'sci_scale': 0,
             },
             {'var_names':
@@ -63,7 +62,6 @@ class VariableGroupBase(VariableGroup):
                     'cam': ['rtm'],
                     'wrf': ['rtm'],
                 },
-                # 'sam_calc': self.getRtmSamCalc,
                 'sci_scale': -3,
             },
             {'var_names':
@@ -74,10 +72,9 @@ class VariableGroupBase(VariableGroup):
                     'r408': ['wpthlp'],
                     'hoc': ['wpthlp'],
                     'e3sm': ['wpthlp'],
-                    'cam': ['wpthlp'], # WPTHLP_CLUBB / (1 .* 1004)
+                    'cam': ['wpthlp'],
                     'wrf': ['wpthlp'],
                 },
-                # 'sam_calc': self.getWpthlpSamCalc,
                 'sci_scale': 0,
             },
             {'var_names':
@@ -91,7 +88,6 @@ class VariableGroupBase(VariableGroup):
                     'cam': ['WPRTP_clubb', 'wprtp'],
                     'wrf': ['wprtp'],
                 },
-                # 'sam_calc': self.getWprtpSamCalc,
                 'sci_scale': -4,
             },
             {'var_names':
@@ -110,7 +106,7 @@ class VariableGroupBase(VariableGroup):
             {'var_names':
                 {
                     'clubb': ['rcm'],
-                    'sam': ['QCL'],
+                    'sam': ['QCL', 'QC'],
                     'coamps': ['qcm', 'rcm'],
                     'r408': ['rcm'],
                     'hoc': ['rcm'],
@@ -164,7 +160,7 @@ class VariableGroupBase(VariableGroup):
             {'var_names':
                 {
                     'clubb': ['rtp2'],
-                    'sam': [self.getRtp2SamCalc, 'RTP2'],
+                    'sam': [self.getRtp2SamCalc, 'RTP2', 'QT2'],
                     'coamps': ['qtp2'],
                     'r408': ['rtp2'],
                     'hoc': ['rtp2'],
@@ -172,7 +168,6 @@ class VariableGroupBase(VariableGroup):
                     'cam': ['RTP2_CLUBB', 'rtp2'],
                     'wrf': ['rtp2'],
                 },
-                # 'sam_calc': self.getRtp2SamCalc,
                 'sci_scale': -7,
             },
             {'var_names':
@@ -199,7 +194,6 @@ class VariableGroupBase(VariableGroup):
                     'cam': ['rtp3'],
                     'wrf': ['rtp3'],
                 },
-                # 'sam_calc': self.getRtp3SamCalc,
                 'sci_scale': -9,
             },
             {'var_names':
@@ -226,8 +220,6 @@ class VariableGroupBase(VariableGroup):
                     'cam': ['Skw_zt'],
                     'wrf': ['Skw_zt'],
                 },
-                # 'sam_calc': self.getSkwZtLesCalc,
-                # 'coamps_calc': self.getSkwZtLesCalc,
                 'sci_scale': 0,
             },
             {'var_names':
@@ -254,7 +246,6 @@ class VariableGroupBase(VariableGroup):
                     'cam': ['Skthl_zt'],
                     'wrf': ['Skthl_zt'],
                 },
-                # 'sam_calc': self.getSkthlZtLesCalc, 'coamps_calc': self.getSkthlZtLesCalc,
                 'sci_scale': 0,
             },
             {'var_names':
@@ -307,7 +298,6 @@ class VariableGroupBase(VariableGroup):
                     'cam': ['UPWP_CLUBB', 'upwp'],
                     'wrf': ['upwp'],
                 },
-                # 'coamps_calc': self.getUwCoampsData,
                 'sci_scale': 0,
             },
             {'var_names':
@@ -321,7 +311,6 @@ class VariableGroupBase(VariableGroup):
                     'cam': ['VPWP_CLUBB', 'vpwp'],
                     'wrf': ['vpwp'],
                 },
-                # 'coamps_calc': self.getVwCoampsData,
                 'sci_scale': 0,
             },
             {'var_names':
@@ -428,7 +417,6 @@ class VariableGroupBase(VariableGroup):
                     'cam': ['WPTHVP_CLUBB', 'wpthvp'],
                     'wrf': ['wpthvp'],
                 },
-                # 'sam_calc': self.getWpthvpSamCalc,
             },
             {'var_names':
                 {
@@ -500,9 +488,6 @@ class VariableGroupBase(VariableGroup):
                     'wrf': ['thlpthvp'],
                 },
             },
-            # TODO SAM output for these variables
-            # TODO validate coamps output
-            # TODO Fix output for these vars in some cases
             {'var_names':
                 {
                     'clubb': [self.get_rc_coef_zm_X_wprcp_clubb_line, 'rc_coef_zm * wprcp'],
@@ -514,9 +499,6 @@ class VariableGroupBase(VariableGroup):
                     'cam': ['rc_coef_zm * wprcp'],
                     'wrf': ['rc_coef_zm * wprcp'],
                 },
-                'clubb_calc': self.get_rc_coef_zm_X_wprcp_clubb_line,
-                'sam_calc': self.get_rc_coef_zm_X_wprcp_sam_calc,
-                'coamps_calc': self.get_rc_coef_zm_X_wprcp_coamps_calc,
                 'title': 'Contribution of Cloud Water Flux to wpthvp',
                 'axis_title': 'rc_coef_zm * wprcp [K m/s]',
                 'sci_scale': 0,
@@ -532,9 +514,6 @@ class VariableGroupBase(VariableGroup):
                     'cam': ['rc_coef_zm * thlprcp'],
                     'wrf': ['rc_coef_zm * thlprcp'],
                 },
-                'sam_calc': self.get_rc_coef_zm_X_thlprcp_sam_calc,
-                'coamps_calc': self.get_rc_coef_zm_X_thlprcp_coamps_calc,
-                'clubb_calc': self.get_rc_coef_zm_X_thlprcp_clubb_calc,
                 'title': 'Contribution of Cloud Water Flux to thlpthvp',
                 'axis_title': 'rc_coef_zm * thlprcp [K^2]',
                 'sci_scale': 0,
@@ -550,9 +529,6 @@ class VariableGroupBase(VariableGroup):
                     'cam': ['rc_coef_zm * rtprcp'],
                     'wrf': ['rc_coef_zm * rtprcp'],
                 },
-                'sam_calc': self.get_rc_coef_zm_X_rtprcp_sam_calc,
-                'coamps_calc': self.get_rc_coef_zm_X_rtprcp_coamps_calc,
-                'clubb_calc': self.get_rc_coef_zm_X_rtprcp_clubb_calc,
                 'title': 'Contribution of Cloud Water Flux to rtpthvp',
                 'axis_title': 'rc_coef_zm * rtprcp [kg/kg K]',
                 'sci_scale': -4
@@ -568,15 +544,23 @@ class VariableGroupBase(VariableGroup):
                     'cam': ['rc_coef_zm * wp2rcp'],
                     'wrf': ['rc_coef_zm * wp2rcp'],
                 },
-                'sam_calc': self.get_rc_coef_X_wp2rcp_sam_calc,
-                'coamps_calc': self.get_rc_coef_X_wp2rcp_coamps_calc,
-                'clubb_calc': self.get_rc_coef_X_wp2rcp_clubb_calc,
                 'title': 'Cloud water contribution to wp2thvp',
                 'axis_title': 'rc_coef * wp2rcp [m^2/s^2 K]',
                 'sci_scale': 0
             },
-
-            # TODO corr chi 2's,
+            {'var_names':
+                {
+                    'clubb': ['wp2thvp'],
+                    'sam': ['WP2THVP'],
+                    'coamps': ['wp2thvp'],
+                    'r408': ['wp2thvp'],
+                    'hoc': ['wp2thvp'],
+                    'e3sm': ['wp2thvp'],
+                    'cam': ['wp2thvp'],
+                    'wrf': ['wp2thvp'],
+                },
+                'sci_scale': 0,
+            },
         ]
 
         # Call ctor of parent class
@@ -610,8 +594,8 @@ class VariableGroupBase(VariableGroup):
         :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
           Lists will be filled with NaN's if the variable could not be calculated.
         """
-        # z,z, dataset = self.getVarForCalculations('z', self.les_dataset)
-        dataset = self.les_dataset
+        # z,z, dataset = self.getVarForCalculations('z', self.sam_benchmark_dataset)
+        dataset = self.sam_benchmark_dataset
         if dataset_override is not None:
             dataset = dataset_override
         thetal, indep, dataset = self.getVarForCalculations('THETAL', dataset)
@@ -648,10 +632,10 @@ class VariableGroupBase(VariableGroup):
         :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
           Lists will be filled with NaN's if the variable could not be calculated.
         """
-        dataset = self.les_dataset
+        dataset = self.sam_benchmark_dataset
         if dataset_override is not None:
             dataset = dataset_override
-        # z,z, dataset = self.getVarForCalculations('z', self.les_dataset)
+        # z,z, dataset = self.getVarForCalculations('z', self.sam_benchmark_dataset)
         qt, indep, dataset = self.getVarForCalculations('QT', dataset)
         qi, indep, dataset = self.getVarForCalculations('QI', dataset)
 
@@ -685,8 +669,8 @@ class VariableGroupBase(VariableGroup):
           Lists will be filled with NaN's if the variable could not be calculated.
         """
         dataset = None
-        if self.les_dataset is not None:
-            dataset = self.les_dataset
+        if self.sam_benchmark_dataset is not None:
+            dataset = self.sam_benchmark_dataset
         if self.coamps_dataset is not None:
             dataset = self.coamps_dataset['sm']
         if dataset_override is not None:
@@ -730,8 +714,8 @@ class VariableGroupBase(VariableGroup):
           Lists will be filled with NaN's if the variable could not be calculated.
         """
         dataset = None
-        if self.les_dataset is not None:
-            dataset = self.les_dataset
+        if self.sam_benchmark_dataset is not None:
+            dataset = self.sam_benchmark_dataset
 
         if self.coamps_dataset is not None:
             dataset = self.coamps_dataset['sm']
@@ -775,8 +759,8 @@ class VariableGroupBase(VariableGroup):
           Lists will be filled with NaN's if the variable could not be calculated.
         """
         dataset = None
-        if self.les_dataset is not None:
-            dataset = self.les_dataset
+        if self.sam_benchmark_dataset is not None:
+            dataset = self.sam_benchmark_dataset
 
         if self.coamps_dataset is not None:
             dataset = self.coamps_dataset['sm']
@@ -784,7 +768,7 @@ class VariableGroupBase(VariableGroup):
         if dataset_override is not None:
             dataset = dataset_override
 
-            # z,z, dataset = self.getVarForCalculations(['z', 'lev', 'altitude'], dataset)
+
         thlp3, indep, dataset = self.getVarForCalculations(['THLP3', 'thlp3'], dataset)
         thlp2, indep, dataset = self.getVarForCalculations(['THLP2', 'thlp2'], dataset)
 
@@ -818,15 +802,18 @@ class VariableGroupBase(VariableGroup):
           Lists will be filled with NaN's if the variable could not be calculated.
         """
         dataset = None
-        if self.les_dataset is not None:
-            dataset = self.les_dataset
+        if self.sam_benchmark_dataset is not None:
+            dataset = self.sam_benchmark_dataset
         if dataset_override is not None:
             dataset = dataset_override
         tlflux, indep, dataset = self.getVarForCalculations(['TLFLUX'], dataset)
         rho, indep, dataset = self.getVarForCalculations(['RHO'], dataset)
         wpthlp_sgs, indep, dataset = self.getVarForCalculations(['WPTHLP_SGS'], dataset)
 
-        wpthlp = (tlflux / (rho * 1004)) + wpthlp_sgs
+        wpthlp = (tlflux / (rho * 1004))
+
+        if not np.isnan(wpthlp_sgs[0]):
+            wpthlp += wpthlp_sgs
 
         return wpthlp, indep
 
@@ -859,16 +846,20 @@ class VariableGroupBase(VariableGroup):
           Lists will be filled with NaN's if the variable could not be calculated.
         """
         dataset = None
-        if self.les_dataset is not None:
-            dataset = self.les_dataset
+        if self.sam_benchmark_dataset is not None:
+            dataset = self.sam_benchmark_dataset
         if dataset_override is not None:
             dataset = dataset_override
         qtflux, indep, dataset = self.getVarForCalculations(['QTFLUX'], dataset)
         rho, indep, dataset = self.getVarForCalculations(['RHO'], dataset)
         wprtp_sgs, indep, dataset = self.getVarForCalculations(['WPRTP_SGS'], dataset)
 
-        wprtp = qtflux / (rho * 2.5104e+6) + wprtp_sgs
-        # z,z, dataset = self.getVarForCalculations(['z', 'lev', 'altitude'], self.les_dataset)
+        wprtp = qtflux / (rho * 2.5104e+6)
+
+        if not np.isnan(wprtp_sgs[0]):
+            wprtp += wprtp_sgs
+
+        # z,z, dataset = self.getVarForCalculations(['z', 'lev', 'altitude'], self.sam_benchmark_dataset)
         return wprtp, indep
 
     def getWpthvpSamCalc(self, dataset_override=None):
@@ -898,14 +889,14 @@ class VariableGroupBase(VariableGroup):
           Lists will be filled with NaN's if the variable could not be calculated.
         """
         dataset = None
-        if self.les_dataset is not None:
-            dataset = self.les_dataset
+        if self.sam_benchmark_dataset is not None:
+            dataset = self.sam_benchmark_dataset
         if dataset_override is not None:
             dataset = dataset_override
         tvflux, indep, dataset = self.getVarForCalculations(['TVFLUX'], dataset)
         rho, indep, dataset = self.getVarForCalculations(['RHO'], dataset)
         wpthvp = tvflux / (rho * 1004)
-        # z,z, dataset = self.getVarForCalculations(['z', 'lev', 'altitude'], self.les_dataset)
+        # z,z, dataset = self.getVarForCalculations(['z', 'lev', 'altitude'], self.sam_benchmark_dataset)
         return wpthvp, indep
 
     def getRtp2SamCalc(self, dataset_override=None):
@@ -937,14 +928,14 @@ class VariableGroupBase(VariableGroup):
           Lists will be filled with NaN's if the variable could not be calculated.
         """
         dataset = None
-        if self.les_dataset is not None:
-            dataset = self.les_dataset
+        if self.sam_benchmark_dataset is not None:
+            dataset = self.sam_benchmark_dataset
         if dataset_override is not None:
             dataset = dataset_override
         QT2, indep, dataset = self.getVarForCalculations(['QT2'], dataset)
         RTP2_SGS, indep, dataset = self.getVarForCalculations(['RTP2_SGS'], dataset)
         rtp2 = (QT2 / 1e+6) + RTP2_SGS
-        # z,z, dataset = self.getVarForCalculations(['z', 'lev', 'altitude'], self.les_dataset)
+        # z,z, dataset = self.getVarForCalculations(['z', 'lev', 'altitude'], self.sam_benchmark_dataset)
         return rtp2, indep
 
     def getRtp3SamCalc(self, dataset_override=None):
@@ -977,7 +968,7 @@ class VariableGroupBase(VariableGroup):
         if dataset_override is not None:
             dataset = dataset_override
         else:
-            dataset = self.les_dataset
+            dataset = self.sam_benchmark_dataset
         if isinstance(dataset, Dataset):
             dataset = {'temp': dataset}
         for dataset in dataset.values():
@@ -1027,7 +1018,7 @@ class VariableGroupBase(VariableGroup):
             dataset = self.clubb_datasets['zm']
         rc_coef_zm, indep, dataset = self.getVarForCalculations('rc_coef_zm', dataset)
         wprcp, indep, dataset = self.getVarForCalculations('wprcp', dataset)
-        # z,z, dataset = self.getVarForCalculations(['z', 'lev', 'altitude'], dataset)
+
         output = rc_coef_zm * wprcp
         return output, indep
 
@@ -1064,21 +1055,18 @@ class VariableGroupBase(VariableGroup):
         if dataset_override is not None:
             dataset = dataset_override
         else:
-            dataset = self.les_dataset
-        # z,z, dataset = self.getVarForCalculations(['z', 'lev', 'altitude'], dataset)
+            dataset = self.sam_benchmark_dataset
+
         WPRCP, indep, dataset = self.getVarForCalculations('WPRCP', dataset)
         QCFLUX, indep, dataset = self.getVarForCalculations('QCFLUX', dataset)
         RHO, indep, dataset = self.getVarForCalculations('RHO', dataset)
         PRES, indep, dataset = self.getVarForCalculations('PRES', dataset)
         THETAV, indep, dataset = self.getVarForCalculations('THETAV', dataset)
 
+        output1 = ((QCFLUX) / (RHO * 2.5104e+6)) * (2.5e6 / (1004.67 * ((PRES / 1000) ** (287.04 / 1004.67))) - 1.61 * THETAV)
+        output2 = WPRCP * (2.5e6 / (1004.67 * ((PRES / 1000) ** (287.04 / 1004.67))) - 1.61 * THETAV)
 
-        # Check if WPRCP contains non-zero values
-        wprcp_is_zeroes = (np.nanmin(WPRCP) == 0.0 and np.nanmax(WPRCP) == 0.0)
-        if wprcp_is_zeroes:
-            output = ((QCFLUX) / (RHO * 2.5104e+6)) * (2.5e6 / (1004.67 * ((PRES / 1000) ** (287.04 / 1004.67))) - 1.61 * THETAV)
-        else:
-            output = WPRCP * (2.5e6 / (1004.67 * ((PRES / 1000) ** (287.04 / 1004.67))) - 1.61 * THETAV)
+        output = self.pickNonZeroOutput(output1, output2, favor_output=output2)
 
         return output, indep
 
@@ -1113,7 +1101,7 @@ class VariableGroupBase(VariableGroup):
             dataset = dataset_override
         else:
             dataset = self.clubb_datasets['zm']
-        # z,z, dataset = self.getVarForCalculations(['z', 'lev', 'altitude'], dataset)
+
         rc_coef_zm, indep, dataset = self.getVarForCalculations('rc_coef_zm', dataset)
         thlprcp, indep, dataset = self.getVarForCalculations('thlprcp', dataset)
 
@@ -1150,7 +1138,7 @@ class VariableGroupBase(VariableGroup):
             dataset = dataset_override
         else:
             dataset = self.clubb_datasets['zm']
-        # z,z, dataset = self.getVarForCalculations(['z', 'lev', 'altitude'], dataset)
+
         rc_coef_zm, indep, dataset = self.getVarForCalculations('rc_coef_zm', dataset)
         rtprcp, indep, dataset = self.getVarForCalculations('rtprcp', dataset)
 
@@ -1377,7 +1365,7 @@ class VariableGroupBase(VariableGroup):
         dataset = self.coamps_dataset['sm']
         if dataset_override is not None:
             dataset = dataset_override['sm']
-        # z,z, dataset = self.getVarForCalculations(['z', 'lev', 'altitude'], dataset)
+
         qtpqcp, indep, dataset = self.getVarForCalculations(['qtpqcp', 'rtprcp'], dataset)
         ex0, indep, dataset = self.getVarForCalculations('ex0', dataset)
         thvm, indep, dataset = self.getVarForCalculations('thvm', dataset)
@@ -1417,7 +1405,7 @@ class VariableGroupBase(VariableGroup):
         dataset = self.sam_datasets
         if dataset_override is not None:
             dataset = dataset_override
-        # z,z, dataset = self.getVarForCalculations(['z', 'lev', 'altitude'], dataset)
+
         RTPRCP, indep, dataset = self.getVarForCalculations('RTPRCP', dataset)
         PRES, indep, dataset = self.getVarForCalculations('PRES', dataset)
         THETAV, indep, dataset = self.getVarForCalculations('THETAV', dataset)
@@ -1450,7 +1438,7 @@ class VariableGroupBase(VariableGroup):
         """
         dataset = self.sam_datasets
         if dataset_override is not None:
-            dataset = dataset_override['sam']
+            dataset = dataset_override#['sam']
         WP2RCP, indep, dataset = self.getVarForCalculations('WP2RCP', dataset)
         PRES, indep, dataset = self.getVarForCalculations('PRES', dataset)
         THETAV, indep, dataset = self.getVarForCalculations('THETAV', dataset)

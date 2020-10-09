@@ -25,7 +25,7 @@ stp_adjst_spread_in = 0.8
 
 &cases
 ! GABLS3 night
-hoc_stats_file_nl(1)    = "../output/gabls3_night_zm.ctl"
+hoc_stats_file_nl(1)    = "../output/gabls3_night_zm.nc"
 les_stats_file_nl(1)    = "../les_data/gabls3_night.nc"
 run_file_nl(1)          = "gabls3_night_hoc.in"
 z_i_nl(1)               = 2

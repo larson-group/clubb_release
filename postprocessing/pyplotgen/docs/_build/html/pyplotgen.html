@@ -182,6 +182,7 @@
 <li class="toctree-l2"><a class="reference internal" href="pyplotgen.config.html#module-config.VariableGroupSamMultilineProfiles">config.VariableGroupSamMultilineProfiles module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="pyplotgen.config.html#module-config.VariableGroupSamProfiles">config.VariableGroupSamProfiles module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="pyplotgen.config.html#module-config.VariableGroupScalars">config.VariableGroupScalars module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pyplotgen.config.html#module-config.VariableGroupSubcolumns">config.VariableGroupSubcolumns module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="pyplotgen.config.html#module-config.VariableGroupWs">config.VariableGroupWs module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="pyplotgen.config.html#module-config">Module contents</a></li>
 </ul>
@@ -235,7 +236,7 @@ of files, generation of plots, and then the export of plots, though
 these processes are mostly carried out by other classes/files.</p>
 <dl class="py class">
 <dt id="pyplotgen.PyPlotGen">
-<em class="property">class </em><code class="sig-prename descclassname">pyplotgen.</code><code class="sig-name descname">PyPlotGen</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">output_folder</span></em>, <em class="sig-param"><span class="n">clubb_folders</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">replace</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">les</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">cgbest</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">hoc</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">benchmark_only</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">nightly</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">zip</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">thin</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">no_legends</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">ensemble</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">plot_e3sm</span><span class="o">=</span><span class="default_value">''</span></em>, <em class="sig-param"><span class="n">sam_folders</span><span class="o">=</span><span class="default_value">['']</span></em>, <em class="sig-param"><span class="n">wrf_folders</span><span class="o">=</span><span class="default_value">['']</span></em>, <em class="sig-param"><span class="n">cam_folders</span><span class="o">=</span><span class="default_value">['']</span></em>, <em class="sig-param"><span class="n">budget_moments</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">bu_morr</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">diff</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">show_alphabetic_id</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">time_height</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">animation</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">disable_multithreading</span><span class="o">=</span><span class="default_value">False</span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyplotgen.PyPlotGen" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="sig-prename descclassname">pyplotgen.</code><code class="sig-name descname">PyPlotGen</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">output_folder</span></em>, <em class="sig-param"><span class="n">clubb_folders</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">replace</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">les</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">cgbest</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">hoc</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">benchmark_only</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">nightly</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">zip</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">thin</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">no_legends</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">ensemble</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">plot_e3sm</span><span class="o">=</span><span class="default_value">''</span></em>, <em class="sig-param"><span class="n">sam_folders</span><span class="o">=</span><span class="default_value">['']</span></em>, <em class="sig-param"><span class="n">wrf_folders</span><span class="o">=</span><span class="default_value">['']</span></em>, <em class="sig-param"><span class="n">cam_folders</span><span class="o">=</span><span class="default_value">['']</span></em>, <em class="sig-param"><span class="n">budget_moments</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">bu_morr</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">diff</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">show_alphabetic_id</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">time_height</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">animation</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">disable_multithreading</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">pdf</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">pdf_filesize_limit</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">plot_subcolumns</span><span class="o">=</span><span class="default_value">False</span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyplotgen.PyPlotGen" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 <p>Main class for the pyplotgen program.
 After processing the command line options in the main function,
@@ -298,7 +299,7 @@ into the pyplotgen output folders.</p>
 
 <dl class="py attribute">
 <dt id="pyplotgen.PyPlotGen.__dict__">
-<code class="sig-name descname">__dict__</code><em class="property"> = mappingproxy({'__module__': 'pyplotgen', '__doc__': '\n    Main class for the pyplotgen program.\n    After processing the command line options in the main function,\n    an instance of this class is created in __process_args__, passing all option parameters.\n    Finally the run function of this class is the actual driver of the pyplotgen program,\n    creating the CaseGallerySetup objects and calling their plot functions to generate the images and html output.\n    ', '__init__': &lt;function PyPlotGen.__init__&gt;, 'run': &lt;function PyPlotGen.run&gt;, '__plotCase__': &lt;function PyPlotGen.__plotCase__&gt;, '__dataForCaseExists__': &lt;function PyPlotGen.__dataForCaseExists__&gt;, '__caseNcFileExists__': &lt;function PyPlotGen.__caseNcFileExists__&gt;, '__copySetupFiles__': &lt;function PyPlotGen.__copySetupFiles__&gt;, '__benchmarkFilesNeeded__': &lt;function PyPlotGen.__benchmarkFilesNeeded__&gt;, '__downloadModelOutputs__': &lt;function PyPlotGen.__downloadModelOutputs__&gt;, '__dict__': &lt;attribute '__dict__' of 'PyPlotGen' objects&gt;, '__weakref__': &lt;attribute '__weakref__' of 'PyPlotGen' objects&gt;})</em><a class="headerlink" href="#pyplotgen.PyPlotGen.__dict__" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">__dict__</code><em class="property"> = mappingproxy({'__module__': 'pyplotgen', '__doc__': '\n    Main class for the pyplotgen program.\n    After processing the command line options in the main function,\n    an instance of this class is created in __process_args__, passing all option parameters.\n    Finally the run function of this class is the actual driver of the pyplotgen program,\n    creating the CaseGallerySetup objects and calling their plot functions to generate the images and html output.\n    ', '__init__': &lt;function PyPlotGen.__init__&gt;, 'run': &lt;function PyPlotGen.run&gt;, '__printToPDF__': &lt;function PyPlotGen.__printToPDF__&gt;, '__writePdfToDisk__': &lt;function PyPlotGen.__writePdfToDisk__&gt;, '__getDecreasedDpiValue__': &lt;function PyPlotGen.__getDecreasedDpiValue__&gt;, '__extractNumCasesPlotted__': &lt;function PyPlotGen.__extractNumCasesPlotted__&gt;, '__plotCase__': &lt;function PyPlotGen.__plotCase__&gt;, '__dataForCaseExists__': &lt;function PyPlotGen.__dataForCaseExists__&gt;, '__caseNcFileExists__': &lt;function PyPlotGen.__caseNcFileExists__&gt;, '__copySetupFiles__': &lt;function PyPlotGen.__copySetupFiles__&gt;, '__benchmarkFilesNeeded__': &lt;function PyPlotGen.__benchmarkFilesNeeded__&gt;, '__downloadModelOutputs__': &lt;function PyPlotGen.__downloadModelOutputs__&gt;, '__dict__': &lt;attribute '__dict__' of 'PyPlotGen' objects&gt;, '__weakref__': &lt;attribute '__weakref__' of 'PyPlotGen' objects&gt;})</em><a class="headerlink" href="#pyplotgen.PyPlotGen.__dict__" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
@@ -315,8 +316,50 @@ Supports: SAM, COAMPS, CLUBB</p>
 </dd></dl>
 
 <dl class="py method">
+<dt id="pyplotgen.PyPlotGen.__extractNumCasesPlotted__">
+<code class="sig-name descname">__extractNumCasesPlotted__</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">plotCaseDataArray</span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyplotgen.PyPlotGen.__extractNumCasesPlotted__" title="Permalink to this definition">¶</a></dt>
+<dd><p>The __plotCase__() function is often called via a pooling map.
+As such, the data returned from the pool map is an array of True/False values
+where each True represents a case being plotted and each False represents a case
+not being plotted. This function counts the number of True’s and retuns that.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>plotCaseDataArray</strong> – Array of True/False values</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>number of True’s in the given list.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="pyplotgen.PyPlotGen.__getDecreasedDpiValue__">
+<code class="sig-name descname">__getDecreasedDpiValue__</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">previous_dpi</span></em>, <em class="sig-param"><span class="n">previous_filesize</span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyplotgen.PyPlotGen.__getDecreasedDpiValue__" title="Permalink to this definition">¶</a></dt>
+<dd><p>When printing files to PDF, dpi lowering the dpi is useful for fitting the pdf’s filesize under a certain value.
+This method returns a suggested dpi value to print the pdf to that’s more likely to fit within a given filesize.
+Note, it is not guranteed that this function will return a dpi that DOES fit within a certain file size. This
+function is intended to be used multiple times throughout a loop as it gets closer to an optimal dpi.
+This function takes an incremental methodology to approaching an optimal dpi.</p>
+<p>Since the relationship between dpi and pdf filesize is mostly linear, the algorithm used to calculate the next
+recommended dpi is based on subtracting a percentage of the dpi relative to how far off the filesize was.</p>
+<p>An optional step_multiplier can be modified in the code to increase or decrease the strength of the dpi change.</p>
+<p>This method was inspired by the optimization functions used in artificial intelligence.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>previous_dpi</strong> – A dpi value that was larger than desired. The dpi value returend will be less than this one</p></li>
+<li><p><strong>previous_filesize</strong> – The filesize of the pdf generated by the previous_dpi</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>A recommended dpi value that is closer to an optimal dpi value for the target filesize</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
 <dt id="pyplotgen.PyPlotGen.__init__">
-<code class="sig-name descname">__init__</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">output_folder</span></em>, <em class="sig-param"><span class="n">clubb_folders</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">replace</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">les</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">cgbest</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">hoc</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">benchmark_only</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">nightly</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">zip</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">thin</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">no_legends</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">ensemble</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">plot_e3sm</span><span class="o">=</span><span class="default_value">''</span></em>, <em class="sig-param"><span class="n">sam_folders</span><span class="o">=</span><span class="default_value">['']</span></em>, <em class="sig-param"><span class="n">wrf_folders</span><span class="o">=</span><span class="default_value">['']</span></em>, <em class="sig-param"><span class="n">cam_folders</span><span class="o">=</span><span class="default_value">['']</span></em>, <em class="sig-param"><span class="n">budget_moments</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">bu_morr</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">diff</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">show_alphabetic_id</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">time_height</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">animation</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">disable_multithreading</span><span class="o">=</span><span class="default_value">False</span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyplotgen.PyPlotGen.__init__" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">__init__</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">output_folder</span></em>, <em class="sig-param"><span class="n">clubb_folders</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">replace</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">les</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">cgbest</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">hoc</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">benchmark_only</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">nightly</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">zip</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">thin</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">no_legends</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">ensemble</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">plot_e3sm</span><span class="o">=</span><span class="default_value">''</span></em>, <em class="sig-param"><span class="n">sam_folders</span><span class="o">=</span><span class="default_value">['']</span></em>, <em class="sig-param"><span class="n">wrf_folders</span><span class="o">=</span><span class="default_value">['']</span></em>, <em class="sig-param"><span class="n">cam_folders</span><span class="o">=</span><span class="default_value">['']</span></em>, <em class="sig-param"><span class="n">budget_moments</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">bu_morr</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">diff</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">show_alphabetic_id</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">time_height</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">animation</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">disable_multithreading</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">pdf</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">pdf_filesize_limit</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">plot_subcolumns</span><span class="o">=</span><span class="default_value">False</span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyplotgen.PyPlotGen.__init__" title="Permalink to this definition">¶</a></dt>
 <dd><p>This creates an instance of PyPlotGen. Each parameter is a command line parameter passed in from the argparser
 below.</p>
 <dl class="field-list simple">
@@ -375,7 +418,20 @@ Not implemented.</p></li>
 <code class="sig-name descname">__plotCase__</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">case_def</span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyplotgen.PyPlotGen.__plotCase__" title="Permalink to this definition">¶</a></dt>
 <dd><p>Plots the given case. Pulled out into it’s own function to help move towards multithreading
 :param case_def:
-:return:</p>
+:return: True if case was plotted, False if case was not plotted</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="pyplotgen.PyPlotGen.__printToPDF__">
+<code class="sig-name descname">__printToPDF__</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pyplotgen.PyPlotGen.__printToPDF__" title="Permalink to this definition">¶</a></dt>
+<dd><p>If –pdf was specified, this prints a pdf. Otherwise, this does nothing.
+If –pdf and –pdf-filesize-limit were specified, this will loop over the run() method, reducing image size on
+each loop, until a pdf is output less than or equal to the specified target pdf filesize.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py attribute">
@@ -385,11 +441,30 @@ Not implemented.</p></li>
 </dd></dl>
 
 <dl class="py method">
+<dt id="pyplotgen.PyPlotGen.__writePdfToDisk__">
+<code class="sig-name descname">__writePdfToDisk__</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">pdf_output_filename</span></em>, <em class="sig-param"><span class="n">case_desciptions</span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyplotgen.PyPlotGen.__writePdfToDisk__" title="Permalink to this definition">¶</a></dt>
+<dd><p>This is a helper function that actually writes the PDF to the disk. This uses the fpdf package to generate the
+pdf.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>pdf_output_filename</strong> – Name of the file to be created. While it can be a relative name, it’s recommended
+to use a full file path.</p></li>
+<li><p><strong>case_desciptions</strong> – A dict of name -&gt; description maps. E.g. {‘bomex’: “I am the bomex case. Fear me!”}</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
 <dt id="pyplotgen.PyPlotGen.run">
 <code class="sig-name descname">run</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pyplotgen.PyPlotGen.run" title="Permalink to this definition">¶</a></dt>
 <dd><p>Main driver of the pyplotgen program executing the following steps:
 - Download benchmark files if needed
-- Loop through cases listed in Case_definitions.ALL_CASES
+- Loop through cases listed in Case_definitions.CASES_TO_PLOT
 - Create instances of these cases
 - Call plot function on the instances
 - Create output folder
@@ -401,6 +476,38 @@ Not implemented.</p></li>
 </dl>
 </dd></dl>
 
+</dd></dl>
+
+<dl class="py function">
+<dt id="pyplotgen.__convertCasenamesToCaseInstances__">
+<code class="sig-prename descclassname">pyplotgen.</code><code class="sig-name descname">__convertCasenamesToCaseInstances__</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">casenames_list</span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyplotgen.__convertCasenamesToCaseInstances__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Takes in a list of case names and searches through all the cases in Case_definitions.py for matches.
+Will then return a tuple containing the case instances that were found and a list of any names that were not found.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>casenames_list</strong> – List of case names. Names must match the ‘name’ parameter of the cases definition in
+Case_definitions.py</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Tuple of (converted_cases, cases_not_found) where converted_cases is a list of case instances and
+cases_not_found is a list of casenames that could not be found.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="pyplotgen.__getSimilarCasenames__">
+<code class="sig-prename descclassname">pyplotgen.</code><code class="sig-name descname">__getSimilarCasenames__</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">invalid_casenames</span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyplotgen.__getSimilarCasenames__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Given a list of casenames, this method returns a list of existing case names that are closest to the list given.</p>
+<p>E.g. if the list given contains [‘bomax’, ‘dycoms_rf01’] this function returns [‘bomex, ‘dycoms2_rf01’]</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>invalid_casenames</strong> – List of casenames that could not be found/likely have typos</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p></p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py function">
@@ -445,7 +552,7 @@ of files, generation of plots, and then the export of plots, though
 these processes are mostly carried out by other classes/files.</p>
 <dl class="py class">
 <dt id="id0">
-<em class="property">class </em><code class="sig-prename descclassname">pyplotgen.</code><code class="sig-name descname">PyPlotGen</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">output_folder</span></em>, <em class="sig-param"><span class="n">clubb_folders</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">replace</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">les</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">cgbest</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">hoc</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">benchmark_only</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">nightly</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">zip</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">thin</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">no_legends</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">ensemble</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">plot_e3sm</span><span class="o">=</span><span class="default_value">''</span></em>, <em class="sig-param"><span class="n">sam_folders</span><span class="o">=</span><span class="default_value">['']</span></em>, <em class="sig-param"><span class="n">wrf_folders</span><span class="o">=</span><span class="default_value">['']</span></em>, <em class="sig-param"><span class="n">cam_folders</span><span class="o">=</span><span class="default_value">['']</span></em>, <em class="sig-param"><span class="n">budget_moments</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">bu_morr</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">diff</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">show_alphabetic_id</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">time_height</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">animation</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">disable_multithreading</span><span class="o">=</span><span class="default_value">False</span></em><span class="sig-paren">)</span><a class="headerlink" href="#id0" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="sig-prename descclassname">pyplotgen.</code><code class="sig-name descname">PyPlotGen</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">output_folder</span></em>, <em class="sig-param"><span class="n">clubb_folders</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">replace</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">les</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">cgbest</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">hoc</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">benchmark_only</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">nightly</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">zip</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">thin</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">no_legends</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">ensemble</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">plot_e3sm</span><span class="o">=</span><span class="default_value">''</span></em>, <em class="sig-param"><span class="n">sam_folders</span><span class="o">=</span><span class="default_value">['']</span></em>, <em class="sig-param"><span class="n">wrf_folders</span><span class="o">=</span><span class="default_value">['']</span></em>, <em class="sig-param"><span class="n">cam_folders</span><span class="o">=</span><span class="default_value">['']</span></em>, <em class="sig-param"><span class="n">budget_moments</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">bu_morr</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">diff</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">show_alphabetic_id</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">time_height</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">animation</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">disable_multithreading</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">pdf</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">pdf_filesize_limit</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">plot_subcolumns</span><span class="o">=</span><span class="default_value">False</span></em><span class="sig-paren">)</span><a class="headerlink" href="#id0" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 <p>Main class for the pyplotgen program.
 After processing the command line options in the main function,
@@ -508,7 +615,7 @@ into the pyplotgen output folders.</p>
 
 <dl class="py attribute">
 <dt id="id5">
-<code class="sig-name descname">__dict__</code><em class="property"> = mappingproxy({'__module__': 'pyplotgen', '__doc__': '\n    Main class for the pyplotgen program.\n    After processing the command line options in the main function,\n    an instance of this class is created in __process_args__, passing all option parameters.\n    Finally the run function of this class is the actual driver of the pyplotgen program,\n    creating the CaseGallerySetup objects and calling their plot functions to generate the images and html output.\n    ', '__init__': &lt;function PyPlotGen.__init__&gt;, 'run': &lt;function PyPlotGen.run&gt;, '__plotCase__': &lt;function PyPlotGen.__plotCase__&gt;, '__dataForCaseExists__': &lt;function PyPlotGen.__dataForCaseExists__&gt;, '__caseNcFileExists__': &lt;function PyPlotGen.__caseNcFileExists__&gt;, '__copySetupFiles__': &lt;function PyPlotGen.__copySetupFiles__&gt;, '__benchmarkFilesNeeded__': &lt;function PyPlotGen.__benchmarkFilesNeeded__&gt;, '__downloadModelOutputs__': &lt;function PyPlotGen.__downloadModelOutputs__&gt;, '__dict__': &lt;attribute '__dict__' of 'PyPlotGen' objects&gt;, '__weakref__': &lt;attribute '__weakref__' of 'PyPlotGen' objects&gt;})</em><a class="headerlink" href="#id5" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">__dict__</code><em class="property"> = mappingproxy({'__module__': 'pyplotgen', '__doc__': '\n    Main class for the pyplotgen program.\n    After processing the command line options in the main function,\n    an instance of this class is created in __process_args__, passing all option parameters.\n    Finally the run function of this class is the actual driver of the pyplotgen program,\n    creating the CaseGallerySetup objects and calling their plot functions to generate the images and html output.\n    ', '__init__': &lt;function PyPlotGen.__init__&gt;, 'run': &lt;function PyPlotGen.run&gt;, '__printToPDF__': &lt;function PyPlotGen.__printToPDF__&gt;, '__writePdfToDisk__': &lt;function PyPlotGen.__writePdfToDisk__&gt;, '__getDecreasedDpiValue__': &lt;function PyPlotGen.__getDecreasedDpiValue__&gt;, '__extractNumCasesPlotted__': &lt;function PyPlotGen.__extractNumCasesPlotted__&gt;, '__plotCase__': &lt;function PyPlotGen.__plotCase__&gt;, '__dataForCaseExists__': &lt;function PyPlotGen.__dataForCaseExists__&gt;, '__caseNcFileExists__': &lt;function PyPlotGen.__caseNcFileExists__&gt;, '__copySetupFiles__': &lt;function PyPlotGen.__copySetupFiles__&gt;, '__benchmarkFilesNeeded__': &lt;function PyPlotGen.__benchmarkFilesNeeded__&gt;, '__downloadModelOutputs__': &lt;function PyPlotGen.__downloadModelOutputs__&gt;, '__dict__': &lt;attribute '__dict__' of 'PyPlotGen' objects&gt;, '__weakref__': &lt;attribute '__weakref__' of 'PyPlotGen' objects&gt;})</em><a class="headerlink" href="#id5" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
@@ -526,7 +633,49 @@ Supports: SAM, COAMPS, CLUBB</p>
 
 <dl class="py method">
 <dt id="id7">
-<code class="sig-name descname">__init__</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">output_folder</span></em>, <em class="sig-param"><span class="n">clubb_folders</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">replace</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">les</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">cgbest</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">hoc</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">benchmark_only</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">nightly</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">zip</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">thin</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">no_legends</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">ensemble</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">plot_e3sm</span><span class="o">=</span><span class="default_value">''</span></em>, <em class="sig-param"><span class="n">sam_folders</span><span class="o">=</span><span class="default_value">['']</span></em>, <em class="sig-param"><span class="n">wrf_folders</span><span class="o">=</span><span class="default_value">['']</span></em>, <em class="sig-param"><span class="n">cam_folders</span><span class="o">=</span><span class="default_value">['']</span></em>, <em class="sig-param"><span class="n">budget_moments</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">bu_morr</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">diff</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">show_alphabetic_id</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">time_height</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">animation</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">disable_multithreading</span><span class="o">=</span><span class="default_value">False</span></em><span class="sig-paren">)</span><a class="headerlink" href="#id7" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">__extractNumCasesPlotted__</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">plotCaseDataArray</span></em><span class="sig-paren">)</span><a class="headerlink" href="#id7" title="Permalink to this definition">¶</a></dt>
+<dd><p>The __plotCase__() function is often called via a pooling map.
+As such, the data returned from the pool map is an array of True/False values
+where each True represents a case being plotted and each False represents a case
+not being plotted. This function counts the number of True’s and retuns that.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>plotCaseDataArray</strong> – Array of True/False values</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>number of True’s in the given list.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="id8">
+<code class="sig-name descname">__getDecreasedDpiValue__</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">previous_dpi</span></em>, <em class="sig-param"><span class="n">previous_filesize</span></em><span class="sig-paren">)</span><a class="headerlink" href="#id8" title="Permalink to this definition">¶</a></dt>
+<dd><p>When printing files to PDF, dpi lowering the dpi is useful for fitting the pdf’s filesize under a certain value.
+This method returns a suggested dpi value to print the pdf to that’s more likely to fit within a given filesize.
+Note, it is not guranteed that this function will return a dpi that DOES fit within a certain file size. This
+function is intended to be used multiple times throughout a loop as it gets closer to an optimal dpi.
+This function takes an incremental methodology to approaching an optimal dpi.</p>
+<p>Since the relationship between dpi and pdf filesize is mostly linear, the algorithm used to calculate the next
+recommended dpi is based on subtracting a percentage of the dpi relative to how far off the filesize was.</p>
+<p>An optional step_multiplier can be modified in the code to increase or decrease the strength of the dpi change.</p>
+<p>This method was inspired by the optimization functions used in artificial intelligence.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>previous_dpi</strong> – A dpi value that was larger than desired. The dpi value returend will be less than this one</p></li>
+<li><p><strong>previous_filesize</strong> – The filesize of the pdf generated by the previous_dpi</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>A recommended dpi value that is closer to an optimal dpi value for the target filesize</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="id9">
+<code class="sig-name descname">__init__</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">output_folder</span></em>, <em class="sig-param"><span class="n">clubb_folders</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">replace</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">les</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">cgbest</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">hoc</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">benchmark_only</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">nightly</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">zip</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">thin</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">no_legends</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">ensemble</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">plot_e3sm</span><span class="o">=</span><span class="default_value">''</span></em>, <em class="sig-param"><span class="n">sam_folders</span><span class="o">=</span><span class="default_value">['']</span></em>, <em class="sig-param"><span class="n">wrf_folders</span><span class="o">=</span><span class="default_value">['']</span></em>, <em class="sig-param"><span class="n">cam_folders</span><span class="o">=</span><span class="default_value">['']</span></em>, <em class="sig-param"><span class="n">budget_moments</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">bu_morr</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">diff</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">show_alphabetic_id</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">time_height</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">animation</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">disable_multithreading</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">pdf</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">pdf_filesize_limit</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">plot_subcolumns</span><span class="o">=</span><span class="default_value">False</span></em><span class="sig-paren">)</span><a class="headerlink" href="#id9" title="Permalink to this definition">¶</a></dt>
 <dd><p>This creates an instance of PyPlotGen. Each parameter is a command line parameter passed in from the argparser
 below.</p>
 <dl class="field-list simple">
@@ -576,30 +725,62 @@ Not implemented.</p></li>
 </dd></dl>
 
 <dl class="py attribute">
-<dt id="id8">
-<code class="sig-name descname">__module__</code><em class="property"> = 'pyplotgen'</em><a class="headerlink" href="#id8" title="Permalink to this definition">¶</a></dt>
+<dt id="id10">
+<code class="sig-name descname">__module__</code><em class="property"> = 'pyplotgen'</em><a class="headerlink" href="#id10" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
-<dt id="id9">
-<code class="sig-name descname">__plotCase__</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">case_def</span></em><span class="sig-paren">)</span><a class="headerlink" href="#id9" title="Permalink to this definition">¶</a></dt>
+<dt id="id11">
+<code class="sig-name descname">__plotCase__</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">case_def</span></em><span class="sig-paren">)</span><a class="headerlink" href="#id11" title="Permalink to this definition">¶</a></dt>
 <dd><p>Plots the given case. Pulled out into it’s own function to help move towards multithreading
 :param case_def:
-:return:</p>
+:return: True if case was plotted, False if case was not plotted</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="id12">
+<code class="sig-name descname">__printToPDF__</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#id12" title="Permalink to this definition">¶</a></dt>
+<dd><p>If –pdf was specified, this prints a pdf. Otherwise, this does nothing.
+If –pdf and –pdf-filesize-limit were specified, this will loop over the run() method, reducing image size on
+each loop, until a pdf is output less than or equal to the specified target pdf filesize.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py attribute">
-<dt id="id10">
-<code class="sig-name descname">__weakref__</code><a class="headerlink" href="#id10" title="Permalink to this definition">¶</a></dt>
+<dt id="id13">
+<code class="sig-name descname">__weakref__</code><a class="headerlink" href="#id13" title="Permalink to this definition">¶</a></dt>
 <dd><p>list of weak references to the object (if defined)</p>
 </dd></dl>
 
 <dl class="py method">
-<dt id="id11">
-<code class="sig-name descname">run</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#id11" title="Permalink to this definition">¶</a></dt>
+<dt id="id14">
+<code class="sig-name descname">__writePdfToDisk__</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">pdf_output_filename</span></em>, <em class="sig-param"><span class="n">case_desciptions</span></em><span class="sig-paren">)</span><a class="headerlink" href="#id14" title="Permalink to this definition">¶</a></dt>
+<dd><p>This is a helper function that actually writes the PDF to the disk. This uses the fpdf package to generate the
+pdf.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>pdf_output_filename</strong> – Name of the file to be created. While it can be a relative name, it’s recommended
+to use a full file path.</p></li>
+<li><p><strong>case_desciptions</strong> – A dict of name -&gt; description maps. E.g. {‘bomex’: “I am the bomex case. Fear me!”}</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="id15">
+<code class="sig-name descname">run</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#id15" title="Permalink to this definition">¶</a></dt>
 <dd><p>Main driver of the pyplotgen program executing the following steps:
 - Download benchmark files if needed
-- Loop through cases listed in Case_definitions.ALL_CASES
+- Loop through cases listed in Case_definitions.CASES_TO_PLOT
 - Create instances of these cases
 - Call plot function on the instances
 - Create output folder
@@ -614,8 +795,40 @@ Not implemented.</p></li>
 </dd></dl>
 
 <dl class="py function">
-<dt id="id12">
-<code class="sig-prename descclassname">pyplotgen.</code><code class="sig-name descname">__processArguments__</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#id12" title="Permalink to this definition">¶</a></dt>
+<dt id="id16">
+<code class="sig-prename descclassname">pyplotgen.</code><code class="sig-name descname">__convertCasenamesToCaseInstances__</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">casenames_list</span></em><span class="sig-paren">)</span><a class="headerlink" href="#id16" title="Permalink to this definition">¶</a></dt>
+<dd><p>Takes in a list of case names and searches through all the cases in Case_definitions.py for matches.
+Will then return a tuple containing the case instances that were found and a list of any names that were not found.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>casenames_list</strong> – List of case names. Names must match the ‘name’ parameter of the cases definition in
+Case_definitions.py</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Tuple of (converted_cases, cases_not_found) where converted_cases is a list of case instances and
+cases_not_found is a list of casenames that could not be found.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="id17">
+<code class="sig-prename descclassname">pyplotgen.</code><code class="sig-name descname">__getSimilarCasenames__</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">invalid_casenames</span></em><span class="sig-paren">)</span><a class="headerlink" href="#id17" title="Permalink to this definition">¶</a></dt>
+<dd><p>Given a list of casenames, this method returns a list of existing case names that are closest to the list given.</p>
+<p>E.g. if the list given contains [‘bomax’, ‘dycoms_rf01’] this function returns [‘bomex, ‘dycoms2_rf01’]</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>invalid_casenames</strong> – List of casenames that could not be found/likely have typos</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="id18">
+<code class="sig-prename descclassname">pyplotgen.</code><code class="sig-name descname">__processArguments__</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#id18" title="Permalink to this definition">¶</a></dt>
 <dd><p>This method takes arguments in from the command line and feeds them into a PyPlotGen object</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns</dt>
@@ -625,8 +838,8 @@ Not implemented.</p></li>
 </dd></dl>
 
 <dl class="py function">
-<dt id="id13">
-<code class="sig-prename descclassname">pyplotgen.</code><code class="sig-name descname">__trimTrailingSlash__</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">args</span></em><span class="sig-paren">)</span><a class="headerlink" href="#id13" title="Permalink to this definition">¶</a></dt>
+<dt id="id19">
+<code class="sig-prename descclassname">pyplotgen.</code><code class="sig-name descname">__trimTrailingSlash__</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">args</span></em><span class="sig-paren">)</span><a class="headerlink" href="#id19" title="Permalink to this definition">¶</a></dt>
 <dd><p>Takes in a list filepaths and removes any trailing /’s</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>

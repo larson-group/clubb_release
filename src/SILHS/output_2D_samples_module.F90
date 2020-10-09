@@ -24,6 +24,7 @@ module output_2D_samples_module
                                    fname_prefix, fdir, &
                                    time, dtwrite, zgrid, variable_names, &
                                    variable_descriptions, variable_units, &
+                                   nlon, nlat, lon_vals, lat_vals, &
                                    sample_file )
 ! Description:
 !   Open a 2D sample file
@@ -72,12 +73,15 @@ module output_2D_samples_module
     type(stat_file), intent(inout) :: &
       sample_file ! File that is being opened
 
-    ! Local Variables
-    integer :: nlat, nlon ! Not actually latitudes and longitudes
+    integer, intent(in) :: &
+      nlon, & ! Number of points in the X direction [-]
+      nlat    ! Number of points in the Y direction [-]
 
-    real( kind = core_rknd ), dimension(num_samples) :: rlat
+    real( kind = core_rknd ), dimension(nlon), intent(in) ::  &
+      lon_vals  ! Longitude values [Degrees E]
 
-    real( kind = core_rknd ), dimension(1) :: rlon
+    real( kind = core_rknd ), dimension(nlat), intent(in) ::  &
+      lat_vals  ! Latitude values  [Degrees N]
 
     character(len=100) :: fname
     integer :: i
@@ -85,33 +89,21 @@ module output_2D_samples_module
     ! ---- Begin Code ----
 
     fname = trim( fname_prefix )//"_lh_sample_points_2D"
-    i =1  ! This assignment prevents a g 95 compiler warning
+    i = 1  ! This assignment prevents a g 95 compiler warning
 
-    ! We need to set this like a latitude to trick GrADS and allow of viewing of
-    ! the sample points with the GrADS application and sdfopen.
-    nlat = num_samples
-    nlon = 1
-
-    allocate( sample_file%rlat(num_samples), sample_file%rlon(1) )
-    allocate( sample_file%var(n_2D_variables) )
+    allocate( sample_file%samples_of_var(n_2D_variables) )
     allocate( sample_file%z(nz) )
 
-    forall( i=1:num_samples )
-      rlat(i) = real( i, kind = core_rknd ) ! Use made up arbitrary values for degrees north
-    end forall
-
-    rlon = 1.0_core_rknd ! Also made up
-
     do i=1, n_2D_variables
-      sample_file%var(i)%name = trim( variable_names(i) )
-      sample_file%var(i)%description = trim( variable_descriptions(i) )
-      sample_file%var(i)%units = trim( variable_units(i) )
+      sample_file%samples_of_var(i)%name = trim( variable_names(i) )
+      sample_file%samples_of_var(i)%description = trim( variable_descriptions(i) )
+      sample_file%samples_of_var(i)%units = trim( variable_units(i) )
     end do
 
 #ifdef NETCDF
     call open_netcdf_for_writing( nlat, nlon, fdir, fname, 1, nz, zgrid, &
-                      day, month, year, rlat, rlon, &
-                      time, dtwrite, n_2D_variables, sample_file )
+                      day, month, year, lat_vals, lon_vals, &
+                      time, dtwrite, n_2D_variables, sample_file, num_samples )
 #else
     stop "This version of CLUBB was not compiled for netCDF output"
 #endif
@@ -136,6 +128,8 @@ module output_2D_samples_module
 #endif
 
     use clubb_precision, only: stat_rknd ! Constant(s)
+
+    use stats_variables, only: l_stats_last !Time-to-print flag
 
     implicit none
 
@@ -162,13 +156,15 @@ module output_2D_samples_module
 
     ! ---- Begin Code ----
 
+    if ( .not. l_stats_last ) return
+
     do j = 1, pdf_dim
-      allocate( lognormal_sample_file%var(j)%ptr(num_samples,1,nz) )
+      allocate( lognormal_sample_file%samples_of_var(j)%ptr(num_samples,1,1,nz) )
     end do
 
     do sample = 1, num_samples
       do j = 1, pdf_dim
-        lognormal_sample_file%var(j)%ptr(sample,1,1:nz) = X_nl_all_levs(1:nz,sample,j)
+        lognormal_sample_file%samples_of_var(j)%ptr(sample,1,1,1:nz) = X_nl_all_levs(1:nz,sample,j)
       end do
     end do
 
@@ -183,7 +179,7 @@ module output_2D_samples_module
 #endif
 
     do j = 1, pdf_dim
-      deallocate( lognormal_sample_file%var(j)%ptr )
+      deallocate( lognormal_sample_file%samples_of_var(j)%ptr )
     end do
 
     return
@@ -209,6 +205,8 @@ module output_2D_samples_module
     use clubb_precision, only: &
       core_rknd, &          ! Precision(s)
       stat_rknd
+
+    use stats_variables, only: l_stats_last !Time-to-print flag
 
     implicit none
 
@@ -241,19 +239,21 @@ module output_2D_samples_module
 
     ! ---- Begin Code ----
 
+    if ( .not. l_stats_last ) return
+
     do j = 1, dp2+2
-      allocate( uniform_sample_file%var(j)%ptr(num_samples,1,nz) )
+      allocate( uniform_sample_file%samples_of_var(j)%ptr(num_samples,1,1,nz) )
     end do
 
     do sample = 1, num_samples
       do j = 1, dp2
-        uniform_sample_file%var(j)%ptr(sample,1,1:nz) = &
+        uniform_sample_file%samples_of_var(j)%ptr(sample,1,1,1:nz) = &
           real( X_u_all_levs(1:nz,sample,j), kind = stat_rknd )
       end do
-      uniform_sample_file%var(dp2+1)%ptr(sample,1,1:nz) = &
+      uniform_sample_file%samples_of_var(dp2+1)%ptr(sample,1,1,1:nz) = &
         real( X_mixt_comp_all_levs(1:nz,sample), kind=stat_rknd )
       do k = 1, nz 
-        uniform_sample_file%var(dp2+2)%ptr(sample,1,k) = &
+        uniform_sample_file%samples_of_var(dp2+2)%ptr(sample,1,1,k) = &
           real( lh_sample_point_weights(k,sample), kind=stat_rknd )
       end do
     end do
@@ -269,7 +269,7 @@ module output_2D_samples_module
 #endif
 
     do j = 1, dp2+2
-      deallocate( uniform_sample_file%var(j)%ptr )
+      deallocate( uniform_sample_file%samples_of_var(j)%ptr )
     end do
 
     return
@@ -299,8 +299,8 @@ module output_2D_samples_module
     stop "This version of CLUBB was not compiled for netCDF output"
 #endif
 
-    deallocate( sample_file%rlat, sample_file%rlon )
-    deallocate( sample_file%var)
+    deallocate( sample_file%lat_vals, sample_file%lon_vals, sample_file%samp_idx )
+    deallocate( sample_file%samples_of_var)
     deallocate( sample_file%z)
 
     return

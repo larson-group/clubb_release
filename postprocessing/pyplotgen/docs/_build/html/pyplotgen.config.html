@@ -100,6 +100,7 @@
 <li class="toctree-l4"><a class="reference internal" href="#module-config.VariableGroupSamMultilineProfiles">config.VariableGroupSamMultilineProfiles module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#module-config.VariableGroupSamProfiles">config.VariableGroupSamProfiles module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#module-config.VariableGroupScalars">config.VariableGroupScalars module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-config.VariableGroupSubcolumns">config.VariableGroupSubcolumns module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#module-config.VariableGroupWs">config.VariableGroupWs module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#module-config">Module contents</a></li>
 </ul>
@@ -232,10 +233,10 @@ using python dictionaries (values surrounded with &lt; &gt; must have the &lt; &
                   <span class="s1">&#39;sfc&#39;</span><span class="p">:</span> <span class="o">&lt;</span><span class="n">path</span> <span class="n">to</span> <span class="n">file</span><span class="o">&gt;</span><span class="p">},</span>
     <span class="s1">&#39;coamps_benchmark_file&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;sm&#39;</span><span class="p">:</span> <span class="o">&lt;</span><span class="n">path</span> <span class="n">to</span> <span class="n">file</span><span class="o">&gt;</span><span class="p">,</span>
                       <span class="s1">&#39;sw&#39;</span><span class="p">:</span> <span class="o">&lt;</span><span class="n">path</span> <span class="n">to</span> <span class="n">file</span><span class="o">&gt;</span><span class="p">},</span>
-    <span class="s1">&#39;clubb_r408_file&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;zm&#39;</span><span class="p">:</span> <span class="o">&lt;</span><span class="n">path</span> <span class="n">to</span> <span class="n">file</span><span class="o">&gt;</span><span class="p">,</span>
+    <span class="s1">&#39;clubb_r408_benchmark_file&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;zm&#39;</span><span class="p">:</span> <span class="o">&lt;</span><span class="n">path</span> <span class="n">to</span> <span class="n">file</span><span class="o">&gt;</span><span class="p">,</span>
                   <span class="s1">&#39;zt&#39;</span><span class="p">:</span> <span class="o">&lt;</span><span class="n">path</span> <span class="n">to</span> <span class="n">file</span><span class="o">&gt;</span><span class="p">,</span>
                   <span class="s1">&#39;sfc&#39;</span><span class="p">:</span> <span class="o">&lt;</span><span class="n">path</span> <span class="n">to</span> <span class="n">file</span><span class="o">&gt;</span><span class="p">},</span>
-   <span class="s1">&#39;clubb_hoc_file&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;zm&#39;</span><span class="p">:</span> <span class="o">&lt;</span><span class="n">path</span> <span class="n">to</span> <span class="n">file</span><span class="o">&gt;</span><span class="s1">&#39;,</span>
+   <span class="s1">&#39;clubb_hoc_benchmark_file&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;zm&#39;</span><span class="p">:</span> <span class="o">&lt;</span><span class="n">path</span> <span class="n">to</span> <span class="n">file</span><span class="o">&gt;</span><span class="s1">&#39;,</span>
                 <span class="s1">&#39;zt&#39;</span><span class="p">:</span> <span class="o">&lt;</span><span class="n">path</span> <span class="n">to</span> <span class="n">file</span><span class="o">&gt;</span><span class="s1">&#39;,</span>
                 <span class="s1">&#39;sfc&#39;</span><span class="p">:</span> <span class="o">&lt;</span><span class="n">path</span> <span class="n">to</span> <span class="n">file</span><span class="o">&gt;</span><span class="p">},</span>
    <span class="s1">&#39;e3sm_file&#39;</span><span class="p">:</span> <span class="o">&lt;</span><span class="n">path</span> <span class="n">to</span> <span class="n">file</span><span class="o">&gt;</span><span class="p">,</span>
@@ -248,7 +249,7 @@ using python dictionaries (values surrounded with &lt; &gt; must have the &lt; &
 </pre></div>
 </td></tr></table></div>
 <p><strong>Important note</strong>:
-When creating a new case, add it to the ALL_CASES list at the bottom of the file. Additionally, please add it in
+When creating a new case, add it to the CASES_TO_PLOT list at the bottom of the file. Additionally, please add it in
 alphabetical order.</p>
 <p><strong>Case Definition values explained</strong>:</p>
 <blockquote>
@@ -281,11 +282,11 @@ i.e. config/VariableGroupBase.py. An example would be thlm in VariableGroupBase.
 <dd><p>To plot only a subset of cases, reguardless of what output exists
 in the clubb folder, uncomment the last line of this file and
 fill that array with the cases you’d like to plot. This overwrites the
-ALL_CASES variable such that pyplotgen will only know about cases in that
+CASES_TO_PLOT variable such that pyplotgen will only know about cases in that
 list and ignore all others. The name must match the python variable name
 below (all caps).</p>
 <p>For example, to plot only bomex and fire:</p>
-<p>ALL_CASES = [BOMEX, FIRE]</p>
+<p>CASES_TO_PLOT = [BOMEX, FIRE]</p>
 </dd></dl>
 
 </div>
@@ -2383,11 +2384,11 @@ Lists will be filled with NaN’s if the variable could not be calculated.</p>
 <p>TODO:   - Arrange lines so that styles match for different panels -&gt; reduced momentum flux budgets</p>
 <dl class="py class">
 <dt id="config.VariableGroupSamBudgets.VariableGroupSamBudgets">
-<em class="property">class </em><code class="sig-prename descclassname">config.VariableGroupSamBudgets.</code><code class="sig-name descname">VariableGroupSamBudgets</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">case</span></em>, <em class="sig-param"><span class="n">clubb_datasets</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">les_dataset</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">coamps_dataset</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">r408_dataset</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">hoc_dataset</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">cam_datasets</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">e3sm_datasets</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">sam_datasets</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">wrf_datasets</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#config.VariableGroupSamBudgets.VariableGroupSamBudgets" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="sig-prename descclassname">config.VariableGroupSamBudgets.</code><code class="sig-name descname">VariableGroupSamBudgets</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">case</span></em>, <em class="sig-param"><span class="n">clubb_datasets</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">les_dataset</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">coamps_dataset</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">r408_dataset</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">hoc_dataset</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">cam_datasets</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">e3sm_datasets</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">sam_datasets</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">wrf_datasets</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">verbose</span><span class="o">=</span><span class="default_value">False</span></em><span class="sig-paren">)</span><a class="headerlink" href="#config.VariableGroupSamBudgets.VariableGroupSamBudgets" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="pyplotgen.src.html#src.VariableGroup.VariableGroup" title="src.VariableGroup.VariableGroup"><code class="xref py py-class docutils literal notranslate"><span class="pre">src.VariableGroup.VariableGroup</span></code></a></p>
 <dl class="py method">
 <dt id="config.VariableGroupSamBudgets.VariableGroupSamBudgets.__init__">
-<code class="sig-name descname">__init__</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">case</span></em>, <em class="sig-param"><span class="n">clubb_datasets</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">les_dataset</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">coamps_dataset</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">r408_dataset</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">hoc_dataset</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">cam_datasets</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">e3sm_datasets</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">sam_datasets</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">wrf_datasets</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#config.VariableGroupSamBudgets.VariableGroupSamBudgets.__init__" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">__init__</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">case</span></em>, <em class="sig-param"><span class="n">clubb_datasets</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">les_dataset</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">coamps_dataset</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">r408_dataset</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">hoc_dataset</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">cam_datasets</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">e3sm_datasets</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">sam_datasets</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">wrf_datasets</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">verbose</span><span class="o">=</span><span class="default_value">False</span></em><span class="sig-paren">)</span><a class="headerlink" href="#config.VariableGroupSamBudgets.VariableGroupSamBudgets.__init__" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
@@ -5168,6 +5169,33 @@ Lists will be filled with NaN’s if the variable could not be calculated.</p>
 <dl class="py attribute">
 <dt id="config.VariableGroupScalars.VariableGroupScalars.__module__">
 <code class="sig-name descname">__module__</code><em class="property"> = 'config.VariableGroupScalars'</em><a class="headerlink" href="#config.VariableGroupScalars.VariableGroupScalars.__module__" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-config.VariableGroupSubcolumns">
+<span id="config-variablegroupsubcolumns-module"></span><h2>config.VariableGroupSubcolumns module<a class="headerlink" href="#module-config.VariableGroupSubcolumns" title="Permalink to this headline">¶</a></h2>
+<dl class="field-list simple">
+<dt class="field-odd">author</dt>
+<dd class="field-odd"><p>Nicolas Strike</p>
+</dd>
+<dt class="field-even">date</dt>
+<dd class="field-even"><p>Mid 2019</p>
+</dd>
+</dl>
+<dl class="py class">
+<dt id="config.VariableGroupSubcolumns.VariableGroupSubcolumns">
+<em class="property">class </em><code class="sig-prename descclassname">config.VariableGroupSubcolumns.</code><code class="sig-name descname">VariableGroupSubcolumns</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">case</span></em>, <em class="sig-param"><span class="n">clubb_datasets</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">les_dataset</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">coamps_dataset</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">r408_dataset</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">hoc_dataset</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">cam_datasets</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">e3sm_datasets</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">sam_datasets</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">wrf_datasets</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#config.VariableGroupSubcolumns.VariableGroupSubcolumns" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="pyplotgen.src.html#src.VariableGroup.VariableGroup" title="src.VariableGroup.VariableGroup"><code class="xref py py-class docutils literal notranslate"><span class="pre">src.VariableGroup.VariableGroup</span></code></a></p>
+<dl class="py method">
+<dt id="config.VariableGroupSubcolumns.VariableGroupSubcolumns.__init__">
+<code class="sig-name descname">__init__</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">case</span></em>, <em class="sig-param"><span class="n">clubb_datasets</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">les_dataset</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">coamps_dataset</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">r408_dataset</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">hoc_dataset</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">cam_datasets</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">e3sm_datasets</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">sam_datasets</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">wrf_datasets</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#config.VariableGroupSubcolumns.VariableGroupSubcolumns.__init__" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt id="config.VariableGroupSubcolumns.VariableGroupSubcolumns.__module__">
+<code class="sig-name descname">__module__</code><em class="property"> = 'config.VariableGroupSubcolumns'</em><a class="headerlink" href="#config.VariableGroupSubcolumns.VariableGroupSubcolumns.__module__" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 </dd></dl>

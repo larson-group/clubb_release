@@ -13,6 +13,7 @@
 *         subject to copyright.
 ********************************************************************************
 
+
 ********************************************************************************
 *        Overview of the Cloud Layers Unified By Binormals (CLUBB) code        
 ********************************************************************************
@@ -899,7 +900,9 @@ Do steps 1, 2, & 3 as outlined in the standalone run.
    a variant of amoeba which uses simulated annealing instead, is used.  A complete 
    explanation of these minimization algorithms can be found 
    in "Numerical Recipes" by Press et al., .
-   Sometimes the variable names in the CLUBB output and the LES output
+   The parameters whose values are adjusted by the tuner 
+   are the non-zero entries in namelist initmax.
+   Sometimes the names of the optimized variable in the CLUBB and LES output
    will differ.  Note that when tuning against netCDF data, the file will
    need to have a .nc extension for the clubb_tuner to correctly identify
    the file as being in netCDF format.
@@ -913,7 +916,7 @@ Do steps 1, 2, & 3 as outlined in the standalone run.
    to .true. for for the purposes of `fixing' variables such as um or vm for
    the purposes of isolating model errors.
 
-6. Edit run_tuner.bash to use your namelists.  Note that run_tuner.bash uses
+6. Edit run_scripts/run_tuner.bash to use your namelists.  Note that run_tuner.bash uses
    a customized stats file for tuning and a (possibly different) stats file 
    to run CLUBB with the optimized parameters.  The stats file used while 
    tuning is input/stats/tuning_stats.in and contains only the names of the 

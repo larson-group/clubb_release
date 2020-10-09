@@ -178,9 +178,11 @@
 <div class="section" id="module-python_html_gallery.gallery">
 <span id="python-html-gallery-gallery-module"></span><h2>python_html_gallery.gallery module<a class="headerlink" href="#module-python_html_gallery.gallery" title="Permalink to this headline">¶</a></h2>
 <dl class="py function">
-<dt id="python_html_gallery.gallery.GenerateThumbnails">
-<code class="sig-prename descclassname">python_html_gallery.gallery.</code><code class="sig-name descname">GenerateThumbnails</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">page</span></em>, <em class="sig-param"><span class="n">jpgs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#python_html_gallery.gallery.GenerateThumbnails" title="Permalink to this definition">¶</a></dt>
-<dd><p>Generates thumbnails for gallery pages.</p>
+<dt id="python_html_gallery.gallery.GenerateHtmlImages">
+<code class="sig-prename descclassname">python_html_gallery.gallery.</code><code class="sig-name descname">GenerateHtmlImages</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">page</span></em>, <em class="sig-param"><span class="n">jpgs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#python_html_gallery.gallery.GenerateHtmlImages" title="Permalink to this definition">¶</a></dt>
+<dd><blockquote>
+<div><p>Creates HTML image elements</p>
+</div></blockquote>
 <dl class="simple">
 <dt>Args:</dt><dd><p>page: str, name of page for thumbnails.
 jpgs: list, jpg files to create thumbnails for.</p>
@@ -251,7 +253,7 @@ jpgs: list, jpg files to create thumbnails for.</p>
 <dt id="python_html_gallery.gallery.get_description">
 <code class="sig-prename descclassname">python_html_gallery.gallery.</code><code class="sig-name descname">get_description</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">casename</span></em><span class="sig-paren">)</span><a class="headerlink" href="#python_html_gallery.gallery.get_description" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get the description from the case definintion
-:param casename: Name of the case as defined by the ‘name’ parameter of it’s entry in ALL_CASES in Case_definitions.py
+:param casename: Name of the case as defined by the ‘name’ parameter of it’s entry in CASES_TO_PLOT in Case_definitions.py
 :return: The case’s description text</p>
 </dd></dl>
 
@@ -260,7 +262,7 @@ jpgs: list, jpg files to create thumbnails for.</p>
 <code class="sig-prename descclassname">python_html_gallery.gallery.</code><code class="sig-name descname">get_start_end_minutes</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">casename</span></em><span class="sig-paren">)</span><a class="headerlink" href="#python_html_gallery.gallery.get_start_end_minutes" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get the start and end time minutes for a case
 as defined in Case_definitions.py
-:param casename: Name of the case as defined by the ‘name’ parameter of it’s entry in ALL_CASES in Case_definitions.py
+:param casename: Name of the case as defined by the ‘name’ parameter of it’s entry in CASES_TO_PLOT in Case_definitions.py
 :return: tuple of the order (start_time,end_time)</p>
 </dd></dl>
 

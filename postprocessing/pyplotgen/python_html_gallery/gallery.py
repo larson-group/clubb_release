@@ -16,8 +16,7 @@ from multiprocessing import freeze_support
 
 from config import Case_definitions
 from python_html_gallery import static
-
-extension = 'png'
+from src import Panel
 
 try:
     from PIL import Image
@@ -52,7 +51,7 @@ def Now(time=True):
 def RandomThumb(page):
     """Returns path to random thumbnail for a given page."""
     return random.choice(
-        glob.glob(os.path.join(page.split('/')[0], '*_thumb.'+extension)))
+        glob.glob(os.path.join(page.split('/')[0], '*_thumb'+Panel.EXTENSION)))
 
 
 def OrganizeRoot(output_dir):
@@ -65,7 +64,7 @@ def OrganizeRoot(output_dir):
         print('Could not cd into %s' % static.root)
         sys.exit(1)
 
-    fs = ListFiles('*.'+extension, '.')
+    fs = ListFiles('*'+Panel.EXTENSION, '.')
     if fs:
         for jpg in fs:
             datehour = Now(time=False)
@@ -78,8 +77,9 @@ def OrganizeRoot(output_dir):
                 print('%s already exists' % os.path.join(datehour, jpg))
 
 
-def GenerateThumbnails(page, jpgs):
-    """Generates thumbnails for gallery pages.
+def GenerateHtmlImages(page, jpgs):
+    """
+    Creates HTML image elements
 
   Args:
     page: str, name of page for thumbnails.
@@ -87,47 +87,10 @@ def GenerateThumbnails(page, jpgs):
   Returns:
     url_imgs: list, image links to write.
   """
-    c_exist = 0
-    c_save = 0
-    c_small = 0
-    pc = 0
     url_imgs = []
-
     for jpg in jpgs:
         jpg = page + '/' + jpg
-        try:
-            im = Image.open(jpg)
-            if im.size > static.min_size:
-                trimIndex = -1*(len(extension) + 1) # position of last char before ".png"
-                thumb = jpg[:trimIndex] + "_thumb." + extension
-                if not os.path.exists(thumb):
-                    # im.thumbnail(static.thumb_size, Image.ANTIALIAS)
-                    im = im.resize(static.thumb_size, resample=Image.BILINEAR)
-                    im.save(thumb, extension)
-                    c_save += 1
-
-                    if (pc == 100):  # progress counter
-                        print('%s: wrote 100 thumbnails, continuing' % page)
-                        pc = 0
-                    pc += 1
-
-                else:
-                    c_exist += 1
-
-                url_imgs.append(static.url_img % (jpg, jpg, thumb))
-            else:
-                if '_thumb.'+extension not in jpg:
-                    c_small += 1
-        except IOError as e:
-            print('Problem with %s: %s, moving to %s' % (jpg, e, static.tmp))
-            try:
-                shutil.move(jpg, static.tmp)
-            except shutil.Error:
-                print('Could not move %s' % jpg)
-                pass
-
-    print('%s: %d new thumbnails, %d already exist, %d too small' % (
-        page, c_save, c_exist, c_small))
+        url_imgs.append(static.url_img % (jpg, jpg, jpg))
     return url_imgs
 
 
@@ -135,20 +98,20 @@ def get_start_end_minutes(casename):
     """
     Get the start and end time minutes for a case
     as defined in Case_definitions.py
-    :param casename: Name of the case as defined by the 'name' parameter of it's entry in ALL_CASES in Case_definitions.py
+    :param casename: Name of the case as defined by the 'name' parameter of it's entry in CASES_TO_PLOT in Case_definitions.py
     :return: tuple of the order (start_time,end_time)
     """
-    for case in Case_definitions.ALL_CASES:
+    for case in Case_definitions.CASES_TO_PLOT:
         if case['name'] == casename:
             return case['start_time'], case['end_time']
 
 def get_description(casename):
     """
     Get the description from the case definintion
-    :param casename: Name of the case as defined by the 'name' parameter of it's entry in ALL_CASES in Case_definitions.py
+    :param casename: Name of the case as defined by the 'name' parameter of it's entry in CASES_TO_PLOT in Case_definitions.py
     :return: The case's description text
     """
-    for case in Case_definitions.ALL_CASES:
+    for case in Case_definitions.CASES_TO_PLOT:
         if case['name'] == casename:
             return case['description']
 
@@ -182,14 +145,14 @@ def WriteGalleryPage(page):
         plots_file.write(static.timestamp % Now())
 
         try:
-            img_paths = '*.'+extension
+            img_paths = '*'+Panel.EXTENSION
             case_images = ListFiles(img_paths, page)
             jpgs = sorted(case_images, reverse=True)[::-1]
         except TypeError:
             print('%s: No images found' % page)
             return
 
-        for e in GenerateThumbnails(page, jpgs):
+        for e in GenerateHtmlImages(page, jpgs):
             plots_file.write(e)
 
         # plots_file.write(static.footer)

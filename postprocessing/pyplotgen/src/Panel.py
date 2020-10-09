@@ -3,6 +3,7 @@
 :date: Mid 2019
 '''
 import os
+import warnings
 from datetime import datetime
 from textwrap import fill
 
@@ -13,18 +14,24 @@ from cycler import cycler
 from config import Style_definitions
 from src.interoperability import clean_path, clean_title
 
+EXTENSION = ".png"  # Get's overriden with ".svg" if --svg passed in via command line
 
 class Panel:
     """
     Represents an individual panel/graph. Each panel contains a number of details
     specific to it, such as a title, axis labels, and lines. Each panel can be plotted/saved to a file.
+
+    For information on the input parameters of this class, please see the documentation for the
+    ``__init__()`` method.
     """
     TYPE_PROFILE = 'profile'
     TYPE_BUDGET = 'budget'
     TYPE_TIMESERIES = 'timeseries'
     TYPE_TIMEHEIGHT = 'timeheight'
     TYPE_ANIMATION = 'animation'
-    EXTENSION = '.png'
+    TYPE_SUBCOLUMN = 'subcolumn'
+
+    VALID_PANEL_TYPES = [TYPE_PROFILE, TYPE_BUDGET, TYPE_TIMESERIES, TYPE_TIMEHEIGHT, TYPE_ANIMATION, TYPE_SUBCOLUMN]
 
     def __init__(self, plots, panel_type="profile", title="Unnamed panel", dependent_title="dependent variable",
                  sci_scale = None, centered = False):
@@ -62,6 +69,9 @@ class Panel:
         elif self.panel_type is Panel.TYPE_BUDGET:
             self.y_title = "Height [m]"
             self.x_title = self.dependent_title
+        elif self.panel_type is Panel.TYPE_SUBCOLUMN:
+            self.x_title = self.dependent_title
+            self.y_title = "Height [m]"
         elif self.panel_type is Panel.TYPE_TIMESERIES:
             self.x_title = "Time [min]"
             self.y_title = self.dependent_title
@@ -70,7 +80,7 @@ class Panel:
             self.y_title = "Height [m]"
         else:
             raise ValueError('Invalid panel type ' + self.panel_type +
-                             '. Valid options are profile, budget, timeseries')
+                             '. Valid options are: ' + str(Panel.VALID_PANEL_TYPES))
 
     def plot(self, output_folder, casename, replace_images = False, no_legends = True, thin_lines = False,
              alphabetic_id="", paired_plots = True):
@@ -87,8 +97,11 @@ class Panel:
             use the color/style rotation specified in Style_definitions.py
         :return: None
         """
-        # Create new figure and axis
-        plt.subplot(111)
+        # Suppress deprecation warnings
+        with warnings.catch_warnings():
+            # Create new figure and axis
+            warnings.simplefilter("ignore")
+            plt.subplot(111)
 
         # Set line color/style. This will cycle through all colors,
         # then once colors run out use a new style and cycle through
@@ -98,7 +111,7 @@ class Panel:
         plt.rc('axes', prop_cycle=default_cycler)
 
         # Set graph size
-        plt.figure(figsize=(10,6))
+        plt.figure(figsize=Style_definitions.FIGSIZE)
 
         # Set font sizes
         plt.rc('font', size=Style_definitions.DEFAULT_TEXT_SIZE)          # controls default text sizes
@@ -114,7 +127,7 @@ class Panel:
         if self.sci_scale is not None:
             scalepower = -1 * self.sci_scale
             if self.sci_scale != 0:
-                label_scale_factor = "\t\t x 1e" + str(self.sci_scale)
+                label_scale_factor = "x 1e" + str(self.sci_scale)
             math_scale_factor =  10 ** (scalepower)
             plt.ticklabel_format(style='plain', axis='x')
         # Use pyplot's default sci scaling
@@ -138,7 +151,10 @@ class Panel:
             y_data = var.y
 
             # Find absolutely greatest value in x_data in Panel for centering
-            max_variable_value = max(abs(np.nanmin(x_data)),np.nanmax(x_data))
+            # Suppress "All-NaN slice encountered" warning
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore")
+                max_variable_value = max(abs(np.nanmin(x_data)),np.nanmax(x_data))
             max_panel_value = max(max_panel_value,max_variable_value)
 
             if x_data.shape[0] != y_data.shape[0]:
@@ -183,16 +199,19 @@ class Panel:
             else:
                 plt.plot(x_data, y_data, label=var.label, linewidth=line_width)
 
-        # Set titles
-        plt.title(self.title)
-        plt.ylabel(self.y_title)
-        plt.xlabel(self.x_title + label_scale_factor)
-
         # Show grid if enabled
         ax = plt.gca()
         ax.grid(Style_definitions.SHOW_GRID)
 
         ax.set_prop_cycle(default_cycler)
+
+
+        # Set titles
+        plt.title(self.title)
+        plt.ylabel(self.y_title)
+        plt.text(1, -0.15, label_scale_factor, transform=ax.transAxes, fontsize=Style_definitions.MEDIUM_FONT_SIZE)
+        plt.xlabel(self.x_title)
+
 
         # Add alphabetic ID
         if alphabetic_id != "":
@@ -231,7 +250,9 @@ class Panel:
 
         # Generate image filename
         filename = self.panel_type + "_"+ str(datetime.now())
-
+        # Force subcolumn plots to show up on top
+        if self.panel_type == Panel.TYPE_SUBCOLUMN:
+            filename = 'aaa' + filename
         if self.panel_type == Panel.TYPE_BUDGET:
             filename = filename + "_"+ self.title
         else:
@@ -241,10 +262,10 @@ class Panel:
         rel_filename = output_folder + "/" +casename+'/' + filename
         rel_filename = clean_path(rel_filename)
         # Save image file
-        if replace_images is True or not os.path.isfile(rel_filename+Panel.EXTENSION):
-            plt.savefig(rel_filename+Panel.EXTENSION)
+        if replace_images is True or not os.path.isfile(rel_filename+EXTENSION):
+            plt.savefig(rel_filename + EXTENSION, dpi=Style_definitions.IMG_OUTPUT_DPI)
         else: # os.path.isfile(rel_filename + Panel.EXTENSION) and replace_images is False:
-            print("\n\tImage " + rel_filename+Panel.EXTENSION+
+            print("\n\tImage " + rel_filename+EXTENSION+
                   ' already exists. To overwrite this image during runtime pass in the --replace (-r) parameter.')
         plt.close()
 
@@ -291,7 +312,7 @@ class Panel:
             label = var.label
 
             # Set graph size
-            plt.figure(figsize=(10,6))
+            plt.figure(figsize=(10,6), dpi=Style_definitions.IMG_OUTPUT_DPI)
 
             # Prevent x-axis label from getting cut off
             # plt.gcf().subplots_adjust(bottom=0.15)
@@ -321,14 +342,14 @@ class Panel:
 
             # Generate image filename
             filename = label + "_timeheight_"+ str(datetime.now())
-
             filename = self.__removeInvalidFilenameChars__(filename)
             # Concatenate with output foldername
             relative_filename = output_folder + '/' + casename + '/' + filename
             relative_filename = clean_path(relative_filename)
+            plt.figure(dpi=Style_definitions.IMG_OUTPUT_DPI)
             # Save image file
             if replace_images is True or not os.path.isfile(relative_filename+Panel.EXTENSION):
-                plt.savefig(relative_filename+Panel.EXTENSION)
+                plt.savefig(relative_filename + Panel.EXTENSION, dpi=Style_definitions.IMG_OUTPUT_DPI)
             else: # os.path.isfile(relative_filename + Panel.EXTENSION) and replace_images is False:
                 print("\n\tImage " + relative_filename+Panel.EXTENSION+
                       ' already exists. To overwrite this image during runtime pass in the --replace (-r) parameter.')

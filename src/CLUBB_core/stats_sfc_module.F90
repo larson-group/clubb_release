@@ -173,7 +173,7 @@ module stats_sfc_module
       case ('lwp')
         ilwp = k
         call stat_assign( var_index=ilwp, var_name="lwp", &
-             var_description="cc, Liquid water path", var_units="kg/m2", l_silhs=.false., &
+             var_description="lwp, Liquid water path", var_units="kg/m2", l_silhs=.false., &
              grid_kind=stats_sfc )
         k = k + 1
 
@@ -337,7 +337,7 @@ module stats_sfc_module
         iwp2_vert_avg = k
 
         call stat_assign( var_index=iwp2_vert_avg, var_name="wp2_vert_avg", &
-             var_description="w'^2_vert_avg, Vertical average (density-weighted) of wp2", &
+             var_description="Density-weighted vertical average of w'^2", &
              var_units="m^2/s^2", l_silhs=.false., grid_kind=stats_sfc )
         k = k + 1
 
@@ -488,4 +488,3 @@ module stats_sfc_module
 
 
 end module stats_sfc_module
-

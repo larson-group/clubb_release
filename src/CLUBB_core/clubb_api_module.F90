@@ -1785,7 +1785,7 @@ contains
     stats_fmt_in, stats_tsamp_in, stats_tout_in, fnamelist, &
     nzmax, nlon, nlat, gzt, gzm, nnrad_zt, &
     grad_zt, nnrad_zm, grad_zm, day, month, year, &
-    rlon, rlat, time_current, delt, l_silhs_out_in )
+    lon_vals, lat_vals, time_current, delt, l_silhs_out_in )
 
     use stats_clubb_utilities, only : stats_init
 
@@ -1830,10 +1830,10 @@ contains
     integer, intent(in) :: day, month, year  ! Time of year
 
     real( kind = core_rknd ), dimension(nlon), intent(in) ::  &
-      rlon  ! Longitude(s) [Degrees E]
+      lon_vals  ! Longitude values [Degrees E]
 
     real( kind = core_rknd ), dimension(nlat), intent(in) ::  &
-      rlat  ! Latitude(s)  [Degrees N]
+      lat_vals  ! Latitude values  [Degrees N]
 
     real( kind = time_precision ), intent(in) ::  &
       time_current ! Model time                         [s]
@@ -1849,7 +1849,7 @@ contains
       stats_fmt_in, stats_tsamp_in, stats_tout_in, fnamelist, &
       nzmax, nlon, nlat, gzt, gzm, nnrad_zt, &
       grad_zt, nnrad_zm, grad_zm, day, month, year, &
-      rlon, rlat, time_current, delt, l_silhs_out_in )
+      lon_vals, lat_vals, time_current, delt, l_silhs_out_in )
 
     if ( err_code == clubb_fatal_error ) stop
     

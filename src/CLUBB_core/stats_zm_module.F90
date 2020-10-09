@@ -570,21 +570,21 @@ module stats_zm_module
       case ('rtp2')
         irtp2 = k
         call stat_assign( var_index=irtp2, var_name="rtp2", &
-             var_description="rt'^2, Variance of rt", var_units="(kg/kg)^2", &
+             var_description="rt'^2, Variance of total water, rt", var_units="(kg/kg)^2", &
              l_silhs=.false., grid_kind=stats_zm )
         k = k + 1
 
       case ('thlp2')
         ithlp2 = k
         call stat_assign( var_index=ithlp2, var_name="thlp2", &
-             var_description="thl'^2, Variance of thl", var_units="K^2", l_silhs=.false., &
+             var_description="thl'^2, Variance of theta_l", var_units="K^2", l_silhs=.false., &
              grid_kind=stats_zm )
         k = k + 1
 
       case ('rtpthlp')
         irtpthlp = k
         call stat_assign( var_index=irtpthlp, var_name="rtpthlp", &
-             var_description="rt'thl', Covariance of rt and thl", &
+             var_description="rt'thl', Covariance of rt and theta_l", &
              var_units="(kg K)/kg", l_silhs=.false., grid_kind=stats_zm )
         k = k + 1
 
@@ -592,7 +592,7 @@ module stats_zm_module
         iwprtp = k
 
         call stat_assign( var_index=iwprtp, var_name="wprtp", &
-             var_description="w'rt', Vertical turbulent flux of rt", &
+             var_description="w'rt', Vertical turbulent flux of total water, rt", &
              var_units="(m kg)/(s kg)", l_silhs=.false., grid_kind=stats_zm )
         k = k + 1
 
@@ -600,7 +600,7 @@ module stats_zm_module
         iwpthlp = k
 
         call stat_assign( var_index=iwpthlp, var_name="wpthlp", &
-             var_description="w'thl', Vertical turbulent flux of thl", &
+             var_description="w'thl', Vertical turbulent flux of theta_l", &
              var_units="(m K)/s", l_silhs=.false., grid_kind=stats_zm )
         k = k + 1
 
@@ -627,7 +627,8 @@ module stats_zm_module
 
       case ('wp4')
         iwp4 = k
-        call stat_assign( var_index=iwp4, var_name="wp4", var_description="w'^4", &
+        call stat_assign( var_index=iwp4, var_name="wp4", &
+             var_description="w'^4, Fourth-order moment of vertical air velocity", &
              var_units="(m^4)/(s^4)", l_silhs=.false., grid_kind=stats_zm )
         k = k + 1
 
@@ -641,14 +642,16 @@ module stats_zm_module
       case ('rtpthvp')
         irtpthvp = k
         call stat_assign( var_index=irtpthvp, var_name="rtpthvp", &
-             var_description="rt'thv'", var_units="(kg/kg) K", l_silhs=.false., &
+             var_description="rt'thv', Covariance of rt and theta_v", var_units="(kg/kg) K", &
+             l_silhs=.false., &
              grid_kind=stats_zm )
         k = k + 1
 
       case ('thlpthvp')
         ithlpthvp = k
         call stat_assign( var_index=ithlpthvp, var_name="thlpthvp", &
-          var_description="thl'thv", var_units="K^2", l_silhs=.false., grid_kind=stats_zm )
+          var_description="thl'thv, Covariance of theta_l and theta_v", var_units="K^2", &
+          l_silhs=.false., grid_kind=stats_zm )
         k = k + 1
 
       case ('tau_zm')
@@ -789,19 +792,20 @@ module stats_zm_module
       case ('rcp2')
         ircp2 = k
         call stat_assign( var_index=ircp2, var_name="rcp2", &
-             var_description="rc'^2", var_units="(kg^2)/(kg^2)", l_silhs=.false., &
+             var_description="rc'^2, Variance of cloud water mixing ratio", &
+             var_units="(kg^2)/(kg^2)", l_silhs=.false., &
              grid_kind=stats_zm )
         k = k + 1
       case ('upwp')
         iupwp = k
         call stat_assign( var_index=iupwp, var_name="upwp", &
-             var_description="u'w', Vertical east-west momentum flux", &
+             var_description="u'w', Vertical turbulent flux of eastward (u) wind", &
              var_units="m^2/s^2", l_silhs=.false., grid_kind=stats_zm )
         k = k + 1
       case ('vpwp')
         ivpwp = k
         call stat_assign( var_index=ivpwp, var_name="vpwp", &
-             var_description="v'w', Vertical north-south momentum flux", &
+             var_description="v'w', Vertical turbulent flux of northward (v) wind", &
              var_units="m^2/s^2", l_silhs=.false., grid_kind=stats_zm )
         k = k + 1
       case ('upthlp')
@@ -2054,14 +2058,14 @@ module stats_zm_module
       case ('up2')
         iup2 = k
         call stat_assign( var_index=iup2, var_name="up2", &
-             var_description="u'^2, u'^2 momentum levels", var_units="m^2/s^2", &
+             var_description="u'^2, Variance of eastward (u) wind", var_units="m^2/s^2", &
              l_silhs=.false., grid_kind=stats_zm )
         k = k + 1
 
       case ('vp2')
         ivp2 = k
         call stat_assign( var_index=ivp2, var_name="vp2", &
-             var_description="v'^2, v'^2 momentum levels", var_units="m^2/s^2", &
+             var_description="v'^2, Variance of northward (v) wind", var_units="m^2/s^2", &
              l_silhs=.false., grid_kind=stats_zm )
         k = k + 1
 
@@ -2698,4 +2702,3 @@ module stats_zm_module
   end subroutine stats_init_zm
 
 end module stats_zm_module
-

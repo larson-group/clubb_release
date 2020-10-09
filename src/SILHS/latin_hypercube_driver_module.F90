@@ -1511,7 +1511,8 @@ module latin_hypercube_driver_module
 !-------------------------------------------------------------------------------
   subroutine latin_hypercube_2D_output &
              ( fname_prefix, fdir, stats_tout, nz, &
-               stats_zt, time_initial, num_samples )
+               stats_zt, time_initial, num_samples, &
+               nlon, nlat, lon_vals, lat_vals )
 !-------------------------------------------------------------------------------
 
     use array_index, only: &
@@ -1563,6 +1564,16 @@ module latin_hypercube_driver_module
       stats_zt ! Altitudes [m]
 
     integer, intent(in) :: num_samples
+
+    integer, intent(in) :: &
+      nlon, & ! Number of points in the X direction [-]
+      nlat    ! Number of points in the Y direction [-]
+
+    real( kind = core_rknd ), dimension(nlon), intent(in) ::  &
+      lon_vals  ! Longitude values [Degrees E]
+
+    real( kind = core_rknd ), dimension(nlat), intent(in) ::  &
+      lat_vals  ! Latitude values  [Degrees N]
 
     ! Local Variables
     character(len=100), allocatable, dimension(:) :: &
@@ -1621,7 +1632,7 @@ module latin_hypercube_driver_module
         variable_units(iiPDF_Ncn)        = "count/kg"
       end if
       if ( iiPDF_Ni > 0 ) then
-        variable_names(iiPDF_Ni)        = "ngrdcol"
+        variable_names(iiPDF_Ni)        = "Ni"
         variable_descriptions(iiPDF_Ni) = "Ice number concentration"
         variable_units(iiPDF_Ni)        = "count/kg"
       end if
@@ -1640,6 +1651,7 @@ module latin_hypercube_driver_module
                                  trim( fname_prefix )//"_nl", fdir, & ! In
                                  time_initial, stats_tout, stats_zt, variable_names, & ! In
                                  variable_descriptions, variable_units, & ! In
+                                 nlon, nlat, lon_vals, lat_vals, & ! In
                                  lognormal_sample_file ) ! In/Out
 
       deallocate( variable_names, variable_descriptions, variable_units )
@@ -1696,7 +1708,7 @@ module latin_hypercube_driver_module
         variable_units(iiPDF_Ncn)        = "count/kg"
       end if
       if ( iiPDF_Ni > 0 ) then
-        variable_names(iiPDF_Ni)        = "ngrdcol"
+        variable_names(iiPDF_Ni)        = "Ni"
         variable_descriptions(iiPDF_Ni) = "Ice number concentration"
         variable_units(iiPDF_Ni)        = "count/kg"
       end if
@@ -1735,6 +1747,7 @@ module latin_hypercube_driver_module
                                  time_initial, stats_tout, stats_zt, & ! In
                                  variable_names(1:p), variable_descriptions(1:p), & ! In
                                  variable_units(1:p), & ! In
+                                 nlon, nlat, lon_vals, lat_vals, & ! In
                                  uniform_sample_file ) ! In/Out
 
       deallocate( variable_names, variable_descriptions, variable_units )

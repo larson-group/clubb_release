@@ -6,13 +6,6 @@ tmp = '/tmp'              # temporary folder to move corrupt files to
 index = 'index.html'      # filename for html files
 plots = 'plots.html'
 navigation = 'navigation.html'
-n_thumbs = 3              # number of thumbnails to display on index page
-min_size = 500,500        # minimum dimensions required to create thumbnail
-
-pyplot_output_width = 640
-pyplot_output_height = 480
-img_scale_factor = 0.75
-thumb_size =int(pyplot_output_width*img_scale_factor),int(pyplot_output_height*img_scale_factor)      # dimensions of thumbnail to create
 
 header = ("""<!doctype html>
 <html>
@@ -23,6 +16,7 @@ header = ("""<!doctype html>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style type="text/css">
     body {
+      background-color: white;
       font-family: "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
       margin: 0;
       padding: 0;

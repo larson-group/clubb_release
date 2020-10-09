@@ -75,7 +75,7 @@ cd $scriptPath
 # We need TEMP as the `eval set --' would nuke the return value of getopt.
 # This also expects gnu-getopt as opposed to BSD getopt. 
 # Make sure you have gnu-getopt installed and it is before BSD getopt in your PATH.
-TEMP=`getopt -o c:mh --long mkl_lapack,config:,help -n 'compile.bash' -- "$@"`
+TEMP=`getopt -o c:lh --long use_lapack_lib,config:,help -n 'compile.bash' -- "$@"`
 
 if [ $? != 0 ] ; then echo "Run with -h for help." >&2 ; exit 1 ; fi
 
@@ -90,7 +90,7 @@ while true ; do
            	 	CONFIG=$2
 
 			shift 2 ;;
-		-m|--mkl_lapack) # Specifiy lapack version
+		-l|--use_lapack_lib) # Specifiy lapack version
 
 			l_use_mkl_lapack=true
 

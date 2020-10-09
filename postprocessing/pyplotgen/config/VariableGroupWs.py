@@ -99,20 +99,7 @@ class VariableGroupWs(VariableGroup):
                 },
              'sci_scale': -4,
             },
-            {'var_names':
-                {
-                'clubb': ['wp2thvp'],
-                'sam': ['WP2THVP'],
-                'coamps': ['wp2thvp'],
-                'r408': ['wp2thvp'],
-                'hoc': ['wp2thvp'],
-                'e3sm': ['wp2thvp'],
-                'cam': ['wp2thvp'],
-                'wrf': ['wp2thvp'],
-                },
-             'sci_scale': 0,
-            },
-            # TODO LES
+
         ]
 
         # Call ctor of parent class

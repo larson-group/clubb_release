@@ -47,8 +47,8 @@ day   = 11    ! Day of model start (1 to 31).
 month = 7     ! Month of model start (1 to 12).
 year  = 2001  ! Year of model start.
 
-rlat = 31.5    ! Latitude (0 to 90 for north lat.; 0 to -90 for south lat.) [degrees]
-rlon = -122.0  ! Longitude (0 to 180 for east long.; 0 to -180 for west long.) [degrees]
+lat_vals = 31.5    ! Latitude (0 to 90 for north lat.; 0 to -90 for south lat.) [degrees]
+lon_vals = -122.0  ! Longitude (0 to 180 for east long.; 0 to -180 for west long.) [degrees]
 
 sfc_elevation = 0.0     ! Elevation of ground level [meters above mean sea level]
 

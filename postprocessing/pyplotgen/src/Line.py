@@ -12,6 +12,9 @@ class Line:
     Data included is anything necessary to graph a line using pyplot, including the
     numerical values, line format style, and a label for the plot. In the future we
     would like to seperate the dependent_data from the format.
+
+    For information on the input parameters of this class, please see the documentation for the
+    ``__init__()`` method.
     """
     def __init__(self, x_data, y_data, line_format = "", label ="Unlabeled plot"):
         """

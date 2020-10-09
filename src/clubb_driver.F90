@@ -187,11 +187,11 @@ module clubb_driver
       
     use silhs_api_module, only: &
       generate_silhs_sample_api, & !----------------------------------------- Procedure(s)
-      clip_transform_silhs_output_api
+      clip_transform_silhs_output_api, &
+      latin_hypercube_2D_output_api
 
     use latin_hypercube_driver_module, only: &
-      stats_accumulate_lh, &
-      latin_hypercube_2D_output
+      stats_accumulate_lh
 
     use latin_hypercube_arrays, only: &
       cleanup_latin_hypercube_arrays !-------------------------------------- Procedure(s)
@@ -222,8 +222,8 @@ module clubb_driver
       zm_init, &
       deltaz, &
       day, month, year, &
-      rlat, &
-      rlon, &
+      lat_vals, &
+      lon_vals, &
       sfc_elevation, &
       runtype, &
       sfctype, &
@@ -760,7 +760,7 @@ module clubb_driver
     namelist /model_setting/  &
       runtype, nzmax, grid_type, deltaz, zm_init, zm_top, &
       zt_grid_fname, zm_grid_fname,  &
-      day, month, year, rlat, rlon, sfc_elevation, &
+      day, month, year, lat_vals, lon_vals, sfc_elevation, &
       time_initial, time_final, &
       dt_main, dt_rad, &
       sfctype, T_sfc, p_sfc, sens_ht, latent_ht, fcor, T0, ts_nudge, &
@@ -1067,8 +1067,8 @@ module clubb_driver
       call write_text( "month = ", month, l_write_to_file, iunit )
       call write_text( "year = ", year, l_write_to_file, iunit )
 
-      call write_text( "rlat = ", rlat, l_write_to_file, iunit )
-      call write_text( "rlon = ", rlon, l_write_to_file, iunit )
+      call write_text( "lat_vals = ", lat_vals, l_write_to_file, iunit )
+      call write_text( "lon_vals = ", lon_vals, l_write_to_file, iunit )
 
       call write_text( "sfc_elevation = ", sfc_elevation, l_write_to_file, iunit )
 
@@ -1897,14 +1897,14 @@ module clubb_driver
                        gr%nz, nlon, nlat, gr%zt, gr%zm, total_atmos_dim - 1, & ! Intent(in)
                        complete_alt(2:total_atmos_dim), total_atmos_dim, & ! Intent(in)
                        complete_momentum(2:total_atmos_dim + 1), day, month, year, & ! Intent(in)
-                       (/rlon/), (/rlat/), time_current, dt_main, l_silhs_out ) ! Intent(in)
+                       (/lon_vals/), (/lat_vals/), time_current, dt_main, l_silhs_out ) ! Intent(in)
     else
       ! Initialize statistics output
       call stats_init( iunit, fname_prefix, fdir, l_stats, & ! Intent(in)
                        stats_fmt, stats_tsamp, stats_tout, runfile, & ! Intent(in)
                        gr%nz, nlon, nlat, gr%zt, gr%zm, 0, & ! Intent(in)
                        rad_dummy, 0, rad_dummy, day, month, year, & ! Intent(in)
-                       (/rlon/), (/rlat/), time_current, dt_main, l_silhs_out ) ! Intent(in)
+                       (/lon_vals/), (/lat_vals/), time_current, dt_main, l_silhs_out ) ! Intent(in)
     end if
  
 
@@ -1912,9 +1912,10 @@ module clubb_driver
     if ( lh_microphys_type /= lh_microphys_disabled ) then
 
       ! Setup 2D output of all subcolumns (if enabled)
-      call latin_hypercube_2D_output &
-           ( fname_prefix, fdir, stats_tout, gr%nz, &
-             gr%zt, time_initial, lh_num_samples )
+      call latin_hypercube_2D_output_api &
+           ( fname_prefix, fdir, stats_tout, gr%nz, & ! Intent(in)
+             gr%zt, time_initial, lh_num_samples, & ! Intent(in)
+             nlon, nlat, (/lon_vals/), (/lat_vals/) )    ! Intent(in)
 
     end if
 #endif /* SILHS */
@@ -3844,8 +3845,8 @@ module clubb_driver
         lh_microphys_type,     & !------------------------ Variable(s)
         lh_microphys_disabled
 
-    use latin_hypercube_driver_module, only: &
-        latin_hypercube_2D_close
+    use silhs_api_module, only: &
+        latin_hypercube_2D_close_api
 
     use latin_hypercube_arrays, only: &
         cleanup_latin_hypercube_arrays !------------------ Procedure(s)
@@ -3906,7 +3907,7 @@ module clubb_driver
 
 #ifdef SILHS
     if ( lh_microphys_type /= lh_microphys_disabled ) then
-      call latin_hypercube_2D_close( )
+      call latin_hypercube_2D_close_api( )
       call cleanup_latin_hypercube_arrays( )
     end if
 #endif
@@ -5056,8 +5057,8 @@ module clubb_driver
       extended_atmos_top_level, &
       extended_atmos_range_size, &
       lin_int_buffer, &
-      rlat, &
-      rlon
+      lat_vals, &
+      lon_vals
 
 
     implicit none
@@ -5137,7 +5138,7 @@ module clubb_driver
         end if
 
       else ! Compute using the formula
-        amu0 = cos_solar_zen( day, month, year, time_current, rlat, rlon )
+        amu0 = cos_solar_zen( day, month, year, time_current, lat_vals, lon_vals )
 
       end if ! l_fix_cos_solar_zen
     else

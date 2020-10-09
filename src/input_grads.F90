@@ -264,20 +264,20 @@ module input_grads
       else if ( index(line,'VARS') > 0 ) then
 
         read(unit=line,fmt=*) tmp, grads_file%nvar
-        allocate( grads_file%var(grads_file%nvar) )
+        allocate( grads_file%grid_avg_var(grads_file%nvar) )
 
         do i = 1, grads_file%nvar, 1
           
           read(unit=unit_number,iostat=ierr,fmt='(a256)') line
-          read(unit=line,fmt=*) grads_file%var(i)%name, nzmax
+          read(unit=line,fmt=*) grads_file%grid_avg_var(i)%name, nzmax
           
           if ( nzmax /= grads_file%iz ) then
             write(unit=fstderr,fmt=*) "Error reading ",  & 
-              trim( grads_file%var(i)%name )
+              trim( grads_file%grid_avg_var(i)%name )
             l_error = .true.
           end if
 
-          grads_file%var(i)%indx = i
+          grads_file%grid_avg_var(i)%indx = i
 
         end do ! 1..grads_file%nvar
 
@@ -306,7 +306,7 @@ module input_grads
       write(*,*) 'grads_file%dtwrite = ',grads_file%dtwrite
       write(*,*) 'grads_file%nvar = ',grads_file%nvar
       do i=1,grads_file%nvar
-         write(*,*) trim(grads_file%var(i)%name)
+         write(*,*) trim(grads_file%grid_avg_var(i)%name)
       end do
     end if ! l_extra_debugging
 !--------- End debugging information -------------------------------------------
@@ -410,7 +410,7 @@ module input_grads
     i    = 1
     ivar = -1 ! Initialization to avoid a compiler warning
     do while ( .not. l_done )
-      if ( trim( varname ) == trim( grads_file%var(i)%name ) ) then
+      if ( trim( varname ) == trim( grads_file%grid_avg_var(i)%name ) ) then
         ivar = i
         l_done = .true.
       else
@@ -493,7 +493,7 @@ module input_grads
     close( unit=grads_file%iounit )
 
     ! Deallocate
-    deallocate( grads_file%var )
+    deallocate( grads_file%grid_avg_var )
     deallocate( grads_file%z )
 
     return

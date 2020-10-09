@@ -63,10 +63,10 @@ module clubb_model_settings
 !$omp threadprivate(day, month, year)
 
   real( kind = core_rknd ), public ::  & 
-    rlat, & ! Latitude  [Degrees North]
-    rlon    ! Longitude [Degrees East]
+    lat_vals, & ! Latitude  [Degrees North]
+    lon_vals    ! Longitude [Degrees East]
 
-!$omp threadprivate(rlat, rlon)
+!$omp threadprivate(lat_vals, lon_vals)
 
   real( kind = core_rknd ), public ::  &
     sfc_elevation ! Elevation of ground level  [m AMSL]
@@ -130,8 +130,8 @@ module clubb_model_settings
 
     day = 22; month = 6; year = 1969
 
-    rlat = 15._core_rknd
-    rlon = -56.5_core_rknd
+    lat_vals = 15._core_rknd
+    lon_vals = -56.5_core_rknd
 
     sfc_elevation = 0._core_rknd
 
