@@ -462,9 +462,7 @@ class PyPlotGen:
                 copy_dest_file = copy_dest_folder + file_basename[:-10] + '_' + folder_basename + file_basename[-10:]
 
                 # If case is actually plotted, create output folder and copy setup file to destination folder
-                if casename in self.cases_plotted:
-                    if not os.path.exists(copy_dest_folder):
-                        os.mkdir(copy_dest_folder)
+                if os.path.exists(copy_dest_folder):
                     shutil.copy(file, copy_dest_file)
                     print("\tFound setup file " + str(file))
 
