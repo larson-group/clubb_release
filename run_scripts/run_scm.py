@@ -5,7 +5,8 @@ import os
 import sys
 
 modifiable_parameters = ['dt', 'dt_output', 'microphysics', 'format', 'prefix', 'dz',
-                         'Tsfc', 'godunov', 'aterms', 'levels', 'tfinal', 'refine']
+                         'Tsfc', 'godunov', 'aterms', 'levels', 'tfinal', 'refine',
+                         'splat']
 
 # TODO: check that this is being run from the run_scripts directory
 os.chdir('../output')
@@ -67,7 +68,7 @@ if ('dz' in parameters):
 if ('levels' in parameters):
   parameters['zt_filename'] = "'../input/grid/deep_convection_{}lev_27km_zt_grid.grd'".format(parameters['levels'])
 
-# if refinement speficied, create grid file and set appropriate file name
+# if refinement specified, create grid file and set appropriate file name
 if ('refine' in parameters):
   height = 10000.0
   refine = int(parameters['refine'])
@@ -102,6 +103,14 @@ if ('tfinal' not in parameters):
 if ('godunov' not in parameters):
   parameters['godunov'] = 'none'
 
+# set no splatting unless user has specified something else
+if ('splat' not in parameters):
+  parameters['splat'] = '0.0'
+
+# set new boundary conditions
+parameters['newBC'] = '.true.'
+parameters['scaleBC'] = '5.0'
+
 # warn about Tsfc parameter
 if ('Tsfc' in parameters):
   print("WARNING: Specifying Tsfc doesn't change model parammeters...")
@@ -124,7 +133,9 @@ for line in model_config:
         or parameter == 'zmax' and line.startswith('zm_top')
         or parameter == 'zt_filename' and line.startswith('zt_grid_fname')
         or parameter == 'levels' and line.startswith('nzmax')
-        or parameter == 'tfinal' and line.startswith('time_final')):
+        or parameter == 'tfinal' and line.startswith('time_final')
+        or parameter == 'newBC' and line.startswith('l_fixed_level_for_surflx')
+        or parameter == 'scaleBC' and line.startswith('f_scale_surflx')):
         default_value = line.split()[2]
         line = line.replace(default_value, parameters[parameter])
         modified = True
@@ -144,8 +155,17 @@ for line in modified_lines:
 line_collections = []
 # "parameter" file
 input_file = open('../input/tunable_parameters/tunable_parameters.in', 'r')
-line_collections.append(input_file.readlines())
+input_lines = input_file.readlines()
 input_file.close()
+line_collection = []
+for line in input_lines:
+  if (line.startswith('C_wp2_splat')):
+    default_value = line.split()[2]
+    line = line.replace(default_value, parameters['splat'])
+    print('Setting splat coefficient to {}'.format(parameters['splat']))
+    print(line)
+  line_collection.append(line)
+line_collections.append(line_collection)
 # "SILHS_PARAMS" file
 input_file = open('../input/tunable_parameters/silhs_parameters.in', 'r')
 line_collections.append(input_file.readlines())
@@ -154,6 +174,7 @@ input_file.close()
 input_file = open('../input/tunable_parameters/configurable_model_flags.in', 'r')
 input_lines = input_file.readlines()
 input_file.close()
+line_collection = []
 for line in input_lines:
   if (parameters['godunov'] == 'scalarwp3' and line.startswith('l_upwind_wp3_ta')):
     line = line.replace('false','true')
@@ -163,7 +184,8 @@ for line in input_lines:
     line = line.replace('false','true')
     print('Setting l_standard_term_ta flag to true')
     print(line)
-  line_collections.append(line)
+  line_collection.append(line)
+line_collections.append(line_collection)
 # "MOD_MODEL" file
 input_file = open(model_file_name, 'r')
 line_collections.append(input_file.readlines())
