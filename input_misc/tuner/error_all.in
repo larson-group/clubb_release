@@ -23,7 +23,7 @@ tune_type = 2
 &cases
 !  GCSS BOMEX
 hoc_stats_file_nl(1)    = "../output/bomex_zt.nc"
-les_stats_file_nl(1)    = "../les_data/bomex_coamps_sm.nc"
+les_stats_file_nl(1)    = "/usr/local/les_and_clubb_benchmark_runs/les_data/bomex_coamps_sm.nc"
 run_file_nl(1)          = "bomex_hoc.in"
 z_i_nl(1)               = 3
 z_f_nl(1)               = 73
