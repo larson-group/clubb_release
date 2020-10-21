@@ -14,8 +14,6 @@ from cycler import cycler
 from config import Style_definitions
 from src.interoperability import clean_path, clean_title
 
-EXTENSION = ".png"  # Get's overriden with ".svg" if --svg passed in via command line
-
 class Panel:
     """
     Represents an individual panel/graph. Each panel contains a number of details
@@ -30,6 +28,7 @@ class Panel:
     TYPE_TIMEHEIGHT = 'timeheight'
     TYPE_ANIMATION = 'animation'
     TYPE_SUBCOLUMN = 'subcolumn'
+    EXTENSION = ".png"  # Gets overwritten with ".svg" if --svg passed in via command line
 
     VALID_PANEL_TYPES = [TYPE_PROFILE, TYPE_BUDGET, TYPE_TIMESERIES, TYPE_TIMEHEIGHT, TYPE_ANIMATION, TYPE_SUBCOLUMN]
 
@@ -262,10 +261,10 @@ class Panel:
         rel_filename = output_folder + "/" +casename+'/' + filename
         rel_filename = clean_path(rel_filename)
         # Save image file
-        if replace_images is True or not os.path.isfile(rel_filename+EXTENSION):
-            plt.savefig(rel_filename + EXTENSION, dpi=Style_definitions.IMG_OUTPUT_DPI)
+        if replace_images is True or not os.path.isfile(rel_filename+Panel.EXTENSION):
+            plt.savefig(rel_filename+Panel.EXTENSION, dpi=Style_definitions.IMG_OUTPUT_DPI)
         else: # os.path.isfile(rel_filename + Panel.EXTENSION) and replace_images is False:
-            print("\n\tImage " + rel_filename+EXTENSION+
+            print("\n\tImage " + rel_filename+Panel.EXTENSION+
                   ' already exists. To overwrite this image during runtime pass in the --replace (-r) parameter.')
         plt.close()
 

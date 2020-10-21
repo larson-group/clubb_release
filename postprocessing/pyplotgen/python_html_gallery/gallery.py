@@ -16,7 +16,7 @@ from multiprocessing import freeze_support
 
 from config import Case_definitions
 from python_html_gallery import static
-from src import Panel
+from src.Panel import Panel
 
 try:
     from PIL import Image
