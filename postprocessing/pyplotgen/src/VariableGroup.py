@@ -690,8 +690,13 @@ class VariableGroup:
                                                          'height': Case_definitions.HEIGHT_VAR_NAMES},
                                   start_time=self.start_time, end_time=self.end_time, avg_axis=2,
                                   conversion_factor=conversion_factor)
-        if variable.dependent_data.ndim != 2:
-            warn("Warning! Variable {} can not be plotted as time-height plot as the data ".format(varname) +
+        if variable.dependent_data.ndim == 3:
+            variable.dependent_data = variable.dependent_data[:,:,0]
+            warn("Warning: assuming {} is a SILHS subcolumn variable. Plotting only the ".format(varname) +
+                 "first subcolumn for time-height plots.  If {} is not a subcolumn variable, ".format(varname) +
+                 "please update src/VariableGroup.py.")
+        elif variable.dependent_data.ndim == 1 or variable.dependent_data.ndim > 3:
+            warn("Warning: Variable {} can not be plotted as time-height plot as the data ".format(varname) +
                  "array's dimension is {} and not 2. Returning no data.".format(variable.dependent_data.ndim))
             return None
         # From here on: variable.dependent_data.ndim == 2

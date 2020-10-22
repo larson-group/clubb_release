@@ -327,7 +327,7 @@ class CaseGallerySetup:
         """
         print("\n\tSaving panels to .png images")
         num_plots = len(self.panels)
-        curr_panel_num = 0
+        curr_panel_num = 1
         for panel in self.panels:
             print("\r\tplotting ", curr_panel_num, " of ", num_plots, " | ", panel.title)
             if show_alphabetic_id:
@@ -339,8 +339,8 @@ class CaseGallerySetup:
                 plot_paired_lines = False
             panel.plot(output_folder, self.name, replace_images=replace_images, no_legends=no_legends,
                        thin_lines=thin_lines, alphabetic_id=alphabetic_id, paired_plots=plot_paired_lines)
-            curr_panel_num += 1
             print("\r\tplotted  ", curr_panel_num, " of ", num_plots, " | ", panel.title, '\n')
+            curr_panel_num += 1
 
     def __getNextAlphabeticID__(self):
         """
