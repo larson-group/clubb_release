@@ -28,7 +28,6 @@ class Panel:
     TYPE_TIMEHEIGHT = 'timeheight'
     TYPE_ANIMATION = 'animation'
     TYPE_SUBCOLUMN = 'subcolumn'
-    EXTENSION = ".png"  # Gets overwritten with ".svg" if --svg passed in via command line
 
     VALID_PANEL_TYPES = [TYPE_PROFILE, TYPE_BUDGET, TYPE_TIMESERIES, TYPE_TIMEHEIGHT, TYPE_ANIMATION, TYPE_SUBCOLUMN]
 
@@ -82,7 +81,7 @@ class Panel:
                              '. Valid options are: ' + str(Panel.VALID_PANEL_TYPES))
 
     def plot(self, output_folder, casename, replace_images = False, no_legends = True, thin_lines = False,
-             alphabetic_id="", paired_plots = True):
+             alphabetic_id="", paired_plots = True, image_extension=".png"):
         """
         Saves a single panel/graph as image to the output directory specified by the pyplotgen launch parameters
 
@@ -261,10 +260,10 @@ class Panel:
         rel_filename = output_folder + "/" +casename+'/' + filename
         rel_filename = clean_path(rel_filename)
         # Save image file
-        if replace_images is True or not os.path.isfile(rel_filename+Panel.EXTENSION):
-            plt.savefig(rel_filename+Panel.EXTENSION, dpi=Style_definitions.IMG_OUTPUT_DPI)
-        else: # os.path.isfile(rel_filename + Panel.EXTENSION) and replace_images is False:
-            print("\n\tImage " + rel_filename+Panel.EXTENSION+
+        if replace_images is True or not os.path.isfile(rel_filename+image_extension):
+            plt.savefig(rel_filename + image_extension, dpi=Style_definitions.IMG_OUTPUT_DPI)
+        else: # os.path.isfile(rel_filename + image_extension) and replace_images is False:
+            print("\n\tImage " + rel_filename+image_extension+
                   ' already exists. To overwrite this image during runtime pass in the --replace (-r) parameter.')
         plt.close()
 
@@ -347,9 +346,9 @@ class Panel:
             relative_filename = clean_path(relative_filename)
             plt.figure(dpi=Style_definitions.IMG_OUTPUT_DPI)
             # Save image file
-            if replace_images is True or not os.path.isfile(relative_filename+Panel.EXTENSION):
-                plt.savefig(relative_filename + Panel.EXTENSION, dpi=Style_definitions.IMG_OUTPUT_DPI)
-            else: # os.path.isfile(relative_filename + Panel.EXTENSION) and replace_images is False:
-                print("\n\tImage " + relative_filename+Panel.EXTENSION+
+            if replace_images is True or not os.path.isfile(relative_filename+image_extension):
+                plt.savefig(relative_filename + image_extension, dpi=Style_definitions.IMG_OUTPUT_DPI)
+            else: # os.path.isfile(relative_filename + image_extension) and replace_images is False:
+                print("\n\tImage " + relative_filename+image_extension+
                       ' already exists. To overwrite this image during runtime pass in the --replace (-r) parameter.')
             plt.close()

@@ -16,7 +16,6 @@ from multiprocessing import freeze_support
 
 from config import Case_definitions
 from python_html_gallery import static
-from src.Panel import Panel
 
 try:
     from PIL import Image
@@ -48,13 +47,13 @@ def Now(time=True):
         return datetime.datetime.now().strftime('%Y%m%d')
 
 
-def RandomThumb(page):
+def RandomThumb(page,image_extension=".png"):
     """Returns path to random thumbnail for a given page."""
     return random.choice(
-        glob.glob(os.path.join(page.split('/')[0], '*_thumb'+Panel.EXTENSION)))
+        glob.glob(os.path.join(page.split('/')[0], '*_thumb'+image_extension)))
 
 
-def OrganizeRoot(output_dir):
+def OrganizeRoot(output_dir,image_extension=".png"):
     """Creates directories for images in root directory."""
 
     static.root = output_dir
@@ -64,7 +63,7 @@ def OrganizeRoot(output_dir):
         print('Could not cd into %s' % static.root)
         sys.exit(1)
 
-    fs = ListFiles('*'+Panel.EXTENSION, '.')
+    fs = ListFiles('*'+image_extension, '.')
     if fs:
         for jpg in fs:
             datehour = Now(time=False)
@@ -116,7 +115,7 @@ def get_description(casename):
             return case['description']
 
 
-def WriteGalleryPage(page):
+def WriteGalleryPage(page,image_extension=".png"):
     """Writes a gallery page for jpgs in path.
 
   Args:
@@ -145,7 +144,7 @@ def WriteGalleryPage(page):
         plots_file.write(static.timestamp % Now())
 
         try:
-            img_paths = '*'+Panel.EXTENSION
+            img_paths = '*'+image_extension
             case_images = ListFiles(img_paths, page)
             jpgs = sorted(case_images, reverse=True)[::-1]
         except TypeError:
@@ -158,7 +157,7 @@ def WriteGalleryPage(page):
         # plots_file.write(static.footer)
 
 
-def WriteGalleryPages(multithreaded=False):
+def WriteGalleryPages(multithreaded=False,image_extension=".png"):
     """Write gallery pages for directories in root path."""
     with open(static.plots, 'w') as index_file:
         index_file.write(static.header)
@@ -172,7 +171,7 @@ def WriteGalleryPages(multithreaded=False):
             pool.map(WriteGalleryPage, all_pages)
     else:
         for page in all_pages:
-            WriteGalleryPage(page)
+            WriteGalleryPage(page,image_extension)
 
     with open(static.plots, 'a') as index_file:
         index_file.write(static.footer)
@@ -211,10 +210,10 @@ def WriteIndex():
 
     print("Wrote index.html")
 
-def main(output_dir, multithreaded=False):
+def main(output_dir, multithreaded=False, image_extension=".png"):
     """Main function."""
-    OrganizeRoot(output_dir)
-    WriteGalleryPages(multithreaded=multithreaded)
+    OrganizeRoot(output_dir,image_extension)
+    WriteGalleryPages(multithreaded=multithreaded,image_extension=image_extension)
     WriteNavigation()
     WriteIndex()
 

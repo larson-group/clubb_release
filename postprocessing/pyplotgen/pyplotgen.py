@@ -45,7 +45,7 @@ class PyPlotGen:
                  plot_e3sm="", sam_folders=[""], wrf_folders=[""], cam_folders=[""],
                  budget_moments=False, bu_morr=False, diff=None, show_alphabetic_id=False,
                  time_height=False, animation=None, disable_multithreading=False, pdf=False,
-                 pdf_filesize_limit=None, plot_subcolumns=False):
+                 pdf_filesize_limit=None, plot_subcolumns=False, image_extension=".png"):
         """
         This creates an instance of PyPlotGen. Each parameter is a command line parameter passed in from the argparser
         below.
@@ -122,6 +122,7 @@ class PyPlotGen:
         self.multithreaded = not disable_multithreading
         self.pdf = pdf
         self.pdf_filesize_limit = pdf_filesize_limit
+        self.image_extension = image_extension
 
         if os.path.isdir(self.output_folder) and self.replace_images is False:
             current_date_time = datetime.now()
@@ -197,7 +198,7 @@ class PyPlotGen:
         # Generate html pages
         # Multithreading changes the order the cases are plotted on the webpage, so it has been disabled.
         # The capability is being left here as a demo.
-        gallery.main(self.output_folder, multithreaded=False)
+        gallery.main(self.output_folder, multithreaded=False, image_extension=self.image_extension)
         print('###########################################')
         print("Output can be viewed at file://" + self.output_folder + "/index.html with a web browser")
 
@@ -370,7 +371,8 @@ class PyPlotGen:
                                                   wrf_folders=self.wrf_folders, diff_datasets=self.case_diff_datasets,
                                                   plot_r408=self.cgbest, plot_hoc=self.hoc, e3sm_dirs=self.e3sm_dir,
                                                   cam_folders=self.cam_folders, time_height=self.time_height,
-                                                  animation=self.animation, plot_subcolumns=self.plot_subcolumns)
+                                                  animation=self.animation, plot_subcolumns=self.plot_subcolumns,
+                                                  image_extension=self.image_extension)
             # Call plot function of case instance
             case_gallery_setup.plot(self.output_folder, replace_images=self.replace_images, no_legends=self.no_legends,
                                     thin_lines=self.thin, show_alphabetic_id=self.show_alphabetic_id)
@@ -691,11 +693,11 @@ def __processArguments__():
         cgbest = args.plot_golaz_best
         hoc = args.plot_hoc_2005
 
+    image_extension = ".png"
     if args.svg:
-        Panel.EXTENSION = ".svg"
-
+        image_extension = ".svg"
     if args.eps:
-        Panel.EXTENSION = ".eps"
+        image_extension = ".eps"
 
     if args.eps and args.svg:
         raise RuntimeError("The --svg and --eps options are not compatible with one another. Please select either --eps "
@@ -731,7 +733,8 @@ def __processArguments__():
                           bu_morr=args.bu_morr, diff=args.diff, show_alphabetic_id=args.show_alphabetic_id,
                           time_height=args.time_height_plots, animation=args.movies,
                           disable_multithreading=args.disable_multithreading, pdf=args.pdf,
-                          pdf_filesize_limit=args.pdf_filesize_limit, plot_subcolumns=args.plot_subcolumns)
+                          pdf_filesize_limit=args.pdf_filesize_limit, plot_subcolumns=args.plot_subcolumns,
+                          image_extension=image_extension)
     return pyplotgen
 
 

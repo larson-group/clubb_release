@@ -28,7 +28,7 @@ class CaseGallerySetup:
 
     def __init__(self, case_definition, clubb_folders=[], diff_datasets=None, sam_folders=[""], wrf_folders=[""],
                  plot_les=False, plot_budgets=False, plot_r408=False, plot_hoc=False, e3sm_dirs=[], cam_folders=[],
-                 time_height=False, animation=None, plot_subcolumns=False):
+                 time_height=False, animation=None, plot_subcolumns=False, image_extension=".png"):
         """
         Initialize a CaseGallerySetup object with the passed parameters
         :param case_definition: dict containing case specific elements. These are pulled in from Case_definitions.py,
@@ -78,6 +78,7 @@ class CaseGallerySetup:
         self.coamps_datasets = None
         self.r408_datasets = None
         self.hoc_datasets = None
+        self.image_extension = image_extension
 
         self.VALID_MODEL_NAMES = ['clubb', 'clubb_hoc','clubb_r408', 'e3sm', 'sam', 'cam', 'wrf', 'coamps']
 
@@ -325,7 +326,7 @@ class CaseGallerySetup:
             e.g. if one case ends on label (ad), the next case will start on (a).
         :return: None
         """
-        print("\n\tSaving panels to .png images")
+        print("\n\tSaving panels to {} images".format(self.image_extension))
         num_plots = len(self.panels)
         curr_panel_num = 1
         for panel in self.panels:
@@ -338,7 +339,8 @@ class CaseGallerySetup:
             if panel.panel_type == panel.TYPE_BUDGET or panel.panel_type == panel.TYPE_SUBCOLUMN:
                 plot_paired_lines = False
             panel.plot(output_folder, self.name, replace_images=replace_images, no_legends=no_legends,
-                       thin_lines=thin_lines, alphabetic_id=alphabetic_id, paired_plots=plot_paired_lines)
+                       thin_lines=thin_lines, alphabetic_id=alphabetic_id, paired_plots=plot_paired_lines,
+                       image_extension=self.image_extension)
             print("\r\tplotted  ", curr_panel_num, " of ", num_plots, " | ", panel.title, '\n')
             curr_panel_num += 1
 
