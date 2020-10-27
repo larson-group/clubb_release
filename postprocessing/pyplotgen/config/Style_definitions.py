@@ -84,7 +84,9 @@ LEGEND_FONT_SIZE = SMALL_FONT_SIZE
 # Misc
 SHOW_GRID = True
 POW_LIMS = (-2,3)
-BUDGET_XAXIS_SCALE_FACTOR = 1.1 # THIS VALUE MUST BE >= 1 !
+BUDGET_XAXIS_SCALE_FACTOR = 1.1 # THIS VALUE MUST BE >= 1
+MOVIE_XAXIS_SCALE_FACTOR = 0.05 # THIS VALUE SHOULD BE << 1
+FRAMES_PER_SECOND = 10 # FOR ANIMATIONS
 
 # Image output configuration
 HQ_DPI = 100 # This value overwrites the default IMG_OUTPUT_DPI when --high-quality is passed in via command line

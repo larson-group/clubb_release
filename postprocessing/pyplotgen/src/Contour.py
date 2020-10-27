@@ -16,7 +16,7 @@ class Contour:
     For information on the input parameters of this class, please see the documentation for the
     ``__init__()`` method.
     """
-    def __init__(self, x_data, y_data, c_data, colors = "", label ="Unlabeled plot"):
+    def __init__(self, x_data, y_data, c_data, colors = "", label = "Unlabeled plot", line_format = ""):
         """
         Create a new Contour object
 
@@ -42,3 +42,4 @@ class Contour:
         self.data = c_data
         self.colors = colors
         self.label = label
+        self.line_format = line_format

@@ -198,7 +198,11 @@ class PyPlotGen:
         # Generate html pages
         # Multithreading changes the order the cases are plotted on the webpage, so it has been disabled.
         # The capability is being left here as a demo.
-        gallery.main(self.output_folder, multithreaded=False, image_extension=self.image_extension)
+        if self.animation is not None:
+            movie_extension = "." + self.animation
+            gallery.main(self.output_folder, multithreaded=False, file_extension=movie_extension)
+        else:
+            gallery.main(self.output_folder, multithreaded=False, file_extension=self.image_extension)
         print('###########################################')
         print("Output can be viewed at file://" + self.output_folder + "/index.html with a web browser")
 
@@ -600,8 +604,8 @@ def __processArguments__():
                         action="store_true")
     parser.add_argument("-m", "--movies",
                         help="Instead of averaged profiles, plot animations of time steps. Cannot be used with -t." +
-                             " Valid arguments: 'gif' or 'mp4'",
-                        action="store", choices=['gif', 'mp4'])
+                             " FRAMES_PER_SECOND can be adjusted in config/Style_definitions.py.",
+                        action="store", choices=['mp4','avi'])
     parser.add_argument("--bu-morr",
                         help="For morrison microphysics: breaks microphysical source terms into component processes",
                         action="store_true")
@@ -714,6 +718,9 @@ def __processArguments__():
 
     if args.time_height_plots and args.movies is not None:
         raise ValueError('Error: Command line parameter -t and -m cannot be used in conjunction.')
+
+    if args.pdf and args.movies is not None:
+        raise ValueError('Error: Command line parameters --pdf and --movies cannot be used in conjunction.')
 
     if len(args.cases) > 0:
         cases_to_plot, cases_not_found = __convertCasenamesToCaseInstances__(args.cases)

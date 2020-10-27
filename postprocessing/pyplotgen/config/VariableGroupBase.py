@@ -814,7 +814,7 @@ class VariableGroupBase(VariableGroup):
 
         wpthlp = (tlflux / (rho * 1004))
 
-        if not np.isnan(wpthlp_sgs[0]):
+        if not np.any(np.isnan(wpthlp_sgs)):
             wpthlp += wpthlp_sgs
 
         return wpthlp, indep
@@ -858,7 +858,7 @@ class VariableGroupBase(VariableGroup):
 
         wprtp = qtflux / (rho * 2.5104e+6)
 
-        if not np.isnan(wprtp_sgs[0]):
+        if not np.any(np.isnan(wprtp_sgs)):
             wprtp += wprtp_sgs
 
         return wprtp, indep

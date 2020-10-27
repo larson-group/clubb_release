@@ -18,7 +18,7 @@ from src.ContourPanel import ContourPanel
 from src.DataReader import DataReader, NetCdfVariable
 from src.Line import Line
 from src.Panel import Panel
-
+from src.AnimationPanel import AnimationPanel
 
 class VariableGroup:
     """
@@ -265,14 +265,8 @@ class VariableGroup:
                     line['calculated'] = False
                     if (model_name + '_calc') in line.keys() and \
                             not self.__varnamesInDataset__(line['var_names'], dataset):
-                        if panel_type == Panel.TYPE_ANIMATION:
-                            plot_data, indep_data = variable_def_dict[(model_name + '_calc')](dataset_override=dataset)
-                            # Create new Line equivalent for anim or rename Contour
-                            plot = Contour(indep_data['time'], indep_data['height'], plot_data,
-                                           colors=Style_definitions.CONTOUR_CMAP, label=label)
-                        else:
-                            plot_data, z = line[(model_name + '_calc')](dataset_override=dataset)
-                            plot = Line(plot_data, z, line_format=line_style, label=line['legend_label'])
+                        plot_data, z = line[(model_name + '_calc')](dataset_override=dataset)
+                        plot = Line(plot_data, z, line_format=line_style, label=line['legend_label'])
                         all_lines.append(plot)
                         line['calculated'] = True
 
@@ -357,6 +351,9 @@ class VariableGroup:
                 centered = variable['centered']
             if panel_type == Panel.TYPE_TIMEHEIGHT:
                 panel = ContourPanel(plotset, title=title, dependent_title=axis_label, panel_type=panel_type)
+            elif self.animation is not None:
+                panel = AnimationPanel(plotset, title=title, dependent_title=axis_label, panel_type=panel_type,
+                                       sci_scale=sci_scale, centered=centered)
             else:
                 panel = Panel(plotset, title=title, dependent_title=axis_label, panel_type=panel_type,
                               sci_scale=sci_scale, centered=centered)
@@ -542,7 +539,21 @@ class VariableGroup:
 
         if isinstance(ncdf_datasets, Dataset):
             ncdf_datasets = {'converted_to_dict': ncdf_datasets}
-        if panel_type is Panel.TYPE_PROFILE:
+
+        if self.animation is not None:
+            if panel_type is Panel.TYPE_PROFILE:
+                contours = self.__getProfileLineForAnim__(var_names, ncdf_datasets, label, line_format, conversion_factor,
+                                                          lines=lines,model_name=model_name)
+                if contours is not None:
+                    all_lines.extend(contours)
+            elif panel_type is Panel.TYPE_SUBCOLUMN:
+                lines = self.__getSubcolumnLinesForAnim__(var_names, ncdf_datasets, label, line_format, conversion_factor,
+                                                    avg_axis, lines=lines, model_name=model_name)
+                all_lines.extend(lines)
+            elif panel_type is Panel.TYPE_BUDGET:
+                budget_lines = self.__getBudgetLines__(lines, ncdf_datasets, model_name=model_name)
+                all_lines.extend(budget_lines)
+        elif panel_type is Panel.TYPE_PROFILE:
             profile_lines = self.__getProfileLine__(var_names, ncdf_datasets, label, line_format, conversion_factor,
                                                     avg_axis, lines=lines, model_name=model_name)
             if profile_lines is not None:
@@ -602,6 +613,38 @@ class VariableGroup:
             output_lines.append(line)
         return output_lines
 
+    def __getProfileLineForAnim__(self, varnames, dataset, label, line_format, conversion_factor, lines=None,
+                                 model_name="unknown"):
+        """
+        Performs the same function as __getProfileLine__() except keeps 2D data for animations.
+        """
+        output_contours=[]
+        variable = NetCdfVariable(varnames, dataset,
+                                      independent_var_names={'time': Case_definitions.TIME_VAR_NAMES,
+                                                             'height': Case_definitions.HEIGHT_VAR_NAMES},
+                                  start_time=self.start_time, end_time=self.end_time, avg_axis=2,
+                                  conversion_factor=conversion_factor)
+        if variable.dependent_data.ndim != 2:
+            warn("Warning: Variable {} can not be plotted as an animation ".format(varnames) +
+                 "array's dimension is {} and not 2. Returning no data.".format(variable.dependent_data.ndim))
+            return None
+        # From here on: variable.dependent_data.ndim == 2
+        variable.trimArray(self.start_time, self.end_time, data=variable.independent_data['time'], axis=0)
+        # Do we want to trim height?
+        variable.trimArray(self.height_min_value, self.height_max_value, data=variable.independent_data['height'],
+                           axis=1)
+
+        if lines is not None:
+            contour = self.__processLinesParamForAnim__(lines, dataset, line_format=line_format,
+                                                              label_suffix=label, model_name=model_name)
+            output_contours.extend(contour)
+        else:
+            contour = Contour(x_data=variable.independent_data['time'], y_data=variable.independent_data['height'],
+                              c_data=variable, colors=Style_definitions.CONTOUR_CMAP, label=label,line_format=line_format)
+            output_contours.append(contour)
+
+        return output_contours
+
     def __getSubcolumnLines__(self, varnames, dataset, label, line_format, conversion_factor, avg_axis, lines=None,
                            model_name="unknown"):
         """
@@ -638,6 +681,32 @@ class VariableGroup:
 
         return output_lines
 
+    def __getSubcolumnLinesForAnim__(self, varnames, dataset, label, line_format, conversion_factor, avg_axis, lines=None,
+                           model_name="unknown"):
+        """
+        Same as __getSubcolumnLines__() but retains 2D data for animations.
+        """
+        output_lines = []
+        variable = NetCdfVariable(varnames, dataset["subcolumns"],
+                                  independent_var_names={'time': Case_definitions.TIME_VAR_NAMES,
+                                                         'height': Case_definitions.HEIGHT_VAR_NAMES},
+                                  start_time=self.start_time, end_time=self.end_time, avg_axis=2,
+                                  conversion_factor=conversion_factor, model_name=model_name)
+        variable.trimArray(self.start_time, self.end_time, data=variable.independent_data['time'], axis=0)
+        variable.trimArray(self.height_min_value, self.height_max_value, data=variable.independent_data['height'],axis=1)
+        for i in range(len(variable.dependent_data[0,0])):
+            label_with_offset = label + "_" + str(i+1)
+            data_i = variable.dependent_data[:,:,i]
+            contour = Contour(x_data=variable.independent_data['time'], y_data=variable.independent_data['height'],
+                          c_data=data_i, colors=Style_definitions.CONTOUR_CMAP, label=label_with_offset,line_format=line_format)
+            output_lines.append(contour)
+
+        if lines is not None:
+            additional_lines = self.__processLinesParamForAnim__(lines, dataset, line_format=line_format,
+                                                              label_suffix=label, model_name=model_name)
+            output_lines.extend(additional_lines)
+
+        return output_lines
 
     def __getTimeseriesLine__(self, varname, dataset, end_time, conversion_factor, label, line_format):
         """
@@ -662,7 +731,8 @@ class VariableGroup:
 
     def __getBudgetLines__(self, lines, dataset, model_name="unknown"):
         """
-        Returns a list of Line objects for a budget plot for each variable defined in lines
+        Returns a list of Line objects (or 2D objects in case of animations) for a budget plot for each 
+        variable defined in lines
 
         :param lines: A list of line definitions containing the variable names, legend labels etc.
             See the addVariable documentation above for a complete description
@@ -670,7 +740,10 @@ class VariableGroup:
         :param model_name: A string name of the model being plotted. I.e. clubb, hoc, r408, sam, cam, wrf, e3sm
         :return: A list of Line objects for a budget plot derived from lines
         """
-        output_lines = self.__processLinesParameter__(lines, dataset, model_name=model_name)
+        if self.animation is not None:
+            output_lines = self.__processLinesParamForAnim__(lines, dataset, model_name=model_name)
+        else:
+            output_lines = self.__processLinesParameter__(lines, dataset, model_name=model_name)
         return output_lines
 
     def __getTimeHeightContours__(self, varname, dataset, label, conversion_factor):
@@ -721,7 +794,7 @@ class VariableGroup:
             It's useful for doing basic model to model conversions, e.g. SAM -> CLUBB.
         :return: A tuple containing the dependent_data for the variable, the height data, and the datasets
         """
-        if self.time_height:
+        if self.time_height or self.animation is not None:
             var_ncdf = NetCdfVariable(varname, datasets,
                                       independent_var_names={'time': Case_definitions.TIME_VAR_NAMES,
                                                              'height': Case_definitions.HEIGHT_VAR_NAMES},
@@ -770,29 +843,29 @@ class VariableGroup:
 
         .. code-block:: python
             :linenos:
-
-            def get_rc_coef_zm_X_wprcp_coamps_calc(self, dataset_override=None):
-                wprlp, z, dataset = self.getVarForCalculations(['thlpqcp', 'wpqcp', 'wprlp'], dataset)
-                ex0, z, dataset = self.getVarForCalculations(['ex0'], dataset)
-                p, z, dataset = self.getVarForCalculations('p', dataset)
-                thvm, z, dataset = self.getVarForCalculations('thvm', dataset)
-                output1 = wprlp * (2.5e6 / (1004.67 * ex0) - 1.61 * thvm)
-                output2 = wprlp * (2.5e6 / (1004.67 * ((p / 1.0e5) ** (287.04 / 1004.67))) - 1.61 * thvm)
-                output = self.pickMostLikelyOutputList(output1, output2)
-                return output, z
-
-
+#
+#            def get_rc_coef_zm_X_wprcp_coamps_calc(self, dataset_override=None):
+#                wprlp, z, dataset = self.getVarForCalculations(['thlpqcp', 'wpqcp', 'wprlp'], dataset)
+#                ex0, z, dataset = self.getVarForCalculations(['ex0'], dataset)
+#                p, z, dataset = self.getVarForCalculations('p', dataset)
+#                thvm, z, dataset = self.getVarForCalculations('thvm', dataset)
+#                output1 = wprlp * (2.5e6 / (1004.67 * ex0) - 1.61 * thvm)
+#                output2 = wprlp * (2.5e6 / (1004.67 * ((p / 1.0e5) ** (287.04 / 1004.67))) - 1.61 * thvm)
+#                output = self.pickMostLikelyOutputList(output1, output2)
+#                return output, z
+#
+#
         :param output1: An arraylike list of numbers outputted from a variable calculation
             (e.g.     output1 = wprlp * (2.5e6 / (1004.67 * ex0) - 1.61 * thvm)
         :param output2: An arraylike list of numbers outputted from a variable calculation
             (e.g.     output2 = wprlp * (2.5e6 / (1004.67 * ((p / 1.0e5) ** (287.04 / 1004.67))) - 1.61 * thvm)
-        :param favor_output: (optional) If an array cannot easily be picked by looking at whether they are zeros/NaN's,
+        :param favor_output: (optional) If an array cannot easily be picked by looking at whether they are zeros/NaNs,
             use this return the data from this array. I.e. if both output1 and output2 contain unique data, the data in
             favor_output will be returned. This array should be identical to either output1 or output2.
         :return: The listlike array of the two datasets most likely to be the correct answer.
         """
-        out1_is_nan = math.isnan(mean(output1))
-        out2_is_nan = math.isnan(mean(output2))
+        out1_is_nan = math.isnan(mean(np.ndarray.flatten(output1)))
+        out2_is_nan = math.isnan(mean(np.ndarray.flatten(output2)))
 
         out1_is_zero = np.all(np.isclose(output1, 0))
         out2_is_zero = np.all(np.isclose(output2, 0))
@@ -841,4 +914,33 @@ class VariableGroup:
             line_definition = Line(variable, variable.independent_data, label=label,
                                    line_format=line_format)  # uses auto-generating line format
             output_lines.append(line_definition)
+        return output_lines
+
+    def __processLinesParamForAnim__(self, lines, dataset, label_suffix="", line_format="", model_name="unknown"):
+        """
+        This method is the same as __processLinesParameter__() except it keeps 2D data for animations.
+
+        :params: same as __processLinesParameter__()
+        :return: list of Contour objects for plotting
+        """
+        if isinstance(lines, dict):
+            lines = lines[model_name]
+        output_lines = []
+        for line_definition in lines:
+            if line_definition['calculated'] is True:
+                continue
+            varnames = line_definition['var_names']
+            label = line_definition['legend_label']
+            if label_suffix != "":
+                label = line_definition['legend_label'] + " " + label_suffix
+            variable = NetCdfVariable(varnames, dataset,
+                                  independent_var_names={'time': Case_definitions.TIME_VAR_NAMES,
+                                                         'height': Case_definitions.HEIGHT_VAR_NAMES},
+                                  start_time=self.start_time, end_time=self.end_time, avg_axis=2)
+            if len(variable.dependent_data.shape) > 1:
+                variable.trimArray(self.start_time, self.end_time, data=variable.independent_data['time'], axis=0)
+                variable.trimArray(self.height_min_value, self.height_max_value, data=variable.independent_data['height'],axis=1)
+                contour = Contour(x_data=variable.independent_data['time'], y_data=variable.independent_data['height'],
+                              c_data=variable, colors=Style_definitions.CONTOUR_CMAP, label=label,line_format=line_format)
+                output_lines.append(contour)
         return output_lines

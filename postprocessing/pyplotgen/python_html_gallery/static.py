@@ -75,4 +75,4 @@ case_description='\n<p>%s</p>'
 timestamp = '\n<p>Page created on %s</p>'
 url_dir = '\n<p><a href="%s">%s</a></p>'
 url_img = '\n<a href="%s"><img title="%s" src="%s"></a>'
-
+url_mov = '\n<video controls><source src="%s"></video>'

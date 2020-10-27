@@ -330,7 +330,7 @@ class CaseGallerySetup:
         num_plots = len(self.panels)
         curr_panel_num = 1
         for panel in self.panels:
-            print("\r\tplotting ", curr_panel_num, " of ", num_plots, " | ", panel.title)
+            print("\r\tPlotting: ", panel.title)
             if show_alphabetic_id:
                 alphabetic_id = self.__getNextAlphabeticID__()
             else:
@@ -338,10 +338,18 @@ class CaseGallerySetup:
             plot_paired_lines = True
             if panel.panel_type == panel.TYPE_BUDGET or panel.panel_type == panel.TYPE_SUBCOLUMN:
                 plot_paired_lines = False
-            panel.plot(output_folder, self.name, replace_images=replace_images, no_legends=no_legends,
-                       thin_lines=thin_lines, alphabetic_id=alphabetic_id, paired_plots=plot_paired_lines,
-                       image_extension=self.image_extension)
-            print("\r\tplotted  ", curr_panel_num, " of ", num_plots, " | ", panel.title, '\n')
+            if self.animation is not None:
+                movie_extension="."+self.animation
+                time_interval = [self.start_time,self.end_time]
+                panel.plot(output_folder, self.name, replace_images=replace_images, no_legends=no_legends,
+                           thin_lines=thin_lines, alphabetic_id=alphabetic_id, paired_plots=plot_paired_lines,
+                           time_interval=time_interval, image_extension=self.image_extension,
+                           movie_extension=movie_extension)
+            else:
+                panel.plot(output_folder, self.name, replace_images=replace_images, no_legends=no_legends,
+                           thin_lines=thin_lines, alphabetic_id=alphabetic_id, paired_plots=plot_paired_lines,
+                           image_extension=self.image_extension)
+            print("\r\tPLOTTED ", curr_panel_num, " of ", num_plots, '\n')
             curr_panel_num += 1
 
     def __getNextAlphabeticID__(self):
