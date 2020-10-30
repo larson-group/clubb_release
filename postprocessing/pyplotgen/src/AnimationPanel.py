@@ -22,7 +22,7 @@ from config import Style_definitions
 from src.interoperability import clean_path, clean_title
 
 import glob
-import cv2  #opencv-python for writing the movies
+#import cv2  #opencv-python for writing the movies
 import shutil
 
 from src.Panel import Panel
