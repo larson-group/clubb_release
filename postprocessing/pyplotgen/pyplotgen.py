@@ -603,9 +603,10 @@ def __processArguments__():
                              " Cannot be used with -m.",
                         action="store_true")
     parser.add_argument("-m", "--movies",
-                        help="Instead of averaged profiles, plot animations of time steps. Cannot be used with -t." +
-                             " FRAMES_PER_SECOND can be adjusted in config/Style_definitions.py.",
-                        action="store", choices=['mp4','avi'])
+                        help="Instead of averaged profiles, plot animations of time steps. Cannot be used with -t, " +
+                             "--pdf, --eps, or --svg. FRAMES_PER_SECOND can be adjusted in " + 
+                             "config/Style_definitions.py.",
+                        action="store", nargs='?', const='mp4', choices=['mp4','avi'])
     parser.add_argument("--bu-morr",
                         help="For morrison microphysics: breaks microphysical source terms into component processes",
                         action="store_true")
@@ -698,6 +699,9 @@ def __processArguments__():
         hoc = args.plot_hoc_2005
 
     image_extension = ".png"
+    if args.movies is not None and (args.svg or args.eps):
+       raise RuntimeError("The --movies option currently only works with .png images.  Please remove --eps or --svg "
+                          "in order to generate animated plots.")
     if args.svg:
         image_extension = ".svg"
     if args.eps:
@@ -721,6 +725,10 @@ def __processArguments__():
 
     if args.pdf and args.movies is not None:
         raise ValueError('Error: Command line parameters --pdf and --movies cannot be used in conjunction.')
+
+    if args.time_height_plots and args.plot_budgets:
+        raise ValueError('Error: Command line parameters --time-height-plots and -b (--plot-budgets) cannot ' 
+                         'be used in conjunction.')
 
     if len(args.cases) > 0:
         cases_to_plot, cases_not_found = __convertCasenamesToCaseInstances__(args.cases)
