@@ -644,7 +644,7 @@ module stats_zm_module
       case ('thlpthvp')
         ithlpthvp = k
         call stat_assign( var_index=ithlpthvp, var_name="thlpthvp", &
-          var_description="thl'thv, Covariance of theta_l and theta_v", var_units="K^2", &
+          var_description="thl'thv', Covariance of theta_l and theta_v", var_units="K^2", &
           l_silhs=.false., grid_kind=stats_zm )
         k = k + 1
 
