@@ -685,6 +685,14 @@ class DataReader():
             for i in range(len(var_values)):
                 var_values[i] = delta_t * (i + 1)
 
+            # Fix for mismatched lengths of data in the COAMPS RICO case.  The CLUBB and SAM RICO
+            # cases have 4320 minutes (3 days), but the COAMPS RICO case has only the third day (1440 minutes).
+            # To get the averaging right we need to add 2880 to the COAMPS time steps.  Luckily, the COAMPS
+            # RICO case is uniquely identified by the global history attribute attached to the file.
+            if hasattr(ncdf_data,'history'):
+                if 'rico_coamps' in ncdf_data.history:
+                    var_values += 2880
+
             if var_values[0] > 1:
                 warn("First time value is " + str(var_values[0]) +
                      " instead of 0-1. Are these time values supposed to be scaled to minutes?")
