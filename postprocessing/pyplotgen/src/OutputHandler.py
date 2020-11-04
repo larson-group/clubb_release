@@ -1,0 +1,126 @@
+
+
+
+import os
+import logging
+from multiprocessing import Value
+
+errorlog = "error_temp.log"
+finalerrorlog = "error.log"
+logging.basicConfig(filename=errorlog, filemode='w', level=logging.INFO,
+                    format='%(asctime)s.%(msecs)03d %(message)s', datefmt='%y-%m-%d %H:%M:%S')
+
+
+def logToFile(message):
+    """
+    Writes a message to the log file.
+    """
+    logging.info("proc_id: "+str(os.getpid())+"\t"+message)
+
+
+def logToFileAndConsole(message):
+    """
+    Writes a message to the console along with log file.
+    """
+    print(message)
+    logging.info("proc_id: "+str(os.getpid())+"\t"+message)
+
+
+def initializeProgress(image_extension, movie_extension):
+    """
+    Prints the initial progress indicator, updated later
+    """
+    print("Processing cases. NOTE: If running multiple cases (ARM, BOMEX, etc.) with multiprocessing,\n"+
+          "the percent completed may fall as threads complete and begin processing new cases.")
+    if movie_extension is not None:
+        movie_extension = "."+movie_extension
+        print("\rProgress: {:4d} of {:>4} total {} panels complete ({:3d}%)".format(0,'?',movie_extension,0), end="")
+    else:
+        print("\rProgress: {:4d} of {:>4} total {} panels complete ({:3d}%)".format(0,'?',image_extension,0), end="")
+
+
+def updateProgress(total_progress_counter, image_extension, movie_extension):
+    """
+    Updates consolve progress continuously to indicate progress to user.
+    """
+    percent_complete=int(total_progress_counter[1]/total_progress_counter[0]*100)
+    if movie_extension is not None:
+        movie_extension = "."+movie_extension
+        print("\rProgress: {:4d} of {:4d} total {} panels complete ({:3d}%)".format(
+              total_progress_counter[1],total_progress_counter[0],movie_extension,percent_complete),
+              end="")
+    else:
+        print("\rProgress: {:4d} of {:4d} total {} panels complete ({:3d}%)".format(
+              total_progress_counter[1],total_progress_counter[0],image_extension,percent_complete),
+              end="")
+
+
+def writeFinalErrorLog():
+    """
+    Rewrites output file in order if multiple processes were active
+    """
+    #open/read file
+    f1 = open("../"+errorlog,"r")
+    Lines = f1.readlines()
+    f1.close()
+
+    #find length of process ID string
+    for i in range(31,len(Lines[0])):
+        if Lines[0][i] == "\t":
+            proc_end=i
+            name_start=proc_end+13
+            break
+
+    # extract times and process ids
+    times = []
+    procs = []
+    table = []
+    for i in range(len(Lines)):
+        times.append(Lines[i][0:20])
+        procs.append(Lines[i][31:proc_end])
+        if "Processing: " in Lines[i]:
+            table.append([Lines[i][name_start:-1],Lines[i][0:20],Lines[i][31:proc_end]])
+   
+    table=sorted(table) 
+    proc_nums=[]
+    for i in range(len(table)):
+        proc_nums.append(table[i][2])
+    
+    #for i in range(len(table)):
+    f2 = open(finalerrorlog,'w')
+   
+    # write new output file, organized alphabetically according
+    # to test case (ARM, etc.) and then time stamp 
+    written_lines=0
+    while procs[written_lines]==procs[0]:
+        f2.write(Lines[written_lines])
+        written_lines+=1
+    for i in range(0,len(proc_nums)):
+        if proc_nums.count(proc_nums[i]) > 1:
+            other_times=[]
+            for j in range(i+1,len(proc_nums)):
+                if table[j][2]==table[i][2]:
+                    other_times.append(table[j][1])
+            if len(other_times) > 0:
+                nextmintime=min(other_times)
+                for k in range(len(Lines)):
+                    if procs[k]==proc_nums[i] and times[k] >= table[i][1] and times[k] < nextmintime:
+                        f2.write(Lines[k])
+                        written_lines+=1
+            else:
+                for k in range(len(Lines)):
+                    if procs[k]==proc_nums[i] and times[k] >= table[i][1]:
+                        f2.write(Lines[k])
+                        written_lines+=1
+        else:
+            for k in range(len(Lines)):
+                if procs[k]==proc_nums[i]:
+                    f2.write(Lines[k])
+                    written_lines+=1
+    for i in range(written_lines,len(Lines)):
+            f2.write(Lines[i])
+   
+    #close new file and remove temp error log 
+    f2.close()
+    os.remove('../'+errorlog)
+
