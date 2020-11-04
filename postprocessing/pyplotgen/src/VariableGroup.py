@@ -6,7 +6,6 @@ import math
 import os
 from pathlib import Path
 from statistics import mean
-from warnings import warn
 
 import numpy as np
 from netCDF4._netCDF4 import Dataset
@@ -19,6 +18,7 @@ from src.DataReader import DataReader, NetCdfVariable
 from src.Line import Line
 from src.Panel import Panel
 from src.AnimationPanel import AnimationPanel
+from src.OutputHandler import logToFile, logToFileAndConsole
 
 class VariableGroup:
     """
@@ -74,8 +74,7 @@ class VariableGroup:
         # Loop over the list self.variable_definitions which is only defined in the subclasses
         # that can be found in the config folder such as VariableGroupBase
         for variable in self.variable_definitions:
-            print("\tProcessing ", variable['var_names']['clubb'])
-
+            logToFile("\tProcessing {}".format(variable['var_names']['clubb']))
             # Only add variable if none of the var_names are blacklisted
             all_var_names = []
             for model_var_names in variable['var_names'].values():
@@ -85,10 +84,10 @@ class VariableGroup:
             if not variable_is_blacklisted:
                 self.addVariable(variable)
             else:
-                print('\tVariable {} is blacklisted and will therefore not be plotted.'.format(variable))
+                logToFile('\tVariable {} is blacklisted and will therefore not be plotted.'.format(variable))
 
         self.generatePanels()
-
+        
     def addVariable(self, variable_def_dict):
         """
         Given basic details about a variable, this
@@ -258,7 +257,7 @@ class VariableGroup:
         # So a line parameter is incompatible.
         if lines is not None:
             if panel_type == Panel.TYPE_TIMEHEIGHT:
-                warn('Warning. Panel type is time-height but a lines argument was found in for variable ' +
+                logToFile('Warning. Panel type is time-height but a lines argument was found in for variable ' +
                      str(all_model_var_names[model_name]) + '. Those are not compatible. Ignoring lines.')
             else:
                 for line in lines:
@@ -382,7 +381,7 @@ class VariableGroup:
         try:
             first_input_datasets = self.getTextDefiningDataset()
         except FileExistsError as e:
-            warn(str(e))
+            logToFile(str(e))
             return title, axis_title
 
         if 'title' not in variable_def_dict.keys():
@@ -625,7 +624,7 @@ class VariableGroup:
                                   start_time=self.start_time, end_time=self.end_time, avg_axis=2,
                                   conversion_factor=conversion_factor)
         if variable.dependent_data.ndim != 2:
-            warn("Warning: Variable {} can not be plotted as an animation ".format(varnames) +
+            logToFile("Warning: Variable {} can not be plotted as an animation ".format(varnames) +
                  "array's dimension is {} and not 2. Returning no data.".format(variable.dependent_data.ndim))
             return None
         # From here on: variable.dependent_data.ndim == 2
@@ -668,11 +667,13 @@ class VariableGroup:
                                   max_height=self.height_max_value, avg_axis=avg_axis,
                                   conversion_factor=conversion_factor, model_name=model_name)
         variable.trimArray(self.height_min_value, self.height_max_value, data=variable.independent_data, axis=0)
-        for i in range(len(variable.dependent_data[0])):
-            label_with_offset = label + "_" + str(i+1)
-            x_data_i = variable.dependent_data[:,i]
-            line = Line(x_data_i, variable.independent_data, label=label_with_offset)
-            output_lines.append(line)
+        # this if statement accommodates cases with some but not all subcolumn vars (e.g. RICO_SILHS)
+        if len(variable.dependent_data.shape) == 2:
+            for i in range(len(variable.dependent_data[0])):
+                label_with_offset = label + "_" + str(i+1)
+                x_data_i = variable.dependent_data[:,i]
+                line = Line(x_data_i, variable.independent_data, label=label_with_offset)
+                output_lines.append(line)
 
         if lines is not None:
             additional_lines = self.__processLinesParameter__(lines, dataset, line_format=line_format,
@@ -694,12 +695,15 @@ class VariableGroup:
                                   conversion_factor=conversion_factor, model_name=model_name)
         variable.trimArray(self.start_time, self.end_time, data=variable.independent_data['time'], axis=0)
         variable.trimArray(self.height_min_value, self.height_max_value, data=variable.independent_data['height'],axis=1)
-        for i in range(len(variable.dependent_data[0,0])):
-            label_with_offset = label + "_" + str(i+1)
-            data_i = variable.dependent_data[:,:,i]
-            contour = Contour(x_data=variable.independent_data['time'], y_data=variable.independent_data['height'],
-                          c_data=data_i, colors=Style_definitions.CONTOUR_CMAP, label=label_with_offset,line_format=line_format)
-            output_lines.append(contour)
+        # this if statement accommodates cases with some but not all subcolumn vars (e.g. RICO_SILHS)
+        if len(variable.dependent_data.shape) == 3:
+            for i in range(len(variable.dependent_data[0,0])):
+                label_with_offset = label + "_" + str(i+1)
+                data_i = variable.dependent_data[:,:,i]
+                contour = Contour(x_data=variable.independent_data['time'], y_data=variable.independent_data['height'],
+                                  c_data=data_i, colors=Style_definitions.CONTOUR_CMAP, label=label_with_offset,
+                                  line_format=line_format)
+                output_lines.append(contour)
 
         if lines is not None:
             additional_lines = self.__processLinesParamForAnim__(lines, dataset, line_format=line_format,
@@ -765,11 +769,11 @@ class VariableGroup:
                                   conversion_factor=conversion_factor)
         if variable.dependent_data.ndim == 3:
             variable.dependent_data = variable.dependent_data[:,:,0]
-            warn("Warning: assuming {} is a SILHS subcolumn variable. Plotting only the ".format(varname) +
+            logToFile("Warning: assuming {} is a SILHS subcolumn variable. Plotting only the ".format(varname) +
                  "first subcolumn for time-height plots.  If {} is not a subcolumn variable, ".format(varname) +
                  "please update src/VariableGroup.py.")
         elif variable.dependent_data.ndim == 1 or variable.dependent_data.ndim > 3:
-            warn("Warning: Variable {} can not be plotted as time-height plot as the data ".format(varname) +
+            logToFile("Warning: Variable {} can not be plotted as time-height plot as the data ".format(varname) +
                  "array's dimension is {} and not 2. Returning no data.".format(variable.dependent_data.ndim))
             return None
         # From here on: variable.dependent_data.ndim == 2

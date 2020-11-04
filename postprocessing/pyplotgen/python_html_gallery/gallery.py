@@ -16,6 +16,7 @@ from multiprocessing import freeze_support
 
 from config import Case_definitions
 from python_html_gallery import static
+from src.OutputHandler import logToFile, logToFileAndConsole
 
 try:
     from PIL import Image
@@ -23,7 +24,7 @@ except ImportError:
     try:
         import Image
     except ImportError:
-        print('Requires Python Imaging Library. See README.md.')
+        logToFile('Requires Python Imaging Library. See README.md.')
         sys.exit(1)
 
 
@@ -68,12 +69,12 @@ def OrganizeRoot(output_dir,file_extension=".png"):
         for jpg in fs:
             datehour = Now(time=False)
             if not os.path.exists(datehour):
-                print('Creating directory: %s' % datehour)
+                logToFile('Creating directory: %s' % datehour)
                 os.makedirs(datehour)
             if not os.path.exists(os.path.join(datehour, jpg)):
                 shutil.move(jpg, datehour)
             else:
-                print('%s already exists' % os.path.join(datehour, jpg))
+                logToFile('%s already exists' % os.path.join(datehour, jpg))
 
 
 def GenerateHtmlImages(page, jpgs, file_extension):
@@ -151,11 +152,11 @@ def WriteGalleryPage(page,file_extension=".png"):
             case_images = ListFiles(img_paths, page)
             jpgs = sorted(case_images, reverse=True)[::-1]
             if file_extension in {'.png','.svg','.eps'}:
-                print('%s: Images found.' % page)
+                logToFileAndConsole('%s: SUCCESS --> Images found.' % page.upper())
             elif file_extension in {'.mp4','.avi'}:
-                print('%s: Movies found.' % page)
+                logToFileAndConsole('%s: SUCCESS --> Movies found.' % page.upper())
         except TypeError:
-            print('%s: No images or movies found...' % page)
+            logToFileAndConsole('%s: ERROR --> No images or movies found...' % page.upper())
             return
 
         for e in GenerateHtmlImages(page, jpgs, file_extension):
@@ -203,7 +204,7 @@ def WriteNavigation():
 
         nav_file.write(static.nav_footer)
 
-    print('Wrote %s with %s gallery link(s)' % (
+    logToFile('Wrote %s with %s gallery link(s)' % (
         os.path.join(static.root, static.navigation), page_count))
 
 def WriteIndex():
@@ -215,7 +216,7 @@ def WriteIndex():
     with open(static.index, 'w') as index_file:
         index_file.write(static.idx_page)
 
-    print("Wrote index.html")
+    logToFile("Wrote index.html")
 
 def main(output_dir, multithreaded=False, file_extension=".png"):
     """Main function."""

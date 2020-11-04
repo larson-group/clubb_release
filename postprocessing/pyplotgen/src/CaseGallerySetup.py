@@ -3,7 +3,6 @@
 :date: 2019
 """
 import os
-from warnings import warn
 
 import numpy as np
 
@@ -12,7 +11,7 @@ from config.VariableGroupSamBudgets import VariableGroupSamBudgets
 from config.VariableGroupSubcolumns import VariableGroupSubcolumns
 from src.DataReader import DataReader
 from src.Panel import Panel
-
+from src.OutputHandler import logToFile, logToFileAndConsole, updateProgress
 
 class CaseGallerySetup:
     """
@@ -28,7 +27,8 @@ class CaseGallerySetup:
 
     def __init__(self, case_definition, clubb_folders=[], diff_datasets=None, sam_folders=[""], wrf_folders=[""],
                  plot_les=False, plot_budgets=False, plot_r408=False, plot_hoc=False, e3sm_dirs=[], cam_folders=[],
-                 time_height=False, animation=None, plot_subcolumns=False, image_extension=".png"):
+                 time_height=False, animation=None, plot_subcolumns=False, image_extension=".png",
+                 total_panels_to_plot=0):
         """
         Initialize a CaseGallerySetup object with the passed parameters
         :param case_definition: dict containing case specific elements. These are pulled in from Case_definitions.py,
@@ -103,9 +103,12 @@ class CaseGallerySetup:
 
 
         self.__generateSubcolumnPanels__()
-        self.__generateVariableGroupPanels__()
-        self.__generateDiffPanels__()
         self.__generateBudgetPanels__()
+        total_panels = self.__generateVariableGroupPanels__()
+        self.__generateDiffPanels__()
+
+        self.total_panels_to_plot = total_panels
+
 
     def __generateSubcolumnPanels__(self):
         """
@@ -127,7 +130,8 @@ class CaseGallerySetup:
                                                     clubb_datasets={folder_name:self.clubb_datasets[input_folder]})
                         self.panels.extend(subcolumn_variables.panels)
                     else:
-                        warn("" + folder_name + " does not seem to contain data for case" + self.name)
+                        logToFile("" + folder_name + " does not seem to contain data for case" + self.name)
+
 
     def __generateBudgetPanels__(self):
         """
@@ -148,7 +152,7 @@ class CaseGallerySetup:
                                                                     clubb_datasets={folder_name:self.clubb_datasets[input_folder]})
                         self.panels.extend(budget_variables.panels)
                     else:
-                        warn("" + folder_name + " does not seem to contain data for case" + self.name)
+                        logToFile("" + folder_name + " does not seem to contain data for case" + self.name)
             if self.wrf_datasets is not None and len(self.wrf_datasets) != 0:
                 # for folders_datasets in wrf_datasets.values():
                 #     budget_variables = VariableGroupBaseBudgets(self, wrf_datasets=folders_datasets)
@@ -171,6 +175,7 @@ class CaseGallerySetup:
                                                                sam_datasets={folder_name:self.sam_datasets[input_folder]})
                 # sam_budgets = VariableGroupSamBudgets(self, sam_datasets=sam_datasets)
                     self.panels.extend(budget_variables.panels)
+
 
     def __generateDiffPanels__(self):
         """
@@ -199,6 +204,7 @@ class CaseGallerySetup:
                 diff_lines = self.getDiffLinesBetweenPanels(regular_panel, diff_panel, get_y_diff=diff_on_y)
                 self.panels[idx].all_plots = diff_lines
 
+
     def __generateVariableGroupPanels__(self):
         """
         This function generates the normal profile plots and adds them to self.panels
@@ -213,6 +219,10 @@ class CaseGallerySetup:
                                   wrf_datasets=self.wrf_datasets, r408_dataset=self.r408_datasets, hoc_dataset=self.hoc_datasets,
                                   e3sm_datasets=self.e3sm_file, cam_datasets=self.cam_file)
             self.panels.extend(temp_group.panels)
+
+        total_panels = len(self.panels)
+        return total_panels
+
 
     def __loadModelFiles__(self, folders, case_definition, model_name):
         if model_name not in self.VALID_MODEL_NAMES:
@@ -302,7 +312,8 @@ class CaseGallerySetup:
         # Return absolute difference between both arrays
         return np.abs(long-short)
 
-    def plot(self, output_folder, replace_images=False, no_legends=False, thin_lines=False, show_alphabetic_id=False):
+    def plot(self, output_folder, replace_images=False, no_legends=False, thin_lines=False,
+             show_alphabetic_id=False, total_progress_counter=[0,0]):
         """
         Plot all panels associated with the case, these will be saved to image files in the <<output>>/<<casename>>
         folder
@@ -324,13 +335,20 @@ class CaseGallerySetup:
             and although pyplotgen won't crash it may start to use weird characters.
             The rotation resets between each case,
             e.g. if one case ends on label (ad), the next case will start on (a).
+        :param total_progress_counter: a variable shared between processes that tracks the total
+            number to panels to be plotted as well as the total number plotted so far.  Used
+            to give user some sense of total progress.
         :return: None
         """
-        print("\n\tSaving panels to {} images".format(self.image_extension))
+        # add total_panels_to_plot to first slot of shared variable counter
+        with total_progress_counter.get_lock():
+            total_progress_counter[0] += self.total_panels_to_plot
+
+        logToFile("\tSaving panels to {} images".format(self.image_extension))
         num_plots = len(self.panels)
         curr_panel_num = 1
         for panel in self.panels:
-            print("\r\tPlotting: ", panel.title)
+            logToFile("\tPlotting {} of {}: {}".format(curr_panel_num,num_plots,panel.title))
             if show_alphabetic_id:
                 alphabetic_id = self.__getNextAlphabeticID__()
             else:
@@ -349,8 +367,12 @@ class CaseGallerySetup:
                 panel.plot(output_folder, self.name, replace_images=replace_images, no_legends=no_legends,
                            thin_lines=thin_lines, alphabetic_id=alphabetic_id, paired_plots=plot_paired_lines,
                            image_extension=self.image_extension)
-            print("\r\tPLOTTED ", curr_panel_num, " of ", num_plots, '\n')
             curr_panel_num += 1
+            # increment by 1 for each plotted panel
+            with total_progress_counter.get_lock():
+                total_progress_counter[1] += 1
+
+            updateProgress(total_progress_counter,self.image_extension,self.animation)
 
     def __getNextAlphabeticID__(self):
         """

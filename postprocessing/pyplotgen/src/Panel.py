@@ -225,12 +225,15 @@ class Panel:
             ax.legend(loc='center left', bbox_to_anchor=(1, 0.5))
 
         # Center plots
-        if self.centered:
-            plt.xlim(-1 * max_panel_value * Style_definitions.BUDGET_XAXIS_SCALE_FACTOR,
-                     max_panel_value * Style_definitions.BUDGET_XAXIS_SCALE_FACTOR)
+        if max_panel_value != 0:
+            if self.centered:
+                plt.xlim(-1 * max_panel_value * Style_definitions.BUDGET_XAXIS_SCALE_FACTOR,
+                         max_panel_value * Style_definitions.BUDGET_XAXIS_SCALE_FACTOR)
 
         # Emphasize 0 line in profile plots if 0 is in x-axis range
         xlim = plt.xlim()
+        if xlim[0] == 0 and xlim[1] == 0:
+            plt.xlim=(-1,1)
         if self.panel_type == Panel.TYPE_PROFILE and 0 >= xlim[0] and 0 <= xlim[1]:
             plt.axvline(x=0, color='grey', ls='-')
 
@@ -260,11 +263,7 @@ class Panel:
         rel_filename = output_folder + "/" +casename+'/' + filename
         rel_filename = clean_path(rel_filename)
         # Save image file
-        if replace_images is True or not os.path.isfile(rel_filename+image_extension):
-            plt.savefig(rel_filename + image_extension, dpi=Style_definitions.IMG_OUTPUT_DPI)
-        else: # os.path.isfile(rel_filename + image_extension) and replace_images is False:
-            print("\n\tImage " + rel_filename+image_extension+
-                  ' already exists. To overwrite this image during runtime pass in the --replace (-r) parameter.')
+        plt.savefig(rel_filename + image_extension, dpi=Style_definitions.IMG_OUTPUT_DPI)
         plt.close()
 
     def __removeInvalidFilenameChars__(self, filename):
@@ -278,77 +277,3 @@ class Panel:
         filename = clean_path(filename)
         filename = clean_title(filename)
         return filename
-
-    def __plotContourf__(self, output_folder, casename, replace_images = False, alphabetic_id = ''):
-        """
-        Generate a single contourf plot from the given data
-
-        :param output_folder: String containing path to folder in which the image files should be created
-        :param casename: The name of the case that is plotted in this panel
-        :param replace_images: Switch to tell pyplotgen if existing files should be overwritten
-        :param alphabetic_id: A string printed into the Panel at coordinates (.9,.9) as an identifier.
-        :return: None
-        """
-        plt.subplot(111)
-
-        # Set font sizes
-        plt.rc('font', size=Style_definitions.DEFAULT_TEXT_SIZE)          # controls default text sizes
-        plt.rc('axes', titlesize=Style_definitions.AXES_TITLE_FONT_SIZE)     # fontsize of the axes title
-        plt.rc('axes', labelsize=Style_definitions.AXES_LABEL_FONT_SIZE)    # fontsize of the x and y labels
-        plt.rc('xtick', labelsize=Style_definitions.X_TICKMARK_FONT_SIZE)    # fontsize of the tick labels
-        plt.rc('ytick', labelsize=Style_definitions.Y_TICKMARK_FONT_SIZE)    # fontsize of the tick labels
-        plt.rc('legend', fontsize=Style_definitions.LEGEND_FONT_SIZE)    # legend fontsize
-        plt.rc('figure', titlesize=Style_definitions.TITLE_TEXT_SIZE)  # fontsize of the figure title
-
-        # For each Contour object stored in self.all_plots generate an individual contourf plot
-        for var in self.all_plots:
-            x_data = var.x
-            y_data = var.y
-            c_data = var.data
-            x_data, y_data = np.meshgrid(x_data, y_data)
-            cmap = var.colors
-            label = var.label
-
-            # Set graph size
-            plt.figure(figsize=(10,6), dpi=Style_definitions.IMG_OUTPUT_DPI)
-
-            # Prevent x-axis label from getting cut off
-            # plt.gcf().subplots_adjust(bottom=0.15)
-
-            cs = plt.contourf(x_data, y_data, c_data.T, cmap=cmap)
-            plt.colorbar(cs)
-            plt.title(label + ' - ' + self.title, pad=10)
-            plt.xlabel(self.x_title)
-            plt.ylabel(self.y_title)
-
-            if alphabetic_id != '':
-                ax = plt.gca()
-                ax.text(0.9, 0.9, '('+alphabetic_id+')', ha='center', va='center', transform=ax.transAxes,
-                               fontsize=Style_definitions.LARGE_FONT_SIZE) # Add letter label to panels
-
-            # Create folders
-            # Because os.mkdir("output") can fail and prevent os.mkdir("output/" + casename) from being called we must
-            # use two separate try blocks
-            try:
-                os.mkdir(output_folder)
-            except FileExistsError:
-                pass # do nothing
-            try:
-                os.mkdir(output_folder + "/" + casename)
-            except FileExistsError:
-                pass # do nothing
-
-            # Generate image filename
-            filename = label + "_timeheight_"+ str(datetime.now())
-            filename = self.__removeInvalidFilenameChars__(filename)
-            # Concatenate with output foldername
-            relative_filename = output_folder + '/' + casename + '/' + filename
-            relative_filename = clean_path(relative_filename)
-            plt.figure(dpi=Style_definitions.IMG_OUTPUT_DPI)
-            # Save image file
-            if replace_images is True or not os.path.isfile(relative_filename+image_extension):
-                plt.savefig(relative_filename + image_extension, dpi=Style_definitions.IMG_OUTPUT_DPI)
-            else: # os.path.isfile(relative_filename + image_extension) and replace_images is False:
-                print("\n\tImage " + relative_filename+image_extension+
-                      ' already exists. To overwrite this image during runtime pass in the --replace (-r) parameter.')
-            plt.close()
