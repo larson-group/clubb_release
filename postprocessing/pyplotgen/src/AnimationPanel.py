@@ -105,7 +105,6 @@ class AnimationPanel(Panel):
                     for i in range(len(x_dataset)):
                         for j in range(len(temp_x_data)):
                             if x_dataset[i] == temp_x_data[j] or abs(x_dataset[i]-temp_x_data[j]) < 0.5:
-            #                    print(x_dataset[i],temp_x_data[j])
                                 filtered_data[i,:]=temp_data[j,:]
                     var.data = filtered_data
                     idx+=1
