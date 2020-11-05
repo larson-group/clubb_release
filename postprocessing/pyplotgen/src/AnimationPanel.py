@@ -22,8 +22,11 @@ from config import Style_definitions
 from src.interoperability import clean_path, clean_title
 
 import glob
-#import cv2  #opencv-python for writing the movies
 import shutil
+try:
+    import cv2  #opencv-python for writing the movies
+except ImportError:
+    pass
 
 from src.Panel import Panel
 
@@ -53,8 +56,7 @@ class AnimationPanel(Panel):
         super().__init__(plots, panel_type, title, dependent_title, sci_scale=None, centered=False)         
 
     def plot(self, output_folder, casename, replace_images = False, no_legends = True, thin_lines = False,
-             alphabetic_id="", paired_plots = True, time_interval=[0,1], image_extension=".png",
-             movie_extension=".mp4"):
+             alphabetic_id="", paired_plots = True, image_extension=".png", movie_extension=".mp4"):
         """
         New version of plot routine to generate movies of profiles.
 
@@ -66,11 +68,48 @@ class AnimationPanel(Panel):
         :param alphabetic_id: A string printed into the Panel at coordinates (.9,.9) as an identifier.
         :param paired_plots: If no format is specified and paired_plots is True,
             use the color/style rotation specified in Style_definitions.py
-        :param time_interval: Passed so the animation plot counter covers the appropriate interval.
-        :param movie_extension: Passed to the movies are output to the user's desired format (mp4, avi, etc.) 
+        :param image_extension: Present in case movies can be made from different image types (only .png for now) 
+        :param movie_extension: Passed so the movies are output to the user's desired format (mp4, avi, etc.) 
         :return: None
         """
-        tmax=time_interval[1]-time_interval[0]
+        #find tmax and x_dataset
+        #tmax -- # of time steps of shortest simulation
+        #x_dataset = time step list of shortest sim.
+        tmax = np.inf ; idx = 0
+        sim_lengths=[]
+        for var in self.all_plots:
+            sim_lengths.append(len(var.x))
+            if len(var.x) < tmax:
+                x_dataset=var.x
+                tmax=len(x_dataset)
+                idx_max = idx
+            idx+=1
+
+        #if discrepanies in number of time steps, filter out the
+        #extraneous time steps from those simulations that have extra steps
+        if np.all(sim_lengths==tmax):
+            filteringFlag=False
+            pass
+        else:
+            filteringFlag=True
+            idx = 0
+            for var in self.all_plots:
+                if idx == idx_max:
+                    idx+=1
+                    continue
+                else:
+                    temp_x_data=var.x
+                    temp_y_data=var.y
+                    temp_data=var.data
+                    filtered_data = np.zeros((len(x_dataset),len(temp_y_data)))
+                    for i in range(len(x_dataset)):
+                        for j in range(len(temp_x_data)):
+                            if x_dataset[i] == temp_x_data[j] or abs(x_dataset[i]-temp_x_data[j]) < 0.5:
+            #                    print(x_dataset[i],temp_x_data[j])
+                                filtered_data[i,:]=temp_data[j,:]
+                    var.data = filtered_data
+                    idx+=1
+
 
         min_x_value = np.inf ; max_x_value = -1*np.inf  #set large to be overwritten during first pass below
         for t in range(0,tmax):
@@ -192,7 +231,7 @@ class AnimationPanel(Panel):
             ax.set_prop_cycle(default_cycler)
         
             # Set titles---top title includes minute counter for reference
-            plt.title(self.title +'\nMinute = {}'.format(time_interval[0]+t))
+            plt.title(self.title +'\nMinute = {}'.format(int(x_dataset[t])))
             plt.ylabel(self.y_title)
             plt.text(1, -0.15, label_scale_factor, transform=ax.transAxes, fontsize=Style_definitions.MEDIUM_FONT_SIZE)
             plt.xlabel(self.x_title)
@@ -256,19 +295,15 @@ class AnimationPanel(Panel):
                 filename = filename + "_"+ self.title
             else:
                 filename = filename + '_' + self.y_title + "_VS_" + self.x_title
-                filename = self.__removeInvalidFilenameChars__(filename)
+            filename = self.__removeInvalidFilenameChars__(filename)
             # Concatenate with output foldername
             rel_filename = output_folder + "/" + casename + '/' + temp_dir + '/' + filename
             rel_filename = clean_path(rel_filename)
             # Save image file
-            if replace_images is True or not os.path.isfile(rel_filename+image_extension):
-                plt.savefig(rel_filename+image_extension, dpi=Style_definitions.IMG_OUTPUT_DPI, bbox_inches='tight')
-            else: # os.path.isfile(rel_filename + image_extension) and replace_images is False:
-                print("\n\tImage " + rel_filename+image_extension+
-                      ' already exists. To overwrite this image during runtime pass in the --replace (-r) parameter.')
+            plt.savefig(rel_filename+image_extension, dpi=Style_definitions.IMG_OUTPUT_DPI, bbox_inches='tight')
             plt.close()
 
-        # Lights, camera, action
+        # Lights, camera, action!
         img_array=[]
         for filename2 in sorted(glob.glob(output_folder + '/' + casename + '/' + temp_dir + '/*'+image_extension)):
             img = cv2.imread(filename2)
@@ -282,18 +317,28 @@ class AnimationPanel(Panel):
         elif movie_extension == ".avi":
             fourcc = cv2.VideoWriter_fourcc(*'XVID')
 
-        # Process images
-        out = cv2.VideoWriter(output_folder + '/' + casename + '/' + filename + movie_extension, fourcc, 
-                              Style_definitions.FRAMES_PER_SECOND , size)
+        # check to see if FFMPEG is available--determines if we need a temporary name
+        if shutil.which('ffmpeg') is not None:
+            moviename = output_folder + '/' + casename + '/' + "movie" + movie_extension
+        else:
+            moviename = output_folder + '/' + casename + '/' + filename + movie_extension
+
+        # We're rolling...
+        out = cv2.VideoWriter(moviename, fourcc, Style_definitions.FRAMES_PER_SECOND , size)
         for i in range(len(img_array)):
             out.write(img_array[i])
 
-        # Release movie
+        # Cut!
         out.release()
+
+        # rename if FFMPEG is present
+        if shutil.which('ffmpeg') is not None:
+            final_name = output_folder + '/' + casename + '/' + filename + movie_extension
+            command="ffmpeg -hide_banner -loglevel panic -i " + moviename + " -vcodec libx264 " + final_name
+            os.system(command)
+            os.remove(moviename)
 
         # Delete temp folder
         shutil.rmtree(output_folder + "/" + casename + "/" + temp_dir)
 
-
-
-
+        return filteringFlag

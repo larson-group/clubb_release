@@ -13,6 +13,7 @@ from src.DataReader import DataReader
 from src.Panel import Panel
 from src.OutputHandler import logToFile, logToFileAndConsole, updateProgress
 
+
 class CaseGallerySetup:
     """
     A case is basically a collection of variable groups and
@@ -358,21 +359,25 @@ class CaseGallerySetup:
                 plot_paired_lines = False
             if self.animation is not None:
                 movie_extension="."+self.animation
-                time_interval = [self.start_time,self.end_time]
-                panel.plot(output_folder, self.name, replace_images=replace_images, no_legends=no_legends,
-                           thin_lines=thin_lines, alphabetic_id=alphabetic_id, paired_plots=plot_paired_lines,
-                           time_interval=time_interval, image_extension=self.image_extension,
-                           movie_extension=movie_extension)
+                filteringFlag = panel.plot(output_folder, self.name, replace_images=replace_images,
+                                           no_legends=no_legends, thin_lines=thin_lines,
+                                           alphabetic_id=alphabetic_id, paired_plots=plot_paired_lines,
+                                           image_extension=self.image_extension, movie_extension=movie_extension)
             else:
                 panel.plot(output_folder, self.name, replace_images=replace_images, no_legends=no_legends,
                            thin_lines=thin_lines, alphabetic_id=alphabetic_id, paired_plots=plot_paired_lines,
                            image_extension=self.image_extension)
             curr_panel_num += 1
+
             # increment by 1 for each plotted panel
             with total_progress_counter.get_lock():
                 total_progress_counter[1] += 1
 
             updateProgress(total_progress_counter,self.image_extension,self.animation)
+
+        if self.animation and filteringFlag:
+            logToFile('Time slices have been filtered from some {} simulations '.format(self.name.upper()) +
+                      'due to mismatched time stepping.')
 
     def __getNextAlphabeticID__(self):
         """

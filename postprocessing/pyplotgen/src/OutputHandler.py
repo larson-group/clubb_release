@@ -30,10 +30,12 @@ def initializeProgress(image_extension, movie_extension):
     """
     Prints the initial progress indicator, updated later
     """
-    print("Processing cases. NOTE: If running multiple cases (ARM, BOMEX, etc.) with multiprocessing,\n"+
+    print("Running. If processing multiple cases (ARM, BOMEX, etc.) with multithreading,\n"+
           "the percent completed may fall as threads complete and begin processing new cases.")
     if movie_extension is not None:
         movie_extension = "."+movie_extension
+        print(' --> NOTE: When making animations, time slices must sometimes be filtered from simulations\n' +
+              "     due to mismatched time stepping. Affected cases are noted in error.log.")
         print("\rProgress: {:4d} of {:>4} total {} panels complete ({:3d}%)".format(0,'?',movie_extension,0), end="")
     else:
         print("\rProgress: {:4d} of {:>4} total {} panels complete ({:3d}%)".format(0,'?',image_extension,0), end="")
