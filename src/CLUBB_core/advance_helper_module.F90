@@ -436,6 +436,12 @@ module advance_helper_module
     use interpolation, only: &
       linear_interp_factor ! Procedure
 
+    use parameters_tunable, only: &
+        Cx_min,             & ! Variable(s)
+        Cx_max,             &
+        Richardson_num_min, &
+        Richardson_num_max
+
     use stats_variables, only: &
       iRichardson_num, &    ! Variable(s)
       ishear_sqd, &
@@ -450,10 +456,6 @@ module advance_helper_module
     ! Constant Parameters
     real( kind = core_rknd ), parameter :: &
       Richardson_num_divisor_threshold = 1.0e-6_core_rknd, &
-      Richardson_num_min = 100._core_rknd, &
-      Richardson_num_max = 400._core_rknd,       &
-      Cx_min            = 0.95_core_rknd,& !one_third,   &
-      Cx_max            = 0.6_core_rknd,         &
       Cx_fnc_Richardson_below_ground_value = one
 
     logical, parameter :: &
