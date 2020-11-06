@@ -1,35 +1,29 @@
 
+'''
+Creates easily readable output compatible with multiprocessing.
+Separates console printing from error log file printing.
 
+:author: Benjamin A. Stephens
+:date: November 2020
+'''
 
 import os
 import logging
-from multiprocessing import Value
-
-errorlog = "error_temp.log"
-finalerrorlog = "error.log"
-logging.basicConfig(filename=errorlog, filemode='w', level=logging.INFO,
-                    format='%(asctime)s.%(msecs)03d %(message)s', datefmt='%y-%m-%d %H:%M:%S')
 
 
 def logToFile(message):
-    """
-    Writes a message to the log file.
-    """
+    """Writes a message to the log file."""
     logging.info("proc_id: "+str(os.getpid())+"\t"+message)
 
 
 def logToFileAndConsole(message):
-    """
-    Writes a message to the console along with log file.
-    """
+    """Writes a message to the console along with log file."""
     print(message)
     logging.info("proc_id: "+str(os.getpid())+"\t"+message)
 
 
 def initializeProgress(image_extension, movie_extension):
-    """
-    Prints the initial progress indicator, updated later
-    """
+    """Prints the initial progress indicator, updated later"""
     print("Running. If processing multiple cases (ARM, BOMEX, etc.) with multithreading,\n"+
           "the percent completed may fall as threads complete and begin processing new cases.")
     if movie_extension is not None:
@@ -42,9 +36,7 @@ def initializeProgress(image_extension, movie_extension):
 
 
 def updateProgress(total_progress_counter, image_extension, movie_extension):
-    """
-    Updates consolve progress continuously to indicate progress to user.
-    """
+    """Updates consolve progress continuously to indicate progress to user."""
     percent_complete=int(total_progress_counter[1]/total_progress_counter[0]*100)
     if movie_extension is not None:
         movie_extension = "."+movie_extension
@@ -57,12 +49,10 @@ def updateProgress(total_progress_counter, image_extension, movie_extension):
               end="")
 
 
-def writeFinalErrorLog():
-    """
-    Rewrites output file in order if multiple processes were active
-    """
+def writeFinalErrorLog(errorlog,finalerrorlog):
+    """Rewrites output file in order if multiple processes were active"""
     #open/read file
-    f1 = open("../"+errorlog,"r")
+    f1 = open(errorlog,"r")
     Lines = f1.readlines()
     f1.close()
 
@@ -124,5 +114,5 @@ def writeFinalErrorLog():
    
     #close new file and remove temp error log 
     f2.close()
-    os.remove('../'+errorlog)
+    os.remove(errorlog)
 

@@ -12,6 +12,7 @@ import argparse
 import glob
 import multiprocessing
 import os
+import logging
 import shutil
 import subprocess
 import time
@@ -132,6 +133,23 @@ class PyPlotGen:
 
         self.output_folder = clean_path(self.output_folder)
 
+        # If --replace flag was set, delete old output folder
+        if self.replace_images:
+            subprocess.run(['rm', '-rf', self.output_folder + '/'])
+            # TODO: Use for Windows
+            # shutil.rmtree(self.output_folder)
+
+        # create output folder to store error log file
+        # and configure logging
+        try:
+            os.mkdir(self.output_folder)
+        except FileExistsError:
+            pass # do nothing
+        self.errorlog = self.output_folder+"/error_temp.log"
+        self.finalerrorlog = self.output_folder+"/error.log"
+        logging.basicConfig(filename=self.errorlog, filemode='w', level=logging.INFO,
+                    format='%(asctime)s.%(msecs)03d %(message)s', datefmt='%y-%m-%d %H:%M:%S')
+
     def run(self):
         """
         Main driver of the pyplotgen program executing the following steps:
@@ -157,14 +175,6 @@ class PyPlotGen:
         # Downloads model output (sam, les, clubb) if it doesn't exist
         if self.__benchmarkFilesNeeded__():
             self.__downloadModelOutputs__()
-
-        # If --replace flag was set, delete old output folder
-        if self.replace_images:
-            logToFileAndConsole("Deleting old plots...")
-            print('-------------------------------------------')
-            subprocess.run(['rm', '-rf', self.output_folder + '/'])
-            # TODO: Use for Windows
-            # shutil.rmtree(self.output_folder)
         self.num_cases_plotted = 0
         # Loop through cases listed in Case_definitions.CASES_TO_PLOT
         # for case_def in all_enabled_cases:
@@ -776,5 +786,5 @@ if __name__ == "__main__":
     pyplotgen.__printToPDF__()
     total_runtime = round(time.time() - start_time)
     logToFileAndConsole("Pyplotgen ran in {} seconds.".format(total_runtime))
-    writeFinalErrorLog()
+    writeFinalErrorLog(pyplotgen.errorlog,pyplotgen.finalerrorlog)
     print("See error.log in the output folder for detailed info including warnings.")
