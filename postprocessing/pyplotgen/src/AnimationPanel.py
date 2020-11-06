@@ -317,7 +317,7 @@ class AnimationPanel(Panel):
             fourcc = cv2.VideoWriter_fourcc(*'XVID')
 
         # check to see if FFMPEG is available--determines if we need a temporary name
-        if shutil.which('ffmpeg') is not None:
+        if shutil.which('ffmpeg') is not None and movie_extension == '.mp4':
             moviename = output_folder + '/' + casename + '/' + "movie" + movie_extension
         else:
             moviename = output_folder + '/' + casename + '/' + filename + movie_extension
@@ -331,7 +331,7 @@ class AnimationPanel(Panel):
         out.release()
 
         # rename if FFMPEG is present
-        if shutil.which('ffmpeg') is not None:
+        if shutil.which('ffmpeg') is not None and movie_extension == '.mp4':
             final_name = output_folder + '/' + casename + '/' + filename + movie_extension
             command="ffmpeg -hide_banner -loglevel panic -i " + moviename + " -vcodec libx264 " + final_name
             os.system(command)
