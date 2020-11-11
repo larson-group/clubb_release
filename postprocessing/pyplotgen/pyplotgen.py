@@ -179,7 +179,11 @@ class PyPlotGen:
         # Loop through cases listed in Case_definitions.CASES_TO_PLOT
         # for case_def in all_enabled_cases:
         cases_plotted_bools = []
+
+        # initialize counter and progress display
+        total_progress_counter = Array('i',[0,0])
         initializeProgress(self.image_extension, self.animation)
+
         if self.multithreaded:
             freeze_support()  # Required for multithreading
             n_processors = multiprocessing.cpu_count()
@@ -256,14 +260,15 @@ class PyPlotGen:
                 bytes_to_mb = 1 / 1000000
                 self.__writePdfToDisk__(pdf_output_filename, case_descriptions)
                 pdf_filesize = os.path.getsize(pdf_output_filename) * bytes_to_mb
-                logToFileAndConsole("PDF generated using a dpi of ", Style_definitions.IMG_OUTPUT_DPI, " with a filesize of ", pdf_filesize, "MB.")
+                logToFileAndConsole("PDF generated using a DPI of " + str(Style_definitions.IMG_OUTPUT_DPI) +
+                                    " with a filesize of " + str(pdf_filesize) + "MB.")
                 Style_definitions.IMG_OUTPUT_DPI = output_dpi
 
                 if pdf_filesize < self.pdf_filesize_limit:
                     pdf_too_large = False
                     logToFileAndConsole("PDF output can be found at: file://" + pdf_output_filename)
-                    logToFileAndConsole("Printing PDF to the target filesize took ", attempted_prints, " attempts to find the right "
-                          "dpi.")
+                    logToFileAndConsole("Printing PDF to the target filesize took " + str(attempted_prints) + 
+                                        " attempts to find the right DPI.")
                 else:
                     # output downscaled images to a new folder so that the original quality ones can still be referenced
                     # via the web page
@@ -272,14 +277,15 @@ class PyPlotGen:
                         pdf_output_filename = self.output_folder + '/pyplotgen_output.pdf'
 
                     output_dpi = self.__getDecreasedDpiValue__(output_dpi, pdf_filesize)
-                    logToFileAndConsole("Attempted to print but the file was too large (", pdf_filesize, "MB insead of <",
-                          self.pdf_filesize_limit, "MB). Reducing DPI and trying again.")
-                    logToFileAndConsole("Attempting to print pdf with dpi of ", output_dpi)
+                    logToFileAndConsole("Attempted to print but the file was too large (" + str(pdf_filesize) + 
+                          "MB insead of <" + str(self.pdf_filesize_limit) + "MB). Reducing DPI and trying again.")
+                    logToFileAndConsole("Attempting to print pdf with dpi of " + str(output_dpi))
 
+                    # delete 'downscaled' output folder and run again
+                    subprocess.run(['rm', '-rf', self.output_folder + '/'])
                     self.run()
                 if output_dpi <= 1:
-                    logToFileAndConsole("There is no possible dpi that fits within ", self.pdf_filesize_limit,
-                          "MB.")
+                    logToFileAndConsole("There is no possible dpi that fits within " + str(self.pdf_filesize_limit) + "MB.")
                     logToFileAndConsole("The most recent PDF output attempt can be found at: file://" + pdf_output_filename)
                     filesize_impossible = True
 
@@ -780,7 +786,6 @@ def tpc_init(x):
 
 if __name__ == "__main__":
     pyplotgen = __processArguments__()
-    total_progress_counter = Array('i',[0,0])
     start_time = time.time()
     pyplotgen.run()
     pyplotgen.__printToPDF__()
