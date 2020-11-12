@@ -43,7 +43,7 @@ class PyPlotGen:
 
     def __init__(self, output_folder, clubb_folders=None, replace=False, les=False, cgbest=False, hoc=False,
                  benchmark_only=False, nightly=False, zip=False, thin=False, no_legends=False, ensemble=False,
-                 plot_e3sm="", sam_folders=[""], wrf_folders=[""], cam_folders=[""],
+                 plot_e3sm="", sam_folders=[""], wrf_folders=[""], cam_folders=[""], priority_vars=False,
                  budget_moments=False, bu_morr=False, diff=None, show_alphabetic_id=False,
                  time_height=False, animation=None, disable_multithreading=False, pdf=False,
                  pdf_filesize_limit=None, plot_subcolumns=False, image_extension=".png"):
@@ -117,6 +117,7 @@ class PyPlotGen:
         self.show_alphabetic_id = show_alphabetic_id
         self.output_folder = os.path.abspath(self.output_folder)
         self.benchmark_only = benchmark_only
+        self.priority_vars = priority_vars
         self.nightly = nightly
         self.time_height = time_height
         self.animation = animation
@@ -124,7 +125,7 @@ class PyPlotGen:
         self.pdf = pdf
         self.pdf_filesize_limit = pdf_filesize_limit
         self.image_extension = image_extension
-     
+
         if os.path.isdir(self.output_folder) and self.replace_images is False:
             current_date_time = datetime.now()
             rounded_down_datetime = current_date_time.replace(microsecond=0)
@@ -398,7 +399,8 @@ class PyPlotGen:
                                                   plot_r408=self.cgbest, plot_hoc=self.hoc, e3sm_dirs=self.e3sm_dir,
                                                   cam_folders=self.cam_folders, time_height=self.time_height,
                                                   animation=self.animation, plot_subcolumns=self.plot_subcolumns,
-                                                  image_extension=self.image_extension, total_panels_to_plot=0)
+                                                  image_extension=self.image_extension, total_panels_to_plot=0,
+                                                  priority_vars=self.priority_vars)
             # Call plot function of case instance
             case_gallery_setup.plot(self.output_folder, replace_images=self.replace_images, no_legends=self.no_legends,
                                     thin_lines=self.thin, show_alphabetic_id=self.show_alphabetic_id,
@@ -692,6 +694,8 @@ def __processArguments__():
                                         "Case_definitions.py. E.g. --cases bomex arm wangara",
                         action="store",
                         default=[], nargs='+')
+    parser.add_argument("--priority-variables", help="Plot only variables with the 'priority' key.",
+                        action="store_true")
     args = parser.parse_args()
 
     if args.zip:
@@ -767,7 +771,7 @@ def __processArguments__():
     pyplotgen = PyPlotGen(args.output, clubb_folders=args.clubb, replace=args.replace, les=les, plot_e3sm=args.e3sm,
                           cgbest=cgbest, cam_folders=args.cam, nightly=args.nightly,
                           hoc=hoc, zip=args.zip, thin=args.thin, sam_folders=args.sam,
-                          wrf_folders=args.wrf, benchmark_only=args.benchmark_only,
+                          wrf_folders=args.wrf, benchmark_only=args.benchmark_only, priority_vars=args.priority_variables,
                           no_legends=args.no_legends, budget_moments=args.plot_budgets,
                           bu_morr=args.bu_morr, diff=args.diff, show_alphabetic_id=args.show_alphabetic_id,
                           time_height=args.time_height_plots, animation=args.movies,

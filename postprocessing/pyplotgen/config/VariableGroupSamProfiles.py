@@ -14,7 +14,7 @@ class VariableGroupSamProfiles(VariableGroup):
     """
     def __init__(self, case, clubb_datasets=None, les_dataset=None, coamps_dataset=None, r408_dataset=None,
                  hoc_dataset=None, cam_datasets=None,
-                 e3sm_datasets=None, sam_datasets=None, wrf_datasets=None):
+                 e3sm_datasets=None, sam_datasets=None, wrf_datasets=None, priority_vars=False):
         """
 
         :param clubb_datasets:
@@ -43,6 +43,7 @@ class VariableGroupSamProfiles(VariableGroup):
              'title': r"Liquid Water Potential Temperature, $\mathrm{\theta_l}$",
              'axis_title': r"$\mathrm{\theta_l}$ $\mathrm{\left[K\right]}$",
              'legend_label': r"$\mathrm{\theta_l}$",
+             'priority': True,
             },
             # R_T
             {'var_names':
@@ -59,6 +60,7 @@ class VariableGroupSamProfiles(VariableGroup):
              'title': r"Total Water Mixing Ratio, $\mathrm{r_t}$",
              'axis_title': r"$\mathrm{r_t}$ $\mathrm{\left[kg\,kg^{-1}\right]}$",
              'legend_label': r'$\mathrm{r_t}$',
+             'priority': True,
             },
             # W'THETA_L'
             {'var_names':
@@ -74,6 +76,7 @@ class VariableGroupSamProfiles(VariableGroup):
              'title': r"Turbulent Flux of $\mathrm{\theta_l}$",
              'axis_title': r"$\mathrm{\overline{w'\theta_l'}}$ / thflux(s) $\mathrm{\left[K\,m\,s^{-1}\right]}$",
              'legend_label': r"$\mathrm{\overline{w'\theta_l'}}$",
+             'priority': True,
             },
             # CORR(W, THETA_L)
             {'var_names':
@@ -107,6 +110,7 @@ class VariableGroupSamProfiles(VariableGroup):
              'title': r"Turbulent Flux of $\mathrm{r_t}$",
              'axis_title': r"$\mathrm{\overline{w'r_t'}}$ (QTFLUX) $\mathrm{\left[kg\,kg^{-1}\,m\,s^{-1}\right]}$",
              'legend_label': r"$\mathrm{\overline{w'r_t'}}$",
+             'priority': True,
             },
             # CORR(W, R_T)
             {'var_names':
@@ -157,6 +161,7 @@ class VariableGroupSamProfiles(VariableGroup):
              'title': r"Cloud Water Mixing Ratio, $\mathrm{r_c}$",
              'axis_title': r"$\mathrm{r_c}$ / $\mathrm{q_{cl}}$ $\mathrm{\left[kg\,kg^{-1}\right]}$",
              'legend_label': r'$\mathrm{r_c}$',
+             'priority': True,
             },
             # W'^2
             {'var_names':
@@ -173,6 +178,7 @@ class VariableGroupSamProfiles(VariableGroup):
              'title': r"Vertical Momentum Variance, $\mathrm{\overline{w'^2}}$",
              'axis_title': r"Momentum variance, $\mathrm{\overline{w'^2}}$ $\mathrm{\left[m^2\,s^{-2}\right]}$",
              'legend_label': r"$\mathrm{\overline{w'^2}}$",
+             'priority': True,
             },
             # W'^3
             {'var_names':
@@ -189,6 +195,7 @@ class VariableGroupSamProfiles(VariableGroup):
              'title': r"Vertical Momentum Skewness, $\mathrm{\overline{w'^3}}$",
              'axis_title': r"Momentum Skewness, $\mathrm{\overline{w'^3}}$ $\mathrm{\left[m^3\,s^{-3}\right]}$",
              'legend_label': r"$\mathrm{\overline{w'^3}}$",
+             'priority': True,
             },
             #THETA_L'^2
             {'var_names':
@@ -205,6 +212,7 @@ class VariableGroupSamProfiles(VariableGroup):
              'title': r"Variance of Liquid Water Potential Temperature, $\mathrm{\overline{\theta_l'^2}}$",
              'axis_title': r"$\mathrm{\overline{\theta_l'^2}}$ $\mathrm{\left[K^2\right]}$",
              'legend_label': r"$\mathrm{\overline{\theta_l'^2}}$",
+             'priority': True,
             },
             # R_T'^2
             {'var_names':
@@ -222,6 +230,7 @@ class VariableGroupSamProfiles(VariableGroup):
              'axis_title': r"$\mathrm{\overline{r_t'^2}}$ / $\mathrm{\overline{q_t'^2}}$ "+
                            r"$\mathrm{\left[kg^2\,kg^{-2}\right]}$",
              'legend_label': r"$\mathrm{\overline{r_t'^2}}$",
+             'priority': True,
             },
             # R_T'THETA_L'
             {'var_names':
@@ -238,6 +247,7 @@ class VariableGroupSamProfiles(VariableGroup):
              'title': r"Covariance of $\mathrm{r_t}$ & $\mathrm{\theta_l}$",
              'axis_title': r"$\mathrm{\overline{r_t'\theta_l'}}$ $\mathrm{\left[kg\,kg^{-1}\,K\right]}$",
              'legend_label': r"$\mathrm{\overline{r_t'\theta_l'}}$",
+             'priority': True,
             },
             # W_OBS
             {'var_names':
@@ -353,6 +363,7 @@ class VariableGroupSamProfiles(VariableGroup):
              'title': r"$\mathrm{\overline{u'w'}}$",
              'axis_title': r"Momentum flux, $\mathrm{\overline{u'w'}\ \left[m^2\,s^{-2}\right]}$",
              'legend_label': r"$\mathrm{\overline{u'w'}}$",
+             'priority': True,
             },
             # V'W'
             {'var_names':
@@ -369,6 +380,7 @@ class VariableGroupSamProfiles(VariableGroup):
              'title': r"$\mathrm{\overline{v'w'}}$",
              'axis_title': r"Momentum flux, $\mathrm{\overline{v'w'}\ \left[m^2\,s^{-2}\right]}$",
              'legend_label': r"$\mathrm{\overline{v'w'}}$",
+             'priority': True,
             },
             # U'^2
             {'var_names':
@@ -385,6 +397,7 @@ class VariableGroupSamProfiles(VariableGroup):
              'title': r"$\mathrm{\overline{u'^2}}$",
              'axis_title': r"Momentum variance, $\mathrm{\overline{u'^2}\ \left[m^2\,s^{-2}\right]}$",
              'legend_label': r"$\mathrm{\overline{u'^2}}$",
+             'priority': True,
             },
             # V'^2
             {'var_names':
@@ -401,6 +414,7 @@ class VariableGroupSamProfiles(VariableGroup):
              'title': r"$\mathrm{\overline{v'^2}}$",
              'axis_title': r"Momentum variance, $\mathrm{\overline{v'^2}\ \left[m^2\,s^{-2}\right]}$",
              'legend_label': r"$\mathrm{\overline{v'^2}}$",
+             'priority': True,
             },
             # CORR(U, W)
             {'var_names':
@@ -1287,6 +1301,7 @@ class VariableGroupSamProfiles(VariableGroup):
              'title': "Cloud fraction",
              'axis_title': "Cloud fraction [-]",
              'legend_label': 'CLD',
+             'priority': True,
             },
             
             ## Tracer variables
@@ -1408,7 +1423,8 @@ class VariableGroupSamProfiles(VariableGroup):
         # Call ctor of parent class
         super().__init__(case, clubb_datasets=clubb_datasets, sam_datasets=sam_datasets, les_dataset=les_dataset,
                          coamps_dataset=coamps_dataset, r408_dataset=r408_dataset, cam_datasets=cam_datasets,
-                         hoc_dataset=hoc_dataset, e3sm_datasets= e3sm_datasets, wrf_datasets=wrf_datasets)
+                         hoc_dataset=hoc_dataset, e3sm_datasets= e3sm_datasets, wrf_datasets=wrf_datasets,
+                         priority_vars=priority_vars)
             
     def getThlmSamCalc(self, dataset_override=None):
         """

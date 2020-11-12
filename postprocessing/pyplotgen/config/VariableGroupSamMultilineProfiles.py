@@ -14,7 +14,7 @@ class VariableGroupSamMultilineProfiles(VariableGroup):
     """
     def __init__(self, case, clubb_datasets=None, les_dataset=None, coamps_dataset=None, r408_dataset=None,
                  hoc_dataset=None, cam_datasets=None,
-                 e3sm_datasets=None, sam_datasets=None, wrf_datasets=None):
+                 e3sm_datasets=None, sam_datasets=None, wrf_datasets=None, priority_vars=False):
         """
 
         :param clubb_datasets:
@@ -444,7 +444,8 @@ class VariableGroupSamMultilineProfiles(VariableGroup):
         # Call ctor of parent class
         super().__init__(case, clubb_datasets=clubb_datasets, sam_datasets=sam_datasets, les_dataset=les_dataset,
                          coamps_dataset=coamps_dataset, r408_dataset=r408_dataset, cam_datasets=cam_datasets,
-                         hoc_dataset=hoc_dataset, e3sm_datasets=e3sm_datasets, wrf_datasets=wrf_datasets)
+                         hoc_dataset=hoc_dataset, e3sm_datasets=e3sm_datasets, wrf_datasets=wrf_datasets,
+                         priority_vars=priority_vars)
 
     def getUpWpCalc(self, dataset_override = None):
         """

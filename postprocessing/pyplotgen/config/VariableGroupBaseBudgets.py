@@ -13,7 +13,8 @@ class VariableGroupBaseBudgets(VariableGroup):
     """
 
     def __init__(self, case, clubb_datasets=None, les_dataset=None, coamps_dataset=None, r408_dataset=None,
-                 hoc_dataset=None, cam_datasets=None, e3sm_datasets=None, wrf_datasets=None):
+                 hoc_dataset=None, cam_datasets=None, e3sm_datasets=None, wrf_datasets=None,
+                 priority_vars=False):
         self.name = "base variables budgets"
 
         thlm_budget_lines = [
@@ -306,6 +307,7 @@ class VariableGroupBaseBudgets(VariableGroup):
                     'wrf': ['thlm'],
                 },
                 'lines': thlm_budget_lines, 'type': Panel.TYPE_BUDGET, 'centered': True,
+                'priority': True,
             },
             {'var_names':
                 {
@@ -319,6 +321,7 @@ class VariableGroupBaseBudgets(VariableGroup):
                     'wrf': ['rtm'],
                 },
                 'lines': rtm_budget_lines, 'type': Panel.TYPE_BUDGET, 'centered': True,
+                'priority': True,
             },
             {'var_names':
                 {
@@ -332,6 +335,7 @@ class VariableGroupBaseBudgets(VariableGroup):
                     'wrf': ['wpthlp'],
                 },
                 'lines': wpthlp_budget_lines, 'type': Panel.TYPE_BUDGET, 'centered': True,
+                'priority': True,
             },
             {'var_names':
                 {
@@ -345,6 +349,7 @@ class VariableGroupBaseBudgets(VariableGroup):
                     'wrf': ['wprtp'],
                 },
                 'lines': wprtp_budget_lines, 'type': Panel.TYPE_BUDGET, 'centered': True,
+                'priority': True,
             },
             {'var_names':
                 {
@@ -358,6 +363,7 @@ class VariableGroupBaseBudgets(VariableGroup):
                     'wrf': ['wp2'],
                 },
                 'lines': wp2_budget_lines, 'type': Panel.TYPE_BUDGET, 'centered': True,
+                'priority': True,
             },
             {'var_names':
                 {
@@ -371,6 +377,7 @@ class VariableGroupBaseBudgets(VariableGroup):
                     'wrf': ['wp3'],
                 },
                 'lines': wp3_budget_lines, 'type': Panel.TYPE_BUDGET, 'centered': True,
+                'priority': True,
             },
             {'var_names':
                 {
@@ -384,6 +391,7 @@ class VariableGroupBaseBudgets(VariableGroup):
                     'wrf': ['thlp2'],
                 },
                 'lines': thlp2_budget_lines, 'type': Panel.TYPE_BUDGET, 'centered': True,
+                'priority': True,
             },
             {'var_names':
                 {
@@ -397,6 +405,7 @@ class VariableGroupBaseBudgets(VariableGroup):
                     'wrf': ['rtp2'],
                 },
                 'lines': rtp2_budget_lines, 'type': Panel.TYPE_BUDGET, 'centered': True,
+                'priority': True,
             },
             {'var_names':
                 {
@@ -410,6 +419,7 @@ class VariableGroupBaseBudgets(VariableGroup):
                     'wrf': ['rtpthlp'],
                 },
                 'lines': rtpthlp_budget_lines, 'type': Panel.TYPE_BUDGET, 'centered': True,
+                'priority': True,
             },
             {'var_names':
                 {
@@ -423,6 +433,7 @@ class VariableGroupBaseBudgets(VariableGroup):
                     'wrf': ['upwp'],
                 },
                 'lines': upwp_budget_lines, 'type': Panel.TYPE_BUDGET, 'centered': True,
+                'priority': True,
             },
             {'var_names':
                 {
@@ -436,6 +447,7 @@ class VariableGroupBaseBudgets(VariableGroup):
                     'wrf': ['vpwp'],
                 },
                 'lines': vpwp_budget_lines, 'type': Panel.TYPE_BUDGET, 'centered': True,
+                'priority': True,
             },
             {'var_names':
                 {
@@ -473,6 +485,7 @@ class VariableGroupBaseBudgets(VariableGroup):
                 'wrf': ['up2']
             },
                 'lines': up2_budget_lines, 'type': Panel.TYPE_BUDGET, 'centered': True,
+                'priority': True,
             },
             {'var_names': {
                 'clubb': ['vp2'],
@@ -484,6 +497,7 @@ class VariableGroupBaseBudgets(VariableGroup):
                 'wrf': ['vp2']
             },
                 'lines': vp2_budget_lines, 'type': Panel.TYPE_BUDGET, 'centered': True,
+                'priority': True,
             },
             {'var_names':
                 {
@@ -516,7 +530,8 @@ class VariableGroupBaseBudgets(VariableGroup):
         # Call ctor of parent class
         super().__init__(case, clubb_datasets=clubb_datasets, les_dataset=les_dataset, coamps_dataset=coamps_dataset,
                          r408_dataset=r408_dataset, cam_datasets=cam_datasets,
-                         hoc_dataset=hoc_dataset, e3sm_datasets=e3sm_datasets, wrf_datasets=wrf_datasets)
+                         hoc_dataset=hoc_dataset, e3sm_datasets=e3sm_datasets, wrf_datasets=wrf_datasets,
+                         priority_vars=priority_vars)
 
     def getThlmClipping(self, dataset_override=None):
         '''

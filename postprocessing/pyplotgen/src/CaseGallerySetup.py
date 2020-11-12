@@ -29,7 +29,7 @@ class CaseGallerySetup:
     def __init__(self, case_definition, clubb_folders=[], diff_datasets=None, sam_folders=[""], wrf_folders=[""],
                  plot_les=False, plot_budgets=False, plot_r408=False, plot_hoc=False, e3sm_dirs=[], cam_folders=[],
                  time_height=False, animation=None, plot_subcolumns=False, image_extension=".png",
-                 total_panels_to_plot=0):
+                 total_panels_to_plot=0, priority_vars=False):
         """
         Initialize a CaseGallerySetup object with the passed parameters
         :param case_definition: dict containing case specific elements. These are pulled in from Case_definitions.py,
@@ -80,6 +80,7 @@ class CaseGallerySetup:
         self.r408_datasets = None
         self.hoc_datasets = None
         self.image_extension = image_extension
+        self.priority_vars = priority_vars
 
         self.VALID_MODEL_NAMES = ['clubb', 'clubb_hoc','clubb_r408', 'e3sm', 'sam', 'cam', 'wrf', 'coamps']
 
@@ -149,7 +150,7 @@ class CaseGallerySetup:
                 for input_folder in self.clubb_datasets:
                     folder_name = os.path.basename(input_folder)
                     if input_folder in self.clubb_datasets.keys():
-                        budget_variables = VariableGroupBaseBudgets(self,
+                        budget_variables = VariableGroupBaseBudgets(self, priority_vars=self.priority_vars,
                                                                     clubb_datasets={folder_name:self.clubb_datasets[input_folder]})
                         self.panels.extend(budget_variables.panels)
                     else:
@@ -159,20 +160,20 @@ class CaseGallerySetup:
                 #     budget_variables = VariableGroupBaseBudgets(self, wrf_datasets=folders_datasets)
                 for input_folder in self.wrf_datasets:
                     folder_name = os.path.basename(input_folder)
-                    budget_variables = VariableGroupBaseBudgets(self,
+                    budget_variables = VariableGroupBaseBudgets(self, priority_vars=self.priority_vars,
                                                                 wrf_datasets={folder_name:self.wrf_datasets[input_folder]})
                     self.panels.extend(budget_variables.panels)
             if self.e3sm_file is not None and len(self.e3sm_file) != 0:
                 for dataset_name in self.e3sm_file:
                     # E3SM dataset must be wrapped in the same form as the clubb datasets
-                    e3sm_budgets = VariableGroupBaseBudgets(self,
+                    e3sm_budgets = VariableGroupBaseBudgets(self, priority_vars=self.priority_vars,
                                                             e3sm_datasets={dataset_name: self.e3sm_file[dataset_name]})
                     self.panels.extend(e3sm_budgets.panels)
             if self.sam_datasets is not None and len(self.sam_datasets) != 0:
                 # for dataset in sam_datasets.values():
                 for input_folder in self.sam_datasets:
                     folder_name = os.path.basename(input_folder)
-                    budget_variables = VariableGroupSamBudgets(self,
+                    budget_variables = VariableGroupSamBudgets(self, priority_vars=self.priority_vars,
                                                                sam_datasets={folder_name:self.sam_datasets[input_folder]})
                 # sam_budgets = VariableGroupSamBudgets(self, sam_datasets=sam_datasets)
                     self.panels.extend(budget_variables.panels)
@@ -218,7 +219,7 @@ class CaseGallerySetup:
             temp_group = VarGroup(self, clubb_datasets=self.clubb_datasets, les_dataset=self.sam_benchmark_file,
                                   coamps_dataset=self.coamps_datasets, sam_datasets=self.sam_datasets,
                                   wrf_datasets=self.wrf_datasets, r408_dataset=self.r408_datasets, hoc_dataset=self.hoc_datasets,
-                                  e3sm_datasets=self.e3sm_file, cam_datasets=self.cam_file)
+                                  e3sm_datasets=self.e3sm_file, cam_datasets=self.cam_file, priority_vars=self.priority_vars)
             self.panels.extend(temp_group.panels)
 
         total_panels = len(self.panels)

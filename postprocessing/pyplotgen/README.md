@@ -32,6 +32,7 @@ Pyplotgen only supports input in the netcdf (.nc) format.
 | --plot-subcolumns | This adds subcolumn (silhs) to the pyplotgen output. Currently only CLUBB subcolumns are supported. |
 | --cases | A set of case name(s) to be ran. Cases not listed here will not be ran. The casename specified must match the 'name' parameter of the case's definition Case_definitions.py. E.g. --cases bomex arm wangara |
 | --movies [OPTIONAL TYPE] | Creates animated plots of all standard variables except type_timeseries.  Basic usage is e.g. --movies=mp4. If no argument (like 'mp4') is given, it defaults to mp4.  Can be used with --plot_budgets, --plot-subcolumns, and other 2D data like --les. Cannot be used with --pdf, --time-height-plots, or --eps or --svg. Currently .mp4 and .avi are supported, but .mp4 is probably more compatible with most web browsers. To adjust the frame rate, change the FRAMES_PER_SECOND variable in config/Style_definitions.py. |  
+| --priority-variables | Outputs a subset of 15 interesting variables (including budgets for these variables if used with the -b option).  Useful for cutting down time for generating animations. |
 
 ## Installing Dependencies
 To install the dependencies necessary for PyPlotgen to run, run the command
