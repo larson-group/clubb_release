@@ -323,12 +323,12 @@ class PyPlotGen:
                         pdf.set_x(x_coord)
                         pdf.image(filename, w=50, h=30)
                         pdf.set_y(pdf.get_y() - 30)
-                    if loop_counter == num_imgs_per_row - 1:
-                        pdf.ln()
-                        loop_counter = 0
-                        pdf.set_y(pdf.get_y() + 20)
-                    else:
-                        loop_counter += 1
+                        if loop_counter == num_imgs_per_row - 1:
+                            pdf.ln()
+                            loop_counter = 0
+                            pdf.set_y(pdf.get_y() + 25)
+                        else:
+                            loop_counter += 1
 
         pdf.output(pdf_output_filename, 'F')
 
