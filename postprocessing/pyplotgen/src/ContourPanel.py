@@ -9,7 +9,12 @@ The changed plot routine outputs contour plots instead of profile plots.
 :date: July 2020
 '''
 import os
+import warnings
 from datetime import datetime
+
+#TODO temporary fix to suppress warnings related to chi/eta corr vars
+import logging
+logging.captureWarnings(True)
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -45,7 +50,7 @@ class ContourPanel(Panel):
         super().__init__(plots, panel_type, title, dependent_title, sci_scale=None, centered=False)
 
     def plot(self, output_folder, casename, replace_images = False, no_legends = True, thin_lines = False,
-             alphabetic_id = '', paired_plots = True):
+             alphabetic_id = '', paired_plots = True, image_extension=".png"):
         """
         Generate a single contourf plot from the given data
 
@@ -55,7 +60,11 @@ class ContourPanel(Panel):
         :param alphabetic_id: A string printed into the Panel at coordinates (.9,.9) as an identifier.
         :return: None
         """
-        plt.subplot(111)
+        # Suppress deprecation warnings
+        with warnings.catch_warnings():
+            # Create new figure and axis
+            warnings.simplefilter("ignore")
+            plt.subplot(111)
 
         # Set font sizes
         plt.rc('font', size=Style_definitions.DEFAULT_TEXT_SIZE)          # controls default text sizes
@@ -105,16 +114,12 @@ class ContourPanel(Panel):
                 pass # do nothing
 
             # Generate image filename
-            filename = label + "_timeheight_"+ str(datetime.now())
+            filename = "timeheight_"+ str(datetime.now())+ "_" + self.title
 
             filename = self.__removeInvalidFilenameChars__(filename)
             # Concatenate with output foldername
             relative_filename = output_folder + '/' + casename + '/' + filename
             relative_filename = clean_path(relative_filename)
             # Save image file
-            if replace_images is True or not os.path.isfile(relative_filename+Panel.EXTENSION):
-                plt.savefig(relative_filename+Panel.EXTENSION)
-            else: # os.path.isfile(relative_filename + Panel.EXTENSION) and replace_images is False:
-                print("\n\tImage " + relative_filename+Panel.EXTENSION+
-                      ' already exists. To overwrite this image during runtime pass in the --replace (-r) parameter.')
+            plt.savefig(relative_filename+image_extension)
             plt.close()

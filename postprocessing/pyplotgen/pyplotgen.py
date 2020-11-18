@@ -12,14 +12,14 @@ import argparse
 import glob
 import multiprocessing
 import os
+import logging
 import shutil
 import subprocess
 import time
 from datetime import datetime
 from difflib import SequenceMatcher
-from multiprocessing import Pool
+from multiprocessing import Pool, Array
 from multiprocessing import freeze_support
-from warnings import warn
 
 from fpdf import FPDF
 
@@ -29,7 +29,8 @@ from src import Panel
 from src.CaseGallerySetup import CaseGallerySetup
 from src.DataReader import DataReader
 from src.interoperability import clean_path
-
+import src.OutputHandler
+from src.OutputHandler import logToFile, logToFileAndConsole, initializeProgress, writeFinalErrorLog
 
 class PyPlotGen:
     """
@@ -45,7 +46,7 @@ class PyPlotGen:
                  plot_e3sm="", sam_folders=[""], wrf_folders=[""], cam_folders=[""],
                  budget_moments=False, bu_morr=False, diff=None, show_alphabetic_id=False,
                  time_height=False, animation=None, disable_multithreading=False, pdf=False,
-                 pdf_filesize_limit=None, plot_subcolumns=False):
+                 pdf_filesize_limit=None, plot_subcolumns=False, image_extension=".png"):
         """
         This creates an instance of PyPlotGen. Each parameter is a command line parameter passed in from the argparser
         below.
@@ -122,7 +123,8 @@ class PyPlotGen:
         self.multithreaded = not disable_multithreading
         self.pdf = pdf
         self.pdf_filesize_limit = pdf_filesize_limit
-
+        self.image_extension = image_extension
+     
         if os.path.isdir(self.output_folder) and self.replace_images is False:
             current_date_time = datetime.now()
             rounded_down_datetime = current_date_time.replace(microsecond=0)
@@ -130,6 +132,23 @@ class PyPlotGen:
             self.output_folder = self.output_folder + '_generated_on_' + datetime_generated_on
 
         self.output_folder = clean_path(self.output_folder)
+
+        # If --replace flag was set, delete old output folder
+        if self.replace_images:
+            subprocess.run(['rm', '-rf', self.output_folder + '/'])
+            # TODO: Use for Windows
+            # shutil.rmtree(self.output_folder)
+
+        # create output folder to store error log file
+        # and configure logging
+        try:
+            os.mkdir(self.output_folder)
+        except FileExistsError:
+            pass # do nothing
+        self.errorlog = self.output_folder+"/error_temp.log"
+        self.finalerrorlog = self.output_folder+"/error.log"
+        logging.basicConfig(filename=self.errorlog, filemode='w', level=logging.INFO,
+                    format='%(asctime)s.%(msecs)03d %(message)s', datefmt='%y-%m-%d %H:%M:%S')
 
     def run(self):
         """
@@ -143,6 +162,10 @@ class PyPlotGen:
         
         :return: None
         """
+        logToFileAndConsole('*******************************************')
+        logToFileAndConsole("Welcome to PyPlotGen.")
+        logToFileAndConsole('*******************************************')
+        logToFileAndConsole('                                           ')
         self.diff_datasets = None
         # Load data used for difference plots
         if self.diff is not None:
@@ -152,27 +175,21 @@ class PyPlotGen:
         # Downloads model output (sam, les, clubb) if it doesn't exist
         if self.__benchmarkFilesNeeded__():
             self.__downloadModelOutputs__()
-
-        # If --replace flag was set, delete old output folder
-        if self.replace_images:
-            print('###########################################')
-            print("\nDeleting old plots")
-            subprocess.run(['rm', '-rf', self.output_folder + '/'])
-            # TODO: Use for Windows
-            # shutil.rmtree(self.output_folder)
         self.num_cases_plotted = 0
         # Loop through cases listed in Case_definitions.CASES_TO_PLOT
         # for case_def in all_enabled_cases:
         cases_plotted_bools = []
+        initializeProgress(self.image_extension, self.animation)
         if self.multithreaded:
             freeze_support()  # Required for multithreading
             n_processors = multiprocessing.cpu_count()
-            with Pool(processes=n_processors) as pool:
+            with Pool(processes=n_processors,initializer=tpc_init,initargs=(total_progress_counter, )) as pool:
                 cases_plotted_bools = pool.map(self.__plotCase__, all_enabled_cases)
         else:
             for case_def in all_enabled_cases:
                 cases_plotted_bools.append(self.__plotCase__(case_def))
-        print('###########################################')
+        logToFileAndConsole('')
+        logToFileAndConsole('-------------------------------------------')
 
         self.num_cases_plotted = self.__extractNumCasesPlotted__(cases_plotted_bools)
 
@@ -181,14 +198,14 @@ class PyPlotGen:
             for case in Case_definitions.CASES_TO_PLOT:
                 all_cases_casenames.append(case["name"])
 
-            warn(
+            logToFileAndConsole( 
                 "Warning, no cases were plotted! Please either specify an input folder for a supported model "
                 "(e.g. using --sam, --clubb, --e3sm, --wrf, --cam). \nMake sure the "
                 "default clubb output folder contains .nc output, and check that the CASES_TO_PLOT variable in "
                 "config/Case_Defintions.py lists all of the cases you expected to plot.\n"
                 "CASES_TO_PLOT = " + str(all_cases_casenames) +
                 "\nPlease run ./pyplotgen.py -h for more information on parameters.")
-        print("\nGenerating webpage for viewing plots ")
+        logToFile("Generating webpage for viewing plots ")
 
         if not os.path.exists(self.output_folder):
             os.mkdir(self.output_folder)
@@ -197,9 +214,13 @@ class PyPlotGen:
         # Generate html pages
         # Multithreading changes the order the cases are plotted on the webpage, so it has been disabled.
         # The capability is being left here as a demo.
-        gallery.main(self.output_folder, multithreaded=False)
-        print('###########################################')
-        print("Output can be viewed at file://" + self.output_folder + "/index.html with a web browser")
+        if self.animation is not None:
+            movie_extension = "." + self.animation
+            gallery.main(self.output_folder, multithreaded=False, file_extension=movie_extension)
+        else:
+            gallery.main(self.output_folder, multithreaded=False, file_extension=self.image_extension)
+        logToFileAndConsole('-------------------------------------------')
+        logToFileAndConsole("Output can be viewed at file://" + self.output_folder + "/index.html with a web browser")
 
     def __printToPDF__(self):
         """
@@ -214,20 +235,20 @@ class PyPlotGen:
         for case in Case_definitions.ALL_CASES:
             case_descriptions[case['name']] = case['description']
         if self.pdf and self.pdf_filesize_limit is None:
-            print('###########################################')
-            print('Generating PDF file ' + pdf_output_filename)
+            logToFileAndConsole('-------------------------------------------')
+            logToFileAndConsole('Generating PDF file ' + pdf_output_filename)
             # config = pdfkit.configuration(wkhtmltopdf='/usr/bin/')
             self.__writePdfToDisk__(pdf_output_filename, case_descriptions)
             # pdfkit.from_file(html_input_filename, pdf_output_filename)
-            print("PDF Output can be viewed at file://" + pdf_output_filename + " with a web browser/ pdf viewer")
-            print('###########################################')
+            logToFileAndConsole("PDF Output can be viewed at file://" + pdf_output_filename + " with a web browser/ pdf viewer")
+            logToFileAndConsole('-------------------------------------------')
         if self.pdf_filesize_limit is not None:
             output_dpi = Style_definitions.IMG_OUTPUT_DPI
             pdf_too_large = True
             filesize_impossible = False
-            print('###########################################')
-            print('Generating PDF file ' + pdf_output_filename)
-            print('Searching for minimum viable DPI for output images to print within '
+            logToFileAndConsole('-------------------------------------------')
+            logToFileAndConsole('Generating PDF file ' + pdf_output_filename)
+            logToFileAndConsole('Searching for minimum viable DPI for output images to print within '
                   + str(self.pdf_filesize_limit) + 'MB')
             attempted_prints = 0
             while pdf_too_large and not filesize_impossible:
@@ -235,13 +256,13 @@ class PyPlotGen:
                 bytes_to_mb = 1 / 1000000
                 self.__writePdfToDisk__(pdf_output_filename, case_descriptions)
                 pdf_filesize = os.path.getsize(pdf_output_filename) * bytes_to_mb
-                print("PDF generated using a dpi of ", Style_definitions.IMG_OUTPUT_DPI, " with a filesize of ", pdf_filesize, "MB.")
+                logToFileAndConsole("PDF generated using a dpi of ", Style_definitions.IMG_OUTPUT_DPI, " with a filesize of ", pdf_filesize, "MB.")
                 Style_definitions.IMG_OUTPUT_DPI = output_dpi
 
                 if pdf_filesize < self.pdf_filesize_limit:
                     pdf_too_large = False
-                    print("PDF output can be found at: file://" + pdf_output_filename)
-                    print("Printing PDF to the target filesize took ", attempted_prints, " attempts to find the right "
+                    logToFileAndConsole("PDF output can be found at: file://" + pdf_output_filename)
+                    logToFileAndConsole("Printing PDF to the target filesize took ", attempted_prints, " attempts to find the right "
                           "dpi.")
                 else:
                     # output downscaled images to a new folder so that the original quality ones can still be referenced
@@ -251,15 +272,15 @@ class PyPlotGen:
                         pdf_output_filename = self.output_folder + '/pyplotgen_output.pdf'
 
                     output_dpi = self.__getDecreasedDpiValue__(output_dpi, pdf_filesize)
-                    print("Attempted to print but the file was too large (", pdf_filesize, "MB insead of <",
+                    logToFileAndConsole("Attempted to print but the file was too large (", pdf_filesize, "MB insead of <",
                           self.pdf_filesize_limit, "MB). Reducing DPI and trying again.")
-                    print("Attempting to print pdf with dpi of ", output_dpi)
+                    logToFileAndConsole("Attempting to print pdf with dpi of ", output_dpi)
 
                     self.run()
                 if output_dpi <= 1:
-                    print("There is no possible dpi that fits within ", self.pdf_filesize_limit,
+                    logToFileAndConsole("There is no possible dpi that fits within ", self.pdf_filesize_limit,
                           "MB.")
-                    print("The most recent PDF output attempt can be found at: file://" + pdf_output_filename)
+                    logToFileAndConsole("The most recent PDF output attempt can be found at: file://" + pdf_output_filename)
                     filesize_impossible = True
 
     def __writePdfToDisk__(self, pdf_output_filename, case_desciptions):
@@ -290,7 +311,7 @@ class PyPlotGen:
                 for filename in sorted(os.listdir(self.output_folder + "/" + foldername)):
                     filename = self.output_folder + '/' + foldername + '/' + filename
 
-                    if "html" not in filename and os.path.isfile(filename):
+                    if "html" not in filename and "txt" not in filename and os.path.isfile(filename):
                         x_coord = 20 + loop_counter * 60
                         pdf.set_x(x_coord)
                         pdf.image(filename, w=50, h=30)
@@ -361,8 +382,8 @@ class PyPlotGen:
         casename = case_def['name']
         case_plotted = False
         if self.__dataForCaseExists__(case_def):
-            print('###########################################')
-            print("plotting ", case_def['name'])
+            logToFile('-------------------------------------------')
+            logToFile("Processing: {}".format(case_def['name'].upper()))
             if self.diff is not None:
                 self.case_diff_datasets = self.diff_datasets[casename]
             case_gallery_setup = CaseGallerySetup(case_def, clubb_folders=self.clubb_folders, plot_les=self.les,
@@ -370,10 +391,12 @@ class PyPlotGen:
                                                   wrf_folders=self.wrf_folders, diff_datasets=self.case_diff_datasets,
                                                   plot_r408=self.cgbest, plot_hoc=self.hoc, e3sm_dirs=self.e3sm_dir,
                                                   cam_folders=self.cam_folders, time_height=self.time_height,
-                                                  animation=self.animation, plot_subcolumns=self.plot_subcolumns)
+                                                  animation=self.animation, plot_subcolumns=self.plot_subcolumns,
+                                                  image_extension=self.image_extension, total_panels_to_plot=0)
             # Call plot function of case instance
             case_gallery_setup.plot(self.output_folder, replace_images=self.replace_images, no_legends=self.no_legends,
-                                    thin_lines=self.thin, show_alphabetic_id=self.show_alphabetic_id)
+                                    thin_lines=self.thin, show_alphabetic_id=self.show_alphabetic_id,
+                                    total_progress_counter=total_progress_counter)
             self.cases_plotted.append(case_def)
             case_plotted = True
 
@@ -446,7 +469,7 @@ class PyPlotGen:
 
         :return: None
         """
-        print("Looking for case_setup.txt files")
+        logToFile("Looking for case_setup.txt files")
         for folder in self.clubb_folders:
             setup_file_search_pattern = folder + '/*_setup.txt'
             folder_basename = os.path.basename(folder)
@@ -462,11 +485,9 @@ class PyPlotGen:
                 copy_dest_file = copy_dest_folder + file_basename[:-10] + '_' + folder_basename + file_basename[-10:]
 
                 # If case is actually plotted, create output folder and copy setup file to destination folder
-                if casename in self.cases_plotted:
-                    if not os.path.exists(copy_dest_folder):
-                        os.mkdir(copy_dest_folder)
+                if os.path.exists(copy_dest_folder):
                     shutil.copy(file, copy_dest_file)
-                    print("\tFound setup file " + str(file))
+                    logToFile("\tFound setup file " + str(file))
 
     def __benchmarkFilesNeeded__(self):
         """
@@ -486,16 +507,17 @@ class PyPlotGen:
         :return: None
         """
         # Ensure benchmark output is available
-        print("Checking for model benchmark output...")
+        logToFileAndConsole("Checking for model benchmark output...")
         # Check if the folder specified in Case_definitions.BENCHMARK_OUTPUT_ROOT exists
         if not os.path.isdir(Case_definitions.BENCHMARK_OUTPUT_ROOT) and \
                 not os.path.islink(Case_definitions.BENCHMARK_OUTPUT_ROOT):
-            print("\tDownloading the benchmarks to " + Case_definitions.BENCHMARK_OUTPUT_ROOT)
+            logToFileAndConsole("\tDownloading the benchmarks to {}.".format(Case_definitions.BENCHMARK_OUTPUT_ROOT))
             subprocess.run(['git', 'clone', 'https://carson.math.uwm.edu/les_and_clubb_benchmark_runs.git',
                             Case_definitions.BENCHMARK_OUTPUT_ROOT])
         else:
-            print("Benchmark output found in " + Case_definitions.BENCHMARK_OUTPUT_ROOT)
-
+            logToFileAndConsole("Benchmark output found in {}.".format(Case_definitions.BENCHMARK_OUTPUT_ROOT))
+        logToFileAndConsole('-------------------------------------------')
+       
 
 def __convertCasenamesToCaseInstances__(casenames_list):
     """
@@ -599,9 +621,10 @@ def __processArguments__():
                              " Cannot be used with -m.",
                         action="store_true")
     parser.add_argument("-m", "--movies",
-                        help="Instead of averaged profiles, plot animations of time steps. Cannot be used with -t." +
-                             " Valid arguments: 'gif' or 'mp4'",
-                        action="store", choices=['gif', 'mp4'])
+                        help="Instead of averaged profiles, plot animations of time steps. Cannot be used with -t, " +
+                             "--pdf, --eps, or --svg. FRAMES_PER_SECOND can be adjusted in " + 
+                             "config/Style_definitions.py.",
+                        action="store", nargs='?', const='mp4', choices=['mp4','avi'])
     parser.add_argument("--bu-morr",
                         help="For morrison microphysics: breaks microphysical source terms into component processes",
                         action="store_true")
@@ -666,9 +689,9 @@ def __processArguments__():
     args = parser.parse_args()
 
     if args.zip:
-        print("Zip flag detected, but that feature is not yet implemented")
+        logToFileAndConsole("Zip flag detected, but that feature is not yet implemented")
     if args.bu_morr:
-        print("Morrison breakdown flag detected, but that feature is not yet implemented")
+        logToFileAndConsole("Morrison breakdown flag detected, but that feature is not yet implemented")
 
     # If the last char in folder path is /, remove it
     args.clubb = __trimTrailingSlash__(args.clubb)
@@ -693,11 +716,14 @@ def __processArguments__():
         cgbest = args.plot_golaz_best
         hoc = args.plot_hoc_2005
 
+    image_extension = ".png"
+    if args.movies is not None and (args.svg or args.eps):
+       raise RuntimeError("The --movies option currently only works with .png images.  Please remove --eps or --svg "
+                          "in order to generate animated plots.")
     if args.svg:
-        Panel.EXTENSION = ".svg"
-
+        image_extension = ".svg"
     if args.eps:
-        Panel.EXTENSION = ".eps"
+        image_extension = ".eps"
 
     if args.eps and args.svg:
         raise RuntimeError("The --svg and --eps options are not compatible with one another. Please select either --eps "
@@ -714,6 +740,13 @@ def __processArguments__():
 
     if args.time_height_plots and args.movies is not None:
         raise ValueError('Error: Command line parameter -t and -m cannot be used in conjunction.')
+
+    if args.pdf and args.movies is not None:
+        raise ValueError('Error: Command line parameters --pdf and --movies cannot be used in conjunction.')
+
+    if args.time_height_plots and args.plot_budgets:
+        raise ValueError('Error: Command line parameters --time-height-plots and -b (--plot-budgets) cannot ' 
+                         'be used in conjunction.')
 
     if len(args.cases) > 0:
         cases_to_plot, cases_not_found = __convertCasenamesToCaseInstances__(args.cases)
@@ -733,14 +766,25 @@ def __processArguments__():
                           bu_morr=args.bu_morr, diff=args.diff, show_alphabetic_id=args.show_alphabetic_id,
                           time_height=args.time_height_plots, animation=args.movies,
                           disable_multithreading=args.disable_multithreading, pdf=args.pdf,
-                          pdf_filesize_limit=args.pdf_filesize_limit, plot_subcolumns=args.plot_subcolumns)
+                          pdf_filesize_limit=args.pdf_filesize_limit, plot_subcolumns=args.plot_subcolumns,
+                          image_extension=image_extension)
     return pyplotgen
+
+
+# Added to track progress with multithreading
+total_progress_counter = [0,0]
+def tpc_init(x):
+    global total_progress_counter
+    total_progress_counter = x
 
 
 if __name__ == "__main__":
     pyplotgen = __processArguments__()
+    total_progress_counter = Array('i',[0,0])
     start_time = time.time()
     pyplotgen.run()
     pyplotgen.__printToPDF__()
     total_runtime = round(time.time() - start_time)
-    print("Pyplotgen ran in: ", total_runtime, " seconds.")
+    logToFileAndConsole("Pyplotgen ran in {} seconds.".format(total_runtime))
+    writeFinalErrorLog(pyplotgen.errorlog,pyplotgen.finalerrorlog)
+    print("See error.log in the output folder for detailed info including warnings.")

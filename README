@@ -1,3 +1,4 @@
+
 ********************************************************************************
 *                           Copyright Notice
 *                       This code is (C) 2006-2020
@@ -924,12 +925,8 @@ Do steps 1, 2, & 3 as outlined in the standalone run.
    you must also edit tuning_stats.in to match the variables being tuned for
    in the error_<CASE_NAME>.in file.
 
-7. You will need to check out the clubb benchmark data from the repository, 
-   create a directory in clubb called les_data, and move all files for the case
-   or cases you want to run the tuner for from the les_runs subdirectory in 
-   clubb_benchmark_data to les_data in clubb. (Note that simply checking out the
-   benchmark data from the repository into les_data will not work properly,
-   the case files must be in the top level of the les_data directory.)  This, along
+7. Ensure that the directory /usr/local/les_and_clubb_benchmark_runs exists on the
+   machine you are using.  (All group computers should have this directory)  This, along
    with setting debug_level to 0, will produce identical output to the nightly tests
    tuning run.
 

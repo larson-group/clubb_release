@@ -16,7 +16,7 @@ from multiprocessing import freeze_support
 
 from config import Case_definitions
 from python_html_gallery import static
-from src import Panel
+from src.OutputHandler import logToFile, logToFileAndConsole
 
 try:
     from PIL import Image
@@ -24,7 +24,7 @@ except ImportError:
     try:
         import Image
     except ImportError:
-        print('Requires Python Imaging Library. See README.md.')
+        logToFile('Requires Python Imaging Library. See README.md.')
         sys.exit(1)
 
 
@@ -48,13 +48,13 @@ def Now(time=True):
         return datetime.datetime.now().strftime('%Y%m%d')
 
 
-def RandomThumb(page):
+def RandomThumb(page,file_extension=".png"):
     """Returns path to random thumbnail for a given page."""
     return random.choice(
-        glob.glob(os.path.join(page.split('/')[0], '*_thumb'+Panel.EXTENSION)))
+        glob.glob(os.path.join(page.split('/')[0], '*_thumb'+file_extension)))
 
 
-def OrganizeRoot(output_dir):
+def OrganizeRoot(output_dir,file_extension=".png"):
     """Creates directories for images in root directory."""
 
     static.root = output_dir
@@ -64,20 +64,20 @@ def OrganizeRoot(output_dir):
         print('Could not cd into %s' % static.root)
         sys.exit(1)
 
-    fs = ListFiles('*'+Panel.EXTENSION, '.')
+    fs = ListFiles('*'+file_extension, '.')
     if fs:
         for jpg in fs:
             datehour = Now(time=False)
             if not os.path.exists(datehour):
-                print('Creating directory: %s' % datehour)
+                logToFile('Creating directory: %s' % datehour)
                 os.makedirs(datehour)
             if not os.path.exists(os.path.join(datehour, jpg)):
                 shutil.move(jpg, datehour)
             else:
-                print('%s already exists' % os.path.join(datehour, jpg))
+                logToFile('%s already exists' % os.path.join(datehour, jpg))
 
 
-def GenerateHtmlImages(page, jpgs):
+def GenerateHtmlImages(page, jpgs, file_extension):
     """
     Creates HTML image elements
 
@@ -90,7 +90,10 @@ def GenerateHtmlImages(page, jpgs):
     url_imgs = []
     for jpg in jpgs:
         jpg = page + '/' + jpg
-        url_imgs.append(static.url_img % (jpg, jpg, jpg))
+        if file_extension in {'.png','.svg','.eps'}:
+            url_imgs.append(static.url_img % (jpg, jpg, jpg))
+        elif file_extension in {'.mp4','.avi'}:
+            url_imgs.append(static.url_mov % (jpg))
     return url_imgs
 
 
@@ -116,7 +119,7 @@ def get_description(casename):
             return case['description']
 
 
-def WriteGalleryPage(page):
+def WriteGalleryPage(page,file_extension=".png"):
     """Writes a gallery page for jpgs in path.
 
   Args:
@@ -145,20 +148,24 @@ def WriteGalleryPage(page):
         plots_file.write(static.timestamp % Now())
 
         try:
-            img_paths = '*'+Panel.EXTENSION
+            img_paths = '*'+file_extension
             case_images = ListFiles(img_paths, page)
             jpgs = sorted(case_images, reverse=True)[::-1]
+            if file_extension in {'.png','.svg','.eps'}:
+                logToFileAndConsole('%s: SUCCESS --> Images found.' % page.upper())
+            elif file_extension in {'.mp4','.avi'}:
+                logToFileAndConsole('%s: SUCCESS --> Movies found.' % page.upper())
         except TypeError:
-            print('%s: No images found' % page)
+            logToFileAndConsole('%s: ERROR --> No images or movies found...' % page.upper())
             return
 
-        for e in GenerateHtmlImages(page, jpgs):
+        for e in GenerateHtmlImages(page, jpgs, file_extension):
             plots_file.write(e)
 
         # plots_file.write(static.footer)
 
 
-def WriteGalleryPages(multithreaded=False):
+def WriteGalleryPages(multithreaded=False,file_extension=".png"):
     """Write gallery pages for directories in root path."""
     with open(static.plots, 'w') as index_file:
         index_file.write(static.header)
@@ -172,7 +179,7 @@ def WriteGalleryPages(multithreaded=False):
             pool.map(WriteGalleryPage, all_pages)
     else:
         for page in all_pages:
-            WriteGalleryPage(page)
+            WriteGalleryPage(page,file_extension)
 
     with open(static.plots, 'a') as index_file:
         index_file.write(static.footer)
@@ -197,7 +204,7 @@ def WriteNavigation():
 
         nav_file.write(static.nav_footer)
 
-    print('Wrote %s with %s gallery link(s)' % (
+    logToFile('Wrote %s with %s gallery link(s)' % (
         os.path.join(static.root, static.navigation), page_count))
 
 def WriteIndex():
@@ -209,12 +216,12 @@ def WriteIndex():
     with open(static.index, 'w') as index_file:
         index_file.write(static.idx_page)
 
-    print("Wrote index.html")
+    logToFile("Wrote index.html")
 
-def main(output_dir, multithreaded=False):
+def main(output_dir, multithreaded=False, file_extension=".png"):
     """Main function."""
-    OrganizeRoot(output_dir)
-    WriteGalleryPages(multithreaded=multithreaded)
+    OrganizeRoot(output_dir,file_extension)
+    WriteGalleryPages(multithreaded=multithreaded,file_extension=file_extension)
     WriteNavigation()
     WriteIndex()
 

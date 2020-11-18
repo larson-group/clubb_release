@@ -6,13 +6,12 @@ import os
 import pathlib as pathlib
 from collections.abc import Iterable
 from os import path
-from warnings import warn
 
 import numpy as np
 from netCDF4 import Dataset
 
 from config import Case_definitions
-
+from src.OutputHandler import logToFile, logToFileAndConsole
 
 class NetCdfVariable:
     """
@@ -84,7 +83,7 @@ class NetCdfVariable:
         if not var_found_in_dataset:
             if len(ncdf_data.values()) == 0:
                 # TODO patch this bug
-                warn("Some model is missing files for " + str(names) +". Try either including these files or "
+                logToFile("Some model is missing files for " + str(names) +". Try either including these files or "
                      "removing their names from the Case_definitions.py config file. "
                      "This warning is a temporary notice until a bug related to missing filenames is patched")
 
@@ -95,7 +94,7 @@ class NetCdfVariable:
                 raise KeyError("Could not find both ", names, " and ", independent_var_names, " in it in datasets ",
                                ncdf_data)
             # dataset_with_var = next(iter(ncdf_data.values()))
-            warn("None of the values " + str(names) + " were found in the dataset " + str(dataset_with_var.filepath()))
+            logToFile("None of the values " + str(names) + " were found in the dataset " + str(dataset_with_var.filepath()))
             dependent_varname = names[0]
 
         # If not already found, find a (set of) matching independent variable(s)
@@ -162,7 +161,7 @@ class NetCdfVariable:
         if data is None:
             data = self.dependent_data
             if len(data.shape)>1:
-                warn('Warning! trimArray was called on a multidimensional array without specifying data.')
+                logToFile('Warning! trimArray was called on a multidimensional array without specifying data.')
                 return None
 
         if axis not in [0,1]:
@@ -259,7 +258,8 @@ class NetCdfVariable:
             else:
                 dependent_data, independent_data = varname_element(dataset_override=all_datasets)
 
-            if np.isnan(dependent_data.any()) or np.isnan(independent_data.any()):
+            # When plotting subcolumns, dependent_data can be multidimentional. This accounts for that.
+            if np.any(np.isnan(dependent_data)):
                 continue
             else:
                 break
@@ -407,7 +407,7 @@ class DataReader():
         if end_time_value == -1:
             if variable_name not in Case_definitions.HEIGHT_VAR_NAMES \
                     and variable_name not in Case_definitions.TIME_VAR_NAMES:
-                warn("End time value was not specified (or was set to -1) for variable " + variable_name +
+                logToFile("End time value was not specified (or was set to -1) for variable " + variable_name +
                      ". Automatically using last time in dataset.")
             end_time_value = time_values[-1]
 
@@ -416,7 +416,7 @@ class DataReader():
         if ncdf_variable.avg_axis == 0:
             start_avg_idx, end_avg_idx = self.__getStartEndIndex__(time_values, start_time_value, end_time_value)
         elif ncdf_variable.avg_axis == 1:
-            warn('Warning! Averaging over heights is not yet implemented.')
+            logToFile('Warning! Averaging over heights is not yet implemented.')
             start_avg_idx, end_avg_idx = self.__getStartEndIndex__(time_values, start_time_value, end_time_value)
         # Get independent values from nc file
         if independent_var_name is None:
@@ -435,7 +435,7 @@ class DataReader():
                 independent_values['height'] = self.__getValuesFromNc__(netcdf_dataset,
                                                                         independent_var_name['height'], 1)
                 if independent_values['height'].ndim > 1:
-                    warn('Warning: Height independent values are multidimensional. Reducing to 1d by averaging.')
+                    logToFile('Warning: Height independent values are multidimensional. Reducing to 1d by averaging.')
                     independent_values['height'] = self.__averageData__(independent_values['height'],
                                                                         idx_t0=start_avg_idx, idx_t1=end_avg_idx,
                                                                         avg_axis=0)
@@ -499,7 +499,7 @@ class DataReader():
         if path.exists(filename):
             dataset = Dataset(filename, "r", format="NETCDF4")
         else:
-            warn("Failed to find file " + filename)
+            logToFile("Failed to find file " + filename)
 
         return dataset
 
@@ -524,22 +524,22 @@ class DataReader():
             raise ValueError('An invalid value for avg_axis was specified. '+
                              'Only 0 (time) and 1 (height) are valid values.')
         if idx_t1 - idx_t0 <= 10:
-            warn("Time averaging interval is small (less than or equal to 10): " + str(idx_t1 - idx_t0) +
+            logToFile("Time averaging interval is small (less than or equal to 10): " + str(idx_t1 - idx_t0) +
                  " | (idx_t0 = " + str(idx_t0) + ", idx_t1 = " + str(
                 idx_t1) + "). Note, start index is inclusive, end index is exclusive.")
         if avg_axis == 0:  # if time-averaged
             if idx_t1 == -1:
                 idx_t1 = len(var)
-                warn("An end index for the time averaging interval was not specified."+
+                logToFile("An end index for the time averaging interval was not specified."+
                      " Automatically using the last index.")
             var_average = np.nanmean(var[idx_t0:idx_t1, :], axis=avg_axis)
         elif avg_axis == 1:  # if height averaged
             if idx_z1 == -1:
                 idx_z1 = len(var)
-                warn("An end index for the height averaging interval was not specified."+
+                logToFile("An end index for the height averaging interval was not specified."+
                      " Automatically using the last index.")
             var_average = np.nanmean(var[:, idx_z0:idx_z1], axis=avg_axis)
-            warn("Using height averaging. If this is not desirable, change the averaging axis from 1 to 0 for time "
+            logToFile("Using height averaging. If this is not desirable, change the averaging axis from 1 to 0 for time "
                  "averaging instead.")
         return var_average
 
@@ -574,7 +574,7 @@ class DataReader():
             if var_found:
                 break
         if units == "Units n/a":
-            warn("Failed to find units for variables " + str(varnames))
+            logToFile("Failed to find units for variables " + str(varnames))
         return units
 
     def getLongName(self, ncdf_datasets, varnames):
@@ -639,7 +639,7 @@ class DataReader():
         # TODO this model detection method is old and can no longer be trusted
         src_model = self.guessNcdfSourceModel(ncdf_data)
         if src_model == 'unknown-model':
-            warn("Warning, unknown model detected. PyPlotgen doesn't know where this netcdf dependent_data is from. "
+            logToFile("Warning, unknown model detected. PyPlotgen doesn't know where this netcdf dependent_data is from. "
                  + str(ncdf_data))
 
         var_values = None
@@ -684,8 +684,16 @@ class DataReader():
             for i in range(len(var_values)):
                 var_values[i] = delta_t * (i + 1)
 
+            # Fix for mismatched lengths of data in the COAMPS RICO case.  The CLUBB and SAM RICO
+            # cases have 4320 minutes (3 days), but the COAMPS RICO case has only the third day (1440 minutes).
+            # To get the averaging right we need to add 2880 to the COAMPS time steps.  Luckily, the COAMPS
+            # RICO case is uniquely identified by the global history attribute attached to the file.
+            if hasattr(ncdf_data,'history'):
+                if 'rico_coamps' in ncdf_data.history:
+                    var_values += 2880
+
             if var_values[0] > 1:
-                warn("First time value is " + str(var_values[0]) +
+                logToFile("First time value is " + str(var_values[0]) +
                      " instead of 0-1. Are these time values supposed to be scaled to minutes?")
 
         return var_values

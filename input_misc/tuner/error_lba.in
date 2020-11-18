@@ -26,7 +26,7 @@ stp_adjst_spread_in = 0.8
 &cases
 ! LBA
 hoc_stats_file_nl(1)    = "../output/lba_zt.nc"
-les_stats_file_nl(1)    = "../sam_benchmark_runs/JULY_2017/LBA_128kmx128kmx128_1km_Morrison/LBA_128kmx128kmx128_1km_Morrison.nc"
+les_stats_file_nl(1)    = "/usr/local/les_and_clubb_benchmark_runs/sam_benchmark_runs/JULY_2017/LBA_128kmx128kmx128_1km_Morrison/LBA_128kmx128kmx128_1km_Morrison.nc"
 run_file_nl(1)          = "lba_hoc.in"
 z_i_nl(1)               = 3
 z_f_nl(1)               = 50
