@@ -2571,6 +2571,7 @@ contains
                                                  l_diag_Lscale_from_tau, & ! Out
                                                  l_use_C7_Richardson, & ! Out
                                                  l_use_C11_Richardson, & ! Out
+                                                 l_use_shear_Richardson, & ! Out
                                                  l_brunt_vaisala_freq_moist, & ! Out
                                                  l_use_thvm_in_bv_freq, & ! Out
                                                  l_rcm_supersat_adj, & ! Out
@@ -2675,6 +2676,7 @@ contains
                                       ! mixing length scale as Lscale = tau * tke
       l_use_C7_Richardson,          & ! Parameterize C7 based on Richardson number
       l_use_C11_Richardson,         & ! Parameterize C11 and C16 based on Richardson number
+      l_use_shear_Richardson,       & ! Use shear in the calculation of Richardson number
       l_brunt_vaisala_freq_moist,   & ! Use a different formula for the Brunt-Vaisala frequency in
                                       ! saturated atmospheres (from Durran and Klemp, 1982)
       l_use_thvm_in_bv_freq,        & ! Use thvm in the calculation of Brunt-Vaisala frequency
@@ -2719,6 +2721,7 @@ contains
                                          l_diag_Lscale_from_tau, & ! Out
                                          l_use_C7_Richardson, & ! Out
                                          l_use_C11_Richardson, & ! Out
+                                         l_use_shear_Richardson, & ! Out
                                          l_brunt_vaisala_freq_moist, & ! Out
                                          l_use_thvm_in_bv_freq, & ! Out
                                          l_rcm_supersat_adj, & ! Out
@@ -2766,6 +2769,7 @@ contains
                                                      l_diag_Lscale_from_tau, & ! In
                                                      l_use_C7_Richardson, & ! In
                                                      l_use_C11_Richardson, & ! In
+                                                     l_use_shear_Richardson, & ! In
                                                      l_brunt_vaisala_freq_moist, & ! In
                                                      l_use_thvm_in_bv_freq, & ! In
                                                      l_rcm_supersat_adj, & ! In
@@ -2872,6 +2876,7 @@ contains
                                       ! mixing length scale as Lscale = tau * tke
       l_use_C7_Richardson,          & ! Parameterize C7 based on Richardson number
       l_use_C11_Richardson,         & ! Parameterize C11 and C16 based on Richardson number
+      l_use_shear_Richardson,       & ! Use shear in the calculation of Richardson number
       l_brunt_vaisala_freq_moist,   & ! Use a different formula for the Brunt-Vaisala frequency in
                                       ! saturated atmospheres (from Durran and Klemp, 1982)
       l_use_thvm_in_bv_freq,        & ! Use thvm in the calculation of Brunt-Vaisala frequency
@@ -2920,6 +2925,7 @@ contains
                                              l_diag_Lscale_from_tau, & ! In
                                              l_use_C7_Richardson, & ! In
                                              l_use_C11_Richardson, & ! In
+                                             l_use_shear_Richardson, & ! In
                                              l_brunt_vaisala_freq_moist, & ! In
                                              l_use_thvm_in_bv_freq, & ! In
                                              l_rcm_supersat_adj, & ! In

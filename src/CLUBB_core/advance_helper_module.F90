@@ -412,6 +412,7 @@ module advance_helper_module
                                         ice_supersat_frac, &
                                         l_brunt_vaisala_freq_moist, &
                                         l_use_thvm_in_bv_freq, &
+                                        l_use_shear_Richardson, &
                                         Cx_fnc_Richardson )
 
   ! Description:
@@ -484,7 +485,8 @@ module advance_helper_module
     logical, intent(in) :: &
       l_brunt_vaisala_freq_moist, & ! Use a different formula for the Brunt-Vaisala frequency in
                                     ! saturated atmospheres (from Durran and Klemp, 1982)
-      l_use_thvm_in_bv_freq         ! Use thvm in the calculation of Brunt-Vaisala frequency
+      l_use_thvm_in_bv_freq,      & ! Use thvm in the calculation of Brunt-Vaisala frequency
+      l_use_shear_Richardson        ! Use shear in the calculation of Richardson number
 
     ! Output Variable
     real( kind = core_rknd), dimension(gr%nz), intent(out) :: &
@@ -540,10 +542,16 @@ module advance_helper_module
       if ( l_stats_samp ) &
         call stat_update_var( ishear_sqd, shear_sqd, stats_zm )
     else
-      Richardson_num = brunt_vaisala_freq_sqd_mixed * invrs_num_div_thresh
-      Ri_zm &
-      = max( 1.0e-7_core_rknd, brunt_vaisala_freq_sqd_mixed ) &
-        / max( ( ddzt(um)**2 + ddzt(vm)**2 ), 1.0e-7_core_rknd )
+
+      if ( l_use_shear_Richardson ) then
+         Richardson_num = brunt_vaisala_freq_sqd_mixed * invrs_num_div_thresh
+         Ri_zm &
+         = max( 1.0e-7_core_rknd, brunt_vaisala_freq_sqd_mixed ) &
+           / max( ( ddzt(um)**2 + ddzt(vm)**2 ), 1.0e-7_core_rknd )
+      else
+         Richardson_num = brunt_vaisala_freq_sqd * invrs_num_div_thresh
+         Ri_zm = Richardson_num
+      endif
 
     end if
 

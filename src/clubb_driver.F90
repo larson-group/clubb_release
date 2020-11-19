@@ -743,6 +743,7 @@ module clubb_driver
                                       ! mixing length scale as Lscale = tau * tke
       l_use_C7_Richardson,          & ! Parameterize C7 based on Richardson number
       l_use_C11_Richardson,         & ! Parameterize C11 and C16 based on Richardson number
+      l_use_shear_Richardson,       & ! Use shear in the calculation of Richardson number
       l_brunt_vaisala_freq_moist,   & ! Use a different formula for the Brunt-Vaisala frequency in
                                       ! saturated atmospheres (from Durran and Klemp, 1982)
       l_use_thvm_in_bv_freq,        & ! Use thvm in the calculation of Brunt-Vaisala frequency
@@ -790,7 +791,7 @@ module clubb_driver
       l_C2_cloud_frac, l_predict_upwp_vpwp, l_diag_Lscale_from_tau, &
       l_stability_correct_tau_zm, l_damp_wp2_using_em, l_use_C7_Richardson, &
       l_use_precip_frac, l_do_expldiff_rtm_thlm, l_use_C11_Richardson, &
-      l_prescribed_avg_deltaz, l_diffuse_rtm_and_thlm, &
+      l_use_shear_Richardson, l_prescribed_avg_deltaz, l_diffuse_rtm_and_thlm, &
       l_stability_correct_Kh_N2_zm, l_trapezoidal_rule_zt, l_trapezoidal_rule_zm, &
       l_call_pdf_closure_twice, l_Lscale_plume_centered, &
       l_brunt_vaisala_freq_moist, l_use_thvm_in_bv_freq, l_update_pressure
@@ -929,6 +930,7 @@ module clubb_driver
                                          l_diag_Lscale_from_tau, & ! Intent(out)
                                          l_use_C7_Richardson, & ! Intent(out)
                                          l_use_C11_Richardson, & ! Intent(out)
+                                         l_use_shear_Richardson, & ! Intent(out)
                                          l_brunt_vaisala_freq_moist, & ! Intent(out)
                                          l_use_thvm_in_bv_freq, & ! Intent(out)
                                          l_rcm_supersat_adj, & ! Intent(out)
@@ -1291,6 +1293,7 @@ module clubb_driver
                                              l_diag_Lscale_from_tau, & ! Intent(in)
                                              l_use_C7_Richardson, & ! Intent(in)
                                              l_use_C11_Richardson, & ! Intent(in)
+                                             l_use_shear_Richardson, & ! Intent(in)
                                              l_brunt_vaisala_freq_moist, & ! Intent(in)
                                              l_use_thvm_in_bv_freq, & ! Intent(in)
                                              l_rcm_supersat_adj, & ! Intent(in)

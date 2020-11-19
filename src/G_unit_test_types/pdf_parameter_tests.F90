@@ -497,6 +497,7 @@ module pdf_parameter_tests
                                       ! mixing length scale as Lscale = tau * tke
       l_use_C7_Richardson,          & ! Parameterize C7 based on Richardson number
       l_use_C11_Richardson,         & ! Parameterize C11 and C16 based on Richardson number
+      l_use_shear_Richardson,       & ! Use shear in the calculation of Richardson number
       l_brunt_vaisala_freq_moist,   & ! Use a different formula for the Brunt-Vaisala frequency in
                                       ! saturated atmospheres (from Durran and Klemp, 1982)
       l_use_thvm_in_bv_freq,        & ! Use thvm in the calculation of Brunt-Vaisala frequency
@@ -542,6 +543,7 @@ module pdf_parameter_tests
                                          l_diag_Lscale_from_tau, &
                                          l_use_C7_Richardson, &
                                          l_use_C11_Richardson, &
+                                         l_use_shear_Richardson, &
                                          l_brunt_vaisala_freq_moist, &
                                          l_use_thvm_in_bv_freq, &
                                          l_rcm_supersat_adj, &

@@ -1503,6 +1503,7 @@ module advance_clubb_core_module
                                           ice_supersat_frac,                    &
                                           clubb_config_flags%l_brunt_vaisala_freq_moist, &
                                           clubb_config_flags%l_use_thvm_in_bv_freq, &
+                                          clubb_config_flags%l_use_shear_Richardson, &
                                           Cx_fnc_Richardson )
       else
           Cx_fnc_Richardson = 0.0
