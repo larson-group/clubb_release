@@ -43,7 +43,7 @@ class PyPlotGen:
 
     def __init__(self, output_folder, clubb_folders=None, replace=False, les=False, cgbest=False, hoc=False,
                  benchmark_only=False, nightly=False, zip=False, thin=False, no_legends=False, ensemble=False,
-                 plot_e3sm="", sam_folders=[""], wrf_folders=[""], cam_folders=[""],
+                 plot_e3sm="", sam_folders=[""], wrf_folders=[""], cam_folders=[""], priority_vars=False,
                  budget_moments=False, bu_morr=False, diff=None, show_alphabetic_id=False,
                  time_height=False, animation=None, disable_multithreading=False, pdf=False,
                  pdf_filesize_limit=None, plot_subcolumns=False, image_extension=".png"):
@@ -117,6 +117,7 @@ class PyPlotGen:
         self.show_alphabetic_id = show_alphabetic_id
         self.output_folder = os.path.abspath(self.output_folder)
         self.benchmark_only = benchmark_only
+        self.priority_vars = priority_vars
         self.nightly = nightly
         self.time_height = time_height
         self.animation = animation
@@ -124,7 +125,7 @@ class PyPlotGen:
         self.pdf = pdf
         self.pdf_filesize_limit = pdf_filesize_limit
         self.image_extension = image_extension
-     
+
         if os.path.isdir(self.output_folder) and self.replace_images is False:
             current_date_time = datetime.now()
             rounded_down_datetime = current_date_time.replace(microsecond=0)
@@ -179,7 +180,11 @@ class PyPlotGen:
         # Loop through cases listed in Case_definitions.CASES_TO_PLOT
         # for case_def in all_enabled_cases:
         cases_plotted_bools = []
+
+        # initialize counter and progress display
+        total_progress_counter = Array('i',[0,0])
         initializeProgress(self.image_extension, self.animation)
+
         if self.multithreaded:
             freeze_support()  # Required for multithreading
             n_processors = multiprocessing.cpu_count()
@@ -256,14 +261,15 @@ class PyPlotGen:
                 bytes_to_mb = 1 / 1000000
                 self.__writePdfToDisk__(pdf_output_filename, case_descriptions)
                 pdf_filesize = os.path.getsize(pdf_output_filename) * bytes_to_mb
-                logToFileAndConsole("PDF generated using a dpi of ", Style_definitions.IMG_OUTPUT_DPI, " with a filesize of ", pdf_filesize, "MB.")
+                logToFileAndConsole("PDF generated using a DPI of " + str(Style_definitions.IMG_OUTPUT_DPI) +
+                                    " with a filesize of " + str(pdf_filesize) + "MB.")
                 Style_definitions.IMG_OUTPUT_DPI = output_dpi
 
                 if pdf_filesize < self.pdf_filesize_limit:
                     pdf_too_large = False
                     logToFileAndConsole("PDF output can be found at: file://" + pdf_output_filename)
-                    logToFileAndConsole("Printing PDF to the target filesize took ", attempted_prints, " attempts to find the right "
-                          "dpi.")
+                    logToFileAndConsole("Printing PDF to the target filesize took " + str(attempted_prints) + 
+                                        " attempts to find the right DPI.")
                 else:
                     # output downscaled images to a new folder so that the original quality ones can still be referenced
                     # via the web page
@@ -272,14 +278,15 @@ class PyPlotGen:
                         pdf_output_filename = self.output_folder + '/pyplotgen_output.pdf'
 
                     output_dpi = self.__getDecreasedDpiValue__(output_dpi, pdf_filesize)
-                    logToFileAndConsole("Attempted to print but the file was too large (", pdf_filesize, "MB insead of <",
-                          self.pdf_filesize_limit, "MB). Reducing DPI and trying again.")
-                    logToFileAndConsole("Attempting to print pdf with dpi of ", output_dpi)
+                    logToFileAndConsole("Attempted to print but the file was too large (" + str(pdf_filesize) + 
+                          "MB insead of <" + str(self.pdf_filesize_limit) + "MB). Reducing DPI and trying again.")
+                    logToFileAndConsole("Attempting to print pdf with dpi of " + str(output_dpi))
 
+                    # delete 'downscaled' output folder and run again
+                    subprocess.run(['rm', '-rf', self.output_folder + '/'])
                     self.run()
                 if output_dpi <= 1:
-                    logToFileAndConsole("There is no possible dpi that fits within ", self.pdf_filesize_limit,
-                          "MB.")
+                    logToFileAndConsole("There is no possible dpi that fits within " + str(self.pdf_filesize_limit) + "MB.")
                     logToFileAndConsole("The most recent PDF output attempt can be found at: file://" + pdf_output_filename)
                     filesize_impossible = True
 
@@ -316,12 +323,12 @@ class PyPlotGen:
                         pdf.set_x(x_coord)
                         pdf.image(filename, w=50, h=30)
                         pdf.set_y(pdf.get_y() - 30)
-                    if loop_counter == num_imgs_per_row - 1:
-                        pdf.ln()
-                        loop_counter = 0
-                        pdf.set_y(pdf.get_y() + 20)
-                    else:
-                        loop_counter += 1
+                        if loop_counter == num_imgs_per_row - 1:
+                            pdf.ln()
+                            loop_counter = 0
+                            pdf.set_y(pdf.get_y() + 25)
+                        else:
+                            loop_counter += 1
 
         pdf.output(pdf_output_filename, 'F')
 
@@ -392,7 +399,8 @@ class PyPlotGen:
                                                   plot_r408=self.cgbest, plot_hoc=self.hoc, e3sm_dirs=self.e3sm_dir,
                                                   cam_folders=self.cam_folders, time_height=self.time_height,
                                                   animation=self.animation, plot_subcolumns=self.plot_subcolumns,
-                                                  image_extension=self.image_extension, total_panels_to_plot=0)
+                                                  image_extension=self.image_extension, total_panels_to_plot=0,
+                                                  priority_vars=self.priority_vars)
             # Call plot function of case instance
             case_gallery_setup.plot(self.output_folder, replace_images=self.replace_images, no_legends=self.no_legends,
                                     thin_lines=self.thin, show_alphabetic_id=self.show_alphabetic_id,
@@ -686,6 +694,8 @@ def __processArguments__():
                                         "Case_definitions.py. E.g. --cases bomex arm wangara",
                         action="store",
                         default=[], nargs='+')
+    parser.add_argument("--priority-variables", help="Plot only variables with the 'priority' key.",
+                        action="store_true")
     args = parser.parse_args()
 
     if args.zip:
@@ -761,7 +771,7 @@ def __processArguments__():
     pyplotgen = PyPlotGen(args.output, clubb_folders=args.clubb, replace=args.replace, les=les, plot_e3sm=args.e3sm,
                           cgbest=cgbest, cam_folders=args.cam, nightly=args.nightly,
                           hoc=hoc, zip=args.zip, thin=args.thin, sam_folders=args.sam,
-                          wrf_folders=args.wrf, benchmark_only=args.benchmark_only,
+                          wrf_folders=args.wrf, benchmark_only=args.benchmark_only, priority_vars=args.priority_variables,
                           no_legends=args.no_legends, budget_moments=args.plot_budgets,
                           bu_morr=args.bu_morr, diff=args.diff, show_alphabetic_id=args.show_alphabetic_id,
                           time_height=args.time_height_plots, animation=args.movies,
@@ -780,7 +790,6 @@ def tpc_init(x):
 
 if __name__ == "__main__":
     pyplotgen = __processArguments__()
-    total_progress_counter = Array('i',[0,0])
     start_time = time.time()
     pyplotgen.run()
     pyplotgen.__printToPDF__()

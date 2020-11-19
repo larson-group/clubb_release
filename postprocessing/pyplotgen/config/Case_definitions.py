@@ -677,7 +677,7 @@ LBA = {'name': 'lba',
                       "Copied from plotgen: SAM-LES uses Morrison microphysics " +
                       "and CLUBB standalone uses COAMPS microphysics",
        'start_time': 300, 'end_time': 360,
-       'height_min_value': 0, 'height_max_value': 12000,
+       'height_min_value': 0, 'height_max_value': 14000,
 
        'blacklisted_vars': ['wprrp', 'wpNrp', 'Ngm'],
        'sam_benchmark_file': {'sam_benchmark': SAM_BENCHMARK_OUTPUT_ROOT +
@@ -805,7 +805,7 @@ NOV11_ALTOCU = {'name': 'nov11_altocu',
 RICO = {'name': 'rico',
         'description': "Cam output may differ from plotgen due to a difference in time averaging.",
         'start_time': 4201, 'end_time': 4320,
-        'height_min_value': 0, 'height_max_value': 4000,
+        'height_min_value': 0, 'height_max_value': 5000,
 
         'blacklisted_vars': [],
         'sam_benchmark_file': {'sam_benchmark': SAM_BENCHMARK_OUTPUT_ROOT +

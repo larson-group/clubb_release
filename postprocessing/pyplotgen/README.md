@@ -32,6 +32,7 @@ Pyplotgen only supports input in the netcdf (.nc) format.
 | --plot-subcolumns | This adds subcolumn (silhs) to the pyplotgen output. Currently only CLUBB subcolumns are supported. |
 | --cases | A set of case name(s) to be ran. Cases not listed here will not be ran. The casename specified must match the 'name' parameter of the case's definition Case_definitions.py. E.g. --cases bomex arm wangara |
 | --movies [OPTIONAL TYPE] | Creates animated plots of all standard variables except type_timeseries.  Basic usage is e.g. --movies=mp4. If no argument (like 'mp4') is given, it defaults to mp4.  Can be used with --plot_budgets, --plot-subcolumns, and other 2D data like --les. Cannot be used with --pdf, --time-height-plots, or --eps or --svg. Currently .mp4 and .avi are supported, but .mp4 is probably more compatible with most web browsers. To adjust the frame rate, change the FRAMES_PER_SECOND variable in config/Style_definitions.py. |  
+| --priority-variables | Outputs a subset of 15 interesting variables (including budgets for these variables if used with the -b option).  Useful for cutting down time for generating animations. |
 
 ## Installing Dependencies
 To install the dependencies necessary for PyPlotgen to run, run the command
@@ -49,6 +50,11 @@ To plot clubb output located in `/home/USERNAME/clubb_nc_output` and save the ge
 If, in addition, you'd like to overplot LES lines and also separately plot CLUBB budgets, run this command:
 
 `python3 ./pyplotgen.py --plot-budgets -l -c /home/USERNAME/clubb_nc_output -o /home/USERNAME/clubb/postprocessing/pyplotgen/output`
+
+## Creating animations
+PyPlotGen can create animations of CLUBB variable profiles, including budgets and SILHS subcolumns.  Currently the code is capable of outputting .mp4 and .avi files although .mp4 is probably preferred due to greater compatibility with web browsers which is how output is typically viewed.  The python package OpenCV is required for making movies, although pyplotgen can still be used for creating figures without OpenCV and will not complain if OpenCV is not present.  Having FFmpeg (a free software not associated with python) installed on your computer, while not a requirement, helps greatly because it will make .mp4 files compatible with a wider range of browers including Firefox and Chrome.  The movie frame rate is set in config/Style_definitions.py under FRAMES_PER_SECOND.
+
+Some cautionary notes about animations:  animations can take considerable time to generate, with the main factor being the number of time steps you wish to use---for example, in config/Case_definitions.py, BOMEX will by default be trimmed to 180 time steps in length, which means for each animation panel (and there will be dozens of panels at a minimum, possibly many more if budgets, etc. are included), 180 images will need to be processed.  This is on the more time-consuming end.  The ARM_97 case by default, includes over 1000 images per animation---this would take hours of processing time, even with multithreading.  Another consideration is that an .html page that contains a lot of movies (meaning many cases---ARM,BOMEX,etc.---being plotted together) can take a long time to load.  So it may be preferable to create one case of movies at a time rather than submit a huge job with many CLUBB cases.
 
 # Advanced Usage
 ## Reference Documentation for Developers
@@ -207,11 +213,6 @@ Here is another example of a non-budget variable definitions:
                 'sci_scale': 0,
             }
 ~~~~
-
-### Creating animations
-PyPlotGen can create animations of CLUBB variable profiles, including budgets and SILHS subcolumns.  Currently the code is capable of outputting .mp4 and .avi files although .mp4 is probably preferred due to greater compatibility with web browsers which is how output is typically viewed.  The python package OpenCV is required for making movies, although pyplotgen can still be used for creating figures without OpenCV and will not complain if OpenCV is not present.  Having FFmpeg (a free software not associated with python) installed on your computer, while not a requirement, helps greatly because it will make .mp4 files compatible with a wider range of browers including Firefox and Chrome.  The movie frame rate is set in config/Style_definitions.py under FRAMES_PER_SECOND.
-
-Some cautionary notes about animations:  animations can take considerable time to generate, with the main factor being the number of time steps you wish to use---for example, in config/Case_definitions.py, BOMEX will by default be trimmed to 180 time steps in length, which means for each animation panel (and there will be dozens of panels at a minimum, possibly many more if budgets, etc. are included), 180 images will need to be processed.  This is on the more time-consuming end.  The ARM_97 case by default, includes over 1000 images per animation---this would take hours of processing time, even with multithreading.  Another consideration is that an .html page that contains a lot of movies (meaning many cases---ARM,BOMEX,etc.---being plotted together) can take a long time to load.  So it may be preferable to create one case of movies at a time rather than submit a huge job with many CLUBB cases.
 
 ### Troubleshooting/Advanced variables
 A lot of the time the only parameter that is needed will be the list of aliases for the variable as used by multiple models. However there are times when a more complicated definition is needed, such as when variables must be calculated. For some of these situations, please check out the appropriate sections below.

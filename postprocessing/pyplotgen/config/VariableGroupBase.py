@@ -18,7 +18,7 @@ class VariableGroupBase(VariableGroup):
 
     def __init__(self, case, clubb_datasets=None, les_dataset=None, coamps_dataset=None, r408_dataset=None,
                  hoc_dataset=None, cam_datasets=None,
-                 e3sm_datasets=None, sam_datasets=None, wrf_datasets=None):
+                 e3sm_datasets=None, sam_datasets=None, wrf_datasets=None, priority_vars=False):
         """
 
         :param clubb_datasets:
@@ -50,6 +50,7 @@ class VariableGroupBase(VariableGroup):
                     'wrf': ['thlm'],
                 },
                 'sci_scale': 0,
+                'priority': True,
             },
             {'var_names':
                 {
@@ -63,6 +64,7 @@ class VariableGroupBase(VariableGroup):
                     'wrf': ['rtm'],
                 },
                 'sci_scale': -3,
+                'priority': True,
             },
             {'var_names':
                 {
@@ -76,6 +78,7 @@ class VariableGroupBase(VariableGroup):
                     'wrf': ['wpthlp'],
                 },
                 'sci_scale': 0,
+                'priority': True,
             },
             {'var_names':
                 {
@@ -89,6 +92,7 @@ class VariableGroupBase(VariableGroup):
                     'wrf': ['wprtp'],
                 },
                 'sci_scale': -4,
+                'priority': True,
             },
             {'var_names':
                 {
@@ -102,6 +106,7 @@ class VariableGroupBase(VariableGroup):
                     'wrf': ['cloud_frac'],
                 },
                 'sci_scale': 0,
+                'priority': True,
             },
             {'var_names':
                 {
@@ -116,6 +121,7 @@ class VariableGroupBase(VariableGroup):
                 },
                 'sam_conv_factor': 1 / 1000,
                 'sci_scale': -5,
+                'priority': True,
             },
             {'var_names':
                 {
@@ -129,6 +135,7 @@ class VariableGroupBase(VariableGroup):
                     'wrf': ['wp2'],
                 },
                 'sci_scale': 0,
+                'priority': True,
             },
             {'var_names':
                 {
@@ -143,6 +150,7 @@ class VariableGroupBase(VariableGroup):
                 },
                 'sci_scale': 0,
                 'axis_title': "wp3",
+                'priority': True,
             },
             {'var_names':
                 {
@@ -156,6 +164,7 @@ class VariableGroupBase(VariableGroup):
                     'wrf': ['thlp2'],
                 },
                 'sci_scale': 0,
+                'priority': True,
             },
             {'var_names':
                 {
@@ -169,6 +178,7 @@ class VariableGroupBase(VariableGroup):
                     'wrf': ['rtp2'],
                 },
                 'sci_scale': -7,
+                'priority': True,
             },
             {'var_names':
                 {
@@ -182,6 +192,7 @@ class VariableGroupBase(VariableGroup):
                     'wrf': ['rtpthlp'],
                 },
                 'sci_scale': -4,
+                'priority': True,
             },
             {'var_names':
                 {
@@ -299,6 +310,7 @@ class VariableGroupBase(VariableGroup):
                     'wrf': ['upwp'],
                 },
                 'sci_scale': 0,
+                'priority': True,
             },
             {'var_names':
                 {
@@ -312,6 +324,7 @@ class VariableGroupBase(VariableGroup):
                     'wrf': ['vpwp'],
                 },
                 'sci_scale': 0,
+                'priority': True,
             },
             {'var_names':
                 {
@@ -325,6 +338,7 @@ class VariableGroupBase(VariableGroup):
                     'wrf': ['up2'],
                 },
                 'sci_scale': 0,
+                'priority': True,
             },
             {'var_names':
                 {
@@ -338,6 +352,7 @@ class VariableGroupBase(VariableGroup):
                     'wrf': ['vp2'],
                 },
                 'sci_scale': 0,
+                'priority': True,
             },
             {'var_names':
                 {
@@ -566,7 +581,8 @@ class VariableGroupBase(VariableGroup):
         # Call ctor of parent class
         super().__init__(case, clubb_datasets=clubb_datasets, sam_datasets=sam_datasets, les_dataset=les_dataset,
                          coamps_dataset=coamps_dataset, r408_dataset=r408_dataset, cam_datasets=cam_datasets,
-                         hoc_dataset=hoc_dataset, e3sm_datasets=e3sm_datasets, wrf_datasets=wrf_datasets)
+                         hoc_dataset=hoc_dataset, e3sm_datasets=e3sm_datasets, wrf_datasets=wrf_datasets,
+                         priority_vars=priority_vars)
 
     def getThlmSamCalc(self, dataset_override=None):
         """

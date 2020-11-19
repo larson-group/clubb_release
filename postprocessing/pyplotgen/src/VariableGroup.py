@@ -34,7 +34,8 @@ class VariableGroup:
     """
 
     def __init__(self, case, clubb_datasets=None, les_dataset=None, coamps_dataset=None, r408_dataset=None,
-                 hoc_dataset=None, cam_datasets=None, e3sm_datasets=None, sam_datasets=None, wrf_datasets=None):
+                 hoc_dataset=None, cam_datasets=None, e3sm_datasets=None, sam_datasets=None, wrf_datasets=None,
+                 priority_vars=False):
         """
         Initialize a VariableGroup object with the passed parameters
 
@@ -70,6 +71,7 @@ class VariableGroup:
         self.height_max_value = case.height_max_value
         self.time_height = case.time_height
         self.animation = case.animation
+        self.priority_vars = priority_vars
 
         # Loop over the list self.variable_definitions which is only defined in the subclasses
         # that can be found in the config folder such as VariableGroupBase
@@ -348,15 +350,16 @@ class VariableGroup:
                 sci_scale = None
             if 'centered' in variable.keys():
                 centered = variable['centered']
-            if panel_type == Panel.TYPE_TIMEHEIGHT:
-                panel = ContourPanel(plotset, title=title, dependent_title=axis_label, panel_type=panel_type)
-            elif self.animation is not None:
-                panel = AnimationPanel(plotset, title=title, dependent_title=axis_label, panel_type=panel_type,
-                                       sci_scale=sci_scale, centered=centered)
-            else:
-                panel = Panel(plotset, title=title, dependent_title=axis_label, panel_type=panel_type,
-                              sci_scale=sci_scale, centered=centered)
-            self.panels.append(panel)
+            if not self.priority_vars or (self.priority_vars and 'priority' in variable.keys()):
+                if panel_type == Panel.TYPE_TIMEHEIGHT:
+                    panel = ContourPanel(plotset, title=title, dependent_title=axis_label, panel_type=panel_type)
+                elif self.animation is not None:
+                    panel = AnimationPanel(plotset, title=title, dependent_title=axis_label, panel_type=panel_type,
+                                           sci_scale=sci_scale, centered=centered)
+                else:
+                    panel = Panel(plotset, title=title, dependent_title=axis_label, panel_type=panel_type,
+                                  sci_scale=sci_scale, centered=centered)
+                self.panels.append(panel)
 
     def __getTitles__(self, variable_def_dict, plotted_models_varname):
         """

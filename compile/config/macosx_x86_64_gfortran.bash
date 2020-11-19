@@ -43,7 +43,7 @@ OPTIMIZE="-O2"
 # There's currently no netCDF for the Macs in W343.
 # Point this to the location of your copy of netCDF if you're using a 
 # different computer and use the lines below that have "netCDF v4" after them.
-#NETCDF="/Users/dschanen/netcdf-gfortran" # netCDF v4
+NETCDF="/usr/local/NETCDF-Fortran-4.4.5-gfortran" # netCDF v4
 
 # == LAPACK libraries ==
 LAPACK="-llapack -lblas" # The netlib reference LAPACK/BLAS

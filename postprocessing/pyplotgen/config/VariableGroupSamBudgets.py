@@ -13,7 +13,8 @@ class VariableGroupSamBudgets(VariableGroup):
     """
     def __init__(self, case, clubb_datasets=None, les_dataset=None, coamps_dataset=None, r408_dataset=None,
                  hoc_dataset=None, cam_datasets=None,
-                 e3sm_datasets=None, sam_datasets=None, wrf_datasets=None, verbose=False):
+                 e3sm_datasets=None, sam_datasets=None, wrf_datasets=None, verbose=False,
+                 priority_vars=False):
         """
 
         :param clubb_datasets:
@@ -460,6 +461,7 @@ class VariableGroupSamBudgets(VariableGroup):
              'title': r'Total Water (No Rain/Snow Included) Budget, $\mathrm{r_t}$',
              'axis_title': r"$\mathrm{r_t}$ budget terms $\mathrm{\left[kg\,kg^{-1}\,s^{-1}\right]}$",
              'centered': True,
+             'priority': True,
             },
             {'var_names':
                 {
@@ -507,6 +509,7 @@ class VariableGroupSamBudgets(VariableGroup):
              'axis_title': r"$\mathrm{\overline{\theta_l'w'}}$ budget terms "+
                            r"$\mathrm{\left[m\,K\,s^{-2}\right]}$",
              'centered': True,
+             'priority': True,
             },
             {'var_names':
                 {
@@ -539,6 +542,7 @@ class VariableGroupSamBudgets(VariableGroup):
              'axis_title': r"$\mathrm{\overline{r_t'w'}}$ budget terms "+
                            r"$\mathrm{\left[kg\,kg^{-1}\,m\,s^{-2}\right]}$",
              'centered': True,
+             'priority': True,
             },
             {'var_names':
                 {
@@ -602,6 +606,7 @@ class VariableGroupSamBudgets(VariableGroup):
              'title': r"Vertical Momentum Variance Budget, $\mathrm{\overline{w'^2}}$",
              'axis_title': r"$\mathrm{\overline{w'^2}}$ budget terms $\mathrm{\left[m^2\,s^{-3}\right]}$",
              'centered': True,
+             'priority': True,
             },
             {'var_names':
                 {
@@ -617,6 +622,7 @@ class VariableGroupSamBudgets(VariableGroup):
              'title': r"Vertical Momentum Skewness Budget, $\mathrm{\overline{w'^3}}$",
              'axis_title': r"$\mathrm{\overline{w'^3}}$ budget terms $\mathrm{\left[m^3\,s^{-4}\right]}$",
              'centered': True,
+             'priority': True,
             },
             {'var_names':
                 {
@@ -647,6 +653,7 @@ class VariableGroupSamBudgets(VariableGroup):
              'title': r"Liquid Water Potential Temperature Variance Budget, $\mathrm{\overline{\theta_l'^2}}$",
              'axis_title': r"$\mathrm{\overline{\theta_l'^2}}$ budget terms $\mathrm{\left[K^2\,s^{-1}\right]}$",
              'centered': True,
+             'priority': True,
             },
             {'var_names':
                 {
@@ -663,6 +670,7 @@ class VariableGroupSamBudgets(VariableGroup):
              'axis_title': r"$\mathrm{\overline{r_t'^2}}$ budget terms "+
                            r"$\mathrm{\left[kg^2\,kg^{-2}\,s^{-1}\right]}$",
              'centered': True,
+             'priority': True,
             },
             {'var_names':
                 {
@@ -696,6 +704,7 @@ class VariableGroupSamBudgets(VariableGroup):
              'axis_title': r"$\mathrm{\overline{q_t'\theta_l'}}$ budget terms "+
                            r"$\mathrm{\left[kg\,kg^{-1}\,K\,s^{-1}\right]}$",
              'centered': True,
+             'priority': True,
             },
             {'var_names':
                 {
@@ -757,6 +766,7 @@ class VariableGroupSamBudgets(VariableGroup):
              'title': r"Eastward Momentum Flux Budget, $\mathrm{\overline{u'w'}}$",
              'axis_title': r"$\mathrm{\overline{u'w'}}$ budget terms $\mathrm{\left[m^2\,s^{-3}\right]}$",
              'centered': True,
+             'priority': True,
             },
             {'var_names':
                 {
@@ -772,6 +782,7 @@ class VariableGroupSamBudgets(VariableGroup):
              'title': r"Northward Momentum Flux Budget, $\mathrm{\overline{v'w'}}$",
              'axis_title': r"$\mathrm{\overline{v'w'}}$ budget terms $\mathrm{\left[m^2\,s^{-3}\right]}$",
              'centered': True,
+             'priority': True,
             },
             {'var_names':
                 {
@@ -787,6 +798,7 @@ class VariableGroupSamBudgets(VariableGroup):
              'title': r"Eastward Momentum Variance Budget, $\mathrm{\overline{u'^2}}$",
              'axis_title': r"$\mathrm{\overline{u'^2}}$ budget terms $\mathrm{\left[m^2\,s^{-3}\right]}$",
              'centered': True,
+             'priority': True,
             },
             {'var_names':
                 {
@@ -802,6 +814,7 @@ class VariableGroupSamBudgets(VariableGroup):
              'title': r"Northward Momentum Variance Budget, $\mathrm{\overline{v'^2}}$",
              'axis_title': r"$\mathrm{\overline{v'^2}}$ budget terms $\mathrm{\left[m^2\,s^{-3}\right]}$",
              'centered': True,
+             'priority': True,
             },
             #{'var_names':
             #    {
@@ -963,7 +976,8 @@ class VariableGroupSamBudgets(VariableGroup):
         # Call ctor of parent class
         super().__init__(case, clubb_datasets=clubb_datasets, sam_datasets=sam_datasets, les_dataset=les_dataset,
                          coamps_dataset=coamps_dataset, r408_dataset=r408_dataset, cam_datasets=cam_datasets,
-                         hoc_dataset=hoc_dataset, e3sm_datasets=e3sm_datasets, wrf_datasets=wrf_datasets)
+                         hoc_dataset=hoc_dataset, e3sm_datasets=e3sm_datasets, wrf_datasets=wrf_datasets,
+                         priority_vars=priority_vars)
 
     def getHlResidual(self, dataset_override=None):
         """
