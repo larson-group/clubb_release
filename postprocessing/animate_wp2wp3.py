@@ -93,7 +93,7 @@ if (__name__ == '__main__'):
   add_to_axis(zm_data['wp3_on_wp2'][:]/10.0, zm, '0.1*wp3/wp2 (zm)', cax, data)
   #add_to_axis(zt_data['cloud_frac'][:], zt, 'cld_frac', cax, data)
   add_to_axis(dwp3dt, zt, 'dwp3/dt', cax, data, linespec='--k')
-  cax.set_xlim(-0.1,0.1)
+  cax.set_xlim(-0.05,0.05)
   # significant quantities
   cax = ax[1,1]
   add_to_axis(zt_data['wp3_ta'][:], zt, 'ta', cax, data)
@@ -101,6 +101,7 @@ if (__name__ == '__main__'):
   add_to_axis(zt_data['wp3_pr2'][:], zt, 'pr2', cax, data)
   add_to_axis(zt_data['wp3_bp1'][:], zt, 'bp1', cax, data)
   add_to_axis(zt_data['wp3_tp'][:], zt, 'tp', cax, data)
+  add_to_axis(zt_data['wp3_ta'][:] + zt_data['wp3_tp'][:], zt, 'ta+tp', cax, data)
   add_to_axis(dwp3dt, zt, 'dwp3/dt', cax, data, linespec='--k')
   cax.set_xlim(-0.05,0.05)
   # insignificant_quantities
@@ -131,8 +132,8 @@ if (__name__ == '__main__'):
   for m in range(M):
     ax[0,m].legend(fontsize='small')
     ax[1,m].legend(fontsize='small')
-    ax[0,m].set_ylim(0.0,5000.0)
-    ax[1,m].set_ylim(0.0,5000.0)
+    ax[0,m].set_ylim(0.0,2000.0)
+    ax[1,m].set_ylim(0.0,2000.0)
     t = time[n0]
     ax[1,m].set_xlabel('t = %d min of %d min' % (t/60.0, t_final/60.0), fontsize='large')
 
