@@ -27,7 +27,7 @@ class CaseGallerySetup:
     """
 
     def __init__(self, case_definition, clubb_folders=[], diff_datasets=None, sam_folders=[""], wrf_folders=[""],
-                 plot_les=False, plot_budgets=False, plot_r408=False, plot_hoc=False, e3sm_dirs=[], cam_folders=[],
+                 plot_les=False, plot_budgets=False, plot_r408=False, plot_hoc=False, e3sm_folders=[], cam_folders=[],
                  time_height=False, animation=None, plot_subcolumns=False, image_extension=".png",
                  total_panels_to_plot=0, priority_vars=False):
         """
@@ -47,7 +47,7 @@ class CaseGallerySetup:
             If False (default), pyplotgen will not plot the Chris Golaz 'best ever' clubb r408 dependent_data lines
         :param plot_hoc: If True, pyplotgen will plot the HOC 2005 dependent_data lines
             If False (default), pyplotgen will not plot the HOC 2005 dependent_data lines
-        :param e3sm_dirs: List of foldernames containing e3sm netcdf files to be plotted
+        :param e3sm_folders: List of foldernames containing e3sm netcdf files to be plotted
         :param cam_folders: List of foldernames containing cam netcdf files to be plotted
         :param time_height: TODO
         :param animation: TODO
@@ -64,7 +64,7 @@ class CaseGallerySetup:
         self.plot_r408 = plot_r408
         self.plot_hoc = plot_hoc
         self.plot_les = plot_les
-        self.e3sm_folders = e3sm_dirs
+        self.e3sm_folders = e3sm_folders
         self.sam_folders = sam_folders
         self.cam_folders = cam_folders
         self.wrf_folders = wrf_folders
@@ -100,7 +100,7 @@ class CaseGallerySetup:
         self.clubb_datasets = self.__loadModelFiles__(clubb_folders, case_definition, "clubb")
         self.sam_datasets = self.__loadModelFiles__(sam_folders, case_definition, "sam")
         self.wrf_datasets = self.__loadModelFiles__(wrf_folders, case_definition, "wrf")
-        self.e3sm_file = self.__loadModelFiles__(e3sm_dirs, case_definition, "e3sm")
+        self.e3sm_datasets = self.__loadModelFiles__(e3sm_folders, case_definition, "e3sm")
         self.cam_file = self.__loadModelFiles__(cam_folders, case_definition, "cam")
 
 
@@ -163,11 +163,11 @@ class CaseGallerySetup:
                     budget_variables = VariableGroupBaseBudgets(self, priority_vars=self.priority_vars,
                                                                 wrf_datasets={folder_name:self.wrf_datasets[input_folder]})
                     self.panels.extend(budget_variables.panels)
-            if self.e3sm_file is not None and len(self.e3sm_file) != 0:
-                for dataset_name in self.e3sm_file:
+            if self.e3sm_datasets is not None and len(self.e3sm_datasets) != 0:
+                for dataset_name in self.e3sm_datasets:
                     # E3SM dataset must be wrapped in the same form as the clubb datasets
                     e3sm_budgets = VariableGroupBaseBudgets(self, priority_vars=self.priority_vars,
-                                                            e3sm_datasets={dataset_name: self.e3sm_file[dataset_name]})
+                                                            e3sm_datasets={dataset_name: self.e3sm_datasets[dataset_name]})
                     self.panels.extend(e3sm_budgets.panels)
             if self.sam_datasets is not None and len(self.sam_datasets) != 0:
                 # for dataset in sam_datasets.values():
@@ -194,7 +194,7 @@ class CaseGallerySetup:
                 # Call the __init__ function of the VarGroup class and, by doing this, create an instance of it
                 diff_group = VarGroup(self, clubb_datasets=self.diff_datasets, sam_file=self.sam_benchmark_file,
                                       coamps_file=self.coamps_datasets, cam_file=self.cam_file, sam_datasets=self.sam_datasets,
-                                      r408_file=self.r408_datasets, hoc_dataset=self.hoc_datasets, e3sm_datasets=self.e3sm_file)
+                                      r408_file=self.r408_datasets, hoc_dataset=self.hoc_datasets, e3sm_datasets=self.e3sm_datasets)
                 for panel in diff_group.panels:
                     self.diff_panels.append(panel)
             for idx in range(len(self.panels)):
@@ -219,7 +219,7 @@ class CaseGallerySetup:
             temp_group = VarGroup(self, clubb_datasets=self.clubb_datasets, les_dataset=self.sam_benchmark_file,
                                   coamps_dataset=self.coamps_datasets, sam_datasets=self.sam_datasets,
                                   wrf_datasets=self.wrf_datasets, r408_dataset=self.r408_datasets, hoc_dataset=self.hoc_datasets,
-                                  e3sm_datasets=self.e3sm_file, cam_datasets=self.cam_file, priority_vars=self.priority_vars)
+                                  e3sm_datasets=self.e3sm_datasets, cam_datasets=self.cam_file, priority_vars=self.priority_vars)
             self.panels.extend(temp_group.panels)
 
         total_panels = len(self.panels)

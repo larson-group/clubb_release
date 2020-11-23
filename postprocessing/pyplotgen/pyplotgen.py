@@ -43,8 +43,8 @@ class PyPlotGen:
 
     def __init__(self, output_folder, clubb_folders=None, replace=False, les=False, cgbest=False, hoc=False,
                  benchmark_only=False, nightly=False, zip=False, thin=False, no_legends=False, ensemble=False,
-                 plot_e3sm="", sam_folders=[""], wrf_folders=[""], cam_folders=[""], priority_vars=False,
-                 budget_moments=False, bu_morr=False, diff=None, show_alphabetic_id=False,
+                 e3sm_folders=[""], sam_folders=[""], wrf_folders=[""], cam_folders=[""], priority_vars=False,
+                 plot_budgets=False, bu_morr=False, diff=None, show_alphabetic_id=False,
                  time_height=False, animation=None, disable_multithreading=False, pdf=False,
                  pdf_filesize_limit=None, plot_subcolumns=False, image_extension=".png"):
         """
@@ -72,7 +72,7 @@ class PyPlotGen:
         :param thin: If True, plot using thin solid lines.
         :param no_legends: If True, plots will not have legend boxes listing the line types.
         :param ensemble: If True, plot ensemble tuner runs. Not implemented.
-        :param plot_e3sm: Plot E3SM dependent_data for comparison.
+        :param e3sm_folders: Plot E3SM dependent_data for comparison.
             This parameter works exactly like the clubb_folders parameter, except E3SM uses only one nc file.
         :param sam_folders: Plot SAM dependent_data for comparison.
             This parameter works exactly like the clubb_folders parameter, except SAM uses only one nc file.
@@ -81,7 +81,7 @@ class PyPlotGen:
             _zm, _zt, and _sfc
         :param cam_folders: Plot CAM dependent_data for comparison.
             This parameter works exactly like the clubb_folders parameter, except CAM uses only one nc file. (CHECK!)
-        :param budget_moments: If True, plot all defined budgets of moments.
+        :param plot_budgets: If True, plot all defined budgets of moments.
         :param bu_morr: For morrison microphysics: If True, break microphysical source terms into component processes.
             Not implemented.
         :param diff: Plot the difference between two clubb folders. (MORE DESCRIPTION)
@@ -94,7 +94,7 @@ class PyPlotGen:
         self.output_folder = output_folder
         self.replace_images = replace
         self.les = les
-        self.e3sm_dir = plot_e3sm
+        self.e3sm_folders = e3sm_folders
         self.sam_folders = sam_folders
         self.cam_folders = cam_folders
         self.wrf_folders = wrf_folders
@@ -105,7 +105,7 @@ class PyPlotGen:
         self.thin = thin
         self.no_legends = no_legends
         self.ensemble = ensemble
-        self.plot_budgets = budget_moments
+        self.plot_budgets = plot_budgets
         self.plot_subcolumns = plot_subcolumns
         self.bu_morr = bu_morr
         self.diff = diff
@@ -396,7 +396,7 @@ class PyPlotGen:
             case_gallery_setup = CaseGallerySetup(case_def, clubb_folders=self.clubb_folders, plot_les=self.les,
                                                   plot_budgets=self.plot_budgets, sam_folders=self.sam_folders,
                                                   wrf_folders=self.wrf_folders, diff_datasets=self.case_diff_datasets,
-                                                  plot_r408=self.cgbest, plot_hoc=self.hoc, e3sm_dirs=self.e3sm_dir,
+                                                  plot_r408=self.cgbest, plot_hoc=self.hoc, e3sm_folders=self.e3sm_folders,
                                                   cam_folders=self.cam_folders, time_height=self.time_height,
                                                   animation=self.animation, plot_subcolumns=self.plot_subcolumns,
                                                   image_extension=self.image_extension, total_panels_to_plot=0,
@@ -417,7 +417,7 @@ class PyPlotGen:
         :param case_def: The case definition object
         :return: True if data exists, False if not
         """
-        e3sm_given = len(self.e3sm_dir) != 0
+        e3sm_given = len(self.e3sm_folders) != 0
         sam_given = len(self.sam_folders) != 0
         wrf_given = len(self.wrf_folders) != 0
         cam_given = len(self.cam_folders) != 0
@@ -429,7 +429,7 @@ class PyPlotGen:
         cam_file_defined = case_def['cam_file'] is not None
         clubb_file_defined = case_def['clubb_file'] is not None
 
-        e3sm_file_exists = self.__caseNcFileExists__(self.e3sm_dir, case_def['e3sm_file'])
+        e3sm_file_exists = self.__caseNcFileExists__(self.e3sm_folders, case_def['e3sm_file'])
         sam_file_exists = self.__caseNcFileExists__(self.sam_folders, case_def['sam_file'])
         wrf_file_exists = self.__caseNcFileExists__(self.wrf_folders, case_def['wrf_file'])
         cam_file_exists = self.__caseNcFileExists__(self.cam_folders, case_def['cam_file'])
@@ -768,11 +768,11 @@ def __processArguments__():
                                                    "Perhaps you meant " + str(suggested_casenames) + "?")
 
     # Call __init__ function of PyPlotGen class defined above and store an instance of that class in pyplotgen
-    pyplotgen = PyPlotGen(args.output, clubb_folders=args.clubb, replace=args.replace, les=les, plot_e3sm=args.e3sm,
+    pyplotgen = PyPlotGen(args.output, clubb_folders=args.clubb, replace=args.replace, les=les, e3sm_folders=args.e3sm,
                           cgbest=cgbest, cam_folders=args.cam, nightly=args.nightly,
                           hoc=hoc, zip=args.zip, thin=args.thin, sam_folders=args.sam,
                           wrf_folders=args.wrf, benchmark_only=args.benchmark_only, priority_vars=args.priority_variables,
-                          no_legends=args.no_legends, budget_moments=args.plot_budgets,
+                          no_legends=args.no_legends, plot_budgets=args.plot_budgets,
                           bu_morr=args.bu_morr, diff=args.diff, show_alphabetic_id=args.show_alphabetic_id,
                           time_height=args.time_height_plots, animation=args.movies,
                           disable_multithreading=args.disable_multithreading, pdf=args.pdf,
