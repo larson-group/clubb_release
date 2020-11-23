@@ -2578,7 +2578,8 @@ contains
                                                  l_single_C2_Skw, & ! Out
                                                  l_damp_wp3_Skw_squared, & ! Out
                                                  l_prescribed_avg_deltaz, & ! Out
-                                                 l_update_pressure ) ! Out
+                                                 l_update_pressure, & ! Out
+                                                 l_lmm_stepping ) ! Out
 
     use model_flags, only: &
       set_default_clubb_config_flags  ! Procedure
@@ -2685,7 +2686,8 @@ contains
                                       ! rtpthlp
       l_damp_wp3_Skw_squared,       & ! Set damping on wp3 to use Skw^2 rather than Skw^4
       l_prescribed_avg_deltaz,      & ! used in adj_low_res_nu. If .true., avg_deltaz = deltaz
-      l_update_pressure               ! Flag for having CLUBB update pressure and exner
+      l_update_pressure,            & ! Flag for having CLUBB update pressure and exner
+      l_lmm_stepping                  ! Apply Linear Multistep Method (LMM) Stepping
 
     call set_default_clubb_config_flags( iiPDF_type, & ! Out
                                          ipdf_call_placement, & ! Out
@@ -2728,7 +2730,8 @@ contains
                                          l_single_C2_Skw, & ! Out
                                          l_damp_wp3_Skw_squared, & ! Out
                                          l_prescribed_avg_deltaz, & ! Out
-                                         l_update_pressure ) ! Out
+                                         l_update_pressure, & ! Out
+                                         l_lmm_stepping ) ! Out
 
   end subroutine set_default_clubb_config_flags_api
 
@@ -2777,6 +2780,7 @@ contains
                                                      l_damp_wp3_Skw_squared, & ! In
                                                      l_prescribed_avg_deltaz, & ! In
                                                      l_update_pressure, & ! In
+                                                     l_lmm_stepping, & ! In
                                                      clubb_config_flags ) ! Out
 
     use model_flags, only: &
@@ -2885,7 +2889,8 @@ contains
                                       ! rtpthlp
       l_damp_wp3_Skw_squared,       & ! Set damping on wp3 to use Skw^2 rather than Skw^4
       l_prescribed_avg_deltaz,      & ! used in adj_low_res_nu. If .true., avg_deltaz = deltaz
-      l_update_pressure               ! Flag for having CLUBB update pressure and exner
+      l_update_pressure,            & ! Flag for having CLUBB update pressure and exner
+      l_lmm_stepping                  ! Apply Linear Multistep Method (LMM) Stepping
 
     ! Output variables
     type(clubb_config_flags_type), intent(out) :: &
@@ -2933,6 +2938,7 @@ contains
                                              l_damp_wp3_Skw_squared, & ! In
                                              l_prescribed_avg_deltaz, & ! In
                                              l_update_pressure, & ! In
+                                             l_lmm_stepping, & ! In
                                              clubb_config_flags ) ! Out
 
   end subroutine initialize_clubb_config_flags_type_api

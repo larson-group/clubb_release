@@ -187,6 +187,7 @@ module advance_clubb_core_module
         three_halves, &
         one_fourth, &
         one, &
+        two, &
         zero, &
         unused_var, &
         grav, &
@@ -405,6 +406,11 @@ module advance_clubb_core_module
 
     real( kind = core_rknd ), intent(in) ::  &
       dt  ! Current timestep duration    [s]
+
+    real( kind = core_rknd ) ::  &
+      dt_advance  ! General timestep duration for advance_wp2_wp3,
+                  ! advance_xm_xpwp, and advance_xp2_xpyp.
+                  ! Only differs from dt if l_lmm_stepping is used    [s]
 
     real( kind = core_rknd ), intent(in) ::  &
       fcor,  &          ! Coriolis forcing             [s^-1]
@@ -811,7 +817,13 @@ module advance_clubb_core_module
 
 
     !----- Begin Code -----
-    
+
+    if ( clubb_config_flags%l_lmm_stepping ) then
+      dt_advance = two * dt
+    else
+      dt_advance = dt
+    end if
+ 
     err_code_out = clubb_no_error  ! Initialize to no error value
 
     ! Determine the maximum allowable value for Lscale (in meters).
@@ -1255,7 +1267,6 @@ module advance_clubb_core_module
         tau_max_zt = Lscale_max / sqrt_em_zt
         tau_max_zm = Lscale_max / sqrt( max( em, em_min ) )
 
-
         tau_no_N2_zm = min( one / invrs_tau_no_N2_zm, tau_max_zm )
         tau_zm       = min( one / invrs_tau_zm, tau_max_zm )
         tau_wp2_zm   = min( one / invrs_tau_wp2_zm, tau_max_zm )
@@ -1514,7 +1525,7 @@ module advance_clubb_core_module
       !   scalar turbulent fluxes (wprtp, wpthlp, and wpsclrp)
       !   by one time step.
       ! advance_xm_wpxp_bad_wp2 ! Test error comment, DO NOT modify or move
-      call advance_xm_wpxp( dt, sigma_sqd_w, wm_zm, wm_zt, wp2,              & ! intent(in)
+      call advance_xm_wpxp( dt_advance, sigma_sqd_w, wm_zm, wm_zt, wp2,      & ! intent(in)
                             Lscale, wp3_on_wp2, wp3_on_wp2_zt, Kh_zt, Kh_zm, & ! intent(in)
                             tau_C6_zm, Skw_zm, wp2rtp, rtpthvp, rtm_forcing, & ! intent(in)
                             wprtp_forcing, rtm_ref, wp2thlp, thlpthvp,       & ! intent(in)
@@ -1542,6 +1553,7 @@ module advance_clubb_core_module
                             clubb_config_flags%l_use_C7_Richardson,          & ! intent(in)
                             clubb_config_flags%l_brunt_vaisala_freq_moist,   & ! intent(in)
                             clubb_config_flags%l_use_thvm_in_bv_freq,        & ! intent(in)
+                            clubb_config_flags%l_lmm_stepping,           & ! intent(in)
                             rtm, wprtp, thlm, wpthlp,                        & ! intent(inout)
                             sclrm, wpsclrp, um, upwp, vm, vpwp )               ! intent(inout)
 
@@ -1591,7 +1603,7 @@ module advance_clubb_core_module
                              thv_ds_zm, cloud_frac, Lscale,             & ! intent(in)
                              wp3_on_wp2, wp3_on_wp2_zt,                 & ! intent(in)
                              pdf_implicit_coefs_terms,                  & ! intent(in)
-                             l_iter_xp2_xpyp, dt,                       & ! intent(in)
+                             l_iter_xp2_xpyp, dt_advance,               & ! intent(in)
                              sclrm, wpsclrp,                            & ! intent(in)
                              wpsclrp2, wpsclrprtp, wpsclrpthlp,         & ! intent(in)
                              wp2_splat,                                 & ! intent(in)
@@ -1601,6 +1613,7 @@ module advance_clubb_core_module
                              clubb_config_flags%l_C2_cloud_frac,        & ! intent(in)
                              clubb_config_flags%l_upwind_xpyp_ta,       & ! intent(in)
                              clubb_config_flags%l_single_C2_Skw,        & ! intent(in)
+                             clubb_config_flags%l_lmm_stepping,     & ! intent(in)
                              rtp2, thlp2, rtpthlp, up2, vp2,            & ! intent(inout)
                              sclrp2, sclrprtp, sclrpthlp)                 ! intent(inout)
 
@@ -1643,7 +1656,7 @@ module advance_clubb_core_module
 
       ! advance_wp2_wp3_bad_wp2 ! Test error comment, DO NOT modify or move
       call advance_wp2_wp3 &
-           ( dt, sfc_elevation, sigma_sqd_w, wm_zm,              & ! intent(in)
+           ( dt_advance, sfc_elevation, sigma_sqd_w, wm_zm,      & ! intent(in)
              wm_zt, a3_coef, a3_coef_zt, wp3_on_wp2, wp4,        & ! intent(in)
              wpthvp, wp2thvp, um, vm, upwp, vpwp,                & ! intent(in)
              up2, vp2, Kh_zm, Kh_zt, tau_wp2_zm, tau_wp3_zt,     & ! intent(in)
@@ -1663,6 +1676,7 @@ module advance_clubb_core_module
              clubb_config_flags%l_damp_wp2_using_em,             & ! intent(in)
              clubb_config_flags%l_use_C11_Richardson,            & ! intent(in)
              clubb_config_flags%l_damp_wp3_Skw_squared,          & ! intent(in)
+             clubb_config_flags%l_lmm_stepping,              & ! intent(in)
              wp2, wp3, wp3_zm, wp2_zt )                            ! intent(inout)
 
       if ( clubb_at_least_debug_level( 0 ) ) then

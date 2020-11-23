@@ -506,8 +506,8 @@ module pdf_parameter_tests
                                       ! rtpthlp
       l_damp_wp3_Skw_squared,       & ! Set damping on wp3 to use Skw^2 rather than Skw^4
       l_prescribed_avg_deltaz,      & ! used in adj_low_res_nu. If .true., avg_deltaz = deltaz
-      l_update_pressure               ! Flag for having CLUBB update pressure and exner
-
+      l_update_pressure,            & ! Flag for having CLUBB update pressure and exner
+      l_lmm_stepping                  ! Apply Linear Multistep Method (LMM) Stepping
 
     call set_default_clubb_config_flags( iiPDF_type, &
                                          ipdf_call_placement, &
@@ -550,7 +550,8 @@ module pdf_parameter_tests
                                          l_single_C2_Skw, &
                                          l_damp_wp3_Skw_squared, &
                                          l_prescribed_avg_deltaz, &
-                                         l_update_pressure )
+                                         l_update_pressure, &
+                                         l_lmm_stepping )
 
     iiPDF_type = test_pdf_type
 

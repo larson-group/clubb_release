@@ -400,8 +400,8 @@ module spurious_source_test
                                       ! rtpthlp
       l_damp_wp3_Skw_squared,       & ! Set damping on wp3 to use Skw^2 rather than Skw^4
       l_prescribed_avg_deltaz,      & ! used in adj_low_res_nu. If .true., avg_deltaz = deltaz
-      l_update_pressure               ! Flag for having CLUBB update pressure and exner
-
+      l_update_pressure,            & ! Flag for having CLUBB update pressure and exner
+      l_lmm_stepping                  ! Apply Linear Multistep Method (LMM) Stepping
 
     call set_default_clubb_config_flags( iiPDF_type, &
                                          ipdf_call_placement, &
@@ -444,7 +444,8 @@ module spurious_source_test
                                          l_single_C2_Skw, &
                                          l_damp_wp3_Skw_squared, &
                                          l_prescribed_avg_deltaz, &
-                                         l_update_pressure )
+                                         l_update_pressure, &
+                                         l_lmm_stepping )
 
     write(*,*)
     write(*,*) "Performing spurious source unit test"
@@ -820,6 +821,7 @@ module spurious_source_test
                              l_use_C7_Richardson, &
                              l_brunt_vaisala_freq_moist, &
                              l_use_thvm_in_bv_freq, &
+                             l_lmm_stepping, &
                              rtm, wprtp, thlm, wpthlp, &
                              sclrm, wpsclrp, um, upwp, vm, vpwp )
 

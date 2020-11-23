@@ -62,6 +62,7 @@ module advance_xp2_xpyp_module
                                l_C2_cloud_frac,                        & ! In
                                l_upwind_xpyp_ta,                       & ! In
                                l_single_C2_Skw,                        & ! In
+                               l_lmm_stepping,                     & ! In
                                rtp2, thlp2, rtpthlp, up2, vp2,         & ! Inout
                                sclrp2, sclrprtp, sclrpthlp)              ! Inout
 
@@ -265,7 +266,8 @@ module advance_xp2_xpyp_module
                                 ! differencing approximation rather than a centered differencing
                                 ! for turbulent or mean advection terms. It affects rtp2, thlp2,
                                 ! up2, vp2, sclrp2, rtpthlp, sclrprtp, & sclrpthlp.
-      l_single_C2_Skw           ! Use a single Skewness dependent C2 for rtp2, thlp2, and rtpthlp
+      l_single_C2_Skw,        & ! Use a single Skewness dependent C2 for rtp2, thlp2, and rtpthlp
+      l_lmm_stepping            ! Apply Linear Multistep Method (LMM) Stepping
 
     ! Input/Output variables
     ! An attribute of (inout) is also needed to import the value of the variances
@@ -276,6 +278,12 @@ module advance_xp2_xpyp_module
       rtpthlp, & ! <r_t'th_l'>                   [(kg K)/kg]
       up2,     & ! <u'^2>                        [m^2/s^2]
       vp2        ! <v'^2>                        [m^2/s^2]
+
+    real( kind = core_rknd ), dimension(gr%nz) ::  &
+      rtp2_old,    & ! <r_t'^2>                  [(kg/kg)^2]
+      thlp2_old,   & ! <th_l'^2>                 [K^2]
+      up2_old,     & ! <u'^2>                    [m^2/s^2]
+      vp2_old        ! <v'^2>                    [m^2/s^2]
 
     ! Passive scalar output
     real( kind = core_rknd ), intent(inout), dimension(gr%nz, sclr_dim) ::  & 
@@ -438,7 +446,10 @@ module advance_xp2_xpyp_module
       Kw9(k) = c_K9 * Kh_zt(k)
 
     enddo
-    
+   
+    thlp2_old = thlp2
+    rtp2_old = rtp2
+ 
     ! Calculate all the explicit and implicit turbulent advection terms 
     call calc_xp2_xpyp_ta_terms( wprtp, wprtp2, wpthlp, wpthlp2, wprtpthlp,          & ! In
                                  rtp2, thlp2, rtpthlp, upwp, vpwp, up2, vp2, wp2,    & ! In
@@ -501,7 +512,12 @@ module advance_xp2_xpyp_module
                                                rtp2, thlp2, rtpthlp,                         & ! Out
                                                sclrp2, sclrprtp, sclrpthlp )                   ! Out
     end if
-    
+
+    if ( l_lmm_stepping ) then
+      thlp2 = one_half * ( thlp2_old + thlp2 )
+      rtp2 = one_half * ( rtp2_old + rtp2 )   
+    end if
+ 
     if ( l_stats_samp ) then
       call xp2_xpyp_implicit_stats( xp2_xpyp_rtp2, rtp2 ) ! Intent(in)
       call xp2_xpyp_implicit_stats( xp2_xpyp_thlp2, thlp2 ) ! Intent(in)
@@ -514,6 +530,9 @@ module advance_xp2_xpyp_module
     call diffusion_zm_lhs( Kw9(:), nu9_vert_res_dep(:),      & ! In
                            gr%invrs_dzt(:), gr%invrs_dzm(:), & ! In
                            lhs_diff_uv(:,:)                  ) ! Out
+
+    up2_old = up2
+    vp2_old = vp2
 
     if ( iiPDF_type == iiPDF_new_hybrid ) then
 
@@ -541,6 +560,10 @@ module advance_xp2_xpyp_module
                             uv_solution )          ! Intent(out)
 
        up2(1:gr%nz) = uv_solution(1:gr%nz,1)
+       
+       if ( l_lmm_stepping ) then 
+         up2 = one_half * ( up2_old + up2 )
+       end if
 
        if ( l_stats_samp ) then
           call xp2_xpyp_implicit_stats( xp2_xpyp_up2, up2 ) ! Intent(in)
@@ -568,6 +591,10 @@ module advance_xp2_xpyp_module
                             uv_solution )          ! Intent(out)
 
        vp2(1:gr%nz) = uv_solution(1:gr%nz,1)
+
+       if ( l_lmm_stepping ) then
+         vp2 = one_half * ( vp2_old + vp2 )
+       end if
 
        if ( l_stats_samp ) then
           call xp2_xpyp_implicit_stats( xp2_xpyp_vp2, vp2 ) ! Intent(in)
@@ -607,6 +634,11 @@ module advance_xp2_xpyp_module
 
        up2(1:gr%nz) = uv_solution(1:gr%nz,1)
        vp2(1:gr%nz) = uv_solution(1:gr%nz,2)
+
+       if ( l_lmm_stepping ) then
+         up2 = one_half * ( up2_old + up2 )
+         vp2 = one_half * ( vp2_old + vp2 )
+       end if
 
        if ( l_stats_samp ) then
           call xp2_xpyp_implicit_stats( xp2_xpyp_up2, up2 ) ! Intent(in)

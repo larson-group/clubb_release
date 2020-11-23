@@ -71,6 +71,7 @@ module advance_xm_wpxp_module
                               l_use_C7_Richardson, &
                               l_brunt_vaisala_freq_moist, &
                               l_use_thvm_in_bv_freq, &
+                              l_lmm_stepping, &
                               rtm, wprtp, thlm, wpthlp, &
                               sclrm, wpsclrp, um, upwp, vm, vpwp )
 
@@ -303,7 +304,8 @@ module advance_xm_wpxp_module
       l_use_C7_Richardson,          & ! Parameterize C7 based on Richardson number
       l_brunt_vaisala_freq_moist,   & ! Use a different formula for the Brunt-Vaisala frequency in
                                       ! saturated atmospheres (from Durran and Klemp, 1982)
-      l_use_thvm_in_bv_freq           ! Use thvm in the calculation of Brunt-Vaisala frequency
+      l_use_thvm_in_bv_freq,        & ! Use thvm in the calculation of Brunt-Vaisala frequency
+      l_lmm_stepping                  ! Apply Linear Multistep Method (LMM) Stepping
 
     ! -------------------- Input/Output Variables --------------------
     
@@ -617,7 +619,20 @@ module advance_xm_wpxp_module
     endif ! l_clip_semi_implicit &
           ! .or. ( ( iiPDF_type == iiPDF_new ) &
           !        .and. ( .not. l_explicit_turbulent_adv_wpxp ) )
-          
+
+    if ( l_lmm_stepping ) then
+      thlm = one_half * ( thlm_old + thlm )
+      rtm = one_half * ( rtm_old + rtm )
+      um = one_half * ( um_old + um )
+      vm = one_half * ( vm_old + vm )
+      wpthlp = one_half * ( wpthlp_old + wpthlp ) 
+      wprtp = one_half * ( wprtp_old + wprtp )
+      if ( l_predict_upwp_vpwp ) then
+        upwp = one_half * ( upwp_old + upwp )
+        vpwp = one_half * ( vpwp_old + vpwp )    
+      end if ! l_predict_upwp_vpwp 
+    end if ! l_lmm_stepping
+
     if ( clubb_at_least_debug_level( 0 ) ) then
       if ( err_code == clubb_fatal_error ) then
         call error_prints_xm_wpxp( dt, sigma_sqd_w, wm_zm, wm_zt, wp2, &

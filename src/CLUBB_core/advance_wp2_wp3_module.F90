@@ -59,6 +59,7 @@ module advance_wp2_wp3_module
                               l_damp_wp2_using_em,                     & ! In
                               l_use_C11_Richardson,                    & ! In
                               l_damp_wp3_Skw_squared,                  & ! In
+                              l_lmm_stepping,                      & ! In
                               wp2, wp3, wp3_zm, wp2_zt )                 ! Inout
 
     ! Description:
@@ -215,13 +216,18 @@ module advance_wp2_wp3_module
       l_damp_wp2_using_em,    & ! In wp2 equation, use a dissipation formula of -(2/3)*em/tau_zm,
                                 ! as in Bougeault (1981)
       l_use_C11_Richardson,   & ! Parameterize C16 based on Richardson number
-      l_damp_wp3_Skw_squared    ! Set damping on wp3 to use Skw^2 rather than Skw^4
+      l_damp_wp3_Skw_squared, & ! Set damping on wp3 to use Skw^2 rather than Skw^4
+      l_lmm_stepping            ! Apply Linear Multistep Method (LMM) Stepping
 
     ! Input/Output
     real( kind = core_rknd ), dimension(gr%nz), intent(inout) ::  & 
       wp2,  & ! w'^2 (momentum levels)                    [m^2/s^2]
       wp3,  & ! w'^3 (thermodynamic levels)               [m^3/s^3]
       wp3_zm  ! w'^3 interpolated to momentum levels      [m^3/s^3]
+
+    real( kind = core_rknd ), dimension(gr%nz) ::  &
+      wp2_old, & ! w'^2 (momentum levels)                 [m^2/s^2]
+      wp3_old    ! w'^3 (thermodynamic levels)            [m^3/s^3] 
 
     real( kind = core_rknd ), dimension(gr%nz), intent(inout) ::  &
       wp2_zt  ! w'^2 interpolated to thermodyamic levels  [m^2/s^2]
@@ -346,6 +352,9 @@ module advance_wp2_wp3_module
 
     enddo
 
+    wp2_old=wp2
+    wp3_old=wp3
+
     ! Solve semi-implicitly
     call wp23_solve( dt, sfc_elevation, sigma_sqd_w, wm_zm, & ! Intent(in)
                      wm_zt, a3, a3_zt, wp3_on_wp2, wp4,     & ! Intent(in)
@@ -368,6 +377,11 @@ module advance_wp2_wp3_module
                      l_damp_wp2_using_em,                   & ! Intent(in)
                      l_damp_wp3_Skw_squared,                & ! Intent(in)
                      wp2, wp3, wp3_zm, wp2_zt )               ! Intent(inout)
+
+    if ( l_lmm_stepping ) then
+      wp2 = one_half * ( wp2_old + wp2 )
+      wp3 = one_half * ( wp3_old + wp3 )
+    end if
 
     ! When selected, apply sponge damping after wp2 and wp3 have been advanced.
     if ( wp2_sponge_damp_settings%l_sponge_damping ) then
