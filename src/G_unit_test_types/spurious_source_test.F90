@@ -394,6 +394,7 @@ module spurious_source_test
       l_prescribed_avg_deltaz,      & ! used in adj_low_res_nu. If .true., avg_deltaz = deltaz
       l_update_pressure,            & ! Flag for having CLUBB update pressure and exner
       l_smooth_wp3_on_wp2,          & ! Flag for applying smoothing on calculated wp3/wp2
+      l_smooth_brunt_vaisala_freq,  & ! Flag for applying smoothing on calculated brunt vaisala frequency
       l_constant_surflx,            & ! Flag for having CLUBB use constant surface flux (rico only)
       l_fixed_level_for_surflx,     & ! Flag for having CLUBB calculate surface flux using a fixed model height
       l_fixed_level_for_momentum_surflx, & ! Flag for having CLUBB calculate surface momentum flux at a fixed model height
@@ -441,6 +442,7 @@ module spurious_source_test
                                          l_prescribed_avg_deltaz, &
                                          l_update_pressure, & 
                                          l_smooth_wp3_on_wp2, &
+                                         l_smooth_brunt_vaisala_freq, &
                                          l_constant_surflx, & 
                                          l_fixed_level_for_surflx, &
                                          l_fixed_level_for_momentum_surflx, &

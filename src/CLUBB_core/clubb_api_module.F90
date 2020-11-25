@@ -2560,7 +2560,8 @@ contains
                                                  l_damp_wp3_Skw_squared, & ! Out
                                                  l_prescribed_avg_deltaz, & ! Out
                                                  l_update_pressure, & ! Out
-                                                 l_smooth_wp3_on_wp2, & ! Out 
+                                                 l_smooth_wp3_on_wp2, & ! Out
+                                                 l_smooth_brunt_vaisala_freq, & ! Out 
                                                  l_constant_surflx, & ! Out
                                                  l_fixed_level_for_surflx, & ! Out
                                                  l_fixed_level_for_momentum_surflx, & ! Out 
@@ -2666,6 +2667,7 @@ contains
       l_prescribed_avg_deltaz,      & ! used in adj_low_res_nu. If .true., avg_deltaz = deltaz
       l_update_pressure,            & ! Flag for having CLUBB update pressure and exner
       l_smooth_wp3_on_wp2,          & ! Flag for applying smoothing on calculated wp3/wp2
+      l_smooth_brunt_vaisala_freq,  & ! Flag for applying smoothing on calculated brunt vaisala frequency
       l_constant_surflx,            & ! Flag for having CLUBB use constant surface flux (Rico only)
       l_fixed_level_for_surflx,     & ! Flag for having CLUBB calculate surface flux at a fixed model height
       l_fixed_level_for_momentum_surflx, & ! Flag for having CLUBB calcualte surface momentum flux at a fixed model height
@@ -2712,6 +2714,7 @@ contains
                                          l_prescribed_avg_deltaz, & ! Out
                                          l_update_pressure, & ! Out
                                          l_smooth_wp3_on_wp2, & ! Out  
+                                         l_smooth_brunt_vaisala_freq, & ! Out
                                          l_constant_surflx, & ! Out
                                          l_fixed_level_for_surflx, & ! Out
                                          l_fixed_level_for_momentum_surflx, & ! Out
@@ -2762,7 +2765,8 @@ contains
                                                      l_damp_wp3_Skw_squared, & ! In
                                                      l_prescribed_avg_deltaz, & ! In
                                                      l_update_pressure, & ! In
-                                                     l_smooth_wp3_on_wp2, & ! In 
+                                                     l_smooth_wp3_on_wp2, & ! In
+                                                     l_smooth_brunt_vaisala_freq, & ! In 
                                                      l_constant_surflx, & ! In 
                                                      l_fixed_level_for_surflx, & ! In
                                                      l_fixed_level_for_momentum_surflx, & ! In
@@ -2869,6 +2873,7 @@ contains
       l_prescribed_avg_deltaz,      & ! used in adj_low_res_nu. If .true., avg_deltaz = deltaz
       l_update_pressure,            & ! Flag for having CLUBB update pressure and exner
       l_smooth_wp3_on_wp2,          & ! Flag for applying smoothing on calculated wp3/wp2
+      l_smooth_brunt_vaisala_freq,  & ! Flag for applying smoothing on calculate brunt vaisala frequency
       l_constant_surflx,            & ! Flag for having CLUBB use constant surface flux (Rico only)
       l_fixed_level_for_surflx,     & ! Flag for having CLUBB calculate surface flux at a fixed model height
       l_fixed_level_for_momentum_surflx, & ! Flag for having CLUBB calculate surface momentum flux at a fixed model height
@@ -2919,6 +2924,7 @@ contains
                                              l_prescribed_avg_deltaz, & ! In
                                              l_update_pressure, & ! In
                                              l_smooth_wp3_on_wp2, & ! In
+                                             l_smooth_brunt_vaisala_freq, & ! In
                                              l_constant_surflx, & ! In 
                                              l_fixed_level_for_surflx, & ! In
                                              l_fixed_level_for_momentum_surflx, & ! In 

@@ -634,6 +634,7 @@ subroutine logical_flags_driver( current_date, current_time )
     l_prescribed_avg_deltaz,      & ! used in adj_low_res_nu. If .true., avg_deltaz = deltaz
     l_update_pressure,            & ! Flag for having CLUBB update pressure and exner
     l_smooth_wp3_on_wp2,          & ! Flag for applying smoothing on calculated wp3/wp2
+    l_smooth_brunt_vaisala_freq,  & ! Flag for applying smoothing on calculate brunt vaisala frequency
     l_constant_surflx,            & ! Flag for having CLUBB use constant surface flux (rico only)
     l_fixed_level_for_surflx,     & ! Flag for having CLUBB calculate surface flux using a fixed model height
     l_fixed_level_for_momentum_surflx, & ! Flag for having CLUBB calculate surface momentum  flux at a fixed model height
@@ -694,6 +695,7 @@ subroutine logical_flags_driver( current_date, current_time )
                                        l_prescribed_avg_deltaz, & ! Intent(out)
                                        l_update_pressure, & !  Intent(out)  
                                        l_smooth_wp3_on_wp2, & ! Intent(out)
+                                       l_smooth_brunt_vaisala_freq, & ! Intent(out)
                                        l_constant_surflx,& !  Intent(out) 
                                        l_fixed_level_for_surflx,& !Intent(out)
                                        l_fixed_level_for_momentum_surflx, & ! Intent (out)

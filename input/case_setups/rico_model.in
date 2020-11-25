@@ -144,6 +144,8 @@ iiedsclr_thl    = -2 ! Location in the edsclrm array to place a scalar like thet
 
 l_diagnose_correlations = .false.
 l_calc_w_corr = .false.
+
+l_smooth_brunt_vaisala_freq = .false.
 /
 
 &gfdl_activation_setting

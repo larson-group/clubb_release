@@ -608,6 +608,7 @@ module clubb_driver
       l_prescribed_avg_deltaz,      & ! used in adj_low_res_nu. If .true., avg_deltaz = deltaz
       l_update_pressure,            & ! Flag for having CLUBB update pressure and exner
       l_smooth_wp3_on_wp2,          & ! Flag for applying smoothing on calculated wp3/wp2
+      l_smooth_brunt_vaisala_freq,  & ! Flag for applying smoothing on calculated brunt vaisala frequency
       l_constant_surflx,            & ! Flag for having CLUBB use constant surface flux (rico only)
       l_fixed_level_for_surflx,     & ! Flag for having CLUBB calculate surface flux using a fixed model height 
       l_fixed_level_for_momentum_surflx, & ! Flag for having CLUBB calculate surface momentum flux at a fixed model height
@@ -638,7 +639,7 @@ module clubb_driver
       edsclr_dim, iiedsclr_thl, iiedsclr_rt, iiedsclr_CO2, &
       l_rtm_nudge, rtm_min, rtm_nudge_max_altitude, &
       l_diagnose_correlations, l_calc_w_corr, &
-      l_smooth_wp3_on_wp2, &
+      l_smooth_wp3_on_wp2, l_smooth_brunt_vaisala_freq, &
       l_constant_surflx, l_fixed_level_for_surflx, &
       l_fixed_level_for_momentum_surflx, & 
       l_perturb_IC_at_rounding_level
@@ -801,6 +802,7 @@ module clubb_driver
                                          l_prescribed_avg_deltaz, & ! Intent(out)
                                          l_update_pressure,& ! Intent(out)      
                                          l_smooth_wp3_on_wp2,& ! Intent (out)
+                                         l_smooth_brunt_vaisala_freq, & ! Intent(out)
                                          l_constant_surflx,& !  Intent(out) 
                                          l_fixed_level_for_surflx, & ! Intent(out)
                                          l_fixed_level_for_momentum_surflx, & !Intent(out)
@@ -1171,6 +1173,7 @@ module clubb_driver
                                              l_prescribed_avg_deltaz, & ! Intent(in)
                                              l_update_pressure, & ! Intent(in)
                                              l_smooth_wp3_on_wp2, & ! Intent (in)
+                                             l_smooth_brunt_vaisala_freq, & ! Intent(in)
                                              l_constant_surflx,& !  Intent(in) 
                                              l_fixed_level_for_surflx, & ! Intent(in)
                                              l_fixed_level_for_momentum_surflx, & ! Intent (in) 

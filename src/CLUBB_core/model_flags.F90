@@ -215,7 +215,8 @@ module model_flags
       l_damp_wp3_Skw_squared,       & ! Set damping on wp3 to use Skw^2 rather than Skw^4
       l_prescribed_avg_deltaz,      & ! used in adj_low_res_nu. If .true., avg_deltaz = deltaz
       l_update_pressure,            & ! Flag for having CLUBB update pressure and exner
-      l_smooth_wp3_on_wp2,          & ! Flag for appling smoothing on calculated wp3/wp2 
+      l_smooth_wp3_on_wp2,          & ! Flag for applying smoothing on calculated wp3/wp2
+      l_smooth_brunt_vaisala_freq,  & ! Flag for applying smoothing on calculate brunt vaisala frequency 
       l_constant_surflx,            & ! Flag for having CLUBB use constant surface flux (Rico only)
       l_fixed_level_for_surflx,     & ! Flag for having CLUBB calculate surface flux at a fixed model height
       l_fixed_level_for_momentum_surflx, & ! Flag for having CLUBB calculate momentum flux at a fixed model height
@@ -330,6 +331,7 @@ module model_flags
                                              l_prescribed_avg_deltaz, &
                                              l_update_pressure, & 
                                              l_smooth_wp3_on_wp2, &
+                                             l_smooth_brunt_vaisala_freq, &
                                              l_constant_surflx, &
                                              l_fixed_level_for_surflx, &
                                              l_fixed_level_for_momentum_surflx, &
@@ -437,7 +439,8 @@ module model_flags
       l_damp_wp3_Skw_squared,       & ! Set damping on wp3 to use Skw^2 rather than Skw^4
       l_prescribed_avg_deltaz,      & ! used in adj_low_res_nu. If .true., avg_deltaz = deltaz
       l_update_pressure,            & ! Flag for having CLUBB update pressure and exner
-      l_smooth_wp3_on_wp2,          & ! Flag for appling smoothing on calculated wp3/wp2
+      l_smooth_wp3_on_wp2,          & ! Flag for applying smoothing on calculated wp3/wp2
+      l_smooth_brunt_vaisala_freq,  & ! Flag for applying smoothing on calculated brunt vaisala frequency
       l_constant_surflx,            & ! Flag for having CLUBB use constant surface flux (Rico only)
       l_fixed_level_for_surflx,     & ! Flag for having CLUBB calculate surface flux at a fixed model height
       l_fixed_level_for_momentum_surflx, & ! Flag for having CLUBB calculate surface momentum flux at a fixed model height
@@ -491,6 +494,7 @@ module model_flags
 #endif
     l_update_pressure = .true.
     l_smooth_wp3_on_wp2 = .true.
+    l_smooth_brunt_vaisala_freq = .false.
     l_constant_surflx = .false.
     l_fixed_level_for_surflx = .false.
     l_fixed_level_for_momentum_surflx = .false.
@@ -541,6 +545,7 @@ module model_flags
                                                  l_prescribed_avg_deltaz, &
                                                  l_update_pressure, &
                                                  l_smooth_wp3_on_wp2, & 
+                                                 l_smooth_brunt_vaisala_freq, & 
                                                  l_constant_surflx, &
                                                  l_fixed_level_for_surflx, &
                                                  l_fixed_level_for_momentum_surflx, &
@@ -650,6 +655,7 @@ module model_flags
       l_prescribed_avg_deltaz,      & ! used in adj_low_res_nu. If .true., avg_deltaz = deltaz
       l_update_pressure,            & ! Flag for having CLUBB update pressure and exner
       l_smooth_wp3_on_wp2,          & ! Flag for applying smoothing on calculated wp3/wp2
+      l_smooth_brunt_vaisala_freq,  & ! Flag for applying smoothing on calculated brunt vaisala frequency
       l_constant_surflx,            & ! Flag for having CLUBB use constant surface flux (Rico only)
       l_fixed_level_for_surflx,     & ! Flag for having CLUBB calculate surface flux at a fixed model height
       l_fixed_level_for_momentum_surflx, & ! Flag for having CLUBB calculate surface flux at a fixed model height
@@ -703,6 +709,7 @@ module model_flags
     clubb_config_flags%l_prescribed_avg_deltaz = l_prescribed_avg_deltaz
     clubb_config_flags%l_update_pressure = l_update_pressure
     clubb_config_flags%l_smooth_wp3_on_wp2 = l_smooth_wp3_on_wp2
+    clubb_config_flags%l_smooth_brunt_vaisala_freq = l_smooth_brunt_vaisala_freq
     clubb_config_flags%l_constant_surflx = l_constant_surflx
     clubb_config_flags%l_fixed_level_for_surflx = l_fixed_level_for_surflx
     clubb_config_flags%l_fixed_level_for_momentum_surflx = l_fixed_level_for_momentum_surflx
@@ -776,6 +783,7 @@ module model_flags
     write(iunit,*) "l_prescribed_avg_deltaz = ", clubb_config_flags%l_prescribed_avg_deltaz
     write(iunit,*) "l_update_pressure = ", clubb_config_flags%l_update_pressure
     write(iunit,*) "l_smooth_wp3_on_wp2 = ", clubb_config_flags%l_smooth_wp3_on_wp2
+    write(iunit,*) "l_smooth_brunt_vaisala_freq = ", clubb_config_flags%l_smooth_brunt_vaisala_freq
     write(iunit,*) "l_constant_surflx = ", clubb_config_flags%l_constant_surflx 
     write(iunit,*) "l_fixed_level_for_surflx = ", clubb_config_flags%l_fixed_level_for_surflx 
     write(iunit,*) "l_fixed_level_for_momentum_surflx= ", clubb_config_flags%l_fixed_level_for_momentum_surflx

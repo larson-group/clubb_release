@@ -6,7 +6,7 @@ import sys
 
 modifiable_parameters = ['dt', 'dt_output', 'microphysics', 'format', 'prefix', 'dz',
                          'Tsfc', 'godunov', 'aterms', 'levels', 'tfinal', 'refine',
-                         'splat']
+                         'splat', 'bvf']
 
 # check that Python 3 is being used
 if (sys.version_info.major < 3):
@@ -98,9 +98,17 @@ if ('refine' in parameters):
     grid[refine_ind] = 0.5*(grid[coarse_ind[1:]] + grid[coarse_ind[:-1]])
   grid[0] = -grid[1]
   parameters['levels'] = str(len(grid))
-  filename = 'deep_convection_{}lev_27km_zt_grid.grd'.format(parameters['levels'])
-  np.savetxt(filename, grid)
-  parameters['zt_filename'] = "'{}'".format(filename)
+  grid_filename = 'deep_convection_{}lev_27km_zt_grid.grd'.format(parameters['levels'])
+  np.savetxt(grid_filename, grid)
+  parameters['zt_filename'] = "'{}'".format(grid_filename)
+
+# set BVF smoothing to false unless use has specified smooth
+if ('bvf' not in parameters):
+  parameters['bvf'] = '.false.'
+elif (parameters['bvf'] == 'smooth'):
+  parameters['bvf'] = '.true.'
+else:
+  sys.exit('unrecognized bvf option ("smooth" is only current option)')
 
 # set l_standard_term_ta to true unless user has specified something else
 if ('aterms' not in parameters):
@@ -146,7 +154,8 @@ for line in model_config:
         or parameter == 'levels' and line.startswith('nzmax')
         or parameter == 'tfinal' and line.startswith('time_final')
         or parameter == 'newBC' and line.startswith('l_fixed_level_for_surflx')
-        or parameter == 'scaleBC' and line.startswith('f_scale_surflx')):
+        or parameter == 'scaleBC' and line.startswith('f_scale_surflx')
+        or parameter == 'bvf' and line.startswith('l_smooth_brunt_vaisala_freq')):
         default_value = line.split()[2]
         line = line.replace(default_value, parameters[parameter])
         modified = True
