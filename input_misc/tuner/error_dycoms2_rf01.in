@@ -123,4 +123,9 @@ C_invrs_tau_N2_wpxp          = 0.
 xp3_coef_base                = 0.
 xp3_coef_slope               = 0.
 altitude_threshold           = 0.
+rtp2_clip_coef               = 0.
+Richardson_num_min           = 0.
+Richardson_num_max           = 0.
+Cx_min                       = 0.
+Cx_max                       = 0.
 /
