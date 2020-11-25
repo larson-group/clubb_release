@@ -34,7 +34,7 @@ f.savefig('stable_unstable.png')
 data = Dataset('rico_godunov-scalarwp3_dt-0.05_refine-7_tfinal-1200_dt_output-1_zm.nc')
 tau_original = data['tau_zm'][:]
 z = data['altitude'][:]
-data = Dataset('brunt_vaisala_smoothing/rico_godunov-scalarwp3_dt-0.05_refine-7_tfinal-1200_dt_output-1_zm.nc')
+data = Dataset('rico_godunov-scalarwp3_dt-0.05_refine-7_bvf-smooth_tfinal-1200_dt_output-1_zm.nc')
 tau_smooth = data['tau_zm'][:]
 
 f, ax = pyplot.subplots(2,2,figsize=figsize, sharey=True)

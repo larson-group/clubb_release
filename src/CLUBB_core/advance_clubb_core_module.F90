@@ -747,36 +747,38 @@ module advance_clubb_core_module
       rel_humidity        ! Relative humidity after PDF closure [-]
 
     real( kind = core_rknd ), dimension(gr%nz) :: &
-       stability_correction,         & ! Stability correction factor
-       tau_N2_zm,                    & ! Tau with a static stability correction applied to it [s]
-       tau_C6_zm,                    & ! Tau values used for the C6 (pr1) term in wpxp [s]
-       tau_C1_zm,                    & ! Tau values used for the C1 (dp1) term in wp2 [s]
-       Cx_fnc_Richardson,            & ! Cx_fnc computed from Richardson_num          [-]
-       brunt_vaisala_freq_sqd,       & ! Buoyancy frequency squared, N^2              [s^-2]
-       brunt_vaisala_freq_sqd_smth,  & ! smoothed Buoyancy frequency squared, N^2     [s^-2]
-       brunt_vaisala_freq_sqd_mixed, & ! A mixture of dry and moist N^2
-       brunt_vaisala_freq_sqd_dry,   & ! dry N^2
-       brunt_vaisala_freq_sqd_moist, & ! moist N^2
-       brunt_vaisala_freq_sqd_plus,  & ! N^2 from another way
-       brunt_freq_out_cloud,         & !
-       invrs_tau_zm,                 & ! One divided by tau on zm levels              [s^-1]
-       invrs_tau_xp2_zm,             & ! One divided by tau_xp2                       [s^-1]
-       invrs_tau_wp2_zm,             & ! One divided by tau_wp2                       [s^-1]
-       invrs_tau_wpxp_zm,            & ! One divided by tau_wpxp                      [s^-1]
-       invrs_tau_wp3_zm,             & ! One divided by tau_wp3                       [s^-1]
-       invrs_tau_N2_zm,              & ! One divided by tau with stability effects    [s^-1]
-       invrs_tau_no_N2_zm,           & ! One divided by tau (without N2) on zm levels [s^-1] 
-       ustar,                        & ! Friction velocity  [m/s]
-       tau_no_N2_zm,                 & ! Tau without Brunt Freq
-       tau_wp2_zm,                   & ! Tau values used for advance_wp2_wpxp
-       tau_wp3_zm,                   & ! Tau values used for advance_wp3_wp2
-       tau_xp2_zm,                   & ! Tau values used for advance_xp2_wpxp
-       tau_wpxp_zm,                  & ! tau_C6_zm = tau_wpxp_zm 
-       tau_wp2_zt,                   & ! Tau wp2 at zt levels
-       tau_wpxp_zt,                  & ! Tau wpxp at zt levels
-       tau_wp3_zt,                   & ! Tau wp3 at zt levels
-       tau_xp2_zt,                   & ! Tau xp2 at zt levels
-       tau_no_N2_zt                    ! 
+       stability_correction,              & ! Stability correction factor
+       tau_N2_zm,                         & ! Tau with a static stability correction applied to it [s]
+       tau_C6_zm,                         & ! Tau values used for the C6 (pr1) term in wpxp [s]
+       tau_C1_zm,                         & ! Tau values used for the C1 (dp1) term in wp2 [s]
+       Cx_fnc_Richardson,                 & ! Cx_fnc computed from Richardson_num          [-]
+       brunt_vaisala_freq_sqd,            & ! Buoyancy frequency squared, N^2              [s^-2]
+       brunt_vaisala_freq_sqd_smth,       & ! smoothed Buoyancy frequency squared, N^2     [s^-2]
+       brunt_vaisala_freq,                & ! Buoyancy frequency N     [s^-1]
+       brunt_vaisala_freq_smth,           & ! smoothed Buoyancy frequency N     [s^-1]
+       brunt_vaisala_freq_sqd_mixed,      & ! A mixture of dry and moist N^2
+       brunt_vaisala_freq_sqd_dry,        & ! dry N^2
+       brunt_vaisala_freq_sqd_moist,      & ! moist N^2
+       brunt_vaisala_freq_sqd_plus,       & ! N^2 from another way
+       brunt_freq_out_cloud,              & !
+       invrs_tau_zm,                      & ! One divided by tau on zm levels              [s^-1]
+       invrs_tau_xp2_zm,                  & ! One divided by tau_xp2                       [s^-1]
+       invrs_tau_wp2_zm,                  & ! One divided by tau_wp2                       [s^-1]
+       invrs_tau_wpxp_zm,                 & ! One divided by tau_wpxp                      [s^-1]
+       invrs_tau_wp3_zm,                  & ! One divided by tau_wp3                       [s^-1]
+       invrs_tau_N2_zm,                   & ! One divided by tau with stability effects    [s^-1]
+       invrs_tau_no_N2_zm,                & ! One divided by tau (without N2) on zm levels [s^-1] 
+       ustar,                             & ! Friction velocity  [m/s]
+       tau_no_N2_zm,                      & ! Tau without Brunt Freq
+       tau_wp2_zm,                        & ! Tau values used for advance_wp2_wpxp
+       tau_wp3_zm,                        & ! Tau values used for advance_wp3_wp2
+       tau_xp2_zm,                        & ! Tau values used for advance_xp2_wpxp
+       tau_wpxp_zm,                       & ! tau_C6_zm = tau_wpxp_zm 
+       tau_wp2_zt,                        & ! Tau wp2 at zt levels
+       tau_wpxp_zt,                       & ! Tau wpxp at zt levels
+       tau_wp3_zt,                        & ! Tau wp3 at zt levels
+       tau_xp2_zt,                        & ! Tau xp2 at zt levels
+       tau_no_N2_zt                         ! 
  
 
 
@@ -1190,33 +1192,45 @@ module advance_clubb_core_module
          + C_invrs_tau_sfc * ( ustar / vonk ) / ( gr%zm - sfc_elevation + z_displace ) &
          + C_invrs_tau_shear * zt2zm( zm2zt( sqrt( (ddzt( um ))**2 + (ddzt( vm ))**2 ) ) )
 
-!        brunt_vaisala_freq_sqd_smth = zt2zm( zm2zt( brunt_vaisala_freq_sqd ) )
-!       The min function below smooths the slope discontinuity in brunt freq
-!           and thereby allows tau to remain large in Sc layers in which thlm may
-!           be slightly stably stratified.
 
-        brunt_vaisala_freq_sqd_smth = zt2zm( zm2zt( &
-              min( brunt_vaisala_freq_sqd, 1.e8_core_rknd * abs(brunt_vaisala_freq_sqd)**3 ) ) )
+!       The min function addresses the slope discontinuity in brunt freq and
+!       thereby allows tau to remain large in Sc layers in which thlm may be
+!       slightly stably stratified.
+        brunt_vaisala_freq_sqd = min(brunt_vaisala_freq_sqd, &
+              1.e8_core_rknd*abs(brunt_vaisala_freq_sqd)**3)
 
-        brunt_freq_out_cloud = sqrt( max( zero_threshold, &
-                brunt_vaisala_freq_sqd_smth ) ) &
+
+        if (clubb_config_flags%l_smooth_brunt_vaisala_freq) then
+!         use new smoothing approach that computes the brunt freq first and then
+!         applies smoothing
+
+          brunt_vaisala_freq = sqrt( max(zero_threshold, brunt_vaisala_freq_sqd) )
+          brunt_vaisala_freq_smth = zt2zm( zm2zt(brunt_vaisala_freq) )
+
+        else
+!         use original smoothing approach that applies smoothing to the brunt 
+!         freq first and then takes square root
+
+          brunt_vaisala_freq_sqd_smth = zt2zm( zm2zt(brunt_vaisala_freq_sqd) )
+          brunt_vaisala_freq_smth = sqrt( max( zero_threshold, &
+                brunt_vaisala_freq_sqd_smth ) )
+
+        end if
+
+        brunt_freq_out_cloud = brunt_vaisala_freq_smth &
               * min(one, max(zero_threshold,&
               one - ( (zt2zm(ice_supersat_frac) / 0.007_core_rknd) )))
 
         invrs_tau_zm = invrs_tau_no_N2_zm & 
-              + C_invrs_tau_N2 * sqrt( max( zero_threshold, &
-              brunt_vaisala_freq_sqd_smth ) )
+              + C_invrs_tau_N2 * brunt_vaisala_freq_smth
 
         invrs_tau_wp2_zm = invrs_tau_no_N2_zm &
-              + C_invrs_tau_N2_wp2 * sqrt( max( zero_threshold, &
-              brunt_vaisala_freq_sqd_smth ) )
+              + C_invrs_tau_N2_wp2 * brunt_vaisala_freq_smth
 
         invrs_tau_xp2_zm =  0.1 * C_invrs_tau_bkgnd  / tau_const &
               + C_invrs_tau_sfc * ( ustar / vonk ) / ( gr%zm - sfc_elevation + z_displace ) &
               + C_invrs_tau_shear * zt2zm( zm2zt( sqrt( (ddzt( um ))**2 + (ddzt( vm ))**2 ) ) )& 
-              + C_invrs_tau_N2_xp2 &
-              * sqrt( max( zero_threshold, &
-              brunt_vaisala_freq_sqd_smth ) )!,0.002_core_rknd )
+              + C_invrs_tau_N2_xp2 * brunt_vaisala_freq_smth
 
         invrs_tau_xp2_zm = merge(0.003_core_rknd, invrs_tau_xp2_zm, &
               zt2zm(ice_supersat_frac) <= 0.01_core_rknd &

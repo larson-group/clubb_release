@@ -10,8 +10,7 @@ modifiable_parameters = ['dt', 'dt_output', 'microphysics', 'format', 'prefix', 
 
 # check that Python 3 is being used
 if (sys.version_info.major < 3):
-  print('must use Python 3 instead of {}'.format(sys.version))
-  sys.exit(1)
+  sys.exit('must use Python 3 instead of {}'.format(sys.version))
 
 # remind user to load modules if this is Quartz
 if ('quartz' in os.uname().nodename):
@@ -19,7 +18,8 @@ if ('quartz' in os.uname().nodename):
   print('  make sure to load the mkl and netcdf-fortran modules  ')
   print('########################################################')
 
-# TODO: check that this is being run from the run_scripts directory
+if (os.path.basename(os.getcwd()) != 'run_scripts'):
+  sys.exit('this script must be run from the run_scripts directory')
 os.chdir('../output')
 
 if (len(sys.argv) < 2):
