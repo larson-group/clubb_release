@@ -724,6 +724,15 @@ class DataReader():
         end_idx = len(data)
         ascending_data = data[0] < data[1]
 
+        # Check that the 'data' array includes start_value and end_value (ie nc data includes all desired pts).
+        # Start_value == 0 means a time-series plot, in which case we want to plot everything, so pass.
+        # I rounded the last data[-1] becuase COAMPS sometimes has funny time numbers and this helps with that.
+        if (start_value == 0) or (data[0] <= start_value <= data[-1] and data[0] <= end_value <= round(data[-1])):
+            pass
+        else:
+            logToFile("Error: The input data does not contain all or part of the specified time or height data." +
+                      " Check Case_definitions.py.")
+
         start_idx_found = False
         if ascending_data:
             # dependent_data is ascending

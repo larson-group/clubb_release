@@ -9,7 +9,7 @@ Separates console printing from error log file printing.
 
 import os
 import logging
-
+import shutil
 
 def logToFile(message):
     """Writes a message to the log file."""
@@ -21,7 +21,6 @@ def logToFileAndConsole(message):
     print(message)
     logging.info("proc_id: "+str(os.getpid())+"\t"+message)
 
-
 def initializeProgress(image_extension, movie_extension):
     """Prints the initial progress indicator, updated later"""
     print("Running...\n" + "----------\n" +
@@ -31,8 +30,13 @@ def initializeProgress(image_extension, movie_extension):
     if movie_extension is not None:
         movie_extension = "."+movie_extension
         print(" --> ANIMATION NOTE: Time slices must sometimes be filtered from animations\n" +
-              "     due to mismatched time stepping. Affected cases are noted in error.log.\n" +
-              "----------")
+              "     due to mismatched time stepping. Affected cases are noted in error.log.")
+        if movie_extension == '.mp4':
+            if shutil.which('ffmpeg') is not None:
+                print(" --> FFmpeg is present and will be used (see README for more info).")
+            else:
+                print(" --> FFmpeg not found, videos may not play on all browsers (see README for more info).")
+        print("----------")
         print("\rProgress: {:4d} of {:>4} total {} panels complete ({:3d}%)".format(0,'?',movie_extension,0), end="")
     else:
         print("\rProgress: {:4d} of {:>4} total {} panels complete ({:3d}%)".format(0,'?',image_extension,0), end="")

@@ -815,7 +815,9 @@ class VariableGroup:
             var_ncdf = NetCdfVariable(varname, datasets, independent_var_names=Case_definitions.HEIGHT_VAR_NAMES,
                                       conversion_factor=conversion_factor, start_time=self.start_time,
                                       end_time=self.end_time)
-            var_ncdf.trimArray(self.height_min_value, self.height_max_value, data=var_ncdf.independent_data)
+            # I think trimming height is redundant with later processes, and this line can cause a problem with
+            # data going outside start/end limits. Commenting for now, maybe eventually delete. BAS 11/20
+            #var_ncdf.trimArray(self.height_min_value, self.height_max_value, data=var_ncdf.independent_data)
         var_data = var_ncdf.dependent_data
         indep_data = var_ncdf.independent_data
         return var_data, indep_data, var_ncdf.ncdf_data  # changed datasets to var_ncdf.ncdf_data to fix budget plots
