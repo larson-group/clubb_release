@@ -95,6 +95,7 @@ C_invrs_tau_N2_clear_wp3 = 1.0 ! Coefficient of inverse tau term contributed by 
 xp3_coef_base  = 0.25    ! "Base" value of xp3_coef in simple eqn  [-]
 xp3_coef_slope = 0.01    ! Slope in regards to Brunt-Vaisla freq.  [-]
 altitude_threshold = 100.0 ! Altitude above which damping should occur for wpxp [m]
+rtp2_clip_coef = 0.5       ! Coef applied to the clipping thresh on rtp2 [-]
 Richardson_num_min = 0.25  ! Threshold on Richardson number
 Richardson_num_max = 400.0 ! Threshold on Richardson number
 Cx_min = 0.333333333333333 ! Threshold on Cx_fnc_Richardson
