@@ -25,7 +25,8 @@ module advance_helper_module
   interface smooth_min_zm
 
     ! These functions wrap the intrinsic Fortran 'min' function in 
-    ! zt2zm(zm2zt()), thus smoothing the result.  They can accept two 1d arrays,
+    ! zt2zm(zm2zt()), thus smoothing the result for a variable defined on the
+    ! momentum grid ("zm").  These functions can accept two 1d arrays,
     ! or a scalar and a 1d array in either order. In the case of an 
     ! array being compared with a scalar (eg zero), an additional
     ! 'min' is applied to guarantee that the smoothing did not violate
@@ -41,7 +42,8 @@ module advance_helper_module
   interface smooth_min_zt
 
     ! These functions wrap the intrinsic Fortran 'min' function in 
-    ! zm2zt(zt2zm()), thus smoothing the result.  They can accept two 1d arrays,
+    ! zm2zt(zt2zm()), thus smoothing the result for a variable defined on the
+    ! thermodynamic grid ("zt").  These functions can accept two 1d arrays,
     ! or a scalar and a 1d array in either order. In the case of an  
     ! array being compared with a scalar (eg zero), an additional
     ! 'min' is applied to guarantee that the smoothing did not violate
@@ -57,7 +59,8 @@ module advance_helper_module
   interface smooth_max_zm
 
     ! These functions wrap the intrinsic Fortran 'max' function in 
-    ! zt2zm(zm2zt()), thus smoothing the result.  They can accept two 1d arrays,
+    ! zt2zm(zm2zt()), thus smoothing the result for a variable defined on the
+    ! momentum grid ("zm").  These functions can accept two 1d arrays,
     ! or a scalar and a 1d array in either order. In the case of an  
     ! array being compared with a scalar (eg zero), an additional
     ! 'max' is applied to guarantee that the smoothing did not violate
@@ -73,7 +76,8 @@ module advance_helper_module
   interface smooth_max_zt
 
     ! These functions wrap the intrinsic Fortran 'max' function in 
-    ! zm2zt(zt2zm()), thus smoothing the result.  They can accept two 1d arrays,
+    ! zm2zt(zt2zm()), thus smoothing the result for a variable defined on the
+    ! thermodynamic grid ("zt").  These functions can accept two 1d arrays,
     ! or a scalar and a 1d array in either order. In the case of an  
     ! array being compared with a scalar (eg zero), an additional
     ! 'max' is applied to guarantee that the smoothing did not violate
@@ -1017,7 +1021,7 @@ module advance_helper_module
 
   !----------------------------------------------------------------------
 
-    output_var = min( input_var1, zt2zm( zm2zt( min( input_var1 , input_var2 ))))
+    output_var = min( input_var2, zt2zm( zm2zt( min( input_var1 , input_var2 ))))
 
     return
   end function smooth_min_zm_array_sclr
@@ -1135,7 +1139,7 @@ module advance_helper_module
 
   !----------------------------------------------------------------------
 
-    output_var = min( input_var1, zm2zt( zt2zm( min( input_var1 , input_var2 ))))
+    output_var = min( input_var2, zm2zt( zt2zm( min( input_var1 , input_var2 ))))
 
     return
   end function smooth_min_zt_array_sclr
@@ -1253,7 +1257,7 @@ module advance_helper_module
 
   !----------------------------------------------------------------------
 
-    output_var = max( input_var1, zt2zm( zm2zt( max( input_var1 , input_var2 ))))
+    output_var = max( input_var2, zt2zm( zm2zt( max( input_var1 , input_var2 ))))
 
     return
   end function smooth_max_zm_array_sclr
@@ -1371,7 +1375,7 @@ module advance_helper_module
 
   !----------------------------------------------------------------------
 
-    output_var = max( input_var1, zm2zt( zt2zm( max( input_var1 , input_var2 ))))
+    output_var = max( input_var2, zm2zt( zt2zm( max( input_var1 , input_var2 ))))
 
     return
   end function smooth_max_zt_array_sclr
