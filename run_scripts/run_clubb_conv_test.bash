@@ -3,10 +3,11 @@
 # $Id$
 #
 # Desciption:
-#   Script to test how well CLUBB is converging. It runs RUN_CASE nine times
-#   doubling the time step each time. Then, for a specified variable, the test
-#   calculates the root mean square difference bewteen the dt = 1s case
-#   and all other cases, to see how well CLUBB converges.
+#   Script to test how well CLUBB is converging. By default, it runs the BOMEX case
+#   for an initial 90-minute run, then repeatedly executes 60-min restart runs
+#   doubling the time step each time.  Then, for a specified variable (rcm, by 
+#   default), the test calculates the root mean square difference bewteen the 
+#   dt = 1s case and all other cases, to see how well CLUBB converges.
 #################################################################################
 
 # Set case to run, specify input file, and choose variable to test
@@ -160,5 +161,4 @@ rm convergence.data
 
 cd $restoreDir
 
-#how to determine convergence success?
 exit $RESULT
