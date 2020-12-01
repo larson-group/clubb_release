@@ -15,10 +15,81 @@ module advance_helper_module
     calc_stability_correction,   &
     calc_brunt_vaisala_freq_sqd, &
     compute_Cx_fnc_Richardson, &
-    term_wp2_splat, term_wp3_splat
+    term_wp2_splat, term_wp3_splat, &
+    smooth_min_zm, smooth_min_zt, &
+    smooth_max_zm, smooth_max_zt
 
   private ! Set Default Scope
 
+!===============================================================================
+  interface smooth_min_zm
+
+    ! These functions wrap the intrinsic Fortran 'min' function in 
+    ! zt2zm(zm2zt()), thus smoothing the result for a variable defined on the
+    ! momentum grid ("zm").  These functions can accept two 1d arrays,
+    ! or a scalar and a 1d array in either order. In the case of an 
+    ! array being compared with a scalar (eg zero), an additional
+    ! 'min' is applied to guarantee that the smoothing did not violate
+    ! the original min requirement.
+
+    module procedure smooth_min_zm_sclr_array
+    module procedure smooth_min_zm_array_sclr
+    module procedure smooth_min_zm_arrays
+
+  end interface
+
+!===============================================================================
+  interface smooth_min_zt
+
+    ! These functions wrap the intrinsic Fortran 'min' function in 
+    ! zm2zt(zt2zm()), thus smoothing the result for a variable defined on the
+    ! thermodynamic grid ("zt").  These functions can accept two 1d arrays,
+    ! or a scalar and a 1d array in either order. In the case of an  
+    ! array being compared with a scalar (eg zero), an additional
+    ! 'min' is applied to guarantee that the smoothing did not violate
+    ! the original min requirement.
+
+    module procedure smooth_min_zt_sclr_array
+    module procedure smooth_min_zt_array_sclr
+    module procedure smooth_min_zt_arrays
+
+  end interface
+
+!===============================================================================
+  interface smooth_max_zm
+
+    ! These functions wrap the intrinsic Fortran 'max' function in 
+    ! zt2zm(zm2zt()), thus smoothing the result for a variable defined on the
+    ! momentum grid ("zm").  These functions can accept two 1d arrays,
+    ! or a scalar and a 1d array in either order. In the case of an  
+    ! array being compared with a scalar (eg zero), an additional
+    ! 'max' is applied to guarantee that the smoothing did not violate
+    ! the original max requirement.
+
+    module procedure smooth_max_zm_sclr_array
+    module procedure smooth_max_zm_array_sclr
+    module procedure smooth_max_zm_arrays
+
+  end interface
+
+!===============================================================================
+  interface smooth_max_zt
+
+    ! These functions wrap the intrinsic Fortran 'max' function in 
+    ! zm2zt(zt2zm()), thus smoothing the result for a variable defined on the
+    ! thermodynamic grid ("zt").  These functions can accept two 1d arrays,
+    ! or a scalar and a 1d array in either order. In the case of an  
+    ! array being compared with a scalar (eg zero), an additional
+    ! 'max' is applied to guarantee that the smoothing did not violate
+    ! the original max requirement.
+
+    module procedure smooth_max_zt_sclr_array
+    module procedure smooth_max_zt_array_sclr
+    module procedure smooth_max_zt_arrays
+
+  end interface
+
+!===============================================================================
   contains
 
   !---------------------------------------------------------------------------
@@ -329,7 +400,7 @@ module advance_helper_module
         else
 
           brunt_vaisala_freq_sqd(:) = ( grav / T0 ) * ddzt_thlm(:)
-    
+
         end if
 
         T_in_K = thlm2T_in_K( thlm, exner, rcm )
@@ -874,5 +945,477 @@ module advance_helper_module
     !wp3_splat = - three * C_wp2_splat * wp3 * 900._core_rknd * d_sqrt_wp2_dz**2
 
   end subroutine term_wp3_splat
+
+!===============================================================================
+  function smooth_min_zm_sclr_array( input_var1, input_var2 ) &
+  result( output_var )
+
+  ! Description:
+  !   Computes a smoothed version of the min function using zt2zm/zm2zt, using
+  !   one scalar and one 1d array as inputs.
+
+  ! References:
+  !   See clubb:ticket:894
+  !----------------------------------------------------------------------
+
+  use clubb_precision, only: &
+    core_rknd                     ! Constant(s)
+
+  use grid_class, only:  &
+    zt2zm, &                      ! Procedure
+    zm2zt, &
+    gr
+
+  implicit none
+
+  ! Input Variables
+  real ( kind = core_rknd ), intent(in) :: &
+    input_var1          ! Units vary
+
+  real ( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
+    input_var2          ! Units vary
+
+  ! Output Variables
+  real( kind = core_rknd ), dimension(gr%nz) :: &
+    output_var          ! Units vary
+
+  !----------------------------------------------------------------------
+
+    output_var = min( input_var1, zt2zm( zm2zt( min( input_var1 , input_var2 ))))
+
+    return
+  end function smooth_min_zm_sclr_array
+
+!===============================================================================
+  function smooth_min_zm_array_sclr( input_var1, input_var2 ) &
+  result( output_var )
+
+  ! Description:
+  !   Computes a smoothed version of the min function using zt2zm/zm2zt, using
+  !   one scalar and one 1d array as inputs.
+
+  ! References:
+  !   See clubb:ticket:894
+  !----------------------------------------------------------------------
+
+  use clubb_precision, only: &
+    core_rknd                     ! Constant(s)
+
+  use grid_class, only:  &
+    zt2zm, &                      ! Procedure
+    zm2zt, &
+    gr
+
+  implicit none
+
+  ! Input Variables
+  real ( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
+    input_var1          ! Units vary
+
+  real ( kind = core_rknd ), intent(in) :: &
+    input_var2          ! Units vary
+
+  ! Output Variables
+  real( kind = core_rknd ), dimension(gr%nz) :: &
+    output_var          ! Units vary
+
+  !----------------------------------------------------------------------
+
+    output_var = min( input_var2, zt2zm( zm2zt( min( input_var1 , input_var2 ))))
+
+    return
+  end function smooth_min_zm_array_sclr
+
+!===============================================================================
+  function smooth_min_zm_arrays( input_var1, input_var2 ) &
+  result( output_var )
+
+  ! Description:
+  !   Computes a smoothed version of the min function using zt2zm/zm2zt, using
+  !   two 1d arrays as inputs.
+
+  ! References:
+  !   See clubb:ticket:894
+  !----------------------------------------------------------------------
+
+  use clubb_precision, only: &
+    core_rknd                     ! Constant(s)
+
+  use grid_class, only:  &
+    zt2zm, &                      ! Procedure
+    zm2zt, &
+    gr
+
+  implicit none
+
+  ! Input Variables
+  real ( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
+    input_var1, &       ! Units vary
+    input_var2          ! Units vary
+
+  ! Output Variables
+  real( kind = core_rknd ), dimension(gr%nz) :: &
+    output_var          ! Units vary
+
+  !----------------------------------------------------------------------
+
+    output_var = zt2zm( zm2zt( min( input_var1 , input_var2 )))
+
+    return
+  end function smooth_min_zm_arrays
+
+!===============================================================================
+  function smooth_min_zt_sclr_array( input_var1, input_var2 ) &
+  result( output_var )
+
+  ! Description:
+  !   Computes a smoothed version of the min function using zt2zm/zm2zt, using
+  !   one scalar and one 1d array as inputs.
+
+  ! References:
+  !   See clubb:ticket:894
+  !----------------------------------------------------------------------
+
+  use clubb_precision, only: &
+    core_rknd                     ! Constant(s)
+
+  use grid_class, only:  &
+    zt2zm, &                      ! Procedure
+    zm2zt, &
+    gr
+
+  implicit none
+
+  ! Input Variables
+  real ( kind = core_rknd ), intent(in) :: &
+    input_var1          ! Units vary
+
+  real ( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
+    input_var2          ! Units vary
+
+  ! Output Variables
+  real( kind = core_rknd ), dimension(gr%nz) :: &
+    output_var          ! Units vary
+
+  !----------------------------------------------------------------------
+
+    output_var = min( input_var1, zm2zt( zt2zm( min( input_var1 , input_var2 ))))
+
+    return
+  end function smooth_min_zt_sclr_array
+
+!===============================================================================
+  function smooth_min_zt_array_sclr( input_var1, input_var2 ) &
+  result( output_var )
+
+  ! Description:
+  !   Computes a smoothed version of the min function using zt2zm/zm2zt, using
+  !   one scalar and one 1d array as inputs.
+
+  ! References:
+  !   See clubb:ticket:894
+  !----------------------------------------------------------------------
+
+  use clubb_precision, only: &
+    core_rknd                     ! Constant(s)
+
+  use grid_class, only:  &
+    zt2zm, &                      ! Procedure
+    zm2zt, &
+    gr
+
+  implicit none
+
+  ! Input Variables
+  real ( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
+    input_var1          ! Units vary
+
+  real ( kind = core_rknd ), intent(in) :: &
+    input_var2          ! Units vary
+
+  ! Output Variables
+  real( kind = core_rknd ), dimension(gr%nz) :: &
+    output_var          ! Units vary
+
+  !----------------------------------------------------------------------
+
+    output_var = min( input_var2, zm2zt( zt2zm( min( input_var1 , input_var2 ))))
+
+    return
+  end function smooth_min_zt_array_sclr
+
+!===============================================================================
+  function smooth_min_zt_arrays( input_var1, input_var2 ) &
+  result( output_var )
+
+  ! Description:
+  !   Computes a smoothed version of the min function using zt2zm/zm2zt, using
+  !   two 1d arrays as inputs.
+
+  ! References:
+  !   See clubb:ticket:894
+  !----------------------------------------------------------------------
+
+  use clubb_precision, only: &
+    core_rknd                     ! Constant(s)
+
+  use grid_class, only:  &
+    zt2zm, &                      ! Procedure
+    zm2zt, &
+    gr
+
+  implicit none
+
+  ! Input Variables
+  real ( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
+    input_var1, &       ! Units vary
+    input_var2          ! Units vary
+
+  ! Output Variables
+  real( kind = core_rknd ), dimension(gr%nz) :: &
+    output_var          ! Units vary
+
+  !----------------------------------------------------------------------
+
+    output_var = zm2zt( zt2zm( min( input_var1 , input_var2 )))
+
+    return
+  end function smooth_min_zt_arrays
+
+!===============================================================================
+  function smooth_max_zm_sclr_array( input_var1, input_var2 ) &
+  result( output_var )
+
+  ! Description:
+  !   Computes a smoothed version of the max function using zt2zm/zm2zt, 
+  !   using one scalar and one 1d array as inputs.
+
+  ! References:
+  !   See clubb:ticket:894
+  !----------------------------------------------------------------------
+
+  use clubb_precision, only: &
+    core_rknd                     ! Constant(s)
+
+  use grid_class, only:  &
+    zt2zm, &                      ! Procedure
+    zm2zt, &
+    gr
+
+  implicit none
+
+  ! Input Variables
+  real ( kind = core_rknd ), intent(in) :: &
+    input_var1          ! Units vary
+
+  real ( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
+    input_var2          ! Units vary
+
+  ! Output Variables
+  real( kind = core_rknd ), dimension(gr%nz) :: &
+    output_var          ! Units vary
+
+  !----------------------------------------------------------------------
+
+    output_var = max( input_var1, zt2zm( zm2zt( max( input_var1 , input_var2 ))))
+  
+    return
+  end function smooth_max_zm_sclr_array
+
+!===============================================================================
+  function smooth_max_zm_array_sclr( input_var1, input_var2 ) &
+  result( output_var )
+
+  ! Description:
+  !   Computes a smoothed version of the max function using zt2zm/zm2zt, 
+  !   using one scalar and one 1d array as inputs.
+
+  ! References:
+  !   See clubb:ticket:894
+  !----------------------------------------------------------------------
+
+  use clubb_precision, only: &
+    core_rknd                     ! Constant(s)
+
+  use grid_class, only:  &
+    zt2zm, &                      ! Procedure
+    zm2zt, &
+    gr
+
+  implicit none
+
+  ! Input Variables
+  real ( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
+    input_var1          ! Units vary
+
+  real ( kind = core_rknd ), intent(in) :: &
+    input_var2          ! Units vary
+
+  ! Output Variables
+  real( kind = core_rknd ), dimension(gr%nz) :: &
+    output_var          ! Units vary
+
+  !----------------------------------------------------------------------
+
+    output_var = max( input_var2, zt2zm( zm2zt( max( input_var1 , input_var2 ))))
+
+    return
+  end function smooth_max_zm_array_sclr
+
+!===============================================================================
+  function smooth_max_zm_arrays( input_var1, input_var2 ) &
+  result( output_var )
+
+  ! Description:
+  !   Computes a smoothed version of the max function using zt2zm/zm2zt, using
+  !   two 1d arrays as inputs.
+
+  ! References:
+  !   See clubb:ticket:894
+  !----------------------------------------------------------------------
+
+  use clubb_precision, only: &
+    core_rknd                     ! Constant(s)
+
+  use grid_class, only:  &
+    zt2zm, &                      ! Procedure
+    zm2zt, &
+    gr
+
+  implicit none
+
+  ! Input Variables
+  real ( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
+    input_var1, &       ! Units vary
+    input_var2          ! Units vary
+
+  ! Output Variables
+  real( kind = core_rknd ), dimension(gr%nz) :: &
+    output_var          ! Units vary
+
+  !----------------------------------------------------------------------
+
+    output_var = zt2zm( zm2zt( max( input_var1 , input_var2 )))
+
+    return
+  end function smooth_max_zm_arrays
+
+!===============================================================================
+  function smooth_max_zt_sclr_array( input_var1, input_var2 ) &
+  result( output_var )
+
+  ! Description:
+  !   Computes a smoothed version of the max function using zt2zm/zm2zt, 
+  !   using one scalar and one 1d array as inputs.
+
+  ! References:
+  !   See clubb:ticket:894
+  !----------------------------------------------------------------------
+
+  use clubb_precision, only: &
+    core_rknd                     ! Constant(s)
+
+  use grid_class, only:  &
+    zt2zm, &                      ! Procedure
+    zm2zt, &
+    gr
+
+  implicit none
+
+  ! Input Variables
+  real ( kind = core_rknd ), intent(in) :: &
+    input_var1          ! Units vary
+
+  real ( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
+    input_var2          ! Units vary
+
+  ! Output Variables
+  real( kind = core_rknd ), dimension(gr%nz) :: &
+    output_var          ! Units vary
+
+  !----------------------------------------------------------------------
+
+    output_var = max( input_var1, zm2zt( zt2zm( max( input_var1 , input_var2 ))))
+
+    return
+  end function smooth_max_zt_sclr_array
+
+!===============================================================================
+  function smooth_max_zt_array_sclr( input_var1, input_var2 ) &
+  result( output_var )
+
+  ! Description:
+  !   Computes a smoothed version of the max function using zt2zm/zm2zt, 
+  !   using one scalar and one 1d array as inputs.
+
+  ! References:
+  !   See clubb:ticket:894
+  !----------------------------------------------------------------------
+
+  use clubb_precision, only: &
+    core_rknd                     ! Constant(s)
+
+  use grid_class, only:  &
+    zt2zm, &                      ! Procedure
+    zm2zt, &
+    gr
+
+  implicit none
+
+  ! Input Variables
+  real ( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
+    input_var1          ! Units vary
+
+  real ( kind = core_rknd ), intent(in) :: &
+    input_var2          ! Units vary
+
+  ! Output Variables
+  real( kind = core_rknd ), dimension(gr%nz) :: &
+    output_var          ! Units vary
+
+  !----------------------------------------------------------------------
+
+    output_var = max( input_var2, zm2zt( zt2zm( max( input_var1 , input_var2 ))))
+
+    return
+  end function smooth_max_zt_array_sclr
+
+!===============================================================================
+  function smooth_max_zt_arrays( input_var1, input_var2 ) &
+  result( output_var )
+
+  ! Description:
+  !   Computes a smoothed version of the max function using zt2zm/zm2zt, using
+  !   two 1d arrays as inputs.
+
+  ! References:
+  !   See clubb:ticket:894
+  !----------------------------------------------------------------------
+
+  use clubb_precision, only: &
+    core_rknd                     ! Constant(s)
+
+  use grid_class, only:  &
+    zt2zm, &                      ! Procedure
+    zm2zt, &
+    gr
+
+  implicit none
+
+  ! Input Variables
+  real ( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
+    input_var1, &       ! Units vary
+    input_var2          ! Units vary
+
+  ! Output Variables
+  real( kind = core_rknd ), dimension(gr%nz) :: &
+    output_var          ! Units vary
+
+  !----------------------------------------------------------------------
+
+    output_var = zm2zt( zt2zm( max( input_var1 , input_var2 )))
+
+    return
+  end function smooth_max_zt_arrays
 
 end module advance_helper_module
