@@ -15,6 +15,23 @@ RUN_CASE="bomex"
 RUN_CASE_INPUT="../input/case_setups/${RUN_CASE}_model.in"
 VAR_TO_TEST="rcm"
 
+# Note that we use `"$@"' to let each command-line parameter expand to a
+# separate word. The quotes around `$@' are essential!
+# We need TEMP as the `eval set --' would nuke the return value of getopt.
+TEMP=`getopt -o :p --long plot-result -n 'run_clubb_conv_test.bash' -- "$@"`
+
+# Note the quotes around `$TEMP': they are essential!
+eval set -- "$TEMP"
+
+while true ; do
+  case "$1" in
+  -p|--plot-result) # Use nightly mode
+            PLOT_RESULT=true
+            shift ;;
+  --) shift ; break ;;
+  esac
+done
+
 # Set the time steps (1, 2, 4, ..., 256)
 TIMESTEP[0]=1
 for i in `seq 1 8`
@@ -103,7 +120,8 @@ done
 # end LOOP
 
 
-# create convergence plot
+# do analysis and create convergence plot if PLOT_RESULT = true
+if [[ $PLOT_RESULT == true ]]; then
 python3 -c '
 from netCDF4 import Dataset;
 import numpy as np;
@@ -122,25 +140,51 @@ for i in range(1,num_exps):
     rmse_values.append(np.log(np.sqrt(np.var(test_vars[:,0]-test_vars[:,i]))));
 print("Generating plot...");
 m,b=np.polyfit(timesteps[0:4],rmse_values[0:4],1)
-#fitted_points=[rmse_values[0]]
-#slope_1_line=[rmse_values[0]]
-#for i in range(1,4):
-#    fitted_points.append(m*(timesteps[i]-timesteps[0])+rmse_values[0])
-#    slope_1_line.append((timesteps[i]-timesteps[0])+rmse_values[0])
-#plt.plot(timesteps[0:4],slope_1_line[0:4],"k--",label="slope-1 line")
-#plt.plot(timesteps[0:4],fitted_points[0:4],"k:",label=os.environ["RUN_CASE"]+" fit (m = {:.2f}, 4 pts.)".format(m))
-#plt.scatter(timesteps,rmse_values,label=os.environ["RUN_CASE"]+" data points");
-#plt.xlabel("log(dt)");
-#plt.ylabel("log(RMSE)");
-#plt.title("Convergence test for "+os.environ["RUN_CASE"].upper()+" ("+os.environ["VAR_TO_TEST"]+")");
-#plt.legend()
-#plt.savefig("../output/"+os.environ["RUN_CASE"]+"_convergence.png",bbox_inches="tight");
+fitted_points=[rmse_values[0]]
+slope_1_line=[rmse_values[0]]
+for i in range(1,4):
+    fitted_points.append(m*(timesteps[i]-timesteps[0])+rmse_values[0])
+    slope_1_line.append((timesteps[i]-timesteps[0])+rmse_values[0])
+plt.plot(timesteps[0:4],slope_1_line[0:4],"k--",label="slope-1 line")
+plt.plot(timesteps[0:4],fitted_points[0:4],"k:",label=os.environ["RUN_CASE"]+" fit (m = {:.2f}, 4 pts.)".format(m))
+plt.scatter(timesteps,rmse_values,label=os.environ["RUN_CASE"]+" data points");
+plt.xlabel("log(dt)");
+plt.ylabel("log(RMSE)");
+plt.title("Convergence test for "+os.environ["RUN_CASE"].upper()+" ("+os.environ["VAR_TO_TEST"]+")");
+plt.legend()
+plt.savefig("../output/"+os.environ["RUN_CASE"]+"_convergence.png",bbox_inches="tight");
 print("slope = ",m)
 if m > 0.5:
     sys.exit(0);
 else:
     sys.exit(1)
 '
+else
+python3 -c '
+from netCDF4 import Dataset;
+import numpy as np;
+import matplotlib.pyplot as plt;
+import os;
+import sys;
+timesteps=[2,4,8,16,32,64,128,256];
+for i in range(len(timesteps)):
+    timesteps[i]=np.log(timesteps[i])
+test_vars=np.loadtxt("convergence.data");
+test_vars_len=len(test_vars);
+num_exps=int(os.environ["NUM_EXPS"]);
+test_vars=np.reshape(test_vars,[int(test_vars_len/num_exps),num_exps]);
+rmse_values=[];
+for i in range(1,num_exps):
+    rmse_values.append(np.log(np.sqrt(np.var(test_vars[:,0]-test_vars[:,i]))));
+print("Generating plot...");
+m,b=np.polyfit(timesteps[0:4],rmse_values[0:4],1)
+print("slope = ",m)
+if m > 0.5:
+    sys.exit(0);
+else:
+    sys.exit(1)
+'
+fi
 
 if [ $? -ne 0 ]; then
   echo "CLUBB failed to converge!"
