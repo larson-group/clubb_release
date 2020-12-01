@@ -58,7 +58,7 @@ module transform_to_pdf_module
       pdf_dim, &  ! `d' Number of variates (normally 3 + microphysics specific variables)
       d_uniform_extra ! Number of variates included in uniform sample only (often 2)
       
-    real( kind = core_rknd ), dimension(ngrdcol,pdf_dim,pdf_dim,nz), intent(in) :: &
+    real( kind = core_rknd ), dimension(pdf_dim,ngrdcol,nz,pdf_dim), intent(in) :: &
       Sigma_Cholesky1, & ! Correlations Cholesky matrix, 1st component [-]
       Sigma_Cholesky2    ! Correlations Cholesky matrix, 2nd component [-]
 
@@ -90,7 +90,7 @@ module transform_to_pdf_module
 
     integer :: i, k, sample, p
     
-    real( kind = core_rknd ), dimension(ngrdcol,nz,num_samples,pdf_dim) :: &
+    real( kind = core_rknd ), dimension(pdf_dim,ngrdcol,nz,num_samples) :: &
       std_normal ! vector of d-variate standard normal distribution [-]
 
     ! Flag to clip sample point values of chi in extreme situations.
@@ -231,7 +231,7 @@ module transform_to_pdf_module
 
     ! ---------------- Return Variable ----------------
 
-    real( kind = core_rknd ), intent(out), dimension(ngrdcol,nz,num_samples,pdf_dim) :: std_normal
+    real( kind = core_rknd ), intent(out), dimension(pdf_dim,ngrdcol,nz,num_samples) :: std_normal
 
     ! ---------------- Local Variable(s) ----------------
     
@@ -253,10 +253,10 @@ module transform_to_pdf_module
     ! ---------------- Begin Code ----------------
     
     !$acc parallel loop collapse(4) async(1)
-    do p = 1, pdf_dim
-      do sample = 1, num_samples
-        do k = 1, nz
-          do i = 1, ngrdcol
+    do sample = 1, num_samples
+      do k = 1, nz
+        do i = 1, ngrdcol
+          do p = 1, pdf_dim
     
             x = two * X_u_all_levs(i,k,sample,p) - one
             
@@ -264,12 +264,12 @@ module transform_to_pdf_module
             
             if ( w < 5.0 ) then 
               w = w - 2.5_core_rknd
-              std_normal(i,k,sample,p) = sqrt_2 * x &
+              std_normal(p,i,k,sample) = sqrt_2 * x &
                                        * (((((((( a(1) * w + a(2) ) * w + a(3) ) * w + a(4) ) * w &
                                         + a(5) ) * w + a(6) ) * w + a(7) ) * w + a(8) ) * w + a(9) )
             else
               w = sqrt(w) - 3._core_rknd
-              std_normal(i,k,sample,p) = sqrt_2 * x &
+              std_normal(p,i,k,sample) = sqrt_2 * x &
                                        * (((((((( b(1) * w + b(2) ) * w + b(3) ) * w + b(4) ) * w &
                                         + b(5) ) * w + b(6) ) * w + b(7) ) * w + b(8) ) * w + b(9) )
             end if                 
@@ -511,14 +511,14 @@ module transform_to_pdf_module
       num_samples,  & ! Number of samples
       pdf_dim         ! Number of variates (normally=5)
 
-    real( kind = core_rknd ), intent(in), dimension(ngrdcol,nz,num_samples,pdf_dim) :: &
+    real( kind = core_rknd ), intent(in), dimension(pdf_dim,ngrdcol,nz,num_samples) :: &
       std_normal ! vector of d-variate standard normal distribution [-]
 
     real( kind = core_rknd ), intent(in), dimension(ngrdcol,pdf_dim,nz) :: &
       mu1, & ! d-dimensional column vector of means of Gaussian, 1st component [units vary]
       mu2    ! d-dimensional column vector of means of Gaussian, 2nd component [units vary]
 
-    real( kind = core_rknd ), intent(in), dimension(ngrdcol,pdf_dim,pdf_dim,nz) :: &
+    real( kind = core_rknd ), intent(in), dimension(pdf_dim,ngrdcol,nz,pdf_dim) :: &
       Sigma_Cholesky1, & ! Cholesky factorization of the Sigma matrix, 1st component [units vary]
       Sigma_Cholesky2    ! Cholesky factorization of the Sigma matrix, 2nd component [units vary]
       
@@ -537,36 +537,40 @@ module transform_to_pdf_module
 
     ! Loop iterators
     integer :: p, j, k, sample, i
+    
+    logical :: l_first_comp
 
     ! --- Begin Code ---
     
     !$acc data copyin(Sigma_Cholesky1, Sigma_Cholesky2, mu1, mu2) async(2)
     
     !$acc parallel loop collapse(4) default(present) async(1) wait(2)
-    do sample = 1, num_samples
-      do k = 1, nz
-        do  p = 1, pdf_dim
+    do  p = 1, pdf_dim
+      do sample = 1, num_samples
+        do k = 1, nz
           do i = 1, ngrdcol
-          
-            X_nl_k_sample_i_tmp = 0.0_core_rknd
+            
+            l_first_comp = (X_mixt_comp_all_levs(i,k,sample) == 1)
+            
+            if ( l_first_comp ) then
+              X_nl_k_sample_i_tmp = mu1(i,p,k)
+            else
+              X_nl_k_sample_i_tmp = mu2(i,p,k)
+            end if
             
             do j = 1, p
               ! Compute Sigma_Cholesky * std_normal
-              if ( X_mixt_comp_all_levs(i,k,sample) == 1 ) then
+              if ( l_first_comp ) then
                 X_nl_k_sample_i_tmp = X_nl_k_sample_i_tmp &
-                                      + Sigma_Cholesky1(i,p,j,k) * std_normal(i,k,sample,j)
+                                      + Sigma_Cholesky1(j,i,k,p) * std_normal(j,i,k,sample)
               else
                 X_nl_k_sample_i_tmp = X_nl_k_sample_i_tmp &
-                                      + Sigma_Cholesky2(i,p,j,k) * std_normal(i,k,sample,j)
+                                      + Sigma_Cholesky2(j,i,k,p) * std_normal(j,i,k,sample)
               end if
             end do
             
-            if ( X_mixt_comp_all_levs(i,k,sample) == 1 ) then
-              X_nl_all_levs(i,k,sample,p) = X_nl_k_sample_i_tmp + mu1(i,p,k)
-            else
-              X_nl_all_levs(i,k,sample,p) = X_nl_k_sample_i_tmp + mu2(i,p,k)
-            end if
-          
+            X_nl_all_levs(i,k,sample,p) = X_nl_k_sample_i_tmp
+            
           end do
         end do
       end do

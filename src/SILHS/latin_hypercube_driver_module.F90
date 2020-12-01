@@ -185,7 +185,7 @@ module latin_hypercube_driver_module
 
     logical :: l_error, l_error_in_sub
     
-    real( kind = core_rknd ), dimension(ngrdcol,pdf_dim,pdf_dim,nz) :: &
+    real( kind = core_rknd ), dimension(pdf_dim,ngrdcol,nz,pdf_dim) :: &
       Sigma_Cholesky1, &  ! Correlations Cholesky matrix 1 [-]
       Sigma_Cholesky2     ! Correlations Cholesky matrix 2 [-]
       
@@ -251,8 +251,8 @@ module latin_hypercube_driver_module
         do j = 1, p
           do i = 1, ngrdcol
             ! Calculate possible Sigma_Cholesky values
-            Sigma_Cholesky1(i,p,j,k) = corr_cholesky_mtx_1(i,p,j,k) * sigma1(i,p,k)
-            Sigma_Cholesky2(i,p,j,k) = corr_cholesky_mtx_2(i,p,j,k) * sigma2(i,p,k)
+            Sigma_Cholesky1(j,i,k,p) = corr_cholesky_mtx_1(i,p,j,k) * sigma1(i,p,k)
+            Sigma_Cholesky2(j,i,k,p) = corr_cholesky_mtx_2(i,p,j,k) * sigma2(i,p,k)
           end do
         end do
       end do
