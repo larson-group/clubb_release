@@ -30,8 +30,8 @@ from src.CaseGallerySetup import CaseGallerySetup
 from src.DataReader import DataReader
 from src.interoperability import clean_path
 import src.OutputHandler
-from src.OutputHandler import logToFile, logToFileAndConsole, initializeProgress, writeFinalErrorLog
-
+from src.OutputHandler import logToFile, logToFileAndConsole
+from src.OutputHandler import initializeProgress, writeFinalErrorLog, warnUser
 class PyPlotGen:
     """
     Main class for the pyplotgen program.
@@ -796,4 +796,5 @@ if __name__ == "__main__":
     total_runtime = round(time.time() - start_time)
     logToFileAndConsole("Pyplotgen ran in {} seconds.".format(total_runtime))
     writeFinalErrorLog(pyplotgen.errorlog,pyplotgen.finalerrorlog)
-    print("See error.log in the output folder for detailed info including warnings.")
+    print("See error.log in the output folder for detailed info including warnings.\n")
+    warnUser(pyplotgen.finalerrorlog)

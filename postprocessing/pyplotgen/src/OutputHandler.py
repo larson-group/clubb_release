@@ -123,3 +123,29 @@ def writeFinalErrorLog(errorlog,finalerrorlog):
     f2.close()
     os.remove(errorlog)
 
+def warnUser(finalerrorlog):
+    """Gives the user a sense of warnings and errors in the output file."""
+    f = open(finalerrorlog,"r")
+    Lines = f.readlines()
+    f.close()
+
+    error=False
+    for i in range(0,len(Lines)):
+        if "Error" in Lines[i]:
+            print("error.log messages include:\n")
+            print(Lines[i],end=" ")
+            error=True
+            break
+
+    for i in range(0,len(Lines)):
+        if ("Warning" in Lines[i]) or ("warning" in Lines[i]):
+            if error == False:
+                print("error.log messages include:\n")
+                print(Lines[i])
+                break
+            else:
+                print(Lines[i])
+                break
+
+
+ 
