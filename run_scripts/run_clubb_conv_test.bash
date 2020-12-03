@@ -5,7 +5,7 @@
 # Desciption:
 #   Script to test how well CLUBB is converging. By default, it runs the BOMEX case
 #   for an initial 90-minute run, then repeatedly executes 60-min restart runs
-#   doubling the time step each time.  Then, for a specified variable (rcm, by 
+#   increasing the time step each time.  Then, for a specified variable (rcm, by 
 #   default), the test calculates the root mean square difference bewteen the 
 #   dt = 1s case and all other cases, to see how well CLUBB converges.
 #################################################################################
@@ -33,7 +33,7 @@ while true ; do
   esac
 done
 
-# Set the time steps (1, 2, 4, ..., 256)
+# Set the time steps
 TIMESTEP[0]=1
 TIMESTEP[1]=2
 TIMESTEP[2]=4
