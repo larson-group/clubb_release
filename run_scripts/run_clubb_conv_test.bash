@@ -35,10 +35,14 @@ done
 
 # Set the time steps (1, 2, 4, ..., 256)
 TIMESTEP[0]=1
-for i in `seq 1 8`
-do
-TIMESTEP[$i]=$((2*${TIMESTEP[$(($i-1))]}))
-done
+TIMESTEP[1]=2
+TIMESTEP[2]=4
+TIMESTEP[3]=8
+TIMESTEP[4]=16
+TIMESTEP[5]=30
+TIMESTEP[6]=60
+TIMESTEP[7]=120
+TIMESTEP[8]=240
 
 # Define output directories for the runs
 for i in `seq 0 8`
