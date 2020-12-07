@@ -77,6 +77,7 @@ from config.VariableGroupLiquidMP import VariableGroupLiquidMP
 from config.VariableGroupSamProfiles import VariableGroupSamProfiles
 from config.VariableGroupScalars import VariableGroupScalars
 from config.VariableGroupWs import VariableGroupWs
+from config.VariableGroupTaus import VariableGroupTaus
 
 # ---------------------------
 BENCHMARK_OUTPUT_ROOT = "/usr/local/les_and_clubb_benchmark_runs/"
@@ -143,7 +144,7 @@ ARM = {'name': 'arm',
                     'zt': wrf_output_root + "/arm_zt_wrf.nc",
                     'sfc': wrf_output_root + "/arm_sfc_wrf.nc"
                     },
-       'var_groups': [VariableGroupBase, VariableGroupWs]}
+       'var_groups': [VariableGroupBase, VariableGroupWs, VariableGroupTaus]}
 
 ARM_97 = {'name': 'arm_97',
           'description': "",
@@ -184,7 +185,7 @@ ASTEX_A209 = {'name': 'astex_a209',
               'sam_file': None,
               'wrf_file': None,
               'var_groups': [VariableGroupBase, VariableGroupWs, VariableGroupLiquidMP, VariableGroupCorrelations,
-                             VariableGroupKKMP]}
+                             VariableGroupKKMP, VariableGroupTaus]}
 
 ATEX = {'name': 'atex',
         'description': "",
@@ -211,7 +212,7 @@ ATEX = {'name': 'atex',
                      'zt': wrf_output_root + "/atex_zt_wrf.nc",
                      'sfc': wrf_output_root + "/atex_sfc_wrf.nc"
                      },
-        'var_groups': [VariableGroupBase, VariableGroupLiquidMP, VariableGroupIceMP, VariableGroupWs]}
+        'var_groups': [VariableGroupBase, VariableGroupLiquidMP, VariableGroupIceMP, VariableGroupWs, VariableGroupTaus]}
 
 BOMEX = {'name': 'bomex',
          'description': "",
@@ -238,7 +239,7 @@ BOMEX = {'name': 'bomex',
          'wrf_file': {'zm': wrf_output_root + '/bomex_zm_wrf.nc',
                       'zt': wrf_output_root + '/bomex_zt_wrf.nc',
                       'sfc': wrf_output_root + '/bomex_sfc_wrf.nc'},
-         'var_groups': [VariableGroupBase, VariableGroupWs]}
+         'var_groups': [VariableGroupBase, VariableGroupWs, VariableGroupTaus]}
 
 CGILS_S6 = {'name': 'cgils_s6',
             'description': "",
@@ -259,7 +260,7 @@ CGILS_S6 = {'name': 'cgils_s6',
             'cam_file': None,
             'sam_file': None,
             'wrf_file': None,
-            'var_groups': [VariableGroupBase, VariableGroupLiquidMP, VariableGroupIceMP]}
+            'var_groups': [VariableGroupBase, VariableGroupLiquidMP, VariableGroupIceMP, VariableGroupTaus]}
 
 CGILS_S11 = {'name': 'cgils_s11',
              'description': "",
@@ -279,7 +280,7 @@ CGILS_S11 = {'name': 'cgils_s11',
              'cam_file': None,
              'sam_file': None,
              'wrf_file': None,
-             'var_groups': [VariableGroupBase, VariableGroupLiquidMP, VariableGroupIceMP]}
+             'var_groups': [VariableGroupBase, VariableGroupLiquidMP, VariableGroupIceMP, VariableGroupTaus]}
 
 CGILS_S12 = {'name': 'cgils_s12',
              'description': "",
@@ -299,7 +300,7 @@ CGILS_S12 = {'name': 'cgils_s12',
              'cam_file': None,
              'sam_file': None,
              'wrf_file': None,
-             'var_groups': [VariableGroupBase, VariableGroupLiquidMP, VariableGroupIceMP]}
+             'var_groups': [VariableGroupBase, VariableGroupLiquidMP, VariableGroupIceMP, VariableGroupTaus]}
 
 CLEX9_NOV02 = {'name': 'clex9_nov02',
                'description': "",
@@ -319,7 +320,7 @@ CLEX9_NOV02 = {'name': 'clex9_nov02',
                'cam_file': None,
                'sam_file': None,
                'wrf_file': None,
-               'var_groups': [VariableGroupBase, VariableGroupLiquidMP, VariableGroupIceMP]}
+               'var_groups': [VariableGroupBase, VariableGroupLiquidMP, VariableGroupIceMP, VariableGroupTaus]}
 
 CLEX9_OCT14 = {'name': 'clex9_oct14',
                'description': "",
@@ -339,7 +340,7 @@ CLEX9_OCT14 = {'name': 'clex9_oct14',
                'cam_file': None,
                'sam_file': None,
                'wrf_file': None,
-               'var_groups': [VariableGroupBase, VariableGroupLiquidMP, VariableGroupIceMP]}
+               'var_groups': [VariableGroupBase, VariableGroupLiquidMP, VariableGroupIceMP, VariableGroupTaus]}
 
 DYCOMS2_RF01 = {'name': 'dycoms2_rf01',
                 'description': "",
@@ -363,7 +364,7 @@ DYCOMS2_RF01 = {'name': 'dycoms2_rf01',
                 'cam_file': None,
                 'sam_file': None,
                 'wrf_file': None,
-                'var_groups': [VariableGroupBase, VariableGroupWs]}
+                'var_groups': [VariableGroupBase, VariableGroupWs, VariableGroupTaus]}
 
 DYCOMS2_RF01_FIXED_SST = {'name': 'dycoms2_rf01_fixed_sst',
                           'description': "Copied from plotgen: Ran with a 5 min timestep and a 48-level grid",
@@ -383,7 +384,7 @@ DYCOMS2_RF01_FIXED_SST = {'name': 'dycoms2_rf01_fixed_sst',
                           'cam_file': None,
                           'sam_file': None,
                           'wrf_file': None,
-                          'var_groups': [VariableGroupBase]}
+                          'var_groups': [VariableGroupBase, VariableGroupTaus]}
 
 DYCOMS2_RF02_DO = {'name': 'dycoms2_rf02_do',
                    'description': "",
@@ -408,7 +409,7 @@ DYCOMS2_RF02_DO = {'name': 'dycoms2_rf02_do',
                    'sam_file': None,
                    'wrf_file': None,
                    'var_groups': [VariableGroupBase, VariableGroupWs, VariableGroupLiquidMP, VariableGroupCorrelations,
-                                  VariableGroupKKMP]}
+                                  VariableGroupKKMP, VariableGroupTaus]}
 
 DYCOMS2_RF02_DS = {'name': 'dycoms2_rf02_ds',
                    'description': "",
@@ -431,7 +432,7 @@ DYCOMS2_RF02_DS = {'name': 'dycoms2_rf02_ds',
                    'sam_file': None,
                    'wrf_file': None,
                    'var_groups': [VariableGroupBase, VariableGroupWs, VariableGroupLiquidMP, VariableGroupCorrelations,
-                                  VariableGroupKKMP]}
+                                  VariableGroupKKMP, VariableGroupTaus]}
 
 DYCOMS2_RF02_ND = {'name': 'dycoms2_rf02_nd',
                    'description': "Copied from plotgen: ** Generated by doing a restart run after 7200 seconds. Note: "
@@ -456,7 +457,7 @@ DYCOMS2_RF02_ND = {'name': 'dycoms2_rf02_nd',
                    'cam_file': None,
                    'sam_file': None,
                    'wrf_file': None,
-                   'var_groups': [VariableGroupBase, VariableGroupWs, VariableGroupLiquidMP, VariableGroupKKMP]}
+                   'var_groups': [VariableGroupBase, VariableGroupWs, VariableGroupLiquidMP, VariableGroupKKMP, VariableGroupTaus]}
 
 DYCOMS2_RF02_DS_RESTART = {'name': 'dycoms2_rf02_ds_restart',
                            'description': "Copied from plotgen: ** Uniform, coarse verticle grid spacing of 40 m. **",
@@ -481,7 +482,7 @@ DYCOMS2_RF02_DS_RESTART = {'name': 'dycoms2_rf02_ds_restart',
                            'sam_file': None,
                            'wrf_file': None,
                            'var_groups': [VariableGroupBase, VariableGroupWs, VariableGroupLiquidMP,
-                                          VariableGroupCorrelations, VariableGroupKKMP]}
+                                          VariableGroupCorrelations, VariableGroupKKMP, VariableGroupTaus]}
 
 DYCOMS2_RF02_SO = {'name': 'dycoms2_rf02_so',
                    'description': "Copied from plotgen: " +
@@ -506,7 +507,7 @@ DYCOMS2_RF02_SO = {'name': 'dycoms2_rf02_so',
                    'cam_file': None,
                    'sam_file': {'sam': sam_output_root + "/DYCOMS_RF02_SAM_CLUBB.nc"},
                    'wrf_file': None,
-                   'var_groups': [VariableGroupBase, VariableGroupWs, VariableGroupLiquidMP, VariableGroupKKMP]}
+                   'var_groups': [VariableGroupBase, VariableGroupWs, VariableGroupLiquidMP, VariableGroupKKMP, VariableGroupTaus]}
 
 FIRE = {'name': 'fire',
         'description': "",
@@ -533,7 +534,7 @@ FIRE = {'name': 'fire',
                      'zt': wrf_output_root + "/fire_zt_wrf.nc",
                      'sfc': wrf_output_root + "/fire_sfc_wrf.nc"
                      },
-        'var_groups': [VariableGroupBase, VariableGroupWs]}
+        'var_groups': [VariableGroupBase, VariableGroupWs, VariableGroupTaus]}
 
 # No budgets
 GABLS2 = {'name': 'gabls2',
@@ -556,7 +557,7 @@ GABLS2 = {'name': 'gabls2',
           'cam_file': None,
           'sam_file': None,
           'wrf_file': None,
-          'var_groups': [VariableGroupBase]}
+          'var_groups': [VariableGroupBase, VariableGroupTaus]}
 
 GABLS2_NIGHTLY = {'name': 'gabls2_nightly',
                   'description': "",
@@ -575,7 +576,7 @@ GABLS2_NIGHTLY = {'name': 'gabls2_nightly',
                   'cam_file': None,
                   'sam_file': None,
                   'wrf_file': None,
-                  'var_groups': [VariableGroupBase, VariableGroupScalars]}
+                  'var_groups': [VariableGroupBase, VariableGroupScalars, VariableGroupTaus]}
 
 GABLS3 = {'name': 'gabls3',
           'description': "",
@@ -594,7 +595,7 @@ GABLS3 = {'name': 'gabls3',
           'cam_file': None,
           'sam_file': None,
           'wrf_file': None,
-          'var_groups': [VariableGroupBase]}
+          'var_groups': [VariableGroupBase, VariableGroupTaus]}
 
 GABLS3_NIGHT = {'name': 'gabls3_night',
                 'description': "Copied from plotgen: Uses a 5-min timestep with 48 levels",
@@ -614,7 +615,7 @@ GABLS3_NIGHT = {'name': 'gabls3_night',
                 'cam_file': None,
                 'sam_file': None,
                 'wrf_file': None,
-                'var_groups': [VariableGroupBase]}
+                'var_groups': [VariableGroupBase, VariableGroupTaus]}
 
 GATE_SHEAR_RLSF = {'name': 'gate_shear_rlsf',
                    'description': "",
@@ -632,7 +633,7 @@ GATE_SHEAR_RLSF = {'name': 'gate_shear_rlsf',
                    'cam_file': None,
                    'sam_file': {'sam': sam_output_root + "/GATE_SAM_CLUBB.nc"},
                    'wrf_file': None,
-                   'var_groups': [VariableGroupBase]}
+                   'var_groups': [VariableGroupBase, VariableGroupTaus]}
 
 # Use to plot IOP forced SAM runs
 IOP = {'name': 'iop',
@@ -649,8 +650,7 @@ IOP = {'name': 'iop',
        'clubb_hoc_benchmark_file': None,
        'e3sm_file': None,
        'cam_file': None,
-       'var_groups': [VariableGroupBase, VariableGroupSamProfiles]
-       }
+       'var_groups': [VariableGroupBase, VariableGroupSamProfiles, VariableGroupTaus]}
 
 JUN25_ALTOCU = {'name': 'jun25_altocu',
                 'description': "",
@@ -670,7 +670,7 @@ JUN25_ALTOCU = {'name': 'jun25_altocu',
                 'cam_file': None,
                 'sam_file': None,
                 'wrf_file': None,
-                'var_groups': [VariableGroupBase, VariableGroupLiquidMP, VariableGroupIceMP]}
+                'var_groups': [VariableGroupBase, VariableGroupLiquidMP, VariableGroupIceMP, VariableGroupTaus]}
 
 LBA = {'name': 'lba',
        'description': "Note that sam-plotgen plots up to a height of 16000 not 12000.\n"
@@ -693,7 +693,7 @@ LBA = {'name': 'lba',
        'cam_file': None,
        'sam_file': {'sam': sam_output_root + "/LBA_SAM_CLUBB.nc"},
        'wrf_file': None,
-       'var_groups': [VariableGroupBase, VariableGroupLiquidMP, VariableGroupIceMP, VariableGroupWs]}
+       'var_groups': [VariableGroupBase, VariableGroupLiquidMP, VariableGroupIceMP, VariableGroupWs, VariableGroupTaus]}
 
 MC3E = {'name': 'mc3e',
         'description': "",
@@ -714,7 +714,7 @@ MC3E = {'name': 'mc3e',
         'cam_file': None,
         'sam_file': None,
         'wrf_file': None,
-        'var_groups': [VariableGroupBase, VariableGroupLiquidMP, VariableGroupIceMP]}
+        'var_groups': [VariableGroupBase, VariableGroupLiquidMP, VariableGroupIceMP, VariableGroupTaus]}
 
 MPACE_A = {'name': 'mpace_a',
            'description': "Copied from plotgen: SAM-LES and CLUBB standalone use Morrison microphysics",
@@ -734,7 +734,7 @@ MPACE_A = {'name': 'mpace_a',
            'cam_file': None,
            'sam_file': None,
            'wrf_file': None,
-           'var_groups': [VariableGroupBase, VariableGroupLiquidMP, VariableGroupIceMP]}
+           'var_groups': [VariableGroupBase, VariableGroupLiquidMP, VariableGroupIceMP, VariableGroupTaus]}
 
 MPACE_B = {'name': 'mpace_b',
            'description': "Copied from plotgen: **The nightly simulation uses COAMPS microphysics**",
@@ -755,7 +755,7 @@ MPACE_B = {'name': 'mpace_b',
            'cam_file': None,
            'sam_file': None,
            'wrf_file': None,
-           'var_groups': [VariableGroupBase, VariableGroupLiquidMP, VariableGroupIceMP]}
+           'var_groups': [VariableGroupBase, VariableGroupLiquidMP, VariableGroupIceMP, VariableGroupTaus]}
 
 MPACE_B_SILHS = {'name': 'mpace_b_silhs',
                  'description': "",
@@ -776,7 +776,7 @@ MPACE_B_SILHS = {'name': 'mpace_b_silhs',
                  'cam_file': None,
                  'sam_file': None,
                  'wrf_file': None,
-                 'var_groups': [VariableGroupBase, VariableGroupLiquidMP, VariableGroupIceMP]}
+                 'var_groups': [VariableGroupBase, VariableGroupLiquidMP, VariableGroupIceMP, VariableGroupTaus]}
 
 NOV11_ALTOCU = {'name': 'nov11_altocu',
                 'description': "",
@@ -800,7 +800,7 @@ NOV11_ALTOCU = {'name': 'nov11_altocu',
                 'cam_file': None,
                 'sam_file': None,
                 'wrf_file': None,
-                'var_groups': [VariableGroupBase, VariableGroupLiquidMP, VariableGroupIceMP]}
+                'var_groups': [VariableGroupBase, VariableGroupLiquidMP, VariableGroupIceMP, VariableGroupTaus]}
 
 RICO = {'name': 'rico',
         'description': "Cam output may differ from plotgen due to a difference in time averaging.",
@@ -822,7 +822,7 @@ RICO = {'name': 'rico',
         'sam_file': {'sam': sam_output_root + "/RICO_256x256x100_drizzle.nc"},
         'wrf_file': None,
         'var_groups': [VariableGroupBase, VariableGroupLiquidMP, VariableGroupWs, VariableGroupCorrelations,
-                       VariableGroupKKMP]}
+                       VariableGroupKKMP, VariableGroupTaus]}
 
 RICO_SILHS = {'name': 'rico_silhs',
               'description': "Copied from plotgen: CLUBB and SAM use Khairoutdinov-Kogan microphysics",
@@ -845,7 +845,7 @@ RICO_SILHS = {'name': 'rico_silhs',
               'sam_file': None,
               'wrf_file': None,
               'var_groups': [VariableGroupBase, VariableGroupLiquidMP, VariableGroupWs, VariableGroupCorrelations,
-                             VariableGroupKKMP]}
+                             VariableGroupKKMP, VariableGroupTaus]}
 
 TWP_ICE = {'name': 'twp_ice',
            'description': "Copied from plotgen: Both vertical and horizontal fluxes applied to THLM and RTM for LES. "
@@ -868,7 +868,7 @@ TWP_ICE = {'name': 'twp_ice',
            'cam_file': None,
            'sam_file': None,
            'wrf_file': None,
-           'var_groups': [VariableGroupBase, VariableGroupLiquidMP, VariableGroupIceMP]}
+           'var_groups': [VariableGroupBase, VariableGroupLiquidMP, VariableGroupIceMP, VariableGroupTaus]}
 
 WANGARA = {'name': 'wangara',
            'description': "Note that COAMPS benchmark data is actually RAMS data by default.",
@@ -895,7 +895,7 @@ WANGARA = {'name': 'wangara',
                         'zt': wrf_output_root + "/wangara_zt_wrf.nc",
                         'sfc': wrf_output_root + "/wangara_sfc_wrf.nc"
                         },
-           'var_groups': [VariableGroupBase, VariableGroupWs]}
+           'var_groups': [VariableGroupBase, VariableGroupWs, VariableGroupTaus]}
 
 # DO NOT EDIT THIS LIST UNLESS YOU ARE ADDING A NEW CASE. NEVER REMOVE CASES FROM THIS LIST.
 # You may define a subset of cases at the end of this file.

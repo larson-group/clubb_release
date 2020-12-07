@@ -37,24 +37,20 @@ def initializeProgress(image_extension, movie_extension):
             else:
                 print(" --> FFmpeg not found, videos may not play on all browsers (see README for more info).")
         print("----------")
-        print("\rProgress: {:4d} of {:>4} total {} panels complete ({:3d}%)".format(0,'?',movie_extension,0), end="")
+        print("\rProgress: {:4d} of {:>4} total {} panels complete".format(0,'?',movie_extension), end="")
     else:
-        print("\rProgress: {:4d} of {:>4} total {} panels complete ({:3d}%)".format(0,'?',image_extension,0), end="")
-
+        print("\rProgress: {:4d} of {:>4} total {} panels complete".format(0,'?',image_extension), end="")
 
 def updateProgress(total_progress_counter, image_extension, movie_extension):
     """Updates consolve progress continuously to indicate progress to user."""
     percent_complete=int(total_progress_counter[1]/total_progress_counter[0]*100)
     if movie_extension is not None:
         movie_extension = "."+movie_extension
-        print("\rProgress: {:4d} of {:4d} total {} panels complete ({:3d}%)".format(
-              total_progress_counter[1],total_progress_counter[0],movie_extension,percent_complete),
-              end="")
+        print("\rProgress: {:4d} of {:4d} total {} panels complete".format(
+              total_progress_counter[1],total_progress_counter[0],movie_extension),end="")
     else:
-        print("\rProgress: {:4d} of {:4d} total {} panels complete ({:3d}%)".format(
-              total_progress_counter[1],total_progress_counter[0],image_extension,percent_complete),
-              end="")
-
+        print("\rProgress: {:4d} of {:4d} total {} panels complete".format(
+              total_progress_counter[1],total_progress_counter[0],image_extension),end="")
 
 def writeFinalErrorLog(errorlog,finalerrorlog):
     """Rewrites output file in order if multiple processes were active"""
