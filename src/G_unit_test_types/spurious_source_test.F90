@@ -156,7 +156,8 @@ module spurious_source_test
       wp3_on_wp2_zt,   & ! Smoothed wp3 / wp2 on thermo. levels     [m/s]
       Kh_zt,           & ! Eddy diffusivity on thermodynamic levels [m^2/s]
       Kh_zm,           & ! Eddy diffusivity on momentum levels      [m^s/s]
-      tau_C6_zm,       & ! Time-scale tau on m-levs applied to C6 term  [s]
+      invrs_tau_C6_zm, & ! Time-scale tau on m-levs applied to C6 term  [s]
+      tau_max_zm,      & ! Max. allowable eddy dissipation time scale on m-levs [s]
       Skw_zm,          & ! Skewness of w on momentum levels         [-]
       wp2rtp,          & ! <w'^2 r_t'> (thermodynamic levels)    [m^2/s^2 kg/kg]
       rtpthvp,         & ! r_t'th_v' (momentum levels)              [(kg/kg) K]
@@ -265,7 +266,8 @@ module spurious_source_test
        wp2_snd,               &
        wp3_on_wp2_snd,        &
        Kh_zm_snd,             &
-       tau_C6_zm_snd,         &
+       invrs_tau_C6_zm_snd,   &
+       tau_max_zm_snd,        &
        rtpthvp_snd,           &
        rtm_forcing_snd,       &
        wprtp_forcing_snd,     &
@@ -489,8 +491,9 @@ module spurious_source_test
        wp2_snd = (/ 0.1_core_rknd, 0.2_core_rknd, 0.1_core_rknd, w_tol_sqd /)
        wp3_on_wp2_snd = (/ zero, 2.0_core_rknd, 1.0_core_rknd, zero /)
        Kh_zm_snd = (/ 100.0_core_rknd, 500.0_core_rknd, 300.0_core_rknd, zero /)
-       tau_C6_zm_snd = (/ 500.0_core_rknd, 900.0_core_rknd, 900.0_core_rknd, &
-                          500.0_core_rknd /)
+       invrs_tau_C6_zm_snd = (/ one/500.0_core_rknd, one/900.0_core_rknd, one/900.0_core_rknd, &
+                                one/500.0_core_rknd /)
+       tau_max_zm_snd = (/ 1.e6_core_rknd, 1.e6_core_rknd, 1.e6_core_rknd, 1.e6_core_rknd /)
        rtpthvp_snd = (/ zero, -4.0e-5_core_rknd, -3.0e-5_core_rknd, zero /)
        rtm_forcing_snd = (/ 0.0_core_rknd, -2.0e-8_core_rknd, &
                             -2.5e-8_core_rknd, 0.0_core_rknd /)
@@ -532,7 +535,8 @@ module spurious_source_test
           wp2_snd = 2.0_core_rknd * rand1 * wp2_snd
           wp3_on_wp2_snd = 5.0_core_rknd * ( rand1 - one_half ) * wp3_on_wp2_snd
           Kh_zm_snd = 2.0_core_rknd * rand1 * Kh_zm_snd
-          tau_C6_zm_snd = 2.0_core_rknd * rand1 * tau_C6_zm_snd
+          invrs_tau_C6_zm_snd = 2.0_core_rknd * rand1 * invrs_tau_C6_zm_snd
+          tau_max_zm_snd = 2.0_core_rknd * rand1 * tau_max_zm_snd
           rtpthvp_snd = 2.0_core_rknd * rand1 * rtpthvp_snd
           rtm_forcing_snd = 2.0_core_rknd * rand1 * rtm_forcing_snd
           wprtp_forcing_snd = 2.0_core_rknd * rand1 * wprtp_forcing_snd
@@ -584,10 +588,15 @@ module spurious_source_test
              = lin_interpolate_two_points( gr%zm(k), z_snd(i), z_snd(i-1), &
                                            Kh_zm_snd(i), Kh_zm_snd(i-1) )
 
-             tau_C6_zm(k) &
+             invrs_tau_C6_zm(k) &
              = lin_interpolate_two_points( gr%zm(k), z_snd(i), z_snd(i-1), &
-                                           tau_C6_zm_snd(i), &
-                                           tau_C6_zm_snd(i-1) )
+                                           invrs_tau_C6_zm_snd(i), &
+                                           invrs_tau_C6_zm_snd(i-1) )
+
+             tau_max_zm(k) &
+             = lin_interpolate_two_points( gr%zm(k), z_snd(i), z_snd(i-1), &
+                                           tau_max_zm_snd(i), &
+                                           tau_max_zm_snd(i-1) )
 
              rtpthvp(k) &
              = lin_interpolate_two_points( gr%zm(k), z_snd(i), z_snd(i-1), &
@@ -795,9 +804,9 @@ module spurious_source_test
 
        call advance_xm_wpxp( dt, sigma_sqd_w, wm_zm, wm_zt, wp2, &
                              Lscale, wp3_on_wp2, wp3_on_wp2_zt, Kh_zt, Kh_zm, &
-                             tau_C6_zm, Skw_zm, wp2rtp, rtpthvp, rtm_forcing, &
-                             wprtp_forcing, rtm_ref, wp2thlp, thlpthvp, &
-                             thlm_forcing, wpthlp_forcing, thlm_ref, &
+                             invrs_tau_C6_zm, tau_max_zm, Skw_zm, wp2rtp, rtpthvp, &
+                             rtm_forcing, wprtp_forcing, rtm_ref, wp2thlp, &
+                             thlpthvp, thlm_forcing, wpthlp_forcing, thlm_ref, &
                              rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm, &
                              invrs_rho_ds_zt, thv_ds_zm, rtp2, thlp2, &
                              w_1_zm, w_2_zm, varnce_w_1_zm, varnce_w_2_zm, &

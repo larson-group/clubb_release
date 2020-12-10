@@ -176,7 +176,8 @@ vars_zm =
 'sclrprcp', 'wpsclrp',  'wpsclrp2', 'wp2sclrp', 
 'wpsclrprtp', 'wpsclrpthlp', 'wpedsclrp',  'stability_correction', 'Richardson_num',
 'lh_rtp2_mc', 'lh_thlp2_mc', 'lh_wprtp_mc', 'lh_wpthlp_mc', 'lh_rtpthlp_mc',
-'bv_freq_sqd', 'shear_sqd','tau_wp2_zm','tau_wp3_zm','tau_xp2_zm','tau_no_N2_zm',
+'bv_freq_sqd', 'shear_sqd', 'invrs_tau_zm', 'invrs_tau_xp2_zm', 'invrs_tau_wp2_zm',
+'invrs_tau_wpxp_zm', 'invrs_tau_wp3_zm', 'invrs_tau_no_N2_zm', 'Richardson_num',
 ''
 
 vars_rad_zt =

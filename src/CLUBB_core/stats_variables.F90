@@ -105,7 +105,8 @@ module stats_variables
      iLscale_down = 0, & 
      iLscale_pert_1 = 0, & 
      iLscale_pert_2 = 0, & 
-     itau_zt = 0, & 
+     itau_zt = 0, &
+     iinvrs_tau_zt = 0, & 
      iKh_zt = 0, & 
      iwp2thvp = 0, & 
      iwp2rcp = 0, & 
@@ -115,10 +116,16 @@ module stats_variables
      irho = 0
 !$omp threadprivate( iLscale_up, iLscale_down, &
 !$omp   iLscale_pert_1, iLscale_pert_2, &
-!$omp   itau_zt, iKh_zt, iwp2thvp, iwp2rcp, iwprtpthlp, irc_coef, &
+!$omp   itau_zt, iinvrs_tau_zt, iKh_zt, iwp2thvp, iwp2rcp, iwprtpthlp, irc_coef, &
 !$omp   isigma_sqd_w_zt, irho )
 
   integer, public :: &
+     iinvrs_tau_zm       = 0, &
+     iinvrs_tau_xp2_zm   = 0, &
+     iinvrs_tau_wp2_zm   = 0, &
+     iinvrs_tau_wpxp_zm  = 0, &
+     iinvrs_tau_wp3_zm   = 0, &
+     iinvrs_tau_no_N2_zm = 0, &
      iinvrs_tau_bkgnd = 0,  &
      iinvrs_tau_sfc   = 0,  &
      iinvrs_tau_shear = 0,  &
@@ -127,7 +134,9 @@ module stats_variables
      itau_wp2_zm   = 0,     &
      itau_wp3_zm   = 0,     &
      itau_wpxp_zm  = 0
-!$omp threadprivate( iinvrs_tau_bkgnd, iinvrs_tau_sfc, iinvrs_tau_shear, &
+!$omp threadprivate( iinvrs_tau_zm, iinvrs_tau_xp2_zm, iinvrs_tau_wp2_zm, &
+!$omp                iinvrs_tau_wpxp_zm, iinvrs_tau_wp3_zm, iinvrs_tau_no_N2_zm, &
+!$omp                iinvrs_tau_bkgnd, iinvrs_tau_sfc, iinvrs_tau_shear, &
 !$omp                itau_no_N2_zm, itau_xp2_zm, itau_wp2_zm, itau_wp3_zm, &
 !$omp                itau_wpxp_zm )
 

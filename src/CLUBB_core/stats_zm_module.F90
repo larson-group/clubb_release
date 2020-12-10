@@ -46,11 +46,6 @@ module stats_zm_module
         irtpthvp, &
         ithlpthvp, &
         itau_zm, &
-        itau_no_N2_zm, &
-        itau_wp2_zm, &
-        itau_wp3_zm, &
-        itau_xp2_zm, &
-        itau_wpxp_zm,&
         iRi_zm, &
         iKh_zm, &
         iK_hm, &
@@ -61,7 +56,13 @@ module stats_zm_module
         ircp2,   &
         iSkw_zm, &
         iSkthl_zm, &
-        iSkrt_zm,  &
+        iSkrt_zm, &
+        iinvrs_tau_zm, &
+        iinvrs_tau_xp2_zm, &
+        iinvrs_tau_wp2_zm, &
+        iinvrs_tau_wpxp_zm, &
+        iinvrs_tau_wp3_zm, &
+        iinvrs_tau_no_N2_zm, &
         iinvrs_tau_bkgnd, &
         iinvrs_tau_sfc, &
         iinvrs_tau_shear, &
@@ -662,6 +663,54 @@ module stats_zm_module
              l_silhs=.false., grid_kind=stats_zm )
         k = k + 1
 
+      case ('invrs_tau_zm')
+        iinvrs_tau_zm = k
+
+        call stat_assign( var_index=iinvrs_tau_zm, var_name="invrs_tau_zm", &
+             var_description="invrs tau on momentum levels [s-1]", &
+             var_units="s^-1", l_silhs=.false., grid_kind=stats_zm )
+        k = k + 1
+
+      case ('invrs_tau_xp2_zm')
+        iinvrs_tau_xp2_zm = k
+
+        call stat_assign( var_index=iinvrs_tau_xp2_zm, var_name="invrs_tau_xp2_zm", &
+             var_description="invrs tau xp2 on momentum levels [s-1]", &
+             var_units="s^-1", l_silhs=.false., grid_kind=stats_zm )
+        k = k + 1
+
+      case ('invrs_tau_wp2_zm')
+        iinvrs_tau_wp2_zm = k
+
+        call stat_assign( var_index=iinvrs_tau_wp2_zm, var_name="invrs_tau_wp2_zm", &
+             var_description="invrs tau wp2 on momentum levels [s-1]", &
+             var_units="s^-1", l_silhs=.false., grid_kind=stats_zm )
+        k = k + 1
+
+      case ('invrs_tau_wpxp_zm')
+        iinvrs_tau_wpxp_zm = k
+
+        call stat_assign( var_index=iinvrs_tau_wpxp_zm, var_name="invrs_tau_wpxp_zm", &
+             var_description="invrs tau wpxp on momentum levels [s-1]", &
+             var_units="s^-1", l_silhs=.false., grid_kind=stats_zm )
+        k = k + 1
+
+      case ('invrs_tau_wp3_zm')
+        iinvrs_tau_wp3_zm = k
+
+        call stat_assign( var_index=iinvrs_tau_wp3_zm, var_name="invrs_tau_wp3_zm", &
+             var_description="invrs tau wp3 on momentum levels [s-1]", &
+             var_units="s^-1", l_silhs=.false., grid_kind=stats_zm )
+        k = k + 1
+
+      case ('invrs_tau_no_N2_zm')
+        iinvrs_tau_no_N2_zm = k
+
+        call stat_assign( var_index=iinvrs_tau_no_N2_zm, var_name="invrs_tau_no_N2_zm", &
+             var_description="invrs tau_no_N2 on momentum levels [s-1]", &
+             var_units="s^-1", l_silhs=.false., grid_kind=stats_zm )
+        k = k + 1
+
       case ('invrs_tau_bkgnd')
         iinvrs_tau_bkgnd = k
 
@@ -685,50 +734,6 @@ module stats_zm_module
              var_description="invrs tau of shear on momentum levels [s-1]", &
              var_units="s^-1", l_silhs=.false., grid_kind=stats_zm )
         k = k + 1
-
-
-      case ('tau_no_N2_zm')
-        itau_no_N2_zm = k
-
-        call stat_assign( var_index=itau_no_N2_zm, var_name="tau_no_N2_zm", &
-             var_description="tau_no_N2_zm, simple tau on momentum levels", var_units="s", &
-             l_silhs=.false., grid_kind=stats_zm )
-        k = k + 1
-
-
-      case ('tau_wp2_zm')
-        itau_wp2_zm = k
-
-        call stat_assign( var_index=itau_wp2_zm, var_name="tau_wp2_zm", &
-             var_description="tau_w'^2_zm, tau for wp2 on momentum levels", var_units="s",&
-             l_silhs=.false., grid_kind=stats_zm )
-        k = k + 1
-
-      case ('tau_wp3_zm')
-        itau_wp3_zm = k
-
-        call stat_assign( var_index=itau_wp3_zm, var_name="tau_wp3_zm", &
-             var_description="tau_w'^3_zm, tau for wp3 on momentum levels", var_units="s",&
-             l_silhs=.false., grid_kind=stats_zm )
-        k = k + 1
-
-
-      case ('tau_xp2_zm')
-        itau_xp2_zm = k
-
-        call stat_assign( var_index=itau_xp2_zm, var_name="tau_xp2_zm", &
-             var_description="tau_x'^2_zm, tau for xp2 on momentum levels", var_units="s",&
-             l_silhs=.false., grid_kind=stats_zm )
-        k = k + 1
-
-      case ('tau_wpxp_zm')
-        itau_wpxp_zm = k
-
-        call stat_assign( var_index=itau_wpxp_zm, var_name="tau_wpxp_zm", &
-             var_description="tau for wpxp on momentum levels [s]", &
-             var_units="s", l_silhs=.false., grid_kind=stats_zm )
-        k = k + 1
-
 
       case ('Kh_zm')
         iKh_zm = k

@@ -338,14 +338,15 @@ module advance_clubb_core_module
         iwpthlp_zt
 
     use stats_variables, only: &
-        iinvrs_tau_bkgnd,        & ! Variable(s)
+        iinvrs_tau_zm,           & ! Variable(s)
+        iinvrs_tau_xp2_zm,       &
+        iinvrs_tau_wp2_zm,       &
+        iinvrs_tau_wpxp_zm,      &
+        iinvrs_tau_wp3_zm,       &
+        iinvrs_tau_no_N2_zm,     &
+        iinvrs_tau_bkgnd,        &
         iinvrs_tau_sfc,          &
         iinvrs_tau_shear,        &
-        itau_no_N2_zm,           &
-        itau_xp2_zm,             &
-        itau_wp2_zm,             &
-        itau_wp3_zm,             &
-        itau_wpxp_zm,            &
         ibrunt_vaisala_freq_sqd, &
         iRi_zm
 
@@ -748,9 +749,19 @@ module advance_clubb_core_module
 
     real( kind = core_rknd ), dimension(gr%nz) :: &
        stability_correction,         & ! Stability correction factor
-       tau_N2_zm,                    & ! Tau with a static stability correction applied to it [s]
-       tau_C6_zm,                    & ! Tau values used for the C6 (pr1) term in wpxp [s]
-       tau_C1_zm,                    & ! Tau values used for the C1 (dp1) term in wp2 [s]
+       invrs_tau_N2_zm,              & ! Inverse tau with static stability correction applied [1/s]
+       invrs_tau_C6_zm,              & ! Inverse tau values used for C6 (pr1) term in wpxp [1/s]
+       invrs_tau_C1_zm,              & ! Inverse tau values used for C1 (dp1) term in wp2 [1/s]
+       invrs_tau_xp2_zm,             & ! Inverse tau values used for advance_xp2_wpxp [s^-1]
+       invrs_tau_wp2_zm,             & ! Inverse tau values used for advance_wp2_wpxp [s^-1]
+       invrs_tau_wpxp_zm,            & ! invrs_tau_C6_zm = invrs_tau_wpxp_zm
+       invrs_tau_wp3_zm,             & ! Inverse tau values used for advance_wp3_wp2 [s^-1]
+       invrs_tau_no_N2_zm,           & ! One divided by tau (without N2) on zm levels [s^-1] 
+       invrs_tau_bkgnd,              & ! One divided by tau_wp3 [s^-1]
+       invrs_tau_shear,              & ! One divided by tau with stability effects    [s^-1]
+       invrs_tau_sfc,                & ! One divided by tau (without N2) on zm levels [s^-1]
+       invrs_tau_zt,                 & ! Inverse time-scale tau on thermodynamics levels [1/s]
+       invrs_tau_wp3_zt,             & ! Inverse tau wp3 at zt levels
        Cx_fnc_Richardson,            & ! Cx_fnc computed from Richardson_num          [-]
        brunt_vaisala_freq_sqd,       & ! Buoyancy frequency squared, N^2              [s^-2]
        brunt_vaisala_freq_sqd_smth,  & ! smoothed Buoyancy frequency squared, N^2     [s^-2]
@@ -762,25 +773,7 @@ module advance_clubb_core_module
        brunt_vaisala_freq_sqd_zt,    & ! Buoyancy frequency squared on t-levs.        [s^-2]
        brunt_freq_out_cloud,         & !
        Ri_zm,                        & ! Richardson number
-       invrs_tau_xp2_zm,             & ! One divided by tau_xp2                       [s^-1]
-       invrs_tau_wp2_zm,             & ! One divided by tau_wp2                       [s^-1]
-       invrs_tau_wpxp_zm,            & ! One divided by tau_wpxp                      [s^-1]
-       invrs_tau_wp3_zm,             & ! One divided by tau_wp3                       [s^-1]
-       invrs_tau_no_N2_zm,           & ! One divided by tau (without N2) on zm levels [s^-1] 
-       invrs_tau_bkgnd,              & ! One divided by tau_wp3                       [s^-1]
-       invrs_tau_shear,              & ! One divided by tau with stability effects    [s^-1]
-       invrs_tau_sfc,                & ! One divided by tau (without N2) on zm levels [s^-1]
-       ustar,                        & ! Friction velocity  [m/s]
-       tau_no_N2_zm,                 & ! Tau without Brunt Freq
-       tau_wp2_zm,                   & ! Tau values used for advance_wp2_wpxp
-       tau_wp3_zm,                   & ! Tau values used for advance_wp3_wp2
-       tau_xp2_zm,                   & ! Tau values used for advance_xp2_wpxp
-       tau_wpxp_zm,                  & ! tau_C6_zm = tau_wpxp_zm 
-       tau_wp2_zt,                   & ! Tau wp2 at zt levels
-       tau_wpxp_zt,                  & ! Tau wpxp at zt levels
-       tau_wp3_zt,                   & ! Tau wp3 at zt levels
-       tau_xp2_zt,                   & ! Tau xp2 at zt levels
-       tau_no_N2_zt                    ! 
+       ustar                           ! Friction velocity  [m/s]
  
     real( kind = core_rknd ), parameter :: &
        ufmin = 0.01_core_rknd,       & ! minimum value of friction velocity     [m/s]
@@ -1133,7 +1126,7 @@ module advance_clubb_core_module
       sqrt_em_zt = SQRT( MAX( em_min, zm2zt( em ) ) )
 
       !----------------------------------------------------------------
-      ! Compute mixing length
+      ! Compute mixing length and dissipation time
       !----------------------------------------------------------------
 
       if ( .not. clubb_config_flags%l_diag_Lscale_from_tau ) then ! compute Lscale 1st, using
@@ -1155,40 +1148,37 @@ module advance_clubb_core_module
           end if
         end if
 
+        ! Calculate CLUBB's turbulent eddy-turnover time scale as
+        !   CLUBB's length scale divided by a velocity scale.
 
-      !----------------------------------------------------------------
-      ! Dissipation time
-      !----------------------------------------------------------------
-
-      ! Calculate CLUBB's turbulent eddy-turnover time scale as
-      !   CLUBB's length scale divided by a velocity scale.
-      tau_zt = MIN( Lscale / sqrt_em_zt, taumax )
-      tau_zm = MIN( ( MAX( zt2zm( Lscale ), zero_threshold )  &
+        tau_zt = MIN( Lscale / sqrt_em_zt, taumax )
+        tau_zm = MIN( ( MAX( zt2zm( Lscale ), zero_threshold )  &
                      / SQRT( MAX( em_min, em ) ) ), taumax )
 
-      tau_xp2_zm = tau_zm   ! Just for the interface of advance_xp2_xpwp  
-      tau_wp2_zm = tau_zm   ! Just for the interface of advance_xp2_xpwp 
-      tau_wpxp_zm= tau_zm
-      tau_xp2_zt = tau_zt   ! Not be used currently 
-      tau_wp2_zt = tau_zt   ! 
-      tau_wpxp_zt= tau_zt
-      tau_wp3_zt = tau_zt
+        invrs_tau_zm      = one / tau_zm
+        invrs_tau_zt      = one / tau_zt
+        invrs_tau_wp2_zm  = invrs_tau_zm
+        invrs_tau_xp2_zm  = invrs_tau_zm
+        invrs_tau_wpxp_zm = invrs_tau_zm
+        invrs_tau_wp3_zt  = invrs_tau_zt
+        
+        tau_max_zm = taumax
+        tau_max_zt = taumax
 
-! End Vince Larson's replacement.
-
+        ! End Vince Larson's replacement.
 
       else ! l_diag_Lscale_from_tau = .true., diagnose simple tau and Lscale.
 
-    call calc_brunt_vaisala_freq_sqd( thlm, exner, rtm, rcm, p_in_Pa, thvm, &
-                                      ice_supersat_frac, &
-                                      clubb_config_flags%l_brunt_vaisala_freq_moist, &
-                                      clubb_config_flags%l_use_thvm_in_bv_freq, &
-                                      brunt_vaisala_freq_sqd, &
-                                      brunt_vaisala_freq_sqd_mixed,&
-                                      brunt_vaisala_freq_sqd_dry, &
-                                      brunt_vaisala_freq_sqd_moist, &
-                                      brunt_vaisala_freq_sqd_plus )
-
+        call calc_brunt_vaisala_freq_sqd( thlm, exner, rtm, rcm, p_in_Pa, thvm, &
+                                          ice_supersat_frac, &
+                                          clubb_config_flags%l_brunt_vaisala_freq_moist, &
+                                          clubb_config_flags%l_use_thvm_in_bv_freq, &
+                                          brunt_vaisala_freq_sqd, &
+                                          brunt_vaisala_freq_sqd_mixed,&
+                                          brunt_vaisala_freq_sqd_dry, &
+                                          brunt_vaisala_freq_sqd_moist, &
+                                          brunt_vaisala_freq_sqd_plus )
+ 
         ustar = max( ( upwp_sfc**2 + vpwp_sfc**2 )**(one_fourth), ufmin )
 
         invrs_tau_bkgnd = C_invrs_tau_bkgnd / tau_const
@@ -1203,10 +1193,10 @@ module advance_clubb_core_module
 
         invrs_tau_no_N2_zm = invrs_tau_bkgnd + invrs_tau_sfc + invrs_tau_shear
 
-!        brunt_vaisala_freq_sqd_smth = zt2zm( zm2zt( brunt_vaisala_freq_sqd ) )
-!       The min function below smooths the slope discontinuity in brunt freq
-!           and thereby allows tau to remain large in Sc layers in which thlm may
-!           be slightly stably stratified.
+        !brunt_vaisala_freq_sqd_smth = zt2zm( zm2zt( brunt_vaisala_freq_sqd ) )
+        !The min function below smooths the slope discontinuity in brunt freq
+        !  and thereby allows tau to remain large in Sc layers in which thlm may
+        !  be slightly stably stratified.
 
         brunt_vaisala_freq_sqd_smth = zt2zm( zm2zt( &
               min( brunt_vaisala_freq_sqd, 1.e8_core_rknd * abs(brunt_vaisala_freq_sqd)**3 ) ) )
@@ -1267,31 +1257,10 @@ module advance_clubb_core_module
         tau_max_zt = Lscale_max / sqrt_em_zt
         tau_max_zm = Lscale_max / sqrt( max( em, em_min ) )
 
-        tau_no_N2_zm = min( one / invrs_tau_no_N2_zm, tau_max_zm )
-        tau_zm       = min( one / invrs_tau_zm, tau_max_zm )
-        tau_wp2_zm   = min( one / invrs_tau_wp2_zm, tau_max_zm )
-        tau_xp2_zm   = min( one / invrs_tau_xp2_zm, tau_max_zm )
-        tau_wpxp_zm  = min( one / invrs_tau_wpxp_zm, tau_max_zm )
-        tau_wp3_zm   = min( one / invrs_tau_wp3_zm, tau_max_zm )
-
-
-        tau_zt       = min( zm2zt( tau_zm ), tau_max_zt )
-        tau_no_N2_zt = min( zm2zt( tau_no_N2_zm ), tau_max_zt )
-        tau_wp2_zt   = min( zm2zt( tau_wp2_zm ), tau_max_zt )
-        tau_xp2_zt   = min( zm2zt( tau_xp2_zm ), tau_max_zt )
-        tau_wpxp_zt  = min( zm2zt( tau_wpxp_zm ), tau_max_zt )
-        tau_wp3_zt   = min( zm2zt( tau_wp3_zm ), tau_max_zt )
-
-
-!        invrs_tau_N2_zm = invrs_tau_zm  &
-!                          + C_invrs_tau_N2 * sqrt( max( zero_threshold, brunt_vaisala_freq_sqd ) )
-!
-!        tau_N2_zm = tau_zm
-
-!        tau_zt = tau_const / &
-!                     ( one + 0.1_core_rknd * tau_const * &
-!                             sqrt( max( zero_threshold, brunt_vaisala_freq_sqd ) ) )
-!        tau_zm = max( zero_threshold, zt2zm( tau_zt ) )
+        tau_zm           = min( one / invrs_tau_zm, tau_max_zm )
+        tau_zt           = min( zm2zt( tau_zm ), tau_max_zt )
+        invrs_tau_zt     = zm2zt( invrs_tau_zm ) 
+        invrs_tau_wp3_zt = zm2zt( invrs_tau_wp3_zm )
 
         Lscale = tau_zt * sqrt_em_zt
 
@@ -1477,31 +1446,31 @@ module advance_clubb_core_module
       ! that has been stability corrected for stably stratified regions.
       ! -dschanen 7 Nov 2014
       if ( clubb_config_flags%l_stability_correct_tau_zm ) then
-        ! Determine the static sta   ! bility corrected version of tau_zm
+        ! Determine the static stability corrected version of tau_zm
         ! Create a damping time scale that is more strongly damped at the
         ! altitudes where the Brunt-Vaisala frequency (N^2) is large.
-        tau_N2_zm = tau_zm / stability_correction
-        tau_C6_zm = tau_N2_zm
-        tau_C1_zm = tau_N2_zm
+        invrs_tau_N2_zm = invrs_tau_zm * stability_correction
+        invrs_tau_C6_zm = invrs_tau_N2_zm
+        invrs_tau_C1_zm = invrs_tau_N2_zm
 
       else
-        tau_N2_zm = unused_var
-        tau_C6_zm = tau_wpxp_zm   !   
-        tau_C1_zm = tau_wp2_zm   ! Note, we let tau_C4 = tau_C1= tau_wp2_zm in advance_wp2_wp3
+        invrs_tau_N2_zm = unused_var
+        invrs_tau_C6_zm = invrs_tau_wpxp_zm
+        invrs_tau_C1_zm = invrs_tau_wp2_zm
 
       end if ! l_stability_correction
 
       if ( l_stats_samp ) then
+         call stat_update_var(iinvrs_tau_zm, invrs_tau_zm, stats_zm)
+         call stat_update_var(iinvrs_tau_xp2_zm, invrs_tau_xp2_zm, stats_zm)
+         call stat_update_var(iinvrs_tau_wp2_zm, invrs_tau_wp2_zm, stats_zm)
+         call stat_update_var(iinvrs_tau_wpxp_zm, invrs_tau_wpxp_zm, stats_zm)
+         call stat_update_var(iinvrs_tau_wp3_zm, invrs_tau_wp3_zm, stats_zm)
+         call stat_update_var(iinvrs_tau_no_N2_zm, invrs_tau_no_N2_zm, stats_zm)
          call stat_update_var(iinvrs_tau_bkgnd, invrs_tau_bkgnd, stats_zm)
          call stat_update_var(iinvrs_tau_sfc, invrs_tau_sfc, stats_zm)
          call stat_update_var(iinvrs_tau_shear, invrs_tau_shear, stats_zm)
-         call stat_update_var(itau_no_N2_zm, tau_no_N2_zm, stats_zm)
-         call stat_update_var(itau_xp2_zm, tau_xp2_zm, stats_zm)
-         call stat_update_var(itau_wp2_zm, tau_wp2_zm, stats_zm)
-         call stat_update_var(itau_wp3_zm, tau_wp3_zm, stats_zm)
-         call stat_update_var(itau_wpxp_zm, tau_wpxp_zm, stats_zm)
-         call stat_update_var(ibrunt_vaisala_freq_sqd, brunt_vaisala_freq_sqd, &
-                              stats_zm)
+         call stat_update_var(ibrunt_vaisala_freq_sqd, brunt_vaisala_freq_sqd, stats_zm)
          call stat_update_var(iRi_zm, Ri_zm, stats_zm)
       end if
 
@@ -1525,37 +1494,37 @@ module advance_clubb_core_module
       !   scalar turbulent fluxes (wprtp, wpthlp, and wpsclrp)
       !   by one time step.
       ! advance_xm_wpxp_bad_wp2 ! Test error comment, DO NOT modify or move
-      call advance_xm_wpxp( dt_advance, sigma_sqd_w, wm_zm, wm_zt, wp2,      & ! intent(in)
-                            Lscale, wp3_on_wp2, wp3_on_wp2_zt, Kh_zt, Kh_zm, & ! intent(in)
-                            tau_C6_zm, Skw_zm, wp2rtp, rtpthvp, rtm_forcing, & ! intent(in)
-                            wprtp_forcing, rtm_ref, wp2thlp, thlpthvp,       & ! intent(in)
-                            thlm_forcing, wpthlp_forcing, thlm_ref,          & ! intent(in)
-                            rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm,           & ! intent(in)
-                            invrs_rho_ds_zt, thv_ds_zm, rtp2, thlp2,         & ! intent(in)
-                            w_1_zm, w_2_zm, varnce_w_1_zm, varnce_w_2_zm,    & ! intent(in)
-                            mixt_frac_zm, l_implemented, em, wp2sclrp,       & ! intent(in)
-                            sclrpthvp, sclrm_forcing, sclrp2, exner, rcm,    & ! intent(in)
-                            p_in_Pa, thvm, Cx_fnc_Richardson,                & ! intent(in)
-                            ice_supersat_frac,                               & !
-                            pdf_implicit_coefs_terms,                        & ! intent(in)
-                            um_forcing, vm_forcing, ug, vg, wpthvp,          & ! intent(in)
-                            fcor, um_ref, vm_ref, up2, vp2,                  & ! intent(in)
-                            uprcp, vprcp, rc_coef,                           & ! intent(in)
-                            clubb_config_flags%iiPDF_type,                   & ! intent(in)
-                            clubb_config_flags%l_predict_upwp_vpwp,          & ! intent(in)
-                            clubb_config_flags%l_diffuse_rtm_and_thlm,       & ! intent(in)
-                            clubb_config_flags%l_stability_correct_Kh_N2_zm, & ! intent(in)
-                            clubb_config_flags%l_upwind_wpxp_ta,             & ! intent(in)
-                            clubb_config_flags%l_upwind_xm_ma,               & ! intent(in)
-                            clubb_config_flags%l_uv_nudge,                   & ! intent(in)
-                            clubb_config_flags%l_tke_aniso,                  & ! intent(in)
-                            clubb_config_flags%l_diag_Lscale_from_tau,       & ! intent(in)
-                            clubb_config_flags%l_use_C7_Richardson,          & ! intent(in)
-                            clubb_config_flags%l_brunt_vaisala_freq_moist,   & ! intent(in)
-                            clubb_config_flags%l_use_thvm_in_bv_freq,        & ! intent(in)
-                            clubb_config_flags%l_lmm_stepping,           & ! intent(in)
-                            rtm, wprtp, thlm, wpthlp,                        & ! intent(inout)
-                            sclrm, wpsclrp, um, upwp, vm, vpwp )               ! intent(inout)
+      call advance_xm_wpxp( dt_advance, sigma_sqd_w, wm_zm, wm_zt, wp2,           & ! intent(in)
+                            Lscale, wp3_on_wp2, wp3_on_wp2_zt, Kh_zt, Kh_zm,      & ! intent(in)
+                            invrs_tau_C6_zm, tau_max_zm, Skw_zm, wp2rtp, rtpthvp, & ! intent(in)
+                            rtm_forcing, wprtp_forcing, rtm_ref, wp2thlp,         & ! intent(in)
+                            thlpthvp, thlm_forcing, wpthlp_forcing, thlm_ref,     & ! intent(in)
+                            rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm,                & ! intent(in)
+                            invrs_rho_ds_zt, thv_ds_zm, rtp2, thlp2,              & ! intent(in)
+                            w_1_zm, w_2_zm, varnce_w_1_zm, varnce_w_2_zm,         & ! intent(in)
+                            mixt_frac_zm, l_implemented, em, wp2sclrp,            & ! intent(in)
+                            sclrpthvp, sclrm_forcing, sclrp2, exner, rcm,         & ! intent(in)
+                            p_in_Pa, thvm, Cx_fnc_Richardson,                     & ! intent(in)
+                            ice_supersat_frac,                                    & !
+                            pdf_implicit_coefs_terms,                             & ! intent(in)
+                            um_forcing, vm_forcing, ug, vg, wpthvp,               & ! intent(in)
+                            fcor, um_ref, vm_ref, up2, vp2,                       & ! intent(in)
+                            uprcp, vprcp, rc_coef,                                & ! intent(in)
+                            clubb_config_flags%iiPDF_type,                        & ! intent(in)
+                            clubb_config_flags%l_predict_upwp_vpwp,               & ! intent(in)
+                            clubb_config_flags%l_diffuse_rtm_and_thlm,            & ! intent(in)
+                            clubb_config_flags%l_stability_correct_Kh_N2_zm,      & ! intent(in)
+                            clubb_config_flags%l_upwind_wpxp_ta,                  & ! intent(in)
+                            clubb_config_flags%l_upwind_xm_ma,                    & ! intent(in)
+                            clubb_config_flags%l_uv_nudge,                        & ! intent(in)
+                            clubb_config_flags%l_tke_aniso,                       & ! intent(in)
+                            clubb_config_flags%l_diag_Lscale_from_tau,            & ! intent(in)
+                            clubb_config_flags%l_use_C7_Richardson,               & ! intent(in)
+                            clubb_config_flags%l_brunt_vaisala_freq_moist,        & ! intent(in)
+                            clubb_config_flags%l_use_thvm_in_bv_freq,             & ! intent(in)
+                            clubb_config_flags%l_lmm_stepping,                    & ! intent(in)
+                            rtm, wprtp, thlm, wpthlp,                             & ! intent(inout)
+                            sclrm, wpsclrp, um, upwp, vm, vpwp )                    ! intent(inout)
 
       if ( clubb_at_least_debug_level( 0 ) ) then
           if ( err_code == clubb_fatal_error ) then
@@ -1593,8 +1562,8 @@ module advance_clubb_core_module
       ! Advance the prognostic equations
       !   for scalar variances and covariances,
       !   plus the horizontal wind variances by one time step, by one time step.
-      call advance_xp2_xpyp( tau_xp2_zm, tau_wp2_zm, wm_zm, rtm,        & ! intent(in)
-                             wprtp, thlm, wpthlp, wpthvp, um, vm,       & ! intent(in)
+      call advance_xp2_xpyp( invrs_tau_xp2_zm, invrs_tau_wp2_zm, wm_zm, & ! intent(in)
+                             rtm, wprtp, thlm, wpthlp, wpthvp, um, vm,  & ! intent(in)
                              wp2, wp2_zt, wp3, upwp, vpwp,              & ! intent(in)
                              sigma_sqd_w, Skw_zm, wprtp2, wpthlp2,      & ! intent(in)
                              wprtpthlp, Kh_zt, rtp2_forcing,            & ! intent(in)
@@ -1613,7 +1582,7 @@ module advance_clubb_core_module
                              clubb_config_flags%l_C2_cloud_frac,        & ! intent(in)
                              clubb_config_flags%l_upwind_xpyp_ta,       & ! intent(in)
                              clubb_config_flags%l_single_C2_Skw,        & ! intent(in)
-                             clubb_config_flags%l_lmm_stepping,     & ! intent(in)
+                             clubb_config_flags%l_lmm_stepping,         & ! intent(in)
                              rtp2, thlp2, rtpthlp, up2, vp2,            & ! intent(inout)
                              sclrp2, sclrprtp, sclrpthlp)                 ! intent(inout)
 
@@ -1656,28 +1625,28 @@ module advance_clubb_core_module
 
       ! advance_wp2_wp3_bad_wp2 ! Test error comment, DO NOT modify or move
       call advance_wp2_wp3 &
-           ( dt_advance, sfc_elevation, sigma_sqd_w, wm_zm,      & ! intent(in)
-             wm_zt, a3_coef, a3_coef_zt, wp3_on_wp2, wp4,        & ! intent(in)
-             wpthvp, wp2thvp, um, vm, upwp, vpwp,                & ! intent(in)
-             up2, vp2, Kh_zm, Kh_zt, tau_wp2_zm, tau_wp3_zt,     & ! intent(in)
-             tau_C1_zm, Skw_zm, Skw_zt, rho_ds_zm,               & ! intent(in)
-             rho_ds_zt, invrs_rho_ds_zm,                         & ! intent(in)
-             invrs_rho_ds_zt, radf, thv_ds_zm,                   & ! intent(in)
-             thv_ds_zt, pdf_params%mixt_frac, Cx_fnc_Richardson, & ! intent(in)
-             wp2_splat, wp3_splat,                               & ! intent(in)
-             pdf_implicit_coefs_terms,                           & ! intent(in)
-             wprtp, wpthlp, rtp2, thlp2,                         & ! intent(in)
-             clubb_config_flags%iiPDF_type,                      & ! intent(in)
-             clubb_config_flags%l_min_wp2_from_corr_wx,          & ! intent(in)
-             clubb_config_flags%l_upwind_xm_ma,                  & ! intent(in)
-             clubb_config_flags%l_tke_aniso,                     & ! intent(in)
-             clubb_config_flags%l_standard_term_ta,              & ! intent(in)
-             clubb_config_flags%l_partial_upwind_wp3,            & ! intent(in)
-             clubb_config_flags%l_damp_wp2_using_em,             & ! intent(in)
-             clubb_config_flags%l_use_C11_Richardson,            & ! intent(in)
-             clubb_config_flags%l_damp_wp3_Skw_squared,          & ! intent(in)
-             clubb_config_flags%l_lmm_stepping,              & ! intent(in)
-             wp2, wp3, wp3_zm, wp2_zt )                            ! intent(inout)
+           ( dt_advance, sfc_elevation, sigma_sqd_w, wm_zm,             & ! intent(in)
+             wm_zt, a3_coef, a3_coef_zt, wp3_on_wp2, wp4,               & ! intent(in)
+             wpthvp, wp2thvp, um, vm, upwp, vpwp,                       & ! intent(in)
+             up2, vp2, Kh_zm, Kh_zt, invrs_tau_wp2_zm,                  & ! intent(in)
+             invrs_tau_wp3_zt, invrs_tau_C1_zm, Skw_zm,                 & ! intent(in)
+             Skw_zt, rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm,             & ! intent(in)
+             invrs_rho_ds_zt, radf, thv_ds_zm,                          & ! intent(in)
+             thv_ds_zt, pdf_params%mixt_frac, Cx_fnc_Richardson,        & ! intent(in)
+             wp2_splat, wp3_splat,                                      & ! intent(in)
+             pdf_implicit_coefs_terms,                                  & ! intent(in)
+             wprtp, wpthlp, rtp2, thlp2,                                & ! intent(in)
+             clubb_config_flags%iiPDF_type,                             & ! intent(in)
+             clubb_config_flags%l_min_wp2_from_corr_wx,                 & ! intent(in)
+             clubb_config_flags%l_upwind_xm_ma,                         & ! intent(in)
+             clubb_config_flags%l_tke_aniso,                            & ! intent(in)
+             clubb_config_flags%l_standard_term_ta,                     & ! intent(in)
+             clubb_config_flags%l_partial_upwind_wp3,                   & ! intent(in)
+             clubb_config_flags%l_damp_wp2_using_em,                    & ! intent(in)
+             clubb_config_flags%l_use_C11_Richardson,                   & ! intent(in)
+             clubb_config_flags%l_damp_wp3_Skw_squared,                 & ! intent(in)
+             clubb_config_flags%l_lmm_stepping,                         & ! intent(in)
+             wp2, wp3, wp3_zm, wp2_zt )                                   ! intent(inout)
 
       if ( clubb_at_least_debug_level( 0 ) ) then
           if ( err_code == clubb_fatal_error ) then
@@ -1722,11 +1691,11 @@ module advance_clubb_core_module
          ! simplified form of the <x'^3> predictive equation.  The simplified
          ! <x'^3> equation can either be advanced from its previous value or
          ! calculated using a steady-state approximation.
-         call advance_xp3( dt, rtm, thlm, rtp2, thlp2, wprtp,  & ! Intent(in)
-                           wpthlp, wprtp2, wpthlp2, rho_ds_zm, & ! Intent(in)
-                           invrs_rho_ds_zt, tau_zt,            & ! Intent(in)
-                           sclrm, sclrp2, wpsclrp, wpsclrp2,   & ! Intent(in)
-                           rtp3, thlp3, sclrp3                 ) ! Intent(inout)
+         call advance_xp3( dt, rtm, thlm, rtp2, thlp2, wprtp,          & ! Intent(in)
+                           wpthlp, wprtp2, wpthlp2, rho_ds_zm,         & ! Intent(in)
+                           invrs_rho_ds_zt, invrs_tau_zt, tau_max_zt,  & ! Intent(in)
+                           sclrm, sclrp2, wpsclrp, wpsclrp2,           & ! Intent(in)
+                           rtp3, thlp3, sclrp3 )                         ! Intent(inout)
 
          ! Use a modified form of the Larson and Golaz (2005) ansatz for the
          ! ADG1 PDF to calculate <u'^3> and <v'^3> for another type of PDF.

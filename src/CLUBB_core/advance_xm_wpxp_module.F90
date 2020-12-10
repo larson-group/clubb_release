@@ -45,9 +45,9 @@ module advance_xm_wpxp_module
   !=============================================================================
   subroutine advance_xm_wpxp( dt, sigma_sqd_w, wm_zm, wm_zt, wp2, &
                               Lscale, wp3_on_wp2, wp3_on_wp2_zt, Kh_zt, Kh_zm, &
-                              tau_C6_zm, Skw_zm, wp2rtp, rtpthvp, rtm_forcing, &
-                              wprtp_forcing, rtm_ref, wp2thlp, thlpthvp, &
-                              thlm_forcing, wpthlp_forcing, thlm_ref, &
+                              invrs_tau_C6_zm, tau_max_zm, Skw_zm, wp2rtp, rtpthvp, &
+                              rtm_forcing, wprtp_forcing, rtm_ref, wp2thlp, &
+                              thlpthvp, thlm_forcing, wpthlp_forcing, thlm_ref, &
                               rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm, &
                               invrs_rho_ds_zt, thv_ds_zm, rtp2, thlp2, &
                               w_1_zm, w_2_zm, varnce_w_1_zm, varnce_w_2_zm, &
@@ -201,7 +201,8 @@ module advance_xm_wpxp_module
       wp3_on_wp2_zt,   & ! Smoothed wp3 / wp2 on thermo. levels     [m/s]
       Kh_zt,           & ! Eddy diffusivity on thermodynamic levels [m^2/s]
       Kh_zm,           & ! Eddy diffusivity on momentum levels
-      tau_C6_zm,       & ! Time-scale tau on momentum levels applied to C6 term [s]
+      invrs_tau_C6_zm, & ! Inverse time-scale on mom. levels applied to C6 term [1/s]
+      tau_max_zm,      & ! Max. allowable eddy dissipation time scale on m-levs  [s]
       Skw_zm,          & ! Skewness of w on momentum levels         [-]
       wp2rtp,          & ! <w'^2 r_t'> (thermodynamic levels)    [m^2/s^2 kg/kg]
       rtpthvp,         & ! r_t'th_v' (momentum levels)              [(kg/kg) K]
@@ -226,7 +227,7 @@ module advance_xm_wpxp_module
       w_2_zm,          & ! Mean w (2nd PDF component)              [m/s]
       varnce_w_1_zm,   & ! Variance of w (1st PDF component)       [m^2/s^2]
       varnce_w_2_zm,   & ! Variance of w (2nd PDF component)       [m^2/s^2]
-      mixt_frac_zm      ! Weight of 1st PDF component (Sk_w dependent) [-]
+      mixt_frac_zm       ! Weight of 1st PDF component (Sk_w dependent) [-]
 
     logical, intent(in) ::  & 
       l_implemented      ! Flag for CLUBB being implemented in a larger model.
@@ -526,10 +527,10 @@ module advance_xm_wpxp_module
 
     ! Calculate 1st pressure terms for w'r_t', w'thl', and w'sclr'. 
     call wpxp_term_pr1_lhs( C6rt_Skw_fnc, C6thl_Skw_fnc, C7_Skw_fnc,        & ! Intent(in)
-                            tau_C6_zm, l_scalar_calc,                       & ! Intent(in)
+                            invrs_tau_C6_zm, l_scalar_calc,                 & ! Intent(in)
                             lhs_pr1_wprtp, lhs_pr1_wpthlp, lhs_pr1_wpsclrp  ) ! Intent(out)
                                 
-    C6_term = C6rt_Skw_fnc / tau_C6_zm
+    C6_term = C6rt_Skw_fnc * invrs_tau_C6_zm
 
     if ( l_stats_samp ) then
       call stat_update_var( iC6_term, C6_term, stats_zm )
@@ -593,9 +594,10 @@ module advance_xm_wpxp_module
     else
       
       ! LHS matrices are equivalent, only one solve required
-      call solve_xm_wpxp_with_single_lhs( dt, l_iter, nrhs, wm_zt, wp2, tau_C6_zm,          & ! In
+      call solve_xm_wpxp_with_single_lhs( dt, l_iter, nrhs, wm_zt, wp2,                     & ! In 
+                                          invrs_tau_C6_zm, tau_max_zm,                      & ! In
                                           rtpthvp, rtm_forcing, wprtp_forcing, thlpthvp,    & ! In
-                                          thlm_forcing,   wpthlp_forcing, rho_ds_zm,        & ! In
+                                          thlm_forcing, wpthlp_forcing, rho_ds_zm,          & ! In
                                           rho_ds_zt, invrs_rho_ds_zm, invrs_rho_ds_zt,      & ! In
                                           thv_ds_zm, rtp2, thlp2, l_implemented,            & ! In
                                           sclrpthvp, sclrm_forcing, sclrp2, um_forcing,     & ! In
@@ -637,7 +639,7 @@ module advance_xm_wpxp_module
       if ( err_code == clubb_fatal_error ) then
         call error_prints_xm_wpxp( dt, sigma_sqd_w, wm_zm, wm_zt, wp2, &
                                    Lscale, wp3_on_wp2, wp3_on_wp2_zt, &
-                                   Kh_zt, Kh_zm, tau_C6_zm, Skw_zm, &
+                                   Kh_zt, Kh_zm, invrs_tau_C6_zm, Skw_zm, &
                                    wp2rtp, rtpthvp, rtm_forcing, &
                                    wprtp_forcing, rtm_ref, wp2thlp, &
                                    thlpthvp, thlm_forcing, &
@@ -2239,9 +2241,10 @@ module advance_xm_wpxp_module
   end subroutine calc_xm_wpxp_ta_terms
   
   !==========================================================================================
-  subroutine solve_xm_wpxp_with_single_lhs( dt, l_iter, nrhs, wm_zt, wp2, tau_C6_zm, &
+  subroutine solve_xm_wpxp_with_single_lhs( dt, l_iter, nrhs, wm_zt, wp2, &
+                                            invrs_tau_C6_zm, tau_max_zm, &
                                             rtpthvp, rtm_forcing, wprtp_forcing, thlpthvp, &
-                                            thlm_forcing,   wpthlp_forcing, rho_ds_zm, &
+                                            thlm_forcing, wpthlp_forcing, rho_ds_zm, &
                                             rho_ds_zt, invrs_rho_ds_zm, invrs_rho_ds_zt, &
                                             thv_ds_zm, rtp2, thlp2, l_implemented, &
                                             sclrpthvp, sclrm_forcing, sclrp2, um_forcing, &
@@ -2318,6 +2321,7 @@ module advance_xm_wpxp_module
       thl_tol_mfl, &
       rt_tol_mfl, &
       zero, &
+      one, &
       ep1
   
     implicit none
@@ -2330,7 +2334,8 @@ module advance_xm_wpxp_module
     real( kind = core_rknd ), intent(in), dimension(gr%nz) :: & 
       wm_zt,           & ! w wind component on thermodynamic levels [m/s]
       wp2,             & ! w'^2 (momentum levels)                   [m^2/s^2]
-      tau_C6_zm,       & ! Time-scale tau on momentum levels applied to C6 term [s]
+      invrs_tau_C6_zm, & ! Inverse tau on momentum levels applied to C6 term [1/s]
+      tau_max_zm,      & ! Max. allowable eddy dissipation time scale on m-levs [s]
       rtpthvp,         & ! r_t'th_v' (momentum levels)              [(kg/kg) K]
       rtm_forcing,     & ! r_t forcing (thermodynamic levels)       [(kg/kg)/s]
       wprtp_forcing,   & ! <w'r_t'> forcing (momentum levels)       [(kg/kg)/s^2]
@@ -2469,7 +2474,8 @@ module advance_xm_wpxp_module
       upthlp,       & ! eastward horz turb flux of theta_l (mom levs)    [m/s K]
       vpthlp,       & ! northward horz turb flux of theta_l (mom levs)   [m/s K]
       uprtp,        & ! eastward horz turb flux of tot water (mom levs)  [m/s kg/kg]
-      vprtp           ! northward horz turb flux of tot water (mom levs) [m/s kg/kg]
+      vprtp,        & ! northward horz turb flux of tot water (mom levs) [m/s kg/kg]
+      tau_C6_zm       ! Time-scale tau on momentum levels applied to C6 term [s]
 
     real( kind = core_rknd ), dimension(2*gr%nz,nrhs) :: & 
       rhs,      & ! Right-hand sides of band diag. matrix. (LAPACK)
@@ -2600,6 +2606,9 @@ module advance_xm_wpxp_module
           call stat_update_var( ivpwp_pr4, 0.7_core_rknd * wp2 * ddzt( vm ), &
                                 stats_zm )
        endif ! l_stats_samp
+
+       ! need tau_C6_zm for these calls
+       tau_C6_zm = min ( one / invrs_tau_C6_zm, tau_max_zm )
 
        call diagnose_upxp( upwp, thlm, wpthlp, um, &               ! Intent(in)
                            C6thl_Skw_fnc, tau_C6_zm, C7_Skw_fnc, & ! Intent(in)
@@ -4284,7 +4293,7 @@ module advance_xm_wpxp_module
 
   !=============================================================================
   pure subroutine wpxp_term_pr1_lhs( C6rt_Skw_fnc, C6thl_Skw_fnc, C7_Skw_fnc, &
-                                     tau_C6_zm, l_scalar_calc, &
+                                     invrs_tau_C6_zm, l_scalar_calc, &
                                      lhs_pr1_wprtp, lhs_pr1_wpthlp, &
                                      lhs_pr1_wpsclrp )
 
@@ -4317,8 +4326,7 @@ module advance_xm_wpxp_module
         gr    ! Variable type(s)
 
     use constants_clubb, only: &
-        one,  & ! Constant(s)
-        zero
+        zero  ! Constant(s)
 
     use clubb_precision, only: &
         core_rknd    ! Variable(s)
@@ -4330,7 +4338,7 @@ module advance_xm_wpxp_module
       C6rt_Skw_fnc,  & ! C_6rt parameter with Sk_w applied        [-]
       C6thl_Skw_fnc, & ! C_6thl parameter with Sk_w applied       [-]
       C7_Skw_fnc,    & ! C_7 parameter with Sk_w applied          [-]
-      tau_C6_zm        ! Time-scale tau at momentum levels        [s]
+      invrs_tau_C6_zm  ! Inverse time-scale tau at momentum levels   [1/s]
 
     logical, intent(in) :: &
       l_scalar_calc   ! True if sclr_dim > 0
@@ -4340,13 +4348,6 @@ module advance_xm_wpxp_module
       lhs_pr1_wprtp,   & ! LHS coefficient for w'r_t' pressure term 1   [1/s]
       lhs_pr1_wpthlp,  & ! LHS coefficient for w'thl' pressure term 1   [1/s]
       lhs_pr1_wpsclrp    ! LHS coefficient for w'sclr' pressure term 1  [1/s]
-
-    ! Local Variables
-    real( kind = core_rknd ), dimension(gr%nz) :: &
-      invrs_tau_C6_zm   ! Inverse of tau_C6_zm
-
-    
-    invrs_tau_C6_zm = one / tau_C6_zm
 
     ! Set lower boundary to 0
     lhs_pr1_wprtp(1) = zero
@@ -4381,7 +4382,6 @@ module advance_xm_wpxp_module
        lhs_pr1_wpsclrp(gr%nz) = zero
 
     endif ! l_scalar_calc
-
 
     return
 
@@ -4452,7 +4452,6 @@ module advance_xm_wpxp_module
 
     ! Set upper boundary to 0
     rhs_bp_pr3(gr%nz) = zero
-
 
     return
 
@@ -4739,7 +4738,7 @@ module advance_xm_wpxp_module
   !=============================================================================
   subroutine error_prints_xm_wpxp( dt, sigma_sqd_w, wm_zm, wm_zt, wp2, &
                                    Lscale, wp3_on_wp2, wp3_on_wp2_zt, &
-                                   Kh_zt, Kh_zm, tau_C6_zm, Skw_zm, &
+                                   Kh_zt, Kh_zm, invrs_tau_C6_zm, Skw_zm, &
                                    wp2rtp, rtpthvp, rtm_forcing, &
                                    wprtp_forcing, rtm_ref, wp2thlp, &
                                    thlpthvp, thlm_forcing, wpthlp_forcing, &
@@ -4799,7 +4798,7 @@ module advance_xm_wpxp_module
       wp3_on_wp2_zt,   & ! Smoothed wp3 / wp2 on thermo. levels     [m/s]
       Kh_zt,           & ! Eddy diffusivity on thermodynamic levels [m^2/s]
       Kh_zm,           & ! Eddy diffusivity on momentum levels
-      tau_C6_zm,       & ! Time-scale tau on momentum levels applied to C6 term [s]
+      invrs_tau_C6_zm, & ! Inverse time-scale tau on momentum levels applied to C6 term [1/s]
       Skw_zm,          & ! Skewness of w on momentum levels         [-]
       wp2rtp,          & ! <w'^2 r_t'> (thermodynamic levels)    [m^2/s^2 kg/kg]
       rtpthvp,         & ! r_t'th_v' (momentum levels)              [(kg/kg) K]
@@ -4927,7 +4926,7 @@ module advance_xm_wpxp_module
     write(fstderr,*) "wp3_on_wp2_zt = ", wp3_on_wp2_zt, new_line('c')
     write(fstderr,*) "Kh_zt = ", Kh_zt, new_line('c')
     write(fstderr,*) "Kh_zm = ", Kh_zm, new_line('c')
-    write(fstderr,*) "tau_C6_zm = ", tau_C6_zm, new_line('c')
+    write(fstderr,*) "invrs_tau_C6_zm = ", invrs_tau_C6_zm, new_line('c')
     write(fstderr,*) "Skw_zm = ", Skw_zm, new_line('c')
     write(fstderr,*) "wp2rtp = ", wp2rtp, new_line('c')
     write(fstderr,*) "rtpthvp = ", rtpthvp, new_line('c')
@@ -5040,7 +5039,6 @@ module advance_xm_wpxp_module
        write(fstderr,*) "vpwp (pre-solve) = ",  vpwp_old, new_line('c')
        write(fstderr,*) "vpwp = ",  vpwp, new_line('c')
     endif ! l_predict_upwp_vpwp
-
 
     return
 

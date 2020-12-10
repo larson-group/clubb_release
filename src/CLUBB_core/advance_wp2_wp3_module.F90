@@ -39,28 +39,28 @@ module advance_wp2_wp3_module
   contains
 
   !=============================================================================
-  subroutine advance_wp2_wp3( dt, sfc_elevation, sigma_sqd_w, wm_zm,   & ! In
-                              wm_zt, a3, a3_zt, wp3_on_wp2, wp4,       & ! In
-                              wpthvp, wp2thvp, um, vm, upwp, vpwp,     & ! In
-                              up2, vp2, Kh_zm, Kh_zt, tau_zm, tau_zt,  & ! In
-                              tau_C1_zm, Skw_zm, Skw_zt, rho_ds_zm,    & ! In
-                              rho_ds_zt, invrs_rho_ds_zm,              & ! In
-                              invrs_rho_ds_zt, radf, thv_ds_zm,        & ! In
-                              thv_ds_zt, mixt_frac, Cx_fnc_Richardson, & ! In
-                              wp2_splat, wp3_splat,                    & ! In
-                              pdf_implicit_coefs_terms,                & ! In
-                              wprtp, wpthlp, rtp2, thlp2,              & ! In
-                              iiPDF_type,                              & ! In
-                              l_min_wp2_from_corr_wx,                  & ! In
-                              l_upwind_xm_ma,                          & ! In
-                              l_tke_aniso,                             & ! In
-                              l_standard_term_ta,                      & ! In
-                              l_partial_upwind_wp3,                    & ! In
-                              l_damp_wp2_using_em,                     & ! In
-                              l_use_C11_Richardson,                    & ! In
-                              l_damp_wp3_Skw_squared,                  & ! In
-                              l_lmm_stepping,                      & ! In
-                              wp2, wp3, wp3_zm, wp2_zt )                 ! Inout
+  subroutine advance_wp2_wp3( dt, sfc_elevation, sigma_sqd_w, wm_zm,         & ! In
+                              wm_zt, a3, a3_zt, wp3_on_wp2, wp4,             & ! In
+                              wpthvp, wp2thvp, um, vm, upwp, vpwp,           & ! In
+                              up2, vp2, Kh_zm, Kh_zt, invrs_tau_zm,          & ! In
+                              invrs_tau_zt, invrs_tau_C1_zm, Skw_zm,         & ! In
+                              Skw_zt, rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm, & ! In
+                              invrs_rho_ds_zt, radf, thv_ds_zm,              & ! In
+                              thv_ds_zt, mixt_frac, Cx_fnc_Richardson,       & ! In
+                              wp2_splat, wp3_splat,                          & ! In
+                              pdf_implicit_coefs_terms,                      & ! In
+                              wprtp, wpthlp, rtp2, thlp2,                    & ! In
+                              iiPDF_type,                                    & ! In
+                              l_min_wp2_from_corr_wx,                        & ! In
+                              l_upwind_xm_ma,                                & ! In
+                              l_tke_aniso,                                   & ! In
+                              l_standard_term_ta,                            & ! In
+                              l_partial_upwind_wp3,                          & ! In
+                              l_damp_wp2_using_em,                           & ! In
+                              l_use_C11_Richardson,                          & ! In
+                              l_damp_wp3_Skw_squared,                        & ! In
+                              l_lmm_stepping,                                & ! In
+                              wp2, wp3, wp3_zm, wp2_zt )                       ! Inout
 
     ! Description:
     ! Advance w'^2 and w'^3 one timestep.
@@ -163,9 +163,9 @@ module advance_wp2_wp3_module
       vp2,               & ! v'^2 (momentum levels)                    [m^2/s^2]
       Kh_zm,             & ! Eddy diffusivity on momentum levels       [m^2/s]
       Kh_zt,             & ! Eddy diffusivity on thermodynamic levels  [m^2/s]
-      tau_zm,            & ! Time-scale tau on momentum levels         [s]
-      tau_zt,            & ! Time-scale tau on thermodynamic levels    [s]
-      tau_C1_zm,         & ! Tau values used for the C1 (dp1) term in wp2 [s]
+      invrs_tau_zm,      & ! Inverse time-scale tau on momentum levels         [1/s]
+      invrs_tau_zt,      & ! Inverse time-scale tau on thermodynamic levels    [1/s]
+      invrs_tau_C1_zm,   & ! Inverse tau values used for the C1 (dp1) term in wp2 [1/s]
       Skw_zm,            & ! Skewness of w on momentum levels          [-]
       Skw_zt,            & ! Skewness of w on thermodynamic levels     [-]
       rho_ds_zm,         & ! Dry, static density on momentum levels    [kg/m^3]
@@ -234,7 +234,7 @@ module advance_wp2_wp3_module
 
     ! Local Variables
     real( kind = core_rknd ), dimension(gr%nz) ::  & 
-      tauw3t  ! Currently just tau_zt                           [s]
+      invrs_tauw3t  ! Currently just invrs_tau_zt         [1/s]
 
     ! Eddy Diffusion for w'^2 and w'^3.
     real( kind = core_rknd ), dimension(gr%nz) :: Kw1    ! w'^2 coef. eddy diff.  [m^2/s]
@@ -276,7 +276,7 @@ module advance_wp2_wp3_module
 !
 !        end do
 
-    tauw3t = tau_zt
+    invrs_tauw3t = invrs_tau_zt
 
     ! Vince Larson added code to make C11 function of Skw. 13 Mar 2005
     ! If this code is used, C11 is no longer relevant, i.e. constants
@@ -356,27 +356,27 @@ module advance_wp2_wp3_module
     wp3_old=wp3
 
     ! Solve semi-implicitly
-    call wp23_solve( dt, sfc_elevation, sigma_sqd_w, wm_zm, & ! Intent(in)
-                     wm_zt, a3, a3_zt, wp3_on_wp2, wp4,     & ! Intent(in)
-                     wpthvp, wp2thvp, um, vm, upwp, vpwp,   & ! Intent(in)
-                     up2, vp2, Kw1, Kw8, Kh_zt, Skw_zt,     & ! Intent(in)
-                     tau_zm, tauw3t, tau_C1_zm, C1_Skw_fnc, & ! Intent(in)
-                     C11_Skw_fnc, C16_fnc, rho_ds_zm,       & ! Intent(in)
-                     rho_ds_zt, invrs_rho_ds_zm,            & ! Intent(in)
-                     invrs_rho_ds_zt, radf,                 & ! Intent(in)
-                     thv_ds_zm, thv_ds_zt,                  & ! Intent(in)
-                     wp2_splat, wp3_splat,                  & ! Intent(in)
-                     pdf_implicit_coefs_terms,              & ! Intent(in)
-                     wprtp, wpthlp, rtp2, thlp2,            & ! Intent(in)
-                     iiPDF_type,                            & ! Intent(in)
-                     l_min_wp2_from_corr_wx,                & ! Intent(in)
-                     l_upwind_xm_ma,                        & ! Intent(in)
-                     l_tke_aniso,                           & ! Intent(in)
-                     l_standard_term_ta,                    & ! Intent(in)
-                     l_partial_upwind_wp3,                  & ! Intent(in)
-                     l_damp_wp2_using_em,                   & ! Intent(in)
-                     l_damp_wp3_Skw_squared,                & ! Intent(in)
-                     wp2, wp3, wp3_zm, wp2_zt )               ! Intent(inout)
+    call wp23_solve( dt, sfc_elevation, sigma_sqd_w, wm_zm,                   & ! Intent(in)
+                     wm_zt, a3, a3_zt, wp3_on_wp2, wp4,                       & ! Intent(in)
+                     wpthvp, wp2thvp, um, vm, upwp, vpwp,                     & ! Intent(in)
+                     up2, vp2, Kw1, Kw8, Kh_zt, Skw_zt,                       & ! Intent(in)
+                     invrs_tau_zm, invrs_tauw3t, invrs_tau_C1_zm, C1_Skw_fnc, & ! Intent(in)
+                     C11_Skw_fnc, C16_fnc, rho_ds_zm,                         & ! Intent(in)
+                     rho_ds_zt, invrs_rho_ds_zm,                              & ! Intent(in)
+                     invrs_rho_ds_zt, radf,                                   & ! Intent(in)
+                     thv_ds_zm, thv_ds_zt,                                    & ! Intent(in)
+                     wp2_splat, wp3_splat,                                    & ! Intent(in)
+                     pdf_implicit_coefs_terms,                                & ! Intent(in)
+                     wprtp, wpthlp, rtp2, thlp2,                              & ! Intent(in)
+                     iiPDF_type,                                              & ! Intent(in)
+                     l_min_wp2_from_corr_wx,                                  & ! Intent(in)
+                     l_upwind_xm_ma,                                          & ! Intent(in)
+                     l_tke_aniso,                                             & ! Intent(in)
+                     l_standard_term_ta,                                      & ! Intent(in)
+                     l_partial_upwind_wp3,                                    & ! Intent(in)
+                     l_damp_wp2_using_em,                                     & ! Intent(in)
+                     l_damp_wp3_Skw_squared,                                  & ! Intent(in)
+                     wp2, wp3, wp3_zm, wp2_zt )                                 ! Intent(inout)
 
     if ( l_lmm_stepping ) then
       wp2 = one_half * ( wp2_old + wp2 )
@@ -437,15 +437,15 @@ module advance_wp2_wp3_module
             write(fstderr,*) "vp2 = ", vp2, new_line('c')
             write(fstderr,*) "Kh_zm = ", Kh_zm, new_line('c')
             write(fstderr,*) "Kh_zt = ", Kh_zt, new_line('c')
-            write(fstderr,*) "tau_zm = ", tau_zm, new_line('c')
-            write(fstderr,*) "tau_zt = ", tau_zt, new_line('c')
+            write(fstderr,*) "invrs_tau_zm = ", invrs_tau_zm, new_line('c')
+            write(fstderr,*) "invrs_tau_zt = ", invrs_tau_zt, new_line('c')
             write(fstderr,*) "Skw_zm = ", Skw_zm, new_line('c')
             write(fstderr,*) "Skw_zt = ", Skw_zt, new_line('c')
             write(fstderr,*) "mixt_frac = ", mixt_frac, new_line('c')
             write(fstderr,*) "a3 = ", a3, new_line('c')
             write(fstderr,*) "a3_zt = ", a3_zt, new_line('c')
             write(fstderr,*) "wp3_on_wp2 = ", wp3_on_wp2, new_line('c')
-            write(fstderr,*) "tau_C1_zm = ", tau_C1_zm, new_line('c')
+            write(fstderr,*) "invrs_tau_C1_zm = ", invrs_tau_C1_zm, new_line('c')
             write(fstderr,*) "rho_ds_zm = ", rho_ds_zm, new_line('c')
             write(fstderr,*) "rho_ds_zt = ", rho_ds_zt, new_line('c')
             write(fstderr,*) "invrs_rho_ds_zm = ", invrs_rho_ds_zm, new_line('c')
@@ -473,27 +473,27 @@ module advance_wp2_wp3_module
   end subroutine advance_wp2_wp3
 
   !=============================================================================
-  subroutine wp23_solve( dt, sfc_elevation, sigma_sqd_w, wm_zm, & ! Intent(in)
-                         wm_zt, a3, a3_zt, wp3_on_wp2, wp4,     & ! Intent(in)
-                         wpthvp, wp2thvp, um, vm, upwp, vpwp,   & ! Intent(in)
-                         up2, vp2, Kw1, Kw8, Kh_zt, Skw_zt,     & ! Intent(in)
-                         tau1m, tauw3t, tau_C1_zm, C1_Skw_fnc,  & ! Intent(in)
-                         C11_Skw_fnc, C16_fnc, rho_ds_zm,       & ! Intent(in)
-                         rho_ds_zt, invrs_rho_ds_zm,            & ! Intent(in)
-                         invrs_rho_ds_zt, radf,                 & ! Intent(in)
-                         thv_ds_zm, thv_ds_zt,                  & ! Intent(in)
-                         wp2_splat, wp3_splat,                  & ! Intent(in)
-                         pdf_implicit_coefs_terms,              & ! Intent(in)
-                         wprtp, wpthlp, rtp2, thlp2,            & ! Intent(in)
-                         iiPDF_type,                            & ! Intent(in)
-                         l_min_wp2_from_corr_wx,                & ! Intent(in)
-                         l_upwind_xm_ma,                        & ! Intent(in)
-                         l_tke_aniso,                           & ! Intent(in)
-                         l_standard_term_ta,                    & ! Intent(in)
-                         l_partial_upwind_wp3,                  & ! Intent(in)
-                         l_damp_wp2_using_em,                   & ! Intent(in)
-                         l_damp_wp3_Skw_squared,                & ! Intent(in)
-                         wp2, wp3, wp3_zm, wp2_zt )               ! Intent(inout)
+  subroutine wp23_solve( dt, sfc_elevation, sigma_sqd_w, wm_zm,                   & ! Intent(in)
+                         wm_zt, a3, a3_zt, wp3_on_wp2, wp4,                       & ! Intent(in)
+                         wpthvp, wp2thvp, um, vm, upwp, vpwp,                     & ! Intent(in)
+                         up2, vp2, Kw1, Kw8, Kh_zt, Skw_zt,                       & ! Intent(in)
+                         invrs_tau1m, invrs_tauw3t, invrs_tau_C1_zm, C1_Skw_fnc,  & ! Intent(in)
+                         C11_Skw_fnc, C16_fnc, rho_ds_zm,                         & ! Intent(in)
+                         rho_ds_zt, invrs_rho_ds_zm,                              & ! Intent(in)
+                         invrs_rho_ds_zt, radf,                                   & ! Intent(in)
+                         thv_ds_zm, thv_ds_zt,                                    & ! Intent(in)
+                         wp2_splat, wp3_splat,                                    & ! Intent(in)
+                         pdf_implicit_coefs_terms,                                & ! Intent(in)
+                         wprtp, wpthlp, rtp2, thlp2,                              & ! Intent(in)
+                         iiPDF_type,                                              & ! Intent(in)
+                         l_min_wp2_from_corr_wx,                                  & ! Intent(in)
+                         l_upwind_xm_ma,                                          & ! Intent(in)
+                         l_tke_aniso,                                             & ! Intent(in)
+                         l_standard_term_ta,                                      & ! Intent(in)
+                         l_partial_upwind_wp3,                                    & ! Intent(in)
+                         l_damp_wp2_using_em,                                     & ! Intent(in)
+                         l_damp_wp3_Skw_squared,                                  & ! Intent(in)
+                         wp2, wp3, wp3_zm, wp2_zt )                                 ! Intent(inout)
 
     ! Description:
     ! Decompose, and back substitute the matrix for wp2/wp3
@@ -647,9 +647,9 @@ module advance_wp2_wp3_module
       Kw8,             & ! Coefficient of eddy diffusivity for w'^3  [m^2/s]
       Kh_zt,           & ! Eddy diffusivity on thermodynamic levels  [m^2/s]
       Skw_zt,          & ! Skewness of w on thermodynamic levels     [-]
-      tau1m,           & ! Time-scale tau on momentum levels         [s]
-      tauw3t,          & ! Time-scale tau on thermodynamic levels    [s]
-      tau_C1_zm,       & ! Tau values used for the C1 (dp1) term in wp2 [s]
+      invrs_tau1m,     & ! Inverse time-scale tau on momentum levels         [1/s]
+      invrs_tauw3t,    & ! Inverse time-scale tau on thermodynamic levels    [1/s]
+      invrs_tau_C1_zm, & ! Inverse tau values used for the C1 (dp1) term in wp2 [1/s]
       C1_Skw_fnc,      & ! C_1 parameter with Sk_w applied           [-]
       C11_Skw_fnc,     & ! C_11 parameter with Sk_w applied          [-]
       C16_fnc,         & ! C_16 parameter                            [-]
@@ -802,21 +802,21 @@ module advance_wp2_wp3_module
 
     ! Compute the explicit portion of the w'^2 and w'^3 equations.
     ! Build the right-hand side vector.
-    call wp23_rhs( dt, wp2, wp3, a1, a1_zt, a3, a3_zt, wp3_on_wp2, &           ! intent(in)
-                   coef_wp4_implicit, wp4, wpthvp, wp2thvp, um, vm, &          ! intent(in)
-                   upwp, vpwp, up2, vp2, Kw1, Kw8, Kh_zt,  &                   ! intent(in)
-                   Skw_zt, tau1m, tauw3t, tau_C1_zm, C1_Skw_fnc, &             ! intent(in)
-                   C11_Skw_fnc, C16_fnc, rho_ds_zm, rho_ds_zt, &               ! intent(in)
-                   invrs_rho_ds_zt, radf, thv_ds_zm, thv_ds_zt, &              ! intent(in)
-                   wp2_splat, wp3_splat, &                                     ! intent(in)
-                   l_crank_nich_diff, &                                        ! intent(in)
-                   iiPDF_type, &                                               ! intent(in)
-                   l_tke_aniso, &                                              ! intent(in)
-                   l_standard_term_ta, &                                       ! intent(in)
-                   l_partial_upwind_wp3, &                                     ! intent(in)
-                   l_damp_wp2_using_em, &                                      ! intent(in)
-                   l_damp_wp3_Skw_squared, &                                   ! intent(in)
-                   rhs )                                                       ! intent(out)
+    call wp23_rhs( dt, wp2, wp3, a1, a1_zt, a3, a3_zt, wp3_on_wp2, &                 ! intent(in)
+                   coef_wp4_implicit, wp4, wpthvp, wp2thvp, um, vm, &                ! intent(in)
+                   upwp, vpwp, up2, vp2, Kw1, Kw8, Kh_zt,  &                         ! intent(in)
+                   Skw_zt, invrs_tau1m, invrs_tauw3t, invrs_tau_C1_zm, C1_Skw_fnc, & ! intent(in)
+                   C11_Skw_fnc, C16_fnc, rho_ds_zm, rho_ds_zt, &                     ! intent(in)
+                   invrs_rho_ds_zt, radf, thv_ds_zm, thv_ds_zt, &                    ! intent(in)
+                   wp2_splat, wp3_splat, &                                           ! intent(in)
+                   l_crank_nich_diff, &                                              ! intent(in)
+                   iiPDF_type, &                                                     ! intent(in)
+                   l_tke_aniso, &                                                    ! intent(in)
+                   l_standard_term_ta, &                                             ! intent(in)
+                   l_partial_upwind_wp3, &                                           ! intent(in)
+                   l_damp_wp2_using_em, &                                            ! intent(in)
+                   l_damp_wp3_Skw_squared, &                                         ! intent(in)
+                   rhs )                                                             ! intent(out)
 
     ! Save the value of rhs, which will be overwritten with the solution as
     ! part of the solving routine.
@@ -826,7 +826,7 @@ module advance_wp2_wp3_module
     ! Build the left-hand side matrix.
     call wp23_lhs( dt, wp2, wm_zm, wm_zt, a1, a1_zt, a3, a3_zt,  &
                    wp3_on_wp2, coef_wp4_implicit, &
-                   Kw1, Kw8, Skw_zt, tau1m, tauw3t, tau_C1_zm, C1_Skw_fnc, &
+                   Kw1, Kw8, Skw_zt, invrs_tau1m, invrs_tauw3t, invrs_tau_C1_zm, C1_Skw_fnc, &
                    C11_Skw_fnc, C16_fnc, rho_ds_zm, rho_ds_zt, &
                    invrs_rho_ds_zm, invrs_rho_ds_zt, l_crank_nich_diff, &
                    iiPDF_type, &
@@ -1142,7 +1142,7 @@ module advance_wp2_wp3_module
   !=================================================================================
   subroutine wp23_lhs( dt, wp2, wm_zm, wm_zt, a1, a1_zt, a3, a3_zt,  &
                        wp3_on_wp2, coef_wp4_implicit, &
-                       Kw1, Kw8, Skw_zt, tau1m, tauw3t, tau_C1_zm, C1_Skw_fnc, &
+                       Kw1, Kw8, Skw_zt, invrs_tau1m, invrs_tauw3t, invrs_tau_C1_zm, C1_Skw_fnc, &
                        C11_Skw_fnc, C16_fnc, rho_ds_zm, rho_ds_zt, &
                        invrs_rho_ds_zm, invrs_rho_ds_zt, l_crank_nich_diff, &
                        iiPDF_type, &
@@ -1285,9 +1285,9 @@ module advance_wp2_wp3_module
       Kw1,               & ! Coefficient of eddy diffusivity for w'^2  [m^2/s]
       Kw8,               & ! Coefficient of eddy diffusivity for w'^3  [m^2/s]
       Skw_zt,            & ! Skewness of w on thermodynamic levels     [-]
-      tau1m,             & ! Time-scale tau on momentum levels         [s]
-      tauw3t,            & ! Time-scale tau on thermodynamic levels    [s]
-      tau_C1_zm,         & ! Tau values used for the C1 (dp1) term in wp2 [s]
+      invrs_tau1m,       & ! Inverse time-scale tau on momentum levels         [1/s]
+      invrs_tauw3t,      & ! Inverse time-scale tau on thermodynamic levels    [1/s]
+      invrs_tau_C1_zm,   & ! Inverse tau values used for the C1 (dp1) term in wp2 [1/s]
       C1_Skw_fnc,        & ! C_1 parameter with Sk_w applied           [-]
       C11_Skw_fnc,       & ! C_11 parameter with Sk_w applied          [-]
       C16_fnc,           & ! C_16 parameter                            [-]
@@ -1426,7 +1426,7 @@ module advance_wp2_wp3_module
 
 
     ! Calculate dissipation terms 1 for w'^2
-    call wp2_term_dp1_lhs( C1_Skw_fnc(:), tau_C1_zm(:), &
+    call wp2_term_dp1_lhs( C1_Skw_fnc(:), invrs_tau_C1_zm(:), &
                            lhs_dp1_wp2(:) )
 
 
@@ -1444,7 +1444,7 @@ module advance_wp2_wp3_module
 
 
     ! Calculate pressure terms 1 for w'^3
-    call wp3_term_pr1_lhs( C8, C8b, tauw3t(:), Skw_zt(:), &
+    call wp3_term_pr1_lhs( C8, C8b, invrs_tauw3t(:), Skw_zt(:), &
                            l_damp_wp3_Skw_squared, &
                            lhs_pr1_wp3(:) )
 
@@ -1557,7 +1557,7 @@ module advance_wp2_wp3_module
         ! https://arxiv.org/pdf/1711.03675v1.pdf#nameddest=url:wp2_pr 
 
         ! Calculate terms
-        call wp2_term_pr1_lhs( C4, tau1m(:), &
+        call wp2_term_pr1_lhs( C4, invrs_tau1m(:), &
                                lhs_pr1_wp2(:) )
 
         ! Add terms to lhs
@@ -1792,7 +1792,7 @@ module advance_wp2_wp3_module
   subroutine wp23_rhs( dt, wp2, wp3, a1, a1_zt, a3, a3_zt, wp3_on_wp2, &
                        coef_wp4_implicit, wp4, wpthvp, wp2thvp, um, vm, & 
                        upwp, vpwp, up2, vp2, Kw1, Kw8, Kh_zt, & 
-                       Skw_zt, tau1m, tauw3t, tau_C1_zm, C1_Skw_fnc, &
+                       Skw_zt, invrs_tau1m, invrs_tauw3t, invrs_tau_C1_zm, C1_Skw_fnc, &
                        C11_Skw_fnc, C16_fnc, rho_ds_zm, rho_ds_zt, &
                        invrs_rho_ds_zt, radf, thv_ds_zm, thv_ds_zt, &
                        wp2_splat, wp3_splat, & 
@@ -1915,9 +1915,9 @@ module advance_wp2_wp3_module
       Kw8,               & ! Coefficient of eddy diffusivity for w'^3  [m^2/s]
       Kh_zt,             & ! Eddy diffusivity on thermodynamic levels  [m^2/s]
       Skw_zt,            & ! Skewness of w on thermodynamic levels     [-]
-      tau1m,             & ! Time-scale tau on momentum levels         [s]
-      tauw3t,            & ! Time-scale tau on thermodynamic levels    [s]
-      tau_C1_zm,         & ! Tau values used for the C1 (dp1) term in wp2 [s]
+      invrs_tau1m,       & ! Inverse time-scale tau on momentum levels         [1/s]
+      invrs_tauw3t,      & ! Inverse time-scale tau on thermodynamic levels    [1/s]
+      invrs_tau_C1_zm,   & ! Inverse tau values used for the C1 (dp1) term in wp2 [1/s]
       C1_Skw_fnc,        & ! C_1 parameter with Sk_w applied           [-]
       C11_Skw_fnc,       & ! C_11 parameter with Sk_w applied          [-]
       C16_fnc,           & ! C_16 parameter                            [-]
@@ -2083,14 +2083,14 @@ module advance_wp2_wp3_module
 
         ! Calculate "over-implicit" pressure terms for w'2 and w'3
 
-        call wp2_term_pr1_rhs( C4, up2(:), vp2(:), tau1m(:), &
+        call wp2_term_pr1_rhs( C4, up2(:), vp2(:), invrs_tau1m(:), &
                                rhs_pr1_wp2(:) )
 
         ! Note:  An "over-implicit" weighted time step is applied to the  term.
         !        A weighting factor of greater than 1 may be used to make the
         !        term more numerically stable (see note below for w'^3 RHS
         !        turbulent advection (ta) term).
-        call wp2_term_pr1_lhs( C4, tau1m(:), &
+        call wp2_term_pr1_lhs( C4, invrs_tau1m(:), &
                                lhs_pr1_wp2(:) )
 
         ! Add pressure terms and splat terms
@@ -2118,12 +2118,12 @@ module advance_wp2_wp3_module
                           lhs_tp_wp3(:,:) )
 
     ! Calculate pressure terms 1 for w'^3
-    call wp3_term_pr1_lhs( C8, C8b, tauw3t(:), Skw_zt(:), &
+    call wp3_term_pr1_lhs( C8, C8b, invrs_tauw3t(:), Skw_zt(:), &
                            l_damp_wp3_Skw_squared, &
                            lhs_pr1_wp3(:) )
 
     ! Calculate dissipation terms 1 for w'^2
-    call wp2_term_dp1_lhs( C1_Skw_fnc(:), tau_C1_zm(:), &
+    call wp2_term_dp1_lhs( C1_Skw_fnc(:), invrs_tau_C1_zm(:), &
                            lhs_dp1_wp2(:) )
 
     ! Calculate buoyancy production of w'^2 and w'^2 pressure term 2
@@ -2136,7 +2136,7 @@ module advance_wp2_wp3_module
                            rhs_pr3_wp2(:) )
 
     ! Calculate dissipation terms 1 for w'^2
-    call wp2_term_dp1_rhs( C1_Skw_fnc(:), tau_C1_zm(:), w_tol_sqd, up2(:), vp2(:), &
+    call wp2_term_dp1_rhs( C1_Skw_fnc(:), invrs_tau_C1_zm(:), w_tol_sqd, up2(:), vp2(:), &
                            l_damp_wp2_using_em, &
                            rhs_dp1_wp2(:) )
 
@@ -2145,7 +2145,7 @@ module advance_wp2_wp3_module
                                 rhs_bp1_pr2_wp3(:) )
 
     ! Calculate pressure terms 1 for w'^3
-    call wp3_term_pr1_rhs( C8, C8b, tauw3t(:), Skw_zt(:), wp3(:), &
+    call wp3_term_pr1_rhs( C8, C8b, invrs_tauw3t(:), Skw_zt(:), wp3(:), &
                            l_damp_wp3_Skw_squared, &
                            rhs_pr1_wp3(:) )
 
@@ -2789,7 +2789,7 @@ module advance_wp2_wp3_module
   end subroutine wp2_terms_ac_pr2_lhs
 
   !=============================================================================
-  pure subroutine wp2_term_dp1_lhs( C1_Skw_fnc, tau1m, &
+  pure subroutine wp2_term_dp1_lhs( C1_Skw_fnc, invrs_tau1m, &
                                     lhs_dp1_wp2 )
 
     ! Description:
@@ -2838,7 +2838,7 @@ module advance_wp2_wp3_module
     ! Input Variables
     real( kind = core_rknd ), dimension(gr%nz), intent(in) :: & 
       C1_Skw_fnc, & ! C_1 parameter with Sk_w applied    [-]
-      tau1m         ! Time-scale tau at momentum levels  [s]
+      invrs_tau1m   ! Inverse time-scale tau at momentum levels  [1/s]
 
     ! Return Variable
     real( kind = core_rknd ), dimension(gr%nz), intent(out) :: &
@@ -2855,7 +2855,7 @@ module advance_wp2_wp3_module
     do k = 2, gr%nz-1
 
        ! Momentum main diagonal: [ x wp2(k,<t+1>) ]
-       lhs_dp1_wp2(k) = + C1_Skw_fnc(k) / tau1m(k)
+       lhs_dp1_wp2(k) = + C1_Skw_fnc(k) * invrs_tau1m(k)
 
     enddo ! k = 2, gr%nz-1
 
@@ -2868,7 +2868,7 @@ module advance_wp2_wp3_module
   end subroutine wp2_term_dp1_lhs
 
   !=============================================================================
-  pure subroutine wp2_term_pr1_lhs( C4, tau1m, &
+  pure subroutine wp2_term_pr1_lhs( C4, invrs_tau1m, &
                                     lhs_pr1_wp2 )
 
     ! Description
@@ -2921,7 +2921,7 @@ module advance_wp2_wp3_module
 
     ! Input Variables
     real( kind = core_rknd ), dimension(gr%nz), intent(in) :: & 
-      tau1m    ! Time-scale tau at momentum levels  [s]
+      invrs_tau1m    ! Inverse time-scale tau at momentum levels  [1/s]
 
     real( kind = core_rknd ), intent(in) :: & 
       C4    ! Model parameter C_4                [-]
@@ -2941,7 +2941,7 @@ module advance_wp2_wp3_module
     do k = 2, gr%nz-1
 
         ! Momentum main diagonal: [ x wp2(k,<t+1>) ]
-        lhs_pr1_wp2(k) = + ( two * C4 ) / ( three * tau1m(k) )
+        lhs_pr1_wp2(k) = + ( two * C4 * invrs_tau1m(k) ) / three
     
     enddo ! k = 2, gr%nz-1
 
@@ -3029,7 +3029,7 @@ module advance_wp2_wp3_module
   end subroutine wp2_terms_bp_pr2_rhs
 
   !=============================================================================
-  pure subroutine wp2_term_dp1_rhs( C1_Skw_fnc, tau1m, threshold, up2, vp2, &
+  pure subroutine wp2_term_dp1_rhs( C1_Skw_fnc, invrs_tau1m, threshold, up2, vp2, &
                                     l_damp_wp2_using_em, &
                                     rhs_dp1_wp2 )
 
@@ -3077,10 +3077,10 @@ module advance_wp2_wp3_module
 
     ! Input Variables
     real( kind = core_rknd ), dimension(gr%nz), intent(in) :: & 
-      C1_Skw_fnc, & ! C_1 parameter with Sk_w applied                  [-]
-      tau1m,      & ! Time-scale tau at momentum levels                [s]
-      up2,        & ! Horizontal (east-west) velocity variance, u'^2   [m^2/s^2]
-      vp2           ! Horizontal (north-south) velocity variance, v'^2 [m^2/s^2]
+      C1_Skw_fnc,  & ! C_1 parameter with Sk_w applied                  [-]
+      invrs_tau1m, & ! Inverse time-scale tau at momentum levels        [1/s]
+      up2,         & ! Horizontal (east-west) velocity variance, u'^2   [m^2/s^2]
+      vp2            ! Horizontal (north-south) velocity variance, v'^2 [m^2/s^2]
 
     real( kind = core_rknd ), intent(in) :: & 
       threshold    ! Minimum allowable value of w'^2       [m^2/s^2]
@@ -3104,13 +3104,13 @@ module advance_wp2_wp3_module
     if ( l_damp_wp2_using_em ) then
 
        do k = 2, gr%nz-1
-          rhs_dp1_wp2(k) = - ( C1_Skw_fnc(k) / tau1m(k) ) * ( up2(k) + vp2(k) )
+          rhs_dp1_wp2(k) = - ( C1_Skw_fnc(k) * invrs_tau1m(k) ) * ( up2(k) + vp2(k) )
        enddo ! k = 2, gr%nz-1
 
     else
 
        do k = 2, gr%nz-1
-          rhs_dp1_wp2(k) = + ( C1_Skw_fnc(k) / tau1m(k) ) * threshold
+          rhs_dp1_wp2(k) = + ( C1_Skw_fnc(k) * invrs_tau1m(k) ) * threshold
        enddo ! k = 2, gr%nz-1
 
     endif ! l_damp_wp2_using_em
@@ -3234,7 +3234,7 @@ module advance_wp2_wp3_module
   end subroutine wp2_term_pr3_rhs
 
   !=============================================================================
-  pure subroutine wp2_term_pr1_rhs( C4, up2, vp2, tau1m, &
+  pure subroutine wp2_term_pr1_rhs( C4, up2, vp2, invrs_tau1m, &
                                     rhs_pr1_wp2 )
 
     ! Description:
@@ -3281,9 +3281,9 @@ module advance_wp2_wp3_module
       C4    ! Model parameter C_4                      [-]
 
     real( kind = core_rknd ), dimension(gr%nz), intent(in) :: & 
-      up2,   & ! u'^2(k)                               [m^2/s^2]
-      vp2,   & ! v'^2(k)                               [m^2/s^2]
-      tau1m    ! Time-scale tau at momentum levels     [s]
+      up2,        & ! u'^2(k)                               [m^2/s^2]
+      vp2,        & ! v'^2(k)                               [m^2/s^2]
+      invrs_tau1m   ! Inverse time-scale tau at momentum levels [1/s]
 
     ! Return Variable
     real( kind = core_rknd ), dimension(gr%nz), intent(out) :: &
@@ -3299,7 +3299,7 @@ module advance_wp2_wp3_module
     ! Calculate term at all interior grid levels.
     do k = 2, gr%nz-1
 
-      rhs_pr1_wp2(k) = + ( C4 * ( up2(k) + vp2(k) ) ) / ( three * tau1m(k) )
+      rhs_pr1_wp2(k) = + ( C4 * ( up2(k) + vp2(k) ) * invrs_tau1m(k) ) / three
 
     enddo ! k = 2, gr%nz-1
 
@@ -4004,7 +4004,7 @@ module advance_wp2_wp3_module
   end subroutine wp3_terms_ac_pr2_lhs
 
   !=============================================================================
-  pure subroutine wp3_term_pr1_lhs( C8, C8b, tauw3t, Skw_zt, &
+  pure subroutine wp3_term_pr1_lhs( C8, C8b, invrs_tauw3t, Skw_zt, &
                                     l_damp_wp3_Skw_squared, &
                                     lhs_pr1_wp3 )
 
@@ -4067,8 +4067,8 @@ module advance_wp2_wp3_module
 
     ! Input Variables
     real( kind = core_rknd ), dimension(gr%nz), intent(in) :: & 
-      tauw3t,  & ! Time-scale tau at thermodynamic levels  [s]
-      Skw_zt     ! Skewness of w at thermodynamic levels   [-]
+      invrs_tauw3t,  & ! Inverse time-scale tau at thermodynamic levels  [1/s]
+      Skw_zt           ! Skewness of w at thermodynamic levels   [-]
 
     real( kind = core_rknd ), intent(in) :: & 
       C8,      & ! Model parameter C_8                     [-]
@@ -4096,7 +4096,7 @@ module advance_wp2_wp3_module
 
           ! Thermodynamic main diagonal: [ x wp3(k,<t+1>) ]
           lhs_pr1_wp3(k) &
-          = + ( C8 / tauw3t(k) ) * ( three * C8b * Skw_zt(k)**2 + one )
+          = + ( C8 * invrs_tauw3t(k) ) * ( three * C8b * Skw_zt(k)**2 + one )
 
        enddo ! k = 2, gr%nz-1
 
@@ -4106,7 +4106,7 @@ module advance_wp2_wp3_module
 
           ! Thermodynamic main diagonal: [ x wp3(k,<t+1>) ]
           lhs_pr1_wp3(k) &
-          = + ( C8 / tauw3t(k) ) * ( five * C8b * Skw_zt(k)**4 + one )
+          = + ( C8 * invrs_tauw3t(k) ) * ( five * C8b * Skw_zt(k)**4 + one )
 
        enddo ! k = 2, gr%nz-1
 
@@ -4375,7 +4375,7 @@ module advance_wp2_wp3_module
   end subroutine wp3_term_bp2_rhs
 
   !=============================================================================
-  pure subroutine wp3_term_pr1_rhs( C8, C8b, tauw3t, Skw_zt, wp3, &
+  pure subroutine wp3_term_pr1_rhs( C8, C8b, invrs_tauw3t, Skw_zt, wp3, &
                                     l_damp_wp3_Skw_squared, &
                                     rhs_pr1_wp3 )
 
@@ -4437,9 +4437,9 @@ module advance_wp2_wp3_module
       C8b    ! Model parameter C_8b                       [-]
 
     real( kind = core_rknd ), dimension(gr%nz), intent(in) :: & 
-      tauw3t, & ! Time-scale tau at thermodynamic levels     [s]
-      Skw_zt, & ! Skewness of w at thermodynamic levels      [-]
-      wp3       ! w'^3                                       [m^3/s^3]
+      invrs_tauw3t, & ! Inverse time-scale tau at thermodynamic levels  [1/s]
+      Skw_zt,       & ! Skewness of w at thermodynamic levels      [-]
+      wp3             ! w'^3                                       [m^3/s^3]
 
     logical, intent(in) :: &
       l_damp_wp3_Skw_squared ! Set damping on wp3 to use Skw^2 rather than Skw^4
@@ -4461,7 +4461,7 @@ module advance_wp2_wp3_module
        do k = 2, gr%nz-1
 
           rhs_pr1_wp3(k) &
-          = + ( C8 / tauw3t(k) ) * ( two * C8b * Skw_zt(k)**2 ) * wp3(k)
+          = + ( C8 * invrs_tauw3t(k) ) * ( two * C8b * Skw_zt(k)**2 ) * wp3(k)
 
        enddo ! k = 2, gr%nz-1
 
@@ -4470,7 +4470,7 @@ module advance_wp2_wp3_module
        do k = 2, gr%nz-1
 
           rhs_pr1_wp3(k) &
-          = + ( C8 / tauw3t(k) ) * ( four * C8b * Skw_zt(k)**4 ) * wp3(k)
+          = + ( C8 * invrs_tauw3t(k) ) * ( four * C8b * Skw_zt(k)**4 ) * wp3(k)
 
        enddo ! k = 2, gr%nz-1
 

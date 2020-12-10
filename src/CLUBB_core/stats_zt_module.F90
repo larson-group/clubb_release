@@ -67,6 +67,7 @@ module stats_zt_module
         iLscale_up, &
         iLscale_down, &
         itau_zt, &
+        iinvrs_tau_zt, &
         iKh_zt, &
         iwp2thvp, &
         iwp2rcp, &
@@ -1362,6 +1363,13 @@ module stats_zt_module
         call stat_assign( var_index=itau_zt, var_name="tau_zt", &
              var_description="tau_zt, Dissipation time", var_units="s", l_silhs=.false., &
              grid_kind=stats_zt )
+        k = k + 1
+
+      case ('invrs_tau_zt')
+        iinvrs_tau_zt = k
+        call stat_assign( var_index=iinvrs_tau_zt, var_name="invrs_tau_zt", &
+             var_description="invrs_tau_zt, Inverse of dissipation time", var_units="s^-1", & 
+             l_silhs=.false., grid_kind=stats_zt )
         k = k + 1
 
       case ('Kh_zt')

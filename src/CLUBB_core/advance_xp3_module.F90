@@ -26,11 +26,11 @@ module advance_xp3_module
   contains
 
   !=============================================================================
-  subroutine advance_xp3( dt, rtm, thlm, rtp2, thlp2, wprtp,  & ! Intent(in)
-                          wpthlp, wprtp2, wpthlp2, rho_ds_zm, & ! Intent(in)
-                          invrs_rho_ds_zt, tau_zt,            & ! Intent(in)
-                          sclrm, sclrp2, wpsclrp, wpsclrp2,   & ! Intent(in)
-                          rtp3, thlp3, sclrp3                 ) ! Intent(inout)
+  subroutine advance_xp3( dt, rtm, thlm, rtp2, thlp2, wprtp,         & ! Intent(in)
+                          wpthlp, wprtp2, wpthlp2, rho_ds_zm,        & ! Intent(in)
+                          invrs_rho_ds_zt, invrs_tau_zt, tau_max_zt, & ! Intent(in)
+                          sclrm, sclrp2, wpsclrp, wpsclrp2,          & ! Intent(in)
+                          rtp3, thlp3, sclrp3 )                        ! Intent(inout)
 
     ! Description:
     ! Advance <rt'^3>, <thl'^3>, and <sclr'^3> one model timestep using a
@@ -72,7 +72,8 @@ module advance_xp3_module
       wpthlp2,         & ! <w'thl'^2> (thermodynamic levels)      [m/s K^2]
       rho_ds_zm,       & ! Dry, static density on momentum levels      [kg/m^3]
       invrs_rho_ds_zt, & ! Inv. dry, static density at thermo. levels  [m^3/kg]
-      tau_zt             ! Time-scale tau on thermodynamic levels      [s]
+      invrs_tau_zt,    & ! Inverse time-scale tau on thermodynamic levels [1/s]
+      tau_max_zt         ! Max. allowable eddy dissipation time scale on t-levs[s]
 
     real( kind = core_rknd ), dimension(gr%nz,sclr_dim), intent(in) :: &
       sclrm,    & ! Mean (overall) of sclr (thermo. levels) [sclr units]
@@ -94,21 +95,23 @@ module advance_xp3_module
 
     ! Advance <rt'^3> one model timestep or calculate <rt'^3> using a
     ! steady-state approximation.
-    call advance_xp3_simplified( xp3_rtp3, dt, rtm, & ! Intent(in)
-                                 rtp2, wprtp,       & ! Intent(in)
-                                 wprtp2, rho_ds_zm, & ! Intent(in)
-                                 invrs_rho_ds_zt,   & ! Intent(in)
-                                 tau_zt, rt_tol,    & ! Intent(in)
-                                 rtp3               ) ! Intent(inout)
+    call advance_xp3_simplified( xp3_rtp3, dt, rtm,        & ! Intent(in)
+                                 rtp2, wprtp,              & ! Intent(in)
+                                 wprtp2, rho_ds_zm,        & ! Intent(in)
+                                 invrs_rho_ds_zt,          & ! Intent(in)
+                                 invrs_tau_zt, tau_max_zt, & ! Intent(in) 
+                                 rt_tol,                   & ! Intent(in)
+                                 rtp3               )        ! Intent(inout)
 
     ! Advance <thl'^3> one model timestep or calculate <thl'^3> using a
     ! steady-state approximation.
-    call advance_xp3_simplified( xp3_thlp3, dt, thlm, & ! Intent(in)
-                                 thlp2, wpthlp,       & ! Intent(in)
-                                 wpthlp2, rho_ds_zm,  & ! Intent(in)
-                                 invrs_rho_ds_zt,     & ! Intent(in)
-                                 tau_zt, thl_tol,     & ! Intent(in)
-                                 thlp3                ) ! Intent(inout)
+    call advance_xp3_simplified( xp3_thlp3, dt, thlm,      & ! Intent(in)
+                                 thlp2, wpthlp,            & ! Intent(in)
+                                 wpthlp2, rho_ds_zm,       & ! Intent(in)
+                                 invrs_rho_ds_zt,          & ! Intent(in)
+                                 invrs_tau_zt, tau_max_zt, & ! Intent(in) 
+                                 thl_tol,                  & ! Intent(in)
+                                 thlp3                )      ! Intent(inout)
 
     ! Advance <sclr'^3> one model timestep or calculate <sclr'^3> using a
     ! steady-state approximation.
@@ -118,7 +121,8 @@ module advance_xp3_module
                                     sclrp2(:,i), wpsclrp(:,i),  & ! In
                                     wpsclrp2(:,i), rho_ds_zm,   & ! In
                                     invrs_rho_ds_zt,            & ! In
-                                    tau_zt, sclr_tol(i),        & ! In
+                                    invrs_tau_zt, tau_max_zt,   & ! In 
+                                    sclr_tol(i),                & ! In
                                     sclrp3(:,i)                 ) ! In/Out
 
     enddo ! i = 1, sclr_dim
@@ -129,12 +133,13 @@ module advance_xp3_module
   end subroutine advance_xp3
 
   !=============================================================================
-  subroutine advance_xp3_simplified( solve_type, dt, xm, & ! Intent(in)
-                                     xp2, wpxp,          & ! Intent(in)
-                                     wpxp2, rho_ds_zm,   & ! Intent(in)
-                                     invrs_rho_ds_zt,    & ! Intent(in)
-                                     tau_zt, x_tol,      & ! Intent(in)
-                                     xp3                 ) ! Intent(inout)
+  subroutine advance_xp3_simplified( solve_type, dt, xm,       & ! Intent(in)
+                                     xp2, wpxp,                & ! Intent(in)
+                                     wpxp2, rho_ds_zm,         & ! Intent(in)
+                                     invrs_rho_ds_zt,          & ! Intent(in)
+                                     invrs_tau_zt, tau_max_zt, & ! Intent(in) 
+                                     x_tol,                    & ! Intent(in)
+                                     xp3                 )       ! Intent(inout)
 
     ! Description:
     ! Predicts the value of <x'^3> using a simplified form of the <x'^3>
@@ -280,7 +285,8 @@ module advance_xp3_module
       wpxp2,           & ! <w'x'^2> (thermodynamic levels)      [m/s(x units)^2]
       rho_ds_zm,       & ! Dry, static density on momentum levels      [kg/m^3]
       invrs_rho_ds_zt, & ! Inv. dry, static density at thermo. levels  [m^3/kg]
-      tau_zt             ! Time-scale tau on thermodynamic levels      [s]
+      invrs_tau_zt,    & ! Inverse time-scale tau on thermodynamic levels  [1/s]
+      tau_max_zt         ! Max. allowable eddy dissipation time scale on t-levs[s]
 
     real( kind = core_rknd ), intent(in) :: &
       x_tol    ! Tolerance value of x                           [(x units)]
@@ -373,12 +379,12 @@ module advance_xp3_module
 
          ! Advance <x'^3> one time step.
          xp3(k) = ( ( xp3(k) / dt ) + term_tp(k) + term_ac(k) ) &
-                  / ( ( one / dt ) + ( C_xp3_dissipation / tau_zt(k) ) )
+                  / ( ( one / dt ) + ( C_xp3_dissipation * invrs_tau_zt(k) ) )
 
       else
 
          ! Calculate <x'^3> using the steady-state approximation.
-         xp3(k) = ( tau_zt(k) / C_xp3_dissipation ) &
+         xp3(k) = min( one / invrs_tau_zt(k), tau_max_zt(k) ) * one / C_xp3_dissipation &
                   * ( term_tp(k) + term_ac(k) )
 
       endif ! l_predict_xp3
@@ -393,7 +399,7 @@ module advance_xp3_module
 
        call stat_update_var( ixp3_tp, term_tp, stats_zt )
        call stat_update_var( ixp3_ac, term_ac, stats_zt )
-       call stat_update_var( ixp3_dp, -(C_xp3_dissipation/tau_zt)*xp3, &
+       call stat_update_var( ixp3_dp, -(C_xp3_dissipation * invrs_tau_zt)*xp3, &
                              stats_zt )
 
        if ( l_predict_xp3 ) then

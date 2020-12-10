@@ -42,29 +42,29 @@ module advance_xp2_xpyp_module
   contains
 
   !=============================================================================
-  subroutine advance_xp2_xpyp( tau_xp2_zm, tau_wp2_zm, wm_zm, rtm,     & ! In
-                               wprtp, thlm, wpthlp, wpthvp, um, vm,    & ! In
-                               wp2, wp2_zt, wp3, upwp, vpwp,           & ! In
-                               sigma_sqd_w, Skw_zm, wprtp2, wpthlp2,   & ! In
-                               wprtpthlp, Kh_zt, rtp2_forcing,         & ! In
-                               thlp2_forcing, rtpthlp_forcing,         & ! In
-                               rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm,  & ! In
-                               thv_ds_zm, cloud_frac, Lscale,          & ! In
-                               wp3_on_wp2, wp3_on_wp2_zt,              & ! In
-                               pdf_implicit_coefs_terms,               & ! In
-                               l_iter, dt,                             & ! In
-                               sclrm, wpsclrp,                         & ! In
-                               wpsclrp2, wpsclrprtp, wpsclrpthlp,      & ! In
-                               wp2_splat,                              & ! In
-                               iiPDF_type,                             & ! In
-                               l_predict_upwp_vpwp,                    & ! In
-                               l_min_xp2_from_corr_wx,                 & ! In
-                               l_C2_cloud_frac,                        & ! In
-                               l_upwind_xpyp_ta,                       & ! In
-                               l_single_C2_Skw,                        & ! In
-                               l_lmm_stepping,                     & ! In
-                               rtp2, thlp2, rtpthlp, up2, vp2,         & ! Inout
-                               sclrp2, sclrprtp, sclrpthlp)              ! Inout
+  subroutine advance_xp2_xpyp( invrs_tau_xp2_zm, invrs_tau_wp2_zm, wm_zm, & ! In
+                               rtm, wprtp, thlm, wpthlp, wpthvp, um, vm,  & ! In
+                               wp2, wp2_zt, wp3, upwp, vpwp,              & ! In
+                               sigma_sqd_w, Skw_zm, wprtp2, wpthlp2,      & ! In
+                               wprtpthlp, Kh_zt, rtp2_forcing,            & ! In
+                               thlp2_forcing, rtpthlp_forcing,            & ! In
+                               rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm,     & ! In
+                               thv_ds_zm, cloud_frac, Lscale,             & ! In
+                               wp3_on_wp2, wp3_on_wp2_zt,                 & ! In
+                               pdf_implicit_coefs_terms,                  & ! In
+                               l_iter, dt,                                & ! In
+                               sclrm, wpsclrp,                            & ! In
+                               wpsclrp2, wpsclrprtp, wpsclrpthlp,         & ! In
+                               wp2_splat,                                 & ! In
+                               iiPDF_type,                                & ! In
+                               l_predict_upwp_vpwp,                       & ! In
+                               l_min_xp2_from_corr_wx,                    & ! In
+                               l_C2_cloud_frac,                           & ! In
+                               l_upwind_xpyp_ta,                          & ! In
+                               l_single_C2_Skw,                           & ! In
+                               l_lmm_stepping,                            & ! In
+                               rtp2, thlp2, rtpthlp, up2, vp2,            & ! Inout
+                               sclrp2, sclrprtp, sclrpthlp)                 ! Inout
 
     ! Description:
     ! Prognose scalar variances, scalar covariances, and horizontal turbulence components.
@@ -193,8 +193,8 @@ module advance_xp2_xpyp_module
 
     ! Input variables
     real( kind = core_rknd ), intent(in), dimension(gr%nz) ::  & 
-      tau_xp2_zm,      & ! Time-scale for xp2 on momentum levels [s]
-      tau_wp2_zm,      & ! Time-scale for wp2 (up2, vp2); m-levs [s]
+      invrs_tau_xp2_zm, & ! Inverse time-scale for xp2 on momentum levels [1/s]
+      invrs_tau_wp2_zm, & ! Inverse time-scale for wp2 (up2, vp2); m-levs [1/s]
       wm_zm,           & ! w-wind component on momentum levels   [m/s]
       rtm,             & ! Total water mixing ratio (t-levs)     [kg/kg]
       wprtp,           & ! <w'r_t'> (momentum levels)            [(m/s)(kg/kg)]
@@ -484,9 +484,9 @@ module advance_xp2_xpyp_module
            
        ! All left hand side matricies are equal for rtp2, thlp2, rtpthlp, and scalars.
        ! Thus only one solve is neccesary, using combined right hand sides
-       call solve_xp2_xpyp_with_single_lhs( C2rt_1d, tau_xp2_zm, rtm, thlm, wprtp, wpthlp,  & ! In
-                                            rtp2_forcing, thlp2_forcing, rtpthlp_forcing,   & ! In
-                                            sclrm, wpsclrp,                                 & ! In
+       call solve_xp2_xpyp_with_single_lhs( C2rt_1d, invrs_tau_xp2_zm, rtm, thlm, wprtp,    & ! In
+                                            wpthlp, rtp2_forcing, thlp2_forcing,            & ! In
+                                            rtpthlp_forcing, sclrm, wpsclrp,                & ! In
                                             lhs_ta_wprtp2, lhs_ma, lhs_diff,                & ! In
                                             rhs_ta_wprtp2, rhs_ta_wpthlp2,                  & ! In
                                             rhs_ta_wprtpthlp, rhs_ta_wpsclrp2,              & ! In
@@ -498,7 +498,7 @@ module advance_xp2_xpyp_module
         
         ! Left hand sides are potentially different, this requires multiple solves
         call solve_xp2_xpyp_with_multiple_lhs( C2rt_1d, C2thl_1d, C2rtthl_1d, C2sclr_1d,     & ! In
-                                               tau_xp2_zm, rtm, thlm, wprtp, wpthlp,         & ! In
+                                               invrs_tau_xp2_zm, rtm, thlm, wprtp, wpthlp,   & ! In
                                                rtp2_forcing, thlp2_forcing, rtpthlp_forcing, & ! In
                                                sclrm, wpsclrp,                               & ! In
                                                lhs_ta_wprtp2, lhs_ta_wpthlp2,                & ! In
@@ -541,14 +541,14 @@ module advance_xp2_xpyp_module
        ! Solve for up2
 
        ! Implicit contributions to term up2
-       call xp2_xpyp_lhs( dt, l_iter, tau_wp2_zm, C4_C14_1d, & ! In
+       call xp2_xpyp_lhs( dt, l_iter, invrs_tau_wp2_zm, C4_C14_1d, & ! In
                           lhs_ta_wpup2, lhs_ma, lhs_diff_uv, & ! In
                           lhs ) ! Out
 
        ! Explicit contributions to up2
        call xp2_xpyp_uv_rhs( xp2_xpyp_up2, dt, l_iter, & ! In
                              wp2, wp2_zt, wpthvp, & ! In
-                             Lscale, C4_C14_1d, tau_wp2_zm,  & ! In
+                             Lscale, C4_C14_1d, invrs_tau_wp2_zm,  & ! In
                              um, vm, upwp, vpwp, up2, vp2, & ! In
                              thv_ds_zm, C4, C5, C14, wp2_splat, & ! In
                              lhs_ta_wpup2, rhs_ta_wpup2, & ! In
@@ -572,14 +572,14 @@ module advance_xp2_xpyp_module
        ! Solve for vp2
 
        ! Implicit contributions to term vp2
-       call xp2_xpyp_lhs( dt, l_iter, tau_wp2_zm, C4_C14_1d, & ! In
+       call xp2_xpyp_lhs( dt, l_iter, invrs_tau_wp2_zm, C4_C14_1d, & ! In
                           lhs_ta_wpvp2, lhs_ma, lhs_diff_uv, & ! In
                           lhs ) ! Out
 
        ! Explicit contributions to vp2
        call xp2_xpyp_uv_rhs( xp2_xpyp_vp2, dt, l_iter, & ! In
                              wp2, wp2_zt, wpthvp, & ! In
-                             Lscale, C4_C14_1d, tau_wp2_zm, & ! In
+                             Lscale, C4_C14_1d, invrs_tau_wp2_zm, & ! In
                              vm, um, vpwp, upwp, vp2, up2, & ! In
                              thv_ds_zm, C4, C5, C14, wp2_splat, & ! In
                              lhs_ta_wpvp2, rhs_ta_wpvp2, & ! In
@@ -605,14 +605,14 @@ module advance_xp2_xpyp_module
        ! ADG1 allows up2 and vp2 to use the same LHS.
 
        ! Implicit contributions to term up2/vp2
-       call xp2_xpyp_lhs( dt, l_iter, tau_wp2_zm, C4_C14_1d, & ! In
+       call xp2_xpyp_lhs( dt, l_iter, invrs_tau_wp2_zm, C4_C14_1d, & ! In
                           lhs_ta_wpup2, lhs_ma, lhs_diff_uv, & ! In
                           lhs ) ! Out
 
        ! Explicit contributions to up2
        call xp2_xpyp_uv_rhs( xp2_xpyp_up2, dt, l_iter, & ! In
                              wp2, wp2_zt, wpthvp, & ! In
-                             Lscale, C4_C14_1d, tau_wp2_zm,  & ! In
+                             Lscale, C4_C14_1d, invrs_tau_wp2_zm,  & ! In
                              um, vm, upwp, vpwp, up2, vp2, & ! In
                              thv_ds_zm, C4, C5, C14, wp2_splat, & ! In
                              lhs_ta_wpup2, rhs_ta_wpup2, & ! In
@@ -621,7 +621,7 @@ module advance_xp2_xpyp_module
        ! Explicit contributions to vp2
        call xp2_xpyp_uv_rhs( xp2_xpyp_vp2, dt, l_iter, & ! In
                              wp2, wp2_zt, wpthvp, & ! In
-                             Lscale, C4_C14_1d, tau_wp2_zm,  & ! In
+                             Lscale, C4_C14_1d, invrs_tau_wp2_zm,  & ! In
                              vm, um, vpwp, upwp, vp2, up2, & ! In
                              thv_ds_zm, C4, C5, C14, wp2_splat, & ! In
                              lhs_ta_wpup2, rhs_ta_wpvp2, & ! In
@@ -969,8 +969,8 @@ module advance_xp2_xpyp_module
 
           write(fstderr,*) "Intent(in)"
 
-          write(fstderr,*) "tau_xp2_zm = ", tau_xp2_zm
-          write(fstderr,*) "tau_wp2_zm = ", tau_wp2_zm
+          write(fstderr,*) "invrs_tau_xp2_zm = ", invrs_tau_xp2_zm
+          write(fstderr,*) "invrs_tau_wp2_zm = ", invrs_tau_wp2_zm
           write(fstderr,*) "wm_zm = ", wm_zm
           write(fstderr,*) "rtm = ", rtm
           write(fstderr,*) "wprtp = ", wprtp
@@ -1021,9 +1021,9 @@ module advance_xp2_xpyp_module
   end subroutine advance_xp2_xpyp
   
   !============================================================================================
-  subroutine solve_xp2_xpyp_with_single_lhs( C2x, tau_xp2_zm, rtm, thlm, wprtp, wpthlp, &
-                                             rtp2_forcing, thlp2_forcing, rtpthlp_forcing, &
-                                             sclrm, wpsclrp, &
+  subroutine solve_xp2_xpyp_with_single_lhs( C2x, invrs_tau_xp2_zm, rtm, thlm, wprtp, &
+                                             wpthlp, rtp2_forcing, thlp2_forcing, &
+                                             rtpthlp_forcing, sclrm, wpsclrp, &
                                              lhs_ta, lhs_ma, lhs_diff, &
                                              rhs_ta_wprtp2, rhs_ta_wpthlp2, &
                                              rhs_ta_wprtpthlp, rhs_ta_wpsclrp2, &
@@ -1066,15 +1066,15 @@ module advance_xp2_xpyp_module
       ! -------- Input Variables --------
       
       real( kind = core_rknd ), intent(in), dimension(gr%nz) ::  & 
-        C2x,             &
-        tau_xp2_zm,      & ! Time-scale for xp2 on momentum levels [s]
-        rtm,             & ! Total water mixing ratio (t-levs)     [kg/kg]
-        thlm,            & ! Liquid potential temp. (t-levs)       [K]
-        wprtp,           & ! <w'r_t'> (momentum levels)            [(m/s)(kg/kg)]
-        wpthlp,          & ! <w'th_l'> (momentum levels)           [(m K)/s]
-        rtp2_forcing,    & ! <r_t'^2> forcing (momentum levels)    [(kg/kg)^2/s]
-        thlp2_forcing,   & ! <th_l'^2> forcing (momentum levels)   [K^2/s]
-        rtpthlp_forcing    ! <r_t'th_l'> forcing (momentum levels) [(kg/kg)K/s]
+        C2x,              &
+        invrs_tau_xp2_zm, & ! Inverse time-scale for xp2 on momentum levels [1/s]
+        rtm,              & ! Total water mixing ratio (t-levs)     [kg/kg]
+        thlm,             & ! Liquid potential temp. (t-levs)       [K]
+        wprtp,            & ! <w'r_t'> (momentum levels)            [(m/s)(kg/kg)]
+        wpthlp,           & ! <w'th_l'> (momentum levels)           [(m K)/s]
+        rtp2_forcing,     & ! <r_t'^2> forcing (momentum levels)    [(kg/kg)^2/s]
+        thlp2_forcing,    & ! <th_l'^2> forcing (momentum levels)   [K^2/s]
+        rtpthlp_forcing     ! <r_t'th_l'> forcing (momentum levels) [(kg/kg)K/s]
 
       logical, intent(in) :: &
         l_iter, & ! Whether variances are prognostic
@@ -1137,7 +1137,7 @@ module advance_xp2_xpyp_module
       ! -------- Begin Code --------
       
       ! Calculate lhs matrix
-      call xp2_xpyp_lhs( dt, l_iter, tau_xp2_zm, C2x, & ! In
+      call xp2_xpyp_lhs( dt, l_iter, invrs_tau_xp2_zm, C2x, & ! In
                          lhs_ta, lhs_ma, lhs_diff,    & ! In
                          lhs )                          ! Out
       
@@ -1145,21 +1145,21 @@ module advance_xp2_xpyp_module
       call xp2_xpyp_rhs( xp2_xpyp_rtp2, dt, l_iter,     & ! In
                          wprtp, wprtp,                  & ! In
                          rtm, rtm, rtp2, rtp2_forcing,  & ! In
-                         C2x, tau_xp2_zm, rt_tol**2,    & ! In
+                         C2x, invrs_tau_xp2_zm, rt_tol**2,    & ! In
                          lhs_ta, rhs_ta_wprtp2,         & ! In
                          rhs(:,1) )                       ! Out
                          
       call xp2_xpyp_rhs( xp2_xpyp_thlp2, dt, l_iter,        & ! In
                          wpthlp, wpthlp,                    & ! In
                          thlm, thlm, thlp2, thlp2_forcing,  & ! In
-                         C2x, tau_xp2_zm, thl_tol**2,       & ! In
+                         C2x, invrs_tau_xp2_zm, thl_tol**2,       & ! In
                          lhs_ta, rhs_ta_wpthlp2,            & ! In
                          rhs(:,2) )                           ! Out
      
      call xp2_xpyp_rhs( xp2_xpyp_rtpthlp, dt, l_iter,           & ! In
                         wprtp, wpthlp,                          & ! In
                         rtm, thlm, rtpthlp, rtpthlp_forcing,    & ! In
-                        C2x, tau_xp2_zm, zero_threshold,        & ! In
+                        C2x, invrs_tau_xp2_zm, zero_threshold,        & ! In
                         lhs_ta, rhs_ta_wprtpthlp,               & ! In
                         rhs(:,3) )                                ! Out
      
@@ -1175,7 +1175,7 @@ module advance_xp2_xpyp_module
                             wpsclrp(:,i), wpsclrp(:,i),      & ! In
                             sclrm(:,i), sclrm(:,i),          & ! In
                             sclrp2(:,i), sclrp2_forcing,     & ! In
-                            C2x, tau_xp2_zm, sclr_tol(i)**2, & ! In
+                            C2x, invrs_tau_xp2_zm, sclr_tol(i)**2, & ! In
                             lhs_ta, rhs_ta_wpsclrp2(:,i),    & ! In
                             rhs(:,3+i) )                       ! Out
 
@@ -1195,7 +1195,7 @@ module advance_xp2_xpyp_module
                             wpsclrp(:,i), wprtp,            & ! In
                             sclrm(:,i), rtm, sclrprtp(:,i), & ! In
                             sclrprtp_forcing,               & ! In
-                            C2x, tau_xp2_zm, threshold,     & ! In
+                            C2x, invrs_tau_xp2_zm, threshold,     & ! In
                             lhs_ta, rhs_ta_wprtpsclrp(:,i), & ! In
                             rhs(:,3+i+sclr_dim) )             ! Out
 
@@ -1214,7 +1214,7 @@ module advance_xp2_xpyp_module
                             wpsclrp(:,i), wpthlp,               & ! In
                             sclrm(:,i), thlm, sclrpthlp(:,i),   & ! In
                             sclrpthlp_forcing,                  & ! In
-                            C2x, tau_xp2_zm, threshold,         & ! In
+                            C2x, invrs_tau_xp2_zm, threshold,         & ! In
                             lhs_ta, rhs_ta_wpthlpsclrp(:,i),    & ! In
                             rhs(:,3+i+2*sclr_dim) )               ! Out
 
@@ -1244,7 +1244,7 @@ module advance_xp2_xpyp_module
   
   !============================================================================================
   subroutine solve_xp2_xpyp_with_multiple_lhs( C2rt_1d, C2thl_1d, C2rtthl_1d, C2sclr_1d, &
-                                    tau_xp2_zm, rtm, thlm, wprtp, wpthlp, &
+                                    invrs_tau_xp2_zm, rtm, thlm, wprtp, wpthlp, &
                                     rtp2_forcing, thlp2_forcing, rtpthlp_forcing, &
                                     sclrm, wpsclrp, &
                                     lhs_ta_wprtp2, lhs_ta_wpthlp2, &
@@ -1290,7 +1290,7 @@ module advance_xp2_xpyp_module
       
     real( kind = core_rknd ), intent(in), dimension(gr%nz) ::  & 
       C2rt_1d, C2thl_1d, C2rtthl_1d, C2sclr_1d, &
-      tau_xp2_zm,      & ! Time-scale for xp2 on momentum levels [s]
+      invrs_tau_xp2_zm, & ! Inverse time-scale for xp2 on momentum levels [1/s]
       rtm,             & ! Total water mixing ratio (t-levs)     [kg/kg]
       thlm,            & ! Liquid potential temp. (t-levs)       [K]
       wprtp,           & ! <w'r_t'> (momentum levels)            [(m/s)(kg/kg)]
@@ -1379,14 +1379,14 @@ module advance_xp2_xpyp_module
     !!!!!***** r_t'^2 *****!!!!!
     
     ! Implicit contributions to term rtp2
-    call xp2_xpyp_lhs( dt, l_iter, tau_xp2_zm, C2rt_1d, & ! In
+    call xp2_xpyp_lhs( dt, l_iter, invrs_tau_xp2_zm, C2rt_1d, & ! In
                        lhs_ta_wprtp2, lhs_ma, lhs_diff, & ! In
                        lhs ) ! Out
 
     call xp2_xpyp_rhs( xp2_xpyp_rtp2, dt, l_iter, & ! In
                        wprtp, wprtp, & ! In
                        rtm, rtm, rtp2, rtp2_forcing, & ! In
-                       C2rt_1d, tau_xp2_zm, rt_tol**2, & ! In
+                       C2rt_1d, invrs_tau_xp2_zm, rt_tol**2, & ! In
                        lhs_ta_wprtp2, rhs_ta_wprtp2, & ! In
                        rhs ) ! Out
                          
@@ -1397,7 +1397,7 @@ module advance_xp2_xpyp_module
     !!!!!***** th_l'^2 *****!!!!!
 
     ! Implicit contributions to term thlp2
-    call xp2_xpyp_lhs( dt, l_iter, tau_xp2_zm, C2thl_1d, & ! In
+    call xp2_xpyp_lhs( dt, l_iter, invrs_tau_xp2_zm, C2thl_1d, & ! In
                        lhs_ta_wpthlp2, lhs_ma, lhs_diff, & ! In
                        lhs ) ! Out
 
@@ -1405,7 +1405,7 @@ module advance_xp2_xpyp_module
     call xp2_xpyp_rhs( xp2_xpyp_thlp2, dt, l_iter, & ! In
                        wpthlp, wpthlp, & ! In
                        thlm, thlm, thlp2, thlp2_forcing, & ! In
-                       C2thl_1d, tau_xp2_zm, thl_tol**2, & ! In
+                       C2thl_1d, invrs_tau_xp2_zm, thl_tol**2, & ! In
                        lhs_ta_wpthlp2, rhs_ta_wpthlp2, & ! In
                        rhs ) ! Out
 
@@ -1416,7 +1416,7 @@ module advance_xp2_xpyp_module
     !!!!!***** r_t'th_l' *****!!!!!
 
     ! Implicit contributions to term rtpthlp
-    call xp2_xpyp_lhs( dt, l_iter, tau_xp2_zm, C2rtthl_1d, & ! In
+    call xp2_xpyp_lhs( dt, l_iter, invrs_tau_xp2_zm, C2rtthl_1d, & ! In
                        lhs_ta_wprtpthlp, lhs_ma, lhs_diff, & ! In
                        lhs ) ! Out
 
@@ -1424,7 +1424,7 @@ module advance_xp2_xpyp_module
     call xp2_xpyp_rhs( xp2_xpyp_rtpthlp, dt, l_iter, & ! In
                        wprtp, wpthlp, & ! In
                        rtm, thlm, rtpthlp, rtpthlp_forcing, & ! In
-                       C2rtthl_1d, tau_xp2_zm, zero_threshold, & ! In
+                       C2rtthl_1d, invrs_tau_xp2_zm, zero_threshold, & ! In
                        lhs_ta_wprtpthlp, rhs_ta_wprtpthlp, & ! In
                        rhs ) ! Out
 
@@ -1444,7 +1444,7 @@ module advance_xp2_xpyp_module
           sclrp2_forcing = zero
 
           !!!!!***** sclr'^2 *****!!!!!
-          call xp2_xpyp_lhs( dt, l_iter, tau_xp2_zm, C2sclr_1d, & ! In
+          call xp2_xpyp_lhs( dt, l_iter, invrs_tau_xp2_zm, C2sclr_1d, & ! In
                              lhs_ta_wpsclrp2(:,:,i), lhs_ma, lhs_diff, & ! In
                              lhs ) ! Out
 
@@ -1452,7 +1452,7 @@ module advance_xp2_xpyp_module
                              wpsclrp(:,i), wpsclrp(:,i), & ! In
                              sclrm(:,i), sclrm(:,i), & ! In
                              sclrp2(:,i), sclrp2_forcing, & ! In
-                             C2sclr_1d, tau_xp2_zm, sclr_tol(i)**2, & ! In
+                             C2sclr_1d, invrs_tau_xp2_zm, sclr_tol(i)**2, & ! In
                              lhs_ta_wpsclrp2(:,:,i), rhs_ta_wpsclrp2(:,i), & ! In
                              rhs ) ! Out
 
@@ -1472,7 +1472,7 @@ module advance_xp2_xpyp_module
              threshold = zero_threshold
           endif
           
-          call xp2_xpyp_lhs( dt, l_iter, tau_xp2_zm, C2sclr_1d, & ! In
+          call xp2_xpyp_lhs( dt, l_iter, invrs_tau_xp2_zm, C2sclr_1d, & ! In
                              lhs_ta_wprtpsclrp(:,:,i), lhs_ma, lhs_diff, & ! In
                              lhs ) ! Out
 
@@ -1480,7 +1480,7 @@ module advance_xp2_xpyp_module
                              wpsclrp(:,i), wprtp, & ! In
                              sclrm(:,i), rtm, sclrprtp(:,i), & ! In
                              sclrprtp_forcing, & ! In
-                             C2sclr_1d, tau_xp2_zm, threshold, & ! In
+                             C2sclr_1d, invrs_tau_xp2_zm, threshold, & ! In
                              lhs_ta_wprtpsclrp(:,:,i), rhs_ta_wprtpsclrp(:,i), & ! In
                              rhs ) ! Out
 
@@ -1500,7 +1500,7 @@ module advance_xp2_xpyp_module
              threshold = zero_threshold
           endif
 
-          call xp2_xpyp_lhs( dt, l_iter, tau_xp2_zm, C2sclr_1d, & ! In
+          call xp2_xpyp_lhs( dt, l_iter, invrs_tau_xp2_zm, C2sclr_1d, & ! In
                              lhs_ta_wpthlpsclrp(:,:,i), lhs_ma, lhs_diff, & ! In
                              lhs ) ! Out
 
@@ -1508,7 +1508,7 @@ module advance_xp2_xpyp_module
                              wpsclrp(:,i), wpthlp, & ! In
                              sclrm(:,i), thlm, sclrpthlp(:,i), & ! In
                              sclrpthlp_forcing, & ! In
-                             C2sclr_1d, tau_xp2_zm, threshold, & ! In
+                             C2sclr_1d, invrs_tau_xp2_zm, threshold, & ! In
                              lhs_ta_wpthlpsclrp(:,:,i), rhs_ta_wpthlpsclrp(:,i), & ! In
                              rhs ) ! Out
 
@@ -1528,7 +1528,7 @@ module advance_xp2_xpyp_module
         !!!!!***** sclr'^2, sclr'r_t', sclr'th_l' *****!!!!!
         ! Note:  For ADG1, the LHS arrays are the same for all scalar variables,
         !        and also for <sclr'^2>, <sclr'r_t'>, and <sclr'th_l'>.
-        call xp2_xpyp_lhs( dt, l_iter, tau_xp2_zm, C2sclr_1d, & ! In
+        call xp2_xpyp_lhs( dt, l_iter, invrs_tau_xp2_zm, C2sclr_1d, & ! In
                            lhs_ta_wpsclrp2(:,:,1), lhs_ma, lhs_diff, & ! In
                            lhs ) ! Out
 
@@ -1544,7 +1544,7 @@ module advance_xp2_xpyp_module
                              wpsclrp(:,i), wpsclrp(:,i), & ! In
                              sclrm(:,i), sclrm(:,i), & ! In
                              sclrp2(:,i), sclrp2_forcing, & ! In
-                             C2sclr_1d, tau_xp2_zm, sclr_tol(i)**2, & ! In
+                             C2sclr_1d, invrs_tau_xp2_zm, sclr_tol(i)**2, & ! In
                              lhs_ta_wpsclrp2(:,:,1), rhs_ta_wpsclrp2(:,i), & ! In
                              sclr_rhs(:,i) ) ! Out
 
@@ -1564,7 +1564,7 @@ module advance_xp2_xpyp_module
                              wpsclrp(:,i), wprtp, & ! In
                              sclrm(:,i), rtm, sclrprtp(:,i), & ! In
                              sclrprtp_forcing, & ! In
-                             C2sclr_1d, tau_xp2_zm, threshold, & ! In
+                             C2sclr_1d, invrs_tau_xp2_zm, threshold, & ! In
                              lhs_ta_wpsclrp2(:,:,1), rhs_ta_wprtpsclrp(:,i), & ! In
                              sclr_rhs(:,i+sclr_dim) ) ! Out
 
@@ -1584,7 +1584,7 @@ module advance_xp2_xpyp_module
                              wpsclrp(:,i), wpthlp, & ! In
                              sclrm(:,i), thlm, sclrpthlp(:,i), & ! In
                              sclrpthlp_forcing, & ! In
-                             C2sclr_1d, tau_xp2_zm, threshold, & ! In
+                             C2sclr_1d, invrs_tau_xp2_zm, threshold, & ! In
                              lhs_ta_wpsclrp2(:,:,1), rhs_ta_wpthlpsclrp(:,i), & ! In
                              sclr_rhs(:,i+2*sclr_dim) ) ! Out
 
@@ -1611,7 +1611,7 @@ module advance_xp2_xpyp_module
   end subroutine solve_xp2_xpyp_with_multiple_lhs
 
   !=============================================================================
-  subroutine xp2_xpyp_lhs( dt, l_iter, tau_zm, Cn, & ! In
+  subroutine xp2_xpyp_lhs( dt, l_iter, invrs_tau_zm, Cn, & ! In
                            lhs_ta, lhs_ma, lhs_diff, & ! In
                            lhs ) ! Out
 
@@ -1697,7 +1697,7 @@ module advance_xp2_xpyp_module
      lhs_ta     ! Turbulent advection contributions to lhs
 
     real( kind = core_rknd ), dimension(gr%nz), intent(in) :: & 
-      tau_zm,                  & ! Time-scale tau on momentum levels         [s]
+      invrs_tau_zm,            & ! Inverse time-scale tau on momentum levels [1/s]
       Cn                         ! Coefficient C_n                           [-]
       
     real( kind = core_rknd ), dimension(3,gr%nz), intent(in) :: & 
@@ -1722,7 +1722,7 @@ module advance_xp2_xpyp_module
     ! step is applied to this term (and to pressure term 1 for u'^2 and v'^2).
     ! https://arxiv.org/pdf/1711.03675v1.pdf#nameddest=url:xp2_dp
     do k = 2, gr%nz-1
-        lhs_dp1(k) = term_dp1_lhs( Cn(k), tau_zm(k) ) * gamma_over_implicit_ts
+        lhs_dp1(k) = term_dp1_lhs( Cn(k), invrs_tau_zm(k) ) * gamma_over_implicit_ts
     enddo ! k=2..gr%nz-1
 
 
@@ -2141,7 +2141,7 @@ module advance_xp2_xpyp_module
   !==================================================================================
   subroutine xp2_xpyp_uv_rhs( solve_type, dt, l_iter, & ! In
                               wp2, wp2_zt, wpthvp, & ! In
-                              Lscale, C4_C14_1d, tau_wp2_zm,  & ! In
+                              Lscale, C4_C14_1d, invrs_tau_wp2_zm,  & ! In
                               xam, xbm, wpxap, wpxbp, xap2, xbp2, & ! In
                               thv_ds_zm, C4, C5, C14, wp2_splat, & ! In
                               lhs_ta, rhs_ta, &
@@ -2237,7 +2237,7 @@ module advance_xp2_xpyp_module
       wpthvp,                 & ! w'th_v' (momentum levels)             [K m/s]
       Lscale,                 & ! Mixing Length                             [m]
       C4_C14_1d,              & ! Combination of model params. C_4 and C_14 [-]
-      tau_wp2_zm,             & ! Time-scale for wp2 (up2, vp2) on m-levs.  [s]
+      invrs_tau_wp2_zm,       & ! Inverse time-scale for wp2 (up2, vp2) on m-levs.  [1/s]
       xam,                    & ! x_am (thermodynamic levels)             [m/s]
       xbm,                    & ! x_bm (thermodynamic levels)             [m/s]
       wpxap,                  & ! w'x_a' (momentum levels)            [m^2/s^2]
@@ -2316,12 +2316,12 @@ module advance_xp2_xpyp_module
                                                 wpxap(k), wpxap(k), gr%invrs_dzm(k) )
 
         ! RHS pressure term 1 (pr1) (and dissipation term 1 (dp1)).
-        rhs(k) = rhs(k) + term_pr1( C4, C14, xbp2(k), wp2(k), tau_wp2_zm(k) )
+        rhs(k) = rhs(k) + term_pr1( C4, C14, xbp2(k), wp2(k), invrs_tau_wp2_zm(k) )
 
         ! RHS contribution from "over-implicit" weighted time step
         ! for LHS dissipation term 1 (dp1) and pressure term 1 (pr1).
         rhs(k) = rhs(k) + ( one - gamma_over_implicit_ts ) &
-                        * ( - term_dp1_lhs( C4_C14_1d(k), tau_wp2_zm(k) ) * xap2(k) )
+                        * ( - term_dp1_lhs( C4_C14_1d(k), invrs_tau_wp2_zm(k) ) * xap2(k) )
 
         ! RHS pressure term 2 (pr2).
         rhs(k) = rhs(k) + term_pr2( C5, thv_ds_zm(k), wpthvp(k), wpxap(k), wpxbp(k), &
@@ -2363,14 +2363,14 @@ module advance_xp2_xpyp_module
 
               tmp  &
               = gamma_over_implicit_ts  &
-              * term_dp1_lhs( two_thirds*C4, tau_wp2_zm(k) )
+              * term_dp1_lhs( two_thirds*C4, invrs_tau_wp2_zm(k) )
               zmscr01(k) = -tmp
               call stat_begin_update_pt( ixapxbp_dp1, k, & ! Intent(in)
-                   -term_pr1( C4, zero, xbp2(k), wp2(k), tau_wp2_zm(k) ), & ! Intent(in)
+                   -term_pr1( C4, zero, xbp2(k), wp2(k), invrs_tau_wp2_zm(k) ), & ! Intent(in)
                                          stats_zm )        ! Intent(inout)
 
               tmp  &
-              = term_dp1_lhs( two_thirds*C4, tau_wp2_zm(k) )
+              = term_dp1_lhs( two_thirds*C4, invrs_tau_wp2_zm(k) )
               call stat_modify_pt( ixapxbp_dp1, k, &        ! Intent(in)
                     + ( one - gamma_over_implicit_ts )  &   ! Intent(in)
                     * ( - tmp * xap2(k) ),  &               ! Intent(in)
@@ -2381,14 +2381,14 @@ module advance_xp2_xpyp_module
             if ( ixapxbp_pr1 > 0 ) then
               tmp  &
               = gamma_over_implicit_ts  &
-              * term_dp1_lhs( one_third*C14, tau_wp2_zm(k) )
+              * term_dp1_lhs( one_third*C14, invrs_tau_wp2_zm(k) )
               zmscr11(k) = -tmp
               call stat_begin_update_pt( ixapxbp_pr1, k, & ! Intent(in)  
-                   -term_pr1( zero, C14, xbp2(k), wp2(k), tau_wp2_zm(k) ), &! Intent(in)
+                   -term_pr1( zero, C14, xbp2(k), wp2(k), invrs_tau_wp2_zm(k) ), &! Intent(in)
                                          stats_zm )        ! Intent(inout)
 
               tmp  &
-              = term_dp1_lhs( one_third*C14, tau_wp2_zm(k) )
+              = term_dp1_lhs( one_third*C14, invrs_tau_wp2_zm(k) )
               call stat_modify_pt( ixapxbp_pr1, k, &        ! Intent(in)
                     + ( one - gamma_over_implicit_ts )  &   ! Intent(in)
                     * ( - tmp * xap2(k) ),  &               ! Intent(in)
@@ -2438,7 +2438,7 @@ module advance_xp2_xpyp_module
   subroutine xp2_xpyp_rhs( solve_type, dt, l_iter, & ! In
                            wpxap, wpxbp, & ! In
                            xam, xbm, xapxbp, xpyp_forcing, & ! In
-                           Cn, tau_zm, threshold, & ! In
+                           Cn, invrs_tau_zm, threshold, & ! In
                            lhs_ta, rhs_ta, &
                            rhs ) ! Out
 
@@ -2532,7 +2532,7 @@ module advance_xp2_xpyp_module
       xbm,                     & ! x_bm (thermodynamic levels)     [{x_b units}]
       xapxbp,                  & ! x_a'x_b' (m-levs)          [{x_a un}{x_b un}]
       xpyp_forcing,            & ! <x'y'> forcing (m-levs)      [{x un}{x un}/s]
-      tau_zm,                  & ! Time-scale tau on momentum levels         [s]
+      invrs_tau_zm,            & ! Time-scale tau on momentum levels       [1/s]
       Cn                         ! Coefficient C_n                           [-]
 
     real( kind = core_rknd ), intent(in) :: &
@@ -2620,12 +2620,12 @@ module advance_xp2_xpyp_module
                                  wpxbp(k), wpxap(k), gr%invrs_dzm(k) )
 
       ! RHS dissipation term 1 (dp1)
-      rhs(k) = rhs(k) + term_dp1_rhs( Cn(k), tau_zm(k), threshold )
+      rhs(k) = rhs(k) + term_dp1_rhs( Cn(k), invrs_tau_zm(k), threshold )
 
       ! RHS contribution from "over-implicit" weighted time step
       ! for LHS dissipation term 1 (dp1).
       rhs(k) = rhs(k)  + ( one - gamma_over_implicit_ts ) &
-                       * ( - term_dp1_lhs( Cn(k), tau_zm(k) ) * xapxbp(k) )
+                       * ( - term_dp1_lhs( Cn(k), invrs_tau_zm(k) ) * xapxbp(k) )
     end do
 
     ! RHS <x'y'> forcing.
@@ -2702,7 +2702,7 @@ module advance_xp2_xpyp_module
             ! stat_begin_update_pt.  Since stat_begin_update_pt automatically
             ! subtracts the value sent in, reverse the sign on term_dp1_rhs.
             call stat_begin_update_pt( ixapxbp_dp1, k, &           ! Intent(in)
-                 -term_dp1_rhs( Cn(k), tau_zm(k), threshold ), &   ! Intent(in)
+                 -term_dp1_rhs( Cn(k), invrs_tau_zm(k), threshold ), &   ! Intent(in)
                                        stats_zm )                  ! Intent(inout)
 
             ! Note:  An "over-implicit" weighted time step is applied to this term.
@@ -2710,7 +2710,7 @@ module advance_xp2_xpyp_module
             !        term more numerically stable (see note above for RHS turbulent
             !        advection (ta) term).
             tmp  &
-            = term_dp1_lhs( Cn(k), tau_zm(k) )
+            = term_dp1_lhs( Cn(k), invrs_tau_zm(k) )
             call stat_modify_pt( ixapxbp_dp1, k,  &         ! Intent(in)
                   + ( one - gamma_over_implicit_ts )  &     ! Intent(in)
                   * ( - tmp * xapxbp(k) ),  & ! Intent(in)
@@ -4123,7 +4123,7 @@ module advance_xp2_xpyp_module
   end function term_tp
 
   !=============================================================================
-  pure function term_dp1_lhs( Cn, tau_zm )  & 
+  pure function term_dp1_lhs( Cn, invrs_tau_zm )  & 
   result( lhs )
 
     ! Description:
@@ -4180,21 +4180,21 @@ module advance_xp2_xpyp_module
 
     ! Input Variables
     real( kind = core_rknd ), intent(in) :: & 
-      Cn,    & ! Coefficient C_n                       [-]
-      tau_zm   ! Time-scale tau at momentum levels (k) [s]
+      Cn,          & ! Coefficient C_n                       [-]
+      invrs_tau_zm   ! Inverse time-scale tau at momentum levels (k) [1/s]
 
     ! Return Variable
     real( kind = core_rknd ) :: lhs
 
     ! Momentum main diagonal: [ x xapxbp(k,<t+1>) ]
     lhs  & 
-    = + Cn / tau_zm
+    = + Cn * invrs_tau_zm
 
     return
   end function term_dp1_lhs
 
   !=============================================================================
-  pure function term_dp1_rhs( Cn, tau_zm, threshold ) &
+  pure function term_dp1_rhs( Cn, invrs_tau_zm, threshold ) &
   result( rhs )
 
     ! Description:
@@ -4242,21 +4242,21 @@ module advance_xp2_xpyp_module
 
     ! Input Variables
     real( kind = core_rknd ), intent(in) :: &
-      Cn,       & ! Coefficient C_n                               [-]
-      tau_zm,   & ! Time-scale tau at momentum levels (k)         [s]
-      threshold   ! Minimum allowable magnitude value of x_a'x_b' [units vary]
+      Cn,             & ! Coefficient C_n                               [-]
+      invrs_tau_zm,   & ! Time-scale tau at momentum levels (k)         [1/s]
+      threshold         ! Minimum allowable magnitude value of x_a'x_b' [units vary]
 
     ! Return Variable
     real( kind = core_rknd ) :: rhs
 
     rhs  & 
-    = + ( Cn / tau_zm ) * threshold
+    = + Cn * invrs_tau_zm * threshold
 
     return
   end function term_dp1_rhs
 
   !=============================================================================
-  pure function term_pr1( C4, C14, xbp2, wp2, tau_zm ) & 
+  pure function term_pr1( C4, C14, xbp2, wp2, invrs_tau_zm ) & 
   result( rhs )
 
     ! Description:
@@ -4348,17 +4348,17 @@ module advance_xp2_xpyp_module
 
     ! Input Variables
     real( kind = core_rknd ), intent(in) :: & 
-      C4,    & ! Model parameter C_4                         [-]
-      C14,   & ! Model parameter C_14                        [-]
-      xbp2,  & ! v'^2(k) (if solving for u'^2) or vice versa [m^2/s^2]
-      wp2,   & ! w'^2(k)                                     [m^2/s^2]
-      tau_zm   ! Time-scale tau at momentum levels (k)       [s]
+      C4,          & ! Model parameter C_4                         [-]
+      C14,         & ! Model parameter C_14                        [-]
+      xbp2,        & ! v'^2(k) (if solving for u'^2) or vice versa [m^2/s^2]
+      wp2,         & ! w'^2(k)                                     [m^2/s^2]
+      invrs_tau_zm   ! Time-scale tau at momentum levels (k)       [1/s]
 
     ! Return Variable
     real( kind = core_rknd ) :: rhs
 
-    rhs = + one_third * ( C4 - C14 ) * ( xbp2 + wp2 ) / tau_zm  &
-          + ( C14 / tau_zm ) * w_tol_sqd
+    rhs = + one_third * ( C4 - C14 ) * ( xbp2 + wp2 ) * invrs_tau_zm  &
+          + C14 * invrs_tau_zm * w_tol_sqd
 
     return
   end function term_pr1
