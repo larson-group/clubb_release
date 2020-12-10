@@ -158,7 +158,8 @@ module clubb_api_module
     iup2_vp2_factor, iSkw_max_mag, iC_invrs_tau_bkgnd, &
     iC_invrs_tau_sfc, iC_invrs_tau_shear, iC_invrs_tau_N2, &
     iC_invrs_tau_N2_wp2, iC_invrs_tau_N2_xp2, iC_invrs_tau_N2_wpxp, &
-    iC_invrs_tau_N2_clear_wp3, ialtitude_threshold, irtp2_clip_coef
+    iC_invrs_tau_N2_clear_wp3, ialtitude_threshold, irtp2_clip_coef, &
+    iRichardson_num_min, iRichardson_num_max, iCx_min, iCx_max
 
 
   use pdf_parameter_module, only : &
@@ -169,6 +170,20 @@ module clubb_api_module
 !#endif
     pdf_parameter, &
     implicit_coefs_terms
+
+  use sponge_layer_damping, only : &
+    thlm_sponge_damp_settings,    & ! Variable(s)
+    rtm_sponge_damp_settings,     &
+    uv_sponge_damp_settings,      &
+    wp2_sponge_damp_settings,     &
+    wp3_sponge_damp_settings,     &
+    up2_vp2_sponge_damp_settings, &
+    thlm_sponge_damp_profile,     &
+    rtm_sponge_damp_profile,      &
+    uv_sponge_damp_profile,       &
+    wp2_sponge_damp_profile,      &
+    wp3_sponge_damp_profile,      &
+    up2_vp2_sponge_damp_profile
 
   use stat_file_module, only : &
     clubb_i, &    ! Used to output multiple columns
@@ -255,8 +270,8 @@ module clubb_api_module
         iup2_vp2_factor, iSkw_max_mag, iC_invrs_tau_bkgnd, &
         iC_invrs_tau_sfc, iC_invrs_tau_shear, iC_invrs_tau_N2, &
         iC_invrs_tau_N2_wp2, iC_invrs_tau_N2_xp2, iC_invrs_tau_N2_wpxp, &
-        iC_invrs_tau_N2_clear_wp3, ialtitude_threshold, irtp2_clip_coef
-
+        iC_invrs_tau_N2_clear_wp3, ialtitude_threshold, irtp2_clip_coef, &
+        iRichardson_num_min, iRichardson_num_max, iCx_min, iCx_max
 
 
 
@@ -468,6 +483,22 @@ module clubb_api_module
     set_default_clubb_config_flags_api, &
     initialize_clubb_config_flags_type_api, &
     print_clubb_config_flags_api
+
+  public &
+    thlm_sponge_damp_settings,      & ! Variable(s)
+    rtm_sponge_damp_settings,       &
+    uv_sponge_damp_settings,        &
+    wp2_sponge_damp_settings,       &
+    wp3_sponge_damp_settings,       &
+    up2_vp2_sponge_damp_settings,   &
+    thlm_sponge_damp_profile,       &
+    rtm_sponge_damp_profile,        &
+    uv_sponge_damp_profile,         &
+    wp2_sponge_damp_profile,        &
+    wp3_sponge_damp_profile,        &
+    up2_vp2_sponge_damp_profile,    &
+    initialize_tau_sponge_damp_api, & ! Procedure(s)
+    finalize_tau_sponge_damp_api
 
   interface zt2zm_api
     module procedure zt2zm_scalar_api, zt2zm_prof_api
@@ -2964,5 +2995,54 @@ contains
     call print_clubb_config_flags( iunit, clubb_config_flags ) ! In
 
   end subroutine print_clubb_config_flags_api
+
+  !================================================================================================
+  ! initialize_tau_sponge_damp
+  !================================================================================================
+  subroutine initialize_tau_sponge_damp_api( dt, z, settings, damping_profile )
+
+    use sponge_layer_damping, only: &
+        sponge_damp_settings,       & ! Variable(s)
+        sponge_damp_profile,        &
+        initialize_tau_sponge_damp    ! Procedure(s)
+
+    implicit none
+
+    ! Input Variable(s)
+    real( kind = core_rknd ), intent(in) :: &
+      dt    ! Model Timestep    [s]
+
+    real( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
+      z    ! Height of model grid levels    [m]
+
+    type(sponge_damp_settings), intent(in) :: &
+      settings
+
+    ! Output Variable(s)
+    type(sponge_damp_profile), intent(out) :: &
+      damping_profile
+
+    call initialize_tau_sponge_damp( dt, z, settings, damping_profile )
+
+  end subroutine initialize_tau_sponge_damp_api
+
+  !================================================================================================
+  ! finalize_tau_sponge_damp
+  !================================================================================================
+  subroutine finalize_tau_sponge_damp_api( damping_profile )
+
+    use sponge_layer_damping, only: &
+        sponge_damp_profile,      & ! Variable(s)
+        finalize_tau_sponge_damp    ! Procedure(s)
+
+    implicit none
+
+    ! Input/Output Variable(s)
+    type(sponge_damp_profile), intent(inout) :: &
+      damping_profile ! Information for damping the profile
+
+    call finalize_tau_sponge_damp( damping_profile )
+
+  end subroutine finalize_tau_sponge_damp_api
     
 end module clubb_api_module

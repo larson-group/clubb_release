@@ -1215,8 +1215,9 @@ module advance_clubb_core_module
            brunt_freq_out_cloud = 0.0_core_rknd
         end where
 
-        invrs_tau_zm = 0.5_core_rknd * invrs_tau_no_N2_zm &
-              + C_invrs_tau_N2 * brunt_freq_pos !* (1.0-5.0* cloud_frac*(1.0-cloud_frac)**4 )
+        invrs_tau_zm &
+        = 0.5_core_rknd &
+          * ( invrs_tau_no_N2_zm + C_invrs_tau_N2 * brunt_freq_pos )
 
         invrs_tau_wp2_zm = invrs_tau_no_N2_zm &
               + C_invrs_tau_N2_wp2 * brunt_freq_pos
