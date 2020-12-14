@@ -165,7 +165,7 @@ ARM_97 = {'name': 'arm_97',
           'cam_file': None,
           'sam_file': {'sam': sam_output_root + "/ARM9707_SAM_CLUBB.nc"},
           'wrf_file': None,
-          'var_groups': [VariableGroupBase, VariableGroupLiquidMP, VariableGroupIceMP]}
+          'var_groups': [VariableGroupBase, VariableGroupLiquidMP, VariableGroupIceMP, VariableGroupTaus]}
 
 ASTEX_A209 = {'name': 'astex_a209',
               'description': "",
