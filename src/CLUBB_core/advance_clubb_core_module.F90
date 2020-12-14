@@ -1169,7 +1169,7 @@ module advance_clubb_core_module
 
       else ! l_diag_Lscale_from_tau = .true., diagnose simple tau and Lscale.
 
-        call calc_brunt_vaisala_freq_sqd( thlm, exner, rtm, rcm, p_in_Pa, thvm, &
+        call calc_brunt_vaisala_freq_sqd( zm2zt( zt2zm( thlm )), exner, rtm, rcm, p_in_Pa, thvm, &
                                           ice_supersat_frac, &
                                           clubb_config_flags%l_brunt_vaisala_freq_moist, &
                                           clubb_config_flags%l_use_thvm_in_bv_freq, &

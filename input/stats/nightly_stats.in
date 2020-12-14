@@ -14,7 +14,7 @@ vars_zt =
 vars_zm =
 'wp2', 'rtp2', 'thlp2', 'rtpthlp', 'wprtp', 'wpthlp', 'tau_zm',
 'upwp', 'vpwp', 'up2', 'vp2', 'rcp2', 'wp4', 'wpthvp', 'wprcp', 'rc_coef_zm',
-'thlpthvp', 'thlprcp', 'rtpthvp', 'rtprcp', 'wphydrometp',
+'thlpthvp', 'thlprcp', 'rtpthvp', 'rtprcp', 'wphydrometp', 'bv_freq_sqd',
 ''
 
 vars_sfc =

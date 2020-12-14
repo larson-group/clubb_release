@@ -25,7 +25,8 @@ def initializeProgress(image_extension, movie_extension):
     """Prints the initial progress indicator, updated later"""
     print("Running...\n" + "----------\n" +
           "NOTE: If processing multiple cases (ARM, BOMEX, etc.) with multithreading,\n"+
-          "the percent completed may fall as threads complete and begin processing new cases.\n" +
+          "the total number of panels to be processed may increase as threads complete\n"+
+          "and begin processing new cases.\n" +
           "----------")
     if movie_extension is not None:
         movie_extension = "."+movie_extension

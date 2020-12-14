@@ -782,7 +782,6 @@ def __processArguments__():
 
 
 # Added to track progress with multithreading
-total_progress_counter = [0,0]
 def tpc_init(x):
     global total_progress_counter
     total_progress_counter = x

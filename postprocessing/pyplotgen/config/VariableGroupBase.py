@@ -423,6 +423,19 @@ class VariableGroupBase(VariableGroup):
             },
             {'var_names':
                 {
+                'clubb': ['bv_freq_sqd'],
+                'sam': ['BV_FREQ_SQD'],
+                'coamps': ['bv_freq_sqd'],
+                'r408': ['bv_freq_sqd'],
+                'hoc': ['bv_freq_sqd'],
+                'e3sm': ['bv_freq_sqd'],
+                'cam': ['bv_freq_sqd'],
+                'wrf': ['bv_freq_sqd'],
+                },
+             'sci_scale': 0,
+            },
+            {'var_names':
+                {
                     'clubb': ['wpthvp'],
                     'sam': [self.getWpthvpSamCalc,'WPTHVP'],
                     'coamps': ['wpthvp'],

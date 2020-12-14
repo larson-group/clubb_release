@@ -54,7 +54,7 @@ ARCHIVED_CLUBB_LINE_THICKNESS = 4
 E3SM_LINE_THICKNESS = 4
 THIN_LINE_THICKNESS = 1  # Used if --thin-lines is passed, overrides every other size
 # These are used when pyplotgen is oscillating between flat/dashed lines
-FLAT_LINE_THICKNESS = 2
+FLAT_LINE_THICKNESS = 3
 DASHED_LINE_THICKNESS = 5
 
 # Line Labels
