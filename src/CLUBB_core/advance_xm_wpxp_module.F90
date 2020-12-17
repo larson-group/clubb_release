@@ -442,7 +442,7 @@ module advance_xm_wpxp_module
           upwp_old = upwp
           vm_old = vm
           vpwp_old = vpwp
-    endif ! l_predict_upwp_vpwp
+       endif ! l_predict_upwp_vpwp
     endif ! l_lmm_stepping
 
     if ( .not. l_diag_Lscale_from_tau ) then
