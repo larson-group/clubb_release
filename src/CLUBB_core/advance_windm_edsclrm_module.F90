@@ -40,6 +40,7 @@ module advance_windm_edsclrm_module
                l_upwind_xm_ma, &
                l_uv_nudge, &
                l_tke_aniso, &
+               l_lmm_stepping, &
                um, vm, edsclrm, &
                upwp, vpwp, wpedsclrp )
 
@@ -154,8 +155,9 @@ module advance_windm_edsclrm_module
                              ! approximation rather than a centered differencing for turbulent or
                              ! mean advection terms. It affects rtm, thlm, sclrm, um and vm.
       l_uv_nudge,          & ! For wind speed nudging
-      l_tke_aniso            ! For anisotropic turbulent kinetic energy, i.e. TKE = 1/2
+      l_tke_aniso,         & ! For anisotropic turbulent kinetic energy, i.e. TKE = 1/2
                              ! (u'^2 + v'^2 + w'^2)
+      l_lmm_stepping         ! Apply Linear Multistep Method (LMM) Stepping
 
     ! Input/Output Variables
     real( kind = core_rknd ), dimension(gr%nz), intent(inout) ::  &
@@ -173,6 +175,13 @@ module advance_windm_edsclrm_module
       wpedsclrp      ! w'edsclr' (momentum levels)           [m/s {units vary}]
 
     ! Local Variables
+    real( kind = core_rknd ), dimension(gr%nz) ::  &
+      um_old, & ! Saved value of mean u (west-to-east) wind component    [m/s]
+      vm_old    ! Saved value of Mean v (south-to-north) wind component  [m/s]
+
+    real( kind = core_rknd ), dimension(gr%nz,edsclr_dim) ::  &
+      edsclrm_old    ! Saved value of mean eddy scalar quantity   [units vary]
+
     real( kind = core_rknd ), dimension(gr%nz) ::  &
       um_tndcy,    & ! u wind component tendency                    [m/s^2]
       vm_tndcy       ! v wind component tendency                    [m/s^2]
@@ -208,6 +217,11 @@ module advance_windm_edsclrm_module
     dummy_nu = 0._core_rknd
 
     if ( .not. l_predict_upwp_vpwp ) then
+
+       if ( l_lmm_stepping ) then
+          um_old = um
+          vm_old = vm
+       endif ! l_lmm_stepping
 
        !----------------------------------------------------------------
        ! Prepare tridiagonal system for horizontal winds, um and vm
@@ -331,6 +345,10 @@ module advance_windm_edsclrm_module
        um(1) = um(2)
        vm(1) = vm(2)
 
+       if ( l_lmm_stepping ) then
+          um = one_half * ( um_old + um )
+          vm = one_half * ( vm_old + vm )
+       endif ! l_lmm_stepping ) then
 
        if ( uv_sponge_damp_settings%l_sponge_damping ) then
 
@@ -463,6 +481,10 @@ module advance_windm_edsclrm_module
 
     if ( edsclr_dim > 0 ) then
 
+      if ( l_lmm_stepping ) then
+         edsclrm_old = edsclrm
+      endif ! l_lmm_stepping
+
       ! Eddy-scalar surface fluxes, x'w'|_sfc, are applied through an explicit
       ! method.
       l_imp_sfc_momentum_flux = .false.
@@ -535,6 +557,10 @@ module advance_windm_edsclrm_module
         edsclrm(1,i) = edsclrm(2,i)
       end forall
 
+      if ( l_lmm_stepping ) then
+         edsclrm = one_half * ( edsclrm_old + edsclrm )
+      endif ! l_lmm_stepping
+
       ! Second part of momentum (implicit component)
 
       ! Solve for x'w' at all intermediate model levels.
@@ -579,9 +605,15 @@ module advance_windm_edsclrm_module
 
           write(fstderr,*) "Intent(inout)"
 
+          if ( l_lmm_stepping ) &
+             write(fstderr,*) "um (pre-solve) = ", um_old
           write(fstderr,*) "um = ", um
+          if ( l_lmm_stepping ) &
+             write(fstderr,*) "vm (pre-solve) = ", vm_old
           write(fstderr,*) "vm = ", vm
           do i = 1, edsclr_dim
+            if ( l_lmm_stepping ) &
+               write(fstderr,*) "edsclrm (pre-solve) # ", i, "=", edsclrm_old(:,i)
             write(fstderr,*) "edsclrm # ", i, "=", edsclrm(:,i)
           end do
           write(fstderr,*) "upwp = ", upwp

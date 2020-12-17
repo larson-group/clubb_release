@@ -279,17 +279,23 @@ module advance_xp2_xpyp_module
       up2,     & ! <u'^2>                        [m^2/s^2]
       vp2        ! <v'^2>                        [m^2/s^2]
 
-    real( kind = core_rknd ), dimension(gr%nz) ::  &
-      rtp2_old,    & ! <r_t'^2>                  [(kg/kg)^2]
-      thlp2_old,   & ! <th_l'^2>                 [K^2]
-      up2_old,     & ! <u'^2>                    [m^2/s^2]
-      vp2_old        ! <v'^2>                    [m^2/s^2]
-
     ! Passive scalar output
     real( kind = core_rknd ), intent(inout), dimension(gr%nz, sclr_dim) ::  & 
       sclrp2, sclrprtp, sclrpthlp
 
     ! Local Variables
+    real( kind = core_rknd ), dimension(gr%nz) ::  &
+      rtp2_old,    & ! Saved value of <r_t'^2>         [(kg/kg)^2]
+      thlp2_old,   & ! Saved value of <th_l'^2>        [K^2]
+      rtpthlp_old, & ! Saved value of <r_t'th_l'>      [(kg K)/kg]
+      up2_old,     & ! Saved value of <u'^2>           [m^2/s^2]
+      vp2_old        ! Saved value of <v'^2>           [m^2/s^2]
+
+    real( kind = core_rknd ), dimension(gr%nz, sclr_dim) ::  & 
+      sclrp2_old,    & ! Saved value of <sclr'^2>     [units vary]
+      sclrprtp_old,  & ! Saved value of <sclr'rt'>    [units vary]
+      sclrpthlp_old    ! Saved value of <sclr'thl'>   [units vary]
+
     real( kind = core_rknd ), dimension(gr%nz) :: & 
       C2sclr_1d, C2rt_1d, C2thl_1d, C2rtthl_1d, &
       C4_C14_1d     ! Parameters C4 and C14 combined for simplicity
@@ -446,9 +452,17 @@ module advance_xp2_xpyp_module
       Kw9(k) = c_K9 * Kh_zt(k)
 
     enddo
-   
-    thlp2_old = thlp2
-    rtp2_old = rtp2
+
+    if ( l_lmm_stepping ) then
+       thlp2_old = thlp2
+       rtp2_old = rtp2
+       rtpthlp_old = rtpthlp
+       if ( sclr_dim > 0 ) then
+          sclrp2_old = sclrp2
+          sclrprtp_old = sclrprtp
+          sclrpthlp_old = sclrpthlp
+       endif ! sclr_dim > 0
+    endif ! l_lmm_stepping
  
     ! Calculate all the explicit and implicit turbulent advection terms 
     call calc_xp2_xpyp_ta_terms( wprtp, wprtp2, wpthlp, wpthlp2, wprtpthlp,          & ! In
@@ -514,9 +528,15 @@ module advance_xp2_xpyp_module
     end if
 
     if ( l_lmm_stepping ) then
-      thlp2 = one_half * ( thlp2_old + thlp2 )
-      rtp2 = one_half * ( rtp2_old + rtp2 )   
-    end if
+       thlp2 = one_half * ( thlp2_old + thlp2 )
+       rtp2 = one_half * ( rtp2_old + rtp2 )
+       rtpthlp = one_half * ( rtpthlp_old + rtpthlp )
+       if ( sclr_dim > 0 ) then
+          sclrp2 = one_half * ( sclrp2_old + sclrp2 )
+          sclrprtp = one_half * ( sclrprtp_old + sclrprtp )
+          sclrpthlp = one_half * ( sclrpthlp_old + sclrpthlp )
+       endif ! sclr_dim > 0
+    endif ! l_lmm_stepping
  
     if ( l_stats_samp ) then
       call xp2_xpyp_implicit_stats( xp2_xpyp_rtp2, rtp2 ) ! Intent(in)
@@ -531,8 +551,10 @@ module advance_xp2_xpyp_module
                            gr%invrs_dzt(:), gr%invrs_dzm(:), & ! In
                            lhs_diff_uv(:,:)                  ) ! Out
 
-    up2_old = up2
-    vp2_old = vp2
+    if ( l_lmm_stepping ) then
+       up2_old = up2
+       vp2_old = vp2
+    endif ! l_lmm_stepping
 
     if ( iiPDF_type == iiPDF_new_hybrid ) then
 
@@ -1002,15 +1024,31 @@ module advance_xp2_xpyp_module
 
           write(fstderr,*) "Intent(In/Out)"
 
+          if ( l_lmm_stepping ) &
+             write(fstderr,*) "rtp2 (pre-solve) = ", rtp2_old
           write(fstderr,*) "rtp2 = ", rtp2
+          if ( l_lmm_stepping ) &
+             write(fstderr,*) "thlp2 (pre-solve) = ", thlp2_old
           write(fstderr,*) "thlp2 = ", thlp2
+          if ( l_lmm_stepping ) &
+             write(fstderr,*) "rtpthlp (pre-solve) = ", rtpthlp_old
           write(fstderr,*) "rtpthlp = ", rtpthlp
+          if ( l_lmm_stepping ) &
+             write(fstderr,*) "up2 (pre-solve) = ", up2_old
           write(fstderr,*) "up2 = ", up2
+          if ( l_lmm_stepping ) &
+             write(fstderr,*) "vp2 (pre-solve) = ", vp2_old
           write(fstderr,*) "vp2 = ", vp2
 
           do i = 1, sclr_dim
+            if ( l_lmm_stepping ) &
+               write(fstderr,*) "sclrp2 (pre-solve) = ", i, sclrp2_old(:,i)
             write(fstderr,*) "sclrp2 = ", i, sclrp2(:,i)
+            if ( l_lmm_stepping ) &
+               write(fstderr,*) "sclrprtp (pre-solve) = ", i, sclrprtp_old(:,i)
             write(fstderr,*) "sclrprtp = ", i, sclrprtp(:,i)
+            if ( l_lmm_stepping ) &
+               write(fstderr,*) "sclrthlp (pre-solve) = ", i, sclrpthlp_old(:,i)
             write(fstderr,*) "sclrthlp = ", i, sclrpthlp(:,i)
           enddo
 

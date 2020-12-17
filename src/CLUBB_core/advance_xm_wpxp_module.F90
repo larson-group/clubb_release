@@ -358,7 +358,8 @@ module advance_xm_wpxp_module
 
     ! Input/Output Variables
     real( kind = core_rknd ), dimension(gr%nz,sclr_dim) ::  & 
-      sclrm_old, wpsclrp_old !                  [Units vary]
+      sclrm_old,   & ! Saved value of sclr      [units vary]
+      wpsclrp_old    ! Saved value of wpsclrp   [units vary]
 
     ! Variables used to predict <u> and <u'w'>, as well as <v> and <v'w'>.
     real( kind = core_rknd ), dimension(gr%nz) ::  & 
@@ -427,20 +428,22 @@ module advance_xm_wpxp_module
     endif
 
     ! Save values of predictive fields to be printed in case of crash.
-    rtm_old = rtm
-    wprtp_old = wprtp
-    thlm_old = thlm
-    wpthlp_old = wpthlp
-    if ( sclr_dim > 0 ) then
-       sclrm_old = sclrm
-       wpsclrp_old = wpsclrp
-    endif ! sclr_dim > 0
-    if ( l_predict_upwp_vpwp ) then
-       um_old = um
-       upwp_old = upwp
-       vm_old = vm
-       vpwp_old = vpwp
+    if ( l_lmm_stepping ) then
+       rtm_old = rtm
+       wprtp_old = wprtp
+       thlm_old = thlm
+       wpthlp_old = wpthlp
+       if ( sclr_dim > 0 ) then
+          sclrm_old = sclrm
+          wpsclrp_old = wpsclrp
+       endif ! sclr_dim > 0
+       if ( l_predict_upwp_vpwp ) then
+          um_old = um
+          upwp_old = upwp
+          vm_old = vm
+          vpwp_old = vpwp
     endif ! l_predict_upwp_vpwp
+    endif ! l_lmm_stepping
 
     if ( .not. l_diag_Lscale_from_tau ) then
 
@@ -625,11 +628,15 @@ module advance_xm_wpxp_module
     if ( l_lmm_stepping ) then
       thlm = one_half * ( thlm_old + thlm )
       rtm = one_half * ( rtm_old + rtm )
-      um = one_half * ( um_old + um )
-      vm = one_half * ( vm_old + vm )
       wpthlp = one_half * ( wpthlp_old + wpthlp ) 
       wprtp = one_half * ( wprtp_old + wprtp )
+      if ( sclr_dim > 0 ) then
+         sclrm = one_half * ( sclrm_old + sclrm )
+         wpsclrp = one_half * ( wpsclrp_old + wpsclrp )
+      endif ! sclr_dim > 0
       if ( l_predict_upwp_vpwp ) then
+        um = one_half * ( um_old + um )
+        vm = one_half * ( vm_old + vm )
         upwp = one_half * ( upwp_old + upwp )
         vpwp = one_half * ( vpwp_old + vpwp )    
       end if ! l_predict_upwp_vpwp 
@@ -661,7 +668,7 @@ module advance_xm_wpxp_module
                                    wprtp_old, thlm_old, wpthlp_old, &
                                    sclrm_old, wpsclrp_old, um_old, &
                                    upwp_old, vm_old, vpwp_old, &
-                                   l_predict_upwp_vpwp )
+                                   l_predict_upwp_vpwp, l_lmm_stepping )
       end if
     end if
 
@@ -4758,7 +4765,7 @@ module advance_xm_wpxp_module
                                    rtm_old, wprtp_old, thlm_old, &
                                    wpthlp_old, sclrm_old, wpsclrp_old, &
                                    um_old, upwp_old, vm_old, vpwp_old, &
-                                   l_predict_upwp_vpwp )
+                                   l_predict_upwp_vpwp, l_lmm_stepping )
 
     ! Description:
     ! Prints values of model fields when fatal errors (LU decomp.) occur.
@@ -4893,7 +4900,8 @@ module advance_xm_wpxp_module
 
     ! Input/Output Variables
     real( kind = core_rknd ), dimension(gr%nz,sclr_dim), intent(in) ::  & 
-      sclrm_old, wpsclrp_old !                  [Units vary]
+      sclrm_old,   & ! Saved value of sclrm     [units vary]
+      wpsclrp_old    ! Saved value of wpsclrp   [units vary]
 
     ! Variables used to predict <u> and <u'w'>, as well as <v> and <v'w'>.
     real( kind = core_rknd ), dimension(gr%nz), intent(in) ::  & 
@@ -4903,11 +4911,14 @@ module advance_xm_wpxp_module
       vpwp_old    ! Saved value of <v'w'>    [m^2/s^2]
 
     logical, intent(in) :: &
-      l_predict_upwp_vpwp ! Flag to predict <u'w'> and <v'w'> along with <u> and <v> alongside the
-                          ! advancement of <rt>, <w'rt'>, <thl>, <wpthlp>, <sclr>, and <w'sclr'> in
-                          ! subroutine advance_xm_wpxp.  Otherwise, <u'w'> and <v'w'> are still
-                          ! approximated by eddy diffusivity when <u> and <v> are advanced in
-                          ! subroutine advance_windm_edsclrm.
+      l_predict_upwp_vpwp, & ! Flag to predict <u'w'> and <v'w'> along with <u>
+                             ! and <v> alongside the advancement of <rt>,
+                             ! <w'rt'>, <thl>, <wpthlp>, <sclr>, and <w'sclr'>
+                             ! in subroutine advance_xm_wpxp.  Otherwise, <u'w'>
+                             ! and <v'w'> are still approximated by eddy
+                             ! diffusivity when <u> and <v> are advanced in
+                             ! subroutine advance_windm_edsclrm.
+      l_lmm_stepping         ! Apply Linear Multistep Method (LMM) Stepping
 
 
     write(fstderr,*) "Error in advance_xm_wpxp", new_line('c')
@@ -5013,30 +5024,40 @@ module advance_xm_wpxp_module
 
     write(fstderr,*) "Intent(inout)", new_line('c')
      
-    write(fstderr,*) "rtm (pre-solve) = ", rtm_old, new_line('c')
+    if ( l_lmm_stepping ) &
+       write(fstderr,*) "rtm (pre-solve) = ", rtm_old, new_line('c')
     write(fstderr,*) "rtm = ", rtm, new_line('c')
-    write(fstderr,*) "wprtp (pre-solve) = ", wprtp_old, new_line('c')
+    if ( l_lmm_stepping )  &
+       write(fstderr,*) "wprtp (pre-solve) = ", wprtp_old, new_line('c')
     write(fstderr,*) "wprtp = ", wprtp, new_line('c')
-    write(fstderr,*) "thlm (pre-solve) = ", thlm_old, new_line('c')
+    if ( l_lmm_stepping ) &
+       write(fstderr,*) "thlm (pre-solve) = ", thlm_old, new_line('c')
     write(fstderr,*) "thlm = ", thlm, new_line('c')
-    write(fstderr,*) "wpthlp (pre-solve) =", wpthlp_old, new_line('c')
+    if ( l_lmm_stepping ) &
+       write(fstderr,*) "wpthlp (pre-solve) =", wpthlp_old, new_line('c')
     write(fstderr,*) "wpthlp =", wpthlp, new_line('c')
 
     if ( sclr_dim > 0 )  then
-       write(fstderr,*) "sclrm (pre-solve) = ", sclrm_old, new_line('c')
+       if ( l_lmm_stepping ) &
+          write(fstderr,*) "sclrm (pre-solve) = ", sclrm_old, new_line('c')
        write(fstderr,*) "sclrm = ", sclrm, new_line('c')
-       write(fstderr,*) "wpsclrp (pre-solve) = ", wpsclrp_old, new_line('c')
+       if ( l_lmm_stepping ) &
+          write(fstderr,*) "wpsclrp (pre-solve) = ", wpsclrp_old, new_line('c')
        write(fstderr,*) "wpsclrp = ", wpsclrp, new_line('c')
     endif
 
     if ( l_predict_upwp_vpwp ) then
-       write(fstderr,*) "um (pre-solve) = ", um_old, new_line('c')
+       if ( l_lmm_stepping ) &
+          write(fstderr,*) "um (pre-solve) = ", um_old, new_line('c')
        write(fstderr,*) "um = ", um, new_line('c')
-       write(fstderr,*) "upwp (pre-solve) = ",  upwp_old, new_line('c')
+       if ( l_lmm_stepping ) &
+          write(fstderr,*) "upwp (pre-solve) = ",  upwp_old, new_line('c')
        write(fstderr,*) "upwp = ",  upwp, new_line('c')
-       write(fstderr,*) "vm (pre-solve) = ", vm_old, new_line('c')
+       if ( l_lmm_stepping ) &
+          write(fstderr,*) "vm (pre-solve) = ", vm_old, new_line('c')
        write(fstderr,*) "vm = ", vm, new_line('c')
-       write(fstderr,*) "vpwp (pre-solve) = ",  vpwp_old, new_line('c')
+       if ( l_lmm_stepping ) &
+          write(fstderr,*) "vpwp (pre-solve) = ",  vpwp_old, new_line('c')
        write(fstderr,*) "vpwp = ",  vpwp, new_line('c')
     endif ! l_predict_upwp_vpwp
 

@@ -1696,6 +1696,7 @@ module advance_clubb_core_module
                            wpthlp, wprtp2, wpthlp2, rho_ds_zm,         & ! Intent(in)
                            invrs_rho_ds_zt, invrs_tau_zt, tau_max_zt,  & ! Intent(in)
                            sclrm, sclrp2, wpsclrp, wpsclrp2,           & ! Intent(in)
+                           clubb_config_flags%l_lmm_stepping,          & ! intent(in)
                            rtp3, thlp3, sclrp3 )                         ! Intent(inout)
 
          ! Use a modified form of the Larson and Golaz (2005) ansatz for the
@@ -1866,6 +1867,7 @@ module advance_clubb_core_module
                                   clubb_config_flags%l_upwind_xm_ma,            & ! intent(in)
                                   clubb_config_flags%l_uv_nudge,                & ! intent(in)
                                   clubb_config_flags%l_tke_aniso,               & ! intent(in)
+                                  clubb_config_flags%l_lmm_stepping,            & ! intent(in)
                                   um, vm, edsclrm,                              & ! intent(inout)
                                   upwp, vpwp, wpedsclrp )                         ! intent(inout)
 

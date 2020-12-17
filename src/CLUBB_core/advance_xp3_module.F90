@@ -30,6 +30,7 @@ module advance_xp3_module
                           wpthlp, wprtp2, wpthlp2, rho_ds_zm,        & ! Intent(in)
                           invrs_rho_ds_zt, invrs_tau_zt, tau_max_zt, & ! Intent(in)
                           sclrm, sclrp2, wpsclrp, wpsclrp2,          & ! Intent(in)
+                          l_lmm_stepping,                            & ! Intent(in)
                           rtp3, thlp3, sclrp3 )                        ! Intent(inout)
 
     ! Description:
@@ -81,6 +82,9 @@ module advance_xp3_module
       wpsclrp,  & ! Turbulent flux of sclr (momentum levs.) [m/s(sclr units)]
       wpsclrp2    ! <w'sclr'^2> (thermodynamic levels)      [m/s(sclr units)^2]
 
+    logical, intent(in) :: &
+      l_lmm_stepping    ! Apply Linear Multistep Method (LMM) Stepping
+
     ! Input/Output Variables
     real( kind = core_rknd ), dimension(gr%nz), intent(inout) :: &
       rtp3,  & ! <rt'^3> (thermodynamic levels)     [kg^3/kg^3]
@@ -100,8 +104,8 @@ module advance_xp3_module
                                  wprtp2, rho_ds_zm,        & ! Intent(in)
                                  invrs_rho_ds_zt,          & ! Intent(in)
                                  invrs_tau_zt, tau_max_zt, & ! Intent(in) 
-                                 rt_tol,                   & ! Intent(in)
-                                 rtp3               )        ! Intent(inout)
+                                 rt_tol, l_lmm_stepping,   & ! Intent(in)
+                                 rtp3                      ) ! Intent(inout)
 
     ! Advance <thl'^3> one model timestep or calculate <thl'^3> using a
     ! steady-state approximation.
@@ -110,20 +114,20 @@ module advance_xp3_module
                                  wpthlp2, rho_ds_zm,       & ! Intent(in)
                                  invrs_rho_ds_zt,          & ! Intent(in)
                                  invrs_tau_zt, tau_max_zt, & ! Intent(in) 
-                                 thl_tol,                  & ! Intent(in)
-                                 thlp3                )      ! Intent(inout)
+                                 thl_tol, l_lmm_stepping,  & ! Intent(in)
+                                 thlp3                     ) ! Intent(inout)
 
     ! Advance <sclr'^3> one model timestep or calculate <sclr'^3> using a
     ! steady-state approximation.
     do i = 1, sclr_dim, 1
 
-       call advance_xp3_simplified( xp3_sclrp3, dt, sclrm(:,i), & ! In
-                                    sclrp2(:,i), wpsclrp(:,i),  & ! In
-                                    wpsclrp2(:,i), rho_ds_zm,   & ! In
-                                    invrs_rho_ds_zt,            & ! In
-                                    invrs_tau_zt, tau_max_zt,   & ! In 
-                                    sclr_tol(i),                & ! In
-                                    sclrp3(:,i)                 ) ! In/Out
+       call advance_xp3_simplified( xp3_sclrp3, dt, sclrm(:,i),  & ! In
+                                    sclrp2(:,i), wpsclrp(:,i),   & ! In
+                                    wpsclrp2(:,i), rho_ds_zm,    & ! In
+                                    invrs_rho_ds_zt,             & ! In
+                                    invrs_tau_zt, tau_max_zt,    & ! In 
+                                    sclr_tol(i), l_lmm_stepping, & ! In
+                                    sclrp3(:,i)                  ) ! In/Out
 
     enddo ! i = 1, sclr_dim
 
@@ -138,8 +142,8 @@ module advance_xp3_module
                                      wpxp2, rho_ds_zm,         & ! Intent(in)
                                      invrs_rho_ds_zt,          & ! Intent(in)
                                      invrs_tau_zt, tau_max_zt, & ! Intent(in) 
-                                     x_tol,                    & ! Intent(in)
-                                     xp3                 )       ! Intent(inout)
+                                     x_tol, l_lmm_stepping,    & ! Intent(in)
+                                     xp3                       ) ! Intent(inout)
 
     ! Description:
     ! Predicts the value of <x'^3> using a simplified form of the <x'^3>
@@ -246,7 +250,8 @@ module advance_xp3_module
         zt2zm
 
     use constants_clubb, only: &
-        one,  & ! Variable(s)
+        one,      & ! Variable(s)
+        one_half, &
         zero
 
     use stats_type_utilities, only: &
@@ -291,11 +296,17 @@ module advance_xp3_module
     real( kind = core_rknd ), intent(in) :: &
       x_tol    ! Tolerance value of x                           [(x units)]
 
+    logical, intent(in) :: &
+      l_lmm_stepping    ! Apply Linear Multistep Method (LMM) Stepping
+
     ! Input/Output Variable
     real( kind = core_rknd ), dimension(gr%nz), intent(inout) :: &
       xp3    ! <x'^3> (thermodynamic levels)    [(x units)^3]
 
     ! Local Variables
+    real( kind = core_rknd ), dimension(gr%nz) :: &
+      xp3_old    ! Saved <x'^3> (thermodynamic levels)    [(x units)^3]
+
     real( kind = core_rknd ), dimension(gr%nz) :: &
       xm_zm,   & ! Mean of x interpolated to momentum levels     [(x units)]
       xp2_zt,  & ! Variance of x interpolated to thermo. levels  [(x units)^2]
@@ -377,9 +388,17 @@ module advance_xp3_module
 
       if ( l_predict_xp3 ) then
 
+         if ( l_lmm_stepping ) then
+            xp3_old = xp3
+         endif ! l_lmm_stepping
+
          ! Advance <x'^3> one time step.
          xp3(k) = ( ( xp3(k) / dt ) + term_tp(k) + term_ac(k) ) &
                   / ( ( one / dt ) + ( C_xp3_dissipation * invrs_tau_zt(k) ) )
+
+         if ( l_lmm_stepping ) then
+            xp3 = one_half * ( xp3_old + xp3 )
+         endif ! l_lmm_stepping
 
       else
 

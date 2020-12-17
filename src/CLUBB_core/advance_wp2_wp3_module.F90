@@ -225,14 +225,14 @@ module advance_wp2_wp3_module
       wp3,  & ! w'^3 (thermodynamic levels)               [m^3/s^3]
       wp3_zm  ! w'^3 interpolated to momentum levels      [m^3/s^3]
 
-    real( kind = core_rknd ), dimension(gr%nz) ::  &
-      wp2_old, & ! w'^2 (momentum levels)                 [m^2/s^2]
-      wp3_old    ! w'^3 (thermodynamic levels)            [m^3/s^3] 
-
     real( kind = core_rknd ), dimension(gr%nz), intent(inout) ::  &
       wp2_zt  ! w'^2 interpolated to thermodyamic levels  [m^2/s^2]
 
     ! Local Variables
+    real( kind = core_rknd ), dimension(gr%nz) ::  &
+      wp2_old, & ! w'^2 (momentum levels)                 [m^2/s^2]
+      wp3_old    ! w'^3 (thermodynamic levels)            [m^3/s^3] 
+
     real( kind = core_rknd ), dimension(gr%nz) ::  & 
       invrs_tauw3t  ! Currently just invrs_tau_zt         [1/s]
 
@@ -352,8 +352,10 @@ module advance_wp2_wp3_module
 
     enddo
 
-    wp2_old=wp2
-    wp3_old=wp3
+    if ( l_lmm_stepping ) then
+       wp2_old=wp2
+       wp3_old=wp3
+    endif ! l_lmm_stepping
 
     ! Solve semi-implicitly
     call wp23_solve( dt, sfc_elevation, sigma_sqd_w, wm_zm,                   & ! Intent(in)
@@ -379,9 +381,9 @@ module advance_wp2_wp3_module
                      wp2, wp3, wp3_zm, wp2_zt )                                 ! Intent(inout)
 
     if ( l_lmm_stepping ) then
-      wp2 = one_half * ( wp2_old + wp2 )
-      wp3 = one_half * ( wp3_old + wp3 )
-    end if
+       wp2 = one_half * ( wp2_old + wp2 )
+       wp3 = one_half * ( wp3_old + wp3 )
+    endif ! l_lmm_stepping
 
     ! When selected, apply sponge damping after wp2 and wp3 have been advanced.
     if ( wp2_sponge_damp_settings%l_sponge_damping ) then
@@ -462,7 +464,11 @@ module advance_wp2_wp3_module
 
             write(fstderr,*) "wp2_zt = ", wp2_zt, new_line('c')
             write(fstderr,*) "wp3_zm = ", wp3_zm, new_line('c')
+            if ( l_lmm_stepping ) &
+               write(fstderr,*) "wp2 (pre-solve) = ", wp2_old, new_line('c')
             write(fstderr,*) "wp2 = ", wp2, new_line('c')
+            if ( l_lmm_stepping ) &
+               write(fstderr,*) "wp3 (pre-solve) = ", wp3_old, new_line('c')
             write(fstderr,*) "wp3 = ", wp3, new_line('c')
 
         end if ! fatal error
