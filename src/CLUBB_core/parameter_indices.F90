@@ -129,8 +129,8 @@ module parameter_indices
     iC_invrs_tau_N2_xp2           = 84, &
     iC_invrs_tau_N2_wpxp          = 85, &
     iC_invrs_tau_N2_clear_wp3     = 86, &
-    iC_invrs_tau_wpxp_N2_thresh   = 87, &
-    iC_invrs_tau_wpxp_Ri          = 88, &
+    iC_invrs_tau_wpxp_Ri          = 87, &
+    iC_invrs_tau_wpxp_N2_thresh   = 88, &
     ixp3_coef_base                = 89, &
     ixp3_coef_slope               = 90, &
     ialtitude_threshold           = 91, &
