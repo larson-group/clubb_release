@@ -213,6 +213,8 @@ module advance_clubb_core_module
         C_invrs_tau_N2_wp2, &
         C_invrs_tau_N2_wpxp, &
         C_invrs_tau_N2_clear_wp3, &
+        C_invrs_tau_wpxp_Ri, &
+        C_invrs_tau_wpxp_N2_thresh, &
         xp3_coef_base, &
         xp3_coef_slope, &
         altitude_threshold
@@ -1215,39 +1217,51 @@ module advance_clubb_core_module
            brunt_freq_out_cloud = 0.0_core_rknd
         end where
 
-        invrs_tau_zm &
-        = 0.5_core_rknd &
-          * ( invrs_tau_no_N2_zm + C_invrs_tau_N2 * brunt_freq_pos )
+        invrs_tau_wp2_zm = invrs_tau_no_N2_zm + C_invrs_tau_N2_wp2 * brunt_freq_pos
 
-        invrs_tau_wp2_zm = invrs_tau_no_N2_zm &
-              + C_invrs_tau_N2_wp2 * brunt_freq_pos
+        invrs_tau_zm = invrs_tau_no_N2_zm + C_invrs_tau_N2 * brunt_freq_pos
 
-        invrs_tau_xp2_zm &
-        = invrs_tau_bkgnd + invrs_tau_sfc + invrs_tau_shear &
-          + C_invrs_tau_N2_xp2 * brunt_freq_pos & ! 0
-          + C_invrs_tau_sfc * 2.0_core_rknd &
-            * sqrt(em) / ( gr%zm - sfc_elevation + z_displace )  ! small
 
-        invrs_tau_xp2_zm &
-        = min( max( sqrt( ( ddzt(um)**2 + ddzt(vm)**2 ) &
-                          / max( 1.0e-7_core_rknd, brunt_vaisala_freq_sqd_smth ) ), &
-                    0.3_core_rknd ), &
-               1.0_core_rknd ) * invrs_tau_xp2_zm
+        if ( clubb_config_flags%l_e3sm_config ) then
 
-        invrs_tau_wp3_zm = invrs_tau_wp2_zm &
-              + C_invrs_tau_N2_clear_wp3 * brunt_freq_out_cloud
+          invrs_tau_zm = 0.5_core_rknd * invrs_tau_zm
 
-        invrs_tau_wpxp_zm = 2.0_core_rknd * invrs_tau_zm &
-              + C_invrs_tau_N2_wpxp * brunt_freq_out_cloud
+          invrs_tau_xp2_zm = invrs_tau_bkgnd + invrs_tau_sfc + invrs_tau_shear &
+                            + C_invrs_tau_N2_xp2 * brunt_freq_pos & ! 0
+                            + C_invrs_tau_sfc * 2.0_core_rknd &
+                            * sqrt(em) / ( gr%zm - sfc_elevation + z_displace )  ! small
+
+          invrs_tau_xp2_zm = min( max( sqrt( ( ddzt(um)**2 + ddzt(vm)**2 ) &
+                            / max( 1.0e-7_core_rknd, brunt_vaisala_freq_sqd_smth ) ), &
+                            0.3_core_rknd ), 1.0_core_rknd ) * invrs_tau_xp2_zm
+
+          invrs_tau_wpxp_zm = 2.0_core_rknd * invrs_tau_zm &
+                             + C_invrs_tau_N2_wpxp * brunt_freq_out_cloud
+
+        else ! l_e3sm_config = false
+
+          invrs_tau_xp2_zm =  0.1_core_rknd * invrs_tau_bkgnd + invrs_tau_sfc &
+                + invrs_tau_shear + C_invrs_tau_N2_xp2 * brunt_freq_pos
+
+          invrs_tau_xp2_zm = merge(0.003_core_rknd, invrs_tau_xp2_zm, &
+                zt2zm(ice_supersat_frac) <= 0.01_core_rknd &
+                .and. invrs_tau_xp2_zm  >= 0.003_core_rknd)
+
+          invrs_tau_wpxp_zm = invrs_tau_zm + C_invrs_tau_N2_wpxp * brunt_freq_out_cloud
+
+        end if ! l_e3sm_config
+
 
         where( gr%zt > altitude_threshold &
-               .and. brunt_vaisala_freq_sqd_smth > 3.3E-4_core_rknd )
+               .and. brunt_vaisala_freq_sqd_smth > C_invrs_tau_wpxp_N2_thresh )
            invrs_tau_wpxp_zm &
            = invrs_tau_wpxp_zm &
              * ( 1.0_core_rknd &
-                 + 3.0_core_rknd * min( max( Ri_zm, 0.0_core_rknd ), &
-                                        12.0_core_rknd ) )
+                 + C_invrs_tau_wpxp_Ri * min( max( Ri_zm, 0.0_core_rknd ), &
+                                      12.0_core_rknd ) )
         end where
+
+        invrs_tau_wp3_zm = invrs_tau_wp2_zm + C_invrs_tau_N2_clear_wp3 * brunt_freq_out_cloud
 
         if ( gr%zm(1) - sfc_elevation + z_displace < eps ) then
              stop  "Lowest zm grid level is below ground in CLUBB."

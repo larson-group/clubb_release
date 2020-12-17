@@ -26,7 +26,7 @@ module parameter_indices
   private ! Default Scope
 
   integer, parameter, public ::  & 
-    nparams = 94 ! Total tunable parameters
+    nparams = 96 ! Total tunable parameters
 
 !***************************************************************
 !                    ***** IMPORTANT *****
@@ -129,14 +129,16 @@ module parameter_indices
     iC_invrs_tau_N2_xp2           = 84, &
     iC_invrs_tau_N2_wpxp          = 85, &
     iC_invrs_tau_N2_clear_wp3     = 86, &
-    ixp3_coef_base                = 87, &
-    ixp3_coef_slope               = 88, &
-    ialtitude_threshold           = 89, &
-    irtp2_clip_coef               = 90, &
-    iCx_min                       = 91, &
-    iCx_max                       = 92, &
-    iRichardson_num_min           = 93, &
-    iRichardson_num_max           = 94
+    iC_invrs_tau_wpxp_N2_thresh   = 87, &
+    iC_invrs_tau_wpxp_Ri          = 88, &
+    ixp3_coef_base                = 89, &
+    ixp3_coef_slope               = 90, &
+    ialtitude_threshold           = 91, &
+    irtp2_clip_coef               = 92, &
+    iCx_min                       = 93, &
+    iCx_max                       = 94, &
+    iRichardson_num_min           = 95, &
+    iRichardson_num_max           = 96
 
 
 end module parameter_indices

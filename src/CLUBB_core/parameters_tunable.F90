@@ -166,20 +166,24 @@ module parameters_tunable
 !$omp threadprivate(Skw_max_mag)
 
   real( kind = core_rknd ), public ::  &   
-    C_invrs_tau_bkgnd         = 1.1_core_rknd,  &   ! 
-    C_invrs_tau_sfc           = 0.1_core_rknd,  &   !
-    C_invrs_tau_shear         = 0.02_core_rknd, &   !
-    C_invrs_tau_N2            = 0.4_core_rknd,  &   ! 
-    C_invrs_tau_N2_wp2        = 0.1_core_rknd,  &   !
-    C_invrs_tau_N2_xp2        = 0.05_core_rknd,  &   !
-    C_invrs_tau_N2_wpxp       = 0.0_core_rknd,  &   !
-    C_invrs_tau_N2_clear_wp3  = 1.0_core_rknd
+    C_invrs_tau_bkgnd          = 1.1_core_rknd,  &   ! 
+    C_invrs_tau_sfc            = 0.1_core_rknd,  &   !
+    C_invrs_tau_shear          = 0.02_core_rknd, &   !
+    C_invrs_tau_N2             = 0.4_core_rknd,  &   ! 
+    C_invrs_tau_N2_wp2         = 0.1_core_rknd,  &   !
+    C_invrs_tau_N2_xp2         = 0.05_core_rknd,  &   !
+    C_invrs_tau_N2_wpxp        = 0.0_core_rknd,  &   !
+    C_invrs_tau_N2_clear_wp3   = 1.0_core_rknd, &
+    C_invrs_tau_wpxp_Ri        = 0.35_core_rknd, &
+    C_invrs_tau_wpxp_N2_thresh = 3.3e-4_core_rknd
 
 !$omp threadprivate(C_invrs_tau_bkgnd,C_invrs_tau_sfc)
 !$omp threadprivate(C_invrs_tau_shear,C_invrs_tau_N2)  
 !$omp threadprivate(C_invrs_tau_N2_wp2,C_invrs_tau_N2_xp2) 
 !$omp threadprivate(C_invrs_tau_N2_wpxp)
 !$omp threadprivate(C_invrs_tau_N2_clear_wp3)
+!$omp threadprivate(C_invrs_tau_wpxp_Ri)
+!$omp threadprivate(C_invrs_tau_wpxp_N2_thresh)
 
 
   ! Parameters for the new PDF (w, rt, and theta-l).
@@ -328,6 +332,7 @@ module parameters_tunable
     rtp2_clip_coef, C_invrs_tau_bkgnd, C_invrs_tau_sfc, &
     C_invrs_tau_shear, C_invrs_tau_N2, C_invrs_tau_N2_wp2, &
     C_invrs_tau_N2_xp2, C_invrs_tau_N2_wpxp, C_invrs_tau_N2_clear_wp3, &
+    C_invrs_tau_wpxp_Ri, C_invrs_tau_wpxp_N2_thresh, &
     Cx_min, Cx_max, Richardson_num_min, Richardson_num_max
 
   ! These are referenced together often enough that it made sense to
@@ -385,7 +390,8 @@ module parameters_tunable
        "C_invrs_tau_sfc             ", "C_invrs_tau_shear           ", &
        "C_invrs_tau_N2              ", "C_invrs_tau_N2_wp2          ", &
        "C_invrs_tau_N2_xp2          ", "C_invrs_tau_N2_wpxp         ", &
-       "C_invrs_tau_N2_clear_wp3    ", "xp3_coef_base               ", &
+       "C_invrs_tau_N2_clear_wp3    ", "C_invrs_tau_wpxp_Ri         ", &
+       "C_invrs_tau_wpxp_N2_thresh  ", "xp3_coef_base               ", &
        "xp3_coef_slope              ", "altitude_threshold          ", &
        "rtp2_clip_coef              ", "Cx_min                      ", &
        "Cx_max                      ", "Richardson_num_min          ", &
@@ -457,6 +463,8 @@ module parameters_tunable
     clubb_C_invrs_tau_N2_xp2,           &
     clubb_C_invrs_tau_N2_wpxp,          &
     clubb_C_invrs_tau_N2_clear_wp3,     &
+    clubb_C_invrs_tau_wpxp_Ri,          &
+    clubb_C_invrs_tau_wpxp_N2_thresh,   &
     clubb_C_wp2_splat,                  &
     clubb_xp3_coef_base,                &
     clubb_xp3_coef_slope,               &
@@ -482,6 +490,7 @@ module parameters_tunable
 !$omp   clubb_C_invrs_tau_sfc, clubb_C_invrs_tau_shear, clubb_C_invrs_tau_N2, &
 !$omp   clubb_C_invrs_tau_N2_wp2, clubb_C_invrs_tau_N2_xp2, &
 !$omp   clubb_C_invrs_tau_N2_wpxp, clubb_C_invrs_tau_N2_clear_wp3, &
+!$omp   clubb_C_invrs_tau_wpxp_Ri, clubb_C_invrs_tau_wpxp_N2_thresh, &
 !$omp   clubb_C_wp2_splat, clubb_xp3_coef_base, clubb_xp3_coef_slope, &
 !$omp   clubb_altitude_threshold, clubb_rtp2_clip_coef, clubb_Cx_min, &
 !$omp   clubb_Cx_max, clubb_Richardson_num_min, clubb_Richardson_num_max)
@@ -615,6 +624,7 @@ module parameters_tunable
                C_invrs_tau_sfc, C_invrs_tau_shear, C_invrs_tau_N2, &
                C_invrs_tau_N2_wp2, C_invrs_tau_N2_xp2, &
                C_invrs_tau_N2_wpxp, C_invrs_tau_N2_clear_wp3, &
+               C_invrs_tau_wpxp_Ri, C_invrs_tau_wpxp_N2_thresh, &
                Cx_min, Cx_max, Richardson_num_min, Richardson_num_max )
 
 
@@ -1112,6 +1122,8 @@ module parameters_tunable
     clubb_C_invrs_tau_N2_xp2,           &
     clubb_C_invrs_tau_N2_wpxp,          &
     clubb_C_invrs_tau_N2_clear_wp3,     &
+    clubb_C_invrs_tau_wpxp_Ri,          &
+    clubb_C_invrs_tau_wpxp_N2_thresh,   &
     clubb_C_wp2_splat,                  &
     clubb_xp3_coef_base,                &
     clubb_xp3_coef_slope,               &
@@ -1184,6 +1196,8 @@ module parameters_tunable
     clubb_C_invrs_tau_N2_xp2 = init_value
     clubb_C_invrs_tau_N2_wpxp = init_value
     clubb_C_invrs_tau_N2_clear_wp3 = init_value
+    clubb_C_invrs_tau_wpxp_Ri = init_value
+    clubb_C_invrs_tau_wpxp_N2_thresh = init_value
     clubb_C_wp2_splat = init_value
     clubb_xp3_coef_base = init_value
     clubb_xp3_coef_slope = init_value
@@ -1258,11 +1272,13 @@ module parameters_tunable
    call mpibcast(clubb_C_invrs_tau_bkgnd, 1, mpir8,  0, mpicom)
    call mpibcast(clubb_C_invrs_tau_sfc, 1, mpir8,  0, mpicom)
    call mpibcast(clubb_C_invrs_tau_shear, 1, mpir8,  0, mpicom) 
-   call mpibcast(clubb_C_invrs_tau_N2 , 1, mpir8,  0, mpicom)
-   call mpibcast(clubb_C_invrs_tau_N2_wp2 , 1, mpir8,  0, mpicom)
-   call mpibcast(clubb_C_invrs_tau_N2_xp2 , 1, mpir8,  0, mpicom)
-   call mpibcast(clubb_C_invrs_tau_N2_wpxp , 1, mpir8,  0, mpicom)
-   call mpibcast(clubb_C_invrs_tau_N2_clear_wp3 , 1, mpir8,  0, mpicom)
+   call mpibcast(clubb_C_invrs_tau_N2, 1, mpir8,  0, mpicom)
+   call mpibcast(clubb_C_invrs_tau_N2_wp2, 1, mpir8,  0, mpicom)
+   call mpibcast(clubb_C_invrs_tau_N2_xp2, 1, mpir8,  0, mpicom)
+   call mpibcast(clubb_C_invrs_tau_N2_wpxp, 1, mpir8,  0, mpicom)
+   call mpibcast(clubb_C_invrs_tau_N2_clear_wp3, 1, mpir8, 0, mpicom)
+   call mpibcast(clubb_C_invrs_tau_wpxp_Ri, 1, mpir8, 0, mpicom)
+   call mpibcast(clubb_C_invrs_tau_wpxp_N2_thresh, 1, mpir8, 0, mpicom)
    call mpibcast(clubb_C_wp2_splat, 1, mpir8,  0, mpicom)
    call mpibcast(clubb_xp3_coef_base, 1, mpir8,  0, mpicom)
    call mpibcast(clubb_xp3_coef_slope, 1, mpir8,  0, mpicom)
@@ -1407,6 +1423,10 @@ module parameters_tunable
        C_invrs_tau_N2_wpxp = clubb_C_invrs_tau_N2_wpxp
     if (clubb_C_invrs_tau_N2_clear_wp3 /= init_value) &
        C_invrs_tau_N2_clear_wp3 = clubb_C_invrs_tau_N2_clear_wp3
+    if (clubb_C_invrs_tau_wpxp_Ri /= init_value) &
+       C_invrs_tau_wpxp_Ri = clubb_C_invrs_tau_wpxp_Ri
+    if (clubb_C_invrs_tau_wpxp_N2_thresh /= init_value) &
+       C_invrs_tau_wpxp_N2_thresh = clubb_C_invrs_tau_wpxp_N2_thresh
     if (clubb_C_wp2_splat  /= init_value ) C_wp2_splat = clubb_C_wp2_splat
     if (clubb_xp3_coef_base /= init_value) xp3_coef_base = clubb_xp3_coef_base
     if (clubb_xp3_coef_slope /= init_value) &
@@ -1445,6 +1465,7 @@ module parameters_tunable
                C_invrs_tau_sfc, C_invrs_tau_shear, C_invrs_tau_N2, &
                C_invrs_tau_N2_wp2, C_invrs_tau_N2_xp2, &  
                C_invrs_tau_N2_wpxp, C_invrs_tau_N2_clear_wp3, &
+               C_invrs_tau_wpxp_Ri, C_invrs_tau_wpxp_N2_thresh, &
                Cx_min, Cx_max, Richardson_num_min, Richardson_num_max, params )
 
     l_error = .false.
@@ -1527,6 +1548,7 @@ module parameters_tunable
       rtp2_clip_coef, C_invrs_tau_bkgnd, C_invrs_tau_sfc, &
       C_invrs_tau_shear, C_invrs_tau_N2, C_invrs_tau_N2_wp2, &
       C_invrs_tau_N2_xp2, C_invrs_tau_N2_wpxp, C_invrs_tau_N2_clear_wp3, &
+      C_invrs_tau_wpxp_Ri, C_invrs_tau_wpxp_N2_thresh, &
       Cx_min, Cx_max, Richardson_num_min, Richardson_num_max
 
     ! Initialize values to -999.
@@ -1561,6 +1583,7 @@ module parameters_tunable
                C_invrs_tau_sfc, C_invrs_tau_shear, C_invrs_tau_N2, &
                C_invrs_tau_N2_wp2, C_invrs_tau_N2_xp2, &
                C_invrs_tau_N2_wpxp, C_invrs_tau_N2_clear_wp3, &
+               C_invrs_tau_wpxp_Ri, C_invrs_tau_wpxp_N2_thresh, &
                Cx_min, Cx_max, Richardson_num_min, Richardson_num_max, &
                param_max )
 
@@ -1616,6 +1639,7 @@ module parameters_tunable
                C_invrs_tau_sfc, C_invrs_tau_shear, C_invrs_tau_N2, &
                C_invrs_tau_N2_wp2, C_invrs_tau_N2_xp2, &
                C_invrs_tau_N2_wpxp, C_invrs_tau_N2_clear_wp3, &
+               C_invrs_tau_wpxp_Ri, C_invrs_tau_wpxp_N2_thresh, &
                Cx_min, Cx_max, Richardson_num_min, Richardson_num_max, params )
 
     ! Description:
@@ -1722,6 +1746,8 @@ module parameters_tunable
       iC_invrs_tau_N2_xp2, &
       iC_invrs_tau_N2_wpxp, &
       iC_invrs_tau_N2_clear_wp3, &
+      iC_invrs_tau_wpxp_Ri, &
+      iC_invrs_tau_wpxp_N2_thresh, &
       iCx_min, &
       iCx_max, &
       iRichardson_num_min, &
@@ -1750,6 +1776,7 @@ module parameters_tunable
       rtp2_clip_coef, C_invrs_tau_bkgnd, C_invrs_tau_sfc, &
       C_invrs_tau_shear, C_invrs_tau_N2, C_invrs_tau_N2_wp2, &
       C_invrs_tau_N2_xp2, C_invrs_tau_N2_wpxp, C_invrs_tau_N2_clear_wp3, &
+      C_invrs_tau_wpxp_Ri, C_invrs_tau_wpxp_N2_thresh, &
       Cx_min, Cx_max, Richardson_num_min, Richardson_num_max
 
     ! Output variables
@@ -1849,14 +1876,16 @@ module parameters_tunable
     params(ixp3_coef_slope) = xp3_coef_slope
     params(ialtitude_threshold) = altitude_threshold
     params(irtp2_clip_coef) = rtp2_clip_coef
-    params(iC_invrs_tau_bkgnd)        = C_invrs_tau_bkgnd
-    params(iC_invrs_tau_sfc)          = C_invrs_tau_sfc
-    params(iC_invrs_tau_shear)        = C_invrs_tau_shear
-    params(iC_invrs_tau_N2)           = C_invrs_tau_N2
-    params(iC_invrs_tau_N2_wp2)       = C_invrs_tau_N2_wp2
-    params(iC_invrs_tau_N2_xp2)       = C_invrs_tau_N2_xp2
-    params(iC_invrs_tau_N2_wpxp)      = C_invrs_tau_N2_wpxp
-    params(iC_invrs_tau_N2_clear_wp3) = C_invrs_tau_N2_clear_wp3
+    params(iC_invrs_tau_bkgnd)          = C_invrs_tau_bkgnd
+    params(iC_invrs_tau_sfc)            = C_invrs_tau_sfc
+    params(iC_invrs_tau_shear)          = C_invrs_tau_shear
+    params(iC_invrs_tau_N2)             = C_invrs_tau_N2
+    params(iC_invrs_tau_N2_wp2)         = C_invrs_tau_N2_wp2
+    params(iC_invrs_tau_N2_xp2)         = C_invrs_tau_N2_xp2
+    params(iC_invrs_tau_N2_wpxp)        = C_invrs_tau_N2_wpxp
+    params(iC_invrs_tau_N2_clear_wp3)   = C_invrs_tau_N2_clear_wp3
+    params(iC_invrs_tau_wpxp_Ri)        = C_invrs_tau_wpxp_Ri
+    params(iC_invrs_tau_wpxp_N2_thresh) = C_invrs_tau_wpxp_N2_thresh
     params(iCx_min) = Cx_min
     params(iCx_max) = Cx_max
     params(iRichardson_num_min) = Richardson_num_min
@@ -1889,6 +1918,7 @@ module parameters_tunable
                C_invrs_tau_sfc, C_invrs_tau_shear, C_invrs_tau_N2, & 
                C_invrs_tau_N2_wp2, C_invrs_tau_N2_xp2, &
                C_invrs_tau_N2_wpxp, C_invrs_tau_N2_clear_wp3, &
+               C_invrs_tau_wpxp_Ri, C_invrs_tau_wpxp_N2_thresh, &
                Cx_min, Cx_max, Richardson_num_min, Richardson_num_max )
 
     ! Description:
@@ -1995,6 +2025,8 @@ module parameters_tunable
       iC_invrs_tau_N2_xp2, &
       iC_invrs_tau_N2_wpxp, &
       iC_invrs_tau_N2_clear_wp3, &
+      iC_invrs_tau_wpxp_Ri, &
+      iC_invrs_tau_wpxp_N2_thresh, &
       iCx_min, &
       iCx_max, &
       iRichardson_num_min, &
@@ -2026,6 +2058,7 @@ module parameters_tunable
       rtp2_clip_coef, C_invrs_tau_bkgnd, C_invrs_tau_sfc, &
       C_invrs_tau_shear, C_invrs_tau_N2, C_invrs_tau_N2_wp2, &
       C_invrs_tau_N2_xp2, C_invrs_tau_N2_wpxp, C_invrs_tau_N2_clear_wp3, &
+      C_invrs_tau_wpxp_Ri, C_invrs_tau_wpxp_N2_thresh, &
       Cx_min, Cx_max, Richardson_num_min, Richardson_num_max
 
     C1      = params(iC1)
@@ -2122,14 +2155,16 @@ module parameters_tunable
     xp3_coef_slope = params(ixp3_coef_slope)
     altitude_threshold = params(ialtitude_threshold)
     rtp2_clip_coef = params(irtp2_clip_coef)
-    C_invrs_tau_bkgnd        = params(iC_invrs_tau_bkgnd)
-    C_invrs_tau_sfc          = params(iC_invrs_tau_sfc )
-    C_invrs_tau_shear        = params(iC_invrs_tau_shear)
-    C_invrs_tau_N2           = params(iC_invrs_tau_N2)
-    C_invrs_tau_N2_wp2       = params(iC_invrs_tau_N2_wp2)
-    C_invrs_tau_N2_xp2       = params(iC_invrs_tau_N2_xp2)
-    C_invrs_tau_N2_wpxp      = params(iC_invrs_tau_N2_wpxp)
-    C_invrs_tau_N2_clear_wp3 = params(iC_invrs_tau_N2_clear_wp3)
+    C_invrs_tau_bkgnd          = params(iC_invrs_tau_bkgnd)
+    C_invrs_tau_sfc            = params(iC_invrs_tau_sfc )
+    C_invrs_tau_shear          = params(iC_invrs_tau_shear)
+    C_invrs_tau_N2             = params(iC_invrs_tau_N2)
+    C_invrs_tau_N2_wp2         = params(iC_invrs_tau_N2_wp2)
+    C_invrs_tau_N2_xp2         = params(iC_invrs_tau_N2_xp2)
+    C_invrs_tau_N2_wpxp        = params(iC_invrs_tau_N2_wpxp)
+    C_invrs_tau_N2_clear_wp3   = params(iC_invrs_tau_N2_clear_wp3)
+    C_invrs_tau_wpxp_Ri        = params(iC_invrs_tau_wpxp_Ri)
+    C_invrs_tau_wpxp_N2_thresh = params(iC_invrs_tau_wpxp_N2_thresh)
     Cx_min = params(iCx_min)
     Cx_max = params(iCx_max)
     Richardson_num_min = params(iRichardson_num_min)
@@ -2174,6 +2209,7 @@ module parameters_tunable
                C_invrs_tau_sfc, C_invrs_tau_shear, C_invrs_tau_N2, &
                C_invrs_tau_N2_wp2, C_invrs_tau_N2_xp2, &
                C_invrs_tau_N2_wpxp, C_invrs_tau_N2_clear_wp3, &
+               C_invrs_tau_wpxp_Ri, C_invrs_tau_wpxp_N2_thresh, &
                Cx_min, Cx_max, Richardson_num_min, Richardson_num_max, params )
 
     return
@@ -2284,6 +2320,8 @@ module parameters_tunable
     C_invrs_tau_N2_wp2           = init_value
     C_invrs_tau_N2_wpxp          = init_value
     C_invrs_tau_N2_clear_wp3     = init_value
+    C_invrs_tau_wpxp_Ri          = init_value
+    C_invrs_tau_wpxp_N2_thresh   = init_value
     Cx_min                       = init_value
     Cx_max                       = init_value
     Richardson_num_min           = init_value

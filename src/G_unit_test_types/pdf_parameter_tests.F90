@@ -507,7 +507,8 @@ module pdf_parameter_tests
       l_damp_wp3_Skw_squared,       & ! Set damping on wp3 to use Skw^2 rather than Skw^4
       l_prescribed_avg_deltaz,      & ! used in adj_low_res_nu. If .true., avg_deltaz = deltaz
       l_update_pressure,            & ! Flag for having CLUBB update pressure and exner
-      l_lmm_stepping                  ! Apply Linear Multistep Method (LMM) Stepping
+      l_lmm_stepping,               & ! Apply Linear Multistep Method (LMM) Stepping
+      l_e3sm_config                   ! Run model with E3SM settings
 
     call set_default_clubb_config_flags( iiPDF_type, &
                                          ipdf_call_placement, &
@@ -551,7 +552,8 @@ module pdf_parameter_tests
                                          l_damp_wp3_Skw_squared, &
                                          l_prescribed_avg_deltaz, &
                                          l_update_pressure, &
-                                         l_lmm_stepping )
+                                         l_lmm_stepping, &
+                                         l_e3sm_config )
 
     iiPDF_type = test_pdf_type
 
