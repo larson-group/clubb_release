@@ -509,7 +509,7 @@ module model_flags
     l_diag_Lscale_from_tau = .true.
     l_use_C7_Richardson = .true.
     l_use_C11_Richardson = .false.
-    l_use_shear_Richardson = .true.
+    l_use_shear_Richardson = .false.
     l_brunt_vaisala_freq_moist = .false.
     l_use_thvm_in_bv_freq = .false.
     l_rcm_supersat_adj = .true.
