@@ -151,6 +151,13 @@ class PyPlotGen:
         logging.basicConfig(filename=self.errorlog, filemode='w', level=logging.INFO,
                     format='%(asctime)s.%(msecs)03d %(message)s', datefmt='%y-%m-%d %H:%M:%S')
 
+        # check that all input folders exist
+        all_folders = self.clubb_folders + self.e3sm_folders + self.sam_folders \
+                    + self.cam_folders+self.wrf_folders
+        for folder in all_folders:
+            if os.path.isdir(folder)==False:
+                raise RuntimeError("The directory " + folder + " does not exist.")
+
     def run(self):
         """
         Main driver of the pyplotgen program executing the following steps:
