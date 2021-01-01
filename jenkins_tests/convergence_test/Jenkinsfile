@@ -1,0 +1,23 @@
+pipeline {
+  agent any
+  stages {
+    stage('Compile') {
+      steps {
+        sh 'compile/compile.bash -c config/linux_x86_64_gfortran.bash'
+      }
+    }
+
+    stage('Run the CLUBB convergence test script') {
+      steps {
+        sh 'run_scripts/run_clubb_conv_test.bash'
+      }
+    }
+
+    stage('Remove Workspace') {
+      steps {
+        cleanWs(cleanWhenFailure: true, cleanWhenSuccess: true, cleanWhenUnstable: true)
+      }
+    }
+
+  }
+}

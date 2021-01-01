@@ -1,0 +1,21 @@
+pipeline {
+  agent any
+  stages {
+    stage('Compile') {
+      steps {
+        sh '''compile/compile.bash -c config/linux_x86_64_ifort.bash'''
+      }
+    }
+    stage('Run') {
+      steps {
+         sh '''source /opt/intel/bin/ifortvars.sh intel64
+               run_scripts/run_scm_all.bash'''
+      }
+    }
+    stage('Remove Workspace') {
+      steps {
+        cleanWs(cleanWhenAborted: true, cleanWhenFailure: true, cleanWhenNotBuilt: true, cleanWhenSuccess: true, cleanWhenUnstable: true)
+      }
+    }
+  }
+}

@@ -1,0 +1,23 @@
+pipeline {
+  agent any
+  stages {
+    stage('Compile') {
+      steps {
+        sh 'compile/compile.bash -c config/linux_x86_64_pgroup.bash'
+      }
+    }
+
+    stage('Run') {
+      steps {
+        sh 'run_scripts/run_scm_all.bash'
+      }
+    }
+
+    stage('Remove Workspace') {
+      steps {
+        cleanWs(cleanWhenFailure: true, cleanWhenSuccess: true, cleanWhenUnstable: true)
+      }
+    }
+
+  }
+}
