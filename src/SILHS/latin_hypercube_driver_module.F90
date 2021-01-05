@@ -386,8 +386,8 @@ module latin_hypercube_driver_module
            X_nl_all_levs )                                       ! Out
     
     if ( l_stats_samp ) then
-      !$acc update host(X_u_all_levs,l_in_precip,lh_sample_point_weights,X_mixt_comp_all_levs) wait
       !$acc wait
+      !$acc update host(X_u_all_levs,l_in_precip,lh_sample_point_weights,X_mixt_comp_all_levs) wait
       do i = 1, ngrdcol
         call stats_accumulate_uniform_lh( nz, num_samples, l_in_precip(i,:,:), &
                                           X_mixt_comp_all_levs(i,:,:), &
@@ -397,8 +397,8 @@ module latin_hypercube_driver_module
     end if
 
     if ( l_output_2D_lognormal_dist ) then
-      !$acc update host(X_nl_all_levs) wait
       !$acc wait
+      !$acc update host(X_nl_all_levs) wait
       
       ! Eric Raut removed lh_rt and lh_thl from call to output_2D_lognormal_dist_file
       ! because they are no longer generated in generate_silhs_sample.
@@ -413,8 +413,8 @@ module latin_hypercube_driver_module
     end if
     
     if ( l_output_2D_uniform_dist ) then
-      !$acc update host(X_u_all_levs,X_mixt_comp_all_levs,lh_sample_point_weights) wait
       !$acc wait
+      !$acc update host(X_u_all_levs,X_mixt_comp_all_levs,lh_sample_point_weights) wait
       do i = 1, ngrdcol
         call output_2D_uniform_dist_file( nz, num_samples, pdf_dim+2, &
                                           X_u_all_levs(i,:,:,:), &
@@ -429,9 +429,8 @@ module latin_hypercube_driver_module
 
     ! Various nefarious assertion checks
     if ( clubb_at_least_debug_level( 2 ) ) then
-      
-      !$acc update host(X_u_all_levs,X_mixt_comp_all_levs,X_nl_all_levs) wait
       !$acc wait
+      !$acc update host(X_u_all_levs,X_mixt_comp_all_levs,X_nl_all_levs) wait
 
       ! Simple assertion check to ensure uniform variates are in the appropriate
       ! range
