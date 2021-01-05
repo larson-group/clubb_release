@@ -3,7 +3,7 @@ pipeline {
   stages {
     stage('Compile') {
       steps {
-        sh '''compile/compile.bash -c compile/config/linux_x86_64_gfortran.bash'''
+        sh '''compile/compile.bash -c config/linux_x86_64_gfortran.bash'''
       }
     }
     stage('Run') {

@@ -1,0 +1,24 @@
+pipeline {
+  agent any
+  stages {
+    stage('Checkout Clubb_Release') {
+      steps {
+        sh '''git clone https://LarsonGroupSysAdmin:repo99sitori@github.com/larson-group/clubb.git
+   git clone https://LarsonGroupSysAdmin:repo99sitori@github.com/larson-group/clubb_release.git'''
+      }
+    }
+
+    stage('Diff') {
+      steps {
+        sh 'diff --exclude=.git --exclude=version_clubb_core.txt --exclude=version_silhs.txt -r clubb clubb_release'
+      }
+    }
+
+    stage('Cleanup') {
+      steps {
+        cleanWs(cleanWhenFailure: true, cleanWhenSuccess: true, cleanWhenUnstable: true)
+      }
+    }
+
+  }
+}
