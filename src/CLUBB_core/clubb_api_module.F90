@@ -2611,7 +2611,8 @@ contains
                                                  l_prescribed_avg_deltaz, & ! Out
                                                  l_update_pressure, & ! Out
                                                  l_lmm_stepping, & ! Out
-                                                 l_e3sm_config ) ! Out
+                                                 l_e3sm_config, & ! Out
+                                                 l_use_tke_in_wp3_bp2_term ) ! Out
 
     use model_flags, only: &
       set_default_clubb_config_flags  ! Procedure
@@ -2720,7 +2721,8 @@ contains
       l_prescribed_avg_deltaz,      & ! used in adj_low_res_nu. If .true., avg_deltaz = deltaz
       l_update_pressure,            & ! Flag for having CLUBB update pressure and exner
       l_lmm_stepping,               & ! Apply Linear Multistep Method (LMM) Stepping
-      l_e3sm_config                   ! Run model with E3SM settings
+      l_e3sm_config,                & ! Run model with E3SM settings
+      l_use_tke_in_wp3_bp2_term       ! Use TKE formulation for wp3 bp2 term
 
     call set_default_clubb_config_flags( iiPDF_type, & ! Out
                                          ipdf_call_placement, & ! Out
@@ -2765,7 +2767,8 @@ contains
                                          l_prescribed_avg_deltaz, & ! Out
                                          l_update_pressure, & ! Out
                                          l_lmm_stepping, & ! Out
-                                         l_e3sm_config ) ! Out
+                                         l_e3sm_config, & ! Out
+                                         l_use_tke_in_wp3_bp2_term ) ! Out
 
   end subroutine set_default_clubb_config_flags_api
 
@@ -2816,6 +2819,7 @@ contains
                                                      l_update_pressure, & ! In
                                                      l_lmm_stepping, & ! In
                                                      l_e3sm_config, & ! In
+                                                     l_use_tke_in_wp3_bp2_term, & ! In
                                                      clubb_config_flags ) ! Out
 
     use model_flags, only: &
@@ -2926,7 +2930,8 @@ contains
       l_prescribed_avg_deltaz,      & ! used in adj_low_res_nu. If .true., avg_deltaz = deltaz
       l_update_pressure,            & ! Flag for having CLUBB update pressure and exner
       l_lmm_stepping,               & ! Apply Linear Multistep Method (LMM) Stepping
-      l_e3sm_config                   ! Run model with E3SM settings
+      l_e3sm_config,                & ! Run model with E3SM settings
+      l_use_tke_in_wp3_bp2_term       ! Use TKE formulation for wp3 bp2 term
 
     ! Output variables
     type(clubb_config_flags_type), intent(out) :: &
@@ -2976,6 +2981,7 @@ contains
                                              l_update_pressure, & ! In
                                              l_lmm_stepping, & ! In
                                              l_e3sm_config, & ! In
+                                             l_use_tke_in_wp3_bp2_term, & ! In
                                              clubb_config_flags ) ! Out
 
   end subroutine initialize_clubb_config_flags_type_api

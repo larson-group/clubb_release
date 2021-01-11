@@ -1643,7 +1643,7 @@ module advance_clubb_core_module
            ( dt_advance, sfc_elevation, sigma_sqd_w, wm_zm,             & ! intent(in)
              wm_zt, a3_coef, a3_coef_zt, wp3_on_wp2, wp4,               & ! intent(in)
              wpthvp, wp2thvp, um, vm, upwp, vpwp,                       & ! intent(in)
-             up2, vp2, Kh_zm, Kh_zt, invrs_tau_wp2_zm,                  & ! intent(in)
+             up2, vp2, em, Kh_zm, Kh_zt, invrs_tau_wp2_zm,              & ! intent(in)
              invrs_tau_wp3_zt, invrs_tau_C1_zm, Skw_zm,                 & ! intent(in)
              Skw_zt, rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm,             & ! intent(in)
              invrs_rho_ds_zt, radf, thv_ds_zm,                          & ! intent(in)
@@ -1661,6 +1661,7 @@ module advance_clubb_core_module
              clubb_config_flags%l_use_C11_Richardson,                   & ! intent(in)
              clubb_config_flags%l_damp_wp3_Skw_squared,                 & ! intent(in)
              clubb_config_flags%l_lmm_stepping,                         & ! intent(in)
+             clubb_config_flags%l_use_tke_in_wp3_bp2_term,              & ! intent(in)
              wp2, wp3, wp3_zm, wp2_zt )                                   ! intent(inout)
 
       if ( clubb_at_least_debug_level( 0 ) ) then
