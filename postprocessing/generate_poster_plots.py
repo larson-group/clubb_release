@@ -72,7 +72,7 @@ for dtValues, label in ((dtValuesU, 'unstable dt/dz'), (dtValuesS, 'stable dt/dz
   dataList = []
   for i,refineLevel in enumerate(refineLevels):
     dt = dtValues[i]
-    dataList.append(Dataset('brunt_vaisala_smoothing/rico_godunov-scalarwp3_dt-{}_refine-{}_tfinal-3600_zt.nc'.format(dt, refineLevel)))
+    dataList.append(Dataset('rico_godunov-scalarwp3_dt-{}_refine-{}_bvf-smooth_tfinal-3600_zt.nc'.format(dt, refineLevel)))
   
   n = refineLevels[-1] - refineLevels[0]
   varRef = dataList[-1][varName][:,range(0,len(dataList[-1]['altitude'][:]),2**n),0,0]
