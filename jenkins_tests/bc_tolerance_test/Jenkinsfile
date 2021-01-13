@@ -16,7 +16,7 @@ pipeline {
 
     stage('Run Clubb') {
       steps {
-        sh '''bash -c "echo bomex >> run_scripts/RUN_CASES"
+        sh '''bash -c "echo bomex > run_scripts/RUN_CASES"
 bash -c "echo dycoms2_rf01 >> run_scripts/RUN_CASES"
 run_scripts/run_scm_all.bash'''
       }
