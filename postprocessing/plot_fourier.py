@@ -1,6 +1,7 @@
 import matplotlib.pyplot as pyplot
 import numpy as np
 from netCDF4 import Dataset
+from scipy.interpolate import interp1d
 import sys
 
 def odd_extension(f):
@@ -40,7 +41,8 @@ for n in range(len(time)):
   # interpolate to uniform grid
   dz = np.min(z[1:]-z[0:-1])
   zi = np.arange(z_ext[0], z_ext[-1], dz)
-  field_interp = np.interp(zi, z_ext, field_ext)
+  interpolant = interp1d(z_ext, field_ext, kind='cubic')
+  field_interp = interpolant(zi)
   
   # FFT
   K = len(zi)/2
@@ -49,7 +51,7 @@ for n in range(len(time)):
   # check for max grid-scale amplitude
   k = (z_ext[-1] - z_ext[0])/np.arange(1,K)
   k_grid = 2.0*np.max(z[1:]-z[0:-1])
-  indices = np.where(k <= k_grid)[0]
+  indices = np.where(k <= 2.0*k_grid)[0]
   field_fft_gridscale = field_fft[1:K][indices]
   current_max_amp = np.max(np.abs(field_fft_gridscale))
 
@@ -80,13 +82,10 @@ ax2.plot(field[max_time,:,0,0], z, label='t={}'.format(time[max_time]))
 ax2.plot(field[-1,:,0,0], z, label='t={}'.format(time[-1]))
 ax2.set_ylim(0,2000)
 ax2.legend()
-ax2.set_title('solution profiles', fontsize='large')
+ax2.set_title(dataset_name, fontsize='large')
 ax2.set_xlabel(field_name, fontsize='large')
 ax2.set_ylabel('altitude (m)', fontsize='large')
 
 f.suptitle(dataset_name)
-#f.tight_layout()
-f2.suptitle(dataset_name)
-#f2.tight_layout()
 pyplot.show()
 
