@@ -1,0 +1,20 @@
+pipeline {
+  agent any
+  stages {
+    stage('Compile') {
+      steps {
+        sh 'compile/compile.bash -c config/linux_x86_64_oracle_debug.bash'
+      }
+    }
+    stage('Run CLUBB') {
+      steps {
+        sh 'run_scripts/run_scm_all.bash'
+      }
+    }
+  }
+  post {
+    always {
+      cleanWs(cleanWhenFailure: true, cleanWhenSuccess: true, cleanWhenUnstable: true, cleanWhenAborted: true)
+    }
+  }
+}
