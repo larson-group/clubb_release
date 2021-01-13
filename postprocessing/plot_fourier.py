@@ -22,7 +22,7 @@ field = data[field_name][:]
 time = data['time'][:]
 z = data['altitude'][:]
  
-f, ax = pyplot.subplots(3, 2, figsize=(8, 9))
+f, ax = pyplot.subplots(3, 2, figsize=(8, 9), constrained_layout=True)
 ax[0,0].set_title('all wave amplitudes', fontsize='large')
 ax[0,1].set_title('grid-scale wave amplitudes', fontsize='large')
 ax[2,0].set_xlabel('wavelength (m)', fontsize='large')
@@ -44,7 +44,7 @@ for n in range(len(time)):
   
   # FFT
   K = len(zi)/2
-  field_fft = np.fft.fft(field_interp)
+  field_fft = np.fft.fft(field_interp)/len(field_interp)
   
   # check for max grid-scale amplitude
   k = (z_ext[-1] - z_ext[0])/np.arange(1,K)
@@ -74,7 +74,7 @@ for n in range(len(time)):
     ax[i,1].set_xlim(k[-1], k[indices[0]])
     ax[i,1].set_ylim(0.0, current_max_amp)
  
-f2, ax2 = pyplot.subplots()
+f2, ax2 = pyplot.subplots(constrained_layout=True)
 ax2.plot(field[0,:,0,0], z, label='t={}'.format(time[0]))
 ax2.plot(field[max_time,:,0,0], z, label='t={}'.format(time[max_time]))
 ax2.plot(field[-1,:,0,0], z, label='t={}'.format(time[-1]))
@@ -84,7 +84,9 @@ ax2.set_title('solution profiles', fontsize='large')
 ax2.set_xlabel(field_name, fontsize='large')
 ax2.set_ylabel('altitude (m)', fontsize='large')
 
-f.tight_layout()
-f2.tight_layout()
+f.suptitle(dataset_name)
+#f.tight_layout()
+f2.suptitle(dataset_name)
+#f2.tight_layout()
 pyplot.show()
 
