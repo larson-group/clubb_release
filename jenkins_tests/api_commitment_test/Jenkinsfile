@@ -1,0 +1,15 @@
+pipeline {
+  agent any
+  stages {
+    stage('Run the API Commitment Script') {
+      steps {
+        sh 'utilities/api_analysis/run_full_api_diagnostics.bash'
+      }
+    }
+  }
+  post {
+    always { 
+      cleanWs(cleanWhenAborted: true, cleanWhenFailure: true, cleanWhenSuccess: true)
+    }
+  }
+}
