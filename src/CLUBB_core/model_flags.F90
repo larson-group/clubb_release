@@ -146,7 +146,7 @@ module model_flags
       l_diffuse_rtm_and_thlm,       & ! Diffuses rtm and thlm
       l_stability_correct_Kh_N2_zm, & ! Divides Kh_N2_zm by a stability factor
       l_calc_thlp2_rad,             & ! Include the contribution of radiation to thlp2
-      l_upwind_wp3_ta,              & ! This flag determines whether we want to use an upwind
+      l_godunov_upwind_wp3_ta,              & ! This flag determines whether we want to use an upwind
                                       ! differencing approximation rather than a centered
                                       ! differencing for turbulent advection terms. It
                                       ! affects wp3 only.
@@ -298,7 +298,7 @@ module model_flags
                                              l_diffuse_rtm_and_thlm, &
                                              l_stability_correct_Kh_N2_zm, &
                                              l_calc_thlp2_rad, &
-                                             l_upwind_wp3_ta,  &
+                                             l_godunov_upwind_wp3_ta,  &
                                              l_upwind_wpxp_ta, &
                                              l_upwind_xpyp_ta, &
                                              l_upwind_xm_ma, &
@@ -370,7 +370,7 @@ module model_flags
       l_diffuse_rtm_and_thlm,       & ! Diffuses rtm and thlm
       l_stability_correct_Kh_N2_zm, & ! Divides Kh_N2_zm by a stability factor
       l_calc_thlp2_rad,             & ! Include the contribution of radiation to thlp2
-      l_upwind_wp3_ta,              & ! This flag determines whether we want to use an upwind
+      l_godunov_upwind_wp3_ta,              & ! This flag determines whether we want to use an upwind
                                       ! differencing approximation rather than a centered
                                       ! differencing for turbulent advection terms. It
                                       ! affects wp3 only.
@@ -457,7 +457,7 @@ module model_flags
     l_diffuse_rtm_and_thlm = .false.
     l_stability_correct_Kh_N2_zm = .false.
     l_calc_thlp2_rad = .true.
-    l_upwind_wp3_ta  = .false.
+    l_godunov_upwind_wp3_ta  = .false.
     l_upwind_wpxp_ta = .false.
     l_upwind_xpyp_ta = .true.
     l_upwind_xm_ma = .true.
@@ -512,7 +512,7 @@ module model_flags
                                                  l_diffuse_rtm_and_thlm, &
                                                  l_stability_correct_Kh_N2_zm, &
                                                  l_calc_thlp2_rad, &
-                                                 l_upwind_wp3_ta,  &
+                                                 l_godunov_upwind_wp3_ta,  &
                                                  l_upwind_wpxp_ta, &
                                                  l_upwind_xpyp_ta, &
                                                  l_upwind_xm_ma, &
@@ -585,7 +585,7 @@ module model_flags
       l_diffuse_rtm_and_thlm,       & ! Diffuses rtm and thlm
       l_stability_correct_Kh_N2_zm, & ! Divides Kh_N2_zm by a stability factor
       l_calc_thlp2_rad,             & ! Include the contribution of radiation to thlp2
-      l_upwind_wp3_ta,              & ! This flag determines whether we want to use an upwind
+      l_godunov_upwind_wp3_ta,              & ! This flag determines whether we want to use an upwind
                                       ! differencing approximation rather than a centered
                                       ! differencing for turbulent advection terms. It
                                       ! affects wp3 .
@@ -676,7 +676,7 @@ module model_flags
     clubb_config_flags%l_diffuse_rtm_and_thlm = l_diffuse_rtm_and_thlm
     clubb_config_flags%l_stability_correct_Kh_N2_zm = l_stability_correct_Kh_N2_zm
     clubb_config_flags%l_calc_thlp2_rad = l_calc_thlp2_rad
-    clubb_config_flags%l_upwind_wp3_ta = l_upwind_wp3_ta
+    clubb_config_flags%l_godunov_upwind_wp3_ta = l_godunov_upwind_wp3_ta
     clubb_config_flags%l_upwind_wpxp_ta = l_upwind_wpxp_ta
     clubb_config_flags%l_upwind_xpyp_ta = l_upwind_xpyp_ta
     clubb_config_flags%l_upwind_xm_ma = l_upwind_xm_ma
@@ -749,7 +749,7 @@ module model_flags
     write(iunit,*) "l_stability_correct_Kh_N2_zm = ", &
                    clubb_config_flags%l_stability_correct_Kh_N2_zm
     write(iunit,*) "l_calc_thlp2_rad = ", clubb_config_flags%l_calc_thlp2_rad
-    write(iunit,*) "l_upwind_wp3_ta = ", clubb_config_flags%l_upwind_wp3_ta
+    write(iunit,*) "l_godunov_upwind_wp3_ta = ", clubb_config_flags%l_godunov_upwind_wp3_ta
     write(iunit,*) "l_upwind_wpxp_ta = ", clubb_config_flags%l_upwind_wpxp_ta
     write(iunit,*) "l_upwind_xpyp_ta = ", clubb_config_flags%l_upwind_xpyp_ta
     write(iunit,*) "l_upwind_xm_ma = ", clubb_config_flags%l_upwind_xm_ma
