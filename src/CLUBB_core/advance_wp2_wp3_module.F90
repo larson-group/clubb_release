@@ -1198,7 +1198,7 @@ module advance_wp2_wp3_module
 
     use parameters_tunable, only:  & 
         C4,  & ! Variables
-        C5,  & 
+        C_uu_shr,  & 
         C8,  & 
         C8b, & 
         C12, & 
@@ -1435,7 +1435,7 @@ module advance_wp2_wp3_module
 
 
     ! Calculate accumulation terms of w'^2 and w'^2 pressure term 2
-    call wp2_terms_ac_pr2_lhs( C5, wm_zt(:), gr%invrs_dzm(:), &
+    call wp2_terms_ac_pr2_lhs( C_uu_shr, wm_zt(:), gr%invrs_dzm(:), &
                                lhs_ac_pr2_wp2(:) )
 
 
@@ -1775,7 +1775,7 @@ module advance_wp2_wp3_module
         ! Note:  To find the contribution of w'^2 term pr2, add 1 to the
         !        C_5 input to function wp2_terms_ac_pr2_lhs.
         if ( iwp2_pr2 > 0 ) then
-           call wp2_terms_ac_pr2_lhs( (one+C5), wm_zt, gr%invrs_dzm, &
+           call wp2_terms_ac_pr2_lhs( (one+C_uu_shr), wm_zt, gr%invrs_dzm, &
                                        zmscr11 )
            zmscr11 = - zmscr11
         endif
@@ -1855,7 +1855,8 @@ module advance_wp2_wp3_module
 
     use parameters_tunable, only:  & 
         C4,  & ! Variables
-        C5,  & 
+        C_uu_shr,  &
+        C_uu_buoy,  & 
         C8,  & 
         C8b, & 
         C12, & 
@@ -2149,11 +2150,11 @@ module advance_wp2_wp3_module
                            lhs_dp1_wp2(:) )
 
     ! Calculate buoyancy production of w'^2 and w'^2 pressure term 2
-    call wp2_terms_bp_pr2_rhs( C5, thv_ds_zm(:), wpthvp(:), &
+    call wp2_terms_bp_pr2_rhs( C_uu_buoy , thv_ds_zm(:), wpthvp(:), &
                                rhs_bp_pr2_wp2(:) )
 
     ! Calculate pressure terms 3 for w'^2
-    call wp2_term_pr3_rhs( C5, thv_ds_zm(:), wpthvp(:), upwp(:), &
+    call wp2_term_pr3_rhs( C_uu_shr, C_uu_buoy, thv_ds_zm(:), wpthvp(:), upwp(:), &
                            um(:), vpwp(:), vm(:), gr%invrs_dzm(:), &
                            rhs_pr3_wp2(:) )
 
@@ -2370,7 +2371,7 @@ module advance_wp2_wp3_module
         ! subtracts the value sent in, reverse the sign on wp2_terms_bp_pr2_rhs.
         ! Note:  To find the contribution of w'^2 term pr2, add 1 to the
         !        C_5 input to function wp2_terms_bp_pr2_rhs.
-        call wp2_terms_bp_pr2_rhs( (one+C5), thv_ds_zm(:), wpthvp(:), &
+        call wp2_terms_bp_pr2_rhs( (one+C_uu_shr), thv_ds_zm(:), wpthvp(:), &
                                    rhs_pr2_wp2(:) )
 
         if ( l_explicit_turbulent_adv_wp3 ) then
@@ -2707,7 +2708,7 @@ module advance_wp2_wp3_module
   end subroutine wp2_term_ta_lhs
 
   !=============================================================================
-  pure subroutine wp2_terms_ac_pr2_lhs( C5, wm_zt, invrs_dzm, &
+  pure subroutine wp2_terms_ac_pr2_lhs( C_uu_shr, wm_zt, invrs_dzm, &
                                         lhs_ac_pr2_wp2 )
 
     ! Description:
@@ -2780,7 +2781,7 @@ module advance_wp2_wp3_module
       invrs_dzm    ! Inverse of grid spacing                     [1/m]
 
     real( kind = core_rknd ), intent(in) :: & 
-      C5    ! Model parameter C_5                            [-]
+      C_uu_shr    ! Model parameter C_5                            [-]
 
     ! Return Variable
     real( kind = core_rknd ), dimension(gr%nz), intent(out) :: &
@@ -2798,7 +2799,7 @@ module advance_wp2_wp3_module
 
        ! Momentum main diagonal: [ x wp2(k,<t+1>) ]
        lhs_ac_pr2_wp2(k) &
-       = + ( one - C5 ) * two * invrs_dzm(k) * ( wm_zt(k+1) - wm_zt(k) )
+       = + ( one - C_uu_shr ) * two * invrs_dzm(k) * ( wm_zt(k+1) - wm_zt(k) )
 
     enddo ! k = 2, gr%nz-1
 
@@ -2976,7 +2977,7 @@ module advance_wp2_wp3_module
   end subroutine wp2_term_pr1_lhs
 
   !=============================================================================
-  pure subroutine wp2_terms_bp_pr2_rhs( C5, thv_ds_zm, wpthvp, &
+  pure subroutine wp2_terms_bp_pr2_rhs( C_uu_buoy, thv_ds_zm, wpthvp, &
                                         rhs_bp_pr2_wp2 )
 
     ! Description:
@@ -3017,7 +3018,7 @@ module advance_wp2_wp3_module
 
     ! Input Variables
     real( kind = core_rknd ), intent(in) :: & 
-      C5    ! Model parameter C_5                             [-]
+      C_uu_buoy    ! Model parameter C_5                             [-]
 
     real( kind = core_rknd ), dimension(gr%nz), intent(in) :: & 
       thv_ds_zm, & ! Dry, base-state theta_v at momentum levels   [K]
@@ -3038,7 +3039,7 @@ module advance_wp2_wp3_module
     do k = 2, gr%nz-1
 
        rhs_bp_pr2_wp2(k) &
-       = + ( one - C5 ) * two * ( grav / thv_ds_zm(k) ) * wpthvp(k)
+       = + ( one - C_uu_buoy ) * two * ( grav / thv_ds_zm(k) ) * wpthvp(k)
 
     enddo ! k = 2, gr%nz-1
 
@@ -3146,7 +3147,7 @@ module advance_wp2_wp3_module
   end subroutine wp2_term_dp1_rhs
 
   !=============================================================================
-  pure subroutine wp2_term_pr3_rhs( C5, thv_ds_zm, wpthvp, upwp, &
+  pure subroutine wp2_term_pr3_rhs( C_uu_shr, C_uu_buoy, thv_ds_zm, wpthvp, upwp, &
                                     um, vpwp, vm, invrs_dzm, &
                                     rhs_pr3_wp2 )
 
@@ -3198,7 +3199,8 @@ module advance_wp2_wp3_module
 
     ! Input Variables
     real( kind = core_rknd ), intent(in) :: & 
-      C5           ! Model parameter C_5                            [-]
+      C_uu_shr,  & ! Model parameter                            [-]
+      C_uu_buoy    ! Model parameter                            [-]
 
     real( kind = core_rknd ), dimension(gr%nz), intent(in) :: & 
       thv_ds_zm, & ! Dry, base-state theta_v at momentum level (k)  [K]
@@ -3226,13 +3228,16 @@ module advance_wp2_wp3_module
        rhs_pr3_wp2(k) &
        ! Michael Falk, 2 August 2007
        ! Use the following code for standard mixing, with c_k=0.548:
-       = + two_thirds * C5 &
-                      * ( ( grav / thv_ds_zm(k) ) * wpthvp(k) &
-                          - upwp(k) * invrs_dzm(k) * ( um(k+1) - um(k) ) &
-                          - vpwp(k) * invrs_dzm(k) * ( vm(k+1) - vm(k) ) &
-                        )
+       = + two_thirds * &
+                      ( C_uu_buoy &
+                        * ( grav / thv_ds_zm(k) ) * wpthvp(k) &
+                      + C_uu_shr &
+                        * ( - upwp(k) * invrs_dzm(k) * ( um(k+1) - um(k) ) &
+                            - vpwp(k) * invrs_dzm(k) * ( vm(k+1) - vm(k) ) &
+                          ) &
+                      )
         ! Use the following code for alternate mixing, with c_k=0.1 or 0.2
-!       = + two_thirds * C5 &
+!       = + two_thirds * C_uu_shr &
 !                      * ( ( grav / thv_ds_zm(k) ) * wpthvp(k) &
 !                          - 0. * upwp(k) * invrs_dzm(k) * ( um(k+1) - um(k) ) &
 !                          - 0. * vpwp(k) * invrs_dzm(k) * ( vm(k+1) - vm(k) ) &

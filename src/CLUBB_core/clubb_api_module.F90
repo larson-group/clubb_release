@@ -140,7 +140,7 @@ module clubb_api_module
   use parameter_indices, only:  &
     nparams, & ! Variable(s)
     iC1, iC1b, iC1c, iC2, iC2b, iC2c,  &
-    iC2rt, iC2thl, iC2rtthl, iC4, iC5, &
+    iC2rt, iC2thl, iC2rtthl, iC4, iC_uu_shr, iC_uu_buoy, &
     iC6rt, iC6rtb, iC6rtc, iC6thl, iC6thlb, iC6thlc, &
     iC7, iC7b, iC7c, iC8, iC8b, iC10, iC11, iC11b, iC11c, &
     iC12, iC13, iC14, iC15, iC_wp2_splat, &
@@ -252,7 +252,7 @@ module clubb_api_module
         l_use_boussinesq, &
         ! The parameters of CLUBB can be retrieved and tuned using these indices:
         iC1, iC1b, iC1c, iC2, iC2b, iC2c,  &
-        iC2rt, iC2thl, iC2rtthl, iC4, iC5, &
+        iC2rt, iC2thl, iC2rtthl, iC4, iC_uu_shr, iC_uu_buoy, &
         iC6rt, iC6rtb, iC6rtc, iC6thl, iC6thlb, iC6thlc, &
         iC7, iC7b, iC7c, iC8, iC8b, iC10, iC11, iC11b, iC11c, &
         iC12, iC13, iC14, iC15, iC_wp2_splat, & 

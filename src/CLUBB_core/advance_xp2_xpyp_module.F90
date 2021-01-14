@@ -114,7 +114,7 @@ module advance_xp2_xpyp_module
         nu9_vert_res_dep, &
         C4,       &
         C14,      &
-        C5,       &
+        C_uu_shr, &
         C2,       &
         C2b,      &
         C2c,      &
@@ -370,9 +370,9 @@ module advance_xp2_xpyp_module
     !---------------------------- Begin Code ----------------------------------
 
     if ( clubb_at_least_debug_level( 0 ) ) then
-      ! Assertion check for C5
-      if ( C5 > one .or. C5 < zero ) then
-        write(fstderr,*) "The C5 variable is outside the valid range"
+      ! Assertion check for C_uu_shr
+      if ( C_uu_shr > one .or. C_uu_shr < zero ) then
+        write(fstderr,*) "The C_uu_shr variable is outside the valid range"
         err_code = clubb_fatal_error
         return
       end if
@@ -572,7 +572,7 @@ module advance_xp2_xpyp_module
                              wp2, wp2_zt, wpthvp, & ! In
                              Lscale, C4_C14_1d, invrs_tau_wp2_zm,  & ! In
                              um, vm, upwp, vpwp, up2, vp2, & ! In
-                             thv_ds_zm, C4, C5, C14, wp2_splat, & ! In
+                             thv_ds_zm, C4, C_uu_shr, C14, wp2_splat, & ! In
                              lhs_ta_wpup2, rhs_ta_wpup2, & ! In
                              uv_rhs(:,1) ) ! Out
 
@@ -603,7 +603,7 @@ module advance_xp2_xpyp_module
                              wp2, wp2_zt, wpthvp, & ! In
                              Lscale, C4_C14_1d, invrs_tau_wp2_zm, & ! In
                              vm, um, vpwp, upwp, vp2, up2, & ! In
-                             thv_ds_zm, C4, C5, C14, wp2_splat, & ! In
+                             thv_ds_zm, C4, C_uu_shr, C14, wp2_splat, & ! In
                              lhs_ta_wpvp2, rhs_ta_wpvp2, & ! In
                              uv_rhs(:,1) ) ! Out
 
@@ -636,7 +636,7 @@ module advance_xp2_xpyp_module
                              wp2, wp2_zt, wpthvp, & ! In
                              Lscale, C4_C14_1d, invrs_tau_wp2_zm,  & ! In
                              um, vm, upwp, vpwp, up2, vp2, & ! In
-                             thv_ds_zm, C4, C5, C14, wp2_splat, & ! In
+                             thv_ds_zm, C4, C_uu_shr, C14, wp2_splat, & ! In
                              lhs_ta_wpup2, rhs_ta_wpup2, & ! In
                              uv_rhs(:,1) ) ! Out
 
@@ -645,7 +645,7 @@ module advance_xp2_xpyp_module
                              wp2, wp2_zt, wpthvp, & ! In
                              Lscale, C4_C14_1d, invrs_tau_wp2_zm,  & ! In
                              vm, um, vpwp, upwp, vp2, up2, & ! In
-                             thv_ds_zm, C4, C5, C14, wp2_splat, & ! In
+                             thv_ds_zm, C4, C_uu_shr, C14, wp2_splat, & ! In
                              lhs_ta_wpup2, rhs_ta_wpvp2, & ! In
                              uv_rhs(:,2) ) ! Out
 
@@ -2181,7 +2181,7 @@ module advance_xp2_xpyp_module
                               wp2, wp2_zt, wpthvp, & ! In
                               Lscale, C4_C14_1d, invrs_tau_wp2_zm,  & ! In
                               xam, xbm, wpxap, wpxbp, xap2, xbp2, & ! In
-                              thv_ds_zm, C4, C5, C14, wp2_splat, & ! In
+                              thv_ds_zm, C4, C_uu_shr, C14, wp2_splat, & ! In
                               lhs_ta, rhs_ta, &
                               rhs ) ! Out
 
@@ -2286,9 +2286,9 @@ module advance_xp2_xpyp_module
       wp2_splat    ! Tendency of <w'^2> due to splatting of eddies  [m^2/s^3]
 
     real( kind = core_rknd ), intent(in) :: & 
-      C4,  & ! Model parameter C_4                         [-]
-      C5,  & ! Model parameter C_5                         [-]
-      C14    ! Model parameter C_{14}                      [-]
+      C4,        & ! Model parameter C_4                         [-]
+      C_uu_shr,  & ! Model parameter C_5                         [-]
+      C14          ! Model parameter C_{14}                      [-]
 
     !------------------- Output Variables -------------------
     real( kind = core_rknd ), dimension(gr%nz), intent(out) :: & 
@@ -2350,7 +2350,7 @@ module advance_xp2_xpyp_module
 
         ! RHS turbulent production (tp) term.
         ! https://arxiv.org/pdf/1711.03675v1.pdf#nameddest=url:up2_pr 
-        rhs(k) = rhs(k) + ( one - C5 ) * term_tp( xam(k+1), xam(k), xam(k+1), xam(k), & 
+        rhs(k) = rhs(k) + ( one - C_uu_shr ) * term_tp( xam(k+1), xam(k), xam(k+1), xam(k), & 
                                                 wpxap(k), wpxap(k), gr%invrs_dzm(k) )
 
         ! RHS pressure term 1 (pr1) (and dissipation term 1 (dp1)).
@@ -2362,7 +2362,7 @@ module advance_xp2_xpyp_module
                         * ( - term_dp1_lhs( C4_C14_1d(k), invrs_tau_wp2_zm(k) ) * xap2(k) )
 
         ! RHS pressure term 2 (pr2).
-        rhs(k) = rhs(k) + term_pr2( C5, thv_ds_zm(k), wpthvp(k), wpxap(k), wpxbp(k), &
+        rhs(k) = rhs(k) + term_pr2( C_uu_shr, thv_ds_zm(k), wpthvp(k), wpxap(k), wpxbp(k), &
                                   xam, xbm, gr%invrs_dzm(k), k+1, k, &
                                   Lscale(k+1), Lscale(k), wp2_zt(k+1), wp2_zt(k) )
     enddo ! k=2..gr%nz-1
@@ -2436,14 +2436,14 @@ module advance_xp2_xpyp_module
 
             ! x'y' term pr2 is completely explicit; call stat_update_var_pt.
             call stat_update_var_pt( ixapxbp_pr2, k, & ! Intent(in)
-                   term_pr2( C5, thv_ds_zm(k), wpthvp(k), wpxap(k), wpxbp(k), & ! In
+                   term_pr2( C_uu_shr, thv_ds_zm(k), wpthvp(k), wpxap(k), wpxbp(k), & ! In
                              xam, xbm, gr%invrs_dzm(k), k+1, k, &  
                              Lscale(k+1), Lscale(k), wp2_zt(k+1), wp2_zt(k) ), &
                    stats_zm )                          ! Intent(inout)
 
             ! x'y' term tp is completely explicit; call stat_update_var_pt.
             call stat_update_var_pt( ixapxbp_tp, k, & ! Intent(in) 
-                  ( one - C5 ) &                      ! Intent(in)
+                  ( one - C_uu_shr ) &                ! Intent(in)
                    * term_tp( xam(k+1), xam(k), xam(k+1), xam(k), &
                               wpxap(k), wpxap(k), gr%invrs_dzm(k) ), & 
                                      stats_zm )       ! Intent(inout)
@@ -4402,7 +4402,7 @@ module advance_xp2_xpyp_module
   end function term_pr1
 
   !=============================================================================
-  function term_pr2( C5, thv_ds_zm, wpthvp, upwp, vpwp, &
+  function term_pr2( C_uu_shr, thv_ds_zm, wpthvp, upwp, vpwp, &
                           um, vm, invrs_dzm, kp1, k, & 
                           Lscalep1, Lscale, wp2_ztp1, wp2_zt ) &
   result( rhs )
@@ -4464,7 +4464,7 @@ module advance_xp2_xpyp_module
 
     ! Input Variables
     real( kind = core_rknd ), intent(in) :: & 
-      C5,        & ! Model parameter C_5                            [-]
+      C_uu_shr,  & ! Model parameter C_5                            [-]
       thv_ds_zm, & ! Dry, base-state theta_v at momentum level (k)  [K]
       wpthvp,    & ! w'th_v'(k)                                     [m/K/s]
       upwp,      & ! u'w'(k)                                        [m^2/s^2]
@@ -4517,7 +4517,7 @@ module advance_xp2_xpyp_module
       ! use original version of term_pr2
 
       ! As applied to w'2
-      rhs = + two_thirds * C5 & 
+      rhs = + two_thirds * C_uu_shr & 
               * ( ( grav / thv_ds_zm ) * wpthvp &
                   - upwp * invrs_dzm * ( um(kp1) - um(k) ) &
                   - vpwp * invrs_dzm * ( vm(kp1) - vm(k) ) &
@@ -4574,10 +4574,10 @@ module advance_xp2_xpyp_module
       ! true (horizontal rolls caused by shear are perpendicular to the shear
       ! vector).  This effect is not yet accounted for.
       !
-      ! For better results, we reduced the value of C5 from 5.2 to 3.0 and
+      ! For better results, we reduced the value of C_uu_shr from 5.2 to 3.0 and
       ! changed the eddy diffusivity coefficient Kh so that it is
       ! proportional to 1.5*wp2 rather than to em.
-      rhs = + two_thirds * C5 & 
+      rhs = + two_thirds * C_uu_shr & 
               * ( constant1 * abs( wp2_ztp1 - wp2_zt ) * invrs_dzm &
                     ! * abs( Lscalep1 - Lscale ) * invrs_dzm &
                   + constant2 * abs( wp2_ztp1 - wp2_zt ) * invrs_dzm &

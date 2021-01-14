@@ -203,7 +203,7 @@ module advance_clubb_core_module
         gamma_coefc, &
         c_K10, &
         c_K10h, &
-        C5, C4, &
+        C_uu_shr, C4, &
         C_wp2_splat, &
         C_invrs_tau_bkgnd, &
         C_invrs_tau_sfc, & 
@@ -1847,7 +1847,7 @@ module advance_clubb_core_module
 
       if ( l_use_buoy_mod_Km_zm ) then
 
-         tau_factor = ( ( one - C5 ) / C4 ) * tau_zm
+         tau_factor = ( ( one - C_uu_shr ) / C4 ) * tau_zm
          Km_zm_denom_term = tau_factor * ( grav / T0 ) * &
                               wpthvp / max( 10._core_rknd*w_tol_sqd, wp2 )
          Km_zm_numerator_term = 0.02_core_rknd * 0.5_core_rknd * ( grav / T0 ) &
