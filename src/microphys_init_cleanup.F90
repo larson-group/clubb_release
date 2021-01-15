@@ -30,7 +30,8 @@ module microphys_init_cleanup
                              l_diagnose_correlations, &
                              l_const_Nc_in_cloud, &
                              l_fix_w_chi_eta_correlations, &
-                             hydromet_dim, silhs_config_flags )
+                             hydromet_dim, silhs_config_flags, &
+                             vert_decorr_coef_out )
 
     ! Description:
     ! Set indices to the various hydrometeor species and define hydromet_dim for
@@ -237,6 +238,9 @@ module microphys_init_cleanup
     type(silhs_config_flags_type), intent(out) :: &
       silhs_config_flags ! Flags for the SILHS sampling code
 
+    real( kind = core_rknd ), intent(out) :: &
+      vert_decorr_coef_out    ! Empirically defined de-correlation constant [-]
+
     ! Local variables
     character(len=30) :: lh_microphys_type
     integer, parameter :: res = 20   ! Used for lookup tables with GFDL activation
@@ -413,6 +417,8 @@ module microphys_init_cleanup
                                              l_lh_var_frac, & ! In
                                              l_lh_normalize_weights, & ! In
                                              silhs_config_flags ) ! Out
+
+    vert_decorr_coef_out = vert_decorr_coef
 
     ! Printing Microphysics inputs
     if ( clubb_at_least_debug_level( 1 ) ) then

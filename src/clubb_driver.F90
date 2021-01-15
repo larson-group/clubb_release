@@ -653,6 +653,9 @@ module clubb_driver
     type(silhs_config_flags_type) :: &
       silhs_config_flags ! Flags for the SILHS sampling code
 
+    real( kind = core_rknd ) :: &
+      vert_decorr_coef    ! Empirically defined de-correlation constant [-]
+
     integer :: &
       iiPDF_type,          & ! Selected option for the two-component normal
                              ! (double Gaussian) PDF type to use for the w, rt,
@@ -1255,7 +1258,8 @@ module clubb_driver
                          l_diagnose_correlations, &                         ! Intent(in)
                          l_const_Nc_in_cloud, &                             ! Intent(inout)
                          l_fix_w_chi_eta_correlations, &                    ! Intent(inout)
-                         hydromet_dim, silhs_config_flags )                 ! Intent(out)
+                         hydromet_dim, silhs_config_flags, &                ! Intent(out)
+                         vert_decorr_coef )                                 ! Intent(out)
 
     ! Setup radiation parameters
     call init_radiation( iunit, runfile, case_info_file, & ! Intent(in)
@@ -2273,6 +2277,7 @@ module clubb_driver
                clubb_config_flags%l_tke_aniso,                               & ! In
                clubb_config_flags%l_standard_term_ta,                        & ! In
                clubb_config_flags%l_single_C2_Skw,                           & ! In
+               vert_decorr_coef,                                             & ! In
                X_nl_all_levs, X_mixt_comp_all_levs,                          & ! Out
                lh_sample_point_weights ) ! Out
        

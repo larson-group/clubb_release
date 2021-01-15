@@ -38,6 +38,7 @@ module latin_hypercube_driver_module
                l_tke_aniso, &                                              ! intent(in)
                l_standard_term_ta, &                                       ! intent(in)
                l_single_C2_Skw, &                                          ! intent(in)
+               vert_decorr_coef, &                                         ! intent(in)
                X_nl_all_levs, X_mixt_comp_all_levs, &                      ! intent(out)
                lh_sample_point_weights )                                   ! intent(out)
 
@@ -76,8 +77,7 @@ module latin_hypercube_driver_module
       stat_rknd
 
     use parameters_silhs, only: &
-      vert_decorr_coef, & ! Variable(s)
-      silhs_config_flags_type ! Type
+      silhs_config_flags_type ! Type(s)
 
     use error_code, only: &
       clubb_at_least_debug_level  ! Procedure
@@ -159,6 +159,9 @@ module latin_hypercube_driver_module
                             ! derivative in advance_wp2_wp3_module.F90 and in
                             ! advance_xp2_xpyp_module.F90.
       l_single_C2_Skw       ! Use a single Skewness dependent C2 for rtp2, thlp2, and rtpthlp
+
+    real( kind = core_rknd ), intent(in) :: &
+      vert_decorr_coef    ! Empirically defined de-correlation constant [-]
     
     ! ---------------- Output Variables ----------------
     real( kind = core_rknd ), intent(out), dimension(ngrdcol,nz,num_samples,pdf_dim) :: &
