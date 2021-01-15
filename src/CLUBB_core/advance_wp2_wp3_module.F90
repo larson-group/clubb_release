@@ -1765,7 +1765,7 @@ module advance_wp2_wp3_module
         end do
 
         ! Note:  To find the contribution of w'^2 term ac, substitute 0 for the
-        !        C_5 input to function wp2_terms_ac_pr2_lhs.
+        !        C_uu_shr input to function wp2_terms_ac_pr2_lhs.
         if ( iwp2_ac > 0 ) then
            call wp2_terms_ac_pr2_lhs( zero, wm_zt, gr%invrs_dzm, &
                                       zmscr10  )
@@ -1773,7 +1773,7 @@ module advance_wp2_wp3_module
         endif
 
         ! Note:  To find the contribution of w'^2 term pr2, add 1 to the
-        !        C_5 input to function wp2_terms_ac_pr2_lhs.
+        !        C_uu_shr input to function wp2_terms_ac_pr2_lhs.
         if ( iwp2_pr2 > 0 ) then
            call wp2_terms_ac_pr2_lhs( (one+C_uu_shr), wm_zt, gr%invrs_dzm, &
                                        zmscr11 )
@@ -2362,7 +2362,7 @@ module advance_wp2_wp3_module
 
         ! w'^2 term bp is completely explicit; call stat_update_var_pt.
         ! Note:  To find the contribution of w'^2 term bp, substitute 0 for the
-        !        C_5 input to function wp2_terms_bp_pr2_rhs.
+        !        C_uu_buoy input to function wp2_terms_bp_pr2_rhs.
         call wp2_terms_bp_pr2_rhs( zero, thv_ds_zm(:), wpthvp(:), &
                                    rhs_bp_wp2(:) )
 
@@ -2370,8 +2370,8 @@ module advance_wp2_wp3_module
         ! stat_begin_update_pt.  Since stat_begin_update_pt automatically
         ! subtracts the value sent in, reverse the sign on wp2_terms_bp_pr2_rhs.
         ! Note:  To find the contribution of w'^2 term pr2, add 1 to the
-        !        C_5 input to function wp2_terms_bp_pr2_rhs.
-        call wp2_terms_bp_pr2_rhs( (one+C_uu_shr), thv_ds_zm(:), wpthvp(:), &
+        !        C_uu_buoy input to function wp2_terms_bp_pr2_rhs.
+        call wp2_terms_bp_pr2_rhs( (one+C_uu_buoy), thv_ds_zm(:), wpthvp(:), &
                                    rhs_pr2_wp2(:) )
 
         if ( l_explicit_turbulent_adv_wp3 ) then
@@ -2426,7 +2426,7 @@ module advance_wp2_wp3_module
 
             ! w'^2 term bp is completely explicit; call stat_update_var_pt.
             ! Note:  To find the contribution of w'^2 term bp, substitute 0 for the
-            !        C_5 input to function wp2_terms_bp_pr2_rhs.
+            !        C_uu_buoy input to function wp2_terms_bp_pr2_rhs.
             call stat_update_var_pt( iwp2_bp, k, rhs_bp_wp2(k), stats_zm )
 
 
@@ -2454,7 +2454,7 @@ module advance_wp2_wp3_module
             ! stat_begin_update_pt.  Since stat_begin_update_pt automatically
             ! subtracts the value sent in, reverse the sign on wp2_terms_bp_pr2_rhs.
             ! Note:  To find the contribution of w'^2 term pr2, add 1 to the
-            !        C_5 input to function wp2_terms_bp_pr2_rhs.
+            !        C_uu_buoy input to function wp2_terms_bp_pr2_rhs.
             call stat_begin_update_pt( iwp2_pr2, k, -rhs_pr2_wp2(k), stats_zm )
 
             ! w'^2 term dp1 has both implicit and explicit components; call
@@ -2728,11 +2728,13 @@ module advance_wp2_wp3_module
     ! and the implicit portion of pressure term 2 are combined and solved 
     ! together as:
     !
-    ! + ( 1 - C_5 ) ( -2 w'^2(t+1) dw/dz ).
+    ! + ( 1 - C_uu_shr ) ( -2 w'^2(t+1) dw/dz ).
     !
-    ! Note:  When the term is brought over to the left-hand side, the sign 
-    !        is reversed and the leading "-" in front of the "2" is changed 
-    !        to a "+".
+    ! Note 1:  When the term is brought over to the left-hand side, the sign 
+    !          is reversed and the leading "-" in front of the "2" is changed 
+    !          to a "+".
+    ! Note 2:  We have broken C5 up into C_uu_shr for this term
+    !          and C_uu_buoy for the buoyancy term.
     !
     ! The timestep index (t+1) means that the value of w'^2 being used is from 
     ! the next timestep, which is being advanced to in solving the d(w'^2)/dt 
@@ -2781,7 +2783,7 @@ module advance_wp2_wp3_module
       invrs_dzm    ! Inverse of grid spacing                     [1/m]
 
     real( kind = core_rknd ), intent(in) :: & 
-      C_uu_shr    ! Model parameter C_5                            [-]
+      C_uu_shr    ! Model parameter C_uu_shr                       [-]
 
     ! Return Variable
     real( kind = core_rknd ), dimension(gr%nz), intent(out) :: &
@@ -2997,8 +2999,11 @@ module advance_wp2_wp3_module
     ! production term and the explicit portion of pressure term 2 are combined 
     ! and solved together as:
     !
-    ! + ( 1 - C_5 ) ( 2 (g/thv_ds) w'th_v' ).
-
+    ! + ( 1 - C_uu_buoy ) ( 2 (g/thv_ds) w'th_v' ).
+    !
+    ! Note:  We have broken C5 up into C_uu_shr for the accumulation term
+    !        and C_uu_buoy for the buoyancy term.
+    !
     ! References:
     !-----------------------------------------------------------------------
 
@@ -3018,7 +3023,7 @@ module advance_wp2_wp3_module
 
     ! Input Variables
     real( kind = core_rknd ), intent(in) :: & 
-      C_uu_buoy    ! Model parameter C_5                             [-]
+      C_uu_buoy    ! Model parameter C_uu_buoy                         [-]
 
     real( kind = core_rknd ), dimension(gr%nz), intent(in) :: & 
       thv_ds_zm, & ! Dry, base-state theta_v at momentum levels   [K]
@@ -3157,6 +3162,9 @@ module advance_wp2_wp3_module
     ! The d(w'^2)/dt equation contains pressure term 3:
     !
     ! + (2/3) C_5 [ (g/thv_ds) w'th_v' - u'w' du/dz - v'w' dv/dz ].
+    !
+    ! Note that below we have broken up C5 into C_uu_shr for shear terms and 
+    ! C_uu_buoy for buoyancy terms.
     !
     ! This term is solved for completely explicitly and is discretized as 
     ! follows:

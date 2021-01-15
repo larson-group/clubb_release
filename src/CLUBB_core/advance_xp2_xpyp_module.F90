@@ -115,6 +115,7 @@ module advance_xp2_xpyp_module
         C4,       &
         C14,      &
         C_uu_shr, &
+        C_uu_buoy, &
         C2,       &
         C2b,      &
         C2c,      &
@@ -572,7 +573,7 @@ module advance_xp2_xpyp_module
                              wp2, wp2_zt, wpthvp, & ! In
                              Lscale, C4_C14_1d, invrs_tau_wp2_zm,  & ! In
                              um, vm, upwp, vpwp, up2, vp2, & ! In
-                             thv_ds_zm, C4, C_uu_shr, C14, wp2_splat, & ! In
+                             thv_ds_zm, C4, C_uu_shr, C_uu_buoy, C14, wp2_splat, & ! In
                              lhs_ta_wpup2, rhs_ta_wpup2, & ! In
                              uv_rhs(:,1) ) ! Out
 
@@ -603,7 +604,7 @@ module advance_xp2_xpyp_module
                              wp2, wp2_zt, wpthvp, & ! In
                              Lscale, C4_C14_1d, invrs_tau_wp2_zm, & ! In
                              vm, um, vpwp, upwp, vp2, up2, & ! In
-                             thv_ds_zm, C4, C_uu_shr, C14, wp2_splat, & ! In
+                             thv_ds_zm, C4, C_uu_shr, C_uu_buoy, C14, wp2_splat, & ! In
                              lhs_ta_wpvp2, rhs_ta_wpvp2, & ! In
                              uv_rhs(:,1) ) ! Out
 
@@ -636,7 +637,7 @@ module advance_xp2_xpyp_module
                              wp2, wp2_zt, wpthvp, & ! In
                              Lscale, C4_C14_1d, invrs_tau_wp2_zm,  & ! In
                              um, vm, upwp, vpwp, up2, vp2, & ! In
-                             thv_ds_zm, C4, C_uu_shr, C14, wp2_splat, & ! In
+                             thv_ds_zm, C4, C_uu_shr, C_uu_buoy, C14, wp2_splat, & ! In
                              lhs_ta_wpup2, rhs_ta_wpup2, & ! In
                              uv_rhs(:,1) ) ! Out
 
@@ -645,7 +646,7 @@ module advance_xp2_xpyp_module
                              wp2, wp2_zt, wpthvp, & ! In
                              Lscale, C4_C14_1d, invrs_tau_wp2_zm,  & ! In
                              vm, um, vpwp, upwp, vp2, up2, & ! In
-                             thv_ds_zm, C4, C_uu_shr, C14, wp2_splat, & ! In
+                             thv_ds_zm, C4, C_uu_shr, C_uu_buoy, C14, wp2_splat, & ! In
                              lhs_ta_wpup2, rhs_ta_wpvp2, & ! In
                              uv_rhs(:,2) ) ! Out
 
@@ -2181,7 +2182,7 @@ module advance_xp2_xpyp_module
                               wp2, wp2_zt, wpthvp, & ! In
                               Lscale, C4_C14_1d, invrs_tau_wp2_zm,  & ! In
                               xam, xbm, wpxap, wpxbp, xap2, xbp2, & ! In
-                              thv_ds_zm, C4, C_uu_shr, C14, wp2_splat, & ! In
+                              thv_ds_zm, C4, C_uu_shr, C_uu_buoy, C14, wp2_splat, & ! In
                               lhs_ta, rhs_ta, &
                               rhs ) ! Out
 
@@ -2287,7 +2288,8 @@ module advance_xp2_xpyp_module
 
     real( kind = core_rknd ), intent(in) :: & 
       C4,        & ! Model parameter C_4                         [-]
-      C_uu_shr,  & ! Model parameter C_5                         [-]
+      C_uu_shr,  & ! Model parameter C_uu_shr                    [-]
+      C_uu_buoy, & ! Model parameter C_uu_buoy                   [-]
       C14          ! Model parameter C_{14}                      [-]
 
     !------------------- Output Variables -------------------
@@ -2362,8 +2364,8 @@ module advance_xp2_xpyp_module
                         * ( - term_dp1_lhs( C4_C14_1d(k), invrs_tau_wp2_zm(k) ) * xap2(k) )
 
         ! RHS pressure term 2 (pr2).
-        rhs(k) = rhs(k) + term_pr2( C_uu_shr, thv_ds_zm(k), wpthvp(k), wpxap(k), wpxbp(k), &
-                                  xam, xbm, gr%invrs_dzm(k), k+1, k, &
+        rhs(k) = rhs(k) + term_pr2( C_uu_shr, C_uu_buoy, thv_ds_zm(k), wpthvp(k), wpxap(k), &
+                                  wpxbp(k), xam, xbm, gr%invrs_dzm(k), k+1, k, &
                                   Lscale(k+1), Lscale(k), wp2_zt(k+1), wp2_zt(k) )
     enddo ! k=2..gr%nz-1
 
@@ -2436,10 +2438,10 @@ module advance_xp2_xpyp_module
 
             ! x'y' term pr2 is completely explicit; call stat_update_var_pt.
             call stat_update_var_pt( ixapxbp_pr2, k, & ! Intent(in)
-                   term_pr2( C_uu_shr, thv_ds_zm(k), wpthvp(k), wpxap(k), wpxbp(k), & ! In
-                             xam, xbm, gr%invrs_dzm(k), k+1, k, &  
-                             Lscale(k+1), Lscale(k), wp2_zt(k+1), wp2_zt(k) ), &
-                   stats_zm )                          ! Intent(inout)
+                 term_pr2( C_uu_shr, C_uu_buoy, thv_ds_zm(k), wpthvp(k), wpxap(k), & ! In
+                           wpxbp(k), xam, xbm, gr%invrs_dzm(k), k+1, k, &  
+                           Lscale(k+1), Lscale(k), wp2_zt(k+1), wp2_zt(k) ), &
+                           stats_zm )                          ! Intent(inout)
 
             ! x'y' term tp is completely explicit; call stat_update_var_pt.
             call stat_update_var_pt( ixapxbp_tp, k, & ! Intent(in) 
@@ -4402,8 +4404,8 @@ module advance_xp2_xpyp_module
   end function term_pr1
 
   !=============================================================================
-  function term_pr2( C_uu_shr, thv_ds_zm, wpthvp, upwp, vpwp, &
-                          um, vm, invrs_dzm, kp1, k, & 
+  function term_pr2( C_uu_shr, C_uu_buoy, thv_ds_zm, wpthvp, upwp, & 
+                          vpwp, um, vm, invrs_dzm, kp1, k, & 
                           Lscalep1, Lscale, wp2_ztp1, wp2_zt ) &
   result( rhs )
 
@@ -4418,6 +4420,9 @@ module advance_xp2_xpyp_module
     ! The d(u'^2)/dt equation contains pressure term 2:
     !
     ! + (2/3) C_5 [ (g/thv_ds) w'th_v' - u'w' du/dz - v'w' dv/dz ].
+    !
+    ! Note that below we have broken up C5 into C_uu_shr for shear terms and 
+    ! C_uu_buoy for buoyancy terms.
     !
     ! This term is solved for completely explicitly and is discretized as
     ! follows:
@@ -4464,7 +4469,8 @@ module advance_xp2_xpyp_module
 
     ! Input Variables
     real( kind = core_rknd ), intent(in) :: & 
-      C_uu_shr,  & ! Model parameter C_5                            [-]
+      C_uu_shr,  & ! Model parameter C_uu_shr                       [-]
+      C_uu_buoy, & ! Model parameter C_uu_buoy                      [-]
       thv_ds_zm, & ! Dry, base-state theta_v at momentum level (k)  [K]
       wpthvp,    & ! w'th_v'(k)                                     [m/K/s]
       upwp,      & ! u'w'(k)                                        [m^2/s^2]
@@ -4517,11 +4523,14 @@ module advance_xp2_xpyp_module
       ! use original version of term_pr2
 
       ! As applied to w'2
-      rhs = + two_thirds * C_uu_shr & 
-              * ( ( grav / thv_ds_zm ) * wpthvp &
-                  - upwp * invrs_dzm * ( um(kp1) - um(k) ) &
-                  - vpwp * invrs_dzm * ( vm(kp1) - vm(k) ) &
-                )
+      rhs = + two_thirds * &
+                      ( C_uu_buoy &
+                        * ( grav / thv_ds_zm ) * wpthvp &
+                      + C_uu_shr &
+                        * ( - upwp * invrs_dzm * ( um(kp1) - um(k) ) &
+                            - vpwp * invrs_dzm * ( vm(kp1) - vm(k) ) &
+                          ) &
+                      )
 
     else ! use experimental version of term_pr2 --ldgrant March 2010
 
