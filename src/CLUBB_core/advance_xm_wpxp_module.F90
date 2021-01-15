@@ -47,7 +47,7 @@ module advance_xm_wpxp_module
   contains
 
   !=============================================================================
-  subroutine advance_xm_wpxp( dt, sigma_sqd_w, wm_zm, wm_zt, wp2, &
+  subroutine advance_xm_wpxp( dt, sigma_sqd_w, wm_zm, wm_zt, wp2, & 
                               Lscale, wp3_on_wp2, wp3_on_wp2_zt, Kh_zt, Kh_zm, &
                               tau_C6_zm, Skw_zm, wp2rtp, rtpthvp, rtm_forcing, &
                               wprtp_forcing, rtm_ref, wp2thlp, thlpthvp, &
@@ -66,6 +66,7 @@ module advance_xm_wpxp_module
                               l_predict_upwp_vpwp, &
                               l_diffuse_rtm_and_thlm, &
                               l_stability_correct_Kh_N2_zm, &
+                              l_godunov_upwind_wpxp_ta, &
                               l_upwind_wpxp_ta, &
                               l_upwind_xm_ma, &
                               l_uv_nudge, &
@@ -295,6 +296,10 @@ module advance_xm_wpxp_module
                                       ! diffusion on rtm and thlm
       l_stability_correct_Kh_N2_zm, & ! This flag determines whether or not we want CLUBB to apply
                                       ! a stability correction
+      l_godunov_upwind_wpxp_ta,     & ! This flag determines whether we want to use a Godunov-like upwind
+                                      ! differencing approximation rather than a centered
+                                      ! differencing for turbulent or mean advection terms.
+                                      ! It affects wprtp, wpthlp, & wpsclrp.
       l_upwind_wpxp_ta,             & ! This flag determines whether we want to use an upwind
                                       ! differencing approximation rather than a centered
                                       ! differencing for turbulent or mean advection terms.
@@ -334,7 +339,7 @@ module advance_xm_wpxp_module
 
     real( kind = core_rknd ), dimension(gr%nz) ::  & 
       C6rt_Skw_fnc, C6thl_Skw_fnc, C7_Skw_fnc
-
+    
     ! Eddy Diffusion for wpthlp and wprtp.
     real( kind = core_rknd ), dimension(gr%nz) :: Kw6  ! wpxp eddy diff. [m^2/s]
 
@@ -533,6 +538,7 @@ module advance_xm_wpxp_module
                                  pdf_implicit_coefs_terms, &
                                  l_explicit_turbulent_adv_wpxp, l_predict_upwp_vpwp, &
                                  l_scalar_calc, &
+                                 l_godunov_upwind_wpxp_ta, &
                                  l_upwind_wpxp_ta, &
                                  lhs_ta_wprtp, lhs_ta_wpthlp, lhs_ta_wpup, &
                                  lhs_ta_wpvp, lhs_ta_wpsclrp, &
@@ -1680,6 +1686,7 @@ module advance_xm_wpxp_module
                                     pdf_implicit_coefs_terms, &
                                     l_explicit_turbulent_adv_wpxp, l_predict_upwp_vpwp, &
                                     l_scalar_calc, &
+                                    l_godunov_upwind_wpxp_ta, &
                                     l_upwind_wpxp_ta, &
                                     lhs_ta_wprtp, lhs_ta_wpthlp, lhs_ta_wpup, &
                                     lhs_ta_wpvp, lhs_ta_wpsclrp, &
@@ -1714,6 +1721,7 @@ module advance_xm_wpxp_module
 
     use turbulent_adv_pdf, only: &
       xpyp_term_ta_pdf_lhs_all, &  ! Procedures
+      xpyp_term_ta_pdf_lhs_godunov, & 
       xpyp_term_ta_pdf_rhs_all, &
       sgn_turbulent_velocity
       
@@ -1766,9 +1774,12 @@ module advance_xm_wpxp_module
       l_predict_upwp_vpwp
 
     logical, intent(in) :: &
-      l_upwind_wpxp_ta ! This flag determines whether we want to use an upwind differencing
-                       ! approximation rather than a centered differencing for turbulent or
-                       ! mean advection terms. It affects wprtp, wpthlp, & wpsclrp.
+      l_upwind_wpxp_ta,  &        ! This flag determines whether we want to use an upwind differencing
+                                  ! approximation rather than a centered differencing for turbulent or
+                                  ! mean advection terms. It affects wprtp, wpthlp, & wpsclrp.
+      l_godunov_upwind_wpxp_ta    ! This flag determines whether we want to use the Godunov-like upwind
+                                  ! differencing approximation rather than a  centered differencing for 
+                                  ! turbulent advection terms. It affects wpxp only.
       
     !------------------- Output Variables -------------------
         
@@ -1956,7 +1967,7 @@ module advance_xm_wpxp_module
         
         ! The termodynamic grid level coefficients are only needed if l_upwind_wpxp_ta
         ! is false, or if stats output is on
-        if ( .not. l_upwind_wpxp_ta .or. l_stats_samp ) then
+        if ( .not. l_upwind_wpxp_ta .or. l_stats_samp .or. l_godunov_upwind_wpxp_ta ) then
           coef_wp2rtp_implicit = a1_zt * wp3_on_wp2_zt
           coef_wp2thlp_implicit = coef_wp2rtp_implicit
         end if
@@ -1966,19 +1977,30 @@ module advance_xm_wpxp_module
            coef_wp2rtp_implicit_zm = a1 * wp3_on_wp2
            sgn_t_vel_wprtp = wp3_on_wp2
         endif ! l_upwind_wpxp_ta
-        
-        ! Calculate the LHS turbulent advection term for <w'r_t'>
-        call xpyp_term_ta_pdf_lhs_all( coef_wp2rtp_implicit(:),     & ! Intent(in)
-                                       rho_ds_zt(:),                & ! Intent(in)
-                                       invrs_rho_ds_zm(:),          & ! Intent(in)
-                                       gr%invrs_dzm(:),             & ! Intent(in)
-                                       l_upwind_wpxp_ta,            & ! Intent(in)
-                                       sgn_t_vel_wprtp(:),          & ! Intent(in)
-                                       coef_wp2rtp_implicit_zm(:),  & ! Intent(in)
-                                       rho_ds_zm(:),                & ! Intent(in)
-                                       gr%invrs_dzt(:),             & ! Intent(in)
-                                       lhs_ta_wprtp(:,:)           ) ! Intent(out)
-        
+
+        ! Calculate the LHS turbulent advection term (ta) for <w'r_t'>       
+        if (.not.l_godunov_upwind_wpxp_ta)then
+
+          ! Default method for the vertical discretization of ta term 
+          call xpyp_term_ta_pdf_lhs_all( coef_wp2rtp_implicit(:),     & ! Intent(in)
+                                         rho_ds_zt(:),                & ! Intent(in)
+                                         invrs_rho_ds_zm(:),          & ! Intent(in)
+                                         gr%invrs_dzm(:),             & ! Intent(in)
+                                         l_upwind_wpxp_ta,            & ! Intent(in)
+                                         sgn_t_vel_wprtp(:),          & ! Intent(in)
+                                         coef_wp2rtp_implicit_zm(:),  & ! Intent(in)
+                                         rho_ds_zm(:),                & ! Intent(in)
+                                         gr%invrs_dzt(:),             & ! Intent(in)
+                                         lhs_ta_wprtp(:,:)           ) ! Intent(out)
+        else
+          ! Godunov-like method for the vertical discretization of ta term  
+          call xpyp_term_ta_pdf_lhs_godunov( coef_wp2rtp_implicit(:),     & ! Intent(in)
+                                             invrs_rho_ds_zm(:),          & ! Intent(in)
+                                             gr%invrs_dzm(:),             & ! Intent(in)
+                                             rho_ds_zm(:),                & ! Intent(in)
+                                             lhs_ta_wprtp(:,:)           ) ! Intent(out)
+         
+        end if 
         ! For ADG1, the LHS turbulent advection terms for 
         ! <w'r_t'>, <w'thl'>, <w'sclr'> are all equal
         lhs_ta_wpthlp = lhs_ta_wprtp
