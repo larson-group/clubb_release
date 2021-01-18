@@ -11,10 +11,10 @@ pipeline {
         sh '''run_scripts/run_scm_all.bash'''
       }
     }
-    stage('Remove Workspace') {
-      steps {
-        cleanWs(cleanWhenAborted: true, cleanWhenFailure: true, cleanWhenSuccess: true, cleanWhenUnstable: true)
-      }
+  }
+  post {
+    always {
+      cleanWs(cleanWhenAborted: true, cleanWhenFailure: true, cleanWhenSuccess: true, cleanWhenUnstable: true)
     }
   }
 }

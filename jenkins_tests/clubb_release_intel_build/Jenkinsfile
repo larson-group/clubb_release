@@ -3,29 +3,24 @@ pipeline {
   stages {
     stage('Checkout Clubb_Release') {
       steps {
-        sh '''
-   git clone https://LarsonGroupSysAdmin:repo99sitori@github.com/larson-group/clubb_release.git'''
+        sh '''git clone https://LarsonGroupSysAdmin:repo99sitori@github.com/larson-group/clubb_release.git'''
       }
     }
-
     stage('Compile Clubb Release ') {
       steps {
         sh 'clubb_release/compile/compile.bash -c config/linux_x86_64_ifort.bash'
       }
     }
-
     stage('Run') {
       steps {
         sh '''source /opt/intel/bin/ifortvars.sh intel64
-clubb_release/run_scripts/run_scm_all.bash'''
+              clubb_release/run_scripts/run_scm_all.bash'''
       }
     }
-
-    stage('Cleanup') {
-      steps {
-        cleanWs(cleanWhenFailure: true, cleanWhenSuccess: true, cleanWhenUnstable: true, cleanWhenAborted: true)
-      }
+  }
+  post {
+    always {
+      cleanWs(cleanWhenFailure: true, cleanWhenSuccess: true, cleanWhenUnstable: true, cleanWhenAborted: true)
     }
-
   }
 }

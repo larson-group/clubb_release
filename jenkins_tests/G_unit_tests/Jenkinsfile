@@ -1,0 +1,20 @@
+pipeline {
+  agent any
+  stages {
+    stage('Compile') {
+      steps {
+        sh 'compile/compile.bash'
+      }
+    }
+    stage('Run CLUBB\'s G Unit Tests') {
+      steps {
+        sh 'run_scripts/run_G_unit_tests.bash'
+      }
+    }
+  }
+  post {
+    always {
+      cleanWs(cleanWhenFailure: true, cleanWhenAborted: true, cleanWhenSuccess: true)
+    }
+  }
+}

@@ -6,15 +6,15 @@ pipeline {
         sh 'compile/compile.bash -c config/linux_x86_64_gfortran.bash'
       }
     }
-    stage('Run the CLUBB convergence test script') {
+    stage('Run SILHS test script') {
       steps {
-        sh 'run_scripts/run_clubb_conv_test.bash'
+        sh 'run_scripts/run_silhs_test.bash'
       }
     }
   }
   post {
     always {
-      cleanWs(cleanWhenFailure: true, cleanWhenSuccess: true, cleanWhenUnstable: true)
+      cleanWs(cleanWhenFailure: true, cleanWhenSuccess: true, cleanWhenUnstable: true, cleanWhenAborted: true)
     }
   }
 }

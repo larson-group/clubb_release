@@ -6,36 +6,30 @@ pipeline {
         sh 'compile/compile.bash '
       }
     }
-
     stage('Configure Clubb') {
       steps {
-        sh '''bash -c "cp input/tunable_parameters_compatible_r8029/* input/tunable_parameters"
-'''
+        sh '''bash -c "cp input/tunable_parameters_compatible_r8029/* input/tunable_parameters"'''
       }
     }
-
     stage('Run Clubb') {
       steps {
         sh '''bash -c "echo bomex > run_scripts/RUN_CASES"
-bash -c "echo dycoms2_rf01 >> run_scripts/RUN_CASES"
-run_scripts/run_scm_all.bash'''
+              bash -c "echo dycoms2_rf01 >> run_scripts/RUN_CASES"
+              run_scripts/run_scm_all.bash'''
       }
     }
-
     stage('Check output against tolerance') {
       steps {
-        sh '''echo "Testing bomex"
-bash -l -c "postprocessing/tolerance_compare/tolerance_check.py /home/pub/tolerance_test_benchmarks/clubb_r8029/bomex_sfc.nc output/bomex_sfc.nc lwp 0.01"
-echo "Testing dycoms2_rf01"
-bash -l -c "postprocessing/tolerance_compare/tolerance_check.py /home/pub/tolerance_test_benchmarks/clubb_r8029/dycoms2_rf01_sfc.nc output/dycoms2_rf01_sfc.nc lwp 0.01"'''
+        sh '''echo "Testing bomex" 
+              bash -l -c "postprocessing/tolerance_compare/tolerance_check.py /home/pub/tolerance_test_benchmarks/clubb_r8029/bomex_sfc.nc output/bomex_sfc.nc lwp 0.01"
+              echo "Testing dycoms2_rf01"
+              bash -l -c "postprocessing/tolerance_compare/tolerance_check.py /home/pub/tolerance_test_benchmarks/clubb_r8029/dycoms2_rf01_sfc.nc output/dycoms2_rf01_sfc.nc lwp 0.01"'''
       }
     }
-
-    stage('Cleanup') {
-      steps {
-        cleanWs(cleanWhenFailure: true, cleanWhenSuccess: true, cleanWhenUnstable: true)
-      }
+  }
+  post {
+    always {
+      cleanWs(cleanWhenFailure: true, cleanWhenSuccess: true, cleanWhenUnstable: true)
     }
-
   }
 }
