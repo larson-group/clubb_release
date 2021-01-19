@@ -23,7 +23,7 @@ OLD_OUTPUT_DIR_1="default"
 OLD_OUTPUT_DIR_2="" # (if you have no 2nd output directory)
 
 # Plotting options for pyplotgen (see postprocessing/pyplotgen/README.md)
-PYPLOTGEN_OPTIONS="--plot-budgets -l -c"
+PYPLOTGEN_OPTIONS="--plot-budgets -l --cases ${CASES[@]} -c"
 
 # Code begins ------------------------------------------------------
 
