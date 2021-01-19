@@ -377,6 +377,11 @@ module advance_xp2_xpyp_module
         err_code = clubb_fatal_error
         return
       end if
+      if ( C_uu_buoy > one .or. C_uu_buoy < zero ) then
+        write(fstderr,*) "The C_uu_buoy variable is outside the valid range"
+        err_code = clubb_fatal_error
+        return
+      end if
     end if
 
     if ( l_single_C2_Skw ) then
