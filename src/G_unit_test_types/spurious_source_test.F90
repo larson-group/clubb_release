@@ -405,7 +405,7 @@ module spurious_source_test
       l_update_pressure,            & ! Flag for having CLUBB update pressure and exner
       l_lmm_stepping,               & ! Apply Linear Multistep Method (LMM) Stepping
       l_e3sm_config,                & ! Run model with E3SM settings
-      l_use_tke_in_wp3_bp2_term       ! Use TKE formulation for wp3 bp2 term
+      l_use_tke_in_wp3_pr_turb_term   ! Use TKE formulation for wp3 pr_turb term
 
     call set_default_clubb_config_flags( iiPDF_type, &
                                          ipdf_call_placement, &
@@ -450,7 +450,7 @@ module spurious_source_test
                                          l_prescribed_avg_deltaz, &
                                          l_update_pressure, &
                                          l_lmm_stepping, &
-                                         l_use_tke_in_wp3_bp2_term, &
+                                         l_use_tke_in_wp3_pr_turb_term, &
                                          l_e3sm_config )
 
     write(*,*)

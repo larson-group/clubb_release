@@ -123,7 +123,7 @@ class VariableGroupBaseBudgets(VariableGroup):
             {'var_names': ['wp3_pr2'], 'legend_label': 'wp3_pr2'},
             {'var_names': ['wp3_pr3'], 'legend_label': 'wp3_pr3'},
             {'var_names': ['wp3_bp1'], 'legend_label': 'wp3_bp1'},
-            {'var_names': ['wp3_bp2'], 'legend_label': 'wp3_bp2'},
+            {'var_names': ['wp3_pr_turb'], 'legend_label': 'wp3_pr_turb'},
             {'var_names': ['wp3_dp1'], 'legend_label': 'wp3_dp1'},
             {'var_names': ['wp3_tp'], 'legend_label': 'wp3_tp'},
             {'var_names': ['wp3_cl'], 'legend_label': 'wp3_cl'},
@@ -909,7 +909,7 @@ class VariableGroupBaseBudgets(VariableGroup):
         .. code-block:: python
             :linenos:
 
-            wp3_bt - (wp3_ma + wp3_ta + wp3_tp + wp3_ac + wp3_bp1 + wp3_bp2 + wp3_pr1 + wp3_pr2 + wp3_pr3 +
+            wp3_bt - (wp3_ma + wp3_ta + wp3_tp + wp3_ac + wp3_bp1 + wp3_pr_turb + wp3_pr1 + wp3_pr2 + wp3_pr3 +
             wp3_dp1 + wp3_cl+wp3_splat)
 
         :param dataset_override: If passed, this netcdf dataset will be used to gather the data needed to calculate the
@@ -920,7 +920,7 @@ class VariableGroupBaseBudgets(VariableGroup):
         '''
         # z,z, dataset = self.getVarForCalculations('altitude', dataset_override)
         wp3_bp1, indep, dataset = self.getVarForCalculations('wp3_bp1', dataset_override)
-        wp3_bp2, indep, dataset = self.getVarForCalculations('wp3_bp2', dataset)
+        wp3_pr_turb, indep, dataset = self.getVarForCalculations('wp3_pr_turb', dataset)
         wp3_cl, indep, dataset = self.getVarForCalculations('wp3_cl', dataset)
         wp3_ac, indep, dataset = self.getVarForCalculations('wp3_ac', dataset)
         wp3_pr1, indep, dataset = self.getVarForCalculations('wp3_pr1', dataset)
@@ -934,7 +934,7 @@ class VariableGroupBaseBudgets(VariableGroup):
         wp3_tp, indep, dataset = self.getVarForCalculations('wp3_tp', dataset)
 
         output_data = wp3_bt - (
-                wp3_ma + wp3_ta + wp3_tp + wp3_ac + wp3_bp1 + wp3_bp2 + wp3_pr1 + wp3_pr2 + wp3_pr3 +
+                wp3_ma + wp3_ta + wp3_tp + wp3_ac + wp3_bp1 + wp3_pr_turb + wp3_pr1 + wp3_pr2 + wp3_pr3 +
                 wp3_dp1 + wp3_cl + wp3_splat)
 
         return output_data, indep

@@ -1661,7 +1661,7 @@ module advance_clubb_core_module
              clubb_config_flags%l_use_C11_Richardson,                   & ! intent(in)
              clubb_config_flags%l_damp_wp3_Skw_squared,                 & ! intent(in)
              clubb_config_flags%l_lmm_stepping,                         & ! intent(in)
-             clubb_config_flags%l_use_tke_in_wp3_bp2_term,              & ! intent(in)
+             clubb_config_flags%l_use_tke_in_wp3_pr_turb_term,          & ! intent(in)
              wp2, wp3, wp3_zm, wp2_zt )                                   ! intent(inout)
 
       if ( clubb_at_least_debug_level( 0 ) ) then

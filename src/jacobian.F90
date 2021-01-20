@@ -229,7 +229,7 @@ program jacobian
   (/"cloud_frac  ", "rcm         ", "rtm         ", & 
     "thlm        ", "um          ", "vm          ", & 
     "wp3         ", "wp3_ta      ", "wp3_tp      ", & 
-    "wp3_bp1     ", "wp3_bp2     ", "wp3_cl      ", & 
+    "wp3_bp1     ", "wp3_pr_turb ", "wp3_cl      ", & 
     "wp3_pr1     ", "wp3_pr2     ", "wp3_dp1     "/)
 
   var1zm%name(1:nvarzm) =  & 

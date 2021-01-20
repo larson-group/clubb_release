@@ -143,7 +143,7 @@ module clubb_api_module
     iC2rt, iC2thl, iC2rtthl, iC4, iC_uu_shr, iC_uu_buoy, &
     iC6rt, iC6rtb, iC6rtc, iC6thl, iC6thlb, iC6thlc, &
     iC7, iC7b, iC7c, iC8, iC8b, iC10, iC11, iC11b, iC11c, &
-    iC12, iC13, iC14, iC15, iC_wp2_splat, &
+    iC12, iC13, iC14, iC_wp3_turb, iC_wp2_splat, &
     iC6rt_Lscale0, iC6thl_Lscale0, &
     iC7_Lscale0, iwpxp_L_thresh, ic_K, ic_K1, inu1, &
     ic_K2, inu2, ic_K6, inu6, ic_K8, inu8, ic_K9, inu9, &
@@ -255,7 +255,7 @@ module clubb_api_module
         iC2rt, iC2thl, iC2rtthl, iC4, iC_uu_shr, iC_uu_buoy, &
         iC6rt, iC6rtb, iC6rtc, iC6thl, iC6thlb, iC6thlc, &
         iC7, iC7b, iC7c, iC8, iC8b, iC10, iC11, iC11b, iC11c, &
-        iC12, iC13, iC14, iC15, iC_wp2_splat, & 
+        iC12, iC13, iC14, iC_wp3_turb, iC_wp2_splat, & 
         iC6rt_Lscale0, iC6thl_Lscale0, &
         iC7_Lscale0, iwpxp_L_thresh, ic_K, ic_K1, inu1, &
         ic_K2, inu2, ic_K6, inu6, ic_K8, inu8, ic_K9, inu9, &
@@ -2612,7 +2612,7 @@ contains
                                                  l_update_pressure, & ! Out
                                                  l_lmm_stepping, & ! Out
                                                  l_e3sm_config, & ! Out
-                                                 l_use_tke_in_wp3_bp2_term ) ! Out
+                                                 l_use_tke_in_wp3_pr_turb_term ) ! Out
 
     use model_flags, only: &
       set_default_clubb_config_flags  ! Procedure
@@ -2722,7 +2722,7 @@ contains
       l_update_pressure,            & ! Flag for having CLUBB update pressure and exner
       l_lmm_stepping,               & ! Apply Linear Multistep Method (LMM) Stepping
       l_e3sm_config,                & ! Run model with E3SM settings
-      l_use_tke_in_wp3_bp2_term       ! Use TKE formulation for wp3 bp2 term
+      l_use_tke_in_wp3_pr_turb_term   ! Use TKE formulation for wp3 pr_turb term
 
     call set_default_clubb_config_flags( iiPDF_type, & ! Out
                                          ipdf_call_placement, & ! Out
@@ -2768,7 +2768,7 @@ contains
                                          l_update_pressure, & ! Out
                                          l_lmm_stepping, & ! Out
                                          l_e3sm_config, & ! Out
-                                         l_use_tke_in_wp3_bp2_term ) ! Out
+                                         l_use_tke_in_wp3_pr_turb_term ) ! Out
 
   end subroutine set_default_clubb_config_flags_api
 
@@ -2819,7 +2819,7 @@ contains
                                                      l_update_pressure, & ! In
                                                      l_lmm_stepping, & ! In
                                                      l_e3sm_config, & ! In
-                                                     l_use_tke_in_wp3_bp2_term, & ! In
+                                                     l_use_tke_in_wp3_pr_turb_term, & ! In
                                                      clubb_config_flags ) ! Out
 
     use model_flags, only: &
@@ -2931,7 +2931,7 @@ contains
       l_update_pressure,            & ! Flag for having CLUBB update pressure and exner
       l_lmm_stepping,               & ! Apply Linear Multistep Method (LMM) Stepping
       l_e3sm_config,                & ! Run model with E3SM settings
-      l_use_tke_in_wp3_bp2_term       ! Use TKE formulation for wp3 bp2 term
+      l_use_tke_in_wp3_pr_turb_term   ! Use TKE formulation for wp3 pr_turb term
 
     ! Output variables
     type(clubb_config_flags_type), intent(out) :: &
@@ -2981,7 +2981,7 @@ contains
                                              l_update_pressure, & ! In
                                              l_lmm_stepping, & ! In
                                              l_e3sm_config, & ! In
-                                             l_use_tke_in_wp3_bp2_term, & ! In
+                                             l_use_tke_in_wp3_pr_turb_term, & ! In
                                              clubb_config_flags ) ! Out
 
   end subroutine initialize_clubb_config_flags_type_api

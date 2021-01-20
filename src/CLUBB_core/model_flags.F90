@@ -245,7 +245,7 @@ module model_flags
       l_update_pressure,            & ! Flag for having CLUBB update pressure and exner
       l_lmm_stepping,               & ! Apply Linear Multistep Method (LMM) Stepping
       l_e3sm_config,                & ! Run model with E3SM settings
-      l_use_tke_in_wp3_bp2_term       ! Use TKE formulation for wp3 bp2 term
+      l_use_tke_in_wp3_pr_turb_term   ! Use TKE formulation for wp3 pr_turb term
 
   end type clubb_config_flags_type
 
@@ -359,7 +359,7 @@ module model_flags
                                              l_update_pressure, &
                                              l_lmm_stepping, &
                                              l_e3sm_config, &
-                                             l_use_tke_in_wp3_bp2_term )
+                                             l_use_tke_in_wp3_pr_turb_term )
 
 ! Description:
 !   Sets all CLUBB flags to a default setting.
@@ -473,7 +473,7 @@ module model_flags
       l_update_pressure,            & ! Flag for having CLUBB update pressure and exner
       l_lmm_stepping,               & ! Apply Linear Multistep Method (LMM) Stepping
       l_e3sm_config,                & ! Run model with E3SM settings
-      l_use_tke_in_wp3_bp2_term       ! Use TKE formulation for wp3 bp2 term
+      l_use_tke_in_wp3_pr_turb_term   ! Use TKE formulation for wp3 pr_turb term
 
 !-----------------------------------------------------------------------
     ! Begin code
@@ -526,7 +526,7 @@ module model_flags
     l_update_pressure = .true.
     l_lmm_stepping = .false.
     l_e3sm_config = .false.
-    l_use_tke_in_wp3_bp2_term = .false.
+    l_use_tke_in_wp3_pr_turb_term = .false.
 
     return
   end subroutine set_default_clubb_config_flags
@@ -576,7 +576,7 @@ module model_flags
                                                  l_update_pressure, &
                                                  l_lmm_stepping, &
                                                  l_e3sm_config, &
-                                                 l_use_tke_in_wp3_bp2_term, &
+                                                 l_use_tke_in_wp3_pr_turb_term, &
                                                  clubb_config_flags )
 
 ! Description:
@@ -691,7 +691,7 @@ module model_flags
       l_update_pressure,            & ! Flag for having CLUBB update pressure and exner
       l_lmm_stepping,               & ! Apply Linear Multistep Method (LMM) Stepping
       l_e3sm_config,                & ! Run model with E3SM settings
-      l_use_tke_in_wp3_bp2_term       ! Use TKE formulation for wp3 bp2 term
+      l_use_tke_in_wp3_pr_turb_term   ! Use TKE formulation for wp3 pr_turb term
 
     ! Output variables
     type(clubb_config_flags_type), intent(out) :: &
@@ -744,7 +744,7 @@ module model_flags
     clubb_config_flags%l_update_pressure = l_update_pressure
     clubb_config_flags%l_lmm_stepping = l_lmm_stepping
     clubb_config_flags%l_e3sm_config = l_e3sm_config
-    clubb_config_flags%l_use_tke_in_wp3_bp2_term = l_use_tke_in_wp3_bp2_term
+    clubb_config_flags%l_use_tke_in_wp3_pr_turb_term = l_use_tke_in_wp3_pr_turb_term
     return
   end subroutine initialize_clubb_config_flags_type
 
@@ -816,7 +816,8 @@ module model_flags
     write(iunit,*) "l_update_pressure = ", clubb_config_flags%l_update_pressure
     write(iunit,*) "l_lmm_stepping = ", clubb_config_flags%l_lmm_stepping
     write(iunit,*) "l_e3sm_config = ", clubb_config_flags%l_e3sm_config
-    write(iunit,*) "l_use_tke_in_wp3_bp2_term = ", clubb_config_flags%l_use_tke_in_wp3_bp2_term
+    write(iunit,*) "l_use_tke_in_wp3_pr_turb_term = ", &
+                   clubb_config_flags%l_use_tke_in_wp3_pr_turb_term
 
     return
   end subroutine print_clubb_config_flags

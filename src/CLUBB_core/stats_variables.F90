@@ -410,7 +410,7 @@ module stats_variables
      iwp3_tp  = 0, & 
      iwp3_ac  = 0, & 
      iwp3_bp1 = 0, & 
-     iwp3_bp2 = 0, & 
+     iwp3_pr_turb = 0, & 
      iwp3_pr1 = 0, & 
      iwp3_pr2 = 0, & 
      iwp3_pr3 = 0, &
@@ -420,7 +420,7 @@ module stats_variables
      iwp3_splat = 0
 
 !$omp   threadprivate(iwp3_bt, iwp3_ma, iwp3_ta, iwp3_tp, iwp3_ac, iwp3_bp1)
-!$omp   threadprivate(iwp3_bp2, iwp3_pr1, iwp3_pr2, iwp3_pr3, iwp3_dp1)
+!$omp   threadprivate(iwp3_pr_turb, iwp3_pr1, iwp3_pr2, iwp3_pr3, iwp3_dp1)
 !$omp   threadprivate(iwp3_sdmp, iwp3_cl, iwp3_splat)
 
   integer, public :: &

@@ -102,14 +102,14 @@
           {'filename' => 'gabls3_night_zt.ctl', 'type' => 'auto', 'name' => 'wp3\_tp', 'expression' => 'wp3_tp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'gabls3_night_zt.ctl', 'type' => 'auto', 'name' => 'wp3\_ac', 'expression' => 'wp3_ac', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'gabls3_night_zt.ctl', 'type' => 'auto', 'name' => 'wp3\_bp1', 'expression' => 'wp3_bp1', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'gabls3_night_zt.ctl', 'type' => 'auto', 'name' => 'wp3\_bp2', 'expression' => 'wp3_bp2', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'gabls3_night_zt.ctl', 'type' => 'auto', 'name' => 'wp3\_pr_turb', 'expression' => 'wp3_pr_turb', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'gabls3_night_zt.ctl', 'type' => 'auto', 'name' => 'wp3\_pr1', 'expression' => 'wp3_pr1', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'gabls3_night_zt.ctl', 'type' => 'auto', 'name' => 'wp3\_pr3', 'expression' => 'wp3_pr3', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'gabls3_night_zt.ctl', 'type' => 'auto', 'name' => 'wp3\_pr2', 'expression' => 'wp3_pr2', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'gabls3_night_zt.ctl', 'type' => 'auto', 'name' => 'wp3\_dp1', 'expression' => 'wp3_dp1', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'gabls3_night_zt.ctl', 'type' => 'auto', 'name' => 'wp3\_cl', 'expression' => 'wp3_cl', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'gabls3_night_zt.ctl', 'type' => 'auto', 'name' => 'wp3\_splat, 'expression' => 'wp3_splat', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'gabls3_night_zt.ctl', 'type' => 'auto', 'name' => 'wp3\_residual', 'expression' => 'wp3_bt - (wp3_ma + wp3_ta + wp3_tp + wp3_ac + wp3_bp1 + wp3_bp2 + wp3_pr1 + wp3_pr2 + wp3_pr3 + wp3_dp1 + wp3_cl + wp3_splat)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+          {'filename' => 'gabls3_night_zt.ctl', 'type' => 'auto', 'name' => 'wp3\_residual', 'expression' => 'wp3_bt - (wp3_ma + wp3_ta + wp3_tp + wp3_ac + wp3_bp1 + wp3_pr_turb + wp3_pr1 + wp3_pr2 + wp3_pr3 + wp3_dp1 + wp3_cl + wp3_splat)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
 
        {'plotTitle' => 'thlp2 budgets', 'axisLabel' => '[(K^2)/s]', 'type' => 'profile', 'lines' =>

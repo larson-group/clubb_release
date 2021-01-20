@@ -67,7 +67,7 @@ module parameter_indices
     iC12              = 28, & 
     iC13              = 29, & 
     iC14              = 30, &
-    iC15              = 31, &
+    iC_wp3_turb       = 31, &
     iC_wp2_splat      = 32
 
   integer, parameter, public :: &

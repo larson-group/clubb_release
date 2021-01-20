@@ -643,7 +643,7 @@ subroutine logical_flags_driver( current_date, current_time )
     l_update_pressure,            & ! Flag for having CLUBB update pressure and exner
     l_lmm_stepping,               & ! Apply Linear Multistep Method (LMM) Stepping
     l_e3sm_config,                & ! Run model with E3SM settings
-    l_use_tke_in_wp3_bp2_term       ! Use TKE formulation for wp3 bp2 term
+    l_use_tke_in_wp3_pr_turb_term   ! Use TKE formulation for wp3 pr_turb term
 
   namelist /configurable_clubb_flags_nl/ &
     iiPDF_type, ipdf_call_placement, &
@@ -657,7 +657,7 @@ subroutine logical_flags_driver( current_date, current_time )
     l_diffuse_rtm_and_thlm, l_stability_correct_Kh_N2_zm, l_trapezoidal_rule_zt, &
     l_trapezoidal_rule_zm, l_call_pdf_closure_twice, l_Lscale_plume_centered, &
     l_brunt_vaisala_freq_moist, l_use_thvm_in_bv_freq, l_update_pressure, &
-    l_lmm_stepping, l_e3sm_config, l_use_tke_in_wp3_bp2_term
+    l_lmm_stepping, l_e3sm_config, l_use_tke_in_wp3_pr_turb_term
 
   ! ---- Begin Code ----
 
@@ -705,7 +705,7 @@ subroutine logical_flags_driver( current_date, current_time )
                                        l_update_pressure, & ! Intent(out)
                                        l_lmm_stepping, & ! Intent(out)
                                        l_e3sm_config, & ! Intent(out)
-                                       l_use_tke_in_wp3_bp2_term ) ! Intent(out)
+                                       l_use_tke_in_wp3_pr_turb_term ) ! Intent(out)
 
   ! Determine the current flags
   model_flags_default(1) = l_upwind_wpxp_ta

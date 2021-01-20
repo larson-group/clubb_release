@@ -212,7 +212,7 @@ module stats_zt_module
         iwp3_tp, &
         iwp3_ac, &
         iwp3_bp1, &
-        iwp3_bp2, &
+        iwp3_pr_turb, &
         iwp3_pr1, &
         iwp3_pr2, &
         iwp3_pr3, &
@@ -1831,10 +1831,10 @@ module stats_zt_module
              var_units="m^{3} s^{-4}", l_silhs=.false., grid_kind=stats_zt )
         k = k + 1
 
-      case ('wp3_bp2')
-        iwp3_bp2 = k
-        call stat_assign( var_index=iwp3_bp2, var_name="wp3_bp2", &
-             var_description="wp3_bp2, wp3 budget: wp3 2nd buoyancy production term", &
+      case ('wp3_pr_turb')
+        iwp3_pr_turb = k
+        call stat_assign( var_index=iwp3_pr_turb, var_name="wp3_pr_turb", &
+             var_description="wp3_pr_turb, wp3 budget: wp3 pressure-turbulence correlation term", &
              var_units="m^{3} s^{-4}", l_silhs=.false., grid_kind=stats_zt )
         k = k + 1
 
