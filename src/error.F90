@@ -119,7 +119,7 @@ module error
     z_i, & ! Initial z level for tuning purposes
     z_f    ! Final z level for tuning purposes
 
-  character(len=100), dimension(:), allocatable, private ::  & 
+  character(len=150), dimension(:), allocatable, private ::  & 
     run_file,        & ! Model run files
     hoc_stats_file,  & ! Model GrADS files
     les_stats_file  ! Model GrADS files
@@ -238,7 +238,7 @@ module error
 
     real( kind = core_rknd ), dimension(max_variables) :: weight_var_nl
 
-    character(len=100), dimension(max_run) ::  & 
+    character(len=150), dimension(max_run) ::  & 
       run_file_nl, & 
       hoc_stats_file_nl, & 
       les_stats_file_nl
