@@ -1,0 +1,21 @@
+pipeline {
+  agent any
+  stages {
+    stage('Compile') {
+      steps {
+        sh 'clubb/compile/compile.bash'
+        checkout([$class: 'GitSCM', branches: [[name: '*/master']], doGenerateSubmoduleConfigurations: false, extensions: [[$class: 'RelativeTargetDirectory', relativeTargetDir: 'sys_admin']], submoduleCfg: [], userRemoteConfigs: [[credentialsId: 'Generic_Key', url: 'https://github.com/larson-group/sys_admin']]])
+      }
+    }
+    stage('Run check_budget_balance') {
+      steps {
+        sh 'sys_admin/bitten_test_driver_scripts/check_budget_balance.bash clubb/'
+      }
+    }
+  }
+  post {
+    always {
+      cleanWs(cleanWhenFailure: true, cleanWhenSuccess: true, cleanWhenUnstable: true)
+    }
+  }
+}
