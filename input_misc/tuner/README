@@ -127,3 +127,16 @@ STPINI(k) = ( X0MAX(k) - X0MIN(k) ) * ROSTEP(k)
 
 Where k is a particular tunable parameter.  Siarry et al. recommends a value 
 of 0.25 for this.
+
+
+-------------------------------------------------------------------------------------
+Tips for using Gunther's esa_driver (tune_type = iesa = 2 and l_esa_siarry = .false.).
+-------------------------------------------------------------------------------------
+
+To reduce the number of tuning iterations, i.e. calls to CLUBB, you may
+
+- Reduce no_improve_max, so that we don't require so many iterations without significant improvement;
+- Increase f_tol, so that a small improvement counts as another iteration without significant improvement;
+- Increase max_final_temp, so that the final polishing is omitted;
+- Decrease anneal_temp, so that the initial jumps in parameter space are not so large.
+- Reduce max_iters, which sets a hard limit on the total number of iterations.
