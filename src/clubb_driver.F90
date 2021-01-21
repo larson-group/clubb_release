@@ -544,6 +544,9 @@ module clubb_driver
       l_godunov_upwind_wpxp_ta,     & ! This flag determines whether we want to use the Godunov-like upwind
                                       ! differencing approximation rather than a centered differencing for 
                                       ! turbulent advection terms. It affects wpxp only.
+      l_godunov_upwind_xpyp_ta,     & ! This flag determines whether we want to use an upwind
+                                      ! differencing approximation rather than a centered differencing for
+                                      ! turbulent advection terms. It affects xpyp only.
       l_upwind_wpxp_ta,             & ! This flag determines whether we want to use an upwind
                                       ! differencing approximation rather than a centered
                                       ! differencing for turbulent or mean advection terms. It
@@ -652,7 +655,7 @@ module clubb_driver
       l_allow_small_stats_tout
 
     namelist /configurable_clubb_flags_nl/ &
-      l_godunov_upwind_wp3_ta,l_godunov_upwind_wpxp_ta, &
+      l_godunov_upwind_wp3_ta,l_godunov_upwind_wpxp_ta, l_godunov_upwind_xpyp_ta, &
       l_upwind_wpxp_ta, l_upwind_xpyp_ta, l_upwind_xm_ma, l_quintic_poly_interp, &
       l_tke_aniso, l_vert_avg_closure, l_single_C2_Skw, l_standard_term_ta, &
       l_use_cloud_cover, l_rcm_supersat_adj, l_damp_wp3_Skw_squared, &
@@ -774,6 +777,7 @@ module clubb_driver
                                          l_calc_thlp2_rad, & ! Intent(out)
                                          l_godunov_upwind_wp3_ta,  & ! Intent(out)
                                          l_godunov_upwind_wpxp_ta, & ! Intent(out)
+                                         l_godunov_upwind_xpyp_ta, & ! Intent(out)
                                          l_upwind_wpxp_ta, & ! Intent(out)
                                          l_upwind_xpyp_ta, & ! Intent(out)
                                          l_upwind_xm_ma, & ! Intent(out)
@@ -1146,6 +1150,7 @@ module clubb_driver
                                              l_calc_thlp2_rad, & ! Intent(in)
                                              l_godunov_upwind_wp3_ta,  & ! Intent(in)
                                              l_godunov_upwind_wpxp_ta, & ! Intent(in)
+                                             l_godunov_upwind_xpyp_ta, & ! Intent(in)
                                              l_upwind_wpxp_ta, & ! Intent(in)
                                              l_upwind_xpyp_ta, & ! Intent(in)
                                              l_upwind_xm_ma, & ! Intent(in)
@@ -1250,16 +1255,17 @@ module clubb_driver
     if ( present( model_flags_array ) ) then
       clubb_config_flags%l_godunov_upwind_wp3_ta  = model_flags_array(1)
       clubb_config_flags%l_godunov_upwind_wpxp_ta = model_flags_array(2)
-      clubb_config_flags%l_upwind_wpxp_ta = model_flags_array(3)
-      clubb_config_flags%l_upwind_xpyp_ta = model_flags_array(4)
-      clubb_config_flags%l_upwind_xm_ma = model_flags_array(5)
-      l_quintic_poly_interp = model_flags_array(6)
-      clubb_config_flags%l_vert_avg_closure = model_flags_array(7)
-      clubb_config_flags%l_single_C2_Skw = model_flags_array(8)
-      clubb_config_flags%l_standard_term_ta = model_flags_array(9)
-      clubb_config_flags%l_tke_aniso = model_flags_array(10)
-      clubb_config_flags%l_use_cloud_cover = model_flags_array(11)
-      clubb_config_flags%l_rcm_supersat_adj = model_flags_array(12)
+      clubb_config_flags%l_godunov_upwind_xpyp_ta = model_flags_array(3)
+      clubb_config_flags%l_upwind_wpxp_ta = model_flags_array(4)
+      clubb_config_flags%l_upwind_xpyp_ta = model_flags_array(5)
+      clubb_config_flags%l_upwind_xm_ma = model_flags_array(6)
+      l_quintic_poly_interp = model_flags_array(7)
+      clubb_config_flags%l_vert_avg_closure = model_flags_array(8)
+      clubb_config_flags%l_single_C2_Skw = model_flags_array(9)
+      clubb_config_flags%l_standard_term_ta = model_flags_array(10)
+      clubb_config_flags%l_tke_aniso = model_flags_array(11)
+      clubb_config_flags%l_use_cloud_cover = model_flags_array(12)
+      clubb_config_flags%l_rcm_supersat_adj = model_flags_array(13)
 
       if ( clubb_config_flags%l_vert_avg_closure ) then
         clubb_config_flags%l_trapezoidal_rule_zt    = .true.

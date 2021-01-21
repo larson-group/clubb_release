@@ -436,6 +436,9 @@ module pdf_parameter_tests
       l_godunov_upwind_wpxp_ta,     & ! This flag determines whether we want to use the Godunov-like upwind
                                       ! differencing approximation rather than a centered differencing for 
                                       ! turbulent advection terms. It affects wpxp only.
+      l_godunov_upwind_xpyp_ta,     & ! This flag determines whether we want to use an upwind
+                                      ! differencing approximation rather than a centered differencing for
+                                      ! turbulent advection terms. It affects xpyp only.
       l_upwind_wpxp_ta,             & ! This flag determines whether we want to use an upwind
                                       ! differencing approximation rather than a centered
                                       ! differencing for turbulent or mean advection terms. It
@@ -517,8 +520,9 @@ module pdf_parameter_tests
                                          l_diffuse_rtm_and_thlm, &
                                          l_stability_correct_Kh_N2_zm, &
                                          l_calc_thlp2_rad, &
-                                         l_godunov_upwind_wp3_ta, &
+                                         l_godunov_upwind_wp3_ta,  &
                                          l_godunov_upwind_wpxp_ta, &
+                                         l_godunov_upwind_xpyp_ta, &
                                          l_upwind_wpxp_ta, &
                                          l_upwind_xpyp_ta, &
                                          l_upwind_xm_ma, &

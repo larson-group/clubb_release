@@ -47,7 +47,7 @@ module advance_xm_wpxp_module
   contains
 
   !=============================================================================
-  subroutine advance_xm_wpxp( dt, sigma_sqd_w, wm_zm, wm_zt, wp2, & 
+  subroutine advance_xm_wpxp( dt, sigma_sqd_w, wm_zm, wm_zt, wp2, &
                               Lscale, wp3_on_wp2, wp3_on_wp2_zt, Kh_zt, Kh_zm, &
                               tau_C6_zm, Skw_zm, wp2rtp, rtpthvp, rtm_forcing, &
                               wprtp_forcing, rtm_ref, wp2thlp, thlpthvp, &
@@ -299,7 +299,7 @@ module advance_xm_wpxp_module
       l_godunov_upwind_wpxp_ta,     & ! This flag determines whether we want to use a Godunov-like upwind
                                       ! differencing approximation rather than a centered
                                       ! differencing for turbulent or mean advection terms.
-                                      ! It affects wprtp, wpthlp, & wpsclrp.
+                                      ! It affects wpxp only.
       l_upwind_wpxp_ta,             & ! This flag determines whether we want to use an upwind
                                       ! differencing approximation rather than a centered
                                       ! differencing for turbulent or mean advection terms.
@@ -1721,7 +1721,7 @@ module advance_xm_wpxp_module
 
     use turbulent_adv_pdf, only: &
       xpyp_term_ta_pdf_lhs_all, &  ! Procedures
-      xpyp_term_ta_pdf_lhs_godunov, & 
+      xpyp_term_ta_pdf_lhs_all_godunov, & 
       xpyp_term_ta_pdf_rhs_all, &
       sgn_turbulent_velocity
       
@@ -1967,7 +1967,7 @@ module advance_xm_wpxp_module
         
         ! The termodynamic grid level coefficients are only needed if l_upwind_wpxp_ta
         ! is false, or if stats output is on
-        if ( .not. l_upwind_wpxp_ta .or. l_stats_samp .or. l_godunov_upwind_wpxp_ta ) then
+        if ( .not. l_upwind_wpxp_ta .or. l_stats_samp ) then
           coef_wp2rtp_implicit = a1_zt * wp3_on_wp2_zt
           coef_wp2thlp_implicit = coef_wp2rtp_implicit
         end if
@@ -1979,7 +1979,7 @@ module advance_xm_wpxp_module
         endif ! l_upwind_wpxp_ta
 
         ! Calculate the LHS turbulent advection term (ta) for <w'r_t'>       
-        if (.not.l_godunov_upwind_wpxp_ta)then
+        if ( .not. l_godunov_upwind_wpxp_ta ) then
 
           ! Default method for the vertical discretization of ta term 
           call xpyp_term_ta_pdf_lhs_all( coef_wp2rtp_implicit(:),     & ! Intent(in)
@@ -1993,12 +1993,16 @@ module advance_xm_wpxp_module
                                          gr%invrs_dzt(:),             & ! Intent(in)
                                          lhs_ta_wprtp(:,:)           ) ! Intent(out)
         else
+
           ! Godunov-like method for the vertical discretization of ta term  
-          call xpyp_term_ta_pdf_lhs_godunov( coef_wp2rtp_implicit(:),     & ! Intent(in)
-                                             invrs_rho_ds_zm(:),          & ! Intent(in)
-                                             gr%invrs_dzm(:),             & ! Intent(in)
-                                             rho_ds_zm(:),                & ! Intent(in)
-                                             lhs_ta_wprtp(:,:)           ) ! Intent(out)
+          coef_wp2rtp_implicit = a1_zt * wp3_on_wp2_zt
+          coef_wp2thlp_implicit = coef_wp2rtp_implicit
+
+          call xpyp_term_ta_pdf_lhs_all_godunov( coef_wp2rtp_implicit(:),     & ! Intent(in)
+                                                 invrs_rho_ds_zm(:),          & ! Intent(in)
+                                                 gr%invrs_dzm(:),             & ! Intent(in)
+                                                 rho_ds_zm(:),                & ! Intent(in)
+                                                 lhs_ta_wprtp(:,:)           ) ! Intent(out)
          
         end if 
         ! For ADG1, the LHS turbulent advection terms for 

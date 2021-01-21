@@ -152,6 +152,9 @@ module model_flags
       l_godunov_upwind_wpxp_ta,     & ! This flag determines whether we want to use an upwind
                                       ! differencing approximation rather than a centered differencing for
                                       ! turbulent advection terms. It affects wpxp only.
+      l_godunov_upwind_xpyp_ta,     & ! This flag determines whether we want to use an upwind
+                                      ! differencing approximation rather than a centered differencing for
+                                      ! turbulent advection terms. It affects xpyp only.
       l_upwind_wpxp_ta,             & ! This flag determines whether we want to use an upwind
                                       ! differencing approximation rather than a centered
                                       ! differencing for turbulent or mean advection terms. It
@@ -302,6 +305,7 @@ module model_flags
                                              l_calc_thlp2_rad, &
                                              l_godunov_upwind_wp3_ta,  &
                                              l_godunov_upwind_wpxp_ta, &
+                                             l_godunov_upwind_xpyp_ta, &
                                              l_upwind_wpxp_ta, &
                                              l_upwind_xpyp_ta, &
                                              l_upwind_xm_ma, &
@@ -379,6 +383,9 @@ module model_flags
       l_godunov_upwind_wpxp_ta,     & ! This flag determines whether we want to use the Godunov-like upwind
                                       ! differencing approximation rather than a centered differencing for 
                                       ! turbulent advection terms. It affects wpxp only.
+      l_godunov_upwind_xpyp_ta,     & ! This flag determines whether we want to use an upwind
+                                      ! differencing approximation rather than a centered differencing for
+                                      ! turbulent advection terms. It affects xpyp only.
       l_upwind_wpxp_ta,             & ! This flag determines whether we want to use an upwind
                                       ! differencing approximation rather than a centered
                                       ! differencing for turbulent or mean advection terms. It
@@ -464,6 +471,7 @@ module model_flags
     l_calc_thlp2_rad = .true.
     l_godunov_upwind_wp3_ta  = .false.
     l_godunov_upwind_wpxp_ta = .false.
+    l_godunov_upwind_xpyp_ta = .false.
     l_upwind_wpxp_ta = .false.
     l_upwind_xpyp_ta = .true.
     l_upwind_xm_ma = .true.
@@ -520,6 +528,7 @@ module model_flags
                                                  l_calc_thlp2_rad, &
                                                  l_godunov_upwind_wp3_ta,  &
                                                  l_godunov_upwind_wpxp_ta, &
+                                                 l_godunov_upwind_xpyp_ta, &
                                                  l_upwind_wpxp_ta, &
                                                  l_upwind_xpyp_ta, &
                                                  l_upwind_xm_ma, &
@@ -598,7 +607,9 @@ module model_flags
       l_godunov_upwind_wpxp_ta,     & ! This flag determines whether we want to use the Godunov-like upwind
                                       ! differencing approximation rather than a centered differencing for 
                                       ! turbulent advection terms. It affects wpxp only.
-
+      l_godunov_upwind_xpyp_ta,     & ! This flag determines whether we want to use an upwind
+                                      ! differencing approximation rather than a centered differencing for
+                                      ! turbulent advection terms. It affects xpyp only.
       l_upwind_wpxp_ta,             & ! This flag determines whether we want to use an upwind
                                       ! differencing approximation rather than a centered
                                       ! differencing for turbulent or mean advection terms. It
@@ -688,6 +699,7 @@ module model_flags
     clubb_config_flags%l_calc_thlp2_rad = l_calc_thlp2_rad
     clubb_config_flags%l_godunov_upwind_wp3_ta = l_godunov_upwind_wp3_ta
     clubb_config_flags%l_godunov_upwind_wpxp_ta = l_godunov_upwind_wpxp_ta
+    clubb_config_flags%l_godunov_upwind_xpyp_ta = l_godunov_upwind_xpyp_ta
     clubb_config_flags%l_upwind_wpxp_ta = l_upwind_wpxp_ta
     clubb_config_flags%l_upwind_xpyp_ta = l_upwind_xpyp_ta
     clubb_config_flags%l_upwind_xm_ma = l_upwind_xm_ma
@@ -762,6 +774,7 @@ module model_flags
     write(iunit,*) "l_calc_thlp2_rad = ", clubb_config_flags%l_calc_thlp2_rad
     write(iunit,*) "l_godunov_upwind_wp3_ta = ", clubb_config_flags%l_godunov_upwind_wp3_ta
     write(iunit,*) "l_godunov_upwind_wpxp_ta = ", clubb_config_flags%l_godunov_upwind_wpxp_ta
+    write(iunit,*) "l_godunov_upwind_xpyp_ta = ", clubb_config_flags%l_godunov_upwind_xpyp_ta
     write(iunit,*) "l_upwind_wpxp_ta = ", clubb_config_flags%l_upwind_wpxp_ta
     write(iunit,*) "l_upwind_xpyp_ta = ", clubb_config_flags%l_upwind_xpyp_ta
     write(iunit,*) "l_upwind_xm_ma = ", clubb_config_flags%l_upwind_xm_ma

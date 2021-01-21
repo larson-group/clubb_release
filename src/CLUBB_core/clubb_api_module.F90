@@ -2529,7 +2529,8 @@ contains
                                                  l_stability_correct_Kh_N2_zm, & ! Out
                                                  l_calc_thlp2_rad, & ! Out
                                                  l_godunov_upwind_wp3_ta,  & ! Out 
-                                                 l_godunov_upwind_wpxp_ta,  & ! Out 
+                                                 l_godunov_upwind_wpxp_ta, & ! Out 
+                                                 l_godunov_upwind_xpyp_ta, & ! Out
                                                  l_upwind_wpxp_ta, & ! Out
                                                  l_upwind_xpyp_ta, & ! Out
                                                  l_upwind_xm_ma, & ! Out
@@ -2600,10 +2601,13 @@ contains
       l_calc_thlp2_rad,             & ! Include the contribution of radiation to thlp2
       l_godunov_upwind_wp3_ta,      & ! This flag determines whether we want to use an upwind
                                       ! differencing approximation rather than a centered differencing for 
-                                      ! turbulent advection terms. It affects wp3 .
+                                      ! turbulent advection terms. It affects wp3 only.
       l_godunov_upwind_wpxp_ta,      & ! This flag determines whether we want to use an upwind
                                       ! differencing approximation rather than a centered differencing for 
-                                      ! turbulent advection terms. It affects wp3 .
+                                      ! turbulent advection terms. It affects wpxp only.
+      l_godunov_upwind_xpyp_ta,     & ! This flag determines whether we want to use an upwind
+                                      ! differencing approximation rather than a centered differencing for
+                                      ! turbulent advection terms. It affects xpyp only.
       l_upwind_wpxp_ta,             & ! This flag determines whether we want to use an upwind
                                       ! differencing approximation rather than a centered
                                       ! differencing for turbulent or mean advection terms. It
@@ -2686,6 +2690,7 @@ contains
                                          l_calc_thlp2_rad, & ! Out
                                          l_godunov_upwind_wp3_ta,  & ! Out
                                          l_godunov_upwind_wpxp_ta, & ! Out
+                                         l_godunov_upwind_xpyp_ta, & ! Out
                                          l_upwind_wpxp_ta, & ! Out
                                          l_upwind_xpyp_ta, & ! Out
                                          l_upwind_xm_ma, & ! Out
@@ -2739,6 +2744,7 @@ contains
                                                      l_calc_thlp2_rad, & ! In
                                                      l_godunov_upwind_wp3_ta,  & ! In
                                                      l_godunov_upwind_wpxp_ta, & ! In
+                                                     l_godunov_upwind_xpyp_ta, & ! In 
                                                      l_upwind_wpxp_ta, & ! In
                                                      l_upwind_xpyp_ta, & ! In
                                                      l_upwind_xm_ma, & ! In
@@ -2810,10 +2816,13 @@ contains
       l_calc_thlp2_rad,             & ! Include the contribution of radiation to thlp2
       l_godunov_upwind_wp3_ta,      & ! This flag determines whether we want to use an upwind
                                       ! differencing approximation rather than a centered differencing for 
-                                      ! turbulent advection terms. It affects wp3 .
+                                      ! turbulent advection terms. It affects wp3 only.
       l_godunov_upwind_wpxp_ta,     & ! This flag determines whether we want to use an upwind
                                       ! differencing approximation rather than a centered differencing for 
-                                      ! turbulent advection terms. It affects wp3 .
+                                      ! turbulent advection terms. It affects wpxp only.
+      l_godunov_upwind_xpyp_ta,     & ! This flag determines whether we want to use an upwind
+                                      ! differencing approximation rather than a centered differencing for
+                                      ! turbulent advection terms. It affects xpyp only.
       l_upwind_wpxp_ta,             & ! This flag determines whether we want to use an upwind
                                       ! differencing approximation rather than a centered
                                       ! differencing for turbulent or mean advection terms. It
@@ -2900,6 +2909,7 @@ contains
                                              l_calc_thlp2_rad, & ! In
                                              l_godunov_upwind_wp3_ta,  & ! In
                                              l_godunov_upwind_wpxp_ta, & ! In 
+                                             l_godunov_upwind_xpyp_ta, & ! In
                                              l_upwind_wpxp_ta, & ! In
                                              l_upwind_xpyp_ta, & ! In
                                              l_upwind_xm_ma, & ! In

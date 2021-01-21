@@ -17,11 +17,11 @@ module turbulent_adv_pdf
 
   implicit none
 
-  public :: xpyp_term_ta_pdf_lhs,     &
-            xpyp_term_ta_pdf_lhs_all, &
-            xpyp_term_ta_pdf_lhs_godunov, & 
-            xpyp_term_ta_pdf_rhs,     &
-            xpyp_term_ta_pdf_rhs_all, &
+  public :: xpyp_term_ta_pdf_lhs,             &
+            xpyp_term_ta_pdf_lhs_all,         &
+            xpyp_term_ta_pdf_lhs_all_godunov, & 
+            xpyp_term_ta_pdf_rhs,             &
+            xpyp_term_ta_pdf_rhs_all,         &
             sgn_turbulent_velocity
 
   private    ! Set default scope
@@ -575,10 +575,10 @@ module turbulent_adv_pdf
 
 
     !=============================================================================================
-    pure subroutine xpyp_term_ta_pdf_lhs_godunov( coef_wpxpyp_implicit, & ! Intent(in)
-                                                  invrs_rho_ds_zm, invrs_dzm, & ! Intent(in)
-                                                  rho_ds_zm,  & ! Intent(in)
-                                                  lhs_ta                          )
+    pure subroutine xpyp_term_ta_pdf_lhs_all_godunov( coef_wpxpyp_implicit, & ! Intent(in)
+                                                      invrs_rho_ds_zm, invrs_dzm, & ! Intent(in)
+                                                      rho_ds_zm,  & ! Intent(in)
+                                                      lhs_ta                          )
     ! Intent(out)
     ! Description:
     !   This subroutine is a revised version of xpyp_term_ta_pdf_lhs_all. The
@@ -651,7 +651,7 @@ module turbulent_adv_pdf
 
         return
 
-    end subroutine xpyp_term_ta_pdf_lhs_godunov
+    end subroutine xpyp_term_ta_pdf_lhs_all_godunov
 
 
   !=============================================================================
