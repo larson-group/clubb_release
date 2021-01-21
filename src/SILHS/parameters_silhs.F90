@@ -67,14 +67,14 @@ module parameters_silhs
     eight_cluster_presc_probs                 ! Prescribed probabilities for
                                               ! l_lh_clustered_sampling = .true.
 
-  !$omp threadprivate( eight_cluster_presc_probs )
+!$omp threadprivate( eight_cluster_presc_probs )
 
   real( kind = core_rknd ), public :: &
     importance_prob_thresh = 1.0e-8_core_rknd, & ! Minimum PDF probability of category for
                                                  ! importance sampling
     vert_decorr_coef       = 0.03_core_rknd      ! Empirically defined de-correlation constant [-]
 
-  !$omp threadprivate( importance_prob_thresh, vert_decorr_coef )
+!$omp threadprivate( importance_prob_thresh, vert_decorr_coef )
   
   
   real( kind = core_rknd ), public, parameter :: &
@@ -82,7 +82,18 @@ module parameters_silhs
                                                  ! [3.e-8_core_rknd,1-3.e-8_core_rknd] since the 
                                                  ! algorithm used to calculate the inverse cdf is 
                                                  ! only accurate for single precision values
+#ifdef E3SM
+  real( kind = core_rknd ), public :: &
+    silhs_vert_decorr_coef    ! Empirically defined de-correlation constant [-]
 
+!$omp threadprivate( silhs_vert_decorr_coef )
+
+  real( kind = core_rknd ), parameter, private :: &
+    init_value = -999._core_rknd ! Initial value for the parameters, used to detect missing values
+
+  public :: read_silhs_parameters
+  
+#endif /*E3SM*/
   private ! Default Scope
 
   public :: eight_cluster_presc_probs_type, silhs_config_flags_type, &
@@ -279,5 +290,64 @@ module parameters_silhs
     return
   end subroutine print_silhs_config_flags
 !-----------------------------------------------------------------------
+#ifdef E3SM
+  subroutine read_silhs_parameters( filename, vert_decorr_coef_out )
+
+    use spmd_utils,      only: masterproc
+    use namelist_utils,  only: find_group_name
+    use units,           only: getunit, freeunit
+    use cam_abortutils,  only: endrun
+    use mpishorthand, only: mpicom, mpir8
+
+    implicit none
+
+    ! Input Variables
+    character(len=*), intent(in) :: &
+      filename
+
+    ! Output Variables
+    real( kind = core_rknd ), intent(out) :: &
+      vert_decorr_coef_out    ! Empirically defined de-correlation constant [-]
+
+    ! Local Variables
+    integer :: read_status
+    integer :: iunit
+
+    namelist /clubb_param_nl/      &
+    silhs_vert_decorr_coef
+
+
+    vert_decorr_coef_out = vert_decorr_coef
+    silhs_vert_decorr_coef = init_value
+
+    if (masterproc) then
+      iunit = getunit()
+      open( iunit, file=trim(filename), status='old' )
+      call find_group_name(iunit, 'clubb_param_nl', status=read_status)
+      if (read_status == 0) then
+         read(unit=iunit, nml=clubb_param_nl,iostat=read_status)
+         if (read_status /= 0) then
+            call endrun('clubb_param_readnl (in read_silhs_parameters):' &
+                        '  error reading namelist')
+         end if
+      endif
+      close(unit=iunit)
+      call freeunit(iunit)
+    end if
+#ifdef SPMD
+   ! Broadcast namelist variables
+   call mpibcast(silhs_vert_decorr_coef, 1, mpir8,  0, mpicom)
+#ifdef /*SPMD*/
+
+    if (silhs_vert_decorr_coef /= init_value) then
+       vert_decorr_coef_out = silhs_vert_decorr_coef
+    endif
+    
+
+    return
+
+  end subroutine read_silhs_parameters
+!-----------------------------------------------------------------------
+#endif /*E3SM*/
 
 end module parameters_silhs
