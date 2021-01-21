@@ -1,0 +1,71 @@
+pipeline {
+  agent any
+  stages {
+    stage('Update Clubb\'s Morrison') {
+      steps {
+        dir(path: '/home/pub/bitten/tmp/clubb') {
+          sh 'git pull'
+        }
+        dir(path: '/home/pub/bitten/tmp/sys_admin') {
+          sh 'git pull'
+        }
+        sh '/home/pub/bitten/tmp/sys_admin/gitUpdateScripts/updateClubbMorrison.sh'
+      }
+    }
+    stage('Update Sam\'s Copy of Clubb') {
+      steps {
+        sh '/home/pub/bitten/tmp/sys_admin/gitUpdateScripts/samClubbUpdate.sh'
+      }
+    }
+    stage('Update Cam\'s Copy of Clubb') {
+      steps {
+        sh '/home/pub/bitten/tmp/sys_admin/gitUpdateScripts/camClubbUpdate.sh'
+      }
+    }
+    stage('Update Wrf\'s Copy of Clubb') {
+      steps {
+        sh '/home/pub/bitten/tmp/sys_admin/gitUpdateScripts/wrfClubbUpdate.sh'
+      }
+    }
+    stage('Update E3SM\'s Copy of Clubb') {
+      steps {
+        sh '/home/pub/bitten/tmp/sys_admin/gitUpdateScripts/e3smClubbUpdate.sh'
+      }
+    }
+    stage('Update the clubb release repo') {
+      steps {
+        sh '/home/pub/bitten/tmp/sys_admin/gitUpdateScripts/updateClubbRelease.sh'
+      }
+    }
+    stage('Update our e3sm fork from regular e3sm') {
+      steps {
+        sh '/home/pub/bitten/tmp/sys_admin/gitUpdateScripts/updateGitFork.sh --source-repo https://github.com/E3SM-Project/E3SM.git --enable-email --destination-repo https://github.com/larson-group/E3SM.git --all-branches'
+      }
+    }
+    stage('Update our cam fork from regular cam') {
+      steps {
+        sh '/home/pub/bitten/tmp/sys_admin/gitUpdateScripts/updateGitFork.sh --source-repo https://github.com/ESCOMP/CAM.git --enable-email --destination-repo https://github.com/larson-group/cam.git --all-branches'
+      }
+    }
+    stage('Update our gfdl_am4 fork from regular gfdl') {
+      steps {
+        sh '/home/pub/bitten/tmp/sys_admin/gitUpdateScripts/updateGitFork.sh --source-repo https://github.com/NOAA-GFDL/AM4.git --enable-email --destination-repo https://github.com/larson-group/gfdl_am4.git --all-branches'
+      }
+    }
+    stage('Test clubb folders') {
+      steps {
+        sh '/home/pub/bitten/tmp/sys_admin/gitUpdateScripts/testClubbFolderSync.sh'
+      }
+    }
+    stage('Test release repos') {
+      steps {
+        sh '/home/pub/bitten/tmp/sys_admin/gitUpdateScripts/testReleaseRepoSync.sh'
+      }
+    }
+  }
+  post {
+    always {
+      cleanWs(cleanWhenAborted: true, cleanWhenFailure: true, cleanWhenSuccess: true)
+    }
+  }
+}

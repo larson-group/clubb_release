@@ -1,19 +1,19 @@
 pipeline {
   agent any
   stages {
-    stage('Run') {
+    stage('Run test_fatal_error_handling') {
       steps {
         dir('run_scripts') {
           sh './test_fatal_error_handling.bash'
         }
       }
     }
-    stage('Check 1') {
+    stage('Check for wp2 NaN error from advance_wp2_wp3') {
       steps {
         sh '''grep 'Error calling advance_wp2_wp3' run_scripts/advance_wp2_wp3_bad_wp2'''
       }
     }
-    stage('Check 2') {
+    stage('Check for wp2 NaN error from advance_wm_wpxp') {
       steps {
         sh '''grep 'Error calling advance_xm_wpxp' run_scripts/advance_xm_wpxp_bad_wp2'''
       }
