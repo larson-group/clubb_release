@@ -337,7 +337,7 @@ module parameters_silhs
 #ifdef SPMD
    ! Broadcast namelist variables
    call mpibcast(silhs_vert_decorr_coef, 1, mpir8,  0, mpicom)
-#ifdef /*SPMD*/
+#endif /*SPMD*/
 
     if (silhs_vert_decorr_coef /= init_value) then
        vert_decorr_coef_out = silhs_vert_decorr_coef
