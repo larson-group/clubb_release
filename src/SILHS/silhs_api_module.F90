@@ -83,10 +83,6 @@ module silhs_api_module
       silhs_config_flags_type, & ! Type(s)
       vert_decorr_coef    ! Variable(s)
 
-#ifdef E3SM
-  use parameters_silhs, only: &
-      read_silhs_parameters    ! Variable(s)
-#endif /*E3SM*/
 #endif
 
   implicit none
@@ -113,11 +109,6 @@ module silhs_api_module
   public  & ! SILHS tunable parameter(s)
     vert_decorr_coef
     
-#ifdef E3SM
-  public &
-    read_silhs_parameters_api
-
-#endif /*E3SM*/
   private &
     generate_silhs_sample_api_single_col, &
     generate_silhs_sample_api_multi_col, &
@@ -937,33 +928,6 @@ contains
 
   end subroutine print_silhs_config_flags_api
 
-#ifdef E3SM
-  !================================================================================================
-  ! read_silhs_parameters - Reads tunable parameters used in SILHS
-  !================================================================================================
-  subroutine read_silhs_parameters_api( filename, vert_decorr_coef_out )
-
-    use parameters_silhs, only: &
-        read_silhs_parameters    ! Procedure(s)
-
-    use clubb_precision, only: &
-        core_rknd    ! Variable(s)
-
-    implicit none
-
-    ! Input Variables
-    character(len=*), intent(in) :: &
-      filename
-
-    ! Output Variables
-    real( kind = core_rknd ), intent(out) :: &
-      vert_decorr_coef_out    ! Empirically defined de-correlation constant [-]
-
-    call read_silhs_parameters( filename, vert_decorr_coef_out )
-
-  end subroutine read_silhs_parameters_api
-
-#endif /*E3SM*/
   !================================================================================================
   ! latin_hypercube_2D_output - Creates and opens the SILHS 2D output files.
   !================================================================================================
