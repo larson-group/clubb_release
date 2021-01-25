@@ -80,8 +80,7 @@ module silhs_api_module
 #ifdef SILHS
 
   use parameters_silhs, only: &
-      silhs_config_flags_type, & ! Type(s)
-      vert_decorr_coef    ! Variable(s)
+    silhs_config_flags_type ! Type
 
 #endif
 
@@ -105,9 +104,6 @@ module silhs_api_module
   public  & ! to print 2D lh samples
     latin_hypercube_2D_output_api, &
     latin_hypercube_2D_close_api
-
-  public  & ! SILHS tunable parameter(s)
-    vert_decorr_coef
     
   private &
     generate_silhs_sample_api_single_col, &
