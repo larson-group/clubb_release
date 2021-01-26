@@ -1529,6 +1529,7 @@ module advance_clubb_core_module
                             clubb_config_flags%l_predict_upwp_vpwp,               & ! intent(in)
                             clubb_config_flags%l_diffuse_rtm_and_thlm,            & ! intent(in)
                             clubb_config_flags%l_stability_correct_Kh_N2_zm,      & ! intent(in)
+                            clubb_config_flags%l_godunov_upwind_wpxp_ta,          & ! intent(in)
                             clubb_config_flags%l_upwind_wpxp_ta,                  & ! intent(in)
                             clubb_config_flags%l_upwind_xm_ma,                    & ! intent(in)
                             clubb_config_flags%l_uv_nudge,                        & ! intent(in)

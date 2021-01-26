@@ -480,6 +480,10 @@ module pdf_parameter_tests
                                       ! of the wp3 turbulent advection term for ADG1
                                       ! that is linearized in terms of wp3<t+1>.
                                       ! (Requires ADG1 PDF and l_standard_term_ta).
+      l_godunov_upwind_wpxp_ta,     & ! This flag determines whether we want to use an upwind
+                                      ! differencing approximation rather than a centered
+                                      ! differencing for turbulent advection terms.
+                                      ! It affects  wpxp only.
       l_use_cloud_cover,            & ! Use cloud_cover and rcm_in_layer to help boost cloud_frac
                                       ! and rcm to help increase cloudiness at coarser grid
                                       ! resolutions.
@@ -533,6 +537,7 @@ module pdf_parameter_tests
                                          l_call_pdf_closure_twice, &
                                          l_standard_term_ta, &
                                          l_partial_upwind_wp3, &
+                                         l_godunov_upwind_wpxp_ta, &
                                          l_use_cloud_cover, &
                                          l_diagnose_correlations, &
                                          l_calc_w_corr, &

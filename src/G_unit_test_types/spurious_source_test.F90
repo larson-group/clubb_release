@@ -376,6 +376,10 @@ module spurious_source_test
                                       ! of the wp3 turbulent advection term for ADG1
                                       ! that is linearized in terms of wp3<t+1>.
                                       ! (Requires ADG1 PDF and l_standard_term_ta).
+      l_godunov_upwind_wpxp_ta,     & ! This flag determines whether we want to use an upwind
+                                      ! differencing approximation rather than a centered
+                                      ! differencing for turbulent advection terms.
+                                      ! It affects  wpxp only.
       l_use_cloud_cover,            & ! Use cloud_cover and rcm_in_layer to help boost cloud_frac
                                       ! and rcm to help increase cloudiness at coarser grid
                                       ! resolutions.
@@ -429,6 +433,7 @@ module spurious_source_test
                                          l_call_pdf_closure_twice, &
                                          l_standard_term_ta, &
                                          l_partial_upwind_wp3, &
+                                         l_godunov_upwind_wpxp_ta, &
                                          l_use_cloud_cover, &
                                          l_diagnose_correlations, &
                                          l_calc_w_corr, &
@@ -826,6 +831,7 @@ module spurious_source_test
                              l_predict_upwp_vpwp, &
                              l_diffuse_rtm_and_thlm, &
                              l_stability_correct_Kh_N2_zm, &
+                             l_godunov_upwind_wpxp_ta, &
                              l_upwind_wpxp_ta, &
                              l_upwind_xm_ma, &
                              l_uv_nudge, &

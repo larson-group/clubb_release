@@ -729,6 +729,10 @@ module clubb_driver
                                       ! of the wp3 turbulent advection term for ADG1
                                       ! that is linearized in terms of wp3<t+1>.
                                       ! (Requires ADG1 PDF and l_standard_term_ta).
+      l_godunov_upwind_wpxp_ta,     & ! This flag determines whether we want to use an upwind
+                                      ! differencing approximation rather than a centered
+                                      ! differencing for turbulent advection terms.
+                                      ! It affects  wpxp only.
       l_use_cloud_cover,            & ! Use cloud_cover and rcm_in_layer to help boost cloud_frac
                                       ! and rcm to help increase cloudiness at coarser grid
                                       ! resolutions.
@@ -792,7 +796,7 @@ module clubb_driver
       iiPDF_type, ipdf_call_placement, &
       l_upwind_wpxp_ta, l_upwind_xpyp_ta, l_upwind_xm_ma, l_quintic_poly_interp, &
       l_tke_aniso, l_vert_avg_closure, l_single_C2_Skw, l_standard_term_ta, &
-      l_partial_upwind_wp3, l_use_cloud_cover, l_rcm_supersat_adj, &
+      l_partial_upwind_wp3, l_godunov_upwind_wpxp_ta, l_use_cloud_cover, l_rcm_supersat_adj, &
       l_damp_wp3_Skw_squared, l_min_wp2_from_corr_wx, l_min_xp2_from_corr_wx, &
       l_C2_cloud_frac, l_predict_upwp_vpwp, l_diag_Lscale_from_tau, &
       l_stability_correct_tau_zm, l_damp_wp2_using_em, l_use_C7_Richardson, &
@@ -925,6 +929,7 @@ module clubb_driver
                                          l_call_pdf_closure_twice, & ! Intent(out)
                                          l_standard_term_ta, & ! Intent(out)
                                          l_partial_upwind_wp3, & ! Intent(out)
+                                         l_godunov_upwind_wpxp_ta, & ! Intent(out)
                                          l_use_cloud_cover, & ! Intent(out)
                                          l_diagnose_correlations, & ! Intent(out)
                                          l_calc_w_corr, & ! Intent(out)
@@ -1292,6 +1297,7 @@ module clubb_driver
                                              l_call_pdf_closure_twice, & ! Intent(in)
                                              l_standard_term_ta, & ! Intent(in)
                                              l_partial_upwind_wp3, & ! Intent(in)
+                                             l_godunov_upwind_wpxp_ta, & ! Intent(in)
                                              l_use_cloud_cover, & ! Intent(in)
                                              l_diagnose_correlations, & ! Intent(in)
                                              l_calc_w_corr, & ! Intent(in)
