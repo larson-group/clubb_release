@@ -315,8 +315,7 @@ class VariableGroupSamBudgets(VariableGroup):
 
         wp3_budget_lines = [
             {'var_names': ['W3ADV'], 'legend_label': 'W3ADV'},
-            {'var_names': ['W3PRES'], 'legend_label': 'W3PRES'},
-            {'var_names': ['W3REDIS'], 'legend_label': 'W3REDIS'},
+            {'var_names': ['W3PRESS'], 'legend_label': 'W3PRES', 'sam_calc': self.getW3PRESS},
             {'var_names': ['W3BUOY'], 'legend_label': 'W3BUOY'},
             {'var_names': ['W3DIFF'], 'legend_label': 'W3DIFF'},
             {'var_names': ['W3BT'], 'legend_label': 'W3BT'},
@@ -2055,6 +2054,41 @@ class VariableGroupSamBudgets(VariableGroup):
         U2V2_RES = 2. * (BT - (ADVTR + BUOYA + PRESSTR + DIFTR + DISSIP + SDMP + SHEAR)) - W2BT + (
                 W2ADV + W2BUOY + W2PRES + W2DIFF + W2SDMP + W2REDIS)
         return U2V2_RES, indep
+
+    def getW3PRESS(self, dataset_override=None):
+        """
+        This is a "calculate function". Calculate functions are intended to be written by the user in the event that
+        they need a variable that is not output by their atmospheric model. The general format for these functions
+        is:
+            1. Get the proper dataset. This is either passed in as dataset_override, or some benchmark dataset
+            2. Get the equations needed variables from the dataset using ``self.getVarForCalculations()``
+            3. Calculate the new variable
+            4. (optional) If there are multiple valid equations, pick the one that worked using
+               ``self.pickNonZeroOutput()``
+            5. Return the data as (dependent,independent)
+
+        For more information on calculate functions, see the "Creating a new calculated function (for calculated
+        variables)" section of the README.md
+
+        Calculates the correct value of W3PRES if an older version of SAM with he variable W3REDIS was used.
+        In this case, the total effect of pressure on wp3 is W3PRES+W3REDIS
+        ``W3PRES = W3PRES + W3REDIS``
+     
+        If W3REDIS is not present in the output, it will populate as zeros and this function will make no difference.
+
+        :param dataset_override: If passed, this netcdf dataset will be used to gather the data needed to calculate the
+          given variable. if not passed, this function should attempt to find the best source for the data, e.g.
+          the benchmark data for the given model
+        :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
+          Lists will be filled with NaN's if the variable could not be calculated.
+        """
+        dataset = self.sam_benchmark_dataset
+        if dataset_override is not None:
+            dataset = dataset_override
+        W3PRES, indep, dataset = self.getVarForCalculations('W3PRES', dataset)
+        W3REDIS, indep, dataset = self.getVarForCalculations('W3REDIS', dataset)
+        W3PRESS = W3PRES + W3REDIS
+        return W3PRESS, indep
 
     def getW3Residual(self, dataset_override=None):
         """
