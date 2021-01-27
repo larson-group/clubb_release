@@ -2344,8 +2344,8 @@ module advance_xm_wpxp_module
       sclr_dim, &  ! Variable(s)
       sclr_tol
 
-!    use parameters_tunable, only: &
-!      C_uu_shr    ! Parameter(s)
+    use parameters_tunable, only: &
+      C_uu_shr    ! Parameter(s)
         
     use clubb_precision, only:  & 
         core_rknd ! Variable(s)
@@ -2629,26 +2629,14 @@ module advance_xm_wpxp_module
        endif ! .not. l_implemented
 
        ! Add "extra term" and optional Coriolis term for <u'w'> and <v'w'>.
-       !upwp_forcing = C7_Skw_fnc * wp2 * ddzt( um )
-       !vpwp_forcing = C7_Skw_fnc * wp2 * ddzt( vm )
-       upwp_forcing = 0.7_core_rknd * wp2 * ddzt( um )
-       vpwp_forcing = 0.7_core_rknd * wp2 * ddzt( vm )
-!       upwp_forcing = C_uu_shr * wp2 * ddzt( um )
-!       vpwp_forcing = C_uu_shr * wp2 * ddzt( vm )
+       upwp_forcing = C_uu_shr * wp2 * ddzt( um )
+       vpwp_forcing = C_uu_shr * wp2 * ddzt( vm )
 
        if ( l_stats_samp ) then
-          !call stat_update_var( iupwp_pr4, C7_Skw_fnc * wp2 * ddzt( um ), &
-          !                      stats_zm )
-          !call stat_update_var( ivpwp_pr4, C7_Skw_fnc * wp2 * ddzt( vm ), &
-          !                      stats_zm )
-          call stat_update_var( iupwp_pr4, 0.7_core_rknd * wp2 * ddzt( um ), &
+          call stat_update_var( iupwp_pr4, C_uu_shr * wp2 * ddzt( um ), &
                                 stats_zm )
-          call stat_update_var( ivpwp_pr4, 0.7_core_rknd * wp2 * ddzt( vm ), &
+          call stat_update_var( ivpwp_pr4, C_uu_shr * wp2 * ddzt( vm ), &
                                 stats_zm )
-!          call stat_update_var( iupwp_pr4, C_uu_shr * wp2 * ddzt( um ), &
-!                                stats_zm )
-!          call stat_update_var( ivpwp_pr4, C_uu_shr * wp2 * ddzt( vm ), &
-!                                stats_zm )
        endif ! l_stats_samp
 
        ! need tau_C6_zm for these calls
