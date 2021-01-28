@@ -56,7 +56,7 @@ module parameters_tunable
     C2b         = 1.300000_core_rknd,    & ! High Skewness in C2 Skw. Function   [-]
     C2c         = 5.000000_core_rknd,    & ! Degree of Slope of C2 Skw. Function [-]
     C4          = 2.000000_core_rknd,    & ! Used only when l_tke_aniso is true  [-]
-    C_uu_shr    = 0.300000_core_rknd,    & ! Coef. in pressure terms (shear): w'^2 eqn   [-]
+    C_uu_shr    = 0.400000_core_rknd,    & ! Coef. in pressure terms (shear): w'^2 eqn   [-]
     C_uu_buoy   = 0.300000_core_rknd,    & ! Coef. in pressure terms (buoyancy): w'^2 eqn [-]
     C6rt        = 2.000000_core_rknd,    & ! Low Skewness in C6rt Skw. Function  [-]
     C6rtb       = 2.000000_core_rknd,    & ! High Skewness in C6rt Skw. Function [-]
