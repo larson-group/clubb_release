@@ -36,12 +36,12 @@ time_final=$(grep -Po 'time_final\s*= \K\d+\.*\d*' $RUN_CASE_INPUT)
 sum="$( bc <<<"$time_init + $time_final" )"
 halfway_time="$( bc <<< "scale=1; $sum / 2")"
 
-# run standard case
+# Run standard case
 echo -n "Running standard $RUN_CASE case... "
 ./run_scm.bash $RUN_CASE &> /dev/null
 echo "Done!"
 
-# Create restart folder and move 90-min run there
+# Create restart folder and move standard run there
 mkdir ../restart
 mv ../output/*.* ../restart/
 
@@ -51,12 +51,12 @@ sed -i -e 's/time_initial\s*=\s*.*/time_initial = '$halfway_time'/g' \
        -e 's/restart_path_case\s*=\s*.*/restart_path_case = "restart\/'$RUN_CASE'"/g' \
        -e 's/time_restart\s*=\s*.*/time_restart = '$halfway_time'/g' $RUN_CASE_INPUT
 
-# run restart case
+# Run restart case
 echo -n "Running restart $RUN_CASE case from halfway point... "
 ./run_scm.bash $RUN_CASE &> /dev/null
 echo "Done!"
 
-#export variables to system environment for python use
+# Export variables to system environment for python use
 export RUN_CASE VAR_TO_TEST
 
 python3 -c '
@@ -88,7 +88,7 @@ mv ../input/case_setups/tmp_model.in $RUN_CASE_INPUT
 
 # cleanup the output
 rm -rf ../restart
-rm -rf ../output/*
+rm ../output/*
 
 cd $restoreDir
 
