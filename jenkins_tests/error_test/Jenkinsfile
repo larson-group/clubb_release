@@ -10,18 +10,12 @@ pipeline {
     }
     stage('Check for wp2 NaN error from advance_wp2_wp3') {
       steps {
-        sh '''num=$(grep -c 'Error calling advance_wp2_wp3' run_scripts/advance_wp2_wp3_bad_wp2)
-              if [[ $num -eq 0 ]]; then
-              	exit 1
-              fi'''
+        sh '''grep 'Error calling advance_wp2_wp3' run_scripts/advance_wp2_wp3_bad_wp2'''
       }
     }
     stage('Check for wp2 NaN error from advance_wm_wpxp') {
       steps {
-        sh '''num=$(grep -c 'Error calling advance_xm_wpxp' run_scripts/advance_xm_wpxp_bad_wp2)
-              if [[ $num -eq 0 ]]; then
-                exit 1
-              fi '''
+        sh '''grep 'Error calling advance_xm_wpxp' run_scripts/advance_xm_wpxp_bad_wp2'''
       }
     }
   }
