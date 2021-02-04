@@ -227,14 +227,14 @@ module microphys_driver
     type(hydromet_pdf_parameter), dimension(gr%nz), intent(in) :: &
       hydromet_pdf_params     ! PDF parameters
 
-    real( kind = core_rknd ), dimension(gr%nz,lh_num_samples,pdf_dim), &
+    real( kind = core_rknd ), dimension(lh_num_samples,gr%nz,pdf_dim), &
     intent(in) :: &
       X_nl_all_levs ! Normally and lognormally distributed hydrometeors and other variables
 
     integer, dimension(gr%nz,lh_num_samples), intent(in) :: &
       X_mixt_comp_all_levs ! Which mixture component the sample is in
 
-    real( kind = core_rknd ), dimension(lh_num_samples), intent(in) :: &
+    real( kind = core_rknd ), dimension(lh_num_samples,gr%nz), intent(in) :: &
       lh_sample_point_weights ! Weights for cloud weighted sampling
 
     real( kind = core_rknd ), dimension(n_variables, gr%nz), intent(in) :: &
@@ -478,7 +478,7 @@ module microphys_driver
         ! Get rid of compiler warnings
         if ( .false. .and. size( X_nl_all_levs ) < 1 ) then
           rcm_mc(1) = &
-            + lh_sample_point_weights(1) + real( X_mixt_comp_all_levs(1,1) )
+            + lh_sample_point_weights(1,1) + real( X_mixt_comp_all_levs(1,1) )
         endif
 #endif /* SILHS */
         call stats_accumulate_lh_tend( hydromet_mc, Ncm_mc, &

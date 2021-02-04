@@ -1762,15 +1762,15 @@ module clubb_driver
     rfrzm = zero
 
     allocate( rcm_zm(gr%nz), radht_zm(gr%nz) )
-
-    allocate( X_nl_all_levs(1,gr%nz,lh_num_samples,pdf_dim), &
-              X_mixt_comp_all_levs(1,gr%nz,lh_num_samples), &
-              lh_rt_clipped(1,gr%nz,lh_num_samples), &
-              lh_thl_clipped(1,gr%nz,lh_num_samples), &
-              lh_rc_clipped(1,gr%nz,lh_num_samples), &
-              lh_rv_clipped(1,gr%nz,lh_num_samples), &
-              lh_Nc_clipped(1,gr%nz,lh_num_samples), &
-              lh_sample_point_weights(1,gr%nz,lh_num_samples), &
+              
+    allocate( X_nl_all_levs(1,lh_num_samples,gr%nz,pdf_dim), &
+              X_mixt_comp_all_levs(1,lh_num_samples,gr%nz), &
+              lh_rt_clipped(1,lh_num_samples,gr%nz), &
+              lh_thl_clipped(1,lh_num_samples,gr%nz), &
+              lh_rc_clipped(1,lh_num_samples,gr%nz), &
+              lh_rv_clipped(1,lh_num_samples,gr%nz), &
+              lh_Nc_clipped(1,lh_num_samples,gr%nz), &
+              lh_sample_point_weights(1,lh_num_samples,gr%nz), &
               Nc_in_cloud(gr%nz) )
 
     if ( .not. l_restart ) then
@@ -2305,8 +2305,12 @@ module clubb_driver
                lh_rt_clipped(1,:,:), lh_thl_clipped(1,:,:),             & ! In
                lh_rc_clipped(1,:,:), lh_rv_clipped(1,:,:),              & ! In
                lh_Nc_clipped(1,:,:)                                     ) ! In
+          
+               
 
       end if ! lh_microphys_enabled
+      
+      
 
 #else
       ! Alleviate compiler warnings
@@ -5548,15 +5552,15 @@ module clubb_driver
       cloud_frac,        & ! Cloud fraction (thermodynamic levels)     [-]
       ice_supersat_frac    ! Ice cloud fraction (thermodynamic levels) [-]
 
-    real( kind = core_rknd ), dimension(nz,lh_num_samples,pdf_dim), intent(in) :: &
+    real( kind = core_rknd ), dimension(lh_num_samples,nz,pdf_dim), intent(in) :: &
       X_nl_all_levs        ! Normal-lognormal samples                  [units vary]
 
-    real( kind = core_rknd ), dimension(nz,lh_num_samples), intent(in) :: &
+    real( kind = core_rknd ), dimension(lh_num_samples,nz), intent(in) :: &
       lh_rt_clipped,  & ! rt generated from silhs sample points
       lh_thl_clipped, & ! thl generated from silhs sample points
       lh_rc_clipped     ! rc generated from silhs sample points
 
-    real( kind = core_rknd ), dimension(lh_num_samples), intent(in) :: &
+    real( kind = core_rknd ), dimension(lh_num_samples,nz), intent(in) :: &
       lh_sample_point_weights ! Weight of each SILHS sample point      [-]
 
     real( kind = core_rknd ), dimension(nz,hydromet_dim), intent(in) :: &
@@ -5572,14 +5576,14 @@ module clubb_driver
       Frad_LW_down    ! Long-wave downwelling radiative flux           [W/m^2]
 
     ! Local Variables
-    real( kind = core_rknd ), dimension(nz,lh_num_samples,hydromet_dim) :: &
+    real( kind = core_rknd ), dimension(lh_num_samples,nz,hydromet_dim) :: &
       hydromet_all_pts ! SILHS sample of hydrometeors for each column  [units vary]
 
-    real( kind = core_rknd ), dimension(nz,lh_num_samples) :: &
+    real( kind = core_rknd ), dimension(lh_num_samples,nz) :: &
       Ncn_all_points   ! SILHS sample of Ncn for each column           [#/kg]
                        ! (not used)
 
-    real( kind = core_rknd ), dimension(nz,lh_num_samples) :: &
+    real( kind = core_rknd ), dimension(lh_num_samples,nz) :: &
       radht_samples,        &    ! radht evaluated at each sample point
       Frad_samples,         &    ! Frad evaluated at each sample point
       Frad_SW_up_samples,   &    ! Frad_SW_up evaluated at each sample point
@@ -5604,28 +5608,28 @@ module clubb_driver
       ! Call a radiation scheme
       call advance_clubb_radiation &
            ( time_current, time_initial, rho, rho_zm, p_in_Pa, &                     ! Intent(in)
-             exner, cloud_frac, ice_supersat_frac, lh_thl_clipped(:,isample), & ! Intent(in)
-             lh_rt_clipped(:,isample), lh_rc_clipped(:,isample), &         ! Intent(in)
-             hydromet_all_pts(:,isample,:), &                                        ! Intent(in)
-             radht_samples(:,isample), Frad_samples(:,isample), &                    ! Intent(out)
-             Frad_SW_up_samples(:,isample), Frad_LW_up_samples(:,isample), &         ! Intent(out)
-             Frad_SW_down_samples(:,isample), Frad_LW_down_samples(:,isample) )      ! Intent(out)
+             exner, cloud_frac, ice_supersat_frac, lh_thl_clipped(isample,:), & ! Intent(in)
+             lh_rt_clipped(isample,:), lh_rc_clipped(isample,:), &         ! Intent(in)
+             hydromet_all_pts(isample,:,:), &                                        ! Intent(in)
+             radht_samples(isample,:), Frad_samples(isample,:), &                    ! Intent(out)
+             Frad_SW_up_samples(isample,:), Frad_LW_up_samples(isample,:), &         ! Intent(out)
+             Frad_SW_down_samples(isample,:), Frad_LW_down_samples(isample,:) )      ! Intent(out)
     end do
 
     ! Average results
     forall ( k = 1:nz )
 
-      radht(k) = sum( radht_samples(k,:) * lh_sample_point_weights(:) ) / &
+      radht(k) = sum( radht_samples(:,k) * lh_sample_point_weights(:,k) ) / &
                   real( lh_num_samples, kind=core_rknd )
-      Frad(k)  = sum( Frad_samples(k,:) * lh_sample_point_weights(:) ) / &
+      Frad(k)  = sum( Frad_samples(:,k) * lh_sample_point_weights(:,k) ) / &
                   real( lh_num_samples, kind=core_rknd )
-      Frad_SW_up(k) = sum( Frad_SW_up_samples(k,:) * lh_sample_point_weights(:) ) / &
+      Frad_SW_up(k) = sum( Frad_SW_up_samples(:,k) * lh_sample_point_weights(:,k) ) / &
                        real( lh_num_samples, kind=core_rknd )
-      Frad_LW_up(k) = sum( Frad_LW_up_samples(k,:) * lh_sample_point_weights(:) ) / &
+      Frad_LW_up(k) = sum( Frad_LW_up_samples(:,k) * lh_sample_point_weights(:,k) ) / &
                        real( lh_num_samples, kind=core_rknd )
-      Frad_SW_down(k)  = sum( Frad_SW_down_samples(k,:) * lh_sample_point_weights(:) ) / &
+      Frad_SW_down(k)  = sum( Frad_SW_down_samples(:,k) * lh_sample_point_weights(:,k) ) / &
                           real( lh_num_samples, kind=core_rknd )
-      Frad_LW_down(k)  = sum( Frad_LW_down_samples(k,:) * lh_sample_point_weights(:) ) / &
+      Frad_LW_down(k)  = sum( Frad_LW_down_samples(:,k) * lh_sample_point_weights(:,k) ) / &
                           real( lh_num_samples, kind=core_rknd )
 
     end forall

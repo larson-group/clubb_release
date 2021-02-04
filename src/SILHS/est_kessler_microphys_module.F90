@@ -54,7 +54,7 @@ module est_kessler_microphys_module
       num_samples, & ! Number of sample points
       pdf_dim   ! Number of variates
 
-    real( kind = core_rknd ), dimension(nz,num_samples,pdf_dim), intent(in) :: &
+    real( kind = core_rknd ), dimension(num_samples,nz,pdf_dim), intent(in) :: &
       X_nl_all_levs ! Sample that is transformed ultimately to normal-lognormal
 
     real( kind = core_rknd ), dimension(nz), intent(in) :: &
@@ -66,10 +66,10 @@ module est_kessler_microphys_module
     type(pdf_parameter), intent(in) :: &
       pdf_params ! PDF parameters       [units vary]
 
-    integer, dimension(nz,num_samples), intent(in) :: &
+    integer, dimension(num_samples,nz), intent(in) :: &
       X_mixt_comp_all_levs ! Whether we're in mixture component 1 or 2
 
-    real( kind = core_rknd ), dimension(nz,num_samples), intent(in) :: &
+    real( kind = core_rknd ), dimension(num_samples,nz), intent(in) :: &
       lh_sample_point_weights ! Weight for cloud weighted sampling
 
     logical, intent(in) :: &
@@ -178,7 +178,7 @@ module est_kessler_microphys_module
       !    but we set means, covariance of hydromet mixing ratio's and number
       !    concentrations to constants.
 
-      rcm_sample(1:num_samples) = max( X_nl_all_levs(level,1:num_samples,1), zero)
+      rcm_sample(1:num_samples) = max( X_nl_all_levs(1:num_samples,level,1), zero)
 
       ! Call microphysics, i.e. Kessler autoconversion.
       ! A_K = (1e-3/s)*(rc-0.5kg/kg)*H(rc-0.5kg/kg)
@@ -189,7 +189,7 @@ module est_kessler_microphys_module
              cloud_frac_1, cloud_frac_2, &                                      ! Intent(in)
              rcm_sample, &                                                      ! Intent(in)
              !X_nl(1:n,3), X_nl(1:n,4), X_nl(1:n,5),
-             X_mixt_comp_all_levs(level,:), lh_sample_point_weights(level,:), & ! Intent(in)
+             X_mixt_comp_all_levs(:,level), lh_sample_point_weights(:,level), & ! Intent(in)
              l_lh_importance_sampling, &                                        ! Intent(in)
              coeff, r_crit, &                                                   ! Intent(in)
              lh_AKm(level) )                                                    ! Intent(out)
@@ -202,7 +202,7 @@ module est_kessler_microphys_module
              cloud_frac_1, cloud_frac_2, &                                      ! Intent(in)
              rcm_sample, &                                                      ! Intent(in)
              !X_nl(1:n,3), X_nl(1:n,4), X_nl(1:n,5),
-             X_mixt_comp_all_levs(level,:), lh_sample_point_weights(level,:), & ! Intent(in)
+             X_mixt_comp_all_levs(:,level), lh_sample_point_weights(:,level), & ! Intent(in)
              l_lh_importance_sampling, &                                        ! Intent(in)
              coeff, r_crit, &                                                   ! Intent(in)
              lh_rcm_avg(level) )                                                ! Intent(out)

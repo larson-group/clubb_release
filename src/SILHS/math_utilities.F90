@@ -37,10 +37,10 @@ module math_utilities
       n_levels, &
       n_samples
 
-    real( kind = core_rknd ),dimension(n_levels,n_samples), intent(in) :: &
+    real( kind = core_rknd ),dimension(n_samples,n_levels), intent(in) :: &
       weight   ! Weights for individual points of the vector
 
-    real( kind = core_rknd ),dimension(n_levels,n_samples), intent(in) :: &
+    real( kind = core_rknd ),dimension(n_samples,n_levels), intent(in) :: &
       x_sample ! Collection of sample points    [units vary]
 
     ! Return type
@@ -55,7 +55,7 @@ module math_utilities
     k = k
 
     forall( k = 1:n_levels )
-      mean(k) = sum( weight(k,1:n_samples) * x_sample(k,1:n_samples) ) &
+      mean(k) = sum( weight(1:n_samples,k) * x_sample(1:n_samples,k) ) &
               / real( n_samples, kind=core_rknd )
     end forall
 
@@ -63,6 +63,7 @@ module math_utilities
     return
 
   end function compute_sample_mean
+
 
 !-----------------------------------------------------------------------
   pure function compute_sample_variance( n_levels, n_samples, x_sample, weight, x_mean ) &
@@ -85,10 +86,10 @@ module math_utilities
       n_levels, & ! Number of sample levels in the mean / variance
       n_samples   ! Number of sample points compute the variance of
 
-    real( kind = core_rknd ),dimension(n_levels,n_samples), intent(in) :: &
+    real( kind = core_rknd ),dimension(n_samples,n_levels), intent(in) :: &
       x_sample ! Collection of sample points    [units vary]
 
-    real( kind = core_rknd ),dimension(n_levels,n_samples), intent(in) :: &
+    real( kind = core_rknd ),dimension(n_samples,n_levels), intent(in) :: &
       weight ! Coefficient to weight the nth sample point by [-]
 
     real( kind = core_rknd ),dimension(n_levels), intent(in) :: &
@@ -107,7 +108,7 @@ module math_utilities
 
     do sample=1, n_samples
       variance(1:n_levels) = variance(1:n_levels) &
-        + weight(1:n_levels,sample) * ( x_sample(1:n_levels,sample) - x_mean(1:n_levels) )**2
+        + weight(sample,1:n_levels) * ( x_sample(sample,1:n_levels) - x_mean(1:n_levels) )**2
     end do
 
     variance(1:n_levels) = variance(1:n_levels) / real( n_samples, kind=core_rknd )
@@ -134,11 +135,11 @@ module math_utilities
       n_levels, & ! Number of sample levels in the mean / variance
       n_samples   ! Number of sample points compute the variance of
 
-    real( kind = core_rknd ),dimension(n_levels,n_samples), intent(in) :: &
+    real( kind = core_rknd ),dimension(n_samples,n_levels), intent(in) :: &
       x_sample, & ! Collection of sample points    [units vary]
       y_sample
 
-    real( kind = core_rknd ),dimension(n_levels,n_samples), intent(in) :: &
+    real( kind = core_rknd ),dimension(n_samples,n_levels), intent(in) :: &
       weight ! Coefficient to weight the nth sample point by [-]
 
     real( kind = core_rknd ),dimension(n_levels), intent(in) :: &
@@ -158,8 +159,8 @@ module math_utilities
 
     do sample=1, n_samples
       covariance(1:n_levels) = covariance(1:n_levels) &
-        + weight(1:n_levels,sample) * ( x_sample(1:n_levels,sample) - x_mean(1:n_levels) ) &
-           * ( y_sample(1:n_levels,sample) - y_mean(1:n_levels) )
+        + weight(sample,1:n_levels) * ( x_sample(sample,1:n_levels) - x_mean(1:n_levels) ) &
+           * ( y_sample(sample,1:n_levels) - y_mean(1:n_levels) )
     end do
 
     covariance(1:n_levels) = covariance(1:n_levels) / real( n_samples, kind=core_rknd )

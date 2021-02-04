@@ -117,13 +117,13 @@ module estimate_scm_microphys_module
       num_samples,   & ! Number of calls to microphysics
       pdf_dim     ! Number of variates
 
-    real( kind = core_rknd ), dimension(nz,num_samples,pdf_dim), intent(in) :: &
+    real( kind = core_rknd ), dimension(num_samples,nz,pdf_dim), intent(in) :: &
       X_nl_all_levs    ! Sample that is transformed ultimately to normal-lognormal
 
-    integer, dimension(nz,num_samples), intent(in) :: &
+    integer, dimension(num_samples,nz), intent(in) :: &
       X_mixt_comp_all_levs    ! Mixture component of each sample
 
-    real( kind = core_rknd ), dimension(num_samples), intent(in) :: &
+    real( kind = core_rknd ), dimension(num_samples,nz), intent(in) :: &
       lh_sample_point_weights ! Weight for cloud weighted sampling
 
     type(pdf_parameter), intent(in) :: &
@@ -142,7 +142,7 @@ module estimate_scm_microphys_module
     real( kind = core_rknd ), dimension(nz,hydromet_dim), intent(in) :: &
       hydromet ! Hydrometeor species    [units vary]
 
-    real( kind = core_rknd ), dimension(nz,num_samples), intent(in) :: &
+    real( kind = core_rknd ), dimension(num_samples,nz), intent(in) :: &
       lh_rt_clipped,  & ! rt generated from silhs sample points
       lh_thl_clipped, & ! thl generated from silhs sample points
       lh_rc_clipped,  & ! rc generated from silhs sample points
@@ -171,20 +171,20 @@ module estimate_scm_microphys_module
 
 
     ! Local Variables
-    real( kind = core_rknd ), dimension(nz,num_samples,hydromet_dim) :: &
+    real( kind = core_rknd ), dimension(num_samples,nz,hydromet_dim) :: &
       lh_hydromet_mc_all, & ! LH est of hydrometeor time tendency          [(units vary)/s]
       lh_hydromet_vel_all   ! LH est of hydrometeor sedimentation velocity [m/s]
 
-    real( kind = core_rknd ), dimension(nz,num_samples) :: &
+    real( kind = core_rknd ), dimension(num_samples,nz) :: &
       lh_Ncm_mc_all,       & ! LH est of time tendency of cloud droplet concentration  [#/kg/s]
       lh_rcm_mc_all,       & ! LH est of time tendency of liquid water mixing ratio    [kg/kg/s]
       lh_rvm_mc_all,       & ! LH est of time tendency of vapor water mixing ratio     [kg/kg/s]
       lh_thlm_mc_all         ! LH est of time tendency of liquid potential temperature     [K/s]
 
-    real( kind = core_rknd ), dimension(nz,num_samples,hydromet_dim) :: &
+    real( kind = core_rknd ), dimension(num_samples,nz,hydromet_dim) :: &
       hydromet_all_points ! Hydrometeor species                    [units vary]
 
-    real( kind = core_rknd ), dimension(nz,num_samples) :: &
+    real( kind = core_rknd ), dimension(num_samples,nz) :: &
       Ncn_all_points, &    ! Cloud Nuclei conc. (simplified); Nc=Ncn*H(chi) [#/kg]
       chi_all_points, &    ! 's' (Mellor 1977)                              [kg/kg]
       w_all_points         ! Vertical velocity                              [m/s]
@@ -231,14 +231,14 @@ module estimate_scm_microphys_module
       ! Call the microphysics scheme to obtain a sample point
       call microphys_sub &
            ( dt, nz, & ! In
-             l_latin_hypercube, lh_thl_clipped(:,sample), w_all_points(:,sample), p_in_Pa, & ! In
+             l_latin_hypercube, lh_thl_clipped(sample,:), w_all_points(sample,:), p_in_Pa, & ! In
              exner, rho, cloud_frac_unused, w_std_dev_unused, & ! In
-             dzq, lh_rc_clipped(:,sample), lh_Nc_clipped(:,sample), & ! In
-             chi_all_points(:,sample), lh_rv_clipped(:,sample), & ! In
-             hydromet_all_points(:,sample,:), & ! In
-             lh_hydromet_mc_all(:,sample,:), lh_hydromet_vel_all(:,sample,:), & ! Out
-             lh_Ncm_mc_all(:,sample), & ! Out
-             lh_rcm_mc_all(:,sample), lh_rvm_mc_all(:,sample), lh_thlm_mc_all(:,sample), & ! Out
+             dzq, lh_rc_clipped(sample,:), lh_Nc_clipped(sample,:), & ! In
+             chi_all_points(sample,:), lh_rv_clipped(sample,:), & ! In
+             hydromet_all_points(sample,:,:), & ! In
+             lh_hydromet_mc_all(sample,:,:), lh_hydromet_vel_all(sample,:,:), & ! Out
+             lh_Ncm_mc_all(sample,:), & ! Out
+             lh_rcm_mc_all(sample,:), lh_rvm_mc_all(sample,:), lh_thlm_mc_all(sample,:), & ! Out
              microphys_stats_zt_all(sample), microphys_stats_sfc_all(sample) ) ! Out
 
       ! Loop to get new sample
@@ -384,7 +384,7 @@ module estimate_scm_microphys_module
     type(microphys_stats_vars_type), dimension(num_samples), intent(in) :: &
       microphys_stats_all   ! Statistics variables
 
-    real( kind = core_rknd ), dimension(num_samples), intent(in) :: &
+    real( kind = core_rknd ), dimension(num_samples,microphys_stats_all(1)%nz), intent(in) :: &
       lh_sample_point_weights ! Weight of each SILHS sample point
 
     ! Output Variables
@@ -394,7 +394,7 @@ module estimate_scm_microphys_module
     ! Local Variables
     integer :: ivar, svar, nz, num_vars, stats_index
 
-    real( kind = core_rknd ), dimension(microphys_stats_all(1)%nz,num_samples) :: &
+    real( kind = core_rknd ), dimension(num_samples,microphys_stats_all(1)%nz) :: &
       stats_var_all
 
     real( kind = core_rknd ), dimension(microphys_stats_all(1)%nz) :: &
@@ -413,7 +413,7 @@ module estimate_scm_microphys_module
       stats_index = microphys_stats_all(1)%stats_indices(ivar)
 
       do svar=1, num_samples
-        stats_var_all(:,svar) = microphys_stats_all(svar)%output_values(:,ivar)
+        stats_var_all(svar,:) = microphys_stats_all(svar)%output_values(:,ivar)
       end do
 
       stats_var_avg = compute_sample_mean( nz, num_samples, lh_sample_point_weights, stats_var_all )

@@ -70,10 +70,10 @@ module lh_microphys_var_covar_module
     real( kind = core_rknd ), intent(in) :: &
       dt                               ! Model time step                             [s]
 
-    real( kind = core_rknd ), dimension(nz,num_samples), intent(in) :: &
+    real( kind = core_rknd ), dimension(num_samples,nz), intent(in) :: &
       lh_sample_point_weights          ! Weight of SILHS sample points
 
-    real( kind = core_rknd ), dimension(nz,num_samples), intent(in) :: &
+    real( kind = core_rknd ), dimension(num_samples,nz), intent(in) :: &
       lh_rt_all, &                     ! SILHS samples of total water                [kg/kg]
       lh_thl_all, &                    ! SILHS samples of potential temperature      [K]
       lh_w_all, &                      ! SILHS samples of vertical velocity          [m/s]
@@ -93,7 +93,7 @@ module lh_microphys_var_covar_module
       lh_rtpthlp_mc_zt                 ! SILHS microphys. est. tendency of <rt'thl'> [K*(kg/kg)/s]
 
     ! Local Variables
-    real( kind = core_rknd ), dimension(nz,num_samples) :: &
+    real( kind = core_rknd ), dimension(num_samples,nz) :: &
       lh_rt_mc_all
 
     real( kind = core_rknd ), dimension(nz) :: &

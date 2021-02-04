@@ -75,13 +75,13 @@ contains
       nz               ! Number of vertical model levels
 
     ! Input Variables
-    real( kind = core_rknd ), intent(in), dimension(nz,num_samples,pdf_dim) :: &
+    real( kind = core_rknd ), intent(in), dimension(num_samples,nz,pdf_dim) :: &
       X_nl_all_levs ! Sample that is transformed ultimately to normal-lognormal
 
-    integer, intent(in), dimension(nz,num_samples) :: &
+    integer, intent(in), dimension(num_samples,nz) :: &
       X_mixt_comp_all_levs ! Which mixture component we're in
 
-    real( kind = core_rknd ), intent(in), dimension(num_samples) :: &
+    real( kind = core_rknd ), intent(in), dimension(num_samples,nz) :: &
       lh_sample_point_weights ! Weight given the individual sample points
 
     type(pdf_parameter), intent(in) :: & 
@@ -101,7 +101,7 @@ contains
       exner,       & ! Exner function               [-]
       rho            ! Density on thermo. grid      [kg/m^3]
       
-    real( kind = core_rknd ), dimension(nz,num_samples), intent(in) :: &
+    real( kind = core_rknd ), dimension(num_samples,nz), intent(in) :: &
       lh_rt_clipped,  & ! rt generated from silhs sample points
       lh_thl_clipped, & ! thl generated from silhs sample points
       lh_rc_clipped,  & ! rc generated from silhs sample points

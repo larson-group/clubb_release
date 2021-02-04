@@ -190,13 +190,13 @@ contains
       lh_seed      ! Random number generator seed
 
     ! Output Variables
-    real( kind = core_rknd ), intent(out), dimension(nz,num_samples,pdf_dim) :: &
+    real( kind = core_rknd ), intent(out), dimension(num_samples,nz,pdf_dim) :: &
       X_nl_all_levs ! Sample that is transformed ultimately to normal-lognormal
 
-    integer, intent(out), dimension(nz,num_samples) :: &
+    integer, intent(out), dimension(num_samples,nz) :: &
       X_mixt_comp_all_levs ! Which mixture component we're in
 
-    real( kind = core_rknd ), intent(out), dimension(nz,num_samples) :: &
+    real( kind = core_rknd ), intent(out), dimension(num_samples,nz) :: &
       lh_sample_point_weights
 
     ! More Input Variables!
@@ -262,13 +262,13 @@ contains
       hydromet_pdf_params_col
       
     ! Output Variables
-    real( kind = core_rknd ), dimension(1,nz,num_samples,pdf_dim) :: &
+    real( kind = core_rknd ), dimension(1,num_samples,nz,pdf_dim) :: &
       X_nl_all_levs_col ! Sample that is transformed ultimately to normal-lognormal
 
-    integer, dimension(1,nz,num_samples) :: &
+    integer, dimension(1,num_samples,nz) :: &
       X_mixt_comp_all_levs_col ! Which mixture component we're in
 
-    real( kind = core_rknd ), dimension(1,nz,num_samples) :: &
+    real( kind = core_rknd ), dimension(1,num_samples,nz) :: &
       lh_sample_point_weights_col
 
     ! -------------- Begin Code --------------
@@ -371,13 +371,13 @@ contains
       lh_seed      ! Random number generator seed
 
     ! Output Variables
-    real( kind = core_rknd ), intent(out), dimension(ngrdcol,nz,num_samples,pdf_dim) :: &
+    real( kind = core_rknd ), intent(out), dimension(ngrdcol,num_samples,nz,pdf_dim) :: &
       X_nl_all_levs ! Sample that is transformed ultimately to normal-lognormal
 
-    integer, intent(out), dimension(ngrdcol,nz,num_samples) :: &
+    integer, intent(out), dimension(ngrdcol,num_samples,nz) :: &
       X_mixt_comp_all_levs ! Which mixture component we're in
 
-    real( kind = core_rknd ), intent(out), dimension(ngrdcol,nz,num_samples) :: &
+    real( kind = core_rknd ), intent(out), dimension(ngrdcol,num_samples,nz) :: &
       lh_sample_point_weights
 
     ! More Input Variables!
@@ -459,10 +459,10 @@ contains
     real( kind = core_rknd ), intent(in), dimension(nz) :: &
       rho_ds_zt  ! Dry, static density (thermo. levs.) [kg/m^3]
 
-    real( kind = core_rknd ), intent(in), dimension(nz,num_samples) :: &
+    real( kind = core_rknd ), intent(in), dimension(num_samples,nz) :: &
       lh_sample_point_weights
 
-    real( kind = core_rknd ), intent(in), dimension(nz,num_samples,pdf_dim) :: &
+    real( kind = core_rknd ), intent(in), dimension(num_samples,nz,pdf_dim) :: &
       X_nl_all_levs ! Sample that is transformed ultimately to normal-lognormal
 
     real( kind = core_rknd ), dimension(nz,num_samples), intent(in) :: &
@@ -510,7 +510,7 @@ contains
       num_samples, & ! Number of sample points
       pdf_dim   ! Number of variates
 
-    real( kind = core_rknd ), dimension(nz,num_samples,pdf_dim), intent(in) :: &
+    real( kind = core_rknd ), dimension(num_samples,nz,pdf_dim), intent(in) :: &
       X_nl_all_levs ! Sample that is transformed ultimately to normal-lognormal
 
     real( kind = core_rknd ), dimension(nz), intent(in) :: &
@@ -522,10 +522,10 @@ contains
     type(pdf_parameter), intent(in) :: &
       pdf_params ! PDF parameters       [units vary]
 
-    integer, dimension(nz,num_samples), intent(in) :: &
+    integer, dimension(num_samples,nz), intent(in) :: &
       X_mixt_comp_all_levs ! Whether we're in mixture component 1 or 2
 
-    real( kind = core_rknd ), dimension(nz,num_samples), intent(in) :: &
+    real( kind = core_rknd ), dimension(num_samples,nz), intent(in) :: &
       lh_sample_point_weights ! Weight for cloud weighted sampling
 
     logical, intent(in) :: &
@@ -586,17 +586,17 @@ contains
       pdf_dim,      & ! Number of variates in X_nl_one_lev
       hydromet_dim    ! Number of hydrometeor species
 
-    integer, dimension(nz,num_samples), intent(in) :: &
+    integer, dimension(num_samples,nz), intent(in) :: &
       X_mixt_comp_all_levs   ! Which component this sample is in (1 or 2)
 
-    real( kind = core_rknd ), dimension(nz,num_samples,pdf_dim), intent(inout) :: &
+    real( kind = core_rknd ), dimension(num_samples,nz,pdf_dim), intent(inout) :: &
       X_nl_all_levs         ! SILHS sample points    [units vary]
 
     type(pdf_parameter), intent(in) :: &
       pdf_params             ! **The** PDF parameters!
 
     ! Output Variables
-    real( kind = core_rknd ), dimension(nz,num_samples), intent(out) :: &
+    real( kind = core_rknd ), dimension(num_samples,nz), intent(out) :: &
       lh_rt_clipped,  & ! rt generated from silhs sample points
       lh_thl_clipped, & ! thl generated from silhs sample points
       lh_rc_clipped,  & ! rc generated from silhs sample points
@@ -605,17 +605,17 @@ contains
       
     ! -------------- Local Variables --------------
     
-    integer, dimension(1,nz,num_samples) :: &
+    integer, dimension(1,num_samples,nz) :: &
       X_mixt_comp_all_levs_col   ! Which component this sample is in (1 or 2)
 
-    real( kind = core_rknd ), dimension(1,nz,num_samples,pdf_dim) :: &
+    real( kind = core_rknd ), dimension(1,num_samples,nz,pdf_dim) :: &
       X_nl_all_levs_col         ! SILHS sample points    [units vary]
 
     type(pdf_parameter), dimension(1) :: &
       pdf_params_col             ! **The** PDF parameters!
 
     ! Output Variables
-    real( kind = core_rknd ), dimension(1,nz,num_samples) :: &
+    real( kind = core_rknd ), dimension(1,num_samples,nz) :: &
       lh_rt_clipped_col,  & ! rt generated from silhs sample points
       lh_thl_clipped_col, & ! thl generated from silhs sample points
       lh_rc_clipped_col,  & ! rc generated from silhs sample points
@@ -676,17 +676,17 @@ contains
       pdf_dim,      & ! Number of variates in X_nl_one_lev
       hydromet_dim    ! Number of hydrometeor species
 
-    integer, dimension(ngrdcol,nz,num_samples), intent(in) :: &
+    integer, dimension(ngrdcol,num_samples,nz), intent(in) :: &
       X_mixt_comp_all_levs   ! Which component this sample is in (1 or 2)
 
-    real( kind = core_rknd ), dimension(ngrdcol,nz,num_samples,pdf_dim), intent(inout) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,num_samples,nz,pdf_dim), intent(inout) :: &
       X_nl_all_levs         ! SILHS sample points    [units vary]
 
     type(pdf_parameter), dimension(ngrdcol), intent(in) :: &
       pdf_params             ! **The** PDF parameters!
 
     ! Output Variables
-    real( kind = core_rknd ), dimension(ngrdcol,nz,num_samples), intent(out) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,num_samples,nz), intent(out) :: &
       lh_rt_clipped,  & ! rt generated from silhs sample points
       lh_thl_clipped, & ! thl generated from silhs sample points
       lh_rc_clipped,  & ! rc generated from silhs sample points
@@ -735,10 +735,10 @@ contains
     real( kind = core_rknd ), intent(in) :: &
       dt                               ! Model time step                             [s]
 
-    real( kind = core_rknd ), dimension(nz,num_samples), intent(in) :: &
+    real( kind = core_rknd ), dimension(num_samples,nz), intent(in) :: &
       lh_sample_point_weights          ! Weight of SILHS sample points
 
-    real( kind = core_rknd ), dimension(nz,num_samples), intent(in) :: &
+    real( kind = core_rknd ), dimension(num_samples,nz), intent(in) :: &
       lh_rt_all, &                     ! SILHS samples of total water                [kg/kg]
       lh_thl_all, &                    ! SILHS samples of potential temperature      [K]
       lh_w_all, &                      ! SILHS samples of vertical velocity          [m/s]

@@ -58,7 +58,7 @@ module silhs_category_variance_module
       pdf_dim,     &      ! Number of variates in X_nl
       hydromet_dim            ! Number of elements of hydromet array
 
-    real( kind = core_rknd ), dimension(nz,num_samples,pdf_dim), intent(in) :: &
+    real( kind = core_rknd ), dimension(num_samples,nz,pdf_dim), intent(in) :: &
       X_nl_all_levs           ! SILHS samples at all height levels
 
     integer, dimension(nz,num_samples), intent(in) :: &
@@ -67,10 +67,10 @@ module silhs_category_variance_module
     type(microphys_stats_vars_type), dimension(num_samples), intent(in) :: &
       microphys_stats_vars_all! The statistics objects to sample from, for each sample point
 
-    real( kind = core_rknd ), dimension(nz,num_samples,hydromet_dim), intent(in) :: &
+    real( kind = core_rknd ), dimension(num_samples,nz,hydromet_dim), intent(in) :: &
       lh_hydromet_mc_all      ! Tendencies of hydometeors at all sample points
 
-    real( kind = core_rknd ), dimension(num_samples), intent(in) :: &
+    real( kind = core_rknd ), dimension(num_samples,nz), intent(in) :: &
       lh_sample_point_weights ! Weight of SILHS sample points
 
     type(pdf_parameter), intent(in) :: &
@@ -80,7 +80,7 @@ module silhs_category_variance_module
       hydromet_pdf_params
 
     ! Local Variables
-    real( kind = core_rknd ), dimension(nz,num_samples) :: &
+    real( kind = core_rknd ), dimension(num_samples,nz) :: &
       samples_all
 
     integer :: structure_index, isample
@@ -102,7 +102,7 @@ module silhs_category_variance_module
       structure_index = microphys_get_index( istat_var, microphys_stats_vars_all(1) )
 
       do isample=1, num_samples
-        samples_all(:,isample) = microphys_stats_vars_all(isample)%output_values &
+        samples_all(isample,:) = microphys_stats_vars_all(isample)%output_values &
                                    (:,structure_index)
       end do
 
@@ -118,7 +118,7 @@ module silhs_category_variance_module
       istat_var = irrm_mc_nonadj
       structure_index = microphys_get_index( istat_var, microphys_stats_vars_all(1) )
       do isample=1, num_samples
-        samples_all(:,isample) = microphys_stats_vars_all(isample)%output_values &
+        samples_all(isample,:) = microphys_stats_vars_all(isample)%output_values &
                                    (:,structure_index)
       end do
 
@@ -181,16 +181,16 @@ module silhs_category_variance_module
       num_samples,     &      ! Number of SILHS sample points
       pdf_dim            ! Number of variates in X_nl
 
-    real( kind = core_rknd ), dimension(nz,num_samples,pdf_dim), intent(in) :: &
+    real( kind = core_rknd ), dimension(num_samples,nz,pdf_dim), intent(in) :: &
       X_nl_all_levs           ! SILHS samples at all height levels
 
-    integer, dimension(nz,num_samples), intent(in) :: &
+    integer, dimension(num_samples,nz), intent(in) :: &
       X_mixt_comp_all_levs    ! Mixture component (1 or 2) of each sample point
 
-    real( kind = core_rknd ), dimension(nz,num_samples), intent(in) :: &
+    real( kind = core_rknd ), dimension(num_samples,nz), intent(in) :: &
       samples_all             ! Sample points of variable to compute variance of
 
-    real( kind = core_rknd ), dimension(num_samples), intent(in) :: &
+    real( kind = core_rknd ), dimension(num_samples,nz), intent(in) :: &
       lh_sample_point_weights ! Weight of SILHS sample points
 
     type(pdf_parameter), intent(in) :: &
@@ -209,7 +209,7 @@ module silhs_category_variance_module
     real( kind = core_rknd ), dimension(num_importance_categories) :: &
       category_real_probs     ! PDF probability of each category
 
-    real( kind = core_rknd ), dimension(nz,num_importance_categories) :: &
+    real( kind = core_rknd ), dimension(num_importance_categories,nz) :: &
       root_weight_mean_sq_cat
 
     integer :: isample, icat, k
@@ -229,8 +229,8 @@ module silhs_category_variance_module
     do k=2, nz
 
       int_sample_category = determine_sample_categories &
-                            ( num_samples, pdf_dim, X_nl_all_levs(k,:,:), &
-                              X_mixt_comp_all_levs(k,:), importance_categories )
+                            ( num_samples, pdf_dim, X_nl_all_levs(:,k,:), &
+                              X_mixt_comp_all_levs(:,k), importance_categories )
 
       category_real_probs = &
         compute_category_real_probs( importance_categories, &
@@ -241,30 +241,30 @@ module silhs_category_variance_module
 
         icat = int_sample_category(isample)
 
-        root_weight_mean_sq_cat(k,icat) = root_weight_mean_sq_cat(k,icat) + &
-          lh_sample_point_weights(isample) * ( samples_all(k,isample) ** 2 )
+        root_weight_mean_sq_cat(icat,k) = root_weight_mean_sq_cat(icat,k) + &
+          lh_sample_point_weights(isample,k) * ( samples_all(isample,k) ** 2 )
 
       end do ! isample=1, num_samples
 
-      root_weight_mean_sq_cat(k,:) = root_weight_mean_sq_cat(k,:) / &
+      root_weight_mean_sq_cat(:,k) = root_weight_mean_sq_cat(:,k) / &
                                      real( num_samples, kind=core_rknd )
 
       where ( category_real_probs > zero )
-        root_weight_mean_sq_cat(k,:) = sqrt( root_weight_mean_sq_cat(k,:) / &
+        root_weight_mean_sq_cat(:,k) = sqrt( root_weight_mean_sq_cat(:,k) / &
                                              category_real_probs(:) )
       else where
-        root_weight_mean_sq_cat(k,:) = -999._core_rknd
+        root_weight_mean_sq_cat(:,k) = -999._core_rknd
       end where
 
     end do ! k=2, nz
 
     ! Microphysics is not run on the lowest thermodynamic grid level.
-    root_weight_mean_sq_cat(1,:) = zero
+    root_weight_mean_sq_cat(:,1) = zero
 
     if ( l_stats_samp ) then
       do icat=1, num_importance_categories
         call stat_update_var( isilhs_variance_category(icat), &
-                              root_weight_mean_sq_cat(:,icat), stats_lh_zt )
+                              root_weight_mean_sq_cat(icat,:), stats_lh_zt )
       end do
     end if
 
