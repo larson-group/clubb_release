@@ -512,7 +512,7 @@ subroutine logical_flags_driver( current_date, current_time )
     i8 = selected_int_kind( 15 )
 
   integer, parameter :: &
-    ndim = 11, & ! Temporarily hardwired for a fixed number of flags
+    ndim = 12, & ! Temporarily hardwired for a fixed number of flags
     two_ndim = 2**ndim, &
     iunit = 10
 
@@ -615,9 +615,13 @@ subroutine logical_flags_driver( current_date, current_time )
                                     ! that is linearized in terms of wp3<t+1>.
                                     ! (Requires ADG1 PDF and l_standard_term_ta).
     l_godunov_upwind_wpxp_ta,     & ! This flag determines whether we want to use an upwind
-                                     ! differencing approximation rather than a centered
-                                     ! differencing for turbulent advection terms.
-                                     ! It affects  wpxp only.
+                                    ! differencing approximation rather than a centered
+                                    ! differencing for turbulent advection terms.
+                                    ! It affects  wpxp only.
+    l_godunov_upwind_xpyp_ta,     & ! This flag determines whether we want to use an upwind
+                                    ! differencing approximation rather than a centered 
+                                    ! differencing for turbulent advection terms. It affects
+                                    ! xpyp only.
     l_use_cloud_cover,            & ! Use cloud_cover and rcm_in_layer to help boost cloud_frac
                                     ! and rcm to help increase cloudiness at coarser grid
                                     ! resolutions.
@@ -653,7 +657,8 @@ subroutine logical_flags_driver( current_date, current_time )
     iiPDF_type, ipdf_call_placement, &
     l_upwind_wpxp_ta, l_upwind_xpyp_ta, l_upwind_xm_ma, l_quintic_poly_interp, &
     l_tke_aniso, l_vert_avg_closure, l_single_C2_Skw, l_standard_term_ta, &
-    l_partial_upwind_wp3, l_godunov_upwind_wpxp_ta, l_use_cloud_cover, l_rcm_supersat_adj, &
+    l_partial_upwind_wp3, l_godunov_upwind_wpxp_ta, l_godunov_upwind_xpyp_ta, &
+    l_use_cloud_cover, l_rcm_supersat_adj, &
     l_damp_wp3_Skw_squared, l_min_wp2_from_corr_wx, l_min_xp2_from_corr_wx, l_C2_cloud_frac, &
     l_predict_upwp_vpwp, l_diag_Lscale_from_tau, l_stability_correct_tau_zm, &
     l_damp_wp2_using_em, l_use_C7_Richardson, l_use_precip_frac, l_do_expldiff_rtm_thlm, &
@@ -688,6 +693,7 @@ subroutine logical_flags_driver( current_date, current_time )
                                        l_standard_term_ta, & ! Intent(out)
                                        l_partial_upwind_wp3, & ! Intent(out)
                                        l_godunov_upwind_wpxp_ta, & ! Intent(out)
+                                       l_godunov_upwind_xpyp_ta, & ! Intent(out)
                                        l_use_cloud_cover, & ! Intent(out)
                                        l_diagnose_correlations, & ! Intent(out)
                                        l_calc_w_corr, & ! Intent(out)
@@ -715,15 +721,16 @@ subroutine logical_flags_driver( current_date, current_time )
   ! Determine the current flags
   model_flags_default(1) = l_upwind_wpxp_ta
   model_flags_default(2) = l_godunov_upwind_wpxp_ta
-  model_flags_default(3) = l_upwind_xpyp_ta
-  model_flags_default(4) = l_upwind_xm_ma
-  model_flags_default(5) = l_quintic_poly_interp
-  model_flags_default(6) = l_vert_avg_closure
-  model_flags_default(7) = l_single_C2_Skw
-  model_flags_default(8) = l_standard_term_ta
-  model_flags_default(9) = l_tke_aniso
-  model_flags_default(10) = l_use_cloud_cover
-  model_flags_default(11) = l_rcm_supersat_adj
+  model_flags_default(3) = l_godunov_upwind_xpyp_ta
+  model_flags_default(4) = l_upwind_xpyp_ta
+  model_flags_default(5) = l_upwind_xm_ma
+  model_flags_default(6) = l_quintic_poly_interp
+  model_flags_default(7) = l_vert_avg_closure
+  model_flags_default(8) = l_single_C2_Skw
+  model_flags_default(9) = l_standard_term_ta
+  model_flags_default(10) = l_tke_aniso
+  model_flags_default(11) = l_use_cloud_cover
+  model_flags_default(12) = l_rcm_supersat_adj
 
   ! This should always be 1.0; it's here as a sanity check
   cost_func_default = real( min_les_clubb_diff( real(param_vals_matrix(1,:)) ), kind = core_rknd )
@@ -829,15 +836,16 @@ subroutine logical_flags_driver( current_date, current_time )
   if ( l_results_file ) then
     l_upwind_wpxp_ta = model_flags_array(1,1)
     l_godunov_upwind_wpxp_ta = model_flags_array(1,2)
-    l_upwind_xpyp_ta = model_flags_array(1,3)
-    l_upwind_xm_ma = model_flags_array(1,4)
-    l_quintic_poly_interp = model_flags_array(1,5)
-    l_vert_avg_closure = model_flags_array(1,6)
-    l_single_C2_Skw = model_flags_array(1,7)
-    l_standard_term_ta = model_flags_array(1,8)
-    l_tke_aniso = model_flags_array(1,9)
-    l_use_cloud_cover = model_flags_array(1,10)
-    l_rcm_supersat_adj = model_flags_array(1,11)
+    l_godunov_upwind_xpyp_ta = model_flags_array(1,3)
+    l_upwind_xpyp_ta = model_flags_array(1,4)
+    l_upwind_xm_ma = model_flags_array(1,5)
+    l_quintic_poly_interp = model_flags_array(1,6)
+    l_vert_avg_closure = model_flags_array(1,7)
+    l_single_C2_Skw = model_flags_array(1,8)
+    l_standard_term_ta = model_flags_array(1,9)
+    l_tke_aniso = model_flags_array(1,10)
+    l_use_cloud_cover = model_flags_array(1,11)
+    l_rcm_supersat_adj = model_flags_array(1,12)
 
     if ( l_vert_avg_closure ) then
       l_trapezoidal_rule_zt    = .true.

@@ -220,6 +220,10 @@ module model_flags
                                       ! differencing approximation rather than a centered 
                                       ! differencing for turbulent advection terms. 
                                       ! It affects  wpxp only.
+      l_godunov_upwind_xpyp_ta,     & ! This flag determines whether we want to use an upwind
+                                      ! differencing approximation rather than a centered 
+                                      ! differencing for turbulent advection terms. It affects
+                                      ! xpyp only.
       l_use_cloud_cover,            & ! Use cloud_cover and rcm_in_layer to help boost cloud_frac
                                       ! and rcm to help increase cloudiness at coarser grid
                                       ! resolutions.
@@ -342,6 +346,7 @@ module model_flags
                                              l_standard_term_ta, &
                                              l_partial_upwind_wp3, &
                                              l_godunov_upwind_wpxp_ta, &
+                                             l_godunov_upwind_xpyp_ta, &
                                              l_use_cloud_cover, &
                                              l_diagnose_correlations, &
                                              l_calc_w_corr, &
@@ -453,6 +458,10 @@ module model_flags
                                       ! differencing approximation rather than a centered 
                                       ! differencing for turbulent advection terms. 
                                       ! It affects  wpxp only.
+      l_godunov_upwind_xpyp_ta,     & ! This flag determines whether we want to use an upwind
+                                      ! differencing approximation rather than a centered 
+                                      ! differencing for turbulent advection terms. It affects
+                                      ! xpyp only.
       l_use_cloud_cover,            & ! Use cloud_cover and rcm_in_layer to help boost cloud_frac
                                       ! and rcm to help increase cloudiness at coarser grid
                                       ! resolutions.
@@ -510,6 +519,7 @@ module model_flags
     l_standard_term_ta = .false.
     l_partial_upwind_wp3 = .false.
     l_godunov_upwind_wpxp_ta = .false.
+    l_godunov_upwind_xpyp_ta = .false.
     l_use_cloud_cover = .false.
     l_diagnose_correlations = .false.
     l_calc_w_corr = .false.
@@ -565,6 +575,7 @@ module model_flags
                                                  l_standard_term_ta, &
                                                  l_partial_upwind_wp3, &
                                                  l_godunov_upwind_wpxp_ta, &
+                                                 l_godunov_upwind_xpyp_ta, &
                                                  l_use_cloud_cover, &
                                                  l_diagnose_correlations, &
                                                  l_calc_w_corr, &
@@ -677,6 +688,10 @@ module model_flags
                                       ! differencing approximation rather than a centered 
                                       ! differencing for turbulent advection terms. 
                                       ! It affects  wpxp only.
+      l_godunov_upwind_xpyp_ta,     & ! This flag determines whether we want to use an upwind
+                                      ! differencing approximation rather than a centered 
+                                      ! differencing for turbulent advection terms. It affects
+                                      ! xpyp only.
       l_use_cloud_cover,            & ! Use cloud_cover and rcm_in_layer to help boost cloud_frac
                                       ! and rcm to help increase cloudiness at coarser grid
                                       ! resolutions.
@@ -738,6 +753,7 @@ module model_flags
     clubb_config_flags%l_standard_term_ta = l_standard_term_ta
     clubb_config_flags%l_partial_upwind_wp3 = l_partial_upwind_wp3
     clubb_config_flags%l_godunov_upwind_wpxp_ta = l_godunov_upwind_wpxp_ta
+    clubb_config_flags%l_godunov_upwind_xpyp_ta = l_godunov_upwind_xpyp_ta
     clubb_config_flags%l_use_cloud_cover = l_use_cloud_cover
     clubb_config_flags%l_diagnose_correlations = l_diagnose_correlations
     clubb_config_flags%l_calc_w_corr = l_calc_w_corr
@@ -810,6 +826,7 @@ module model_flags
     write(iunit,*) "l_standard_term_ta = ", clubb_config_flags%l_standard_term_ta
     write(iunit,*) "l_partial_upwind_wp3 = ", clubb_config_flags%l_partial_upwind_wp3
     write(iunit,*) "l_godunov_upwind_wpxp_ta = ", clubb_config_flags%l_godunov_upwind_wpxp_ta
+    write(iunit,*) "l_godunov_upwind_xpyp_ta = ", clubb_config_flags%l_godunov_upwind_xpyp_ta
     write(iunit,*) "l_use_cloud_cover = ", clubb_config_flags%l_use_cloud_cover
     write(iunit,*) "l_diagnose_correlations = ", clubb_config_flags%l_diagnose_correlations
     write(iunit,*) "l_calc_w_corr = ", clubb_config_flags%l_calc_w_corr
