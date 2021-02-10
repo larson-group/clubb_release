@@ -861,6 +861,10 @@ module error
         if (les_stats_file(c_run)(len_file-2: len_file) == ".nc") then
           call open_netcdf_read( les_v(i), les_stats_file(c_run), netcdf_file, l_file_error);
           call close_netcdf_read(netcdf_file);
+          ! If l_file_error is actually signalling an error, make sure an error is thrown
+          if (l_file_error) then
+            l_error = .true.
+          end if
         else
           l_file_error = .true. ! This will cause the following assertion check to be skipped
         end if
@@ -909,7 +913,7 @@ module error
           end if
           write(fstderr,*) "The specified LES variable "//trim( les_v(i) )//" was invalid, "// &
             "or the GrADS file did not exist."
-          stop
+          error stop "Missing or improperly formatted file"
         end if
 
         ! Verify that the domain that we're tuning CLUBB over is fully defined in
