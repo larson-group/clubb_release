@@ -2,6 +2,18 @@
 Pyplotgen takes parameters in the form `python3 ./PyPlotGen.py [OPTIONS]`
 Pyplotgen only supports input in the netcdf (.nc) format.
 
+## Example Run Commands
+
+To plot clubb output located in `/home/USERNAME/clubb_issue_834/output/default_run` 
+and save the generated plots in `/home/USERNAME/clubb/output/pyplots_default_run`, 
+run this command:
+
+`python3 ./pyplotgen.py -c /home/USERNAME/clubb_issue_834/output/default_run -o /home/USERNAME/clubb/output/pyplots_default_run`
+
+If, in addition, you'd like to overplot LES lines and also separately plot CLUBB budgets, run this command:
+
+`python3 ./pyplotgen.py --plot-budgets -l -c /home/USERNAME/clubb_issue_834/output/default_run -o /home/USERNAME/clubb/output/pyplots_default_run`
+
 ## Valid options
 
 | *Option Flag* | *Description* |
@@ -39,18 +51,6 @@ To install the dependencies necessary for PyPlotgen to run, go to the `postproce
 ```
 pip3 install -r requirements.txt
 ```
-
-## Example Run Commands
-
-To plot clubb output located in `/home/USERNAME/clubb_issue_834/output/default_run` 
-and save the generated plots in `/home/USERNAME/clubb/output/pyplots_default_run`, 
-run this command:
-
-`python3 ./pyplotgen.py -c /home/USERNAME/clubb_issue_834/output/default_run -o /home/USERNAME/clubb/output/pyplots_default_run`
-
-If, in addition, you'd like to overplot LES lines and also separately plot CLUBB budgets, run this command:
-
-`python3 ./pyplotgen.py --plot-budgets -l -c /home/USERNAME/clubb_issue_834/output/default_run -o /home/USERNAME/clubb/output/pyplots_default_run`
 
 ## Creating animations
 PyPlotGen can create animations of CLUBB variable profiles, including budgets and SILHS subcolumns.  Currently the code is capable of outputting .mp4 and .avi files although .mp4 is probably preferred due to greater compatibility with web browsers which is how output is typically viewed.  The python package OpenCV is required for making movies, although pyplotgen can still be used for creating figures without OpenCV and will not complain if OpenCV is not present.  Having FFmpeg (a free software not associated with python) installed on your computer, while not a requirement, helps greatly because it will make .mp4 files compatible with a wider range of browers including Firefox and Chrome.  The movie frame rate is set in config/Style_definitions.py under FRAMES_PER_SECOND.
