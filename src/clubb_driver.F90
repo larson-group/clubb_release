@@ -1250,7 +1250,7 @@ module clubb_driver
                             momentum_heights, &                 ! Intent(out)
                             thermodynamic_heights )             ! Intent(out)
 
-    if ( err_code == clubb_fatal_error ) stop 
+    if ( err_code == clubb_fatal_error ) error stop 
 
     ! These numbers represent host model horizontal grid spacing
     ! which for a single column simulation is effectively infinite
@@ -1847,7 +1847,7 @@ module clubb_driver
         write(fstderr,*) "time_restart = ", time_restart
         write(fstderr,*) "time_initial = ", time_initial
         write(fstderr,*) "dt_main = ", dt_main
-        stop "Fatal error"
+        error stop "Fatal error"
 
       end if ! mod( (time_restart-time_initial) , dt_main ) /= 0
 
@@ -1955,7 +1955,7 @@ module clubb_driver
     ! check to make sure dt_rad is a mutliple of dt_main
     if ( abs(dt_rad/dt_main - real(floor(dt_rad/dt_main), kind=core_rknd)) &
           > 1.e-8_core_rknd) then
-      stop "dt_rad must be a multiple of dt_main"
+      error stop "dt_rad must be a multiple of dt_main"
     end if
 
     if( l_stats ) then
@@ -1964,7 +1964,7 @@ module clubb_driver
             < 1.e-8_core_rknd) .or. &
          ( abs(stats_tout/dt_rad - real(floor(stats_tout/dt_rad), kind=core_rknd)) &
             < 1.e-8_core_rknd)) ) then
-        stop "dt_rad must be a multiple of stats_tout or stats_tout must be a mulitple of dt_rad"
+        error stop "dt_rad must be a multiple of stats_tout or stats_tout must be a mulitple of dt_rad"
       end if
 
     end if
@@ -1980,7 +1980,7 @@ module clubb_driver
 
     if ( clubb_config_flags%l_calc_thlp2_rad .and. rad_scheme == "none" ) then
 
-      stop "The options rad_scheme == none and l_calc_thlp2_rad are incompatible."
+      error stop "The options rad_scheme == none and l_calc_thlp2_rad are incompatible."
 
     end if
     stats_nsamp = nint( stats_tsamp / dt_main )
@@ -2061,7 +2061,7 @@ module clubb_driver
                                  hydromet, sclrm, edsclrm ) ) then
         err_code = clubb_fatal_error
         write(fstderr,*) "Fatal error: a CLUBB variable is NaN in main time stepping loop."
-        stop
+        error stop
       end if
 
       ! Calculate radiation only once in a while
@@ -2089,7 +2089,7 @@ module clubb_driver
       if ( clubb_at_least_debug_level( 0 ) ) then
         if ( err_code == clubb_fatal_error ) then
             write(fstderr,*) "Fatal error in prescribe_forcings:"
-            stop
+            error stop
         end if
       end if
 
@@ -2170,7 +2170,7 @@ module clubb_driver
 
       if ( clubb_at_least_debug_level( 0 ) ) then
         if ( err_code == clubb_fatal_error ) then
-            stop "Fatal error in clubb, check your parameter values and timestep"
+            error stop "Fatal error in clubb, check your parameter values and timestep"
         end if
       end if
 
@@ -2204,7 +2204,7 @@ module clubb_driver
                                     corr_cholesky_mtx_1, corr_cholesky_mtx_2,        & ! Intent(out)
                                     hydromet_pdf_params(1,:) )                         ! Intent(out)
 
-         if ( err_code == clubb_fatal_error ) stop
+         if ( err_code == clubb_fatal_error ) error stop
 
          ! Calculate < rt'hm' >, < thl'hm' >, and < w'^2 hm' >.
          call hydrometeor_mixed_moments( gr%nz, pdf_dim, hydromet,                & ! Intent(in)
@@ -2384,7 +2384,7 @@ module clubb_driver
       if ( clubb_at_least_debug_level( 0 ) ) then
           if ( err_code == clubb_fatal_error ) then
             write(fstderr,*) "Fatal error in advance_microphys:"
-            stop   
+            error stop   
           endif
       end if
 
@@ -3505,7 +3505,7 @@ module clubb_driver
                            'implemented.  Either specify pressure as the ', &
                            'independent variable or thm/thlm as the ', &
                            'temperature variable.'
-          stop "Fatal error."
+          error stop "Fatal error."
 
        elseif ( trim( alt_type ) == pressure_name ) then
 
@@ -3522,7 +3522,7 @@ module clubb_driver
 
        else
 
-          stop "Invalid sounding vertical-coordinate variable"
+          error stop "Invalid sounding vertical-coordinate variable"
 
        endif
 
@@ -3640,7 +3640,7 @@ module clubb_driver
     case default
 
        write(fstderr,*) "Invalid theta_type: ", theta_type
-       stop
+       error stop
 
 
     end select
@@ -4318,7 +4318,7 @@ module clubb_driver
     if ( timestep < 0 ) then
       write(fstderr,*) "Invalid time_restart in "// & 
         "file: "//trim( runfile )
-      stop
+      error stop
     end if
 
     ! Read data from stats files
@@ -4721,7 +4721,7 @@ module clubb_driver
         write(unit=fstderr,fmt=*)  & 
            "prescribe_forcings: Don't know how to handle " &
            //"LS forcing for runtype: "//trim( runtype )
-        stop
+        error stop
 
       end select
 
@@ -4949,7 +4949,7 @@ module clubb_driver
     case default
       write(unit=fstderr,fmt=*)  & 
         "Invalid value of runtype = ", runtype
-      stop
+      error stop
 
     end select ! runtype
 
@@ -5162,7 +5162,7 @@ module clubb_driver
           amu0 = dble( cos_solar_zen_values(i) )
         else
           write(fstderr,*) "Time not found in cos_solar_zen_times"
-          stop "Critical error."
+          error stop "Critical error."
         end if
 
       else ! Compute using the formula
@@ -5280,7 +5280,7 @@ module clubb_driver
 
 #else
 
-      stop "Cannot call BUGSrad with these compile options."
+      error stop "Cannot call BUGSrad with these compile options."
 
 #endif /*radoffline*/
 
@@ -5331,14 +5331,14 @@ module clubb_driver
 
     case default
       write(fstderr,*) "Undefined value for namelist variable rad_scheme: "//trim( rad_scheme )
-      stop "Fatal error encountered in advance_clubb_radiation."
+      error stop "Fatal error encountered in advance_clubb_radiation."
 
     end select ! Radiation scheme
 
     if ( clubb_at_least_debug_level( 0 ) ) then
         if ( err_code == clubb_fatal_error ) then
             write(fstderr,*) "Fatal error in advance_clubb_radiation:"
-            stop
+            error stop
         end if
     end if
 
@@ -5637,7 +5637,7 @@ module clubb_driver
     if ( clubb_at_least_debug_level( 0 ) ) then
         if ( err_code == clubb_fatal_error ) then
           write(fstderr,*) "Fatal error in silhs_radiation_driver:"
-          stop
+          error stop
         end if
     end if
 

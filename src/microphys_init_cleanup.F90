@@ -674,7 +674,7 @@ module microphys_init_cleanup
           aerosol_mode = morrison_lognormal
 
        case default
-          stop "Unknown Morrison aerosol mode."
+          error stop "Unknown Morrison aerosol mode."
 
        end select
 
@@ -718,7 +718,7 @@ module microphys_init_cleanup
           write(fstderr,*) "Morrison microphysics has seperate code for" &
                            //" cloud water sedimentation, therefore " &
                            //"l_cloud_sed should be set to .false."
-          stop "Fatal error."
+          error stop "Fatal error."
        endif
 
        if ( .not. l_fix_w_chi_eta_correlations .and. l_ice_microphys &
@@ -728,7 +728,7 @@ module microphys_init_cleanup
                            // " sampling and ice microphysics."
           write(fstderr,*) "The flag l_ice_microphys must be set" &
                            // " to false to use this option."
-          stop "Fatal error."
+          error stop "Fatal error."
        endif
 
        allocate( l_hydromet_sed(hydromet_dim) )
@@ -743,7 +743,7 @@ module microphys_init_cleanup
        if ( .not. l_predict_Nc ) then
           write(fstderr,*) "COAMPS microphysics" &
                            // " does not support l_predict_Nc = F"
-          stop "Fatal Error"
+          error stop "Fatal Error"
        endif
 
        iirr = 1
@@ -774,7 +774,7 @@ module microphys_init_cleanup
        if ( l_predict_Nc ) then
           write(fstderr,*) "Khairoutdinov-Kogan microphysics" &
                            // " does not support l_predict_Nc = T"
-          stop "Fatal Error"
+          error stop "Fatal Error"
        endif
 
        iirr = 1
@@ -813,7 +813,7 @@ module microphys_init_cleanup
     case default
 
        write(fstderr,*) "Unknown microphys_scheme: "// trim( microphys_scheme )
-       stop
+       error stop
 
     end select
 
@@ -835,7 +835,7 @@ module microphys_init_cleanup
        lh_microphys_type_int = lh_microphys_disabled
 
     case default
-       stop "Error determining lh_microphys_type"
+       error stop "Error determining lh_microphys_type"
 
     end select
 
@@ -844,7 +844,7 @@ module microphys_init_cleanup
     if ( ( .not. ( lh_microphys_type_int == lh_microphys_disabled ) ) &
            .and. ( trim( microphys_scheme ) == "coamps" .or. &
                    trim( microphys_scheme ) == "simplified_ice" ) ) then
-       stop "LH sampling can not be enabled when using coamps," &
+       error stop "LH sampling can not be enabled when using coamps," &
             // " or simplified_ice microphysics types"
     endif
 
@@ -852,7 +852,7 @@ module microphys_init_cleanup
     ! a microphysics scheme other than khairoutdinov_kogan (KK)
     if ( l_silhs_KK_convergence_adj_mean .and. &
           trim( microphys_scheme ) /= "khairoutdinov_kogan" ) then
-       stop "l_silhs_KK_convergence_adj_mean requires khairoutdinov_kogan microphysics"
+       error stop "l_silhs_KK_convergence_adj_mean requires khairoutdinov_kogan microphysics"
     endif
 
     !The algorithm for diagnosing the correlations only works with the KK
@@ -863,7 +863,7 @@ module microphys_init_cleanup
          .and. ( lh_microphys_type_int == lh_microphys_disabled ) ) ) then
        write(fstderr,*) "Error: The diagnose_corr algorithm only works " &
                         // "for KK microphysics by now."
-       stop
+       error stop
     endif
 
     if ( ( .not. l_local_kk) .and. &
@@ -873,7 +873,7 @@ module microphys_init_cleanup
                         // "(l_local_kk = .false.) and interactive Latin " &
                         // "Hypercube (lh_microphys_type = interactive) " &
                         // "are incompatible."
-       stop
+       error stop
     endif
 
     if ( l_morr_xp2_mc .and. &
@@ -882,7 +882,7 @@ module microphys_init_cleanup
                         // "evaporation on rtp2 and thlp2 in Morrison " &
                         // "microphysics (l_morr_xp2_mc = .true.) and " &
                         // "Latin Hypercube are incompatible."
-       stop
+       error stop
     endif
 
     if ( l_morr_xp2_mc .and. l_var_covar_src ) then
@@ -890,13 +890,13 @@ module microphys_init_cleanup
                         // "l_var_covar_src are incompatible, since " &
                         // "they both are used to determine the effect " &
                         // "of microphysics on variances."
-       stop
+       error stop
     endif
 
     if ( l_morr_xp2_mc .and. l_evaporate_cold_rcm ) then
        write(fstderr,*) "Error: l_morr_xp2_mc and l_evaporate_cold_rcm " &
                         //  "are currently incompatible."
-       stop
+       error stop
     endif
 
     corr_file_path_cloud = corr_input_path//trim( runtype )//cloud_file_ext

@@ -184,7 +184,7 @@ module extended_atmosphere_module
 
     if ( alt_type == z_name ) then
       write(fstderr,*) "Fatal error in convert_snd2extended_atm."
-      stop "Feature not implemented"
+      error stop "Feature not implemented"
     end if
 
     extended_p_in_mb = extended_p_in_Pa / pascal_per_mb
@@ -298,7 +298,7 @@ module extended_atmosphere_module
 
     if ( radiation_top < zm_grid(grid_size) ) then
       write(fstderr,*) "In subroutine determine_extended_atmos_bounds"
-      stop "top of the radiation grid is below the top of the computational grid"
+      error stop "top of the radiation grid is below the top of the computational grid"
     end if
 
     ! Determine the bounds to use for the extended atmosphere
@@ -318,20 +318,20 @@ module extended_atmosphere_module
 
     if ( extended_alt(j) < zm_grid(grid_size) ) then
       write(fstderr,*) "In subroutine determine_extended_atmos_bounds"
-      stop "Extended atmosphere is below the top of the computational grid"
+      error stop "Extended atmosphere is below the top of the computational grid"
     end if
 
     if ( extended_alt(extended_atmos_dim) < radiation_top ) then
       write(fstderr,*) "In subroutine determine_extended_atmos_bounds"
       write(fstderr,*) "Atmosphere cannot be extended because extension data does ", &
                          "not reach radiation_top"
-      stop
+      error stop
     end if
 
     if ( p_in_Pa_zm(grid_size) < &
          extended_p_in_mb(j) * pascal_per_mb ) then
       write(fstderr,*) "In subroutine determine_extended_atmos_bounds"
-      stop "pressure at top of computational grid less than pressure at base of radiative grid"
+      error stop "pressure at top of computational grid less than pressure at base of radiative grid"
     end if
 
     k=1
@@ -358,7 +358,7 @@ module extended_atmosphere_module
 
     if ( extended_atmos_range_size < 1 ) then
       write(fstderr,*) "In subroutine determine_extended_atmos_bounds"
-      stop "radiation top below computational grid"
+      error stop "radiation top below computational grid"
     end if
 
     ! Get the altitudes for a couple of key points so we can calculate a buffer

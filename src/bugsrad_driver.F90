@@ -213,7 +213,7 @@ module bugsrad_driver
                        extended_alt(extended_atmos_dim), "m."
       write(fstderr,*) "Reduce the vertical extent of the CLUBB model grid."
       ! CLUBB zm grid exceeds a 50 km altitude
-      stop "compute_bugsrad_radiation: cannot handle this altitude"
+      error stop "compute_bugsrad_radiation: cannot handle this altitude"
 
     else
       ! Continue
@@ -296,7 +296,7 @@ module bugsrad_driver
         write(0,*) "Pressure (i)  [mb] = ", p_in_mb(1,i)
         write(0,*) "Pressure (i-1) [mb] = ", p_in_mb(1,i-1)
         write(0,*) "i level = ", i
-        stop "Fatal error: assertion check for pressure in BUGSrad_driver failed"
+        error stop "Fatal error: assertion check for pressure in BUGSrad_driver failed"
       end if
     end do
 

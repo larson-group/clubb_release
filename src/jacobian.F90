@@ -140,7 +140,7 @@ program jacobian
   allocate( clubb_params%value( nparams ),  & 
             clubb_params%name( nparams ), & 
             stat=alloc_stat )
-  if (alloc_stat /= 0 ) stop "allocate failed"
+  if (alloc_stat /= 0 ) error stop "allocate failed"
 
   clubb_params%entries = nparams
 
@@ -174,7 +174,7 @@ program jacobian
 
   if ( clubb_at_least_debug_level( 0 ) ) then
     if ( err_code == clubb_fatal_error ) then
-      stop "The initial set of parameters caused a fatal error."
+      error stop "The initial set of parameters caused a fatal error."
     end if
   end if
 
@@ -193,7 +193,7 @@ program jacobian
             var2zt%z(nzt), & 
             stat=alloc_stat )
 
-  if (alloc_stat /= 0 ) stop "allocate failed"
+  if (alloc_stat /= 0 ) error stop "allocate failed"
 
   var1zt%entries = nvarzt
   var1zt%nz      = nzt
@@ -213,7 +213,7 @@ program jacobian
             var2zm%z(nzm), & 
             stat = alloc_stat )
 
-  if (alloc_stat /= 0 ) stop "allocate failed"
+  if (alloc_stat /= 0 ) error stop "allocate failed"
 
   var1zm%entries = nvarzm
   var1zm%nz      = nzm
@@ -411,7 +411,7 @@ program jacobian
 
       if ( l_error ) then
         write(unit=fstderr,fmt=*) "Error in reading"//varray%name(i)
-        stop
+        error stop
       end if
 
     end do

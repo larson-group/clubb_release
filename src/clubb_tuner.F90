@@ -87,7 +87,7 @@ program clubb_tuner
           write(fstdout,*) "All parameter sets have been run"
 
         case default
-           stop "Unknown tuning type"
+           error stop "Unknown tuning type"
     end select
 
     ! Print to stdout if specified
@@ -273,7 +273,7 @@ program clubb_tuner
 
   return
 #else
-  stop "Numerical recipes subroutines were disabled at compile time"
+  error stop "Numerical recipes subroutines were disabled at compile time"
 #endif
   end subroutine amoeba_driver
 
@@ -390,7 +390,7 @@ program clubb_tuner
   return
 
 #else
-  stop "Numerical recipes subroutines were disabled at compile time"
+  error stop "Numerical recipes subroutines were disabled at compile time"
 #endif
 end subroutine amebsa_driver
 !----------------------------------------------------------------------

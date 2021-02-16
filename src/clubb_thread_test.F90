@@ -63,7 +63,7 @@ program clubb_thread_test
   ! --- Begin Code ---
 
 #ifndef _OPENMP
-  stop "This program needs to be compiled with OpenMP enabled to test if CLUBB is threadsafe"
+  error stop "This program needs to be compiled with OpenMP enabled to test if CLUBB is threadsafe"
 #endif
 
   ! Initialize status of run 

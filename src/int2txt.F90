@@ -50,7 +50,7 @@ program int2txt
   ! Test to check there is an argument given
   if ( iargc( ) < 1 ) then
     write(fstderr,*) "Usage: int2txt <filename>"
-    stop
+    error stop
   end if
 
   ! Get the source of the random data (usually /dev/random)

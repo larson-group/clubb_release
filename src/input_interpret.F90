@@ -206,7 +206,7 @@ module input_interpret
         case default
 
            write(fstderr,*) "Invalid theta_type: ", theta_type
-           stop
+           error stop
 
 
         end select
@@ -264,7 +264,7 @@ module input_interpret
 
       else
 
-         stop "Could not read sounding vertical-coordinate variable"
+         error stop "Could not read sounding vertical-coordinate variable"
 
 
       endif ! z_ name or pressure_name
@@ -316,7 +316,7 @@ module input_interpret
       elseif( any(retVars%name == temperature_name))then
         theta_type = temperature_name
       else
-        stop "Could not read theta compatable variable"
+        error stop "Could not read theta compatable variable"
       endif
       theta = read_x_profile( nvar, nsize, theta_type, retVars )
 
@@ -363,7 +363,7 @@ module input_interpret
       elseif( any(retVars%name == omega_name))then
         subs_type = omega_name
       else
-        stop "Could not read vertical velocity compatable variable"
+        error stop "Could not read vertical velocity compatable variable"
       endif
       subs = read_x_profile(nvar, nsize, subs_type, retVars)
 

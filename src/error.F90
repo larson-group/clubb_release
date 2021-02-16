@@ -432,7 +432,7 @@ module error
 
       if ( ndim == 0 .and. tune_type /= iflags ) then
         write(fstderr,*) "You must vary at least one parameter"
-        stop
+        error stop
       end if
 
       if ( tune_type == iamoeba .or. tune_type == iamebsa ) then
@@ -555,7 +555,7 @@ module error
     if ( clubb_at_least_debug_level( 0 ) ) then
         if ( err_code == clubb_fatal_error ) then
           write(fstderr,*) "Initial variable values must be valid."
-          stop
+          error stop
         end if
     end if
 
@@ -836,7 +836,7 @@ module error
                 les_zl(clubb_nz), clubb_grid_heights(clubb_nz), stat=AllocateStatus )
 
       if ( AllocateStatus /= 0 ) then
-        stop "Allocation of arrays in minimization function failed"
+        error stop "Allocation of arrays in minimization function failed"
       end if
 
       ! Determine the height of GrADS input
@@ -896,7 +896,7 @@ module error
               write(*,*) "LES start time: ", netcdf_file%time
               write(*,*) "LES dtwrite: ", netcdf_file%dtwrite
 
-              stop "Please modify the models so that they start at the same time and &
+              error stop "Please modify the models so that they start at the same time and &
                 &have the same stat output interval." 
           end if
         end if
@@ -923,7 +923,7 @@ module error
             "or the LES data is NaN"
           write(*,*)
           write(fstderr,*) trim( les_v(i) )//" = ", les_zl(z_i(c_run):z_f(c_run))
-          stop "Fatal error"
+          error stop "Fatal error"
         end if
 
         ! Read in CLUBB grads data for one variable, averaged
@@ -934,7 +934,7 @@ module error
           timestep_intvls(c_run,:), hoc_v(i), clubb_grid_heights, 1, l_error )
 
         if ( l_error ) then
-          stop "The specified CLUBB variable was invalid 1"
+          error stop "The specified CLUBB variable was invalid 1"
         end if
 
         ! The same variable, with npower = 2
@@ -944,7 +944,7 @@ module error
           timestep_intvls(c_run,:), hoc_v(i), clubb_grid_heights, 2, l_error )
 
         if ( l_error ) then
-          stop "The specified CLUBB variable was invalid 2"
+          error stop "The specified CLUBB variable was invalid 2"
         end if
 
         !-----------------------------------------------------------------------
@@ -961,7 +961,7 @@ module error
           - minval( les_zl(z_i(c_run):z_f(c_run)) )
 
         if ( abs(les_minmax) < eps) then
-          stop "An LES variable was 0 from z_i to z_f."
+          error stop "An LES variable was 0 from z_i to z_f."
         end if
 
         ! Old code
@@ -1473,7 +1473,7 @@ module error
     read(unit=iunit, fmt=*, iostat=InputStatus) rand_seed(1:rand_size)
     if ( InputStatus /= 0 ) then
       write(fstderr,*) "Error reading "//seed_file
-      stop
+      error stop
     end if
 
     close(unit=iunit)

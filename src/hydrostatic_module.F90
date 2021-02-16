@@ -242,7 +242,7 @@ module hydrostatic_module
       ! to run the model.  Stop the run.
 
       write(fstderr,*) "The entire sounding is below the model surface."
-      stop
+      error stop
 
     elseif ( exner_sfc > exner(1) ) then
 

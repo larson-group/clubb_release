@@ -449,7 +449,7 @@ module stat_file_utils
 #endif
       if ( l_error ) then
         write(fstderr,*) "Error opening "// filename
-        stop
+        error stop
       end if
 
     end if
@@ -534,7 +534,7 @@ module stat_file_utils
 #endif
       if ( l_error ) then
         write(fstderr,*) "Error opening "// filename
-        stop
+        error stop
       end if
 
     end if
@@ -581,7 +581,7 @@ module stat_file_utils
     else
       l_netcdf_file = .false.
       write(fstderr,*) "Unrecognized file type: "//trim( filename )
-      stop
+      error stop
     end if
 
     return
@@ -641,7 +641,7 @@ module stat_file_utils
           ! domain.
           write(fstderr,*) "The lowest LES input level is above the top ",  &
                            "of the CLUBB model domain."
-          stop "Error in CLUBB_levels_within_LES_domain"
+          error stop "Error in CLUBB_levels_within_LES_domain"
         else
           ! Level k is the first CLUBB level below the LES domain.  Thus, the
           ! lowest CLUBB level within the LES domain has the index k + 1.
@@ -673,7 +673,7 @@ module stat_file_utils
           ! domain.
           write(fstderr,*) "The highest LES input level is below the ",  &
                            "bottom of the CLUBB model domain."
-          stop "Error in CLUBB_levels_within_LES_domain"
+          error stop "Error in CLUBB_levels_within_LES_domain"
         else
           ! Level k is the first CLUBB level above the LES domain.  Thus, the
           ! highest CLUBB level within the LES domain has the index k - 1.

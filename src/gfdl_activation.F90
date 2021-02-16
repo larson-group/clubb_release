@@ -279,7 +279,7 @@ end subroutine aer_act_clubb_quadrature_Gauss
     if(i==100)then
       ! Eric Raut added to remove compiler warning (obviously result is not used)
       get_unit = 0
-      stop "Unable to open unit."
+      error stop "Unable to open unit."
     else
       get_unit = i
     endif
