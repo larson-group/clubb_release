@@ -155,7 +155,7 @@ module sponge_layer_damping
 
     else
 
-       stop "tau_sponge_damp in sponge_damp_xm used before initialization"
+       error stop "tau_sponge_damp in sponge_damp_xm used before initialization"
 
     endif
 
@@ -277,7 +277,7 @@ module sponge_layer_damping
 
     else
 
-       stop "tau_sponge_damp in sponge_damp_xp2 used before initialization"
+       error stop "tau_sponge_damp in sponge_damp_xp2 used before initialization"
 
     endif
 
@@ -390,7 +390,7 @@ module sponge_layer_damping
 
     else
 
-       stop "tau_sponge_damp in sponge_damp_xp3 used before initialization"
+       error stop "tau_sponge_damp in sponge_damp_xp3 used before initialization"
 
     endif
 
@@ -466,7 +466,7 @@ module sponge_layer_damping
     if ( settings%tau_sponge_damp_min < two * dt ) then
        write(fstderr,*) "Error:  tau_sponge_damp_min is too small!"
        write(fstderr,*) "It must be at least 2.0 * dt"
-       stop
+       error stop
     endif
 
     ! Calculate the value of the damping time scale, tau_sponge_damp, at levels

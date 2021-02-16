@@ -125,7 +125,7 @@ module pos_definite_module
       kbelow = -1
       ! Joshua Fasching June 2008
 
-      stop "Error in pos_def_adj"
+      error stop "Error in pos_def_adj"
     end if
 
     if ( clubb_at_least_debug_level( 1 ) ) then

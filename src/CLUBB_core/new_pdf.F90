@@ -432,7 +432,7 @@ module new_pdf
        write(fstderr,*) "Mixture fraction cannot be calculated."
        write(fstderr,*) "The value of F_x must be greater than 0 when " &
                         // "| Skx | > 0."
-       stop
+       error stop
     endif ! any( .not. l_valid_mixt_frac )
 
 

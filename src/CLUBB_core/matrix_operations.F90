@@ -204,7 +204,7 @@ module matrix_operations
       case( :-1 )
         write(fstderr,*) "Cholesky_factor " // & 
           " illegal value for argument ", -info
-        stop
+        error stop
       case( 0 )
         ! Success!
         if ( clubb_at_least_debug_level( 1 ) .and. iter > 1 ) then

@@ -770,7 +770,7 @@ module fill_holes
           case( "rim", "rsm", "rgm" )
              thlm_mc(k) = thlm_mc(k) - rvm_clip_tndcy * ( Ls / ( Cp*exner(k) ) )
           case default
-             stop "Fatal error in microphys_driver"
+             error stop "Fatal error in microphys_driver"
           end select
 
           ! Set the mixing ratio to 0

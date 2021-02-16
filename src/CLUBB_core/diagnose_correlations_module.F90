@@ -825,7 +825,7 @@ module diagnose_correlations_module
                   .or. ( corr_array(j,i) > max_mag_correlation ) ) &
              then
 
-                stop "Error: A value in the correlation matrix is out of range."
+                error stop "Error: A value in the correlation matrix is out of range."
 
              endif
 
@@ -840,7 +840,7 @@ module diagnose_correlations_module
           ! Check if the diagonal elements are one (up to a tolerance)
           if ( ( corr_array(i,i) > one + tol ) .or. (corr_array(i,i) < one - tol ) ) then
 
-             stop "Error: Diagonal element(s) of the correlation matrix are unequal to one."
+             error stop "Error: Diagonal element(s) of the correlation matrix are unequal to one."
 
           endif
        enddo

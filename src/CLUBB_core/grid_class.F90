@@ -1132,7 +1132,7 @@ module grid_class
       if (.not. l_cubic_interp) then
         write (fstdout, *) "Error: Model flag l_quintic_poly_interp should not be true if "&
                          //"l_cubic_interp is false."
-        stop
+        error stop
       end if
     end if
 
@@ -1180,7 +1180,7 @@ module grid_class
       if (.not. l_cubic_interp) then
         write (fstdout, *) "Error: Model flag l_quintic_poly_interp should not be true if "&
                          //"l_cubic_interp is false."
-        stop
+        error stop
       end if
     end if
 
@@ -1231,7 +1231,7 @@ module grid_class
       if (.not. l_cubic_interp) then
         write (fstdout, *) "Error: Model flag l_quintic_poly_interp should not be true if "&
                          //"l_cubic_interp is false."
-        stop
+        error stop
       end if
     end if
 
@@ -1279,7 +1279,7 @@ module grid_class
       if (.not. l_cubic_interp) then
         write (fstdout, *) "Error: Model flag l_quintic_poly_interp should not be true if "&
                          //"l_cubic_interp is false."
-        stop
+        error stop
       end if
     end if
 

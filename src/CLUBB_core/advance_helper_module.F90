@@ -128,7 +128,7 @@ module advance_helper_module
     if ( ( present( low_bound2 ) .or. present( high_bound2 ) ) .and. &
          ( .not. present( diag_index2 ) ) ) then
 
-      stop "Boundary index provided without diag_index."
+      error stop "Boundary index provided without diag_index."
 
     end if
 
@@ -208,7 +208,7 @@ module advance_helper_module
     if ( (present( low_bound2 ) .and. (.not. present( low_value2 ))) .or. &
          (present( high_bound2 ) .and. (.not. present( high_value2 ))) ) then
 
-      stop "Boundary condition provided without value."
+      error stop "Boundary condition provided without value."
 
     end if
 

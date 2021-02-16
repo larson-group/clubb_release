@@ -76,7 +76,7 @@ module interpolation
     ! Check for valid input
     if ( abs(height_low - height_high) < 1.0e-12_core_rknd ) then
       write(fstderr,*) "lin_interpolate_two_points: height_high and height_low cannot be equal."
-      stop
+      error stop
     end if
 
     ! Compute linear interpolation
@@ -627,7 +627,7 @@ module interpolation
        do i=2,nparam
          if ( xlist(i) <= xlist(i-1) ) then
            write(fstderr,*) "xlist must be sorted for lin_interpolate_on_grid."
-           stop
+           error stop
          end if
        end do
      end if
@@ -641,7 +641,7 @@ module interpolation
     if ( clubb_at_least_debug_level( 0 ) ) then
         if ( (xvalue < xlist(1)) .or. (xvalue > xlist(nparam)) ) then
           write(fstderr,*) "lin_interpolate_on_grid: Value out of range"
-          stop
+          error stop
         end if
     end if
 

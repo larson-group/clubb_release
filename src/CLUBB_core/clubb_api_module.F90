@@ -1346,7 +1346,7 @@ contains
       deltaz, zm_init, momentum_heights,  &
       thermodynamic_heights )
 
-    if ( err_code == clubb_fatal_error ) stop
+    if ( err_code == clubb_fatal_error ) error stop
 
   end subroutine setup_grid_heights_api
 
@@ -1803,7 +1803,7 @@ contains
       corr_cholesky_mtx_1, corr_cholesky_mtx_2, & ! Intent(out)
       hydromet_pdf_params )                       ! Intent(out)
 
-    if ( err_code == clubb_fatal_error ) stop
+    if ( err_code == clubb_fatal_error ) error stop
 
   end subroutine setup_pdf_parameters_api
 
@@ -1882,7 +1882,7 @@ contains
       grad_zt, nnrad_zm, grad_zm, day, month, year, &
       lon_vals, lat_vals, time_current, delt, l_silhs_out_in )
 
-    if ( err_code == clubb_fatal_error ) stop
+    if ( err_code == clubb_fatal_error ) error stop
     
   end subroutine stats_init_api
 
@@ -1950,7 +1950,7 @@ contains
 #endif
                               )
 
-    if ( err_code == clubb_fatal_error ) stop
+    if ( err_code == clubb_fatal_error ) error stop
 
   end subroutine stats_end_timestep_api
 

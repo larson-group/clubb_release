@@ -789,7 +789,7 @@ module stats_clubb_utilities
 
       if ( err_code == clubb_fatal_error ) return
 #else
-      stop "This CLUBB program was not compiled with netCDF support."
+      error stop "This CLUBB program was not compiled with netCDF support."
 #endif
 
     end if
@@ -882,7 +882,7 @@ module stats_clubb_utilities
 
         if ( err_code == clubb_fatal_error ) return
 #else
-        stop "This CLUBB program was not compiled with netCDF support."
+        error stop "This CLUBB program was not compiled with netCDF support."
 #endif
 
       end if
@@ -950,7 +950,7 @@ module stats_clubb_utilities
 
         if ( err_code == clubb_fatal_error ) return
 #else
-        stop "This CLUBB program was not compiled with netCDF support."
+        error stop "This CLUBB program was not compiled with netCDF support."
 #endif
 
       end if
@@ -1210,7 +1210,7 @@ module stats_clubb_utilities
 
       if ( err_code == clubb_fatal_error ) return
 #else
-      stop "This CLUBB program was not compiled with netCDF support."
+      error stop "This CLUBB program was not compiled with netCDF support."
 #endif
     end if
 
@@ -1280,7 +1280,7 @@ module stats_clubb_utilities
 
         if ( err_code == clubb_fatal_error ) return
 #else
-        stop "This CLUBB program was not compiled with netCDF support."
+        error stop "This CLUBB program was not compiled with netCDF support."
 #endif
       end if
 
@@ -1349,7 +1349,7 @@ module stats_clubb_utilities
 
         if ( err_code == clubb_fatal_error ) return
 #else
-        stop "This CLUBB program was not compiled with netCDF support."
+        error stop "This CLUBB program was not compiled with netCDF support."
 #endif
       end if
 
@@ -1420,7 +1420,7 @@ module stats_clubb_utilities
 
       if ( err_code == clubb_fatal_error ) return
 #else
-      stop "This CLUBB program was not compiled with netCDF support."
+      error stop "This CLUBB program was not compiled with netCDF support."
 #endif
     end if
 
@@ -1762,7 +1762,7 @@ module stats_clubb_utilities
             
         if ( err_code == clubb_fatal_error ) return
 #else
-        stop "This program was not compiled with netCDF support"
+        error stop "This program was not compiled with netCDF support"
 #endif /* NETCDF */
       end if ! l_grads
 
@@ -2975,7 +2975,7 @@ module stats_clubb_utilities
       call close_netcdf( stats_rad_zm%file )
       call close_netcdf( stats_sfc%file )
 #else
-      stop "This program was not compiled with netCDF support"
+      error stop "This program was not compiled with netCDF support"
 #endif
     end if
 

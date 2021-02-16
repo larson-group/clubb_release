@@ -157,7 +157,7 @@ module output_grads
         write(fstderr,*) "To override this warning, set l_allow_small_stats_tout = &
                          &.true. in the stats_setting namelist in the &
                          &appropriate *_model.in file."
-        stop "Fatal error in open_grads"
+        error stop "Fatal error in open_grads"
       end if
     end if
 
@@ -202,7 +202,7 @@ module output_grads
         write(unit=fstderr,fmt=*)  & 
         "Attempt to append to existing files failed"
 !              call stopcode('open_grads')
-        stop 'open_grads'
+        error stop 'open_grads'
       end if
 
       return
@@ -214,7 +214,7 @@ module output_grads
       write(unit=fstderr,fmt=*)  & 
         "Attempt to append to existing files failed,"//  & 
         " because only one of the two GrADS files was found."
-      stop "open_grads"
+      error stop "open_grads"
 
     end if
 
@@ -537,7 +537,7 @@ module output_grads
       write(unit=fstderr,fmt=*)  & 
         "write_grads: error opening binary file"
       write(unit=fstderr,fmt=*) "iostat = ", ios
-      stop
+      error stop
     end if
 
     if ( grads_file%ia <= grads_file%iz ) then
@@ -564,7 +564,7 @@ module output_grads
       write(unit=fstderr,fmt=*)  & 
         "write_grads: error closing binary file"
       write(unit=fstderr,fmt=*) "iostat = ", ios
-      stop
+      error stop
     end if
 
     grads_file%ntimes = grads_file%ntimes + 1
@@ -578,7 +578,7 @@ module output_grads
       write(unit=fstderr,fmt=*)  & 
         "write_grads: error opening control file"
       write(unit=fstderr,fmt=*) "iostat = ", ios
-      stop
+      error stop
     end if
 
     ! Write file header
@@ -649,7 +649,7 @@ module output_grads
       write(unit=fstderr,fmt=*)  & 
         "write_grads: error closing control file"
       write(unit=fstderr,fmt=*) "iostat = ",ios
-      stop
+      error stop
     end if
 
     return
@@ -781,7 +781,7 @@ module output_grads
           dtwrite_ctl = int( dtwrite_days )
           units = 'dy'
         else
-          stop "Fatal error in determine_time_inc"
+          error stop "Fatal error in determine_time_inc"
         end if ! dwrite_days <= 99.
       end if ! dtwrite_hrs <= 99.
     end if ! dtwrite_min <= 99.

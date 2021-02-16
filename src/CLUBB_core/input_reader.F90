@@ -154,11 +154,11 @@ module input_reader
         exit
       else if ( input_status > 0 ) then
         write(fstderr,*) "Error reading data from file: " //trim( filename )
-        stop "Fatal error input_reader"
+        error stop "Fatal error input_reader"
       end if
 
       if( nRowI < 1 ) then
-        stop "Number of elements must be an integer and greater than zero in two-dim  input file."
+        error stop "Number of elements must be an integer and greater than zero in two-dim  input file."
       end if
 
       do k =1, nRowI
@@ -665,7 +665,7 @@ module input_reader
 
       write(fstderr,*) trim( target_name )//" could not be found."
 
-      stop "Fatal error in function read_x_table"
+      error stop "Fatal error in function read_x_table"
 
     end if
 
@@ -731,7 +731,7 @@ module input_reader
       else
         write(fstderr,*) trim( target_name ), ' could not be found. Check your sounding.in file.'
       end if ! present( input_file )
-      stop "Fatal error in read_x_profile"
+      error stop "Fatal error in read_x_profile"
       
     end if ! target_exists_in_array
 
@@ -847,7 +847,7 @@ module input_reader
 
     else if ( status_var > 0 ) then
       ! Handle the case where we have an error before the EOF marker is found
-      stop "Fatal error reading data in time_dependent_input function count_columns"
+      error stop "Fatal error reading data in time_dependent_input function count_columns"
 
     end if
     

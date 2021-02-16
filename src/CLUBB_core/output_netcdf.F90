@@ -556,7 +556,7 @@ module output_netcdf
     if ( stat /= NF90_NOERR ) then
       write(fstderr,*) "Error closing file "//  & 
         trim( ncf%fname )//": ", trim( nf90_strerror( stat ) )
-      stop "Fatal error"
+      error stop "Fatal error"
     end if
 
     return

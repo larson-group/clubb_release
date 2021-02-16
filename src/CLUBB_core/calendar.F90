@@ -243,7 +243,7 @@ module calendar
 
     if ( ( leap_year( year ) .and. gregorian2julian_day > 366 ) .or. & 
          ( .not. leap_year( year ) .and. gregorian2julian_day > 365 ) ) then
-      stop "Problem with Julian day conversion in gregorian2julian_day."
+      error stop "Problem with Julian day conversion in gregorian2julian_day."
     end if
 
     return

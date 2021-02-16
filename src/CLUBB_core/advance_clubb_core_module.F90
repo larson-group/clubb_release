@@ -1264,7 +1264,7 @@ module advance_clubb_core_module
         invrs_tau_wp3_zm = invrs_tau_wp2_zm + C_invrs_tau_N2_clear_wp3 * brunt_freq_out_cloud
 
         if ( gr%zm(1) - sfc_elevation + z_displace < eps ) then
-             stop  "Lowest zm grid level is below ground in CLUBB."
+             error stop  "Lowest zm grid level is below ground in CLUBB."
         end if
 
         ! Calculate the maximum allowable value of time-scale tau,

@@ -220,7 +220,7 @@ module mixing_length
 
     if( abs(mu) < eps ) then
         write(fstderr,*) "Entrainment rate mu cannot be 0"
-        stop "Fatal error in subroutine compute_mixing_length"
+        error stop "Fatal error in subroutine compute_mixing_length"
     end if
 
 

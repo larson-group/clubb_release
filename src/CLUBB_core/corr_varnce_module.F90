@@ -410,7 +410,7 @@ module corr_varnce_module
     if( size( retVars(1)%values ) /= nCols ) then
       write(fstderr, *) "Correlation matrix must have an equal number of rows and cols in file ", &
             input_file
-      stop "Bad data in correlation file."
+      error stop "Bad data in correlation file."
     end if
 
     ! Start at 2 because the first index is always just 1.0 in the first row

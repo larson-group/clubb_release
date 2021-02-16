@@ -346,7 +346,7 @@ module new_hybrid_pdf_main
        write(fstderr,*) "Mixture fraction cannot be calculated."
        write(fstderr,*) "The value of F_w must be greater than 0 when " &
                         // "| Skw | > 0."
-       stop
+       error stop
     endif
 
     ! Calculate the PDF parameters for responder variable rt.

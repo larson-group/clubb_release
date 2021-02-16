@@ -821,7 +821,7 @@ module saturation
       ! Magic Eric Raut added to remove compiler warning (clearly this value is not used)
       rcm = 0.0_core_rknd
       
-      stop "Error in rcm_sat_adj: could not determine rcm"
+      error stop "Error in rcm_sat_adj: could not determine rcm"
     else
       rcm = MAX( rtm - sat_mixrat_liq( p_in_Pa, theta*exner), zero_threshold )
       return

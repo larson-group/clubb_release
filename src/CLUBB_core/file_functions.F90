@@ -76,7 +76,7 @@ module file_functions
           iostat=ierr )
     if ( ierr /= 0 ) then
       write(fstderr,*) "CLUBB encountered an error trying to open "//path_and_filename
-      stop "Error opening forcings file"
+      error stop "Error opening forcings file"
     end if
 
     ! Michael Falk wrote this routine to read data files in a particular format for mpace_a.

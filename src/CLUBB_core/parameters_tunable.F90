@@ -992,7 +992,7 @@ module parameters_tunable
         ! Eric Raut added to remove compiler warning. (Obviously, this value is not used)
         avg_deltaz = 0.0_core_rknd
         write(fstderr,*) "Invalid grid_type:", grid_type
-        stop "Fatal error"
+        error stop "Fatal error"
 
       end if ! grid_type
 
@@ -1485,7 +1485,7 @@ module parameters_tunable
       end if
     end do
 
-    if ( l_error ) stop "Fatal error."
+    if ( l_error ) error stop "Fatal error."
 
     return
 
@@ -1604,7 +1604,7 @@ module parameters_tunable
       end if
     end do
 
-    if ( l_error ) stop "Fatal error."
+    if ( l_error ) error stop "Fatal error."
 
     ! Initialize to zero
     nindex(1:nparams) = 0
