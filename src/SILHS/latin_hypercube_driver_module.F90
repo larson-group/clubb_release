@@ -206,7 +206,7 @@ module latin_hypercube_driver_module
       Lscale_vert_avg, &  ! 3pt vertical average of Lscale                    [m]
       X_vert_corr         ! Vertical correlations between height levels       [-]
       
-    real(kind = core_rknd), dimension(ngrdcol,nz,num_samples,pdf_dim+d_uniform_extra) :: &
+    real(kind = core_rknd), dimension(ngrdcol,num_samples,nz,pdf_dim+d_uniform_extra) :: &
       rand_pool ! Array of randomly generated numbers
 
     ! ---------------- Begin Code ----------------
@@ -527,7 +527,7 @@ module latin_hypercube_driver_module
       
     ! ------------------- Output Variables -------------------
 
-    real(kind=core_rknd), dimension(ngrdcol,nz,num_samples,pdf_dim+d_uniform_extra), intent(out)::&
+    real(kind=core_rknd), dimension(ngrdcol,num_samples,nz,pdf_dim+d_uniform_extra), intent(out)::&
       rand_pool   ! Pool of random reals, generated from integers
       
     ! ------------------- Local Variables -------------------
@@ -561,7 +561,7 @@ module latin_hypercube_driver_module
     end if
     
     !$acc host_data use_device(rand_pool) 
-    r_status = curandGenerate(cu_gen, rand_pool, ngrdcol*nz*num_samples*(pdf_dim+d_uniform_extra))
+    r_status = curandGenerate(cu_gen, rand_pool, ngrdcol*num_samples*nz*(pdf_dim+d_uniform_extra))
     !$acc end host_data
     !$acc wait
     
@@ -576,10 +576,10 @@ module latin_hypercube_driver_module
 
     ! Populate rand_pool with a generator designed for a CPU
     do p=1, pdf_dim+d_uniform_extra
-      do sample=1, num_samples
-        do k = 1, nz
+      do k = 1, nz
+        do sample=1, num_samples
           do i = 1, ngrdcol
-            rand_pool(i,k,sample,p) = rand_uniform_real()
+            rand_pool(i,sample,k,p) = rand_uniform_real()
           end do
         end do
       end do
@@ -670,7 +670,7 @@ module latin_hypercube_driver_module
     type(hydromet_pdf_parameter), dimension(ngrdcol,nz), intent(in) :: &
       hydromet_pdf_params
 
-    real(kind = core_rknd),dimension(ngrdcol,nz,num_samples,pdf_dim+d_uniform_extra),intent(in)::&
+    real(kind = core_rknd),dimension(ngrdcol,num_samples,nz,pdf_dim+d_uniform_extra),intent(in)::&
       rand_pool ! Array of randomly generated numbers
 
     integer, intent(in) :: &
@@ -721,7 +721,7 @@ module latin_hypercube_driver_module
               do i = 1, ngrdcol
                 X_u_all_levs(i,sample,k,p) = max( single_prec_thresh, &
                                                 min( one - single_prec_thresh, &
-                                                     rand_pool(i,k,sample,p) ) )
+                                                     rand_pool(i,sample,k,p) ) )
               end do
             end do
           end do
@@ -815,7 +815,7 @@ module latin_hypercube_driver_module
               do i = 1, ngrdcol
                 X_u_all_levs(i,sample,k,p) = max( single_prec_thresh, &
                                                 min( one - single_prec_thresh, &
-                                                     rand_pool(i,k,sample,p) ) )
+                                                     rand_pool(i,sample,k,p) ) )
               end do
             end do
           end do
@@ -1833,7 +1833,7 @@ module latin_hypercube_driver_module
     real(kind=core_rknd), dimension(ngrdcol,nz), intent(in) :: &
       vert_corr ! Vertical correlation between k points in range [0,1]   [-]
       
-    real(kind = core_rknd), dimension(ngrdcol,nz,num_samples,pdf_dim+d_uniform_extra) :: &
+    real(kind = core_rknd), dimension(ngrdcol,num_samples,nz,pdf_dim+d_uniform_extra) :: &
       rand_pool ! Array of randomly generated numbers
 
     ! ---------------- Output Variables ----------------
@@ -1865,7 +1865,7 @@ module latin_hypercube_driver_module
             half_width = one - vert_corr(i,k+1)
             min_val = unbounded_point - half_width
 
-            offset = two * half_width * rand_pool(i,k+1,sample,p)
+            offset = two * half_width * rand_pool(i,sample,k+1,p)
 
             unbounded_point = min_val + offset
            
@@ -1899,7 +1899,7 @@ module latin_hypercube_driver_module
             half_width = one - vert_corr(i,k-1)
             min_val = unbounded_point - half_width
 
-            offset = two * half_width * rand_pool(i,k-1,sample,p)
+            offset = two * half_width * rand_pool(i,sample,k-1,p)
 
             unbounded_point = min_val + offset
            
