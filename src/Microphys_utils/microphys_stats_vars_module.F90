@@ -111,7 +111,7 @@ module microphys_stats_vars_module
     if ( microphys_stats_vars%num_vars == microphys_stats_vars%alloc_size ) then
       ! There is no more room in the structure. Do nothing (for now).
       write(fstderr,*) "Invalid allocation size"
-      stop "Fatal error in microphys_put_var"
+      error stop "Fatal error in microphys_put_var"
     end if
 
     if ( var_index > 0 ) then
@@ -221,7 +221,7 @@ module microphys_stats_vars_module
     end do
 
     if ( .not. l_found ) then
-      stop "Variable not found in microphys_get_index"
+      error stop "Variable not found in microphys_get_index"
     end if
 
     return
@@ -272,7 +272,7 @@ module microphys_stats_vars_module
     end do
 
     if ( .not. l_found ) then
-      stop "Variable not found in microphys_get_var"
+      error stop "Variable not found in microphys_get_var"
     end if
 
     return
