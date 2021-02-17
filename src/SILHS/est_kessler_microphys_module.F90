@@ -351,19 +351,19 @@ module est_kessler_microphys_module
       write(fstderr,*) 'Error in calc_estimate:  ',  &
                        'mixture fraction, mixt_frac, does not lie in [0,1].'
       write(fstderr,*) 'mixt_frac = ', mixt_frac
-      stop
+      error stop
     end if
     if ( cloud_frac_1 > one .or. cloud_frac_1 < zero ) then
       write(fstderr,*) 'Error in calc_estimate:  ',  &
                        'cloud fraction 1, cloud_frac_1, does not lie in [0,1].'
       write(fstderr,*) 'cloud_frac_1 = ', cloud_frac_1
-      stop
+      error stop
     end if
     if ( cloud_frac_2 > one .or. cloud_frac_2 < zero ) then
       write(fstderr,*) 'Error in calc_estimate:  ',  &
                        'cloud fraction 2, cloud_frac_2, does not lie in [0,1].'
       write(fstderr,*) 'cloud_frac_2 = ', cloud_frac_2
-      stop
+      error stop
     end if
 
     ! Initialize autoconversion in each mixture component
@@ -438,7 +438,7 @@ module est_kessler_microphys_module
 !       end if
 
     if ( n1 == 0 .and. n2 == 0 ) then
-      stop 'Error:  no sample points in calc_estimate'
+      error stop 'Error:  no sample points in calc_estimate'
     end if
 
     if ( l_cloud_weighted_averaging ) then

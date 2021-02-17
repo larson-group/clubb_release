@@ -147,7 +147,7 @@ module silhs_importance_sample_module
                                       l_lh_var_frac )
       case default
         write(fstderr,*) "Unsupported allocation strategy:", cluster_allocation_strategy
-        stop "Fatal error in importance_sampling_driver"
+        error stop "Fatal error in importance_sampling_driver"
       end select
 
       if ( l_lh_limit_weights ) then
@@ -211,7 +211,7 @@ module silhs_importance_sample_module
              l_error ) ! Out
 
       if ( l_error ) then
-        stop "Fatal error in importance_sampling_driver"
+        error stop "Fatal error in importance_sampling_driver"
       end if ! l_error
 
     end if
@@ -516,7 +516,7 @@ module silhs_importance_sample_module
         ! weight. This could happen if the maximum weight is too low.
         write(fstderr,*) "The sample point weights could not be limited to the &
                          &maximum value."
-        stop "Fatal error in limit_category_weights"
+        error stop "Fatal error in limit_category_weights"
       end if
 
       ! Adjust the prescribed probabilities to achieve the minimum.
@@ -545,7 +545,7 @@ module silhs_importance_sample_module
             write(fstderr,*) "weight = ", weight
             write(fstderr,*) "min_presc_probs = ", min_presc_probs(icategory)
             write(fstderr,*) "min_presc_prob_diff = ", min_presc_prob_diff(icategory)
-            stop "Fatal error in limit_category_weights"
+            error stop "Fatal error in limit_category_weights"
           end if
         end if ! category_prescribed_probs(icategory) > zero
       end do ! icategory=1, num_importance_categories
@@ -665,7 +665,7 @@ module silhs_importance_sample_module
       if ( int_sample_category(sample) == 0 ) then
         write(fstderr,*) "Invalid rand_vect number in pick_sample_categories"
         write(fstderr,*) "rand_vect(sample) = ", rand_vect(sample)
-        stop "Fatal error"
+        error stop "Fatal error"
       end if
 
     end do ! sample=1, num_samples
@@ -861,7 +861,7 @@ module silhs_importance_sample_module
     if ( clubb_at_least_debug_level( 2 ) ) then
       if ( num_categories_in_cluster(iinocld_precip) /= 2 .or. &
            num_categories_in_cluster(iicld_or_precip) /= 6 ) then
-        stop "Invalid categories in two_cluster_cp_nocp"
+        error stop "Invalid categories in two_cluster_cp_nocp"
       end if
     end if
 
@@ -969,7 +969,7 @@ module silhs_importance_sample_module
         cluster_prescribed_probs(icategory) = eight_cluster_presc_probs%nocloud_noprecip_comp2
 
       else
-        stop "Invalid category in eight_cluster_allocation"
+        error stop "Invalid category in eight_cluster_allocation"
       end if
 
     end do ! icategory=1, num_importance_categories
@@ -1087,7 +1087,7 @@ module silhs_importance_sample_module
         cluster_categories(iincld_comp2,num_categories_in_cluster(iincld_comp2)) = icategory
 
       else
-        stop "Invalid category in four_cluster_no_precip"
+        error stop "Invalid category in four_cluster_no_precip"
       end if
 
     end do ! icategory=1, num_importance_categories
@@ -1095,7 +1095,7 @@ module silhs_importance_sample_module
     if ( clubb_at_least_debug_level( 2 ) ) then
       if ( any( num_categories_in_cluster /= 2 ) ) then
         write(fstderr,*) "Not all clusters have two categories"
-        stop "Fatal error in four_cluster_no_precip"
+        error stop "Fatal error in four_cluster_no_precip"
       end if
     end if
 
@@ -2021,7 +2021,7 @@ module silhs_importance_sample_module
       X_u_dp1_element = mixt_rand_element_scaled * (one - mixt_frac) + mixt_frac
 
     else
-      stop "Should not be here"
+      error stop "Should not be here"
     end if ! X_mixt_comp_one_lev == 1
 
     !---------------------------------------------------------------------
@@ -2117,7 +2117,7 @@ module silhs_importance_sample_module
       end if
 
       if ( iiPDF_rr == -1 ) then
-        stop "iiPDF_rr must be greater than zero for the category sampler to work."
+        error stop "iiPDF_rr must be greater than zero for the category sampler to work."
       end if
 
       if ( X_nl_one_lev(isample,iiPDF_rr) > zero ) then
@@ -2149,7 +2149,7 @@ module silhs_importance_sample_module
       end do ! icategory=1, num_importance_categories
 
       if ( found_category_index == -1 ) then
-        stop "Fatal error determining category in determine_sample_categories"
+        error stop "Fatal error determining category in determine_sample_categories"
       end if
 
       int_sample_category(isample) = found_category_index

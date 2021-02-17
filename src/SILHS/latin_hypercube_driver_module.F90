@@ -216,7 +216,7 @@ module latin_hypercube_driver_module
     ! Sanity checks for l_lh_importance_sampling
     if ( silhs_config_flags%l_lh_importance_sampling .and. sequence_length /= 1 ) then
       write(fstderr,*) "Cloud weighted sampling requires sequence length be equal to 1."
-      stop "Fatal error."
+      error stop "Fatal error."
     end if
 
     !--------------------------------------------------------------
@@ -225,7 +225,7 @@ module latin_hypercube_driver_module
         
 #ifdef _OPENACC
     if ( .not. silhs_config_flags%l_lh_straight_mc ) then
-      stop "CLUBB ERROR: Running SILHS with OpenACC requires lh_straight_mc=true"
+      error stop "CLUBB ERROR: Running SILHS with OpenACC requires lh_straight_mc=true"
     end if
 #endif
 
@@ -270,7 +270,7 @@ module latin_hypercube_driver_module
       !                       ( (kp1-km1+1), rho_ds_zt(km1:kp1), &
       !                         Lscale(km1:kp1), gr%dzt(km1:kp1) )
       !end do
-      stop "CLUBB ERROR: l_Lscale_vert_avg has been depricated"
+      error stop "CLUBB ERROR: l_Lscale_vert_avg has been depricated"
     else
         Lscale_vert_avg = Lscale 
     end if
@@ -295,7 +295,7 @@ module latin_hypercube_driver_module
             write(fstderr,*) "i = ", i, "k = ", k, "Vert. correlation = ", X_vert_corr(i,k)
           end do
         end do
-        stop "Fatal error in vertical_overlap_driver"
+        error stop "Fatal error in vertical_overlap_driver"
       end if ! Some correlation isn't between [0,1]
     end if ! clubb_at_least_debug_level 1
     
@@ -468,7 +468,7 @@ module latin_hypercube_driver_module
 
     ! Stop the run if an error occurred
     if ( l_error ) then
-      stop "Fatal error in generate_silhs_sample"
+      error stop "Fatal error in generate_silhs_sample"
     end if
 
     return
@@ -702,7 +702,7 @@ module latin_hypercube_driver_module
     ! Sanity check
     if ( l_lh_old_cloud_weighted .and. mod( num_samples, 2 ) /= 0 ) then
       write(fstderr,*) "Old cloud weighted sampling requires num_samples to be divisible by 2."
-      stop "Fatal error."
+      error stop "Fatal error."
     end if
     
     if ( .not. l_calc_weights_all_levs_itime ) then
@@ -1168,7 +1168,7 @@ module latin_hypercube_driver_module
     if ( l_clip_hydromet_samples ) then
       
 #ifdef _OPENACC
-       stop "CLUBB ERROR: Running SILHS with OpenACC requires l_clip_hydromet_samples=false"
+       error stop "CLUBB ERROR: Running SILHS with OpenACC requires l_clip_hydromet_samples=false"
 #endif
        ! Loop over all sample columns.
        do sample = 1, num_samples, 1
@@ -1490,7 +1490,7 @@ module latin_hypercube_driver_module
         end if
 
       else
-        stop "X_u_chi not in correct range in assert_correct_cloud_normal"
+        error stop "X_u_chi not in correct range in assert_correct_cloud_normal"
       end if
 
     end do ! 1..num_samples

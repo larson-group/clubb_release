@@ -105,7 +105,7 @@ module output_2D_samples_module
                       day, month, year, lat_vals, lon_vals, &
                       time, dtwrite, n_2D_variables, sample_file, num_samples )
 #else
-    stop "This version of CLUBB was not compiled for netCDF output"
+    error stop "This version of CLUBB was not compiled for netCDF output"
 #endif
 
     return
@@ -175,7 +175,7 @@ module output_2D_samples_module
                        l_single_C2_Skw, &
                        lognormal_sample_file )
 #else
-    stop "This version of CLUBB was not compiled for netCDF output"
+    error stop "This version of CLUBB was not compiled for netCDF output"
 #endif
 
     do j = 1, pdf_dim
@@ -265,7 +265,7 @@ module output_2D_samples_module
                        l_single_C2_Skw, &
                        uniform_sample_file )
 #else
-    stop "This version of CLUBB was not compiled for netCDF output"
+    error stop "This version of CLUBB was not compiled for netCDF output"
 #endif
 
     do j = 1, dp2+2
@@ -296,7 +296,7 @@ module output_2D_samples_module
 #ifdef NETCDF
     call close_netcdf( sample_file )
 #else
-    stop "This version of CLUBB was not compiled for netCDF output"
+    error stop "This version of CLUBB was not compiled for netCDF output"
 #endif
 
     deallocate( sample_file%lat_vals, sample_file%lon_vals, sample_file%samp_idx )
