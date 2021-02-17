@@ -138,7 +138,7 @@ module cos_solar_zen_module
     case default
       zln = 0.0_dp
       write(unit=fstderr,fmt=*) "Hour=", hour
-      stop " > 24 hours in cosine solar zenith code"
+      error stop " > 24 hours in cosine solar zenith code"
     end select
 
     longang = abs( real(lon_in_degrees, kind=dp) - zln ) * radians_per_deg_dp

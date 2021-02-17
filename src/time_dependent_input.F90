@@ -357,7 +357,7 @@ module time_dependent_input
       t_dependent_forcing_data_f_grid(1)%values = -t_dependent_forcing_data_f_grid(1)%values
 
     case default
-      stop "Incompatible grid type in first element of t_dependent_forcings."
+      error stop "Incompatible grid type in first element of t_dependent_forcings."
     end select
 
     ! Interpolate the time dependent input data to the appropriate grid.
@@ -684,7 +684,7 @@ module time_dependent_input
         case default
 
           write(fstderr, *) "Incompatable forcing type: "//t_dependent_forcing_data(i)%name
-          stop
+          error stop
 
         end select
 
@@ -755,7 +755,7 @@ module time_dependent_input
       write(fstderr,*) "In subroutine time_select:"
       write(fstderr,*) "Selected time is before the first (begin) time"
       write(fstderr,*) "at which data are available.  Cannot interpolate."
-      stop
+      error stop
 
     else if ( real( time, kind = core_rknd ) > time_array(nvar) ) then
 
@@ -764,7 +764,7 @@ module time_dependent_input
       write(fstderr,*) "In subroutine time_select:"
       write(fstderr,*) "Selected time is after the last (end) time"
       write(fstderr,*) "at which data are available.  Cannot interpolate."
-      stop
+      error stop
 
     else
 
@@ -776,7 +776,7 @@ module time_dependent_input
             write(fstderr,*) "In subroutine time_select:"
             write(fstderr,*) "times are not sorted. Check (case)_surface.in "
             write(fstderr,*) "and (case)_forcings.in, located in input/case_setups."
-            stop
+            error stop
 
         end if 
 

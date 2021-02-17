@@ -59,7 +59,7 @@ program clubb_standalone
   call run_clubb( params, namelist_filename, l_stdout )
 
   if ( err_code == clubb_fatal_error ) then
-    stop "Fatal error in clubb, check your parameter values and timestep"
+    error stop "Fatal error in clubb, check your parameter values and timestep"
   else
     write(fstderr,*) "Program exited normally"
     call exit(success_code)

@@ -193,7 +193,7 @@ module sounding
                                sounding_retVars )
     else
       write(fstderr,*) 'Cannot open ' // trim( runtype ) // '_sounding.in file'
-      stop 'Fatal error in read_sounding'
+      error stop 'Fatal error in read_sounding'
       ! sounding namelist is no longer used.
       ! Joshua Fasching April 2009
     end if
@@ -211,14 +211,14 @@ module sounding
           call read_sclr_sounding_file( iunit, runtype, sclr, &
                                         sclr_sounding_retVars )
         else
-          stop 'Cannot open <runtype>_sclr_sounding.in file'
+          error stop 'Cannot open <runtype>_sclr_sounding.in file'
         end if
       end if
       if( edsclr_dim > 0 ) then
         if( l_edsclr_sounding_exists  ) then
           call read_edsclr_sounding_file( iunit, runtype, edsclr )
         else
-          stop 'Cannot open <runtype>_edsclr_sounding.in file'
+          error stop 'Cannot open <runtype>_edsclr_sounding.in file'
         end if
       end if
     end if
@@ -227,7 +227,7 @@ module sounding
       write(fstderr,*) 'Error in sounding: nlevels > nmaxsnd'
       write(fstderr,*) 'nlevels = ',nlevels
       write(fstderr,*) 'nmaxsnd = ',nmaxsnd
-      stop 'STOP in read_sounding'
+      error stop 'STOP in read_sounding'
     end if
 
     ! Error check: if lowest above-model-surface themodynamic grid height
@@ -239,7 +239,7 @@ module sounding
       " below the first above-model-surface thermodynamic level, gr%zt(2)"
       write(fstderr,*) " First sounding level z(1) = ", z(1)
       write(fstderr,*) " First thermodynamic level gr%zt(2) = ", gr%zt(2)
-      stop 'STOP in read_sounding'
+      error stop 'STOP in read_sounding'
     endif
 
     ! First sounding level should be near ground value
@@ -250,7 +250,7 @@ module sounding
     ! if ( abs(z(1)) > 1.e-8_core_rknd ) then
     if ( .false. ) then
       write(fstderr,*) 'First level of input sounding must be z=0'
-      stop 'STOP in read_sounding'
+      error stop 'STOP in read_sounding'
     else
       um   = u(1)
       vm   = v(1)
@@ -314,7 +314,7 @@ module sounding
                '  highest sounding level', z(nlevels),&
                '  should be higher than highest thermodynamic point',&
                gr%zt(gr%nz)
-              stop 'STOP in sounding'
+              error stop 'STOP in sounding'
           exit
         end if  ! k > nlevels
 
@@ -617,15 +617,15 @@ module sounding
       select case ( trim( retVars(i)%name ) )
       case( CO2_name )
         if( i /= iisclr_CO2 .and. iisclr_CO2 > 0) then
-          stop "iisclr_CO2 index does not match column."
+          error stop "iisclr_CO2 index does not match column."
         end if
       case ( rt_name )
         if( i /= iisclr_rt .and. iisclr_rt > 0) then
-          stop "iisclr_rt index does not match column."
+          error stop "iisclr_rt index does not match column."
         end if
       case ( theta_name, thetal_name, temperature_name )
         if( i /= iisclr_thl .and. iisclr_thl > 0) then
-          stop "iisclr_thl index does not match column."
+          error stop "iisclr_thl index does not match column."
         end if
       end select
       sclr(1:size(retVars(i)%values),i) = retVars(i)%values
@@ -690,15 +690,15 @@ module sounding
 
       case( CO2_name )
         if( i /= iiedsclr_CO2 .and. iiedsclr_CO2 > 0) then
-          stop "iisclr_CO2 index does not match column."
+          error stop "iisclr_CO2 index does not match column."
         end if
       case( rt_name )
         if( i /= iiedsclr_rt .and. iiedsclr_rt > 0) then
-          stop "iisclr_rt index does not match column."
+          error stop "iisclr_rt index does not match column."
         end if
       case( theta_name, thetal_name, temperature_name )
         if( i /= iiedsclr_thl .and. iiedsclr_thl > 0) then
-          stop "iisclr_thl index does not match column."
+          error stop "iisclr_thl index does not match column."
         end if
       end select
       edsclr(1:size( retVars(i)%values ),i) = retVars(i)%values
@@ -766,7 +766,7 @@ module sounding
       write(fstderr,*) 'Error in sounding: nlevels > nmaxsnd'
       write(fstderr,*) 'nlevels = ', nlevels
       write(fstderr,*) 'nmaxsnd = ', nmaxsnd
-      stop 'STOP in read_profile (sounding.F90)'
+      error stop 'STOP in read_profile (sounding.F90)'
     endif
 
     ! Error check: if lowest above-model-surface themodynamic grid height
@@ -778,7 +778,7 @@ module sounding
       " below the first above-model-surface thermodynamic level, gr%zt(2)"
       write(fstderr,*) " First sounding level z(1) = ", z(1)
       write(fstderr,*) " First thermodynamic level gr%zt(2) = ", gr%zt(2)
-      stop 'STOP in read_profile (sounding.F90)'
+      error stop 'STOP in read_profile (sounding.F90)'
     endif
 
     ! Use linear interpolation from two nearest prescribed grid points
@@ -797,7 +797,7 @@ module sounding
                'should be higher than highest thermodynamic point',  &
                gr%zt(gr%nz)
           write(*,*) ' Filename: ', fname
-          stop 'STOP in read_profile (sounding.F90)'
+          error stop 'STOP in read_profile (sounding.F90)'
         endif
         x(i) = lin_interpolate_two_points( gr%zt(i), z(k), z(k-1), var(k), var(k-1) )
       enddo ! while

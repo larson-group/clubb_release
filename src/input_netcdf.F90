@@ -481,7 +481,7 @@ module input_netcdf
     if ( ierr /= NF90_NOERR ) then
       write(fstderr,*) "Error closing a netCDF file"
       write(fstderr,*) nf90_strerror( ierr )
-      stop "Fatal error."
+      error stop "Fatal error."
     end if
 
     return

@@ -199,7 +199,7 @@ module inputfields
     case default
       write(fstderr,*) "Don't know how to handle input_type = "// & 
         input_type
-      stop
+      error stop
 
     end select
 
@@ -962,7 +962,7 @@ module inputfields
 
 
 
-      if ( l_fatal_error ) stop "oops, get_grads_var failed in stat_fields_reader"
+      if ( l_fatal_error ) error stop "oops, get_grads_var failed in stat_fields_reader"
 
 
     !---------------------------------------
@@ -1543,7 +1543,7 @@ module inputfields
       ! Initialize l_read_error for case ( "les" )
       l_read_error = .false.
 
-      if ( l_fatal_error ) stop "oops, bad input for inputfields"
+      if ( l_fatal_error ) error stop "oops, bad input for inputfields"
       
       call get_input_variables_interp &
              (k, coamps_variables, timestep, &
@@ -2487,7 +2487,7 @@ module inputfields
          = temp_wpNrp(k_lowest_zt(sam_file):k_highest_zt(sam_file))
       endif
 
-      if ( l_fatal_error ) stop "Failed to read inputfields for SAM."
+      if ( l_fatal_error ) error stop "Failed to read inputfields for SAM."
 
       deallocate( SAM_variables )
 
@@ -2657,7 +2657,7 @@ module inputfields
 
     if ( l_error ) then
       write(fstderr,*) "Error reading file " // trim( filename )
-      stop "Fatal error"
+      error stop "Fatal error"
     end if
 
     if (l_grads_file) then
@@ -2689,7 +2689,7 @@ module inputfields
                 "of the reference GrADS output time interval."
         write(fstderr,*) "Elapsed time [s] = ", delta_time
         write(fstderr,*) "GrADS output time interval = ", fread_var%dtwrite
-        stop
+        error stop
       end if
 
       if ( mod( delta_time , sec_per_min ) > 1e-8_core_rknd& 
@@ -2697,7 +2697,7 @@ module inputfields
         write(fstderr,*) "Error: Elapsed time is not a multiple ", & 
                 "of one minute."
         write(fstderr,*) "Elapsed time [s] = ", delta_time
-        stop
+        error stop
       end if
 
     end if ! l_restart
@@ -2897,14 +2897,14 @@ module inputfields
       end do ! file_index=1, size(stat_files)
 #else
       write(fstderr,*) "This version of CLUBB was not compiled with netCDF support"
-      stop "Fatal error"
+      error stop "Fatal error"
 
 #endif
     end if
 
     if (l_error) then
       write(fstderr,*) "A fatal error occured while reading the input file."
-      stop "Fatal error in input_fields.get_input_variables_interp"
+      error stop "Fatal error in input_fields.get_input_variables_interp"
     end if
 
     ! initialize to boundary values to determine min and max later
@@ -2992,7 +2992,7 @@ module inputfields
       end do ! file_index=1, size(stat_files)
 #else
       write(fstderr,*) "This version of CLUBB was not compiled with netCDF support"
-      stop "Fatal error"
+      error stop "Fatal error"
 
 #endif
     end if ! l_grads_file

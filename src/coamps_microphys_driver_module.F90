@@ -436,7 +436,7 @@ module coamps_microphys_driver_module
 !   is not implemented yet.
     if ( l_ice_microphys .and. ldrizzle ) then
       write(fstderr,*) "l_ice_microphys must be false to use ldrizzle"
-      stop
+      error stop
     end if
 
 !------------------------------------------
@@ -949,7 +949,7 @@ module coamps_microphys_driver_module
 
      implicit none
 
-     stop "Not compiled with COAMPS Microphysics"
+     error stop "Not compiled with COAMPS Microphysics"
 
    end subroutine coamps_microphys_driver
 #endif

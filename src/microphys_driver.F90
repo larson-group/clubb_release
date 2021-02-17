@@ -375,7 +375,7 @@ module microphys_driver
 
     ! Make some compiler warnings go away for external users
     if ( runtype == "" ) then
-      stop "Runtype is null, which should not happen."
+      error stop "Runtype is null, which should not happen."
     endif
 
     ! Calculate the updated value of mean cloud droplet concentration, based on
@@ -427,9 +427,9 @@ module microphys_driver
              Ncm_mc, hydromet_mc(:,iiNi), & ! Out
              rvm_mc, rcm_mc, thlm_mc )
 #else
-      stop "Not compiled with COAMPS microphysics"
+      error stop "Not compiled with COAMPS microphysics"
       cond = -999._core_rknd
-      if ( cond(1,1,1) /= cond(1,1,1) ) stop
+      if ( cond(1,1,1) /= cond(1,1,1) ) error stop
 #endif
 
       if ( l_stats_samp ) then
@@ -474,7 +474,7 @@ module microphys_driver
                lh_rcm_avg, AKm_rcm, AKm_rcc, &
                morrison_microphys_driver )  ! Procedure
 #else
-        stop "Latin hypercube was not enabled at compile time"
+        error stop "Latin hypercube was not enabled at compile time"
         ! Get rid of compiler warnings
         if ( .false. .and. size( X_nl_all_levs ) < 1 ) then
           rcm_mc(1) = &
@@ -572,7 +572,7 @@ module microphys_driver
                lh_rcm_avg, AKm_rcm, AKm_rcc, &
                KK_local_microphys ) ! Procedure
 #else
-        stop "Subgrid Importance Latin Hypercube was not enabled at compile time"
+        error stop "Subgrid Importance Latin Hypercube was not enabled at compile time"
 #endif /* SILHS */
 
         call stats_accumulate_lh_tend( hydromet_mc, Ncm_mc, &
@@ -710,7 +710,7 @@ module microphys_driver
 
       else
 
-        stop "Unsupported microphysics scheme for GFDL activation."
+        error stop "Unsupported microphysics scheme for GFDL activation."
 
       endif  ! l_predict_Nc
     endif ! l_gfdl_activation
