@@ -149,7 +149,7 @@ module dycoms2_rf01
   else  ! Undefined value for sfctype
 
     write(fstderr,*) "Invalid sfctype value = ", sfctype
-    stop
+    error stop
 
   end if ! sfctype
   return

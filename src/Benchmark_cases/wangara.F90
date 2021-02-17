@@ -122,7 +122,7 @@ module wangara
       write(fstderr,*) "wangara_sfclyr: error local time must" & 
         //" be between 730 and 1730._core_rknd"
       write(fstderr,*) 'time_est = ',time_est
-      stop
+      error stop
     end if
 
     ! Compute heat and moisture fluxes

@@ -134,7 +134,7 @@ module cloud_feedback
     wpthlp_sfc = compute_wpthlp_sfc( Ch, ubar, thlm_sfc, & 
                                      T_sfc, exner_sfc )
   else
-    stop "Invalid value for sfctype."
+    error stop "Invalid value for sfctype."
   end if
 
 
