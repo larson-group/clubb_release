@@ -3,6 +3,8 @@ pipeline {
   stages {
     stage('Compile') {
       steps {
+        //Replace instances of error stop with stop (sunf95 does not support error stop)
+        sh 'grep -rl "error stop" src/ | xargs sed -i "s/error stop/stop/"'
         sh 'compile/compile.bash -c config/linux_x86_64_oracle_debug.bash'
       }
     }
