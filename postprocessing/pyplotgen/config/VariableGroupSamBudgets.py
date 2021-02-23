@@ -936,7 +936,7 @@ class VariableGroupSamBudgets(VariableGroup):
                 'cam': ['W2 REDUCED'],
                 },
              'lines': wp2_reduced_budget_lines, 'type': Panel.TYPE_BUDGET,
-             'title': r"Vertical Momentum Variance Budget, $\mathrm{\overline{w'^2}}$",
+             'title': r"Vertical Momentum Variance Budget (Reduced), $\mathrm{\overline{w'^2}}$",
              'axis_title': r"$\mathrm{\overline{w'^2}}$ budget terms $\mathrm{\left[m^2\,s^{-3}\right]}$",
              'centered': True,
             },
