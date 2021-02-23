@@ -1,13 +1,13 @@
 ! $Id$
 &stats
-f_tol               = 0.0001,
+f_tol               = 0.1,
 l_results_stdout    = .true.,
 l_results_file      = .true.,
-l_stdout_on_invalid = .true.,
-t_variables       = "wp3", "WP3", "rcm", "RCM",
-weight_var_nl     = 0.5, 0.5,
-anneal_temp       = 100.,
-max_final_temp      = 0.01,
+l_stdout_on_invalid = .false.,
+t_variables       = "cloud_frac", "CLD", "rcm", "QC", "wp2_zt", "WP2", "wp3", "WP3", "wpthlp_zt", "WPTHLP", "wprtp_zt", "WPRTP", "rtp2_zt", "RTP2", "thlp2_zt", "THLP2",
+weight_var_nl     = 1.0, 1e5, 1.0, 1.0, 1.0, 1e4, 1e7, 1.0,
+anneal_temp       = 0.3,
+max_final_temp      = 0.05,
 anneal_iter       = 100,
 tune_type = 2
 stp_adjst_center_in = 0.6
@@ -28,13 +28,13 @@ hoc_stats_file_nl(1)    = "../output/dycoms2_rf01_zt.nc"
 les_stats_file_nl(1)    = "/usr/local/les_and_clubb_benchmark_runs/sam_benchmark_runs/JULY_2017/DYCOMS_RF01_96x96x320/DYCOMS_RF01_96x96x320.nc"
 run_file_nl(1)          = "dycoms2_rf01_hoc.in"
 z_i_nl(1)               = 3
-z_f_nl(1)               = 130
-timestep_intvls_nl(1,:) = 120, 240
+z_f_nl(1)               = 120
+timestep_intvls_nl(1,:) = 61, 120, 121, 180, 181, 240
 weight_case_nl(1)       = 1.0
 /
 
 &initmax
-C1                           = 5.
+C1                           = 0.
 C1b                          = 0.
 C1c                          = 0.
 C2rt                         = 0.
@@ -52,13 +52,13 @@ C6rtc                        = 0.
 C6thl                        = 0.
 C6thlb                       = 0.
 C6thlc                       = 0.
-C7                           = 1.
+C7                           = 0.
 C7b                          = 0.
 C7c                          = 0.
 C8                           = 0.
 C8b                          = 0.
 C10                          = 0.
-C11                          = 1.
+C11                          = 0.
 C11b                         = 0.
 C11c                         = 0.
 C12                          = 0.
@@ -120,7 +120,7 @@ C_invrs_tau_N2               = 0.
 C_invrs_tau_N2_xp2           = 0.
 C_invrs_tau_N2_wp2           = 0.
 C_invrs_tau_N2_clear_wp3     = 0.
-C_invrs_tau_N2_wpxp          = 0.
+C_invrs_tau_N2_wpxp          = 1.
 C_invrs_tau_wpxp_Ri          = 0.
 C_invrs_tau_wpxp_N2_thresh   = 0.
 xp3_coef_base                = 0.

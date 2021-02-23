@@ -86,8 +86,8 @@ module enhanced_simann
 
         ! Stop conditions parameters
         integer, parameter :: &
-          max_iters = 5000,     & ! Max iterations
-          no_improve_max = 5      ! Max number of temperature stages with no improvement
+          max_iters = 200,     & ! Max iterations
+          no_improve_max = 3      ! Max number of temperature stages with no improvement
 
         ! Parameters for temperature adjustment
         real( kind = core_rknd ), parameter :: &
