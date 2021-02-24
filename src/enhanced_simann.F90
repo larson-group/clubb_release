@@ -86,15 +86,20 @@ module enhanced_simann
 
         ! Stop conditions parameters
         integer, parameter :: &
-          max_iters = 200,     & ! Max iterations
-          no_improve_max = 3      ! Max number of temperature stages with no improvement
+          max_iters = 2000,     & ! Max iterations
+          no_improve_max = 3      ! Max num of temperature stages we allow 
+                                  ! since the most recent improvement.
+                                  ! A stage is a series of iterations at the same temperature.
+                                  ! Once stages_w_no_improve reaches no_improve_max, 
+                                  ! then the optimization stops.
 
         ! Parameters for temperature adjustment
         real( kind = core_rknd ), parameter :: &
           use_max  = 0.8_core_rknd,     & ! The maximum chance for a variable to be used
           use_min  = 0.2_core_rknd,     & ! The minimum chance for a variable to be used
-          min_cool = 0.7_core_rknd,     & ! The minimum value the temp can cool by each stage
-          max_cool = 0.3_core_rknd        ! The maximum value the temp can cool by each stage
+          min_cool = 0.7_core_rknd,     & ! We insist that temperature at new stage cools by at 
+                                          ! least min_cool times the temperature at the prior stage,
+          max_cool = 0.3_core_rknd        ! but no more than max_cool times the prior temperature.
 
         ! Parameters for step vector adjustment
         real( kind = core_rknd ) :: &
@@ -124,14 +129,14 @@ module enhanced_simann
 
         integer :: &
           iter,                 & ! Total iterations comepleted
-          stages_w_no_improve,  & ! The number of iterations without improvement 
+          stages_w_no_improve,  & ! Number of temperature stages since the most recent improvement
           vars,                 & ! Size of the a partion
           n1, n2,               & ! Annealing schedule
           k                       ! Loop variable
 
         real( kind = core_rknd ) :: &
-          min_nrgy,             & ! Minimal fobj value at current temp stage
-          tot_nrgy                ! Sum of successive fobj values at current temp stage
+          min_nrgy,             & ! Minimal fobj value at current temperature stage
+          tot_nrgy                ! Sum of successive fobj values at current temperature stage
 
         real( kind(0.0) ) :: &
           rand                    ! random number from [0,1]
@@ -221,16 +226,19 @@ module enhanced_simann
                 old_nrgy = new_nrgy
                 xstart = xtry
 
-                ! if energy is best for this stage, save energy value only
+                ! if energy is best for this temperature stage, save energy value only
                 if ( new_nrgy < min_nrgy ) then
                   min_nrgy = new_nrgy
                 end if
 
-                ! if energy is the best overall, save it and the vars
+                ! If new energy is the best (smallest) among all temperature stages, 
+                ! then save it and the variables
                 if ( new_nrgy < nrgy_opt ) then
 
-                    ! if the ratio of previos best to new best is greater than the fractional
-                    ! tolerance, then reset stages with no improvement to continue
+                    ! If the new best is significantly better than the old best, 
+                    ! then reset the num of stages since last improvement to zero.
+                    ! This will cause us to iterate more at the same temperature,
+                    ! instead of coming closer to reaching the stopping criterion.
                     if ( nrgy_opt - new_nrgy > f_tol * nrgy_opt ) then
                         stages_w_no_improve = 0
                     end if
@@ -240,7 +248,7 @@ module enhanced_simann
 
                 end if
 
-            else    ! energy increased, but randomly accept it with temp based chance
+            else    ! energy increased (worsened), but randomly accept it with temp based chance
            
                call random_number( rand )                               
                if ( rand <= exp( -delta_nrgy / temp ) ) then
@@ -253,7 +261,8 @@ module enhanced_simann
             end if
 
 
-            ! if not much improvement, and not many attempts, keep going at this step size and temp
+            ! If there has not been much improvement, and not many attempts, 
+            ! keep going at this step size and temperature.
             if ( sum(improved) <  n1*vars .and. sum(attempted) < n2*vars ) then
                 cycle                   
             end if
@@ -272,7 +281,7 @@ module enhanced_simann
             stp_cur(:) = stp_cur(:) * ( stp_adjst_spread * &
                          ( improvement_ratio(:) - stp_adjst_center ) + 1 )
 
-            ! too many iterations
+            ! too many iterations, so let's stop.
             if ( iter >= max_iters ) then
 
                 ! debugging
@@ -284,7 +293,7 @@ module enhanced_simann
                 exit
             end if
 
-            ! too many temp stages with no improvement
+            ! too many temperature stages with no improvement, so let's stop.
             if ( temp <= max_final_temp .and. stages_w_no_improve > no_improve_max ) then
 
                 ! debugging

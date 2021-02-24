@@ -109,7 +109,7 @@ module tuner_tests
             print *, "himmelblau pass"
         end if
 
-        if ( eggholder_test() < 0.8 ) then
+        if ( eggholder_test() < 0.7 ) then
             print *, "eggholder fail"
             tuner_tests_driver = 1
         else 
