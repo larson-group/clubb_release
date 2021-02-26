@@ -105,7 +105,9 @@ external code.
     because it is then obvious which variables from the module are being
     used. Even if all variables from the module are used, listing all
     variables after the `only:` statement is still worthwhile because it
-    provides documentation about the inputs. E.g.
+    provides documentation about the inputs. 
+    
+    E.g.
 
         !-----------------------------------------------------------------------
         subroutine mulmul( x, y, z )
@@ -177,7 +179,9 @@ external code.
     arguments third. The exception to this is optional variables, which
     must occur last. In that case, standard variables should be ordered
     as above; below this, the optional variables should be listed with
-    input first, then input/output, and then output variables. E.g.
+    input first, then input/output, and then output variables. 
+    
+    E.g.
 
 
           ! The wrong way
@@ -191,7 +195,9 @@ external code.
 7.  Keep on the same lines the arguments of both the originating call
     and its corresponding subroutine declaration. This makes it easier
     to check the consistency of arguments of subroutines and functions
-    with long argument lists. E.g.
+    with long argument lists. 
+    
+    E.g.
 
 
           ! The wrong way
@@ -211,7 +217,9 @@ external code.
 
 8.  When breaking up an arithmetic expression over multiple lines, do so
     according to operator precedence. This makes things more readable at
-    a glance. E.g. Do this:
+    a glance. 
+    
+    E.g. Do this:
 
           x = t + y*x  &
             + g*v + t*h
@@ -256,7 +264,9 @@ external code.
           end do ! i = 1..100
 
 11. When making a logical expression, leave spaces between the logical
-    operators and use the Fortran 90 style logical operators. E.g.
+    operators and use the Fortran 90 style logical operators. 
+    
+    E.g.
 
           ! Like this
           if ( ( x == y ) .and. ( y >= z ) .or. ( z /= 0.0 ) ) then
@@ -287,7 +297,9 @@ external code.
 13. When writing flow control statements (` if, else if, select case `),
     keep the logic as straightforward and clear as possible. If a set of
     `if...then` expressions grows to more than three cases, then rewrite
-    the logic as a `select...case` expression instead. E.g.
+    the logic as a `select...case` expression instead. 
+    
+    E.g.
 
           ! Rewrite this:
           if ( trim( run ) == "BOMEX" ) then
@@ -328,7 +340,9 @@ external code.
 
 14. When mixing scalar variables with array variables in a single
     mathematical statement, it is often more clear to use indices, even
-    though Fortran 90 allows you to omit them. E.g. Do this:
+    though Fortran 90 allows you to omit them. 
+    
+    E.g. Do this:
 
          xyzzy(1:gr%nz) = variable_arr1(1:gr%nz) * variable_scl1 &
                             * variable_arr2(1:gr%nz)**2
