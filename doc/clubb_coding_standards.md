@@ -1,3 +1,7 @@
+# Standards and Coding Practices for CLUBB
+
+## Larson Group UW-Milwaukee
+
 The following rules apply only to the parts of CLUBB that we have
 written. We try not to modify code from external contributors such as
 BUGSrad, Numerical Recipes, and so forth, because such external code is
