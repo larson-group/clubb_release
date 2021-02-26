@@ -1,6 +1,8 @@
+<p align="center">
 # Standards and Coding Practices for CLUBB
 
 ## Larson Group UW-Milwaukee
+</p>
 
 The following rules apply only to the parts of CLUBB that we have
 written. We try not to modify code from external contributors such as
