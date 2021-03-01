@@ -817,7 +817,7 @@ module advance_wp2_wp3_module
 
     ! Compute the explicit portion of the w'^2 and w'^3 equations.
     ! Build the right-hand side vector.
-    call wp23_rhs( dt, wp2, wp2_zt, wp3, a1, a1_zt, a3, a3_zt, wp3_on_wp2, &         ! intent(in)
+    call wp23_rhs( dt, wp2, wp3, a1, a1_zt, a3, a3_zt, wp3_on_wp2, &                 ! intent(in)
                    coef_wp4_implicit, wp4, wpthvp, wp2thvp, um, vm, &                ! intent(in)
                    upwp, vpwp, up2, vp2, em, Kw1, Kw8, Kh_zt,  &                     ! intent(in)
                    Skw_zt, invrs_tau1m, invrs_tauw3t, invrs_tau_C1_zm, C1_Skw_fnc, & ! intent(in)
@@ -1805,7 +1805,7 @@ module advance_wp2_wp3_module
   end subroutine wp23_lhs
 
   !=================================================================================
-  subroutine wp23_rhs( dt, wp2, wp2_zt, wp3, a1, a1_zt, a3, a3_zt, wp3_on_wp2, &
+  subroutine wp23_rhs( dt, wp2, wp3, a1, a1_zt, a3, a3_zt, wp3_on_wp2, &
                        coef_wp4_implicit, wp4, wpthvp, wp2thvp, um, vm, & 
                        upwp, vpwp, up2, vp2, em, Kw1, Kw8, Kh_zt, & 
                        Skw_zt, invrs_tau1m, invrs_tauw3t, invrs_tau_C1_zm, C1_Skw_fnc, &
@@ -1913,7 +1913,6 @@ module advance_wp2_wp3_module
 
     real( kind = core_rknd ), dimension(gr%nz), intent(in) ::  & 
       wp2,               & ! w'^2 (momentum levels)                    [m^2/s^2]
-      wp2_zt,            & ! w'^2 (thermodynamic levels)               [m^2/s^2]
       wp3,               & ! w'^3 (thermodynamic levels)               [m^3/s^3]
       a1,                & ! sigma_sqd_w term a_1 (momentum levels)    [-]
       a1_zt,             & ! a_1 interpolated to thermodynamic levels  [-]
@@ -2048,7 +2047,7 @@ module advance_wp2_wp3_module
                                    upwp(:), vpwp(:), &
                                    thv_ds_zt(:), gr%invrs_dzt(:), &
                                    rho_ds_zm(:), invrs_rho_ds_zt(:), &
-                                   wp2_zt(:), em(:), &
+                                   wp2(:), em(:), &
                                    rhs_pr_turb_wp3(:), &
                                    l_use_tke_in_wp3_pr_turb_term )
         ! Add term
@@ -4337,7 +4336,7 @@ module advance_wp2_wp3_module
                                         upwp, vpwp, &
                                         thv_ds_zt, invrs_dzt, &
                                         rho_ds_zm, invrs_rho_ds_zt, &
-                                        wp2_zt, em, &
+                                        wp2, em, &
                                         rhs_pr_turb_wp3, &
                                         l_use_tke_in_wp3_pr_turb_term )
 
@@ -4382,7 +4381,7 @@ module advance_wp2_wp3_module
       invrs_dzt,       & ! Inverse of grid spacing                 [1/m]
       invrs_rho_ds_zt, & ! Inverse dry static density (thermo levels) [kg/m^3] 
       rho_ds_zm,       & ! Dry static density on mom. levels       [kg/m^3]
-      wp2_zt,          & ! w'^2 on thermodyanmic levels            [m^2/s^2]
+      wp2,             & ! w'^2 on momentum levels                 [m^2/s^2]
       em                 ! Turbulence kinetic energy               [m^2/s^2]
 
     logical, intent(in) :: &
@@ -4417,8 +4416,8 @@ module advance_wp2_wp3_module
       else
 
         rhs_pr_turb_wp3(k) &
-        = - C_wp3_turb * invrs_rho_ds_zt(k) * wp2_zt(k) * invrs_dzt(k) &
-            * ( rho_ds_zm(k) * em(k) - rho_ds_zm(k-1) * em( k-1 ) )
+        = - C_wp3_turb * invrs_rho_ds_zt(k) * invrs_dzt(k) &
+            * ( rho_ds_zm(k) * wp2(k) * em(k) - rho_ds_zm(k-1) * wp2(k-1) * em( k-1 ) )
 
       endif
 
