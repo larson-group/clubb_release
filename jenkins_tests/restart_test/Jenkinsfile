@@ -8,7 +8,7 @@ pipeline {
     }
     stage('Run the CLUBB restart test script') {
       steps {
-        sh 'run_scripts/run_restart_test.bash'
+        sh 'run_scripts/run_restart_test.bash bomex'
       }
     }
   }
