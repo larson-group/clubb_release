@@ -332,7 +332,7 @@ def findNetcdfErrorsAtTimestep(iteration, ncFile, numVars, varList, numLevels, t
             # Find components of the budget variable
             for variableName in varList:
                 try:
-                    varPrefix = re.match("\w+_", variableName).group()
+                    varPrefix = re.match("\w+?_", variableName).group()
                     if varPrefix == budgetVarName[:-2] and variableName[-2:] != "bt":
                             var = ncFile.variables[variableName]
                             
