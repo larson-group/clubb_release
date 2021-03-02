@@ -10,8 +10,14 @@
 #################################################################################
 
 # Set case to run and choose variable to test
-RUN_CASE="bomex"
+#RUN_CASE="bomex"
+RUN_CASE=$1
 VAR_TO_TEST="thlm"
+
+if [[ -z $RUN_CASE ]]; then
+	echo "Please input a case name in argument 1"
+	exit 1
+fi
 
 # Specify input file
 RUN_CASE_INPUT="../input/case_setups/${RUN_CASE}_model.in"

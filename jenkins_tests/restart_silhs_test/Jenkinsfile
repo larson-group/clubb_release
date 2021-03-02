@@ -1,0 +1,20 @@
+pipeline {
+  agent any
+  stages {
+    stage('Compile') {
+      steps {
+        sh 'compile/compile.bash -c config/linux_x86_64_gfortran.bash'
+      }
+    }
+    stage('Run the restart test script with rico_silhs') {
+      steps {
+        sh 'run_scripts/run_restart_test.bash rico_silhs'
+      }
+    }
+  }
+  post {
+    always {
+      cleanWs(cleanWhenFailure: true, cleanWhenSuccess: true, cleanWhenUnstable: true)
+    }
+  }
+}
