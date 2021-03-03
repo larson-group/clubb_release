@@ -8,12 +8,12 @@ pipeline {
   stages {
     stage('Compile') {
       steps {
-        sh '''compile/compile.bash '''
+        sh '''compile/compile.bash'''
       }
     }
     stage('Run Clubb') {
       steps {
-        sh 'run_scripts/run_scm_all.bash'
+        sh 'run_scripts/run_scm_all.bash --min-cases'
       }
     }
   }
