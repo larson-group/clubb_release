@@ -286,9 +286,9 @@ module parameters_tunable
 !$omp threadprivate( thlp2_rad_coef, thlp2_rad_cloud_frac_thresh )
 
   real( kind = core_rknd ), public :: &
-    up2_vp2_factor = 4.0_core_rknd               ! Coefficients of up2 and vp2    [-]
+    up2_sfc_coef = 4.0_core_rknd               ! Coefficients of up2 and vp2    [-]
 
-!$omp threadprivate( up2_vp2_factor )
+!$omp threadprivate( up2_sfc_coef )
 
   real( kind = core_rknd ), public :: &
     xp3_coef_base  = 0.25_core_rknd, & ! "Base" value of xp3_coef in simple eqn
@@ -328,7 +328,7 @@ module parameters_tunable
     omicron, zeta_vrnce_rat, upsilon_precip_frac_rat, &
     lambda0_stability_coef, mult_coef, taumin, taumax, mu, Lscale_mu_coef, &
     Lscale_pert_coef, alpha_corr, Skw_denom_coef, c_K10, c_K10h, &
-    thlp2_rad_coef, thlp2_rad_cloud_frac_thresh, up2_vp2_factor, &
+    thlp2_rad_coef, thlp2_rad_cloud_frac_thresh, up2_sfc_coef, &
     Skw_max_mag, xp3_coef_base, xp3_coef_slope, altitude_threshold, &
     rtp2_clip_coef, C_invrs_tau_bkgnd, C_invrs_tau_sfc, &
     C_invrs_tau_shear, C_invrs_tau_N2, C_invrs_tau_N2_wp2, &
@@ -387,7 +387,7 @@ module parameters_tunable
        "Lscale_pert_coef            ", "alpha_corr                  ", &
        "Skw_denom_coef              ", "c_K10                       ", &
        "c_K10h                      ", "thlp2_rad_coef              ", &
-       "thlp2_rad_cloud_frac_thresh ", "up2_vp2_factor              ", &
+       "thlp2_rad_cloud_frac_thresh ", "up2_sfc_coef                ", &
        "Skw_max_mag                 ", "C_invrs_tau_bkgnd           ", &
        "C_invrs_tau_sfc             ", "C_invrs_tau_shear           ", &
        "C_invrs_tau_N2              ", "C_invrs_tau_N2_wp2          ", &
@@ -456,7 +456,7 @@ module parameters_tunable
     clubb_lmin_coef,                    &
     clubb_mult_coef,                    &
     clubb_Skw_denom_coef,               &
-    clubb_up2_vp2_factor,               &
+    clubb_up2_sfc_coef,               &
     clubb_Skw_max_mag,                  &
     clubb_C_invrs_tau_bkgnd,            &
     clubb_C_invrs_tau_sfc,              &
@@ -489,7 +489,7 @@ module parameters_tunable
 !$omp   clubb_c_K2, clubb_nu2, clubb_c_K8, clubb_nu8, clubb_c_K9, clubb_nu9, &
 !$omp   clubb_c_K10, clubb_c_K10h, clubb_c_K_hmb, clubb_wpxp_L_thresh, &
 !$omp   clubb_lmin_coef, clubb_mult_coef, clubb_Skw_denom_coef, &
-!$omp   clubb_up2_vp2_factor, clubb_Skw_max_mag, clubb_C_invrs_tau_bkgnd, &
+!$omp   clubb_up2_sfc_coef, clubb_Skw_max_mag, clubb_C_invrs_tau_bkgnd, &
 !$omp   clubb_C_invrs_tau_sfc, clubb_C_invrs_tau_shear, clubb_C_invrs_tau_N2, &
 !$omp   clubb_C_invrs_tau_N2_wp2, clubb_C_invrs_tau_N2_xp2, &
 !$omp   clubb_C_invrs_tau_N2_wpxp, clubb_C_invrs_tau_N2_clear_wp3, &
@@ -621,7 +621,7 @@ module parameters_tunable
                lambda0_stability_coef, mult_coef, taumin, taumax, &
                Lscale_mu_coef, Lscale_pert_coef, alpha_corr, &
                Skw_denom_coef, c_K10, c_K10h, thlp2_rad_coef, &
-               thlp2_rad_cloud_frac_thresh, up2_vp2_factor, &
+               thlp2_rad_cloud_frac_thresh, up2_sfc_coef, &
                Skw_max_mag, xp3_coef_base, xp3_coef_slope, &
                altitude_threshold, rtp2_clip_coef, C_invrs_tau_bkgnd, &
                C_invrs_tau_sfc, C_invrs_tau_shear, C_invrs_tau_N2, &
@@ -1116,7 +1116,7 @@ module parameters_tunable
     clubb_lmin_coef,                    &
     clubb_mult_coef,                    &
     clubb_Skw_denom_coef,               &
-    clubb_up2_vp2_factor,               &
+    clubb_up2_sfc_coef,               &
     clubb_Skw_max_mag,                  &
     clubb_C_invrs_tau_bkgnd,            &
     clubb_C_invrs_tau_sfc,              &
@@ -1191,7 +1191,7 @@ module parameters_tunable
     clubb_lmin_coef = init_value
     clubb_mult_coef = init_value
     clubb_Skw_denom_coef = init_value
-    clubb_up2_vp2_factor = init_value
+    clubb_up2_sfc_coef = init_value
     clubb_Skw_max_mag = init_value
     clubb_C_invrs_tau_bkgnd = init_value
     clubb_C_invrs_tau_sfc = init_value
@@ -1273,7 +1273,7 @@ module parameters_tunable
    call mpibcast(clubb_lmin_coef,  1, mpir8,  0, mpicom)
    call mpibcast(clubb_mult_coef,  1, mpir8,  0, mpicom)
    call mpibcast(clubb_Skw_denom_coef, 1, mpir8,  0, mpicom)
-   call mpibcast(clubb_up2_vp2_factor, 1, mpir8,  0, mpicom)
+   call mpibcast(clubb_up2_sfc_coef, 1, mpir8,  0, mpicom)
    call mpibcast(clubb_Skw_max_mag, 1, mpir8,  0, mpicom)
    call mpibcast(clubb_C_invrs_tau_bkgnd, 1, mpir8,  0, mpicom)
    call mpibcast(clubb_C_invrs_tau_sfc, 1, mpir8,  0, mpicom)
@@ -1410,8 +1410,8 @@ module parameters_tunable
     if (clubb_mult_coef /= init_value) mult_coef = clubb_mult_coef
     if (clubb_Skw_denom_coef /= init_value) &
        Skw_denom_coef = clubb_Skw_denom_coef
-    if (clubb_up2_vp2_factor /= init_value) &
-       up2_vp2_factor = clubb_up2_vp2_factor
+    if (clubb_up2_sfc_coef /= init_value) &
+       up2_sfc_coef = clubb_up2_sfc_coef
     if (clubb_Skw_max_mag /= init_value) &
        Skw_max_mag = clubb_Skw_max_mag
     if (clubb_C_invrs_tau_bkgnd /= init_value) &
@@ -1466,7 +1466,7 @@ module parameters_tunable
                lambda0_stability_coef, mult_coef, taumin, taumax, &
                Lscale_mu_coef, Lscale_pert_coef, alpha_corr, &
                Skw_denom_coef, c_K10, c_K10h, thlp2_rad_coef, &
-               thlp2_rad_cloud_frac_thresh, up2_vp2_factor, &
+               thlp2_rad_cloud_frac_thresh, up2_sfc_coef, &
                Skw_max_mag, xp3_coef_base, xp3_coef_slope, &
                altitude_threshold, rtp2_clip_coef, C_invrs_tau_bkgnd, &
                C_invrs_tau_sfc, C_invrs_tau_shear, C_invrs_tau_N2, &
@@ -1550,7 +1550,7 @@ module parameters_tunable
       omicron, zeta_vrnce_rat, upsilon_precip_frac_rat, &
       lambda0_stability_coef, mult_coef, taumin, taumax, mu, Lscale_mu_coef, &
       Lscale_pert_coef, alpha_corr, Skw_denom_coef, c_K10, c_K10h, &
-      thlp2_rad_coef, thlp2_rad_cloud_frac_thresh, up2_vp2_factor, &
+      thlp2_rad_coef, thlp2_rad_cloud_frac_thresh, up2_sfc_coef, &
       Skw_max_mag, xp3_coef_base, xp3_coef_slope, altitude_threshold, &
       rtp2_clip_coef, C_invrs_tau_bkgnd, C_invrs_tau_sfc, &
       C_invrs_tau_shear, C_invrs_tau_N2, C_invrs_tau_N2_wp2, &
@@ -1584,7 +1584,7 @@ module parameters_tunable
                lambda0_stability_coef, mult_coef, taumin, taumax, &
                Lscale_mu_coef, Lscale_pert_coef, alpha_corr, &
                Skw_denom_coef, c_K10, c_K10h, thlp2_rad_coef, &
-               thlp2_rad_cloud_frac_thresh, up2_vp2_factor, &
+               thlp2_rad_cloud_frac_thresh, up2_sfc_coef, &
                Skw_max_mag, xp3_coef_base, xp3_coef_slope, &
                altitude_threshold, rtp2_clip_coef, C_invrs_tau_bkgnd, &
                C_invrs_tau_sfc, C_invrs_tau_shear, C_invrs_tau_N2, &
@@ -1640,7 +1640,7 @@ module parameters_tunable
                lambda0_stability_coef, mult_coef, taumin, taumax, &
                Lscale_mu_coef, Lscale_pert_coef, alpha_corr, &
                Skw_denom_coef, c_K10, c_K10h, thlp2_rad_coef, &
-               thlp2_rad_cloud_frac_thresh, up2_vp2_factor, &
+               thlp2_rad_cloud_frac_thresh, up2_sfc_coef, &
                Skw_max_mag, xp3_coef_base, xp3_coef_slope, &
                altitude_threshold, rtp2_clip_coef, C_invrs_tau_bkgnd, &
                C_invrs_tau_sfc, C_invrs_tau_shear, C_invrs_tau_N2, &
@@ -1740,7 +1740,7 @@ module parameters_tunable
       ic_K10h, &
       ithlp2_rad_coef, &
       ithlp2_rad_cloud_frac_thresh, &
-      iup2_vp2_factor, &
+      iup2_sfc_coef, &
       iSkw_max_mag, &
       ixp3_coef_base, &
       ixp3_coef_slope, &
@@ -1779,7 +1779,7 @@ module parameters_tunable
       omicron, zeta_vrnce_rat, upsilon_precip_frac_rat, &
       lambda0_stability_coef, mult_coef, taumin, taumax, Lscale_mu_coef, &
       Lscale_pert_coef, alpha_corr, Skw_denom_coef, c_K10, c_K10h, &
-      thlp2_rad_coef, thlp2_rad_cloud_frac_thresh, up2_vp2_factor, &
+      thlp2_rad_coef, thlp2_rad_cloud_frac_thresh, up2_sfc_coef, &
       Skw_max_mag, xp3_coef_base, xp3_coef_slope, altitude_threshold, &
       rtp2_clip_coef, C_invrs_tau_bkgnd, C_invrs_tau_sfc, &
       C_invrs_tau_shear, C_invrs_tau_N2, C_invrs_tau_N2_wp2, &
@@ -1879,7 +1879,7 @@ module parameters_tunable
     params(ic_K10h) = c_K10h
     params(ithlp2_rad_coef) = thlp2_rad_coef
     params(ithlp2_rad_cloud_frac_thresh) = thlp2_rad_cloud_frac_thresh
-    params(iup2_vp2_factor) = up2_vp2_factor
+    params(iup2_sfc_coef) = up2_sfc_coef
     params(iSkw_max_mag) = Skw_max_mag
     params(ixp3_coef_base) = xp3_coef_base
     params(ixp3_coef_slope) = xp3_coef_slope
@@ -1921,7 +1921,7 @@ module parameters_tunable
                lambda0_stability_coef, mult_coef, taumin, taumax, &
                Lscale_mu_coef, Lscale_pert_coef, alpha_corr, &
                Skw_denom_coef, c_K10, c_K10h, thlp2_rad_coef, &
-               thlp2_rad_cloud_frac_thresh, up2_vp2_factor, &
+               thlp2_rad_cloud_frac_thresh, up2_sfc_coef, &
                Skw_max_mag, xp3_coef_base, xp3_coef_slope, &
                altitude_threshold, rtp2_clip_coef, C_invrs_tau_bkgnd, &
                C_invrs_tau_sfc, C_invrs_tau_shear, C_invrs_tau_N2, & 
@@ -2021,7 +2021,7 @@ module parameters_tunable
       ic_K10h, & 
       ithlp2_rad_coef, &
       ithlp2_rad_cloud_frac_thresh, &
-      iup2_vp2_factor, &
+      iup2_sfc_coef, &
       iSkw_max_mag, &
       ixp3_coef_base, &
       ixp3_coef_slope, &
@@ -2063,7 +2063,7 @@ module parameters_tunable
       omicron, zeta_vrnce_rat, upsilon_precip_frac_rat, &
       lambda0_stability_coef, mult_coef, taumin, taumax, Lscale_mu_coef, &
       Lscale_pert_coef, alpha_corr, Skw_denom_coef, c_K10, c_K10h, &
-      thlp2_rad_coef, thlp2_rad_cloud_frac_thresh, up2_vp2_factor, &
+      thlp2_rad_coef, thlp2_rad_cloud_frac_thresh, up2_sfc_coef, &
       Skw_max_mag, xp3_coef_base, xp3_coef_slope, altitude_threshold, &
       rtp2_clip_coef, C_invrs_tau_bkgnd, C_invrs_tau_sfc, &
       C_invrs_tau_shear, C_invrs_tau_N2, C_invrs_tau_N2_wp2, &
@@ -2161,7 +2161,7 @@ module parameters_tunable
 
     thlp2_rad_coef = params(ithlp2_rad_coef)
     thlp2_rad_cloud_frac_thresh = params(ithlp2_rad_cloud_frac_thresh)
-    up2_vp2_factor = params(iup2_vp2_factor)
+    up2_sfc_coef = params(iup2_sfc_coef)
     Skw_max_mag = params(iSkw_max_mag)
     xp3_coef_base = params(ixp3_coef_base)
     xp3_coef_slope = params(ixp3_coef_slope)
@@ -2215,7 +2215,7 @@ module parameters_tunable
                lambda0_stability_coef, mult_coef, taumin, taumax, &
                Lscale_mu_coef, Lscale_pert_coef, alpha_corr, &
                Skw_denom_coef, c_K10, c_K10h, thlp2_rad_coef, &
-               thlp2_rad_cloud_frac_thresh, up2_vp2_factor, &
+               thlp2_rad_cloud_frac_thresh, up2_sfc_coef, &
                Skw_max_mag, xp3_coef_base, xp3_coef_slope, &
                altitude_threshold, rtp2_clip_coef, C_invrs_tau_bkgnd, &
                C_invrs_tau_sfc, C_invrs_tau_shear, C_invrs_tau_N2, &
@@ -2319,7 +2319,7 @@ module parameters_tunable
     c_K10h                       = init_value
     thlp2_rad_coef               = init_value
     thlp2_rad_cloud_frac_thresh  = init_value
-    up2_vp2_factor               = init_value
+    up2_sfc_coef               = init_value
     Skw_max_mag                  = init_value
     xp3_coef_base                = init_value
     xp3_coef_slope               = init_value

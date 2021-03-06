@@ -79,6 +79,6 @@ c_K10 = 1.0            ! Coefficient of momentum diffusivity, Km_zm. Units [-]
 c_K10h = 1.0           ! Coefficient of thermo   diffusivity, Kmh_zm. Units [-]
 thlp2_rad_coef = 1.0   ! Coefficient of thlp2_rad. Units [-]
 thlp2_rad_cloud_frac_thresh = 0.1 ! Minimum cloud fraction for computation of thlp2_rad. Units [-]
-up2_vp2_factor = 2.0   ! Coefficient of up2_sfc and vp2_sfc    [-]
+up2_sfc_coef = 2.0   ! Coefficient of up2_sfc and vp2_sfc    [-]
 Skw_max_mag = 4.5      ! Max magnitude of skewness     [-]
 /

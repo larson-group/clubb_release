@@ -120,7 +120,7 @@ module parameter_indices
     ic_K10h                       = 75, &
     ithlp2_rad_coef               = 76, &
     ithlp2_rad_cloud_frac_thresh  = 77, &
-    iup2_vp2_factor               = 78, &
+    iup2_sfc_coef               = 78, &
     iSkw_max_mag                  = 79, &
     iC_invrs_tau_bkgnd            = 80, &
     iC_invrs_tau_sfc              = 81, &

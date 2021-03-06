@@ -73,7 +73,7 @@ module surface_varnce_module
         core_rknd ! Variable(s)
 
     use parameters_tunable, only: &
-        up2_vp2_factor ! Variable
+        up2_sfc_coef ! Variable
 
     implicit none
 
@@ -364,8 +364,8 @@ module surface_varnce_module
 
        ! Compute estimate for surface second order moments
        wp2_sfc = a_const * uf**2
-       up2_sfc = up2_vp2_factor * a_const * uf**2  ! From Andre, et al. 1978
-       vp2_sfc = up2_vp2_factor * a_const * uf**2  ! "  "
+       up2_sfc = up2_sfc_coef * a_const * uf**2  ! From Andre, et al. 1978
+       vp2_sfc = up2_sfc_coef * a_const * uf**2  ! "  "
 
        ! Notes:  1) With "a" having a value of 1.8, the surface correlations of
        !            both w & rt and w & thl have a value of about 0.878.
