@@ -589,6 +589,18 @@ class VariableGroupBase(VariableGroup):
                 },
                 'sci_scale': 0,
             },
+            {'var_names':
+                {
+                    'clubb': ['em'],
+                    'sam': [self.get_tke_sam_calc,'TKE'],
+                    'coamps': ['em'],
+                    'r408': ['em'],
+                    'hoc': ['em'],
+                    'e3sm': ['em'],
+                    'cam': ['em'],
+                    'wrf': ['em'],
+                },
+            },
         ]
 
         # Call ctor of parent class
@@ -1791,3 +1803,24 @@ class VariableGroupBase(VariableGroup):
         output = VP2_SGS + V2
 
         return output, z
+
+    def get_tke_sam_calc(self, dataset_override=None):
+        """
+        This function calculates TKE from SAM data by explicitly summing the squared
+        components of the velocity.
+        """
+        if dataset_override is not None:
+            dataset = dataset_override
+        else:
+            dataset = self.sam_datasets
+        U2, z, dataset = self.getVarForCalculations('U2', dataset)
+        UP2_SGS, z, dataset = self.getVarForCalculations('UP2_SGS', dataset)
+        V2, z, dataset = self.getVarForCalculations('V2', dataset)
+        VP2_SGS, z, dataset = self.getVarForCalculations('VP2_SGS', dataset)
+        W2, z, dataset = self.getVarForCalculations('W2', dataset)
+        WP2_SGS, z, dataset = self.getVarForCalculations('WP2_SGS', dataset)
+
+        output = 0.5 * ( U2 + UP2_SGS + V2 + VP2_SGS + W2 + WP2_SGS )
+
+        return output, z
+
