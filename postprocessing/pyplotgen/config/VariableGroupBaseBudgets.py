@@ -124,6 +124,7 @@ class VariableGroupBaseBudgets(VariableGroup):
             {'var_names': ['wp3_pr3'], 'legend_label': 'wp3_pr3'},
             {'var_names': ['wp3_bp1'], 'legend_label': 'wp3_bp1'},
             {'var_names': ['wp3_pr_turb'], 'legend_label': 'wp3_pr_turb'},
+            {'var_names': ['wp3_pr_dfsn'], 'legend_label': 'wp3_pr_dfsn'},
             {'var_names': ['wp3_dp1'], 'legend_label': 'wp3_dp1'},
             {'var_names': ['wp3_tp'], 'legend_label': 'wp3_tp'},
             {'var_names': ['wp3_cl'], 'legend_label': 'wp3_cl'},

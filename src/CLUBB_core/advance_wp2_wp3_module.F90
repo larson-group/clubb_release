@@ -28,7 +28,8 @@ module advance_wp2_wp3_module
              wp3_term_ta_explicit_rhs, &
              wp3_terms_bp1_pr2_rhs, & 
              wp3_term_pr1_rhs, &
-             wp3_term_pr_turb_rhs
+             wp3_term_pr_turb_rhs, &
+             wp3_term_pr_dfsn_rhs
 
   ! Private named constants to avoid string comparisons
   integer, parameter, private :: &
@@ -1850,7 +1851,7 @@ module advance_wp2_wp3_module
     !-------------------------------------------------------------------------------
 
     use grid_class, only:  & 
-        gr ! Variable
+        gr, zm2zt ! Variable
 
     use grid_class, only:  & 
         ddzt ! Procedure
@@ -1891,7 +1892,8 @@ module advance_wp2_wp3_module
         l_stats_samp, iwp2_dp1, iwp2_dp2, stats_zm, iwp2_bp,   & ! Variable(s)
         iwp2_pr1, iwp2_pr2, iwp2_pr3, iwp2_splat, iwp3_splat, &
         iwp3_ta, stats_zt, & 
-        iwp3_tp, iwp3_bp1, iwp3_pr2, iwp3_pr1, iwp3_dp1, iwp3_pr_turb, iwp3_pr3
+        iwp3_tp, iwp3_bp1, iwp3_pr2, iwp3_pr1, iwp3_dp1, iwp3_pr_turb, &
+        iwp3_pr_dfsn, iwp3_pr3
         
     use stats_type_utilities, only:  &
         stat_update_var_pt,  & ! Procedure(s)
@@ -2011,7 +2013,8 @@ module advance_wp2_wp3_module
       rhs_pr3_wp2, &          ! wp2 pressure term 3
       rhs_pr3_wp3, &          ! wp3 pressure term 3
       rhs_ta_wp3, &           ! wp3 turbulent advection term
-      rhs_pr_turb_wp3         ! wp3 pressure-turbulence correlation term !--EXPERIMENTAL--!
+      rhs_pr_turb_wp3, &      ! wp3 pressure-turbulence correlation term !--EXPERIMENTAL--!
+      rhs_pr_dfsn_wp3
 
     real( kind = core_rknd ), dimension(gr%nz) :: &
       rhs_bp_wp2, &  ! wp2 bouyancy production (stats only)
@@ -2025,8 +2028,12 @@ module advance_wp2_wp3_module
     real( kind = core_rknd ), dimension(gr%nz) :: &
       zero_vector    ! Vector of 0s
 
+    real( kind = core_rknd ), dimension(gr%nz) :: &
+      em_zt
+
     ! --------------- Begin Code ---------------
-        
+
+    em_zt = zm2zt( em )        
 
     ! Initialize arrays to 0 and calculate invers_dt
     invrs_dt = 1.0_core_rknd / dt
@@ -2047,9 +2054,15 @@ module advance_wp2_wp3_module
                                    upwp(:), vpwp(:), &
                                    thv_ds_zt(:), gr%invrs_dzt(:), &
                                    rho_ds_zm(:), invrs_rho_ds_zt(:), &
-                                   wp2(:), em(:), &
+                                   up2(:), vp2(:), wp2(:), wp4(:), em(:), em_zt(:), &
                                    rhs_pr_turb_wp3(:), &
                                    l_use_tke_in_wp3_pr_turb_term )
+
+        call wp3_term_pr_dfsn_rhs( C_wp3_turb, gr%invrs_dzt(:), &
+                                   rho_ds_zm(:), invrs_rho_ds_zt(:), &
+                                   wp2(:), em(:), &
+                                   rhs_pr_dfsn_wp3(:) )
+
         ! Add term
         do k = 2, gr%nz-1
 
@@ -2594,6 +2607,7 @@ module advance_wp2_wp3_module
             ! Experimental bouyancy term
             if ( l_wp3_2nd_buoyancy_term ) then
                 call stat_update_var_pt( iwp3_pr_turb, k, rhs_pr_turb_wp3(k), stats_zt )
+                call stat_update_var_pt( iwp3_pr_dfsn, k, rhs_pr_dfsn_wp3(k), stats_zt )
             end if
 
         end do
@@ -4336,7 +4350,7 @@ module advance_wp2_wp3_module
                                         upwp, vpwp, &
                                         thv_ds_zt, invrs_dzt, &
                                         rho_ds_zm, invrs_rho_ds_zt, &
-                                        wp2, em, &
+                                        up2, vp2, wp2, wp4, em, em_zt, &
                                         rhs_pr_turb_wp3, &
                                         l_use_tke_in_wp3_pr_turb_term )
 
@@ -4355,11 +4369,11 @@ module advance_wp2_wp3_module
     !-----------------------------------------------------------------------
 
     use grid_class, only: &
-        gr    ! Variable type(s)
+        gr, zm2zt    ! Variable type(s)
 
     use constants_clubb, only: & ! Constant(s) 
         grav, & ! Gravitational acceleration [m/s^2]
-        zero
+        zero, two, two_thirds
 
     use clubb_precision, only: &
         core_rknd    ! Variable(s)
@@ -4381,8 +4395,8 @@ module advance_wp2_wp3_module
       invrs_dzt,       & ! Inverse of grid spacing                 [1/m]
       invrs_rho_ds_zt, & ! Inverse dry static density (thermo levels) [kg/m^3] 
       rho_ds_zm,       & ! Dry static density on mom. levels       [kg/m^3]
-      wp2,             & ! w'^2 on momentum levels                 [m^2/s^2]
-      em                 ! Turbulence kinetic energy               [m^2/s^2]
+      up2, vp2, wp2,   & ! w'^2 on momentum levels                 [m^2/s^2]
+      wp4, em, em_zt                 ! Turbulence kinetic energy               [m^2/s^2]
 
     logical, intent(in) :: &
       l_use_tke_in_wp3_pr_turb_term  ! Use TKE formulation for wp3 pr_turb term
@@ -4416,8 +4430,16 @@ module advance_wp2_wp3_module
       else
 
         rhs_pr_turb_wp3(k) &
-        = - C_wp3_turb * invrs_rho_ds_zt(k) * invrs_dzt(k) &
-            * ( rho_ds_zm(k) * wp2(k) * em(k) - rho_ds_zm(k-1) * wp2(k-1) * em( k-1 ) )
+!        = + C_wp3_turb * invrs_rho_ds_zt(k) * invrs_dzt(k) &
+!           * ( rho_ds_zm(k) * ( wp2(k) * up2(k) + two * wp2(k) * upwp(k) &
+!                              + wp2(k) * vp2(k) + two * wp2(k) * vpwp(k) &
+!                              + wp4(k) ) &
+!             - rho_ds_zm(k-1) * ( wp2(k-1) * up2(k-1) + two * wp2(k-1) * upwp(k-1) &
+!                              + wp2(k-1) * vp2(k-1) + two * wp2(k-1) * vpwp(k-1) &
+!                              + wp4(k-1) ) & 
+!             )
+        = - C_wp3_turb * invrs_dzt(k) &
+            * em_zt(k) * ( em(k) - em(k-1) )
 
       endif
 
@@ -4430,6 +4452,78 @@ module advance_wp2_wp3_module
     return
 
   end subroutine wp3_term_pr_turb_rhs
+
+  !=============================================================================
+  pure subroutine wp3_term_pr_dfsn_rhs( C_wp3_turb, invrs_dzt, &
+                                        rho_ds_zm, invrs_rho_ds_zt, &
+                                        wp2, em, &
+                                        rhs_pr_dfsn_wp3 )
+
+    ! Description:
+    !
+    ! This term is intended to represent the "diffusion" part of the total 
+    ! pressure correlation.  The total pressure term, -3w'^2/rho*dp'/dz, can be
+    ! split into
+    ! 
+    !   -3w'^2/rho*dp'/dz = + 3p'/rho*d(w'^2)/dz - 3/rho*d(w'^2p')/dz 
+    !
+    ! using the product rule.  The second term here we consider to be the
+    ! diffusion part, calculated by this subroutine.  (It should probably be
+    ! evaluated using CLUBB's PDF but this may be good enough for now.)
+    !
+    ! References:
+    !   None
+    !-----------------------------------------------------------------------
+
+    use grid_class, only: &
+        gr    ! Variable type(s)
+
+    use constants_clubb, only: &
+        zero
+
+    use clubb_precision, only: &
+        core_rknd    ! Variable(s)
+
+    implicit none
+
+    ! Input Variables
+    real( kind = core_rknd ), intent(in) :: &
+      C_wp3_turb         ! Model parameter C_wp3_turb                [-]
+
+    real( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
+      invrs_dzt,       & ! Inverse of grid spacing                 [1/m]
+      invrs_rho_ds_zt, & ! Inverse dry static density (thermo levels) [kg/m^3] 
+      rho_ds_zm,       & ! Dry static density on mom. levels       [kg/m^3]
+      wp2,             & ! w'^2 on momentum levels                 [m^2/s^2]
+      em                 ! Turbulence kinetic energy   [m^2/s^2]
+
+    ! Return Variable
+    real( kind = core_rknd ), dimension(gr%nz), intent(out) :: &
+      rhs_pr_dfsn_wp3    ! RHS portion of wp3 from pressure-turbulence correlation [m^3/s^4]
+
+    ! Local Variables
+    integer :: k   ! Vertical level index 
+
+    ! ---- Begin Code ----
+
+    ! Set lower boundary to 0
+    rhs_pr_dfsn_wp3(1) = zero
+
+    do k = 2, gr%nz-1
+
+        rhs_pr_dfsn_wp3(k) &
+         = - C_wp3_turb * invrs_rho_ds_zt(k) * invrs_dzt(k) &
+            * ( rho_ds_zm(k) * wp2(k) * em(k) - rho_ds_zm(k-1) * wp2(k-1) * em(k-1) )
+
+    enddo ! k = 2, gr%nz-1
+
+    ! Set upper boundary to 0
+    rhs_pr_dfsn_wp3(gr%nz) = zero
+
+
+    return
+
+  end subroutine wp3_term_pr_dfsn_rhs
 
   !=============================================================================
   pure subroutine wp3_term_pr1_rhs( C8, C8b, invrs_tauw3t, Skw_zt, wp3, &
