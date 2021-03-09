@@ -782,6 +782,9 @@ module advance_clubb_core_module
        z_displace = 10.0_core_rknd   ! displacement of log law profile above ground   [m]
 
     real( kind = core_rknd ) :: &
+      depth_pos_wpthlp  ! Thickness of the layer near the surface with wpthlp > 0 [m]
+
+    real( kind = core_rknd ) :: &
       Lscale_max    ! Max. allowable mixing length (based on grid box size) [m]
 
     real( kind = core_rknd ), dimension(gr%nz) :: &
@@ -1348,10 +1351,24 @@ module advance_clubb_core_module
                                      stats_zm )                      ! intent(inout)
         end if
 
+
+        ! Find thickness of layer near surface with positive heat flux.
+        ! This is used when l_vary_convect_depth=.true. in order to determine wp2_sfc.
+        if ( wpthlp_sfc <= zero ) then
+           depth_pos_wpthlp = one ! When sfc heat flux is negative, set depth to 1 m.
+        else ! When sfc heat flux is positive, march up sounding until wpthlp 1st becomes negative.
+           k = 1
+           do while ( wpthlp(k) > zero .and. (gr%zm(k)-sfc_elevation) < 1000._core_rknd )
+              k = k + 1
+           end do
+           depth_pos_wpthlp = max( one, gr%zm(k)-sfc_elevation )
+        end if
+
         ! Diagnose surface variances based on surface fluxes.
         call calc_surface_varnce( upwp_sfc, vpwp_sfc, wpthlp_sfc, wprtp_sfc, &      ! intent(in)
                              um(2), vm(2), Lscale_up(2), wpsclrp_sfc,        &      ! intent(in)
                              wp2_splat(1), tau_zm(1),                        &      ! intent(in)
+                             depth_pos_wpthlp,                               &      ! intent(in)
                              wp2(1), up2(1), vp2(1),                         &      ! intent(out)
                              thlp2(1), rtp2(1), rtpthlp(1),                  &      ! intent(out)
                              sclrp2(1,1:sclr_dim),                           &      ! intent(out)
