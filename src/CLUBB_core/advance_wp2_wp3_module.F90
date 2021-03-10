@@ -1863,7 +1863,8 @@ module advance_wp2_wp3_module
         C8,  & 
         C8b, & 
         C12, & 
-        C_wp3_turb, & 
+        C_wp3_turb, &
+        C_wp3_pr_dfsn, & 
         nu1_vert_res_dep, & 
         nu8_vert_res_dep
 
@@ -2058,7 +2059,7 @@ module advance_wp2_wp3_module
                                    rhs_pr_turb_wp3(:), &
                                    l_use_tke_in_wp3_pr_turb_term )
 
-        call wp3_term_pr_dfsn_rhs( C_wp3_turb, gr%invrs_dzt(:), &
+        call wp3_term_pr_dfsn_rhs( C_wp3_pr_dfsn, gr%invrs_dzt(:), &
                                    rho_ds_zm(:), invrs_rho_ds_zt(:), &
                                    wp2(:), em(:), &
                                    rhs_pr_dfsn_wp3(:) )
@@ -2068,7 +2069,7 @@ module advance_wp2_wp3_module
 
             k_wp3 = 2*k - 1
 
-            rhs(k_wp3) = rhs(k_wp3) + rhs_pr_turb_wp3(k)
+            rhs(k_wp3) = rhs(k_wp3) + rhs_pr_turb_wp3(k) + rhs_pr_dfsn_wp3(k)
 
         end do
 
@@ -4454,7 +4455,7 @@ module advance_wp2_wp3_module
   end subroutine wp3_term_pr_turb_rhs
 
   !=============================================================================
-  pure subroutine wp3_term_pr_dfsn_rhs( C_wp3_turb, invrs_dzt, &
+  pure subroutine wp3_term_pr_dfsn_rhs( C_wp3_pr_dfsn, invrs_dzt, &
                                         rho_ds_zm, invrs_rho_ds_zt, &
                                         wp2, em, &
                                         rhs_pr_dfsn_wp3 )
@@ -4488,7 +4489,7 @@ module advance_wp2_wp3_module
 
     ! Input Variables
     real( kind = core_rknd ), intent(in) :: &
-      C_wp3_turb         ! Model parameter C_wp3_turb                [-]
+      C_wp3_pr_dfsn      ! Model parameter C_wp3_turb                [-]
 
     real( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
       invrs_dzt,       & ! Inverse of grid spacing                 [1/m]
@@ -4512,7 +4513,7 @@ module advance_wp2_wp3_module
     do k = 2, gr%nz-1
 
         rhs_pr_dfsn_wp3(k) &
-         = - C_wp3_turb * invrs_rho_ds_zt(k) * invrs_dzt(k) &
+         = - C_wp3_pr_dfsn * invrs_rho_ds_zt(k) * invrs_dzt(k) &
             * ( rho_ds_zm(k) * wp2(k) * em(k) - rho_ds_zm(k-1) * wp2(k-1) * em(k-1) )
 
     enddo ! k = 2, gr%nz-1

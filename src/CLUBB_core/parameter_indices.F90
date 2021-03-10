@@ -26,7 +26,7 @@ module parameter_indices
   private ! Default Scope
 
   integer, parameter, public ::  & 
-    nparams = 97 ! Total tunable parameters
+    nparams = 98 ! Total tunable parameters
 
 !***************************************************************
 !                    ***** IMPORTANT *****
@@ -68,78 +68,79 @@ module parameter_indices
     iC13              = 29, & 
     iC14              = 30, &
     iC_wp3_turb       = 31, &
-    iC_wp2_splat      = 32
+    iC_wp3_pr_dfsn    = 32, &
+    iC_wp2_splat      = 33
 
   integer, parameter, public :: &
-    iC6rt_Lscale0     = 33, &
-    iC6thl_Lscale0    = 34, &
-    iC7_Lscale0       = 35, &
-    iwpxp_L_thresh    = 36
+    iC6rt_Lscale0     = 34, &
+    iC6thl_Lscale0    = 35, &
+    iC7_Lscale0       = 36, &
+    iwpxp_L_thresh    = 37
 
   integer, parameter, public :: & 
-    ic_K              = 37, & 
-    ic_K1             = 38, & 
-    inu1              = 39, & 
-    ic_K2             = 40, & 
-    inu2              = 41, & 
-    ic_K6             = 42, & 
-    inu6              = 43, & 
-    ic_K8             = 44, & 
-    inu8              = 45, & 
-    ic_K9             = 46, & 
-    inu9              = 47, & 
-    inu10             = 48, &
-    ic_K_hm           = 49, & 
-    ic_K_hmb          = 50, & 
-    iK_hm_min_coef    = 51, & 
-    inu_hm            = 52 
+    ic_K              = 38, & 
+    ic_K1             = 39, & 
+    inu1              = 40, & 
+    ic_K2             = 41, & 
+    inu2              = 42, & 
+    ic_K6             = 43, & 
+    inu6              = 44, & 
+    ic_K8             = 45, & 
+    inu8              = 46, & 
+    ic_K9             = 47, & 
+    inu9              = 48, & 
+    inu10             = 49, &
+    ic_K_hm           = 50, & 
+    ic_K_hmb          = 51, & 
+    iK_hm_min_coef    = 52, & 
+    inu_hm            = 53 
 
   integer, parameter, public :: &
-    islope_coef_spread_DG_means_w = 53, &
-    ipdf_component_stdev_factor_w = 54, &
-    icoef_spread_DG_means_rt      = 55, &
-    icoef_spread_DG_means_thl     = 56, &
-    igamma_coef                   = 57, & 
-    igamma_coefb                  = 58, & 
-    igamma_coefc                  = 59, & 
-    imu                           = 60, & 
-    ibeta                         = 61, & 
-    ilmin_coef                    = 62, &
-    iomicron                      = 63, &
-    izeta_vrnce_rat               = 64, &
-    iupsilon_precip_frac_rat      = 65, &
-    ilambda0_stability_coef       = 66, &
-    imult_coef                    = 67, &
-    itaumin                       = 68, &
-    itaumax                       = 69, &
-    iLscale_mu_coef               = 70, &
-    iLscale_pert_coef             = 71, &
-    ialpha_corr                   = 72, &
-    iSkw_denom_coef               = 73, &
-    ic_K10                        = 74, &
-    ic_K10h                       = 75, &
-    ithlp2_rad_coef               = 76, &
-    ithlp2_rad_cloud_frac_thresh  = 77, &
-    iup2_sfc_coef               = 78, &
-    iSkw_max_mag                  = 79, &
-    iC_invrs_tau_bkgnd            = 80, &
-    iC_invrs_tau_sfc              = 81, &
-    iC_invrs_tau_shear            = 82, &
-    iC_invrs_tau_N2               = 83, &
-    iC_invrs_tau_N2_wp2           = 84, &
-    iC_invrs_tau_N2_xp2           = 85, &
-    iC_invrs_tau_N2_wpxp          = 86, &
-    iC_invrs_tau_N2_clear_wp3     = 87, &
-    iC_invrs_tau_wpxp_Ri          = 88, &
-    iC_invrs_tau_wpxp_N2_thresh   = 89, &
-    ixp3_coef_base                = 90, &
-    ixp3_coef_slope               = 91, &
-    ialtitude_threshold           = 92, &
-    irtp2_clip_coef               = 93, &
-    iCx_min                       = 94, &
-    iCx_max                       = 95, &
-    iRichardson_num_min           = 96, &
-    iRichardson_num_max           = 97
+    islope_coef_spread_DG_means_w = 54, &
+    ipdf_component_stdev_factor_w = 55, &
+    icoef_spread_DG_means_rt      = 56, &
+    icoef_spread_DG_means_thl     = 57, &
+    igamma_coef                   = 58, & 
+    igamma_coefb                  = 59, & 
+    igamma_coefc                  = 60, & 
+    imu                           = 61, & 
+    ibeta                         = 62, & 
+    ilmin_coef                    = 63, &
+    iomicron                      = 64, &
+    izeta_vrnce_rat               = 65, &
+    iupsilon_precip_frac_rat      = 66, &
+    ilambda0_stability_coef       = 67, &
+    imult_coef                    = 68, &
+    itaumin                       = 69, &
+    itaumax                       = 70, &
+    iLscale_mu_coef               = 71, &
+    iLscale_pert_coef             = 72, &
+    ialpha_corr                   = 73, &
+    iSkw_denom_coef               = 74, &
+    ic_K10                        = 75, &
+    ic_K10h                       = 76, &
+    ithlp2_rad_coef               = 77, &
+    ithlp2_rad_cloud_frac_thresh  = 78, &
+    iup2_sfc_coef                 = 79, &
+    iSkw_max_mag                  = 80, &
+    iC_invrs_tau_bkgnd            = 81, &
+    iC_invrs_tau_sfc              = 82, &
+    iC_invrs_tau_shear            = 83, &
+    iC_invrs_tau_N2               = 84, &
+    iC_invrs_tau_N2_wp2           = 85, &
+    iC_invrs_tau_N2_xp2           = 86, &
+    iC_invrs_tau_N2_wpxp          = 87, &
+    iC_invrs_tau_N2_clear_wp3     = 88, &
+    iC_invrs_tau_wpxp_Ri          = 89, &
+    iC_invrs_tau_wpxp_N2_thresh   = 90, &
+    ixp3_coef_base                = 91, &
+    ixp3_coef_slope               = 92, &
+    ialtitude_threshold           = 93, &
+    irtp2_clip_coef               = 94, &
+    iCx_min                       = 95, &
+    iCx_max                       = 96, &
+    iRichardson_num_min           = 97, &
+    iRichardson_num_max           = 98
 
 end module parameter_indices
 !-----------------------------------------------------------------------
