@@ -848,14 +848,17 @@ Currently, we have only tested the code with data from COAMPS and SAM-LES.  Data
 from CLUBB also works, but should result in similar results to not 
 using input_fields and so is less useful.
 
-The relevant namelist files are in the input/<Model Case>_model.in files.  The
-variable l_input_fields enabled the code when true, and then a separate
-namelist called &setfields is used to control which variables are read in.
+The relevant namelist files are in the input/case_setups/<Model Case>_model.in files.
+To execute an input fields run, you first need to set the variable l_input_fields to
+.true., and then configure a separate namelist called &setfields, which controls the
+data and variables that are read in.  First, set the 'datafile' variable in the
+&setfields namelist to the location of the data files, and set 'input_type' to ether 
+"clubb", "coamps_les", "sam", or "rams_les" depending on the type of data you want to
+read in.  Finally, set 'l_input_<varname>' to .true. for those fields for which you 
+want to use a fixed value from the LES dataset at the beginning of each timestep.
 
-To execute an input fields run, you need to set the 'datafile' variable in the
-setfields namelist to the location of the data files, and set 'l_input_<varname>'
-to .true. for those fields for which you want to use a fixed value from
-the LES dataset at the beginning of each timestep.
+Then, change your directory to run_scripts and execute the run_scm.bash
+as you would usually.
 
 Nota bene:  The GrADS data files cannot have a time increment less than 1mn.
 Therefore, when a file is output in CLUBB with a stats_tout of less than
@@ -863,12 +866,6 @@ Therefore, when a file is output in CLUBB with a stats_tout of less than
 resulting GrADS data file generated for an inputfields simulation.
 Therefore, when l_input_fields is true, always use GrADS data output
 at 1mn increments or greater.
-
-You will need to set 'input_type' to the type of run you are using for input
-to ether "clubb", "coamps_les", "sam", or "rams_les".
-
-Then, change your directory to run_scripts and execute the run_scm.bash
-as you would usually.
 
 Note the input fields code will also work for tuning runs, if the tuner is
 configured to use a <Case Name>_model.in with the input fields options
