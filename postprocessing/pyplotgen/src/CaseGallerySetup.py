@@ -7,6 +7,7 @@ import os
 import numpy as np
 
 from config.VariableGroupBaseBudgets import VariableGroupBaseBudgets
+from config.VariableGroupBaseBudgetsSamStyle import VariableGroupBaseBudgetsSamStyle
 from config.VariableGroupSamBudgets import VariableGroupSamBudgets
 from config.VariableGroupSubcolumns import VariableGroupSubcolumns
 from src.DataReader import DataReader
@@ -28,7 +29,7 @@ class CaseGallerySetup:
 
     def __init__(self, case_definition, clubb_folders=[], diff_datasets=None, sam_folders=[""], wrf_folders=[""],
                  plot_les=False, plot_budgets=False, plot_r408=False, plot_hoc=False, e3sm_folders=[], cam_folders=[],
-                 time_height=False, animation=None, plot_subcolumns=False, image_extension=".png",
+                 time_height=False, animation=None, samstyle=False, plot_subcolumns=False, image_extension=".png",
                  total_panels_to_plot=0, priority_vars=False):
         """
         Initialize a CaseGallerySetup object with the passed parameters
@@ -72,6 +73,7 @@ class CaseGallerySetup:
         self.next_panel_alphabetic_id_code = 97
         self.time_height = time_height
         self.animation = animation
+        self.sam_style_budgets = samstyle
         self.panels = []
         self.diff_panels = []
         self.plot_subcolumns = plot_subcolumns
@@ -150,8 +152,12 @@ class CaseGallerySetup:
                 for input_folder in self.clubb_datasets:
                     folder_name = os.path.basename(input_folder)
                     if input_folder in self.clubb_datasets.keys():
-                        budget_variables = VariableGroupBaseBudgets(self, priority_vars=self.priority_vars,
-                                                                    clubb_datasets={folder_name:self.clubb_datasets[input_folder]})
+                        if not self.sam_style_budgets:
+                            budget_variables = VariableGroupBaseBudgets(self, priority_vars=self.priority_vars,
+                                                         clubb_datasets={folder_name:self.clubb_datasets[input_folder]})
+                        else:
+                            budget_variables = VariableGroupBaseBudgetsSamStyle(self, priority_vars=self.priority_vars,
+                                                         clubb_datasets={folder_name:self.clubb_datasets[input_folder]})
                         self.panels.extend(budget_variables.panels)
                     else:
                         logToFile("" + folder_name + " does not seem to contain data for case" + self.name)

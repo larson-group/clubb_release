@@ -32,6 +32,7 @@ from src.interoperability import clean_path
 import src.OutputHandler
 from src.OutputHandler import logToFile, logToFileAndConsole
 from src.OutputHandler import initializeProgress, writeFinalErrorLog, warnUser
+
 class PyPlotGen:
     """
     Main class for the pyplotgen program.
@@ -45,7 +46,7 @@ class PyPlotGen:
                  benchmark_only=False, nightly=False, zip=False, thin=False, no_legends=False, ensemble=False,
                  e3sm_folders=[""], sam_folders=[""], wrf_folders=[""], cam_folders=[""], priority_vars=False,
                  plot_budgets=False, bu_morr=False, diff=None, show_alphabetic_id=False,
-                 time_height=False, animation=None, disable_multithreading=False, pdf=False,
+                 time_height=False, animation=None, samstyle=False, disable_multithreading=False, pdf=False,
                  pdf_filesize_limit=None, plot_subcolumns=False, image_extension=".png"):
         """
         This creates an instance of PyPlotGen. Each parameter is a command line parameter passed in from the argparser
@@ -121,6 +122,7 @@ class PyPlotGen:
         self.nightly = nightly
         self.time_height = time_height
         self.animation = animation
+        self.sam_style_budgets = samstyle
         self.multithreaded = not disable_multithreading
         self.pdf = pdf
         self.pdf_filesize_limit = pdf_filesize_limit
@@ -405,7 +407,8 @@ class PyPlotGen:
                                                   wrf_folders=self.wrf_folders, diff_datasets=self.case_diff_datasets,
                                                   plot_r408=self.cgbest, plot_hoc=self.hoc, e3sm_folders=self.e3sm_folders,
                                                   cam_folders=self.cam_folders, time_height=self.time_height,
-                                                  animation=self.animation, plot_subcolumns=self.plot_subcolumns,
+                                                  animation=self.animation, samstyle=self.sam_style_budgets, 
+                                                  plot_subcolumns=self.plot_subcolumns,
                                                   image_extension=self.image_extension, total_panels_to_plot=0,
                                                   priority_vars=self.priority_vars)
             # Call plot function of case instance
@@ -703,6 +706,8 @@ def __processArguments__():
                         default=[], nargs='+')
     parser.add_argument("--priority-variables", help="Plot only variables with the 'priority' key.",
                         action="store_true")
+    parser.add_argument("--sam-style-budgets", help="Plot CLUBB variables as if they were SAM variables.",
+                        action="store_true")
     args = parser.parse_args()
 
     if args.zip:
@@ -781,7 +786,7 @@ def __processArguments__():
                           wrf_folders=args.wrf, benchmark_only=args.benchmark_only, priority_vars=args.priority_variables,
                           no_legends=args.no_legends, plot_budgets=args.plot_budgets,
                           bu_morr=args.bu_morr, diff=args.diff, show_alphabetic_id=args.show_alphabetic_id,
-                          time_height=args.time_height_plots, animation=args.movies,
+                          time_height=args.time_height_plots, animation=args.movies, samstyle=args.sam_style_budgets,
                           disable_multithreading=args.disable_multithreading, pdf=args.pdf,
                           pdf_filesize_limit=args.pdf_filesize_limit, plot_subcolumns=args.plot_subcolumns,
                           image_extension=image_extension)
