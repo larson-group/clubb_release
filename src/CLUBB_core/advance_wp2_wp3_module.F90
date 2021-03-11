@@ -2054,14 +2054,14 @@ module advance_wp2_wp3_module
                                    dum_dz(:), dvm_dz(:), &
                                    upwp(:), vpwp(:), &
                                    thv_ds_zt(:), gr%invrs_dzt(:), &
-                                   rho_ds_zm(:), invrs_rho_ds_zt(:), &
-                                   up2(:), vp2(:), wp2(:), wp4(:), em(:), em_zt(:), &
+                                   em(:), em_zt(:), &
                                    rhs_pr_turb_wp3(:), &
                                    l_use_tke_in_wp3_pr_turb_term )
 
         call wp3_term_pr_dfsn_rhs( C_wp3_pr_dfsn, gr%invrs_dzt(:), &
                                    rho_ds_zm(:), invrs_rho_ds_zt(:), &
-                                   wp2(:), em(:), &
+                                   up2(:), vp2(:), wp2(:), wp4(:), em(:), &
+                                   upwp(:), vpwp(:), &
                                    rhs_pr_dfsn_wp3(:) )
 
         ! Add term
@@ -4350,8 +4350,7 @@ module advance_wp2_wp3_module
                                         dum_dz, dvm_dz, &
                                         upwp, vpwp, &
                                         thv_ds_zt, invrs_dzt, &
-                                        rho_ds_zm, invrs_rho_ds_zt, &
-                                        up2, vp2, wp2, wp4, em, em_zt, &
+                                        em, em_zt, &
                                         rhs_pr_turb_wp3, &
                                         l_use_tke_in_wp3_pr_turb_term )
 
@@ -4374,7 +4373,7 @@ module advance_wp2_wp3_module
 
     use constants_clubb, only: & ! Constant(s) 
         grav, & ! Gravitational acceleration [m/s^2]
-        zero, two, two_thirds
+        zero
 
     use clubb_precision, only: &
         core_rknd    ! Variable(s)
@@ -4394,10 +4393,8 @@ module advance_wp2_wp3_module
       vpwp,            & ! v'w'                                    [m^2/s^2]
       thv_ds_zt,       & ! Dry, base-state theta_v at thermo. levs [K]
       invrs_dzt,       & ! Inverse of grid spacing                 [1/m]
-      invrs_rho_ds_zt, & ! Inverse dry static density (thermo levels) [kg/m^3] 
-      rho_ds_zm,       & ! Dry static density on mom. levels       [kg/m^3]
-      up2, vp2, wp2,   & ! w'^2 on momentum levels                 [m^2/s^2]
-      wp4, em, em_zt                 ! Turbulence kinetic energy               [m^2/s^2]
+      em,              & ! Turbulence kinetic energy               [m^2/s^2]
+      em_zt              ! Turbulence kinetic energy (thermo levels) [m^2/s^2]
 
     logical, intent(in) :: &
       l_use_tke_in_wp3_pr_turb_term  ! Use TKE formulation for wp3 pr_turb term
@@ -4418,10 +4415,6 @@ module advance_wp2_wp3_module
 
       if ( .not. l_use_tke_in_wp3_pr_turb_term ) then
 
-!       rhs_pr_turb_wp3(k) &
-!       = - C_wp3_turb * Kh_zt(k) * invrs_dzt(k) &
-!           * grav / thv_ds_zt(k) * ( wpthvp(k) - wpthvp(k-1) )
-
         rhs_pr_turb_wp3(k) &
         = - C_wp3_turb * Kh_zt(k) * invrs_dzt(k) &
             * ( grav / thv_ds_zt(k) * ( wpthvp(k) - wpthvp(k-1) ) &
@@ -4431,14 +4424,6 @@ module advance_wp2_wp3_module
       else
 
         rhs_pr_turb_wp3(k) &
-!        = + C_wp3_turb * invrs_rho_ds_zt(k) * invrs_dzt(k) &
-!           * ( rho_ds_zm(k) * ( wp2(k) * up2(k) + two * wp2(k) * upwp(k) &
-!                              + wp2(k) * vp2(k) + two * wp2(k) * vpwp(k) &
-!                              + wp4(k) ) &
-!             - rho_ds_zm(k-1) * ( wp2(k-1) * up2(k-1) + two * wp2(k-1) * upwp(k-1) &
-!                              + wp2(k-1) * vp2(k-1) + two * wp2(k-1) * vpwp(k-1) &
-!                              + wp4(k-1) ) & 
-!             )
         = - C_wp3_turb * invrs_dzt(k) &
             * em_zt(k) * ( em(k) - em(k-1) )
 
@@ -4457,7 +4442,8 @@ module advance_wp2_wp3_module
   !=============================================================================
   pure subroutine wp3_term_pr_dfsn_rhs( C_wp3_pr_dfsn, invrs_dzt, &
                                         rho_ds_zm, invrs_rho_ds_zt, &
-                                        wp2, em, &
+                                        up2, vp2, wp2, wp4, em, &
+                                        upwp, vpwp, & 
                                         rhs_pr_dfsn_wp3 )
 
     ! Description:
@@ -4480,7 +4466,7 @@ module advance_wp2_wp3_module
         gr    ! Variable type(s)
 
     use constants_clubb, only: &
-        zero
+        zero, two
 
     use clubb_precision, only: &
         core_rknd    ! Variable(s)
@@ -4495,8 +4481,13 @@ module advance_wp2_wp3_module
       invrs_dzt,       & ! Inverse of grid spacing                 [1/m]
       invrs_rho_ds_zt, & ! Inverse dry static density (thermo levels) [kg/m^3] 
       rho_ds_zm,       & ! Dry static density on mom. levels       [kg/m^3]
+      up2,             & ! u'^2 on momentum levels                 [m^2/s^2]
+      vp2,             & ! v'^2 on momentum levels                 [m^2/s^2]
       wp2,             & ! w'^2 on momentum levels                 [m^2/s^2]
-      em                 ! Turbulence kinetic energy   [m^2/s^2]
+      wp4,             & ! w'^4 on momentum levels                 [m^2/s^2]
+      upwp,            & ! u'w' on momentum levels                 [m^2/s^2]
+      vpwp,            & ! v'w' on momentum levels                 [m^2/s^2]
+      em                 ! Turbulence kinetic energy               [m^2/s^2]
 
     ! Return Variable
     real( kind = core_rknd ), dimension(gr%nz), intent(out) :: &
@@ -4513,8 +4504,14 @@ module advance_wp2_wp3_module
     do k = 2, gr%nz-1
 
         rhs_pr_dfsn_wp3(k) &
-         = - C_wp3_pr_dfsn * invrs_rho_ds_zt(k) * invrs_dzt(k) &
-            * ( rho_ds_zm(k) * wp2(k) * em(k) - rho_ds_zm(k-1) * wp2(k-1) * em(k-1) )
+         = + C_wp3_pr_dfsn * invrs_rho_ds_zt(k) * invrs_dzt(k) &
+!            * ( rho_ds_zm(k) * wp2(k) * em(k) - rho_ds_zm(k-1) * wp2(k-1) * em(k-1) )
+           * ( rho_ds_zm(k) * ( wp2(k) * up2(k) + two * wp2(k) * upwp(k) &
+                              + wp2(k) * vp2(k) + two * wp2(k) * vpwp(k) &
+                              + wp4(k) ) &
+             - rho_ds_zm(k-1) * ( wp2(k-1) * up2(k-1) + two * wp2(k-1) * upwp(k-1) &
+                              + wp2(k-1) * vp2(k-1) + two * wp2(k-1) * vpwp(k-1) &
+                              + wp4(k-1) ) ) 
 
     enddo ! k = 2, gr%nz-1
 
