@@ -96,29 +96,26 @@ class VariableGroupBaseBudgetsSamStyle(VariableGroup):
 #        ]
 
         wp2_budget_lines = [
-            {'var_names': ['wp2_bt'], 'legend_label': 'wp2_bt'},
+            {'var_names': ['wp2_residual', self.getWp2Residual], 'legend_label': 'wp2_residual'},
             {'var_names': ['wp2_adv',self.calc_wp2_adv], 'legend_label': 'wp2_adv'},
-            {'var_names': ['wp2_bp'], 'legend_label': 'wp2_buoy'},
             {'var_names': ['wp2_pres',self.calc_wp2_pres], 'legend_label': 'wp2_pres'},
+            {'var_names': ['wp2_pr1'], 'legend_label': 'wp2_redis'},
+            {'var_names': ['wp2_bp'], 'legend_label': 'wp2_buoy'},
             {'var_names': ['wp2_diff',self.calc_wp2_diff], 'legend_label': 'wp2_diff'},
-            {'var_names': ['wp2_cl'], 'legend_label': 'wp2_cl'},
-            {'var_names': ['wp2_pd'], 'legend_label': 'wp2_pd'},
-            {'var_names': ['wp2_splat'], 'legend_label': 'wp2_splat'},
+            {'var_names': ['wp2_sdmp'], 'legend_label': 'wp2_sdmp'},
+            {'var_names': ['wp2_bt'], 'legend_label': 'wp2_bt'},
+            {'var_names': ['wp2_limit',self.calc_wp2_limit], 'legend_label': 'wp2_limit'},
             {'var_names': ['wp2_sf'], 'legend_label': 'wp2_sf'},
-            {'var_names': ['wp2_residual', self.getWp2Residual], 'legend_label': 'wp2_residual',
-             },
         ]
 
         wp3_budget_lines = [
-            {'var_names': ['wp3_bt'], 'legend_label': 'wp3_bt'},
-            {'var_names': ['wp3_adv',self.calc_wp3_adv], 'legend_label': 'wp3_adv'},
+            {'var_names': ['wp3_residual', self.getWp3Residual], 'legend_label': 'wp3_residual'},
             {'var_names': ['wp3_pres',self.calc_wp3_pres], 'legend_label': 'wp3_pres'},
+            {'var_names': ['wp3_adv',self.calc_wp3_adv], 'legend_label': 'wp3_adv'},
             {'var_names': ['wp3_bp1'], 'legend_label': 'wp3_buoy'},
-            {'var_names': ['wp3_diff',self.calc_wp3_diff], 'legend_label': 'wp3_diff'},
-            {'var_names': ['wp3_cl'], 'legend_label': 'wp3_cl'},
-            {'var_names': ['wp3_splat'], 'legend_label': 'wp3_splat'},
-            {'var_names': ['wp3_residual', self.getWp3Residual], 'legend_label': 'wp3_residual',
-             },
+            {'var_names': ['wp3_dp1'], 'legend_label': 'wp3_diff'},
+            {'var_names': ['wp3_bt'], 'legend_label': 'wp3_bt'},
+            {'var_names': ['wp3_cl'], 'legend_label': 'wp3_limit'},
         ]
 
 #        thlp2_budget_lines = [
@@ -227,27 +224,27 @@ class VariableGroupBaseBudgetsSamStyle(VariableGroup):
 #        ]
 
         up2_budget_lines = [
-            {'var_names': ['up2_bt'], 'legend_label': 'up2_bt'},
+            {'var_names': ['up2_res',self.calc_up2_res], 'legend_label': 'up2_res'},
             {'var_names': ['up2_adv',self.calc_up2_adv], 'legend_label': 'up2_adv'},
+            {'var_names': ['up2_tp'], 'legend_label': 'up2_shear'},
+            {'var_names': ['up2_redis',self.calc_up2_redis], 'legend_label': 'up2_redis'},
             {'var_names': ['up2_diff',self.calc_up2_diff], 'legend_label': 'up2_diff'},
-            {'var_names': ['up2_pres',self.calc_up2_pres], 'legend_label': 'up2_pres'},
+            {'var_names': ['up2_bt'], 'legend_label': 'up2_bt'},
             {'var_names': ['up2_sdmp'], 'legend_label': 'up2_sdmp'},
-            {'var_names': ['up2_cl'], 'legend_label': 'up2_cl'},
-            {'var_names': ['up2_pd'], 'legend_label': 'up2_pd'},
+            {'var_names': ['up2_limit',self.calc_up2_limit], 'legend_label': 'up2_limit'},
             {'var_names': ['up2_sf'], 'legend_label': 'up2_sf'},
-            {'var_names': ['up2_splat'], 'legend_label': 'up2_splat'}
         ]
 
         vp2_budget_lines = [
-            {'var_names': ['vp2_bt'], 'legend_label': 'vp2_bt'},
+            {'var_names': ['vp2_res',self.calc_vp2_res], 'legend_label': 'vp2_res'},
             {'var_names': ['vp2_adv',self.calc_vp2_adv], 'legend_label': 'vp2_adv'},
+            {'var_names': ['vp2_tp'], 'legend_label': 'vp2_shear'},
+            {'var_names': ['vp2_redis',self.calc_vp2_redis], 'legend_label': 'vp2_redis'},
             {'var_names': ['vp2_diff',self.calc_vp2_diff], 'legend_label': 'vp2_diff'},
-            {'var_names': ['vp2_pres',self.calc_vp2_pres], 'legend_label': 'vp2_pres'},
+            {'var_names': ['vp2_bt'], 'legend_label': 'vp2_bt'},
             {'var_names': ['vp2_sdmp'], 'legend_label': 'vp2_sdmp'},
-            {'var_names': ['vp2_cl'], 'legend_label': 'vp2_cl'},
-            {'var_names': ['vp2_pd'], 'legend_label': 'vp2_pd'},
+            {'var_names': ['vp2_limit',self.calc_vp2_limit], 'legend_label': 'vp2_limit'},
             {'var_names': ['vp2_sf'], 'legend_label': 'vp2_sf'},
-            {'var_names': ['vp2_splat'], 'legend_label': 'vp2_splat'}
         ]
 
 #        rrm_budget_lines = [
@@ -828,8 +825,9 @@ class VariableGroupBaseBudgetsSamStyle(VariableGroup):
         wp2_ma, indep, dataset = self.getVarForCalculations('wp2_ma', dataset_override)
         wp2_ta, indep, dataset = self.getVarForCalculations('wp2_ta', dataset)
         wp2_ac, indep, dataset = self.getVarForCalculations('wp2_ac', dataset)
+        wp2_splat, indep, dataset = self.getVarForCalculations('wp2_splat', dataset)
 
-        output_data = wp2_ma + wp2_ta + wp2_ac
+        output_data = wp2_ma + wp2_ta + wp2_ac + wp2_splat
 
         return output_data, indep
 
@@ -837,22 +835,32 @@ class VariableGroupBaseBudgetsSamStyle(VariableGroup):
         '''
         '''
         # z,z, dataset = self.getVarForCalculations('altitude', dataset_override)
-        wp2_pr1, indep, dataset = self.getVarForCalculations('wp2_pr1', dataset_override)
-        wp2_pr2, indep, dataset = self.getVarForCalculations('wp2_pr2', dataset)
+        wp2_pr2, indep, dataset = self.getVarForCalculations('wp2_pr2', dataset_override)
         wp2_pr3, indep, dataset = self.getVarForCalculations('wp2_pr3', dataset)
 
-        output_data = wp2_pr1 + wp2_pr2 + wp2_pr3
+        output_data = wp2_pr2 + wp2_pr3
 
         return output_data, indep
 
     def calc_wp2_diff(self, dataset_override=None):
+         '''
+         '''
+         # z,z, dataset = self.getVarForCalculations('altitude', dataset_override)
+         wp2_dp1, indep, dataset = self.getVarForCalculations('wp2_dp1', dataset_override)
+         wp2_dp2, indep, dataset = self.getVarForCalculations('wp2_dp2', dataset)
+
+         output_data = wp2_dp1 + wp2_dp2
+
+         return output_data, indep
+
+    def calc_wp2_limit(self, dataset_override=None):
         '''
         '''
         # z,z, dataset = self.getVarForCalculations('altitude', dataset_override)
-        wp2_dp1, indep, dataset = self.getVarForCalculations('wp2_dp1', dataset_override)
-        wp2_dp2, indep, dataset = self.getVarForCalculations('wp2_dp2', dataset)
+        wp2_cl, indep, dataset = self.getVarForCalculations('wp2_cl', dataset_override)
+        wp2_pd, indep, dataset = self.getVarForCalculations('wp2_pd', dataset)
 
-        output_data = wp2_dp1 + wp2_dp2
+        output_data = wp2_cl + wp2_pd
 
         return output_data, indep
 
@@ -914,8 +922,9 @@ class VariableGroupBaseBudgetsSamStyle(VariableGroup):
         wp3_ta, indep, dataset = self.getVarForCalculations('wp3_ta', dataset)
         wp3_tp, indep, dataset = self.getVarForCalculations('wp3_tp', dataset)
         wp3_ac, indep, dataset = self.getVarForCalculations('wp3_ac', dataset)
+        wp3_splat, indep, dataset = self.getVarForCalculations('wp3_splat', dataset)
 
-        output_data = wp3_ma + wp3_ta + wp3_tp + wp3_ac
+        output_data = wp3_ma + wp3_ta + wp3_tp + wp3_ac + wp3_splat
 
         return output_data, indep
     
@@ -929,16 +938,6 @@ class VariableGroupBaseBudgetsSamStyle(VariableGroup):
         wp3_pr_turb, indep, dataset = self.getVarForCalculations('wp3_pr_turb', dataset)
 
         output_data = wp3_pr1 + wp3_pr2 + wp3_pr3 + wp3_pr_turb
-
-        return output_data, indep
-
-    def calc_wp3_diff(self, dataset_override=None):
-        '''
-        '''
-        # z,z, dataset = self.getVarForCalculations('altitude', dataset_override)
-        wp3_dp1, indep, dataset = self.getVarForCalculations('wp3_dp1', dataset_override)
-
-        output_data = wp3_dp1
 
         return output_data, indep
 
@@ -991,37 +990,92 @@ class VariableGroupBaseBudgetsSamStyle(VariableGroup):
 
         return output_data, indep
 
+    def calc_up2_res(self, dataset_override=None):
+
+        # z,z, dataset = self.getVarForCalculations('altitude', dataset_override)
+        up2_sf, indep, dataset = self.getVarForCalculations('up2_sf', dataset_override)
+        up2_cl, indep, dataset = self.getVarForCalculations('up2_cl', dataset)
+        up2_pd, indep, dataset = self.getVarForCalculations('up2_pd', dataset)
+        up2_pr1, indep, dataset = self.getVarForCalculations('up2_pr1', dataset)
+        up2_pr2, indep, dataset = self.getVarForCalculations('up2_pr2', dataset)
+        up2_dp1, indep, dataset = self.getVarForCalculations('up2_dp1', dataset)
+        up2_dp2, indep, dataset = self.getVarForCalculations('up2_dp2', dataset)
+        up2_ta, indep, dataset = self.getVarForCalculations('up2_ta', dataset)
+        up2_splat, indep, dataset = self.getVarForCalculations('up2_splat', dataset)
+        up2_ma, indep, dataset = self.getVarForCalculations('up2_ma', dataset)
+        up2_tp, indep, dataset = self.getVarForCalculations('up2_tp', dataset)
+        up2_bt, indep, dataset = self.getVarForCalculations('up2_bt', dataset)
+
+        output_data = up2_bt - (
+                up2_ma + up2_ta + up2_tp + up2_dp1 + up2_dp2 + up2_pr1 + up2_pr2 + up2_pd +
+                up2_sf + up2_cl + up2_splat)
+
+        return output_data, indep
+
     def calc_up2_adv(self, dataset_override=None):
         '''
         '''
         # z,z, dataset = self.getVarForCalculations('altitude', dataset_override)
         up2_ma, indep, dataset = self.getVarForCalculations('up2_ma', dataset_override)
         up2_ta, indep, dataset = self.getVarForCalculations('up2_ta', dataset)
-        up2_tp, indep, dataset = self.getVarForCalculations('up2_tp', dataset)
+        up2_splat, indep, dataset = self.getVarForCalculations('up2_splat', dataset)
 
-        output_data = up2_ma + up2_ta + up2_tp
+        output_data = up2_ma + up2_ta + up2_splat
 
         return output_data, indep
 
-    def calc_up2_pres(self, dataset_override=None):
+    def calc_up2_redis(self, dataset_override=None):
         '''
         '''
         # z,z, dataset = self.getVarForCalculations('altitude', dataset_override)
         up2_pr1, indep, dataset = self.getVarForCalculations('up2_pr1', dataset_override)
-        up2_pr2, indep, dataset = self.getVarForCalculations('up2_pr2', dataset)
+#        up2_pr2, indep, dataset = self.getVarForCalculations('up2_pr2', dataset)
 
-        output_data = up2_pr1 + up2_pr2
+        output_data = up2_pr1
 
         return output_data, indep
 
     def calc_up2_diff(self, dataset_override=None):
+         '''
+         '''
+         # z,z, dataset = self.getVarForCalculations('altitude', dataset_override)
+         up2_dp1, indep, dataset = self.getVarForCalculations('up2_dp1', dataset_override)
+         up2_dp2, indep, dataset = self.getVarForCalculations('up2_dp2', dataset)
+
+         output_data = up2_dp1 + up2_dp2
+
+         return output_data, indep
+
+    def calc_up2_limit(self, dataset_override=None):
         '''
         '''
         # z,z, dataset = self.getVarForCalculations('altitude', dataset_override)
-        up2_dp1, indep, dataset = self.getVarForCalculations('up2_dp1', dataset_override)
-        up2_dp2, indep, dataset = self.getVarForCalculations('up2_dp2', dataset)
+        up2_cl, indep, dataset = self.getVarForCalculations('up2_cl', dataset_override)
+        up2_pd, indep, dataset = self.getVarForCalculations('up2_pd', dataset)
 
-        output_data = up2_dp1 + up2_dp2
+        output_data = up2_cl + up2_pd
+
+        return output_data, indep
+
+    def calc_vp2_res(self, dataset_override=None):
+
+        # z,z, dataset = self.getVarForCalculations('altitude', dataset_override)
+        vp2_sf, indep, dataset = self.getVarForCalculations('vp2_sf', dataset_override)
+        vp2_cl, indep, dataset = self.getVarForCalculations('vp2_cl', dataset)
+        vp2_pd, indep, dataset = self.getVarForCalculations('vp2_pd', dataset)
+        vp2_pr1, indep, dataset = self.getVarForCalculations('vp2_pr1', dataset)
+        vp2_pr2, indep, dataset = self.getVarForCalculations('vp2_pr2', dataset)
+        vp2_dp1, indep, dataset = self.getVarForCalculations('vp2_dp1', dataset)
+        vp2_dp2, indep, dataset = self.getVarForCalculations('vp2_dp2', dataset)
+        vp2_ta, indep, dataset = self.getVarForCalculations('vp2_ta', dataset)
+        vp2_splat, indep, dataset = self.getVarForCalculations('vp2_splat', dataset)
+        vp2_ma, indep, dataset = self.getVarForCalculations('vp2_ma', dataset)
+        vp2_tp, indep, dataset = self.getVarForCalculations('vp2_tp', dataset)
+        vp2_bt, indep, dataset = self.getVarForCalculations('vp2_bt', dataset)
+
+        output_data = vp2_bt - (
+                vp2_ma + vp2_ta + vp2_tp + vp2_dp1 + vp2_dp2 + vp2_pr1 + vp2_pr2 + vp2_pd +
+                vp2_sf + vp2_cl + vp2_splat)
 
         return output_data, indep
 
@@ -1032,30 +1086,42 @@ class VariableGroupBaseBudgetsSamStyle(VariableGroup):
         vp2_ma, indep, dataset = self.getVarForCalculations('vp2_ma', dataset_override)
         vp2_ta, indep, dataset = self.getVarForCalculations('vp2_ta', dataset)
         vp2_tp, indep, dataset = self.getVarForCalculations('vp2_tp', dataset)
+        vp2_splat, indep, dataset = self.getVarForCalculations('vp2_splat', dataset)
 
-        output_data = vp2_ma + vp2_ta + vp2_tp
+        output_data = vp2_ma + vp2_ta + vp2_tp + vp2_splat
 
         return output_data, indep
 
-    def calc_vp2_pres(self, dataset_override=None):
+    def calc_vp2_redis(self, dataset_override=None):
         '''
         '''
         # z,z, dataset = self.getVarForCalculations('altitude', dataset_override)
         vp2_pr1, indep, dataset = self.getVarForCalculations('vp2_pr1', dataset_override)
-        vp2_pr2, indep, dataset = self.getVarForCalculations('vp2_pr2', dataset)
+#        vp2_pr2, indep, dataset = self.getVarForCalculations('vp2_pr2', dataset)
 
-        output_data = vp2_pr1 + vp2_pr2
+        output_data = vp2_pr1
 
         return output_data, indep
 
     def calc_vp2_diff(self, dataset_override=None):
+         '''
+         '''
+         # z,z, dataset = self.getVarForCalculations('altitude', dataset_override)
+         vp2_dp1, indep, dataset = self.getVarForCalculations('vp2_dp1', dataset_override)
+         vp2_dp2, indep, dataset = self.getVarForCalculations('vp2_dp2', dataset)
+
+         output_data = vp2_dp1 + vp2_dp2
+
+         return output_data, indep
+
+    def calc_vp2_limit(self, dataset_override=None):
         '''
         '''
         # z,z, dataset = self.getVarForCalculations('altitude', dataset_override)
-        vp2_dp1, indep, dataset = self.getVarForCalculations('vp2_dp1', dataset_override)
-        vp2_dp2, indep, dataset = self.getVarForCalculations('vp2_dp2', dataset)
+        vp2_cl, indep, dataset = self.getVarForCalculations('vp2_cl', dataset_override)
+        vp2_pd, indep, dataset = self.getVarForCalculations('vp2_pd', dataset)
 
-        output_data = vp2_dp1 + vp2_dp2
+        output_data = vp2_cl + vp2_pd
 
         return output_data, indep
 

@@ -315,11 +315,11 @@ class VariableGroupSamBudgets(VariableGroup):
 
         wp3_budget_lines = [
             {'var_names': ['W3ADV'], 'legend_label': 'W3ADV'},
-            {'var_names': ['W3PRESS'], 'legend_label': 'W3PRES', 'sam_calc': self.getW3PRESS},
             {'var_names': ['W3BUOY'], 'legend_label': 'W3BUOY'},
             {'var_names': ['W3DIFF'], 'legend_label': 'W3DIFF'},
             {'var_names': ['W3BT'], 'legend_label': 'W3BT'},
             {'var_names': ['W3_RES'], 'legend_label': 'W3_RES', 'sam_calc': self.getW3Residual},
+            {'var_names': ['W3PRESS'], 'legend_label': 'W3PRES', 'sam_calc': self.getW3PRESS},
         ]
 
         ## Tau plots showing C_2/tau and C_14/tau ##
