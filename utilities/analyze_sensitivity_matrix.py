@@ -1,5 +1,7 @@
-import pdb
+
 import numpy as np
+from scipy.io import netcdf
+import pdb
 
 
 paramsNames = np.array(['C5','C8'])
@@ -11,6 +13,11 @@ ncFilenames = np.array(['pathfile1', 'pathfile2'])
 if ( len(paramsNames) != len(ncFilenames)   ):
 	print("Number of parameters must equal number of netcdf files.")
 	quit()
+
+# Read netcdf file with metrics and parameters from default simulation
+#f_defaultMetricsParams = netcdf.netcdf_file('canopy/scripts/defaultMetricsParams.nc', 'r')
+# Read netcdf file with changed parameter values from all sensitivity simulations.
+#f_sensParams = netcdf.netcdf_file('canopy/scripts/sensParams.nc', 'r')
 
 # Observed values of our metrics, from, e.g., CERES-EBAF.
 obsMetricValsDict = {'LWCF': 4., 'PRECT': -999., 'SWCF': 6.}
@@ -46,7 +53,7 @@ obsMetricValsCol = np.zeros((numMetrics,1))
 for idx in np.arange(numMetrics):
 	metricName = metricsNames[idx]
 	obsMetricValsCol[idx] = obsMetricValsDict[metricName]
- 
+  
 print("\nobsMetricValsCol =")
 print(obsMetricValsCol)
  
@@ -56,6 +63,9 @@ defaultMetricValsCol = np.zeros((numMetrics,1))
 for idx in np.arange(numMetrics):
 	metricName = metricsNames[idx]
 	defaultMetricValsCol[idx] = defaultMetricValsDict[metricName]
+        # Assume each metric is stored as length-1 array, rather than scalar.  
+        #   Hence the "[0]" at the end is needed.
+	#defaultMetricValsCol[idx] = f_defaultMetricsParams.variables[metricName][0]
 
 print("\ndefaultMetricValsCol =")
 print(defaultMetricValsCol)
@@ -66,6 +76,9 @@ defaultParamValsRow = np.zeros((1, numParams))
 for idx in np.arange(numParams):
 	paramName = paramsNames[idx]
 	defaultParamValsRow[0,idx] = defaultParamValsDict[paramName]
+        # Assume each metric is stored as length-1 array, rather than scalar.  
+        #   Hence the "[0]" at the end is needed.
+	#defaultParamValsRow[0,idx] = f_defaultMetricsParams.variables[paramName][0]
 
 #defaultParamValsRow = np.array([[1., 2.]])
  
@@ -78,6 +91,9 @@ sensParamValsRow = np.zeros((1, numParams))
 for idx in np.arange(numParams):
 	paramName = paramsNames[idx]
 	sensParamValsRow[0,idx] = sensParamValsDict[paramName]
+        # Assume each metric is stored as length-1 array, rather than scalar.  
+        #   Hence the "[0]" at the end is needed.
+	#sensParamValsRow[0,idx] = f_sensParams.variables[paramName][0]
 
 #sensParamValsRow = np.array([[2., 4.]])
  
@@ -191,5 +207,8 @@ print(eigVals)
  
 print("\neigVecs = ")
 print(eigVecs)
- 
+
+#f_defaultMetricsParams.close() 
+#f_sensParams.close()  
+    
 print("\nReached the end.")
