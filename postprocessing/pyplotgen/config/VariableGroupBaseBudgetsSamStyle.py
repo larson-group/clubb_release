@@ -17,24 +17,6 @@ class VariableGroupBaseBudgetsSamStyle(VariableGroup):
                  priority_vars=False):
         self.name = "base variables budgets"
 
-#        thlm_budget_lines = [
-#            {'var_names': ['thlm_bt'], 'legend_label': 'thlm_bt'},
-#            {'var_names': ['thlm_ma'], 'legend_label': 'thlm_ma'},
-#            {'var_names': ['thlm_ta'], 'legend_label': 'thlm_ta'},
-#            {'var_names': ['thlm_mc'], 'legend_label': 'thlm_mc'},
-#            {'var_names': ['thlm_clipping', self.getThlmClipping],
-#                 'legend_label': 'thlm_clipping',
-#             },
-#            {'var_names': ['radht'], 'legend_label': 'radht'},
-#            {'var_names': ['ls_forcing', self.getThlmLsforcing],
-#             'legend_label': 'thlm_ls_forcing',
-#             },
-#            {'var_names': ['thlm_residual', self.getThlmResidual],
-#             'legend_label': 'thlm_residual',
-#             },
-#
-#        ]
-#
 #        rtm_budget_lines = [
 #            {'var_names': ['rtm_bt'], 'legend_label': 'rtm_bt'},
 #            {'var_names': ['rtm_ma'], 'legend_label': 'rtm_ma'},
@@ -54,49 +36,36 @@ class VariableGroupBaseBudgetsSamStyle(VariableGroup):
 #             },
 #
 #        ]
-#
-#        wpthlp_budget_lines = [
-#            {'var_names': ['wpthlp_bt'], 'legend_label': 'wpthlp_bt'},
-#            {'var_names': ['wpthlp_ma'], 'legend_label': 'wpthlp_ma'},
-#            {'var_names': ['wpthlp_ta'], 'legend_label': 'wpthlp_ta'},
-#            {'var_names': ['wpthlp_tp'], 'legend_label': 'wpthlp_tp'},
-#            {'var_names': ['wpthlp_ac'], 'legend_label': 'wpthlp_ac'},
-#            {'var_names': ['wpthlp_bp'], 'legend_label': 'wpthlp_bp'},
-#            {'var_names': ['wpthlp_pr1'], 'legend_label': 'wpthlp_pr1'},
-#            {'var_names': ['wpthlp_pr2'], 'legend_label': 'wpthlp_pr2'},
-#            {'var_names': ['wpthlp_pr3'], 'legend_label': 'wpthlp_pr3'},
-#            {'var_names': ['wpthlp_dp1'], 'legend_label': 'wpthlp_dp1'},
-#            {'var_names': ['wpthlp_mfl'], 'legend_label': 'wpthlp_mfl'},
-#            {'var_names': ['wpthlp_cl'], 'legend_label': 'wpthlp_cl'},
-#            {'var_names': ['wpthlp_sicl'], 'legend_label': 'wpthlp_sicl'},
-#            {'var_names': ['wpthlp_forcing'], 'legend_label': 'wpthlp_forcing'},
-#            {'var_names': ['wpthlp_residual', self.getWpthlpResidual], 'legend_label': 'wpthlp_residual',
-#             },
-#
-#        ]
-#
-#        wprtp_budget_lines = [
-#            {'var_names': ['wprtp_bt'], 'legend_label': 'wprtp_bt'},
-#            {'var_names': ['wprtp_ma'], 'legend_label': 'wprtp_ma'},
-#            {'var_names': ['wprtp_ta'], 'legend_label': 'wprtp_ta'},
-#            {'var_names': ['wprtp_tp'], 'legend_label': 'wprtp_tp'},
-#            {'var_names': ['wprtp_ac'], 'legend_label': 'wprtp_ac'},
-#            {'var_names': ['wprtp_bp'], 'legend_label': 'wprtp_bp'},
-#            {'var_names': ['wprtp_pr1'], 'legend_label': 'wprtp_pr1'},
-#            {'var_names': ['wprtp_pr2'], 'legend_label': 'wprtp_pr2'},
-#            {'var_names': ['wprtp_pr3'], 'legend_label': 'wprtp_pr3'},
-#            {'var_names': ['wprtp_dp1'], 'legend_label': 'wprtp_dp1'},
-#            {'var_names': ['wprtp_mfl'], 'legend_label': 'wprtp_mfl'},
-#            {'var_names': ['wprtp_cl'], 'legend_label': 'wprtp_cl'},
-#            {'var_names': ['wprtp_sicl'], 'legend_label': 'wprtp_sicl'},
-#            {'var_names': ['wprtp_pd'], 'legend_label': 'wprtp_pd'},
-#            {'var_names': ['wprtp_forcing'], 'legend_label': 'wprtp_forcing'},
-#            {'var_names': ['wprtp_residual', self.getWprtpResidual], 'legend_label': 'wprtp_residual',
-#             },
-#        ]
+
+        wpthlp_budget_lines = [
+            {'var_names': ['wpthlp_residual', self.getWpthlpResidual], 'legend_label': 'wpthlp_res'},
+            {'var_names': ['wpthlp_tp'], 'legend_label': 'wpthlp_grad'},
+            {'var_names': ['wpthlp_adv',self.calc_wpthlp_adv], 'legend_label': 'wpthlp_adv'},
+            {'var_names': ['wpthlp_dp1'], 'legend_label': 'wpthlp_diff'},
+            {'var_names': ['wpthlp_bp'], 'legend_label': 'wpthlp_buoy'},
+            {'var_names': ['wpthlp_pres',self.calc_wpthlp_pres], 'legend_label': 'wpthlp_pres'},
+            {'var_names': ['wpthlp_mc'], 'legend_label': 'wpthlp_prec'},
+            {'var_names': ['wpthlp_rad',self.calc_wpthlp_rad], 'legend_label': 'wpthlp_rad'},
+            {'var_names': ['wpthlp_forc',self.calc_wpthlp_forc], 'legend_label': 'wpthlp_forc'},
+            {'var_names': ['wpthlp_bt'], 'legend_label': 'wpthlp_bt'},
+            {'var_names': ['wpthlp_limit',self.calc_wpthlp_limit], 'legend_label': 'wpthlp_limit'},
+        ]
+
+        wprtp_budget_lines = [
+            {'var_names': ['wprtp_residual', self.getWprtpResidual], 'legend_label': 'wprtp_res'},
+            {'var_names': ['wprtp_tp'], 'legend_label': 'wprtp_grad'},
+            {'var_names': ['wprtp_adv',self.calc_wprtp_adv], 'legend_label': 'wprtp_adv'},
+            {'var_names': ['wprtp_dp1'], 'legend_label': 'wprtp_diff'},
+            {'var_names': ['wprtp_bp'], 'legend_label': 'wprtp_buoy'},
+            {'var_names': ['wprtp_pres',self.calc_wprtp_pres], 'legend_label': 'wprtp_pres'},
+            {'var_names': ['wprtp_mc'], 'legend_label': 'wprtp_prec'},
+            {'var_names': ['wprtp_forc',self.calc_wprtp_forc], 'legend_label': 'wprtp_forc'},
+            {'var_names': ['wprtp_bt'], 'legend_label': 'wprtp_bt'},
+            {'var_names': ['wprtp_limit',self.calc_wprtp_limit], 'legend_label': 'wprtp_limit'},
+        ]
 
         wp2_budget_lines = [
-            {'var_names': ['wp2_residual', self.getWp2Residual], 'legend_label': 'wp2_residual'},
+            {'var_names': ['wp2_residual', self.getWp2Residual], 'legend_label': 'wp2_res'},
             {'var_names': ['wp2_adv',self.calc_wp2_adv], 'legend_label': 'wp2_adv'},
             {'var_names': ['wp2_pres',self.calc_wp2_pres], 'legend_label': 'wp2_pres'},
             {'var_names': ['wp2_pr1'], 'legend_label': 'wp2_redis'},
@@ -109,7 +78,7 @@ class VariableGroupBaseBudgetsSamStyle(VariableGroup):
         ]
 
         wp3_budget_lines = [
-            {'var_names': ['wp3_residual', self.getWp3Residual], 'legend_label': 'wp3_residual'},
+            {'var_names': ['wp3_residual', self.getWp3Residual], 'legend_label': 'wp3_res'},
             {'var_names': ['wp3_pres',self.calc_wp3_pres], 'legend_label': 'wp3_pres'},
             {'var_names': ['wp3_adv',self.calc_wp3_adv], 'legend_label': 'wp3_adv'},
             {'var_names': ['wp3_bp1'], 'legend_label': 'wp3_buoy'},
@@ -118,116 +87,75 @@ class VariableGroupBaseBudgetsSamStyle(VariableGroup):
             {'var_names': ['wp3_cl'], 'legend_label': 'wp3_limit'},
         ]
 
-#        thlp2_budget_lines = [
-#            {'var_names': ['thlp2_bt'], 'legend_label': 'thlp2_bt'},
-#            {'var_names': ['thlp2_ma'], 'legend_label': 'thlp2_ma'},
-#            {'var_names': ['thlp2_ta'], 'legend_label': 'thlp2_ta'},
-#            {'var_names': ['thlp2_tp'], 'legend_label': 'thlp2_tp'},
-#            {'var_names': ['thlp2_dp1'], 'legend_label': 'thlp2_dp1'},
-#            {'var_names': ['thlp2_dp2'], 'legend_label': 'thlp2_dp2'},
-#            {'var_names': ['thlp2_cl'], 'legend_label': 'thlp2_cl'},
-#            {'var_names': ['thlp2_pd'], 'legend_label': 'thlp2_pd'},
-#            {'var_names': ['thlp2_sf'], 'legend_label': 'thlp2_sf'},
-#            {'var_names': ['thlp2_forcing'], 'legend_label': 'thlp2_forcing'},
-#            {'var_names': ['thlp2_residual', self.getThlp2Residual], 'legend_label': 'thlp2_residual',
-#             },
-#        ]
-#
-#        rtp2_budget_lines = [
-#            {'var_names': ['rtp2_bt'], 'legend_label': 'rtp2_bt'},
-#            {'var_names': ['rtp2_ma'], 'legend_label': 'rtp2_ma'},
-#            {'var_names': ['rtp2_ta'], 'legend_label': 'rtp2_ta'},
-#            {'var_names': ['rtp2_tp'], 'legend_label': 'rtp2_tp'},
-#            {'var_names': ['rtp2_dp1'], 'legend_label': 'rtp2_dp1'},
-#            {'var_names': ['rtp2_dp2'], 'legend_label': 'rtp2_dp2'},
-#            {'var_names': ['rtp2_cl'], 'legend_label': 'rtp2_cl'},
-#            {'var_names': ['rtp2_pd'], 'legend_label': 'rtp2_pd'},
-#            {'var_names': ['rtp2_sf'], 'legend_label': 'rtp2_sf'},
-#            {'var_names': ['rtp2_forcing'], 'legend_label': 'rtp2_forcing'},
-#            {'var_names': ['rtp2_residual', self.getRtp2Residual], 'legend_label': 'rtp2_residual',
-#             },
-#        ]
-#
-#        rtpthlp_budget_lines = [
-#            {'var_names': ['rtpthlp_bt'], 'legend_label': 'rtpthlp_bt'},
-#            {'var_names': ['rtpthlp_ma'], 'legend_label': 'rtpthlp_ma'},
-#            {'var_names': ['rtpthlp_ta'], 'legend_label': 'rtpthlp_ta'},
-#            {'var_names': ['rtpthlp_tp1'], 'legend_label': 'rtpthlp_tp1'},
-#            {'var_names': ['rtpthlp_dp1'], 'legend_label': 'rtpthlp_dp1'},
-#            {'var_names': ['rtpthlp_dp2'], 'legend_label': 'rtpthlp_dp2'},
-#            {'var_names': ['rtpthlp_cl'], 'legend_label': 'rtpthlp_cl'},
-#            {'var_names': ['rtpthlp_tp2'], 'legend_label': 'rtpthlp_tp2'},
-#            {'var_names': ['rtpthlp_sf'], 'legend_label': 'rtpthlp_sf'},
-#            {'var_names': ['rtpthlp_forcing'], 'legend_label': 'rtpthlp_forcing'},
-#            {'var_names': ['rtpthlp_residual', self.getRtpthlpResidual], 'legend_label': 'rtpthlp_residual',
-#             },
-#        ]
-#
-#        upwp_budget_lines = [
-#            {'var_names': ['upwp_bt'], 'legend_label': 'upwp_bt'},
-#            {'var_names': ['upwp_ma'], 'legend_label': 'upwp_ma'},
-#            {'var_names': ['upwp_ta'], 'legend_label': 'upwp_ta'},
-#            {'var_names': ['upwp_tp'], 'legend_label': 'upwp_tp'},
-#            {'var_names': ['upwp_ac'], 'legend_label': 'upwp_ac'},
-#            {'var_names': ['upwp_bp'], 'legend_label': 'upwp_bp'},
-#            {'var_names': ['upwp_pr1'], 'legend_label': 'upwp_pr1'},
-#            {'var_names': ['upwp_pr2'], 'legend_label': 'upwp_pr2'},
-#            {'var_names': ['upwp_pr3'], 'legend_label': 'upwp_pr3'},
-#            {'var_names': ['upwp_pr4'], 'legend_label': 'upwp_pr4'},
-#            {'var_names': ['upwp_dp1'], 'legend_label': 'upwp_dp1'},
-#            {'var_names': ['upwp_cl'], 'legend_label': 'upwp_cl'},
-#            {'var_names': ['upwp_mfl'], 'legend_label': 'upwp_mfl'},
-#            {'var_names': ['upwp_residual', self.getUpwpResidual], 'legend_label': 'upwp_residual',
-#             },
-#        ]
-#
-#        vpwp_budget_lines = [
-#            {'var_names': ['vpwp_bt'], 'legend_label': 'vpwp_bt'},
-#            {'var_names': ['vpwp_ma'], 'legend_label': 'vpwp_ma'},
-#            {'var_names': ['vpwp_ta'], 'legend_label': 'vpwp_ta'},
-#            {'var_names': ['vpwp_tp'], 'legend_label': 'vpwp_tp'},
-#            {'var_names': ['vpwp_ac'], 'legend_label': 'vpwp_ac'},
-#            {'var_names': ['vpwp_bp'], 'legend_label': 'vpwp_bp'},
-#            {'var_names': ['vpwp_pr1'], 'legend_label': 'vpwp_pr1'},
-#            {'var_names': ['vpwp_pr2'], 'legend_label': 'vpwp_pr2'},
-#            {'var_names': ['vpwp_pr3'], 'legend_label': 'vpwp_pr3'},
-#            {'var_names': ['vpwp_pr4'], 'legend_label': 'vpwp_pr4'},
-#            {'var_names': ['vpwp_dp1'], 'legend_label': 'vpwp_dp1'},
-#            {'var_names': ['vpwp_cl'], 'legend_label': 'vpwp_cl'},
-#            {'var_names': ['vpwp_mfl'], 'legend_label': 'vpwp_mfl'},
-#            {'var_names': ['vpwp_residual', self.getVpwpResidual], 'legend_label': 'vpwp_residual',
-#             },
-#        ]
-#
-#        um_budget_lines = [
-#            {'var_names': ['um_bt'], 'legend_label': 'um_bt'},
-#            {'var_names': ['um_ma'], 'legend_label': 'um_ma'},
-#            {'var_names': ['um_gf'], 'legend_label': 'um_gf'},
-#            {'var_names': ['um_cf'], 'legend_label': 'um_cf'},
-#            {'var_names': ['um_ta'], 'legend_label': 'um_ta'},
-#            {'var_names': ['um_f'], 'legend_label': 'um_f'},
-#            {'var_names': ['um_sdmp'], 'legend_label': 'um_sdmp'},
-#            {'var_names': ['um_ndg'], 'legend_label': 'um_ndg'},
-#            {'var_names': ['um_mfl'], 'legend_label': 'um_mfl'}
-#        ]
-#
-#        vm_budget_lines = [
-#            {'var_names': ['vm_bt'], 'legend_label': 'vm_bt'},
-#            {'var_names': ['vm_ma'], 'legend_label': 'vm_ma'},
-#            {'var_names': ['vm_gf'], 'legend_label': 'vm_gf'},
-#            {'var_names': ['vm_cf'], 'legend_label': 'vm_cf'},
-#            {'var_names': ['vm_ta'], 'legend_label': 'vm_ta'},
-#            {'var_names': ['vm_f'], 'legend_label': 'vm_f'},
-#            {'var_names': ['vm_sdmp'], 'legend_label': 'vm_sdmp'},
-#            {'var_names': ['vm_ndg'], 'legend_label': 'vm_ndg'},
-#            {'var_names': ['vm_mfl'], 'legend_label': 'vm_mfl'}
-#        ]
+        thlp2_budget_lines = [
+            {'var_names': ['thlp2_residual', self.getThlp2Residual], 'legend_label': 'thlp2_res'},
+            {'var_names': ['thlp2_adv',self.calc_thlp2_adv], 'legend_label': 'thlp2_adv'},
+            {'var_names': ['thlp2_tp'], 'legend_label': 'thlp2_grad'},
+            {'var_names': ['thlp2_dp1'], 'legend_label': 'thlp2_dissip'},
+            {'var_names': ['thlp2_dp2'], 'legend_label': 'thlp2_difftr'},
+            {'var_names': ['thlp2_mc'], 'legend_label': 'thlp2_prec'},
+            {'var_names': ['thlp2_rad',self.calc_wpthlp_rad], 'legend_label': 'thlp2_rad'}, 
+            {'var_names': ['thlp2_forcing',self.calc_thlp2_forc], 'legend_label': 'thlp2_forc'},
+            {'var_names': ['thlp2_bt'], 'legend_label': 'thlp2_bt'},
+            {'var_names': ['thlp2_limit',self.calc_thlp2_limit], 'legend_label': 'thlp2_limit'},
+            {'var_names': ['thlp2_sf'], 'legend_label': 'thlp2_sf'},
+        ]
+
+        rtp2_budget_lines = [
+            {'var_names': ['rtp2_residual', self.getRtp2Residual], 'legend_label': 'rtp2_res'},
+            {'var_names': ['rtp2_adv',self.calc_rtp2_adv], 'legend_label': 'rtp2_adv'},
+            {'var_names': ['rtp2_tp'], 'legend_label': 'rtp2_grad'},
+            {'var_names': ['rtp2_dp1'], 'legend_label': 'rtp2_dissip'},
+            {'var_names': ['rtp2_dp2'], 'legend_label': 'rtp2_difftr'},
+            {'var_names': ['rtp2_mc'], 'legend_label': 'rtp2_prec'},
+            {'var_names': ['rtp2_forcing',self.calc_rtp2_forc], 'legend_label': 'rtp2_forc'},
+            {'var_names': ['rtp2_bt'], 'legend_label': 'rtp2_bt'},
+            {'var_names': ['rtp2_limit',self.calc_rtp2_limit], 'legend_label': 'rtp2_limit'},
+            {'var_names': ['rtp2_sf'], 'legend_label': 'rtp2_sf'},
+        ]
+
+        rtpthlp_budget_lines = [
+            {'var_names': ['rtpthlp_residual', self.getRtpthlpResidual], 'legend_label': 'rtpthlp_res'},
+            {'var_names': ['rtpthlp_adv',self.calc_rtpthlp_adv], 'legend_label': 'rtpthlp_adv'},
+            {'var_names': ['rtpthlp_grad',self.calc_rtpthlp_grad], 'legend_label': 'rtpthlp_grad'},
+            {'var_names': ['rtpthlp_dp1'], 'legend_label': 'rtpthlp_dissip'},
+            {'var_names': ['rtpthlp_dp2'], 'legend_label': 'rtpthlp_difftr'},
+            {'var_names': ['rtpthlp_mc'], 'legend_label': 'rtpthlp_prec'},
+            {'var_names': ['rtpthlp_forcing',self.calc_rtpthlp_forc], 'legend_label': 'rtpthlp_forc'},
+            {'var_names': ['rtpthlp_bt'], 'legend_label': 'rtpthlp_bt'},
+            {'var_names': ['rtpthlp_pd'], 'legend_label': 'rtpthlp_limit'},
+            {'var_names': ['rtpthlp_sf'], 'legend_label': 'rtpthlp_sf'},
+        ]
+
+        upwp_budget_lines = [
+            {'var_names': ['upwp_residual', self.getUpwpResidual], 'legend_label': 'upwp_res'},
+            {'var_names': ['upwp_dp1'], 'legend_label': 'upwp_diff'},
+            {'var_names': ['upwp_adv',self.calc_upwp_adv], 'legend_label': 'upwp_adv'},
+            {'var_names': ['upwp_pres',self.calc_upwp_pres], 'legend_label': 'upwp_pres'},
+            {'var_names': ['upwp_pr1'], 'legend_label': 'upwp_aniz'},
+            {'var_names': ['upwp_bp'], 'legend_label': 'upwp_buoy'},
+            {'var_names': ['upwp_tp'], 'legend_label': 'upwp_shear'},
+            {'var_names': ['upwp_bt'], 'legend_label': 'upwp_bt'},
+            {'var_names': ['upwp_limit',self.calc_upwp_limit], 'legend_label': 'upwp_limit'},
+        ]
+
+        vpwp_budget_lines = [
+            {'var_names': ['vpwp_residual', self.getVpwpResidual], 'legend_label': 'vpwp_res'},
+            {'var_names': ['vpwp_dp1'], 'legend_label': 'vpwp_diff'},
+            {'var_names': ['vpwp_adv',self.calc_vpwp_adv], 'legend_label': 'vpwp_adv'},
+            {'var_names': ['vpwp_pres',self.calc_vpwp_pres], 'legend_label': 'vpwp_pres'},
+            {'var_names': ['vpwp_pr1'], 'legend_label': 'vpwp_aniz'},
+            {'var_names': ['vpwp_bp'], 'legend_label': 'vpwp_buoy'},
+            {'var_names': ['vpwp_tp'], 'legend_label': 'vpwp_shear'},         
+            {'var_names': ['vpwp_bt'], 'legend_label': 'vpwp_bt'},
+            {'var_names': ['vpwp_limit',self.calc_vpwp_limit], 'legend_label': 'vpwp_limit'},
+        ]
 
         up2_budget_lines = [
             {'var_names': ['up2_res',self.calc_up2_res], 'legend_label': 'up2_res'},
             {'var_names': ['up2_adv',self.calc_up2_adv], 'legend_label': 'up2_adv'},
             {'var_names': ['up2_tp'], 'legend_label': 'up2_shear'},
-            {'var_names': ['up2_redis',self.calc_up2_redis], 'legend_label': 'up2_redis'},
+            {'var_names': ['up2_pr1'], 'legend_label': 'up2_redis'},
             {'var_names': ['up2_diff',self.calc_up2_diff], 'legend_label': 'up2_diff'},
             {'var_names': ['up2_bt'], 'legend_label': 'up2_bt'},
             {'var_names': ['up2_sdmp'], 'legend_label': 'up2_sdmp'},
@@ -239,7 +167,7 @@ class VariableGroupBaseBudgetsSamStyle(VariableGroup):
             {'var_names': ['vp2_res',self.calc_vp2_res], 'legend_label': 'vp2_res'},
             {'var_names': ['vp2_adv',self.calc_vp2_adv], 'legend_label': 'vp2_adv'},
             {'var_names': ['vp2_tp'], 'legend_label': 'vp2_shear'},
-            {'var_names': ['vp2_redis',self.calc_vp2_redis], 'legend_label': 'vp2_redis'},
+            {'var_names': ['vp2_pr1'], 'legend_label': 'vp2_redis'},
             {'var_names': ['vp2_diff',self.calc_vp2_diff], 'legend_label': 'vp2_diff'},
             {'var_names': ['vp2_bt'], 'legend_label': 'vp2_bt'},
             {'var_names': ['vp2_sdmp'], 'legend_label': 'vp2_sdmp'},
@@ -247,46 +175,7 @@ class VariableGroupBaseBudgetsSamStyle(VariableGroup):
             {'var_names': ['vp2_sf'], 'legend_label': 'vp2_sf'},
         ]
 
-#        rrm_budget_lines = [
-#            {'var_names': ['rrm_bt'], 'legend_label': 'rrm_bt'},
-#            {'var_names': ['rrm_ma'], 'legend_label': 'rrm_ma'},
-#            {'var_names': ['rrm_sd'], 'legend_label': 'rrm_sd'},
-#            {'var_names': ['rrm_ta'], 'legend_label': 'rrm_ta'},
-#            {'var_names': ['rrm_ts'], 'legend_label': 'rrm_ts'},
-#            {'var_names': ['rrm_fill_clip', self.getRrmFillClip], 'legend_label': 'rrm_fill_clip',
-#             },
-#            {'var_names': ['rrm_mc'], 'legend_label': 'rrm_mc'},
-#            {'var_names': ['rrm_residual', self.getRrmResidual], 'legend_label': 'rrm_residual',
-#             },
-#        ]
-#
-#        Nrm_budget_lines = [
-#            {'var_names': ['Nrm_bt'], 'legend_label': 'Nrm_bt'},
-#            {'var_names': ['Nrm_ma'], 'legend_label': 'Nrm_ma'},
-#            {'var_names': ['Nrm_sd'], 'legend_label': 'Nrm_sd'},
-#            {'var_names': ['Nrm_ta'], 'legend_label': 'Nrm_ta'},
-#            {'var_names': ['Nrm_ts'], 'legend_label': 'Nrm_ts'},
-#            {'var_names': ['Nrm_cl'], 'legend_label': 'Nrm_cl'},
-#            {'var_names': ['Nrm_mc'], 'legend_label': 'Nrm_mc'},
-#            {'var_names': ['Nrm_residual', self.getNrmResidual], 'legend_label': 'Nrm_residual',
-#             },
-#        ]
-
         self.variable_definitions = [
-#            {'var_names':
-#                {
-#                    'clubb': ['thlm'],
-#                    'sam': ['thlm'],
-#                    'coamps': ['thlm'],
-#                    'r408': ['thlm'],
-#                    'hoc': ['thlm'],
-#                    'e3sm': ['thlm'],
-#                    'cam': ['thlm'],
-#                    'wrf': ['thlm'],
-#                },
-#                'lines': thlm_budget_lines, 'type': Panel.TYPE_BUDGET, 'centered': True,
-#                'priority': True,
-#            },
 #            {'var_names':
 #                {
 #                    'clubb': ['rtm'],
@@ -301,34 +190,34 @@ class VariableGroupBaseBudgetsSamStyle(VariableGroup):
 #                'lines': rtm_budget_lines, 'type': Panel.TYPE_BUDGET, 'centered': True,
 #                'priority': True,
 #            },
-#            {'var_names':
-#                {
-#                    'clubb': ['wpthlp'],
-#                    'sam': ['wpthlp'],
-#                    'coamps': ['wpthlp'],
-#                    'r408': ['wpthlp'],
-#                    'hoc': ['wpthlp'],
-#                    'e3sm': ['wpthlp'],
-#                    'cam': ['wpthlp'],
-#                    'wrf': ['wpthlp'],
-#                },
-#                'lines': wpthlp_budget_lines, 'type': Panel.TYPE_BUDGET, 'centered': True,
-#                'priority': True,
-#            },
-#            {'var_names':
-#                {
-#                    'clubb': ['wprtp'],
-#                    'sam': ['wprtp'],
-#                    'coamps': ['wprtp'],
-#                    'r408': ['wprtp'],
-#                    'hoc': ['wprtp'],
-#                    'e3sm': ['wprtp'],
-#                    'cam': ['wprtp'],
-#                    'wrf': ['wprtp'],
-#                },
-#                'lines': wprtp_budget_lines, 'type': Panel.TYPE_BUDGET, 'centered': True,
-#                'priority': True,
-#            },
+            {'var_names':
+                {
+                    'clubb': ['wpthlp'],
+                    'sam': ['wpthlp'],
+                    'coamps': ['wpthlp'],
+                    'r408': ['wpthlp'],
+                    'hoc': ['wpthlp'],
+                    'e3sm': ['wpthlp'],
+                    'cam': ['wpthlp'],
+                    'wrf': ['wpthlp'],
+                },
+                'lines': wpthlp_budget_lines, 'type': Panel.TYPE_BUDGET, 'centered': True,
+                'priority': True,
+            },
+            {'var_names':
+                {
+                    'clubb': ['wprtp'],
+                    'sam': ['wprtp'],
+                    'coamps': ['wprtp'],
+                    'r408': ['wprtp'],
+                    'hoc': ['wprtp'],
+                    'e3sm': ['wprtp'],
+                    'cam': ['wprtp'],
+                    'wrf': ['wprtp'],
+                },
+                'lines': wprtp_budget_lines, 'type': Panel.TYPE_BUDGET, 'centered': True,
+                'priority': True,
+            },
             {'var_names':
                 {
                     'clubb': ['wp2'],
@@ -357,102 +246,76 @@ class VariableGroupBaseBudgetsSamStyle(VariableGroup):
                 'lines': wp3_budget_lines, 'type': Panel.TYPE_BUDGET, 'centered': True,
                 'priority': True,
             },
-#            {'var_names':
-#                {
-#                    'clubb': ['thlp2'],
-#                    'sam': ['thlp2'],
-#                    'coamps': ['thlp2'],
-#                    'r408': ['thlp2'],
-#                    'hoc': ['thlp2'],
-#                    'e3sm': ['thlp2'],
-#                    'cam': ['thlp2'],
-#                    'wrf': ['thlp2'],
-#                },
-#                'lines': thlp2_budget_lines, 'type': Panel.TYPE_BUDGET, 'centered': True,
-#                'priority': True,
-#            },
-#            {'var_names':
-#                {
-#                    'clubb': ['rtp2'],
-#                    'sam': ['rtp2'],
-#                    'coamps': ['rtp2'],
-#                    'r408': ['rtp2'],
-#                    'hoc': ['rtp2'],
-#                    'e3sm': ['rtp2'],
-#                    'cam': ['rtp2'],
-#                    'wrf': ['rtp2'],
-#                },
-#                'lines': rtp2_budget_lines, 'type': Panel.TYPE_BUDGET, 'centered': True,
-#                'priority': True,
-#            },
-#            {'var_names':
-#                {
-#                    'clubb': ['rtpthlp'],
-#                    'sam': ['rtpthlp'],
-#                    'coamps': ['rtpthlp'],
-#                    'r408': ['rtpthlp'],
-#                    'hoc': ['rtpthlp'],
-#                    'e3sm': ['rtpthlp'],
-#                    'cam': ['rtpthlp'],
-#                    'wrf': ['rtpthlp'],
-#                },
-#                'lines': rtpthlp_budget_lines, 'type': Panel.TYPE_BUDGET, 'centered': True,
-#                'priority': True,
-#            },
-#            {'var_names':
-#                {
-#                    'clubb': ['upwp'],
-#                    'sam': ['upwp'],
-#                    'coamps': ['upwp'],
-#                    'r408': ['upwp'],
-#                    'hoc': ['upwp'],
-#                    'e3sm': ['upwp'],
-#                    'cam': ['upwp'],
-#                    'wrf': ['upwp'],
-#                },
-#                'lines': upwp_budget_lines, 'type': Panel.TYPE_BUDGET, 'centered': True,
-#                'priority': True,
-#            },
-#            {'var_names':
-#                {
-#                    'clubb': ['vpwp'],
-#                    'sam': ['vpwp'],
-#                    'coamps': ['vpwp'],
-#                    'r408': ['vpwp'],
-#                    'hoc': ['vpwp'],
-#                    'e3sm': ['vpwp'],
-#                    'cam': ['vpwp'],
-#                    'wrf': ['vpwp'],
-#                },
-#                'lines': vpwp_budget_lines, 'type': Panel.TYPE_BUDGET, 'centered': True,
-#                'priority': True,
-#            },
-#            {'var_names':
-#                {
-#                    'clubb': ['um'],
-#                    'sam': ['um'],
-#                    'coamps': ['um'],
-#                    'r408': ['um'],
-#                    'hoc': ['um'],
-#                    'e3sm': ['um'],
-#                    'cam': ['um'],
-#                    'wrf': ['um'],
-#                },
-#                'lines': um_budget_lines, 'type': Panel.TYPE_BUDGET, 'centered': True,
-#            },
-#            {'var_names':
-#                {
-#                    'clubb': ['vm'],
-#                    'sam': ['vm'],
-#                    'coamps': ['vm'],
-#                    'r408': ['vm'],
-#                    'hoc': ['vm'],
-#                    'e3sm': ['vm'],
-#                    'cam': ['vm'],
-#                    'wrf': ['vm'],
-#                },
-#                'lines': vm_budget_lines, 'type': Panel.TYPE_BUDGET, 'centered': True,
-#            },
+            {'var_names':
+                {
+                    'clubb': ['thlp2'],
+                    'sam': ['thlp2'],
+                    'coamps': ['thlp2'],
+                    'r408': ['thlp2'],
+                    'hoc': ['thlp2'],
+                    'e3sm': ['thlp2'],
+                    'cam': ['thlp2'],
+                    'wrf': ['thlp2'],
+                },
+                'lines': thlp2_budget_lines, 'type': Panel.TYPE_BUDGET, 'centered': True,
+                'priority': True,
+            },
+            {'var_names':
+                {
+                    'clubb': ['rtp2'],
+                    'sam': ['rtp2'],
+                    'coamps': ['rtp2'],
+                    'r408': ['rtp2'],
+                    'hoc': ['rtp2'],
+                    'e3sm': ['rtp2'],
+                    'cam': ['rtp2'],
+                    'wrf': ['rtp2'],
+                },
+                'lines': rtp2_budget_lines, 'type': Panel.TYPE_BUDGET, 'centered': True,
+                'priority': True,
+            },
+            {'var_names':
+                {
+                    'clubb': ['rtpthlp'],
+                    'sam': ['rtpthlp'],
+                    'coamps': ['rtpthlp'],
+                    'r408': ['rtpthlp'],
+                    'hoc': ['rtpthlp'],
+                    'e3sm': ['rtpthlp'],
+                    'cam': ['rtpthlp'],
+                    'wrf': ['rtpthlp'],
+                },
+                'lines': rtpthlp_budget_lines, 'type': Panel.TYPE_BUDGET, 'centered': True,
+                'priority': True,
+            },
+            {'var_names':
+                {
+                    'clubb': ['upwp'],
+                    'sam': ['upwp'],
+                    'coamps': ['upwp'],
+                    'r408': ['upwp'],
+                    'hoc': ['upwp'],
+                    'e3sm': ['upwp'],
+                    'cam': ['upwp'],
+                    'wrf': ['upwp'],
+                },
+                'lines': upwp_budget_lines, 'type': Panel.TYPE_BUDGET, 'centered': True,
+                'priority': True,
+            },
+            {'var_names':
+                {
+                    'clubb': ['vpwp'],
+                    'sam': ['vpwp'],
+                    'coamps': ['vpwp'],
+                    'r408': ['vpwp'],
+                    'hoc': ['vpwp'],
+                    'e3sm': ['vpwp'],
+                    'cam': ['vpwp'],
+                    'wrf': ['vpwp'],
+                },
+                'lines': vpwp_budget_lines, 'type': Panel.TYPE_BUDGET, 'centered': True,
+                'priority': True,
+            },
             {'var_names': {
                 'clubb': ['up2'],
                 'sam': ['up2'],
@@ -477,32 +340,6 @@ class VariableGroupBaseBudgetsSamStyle(VariableGroup):
                 'lines': vp2_budget_lines, 'type': Panel.TYPE_BUDGET, 'centered': True,
                 'priority': True,
             },
-#            {'var_names':
-#                {
-#                    'clubb': ['rrm'],
-#                    'sam': ['rrm'],
-#                    'coamps': ['rrm'],
-#                    'r408': ['rrm'],
-#                    'hoc': ['rrm'],
-#                    'e3sm': ['rrm'],
-#                    'cam': ['rrm'],
-#                    'wrf': ['rrm'],
-#                },
-#                'lines': rrm_budget_lines, 'type': Panel.TYPE_BUDGET, 'centered': True,
-#            },
-#            {'var_names':
-#                {
-#                    'clubb': ['Nrm'],
-#                    'sam': ['Nrm'],
-#                    'coamps': ['Nrm'],
-#                    'r408': ['Nrm'],
-#                    'hoc': ['Nrm'],
-#                    'e3sm': ['Nrm'],
-#                    'cam': ['Nrm'],
-#                    'wrf': ['Nrm'],
-#                },
-#                'lines': Nrm_budget_lines, 'type': Panel.TYPE_BUDGET, 'centered': True
-#            },
         ]
 
         # Call ctor of parent class
@@ -510,109 +347,6 @@ class VariableGroupBaseBudgetsSamStyle(VariableGroup):
                          r408_dataset=r408_dataset, cam_datasets=cam_datasets,
                          hoc_dataset=hoc_dataset, e3sm_datasets=e3sm_datasets, wrf_datasets=wrf_datasets,
                          priority_vars=priority_vars)
-
-    def getThlmClipping(self, dataset_override=None):
-        '''
-
-        This is a "calculate function". Calculate functions are intended to be written by the user in the event that
-        they need a variable that is not output by their atmospheric model. The general format for these functions
-        is:
-            1. Get the proper dataset. This is either passed in as dataset_override, or some benchmark dataset
-            2. Get the equations needed variables from the dataset using ``self.getVarForCalculations()``
-            3. Calculate the new variable
-            4. (optional) If there are multiple valid equations, pick the one that worked using
-               ``self.pickNonZeroOutput()``
-            5. Return the data as (dependent,independent)
-
-        For more information on calculate functions, see the "Creating a new calculated function (for calculated
-        variables)" section of the README.md
-
-        ``thlm_mfl+thlm_cl+thlm_tacl+thlm_sdmp``
-
-        :param dataset_override: If passed, this netcdf dataset will be used to gather the data needed to calculate the
-          given variable. if not passed, this function should attempt to find the best source for the data, e.g.
-          the benchmark data for the given model
-        :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
-          Lists will be filled with NaN's if the variable could not be calculated.
-        '''
-
-        thlm_mfl, indep, dataset = self.getVarForCalculations('thlm_mfl', dataset_override)
-        thlm_cl, indep, dataset = self.getVarForCalculations('thlm_cl', dataset)
-        thlm_tacl, indep, dataset = self.getVarForCalculations('thlm_tacl', dataset)
-        thlm_sdmp, indep, dataset = self.getVarForCalculations('thlm_sdmp', dataset)
-
-        output_data = thlm_mfl + thlm_cl + thlm_tacl + thlm_sdmp
-
-        return output_data, indep
-
-    def getThlmLsforcing(self, dataset_override=None):
-        '''
-
-        This is a "calculate function". Calculate functions are intended to be written by the user in the event that
-        they need a variable that is not output by their atmospheric model. The general format for these functions
-        is:
-            1. Get the proper dataset. This is either passed in as dataset_override, or some benchmark dataset
-            2. Get the equations needed variables from the dataset using ``self.getVarForCalculations()``
-            3. Calculate the new variable
-            4. (optional) If there are multiple valid equations, pick the one that worked using
-               ``self.pickNonZeroOutput()``
-            5. Return the data as (dependent,independent)
-
-        For more information on calculate functions, see the "Creating a new calculated function (for calculated
-        variables)" section of the README.md
-
-        ``thlm_forcing-radht-thlm_mc``
-
-        :param dataset_override: If passed, this netcdf dataset will be used to gather the data needed to calculate the
-          given variable. if not passed, this function should attempt to find the best source for the data, e.g.
-          the benchmark data for the given model
-        :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
-          Lists will be filled with NaN's if the variable could not be calculated.
-        '''
-        thlm_forcing, indep, dataset = self.getVarForCalculations('thlm_forcing', dataset_override)
-        radht, indep, dataset = self.getVarForCalculations('radht', dataset)
-        thlm_mc, indep, dataset = self.getVarForCalculations('thlm_mc', dataset)
-
-        output_data = thlm_forcing - radht - thlm_mc
-
-        return output_data, indep
-
-    def getThlmResidual(self, dataset_override=None):
-        '''
-
-        This is a "calculate function". Calculate functions are intended to be written by the user in the event that
-        they need a variable that is not output by their atmospheric model. The general format for these functions
-        is:
-            1. Get the proper dataset. This is either passed in as dataset_override, or some benchmark dataset
-            2. Get the equations needed variables from the dataset using ``self.getVarForCalculations()``
-            3. Calculate the new variable
-            4. (optional) If there are multiple valid equations, pick the one that worked using
-               ``self.pickNonZeroOutput()``
-            5. Return the data as (dependent,independent)
-
-        For more information on calculate functions, see the "Creating a new calculated function (for calculated
-        variables)" section of the README.md
-
-        ``thlm_bt-(thlm_ma+thlm_ta+thlm_mfl+thlm_cl+thlm_tacl+thlm_sdmp+thlm_forcing)``
-
-        :param dataset_override: If passed, this netcdf dataset will be used to gather the data needed to calculate the
-          given variable. if not passed, this function should attempt to find the best source for the data, e.g.
-          the benchmark data for the given model
-        :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
-          Lists will be filled with NaN's if the variable could not be calculated.
-        '''
-        thlm_mfl, indep, dataset = self.getVarForCalculations('thlm_mfl', dataset_override)
-        thlm_cl, indep, dataset = self.getVarForCalculations('thlm_cl', dataset)
-        thlm_tacl, indep, dataset = self.getVarForCalculations('thlm_tacl', dataset)
-        thlm_sdmp, indep, dataset = self.getVarForCalculations('thlm_sdmp', dataset)
-        thlm_bt, indep, dataset = self.getVarForCalculations('thlm_bt', dataset)
-        thlm_ta, indep, dataset = self.getVarForCalculations('thlm_ta', dataset)
-        thlm_forcing, indep, dataset = self.getVarForCalculations('thlm_forcing', dataset)
-        thlm_ma, indep, dataset = self.getVarForCalculations('thlm_ma', dataset)
-
-        output_data = thlm_bt - (thlm_ma + thlm_ta + thlm_mfl + thlm_cl + thlm_tacl + thlm_sdmp + thlm_forcing)
-
-        return output_data, indep
 
     def getRtmClipping(self, dataset_override=None):
         '''
@@ -717,6 +451,63 @@ class VariableGroupBaseBudgetsSamStyle(VariableGroup):
 
         return output_data, indep
 
+    def calc_wpthlp_adv(self, dataset_override=None):
+        '''
+        '''
+        # z,z, dataset = self.getVarForCalculations('altitude', dataset_override)
+        wpthlp_ma, indep, dataset = self.getVarForCalculations('wpthlp_ma', dataset_override)
+        wpthlp_ta, indep, dataset = self.getVarForCalculations('wpthlp_ta', dataset)
+        wpthlp_ac, indep, dataset = self.getVarForCalculations('wpthlp_ac', dataset)
+
+        output_data = wpthlp_ma + wpthlp_ta + wpthlp_ac
+
+        return output_data, indep
+
+    def calc_wpthlp_pres(self, dataset_override=None):
+        '''
+        '''
+        # z,z, dataset = self.getVarForCalculations('altitude', dataset_override)
+        wpthlp_pr1, indep, dataset = self.getVarForCalculations('wpthlp_pr1', dataset_override)
+        wpthlp_pr2, indep, dataset = self.getVarForCalculations('wpthlp_pr2', dataset)
+        wpthlp_pr3, indep, dataset = self.getVarForCalculations('wpthlp_pr3', dataset)
+
+        output_data = wpthlp_pr1 + wpthlp_pr2 + wpthlp_pr3
+
+        return output_data, indep
+
+    def calc_wpthlp_rad(self, dataset_override=None):
+        '''
+        '''
+        # z,z, dataset = self.getVarForCalculations('altitude', dataset_override)
+        wpthlp_forcing, indep, dataset = self.getVarForCalculations('wpthlp_forcing', dataset_override)
+
+        output_data = wpthlp_forcing - wpthlp_forcing 
+
+        return output_data, indep
+
+    def calc_wpthlp_forc(self, dataset_override=None):
+        '''
+        '''
+        # z,z, dataset = self.getVarForCalculations('altitude', dataset_override)
+        wpthlp_mc, indep, dataset = self.getVarForCalculations('wpthlp_mc', dataset_override)
+        wpthlp_forcing, indep, dataset = self.getVarForCalculations('wpthlp_forcing', dataset)
+
+        output_data = wpthlp_forcing - wpthlp_mc
+
+        return output_data, indep
+
+    def calc_wpthlp_limit(self, dataset_override=None):
+        '''
+        '''
+        # z,z, dataset = self.getVarForCalculations('altitude', dataset_override)
+        wpthlp_mfl, indep, dataset = self.getVarForCalculations('wpthlp_mfl', dataset_override)
+        wpthlp_cl, indep, dataset = self.getVarForCalculations('wpthlp_cl', dataset)
+        wpthlp_sicl, indep, dataset = self.getVarForCalculations('wpthlp_sicl', dataset)
+
+        output_data = wpthlp_mfl + wpthlp_cl + wpthlp_sicl
+
+        return output_data, indep
+
     def getWpthlpResidual(self, dataset_override=None):
         '''
 
@@ -764,6 +555,53 @@ class VariableGroupBaseBudgetsSamStyle(VariableGroup):
         output_data = wpthlp_bt - (
                 wpthlp_ma + wpthlp_ta + wpthlp_tp + wpthlp_ac + wpthlp_bp + wpthlp_pr1 + wpthlp_pr2 + wpthlp_pr3 +
                 wpthlp_dp1 + wpthlp_mfl + wpthlp_cl + wpthlp_sicl + wpthlp_forcing)
+
+        return output_data, indep
+
+    def calc_wprtp_adv(self, dataset_override=None):
+        '''
+        '''
+        # z,z, dataset = self.getVarForCalculations('altitude', dataset_override)
+        wprtp_ma, indep, dataset = self.getVarForCalculations('wprtp_ma', dataset_override)
+        wprtp_ta, indep, dataset = self.getVarForCalculations('wprtp_ta', dataset)
+        wprtp_ac, indep, dataset = self.getVarForCalculations('wprtp_ac', dataset)
+
+        output_data = wprtp_ma + wprtp_ta + wprtp_ac 
+
+        return output_data, indep
+
+    def calc_wprtp_pres(self, dataset_override=None):
+        '''
+        '''
+        # z,z, dataset = self.getVarForCalculations('altitude', dataset_override)
+        wprtp_pr1, indep, dataset = self.getVarForCalculations('wprtp_pr1', dataset_override)
+        wprtp_pr2, indep, dataset = self.getVarForCalculations('wprtp_pr2', dataset)
+        wprtp_pr3, indep, dataset = self.getVarForCalculations('wprtp_pr3', dataset)
+
+        output_data = wprtp_pr1 + wprtp_pr2 + wprtp_pr3
+
+        return output_data, indep
+
+    def calc_wprtp_forc(self, dataset_override=None):
+        '''
+        '''
+        # z,z, dataset = self.getVarForCalculations('altitude', dataset_override)
+        wprtp_mc, indep, dataset = self.getVarForCalculations('wprtp_mc', dataset_override)
+        wprtp_forcing, indep, dataset = self.getVarForCalculations('wprtp_forcing', dataset)
+
+        output_data = wprtp_forcing - wprtp_mc
+
+        return output_data, indep
+
+    def calc_wprtp_limit(self, dataset_override=None):
+        '''
+        '''
+        # z,z, dataset = self.getVarForCalculations('altitude', dataset_override)
+        wprtp_mfl, indep, dataset = self.getVarForCalculations('wprtp_mfl', dataset_override)
+        wprtp_cl, indep, dataset = self.getVarForCalculations('wprtp_cl', dataset)
+        wprtp_sicl, indep, dataset = self.getVarForCalculations('wprtp_sicl', dataset)
+
+        output_data = wprtp_mfl + wprtp_cl + wprtp_sicl
 
         return output_data, indep
 
@@ -1024,17 +862,6 @@ class VariableGroupBaseBudgetsSamStyle(VariableGroup):
 
         return output_data, indep
 
-    def calc_up2_redis(self, dataset_override=None):
-        '''
-        '''
-        # z,z, dataset = self.getVarForCalculations('altitude', dataset_override)
-        up2_pr1, indep, dataset = self.getVarForCalculations('up2_pr1', dataset_override)
-#        up2_pr2, indep, dataset = self.getVarForCalculations('up2_pr2', dataset)
-
-        output_data = up2_pr1
-
-        return output_data, indep
-
     def calc_up2_diff(self, dataset_override=None):
          '''
          '''
@@ -1092,17 +919,6 @@ class VariableGroupBaseBudgetsSamStyle(VariableGroup):
 
         return output_data, indep
 
-    def calc_vp2_redis(self, dataset_override=None):
-        '''
-        '''
-        # z,z, dataset = self.getVarForCalculations('altitude', dataset_override)
-        vp2_pr1, indep, dataset = self.getVarForCalculations('vp2_pr1', dataset_override)
-#        vp2_pr2, indep, dataset = self.getVarForCalculations('vp2_pr2', dataset)
-
-        output_data = vp2_pr1
-
-        return output_data, indep
-
     def calc_vp2_diff(self, dataset_override=None):
          '''
          '''
@@ -1122,6 +938,49 @@ class VariableGroupBaseBudgetsSamStyle(VariableGroup):
         vp2_pd, indep, dataset = self.getVarForCalculations('vp2_pd', dataset)
 
         output_data = vp2_cl + vp2_pd
+
+        return output_data, indep
+
+    def calc_thlp2_adv(self, dataset_override=None):
+        '''
+        '''
+        # z,z, dataset = self.getVarForCalculations('altitude', dataset_override)
+        thlp2_ma, indep, dataset = self.getVarForCalculations('thlp2_ma', dataset_override)
+        thlp2_ta, indep, dataset = self.getVarForCalculations('thlp2_ta', dataset)
+
+        output_data = thlp2_ma + thlp2_ta
+
+        return output_data, indep
+
+    def calc_thlp2_rad(self, dataset_override=None):
+        '''
+        '''
+        # z,z, dataset = self.getVarForCalculations('altitude', dataset_override)
+        thlp2_forcing, indep, dataset = self.getVarForCalculations('thlp2_forcing', dataset_override)
+
+        output_data = thlp2_forcing - thlp2_forcing
+
+        return output_data, indep
+
+    def calc_thlp2_forc(self, dataset_override=None):
+        '''
+        '''
+        # z,z, dataset = self.getVarForCalculations('altitude', dataset_override)
+        thlp2_mc, indep, dataset = self.getVarForCalculations('thlp2_mc', dataset_override)
+        thlp2_forcing, indep, dataset = self.getVarForCalculations('thlp2_forcing', dataset)
+
+        output_data = thlp2_forcing - thlp2_mc
+
+        return output_data, indep
+
+    def calc_thlp2_limit(self, dataset_override=None):
+        '''
+        '''
+        # z,z, dataset = self.getVarForCalculations('altitude', dataset_override)
+        thlp2_cl, indep, dataset = self.getVarForCalculations('thlp2_cl', dataset_override)
+        thlp2_pd, indep, dataset = self.getVarForCalculations('thlp2_pd', dataset)
+
+        output_data = thlp2_cl + thlp2_pd
 
         return output_data, indep
 
@@ -1170,6 +1029,39 @@ class VariableGroupBaseBudgetsSamStyle(VariableGroup):
 
         return output_data, indep
 
+    def calc_rtp2_adv(self, dataset_override=None):
+        '''
+        '''
+        # z,z, dataset = self.getVarForCalculations('altitude', dataset_override)
+        rtp2_ma, indep, dataset = self.getVarForCalculations('rtp2_ma', dataset_override)
+        rtp2_ta, indep, dataset = self.getVarForCalculations('rtp2_ta', dataset)
+
+        output_data = rtp2_ma + rtp2_ta
+
+        return output_data, indep
+
+    def calc_rtp2_forc(self, dataset_override=None):
+        '''
+        '''
+        # z,z, dataset = self.getVarForCalculations('altitude', dataset_override)
+        rtp2_mc, indep, dataset = self.getVarForCalculations('rtp2_mc', dataset_override)
+        rtp2_forcing, indep, dataset = self.getVarForCalculations('rtp2_forcing', dataset)
+
+        output_data = rtp2_forcing - rtp2_mc
+
+        return output_data, indep
+
+    def calc_rtp2_limit(self, dataset_override=None):
+        '''
+        '''
+        # z,z, dataset = self.getVarForCalculations('altitude', dataset_override)
+        rtp2_cl, indep, dataset = self.getVarForCalculations('rtp2_cl', dataset_override)
+        rtp2_pd, indep, dataset = self.getVarForCalculations('rtp2_pd', dataset)
+
+        output_data = rtp2_cl + rtp2_pd
+
+        return output_data, indep
+
     def getRtp2Residual(self, dataset_override=None):
         '''
 
@@ -1211,6 +1103,39 @@ class VariableGroupBaseBudgetsSamStyle(VariableGroup):
 
         output_data = rtp2_bt - (
                 rtp2_ma + rtp2_ta + rtp2_tp + rtp2_dp1 + rtp2_dp2 + rtp2_cl + rtp2_pd + rtp2_sf + rtp2_forcing)
+
+        return output_data, indep
+
+    def calc_rtpthlp_adv(self, dataset_override=None):
+        '''
+        '''
+        # z,z, dataset = self.getVarForCalculations('altitude', dataset_override)
+        rtpthlp_ma, indep, dataset = self.getVarForCalculations('rtpthlp_ma', dataset_override)
+        rtpthlp_ta, indep, dataset = self.getVarForCalculations('rtpthlp_ta', dataset)
+
+        output_data = rtpthlp_ma + rtpthlp_ta
+
+        return output_data, indep
+
+    def calc_rtpthlp_grad(self, dataset_override=None):
+        '''
+        '''
+        # z,z, dataset = self.getVarForCalculations('altitude', dataset_override)
+        rtpthlp_tp1, indep, dataset = self.getVarForCalculations('rtpthlp_tp1', dataset_override)
+        rtpthlp_tp2, indep, dataset = self.getVarForCalculations('rtpthlp_tp2', dataset)
+
+        output_data = rtpthlp_tp1 + rtpthlp_tp2
+
+        return output_data, indep    
+    
+    def calc_rtpthlp_forc(self, dataset_override=None):
+        '''
+        '''
+        # z,z, dataset = self.getVarForCalculations('altitude', dataset_override)
+        rtpthlp_mc, indep, dataset = self.getVarForCalculations('rtpthlp_mc', dataset_override)
+        rtpthlp_forcing, indep, dataset = self.getVarForCalculations('rtpthlp_forcing', dataset)
+
+        output_data = rtpthlp_forcing - rtpthlp_mc
 
         return output_data, indep
 
@@ -1260,6 +1185,41 @@ class VariableGroupBaseBudgetsSamStyle(VariableGroup):
 
         return output_data, indep
 
+    def calc_upwp_adv(self, dataset_override=None):
+        '''
+        '''
+        # z,z, dataset = self.getVarForCalculations('altitude', dataset_override)
+        upwp_ma, indep, dataset = self.getVarForCalculations('upwp_ma', dataset_override)
+        upwp_ta, indep, dataset = self.getVarForCalculations('upwp_ta', dataset)
+        upwp_ac, indep, dataset = self.getVarForCalculations('upwp_ac', dataset)
+
+        output_data = upwp_ma + upwp_ta + upwp_ac
+
+        return output_data, indep
+
+    def calc_upwp_pres(self, dataset_override=None):
+        '''
+        '''
+        # z,z, dataset = self.getVarForCalculations('altitude', dataset_override)
+        upwp_pr2, indep, dataset = self.getVarForCalculations('upwp_pr2', dataset_override)
+        upwp_pr3, indep, dataset = self.getVarForCalculations('upwp_pr3', dataset)
+        upwp_pr4, indep, dataset = self.getVarForCalculations('upwp_pr4', dataset)
+
+        output_data = upwp_pr2 + upwp_pr3 + upwp_pr4
+
+        return output_data, indep
+
+    def calc_upwp_limit(self, dataset_override=None):
+        '''
+        '''
+        # z,z, dataset = self.getVarForCalculations('altitude', dataset_override)
+        upwp_cl, indep, dataset = self.getVarForCalculations('upwp_cl', dataset_override)
+        upwp_mfl, indep, dataset = self.getVarForCalculations('upwp_mfl', dataset)
+
+        output_data = upwp_cl + upwp_mfl
+
+        return output_data, indep
+
     def getUpwpResidual(self, dataset_override=None):
         '''
 
@@ -1305,6 +1265,41 @@ class VariableGroupBaseBudgetsSamStyle(VariableGroup):
         output_data = upwp_bt - (
                 upwp_ma + upwp_ta + upwp_tp + upwp_ac + upwp_bp + upwp_pr1 + upwp_pr2 + upwp_pr3 + upwp_pr4 +
                 upwp_dp1 + upwp_mfl + upwp_cl)
+
+        return output_data, indep
+
+    def calc_vpwp_adv(self, dataset_override=None):
+        '''
+        '''
+        # z,z, dataset = self.getVarForCalculations('altitude', dataset_override)
+        vpwp_ma, indep, dataset = self.getVarForCalculations('vpwp_ma', dataset_override)
+        vpwp_ta, indep, dataset = self.getVarForCalculations('vpwp_ta', dataset)
+        vpwp_ac, indep, dataset = self.getVarForCalculations('vpwp_ac', dataset)
+
+        output_data = vpwp_ma + vpwp_ta + vpwp_ac
+
+        return output_data, indep
+
+    def calc_vpwp_pres(self, dataset_override=None):
+        '''
+        '''
+        # z,z, dataset = self.getVarForCalculations('altitude', dataset_override)
+        vpwp_pr2, indep, dataset = self.getVarForCalculations('vpwp_pr2', dataset_override)
+        vpwp_pr3, indep, dataset = self.getVarForCalculations('vpwp_pr3', dataset)
+        vpwp_pr4, indep, dataset = self.getVarForCalculations('vpwp_pr4', dataset)
+
+        output_data = vpwp_pr2 + vpwp_pr3 + vpwp_pr4
+
+        return output_data, indep
+
+    def calc_vpwp_limit(self, dataset_override=None):
+        '''
+        '''
+        # z,z, dataset = self.getVarForCalculations('altitude', dataset_override)
+        vpwp_cl, indep, dataset = self.getVarForCalculations('vpwp_cl', dataset_override)
+        vpwp_mfl, indep, dataset = self.getVarForCalculations('vpwp_mfl', dataset)
+
+        output_data = vpwp_cl + vpwp_mfl
 
         return output_data, indep
 
