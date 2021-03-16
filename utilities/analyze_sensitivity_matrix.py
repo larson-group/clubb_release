@@ -7,7 +7,6 @@
 def main():
 
     import numpy as np
-    from scipy.io import netcdf
     import pdb
     
     
@@ -15,16 +14,14 @@ def main():
     
     metricsNames = np.array(['SWCF', 'LWCF'])
     
-    ncFilenames = np.array(['pathfile1', 'pathfile2'])
+    sensNcFilenames = np.array(['canopy/scripts/sensParams.nc', \
+                                'canopy/scripts/sensParams.nc'])
     
-    if ( len(paramsNames) != len(ncFilenames)   ):
+    if ( len(paramsNames) != len(sensNcFilenames)   ):
    	print("Number of parameters must equal number of netcdf files.")
    	quit()
     
-    # Read netcdf file with metrics and parameters from default simulation
-    #f_defaultMetricsParams = netcdf.netcdf_file('canopy/scripts/defaultMetricsParams.nc', 'r')
-    # Read netcdf file with changed parameter values from all sensitivity simulations.
-    #f_sensParams = netcdf.netcdf_file('canopy/scripts/sensParams.nc', 'r')
+    defaultNcFilename = 'canopy/scripts/defaultMetricsParams.nc'
     
     # Observed values of our metrics, from, e.g., CERES-EBAF.
     obsMetricValsDict = {'LWCF': 4., 'PRECT': -999., 'SWCF': 6.}
@@ -67,47 +64,22 @@ def main():
     defaultMetricValsCol, defaultParamValsRow = \
             setupDefaultVectors(defaultMetricValsDict, metricsNames, 
                                 defaultParamValsDict, paramsNames,
-                                numParams, numMetrics)
-    
-    # Create row vector size numParams containing
-    # parameter values from sensitivity simulations
-    sensParamValsRow = np.zeros((1, numParams))
-    for idx in np.arange(numParams):
-   	paramName = paramsNames[idx]
-   	sensParamValsRow[0,idx] = sensParamValsDict[paramName]
-            # Assume each metric is stored as length-1 array, rather than scalar.  
-            #   Hence the "[0]" at the end is needed.
-   	#sensParamValsRow[0,idx] = f_sensParams.variables[paramName][0]
-    
-    #sensParamValsRow = np.array([[2., 4.]])
-    
-    print("\nsensParamValsRow =")
-    print(sensParamValsRow)
-    
-    # numMetrics x numParams matrix of metric values
-    # from sensitivity simulations
-    sensMetricValsMatrix = np.zeros((numMetrics, numParams))
-    for row in np.arange(numMetrics):
-   	metricName = metricsNames[row]
-   	for col in np.arange(numParams):
-  		ncFilename = ncFilenames[col]
-  		sensMetricValsMatrix[row,col] = sensMetricValsRefMatrix[row,col]
-    
-    #sensMetricValsMatrix = np.array([[1., 2.], [3., 4.]])
-    
-    print("\nsensMetricValsMatrix =")
-    print(sensMetricValsMatrix)
-    
+                                numParams, numMetrics,
+                                defaultNcFilename)
+
+    sensParamValsRow, sensMetricValsMatrix = \
+            setupSensArrays(sensMetricValsRefMatrix, metricsNames, 
+                    sensParamValsDict, paramsNames,
+                    numParams, numMetrics,
+                    sensNcFilenames)   
+            
     sensMatrix, normlzdSensMatrix = \
         constructSensMatrix(sensParamValsRow, sensMetricValsMatrix, 
                             defaultParamValsRow, defaultMetricValsCol, 
                             obsMetricValsCol, 
                             numParams, numMetrics)
                             
-    calcSvd(normlzdSensMatrix)
-
-    #f_defaultMetricsParams.close() 
-    #f_sensParams.close()  
+    svdInvrs = calcSvd(normlzdSensMatrix)
         
     print("\nReached the end.")
 
@@ -206,10 +178,10 @@ def calcSvd(sensMatrix):
     print("\nInverse truncated singular values =")
     print(sValsTruncInv)
     
-    svdInv = np.transpose(vh)*np.diag(sValsTruncInv) *np.transpose(u)
+    svdInvrs = np.transpose(vh)*np.diag(sValsTruncInv) *np.transpose(u)
     
     print("\nSVD inverse =")
-    print(svdInv)
+    print(svdInvrs)
     
     eigVals, eigVecs = np.linalg.eig(np.transpose(sensMatrix)*sensMatrix)
     
@@ -219,21 +191,28 @@ def calcSvd(sensMatrix):
     print("\neigVecs = ")
     print(eigVecs)
 
+    return svdInvrs
+
 def setupDefaultVectors(defaultMetricValsDict, metricsNames, 
                         defaultParamValsDict, paramsNames,
-                        numParams, numMetrics):    
+                        numParams, numMetrics,
+                        defaultNcFilename):    
 
     import numpy as np            
-                                    
+    from scipy.io import netcdf
+    
+    # Read netcdf file with metrics and parameters from default simulation
+    f_defaultMetricsParams = netcdf.netcdf_file(defaultNcFilename, 'r')                                    
+                                                                                                            
     # Set up column vector of numMetrics elements containing
     # metric values from default simulation
     defaultMetricValsCol = np.zeros((numMetrics,1))
     for idx in np.arange(numMetrics):
    	metricName = metricsNames[idx]
-   	defaultMetricValsCol[idx] = defaultMetricValsDict[metricName]
-            # Assume each metric is stored as length-1 array, rather than scalar.  
-            #   Hence the "[0]" at the end is needed.
-   	#defaultMetricValsCol[idx] = f_defaultMetricsParams.variables[metricName][0]
+   	#defaultMetricValsCol[idx] = defaultMetricValsDict[metricName]
+        # Assume each metric is stored as length-1 array, rather than scalar.  
+        #   Hence the "[0]" at the end is needed.
+   	defaultMetricValsCol[idx] = f_defaultMetricsParams.variables[metricName][0]
     
     print("\ndefaultMetricValsCol =")
     print(defaultMetricValsCol)
@@ -243,19 +222,69 @@ def setupDefaultVectors(defaultMetricValsDict, metricsNames,
     defaultParamValsRow = np.zeros((1, numParams))
     for idx in np.arange(numParams):
    	paramName = paramsNames[idx]
-   	defaultParamValsRow[0,idx] = defaultParamValsDict[paramName]
-            # Assume each metric is stored as length-1 array, rather than scalar.  
-            #   Hence the "[0]" at the end is needed.
-   	#defaultParamValsRow[0,idx] = f_defaultMetricsParams.variables[paramName][0]
+   	#defaultParamValsRow[0,idx] = defaultParamValsDict[paramName]
+        # Assume each metric is stored as length-1 array, rather than scalar.  
+        #   Hence the "[0]" at the end is needed.
+   	defaultParamValsRow[0,idx] = f_defaultMetricsParams.variables[paramName][0]
     
     #defaultParamValsRow = np.array([[1., 2.]])
     
     print("\ndefaultParamValsRow =")
     print(defaultParamValsRow)
-    
+
+    f_defaultMetricsParams.close()     
+            
     return (defaultMetricValsCol, defaultParamValsRow)
+
+def setupSensArrays(sensMetricValsRefMatrix, metricsNames, 
+                    sensParamValsDict, paramsNames,
+                    numParams, numMetrics,
+                    sensNcFilenames):
+    
+    import numpy as np
+    from scipy.io import netcdf
+                        
+    # Create row vector size numParams containing
+    # parameter values from sensitivity simulations
+    sensParamValsRow = np.zeros((1, numParams))
+    for idx in np.arange(numParams):
+   	paramName = paramsNames[idx]
+        # Read netcdf file with changed parameter values from all sensitivity simulations.
+        #f_sensParams = netcdf.netcdf_file('canopy/scripts/sensParams.nc', 'r')    
+        f_sensParams = netcdf.netcdf_file(sensNcFilenames[idx], 'r')   	
+   	#sensParamValsRow[0,idx] = sensParamValsDict[paramName]
+        # Assume each metric is stored as length-1 array, rather than scalar.  
+        #   Hence the "[0]" at the end is needed.
+   	sensParamValsRow[0,idx] = f_sensParams.variables[paramName][0]
+   	f_sensParams.close()
+    
+    #sensParamValsRow = np.array([[2., 4.]])
+    
+    print("\nsensParamValsRow =")
+    print(sensParamValsRow)
+    
+    # numMetrics x numParams matrix of metric values
+    # from sensitivity simulations
+    sensMetricValsMatrix = np.zeros((numMetrics, numParams))
+    for col in np.arange(numParams):
+  	f_sens = netcdf.netcdf_file(sensNcFilenames[col], 'r')
+        for row in np.arange(numMetrics):
+   	    metricName = metricsNames[row]
+   	    sensMetricValsMatrix[row,col] = sensMetricValsRefMatrix[row,col]
+   	    #sensMetricValsMatrix[row,col] = f_sens.variables[metricName][0]
+        f_sens.close()
+            
+    #sensMetricValsMatrix = np.array([[1., 2.], [3., 4.]])
+    
+    print("\nsensMetricValsMatrix =")
+    print(sensMetricValsMatrix)
+
+    f_sensParams.close()  
+
+    return(sensParamValsRow, sensMetricValsMatrix)    
 
 # Standard boilerplate to call the main() function to begin
 # the program.
 if __name__ == '__main__':
     main()
+    
