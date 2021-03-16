@@ -2411,37 +2411,37 @@ module advance_xp2_xpyp_module
                                        - lhs_ta(3,k) * xap2(k-1) ), &
                                  stats_zm )                 ! Intent(inout)
 
-            if ( ixapxbp_dp1 > 0 ) then
+            if ( ixapxbp_pr1 > 0 ) then
 
               tmp  &
               = gamma_over_implicit_ts  &
               * term_dp1_lhs( two_thirds*C4, invrs_tau_wp2_zm(k) )
-              zmscr01(k) = -tmp
-              call stat_begin_update_pt( ixapxbp_dp1, k, & ! Intent(in)
+              zmscr11(k) = -tmp
+              call stat_begin_update_pt( ixapxbp_pr1, k, & ! Intent(in)
                    -term_pr1( C4, zero, xbp2(k), wp2(k), invrs_tau_wp2_zm(k) ), & ! Intent(in)
                                          stats_zm )        ! Intent(inout)
 
               tmp  &
               = term_dp1_lhs( two_thirds*C4, invrs_tau_wp2_zm(k) )
-              call stat_modify_pt( ixapxbp_dp1, k, &        ! Intent(in)
+              call stat_modify_pt( ixapxbp_pr1, k, &        ! Intent(in)
                     + ( one - gamma_over_implicit_ts )  &   ! Intent(in)
                     * ( - tmp * xap2(k) ),  &               ! Intent(in)
                                          stats_zm )         ! Intent(inout)
 
             endif
 
-            if ( ixapxbp_pr1 > 0 ) then
+            if ( ixapxbp_dp1 > 0 ) then
               tmp  &
               = gamma_over_implicit_ts  &
               * term_dp1_lhs( one_third*C14, invrs_tau_wp2_zm(k) )
-              zmscr11(k) = -tmp
-              call stat_begin_update_pt( ixapxbp_pr1, k, & ! Intent(in)  
+              zmscr01(k) = -tmp
+              call stat_begin_update_pt( ixapxbp_dp1, k, & ! Intent(in)  
                    -term_pr1( zero, C14, xbp2(k), wp2(k), invrs_tau_wp2_zm(k) ), &! Intent(in)
                                          stats_zm )        ! Intent(inout)
 
               tmp  &
               = term_dp1_lhs( one_third*C14, invrs_tau_wp2_zm(k) )
-              call stat_modify_pt( ixapxbp_pr1, k, &        ! Intent(in)
+              call stat_modify_pt( ixapxbp_dp1, k, &        ! Intent(in)
                     + ( one - gamma_over_implicit_ts )  &   ! Intent(in)
                     * ( - tmp * xap2(k) ),  &               ! Intent(in)
                                          stats_zm )         ! Intent(inout)
