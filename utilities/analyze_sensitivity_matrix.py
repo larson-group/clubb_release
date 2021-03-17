@@ -13,22 +13,25 @@ def main():
     metricsNames = np.array(['SWCF', 'LWCF'])
 
     # Parameters are tunable model parameters.
-    paramsNames = np.array(['C5','C8'])
-    #paramsNames = np.array(['clubb_c_invrs_tau_n2','clubb_c_invrs_tau_n2_wp2'])
+    #paramsNames = np.array(['C5','C8'])
+    paramsNames = np.array(['clubb_c8','clubb_c_invrs_tau_n2'])
 
     # This is a list of one netcdf file per each sensitivity simulation.
     # Each file contains metrics and parameter values for a single simulation.
     # There should be one sensitivity simulation per each tunable parameter.
     # These filenames must be listed in the same order as the parameters (paramsNames).
-    sensNcFilenames = np.array(['/home/vlarson/canopy/scripts/sens_C5_MetricsParams.nc', \
-                                '/home/vlarson/canopy/scripts/sens_C8_MetricsParams.nc'])
-    #sensNcFilenames = \
-    #np.array(['/home/vlarson/canopy/scripts/anvil-centos7.manu.repeat.ne30_ne30_GLBmean.nc', \
-    #                            '/home/vlarson/canopy/scripts/anvil-centos7.manu.repeat.ne30_ne30_GLBmean.nc'])
+    #sensNcFilenames = np.array(['/home/vlarson/canopy/scripts/sens_C5_MetricsParams.nc', \
+    #                            '/home/vlarson/canopy/scripts/sens_C8_MetricsParams.nc'])
+    sensNcFilenames = \
+    np.array([ \
+        '/home/vlarson/canopy/scripts/anvil.c689c7e.repeatbmg_flux_c82.ne30_ne30_GLBmean.nc', \
+        '/home/vlarson/canopy/scripts/anvil.c689c7e.repeatbmg_flux_n21.ne30_ne30_GLBmean.nc' \
+             ])
 
     # Netcdf file containing metric and parameter values from the default simulation
-    defaultNcFilename = '/home/vlarson/canopy/scripts/defaultMetricsParams.nc'
-    #defaultNcFilename = '/home/vlarson/canopy/scripts/anvil-centos7.manu.repeat.ne30_ne30_GLBmean.nc'
+    #defaultNcFilename = '/home/vlarson/canopy/scripts/defaultMetricsParams.nc'
+    defaultNcFilename = \
+        '/home/vlarson/canopy/scripts/anvil.c689c7e.repeatbmg_flux.ne30_ne30_GLBmean.nc'
 
     # Observed values of our metrics, from, e.g., CERES-EBAF.
     obsMetricValsDict = {'LWCF': 4., 'PRECT': -999., 'SWCF': 6.}
@@ -39,7 +42,7 @@ def main():
                       sensNcFilenames, defaultNcFilename,
                       obsMetricValsDict)
 
-    print("\nReached the end.")
+    print("\nReached the end of main.")
 
     return
 
@@ -270,10 +273,10 @@ def setupDefaultVectors(defaultMetricValsDict, metricsNames,
     """
 
     import numpy as np
-    from scipy.io import netcdf
+    import netCDF4
 
     # Read netcdf file with metrics and parameters from default simulation
-    f_defaultMetricsParams = netcdf.netcdf_file(defaultNcFilename, 'r')
+    f_defaultMetricsParams = netCDF4.Dataset(defaultNcFilename, 'r')
 
     # Set up column vector of numMetrics elements containing
     # metric values from default simulation
@@ -320,7 +323,7 @@ def setupSensArrays(sensMetricValsRefMatrix, metricsNames,
 
 
     import numpy as np
-    from scipy.io import netcdf
+    import netCDF4
 
     # Create row vector size numParams containing
     # parameter values from sensitivity simulations
@@ -328,7 +331,7 @@ def setupSensArrays(sensMetricValsRefMatrix, metricsNames,
     for idx in np.arange(numParams):
         paramName = paramsNames[idx]
         # Read netcdf file with changed parameter values from all sensitivity simulations.
-        f_sensParams = netcdf.netcdf_file(sensNcFilenames[idx], 'r')
+        f_sensParams = netCDF4.Dataset(sensNcFilenames[idx], 'r')
         #sensParamValsRow[0,idx] = sensParamValsDict[paramName]
         # Assume each metric is stored as length-1 array, rather than scalar.
         #   Hence the "[0]" at the end is needed.
@@ -344,7 +347,7 @@ def setupSensArrays(sensMetricValsRefMatrix, metricsNames,
     # from sensitivity simulations
     sensMetricValsMatrix = np.zeros((numMetrics, numParams))
     for col in np.arange(numParams):
-        f_sens = netcdf.netcdf_file(sensNcFilenames[col], 'r')
+        f_sens = netCDF4.Dataset(sensNcFilenames[col], 'r')
         for row in np.arange(numMetrics):
             metricName = metricsNames[row]
             #sensMetricValsMatrix[row,col] = sensMetricValsRefMatrix[row,col]
@@ -355,8 +358,6 @@ def setupSensArrays(sensMetricValsRefMatrix, metricsNames,
 
     print("\nsensMetricValsMatrix =")
     print(sensMetricValsMatrix)
-
-    f_sensParams.close()
 
     return(sensParamValsRow, sensMetricValsMatrix)
 
