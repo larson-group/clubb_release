@@ -14,6 +14,7 @@ def main():
 
     # Parameters are tunable model parameters.
     paramsNames = np.array(['C5','C8'])
+    #paramsNames = np.array(['clubb_c_invrs_tau_n2','clubb_c_invrs_tau_n2_wp2'])
 
     # This is a list of one netcdf file per each sensitivity simulation.
     # Each file contains metrics and parameter values for a single simulation.
@@ -21,16 +22,37 @@ def main():
     # These filenames must be listed in the same order as the parameters (paramsNames).
     sensNcFilenames = np.array(['/home/vlarson/canopy/scripts/sens_C5_MetricsParams.nc', \
                                 '/home/vlarson/canopy/scripts/sens_C8_MetricsParams.nc'])
+    #sensNcFilenames = \
+    #np.array(['/home/vlarson/canopy/scripts/anvil-centos7.manu.repeat.ne30_ne30_GLBmean.nc', \
+    #                            '/home/vlarson/canopy/scripts/anvil-centos7.manu.repeat.ne30_ne30_GLBmean.nc'])
 
     # Netcdf file containing metric and parameter values from the default simulation
     defaultNcFilename = '/home/vlarson/canopy/scripts/defaultMetricsParams.nc'
+    #defaultNcFilename = '/home/vlarson/canopy/scripts/anvil-centos7.manu.repeat.ne30_ne30_GLBmean.nc'
 
     # Observed values of our metrics, from, e.g., CERES-EBAF.
     obsMetricValsDict = {'LWCF': 4., 'PRECT': -999., 'SWCF': 6.}
 
-    # ---------------------------------
-    # No need to modify below this line
-    # ---------------------------------
+    # Calculate changes in parameter values needed to match metrics.
+    svdInvrs = \
+        analyzeSensMatrix(metricsNames, paramsNames,
+                      sensNcFilenames, defaultNcFilename,
+                      obsMetricValsDict)
+
+    print("\nReached the end.")
+
+    return
+
+def analyzeSensMatrix(metricsNames, paramsNames,
+                      sensNcFilenames, defaultNcFilename,
+                      obsMetricValsDict):
+    """
+    Input: Information about metrics and parameter values from
+            a default simulation, some sensitivity simulations, and observations.
+    Output: The inverse of the singular value decomposition.
+    """
+
+    import numpy as np
 
     if ( len(paramsNames) != len(sensNcFilenames)   ):
         print("Number of parameters must equal number of netcdf files.")
@@ -95,8 +117,7 @@ def main():
     # This gives the recommended changes to parameter values.
     svdInvrs = calcSvd(normlzdSensMatrix)
 
-    print("\nReached the end.")
-
+    return svdInvrs
 
 def constructSensMatrix(sensParamValsRow, sensMetricValsMatrix,
                         defaultParamValsRow, defaultMetricValsCol,
