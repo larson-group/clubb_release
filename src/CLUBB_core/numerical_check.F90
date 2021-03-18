@@ -527,7 +527,7 @@ module numerical_check
     ! Constant Parameters
     ! Name of the subroutine calling the check
     character(len=*), parameter :: &
-      proc_name = "calc_sfc_varnce"
+      proc_name = "calc_surface_varnce"
 
     ! Input Variables
     real( kind = core_rknd ),intent(in) ::  & 
