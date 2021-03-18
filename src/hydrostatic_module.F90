@@ -241,7 +241,7 @@ module hydrostatic_module
       ! all the levels of the sounding), then there is insufficient information
       ! to run the model.  Stop the run.
 
-      write(fstderr,*) "The entire sounding is below the model sfc."
+      write(fstderr,*) "The entire sounding is below the model surface."
       error stop
 
     elseif ( exner_sfc > exner(1) ) then
