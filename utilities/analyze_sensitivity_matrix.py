@@ -34,7 +34,8 @@ def main():
         '/home/vlarson/canopy/scripts/anvil.c689c7e.repeatbmg_flux.ne30_ne30_GLBmean.nc'
 
     # Observed values of our metrics, from, e.g., CERES-EBAF.
-    obsMetricValsDict = {'LWCF': 4., 'PRECT': -999., 'SWCF': 6.}
+    obsMetricValsDict = {'LWCF': 28.008, 'PRECT': 0.000000033912037, 'SWCF': -45.81}    # Global mean, NOTE PRECT is in the unit of m/s
+    #obsMetricValsDict = {'LWCF': 17.39229, 'PRECT': 5.540433451401774e-09, 'SWCF': -63.05767 }    # SC(GPCI) mean, NOTE PRECT is in the unit of m/s
 
     # Calculate changes in parameter values needed to match metrics.
     svdInvrs = \
