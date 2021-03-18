@@ -495,10 +495,10 @@ module grid_class
     if ( sfc_elevation > gr%zm(1) ) then
       write(fstderr,*) "The altitude of the lowest momentum level, "        &
                        // "gr%zm(1), must be at or above the altitude of "  &
-                       // "the sfc, sfc_elevation.  The lowest model "  &
-                       // "momentum level cannot be below the sfc."
+                       // "the surface, sfc_elevation.  The lowest model "  &
+                       // "momentum level cannot be below the surface."
       write(fstderr,*) "Altitude of lowest momentum level =", gr%zm(1)
-      write(fstderr,*) "Altitude of the sfc =", sfc_elevation
+      write(fstderr,*) "Altitude of the surface =", sfc_elevation
       err_code = clubb_fatal_error
       return
     endif
