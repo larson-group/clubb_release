@@ -1,6 +1,6 @@
 !$Id$
 !-------------------------------------------------------------------------------
-module surface_flux
+module sfc_flux
 !  Description:
 !    This module contains generalized subroutines for determining surface
 !    fluxes.
@@ -314,4 +314,4 @@ module surface_flux
   
   end function convert_latent_ht_to_m_s
 
-end module surface_flux
+end module sfc_flux

@@ -134,7 +134,7 @@ module mpace_b
   !          http://science.arm.gov/wg/cpm/scm/scmic5/index.html
   !-----------------------------------------------------------------------
 
-    use surface_flux, only: convert_sens_ht_to_km_s, convert_latent_ht_to_m_s ! Functions(s)
+    use sfc_flux, only: convert_sens_ht_to_km_s, convert_latent_ht_to_m_s ! Functions(s)
 
     use time_dependent_input, only: sens_ht_given, latent_ht_given, time_sfc_given,& !Variable(s)
                                     time_select ! Procedure(s)

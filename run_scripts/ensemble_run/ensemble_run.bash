@@ -14,7 +14,7 @@ do
 	#Setup CLUBB using the files we created
 	cp "$ENSEMBLE/$caseName"_sounding.in ../../input/case_setups
 	cp "$ENSEMBLE/$caseName"_forcings.in ../../input/case_setups
-	cp "$ENSEMBLE/$caseName"_surface.in ../../input/case_setups
+	cp "$ENSEMBLE/$caseName"_sfc.in ../../input/case_setups
 
 	#Clean up any old output files before running CLUBB
 	rm -f ../../output/"$caseName"_zt.ctl

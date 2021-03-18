@@ -77,7 +77,7 @@ module dycoms2_rf01
 
   use saturation, only: sat_mixrat_liq ! Variable(s)
 
-  use surface_flux, only: compute_wpthlp_sfc, compute_wprtp_sfc, &
+  use sfc_flux, only: compute_wpthlp_sfc, compute_wprtp_sfc, &
                           convert_sens_ht_to_km_s, convert_latent_ht_to_m_s ! Procedure(s)
 
   use time_dependent_input, only: sens_ht_given, latent_ht_given, time_sfc_given,& ! Variable(s)

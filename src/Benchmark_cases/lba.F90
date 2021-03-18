@@ -89,7 +89,7 @@ module lba
 
     use diag_ustar_module, only: diag_ustar ! Variable(s)
 
-    use surface_flux, only: convert_sens_ht_to_km_s, convert_latent_ht_to_m_s ! Procedure(s)
+    use sfc_flux, only: convert_sens_ht_to_km_s, convert_latent_ht_to_m_s ! Procedure(s)
 
     implicit none
 

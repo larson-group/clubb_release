@@ -40,7 +40,7 @@ C					and each sigma level
 C qs(len)		real	input	snow flakes at each grid point
 C					and for each sigma level
 C ss(m,n)               real    input   net short wave flux down to
-C                                       ground surface (watt/m2)
+C                                       ground sfc (watt/m2)
 C termb(len)            real    input   work array
 C w1(len)               real    input (NOT USED)w wind component at each grid
 C                                       point for each sigma leve at

@@ -185,7 +185,7 @@ module atex
   !   ATEX_JAS2001.pdf
   !----------------------------------------------------------------------
 
-  use surface_flux, only: compute_wpthlp_sfc, compute_wprtp_sfc
+  use sfc_flux, only: compute_wpthlp_sfc, compute_wprtp_sfc
 
   use interpolation, only: linear_interp_factor ! Procedure(s)
 

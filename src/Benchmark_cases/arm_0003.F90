@@ -46,7 +46,7 @@ module arm_0003
 
     use diag_ustar_module, only: diag_ustar ! Variable(s)
 
-    use surface_flux, only: compute_ht_mostr_flux, &
+    use sfc_flux, only: compute_ht_mostr_flux, &
                             convert_sens_ht_to_km_s, convert_latent_ht_to_m_s ! Procedures
 
     use time_dependent_input, only: time_sfc_given ! Variable(s)

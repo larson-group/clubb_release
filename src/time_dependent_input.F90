@@ -25,8 +25,8 @@ module time_dependent_input
 
   private :: initialize_t_dependent_forcings, &
              finalize_t_dependent_forcings,   & 
-             initialize_t_dependent_surface,  &
-             finalize_t_dependent_surface,    &
+             initialize_t_dependent_sfc,  &
+             finalize_t_dependent_sfc,    &
              read_to_grid                      
 
   integer, parameter :: nCols = 10 ! Number of columns in the input file
@@ -79,7 +79,7 @@ module time_dependent_input
 
   character(len=*), private, parameter :: forcings_path = "_forcings.in"
 
-  character(len=*), private, parameter :: surface_path = "_surface.in"
+  character(len=*), private, parameter :: sfc_path = "_sfc.in"
 
   private
 
@@ -119,8 +119,8 @@ module time_dependent_input
                    ( iunit, input_path//trim(runtype)//forcings_path, grid_size, grid, p_in_Pa )
     end if
 
-    call initialize_t_dependent_surface &
-                   ( iunit, input_path//trim(runtype)//surface_path )
+    call initialize_t_dependent_sfc &
+                   ( iunit, input_path//trim(runtype)//sfc_path )
 
   end subroutine initialize_t_dependent_input
 
@@ -143,12 +143,12 @@ module time_dependent_input
       call finalize_t_dependent_forcings()
     end if
 
-    call finalize_t_dependent_surface()
+    call finalize_t_dependent_sfc()
 
   end subroutine finalize_t_dependent_input
 
   !================================================================================================
-  subroutine initialize_t_dependent_surface( iunit, input_file )
+  subroutine initialize_t_dependent_sfc( iunit, input_file )
     !
     !  Description: This subroutine reads in a file that details time dependent
     !  input values that vary in one dimension.
@@ -284,7 +284,7 @@ module time_dependent_input
     call deallocate_one_dim_vars( nCols, retVars )
 
     return 
-  end subroutine initialize_t_dependent_surface
+  end subroutine initialize_t_dependent_sfc
 
   !================================================================================================
   subroutine initialize_t_dependent_forcings( iunit, input_file, grid_size, grid, p_in_Pa )
@@ -404,7 +404,7 @@ module time_dependent_input
   end subroutine finalize_t_dependent_forcings
   
   !================================================================================================
-  subroutine finalize_t_dependent_surface( )
+  subroutine finalize_t_dependent_sfc( )
     !
     !  Description: Clears memory initialized in initialize_t_dependent_surface.
     !  This should be called at the end of the model.
@@ -427,7 +427,7 @@ module time_dependent_input
     if ( allocated( wpthlp_sfc_given ) ) deallocate( wpthlp_sfc_given )
     if ( allocated( wpqtp_sfc_given ) )  deallocate( wpqtp_sfc_given )
 
-  end subroutine finalize_t_dependent_surface
+  end subroutine finalize_t_dependent_sfc
 
   !================================================================================================
   function read_to_grid( ntwo_dim_vars, dim_size, other_dim_size, &
@@ -774,7 +774,7 @@ module time_dependent_input
 
             ! If times are not increasing then they aren't sorted properly.
             write(fstderr,*) "In subroutine time_select:"
-            write(fstderr,*) "times are not sorted. Check (case)_surface.in "
+            write(fstderr,*) "times are not sorted. Check (case)_sfc.in "
             write(fstderr,*) "and (case)_forcings.in, located in input/case_setups."
             error stop
 

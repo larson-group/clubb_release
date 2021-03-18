@@ -361,7 +361,7 @@ k_end   = MIN(kde-1, kte)
 !         of u* (used for u'w' and v'w'), for each of the GCSS cases we have
 !         previously set up in WRF.
 
-CALL set_surface_fluxes ( th_phy, p_phy, u_phy, v_phy, z,     &
+CALL set_sfc_fluxes ( th_phy, p_phy, u_phy, v_phy, z,     &
                           rho, moist, n_moist, dt, itimestep, &
                           u_star, heat_flux, latent_flux,     &
                           config_flags,                       &

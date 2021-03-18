@@ -37,7 +37,7 @@ module gabls3_night
 
     use clubb_precision, only: time_precision, core_rknd ! Variable(s)
 
-    use surface_flux, only: compute_momentum_flux ! Procedure(s)
+    use sfc_flux, only: compute_momentum_flux ! Procedure(s)
 
     use time_dependent_input, only: l_t_dependent,    & ! Variable(s)
                                     l_input_xpwp_sfc, &

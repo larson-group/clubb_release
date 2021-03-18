@@ -151,7 +151,7 @@ module rico
 
   use saturation, only: sat_mixrat_liq ! Procedure(s)
 
-  use surface_flux, only: compute_ubar, compute_momentum_flux, &
+  use sfc_flux, only: compute_ubar, compute_momentum_flux, &
                           compute_wpthlp_sfc, compute_wprtp_sfc
 
   use time_dependent_input, only: time_sfc_given, T_sfc_given, &  ! Variable(s)

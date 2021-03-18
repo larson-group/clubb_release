@@ -197,7 +197,7 @@ foreach $file (@ARGV){
 
 # Ask the user how they want to process the data
 print "What kind of file do you want to process?\n";
-print "1 => surface\n";
+print "1 => sfc\n";
 print "2 => forcing\n";
 print "3 => both\n";
 
@@ -205,17 +205,17 @@ print "3 => both\n";
 chomp( $response = <STDIN> );
 
 if($response == 1){
-	&create_surface_file();
+	&create_sfc_file();
 }
 elsif($response == 2){
 	&create_forcing_file();
 }
 elsif($response == 3){
-	&create_surface_file();
+	&create_sfc_file();
 	&create_forcing_file();
 }
 
-sub create_surface_file{
+sub create_sfc_file{
 #
 #  This subroutine attempts to create an <case_path>_sounding.in file using 
 #  data provided by the input files.
@@ -230,7 +230,7 @@ sub create_surface_file{
 
         my($i, $lh, $sh, $thlm, $rt, $press);
 
-	print "Creating surface file";
+	print "Creating sfc file";
 	
 	# Sanity checking
 	if( ! exists $variables{'time'} ){
@@ -238,7 +238,7 @@ sub create_surface_file{
 		exit
 	}
 
-        open FILE, ">", $case_path . "_surface.in";
+        open FILE, ">", $case_path . "_sfc.in";
 
 	# Write out header
         print FILE " Time[s]     LH[W\\m^2]     SH[W\\m^2]     thlm[K]     rt[kg\\kg]     Press[Pa]\n";
@@ -256,7 +256,7 @@ sub create_surface_file{
 	
 	close FILE;
 
-	TextFormat->align_table( $case_path . "_surface.in");
+	TextFormat->align_table( $case_path . "_sfc.in");
 }
 
 sub create_forcing_file{

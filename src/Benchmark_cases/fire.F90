@@ -38,7 +38,7 @@ module fire
 
   use saturation, only: sat_mixrat_liq ! Procedure(s)
  
-  use surface_flux, only: compute_wprtp_sfc, compute_wpthlp_sfc
+  use sfc_flux, only: compute_wprtp_sfc, compute_wpthlp_sfc
 
   use clubb_precision, only: time_precision, core_rknd ! Variable(s)
 

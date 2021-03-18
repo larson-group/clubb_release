@@ -33,7 +33,7 @@ module gabls3
 
     use diag_ustar_module, only: diag_ustar ! Procedure(s)
 
-    use surface_flux, only: compute_wpthlp_sfc, compute_wprtp_sfc ! Procedure(s)
+    use sfc_flux, only: compute_wpthlp_sfc, compute_wprtp_sfc ! Procedure(s)
 
     use clubb_precision, only: core_rknd ! Variable(s)
 

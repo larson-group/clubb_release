@@ -261,8 +261,8 @@ module advance_clubb_core_module
     use advance_xp2_xpyp_module, only: &
         advance_xp2_xpyp     ! Computes variance terms
 
-    use surface_varnce_module, only:  &
-        calc_surface_varnce ! Procedure
+    use sfc_varnce_module, only:  &
+        calc_sfc_varnce ! Procedure
 
     use mixing_length, only: &
         compute_mixing_length, &    ! Procedure
@@ -1365,7 +1365,7 @@ module advance_clubb_core_module
         end if
 
         ! Diagnose surface variances based on surface fluxes.
-        call calc_surface_varnce( upwp_sfc, vpwp_sfc, wpthlp_sfc, wprtp_sfc, &      ! intent(in)
+        call calc_sfc_varnce( upwp_sfc, vpwp_sfc, wpthlp_sfc, wprtp_sfc, &      ! intent(in)
                              um(2), vm(2), Lscale_up(2), wpsclrp_sfc,        &      ! intent(in)
                              wp2_splat(1), tau_zm(1),                        &      ! intent(in)
                              depth_pos_wpthlp,                               &      ! intent(in)
@@ -1378,7 +1378,7 @@ module advance_clubb_core_module
         if ( clubb_at_least_debug_level( 0 ) ) then
           if ( err_code == clubb_fatal_error ) then
             err_code_out = err_code
-            write(fstderr,*) "Error calling calc_surface_varnce"
+            write(fstderr,*) "Error calling calc_sfc_varnce"
             return
           end if
         end if
