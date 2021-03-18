@@ -130,14 +130,14 @@ module stats_sfc_module
         iveg_T_in_K = k
 
         call stat_assign( var_index=iveg_T_in_K, var_name="veg_T_in_K", &
-             var_description="veg_T_in_K, sfc Vegetation Temperature", var_units="K", &
+             var_description="veg_T_in_K, Surface Vegetation Temperature", var_units="K", &
              l_silhs=.false., grid_kind=stats_sfc )
         k = k + 1
       case ('sfc_soil_T_in_K')
         isfc_soil_T_in_K = k
 
         call stat_assign( var_index=isfc_soil_T_in_K, var_name="sfc_soil_T_in_K", &
-             var_description="sfc_soil_T_in_K, sfc soil temperature", &
+             var_description="sfc_soil_T_in_K, Surface soil temperature", &
              var_units="K", l_silhs=.false., &
              grid_kind=stats_sfc )
         k = k + 1
@@ -153,14 +153,14 @@ module stats_sfc_module
       case ('lh')
         ilh = k
         call stat_assign( var_index=ilh, var_name="lh", &
-             var_description="lh, sfc latent heating", var_units="W/m2", l_silhs=.false., &
+             var_description="lh, Surface latent heating", var_units="W/m2", l_silhs=.false., &
              grid_kind=stats_sfc )
         k = k + 1
 
       case ('sh')
         ish = k
         call stat_assign( var_index=ish, var_name="sh", &
-             var_description="sh, sfc sensible heating", var_units="W/m2", &
+             var_description="sh, Surface sensible heating", var_units="W/m2", &
              l_silhs=.false., grid_kind=stats_sfc )
         k = k + 1
 
@@ -223,7 +223,7 @@ module stats_sfc_module
       case ('precip_rate_sfc')          ! Brian
         iprecip_rate_sfc = k
         call stat_assign( var_index=iprecip_rate_sfc, var_name="precip_rate_sfc", &
-             var_description="precip_rate_sfc, sfc rainfall rate", var_units="mm/day", &
+             var_description="precip_rate_sfc, Surface rainfall rate", var_units="mm/day", &
              l_silhs=.true., grid_kind=stats_sfc )
         k = k + 1
 
@@ -231,7 +231,7 @@ module stats_sfc_module
         irain_flux_sfc = k
 
         call stat_assign( var_index=irain_flux_sfc, var_name="rain_flux_sfc, ", &
-             var_description="rain_flux_sfc, sfc rain flux", &
+             var_description="rain_flux_sfc, Surface rain flux", &
              var_units="W/m^2", l_silhs=.false., &
              grid_kind=stats_sfc )
         k = k + 1
@@ -240,7 +240,7 @@ module stats_sfc_module
         irrm_sfc = k
 
         call stat_assign( var_index=irrm_sfc, var_name="rrm_sfc", &
-             var_description="rrm_sfc, sfc rain water mixing ratio", var_units="kg/kg", &
+             var_description="rrm_sfc, Surface rain water mixing ratio", var_units="kg/kg", &
              l_silhs=.false., grid_kind=stats_sfc )
         k = k + 1
 
@@ -267,7 +267,7 @@ module stats_sfc_module
         iwpthlp_sfc = k
 
         call stat_assign( var_index=iwpthlp_sfc, var_name="wpthlp_sfc", &
-             var_description="w'thl'_sfc, wpthlp sfc flux", &
+             var_description="w'thl'_sfc, wpthlp surface flux", &
              var_units="K m/s", l_silhs=.false., &
              grid_kind=stats_sfc )
         k = k + 1
@@ -276,7 +276,7 @@ module stats_sfc_module
         iwprtp_sfc = k
 
         call stat_assign( var_index=iwprtp_sfc, var_name="wprtp_sfc", &
-             var_description="w'rt'_sfc, wprtp sfc flux", var_units="(kg/kg) m/s", &
+             var_description="w'rt'_sfc, wprtp surface flux", var_units="(kg/kg) m/s", &
              l_silhs=.false., grid_kind=stats_sfc )
         k = k + 1
 
@@ -284,7 +284,7 @@ module stats_sfc_module
         iupwp_sfc = k
 
         call stat_assign( var_index=iupwp_sfc, var_name="upwp_sfc", &
-             var_description="u'w'_sfc, upwp sfc flux", &
+             var_description="u'w'_sfc, upwp surface flux", &
              var_units="m^2/s^2", l_silhs=.false., &
              grid_kind=stats_sfc )
         k = k + 1
@@ -293,7 +293,7 @@ module stats_sfc_module
         ivpwp_sfc = k
 
         call stat_assign( var_index=ivpwp_sfc, var_name="vpwp_sfc", &
-             var_description="v'w'_sfc, vpwp sfc flux", &
+             var_description="v'w'_sfc, vpwp surface flux", &
              var_units="m^2/s^2", l_silhs=.false., &
              grid_kind=stats_sfc )
         k = k + 1
@@ -377,7 +377,7 @@ module stats_sfc_module
         iT_sfc = k
 
         call stat_assign( var_index=iT_sfc, var_name="T_sfc", &
-             var_description="T_sfc, sfc Temperature", var_units="K", l_silhs=.false., &
+             var_description="T_sfc, Surface Temperature", var_units="K", l_silhs=.false., &
              grid_kind=stats_sfc )
         k = k + 1
 
