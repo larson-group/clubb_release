@@ -180,7 +180,7 @@ def constructSensMatrix(sensParamValsRow, sensMetricValsMatrix,
 
     # Matrix of inverse biases.
     # Used for forming normalized sensitivity derivatives.
-    invrsBiasesMatrix = np.matmul(np.reciprocal(defaultBiasesCol),np.ones((1,numMetrics)))
+    invrsBiasesMatrix = np.matmul(np.reciprocal(defaultBiasesCol),np.ones((1,numParams)))
 
     print("\ninvrsBiasesMatrix =")
     print(invrsBiasesMatrix)
@@ -203,7 +203,7 @@ def calcSvd(sensMatrix):
 
     import  numpy as np
 
-    u, s, vh = np.linalg.svd(sensMatrix)
+    u, s, vh = np.linalg.svd(sensMatrix, full_matrices=False)
 
     print("\nSingular values =")
     print(s)
@@ -227,19 +227,19 @@ def calcSvd(sensMatrix):
 
     print("\nInverse truncated singular values =")
     print(sValsTruncInv)
-
-    svdInvrs = np.transpose(vh)*np.diag(sValsTruncInv) *np.transpose(u)
+    pdb.set_trace()
+    svdInvrs = np.transpose(vh) @ np.diag(sValsTruncInv) @ np.transpose(u)
 
     print("\nSVD inverse =")
     print(svdInvrs)
 
-    eigVals, eigVecs = np.linalg.eig(np.transpose(sensMatrix)*sensMatrix)
+    eigVals, eigVecs = np.linalg.eig(np.transpose(sensMatrix) @ sensMatrix)
 
-    print("\neigVals =")
-    print(eigVals)
+    #print("\neigVals =")
+    #print(eigVals)
 
-    print("\neigVecs = ")
-    print(eigVecs)
+    #print("\neigVecs = ")
+    #print(eigVecs)
 
     return svdInvrs
 
