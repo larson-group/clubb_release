@@ -10,7 +10,7 @@ def main():
     import pdb
 
     # Metrics are observed quantities that we want to match.
-    metricsNames = np.array(['SWCF', 'LWCF'])
+    metricsNames = np.array(['SWCF', 'LWCF', 'PRECT'])
 
     # Parameters are tunable model parameters.
     #paramsNames = np.array(['C5','C8'])
@@ -57,6 +57,9 @@ def analyzeSensMatrix(metricsNames, paramsNames,
     """
 
     import numpy as np
+    import sys
+    import netCDF4
+    import pdb
 
     if ( len(paramsNames) != len(sensNcFilenames)   ):
         print("Number of parameters must equal number of netcdf files.")
@@ -98,6 +101,31 @@ def analyzeSensMatrix(metricsNames, paramsNames,
                                 defaultParamValsDict, paramsNames,
                                 numParams, numMetrics,
                                 defaultNcFilename)
+
+    # Make sure that each sensitivity simulation changes one and only one parameter.
+    # However, here we only check parameters that are listed in paramsNames.
+    for sensFileIdx in np.arange(numParams):
+        # Read netcdf file of a sensitivity simulation.
+        f_sensParams = netCDF4.Dataset(sensNcFilenames[sensFileIdx], 'r')
+        # Now loop over parameters and compare values in the sensitivity and default simulations
+        for paramIdx in np.arange(numParams):
+            paramName = paramsNames[paramIdx]
+            #sensParamValsRow[0,idx] = sensParamValsDict[paramName]
+            # Assume each metric is stored as length-1 array, rather than scalar.
+            #   Hence the "[0]" at the end is needed.
+            sensParamVal = np.asscalar( f_sensParams.variables[paramName][0] )
+            defaultParamVal = defaultParamValsRow[0][paramIdx]
+            sensDefaultAreClose = np.isclose(sensParamVal,defaultParamVal)
+            if sensFileIdx==paramIdx and sensDefaultAreClose:
+                print("\nsensFileIdx =", sensFileIdx)
+                print("paramIdx =", paramIdx, ", defaultParamVal =", defaultParamVal, ", sensParamVal =", sensParamVal)
+                sys.exit("Error: a sensitivity simulation has left a designated parameter at its default value.")
+            if sensFileIdx!=paramIdx and not sensDefaultAreClose:
+                print("\nsensFileIdx =", sensFileIdx)
+                print("paramIdx =", paramIdx, ", defaultParamVal =", defaultParamVal, ", sensParamVal =", sensParamVal)
+                sys.exit("Error: sensitivity simulation has changed the value of an undesignated parameter.")
+        f_sensParams.close()
+
     # Based on the numParams sensitivity simulations,
     #    set up a row vector of modified parameter values.
     # Also set up numMetrics x numParams matrix,
@@ -107,7 +135,7 @@ def analyzeSensMatrix(metricsNames, paramsNames,
             setupSensArrays(sensMetricValsRefMatrix, metricsNames,
                     sensParamValsDict, paramsNames,
                     numParams, numMetrics,
-                     sensNcFilenames)
+                    sensNcFilenames)
 
     # Calculate the sensitivity matrix and the sensitivity matrix
     # normalized by the discrepancies from observations in default simulation.
@@ -134,6 +162,7 @@ def constructSensMatrix(sensParamValsRow, sensMetricValsMatrix,
     """
 
     import numpy as np
+    import sys
 
     # Matrix of metric values from default simulation
     # Each column in the matrix is repeated numParams times, for later multiplication
@@ -153,6 +182,13 @@ def constructSensMatrix(sensParamValsRow, sensMetricValsMatrix,
 
     print("\ndparamsRow =")
     print(dparamsRow)
+
+    # Make sure that the parameter values from sensitivity simulations
+    #    are actually different than the ones from the default simulation:
+    if np.any( np.isclose(dparamsRow, np.zeros((1,numParams))) ):
+        print("\ndparamsRow =")
+        print(dparamsRow)
+        sys.exit("Error: A sensitivity simulation has left its 'changed' parameter at the default value.")
 
     print("\nreciprocal of dparamsRow")
     print(np.reciprocal(dparamsRow))
