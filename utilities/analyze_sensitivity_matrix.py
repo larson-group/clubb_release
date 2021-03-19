@@ -227,7 +227,7 @@ def calcSvd(sensMatrix):
 
     print("\nInverse truncated singular values =")
     print(sValsTruncInv)
-    pdb.set_trace()
+    
     svdInvrs = np.transpose(vh) @ np.diag(sValsTruncInv) @ np.transpose(u)
 
     print("\nSVD inverse =")
