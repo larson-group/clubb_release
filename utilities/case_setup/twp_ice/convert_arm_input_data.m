@@ -5,7 +5,7 @@
 %	caseName - the name of the case files are being made for
 %	fileName - the name of the file to read
 %	sndgTime - the time the initial sounding should be generated from (in seconds)
-%	Psfc	 - pressure at the surface in mb
+%	Psfc	 - pressure at the sfc in mb
 function convert_arm_input_data( caseName, fileName, sndgTime, Psfc )
 
 seconds_per_day = 86400;
@@ -148,7 +148,7 @@ end
 fclose(fid);
 
 %Do some unit conversions
-%Convert pressure levels to height (requires pressure at surface)
+%Convert pressure levels to height (requires pressure at sfc)
 height = convert_units.pressure_in_hPa_to_height_m(T(1:size(lev,1)), lev, Psfc);
 
 exner = convert_units.pressure_in_hPa_to_exner(lev);
@@ -227,8 +227,8 @@ end
 %Close the output file
 fclose(fout);	
 
-%Now we need to create the surface.in file 
-fileName = [caseName '_surface.in'];
+%Now we need to create the sfc.in file 
+fileName = [caseName '_sfc.in'];
 
 %Open the output file
 fout = fopen(fileName,'w');

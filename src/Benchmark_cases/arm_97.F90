@@ -38,7 +38,7 @@ module arm_97
 
     use interpolation, only: linear_interp_factor ! Procedure(s)
 
-    use surface_flux, only: convert_sens_ht_to_km_s, convert_latent_ht_to_m_s ! Procedure(s)
+    use sfc_flux, only: convert_sens_ht_to_km_s, convert_latent_ht_to_m_s ! Procedure(s)
 
     use time_dependent_input, only: &
       time_select, &

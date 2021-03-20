@@ -21,7 +21,7 @@ module numerical_check
 
   public :: invalid_model_arrays, is_nan_2d,  & 
             rad_check, parameterization_check, & 
-            surface_varnce_check, pdf_closure_check, & 
+            sfc_varnce_check, pdf_closure_check, & 
             length_check, is_nan_sclr, calculate_spurious_source
 
   private :: check_negative, check_nan
@@ -504,7 +504,7 @@ module numerical_check
   end subroutine parameterization_check
 
 !-----------------------------------------------------------------------
-  subroutine surface_varnce_check( wp2_sfc, up2_sfc, vp2_sfc, thlp2_sfc, & 
+  subroutine sfc_varnce_check( wp2_sfc, up2_sfc, vp2_sfc, thlp2_sfc, & 
            rtp2_sfc, rtpthlp_sfc, &
            sclrp2_sfc, sclrprtp_sfc, sclrpthlp_sfc )
 !
@@ -568,7 +568,7 @@ module numerical_check
     end if
 
     return
-  end subroutine surface_varnce_check
+  end subroutine sfc_varnce_check
 
 !-----------------------------------------------------------------------
   subroutine rad_check( thlm, rcm, rtm, rim,  & 

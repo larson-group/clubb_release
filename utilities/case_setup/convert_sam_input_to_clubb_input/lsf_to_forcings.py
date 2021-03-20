@@ -22,7 +22,7 @@ import common_utils
 # Check arguments!
 if len(sys.argv) != 4:
     print "Usage:"
-    print "./sfc_to_surface.py inputFile outputFile day0"
+    print "./sfc_to_sfc.py inputFile outputFile day0"
     print "Where inputFile is the lsf file, outputFile is the *_forcings.in \
 file, and day0 is the value for the day field that corresponds to t=0 in CLUBB."
     sys.exit(1)

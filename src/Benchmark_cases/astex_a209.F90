@@ -109,7 +109,7 @@ module astex_a209
     use time_dependent_input, only: T_sfc_given, time_sfc_given, &
                                     time_select ! Variable(s)
 
-    use surface_flux, only: compute_wprtp_sfc, compute_wpthlp_sfc   !Procedure(s)
+    use sfc_flux, only: compute_wprtp_sfc, compute_wpthlp_sfc   !Procedure(s)
 
     use saturation, only: sat_mixrat_liq ! Procedure(s)
 

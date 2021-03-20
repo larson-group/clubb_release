@@ -37,7 +37,7 @@ module cloud_feedback
 
   use clubb_precision, only: time_precision, core_rknd ! Variable(s)
 
-  use surface_flux, only: compute_wprtp_sfc, compute_wpthlp_sfc
+  use sfc_flux, only: compute_wprtp_sfc, compute_wpthlp_sfc
 
   use time_dependent_input, only: time_sfc_given, T_sfc_given, &! Variable(s)
                                   time_select                   ! Procedure(s)

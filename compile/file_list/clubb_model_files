@@ -25,7 +25,7 @@
 ../src/Benchmark_cases/rad_lwsw_module.F90
 ../src/Benchmark_cases/rico.F90
 ../src/Benchmark_cases/spec_hum_to_mixing_ratio.F90
-../src/Benchmark_cases/surface_flux.F90
+../src/Benchmark_cases/sfc_flux.F90
 ../src/Benchmark_cases/twp_ice.F90
 ../src/Benchmark_cases/wangara.F90
 ../src/advance_microphys_module.F90

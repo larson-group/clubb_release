@@ -15,6 +15,6 @@ do
 	sudo -u matlabuser matlab -nodisplay -nodesktop -r convert_arm_input_data"('twp_ice', '$dataName', 0, 1004.4 )"
 	mv -f "twp_ice_sounding.in" "ensembles/$folderName"
 	mv -f "twp_ice_forcings.in" "ensembles/$folderName"
-	mv -f "twp_ice_surface.in" "ensembles/$folderName"
+	mv -f "twp_ice_sfc.in" "ensembles/$folderName"
 	rm $dataName
 done

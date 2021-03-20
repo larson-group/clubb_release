@@ -4522,7 +4522,7 @@ module clubb_driver
 
     use wangara, only: wangara_tndcy, wangara_sfclyr !------- Procedure(s)
 
-    use surface_flux, only:  &   !--------------------------- Procedure(s)
+    use sfc_flux, only:  &   !--------------------------- Procedure(s)
       compute_momentum_flux, &
       compute_ubar,          &
       set_sclr_sfc_rtm_thlm

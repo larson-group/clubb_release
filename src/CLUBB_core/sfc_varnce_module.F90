@@ -1,18 +1,18 @@
 !-------------------------------------------------------------------------
 ! $Id$
 !===============================================================================
-module surface_varnce_module
+module sfc_varnce_module
 
   implicit none
 
   private ! Default to private
 
-  public :: calc_surface_varnce
+  public :: calc_sfc_varnce
 
   contains
 
   !=============================================================================
-  subroutine calc_surface_varnce( upwp_sfc, vpwp_sfc, wpthlp_sfc, wprtp_sfc, & 
+  subroutine calc_sfc_varnce( upwp_sfc, vpwp_sfc, wpthlp_sfc, wprtp_sfc, & 
                              um_sfc, vm_sfc, Lscale_up_sfc, wpsclrp_sfc, & 
                              wp2_splat_sfc, tau_zm_sfc, &
                              depth_pos_wpthlp, &
@@ -55,7 +55,7 @@ module surface_varnce_module
         sclr_dim  ! Variable(s)
 
     use numerical_check, only: & 
-        surface_varnce_check ! Procedure
+        sfc_varnce_check ! Procedure
 
     use error_code, only: &
         clubb_at_least_debug_level,  & ! Procedure
@@ -483,13 +483,13 @@ module surface_varnce_module
 
     if ( clubb_at_least_debug_level( 2 ) ) then
 
-       call surface_varnce_check( wp2_sfc, up2_sfc, vp2_sfc,  & 
+       call sfc_varnce_check( wp2_sfc, up2_sfc, vp2_sfc,  & 
                                   thlp2_sfc, rtp2_sfc, rtpthlp_sfc, & 
                                   sclrp2_sfc, sclrprtp_sfc, sclrpthlp_sfc )
 
        if ( err_code == clubb_fatal_error ) then
 
-          write(fstderr,*) "Error in calc_surface_varnce"
+          write(fstderr,*) "Error in calc_sfc_varnce"
           write(fstderr,*) "Intent(in)"
 
           write(fstderr,*) "upwp_sfc = ", upwp_sfc
@@ -523,8 +523,8 @@ module surface_varnce_module
 
     return
 
-  end subroutine calc_surface_varnce
+  end subroutine calc_sfc_varnce
 
 !===============================================================================
 
-end module surface_varnce_module
+end module sfc_varnce_module

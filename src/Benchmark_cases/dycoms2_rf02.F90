@@ -101,7 +101,7 @@ module dycoms2_rf02
   !  http://www.atmos.ucla.edu/~bstevens/Documents/dycoms.pdf 
   !----------------------------------------------------------------------
 
-    use surface_flux, only: convert_sens_ht_to_km_s, convert_latent_ht_to_m_s ! Procedure(s)
+    use sfc_flux, only: convert_sens_ht_to_km_s, convert_latent_ht_to_m_s ! Procedure(s)
 
     use time_dependent_input, only: sens_ht_given, latent_ht_given, time_sfc_given,& ! Variable(s)
                                     time_select ! Procedure(s)
