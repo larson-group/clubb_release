@@ -70,15 +70,21 @@ def analyzeSensMatrix(metricsNames, paramsNames, transformedParams,
     # Number of tunable parameters
     numParams = len(paramsNames)
 
-    print("\nnumParams =")
-    print(numParams)
+    #print("\nnumParams =")
+    #print(numParams)
 
     # Number of metrics
     numMetrics = len(metricsNames)
 
-    print("\nnumMetrics =")
-    print(numMetrics)
+    #print("\nnumMetrics =")
+    #print(numMetrics)
 
+    print("\nmetricsNames = ")
+    print(metricsNames)
+    
+    print("\nparamsNames = ")
+    print(paramsNames)    
+    
     # Set up a column vector of observed metrics
     obsMetricValsCol = \
             setupObsCol(obsMetricValsDict, metricsNames, numMetrics)
