@@ -9,7 +9,7 @@ def main():
     import numpy as np
     import pdb
     from analyze_sensitivity_matrix \
-        import analyzeSensMatrix#, plotNormlzdSensMatri
+        import analyzeSensMatrix, plotNormlzdSensMatri
 
     # Metrics are observed quantities that we want to match.
     metricsNames = np.array(['SWCF', 'LWCF', 'PRECT'])
@@ -48,7 +48,7 @@ def main():
         print("\nError: dparamsSoln should equal [0.48658305 2/3], but it does not.")
 
     # Create a heatmap matrix that displays the normalized sensitivity matrix
-#    plotNormlzdSensMatrix(normlzdSensMatrix, metricsNames, paramsNames)
+    plotNormlzdSensMatrix(normlzdSensMatrix, metricsNames, paramsNames)
 
     print("\nReached the end of main in test harness.")
 
