@@ -407,6 +407,22 @@ def setupSensArrays(metricsNames, paramsNames, transformedParams,
 
     return(sensParamValsRow, sensMetricValsMatrix)
 
+def plotNormlzdSensMatrix(normlzdSensMatrix, metricsNames, paramsNames):
+
+    import numpy as np
+    import matplotlib.pyplot as plt    
+
+    fig, ax = plt.subplots(1,1)
+    coloredMatrix = ax.imshow(normlzdSensMatrix, aspect='auto', cmap=plt.cm.RdBu)
+    # Print the matrix element values as text
+    for (i, j), value in np.ndenumerate(normlzdSensMatrix):
+        plt.text(j, i, "%.3f"%value, va='center', ha='center')
+    ax.set_yticks(np.arange(metricsNames.size))
+    ax.set_yticklabels(metricsNames)
+    ax.set_xticks(np.arange(paramsNames.size))
+    ax.set_xticklabels(paramsNames)
+    plt.show()
+    
 # Standard boilerplate to call the main() function to begin
 # the program.
 if __name__ == '__main__':
