@@ -72,6 +72,12 @@ def analyzeSensMatrix(metricsNames, paramsNames, transformedParams,
         print("Number of parameters must equal number of netcdf files.")
         quit()
 
+    print("\ndefaultNcFilename = ")
+    print(defaultNcFilename)
+
+    print("\nsensNcFilenames = ")
+    print(sensNcFilenames)
+
     # Number of tunable parameters
     numParams = len(paramsNames)
 
@@ -89,6 +95,9 @@ def analyzeSensMatrix(metricsNames, paramsNames, transformedParams,
 
     print("\nparamsNames = ")
     print(paramsNames)
+
+    print("\ntransformedParams = ")
+    print(transformedParams)
 
     # Set up a column vector of observed metrics
     obsMetricValsCol = \
@@ -160,7 +169,6 @@ def analyzeSensMatrix(metricsNames, paramsNames, transformedParams,
         paramName = paramsNames[idx]
         if paramName in transformedParams:
             paramsSoln[idx,0] = 1.0-np.exp(-paramsSoln[idx,0])
-            #dparamsSoln[idx,0] = 1.0-np.exp(-dparamsSoln[idx,0])
             dparamsSoln[idx,0] = paramsSoln[idx,0] - defaultParamValsOrigRow[0,idx]
 
     print("\ndparamsSoln =")
@@ -169,10 +177,12 @@ def analyzeSensMatrix(metricsNames, paramsNames, transformedParams,
     print("\nparamsSoln =")
     print(paramsSoln)
 
-    #print("\nCheck: compare with defaultBiasesCol above:")
-    #defaultBiasesApprox = sensMatrix @ dparamsSoln
-    #print("defaultBiasesApprox =")
-    #print(defaultBiasesApprox)
+    # This check is currently broken if any params span [0,1], e.g., C5
+    if transformedParams == np.array(['']):
+        print("\nCheck: Does defaultBiasesApprox approximate defaultBiasesCol above?")
+        defaultBiasesApprox = sensMatrix @ dparamsSoln
+        print("defaultBiasesApprox =")
+        print(defaultBiasesApprox)
 
     return (sensMatrix, normlzdSensMatrix, svdInvrsNormlzd, dparamsSoln, paramsSoln)
 
@@ -266,6 +276,7 @@ def calcSvdInvrs(normlzdSensMatrix):
 
 
     import  numpy as np
+    import pdb
 
     u, s, vh = np.linalg.svd(normlzdSensMatrix, full_matrices=False)
 
@@ -293,6 +304,12 @@ def calcSvdInvrs(normlzdSensMatrix):
     #print(sValsTruncInv)
 
     svdInvrs = np.transpose(vh) @ np.diag(sValsTruncInv) @ np.transpose(u)
+
+    # Assertion check: is svdInvrs truly the inverse of normlzdSensMatrix?
+    numParams = normlzdSensMatrix.shape[1] # = number of columns
+    if not np.all( np.isclose(np.identity(numParams), svdInvrs @ normlzdSensMatrix, \
+                      rtol=1e-6, atol=1e-6 ) ):
+        print("svdInvrs is not the inverse of normlzdSensMatrix")
 
     #print("\nSVD inverse =")
     #print(svdInvrs)
@@ -445,7 +462,7 @@ def plotNormlzdSensMatrix(normlzdSensMatrix, metricsNames, paramsNames):
     ax.set_xticks(np.arange(paramsNames.size))
     ax.set_xticklabels(paramsNames)
     plt.show()
-    
+
 # Standard boilerplate to call the main() function to begin
 # the program.
 if __name__ == '__main__':
