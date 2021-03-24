@@ -79,6 +79,9 @@ module clubb_driver
         w_tol_sqd, &
         em_min, &
         eps
+        
+    use clubb_api_module, only: &
+      setup_pdf_parameters_api
 
     use pdf_parameter_module, only: &
         pdf_parameter,                 & !----------------------------------- Variable Type(s)
@@ -2194,7 +2197,7 @@ module clubb_driver
       if ( .not. trim( microphys_scheme ) == "none" ) then
 
          !!! Setup the PDF parameters.
-         call setup_pdf_parameters( gr%nz, pdf_dim, dt_main,                         & ! Intent(in)
+         call setup_pdf_parameters_api( gr%nz, pdf_dim, dt_main,                         & ! Intent(in)
                                     Nc_in_cloud, rcm(1,:), cloud_frac, Kh_zm,        & ! Intent(in)
                                     ice_supersat_frac, hydromet, wphydrometp,        & ! Intent(in)
                                     corr_array_n_cloud, corr_array_n_below,          & ! Intent(in)
@@ -2210,7 +2213,7 @@ module clubb_driver
                                     mu_x_1_n(1,:,:), mu_x_2_n(1,:,:),                & ! Intent(out)
                                     sigma_x_1_n(1,:,:), sigma_x_2_n(1,:,:),          & ! Intent(out)
                                     corr_array_1_n, corr_array_2_n,                  & ! Intent(out)
-                                    corr_cholesky_mtx_1, corr_cholesky_mtx_2,        & ! Intent(out)
+                                    corr_cholesky_mtx_1(1,:,:,:), corr_cholesky_mtx_2(1,:,:,:),        & ! Intent(out)
                                     hydromet_pdf_params(1,:) )                         ! Intent(out)
 
          if ( err_code == clubb_fatal_error ) error stop

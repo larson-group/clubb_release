@@ -39,7 +39,7 @@ module setup_clubb_pdf_params
   contains
 
   !=============================================================================
-  subroutine setup_pdf_parameters( nz, pdf_dim, dt, &                          ! Intent(in)
+  subroutine setup_pdf_parameters( nz, ngrdcol, pdf_dim, dt, &                 ! Intent(in)
                                    Nc_in_cloud, rcm, cloud_frac, Kh_zm, &      ! Intent(in)
                                    ice_supersat_frac, hydromet, wphydrometp, & ! Intent(in)
                                    corr_array_n_cloud, corr_array_n_below, &   ! Intent(in)
@@ -157,19 +157,20 @@ module setup_clubb_pdf_params
     ! Input Variables
     integer, intent(in) :: &
       nz,          & ! Number of model vertical grid levels
-      pdf_dim   ! Number of variables in the correlation array
+      pdf_dim,     & ! Number of variables in the correlation array
+      ngrdcol        ! Number of grid columns
 
     real( kind = core_rknd ), intent(in) ::  &
       dt    ! Model timestep                                           [s]
 
-    real( kind = core_rknd ), dimension(nz), intent(in) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: &
       Nc_in_cloud,       & ! Mean (in-cloud) cloud droplet conc.       [num/kg]
       rcm,               & ! Mean cloud water mixing ratio, < r_c >    [kg/kg]
       cloud_frac,        & ! Cloud fraction                            [-]
       Kh_zm,             & ! Eddy diffusivity coef. on momentum levels [m^2/s]
       ice_supersat_frac    ! Ice supersaturation fraction              [-]
 
-    real( kind = core_rknd ), dimension(nz,hydromet_dim), intent(in) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nz,hydromet_dim), intent(in) :: &
       hydromet,    & ! Mean of hydrometeor, hm (overall) (t-levs.) [units]
       wphydrometp    ! Covariance < w'h_m' > (momentum levels)     [(m/s)units]
 
@@ -178,7 +179,7 @@ module setup_clubb_pdf_params
       corr_array_n_cloud, & ! Prescribed normal space corr. array in cloud  [-]
       corr_array_n_below    ! Prescribed normal space corr. array below cl. [-]
 
-    type(pdf_parameter), intent(in) :: &
+    type(pdf_parameter), dimension(ngrdcol), intent(in) :: &
       pdf_params    ! PDF parameters                               [units vary]
 
     logical, intent(in) :: &
@@ -206,27 +207,27 @@ module setup_clubb_pdf_params
       l_fix_w_chi_eta_correlations    ! Use a fixed correlation for s and t Mellor(chi/eta)
 
     ! Output Variables
-    real( kind = core_rknd ), dimension(nz,hydromet_dim), intent(out) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nz,hydromet_dim), intent(out) :: &
       hydrometp2    ! Variance of a hydrometeor (overall) (m-levs.)   [units^2]
 
     ! Output Variables
-    real( kind = core_rknd ), dimension(pdf_dim, nz), intent(out) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,pdf_dim,nz), intent(out) :: &
       mu_x_1_n,    & ! Mean array (normal space): PDF vars. (comp. 1) [un. vary]
       mu_x_2_n,    & ! Mean array (normal space): PDF vars. (comp. 2) [un. vary]
       sigma_x_1_n, & ! Std. dev. array (normal space): PDF vars (comp. 1) [u.v.]
       sigma_x_2_n    ! Std. dev. array (normal space): PDF vars (comp. 2) [u.v.]
 
-    real( kind = core_rknd ), dimension(pdf_dim,pdf_dim,nz), &
+    real( kind = core_rknd ), dimension(ngrdcol,pdf_dim,pdf_dim,nz), &
     intent(out) :: &
       corr_array_1_n, & ! Corr. array (normal space) of PDF vars. (comp. 1)  [-]
       corr_array_2_n    ! Corr. array (normal space) of PDF vars. (comp. 2)  [-]
 
-    real( kind = core_rknd ), dimension(pdf_dim,pdf_dim,nz), &
+    real( kind = core_rknd ), dimension(ngrdcol,pdf_dim,pdf_dim,nz), &
     intent(out) :: &
       corr_cholesky_mtx_1, & ! Transposed corr. cholesky matrix, 1st comp. [-]
       corr_cholesky_mtx_2    ! Transposed corr. cholesky matrix, 2nd comp. [-]
 
-    type(hydromet_pdf_parameter), dimension(nz), intent(out) :: &
+    type(hydromet_pdf_parameter), dimension(ngrdcol,nz), intent(out) :: &
       hydromet_pdf_params    ! Hydrometeor PDF parameters        [units vary]
 
     ! Local Variables
@@ -319,469 +320,473 @@ module setup_clubb_pdf_params
     character(len=10) :: &
       hydromet_name    ! Name of a hydrometeor
 
-    integer :: k, i  ! Loop indices
+    integer :: k, i, j  ! Loop indices
 
     ! ---- Begin Code ----
-
-    ! Assertion check
-    ! Check that all hydrometeors are positive otherwise exit the program
-    if ( clubb_at_least_debug_level( 0 ) ) then
-       do i = 1, hydromet_dim
-          if ( any( hydromet(:,i) < zero_threshold ) ) then
-             hydromet_name = hydromet_list(i)
-             do k = 1, nz
-                if ( hydromet(k,i) < zero_threshold ) then
-                   ! Write error message
-                   write(fstderr,*) " at beginning of setup_pdf_parameters: ", &
-                                    trim( hydromet_name )//" = ", &
-                                    hydromet(k,i), " < ", zero_threshold, &
-                                    " at k = ", k
-                   err_code = clubb_fatal_error
-                   return
-                endif ! hydromet(k,i) < 0
-             enddo ! k = 1, nz
-          endif ! hydromet(:,i) < 0
-       enddo ! i = 1, hydromet_dim
-    endif !clubb_at_least_debug_level( 2 )
-
-    ! Setup some of the PDF parameters
-    mu_w_1       = pdf_params%w_1
-    mu_w_2       = pdf_params%w_2
-    mu_chi_1     = pdf_params%chi_1
-    mu_chi_2     = pdf_params%chi_2
-    sigma_w_1    = sqrt( pdf_params%varnce_w_1 )
-    sigma_w_2    = sqrt( pdf_params%varnce_w_2 )
-    sigma_chi_1  = pdf_params%stdev_chi_1
-    sigma_chi_2  = pdf_params%stdev_chi_2
-    rc_1         = pdf_params%rc_1
-    rc_2         = pdf_params%rc_2
-    cloud_frac_1 = pdf_params%cloud_frac_1
-    cloud_frac_2 = pdf_params%cloud_frac_2
-    mixt_frac    = pdf_params%mixt_frac
-
-    ice_supersat_frac_1 = pdf_params%ice_supersat_frac_1
-    ice_supersat_frac_2 = pdf_params%ice_supersat_frac_2
-
-    ! Recalculate wm_zt and wp2_zt.  Mean vertical velocity may not be easy to
-    ! pass into this subroutine from a host model, and wp2_zt needs to have a
-    ! value consistent with the value it had when the PDF parameters involving w
-    ! were originally set in subroutine pdf_closure.  The variable wp2 has since
-    ! been advanced, resulting a new wp2_zt.  However, the value of wp2 here
-    ! needs to be consistent with wp2 at the time the PDF parameters were
-    ! calculated.
-    do k = 1, nz, 1
-
-       ! Calculate the overall mean of vertical velocity, w, on thermodynamic
-       ! levels.
-       wm_zt(k) = compute_mean_binormal( mu_w_1(k), mu_w_2(k), mixt_frac(k) )
-
-       ! Calculate the overall variance of vertical velocity on thermodynamic
-       ! levels.
-       wp2_zt(k) = compute_variance_binormal( wm_zt(k), mu_w_1(k), mu_w_2(k), &
-                                              sigma_w_1(k), sigma_w_2(k), &
-                                              mixt_frac(k) )
-
-    enddo
-
-    ! Note on hydrometeor PDF shape:
-    ! To use a single lognormal over the entire grid level, turn off the
-    ! l_use_precip_frac flag and set omicron to 1 and zeta_vrnce_rat to 0 in
-    ! tunable_parameters.in.
-    ! To use a single delta-lognormal (single lognormal in-precip.), enable the
-    ! l_use_precip_frac flag and set omicron to 1 and zeta_vrnce_rat to 0 in
-    ! tunable_parameters.in.
-    ! Otherwise, with l_use_precip_frac enabled and omicron and zeta_vrnce_rat
-    ! values that are not 1 and 0, respectively, the PDF shape is a double
-    ! delta-lognormal (two independent lognormals in-precip.).
-
-    ! Calculate precipitation fraction.
-    if ( l_use_precip_frac ) then
-
-       call precip_fraction( nz, hydromet, cloud_frac, cloud_frac_1, &    ! In
-                             cloud_frac_2, ice_supersat_frac, &           ! In
-                             ice_supersat_frac_1, ice_supersat_frac_2, &  ! In
-                             mixt_frac, l_stats_samp, &                   ! In
-                             precip_frac, precip_frac_1, precip_frac_2, & ! Out
-                             precip_frac_tol )                            ! Out
-
-       if ( err_code == clubb_fatal_error ) return
-
-    else
-
-       precip_frac     = one
-       precip_frac_1   = one
-       precip_frac_2   = one
-       precip_frac_tol = cloud_frac_min
-
-    endif
-
-    ! Calculate <N_cn> from Nc_in_cloud, whether Nc_in_cloud is predicted or
-    ! based on a prescribed value, and whether the value is constant or varying
-    ! over the grid level.
-    if ( .not. l_const_Nc_in_cloud ) then
-       ! Ncn varies at each vertical level.
-       const_Ncnp2_on_Ncnm2 = Ncnp2_on_Ncnm2
-    else  ! l_const_Nc_in_cloud
-       ! Ncn is constant at each vertical level.
-       const_Ncnp2_on_Ncnm2 = zero
-    endif
-
-    const_corr_chi_Ncn_n_cloud = corr_array_n_cloud(iiPDF_Ncn,iiPDF_chi)
-
-    const_corr_chi_Ncn &
-    = corr_NN2NL( const_corr_chi_Ncn_n_cloud, &
-                  stdev_L2N( const_Ncnp2_on_Ncnm2 ), &
-                  const_Ncnp2_on_Ncnm2 )
-
-    Ncnm = Nc_in_cloud_to_Ncnm( mu_chi_1, mu_chi_2, sigma_chi_1, &
-                                sigma_chi_2, mixt_frac, Nc_in_cloud, &
-                                cloud_frac_1, cloud_frac_2, &
-                                const_Ncnp2_on_Ncnm2, const_corr_chi_Ncn )
-
-    ! Boundary Condition.
-    ! At thermodynamic level k = 1, which is below the model lower boundary, the
-    ! value of Ncnm does not matter.
-    Ncnm(1) = Nc_in_cloud(1)
-
-    ! Calculate the overall variance of a precipitating hydrometeor (hm),
-    !<hm'^2>.
-    do i = 1, hydromet_dim, 1
-
-       do k = 1, nz, 1
-          if ( hydromet(k,i) >= hydromet_tol(i) ) then
-             ! There is some of the hydrometeor species found at level k.
-             ! Calculate the variance (overall) of the hydrometeor.
-             hydrometp2_zt(k,i) &
-             = ( ( hmp2_ip_on_hmm2_ip(i) + one ) / precip_frac(k) - one ) &
-               * hydromet(k,i)**2
-          else
-             hydrometp2_zt(k,i) = zero
-          endif
-       enddo ! k = 1, nz, 1
-
-       ! Statistics
-       if ( l_stats_samp ) then
-          if ( ihmp2_zt(i) > 0 ) then
-             ! Variance (overall) of the hydrometeor, <hm'^2>.
-!             call stat_update_var( ihmp2_zt(i), hydrometp2_zt(:,i), stats_zt )
-             ! Switch back to using stat_update_var once the code is generalized
-             ! to pass in the number of vertical levels.
-             do k = 1, nz, 1
-                call stat_update_var_pt( ihmp2_zt(i), k, hydrometp2_zt(k,i), &
-                                         stats_zt )
-             enddo ! k = 1, nz, 1
-          endif
-       endif ! l_stats_samp
-
-       ! Interpolate the covariances (overall) of w and precipitating
-       ! hydrometeors to thermodynamic grid levels.
-       wphydrometp_zt(:,i) = zm2zt( wphydrometp(:,i) )
-
-       ! When the mean value of a precipitating hydrometeor is below tolerance
-       ! value, it is considered to have a value of 0, and the precipitating
-       ! hydrometeor does not vary over the grid level.  Any covariances
-       ! involving that precipitating hydrometeor also have values of 0 at that
-       ! grid level.
-       do k = 1, nz, 1
-
-          if ( hydromet(k,i) < hydromet_tol(i) ) then
-             wphydrometp_zt(k,i) = zero
-          endif
-
-          ! Clip the value of covariance <w'hm'> on thermodynamic levels.
-          call clip_covar_level( clip_wphydrometp, k, l_first_clip_ts, &
-                                 l_last_clip_ts, dt, wp2_zt(k), &
-                                 hydrometp2_zt(k,i), &
-                                 l_predict_upwp_vpwp, &
-                                 wphydrometp_zt(k,i), wphydrometp_chnge(k,i) )
-
-       enddo ! k = 1, nz, 1
-
-    enddo ! i = 1, hydromet_dim, 1
-
-    ! Calculate correlations involving w and Ncn by first calculating the
-    ! overall covariance of w and Ncn using the down-gradient approximation.
-    if ( l_calc_w_corr ) then
-
-       wpNcnp_zm(1:nz-1) = xpwp_fnc( -c_K_hm * Kh_zm(1:nz-1), Ncnm(1:nz-1), &
-                                     Ncnm(2:nz), gr%invrs_dzm(1:nz-1) )
-
-       ! Boundary conditions; We are assuming zero flux at the top.
-       wpNcnp_zm(nz) = zero
-
-       ! Interpolate the covariances to thermodynamic grid levels.
-       wpNcnp_zt = zm2zt( wpNcnp_zm )
-
-       ! When the mean value of Ncn is below tolerance value, it is considered
-       ! to have a value of 0, and Ncn does not vary over the grid level.  Any
-       ! covariance involving Ncn also has a value of 0 at that grid level.
-       do k = 1, nz, 1
-          if ( Ncnm(k) <= Ncn_tol ) then
-             wpNcnp_zt(k) = zero
-          endif
-       enddo ! k = 1, nz, 1
-
-    endif ! l_calc_w_corr
-
-    ! Statistics
-    if ( l_stats_samp ) then
-
-       ! Switch back to using stat_update_var once the code is generalized
-       ! to pass in the number of vertical levels.
-       if ( iprecip_frac > 0 ) then
-          ! Overall precipitation fraction.
-!          call stat_update_var( iprecip_frac, precip_frac, stats_zt )
-          do k = 1, nz, 1
-             call stat_update_var_pt( iprecip_frac, k, precip_frac(k), &
-                                      stats_zt )
-          enddo ! k = 1, nz, 1
-       endif
-
-       if ( iprecip_frac_1 > 0 ) then
-          ! Precipitation fraction in PDF component 1.
-!          call stat_update_var( iprecip_frac_1, precip_frac_1, stats_zt )
-          do k = 1, nz, 1
-             call stat_update_var_pt( iprecip_frac_1, k, precip_frac_1(k), &
-                                      stats_zt )
-          enddo ! k = 1, nz, 1
-       endif
-
-       if ( iprecip_frac_2 > 0 ) then
-          ! Precipitation fraction in PDF component 2.
-!          call stat_update_var( iprecip_frac_2, precip_frac_2, stats_zt )
-          do k = 1, nz, 1
-             call stat_update_var_pt( iprecip_frac_2, k, precip_frac_2(k), &
-                                      stats_zt )
-          enddo ! k = 1, nz, 1
-       endif
-
-       if ( iNcnm > 0 ) then
-          ! Mean simplified cloud nuclei concentration (overall).
-!          call stat_update_var( iNcnm, Ncnm, stats_zt )
-          do k = 1, nz, 1
-             call stat_update_var_pt( iNcnm, k, Ncnm(k), stats_zt )
-          enddo ! k = 1, nz, 1
-       endif
-
-    endif
-
-
-    !!! Calculate the means and standard deviations involving PDF variables
-    !!! -- w, chi, eta, N_cn, and any precipitating hydrometeors (hm in-precip)
-    !!! -- for each PDF component.
-    call compute_mean_stdev( nz, hydromet, hydrometp2_zt,   & ! Intent(in)
-                             Ncnm, mixt_frac, precip_frac,  & ! Intent(in)
-                             precip_frac_1, precip_frac_2,  & ! Intent(in)
-                             precip_frac_tol,               & ! Intent(in)
-                             pdf_params%w_1,                & ! Intent(in)
-                             pdf_params%w_2,                & ! Intent(in)
-                             pdf_params%varnce_w_1,         & ! Intent(in)
-                             pdf_params%varnce_w_2,         & ! Intent(in)
-                             pdf_params%chi_1,              & ! Intent(in)
-                             pdf_params%chi_2,              & ! Intent(in)
-                             pdf_params%stdev_chi_1,        & ! Intent(in)
-                             pdf_params%stdev_chi_2,        & ! Intent(in)
-                             pdf_params%stdev_eta_1,        & ! Intent(in)
-                             pdf_params%stdev_eta_2,        & ! Intent(in)
-                             pdf_params%thl_1,              & ! Intent(in)
-                             pdf_params%thl_2,              & ! Intent(in)
-                             pdf_dim,                       & ! Intent(in)
-                             l_const_Nc_in_cloud,           & ! Intent(in)
-                             mu_x_1, mu_x_2,                & ! Intent(out)
-                             sigma_x_1, sigma_x_2,          & ! Intent(out)
-                             hm_1, hm_2,                    & ! Intent(out)
-                             sigma2_on_mu2_ip_1,            & ! Intent(out)
-                             sigma2_on_mu2_ip_2             ) ! Intent(out)
-
-    !!! Transform the component means and standard deviations involving
-    !!! precipitating hydrometeors (hm in-precip) and N_cn -- ln hm and
-    !!! ln N_cn -- to normal space for each PDF component.
-    call norm_transform_mean_stdev( nz, hm_1, hm_2,          & ! Intent(in)
-                                    Ncnm, pdf_dim,           & ! Intent(in)
-                                    mu_x_1, mu_x_2,          & ! Intent(in)
-                                    sigma_x_1, sigma_x_2,    & ! Intent(in)
-                                    sigma2_on_mu2_ip_1,      & ! Intent(in)
-                                    sigma2_on_mu2_ip_2,      & ! Intent(in)
-                                    l_const_Nc_in_cloud,     & ! Intent(in)
-                                    mu_x_1_n, mu_x_2_n,      & ! Intent(out)
-                                    sigma_x_1_n, sigma_x_2_n ) ! Intent(out)
-
-    !!! Calculate the normal space correlations.
-    !!! The normal space correlations are the same as the true correlations
-    !!! except when at least one of the variables involved is a precipitating
-    !!! hydrometeor or Ncn.  In these cases, the normal space correlation
-    !!! involves the natural logarithm of the precipitating hydrometeors, ln hm
-    !!! (for example, ln r_r and ln N_r), and ln N_cn for each PDF component.
-    if ( l_diagnose_correlations ) then
-
-       do k = 2, nz, 1
-
-          if ( rcm(k) > rc_tol ) then
-
-             call diagnose_correlations( pdf_dim, corr_array_n_cloud, & ! In
-                                         l_calc_w_corr, &               ! In
-                                         corr_array_1_n(:,:,k) )        ! Out
-
-             call diagnose_correlations( pdf_dim, corr_array_n_cloud, & ! In
-                                         l_calc_w_corr, &               ! In
-                                         corr_array_2_n(:,:,k) )        ! Out
-
-          else
-
-             call diagnose_correlations( pdf_dim, corr_array_n_below, & ! In
-                                         l_calc_w_corr, &               ! In
-                                         corr_array_1_n(:,:,k) )        ! Out
-
-             call diagnose_correlations( pdf_dim, corr_array_n_below, & ! In
-                                         l_calc_w_corr, &               ! In
-                                         corr_array_2_n(:,:,k) )        ! Out
-
-          endif
-
-       enddo ! k = 2, nz, 1
-
-    else ! if .not. l_diagnose_correlations
-
-       call comp_corr_norm( nz, wm_zt, rc_1, rc_2, cloud_frac_1, &
-                            cloud_frac_2, mixt_frac, &
-                            precip_frac_1, precip_frac_2, &
-                            wpNcnp_zt, wphydrometp_zt, &
-                            mu_x_1, mu_x_2, &
-                            sigma_x_1, sigma_x_2, &
-                            sigma_x_1_n, sigma_x_2_n, &
-                            corr_array_n_cloud, corr_array_n_below, &
-                            pdf_params%corr_chi_eta_1, &
-                            pdf_params%corr_chi_eta_2, &
-                            pdf_params%corr_w_chi_1, &
-                            pdf_params%corr_w_chi_2, &
-                            pdf_params%corr_w_eta_1, &
-                            pdf_params%corr_w_eta_2, &
-                            pdf_dim, &
-                            iiPDF_type, &
-                            l_calc_w_corr, &
-                            l_fix_w_chi_eta_correlations, &
-                            corr_array_1_n, corr_array_2_n )
-
-    endif ! l_diagnose_correlations
-
-    !!! Calculate the true correlations for each PDF component.
-    call denorm_transform_corr( nz, pdf_dim, &
-                                sigma_x_1_n, sigma_x_2_n, &
-                                sigma2_on_mu2_ip_1, sigma2_on_mu2_ip_2, &
-                                corr_array_1_n, &
-                                corr_array_2_n, &
-                                corr_array_1, corr_array_2 )
-
-    !!! Statistics for standard PDF parameters involving hydrometeors.
-    call pdf_param_hm_stats( nz, pdf_dim, hm_1, hm_2, &
-                             mu_x_1, mu_x_2, &
-                             sigma_x_1, sigma_x_2, &
-                             corr_array_1, corr_array_2, &
-                             l_stats_samp )
-
-    !!! Statistics for normal space PDF parameters involving hydrometeors.
-    call pdf_param_ln_hm_stats( nz, pdf_dim, mu_x_1_n, &
-                                mu_x_2_n, sigma_x_1_n, &
-                                sigma_x_2_n, corr_array_1_n, &
-                                corr_array_2_n, l_stats_samp )
-
-    !!! Pack the PDF parameters
-    call pack_hydromet_pdf_params( nz, hm_1, hm_2, pdf_dim,    & ! In
-                                   mu_x_1, mu_x_2,             & ! In
-                                   sigma_x_1, sigma_x_2,       & ! In
-                                   corr_array_1, corr_array_2, & ! In
-                                   precip_frac, precip_frac_1, & ! In
-                                   precip_frac_2,              & ! In
-                                   hydromet_pdf_params         ) ! Out
-
-    !!! Setup PDF parameters loop.
-    ! Loop over all model thermodynamic level above the model lower boundary.
-    ! Now also including "model lower boundary" -- Eric Raut Aug 2013
-    ! Now not  including "model lower boundary" -- Eric Raut Aug 2014
-
-    do k = 2, nz, 1
-
-       if ( l_diagnose_correlations ) then
-
-          call calc_cholesky_corr_mtx_approx &
-                         ( pdf_dim, corr_array_1_n(:,:,k), &           ! intent(in)
-                           corr_cholesky_mtx_1(:,:,k), corr_mtx_approx_1 ) ! intent(out)
-
-          call calc_cholesky_corr_mtx_approx &
-                         ( pdf_dim, corr_array_2_n(:,:,k), &           ! intent(in)
-                           corr_cholesky_mtx_2(:,:,k), corr_mtx_approx_2 ) ! intent(out)
-
-          corr_array_1_n(:,:,k) = corr_mtx_approx_1
-          corr_array_2_n(:,:,k) = corr_mtx_approx_2
-
-       else
-
-          ! Compute choleksy factorization for the correlation matrix (out of
-          ! cloud)
-          call Cholesky_factor( pdf_dim, corr_array_1_n(:,:,k), & ! In
-                                corr_array_scaling, corr_cholesky_mtx_1(:,:,k), &  ! Out
-                                l_corr_array_scaling ) ! Out
-
-          call Cholesky_factor( pdf_dim, corr_array_2_n(:,:,k), & ! In
-                                corr_array_scaling, corr_cholesky_mtx_2(:,:,k), &  ! Out
-                                l_corr_array_scaling ) ! Out
-       endif
-
-       ! For ease of use later in the code, we make the correlation arrays
-       ! symmetrical
-       call mirror_lower_triangular_matrix( pdf_dim, corr_array_1_n(:,:,k) )
-       call mirror_lower_triangular_matrix( pdf_dim, corr_array_2_n(:,:,k) )
-
-    enddo  ! Setup PDF parameters loop: k = 2, nz, 1
-
-    ! Interpolate the overall variance of a hydrometeor, <hm'^2>, to its home on
-    ! momentum grid levels.
-    do i = 1, hydromet_dim, 1
-       hydrometp2(:,i)  = zt2zm( hydrometp2_zt(:,i) )
-       hydrometp2(nz,i) = zero
-    enddo
-
-    if ( l_stats_samp ) then
-       if ( irtp2_from_chi > 0 ) then
-
-          rtp2_zt_from_chi &
-            = compute_rtp2_from_chi( pdf_params%stdev_chi_1(:), pdf_params%stdev_chi_2(:), &
-                                     pdf_params%stdev_eta_1(:), pdf_params%stdev_eta_2(:), &
-                                     pdf_params%rt_1(:), pdf_params%rt_2(:),               &
-                                     pdf_params%crt_1(:), pdf_params%crt_2(:),             &
-                                     pdf_params%mixt_frac(:),                              &   
-                                     corr_array_1_n(iiPDF_chi,iiPDF_eta,:),                &
-                                     corr_array_2_n(iiPDF_chi,iiPDF_eta,:) )
-
-          ! Switch back to using stat_update_var once the code is generalized
-          ! to pass in the number of vertical levels.
-!          call stat_update_var( irtp2_from_chi, zt2zm( rtp2_zt_from_chi ), &
-!                                stats_zm )
-          do k = 1, nz, 1
-             call stat_update_var_pt( irtp2_from_chi, k, zt2zm( rtp2_zt_from_chi, k ), &
-                                      stats_zm )
-          enddo ! k = 1, nz, 1
-       endif
-    endif
-
-
-    ! Boundary conditions for the output variables at k=1.
-    mu_x_1_n(:,1) = zero
-    mu_x_2_n(:,1) = zero
-    sigma_x_1_n(:,1) = zero
-    sigma_x_2_n(:,1) = zero
-    corr_array_1_n(:,:,1) = zero
-    corr_array_2_n(:,:,1) = zero
-    corr_cholesky_mtx_1(:,:,1) = zero
-    corr_cholesky_mtx_2(:,:,1) = zero
-    call init_hydromet_pdf_params( hydromet_pdf_params(1) )
-
-    if ( clubb_at_least_debug_level( 2 ) ) then
-        do k = 2, nz
-            call assert_corr_symmetric( corr_array_1_n(:,:,k), pdf_dim)
-            call assert_corr_symmetric( corr_array_2_n(:,:,k), pdf_dim)
-        enddo
-    endif
+    
+    do j = 1, ngrdcol
+
+      ! Assertion check
+      ! Check that all hydrometeors are positive otherwise exit the program
+      if ( clubb_at_least_debug_level( 0 ) ) then
+         do i = 1, hydromet_dim
+            if ( any( hydromet(j,:,i) < zero_threshold ) ) then
+               hydromet_name = hydromet_list(i)
+               do k = 1, nz
+                  if ( hydromet(j,k,i) < zero_threshold ) then
+                     ! Write error message
+                     write(fstderr,*) " at beginning of setup_pdf_parameters: ", &
+                                      trim( hydromet_name )//" = ", &
+                                      hydromet(j,k,i), " < ", zero_threshold, &
+                                      " at k = ", k
+                     err_code = clubb_fatal_error
+                     return
+                  endif ! hydromet(k,i) < 0
+               enddo ! k = 1, nz
+            endif ! hydromet(:,i) < 0
+         enddo ! i = 1, hydromet_dim
+      endif !clubb_at_least_debug_level( 2 )
+
+      ! Setup some of the PDF parameters
+      mu_w_1       = pdf_params(j)%w_1
+      mu_w_2       = pdf_params(j)%w_2
+      mu_chi_1     = pdf_params(j)%chi_1
+      mu_chi_2     = pdf_params(j)%chi_2
+      sigma_w_1    = sqrt( pdf_params(j)%varnce_w_1 )
+      sigma_w_2    = sqrt( pdf_params(j)%varnce_w_2 )
+      sigma_chi_1  = pdf_params(j)%stdev_chi_1
+      sigma_chi_2  = pdf_params(j)%stdev_chi_2
+      rc_1         = pdf_params(j)%rc_1
+      rc_2         = pdf_params(j)%rc_2
+      cloud_frac_1 = pdf_params(j)%cloud_frac_1
+      cloud_frac_2 = pdf_params(j)%cloud_frac_2
+      mixt_frac    = pdf_params(j)%mixt_frac
+
+      ice_supersat_frac_1 = pdf_params(j)%ice_supersat_frac_1
+      ice_supersat_frac_2 = pdf_params(j)%ice_supersat_frac_2
+
+      ! Recalculate wm_zt and wp2_zt.  Mean vertical velocity may not be easy to
+      ! pass into this subroutine from a host model, and wp2_zt needs to have a
+      ! value consistent with the value it had when the PDF parameters involving w
+      ! were originally set in subroutine pdf_closure.  The variable wp2 has since
+      ! been advanced, resulting a new wp2_zt.  However, the value of wp2 here
+      ! needs to be consistent with wp2 at the time the PDF parameters were
+      ! calculated.
+      do k = 1, nz, 1
+
+         ! Calculate the overall mean of vertical velocity, w, on thermodynamic
+         ! levels.
+         wm_zt(k) = compute_mean_binormal( mu_w_1(k), mu_w_2(k), mixt_frac(k) )
+
+         ! Calculate the overall variance of vertical velocity on thermodynamic
+         ! levels.
+         wp2_zt(k) = compute_variance_binormal( wm_zt(k), mu_w_1(k), mu_w_2(k), &
+                                                sigma_w_1(k), sigma_w_2(k), &
+                                                mixt_frac(k) )
+
+      enddo
+
+      ! Note on hydrometeor PDF shape:
+      ! To use a single lognormal over the entire grid level, turn off the
+      ! l_use_precip_frac flag and set omicron to 1 and zeta_vrnce_rat to 0 in
+      ! tunable_parameters.in.
+      ! To use a single delta-lognormal (single lognormal in-precip.), enable the
+      ! l_use_precip_frac flag and set omicron to 1 and zeta_vrnce_rat to 0 in
+      ! tunable_parameters.in.
+      ! Otherwise, with l_use_precip_frac enabled and omicron and zeta_vrnce_rat
+      ! values that are not 1 and 0, respectively, the PDF shape is a double
+      ! delta-lognormal (two independent lognormals in-precip.).
+
+      ! Calculate precipitation fraction.
+      if ( l_use_precip_frac ) then
+
+         call precip_fraction( nz, hydromet(j,:,:), cloud_frac(j,:), cloud_frac_1, &    ! In
+                               cloud_frac_2, ice_supersat_frac(j,:), &           ! In
+                               ice_supersat_frac_1, ice_supersat_frac_2, &  ! In
+                               mixt_frac, l_stats_samp, &                   ! In
+                               precip_frac, precip_frac_1, precip_frac_2, & ! Out
+                               precip_frac_tol )                            ! Out
+
+         if ( err_code == clubb_fatal_error ) return
+
+      else
+
+         precip_frac     = one
+         precip_frac_1   = one
+         precip_frac_2   = one
+         precip_frac_tol = cloud_frac_min
+
+      endif
+
+      ! Calculate <N_cn> from Nc_in_cloud, whether Nc_in_cloud is predicted or
+      ! based on a prescribed value, and whether the value is constant or varying
+      ! over the grid level.
+      if ( .not. l_const_Nc_in_cloud ) then
+         ! Ncn varies at each vertical level.
+         const_Ncnp2_on_Ncnm2 = Ncnp2_on_Ncnm2
+      else  ! l_const_Nc_in_cloud
+         ! Ncn is constant at each vertical level.
+         const_Ncnp2_on_Ncnm2 = zero
+      endif
+
+      const_corr_chi_Ncn_n_cloud = corr_array_n_cloud(iiPDF_Ncn,iiPDF_chi)
+
+      const_corr_chi_Ncn &
+      = corr_NN2NL( const_corr_chi_Ncn_n_cloud, &
+                    stdev_L2N( const_Ncnp2_on_Ncnm2 ), &
+                    const_Ncnp2_on_Ncnm2 )
+
+      Ncnm = Nc_in_cloud_to_Ncnm( mu_chi_1, mu_chi_2, sigma_chi_1, &
+                                  sigma_chi_2, mixt_frac, Nc_in_cloud(j,:), &
+                                  cloud_frac_1, cloud_frac_2, &
+                                  const_Ncnp2_on_Ncnm2, const_corr_chi_Ncn )
+
+      ! Boundary Condition.
+      ! At thermodynamic level k = 1, which is below the model lower boundary, the
+      ! value of Ncnm does not matter.
+      Ncnm(1) = Nc_in_cloud(j,1)
+
+      ! Calculate the overall variance of a precipitating hydrometeor (hm),
+      !<hm'^2>.
+      do i = 1, hydromet_dim, 1
+
+         do k = 1, nz, 1
+            if ( hydromet(j,k,i) >= hydromet_tol(i) ) then
+               ! There is some of the hydrometeor species found at level k.
+               ! Calculate the variance (overall) of the hydrometeor.
+               hydrometp2_zt(k,i) &
+               = ( ( hmp2_ip_on_hmm2_ip(i) + one ) / precip_frac(k) - one ) &
+                 * hydromet(j,k,i)**2
+            else
+               hydrometp2_zt(k,i) = zero
+            endif
+         enddo ! k = 1, nz, 1
+
+         ! Statistics
+         if ( l_stats_samp ) then
+            if ( ihmp2_zt(i) > 0 ) then
+               ! Variance (overall) of the hydrometeor, <hm'^2>.
+  !             call stat_update_var( ihmp2_zt(i), hydrometp2_zt(:,i), stats_zt )
+               ! Switch back to using stat_update_var once the code is generalized
+               ! to pass in the number of vertical levels.
+               do k = 1, nz, 1
+                  call stat_update_var_pt( ihmp2_zt(i), k, hydrometp2_zt(k,i), &
+                                           stats_zt )
+               enddo ! k = 1, nz, 1
+            endif
+         endif ! l_stats_samp
+
+         ! Interpolate the covariances (overall) of w and precipitating
+         ! hydrometeors to thermodynamic grid levels.
+         wphydrometp_zt(:,i) = zm2zt( wphydrometp(j,:,i) )
+
+         ! When the mean value of a precipitating hydrometeor is below tolerance
+         ! value, it is considered to have a value of 0, and the precipitating
+         ! hydrometeor does not vary over the grid level.  Any covariances
+         ! involving that precipitating hydrometeor also have values of 0 at that
+         ! grid level.
+         do k = 1, nz, 1
+
+            if ( hydromet(j,k,i) < hydromet_tol(i) ) then
+               wphydrometp_zt(k,i) = zero
+            endif
+
+            ! Clip the value of covariance <w'hm'> on thermodynamic levels.
+            call clip_covar_level( clip_wphydrometp, k, l_first_clip_ts, &
+                                   l_last_clip_ts, dt, wp2_zt(k), &
+                                   hydrometp2_zt(k,i), &
+                                   l_predict_upwp_vpwp, &
+                                   wphydrometp_zt(k,i), wphydrometp_chnge(k,i) )
+
+         enddo ! k = 1, nz, 1
+
+      enddo ! i = 1, hydromet_dim, 1
+
+      ! Calculate correlations involving w and Ncn by first calculating the
+      ! overall covariance of w and Ncn using the down-gradient approximation.
+      if ( l_calc_w_corr ) then
+
+         wpNcnp_zm(1:nz-1) = xpwp_fnc( -c_K_hm * Kh_zm(j,1:nz-1), Ncnm(1:nz-1), &
+                                       Ncnm(2:nz), gr%invrs_dzm(1:nz-1) )
+
+         ! Boundary conditions; We are assuming zero flux at the top.
+         wpNcnp_zm(nz) = zero
+
+         ! Interpolate the covariances to thermodynamic grid levels.
+         wpNcnp_zt = zm2zt( wpNcnp_zm )
+
+         ! When the mean value of Ncn is below tolerance value, it is considered
+         ! to have a value of 0, and Ncn does not vary over the grid level.  Any
+         ! covariance involving Ncn also has a value of 0 at that grid level.
+         do k = 1, nz, 1
+            if ( Ncnm(k) <= Ncn_tol ) then
+               wpNcnp_zt(k) = zero
+            endif
+         enddo ! k = 1, nz, 1
+
+      endif ! l_calc_w_corr
+
+      ! Statistics
+      if ( l_stats_samp ) then
+
+         ! Switch back to using stat_update_var once the code is generalized
+         ! to pass in the number of vertical levels.
+         if ( iprecip_frac > 0 ) then
+            ! Overall precipitation fraction.
+  !          call stat_update_var( iprecip_frac, precip_frac, stats_zt )
+            do k = 1, nz, 1
+               call stat_update_var_pt( iprecip_frac, k, precip_frac(k), &
+                                        stats_zt )
+            enddo ! k = 1, nz, 1
+         endif
+
+         if ( iprecip_frac_1 > 0 ) then
+            ! Precipitation fraction in PDF component 1.
+  !          call stat_update_var( iprecip_frac_1, precip_frac_1, stats_zt )
+            do k = 1, nz, 1
+               call stat_update_var_pt( iprecip_frac_1, k, precip_frac_1(k), &
+                                        stats_zt )
+            enddo ! k = 1, nz, 1
+         endif
+
+         if ( iprecip_frac_2 > 0 ) then
+            ! Precipitation fraction in PDF component 2.
+  !          call stat_update_var( iprecip_frac_2, precip_frac_2, stats_zt )
+            do k = 1, nz, 1
+               call stat_update_var_pt( iprecip_frac_2, k, precip_frac_2(k), &
+                                        stats_zt )
+            enddo ! k = 1, nz, 1
+         endif
+
+         if ( iNcnm > 0 ) then
+            ! Mean simplified cloud nuclei concentration (overall).
+  !          call stat_update_var( iNcnm, Ncnm, stats_zt )
+            do k = 1, nz, 1
+               call stat_update_var_pt( iNcnm, k, Ncnm(k), stats_zt )
+            enddo ! k = 1, nz, 1
+         endif
+
+      endif
+
+
+      !!! Calculate the means and standard deviations involving PDF variables
+      !!! -- w, chi, eta, N_cn, and any precipitating hydrometeors (hm in-precip)
+      !!! -- for each PDF component.
+      call compute_mean_stdev( nz, hydromet(j,:,:), hydrometp2_zt,   & ! Intent(in)
+                               Ncnm, mixt_frac, precip_frac,  & ! Intent(in)
+                               precip_frac_1, precip_frac_2,  & ! Intent(in)
+                               precip_frac_tol,               & ! Intent(in)
+                               pdf_params(j)%w_1,                & ! Intent(in)
+                               pdf_params(j)%w_2,                & ! Intent(in)
+                               pdf_params(j)%varnce_w_1,         & ! Intent(in)
+                               pdf_params(j)%varnce_w_2,         & ! Intent(in)
+                               pdf_params(j)%chi_1,              & ! Intent(in)
+                               pdf_params(j)%chi_2,              & ! Intent(in)
+                               pdf_params(j)%stdev_chi_1,        & ! Intent(in)
+                               pdf_params(j)%stdev_chi_2,        & ! Intent(in)
+                               pdf_params(j)%stdev_eta_1,        & ! Intent(in)
+                               pdf_params(j)%stdev_eta_2,        & ! Intent(in)
+                               pdf_params(j)%thl_1,              & ! Intent(in)
+                               pdf_params(j)%thl_2,              & ! Intent(in)
+                               pdf_dim,                       & ! Intent(in)
+                               l_const_Nc_in_cloud,           & ! Intent(in)
+                               mu_x_1, mu_x_2,                & ! Intent(out)
+                               sigma_x_1, sigma_x_2,          & ! Intent(out)
+                               hm_1, hm_2,                    & ! Intent(out)
+                               sigma2_on_mu2_ip_1,            & ! Intent(out)
+                               sigma2_on_mu2_ip_2             ) ! Intent(out)
+
+      !!! Transform the component means and standard deviations involving
+      !!! precipitating hydrometeors (hm in-precip) and N_cn -- ln hm and
+      !!! ln N_cn -- to normal space for each PDF component.
+      call norm_transform_mean_stdev( nz, hm_1, hm_2,          & ! Intent(in)
+                                      Ncnm, pdf_dim,           & ! Intent(in)
+                                      mu_x_1, mu_x_2,          & ! Intent(in)
+                                      sigma_x_1, sigma_x_2,    & ! Intent(in)
+                                      sigma2_on_mu2_ip_1,      & ! Intent(in)
+                                      sigma2_on_mu2_ip_2,      & ! Intent(in)
+                                      l_const_Nc_in_cloud,     & ! Intent(in)
+                                      mu_x_1_n(j,:,:), mu_x_2_n(j,:,:),      & ! Intent(out)
+                                      sigma_x_1_n(j,:,:), sigma_x_2_n(j,:,:) ) ! Intent(out)
+
+      !!! Calculate the normal space correlations.
+      !!! The normal space correlations are the same as the true correlations
+      !!! except when at least one of the variables involved is a precipitating
+      !!! hydrometeor or Ncn.  In these cases, the normal space correlation
+      !!! involves the natural logarithm of the precipitating hydrometeors, ln hm
+      !!! (for example, ln r_r and ln N_r), and ln N_cn for each PDF component.
+      if ( l_diagnose_correlations ) then
+
+         do k = 2, nz, 1
+
+            if ( rcm(j,k) > rc_tol ) then
+
+               call diagnose_correlations( pdf_dim, corr_array_n_cloud, & ! In
+                                           l_calc_w_corr, &               ! In
+                                           corr_array_1_n(j,:,:,k) )        ! Out
+
+               call diagnose_correlations( pdf_dim, corr_array_n_cloud, & ! In
+                                           l_calc_w_corr, &               ! In
+                                           corr_array_2_n(j,:,:,k) )        ! Out
+
+            else
+
+               call diagnose_correlations( pdf_dim, corr_array_n_below, & ! In
+                                           l_calc_w_corr, &               ! In
+                                           corr_array_1_n(j,:,:,k) )        ! Out
+
+               call diagnose_correlations( pdf_dim, corr_array_n_below, & ! In
+                                           l_calc_w_corr, &               ! In
+                                           corr_array_2_n(j,:,:,k) )        ! Out
+
+            endif
+
+         enddo ! k = 2, nz, 1
+
+      else ! if .not. l_diagnose_correlations
+
+         call comp_corr_norm( nz, wm_zt, rc_1, rc_2, cloud_frac_1, &
+                              cloud_frac_2, mixt_frac, &
+                              precip_frac_1, precip_frac_2, &
+                              wpNcnp_zt, wphydrometp_zt, &
+                              mu_x_1, mu_x_2, &
+                              sigma_x_1, sigma_x_2, &
+                              sigma_x_1_n(j,:,:), sigma_x_2_n(j,:,:), &
+                              corr_array_n_cloud, corr_array_n_below, &
+                              pdf_params(j)%corr_chi_eta_1, &
+                              pdf_params(j)%corr_chi_eta_2, &
+                              pdf_params(j)%corr_w_chi_1, &
+                              pdf_params(j)%corr_w_chi_2, &
+                              pdf_params(j)%corr_w_eta_1, &
+                              pdf_params(j)%corr_w_eta_2, &
+                              pdf_dim, &
+                              iiPDF_type, &
+                              l_calc_w_corr, &
+                              l_fix_w_chi_eta_correlations, &
+                              corr_array_1_n(j,:,:,:), corr_array_2_n(j,:,:,:) )
+
+      endif ! l_diagnose_correlations
+
+      !!! Calculate the true correlations for each PDF component.
+      call denorm_transform_corr( nz, pdf_dim, &
+                                  sigma_x_1_n(j,:,:), sigma_x_2_n(j,:,:), &
+                                  sigma2_on_mu2_ip_1, sigma2_on_mu2_ip_2, &
+                                  corr_array_1_n(j,:,:,:), &
+                                  corr_array_2_n(j,:,:,:), &
+                                  corr_array_1, corr_array_2 )
+
+      !!! Statistics for standard PDF parameters involving hydrometeors.
+      call pdf_param_hm_stats( nz, pdf_dim, hm_1, hm_2, &
+                               mu_x_1, mu_x_2, &
+                               sigma_x_1, sigma_x_2, &
+                               corr_array_1, corr_array_2, &
+                               l_stats_samp )
+
+      !!! Statistics for normal space PDF parameters involving hydrometeors.
+      call pdf_param_ln_hm_stats( nz, pdf_dim, mu_x_1_n(j,:,:), &
+                                  mu_x_2_n(j,:,:), sigma_x_1_n(j,:,:), &
+                                  sigma_x_2_n(j,:,:), corr_array_1_n(j,:,:,:), &
+                                  corr_array_2_n(j,:,:,:), l_stats_samp )
+
+      !!! Pack the PDF parameters
+      call pack_hydromet_pdf_params( nz, hm_1, hm_2, pdf_dim,    & ! In
+                                     mu_x_1, mu_x_2,             & ! In
+                                     sigma_x_1, sigma_x_2,       & ! In
+                                     corr_array_1, corr_array_2, & ! In
+                                     precip_frac, precip_frac_1, & ! In
+                                     precip_frac_2,              & ! In
+                                     hydromet_pdf_params(j,:)         ) ! Out
+
+      !!! Setup PDF parameters loop.
+      ! Loop over all model thermodynamic level above the model lower boundary.
+      ! Now also including "model lower boundary" -- Eric Raut Aug 2013
+      ! Now not  including "model lower boundary" -- Eric Raut Aug 2014
+
+      do k = 2, nz, 1
+
+         if ( l_diagnose_correlations ) then
+
+            call calc_cholesky_corr_mtx_approx &
+                           ( pdf_dim, corr_array_1_n(j,:,:,k), &           ! intent(in)
+                             corr_cholesky_mtx_1(j,:,:,k), corr_mtx_approx_1 ) ! intent(out)
+
+            call calc_cholesky_corr_mtx_approx &
+                           ( pdf_dim, corr_array_2_n(j,:,:,k), &           ! intent(in)
+                             corr_cholesky_mtx_2(j,:,:,k), corr_mtx_approx_2 ) ! intent(out)
+
+            corr_array_1_n(j,:,:,k) = corr_mtx_approx_1
+            corr_array_2_n(j,:,:,k) = corr_mtx_approx_2
+
+         else
+
+            ! Compute choleksy factorization for the correlation matrix (out of
+            ! cloud)
+            call Cholesky_factor( pdf_dim, corr_array_1_n(j,:,:,k), & ! In
+                                  corr_array_scaling, corr_cholesky_mtx_1(j,:,:,k), &  ! Out
+                                  l_corr_array_scaling ) ! Out
+
+            call Cholesky_factor( pdf_dim, corr_array_2_n(j,:,:,k), & ! In
+                                  corr_array_scaling, corr_cholesky_mtx_2(j,:,:,k), &  ! Out
+                                  l_corr_array_scaling ) ! Out
+         endif
+
+         ! For ease of use later in the code, we make the correlation arrays
+         ! symmetrical
+         call mirror_lower_triangular_matrix( pdf_dim, corr_array_1_n(j,:,:,k) )
+         call mirror_lower_triangular_matrix( pdf_dim, corr_array_2_n(j,:,:,k) )
+
+      enddo  ! Setup PDF parameters loop: k = 2, nz, 1
+
+      ! Interpolate the overall variance of a hydrometeor, <hm'^2>, to its home on
+      ! momentum grid levels.
+      do i = 1, hydromet_dim, 1
+         hydrometp2(j,:,i)  = zt2zm( hydrometp2_zt(:,i) )
+         hydrometp2(j,nz,i) = zero
+      enddo
+
+      if ( l_stats_samp ) then
+         if ( irtp2_from_chi > 0 ) then
+
+            rtp2_zt_from_chi &
+              = compute_rtp2_from_chi( pdf_params(j)%stdev_chi_1(:), pdf_params(j)%stdev_chi_2(:), &
+                                       pdf_params(j)%stdev_eta_1(:), pdf_params(j)%stdev_eta_2(:), &
+                                       pdf_params(j)%rt_1(:), pdf_params(j)%rt_2(:),               &
+                                       pdf_params(j)%crt_1(:), pdf_params(j)%crt_2(:),             &
+                                       pdf_params(j)%mixt_frac(:),                              &   
+                                       corr_array_1_n(j,iiPDF_chi,iiPDF_eta,:),                &
+                                       corr_array_2_n(j,iiPDF_chi,iiPDF_eta,:) )
+
+            ! Switch back to using stat_update_var once the code is generalized
+            ! to pass in the number of vertical levels.
+  !          call stat_update_var( irtp2_from_chi, zt2zm( rtp2_zt_from_chi ), &
+  !                                stats_zm )
+            do k = 1, nz, 1
+               call stat_update_var_pt( irtp2_from_chi, k, zt2zm( rtp2_zt_from_chi, k ), &
+                                        stats_zm )
+            enddo ! k = 1, nz, 1
+         endif
+      endif
+
+
+      ! Boundary conditions for the output variables at k=1.
+      mu_x_1_n(j,:,1) = zero
+      mu_x_2_n(j,:,1) = zero
+      sigma_x_1_n(j,:,1) = zero
+      sigma_x_2_n(j,:,1) = zero
+      corr_array_1_n(j,:,:,1) = zero
+      corr_array_2_n(j,:,:,1) = zero
+      corr_cholesky_mtx_1(j,:,:,1) = zero
+      corr_cholesky_mtx_2(j,:,:,1) = zero
+      call init_hydromet_pdf_params( hydromet_pdf_params(j,1) )
+
+      if ( clubb_at_least_debug_level( 2 ) ) then
+          do k = 2, nz
+              call assert_corr_symmetric( corr_array_1_n(j,:,:,k), pdf_dim)
+              call assert_corr_symmetric( corr_array_2_n(j,:,:,k), pdf_dim)
+          enddo
+      endif
+      
+    end do
 
 
     return
