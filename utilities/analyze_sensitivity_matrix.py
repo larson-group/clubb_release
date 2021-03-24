@@ -276,6 +276,7 @@ def calcSvdInvrs(normlzdSensMatrix):
 
 
     import  numpy as np
+    import sys
     import pdb
 
     u, s, vh = np.linalg.svd(normlzdSensMatrix, full_matrices=False)
@@ -309,7 +310,7 @@ def calcSvdInvrs(normlzdSensMatrix):
     numParams = normlzdSensMatrix.shape[1] # = number of columns
     if not np.all( np.isclose(np.identity(numParams), svdInvrs @ normlzdSensMatrix, \
                       rtol=1e-6, atol=1e-6 ) ):
-        print("svdInvrs is not the inverse of normlzdSensMatrix")
+        sys.exit("Error: svdInvrs is not the inverse of normlzdSensMatrix")
 
     #print("\nSVD inverse =")
     #print(svdInvrs)
