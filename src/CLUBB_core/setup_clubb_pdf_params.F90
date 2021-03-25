@@ -842,7 +842,7 @@ module setup_clubb_pdf_params
     mu_x_2_n(:,:,1) = zero
     sigma_x_1_n(:,:,1) = zero
     sigma_x_2_n(:,:,1) = zero
-    corr_array_1_n(;,:,:,1) = zero
+    corr_array_1_n(:,:,:,1) = zero
     corr_array_2_n(:,:,:,1) = zero
     corr_cholesky_mtx_1(:,:,:,1) = zero
     corr_cholesky_mtx_2(:,:,:,1) = zero
