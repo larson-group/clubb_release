@@ -36,13 +36,15 @@ def test_3x2_C8transformed():
     # The metrics are observed quantities that we want a tuned simulation to match.
     #    The order of metricNames determines the order of rows in sensMatrix.
     metricsNames = np.array(['SWCF', 'LWCF', 'PRECT'])
-    #metricsNames = np.array(['SWCF', 'LWCF'])
+
+    # Column vector of (positive) weights.  A small value de-emphasizes
+    #   the corresponding metric in the fit.
+    metricsWeights = np.array([[1.], [1.], [1.]])
 
     # This is the subset of paramsNames that vary from [0,1] (e.g., C5)
     #    and hence will be transformed to [0,infinity] in order to make
     #    the relationship between parameters and metrics more linear:
     transformedParams = np.array(['clubb_c8'])
-    #transformedParams = np.array([''])
 
     # Example values of the clubb_c8 parameter in the default and 2 sensitivity runs
     clubbC8Vals = np.array([0.1812692, 0.50341469, 0.1812692])
@@ -51,10 +53,11 @@ def test_3x2_C8transformed():
     write_test_netcdf_files(obsMetricValsDict, clubbC8Vals)
 
     # Calculate changes in parameter values needed to match metrics.
-    sensMatrix, normlzdSensMatrix, svdInvrsNormlzd, dparamsSoln, paramsSoln = \
+    sensMatrix, normlzdSensMatrix, svdInvrsNormlzdWeighted, dparamsSoln, paramsSoln = \
         analyzeSensMatrix(metricsNames, paramsNames, transformedParams,
-                       sensNcFilenames, defaultNcFilename,
-                       obsMetricValsDict)
+                        metricsWeights,
+                        sensNcFilenames, defaultNcFilename,
+                        obsMetricValsDict)
 
     # Check whether the expected answer for the fake data
     #    has been calculated correctly.
@@ -70,7 +73,7 @@ def test_3x2_C8transformed():
     # Create a heatmap plot that allows us to visualize the normalized sensitivity matrix
     plotNormlzdSensMatrix(normlzdSensMatrix, metricsNames, paramsNames)
 
-    print("\nReached the end of function test_analyzeSensMatrix in test harness.")
+    print("\nReached the end of function test_3x2_C8transformed in test harness.")
 
     return
 
@@ -85,6 +88,10 @@ def test_3x2_novarstransformed():
     #    The order of metricNames determines the order of rows in sensMatrix.
     metricsNames = np.array(['SWCF', 'LWCF', 'PRECT'])
 
+    # Column vector of (positive) weights.  A small value de-emphasizes
+    #   the corresponding metric in the fit.
+    metricsWeights = np.array([[1.0], [0.000001], [1.0]])
+
     # This is the subset of paramsNames that vary from [0,1] (e.g., C5)
     #    and hence will be transformed to [0,infinity] in order to make
     #    the relationship between parameters and metrics more linear:
@@ -97,23 +104,24 @@ def test_3x2_novarstransformed():
     write_test_netcdf_files(obsMetricValsDict, clubbC8Vals)
 
     # Calculate changes in parameter values needed to match metrics.
-    sensMatrix, normlzdSensMatrix, svdInvrsNormlzd, dparamsSoln, paramsSoln = \
+    sensMatrix, normlzdSensMatrix, svdInvrsNormlzdWeighted, dparamsSoln, paramsSoln = \
         analyzeSensMatrix(metricsNames, paramsNames, transformedParams,
-                       sensNcFilenames, defaultNcFilename,
-                       obsMetricValsDict)
+                        metricsWeights,
+                        sensNcFilenames, defaultNcFilename,
+                        obsMetricValsDict)
 
     # Check whether the expected answer for the fake data
     #    has been calculated correctly.
-    if np.all( np.isclose( dparamsSoln, np.array([[2./3.], [2./3.]]), \
+    if np.all( np.isclose( dparamsSoln, np.array([[1.], [0.]]), \
                               rtol=1e-5, atol=1e-5 ) ):
         print("\nPassed test.")
     else:
-        print("\ndparamsSoln = ")
+        print("\ndparamsSoln =  ")
         print(dparamsSoln)
-        print("\nError: dparamsSoln should equal [2/3 2/3], but it does not.")
+        print("\nError: dparamsSoln should equal [1 0], but it does not.")
         assert False
 
-    print("\nReached the end of function test_analyzeSensMatrix in test harness.")
+    print("\nReached the end of function test_3x2_novarstransformed in test harness.")
 
     return
 
@@ -128,6 +136,10 @@ def test_2x2_novarstransformed():
     #    The order of metricNames determines the order of rows in sensMatrix.
     metricsNames = np.array(['SWCF', 'LWCF'])
 
+    # Column vector of (positive) weights.  A small value de-emphasizes
+    #   the corresponding metric in the fit.
+    metricsWeights = np.array([[1.], [1.]])
+
     # This is the subset of paramsNames that vary from [0,1] (e.g., C5)
     #    and hence will be transformed to [0,infinity] in order to make
     #    the relationship between parameters and metrics more linear:
@@ -140,10 +152,11 @@ def test_2x2_novarstransformed():
     write_test_netcdf_files(obsMetricValsDict, clubbC8Vals)
 
     # Calculate changes in parameter values needed to match metrics.
-    sensMatrix, normlzdSensMatrix, svdInvrsNormlzd, dparamsSoln, paramsSoln = \
+    sensMatrix, normlzdSensMatrix, svdInvrsNormlzdWeighted, dparamsSoln, paramsSoln = \
         analyzeSensMatrix(metricsNames, paramsNames, transformedParams,
-                       sensNcFilenames, defaultNcFilename,
-                       obsMetricValsDict)
+                        metricsWeights,
+                        sensNcFilenames, defaultNcFilename,
+                        obsMetricValsDict)
 
     # Check whether the expected answer for the fake data
     #    has been calculated correctly.
@@ -156,7 +169,7 @@ def test_2x2_novarstransformed():
         print("\nError: dparamsSoln should equal [1 1], but it does not.")
         assert False
 
-    print("\nReached the end of function test_analyzeSensMatrix in test harness.")
+    print("\nReached the end of function test_2x2_novarstransformed in test harness.")
 
 
 def write_test_netcdf_files(obsMetricValsDict, clubbC8Vals):

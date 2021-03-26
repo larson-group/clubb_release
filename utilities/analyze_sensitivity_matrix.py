@@ -13,6 +13,10 @@ def main():
     #    The order of metricNames determines the order of rows in sensMatrix.
     metricsNames = np.array(['SWCF', 'LWCF', 'PRECT'])
 
+    # Column vector of (positive) weights.  A small value de-emphasizes
+    #   the corresponding metric in the fit.
+    metricsWeights = np.array([[1.], [1.], [1.]])
+
     # Parameters are tunable model parameters.
     #    The order of paramsNames must match the order of filenames below.
     paramsNames = np.array(['clubb_c8','clubb_c_invrs_tau_n2'])
@@ -42,8 +46,9 @@ def main():
     obsMetricValsDict = {'LWCF': 28.008, 'PRECT': 0.000000033912037, 'SWCF': -45.81}
 
     # Calculate changes in parameter values needed to match metrics.
-    sensMatrix, normlzdSensMatrix, svdInvrsNormlzd, dparamsSoln, paramsSoln = \
+    sensMatrix, normlzdSensMatrix, svdInvrsNormlzdWeighted, dparamsSoln, paramsSoln = \
         analyzeSensMatrix(metricsNames, paramsNames, transformedParams,
+                      metricsWeights,
                       sensNcFilenames, defaultNcFilename,
                       obsMetricValsDict)
 
@@ -55,6 +60,7 @@ def main():
     return
 
 def analyzeSensMatrix(metricsNames, paramsNames, transformedParams,
+                      metricsWeights,
                       sensNcFilenames, defaultNcFilename,
                       obsMetricValsDict):
     """
@@ -154,15 +160,19 @@ def analyzeSensMatrix(metricsNames, paramsNames, transformedParams,
                             obsMetricValsCol,
                             numMetrics, numParams)
 
+    # In order to de-weight certain metrics, multiply each row of normlzdSensMatrix 
+    # by metricsWeights
+    normlzdWeightedSensMatrix = np.diag(np.transpose(metricsWeights)[0]) @ normlzdSensMatrix
+
     # Calculate inverse of the singular value decomposition.
     # This gives the recommended changes to parameter values.
-    svdInvrsNormlzd = calcSvdInvrs(normlzdSensMatrix)
+    svdInvrsNormlzdWeighted = calcSvdInvrs(normlzdWeightedSensMatrix)
 
-    print("\nNormalized SVD inverse =")
-    print(svdInvrsNormlzd)
+    print("\nNormalized, weighted SVD inverse =")
+    print(svdInvrsNormlzdWeighted)
 
     # Calculate solution in transformed space
-    dparamsSoln = svdInvrsNormlzd @ np.ones((numMetrics,1)) * np.transpose(defaultParamValsRow)
+    dparamsSoln = svdInvrsNormlzdWeighted @ metricsWeights * np.transpose(defaultParamValsRow)
     paramsSoln = np.transpose(defaultParamValsRow) + dparamsSoln
     # Transform some variables from [0,infinity] back to [0,1] range
     for idx in np.arange(numParams):
@@ -184,7 +194,7 @@ def analyzeSensMatrix(metricsNames, paramsNames, transformedParams,
         print("defaultBiasesApprox =")
         print(defaultBiasesApprox)
 
-    return (sensMatrix, normlzdSensMatrix, svdInvrsNormlzd, dparamsSoln, paramsSoln)
+    return (sensMatrix, normlzdSensMatrix, svdInvrsNormlzdWeighted, dparamsSoln, paramsSoln)
 
 def constructSensMatrix(sensMetricValsMatrix, sensParamValsRow,
                         defaultMetricValsCol, defaultParamValsRow,
@@ -267,7 +277,7 @@ def constructSensMatrix(sensMetricValsMatrix, sensParamValsRow,
     return  (sensMatrix, normlzdSensMatrix)
 
 
-def calcSvdInvrs(normlzdSensMatrix):
+def calcSvdInvrs(normlzdWeightedSensMatrix):
     """
     Input: sensitivity matrix
     Output: singular value decomposition of sensitivity matrix
@@ -279,7 +289,7 @@ def calcSvdInvrs(normlzdSensMatrix):
     import sys
     import pdb
 
-    u, s, vh = np.linalg.svd(normlzdSensMatrix, full_matrices=False)
+    u, s, vh = np.linalg.svd(normlzdWeightedSensMatrix, full_matrices=False)
 
     print("\nSingular values =")
     print(s)
@@ -307,15 +317,15 @@ def calcSvdInvrs(normlzdSensMatrix):
     svdInvrs = np.transpose(vh) @ np.diag(sValsTruncInv) @ np.transpose(u)
 
     # Assertion check: is svdInvrs truly the inverse of normlzdSensMatrix?
-    numParams = normlzdSensMatrix.shape[1] # = number of columns
-    if not np.all( np.isclose(np.identity(numParams), svdInvrs @ normlzdSensMatrix, \
-                      rtol=1e-6, atol=1e-6 ) ):
-        sys.exit("Error: svdInvrs is not the inverse of normlzdSensMatrix")
+    numParams = normlzdWeightedSensMatrix.shape[1] # = number of columns
+    if not np.all( np.isclose(np.identity(numParams), svdInvrs @ normlzdWeightedSensMatrix, \
+                      rtol=1e-6 , atol=1e-6 ) ):
+        sys.exit("Error: svdInvrs is not the inverse of normlzdWeightedSensMatrix")
 
     #print("\nSVD inverse =")
     #print(svdInvrs)
 
-    eigVals, eigVecs = np.linalg.eig(np.transpose(normlzdSensMatrix) @ normlzdSensMatrix)
+    eigVals, eigVecs = np.linalg.eig(np.transpose(normlzdWeightedSensMatrix) @ normlzdWeightedSensMatrix)
 
     #print("\neigVals =")
     #print(eigVals)
