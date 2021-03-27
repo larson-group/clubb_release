@@ -61,13 +61,16 @@ def test_3x2_C8transformed():
 
     # Check whether the expected answer for the fake data
     #    has been calculated correctly.
-    if np.all( np.isclose( dparamsSoln, np.array([[0.39838053], [2./3.]]), \
+    #if np.all( np.isclose( dparamsSoln, np.array([[0.39838053], [2./3.]]), \
+    #                          rtol=1e-5, atol=1e-5 ) ):
+    if np.all( np.isclose( dparamsSoln, np.array([[0.52633989], [2./3.]]), \
                               rtol=1e-5, atol=1e-5 ) ):
         print("\nPassed test.")
     else:
         print("\ndparamsSoln = ")
         print(dparamsSoln)
-        print("\nError: dparamsSoln should equal [0.48658305 2/3], but it does not.")
+        #print("\nError: dparamsSoln should equal [0.48658305 2/3], but it does not.")
+        print("\nError: dparamsSoln should equal [0.52633989 2/3], but it does not.")
         assert False
 
     # Create a heatmap plot that allows us to visualize the normalized sensitivity matrix

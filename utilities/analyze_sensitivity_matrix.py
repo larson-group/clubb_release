@@ -129,7 +129,8 @@ def analyzeSensMatrix(metricsNames, paramsNames, transformedParams,
             sensParamVal = np.ndarray.item( f_sensParams.variables[paramName][0] )
             # Transform [0,1] variable to extend over range [0,infinity]
             if paramName in transformedParams:
-                sensParamVal = -np.log(1-sensParamVal)
+                #sensParamVal = -np.log(1-sensParamVal)
+                sensParamVal = np.log(sensParamVal)
             defaultParamVal = defaultParamValsRow[0][paramIdx]
             sensDefaultAreClose = np.isclose(sensParamVal,defaultParamVal)
             if sensFileIdx==paramIdx and sensDefaultAreClose:
@@ -178,7 +179,8 @@ def analyzeSensMatrix(metricsNames, paramsNames, transformedParams,
     for idx in np.arange(numParams):
         paramName = paramsNames[idx]
         if paramName in transformedParams:
-            paramsSoln[idx,0] = 1.0-np.exp(-paramsSoln[idx,0])
+            #paramsSoln[idx,0] = 1.0-np.exp(-paramsSoln[idx,0])
+            paramsSoln[idx,0] = np.exp(paramsSoln[idx,0])
             dparamsSoln[idx,0] = paramsSoln[idx,0] - defaultParamValsOrigRow[0,idx]
 
     print("\ndparamsSoln =")
@@ -393,7 +395,8 @@ def setupDefaultVectors(metricsNames, paramsNames, transformedParams,
         defaultParamValsOrigRow[0,idx] = f_defaultMetricsParams.variables[paramName][0]
         # Transform [0,1] variable to extend over range [0,infinity]
         if paramName in transformedParams:
-            defaultParamValsRow[0,idx] = -np.log(1-defaultParamValsOrigRow[0,idx])
+            #defaultParamValsRow[0,idx] = -np.log(1-defaultParamValsOrigRow[0,idx])
+            defaultParamValsRow[0,idx] = np.log(defaultParamValsOrigRow[0,idx])
         else:
             defaultParamValsRow[0,idx] = defaultParamValsOrigRow[0,idx]
 
@@ -433,7 +436,8 @@ def setupSensArrays(metricsNames, paramsNames, transformedParams,
         sensParamValsRow[0,idx] = f_sensParams.variables[paramName][0]
         # Transform [0,1] variable to extend over range [0,infinity]
         if paramName in transformedParams:
-            sensParamValsRow[0,idx] = -np.log(1-sensParamValsRow[0,idx])
+            #sensParamValsRow[0,idx] = -np.log(1-sensParamValsRow[0,idx])
+            sensParamValsRow[0,idx] = np.log(sensParamValsRow[0,idx])
         f_sensParams.close()
 
     #sensParamValsRow = np.array([[2., 4.]])
