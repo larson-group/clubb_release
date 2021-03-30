@@ -173,7 +173,7 @@ def analyzeSensMatrix(metricsNames, paramsNames, transformedParams,
     print(svdInvrsNormlzdWeighted)
 
     # Calculate solution in transformed space
-    dparamsSoln = svdInvrsNormlzdWeighted @ metricsWeights * np.transpose(defaultParamValsRow)
+    dparamsSoln = svdInvrsNormlzdWeighted @ metricsWeights #* np.transpose(defaultParamValsRow)
     paramsSoln = np.transpose(defaultParamValsRow) + dparamsSoln
     # Transform some variables from [0,infinity] back to [0,1] range
     for idx in np.arange(numParams):
@@ -271,7 +271,7 @@ def constructSensMatrix(sensMetricValsMatrix, sensParamValsRow,
     defaultParamValsMatrix = np.ones((numMetrics,1)) @ defaultParamValsRow
 
     # Sensitivity matrix, normalized by biases and parameter values
-    normlzdSensMatrix = sensMatrix * invrsBiasesMatrix * defaultParamValsMatrix
+    normlzdSensMatrix = sensMatrix * invrsBiasesMatrix #* defaultParamValsMatrix
 
     print("\nnormlzdSensMatrix =")
     print(normlzdSensMatrix)
