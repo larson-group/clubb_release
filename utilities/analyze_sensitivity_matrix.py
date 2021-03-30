@@ -190,7 +190,7 @@ def analyzeSensMatrix(metricsNames, paramsNames, transformedParams,
     print(paramsSoln)
 
     # This check is currently broken if any params span [0,1], e.g., C5
-    if transformedParams == np.array(['']):
+    if (transformedParams - np.array([''])).all():
         print("\nCheck: Does defaultBiasesApprox approximate defaultBiasesCol above?")
         defaultBiasesApprox = sensMatrix @ dparamsSoln
         print("defaultBiasesApprox =")
