@@ -1458,98 +1458,63 @@ module setup_clubb_pdf_params
     end do
 
     ! Correlation of eta (old t) and the natural logarithm of the hydrometeors
-    ivar = iiPDF_eta
     do jvar = iiPDF_Ncn+1, pdf_dim
-      do j = 1, ngrdcol
-        corr_array_1_n(j,jvar,ivar,:) &
-        = component_corr_eta_hm_n_ip( nz, corr_array_1_n(j,iiPDF_eta,iiPDF_chi,:), &
-                                      corr_array_1_n(j,jvar,iiPDF_chi,:) )
-      end do
-                                      
-      do j = 1, ngrdcol
-        corr_array_2_n(j,jvar,ivar,:) &
-        = component_corr_eta_hm_n_ip( nz, corr_array_2_n(j,iiPDF_eta,iiPDF_chi,:), &
-                                      corr_array_2_n(j,jvar,iiPDF_chi,:) )
-      end do
+      call component_corr_eta_hm_n_ip( nz, ngrdcol, &
+                                       corr_array_1_n(:,iiPDF_eta,iiPDF_chi,:), &
+                                       corr_array_1_n(:,jvar,iiPDF_chi,:), &
+                                       corr_array_2_n(:,iiPDF_eta,iiPDF_chi,:), &
+                                       corr_array_2_n(:,jvar,iiPDF_chi,:), &
+                                       corr_array_1_n(:,jvar,iiPDF_eta,:), &
+                                       corr_array_2_n(:,jvar,iiPDF_eta,:) )
     end do
 
 
     ! Correlation of w and ln Ncn
-    do j = 1, ngrdcol
-      corr_array_1_n(j,iiPDF_Ncn,iiPDF_w,:) &
-      = component_corr_w_hm_n_ip( nz, corr_w_Ncn_1_n(j,:), rc_1(j,:), ones_vector, &
-                                  corr_array_n_cloud(iiPDF_Ncn,iiPDF_w), &
-                                  corr_array_n_below(iiPDF_Ncn,iiPDF_w), &
-                                  l_calc_w_corr )
-    end do
-
-    do j = 1, ngrdcol
-      corr_array_2_n(j,iiPDF_Ncn,iiPDF_w,:) &
-      = component_corr_w_hm_n_ip( nz, corr_w_Ncn_2_n(j,:), rc_2(j,:), ones_vector, &
-                                  corr_array_n_cloud(iiPDF_Ncn,iiPDF_w), &
-                                  corr_array_n_below(iiPDF_Ncn,iiPDF_w), &
-                                  l_calc_w_corr )
-    end do
+    call component_corr_w_hm_n_ip( nz, ngrdcol, &
+                                   corr_w_Ncn_1_n(:,:), rc_1(:,:), ones_vector, &
+                                   corr_w_Ncn_2_n(:,:), rc_2(:,:), ones_vector, &
+                                   corr_array_n_cloud(iiPDF_Ncn,iiPDF_w), &
+                                   corr_array_n_below(iiPDF_Ncn,iiPDF_w), &
+                                   l_calc_w_corr, &
+                                   corr_array_1_n(:,iiPDF_Ncn,iiPDF_w,:), &
+                                   corr_array_2_n(:,iiPDF_Ncn,iiPDF_w,:) )
 
     ! Correlation of w and the natural logarithm of the hydrometeors
-    ivar = iiPDF_w
     do jvar = iiPDF_Ncn+1, pdf_dim
-
-      do j = 1, ngrdcol
-        corr_array_1_n(j,jvar,ivar,:) &
-        = component_corr_w_hm_n_ip( nz, corr_w_hm_1_n(j,jvar,:), &
-                                    rc_1(j,:), cloud_frac_1(j,:), &
-                                    corr_array_n_cloud(jvar,ivar), &
-                                    corr_array_n_below(jvar,ivar), &
-                                    l_calc_w_corr )
-      end do
-
-      do j = 1, ngrdcol
-        corr_array_2_n(j,jvar,ivar,:) &
-        = component_corr_w_hm_n_ip( nz, corr_w_hm_2_n(j,jvar,:), &
-                                    rc_2(j,:), cloud_frac_2(j,:), &
-                                    corr_array_n_cloud(jvar,ivar), &
-                                    corr_array_n_below(jvar,ivar), &
-                                    l_calc_w_corr )
-      end do
-
+      call component_corr_w_hm_n_ip( nz, ngrdcol, &
+                                     corr_w_hm_1_n(:,jvar,:), rc_1(:,:), cloud_frac_1(:,:), &
+                                     corr_w_hm_2_n(:,jvar,:), rc_2(:,:), cloud_frac_2(:,:), &
+                                     corr_array_n_cloud(jvar,iiPDF_w), &
+                                     corr_array_n_below(jvar,iiPDF_w), &
+                                     l_calc_w_corr, &
+                                     corr_array_1_n(:,jvar,iiPDF_w,:), &
+                                     corr_array_2_n(:,jvar,iiPDF_w,:) )
     end do
 
     ! Correlation of ln Ncn and the natural logarithm of the hydrometeors
-    ivar = iiPDF_Ncn
     do jvar = iiPDF_Ncn+1, pdf_dim
-      do j = 1, ngrdcol
-        corr_array_1_n(j,jvar,ivar,:) &
-        = component_corr_hmx_hmy_n_ip( nz, rc_1(j,:), cloud_frac_1(j,:), &
-                                       corr_array_n_cloud(jvar,ivar), &
-                                       corr_array_n_below(jvar,ivar) )
-      end do
-                                       
-      do j = 1, ngrdcol
-        corr_array_2_n(j,jvar,ivar,:) &
-        = component_corr_hmx_hmy_n_ip( nz, rc_2(j,:), cloud_frac_2(j,:), &
-                                      corr_array_n_cloud(jvar,ivar), &
-                                      corr_array_n_below(jvar,ivar) )
-      end do
+      
+      call component_corr_hmx_hmy_n_ip( nz, ngrdcol, &
+                                        rc_1(:,:), cloud_frac_1(:,:), &
+                                        rc_2(:,:), cloud_frac_2(:,:), &
+                                        corr_array_n_cloud(jvar,iiPDF_Ncn), &
+                                        corr_array_n_below(jvar,iiPDF_Ncn), &
+                                        corr_array_1_n(:,jvar,iiPDF_Ncn,:), &
+                                        corr_array_2_n(:,jvar,iiPDF_Ncn,:) )
     end do
 
     ! Correlation of the natural logarithm of two hydrometeors
     do ivar = iiPDF_Ncn+1, pdf_dim-1
       do jvar = ivar+1, pdf_dim
 
-        do j = 1, ngrdcol
-          corr_array_1_n(j,jvar,ivar,:) &
-          = component_corr_hmx_hmy_n_ip( nz, rc_1(j,:), cloud_frac_1(j,:), &
-                                         corr_array_n_cloud(jvar,ivar), &
-                                         corr_array_n_below(jvar,ivar) )
-        end do
-                                         
-        do j = 1, ngrdcol
-          corr_array_2_n(j,jvar,ivar,:) &
-          = component_corr_hmx_hmy_n_ip( nz, rc_2(j,:), cloud_frac_2(j,:), &
-                                         corr_array_n_cloud(jvar,ivar), &
-                                         corr_array_n_below(jvar,ivar) )
-        end do
+
+        call component_corr_hmx_hmy_n_ip( nz, ngrdcol, &
+                                          rc_1(:,:), cloud_frac_1(:,:), &
+                                          rc_2(:,:), cloud_frac_2(:,:), &
+                                          corr_array_n_cloud(jvar,ivar), &
+                                          corr_array_n_below(jvar,ivar), &
+                                          corr_array_1_n(:,jvar,ivar,:), &
+                                          corr_array_2_n(:,jvar,ivar,:) )
 
        end do ! jvar
     end do ! ivar
@@ -2651,12 +2616,15 @@ module setup_clubb_pdf_params
   end subroutine component_corr_chi_eta
 
   !=============================================================================
-  function component_corr_w_hm_n_ip( nz, corr_w_hm_i_n_in, rc_i, cloud_frac_i, &
-                                     corr_w_hm_n_NL_cloud, &
-                                     corr_w_hm_n_NL_below, &
-                                     l_calc_w_corr ) &
-  result( corr_w_hm_i_n )
-
+  subroutine component_corr_w_hm_n_ip( nz, ngrdcol, &
+                                       corr_w_hm_1_n_in, rc_1, cloud_frac_1, &
+                                       corr_w_hm_2_n_in, rc_2, cloud_frac_2, &
+                                       corr_w_hm_n_NL_cloud, &
+                                       corr_w_hm_n_NL_below, &
+                                       l_calc_w_corr, &
+                                       corr_w_hm_1_n, &
+                                       corr_w_hm_2_n )
+                                       
     ! Description:
     ! Calculates the in-precip correlation of w and the natural logarithm of a
     ! hydrometeor species within the ith PDF component.
@@ -2675,12 +2643,16 @@ module setup_clubb_pdf_params
 
     ! Input Variables
     integer, intent(in) :: &
-      nz   ! Number of model vertical grid levels
+      nz,     & ! Number of model vertical grid levels
+      ngrdcol   ! Number of grid columns
 
-    real( kind = core_rknd ), dimension(nz), intent(in) :: &
-      corr_w_hm_i_n_in, & ! Correlation of w and ln hm (ith PDF comp.) ip    [-]
-      rc_i,             & ! Mean cloud water mix. ratio (ith PDF comp.)  [kg/kg]
-      cloud_frac_i        ! Cloud fraction (ith PDF component)               [-]
+    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: &
+      corr_w_hm_1_n_in, & ! Correlation of w and ln hm (1st PDF comp.) ip    [-]
+      corr_w_hm_2_n_in, & ! Correlation of w and ln hm (2nd PDF comp.) ip    [-]
+      rc_1,             & ! Mean cloud water mix. ratio (1st PDF comp.)  [kg/kg]
+      rc_2,             & ! Mean cloud water mix. ratio (2nd PDF comp.)  [kg/kg]
+      cloud_frac_1,     & ! Cloud fraction (1st PDF component)               [-]
+      cloud_frac_2        ! Cloud fraction (2nd PDF component)               [-]
 
     real( kind = core_rknd ), intent(in) :: &
       corr_w_hm_n_NL_cloud, & ! Corr. of w & ln hm (ith PDF comp.) ip; cloud [-]
@@ -2689,31 +2661,66 @@ module setup_clubb_pdf_params
     logical, intent(in) :: &
       l_calc_w_corr ! Calculate the correlations between w and the hydrometeors
 
-    ! Return Variable
-    real( kind = core_rknd ), dimension(nz) :: &
-      corr_w_hm_i_n    ! Correlation of w and ln hm (ith PDF component) ip   [-]
+    ! Output Variables
+    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(out) :: &
+      corr_w_hm_1_n, & ! Correlation of w and ln hm (1st PDF component) ip   [-]
+      corr_w_hm_2_n    ! Correlation of w and ln hm (2nd PDF component) ip   [-]
+      
+    ! Local Variables
+    integer :: j, k
 
 
     ! Correlation (in-precip) of w and the natural logarithm of the hydrometeor
     ! in the ith PDF component.
     if ( l_calc_w_corr ) then
-       corr_w_hm_i_n = corr_w_hm_i_n_in
+      
+      corr_w_hm_1_n(:,:) = corr_w_hm_1_n_in(:,:)
+      corr_w_hm_2_n(:,:) = corr_w_hm_2_n_in(:,:)
+       
     else ! use prescribed parameter values
-       if ( l_interp_prescribed_params ) then
-          corr_w_hm_i_n = cloud_frac_i * corr_w_hm_n_NL_cloud &
-                          + ( one - cloud_frac_i ) * corr_w_hm_n_NL_below
-       else
-          where ( rc_i > rc_tol )
-             corr_w_hm_i_n = corr_w_hm_n_NL_cloud
-          elsewhere
-             corr_w_hm_i_n = corr_w_hm_n_NL_below
-          endwhere
-       end if ! l_interp_prescribed_params
+      
+      if ( l_interp_prescribed_params ) then
+        
+        do k = 1, nz
+          do j = 1, ngrdcol
+            corr_w_hm_1_n(j,k) = cloud_frac_1(j,k) * corr_w_hm_n_NL_cloud &
+                            + ( one - cloud_frac_1(j,k) ) * corr_w_hm_n_NL_below
+          end do
+        end do
+        
+        do k = 1, nz
+          do j = 1, ngrdcol
+            corr_w_hm_2_n(j,k) = cloud_frac_2(j,k) * corr_w_hm_n_NL_cloud &
+                            + ( one - cloud_frac_2(j,k) ) * corr_w_hm_n_NL_below
+          end do
+        end do
+        
+      else
+         
+        do k = 1, nz
+          do j = 1, ngrdcol
+            
+            if ( rc_1(j,k) > rc_tol ) then
+               corr_w_hm_1_n(j,k) = corr_w_hm_n_NL_cloud
+            else
+               corr_w_hm_1_n(j,k) = corr_w_hm_n_NL_below
+            end if
+            
+            if ( rc_2(j,k) > rc_tol ) then
+               corr_w_hm_2_n(j,k) = corr_w_hm_n_NL_cloud
+            else
+               corr_w_hm_2_n(j,k) = corr_w_hm_n_NL_below
+            end if
+          end do
+        end do
+          
+      end if ! l_interp_prescribed_params
+       
     end if ! l_calc_w_corr
 
     return
 
-  end function component_corr_w_hm_n_ip
+  end subroutine component_corr_w_hm_n_ip
 
   !=============================================================================
   function component_corr_x_hm_n_ip( nz, rc_i, cloud_frac_i, &
@@ -2773,10 +2780,13 @@ module setup_clubb_pdf_params
   end function component_corr_x_hm_n_ip
 
   !=============================================================================
-  function component_corr_hmx_hmy_n_ip( nz, rc_i, cloud_frac_i, &
-                                        corr_hmx_hmy_n_LL_cloud, &
-                                        corr_hmx_hmy_n_LL_below ) &
-  result( corr_hmx_hmy_i_n )
+  subroutine component_corr_hmx_hmy_n_ip( nz, ngrdcol, &  
+                                          rc_1, cloud_frac_1, &
+                                          rc_2, cloud_frac_2, &
+                                          corr_hmx_hmy_n_LL_cloud, &
+                                          corr_hmx_hmy_n_LL_below, &
+                                          corr_hmx_hmy_1_n, &
+                                          corr_hmx_hmy_2_n ) 
 
     ! Description:
     ! Calculates the in-precip correlation of the natural logarithms of
@@ -2796,44 +2806,81 @@ module setup_clubb_pdf_params
 
     ! Input Variables
     integer, intent(in) :: &
-      nz   ! Number of model vertical grid levels
+      nz,     & ! Number of model vertical grid levels
+      ngrdcol   ! Number of grid columns
 
-    real( kind = core_rknd ), dimension(nz), intent(in) :: &
-      rc_i,         & ! Mean cloud water mixing ratio (ith PDF comp.) [kg/kg]
-      cloud_frac_i    ! Cloud fraction (ith PDF component)            [-]
+    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: &
+      rc_1,         & ! Mean cloud water mixing ratio (ith PDF comp.) [kg/kg]
+      rc_2,         & ! Mean cloud water mixing ratio (ith PDF comp.) [kg/kg]
+      cloud_frac_1, & ! Cloud fraction (ith PDF component)            [-]
+      cloud_frac_2    ! Cloud fraction (ith PDF component)            [-]
 
     real( kind = core_rknd ), intent(in) :: &
       corr_hmx_hmy_n_LL_cloud, & ! Corr.: ln hmx & ln hmy (ith PDF comp.) ip [-]
       corr_hmx_hmy_n_LL_below    ! Corr.: ln hmx & ln hmy (ith PDF comp.) ip [-]
 
-    ! Return Variable
-    real( kind = core_rknd ), dimension(nz) :: &
-      corr_hmx_hmy_i_n    ! Corr. of ln hmx & ln hmy (ith PDF comp.) ip      [-]
+    ! Output Variable
+    real( kind = core_rknd ), dimension(ngrdcol,nz) :: &
+      corr_hmx_hmy_1_n, & ! Corr. of ln hmx & ln hmy (ith PDF comp.) ip      [-]
+      corr_hmx_hmy_2_n    ! Corr. of ln hmx & ln hmy (ith PDF comp.) ip      [-]
 
+    ! Local Variable
+    integer :: j, k
+    
 
     ! Correlation (in-precip) of the natural logarithms of hydrometeor x and
     ! hydrometeor y in the ith PDF component.
     if ( l_interp_prescribed_params ) then
-       corr_hmx_hmy_i_n = cloud_frac_i * corr_hmx_hmy_n_LL_cloud &
-                        + ( one - cloud_frac_i ) * corr_hmx_hmy_n_LL_below
+      
+      do k = 1, nz
+        do j = 1, ngrdcol
+          corr_hmx_hmy_1_n(j,k) = cloud_frac_1(j,k) * corr_hmx_hmy_n_LL_cloud &
+                             + ( one - cloud_frac_1(j,k) ) * corr_hmx_hmy_n_LL_below
+        end do
+      end do
+      
+      do k = 1, nz
+        do j = 1, ngrdcol
+          corr_hmx_hmy_2_n(j,k) = cloud_frac_2(j,k) * corr_hmx_hmy_n_LL_cloud &
+                             + ( one - cloud_frac_2(j,k) ) * corr_hmx_hmy_n_LL_below
+        end do
+      end do
+      
     else
-       where ( rc_i > rc_tol )
-          corr_hmx_hmy_i_n = corr_hmx_hmy_n_LL_cloud
-       elsewhere
-          corr_hmx_hmy_i_n = corr_hmx_hmy_n_LL_below
-       endwhere
+      
+      do k = 1, nz
+        do j = 1, ngrdcol
+          
+          if ( rc_1(j,k) > rc_tol ) then
+            corr_hmx_hmy_1_n(j,k) = corr_hmx_hmy_n_LL_cloud
+          else
+            corr_hmx_hmy_1_n(j,k) = corr_hmx_hmy_n_LL_below
+          end if
+          
+          if ( rc_2(j,k) > rc_tol ) then
+            corr_hmx_hmy_2_n(j,k) = corr_hmx_hmy_n_LL_cloud
+          else
+            corr_hmx_hmy_2_n(j,k) = corr_hmx_hmy_n_LL_below
+          end if
+          
+        end do
+      end do
+       
     end if
 
 
     return
 
-  end function component_corr_hmx_hmy_n_ip
+  end subroutine component_corr_hmx_hmy_n_ip
 
   !=============================================================================
-  pure function component_corr_eta_hm_n_ip( nz, corr_chi_eta_i, &
-                                            corr_chi_hm_n_i ) &
-  result( corr_eta_hm_n_i )
-
+  subroutine component_corr_eta_hm_n_ip( nz, ngrdcol, &
+                                         corr_chi_eta_1, &
+                                         corr_chi_hm_n_1, &
+                                         corr_chi_eta_2, &
+                                         corr_chi_hm_n_2, &
+                                         corr_eta_hm_n_1, &
+                                         corr_eta_hm_n_2) 
     ! Description:
     ! Estimates the correlation of eta and the natural logarithm of a
     ! hydrometeor species using the correlation of chi and eta and the
@@ -2852,23 +2899,29 @@ module setup_clubb_pdf_params
 
     ! Input Variables
     integer, intent(in) :: &
-      nz   ! Number of model vertical grid levels
+      nz,     & ! Number of model vertical grid levels
+      ngrdcol   ! Number of grid columns
 
-    real( kind = core_rknd ), dimension(nz), intent(in) :: &
-      corr_chi_eta_i,  & ! Component correlation of chi and eta              [-]
-      corr_chi_hm_n_i    ! Component correlation of chi and ln hm            [-]
+
+    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: &
+      corr_chi_eta_1,  & ! Component correlation of chi and eta              [-]
+      corr_chi_eta_2,  & ! Component correlation of chi and eta              [-]
+      corr_chi_hm_n_1, & ! Component correlation of chi and ln hm            [-]
+      corr_chi_hm_n_2    ! Component correlation of chi and ln hm            [-]
 
     ! Output Variables
-    real( kind = core_rknd ), dimension(nz) :: &
-      corr_eta_hm_n_i    ! Component correlation of eta and ln hm            [-]
+    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(out) :: &
+      corr_eta_hm_n_1, & ! Component correlation of eta and ln hm            [-]
+      corr_eta_hm_n_2    ! Component correlation of eta and ln hm            [-]
 
 
-    corr_eta_hm_n_i = corr_chi_eta_i * corr_chi_hm_n_i
+    corr_eta_hm_n_1 = corr_chi_eta_1 * corr_chi_hm_n_1
+    corr_eta_hm_n_2 = corr_chi_eta_2 * corr_chi_hm_n_2
 
 
     return
 
-  end function component_corr_eta_hm_n_ip
+  end subroutine component_corr_eta_hm_n_ip
 
   !=============================================================================
   subroutine norm_transform_mean_stdev( nz, hm_1, hm_2, &
