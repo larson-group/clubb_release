@@ -24,7 +24,7 @@ def main():
     # This the subset of paramsNames that vary from [0,1] (e.g., C5)
     #    and hence will be transformed to [0,infinity] in order to make
     #    the relationship between parameters and metrics more linear:
-    transformedParams = np.array([''])
+    transformedParamsNames = np.array([''])
 
     # Netcdf file containing metric and parameter values from the default simulation
     defaultNcFilename = \
@@ -47,7 +47,7 @@ def main():
 
     # Calculate changes in parameter values needed to match metrics.
     sensMatrix, normlzdSensMatrix, svdInvrsNormlzdWeighted, dparamsSoln, paramsSoln = \
-        analyzeSensMatrix(metricsNames, paramsNames, transformedParams,
+        analyzeSensMatrix(metricsNames, paramsNames, transformedParamsNames,
                       metricsWeights,
                       sensNcFilenames, defaultNcFilename,
                       obsMetricValsDict)
@@ -59,7 +59,7 @@ def main():
 
     return
 
-def analyzeSensMatrix(metricsNames, paramsNames, transformedParams,
+def analyzeSensMatrix(metricsNames, paramsNames, transformedParamsNames,
                       metricsWeights,
                       sensNcFilenames, defaultNcFilename,
                       obsMetricValsDict):
@@ -99,11 +99,14 @@ def analyzeSensMatrix(metricsNames, paramsNames, transformedParams,
     print("\nmetricsNames = ")
     print(metricsNames)
 
+    print("\nmetricsWeights = ")
+    print(metricsWeights)
+
     print("\nparamsNames = ")
     print(paramsNames)
 
-    print("\ntransformedParams = ")
-    print(transformedParams)
+    print("\ntransformedParamsNames = ")
+    print(transformedParamsNames)
 
     # Set up a column vector of observed metrics
     obsMetricValsCol = \
@@ -112,7 +115,7 @@ def analyzeSensMatrix(metricsNames, paramsNames, transformedParams,
     # Based on the default simulation,
     #    set up a column vector of metrics and a row vector of parameter values.
     defaultMetricValsCol, defaultParamValsRow, defaultParamValsOrigRow = \
-            setupDefaultVectors(metricsNames, paramsNames, transformedParams,
+            setupDefaultVectors(metricsNames, paramsNames, transformedParamsNames,
                                 numMetrics, numParams,
                                 defaultNcFilename)
 
@@ -128,7 +131,7 @@ def analyzeSensMatrix(metricsNames, paramsNames, transformedParams,
             #   Hence the "[0]" at the end is needed.
             sensParamVal = np.ndarray.item( f_sensParams.variables[paramName][0] )
             # Transform [0,1] variable to extend over range [0,infinity]
-            if paramName in transformedParams:
+            if paramName in transformedParamsNames:
                 #sensParamVal = -np.log(1-sensParamVal)
                 sensParamVal = np.log(sensParamVal)
             defaultParamVal = defaultParamValsRow[0][paramIdx]
@@ -148,18 +151,30 @@ def analyzeSensMatrix(metricsNames, paramsNames, transformedParams,
     # Also set up numMetrics x numParams matrix,
     #    each column of which lists the metrics
     #    from one of the sensitivity simulations
-    sensParamValsRow, sensMetricValsMatrix = \
-            setupSensArrays(metricsNames, paramsNames, transformedParams,
+    sensMetricValsMatrix, sensParamValsRow, sensParamValsOrigRow = \
+            setupSensArrays(metricsNames, paramsNames, transformedParamsNames,
                     numMetrics, numParams,
                     sensNcFilenames)
 
     # Calculate the sensitivity matrix and the sensitivity matrix
     # normalized by the discrepancies from observations in default simulation.
+    # Use untransformed (original) parameter values.
+    sensMatrixOrig, normlzdSensMatrixOrig = \
+         constructSensMatrix(sensMetricValsMatrix, sensParamValsOrigRow,
+                            defaultMetricValsCol, defaultParamValsOrigRow,
+                            obsMetricValsCol,
+                            numMetrics, numParams,
+                            beVerbose=False)
+
+    # Calculate the sensitivity matrix and the sensitivity matrix
+    # normalized by the discrepancies from observations in default simulation.
+    # Use transformed parameter values.
     sensMatrix, normlzdSensMatrix = \
          constructSensMatrix(sensMetricValsMatrix, sensParamValsRow,
                             defaultMetricValsCol, defaultParamValsRow,
                             obsMetricValsCol,
-                            numMetrics, numParams)
+                            numMetrics, numParams,
+                            beVerbose=True)
 
     # In order to de-weight certain metrics, multiply each row of normlzdSensMatrix 
     # by metricsWeights
@@ -175,10 +190,10 @@ def analyzeSensMatrix(metricsNames, paramsNames, transformedParams,
     # Calculate solution in transformed space
     dparamsSoln = svdInvrsNormlzdWeighted @ metricsWeights #* np.transpose(defaultParamValsRow)
     paramsSoln = np.transpose(defaultParamValsRow) + dparamsSoln
-    # Transform some variables from [0,infinity] back to [0,1] range
+    # Transform some variables from [-inf,inf] back to [0,inf] range
     for idx in np.arange(numParams):
         paramName = paramsNames[idx]
-        if paramName in transformedParams:
+        if paramName in transformedParamsNames:
             #paramsSoln[idx,0] = 1.0-np.exp(-paramsSoln[idx,0])
             paramsSoln[idx,0] = np.exp(paramsSoln[idx,0])
             dparamsSoln[idx,0] = paramsSoln[idx,0] - defaultParamValsOrigRow[0,idx]
@@ -190,18 +205,19 @@ def analyzeSensMatrix(metricsNames, paramsNames, transformedParams,
     print(paramsSoln)
 
     # This check is currently broken if any params span [0,1], e.g., C5
-    if (transformedParams - np.array([''])).all():
-        print("\nCheck: Does defaultBiasesApprox approximate defaultBiasesCol above?")
-        defaultBiasesApprox = sensMatrix @ dparamsSoln
-        print("defaultBiasesApprox =")
-        print(defaultBiasesApprox)
+    #if (transformedParamsNames == np.array([''])).all():
+    print("\nCheck: Does defaultBiasesApprox approximate defaultBiasesCol above?")
+    defaultBiasesApprox = sensMatrixOrig @ dparamsSoln
+    print("defaultBiasesApprox =")
+    print(defaultBiasesApprox)
 
     return (sensMatrix, normlzdSensMatrix, svdInvrsNormlzdWeighted, dparamsSoln, paramsSoln)
 
 def constructSensMatrix(sensMetricValsMatrix, sensParamValsRow,
                         defaultMetricValsCol, defaultParamValsRow,
                         obsMetricValsCol,
-                        numMetrics, numParams):
+                        numMetrics, numParams,
+                        beVerbose):
     """
     Inputs: Metric and parameter values from default and sensitivity simulations,
         and from observations.
@@ -222,14 +238,16 @@ def constructSensMatrix(sensMetricValsMatrix, sensParamValsRow,
     # Sensitivity simulation metrics minus default simulation metrics
     dmetricsMatrix = np.subtract(sensMetricValsMatrix, defaultMetricValsMatrix)
 
-    print("\ndmetricsMatrix =")
-    print(dmetricsMatrix)
+    if beVerbose:
+        print("\ndmetricsMatrix =")
+        print(dmetricsMatrix)
 
     # Perturbation parameter values
     dparamsRow = np.subtract(sensParamValsRow, defaultParamValsRow)
 
-    print("\ndparamsRow =")
-    print(dparamsRow)
+    if beVerbose:
+        print("\ndparamsRow =")
+        print(dparamsRow)
 
     # Make sure that the parameter values from sensitivity simulations
     #    are actually different than the ones from the default simulation:
@@ -251,14 +269,16 @@ def constructSensMatrix(sensMetricValsMatrix, sensParamValsRow,
     # Sensitivity matrix of derivatives, dmetrics/dparams
     sensMatrix = dmetricsMatrix * invrsDparamsMatrix
 
-    print("\nsensMatrix =")
-    print(sensMatrix)
+    if beVerbose:
+        print("\nsensMatrix =")
+        print(sensMatrix)
 
     # Store biases in default simulation
     defaultBiasesCol = np.subtract(obsMetricValsCol, defaultMetricValsCol)
 
-    print("\ndefaultBiasesCol =")
-    print(defaultBiasesCol)
+    if beVerbose:
+        print("\ndefaultBiasesCol =")
+        print(defaultBiasesCol)
 
     # Matrix of inverse biases.
     # Used for forming normalized sensitivity derivatives.
@@ -268,13 +288,14 @@ def constructSensMatrix(sensMetricValsMatrix, sensParamValsRow,
     #print(invrsBiasesMatrix)
 
     # Form matrix of default parameter values, for later normalization of the sensitivity matrix
-    defaultParamValsMatrix = np.ones((numMetrics,1)) @ defaultParamValsRow
+    #defaultParamValsMatrix = np.ones((numMetrics,1)) @ defaultParamValsRow
 
     # Sensitivity matrix, normalized by biases and parameter values
     normlzdSensMatrix = sensMatrix * invrsBiasesMatrix #* defaultParamValsMatrix
 
-    print("\nnormlzdSensMatrix =")
-    print(normlzdSensMatrix)
+    if beVerbose:
+        print("\nnormlzdSensMatrix =")
+        print(normlzdSensMatrix)
 
     return  (sensMatrix, normlzdSensMatrix)
 
@@ -296,11 +317,11 @@ def calcSvdInvrs(normlzdWeightedSensMatrix):
     print("\nSingular values =")
     print(s)
 
-    print("\nvh =")
-    print(vh)
+    #print("\nvh =")
+    #print(vh)
 
-    print("\nu =")
-    print(u)
+    #print("\nu =")
+    #print(u)
 
     sValsTrunc = s
 
@@ -357,7 +378,7 @@ def setupObsCol(obsMetricValsDict, metricsNames, numMetrics):
 
     return obsMetricValsCol
 
-def setupDefaultVectors(metricsNames, paramsNames, transformedParams,
+def setupDefaultVectors(metricsNames, paramsNames, transformedParamsNames,
                         numMetrics, numParams,
                         defaultNcFilename):
     """
@@ -394,7 +415,7 @@ def setupDefaultVectors(metricsNames, paramsNames, transformedParams,
         #   Hence the "[0]" at the end is needed.
         defaultParamValsOrigRow[0,idx] = f_defaultMetricsParams.variables[paramName][0]
         # Transform [0,1] variable to extend over range [0,infinity]
-        if paramName in transformedParams:
+        if paramName in transformedParamsNames:
             #defaultParamValsRow[0,idx] = -np.log(1-defaultParamValsOrigRow[0,idx])
             defaultParamValsRow[0,idx] = np.log(defaultParamValsOrigRow[0,idx])
         else:
@@ -410,7 +431,7 @@ def setupDefaultVectors(metricsNames, paramsNames, transformedParams,
 
     return (defaultMetricValsCol, defaultParamValsRow, defaultParamValsOrigRow)
 
-def setupSensArrays(metricsNames, paramsNames, transformedParams,
+def setupSensArrays(metricsNames, paramsNames, transformedParamsNames,
                     numMetrics, numParams,
                     sensNcFilenames):
     """
@@ -426,6 +447,9 @@ def setupSensArrays(metricsNames, paramsNames, transformedParams,
 
     # Create row vector size numParams containing
     # parameter values from sensitivity simulations
+    sensParamValsOrigRow = np.zeros((1, numParams))
+    # This variable contains transformed parameter values,
+    #    if transformedParamsNames is non-empty:
     sensParamValsRow = np.zeros((1, numParams))
     for idx in np.arange(numParams):
         paramName = paramsNames[idx]
@@ -433,14 +457,19 @@ def setupSensArrays(metricsNames, paramsNames, transformedParams,
         f_sensParams = netCDF4.Dataset(sensNcFilenames[idx], 'r')
         # Assume each metric is stored as length-1 array, rather than scalar.
         #   Hence the "[0]" at the end is needed.
-        sensParamValsRow[0,idx] = f_sensParams.variables[paramName][0]
+        sensParamValsOrigRow[0,idx] = f_sensParams.variables[paramName][0]
         # Transform [0,1] variable to extend over range [0,infinity]
-        if paramName in transformedParams:
+        if paramName in transformedParamsNames:
             #sensParamValsRow[0,idx] = -np.log(1-sensParamValsRow[0,idx])
-            sensParamValsRow[0,idx] = np.log(sensParamValsRow[0,idx])
+            sensParamValsRow[0,idx] = np.log(sensParamValsOrigRow[0,idx])
+        else:
+            sensParamValsRow[0,idx] = sensParamValsOrigRow[0,idx]
         f_sensParams.close()
 
     #sensParamValsRow = np.array([[2., 4.]])
+
+    print("\nsensParamValsOrigRow =")
+    print(sensParamValsOrigRow)
 
     print("\nsensParamValsRow =")
     print(sensParamValsRow)
@@ -460,7 +489,7 @@ def setupSensArrays(metricsNames, paramsNames, transformedParams,
     print("\nsensMetricValsMatrix =")
     print(sensMetricValsMatrix)
 
-    return(sensParamValsRow, sensMetricValsMatrix)
+    return(sensMetricValsMatrix, sensParamValsRow, sensParamValsOrigRow)
 
 def plotNormlzdSensMatrix(normlzdSensMatrix, metricsNames, paramsNames):
 
