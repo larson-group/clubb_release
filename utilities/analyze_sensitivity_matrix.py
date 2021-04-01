@@ -166,6 +166,9 @@ def analyzeSensMatrix(metricsNames, paramsNames, transformedParamsNames,
                             numMetrics, numParams,
                             beVerbose=False)
 
+    print("\nsensMatrixOrig =")
+    print(sensMatrixOrig)
+
     # Calculate the sensitivity matrix and the sensitivity matrix
     # normalized by the discrepancies from observations in default simulation.
     # Use transformed parameter values.
@@ -184,8 +187,8 @@ def analyzeSensMatrix(metricsNames, paramsNames, transformedParamsNames,
     # This gives the recommended changes to parameter values.
     svdInvrsNormlzdWeighted = calcSvdInvrs(normlzdWeightedSensMatrix)
 
-    print("\nNormalized, weighted SVD inverse =")
-    print(svdInvrsNormlzdWeighted)
+    #print("\nNormalized, weighted SVD inverse =")
+    #print(svdInvrsNormlzdWeighted)
 
     # Calculate solution in transformed space
     dparamsSoln = svdInvrsNormlzdWeighted @ metricsWeights #* np.transpose(defaultParamValsRow)
