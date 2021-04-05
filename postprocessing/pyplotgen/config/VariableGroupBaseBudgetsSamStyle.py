@@ -87,6 +87,9 @@ class VariableGroupBaseBudgetsSamStyle(VariableGroup):
             {'var_names': ['wp3_cl'], 'legend_label': 'wp3_limit'},
         ]
 
+        # According to https://carson.math.uwm.edu/larson-group/internal/SAM_LES_BUDGET_PLOTS/,
+        # the DISSIP and DIFFTR terms in SAM should be equivalent to CLUBB's dp1 and dp2 terms,
+        # respectively.
         thlp2_budget_lines = [
             {'var_names': ['thlp2_residual', self.getThlp2Residual], 'legend_label': 'thlp2_res'},
             {'var_names': ['thlp2_adv',self.calc_thlp2_adv], 'legend_label': 'thlp2_adv'},
@@ -101,6 +104,9 @@ class VariableGroupBaseBudgetsSamStyle(VariableGroup):
             {'var_names': ['thlp2_sf'], 'legend_label': 'thlp2_sf'},
         ]
 
+        # According to https://carson.math.uwm.edu/larson-group/internal/SAM_LES_BUDGET_PLOTS/,
+        # the DISSIP and DIFFTR terms in SAM should be equivalent to CLUBB's dp1 and dp2 terms,
+        # respectively.
         rtp2_budget_lines = [
             {'var_names': ['rtp2_residual', self.getRtp2Residual], 'legend_label': 'rtp2_res'},
             {'var_names': ['rtp2_adv',self.calc_rtp2_adv], 'legend_label': 'rtp2_adv'},
@@ -114,6 +120,9 @@ class VariableGroupBaseBudgetsSamStyle(VariableGroup):
             {'var_names': ['rtp2_sf'], 'legend_label': 'rtp2_sf'},
         ]
 
+        # According to https://carson.math.uwm.edu/larson-group/internal/SAM_LES_BUDGET_PLOTS/,
+        # the DISSIP and DIFFTR terms in SAM should be equivalent to CLUBB's dp1 and dp2 terms,
+        # respectively.
         rtpthlp_budget_lines = [
             {'var_names': ['rtpthlp_residual', self.getRtpthlpResidual], 'legend_label': 'rtpthlp_res'},
             {'var_names': ['rtpthlp_adv',self.calc_rtpthlp_adv], 'legend_label': 'rtpthlp_adv'},
@@ -127,24 +136,40 @@ class VariableGroupBaseBudgetsSamStyle(VariableGroup):
             {'var_names': ['rtpthlp_sf'], 'legend_label': 'rtpthlp_sf'},
         ]
 
+        # In SAM, upwp_aniz ends up being equal to (-w'*dp'/dx-u'*dp'/dz)-d(u'p')/dz.
+        # This is similar to the "scrambling" part of the pressure covariance,
+        # since it's the total pressure contribution minus a diffusion part.  (It's not 
+        # subtracting the total diffusion part, since there would also be d(w'p')/dz.)
+        # Hence I have set upwp_aniz equal to the sum of all current pressure contributions,
+        # since they all parameterize the pressure-scrambling part of the equation.
+        # As of now CLUBB doesn't explicitly model the "diffusion" part of the pressure
+        # covariance upwp_pres, so that part is set to zero.
         upwp_budget_lines = [
             {'var_names': ['upwp_residual', self.getUpwpResidual], 'legend_label': 'upwp_res'},
             {'var_names': ['upwp_dp1'], 'legend_label': 'upwp_diff'},
             {'var_names': ['upwp_adv',self.calc_upwp_adv], 'legend_label': 'upwp_adv'},
             {'var_names': ['upwp_pres',self.calc_upwp_pres], 'legend_label': 'upwp_pres'},
-            {'var_names': ['upwp_pr1'], 'legend_label': 'upwp_aniz'},
+            {'var_names': ['upwp_aniz',self.calc_upwp_aniz], 'legend_label': 'upwp_aniz'},
             {'var_names': ['upwp_bp'], 'legend_label': 'upwp_buoy'},
             {'var_names': ['upwp_tp'], 'legend_label': 'upwp_shear'},
             {'var_names': ['upwp_bt'], 'legend_label': 'upwp_bt'},
             {'var_names': ['upwp_limit',self.calc_upwp_limit], 'legend_label': 'upwp_limit'},
         ]
 
+        # In SAM, vpwp_aniz ends up being equal to (-w'*dp'/dy-v'*dp'/dz)-d(v'p')/dz.
+        # This is similar to the "scrambling" part of the pressure covariance,
+        # since it's the total pressure contribution minus a diffusion part.  (It's not 
+        # subtracting the total diffusion part, since there would also be d(w'p')/dz.)
+        # Hence I have set vpwp_aniz equal to the sum of all current pressure contributions,
+        # since they all parameterize the pressure-scrambling part of the equation.
+        # As of now CLUBB doesn't explicitly model the "diffusion" part of the pressure
+        # covariance vpwp_pres, so that part is set to zero.
         vpwp_budget_lines = [
             {'var_names': ['vpwp_residual', self.getVpwpResidual], 'legend_label': 'vpwp_res'},
             {'var_names': ['vpwp_dp1'], 'legend_label': 'vpwp_diff'},
             {'var_names': ['vpwp_adv',self.calc_vpwp_adv], 'legend_label': 'vpwp_adv'},
             {'var_names': ['vpwp_pres',self.calc_vpwp_pres], 'legend_label': 'vpwp_pres'},
-            {'var_names': ['vpwp_pr1'], 'legend_label': 'vpwp_aniz'},
+            {'var_names': ['vpwp_aniz',self.calc_vpwp_aniz], 'legend_label': 'vpwp_aniz'},
             {'var_names': ['vpwp_bp'], 'legend_label': 'vpwp_buoy'},
             {'var_names': ['vpwp_tp'], 'legend_label': 'vpwp_shear'},         
             {'var_names': ['vpwp_bt'], 'legend_label': 'vpwp_bt'},
@@ -1202,10 +1227,21 @@ class VariableGroupBaseBudgetsSamStyle(VariableGroup):
         '''
         # z,z, dataset = self.getVarForCalculations('altitude', dataset_override)
         upwp_pr2, indep, dataset = self.getVarForCalculations('upwp_pr2', dataset_override)
+
+        output_data = upwp_pr2 - upwp_pr2
+
+        return output_data, indep
+
+    def calc_upwp_aniz(self, dataset_override=None):
+        '''
+        '''
+        # z,z, dataset = self.getVarForCalculations('altitude', dataset_override)
+        upwp_pr1, indep, dataset = self.getVarForCalculations('upwp_pr1', dataset_override)
+        upwp_pr2, indep, dataset = self.getVarForCalculations('upwp_pr2', dataset)
         upwp_pr3, indep, dataset = self.getVarForCalculations('upwp_pr3', dataset)
         upwp_pr4, indep, dataset = self.getVarForCalculations('upwp_pr4', dataset)
 
-        output_data = upwp_pr2 + upwp_pr3 + upwp_pr4
+        output_data = upwp_pr1 + upwp_pr2 + upwp_pr3 + upwp_pr4
 
         return output_data, indep
 
@@ -1285,10 +1321,21 @@ class VariableGroupBaseBudgetsSamStyle(VariableGroup):
         '''
         # z,z, dataset = self.getVarForCalculations('altitude', dataset_override)
         vpwp_pr2, indep, dataset = self.getVarForCalculations('vpwp_pr2', dataset_override)
+
+        output_data = vpwp_pr2 - vpwp_pr2
+
+        return output_data, indep
+
+    def calc_vpwp_aniz(self, dataset_override=None):
+        '''
+        '''
+        # z,z, dataset = self.getVarForCalculations('altitude', dataset_override)
+        vpwp_pr1, indep, dataset = self.getVarForCalculations('vpwp_pr1', dataset_override)
+        vpwp_pr2, indep, dataset = self.getVarForCalculations('vpwp_pr2', dataset)
         vpwp_pr3, indep, dataset = self.getVarForCalculations('vpwp_pr3', dataset)
         vpwp_pr4, indep, dataset = self.getVarForCalculations('vpwp_pr4', dataset)
 
-        output_data = vpwp_pr2 + vpwp_pr3 + vpwp_pr4
+        output_data = vpwp_pr1 + vpwp_pr2 + vpwp_pr3 + vpwp_pr4
 
         return output_data, indep
 
@@ -1348,123 +1395,5 @@ class VariableGroupBaseBudgetsSamStyle(VariableGroup):
         output_data = vpwp_bt - (
                 vpwp_ma + vpwp_ta + vpwp_tp + vpwp_ac + vpwp_bp + vpwp_pr1 + vpwp_pr2 + vpwp_pr3 + vpwp_pr4 +
                 vpwp_dp1 + vpwp_mfl + vpwp_cl)
-
-        return output_data, indep
-
-    def getRrmFillClip(self, dataset_override=None):
-        '''
-
-        This is a "calculate function". Calculate functions are intended to be written by the user in the event that
-        they need a variable that is not output by their atmospheric model. The general format for these functions
-        is:
-            1. Get the proper dataset. This is either passed in as dataset_override, or some benchmark dataset
-            2. Get the equations needed variables from the dataset using ``self.getVarForCalculations()``
-            3. Calculate the new variable
-            4. (optional) If there are multiple valid equations, pick the one that worked using
-               ``self.pickNonZeroOutput()``
-            5. Return the data as (dependent,independent)
-
-        For more information on calculate functions, see the "Creating a new calculated function (for calculated
-        variables)" section of the README.md
-
-        .. code-block:: python
-            :linenos:
-
-            rrm_hf + rrm_wvhf + rrm_cl
-
-        :param dataset_override: If passed, this netcdf dataset will be used to gather the data needed to calculate the
-          given variable. if not passed, this function should attempt to find the best source for the data, e.g.
-          the benchmark data for the given model
-        :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
-          Lists will be filled with NaN's if the variable could not be calculated.
-        '''
-        # z,z, dataset = self.getVarForCalculations('altitude', dataset_override)
-        rrm_hf, indep, dataset = self.getVarForCalculations('rrm_hf', dataset_override)
-        rrm_wvhf, indep, dataset = self.getVarForCalculations('rrm_wvhf', dataset)
-        rrm_cl, indep, dataset = self.getVarForCalculations('rrm_cl', dataset)
-
-        output_data = rrm_hf + rrm_wvhf + rrm_cl
-
-        return output_data, indep
-
-    def getRrmResidual(self, dataset_override=None):
-        '''
-
-        This is a "calculate function". Calculate functions are intended to be written by the user in the event that
-        they need a variable that is not output by their atmospheric model. The general format for these functions
-        is:
-            1. Get the proper dataset. This is either passed in as dataset_override, or some benchmark dataset
-            2. Get the equations needed variables from the dataset using ``self.getVarForCalculations()``
-            3. Calculate the new variable
-            4. (optional) If there are multiple valid equations, pick the one that worked using
-               ``self.pickNonZeroOutput()``
-            5. Return the data as (dependent,independent)
-
-        For more information on calculate functions, see the "Creating a new calculated function (for calculated
-        variables)" section of the README.md
-
-        .. code-block:: python
-            :linenos:
-
-            rrm_bt - (rrm_ma + rrm_sd + rrm_ta + rrm_ts + rrm_hf + rrm_wvhf + rrm_cl + rrm_mc)
-
-        :param dataset_override: If passed, this netcdf dataset will be used to gather the data needed to calculate the
-          given variable. if not passed, this function should attempt to find the best source for the data, e.g.
-          the benchmark data for the given model
-        :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
-          Lists will be filled with NaN's if the variable could not be calculated.
-        '''
-        # z,z, dataset = self.getVarForCalculations('altitude', dataset_override)
-        rrm_bt, indep, dataset = self.getVarForCalculations('rrm_bt', dataset_override)
-        rrm_ma, indep, dataset = self.getVarForCalculations('rrm_ma', dataset)
-        rrm_sd, indep, dataset = self.getVarForCalculations('rrm_sd', dataset)
-        rrm_ta, indep, dataset = self.getVarForCalculations('rrm_ta', dataset)
-        rrm_ts, indep, dataset = self.getVarForCalculations('rrm_ts', dataset)
-        rrm_hf, indep, dataset = self.getVarForCalculations('rrm_hf', dataset)
-        rrm_wvhf, indep, dataset = self.getVarForCalculations('rrm_wvhf', dataset)
-        rrm_cl, indep, dataset = self.getVarForCalculations('rrm_cl', dataset)
-        rrm_mc, indep, dataset = self.getVarForCalculations('rrm_mc', dataset)
-
-        output_data = rrm_bt - (rrm_ma + rrm_sd + rrm_ta + rrm_ts + rrm_hf + rrm_wvhf + rrm_cl + rrm_mc)
-
-        return output_data, indep
-
-    def getNrmResidual(self, dataset_override=None):
-        '''
-
-        This is a "calculate function". Calculate functions are intended to be written by the user in the event that
-        they need a variable that is not output by their atmospheric model. The general format for these functions
-        is:
-            1. Get the proper dataset. This is either passed in as dataset_override, or some benchmark dataset
-            2. Get the equations needed variables from the dataset using ``self.getVarForCalculations()``
-            3. Calculate the new variable
-            4. (optional) If there are multiple valid equations, pick the one that worked using
-               ``self.pickNonZeroOutput()``
-            5. Return the data as (dependent,independent)
-
-        For more information on calculate functions, see the "Creating a new calculated function (for calculated
-        variables)" section of the README.md
-
-        .. code-block:: python
-            :linenos:
-
-            Nrm_bt - (Nrm_ma + Nrm_sd + Nrm_ta + Nrm_ts + Nrm_cl + Nrm_mc)
-
-        :param dataset_override: If passed, this netcdf dataset will be used to gather the data needed to calculate the
-          given variable. if not passed, this function should attempt to find the best source for the data, e.g.
-          the benchmark data for the given model
-        :return: tuple of numeric lists of the form (dependent_data, independent_data) for the given variable being caluclated.
-          Lists will be filled with NaN's if the variable could not be calculated.
-        '''
-        # z,z, dataset = self.getVarForCalculations('altitude', dataset_override)
-        Nrm_bt, indep, dataset = self.getVarForCalculations('Nrm_bt', dataset_override)
-        Nrm_ma, indep, dataset = self.getVarForCalculations('Nrm_ma', dataset)
-        Nrm_sd, indep, dataset = self.getVarForCalculations('Nrm_sd', dataset)
-        Nrm_ta, indep, dataset = self.getVarForCalculations('Nrm_ta', dataset)
-        Nrm_ts, indep, dataset = self.getVarForCalculations('Nrm_ts', dataset)
-        Nrm_cl, indep, dataset = self.getVarForCalculations('Nrm_cl', dataset)
-        Nrm_mc, indep, dataset = self.getVarForCalculations('Nrm_mc', dataset)
-
-        output_data = Nrm_bt - (Nrm_ma + Nrm_sd + Nrm_ta + Nrm_ts + Nrm_cl + Nrm_mc)
 
         return output_data, indep
