@@ -25,6 +25,9 @@ sensNcFilenames = np.array(['sens0.nc', 'sens1.nc'])
 # Global mean, NOTE PRECT is in the unit of m/s
 obsMetricValsDict = {'LWCF': 28.008, 'PRECT': 0.000000033912037, 'SWCF': -45.81}
 
+# Write obsMetricValsDict to netcdf file in order to test whether SVD solution recovers original
+#    observations.
+obsNcFilename = 'obs.nc'
 
 def test_3x2_C8transformed():
 
@@ -53,7 +56,8 @@ def test_3x2_C8transformed():
     write_test_netcdf_files(obsMetricValsDict, clubbC8Vals)
 
     # Calculate changes in parameter values needed to match metrics.
-    sensMatrix, normlzdSensMatrix, svdInvrsNormlzdWeighted, dparamsSoln, paramsSoln = \
+    sensMatrixOrig, sensMatrix, normlzdSensMatrix, svdInvrsNormlzdWeighted, \
+            dparamsSoln, paramsSoln, defaultBiasesApprox = \
         analyzeSensMatrix(metricsNames, paramsNames, transformedParams,
                         metricsWeights,
                         sensNcFilenames, defaultNcFilename,
@@ -107,7 +111,8 @@ def test_3x2_novarstransformed():
     write_test_netcdf_files(obsMetricValsDict, clubbC8Vals)
 
     # Calculate changes in parameter values needed to match metrics.
-    sensMatrix, normlzdSensMatrix, svdInvrsNormlzdWeighted, dparamsSoln, paramsSoln = \
+    sensMatrixOrig, sensMatrix, normlzdSensMatrix, svdInvrsNormlzdWeighted, \
+            dparamsSoln, paramsSoln, defaultBiasesApprox = \
         analyzeSensMatrix(metricsNames, paramsNames, transformedParams,
                         metricsWeights,
                         sensNcFilenames, defaultNcFilename,
@@ -127,6 +132,64 @@ def test_3x2_novarstransformed():
     print("\nReached the end of function test_3x2_novarstransformed in test harness.")
 
     return
+
+def test_2x2_C8transformed():
+
+    import numpy as np
+    import pdb
+    from analyze_sensitivity_matrix \
+        import analyzeSensMatrix, plotNormlzdSensMatrix, calcLinSolnBias
+
+    # The metrics are observed quantities that we want a tuned simulation to match.
+    #    The order of metricNames determines the order of rows in sensMatrix.
+    metricsNames = np.array(['SWCF', 'LWCF'])
+
+    # Column vector of (positive) weights.  A small value de-emphasizes
+    #   the corresponding metric in the fit.
+    metricsWeights = np.array([[1.], [1.]])
+
+    # This is the subset of paramsNames that vary from [0,1] (e.g., C5)
+    #    and hence will be transformed to [0,infinity] in order to make
+    #    the relationship between parameters and metrics more linear:
+    transformedParams = np.array(['clubb_c8'])
+
+    # Example values of the clubb_c8 parameter in the default and 2 sensitivity runs
+    clubbC8Vals = np.array([0.2, 0.20001, 0.2])
+
+    # Create fake testing data with simple values
+    write_test_netcdf_files(obsMetricValsDict, clubbC8Vals)
+
+    # Calculate changes in parameter values needed to match metrics.
+    sensMatrixOrig, sensMatrix, normlzdSensMatrix, svdInvrsNormlzdWeighted, \
+            dparamsSoln, paramsSoln, defaultBiasesApprox = \
+        analyzeSensMatrix(metricsNames, paramsNames, transformedParams,
+                        metricsWeights,
+                        sensNcFilenames, defaultNcFilename,
+                        obsMetricValsDict)
+
+    # For the purpose of this unit test, assume that the atmospheric model is indeed linear and
+    #   reproduces the observations exactly.
+    linSolnNcFilename = obsNcFilename
+
+    # See if the solution based on a linear combination of the SVD-calculated parameter values
+    #    matches what we expect.
+    linSolnBias = calcLinSolnBias(linSolnNcFilename, defaultNcFilename,
+                                  metricsNames)
+
+    # Check whether the expected answer for the fake data
+    #    has been calculated correctly.
+    if np.all( np.isclose( linSolnBias, defaultBiasesApprox, \
+                               rtol=1e-4, atol=1e-4 ) ):
+        print("\nPassed test.")
+    else:
+        print("\nlinSolnBias = ")
+        print(linSolnBias)
+        print("\ndefaultBiasesApprox = ")
+        print(defaultBiasesApprox)
+        print("\nError: linSolnBias should equal defaultBiasesApprox, but it does not.")
+        assert False
+
+    print("\nReached the end of function test_2x2_C8transformed in test harness.")
 
 def test_2x2_novarstransformed():
 
@@ -155,7 +218,8 @@ def test_2x2_novarstransformed():
     write_test_netcdf_files(obsMetricValsDict, clubbC8Vals)
 
     # Calculate changes in parameter values needed to match metrics.
-    sensMatrix, normlzdSensMatrix, svdInvrsNormlzdWeighted, dparamsSoln, paramsSoln = \
+    sensMatrixOrig, sensMatrix, normlzdSensMatrix, svdInvrsNormlzdWeighted, \
+            dparamsSoln, paramsSoln, defaultBiasesApprox = \
         analyzeSensMatrix(metricsNames, paramsNames, transformedParams,
                         metricsWeights,
                         sensNcFilenames, defaultNcFilename,
@@ -182,6 +246,16 @@ def write_test_netcdf_files(obsMetricValsDict, clubbC8Vals):
     SWCF_obs = obsMetricValsDict['SWCF']
     LWCF_obs = obsMetricValsDict['LWCF']
     PRECT_obs = obsMetricValsDict['PRECT']
+
+    f_obs = netCDF4.Dataset('obs.nc', 'w')
+    f_obs.createDimension('scalar', 1)
+    SWCF = f_obs.createVariable('SWCF', 'f', ('scalar',))
+    SWCF[:] = SWCF_obs
+    LWCF = f_obs.createVariable('LWCF', 'f', ('scalar',))
+    LWCF[:] = LWCF_obs
+    PRECT = f_obs.createVariable('PRECT', 'f', ('scalar',))
+    PRECT[:] = PRECT_obs
+    f_obs.close()
 
     f_default = netCDF4.Dataset('default.nc', 'w')
     f_default.createDimension('scalar', 1)

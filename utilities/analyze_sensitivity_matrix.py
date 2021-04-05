@@ -30,6 +30,11 @@ def main():
     defaultNcFilename = \
         '/home/vlarson/canopy/scripts/anvil.c689c7e.repeatbmg_flux.ne30_ne30_GLBmean.nc'
 
+    # Metrics from simulation that use the SVD-recommended parameter values
+    # Here, we use default simulation just as a placeholder.
+    linSolnNcFilename = \
+        '/home/vlarson/canopy/scripts/anvil.c689c7e.repeatbmg_flux.ne30_ne30_GLBmean.nc'
+
     # This is a list of one netcdf file per each sensitivity simulation.
     # Each file contains metrics and parameter values for a single simulation.
     # There should be one sensitivity simulation per each tunable parameter.
@@ -38,7 +43,7 @@ def main():
     np.array([ \
         '/home/vlarson/canopy/scripts/anvil.c689c7e.repeatbmg_flux_c82.ne30_ne30_GLBmean.nc', \
         '/home/vlarson/canopy/scripts/anvil.c689c7e.repeatbmg_flux_n21.ne30_ne30_GLBmean.nc' \
-             ])
+              ])
 
     # Observed values of our metrics, from, e.g., CERES-EBAF.
     # These observed metrics will be matched as closely as possible by analyzeSensMatrix.
@@ -46,11 +51,17 @@ def main():
     obsMetricValsDict = {'LWCF': 28.008, 'PRECT': 0.000000033912037, 'SWCF': -45.81}
 
     # Calculate changes in parameter values needed to match metrics.
-    sensMatrix, normlzdSensMatrix, svdInvrsNormlzdWeighted, dparamsSoln, paramsSoln = \
+    sensMatrixOrig, sensMatrix, normlzdSensMatrix, svdInvrsNormlzdWeighted, \
+            dparamsSoln, paramsSoln, defaultBiasesApprox = \
         analyzeSensMatrix(metricsNames, paramsNames, transformedParamsNames,
                       metricsWeights,
                       sensNcFilenames, defaultNcFilename,
                       obsMetricValsDict)
+
+    # See if the solution based on a linear combination of the SVD-calculated parameter values
+    #    matches what we expect.
+    linSolnBias = calcLinSolnBias(linSolnNcFilename, defaultNcFilename,
+                                  metricsNames)
 
     # Create a heatmap plot that allows us to visualize the normalized sensitivity matrix
     plotNormlzdSensMatrix(normlzdSensMatrix, metricsNames, paramsNames)
@@ -192,13 +203,13 @@ def analyzeSensMatrix(metricsNames, paramsNames, transformedParamsNames,
 
     # Calculate solution in transformed space
     dparamsSoln = svdInvrsNormlzdWeighted @ metricsWeights #* np.transpose(defaultParamValsRow)
-    paramsSoln = np.transpose(defaultParamValsRow) + dparamsSoln
+    paramsSoln = np.transpose(defaultParamValsOrigRow) + dparamsSoln
     # Transform some variables from [-inf,inf] back to [0,inf] range
     for idx in np.arange(numParams):
         paramName = paramsNames[idx]
         if paramName in transformedParamsNames:
             #paramsSoln[idx,0] = 1.0-np.exp(-paramsSoln[idx,0])
-            paramsSoln[idx,0] = np.exp(paramsSoln[idx,0])
+            paramsSoln[idx,0] = np.exp(dparamsSoln[idx,0]) * defaultParamValsOrigRow[0,idx]
             dparamsSoln[idx,0] = paramsSoln[idx,0] - defaultParamValsOrigRow[0,idx]
 
     print("\ndparamsSoln =")
@@ -214,7 +225,8 @@ def analyzeSensMatrix(metricsNames, paramsNames, transformedParamsNames,
     print("defaultBiasesApprox =")
     print(defaultBiasesApprox)
 
-    return (sensMatrix, normlzdSensMatrix, svdInvrsNormlzdWeighted, dparamsSoln, paramsSoln)
+    return (sensMatrixOrig, sensMatrix, normlzdSensMatrix, svdInvrsNormlzdWeighted,
+            dparamsSoln, paramsSoln, defaultBiasesApprox)
 
 def constructSensMatrix(sensMetricValsMatrix, sensParamValsRow,
                         defaultMetricValsCol, defaultParamValsRow,
@@ -509,6 +521,46 @@ def plotNormlzdSensMatrix(normlzdSensMatrix, metricsNames, paramsNames):
     ax.set_xticks(np.arange(paramsNames.size))
     ax.set_xticklabels(paramsNames)
     plt.show()
+
+def calcLinSolnBias(linSolnNcFilename, defaultNcFilename,
+                    metricsNames):
+
+    import numpy as np
+    import netCDF4
+
+    # Number of metrics
+    numMetrics = len(metricsNames)
+
+    # Read netcdf file with metrics and parameters from default simulation
+    f_default = netCDF4.Dataset(defaultNcFilename, 'r')
+    # Set up column vector of numMetrics elements containing
+    # metric values from default simulation
+    defaultMetricValsCol = np.zeros((numMetrics,1))
+    for idx in np.arange(numMetrics):
+        metricName = metricsNames[idx]
+        # Assume each metric is stored as length-1 array, rather than scalar.
+        #   Hence the "[0]" at the end is needed.
+        defaultMetricValsCol[idx] = f_default.variables[metricName][0]
+    f_default.close()
+
+    # Read netcdf file with metrics and parameters from default simulation
+    f_linSoln = netCDF4.Dataset(linSolnNcFilename, 'r')
+    # Set up column vector of numMetrics elements containing
+    # metric values from simulation that uses SVD-recommended parameter values
+    linSolnMetricValsCol = np.zeros((numMetrics,1))
+    for idx in np.arange(numMetrics):
+        metricName = metricsNames[idx]
+        # Assume each metric is stored as length-1 array, rather than scalar.
+        #   Hence the "[0]" at the end is needed.
+        linSolnMetricValsCol[idx] = f_linSoln.variables[metricName][0]
+    f_linSoln.close()
+
+    linSolnBias = linSolnMetricValsCol - defaultMetricValsCol
+
+    print("\nlinSolnBias")
+    print(linSolnBias)
+
+    return linSolnBias
 
 # Standard boilerplate to call the main() function to begin
 # the program.
