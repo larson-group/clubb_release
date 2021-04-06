@@ -1395,7 +1395,8 @@ module setup_clubb_pdf_params
     end if 
                              
 
-    ! Correlation of chi (old s) and ln Ncn
+    ! Correlation of chi (old s) and ln Ncn, corr_array_n_cloud used twice because 
+    ! Ncn is an inherently in-cloud property.
     call component_corr_x_hm_n_ip( nz, ngrdcol, &
                                    rc_1(:,:), ones_vector(:,:), &
                                    rc_2(:,:), ones_vector(:,:), &
@@ -1436,7 +1437,8 @@ module setup_clubb_pdf_params
       
     end if 
     
-    ! Correlation of eta (old t) and ln Ncn
+    ! Correlation of eta (old t) and ln Ncn, corr_array_n_cloud used twice because 
+    ! Ncn is an inherently in-cloud property.
     call component_corr_x_hm_n_ip( nz, ngrdcol, &
                                    rc_1(:,:), ones_vector(:,:), &
                                    rc_2(:,:), ones_vector(:,:), &
