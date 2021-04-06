@@ -237,12 +237,18 @@ module setup_clubb_pdf_params
       mu_w_2,       & ! Mean of w (2nd PDF component)                    [m/s]
       mu_chi_1,     & ! Mean of chi (old s) (1st PDF component)          [kg/kg]
       mu_chi_2,     & ! Mean of chi (old s) (2nd PDF component)          [kg/kg]
+      varnce_w_1,   & ! Standard deviation of w (1st PDF component)      [m/s]
+      varnce_w_2,   & ! Standard deviation of w (2nd PDF component)      [m/s]
       sigma_w_1,    & ! Standard deviation of w (1st PDF component)      [m/s]
       sigma_w_2,    & ! Standard deviation of w (2nd PDF component)      [m/s]
       sigma_chi_1,  & ! Standard deviation of chi (1st PDF component)    [kg/kg]
       sigma_chi_2,  & ! Standard deviation of chi (2nd PDF component)    [kg/kg]
+      sigma_eta_1,  & ! Standard deviation of chi (1st PDF component)    [kg/kg]
+      sigma_eta_2,  & ! Standard deviation of chi (2nd PDF component)    [kg/kg]
       rc_1,         & ! Mean of r_c (1st PDF component)                  [kg/kg]
       rc_2,         & ! Mean of r_c (2nd PDF component)                  [kg/kg]
+      thl_1,        & ! Mean of thl (1st PDF component)                [K]
+      thl_2,        & ! Mean of thl (2nd PDF component)                [K]
       cloud_frac_1, & ! Cloud fraction (1st PDF component)               [-]
       cloud_frac_2, & ! Cloud fraction (2nd PDF component)               [-]
       mixt_frac       ! Mixture fraction                                 [-]
@@ -348,12 +354,18 @@ module setup_clubb_pdf_params
       mu_w_2(j,:)       = pdf_params(j)%w_2
       mu_chi_1(j,:)     = pdf_params(j)%chi_1
       mu_chi_2(j,:)     = pdf_params(j)%chi_2
+      varnce_w_1(j,:)   = pdf_params(j)%varnce_w_1
+      varnce_w_2(j,:)   = pdf_params(j)%varnce_w_2
       sigma_w_1(j,:)    = sqrt( pdf_params(j)%varnce_w_1 )
       sigma_w_2(j,:)    = sqrt( pdf_params(j)%varnce_w_2 )
       sigma_chi_1(j,:)  = pdf_params(j)%stdev_chi_1
       sigma_chi_2(j,:)  = pdf_params(j)%stdev_chi_2
+      sigma_eta_1(j,:)  = pdf_params(j)%stdev_eta_1
+      sigma_eta_2(j,:)  = pdf_params(j)%stdev_eta_2
       rc_1(j,:)         = pdf_params(j)%rc_1
       rc_2(j,:)         = pdf_params(j)%rc_2
+      thl_1(j,:)        = pdf_params(j)%thl_1
+      thl_2(j,:)        = pdf_params(j)%thl_2
       cloud_frac_1(j,:) = pdf_params(j)%cloud_frac_1
       cloud_frac_2(j,:) = pdf_params(j)%cloud_frac_2
       mixt_frac(j,:)    = pdf_params(j)%mixt_frac
@@ -393,26 +405,26 @@ module setup_clubb_pdf_params
 
     ! Calculate precipitation fraction.
     if ( l_use_precip_frac ) then
-      
-      do j = 1, ngrdcol
         
-        call precip_fraction( nz, hydromet(j,:,:), cloud_frac(j,:), cloud_frac_1(j,:), &    ! In
-                             cloud_frac_2(j,:), ice_supersat_frac(j,:), &           ! In
-                             ice_supersat_frac_1(j,:), ice_supersat_frac_2(j,:), &  ! In
-                             mixt_frac(j,:), l_stats_samp, &                   ! In
-                             precip_frac(j,:), precip_frac_1(j,:), precip_frac_2(j,:), & ! Out
-                             precip_frac_tol(j) )                            ! Out
-
-      end do
+      call precip_fraction( nz, ngrdcol,                                              & ! In
+                            hydromet(:,:,:), cloud_frac(:,:), cloud_frac_1(:,:),      & ! In
+                            cloud_frac_2(:,:), ice_supersat_frac(:,:),                & ! In
+                            ice_supersat_frac_1(:,:), ice_supersat_frac_2(:,:),       & ! In
+                            mixt_frac(:,:), l_stats_samp,                             & ! In
+                            precip_frac(:,:), precip_frac_1(:,:), precip_frac_2(:,:), & ! Out
+                            precip_frac_tol(:) )                                        ! Out
         
-      if ( err_code == clubb_fatal_error ) return
+      if ( err_code == clubb_fatal_error ) then
+        write(fstderr,*) " in setup_pdf_parameters after calling precip_fraction"
+        return
+      end if
 
     else
 
-       precip_frac(:,:)     = one
-       precip_frac_1(:,:)   = one
-       precip_frac_2(:,:)   = one
-       precip_frac_tol(:) = cloud_frac_min
+      precip_frac(:,:)     = one
+      precip_frac_1(:,:)   = one
+      precip_frac_2(:,:)   = one
+      precip_frac_tol(:) = cloud_frac_min
 
     end if
       
@@ -440,13 +452,13 @@ module setup_clubb_pdf_params
 
 
     const_corr_chi_Ncn(:,:) = corr_NN2NL( const_corr_chi_Ncn_n_cloud(:,:), &
-                                     stdev_const_Ncnp2_on_Ncnm2(:,:), &
-                                     const_Ncnp2_on_Ncnm2(:,:) )
+                                          stdev_const_Ncnp2_on_Ncnm2(:,:), &
+                                          const_Ncnp2_on_Ncnm2(:,:) )
 
     Ncnm(:,:) = Nc_in_cloud_to_Ncnm( mu_chi_1(:,:), mu_chi_2(:,:), sigma_chi_1(:,:), &
-                                sigma_chi_2(:,:), mixt_frac(:,:), Nc_in_cloud(:,:), &
-                                cloud_frac_1(:,:), cloud_frac_2(:,:), &
-                                const_Ncnp2_on_Ncnm2(:,:), const_corr_chi_Ncn(:,:) )
+                                     sigma_chi_2(:,:), mixt_frac(:,:), Nc_in_cloud(:,:), &
+                                     cloud_frac_1(:,:), cloud_frac_2(:,:), &
+                                     const_Ncnp2_on_Ncnm2(:,:), const_corr_chi_Ncn(:,:) )
 
     ! Boundary Condition.
     ! At thermodynamic level k = 1, which is below the model lower boundary, the
@@ -461,13 +473,13 @@ module setup_clubb_pdf_params
          do j = 1, ngrdcol
              
             if ( hydromet(j,k,i) >= hydromet_tol(i) ) then
-               ! There is some of the hydrometeor species found at level k.
-               ! Calculate the variance (overall) of the hydrometeor.
-               hydrometp2_zt(j,k,i) &
-               = ( ( hmp2_ip_on_hmm2_ip(i) + one ) / precip_frac(j,k) - one ) &
-                 * hydromet(j,k,i)**2
+              ! There is some of the hydrometeor species found at level k.
+              ! Calculate the variance (overall) of the hydrometeor.
+              hydrometp2_zt(j,k,i) &
+              = ( ( hmp2_ip_on_hmm2_ip(i) + one ) / precip_frac(j,k) - one ) &
+                * hydromet(j,k,i)**2
             else
-               hydrometp2_zt(j,k,i) = zero
+              hydrometp2_zt(j,k,i) = zero
             end if
             
          end do ! k = 1, nz, 1
@@ -605,46 +617,44 @@ module setup_clubb_pdf_params
     !!! Calculate the means and standard deviations involving PDF variables
     !!! -- w, chi, eta, N_cn, and any precipitating hydrometeors (hm in-precip)
     !!! -- for each PDF component.
-    do j = 1, ngrdcol
-      call compute_mean_stdev( nz, hydromet(j,:,:), hydrometp2_zt(j,:,:),   & ! Intent(in)
-                               Ncnm(j,:), mixt_frac(j,:), precip_frac(j,:),  & ! Intent(in)
-                               precip_frac_1(j,:), precip_frac_2(j,:),  & ! Intent(in)
-                               precip_frac_tol(j),               & ! Intent(in)
-                               pdf_params(j)%w_1,                & ! Intent(in)
-                               pdf_params(j)%w_2,                & ! Intent(in)
-                               pdf_params(j)%varnce_w_1,         & ! Intent(in)
-                               pdf_params(j)%varnce_w_2,         & ! Intent(in)
-                               pdf_params(j)%chi_1,              & ! Intent(in)
-                               pdf_params(j)%chi_2,              & ! Intent(in)
-                               pdf_params(j)%stdev_chi_1,        & ! Intent(in)
-                               pdf_params(j)%stdev_chi_2,        & ! Intent(in)
-                               pdf_params(j)%stdev_eta_1,        & ! Intent(in)
-                               pdf_params(j)%stdev_eta_2,        & ! Intent(in)
-                               pdf_params(j)%thl_1,              & ! Intent(in)
-                               pdf_params(j)%thl_2,              & ! Intent(in)
-                               pdf_dim,                       & ! Intent(in)
-                               l_const_Nc_in_cloud,           & ! Intent(in)
-                               mu_x_1(j,:,:), mu_x_2(j,:,:),                & ! Intent(out)
-                               sigma_x_1(j,:,:), sigma_x_2(j,:,:),          & ! Intent(out)
-                               hm_1(j,:,:), hm_2(j,:,:),                    & ! Intent(out)
-                               sigma2_on_mu2_ip_1(j,:,:),            & ! Intent(out)
-                               sigma2_on_mu2_ip_2(j,:,:)             ) ! Intent(out)
-    end do
+    call compute_mean_stdev( nz, ngrdcol, &
+                             hydromet(:,:,:), hydrometp2_zt(:,:,:),         & ! Intent(in)
+                             Ncnm(:,:), mixt_frac(:,:), precip_frac(:,:),   & ! Intent(in)
+                             precip_frac_1(:,:), precip_frac_2(:,:),        & ! Intent(in)
+                             precip_frac_tol(:),                            & ! Intent(in)
+                             mu_w_1(:,:),                                   & ! Intent(in)
+                             mu_w_2(:,:),                                   & ! Intent(in)
+                             varnce_w_1(:,:),                               & ! Intent(in)
+                             varnce_w_2(:,:),                               & ! Intent(in)
+                             mu_chi_1(:,:),                                 & ! Intent(in)
+                             mu_chi_2(:,:),                                 & ! Intent(in)
+                             sigma_chi_1(:,:),                              & ! Intent(in)
+                             sigma_chi_2(:,:),                              & ! Intent(in)
+                             sigma_eta_1(:,:),                              & ! Intent(in)
+                             sigma_eta_2(:,:),                              & ! Intent(in)
+                             thl_1(:,:),                                    & ! Intent(in)
+                             thl_2(:,:),                                    & ! Intent(in)
+                             pdf_dim,                                       & ! Intent(in)
+                             l_const_Nc_in_cloud,                           & ! Intent(in)
+                             mu_x_1(:,:,:), mu_x_2(:,:,:),                  & ! Intent(out)
+                             sigma_x_1(:,:,:), sigma_x_2(:,:,:),            & ! Intent(out)
+                             hm_1(:,:,:), hm_2(:,:,:),                      & ! Intent(out)
+                             sigma2_on_mu2_ip_1(:,:,:),                     & ! Intent(out)
+                             sigma2_on_mu2_ip_2(:,:,:) )                      ! Intent(out)
 
     !!! Transform the component means and standard deviations involving
     !!! precipitating hydrometeors (hm in-precip) and N_cn -- ln hm and
     !!! ln N_cn -- to normal space for each PDF component.
-    do j = 1, ngrdcol
-      call norm_transform_mean_stdev( nz, hm_1(j,:,:), hm_2(j,:,:),          & ! Intent(in)
-                                      Ncnm(j,:), pdf_dim,           & ! Intent(in)
-                                      mu_x_1(j,:,:), mu_x_2(j,:,:),          & ! Intent(in)
-                                      sigma_x_1(j,:,:), sigma_x_2(j,:,:),    & ! Intent(in)
-                                      sigma2_on_mu2_ip_1(j,:,:),      & ! Intent(in)
-                                      sigma2_on_mu2_ip_2(j,:,:),      & ! Intent(in)
-                                      l_const_Nc_in_cloud,     & ! Intent(in)
-                                      mu_x_1_n(j,:,:), mu_x_2_n(j,:,:),      & ! Intent(out)
-                                      sigma_x_1_n(j,:,:), sigma_x_2_n(j,:,:) ) ! Intent(out)
-    end do
+    call norm_transform_mean_stdev( nz, ngrdcol,                            & ! Intent(in)
+                                    hm_1(:,:,:), hm_2(:,:,:),               & ! Intent(in)
+                                    Ncnm(:,:), pdf_dim,                     & ! Intent(in)
+                                    mu_x_1(:,:,:), mu_x_2(:,:,:),           & ! Intent(in)
+                                    sigma_x_1(:,:,:), sigma_x_2(:,:,:),     & ! Intent(in)
+                                    sigma2_on_mu2_ip_1(:,:,:),              & ! Intent(in)
+                                    sigma2_on_mu2_ip_2(:,:,:),              & ! Intent(in)
+                                    l_const_Nc_in_cloud,                    & ! Intent(in)
+                                    mu_x_1_n(:,:,:), mu_x_2_n(:,:,:),       & ! Intent(out)
+                                    sigma_x_1_n(:,:,:), sigma_x_2_n(:,:,:) )  ! Intent(out)
 
     
     !!! Calculate the normal space correlations.
@@ -853,7 +863,8 @@ module setup_clubb_pdf_params
   end subroutine setup_pdf_parameters
 
   !=============================================================================
-  subroutine compute_mean_stdev( nz, hydromet, hydrometp2_zt,   & ! Intent(in)
+  subroutine compute_mean_stdev( nz, ngrdcol, &
+                                 hydromet, hydrometp2_zt,   & ! Intent(in)
                                  Ncnm, mixt_frac, precip_frac,  & ! Intent(in)
                                  precip_frac_1, precip_frac_2,  & ! Intent(in)
                                  precip_frac_tol,               & ! Intent(in)
@@ -914,20 +925,22 @@ module setup_clubb_pdf_params
 
     ! Input Variables
     integer, intent(in) :: &
-      nz   ! Number of model vertical grid levels
+      nz,      & ! Number of model vertical grid levels
+      pdf_dim, & ! Number of PDF variables
+      ngrdcol    ! Number of grid columns
 
-    real( kind = core_rknd ), dimension(nz, hydromet_dim), intent(in) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nz,hydromet_dim), intent(in) :: &
       hydromet,       & ! Mean of a hydrometeor (overall)         [hm units]
       hydrometp2_zt     ! Variance of a hydrometeor (overall)     [(hm units)^2]
 
-    real( kind = core_rknd ), dimension(nz), intent(in) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: &
       Ncnm,          & ! Mean simplified cloud nuclei concentration   [num/kg]
       mixt_frac,     & ! Mixture fraction                             [-]
       precip_frac,   & ! Precipitation fraction (overall)             [-]
       precip_frac_1, & ! Precipitation fraction (1st PDF component)   [-]
       precip_frac_2    ! Precipitation fraction (2nd PDF component)   [-]
 
-    real( kind = core_rknd ), dimension(nz), intent(in) :: &  
+    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: &  
       w_1,         & ! Mean of w (1st PDF component)                  [m/s]
       w_2,         & ! Mean of w (2nd PDF component)                  [m/s]
       varnce_w_1,  & ! Variance of w (1st PDF component)              [m^2/s^2]
@@ -941,11 +954,8 @@ module setup_clubb_pdf_params
       thl_1,       & ! Mean of thl (1st PDF component)                [K]
       thl_2          ! Mean of thl (2nd PDF component)                [K]
 
-    real( kind = core_rknd ), intent(in) :: &
+    real( kind = core_rknd ), dimension(ngrdcol), intent(in) :: &
       precip_frac_tol    ! Minimum precip. frac. when hydromet. are present  [-]
-
-    integer, intent(in) :: &
-      pdf_dim   ! Number of PDF variables
 
     logical, intent(in) :: &
       l_const_Nc_in_cloud ! Use a constant cloud droplet conc. within cloud (K&K)
@@ -955,41 +965,19 @@ module setup_clubb_pdf_params
     ! correlation arrays, etc., which is determined by the iiPDF indices.
     ! The order should be as follows:  chi, eta, w, Ncn, <precip. hydrometeors>
     ! (indices increasing from left to right).
-    real( kind = core_rknd ), dimension(pdf_dim,nz), intent(out) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,pdf_dim,nz), intent(out) :: &
       mu_x_1,    & ! Mean array of PDF vars. (1st PDF component)    [units vary]
       mu_x_2,    & ! Mean array of PDF vars. (2nd PDF component)    [units vary]
       sigma_x_1, & ! Standard deviation array of PDF vars (comp. 1) [units vary]
       sigma_x_2    ! Standard deviation array of PDF vars (comp. 2) [units vary]
 
-    real( kind = core_rknd ), dimension(nz,hydromet_dim), intent(out) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nz,hydromet_dim), intent(out) :: &
       hm_1, & ! Mean of a precip. hydrometeor (1st PDF component)   [units vary]
       hm_2    ! Mean of a precip. hydrometeor (2nd PDF component)   [units vary]
 
-    real( kind = core_rknd ), dimension(pdf_dim,nz), intent(out) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,pdf_dim,nz), intent(out) :: &
       sigma_hm_1_sqd_on_mu_hm_1_sqd, & ! Ratio sigma_hm_1^2 / mu_hm_1^2      [-]
       sigma_hm_2_sqd_on_mu_hm_2_sqd    ! Ratio sigma_hm_2^2 / mu_hm_2^2      [-]
-
-    ! Local Variables
-    real( kind = core_rknd ), dimension(nz) :: &
-      hmm,                   & ! Hydrometeor mean (overall)           [hm units]
-      hmp2,                  & ! Hydromet. variance (overall)     [(hm units)^2]
-      hmp2_ip_on_hmm2_ip_in, & ! Ratio <hm|_ip'^2> / <hm|_ip>^2              [-]
-      hm_tol,                & ! Tolerance value of hydrometeor       [hm units]
-      precip_frac_tol_in,    & ! Min. precip. frac. when hydromet. present   [-]
-      omicron_in,            & ! Relative width param., omicron = R / Rmax   [-]
-      zeta_vrnce_rat_in        ! Width param. for sigma_hm_1^2 / mu_hm_1^2   [-]
-
-    real( kind = core_rknd ), dimension(nz) :: &
-      mu_hm_1,    & ! Mean of hm (1st PDF component) in-precip (ip)      [hm un]
-      mu_hm_2,    & ! Mean of hm (2nd PDF component) ip                  [hm un]
-      sigma_hm_1, & ! Standard deviation of hm (1st PDF component) ip    [hm un]
-      sigma_hm_2, & ! Standard deviation of hm (2nd PDF component) ip    [hm un]
-      hm_1_out,   & ! Mean of hm (1st PDF component)                     [hm un]
-      hm_2_out      ! Mean of hm (2nd PDF component)                     [hm un]
-
-    real( kind = core_rknd ), dimension(nz) :: &
-      sigma_hm_1_sqd_on_mu_hm_1_sqd_o, & ! Ratio sigma_hm_1**2 / mu_hm_1**2  [-]
-      sigma_hm_2_sqd_on_mu_hm_2_sqd_o    ! Ratio sigma_hm_2**2 / mu_hm_2**2  [-]
 
     integer :: ivar ! Loop iterator
 
@@ -997,14 +985,14 @@ module setup_clubb_pdf_params
 
 
     !!! Initialize output variables.
-    mu_x_1 = zero
-    mu_x_2 = zero
-    sigma_x_1 = zero
-    sigma_x_2 = zero
-    hm_1 = zero
-    hm_2 = zero
-    sigma_hm_1_sqd_on_mu_hm_1_sqd = zero
-    sigma_hm_2_sqd_on_mu_hm_2_sqd = zero
+    mu_x_1(:,:,:)     = zero
+    mu_x_2(:,:,:)     = zero
+    sigma_x_1(:,:,:)  = zero
+    sigma_x_2(:,:,:)  = zero
+    hm_1(:,:,:)       = zero
+    hm_2(:,:,:)       = zero
+    sigma_hm_1_sqd_on_mu_hm_1_sqd(:,:,:) = zero
+    sigma_hm_2_sqd_on_mu_hm_2_sqd(:,:,:) = zero
 
 
     !!! Enter the PDF parameters.
@@ -1012,35 +1000,35 @@ module setup_clubb_pdf_params
     !!! Vertical velocity, w.
 
     ! Mean of vertical velocity, w, in PDF component 1.
-    mu_x_1(iiPDF_w,:) = w_1
+    mu_x_1(:,iiPDF_w,:) = w_1(:,:)
 
     ! Mean of vertical velocity, w, in PDF component 2.
-    mu_x_2(iiPDF_w,:) = w_2
+    mu_x_2(:,iiPDF_w,:) = w_2(:,:)
 
     ! Standard deviation of vertical velocity, w, in PDF component 1.
-    sigma_x_1(iiPDF_w,:) = sqrt( varnce_w_1 )
+    sigma_x_1(:,iiPDF_w,:) = sqrt( varnce_w_1(:,:) )
 
     ! Standard deviation of vertical velocity, w, in PDF component 2.
-    sigma_x_2(iiPDF_w,:) = sqrt( varnce_w_2 )
+    sigma_x_2(:,iiPDF_w,:) = sqrt( varnce_w_2(:,:) )
 
 
     !!! Extended liquid water mixing ratio, chi.
 
     ! Mean of extended liquid water mixing ratio, chi (old s),
     ! in PDF component 1.
-    mu_x_1(iiPDF_chi,:) = chi_1
+    mu_x_1(:,iiPDF_chi,:) = chi_1(:,:)
 
     ! Mean of extended liquid water mixing ratio, chi (old s),
     ! in PDF component 2.
-    mu_x_2(iiPDF_chi,:) = chi_2
+    mu_x_2(:,iiPDF_chi,:) = chi_2(:,:)
 
     ! Standard deviation of extended liquid water mixing ratio, chi (old s),
     ! in PDF component 1.
-    sigma_x_1(iiPDF_chi,:) = stdev_chi_1
+    sigma_x_1(:,iiPDF_chi,:) = stdev_chi_1(:,:)
 
     ! Standard deviation of extended liquid water mixing ratio, chi (old s),
     ! in PDF component 2.
-    sigma_x_2(iiPDF_chi,:) = stdev_chi_2
+    sigma_x_2(:,iiPDF_chi,:) = stdev_chi_2(:,:)
 
 
     !!! Coordinate orthogonal to chi, eta.
@@ -1050,59 +1038,59 @@ module setup_clubb_pdf_params
     ! The component mean values of eta are not important.  They can be set to
     ! anything.  They cancel out in the model code.  However, the best thing to
     ! do is to set them to 0 and avoid any kind of numerical error.
-    mu_x_1(iiPDF_eta,:) = zero
+    mu_x_1(:,iiPDF_eta,:) = zero
 
     ! Mean of eta (old t) in PDF component 2.
     ! Set the component mean values of eta to 0.
     ! The component mean values of eta are not important.  They can be set to
     ! anything.  They cancel out in the model code.  However, the best thing to
     ! do is to set them to 0 and avoid any kind of numerical error.
-    mu_x_2(iiPDF_eta,:) = zero
+    mu_x_2(:,iiPDF_eta,:) = zero
 
     ! Standard deviation of eta (old t) in PDF component 1.
-    sigma_x_1(iiPDF_eta,:) = stdev_eta_1
+    sigma_x_1(:,iiPDF_eta,:) = stdev_eta_1(:,:)
 
     ! Standard deviation of eta (old t) in PDF component 2.
-    sigma_x_2(iiPDF_eta,:) = stdev_eta_2
+    sigma_x_2(:,iiPDF_eta,:) = stdev_eta_2(:,:)
 
 
     !!! Simplified cloud nuclei concentration, Ncn.
 
     ! Mean of simplified cloud nuclei concentration, Ncn, in PDF component 1.
-    mu_x_1(iiPDF_Ncn,:) = Ncnm
+    mu_x_1(:,iiPDF_Ncn,:) = Ncnm(:,:)
 
     ! Mean of simplified cloud nuclei concentration, Ncn, in PDF component 2.
-    mu_x_2(iiPDF_Ncn,:) = Ncnm
+    mu_x_2(:,iiPDF_Ncn,:) = Ncnm(:,:)
 
     ! Standard deviation of simplified cloud nuclei concentration, Ncn,
     ! in PDF component 1.
     if ( .not. l_const_Nc_in_cloud ) then
 
        ! Ncn varies in both PDF components.
-       sigma_x_1(iiPDF_Ncn,:) = sqrt( Ncnp2_on_Ncnm2 ) * Ncnm
+       sigma_x_1(:,iiPDF_Ncn,:) = sqrt( Ncnp2_on_Ncnm2 ) * Ncnm(:,:)
 
-       sigma_x_2(iiPDF_Ncn,:) = sqrt( Ncnp2_on_Ncnm2 ) * Ncnm
+       sigma_x_2(:,iiPDF_Ncn,:) = sqrt( Ncnp2_on_Ncnm2 ) * Ncnm(:,:)
 
        ! Ncn is not an official hydrometeor.  However, both the
        ! sigma_hm_1_sqd_on_mu_hm_1_sqd and sigma_hm_2_sqd_on_mu_hm_2_sqd arrays
        ! have size pdf_dim, and both sigma_Ncn_1^2/mu_Ncn_1^2 and
        ! sigma_Ncn_2^2/mu_Ncn_2^2 need to be output as part of these arrays.
-       sigma_hm_1_sqd_on_mu_hm_1_sqd(iiPDF_Ncn,:) = Ncnp2_on_Ncnm2
-       sigma_hm_2_sqd_on_mu_hm_2_sqd(iiPDF_Ncn,:) = Ncnp2_on_Ncnm2
+       sigma_hm_1_sqd_on_mu_hm_1_sqd(:,iiPDF_Ncn,:) = Ncnp2_on_Ncnm2
+       sigma_hm_2_sqd_on_mu_hm_2_sqd(:,iiPDF_Ncn,:) = Ncnp2_on_Ncnm2
 
     else ! l_const_Nc_in_cloud
 
        ! Ncn is constant in both PDF components.
-       sigma_x_1(iiPDF_Ncn,:) = zero
+       sigma_x_1(:,iiPDF_Ncn,:) = zero
 
-       sigma_x_2(iiPDF_Ncn,:) = zero
+       sigma_x_2(:,iiPDF_Ncn,:) = zero
 
        ! Ncn is not an official hydrometeor.  However, both the
        ! sigma_hm_1_sqd_on_mu_hm_1_sqd and sigma_hm_2_sqd_on_mu_hm_2_sqd arrays
        ! have size pdf_dim, and both sigma_Ncn_1^2/mu_Ncn_1^2 and
        ! sigma_Ncn_2^2/mu_Ncn_2^2 need to be output as part of these arrays.
-       sigma_hm_1_sqd_on_mu_hm_1_sqd(iiPDF_Ncn,:) = zero
-       sigma_hm_2_sqd_on_mu_hm_2_sqd(iiPDF_Ncn,:) = zero
+       sigma_hm_1_sqd_on_mu_hm_1_sqd(:,iiPDF_Ncn,:) = zero
+       sigma_hm_2_sqd_on_mu_hm_2_sqd(:,iiPDF_Ncn,:) = zero
 
     end if ! .not. l_const_Nc_in_cloud
 
@@ -1110,37 +1098,21 @@ module setup_clubb_pdf_params
     !!! Precipitating hydrometeor species.
     do ivar = iiPDF_Ncn+1, pdf_dim, 1
 
-       hm_idx = pdf2hydromet_idx(ivar)
-
-       hmm = hydromet(:,hm_idx)
-       hmp2 = hydrometp2_zt(:,hm_idx)
-       hmp2_ip_on_hmm2_ip_in = hmp2_ip_on_hmm2_ip(hm_idx)
-       hm_tol = hydromet_tol(hm_idx)
-       precip_frac_tol_in = precip_frac_tol
-       omicron_in = omicron
-       zeta_vrnce_rat_in = zeta_vrnce_rat
-
-       call calc_comp_mu_sigma_hm( hmm, hmp2, &                       ! In
-                                   hmp2_ip_on_hmm2_ip_in, &           ! In
-                                   mixt_frac, precip_frac, &          ! In
-                                   precip_frac_1, precip_frac_2, &    ! In
-                                   hm_tol, precip_frac_tol_in, &      ! In
-                                   thl_1, thl_2, &                    ! In
-                                   omicron_in, zeta_vrnce_rat_in, &   ! In
-                                   mu_hm_1, mu_hm_2, &                ! Out
-                                   sigma_hm_1, sigma_hm_2, &          ! Out
-                                   hm_1_out, hm_2_out, &              ! Out
-                                   sigma_hm_1_sqd_on_mu_hm_1_sqd_o, & ! Out
-                                   sigma_hm_2_sqd_on_mu_hm_2_sqd_o )  ! Out
-
-       mu_x_1(ivar,:) = mu_hm_1
-       mu_x_2(ivar,:) = mu_hm_2
-       sigma_x_1(ivar,:) = sigma_hm_1
-       sigma_x_2(ivar,:) = sigma_hm_2
-       hm_1(:,hm_idx) = hm_1_out
-       hm_2(:,hm_idx) = hm_2_out
-       sigma_hm_1_sqd_on_mu_hm_1_sqd(ivar,:) = sigma_hm_1_sqd_on_mu_hm_1_sqd_o
-       sigma_hm_2_sqd_on_mu_hm_2_sqd(ivar,:) = sigma_hm_2_sqd_on_mu_hm_2_sqd_o
+      hm_idx = pdf2hydromet_idx(ivar)
+       
+      call calc_comp_mu_sigma_hm_2D( nz, ngrdcol,                                       & ! In
+                                     hydromet(:,:,hm_idx), hydrometp2_zt(:,:,hm_idx),   & ! In
+                                     hmp2_ip_on_hmm2_ip(hm_idx),                        & ! In
+                                     mixt_frac(:,:), precip_frac(:,:),                  & ! In
+                                     precip_frac_1(:,:), precip_frac_2(:,:),            & ! In
+                                     hydromet_tol(hm_idx), precip_frac_tol(:),          & ! In
+                                     thl_1(:,:), thl_2(:,:),                            & ! In
+                                     omicron, zeta_vrnce_rat,                           & ! In
+                                     mu_x_1(:,ivar,:), mu_x_2(:,ivar,:),                & ! Out
+                                     sigma_x_1(:,ivar,:), sigma_x_2(:,ivar,:),          & ! Out
+                                     hm_1(:,:,hm_idx), hm_2(:,:,hm_idx),                & ! Out
+                                     sigma_hm_1_sqd_on_mu_hm_1_sqd(:,ivar,:),           & ! Out
+                                     sigma_hm_2_sqd_on_mu_hm_2_sqd(:,ivar,:) )            ! Out
 
     end do ! ivar = iiPDF_Ncn+1, pdf_dim, 1
 
@@ -2296,6 +2268,801 @@ module setup_clubb_pdf_params
     return
 
   end subroutine calc_comp_mu_sigma_hm
+  
+  !=============================================================================
+  subroutine calc_comp_mu_sigma_hm_2D( nz, ngrdcol, &                   ! In
+                                       hmm, hmp2, &                     ! In
+                                       hmp2_ip_on_hmm2_ip, &            ! In
+                                       mixt_frac, precip_frac, &        ! In
+                                       precip_frac_1, precip_frac_2, &  ! In
+                                       hm_tol, precip_frac_tol, &       ! In
+                                       mu_thl_1, mu_thl_2, &            ! In
+                                       omicron, zeta_vrnce_rat_in, &    ! In
+                                       mu_hm_1, mu_hm_2, &              ! Out
+                                       sigma_hm_1, sigma_hm_2, &        ! Out
+                                       hm_1, hm_2, &                    ! Out
+                                       sigma_hm_1_sqd_on_mu_hm_1_sqd, & ! Out
+                                       sigma_hm_2_sqd_on_mu_hm_2_sqd )  ! Out
+
+
+    ! Description:
+    ! Calculates the in-precipitation mean and in-precipitation standard
+    ! deviation in both PDF components for a precipitating hydrometeor.
+    !
+    ! When precipitation is found in both PDF components (precip_frac_1 > 0 and
+    ! precip_frac_2 > 0), the method that solves for in-precip. mean and
+    ! in-precip. standard deviation in each PDF component, preserving overall
+    ! mean and overall variance, is used.  When precipitation fraction is found
+    ! in one PDF component but not the other one (precip_frac_1 > 0 and
+    ! precip_frac_2 = 0, or precip_frac_1 = 0 and precip_frac_2 > 0), the
+    ! calculation of component in-precip. mean and in-precip. standard deviation
+    ! is simple.  When precipitation is not found in either component
+    ! (precip_frac_1 = 0 and precip_frac_2 = 0), there isn't any precipitation
+    ! found overall (at that grid level).
+    !
+    !
+    ! DESCRIPTION OF THE METHOD THAT SOLVES FOR TWO IN-PRECIPITATION COMPONENTS
+    ! =========================================================================
+    !
+    ! OVERVIEW
+    !
+    ! The goal is to calculate the in-precip. mean of the hydrometeor field in
+    ! each PDF component (mu_hm_1 and mu_hm_2) in a scenario when there is
+    ! precipitation found in both PDF components.  The fields provided are the
+    ! overall mean of the hydrometeor, <hm>, the overall variance of the
+    ! hydrometeor, <hm’^2>, the mixture fraction, a, the overall precipitation
+    ! fraction, f_p, and the precipitation fraction in each PDF component
+    ! (f_p_1 and f_p_2).
+    !
+    ! The PDF equation for <hm> is:
+    !
+    ! <hm> = a * f_p_1 * mu_hm_1 + ( 1- a ) * f_p_2 * mu_hm_2.
+    !
+    ! Likewise, the PDF equation for <hm’^2> is:
+    !
+    ! <hm’^2> = a * f_p_1 * ( mu_hm_1^2 + sigma_hm_1^2 )
+    !           + ( 1 - a ) * f_p_2 * ( mu_hm_2^2 + sigma_hm_2^2 )
+    !           - <hm>^2;
+    !
+    ! where sigma_hm_1 and sigma_hm_2 are the in-precip. standard deviations of
+    ! the hydrometeor field in each PDF component.  This can be rewritten as:
+    !
+    ! <hm’^2>
+    ! = a * f_p_1 * ( 1 + sigma_hm_1^2 / mu_hm_1^2 ) * mu_hm_1^2
+    !   + ( 1 - a ) * f_p_2 * ( 1 + sigma_hm_2^2 / mu_hm_2^2 ) * mu_hm_2^2
+    !   - <hm>^2.
+    !
+    ! The ratio of sigma_hm_2^2 to mu_hm_2^2 is denoted R:
+    !
+    ! R = sigma_hm_2^2 / mu_hm_2^2.
+    !
+    ! In order to allow sigma_hm_1^2 / mu_hm_1^2 to have a different ratio, the
+    ! parameter zeta is introduced, such that:
+    !
+    ! R * ( 1 + zeta ) = sigma_hm_1^2 / mu_hm_1^2;
+    !
+    ! where zeta > -1.  When -1 < zeta < 0, the ratio sigma_hm_2^2 / mu_hm_2^2
+    ! grows at the expense of sigma_hm_1^2 / mu_hm_1^2, which narrows.  When
+    ! zeta = 0, the ratio sigma_hm_1^2 / mu_hm_1^2 is the same as
+    ! sigma_hm_2^2 / mu_hm_2^2.  When zeta > 0, sigma_hm_1^2 / mu_hm_1^2 grows
+    ! at the expense of sigma_hm_2^2 / mu_hm_2^2, which narrows.  The component
+    ! variances are written as:
+    !
+    ! sigma_hm_1^2 = R * ( 1 + zeta ) * mu_hm_1^2; and
+    ! sigma_hm_2^2 = R * mu_hm_2^2,
+    !
+    ! and the component standard deviations are simply:
+    !
+    ! sigma_hm_1 = sqrt( R * ( 1 + zeta ) ) * mu_hm_1; and
+    ! sigma_hm_2 = sqrt( R ) * mu_hm_2.
+    !
+    ! The equation for <hm’^2> can be rewritten as:
+    !
+    ! <hm’^2> = a * f_p_1 * ( 1 + R * ( 1 + zeta ) ) * mu_hm_1^2
+    !           + ( 1 - a ) * f_p_2 * ( 1 + R ) * mu_hm_2^2
+    !           - <hm>^2.
+    !
+    !
+    ! HYDROMETEOR IN-PRECIP. VARIANCE:
+    ! THE SPREAD OF THE MEANS VS. THE STANDARD DEVIATIONS
+    !
+    ! Part I:  Minimum and Maximum Values for R
+    !
+    ! The in-precip. variance of the hydrometeor is accounted for through a
+    ! combination of the variance of each PDF component and the spread between
+    ! the means of each PDF component.  At one extreme, the standard deviation
+    ! of each component could be set to 0 and the in-prccip. variance could be
+    ! accounted for by spreading the PDF component (in-precip.) means far apart.
+    ! The value of R in this scenario would be its minimum possible value, which
+    ! is 0.  At the other extreme, the means of each component could be set
+    ! equal to each other and the in-precip. variance could be accounted for
+    ! entirely by the PDF component (in-precip.) standard deviations.  The value
+    ! of R in this scenario would be its maximum possible value, which is Rmax.
+    !
+    ! In order to calculate the value of Rmax, use the equation set but set
+    ! mu_hm_1 = mu_hm_2 and R = Rmax.  When this happens:
+    !
+    ! <hm> = ( a * f_p_1 + ( 1- a ) * f_p_2 ) * mu_hm_i;
+    !
+    ! and since f_p = a * f_p_1 + ( 1 - a ) * f_p_2:
+    !
+    ! mu_hm_i = <hm> / f_p = <hm|_ip>;
+    !
+    ! where <hm|_ip> is the in-precip. mean of the hydrometeor.  The equation
+    ! for hydrometeor variance in this scenario becomes:
+    !
+    ! <hm’^2> = <hm|_ip>^2 * ( a * f_p_1 * ( 1 + Rmax * ( 1 + zeta ) )
+    !                          + ( 1 - a ) * f_p_2 * ( 1 + Rmax ) )
+    !           - <hm>^2.
+    !
+    ! The general equation for the in-precip. variance of a hydrometeor,
+    ! <hm|_ip’^2>, is given by:
+    !
+    ! <hm|_ip’^2> = ( <hm’^2> + <hm>^2 - f_p * <hm|_ip>^2 ) / f_p;
+    !
+    ! which can be rewritten as:
+    !
+    ! <hm’^2> + <hm>^2 = f_p * ( <hm|_ip’^2> + <hm|_ip>^2 ).
+    !
+    ! When the above equation is substituted into the modified PDF equation for
+    ! <hm’^2>, Rmax is solved for and the equation is:
+    !
+    ! Rmax = ( f_p / ( a * f_p_1 * ( 1 + zeta ) + ( 1 - a ) * f_p_2 ) )
+    !        * ( <hm|_ip’^2> / <hm|_ip>^2 ).
+    !
+    ! Here, in the scenario that zeta = 0, both PDF components have the same
+    ! mean and same variance, which reduces the in-precip. distribution to an
+    ! assumed single lognormal, and the above equation reduces to:
+    !
+    ! Rmax = <hm|_ip’^2> / <hm|_ip>^2;
+    !
+    ! which is what is expected in that case.
+    !
+    !
+    ! Part II:  Enter omicron
+    !
+    ! A parameter is used to prescribe the ratio of R to its maximum value,
+    ! Rmax.  The prescribed parameter is called omicron, where:
+    !
+    ! R = omicron * Rmax;
+    !
+    ! where 0 <= omicron <= 1.  When omicron = 0, the standard deviation of each
+    ! PDF component is 0, and mu_hm_1 is spread as far away from mu_hm_2 as it
+    ! needs to be to account for the in-precip. variance.  When omicron = 1,
+    ! mu_hm_1 is equal to mu_hm_2, and the standard deviations of the PDF
+    ! components account for all of the in-precip. variance (and when zeta = 0,
+    ! the PDF shape is a single lognormal in-precip.).  At intermediate values
+    ! of omicron, the means of each PDF component are somewhat spread and each
+    ! PDF component has some width.  The modified parameters are listed below.
+    !
+    ! The ratio of sigma_hm_2^2 to mu_hm_2^2 is:
+    !
+    ! sigma_hm_2^2 / mu_hm_2^2 = omicron * Rmax;
+    !
+    ! and the ratio of sigma_hm_1^2 / mu_hm_1^2 is:
+    !
+    ! sigma_hm_1^2 / mu_hm_1^2 = omicron * Rmax * ( 1 + zeta ). 
+    ! 
+    ! The component variances are written as:
+    !
+    ! sigma_hm_1^2 = omicron * Rmax * ( 1 + zeta ) * mu_hm_1^2; and
+    ! sigma_hm_2^2 = omicron * Rmax * mu_hm_2^2,
+    !
+    ! and the component standard deviations are simply:
+    !
+    ! sigma_hm_1 = sqrt( omicron * Rmax * ( 1 + zeta ) ) * mu_hm_1; and
+    ! sigma_hm_2 = sqrt( omicron * Rmax ) * mu_hm_2.
+    !
+    ! The equation set becomes:
+    !
+    ! [1] <hm> = a * f_p_1 * mu_hm_1 + ( 1- a ) * f_p_2 * mu_hm_2; and
+    !
+    ! [2] <hm’^2>
+    !     = a * f_p_1 * ( 1 + omicron * Rmax * ( 1 + zeta ) ) * mu_hm_1^2
+    !       + ( 1 - a ) * f_p_2 * ( 1 + omicron * Rmax ) * mu_hm_2^2
+    !       - <hm>^2.
+    !
+    !
+    ! SOLVING THE EQUATION SET FOR MU_HM_1 AND MU_HM_2.
+    !
+    ! The above system of two equations can be solved for mu_hm_1 and mu_hm_2.
+    ! All other quantities in the equation set are known quantities.  The
+    ! equation for <hm> is rewritten to isolate mu_hm_2:
+    !
+    ! mu_hm_2 = ( <hm> - a * f_p_1 * mu_hm_1 ) / ( ( 1 - a ) * f_p_2 ).
+    !
+    ! The above equation is substituted into the equation for <hm’^2>.  The
+    ! equation for <hm’^2> is rewritten, resulting in:
+    !
+    ! [ a * f_p_1 * ( 1 + omicron * Rmax * ( 1 + zeta ) )
+    !   + a^2 * f_p_1^2 * ( 1 + omicron * Rmax ) / ( ( 1 - a ) * f_p_2 ) ]
+    ! * mu_hm_1^2
+    ! + [ - 2 * <hm> * a * f_p_1 * ( 1 + omicron * Rmax )
+    !     / ( ( 1 - a ) * f_p_2 ) ] * mu_hm_1
+    ! + [ - ( <hm’^2>
+    !         + ( 1 - ( 1 + omicron * Rmax ) / ( ( 1 - a ) * f_p_2 ) )
+    !           * <hm>^2 ) ]
+    ! = 0.
+    !
+    ! This equation is of the form:
+    !
+    ! A * mu_hm_1^2 + B * mu_hm_1 + C = 0;
+    !
+    ! so the solution for mu_hm_1 is:
+    !
+    ! mu_hm_1 = ( -B +/- sqrt( B^2 - 4*A*C ) ) / (2*A);
+    !
+    ! where:
+    !
+    ! A = a * f_p_1 * ( 1 + omicron * Rmax * ( 1 + zeta ) )
+    !     + a^2 * f_p_1^2 * ( 1 + omicron * Rmax ) / ( ( 1 - a ) * f_p_2 );
+    !
+    ! B = - 2 * <hm> * a * f_p_1 * ( 1 + omicron * Rmax )
+    !     / ( ( 1 - a ) * f_p_2 );
+    !
+    ! and
+    !
+    ! C = - ( <hm’^2>
+    !         + ( 1 - ( 1 + omicron * Rmax ) / ( ( 1 - a ) * f_p_2 ) )
+    !           * <hm>^2 ).
+    !
+    ! The signs of the coefficients:
+    !
+    ! 1) coefficient A is always positive,
+    ! 2) coefficient B is always negative (this means that -B is always
+    !    positive), and
+    ! 3) coefficient C can be positive, negative, or zero.
+    !
+    ! Since ( 1 - ( 1 + omicron * Rmax ) / ( ( 1 - a ) * f_p_2 ) ) * <hm>^2 is
+    ! always negative and <hm’^2> is always positive, the sign of coefficient C
+    ! depends on which term is greater in magnitude.
+    !
+    ! When <hm’^2> is greater, the sign of coefficient C is negative.  This
+    ! means that -4*A*C is positive, which in turn means that
+    ! sqrt( B^2 - 4*A*C ) is greater in magnitude than -B.  If the subtraction
+    ! option of the +/- were to be chosen, the value of mu_hm_1 would be
+    ! negative in this scenerio.  So the natural thing to do would be to always
+    ! choose the addition option.  However, this method requires that mu_hm_1
+    ! equals mu_hm_2 when omicron = 1.  When zeta >= 0, this happens when the
+    ! addition option is chosen, but not when the subtraction option is chosen.
+    ! However, when zeta < 0, this happens when the subtraction option is
+    ! chosen, but not when the addition option is chosen.  So, the equation for
+    ! mu_hm_1 becomes:
+    !
+    ! mu_hm_1 = ( -B + sqrt( B^2 - 4*A*C ) ) / (2*A); when zeta >= 0; and
+    ! mu_hm_1 = ( -B - sqrt( B^2 - 4*A*C ) ) / (2*A); when zeta < 0.
+    !
+    ! Once this is set, of course:
+    !
+    ! mu_hm_2 = ( <hm> - a * f_p_1 * mu_hm_1 ) / ( ( 1 - a ) * f_p_2 ).
+    !
+    ! The system has been solved and the in-precip. PDF component means have
+    ! been found!
+    !
+    !
+    ! NOTES
+    !
+    ! Note 1:
+    !
+    ! The term B^2 - 4*A*C has been analyzed, and mathematically:
+    !
+    ! B^2 - 4*A*C >= 0
+    !
+    ! always holds true.  Additionally, the minimum value:
+    !
+    ! B^2 - 4*A*C = 0,
+    !
+    ! can only occur when omicron = 1 and zeta = 0 (or alternatively to
+    ! zeta = 0, Rmax = 0, but this only occurs when <hm|_ip'^2> / <hm|_ip>^2 has
+    ! a value of 0).
+    !
+    ! Numerically, when omicron = 1 and zeta = 0, B^2 - 4*A*C can produce very
+    ! small (on the order of epsilon) negative values.  This is due to numerical
+    ! round off error.  When this happens, the erroneous small, negative value
+    ! of B^2 - 4*A*C is simply reset to the value it's supposed to have, which
+    ! is 0.
+    !
+    !
+    ! Note 2:
+    !
+    ! As the value of <hm|_ip'^2> / <hm|_ip>^2 increases and as the value of
+    ! omicron decreases (narrowing the in-precip standard deviations and
+    ! increasing the spread between the in-precip means), a situtation arises
+    ! where the value of one of the component means will become negative.  This
+    ! is because there is a limit to the amount of in-precip variance that can
+    ! be represented by this kind of distribution.  In order to prevent
+    ! out-of-bounds values of mu_hm_1 or mu_hm_2, lower limits will be
+    ! declared, called mu_hm_1_min and mu_hm_2_min.  The value of the
+    ! hydrometeor in-precip. component mean will be limited from going any
+    ! smaller (or negative) at this value.  From there, the value of the other
+    ! hydrometeor in-precip. component mean is easy to calculate.  Then, both
+    ! values will be entered into the calculation of hydrometeor variance, which
+    ! will be rewritten to solve for R.  Then, both the hydrometeor mean and
+    ! hydrometeor variance will be preserved with a valid distribution.
+    !
+    ! In this emergency scenario, the value of R is:
+    !
+    ! R = ( <hm'^2> + <hm>^2 - a * f_p_1 * mu_hm_1^2
+    !       - ( 1 - a ) * f_p_2 * mu_hm_2^2 )
+    !     / ( a * f_p_1 * ( 1 + zeta ) * mu_hm_1^2
+    !         + ( 1 - a ) * f_p_2 * mu_hm_2^2 ).
+    !
+    ! The minimum values of the in-precip. component means are bounded by:
+    !
+    ! mu_hm_1_min >= hm_tol / f_p_1; and
+    ! mu_hm_2_min >= hm_tol / f_p_2.
+    !
+    ! These are set this way because hm_1 ( = mu_hm_1 * f_p_1 ) and
+    ! hm_2 ( = mu_hm_2 * f_p_2 ) need to have values of at least hm_tol when
+    ! precipitation is found in both PDF components.
+    !
+    ! However, an in-precip. component mean value of hm_tol / f_p_1 or
+    ! hm_tol / f_p_2 often produces a distribution where one component centers
+    ! around values that are too small to be a good match with data taken from
+    ! Large Eddy Simulations (LES).  It is desirable to increase the minimum
+    ! threshold of mu_hm_1 and mu_hm_2.
+    !
+    ! As the minimum threshold increases, the value of the in-precip. component
+    ! mean that is from the component that is not being set to the minimum
+    ! threshold decreases.  If the minimum threshold were to be boosted as high
+    ! as <hm> / f_p (in most cases, <hm> / f_p >> hm_tol / f_p_i), both
+    ! components would have a value of <hm> / f_p.  The minimum threshold should
+    ! not be set this high.
+    !
+    ! Additionally, the minimum threshold for one in-precip. component mean
+    ! cannot be set so high as to drive the other in-precip. component mean
+    ! below hm_tol / f_p_i.  (This doesn't come into play unless <hm> is close
+    ! to hm_tol.)  The upper limit for the in-precip. mean values are:
+    !
+    ! mu_hm_1|_(upper. lim.) = ( <hm> - ( 1 - a ) * f_p_2 * ( hm_tol / f_p_2 ) )
+    !                          / ( a * f_p_1 ); and
+    !
+    ! mu_hm_2|_(upper. lim.) = ( <hm> - a * f_p_1 * ( hm_tol / f_p_1 ) )
+    !                          / ( ( 1 - a ) * f_p_2 );
+    !
+    ! which reduces to:
+    !
+    ! mu_hm_1|_(upper. lim.) = ( <hm> - ( 1 - a ) * hm_tol ) / ( a * f_p_1 );
+    ! and
+    ! mu_hm_2|_(upper. lim.) = ( <hm> - a * hm_tol ) / ( ( 1 - a ) * f_p_2 ).
+    !
+    ! An appropriate minimum value for mu_hm_1 can be set by:
+    !
+    ! mu_hm_1_min = | min( hm_tol / f_p_1
+    !               |      + mu_hm_min_coef * ( <hm> / f_p - hm_tol / f_p_1 ),
+    !               |      ( <hm> - ( 1 - a ) * hm_tol ) / ( a * f_p_1 ) );
+    !               |    where <hm> / f_p > hm_tol / f_p_1;
+    !               | hm_tol / f_p_1;
+    !               |    where <hm> / f_p <= hm_tol / f_p_1;
+    !
+    ! and similarly for mu_hm_2:
+    !
+    ! mu_hm_2_min = | min( hm_tol / f_p_2
+    !               |      + mu_hm_min_coef * ( <hm> / f_p - hm_tol / f_p_2 ),
+    !               |      ( <hm> - a * hm_tol ) / ( ( 1 - a ) * f_p_2 ) );
+    !               |    where <hm> / f_p > hm_tol / f_p_2;
+    !               | hm_tol / f_p_2;
+    !               |    where <hm> / f_p <= hm_tol / f_p_2;
+    !
+    ! where mu_hm_min_coef is a coefficient that has a value
+    ! 0 <= mu_hm_min_coef < 1.  When the value of mu_hm_min_coef is 0,
+    ! mu_hm_1_min reverts to hm_tol / f_p_1 and mu_hm_2_min reverts to
+    ! hm_tol / f_p_2.  An appropriate value for mu_hm_min_coef should be small,
+    ! such as 0.01 - 0.05.
+    !
+    !
+    ! Note 3:
+    !
+    ! When the value of zeta >= 0, the value of mu_hm_1 tends to be larger than
+    ! the value of mu_hm_2.  Likewise when the value of zeta < 0, the value of
+    ! mu_hm_2 tends to be larger than the value of mu_hm_1.  Since most cloud
+    ! water and cloud fraction tends to be found in PDF component 1, it is
+    ! advantageous to have the larger in-precip. component mean of the
+    ! hydrometeor also found in PDF component 1.  The recommended value of zeta
+    ! is a value greater than or equal to 0.
+    !
+    !
+    ! Update:
+    !
+    ! In order to better represent the increase in <th_l'^2> near the ground
+    ! from the evaporation of rain, the code is modified to tend towards a
+    ! negative correlation of th_l and hm.  When mu_thl_1 <= mu_thl_2,
+    ! mu_hm_1 >= mu_hm_2; otherwise, when mu_thl_1 > mu_thl_2,
+    ! mu_hm_1 <= mu_hm_2.
+    !
+    ! In the original derivation, mu_hm_1 >= mu_hm_2 when zeta >= 0, and
+    ! mu_hm_1 < mu_hm_2 when zeta < 0, where zeta is a tunable or adjustable
+    ! parameter.  In order to allow the relationship of mu_hm_1 to mu_hm_2 to
+    ! depend on the relationship of mu_thl_1 to mu_thl_2, the value of zeta must
+    ! also depend on the relationship of mu_thl_1 to mu_thl_2.
+    !
+    ! When mu_thl_1 <= mu_thl_2:
+    !
+    ! The relationship of mu_hm_1 to mu_hm_2 is mu_hm_1 >= mu_hm_2, so
+    ! zeta >= 0.  The tunable value of zeta is referred to as zeta_in.  When
+    ! zeta_in is already greater than 0 (meaning sigma_hm_1^2 / mu_hm_1^2 is
+    ! greater than sigma_hm_2^2 / mu_hm_2^2), zeta is simply set to zeta_in.  In
+    ! other words, the component with the greater mean value of the hydrometeor
+    ! also has the greater value of component variance to the square of the
+    ! component mean.  However, when zeta_in is less than 0, zeta must be
+    ! adjusted to be greater than 0.  The following equation is used to set the
+    ! value of zeta:
+    !
+    !        | zeta_in; when zeta_in >= 0
+    ! zeta = |
+    !        | ( 1 / ( 1 + zeta_in ) ) - 1; when zeta_in < 0.
+    !
+    ! Previously, when zeta_in < 0, mu_hm_1 < mu_hm_2, and
+    ! sigma_hm_1^2 / mu_hm_1^2 < sigma_hm_2^2 / mu_hm_2^2.  Now that zeta has to
+    ! be greater than 0, sigma_hm_1^2 / mu_hm_1^2 > sigma_hm_2^2 / mu_hm_2^2.
+    ! The ratio of the greater variance-over-mean-squared to the smaller
+    ! variance-over-mean-squared remains the same when using the equation for
+    ! zeta listed above.
+    !
+    ! When mu_thl_1 > mu_thl_2:
+    !
+    ! The relationship of mu_hm_1 to mu_hm_2 is mu_hm_1 <= mu_hm_2, so
+    ! zeta <= 0.  When zeta_in is already less than 0 (meaning
+    ! sigma_hm_1^2 / mu_hm_1^2 is less than sigma_hm_2^2 / mu_hm_2^2), zeta is
+    ! simply set to zeta_in.  In other words, the component with the greater
+    ! mean value of the hydrometeor also has the greater value of component
+    ! variance to the square of the component mean.  However, when zeta_in is
+    ! greater than 0, zeta must be adjusted to be less than 0.  The following
+    ! equation is used to set the value of zeta:
+    !
+    !        | zeta_in; when zeta_in <= 0
+    ! zeta = |
+    !        | ( 1 / ( 1 + zeta_in ) ) - 1; when zeta_in > 0.
+    !
+    ! Previously, when zeta_in > 0, mu_hm_1 > mu_hm_2, and
+    ! sigma_hm_1^2 / mu_hm_1^2 > sigma_hm_2^2 / mu_hm_2^2.  Now that zeta has to
+    ! be less than 0, sigma_hm_1^2 / mu_hm_1^2 < sigma_hm_2^2 / mu_hm_2^2.
+    ! The ratio of the greater variance-over-mean-squared to the smaller
+    ! variance-over-mean-squared remains the same when using the equation for
+    ! zeta listed above.
+    !
+    !
+    ! Brian Griffin; February 2015.
+
+    ! References:
+    !----------------------------------------------------------------------- 
+
+    use constants_clubb, only: &
+        four, & ! Constant(s)
+        two,  &
+        one,  &
+        zero
+
+    use clubb_precision, only: &
+        core_rknd    ! Variable(s)
+
+    implicit none
+    
+    ! Input Variables
+    integer, intent(in) :: &
+      nz,      & ! Number of model vertical grid levels
+      ngrdcol    ! Number of grid columns
+
+    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: &
+      hmm,           & ! Hydrometeor mean (overall), <hm>           [hm units]
+      hmp2,          & ! Hydrometeor variance (overall), <hm'^2>    [hm units^2]
+      mixt_frac,     & ! Mixture fraction                           [-]
+      precip_frac,   & ! Precipitation fraction (overall)           [-]
+      precip_frac_1, & ! Precipitation fraction (1st PDF component) [-]
+      precip_frac_2, & ! Precipitation fraction (2nd PDF component) [-]
+      mu_thl_1,      & ! Mean of th_l (1st PDF component)           [K]
+      mu_thl_2         ! Mean of th_l (2nd PDF component)           [K]
+
+    real( kind = core_rknd ), intent(in) :: &
+      hmp2_ip_on_hmm2_ip, & ! Ratio <hm|_ip'^2> / <hm|_ip>^2                 [-]
+      hm_tol                ! Tolerance value of hydrometeor          [hm units]
+      
+    real( kind = core_rknd ), dimension(ngrdcol), intent(in) :: &
+      precip_frac_tol       ! Min. precip. frac. when hydromet. are present  [-]
+
+    real( kind = core_rknd ), intent(in) :: &
+      omicron,           & ! Relative width parameter, omicron = R / Rmax    [-]
+      zeta_vrnce_rat_in    ! Width parameter for sigma_hm_1^2 / mu_hm_1^2    [-]
+
+    ! Output Variables
+    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(out) :: &
+      mu_hm_1,    & ! Mean of hm (1st PDF component) in-precip (ip)      [hm un]
+      mu_hm_2,    & ! Mean of hm (2nd PDF component) ip                  [hm un]
+      sigma_hm_1, & ! Standard deviation of hm (1st PDF component) ip    [hm un]
+      sigma_hm_2, & ! Standard deviation of hm (2nd PDF component) ip    [hm un]
+      hm_1,       & ! Mean of hm (1st PDF component)                     [hm un]
+      hm_2          ! Mean of hm (2nd PDF component)                     [hm un]
+
+    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(out) :: &
+      sigma_hm_1_sqd_on_mu_hm_1_sqd, & ! Ratio sigma_hm_1**2 / mu_hm_1**2    [-]
+      sigma_hm_2_sqd_on_mu_hm_2_sqd    ! Ratio sigma_hm_2**2 / mu_hm_2**2    [-]
+
+    ! Local Variables
+    real( kind = core_rknd ) :: &
+      Rmax,       & ! Maximum possible value of ratio R                [-]
+      coef_A,     & ! Coefficient A in A*mu_hm_1^2 + B*mu_hm_1 + C = 0 [-]
+      coef_B,     & ! Coefficient B in A*mu_hm_1^2 + B*mu_hm_1 + C = 0 [hm un]
+      coef_C,     & ! Coefficient C in A*mu_hm_1^2 + B*mu_hm_1 + C = 0 [hm un^2]
+      Bsqd_m_4AC    ! Value B^2 - 4*A*C in quadratic eqn. for mu_hm_1  [hm un^2]
+      
+    real( kind = core_rknd ) :: &
+      zeta_vrnce_rat    ! Width parameter for sigma_hm_1^2 / mu_hm_1^2       [-]
+
+    real( kind = core_rknd ) :: &
+      mu_hm_1_min, & ! Minimum value of mu_hm_1 (precip. in both comps.) [hm un]
+      mu_hm_2_min    ! Minimum value of mu_hm_2 (precip. in both comps.) [hm un]
+
+    real( kind = core_rknd ), parameter :: &
+      mu_hm_min_coef = 0.01_core_rknd  ! Coef. for mu_hm_1_min and mu_hm_2_min
+
+    integer :: j, k ! Loop iterators
+      
+    do k = 1, nz
+      do j = 1, ngrdcol
+
+        if ( hmm(j,k) >= hm_tol &
+             .and. precip_frac_1(j,k) >= precip_frac_tol(j) &
+             .and. precip_frac_2(j,k) >= precip_frac_tol(j) ) then
+
+           ! Adjust the value of zeta based on the relationship of mu_thl_1 to
+           ! mu_thl_2.
+           if ( mu_thl_1(j,k) <= mu_thl_2(j,k) ) then
+              if ( zeta_vrnce_rat_in >= zero ) then
+                 zeta_vrnce_rat = zeta_vrnce_rat_in
+              else ! zeta_vrnce_rat_in < 0
+                 zeta_vrnce_rat = ( one / ( one + zeta_vrnce_rat_in ) ) - one
+              end if ! zeta_vrnce_rat_in >= 0
+           else ! mu_thl_1 > mu_thl_2
+              if ( zeta_vrnce_rat_in <= zero ) then
+                 zeta_vrnce_rat = zeta_vrnce_rat_in
+              else ! zeta_vrnce_rat_in > 0
+                 zeta_vrnce_rat = ( one / ( one + zeta_vrnce_rat_in ) ) - one
+              end if ! zeta_vrnce_rat_in <= 0
+           end if ! mu_thl_1 <= mu_thl_2
+
+           ! Calculate the value of Rmax.
+           ! Rmax = ( f_p / ( a * f_p_1 * ( 1 + zeta ) + ( 1 - a ) * f_p_2 ) )
+           !        * ( <hm|_ip’^2> / <hm|_ip>^2 ).
+           ! The parameter zeta is written in the code as zeta_vrnce_rat.
+           Rmax = ( precip_frac(j,k) &
+                    / ( mixt_frac(j,k) * precip_frac_1(j,k) * ( one + zeta_vrnce_rat ) &
+                        + ( one - mixt_frac(j,k) ) * precip_frac_2(j,k) ) ) &
+                  * hmp2_ip_on_hmm2_ip
+
+           ! Calculate the value of coefficient A.
+           ! A = a * f_p_1 * ( 1 + omicron * Rmax * ( 1 + zeta ) )
+           !     + a^2 * f_p_1^2 * ( 1 + omicron * Rmax ) / ( ( 1 - a ) * f_p_2 ).
+           coef_A = mixt_frac(j,k) * precip_frac_1(j,k) &
+                    * ( one + omicron * Rmax * ( one + zeta_vrnce_rat ) ) &
+                    + mixt_frac(j,k)**2 * precip_frac_1(j,k)**2 &
+                      * ( one + omicron * Rmax ) &
+                      / ( ( one - mixt_frac(j,k) ) * precip_frac_2(j,k) )
+
+           ! Calculate the value of coefficient B.
+           ! B = - 2 * <hm> * a * f_p_1 * ( 1 + omicron * Rmax )
+           !     / ( ( 1 - a ) * f_p_2 ).
+           coef_B = -two * hmm(j,k) * mixt_frac(j,k) * precip_frac_1(j,k) &
+                     * ( one + omicron * Rmax ) &
+                     / ( ( one - mixt_frac(j,k) ) * precip_frac_2(j,k) )
+
+           ! Calculate the value of coefficient C.
+           ! C = - ( <hm’^2>
+           !         + ( 1 - ( 1 + omicron * Rmax ) / ( ( 1 - a ) * f_p_2 ) )
+           !           * <hm>^2 ).
+           coef_C = - ( hmp2(j,k) + ( one &
+                                 - ( one + omicron * Rmax ) &
+                                   / ( ( one - mixt_frac(j,k) ) * precip_frac_2(j,k) ) &
+                               ) * hmm(j,k)**2 )
+
+           ! Calculate value of B^2 - 4*A*C.
+           Bsqd_m_4AC = coef_B**2 - four * coef_A * coef_C
+
+           ! Mathematically, the value of B^2 - 4*A*C cannot be less than 0.
+           ! Numerically, this can happen when numerical round off error causes an
+           ! epsilon-sized negative value.  When this happens, reset the value of
+           ! B^2 - 4*A*C to 0.
+           if ( Bsqd_m_4AC < zero ) then
+              Bsqd_m_4AC = zero
+           end if
+
+           ! Calculate the mean (in-precip.) of the hydrometeor in the 1st PDF
+           ! component.
+           if ( mu_thl_1(j,k) <= mu_thl_2(j,k) ) then
+              mu_hm_1(j,k) = ( -coef_B + sqrt( Bsqd_m_4AC ) ) / ( two * coef_A )
+           else ! mu_thl_1 > mu_thl_2
+              mu_hm_1(j,k) = ( -coef_B - sqrt( Bsqd_m_4AC ) ) / ( two * coef_A )
+           end if ! mu_thl_1 <= mu_thl_2
+
+           ! Calculate the mean (in-precip.) of the hydrometeor in the 2nd PDF
+           ! component.
+           mu_hm_2(j,k) = ( hmm(j,k) - mixt_frac(j,k) * precip_frac_1(j,k) * mu_hm_1(j,k) ) &
+                     / ( ( one - mixt_frac(j,k) ) * precip_frac_2(j,k) )
+
+           ! Calculate the value of the ratio R (which is sigma_hm_2^2 / mu_hm_2^2),
+           ! where R = omicron * Rmax.  The name of the variable used for R is
+           ! sigma_hm_2_sqd_on_mu_hm_2_sqd.
+           sigma_hm_2_sqd_on_mu_hm_2_sqd(j,k) = omicron * Rmax
+
+           ! Calculate minimum allowable values for mu_hm_1 and mu_hm_2.
+           if ( hmm(j,k) / precip_frac(j,k) > hm_tol / precip_frac_1(j,k) ) then
+              mu_hm_1_min &
+              = min( hm_tol / precip_frac_1(j,k) &
+                     + mu_hm_min_coef * ( hmm(j,k) / precip_frac(j,k) &
+                                          - hm_tol / precip_frac_1(j,k) ), &
+                     ( hmm(j,k) - ( one - mixt_frac(j,k) ) * hm_tol ) &
+                     / ( mixt_frac(j,k) * precip_frac_1(j,k) ) )
+           else ! hmm / precip_frac <= hm_tol / precip_frac_1
+              mu_hm_1_min = hm_tol / precip_frac_1(j,k)
+           end if
+           if ( hmm(j,k) / precip_frac(j,k) > hm_tol / precip_frac_2(j,k) ) then
+              mu_hm_2_min &
+              = min( hm_tol / precip_frac_2(j,k) &
+                     + mu_hm_min_coef * ( hmm(j,k) / precip_frac(j,k) &
+                                          - hm_tol / precip_frac_2(j,k) ), &
+                     ( hmm(j,k) - mixt_frac(j,k) * hm_tol ) &
+                     / ( ( one - mixt_frac(j,k) ) * precip_frac_2(j,k) ) )
+           else ! hmm / precip_frac <= hm_tol / precip_frac_2
+              mu_hm_2_min = hm_tol / precip_frac_2(j,k)
+           end if
+
+           ! Handle the "emergency" situation when the specified value of omicron is
+           ! too small for the value of <hm|_ip'^2> / <hm|_ip>^2, resulting in a
+           ! component mean that is too small (below tolerance value) or negative.
+           if ( mu_hm_1(j,k) < mu_hm_1_min ) then
+
+              ! Set the value of mu_hm_1 to the threshold positive value.
+              mu_hm_1(j,k) = mu_hm_1_min
+
+              ! Recalculate the mean (in-precip.) of the hydrometeor in the 2nd PDF
+              ! component.
+              mu_hm_2(j,k) = ( hmm(j,k) - mixt_frac(j,k) * precip_frac_1(j,k) * mu_hm_1(j,k) ) &
+                        / ( ( one - mixt_frac(j,k) ) * precip_frac_2(j,k) )
+
+              ! Recalculate the value of R ( sigma_hm_2^2 / mu_hm_2^2 ) in this
+              ! scenario.
+              ! R = ( <hm'^2> + <hm>^2 - a * f_p_1 * mu_hm_1^2
+              !       - ( 1 - a ) * f_p_2 * mu_hm_2^2 )
+              !     / ( a * f_p_1 * ( 1 + zeta ) * mu_hm_1^2
+              !         + ( 1 - a ) * f_p_2 * mu_hm_2^2 ).
+              sigma_hm_2_sqd_on_mu_hm_2_sqd(j,k) &
+              = ( hmp2(j,k) + hmm(j,k)**2 - mixt_frac(j,k) * precip_frac_1(j,k) * mu_hm_1(j,k)**2 &
+                  - ( one - mixt_frac(j,k) ) * precip_frac_2(j,k) * mu_hm_2(j,k)**2 ) &
+                / ( mixt_frac(j,k) * precip_frac_1(j,k) &
+                    * ( one + zeta_vrnce_rat ) * mu_hm_1(j,k)**2 &
+                    + ( one - mixt_frac(j,k) ) * precip_frac_2(j,k) * mu_hm_2(j,k)**2 )
+
+              ! Mathematically, this ratio can never be less than 0.  In case
+              ! numerical round off error produces a negative value in extreme
+              ! cases, reset the value of R to 0.
+              if ( sigma_hm_2_sqd_on_mu_hm_2_sqd(j,k) < zero ) then
+                 sigma_hm_2_sqd_on_mu_hm_2_sqd(j,k) = zero
+              end if
+
+           elseif ( mu_hm_2(j,k) < mu_hm_2_min ) then
+
+              ! Set the value of mu_hm_2 to the threshold positive value.
+              mu_hm_2(j,k) = mu_hm_2_min
+
+              ! Recalculate the mean (in-precip.) of the hydrometeor in the 1st PDF
+              ! component.
+              mu_hm_1(j,k) = ( hmm(j,k) - ( one - mixt_frac(j,k) ) &
+                                          * precip_frac_2(j,k) * mu_hm_2(j,k) ) &
+                             / ( mixt_frac(j,k) * precip_frac_1(j,k) )
+
+              ! Recalculate the value of R ( sigma_hm_2^2 / mu_hm_2^2 ) in this
+              ! scenario.
+              ! R = ( <hm'^2> + <hm>^2 - a * f_p_1 * mu_hm_1^2
+              !       - ( 1 - a ) * f_p_2 * mu_hm_2^2 )
+              !     / ( a * f_p_1 * ( 1 + zeta ) * mu_hm_1^2
+              !         + ( 1 - a ) * f_p_2 * mu_hm_2^2 ).
+              sigma_hm_2_sqd_on_mu_hm_2_sqd(j,k) &
+              = ( hmp2(j,k) + hmm(j,k)**2 - mixt_frac(j,k) * precip_frac_1(j,k) * mu_hm_1(j,k)**2 &
+                  - ( one - mixt_frac(j,k) ) * precip_frac_2(j,k) * mu_hm_2(j,k)**2 ) &
+                / ( mixt_frac(j,k) * precip_frac_1(j,k) &
+                    * ( one + zeta_vrnce_rat ) * mu_hm_1(j,k)**2 &
+                    + ( one - mixt_frac(j,k) ) * precip_frac_2(j,k) * mu_hm_2(j,k)**2 )
+
+              ! Mathematically, this ratio can never be less than 0.  In case
+              ! numerical round off error produces a negative value in extreme
+              ! cases, reset the value of R to 0.
+              if ( sigma_hm_2_sqd_on_mu_hm_2_sqd(j,k) < zero ) then
+                 sigma_hm_2_sqd_on_mu_hm_2_sqd(j,k) = zero
+              end if
+
+           end if
+     
+           ! Calculate the standard deviation (in-precip.) of the hydrometeor in the
+           ! 1st PDF component.
+           sigma_hm_1(j,k) = sqrt( sigma_hm_2_sqd_on_mu_hm_2_sqd(j,k) &
+                              * ( one + zeta_vrnce_rat ) ) &
+                        * mu_hm_1(j,k)
+
+           ! Calculate the standard deviation (in-precip.) of the hydrometeor in the
+           ! 2nd PDF component.
+           sigma_hm_2(j,k) = sqrt( sigma_hm_2_sqd_on_mu_hm_2_sqd(j,k) ) * mu_hm_2(j,k)
+
+           ! Calculate the mean of the hydrometeor in the 1st PDF component.
+           hm_1(j,k) = max( mu_hm_1(j,k) * precip_frac_1(j,k), hm_tol )
+
+           ! Calculate the mean of the hydrometeor in the 1st PDF component.
+           hm_2(j,k) = max( mu_hm_2(j,k) * precip_frac_2(j,k), hm_tol )
+
+           ! Calculate the ratio of sigma_hm_1^2 / mu_hm_1^2.
+           sigma_hm_1_sqd_on_mu_hm_1_sqd(j,k) = sigma_hm_1(j,k)**2 / mu_hm_1(j,k)**2
+
+           ! The value of R, sigma_hm_2_sqd_on_mu_hm_2_sqd, has already been
+           ! calculated.
+
+
+        elseif ( hmm(j,k) >= hm_tol .and. precip_frac_1(j,k) >= precip_frac_tol(j) ) then
+
+           ! Precipitation is found in the 1st PDF component, but not in the 2nd
+           ! PDF component (precip_frac_2 = 0).
+           mu_hm_1(j,k) = hmm(j,k) / ( mixt_frac(j,k) * precip_frac_1(j,k) )
+           mu_hm_2(j,k) = zero
+
+           sigma_hm_1(j,k) = sqrt( max( ( hmp2(j,k) + hmm(j,k)**2 &
+                                     - mixt_frac(j,k) * precip_frac_1(j,k) * mu_hm_1(j,k)**2 ) &
+                                   / ( mixt_frac(j,k) * precip_frac_1(j,k) ), &
+                                   zero ) )
+           sigma_hm_2(j,k) = zero
+
+           hm_1(j,k) = mu_hm_1(j,k) * precip_frac_1(j,k)
+           hm_2(j,k) = zero
+
+           sigma_hm_1_sqd_on_mu_hm_1_sqd(j,k) = sigma_hm_1(j,k)**2 / mu_hm_1(j,k)**2
+           ! The ratio sigma_hm_2^2 / mu_hm_2^2 is undefined.
+           sigma_hm_2_sqd_on_mu_hm_2_sqd(j,k) = zero
+
+
+        elseif ( hmm(j,k) >= hm_tol .and. precip_frac_2(j,k) >= precip_frac_tol(j) ) then
+
+           ! Precipitation is found in the 2nd PDF component, but not in the 1st
+           ! PDF component (precip_frac_1 = 0).
+           mu_hm_1(j,k) = zero
+           mu_hm_2(j,k) = hmm(j,k) / ( ( one - mixt_frac(j,k) ) * precip_frac_2(j,k) )
+
+           sigma_hm_1(j,k) = zero
+           sigma_hm_2(j,k) &
+           = sqrt( max( ( hmp2(j,k) + hmm(j,k)**2 &
+                          - ( one - mixt_frac(j,k) ) * precip_frac_2(j,k) * mu_hm_2(j,k)**2 ) &
+                        / ( ( one - mixt_frac(j,k) ) * precip_frac_2(j,k) ), &
+                        zero ) )
+
+           hm_1(j,k) = zero
+           hm_2(j,k) = mu_hm_2(j,k) * precip_frac_2(j,k)
+
+           ! The ratio sigma_hm_1^2 / mu_hm_1^2 is undefined.
+           sigma_hm_1_sqd_on_mu_hm_1_sqd(j,k) = zero
+           sigma_hm_2_sqd_on_mu_hm_2_sqd(j,k) = sigma_hm_2(j,k)**2 / mu_hm_2(j,k)**2
+
+
+        else ! hm < hm_tol or ( precip_frac_1 = 0 and precip_frac_2 = 0 ).
+
+           ! Precipitation is not found in either PDF component.
+           mu_hm_1(j,k) = zero
+           mu_hm_2(j,k) = zero
+
+           sigma_hm_1(j,k) = zero
+           sigma_hm_2(j,k) = zero
+
+           hm_1(j,k) = zero
+           hm_2(j,k) = zero
+
+           ! The ratio sigma_hm_1^2 / mu_hm_1^2 is undefined.
+           sigma_hm_1_sqd_on_mu_hm_1_sqd(j,k) = zero
+           ! The ratio sigma_hm_2^2 / mu_hm_2^2 is undefined.
+           sigma_hm_2_sqd_on_mu_hm_2_sqd(j,k) = zero
+
+
+        end if ! hmm >= hm_tol and precip_frac_1 >= precip_frac_tol
+              ! and precip_frac_2 >= precip_frac_tol
+      end do
+    end do
+
+    return
+
+  end subroutine calc_comp_mu_sigma_hm_2D
 
   !=============================================================================
   subroutine component_corr_w_x( nz, ngrdcol, &
@@ -2930,7 +3697,8 @@ module setup_clubb_pdf_params
   end subroutine component_corr_eta_hm_n_ip
 
   !=============================================================================
-  subroutine norm_transform_mean_stdev( nz, hm_1, hm_2, &
+  subroutine norm_transform_mean_stdev( nz, ngrdcol, &
+                                        hm_1, hm_2, &
                                         Ncnm, pdf_dim, &
                                         mu_x_1, mu_x_2, &
                                         sigma_x_1, sigma_x_2, &
@@ -2961,6 +3729,9 @@ module setup_clubb_pdf_params
         pdf2hydromet_idx  ! Procedure(s)
 
     use array_index, only: &
+        iiPDF_w,   & 
+        iiPDF_chi, &
+        iiPDF_eta, &
         iiPDF_Ncn, &  ! Variable(s)
         hydromet_tol  ! Variable(s)
 
@@ -2974,25 +3745,24 @@ module setup_clubb_pdf_params
 
     ! Input Variables
     integer, intent(in) :: &
-      nz    ! Number of vertical levels                             [-]
+      nz,      & ! Number of model vertical grid levels
+      pdf_dim, & ! Number of variables in CLUBB's PDF
+      ngrdcol    ! Number of grid columns
 
-    real( kind = core_rknd ), dimension(nz,hydromet_dim), intent(in) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nz,hydromet_dim), intent(in) :: &
       hm_1, & ! Mean of a precip. hydrometeor (1st PDF component)   [units vary]
       hm_2    ! Mean of a precip. hydrometeor (2nd PDF component)   [units vary]
 
-    real( kind = core_rknd ), dimension(nz), intent(in) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: &
       Ncnm    ! Mean cloud nuclei concentration, < N_cn >               [num/kg]
 
-    integer, intent(in) :: &
-      pdf_dim   ! Number of variables in CLUBB's PDF
-
-    real( kind = core_rknd ), dimension(pdf_dim,nz), intent(in) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,pdf_dim,nz), intent(in) :: &
       mu_x_1,    & ! Mean array of PDF vars. (1st PDF component)    [units vary]
       mu_x_2,    & ! Mean array of PDF vars. (2nd PDF component)    [units vary]
       sigma_x_1, & ! Standard deviation array of PDF vars (comp. 1) [units vary]
       sigma_x_2    ! Standard deviation array of PDF vars (comp. 2) [units vary]
 
-    real( kind = core_rknd ), dimension(pdf_dim,nz), intent(in) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,pdf_dim,nz), intent(in) :: &
       sigma2_on_mu2_ip_1, & ! Prescribed ratio array: sigma_hm_1^2/mu_hm_1^2 [-]
       sigma2_on_mu2_ip_2    ! Prescribed ratio array: sigma_hm_2^2/mu_hm_2^2 [-]
 
@@ -3000,14 +3770,14 @@ module setup_clubb_pdf_params
       l_const_Nc_in_cloud ! Use a constant cloud droplet conc. within cloud (K&K)
 
     ! Output Variables
-    real( kind = core_rknd ), dimension(pdf_dim,nz), intent(out) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,pdf_dim,nz), intent(out) :: &
       mu_x_1_n,    & ! Mean array (normal space): PDF vars. (comp. 1) [un. vary]
       mu_x_2_n,    & ! Mean array (normal space): PDF vars. (comp. 2) [un. vary]
       sigma_x_1_n, & ! Std. dev. array (normal space): PDF vars (comp. 1) [u.v.]
       sigma_x_2_n    ! Std. dev. array (normal space): PDF vars (comp. 2) [u.v.]
 
     ! Local Variable
-    integer :: ivar, hm_idx  ! Indices
+    integer :: ivar, hm_idx, k, j  ! Indices
 
 
     ! The means and standard deviations in each PDF component of w, chi (old s),
@@ -3015,11 +3785,30 @@ module setup_clubb_pdf_params
     ! chi, and eta already follow assumed normal distributions in each PDF
     ! component.  The normal space means and standard deviations are the same as
     ! the actual means and standard deviations.    
-    mu_x_1_n = mu_x_1
-    mu_x_2_n = mu_x_2
-    sigma_x_1_n = sigma_x_1
-    sigma_x_2_n = sigma_x_2
-
+    do k = 1, nz
+      mu_x_1_n(:,iiPDF_chi,k) = mu_x_1(:,iiPDF_chi,k)
+      mu_x_1_n(:,iiPDF_eta,k) = mu_x_1(:,iiPDF_eta,k)
+      mu_x_1_n(:,iiPDF_w,k)   = mu_x_1(:,iiPDF_w,k)
+    end do
+      
+    do k = 1, nz  
+      mu_x_2_n(:,iiPDF_chi,k) = mu_x_2(:,iiPDF_chi,k)
+      mu_x_2_n(:,iiPDF_eta,k) = mu_x_2(:,iiPDF_eta,k)
+      mu_x_2_n(:,iiPDF_w,k)   = mu_x_2(:,iiPDF_w,k)
+    end do
+    
+    do k = 1, nz
+      sigma_x_1_n(:,iiPDF_chi,k) = sigma_x_1(:,iiPDF_chi,k)
+      sigma_x_1_n(:,iiPDF_eta,k) = sigma_x_1(:,iiPDF_eta,k)
+      sigma_x_1_n(:,iiPDF_w,k)   = sigma_x_1(:,iiPDF_w,k)
+    end do
+      
+    do k = 1, nz
+      sigma_x_2_n(:,iiPDF_chi,k) = sigma_x_2(:,iiPDF_chi,k)
+      sigma_x_2_n(:,iiPDF_eta,k) = sigma_x_2(:,iiPDF_eta,k)
+      sigma_x_2_n(:,iiPDF_w,k)   = sigma_x_2(:,iiPDF_w,k)
+    end do
+    
     !!! Transform the mean and standard deviation to normal space in each PDF
     !!! component for variables that have an assumed lognormal distribution,
     !!! given the mean and standard deviation in each PDF component for those
@@ -3032,106 +3821,128 @@ module setup_clubb_pdf_params
 
     ! Normal space mean of simplified cloud nuclei concentration, N_cn,
     ! in PDF component 1.
-    where ( Ncnm >= Ncn_tol )
+    do k = 1, nz
+      do j = 1, ngrdcol
+        
+        if ( Ncnm(j,k) >= Ncn_tol ) then
 
-       mu_x_1_n(iiPDF_Ncn,:) = mean_L2N( mu_x_1(iiPDF_Ncn,:), &
-                                         sigma2_on_mu2_ip_1(iiPDF_Ncn,:) )
+           mu_x_1_n(j,iiPDF_Ncn,k) = mean_L2N( mu_x_1(j,iiPDF_Ncn,k), &
+                                               sigma2_on_mu2_ip_1(j,iiPDF_Ncn,k) )
 
-    elsewhere
+        else
 
-       ! Mean simplified cloud nuclei concentration in PDF component 1 is less
-       ! than the tolerance amount.  It is considered to have a value of 0.
-       ! There are not any cloud nuclei or cloud at this grid level.  The value
-       ! of mu_Ncn_1_n should be -inf.  It will be set to -huge for purposes of
-       ! assigning it a value.
-       mu_x_1_n(iiPDF_Ncn,:) = -huge( mu_x_1(iiPDF_Ncn,:) )
+           ! Mean simplified cloud nuclei concentration in PDF component 1 is less
+           ! than the tolerance amount.  It is considered to have a value of 0.
+           ! There are not any cloud nuclei or cloud at this grid level.  The value
+           ! of mu_Ncn_1_n should be -inf.  It will be set to -huge for purposes of
+           ! assigning it a value.
+           mu_x_1_n(j,iiPDF_Ncn,k) = -huge( mu_x_1(j,iiPDF_Ncn,k) )
 
-    endwhere
+        end if
+        
+      end do
+    end do
 
     ! Normal space mean of simplified cloud nuclei concentration, N_cn,
     ! in PDF component 2.
-    where ( Ncnm >= Ncn_tol )
+    do k = 1, nz
+      do j = 1, ngrdcol
+        
+        if ( Ncnm(j,k) >= Ncn_tol ) then
 
-       mu_x_2_n(iiPDF_Ncn,:) = mean_L2N( mu_x_2(iiPDF_Ncn,:), &
-                                         sigma2_on_mu2_ip_1(iiPDF_Ncn,:) )
+           mu_x_2_n(j,iiPDF_Ncn,k) = mean_L2N( mu_x_2(j,iiPDF_Ncn,k), &
+                                               sigma2_on_mu2_ip_1(j,iiPDF_Ncn,k) )
 
-    elsewhere
+        else
 
-       ! Mean simplified cloud nuclei concentration in PDF component 1 is less
-       ! than the tolerance amount.  It is considered to have a value of 0.
-       ! There are not any cloud nuclei or cloud at this grid level.  The value
-       ! of mu_Ncn_1_n should be -inf.  It will be set to -huge for purposes of
-       ! assigning it a value.
-       mu_x_2_n(iiPDF_Ncn,:) = -huge( mu_x_2(iiPDF_Ncn,:) )
+           ! Mean simplified cloud nuclei concentration in PDF component 1 is less
+           ! than the tolerance amount.  It is considered to have a value of 0.
+           ! There are not any cloud nuclei or cloud at this grid level.  The value
+           ! of mu_Ncn_1_n should be -inf.  It will be set to -huge for purposes of
+           ! assigning it a value.
+           mu_x_2_n(j,iiPDF_Ncn,k) = -huge( mu_x_2(j,iiPDF_Ncn,k) )
 
-    endwhere
+        end if
+        
+      end do
+    end do
 
     ! Normal space standard deviation of simplified cloud nuclei concentration,
     ! N_cn, in PDF components 1 and 2.
     if ( l_const_Nc_in_cloud ) then
-       ! Ncn does not vary in the grid box.
-       sigma_x_1_n(iiPDF_Ncn,:) = zero
-       sigma_x_2_n(iiPDF_Ncn,:) = zero
+      ! Ncn does not vary in the grid box.
+      sigma_x_1_n(:,iiPDF_Ncn,:) = zero
+      sigma_x_2_n(:,iiPDF_Ncn,:) = zero
     else
        ! Ncn (perhaps) varies in the grid box.
-       sigma_x_1_n(iiPDF_Ncn,:) &
-       = stdev_L2N( sigma2_on_mu2_ip_1(iiPDF_Ncn,:) )
-       sigma_x_2_n(iiPDF_Ncn,:) &
-       = stdev_L2N( sigma2_on_mu2_ip_2(iiPDF_Ncn,:) )
+       sigma_x_1_n(:,iiPDF_Ncn,:) = stdev_L2N( sigma2_on_mu2_ip_1(:,iiPDF_Ncn,:) )
+       sigma_x_2_n(:,iiPDF_Ncn,:) = stdev_L2N( sigma2_on_mu2_ip_2(:,iiPDF_Ncn,:) )
     end if
 
     ! Normal space precipitating hydrometeor means and standard deviations.
     do ivar = iiPDF_Ncn+1, pdf_dim, 1
 
-       hm_idx = pdf2hydromet_idx(ivar)
+      hm_idx = pdf2hydromet_idx(ivar)
 
-       ! Normal space mean of a precipitating hydrometeor, hm, in PDF
-       ! component 1.
-       where ( hm_1(:,hm_idx) >= hydromet_tol(hm_idx) )
+      ! Normal space mean of a precipitating hydrometeor, hm, in PDF
+      ! component 1.
+      do k = 1, nz
+        do j = 1, ngrdcol
+          
+          if ( hm_1(j,k,hm_idx) >= hydromet_tol(hm_idx) ) then
 
-          mu_x_1_n(ivar,:) = mean_L2N( mu_x_1(ivar,:), &
-                                       sigma2_on_mu2_ip_1(ivar,:) )
+            mu_x_1_n(j,ivar,k) = mean_L2N( mu_x_1(j,ivar,k), &
+                                           sigma2_on_mu2_ip_1(j,ivar,k) )
 
-       elsewhere
+          else
 
-          ! The mean of a precipitating hydrometeor in PDF component 1 is less
-          ! than its tolerance amount.  It is considered to have a value of 0.
-          ! There is not any of this precipitating hydrometeor in the 1st PDF
-          ! component at this grid level.  The in-precip mean of this
-          ! precipitating hydrometeor (1st PDF component) is also 0.  The value
-          ! of mu_hm_1_n should be -inf.  It will be set to -huge for purposes
-          ! of assigning it a value.
-          mu_x_1_n(ivar,:) = -huge( mu_x_1(ivar,:) )
+            ! The mean of a precipitating hydrometeor in PDF component 1 is less
+            ! than its tolerance amount.  It is considered to have a value of 0.
+            ! There is not any of this precipitating hydrometeor in the 1st PDF
+            ! component at this grid level.  The in-precip mean of this
+            ! precipitating hydrometeor (1st PDF component) is also 0.  The value
+            ! of mu_hm_1_n should be -inf.  It will be set to -huge for purposes
+            ! of assigning it a value.
+            mu_x_1_n(j,ivar,k) = -huge( mu_x_1(j,ivar,k) )
 
-       endwhere
+          end if
+          
+        end do
+      end do
 
-       ! Normal space standard deviation of a precipitating hydrometeor, hm, in
-       ! PDF component 1.
-       sigma_x_1_n(ivar,:) = stdev_L2N( sigma2_on_mu2_ip_1(ivar,:) )
+      ! Normal space standard deviation of a precipitating hydrometeor, hm, in
+      ! PDF component 1.
+      sigma_x_1_n(:,ivar,:) = stdev_L2N( sigma2_on_mu2_ip_1(:,ivar,:) )
 
-       ! Normal space mean of a precipitating hydrometeor, hm, in PDF
-       ! component 2.
-       where ( hm_2(:,hm_idx) >= hydromet_tol(hm_idx) )
+      ! Normal space mean of a precipitating hydrometeor, hm, in PDF
+      ! component 2.
+      do k = 1, nz
+        do j = 1, ngrdcol
+          
+          if ( hm_2(j,k,hm_idx) >= hydromet_tol(hm_idx) ) then
 
-          mu_x_2_n(ivar,:) = mean_L2N( mu_x_2(ivar,:), &
-                                       sigma2_on_mu2_ip_2(ivar,:) )
+            mu_x_2_n(j,ivar,k) = mean_L2N( mu_x_2(j,ivar,k), &
+                                         sigma2_on_mu2_ip_2(j,ivar,k) )
 
-       elsewhere
+          else
 
-          ! The mean of a precipitating hydrometeor in PDF component 2 is less
-          ! than its tolerance amount.  It is considered to have a value of 0.
-          ! There is not any of this precipitating hydrometeor in the 2nd PDF
-          ! component at this grid level.  The in-precip mean of this
-          ! precipitating hydrometeor (2nd PDF component) is also 0.  The value
-          ! of mu_hm_2_n should be -inf.  It will be set to -huge for purposes
-          ! of assigning it a value.
-          mu_x_2_n(ivar,:) = -huge( mu_x_2(ivar,:) )
+            ! The mean of a precipitating hydrometeor in PDF component 2 is less
+            ! than its tolerance amount.  It is considered to have a value of 0.
+            ! There is not any of this precipitating hydrometeor in the 2nd PDF
+            ! component at this grid level.  The in-precip mean of this
+            ! precipitating hydrometeor (2nd PDF component) is also 0.  The value
+            ! of mu_hm_2_n should be -inf.  It will be set to -huge for purposes
+            ! of assigning it a value.
+            mu_x_2_n(j,ivar,k) = -huge( mu_x_2(j,ivar,k) )
 
-       endwhere
+          end if
+            
+        end do
+      end do
 
-       ! Normal space standard deviation of a precipitating hydrometeor, hm, in
-       ! PDF component 2.
-       sigma_x_2_n(ivar,:) = stdev_L2N( sigma2_on_mu2_ip_2(ivar,:) )
+      ! Normal space standard deviation of a precipitating hydrometeor, hm, in
+      ! PDF component 2.
+      sigma_x_2_n(:,ivar,:) = stdev_L2N( sigma2_on_mu2_ip_2(:,ivar,:) )
 
     end do ! ivar = iiPDF_Ncn+1, pdf_dim, 1
 
