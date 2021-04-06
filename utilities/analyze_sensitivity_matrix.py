@@ -52,7 +52,7 @@ def main():
 
     # Calculate changes in parameter values needed to match metrics.
     sensMatrixOrig, sensMatrix, normlzdSensMatrix, svdInvrsNormlzdWeighted, \
-            dparamsSoln, paramsSoln, defaultBiasesApprox = \
+            dparamsSoln, paramsSoln, defaultBiasesOrigApprox = \
         analyzeSensMatrix(metricsNames, paramsNames, transformedParamsNames,
                       metricsWeights,
                       sensNcFilenames, defaultNcFilename,
@@ -203,6 +203,9 @@ def analyzeSensMatrix(metricsNames, paramsNames, transformedParamsNames,
 
     # Calculate solution in transformed space
     dparamsSoln = svdInvrsNormlzdWeighted @ metricsWeights #* np.transpose(defaultParamValsRow)
+    defaultBiasesApprox = sensMatrix @ dparamsSoln
+    print("defaultBiasesApprox =")
+    print(defaultBiasesApprox)
     paramsSoln = np.transpose(defaultParamValsOrigRow) + dparamsSoln
     # Transform some variables from [-inf,inf] back to [0,inf] range
     for idx in np.arange(numParams):
@@ -220,13 +223,13 @@ def analyzeSensMatrix(metricsNames, paramsNames, transformedParamsNames,
 
     # This check is currently broken if any params span [0,1], e.g., C5
     #if (transformedParamsNames == np.array([''])).all():
-    print("\nCheck: Does defaultBiasesApprox approximate defaultBiasesCol above?")
-    defaultBiasesApprox = sensMatrixOrig @ dparamsSoln
-    print("defaultBiasesApprox =")
-    print(defaultBiasesApprox)
+    print("\nCheck: Does defaultBiasesOrigApprox approximate defaultBiasesCol above?")
+    defaultBiasesOrigApprox = sensMatrixOrig @ dparamsSoln
+    print("defaultBiasesOrigApprox =")
+    print(defaultBiasesOrigApprox)
 
     return (sensMatrixOrig, sensMatrix, normlzdSensMatrix, svdInvrsNormlzdWeighted,
-            dparamsSoln, paramsSoln, defaultBiasesApprox)
+            dparamsSoln, paramsSoln, defaultBiasesOrigApprox)
 
 def constructSensMatrix(sensMetricValsMatrix, sensParamValsRow,
                         defaultMetricValsCol, defaultParamValsRow,
