@@ -89,7 +89,10 @@ class VariableGroupBaseBudgetsSamStyle(VariableGroup):
 
         # According to https://carson.math.uwm.edu/larson-group/internal/SAM_LES_BUDGET_PLOTS/,
         # the DISSIP and DIFFTR terms in SAM should be equivalent to CLUBB's dp1 and dp2 terms,
-        # respectively.
+        # respectively.  The DISSIP term is calculated by (approximately), K * (dX/dz )^2, 
+        # where K is eddy conductivity [m2/s]. The DIFFTR term is calculated as (approximately), 
+        # (X(curr)^2-X(prev)^2)/dt, where a general diffusion subroutine is applied 
+        # between the "curr" and "prev" values.
         thlp2_budget_lines = [
             {'var_names': ['thlp2_residual', self.getThlp2Residual], 'legend_label': 'thlp2_res'},
             {'var_names': ['thlp2_adv',self.calc_thlp2_adv], 'legend_label': 'thlp2_adv'},
@@ -106,7 +109,10 @@ class VariableGroupBaseBudgetsSamStyle(VariableGroup):
 
         # According to https://carson.math.uwm.edu/larson-group/internal/SAM_LES_BUDGET_PLOTS/,
         # the DISSIP and DIFFTR terms in SAM should be equivalent to CLUBB's dp1 and dp2 terms,
-        # respectively.
+        # respectively.  The DISSIP term is calculated by (approximately), K * (dX/dz )^2, 
+        # where K is eddy conductivity [m2/s]. The DIFFTR term is calculated as (approximately), 
+        # (X(curr)^2-X(prev)^2)/dt, where a general diffusion subroutine is applied 
+        # between the "curr" and "prev" values.
         rtp2_budget_lines = [
             {'var_names': ['rtp2_residual', self.getRtp2Residual], 'legend_label': 'rtp2_res'},
             {'var_names': ['rtp2_adv',self.calc_rtp2_adv], 'legend_label': 'rtp2_adv'},
@@ -122,7 +128,10 @@ class VariableGroupBaseBudgetsSamStyle(VariableGroup):
 
         # According to https://carson.math.uwm.edu/larson-group/internal/SAM_LES_BUDGET_PLOTS/,
         # the DISSIP and DIFFTR terms in SAM should be equivalent to CLUBB's dp1 and dp2 terms,
-        # respectively.
+        # respectively.  The DISSIP term is calculated by (approximately), K * (dX/dz )^2, 
+        # where K is eddy conductivity [m2/s]. The DIFFTR term is calculated as (approximately), 
+        # (X(curr)^2-X(prev)^2)/dt, where a general diffusion subroutine is applied 
+        # between the "curr" and "prev" values.
         rtpthlp_budget_lines = [
             {'var_names': ['rtpthlp_residual', self.getRtpthlpResidual], 'legend_label': 'rtpthlp_res'},
             {'var_names': ['rtpthlp_adv',self.calc_rtpthlp_adv], 'legend_label': 'rtpthlp_adv'},
