@@ -92,13 +92,14 @@ class VariableGroupBaseBudgetsSamStyle(VariableGroup):
         # respectively.  The DISSIP term is calculated by (approximately), K * (dX/dz )^2, 
         # where K is eddy conductivity [m2/s]. The DIFFTR term is calculated as (approximately), 
         # (X(curr)^2-X(prev)^2)/dt, where a general diffusion subroutine is applied 
-        # between the "curr" and "prev" values.
+        # between the "curr" and "prev" values.  Because the DISSIP term more closely resembles
+        # CLUBB's dp2 term, however, I've switched them here so that DISSIP = dp2 and DIFFTR = dp1.
         thlp2_budget_lines = [
             {'var_names': ['thlp2_residual', self.getThlp2Residual], 'legend_label': 'thlp2_res'},
             {'var_names': ['thlp2_adv',self.calc_thlp2_adv], 'legend_label': 'thlp2_adv'},
             {'var_names': ['thlp2_tp'], 'legend_label': 'thlp2_grad'},
-            {'var_names': ['thlp2_dp1'], 'legend_label': 'thlp2_dissip'},
-            {'var_names': ['thlp2_dp2'], 'legend_label': 'thlp2_difftr'},
+            {'var_names': ['thlp2_dp2'], 'legend_label': 'thlp2_dissip'},
+            {'var_names': ['thlp2_dp1'], 'legend_label': 'thlp2_difftr'},
             {'var_names': ['thlp2_mc'], 'legend_label': 'thlp2_prec'},
             {'var_names': ['thlp2_rad',self.calc_wpthlp_rad], 'legend_label': 'thlp2_rad'}, 
             {'var_names': ['thlp2_forcing',self.calc_thlp2_forc], 'legend_label': 'thlp2_forc'},
@@ -112,13 +113,14 @@ class VariableGroupBaseBudgetsSamStyle(VariableGroup):
         # respectively.  The DISSIP term is calculated by (approximately), K * (dX/dz )^2, 
         # where K is eddy conductivity [m2/s]. The DIFFTR term is calculated as (approximately), 
         # (X(curr)^2-X(prev)^2)/dt, where a general diffusion subroutine is applied 
-        # between the "curr" and "prev" values.
+        # between the "curr" and "prev" values.  Because the DISSIP term more closely resembles
+        # CLUBB's dp2 term, however, I've switched them here so that DISSIP = dp2 and DIFFTR = dp1.
         rtp2_budget_lines = [
             {'var_names': ['rtp2_residual', self.getRtp2Residual], 'legend_label': 'rtp2_res'},
             {'var_names': ['rtp2_adv',self.calc_rtp2_adv], 'legend_label': 'rtp2_adv'},
             {'var_names': ['rtp2_tp'], 'legend_label': 'rtp2_grad'},
-            {'var_names': ['rtp2_dp1'], 'legend_label': 'rtp2_dissip'},
-            {'var_names': ['rtp2_dp2'], 'legend_label': 'rtp2_difftr'},
+            {'var_names': ['rtp2_dp2'], 'legend_label': 'rtp2_dissip'},
+            {'var_names': ['rtp2_dp1'], 'legend_label': 'rtp2_difftr'},
             {'var_names': ['rtp2_mc'], 'legend_label': 'rtp2_prec'},
             {'var_names': ['rtp2_forcing',self.calc_rtp2_forc], 'legend_label': 'rtp2_forc'},
             {'var_names': ['rtp2_bt'], 'legend_label': 'rtp2_bt'},
@@ -131,13 +133,14 @@ class VariableGroupBaseBudgetsSamStyle(VariableGroup):
         # respectively.  The DISSIP term is calculated by (approximately), K * (dX/dz )^2, 
         # where K is eddy conductivity [m2/s]. The DIFFTR term is calculated as (approximately), 
         # (X(curr)^2-X(prev)^2)/dt, where a general diffusion subroutine is applied 
-        # between the "curr" and "prev" values.
+        # between the "curr" and "prev" values.  Because the DISSIP term more closely resembles
+        # CLUBB's dp2 term, however, I've switched them here so that DISSIP = dp2 and DIFFTR = dp1.
         rtpthlp_budget_lines = [
             {'var_names': ['rtpthlp_residual', self.getRtpthlpResidual], 'legend_label': 'rtpthlp_res'},
             {'var_names': ['rtpthlp_adv',self.calc_rtpthlp_adv], 'legend_label': 'rtpthlp_adv'},
             {'var_names': ['rtpthlp_grad',self.calc_rtpthlp_grad], 'legend_label': 'rtpthlp_grad'},
-            {'var_names': ['rtpthlp_dp1'], 'legend_label': 'rtpthlp_dissip'},
-            {'var_names': ['rtpthlp_dp2'], 'legend_label': 'rtpthlp_difftr'},
+            {'var_names': ['rtpthlp_dp2'], 'legend_label': 'rtpthlp_dissip'},
+            {'var_names': ['rtpthlp_dp1'], 'legend_label': 'rtpthlp_difftr'},
             {'var_names': ['rtpthlp_mc'], 'legend_label': 'rtpthlp_prec'},
             {'var_names': ['rtpthlp_forcing',self.calc_rtpthlp_forc], 'legend_label': 'rtpthlp_forc'},
             {'var_names': ['rtpthlp_bt'], 'legend_label': 'rtpthlp_bt'},
