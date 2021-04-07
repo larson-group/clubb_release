@@ -31,7 +31,7 @@ class VariableGroupSamBudgets(VariableGroup):
         hlp_budget_lines = [
             {'var_names': ['HLADV'], 'legend_label': 'HLADV',
              'sam_conv_factor': self.kg_per_second_to_kg_per_day},
-            {'var_names': ['HLDIFF'], 'legend_label': 'HLDIFF',
+            {'var_names': ['HLDIFF'], 'legend_label': 'HLDFSN',
              'sam_conv_factor': self.kg_per_second_to_kg_per_day},
             {'var_names': ['HLRAD'], 'legend_label': 'HLRAD',
              'sam_conv_factor': self.kg_per_second_to_kg_per_day},
@@ -49,7 +49,7 @@ class VariableGroupSamBudgets(VariableGroup):
         qtp_budget_lines = [
             {'var_names': ['QTADV'], 'legend_label': 'QTADV',
              'sam_conv_factor': self.g_per_second_to_kg_per_day},
-            {'var_names': ['QTDIFF'], 'legend_label': 'QTDIFF',
+            {'var_names': ['QTDIFF'], 'legend_label': 'QTDFSN',
              'sam_conv_factor': self.g_per_second_to_kg_per_day},
             {'var_names': ['QTSRC'], 'legend_label': 'QTSRC',
              'sam_conv_factor': self.g_per_second_to_kg_per_day},
@@ -68,7 +68,7 @@ class VariableGroupSamBudgets(VariableGroup):
         tpwp_budget_lines = [
             {'var_names': ['TWGRAD'], 'legend_label': 'TWGRAD'},
             {'var_names': ['TWADV'], 'legend_label': 'TWADV'},
-            {'var_names': ['TWDIFF'], 'legend_label': 'TWDIFF'},
+            {'var_names': ['TWDIFF'], 'legend_label': 'TWDFSN'},
             {'var_names': ['TWB+P'], 'legend_label': 'TWBUOY+TWPRES', 'sam_calc': self.getTwBuoyPlusPres},
             {'var_names': ['TWPREC'], 'legend_label': 'TWPREC'},
             {'var_names': ['TWRAD'], 'legend_label': 'TWRAD'},
@@ -80,7 +80,7 @@ class VariableGroupSamBudgets(VariableGroup):
         tpwp_split_budget_lines = [
             {'var_names': ['TWGRAD'], 'legend_label': 'TWGRAD'},
             {'var_names': ['TWADV'], 'legend_label': 'TWADV'},
-            {'var_names': ['TWDIFF'], 'legend_label': 'TWDIFF'},
+            {'var_names': ['TWDIFF'], 'legend_label': 'TWDFSN'},
             {'var_names': ['TWBUOY'], 'legend_label': 'TWBUOY'},
             {'var_names': ['TWPRES'], 'legend_label': 'TWPRES'},
             {'var_names': ['TWPREC'], 'legend_label': 'TWPREC'},
@@ -94,7 +94,7 @@ class VariableGroupSamBudgets(VariableGroup):
         thlpwp_budget_lines = [
             {'var_names': ['THLWGRAD'], 'legend_label': 'THLWGRAD'},
             {'var_names': ['THLWADV'], 'legend_label': 'THLWADV'},
-            {'var_names': ['THLWDIFF'], 'legend_label': 'THLWDIFF'},
+            {'var_names': ['THLWDIFF'], 'legend_label': 'THLWDFSN'},
             {'var_names': ['THLWB+P'], 'legend_label': 'THLWBUOY+PRES', 'sam_calc': self.getThlwBuoyPlusPres},
             {'var_names': ['THLWPREC'], 'legend_label': 'THLWPREC'},
             {'var_names': ['THLWRAD'], 'legend_label': 'THLWRAD'},
@@ -106,7 +106,7 @@ class VariableGroupSamBudgets(VariableGroup):
         thlpwp_split_budget_lines = [
             {'var_names': ['THLWGRAD'], 'legend_label': 'THLWGRAD'},
             {'var_names': ['THLWADV'], 'legend_label': 'THLWADV'},
-            {'var_names': ['THLWDIFF'], 'legend_label': 'THLWDIFF'},
+            {'var_names': ['THLWDIFF'], 'legend_label': 'THLWDFSN'},
             {'var_names': ['THLWBUOY'], 'legend_label': 'THLWBUOY'},
             {'var_names': ['THLWPRES'], 'legend_label': 'THLWPRES'},
             {'var_names': ['THLWPREC'], 'legend_label': 'THLWPREC'},
@@ -120,7 +120,7 @@ class VariableGroupSamBudgets(VariableGroup):
         qpwp_budget_lines = [
             {'var_names': ['QWGRAD'], 'legend_label': 'QWGRAD'},
             {'var_names': ['QWADV'], 'legend_label': 'QWADV'},
-            {'var_names': ['QWDIFF'], 'legend_label': 'QWDIFF'},
+            {'var_names': ['QWDIFF'], 'legend_label': 'QWDFSN'},
             {'var_names': ['QWB+P'], 'legend_label': 'QWBUOY+QWPRES', 'sam_calc': self.getQwBuoyPlusPres},
             {'var_names': ['QWPREC'], 'legend_label': 'QWPREC'},
             {'var_names': ['QWFORC'], 'legend_label': 'QWFORC'},
@@ -131,7 +131,7 @@ class VariableGroupSamBudgets(VariableGroup):
         qpwp_split_budget_lines = [
             {'var_names': ['QWGRAD'], 'legend_label': 'QWGRAD'},
             {'var_names': ['QWADV'], 'legend_label': 'QWADV'},
-            {'var_names': ['QWDIFF'], 'legend_label': 'QWDIFF'},
+            {'var_names': ['QWDIFF'], 'legend_label': 'QWDFSN'},
             {'var_names': ['QWBUOY'], 'legend_label': 'QWBUOY'},
             {'var_names': ['QWPRES'], 'legend_label': 'QWPRES'},
             {'var_names': ['QWPREC'], 'legend_label': 'QWPREC'},
@@ -143,7 +143,7 @@ class VariableGroupSamBudgets(VariableGroup):
         qtogpwp_budget_lines = [
             {'var_names': ['QTOGWGRAD'], 'legend_label': 'QTOGWGRAD'},
             {'var_names': ['QTOGWADV'], 'legend_label': 'QTOGWADV'},
-            {'var_names': ['QTOGWDIFF'], 'legend_label': 'QTOGWDIFF'},
+            {'var_names': ['QTOGWDIFF'], 'legend_label': 'QTOGWDFSN'},
             {'var_names': ['QTOGWB+P'], 'legend_label': 'QTOGWBUOY+PRES',
              'sam_calc': self.getQtogwBuoyPlusPres},
             {'var_names': ['QTOGWPREC'], 'legend_label': 'QTOGWPREC'},
@@ -155,7 +155,7 @@ class VariableGroupSamBudgets(VariableGroup):
         qtogpwp_split_budget_lines = [
             {'var_names': ['QTOGWGRAD'], 'legend_label': 'QTOGWGRAD'},
             {'var_names': ['QTOGWADV'], 'legend_label': 'QTOGWADV'},
-            {'var_names': ['QTOGWDIFF'], 'legend_label': 'QTOGWDIFF'},
+            {'var_names': ['QTOGWDIFF'], 'legend_label': 'QTOGWDFSN'},
             {'var_names': ['QTOGWBUOY'], 'legend_label': 'QTOGWBUOY'},
             {'var_names': ['QTOGWPRES'], 'legend_label': 'QTOGWPRES'},
             {'var_names': ['QTOGWPREC'], 'legend_label': 'QTOGWPREC'},
@@ -251,7 +251,7 @@ class VariableGroupSamBudgets(VariableGroup):
             {'var_names': ['U2V2BUOY'], 'legend_label': 'U2V2BUOY', 'sam_calc': self.getU2V2Buoy},
             {'var_names': ['U2V2PRESS'], 'legend_label': 'U2V2PRES', 'sam_calc': self.getU2V2Pres},
             {'var_names': ['W2REDIS'], 'legend_label': 'U2V2REDIS', 'sam_conv_factor': -1},
-            {'var_names': ['U2V2DIFF'], 'legend_label': 'U2V2DIFF', 'sam_calc': self.getU2V2Diff},
+            {'var_names': ['U2V2DIFF'], 'legend_label': 'U2V2DFSN', 'sam_calc': self.getU2V2Diff},
             {'var_names': ['DISSIP'], 'legend_label': 'U2V2DISSIP', 'sam_conv_factor': 2},
             {'var_names': ['U2V2SDMP'], 'legend_label': 'U2V2SDMP', 'sam_calc': self.getU2V2Sdmp},
             {'var_names': ['SHEAR'], 'legend_label': 'U2V2SHEAR', 'sam_conv_factor': 2},
@@ -261,7 +261,7 @@ class VariableGroupSamBudgets(VariableGroup):
         ]
 
         upwp_budget_lines = [
-            {'var_names': ['WUDIFF'], 'legend_label': 'WUDIFF'},
+            {'var_names': ['WUDIFF'], 'legend_label': 'WUDFSN'},
             {'var_names': ['WU_RES'], 'legend_label': 'WU_RES', 'sam_calc': self.getUWResidual},
             {'var_names': ['WUADV'], 'legend_label': 'WUADV'},
             {'var_names': ['WUPRES'], 'legend_label': 'WUPRES'},
@@ -273,7 +273,7 @@ class VariableGroupSamBudgets(VariableGroup):
         ]
 
         vpwp_budget_lines = [
-            {'var_names': ['WVDIFF'], 'legend_label': 'WVDIFF'},
+            {'var_names': ['WVDIFF'], 'legend_label': 'WVDFSN'},
             {'var_names': ['WV_RES'], 'legend_label': 'WV_RES', 'sam_calc': self.getVWResidual},
             {'var_names': ['WVADV'], 'legend_label': 'WVADV'},
             {'var_names': ['WVPRES'], 'legend_label': 'WVPRES'},
@@ -288,7 +288,7 @@ class VariableGroupSamBudgets(VariableGroup):
             {'var_names': ['U2ADV'], 'legend_label': 'U2ADV'},
             {'var_names': ['U2SHEAR'], 'legend_label': 'U2SHEAR'},
             {'var_names': ['U2REDIS'], 'legend_label': 'U2REDIS'},
-            {'var_names': ['U2DIFF'], 'legend_label': 'U2DIFF'},
+            {'var_names': ['U2DIFF'], 'legend_label': 'U2DFSN'},
             {'var_names': ['U2BT'], 'legend_label': 'U2BT'},
             {'var_names': ['U2_RES'], 'legend_label': 'U2_RES', 'sam_calc': self.getU2Residual},
         ]
@@ -297,7 +297,7 @@ class VariableGroupSamBudgets(VariableGroup):
             {'var_names': ['V2ADV'], 'legend_label': 'V2ADV'},
             {'var_names': ['V2SHEAR'], 'legend_label': 'V2SHEAR'},
             {'var_names': ['V2REDIS'], 'legend_label': 'V2REDIS'},
-            {'var_names': ['V2DIFF'], 'legend_label': 'V2DIFF'},
+            {'var_names': ['V2DIFF'], 'legend_label': 'V2DFSN'},
             {'var_names': ['V2BT'], 'legend_label': 'V2BT'},
             {'var_names': ['V2_RES'], 'legend_label': 'V2_RES', 'sam_calc': self.getV2Residual},
         ]
@@ -307,7 +307,7 @@ class VariableGroupSamBudgets(VariableGroup):
             {'var_names': ['W2PRES'], 'legend_label': 'W2PRES'},
             {'var_names': ['W2REDIS'], 'legend_label': 'W2REDIS'},
             {'var_names': ['W2BUOY'], 'legend_label': 'W2BUOY'},
-            {'var_names': ['W2DIFF'], 'legend_label': 'W2DIFF'},
+            {'var_names': ['W2DIFF'], 'legend_label': 'W2DFSN'},
             {'var_names': ['W2SDMP'], 'legend_label': 'W2SDMP'},
             {'var_names': ['W2BT'], 'legend_label': 'W2BT'},
             {'var_names': ['W2_RES'], 'legend_label': 'W2_RES', 'sam_calc': self.getW2Residual},
@@ -316,7 +316,7 @@ class VariableGroupSamBudgets(VariableGroup):
         wp3_budget_lines = [
             {'var_names': ['W3ADV'], 'legend_label': 'W3ADV'},
             {'var_names': ['W3BUOY'], 'legend_label': 'W3BUOY'},
-            {'var_names': ['W3DIFF'], 'legend_label': 'W3DIFF'},
+            {'var_names': ['W3DIFF'], 'legend_label': 'W3DFSN'},
             {'var_names': ['W3BT'], 'legend_label': 'W3BT'},
             {'var_names': ['W3_RES'], 'legend_label': 'W3_RES', 'sam_calc': self.getW3Residual},
             {'var_names': ['W3PRESS'], 'legend_label': 'W3PRES', 'sam_calc': self.getW3PRESS},

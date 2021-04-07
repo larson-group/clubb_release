@@ -706,7 +706,8 @@ def __processArguments__():
                         default=[], nargs='+')
     parser.add_argument("--priority-variables", help="Plot only variables with the 'priority' key.",
                         action="store_true")
-    parser.add_argument("--sam-style-budgets", help="Plot CLUBB variables as if they were SAM variables.",
+    parser.add_argument("--sam-style-budgets", help="Lump together certain CLUBB budget terms so that the relevant " 
+                                                    "CLUBB budgets look comparable to SAM's budgets.",
                         action="store_true")
     args = parser.parse_args()
 

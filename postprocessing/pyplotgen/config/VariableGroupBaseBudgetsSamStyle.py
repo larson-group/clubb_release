@@ -1,6 +1,6 @@
 """
-:author: Nicolas Strike
-:date: Mid 2019
+:author: Benjamin A. Stephens 
+:date: April 2021
 """
 
 from src.Panel import Panel
@@ -41,27 +41,27 @@ class VariableGroupBaseBudgetsSamStyle(VariableGroup):
             {'var_names': ['wpthlp_residual', self.getWpthlpResidual], 'legend_label': 'wpthlp_res'},
             {'var_names': ['wpthlp_tp'], 'legend_label': 'wpthlp_grad'},
             {'var_names': ['wpthlp_adv',self.calc_wpthlp_adv], 'legend_label': 'wpthlp_adv'},
-            {'var_names': ['wpthlp_dp1'], 'legend_label': 'wpthlp_diff'},
+            {'var_names': ['wpthlp_dp1'], 'legend_label': 'wpthlp_dfsn'},
             {'var_names': ['wpthlp_bp'], 'legend_label': 'wpthlp_buoy'},
             {'var_names': ['wpthlp_pres',self.calc_wpthlp_pres], 'legend_label': 'wpthlp_pres'},
             {'var_names': ['wpthlp_mc'], 'legend_label': 'wpthlp_prec'},
             {'var_names': ['wpthlp_rad',self.calc_wpthlp_rad], 'legend_label': 'wpthlp_rad'},
             {'var_names': ['wpthlp_forc',self.calc_wpthlp_forc], 'legend_label': 'wpthlp_forc'},
             {'var_names': ['wpthlp_bt'], 'legend_label': 'wpthlp_bt'},
-            {'var_names': ['wpthlp_limit',self.calc_wpthlp_limit], 'legend_label': 'wpthlp_limit'},
+            {'var_names': ['wpthlp_limiters',self.calc_wpthlp_limiters], 'legend_label': 'wpthlp_limiters'},
         ]
 
         wprtp_budget_lines = [
             {'var_names': ['wprtp_residual', self.getWprtpResidual], 'legend_label': 'wprtp_res'},
             {'var_names': ['wprtp_tp'], 'legend_label': 'wprtp_grad'},
             {'var_names': ['wprtp_adv',self.calc_wprtp_adv], 'legend_label': 'wprtp_adv'},
-            {'var_names': ['wprtp_dp1'], 'legend_label': 'wprtp_diff'},
+            {'var_names': ['wprtp_dp1'], 'legend_label': 'wprtp_dfsn'},
             {'var_names': ['wprtp_bp'], 'legend_label': 'wprtp_buoy'},
             {'var_names': ['wprtp_pres',self.calc_wprtp_pres], 'legend_label': 'wprtp_pres'},
             {'var_names': ['wprtp_mc'], 'legend_label': 'wprtp_prec'},
             {'var_names': ['wprtp_forc',self.calc_wprtp_forc], 'legend_label': 'wprtp_forc'},
             {'var_names': ['wprtp_bt'], 'legend_label': 'wprtp_bt'},
-            {'var_names': ['wprtp_limit',self.calc_wprtp_limit], 'legend_label': 'wprtp_limit'},
+            {'var_names': ['wprtp_limiters',self.calc_wprtp_limiters], 'legend_label': 'wprtp_limiters'},
         ]
 
         wp2_budget_lines = [
@@ -70,10 +70,10 @@ class VariableGroupBaseBudgetsSamStyle(VariableGroup):
             {'var_names': ['wp2_pres',self.calc_wp2_pres], 'legend_label': 'wp2_pres'},
             {'var_names': ['wp2_pr1'], 'legend_label': 'wp2_redis'},
             {'var_names': ['wp2_bp'], 'legend_label': 'wp2_buoy'},
-            {'var_names': ['wp2_diff',self.calc_wp2_diff], 'legend_label': 'wp2_diff'},
+            {'var_names': ['wp2_dfsn',self.calc_wp2_dfsn], 'legend_label': 'wp2_dfsn'},
             {'var_names': ['wp2_sdmp'], 'legend_label': 'wp2_sdmp'},
             {'var_names': ['wp2_bt'], 'legend_label': 'wp2_bt'},
-            {'var_names': ['wp2_limit',self.calc_wp2_limit], 'legend_label': 'wp2_limit'},
+            {'var_names': ['wp2_limiters',self.calc_wp2_limiters], 'legend_label': 'wp2_limiters'},
             {'var_names': ['wp2_sf'], 'legend_label': 'wp2_sf'},
         ]
 
@@ -82,9 +82,9 @@ class VariableGroupBaseBudgetsSamStyle(VariableGroup):
             {'var_names': ['wp3_pres',self.calc_wp3_pres], 'legend_label': 'wp3_pres'},
             {'var_names': ['wp3_adv',self.calc_wp3_adv], 'legend_label': 'wp3_adv'},
             {'var_names': ['wp3_bp1'], 'legend_label': 'wp3_buoy'},
-            {'var_names': ['wp3_dp1'], 'legend_label': 'wp3_diff'},
+            {'var_names': ['wp3_dp1'], 'legend_label': 'wp3_dfsn'},
             {'var_names': ['wp3_bt'], 'legend_label': 'wp3_bt'},
-            {'var_names': ['wp3_cl'], 'legend_label': 'wp3_limit'},
+            {'var_names': ['wp3_cl'], 'legend_label': 'wp3_limiters'},
         ]
 
         # According to https://carson.math.uwm.edu/larson-group/internal/SAM_LES_BUDGET_PLOTS/,
@@ -104,7 +104,7 @@ class VariableGroupBaseBudgetsSamStyle(VariableGroup):
             {'var_names': ['thlp2_rad',self.calc_wpthlp_rad], 'legend_label': 'thlp2_rad'}, 
             {'var_names': ['thlp2_forcing',self.calc_thlp2_forc], 'legend_label': 'thlp2_forc'},
             {'var_names': ['thlp2_bt'], 'legend_label': 'thlp2_bt'},
-            {'var_names': ['thlp2_limit',self.calc_thlp2_limit], 'legend_label': 'thlp2_limit'},
+            {'var_names': ['thlp2_limiters',self.calc_thlp2_limiters], 'legend_label': 'thlp2_limiters'},
             {'var_names': ['thlp2_sf'], 'legend_label': 'thlp2_sf'},
         ]
 
@@ -124,7 +124,7 @@ class VariableGroupBaseBudgetsSamStyle(VariableGroup):
             {'var_names': ['rtp2_mc'], 'legend_label': 'rtp2_prec'},
             {'var_names': ['rtp2_forcing',self.calc_rtp2_forc], 'legend_label': 'rtp2_forc'},
             {'var_names': ['rtp2_bt'], 'legend_label': 'rtp2_bt'},
-            {'var_names': ['rtp2_limit',self.calc_rtp2_limit], 'legend_label': 'rtp2_limit'},
+            {'var_names': ['rtp2_limiters',self.calc_rtp2_limiters], 'legend_label': 'rtp2_limiters'},
             {'var_names': ['rtp2_sf'], 'legend_label': 'rtp2_sf'},
         ]
 
@@ -144,48 +144,32 @@ class VariableGroupBaseBudgetsSamStyle(VariableGroup):
             {'var_names': ['rtpthlp_mc'], 'legend_label': 'rtpthlp_prec'},
             {'var_names': ['rtpthlp_forcing',self.calc_rtpthlp_forc], 'legend_label': 'rtpthlp_forc'},
             {'var_names': ['rtpthlp_bt'], 'legend_label': 'rtpthlp_bt'},
-            {'var_names': ['rtpthlp_pd'], 'legend_label': 'rtpthlp_limit'},
+            {'var_names': ['rtpthlp_pd'], 'legend_label': 'rtpthlp_limiters'},
             {'var_names': ['rtpthlp_sf'], 'legend_label': 'rtpthlp_sf'},
         ]
 
-        # In SAM, upwp_aniz ends up being equal to (-w'*dp'/dx-u'*dp'/dz)-d(u'p')/dz.
-        # This is similar to the "scrambling" part of the pressure covariance,
-        # since it's the total pressure contribution minus a diffusion part.  (It's not 
-        # subtracting the total diffusion part, since there would also be d(w'p')/dz.)
-        # Hence I have set upwp_aniz equal to the sum of all current pressure contributions,
-        # since they all parameterize the pressure-scrambling part of the equation.
-        # As of now CLUBB doesn't explicitly model the "diffusion" part of the pressure
-        # covariance upwp_pres, so that part is set to zero.
         upwp_budget_lines = [
             {'var_names': ['upwp_residual', self.getUpwpResidual], 'legend_label': 'upwp_res'},
-            {'var_names': ['upwp_dp1'], 'legend_label': 'upwp_diff'},
+            {'var_names': ['upwp_dp1'], 'legend_label': 'upwp_dfsn'},
             {'var_names': ['upwp_adv',self.calc_upwp_adv], 'legend_label': 'upwp_adv'},
             {'var_names': ['upwp_pres',self.calc_upwp_pres], 'legend_label': 'upwp_pres'},
             {'var_names': ['upwp_aniz',self.calc_upwp_aniz], 'legend_label': 'upwp_aniz'},
             {'var_names': ['upwp_bp'], 'legend_label': 'upwp_buoy'},
             {'var_names': ['upwp_tp'], 'legend_label': 'upwp_shear'},
             {'var_names': ['upwp_bt'], 'legend_label': 'upwp_bt'},
-            {'var_names': ['upwp_limit',self.calc_upwp_limit], 'legend_label': 'upwp_limit'},
+            {'var_names': ['upwp_limiters',self.calc_upwp_limiters], 'legend_label': 'upwp_limiters'},
         ]
 
-        # In SAM, vpwp_aniz ends up being equal to (-w'*dp'/dy-v'*dp'/dz)-d(v'p')/dz.
-        # This is similar to the "scrambling" part of the pressure covariance,
-        # since it's the total pressure contribution minus a diffusion part.  (It's not 
-        # subtracting the total diffusion part, since there would also be d(w'p')/dz.)
-        # Hence I have set vpwp_aniz equal to the sum of all current pressure contributions,
-        # since they all parameterize the pressure-scrambling part of the equation.
-        # As of now CLUBB doesn't explicitly model the "diffusion" part of the pressure
-        # covariance vpwp_pres, so that part is set to zero.
         vpwp_budget_lines = [
             {'var_names': ['vpwp_residual', self.getVpwpResidual], 'legend_label': 'vpwp_res'},
-            {'var_names': ['vpwp_dp1'], 'legend_label': 'vpwp_diff'},
+            {'var_names': ['vpwp_dp1'], 'legend_label': 'vpwp_dfsn'},
             {'var_names': ['vpwp_adv',self.calc_vpwp_adv], 'legend_label': 'vpwp_adv'},
             {'var_names': ['vpwp_pres',self.calc_vpwp_pres], 'legend_label': 'vpwp_pres'},
             {'var_names': ['vpwp_aniz',self.calc_vpwp_aniz], 'legend_label': 'vpwp_aniz'},
             {'var_names': ['vpwp_bp'], 'legend_label': 'vpwp_buoy'},
             {'var_names': ['vpwp_tp'], 'legend_label': 'vpwp_shear'},         
             {'var_names': ['vpwp_bt'], 'legend_label': 'vpwp_bt'},
-            {'var_names': ['vpwp_limit',self.calc_vpwp_limit], 'legend_label': 'vpwp_limit'},
+            {'var_names': ['vpwp_limiters',self.calc_vpwp_limiters], 'legend_label': 'vpwp_limiters'},
         ]
 
         up2_budget_lines = [
@@ -193,11 +177,12 @@ class VariableGroupBaseBudgetsSamStyle(VariableGroup):
             {'var_names': ['up2_adv',self.calc_up2_adv], 'legend_label': 'up2_adv'},
             {'var_names': ['up2_tp'], 'legend_label': 'up2_shear'},
             {'var_names': ['up2_pr1'], 'legend_label': 'up2_redis'},
-            {'var_names': ['up2_diff',self.calc_up2_diff], 'legend_label': 'up2_diff'},
+            {'var_names': ['up2_dfsn',self.calc_up2_dfsn], 'legend_label': 'up2_dfsn'},
             {'var_names': ['up2_bt'], 'legend_label': 'up2_bt'},
             {'var_names': ['up2_sdmp'], 'legend_label': 'up2_sdmp'},
-            {'var_names': ['up2_limit',self.calc_up2_limit], 'legend_label': 'up2_limit'},
+            {'var_names': ['up2_limiters',self.calc_up2_limiters], 'legend_label': 'up2_limiters'},
             {'var_names': ['up2_sf'], 'legend_label': 'up2_sf'},
+            {'var_names': ['up2_splat'], 'legend_label': 'up2_splat'}
         ]
 
         vp2_budget_lines = [
@@ -205,11 +190,12 @@ class VariableGroupBaseBudgetsSamStyle(VariableGroup):
             {'var_names': ['vp2_adv',self.calc_vp2_adv], 'legend_label': 'vp2_adv'},
             {'var_names': ['vp2_tp'], 'legend_label': 'vp2_shear'},
             {'var_names': ['vp2_pr1'], 'legend_label': 'vp2_redis'},
-            {'var_names': ['vp2_diff',self.calc_vp2_diff], 'legend_label': 'vp2_diff'},
+            {'var_names': ['vp2_dfsn',self.calc_vp2_dfsn], 'legend_label': 'vp2_dfsn'},
             {'var_names': ['vp2_bt'], 'legend_label': 'vp2_bt'},
             {'var_names': ['vp2_sdmp'], 'legend_label': 'vp2_sdmp'},
-            {'var_names': ['vp2_limit',self.calc_vp2_limit], 'legend_label': 'vp2_limit'},
+            {'var_names': ['vp2_limiters',self.calc_vp2_limiters], 'legend_label': 'vp2_limiters'},
             {'var_names': ['vp2_sf'], 'legend_label': 'vp2_sf'},
+            {'var_names': ['vp2_splat'], 'legend_label': 'vp2_splat'}
         ]
 
         self.variable_definitions = [
@@ -514,6 +500,9 @@ class VariableGroupBaseBudgetsSamStyle(VariableGroup):
 
     def calc_wpthlp_rad(self, dataset_override=None):
         '''
+        This function currently outputs an array of zeros since CLUBB does not have a comparable term
+        to SAM.  In the future one could replace " - wpthlp_forcing" below with all forcings except
+        radiation.
         '''
         # z,z, dataset = self.getVarForCalculations('altitude', dataset_override)
         wpthlp_forcing, indep, dataset = self.getVarForCalculations('wpthlp_forcing', dataset_override)
@@ -533,8 +522,9 @@ class VariableGroupBaseBudgetsSamStyle(VariableGroup):
 
         return output_data, indep
 
-    def calc_wpthlp_limit(self, dataset_override=None):
+    def calc_wpthlp_limiters(self, dataset_override=None):
         '''
+        This term includes limiters, i.e. various types of clipping to prevent unwanted values.
         '''
         # z,z, dataset = self.getVarForCalculations('altitude', dataset_override)
         wpthlp_mfl, indep, dataset = self.getVarForCalculations('wpthlp_mfl', dataset_override)
@@ -630,8 +620,9 @@ class VariableGroupBaseBudgetsSamStyle(VariableGroup):
 
         return output_data, indep
 
-    def calc_wprtp_limit(self, dataset_override=None):
+    def calc_wprtp_limiters(self, dataset_override=None):
         '''
+        This term includes limiters, i.e. various types of clipping to prevent unwanted values.
         '''
         # z,z, dataset = self.getVarForCalculations('altitude', dataset_override)
         wprtp_mfl, indep, dataset = self.getVarForCalculations('wprtp_mfl', dataset_override)
@@ -700,9 +691,8 @@ class VariableGroupBaseBudgetsSamStyle(VariableGroup):
         wp2_ma, indep, dataset = self.getVarForCalculations('wp2_ma', dataset_override)
         wp2_ta, indep, dataset = self.getVarForCalculations('wp2_ta', dataset)
         wp2_ac, indep, dataset = self.getVarForCalculations('wp2_ac', dataset)
-        wp2_splat, indep, dataset = self.getVarForCalculations('wp2_splat', dataset)
 
-        output_data = wp2_ma + wp2_ta + wp2_ac + wp2_splat
+        output_data = wp2_ma + wp2_ta + wp2_ac
 
         return output_data, indep
 
@@ -712,12 +702,13 @@ class VariableGroupBaseBudgetsSamStyle(VariableGroup):
         # z,z, dataset = self.getVarForCalculations('altitude', dataset_override)
         wp2_pr2, indep, dataset = self.getVarForCalculations('wp2_pr2', dataset_override)
         wp2_pr3, indep, dataset = self.getVarForCalculations('wp2_pr3', dataset)
+        wp2_splat, indep, dataset = self.getVarForCalculations('wp2_splat', dataset)
 
-        output_data = wp2_pr2 + wp2_pr3
+        output_data = wp2_pr2 + wp2_pr3 + wp2_splat
 
         return output_data, indep
 
-    def calc_wp2_diff(self, dataset_override=None):
+    def calc_wp2_dfsn(self, dataset_override=None):
          '''
          '''
          # z,z, dataset = self.getVarForCalculations('altitude', dataset_override)
@@ -728,8 +719,9 @@ class VariableGroupBaseBudgetsSamStyle(VariableGroup):
 
          return output_data, indep
 
-    def calc_wp2_limit(self, dataset_override=None):
+    def calc_wp2_limiters(self, dataset_override=None):
         '''
+        This term includes limiters, i.e. various types of clipping to prevent unwanted values.
         '''
         # z,z, dataset = self.getVarForCalculations('altitude', dataset_override)
         wp2_cl, indep, dataset = self.getVarForCalculations('wp2_cl', dataset_override)
@@ -797,9 +789,8 @@ class VariableGroupBaseBudgetsSamStyle(VariableGroup):
         wp3_ta, indep, dataset = self.getVarForCalculations('wp3_ta', dataset)
         wp3_tp, indep, dataset = self.getVarForCalculations('wp3_tp', dataset)
         wp3_ac, indep, dataset = self.getVarForCalculations('wp3_ac', dataset)
-        wp3_splat, indep, dataset = self.getVarForCalculations('wp3_splat', dataset)
 
-        output_data = wp3_ma + wp3_ta + wp3_tp + wp3_ac + wp3_splat
+        output_data = wp3_ma + wp3_ta + wp3_tp + wp3_ac
 
         return output_data, indep
     
@@ -811,8 +802,9 @@ class VariableGroupBaseBudgetsSamStyle(VariableGroup):
         wp3_pr2, indep, dataset = self.getVarForCalculations('wp3_pr2', dataset)
         wp3_pr3, indep, dataset = self.getVarForCalculations('wp3_pr3', dataset)
         wp3_pr_turb, indep, dataset = self.getVarForCalculations('wp3_pr_turb', dataset)
+        wp3_splat, indep, dataset = self.getVarForCalculations('wp3_splat', dataset)
 
-        output_data = wp3_pr1 + wp3_pr2 + wp3_pr3 + wp3_pr_turb
+        output_data = wp3_pr1 + wp3_pr2 + wp3_pr3 + wp3_pr_turb + wp3_splat
 
         return output_data, indep
 
@@ -893,13 +885,12 @@ class VariableGroupBaseBudgetsSamStyle(VariableGroup):
         # z,z, dataset = self.getVarForCalculations('altitude', dataset_override)
         up2_ma, indep, dataset = self.getVarForCalculations('up2_ma', dataset_override)
         up2_ta, indep, dataset = self.getVarForCalculations('up2_ta', dataset)
-        up2_splat, indep, dataset = self.getVarForCalculations('up2_splat', dataset)
 
-        output_data = up2_ma + up2_ta + up2_splat
+        output_data = up2_ma + up2_ta
 
         return output_data, indep
 
-    def calc_up2_diff(self, dataset_override=None):
+    def calc_up2_dfsn(self, dataset_override=None):
          '''
          '''
          # z,z, dataset = self.getVarForCalculations('altitude', dataset_override)
@@ -910,8 +901,9 @@ class VariableGroupBaseBudgetsSamStyle(VariableGroup):
 
          return output_data, indep
 
-    def calc_up2_limit(self, dataset_override=None):
+    def calc_up2_limiters(self, dataset_override=None):
         '''
+        This term includes limiters, i.e. various types of clipping to prevent unwanted values.
         '''
         # z,z, dataset = self.getVarForCalculations('altitude', dataset_override)
         up2_cl, indep, dataset = self.getVarForCalculations('up2_cl', dataset_override)
@@ -950,13 +942,12 @@ class VariableGroupBaseBudgetsSamStyle(VariableGroup):
         vp2_ma, indep, dataset = self.getVarForCalculations('vp2_ma', dataset_override)
         vp2_ta, indep, dataset = self.getVarForCalculations('vp2_ta', dataset)
         vp2_tp, indep, dataset = self.getVarForCalculations('vp2_tp', dataset)
-        vp2_splat, indep, dataset = self.getVarForCalculations('vp2_splat', dataset)
 
-        output_data = vp2_ma + vp2_ta + vp2_tp + vp2_splat
+        output_data = vp2_ma + vp2_ta + vp2_tp
 
         return output_data, indep
 
-    def calc_vp2_diff(self, dataset_override=None):
+    def calc_vp2_dfsn(self, dataset_override=None):
          '''
          '''
          # z,z, dataset = self.getVarForCalculations('altitude', dataset_override)
@@ -967,8 +958,9 @@ class VariableGroupBaseBudgetsSamStyle(VariableGroup):
 
          return output_data, indep
 
-    def calc_vp2_limit(self, dataset_override=None):
+    def calc_vp2_limiters(self, dataset_override=None):
         '''
+        This term includes limiters, i.e. various types of clipping to prevent unwanted values.
         '''
         # z,z, dataset = self.getVarForCalculations('altitude', dataset_override)
         vp2_cl, indep, dataset = self.getVarForCalculations('vp2_cl', dataset_override)
@@ -991,6 +983,9 @@ class VariableGroupBaseBudgetsSamStyle(VariableGroup):
 
     def calc_thlp2_rad(self, dataset_override=None):
         '''
+        This function currently outputs an array of zeros since CLUBB does not have a comparable term
+        to SAM.  In the future one could replace " - thlp2_forcing" below with all forcings except
+        radiation.
         '''
         # z,z, dataset = self.getVarForCalculations('altitude', dataset_override)
         thlp2_forcing, indep, dataset = self.getVarForCalculations('thlp2_forcing', dataset_override)
@@ -1010,8 +1005,9 @@ class VariableGroupBaseBudgetsSamStyle(VariableGroup):
 
         return output_data, indep
 
-    def calc_thlp2_limit(self, dataset_override=None):
+    def calc_thlp2_limiters(self, dataset_override=None):
         '''
+        This term includes limiters, i.e. various types of clipping to prevent unwanted values.
         '''
         # z,z, dataset = self.getVarForCalculations('altitude', dataset_override)
         thlp2_cl, indep, dataset = self.getVarForCalculations('thlp2_cl', dataset_override)
@@ -1088,8 +1084,9 @@ class VariableGroupBaseBudgetsSamStyle(VariableGroup):
 
         return output_data, indep
 
-    def calc_rtp2_limit(self, dataset_override=None):
+    def calc_rtp2_limiters(self, dataset_override=None):
         '''
+        This term includes limiters, i.e. various types of clipping to prevent unwanted values.
         '''
         # z,z, dataset = self.getVarForCalculations('altitude', dataset_override)
         rtp2_cl, indep, dataset = self.getVarForCalculations('rtp2_cl', dataset_override)
@@ -1236,6 +1233,8 @@ class VariableGroupBaseBudgetsSamStyle(VariableGroup):
 
     def calc_upwp_pres(self, dataset_override=None):
         '''
+        This function currently outputs an array of zeros since CLUBB does not have a comparable term
+        to SAM.  In the future one could replace this with an appropriate pressure term.
         '''
         # z,z, dataset = self.getVarForCalculations('altitude', dataset_override)
         upwp_pr2, indep, dataset = self.getVarForCalculations('upwp_pr2', dataset_override)
@@ -1246,6 +1245,14 @@ class VariableGroupBaseBudgetsSamStyle(VariableGroup):
 
     def calc_upwp_aniz(self, dataset_override=None):
         '''
+        In SAM, upwp_aniz ends up being equal to (-w'*dp'/dx-u'*dp'/dz)-d(u'p')/dz.
+        This is similar to the "scrambling" part of the pressure covariance,
+        since it's the total pressure contribution minus a diffusion part.  (It's not 
+        subtracting the total diffusion part, since there would also be d(w'p')/dz.)
+        Hence I have set upwp_aniz equal to the sum of all current pressure contributions,
+        since they all parameterize the pressure-scrambling part of the equation.
+        As of now CLUBB doesn't explicitly model the "diffusion" part of the pressure
+        covariance upwp_pres, so that part is set to zero.
         '''
         # z,z, dataset = self.getVarForCalculations('altitude', dataset_override)
         upwp_pr1, indep, dataset = self.getVarForCalculations('upwp_pr1', dataset_override)
@@ -1257,8 +1264,9 @@ class VariableGroupBaseBudgetsSamStyle(VariableGroup):
 
         return output_data, indep
 
-    def calc_upwp_limit(self, dataset_override=None):
+    def calc_upwp_limiters(self, dataset_override=None):
         '''
+        This term includes limiters, i.e. various types of clipping to prevent unwanted values.
         '''
         # z,z, dataset = self.getVarForCalculations('altitude', dataset_override)
         upwp_cl, indep, dataset = self.getVarForCalculations('upwp_cl', dataset_override)
@@ -1330,6 +1338,8 @@ class VariableGroupBaseBudgetsSamStyle(VariableGroup):
 
     def calc_vpwp_pres(self, dataset_override=None):
         '''
+        This function currently outputs an array of zeros since CLUBB does not have a comparable term
+        to SAM.  In the future one could replace this with an appropriate pressure term.
         '''
         # z,z, dataset = self.getVarForCalculations('altitude', dataset_override)
         vpwp_pr2, indep, dataset = self.getVarForCalculations('vpwp_pr2', dataset_override)
@@ -1340,6 +1350,14 @@ class VariableGroupBaseBudgetsSamStyle(VariableGroup):
 
     def calc_vpwp_aniz(self, dataset_override=None):
         '''
+        In SAM, vpwp_aniz ends up being equal to (-w'*dp'/dy-v'*dp'/dz)-d(v'p')/dz.
+        This is similar to the "scrambling" part of the pressure covariance,
+        since it's the total pressure contribution minus a diffusion part.  (It's not 
+        subtracting the total diffusion part, since there would also be d(w'p')/dz.)
+        Hence I have set vpwp_aniz equal to the sum of all current pressure contributions,
+        since they all parameterize the pressure-scrambling part of the equation.
+        As of now CLUBB doesn't explicitly model the "diffusion" part of the pressure
+        covariance vpwp_pres, so that part is set to zero.
         '''
         # z,z, dataset = self.getVarForCalculations('altitude', dataset_override)
         vpwp_pr1, indep, dataset = self.getVarForCalculations('vpwp_pr1', dataset_override)
@@ -1351,8 +1369,9 @@ class VariableGroupBaseBudgetsSamStyle(VariableGroup):
 
         return output_data, indep
 
-    def calc_vpwp_limit(self, dataset_override=None):
+    def calc_vpwp_limiters(self, dataset_override=None):
         '''
+        This term includes limiters, i.e. various types of clipping to prevent unwanted values.
         '''
         # z,z, dataset = self.getVarForCalculations('altitude', dataset_override)
         vpwp_cl, indep, dataset = self.getVarForCalculations('vpwp_cl', dataset_override)
