@@ -1790,8 +1790,11 @@ module mono_flux_limiter
       use constants_clubb, only: &
           sqrt_2pi, &  ! Constant(s)
           sqrt_2, &
-          one, &
-          one_half
+          one
+#ifdef MKL
+      use constants_clubb, only: &
+          one_half  ! Constant(s)
+#endif
 
       use clubb_precision, only: &
         core_rknd ! Variable(s)
