@@ -90,8 +90,9 @@ class VariableGroupBaseBudgetsSamStyle(VariableGroup):
         # According to https://carson.math.uwm.edu/larson-group/internal/SAM_LES_BUDGET_PLOTS/,
         # the DISSIP and DIFFTR terms in SAM should be equivalent to CLUBB's dp1 and dp2 terms,
         # respectively.  The DISSIP term is calculated by (approximately), K * (dX/dz )^2, 
-        # where K is eddy conductivity [m2/s]. The DIFFTR term is calculated as (approximately), 
-        # (X(curr)^2-X(prev)^2)/dt, where a general diffusion subroutine is applied 
+        # where K is eddy conductivity [m2/s].  (See e.g. around lines 486+ of SGS_TKE/sgs.F90.)
+        # The DIFFTR term is calculated as (approximately), (X(curr)^2-X(prev)^2)/dt, 
+        # (also from the sgs.F90 file) where a general diffusion subroutine is applied 
         # between the "curr" and "prev" values.  Because the DISSIP term more closely resembles
         # CLUBB's dp2 term, however, I've switched them here so that DISSIP = dp2 and DIFFTR = dp1.
         thlp2_budget_lines = [
@@ -111,8 +112,9 @@ class VariableGroupBaseBudgetsSamStyle(VariableGroup):
         # According to https://carson.math.uwm.edu/larson-group/internal/SAM_LES_BUDGET_PLOTS/,
         # the DISSIP and DIFFTR terms in SAM should be equivalent to CLUBB's dp1 and dp2 terms,
         # respectively.  The DISSIP term is calculated by (approximately), K * (dX/dz )^2, 
-        # where K is eddy conductivity [m2/s]. The DIFFTR term is calculated as (approximately), 
-        # (X(curr)^2-X(prev)^2)/dt, where a general diffusion subroutine is applied 
+        # where K is eddy conductivity [m2/s].  (See e.g. around lines 486+ of SGS_TKE/sgs.F90.)
+        # The DIFFTR term is calculated as (approximately), (X(curr)^2-X(prev)^2)/dt, 
+        # (also from the sgs.F90 file) where a general diffusion subroutine is applied 
         # between the "curr" and "prev" values.  Because the DISSIP term more closely resembles
         # CLUBB's dp2 term, however, I've switched them here so that DISSIP = dp2 and DIFFTR = dp1.
         rtp2_budget_lines = [
@@ -131,8 +133,9 @@ class VariableGroupBaseBudgetsSamStyle(VariableGroup):
         # According to https://carson.math.uwm.edu/larson-group/internal/SAM_LES_BUDGET_PLOTS/,
         # the DISSIP and DIFFTR terms in SAM should be equivalent to CLUBB's dp1 and dp2 terms,
         # respectively.  The DISSIP term is calculated by (approximately), K * (dX/dz )^2, 
-        # where K is eddy conductivity [m2/s]. The DIFFTR term is calculated as (approximately), 
-        # (X(curr)^2-X(prev)^2)/dt, where a general diffusion subroutine is applied 
+        # where K is eddy conductivity [m2/s].  (See e.g. around lines 486+ of SGS_TKE/sgs.F90.)
+        # The DIFFTR term is calculated as (approximately), (X(curr)^2-X(prev)^2)/dt, 
+        # (also from the sgs.F90 file) where a general diffusion subroutine is applied 
         # between the "curr" and "prev" values.  Because the DISSIP term more closely resembles
         # CLUBB's dp2 term, however, I've switched them here so that DISSIP = dp2 and DIFFTR = dp1.
         rtpthlp_budget_lines = [
@@ -1246,6 +1249,7 @@ class VariableGroupBaseBudgetsSamStyle(VariableGroup):
     def calc_upwp_aniz(self, dataset_override=None):
         '''
         In SAM, upwp_aniz ends up being equal to (-w'*dp'/dx-u'*dp'/dz)-d(u'p')/dz.
+        See around lines 990+ in statistics.f90 and the lines calculating presx.
         This is similar to the "scrambling" part of the pressure covariance,
         since it's the total pressure contribution minus a diffusion part.  (It's not 
         subtracting the total diffusion part, since there would also be d(w'p')/dz.)
@@ -1351,6 +1355,7 @@ class VariableGroupBaseBudgetsSamStyle(VariableGroup):
     def calc_vpwp_aniz(self, dataset_override=None):
         '''
         In SAM, vpwp_aniz ends up being equal to (-w'*dp'/dy-v'*dp'/dz)-d(v'p')/dz.
+        See around lines 990+ in statistics.f90 and the lines calculating presy.
         This is similar to the "scrambling" part of the pressure covariance,
         since it's the total pressure contribution minus a diffusion part.  (It's not 
         subtracting the total diffusion part, since there would also be d(w'p')/dz.)
