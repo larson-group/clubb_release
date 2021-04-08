@@ -2236,7 +2236,7 @@ do n = 1,nmicro_fields
    call add_to_namelist(count,microcount,name,longname,units,0)
 
    ! add vertical diffusive tendency
-   name = trim(mkname(n))//'DIFF'
+   name = trim(mkname(n))//'DFSN'
    longname = 'Tendency of '//trim(mklongname(n))// &
         ' due to vertical SGS transport'
    units = trim(mkunits(n))//'/day'
@@ -6064,7 +6064,7 @@ do n = 1,nmicro_fields
    ! tendencies
    call hbuf_put(trim(mkname(n))//'ADV', &
         mkadv(:,n),mkoutputscale(n)*factor_xy*86400./dtn)
-   call hbuf_put(trim(mkname(n))//'DIFF', &
+   call hbuf_put(trim(mkname(n))//'DFSN', &
         mkdiff(:,n),mkoutputscale(n)*factor_xy*86400./dtn)
    call hbuf_put(trim(mkname(n))//'LSADV', &
         mklsadv(:,n),mkoutputscale(n)*factor_xy*86400.)
