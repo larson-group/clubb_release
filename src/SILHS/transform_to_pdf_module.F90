@@ -62,7 +62,7 @@ module transform_to_pdf_module
       Sigma_Cholesky1, & ! Correlations Cholesky matrix, 1st component [-]
       Sigma_Cholesky2    ! Correlations Cholesky matrix, 2nd component [-]
 
-    real( kind = core_rknd ), dimension(ngrdcol,pdf_dim,nz), intent(in) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nz,pdf_dim), intent(in) :: &
       mu1, & ! Means of the hydrometeors,(chi, eta, w, <hydrometeors>), 1st component [units vary]
       mu2    ! Means of the hydrometeors,(chi, eta, w, <hydrometeors>), 2nd component [units vary]
 
@@ -514,7 +514,7 @@ module transform_to_pdf_module
     real( kind = core_rknd ), intent(in), dimension(pdf_dim,ngrdcol,nz,num_samples) :: &
       std_normal ! vector of d-variate standard normal distribution [-]
 
-    real( kind = core_rknd ), intent(in), dimension(ngrdcol,pdf_dim,nz) :: &
+    real( kind = core_rknd ), intent(in), dimension(ngrdcol,nz,pdf_dim) :: &
       mu1, & ! d-dimensional column vector of means of Gaussian, 1st component [units vary]
       mu2    ! d-dimensional column vector of means of Gaussian, 2nd component [units vary]
 
@@ -553,9 +553,9 @@ module transform_to_pdf_module
             l_first_comp = (X_mixt_comp_all_levs(i,sample,k) == 1)
             
             if ( l_first_comp ) then
-              X_nl_k_sample_i_tmp = mu1(i,p,k)
+              X_nl_k_sample_i_tmp = mu1(i,k,p)
             else
-              X_nl_k_sample_i_tmp = mu2(i,p,k)
+              X_nl_k_sample_i_tmp = mu2(i,k,p)
             end if
             
             do j = 1, p

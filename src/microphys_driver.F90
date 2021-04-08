@@ -237,13 +237,13 @@ module microphys_driver
     real( kind = core_rknd ), dimension(lh_num_samples,gr%nz), intent(in) :: &
       lh_sample_point_weights ! Weights for cloud weighted sampling
 
-    real( kind = core_rknd ), dimension(n_variables, gr%nz), intent(in) :: &
+    real( kind = core_rknd ), dimension(gr%nz,n_variables), intent(in) :: &
       mu_x_1_n,    & ! Mean array (normal space): PDF vars. (comp. 1) [un. vary]
       mu_x_2_n,    & ! Mean array (normal space): PDF vars. (comp. 2) [un. vary]
       sigma_x_1_n, & ! Std. dev. array (normal space): PDF vars (comp. 1) [u.v.]
       sigma_x_2_n    ! Std. dev. array (normal space): PDF vars (comp. 2) [u.v.]
 
-    real( kind = core_rknd ), dimension(n_variables, n_variables, gr%nz), &
+    real( kind = core_rknd ), dimension(gr%nz, n_variables, n_variables), &
     intent(in) :: &
       corr_array_1_n, & ! Corr. array (normal space) of PDF vars. (comp. 1)  [-]
       corr_array_2_n    ! Corr. array (normal space) of PDF vars. (comp. 2)  [-]

@@ -522,13 +522,13 @@ module KK_microphys_module
     real( kind = core_rknd ), dimension(nz,hydromet_dim), intent(in) :: &
       hydromet       ! Hydrometeor mean, < h_m > (thermodynamic levels)  [units]
 
-    real( kind = core_rknd ), dimension(pdf_dim, nz), intent(in) :: &
+    real( kind = core_rknd ), dimension(nz,pdf_dim), intent(in) :: &
       mu_x_1_n,    & ! Mean array (normal space): PDF vars. (comp. 1) [un. vary]
       mu_x_2_n,    & ! Mean array (normal space): PDF vars. (comp. 2) [un. vary]
       sigma_x_1_n, & ! Std. dev. array (normal space): PDF vars (comp. 1) [u.v.]
       sigma_x_2_n    ! Std. dev. array (normal space): PDF vars (comp. 2) [u.v.]
 
-    real( kind = core_rknd ), dimension(pdf_dim,pdf_dim,nz), &
+    real( kind = core_rknd ), dimension(nz,pdf_dim,pdf_dim), &
     intent(in) :: &
       corr_array_1_n, & ! Corr. array (normal space) of PDF vars. (comp. 1)  [-]
       corr_array_2_n    ! Corr. array (normal space) of PDF vars. (comp. 2)  [-]
@@ -727,10 +727,10 @@ module KK_microphys_module
 
 
        !!! Unpack the PDF parameters.
-       call unpack_pdf_params_KK( pdf_dim, mu_x_1_n(:,k), mu_x_2_n(:,k), &
-                                  sigma_x_1_n(:,k), sigma_x_2_n(:,k), &
-                                  corr_array_1_n(:,:,k), &
-                                  corr_array_2_n(:,:,k), &
+       call unpack_pdf_params_KK( pdf_dim, mu_x_1_n(k,:), mu_x_2_n(k,:), &
+                                  sigma_x_1_n(k,:), sigma_x_2_n(k,:), &
+                                  corr_array_1_n(k,:,:), &
+                                  corr_array_2_n(k,:,:), &
                                   hydromet_pdf_params(k), &
                                   mu_w_1, mu_w_2, mu_chi_1, mu_chi_2, &
                                   mu_eta_1, mu_eta_2, mu_rr_1, mu_rr_2, &

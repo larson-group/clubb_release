@@ -91,13 +91,13 @@ module mixed_moment_PDF_integrals
     real( kind = core_rknd ), dimension(nz,hydromet_dim), intent(in) :: &
       hydromet    ! Mean of hydrometeor, hm (overall) (t-levels)    [units vary]
 
-    real( kind = core_rknd ), dimension(pdf_dim, nz), intent(in) :: &
+    real( kind = core_rknd ), dimension(nz,pdf_dim), intent(in) :: &
       mu_x_1_n,    & ! Mean array (normal space): PDF vars. (comp. 1) [un. vary]
       mu_x_2_n,    & ! Mean array (normal space): PDF vars. (comp. 2) [un. vary]
       sigma_x_1_n, & ! Std. dev. array (normal space): PDF vars (comp. 1) [u.v.]
       sigma_x_2_n    ! Std. dev. array (normal space): PDF vars (comp. 2) [u.v.]
 
-    real( kind = core_rknd ), dimension(pdf_dim,pdf_dim,nz), &
+    real( kind = core_rknd ), dimension(nz,pdf_dim,pdf_dim), &
     intent(in) :: &
       corr_array_1_n, & ! Corr. array (normal space) of PDF vars. (comp. 1)  [-]
       corr_array_2_n    ! Corr. array (normal space) of PDF vars. (comp. 2)  [-]
@@ -194,26 +194,26 @@ module mixed_moment_PDF_integrals
     do k = 2, nz, 1
 
        ! Unpack the means of w, rt, and thl in each PDF component.
-       mu_w_1   = mu_x_1_n(iiPDF_w,k)
-       mu_w_2   = mu_x_2_n(iiPDF_w,k)
+       mu_w_1   = mu_x_1_n(k,iiPDF_w)
+       mu_w_2   = mu_x_2_n(k,iiPDF_w)
        mu_rt_1  = pdf_params%rt_1(k)
        mu_rt_2  = pdf_params%rt_2(k)
        mu_thl_1 = pdf_params%thl_1(k)
        mu_thl_2 = pdf_params%thl_2(k)
 
        ! Unpack the standard deviations of w, rt, and thl in each PDF component.
-       sigma_w_1   = sigma_x_1_n(iiPDF_w,k)
-       sigma_w_2   = sigma_x_2_n(iiPDF_w,k)
+       sigma_w_1   = sigma_x_1_n(k,iiPDF_w)
+       sigma_w_2   = sigma_x_2_n(k,iiPDF_w)
        sigma_rt_1  = sqrt( pdf_params%varnce_rt_1(k) )
        sigma_rt_2  = sqrt( pdf_params%varnce_rt_2(k) )
        sigma_thl_1 = sqrt( pdf_params%varnce_thl_1(k) )
        sigma_thl_2 = sqrt( pdf_params%varnce_thl_2(k) )
 
        ! Unpack the standard deviations of chi and eta in each PDF component.
-       sigma_chi_1 = sigma_x_1_n(iiPDF_chi,k)
-       sigma_chi_2 = sigma_x_2_n(iiPDF_chi,k)
-       sigma_eta_1 = sigma_x_1_n(iiPDF_eta,k)
-       sigma_eta_2 = sigma_x_2_n(iiPDF_eta,k)
+       sigma_chi_1 = sigma_x_1_n(k,iiPDF_chi)
+       sigma_chi_2 = sigma_x_2_n(k,iiPDF_chi)
+       sigma_eta_1 = sigma_x_1_n(k,iiPDF_eta)
+       sigma_eta_2 = sigma_x_2_n(k,iiPDF_eta)
 
        ! Unpack the mixture fraction.
        mixt_frac = pdf_params%mixt_frac(k)
@@ -304,18 +304,18 @@ module mixed_moment_PDF_integrals
           pdf_idx = hydromet2pdf_idx(hm_idx)
 
           ! Unpack the mean (in-precip) of ln hm in each PDF component.
-          mu_hm_1_n = mu_x_1_n(pdf_idx,k)
-          mu_hm_2_n = mu_x_2_n(pdf_idx,k)
+          mu_hm_1_n = mu_x_1_n(k,pdf_idx)
+          mu_hm_2_n = mu_x_2_n(k,pdf_idx)
 
           ! Unpack the standard deviation (in-precip) of ln hm in each PDF
           ! component.
-          sigma_hm_1_n = sigma_x_1_n(pdf_idx,k)
-          sigma_hm_2_n = sigma_x_2_n(pdf_idx,k)
+          sigma_hm_1_n = sigma_x_1_n(k,pdf_idx)
+          sigma_hm_2_n = sigma_x_2_n(k,pdf_idx)
 
           ! Unpack the correlation (in-precip) of w and ln hm in each PDF
           ! component.
-          corr_w_hm_1_n = corr_array_1_n(pdf_idx,iiPDF_w,k)
-          corr_w_hm_2_n = corr_array_2_n(pdf_idx,iiPDF_w,k)
+          corr_w_hm_1_n = corr_array_1_n(k,pdf_idx,iiPDF_w)
+          corr_w_hm_2_n = corr_array_2_n(k,pdf_idx,iiPDF_w)
 
           ! Unpack the mean (overall) value of the hydrometeor.
           hm_mean = hydromet(k,hm_idx)

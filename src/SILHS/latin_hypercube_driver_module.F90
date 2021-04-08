@@ -134,11 +134,11 @@ module latin_hypercube_driver_module
       l_calc_weights_all_levs_itime ! determines if vertically correlated sample points are needed
       
     ! More Input Variables!
-    real( kind = core_rknd ), dimension(ngrdcol,pdf_dim,pdf_dim,nz), intent(in) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nz,pdf_dim,pdf_dim), intent(in) :: &
       corr_cholesky_mtx_1, & ! Correlations Cholesky matrix (1st comp.)  [-]
       corr_cholesky_mtx_2    ! Correlations Cholesky matrix (2nd comp.)  [-]
 
-    real( kind = core_rknd ), dimension(ngrdcol,pdf_dim,nz), intent(in) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nz,pdf_dim), intent(in) :: &
       mu1,    & ! Means of the hydrometeors, 1st comp. (chi, eta, w, <hydrometeors>)  [units vary]
       mu2,    & ! Means of the hydrometeors, 2nd comp. (chi, eta, w, <hydrometeors>)  [units vary]
       sigma1, & ! Stdevs of the hydrometeors, 1st comp. (chi, eta, w, <hydrometeors>) [units vary]
@@ -249,13 +249,13 @@ module latin_hypercube_driver_module
                                      
     ! Calculate possible Sigma_Cholesky values
     ! Row-wise multiply of the elements of a lower triangular matrix.
-    do k = 1, nz
-      do p = 1, pdf_dim
-        do j = 1, p
+    do p = 1, pdf_dim
+      do j = 1, p
+        do k = 1, nz
           do i = 1, ngrdcol
             ! Calculate possible Sigma_Cholesky values
-            Sigma_Cholesky1(j,i,k,p) = corr_cholesky_mtx_1(i,p,j,k) * sigma1(i,p,k)
-            Sigma_Cholesky2(j,i,k,p) = corr_cholesky_mtx_2(i,p,j,k) * sigma2(i,p,k)
+            Sigma_Cholesky1(j,i,k,p) = corr_cholesky_mtx_1(i,k,p,j) * sigma1(i,k,p)
+            Sigma_Cholesky2(j,i,k,p) = corr_cholesky_mtx_2(i,k,p,j) * sigma2(i,k,p)
           end do
         end do
       end do

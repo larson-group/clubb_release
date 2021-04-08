@@ -587,7 +587,7 @@ module clubb_driver
       sigma_x_1_n, & ! Std. dev. array (normal space): PDF vars (comp. 1) [u.v.]
       sigma_x_2_n    ! Std. dev. array (normal space): PDF vars (comp. 2) [u.v.]
 
-    real( kind = core_rknd ), dimension(:,:,:), allocatable :: &
+    real( kind = core_rknd ), dimension(:,:,:,:), allocatable :: &
       corr_array_1_n, & ! Corr. array (normal space) of PDF vars. (comp. 1)  [-]
       corr_array_2_n    ! Corr. array (normal space) of PDF vars. (comp. 2)  [-]
 
@@ -1716,16 +1716,16 @@ module clubb_driver
     end do
 
     ! Allocate the correlation arrays
-    allocate(corr_array_1_n(pdf_dim, pdf_dim, gr%nz))
-    allocate(corr_array_2_n(pdf_dim, pdf_dim, gr%nz))
-    allocate(corr_cholesky_mtx_1(1,pdf_dim, pdf_dim, gr%nz))
-    allocate(corr_cholesky_mtx_2(1,pdf_dim, pdf_dim, gr%nz))
+    allocate(corr_array_1_n(1,gr%nz,pdf_dim,pdf_dim))
+    allocate(corr_array_2_n(1,gr%nz,pdf_dim,pdf_dim))
+    allocate(corr_cholesky_mtx_1(1,gr%nz,pdf_dim,pdf_dim))
+    allocate(corr_cholesky_mtx_2(1,gr%nz,pdf_dim,pdf_dim))
 
     ! Allocate the mean and stddev arrays
-    allocate(mu_x_1_n(1,pdf_dim, gr%nz))
-    allocate(mu_x_2_n(1,pdf_dim, gr%nz))
-    allocate(sigma_x_1_n(1,pdf_dim, gr%nz))
-    allocate(sigma_x_2_n(1,pdf_dim, gr%nz))
+    allocate(mu_x_1_n(1,gr%nz,pdf_dim))
+    allocate(mu_x_2_n(1,gr%nz,pdf_dim))
+    allocate(sigma_x_1_n(1,gr%nz,pdf_dim))
+    allocate(sigma_x_2_n(1,gr%nz,pdf_dim))
 
     ! Initialize to 0.
     rvm_mc  = zero
@@ -2197,34 +2197,34 @@ module clubb_driver
       if ( .not. trim( microphys_scheme ) == "none" ) then
 
          !!! Setup the PDF parameters.
-         call setup_pdf_parameters_api( gr%nz, pdf_dim, dt_main,                         & ! Intent(in)
-                                    Nc_in_cloud, rcm(1,:), cloud_frac, Kh_zm,        & ! Intent(in)
-                                    ice_supersat_frac, hydromet, wphydrometp,        & ! Intent(in)
-                                    corr_array_n_cloud, corr_array_n_below,          & ! Intent(in)
-                                    pdf_params(1), l_stats_samp,                     & ! Intent(in)
-                                    clubb_config_flags%iiPDF_type,                   & ! Intent(in)
-                                    l_use_precip_frac,                               & ! Intent(in)
-                                    clubb_config_flags%l_predict_upwp_vpwp,          & ! Intent(in)
-                                    clubb_config_flags%l_diagnose_correlations,      & ! Intent(in)
-                                    clubb_config_flags%l_calc_w_corr,                & ! Intent(in)
-                                    clubb_config_flags%l_const_Nc_in_cloud,          & ! Intent(in)
-                                    clubb_config_flags%l_fix_w_chi_eta_correlations, & ! Intent(in)
-                                    hydrometp2,                                      & ! Intent(out)
-                                    mu_x_1_n(1,:,:), mu_x_2_n(1,:,:),                & ! Intent(out)
-                                    sigma_x_1_n(1,:,:), sigma_x_2_n(1,:,:),          & ! Intent(out)
-                                    corr_array_1_n, corr_array_2_n,                  & ! Intent(out)
-                                    corr_cholesky_mtx_1(1,:,:,:), corr_cholesky_mtx_2(1,:,:,:),        & ! Intent(out)
-                                    hydromet_pdf_params(1,:) )                         ! Intent(out)
+         call setup_pdf_parameters_api( gr%nz, pdf_dim, dt_main,                    & ! Intent(in)
+                        Nc_in_cloud, rcm(1,:), cloud_frac, Kh_zm,                   & ! Intent(in)
+                        ice_supersat_frac, hydromet, wphydrometp,                   & ! Intent(in)
+                        corr_array_n_cloud, corr_array_n_below,                     & ! Intent(in)
+                        pdf_params(1), l_stats_samp,                                & ! Intent(in)
+                        clubb_config_flags%iiPDF_type,                              & ! Intent(in)
+                        l_use_precip_frac,                                          & ! Intent(in)
+                        clubb_config_flags%l_predict_upwp_vpwp,                     & ! Intent(in)
+                        clubb_config_flags%l_diagnose_correlations,                 & ! Intent(in)
+                        clubb_config_flags%l_calc_w_corr,                           & ! Intent(in)
+                        clubb_config_flags%l_const_Nc_in_cloud,                     & ! Intent(in)
+                        clubb_config_flags%l_fix_w_chi_eta_correlations,            & ! Intent(in)
+                        hydrometp2,                                                 & ! Intent(out)
+                        mu_x_1_n(1,:,:), mu_x_2_n(1,:,:),                           & ! Intent(out)
+                        sigma_x_1_n(1,:,:), sigma_x_2_n(1,:,:),                     & ! Intent(out)
+                        corr_array_1_n(1,:,:,:), corr_array_2_n(1,:,:,:),           & ! Intent(out)
+                        corr_cholesky_mtx_1(1,:,:,:), corr_cholesky_mtx_2(1,:,:,:), & ! Intent(out)
+                        hydromet_pdf_params(1,:) )                                    ! Intent(out)
 
          if ( err_code == clubb_fatal_error ) error stop
 
          ! Calculate < rt'hm' >, < thl'hm' >, and < w'^2 hm' >.
-         call hydrometeor_mixed_moments( gr%nz, pdf_dim, hydromet,                & ! Intent(in)
-                                         mu_x_1_n(1,:,:), mu_x_2_n(1,:,:),        & ! Intent(in)
-                                         sigma_x_1_n(1,:,:), sigma_x_2_n(1,:,:),  & ! Intent(in)
-                                         corr_array_1_n, corr_array_2_n,          & ! Intent(in)
-                                         pdf_params(1), hydromet_pdf_params(1,:), & ! Intent(in)
-                                         rtphmp_zt, thlphmp_zt, wp2hmp )            ! Intent(out)
+         call hydrometeor_mixed_moments( gr%nz, pdf_dim, hydromet,                   & ! Intent(in)
+                                   mu_x_1_n(1,:,:), mu_x_2_n(1,:,:),                 & ! Intent(in)
+                                   sigma_x_1_n(1,:,:), sigma_x_2_n(1,:,:),           & ! Intent(in)
+                                   corr_array_1_n(1,:,:,:), corr_array_2_n(1,:,:,:), & ! Intent(in)
+                                   pdf_params(1), hydromet_pdf_params(1,:),          & ! Intent(in)
+                                   rtphmp_zt, thlphmp_zt, wp2hmp )                     ! Intent(out)
 
       endif ! not microphys_scheme == "none"
       
@@ -2351,7 +2351,7 @@ module clubb_driver
                               lh_sample_point_weights(1,:,:), &                       ! In
                               mu_x_1_n(1,:,:), mu_x_2_n(1,:,:), &                     ! In
                               sigma_x_1_n(1,:,:), sigma_x_2_n(1,:,:), &               ! In
-                              corr_array_1_n, corr_array_2_n, &                       ! In
+                              corr_array_1_n(1,:,:,:), corr_array_2_n(1,:,:,:), &     ! In
                               lh_rt_clipped(1,:,:), lh_thl_clipped(1,:,:), &          ! In
                               lh_rc_clipped(1,:,:), lh_rv_clipped(1,:,:), &           ! In
                               lh_Nc_clipped(1,:,:), &                                 ! In

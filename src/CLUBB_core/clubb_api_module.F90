@@ -1769,18 +1769,18 @@ contains
       hydrometp2    ! Variance of a hydrometeor (overall) (m-levs.)   [units^2]
 
     ! Output Variables
-    real( kind = core_rknd ), dimension(pdf_dim, nz), intent(out) :: &
+    real( kind = core_rknd ), dimension(nz,pdf_dim), intent(out) :: &
       mu_x_1_n,    & ! Mean array (normal space): PDF vars. (comp. 1) [un. vary]
       mu_x_2_n,    & ! Mean array (normal space): PDF vars. (comp. 2) [un. vary]
       sigma_x_1_n, & ! Std. dev. array (normal space): PDF vars (comp. 1) [u.v.]
       sigma_x_2_n    ! Std. dev. array (normal space): PDF vars (comp. 2) [u.v.]
 
-    real( kind = core_rknd ), dimension(pdf_dim,pdf_dim,nz), &
+    real( kind = core_rknd ), dimension(nz,pdf_dim,pdf_dim), &
       intent(out) :: &
       corr_array_1_n, & ! Corr. array (normal space):  PDF vars. (comp. 1)   [-]
       corr_array_2_n    ! Corr. array (normal space):  PDF vars. (comp. 2)   [-]
 
-    real( kind = core_rknd ), dimension(pdf_dim,pdf_dim,nz), &
+    real( kind = core_rknd ), dimension(nz,pdf_dim,pdf_dim), &
       intent(out) :: &
       corr_cholesky_mtx_1, & ! Transposed corr. cholesky matrix, 1st comp. [-]
       corr_cholesky_mtx_2    ! Transposed corr. cholesky matrix, 2nd comp. [-]
@@ -1809,17 +1809,17 @@ contains
       hydrometp2_col    ! Variance of a hydrometeor (overall) (m-levs.)   [units^2]
 
     ! Output Variables
-    real( kind = core_rknd ), dimension(1,pdf_dim, nz) :: &
+    real( kind = core_rknd ), dimension(1,nz,pdf_dim) :: &
       mu_x_1_n_col,    & ! Mean array (normal space): PDF vars. (comp. 1) [un. vary]
       mu_x_2_n_col,    & ! Mean array (normal space): PDF vars. (comp. 2) [un. vary]
       sigma_x_1_n_col, & ! Std. dev. array (normal space): PDF vars (comp. 1) [u.v.]
       sigma_x_2_n_col    ! Std. dev. array (normal space): PDF vars (comp. 2) [u.v.]
 
-    real( kind = core_rknd ), dimension(1,pdf_dim,pdf_dim,nz) :: &
+    real( kind = core_rknd ), dimension(1,nz,pdf_dim,pdf_dim) :: &
       corr_array_1_n_col, & ! Corr. array (normal space):  PDF vars. (comp. 1)   [-]
       corr_array_2_n_col    ! Corr. array (normal space):  PDF vars. (comp. 2)   [-]
 
-    real( kind = core_rknd ), dimension(1,pdf_dim,pdf_dim,nz) :: &
+    real( kind = core_rknd ), dimension(1,nz,pdf_dim,pdf_dim) :: &
       corr_cholesky_mtx_1_col, & ! Transposed corr. cholesky matrix, 1st comp. [-]
       corr_cholesky_mtx_2_col    ! Transposed corr. cholesky matrix, 2nd comp. [-]
 
@@ -1961,18 +1961,18 @@ contains
       hydrometp2    ! Variance of a hydrometeor (overall) (m-levs.)   [units^2]
 
     ! Output Variables
-    real( kind = core_rknd ), dimension(ngrdcol,pdf_dim, nz), intent(out) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nz,pdf_dim), intent(out) :: &
       mu_x_1_n,    & ! Mean array (normal space): PDF vars. (comp. 1) [un. vary]
       mu_x_2_n,    & ! Mean array (normal space): PDF vars. (comp. 2) [un. vary]
       sigma_x_1_n, & ! Std. dev. array (normal space): PDF vars (comp. 1) [u.v.]
       sigma_x_2_n    ! Std. dev. array (normal space): PDF vars (comp. 2) [u.v.]
 
-    real( kind = core_rknd ), dimension(ngrdcol,pdf_dim,pdf_dim,nz), &
+    real( kind = core_rknd ), dimension(ngrdcol,nz,pdf_dim,pdf_dim), &
       intent(out) :: &
       corr_array_1_n, & ! Corr. array (normal space):  PDF vars. (comp. 1)   [-]
       corr_array_2_n    ! Corr. array (normal space):  PDF vars. (comp. 2)   [-]
 
-    real( kind = core_rknd ), dimension(ngrdcol,pdf_dim,pdf_dim,nz), &
+    real( kind = core_rknd ), dimension(ngrdcol,nz,pdf_dim,pdf_dim), &
       intent(out) :: &
       corr_cholesky_mtx_1, & ! Transposed corr. cholesky matrix, 1st comp. [-]
       corr_cholesky_mtx_2    ! Transposed corr. cholesky matrix, 2nd comp. [-]
