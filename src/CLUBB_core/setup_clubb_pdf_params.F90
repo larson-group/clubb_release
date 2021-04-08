@@ -369,9 +369,6 @@ module setup_clubb_pdf_params
       cloud_frac_1(j,:) = pdf_params(j)%cloud_frac_1
       cloud_frac_2(j,:) = pdf_params(j)%cloud_frac_2
       mixt_frac(j,:)    = pdf_params(j)%mixt_frac
-
-      ice_supersat_frac_1(j,:) = pdf_params(j)%ice_supersat_frac_1
-      ice_supersat_frac_2(j,:) = pdf_params(j)%ice_supersat_frac_2
     end do
     
     ! Recalculate wm_zt and wp2_zt.  Mean vertical velocity may not be easy to
@@ -405,7 +402,12 @@ module setup_clubb_pdf_params
 
     ! Calculate precipitation fraction.
     if ( l_use_precip_frac ) then
-        
+      
+      do j = 1, ngrdcol
+        ice_supersat_frac_1(j,:) = pdf_params(j)%ice_supersat_frac_1
+        ice_supersat_frac_2(j,:) = pdf_params(j)%ice_supersat_frac_2
+      end do
+      
       call precip_fraction( nz, ngrdcol,                                              & ! In
                             hydromet(:,:,:), cloud_frac(:,:), cloud_frac_1(:,:),      & ! In
                             cloud_frac_2(:,:), ice_supersat_frac(:,:),                & ! In
@@ -491,7 +493,7 @@ module setup_clubb_pdf_params
       do i = 1, hydromet_dim
         if ( ihmp2_zt(i) > 0 ) then
           ! Variance (overall) of the hydrometeor, <hm'^2>.
-!         call stat_update_var( ihmp2_zt(i), hydrometp2_zt(:,i), stats_zt )
+          ! call stat_update_var( ihmp2_zt(i), hydrometp2_zt(:,i), stats_zt )
           ! Switch back to using stat_update_var once the code is generalized
           ! to pass in the number of vertical levels.
             do k = 1, nz, 1
@@ -579,7 +581,7 @@ module setup_clubb_pdf_params
          ! to pass in the number of vertical levels.
          if ( iprecip_frac > 0 ) then
             ! Overall precipitation fraction.
-  !          call stat_update_var( iprecip_frac, precip_frac, stats_zt )
+            ! call stat_update_var( iprecip_frac, precip_frac, stats_zt )
             do k = 1, nz, 1
                call stat_update_var_pt( iprecip_frac, k, precip_frac(j,k), &
                                         stats_zt )
@@ -588,7 +590,7 @@ module setup_clubb_pdf_params
 
          if ( iprecip_frac_1 > 0 ) then
             ! Precipitation fraction in PDF component 1.
-  !          call stat_update_var( iprecip_frac_1, precip_frac_1, stats_zt )
+            ! call stat_update_var( iprecip_frac_1, precip_frac_1, stats_zt )
             do k = 1, nz, 1
                call stat_update_var_pt( iprecip_frac_1, k, precip_frac_1(j,k), &
                                         stats_zt )
@@ -597,7 +599,7 @@ module setup_clubb_pdf_params
 
          if ( iprecip_frac_2 > 0 ) then
             ! Precipitation fraction in PDF component 2.
-  !          call stat_update_var( iprecip_frac_2, precip_frac_2, stats_zt )
+            ! call stat_update_var( iprecip_frac_2, precip_frac_2, stats_zt )
             do k = 1, nz, 1
                call stat_update_var_pt( iprecip_frac_2, k, precip_frac_2(j,k), &
                                         stats_zt )
@@ -606,7 +608,7 @@ module setup_clubb_pdf_params
 
          if ( iNcnm > 0 ) then
             ! Mean simplified cloud nuclei concentration (overall).
-  !          call stat_update_var( iNcnm, Ncnm, stats_zt )
+            ! call stat_update_var( iNcnm, Ncnm, stats_zt )
             do k = 1, nz, 1
                call stat_update_var_pt( iNcnm, k, Ncnm(j,k), stats_zt )
             end do ! k = 1, nz, 1
@@ -692,31 +694,91 @@ module setup_clubb_pdf_params
 
         end do
       end do
+      
+      do k = 2, nz, 1
+        do j = 1, ngrdcol
+          call calc_cholesky_corr_mtx_approx &
+                         ( pdf_dim, corr_array_1_n(j,:,:,k), &           ! intent(in)
+                           corr_cholesky_mtx_1(j,:,:,k), corr_array_1_n(j,:,:,k) ) ! intent(out)
+        end do
+      end do
+
+      do k = 2, nz, 1
+        do j = 1, ngrdcol
+          call calc_cholesky_corr_mtx_approx &
+                         ( pdf_dim, corr_array_2_n(j,:,:,k), &           ! intent(in)
+                           corr_cholesky_mtx_2(j,:,:,k), corr_array_2_n(j,:,:,k) ) ! intent(out)
+        end do
+      end do
 
     else ! if .not. l_diagnose_correlations
+      
+      if ( .not. l_interp_prescribed_params .and. l_fix_w_chi_eta_correlations &
+           .and. .not. l_calc_w_corr ) then
+        
+        ! When the flags are set this way, the correlation matrices do not vary with any vertical
+        ! values, and instead are determined entirely by prescribed values. This results in there
+        ! being only two unique correlation matrices, one for when the grid box is in cloud
+        ! and one for when it is not. So instead of setting up correlation matrices for all
+        ! grid boxes then calculating their Cholesky decomps, we can simply set up two correlation
+        ! matrices, one for in cloud and one for out cloud, calculate the corresponding 
+        ! Cholesky decompositions, then use the value of rc at each grid box to determine whether
+        ! we assign the in cloud or out of cloud matrices to that grid box. 
+        call calc_corr_norm_and_cholesky_factor( nz, ngrdcol, pdf_dim, iiPDF_type, &
+                                                 rc_1, rc_2, &
+                                                 corr_array_n_cloud, corr_array_n_below, &
+                                                 corr_array_1_n, corr_array_2_n, &
+                                                 corr_cholesky_mtx_1, corr_cholesky_mtx_2 )
+        
+      else
+        
+        ! The correlation matrices can vary with vertical values. So we need to set the 
+        ! correlation matrices up for each grid box, then find the Cholesky decomp for each
+        ! grid box individually. This is very computationally expensive.
 
-      call comp_corr_norm( nz, pdf_dim, ngrdcol, wm_zt(:,:), rc_1(:,:), rc_2(:,:), &
-                           cloud_frac_1(:,:), cloud_frac_2(:,:), mixt_frac(:,:), &
-                           precip_frac_1(:,:), precip_frac_2(:,:), &
-                           wpNcnp_zt(:,:), wphydrometp_zt(:,:,:), &
-                           mu_x_1(:,:,:), mu_x_2(:,:,:), &
-                           sigma_x_1(:,:,:), sigma_x_2(:,:,:), &
-                           sigma_x_1_n(:,:,:), sigma_x_2_n(:,:,:), &
-                           corr_array_n_cloud, corr_array_n_below, &
-                           pdf_params, &
-                           iiPDF_type, &
-                           l_calc_w_corr, &
-                           l_fix_w_chi_eta_correlations, &
-                           corr_array_1_n(:,:,:,:), corr_array_2_n(:,:,:,:) )
+        call comp_corr_norm( nz, pdf_dim, ngrdcol, wm_zt(:,:), rc_1(:,:), rc_2(:,:), &
+                             cloud_frac_1(:,:), cloud_frac_2(:,:), mixt_frac(:,:), &
+                             precip_frac_1(:,:), precip_frac_2(:,:), &
+                             wpNcnp_zt(:,:), wphydrometp_zt(:,:,:), &
+                             mu_x_1(:,:,:), mu_x_2(:,:,:), &
+                             sigma_x_1(:,:,:), sigma_x_2(:,:,:), &
+                             sigma_x_1_n(:,:,:), sigma_x_2_n(:,:,:), &
+                             corr_array_n_cloud, corr_array_n_below, &
+                             pdf_params, &
+                             iiPDF_type, &
+                             l_calc_w_corr, &
+                             l_fix_w_chi_eta_correlations, &
+                             corr_array_1_n(:,:,:,:), corr_array_2_n(:,:,:,:) )
+                             
+        ! Compute choleksy factorization for the correlation matrix of 1st PDF component
+        do k = 2, nz, 1
+          do j = 1, ngrdcol
+            call Cholesky_factor( pdf_dim, corr_array_1_n(j,:,:,k), & ! In
+                                  corr_array_scaling, corr_cholesky_mtx_1(j,:,:,k), &  ! Out
+                                  l_corr_array_scaling ) ! Out
+          end do
+        end do
+        
+        ! Compute choleksy factorization for the correlation matrix of 2nd PDF component
+        do k = 2, nz, 1
+          do j = 1, ngrdcol
+            call Cholesky_factor( pdf_dim, corr_array_2_n(j,:,:,k), & ! In
+                                  corr_array_scaling, corr_cholesky_mtx_2(j,:,:,k), &  ! Out
+                                  l_corr_array_scaling ) ! Out
+          end do
+        end do
+        
+      end if
+      
     end if ! l_diagnose_correlations
 
     !!! Calculate the true correlations for each PDF component.
     call denorm_transform_corr_2D( nz, ngrdcol, pdf_dim, &
-                                sigma_x_1_n(:,:,:), sigma_x_2_n(:,:,:), &
-                                sigma2_on_mu2_ip_1(:,:,:), sigma2_on_mu2_ip_2(:,:,:), &
-                                corr_array_1_n(:,:,:,:), &
-                                corr_array_2_n(:,:,:,:), &
-                                corr_array_1(:,:,:,:), corr_array_2(:,:,:,:) )
+                                   sigma_x_1_n(:,:,:), sigma_x_2_n(:,:,:), &
+                                   sigma2_on_mu2_ip_1(:,:,:), sigma2_on_mu2_ip_2(:,:,:), &
+                                   corr_array_1_n(:,:,:,:), &
+                                   corr_array_2_n(:,:,:,:), &
+                                   corr_array_1(:,:,:,:), corr_array_2(:,:,:,:) )
 
     !!! Statistics for standard PDF parameters involving hydrometeors.
     if ( l_stats_samp ) then
@@ -750,46 +812,6 @@ module setup_clubb_pdf_params
     ! Loop over all model thermodynamic level above the model lower boundary.
     ! Now also including "model lower boundary" -- Eric Raut Aug 2013
     ! Now not  including "model lower boundary" -- Eric Raut Aug 2014
-
-    if ( l_diagnose_correlations ) then
-         
-      do k = 2, nz, 1
-        do j = 1, ngrdcol
-          call calc_cholesky_corr_mtx_approx &
-                         ( pdf_dim, corr_array_1_n(j,:,:,k), &           ! intent(in)
-                           corr_cholesky_mtx_1(j,:,:,k), corr_array_1_n(j,:,:,k) ) ! intent(out)
-        end do
-      end do
-
-      do k = 2, nz, 1
-        do j = 1, ngrdcol
-          call calc_cholesky_corr_mtx_approx &
-                         ( pdf_dim, corr_array_2_n(j,:,:,k), &           ! intent(in)
-                           corr_cholesky_mtx_2(j,:,:,k), corr_array_2_n(j,:,:,k) ) ! intent(out)
-        end do
-      end do
-
-    else
-      
-      ! Compute choleksy factorization for the correlation matrix (out of
-      ! cloud)
-      do k = 2, nz, 1
-        do j = 1, ngrdcol
-          call Cholesky_factor( pdf_dim, corr_array_1_n(j,:,:,k), & ! In
-                                corr_array_scaling, corr_cholesky_mtx_1(j,:,:,k), &  ! Out
-                                l_corr_array_scaling ) ! Out
-        end do
-      end do
-      
-      do k = 2, nz, 1
-        do j = 1, ngrdcol
-          call Cholesky_factor( pdf_dim, corr_array_2_n(j,:,:,k), & ! In
-                                corr_array_scaling, corr_cholesky_mtx_2(j,:,:,k), &  ! Out
-                                l_corr_array_scaling ) ! Out
-        end do
-      end do
-        
-    end if
 
     ! For ease of use later in the code, we make the correlation arrays
     ! symmetrical
@@ -1120,7 +1142,186 @@ module setup_clubb_pdf_params
     return
 
   end subroutine compute_mean_stdev
+  
+  !=============================================================================
+  subroutine calc_corr_norm_and_cholesky_factor( nz, ngrdcol, pdf_dim, iiPDF_type, &
+                                                 rc_1, rc_2, &
+                                                 corr_array_n_cloud, corr_array_n_below, &
+                                                 corr_array_1_n, corr_array_2_n, &
+                                                 corr_cholesky_mtx_1, corr_cholesky_mtx_2 )
 
+    ! Description: This subroutine computes the correlation arrays and correlation
+    !   Cholesky matrices of PDF vars for both components. Here, we assume that
+    !   there are only two unique correlation arrays, which allows us to compute 
+    !   these two unique arrays and their corresponding Cholesky decompositions,
+    !   then use rc to determine which one to assign to each grid column and 
+    !   vertical level. If the correlation arrays vary based on vertically varying
+    !   values, then this subroutine is not appropriate.
+    !   
+    ! References:
+    !   https://github.com/larson-group/cam/issues/129#issuecomment-816205563
+    !-----------------------------------------------------------------------
+    
+    use constants_clubb, only:  &
+        rc_tol,      &
+        zero
+
+    use clubb_precision, only: &
+        core_rknd  ! Variable(s)
+
+    use array_index, only: &
+        iiPDF_chi, & ! Variable(s)
+        iiPDF_eta, &
+        iiPDF_w,   &
+        iiPDF_Ncn
+        
+    use model_flags, only: &
+        iiPDF_ADG1,       & ! Variable(s)
+        iiPDF_ADG2,       &
+        iiPDF_new_hybrid
+
+    use pdf_parameter_module, only: &
+        pdf_parameter  ! Variable(s)    
+        
+    use matrix_operations, only: &
+        Cholesky_factor ! Procedure(s)
+
+    implicit none
+
+    ! Input Variables
+    integer, intent(in) :: &
+      nz,      & ! Number of vertical levels
+      pdf_dim, & ! Number of variables in the corr/mean/stdev arrays
+      ngrdcol    ! Number of grid columns
+
+    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: &
+      rc_1,   & ! Mean of r_c (1st PDF component)                 [kg/kg]
+      rc_2      ! Mean of r_c (2nd PDF component)                 [kg/kg]
+
+    real( kind = core_rknd ), dimension(pdf_dim,pdf_dim), intent(in) :: &
+      corr_array_n_cloud, & ! Prescribed correlation array in cloud        [-]
+      corr_array_n_below    ! Prescribed correlation array below cloud     [-]
+
+    integer, intent(in) :: &
+      iiPDF_type    ! Selected option for the two-component normal (double
+                    ! Gaussian) PDF type to use for the w, rt, and theta-l (or
+                    ! w, chi, and eta) portion of CLUBB's multivariate,
+                    ! two-component PDF.
+                    
+    ! Output Variables
+    real( kind = core_rknd ), dimension(ngrdcol,pdf_dim,pdf_dim,nz), intent(out) :: &
+      corr_array_1_n,       & ! Corr. array (normal space) of PDF vars. (comp. 1)  [-]
+      corr_array_2_n,       & ! Corr. array (normal space) of PDF vars. (comp. 2)  [-]
+      corr_cholesky_mtx_1,  & ! Transposed corr. cholesky matrix, 1st comp.        [-]
+      corr_cholesky_mtx_2     ! Transposed corr. cholesky matrix, 2nd comp.        [-]
+
+    ! Local Variables
+    real( kind = core_rknd ), dimension(pdf_dim,pdf_dim) :: &
+      corr_array_cloud,         & ! General in cloud corr. matrix
+      corr_array_below,         & ! General out of cloud corr. matrix
+      corr_cholesky_mtx_cloud,  & ! General in cloud Cholesky matrix
+      corr_cholesky_mtx_below     ! General out of cloud Cholesky matrix
+      
+    logical :: &
+      l_corr_array_scaling  ! Dummy variable that we need for calling Cholesky_factor
+      
+    real( kind = core_rknd ), dimension(pdf_dim) :: &
+      corr_array_scaling    ! Dummy variable that we need for calling Cholesky_factor
+
+    integer :: jvar, j, k ! Indices
+    
+    logical, parameter :: &
+      l_follow_ADG1_PDF_standards = .true.
+                                    
+    !-------------------- Begin Code --------------------
+    
+    ! Initialize correlation arrays with prescribed values
+    corr_array_cloud(:,:) = corr_array_n_cloud(:,:)
+    corr_array_below(:,:) = corr_array_n_below(:,:)
+    
+    ! The ADG1 PDF fixes the correlation of w and rt and the correlation of
+    ! w and theta_l to be 0, which means the correlation of w and chi and the
+    ! correlation of w and eta must also be 0.
+    if ( ( iiPDF_type == iiPDF_ADG1 .or. iiPDF_type == iiPDF_ADG2 &
+            .or. iiPDF_type == iiPDF_new_hybrid ) &
+          .and. l_follow_ADG1_PDF_standards ) then
+          
+      corr_array_cloud(iiPDF_w,iiPDF_chi) = zero
+      corr_array_below(iiPDF_w,iiPDF_chi) = zero
+      
+      corr_array_cloud(iiPDF_w,iiPDF_eta) = zero
+      corr_array_below(iiPDF_w,iiPDF_eta) = zero
+      
+    end if
+    
+    ! Ncn is an inherently in-cloud property, so replace out of cloud correlation values
+    ! with in cloud ones.
+    corr_array_below(iiPDF_Ncn,iiPDF_chi) = corr_array_cloud(iiPDF_Ncn,iiPDF_chi)
+    corr_array_below(iiPDF_Ncn,iiPDF_eta) = corr_array_cloud(iiPDF_Ncn,iiPDF_eta)
+    
+    
+    ! Estimates the correlation of the natural logarithm of a
+    ! hydrometeor species and eta using the correlation of chi and eta and the
+    ! correlation of chi and the natural logarithm of the hydrometeor.  This
+    ! facilitates the Cholesky decomposability of the correlation array that will
+    ! inevitably be decomposed for SILHS purposes. Without this estimation, we
+    ! have found that the resulting correlation matrix cannot be decomposed.
+    do jvar = iiPDF_Ncn+1, pdf_dim
+      
+      corr_array_cloud(jvar,iiPDF_eta) = corr_array_cloud(iiPDF_eta,iiPDF_chi) &
+                                         * corr_array_cloud(jvar,iiPDF_chi)
+      
+      corr_array_below(jvar,iiPDF_eta) = corr_array_below(iiPDF_eta,iiPDF_chi) &
+                                         * corr_array_below(jvar,iiPDF_chi)
+      
+    end do
+    
+    ! Calc in cloud Cholesky 
+    call Cholesky_factor( pdf_dim, corr_array_cloud(:,:), & ! In
+                          corr_array_scaling, corr_cholesky_mtx_cloud(:,:), &  ! Out
+                          l_corr_array_scaling ) ! Out
+                
+    ! Calc out of cloud Cholesky           
+    call Cholesky_factor( pdf_dim, corr_array_below(:,:), & ! In
+                          corr_array_scaling, corr_cholesky_mtx_below(:,:), &  ! Out
+                          l_corr_array_scaling ) ! Out
+                          
+    ! Use rc_1 to determine which correlation and Cholesky matrices to assign to 1st PDF 
+    do k = 1, nz
+      do j = 1, ngrdcol
+        
+        if ( rc_1(j,k) > rc_tol ) then
+          ! Assign in cloud matrices to 1st PDF component
+          corr_array_1_n(j,:,:,k)      = corr_array_cloud
+          corr_cholesky_mtx_1(j,:,:,k) = corr_cholesky_mtx_cloud
+        else
+          ! Assign out of cloud matrices to 1st PDF component
+          corr_array_1_n(j,:,:,k)      = corr_array_below
+          corr_cholesky_mtx_1(j,:,:,k) = corr_cholesky_mtx_below
+        end if
+        
+      end do
+    end do
+        
+    ! Use rc_1 to determine which correlation and Cholesky matrices to assign to 2nd PDF 
+    do k = 1, nz
+      do j = 1, ngrdcol
+        
+        if ( rc_2(j,k) > rc_tol ) then
+          ! Assign in cloud matrices to 2nd PDF component
+          corr_array_2_n(j,:,:,k)      = corr_array_cloud
+          corr_cholesky_mtx_2(j,:,:,k) = corr_cholesky_mtx_cloud
+        else
+          ! Assign out of cloud matrices to 2nd PDF component
+          corr_array_2_n(j,:,:,k)      = corr_array_below
+          corr_cholesky_mtx_2(j,:,:,k) = corr_cholesky_mtx_below
+        end if
+        
+      end do
+    end do
+  
+  end subroutine calc_corr_norm_and_cholesky_factor
+  
   !=============================================================================
   subroutine comp_corr_norm( nz, pdf_dim, ngrdcol, wm_zt, rc_1, rc_2, &
                              cloud_frac_1, cloud_frac_2, mixt_frac, &
