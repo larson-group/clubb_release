@@ -236,8 +236,6 @@ module setup_clubb_pdf_params
       mu_w_2,       & ! Mean of w (2nd PDF component)                    [m/s]
       mu_chi_1,     & ! Mean of chi (old s) (1st PDF component)          [kg/kg]
       mu_chi_2,     & ! Mean of chi (old s) (2nd PDF component)          [kg/kg]
-      varnce_w_1,   & ! Standard deviation of w (1st PDF component)      [m/s]
-      varnce_w_2,   & ! Standard deviation of w (2nd PDF component)      [m/s]
       sigma_w_1,    & ! Standard deviation of w (1st PDF component)      [m/s]
       sigma_w_2,    & ! Standard deviation of w (2nd PDF component)      [m/s]
       sigma_chi_1,  & ! Standard deviation of chi (1st PDF component)    [kg/kg]
@@ -353,8 +351,6 @@ module setup_clubb_pdf_params
       mu_w_2(j,:)       = pdf_params(j)%w_2
       mu_chi_1(j,:)     = pdf_params(j)%chi_1
       mu_chi_2(j,:)     = pdf_params(j)%chi_2
-      varnce_w_1(j,:)   = pdf_params(j)%varnce_w_1
-      varnce_w_2(j,:)   = pdf_params(j)%varnce_w_2
       sigma_w_1(j,:)    = sqrt( pdf_params(j)%varnce_w_1 )
       sigma_w_2(j,:)    = sqrt( pdf_params(j)%varnce_w_2 )
       sigma_chi_1(j,:)  = pdf_params(j)%stdev_chi_1
@@ -625,8 +621,8 @@ module setup_clubb_pdf_params
                              precip_frac_tol(:),                            & ! Intent(in)
                              mu_w_1(:,:),                                   & ! Intent(in)
                              mu_w_2(:,:),                                   & ! Intent(in)
-                             varnce_w_1(:,:),                               & ! Intent(in)
-                             varnce_w_2(:,:),                               & ! Intent(in)
+                             sigma_w_1(:,:),                                & ! Intent(in)
+                             sigma_w_1(:,:),                                & ! Intent(in)
                              mu_chi_1(:,:),                                 & ! Intent(in)
                              mu_chi_2(:,:),                                 & ! Intent(in)
                              sigma_chi_1(:,:),                              & ! Intent(in)
@@ -876,7 +872,7 @@ module setup_clubb_pdf_params
                                  precip_frac_1, precip_frac_2,  & ! Intent(in)
                                  precip_frac_tol,               & ! Intent(in)
                                  w_1, w_2,                      & ! Intent(in)
-                                 varnce_w_1, varnce_w_2,        & ! Intent(in)
+                                 stdev_w_1, stdev_w_2,          & ! Intent(in)
                                  chi_1, chi_2,                  & ! Intent(in)
                                  stdev_chi_1, stdev_chi_2,      & ! Intent(in)
                                  stdev_eta_1, stdev_eta_2,      & ! Intent(in)
@@ -950,8 +946,8 @@ module setup_clubb_pdf_params
     real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: &  
       w_1,         & ! Mean of w (1st PDF component)                  [m/s]
       w_2,         & ! Mean of w (2nd PDF component)                  [m/s]
-      varnce_w_1,  & ! Variance of w (1st PDF component)              [m^2/s^2]
-      varnce_w_2,  & ! Variance of w (2nd PDF component)              [m^2/s^2]
+      stdev_w_1,  & ! Variance of w (1st PDF component)              [m^2/s^2]
+      stdev_w_2,  & ! Variance of w (2nd PDF component)              [m^2/s^2]
       chi_1,       & ! Mean of chi (1st PDF component)                [kg/kg]
       chi_2,       & ! Mean of chi (2nd PDF component)                [kg/kg]
       stdev_chi_1, & ! Standard deviation of chi (1st PDF component)  [kg/kg]
@@ -992,10 +988,6 @@ module setup_clubb_pdf_params
 
 
     !!! Initialize output variables.
-    mu_x_1(:,:,:)     = zero
-    mu_x_2(:,:,:)     = zero
-    sigma_x_1(:,:,:)  = zero
-    sigma_x_2(:,:,:)  = zero
     hm_1(:,:,:)       = zero
     hm_2(:,:,:)       = zero
     sigma_hm_1_sqd_on_mu_hm_1_sqd(:,:,:) = zero
@@ -1013,10 +1005,10 @@ module setup_clubb_pdf_params
     mu_x_2(:,:,iiPDF_w) = w_2(:,:)
 
     ! Standard deviation of vertical velocity, w, in PDF component 1.
-    sigma_x_1(:,:,iiPDF_w) = sqrt( varnce_w_1(:,:) )
+    sigma_x_1(:,:,iiPDF_w) = stdev_w_1(:,:)
 
     ! Standard deviation of vertical velocity, w, in PDF component 2.
-    sigma_x_2(:,:,iiPDF_w) = sqrt( varnce_w_2(:,:) )
+    sigma_x_2(:,:,iiPDF_w) = stdev_w_2(:,:)
 
 
     !!! Extended liquid water mixing ratio, chi.
@@ -1073,31 +1065,31 @@ module setup_clubb_pdf_params
     ! in PDF component 1.
     if ( .not. l_const_Nc_in_cloud ) then
 
-       ! Ncn varies in both PDF components.
-       sigma_x_1(:,:,iiPDF_Ncn) = sqrt( Ncnp2_on_Ncnm2 ) * Ncnm(:,:)
+      ! Ncn varies in both PDF components.
+      sigma_x_1(:,:,iiPDF_Ncn) = sqrt( Ncnp2_on_Ncnm2 ) * Ncnm(:,:)
 
-       sigma_x_2(:,:,iiPDF_Ncn) = sqrt( Ncnp2_on_Ncnm2 ) * Ncnm(:,:)
+      sigma_x_2(:,:,iiPDF_Ncn) = sqrt( Ncnp2_on_Ncnm2 ) * Ncnm(:,:)
 
-       ! Ncn is not an official hydrometeor.  However, both the
-       ! sigma_hm_1_sqd_on_mu_hm_1_sqd and sigma_hm_2_sqd_on_mu_hm_2_sqd arrays
-       ! have size pdf_dim, and both sigma_Ncn_1^2/mu_Ncn_1^2 and
-       ! sigma_Ncn_2^2/mu_Ncn_2^2 need to be output as part of these arrays.
-       sigma_hm_1_sqd_on_mu_hm_1_sqd(:,:,iiPDF_Ncn) = Ncnp2_on_Ncnm2
-       sigma_hm_2_sqd_on_mu_hm_2_sqd(:,:,iiPDF_Ncn) = Ncnp2_on_Ncnm2
+      ! Ncn is not an official hydrometeor.  However, both the
+      ! sigma_hm_1_sqd_on_mu_hm_1_sqd and sigma_hm_2_sqd_on_mu_hm_2_sqd arrays
+      ! have size pdf_dim, and both sigma_Ncn_1^2/mu_Ncn_1^2 and
+      ! sigma_Ncn_2^2/mu_Ncn_2^2 need to be output as part of these arrays.
+      sigma_hm_1_sqd_on_mu_hm_1_sqd(:,:,iiPDF_Ncn) = Ncnp2_on_Ncnm2
+      sigma_hm_2_sqd_on_mu_hm_2_sqd(:,:,iiPDF_Ncn) = Ncnp2_on_Ncnm2
 
     else ! l_const_Nc_in_cloud
 
-       ! Ncn is constant in both PDF components.
-       sigma_x_1(:,:,iiPDF_Ncn) = zero
+      ! Ncn is constant in both PDF components.
+      sigma_x_1(:,:,iiPDF_Ncn) = zero
 
-       sigma_x_2(:,:,iiPDF_Ncn) = zero
+      sigma_x_2(:,:,iiPDF_Ncn) = zero
 
-       ! Ncn is not an official hydrometeor.  However, both the
-       ! sigma_hm_1_sqd_on_mu_hm_1_sqd and sigma_hm_2_sqd_on_mu_hm_2_sqd arrays
-       ! have size pdf_dim, and both sigma_Ncn_1^2/mu_Ncn_1^2 and
-       ! sigma_Ncn_2^2/mu_Ncn_2^2 need to be output as part of these arrays.
-       sigma_hm_1_sqd_on_mu_hm_1_sqd(:,:,iiPDF_Ncn) = zero
-       sigma_hm_2_sqd_on_mu_hm_2_sqd(:,:,iiPDF_Ncn) = zero
+      ! Ncn is not an official hydrometeor.  However, both the
+      ! sigma_hm_1_sqd_on_mu_hm_1_sqd and sigma_hm_2_sqd_on_mu_hm_2_sqd arrays
+      ! have size pdf_dim, and both sigma_Ncn_1^2/mu_Ncn_1^2 and
+      ! sigma_Ncn_2^2/mu_Ncn_2^2 need to be output as part of these arrays.
+      sigma_hm_1_sqd_on_mu_hm_1_sqd(:,:,iiPDF_Ncn) = zero
+      sigma_hm_2_sqd_on_mu_hm_2_sqd(:,:,iiPDF_Ncn) = zero
 
     end if ! .not. l_const_Nc_in_cloud
 
