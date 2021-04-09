@@ -58,8 +58,8 @@ def main():
                       sensNcFilenames, defaultNcFilename,
                       obsMetricValsDict)
 
-    # See if the solution based on a linear combination of the SVD-calculated parameter values
-    #    matches what we expect.
+    # See if new global simulation output based on a linear combination
+    #    of the SVD-calculated parameter values matches what we expect.
     linSolnBias = calcLinSolnBias(linSolnNcFilename, defaultNcFilename,
                                   metricsNames)
 
