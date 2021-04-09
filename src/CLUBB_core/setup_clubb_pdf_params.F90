@@ -4370,9 +4370,12 @@ module setup_clubb_pdf_params
     ! References:
     !-----------------------------------------------------------------------
 
+    use constants_clubb, only : &
+      one
+
     use pdf_utilities, only: &
-        corr_NN2NL, & ! Procedure(s)
-        corr_NN2LL
+        corr_NN2NL_2D, & ! Procedure(s)
+        corr_NN2LL_2D
 
     use array_index, only: &
         iiPDF_chi, & ! Variable(s)
@@ -4413,14 +4416,26 @@ module setup_clubb_pdf_params
     ! Local Variables
     integer :: ivar, jvar ! Loop indices
 
+    ! ----------- Begin Code -----------
+
+    ! Initialize diagonal elements to one
+    do ivar = 1, pdf_dim
+      corr_array_1(:,:,ivar,ivar) = one
+      corr_array_2(:,:,ivar,ivar) = one
+    end do
 
     ! The correlations in each PDF component between two of w, chi (old s), and
     ! eta (old t) do not need to be transformed to standard space, since w, chi,
     ! and eta follow assumed normal distributions in each PDF component.  The
     ! normal space correlations between any two of these variables are the same
     ! as the actual correlations.    
-    corr_array_1 = corr_array_1_n
-    corr_array_2 = corr_array_2_n
+    corr_array_1(:,:,iiPDF_eta,iiPDF_chi) = corr_array_1_n(:,:,iiPDF_eta,iiPDF_chi)
+    corr_array_1(:,:,iiPDF_w,iiPDF_chi)   = corr_array_1_n(:,:,iiPDF_w,iiPDF_chi)
+    corr_array_1(:,:,iiPDF_w,iiPDF_eta)   = corr_array_1_n(:,:,iiPDF_w,iiPDF_eta)
+    
+    corr_array_2(:,:,iiPDF_eta,iiPDF_chi) = corr_array_2_n(:,:,iiPDF_eta,iiPDF_chi)
+    corr_array_2(:,:,iiPDF_w,iiPDF_chi)   = corr_array_2_n(:,:,iiPDF_w,iiPDF_chi)
+    corr_array_2(:,:,iiPDF_w,iiPDF_eta)   = corr_array_2_n(:,:,iiPDF_w,iiPDF_eta)
 
     !!! Calculate the true correlation of variables that have an assumed normal
     !!! distribution and variables that have an assumed lognormal distribution
@@ -4430,60 +4445,62 @@ module setup_clubb_pdf_params
 
     ! Transform the correlations between chi/eta/w and N_cn to standard space.
 
-    ! Transform the correlation of w and N_cn to standard space in PDF
-    ! component 1.
-    corr_array_1(:,:,iiPDF_Ncn,iiPDF_w) &
-    = corr_NN2NL( corr_array_1_n(:,:,iiPDF_Ncn,iiPDF_w), &
-                  sigma_x_1_n(:,:,iiPDF_Ncn), sigma2_on_mu2_ip_1(:,:,iiPDF_Ncn) )
+    ! Transform the correlation of chi (old s) and N_cn to standard space in PDF component 1.
+    call corr_NN2NL_2D( nz, ngrdcol, &
+                        corr_array_1_n(:,:,iiPDF_Ncn,iiPDF_chi), &
+                        sigma_x_1_n(:,:,iiPDF_Ncn), sigma2_on_mu2_ip_1(:,:,iiPDF_Ncn), &
+                        corr_array_1(:,:,iiPDF_Ncn,iiPDF_chi)  )
+                        
+    ! Transform the correlation of eta (old t) and N_cn to standard space in PDF component 1.
+    call corr_NN2NL_2D( nz, ngrdcol, &
+                        corr_array_1_n(:,:,iiPDF_Ncn,iiPDF_eta), &
+                        sigma_x_1_n(:,:,iiPDF_Ncn), sigma2_on_mu2_ip_1(:,:,iiPDF_Ncn), &
+                        corr_array_1(:,:,iiPDF_Ncn,iiPDF_eta)  )
 
-    ! Transform the correlation of w and N_cn to standard space in PDF
-    ! component 2.
-    corr_array_2(:,:,iiPDF_Ncn,iiPDF_w) &
-    = corr_NN2NL( corr_array_2_n(:,:,iiPDF_Ncn,iiPDF_w), &
-                  sigma_x_2_n(:,:,iiPDF_Ncn), sigma2_on_mu2_ip_1(:,:,iiPDF_Ncn) )
+    ! Transform the correlation of w and N_cn to standard space in PDF component 1.
+    call corr_NN2NL_2D( nz, ngrdcol, &
+                        corr_array_1_n(:,:,iiPDF_Ncn,iiPDF_w), &
+                        sigma_x_1_n(:,:,iiPDF_Ncn), sigma2_on_mu2_ip_1(:,:,iiPDF_Ncn), &
+                        corr_array_1(:,:,iiPDF_Ncn,iiPDF_w)  )
 
-    ! Transform the correlation of chi (old s) and N_cn to standard space in
-    ! PDF component 1.
-    corr_array_1(:,:,iiPDF_Ncn,iiPDF_chi) &
-    = corr_NN2NL( corr_array_1_n(:,:,iiPDF_Ncn,iiPDF_chi), &
-                  sigma_x_1_n(:,:,iiPDF_Ncn), sigma2_on_mu2_ip_1(:,:,iiPDF_Ncn) )
+    ! Transform the correlation of chi (old s) and N_cn to standard space in PDF component 2.
+    call corr_NN2NL_2D( nz, ngrdcol, &
+                        corr_array_2_n(:,:,iiPDF_Ncn,iiPDF_chi), &
+                        sigma_x_2_n(:,:,iiPDF_Ncn), sigma2_on_mu2_ip_1(:,:,iiPDF_Ncn), &
+                        corr_array_2(:,:,iiPDF_Ncn,iiPDF_chi)  )
 
-    ! Transform the correlation of chi (old s) and N_cn to standard space in
-    ! PDF component 2.
-    corr_array_2(:,:,iiPDF_Ncn,iiPDF_chi) &
-    = corr_NN2NL( corr_array_2_n(:,:,iiPDF_Ncn,iiPDF_chi), &
-                  sigma_x_2_n(:,:,iiPDF_Ncn), sigma2_on_mu2_ip_1(:,:,iiPDF_Ncn) )
-
-    ! Transform the correlation of eta (old t) and N_cn to standard space in
-    ! PDF component 1.
-    corr_array_1(:,:,iiPDF_Ncn,iiPDF_eta) &
-    = corr_NN2NL( corr_array_1_n(:,:,iiPDF_Ncn,iiPDF_eta), &
-                  sigma_x_1_n(:,:,iiPDF_Ncn), sigma2_on_mu2_ip_1(:,:,iiPDF_Ncn) )
-
-    ! Transform the correlation of eta (old t) and N_cn to standard space in
-    ! PDF component 2.
-    corr_array_2(:,:,iiPDF_Ncn,iiPDF_eta) &
-    = corr_NN2NL( corr_array_2_n(:,:,iiPDF_Ncn,iiPDF_eta), &
-                  sigma_x_2_n(:,:,iiPDF_Ncn), sigma2_on_mu2_ip_1(:,:,iiPDF_Ncn) )
+    ! Transform the correlation of eta (old t) and N_cn to standard space in PDF component 2.
+    call corr_NN2NL_2D( nz, ngrdcol, &
+                        corr_array_2_n(:,:,iiPDF_Ncn,iiPDF_eta), &
+                        sigma_x_2_n(:,:,iiPDF_Ncn), sigma2_on_mu2_ip_1(:,:,iiPDF_Ncn), &
+                        corr_array_2(:,:,iiPDF_Ncn,iiPDF_eta)  )
+                        
+    ! Transform the correlation of w and N_cn to standard space in PDF component 2.
+    call corr_NN2NL_2D( nz, ngrdcol, &
+                        corr_array_2_n(:,:,iiPDF_Ncn,iiPDF_w), &
+                        sigma_x_2_n(:,:,iiPDF_Ncn), sigma2_on_mu2_ip_1(:,:,iiPDF_Ncn), &
+                        corr_array_2(:,:,iiPDF_Ncn,iiPDF_w)  )
 
     ! Transform the correlations (in-precip) between chi/eta/w and the
     ! precipitating hydrometeors to standard space.
     do ivar = iiPDF_chi, iiPDF_w
-       do jvar = iiPDF_Ncn+1, pdf_dim
+      do jvar = iiPDF_Ncn+1, pdf_dim
 
-          ! Transform the correlation (in-precip) between w, chi, or eta and a
-          ! precipitating hydrometeor, hm, to standard space in PDF component 1.
-          corr_array_1(:,:,jvar,ivar) &
-          = corr_NN2NL( corr_array_1_n(:,:,jvar,ivar), sigma_x_1_n(:,:,jvar), &
-                        sigma2_on_mu2_ip_1(:,:,jvar) )
+        ! Transform the correlation (in-precip) between w, chi, or eta and a
+        ! precipitating hydrometeor, hm, to standard space in PDF component 1.
+        call corr_NN2NL_2D( nz, ngrdcol, &
+                            corr_array_1_n(:,:,jvar,ivar), &
+                            sigma_x_1_n(:,:,jvar), sigma2_on_mu2_ip_1(:,:,jvar), &
+                            corr_array_1(:,:,jvar,ivar)  )
 
-          ! Transform the correlation (in-precip) between w, chi, or eta and a
-          ! precipitating hydrometeor, hm, to standard space in PDF component 2.
-          corr_array_2(:,:,jvar,ivar) &
-          = corr_NN2NL( corr_array_2_n(:,:,jvar,ivar), sigma_x_2_n(:,:,jvar), &
-                        sigma2_on_mu2_ip_2(:,:,jvar) )
+        ! Transform the correlation (in-precip) between w, chi, or eta and a
+        ! precipitating hydrometeor, hm, to standard space in PDF component 2.
+        call corr_NN2NL_2D( nz, ngrdcol, &
+                            corr_array_2_n(:,:,jvar,ivar), &
+                            sigma_x_2_n(:,:,jvar), sigma2_on_mu2_ip_2(:,:,jvar), &
+                            corr_array_2(:,:,jvar,ivar)  )
 
-       end do ! jvar = iiPDF_Ncn+1, pdf_dim
+      end do ! jvar = iiPDF_Ncn+1, pdf_dim
     end do ! ivar = iiPDF_chi, iiPDF_w
 
 
@@ -4494,49 +4511,51 @@ module setup_clubb_pdf_params
 
     ! Transform the correlations (in-precip) between N_cn and the precipitating
     ! hydrometeors to standard space.
-    ivar = iiPDF_Ncn
-    do jvar = ivar+1, pdf_dim
+    do jvar = iiPDF_Ncn+1, pdf_dim
 
-       ! Transform the correlation (in-precip) between N_cn and a precipitating
-       ! hydrometeor, hm, to standard space in PDF component 1.
-       corr_array_1(:,:,jvar,ivar) &
-       = corr_NN2LL( corr_array_1_n(:,:,jvar,ivar), &
-                     sigma_x_1_n(:,:,ivar), sigma_x_1_n(:,:,jvar), &
-                     sigma2_on_mu2_ip_1(:,:,ivar), sigma2_on_mu2_ip_1(:,:,jvar) )
+      ! Transform the correlation (in-precip) between N_cn and a precipitating
+      ! hydrometeor, hm, to standard space in PDF component 1.
+      call corr_NN2LL_2D( nz, ngrdcol, &
+                          corr_array_1_n(:,:,jvar,iiPDF_Ncn), &
+                          sigma_x_1_n(:,:,iiPDF_Ncn), sigma_x_1_n(:,:,jvar), &
+                          sigma2_on_mu2_ip_1(:,:,iiPDF_Ncn), sigma2_on_mu2_ip_1(:,:,jvar), &
+                          corr_array_1(:,:,jvar,iiPDF_Ncn))
 
-       ! Transform the correlation (in-precip) between N_cn and a precipitating
-       ! hydrometeor, hm, to standard space in PDF component 2.
-       corr_array_2(:,:,jvar,ivar) &
-       = corr_NN2LL( corr_array_2_n(:,:,jvar,ivar), &
-                     sigma_x_2_n(:,:,ivar), sigma_x_2_n(:,:,jvar), &
-                     sigma2_on_mu2_ip_1(:,:,ivar), sigma2_on_mu2_ip_2(:,:,jvar) )
+      ! Transform the correlation (in-precip) between N_cn and a precipitating
+      ! hydrometeor, hm, to standard space in PDF component 2.
+      call corr_NN2LL_2D( nz, ngrdcol, &
+                          corr_array_2_n(:,:,jvar,iiPDF_Ncn), &
+                          sigma_x_2_n(:,:,iiPDF_Ncn), sigma_x_2_n(:,:,jvar), &
+                          sigma2_on_mu2_ip_1(:,:,iiPDF_Ncn), sigma2_on_mu2_ip_2(:,:,jvar), &
+                          corr_array_2(:,:,jvar,iiPDF_Ncn))
 
     end do ! jvar = ivar+1, pdf_dim
 
     ! Transform the correlations (in-precip) between two precipitating
     ! hydrometeors to standard space.
     do ivar = iiPDF_Ncn+1, pdf_dim-1
-       do jvar = ivar+1, pdf_dim
+      do jvar = ivar+1, pdf_dim
 
-          ! Transform the correlation (in-precip) between two precipitating
-          ! hydrometeors (for example, r_r and N_r) to standard space in PDF
-          ! component 1.
-          corr_array_1(:,:,jvar,ivar) &
-          = corr_NN2LL( corr_array_1_n(:,:,jvar,ivar), &
-                        sigma_x_1_n(:,:,ivar), sigma_x_1_n(:,:,jvar), &
-                        sigma2_on_mu2_ip_1(:,:,ivar), sigma2_on_mu2_ip_1(:,:,jvar) )
+        ! Transform the correlation (in-precip) between two precipitating
+        ! hydrometeors (for example, r_r and N_r) to standard space in PDF
+        ! component 1.
+        call corr_NN2LL_2D( nz, ngrdcol, &
+                            corr_array_1_n(:,:,jvar,ivar), &
+                            sigma_x_1_n(:,:,ivar), sigma_x_1_n(:,:,jvar), &
+                            sigma2_on_mu2_ip_1(:,:,ivar), sigma2_on_mu2_ip_1(:,:,jvar), &
+                            corr_array_1(:,:,jvar,ivar))
 
-          ! Transform the correlation (in-precip) between two precipitating
-          ! hydrometeors (for example, r_r and N_r) to standard space in PDF
-          ! component 2.
-          corr_array_2(:,:,jvar,ivar) &
-          = corr_NN2LL( corr_array_2_n(:,:,jvar,ivar), &
-                        sigma_x_2_n(:,:,ivar), sigma_x_2_n(:,:,jvar), &
-                        sigma2_on_mu2_ip_2(:,:,ivar), sigma2_on_mu2_ip_2(:,:,jvar) )
+        ! Transform the correlation (in-precip) between two precipitating
+        ! hydrometeors (for example, r_r and N_r) to standard space in PDF
+        ! component 2.
+        call corr_NN2LL_2D( nz, ngrdcol, &
+                            corr_array_2_n(:,:,jvar,ivar), &
+                            sigma_x_2_n(:,:,ivar), sigma_x_2_n(:,:,jvar), &
+                            sigma2_on_mu2_ip_2(:,:,ivar), sigma2_on_mu2_ip_2(:,:,jvar), &
+                            corr_array_2(:,:,jvar,ivar))
 
-       end do ! jvar = ivar+1, pdf_dim
+      end do ! jvar = ivar+1, pdf_dim
     end do ! ivar = iiPDF_Ncn+1, pdf_dim-1
-
 
     return
 

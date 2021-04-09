@@ -14,9 +14,11 @@ module pdf_utilities
             corr_NL2NN,                &
             corr_NL2NN_dp,             &
             corr_NN2NL,                &
+            corr_NN2NL_2D,             &
             corr_LL2NN,                &
             corr_LL2NN_dp,             &
             corr_NN2LL,                &
+            corr_NN2LL_2D,             &
             compute_mean_binormal,     &
             compute_variance_binormal, &
             calc_comp_corrs_binormal,  &
@@ -418,6 +420,96 @@ module pdf_utilities
     return
 
   end function corr_NN2NL
+  
+  !=============================================================================
+  subroutine corr_NN2NL_2D( nz, ngrdcol, &
+                            corr_x_y_n, sigma_y_n, y_sigma2_on_mu2, &
+                            corr_x_y )
+
+    ! Description:
+    ! For a normally-distributed variable x and a lognormally-distributed
+    ! variable y, this function finds the correlation of x and y (corr_x_y) for
+    ! the ith component of the PDF, given the correlation of x and ln y
+    ! (corr_x_y_n) and the standard deviation of ln y (sigma_y_n) for the ith
+    ! component of the PDF.  The value ln y is distributed normally when y is
+    ! distributed lognormally.
+
+    ! References:
+    !  Garvey, P. R., 2000: Probability methods for cost uncertainty analysis.
+    !    Marcel Dekker, 401 pp.
+    !  -- Eq. B-1.
+    !-----------------------------------------------------------------------
+
+    use constants_clubb, only: &
+        max_mag_correlation, & ! Constant(s)
+        zero
+
+    use clubb_precision, only: &
+        core_rknd ! Variable(s)
+
+    implicit none
+
+    ! Input Variables
+    integer, intent(in) :: &
+      nz,      & ! Number of vertical levels
+      ngrdcol    ! Number of grid columns
+      
+    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: &
+      corr_x_y_n,      & ! Correlation of x and ln y (ith PDF component)    [-]
+      sigma_y_n,       & ! Standard deviation of ln y (ith PDF component)   [-]
+      y_sigma2_on_mu2    ! Ratio:  sigma_y^2 / mu_y^2 (ith PDF component)   [-]
+
+    ! Output Variable
+    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(out) ::  &
+      corr_x_y  ! Correlation of x and y (ith PDF component) [-]
+      
+    ! Local variables
+    integer :: &
+      j, k  ! Loop iterators
+
+
+    ! Find the correlation of x and y for the ith component of the PDF.
+    ! When sigma_y = 0 and mu_y > 0, y_sigma2_on_mu2 = 0.  This results in
+    ! sigma_y_n = 0.  The resulting corr_x_y and corr_x_y_n are undefined.
+    ! However, the divide-by-zero problem needs to be addressed in the code.
+    do k = 1, nz
+      do j = 1, ngrdcol
+        
+        if ( sigma_y_n(j,k) > zero ) then
+           ! Use the maximum of y_sigma2_on_mu2 and tiny( y_sigma2_on_mu2 ) instead
+           ! of just y_sigma2_on_mu2.  The value of y_sigma2_on_mu2 must already be
+           ! greater than 0 in order for this block of code to be entered (when
+           ! y_sigma2_on_mu2 = 0, sigma_y_n = 0, and this block of code is not
+           ! entered).
+           corr_x_y(j,k) = corr_x_y_n(j,k) * sigma_y_n(j,k) &
+                            / sqrt( max( y_sigma2_on_mu2(j,k), tiny( y_sigma2_on_mu2(j,k) ) ) )
+        else ! sigma_y_n = 0
+           ! The value of sigma_y_n / sqrt( y_sigma2_on_mu2 ) can be rewritten as:
+           ! sqrt( ln( 1 + y_sigma2_on_mu2 ) ) / sqrt( y_sigma2_on_mu2 ).
+           ! This can be further rewritten as:
+           ! sqrt( ln( 1 + y_sigma2_on_mu2 ) / y_sigma2_on_mu2 ),
+           ! which has a limit of 1 as y_sigma2_on_mu2 approaches 0 from the right.
+           ! When sigma_y_n = 0, the value of corr_x_y is undefined, so set it
+           ! to corr_x_y_n.
+           corr_x_y(j,k) = corr_x_y_n(j,k)
+        endif ! sigma_y_n > 0
+        
+        ! Clip the magnitude of the correlation of x and y in the ith PDF component,
+        ! just in case the correlation (ith PDF component) of x and ln y and the
+        ! standard deviation (ith PDF component) of ln y are inconsistent, resulting
+        ! in an unrealizable value for corr_x_y.
+        if ( corr_x_y(j,k) > max_mag_correlation ) then
+           corr_x_y(j,k) = max_mag_correlation
+        elseif ( corr_x_y(j,k) < -max_mag_correlation ) then
+           corr_x_y(j,k) = -max_mag_correlation
+        endif
+        
+      end do
+    end do
+
+    return
+
+  end subroutine corr_NN2NL_2D
 
   !=============================================================================
   elemental function corr_LL2NN( corr_x_y, sigma_x_n, sigma_y_n, &
@@ -644,6 +736,93 @@ module pdf_utilities
     return
 
   end function corr_NN2LL
+  
+  !=============================================================================
+  subroutine corr_NN2LL_2D( nz, ngrdcol, &
+                            corr_x_y_n, sigma_x_n, sigma_y_n, &
+                            x_sigma2_on_mu2, y_sigma2_on_mu2, &
+                            corr_x_y )
+
+    ! Description:
+    ! For lognormally-distributed variables x and y, this function finds the
+    ! correlation of x and y (corr_x_y) for the ith component of the PDF, given
+    ! the correlation of ln x and ln y (corr_x_y_n), the standard deviation of
+    ! ln x (sigma_x_n), and the standard deviation of ln y (sigma_y_n) for
+    ! the ith component of the PDF.  The value of ln x (or ln y) is distributed
+    ! normally when x (or y) is distributed lognormally.
+
+    ! References:
+    !  Garvey, P. R., 2000: Probability methods for cost uncertainty analysis.
+    !    Marcel Dekker, 401 pp.
+    !  -- Eq. C-3.
+    !-----------------------------------------------------------------------
+
+    use constants_clubb, only: &
+        one,                 & ! Constant(s)
+        zero,                &
+        max_mag_correlation
+
+    use clubb_precision, only: &
+        core_rknd ! Variable(s)
+
+    implicit none
+
+    ! Input Variables
+    integer, intent(in) :: &
+      nz,      & ! Number of vertical levels
+      ngrdcol    ! Number of grid columns
+      
+    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) ::  &
+      corr_x_y_n,      & ! Correlation of ln x and ln y (ith PDF component) [-]
+      sigma_x_n,       & ! Standard deviation of ln x (ith PDF component)   [-]
+      sigma_y_n,       & ! Standard deviation of ln y (ith PDF component)   [-]
+      x_sigma2_on_mu2, & ! Ratio:  sigma_x^2 / mu_x^2 (ith PDF component)   [-]
+      y_sigma2_on_mu2    ! Ratio:  sigma_y^2 / mu_y^2 (ith PDF component)   [-]
+
+    ! Output Variable
+    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(out) ::  &
+      corr_x_y  ! Correlation of x and y (ith PDF component)  [-]
+      
+    ! Local variables
+    integer :: &
+      j, k  ! Loop iterators
+
+    ! Find the correlation of x and y for the ith component of the PDF.
+    ! When sigma_x = 0 and mu_x > 0, x_sigma2_on_mu2 = 0.  This results in
+    ! sigma_x_n = 0.  The resulting corr_x_y and corr_x_y_n are undefined.  The
+    ! same holds true when sigma_y = 0 and mu_y > 0.  However, the
+    ! divide-by-zero problem needs to be addressed in the code.
+    do k = 1, nz
+      do j = 1, ngrdcol
+        
+        if ( sigma_x_n(j,k) > zero .and. sigma_y_n(j,k) > zero ) then
+    !       corr_x_y = ( exp( sigma_x_n * sigma_y_n * corr_x_y_n ) - one ) &
+    !                  / ( sqrt( exp( sigma_x_n**2 ) - one ) &
+    !                      * sqrt( exp( sigma_y_n**2 ) - one ) )
+           corr_x_y(j,k) = ( exp( sigma_x_n(j,k) * sigma_y_n(j,k) * corr_x_y_n(j,k) ) - one ) &
+                           / sqrt( x_sigma2_on_mu2(j,k) * y_sigma2_on_mu2(j,k) )
+        else ! sigma_x_n = 0 or sigma_y_n = 0
+           ! The value of corr_x_y is undefined, so set it to corr_x_y_n.
+           corr_x_y(j,k) = corr_x_y_n(j,k)
+        endif ! sigma_x_n > 0 and sigma_y_n > 0
+
+        ! Clip the magnitude of the correlation of x and y in the ith PDF component,
+        ! just in case the correlation (ith PDF component) of ln x and ln y, the
+        ! standard deviation (ith PDF component) of ln x, and the standard deviation
+        ! (ith PDF component) of ln y are inconsistent, resulting in an unrealizable
+        ! value for corr_x_y.
+        if ( corr_x_y(j,k) > max_mag_correlation ) then
+           corr_x_y(j,k) = max_mag_correlation
+        elseif ( corr_x_y(j,k) < -max_mag_correlation ) then
+           corr_x_y(j,k) = -max_mag_correlation
+        endif
+        
+      end do
+    end do
+
+    return
+
+  end subroutine corr_NN2LL_2D
 
   !=============================================================================
   elemental function compute_mean_binormal( mu_x_1, mu_x_2, mixt_frac ) &
