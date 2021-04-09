@@ -121,8 +121,7 @@ module setup_clubb_pdf_params
         core_rknd        ! Variable(s)
 
     use matrix_operations, only: &
-        Cholesky_factor, & ! Procedure(s)
-        mirror_lower_triangular_matrix
+        Cholesky_factor  ! Procedure(s)
 
     use stats_type_utilities, only: &
 !        stat_update_var,    & ! Procedure(s)
@@ -807,20 +806,6 @@ module setup_clubb_pdf_params
                                    precip_frac(:,:), precip_frac_1(:,:), & ! In
                                    precip_frac_2(:,:),              & ! In
                                    hydromet_pdf_params(:,:)         ) ! Out
-
-    !!! Setup PDF parameters loop.
-    ! Loop over all model thermodynamic level above the model lower boundary.
-    ! Now also including "model lower boundary" -- Eric Raut Aug 2013
-    ! Now not  including "model lower boundary" -- Eric Raut Aug 2014
-
-    ! For ease of use later in the code, we make the correlation arrays
-    ! symmetrical
-    do k = 2, nz, 1
-      do j = 1, ngrdcol
-        call mirror_lower_triangular_matrix( pdf_dim, corr_array_1_n(j,k,:,:) )
-        call mirror_lower_triangular_matrix( pdf_dim, corr_array_2_n(j,k,:,:) )
-      end do
-    end do
     
     ! Interpolate the overall variance of a hydrometeor, <hm'^2>, to its home on
     ! momentum grid levels.
@@ -1228,7 +1213,7 @@ module setup_clubb_pdf_params
     real( kind = core_rknd ), dimension(pdf_dim) :: &
       corr_array_scaling    ! Dummy variable that we need for calling Cholesky_factor
 
-    integer :: jvar, j, k ! Indices
+    integer :: ivar, jvar, j, k ! Indices
     
     logical, parameter :: &
       l_follow_ADG1_PDF_standards = .true.
@@ -1287,36 +1272,60 @@ module setup_clubb_pdf_params
                           l_corr_array_scaling ) ! Out
                           
     ! Use rc_1 to determine which correlation and Cholesky matrices to assign to 1st PDF 
-    do k = 1, nz
-      do j = 1, ngrdcol
-        
-        if ( rc_1(j,k) > rc_tol ) then
-          ! Assign in cloud matrices to 1st PDF component
-          corr_array_1_n(j,k,:,:)      = corr_array_cloud
-          corr_cholesky_mtx_1(j,k,:,:) = corr_cholesky_mtx_cloud
-        else
-          ! Assign out of cloud matrices to 1st PDF component
-          corr_array_1_n(j,k,:,:)      = corr_array_below
-          corr_cholesky_mtx_1(j,k,:,:) = corr_cholesky_mtx_below
-        end if
-        
+    ! Correlation matrices are symmetric, so we copy ij values to ji indices as well
+    ! Cholesky matrices are lower triangular, so we only copy those values 
+    do ivar = 1, pdf_dim
+      do jvar = ivar, pdf_dim
+        do k = 1, nz
+          do j = 1, ngrdcol
+            
+            if ( rc_1(j,k) > rc_tol ) then
+              ! Assign in cloud matrices to 1st PDF component
+              corr_array_1_n(j,k,jvar,ivar)      = corr_array_cloud(jvar,ivar)
+              corr_array_1_n(j,k,ivar,jvar)      = corr_array_cloud(jvar,ivar)
+              corr_cholesky_mtx_1(j,k,jvar,ivar) = corr_cholesky_mtx_cloud(jvar,ivar)
+            else
+              ! Assign out of cloud matrices to 1st PDF component
+              corr_array_1_n(j,k,jvar,ivar)      = corr_array_below(jvar,ivar)
+              corr_array_1_n(j,k,ivar,jvar)      = corr_array_below(jvar,ivar)
+              corr_cholesky_mtx_1(j,k,jvar,ivar) = corr_cholesky_mtx_below(jvar,ivar)
+            end if
+            
+          end do
+        end do
       end do
     end do
-        
+            
     ! Use rc_1 to determine which correlation and Cholesky matrices to assign to 2nd PDF 
-    do k = 1, nz
-      do j = 1, ngrdcol
-        
-        if ( rc_2(j,k) > rc_tol ) then
-          ! Assign in cloud matrices to 2nd PDF component
-          corr_array_2_n(j,k,:,:)      = corr_array_cloud
-          corr_cholesky_mtx_2(j,k,:,:) = corr_cholesky_mtx_cloud
-        else
-          ! Assign out of cloud matrices to 2nd PDF component
-          corr_array_2_n(j,k,:,:)      = corr_array_below
-          corr_cholesky_mtx_2(j,k,:,:) = corr_cholesky_mtx_below
-        end if
-        
+    ! Correlation matrices are symmetric, so we copy ij values to ji indices as well
+    ! Cholesky matrices are lower triangular, so we only copy those values 
+    do ivar = 1, pdf_dim
+      do jvar = ivar, pdf_dim
+        do k = 1, nz
+          do j = 1, ngrdcol
+            
+            if ( rc_2(j,k) > rc_tol ) then
+              ! Assign in cloud matrices to 2nd PDF component
+              corr_array_2_n(j,k,jvar,ivar)      = corr_array_cloud(jvar,ivar)
+              corr_array_2_n(j,k,ivar,jvar)      = corr_array_cloud(jvar,ivar)
+              corr_cholesky_mtx_2(j,k,jvar,ivar) = corr_cholesky_mtx_cloud(jvar,ivar)
+            else
+              ! Assign out of cloud matrices to 2nd PDF component
+              corr_array_2_n(j,k,jvar,ivar)      = corr_array_below(jvar,ivar)
+              corr_array_2_n(j,k,ivar,jvar)      = corr_array_below(jvar,ivar)
+              corr_cholesky_mtx_2(j,k,jvar,ivar) = corr_cholesky_mtx_below(jvar,ivar)
+            end if
+            
+          end do
+        end do
+      end do
+    end do
+    
+    ! Set upper triangular parts of Cholesky matrices to zero
+    do ivar = 1, pdf_dim
+      do jvar = 1, ivar-1
+        corr_cholesky_mtx_1(:,:,jvar,ivar) = zero
+        corr_cholesky_mtx_2(:,:,jvar,ivar) = zero
       end do
     end do
   
@@ -1368,6 +1377,9 @@ module setup_clubb_pdf_params
 
     use pdf_parameter_module, only: &
         pdf_parameter  ! Variable(s)    
+        
+    use matrix_operations, only: &
+        mirror_lower_triangular_matrix
 
     implicit none
 
@@ -1682,6 +1694,15 @@ module setup_clubb_pdf_params
 
        end do ! jvar
     end do ! ivar
+    
+    ! For ease of use later in the code, we make the correlation arrays
+    ! symmetrical
+    do k = 2, nz, 1
+      do j = 1, ngrdcol
+        call mirror_lower_triangular_matrix( pdf_dim, corr_array_1_n(j,k,:,:) )
+        call mirror_lower_triangular_matrix( pdf_dim, corr_array_2_n(j,k,:,:) )
+      end do
+    end do
 
     return
 
