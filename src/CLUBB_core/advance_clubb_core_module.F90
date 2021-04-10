@@ -206,7 +206,7 @@ module advance_clubb_core_module
         C_uu_shr, C4, &
         C_wp2_splat, &
         C_invrs_tau_bkgnd, &
-        C_invrs_tau_sfc, & 
+        C_invrs_tau_sfc, &
         C_invrs_tau_shear, &
         C_invrs_tau_N2, &
         C_invrs_tau_N2_xp2, &
@@ -743,7 +743,8 @@ module advance_clubb_core_module
 
     real( kind = core_rknd ) :: &
       thlm1000, &
-      thlm700
+      thlm700,  &
+      ustar                           ! Friction velocity  [m/s]
 
     real( kind = core_rknd ), dimension(gr%nz) :: &
       rcm_supersat_adj, & ! Adjustment to rcm due to spurious supersaturation
@@ -758,7 +759,7 @@ module advance_clubb_core_module
        invrs_tau_wp2_zm,             & ! Inverse tau values used for advance_wp2_wpxp [s^-1]
        invrs_tau_wpxp_zm,            & ! invrs_tau_C6_zm = invrs_tau_wpxp_zm
        invrs_tau_wp3_zm,             & ! Inverse tau values used for advance_wp3_wp2 [s^-1]
-       invrs_tau_no_N2_zm,           & ! One divided by tau (without N2) on zm levels [s^-1] 
+       invrs_tau_no_N2_zm,           & ! One divided by tau (without N2) on zm levels [s^-1]
        invrs_tau_bkgnd,              & ! One divided by tau_wp3 [s^-1]
        invrs_tau_shear,              & ! One divided by tau with stability effects    [s^-1]
        invrs_tau_sfc,                & ! One divided by tau (without N2) on zm levels [s^-1]
@@ -774,9 +775,9 @@ module advance_clubb_core_module
        brunt_vaisala_freq_sqd_plus,  & ! N^2 from another way
        brunt_vaisala_freq_sqd_zt,    & ! Buoyancy frequency squared on t-levs.        [s^-2]
        brunt_freq_out_cloud,         & !
-       Ri_zm,                        & ! Richardson number
-       ustar                           ! Friction velocity  [m/s]
- 
+       Ri_zm ! Richardson number
+
+
     real( kind = core_rknd ), parameter :: &
        ufmin = 0.01_core_rknd,       & ! minimum value of friction velocity     [m/s]
        z_displace = 10.0_core_rknd   ! displacement of log law profile above ground   [m]
@@ -809,7 +810,7 @@ module advance_clubb_core_module
     !  Km_Skw_thresh = zero_threshold, &  ! Value of Skw at which Skw correction kicks in
     !  Km_Skw_factor_efold = 0.5_core_rknd, & ! E-folding rate of exponential Skw correction
     !  Km_Skw_factor_min   = 0.2_core_rknd    ! Minimum value of Km_Skw_factor
-    
+
     integer, intent(out) :: &
       err_code_out  ! Error code indicator
 
@@ -821,7 +822,7 @@ module advance_clubb_core_module
     else
       dt_advance = dt
     end if
- 
+
     err_code_out = clubb_no_error  ! Initialize to no error value
 
     ! Determine the maximum allowable value for Lscale (in meters).
@@ -1138,13 +1139,13 @@ module advance_clubb_core_module
                                                                   ! buoyant parcel calc
 
 
-        call calc_Lscale_directly ( l_implemented, p_in_Pa, exner, & 
+        call calc_Lscale_directly ( l_implemented, p_in_Pa, exner, &
                   rtm, thlm, thvm, &
                   newmu, rtp2, thlp2, rtpthlp, pdf_params, em, &
                   thv_ds_zt, Lscale_max, &
                   clubb_config_flags%l_Lscale_plume_centered, &
                   Lscale, Lscale_up, Lscale_down )
-                  
+
         if ( clubb_at_least_debug_level( 0 ) ) then
           if ( err_code == clubb_fatal_error ) then
             err_code_out = err_code
@@ -1166,7 +1167,7 @@ module advance_clubb_core_module
         invrs_tau_xp2_zm  = invrs_tau_zm
         invrs_tau_wpxp_zm = invrs_tau_zm
         invrs_tau_wp3_zt  = invrs_tau_zt
-        
+
         tau_max_zm = taumax
         tau_max_zt = taumax
 
@@ -1183,7 +1184,7 @@ module advance_clubb_core_module
                                           brunt_vaisala_freq_sqd_dry, &
                                           brunt_vaisala_freq_sqd_moist, &
                                           brunt_vaisala_freq_sqd_plus )
- 
+
         ustar = max( ( upwp_sfc**2 + vpwp_sfc**2 )**(one_fourth), ufmin )
 
         invrs_tau_bkgnd = C_invrs_tau_bkgnd / tau_const
@@ -1277,7 +1278,7 @@ module advance_clubb_core_module
 
         tau_zm           = min( one / invrs_tau_zm, tau_max_zm )
         tau_zt           = min( zm2zt( tau_zm ), tau_max_zt )
-        invrs_tau_zt     = zm2zt( invrs_tau_zm ) 
+        invrs_tau_zt     = zm2zt( invrs_tau_zm )
         invrs_tau_wp3_zt = zm2zt( invrs_tau_wp3_zm )
 
         Lscale = tau_zt * sqrt_em_zt
@@ -3171,7 +3172,7 @@ module advance_clubb_core_module
 
       use parameter_indices, only:  &
           nparams, & ! Variable(s)
-          iC1,     & ! Constant(s)  
+          iC1,     & ! Constant(s)
           iC14
 
       use parameters_tunable, only: &
@@ -3190,7 +3191,7 @@ module advance_clubb_core_module
           err_code,                    & ! Error Indicator
           clubb_no_error, &              ! Constant
           clubb_fatal_error              ! Constant
-          
+
       use model_flags, only: &
           clubb_config_flags_type, & ! Type
           setup_model_flags, & ! Subroutine
@@ -3300,7 +3301,7 @@ module advance_clubb_core_module
         l_prescribed_avg_deltaz, &  ! used in adj_low_res_nu. If .true., avg_deltaz = deltaz
         l_damp_wp2_using_em,     &
         l_stability_correct_tau_zm
-        
+
 #ifdef GFDL
       logical, intent(in) :: &  ! h1g, 2010-06-16 begin mod
          I_sat_sphum
@@ -3311,15 +3312,15 @@ module advance_clubb_core_module
 
       ! Local variables
       integer :: begin_height, end_height
-      
+
       integer, intent(out) :: &
         err_code_out  ! Error code indicator
 
       !----- Begin Code -----
-      
+
       err_code_out = clubb_no_error ! Initialize to no error value
       call initialize_error_headers
-      
+
       ! Sanity check
       if ( clubb_at_least_debug_level( 0 ) ) then
 
@@ -3500,7 +3501,7 @@ module advance_clubb_core_module
       if ( clubb_at_least_debug_level( 0 ) ) then
         if ( err_code == clubb_fatal_error ) then
           err_code_out = err_code
-          
+
           write(fstderr,*) "Error in setup_clubb_core"
 
           write(fstderr,*) "Intent(in)"
@@ -4558,7 +4559,7 @@ module advance_clubb_core_module
     rc_tol
 
   use parameters_tunable, only: &
-    thlp2_rad_coef    
+    thlp2_rad_coef
 
   implicit none
 
