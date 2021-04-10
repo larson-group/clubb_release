@@ -266,7 +266,8 @@ module advance_clubb_core_module
 
     use mixing_length, only: &
         compute_mixing_length, &    ! Procedure
-        calc_Lscale_directly  ! for Lscale
+        calc_Lscale_directly,  &  ! for Lscale
+        diagnose_Lscale_from_tau  ! for Lscale from tau
 
     use advance_windm_edsclrm_module, only:  &
         advance_windm_edsclrm  ! Procedure(s)
@@ -1175,118 +1176,47 @@ module advance_clubb_core_module
 
       else ! l_diag_Lscale_from_tau = .true., diagnose simple tau and Lscale.
 
-        call calc_brunt_vaisala_freq_sqd( zm2zt( zt2zm( thlm )), exner, rtm, rcm, p_in_Pa, thvm, &
-                                          ice_supersat_frac, &
-                                          clubb_config_flags%l_brunt_vaisala_freq_moist, &
-                                          clubb_config_flags%l_use_thvm_in_bv_freq, &
-                                          brunt_vaisala_freq_sqd, &
-                                          brunt_vaisala_freq_sqd_mixed,&
-                                          brunt_vaisala_freq_sqd_dry, &
-                                          brunt_vaisala_freq_sqd_moist, &
-                                          brunt_vaisala_freq_sqd_plus )
-
-        ustar = max( ( upwp_sfc**2 + vpwp_sfc**2 )**(one_fourth), ufmin )
-
-        invrs_tau_bkgnd = C_invrs_tau_bkgnd / tau_const
-
-        invrs_tau_shear &
-        = C_invrs_tau_shear &
-          * zt2zm( zm2zt( sqrt( (ddzt( um ))**2 + (ddzt( vm ))**2 ) ) )
-
-        invrs_tau_sfc &
-        = C_invrs_tau_sfc * ( ustar / vonk ) / ( gr%zm - sfc_elevation + z_displace )
-         !C_invrs_tau_sfc * ( wp2 / vonk /ustar ) / ( gr%zm -sfc_elevation + z_displace )
-
-        invrs_tau_no_N2_zm = invrs_tau_bkgnd + invrs_tau_sfc + invrs_tau_shear
-
-        !brunt_vaisala_freq_sqd_smth = zt2zm( zm2zt( brunt_vaisala_freq_sqd ) )
-        !The min function below smooths the slope discontinuity in brunt freq
-        !  and thereby allows tau to remain large in Sc layers in which thlm may
-        !  be slightly stably stratified.
-
-        brunt_vaisala_freq_sqd_smth = zt2zm( zm2zt( &
-              min( brunt_vaisala_freq_sqd, 1.e8_core_rknd * abs(brunt_vaisala_freq_sqd)**3 ) ) )
-
-        sqrt_Ri_zm &
-        = sqrt( max( 1.0e-7_core_rknd, brunt_vaisala_freq_sqd_smth ) &
-                / max( ( ddzt(um)**2 + ddzt(vm)**2 ), 1.0e-7_core_rknd ) )
-
-        brunt_freq_pos = sqrt( max( zero_threshold, brunt_vaisala_freq_sqd_smth ) )
-
-        brunt_freq_out_cloud =  brunt_freq_pos &
-              * min(one, max(zero_threshold,&
-              one - ( (zt2zm(ice_supersat_frac) / 0.007_core_rknd) )))
-
-        where ( gr%zt < altitude_threshold )
-           brunt_freq_out_cloud = 0.0_core_rknd
-        end where
-
-        invrs_tau_wp2_zm = invrs_tau_no_N2_zm + C_invrs_tau_N2_wp2 * brunt_freq_pos
-
-        invrs_tau_zm = invrs_tau_no_N2_zm + C_invrs_tau_N2 * brunt_freq_pos
-
-
-        if ( clubb_config_flags%l_e3sm_config ) then
-
-          invrs_tau_zm = 0.5_core_rknd * invrs_tau_zm
-
-          invrs_tau_xp2_zm = invrs_tau_bkgnd + invrs_tau_sfc + invrs_tau_shear &
-                            + C_invrs_tau_N2_xp2 * brunt_freq_pos & ! 0
-                            + C_invrs_tau_sfc * 2.0_core_rknd &
-                            * sqrt(em) / ( gr%zm - sfc_elevation + z_displace )  ! small
-
-          invrs_tau_xp2_zm = min( max( sqrt( ( ddzt(um)**2 + ddzt(vm)**2 ) &
-                            / max( 1.0e-7_core_rknd, brunt_vaisala_freq_sqd_smth ) ), &
-                            0.3_core_rknd ), 1.0_core_rknd ) * invrs_tau_xp2_zm
-
-          invrs_tau_wpxp_zm = 2.0_core_rknd * invrs_tau_zm &
-                             + C_invrs_tau_N2_wpxp * brunt_freq_out_cloud
-
-        else ! l_e3sm_config = false
-
-          invrs_tau_xp2_zm =  0.1_core_rknd * invrs_tau_bkgnd + invrs_tau_sfc &
-                + invrs_tau_shear + C_invrs_tau_N2_xp2 * brunt_freq_pos
-
-          invrs_tau_xp2_zm = merge(0.003_core_rknd, invrs_tau_xp2_zm, &
-                zt2zm(ice_supersat_frac) <= 0.01_core_rknd &
-                .and. invrs_tau_xp2_zm  >= 0.003_core_rknd)
-
-          invrs_tau_wpxp_zm = invrs_tau_zm + C_invrs_tau_N2_wpxp * brunt_freq_out_cloud
-
-        end if ! l_e3sm_config
-
-
-        where( gr%zt > altitude_threshold &
-               .and. brunt_vaisala_freq_sqd_smth > C_invrs_tau_wpxp_N2_thresh )
-           invrs_tau_wpxp_zm &
-           = invrs_tau_wpxp_zm &
-             * ( 1.0_core_rknd &
-                 + C_invrs_tau_wpxp_Ri * min( max( sqrt_Ri_zm, 0.0_core_rknd ), &
-                                      12.0_core_rknd ) )
-        end where
-
-        invrs_tau_wp3_zm = invrs_tau_wp2_zm + C_invrs_tau_N2_clear_wp3 * brunt_freq_out_cloud
-
-        if ( gr%zm(1) - sfc_elevation + z_displace < eps ) then
-             error stop  "Lowest zm grid level is below ground in CLUBB."
-        end if
-
-        ! Calculate the maximum allowable value of time-scale tau,
-        ! which depends of the value of Lscale_max.
-        tau_max_zt = Lscale_max / sqrt_em_zt
-        tau_max_zm = Lscale_max / sqrt( max( em, em_min ) )
-
-        tau_zm           = min( one / invrs_tau_zm, tau_max_zm )
-        tau_zt           = min( zm2zt( tau_zm ), tau_max_zt )
-        invrs_tau_zt     = zm2zt( invrs_tau_zm )
-        invrs_tau_wp3_zt = zm2zt( invrs_tau_wp3_zm )
-
-        Lscale = tau_zt * sqrt_em_zt
-
-        ! Lscale_up and Lscale_down aren't calculated with this option.
-        ! They are set to 0 for stats output.
-        Lscale_up = zero
-        Lscale_down = zero
+        call diagnose_Lscale_from_tau(    brunt_vaisala_freq_sqd,       &
+        brunt_vaisala_freq_sqd_mixed, &
+        brunt_vaisala_freq_sqd_dry,   &
+        brunt_vaisala_freq_sqd_moist, &
+        brunt_vaisala_freq_sqd_plus,  &
+        sqrt_Ri_zm,                        &
+        tau_max_zm,                   &
+        tau_max_zt,                   &
+        tau_zm,                       &
+        tau_zt,                       &
+        invrs_tau_shear,              &
+        invrs_tau_sfc,                &
+        invrs_tau_no_N2_zm,           &
+        invrs_tau_bkgnd,              &
+        invrs_tau_wp2_zm,             &
+        invrs_tau_xp2_zm,             &
+        invrs_tau_zt,                 &
+        invrs_tau_wp3_zm,             &
+        invrs_tau_wp3_zt,             &
+        invrs_tau_wpxp_zm,            &
+        invrs_tau_zm ,                &
+        Lscale,                       &
+        Lscale_up,                    &
+        Lscale_down,                  &
+        brunt_freq_pos,               &
+        brunt_freq_out_cloud,         &
+        brunt_vaisala_freq_sqd_smth, upwp_sfc,      &
+        vpwp_sfc,      &
+        sfc_elevation, &
+        Lscale_max,    &
+        ustar,    exner, &
+        p_in_Pa, &
+        rtm, &
+        um, &
+        vm, &
+        rcm, &
+        thlm, &
+        ice_supersat_frac, &
+        thvm,                         &
+        em,                           &
+        sqrt_em_zt, ufmin, z_displace, tau_const)
 
       end if ! l_diag_Lscale_from_tau
 
