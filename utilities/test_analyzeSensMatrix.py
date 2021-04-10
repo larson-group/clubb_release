@@ -56,7 +56,7 @@ def test_3x2_C8transformed():
     write_test_netcdf_files(obsMetricValsDict, clubbC8Vals)
 
     # Calculate changes in parameter values needed to match metrics.
-    sensMatrixOrig, sensMatrix, normlzdSensMatrix, svdInvrsNormlzdWeighted, \
+    defaultBiasesCol, sensMatrixOrig, sensMatrix, normlzdSensMatrix, svdInvrsNormlzdWeighted, \
             dparamsSoln, paramsSoln, defaultBiasesApprox = \
         analyzeSensMatrix(metricsNames, paramsNames, transformedParams,
                         metricsWeights,
@@ -111,7 +111,7 @@ def test_3x2_novarstransformed():
     write_test_netcdf_files(obsMetricValsDict, clubbC8Vals)
 
     # Calculate changes in parameter values needed to match metrics.
-    sensMatrixOrig, sensMatrix, normlzdSensMatrix, svdInvrsNormlzdWeighted, \
+    defaultBiasesCol, sensMatrixOrig, sensMatrix, normlzdSensMatrix, svdInvrsNormlzdWeighted, \
             dparamsSoln, paramsSoln, defaultBiasesApprox = \
         analyzeSensMatrix(metricsNames, paramsNames, transformedParams,
                         metricsWeights,
@@ -160,7 +160,7 @@ def test_2x2_C8transformed():
     write_test_netcdf_files(obsMetricValsDict, clubbC8Vals)
 
     # Calculate changes in parameter values needed to match metrics.
-    sensMatrixOrig, sensMatrix, normlzdSensMatrix, svdInvrsNormlzdWeighted, \
+    defaultBiasesCol, sensMatrixOrig, sensMatrix, normlzdSensMatrix, svdInvrsNormlzdWeighted, \
             dparamsSoln, paramsSoln, defaultBiasesApprox = \
         analyzeSensMatrix(metricsNames, paramsNames, transformedParams,
                         metricsWeights,
@@ -218,7 +218,7 @@ def test_2x2_novarstransformed():
     write_test_netcdf_files(obsMetricValsDict, clubbC8Vals)
 
     # Calculate changes in parameter values needed to match metrics.
-    sensMatrixOrig, sensMatrix, normlzdSensMatrix, svdInvrsNormlzdWeighted, \
+    defaultBiasesCol, sensMatrixOrig, sensMatrix, normlzdSensMatrix, svdInvrsNormlzdWeighted, \
             dparamsSoln, paramsSoln, defaultBiasesApprox = \
         analyzeSensMatrix(metricsNames, paramsNames, transformedParams,
                         metricsWeights,

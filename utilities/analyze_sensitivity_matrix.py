@@ -51,7 +51,7 @@ def main():
     obsMetricValsDict = {'LWCF': 28.008, 'PRECT': 0.000000033912037, 'SWCF': -45.81}
 
     # Calculate changes in parameter values needed to match metrics.
-    sensMatrixOrig, sensMatrix, normlzdSensMatrix, svdInvrsNormlzdWeighted, \
+    defaultBiasesCol, sensMatrixOrig, sensMatrix, normlzdSensMatrix, svdInvrsNormlzdWeighted, \
             dparamsSoln, paramsSoln, defaultBiasesOrigApprox = \
         analyzeSensMatrix(metricsNames, paramsNames, transformedParamsNames,
                       metricsWeights,
@@ -170,7 +170,7 @@ def analyzeSensMatrix(metricsNames, paramsNames, transformedParamsNames,
     # Calculate the sensitivity matrix and the sensitivity matrix
     # normalized by the discrepancies from observations in default simulation.
     # Use untransformed (original) parameter values.
-    sensMatrixOrig, normlzdSensMatrixOrig = \
+    defaultBiasesCol, sensMatrixOrig, normlzdSensMatrixOrig = \
          constructSensMatrix(sensMetricValsMatrix, sensParamValsOrigRow,
                             defaultMetricValsCol, defaultParamValsOrigRow,
                             obsMetricValsCol,
@@ -183,7 +183,7 @@ def analyzeSensMatrix(metricsNames, paramsNames, transformedParamsNames,
     # Calculate the sensitivity matrix and the sensitivity matrix
     # normalized by the discrepancies from observations in default simulation.
     # Use transformed parameter values.
-    sensMatrix, normlzdSensMatrix = \
+    defaultBiasesCol, sensMatrix, normlzdSensMatrix = \
          constructSensMatrix(sensMetricValsMatrix, sensParamValsRow,
                             defaultMetricValsCol, defaultParamValsRow,
                             obsMetricValsCol,
@@ -228,7 +228,7 @@ def analyzeSensMatrix(metricsNames, paramsNames, transformedParamsNames,
     print("defaultBiasesOrigApprox =")
     print(defaultBiasesOrigApprox)
 
-    return (sensMatrixOrig, sensMatrix, normlzdSensMatrix, svdInvrsNormlzdWeighted,
+    return (defaultBiasesCol, sensMatrixOrig, sensMatrix, normlzdSensMatrix, svdInvrsNormlzdWeighted,
             dparamsSoln, paramsSoln, defaultBiasesOrigApprox)
 
 def constructSensMatrix(sensMetricValsMatrix, sensParamValsRow,
@@ -315,7 +315,7 @@ def constructSensMatrix(sensMetricValsMatrix, sensParamValsRow,
         print("\nnormlzdSensMatrix =")
         print(normlzdSensMatrix)
 
-    return  (sensMatrix, normlzdSensMatrix)
+    return  (defaultBiasesCol, sensMatrix, normlzdSensMatrix)
 
 
 def calcSvdInvrs(normlzdWeightedSensMatrix):
@@ -523,7 +523,9 @@ def plotNormlzdSensMatrix(normlzdSensMatrix, metricsNames, paramsNames):
     ax.set_yticklabels(metricsNames)
     ax.set_xticks(np.arange(paramsNames.size))
     ax.set_xticklabels(paramsNames)
+    plt.ion()  # Prevent plotting from blocking rest of execution
     plt.show()
+    plt.pause(1)
 
 def calcLinSolnBias(linSolnNcFilename, defaultNcFilename,
                     metricsNames):
