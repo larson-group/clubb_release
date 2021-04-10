@@ -350,7 +350,7 @@ module advance_clubb_core_module
         iinvrs_tau_sfc,          &
         iinvrs_tau_shear,        &
         ibrunt_vaisala_freq_sqd, &
-        iRi_zm
+        isqrt_Ri_zm
 
     use stats_variables, only: &
         iwprtp_zt,     &
@@ -775,7 +775,7 @@ module advance_clubb_core_module
        brunt_vaisala_freq_sqd_plus,  & ! N^2 from another way
        brunt_vaisala_freq_sqd_zt,    & ! Buoyancy frequency squared on t-levs.        [s^-2]
        brunt_freq_out_cloud,         & !
-       Ri_zm ! Richardson number
+       sqrt_Ri_zm ! Richardson number
 
 
     real( kind = core_rknd ), parameter :: &
@@ -1207,7 +1207,7 @@ module advance_clubb_core_module
         brunt_vaisala_freq_sqd_smth = zt2zm( zm2zt( &
               min( brunt_vaisala_freq_sqd, 1.e8_core_rknd * abs(brunt_vaisala_freq_sqd)**3 ) ) )
 
-        Ri_zm &
+        sqrt_Ri_zm &
         = sqrt( max( 1.0e-7_core_rknd, brunt_vaisala_freq_sqd_smth ) &
                 / max( ( ddzt(um)**2 + ddzt(vm)**2 ), 1.0e-7_core_rknd ) )
 
@@ -1261,7 +1261,7 @@ module advance_clubb_core_module
            invrs_tau_wpxp_zm &
            = invrs_tau_wpxp_zm &
              * ( 1.0_core_rknd &
-                 + C_invrs_tau_wpxp_Ri * min( max( Ri_zm, 0.0_core_rknd ), &
+                 + C_invrs_tau_wpxp_Ri * min( max( sqrt_Ri_zm, 0.0_core_rknd ), &
                                       12.0_core_rknd ) )
         end where
 
@@ -1504,7 +1504,7 @@ module advance_clubb_core_module
          call stat_update_var(iinvrs_tau_sfc, invrs_tau_sfc, stats_zm)
          call stat_update_var(iinvrs_tau_shear, invrs_tau_shear, stats_zm)
          call stat_update_var(ibrunt_vaisala_freq_sqd, brunt_vaisala_freq_sqd, stats_zm)
-         call stat_update_var(iRi_zm, Ri_zm, stats_zm)
+         call stat_update_var(isqrt_Ri_zm, sqrt_Ri_zm, stats_zm)
       end if
 
       ! Cx_fnc_Richardson is only used if one of these flags is true,
