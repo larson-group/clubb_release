@@ -28,12 +28,12 @@ def main():
 
     # Netcdf file containing metric and parameter values from the default simulation
     defaultNcFilename = \
-        '/home/vlarson/canopy/scripts/anvil.c689c7e.repeatbmg_flux.ne30_ne30_GLBmean.nc'
-
+        'default.nc' #'/home/vlarson/canopy/scripts/anvil.c689c7e.repeatbmg_flux.ne30_ne30_GLBmean.nc'
+        
     # Metrics from simulation that use the SVD-recommended parameter values
     # Here, we use default simulation just as a placeholder.
     linSolnNcFilename = \
-        '/home/vlarson/canopy/scripts/anvil.c689c7e.repeatbmg_flux.ne30_ne30_GLBmean.nc'
+        'default.nc' #'/home/vlarson/canopy/scripts/anvil.c689c7e.repeatbmg_flux.ne30_ne30_GLBmean.nc'
 
     # This is a list of one netcdf file per each sensitivity simulation.
     # Each file contains metrics and parameter values for a single simulation.
@@ -41,8 +41,10 @@ def main():
     # These filenames must be listed in the same order as the parameters (paramsNames).
     sensNcFilenames = \
     np.array([ \
-        '/home/vlarson/canopy/scripts/anvil.c689c7e.repeatbmg_flux_c82.ne30_ne30_GLBmean.nc', \
-        '/home/vlarson/canopy/scripts/anvil.c689c7e.repeatbmg_flux_n21.ne30_ne30_GLBmean.nc' \
+        #'/home/vlarson/canopy/scripts/anvil.c689c7e.repeatbmg_flux_c82.ne30_ne30_GLBmean.nc', \
+        #'/home/vlarson/canopy/scripts/anvil.c689c7e.repeatbmg_flux_n21.ne30_ne30_GLBmean.nc' \
+        'sens0.nc', \
+        'sens1.nc'    
               ])
 
     # Observed values of our metrics, from, e.g., CERES-EBAF.
@@ -167,12 +169,23 @@ def analyzeSensMatrix(metricsNames, paramsNames, transformedParamsNames,
                     numMetrics, numParams,
                     sensNcFilenames)
 
+    # Calculate the magnitude of the maximum value of parameters
+    #    from the default and sensitivity runs, for later use
+    #    in scaling the normalized sensitivity matrix.
+    maxMagParamValsRow = np.maximum( np.abs(defaultParamValsRow), \
+                                     np.abs(sensParamValsRow) )
+    if np.any( np.isclose(maxMagParamValsRow, np.zeros((1,numParams))) ):
+        print("\nmaxMagParamValsRow =")
+        print(maxMagParamValsRow)
+        sys.exit("Error: A parameter value from both default and sensitivity simulation is zero.")    
+
     # Calculate the sensitivity matrix and the sensitivity matrix
     # normalized by the discrepancies from observations in default simulation.
     # Use untransformed (original) parameter values.
     defaultBiasesCol, sensMatrixOrig, normlzdSensMatrixOrig = \
          constructSensMatrix(sensMetricValsMatrix, sensParamValsOrigRow,
                             defaultMetricValsCol, defaultParamValsOrigRow,
+                            np.full_like(maxMagParamValsRow,1.0),
                             obsMetricValsCol,
                             numMetrics, numParams,
                             beVerbose=False)
@@ -186,6 +199,7 @@ def analyzeSensMatrix(metricsNames, paramsNames, transformedParamsNames,
     defaultBiasesCol, sensMatrix, normlzdSensMatrix = \
          constructSensMatrix(sensMetricValsMatrix, sensParamValsRow,
                             defaultMetricValsCol, defaultParamValsRow,
+                            maxMagParamValsRow,
                             obsMetricValsCol,
                             numMetrics, numParams,
                             beVerbose=True)
@@ -202,7 +216,7 @@ def analyzeSensMatrix(metricsNames, paramsNames, transformedParamsNames,
     #print(svdInvrsNormlzdWeighted)
 
     # Calculate solution in transformed space
-    dparamsSoln = svdInvrsNormlzdWeighted @ metricsWeights #* np.transpose(defaultParamValsRow)
+    dparamsSoln = svdInvrsNormlzdWeighted @ metricsWeights * np.transpose(maxMagParamValsRow)
     defaultBiasesApprox = sensMatrix @ dparamsSoln
     print("defaultBiasesApprox =")
     print(defaultBiasesApprox)
@@ -233,6 +247,7 @@ def analyzeSensMatrix(metricsNames, paramsNames, transformedParamsNames,
 
 def constructSensMatrix(sensMetricValsMatrix, sensParamValsRow,
                         defaultMetricValsCol, defaultParamValsRow,
+                        maxMagParamValsRow,
                         obsMetricValsCol,
                         numMetrics, numParams,
                         beVerbose):
@@ -306,10 +321,10 @@ def constructSensMatrix(sensMetricValsMatrix, sensParamValsRow,
     #print(invrsBiasesMatrix)
 
     # Form matrix of default parameter values, for later normalization of the sensitivity matrix
-    #defaultParamValsMatrix = np.ones((numMetrics,1)) @ defaultParamValsRow
+    maxMagParamValsMatrix = np.ones((numMetrics,1)) @ maxMagParamValsRow
 
     # Sensitivity matrix, normalized by biases and parameter values
-    normlzdSensMatrix = sensMatrix * invrsBiasesMatrix #* defaultParamValsMatrix
+    normlzdSensMatrix = sensMatrix * invrsBiasesMatrix * maxMagParamValsMatrix
 
     if beVerbose:
         print("\nnormlzdSensMatrix =")
