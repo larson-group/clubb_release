@@ -31,7 +31,7 @@ class VariableGroupSamBudgets(VariableGroup):
         hlp_budget_lines = [
             {'var_names': ['HLADV'], 'legend_label': 'HLADV',
              'sam_conv_factor': self.kg_per_second_to_kg_per_day},
-            {'var_names': ['HLDIFF'], 'legend_label': 'HLDFSN',
+            {'var_names': ['HLDFSN'], 'legend_label': 'HLDFSN',
              'sam_conv_factor': self.kg_per_second_to_kg_per_day},
             {'var_names': ['HLRAD'], 'legend_label': 'HLRAD',
              'sam_conv_factor': self.kg_per_second_to_kg_per_day},
@@ -49,7 +49,7 @@ class VariableGroupSamBudgets(VariableGroup):
         qtp_budget_lines = [
             {'var_names': ['QTADV'], 'legend_label': 'QTADV',
              'sam_conv_factor': self.g_per_second_to_kg_per_day},
-            {'var_names': ['QTDIFF'], 'legend_label': 'QTDFSN',
+            {'var_names': ['QTDFSN'], 'legend_label': 'QTDFSN',
              'sam_conv_factor': self.g_per_second_to_kg_per_day},
             {'var_names': ['QTSRC'], 'legend_label': 'QTSRC',
              'sam_conv_factor': self.g_per_second_to_kg_per_day},
@@ -68,7 +68,7 @@ class VariableGroupSamBudgets(VariableGroup):
         tpwp_budget_lines = [
             {'var_names': ['TWGRAD'], 'legend_label': 'TWGRAD'},
             {'var_names': ['TWADV'], 'legend_label': 'TWADV'},
-            {'var_names': ['TWDIFF'], 'legend_label': 'TWDFSN'},
+            {'var_names': ['TWDFSN'], 'legend_label': 'TWDFSN'},
             {'var_names': ['TWB+P'], 'legend_label': 'TWBUOY+TWPRES', 'sam_calc': self.getTwBuoyPlusPres},
             {'var_names': ['TWPREC'], 'legend_label': 'TWPREC'},
             {'var_names': ['TWRAD'], 'legend_label': 'TWRAD'},
@@ -80,7 +80,7 @@ class VariableGroupSamBudgets(VariableGroup):
         tpwp_split_budget_lines = [
             {'var_names': ['TWGRAD'], 'legend_label': 'TWGRAD'},
             {'var_names': ['TWADV'], 'legend_label': 'TWADV'},
-            {'var_names': ['TWDIFF'], 'legend_label': 'TWDFSN'},
+            {'var_names': ['TWDFSN'], 'legend_label': 'TWDFSN'},
             {'var_names': ['TWBUOY'], 'legend_label': 'TWBUOY'},
             {'var_names': ['TWPRES'], 'legend_label': 'TWPRES'},
             {'var_names': ['TWPREC'], 'legend_label': 'TWPREC'},
@@ -94,7 +94,7 @@ class VariableGroupSamBudgets(VariableGroup):
         thlpwp_budget_lines = [
             {'var_names': ['THLWGRAD'], 'legend_label': 'THLWGRAD'},
             {'var_names': ['THLWADV'], 'legend_label': 'THLWADV'},
-            {'var_names': ['THLWDIFF'], 'legend_label': 'THLWDFSN'},
+            {'var_names': ['THLWDFSN'], 'legend_label': 'THLWDFSN'},
             {'var_names': ['THLWB+P'], 'legend_label': 'THLWBUOY+PRES', 'sam_calc': self.getThlwBuoyPlusPres},
             {'var_names': ['THLWPREC'], 'legend_label': 'THLWPREC'},
             {'var_names': ['THLWRAD'], 'legend_label': 'THLWRAD'},
@@ -106,7 +106,7 @@ class VariableGroupSamBudgets(VariableGroup):
         thlpwp_split_budget_lines = [
             {'var_names': ['THLWGRAD'], 'legend_label': 'THLWGRAD'},
             {'var_names': ['THLWADV'], 'legend_label': 'THLWADV'},
-            {'var_names': ['THLWDIFF'], 'legend_label': 'THLWDFSN'},
+            {'var_names': ['THLWDFSN'], 'legend_label': 'THLWDFSN'},
             {'var_names': ['THLWBUOY'], 'legend_label': 'THLWBUOY'},
             {'var_names': ['THLWPRES'], 'legend_label': 'THLWPRES'},
             {'var_names': ['THLWPREC'], 'legend_label': 'THLWPREC'},
@@ -120,7 +120,7 @@ class VariableGroupSamBudgets(VariableGroup):
         qpwp_budget_lines = [
             {'var_names': ['QWGRAD'], 'legend_label': 'QWGRAD'},
             {'var_names': ['QWADV'], 'legend_label': 'QWADV'},
-            {'var_names': ['QWDIFF'], 'legend_label': 'QWDFSN'},
+            {'var_names': ['QWDFSN'], 'legend_label': 'QWDFSN'},
             {'var_names': ['QWB+P'], 'legend_label': 'QWBUOY+QWPRES', 'sam_calc': self.getQwBuoyPlusPres},
             {'var_names': ['QWPREC'], 'legend_label': 'QWPREC'},
             {'var_names': ['QWFORC'], 'legend_label': 'QWFORC'},
@@ -131,7 +131,7 @@ class VariableGroupSamBudgets(VariableGroup):
         qpwp_split_budget_lines = [
             {'var_names': ['QWGRAD'], 'legend_label': 'QWGRAD'},
             {'var_names': ['QWADV'], 'legend_label': 'QWADV'},
-            {'var_names': ['QWDIFF'], 'legend_label': 'QWDFSN'},
+            {'var_names': ['QWDFSN'], 'legend_label': 'QWDFSN'},
             {'var_names': ['QWBUOY'], 'legend_label': 'QWBUOY'},
             {'var_names': ['QWPRES'], 'legend_label': 'QWPRES'},
             {'var_names': ['QWPREC'], 'legend_label': 'QWPREC'},
@@ -143,7 +143,7 @@ class VariableGroupSamBudgets(VariableGroup):
         qtogpwp_budget_lines = [
             {'var_names': ['QTOGWGRAD'], 'legend_label': 'QTOGWGRAD'},
             {'var_names': ['QTOGWADV'], 'legend_label': 'QTOGWADV'},
-            {'var_names': ['QTOGWDIFF'], 'legend_label': 'QTOGWDFSN'},
+            {'var_names': ['QTOGWDFSN'], 'legend_label': 'QTOGWDFSN'},
             {'var_names': ['QTOGWB+P'], 'legend_label': 'QTOGWBUOY+PRES',
              'sam_calc': self.getQtogwBuoyPlusPres},
             {'var_names': ['QTOGWPREC'], 'legend_label': 'QTOGWPREC'},
@@ -155,7 +155,7 @@ class VariableGroupSamBudgets(VariableGroup):
         qtogpwp_split_budget_lines = [
             {'var_names': ['QTOGWGRAD'], 'legend_label': 'QTOGWGRAD'},
             {'var_names': ['QTOGWADV'], 'legend_label': 'QTOGWADV'},
-            {'var_names': ['QTOGWDIFF'], 'legend_label': 'QTOGWDFSN'},
+            {'var_names': ['QTOGWDFSN'], 'legend_label': 'QTOGWDFSN'},
             {'var_names': ['QTOGWBUOY'], 'legend_label': 'QTOGWBUOY'},
             {'var_names': ['QTOGWPRES'], 'legend_label': 'QTOGWPRES'},
             {'var_names': ['QTOGWPREC'], 'legend_label': 'QTOGWPREC'},
@@ -233,7 +233,7 @@ class VariableGroupSamBudgets(VariableGroup):
             {'var_names': ['PRESSTR'], 'legend_label': 'PRESSTR'},
             {'var_names': ['SDMP'], 'legend_label': 'SDMP'},
             {'var_names': ['DIFTR+DISS'], 'legend_label': 'DISSIP+DIFTR',
-             'sam_calc': self.getTkeDissPlusDiff},
+             'sam_calc': self.getTkeDissPlusDfsn},
             {'var_names': ['BT'], 'legend_label': 'BT'},
             {'var_names': ['TKE_RES'], 'legend_label': 'TKE_RES', 'sam_calc': self.getTkeResidual},
         ]
@@ -251,7 +251,7 @@ class VariableGroupSamBudgets(VariableGroup):
             {'var_names': ['U2V2BUOY'], 'legend_label': 'U2V2BUOY', 'sam_calc': self.getU2V2Buoy},
             {'var_names': ['U2V2PRESS'], 'legend_label': 'U2V2PRES', 'sam_calc': self.getU2V2Pres},
             {'var_names': ['W2REDIS'], 'legend_label': 'U2V2REDIS', 'sam_conv_factor': -1},
-            {'var_names': ['U2V2DIFF'], 'legend_label': 'U2V2DFSN', 'sam_calc': self.getU2V2Diff},
+            {'var_names': ['U2V2DFSN'], 'legend_label': 'U2V2DFSN', 'sam_calc': self.getU2V2Dfsn},
             {'var_names': ['DISSIP'], 'legend_label': 'U2V2DISSIP', 'sam_conv_factor': 2},
             {'var_names': ['U2V2SDMP'], 'legend_label': 'U2V2SDMP', 'sam_calc': self.getU2V2Sdmp},
             {'var_names': ['SHEAR'], 'legend_label': 'U2V2SHEAR', 'sam_conv_factor': 2},
@@ -261,7 +261,7 @@ class VariableGroupSamBudgets(VariableGroup):
         ]
 
         upwp_budget_lines = [
-            {'var_names': ['WUDIFF'], 'legend_label': 'WUDFSN'},
+            {'var_names': ['WUDFSN'], 'legend_label': 'WUDFSN'},
             {'var_names': ['WU_RES'], 'legend_label': 'WU_RES', 'sam_calc': self.getUWResidual},
             {'var_names': ['WUADV'], 'legend_label': 'WUADV'},
             {'var_names': ['WUPRES'], 'legend_label': 'WUPRES'},
@@ -273,7 +273,7 @@ class VariableGroupSamBudgets(VariableGroup):
         ]
 
         vpwp_budget_lines = [
-            {'var_names': ['WVDIFF'], 'legend_label': 'WVDFSN'},
+            {'var_names': ['WVDFSN'], 'legend_label': 'WVDFSN'},
             {'var_names': ['WV_RES'], 'legend_label': 'WV_RES', 'sam_calc': self.getVWResidual},
             {'var_names': ['WVADV'], 'legend_label': 'WVADV'},
             {'var_names': ['WVPRES'], 'legend_label': 'WVPRES'},
@@ -288,7 +288,7 @@ class VariableGroupSamBudgets(VariableGroup):
             {'var_names': ['U2ADV'], 'legend_label': 'U2ADV'},
             {'var_names': ['U2SHEAR'], 'legend_label': 'U2SHEAR'},
             {'var_names': ['U2REDIS'], 'legend_label': 'U2REDIS'},
-            {'var_names': ['U2DIFF'], 'legend_label': 'U2DFSN'},
+            {'var_names': ['U2DFSN'], 'legend_label': 'U2DFSN'},
             {'var_names': ['U2BT'], 'legend_label': 'U2BT'},
             {'var_names': ['U2_RES'], 'legend_label': 'U2_RES', 'sam_calc': self.getU2Residual},
         ]
@@ -297,7 +297,7 @@ class VariableGroupSamBudgets(VariableGroup):
             {'var_names': ['V2ADV'], 'legend_label': 'V2ADV'},
             {'var_names': ['V2SHEAR'], 'legend_label': 'V2SHEAR'},
             {'var_names': ['V2REDIS'], 'legend_label': 'V2REDIS'},
-            {'var_names': ['V2DIFF'], 'legend_label': 'V2DFSN'},
+            {'var_names': ['V2DFSN'], 'legend_label': 'V2DFSN'},
             {'var_names': ['V2BT'], 'legend_label': 'V2BT'},
             {'var_names': ['V2_RES'], 'legend_label': 'V2_RES', 'sam_calc': self.getV2Residual},
         ]
@@ -307,7 +307,7 @@ class VariableGroupSamBudgets(VariableGroup):
             {'var_names': ['W2PRES'], 'legend_label': 'W2PRES'},
             {'var_names': ['W2REDIS'], 'legend_label': 'W2REDIS'},
             {'var_names': ['W2BUOY'], 'legend_label': 'W2BUOY'},
-            {'var_names': ['W2DIFF'], 'legend_label': 'W2DFSN'},
+            {'var_names': ['W2DFSN'], 'legend_label': 'W2DFSN'},
             {'var_names': ['W2SDMP'], 'legend_label': 'W2SDMP'},
             {'var_names': ['W2BT'], 'legend_label': 'W2BT'},
             {'var_names': ['W2_RES'], 'legend_label': 'W2_RES', 'sam_calc': self.getW2Residual},
@@ -316,7 +316,7 @@ class VariableGroupSamBudgets(VariableGroup):
         wp3_budget_lines = [
             {'var_names': ['W3ADV'], 'legend_label': 'W3ADV'},
             {'var_names': ['W3BUOY'], 'legend_label': 'W3BUOY'},
-            {'var_names': ['W3DIFF'], 'legend_label': 'W3DFSN'},
+            {'var_names': ['W3DFSN'], 'legend_label': 'W3DFSN'},
             {'var_names': ['W3BT'], 'legend_label': 'W3BT'},
             {'var_names': ['W3_RES'], 'legend_label': 'W3_RES', 'sam_calc': self.getW3Residual},
             {'var_names': ['W3PRESS'], 'legend_label': 'W3PRES', 'sam_calc': self.getW3PRESS},
@@ -325,8 +325,8 @@ class VariableGroupSamBudgets(VariableGroup):
         ## Tau plots showing C_2/tau and C_14/tau ##
         # No support for 2nd axis, not needed
         # up2vp2tau_budget_lines = [
-        # {'var_names': [r'U2DIFF'], 'legend_label': 'U2DIFF'},
-        # {'var_names': [r'V2DIFF'], 'legend_label': 'V2DIFF'},
+        # {'var_names': [r'U2DFSN'], 'legend_label': 'U2DFSN'},
+        # {'var_names': [r'V2DFSN'], 'legend_label': 'V2DFSN'},
         # {'var_names': [r'TKES'], 'legend_label': 'TKES', 1, 1],
         # {'var_names': [r'TKE'], 'legend_label': 'TKE', 1, 1],
         # {'var_names': ['U2_C14_over_tau'], 'legend_label': r"$\frac{C_{14}}{\tau}\ (u'^2)$",
@@ -378,7 +378,7 @@ class VariableGroupSamBudgets(VariableGroup):
         up2_reduced_budget_lines = [
             {'var_names': ['U2ADV'], 'legend_label': 'advection'},
             # {'var_names': ['U2BUOY'], 'legend_label': 'buoyancy', 'sam_calc': self.getNothing},
-            {'var_names': ['U2DIFF'], 'legend_label': 'dissipation'},
+            {'var_names': ['U2DFSN'], 'legend_label': 'dissipation'},
             {'var_names': ['U2REDIS'], 'legend_label': 'isotropy'},
             # {'var_names': ['U2PRES'], 'legend_label': 'pressure', 'sam_calc': self.getNothing},
             {'var_names': ['U2SHEAR'], 'legend_label': 'turb. prod.'},
@@ -389,7 +389,7 @@ class VariableGroupSamBudgets(VariableGroup):
         vp2_reduced_budget_lines = [
             {'var_names': ['V2ADV'], 'legend_label': 'advection'},
             # {'var_names': ['V2BUOY'], 'legend_label': 'buoyancy', 'sam_calc': self.getNothing},
-            {'var_names': ['V2DIFF'], 'legend_label': 'dissipation'},
+            {'var_names': ['V2DFSN'], 'legend_label': 'dissipation'},
             {'var_names': ['V2REDIS'], 'legend_label': 'isotropy'},
             # {'var_names': ['V2PRES'], 'legend_label': 'pressure', 'sam_calc': self.getNothing},
             {'var_names': ['V2SHEAR'], 'legend_label': 'turb. prod.'},
@@ -401,7 +401,7 @@ class VariableGroupSamBudgets(VariableGroup):
             # {'var_names': ['W2SDMP'], 'legend_label': 'damping'},
             {'var_names': ['W2ADV'], 'legend_label': 'advection'},
             {'var_names': ['W2BUOY'], 'legend_label': 'buoyancy'},
-            {'var_names': ['W2DIFF'], 'legend_label': 'dissipation'},
+            {'var_names': ['W2DFSN'], 'legend_label': 'dissipation'},
             {'var_names': ['W2REDIS+PRES'], 'legend_label': 'pressure', 'sam_calc': self.getW2RedisPlusPres},
             # {'var_names': ['W2SHEAR'], 'legend_label': 'turb. prod.', 'sam_calc': self.getNothing},
             {'var_names': ['W2BT'], 'legend_label': 'time tndcy'},
@@ -412,7 +412,7 @@ class VariableGroupSamBudgets(VariableGroup):
             # {'var_names': ['WUSDMP'], 'legend_label': 'WUSDMP'},
             {'var_names': ['WUADV'], 'legend_label': 'advection'},
             {'var_names': ['WUBUOY'], 'legend_label': 'buoyancy'},
-            {'var_names': ['WUDIFF'], 'legend_label': 'dissipation'},
+            {'var_names': ['WUDFSN'], 'legend_label': 'dissipation'},
             {'var_names': ['WUPRES+ANIZ'], 'legend_label': 'pressure', 'sam_calc': self.getUWPresPlusAniz},
             {'var_names': ['WUSHEAR'], 'legend_label': 'turb. prod.'},
             {'var_names': ['WUBT'], 'legend_label': 'time tndcy'},
@@ -423,7 +423,7 @@ class VariableGroupSamBudgets(VariableGroup):
             # {'var_names': ['WVSDMP'], 'legend_label': 'WUSDMP'},
             {'var_names': ['WVADV'], 'legend_label': 'advection'},
             {'var_names': ['WVBUOY'], 'legend_label': 'buoyancy'},
-            {'var_names': ['WVDIFF'], 'legend_label': 'dissipation'},
+            {'var_names': ['WVDFSN'], 'legend_label': 'dissipation'},
             {'var_names': ['WVPRES+ANIZ'], 'legend_label': 'pressure', 'sam_calc': self.getVWPresPlusAniz},
             {'var_names': ['WVSHEAR'], 'legend_label': 'turb. prod.'},
             {'var_names': ['WVBT'], 'legend_label': 'time tndcy'},
@@ -995,7 +995,7 @@ class VariableGroupSamBudgets(VariableGroup):
 
         Calculates the residual for the HL budget using
         the following equation:
-        ``(HLSTOR)+((-1)*(HLADV+HLDIFF+HLRAD+HLLAT+TTEND))*g_per_second_to_kg_per_day``
+        ``(HLSTOR)+((-1)*(HLADV+HLDFSN+HLRAD+HLLAT+TTEND))*g_per_second_to_kg_per_day``
 
         :param dataset_override: If passed, this netcdf dataset will be used to gather the data needed to calculate the
           given variable. if not passed, this function should attempt to find the best source for the data, e.g.
@@ -1010,7 +1010,7 @@ class VariableGroupSamBudgets(VariableGroup):
         HLADV, indep, dataset = self.getVarForCalculations('HLADV', dataset,
                                                            conversion_factor = self.kg_per_second_to_kg_per_day)
 
-        HLDIFF, indep, dataset = self.getVarForCalculations('HLDIFF', dataset,
+        HLDFSN, indep, dataset = self.getVarForCalculations('HLDFSN', dataset,
                                                         conversion_factor = self.kg_per_second_to_kg_per_day)
 
         HLLAT, indep, dataset = self.getVarForCalculations('HLLAT', dataset,
@@ -1026,7 +1026,7 @@ class VariableGroupSamBudgets(VariableGroup):
                                                        conversion_factor = self.kg_per_second_to_kg_per_day)
 
         # ALERT: Conversion factor correct?
-        HL_RES = (HLSTOR - (HLADV + HLDIFF + HLLAT + HLRAD + TTEND)) * self.g_per_second_to_kg_per_day
+        HL_RES = (HLSTOR - (HLADV + HLDFSN + HLLAT + HLRAD + TTEND)) * self.g_per_second_to_kg_per_day
         return HL_RES, indep
 
     def getQtResidual(self, dataset_override=None):
@@ -1049,7 +1049,7 @@ class VariableGroupSamBudgets(VariableGroup):
         .. code-block:: python
             :linenos:
 
-            QTSTOR+(-1)*(QTADV+QTDIFF+QTSRC+QTSINK+QTEND)
+            QTSTOR+(-1)*(QTADV+QTDFSN+QTSRC+QTSINK+QTEND)
 
         :param dataset_override: If passed, this netcdf dataset will be used to gather the data needed to calculate the
           given variable. if not passed, this function should attempt to find the best source for the data, e.g.
@@ -1062,7 +1062,7 @@ class VariableGroupSamBudgets(VariableGroup):
             dataset = dataset_override
         QTADV, indep, dataset = self.getVarForCalculations('QTADV', dataset,
                                                        conversion_factor  = self.g_per_second_to_kg_per_day)
-        QTDIFF, indep, dataset = self.getVarForCalculations('QTDIFF', dataset,
+        QTDFSN, indep, dataset = self.getVarForCalculations('QTDFSN', dataset,
                                                        conversion_factor  = self.g_per_second_to_kg_per_day)
         QTEND, indep, dataset = self.getVarForCalculations('QTEND', dataset,
                                                        conversion_factor  = self.g_per_second_to_kg_per_day)
@@ -1074,7 +1074,7 @@ class VariableGroupSamBudgets(VariableGroup):
                                                        conversion_factor  = self.g_per_second_to_kg_per_day)
         QV_TNDCY, indep, dataset = self.getVarForCalculations('QV_TNDCY', dataset,
                                                        conversion_factor  = self.g_per_second_to_kg_per_day)
-        QT_RES = QTSTOR - (QTADV + QTDIFF + QTEND + QTSRC + QTSINK)
+        QT_RES = QTSTOR - (QTADV + QTDFSN + QTEND + QTSRC + QTSINK)
         return QT_RES, indep
 
     def getTwBuoyPlusPres(self, dataset_override=None):
@@ -1127,7 +1127,7 @@ class VariableGroupSamBudgets(VariableGroup):
 
         Calculates the residual for the TW budget using
         the following equation:
-        ``TWBT - (TWGRAD + TWADV + TWDIFF + TWBUOY + TWPRES + TWPREC + TWRAD + TWFORC)``
+        ``TWBT - (TWGRAD + TWADV + TWDFSN + TWBUOY + TWPRES + TWPREC + TWRAD + TWFORC)``
 
         :param dataset_override: If passed, this netcdf dataset will be used to gather the data needed to calculate the
           given variable. if not passed, this function should attempt to find the best source for the data, e.g.
@@ -1141,13 +1141,13 @@ class VariableGroupSamBudgets(VariableGroup):
         TWADV, indep, dataset = self.getVarForCalculations('TWADV', dataset)
         TWBT, indep, dataset = self.getVarForCalculations('TWBT', dataset)
         TWBUOY, indep, dataset = self.getVarForCalculations('TWBUOY', dataset)
-        TWDIFF, indep, dataset = self.getVarForCalculations('TWDIFF', dataset)
+        TWDFSN, indep, dataset = self.getVarForCalculations('TWDFSN', dataset)
         TWFORC, indep, dataset = self.getVarForCalculations('TWFORC', dataset)
         TWGRAD, indep, dataset = self.getVarForCalculations('TWGRAD', dataset)
         TWPREC, indep, dataset = self.getVarForCalculations('TWPREC', dataset)
         TWPRES, indep, dataset = self.getVarForCalculations('TWPRES', dataset)
         TWRAD, indep, dataset = self.getVarForCalculations('TWRAD', dataset)
-        TW_RES = TWBT - (TWADV + TWBUOY + TWDIFF + TWFORC + TWGRAD + TWPREC + TWPRES + TWRAD)
+        TW_RES = TWBT - (TWADV + TWBUOY + TWDFSN + TWFORC + TWGRAD + TWPREC + TWPRES + TWRAD)
         return TW_RES, indep
 
     def getThlwBuoyPlusPres(self, dataset_override=None):
@@ -1200,7 +1200,7 @@ class VariableGroupSamBudgets(VariableGroup):
 
         Calculates the residual for the THLW budget using
         the following equation:
-        ``THLWBT - (THLWGRAD + THLWADV + THLWDIFF + THLWBUOY + THLWPRES + THLWPREC + THLWRAD + THLWFORC)``
+        ``THLWBT - (THLWGRAD + THLWADV + THLWDFSN + THLWBUOY + THLWPRES + THLWPREC + THLWRAD + THLWFORC)``
 
         :param dataset_override: If passed, this netcdf dataset will be used to gather the data needed to calculate the
           given variable. if not passed, this function should attempt to find the best source for the data, e.g.
@@ -1214,13 +1214,13 @@ class VariableGroupSamBudgets(VariableGroup):
         THLWADV, indep, dataset = self.getVarForCalculations('THLWADV', dataset)
         THLWBT, indep, dataset = self.getVarForCalculations('THLWBT', dataset)
         THLWBUOY, indep, dataset = self.getVarForCalculations('THLWBUOY', dataset)
-        THLWDIFF, indep, dataset = self.getVarForCalculations('THLWDIFF', dataset)
+        THLWDFSN, indep, dataset = self.getVarForCalculations('THLWDFSN', dataset)
         THLWFORC, indep, dataset = self.getVarForCalculations('THLWFORC', dataset)
         THLWGRAD, indep, dataset = self.getVarForCalculations('THLWGRAD', dataset)
         THLWPREC, indep, dataset = self.getVarForCalculations('THLWPREC', dataset)
         THLWPRES, indep, dataset = self.getVarForCalculations('THLWPRES', dataset)
         THLWRAD, indep, dataset = self.getVarForCalculations('THLWRAD', dataset)
-        THLW_RES = THLWBT - (THLWADV + THLWBUOY + THLWDIFF + THLWFORC + THLWGRAD + THLWPREC + THLWPRES + THLWRAD)
+        THLW_RES = THLWBT - (THLWADV + THLWBUOY + THLWDFSN + THLWFORC + THLWGRAD + THLWPREC + THLWPRES + THLWRAD)
         return THLW_RES, indep
 
     def getQwBuoyPlusPres(self, dataset_override=None):
@@ -1273,7 +1273,7 @@ class VariableGroupSamBudgets(VariableGroup):
 
         Calculates the residual for the QW budget using
         the following equation:
-        ``QWBT - (QWGRAD + QWADV + QWDIFF + QWBUOY + QWPRES + QWPREC + QWFORC)``
+        ``QWBT - (QWGRAD + QWADV + QWDFSN + QWBUOY + QWPRES + QWPREC + QWFORC)``
 
         :param dataset_override: If passed, this netcdf dataset will be used to gather the data needed to calculate the
           given variable. if not passed, this function should attempt to find the best source for the data, e.g.
@@ -1287,12 +1287,12 @@ class VariableGroupSamBudgets(VariableGroup):
         QWADV, indep, dataset = self.getVarForCalculations('QWADV', dataset)
         QWBT, indep, dataset = self.getVarForCalculations('QWBT', dataset)
         QWBUOY, indep, dataset = self.getVarForCalculations('QWBUOY', dataset)
-        QWDIFF, indep, dataset = self.getVarForCalculations('QWDIFF', dataset)
+        QWDFSN, indep, dataset = self.getVarForCalculations('QWDFSN', dataset)
         QWFORC, indep, dataset = self.getVarForCalculations('QWFORC', dataset)
         QWGRAD, indep, dataset = self.getVarForCalculations('QWGRAD', dataset)
         QWPREC, indep, dataset = self.getVarForCalculations('QWPREC', dataset)
         QWPRES, indep, dataset = self.getVarForCalculations('QWPRES', dataset)
-        QW_RES = QWBT - (QWGRAD + QWADV + QWDIFF + QWBUOY + QWPRES + QWPREC + QWFORC)
+        QW_RES = QWBT - (QWGRAD + QWADV + QWDFSN + QWBUOY + QWPRES + QWPREC + QWFORC)
         return QW_RES, indep
 
     def getQtogwBuoyPlusPres(self, dataset_override=None):
@@ -1345,7 +1345,7 @@ class VariableGroupSamBudgets(VariableGroup):
 
         Calculates the residual for the QTOGW budget using
         the following equation:
-        ``QTOGWBT - (QTOGWGRAD + QTOGWADV + QTOGWDIFF + QTOGWBUOY + QTOGWPRES + QTOGWPREC + QTOGWFORC)``
+        ``QTOGWBT - (QTOGWGRAD + QTOGWADV + QTOGWDFSN + QTOGWBUOY + QTOGWPRES + QTOGWPREC + QTOGWFORC)``
 
         :param dataset_override: If passed, this netcdf dataset will be used to gather the data needed to calculate the
           given variable. if not passed, this function should attempt to find the best source for the data, e.g.
@@ -1359,12 +1359,12 @@ class VariableGroupSamBudgets(VariableGroup):
         QTOGWADV, indep, dataset = self.getVarForCalculations('QTOGWADV', dataset)
         QTOGWBT, indep, dataset = self.getVarForCalculations('QTOGWBT', dataset)
         QTOGWBUOY, indep, dataset = self.getVarForCalculations('QTOGWBUOY', dataset)
-        QTOGWDIFF, indep, dataset = self.getVarForCalculations('QTOGWDIFF', dataset)
+        QTOGWDFSN, indep, dataset = self.getVarForCalculations('QTOGWDFSN', dataset)
         QTOGWFORC, indep, dataset = self.getVarForCalculations('QTOGWFORC', dataset)
         QTOGWGRAD, indep, dataset = self.getVarForCalculations('QTOGWGRAD', dataset)
         QTOGWPREC, indep, dataset = self.getVarForCalculations('QTOGWPREC', dataset)
         QTOGWPRES, indep, dataset = self.getVarForCalculations('QTOGWPRES', dataset)
-        QTOGW_RES = QTOGWBT - (QTOGWGRAD + QTOGWADV + QTOGWDIFF + QTOGWBUOY + QTOGWPRES + QTOGWPREC + QTOGWFORC)
+        QTOGW_RES = QTOGWBT - (QTOGWGRAD + QTOGWADV + QTOGWDFSN + QTOGWBUOY + QTOGWPRES + QTOGWPREC + QTOGWFORC)
         return QTOGW_RES, indep
 
     def getT2Residual(self, dataset_override=None):
@@ -1560,7 +1560,7 @@ class VariableGroupSamBudgets(VariableGroup):
         QTHLW_RES = QTHLBT - (QTHLADV + QTHLGRAD + QTHLDISSIP + QTHLDIFTR + QTHLPREC + QTHLRAD + QTHLFORC)
         return QTHLW_RES, indep
 
-    def getTkeDissPlusDiff(self, dataset_override=None):
+    def getTkeDissPlusDfsn(self, dataset_override=None):
         """
         This is a "calculate function". Calculate functions are intended to be written by the user in the event that
         they need a variable that is not output by their atmospheric model. The general format for these functions
@@ -1590,8 +1590,8 @@ class VariableGroupSamBudgets(VariableGroup):
             dataset = dataset_override
         DIFTR, indep, dataset = self.getVarForCalculations('DIFTR', dataset)
         DISSIP, indep, dataset = self.getVarForCalculations('DISSIP', dataset)
-        TKE_DISS_DIFF = DIFTR + DISSIP
-        return TKE_DISS_DIFF, indep
+        TKE_DISS_DFSN = DIFTR + DISSIP
+        return TKE_DISS_DFSN, indep
 
     def getTkeResidual(self, dataset_override=None):
         """
@@ -1684,7 +1684,7 @@ class VariableGroupSamBudgets(VariableGroup):
 
         Calculates the residual for the U2 budget using
         the following equation:
-        ``U2BT - (U2ADV + U2SHEAR + U2REDIS + U2DIFF)``
+        ``U2BT - (U2ADV + U2SHEAR + U2REDIS + U2DFSN)``
 
         :param dataset_override: If passed, this netcdf dataset will be used to gather the data needed to calculate the
           given variable. if not passed, this function should attempt to find the best source for the data, e.g.
@@ -1697,10 +1697,10 @@ class VariableGroupSamBudgets(VariableGroup):
             dataset = dataset_override
         U2ADV, indep, dataset = self.getVarForCalculations('U2ADV', dataset)
         U2BT, indep, dataset = self.getVarForCalculations('U2BT', dataset)
-        U2DIFF, indep, dataset = self.getVarForCalculations('U2DIFF', dataset)
+        U2DFSN, indep, dataset = self.getVarForCalculations('U2DFSN', dataset)
         U2REDIS, indep, dataset = self.getVarForCalculations('U2REDIS', dataset)
         U2SHEAR, indep, dataset = self.getVarForCalculations('U2SHEAR', dataset)
-        U2_RES = U2BT - (U2ADV + U2SHEAR + U2REDIS + U2DIFF)
+        U2_RES = U2BT - (U2ADV + U2SHEAR + U2REDIS + U2DFSN)
         return U2_RES, indep
 
     def getV2Residual(self, dataset_override=None):
@@ -1720,7 +1720,7 @@ class VariableGroupSamBudgets(VariableGroup):
 
         Calculates the residual for the V2 budget using
         the following equation:
-        ``V2BT - (V2ADV + V2SHEAR + V2REDIS + V2DIFF)``
+        ``V2BT - (V2ADV + V2SHEAR + V2REDIS + V2DFSN)``
 
         :param dataset_override: If passed, this netcdf dataset will be used to gather the data needed to calculate the
           given variable. if not passed, this function should attempt to find the best source for the data, e.g.
@@ -1733,10 +1733,10 @@ class VariableGroupSamBudgets(VariableGroup):
             dataset = dataset_override
         V2ADV, indep, dataset = self.getVarForCalculations('V2ADV', dataset)
         V2BT, indep, dataset = self.getVarForCalculations('V2BT', dataset)
-        V2DIFF, indep, dataset = self.getVarForCalculations('V2DIFF', dataset)
+        V2DFSN, indep, dataset = self.getVarForCalculations('V2DFSN', dataset)
         V2REDIS, indep, dataset = self.getVarForCalculations('V2REDIS', dataset)
         V2SHEAR, indep, dataset = self.getVarForCalculations('V2SHEAR', dataset)
-        V2_RES = V2BT - (V2ADV + V2SHEAR + V2REDIS + V2DIFF)
+        V2_RES = V2BT - (V2ADV + V2SHEAR + V2REDIS + V2DFSN)
         return V2_RES, indep
 
     def getW2RedisPlusPres(self, dataset_override=None):
@@ -1789,7 +1789,7 @@ class VariableGroupSamBudgets(VariableGroup):
 
         Calculates the residual for the W2 budget using
         the following equation:
-        ``W2BT - (W2ADV + W2PRES + W2REDIS + W2BUOY + W2DIFF + W2SDMP)``
+        ``W2BT - (W2ADV + W2PRES + W2REDIS + W2BUOY + W2DFSN + W2SDMP)``
 
         :param dataset_override: If passed, this netcdf dataset will be used to gather the data needed to calculate the
           given variable. if not passed, this function should attempt to find the best source for the data, e.g.
@@ -1803,11 +1803,11 @@ class VariableGroupSamBudgets(VariableGroup):
         W2ADV, indep, dataset = self.getVarForCalculations('W2ADV', dataset)
         W2BT, indep, dataset = self.getVarForCalculations('W2BT', dataset)
         W2BUOY, indep, dataset = self.getVarForCalculations('W2BUOY', dataset)
-        W2DIFF, indep, dataset = self.getVarForCalculations('W2DIFF', dataset)
+        W2DFSN, indep, dataset = self.getVarForCalculations('W2DFSN', dataset)
         W2PRES, indep, dataset = self.getVarForCalculations('W2PRES', dataset)
         W2REDIS, indep, dataset = self.getVarForCalculations('W2REDIS', dataset)
         W2SDMP, indep, dataset = self.getVarForCalculations('W2SDMP', dataset)
-        W2_RES = W2BT - (W2ADV + W2PRES + W2REDIS + W2BUOY + W2DIFF + W2SDMP)
+        W2_RES = W2BT - (W2ADV + W2PRES + W2REDIS + W2BUOY + W2DFSN + W2SDMP)
         return W2_RES, indep
 
     def getU2V2Adv(self, dataset_override):
@@ -1909,7 +1909,7 @@ class VariableGroupSamBudgets(VariableGroup):
         U2V2_PRES = 2 * PRESSTR + W2PRES
         return U2V2_PRES, indep
 
-    def getU2V2Diff(self, dataset_override):
+    def getU2V2Dfsn(self, dataset_override):
         """
         This is a "calculate function". Calculate functions are intended to be written by the user in the event that
         they need a variable that is not output by their atmospheric model. The general format for these functions
@@ -1924,9 +1924,9 @@ class VariableGroupSamBudgets(VariableGroup):
         For more information on calculate functions, see the "Creating a new calculated function (for calculated
         variables)" section of the README.md
 
-        Calculates the DIFF variable value
+        Calculates the DFSN variable value
         of the combined U2+V2 budget using the following equation:
-        ``2 * DIFTR - W2DIFF``
+        ``2 * DIFTR - W2DFSN``
 
         :param dataset_override: If passed, this netcdf dataset will be used to gather the data needed to calculate the
           given variable. if not passed, this function should attempt to find the best source for the data, e.g.
@@ -1938,9 +1938,9 @@ class VariableGroupSamBudgets(VariableGroup):
         if dataset_override is not None:
             dataset = dataset_override
         DIFTR, indep, dataset = self.getVarForCalculations('DIFTR', dataset)
-        W2DIFF, indep, dataset = self.getVarForCalculations('W2DIFF', dataset)
-        U2V2_DIFF = 2 * DIFTR + W2DIFF
-        return U2V2_DIFF, indep
+        W2DFSN, indep, dataset = self.getVarForCalculations('W2DFSN', dataset)
+        U2V2_DFSN = 2 * DIFTR + W2DFSN
+        return U2V2_DFSN, indep
 
     def getU2V2Sdmp(self, dataset_override):
         """
@@ -2043,7 +2043,7 @@ class VariableGroupSamBudgets(VariableGroup):
         BUOYA, indep, dataset = self.getVarForCalculations('BUOYA', dataset)
         W2BUOY, indep, dataset = self.getVarForCalculations('W2BUOY', dataset)
         DIFTR, indep, dataset = self.getVarForCalculations('DIFTR', dataset)
-        W2DIFF, indep, dataset = self.getVarForCalculations('W2DIFF', dataset)
+        W2DFSN, indep, dataset = self.getVarForCalculations('W2DFSN', dataset)
         DISSIP, indep, dataset = self.getVarForCalculations('DISSIP', dataset)
         PRESSTR, indep, dataset = self.getVarForCalculations('PRESSTR', dataset)
         W2PRES, indep, dataset = self.getVarForCalculations('W2PRES', dataset)
@@ -2052,7 +2052,7 @@ class VariableGroupSamBudgets(VariableGroup):
         W2SDMP, indep, dataset = self.getVarForCalculations('W2SDMP', dataset)
         SHEAR, indep, dataset = self.getVarForCalculations('SHEAR', dataset)
         U2V2_RES = 2. * (BT - (ADVTR + BUOYA + PRESSTR + DIFTR + DISSIP + SDMP + SHEAR)) - W2BT + (
-                W2ADV + W2BUOY + W2PRES + W2DIFF + W2SDMP + W2REDIS)
+                W2ADV + W2BUOY + W2PRES + W2DFSN + W2SDMP + W2REDIS)
         return U2V2_RES, indep
 
     def getW3PRESS(self, dataset_override=None):
@@ -2107,7 +2107,7 @@ class VariableGroupSamBudgets(VariableGroup):
 
         Calculates the residual for the W3 budget using
         the following equation:
-        ``W3BT - (W3ADV + W3PRES + W3REDIS + W3BUOY + W3DIFF)``
+        ``W3BT - (W3ADV + W3PRES + W3REDIS + W3BUOY + W3DFSN)``
 
         :param dataset_override: If passed, this netcdf dataset will be used to gather the data needed to calculate the
           given variable. if not passed, this function should attempt to find the best source for the data, e.g.
@@ -2121,10 +2121,10 @@ class VariableGroupSamBudgets(VariableGroup):
         W3ADV, indep, dataset = self.getVarForCalculations('W3ADV', dataset)
         W3BT, indep, dataset = self.getVarForCalculations('W3BT', dataset)
         W3BUOY, indep, dataset = self.getVarForCalculations('W3BUOY', dataset)
-        W3DIFF, indep, dataset = self.getVarForCalculations('W3DIFF', dataset)
+        W3DFSN, indep, dataset = self.getVarForCalculations('W3DFSN', dataset)
         W3PRES, indep, dataset = self.getVarForCalculations('W3PRES', dataset)
         W3REDIS, indep, dataset = self.getVarForCalculations('W3REDIS', dataset)
-        W3_RES = W3BT - (W3ADV + W3PRES + W3REDIS + W3BUOY + W3DIFF)
+        W3_RES = W3BT - (W3ADV + W3PRES + W3REDIS + W3BUOY + W3DFSN)
         return W3_RES, indep
 
     def getUWPresPlusAniz(self, dataset_override=None):
@@ -2177,7 +2177,7 @@ class VariableGroupSamBudgets(VariableGroup):
 
         Calculates the residual for the UW budget using
         the following equation:
-        ``WUBT - (WUDIFF + WUSHEAR + WUADV + WUPRES + WUANIZ + WUBUOY + WUSDMP)``
+        ``WUBT - (WUDFSN + WUSHEAR + WUADV + WUPRES + WUANIZ + WUBUOY + WUSDMP)``
 
         :param dataset_override: If passed, this netcdf dataset will be used to gather the data needed to calculate the
           given variable. if not passed, this function should attempt to find the best source for the data, e.g.
@@ -2192,11 +2192,11 @@ class VariableGroupSamBudgets(VariableGroup):
         WUANIZ, indep, dataset = self.getVarForCalculations('WUANIZ', dataset)
         WUBT, indep, dataset = self.getVarForCalculations('WUBT', dataset)
         WUBUOY, indep, dataset = self.getVarForCalculations('WUBUOY', dataset)
-        WUDIFF, indep, dataset = self.getVarForCalculations('WUDIFF', dataset)
+        WUDFSN, indep, dataset = self.getVarForCalculations('WUDFSN', dataset)
         WUPRES, indep, dataset = self.getVarForCalculations('WUPRES', dataset)
         WUSHEAR, indep, dataset = self.getVarForCalculations('WUSHEAR', dataset)
         WUSDMP, indep, dataset = self.getVarForCalculations('WUSDMP', dataset)
-        WU_RES = WUBT - (WUDIFF + WUSHEAR + WUADV + WUPRES + WUANIZ + WUBUOY + WUSDMP)
+        WU_RES = WUBT - (WUDFSN + WUSHEAR + WUADV + WUPRES + WUANIZ + WUBUOY + WUSDMP)
         return WU_RES, indep
 
     def getVWPresPlusAniz(self, dataset_override=None):
@@ -2249,7 +2249,7 @@ class VariableGroupSamBudgets(VariableGroup):
 
         Calculates the residual for the VW budget using
         the following equation:
-        ``WVBT - (WVDIFF + WVSHEAR + WVADV + WVPRES + WVANIZ + WVBUOY + WVSDMP)``
+        ``WVBT - (WVDFSN + WVSHEAR + WVADV + WVPRES + WVANIZ + WVBUOY + WVSDMP)``
 
         :param dataset_override: If passed, this netcdf dataset will be used to gather the data needed to calculate the
           given variable. if not passed, this function should attempt to find the best source for the data, e.g.
@@ -2264,19 +2264,19 @@ class VariableGroupSamBudgets(VariableGroup):
         WVANIZ, indep, dataset = self.getVarForCalculations('WVANIZ', dataset)
         WVBT, indep, dataset = self.getVarForCalculations('WVBT', dataset)
         WVBUOY, indep, dataset = self.getVarForCalculations('WVBUOY', dataset)
-        WVDIFF, indep, dataset = self.getVarForCalculations('WVDIFF', dataset)
+        WVDFSN, indep, dataset = self.getVarForCalculations('WVDFSN', dataset)
         WVPRES, indep, dataset = self.getVarForCalculations('WVPRES', dataset)
         WVSHEAR, indep, dataset = self.getVarForCalculations('WVSHEAR', dataset)
         WVSDMP, indep, dataset = self.getVarForCalculations('WVSDMP', dataset)
-        WV_RES = WVBT - (WVDIFF + WVSHEAR + WVADV + WVPRES + WVANIZ + WVBUOY + WVSDMP)
+        WV_RES = WVBT - (WVDFSN + WVSHEAR + WVADV + WVPRES + WVANIZ + WVBUOY + WVSDMP)
         return WV_RES, indep
 
     # NOTE: Not needed anymore?
     # def getU2C14OverTau(self, dataset_override = None):
-    # formula = '- (3/2) * U2DIFF / np.maximum( TKE + TKES, 1e-6 )'
+    # formula = '- (3/2) * U2DFSN / np.maximum( TKE + TKES, 1e-6 )'
 
     # def getV2C14OverTau(self, dataset_override = None):
-    # formula = ' - (3/2) * V2DIFF / np.maximum( TKE + TKES, 1e-6 )'
+    # formula = ' - (3/2) * V2DFSN / np.maximum( TKE + TKES, 1e-6 )'
 
     # def getThl2C2OverTau(self, dataset_override = None):
     # formula = ' - ( THL2DISSIP + THL2DIFTR ) / np.maximum( THEL2, 1e-6 )'
