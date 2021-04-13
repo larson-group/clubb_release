@@ -142,12 +142,12 @@ sensNcFilenames = \
 
 # Netcdf file containing metric and parameter values from the default simulation
 defaultNcFilename = \
-        'anvil.devel.base.ne30_ne30_Regional.nc' #'/home/vlarson/canopy/scripts/anvil.c689c7e.repeatbmg_flux.ne30_ne30_GLBmean.nc'
-        
+        'devel/anvil.devel.base.ne30_ne30_Regional.nc'#'/home/vlarson/canopy/scripts/anvil.c689c7e.repeatbmg_flux.ne30_ne30_GLBmean.nc'
+
 # Metrics from simulation that use the SVD-recommended parameter values
 # Here, we use default simulation just as a placeholder.
 linSolnNcFilename = \
-        'anvil.devel.base.ne30_ne30_Regional.nc' #'/home/vlarson/canopy/scripts/anvil.c689c7e.repeatbmg_flux.ne30_ne30_GLBmean.nc'
+        'devel/anvil.devel.base.ne30_ne30_Regional.nc' #'/home/vlarson/canopy/scripts/anvil.c689c7e.repeatbmg_flux.ne30_ne30_GLBmean.nc'
 
     # Observed values of our metrics, from, e.g., CERES-EBAF.
     # These observed metrics will be matched as closely as possible by analyzeSensMatrix.
@@ -165,9 +165,10 @@ obsMetricValsDict = { 'LWCF_GLB': 28.008, 'PRECT_GLB': 0.000000031134259, 'SWCF_
                       'LWCF_VOCAL': 16.2196, 'PRECT_VOCAL': 1.78555e-09, 'SWCF_VOCAL': -77.2623, 'TMQ_VOCAL':17.5992  } 
 
 # Calculate changes in parameter values needed to match metrics.
-defaultBiasesCol, sensMatrixOrig, sensMatrix, normlzdSensMatrix, svdInvrsNormlzdWeighted, \
-    dparamsSoln, paramsSoln, defaultBiasesApprox = \
-        analyzeSensMatrix(metricsNames, paramsNames, transformedParams,
+defaultMetricValsCol, defaultBiasesCol, defaultBiasesOrigApprox, \
+sensMatrixOrig, sensMatrix, normlzdSensMatrix, svdInvrsNormlzdWeighted, \
+defaultParamValsOrigRow, dparamsSoln, paramsSoln = \
+         analyzeSensMatrix(metricsNames, paramsNames, transformedParams,
                         metricsWeights,
                         sensNcFilenames, defaultNcFilename,
                         obsMetricValsDict)
@@ -177,13 +178,14 @@ external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
 sensMatrixDashboard = dash.Dash(__name__, external_stylesheets=external_stylesheets)
 
 # Plot the biases of the default simulation and the SVD approximation of that
-biasesMatrix = np.dstack((defaultBiasesCol,defaultBiasesApprox)).squeeze()
-df = pd.DataFrame(biasesMatrix,
+biasesMatrix = np.dstack((defaultBiasesCol,defaultBiasesOrigApprox)).squeeze()
+fracBiasesMatrix = np.diagflat(np.reciprocal(np.abs(defaultMetricValsCol))) @ biasesMatrix
+df = pd.DataFrame(fracBiasesMatrix,
                   index=metricsNames,
-                  columns= ['defBias', 'defBiasApprox'])
+                  columns= ['fracDefBias', 'fracDefBiasOrigApprox'])
 biasesFig = px.line(df, x=df.index, y=df.columns,
-              title = 'Biases of default simulation and approximations thereof.')
-biasesFig.update_yaxes(title="Bias")
+              title = 'Fractional biases of default simulation and approximations thereof.')
+biasesFig.update_yaxes(title="Bias / abs(default metric value)")
 biasesFig.update_xaxes(title="Metric and region")
 
 # Plot each column of normalized sensitivity matrix as a separate line.
@@ -212,6 +214,18 @@ normlzdSensMatrixRowsFig.update_xaxes(title="Parameter")
 
 # Plot the parameter values recommended by SVD.
 paramsMatrix = np.dstack((dparamsSoln,paramsSoln)).squeeze()
+fracParamsMatrix = np.diagflat(np.reciprocal(np.abs(defaultParamValsOrigRow))) @ paramsMatrix
+#pdb.set_trace()
+df = pd.DataFrame(fracParamsMatrix,
+                  index=paramsNames,
+                  columns= ['fracDparamsSoln', 'fracParamsSoln'])
+fracParamsFig = px.line(df, x=df.index, y=df.columns,
+              title = 'Fractional parameter values (and values - default) recommended by SVD.')
+fracParamsFig.update_yaxes(title="(Parameter value) / abs(default value)")
+fracParamsFig.update_xaxes(title="Parameter Name")
+
+# Plot the parameter values recommended by SVD.
+paramsMatrix = np.dstack((dparamsSoln,paramsSoln)).squeeze()
 df = pd.DataFrame(paramsMatrix,
                   index=paramsNames,
                   columns= ['dparamsSoln', 'paramsSoln'])
@@ -228,6 +242,7 @@ sensMatrixDashboard.layout = html.Div(children=[
         dcc.Graph( id='biasesFig', figure=biasesFig ),
         dcc.Graph( id='normlzdSensMatrixColsFig', figure=normlzdSensMatrixColsFig ),
         dcc.Graph( id='normlzdSensMatrixRowsFig', figure=normlzdSensMatrixRowsFig ),
+        dcc.Graph( id='fracParamsFig', figure=fracParamsFig ),
         dcc.Graph( id='paramsFig', figure=paramsFig )
 
 ])

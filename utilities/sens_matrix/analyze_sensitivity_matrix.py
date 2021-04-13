@@ -53,8 +53,9 @@ def main():
     obsMetricValsDict = {'LWCF': 28.008, 'PRECT': 0.000000033912037, 'SWCF': -45.81}
 
     # Calculate changes in parameter values needed to match metrics.
-    defaultBiasesCol, sensMatrixOrig, sensMatrix, normlzdSensMatrix, svdInvrsNormlzdWeighted, \
-            dparamsSoln, paramsSoln, defaultBiasesOrigApprox = \
+    defaultMetricValsCol, defaultBiasesCol, defaultBiasesOrigApprox, \
+    sensMatrixOrig, sensMatrix, normlzdSensMatrix, svdInvrsNormlzdWeighted, \
+    defaultParamValsOrigRow, dparamsSoln, paramsSoln = \
         analyzeSensMatrix(metricsNames, paramsNames, transformedParamsNames,
                       metricsWeights,
                       sensNcFilenames, defaultNcFilename,
@@ -218,7 +219,7 @@ def analyzeSensMatrix(metricsNames, paramsNames, transformedParamsNames,
     # Calculate solution in transformed space
     dparamsSoln = svdInvrsNormlzdWeighted @ metricsWeights * np.transpose(maxMagParamValsRow)
     defaultBiasesApprox = sensMatrix @ dparamsSoln
-    print("defaultBiasesApprox =")
+    print("\ndefaultBiasesApprox =")
     print(defaultBiasesApprox)
     paramsSoln = np.transpose(defaultParamValsOrigRow) + dparamsSoln
     # Transform some variables from [-inf,inf] back to [0,inf] range
@@ -242,8 +243,9 @@ def analyzeSensMatrix(metricsNames, paramsNames, transformedParamsNames,
     print("defaultBiasesOrigApprox =")
     print(defaultBiasesOrigApprox)
 
-    return (defaultBiasesCol, sensMatrixOrig, sensMatrix, normlzdSensMatrix, svdInvrsNormlzdWeighted,
-            dparamsSoln, paramsSoln, defaultBiasesOrigApprox)
+    return (defaultMetricValsCol, defaultBiasesCol, defaultBiasesOrigApprox, \
+            sensMatrixOrig, sensMatrix, normlzdSensMatrix, svdInvrsNormlzdWeighted, \
+            defaultParamValsOrigRow, dparamsSoln, paramsSoln)
 
 def constructSensMatrix(sensMetricValsMatrix, sensParamValsRow,
                         defaultMetricValsCol, defaultParamValsRow,
