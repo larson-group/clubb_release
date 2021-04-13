@@ -47,7 +47,7 @@ def test_3x2_C8transformed():
     # This is the subset of paramsNames that vary from [0,1] (e.g., C5)
     #    and hence will be transformed to [0,infinity] in order to make
     #    the relationship between parameters and metrics more linear:
-    transformedParams = np.array(['clubb_c8'])
+    transformedParamsNames = np.array(['clubb_c8'])
 
     # Example values of the clubb_c8 parameter in the default and 2 sensitivity runs
     clubbC8Vals = np.array([0.1812692, 0.50341469, 0.1812692])
@@ -59,7 +59,7 @@ def test_3x2_C8transformed():
     defaultMetricValsCol, defaultBiasesCol, defaultBiasesOrigApprox, \
     sensMatrixOrig, sensMatrix, normlzdSensMatrix, svdInvrsNormlzdWeighted, \
     defaultParamValsOrigRow, dparamsSoln, paramsSoln = \
-        analyzeSensMatrix(metricsNames, paramsNames, transformedParams,
+        analyzeSensMatrix(metricsNames, paramsNames, transformedParamsNames,
                         metricsWeights,
                         sensNcFilenames, defaultNcFilename,
                         obsMetricValsDict)
@@ -103,7 +103,7 @@ def test_3x2_novarstransformed():
     # This is the subset of paramsNames that vary from [0,1] (e.g., C5)
     #    and hence will be transformed to [0,infinity] in order to make
     #    the relationship between parameters and metrics more linear:
-    transformedParams = np.array([''])
+    transformedParamsNames = np.array([''])
 
     # Example values of the clubb_c8 parameter in the default and 2 sensitivity runs
     clubbC8Vals = np.array([0.2, 0.7, 0.2])
@@ -115,7 +115,7 @@ def test_3x2_novarstransformed():
     defaultMetricValsCol, defaultBiasesCol, defaultBiasesOrigApprox, \
     sensMatrixOrig, sensMatrix, normlzdSensMatrix, svdInvrsNormlzdWeighted, \
     defaultParamValsOrigRow, dparamsSoln, paramsSoln = \
-        analyzeSensMatrix(metricsNames, paramsNames, transformedParams,
+        analyzeSensMatrix(metricsNames, paramsNames, transformedParamsNames,
                         metricsWeights,
                         sensNcFilenames, defaultNcFilename,
                         obsMetricValsDict)
@@ -153,7 +153,7 @@ def test_2x2_C8transformed():
     # This is the subset of paramsNames that vary from [0,1] (e.g., C5)
     #    and hence will be transformed to [0,infinity] in order to make
     #    the relationship between parameters and metrics more linear:
-    transformedParams = np.array(['clubb_c8'])
+    transformedParamsNames = np.array(['clubb_c8'])
 
     # Example values of the clubb_c8 parameter in the default and 2 sensitivity runs
     clubbC8Vals = np.array([0.2, 0.20001, 0.2])
@@ -165,7 +165,7 @@ def test_2x2_C8transformed():
     defaultMetricValsCol, defaultBiasesCol, defaultBiasesOrigApprox, \
     sensMatrixOrig, sensMatrix, normlzdSensMatrix, svdInvrsNormlzdWeighted, \
     defaultParamValsOrigRow, dparamsSoln, paramsSoln = \
-        analyzeSensMatrix(metricsNames, paramsNames, transformedParams,
+        analyzeSensMatrix(metricsNames, paramsNames, transformedParamsNames,
                         metricsWeights,
                         sensNcFilenames, defaultNcFilename,
                         obsMetricValsDict)
@@ -213,7 +213,7 @@ def test_2x2_novarstransformed():
     # This is the subset of paramsNames that vary from [0,1] (e.g., C5)
     #    and hence will be transformed to [0,infinity] in order to make
     #    the relationship between parameters and metrics more linear:
-    transformedParams = np.array([''])
+    transformedParamsNames = np.array([''])
 
     # Example values of the clubb_c8 parameter in the default and 2 sensitivity runs
     clubbC8Vals = np.array([0.2, 0.7, 0.2])
@@ -225,7 +225,7 @@ def test_2x2_novarstransformed():
     defaultMetricValsCol, defaultBiasesCol, defaultBiasesOrigApprox, \
     sensMatrixOrig, sensMatrix, normlzdSensMatrix, svdInvrsNormlzdWeighted, \
     defaultParamValsOrigRow, dparamsSoln, paramsSoln = \
-        analyzeSensMatrix(metricsNames, paramsNames, transformedParams,
+        analyzeSensMatrix(metricsNames, paramsNames, transformedParamsNames,
                         metricsWeights,
                         sensNcFilenames, defaultNcFilename,
                         obsMetricValsDict)

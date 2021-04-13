@@ -400,6 +400,7 @@ def setupObsCol(obsMetricValsDict, metricsNames, numMetrics):
     """
 
     import numpy as np
+    import pdb
 
     # Set up column vector of numMetrics elements containing
     # "true" metric values from observations
