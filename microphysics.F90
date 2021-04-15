@@ -9749,7 +9749,7 @@ if ( masterproc ) then
    close (46)
    if(RUN3D .or. save3Dsep) then
      if(dogzip3D) call systemf('gzip -f '//filename)
-     print*, 'Writting 3D data. file:'//filename
+     print*, 'Writing 3D data. file:'//filename
    else
      print*, 'Appending 3D data. file:'//filename
   end if
