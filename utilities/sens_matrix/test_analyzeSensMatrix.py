@@ -56,9 +56,10 @@ def test_3x2_C8transformed():
     write_test_netcdf_files(obsMetricValsDict, clubbC8Vals)
 
     # Calculate changes in parameter values needed to match metrics.
-    defaultMetricValsCol, defaultBiasesCol, defaultBiasesOrigApprox, \
+    defaultMetricValsCol, defaultBiasesCol, \
+    defaultBiasesOrigApprox, defaultBiasesOrigApproxPC, \
     sensMatrixOrig, sensMatrix, normlzdSensMatrix, svdInvrsNormlzdWeighted, \
-    defaultParamValsOrigRow, dparamsSoln, paramsSoln = \
+    defaultParamValsOrigRow, dparamsSoln, paramsSoln, paramsSolnPC = \
         analyzeSensMatrix(metricsNames, paramsNames, transformedParamsNames,
                         metricsWeights,
                         sensNcFilenames, defaultNcFilename,
@@ -112,9 +113,10 @@ def test_3x2_novarstransformed():
     write_test_netcdf_files(obsMetricValsDict, clubbC8Vals)
 
     # Calculate changes in parameter values needed to match metrics.
-    defaultMetricValsCol, defaultBiasesCol, defaultBiasesOrigApprox, \
+    defaultMetricValsCol, defaultBiasesCol, \
+    defaultBiasesOrigApprox, defaultBiasesOrigApproxPC, \
     sensMatrixOrig, sensMatrix, normlzdSensMatrix, svdInvrsNormlzdWeighted, \
-    defaultParamValsOrigRow, dparamsSoln, paramsSoln = \
+    defaultParamValsOrigRow, dparamsSoln, paramsSoln, paramsSolnPC = \
         analyzeSensMatrix(metricsNames, paramsNames, transformedParamsNames,
                         metricsWeights,
                         sensNcFilenames, defaultNcFilename,
@@ -162,9 +164,10 @@ def test_2x2_C8transformed():
     write_test_netcdf_files(obsMetricValsDict, clubbC8Vals)
 
     # Calculate changes in parameter values needed to match metrics.
-    defaultMetricValsCol, defaultBiasesCol, defaultBiasesOrigApprox, \
+    defaultMetricValsCol, defaultBiasesCol, \
+    defaultBiasesOrigApprox, defaultBiasesOrigApproxPC, \
     sensMatrixOrig, sensMatrix, normlzdSensMatrix, svdInvrsNormlzdWeighted, \
-    defaultParamValsOrigRow, dparamsSoln, paramsSoln = \
+    defaultParamValsOrigRow, dparamsSoln, paramsSoln, paramsSolnPC = \
         analyzeSensMatrix(metricsNames, paramsNames, transformedParamsNames,
                         metricsWeights,
                         sensNcFilenames, defaultNcFilename,
@@ -222,9 +225,10 @@ def test_2x2_novarstransformed():
     write_test_netcdf_files(obsMetricValsDict, clubbC8Vals)
 
     # Calculate changes in parameter values needed to match metrics.
-    defaultMetricValsCol, defaultBiasesCol, defaultBiasesOrigApprox, \
+    defaultMetricValsCol, defaultBiasesCol, \
+    defaultBiasesOrigApprox, defaultBiasesOrigApproxPC, \
     sensMatrixOrig, sensMatrix, normlzdSensMatrix, svdInvrsNormlzdWeighted, \
-    defaultParamValsOrigRow, dparamsSoln, paramsSoln = \
+    defaultParamValsOrigRow, dparamsSoln, paramsSoln, paramsSolnPC = \
         analyzeSensMatrix(metricsNames, paramsNames, transformedParamsNames,
                         metricsWeights,
                         sensNcFilenames, defaultNcFilename,

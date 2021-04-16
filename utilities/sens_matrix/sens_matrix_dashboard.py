@@ -61,7 +61,7 @@ from test_analyzeSensMatrix import write_test_netcdf_files
 # Column vector of (positive) weights.  A small value de-emphasizes
 #   the corresponding metric in the fit.
 metricsNamesAndWeights = [ \
-                        ['SWCF_GLB', 1.], \
+                        ['SWCF_GLB', 2.], \
                         ['SWCF_DYCOMS', 1.], \
                         ['SWCF_HAWAII', 1.], \
                         ['SWCF_VOCAL', 1.], \
@@ -76,12 +76,12 @@ metricsNamesAndWeights = [ \
                         ['PRECT_DYCOMS', 0.1], \
                         ['PRECT_HAWAII', 0.1], \
                         ['PRECT_VOCAL', 0.1], \
-                        ['PRECT_LBA', 1.], \
-                        ['PRECT_WP', 1.], \
+                        ['PRECT_LBA', 2.], \
+                        ['PRECT_WP', 2.], \
                         ['PRECT_EP', 1.], \
                         ['PRECT_NP', 1.], \
                         ['PRECT_SP', 1.], \
-                        ['PRECT_PA', 1.], \
+                        ['PRECT_PA', 2.], \
                         ['PRECT_CAF', 1.] \
                          ]
 
@@ -119,7 +119,7 @@ sensNcFilenames = dfparamsNamesAndFilenames[['sensNcFilenames']].to_numpy().asty
 # This the subset of paramsNames that vary from [0,1] (e.g., C5)
 #    and hence will be transformed to [0,infinity] in order to make
 #    the relationship between parameters and metrics more linear:
-transformedParamsNames = np.array(['clubb_c8','clubb_c_invrs_tau_n2_clear_wp3'])
+transformedParamsNames = np.array(['clubb_c8','clubb_c_invrs_tau_n2', 'clubb_c_invrs_tau_n2_clear_wp3'])
 
 # Netcdf file containing metric and parameter values from the default simulation
 defaultNcFilename = \
@@ -147,9 +147,10 @@ obsMetricValsDict = { \
    'LWCF_VOCAL': 16.2196, 'PRECT_VOCAL': 1.78555e-09, 'SWCF_VOCAL': -77.2623, 'TMQ_VOCAL':17.5992  }
 
 # Calculate changes in parameter values needed to match metrics.
-defaultMetricValsCol, defaultBiasesCol, defaultBiasesOrigApprox, \
+defaultMetricValsCol, defaultBiasesCol, \
+defaultBiasesOrigApprox, defaultBiasesOrigApproxPC, \
 sensMatrixOrig, sensMatrix, normlzdSensMatrix, svdInvrsNormlzdWeighted, \
-defaultParamValsOrigRow, dparamsSoln, paramsSoln = \
+defaultParamValsOrigRow, dparamsSoln, paramsSoln, paramsSolnPC = \
          analyzeSensMatrix(metricsNames, paramsNames, transformedParamsNames,
                         metricsWeights,
                         sensNcFilenames, defaultNcFilename,
@@ -160,11 +161,11 @@ external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
 sensMatrixDashboard = dash.Dash(__name__, external_stylesheets=external_stylesheets)
 
 # Plot the biases of the default simulation and the SVD approximation of that
-biasesMatrix = np.dstack((defaultBiasesCol,defaultBiasesOrigApprox)).squeeze()
+biasesMatrix = np.dstack((defaultBiasesCol,defaultBiasesOrigApprox, defaultBiasesOrigApproxPC)).squeeze()
 fracBiasesMatrix = np.diagflat(np.reciprocal(np.abs(defaultMetricValsCol))) @ biasesMatrix
 df = pd.DataFrame(fracBiasesMatrix,
                   index=metricsNames,
-                  columns= ['fracDefBias', 'fracDefBiasOrigApprox'])
+                  columns= ['fracDefBias', 'fracDefBiasOrigApprox', 'defaultBiasesOrigApproxPC'])
 biasesFig = px.line(df, x=df.index, y=df.columns,
               title = 'Fractional biases of default simulation and approximations thereof.')
 biasesFig.update_yaxes(title="Bias / abs(default metric value)")
@@ -208,10 +209,10 @@ fracParamsFig.update_xaxes(title="Parameter Name")
 
 # Plot the parameter values recommended by SVD.
 #pdb.set_trace()
-paramsMatrix = np.dstack((np.transpose(defaultParamValsOrigRow),paramsSoln,dparamsSoln)).squeeze()
+paramsMatrix = np.dstack((np.transpose(defaultParamValsOrigRow),paramsSoln,paramsSolnPC)).squeeze()
 df = pd.DataFrame(paramsMatrix,
                   index=paramsNames,
-                  columns= ['defaultParamValsOrigRow', 'paramsSoln', 'dparamsSoln'])
+                  columns= ['defaultParamValsOrigRow', 'paramsSoln', 'paramsSolnPC'])
 paramsFig = px.line(df, x=df.index, y=df.columns,
               title = 'Parameter values (and values - default) recommended by SVD.')
 paramsFig.update_yaxes(title="Parameter value")
