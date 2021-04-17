@@ -1130,9 +1130,9 @@ module mixing_length
                                       em, sqrt_em_zt, & ! intent in
                                       ufmin, z_displace, tau_const, & ! intent in
                                       sfc_elevation, Lscale_max, & ! intent in
-                                      clubb_config_flags%l_e3sm_config, & ! intent in
-                                      clubb_config_flags%l_brunt_vaisala_freq_moist, & !intent in
-                                      clubb_config_flags%l_use_thvm_in_bv_freq, &! intent in
+                                      l_e3sm_config, & ! intent in
+                                      l_brunt_vaisala_freq_moist, & !intent in
+                                      l_use_thvm_in_bv_freq, &! intent in
                                       brunt_vaisala_freq_sqd, brunt_vaisala_freq_sqd_mixed, & ! intent out
                                       brunt_vaisala_freq_sqd_dry, brunt_vaisala_freq_sqd_moist, & ! intent out
                                       brunt_vaisala_freq_sqd_plus, & !intent out
@@ -1149,17 +1149,17 @@ module mixing_length
     calc_brunt_vaisala_freq_sqd
 
   use constants_clubb, only: &
-    one_fourth, &
-    vonk, &
-    zero, &
-    one, &
-    em_min, &
+    one_fourth,     &
+    vonk,           &
+    zero,           &
+    one,            & 
+    em_min,         &
     zero_threshold, &
     eps
 
 
   use grid_class, only: &
-    gr, &
+    gr,    &
     zt2zm, &
     zm2zt, &
     ddzt
@@ -1169,10 +1169,10 @@ module mixing_length
     core_rknd
 
   use parameters_tunable, only: &
-    C_invrs_tau_bkgnd, &
-    C_invrs_tau_shear, &
-    C_invrs_tau_sfc, &
-    C_invrs_tau_N2, &
+    C_invrs_tau_bkgnd,          &
+    C_invrs_tau_shear,          &
+    C_invrs_tau_sfc,            &
+    C_invrs_tau_N2,             &
     C_invrs_tau_N2_wp2 ,        &
     C_invrs_tau_N2_wpxp,        &
     C_invrs_tau_N2_xp2,         &
@@ -1195,20 +1195,20 @@ module mixing_length
     upwp_sfc,      &
     vpwp_sfc,      &
     sfc_elevation, &
-    ufmin, &
-    z_displace, &
+    ufmin,         &
+    z_displace,    &
     tau_const
 
   real( kind = core_rknd ), dimension(gr%nz), intent(out) :: &
-    Lscale, &
-    Lscale_up, &
-    Lscale_down, &
-    sqrt_Ri_zm, &
+    Lscale,                       &
+    Lscale_up,                    &
+    Lscale_down,                  &
+    sqrt_Ri_zm,                   &
     brunt_vaisala_freq_sqd,       &
     brunt_vaisala_freq_sqd_mixed, &
     brunt_vaisala_freq_sqd_dry,   &
     brunt_vaisala_freq_sqd_moist, &
-    brunt_vaisala_freq_sqd_plus, &
+    brunt_vaisala_freq_sqd_plus,  &
     tau_max_zt,                   &
     tau_zm,                       &
     tau_zt,                       &
@@ -1227,20 +1227,20 @@ module mixing_length
 
 
   real( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
-    exner, &
-    rtm, &
-    rcm, &
-    p_in_Pa, &
-    thvm, &
+    exner,             &
+    rtm,               &
+    rcm,               &
+    p_in_Pa,           &
+    thvm,              &
     ice_supersat_frac, &
-    um, &
-    vm, &
-    em,                           &
-    sqrt_em_zt, &
+    um,                &
+    vm,                &
+    em,                &
+    sqrt_em_zt,        &
     thlm
 
   real( kind = core_rknd ), dimension(gr%nz) :: &
-    brunt_freq_pos, &
+    brunt_freq_pos,               &
     brunt_vaisala_freq_sqd_smth,  & ! smoothed Buoyancy frequency squared, N^2     [s^-2]
     brunt_freq_out_cloud
 
