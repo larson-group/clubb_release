@@ -9,7 +9,7 @@ module mixing_length
 
   public :: compute_mixing_length, &
             calc_Lscale_directly,  &
-            diagnose_Lscale_from_tau 
+            diagnose_Lscale_from_tau
 
   contains
 
@@ -20,83 +20,83 @@ module mixing_length
                              Lscale, Lscale_up, Lscale_down )
     ! Description:
     !   Larson's 5th moist, nonlocal length scale
-    ! 
+    !
     ! References:
     !   Section 3b ( /Eddy length formulation/ ) of
     !   ``A PDF-Based Model for Boundary Layer Clouds. Part I:
     !   Method and Model Description'' Golaz, et al. (2002)
     !   JAS, Vol. 59, pp. 3540--3551.
-    ! 
-    ! Notes: 
-    ! 
+    !
+    ! Notes:
+    !
     !   The equation for the rate of change of theta_l and r_t of the parcel with
     !   respect to height, due to entrainment, is:
-    ! 
+    !
     !           d(thl_par)/dz = - mu * ( thl_parcel - thl_environment );
-    ! 
+    !
     !           d(rt_par)/dz = - mu * ( rt_parcel - rt_environment );
-    ! 
+    !
     !   where mu is the entrainment rate,
     !   such that:
-    ! 
+    !
     !           mu = (1/m)*(dm/dz);
-    ! 
+    !
     !   where m is the mass of the parcel.  The value of mu is set to be a
     !   constant.
-    ! 
-    !   The differential equations are solved for given the boundary condition 
-    !   and given the fact that the value of thl_environment and rt_environment 
+    !
+    !   The differential equations are solved for given the boundary condition
+    !   and given the fact that the value of thl_environment and rt_environment
     !   are treated as changing linearly for a parcel of air from one grid level
     !   to the next.
-    ! 
+    !
     !   For the special case where entrainment rate, mu, is set to 0,
     !   thl_parcel and rt_parcel remain constant
-    ! 
-    ! 
+    !
+    !
     !   The equation for Lscale_up is:
-    ! 
+    !
     !       INT(z_i:z_i+Lscale_up) g * ( thv_par - thvm ) / thvm dz = -em(z_i);
-    ! 
+    !
     !   and for Lscale_down
-    !   
+    !
     !       INT(z_i-Lscale_down:z_i) g * ( thv_par - thvm ) / thvm dz = em(z_i);
-    ! 
+    !
     !   where thv_par is theta_v of the parcel, thvm is the mean
     !   environmental value of theta_v, z_i is the altitude that the parcel
     !   started from, and em is the mean value of TKE at
     !   altitude z_i (which gives the parcel its initial boost)
-    ! 
-    !   The increment of CAPE (convective air potential energy) for any two 
+    !
+    !   The increment of CAPE (convective air potential energy) for any two
     !   successive vertical levels is:
-    !   
+    !
     !       Upwards:
     !           CAPE_incr = INT(z_0:z_1) g * ( thv_par - thvm ) / thvm dz
     !
-    !       Downwards: 
+    !       Downwards:
     !           CAPE_incr = INT(z_(-1):z_0) g * ( thv_par - thvm ) / thvm dz
-    ! 
+    !
     !   Thus, the derivative of CAPE with respect to height is:
-    ! 
+    !
     !           dCAPE/dz = g * ( thv_par - thvm ) / thvm.
-    ! 
+    !
     !   A purely trapezoidal rule is used between levels, and is considered
-    !   to vary linearly at all altitudes.  Thus, dCAPE/dz is considered to be 
+    !   to vary linearly at all altitudes.  Thus, dCAPE/dz is considered to be
     !   of the form:  A * (z-zo) + dCAPE/dz|_(z_0),
     !   where A = ( dCAPE/dz|_(z_1) - dCAPE/dz|_(z_0) ) / ( z_1 - z_0 )
-    ! 
+    !
     !   The integral is evaluated to find the CAPE increment between two
     !   successive vertical levels.  The result either adds to or depletes
     !   from the total amount of energy that keeps the parcel ascending/descending.
-    ! 
-    ! 
+    !
+    !
     ! IMPORTANT NOTE:
     !   This subroutine has been optimized by adding precalculations, rearranging
     !   equations to avoid divides, and modifying the algorithm entirely.
     !       -Gunther Huebler
-    ! 
+    !
     !   The algorithm previously used looped over every grid level, following a
-    !   a parcel up from its initial grid level to its max. The very nature of this 
-    !   algorithm is an N^2 
+    !   a parcel up from its initial grid level to its max. The very nature of this
+    !   algorithm is an N^2
     !--------------------------------------------------------------------------------
 
     ! mu = (1/M) dM/dz > 0.  mu=0 for no entrainment.
@@ -118,11 +118,11 @@ module mixing_length
     use parameters_tunable, only:  &  ! Variable(s)
         lmin    ! Minimum value for Lscale                         [m]
 
-    use grid_class, only:  & 
+    use grid_class, only:  &
         gr,  & ! Variable(s)
         zm2zt ! Procedure(s)
 
-    use numerical_check, only:  & 
+    use numerical_check, only:  &
         length_check ! Procedure(s)
 
     use clubb_precision, only: &
@@ -139,12 +139,12 @@ module mixing_length
     intrinsic :: min, max, sqrt
 
     ! Constant Parameters
-    real( kind = core_rknd ), parameter ::  & 
+    real( kind = core_rknd ), parameter ::  &
       zlmin = 0.1_core_rknd, & ! Minimum value for Lscale [m]
       Lscale_sfclyr_depth = 500._core_rknd ! [m]
 
     ! Input Variables
-    real( kind = core_rknd ), dimension(gr%nz), intent(in) ::  & 
+    real( kind = core_rknd ), dimension(gr%nz), intent(in) ::  &
       thvm,    & ! Virtual potential temp. on themodynamic level  [K]
       thlm,    & ! Liquid potential temp. on themodynamic level   [K]
       rtm,     & ! Total water mixing ratio on themodynamic level [kg/kg]
@@ -163,7 +163,7 @@ module mixing_length
     logical, intent(in) :: &
       l_implemented ! Flag for CLUBB being implemented in a larger model
 
-    real( kind = core_rknd ), dimension(gr%nz), intent(out) ::  & 
+    real( kind = core_rknd ), dimension(gr%nz), intent(out) ::  &
       Lscale,    & ! Mixing length      [m]
       Lscale_up, & ! Mixing length up   [m]
       Lscale_down  ! Mixing length down [m]
@@ -252,12 +252,12 @@ module mixing_length
 
     ! Calculate initial turbulent kinetic energy for each grid level
     tke_i = zm2zt( em )
-    
+
 
     ! ---------------- Upwards Length Scale Calculation ----------------
 
     ! Precalculate values for upward Lscale, these are useful only if a parcel can rise
-    ! more than one level. They are used in the equations that calculate thl and rt 
+    ! more than one level. They are used in the equations that calculate thl and rt
     ! recursively for a parcel as it ascends
     do j = 2, gr%nz-1
 
@@ -272,10 +272,10 @@ module mixing_length
     ! Calculate the initial change in TKE for each level. This is done for computational
     ! efficiency, it helps because there will be at least one calculation for each grid level,
     ! meaning the first one can be done for every grid level and therefore the calculations can
-    ! be vectorized, clubb:ticket:834. After the initial calculation however, it is uncertain 
+    ! be vectorized, clubb:ticket:834. After the initial calculation however, it is uncertain
     ! how many more iterations should be done for each individual grid level, and calculating
     ! one change in TKE for each level until all are exhausted will result in many unnessary
-    ! and expensive calculations. 
+    ! and expensive calculations.
 
     ! Calculate initial thl, tl, and rt for parcels at each grid level
     do j = 3, gr%nz
@@ -285,7 +285,7 @@ module mixing_length
         tl_par_1(j) = thl_par_1(j) * exner(j)
 
         rt_par_1(j) = rtm(j) - ( rtm(j) - rtm(j-1) ) * entrain_coef(j-1)
-       
+
     end do
 
 
@@ -298,22 +298,22 @@ module mixing_length
 
         tl_par_j_sqd = tl_par_1(j)**2
 
-        ! s from Lewellen and Yoh 1993 (LY) eqn. 1 
-        !                           s = ( rt - rsatl ) / ( 1 + beta * rsatl )  
+        ! s from Lewellen and Yoh 1993 (LY) eqn. 1
+        !                           s = ( rt - rsatl ) / ( 1 + beta * rsatl )
         ! and SD's beta (eqn. 8),
-        !                           beta = ep * ( Lv / ( Rd * tl ) ) * ( Lv / ( cp * tl ) )  
-        ! 
+        !                           beta = ep * ( Lv / ( Rd * tl ) ) * ( Lv / ( cp * tl ) )
+        !
         ! Simplified by multiplying top and bottom by tl^2 to avoid a divide and precalculating
-        ! ep * Lv**2 / ( Rd * cp )  
+        ! ep * Lv**2 / ( Rd * cp )
         s_par_1(j) = ( rt_par_1(j) - rsatl_par_1(j) ) * tl_par_j_sqd &
                      / ( tl_par_j_sqd + Lv2_coef * rsatl_par_1(j) )
 
         rc_par_1(j) = max( s_par_1(j), zero_threshold )
 
-        ! theta_v of entraining parcel at grid level j 
+        ! theta_v of entraining parcel at grid level j
         thv_par_1(j) = thl_par_1(j) + ep1 * thv_ds(j) * rt_par_1(j) + Lv_coef(j) * rc_par_1(j)
 
-        
+
         ! dCAPE/dz = g * ( thv_par - thvm ) / thvm.
         dCAPE_dz_1(j) = grav_on_thvm(j) * ( thv_par_1(j) - thvm(j) )
 
@@ -323,10 +323,10 @@ module mixing_length
 
     end do
 
-    
+
     ! Calculate Lscale_up for each grid level. If the TKE from a parcel has not been completely
     ! exhausted by the initial change then continue the exhaustion calculations here for a single
-    ! grid level at a time until the TKE is exhausted. 
+    ! grid level at a time until the TKE is exhausted.
 
     Lscale_up_max_alt = 0._core_rknd    ! Set initial max value for Lscale_up to 0
     do i = 2, gr%nz-2
@@ -352,25 +352,25 @@ module mixing_length
             ! be reached for a parcel starting at level i. If TKE is exhausted in this loop
             ! that means the parcel starting at i cannot reach level j, but has reached j-1
             do while ( j < gr%nz )
-           
+
                 ! thl, rt of parcel are conserved except for entrainment
-                ! 
-                ! The values of thl_env and rt_env are treated as changing linearly for a parcel 
+                !
+                ! The values of thl_env and rt_env are treated as changing linearly for a parcel
                 ! of air ascending from level j-1 to level j
 
                 ! theta_l of the parcel starting at grid level i, and currenly
                 ! at grid level j
-                ! 
+                !
                 ! d(thl_par)/dz = - mu * ( thl_par - thl_env )
                 thl_par_j = thl_par_j_precalc(j) + thl_par_j * exp_mu_dzm(j-1)
 
 
                 ! r_t of the parcel starting at grid level i, and currenly
                 ! at grid level j
-                ! 
+                !
                 ! d(rt_par)/dz = - mu * ( rt_par - rt_env )
                 rt_par_j = rt_par_j_precalc(j) + rt_par_j * exp_mu_dzm(j-1)
-                
+
 
                 ! Include effects of latent heating on Lscale_up 6/12/00
                 ! Use thermodynamic formula of Bougeault 1981 JAS Vol. 38, 2416
@@ -382,19 +382,19 @@ module mixing_length
 
                 tl_par_j_sqd = tl_par_j**2
 
-                ! s from Lewellen and Yoh 1993 (LY) eqn. 1 
-                !                         s = ( rt - rsatl ) / ( 1 + beta * rsatl )  
+                ! s from Lewellen and Yoh 1993 (LY) eqn. 1
+                !                         s = ( rt - rsatl ) / ( 1 + beta * rsatl )
                 ! and SD's beta (eqn. 8),
                 !                         beta = ep * ( Lv / ( Rd * tl ) ) * ( Lv / ( cp * tl ) )
-                ! 
-                ! Simplified by multiplying top and bottom by tl^2 to avoid a 
-                ! divide and precalculating ep * Lv**2 / ( Rd * cp )  
+                !
+                ! Simplified by multiplying top and bottom by tl^2 to avoid a
+                ! divide and precalculating ep * Lv**2 / ( Rd * cp )
                 s_par_j = ( rt_par_j - rsatl_par_j ) * tl_par_j_sqd &
                           / ( tl_par_j_sqd + Lv2_coef * rsatl_par_j )
 
                 rc_par_j = max( s_par_j, zero_threshold )
 
-                ! theta_v of entraining parcel at grid level j 
+                ! theta_v of entraining parcel at grid level j
                 thv_par_j = thl_par_j + ep1 * thv_ds(j) * rt_par_j  &
                             + Lv_coef(j) * rc_par_j
 
@@ -429,12 +429,12 @@ module mixing_length
 
                 ! Loop terminated early, meaning TKE was completely exhaused at grid level j.
                 ! Add the thickness z - z_0 (where z_0 < z <= z_1) to Lscale_up.
-        
+
                 if ( abs( dCAPE_dz_j - dCAPE_dz_j_minus_1 ) * 2 <= &
                      abs( dCAPE_dz_j + dCAPE_dz_j_minus_1 ) * eps ) then
 
                     ! Special case where dCAPE/dz|_(z_1) - dCAPE/dz|_(z_0) = 0
-                    ! Find the remaining distance z - z_0 that it takes to 
+                    ! Find the remaining distance z - z_0 that it takes to
                     ! exhaust the remaining TKE
 
                     Lscale_up(i) = Lscale_up(i) + ( - tke / dCAPE_dz_j )
@@ -450,7 +450,7 @@ module mixing_length
                     Lscale_up(i) = Lscale_up(i) &
                                    - dCAPE_dz_j_minus_1 * invrs_dCAPE_diff * gr%dzm(j-1)  &
                                    - sqrt( dCAPE_dz_j_minus_1**2 &
-                                            - 2.0_core_rknd * tke * gr%invrs_dzm(j-1) & 
+                                            - 2.0_core_rknd * tke * gr%invrs_dzm(j-1) &
                                               * ( dCAPE_dz_j - dCAPE_dz_j_minus_1 ) ) &
                                      * invrs_dCAPE_diff  * gr%dzm(j-1)
                 endif
@@ -458,26 +458,26 @@ module mixing_length
             end if
 
         else    ! TKE for parcel at level (i) was exhaused before one full grid level
-            
+
             ! Find the remaining distance z - z_0 that it takes to exhaust the
-            ! remaining TKE (tke_i), using the quadratic formula. Simplified 
+            ! remaining TKE (tke_i), using the quadratic formula. Simplified
             ! since dCAPE_dz_j_minus_1 = 0.0
             Lscale_up(i) = Lscale_up(i) - sqrt( - 2.0_core_rknd * tke_i(i) &
                                                   * gr%dzm(i) * dCAPE_dz_1(i+1) ) &
-                                          / dCAPE_dz_1(i+1)  
+                                          / dCAPE_dz_1(i+1)
         endif
 
 
         ! If a parcel at a previous grid level can rise past the parcel at this grid level
-        ! then this one should also be able to rise up to that height. This feature insures 
+        ! then this one should also be able to rise up to that height. This feature insures
         ! that the profile of Lscale_up will be smooth, thus reducing numerical instability.
         if ( gr%zt(i) + Lscale_up(i) < Lscale_up_max_alt ) then
 
             ! A lower starting parcel can ascend higher than this one, set height to the max
             ! that any lower starting parcel can ascend to
             Lscale_up(i) = Lscale_up_max_alt - gr%zt(i)
-        else 
-            
+        else
+
             ! This parcel can ascend higher than any below it, save final height
             Lscale_up_max_alt = Lscale_up(i) + gr%zt(i)
         end if
@@ -489,7 +489,7 @@ module mixing_length
     ! ---------------- Downwards Length Scale Calculation ----------------
 
     ! Precalculate values for downward Lscale, these are useful only if a parcel can descend
-    ! more than one level. They are used in the equations that calculate thl and rt 
+    ! more than one level. They are used in the equations that calculate thl and rt
     ! recursively for a parcel as it descends
     do j = 2, gr%nz-1
 
@@ -504,10 +504,10 @@ module mixing_length
     ! Calculate the initial change in TKE for each level. This is done for computational
     ! efficiency, it helps because there will be at least one calculation for each grid level,
     ! meaning the first one can be done for every grid level and therefore the calculations can
-    ! be vectorized, clubb:ticket:834. After the initial calculation however, it is uncertain 
+    ! be vectorized, clubb:ticket:834. After the initial calculation however, it is uncertain
     ! how many more iterations should be done for each individual grid level, and calculating
     ! one change in TKE for each level until all are exhausted will result in many unnessary
-    ! and expensive calculations. 
+    ! and expensive calculations.
 
     ! Calculate initial thl, tl, and rt for parcels at each grid level
     do j = 2, gr%nz-1
@@ -517,7 +517,7 @@ module mixing_length
         tl_par_1(j) = thl_par_1(j) * exner(j)
 
         rt_par_1(j) = rtm(j) - ( rtm(j) - rtm(j+1) ) * entrain_coef(j)
-       
+
     end do
 
 
@@ -530,19 +530,19 @@ module mixing_length
 
         tl_par_j_sqd = tl_par_1(j)**2
 
-        ! s from Lewellen and Yoh 1993 (LY) eqn. 1 
-        !                           s = ( rt - rsatl ) / ( 1 + beta * rsatl )  
+        ! s from Lewellen and Yoh 1993 (LY) eqn. 1
+        !                           s = ( rt - rsatl ) / ( 1 + beta * rsatl )
         ! and SD's beta (eqn. 8),
-        !                           beta = ep * ( Lv / ( Rd * tl ) ) * ( Lv / ( cp * tl ) )  
-        ! 
+        !                           beta = ep * ( Lv / ( Rd * tl ) ) * ( Lv / ( cp * tl ) )
+        !
         ! Simplified by multiplying top and bottom by tl^2 to avoid a divide and precalculating
-        ! ep * Lv**2 / ( Rd * cp )  
+        ! ep * Lv**2 / ( Rd * cp )
         s_par_1(j) = ( rt_par_1(j) - rsatl_par_1(j) ) * tl_par_j_sqd &
                      / ( tl_par_j_sqd + Lv2_coef * rsatl_par_1(j) )
 
         rc_par_1(j) = max( s_par_1(j), zero_threshold )
 
-        ! theta_v of entraining parcel at grid level j 
+        ! theta_v of entraining parcel at grid level j
         thv_par_1(j) = thl_par_1(j) + ep1 * thv_ds(j) * rt_par_1(j) + Lv_coef(j) * rc_par_1(j)
 
         ! dCAPE/dz = g * ( thv_par - thvm ) / thvm.
@@ -557,7 +557,7 @@ module mixing_length
 
     ! Calculate Lscale_down for each grid level. If the TKE from a parcel has not been completely
     ! exhausted by the initial change then continue the exhaustion calculations here for a single
-    ! grid level at a time until the TKE is exhausted. 
+    ! grid level at a time until the TKE is exhausted.
 
     Lscale_down_min_alt = gr%zt(gr%nz)  ! Set initial min value for Lscale_down to max zt
     do i = gr%nz, 3, -1
@@ -585,20 +585,20 @@ module mixing_length
             do while ( j >= 2 )
 
                 ! thl, rt of parcel are conserved except for entrainment
-                ! 
-                ! The values of thl_env and rt_env are treated as changing linearly for a parcel 
+                !
+                ! The values of thl_env and rt_env are treated as changing linearly for a parcel
                 ! of air descending from level j to level j-1
 
                 ! theta_l of the parcel starting at grid level i, and currenly
                 ! at grid level j
-                ! 
+                !
                 ! d(thl_par)/dz = - mu * ( thl_par - thl_env )
                 thl_par_j = thl_par_j_precalc(j) + thl_par_j * exp_mu_dzm(j)
 
 
                 ! r_t of the parcel starting at grid level i, and currenly
                 ! at grid level j
-                ! 
+                !
                 ! d(rt_par)/dz = - mu * ( rt_par - rt_env )
                 rt_par_j = rt_par_j_precalc(j) + rt_par_j * exp_mu_dzm(j)
 
@@ -613,19 +613,19 @@ module mixing_length
 
                 tl_par_j_sqd = tl_par_j**2
 
-                ! s from Lewellen and Yoh 1993 (LY) eqn. 1 
-                !                         s = ( rt - rsatl ) / ( 1 + beta * rsatl )  
+                ! s from Lewellen and Yoh 1993 (LY) eqn. 1
+                !                         s = ( rt - rsatl ) / ( 1 + beta * rsatl )
                 ! and SD's beta (eqn. 8),
                 !                         beta = ep * ( Lv / ( Rd * tl ) ) * ( Lv / ( cp * tl ) )
-                ! 
-                ! Simplified by multiplying top and bottom by tl^2 to avoid a 
-                ! divide and precalculating ep * Lv**2 / ( Rd * cp )  
+                !
+                ! Simplified by multiplying top and bottom by tl^2 to avoid a
+                ! divide and precalculating ep * Lv**2 / ( Rd * cp )
                 s_par_j = (rt_par_j - rsatl_par_j) * tl_par_j_sqd &
                           / ( tl_par_j_sqd + Lv2_coef * rsatl_par_j )
 
                 rc_par_j = max( s_par_j, zero_threshold )
 
-                ! theta_v of entraining parcel at grid level j 
+                ! theta_v of entraining parcel at grid level j
                 thv_par_j = thl_par_j + ep1 * thv_ds(j) * rt_par_j + Lv_coef(j) * rc_par_j
 
                 ! dCAPE/dz = g * ( thv_par - thvm ) / thvm.
@@ -653,9 +653,9 @@ module mixing_length
             ! being exhausted, difference between starting level (i) and last level passed (j+1)
             Lscale_down(i) = Lscale_down(i) + gr%zt(i) - gr%zt(j+1)
 
-            
+
             if ( j >= 2 ) then
-        
+
                 ! Loop terminated early, meaning TKE was completely exhaused at grid level j.
                 ! Add the thickness z - z_0 (where z_0 < z <= z_1) to Lscale_up.
 
@@ -663,7 +663,7 @@ module mixing_length
                      abs( dCAPE_dz_j + dCAPE_dz_j_plus_1 ) * eps ) then
 
                     ! Special case where dCAPE/dz|_(z_(-1)) - dCAPE/dz|_(z_0) = 0
-                    ! Find the remaining distance z_0 - z that it takes to 
+                    ! Find the remaining distance z_0 - z that it takes to
                     ! exhaust the remaining TKE
 
                     Lscale_down(i) = Lscale_down(i) + ( tke / dCAPE_dz_j )
@@ -692,11 +692,11 @@ module mixing_length
         else    ! TKE for parcel at level (i) was exhaused before one full grid level
 
             ! Find the remaining distance z_0 - z that it takes to exhaust the
-            ! remaining TKE (tke_i), using the quadratic formula. Simplified 
+            ! remaining TKE (tke_i), using the quadratic formula. Simplified
             ! since dCAPE_dz_j_plus_1 = 0.0
             Lscale_down(i) = Lscale_down(i) + sqrt( 2.0_core_rknd * tke_i(i) &
                                                     * gr%dzm(i-1) * dCAPE_dz_1(i-1) ) &
-                                              / dCAPE_dz_1(i-1) 
+                                              / dCAPE_dz_1(i-1)
         endif
 
         ! If a parcel at a previous grid level can descend past the parcel at this grid level
@@ -704,7 +704,7 @@ module mixing_length
         ! that the profile of Lscale_down will be smooth, thus reducing numerical instability.
         if ( gr%zt(i) - Lscale_down(i) > Lscale_down_min_alt ) then
             Lscale_down(i) = gr%zt(i) - Lscale_down_min_alt
-        else 
+        else
             Lscale_down_min_alt = gr%zt(i) - Lscale_down(i)
         end if
 
@@ -734,8 +734,8 @@ module mixing_length
 
         ! When L is large, turbulence is weakly damped
         ! When L is small, turbulence is strongly damped
-        ! Use a geometric mean to determine final Lscale so that L tends to become small 
-        ! if either Lscale_up or Lscale_down becomes small. 
+        ! Use a geometric mean to determine final Lscale so that L tends to become small
+        ! if either Lscale_up or Lscale_down becomes small.
         Lscale(i) = sqrt( Lscale_up(i) * Lscale_down(i) )
 
     enddo
@@ -748,7 +748,7 @@ module mixing_length
     ! model to take over deep convection.  13 Feb 2008.
     Lscale = min( Lscale, Lscale_max )
 
- 
+
     ! Ensure that no Lscale values are NaN
     if ( clubb_at_least_debug_level( 1 ) ) then
 
@@ -773,7 +773,7 @@ module mixing_length
           write(fstderr,*) "Lscale = ", Lscale
           write(fstderr,*) "Lscale_up = ", Lscale_up
           write(fstderr,*) "Lscale_down = ", Lscale_down
-     
+
         endif ! Fatal error
 
     end if
@@ -799,7 +799,7 @@ module mixing_length
     use model_flags, only: &
       l_sat_mixrat_lookup ! Variable(s)
 
-    use saturation, only:  & 
+    use saturation, only:  &
       sat_mixrat_liq, & ! Procedure(s)
       sat_mixrat_liq_lookup, &
       sat_mixrat_ice
@@ -912,7 +912,7 @@ module mixing_length
 
     use stats_type_utilities, only:   &
         stat_update_var
-        
+
     use error_code, only: &
         clubb_at_least_debug_level,  & ! Procedure
         err_code,                    & ! Error Indicator
@@ -984,7 +984,7 @@ module mixing_length
     !point.
 
  ! ---- Begin Code ----
- 
+
       if ( clubb_at_least_debug_level( 0 ) ) then
 
         if ( l_Lscale_plume_centered .and. .not. l_avg_Lscale ) then
@@ -1123,47 +1123,27 @@ module mixing_length
 
 !===============================================================================
 
- subroutine diagnose_Lscale_from_tau(    brunt_vaisala_freq_sqd,       &
-  brunt_vaisala_freq_sqd_mixed, &
-  brunt_vaisala_freq_sqd_dry,   &
-  brunt_vaisala_freq_sqd_moist, &
-  brunt_vaisala_freq_sqd_plus,  &
-  sqrt_Ri_zm,                        &
-  tau_max_zm,                   &
-  tau_max_zt,                   &
-  tau_zm,                       &
-  tau_zt,                       &
-  invrs_tau_shear,              &
-  invrs_tau_sfc,                &
-  invrs_tau_no_N2_zm,           &
-  invrs_tau_bkgnd,              &
-  invrs_tau_wp2_zm,             &
-  invrs_tau_xp2_zm,             &
-  invrs_tau_zt,                 &
-  invrs_tau_wp3_zm,             &
-  invrs_tau_wp3_zt,             &
-  invrs_tau_wpxp_zm,            &
-  invrs_tau_zm ,                &
-  Lscale,                       &
-  Lscale_up,                    &
-  Lscale_down,                  &
-  brunt_freq_pos,               &
-  brunt_freq_out_cloud,         &
-  brunt_vaisala_freq_sqd_smth, upwp_sfc,      &
-  vpwp_sfc,      &
-  sfc_elevation, &
-  Lscale_max,    &
-  ustar,    exner, &
-  p_in_Pa, &
-  rtm, &
-  um, &
-  vm, &
-  rcm, &
-  thlm, &
-  ice_supersat_frac, &
-  thvm,                         &
-  em,                           &
-  sqrt_em_zt, ufmin, z_displace, tau_const)
+ subroutine diagnose_Lscale_from_tau(upwp_sfc, vpwp_sfc, um, vm, & !intent in
+                                      exner, p_in_Pa, & !intent in
+                                      rtm, thlm, thvm, & !intent in
+                                      rcm, ice_supersat_frac, &! intent in
+                                      em, sqrt_em_zt, & ! intent in
+                                      ufmin, z_displace, tau_const, & ! intent in
+                                      sfc_elevation, Lscale_max, & ! intent in
+                                      clubb_config_flags%l_e3sm_config, & ! intent in
+                                      clubb_config_flags%l_brunt_vaisala_freq_moist, & !intent in
+                                      clubb_config_flags%l_use_thvm_in_bv_freq, &! intent in
+                                      brunt_vaisala_freq_sqd, brunt_vaisala_freq_sqd_mixed, & ! intent out
+                                      brunt_vaisala_freq_sqd_dry, brunt_vaisala_freq_sqd_moist, & ! intent out
+                                      brunt_vaisala_freq_sqd_plus, & !intent out
+                                      sqrt_Ri_zm, & ! intent out
+                                      invrs_tau_zt, invrs_tau_zm, & ! intent out
+                                      invrs_tau_sfc, invrs_tau_no_N2_zm, invrs_tau_bkgnd, & ! intent out
+                                      invrs_tau_shear, invrs_tau_wp2_zm, invrs_tau_xp2_zm, & ! intent out
+                                      invrs_tau_wp3_zm, invrs_tau_wp3_zt, invrs_tau_wpxp_zm, & ! intent out
+                                      tau_max_zm, tau_max_zt, tau_zm, tau_zt, & !intent out
+                                      Lscale, Lscale_up, Lscale_down)! intent out
+
 
   use advance_helper_module, only: &
     calc_brunt_vaisala_freq_sqd
@@ -1188,8 +1168,6 @@ module mixing_length
   use clubb_precision, only: &
     core_rknd
 
-
-
   use parameters_tunable, only: &
     C_invrs_tau_bkgnd, &
     C_invrs_tau_shear, &
@@ -1203,13 +1181,17 @@ module mixing_length
     C_invrs_tau_wpxp_Ri,        &
     altitude_threshold
 
+  implicit none
 
-  use model_flags, only: &
-    clubb_config_flags_type
 
-  implicit None
+  logical, intent(in) :: &
+    l_brunt_vaisala_freq_moist, & ! Use a different formula for the Brunt-Vaisala frequency in
+                                  ! saturated atmospheres (from Durran and Klemp, 1982)
+    l_use_thvm_in_bv_freq, &         ! Use thvm in the calculation of Brunt-Vaisala frequency
+    l_e3sm_config
 
   real( kind = core_rknd ), intent(in) :: &
+    Lscale_max,    &
     upwp_sfc,      &
     vpwp_sfc,      &
     sfc_elevation, &
@@ -1217,18 +1199,16 @@ module mixing_length
     z_displace, &
     tau_const
 
-  real( kind = core_rknd) :: &
-    Lscale_max, &
-    ustar
-
-  real( kind = core_rknd), dimension(gr%nz) :: &
+  real( kind = core_rknd ), dimension(gr%nz), intent(out) :: &
+    Lscale, &
+    Lscale_up, &
+    Lscale_down, &
+    sqrt_Ri_zm, &
     brunt_vaisala_freq_sqd,       &
     brunt_vaisala_freq_sqd_mixed, &
     brunt_vaisala_freq_sqd_dry,   &
     brunt_vaisala_freq_sqd_moist, &
-    brunt_vaisala_freq_sqd_plus,  &
-    sqrt_Ri_zm,                        &
-    tau_max_zm,                   &
+    brunt_vaisala_freq_sqd_plus, &
     tau_max_zt,                   &
     tau_zm,                       &
     tau_zt,                       &
@@ -1242,18 +1222,11 @@ module mixing_length
     invrs_tau_wp3_zm,             &
     invrs_tau_wp3_zt,             &
     invrs_tau_wpxp_zm,            &
-    invrs_tau_zm ,                &
-    Lscale,                       &
-    Lscale_up,                    &
-    Lscale_down,                  &
-    brunt_freq_pos,               &
-    brunt_freq_out_cloud,         &
-    brunt_vaisala_freq_sqd_smth,  &
-    em,                           &
-    sqrt_em_zt
+    invrs_tau_zm,                 &
+    tau_max_zm
 
 
-  real( kind = core_rknd), dimension(gr%nz), intent(inout) :: &
+  real( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
     exner, &
     rtm, &
     rcm, &
@@ -1262,22 +1235,30 @@ module mixing_length
     ice_supersat_frac, &
     um, &
     vm, &
+    em,                           &
+    sqrt_em_zt, &
     thlm
 
+  real( kind = core_rknd ), dimension(gr%nz) :: &
+    brunt_freq_pos, &
+    brunt_vaisala_freq_sqd_smth,  & ! smoothed Buoyancy frequency squared, N^2     [s^-2]
+    brunt_freq_out_cloud
 
-  type( clubb_config_flags_type ) :: &
-    clubb_config_flags
+ real( kind = core_rknd ) :: &
+    ustar
+
 
 !-----------------------------------Begin Code---------------------------------------------------------!
   call calc_brunt_vaisala_freq_sqd( zm2zt( zt2zm( thlm )), exner, rtm, rcm, p_in_Pa, thvm, &
                                           ice_supersat_frac, &
-                                          clubb_config_flags%l_brunt_vaisala_freq_moist, &
-                                          clubb_config_flags%l_use_thvm_in_bv_freq, &
+                                          l_brunt_vaisala_freq_moist, &
+                                          l_use_thvm_in_bv_freq, &
                                           brunt_vaisala_freq_sqd, &
                                           brunt_vaisala_freq_sqd_mixed,&
                                           brunt_vaisala_freq_sqd_dry, &
                                           brunt_vaisala_freq_sqd_moist, &
                                           brunt_vaisala_freq_sqd_plus )
+
 
         ustar = max( ( upwp_sfc**2 + vpwp_sfc**2 )**(one_fourth), ufmin )
 
@@ -1320,7 +1301,7 @@ module mixing_length
         invrs_tau_zm = invrs_tau_no_N2_zm + C_invrs_tau_N2 * brunt_freq_pos
 
 
-        if ( clubb_config_flags%l_e3sm_config ) then
+        if ( l_e3sm_config ) then
 
           invrs_tau_zm = 0.5_core_rknd * invrs_tau_zm
 
