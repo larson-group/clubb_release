@@ -73,15 +73,15 @@ metricsNamesAndWeights = [ \
                         ['SWCF_PA', 1.], \
                         ['SWCF_CAF', 1.], \
                         ['PRECT_GLB', 1.], \
-                        ['PRECT_DYCOMS', 0.1], \
-                        ['PRECT_HAWAII', 0.1], \
-                        ['PRECT_VOCAL', 0.1], \
-                        ['PRECT_LBA', 2.], \
-                        ['PRECT_WP', 2.], \
+#                        ['PRECT_DYCOMS', 0.1], \
+#                        ['PRECT_HAWAII', 0.1], \
+#                        ['PRECT_VOCAL', 0.1], \
+                        ['PRECT_LBA', 1.], \
+                        ['PRECT_WP', 1.], \
                         ['PRECT_EP', 1.], \
                         ['PRECT_NP', 1.], \
                         ['PRECT_SP', 1.], \
-                        ['PRECT_PA', 2.], \
+                        ['PRECT_PA', 1.], \
                         ['PRECT_CAF', 1.] \
                          ]
 
@@ -97,18 +97,17 @@ metricsWeights = dfMetricsNamesAndWeights[['metricsWeights']].to_numpy()
 # There should be one sensitivity simulation per each tunable parameter.
 # These filenames must be listed in the same order as the parameters (paramsNames).
 paramsNamesAndFilenames = [ \
-#                  ['micro_mg_berg_eff_factor', 'devel/anvil.devel.berg1.ne30_ne30_Regional.nc'], \
-                  ['clubb_c8', 'devel/anvil.devel.C82.ne30_ne30_Regional.nc'], \
-#                  ['micro_mg_dcs','devel/anvil.devel.dcs3h.ne30_ne30_Regional.nc'], \
-                  ['clubb_c_invrs_tau_wpxp_n2_thresh','devel/anvil.devel.n2thres3.ne30_ne30_Regional.nc'], \
-                  ['clubb_c_invrs_tau_n2','devel/anvil.devel.n21.ne30_ne30_Regional.nc'], \
-                  ['prc_exp', 'devel/anvil.devel.prc2.ne30_ne30_Regional.nc'], \
-#                  ['prc_exp1', 'devel/anvil.devel.prcexp1m1.ne30_ne30_Regional.nc'], \
-                  ['clubb_c_invrs_tau_wpxp_ri', 'devel/anvil.devel.ri4.ne30_ne30_Regional.nc'], \
-#                  ['ice_sed_ai', 'devel/anvil.devel.sedai300.ne30_ne30_Regional.nc'], \
-#                  ['clubb_c_invrs_tau_n2_wp2', 'devel/anvil.devel.wp21.ne30_ne30_Regional.nc'], \
-                  ['clubb_c_invrs_tau_n2_clear_wp3', 'devel/anvil.devel.wp35.ne30_ne30_Regional.nc'], \
-#                  ['clubb_c_invrs_tau_n2_wpxp', 'devel/anvil.devel.wpxp10.ne30_ne30_Regional.nc'] \
+#                  ['clubb_c8', 'devel/anvil.devel.C82.ne30_ne30_Regional.nc'], \
+#                  ['clubb_c_invrs_tau_wpxp_n2_thresh','devel/anvil.devel.n2thres3.ne30_ne30_Regional.nc'], \
+#                  ['clubb_c_invrs_tau_n2','devel/anvil.devel.n21.ne30_ne30_Regional.nc'], \
+#                  ['prc_exp', 'devel/anvil.devel.prc2.ne30_ne30_Regional.nc'], \
+#                  ['clubb_c_invrs_tau_wpxp_ri', 'devel/anvil.devel.ri4.ne30_ne30_Regional.nc'], \
+#                  ['clubb_c_invrs_tau_n2_clear_wp3', 'devel/anvil.devel.wp35.ne30_ne30_Regional.nc'], \
+                  ['clubb_c8', 'improved/anvil.devel.improved_0416_c81.ne30_ne30_Regional.nc'], \
+                  ['clubb_c_invrs_tau_wpxp_n2_thresh','improved/anvil.devel.improved_0416_thres3p2.ne30_ne30_Regional.nc'], \
+                  ['clubb_c_k10','improved/anvil.devel.improved_0416_ck101.ne30_ne30_Regional.nc'], \
+#                 ['clubb_c_k10h', 'improved/anvil.devel.improved_0416_ck10h1.ne30_ne30_Regional.nc'], \
+#                  ['clubb_c_invrs_tau_wpxp_ri', 'improved/anvil.devel.improved_0416_ri5.ne30_ne30_Regional.nc'], \
                          ]
 
 dfparamsNamesAndFilenames =  \
@@ -123,7 +122,8 @@ transformedParamsNames = np.array(['clubb_c8','clubb_c_invrs_tau_n2', 'clubb_c_i
 
 # Netcdf file containing metric and parameter values from the default simulation
 defaultNcFilename = \
-   'devel/anvil.devel.base.ne30_ne30_Regional.nc'#'/home/vlarson/canopy/scripts/anvil.c689c7e.repeatbmg_flux.ne30_ne30_GLBmean.nc'
+    'improved/anvil.devel.improved_0415.ne30_ne30_Regional.nc'#'/home/vlarson/canopy/scripts/anvil.c689c7e.repeatbmg_flux.ne30_ne30_GLBmean.nc'
+#    'devel/anvil.devel.base.ne30_ne30_Regional.nc'
 
 # Metrics from simulation that use the SVD-recommended parameter values
 # Here, we use default simulation just as a placeholder.
