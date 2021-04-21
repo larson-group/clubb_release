@@ -182,8 +182,30 @@ df = pd.DataFrame(fracBiasesMatrix,
                   columns= ['fracDefBias', 'fracDefBiasOrigApprox', 'defaultBiasesOrigApproxPC'])
 biasesFig = px.line(df, x=df.index, y=df.columns,
               title = 'Fractional biases of default simulation and approximations thereof.')
-biasesFig.update_yaxes(title="Bias / abs(default metric value)")
+biasesFig.update_yaxes(title="(Obs-Sim) / abs(default metric value)")
 biasesFig.update_xaxes(title="Metric and region")
+
+# estBiasesOrig = default metric value + correction - observed metric value
+defaultBiasesColSqd = defaultBiasesCol**2
+defaultMetricValsColSqd = defaultMetricValsCol**2
+estBiasesOrigSqd = (defaultBiasesOrigApprox - defaultBiasesCol)**2
+fracError = estBiasesOrigSqd / defaultBiasesColSqd
+#fracError = estBiasesOrigSqd / defaultMetricValsColSqd
+estBiasesOrigPCSqd = (defaultBiasesOrigApproxPC - defaultBiasesCol)**2
+fracErrorPC = estBiasesOrigPCSqd / defaultBiasesColSqd
+#fracErrorPC = estBiasesOrigPCSqd / defaultMetricValsColSqd
+
+#pdb.set_trace()
+
+fracErrorMatrix = np.dstack((fracError, fracErrorPC)).squeeze()
+df = pd.DataFrame(fracErrorMatrix,
+                  index=metricsNames,
+                  columns= ['fracError', 'fracErrorPC'])
+errorsFig = px.line(df, x=df.index, y=df.columns,
+              title = 'Fractional error in corrected solution.')
+errorsFig.update_yaxes(title="Corr Err Sqd / Def Err Sqd")
+errorsFig.update_xaxes(title="Metric and region")
+
 
 # Plot each column of normalized sensitivity matrix as a separate line.
 # Each column tells us how all metrics vary with a single parameter.
@@ -238,6 +260,7 @@ sensMatrixDashboard.layout = html.Div(children=[
         html.Div(children=''' '''),
 
         dcc.Graph( id='biasesFig', figure=biasesFig ),
+        dcc.Graph( id='errorsFig', figure=errorsFig ),
         dcc.Graph( id='normlzdSensMatrixColsFig', figure=normlzdSensMatrixColsFig ),
         dcc.Graph( id='normlzdSensMatrixRowsFig', figure=normlzdSensMatrixRowsFig ),
         dcc.Graph( id='fracParamsFig', figure=fracParamsFig ),
