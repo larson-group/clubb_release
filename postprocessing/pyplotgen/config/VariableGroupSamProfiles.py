@@ -28,56 +28,84 @@ class VariableGroupSamProfiles(VariableGroup):
         self.g_per_second_to_kg_per_day = self.kg_per_second_to_kg_per_day / 1000
         
         self.variable_definitions = [
-            # THETA_L
             {'var_names':
                 {
-                'clubb': ['thlm'],
-                'sam': ['THETAL'],
-                'coamps': ['thlm'],
-                'r408': ['thlm'],
-                'hoc': ['thlm'],
-                'e3sm': ['thlm'],
-				'cam': ['thlm'],
+                'clubb': [''],
+                'sam': ['WPPP'],
+                'coamps': [''],
+                'r408': [''],
+                'hoc': [''],
+                'e3sm': [''],
+                'cam': [''],
                 },
-             'sam_calc': self.getThlmSamCalc, 'sam_conv_factor': 1,
-             'title': r"Liquid Water Potential Temperature, $\mathrm{\theta_l}$",
-             'axis_title': r"$\mathrm{\theta_l}$ $\mathrm{\left[K\right]}$",
-             'legend_label': r"$\mathrm{\theta_l}$",
-             'priority': True,
-            },
-            # R_T
+             'title': r"Covariance of w' and p'",
+             'axis_title': r"$\mathrm{\overline{w'p'}}$ $\mathrm{\left[m^3\,s^{-3}\right]}$",
+             },
             {'var_names':
                 {
-                'clubb': ['rtm'],
-                'sam': ['QT'],
-                'coamps': ['qtm'],
-                'r408': ['rtm'],
-                'hoc': ['rtm'],
-                'e3sm': ['rtm'],
-				'cam': ['rtm'],
+                'clubb': [''],
+                'sam': ['WP2PP'],
+                'coamps': [''],
+                'r408': [''],
+                'hoc': [''],
+                'e3sm': [''],
+                'cam': [''],
                 },
-             'sam_calc': self.getRtmSamCalc, 'sam_conv_factor': 1,
-             'title': r"Total Water Mixing Ratio, $\mathrm{r_t}$",
-             'axis_title': r"$\mathrm{r_t}$ $\mathrm{\left[kg\,kg^{-1}\right]}$",
-             'legend_label': r'$\mathrm{r_t}$',
-             'priority': True,
-            },
-            # W'THETA_L'
+             'title': r"Covariance of w'^2 and p'",
+             'axis_title': r"$\mathrm{\overline{w'^2p'}}$ $\mathrm{\left[m^4\,s^{-4}\right]}$",
+             },
             {'var_names':
                 {
-                'clubb': ['wpthlp'],
-                'sam': ['TLFLUX'],
-                'coamps': ['wpthlp'],
-                'r408': ['wpthlp'],
-                'hoc': ['wpthlp'],
-                'e3sm': ['wpthlp'],
+                'clubb': [''],
+                'sam': ['WP2UP2'],
+                'coamps': [''],
+                'r408': [''],
+                'hoc': [''],
+                'e3sm': [''],
+                'cam': [''],
                 },
-             'sam_calc': self.getWpthlpCalc, 'sam_conv_factor': 1,
-             'title': r"Turbulent Flux of $\mathrm{\theta_l}$",
-             'axis_title': r"$\mathrm{\overline{w'\theta_l'}}$ / thflux(s) $\mathrm{\left[K\,m\,s^{-1}\right]}$",
-             'legend_label': r"$\mathrm{\overline{w'\theta_l'}}$",
-             'priority': True,
-            },
+             'title': r"Covariance of w'^2 and u'^2",
+             'axis_title': r"$\mathrm{\overline{w'^2u'^2}}$ $\mathrm{\left[m^4\,s^{-4}\right]}$",
+             },
+            {'var_names':
+                {
+                'clubb': [''],
+                'sam': ['WP2VP2'],
+                'coamps': [''],
+                'r408': [''],
+                'hoc': [''],
+                'e3sm': [''],
+                'cam': [''],
+                },
+             'title': r"Covariance of w'^2 and v'^2",
+             'axis_title': r"$\mathrm{\overline{w'^2v'^2}}$ $\mathrm{\left[m^4\,s^{-4}\right]}$",
+},
+            {'var_names':
+                {
+                'clubb': [''],
+                'sam': ['WP2TKE'],
+                'coamps': [''],
+                'r408': [''],
+                'hoc': [''],
+                'e3sm': [''],
+                'cam': [''],
+                },
+             'title': r"Covariance of w'^2 and TKE (0.5*(u'^2+v'^2+w'^2))",
+             'axis_title': r"$\mathrm{\overline{w'^2e}}$ $\mathrm{\left[m^4\,s^{-4}\right]}$",
+             },
+            {'var_names':
+                {
+                'clubb': [''],
+                'sam': ['PPTKE'],
+                'coamps': [''],
+                'r408': [''],
+                'hoc': [''],
+                'e3sm': [''],
+                'cam': [''],
+                },
+             'title': r"Covariance of p' and TKE (0.5*(u'^2+v'^2+w'^2))",
+             'axis_title': r"$\mathrm{\overline{p'e}}$ $\mathrm{\left[m^4\,s^{-4}\right]}$",
+             },
             # CORR(W, THETA_L)
             {'var_names':
                 {
@@ -95,22 +123,6 @@ class VariableGroupSamProfiles(VariableGroup):
                            r"$\mathrm{\overline{w'\theta_l'} / \sqrt{\overline{w'^2}\;\overline{\theta_l'^2}}}$"+
                            r" $\mathrm{\left[-\right]}$",
              'legend_label': r"$\mathrm{Corr(w,\theta_l)}$",
-            },
-            # W'R_T'
-            {'var_names':
-                {
-                'clubb': ['wprtp'],
-                'sam': ['QTFLUX'],
-                'coamps': ['wpqtp'],
-                'r408': ['wprtp'],
-                'hoc': ['wprtp'],
-                'e3sm': ['wprtp'],
-                },
-             'sam_calc': self.getWprtpCalc, 'sam_conv_factor': 1,
-             'title': r"Turbulent Flux of $\mathrm{r_t}$",
-             'axis_title': r"$\mathrm{\overline{w'r_t'}}$ (QTFLUX) $\mathrm{\left[kg\,kg^{-1}\,m\,s^{-1}\right]}$",
-             'legend_label': r"$\mathrm{\overline{w'r_t'}}$",
-             'priority': True,
             },
             # CORR(W, R_T)
             {'var_names':
@@ -146,125 +158,6 @@ class VariableGroupSamProfiles(VariableGroup):
              'axis_title': r"Cloud liquid fraction $\mathrm{\left[\frac{\%}{100}\right]}$",
              'legend_label': 'cloudliq_frac_em6',
             },
-            # R_C
-            {'var_names':
-                {
-                'clubb': [],
-                'sam': ['QCL'],
-                'coamps': [],
-                'r408': [],
-                'hoc': [],
-                'e3sm': [],
-				'cam': [],
-                },
-             'sam_conv_factor': 1e-3,
-             'title': r"Cloud Water Mixing Ratio, $\mathrm{r_c}$",
-             'axis_title': r"$\mathrm{r_c}$ / $\mathrm{q_{cl}}$ $\mathrm{\left[kg\,kg^{-1}\right]}$",
-             'legend_label': r'$\mathrm{r_c}$',
-             'priority': True,
-            },
-            # W'^2
-            {'var_names':
-                {
-                'clubb': [],
-                'sam': ['W2'],
-                'coamps': [],
-                'r408': [],
-                'hoc': [],
-                'e3sm': [],
-				'cam': [],
-                },
-             'sam_calc': self.getWp2Calc, 'sam_conv_factor': 1,
-             'title': r"Vertical Momentum Variance, $\mathrm{\overline{w'^2}}$",
-             'axis_title': r"Momentum variance, $\mathrm{\overline{w'^2}}$ $\mathrm{\left[m^2\,s^{-2}\right]}$",
-             'legend_label': r"$\mathrm{\overline{w'^2}}$",
-             'priority': True,
-            },
-            # W'^3
-            {'var_names':
-                {
-                'clubb': [],
-                'sam': ['W3'],
-                'coamps': [],
-                'r408': [],
-                'hoc': [],
-                'e3sm': [],
-				'cam': [],
-                },
-             'sam_calc': self.getWp3Calc, 'sam_conv_factor': 1,
-             'title': r"Vertical Momentum Skewness, $\mathrm{\overline{w'^3}}$",
-             'axis_title': r"Momentum Skewness, $\mathrm{\overline{w'^3}}$ $\mathrm{\left[m^3\,s^{-3}\right]}$",
-             'legend_label': r"$\mathrm{\overline{w'^3}}$",
-             'priority': True,
-            },
-            #THETA_L'^2
-            {'var_names':
-                {
-                'clubb': [],
-                'sam': ['TL2'],
-                'coamps': [],
-                'r408': [],
-                'hoc': [],
-                'e3sm': [],
-				'cam': [],
-                },
-             'sam_calc': self.getThetalVarCalc, 'sam_conv_factor': 1,
-             'title': r"Variance of Liquid Water Potential Temperature, $\mathrm{\overline{\theta_l'^2}}$",
-             'axis_title': r"$\mathrm{\overline{\theta_l'^2}}$ $\mathrm{\left[K^2\right]}$",
-             'legend_label': r"$\mathrm{\overline{\theta_l'^2}}$",
-             'priority': True,
-            },
-            # R_T'^2
-            {'var_names':
-                {
-                'clubb': [],
-                'sam': ['QT2'],
-                'coamps': [],
-                'r408': [],
-                'hoc': [],
-                'e3sm': [],
-				'cam': [],
-                },
-             'sam_calc': self.getRtVarCalc, 'sam_conv_factor': 1,
-             'title': r"Variance of Total Water Mixing Ratio, $\mathrm{\overline{r_t'^2}}$",
-             'axis_title': r"$\mathrm{\overline{r_t'^2}}$ / $\mathrm{\overline{q_t'^2}}$ "+
-                           r"$\mathrm{\left[kg^2\,kg^{-2}\right]}$",
-             'legend_label': r"$\mathrm{\overline{r_t'^2}}$",
-             'priority': True,
-            },
-            # R_T'THETA_L'
-            {'var_names':
-                {
-                'clubb': [],
-                'sam': ['RTPTHLP'],
-                'coamps': [],
-                'r408': [],
-                'hoc': [],
-                'e3sm': [],
-				'cam': [],
-                },
-             'sam_conv_factor': 1,
-             'title': r"Covariance of $\mathrm{r_t}$ & $\mathrm{\theta_l}$",
-             'axis_title': r"$\mathrm{\overline{r_t'\theta_l'}}$ $\mathrm{\left[kg\,kg^{-1}\,K\right]}$",
-             'legend_label': r"$\mathrm{\overline{r_t'\theta_l'}}$",
-             'priority': True,
-            },
-            # W_OBS
-            {'var_names':
-                {
-                'clubb': [],
-                'sam': ['WOBS'],
-                'coamps': [],
-                'r408': [],
-                'hoc': [],
-                'e3sm': [],
-				'cam': [],
-                },
-             'sam_conv_factor': 1,
-             'title': r"$\mathrm{w_{obs}}$",
-             'axis_title': r"Observed wind, $\mathrm{w_{obs}}\ \mathrm{\left[m\,s^{-1}\right]}$",
-             'legend_label': r"$\mathrm{w_{obs}}$",
-            },
             # WCLD unweighted
             {'var_names':
                 {
@@ -274,29 +167,13 @@ class VariableGroupSamProfiles(VariableGroup):
                 'r408': [],
                 'hoc': [],
                 'e3sm': [],
-				'cam': [],
+                'cam': [],
                 },
              'sam_conv_factor': 1,
              'title': r"In-cloud mean wind, $\overline{W}^{cld}$",
              'axis_title': r"In-cloud mean wind, "+
                            r"$\overline{w}^\mathrm{{cld}}\ \mathrm{\left[m\,s^{-1}\right]}$",
              'legend_label': r"$\overline{w}^\mathrm{{cld}}$",
-            },
-            # U
-            {'var_names':
-                {
-                'clubb': [],
-                'sam': ['U'],
-                'coamps': [],
-                'r408': [],
-                'hoc': [],
-                'e3sm': [],
-				'cam': [],
-                },
-             'sam_conv_factor': 1,
-             'title': r"Zonal Wind Component, $\mathrm{\overline{u}}$",
-             'axis_title': r"$\mathrm{\overline{u}}\ \mathrm{\left[m\,s^{-1}\right]}$",
-             'legend_label': r'\mathrm{\overline{u}}',
             },
             # UCLD unweighted
             {'var_names':
@@ -315,22 +192,6 @@ class VariableGroupSamProfiles(VariableGroup):
                            r"$\overline{u}^\mathrm{{cld}}\ \mathrm{\left[m\,s^{-1}\right]}$",
              'legend_label': r"$\overline{u}^\mathrm{{cld}}$",
             },
-            # V
-            {'var_names':
-                {
-                'clubb': [],
-                'sam': ['V'],
-                'coamps': [],
-                'r408': [],
-                'hoc': [],
-                'e3sm': [],
-				'cam': [],
-                },
-             'sam_conv_factor': 1,
-             'title': r"Meridonal Wind Component, $\mathrm{\overline{v}}$",
-             'axis_title': r"$\mathrm{\overline{v}}\ \mathrm{\left[m\,s^{-1}\right]}$",
-             'legend_label': r"$\mathrm{\overline{v}}$",
-            },
             # VCLD unweighted
             {'var_names':
                 {
@@ -347,74 +208,6 @@ class VariableGroupSamProfiles(VariableGroup):
              'axis_title': r"In-cloud mean wind, "+
                            r"$\overline{v}^\mathrm{{cld}}\ \mathrm{\left[m\,s^{-1}\right]}$",
              'legend_label': r"$\overline{v}^\mathrm{{cld}}$",
-            },
-            # U'W'
-            {'var_names':
-                {
-                'clubb': [],
-                'sam': ['UW'],
-                'coamps': [],
-                'r408': [],
-                'hoc': [],
-                'e3sm': [],
-				'cam': [],
-                },
-             'sam_calc': self.getUpWpCalc, 'sam_conv_factor': 1,
-             'title': r"$\mathrm{\overline{u'w'}}$",
-             'axis_title': r"Momentum flux, $\mathrm{\overline{u'w'}\ \left[m^2\,s^{-2}\right]}$",
-             'legend_label': r"$\mathrm{\overline{u'w'}}$",
-             'priority': True,
-            },
-            # V'W'
-            {'var_names':
-                {
-                'clubb': [],
-                'sam': ['VW'],
-                'coamps': [],
-                'r408': [],
-                'hoc': [],
-                'e3sm': [],
-				'cam': [],
-                },
-             'sam_calc': self.getVpWpCalc, 'sam_conv_factor': 1,
-             'title': r"$\mathrm{\overline{v'w'}}$",
-             'axis_title': r"Momentum flux, $\mathrm{\overline{v'w'}\ \left[m^2\,s^{-2}\right]}$",
-             'legend_label': r"$\mathrm{\overline{v'w'}}$",
-             'priority': True,
-            },
-            # U'^2
-            {'var_names':
-                {
-                'clubb': [],
-                'sam': ['U2'],
-                'coamps': [],
-                'r408': [],
-                'hoc': [],
-                'e3sm': [],
-				'cam': [],
-                },
-             'sam_calc': self.getUp2Calc, 'sam_conv_factor': 1,
-             'title': r"$\mathrm{\overline{u'^2}}$",
-             'axis_title': r"Momentum variance, $\mathrm{\overline{u'^2}\ \left[m^2\,s^{-2}\right]}$",
-             'legend_label': r"$\mathrm{\overline{u'^2}}$",
-             'priority': True,
-            },
-            # V'^2
-            {'var_names':
-                {
-                'clubb': [],
-                'sam': ['V2'],
-                'coamps': [],
-                'r408': [],
-                'hoc': [],
-                'e3sm': [],
-				'cam': [],
-                },
-             'sam_calc': self.getVp2Calc, 'sam_conv_factor': 1,
-             'title': r"$\mathrm{\overline{v'^2}}$",
-             'axis_title': r"Momentum variance, $\mathrm{\overline{v'^2}\ \left[m^2\,s^{-2}\right]}$",
-             'legend_label': r"$\mathrm{\overline{v'^2}}$",
-             'priority': True,
             },
             # CORR(U, W)
             {'var_names':
@@ -1285,25 +1078,6 @@ class VariableGroupSamProfiles(VariableGroup):
                            r"$\overline{v'\theta_v'}\ \mathrm{\left[K\,m\,s^{-1}\right]}$",
              'legend_label': r"$\overline{v'\theta_v'}$",
             },
-
-            # CLD
-            {'var_names':
-                {
-                'clubb': [],
-                'sam': ['CLD'],
-                'coamps': [],
-                'r408': [],
-                'hoc': [],
-                'e3sm': [],
-				'cam': [],
-                },
-             'sam_conv_factor': 1,
-             'title': "Cloud fraction",
-             'axis_title': "Cloud fraction [-]",
-             'legend_label': 'CLD',
-             'priority': True,
-            },
-            
             ## Tracer variables
             
             # TR01

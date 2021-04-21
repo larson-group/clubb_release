@@ -409,8 +409,11 @@ class VariableGroup:
                 any_varname_with_budget_units = [var.label for var in all_lines]
                 axis_title = "[" + data_reader.__getUnits__(first_input_datasets, any_varname_with_budget_units) + "]"
             else:
+                all_var_names = []
+                for model_var_names in var_names.values():
+                    all_var_names.extend(model_var_names)
                 # Get axis title for any of the var_names given in variable_def_dict
-                imported_axis_title = data_reader.getAxisTitle(first_input_datasets, plotted_models_varname)
+                imported_axis_title = data_reader.getAxisTitle(first_input_datasets, all_var_names)
                 axis_title = imported_axis_title
         else:
             # An axis_title is manually defined in variable_def_dict

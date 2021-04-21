@@ -10,6 +10,7 @@ from config.VariableGroupBaseBudgets import VariableGroupBaseBudgets
 from config.VariableGroupBaseBudgetsSamStyle import VariableGroupBaseBudgetsSamStyle
 from config.VariableGroupSamBudgets import VariableGroupSamBudgets
 from config.VariableGroupSubcolumns import VariableGroupSubcolumns
+from config.VariableGroupSamProfiles import VariableGroupSamProfiles
 from src.DataReader import DataReader
 from src.Panel import Panel
 from src.OutputHandler import logToFile, logToFileAndConsole, updateProgress
@@ -223,6 +224,13 @@ class CaseGallerySetup:
         for VarGroup in self.var_groups:
             # Calls the __init__ function of the VarGroup class and, by doing this, create an instance of it
             temp_group = VarGroup(self, clubb_datasets=self.clubb_datasets, les_dataset=self.sam_benchmark_file,
+                                  coamps_dataset=self.coamps_datasets, sam_datasets=self.sam_datasets,
+                                  wrf_datasets=self.wrf_datasets, r408_dataset=self.r408_datasets, hoc_dataset=self.hoc_datasets,
+                                  e3sm_datasets=self.e3sm_datasets, cam_datasets=self.cam_file, priority_vars=self.priority_vars)
+            self.panels.extend(temp_group.panels)
+
+        if self.sam_datasets is not None and len(self.sam_datasets) != 0:
+            temp_group=VariableGroupSamProfiles(self, clubb_datasets=self.clubb_datasets, les_dataset=self.sam_benchmark_file,
                                   coamps_dataset=self.coamps_datasets, sam_datasets=self.sam_datasets,
                                   wrf_datasets=self.wrf_datasets, r408_dataset=self.r408_datasets, hoc_dataset=self.hoc_datasets,
                                   e3sm_datasets=self.e3sm_datasets, cam_datasets=self.cam_file, priority_vars=self.priority_vars)

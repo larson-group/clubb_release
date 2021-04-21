@@ -569,7 +569,7 @@ class DataReader():
                     # Encase unit string in '$' characters, signaling matplotlib
                     # that this string should be rendered with latex
                     if len(raw_units) > 0:
-                        units = "$" + raw_units + "$"  # $'s are used to format equations
+                        units = "$\mathrm{" + raw_units + "}$"  # $'s are used to format equations
                         break
             if var_found:
                 break
@@ -591,15 +591,15 @@ class DataReader():
         long_name = "Title not found"
         # Find dataset and with matching variable name,
         # Get the string stored as long_name attribute and return it
-        for varname in varnames:
-            for dataset in ncdf_datasets:
+        for dataset in ncdf_datasets:
+            for varname in varnames:
                 keys = dataset.variables.keys()
                 if varname in keys:
                     long_name = dataset.variables[varname].long_name
                     return long_name
         return long_name
 
-    def getAxisTitle(self, ncdf_datasets, varname):
+    def getAxisTitle(self, ncdf_datasets, varnames):
         """
         Find netcdf variable in ncdf_datasets matching varname and generate the axis title from its attributes
 
@@ -614,13 +614,14 @@ class DataReader():
         # Find dataset and with matching variable name,
         # Get name and unit attributes, generate an axis title string from those and return it
         for dataset in ncdf_datasets:
-            keys = dataset.variables.keys()
-            if varname in keys:
-                imported_name = dataset.variables[varname].name
-                units = self.__getUnits__([dataset], varname)  # dataset.variables[varname].units
-                axis_title = imported_name
-                axis_title += ' ' + '[' + units + ']'  # $'s are used to format equations
-                break
+            for varname in varnames:
+                keys = dataset.variables.keys()
+                if varname in keys:
+                    imported_name = dataset.variables[varname].name
+                    units = self.__getUnits__([dataset], varname)  # dataset.variables[varname].units
+                    axis_title = imported_name
+                    axis_title += ' ' + '[' + units + ']'
+                    return axis_title
         return axis_title
 
     def __getValuesFromNc__(self, ncdf_data, varname, conversion):

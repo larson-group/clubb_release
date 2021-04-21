@@ -55,7 +55,7 @@ class VariableGroupBase(VariableGroup):
             {'var_names':
                 {
                     'clubb': ['rtm'],
-                    'sam': [self.getRtmSamCalc],
+                    'sam': [self.getRtmSamCalc,'QT'],
                     'coamps': ['qtm', 'rtm'],
                     'r408': ['rtm'],
                     'hoc': ['rtm'],
@@ -105,6 +105,8 @@ class VariableGroupBase(VariableGroup):
                     'cam': ['CLOUD', 'cloud_frac'],
                     'wrf': ['cloud_frac'],
                 },
+                'title': 'Cloud fraction',
+                'axis_title': 'cloud_frac [$-$]',
                 'sci_scale': 0,
                 'priority': True,
             },
@@ -149,7 +151,6 @@ class VariableGroupBase(VariableGroup):
                     'wrf': ['wp3'],
                 },
                 'sci_scale': 0,
-                'axis_title': "wp3",
                 'priority': True,
             },
             {'var_names':
@@ -231,6 +232,8 @@ class VariableGroupBase(VariableGroup):
                     'cam': ['Skw_zt'],
                     'wrf': ['Skw_zt'],
                 },
+                'title': 'Skw, Skewness of vertical velocity w',
+                'axis_title': 'Skw [$-$]',
                 'sci_scale': 0,
             },
             {'var_names':
@@ -244,6 +247,8 @@ class VariableGroupBase(VariableGroup):
                     'cam': ['Skrt_zt'],
                     'wrf': ['Skrt_zt'],
                 },
+                'title': 'Skrt, Skewness of total liquid water rt',
+                'axis_title': 'Skrt [$-$]',
                 'sci_scale': 0,
             },
             {'var_names':
@@ -257,6 +262,8 @@ class VariableGroupBase(VariableGroup):
                     'cam': ['Skthl_zt'],
                     'wrf': ['Skthl_zt'],
                 },
+                'title': 'Skthl, Skewness of liq. water pot. temp. thl',
+                'axis_title': 'Skthl [$-$]',
                 'sci_scale': 0,
             },
             {'var_names':
@@ -406,6 +413,8 @@ class VariableGroupBase(VariableGroup):
                     'cam': ['tau_zm'],
                     'wrf': ['tau_zm'],
                 },
+                'title': 'CLUBB time-scale tau',
+                'axis_title': 'tau [s]',
                 'sci_scale': 0,
             },
             {'var_names':
@@ -419,6 +428,8 @@ class VariableGroupBase(VariableGroup):
                     'cam': ['Lscale'],
                     'wrf': ['Lscale'],
                 },
+                'title': 'CLUBB turbulent mixing length',
+                'axis_title': 'Lscale [m]',
                 'sci_scale': 0,
             },
             {'var_names':
@@ -432,7 +443,9 @@ class VariableGroupBase(VariableGroup):
                 'cam': ['bv_freq_sqd'],
                 'wrf': ['bv_freq_sqd'],
                 },
-             'sci_scale': 0,
+                'title': 'Brunt-Vaisala frequency squared',
+                'axis_title': 'bv_freq_sqd [$\mathrm{1/s^2}$]',
+                'sci_scale': 0,
             },
             {'var_names':
                 {
@@ -485,7 +498,7 @@ class VariableGroupBase(VariableGroup):
                 },
                 'lines': corr_w_chi_i_lines,
                 'title': "Correlation of w and chi",
-                'axis_title': "corr_w_chi_i [-]",
+                'axis_title': "corr_w_chi_i [$-$]",
                 'sci_scale': 0,
             },
             {'var_names':
@@ -501,7 +514,7 @@ class VariableGroupBase(VariableGroup):
                 },
                 'lines': corr_chi_eta_i_lines,
                 'title': "Correlation of chi and eta",
-                'axis_title': "corr_chi_eta_i [-]",
+                'axis_title': "corr_chi_eta_i [$-$]",
                 'sci_scale': 0,
             },
             {'var_names':
