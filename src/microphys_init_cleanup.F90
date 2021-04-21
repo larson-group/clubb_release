@@ -960,7 +960,7 @@ module microphys_init_cleanup
        enddo ! i = 1, hydromet_dim, 1
 
        ! Calculate the correlations given the normal space correlations.
-       call denorm_transform_corr( one_lev, pdf_dim, &
+       call denorm_transform_corr( 1, one_lev, pdf_dim, &
                                    sigma_x_n_cloud, sigma_x_n_below, &
                                    sigma2_on_mu2_ip_cloud, &
                                    sigma2_on_mu2_ip_below, &
