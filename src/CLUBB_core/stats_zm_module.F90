@@ -2461,7 +2461,7 @@ module stats_zm_module
       case ( 'bv_freq_sqd' )
         ibrunt_vaisala_freq_sqd = k
         call stat_assign( var_index=ibrunt_vaisala_freq_sqd, var_name="bv_freq_sqd", &
-             var_description="Brunt-Vaisala frequency squared [1/s^2]", &
+             var_description="Brunt-Vaisala frequency squared", &
              var_units="1/s^2", &
              l_silhs=.false., grid_kind=stats_zm )
         k = k + 1
