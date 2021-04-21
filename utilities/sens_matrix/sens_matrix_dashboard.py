@@ -72,14 +72,25 @@ metricsNamesAndWeights = [ \
                         ['SWCF_SP', 1.], \
                         ['SWCF_PA', 1.], \
                         ['SWCF_CAF', 1.], \
-                        ['PRECT_GLB', 1.], \
+                        ['LWCF_GLB', 2.], \
+#                        ['LWCF_DYCOMS', 1.], \
+#                        ['LWCF_HAWAII', 1.], \
+#                        ['LWCF_VOCAL', 1.], \
+                        ['LWCF_LBA', 1.], \
+                        ['LWCF_WP', 1.], \
+                        ['LWCF_EP', 1.], \
+#                        ['LWCF_NP', 1.], \
+                        ['LWCF_SP', 1.], \
+                        ['LWCF_PA', 1.], \
+                        ['LWCF_CAF', 1.], \
+                        ['PRECT_GLB', 2.], \
 #                        ['PRECT_DYCOMS', 0.1], \
 #                        ['PRECT_HAWAII', 0.1], \
 #                        ['PRECT_VOCAL', 0.1], \
                         ['PRECT_LBA', 1.], \
                         ['PRECT_WP', 1.], \
                         ['PRECT_EP', 1.], \
-                        ['PRECT_NP', 1.], \
+#                        ['PRECT_NP', 1.], \
                         ['PRECT_SP', 1.], \
                         ['PRECT_PA', 1.], \
                         ['PRECT_CAF', 1.] \
@@ -106,9 +117,12 @@ paramsNamesAndFilenames = [ \
                   ['clubb_c8', 'improved/anvil.devel.improved_0416_c81.ne30_ne30_Regional.nc'], \
                   ['clubb_c_invrs_tau_wpxp_n2_thresh','improved/anvil.devel.improved_0416_thres3p2.ne30_ne30_Regional.nc'], \
                   ['clubb_c_k10','improved/anvil.devel.improved_0416_ck101.ne30_ne30_Regional.nc'], \
-#                 ['clubb_c_k10h', 'improved/anvil.devel.improved_0416_ck10h1.ne30_ne30_Regional.nc'], \
-#                  ['clubb_c_invrs_tau_wpxp_ri', 'improved/anvil.devel.improved_0416_ri5.ne30_ne30_Regional.nc'], \
-                         ]
+                  ['clubb_c_k10h', 'improved/anvil.devel.improved_0416_ck10h1.ne30_ne30_Regional.nc'], \
+                  ['clubb_c_invrs_tau_wpxp_ri', 'improved/anvil.devel.improved_0416_ri5.ne30_ne30_Regional.nc'], \
+                  ['eci', 'improved/anvil.devel.improved_0416_eci1p5.ne30_ne30_Regional.nc'], \
+                  ['max_total_ni', 'improved/anvil.devel.improved_0416_ni700.ne30_ne30_Regional.nc'], \
+                  ['cldfrc_rhminl', 'improved/anvil.devel.improved_0416_rhp9.ne30_ne30_Regional.nc'] \
+                        ]
 
 dfparamsNamesAndFilenames =  \
         pd.DataFrame( paramsNamesAndFilenames, columns = ['paramsNames', 'sensNcFilenames'] )
