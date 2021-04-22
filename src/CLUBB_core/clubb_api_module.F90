@@ -144,7 +144,7 @@ module clubb_api_module
     iC2rt, iC2thl, iC2rtthl, iC4, iC_uu_shr, iC_uu_buoy, &
     iC6rt, iC6rtb, iC6rtc, iC6thl, iC6thlb, iC6thlc, &
     iC7, iC7b, iC7c, iC8, iC8b, iC10, iC11, iC11b, iC11c, &
-    iC12, iC13, iC14, iC_wp3_turb, iC_wp3_pr_dfsn, iC_wp2_splat, &
+    iC12, iC13, iC14, iC_wp3_pr_turb, iC_wp3_pr_dfsn, iC_wp2_splat, &
     iC6rt_Lscale0, iC6thl_Lscale0, &
     iC7_Lscale0, iwpxp_L_thresh, ic_K, ic_K1, inu1, &
     ic_K2, inu2, ic_K6, inu6, ic_K8, inu8, ic_K9, inu9, &
@@ -256,7 +256,7 @@ module clubb_api_module
         iC2rt, iC2thl, iC2rtthl, iC4, iC_uu_shr, iC_uu_buoy, &
         iC6rt, iC6rtb, iC6rtc, iC6thl, iC6thlb, iC6thlc, &
         iC7, iC7b, iC7c, iC8, iC8b, iC10, iC11, iC11b, iC11c, &
-        iC12, iC13, iC14, iC_wp3_turb, iC_wp3_pr_dfsn, iC_wp2_splat, & 
+        iC12, iC13, iC14, iC_wp3_pr_turb, iC_wp3_pr_dfsn, iC_wp2_splat, & 
         iC6rt_Lscale0, iC6thl_Lscale0, &
         iC7_Lscale0, iwpxp_L_thresh, ic_K, ic_K1, inu1, &
         ic_K2, inu2, ic_K6, inu6, ic_K8, inu8, ic_K9, inu9, &

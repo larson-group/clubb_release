@@ -1863,7 +1863,7 @@ module advance_wp2_wp3_module
         C8,  & 
         C8b, & 
         C12, & 
-        C_wp3_turb, &
+        C_wp3_pr_turb, &
         C_wp3_pr_dfsn, & 
         nu1_vert_res_dep, & 
         nu8_vert_res_dep
@@ -2045,7 +2045,7 @@ module advance_wp2_wp3_module
           dvm_dz = ddzt( vm )
 
         ! Calculate term
-        call wp3_term_pr_turb_rhs( C_wp3_turb, Kh_zt(:), wpthvp(:), &
+        call wp3_term_pr_turb_rhs( C_wp3_pr_turb, Kh_zt(:), wpthvp(:), &
                                    dum_dz(:), dvm_dz(:), &
                                    upwp(:), vpwp(:), &
                                    thv_ds_zt(:), gr%invrs_dzt(:), &
@@ -4341,7 +4341,7 @@ module advance_wp2_wp3_module
   end subroutine wp3_terms_bp1_pr2_rhs
 
   !=============================================================================
-  pure subroutine wp3_term_pr_turb_rhs( C_wp3_turb, Kh_zt, wpthvp, &
+  pure subroutine wp3_term_pr_turb_rhs( C_wp3_pr_turb, Kh_zt, wpthvp, &
                                         dum_dz, dvm_dz, &
                                         upwp, vpwp, &
                                         thv_ds_zt, invrs_dzt, &
@@ -4377,7 +4377,7 @@ module advance_wp2_wp3_module
 
     ! Input Variables
     real( kind = core_rknd ), intent(in) :: &
-      C_wp3_turb         ! Model parameter C_wp3_turb                [-]
+      C_wp3_pr_turb         ! Model parameter C_wp3_pr_turb                [-]
 
     real( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
       Kh_zt,           & ! Eddy-diffusivity on moment. levels      [m^2/s]
@@ -4410,7 +4410,7 @@ module advance_wp2_wp3_module
       if ( .not. l_use_tke_in_wp3_pr_turb_term ) then
 
         rhs_pr_turb_wp3(k) &
-        = - C_wp3_turb * Kh_zt(k) * invrs_dzt(k) &
+        = - C_wp3_pr_turb * Kh_zt(k) * invrs_dzt(k) &
             * ( grav / thv_ds_zt(k) * ( wpthvp(k) - wpthvp(k-1) ) &
                 - ( upwp(k) * dum_dz(k) - upwp(k-1) * dum_dz(k-1) ) &
                 - ( vpwp(k) * dvm_dz(k) - vpwp(k-1) * dvm_dz(k-1) ) )
@@ -4418,7 +4418,7 @@ module advance_wp2_wp3_module
       else
 
         rhs_pr_turb_wp3(k) &
-        = - C_wp3_turb * invrs_dzt(k) &
+        = - C_wp3_pr_turb * invrs_dzt(k) &
             * ( em(k) * em(k) - em(k-1) * em(k-1) )
 
       endif
@@ -4469,7 +4469,7 @@ module advance_wp2_wp3_module
 
     ! Input Variables
     real( kind = core_rknd ), intent(in) :: &
-      C_wp3_pr_dfsn      ! Model parameter C_wp3_dfsn                [-]
+      C_wp3_pr_dfsn      ! Model parameter C_wp3_pr_dfsn                [-]
 
     real( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
       invrs_dzt,       & ! Inverse of grid spacing                 [1/m]
