@@ -2029,12 +2029,7 @@ module advance_wp2_wp3_module
     real( kind = core_rknd ), dimension(gr%nz) :: &
       zero_vector    ! Vector of 0s
 
-    real( kind = core_rknd ), dimension(gr%nz) :: &
-      em_zt
-
     ! --------------- Begin Code ---------------
-
-    em_zt = zm2zt( em )        
 
     ! Initialize arrays to 0 and calculate invers_dt
     invrs_dt = 1.0_core_rknd / dt
@@ -2054,7 +2049,7 @@ module advance_wp2_wp3_module
                                    dum_dz(:), dvm_dz(:), &
                                    upwp(:), vpwp(:), &
                                    thv_ds_zt(:), gr%invrs_dzt(:), &
-                                   em(:), em_zt(:), &
+                                   em(:), &
                                    rhs_pr_turb_wp3(:), &
                                    l_use_tke_in_wp3_pr_turb_term )
 
@@ -4350,7 +4345,7 @@ module advance_wp2_wp3_module
                                         dum_dz, dvm_dz, &
                                         upwp, vpwp, &
                                         thv_ds_zt, invrs_dzt, &
-                                        em, em_zt, &
+                                        em, &
                                         rhs_pr_turb_wp3, &
                                         l_use_tke_in_wp3_pr_turb_term )
 
@@ -4393,8 +4388,7 @@ module advance_wp2_wp3_module
       vpwp,            & ! v'w'                                    [m^2/s^2]
       thv_ds_zt,       & ! Dry, base-state theta_v at thermo. levs [K]
       invrs_dzt,       & ! Inverse of grid spacing                 [1/m]
-      em,              & ! Turbulence kinetic energy               [m^2/s^2]
-      em_zt              ! Turbulence kinetic energy (thermo levels) [m^2/s^2]
+      em                 ! Turbulence kinetic energy               [m^2/s^2]
 
     logical, intent(in) :: &
       l_use_tke_in_wp3_pr_turb_term  ! Use TKE formulation for wp3 pr_turb term
@@ -4425,7 +4419,7 @@ module advance_wp2_wp3_module
 
         rhs_pr_turb_wp3(k) &
         = - C_wp3_turb * invrs_dzt(k) &
-            * em_zt(k) * ( em(k) - em(k-1) )
+            * ( em(k) * em(k) - em(k-1) * em(k-1) )
 
       endif
 
@@ -4475,7 +4469,7 @@ module advance_wp2_wp3_module
 
     ! Input Variables
     real( kind = core_rknd ), intent(in) :: &
-      C_wp3_pr_dfsn      ! Model parameter C_wp3_turb                [-]
+      C_wp3_pr_dfsn      ! Model parameter C_wp3_dfsn                [-]
 
     real( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
       invrs_dzt,       & ! Inverse of grid spacing                 [1/m]
@@ -4491,7 +4485,7 @@ module advance_wp2_wp3_module
 
     ! Return Variable
     real( kind = core_rknd ), dimension(gr%nz), intent(out) :: &
-      rhs_pr_dfsn_wp3    ! RHS portion of wp3 from pressure-turbulence correlation [m^3/s^4]
+      rhs_pr_dfsn_wp3    ! RHS portion of wp3 from pressure-diffusion correlation [m^3/s^4]
 
     ! Local Variables
     integer :: k   ! Vertical level index 

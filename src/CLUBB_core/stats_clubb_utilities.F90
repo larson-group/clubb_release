@@ -2482,7 +2482,7 @@ module stats_clubb_utilities
 
       end if
 
-      ! Vapor Water Path (Preciptable Water)
+      ! Vapor Water Path (Precipitable Water)
       if ( ivwp > 0 ) then
 
         xtmp &
