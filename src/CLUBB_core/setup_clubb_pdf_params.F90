@@ -79,6 +79,7 @@ module setup_clubb_pdf_params
                                    sigma_x_1_n, sigma_x_2_n, &                 ! Intent(out)
                                    corr_array_1_n, corr_array_2_n, &           ! Intent(out)
                                    corr_cholesky_mtx_1, corr_cholesky_mtx_2, & ! Intent(out)
+                                   precip_fracs, &                             ! Intent(out)
                                    hydromet_pdf_params )                       ! Intent(out)
 
     ! Description:
@@ -105,6 +106,7 @@ module setup_clubb_pdf_params
 
     use hydromet_pdf_parameter_module, only: &
         hydromet_pdf_parameter,   &  ! Type
+        precipitation_fractions,  &
         init_hydromet_pdf_params     ! Procedure
 
     use parameters_model, only: &
@@ -251,6 +253,9 @@ module setup_clubb_pdf_params
 
     type(hydromet_pdf_parameter), dimension(ngrdcol,nz), intent(out) :: &
       hydromet_pdf_params    ! Hydrometeor PDF parameters        [units vary]
+      
+    type(precipitation_fractions), intent(out) :: &
+      precip_fracs           ! Precipitation fractions      [-]
 
     ! Local Variables
 
@@ -447,6 +452,10 @@ module setup_clubb_pdf_params
       precip_frac_tol(:) = cloud_frac_min
 
     end if
+    
+    precip_fracs%precip_frac   = precip_frac
+    precip_fracs%precip_frac_1 = precip_frac_1
+    precip_fracs%precip_frac_2 = precip_frac_2
       
     
     ! Calculate <N_cn> from Nc_in_cloud, whether Nc_in_cloud is predicted or
@@ -822,8 +831,6 @@ module setup_clubb_pdf_params
                                    mu_x_1(:,:,:), mu_x_2(:,:,:),             & ! In
                                    sigma_x_1(:,:,:), sigma_x_2(:,:,:),       & ! In
                                    corr_array_1(:,:,:,:), corr_array_2(:,:,:,:), & ! In
-                                   precip_frac(:,:), precip_frac_1(:,:), & ! In
-                                   precip_frac_2(:,:),              & ! In
                                    hydromet_pdf_params(:,:)         ) ! Out
     
     ! Interpolate the overall variance of a hydrometeor, <hm'^2>, to its home on
@@ -874,6 +881,10 @@ module setup_clubb_pdf_params
     do j = 1, ngrdcol
       call init_hydromet_pdf_params( hydromet_pdf_params(j,1) )
     end do
+    
+    precip_fracs%precip_frac(:,1)   = zero
+    precip_fracs%precip_frac_1(:,1) = zero
+    precip_fracs%precip_frac_2(:,1) = zero
 
     if ( clubb_at_least_debug_level( 2 ) ) then
       do k = 2, nz
@@ -4812,8 +4823,6 @@ module setup_clubb_pdf_params
   subroutine pack_hydromet_pdf_params( nz, ngrdcol, hm_1, hm_2, pdf_dim, mu_x_1, & ! In
                                        mu_x_2, sigma_x_1, sigma_x_2, &             ! In
                                        corr_array_1, corr_array_2, &               ! In
-                                       precip_frac, precip_frac_1, &               ! In
-                                       precip_frac_2, &                            ! In
                                        hydromet_pdf_params )                       ! Out
 
     ! Description:
@@ -4867,11 +4876,6 @@ module setup_clubb_pdf_params
     real( kind = core_rknd ), dimension(ngrdcol,nz,pdf_dim,pdf_dim), intent(in) :: &
       corr_array_1, & ! Correlation array of PDF vars. (comp. 1)    [-]
       corr_array_2    ! Correlation array of PDF vars. (comp. 2)    [-]
-
-    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: &
-      precip_frac,   & ! Precipitation fraction (overall)           [-]
-      precip_frac_1, & ! Precipitation fraction (1st PDF component) [-]
-      precip_frac_2    ! Precipitation fraction (2nd PDF component) [-]
 
     ! Output Variable
     type(hydromet_pdf_parameter), dimension(ngrdcol,nz), intent(out) :: &
@@ -4970,13 +4974,6 @@ module setup_clubb_pdf_params
     hydromet_pdf_params(:,:)%sigma_Ncn_1 = sigma_x_1(:,:,iiPDF_Ncn)
     ! Standard deviation of Ncn (overall) in the 2nd PDF component.
     hydromet_pdf_params(:,:)%sigma_Ncn_2 = sigma_x_2(:,:,iiPDF_Ncn)
-
-    ! Precipitation fraction (overall).
-    hydromet_pdf_params(:,:)%precip_frac   = precip_frac(:,:)
-    ! Precipitation fraction (1st PDF component).
-    hydromet_pdf_params(:,:)%precip_frac_1 = precip_frac_1(:,:)
-    ! Precipitation fraction (2nd PDF component).
-    hydromet_pdf_params(:,:)%precip_frac_2 = precip_frac_2(:,:)
 
 
     return

@@ -16,7 +16,7 @@ contains
   subroutine lh_microphys_driver &
              ( dt, nz, num_samples, pdf_dim, &
                X_nl_all_levs, lh_sample_point_weights, &
-               pdf_params, hydromet_pdf_params, p_in_Pa, exner, rho, &
+               pdf_params, precip_fracs, p_in_Pa, exner, rho, &
                rcm, delta_zt, cloud_frac, &
                hydromet, X_mixt_comp_all_levs,  &
                lh_rt_clipped, lh_thl_clipped, & ! In
@@ -46,7 +46,7 @@ contains
       pdf_parameter  ! Type
 
     use hydromet_pdf_parameter_module, only: &
-      hydromet_pdf_parameter ! Type
+      precipitation_fractions ! Type
 
     use est_kessler_microphys_module, only: &
       est_kessler_microphys
@@ -87,8 +87,8 @@ contains
     type(pdf_parameter), intent(in) :: & 
       pdf_params ! PDF parameters       [units vary]
 
-    type(hydromet_pdf_parameter), dimension(nz), intent(in) :: &
-      hydromet_pdf_params
+    type(precipitation_fractions), intent(in) :: &
+      precip_fracs           ! Precipitation fractions      [-]
 
     real( kind = core_rknd ), dimension(nz,hydromet_dim), intent(in) :: &
       hydromet ! Hydrometeor species    [units vary]
@@ -156,7 +156,7 @@ contains
     call est_single_column_tndcy &
          ( dt, nz, num_samples, pdf_dim, &                             ! Intent(in)
            X_nl_all_levs, X_mixt_comp_all_levs, &                      ! Intent(in)
-           lh_sample_point_weights, pdf_params, hydromet_pdf_params, & ! Intent(in)
+           lh_sample_point_weights, pdf_params, precip_fracs, &        ! Intent(in)
            p_in_Pa, exner, rho, &                                      ! Intent(in)
            delta_zt, hydromet, rcm, &                                  ! Intent(in)
            lh_rt_clipped, lh_thl_clipped, &                            ! Intent(in)

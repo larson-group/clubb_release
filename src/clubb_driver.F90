@@ -81,7 +81,9 @@ module clubb_driver
         eps
         
     use clubb_api_module, only: &
-      setup_pdf_parameters_api
+      setup_pdf_parameters_api, &
+      precipitation_fractions, &
+      init_precip_fracs_api
 
     use pdf_parameter_module, only: &
         pdf_parameter,                 & !----------------------------------- Variable Type(s)
@@ -256,7 +258,9 @@ module clubb_driver
 
     use hydromet_pdf_parameter_module, only: &
         hydromet_pdf_parameter,   & !------------------------------------- Type(s)
-        init_hydromet_pdf_params    !------------------------------------- Procedure(s)
+        precipitation_fractions,  &
+        init_hydromet_pdf_params, & !------------------------------------- Procedure(s)
+        init_precip_fracs
 
     use fill_holes, only: &
         vertical_avg  !--------------------------------------------------- Procedure(s)
@@ -627,6 +631,9 @@ module clubb_driver
 
     type(hydromet_pdf_parameter), dimension(:,:), allocatable :: &
       hydromet_pdf_params    ! Hydrometeor PDF parameters      [units vary]
+      
+    type(precipitation_fractions), allocatable :: &
+      precip_fracs           ! Precipitation fractions      [-]
       
     ! coarse-grained timing budget of main time stepping loop
     real( kind = core_rknd ) :: & 
@@ -1709,11 +1716,16 @@ module clubb_driver
 
     ! Allocate hydromet_pdf_params
     allocate( hydromet_pdf_params(1,gr%nz) )
+    
+    allocate( precip_fracs )
 
     ! Initialize to 0.
     do k=1,gr%nz
       call init_hydromet_pdf_params( hydromet_pdf_params(1,k) )
     end do
+    
+    call init_precip_fracs_api( gr%nz, 1, &
+                                precip_fracs )
 
     ! Allocate the correlation arrays
     allocate(corr_array_1_n(1,gr%nz,pdf_dim,pdf_dim))
@@ -2214,6 +2226,7 @@ module clubb_driver
                         sigma_x_1_n(1,:,:), sigma_x_2_n(1,:,:),                     & ! Intent(out)
                         corr_array_1_n(1,:,:,:), corr_array_2_n(1,:,:,:),           & ! Intent(out)
                         corr_cholesky_mtx_1(1,:,:,:), corr_cholesky_mtx_2(1,:,:,:), & ! Intent(out)
+                        precip_fracs,                                               & ! Intent(out)
                         hydromet_pdf_params(1,:) )                                    ! Intent(out)
 
          if ( err_code == clubb_fatal_error ) error stop
@@ -2224,6 +2237,7 @@ module clubb_driver
                                    sigma_x_1_n(1,:,:), sigma_x_2_n(1,:,:),           & ! Intent(in)
                                    corr_array_1_n(1,:,:,:), corr_array_2_n(1,:,:,:), & ! Intent(in)
                                    pdf_params(1), hydromet_pdf_params(1,:),          & ! Intent(in)
+                                   precip_fracs,                                     & ! Intent(in)
                                    rtphmp_zt, thlphmp_zt, wp2hmp )                     ! Intent(out)
 
       endif ! not microphys_scheme == "none"
@@ -2290,7 +2304,7 @@ module clubb_driver
                rho_ds_zt,                                                    & ! In
                mu_x_1_n, mu_x_2_n, sigma_x_1_n, sigma_x_2_n,                 & ! In
                corr_cholesky_mtx_1, corr_cholesky_mtx_2,                     & ! In
-               hydromet_pdf_params, silhs_config_flags,                      & ! In
+               precip_fracs, silhs_config_flags,                             & ! In
                clubb_config_flags%l_uv_nudge,                                & ! In
                clubb_config_flags%l_tke_aniso,                               & ! In
                clubb_config_flags%l_standard_term_ta,                        & ! In
@@ -2347,6 +2361,7 @@ module clubb_driver
                               rcm(1,:), cloud_frac, wm_zt, wm_zm, wp2_zt, &           ! In
                               hydromet, Nc_in_cloud, &                                ! In
                               pdf_params(1), hydromet_pdf_params(1,:), &              ! In
+                              precip_fracs, &                                         ! In
                               X_nl_all_levs(1,:,:,:), X_mixt_comp_all_levs(1,:,:), &  ! In
                               lh_sample_point_weights(1,:,:), &                       ! In
                               mu_x_1_n(1,:,:), mu_x_2_n(1,:,:), &                     ! In

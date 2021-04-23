@@ -33,7 +33,7 @@ module latin_hypercube_driver_module
 !              rho_ds_zt, &
                mu1, mu2, sigma1, sigma2, &                                 ! intent(in)
                corr_cholesky_mtx_1, corr_cholesky_mtx_2, &                 ! intent(in)
-               hydromet_pdf_params, silhs_config_flags, &                  ! intent(in)
+               precip_fracs, silhs_config_flags, &                         ! intent(in)
                l_uv_nudge, &                                               ! intent(in)
                l_tke_aniso, &                                              ! intent(in)
                l_standard_term_ta, &                                       ! intent(in)
@@ -64,7 +64,7 @@ module latin_hypercube_driver_module
       pdf_parameter  ! Type
 
     use hydromet_pdf_parameter_module, only: &
-      hydromet_pdf_parameter ! Type
+      precipitation_fractions ! Type
 
     use constants_clubb, only: &
       fstderr, & ! Constant(s)
@@ -144,8 +144,8 @@ module latin_hypercube_driver_module
       sigma1, & ! Stdevs of the hydrometeors, 1st comp. (chi, eta, w, <hydrometeors>) [units vary]
       sigma2    ! Stdevs of the hydrometeors, 2nd comp. (chi, eta, w, <hydrometeors>) [units vary]
 
-    type(hydromet_pdf_parameter), dimension(ngrdcol,nz), intent(in) :: &
-      hydromet_pdf_params ! Hydrometeor PDF parameters  [units vary]
+    type(precipitation_fractions), intent(in) :: &
+      precip_fracs           ! Precipitation fractions      [-]
 
     type(silhs_config_flags_type), intent(in) :: &
       silhs_config_flags ! Flags for the SILHS sampling code [-]
@@ -199,8 +199,8 @@ module latin_hypercube_driver_module
       cloud_frac_1,  & ! Array used to store pdf_params(:)%cloud_frac_1
       cloud_frac_2,  & ! Array used to store pdf_params(:)%cloud_frac_2
       mixt_frac,     & ! Array used to store pdf_params(:)%mixt_frac
-      precip_frac_1, & ! Array used to store hydromet_pdf_params(:)%precip_frac_1
-      precip_frac_2    ! Array used to store hydromet_pdf_params(:)%precip_frac_2
+      precip_frac_1, & ! Array used to store precip_fracs%precip_frac_1
+      precip_frac_2    ! Array used to store precip_fracs%precip_frac_2
       
     real( kind = core_rknd ), dimension(ngrdcol,nz) :: &
       Lscale_vert_avg, &  ! 3pt vertical average of Lscale                    [m]
@@ -230,8 +230,8 @@ module latin_hypercube_driver_module
 #endif
 
     ! Copy type arrays to contiguous arrays, so they can be copied to the GPU
-    precip_frac_1 = hydromet_pdf_params(:,:)%precip_frac_1
-    precip_frac_2 = hydromet_pdf_params(:,:)%precip_frac_2
+    precip_frac_1 = precip_fracs%precip_frac_1
+    precip_frac_2 = precip_fracs%precip_frac_2
     
     do i = 1, ngrdcol
       cloud_frac_1(i,:) = pdf_params(i)%cloud_frac_1(:)
@@ -314,7 +314,7 @@ module latin_hypercube_driver_module
            nz, ngrdcol, k_lh_start, X_vert_corr, rand_pool,              & ! Intent(in)
            cloud_frac_1,                                                 & ! Intent(in)
            cloud_frac_2,                                                 & ! Intent(in)
-           mixt_frac, hydromet_pdf_params,                               & ! Intent(in)
+           mixt_frac, precip_fracs,                                      & ! Intent(in)
            silhs_config_flags%cluster_allocation_strategy,               & ! Intent(in)
            silhs_config_flags%l_lh_importance_sampling,                  & ! Intent(in)
            silhs_config_flags%l_lh_straight_mc,                          & ! Intent(in)
@@ -595,7 +595,7 @@ module latin_hypercube_driver_module
                nz, ngrdcol, k_lh_start, X_vert_corr, rand_pool,              & ! Intent(in)
                cloud_frac_1,                                                 & ! Intent(in)
                cloud_frac_2,                                                 & ! Intent(in)
-               mixt_frac, hydromet_pdf_params,                               & ! Intent(in)
+               mixt_frac, precip_fracs,                                      & ! Intent(in)
                cluster_allocation_strategy,                                  & ! Intent(in)
                l_lh_importance_sampling,                                     & ! Intent(in)
                l_lh_straight_mc,                                             & ! Intent(in)
@@ -625,7 +625,7 @@ module latin_hypercube_driver_module
       one, fstderr                ! Constant(s)
 
     use hydromet_pdf_parameter_module, only: &
-      hydromet_pdf_parameter      ! Type
+      precipitation_fractions      ! Type
 
     use generate_uniform_sample_module, only: &
       rand_uniform_real, &        ! Procedure(s)
@@ -667,8 +667,8 @@ module latin_hypercube_driver_module
       mixt_frac, &
       X_vert_corr
 
-    type(hydromet_pdf_parameter), dimension(ngrdcol,nz), intent(in) :: &
-      hydromet_pdf_params
+    type(precipitation_fractions), intent(in) :: &
+      precip_fracs           ! Precipitation fractions      [-]
 
     real(kind = core_rknd),dimension(ngrdcol,num_samples,nz,pdf_dim+d_uniform_extra),intent(in)::&
       rand_pool ! Array of randomly generated numbers
@@ -763,7 +763,9 @@ module latin_hypercube_driver_module
               call importance_sampling_driver &
                    ( num_samples,                                                      & ! In
                      cloud_frac_1(i,k_lh_start(i)), cloud_frac_2(i,k_lh_start(i)),     & ! In
-                     mixt_frac(i,k_lh_start(i)), hydromet_pdf_params(i,k_lh_start(i)), & ! In
+                     mixt_frac(i,k_lh_start(i)),                                       & ! In
+                     precip_fracs%precip_frac_1(i,k_lh_start(i)),                      & ! In
+                     precip_fracs%precip_frac_2(i,k_lh_start(i)),                      & ! In
                      cluster_allocation_strategy, l_lh_clustered_sampling,             & ! In
                      l_lh_limit_weights, l_lh_var_frac, l_lh_normalize_weights,        & ! In
                      X_u_all_levs(i,:,k_lh_start(i),iiPDF_chi),                        & ! In/Out
@@ -859,7 +861,9 @@ module latin_hypercube_driver_module
                 call importance_sampling_driver &
                      ( num_samples,                                               & ! In
                        cloud_frac_1(i,k), cloud_frac_2(i,k),                      & ! In
-                       mixt_frac(i,k), hydromet_pdf_params(i,k),                  & ! In
+                       mixt_frac(i,k),                                            & ! In
+                       precip_fracs%precip_frac_1(i,k),                           & ! In
+                       precip_fracs%precip_frac_2(i,k),                           & ! In
                        cluster_allocation_strategy, l_lh_clustered_sampling,      & ! In
                        l_lh_limit_weights, l_lh_var_frac, l_lh_normalize_weights, & ! In
                        X_u_all_levs(i,:,k,iiPDF_chi),                             & ! In/Out

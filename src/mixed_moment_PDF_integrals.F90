@@ -24,6 +24,7 @@ module mixed_moment_PDF_integrals
                                         sigma_x_1_n, sigma_x_2_n, &
                                         corr_array_1_n, corr_array_2_n, &
                                         pdf_params, hydromet_pdf_params, &
+                                        precip_fracs, &
                                         rtphmp_zt, thlphmp_zt, wp2hmp ) 
 
     ! Description:
@@ -47,7 +48,8 @@ module mixed_moment_PDF_integrals
         pdf_parameter   ! Variable(s)
 
     use hydromet_pdf_parameter_module, only: &
-        hydromet_pdf_parameter  ! Variable(s)
+        hydromet_pdf_parameter, & ! Variable(s)
+        precipitation_fractions
 
     use index_mapping, only: &
         hydromet2pdf_idx   ! Procedure(s)
@@ -107,6 +109,9 @@ module mixed_moment_PDF_integrals
 
     type(hydromet_pdf_parameter), dimension(nz), intent(in) :: &
       hydromet_pdf_params    ! Hydrometeor PDF parameters           [units vary]
+      
+    type(precipitation_fractions), intent(in) :: &
+      precip_fracs           ! Precipitation fractions      [-]
 
     ! Output Variables
     real( kind = core_rknd ), dimension(nz,hydromet_dim), intent(out) :: &
@@ -219,8 +224,8 @@ module mixed_moment_PDF_integrals
        mixt_frac = pdf_params%mixt_frac(k)
 
        ! Unpack the precipitation fraction in each PDF component.
-       precip_frac_1 = hydromet_pdf_params(k)%precip_frac_1
-       precip_frac_2 = hydromet_pdf_params(k)%precip_frac_2
+       precip_frac_1 = precip_fracs%precip_frac_1(1,k)
+       precip_frac_2 = precip_fracs%precip_frac_2(1,k)
 
        ! Unpack the coefficients of rt and thl in the chi/eta PDF transformation
        ! equations for each PDF component.

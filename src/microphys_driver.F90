@@ -33,6 +33,7 @@ module microphys_driver
                                 rcm, cloud_frac, wm_zt, wm_zm, wp2_zt, &  ! In
                                 hydromet, Nc_in_cloud, &                  ! In
                                 pdf_params, hydromet_pdf_params, &        ! In
+                                precip_fracs, &                           ! In
                                 X_nl_all_levs, X_mixt_comp_all_levs, &    ! In
                                 lh_sample_point_weights, &                ! In
                                 mu_x_1_n, mu_x_2_n, &                     ! In
@@ -129,7 +130,8 @@ module microphys_driver
         pdf_parameter  ! Type
 
     use hydromet_pdf_parameter_module, only:  &
-        hydromet_pdf_parameter  ! Type
+        hydromet_pdf_parameter, &  ! Type
+        precipitation_fractions
 
     use stats_type_utilities, only: & 
         stat_update_var,   & ! Procedure(s)
@@ -226,6 +228,9 @@ module microphys_driver
 
     type(hydromet_pdf_parameter), dimension(gr%nz), intent(in) :: &
       hydromet_pdf_params     ! PDF parameters
+      
+    type(precipitation_fractions), intent(in) :: &
+      precip_fracs           ! Precipitation fractions      [-]
 
     real( kind = core_rknd ), dimension(lh_num_samples,gr%nz,pdf_dim), &
     intent(in) :: &
@@ -458,7 +463,7 @@ module microphys_driver
         call lh_microphys_driver &
              ( dt, gr%nz, lh_num_samples, pdf_dim, & ! In
                X_nl_all_levs, lh_sample_point_weights, & ! In
-               pdf_params, hydromet_pdf_params, p_in_Pa, exner, rho, & ! In
+               pdf_params, precip_fracs, p_in_Pa, exner, rho, & ! In
                rcm, delta_zt, cloud_frac, & ! In
                hydromet, X_mixt_comp_all_levs,  & ! In
                lh_rt_clipped, lh_thl_clipped, & ! In
@@ -556,7 +561,7 @@ module microphys_driver
         call lh_microphys_driver &
              ( dt, gr%nz, lh_num_samples, pdf_dim, & ! In
                X_nl_all_levs, lh_sample_point_weights, & ! In
-               pdf_params, hydromet_pdf_params, p_in_Pa, exner, rho, & ! In
+               pdf_params, precip_fracs, p_in_Pa, exner, rho, & ! In
                rcm, delta_zt, cloud_frac, & ! In
                hydromet, X_mixt_comp_all_levs,  & !In
                lh_rt_clipped, lh_thl_clipped, & ! In
@@ -614,6 +619,7 @@ module microphys_driver
                                       wm_zt, rtm, thlm, p_in_Pa,            & ! In
                                       exner, rho, rcm,                      & ! In
                                       pdf_params, hydromet_pdf_params,      & ! In
+                                      precip_fracs,                         & ! In
                                       hydromet,                             & ! In
                                       mu_x_1_n, mu_x_2_n,                   & ! In
                                       sigma_x_1_n, sigma_x_2_n,             & ! In

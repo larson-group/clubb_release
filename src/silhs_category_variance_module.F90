@@ -16,7 +16,7 @@ module silhs_category_variance_module
              ( nz, num_samples, pdf_dim, hydromet_dim, X_nl_all_levs, &
                X_mixt_comp_all_levs, microphys_stats_vars_all, &
                lh_hydromet_mc_all, lh_sample_point_weights, pdf_params, &
-               hydromet_pdf_params )
+               precip_fracs )
 
   ! Description:
   !   Computes the variance of a microphysics variable in each importance
@@ -46,7 +46,7 @@ module silhs_category_variance_module
       pdf_parameter     ! Type
 
     use hydromet_pdf_parameter_module, only: &
-      hydromet_pdf_parameter
+      precipitation_fractions
 
 
     implicit none
@@ -76,8 +76,8 @@ module silhs_category_variance_module
     type(pdf_parameter), intent(in) :: &
       pdf_params              ! The PDF parameters!
 
-    type(hydromet_pdf_parameter), dimension(nz), intent(in) :: &
-      hydromet_pdf_params
+    type(precipitation_fractions), intent(in) :: &
+      precip_fracs           ! Precipitation fractions      [-]
 
     ! Local Variables
     real( kind = core_rknd ), dimension(num_samples,nz) :: &
@@ -126,7 +126,7 @@ module silhs_category_variance_module
 
     call silhs_sample_category_variance &
          ( nz, num_samples, pdf_dim, X_nl_all_levs, X_mixt_comp_all_levs, &
-           samples_all, lh_sample_point_weights, pdf_params, hydromet_pdf_params )
+           samples_all, lh_sample_point_weights, pdf_params, precip_fracs )
 
     return
   end subroutine silhs_category_variance_driver
@@ -135,7 +135,7 @@ module silhs_category_variance_module
   !-----------------------------------------------------------------------
   subroutine silhs_sample_category_variance &
              ( nz, num_samples, pdf_dim, X_nl_all_levs, X_mixt_comp_all_levs, &
-               samples_all, lh_sample_point_weights, pdf_params, hydromet_pdf_params )
+               samples_all, lh_sample_point_weights, pdf_params, precip_fracs )
 
   ! Description:
   !   Computes the variance of a microphysics variable in each importance
@@ -171,7 +171,7 @@ module silhs_category_variance_module
       pdf_parameter       ! Type
 
     use hydromet_pdf_parameter_module, only: &
-      hydromet_pdf_parameter
+      precipitation_fractions
 
     implicit none
 
@@ -196,8 +196,8 @@ module silhs_category_variance_module
     type(pdf_parameter), intent(in) :: &
       pdf_params              ! The PDF parameters!
 
-    type(hydromet_pdf_parameter), dimension(nz), intent(in) :: &
-      hydromet_pdf_params
+    type(precipitation_fractions), intent(in) :: &
+      precip_fracs           ! Precipitation fractions      [-]
 
     ! Local Variables
     type(importance_category_type), dimension(num_importance_categories) :: &
@@ -235,7 +235,9 @@ module silhs_category_variance_module
       category_real_probs = &
         compute_category_real_probs( importance_categories, &
                                      pdf_params%cloud_frac_1(k), pdf_params%cloud_frac_2(k), &
-                                     pdf_params%mixt_frac(k), hydromet_pdf_params(k) )
+                                     pdf_params%mixt_frac(k), &
+                                     precip_fracs%precip_frac_1(1,k), &
+                                     precip_fracs%precip_frac_2(1,k) )
 
       do isample=1, num_samples
 

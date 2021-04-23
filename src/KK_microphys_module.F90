@@ -389,6 +389,7 @@ module KK_microphys_module
                                     wm_zt, rtm, thlm, p_in_Pa,         & ! In
                                     exner, rho, rcm,                   & ! In
                                     pdf_params, hydromet_pdf_params,   & ! In
+                                    precip_fracs,                      & ! In
                                     hydromet,                          & ! In
                                     mu_x_1_n, mu_x_2_n,                & ! In
                                     sigma_x_1_n, sigma_x_2_n,          & ! In
@@ -461,7 +462,8 @@ module KK_microphys_module
         pdf_parameter  ! Variable(s)
 
     use hydromet_pdf_parameter_module, only: &
-        hydromet_pdf_parameter  ! Variable(s)
+        hydromet_pdf_parameter, &  ! Variable(s)
+        precipitation_fractions
 
     use parameters_model, only: &
         hydromet_dim  ! Variable(s)
@@ -518,6 +520,9 @@ module KK_microphys_module
 
     type(hydromet_pdf_parameter), dimension(nz), intent(in) :: &
       hydromet_pdf_params
+       
+    type(precipitation_fractions), intent(in) :: &
+      precip_fracs           ! Precipitation fractions      [-]
 
     real( kind = core_rknd ), dimension(nz,hydromet_dim), intent(in) :: &
       hydromet       ! Hydrometeor mean, < h_m > (thermodynamic levels)  [units]
@@ -755,8 +760,11 @@ module KK_microphys_module
                                   corr_eta_Nr_1_n, corr_eta_Nr_2_n, &
                                   corr_eta_Ncn_1_n, corr_eta_Ncn_2_n, &
                                   corr_rr_Nr_1_n, corr_rr_Nr_2_n, &
-                                  rr_1, rr_2, Nr_1, Nr_2, &
-                                  precip_frac, precip_frac_1, precip_frac_2 )
+                                  rr_1, rr_2, Nr_1, Nr_2 )
+                                  
+       precip_frac   = precip_fracs%precip_frac(1,k)
+       precip_frac_1 = precip_fracs%precip_frac_1(1,k)
+       precip_frac_2 = precip_fracs%precip_frac_2(1,k)
 
        !!! Calculate the values of the upscaled KK microphysics tendencies.
        call KK_upscaled_means_driver( mu_chi_1, mu_chi_2, mu_rr_1, mu_rr_2, &
@@ -1813,8 +1821,7 @@ module KK_microphys_module
                                    corr_eta_Nr_1_n, corr_eta_Nr_2_n, &
                                    corr_eta_Ncn_1_n, corr_eta_Ncn_2_n, &
                                    corr_rr_Nr_1_n, corr_rr_Nr_2_n, &
-                                   rr_1, rr_2, Nr_1, Nr_2, &
-                                   precip_frac, precip_frac_1, precip_frac_2 )
+                                   rr_1, rr_2, Nr_1, Nr_2 )
 
     ! Description:
 
@@ -1930,11 +1937,6 @@ module KK_microphys_module
       Nr_1, & ! Mean rain drop concentration (1st PDF component)      [num/kg]
       Nr_2    ! Mean rain drop concentration (2nd PDF component)      [num/kg]
 
-    real( kind = core_rknd ), intent(out) :: &
-      precip_frac,   & ! Precipitation fraction (overall)           [-]
-      precip_frac_1, & ! Precipitation fraction (1st PDF component) [-]
-      precip_frac_2    ! Precipitation fraction (2nd PDF component) [-]
-
 
     ! Unpack mu_x_i and sigma_x_i into Means and Standard Deviations.
     mu_w_1        = mu_x_1_n(iiPDF_w)
@@ -1980,9 +1982,6 @@ module KK_microphys_module
     rr_2          = hydromet_pdf_params%hm_2(iirr)
     Nr_1          = hydromet_pdf_params%hm_1(iiNr)
     Nr_2          = hydromet_pdf_params%hm_2(iiNr)
-    precip_frac   = hydromet_pdf_params%precip_frac
-    precip_frac_1 = hydromet_pdf_params%precip_frac_1
-    precip_frac_2 = hydromet_pdf_params%precip_frac_2
 
     ! Unpack corr_array_1_n into correlations (1st PDF component).
     corr_chi_eta_1   = corr_array_1_n(iiPDF_eta, iiPDF_chi)

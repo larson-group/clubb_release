@@ -15,7 +15,7 @@ module estimate_scm_microphys_module
   subroutine est_single_column_tndcy &
              ( dt, nz, num_samples, pdf_dim, &
                X_nl_all_levs, X_mixt_comp_all_levs, lh_sample_point_weights, &
-               pdf_params, hydromet_pdf_params, p_in_Pa, exner, rho, &
+               pdf_params, precip_fracs, p_in_Pa, exner, rho, &
                dzq, hydromet, rcm, &
                lh_rt_clipped, lh_thl_clipped, &
                lh_rc_clipped, lh_rv_clipped, &
@@ -95,7 +95,7 @@ module estimate_scm_microphys_module
       pdf_parameter
 
     use hydromet_pdf_parameter_module, only: &
-      hydromet_pdf_parameter
+      precipitation_fractions
 
     implicit none
 
@@ -129,8 +129,8 @@ module estimate_scm_microphys_module
     type(pdf_parameter), intent(in) :: &
       pdf_params    ! The PDF parameters
 
-    type(hydromet_pdf_parameter), dimension(nz), intent(in) :: &
-      hydromet_pdf_params
+    type(precipitation_fractions), intent(in) :: &
+      precip_fracs           ! Precipitation fractions      [-]
 
     real( kind = core_rknd ), dimension(nz), intent(in) :: &
       p_in_Pa,    & ! Pressure                 [Pa]
@@ -333,7 +333,7 @@ module estimate_scm_microphys_module
                ( nz, num_samples, pdf_dim, hydromet_dim, X_nl_all_levs, & ! Intent(in)
                  X_mixt_comp_all_levs, microphys_stats_zt_all,              & ! Intent(in)
                  lh_hydromet_mc_all, lh_sample_point_weights, pdf_params,   & ! Intent(in)
-                 hydromet_pdf_params )                                        ! Intent(in)
+                 precip_fracs )                                        ! Intent(in)
         end if ! isilhs_variance_category(1) > 0
 
       end if ! allocated( isilhs_variance_category ) 

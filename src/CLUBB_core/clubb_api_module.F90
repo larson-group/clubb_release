@@ -120,7 +120,8 @@ module clubb_api_module
     gr
 
   use hydromet_pdf_parameter_module, only : &
-    hydromet_pdf_parameter
+    hydromet_pdf_parameter, &
+    precipitation_fractions
 
   use model_flags, only : &
       clubb_config_flags_type, & ! Type
@@ -428,6 +429,8 @@ module clubb_api_module
     num_pdf_params, &
 !#endif
     init_pdf_params_api, &
+    init_precip_fracs_api, &
+    precipitation_fractions, &
     init_pdf_implicit_coefs_terms_api, &
     adj_low_res_nu_api, &
     assignment( = ), &
@@ -1653,6 +1656,32 @@ contains
   end subroutine init_pdf_params_api
   
   !================================================================================================
+  ! init_precip_fracs - allocates arrays for precip_fracs
+  !================================================================================================
+  subroutine init_precip_fracs_api( nz, ngrdcol, &
+                                    precip_fracs )
+
+    use hydromet_pdf_parameter_module, only : init_precip_fracs
+
+    implicit none
+    
+    ! Input Variable(s)
+    integer, intent(in) :: &
+      nz,     & ! Number of vertical grid levels    [-]
+      ngrdcol   ! Number of grid columns            [-]
+
+    ! Output Variable
+    type(precipitation_fractions), intent(out) :: &
+      precip_fracs    ! Hydrometeor PDF parameters      [units vary]
+
+    call init_precip_fracs( nz, ngrdcol, &
+                            precip_fracs )
+
+    return
+
+  end subroutine init_precip_fracs_api
+  
+  !================================================================================================
   ! init_pdf_implicit_coefs_terms - allocates arrays for the PDF implicit
   ! coefficient and explicit terms.
   !================================================================================================
@@ -1700,6 +1729,7 @@ contains
     sigma_x_1_n, sigma_x_2_n, &                 ! Intent(out)
     corr_array_1_n, corr_array_2_n, &           ! Intent(out)
     corr_cholesky_mtx_1, corr_cholesky_mtx_2, & ! Intent(out)
+    precip_fracs,  &                            ! Intent(out)
     hydromet_pdf_params )                       ! Intent(out)
 
     use setup_clubb_pdf_params, only : setup_pdf_parameters
@@ -1785,6 +1815,9 @@ contains
       corr_cholesky_mtx_1, & ! Transposed corr. cholesky matrix, 1st comp. [-]
       corr_cholesky_mtx_2    ! Transposed corr. cholesky matrix, 2nd comp. [-]
 
+    type(precipitation_fractions), intent(out) :: &
+      precip_fracs           ! Precipitation fractions      [-]
+
     type(hydromet_pdf_parameter), dimension(nz), intent(out) :: &
       hydromet_pdf_params    ! Hydrometeor PDF parameters        [units vary]
       
@@ -1856,6 +1889,7 @@ contains
       sigma_x_1_n_col, sigma_x_2_n_col, &                 ! Intent(out)
       corr_array_1_n_col, corr_array_2_n_col, &           ! Intent(out)
       corr_cholesky_mtx_1_col, corr_cholesky_mtx_2_col, & ! Intent(out)
+      precip_fracs,                                    & ! Intent(out)
       hydromet_pdf_params_col )                       ! Intent(out)
 
     if ( err_code == clubb_fatal_error ) error stop
@@ -1891,6 +1925,7 @@ contains
     sigma_x_1_n, sigma_x_2_n, &                 ! Intent(out)
     corr_array_1_n, corr_array_2_n, &           ! Intent(out)
     corr_cholesky_mtx_1, corr_cholesky_mtx_2, & ! Intent(out)
+    precip_fracs, &                             ! Intent(out)
     hydromet_pdf_params )                       ! Intent(out)
 
     use setup_clubb_pdf_params, only : setup_pdf_parameters
@@ -1979,6 +2014,9 @@ contains
 
     type(hydromet_pdf_parameter), dimension(ngrdcol,nz), intent(out) :: &
       hydromet_pdf_params    ! Hydrometeor PDF parameters        [units vary]
+      
+    type(precipitation_fractions), intent(out) :: &
+      precip_fracs           ! Precipitation fractions      [-]
 
     call setup_pdf_parameters( &
       nz, ngrdcol, pdf_dim, dt, &                 ! Intent(in)
@@ -1998,6 +2036,7 @@ contains
       sigma_x_1_n, sigma_x_2_n, &                 ! Intent(out)
       corr_array_1_n, corr_array_2_n, &           ! Intent(out)
       corr_cholesky_mtx_1, corr_cholesky_mtx_2, & ! Intent(out)
+      precip_fracs, &                             ! Intent(out)
       hydromet_pdf_params )                       ! Intent(out)
 
     if ( err_code == clubb_fatal_error ) error stop
