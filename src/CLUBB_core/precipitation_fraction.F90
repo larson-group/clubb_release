@@ -28,7 +28,9 @@ module precipitation_fraction
                               cloud_frac_2, ice_supersat_frac, &
                               ice_supersat_frac_1, ice_supersat_frac_2, &
                               mixt_frac, l_stats_samp, &
-                              precip_frac, precip_frac_1, precip_frac_2, &
+                              precip_frac, &
+                              precip_frac_1, &
+                              precip_frac_2, &
                               precip_frac_tol )
 
     ! Description:

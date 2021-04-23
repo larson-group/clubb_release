@@ -1815,7 +1815,8 @@ contains
       corr_cholesky_mtx_1, & ! Transposed corr. cholesky matrix, 1st comp. [-]
       corr_cholesky_mtx_2    ! Transposed corr. cholesky matrix, 2nd comp. [-]
 
-    type(precipitation_fractions), intent(out) :: &
+    ! This is only an output, but it contains allocated arrays, so we need to treat it as inout
+    type(precipitation_fractions), intent(inout) :: &
       precip_fracs           ! Precipitation fractions      [-]
 
     type(hydromet_pdf_parameter), dimension(nz), intent(out) :: &
@@ -2015,7 +2016,8 @@ contains
     type(hydromet_pdf_parameter), dimension(ngrdcol,nz), intent(out) :: &
       hydromet_pdf_params    ! Hydrometeor PDF parameters        [units vary]
       
-    type(precipitation_fractions), intent(out) :: &
+    ! This is only an output, but it contains allocated arrays, so we need to treat it as inout
+    type(precipitation_fractions), intent(inout) :: &
       precip_fracs           ! Precipitation fractions      [-]
 
     call setup_pdf_parameters( &
