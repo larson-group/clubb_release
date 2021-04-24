@@ -2226,8 +2226,8 @@ module clubb_driver
                         sigma_x_1_n(1,:,:), sigma_x_2_n(1,:,:),                     & ! Intent(out)
                         corr_array_1_n(1,:,:,:), corr_array_2_n(1,:,:,:),           & ! Intent(out)
                         corr_cholesky_mtx_1(1,:,:,:), corr_cholesky_mtx_2(1,:,:,:), & ! Intent(out)
-                        precip_fracs,                                               & ! Intent(out)
-                        hydromet_pdf_params(1,:) )                                    ! Intent(out)
+                        precip_fracs,                                             & ! Intent(inout)
+                        hydromet_pdf_params(1,:) )                                  ! Optional(out)
 
          if ( err_code == clubb_fatal_error ) error stop
 

@@ -250,13 +250,13 @@ module setup_clubb_pdf_params
     intent(out) :: &
       corr_cholesky_mtx_1, & ! Transposed corr. cholesky matrix, 1st comp. [-]
       corr_cholesky_mtx_2    ! Transposed corr. cholesky matrix, 2nd comp. [-]
-
-    type(hydromet_pdf_parameter), dimension(ngrdcol,nz), intent(out) :: &
-      hydromet_pdf_params    ! Hydrometeor PDF parameters        [units vary]
       
     ! This is only an output, but it contains allocated arrays, so we need to treat it as inout
     type(precipitation_fractions), intent(inout) :: &
       precip_fracs           ! Precipitation fractions      [-]
+
+    type(hydromet_pdf_parameter), dimension(ngrdcol,nz), optional, intent(out) :: &
+      hydromet_pdf_params    ! Hydrometeor PDF parameters        [units vary]
 
     ! Local Variables
 
@@ -599,9 +599,9 @@ module setup_clubb_pdf_params
     call compute_mean_stdev( nz, ngrdcol, &
                              hydromet(:,:,:), hydrometp2_zt(:,:,:),         & ! Intent(in)
                              Ncnm(:,:), mixt_frac(:,:),                     & ! Intent(in)
-                             precip_frac(:,:),                 & ! Intent(in)
-                             precip_frac_1(:,:),               & ! Intent(in)
-                             precip_frac_2(:,:),               & ! Intent(in)
+                             precip_frac(:,:),                              & ! Intent(in)
+                             precip_frac_1(:,:),                            & ! Intent(in)
+                             precip_frac_2(:,:),                            & ! Intent(in)
                              precip_frac_tol(:),                            & ! Intent(in)
                              mu_w_1(:,:),                                   & ! Intent(in)
                              mu_w_2(:,:),                                   & ! Intent(in)
@@ -717,8 +717,8 @@ module setup_clubb_pdf_params
 
         call comp_corr_norm( nz, pdf_dim, ngrdcol, wm_zt(:,:), rc_1(:,:), rc_2(:,:),  & ! In  
                              cloud_frac_1(:,:), cloud_frac_2(:,:), mixt_frac(:,:),    & ! In
-                             precip_frac_1(:,:),                         & ! In
-                             precip_frac_2(:,:),                         & ! In
+                             precip_frac_1(:,:),                                      & ! In
+                             precip_frac_2(:,:),                                      & ! In
                              wpNcnp_zt(:,:), wphydrometp_zt(:,:,:),                   & ! In
                              mu_x_1(:,:,:), mu_x_2(:,:,:),                            & ! In
                              sigma_x_1(:,:,:), sigma_x_2(:,:,:),                      & ! In
@@ -752,24 +752,30 @@ module setup_clubb_pdf_params
       
     end if ! l_diagnose_correlations
 
-    !!! Calculate the true correlations for each PDF component.
-    call denorm_transform_corr( nz, ngrdcol, pdf_dim,                                   & ! In
-                                sigma_x_1_n(:,:,:), sigma_x_2_n(:,:,:),                 & ! In
-                                sigma2_on_mu2_ip_1(:,:,:), sigma2_on_mu2_ip_2(:,:,:),   & ! In
-                                corr_array_1_n(:,:,:,:),                                & ! In
-                                corr_array_2_n(:,:,:,:),                                & ! In
-                                corr_array_1(:,:,:,:), corr_array_2(:,:,:,:) )            ! Out
+    ! hydromet_pdf_params is optional, so if it is not present we simply skip the steps 
+    ! to compute it.
+    if ( present(hydromet_pdf_params) ) then
 
-    !!! Pack the PDF parameters
-    call pack_hydromet_pdf_params( nz, ngrdcol, hm_1(:,:,:), hm_2(:,:,:), pdf_dim,  & ! In
-                                   mu_x_1(:,:,:), mu_x_2(:,:,:),                    & ! In
-                                   sigma_x_1(:,:,:), sigma_x_2(:,:,:),              & ! In
-                                   corr_array_1(:,:,:,:), corr_array_2(:,:,:,:),    & ! In
-                                   hydromet_pdf_params(:,:) )                         ! Out
-                                   
-    do j = 1, ngrdcol
-      call init_hydromet_pdf_params( hydromet_pdf_params(j,1) )
-    end do
+      !!! Calculate the true correlations for each PDF component.
+      call denorm_transform_corr( nz, ngrdcol, pdf_dim,                                   & ! In
+                                  sigma_x_1_n(:,:,:), sigma_x_2_n(:,:,:),                 & ! In
+                                  sigma2_on_mu2_ip_1(:,:,:), sigma2_on_mu2_ip_2(:,:,:),   & ! In
+                                  corr_array_1_n(:,:,:,:),                                & ! In
+                                  corr_array_2_n(:,:,:,:),                                & ! In
+                                  corr_array_1(:,:,:,:), corr_array_2(:,:,:,:) )            ! Out
+
+      !!! Pack the PDF parameters
+      call pack_hydromet_pdf_params( nz, ngrdcol, hm_1(:,:,:), hm_2(:,:,:), pdf_dim,  & ! In
+                                     mu_x_1(:,:,:), mu_x_2(:,:,:),                    & ! In
+                                     sigma_x_1(:,:,:), sigma_x_2(:,:,:),              & ! In
+                                     corr_array_1(:,:,:,:), corr_array_2(:,:,:,:),    & ! In
+                                     hydromet_pdf_params(:,:) )                         ! Out
+                                     
+      do j = 1, ngrdcol
+        call init_hydromet_pdf_params( hydromet_pdf_params(j,1) )
+      end do
+
+    end if
 
     if ( l_stats_samp ) then
       
