@@ -1146,7 +1146,7 @@ module mixing_length
 ! Description:
 !     Diagnose inverse damping time scales (invrs_tau_...) and turbulent mixing length (Lscale)
 ! References:
-!     None
+!     Guo et al.(2021, JAMES)
 !-----------------------------------------------------------------------------------------------------------
 
   use advance_helper_module, only: &
