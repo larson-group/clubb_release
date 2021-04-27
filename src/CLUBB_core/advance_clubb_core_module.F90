@@ -206,7 +206,7 @@ module advance_clubb_core_module
         C_uu_shr, C4, &
         C_wp2_splat, &
         C_invrs_tau_bkgnd, &
-        C_invrs_tau_sfc, & 
+        C_invrs_tau_sfc, &
         C_invrs_tau_shear, &
         C_invrs_tau_N2, &
         C_invrs_tau_N2_xp2, &
@@ -266,7 +266,8 @@ module advance_clubb_core_module
 
     use mixing_length, only: &
         compute_mixing_length, &    ! Procedure
-        calc_Lscale_directly  ! for Lscale
+        calc_Lscale_directly,  &  ! for Lscale
+        diagnose_Lscale_from_tau  ! for Lscale from tau
 
     use advance_windm_edsclrm_module, only:  &
         advance_windm_edsclrm  ! Procedure(s)
@@ -350,7 +351,7 @@ module advance_clubb_core_module
         iinvrs_tau_sfc,          &
         iinvrs_tau_shear,        &
         ibrunt_vaisala_freq_sqd, &
-        iRi_zm
+        isqrt_Ri_zm
 
     use stats_variables, only: &
         iwprtp_zt,     &
@@ -743,7 +744,7 @@ module advance_clubb_core_module
 
     real( kind = core_rknd ) :: &
       thlm1000, &
-      thlm700
+      thlm700                      
 
     real( kind = core_rknd ), dimension(gr%nz) :: &
       rcm_supersat_adj, & ! Adjustment to rcm due to spurious supersaturation
@@ -758,7 +759,7 @@ module advance_clubb_core_module
        invrs_tau_wp2_zm,             & ! Inverse tau values used for advance_wp2_wpxp [s^-1]
        invrs_tau_wpxp_zm,            & ! invrs_tau_C6_zm = invrs_tau_wpxp_zm
        invrs_tau_wp3_zm,             & ! Inverse tau values used for advance_wp3_wp2 [s^-1]
-       invrs_tau_no_N2_zm,           & ! One divided by tau (without N2) on zm levels [s^-1] 
+       invrs_tau_no_N2_zm,           & ! One divided by tau (without N2) on zm levels [s^-1]
        invrs_tau_bkgnd,              & ! One divided by tau_wp3 [s^-1]
        invrs_tau_shear,              & ! One divided by tau with stability effects    [s^-1]
        invrs_tau_sfc,                & ! One divided by tau (without N2) on zm levels [s^-1]
@@ -766,17 +767,14 @@ module advance_clubb_core_module
        invrs_tau_wp3_zt,             & ! Inverse tau wp3 at zt levels
        Cx_fnc_Richardson,            & ! Cx_fnc computed from Richardson_num          [-]
        brunt_vaisala_freq_sqd,       & ! Buoyancy frequency squared, N^2              [s^-2]
-       brunt_vaisala_freq_sqd_smth,  & ! smoothed Buoyancy frequency squared, N^2     [s^-2]
-       brunt_freq_pos,               & !
        brunt_vaisala_freq_sqd_mixed, & ! A mixture of dry and moist N^2
        brunt_vaisala_freq_sqd_dry,   & ! dry N^2
        brunt_vaisala_freq_sqd_moist, & ! moist N^2
        brunt_vaisala_freq_sqd_plus,  & ! N^2 from another way
        brunt_vaisala_freq_sqd_zt,    & ! Buoyancy frequency squared on t-levs.        [s^-2]
-       brunt_freq_out_cloud,         & !
-       Ri_zm,                        & ! Richardson number
-       ustar                           ! Friction velocity  [m/s]
- 
+       sqrt_Ri_zm                      ! square root of Richardson number
+
+
     real( kind = core_rknd ), parameter :: &
        ufmin = 0.01_core_rknd,       & ! minimum value of friction velocity     [m/s]
        z_displace = 10.0_core_rknd   ! displacement of log law profile above ground   [m]
@@ -809,7 +807,7 @@ module advance_clubb_core_module
     !  Km_Skw_thresh = zero_threshold, &  ! Value of Skw at which Skw correction kicks in
     !  Km_Skw_factor_efold = 0.5_core_rknd, & ! E-folding rate of exponential Skw correction
     !  Km_Skw_factor_min   = 0.2_core_rknd    ! Minimum value of Km_Skw_factor
-    
+
     integer, intent(out) :: &
       err_code_out  ! Error code indicator
 
@@ -821,7 +819,7 @@ module advance_clubb_core_module
     else
       dt_advance = dt
     end if
- 
+
     err_code_out = clubb_no_error  ! Initialize to no error value
 
     ! Determine the maximum allowable value for Lscale (in meters).
@@ -1138,13 +1136,13 @@ module advance_clubb_core_module
                                                                   ! buoyant parcel calc
 
 
-        call calc_Lscale_directly ( l_implemented, p_in_Pa, exner, & 
+        call calc_Lscale_directly ( l_implemented, p_in_Pa, exner, &
                   rtm, thlm, thvm, &
                   newmu, rtp2, thlp2, rtpthlp, pdf_params, em, &
                   thv_ds_zt, Lscale_max, &
                   clubb_config_flags%l_Lscale_plume_centered, &
                   Lscale, Lscale_up, Lscale_down )
-                  
+
         if ( clubb_at_least_debug_level( 0 ) ) then
           if ( err_code == clubb_fatal_error ) then
             err_code_out = err_code
@@ -1166,7 +1164,7 @@ module advance_clubb_core_module
         invrs_tau_xp2_zm  = invrs_tau_zm
         invrs_tau_wpxp_zm = invrs_tau_zm
         invrs_tau_wp3_zt  = invrs_tau_zt
-        
+
         tau_max_zm = taumax
         tau_max_zt = taumax
 
@@ -1174,118 +1172,26 @@ module advance_clubb_core_module
 
       else ! l_diag_Lscale_from_tau = .true., diagnose simple tau and Lscale.
 
-        call calc_brunt_vaisala_freq_sqd( zm2zt( zt2zm( thlm )), exner, rtm, rcm, p_in_Pa, thvm, &
-                                          ice_supersat_frac, &
-                                          clubb_config_flags%l_brunt_vaisala_freq_moist, &
-                                          clubb_config_flags%l_use_thvm_in_bv_freq, &
-                                          brunt_vaisala_freq_sqd, &
-                                          brunt_vaisala_freq_sqd_mixed,&
-                                          brunt_vaisala_freq_sqd_dry, &
-                                          brunt_vaisala_freq_sqd_moist, &
-                                          brunt_vaisala_freq_sqd_plus )
- 
-        ustar = max( ( upwp_sfc**2 + vpwp_sfc**2 )**(one_fourth), ufmin )
-
-        invrs_tau_bkgnd = C_invrs_tau_bkgnd / tau_const
-
-        invrs_tau_shear &
-        = C_invrs_tau_shear &
-          * zt2zm( zm2zt( sqrt( (ddzt( um ))**2 + (ddzt( vm ))**2 ) ) )
-
-        invrs_tau_sfc &
-        = C_invrs_tau_sfc * ( ustar / vonk ) / ( gr%zm - sfc_elevation + z_displace )
-         !C_invrs_tau_sfc * ( wp2 / vonk /ustar ) / ( gr%zm -sfc_elevation + z_displace )
-
-        invrs_tau_no_N2_zm = invrs_tau_bkgnd + invrs_tau_sfc + invrs_tau_shear
-
-        !brunt_vaisala_freq_sqd_smth = zt2zm( zm2zt( brunt_vaisala_freq_sqd ) )
-        !The min function below smooths the slope discontinuity in brunt freq
-        !  and thereby allows tau to remain large in Sc layers in which thlm may
-        !  be slightly stably stratified.
-
-        brunt_vaisala_freq_sqd_smth = zt2zm( zm2zt( &
-              min( brunt_vaisala_freq_sqd, 1.e8_core_rknd * abs(brunt_vaisala_freq_sqd)**3 ) ) )
-
-        Ri_zm &
-        = sqrt( max( 1.0e-7_core_rknd, brunt_vaisala_freq_sqd_smth ) &
-                / max( ( ddzt(um)**2 + ddzt(vm)**2 ), 1.0e-7_core_rknd ) )
-
-        brunt_freq_pos = sqrt( max( zero_threshold, brunt_vaisala_freq_sqd_smth ) )
-
-        brunt_freq_out_cloud =  brunt_freq_pos &
-              * min(one, max(zero_threshold,&
-              one - ( (zt2zm(ice_supersat_frac) / 0.007_core_rknd) )))
-
-        where ( gr%zt < altitude_threshold )
-           brunt_freq_out_cloud = 0.0_core_rknd
-        end where
-
-        invrs_tau_wp2_zm = invrs_tau_no_N2_zm + C_invrs_tau_N2_wp2 * brunt_freq_pos
-
-        invrs_tau_zm = invrs_tau_no_N2_zm + C_invrs_tau_N2 * brunt_freq_pos
-
-
-        if ( clubb_config_flags%l_e3sm_config ) then
-
-          invrs_tau_zm = 0.5_core_rknd * invrs_tau_zm
-
-          invrs_tau_xp2_zm = invrs_tau_bkgnd + invrs_tau_sfc + invrs_tau_shear &
-                            + C_invrs_tau_N2_xp2 * brunt_freq_pos & ! 0
-                            + C_invrs_tau_sfc * 2.0_core_rknd &
-                            * sqrt(em) / ( gr%zm - sfc_elevation + z_displace )  ! small
-
-          invrs_tau_xp2_zm = min( max( sqrt( ( ddzt(um)**2 + ddzt(vm)**2 ) &
-                            / max( 1.0e-7_core_rknd, brunt_vaisala_freq_sqd_smth ) ), &
-                            0.3_core_rknd ), 1.0_core_rknd ) * invrs_tau_xp2_zm
-
-          invrs_tau_wpxp_zm = 2.0_core_rknd * invrs_tau_zm &
-                             + C_invrs_tau_N2_wpxp * brunt_freq_out_cloud
-
-        else ! l_e3sm_config = false
-
-          invrs_tau_xp2_zm =  0.1_core_rknd * invrs_tau_bkgnd + invrs_tau_sfc &
-                + invrs_tau_shear + C_invrs_tau_N2_xp2 * brunt_freq_pos
-
-          invrs_tau_xp2_zm = merge(0.003_core_rknd, invrs_tau_xp2_zm, &
-                zt2zm(ice_supersat_frac) <= 0.01_core_rknd &
-                .and. invrs_tau_xp2_zm  >= 0.003_core_rknd)
-
-          invrs_tau_wpxp_zm = invrs_tau_zm + C_invrs_tau_N2_wpxp * brunt_freq_out_cloud
-
-        end if ! l_e3sm_config
-
-
-        where( gr%zt > altitude_threshold &
-               .and. brunt_vaisala_freq_sqd_smth > C_invrs_tau_wpxp_N2_thresh )
-           invrs_tau_wpxp_zm &
-           = invrs_tau_wpxp_zm &
-             * ( 1.0_core_rknd &
-                 + C_invrs_tau_wpxp_Ri * min( max( Ri_zm, 0.0_core_rknd ), &
-                                      12.0_core_rknd ) )
-        end where
-
-        invrs_tau_wp3_zm = invrs_tau_wp2_zm + C_invrs_tau_N2_clear_wp3 * brunt_freq_out_cloud
-
-        if ( gr%zm(1) - sfc_elevation + z_displace < eps ) then
-             error stop  "Lowest zm grid level is below ground in CLUBB."
-        end if
-
-        ! Calculate the maximum allowable value of time-scale tau,
-        ! which depends of the value of Lscale_max.
-        tau_max_zt = Lscale_max / sqrt_em_zt
-        tau_max_zm = Lscale_max / sqrt( max( em, em_min ) )
-
-        tau_zm           = min( one / invrs_tau_zm, tau_max_zm )
-        tau_zt           = min( zm2zt( tau_zm ), tau_max_zt )
-        invrs_tau_zt     = zm2zt( invrs_tau_zm ) 
-        invrs_tau_wp3_zt = zm2zt( invrs_tau_wp3_zm )
-
-        Lscale = tau_zt * sqrt_em_zt
-
-        ! Lscale_up and Lscale_down aren't calculated with this option.
-        ! They are set to 0 for stats output.
-        Lscale_up = zero
-        Lscale_down = zero
+        call diagnose_Lscale_from_tau(upwp_sfc, vpwp_sfc, um, vm, & !intent in
+                                      exner, p_in_Pa, & !intent in
+                                      rtm, thlm, thvm, & !intent in
+                                      rcm, ice_supersat_frac, &! intent in
+                                      em, sqrt_em_zt, & ! intent in
+                                      ufmin, z_displace, tau_const, & ! intent in
+                                      sfc_elevation, Lscale_max, & ! intent in
+                                      clubb_config_flags%l_e3sm_config, & ! intent in
+                                      clubb_config_flags%l_brunt_vaisala_freq_moist, & !intent in
+                                      clubb_config_flags%l_use_thvm_in_bv_freq, &! intent in
+                                      brunt_vaisala_freq_sqd, brunt_vaisala_freq_sqd_mixed, & ! intent out
+                                      brunt_vaisala_freq_sqd_dry, brunt_vaisala_freq_sqd_moist, & ! intent out
+                                      brunt_vaisala_freq_sqd_plus, & !intent out
+                                      sqrt_Ri_zm, & ! intent out
+                                      invrs_tau_zt, invrs_tau_zm, & ! intent out
+                                      invrs_tau_sfc, invrs_tau_no_N2_zm, invrs_tau_bkgnd, & ! intent out
+                                      invrs_tau_shear, invrs_tau_wp2_zm, invrs_tau_xp2_zm, & ! intent out
+                                      invrs_tau_wp3_zm, invrs_tau_wp3_zt, invrs_tau_wpxp_zm, & ! intent out
+                                      tau_max_zm, tau_max_zt, tau_zm, tau_zt, & !intent out
+                                      Lscale, Lscale_up, Lscale_down)! intent out
 
       end if ! l_diag_Lscale_from_tau
 
@@ -1503,7 +1409,7 @@ module advance_clubb_core_module
          call stat_update_var(iinvrs_tau_sfc, invrs_tau_sfc, stats_zm)
          call stat_update_var(iinvrs_tau_shear, invrs_tau_shear, stats_zm)
          call stat_update_var(ibrunt_vaisala_freq_sqd, brunt_vaisala_freq_sqd, stats_zm)
-         call stat_update_var(iRi_zm, Ri_zm, stats_zm)
+         call stat_update_var(isqrt_Ri_zm, sqrt_Ri_zm, stats_zm)
       end if
 
       ! Cx_fnc_Richardson is only used if one of these flags is true,
@@ -3171,7 +3077,7 @@ module advance_clubb_core_module
 
       use parameter_indices, only:  &
           nparams, & ! Variable(s)
-          iC1,     & ! Constant(s)  
+          iC1,     & ! Constant(s)
           iC14
 
       use parameters_tunable, only: &
@@ -3190,7 +3096,7 @@ module advance_clubb_core_module
           err_code,                    & ! Error Indicator
           clubb_no_error, &              ! Constant
           clubb_fatal_error              ! Constant
-          
+
       use model_flags, only: &
           clubb_config_flags_type, & ! Type
           setup_model_flags, & ! Subroutine
@@ -3300,7 +3206,7 @@ module advance_clubb_core_module
         l_prescribed_avg_deltaz, &  ! used in adj_low_res_nu. If .true., avg_deltaz = deltaz
         l_damp_wp2_using_em,     &
         l_stability_correct_tau_zm
-        
+
 #ifdef GFDL
       logical, intent(in) :: &  ! h1g, 2010-06-16 begin mod
          I_sat_sphum
@@ -3311,15 +3217,15 @@ module advance_clubb_core_module
 
       ! Local variables
       integer :: begin_height, end_height
-      
+
       integer, intent(out) :: &
         err_code_out  ! Error code indicator
 
       !----- Begin Code -----
-      
+
       err_code_out = clubb_no_error ! Initialize to no error value
       call initialize_error_headers
-      
+
       ! Sanity check
       if ( clubb_at_least_debug_level( 0 ) ) then
 
@@ -3500,7 +3406,7 @@ module advance_clubb_core_module
       if ( clubb_at_least_debug_level( 0 ) ) then
         if ( err_code == clubb_fatal_error ) then
           err_code_out = err_code
-          
+
           write(fstderr,*) "Error in setup_clubb_core"
 
           write(fstderr,*) "Intent(in)"
@@ -4558,7 +4464,7 @@ module advance_clubb_core_module
     rc_tol
 
   use parameters_tunable, only: &
-    thlp2_rad_coef    
+    thlp2_rad_coef
 
   implicit none
 
