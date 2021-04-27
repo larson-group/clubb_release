@@ -213,7 +213,9 @@ def analyzeSensMatrix(metricsNames, paramsNames, transformedParamsNames,
 
     # Calculate inverse of the singular value decomposition.
     # This gives the recommended changes to parameter values.
-    svdInvrsNormlzdWeighted, svdInvrsNormlzdWeightedPC = calcSvdInvrs(normlzdWeightedSensMatrix)
+    svdInvrsNormlzdWeighted, svdInvrsNormlzdWeightedPC, sValsTruncInvNormlzdWeighted, \
+    vhNormlzdWeighted = \
+    calcSvdInvrs(normlzdWeightedSensMatrix)
 
     #print("\nNormalized, weighted SVD inverse =")
     #print(svdInvrsNormlzdWeighted)
@@ -221,11 +223,13 @@ def analyzeSensMatrix(metricsNames, paramsNames, transformedParamsNames,
     paramsSoln, dparamsSoln, defaultBiasesApprox = \
     calcParamsSoln(svdInvrsNormlzdWeighted, metricsWeights, maxMagParamValsRow, \
                    sensMatrix, defaultParamValsOrigRow, \
+                   sValsTruncInvNormlzdWeighted, vhNormlzdWeighted, \
                    numParams, paramsNames, transformedParamsNames )
 
     paramsSolnPC, dparamsSolnPC, defaultBiasesApproxPC = \
     calcParamsSoln(svdInvrsNormlzdWeightedPC, metricsWeights, maxMagParamValsRow, \
                    sensMatrix, defaultParamValsOrigRow, \
+                   sValsTruncInvNormlzdWeighted, vhNormlzdWeighted, \
                    numParams, paramsNames, transformedParamsNames )
 
     print("\ndefaultBiasesApprox =")
@@ -393,6 +397,7 @@ def calcSvdInvrs(normlzdWeightedSensMatrix):
     halfNumSVals = np.floor_divide( sValsTrunc.size, 2 )
     sValsInvPC = np.zeros_like(sValsTruncInv)
     sValsInvPC[0:halfNumSVals] = sValsTruncInv[0:halfNumSVals]
+    #sValsInvPC[0:sValsTruncInv.size-3] = sValsTruncInv[0:sValsTruncInv.size-3]
 
     #pdb.set_trace()
 
@@ -406,10 +411,11 @@ def calcSvdInvrs(normlzdWeightedSensMatrix):
     #print("\neigVecs = ")
     #print(eigVecs)
 
-    return ( svdInvrs, svdInvrsPC )
+    return ( svdInvrs, svdInvrsPC, sValsTruncInv, vh )
 
 def calcParamsSoln(svdInvrsNormlzdWeighted, metricsWeights, maxMagParamValsRow, \
                    sensMatrix, defaultParamValsOrigRow, \
+                   sValsTruncInvNormlzdWeighted, vhNormlzdWeighted, \
                    numParams, paramsNames, transformedParamsNames ):
 
     import numpy as np
@@ -419,6 +425,9 @@ def calcParamsSoln(svdInvrsNormlzdWeighted, metricsWeights, maxMagParamValsRow, 
     dparamsSoln = svdInvrsNormlzdWeighted @ metricsWeights * np.transpose(maxMagParamValsRow)
     defaultBiasesApprox = sensMatrix @ dparamsSoln
     paramsSoln = np.transpose(defaultParamValsOrigRow) + dparamsSoln
+    paramsErrMatrix = np.transpose(vhNormlzdWeighted) * sValsTruncInvNormlzdWeighted
+    paramsErrStd = np.sqrt( np.reshape( np.sum( paramsErrMatrix * paramsErrMatrix, axis=1 ), (-1, 1)) )
+    #pdb.set_trace()
     # Transform some variables from [-inf,inf] back to [0,inf] range
     for idx in np.arange(numParams):
         paramName = paramsNames[idx]
