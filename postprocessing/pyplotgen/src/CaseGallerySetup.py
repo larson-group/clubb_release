@@ -230,10 +230,7 @@ class CaseGallerySetup:
             self.panels.extend(temp_group.panels)
 
         if self.sam_datasets is not None and len(self.sam_datasets) != 0:
-            temp_group=VariableGroupSamProfiles(self, clubb_datasets=self.clubb_datasets, les_dataset=self.sam_benchmark_file,
-                                  coamps_dataset=self.coamps_datasets, sam_datasets=self.sam_datasets,
-                                  wrf_datasets=self.wrf_datasets, r408_dataset=self.r408_datasets, hoc_dataset=self.hoc_datasets,
-                                  e3sm_datasets=self.e3sm_datasets, cam_datasets=self.cam_file, priority_vars=self.priority_vars)
+            temp_group=VariableGroupSamProfiles(self,sam_datasets=self.sam_datasets,priority_vars=self.priority_vars)
             self.panels.extend(temp_group.panels)
 
         total_panels = len(self.panels)
