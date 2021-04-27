@@ -744,7 +744,7 @@ module advance_clubb_core_module
 
     real( kind = core_rknd ) :: &
       thlm1000, &
-      thlm700                      ! Friction velocity  [m/s]
+      thlm700                      
 
     real( kind = core_rknd ), dimension(gr%nz) :: &
       rcm_supersat_adj, & ! Adjustment to rcm due to spurious supersaturation
@@ -772,7 +772,7 @@ module advance_clubb_core_module
        brunt_vaisala_freq_sqd_moist, & ! moist N^2
        brunt_vaisala_freq_sqd_plus,  & ! N^2 from another way
        brunt_vaisala_freq_sqd_zt,    & ! Buoyancy frequency squared on t-levs.        [s^-2]
-       sqrt_Ri_zm ! Richardson number
+       sqrt_Ri_zm                      ! square root of Richardson number
 
 
     real( kind = core_rknd ), parameter :: &
