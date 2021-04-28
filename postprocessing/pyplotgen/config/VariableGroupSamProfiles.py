@@ -38,8 +38,8 @@ class VariableGroupSamProfiles(VariableGroup):
                 'e3sm': [''],
                 'cam': [''],
                 },
-             'title': r"Covariance of w' and p'",
-             'axis_title': r"$\mathrm{\overline{w'p'}}$ $\mathrm{\left[m^3\,s^{-3}\right]}$",
+             'title': r"Covariance of w' and p'/$\rho$",
+             'axis_title': r"$\mathrm{\overline{w'p'/\rho}}$ $\mathrm{\left[m^3\,s^{-3}\right]}$",
              },
             {'var_names':
                 {
@@ -51,8 +51,8 @@ class VariableGroupSamProfiles(VariableGroup):
                 'e3sm': [''],
                 'cam': [''],
                 },
-             'title': r"Covariance of w'^2 and p'",
-             'axis_title': r"$\mathrm{\overline{w'^2p'}}$ $\mathrm{\left[m^4\,s^{-4}\right]}$",
+             'title': r"Covariance of w'^2 and p'/$\rho$",
+             'axis_title': r"$\mathrm{\overline{w'^2p'/\rho}}$ $\mathrm{\left[m^4\,s^{-4}\right]}$",
              },
             {'var_names':
                 {
@@ -64,7 +64,7 @@ class VariableGroupSamProfiles(VariableGroup):
                 'e3sm': [''],
                 'cam': [''],
                 },
-             'title': r"Covariance of w'^2 and u'^2",
+             'title': r"4th-order moment, w'^2u'^2",
              'axis_title': r"$\mathrm{\overline{w'^2u'^2}}$ $\mathrm{\left[m^4\,s^{-4}\right]}$",
              },
             {'var_names':
@@ -77,7 +77,7 @@ class VariableGroupSamProfiles(VariableGroup):
                 'e3sm': [''],
                 'cam': [''],
                 },
-             'title': r"Covariance of w'^2 and v'^2",
+             'title': r"4th-order moment, w'^2v'^2",
              'axis_title': r"$\mathrm{\overline{w'^2v'^2}}$ $\mathrm{\left[m^4\,s^{-4}\right]}$",
 },
             {'var_names':
@@ -90,8 +90,8 @@ class VariableGroupSamProfiles(VariableGroup):
                 'e3sm': [''],
                 'cam': [''],
                 },
-             'title': r"Covariance of w'^2 and TKE (0.5*(u'^2+v'^2+w'^2))",
-             'axis_title': r"$\mathrm{\overline{w'^2e}}$ $\mathrm{\left[m^4\,s^{-4}\right]}$",
+             'title': r"4th-order moment, w'^2(0.5*(u'^2+v'^2+w'^2))",
+             'axis_title': r"$\mathrm{\overline{w'^2\;0.5u_i'u_i'}}$ $\mathrm{\left[m^4\,s^{-4}\right]}$",
              },
             {'var_names':
                 {
@@ -103,8 +103,8 @@ class VariableGroupSamProfiles(VariableGroup):
                 'e3sm': [''],
                 'cam': [''],
                 },
-             'title': r"Covariance of p' and TKE (0.5*(u'^2+v'^2+w'^2))",
-             'axis_title': r"$\mathrm{\overline{p'e}}$ $\mathrm{\left[m^4\,s^{-4}\right]}$",
+             'title': r"3rd-order moment, p'/$\rho$(0.5*(u'^2+v'^2+w'^2))",
+             'axis_title': r"$\mathrm{\overline{p'/\rho\;0.5u_i'u_i'}}$ $\mathrm{\left[m^4\,s^{-4}\right]}$",
              },
             # CORR(W, THETA_L)
             {'var_names':
