@@ -164,7 +164,9 @@ obsMetricValsDict = { \
 defaultMetricValsCol, defaultBiasesCol, \
 defaultBiasesOrigApprox, defaultBiasesOrigApproxPC, \
 sensMatrixOrig, sensMatrix, normlzdSensMatrix, svdInvrsNormlzdWeighted, \
-defaultParamValsOrigRow, dparamsSoln, paramsSoln, paramsSolnPC = \
+defaultParamValsOrigRow, dparamsSoln, \
+paramsSoln, paramsLowVals, paramsHiVals, \
+paramsSolnPC, paramsLowValsPC, paramsHiValsPC = \
          analyzeSensMatrix(metricsNames, paramsNames, transformedParamsNames,
                         metricsWeights,
                         sensNcFilenames, defaultNcFilename,
@@ -194,6 +196,7 @@ fracError = estBiasesOrigSqd / defaultBiasesColSqd
 estBiasesOrigPCSqd = (defaultBiasesOrigApproxPC - defaultBiasesCol)**2
 fracErrorPC = estBiasesOrigPCSqd / defaultBiasesColSqd
 #fracErrorPC = estBiasesOrigPCSqd / defaultMetricValsColSqd
+
 
 #pdb.set_trace()
 
