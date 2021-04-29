@@ -331,7 +331,8 @@ module extended_atmosphere_module
     if ( p_in_Pa_zm(grid_size) < &
          extended_p_in_mb(j) * pascal_per_mb ) then
       write(fstderr,*) "In subroutine determine_extended_atmos_bounds"
-      error stop "pressure at top of computational grid less than pressure at base of radiative grid"
+      error stop &
+            "pressure at top of computational grid less than pressure at base of radiative grid"
     end if
 
     k=1

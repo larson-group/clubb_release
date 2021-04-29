@@ -957,8 +957,10 @@ module latin_hypercube_driver_module
 
     !----- Begin Code -----
     if ( l_rcm_in_cloud_k_lh_start .or. l_random_k_lh_start ) then
-      rcm_pdf = compute_mean_binormal( pdf_params%rc_1(i,:), pdf_params%rc_2(i,:), pdf_params%mixt_frac(i,:) )
-      cloud_frac_pdf = compute_mean_binormal( pdf_params%cloud_frac_1(i,:), pdf_params%cloud_frac_2(i,:), &
+      rcm_pdf = compute_mean_binormal( pdf_params%rc_1(i,:), pdf_params%rc_2(i,:), &
+                                       pdf_params%mixt_frac(i,:) )
+      cloud_frac_pdf = compute_mean_binormal( pdf_params%cloud_frac_1(i,:), &
+                                              pdf_params%cloud_frac_2(i,:), &
                                               pdf_params%mixt_frac(i,:) )
       k_lh_start_rcm_in_cloud = maxloc( rcm_pdf / max( cloud_frac_pdf, cloud_frac_min ), 1 )
     end if

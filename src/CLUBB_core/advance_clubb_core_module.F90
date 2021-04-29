@@ -1172,26 +1172,27 @@ module advance_clubb_core_module
 
       else ! l_diag_Lscale_from_tau = .true., diagnose simple tau and Lscale.
 
-        call diagnose_Lscale_from_tau(upwp_sfc, vpwp_sfc, um, vm, & !intent in
-                                      exner, p_in_Pa, & !intent in
-                                      rtm, thlm, thvm, & !intent in
-                                      rcm, ice_supersat_frac, &! intent in
-                                      em, sqrt_em_zt, & ! intent in
-                                      ufmin, z_displace, tau_const, & ! intent in
-                                      sfc_elevation, Lscale_max, & ! intent in
-                                      clubb_config_flags%l_e3sm_config, & ! intent in
-                                      clubb_config_flags%l_brunt_vaisala_freq_moist, & !intent in
-                                      clubb_config_flags%l_use_thvm_in_bv_freq, &! intent in
-                                      brunt_vaisala_freq_sqd, brunt_vaisala_freq_sqd_mixed, & ! intent out
-                                      brunt_vaisala_freq_sqd_dry, brunt_vaisala_freq_sqd_moist, & ! intent out
-                                      brunt_vaisala_freq_sqd_plus, & !intent out
-                                      sqrt_Ri_zm, & ! intent out
-                                      invrs_tau_zt, invrs_tau_zm, & ! intent out
-                                      invrs_tau_sfc, invrs_tau_no_N2_zm, invrs_tau_bkgnd, & ! intent out
-                                      invrs_tau_shear, invrs_tau_wp2_zm, invrs_tau_xp2_zm, & ! intent out
-                                      invrs_tau_wp3_zm, invrs_tau_wp3_zt, invrs_tau_wpxp_zm, & ! intent out
-                                      tau_max_zm, tau_max_zt, tau_zm, tau_zt, & !intent out
-                                      Lscale, Lscale_up, Lscale_down)! intent out
+        call diagnose_Lscale_from_tau( &
+                          upwp_sfc, vpwp_sfc, um, vm, & !intent in
+                          exner, p_in_Pa, & !intent in
+                          rtm, thlm, thvm, & !intent in
+                          rcm, ice_supersat_frac, &! intent in
+                          em, sqrt_em_zt, & ! intent in
+                          ufmin, z_displace, tau_const, & ! intent in
+                          sfc_elevation, Lscale_max, & ! intent in
+                          clubb_config_flags%l_e3sm_config, & ! intent in
+                          clubb_config_flags%l_brunt_vaisala_freq_moist, & !intent in
+                          clubb_config_flags%l_use_thvm_in_bv_freq, &! intent in
+                          brunt_vaisala_freq_sqd, brunt_vaisala_freq_sqd_mixed, & ! intent out
+                          brunt_vaisala_freq_sqd_dry, brunt_vaisala_freq_sqd_moist, & ! intent out
+                          brunt_vaisala_freq_sqd_plus, & !intent out
+                          sqrt_Ri_zm, & ! intent out
+                          invrs_tau_zt, invrs_tau_zm, & ! intent out
+                          invrs_tau_sfc, invrs_tau_no_N2_zm, invrs_tau_bkgnd, & ! intent out
+                          invrs_tau_shear, invrs_tau_wp2_zm, invrs_tau_xp2_zm, & ! intent out
+                          invrs_tau_wp3_zm, invrs_tau_wp3_zt, invrs_tau_wpxp_zm, & ! intent out
+                          tau_max_zm, tau_max_zt, tau_zm, tau_zt, & !intent out
+                          Lscale, Lscale_up, Lscale_down)! intent out
 
       end if ! l_diag_Lscale_from_tau
 

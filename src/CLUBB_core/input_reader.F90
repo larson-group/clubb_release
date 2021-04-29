@@ -158,7 +158,8 @@ module input_reader
       end if
 
       if( nRowI < 1 ) then
-        error stop "Number of elements must be an integer and greater than zero in two-dim  input file."
+        error stop &
+              "Number of elements must be an integer and greater than zero in two-dim input file."
       end if
 
       do k =1, nRowI

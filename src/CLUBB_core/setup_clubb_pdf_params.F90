@@ -818,8 +818,8 @@ module setup_clubb_pdf_params
                                      pdf_params%stdev_eta_1(j,:), pdf_params%stdev_eta_2(j,:), &
                                      pdf_params%rt_1(j,:), pdf_params%rt_2(j,:),               &
                                      pdf_params%crt_1(j,:), pdf_params%crt_2(j,:),             &
-                                     pdf_params%mixt_frac(j,:),                                    &   
-                                     corr_array_1_n(j,:,iiPDF_chi,iiPDF_eta),                    &
+                                     pdf_params%mixt_frac(j,:),                                &   
+                                     corr_array_1_n(j,:,iiPDF_chi,iiPDF_eta),                  &
                                      corr_array_2_n(j,:,iiPDF_chi,iiPDF_eta) )
 
           ! Switch back to using stat_update_var once the code is generalized

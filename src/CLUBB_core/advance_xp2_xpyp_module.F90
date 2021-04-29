@@ -5048,7 +5048,7 @@ module advance_xp2_xpyp_module
 
     ! Include effects of rain evaporation on rtp2
     temp_rtp2 = pdf_params%mixt_frac(1,:) &
-                    * ( ( pdf_params%rt_1(1,:) - ( rcm + rvm ) )**2 + pdf_params%varnce_rt_1(1,:) ) &
+                * ( ( pdf_params%rt_1(1,:) - ( rcm + rvm ) )**2 + pdf_params%varnce_rt_1(1,:) ) &
                 + ( 1.0_core_rknd - pdf_params%mixt_frac(1,:) ) &
                     * ( ( pdf_params%rt_2(1,:) - ( rcm + rvm ) )**2 + pdf_params%varnce_rt_2(1,:) )
 

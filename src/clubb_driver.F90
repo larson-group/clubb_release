@@ -1988,7 +1988,8 @@ module clubb_driver
             < 1.e-8_core_rknd) .or. &
          ( abs(stats_tout/dt_rad - real(floor(stats_tout/dt_rad), kind=core_rknd)) &
             < 1.e-8_core_rknd)) ) then
-        error stop "dt_rad must be a multiple of stats_tout or stats_tout must be a mulitple of dt_rad"
+        error stop &
+              "dt_rad must be a multiple of stats_tout or stats_tout must be a mulitple of dt_rad"
       end if
 
     end if
