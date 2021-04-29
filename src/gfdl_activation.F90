@@ -99,29 +99,29 @@ module gfdl_activation
 
     do iz_clubb = 2, gr%nz
 
-      if( pdf_params%varnce_w_1(iz_clubb) > wp2_eps) then
+      if( pdf_params%varnce_w_1(1,iz_clubb) > wp2_eps) then
         P1_updraft = 0.5_core_rknd + 0.5_core_rknd &
-            * erff( pdf_params%w_1(iz_clubb) &
-            / sqrt( 2.0_core_rknd*pdf_params%varnce_w_1(iz_clubb)) )
-        P1_updraft = P1_updraft * pdf_params%mixt_frac(iz_clubb) &
-            * pdf_params%cloud_frac_1(iz_clubb)
-      else if( pdf_params%w_1(iz_clubb) > 0.0_core_rknd) then
-          P1_updraft = pdf_params%mixt_frac(iz_clubb) * pdf_params%cloud_frac_1(iz_clubb)
+            * erff( pdf_params%w_1(1,iz_clubb) &
+            / sqrt( 2.0_core_rknd*pdf_params%varnce_w_1(1,iz_clubb)) )
+        P1_updraft = P1_updraft * pdf_params%mixt_frac(1,iz_clubb) &
+            * pdf_params%cloud_frac_1(1,iz_clubb)
+      else if( pdf_params%w_1(1,iz_clubb) > 0.0_core_rknd) then
+          P1_updraft = pdf_params%mixt_frac(1,iz_clubb) * pdf_params%cloud_frac_1(1,iz_clubb)
       else
         ! Eric Raut added to remove compiler warning
           P1_updraft = 0.0_core_rknd
       end if
 
 
-      if( pdf_params%varnce_w_2(iz_clubb) > wp2_eps) then
+      if( pdf_params%varnce_w_2(1,iz_clubb) > wp2_eps) then
         P2_updraft = 0.5_core_rknd + &
-                      0.5_core_rknd*erff( pdf_params%w_2(iz_clubb) &
-                      / sqrt( 2.0_core_rknd*pdf_params%varnce_w_2(iz_clubb)) )
-        P2_updraft = P2_updraft * ( 1.0_core_rknd-pdf_params%mixt_frac(iz_clubb ) ) &
-                      * pdf_params%cloud_frac_2(iz_clubb)
-      else if( pdf_params%w_2(iz_clubb) > 0.0_core_rknd) then
-           P2_updraft = ( 1.0_core_rknd-pdf_params%mixt_frac(iz_clubb) ) &
-                          * pdf_params%cloud_frac_2(iz_clubb)
+                      0.5_core_rknd*erff( pdf_params%w_2(1,iz_clubb) &
+                      / sqrt( 2.0_core_rknd*pdf_params%varnce_w_2(1,iz_clubb)) )
+        P2_updraft = P2_updraft * ( 1.0_core_rknd-pdf_params%mixt_frac(1,iz_clubb) ) &
+                      * pdf_params%cloud_frac_2(1,iz_clubb)
+      else if( pdf_params%w_2(1,iz_clubb) > 0.0_core_rknd) then
+           P2_updraft = ( 1.0_core_rknd-pdf_params%mixt_frac(1,iz_clubb) ) &
+                          * pdf_params%cloud_frac_2(1,iz_clubb)
       else
         ! Eric Raut added to remove compiler warning
         P2_updraft = 0.0_core_rknd
@@ -141,16 +141,16 @@ module gfdl_activation
       drop_r4 = real(drop)
 
       call aer_ccn_act_wpdf_k( real(temp_clubb_act(iz_clubb)), real(p_in_Pa(iz_clubb)),&!intent(in)
-                              real(pdf_params%w_1(iz_clubb)),                      &! intent(in)
-                              real(pdf_params%varnce_w_1(iz_clubb)),               &! intent(in)
+                              real(pdf_params%w_1(1,iz_clubb)),                      &! intent(in)
+                              real(pdf_params%varnce_w_1(1,iz_clubb)),               &! intent(in)
                               aeromass_clubb_r4, Tym,             &! intent(in)
                               drop_r4,   ier,   ermesg )                        ! intent(out)
     
       Ndrop_max(iz_clubb) = drop * P1_updraft
 
       call aer_ccn_act_wpdf_k( real(temp_clubb_act(iz_clubb)), real(p_in_Pa(iz_clubb)),&!intent(in)
-                             real(pdf_params%w_2(iz_clubb)),                        &! intent(in)
-                             real(pdf_params%varnce_w_2(iz_clubb)),                 &! intent(in)
+                             real(pdf_params%w_2(1,iz_clubb)),                        &! intent(in)
+                             real(pdf_params%varnce_w_2(1,iz_clubb)),                 &! intent(in)
                              aeromass_clubb_r4, Tym,               &! intent(in)
                              drop_r4,   ier,   ermesg )                         ! intent(out)
 
@@ -162,9 +162,9 @@ module gfdl_activation
 
       ! get the layer-averaged activated droplet concentration (/cm3)
       Ndrop_max(iz_clubb) = Ndrop_max(iz_clubb) *  &
-                 (  pdf_params%mixt_frac(iz_clubb)  * pdf_params%cloud_frac_1(iz_clubb) + &
-                   (1._core_rknd- pdf_params%mixt_frac(iz_clubb)) * &
-                   pdf_params%cloud_frac_2(iz_clubb) )
+                 (  pdf_params%mixt_frac(1,iz_clubb)  * pdf_params%cloud_frac_1(1,iz_clubb) + &
+                   (1._core_rknd- pdf_params%mixt_frac(1,iz_clubb)) * &
+                   pdf_params%cloud_frac_2(1,iz_clubb) )
 
   end do
 return

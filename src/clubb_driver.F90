@@ -439,7 +439,7 @@ module clubb_driver
       thlp2_forcing,   & ! liq pot temp variance forcing (m-levs)     [K^2/s]
       rtpthlp_forcing    ! <r_t'th_l'> covariance forcing (m-levs)    [K(kg/kg)/s]
 
-    type(pdf_parameter), dimension(:), allocatable :: &
+    type(pdf_parameter), allocatable :: &
       pdf_params ! PDF parameters (thermodynamic levels)    [units vary]
       
     type(pdf_parameter), allocatable :: &
@@ -1504,10 +1504,10 @@ module clubb_driver
     allocate( sclrpthvp(1:gr%nz, 1:sclr_dim) )
 
     ! Variables for PDF closure scheme
-    allocate( pdf_params(1) )
-    call init_pdf_params( gr%nz, pdf_params(1) )
+    allocate( pdf_params )
+    call init_pdf_params( gr%nz, 1, pdf_params )
     allocate( pdf_params_zm )
-    call init_pdf_params( gr%nz, pdf_params_zm )
+    call init_pdf_params( gr%nz, 1, pdf_params_zm )
 
     allocate( pdf_implicit_coefs_terms )
     call init_pdf_implicit_coefs_terms( gr%nz, sclr_dim, &         ! Intent(in)
@@ -1895,7 +1895,7 @@ module clubb_driver
              Kh_zt, Kh_zm, ug, vg, Lscale(1,:),        & ! Intent(inout)
              Lscale_up, Lscale_down, thlprcp,          & ! Intent(inout)
              sigma_sqd_w, sigma_sqd_w_zt, radht,       & ! Intent(inout)
-             pdf_params(1), pdf_params_zm,             & ! Intent(inout)
+             pdf_params, pdf_params_zm,                & ! Intent(inout)
              rcm_mc, rvm_mc, thlm_mc,                  & ! Intent(out)
              wprtp_mc, wpthlp_mc, rtp2_mc,             & ! Intent(out)
              thlp2_mc, rtpthlp_mc,                     & ! Intent(out)
@@ -2068,7 +2068,7 @@ module clubb_driver
                                  Kh_zt, Kh_zm, ug, vg, Lscale(1,:), & ! Inout
                                  Lscale_up, Lscale_down, thlprcp, & ! Inout
                                  sigma_sqd_w, sigma_sqd_w_zt, radht, & ! Inout
-                                 pdf_params(1), pdf_params_zm ) ! Inout
+                                 pdf_params, pdf_params_zm ) ! Inout
 
         ! clip wp3 if it is input from inputfields
         ! this helps restrict the skewness of wp3_on_wp2
@@ -2185,7 +2185,7 @@ module clubb_driver
              rcm(1,:), cloud_frac, &                              ! Intent(inout)
              wpthvp, wp2thvp, rtpthvp, thlpthvp, &                ! Intent(inout)
              sclrpthvp, &                                         ! Intent(inout)
-             pdf_params(1), pdf_params_zm, &                      ! Intent(inout)
+             pdf_params, pdf_params_zm, &                         ! Intent(inout)
              pdf_implicit_coefs_terms, &                          ! intent(inout)
              Kh_zm, Kh_zt, &                                      ! intent(out)
              thlprcp, wprcp, ice_supersat_frac, &                 ! Intent(out)
@@ -2213,7 +2213,7 @@ module clubb_driver
                         Nc_in_cloud, rcm(1,:), cloud_frac, Kh_zm,                   & ! Intent(in)
                         ice_supersat_frac, hydromet, wphydrometp,                   & ! Intent(in)
                         corr_array_n_cloud, corr_array_n_below,                     & ! Intent(in)
-                        pdf_params(1), l_stats_samp,                                & ! Intent(in)
+                        pdf_params, l_stats_samp,                                   & ! Intent(in)
                         clubb_config_flags%iiPDF_type,                              & ! Intent(in)
                         l_use_precip_frac,                                          & ! Intent(in)
                         clubb_config_flags%l_predict_upwp_vpwp,                     & ! Intent(in)
@@ -2236,7 +2236,7 @@ module clubb_driver
                                    mu_x_1_n(1,:,:), mu_x_2_n(1,:,:),                 & ! Intent(in)
                                    sigma_x_1_n(1,:,:), sigma_x_2_n(1,:,:),           & ! Intent(in)
                                    corr_array_1_n(1,:,:,:), corr_array_2_n(1,:,:,:), & ! Intent(in)
-                                   pdf_params(1), hydromet_pdf_params(1,:),          & ! Intent(in)
+                                   pdf_params, hydromet_pdf_params(1,:),             & ! Intent(in)
                                    precip_fracs,                                     & ! Intent(in)
                                    rtphmp_zt, thlphmp_zt, wp2hmp )                     ! Intent(out)
 
@@ -2360,7 +2360,7 @@ module clubb_driver
                               thlm, p_in_Pa, exner, rho, rho_zm, rtm, &               ! In
                               rcm(1,:), cloud_frac, wm_zt, wm_zm, wp2_zt, &           ! In
                               hydromet, Nc_in_cloud, &                                ! In
-                              pdf_params(1), hydromet_pdf_params(1,:), &              ! In
+                              pdf_params, hydromet_pdf_params(1,:), &                 ! In
                               precip_fracs, &                                         ! In
                               X_nl_all_levs(1,:,:,:), X_mixt_comp_all_levs(1,:,:), &  ! In
                               lh_sample_point_weights(1,:,:), &                       ! In

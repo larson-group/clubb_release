@@ -233,9 +233,6 @@ contains
       vert_decorr_coef    ! Empirically defined de-correlation constant [-]
     
     ! -------------- Local Variables --------------
-    
-    type(pdf_parameter), dimension(1) :: &
-      pdf_params_col ! PDF parameters, with column dimension 1       [units vary]
       
     real( kind = core_rknd ), dimension(1,nz) :: &
       delta_zm_col, &  ! Difference in moment. altitudes, with column dimension 1    [m]
@@ -270,7 +267,6 @@ contains
 
     ! -------------- Begin Code --------------
 
-    pdf_params_col(1)                 = pdf_params
     delta_zm_col(1,:)                 = delta_zm
     rcm_col(1,:)                      = rcm
     rho_ds_zt_col(1,:)                = rho_ds_zt
@@ -285,7 +281,7 @@ contains
     call generate_silhs_sample( &
       iter, pdf_dim, num_samples, sequence_length, nz, 1, & ! In
       l_calc_weights_all_levs_itime, & ! In
-      pdf_params_col, delta_zm_col, rcm_col, Lscale_col, & ! In
+      pdf_params, delta_zm_col, rcm_col, Lscale_col, & ! In
       lh_seed, & ! In
 !     rho_ds_zt_col, & ! Unused
       mu1_col, mu2_col, sigma1_col, sigma2_col, & ! In
@@ -350,7 +346,7 @@ contains
       nz,              & ! Number of vertical model levels
       ngrdcol            ! Number of grid columns
 
-    type(pdf_parameter), dimension(ngrdcol), intent(in) :: &
+    type(pdf_parameter), intent(in) :: &
       pdf_params ! PDF parameters       [units vary]
 
     real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: &
@@ -607,9 +603,6 @@ contains
     real( kind = core_rknd ), dimension(1,num_samples,nz,pdf_dim) :: &
       X_nl_all_levs_col         ! SILHS sample points    [units vary]
 
-    type(pdf_parameter), dimension(1) :: &
-      pdf_params_col             ! **The** PDF parameters!
-
     ! Output Variables
     real( kind = core_rknd ), dimension(1,num_samples,nz) :: &
       lh_rt_clipped_col,  & ! rt generated from silhs sample points
@@ -620,7 +613,6 @@ contains
     
     ! -------------- Begin Code --------------
     
-    pdf_params_col(1)               = pdf_params
     X_mixt_comp_all_levs_col(1,:,:) = X_mixt_comp_all_levs
     X_nl_all_levs_col(1,:,:,:)      = X_nl_all_levs
 
@@ -629,7 +621,7 @@ contains
                                       pdf_dim, hydromet_dim,                  & ! In
                                       X_mixt_comp_all_levs_col,               & ! In
                                       X_nl_all_levs_col,                      & ! In
-                                      pdf_params_col, l_use_Ncn_to_Nc,        & ! In
+                                      pdf_params, l_use_Ncn_to_Nc,            & ! In
                                       lh_rt_clipped_col, lh_thl_clipped_col,  & ! Out
                                       lh_rc_clipped_col, lh_rv_clipped_col,   & ! Out
                                       lh_Nc_clipped_col                       ) ! Out
@@ -678,7 +670,7 @@ contains
     real( kind = core_rknd ), dimension(ngrdcol,num_samples,nz,pdf_dim), intent(inout) :: &
       X_nl_all_levs         ! SILHS sample points    [units vary]
 
-    type(pdf_parameter), dimension(ngrdcol), intent(in) :: &
+    type(pdf_parameter), intent(in) :: &
       pdf_params             ! **The** PDF parameters!
 
     ! Output Variables

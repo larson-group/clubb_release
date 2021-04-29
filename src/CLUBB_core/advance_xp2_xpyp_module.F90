@@ -5047,10 +5047,10 @@ module advance_xp2_xpyp_module
     endwhere
 
     ! Include effects of rain evaporation on rtp2
-    temp_rtp2 = pdf_params%mixt_frac &
-                    * ( ( pdf_params%rt_1 - ( rcm + rvm ) )**2 + pdf_params%varnce_rt_1 ) &
-                + ( 1.0_core_rknd - pdf_params%mixt_frac ) &
-                    * ( ( pdf_params%rt_2 - ( rcm + rvm ) )**2 + pdf_params%varnce_rt_2 )
+    temp_rtp2 = pdf_params%mixt_frac(1,:) &
+                    * ( ( pdf_params%rt_1(1,:) - ( rcm + rvm ) )**2 + pdf_params%varnce_rt_1(1,:) ) &
+                + ( 1.0_core_rknd - pdf_params%mixt_frac(1,:) ) &
+                    * ( ( pdf_params%rt_2(1,:) - ( rcm + rvm ) )**2 + pdf_params%varnce_rt_2(1,:) )
 
     rtp2_mc_zt = rrm_evap**2 * pf_const * dt &
                        + 2.0_core_rknd * abs(rrm_evap) * sqrt(temp_rtp2 * pf_const)
@@ -5059,10 +5059,10 @@ module advance_xp2_xpyp_module
     rtp2_mc = zt2zm( rtp2_mc_zt )
 
     !Include the effects of rain evaporation on thlp2
-    temp_thlp2 = pdf_params%mixt_frac &
-                    * ( ( pdf_params%thl_1 - thlm )**2 + pdf_params%varnce_thl_1 ) &
-                 + ( 1.0_core_rknd - pdf_params%mixt_frac ) &
-                    * ( ( pdf_params%thl_2 - thlm )**2 + pdf_params%varnce_thl_2 )
+    temp_thlp2 = pdf_params%mixt_frac(1,:) &
+                    * ( ( pdf_params%thl_1(1,:) - thlm )**2 + pdf_params%varnce_thl_1(1,:) ) &
+                 + ( 1.0_core_rknd - pdf_params%mixt_frac(1,:) ) &
+                    * ( ( pdf_params%thl_2(1,:) - thlm )**2 + pdf_params%varnce_thl_2(1,:) )
 
     thlp2_mc_zt = ( rrm_evap * Lv / ( Cp * exner) )**2 &
                        * pf_const * dt &
@@ -5074,10 +5074,10 @@ module advance_xp2_xpyp_module
     ! Include effects of rain evaporation on other moments (wprtp, wpthlp, and 
     ! rtpthlp - added 07/13 rstorer
 
-    temp_wp2 = pdf_params%mixt_frac &
-                  * ( ( pdf_params%w_1 - wm )**2 + pdf_params%varnce_w_1 ) &
-               + ( 1.0_core_rknd - pdf_params%mixt_frac ) &
-                  * ( ( pdf_params%w_2 - wm )**2 + pdf_params%varnce_w_2 )
+    temp_wp2 = pdf_params%mixt_frac(1,:) &
+                  * ( ( pdf_params%w_1(1,:) - wm )**2 + pdf_params%varnce_w_1(1,:) ) &
+               + ( 1.0_core_rknd - pdf_params%mixt_frac(1,:) ) &
+                  * ( ( pdf_params%w_2(1,:) - wm )**2 + pdf_params%varnce_w_2(1,:) )
 
     wprtp_mc_zt = abs(rrm_evap) * sqrt(pf_const) * sqrt(temp_wp2)
 

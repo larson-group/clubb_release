@@ -114,7 +114,7 @@ module latin_hypercube_driver_module
       nz,              & ! Number of vertical model levels
       ngrdcol            ! Number of grid columns
 
-    type(pdf_parameter), dimension(ngrdcol), intent(in) :: &
+    type(pdf_parameter), intent(in) :: &
       pdf_params ! PDF parameters       [units vary]
 
     real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: &
@@ -234,16 +234,16 @@ module latin_hypercube_driver_module
     precip_frac_2 = precip_fracs%precip_frac_2
     
     do i = 1, ngrdcol
-      cloud_frac_1(i,:) = pdf_params(i)%cloud_frac_1(:)
-      cloud_frac_2(i,:) = pdf_params(i)%cloud_frac_2(:)
-      mixt_frac(i,:)    = pdf_params(i)%mixt_frac(:)
+      cloud_frac_1(i,:) = pdf_params%cloud_frac_1(i,:)
+      cloud_frac_2(i,:) = pdf_params%cloud_frac_2(i,:)
+      mixt_frac(i,:)    = pdf_params%mixt_frac(i,:)
     end do
 
     ! Compute k_lh_start, the starting vertical grid level 
     !   for SILHS sampling
     do i = 1, ngrdcol
-      k_lh_start(i) = compute_k_lh_start( nz, rcm(i,:), pdf_params(i), &
-                                          silhs_config_flags%l_rcm_in_cloud_k_lh_start, &
+      k_lh_start(i) = compute_k_lh_start( nz, rcm(i,:), pdf_params, &
+                                          silhs_config_flags%l_rcm_in_cloud_k_lh_start, i, &
                                           silhs_config_flags%l_random_k_lh_start )
     end do
                                      
@@ -392,7 +392,7 @@ module latin_hypercube_driver_module
       do i = 1, ngrdcol
         call stats_accumulate_uniform_lh( nz, num_samples, l_in_precip(i,:,:), &
                                           X_mixt_comp_all_levs(i,:,:), &
-                                          X_u_all_levs(i,:,:,iiPDF_chi), pdf_params(i), &
+                                          X_u_all_levs(i,:,:,iiPDF_chi), pdf_params, &
                                           lh_sample_point_weights(i,:,:), k_lh_start(i) )
       end do
     end if
@@ -443,9 +443,9 @@ module latin_hypercube_driver_module
       do i = 1, ngrdcol
         do k = 2, nz
 
-          call assert_consistent_cloud_frac( pdf_params(i)%chi_1(k), pdf_params(i)%chi_2(k), & 
-                                    pdf_params(i)%cloud_frac_1(k), pdf_params(i)%cloud_frac_2(k), &
-                                    pdf_params(i)%stdev_chi_1(k), pdf_params(i)%stdev_chi_2(k), & 
+          call assert_consistent_cloud_frac( pdf_params%chi_1(i,k), pdf_params%chi_2(i,k), & 
+                                    pdf_params%cloud_frac_1(i,k), pdf_params%cloud_frac_2(i,k), &
+                                    pdf_params%stdev_chi_1(i,k), pdf_params%stdev_chi_2(i,k), & 
                                     l_error_in_sub )
           l_error = l_error .or. l_error_in_sub
 
@@ -453,8 +453,8 @@ module latin_hypercube_driver_module
           call assert_correct_cloud_normal( num_samples, X_u_all_levs(i,:,k,iiPDF_chi), & ! In
                                             X_nl_all_levs(i,:,k,iiPDF_chi), & ! In
                                             X_mixt_comp_all_levs(i,:,k), & ! In
-                                            pdf_params(i)%cloud_frac_1(k), & ! In
-                                            pdf_params(i)%cloud_frac_2(k), & ! In
+                                            pdf_params%cloud_frac_1(i,k), & ! In
+                                            pdf_params%cloud_frac_2(i,k), & ! In
                                             l_error_in_sub ) ! Out
           l_error = l_error .or. l_error_in_sub
 
@@ -897,7 +897,7 @@ module latin_hypercube_driver_module
 
 !-----------------------------------------------------------------------
   function compute_k_lh_start( nz, rcm, pdf_params, &
-                               l_rcm_in_cloud_k_lh_start, &
+                               l_rcm_in_cloud_k_lh_start, i, &
                                l_random_k_lh_start ) result( k_lh_start )
 
   ! Description:
@@ -938,6 +938,8 @@ module latin_hypercube_driver_module
     logical, intent(in) :: &
       l_rcm_in_cloud_k_lh_start, & ! Determine k_lh_start based on maximum within-cloud rcm
       l_random_k_lh_start          ! k_lh_start found randomly between max rcm and rcm_in_cloud
+    
+    integer, intent(in) :: i
 
     ! Output Variable
     integer :: &
@@ -955,9 +957,9 @@ module latin_hypercube_driver_module
 
     !----- Begin Code -----
     if ( l_rcm_in_cloud_k_lh_start .or. l_random_k_lh_start ) then
-      rcm_pdf = compute_mean_binormal( pdf_params%rc_1, pdf_params%rc_2, pdf_params%mixt_frac )
-      cloud_frac_pdf = compute_mean_binormal( pdf_params%cloud_frac_1, pdf_params%cloud_frac_2, &
-                                              pdf_params%mixt_frac )
+      rcm_pdf = compute_mean_binormal( pdf_params%rc_1(i,:), pdf_params%rc_2(i,:), pdf_params%mixt_frac(i,:) )
+      cloud_frac_pdf = compute_mean_binormal( pdf_params%cloud_frac_1(i,:), pdf_params%cloud_frac_2(i,:), &
+                                              pdf_params%mixt_frac(i,:) )
       k_lh_start_rcm_in_cloud = maxloc( rcm_pdf / max( cloud_frac_pdf, cloud_frac_min ), 1 )
     end if
 
@@ -1056,7 +1058,7 @@ module latin_hypercube_driver_module
     integer, dimension(ngrdcol,num_samples,nz), intent(in) :: &
       X_mixt_comp_all_levs   ! Which component this sample is in (1 or 2)
 
-    type(pdf_parameter), dimension(ngrdcol), intent(in) :: &
+    type(pdf_parameter), intent(in) :: &
       pdf_params             ! **The** PDF parameters!
 
     ! ------------------- Input/Output Variable -------------------
@@ -1098,16 +1100,16 @@ module latin_hypercube_driver_module
     ! and Nc.
     
     do i = 1, ngrdcol
-      rt_1(i,:) = pdf_params(i)%rt_1(:)
-      rt_2(i,:) = pdf_params(i)%rt_2(:)
-      thl_1(i,:) = pdf_params(i)%thl_1(:)
-      thl_2(i,:) = pdf_params(i)%thl_2(:)
-      crt_1(i,:) = pdf_params(i)%crt_1(:)
-      crt_2(i,:) = pdf_params(i)%crt_2(:)
-      cthl_1(i,:) = pdf_params(i)%cthl_1(:)
-      cthl_2(i,:) = pdf_params(i)%cthl_2(:)
-      mu_chi_1(i,:) = pdf_params(i)%chi_1(:)
-      mu_chi_2(i,:) = pdf_params(i)%chi_2(:)
+      rt_1(i,:) = pdf_params%rt_1(i,:)
+      rt_2(i,:) = pdf_params%rt_2(i,:)
+      thl_1(i,:) = pdf_params%thl_1(i,:)
+      thl_2(i,:) = pdf_params%thl_2(i,:)
+      crt_1(i,:) = pdf_params%crt_1(i,:)
+      crt_2(i,:) = pdf_params%crt_2(i,:)
+      cthl_1(i,:) = pdf_params%cthl_1(i,:)
+      cthl_2(i,:) = pdf_params%cthl_2(i,:)
+      mu_chi_1(i,:) = pdf_params%chi_1(i,:)
+      mu_chi_2(i,:) = pdf_params%chi_2(i,:)
     end do
         
     ! Compute lh_rt and lh_thl
@@ -2615,10 +2617,10 @@ module latin_hypercube_driver_module
 
             if ( X_mixt_comp_all_levs(isample,k) == 1 ) then
               l_in_comp_1 = .true.
-              cloud_frac_i = pdf_params%cloud_frac_1(k)
+              cloud_frac_i = pdf_params%cloud_frac_1(1,k)
             else
               l_in_comp_1 = .false.
-              cloud_frac_i = pdf_params%cloud_frac_2(k)
+              cloud_frac_i = pdf_params%cloud_frac_2(1,k)
             end if
 
             l_in_cloud = X_u_chi_all_levs(isample,k) > (one - cloud_frac_i)

@@ -1037,26 +1037,26 @@ module mixing_length
           sign_rtpthlp(k) = sign(1.0_core_rknd, rtpthlp(k))
         end do
 
-        where ( pdf_params%rt_1 > pdf_params%rt_2 )
-          rtm_pert_pos_rt = pdf_params%rt_1 &
-                     + Lscale_pert_coef * sqrt( max( pdf_params%varnce_rt_1, rt_tol**2 ) )
-          thlm_pert_pos_rt = pdf_params%thl_1 + ( sign_rtpthlp * Lscale_pert_coef &
-                     * sqrt( max( pdf_params%varnce_thl_1, thl_tol**2 ) ) )
-          thlm_pert_neg_rt = pdf_params%thl_2 - ( sign_rtpthlp * Lscale_pert_coef &
-                     * sqrt( max( pdf_params%varnce_thl_2, thl_tol**2 ) ) )
-          rtm_pert_neg_rt = pdf_params%rt_2 &
-                     - Lscale_pert_coef * sqrt( max( pdf_params%varnce_rt_2, rt_tol**2 ) )
-          !Lscale_weight = pdf_params%mixt_frac
+        where ( pdf_params%rt_1(1,:) > pdf_params%rt_2(1,:) )
+          rtm_pert_pos_rt = pdf_params%rt_1(1,:) &
+                     + Lscale_pert_coef * sqrt( max( pdf_params%varnce_rt_1(1,:), rt_tol**2 ) )
+          thlm_pert_pos_rt = pdf_params%thl_1(1,:) + ( sign_rtpthlp * Lscale_pert_coef &
+                     * sqrt( max( pdf_params%varnce_thl_1(1,:), thl_tol**2 ) ) )
+          thlm_pert_neg_rt = pdf_params%thl_2(1,:) - ( sign_rtpthlp * Lscale_pert_coef &
+                     * sqrt( max( pdf_params%varnce_thl_2(1,:), thl_tol**2 ) ) )
+          rtm_pert_neg_rt = pdf_params%rt_2(1,:) &
+                     - Lscale_pert_coef * sqrt( max( pdf_params%varnce_rt_2(1,:), rt_tol**2 ) )
+          !Lscale_weight = pdf_params%mixt_frac(1,:)
         elsewhere
-          rtm_pert_pos_rt = pdf_params%rt_2 &
-                     + Lscale_pert_coef * sqrt( max( pdf_params%varnce_rt_2, rt_tol**2 ) )
-          thlm_pert_pos_rt = pdf_params%thl_2 + ( sign_rtpthlp * Lscale_pert_coef &
-                     * sqrt( max( pdf_params%varnce_thl_2, thl_tol**2 ) ) )
-          thlm_pert_neg_rt = pdf_params%thl_1 - ( sign_rtpthlp * Lscale_pert_coef &
-                     * sqrt( max( pdf_params%varnce_thl_1, thl_tol**2 ) ) )
-          rtm_pert_neg_rt = pdf_params%rt_1 &
-                     - Lscale_pert_coef * sqrt( max( pdf_params%varnce_rt_1, rt_tol**2 ) )
-          !Lscale_weight = 1.0_core_rknd - pdf_params%mixt_frac
+          rtm_pert_pos_rt = pdf_params%rt_2(1,:) &
+                     + Lscale_pert_coef * sqrt( max( pdf_params%varnce_rt_2(1,:), rt_tol**2 ) )
+          thlm_pert_pos_rt = pdf_params%thl_2(1,:) + ( sign_rtpthlp * Lscale_pert_coef &
+                     * sqrt( max( pdf_params%varnce_thl_2(1,:), thl_tol**2 ) ) )
+          thlm_pert_neg_rt = pdf_params%thl_1(1,:) - ( sign_rtpthlp * Lscale_pert_coef &
+                     * sqrt( max( pdf_params%varnce_thl_1(1,:), thl_tol**2 ) ) )
+          rtm_pert_neg_rt = pdf_params%rt_1(1,:) &
+                     - Lscale_pert_coef * sqrt( max( pdf_params%varnce_rt_1(1,:), rt_tol**2 ) )
+          !Lscale_weight = 1.0_core_rknd - pdf_params%mixt_frac(1,:)
         endwhere
 
         mu_pert_pos_rt  = newmu / Lscale_mu_coef

@@ -201,18 +201,18 @@ module mixed_moment_PDF_integrals
        ! Unpack the means of w, rt, and thl in each PDF component.
        mu_w_1   = mu_x_1_n(k,iiPDF_w)
        mu_w_2   = mu_x_2_n(k,iiPDF_w)
-       mu_rt_1  = pdf_params%rt_1(k)
-       mu_rt_2  = pdf_params%rt_2(k)
-       mu_thl_1 = pdf_params%thl_1(k)
-       mu_thl_2 = pdf_params%thl_2(k)
+       mu_rt_1  = pdf_params%rt_1(1,k)
+       mu_rt_2  = pdf_params%rt_2(1,k)
+       mu_thl_1 = pdf_params%thl_1(1,k)
+       mu_thl_2 = pdf_params%thl_2(1,k)
 
        ! Unpack the standard deviations of w, rt, and thl in each PDF component.
        sigma_w_1   = sigma_x_1_n(k,iiPDF_w)
        sigma_w_2   = sigma_x_2_n(k,iiPDF_w)
-       sigma_rt_1  = sqrt( pdf_params%varnce_rt_1(k) )
-       sigma_rt_2  = sqrt( pdf_params%varnce_rt_2(k) )
-       sigma_thl_1 = sqrt( pdf_params%varnce_thl_1(k) )
-       sigma_thl_2 = sqrt( pdf_params%varnce_thl_2(k) )
+       sigma_rt_1  = sqrt( pdf_params%varnce_rt_1(1,k) )
+       sigma_rt_2  = sqrt( pdf_params%varnce_rt_2(1,k) )
+       sigma_thl_1 = sqrt( pdf_params%varnce_thl_1(1,k) )
+       sigma_thl_2 = sqrt( pdf_params%varnce_thl_2(1,k) )
 
        ! Unpack the standard deviations of chi and eta in each PDF component.
        sigma_chi_1 = sigma_x_1_n(k,iiPDF_chi)
@@ -221,7 +221,7 @@ module mixed_moment_PDF_integrals
        sigma_eta_2 = sigma_x_2_n(k,iiPDF_eta)
 
        ! Unpack the mixture fraction.
-       mixt_frac = pdf_params%mixt_frac(k)
+       mixt_frac = pdf_params%mixt_frac(1,k)
 
        ! Unpack the precipitation fraction in each PDF component.
        precip_frac_1 = precip_fracs%precip_frac_1(1,k)
@@ -229,10 +229,10 @@ module mixed_moment_PDF_integrals
 
        ! Unpack the coefficients of rt and thl in the chi/eta PDF transformation
        ! equations for each PDF component.
-       crt_1  = pdf_params%crt_1(k)
-       crt_2  = pdf_params%crt_2(k)
-       cthl_1 = pdf_params%cthl_1(k)
-       cthl_2 = pdf_params%cthl_2(k)
+       crt_1  = pdf_params%crt_1(1,k)
+       crt_2  = pdf_params%crt_2(1,k)
+       cthl_1 = pdf_params%cthl_1(1,k)
+       cthl_2 = pdf_params%cthl_2(1,k)
 
        ! Re-calculate rtm, thlm, and wm from PDF parameters.
        ! This needs to be done because rtm and thlm have been advanced since

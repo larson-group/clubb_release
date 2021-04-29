@@ -393,8 +393,8 @@ module microphys_driver
     aeromass = aeromass_value
 
     ! Determine 's' from Mellor (1977)
-    chi(:) = pdf_params%mixt_frac * pdf_params%chi_1 &
-                  + ( one - pdf_params%mixt_frac ) * pdf_params%chi_2
+    chi(:) = pdf_params%mixt_frac(1,:) * pdf_params%chi_1(1,:) &
+                  + ( one - pdf_params%mixt_frac(1,:) ) * pdf_params%chi_2(1,:)
 
     ! Compute standard deviation of vertical velocity in the grid column
     wtmp(:) = sqrt( wp2_zt(:) )
@@ -501,16 +501,16 @@ module microphys_driver
         if ( l_morr_xp2_mc ) then
           !Use the moister rt_1/rt_2 rather than rtm in morrison microphys
           !Also use the colder of thl_1/thl_2
-          where ( pdf_params%rt_1 > pdf_params%rt_2 )
-            rvm = pdf_params%rt_1 - pdf_params%rc_1
+          where ( pdf_params%rt_1(1,:) > pdf_params%rt_2(1,:) )
+            rvm = pdf_params%rt_1(1,:) - pdf_params%rc_1(1,:)
           else where
-            rvm = pdf_params%rt_2 - pdf_params%rc_2
+            rvm = pdf_params%rt_2(1,:) - pdf_params%rc_2(1,:)
           end where
 
-          where ( pdf_params%thl_1 < pdf_params%thl_2 )
-            thlm_morr = pdf_params%thl_1
+          where ( pdf_params%thl_1(1,:) < pdf_params%thl_2(1,:) )
+            thlm_morr = pdf_params%thl_1(1,:)
           else where
-            thlm_morr = pdf_params%thl_2
+            thlm_morr = pdf_params%thl_2(1,:)
           end where
         else
           rvm = rtm - rcm

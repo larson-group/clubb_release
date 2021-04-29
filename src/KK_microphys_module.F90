@@ -719,7 +719,7 @@ module KK_microphys_module
                             l_src_adj_enabled, l_evap_adj_enabled )
 
     ! Setup mixture fraction.
-    mixt_frac = pdf_params%mixt_frac    
+    mixt_frac = pdf_params%mixt_frac(1,:)    
 
     !!! Microphysics tendency loop.
     ! Loop over all model thermodynamic level above the model lower boundary.
@@ -837,10 +837,10 @@ module KK_microphys_module
                                          KK_evap_coef, KK_auto_coef, &
                                          KK_accr_coef, KK_evap_tndcy(k), &
                                          KK_auto_tndcy(k), KK_accr_tndcy(k), &
-                                         pdf_params%rt_1(k), pdf_params%rt_2(k), &
-                                         pdf_params%thl_1(k), pdf_params%thl_2(k), &
-                                         pdf_params%crt_1(k), pdf_params%crt_2(k), &
-                                         pdf_params%cthl_1(k), pdf_params%cthl_2(k), &
+                                         pdf_params%rt_1(1,k), pdf_params%rt_2(1,k), &
+                                         pdf_params%thl_1(1,k), pdf_params%thl_2(1,k), &
+                                         pdf_params%crt_1(1,k), pdf_params%crt_2(1,k), &
+                                         pdf_params%cthl_1(1,k), pdf_params%cthl_2(1,k), &
                                          k, l_stats_samp, &
                                          wprtp_mc_zt(k), &
                                          wpthlp_mc_zt(k), &

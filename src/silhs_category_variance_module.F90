@@ -234,8 +234,8 @@ module silhs_category_variance_module
 
       category_real_probs = &
         compute_category_real_probs( importance_categories, &
-                                     pdf_params%cloud_frac_1(k), pdf_params%cloud_frac_2(k), &
-                                     pdf_params%mixt_frac(k), &
+                                     pdf_params%cloud_frac_1(1,k), pdf_params%cloud_frac_2(1,k), &
+                                     pdf_params%mixt_frac(1,k), &
                                      precip_fracs%precip_frac_1(1,k), &
                                      precip_fracs%precip_frac_2(1,k) )
 

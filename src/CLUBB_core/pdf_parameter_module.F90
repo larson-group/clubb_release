@@ -25,7 +25,7 @@ module pdf_parameter_module
   ! CLUBB's PDF parameters.
   type pdf_parameter
 
-    real( kind = core_rknd ), dimension(:), allocatable :: &
+    real( kind = core_rknd ), dimension(:,:), allocatable :: &
       w_1,             & ! Mean of w (1st PDF component)                   [m/s]
       w_2,             & ! Mean of w (2nd PDF component)                   [m/s]
       varnce_w_1,      & ! Variance of w (1st PDF component)           [m^2/s^2]
@@ -166,7 +166,7 @@ module pdf_parameter_module
   contains
   
   !=============================================================================
-  subroutine init_pdf_params( nz, pdf_params )
+  subroutine init_pdf_params( nz, ngrdcol, pdf_params )
 
     ! Description:
     ! Initializes all PDF parameters in the variable type pdf_parameter.
@@ -181,107 +181,108 @@ module pdf_parameter_module
 
     ! Input Variable(s)
     integer, intent(in) :: &
-      nz    ! Number of vertical grid levels    [-]
+      nz,   & ! Number of vertical grid levels    [-]
+      ngrdcol ! Number of grid columns            [-]
 
     ! Output Variable(s)
     type(pdf_parameter), intent(out) :: &
       pdf_params    ! PDF parameters            [units vary]
 
-    allocate( pdf_params%w_1(nz), &
-              pdf_params%w_2(nz), &
-              pdf_params%varnce_w_1(nz), &
-              pdf_params%varnce_w_2(nz), &
-              pdf_params%rt_1(nz), &
-              pdf_params%rt_2(nz), &
-              pdf_params%varnce_rt_1(nz), &
-              pdf_params%varnce_rt_2(nz), &
-              pdf_params%thl_1(nz), &
-              pdf_params%thl_2(nz), &
-              pdf_params%varnce_thl_1(nz), &
-              pdf_params%varnce_thl_2(nz), &
-              pdf_params%corr_w_rt_1(nz), &
-              pdf_params%corr_w_rt_2(nz), &
-              pdf_params%corr_w_thl_1(nz), &
-              pdf_params%corr_w_thl_2(nz), &
-              pdf_params%corr_rt_thl_1(nz), &
-              pdf_params%corr_rt_thl_2(nz), &
-              pdf_params%alpha_thl(nz), &
-              pdf_params%alpha_rt(nz), &
-              pdf_params%crt_1(nz), &
-              pdf_params%crt_2(nz), &
-              pdf_params%cthl_1(nz), &
-              pdf_params%cthl_2(nz), &
-              pdf_params%chi_1(nz), &
-              pdf_params%chi_2(nz), &
-              pdf_params%stdev_chi_1(nz), &
-              pdf_params%stdev_chi_2(nz), &
-              pdf_params%stdev_eta_1(nz), &
-              pdf_params%stdev_eta_2(nz), &
-              pdf_params%covar_chi_eta_1(nz), &
-              pdf_params%covar_chi_eta_2(nz), &
-              pdf_params%corr_w_chi_1(nz), & 
-              pdf_params%corr_w_chi_2(nz), &
-              pdf_params%corr_w_eta_1(nz), & 
-              pdf_params%corr_w_eta_2(nz), & 
-              pdf_params%corr_chi_eta_1(nz), & 
-              pdf_params%corr_chi_eta_2(nz), &
-              pdf_params%rsatl_1(nz), &
-              pdf_params%rsatl_2(nz), &
-              pdf_params%rc_1(nz), &
-              pdf_params%rc_2(nz), &
-              pdf_params%cloud_frac_1(nz), &
-              pdf_params%cloud_frac_2(nz), &
-              pdf_params%mixt_frac(nz), &
-              pdf_params%ice_supersat_frac_1(nz), &
-              pdf_params%ice_supersat_frac_2(nz) )
+    allocate( pdf_params%w_1(ngrdcol,nz), &
+              pdf_params%w_2(ngrdcol,nz), &
+              pdf_params%varnce_w_1(ngrdcol,nz), &
+              pdf_params%varnce_w_2(ngrdcol,nz), &
+              pdf_params%rt_1(ngrdcol,nz), &
+              pdf_params%rt_2(ngrdcol,nz), &
+              pdf_params%varnce_rt_1(ngrdcol,nz), &
+              pdf_params%varnce_rt_2(ngrdcol,nz), &
+              pdf_params%thl_1(ngrdcol,nz), &
+              pdf_params%thl_2(ngrdcol,nz), &
+              pdf_params%varnce_thl_1(ngrdcol,nz), &
+              pdf_params%varnce_thl_2(ngrdcol,nz), &
+              pdf_params%corr_w_rt_1(ngrdcol,nz), &
+              pdf_params%corr_w_rt_2(ngrdcol,nz), &
+              pdf_params%corr_w_thl_1(ngrdcol,nz), &
+              pdf_params%corr_w_thl_2(ngrdcol,nz), &
+              pdf_params%corr_rt_thl_1(ngrdcol,nz), &
+              pdf_params%corr_rt_thl_2(ngrdcol,nz), &
+              pdf_params%alpha_thl(ngrdcol,nz), &
+              pdf_params%alpha_rt(ngrdcol,nz), &
+              pdf_params%crt_1(ngrdcol,nz), &
+              pdf_params%crt_2(ngrdcol,nz), &
+              pdf_params%cthl_1(ngrdcol,nz), &
+              pdf_params%cthl_2(ngrdcol,nz), &
+              pdf_params%chi_1(ngrdcol,nz), &
+              pdf_params%chi_2(ngrdcol,nz), &
+              pdf_params%stdev_chi_1(ngrdcol,nz), &
+              pdf_params%stdev_chi_2(ngrdcol,nz), &
+              pdf_params%stdev_eta_1(ngrdcol,nz), &
+              pdf_params%stdev_eta_2(ngrdcol,nz), &
+              pdf_params%covar_chi_eta_1(ngrdcol,nz), &
+              pdf_params%covar_chi_eta_2(ngrdcol,nz), &
+              pdf_params%corr_w_chi_1(ngrdcol,nz), & 
+              pdf_params%corr_w_chi_2(ngrdcol,nz), &
+              pdf_params%corr_w_eta_1(ngrdcol,nz), & 
+              pdf_params%corr_w_eta_2(ngrdcol,nz), & 
+              pdf_params%corr_chi_eta_1(ngrdcol,nz), & 
+              pdf_params%corr_chi_eta_2(ngrdcol,nz), &
+              pdf_params%rsatl_1(ngrdcol,nz), &
+              pdf_params%rsatl_2(ngrdcol,nz), &
+              pdf_params%rc_1(ngrdcol,nz), &
+              pdf_params%rc_2(ngrdcol,nz), &
+              pdf_params%cloud_frac_1(ngrdcol,nz), &
+              pdf_params%cloud_frac_2(ngrdcol,nz), &
+              pdf_params%mixt_frac(ngrdcol,nz), &
+              pdf_params%ice_supersat_frac_1(ngrdcol,nz), &
+              pdf_params%ice_supersat_frac_2(ngrdcol,nz) )
 
-    pdf_params%w_1 = zero
-    pdf_params%w_2 = zero
-    pdf_params%varnce_w_1 = zero
-    pdf_params%varnce_w_2 = zero
-    pdf_params%rt_1 = zero
-    pdf_params%rt_2 = zero
-    pdf_params%varnce_rt_1 = zero
-    pdf_params%varnce_rt_2 = zero
-    pdf_params%thl_1 = zero
-    pdf_params%thl_2 = zero
-    pdf_params%varnce_thl_1 = zero
-    pdf_params%varnce_thl_2 = zero
-    pdf_params%corr_w_rt_1 = zero
-    pdf_params%corr_w_rt_2 = zero
-    pdf_params%corr_w_thl_1 = zero
-    pdf_params%corr_w_thl_2 = zero
-    pdf_params%corr_rt_thl_1 = zero
-    pdf_params%corr_rt_thl_2 = zero
-    pdf_params%alpha_thl = zero
-    pdf_params%alpha_rt = zero
-    pdf_params%crt_1 = zero
-    pdf_params%crt_2 = zero
-    pdf_params%cthl_1 = zero
-    pdf_params%cthl_2 = zero
-    pdf_params%chi_1 = zero
-    pdf_params%chi_2 = zero
-    pdf_params%stdev_chi_1 = zero
-    pdf_params%stdev_chi_2 = zero
-    pdf_params%stdev_eta_1 = zero
-    pdf_params%stdev_eta_2 = zero
-    pdf_params%covar_chi_eta_1 = zero
-    pdf_params%covar_chi_eta_2 = zero
-    pdf_params%corr_w_chi_1 = zero 
-    pdf_params%corr_w_chi_2 = zero 
-    pdf_params%corr_w_eta_1 = zero 
-    pdf_params%corr_w_eta_2 = zero 
-    pdf_params%corr_chi_eta_1 = zero 
-    pdf_params%corr_chi_eta_2 = zero 
-    pdf_params%rsatl_1 = zero
-    pdf_params%rsatl_2 = zero
-    pdf_params%rc_1 = zero
-    pdf_params%rc_2 = zero
-    pdf_params%cloud_frac_1 = zero
-    pdf_params%cloud_frac_2 = zero
-    pdf_params%mixt_frac = zero
-    pdf_params%ice_supersat_frac_1 = zero
-    pdf_params%ice_supersat_frac_2 = zero
+    pdf_params%w_1(1,:) = zero
+    pdf_params%w_2(1,:) = zero
+    pdf_params%varnce_w_1(1,:) = zero
+    pdf_params%varnce_w_2(1,:) = zero
+    pdf_params%rt_1(1,:) = zero
+    pdf_params%rt_2(1,:) = zero
+    pdf_params%varnce_rt_1(1,:) = zero
+    pdf_params%varnce_rt_2(1,:) = zero
+    pdf_params%thl_1(1,:) = zero
+    pdf_params%thl_2(1,:) = zero
+    pdf_params%varnce_thl_1(1,:) = zero
+    pdf_params%varnce_thl_2(1,:) = zero
+    pdf_params%corr_w_rt_1(1,:) = zero
+    pdf_params%corr_w_rt_2(1,:) = zero
+    pdf_params%corr_w_thl_1(1,:) = zero
+    pdf_params%corr_w_thl_2(1,:) = zero
+    pdf_params%corr_rt_thl_1(1,:) = zero
+    pdf_params%corr_rt_thl_2(1,:) = zero
+    pdf_params%alpha_thl(1,:) = zero
+    pdf_params%alpha_rt(1,:) = zero
+    pdf_params%crt_1(1,:) = zero
+    pdf_params%crt_2(1,:) = zero
+    pdf_params%cthl_1(1,:) = zero
+    pdf_params%cthl_2(1,:) = zero
+    pdf_params%chi_1(1,:) = zero
+    pdf_params%chi_2(1,:) = zero
+    pdf_params%stdev_chi_1(1,:) = zero
+    pdf_params%stdev_chi_2(1,:) = zero
+    pdf_params%stdev_eta_1(1,:) = zero
+    pdf_params%stdev_eta_2(1,:) = zero
+    pdf_params%covar_chi_eta_1(1,:) = zero
+    pdf_params%covar_chi_eta_2(1,:) = zero
+    pdf_params%corr_w_chi_1(1,:) = zero 
+    pdf_params%corr_w_chi_2(1,:) = zero 
+    pdf_params%corr_w_eta_1(1,:) = zero 
+    pdf_params%corr_w_eta_2(1,:) = zero 
+    pdf_params%corr_chi_eta_1(1,:) = zero 
+    pdf_params%corr_chi_eta_2(1,:) = zero 
+    pdf_params%rsatl_1(1,:) = zero
+    pdf_params%rsatl_2(1,:) = zero
+    pdf_params%rc_1(1,:) = zero
+    pdf_params%rc_2(1,:) = zero
+    pdf_params%cloud_frac_1(1,:) = zero
+    pdf_params%cloud_frac_2(1,:) = zero
+    pdf_params%mixt_frac(1,:) = zero
+    pdf_params%ice_supersat_frac_1(1,:) = zero
+    pdf_params%ice_supersat_frac_2(1,:) = zero
 
 
     return
@@ -414,53 +415,53 @@ module pdf_parameter_module
         k_end = nz
     end if
 
-    r_param_array(:,1) = pdf_params%w_1(k_start:k_end)
-    r_param_array(:,2) = pdf_params%w_2(k_start:k_end)
-    r_param_array(:,3) = pdf_params%varnce_w_1(k_start:k_end)
-    r_param_array(:,4) = pdf_params%varnce_w_2(k_start:k_end)
-    r_param_array(:,5) = pdf_params%rt_1(k_start:k_end)
-    r_param_array(:,6) = pdf_params%rt_2(k_start:k_end)
-    r_param_array(:,7) = pdf_params%varnce_rt_1(k_start:k_end)
-    r_param_array(:,8) = pdf_params%varnce_rt_2(k_start:k_end)
-    r_param_array(:,9) = pdf_params%thl_1(k_start:k_end)
-    r_param_array(:,10) = pdf_params%thl_2(k_start:k_end)
-    r_param_array(:,11) = pdf_params%varnce_thl_1(k_start:k_end)
-    r_param_array(:,12) = pdf_params%varnce_thl_2(k_start:k_end)
-    r_param_array(:,13) = pdf_params%corr_w_rt_1(k_start:k_end)
-    r_param_array(:,14) = pdf_params%corr_w_rt_2(k_start:k_end)
-    r_param_array(:,15) = pdf_params%corr_w_thl_1(k_start:k_end)
-    r_param_array(:,16) = pdf_params%corr_w_thl_2(k_start:k_end)
-    r_param_array(:,17) = pdf_params%corr_rt_thl_1(k_start:k_end)
-    r_param_array(:,18) = pdf_params%corr_rt_thl_2(k_start:k_end)
-    r_param_array(:,19) = pdf_params%alpha_thl(k_start:k_end)
-    r_param_array(:,20) = pdf_params%alpha_rt(k_start:k_end)
-    r_param_array(:,21) = pdf_params%crt_1(k_start:k_end)
-    r_param_array(:,22) = pdf_params%crt_2(k_start:k_end)
-    r_param_array(:,23) = pdf_params%cthl_1(k_start:k_end)
-    r_param_array(:,24) = pdf_params%cthl_2(k_start:k_end)
-    r_param_array(:,25) = pdf_params%chi_1(k_start:k_end)
-    r_param_array(:,26) = pdf_params%chi_2(k_start:k_end)
-    r_param_array(:,27) = pdf_params%stdev_chi_1(k_start:k_end)
-    r_param_array(:,28) = pdf_params%stdev_chi_2(k_start:k_end)
-    r_param_array(:,29) = pdf_params%stdev_eta_1(k_start:k_end)
-    r_param_array(:,30) = pdf_params%stdev_eta_2(k_start:k_end)
-    r_param_array(:,31) = pdf_params%covar_chi_eta_1(k_start:k_end)
-    r_param_array(:,32) = pdf_params%covar_chi_eta_2(k_start:k_end)
-    r_param_array(:,33) = pdf_params%corr_w_chi_1(k_start:k_end) 
-    r_param_array(:,34) = pdf_params%corr_w_chi_2(k_start:k_end) 
-    r_param_array(:,35) = pdf_params%corr_w_eta_1(k_start:k_end) 
-    r_param_array(:,36) = pdf_params%corr_w_eta_2(k_start:k_end) 
-    r_param_array(:,37) = pdf_params%corr_chi_eta_1(k_start:k_end) 
-    r_param_array(:,38) = pdf_params%corr_chi_eta_2(k_start:k_end) 
-    r_param_array(:,39) = pdf_params%rsatl_1(k_start:k_end)
-    r_param_array(:,40) = pdf_params%rsatl_2(k_start:k_end)
-    r_param_array(:,41) = pdf_params%rc_1(k_start:k_end)
-    r_param_array(:,42) = pdf_params%rc_2(k_start:k_end)
-    r_param_array(:,43) = pdf_params%cloud_frac_1(k_start:k_end)
-    r_param_array(:,44) = pdf_params%cloud_frac_2(k_start:k_end)
-    r_param_array(:,45) = pdf_params%mixt_frac(k_start:k_end)
-    r_param_array(:,46) = pdf_params%ice_supersat_frac_1(k_start:k_end)
-    r_param_array(:,47) = pdf_params%ice_supersat_frac_2(k_start:k_end)
+    r_param_array(:,1) = pdf_params%w_1(1,k_start:k_end)
+    r_param_array(:,2) = pdf_params%w_2(1,k_start:k_end)
+    r_param_array(:,3) = pdf_params%varnce_w_1(1,k_start:k_end)
+    r_param_array(:,4) = pdf_params%varnce_w_2(1,k_start:k_end)
+    r_param_array(:,5) = pdf_params%rt_1(1,k_start:k_end)
+    r_param_array(:,6) = pdf_params%rt_2(1,k_start:k_end)
+    r_param_array(:,7) = pdf_params%varnce_rt_1(1,k_start:k_end)
+    r_param_array(:,8) = pdf_params%varnce_rt_2(1,k_start:k_end)
+    r_param_array(:,9) = pdf_params%thl_1(1,k_start:k_end)
+    r_param_array(:,10) = pdf_params%thl_2(1,k_start:k_end)
+    r_param_array(:,11) = pdf_params%varnce_thl_1(1,k_start:k_end)
+    r_param_array(:,12) = pdf_params%varnce_thl_2(1,k_start:k_end)
+    r_param_array(:,13) = pdf_params%corr_w_rt_1(1,k_start:k_end)
+    r_param_array(:,14) = pdf_params%corr_w_rt_2(1,k_start:k_end)
+    r_param_array(:,15) = pdf_params%corr_w_thl_1(1,k_start:k_end)
+    r_param_array(:,16) = pdf_params%corr_w_thl_2(1,k_start:k_end)
+    r_param_array(:,17) = pdf_params%corr_rt_thl_1(1,k_start:k_end)
+    r_param_array(:,18) = pdf_params%corr_rt_thl_2(1,k_start:k_end)
+    r_param_array(:,19) = pdf_params%alpha_thl(1,k_start:k_end)
+    r_param_array(:,20) = pdf_params%alpha_rt(1,k_start:k_end)
+    r_param_array(:,21) = pdf_params%crt_1(1,k_start:k_end)
+    r_param_array(:,22) = pdf_params%crt_2(1,k_start:k_end)
+    r_param_array(:,23) = pdf_params%cthl_1(1,k_start:k_end)
+    r_param_array(:,24) = pdf_params%cthl_2(1,k_start:k_end)
+    r_param_array(:,25) = pdf_params%chi_1(1,k_start:k_end)
+    r_param_array(:,26) = pdf_params%chi_2(1,k_start:k_end)
+    r_param_array(:,27) = pdf_params%stdev_chi_1(1,k_start:k_end)
+    r_param_array(:,28) = pdf_params%stdev_chi_2(1,k_start:k_end)
+    r_param_array(:,29) = pdf_params%stdev_eta_1(1,k_start:k_end)
+    r_param_array(:,30) = pdf_params%stdev_eta_2(1,k_start:k_end)
+    r_param_array(:,31) = pdf_params%covar_chi_eta_1(1,k_start:k_end)
+    r_param_array(:,32) = pdf_params%covar_chi_eta_2(1,k_start:k_end)
+    r_param_array(:,33) = pdf_params%corr_w_chi_1(1,k_start:k_end) 
+    r_param_array(:,34) = pdf_params%corr_w_chi_2(1,k_start:k_end) 
+    r_param_array(:,35) = pdf_params%corr_w_eta_1(1,k_start:k_end) 
+    r_param_array(:,36) = pdf_params%corr_w_eta_2(1,k_start:k_end) 
+    r_param_array(:,37) = pdf_params%corr_chi_eta_1(1,k_start:k_end) 
+    r_param_array(:,38) = pdf_params%corr_chi_eta_2(1,k_start:k_end) 
+    r_param_array(:,39) = pdf_params%rsatl_1(1,k_start:k_end)
+    r_param_array(:,40) = pdf_params%rsatl_2(1,k_start:k_end)
+    r_param_array(:,41) = pdf_params%rc_1(1,k_start:k_end)
+    r_param_array(:,42) = pdf_params%rc_2(1,k_start:k_end)
+    r_param_array(:,43) = pdf_params%cloud_frac_1(1,k_start:k_end)
+    r_param_array(:,44) = pdf_params%cloud_frac_2(1,k_start:k_end)
+    r_param_array(:,45) = pdf_params%mixt_frac(1,k_start:k_end)
+    r_param_array(:,46) = pdf_params%ice_supersat_frac_1(1,k_start:k_end)
+    r_param_array(:,47) = pdf_params%ice_supersat_frac_2(1,k_start:k_end)
 
   end subroutine pack_pdf_params
 
@@ -489,53 +490,53 @@ module pdf_parameter_module
         k_end = nz
     end if
     
-    pdf_params%w_1(k_start:k_end) = r_param_array(:,1)
-    pdf_params%w_2(k_start:k_end) = r_param_array(:,2)
-    pdf_params%varnce_w_1(k_start:k_end) = r_param_array(:,3)
-    pdf_params%varnce_w_2(k_start:k_end) = r_param_array(:,4)
-    pdf_params%rt_1(k_start:k_end) = r_param_array(:,5)
-    pdf_params%rt_2(k_start:k_end) = r_param_array(:,6)
-    pdf_params%varnce_rt_1(k_start:k_end) = r_param_array(:,7)
-    pdf_params%varnce_rt_2(k_start:k_end)= r_param_array(:,8)
-    pdf_params%thl_1(k_start:k_end) = r_param_array(:,9)
-    pdf_params%thl_2(k_start:k_end) = r_param_array(:,10)
-    pdf_params%varnce_thl_1(k_start:k_end) = r_param_array(:,11)
-    pdf_params%varnce_thl_2(k_start:k_end) = r_param_array(:,12)
-    pdf_params%corr_w_rt_1(k_start:k_end) = r_param_array(:,13)
-    pdf_params%corr_w_rt_2(k_start:k_end) = r_param_array(:,14)
-    pdf_params%corr_w_thl_1(k_start:k_end) = r_param_array(:,15)
-    pdf_params%corr_w_thl_2(k_start:k_end) = r_param_array(:,16)
-    pdf_params%corr_rt_thl_1(k_start:k_end) = r_param_array(:,17)
-    pdf_params%corr_rt_thl_2(k_start:k_end) = r_param_array(:,18)
-    pdf_params%alpha_thl(k_start:k_end) = r_param_array(:,19)
-    pdf_params%alpha_rt(k_start:k_end) = r_param_array(:,20)
-    pdf_params%crt_1(k_start:k_end) = r_param_array(:,21)
-    pdf_params%crt_2(k_start:k_end) = r_param_array(:,22)
-    pdf_params%cthl_1(k_start:k_end) = r_param_array(:,23)
-    pdf_params%cthl_2(k_start:k_end) = r_param_array(:,24)
-    pdf_params%chi_1(k_start:k_end) = r_param_array(:,25)
-    pdf_params%chi_2(k_start:k_end) = r_param_array(:,26)
-    pdf_params%stdev_chi_1(k_start:k_end) = r_param_array(:,27)
-    pdf_params%stdev_chi_2(k_start:k_end) = r_param_array(:,28)
-    pdf_params%stdev_eta_1(k_start:k_end) = r_param_array(:,29)
-    pdf_params%stdev_eta_2(k_start:k_end) = r_param_array(:,30)
-    pdf_params%covar_chi_eta_1(k_start:k_end) = r_param_array(:,31)
-    pdf_params%covar_chi_eta_2(k_start:k_end) = r_param_array(:,32)
-    pdf_params%corr_w_chi_1(k_start:k_end) = r_param_array(:,33)
-    pdf_params%corr_w_chi_2(k_start:k_end) = r_param_array(:,34)
-    pdf_params%corr_w_eta_1(k_start:k_end) = r_param_array(:,35)
-    pdf_params%corr_w_eta_2(k_start:k_end) = r_param_array(:,36)
-    pdf_params%corr_chi_eta_1(k_start:k_end) = r_param_array(:,37)
-    pdf_params%corr_chi_eta_2(k_start:k_end) = r_param_array(:,38)
-    pdf_params%rsatl_1(k_start:k_end) = r_param_array(:,39)
-    pdf_params%rsatl_2(k_start:k_end) = r_param_array(:,40)
-    pdf_params%rc_1(k_start:k_end) = r_param_array(:,41)
-    pdf_params%rc_2(k_start:k_end) = r_param_array(:,42)
-    pdf_params%cloud_frac_1(k_start:k_end) = r_param_array(:,43)
-    pdf_params%cloud_frac_2(k_start:k_end) = r_param_array(:,44)
-    pdf_params%mixt_frac(k_start:k_end) = r_param_array(:,45)
-    pdf_params%ice_supersat_frac_1(k_start:k_end) = r_param_array(:,46)
-    pdf_params%ice_supersat_frac_2(k_start:k_end) = r_param_array(:,47)
+    pdf_params%w_1(1,k_start:k_end) = r_param_array(:,1)
+    pdf_params%w_2(1,k_start:k_end) = r_param_array(:,2)
+    pdf_params%varnce_w_1(1,k_start:k_end) = r_param_array(:,3)
+    pdf_params%varnce_w_2(1,k_start:k_end) = r_param_array(:,4)
+    pdf_params%rt_1(1,k_start:k_end) = r_param_array(:,5)
+    pdf_params%rt_2(1,k_start:k_end) = r_param_array(:,6)
+    pdf_params%varnce_rt_1(1,k_start:k_end) = r_param_array(:,7)
+    pdf_params%varnce_rt_2(1,k_start:k_end)= r_param_array(:,8)
+    pdf_params%thl_1(1,k_start:k_end) = r_param_array(:,9)
+    pdf_params%thl_2(1,k_start:k_end) = r_param_array(:,10)
+    pdf_params%varnce_thl_1(1,k_start:k_end) = r_param_array(:,11)
+    pdf_params%varnce_thl_2(1,k_start:k_end) = r_param_array(:,12)
+    pdf_params%corr_w_rt_1(1,k_start:k_end) = r_param_array(:,13)
+    pdf_params%corr_w_rt_2(1,k_start:k_end) = r_param_array(:,14)
+    pdf_params%corr_w_thl_1(1,k_start:k_end) = r_param_array(:,15)
+    pdf_params%corr_w_thl_2(1,k_start:k_end) = r_param_array(:,16)
+    pdf_params%corr_rt_thl_1(1,k_start:k_end) = r_param_array(:,17)
+    pdf_params%corr_rt_thl_2(1,k_start:k_end) = r_param_array(:,18)
+    pdf_params%alpha_thl(1,k_start:k_end) = r_param_array(:,19)
+    pdf_params%alpha_rt(1,k_start:k_end) = r_param_array(:,20)
+    pdf_params%crt_1(1,k_start:k_end) = r_param_array(:,21)
+    pdf_params%crt_2(1,k_start:k_end) = r_param_array(:,22)
+    pdf_params%cthl_1(1,k_start:k_end) = r_param_array(:,23)
+    pdf_params%cthl_2(1,k_start:k_end) = r_param_array(:,24)
+    pdf_params%chi_1(1,k_start:k_end) = r_param_array(:,25)
+    pdf_params%chi_2(1,k_start:k_end) = r_param_array(:,26)
+    pdf_params%stdev_chi_1(1,k_start:k_end) = r_param_array(:,27)
+    pdf_params%stdev_chi_2(1,k_start:k_end) = r_param_array(:,28)
+    pdf_params%stdev_eta_1(1,k_start:k_end) = r_param_array(:,29)
+    pdf_params%stdev_eta_2(1,k_start:k_end) = r_param_array(:,30)
+    pdf_params%covar_chi_eta_1(1,k_start:k_end) = r_param_array(:,31)
+    pdf_params%covar_chi_eta_2(1,k_start:k_end) = r_param_array(:,32)
+    pdf_params%corr_w_chi_1(1,k_start:k_end) = r_param_array(:,33)
+    pdf_params%corr_w_chi_2(1,k_start:k_end) = r_param_array(:,34)
+    pdf_params%corr_w_eta_1(1,k_start:k_end) = r_param_array(:,35)
+    pdf_params%corr_w_eta_2(1,k_start:k_end) = r_param_array(:,36)
+    pdf_params%corr_chi_eta_1(1,k_start:k_end) = r_param_array(:,37)
+    pdf_params%corr_chi_eta_2(1,k_start:k_end) = r_param_array(:,38)
+    pdf_params%rsatl_1(1,k_start:k_end) = r_param_array(:,39)
+    pdf_params%rsatl_2(1,k_start:k_end) = r_param_array(:,40)
+    pdf_params%rc_1(1,k_start:k_end) = r_param_array(:,41)
+    pdf_params%rc_2(1,k_start:k_end) = r_param_array(:,42)
+    pdf_params%cloud_frac_1(1,k_start:k_end) = r_param_array(:,43)
+    pdf_params%cloud_frac_2(1,k_start:k_end) = r_param_array(:,44)
+    pdf_params%mixt_frac(1,k_start:k_end) = r_param_array(:,45)
+    pdf_params%ice_supersat_frac_1(1,k_start:k_end) = r_param_array(:,46)
+    pdf_params%ice_supersat_frac_2(1,k_start:k_end) = r_param_array(:,47)
 
   end subroutine unpack_pdf_params
 

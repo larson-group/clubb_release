@@ -203,7 +203,7 @@ module setup_clubb_pdf_params
       corr_array_n_cloud, & ! Prescribed normal space corr. array in cloud  [-]
       corr_array_n_below    ! Prescribed normal space corr. array below cl. [-]
 
-    type(pdf_parameter), dimension(ngrdcol), intent(in) :: &
+    type(pdf_parameter), intent(in) :: &
       pdf_params    ! PDF parameters                               [units vary]
 
     logical, intent(in) :: &
@@ -378,23 +378,23 @@ module setup_clubb_pdf_params
 
     do j = 1, ngrdcol
       ! Setup some of the PDF parameters
-      mu_w_1(j,:)       = pdf_params(j)%w_1
-      mu_w_2(j,:)       = pdf_params(j)%w_2
-      mu_chi_1(j,:)     = pdf_params(j)%chi_1
-      mu_chi_2(j,:)     = pdf_params(j)%chi_2
-      sigma_w_1(j,:)    = sqrt( pdf_params(j)%varnce_w_1 )
-      sigma_w_2(j,:)    = sqrt( pdf_params(j)%varnce_w_2 )
-      sigma_chi_1(j,:)  = pdf_params(j)%stdev_chi_1
-      sigma_chi_2(j,:)  = pdf_params(j)%stdev_chi_2
-      sigma_eta_1(j,:)  = pdf_params(j)%stdev_eta_1
-      sigma_eta_2(j,:)  = pdf_params(j)%stdev_eta_2
-      rc_1(j,:)         = pdf_params(j)%rc_1
-      rc_2(j,:)         = pdf_params(j)%rc_2
-      thl_1(j,:)        = pdf_params(j)%thl_1
-      thl_2(j,:)        = pdf_params(j)%thl_2
-      cloud_frac_1(j,:) = pdf_params(j)%cloud_frac_1
-      cloud_frac_2(j,:) = pdf_params(j)%cloud_frac_2
-      mixt_frac(j,:)    = pdf_params(j)%mixt_frac
+      mu_w_1(j,:)       = pdf_params%w_1(j,:)
+      mu_w_2(j,:)       = pdf_params%w_2(j,:)
+      mu_chi_1(j,:)     = pdf_params%chi_1(j,:)
+      mu_chi_2(j,:)     = pdf_params%chi_2(j,:)
+      sigma_w_1(j,:)    = sqrt( pdf_params%varnce_w_1(j,:) )
+      sigma_w_2(j,:)    = sqrt( pdf_params%varnce_w_2(j,:) )
+      sigma_chi_1(j,:)  = pdf_params%stdev_chi_1(j,:)
+      sigma_chi_2(j,:)  = pdf_params%stdev_chi_2(j,:)
+      sigma_eta_1(j,:)  = pdf_params%stdev_eta_1(j,:)
+      sigma_eta_2(j,:)  = pdf_params%stdev_eta_2(j,:)
+      rc_1(j,:)         = pdf_params%rc_1(j,:)
+      rc_2(j,:)         = pdf_params%rc_2(j,:)
+      thl_1(j,:)        = pdf_params%thl_1(j,:)
+      thl_2(j,:)        = pdf_params%thl_2(j,:)
+      cloud_frac_1(j,:) = pdf_params%cloud_frac_1(j,:)
+      cloud_frac_2(j,:) = pdf_params%cloud_frac_2(j,:)
+      mixt_frac(j,:)    = pdf_params%mixt_frac(j,:)
     end do
 
     ! Note on hydrometeor PDF shape:
@@ -412,8 +412,8 @@ module setup_clubb_pdf_params
     if ( l_use_precip_frac ) then
       
       do j = 1, ngrdcol
-        ice_supersat_frac_1(j,:) = pdf_params(j)%ice_supersat_frac_1
-        ice_supersat_frac_2(j,:) = pdf_params(j)%ice_supersat_frac_2
+        ice_supersat_frac_1(j,:) = pdf_params%ice_supersat_frac_1(j,:)
+        ice_supersat_frac_2(j,:) = pdf_params%ice_supersat_frac_2(j,:)
       end do
       
       call precip_fraction( nz, ngrdcol,                                              & ! In
@@ -814,11 +814,11 @@ module setup_clubb_pdf_params
 
         do j = 1, ngrdcol
           rtp2_zt_from_chi &
-            = compute_rtp2_from_chi( pdf_params(j)%stdev_chi_1(:), pdf_params(j)%stdev_chi_2(:), &
-                                     pdf_params(j)%stdev_eta_1(:), pdf_params(j)%stdev_eta_2(:), &
-                                     pdf_params(j)%rt_1(:), pdf_params(j)%rt_2(:),               &
-                                     pdf_params(j)%crt_1(:), pdf_params(j)%crt_2(:),             &
-                                     pdf_params(j)%mixt_frac,                                    &   
+            = compute_rtp2_from_chi( pdf_params%stdev_chi_1(j,:), pdf_params%stdev_chi_2(j,:), &
+                                     pdf_params%stdev_eta_1(j,:), pdf_params%stdev_eta_2(j,:), &
+                                     pdf_params%rt_1(j,:), pdf_params%rt_2(j,:),               &
+                                     pdf_params%crt_1(j,:), pdf_params%crt_2(j,:),             &
+                                     pdf_params%mixt_frac(j,:),                                    &   
                                      corr_array_1_n(j,:,iiPDF_chi,iiPDF_eta),                    &
                                      corr_array_2_n(j,:,iiPDF_chi,iiPDF_eta) )
 
@@ -1445,7 +1445,7 @@ module setup_clubb_pdf_params
       corr_array_n_cloud, & ! Prescribed correlation array in cloud        [-]
       corr_array_n_below    ! Prescribed correlation array below cloud     [-]
       
-    type(pdf_parameter), dimension(ngrdcol), intent(in) :: &
+    type(pdf_parameter), intent(in) :: &
       pdf_params    ! PDF parameters                               [units vary]
 
     integer, intent(in) :: &
@@ -1582,8 +1582,8 @@ module setup_clubb_pdf_params
       
       ! Preferred, more accurate version.
       do j = 1, ngrdcol
-        corr_array_1_n(j,:,iiPDF_eta,iiPDF_chi) = pdf_params(j)%corr_chi_eta_1(:)
-        corr_array_2_n(j,:,iiPDF_eta,iiPDF_chi) = pdf_params(j)%corr_chi_eta_2(:)
+        corr_array_1_n(j,:,iiPDF_eta,iiPDF_chi) = pdf_params%corr_chi_eta_1(j,:)
+        corr_array_2_n(j,:,iiPDF_eta,iiPDF_chi) = pdf_params%corr_chi_eta_2(j,:)
       end do
       
     end if
@@ -1602,8 +1602,8 @@ module setup_clubb_pdf_params
       
       ! Preferred, more accurate version.
       do j = 1, ngrdcol
-        corr_array_1_n(j,:,iiPDF_w,iiPDF_chi) = pdf_params(j)%corr_w_chi_1(:)
-        corr_array_2_n(j,:,iiPDF_w,iiPDF_chi) = pdf_params(j)%corr_w_chi_2(:)
+        corr_array_1_n(j,:,iiPDF_w,iiPDF_chi) = pdf_params%corr_w_chi_1(j,:)
+        corr_array_2_n(j,:,iiPDF_w,iiPDF_chi) = pdf_params%corr_w_chi_2(j,:)
       end do
       
     end if 
@@ -1645,8 +1645,8 @@ module setup_clubb_pdf_params
       
       ! Preferred, more accurate version.
       do j = 1, ngrdcol
-        corr_array_1_n(j,:,iiPDF_w,iiPDF_chi) = pdf_params(j)%corr_w_chi_1(:)
-        corr_array_2_n(j,:,iiPDF_w,iiPDF_chi) = pdf_params(j)%corr_w_chi_2(:)
+        corr_array_1_n(j,:,iiPDF_w,iiPDF_chi) = pdf_params%corr_w_chi_1(j,:)
+        corr_array_2_n(j,:,iiPDF_w,iiPDF_chi) = pdf_params%corr_w_chi_2(j,:)
       end do
       
     end if 

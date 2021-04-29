@@ -124,16 +124,16 @@ module lh_microphys_var_covar_module
     lh_rt_mc_all = lh_rcm_mc_all + lh_rvm_mc_all
 
     ! Calculate means, variances, and covariances needed for the tendency terms
-    mean_rt = pdf_params%mixt_frac * pdf_params%rt_1 &
-      + (one - pdf_params%mixt_frac) * pdf_params%rt_2
+    mean_rt = pdf_params%mixt_frac(1,:) * pdf_params%rt_1(1,:) &
+      + (one - pdf_params%mixt_frac(1,:)) * pdf_params%rt_2(1,:)
     mean_rt(1) = zero
     
-    mean_thl = pdf_params%mixt_frac * pdf_params%thl_1 &
-      + (one - pdf_params%mixt_frac) * pdf_params%thl_2
+    mean_thl = pdf_params%mixt_frac(1,:) * pdf_params%thl_1(1,:) &
+      + (one - pdf_params%mixt_frac(1,:)) * pdf_params%thl_2(1,:)
     mean_thl(1) = zero
     
-    mean_w = pdf_params%mixt_frac * pdf_params%w_1 &
-      + (one - pdf_params%mixt_frac) * pdf_params%w_2
+    mean_w = pdf_params%mixt_frac(1,:) * pdf_params%w_1(1,:) &
+      + (one - pdf_params%mixt_frac(1,:)) * pdf_params%w_2(1,:)
     mean_w(1) = zero
     
     ! Calculate means, variances, and covariances needed for the tendency terms
