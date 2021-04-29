@@ -239,13 +239,10 @@ module latin_hypercube_driver_module
       mixt_frac(i,:)    = pdf_params%mixt_frac(i,:)
     end do
 
-    ! Compute k_lh_start, the starting vertical grid level 
-    !   for SILHS sampling
-    do i = 1, ngrdcol
-      k_lh_start(i) = compute_k_lh_start( nz, rcm(i,:), pdf_params, &
-                                          silhs_config_flags%l_rcm_in_cloud_k_lh_start, i, &
-                                          silhs_config_flags%l_random_k_lh_start )
-    end do
+    ! Compute k_lh_start, the starting vertical grid level for SILHS sampling
+    k_lh_start(:) = compute_k_lh_start( nz, ngrdcol, rcm, pdf_params, &
+                                        silhs_config_flags%l_rcm_in_cloud_k_lh_start, &
+                                        silhs_config_flags%l_random_k_lh_start )
                                      
     ! Calculate possible Sigma_Cholesky values
     ! Row-wise multiply of the elements of a lower triangular matrix.
@@ -389,12 +386,10 @@ module latin_hypercube_driver_module
     if ( l_stats_samp ) then
       !$acc wait
       !$acc update host(X_u_all_levs,l_in_precip,lh_sample_point_weights,X_mixt_comp_all_levs) wait
-      do i = 1, ngrdcol
-        call stats_accumulate_uniform_lh( nz, num_samples, l_in_precip(i,:,:), &
-                                          X_mixt_comp_all_levs(i,:,:), &
-                                          X_u_all_levs(i,:,:,iiPDF_chi), pdf_params, &
-                                          lh_sample_point_weights(i,:,:), k_lh_start(i) )
-      end do
+      call stats_accumulate_uniform_lh( nz, num_samples, ngrdcol, l_in_precip(:,:,:), &
+                                        X_mixt_comp_all_levs(:,:,:), &
+                                        X_u_all_levs(:,:,:,iiPDF_chi), pdf_params, &
+                                        lh_sample_point_weights(:,:,:), k_lh_start(:) )
     end if
 
     if ( l_output_2D_lognormal_dist ) then
@@ -896,8 +891,8 @@ module latin_hypercube_driver_module
 !-------------------------------------------------------------------------------
 
 !-----------------------------------------------------------------------
-  function compute_k_lh_start( nz, rcm, pdf_params, &
-                               l_rcm_in_cloud_k_lh_start, i, &
+  function compute_k_lh_start( nz, ngrdcol, rcm, pdf_params, &
+                               l_rcm_in_cloud_k_lh_start, &
                                l_random_k_lh_start ) result( k_lh_start )
 
   ! Description:
@@ -927,9 +922,10 @@ module latin_hypercube_driver_module
 
     ! Input Variables
     integer, intent(in) :: &
-      nz          ! Number of vertical levels
+      nz, &   ! Number of vertical levels
+      ngrdcol ! Number of grid columns
 
-    real( kind = core_rknd ), dimension(nz), intent(in) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,nz), intent(in) :: &
       rcm         ! Liquid water mixing ratio               [kg/kg]
 
     type(pdf_parameter), intent(in) :: &
@@ -938,11 +934,9 @@ module latin_hypercube_driver_module
     logical, intent(in) :: &
       l_rcm_in_cloud_k_lh_start, & ! Determine k_lh_start based on maximum within-cloud rcm
       l_random_k_lh_start          ! k_lh_start found randomly between max rcm and rcm_in_cloud
-    
-    integer, intent(in) :: i
 
     ! Output Variable
-    integer :: &
+    integer, dimension(ngrdcol) :: &
       k_lh_start  ! Starting SILHS sample level
 
     ! Local Variables
@@ -952,47 +946,52 @@ module latin_hypercube_driver_module
 
     real( kind = core_rknd ), dimension(nz) :: &
       rcm_pdf, cloud_frac_pdf
+      
+    integer :: i  ! Loop iterator
 
-  !-----------------------------------------------------------------------
+  !------------------------------ Begin Code -----------------------------------
 
-    !----- Begin Code -----
-    if ( l_rcm_in_cloud_k_lh_start .or. l_random_k_lh_start ) then
-      rcm_pdf = compute_mean_binormal( pdf_params%rc_1(i,:), pdf_params%rc_2(i,:), &
-                                       pdf_params%mixt_frac(i,:) )
-      cloud_frac_pdf = compute_mean_binormal( pdf_params%cloud_frac_1(i,:), &
-                                              pdf_params%cloud_frac_2(i,:), &
-                                              pdf_params%mixt_frac(i,:) )
-      k_lh_start_rcm_in_cloud = maxloc( rcm_pdf / max( cloud_frac_pdf, cloud_frac_min ), 1 )
-    end if
+    do i = 1, ngrdcol
 
-    if ( .not. l_rcm_in_cloud_k_lh_start .or. l_random_k_lh_start ) then
-      k_lh_start_rcm    = maxloc( rcm, 1 )
-    end if
-
-    if ( l_random_k_lh_start ) then
-      if ( k_lh_start_rcm_in_cloud == k_lh_start_rcm ) then
-        k_lh_start = k_lh_start_rcm
-      else
-        ! Pick a random height level between k_lh_start_rcm and
-        ! k_lh_start_rcm_in_cloud
-        if ( k_lh_start_rcm_in_cloud > k_lh_start_rcm ) then
-          k_lh_start = rand_integer_in_range( k_lh_start_rcm, k_lh_start_rcm_in_cloud )
-        else if ( k_lh_start_rcm > k_lh_start_rcm_in_cloud ) then
-          k_lh_start = rand_integer_in_range( k_lh_start_rcm_in_cloud, k_lh_start_rcm )
-        end if
+      if ( l_rcm_in_cloud_k_lh_start .or. l_random_k_lh_start ) then
+        rcm_pdf = compute_mean_binormal( pdf_params%rc_1(i,:), pdf_params%rc_2(i,:), &
+                                         pdf_params%mixt_frac(i,:) )
+        cloud_frac_pdf = compute_mean_binormal( pdf_params%cloud_frac_1(i,:), &
+                                                pdf_params%cloud_frac_2(i,:), &
+                                                pdf_params%mixt_frac(i,:) )
+        k_lh_start_rcm_in_cloud = maxloc( rcm_pdf / max( cloud_frac_pdf, cloud_frac_min ), 1 )
       end if
-    else if ( l_rcm_in_cloud_k_lh_start ) then
-      k_lh_start = k_lh_start_rcm_in_cloud
-    else ! .not. l_random_k_lh_start .and. .not. l_rcm_in_cloud_k_lh_start
-      k_lh_start = k_lh_start_rcm
-    end if
 
-    ! If there's no cloud k_lh_start appears to end up being 1. Check if
-    ! k_lh_start is 1 or nz and set it to the middle of the domain in that
-    ! case.
-    if ( k_lh_start == nz .or. k_lh_start == 1 ) then
-      k_lh_start = nz / 2
-    end if
+      if ( .not. l_rcm_in_cloud_k_lh_start .or. l_random_k_lh_start ) then
+        k_lh_start_rcm    = maxloc( rcm(i,:), 1 )
+      end if
+
+      if ( l_random_k_lh_start ) then
+        if ( k_lh_start_rcm_in_cloud == k_lh_start_rcm ) then
+          k_lh_start(i) = k_lh_start_rcm
+        else
+          ! Pick a random height level between k_lh_start_rcm and
+          ! k_lh_start_rcm_in_cloud
+          if ( k_lh_start_rcm_in_cloud > k_lh_start_rcm ) then
+            k_lh_start(i) = rand_integer_in_range( k_lh_start_rcm, k_lh_start_rcm_in_cloud )
+          else if ( k_lh_start_rcm > k_lh_start_rcm_in_cloud ) then
+            k_lh_start(i) = rand_integer_in_range( k_lh_start_rcm_in_cloud, k_lh_start_rcm )
+          end if
+        end if
+      else if ( l_rcm_in_cloud_k_lh_start ) then
+        k_lh_start(i) = k_lh_start_rcm_in_cloud
+      else ! .not. l_random_k_lh_start .and. .not. l_rcm_in_cloud_k_lh_start
+        k_lh_start(i) = k_lh_start_rcm
+      end if
+
+      ! If there's no cloud k_lh_start appears to end up being 1. Check if
+      ! k_lh_start is 1 or nz and set it to the middle of the domain in that
+      ! case.
+      if ( k_lh_start(i) == nz .or. k_lh_start(i) == 1 ) then
+        k_lh_start(i) = nz / 2
+      end if
+      
+    end do
 
     return
   end function compute_k_lh_start
@@ -2428,7 +2427,7 @@ module latin_hypercube_driver_module
   end subroutine stats_accumulate_lh
 
   !-----------------------------------------------------------------------
-  subroutine stats_accumulate_uniform_lh( nz, num_samples, l_in_precip_all_levs, &
+  subroutine stats_accumulate_uniform_lh( nz, num_samples, ngrdcol, l_in_precip_all_levs, &
                                           X_mixt_comp_all_levs, X_u_chi_all_levs, pdf_params, &
                                           lh_sample_point_weights, k_lh_start )
 
@@ -2476,27 +2475,28 @@ module latin_hypercube_driver_module
 
     ! Input Variables
     integer, intent(in) :: &
-      nz, &         ! Number of vertical levels
-      num_samples ! Number of SILHS sample points
+      nz,          & ! Number of vertical levels
+      num_samples, & ! Number of SILHS sample points
+      ngrdcol        ! Number of grid columns
 
-    logical, dimension(num_samples,nz), intent(in) :: &
+    logical, dimension(ngrdcol,num_samples,nz), intent(in) :: &
       l_in_precip_all_levs ! Boolean variables indicating whether a sample is in
                            ! precipitation at a given height level
 
-    integer, dimension(num_samples,nz), intent(in) :: &
+    integer, dimension(ngrdcol,num_samples,nz), intent(in) :: &
       X_mixt_comp_all_levs ! Integers indicating which mixture component a
                            ! sample is in at a given height level
 
-    real( kind = core_rknd ), dimension(num_samples,nz), intent(in) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,num_samples,nz), intent(in) :: &
       X_u_chi_all_levs     ! Uniform value of chi
 
     type(pdf_parameter), intent(in) :: &
       pdf_params           ! The official PDF parameters!
 
-    real( kind = core_rknd ), dimension(num_samples,nz), intent(in) :: &
+    real( kind = core_rknd ), dimension(ngrdcol,num_samples,nz), intent(in) :: &
       lh_sample_point_weights ! The weight of each sample
 
-    integer, intent(in) :: &
+    integer, dimension(ngrdcol), intent(in) :: &
       k_lh_start           ! Vertical level for sampling preferentially within       [-]
                            ! cloud
 
@@ -2528,140 +2528,144 @@ module latin_hypercube_driver_module
     integer, dimension(num_importance_categories) :: &
       category_counts  ! Count of number of samples in each importance category
 
-    integer :: k, isample, icategory
+    integer :: k, isample, icategory, i
   !-----------------------------------------------------------------------
 
     !----- Begin Code -----
+    
+    do i = 1, ngrdcol
 
-    ! Switch back to using stat_update_var once the code is generalized
-    ! to pass in the number of vertical levels.
+      ! Switch back to using stat_update_var once the code is generalized
+      ! to pass in the number of vertical levels.
 
-    ! Estimate of lh_precip_frac
-    if ( ilh_precip_frac > 0 ) then
-      where ( l_in_precip_all_levs )
-        int_in_precip = 1.0_core_rknd
-      else where
-        int_in_precip = 0.0_core_rknd
-      end where
-      lh_precip_frac(:) = compute_sample_mean( nz, num_samples, lh_sample_point_weights, &
-                                               int_in_precip )
-!      call stat_update_var( ilh_precip_frac, lh_precip_frac, stats_lh_zt )
-      do k = 1, nz
-         call stat_update_var_pt( ilh_precip_frac, k, lh_precip_frac(k), &
-                                  stats_lh_zt )
-      enddo ! k = 1, nz
-    end if
+      ! Estimate of lh_precip_frac
+      if ( ilh_precip_frac > 0 ) then
+        where ( l_in_precip_all_levs(i,:,:) )
+          int_in_precip = 1.0_core_rknd
+        else where
+          int_in_precip = 0.0_core_rknd
+        end where
+        lh_precip_frac(:) = compute_sample_mean( nz, num_samples, lh_sample_point_weights(i,:,:), &
+                                                 int_in_precip )
+  !      call stat_update_var( ilh_precip_frac, lh_precip_frac, stats_lh_zt )
+        do k = 1, nz
+           call stat_update_var_pt( ilh_precip_frac, k, lh_precip_frac(k), &
+                                    stats_lh_zt )
+        enddo ! k = 1, nz
+      end if
 
-    ! Unweighted estimate of lh_precip_frac
-    if ( ilh_precip_frac_unweighted > 0 ) then
-      where ( l_in_precip_all_levs )
-        int_in_precip = 1.0_core_rknd
-      else where
-        int_in_precip = 0.0_core_rknd
-      end where
-      one_weights = one
-      lh_precip_frac(:) = compute_sample_mean( nz, num_samples, one_weights, &
-                                               int_in_precip )
-!      call stat_update_var( ilh_precip_frac_unweighted, lh_precip_frac, stats_lh_zt )
-      do k = 1, nz
-         call stat_update_var_pt( ilh_precip_frac_unweighted, k, &
-                                  lh_precip_frac(k), stats_lh_zt )
-      enddo ! k = 1, nz
-    end if
+      ! Unweighted estimate of lh_precip_frac
+      if ( ilh_precip_frac_unweighted > 0 ) then
+        where ( l_in_precip_all_levs(i,:,:) )
+          int_in_precip = 1.0_core_rknd
+        else where
+          int_in_precip = 0.0_core_rknd
+        end where
+        one_weights = one
+        lh_precip_frac(:) = compute_sample_mean( nz, num_samples, one_weights, &
+                                                 int_in_precip )
+  !      call stat_update_var( ilh_precip_frac_unweighted, lh_precip_frac, stats_lh_zt )
+        do k = 1, nz
+           call stat_update_var_pt( ilh_precip_frac_unweighted, k, &
+                                    lh_precip_frac(k), stats_lh_zt )
+        enddo ! k = 1, nz
+      end if
 
-    ! Estimate of lh_mixt_frac
-    if ( ilh_mixt_frac > 0 ) then
-      where ( X_mixt_comp_all_levs == 1 )
-        int_mixt_comp = 1.0_core_rknd
-      else where
-        int_mixt_comp = 0.0_core_rknd
-      end where
-      lh_mixt_frac(:) = compute_sample_mean( nz, num_samples, lh_sample_point_weights, &
-                                             int_mixt_comp )
-!      call stat_update_var( ilh_mixt_frac, lh_mixt_frac, stats_lh_zt )
-      do k = 1, nz
-         call stat_update_var_pt( ilh_mixt_frac, k, lh_mixt_frac(k), &
-                                  stats_lh_zt )
-      enddo ! k = 1, nz
-    end if
+      ! Estimate of lh_mixt_frac
+      if ( ilh_mixt_frac > 0 ) then
+        where ( X_mixt_comp_all_levs(i,:,:) == 1 )
+          int_mixt_comp = 1.0_core_rknd
+        else where
+          int_mixt_comp = 0.0_core_rknd
+        end where
+        lh_mixt_frac(:) = compute_sample_mean( nz, num_samples, lh_sample_point_weights(i,:,:), &
+                                               int_mixt_comp )
+  !      call stat_update_var( ilh_mixt_frac, lh_mixt_frac, stats_lh_zt )
+        do k = 1, nz
+           call stat_update_var_pt( ilh_mixt_frac, k, lh_mixt_frac(k), &
+                                    stats_lh_zt )
+        enddo ! k = 1, nz
+      end if
 
-    ! Unweighted estimate of lh_mixt_frac
-    if ( ilh_mixt_frac_unweighted > 0 ) then
-      where ( X_mixt_comp_all_levs == 1 )
-        int_mixt_comp = 1.0_core_rknd
-      else where
-        int_mixt_comp = 0.0_core_rknd
-      end where
-      one_weights = one
-      lh_mixt_frac(:) = compute_sample_mean( nz, num_samples, one_weights, &
-                                             int_mixt_comp )
-!      call stat_update_var( ilh_mixt_frac_unweighted, lh_mixt_frac, stats_lh_zt )
-      do k = 1, nz
-         call stat_update_var_pt( ilh_mixt_frac_unweighted, k, &
-                                  lh_mixt_frac(k), stats_lh_zt )
-      enddo ! k = 1, nz
-    end if
+      ! Unweighted estimate of lh_mixt_frac
+      if ( ilh_mixt_frac_unweighted > 0 ) then
+        where ( X_mixt_comp_all_levs(i,:,:) == 1 )
+          int_mixt_comp = 1.0_core_rknd
+        else where
+          int_mixt_comp = 0.0_core_rknd
+        end where
+        one_weights = one
+        lh_mixt_frac(:) = compute_sample_mean( nz, num_samples, one_weights, &
+                                               int_mixt_comp )
+  !      call stat_update_var( ilh_mixt_frac_unweighted, lh_mixt_frac, stats_lh_zt )
+        do k = 1, nz
+           call stat_update_var_pt( ilh_mixt_frac_unweighted, k, &
+                                    lh_mixt_frac(k), stats_lh_zt )
+        enddo ! k = 1, nz
+      end if
 
-    ! k_lh_start is an integer, so it would be more appropriate to sample it
-    ! as an integer, but as far as I can tell our current sampling
-    ! infrastructure mainly supports sampling real numbers.
-    call stat_update_var_pt( ik_lh_start, 1, real( k_lh_start, kind=core_rknd ), stats_lh_sfc )
+      ! k_lh_start is an integer, so it would be more appropriate to sample it
+      ! as an integer, but as far as I can tell our current sampling
+      ! infrastructure mainly supports sampling real numbers.
+      call stat_update_var_pt( ik_lh_start, 1, real( k_lh_start(i), kind=core_rknd ), stats_lh_sfc )
 
-    if ( allocated( ilh_samp_frac_category ) ) then
-      if ( ilh_samp_frac_category(1) > 0 ) then
+      if ( allocated( ilh_samp_frac_category ) ) then
+        if ( ilh_samp_frac_category(1) > 0 ) then
 
-        importance_categories = define_importance_categories( )
+          importance_categories = define_importance_categories( )
 
-        do k=1, nz
-          category_counts(:) = 0
+          do k=1, nz
+            category_counts(:) = 0
 
-          do isample=1, num_samples
+            do isample=1, num_samples
 
-            if ( X_mixt_comp_all_levs(isample,k) == 1 ) then
-              l_in_comp_1 = .true.
-              cloud_frac_i = pdf_params%cloud_frac_1(1,k)
-            else
-              l_in_comp_1 = .false.
-              cloud_frac_i = pdf_params%cloud_frac_2(1,k)
-            end if
+              if ( X_mixt_comp_all_levs(i,isample,k) == 1 ) then
+                l_in_comp_1 = .true.
+                cloud_frac_i = pdf_params%cloud_frac_1(i,k)
+              else
+                l_in_comp_1 = .false.
+                cloud_frac_i = pdf_params%cloud_frac_2(i,k)
+              end if
 
-            l_in_cloud = X_u_chi_all_levs(isample,k) > (one - cloud_frac_i)
+              l_in_cloud = X_u_chi_all_levs(i,isample,k) > (one - cloud_frac_i)
+
+              do icategory=1, num_importance_categories
+                if ( (l_in_cloud .eqv. importance_categories(icategory)%l_in_cloud) .and. &
+                     (l_in_precip_all_levs(i,isample,k) .eqv. importance_categories(icategory)%&
+                                                           l_in_precip) .and. &
+                     (l_in_comp_1 .eqv. importance_categories(icategory)%l_in_component_1) ) then
+
+                  category_counts(icategory) = category_counts(icategory) + 1
+                  exit
+
+                end if
+              end do
+
+            end do ! isample=1, num_samples
 
             do icategory=1, num_importance_categories
-              if ( (l_in_cloud .eqv. importance_categories(icategory)%l_in_cloud) .and. &
-                   (l_in_precip_all_levs(isample,k) .eqv. importance_categories(icategory)%&
-                                                         l_in_precip) .and. &
-                   (l_in_comp_1 .eqv. importance_categories(icategory)%l_in_component_1) ) then
-
-                category_counts(icategory) = category_counts(icategory) + 1
-                exit
-
-              end if
+              lh_samp_frac(k,icategory) = real( category_counts(icategory), kind=core_rknd ) / &
+                                          real( num_samples, kind=core_rknd )
             end do
 
-          end do ! isample=1, num_samples
+          end do ! k=2, nz
+
+          ! Microphysics is not run at lower level
+          lh_samp_frac(1,:) = zero
 
           do icategory=1, num_importance_categories
-            lh_samp_frac(k,icategory) = real( category_counts(icategory), kind=core_rknd ) / &
-                                        real( num_samples, kind=core_rknd )
-          end do
+  !          call stat_update_var( ilh_samp_frac_category(icategory), lh_samp_frac(:,icategory), &
+  !                                stats_lh_zt )
+            do k = 1, nz
+               call stat_update_var_pt( ilh_samp_frac_category(icategory), k, &
+                                        lh_samp_frac(k,icategory), stats_lh_zt )
+            enddo ! k = 1, nz
+          end do ! icategory=1, num_importance_categories
 
-        end do ! k=2, nz
-
-        ! Microphysics is not run at lower level
-        lh_samp_frac(1,:) = zero
-
-        do icategory=1, num_importance_categories
-!          call stat_update_var( ilh_samp_frac_category(icategory), lh_samp_frac(:,icategory), &
-!                                stats_lh_zt )
-          do k = 1, nz
-             call stat_update_var_pt( ilh_samp_frac_category(icategory), k, &
-                                      lh_samp_frac(k,icategory), stats_lh_zt )
-          enddo ! k = 1, nz
-        end do ! icategory=1, num_importance_categories
-
-      end if ! ilh_samp_frac_category(1) > 0
-    end if ! allocated( ilh_samp_frac_category )
+        end if ! ilh_samp_frac_category(1) > 0
+      end if ! allocated( ilh_samp_frac_category )
+      
+    end do
 
     return
   end subroutine stats_accumulate_uniform_lh
