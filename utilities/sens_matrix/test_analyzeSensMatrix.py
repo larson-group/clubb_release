@@ -59,7 +59,9 @@ def test_3x2_C8transformed():
     defaultMetricValsCol, defaultBiasesCol, \
     defaultBiasesOrigApprox, defaultBiasesOrigApproxPC, \
     sensMatrixOrig, sensMatrix, normlzdSensMatrix, svdInvrsNormlzdWeighted, \
-    defaultParamValsOrigRow, dparamsSoln, paramsSoln, paramsSolnPC = \
+    defaultParamValsOrigRow, dparamsSoln, \
+    paramsSoln, paramsLowVals, paramsHiVals, \
+    paramsSolnPC, paramsLowValsPC, paramsHiValsPC = \
         analyzeSensMatrix(metricsNames, paramsNames, transformedParamsNames,
                         metricsWeights,
                         sensNcFilenames, defaultNcFilename,
@@ -116,7 +118,9 @@ def test_3x2_novarstransformed():
     defaultMetricValsCol, defaultBiasesCol, \
     defaultBiasesOrigApprox, defaultBiasesOrigApproxPC, \
     sensMatrixOrig, sensMatrix, normlzdSensMatrix, svdInvrsNormlzdWeighted, \
-    defaultParamValsOrigRow, dparamsSoln, paramsSoln, paramsSolnPC = \
+    defaultParamValsOrigRow, dparamsSoln, \
+    paramsSoln, paramsLowVals, paramsHiVals, \
+    paramsSolnPC, paramsLowValsPC, paramsHiValsPC = \
         analyzeSensMatrix(metricsNames, paramsNames, transformedParamsNames,
                         metricsWeights,
                         sensNcFilenames, defaultNcFilename,
@@ -167,7 +171,9 @@ def test_2x2_C8transformed():
     defaultMetricValsCol, defaultBiasesCol, \
     defaultBiasesOrigApprox, defaultBiasesOrigApproxPC, \
     sensMatrixOrig, sensMatrix, normlzdSensMatrix, svdInvrsNormlzdWeighted, \
-    defaultParamValsOrigRow, dparamsSoln, paramsSoln, paramsSolnPC = \
+    defaultParamValsOrigRow, dparamsSoln, \
+    paramsSoln, paramsLowVals, paramsHiVals, \
+    paramsSolnPC, paramsLowValsPC, paramsHiValsPC = \
         analyzeSensMatrix(metricsNames, paramsNames, transformedParamsNames,
                         metricsWeights,
                         sensNcFilenames, defaultNcFilename,
@@ -228,7 +234,9 @@ def test_2x2_novarstransformed():
     defaultMetricValsCol, defaultBiasesCol, \
     defaultBiasesOrigApprox, defaultBiasesOrigApproxPC, \
     sensMatrixOrig, sensMatrix, normlzdSensMatrix, svdInvrsNormlzdWeighted, \
-    defaultParamValsOrigRow, dparamsSoln, paramsSoln, paramsSolnPC = \
+    defaultParamValsOrigRow, dparamsSoln, \
+    paramsSoln, paramsLowVals, paramsHiVals, \
+    paramsSolnPC, paramsLowValsPC, paramsHiValsPC = \
         analyzeSensMatrix(metricsNames, paramsNames, transformedParamsNames,
                         metricsWeights,
                         sensNcFilenames, defaultNcFilename,

@@ -114,14 +114,14 @@ paramsNamesAndFilenames = [ \
 #                  ['prc_exp', 'devel/anvil.devel.prc2.ne30_ne30_Regional.nc'], \
 #                  ['clubb_c_invrs_tau_wpxp_ri', 'devel/anvil.devel.ri4.ne30_ne30_Regional.nc'], \
 #                  ['clubb_c_invrs_tau_n2_clear_wp3', 'devel/anvil.devel.wp35.ne30_ne30_Regional.nc'], \
-                  ['clubb_c8', 'improved/anvil.devel.improved_0416_c81.ne30_ne30_Regional.nc'], \
-                  ['clubb_c_invrs_tau_wpxp_n2_thresh','improved/anvil.devel.improved_0416_thres3p2.ne30_ne30_Regional.nc'], \
-                  ['clubb_c_k10','improved/anvil.devel.improved_0416_ck101.ne30_ne30_Regional.nc'], \
-                  ['clubb_c_k10h', 'improved/anvil.devel.improved_0416_ck10h1.ne30_ne30_Regional.nc'], \
-                  ['clubb_c_invrs_tau_wpxp_ri', 'improved/anvil.devel.improved_0416_ri5.ne30_ne30_Regional.nc'], \
-                  ['eci', 'improved/anvil.devel.improved_0416_eci1p5.ne30_ne30_Regional.nc'], \
-                  ['max_total_ni', 'improved/anvil.devel.improved_0416_ni700.ne30_ne30_Regional.nc'], \
-                  ['cldfrc_rhminl', 'improved/anvil.devel.improved_0416_rhp9.ne30_ne30_Regional.nc'] \
+                  ['clubb_c8', '20210426/anvil.devel.0426_c8p5.ne30_ne30_Regional.nc'], \
+                  ['clubb_c_invrs_tau_wpxp_n2_thresh','20210426/anvil.devel.0426_thres1p2.ne30_ne30_Regional.nc'], \
+                  ['clubb_c_k10','20210426/anvil.devel.0426_ck10p1.ne30_ne30_Regional.nc'], \
+                  ['vqit', '20210426/anvil.devel.0426_vqitp25.ne30_ne30_Regional.nc'], \
+#                  ['clubb_c_invrs_tau_wpxp_ri', '20210426/anvil.devel.0426_ri5.ne30_ne30_Regional.nc'], \
+                  ['clubb_gamma_coef', '20210426/anvil.devel.0426_gap2.ne30_ne30_Regional.nc'], \
+#                  ['max_total_ni', '20210426/anvil.devel.0426_ni700.ne30_ne30_Regional.nc'], \
+#                  ['cldfrc_rhminl', '20210426/anvil.devel.0426_rhp9.ne30_ne30_Regional.nc'] \
                         ]
 
 dfparamsNamesAndFilenames =  \
@@ -136,13 +136,13 @@ transformedParamsNames = np.array(['clubb_c8','clubb_c_invrs_tau_n2', 'clubb_c_i
 
 # Netcdf file containing metric and parameter values from the default simulation
 defaultNcFilename = \
-    'improved/anvil.devel.improved_0415.ne30_ne30_Regional.nc'#'/home/vlarson/canopy/scripts/anvil.c689c7e.repeatbmg_flux.ne30_ne30_GLBmean.nc'
+    '20210426/anvil.devel.0426_nolmm.ne30_ne30_Regional.nc'#'/home/vlarson/canopy/scripts/anvil.c689c7e.repeatbmg_flux.ne30_ne30_GLBmean.nc'
 #    'devel/anvil.devel.base.ne30_ne30_Regional.nc'
 
 # Metrics from simulation that use the SVD-recommended parameter values
 # Here, we use default simulation just as a placeholder.
 linSolnNcFilename = \
-   'devel/anvil.devel.base.ne30_ne30_Regional.nc' #'/home/vlarson/canopy/scripts/anvil.c689c7e.repeatbmg_flux.ne30_ne30_GLBmean.nc'
+   '20210426/anvil.devel.0426_nolmm.ne30_ne30_Regional.nc' #'/home/vlarson/canopy/scripts/anvil.c689c7e.repeatbmg_flux.ne30_ne30_GLBmean.nc'
 
 # Observed values of our metrics, from, e.g., CERES-EBAF.
 # These observed metrics will be matched as closely as possible by analyzeSensMatrix.
@@ -164,7 +164,9 @@ obsMetricValsDict = { \
 defaultMetricValsCol, defaultBiasesCol, \
 defaultBiasesOrigApprox, defaultBiasesOrigApproxPC, \
 sensMatrixOrig, sensMatrix, normlzdSensMatrix, svdInvrsNormlzdWeighted, \
-defaultParamValsOrigRow, dparamsSoln, paramsSoln, paramsSolnPC = \
+defaultParamValsOrigRow, dparamsSoln, \
+paramsSoln, paramsLowVals, paramsHiVals, \
+paramsSolnPC, paramsLowValsPC, paramsHiValsPC = \
          analyzeSensMatrix(metricsNames, paramsNames, transformedParamsNames,
                         metricsWeights,
                         sensNcFilenames, defaultNcFilename,
@@ -194,6 +196,7 @@ fracError = estBiasesOrigSqd / defaultBiasesColSqd
 estBiasesOrigPCSqd = (defaultBiasesOrigApproxPC - defaultBiasesCol)**2
 fracErrorPC = estBiasesOrigPCSqd / defaultBiasesColSqd
 #fracErrorPC = estBiasesOrigPCSqd / defaultMetricValsColSqd
+
 
 #pdb.set_trace()
 
