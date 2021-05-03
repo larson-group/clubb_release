@@ -154,11 +154,15 @@ def analyzeSensMatrix(metricsNames, paramsNames, transformedParamsNames,
             defaultParamVal = defaultParamValsRow[0][paramIdx]
             sensDefaultAreClose = np.isclose(sensParamVal,defaultParamVal)
             if sensFileIdx==paramIdx and sensDefaultAreClose:
-                print("\nsensFileIdx =", sensFileIdx)
+                print("\nSensitivity filename =", sensNcFilenames[sensFileIdx])
+                print("sensFileIdx =", sensFileIdx)
+                print("Parameter name = ", paramName)
                 print("paramIdx =", paramIdx, ", defaultParamVal =", defaultParamVal, ", sensParamVal =", sensParamVal)
                 sys.exit("Error: a sensitivity simulation has left a designated parameter at its default value.")
             if sensFileIdx!=paramIdx and not sensDefaultAreClose:
-                print("\nsensFileIdx =", sensFileIdx)
+                print("\nSensitivity filename =", sensNcFilenames[sensFileIdx])
+                print("sensFileIdx =", sensFileIdx)
+                print("Parameter name = ", paramName)
                 print("paramIdx =", paramIdx, ", defaultParamVal =", defaultParamVal, ", sensParamVal =", sensParamVal)
                 sys.exit("Error: sensitivity simulation has changed the value of an undesignated parameter.")
         f_sensParams.close()
@@ -401,8 +405,8 @@ def calcSvdInvrs(normlzdWeightedSensMatrix):
     #pdb.set_trace()
     halfNumSVals = np.floor_divide( sValsTrunc.size, 2 )
     sValsInvPC = np.zeros_like(sValsTruncInv)
-    sValsInvPC[0:halfNumSVals] = sValsTruncInv[0:halfNumSVals]
-    #sValsInvPC[0:sValsTruncInv.size-3] = sValsTruncInv[0:sValsTruncInv.size-3]
+    #sValsInvPC[0:halfNumSVals] = sValsTruncInv[0:halfNumSVals]
+    sValsInvPC[0:sValsTruncInv.size-2] = sValsTruncInv[0:sValsTruncInv.size-2]
 
     #pdb.set_trace()
 

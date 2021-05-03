@@ -7,6 +7,7 @@ import dash
 import dash_core_components as dcc
 import dash_html_components as html
 import plotly.express as px
+import plotly.graph_objects as go
 import pandas as pd
 
 import numpy as np
@@ -116,7 +117,8 @@ paramsNamesAndFilenames = [ \
 #                  ['clubb_c_invrs_tau_n2_clear_wp3', 'devel/anvil.devel.wp35.ne30_ne30_Regional.nc'], \
                   ['clubb_c8', '20210426/anvil.devel.0426_c8p5.ne30_ne30_Regional.nc'], \
                   ['clubb_c_invrs_tau_wpxp_n2_thresh','20210426/anvil.devel.0426_thres1p2.ne30_ne30_Regional.nc'], \
-                  ['clubb_c_k10','20210426/anvil.devel.0426_ck10p1.ne30_ne30_Regional.nc'], \
+                  ['clubb_c_invrs_tau_n2_wp2','20210426/anvil.devel.0426_wp2p3.ne30_ne30_Regional.nc'], \
+#                  ['clubb_c_k10','20210426/anvil.devel.0426_ck10p1.ne30_ne30_Regional.nc'], \
                   ['vqit', '20210426/anvil.devel.0426_vqitp25.ne30_ne30_Regional.nc'], \
 #                  ['clubb_c_invrs_tau_wpxp_ri', '20210426/anvil.devel.0426_ri5.ne30_ne30_Regional.nc'], \
                   ['clubb_gamma_coef', '20210426/anvil.devel.0426_gap2.ne30_ne30_Regional.nc'], \
@@ -247,15 +249,13 @@ fracParamsFig.update_yaxes(title="(Parameter value) / abs(default value)")
 fracParamsFig.update_xaxes(title="Parameter Name")
 
 # Plot the parameter values recommended by SVD.
-#pdb.set_trace()
-paramsMatrix = np.dstack((np.transpose(defaultParamValsOrigRow),paramsSoln,paramsSolnPC)).squeeze()
-df = pd.DataFrame(paramsMatrix,
-                  index=paramsNames,
-                  columns= ['defaultParamValsOrigRow', 'paramsSoln', 'paramsSolnPC'])
-paramsFig = px.line(df, x=df.index, y=df.columns,
-              title = 'Parameter values (and values - default) recommended by SVD.')
-paramsFig.update_yaxes(title="Parameter value")
-paramsFig.update_xaxes(title="Parameter Name")
+paramsFig = go.Figure()
+paramsFig.add_trace(go.Scatter(x=paramsNames, y=paramsLowVals[:,0], name=r'$paramsSoln - \sigma$'))
+paramsFig.add_trace(go.Scatter(x=paramsNames, y=paramsHiVals[:,0], fill='tonexty', name=r'$paramsSoln + \sigma$'))
+paramsFig.add_trace(go.Scatter(x=paramsNames, y=paramsSoln[:,0], name='paramsSoln'))
+paramsFig.add_trace(go.Scatter(x=paramsNames, y=paramsSolnPC[:,0], name='paramsSolnPC'))
+paramsFig.add_trace(go.Scatter(x=paramsNames, y=defaultParamValsOrigRow[:,0], name='defaultParamVals'))
+
 
 sensMatrixDashboard.layout = html.Div(children=[
         html.H1(children='Sensitivity matrix diagnostics'),
