@@ -185,13 +185,11 @@ module advance_clubb_core_module
         fstderr, &
         zero_threshold, &
         three_halves, &
-        one_fourth, &
         one, &
         two, &
         zero, &
         unused_var, &
         grav, &
-        vonk, &
         eps
 
     use parameters_tunable, only: &
