@@ -45,10 +45,11 @@ module sigma_sqd_w_module
     !-----------------------------------------------------------------------
 
     use constants_clubb, only: &
-        one,       & ! Constant(s)
-        w_tol,     &
-        rt_tol,    &
-        thl_tol,   &
+        one,         & ! Constant(s)
+        w_tol,       &
+        rt_tol,      &
+        thl_tol,     &
+        one_hundred, &
         w_tol_sqd
 
     use clubb_precision, only: &
@@ -98,16 +99,16 @@ module sigma_sqd_w_module
     ! also calculated as part of the PDF, and they are included as well.
     ! Additionally, when sclr_dim > 0, passive scalars (sclr) are also included.
     max_corr_w_x_sqd = max( ( wpthlp / ( sqrt( wp2 * thlp2 ) &
-                            + 0.01_core_rknd * w_tol * thl_tol ) )**2, &
+                            + one_hundred * w_tol * thl_tol ) )**2, &
                             ( wprtp / ( sqrt( wp2 * rtp2 )  &
-                            + 0.01_core_rknd * w_tol * rt_tol ) )**2 )
+                            + one_hundred * w_tol * rt_tol ) )**2 )
 
     if ( l_predict_upwp_vpwp ) then
        max_corr_w_x_sqd = max( max_corr_w_x_sqd, &
                                ( upwp / ( sqrt( up2 * wp2 ) &
-                               + 0.01_core_rknd * w_tol_sqd ) )**2, &
+                               + one_hundred * w_tol_sqd ) )**2, &
                                ( vpwp / ( sqrt( vp2 * wp2 ) &
-                               + 0.01_core_rknd * w_tol_sqd ) )**2 )
+                               + one_hundred * w_tol_sqd ) )**2 )
     endif ! l_predict_upwp_vpwp
 
     ! Calculate the value of sigma_sqd_w .
