@@ -14,6 +14,12 @@ If, in addition, you'd like to overplot LES lines and also separately plot CLUBB
 
 `python3 ./pyplotgen.py --plot-budgets -l -c /home/USERNAME/clubb_issue_834/output/default_run -o /home/USERNAME/clubb/output/pyplots_default_run`
 
+If you'd like to overplot two CLUBB cases that have been output to two different subdirectories, dir1 and dir2, then just list both:
+
+`python3 ./pyplotgen.py`<br/> 
+`-c /home/USERNAME/clubb_issue_834/output/dir1 /home/USERNAME/clubb_issue_834/output/dir2` <br/>
+`-o /home/USERNAME/clubb/output/pyplots_default_run`
+
 ## Valid options
 
 | *Option Flag* | *Description* |
