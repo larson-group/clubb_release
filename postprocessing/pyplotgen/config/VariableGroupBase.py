@@ -614,6 +614,18 @@ class VariableGroupBase(VariableGroup):
                     'wrf': ['em'],
                 },
             },
+            {'var_names':
+                {
+                    'clubb':['sigma_sqd_w'],
+                    'sam': [],
+                    'coamps': [],
+                    'r408': [],
+                    'hoc': [],
+                    'e3sm': [],
+                    'cam': [],
+                    'wrf': [],
+                },
+            },
         ]
 
         # Call ctor of parent class

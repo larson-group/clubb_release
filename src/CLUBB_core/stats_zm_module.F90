@@ -870,7 +870,7 @@ module stats_zm_module
       case ('sigma_sqd_w')
         isigma_sqd_w = k
         call stat_assign( var_index=isigma_sqd_w, var_name="sigma_sqd_w", &
-             var_description="sigma_sqd_w, Nondimensionalized w variance of Gaussian component", &
+             var_description="sigma_sqd_w, Nondim w variance of Gaussian component", &
              var_units="-", l_silhs=.false., grid_kind=stats_zm )
         k = k + 1
       case ('rho_ds_zm')
