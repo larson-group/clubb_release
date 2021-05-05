@@ -1105,7 +1105,7 @@ module clip_explicit
       if ( gr%zt(k) - sfc_elevation <= 100.0_core_rknd ) then ! Clip for 100 m. AGL.
        !wp3_upper_lim(k) =  0.2_core_rknd * sqrt_2 * wp2_zt(k)**(3.0_core_rknd/2.0_core_rknd)
        !wp3_lower_lim(k) = -0.2_core_rknd * sqrt_2 * wp2_zt(k)**(3.0_core_rknd/2.0_core_rknd)
-        wp3_lim_sqd(k) = 0.08_core_rknd * wp2_zt_cubed(k) ! Where 0.08_core_rknd
+        wp3_lim_sqd(k) = 0.002_core_rknd * Skw_max_mag**2 * wp2_zt_cubed(k) ! Where 0.08_core_rknd
                               ! == (sqrt(2)*0.2_core_rknd)**2 known magic number
       else                          ! Clip skewness consistently with a.
        !wp3_upper_lim(k) =  4.5_core_rknd * wp2_zt(k)**(3.0_core_rknd/2.0_core_rknd)
