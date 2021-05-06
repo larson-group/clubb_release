@@ -41,6 +41,8 @@ module stats_zm_module
         iwp3_zm, &
         ithlp3_zm, &
         irtp3_zm, &
+        iwp2up2, &
+        iwp2vp2, &
         iwp4, &
         iwpthvp, &
         irtpthvp, &
@@ -624,6 +626,21 @@ module stats_zm_module
         call stat_assign( var_index=irtp3_zm, var_name="rtp3_zm", &
              var_description="rt'^3 interpolated to moment. levels", &
              var_units="(kg^3)/(kg^3)", l_silhs=.false., grid_kind=stats_zm )
+        k = k + 1
+
+      case ('wp2up2')
+        iwp2up2 = k
+        call stat_assign( var_index=iwp2up2, var_name="wp2up2", &
+             var_description="w'^2u'^2, 4th-order moment of vertical and zonal air velocity", &
+             var_units="(m^4)/(s^4)", l_silhs=.false., grid_kind=stats_zm )
+        k = k + 1
+
+      case ('wp2vp2')
+        iwp2vp2 = k
+        call stat_assign( var_index=iwp2vp2, var_name="wp2vp2", &
+             var_description &
+               ="w'^2v'^2, 4th-order moment of vert. and merid. air velocity", &
+             var_units="(m^4)/(s^4)", l_silhs=.false., grid_kind=stats_zm )
         k = k + 1
 
       case ('wp4')

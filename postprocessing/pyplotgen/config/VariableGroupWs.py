@@ -21,7 +21,45 @@ class VariableGroupWs(VariableGroup):
         """
         self.name = "w variables"
         self.variable_definitions = [
-            {'var_names':
+             {'var_names':
+                 {
+                 'clubb': ['wp2up2'],
+                 'sam': ['WP2UP2'],
+                 'coamps': ['wp2up2'],
+                 'r408': ['wp2up2'],
+                 'hoc': ['wp2up2'],
+                 'e3sm': ['wp2up2'],
+                 'cam': ['wp2up2'],
+                 'wrf': ['wp2up2'],
+                 },
+             },
+             {'var_names':
+                 {
+                 'clubb': ['wp2vp2'],
+                 'sam': ['WP2VP2'],
+                 'coamps': ['wp2vp2'],
+                 'r408': ['wp2vp2'],
+                 'hoc': ['wp2vp2'],
+                 'e3sm': ['wp2vp2'],
+                 'cam': ['wp2vp2'],
+                 'wrf': ['wp2vp2'],
+                 },
+             },
+             {'var_names':
+                 {
+                 'clubb': [self.get_wp2uiui],
+                 'sam': ['WP2TKE'],
+                 'coamps': ['wp2vp2'],
+                 'r408': ['wp2vp2'],
+                 'hoc': ['wp2vp2'],
+                 'e3sm': ['wp2vp2'],
+                 'cam': ['wp2vp2'],
+                 'wrf': ['wp2vp2'],
+                 },
+              'title': "4th-order moment $0.5\overline{w'^2u_i'u_i'}$",
+              'axis_title': "$0.5\overline{w'^2u_i'u_i'}$ [m4/s4]",
+             },
+             {'var_names':
                 {
                 'clubb': ['wp4'],
                 'sam': ['WP4'],
@@ -107,3 +145,18 @@ class VariableGroupWs(VariableGroup):
                          r408_dataset=r408_dataset, hoc_dataset=hoc_dataset, e3sm_datasets=e3sm_datasets,
                          cam_datasets=cam_datasets, sam_datasets=sam_datasets, wrf_datasets=wrf_datasets,
                          priority_vars=priority_vars)
+
+    def get_wp2uiui(self, dataset_override=None):
+
+        if dataset_override is not None:
+            dataset = dataset_override
+        else:
+            dataset = self.sam_datasets
+        wp2up2, z, dataset = self.getVarForCalculations('wp2up2', dataset)
+        wp2vp2, z, dataset = self.getVarForCalculations('wp2vp2', dataset)
+        wp4, z, dataset = self.getVarForCalculations('wp4', dataset)
+
+        output = 0.5 * ( wp2up2 + wp2vp2 + wp4 )
+
+        return output, z
+

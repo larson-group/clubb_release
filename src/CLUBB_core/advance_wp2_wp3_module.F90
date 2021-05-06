@@ -41,7 +41,8 @@ module advance_wp2_wp3_module
 
   !=============================================================================
   subroutine advance_wp2_wp3( dt, sfc_elevation, sigma_sqd_w, wm_zm,         & ! In
-                              wm_zt, a3, a3_zt, wp3_on_wp2, wp4,             & ! In
+                              wm_zt, a3, a3_zt, wp3_on_wp2,                  & ! In
+                              wp2up2, wp2vp2, wp4,                           & ! In
                               wpthvp, wp2thvp, um, vm, upwp, vpwp,           & ! In
                               up2, vp2, em, Kh_zm, Kh_zt, invrs_tau_zm,      & ! In
                               invrs_tau_zt, invrs_tau_C1_zm, Skw_zm,         & ! In
@@ -154,6 +155,8 @@ module advance_wp2_wp3_module
       a3,                & ! a_3 (momentum levels); See eqn. 25 in `Equations for CLUBB' [-]
       a3_zt,             & ! a_3 interpolated to thermodynamic levels  [-]
       wp3_on_wp2,        & ! Smoothed version of wp3 / wp2             [m/s]
+      wp2up2,            & ! w'^2u'^2 (momentum levels)                [m^4/s^4]
+      wp2vp2,            & ! w'^2v'^2 (momentum levels)                [m^4/s^4]
       wp4,               & ! w'^4 (momentum levels)                    [m^4/s^4]
       wpthvp,            & ! w'th_v' (momentum levels)                 [K m/s]
       wp2thvp,           & ! w'^2th_v' (thermodynamic levels)          [K m^2/s^2]
@@ -364,7 +367,8 @@ module advance_wp2_wp3_module
 
     ! Solve semi-implicitly
     call wp23_solve( dt, sfc_elevation, sigma_sqd_w, wm_zm,                   & ! Intent(in)
-                     wm_zt, a3, a3_zt, wp3_on_wp2, wp4,                       & ! Intent(in)
+                     wm_zt, a3, a3_zt, wp3_on_wp2,                            & ! Intent(in)
+                     wp2up2, wp2vp2, wp4,                                     & ! Intent(in)
                      wpthvp, wp2thvp, um, vm, upwp, vpwp,                     & ! Intent(in)
                      up2, vp2, em, Kw1, Kw8, Kh_zt, Skw_zt,                   & ! Intent(in)
                      invrs_tau_zm, invrs_tauw3t, invrs_tau_C1_zm, C1_Skw_fnc, & ! Intent(in)
@@ -486,7 +490,8 @@ module advance_wp2_wp3_module
 
   !=============================================================================
   subroutine wp23_solve( dt, sfc_elevation, sigma_sqd_w, wm_zm,                   & ! Intent(in)
-                         wm_zt, a3, a3_zt, wp3_on_wp2, wp4,                       & ! Intent(in)
+                         wm_zt, a3, a3_zt, wp3_on_wp2,                            & ! Intent(in)
+                         wp2up2, wp2vp2, wp4,                                     & ! Intent(in)
                          wpthvp, wp2thvp, um, vm, upwp, vpwp,                     & ! Intent(in)
                          up2, vp2, em, Kw1, Kw8, Kh_zt, Skw_zt,                   & ! Intent(in)
                          invrs_tau1m, invrs_tauw3t, invrs_tau_C1_zm, C1_Skw_fnc,  & ! Intent(in)
@@ -647,6 +652,8 @@ module advance_wp2_wp3_module
       a3,              & ! a_3 (momentum levels); See eqn. 25 in `Equations for CLUBB' [-]
       a3_zt,           & ! a_3 interpolated to thermodynamic levels  [-]
       wp3_on_wp2,      & ! Smoothed version of wp3 / wp2             [m/s]
+      wp2up2,          & ! w'^2u'^2 (momentum levels)                [m^4/s^4]
+      wp2vp2,          & ! w'^2v'^2 (momentum levels)                [m^4/s^4]
       wp4,             & ! w'^4 (momentum levels)                    [m^4/s^4]
       wpthvp,          & ! w'th_v' (momentum levels)                 [K m/s]
       wp2thvp,         & ! w'^2th_v' (thermodynamic levels)          [K m^2/s^2]
@@ -819,7 +826,8 @@ module advance_wp2_wp3_module
     ! Compute the explicit portion of the w'^2 and w'^3 equations.
     ! Build the right-hand side vector.
     call wp23_rhs( dt, wp2, wp3, a1, a1_zt, a3, a3_zt, wp3_on_wp2, &                 ! intent(in)
-                   coef_wp4_implicit, wp4, wpthvp, wp2thvp, um, vm, &                ! intent(in)
+                   coef_wp4_implicit, wp2up2, wp2vp2, wp4, &                         ! intent(in)
+                   wpthvp, wp2thvp, um, vm, &                                        ! intent(in)
                    upwp, vpwp, up2, vp2, em, Kw1, Kw8, Kh_zt,  &                     ! intent(in)
                    Skw_zt, invrs_tau1m, invrs_tauw3t, invrs_tau_C1_zm, C1_Skw_fnc, & ! intent(in)
                    C11_Skw_fnc, C16_fnc, rho_ds_zm, rho_ds_zt, &                     ! intent(in)
@@ -1807,7 +1815,8 @@ module advance_wp2_wp3_module
 
   !=================================================================================
   subroutine wp23_rhs( dt, wp2, wp3, a1, a1_zt, a3, a3_zt, wp3_on_wp2, &
-                       coef_wp4_implicit, wp4, wpthvp, wp2thvp, um, vm, & 
+                       coef_wp4_implicit, wp2up2, wp2vp2, wp4, &
+                       wpthvp, wp2thvp, um, vm, &
                        upwp, vpwp, up2, vp2, em, Kw1, Kw8, Kh_zt, & 
                        Skw_zt, invrs_tau1m, invrs_tauw3t, invrs_tau_C1_zm, C1_Skw_fnc, &
                        C11_Skw_fnc, C16_fnc, rho_ds_zm, rho_ds_zt, &
@@ -1923,6 +1932,8 @@ module advance_wp2_wp3_module
       a3_zt,             & ! a_3 interpolated to thermodynamic levels  [-]
       wp3_on_wp2,        & ! Smoothed version of wp3 / wp2             [m/s]
       coef_wp4_implicit, & ! <w'^4> = coef_wp4_implicit * <w'^2>^2     [-]
+      wp2up2,            & ! w'^2u'^2 (momentum levels)                [m^4/s^4]
+      wp2vp2,            & ! w'^2v'^2 (momentum levels)                [m^4/s^4]
       wp4,               & ! w'^4 (momentum levels)                    [m^4/s^4]
       wpthvp,            & ! w'th_v' (momentum levels)                 [K m/s]
       wp2thvp,           & ! w'^2th_v' (thermodynamic levels)        [K m^2/s^2]
@@ -2055,8 +2066,7 @@ module advance_wp2_wp3_module
 
         call wp3_term_pr_dfsn_rhs( C_wp3_pr_dfsn, gr%invrs_dzt(:), &
                                    rho_ds_zm(:), invrs_rho_ds_zt(:), &
-                                   up2(:), vp2(:), wp2(:), wp4(:), em(:), &
-                                   upwp(:), vpwp(:), &
+                                   wp2up2(:), wp2vp2(:), wp4(:), &
                                    rhs_pr_dfsn_wp3(:) )
 
         ! Add term
@@ -4436,8 +4446,7 @@ module advance_wp2_wp3_module
   !=============================================================================
   pure subroutine wp3_term_pr_dfsn_rhs( C_wp3_pr_dfsn, invrs_dzt, &
                                         rho_ds_zm, invrs_rho_ds_zt, &
-                                        up2, vp2, wp2, wp4, em, &
-                                        upwp, vpwp, & 
+                                        wp2up2, wp2vp2, wp4, &
                                         rhs_pr_dfsn_wp3 )
 
     ! Description:
@@ -4460,7 +4469,7 @@ module advance_wp2_wp3_module
         gr    ! Variable type(s)
 
     use constants_clubb, only: &
-        zero, two
+        zero
 
     use clubb_precision, only: &
         core_rknd    ! Variable(s)
@@ -4475,13 +4484,9 @@ module advance_wp2_wp3_module
       invrs_dzt,       & ! Inverse of grid spacing                 [1/m]
       invrs_rho_ds_zt, & ! Inverse dry static density (thermo levels) [kg/m^3] 
       rho_ds_zm,       & ! Dry static density on mom. levels       [kg/m^3]
-      up2,             & ! u'^2 on momentum levels                 [m^2/s^2]
-      vp2,             & ! v'^2 on momentum levels                 [m^2/s^2]
-      wp2,             & ! w'^2 on momentum levels                 [m^2/s^2]
-      wp4,             & ! w'^4 on momentum levels                 [m^2/s^2]
-      upwp,            & ! u'w' on momentum levels                 [m^2/s^2]
-      vpwp,            & ! v'w' on momentum levels                 [m^2/s^2]
-      em                 ! Turbulence kinetic energy               [m^2/s^2]
+      wp2up2,          & ! w'^2u'^2 on momentum levels             [m^4/s^4]
+      wp2vp2,          & ! w'^2v'^2 on momentum levels             [m^4/s^4]
+      wp4                ! w'^4 on momentum levels                 [m^4/s^4]
 
     ! Return Variable
     real( kind = core_rknd ), dimension(gr%nz), intent(out) :: &
@@ -4490,23 +4495,20 @@ module advance_wp2_wp3_module
     ! Local Variables
     integer :: k   ! Vertical level index 
 
+    real( kind = core_rknd ), dimension(gr%nz) :: &
+      wp2upi2            ! 4th-order moment sum <w'^2u_i'u_i'>     [m^4/s^4]
+
     ! ---- Begin Code ----
+
+    wp2upi2 = 0.5 * ( wp2up2 + wp2vp2 + wp4 )
 
     ! Set lower boundary to 0
     rhs_pr_dfsn_wp3(1) = zero
 
     do k = 2, gr%nz-1
-
-        rhs_pr_dfsn_wp3(k) &
-         = + C_wp3_pr_dfsn * invrs_rho_ds_zt(k) * invrs_dzt(k) &
-!            * ( rho_ds_zm(k) * wp2(k) * em(k) - rho_ds_zm(k-1) * wp2(k-1) * em(k-1) )
-           * ( rho_ds_zm(k) * ( wp2(k) * up2(k) + two * wp2(k) * upwp(k) &
-                              + wp2(k) * vp2(k) + two * wp2(k) * vpwp(k) &
-                              + wp4(k) ) &
-             - rho_ds_zm(k-1) * ( wp2(k-1) * up2(k-1) + two * wp2(k-1) * upwp(k-1) &
-                              + wp2(k-1) * vp2(k-1) + two * wp2(k-1) * vpwp(k-1) &
-                              + wp4(k-1) ) ) 
-
+      rhs_pr_dfsn_wp3(k) &
+       = + C_wp3_pr_dfsn * invrs_rho_ds_zt(k) * invrs_dzt(k) &
+         * ( rho_ds_zm(k) * wp2upi2(k) - rho_ds_zm(k-1) * wp2upi2(k-1) )
     enddo ! k = 2, gr%nz-1
 
     ! Set upper boundary to 0

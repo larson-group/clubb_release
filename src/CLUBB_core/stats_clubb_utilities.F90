@@ -1813,7 +1813,8 @@ module stats_clubb_utilities
                      Lscale_up, Lscale_down, tau_zt, Kh_zt, wp2rcp, &
                      wprtpthlp, sigma_sqd_w_zt, rsat, wp2_zt, thlp2_zt, &
                      wpthlp_zt, wprtp_zt, rtp2_zt, rtpthlp_zt, up2_zt, &
-                     vp2_zt, upwp_zt, vpwp_zt, wp4, tau_zm, Kh_zm, thlprcp, &
+                     vp2_zt, upwp_zt, vpwp_zt, wp2up2, wp2vp2, wp4, &
+                     tau_zm, Kh_zm, thlprcp, &
                      rtprcp, rcp2, em, a3_coef, a3_coef_zt, &
                      wp3_zm, wp3_on_wp2, wp3_on_wp2_zt, Skw_velocity, &
                      pdf_params, pdf_params_zm, sclrm, sclrp2, &
@@ -1954,6 +1955,8 @@ module stats_clubb_utilities
         irtpthlp, &
         iwprtp,  &
         iwpthlp, &
+        iwp2up2, &
+        iwp2vp2, &
         iwp4,  &
         iwpthvp, &
         irtpthvp
@@ -2156,6 +2159,8 @@ module stats_clubb_utilities
         vp2_zt,        & ! v'^2 on thermo. grid                  [m^2/s^2]
         upwp_zt,       & ! u'w' on thermo. grid                  [m^2/s^2]
         vpwp_zt,       & ! v'w' on thermo. grid                  [m^2/s^2]
+        wp2up2,        & ! < w'^2u'^2 > (momentum levels)        [m^4/s^4]
+        wp2vp2,        & ! < w'^2v'^2 > (momentum levels)        [m^4/s^4]
         wp4,           & ! < w'^4 > (momentum levels)            [m^4/s^4]
         tau_zm,        & ! Eddy diss. time scale; momentum levs. [s]
         Kh_zm,         & ! Eddy diff. coef. on momentum levels   [m^2/s]
@@ -2374,6 +2379,8 @@ module stats_clubb_utilities
       call stat_update_var( irtpthlp, rtpthlp, stats_zm )
       call stat_update_var( iwprtp, wprtp, stats_zm )
       call stat_update_var( iwpthlp, wpthlp, stats_zm )
+      call stat_update_var( iwp2up2, wp2up2, stats_zm )
+      call stat_update_var( iwp2vp2, wp2vp2, stats_zm )
       call stat_update_var( iwp4, wp4, stats_zm )
       call stat_update_var( iwpthvp, wpthvp, stats_zm )
       call stat_update_var( irtpthvp, rtpthvp, stats_zm )
