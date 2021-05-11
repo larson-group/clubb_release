@@ -511,7 +511,8 @@ module interpolation
 
 !-------------------------------------------------------------------------------
   subroutine pvertinterp & 
-             ( nlev, pmid, pout, arrin, arrout )
+             ( nlev, pmid, pout, arrin, &
+               arrout )
 	     
     implicit none
     

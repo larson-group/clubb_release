@@ -288,15 +288,15 @@ module advance_helper_module
       lambda0_stability
 
     !------------ Begin Code --------------
-    call calc_brunt_vaisala_freq_sqd(  thlm, exner, rtm, rcm, p_in_Pa, thvm, &
-                                      ice_supersat_frac, &
-                                      l_brunt_vaisala_freq_moist, &
-                                      l_use_thvm_in_bv_freq, &
-                                      brunt_vaisala_freq_sqd, &
-                                      brunt_vaisala_freq_sqd_mixed,&
-                                      brunt_vaisala_freq_sqd_dry, &
-                                      brunt_vaisala_freq_sqd_moist, &
-                                      brunt_vaisala_freq_sqd_plus )
+    call calc_brunt_vaisala_freq_sqd(  thlm, exner, rtm, rcm, p_in_Pa, thvm, & ! intent(in)
+                                      ice_supersat_frac, &                     ! intent(in)
+                                      l_brunt_vaisala_freq_moist, &            ! intent(in)
+                                      l_use_thvm_in_bv_freq, &                 ! intent(in)
+                                      brunt_vaisala_freq_sqd, &                ! intent(out)
+                                      brunt_vaisala_freq_sqd_mixed,&           ! intent(out)
+                                      brunt_vaisala_freq_sqd_dry, &            ! intent(out)
+                                      brunt_vaisala_freq_sqd_moist, &          ! intent(out)
+                                      brunt_vaisala_freq_sqd_plus )            ! intent(out)
  
 
     lambda0_stability = merge( lambda0_stability_coef, zero, brunt_vaisala_freq_sqd > zero )
@@ -585,15 +585,15 @@ module advance_helper_module
 
     !----- Begin Code -----
 
-    call calc_brunt_vaisala_freq_sqd( thlm, exner, rtm, rcm, p_in_Pa, thvm, &
-                                      ice_supersat_frac, &
-                                      l_brunt_vaisala_freq_moist, &
-                                      l_use_thvm_in_bv_freq, &
-                                      brunt_vaisala_freq_sqd, &
-                                      brunt_vaisala_freq_sqd_mixed,&
-                                      brunt_vaisala_freq_sqd_dry, &
-                                      brunt_vaisala_freq_sqd_moist, &
-                                      brunt_vaisala_freq_sqd_plus )
+    call calc_brunt_vaisala_freq_sqd( thlm, exner, rtm, rcm, p_in_Pa, thvm, & ! intent(in)
+                                      ice_supersat_frac, &                    ! intent(in)
+                                      l_brunt_vaisala_freq_moist, &           ! intent(in)
+                                      l_use_thvm_in_bv_freq, &                ! intent(in)
+                                      brunt_vaisala_freq_sqd, &               ! intent(out)
+                                      brunt_vaisala_freq_sqd_mixed,&          ! intent(out)
+                                      brunt_vaisala_freq_sqd_dry, &           ! intent(out)
+                                      brunt_vaisala_freq_sqd_moist, &         ! intent(out)
+                                      brunt_vaisala_freq_sqd_plus )           ! intent(out)
 
     invrs_min_max_diff = 1.0_core_rknd / ( Richardson_num_max - Richardson_num_min )
     invrs_num_div_thresh = 1.0_core_rknd / Richardson_num_divisor_threshold
@@ -611,7 +611,8 @@ module advance_helper_module
                                                      Richardson_num_divisor_threshold )
 
       if ( l_stats_samp ) &
-        call stat_update_var( ishear_sqd, shear_sqd, stats_zm )
+        call stat_update_var( ishear_sqd, shear_sqd, & ! intent(in)
+                              stats_zm )               ! intent(inout)
     else
 
       if ( l_use_shear_Richardson ) then
@@ -652,7 +653,8 @@ module advance_helper_module
 
     ! Stats sampling
     if ( l_stats_samp ) then
-      call stat_update_var( iRichardson_num, Richardson_num, stats_zm )
+      call stat_update_var( iRichardson_num, Richardson_num, & ! intent(in)
+                            stats_zm )                         ! intent(inout)
     end if
 
   end subroutine compute_Cx_fnc_Richardson

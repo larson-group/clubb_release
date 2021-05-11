@@ -330,9 +330,9 @@ module advance_windm_edsclrm_module
        if ( l_stats_samp ) then
 
           ! Implicit contributions to um and vm
-          call windm_edsclrm_implicit_stats( windm_edsclrm_um, um ) ! in
+          call windm_edsclrm_implicit_stats( windm_edsclrm_um, um ) ! intent(in)
 
-          call windm_edsclrm_implicit_stats( windm_edsclrm_vm, vm ) ! in
+          call windm_edsclrm_implicit_stats( windm_edsclrm_vm, vm ) ! intent(in)
 
        endif ! l_stats_samp
     
@@ -353,8 +353,10 @@ module advance_windm_edsclrm_module
        if ( uv_sponge_damp_settings%l_sponge_damping ) then
 
           if ( l_stats_samp ) then
-             call stat_begin_update( ium_sdmp, um / dt, stats_zt )
-             call stat_begin_update( ivm_sdmp, vm / dt, stats_zt )
+             call stat_begin_update( ium_sdmp, um / dt, & ! intent(in)
+                                     stats_zt )           ! intent(inout)
+             call stat_begin_update( ivm_sdmp, vm / dt, & ! intent(in)
+                                     stats_zt )           ! intent(inout)
           endif
 
           um(1:gr%nz) = sponge_damp_xm( dt, gr%zt, um_ref(1:gr%nz), &
@@ -364,8 +366,10 @@ module advance_windm_edsclrm_module
                                         vm(1:gr%nz), uv_sponge_damp_profile )
 
           if ( l_stats_samp ) then
-             call stat_end_update( ium_sdmp, um / dt, stats_zt )
-             call stat_end_update( ivm_sdmp, vm / dt, stats_zt )
+             call stat_end_update( ium_sdmp, um / dt, & ! intent(in) 
+                                   stats_zt )           ! intent(inout)
+             call stat_end_update( ivm_sdmp, vm / dt, & ! intent(in)
+                                   stats_zt )           ! intent(inout)
           endif
 
        endif ! uv_sponge_damp_settings%l_sponge_damping
@@ -393,8 +397,10 @@ module advance_windm_edsclrm_module
 
           ! Reflect nudging in budget
           if ( l_stats_samp ) then
-             call stat_begin_update( ium_ndg, um / dt, stats_zt )
-             call stat_begin_update( ivm_ndg, vm / dt, stats_zt )
+             call stat_begin_update( ium_ndg, um / dt, & ! intent(in)
+                                     stats_zt )          ! intent(inout)
+             call stat_begin_update( ivm_ndg, vm / dt, & ! intent(in)
+                                     stats_zt )          ! intent(inout)
           endif
       
           um(1:gr%nz) &
@@ -403,15 +409,19 @@ module advance_windm_edsclrm_module
           = vm(1:gr%nz) - ( ( vm(1:gr%nz) - vm_ref(1:gr%nz) ) * (dt/ts_nudge) )
 
           if ( l_stats_samp ) then
-             call stat_end_update( ium_ndg, um / dt, stats_zt )
-             call stat_end_update( ivm_ndg, vm / dt, stats_zt )
+             call stat_end_update( ium_ndg, um / dt, & ! intent(in)
+                                   stats_zt )          ! intent(inout)
+             call stat_end_update( ivm_ndg, vm / dt, & ! intent(in)
+                                   stats_zt )          ! intent(inout)
           endif
       
        endif ! l_uv_nudge
 
        if ( l_stats_samp ) then
-          call stat_update_var( ium_ref, um_ref, stats_zt )
-          call stat_update_var( ivm_ref, vm_ref, stats_zt )
+          call stat_update_var( ium_ref, um_ref, & ! intent(in)
+                                stats_zt )         ! intent(inout)
+          call stat_update_var( ivm_ref, vm_ref, & ! intent(in)
+                                stats_zt )         ! intent(inout)
        endif
 
        if ( l_tke_aniso ) then
@@ -1268,18 +1278,20 @@ module advance_windm_edsclrm_module
 
       ! xm mean advection
       ! xm term ma is completely implicit; call stat_update_var_pt.
-      call stat_update_var_pt( ixm_ma, k, &
+      call stat_update_var_pt( ixm_ma, k, & ! intent(in)
              ztscr01(k) * xm(km1) &
            + ztscr02(k) * xm(k) &
-           + ztscr03(k) * xm(kp1), stats_zt )
+           + ztscr03(k) * xm(kp1), &        ! intent(in)
+             stats_zt )                     ! intent(inout)
 
       ! xm turbulent transport (implicit component)
       ! xm term ta has both implicit and explicit components;
       ! call stat_end_update_pt.
-      call stat_end_update_pt( ixm_ta, k, &
+      call stat_end_update_pt( ixm_ta, k, & ! intent(in)
              ztscr04(k) * xm(km1) &
-           + ztscr05(k) * xm(k) &
-           + ztscr06(k) * xm(kp1), stats_zt )
+           + ztscr05(k) * xm(k) &         
+           + ztscr06(k) * xm(kp1), &        ! intent(in) 
+           stats_zt )                       ! intent(inout)
 
     enddo
 
@@ -1290,16 +1302,18 @@ module advance_windm_edsclrm_module
 
     ! xm mean advection
     ! xm term ma is completely implicit; call stat_update_var_pt.
-    call stat_update_var_pt( ixm_ma, k, &
+    call stat_update_var_pt( ixm_ma, k, & ! intent(in)
            ztscr01(k) * xm(km1) &
-         + ztscr02(k) * xm(k), stats_zt )
+         + ztscr02(k) * xm(k), &          ! intent(in)
+           stats_zt )                     ! intent(inout)
 
     ! xm turbulent transport (implicit component)
     ! xm term ta has both implicit and explicit components;
     ! call stat_end_update_pt.
-    call stat_end_update_pt( ixm_ta, k, &
+    call stat_end_update_pt( ixm_ta, k, & ! intent(in)
            ztscr04(k) * xm(km1) &
-         + ztscr05(k) * xm(k), stats_zt )
+         + ztscr05(k) * xm(k), &          ! intent(in)
+           stats_zt )                     ! intent(inout)
 
 
     return
@@ -1433,13 +1447,16 @@ module advance_windm_edsclrm_module
       if ( l_stats_samp ) then
 
         ! xm term gf is completely explicit; call stat_update_var.
-        call stat_update_var( ixm_gf, xm_gf, stats_zt )
+        call stat_update_var( ixm_gf, xm_gf, & ! intent(in)
+                              stats_zt )       ! intent(inout)
 
         ! xm term cf is completely explicit; call stat_update_var.
-        call stat_update_var( ixm_cf, xm_cf, stats_zt )
+        call stat_update_var( ixm_cf, xm_cf, & ! intent(in)
+                              stats_zt )       ! intent(inout)
 
         ! xm term F
-        call stat_update_var( ixm_f, xm_forcing, stats_zt )
+        call stat_update_var( ixm_f, xm_forcing, & ! intent(in)
+                              stats_zt )           ! intent(inout)
       endif
 
     else   ! implemented in a host model.
@@ -1565,9 +1582,9 @@ module advance_windm_edsclrm_module
     invrs_dt = 1.0_core_rknd / dt
 
     ! Calculate diffusion terms
-    call diffusion_zt_lhs( K_zm(:), nu(:),  &
-                           gr%invrs_dzm(:), gr%invrs_dzt(:), &
-                           lhs_diff(:,:) )
+    call diffusion_zt_lhs( K_zm(:), nu(:),  &                  ! intent(in)
+                           gr%invrs_dzm(:), gr%invrs_dzt(:), & ! intent(in)
+                           lhs_diff(:,:) )                     ! intent(out)
 
     ! The lower boundary condition needs to be applied here at level 2.
 
@@ -1607,9 +1624,9 @@ module advance_windm_edsclrm_module
     ! LHS mean advection term.
     if ( .not. l_implemented ) then
 
-        call term_ma_zt_lhs( wm_zt(:), gr%invrs_dzt(:), gr%invrs_dzm(:), &
-                             l_upwind_xm_ma, &
-                             lhs_ma_zt(:,:) )
+        call term_ma_zt_lhs( wm_zt(:), gr%invrs_dzt(:), gr%invrs_dzm(:), & ! intent(in)
+                             l_upwind_xm_ma, &                             ! intent(in)
+                             lhs_ma_zt(:,:) )                              ! intent(out)
 
         do k = 2, gr%nz-1
             lhs(1:3,k) = lhs(1:3,k) + lhs_ma_zt(:,k)
@@ -1842,18 +1859,20 @@ module advance_windm_edsclrm_module
         ! turbulent advection component.
         do k = 2, gr%nz-1
 
-            call stat_begin_update_pt( ixm_ta, k, &
+            call stat_begin_update_pt( ixm_ta, k, &                         ! intent(in)
                                        0.5_core_rknd * invrs_rho_ds_zt(k) &
                                      * ( lhs_diff(3,k) * xm(k-1) &
-                                     +   lhs_diff(2,k) * xm(k)   &
-                                     +   lhs_diff(1,k) * xm(k+1) ), stats_zt )
+                                     +   lhs_diff(2,k) * xm(k)   &          ! intent(in)
+                                     +   lhs_diff(1,k) * xm(k+1) ), &
+                                         stats_zt )                         ! intent(inout)
         end do
 
         ! Upper boundary
         call stat_begin_update_pt( ixm_ta, gr%nz, &
-                                   0.5_core_rknd * invrs_rho_ds_zt(gr%nz) &
+                                   0.5_core_rknd * invrs_rho_ds_zt(gr%nz) & ! intent(in)
                                  * ( lhs_diff(3,gr%nz) * xm(gr%nz-1) &
-                                 +   lhs_diff(2,gr%nz) * xm(gr%nz) ), stats_zt )
+                                 +   lhs_diff(2,gr%nz) * xm(gr%nz) ), &     ! intent(in)
+                                     stats_zt )                             ! intent(inout)
     endif
 
     if ( .not. l_imp_sfc_momentum_flux ) then
@@ -1865,11 +1884,11 @@ module advance_windm_edsclrm_module
 
         if ( l_stats_samp .and. ixm_ta > 0 ) then
 
-            call stat_modify_pt( ixm_ta, 2,  &
-                               + invrs_rho_ds_zt(2)  &
+            call stat_modify_pt( ixm_ta, 2,  &               ! intent(in)  
+                               + invrs_rho_ds_zt(2)  &  
                                * gr%invrs_dzt(2)  &
-                               * rho_ds_zm(1) * xpwp_sfc,  &
-                                 stats_zt )
+                               * rho_ds_zm(1) * xpwp_sfc,  & ! intent(in)
+                                 stats_zt )                  ! intent(inout)
         end if
 
     endif ! l_imp_sfc_momentum_flux

@@ -79,7 +79,8 @@ module stats_type_utilities
   end subroutine stat_assign
 
   !=============================================================================
-  subroutine stat_update_var( var_index, value, grid_kind )
+  subroutine stat_update_var( var_index, value, &
+                              grid_kind )
 
     ! Description:
     ! This updates the value of a statistics variable located at var_index
@@ -136,7 +137,8 @@ module stats_type_utilities
   end subroutine stat_update_var
 
   !=============================================================================
-  subroutine stat_update_var_pt( var_index, grid_level, value, grid_kind )
+  subroutine stat_update_var_pt( var_index, grid_level, value, &
+                                 grid_kind )
 
     ! Description:
     ! This updates the value of a statistics variable located at var_index
@@ -245,7 +247,8 @@ module stats_type_utilities
 
   !=============================================================================
   subroutine stat_begin_update_pt &
-             ( var_index, grid_level, value, grid_kind )
+             ( var_index, grid_level, value, &
+               grid_kind )
 
     ! Description:
     !   This begins an update of the value of a statistics variable located at
@@ -312,7 +315,8 @@ module stats_type_utilities
   end subroutine stat_begin_update_pt
 
   !=============================================================================
-  subroutine stat_end_update( var_index, value, grid_kind )
+  subroutine stat_end_update( var_index, value, &
+                              grid_kind )
 
     ! Description:
     ! This ends an update of the value of a statistics variable located at
@@ -375,7 +379,8 @@ module stats_type_utilities
 
   !=============================================================================
   subroutine stat_end_update_pt &
-                ( var_index, grid_level, value, grid_kind )
+                ( var_index, grid_level, value, &
+                  grid_kind )
 
     ! Description:
     ! This ends an update of the value of a statistics variable located at

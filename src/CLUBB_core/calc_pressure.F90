@@ -13,7 +13,8 @@ module calc_pressure
 
   !=============================================================================
   subroutine update_pressure( thlm, rtm, rcm, rho_ds_zt, thv_ds_zt, &
-                              p_in_Pa, exner, p_in_Pa_zm, exner_zm )
+                              p_in_Pa, exner, &
+                              p_in_Pa_zm, exner_zm )
 
     ! Description:
     ! Updates pressure according to the hydrostatic approximation.  Combining
