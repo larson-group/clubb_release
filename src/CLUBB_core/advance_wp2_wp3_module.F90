@@ -2060,7 +2060,8 @@ module advance_wp2_wp3_module
                                    dum_dz(:), dvm_dz(:), &
                                    upwp(:), vpwp(:), &
                                    thv_ds_zt(:), gr%invrs_dzt(:), &
-                                   em(:), &
+                                   rho_ds_zm(:), invrs_rho_ds_zt(:), &
+                                   em(:), wp2(:), &
                                    rhs_pr_turb_wp3(:), &
                                    l_use_tke_in_wp3_pr_turb_term )
 
@@ -4355,7 +4356,8 @@ module advance_wp2_wp3_module
                                         dum_dz, dvm_dz, &
                                         upwp, vpwp, &
                                         thv_ds_zt, invrs_dzt, &
-                                        em, &
+                                        rho_ds_zm, invrs_rho_ds_zt,  &
+                                        em, wp2, &
                                         rhs_pr_turb_wp3, &
                                         l_use_tke_in_wp3_pr_turb_term )
 
@@ -4398,6 +4400,9 @@ module advance_wp2_wp3_module
       vpwp,            & ! v'w'                                    [m^2/s^2]
       thv_ds_zt,       & ! Dry, base-state theta_v at thermo. levs [K]
       invrs_dzt,       & ! Inverse of grid spacing                 [1/m]
+      rho_ds_zm,       & ! Dry static density on mom. levels       [kg/m^3]
+      invrs_rho_ds_zt, & ! Inverse dry static density on thermo. levs [kg/m^3]
+      wp2,             & ! w'^2                                    [m^2/s^2]
       em                 ! Turbulence kinetic energy               [m^2/s^2]
 
     logical, intent(in) :: &
@@ -4428,8 +4433,8 @@ module advance_wp2_wp3_module
       else
 
         rhs_pr_turb_wp3(k) &
-        = - C_wp3_pr_turb * invrs_dzt(k) &
-            * ( em(k) * em(k) - em(k-1) * em(k-1) )
+        = - C_wp3_pr_turb * invrs_rho_ds_zt(k) * invrs_dzt(k) &
+            * ( rho_ds_zm(k) * wp2(k) * em(k) - rho_ds_zm(k-1) * wp2(k-1) * em(k-1) )
 
       endif
 
