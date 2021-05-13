@@ -146,8 +146,7 @@ module pdf_closure_module
         l_mix_rat_hm  ! Variable(s)
 
     use model_flags, only: &
-        l_explicit_turbulent_adv_wp3,  & ! Variable(s)
-        l_explicit_turbulent_adv_xpyp
+        l_explicit_turbulent_adv_xpyp ! Variable(s)
 
     use numerical_check, only:  & 
         pdf_closure_check ! Procedure(s)
@@ -157,8 +156,7 @@ module pdf_closure_module
         sat_mixrat_ice
 
     use stats_variables, only: &
-        iwp4,       & ! Variables
-        ircp2,      &
+        ircp2,      & ! Variables
         iwprtp2,    &
         iwprtpthlp, &
         iwpthlp2
@@ -743,6 +741,7 @@ endif
                               pdf_params%corr_w_thl_1(1,:), pdf_params%corr_w_thl_2(1,:),     &
                               pdf_params%mixt_frac(1,:) )
 
+    ! Compute higher order moments (these may be interactive)
     wp2up2 = calc_wp2xp2_pdf( wm, um, pdf_params%w_1, pdf_params%w_2, &
                               u_1, u_2, &
                               pdf_params%varnce_w_1, pdf_params%varnce_w_2, &
@@ -757,12 +756,9 @@ endif
                               corr_v_w_1, corr_v_w_2, &
                               pdf_params%mixt_frac )
 
-    ! Compute higher order moments (these may be interactive)
-    if ( l_explicit_turbulent_adv_wp3 .or. iwp4 > 0 ) then
-       wp4 = calc_wp4_pdf( wm, pdf_params%w_1(1,:), pdf_params%w_2(1,:),              &
-                           pdf_params%varnce_w_1(1,:), pdf_params%varnce_w_2(1,:),    &
-                           pdf_params%mixt_frac(1,:) )
-    endif
+    wp4 = calc_wp4_pdf( wm, pdf_params%w_1(1,:), pdf_params%w_2(1,:),              &
+                        pdf_params%varnce_w_1(1,:), pdf_params%varnce_w_2(1,:),    &
+                        pdf_params%mixt_frac(1,:) )
 
     if ( l_explicit_turbulent_adv_xpyp .or. iwprtp2 > 0 ) then
        wprtp2 = calc_wpxp2_pdf( wm, rtm, pdf_params%w_1(1,:), pdf_params%w_2(1,:),        &

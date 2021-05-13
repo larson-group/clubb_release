@@ -1428,14 +1428,14 @@ module advance_clubb_core_module
       ! Cx_fnc_Richardson is only used if one of these flags is true,
       ! otherwise its value is irrelevant, set it to 0 to avoid NaN problems
       if ( clubb_config_flags%l_use_C7_Richardson .or. clubb_config_flags%l_use_C11_Richardson &
-           .or. l_use_wp3_pr3 ) then
-          call compute_Cx_Fnc_Richardson( thlm, um, vm, em, Lscale, exner, rtm,          & ! intent(in)
-                                          rcm, p_in_Pa, thvm, rho_ds_zm,                 & ! intent(in)
-                                          ice_supersat_frac,                             & ! intent(in)
-                                          clubb_config_flags%l_brunt_vaisala_freq_moist, & ! intent(in)
-                                          clubb_config_flags%l_use_thvm_in_bv_freq,      & ! intent(in
-                                          clubb_config_flags%l_use_shear_Richardson,     & ! intent(in)
-                                          Cx_fnc_Richardson )                              ! intent(out)
+        .or. l_use_wp3_pr3 ) then
+       call compute_Cx_Fnc_Richardson( thlm, um, vm, em, Lscale, exner, rtm,          & ! intent(in)
+                                       rcm, p_in_Pa, thvm, rho_ds_zm,                 & ! intent(in)
+                                       ice_supersat_frac,                             & ! intent(in)
+                                       clubb_config_flags%l_brunt_vaisala_freq_moist, & ! intent(in)
+                                       clubb_config_flags%l_use_thvm_in_bv_freq,      & ! intent(in
+                                       clubb_config_flags%l_use_shear_Richardson,     & ! intent(in)
+                                       Cx_fnc_Richardson )                             ! intent(out)
       else
           Cx_fnc_Richardson = 0.0
       end if
@@ -2225,8 +2225,7 @@ module advance_clubb_core_module
         sat_mixrat_liq    ! Procedure(s)
 
     use model_flags, only: &
-        l_gamma_Skw,                  & ! Variable(s)
-        l_explicit_turbulent_adv_wp3
+        l_gamma_Skw    ! Variable(s)
 
     use error_code, only: &
         clubb_at_least_debug_level,  & ! Procedure
@@ -2259,7 +2258,6 @@ module advance_clubb_core_module
         imin_F_thl,          &
         imax_F_thl,          &
         ircp2,               &
-        iwp4,                &
         ircm_refined,        &
         icloud_frac_refined
 
@@ -2927,17 +2925,13 @@ module advance_clubb_core_module
       ! pdf_closure back to momentum grid.
       ! Since top momentum level is higher than top thermo level,
       ! Set variables at top momentum level to 0.
-      if ( l_explicit_turbulent_adv_wp3 .or. iwp4 > 0 ) then
-         wp4 = max( zt2zm( wp4_zt ), zero_threshold )  ! Pos. def. quantity
-         wp4(gr%nz) = zero
-         ! Set wp4 to 0 at the lowest momentum level (momentum level 1).
-         ! When the l_explicit_turbulent_adv_wp3 flag is enabled, wp4 (including
-         ! its value at momentum level 1) is used interactively in the code.
-         ! The value of wp4 at momentum level 1 is found by interpolation of
-         ! the values produced by the PDF for wp4_zt at thermodynamic levels
-         ! 1 and 2.  This value is unreliable at thermodynamic level 1.
-         wp4(1) = zero
-      endif
+      wp4 = max( zt2zm( wp4_zt ), zero_threshold )  ! Pos. def. quantity
+      wp4(gr%nz) = zero
+      ! Set wp4 to 0 at the lowest momentum level (momentum level 1).
+      ! The value of wp4 at momentum level 1 is found by interpolation of
+      ! the values produced by the PDF for wp4_zt at thermodynamic levels
+      ! 1 and 2.  This value is unreliable at thermodynamic level 1.
+      wp4(1) = zero
 
 #ifndef CLUBB_CAM
       ! CAM-CLUBB needs cloud water variance thus always compute this
