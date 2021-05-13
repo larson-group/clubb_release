@@ -267,7 +267,12 @@ class VariableGroup:
                     if (model_name + '_calc') in line.keys() and \
                             not self.__varnamesInDataset__(line['var_names'], dataset):
                         plot_data, z = line[(model_name + '_calc')](dataset_override=dataset)
-                        plot = Line(plot_data, z, line_format=line_style, label=line['legend_label'])
+                        if self.animation is None:
+                            plot = Line(plot_data, z, line_format=line_style, label=line['legend_label'])
+                        else:
+                            plot = Contour(x_data=z['time'],y_data=z['height'],c_data=plot_data,
+                                           colors=Style_definitions.CONTOUR_CMAP,
+                                           label=line['legend_label'], line_format=line_style)
                         all_lines.append(plot)
                         line['calculated'] = True
 
