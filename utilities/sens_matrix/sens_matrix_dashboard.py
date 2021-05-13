@@ -74,24 +74,24 @@ metricsNamesAndWeights = [ \
                         ['SWCF_PA', 1.], \
                         ['SWCF_CAF', 1.], \
                         ['LWCF_GLB', 2.], \
-#                        ['LWCF_DYCOMS', 1.], \
-#                        ['LWCF_HAWAII', 1.], \
-#                        ['LWCF_VOCAL', 1.], \
+##                        ['LWCF_DYCOMS', 0.1], \
+##                        ['LWCF_HAWAII', 0.1], \
+##                        ['LWCF_VOCAL', 0.1], \
                         ['LWCF_LBA', 1.], \
                         ['LWCF_WP', 1.], \
                         ['LWCF_EP', 1.], \
-#                        ['LWCF_NP', 1.], \
+                        ['LWCF_NP', 1.], \
                         ['LWCF_SP', 1.], \
                         ['LWCF_PA', 1.], \
                         ['LWCF_CAF', 1.], \
                         ['PRECT_GLB', 2.], \
-#                        ['PRECT_DYCOMS', 0.1], \
-#                        ['PRECT_HAWAII', 0.1], \
-#                        ['PRECT_VOCAL', 0.1], \
+##                        ['PRECT_DYCOMS', 0.1], \
+##                        ['PRECT_HAWAII', 0.1], \
+##                        ['PRECT_VOCAL', 0.1], \
                         ['PRECT_LBA', 1.], \
                         ['PRECT_WP', 1.], \
                         ['PRECT_EP', 1.], \
-#                        ['PRECT_NP', 1.], \
+                        ['PRECT_NP', 1.], \
                         ['PRECT_SP', 1.], \
                         ['PRECT_PA', 1.], \
                         ['PRECT_CAF', 1.] \
@@ -115,15 +115,15 @@ paramsNamesAndFilenames = [ \
 #                  ['prc_exp', 'devel/anvil.devel.prc2.ne30_ne30_Regional.nc'], \
 #                  ['clubb_c_invrs_tau_wpxp_ri', 'devel/anvil.devel.ri4.ne30_ne30_Regional.nc'], \
 #                  ['clubb_c_invrs_tau_n2_clear_wp3', 'devel/anvil.devel.wp35.ne30_ne30_Regional.nc'], \
-                  ['clubb_c8', '20210426/anvil.devel.0426_c8p5.ne30_ne30_Regional.nc'], \
-                  ['clubb_c_invrs_tau_wpxp_n2_thresh','20210426/anvil.devel.0426_thres1p2.ne30_ne30_Regional.nc'], \
-                  ['clubb_c_invrs_tau_n2_wp2','20210426/anvil.devel.0426_wp2p3.ne30_ne30_Regional.nc'], \
-#                  ['clubb_c_k10','20210426/anvil.devel.0426_ck10p1.ne30_ne30_Regional.nc'], \
-                  ['vqit', '20210426/anvil.devel.0426_vqitp25.ne30_ne30_Regional.nc'], \
-#                  ['clubb_c_invrs_tau_wpxp_ri', '20210426/anvil.devel.0426_ri5.ne30_ne30_Regional.nc'], \
-                  ['clubb_gamma_coef', '20210426/anvil.devel.0426_gap2.ne30_ne30_Regional.nc'], \
-#                  ['max_total_ni', '20210426/anvil.devel.0426_ni700.ne30_ne30_Regional.nc'], \
-#                  ['cldfrc_rhminl', '20210426/anvil.devel.0426_rhp9.ne30_ne30_Regional.nc'] \
+                  ['clubb_c8', '20210505/anvil.devel.0503_c8p4.ne30_ne30_Regional.nc'], \
+                  ['clubb_c_invrs_tau_wpxp_n2_thresh','20210505/anvil.devel.0503_thresh2.2.ne30_ne30_Regional.nc'], \
+                  ['clubb_c_invrs_tau_n2','20210505/anvil.devel.0503_n2p4.ne30_ne30_Regional.nc'], \
+                  ['clubb_c_k10','20210505/anvil.devel.0503_ck10p3.ne30_ne30_Regional.nc'], \
+                  ['vqit', '20210505/anvil.devel.0503_vqitp4.ne30_ne30_Regional.nc'], \
+#                  ['clubb_c_invrs_tau_wpxp_ri', '20210505/anvil.devel.0503_ri5.ne30_ne30_Regional.nc'], \
+#                  ['clubb_gamma_coef', '20210505/anvil.devel.0503_gap2.ne30_ne30_Regional.nc'], \
+#                  ['max_total_ni', '20210505/anvil.devel.0503_ni700.ne30_ne30_Regional.nc'], \
+#                  ['cldfrc_rhminl', '20210505/anvil.devel.0503_rhp9.ne30_ne30_Regional.nc'] \
                         ]
 
 dfparamsNamesAndFilenames =  \
@@ -135,16 +135,17 @@ sensNcFilenames = dfparamsNamesAndFilenames[['sensNcFilenames']].to_numpy().asty
 #    and hence will be transformed to [0,infinity] in order to make
 #    the relationship between parameters and metrics more linear:
 transformedParamsNames = np.array(['clubb_c8','clubb_c_invrs_tau_n2', 'clubb_c_invrs_tau_n2_clear_wp3'])
+#transformedParamsNames = np.array([''])
 
 # Netcdf file containing metric and parameter values from the default simulation
 defaultNcFilename = \
-    '20210426/anvil.devel.0426_nolmm.ne30_ne30_Regional.nc'#'/home/vlarson/canopy/scripts/anvil.c689c7e.repeatbmg_flux.ne30_ne30_GLBmean.nc'
+    '20210505/anvil.devel.NGD_thres2p3_vqitp5.ne30_ne30_Regional.nc'#'/home/vlarson/canopy/scripts/anvil.c689c7e.repeatbmg_flux.ne30_ne30_GLBmean.nc'
 #    'devel/anvil.devel.base.ne30_ne30_Regional.nc'
 
 # Metrics from simulation that use the SVD-recommended parameter values
 # Here, we use default simulation just as a placeholder.
 linSolnNcFilename = \
-   '20210426/anvil.devel.0426_nolmm.ne30_ne30_Regional.nc' #'/home/vlarson/canopy/scripts/anvil.c689c7e.repeatbmg_flux.ne30_ne30_GLBmean.nc'
+   '20210505/anvil.devel.NGD_thres2p3_vqitp5.ne30_ne30_Regional.nc' #'/home/vlarson/canopy/scripts/anvil.c689c7e.repeatbmg_flux.ne30_ne30_GLBmean.nc'
 
 # Observed values of our metrics, from, e.g., CERES-EBAF.
 # These observed metrics will be matched as closely as possible by analyzeSensMatrix.
@@ -164,6 +165,7 @@ obsMetricValsDict = { \
 
 # Calculate changes in parameter values needed to match metrics.
 defaultMetricValsCol, defaultBiasesCol, \
+defaultBiasesApprox, defaultBiasesApproxPC, \
 defaultBiasesOrigApprox, defaultBiasesOrigApproxPC, \
 sensMatrixOrig, sensMatrix, normlzdSensMatrix, svdInvrsNormlzdWeighted, \
 defaultParamValsOrigRow, dparamsSoln, \
@@ -179,25 +181,27 @@ external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
 sensMatrixDashboard = dash.Dash(__name__, external_stylesheets=external_stylesheets)
 
 # Plot the biases of the default simulation and the SVD approximation of that
-biasesMatrix = np.dstack((defaultBiasesCol,defaultBiasesOrigApprox, defaultBiasesOrigApproxPC)).squeeze()
+biasesMatrix = np.dstack((defaultBiasesCol,defaultBiasesApprox, defaultBiasesApproxPC)).squeeze()
 fracBiasesMatrix = np.diagflat(np.reciprocal(np.abs(defaultMetricValsCol))) @ biasesMatrix
 df = pd.DataFrame(fracBiasesMatrix,
                   index=metricsNames,
-                  columns= ['fracDefBias', 'fracDefBiasOrigApprox', 'defaultBiasesOrigApproxPC'])
+                  columns= ['fracDefBias', 'fracDefBiasApprox', 'defaultBiasesApproxPC'])
 biasesFig = px.line(df, x=df.index, y=df.columns,
               title = 'Fractional biases of default simulation and approximations thereof.')
-biasesFig.update_yaxes(title="(Obs-Sim) / abs(default metric value)")
+biasesFig.update_yaxes(title="-(Sim-Obs) / abs(default metric value)")
 biasesFig.update_xaxes(title="Metric and region")
+biasesFig.update_layout(hovermode="x")
 
+# Compute errors in the final parameter solution as a frac of the original errors
 # estBiasesOrig = default metric value + correction - observed metric value
 defaultBiasesColSqd = defaultBiasesCol**2
-defaultMetricValsColSqd = defaultMetricValsCol**2
-estBiasesOrigSqd = (defaultBiasesOrigApprox - defaultBiasesCol)**2
-fracError = estBiasesOrigSqd / defaultBiasesColSqd
-#fracError = estBiasesOrigSqd / defaultMetricValsColSqd
-estBiasesOrigPCSqd = (defaultBiasesOrigApproxPC - defaultBiasesCol)**2
-fracErrorPC = estBiasesOrigPCSqd / defaultBiasesColSqd
-#fracErrorPC = estBiasesOrigPCSqd / defaultMetricValsColSqd
+#defaultMetricValsColSqd = defaultMetricValsCol**2
+estBiasesSqd = (defaultBiasesApprox - defaultBiasesCol)**2
+fracError = estBiasesSqd / defaultBiasesColSqd
+#fracError = estBiasesSqd / defaultMetricValsColSqd
+estBiasesPCSqd = (defaultBiasesApproxPC - defaultBiasesCol)**2
+fracErrorPC = estBiasesPCSqd / defaultBiasesColSqd
+#fracErrorPC = estBiasesPCSqd / defaultMetricValsColSqd
 
 
 #pdb.set_trace()
@@ -210,6 +214,7 @@ errorsFig = px.line(df, x=df.index, y=df.columns,
               title = 'Fractional error in corrected solution.')
 errorsFig.update_yaxes(title="Corr Err Sqd / Def Err Sqd")
 errorsFig.update_xaxes(title="Metric and region")
+errorsFig.update_layout(hovermode="x")
 
 
 # Plot each column of normalized sensitivity matrix as a separate line.
@@ -219,10 +224,11 @@ df = pd.DataFrame(normlzdSensMatrix,
                   columns=paramsNames)
 normlzdSensMatrixColsFig = px.line(df, x=df.index, y=df.columns,
               title = """Columns of normalized sensitivity matrix.<br>
-                       Each column (line) shows how sensitive the metrics are<br>
-                       to a change in a single parameter value.""" )
-normlzdSensMatrixColsFig.update_yaxes(title="Normalized sensitivity, (1/metric) * dmetric/dparam")
+                       Each column (line) shows how sensitive the metrics are to a change in a single parameter value.<br>
+                       (A positive value means that an increase in parameter value brings the default simulation closer to obs.)""" )
+normlzdSensMatrixColsFig.update_yaxes(title="Norml sens, (|param|/(obsmetric-defmetric)) * dmetric/dparam")
 normlzdSensMatrixColsFig.update_xaxes(title="Metric and region")
+normlzdSensMatrixColsFig.update_layout(hovermode="x")
 
 # Plot each row of normalized sensitivity matrix as a separate line.
 # Each row tells us how a single metric varies with all parameters.
@@ -231,10 +237,11 @@ df = pd.DataFrame(np.transpose(normlzdSensMatrix),
                   columns=metricsNames)
 normlzdSensMatrixRowsFig = px.line(df, x=df.index, y=df.columns,
               title = """Rows of normalized sensitivity matrix.<br>
-                       Each row (line) tells us how a single metric<br>
-                       varies with all parameters.""" )
-normlzdSensMatrixRowsFig.update_yaxes(title="Normalized sensitivity, (1/metric) * dmetric/dparam")
+                       Each row (line) tells us how a single metric varies with all parameters.<br>
+                       (A positive value means that an increase in parameter value brings the default simulation closer to obs.)""" )
+normlzdSensMatrixRowsFig.update_yaxes(title="Norml sens, (|param|/(obsmetric-defmetric)) * dmetric/dparam")
 normlzdSensMatrixRowsFig.update_xaxes(title="Parameter")
+normlzdSensMatrixRowsFig.update_layout(hovermode="x")
 
 # Plot the parameter values recommended by SVD.
 paramsMatrix = np.dstack((dparamsSoln,paramsSoln)).squeeze()
@@ -247,6 +254,7 @@ fracParamsFig = px.line(df, x=df.index, y=df.columns,
               title = 'Fractional parameter values (and values - default) recommended by SVD.')
 fracParamsFig.update_yaxes(title="(Parameter value) / abs(default value)")
 fracParamsFig.update_xaxes(title="Parameter Name")
+fracParamsFig.update_layout(hovermode="x")
 
 # Plot the parameter values recommended by SVD.
 paramsFig = go.Figure()
@@ -254,8 +262,8 @@ paramsFig.add_trace(go.Scatter(x=paramsNames, y=paramsLowVals[:,0], name=r'$para
 paramsFig.add_trace(go.Scatter(x=paramsNames, y=paramsHiVals[:,0], fill='tonexty', name=r'$paramsSoln + \sigma$'))
 paramsFig.add_trace(go.Scatter(x=paramsNames, y=paramsSoln[:,0], name='paramsSoln'))
 paramsFig.add_trace(go.Scatter(x=paramsNames, y=paramsSolnPC[:,0], name='paramsSolnPC'))
-paramsFig.add_trace(go.Scatter(x=paramsNames, y=defaultParamValsOrigRow[:,0], name='defaultParamVals'))
-
+paramsFig.add_trace(go.Scatter(x=paramsNames, y=defaultParamValsOrigRow[0,:], name='defaultParamVals'))
+paramsFig.update_layout(hovermode="x")
 
 sensMatrixDashboard.layout = html.Div(children=[
         html.H1(children='Sensitivity matrix diagnostics'),
@@ -270,6 +278,7 @@ sensMatrixDashboard.layout = html.Div(children=[
         dcc.Graph( id='paramsFig', figure=paramsFig )
 
 ])
+
 
 if __name__ == '__main__':
         sensMatrixDashboard.run_server(debug=True)

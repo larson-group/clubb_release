@@ -54,6 +54,7 @@ def main():
 
     # Calculate changes in parameter values needed to match metrics.
     defaultMetricValsCol, defaultBiasesCol, \
+    defaultBiasesApprox, defaultBiasesApproxPC, \
     defaultBiasesOrigApprox, defaultBiasesOrigApproxPC, \
     sensMatrixOrig, sensMatrix, normlzdSensMatrix, svdInvrsNormlzdWeighted, \
     defaultParamValsOrigRow, dparamsSoln, \
@@ -258,6 +259,7 @@ def analyzeSensMatrix(metricsNames, paramsNames, transformedParamsNames,
     defaultBiasesOrigApproxPC = sensMatrixOrig @ dparamsSolnPC
 
     return (defaultMetricValsCol, defaultBiasesCol, \
+            defaultBiasesApprox, defaultBiasesApproxPC, \
             defaultBiasesOrigApprox, defaultBiasesOrigApproxPC, \
             sensMatrixOrig, sensMatrix, normlzdSensMatrix, svdInvrsNormlzdWeighted, \
             defaultParamValsOrigRow, dparamsSoln, \
@@ -336,11 +338,16 @@ def constructSensMatrix(sensMetricValsMatrix, sensParamValsRow,
     # Used for forming normalized sensitivity derivatives.
     invrsBiasesMatrix = np.reciprocal(defaultBiasesCol) @ np.ones((1,numParams))
 
-    #print("\ninvrsBiasesMatrix =")
-    #print(invrsBiasesMatrix)
+#    if beVerbose:
+#        print("\ninvrsBiasesMatrix =")
+#        print(invrsBiasesMatrix)
 
     # Form matrix of default parameter values, for later normalization of the sensitivity matrix
     maxMagParamValsMatrix = np.ones((numMetrics,1)) @ maxMagParamValsRow
+
+#    if beVerbose:
+#        print("\nmaxMagParamValsMatrix =")
+#        print(maxMagParamValsMatrix)
 
     # Sensitivity matrix, normalized by biases and parameter values
     normlzdSensMatrix = sensMatrix * invrsBiasesMatrix * maxMagParamValsMatrix
