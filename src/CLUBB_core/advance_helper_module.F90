@@ -940,9 +940,8 @@ module advance_helper_module
 
     d_sqrt_wp2_dz = ddzm( sqrt( wp2 ) )
     ! The splatting term is clipped so that the incremental change doesn't exceed 5 times the
-    !   value of wp2 itself.  This prevents spikes in wp2 from being propagated to up2 and vp2.
-    !   However, it does introduce undesired dependence on the time step.
-    !   Someday we may wish to treat this term using a semi-implicit discretization.
+    ! value of wp3 itself. Someday we may wish to treat this term using a semi-implicit 
+    ! discretization.
     wp3_splat = - wp3 * min( five/dt, three * C_wp2_splat * tau_zt * d_sqrt_wp2_dz**2 )
     !wp3_splat = - three * C_wp2_splat * wp3 * 900._core_rknd * d_sqrt_wp2_dz**2
 
