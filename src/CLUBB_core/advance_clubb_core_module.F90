@@ -203,19 +203,8 @@ module advance_clubb_core_module
         c_K10h, &
         C_uu_shr, C4, &
         C_wp2_splat, &
-        C_invrs_tau_bkgnd, &
-        C_invrs_tau_sfc, &
-        C_invrs_tau_shear, &
-        C_invrs_tau_N2, &
-        C_invrs_tau_N2_xp2, &
-        C_invrs_tau_N2_wp2, &
-        C_invrs_tau_N2_wpxp, &
-        C_invrs_tau_N2_clear_wp3, &
-        C_invrs_tau_wpxp_Ri, &
-        C_invrs_tau_wpxp_N2_thresh, &
         xp3_coef_base, &
-        xp3_coef_slope, &
-        altitude_threshold
+        xp3_coef_slope
 
     use parameters_model, only: &
         sclr_dim, & ! Variable(s)
