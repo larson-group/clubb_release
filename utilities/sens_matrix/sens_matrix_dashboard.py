@@ -97,39 +97,44 @@ metricsNamesAndWeights = [ \
                         ['PRECT_CAF', 1.] \
                          ]
 
+
 dfMetricsNamesAndWeights =  \
         pd.DataFrame( metricsNamesAndWeights, columns = ['metricsNames', 'metricsWeights'] )
 metricsNames = dfMetricsNamesAndWeights[['metricsNames']].to_numpy().astype(str)[:,0]
 metricsWeights = dfMetricsNamesAndWeights[['metricsWeights']].to_numpy()
 
+
 # Parameters are tunable model parameters.
-#    The order of paramsNames must match the order of filenames below.
-# This is a list of one netcdf file per each sensitivity simulation.
-# Each file contains metrics and parameter values for a single simulation.
-# There should be one sensitivity simulation per each tunable parameter.
-# These filenames must be listed in the same order as the parameters (paramsNames).
-paramsNamesAndFilenames = [ \
-#                  ['clubb_c8', 'devel/anvil.devel.C82.ne30_ne30_Regional.nc'], \
-#                  ['clubb_c_invrs_tau_wpxp_n2_thresh','devel/anvil.devel.n2thres3.ne30_ne30_Regional.nc'], \
-#                  ['clubb_c_invrs_tau_n2','devel/anvil.devel.n21.ne30_ne30_Regional.nc'], \
-#                  ['prc_exp', 'devel/anvil.devel.prc2.ne30_ne30_Regional.nc'], \
-#                  ['clubb_c_invrs_tau_wpxp_ri', 'devel/anvil.devel.ri4.ne30_ne30_Regional.nc'], \
-#                  ['clubb_c_invrs_tau_n2_clear_wp3', 'devel/anvil.devel.wp35.ne30_ne30_Regional.nc'], \
-                  ['clubb_c8', '20210505/anvil.devel.0503_c8p4.ne30_ne30_Regional.nc'], \
-                  ['clubb_c_invrs_tau_wpxp_n2_thresh','20210505/anvil.devel.0503_thresh2.2.ne30_ne30_Regional.nc'], \
-                  ['clubb_c_invrs_tau_n2','20210505/anvil.devel.0503_n2p4.ne30_ne30_Regional.nc'], \
-                  ['clubb_c_k10','20210505/anvil.devel.0503_ck10p3.ne30_ne30_Regional.nc'], \
-                  ['vqit', '20210505/anvil.devel.0503_vqitp4.ne30_ne30_Regional.nc'], \
-#                  ['clubb_c_invrs_tau_wpxp_ri', '20210505/anvil.devel.0503_ri5.ne30_ne30_Regional.nc'], \
-#                  ['clubb_gamma_coef', '20210505/anvil.devel.0503_gap2.ne30_ne30_Regional.nc'], \
-#                  ['max_total_ni', '20210505/anvil.devel.0503_ni700.ne30_ne30_Regional.nc'], \
-#                  ['cldfrc_rhminl', '20210505/anvil.devel.0503_rhp9.ne30_ne30_Regional.nc'] \
+# Each parameter is associated with a single sensitivity simulation in which that parameter is perturbed,
+#    and the output from each sensitivity simulation is expected to be stored in its own netcdf file.
+#    Each netcdf file contains metrics and parameter values for a single simulation.
+# paramsNames designates the parameter whose value is changed in the corresponding sensitivity simulation.
+# The float listed below is a factor that is used below for scaling plots.
+paramsNamesScalesAndFilenames = [ \
+#                  ['clubb_c8', 1.0, 'devel/anvil.devel.C82.ne30_ne30_Regional.nc'], \
+#                  ['clubb_c_invrs_tau_wpxp_n2_thresh', 1.0, 'devel/anvil.devel.n2thres3.ne30_ne30_Regional.nc'], \
+#                  ['clubb_c_invrs_tau_n2', 1.0, 'devel/anvil.devel.n21.ne30_ne30_Regional.nc'], \
+#                  ['prc_exp', 1.0, 'devel/anvil.devel.prc2.ne30_ne30_Regional.nc'], \
+#                  ['clubb_c_invrs_tau_wpxp_ri', 1.0, 'devel/anvil.devel.ri4.ne30_ne30_Regional.nc'], \
+#                  ['clubb_c_invrs_tau_n2_clear_wp3', 1.0, 'devel/anvil.devel.wp35.ne30_ne30_Regional.nc'], \
+                  ['clubb_c8', 1.0, '20210505/anvil.devel.0503_c8p4.ne30_ne30_Regional.nc'], \
+                  ['clubb_c_invrs_tau_wpxp_n2_thresh', 1.e3, '20210505/anvil.devel.0503_thresh2.2.ne30_ne30_Regional.nc'], \
+                  ['clubb_c_invrs_tau_n2', 1.0, '20210505/anvil.devel.0503_n2p4.ne30_ne30_Regional.nc'], \
+                  ['clubb_c_k10', 1.0, '20210505/anvil.devel.0503_ck10p3.ne30_ne30_Regional.nc'], \
+                  ['vqit', 1.0, '20210505/anvil.devel.0503_vqitp4.ne30_ne30_Regional.nc'], \
+#                  ['clubb_c_invrs_tau_wpxp_ri', 1.0, '20210505/anvil.devel.0503_ri5.ne30_ne30_Regional.nc'], \
+#                  ['clubb_gamma_coef', 1.0, '20210505/anvil.devel.0503_gap2.ne30_ne30_Regional.nc'], \
+#                  ['max_total_ni', 1.0, '20210505/anvil.devel.0503_ni700.ne30_ne30_Regional.nc'], \
+#                  ['cldfrc_rhminl', 1.0, '20210505/anvil.devel.0503_rhp9.ne30_ne30_Regional.nc'] \
                         ]
 
-dfparamsNamesAndFilenames =  \
-        pd.DataFrame( paramsNamesAndFilenames, columns = ['paramsNames', 'sensNcFilenames'] )
-paramsNames = dfparamsNamesAndFilenames[['paramsNames']].to_numpy().astype(str)[:,0]
-sensNcFilenames = dfparamsNamesAndFilenames[['sensNcFilenames']].to_numpy().astype(str)[:,0]
+dfparamsNamesScalesAndFilenames =  \
+        pd.DataFrame( paramsNamesScalesAndFilenames, columns = ['paramsNames', 'paramsScales', 'sensNcFilenames'] )
+paramsNames = dfparamsNamesScalesAndFilenames[['paramsNames']].to_numpy().astype(str)[:,0]
+# Extract scaling factors of parameter values.
+# The scaling allows us to avoid plotting very large or small values.
+paramsScales = dfparamsNamesScalesAndFilenames[['paramsScales']].to_numpy().astype(float)[:,0]
+sensNcFilenames = dfparamsNamesScalesAndFilenames[['sensNcFilenames']].to_numpy().astype(str)[:,0]
 
 # This the subset of paramsNames that vary from [0,1] (e.g., C5)
 #    and hence will be transformed to [0,infinity] in order to make
@@ -204,8 +209,6 @@ fracErrorPC = estBiasesPCSqd / defaultBiasesColSqd
 #fracErrorPC = estBiasesPCSqd / defaultMetricValsColSqd
 
 
-#pdb.set_trace()
-
 fracErrorMatrix = np.dstack((fracError, fracErrorPC)).squeeze()
 df = pd.DataFrame(fracErrorMatrix,
                   index=metricsNames,
@@ -246,7 +249,6 @@ normlzdSensMatrixRowsFig.update_layout(hovermode="x")
 # Plot the parameter values recommended by SVD.
 paramsMatrix = np.dstack((dparamsSoln,paramsSoln)).squeeze()
 fracParamsMatrix = np.diagflat(np.reciprocal(np.abs(defaultParamValsOrigRow))) @ paramsMatrix
-#pdb.set_trace()
 df = pd.DataFrame(fracParamsMatrix,
                   index=paramsNames,
                   columns= ['fracDparamsSoln', 'fracParamsSoln'])
@@ -257,13 +259,17 @@ fracParamsFig.update_xaxes(title="Parameter Name")
 fracParamsFig.update_layout(hovermode="x")
 
 # Plot the parameter values recommended by SVD.
+# Multiply in the user-designated scale factors before plotting.
 paramsFig = go.Figure()
-paramsFig.add_trace(go.Scatter(x=paramsNames, y=paramsLowVals[:,0], name=r'$paramsSoln - \sigma$'))
-paramsFig.add_trace(go.Scatter(x=paramsNames, y=paramsHiVals[:,0], fill='tonexty', name=r'$paramsSoln + \sigma$'))
-paramsFig.add_trace(go.Scatter(x=paramsNames, y=paramsSoln[:,0], name='paramsSoln'))
-paramsFig.add_trace(go.Scatter(x=paramsNames, y=paramsSolnPC[:,0], name='paramsSolnPC'))
-paramsFig.add_trace(go.Scatter(x=paramsNames, y=defaultParamValsOrigRow[0,:], name='defaultParamVals'))
+paramsFig.add_trace(go.Scatter(x=paramsNames, y=paramsLowVals[:,0]*paramsScales, name=r'$paramsSoln - \sigma$'))
+paramsFig.add_trace(go.Scatter(x=paramsNames, y=paramsHiVals[:,0]*paramsScales, fill='tonexty', name=r'$paramsSoln + \sigma$'))
+paramsFig.add_trace(go.Scatter(x=paramsNames, y=paramsSoln[:,0]*paramsScales, name='paramsSoln'))
+paramsFig.add_trace(go.Scatter(x=paramsNames, y=paramsSolnPC[:,0]*paramsScales, name='paramsSolnPC'))
+paramsFig.add_trace(go.Scatter(x=paramsNames, y=defaultParamValsOrigRow[0,:]*paramsScales, name='defaultParamVals'))
+paramsFig.update_yaxes(title="User-scaled parameter value")
+paramsFig.update_xaxes(title="Parameter Name")
 paramsFig.update_layout(hovermode="x")
+
 
 sensMatrixDashboard.layout = html.Div(children=[
         html.H1(children='Sensitivity matrix diagnostics'),
