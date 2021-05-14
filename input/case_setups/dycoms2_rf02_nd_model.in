@@ -99,8 +99,6 @@ restart_path_case  = "restart/dycoms2_rf02_nd"
 time_restart  = 0.0      ! Time of model restart.
                          ! [seconds since start time listed in GrADS control file]
 
-l_input_fields = .false.,
-
 ! Select debug level:
 !        0 => Print no debug messages to the screen
 !        1 => Print lightweight debug messages, e.g. print statements
