@@ -757,7 +757,8 @@ module advance_xp2_xpyp_module
     
       ! This overwrites stats clipping data from clip_variance
       if ( l_stats_samp ) then
-        call stat_modify( irtp2_cl, -rtp2 / dt, stats_zm )
+        call stat_modify( irtp2_cl, -rtp2 / dt, & ! intent(in)
+                          stats_zm )              ! intent(inout)
       endif
       
       do k = 1, gr%nz
@@ -768,7 +769,8 @@ module advance_xp2_xpyp_module
       end do ! k = 1..gr%nz
       
       if ( l_stats_samp ) then
-        call stat_modify( irtp2_cl, rtp2 / dt, stats_zm )
+        call stat_modify( irtp2_cl, rtp2 / dt, & ! intent(in)
+                          stats_zm )             ! intent(inout)
       endif
       
     end if ! l_clip_large_rtp2
@@ -874,8 +876,10 @@ module advance_xp2_xpyp_module
     if ( up2_vp2_sponge_damp_settings%l_sponge_damping ) then
 
        if ( l_stats_samp ) then
-          call stat_begin_update( iup2_sdmp, up2 / dt, stats_zm )
-          call stat_begin_update( ivp2_sdmp, vp2 / dt, stats_zm )
+          call stat_begin_update( iup2_sdmp, up2 / dt, & ! intent(in)
+                                  stats_zm )             ! intent(inout)
+          call stat_begin_update( ivp2_sdmp, vp2 / dt, & ! intent(in)
+                                  stats_zm )             ! intent(inout)
        endif
 
        up2 = sponge_damp_xp2( dt, gr%zm, up2, w_tol_sqd, &
@@ -885,8 +889,10 @@ module advance_xp2_xpyp_module
                               up2_vp2_sponge_damp_profile )
 
        if ( l_stats_samp ) then
-          call stat_end_update( iup2_sdmp, up2 / dt, stats_zm )
-          call stat_end_update( ivp2_sdmp, vp2 / dt, stats_zm )
+          call stat_end_update( iup2_sdmp, up2 / dt, & ! intent(in)
+                                stats_zm )             ! intent(inout)
+          call stat_end_update( ivp2_sdmp, vp2 / dt, & ! intent(in)
+                                stats_zm )             ! intent(inout)
        endif
 
     endif ! up2_vp2_sponge_damp_settings%l_sponge_damping
@@ -1864,7 +1870,8 @@ module advance_xp2_xpyp_module
     low_bound = 1
     high_bound = gr%nz
 
-    call set_boundary_conditions_lhs( 2, low_bound, high_bound, lhs )
+    call set_boundary_conditions_lhs( 2, low_bound, high_bound, & ! intent(in)
+                                      lhs ) ! intent(inout)
 
     return
 
@@ -2796,11 +2803,12 @@ module advance_xp2_xpyp_module
             if ( l_clip_large_neg_mc &
                  .and. ( solve_type == xp2_xpyp_rtp2 &
                          .or. solve_type == xp2_xpyp_thlp2 ) ) then
-               call stat_update_var_pt( ixapxbp_f, k, &
-                                        max( xpyp_forcing(k), xp2_mc_limiter ), &
-                                        stats_zm )
+               call stat_update_var_pt( ixapxbp_f, k, & ! intent(in)
+                                        max( xpyp_forcing(k), xp2_mc_limiter ), & ! intent(in)
+                                        stats_zm ) ! intent(inout)
             else
-               call stat_update_var_pt( ixapxbp_f, k, xpyp_forcing(k), stats_zm )
+               call stat_update_var_pt( ixapxbp_f, k, xpyp_forcing(k), & ! intent(in)
+                                        stats_zm )                       ! intent(inout)
             endif
    
         enddo ! k=2..gr%nz-1
@@ -2821,7 +2829,8 @@ module advance_xp2_xpyp_module
 
     ! The value of the field at the upper boundary will be set to it's threshold
     ! minimum value, as contained in the variable 'threshold'.
-    call set_boundary_conditions_rhs( xapxbp(1), k_low, threshold, k_high, rhs(:) )
+    call set_boundary_conditions_rhs( xapxbp(1), k_low, threshold, k_high, & ! intent(in)
+                                      rhs(:) )                               ! intent(inout)
 
     return
   end subroutine xp2_xpyp_rhs
@@ -4232,18 +4241,18 @@ module advance_xp2_xpyp_module
     ! <w'rt'^2>, <w'thl'^2>, and <w'rt'thl'> used in the calcualtion of
     ! the turbulent advection terms
     if ( l_stats_samp ) then
-       call stat_update_var( icoef_wprtp2_implicit, coef_wprtp2_implicit, &
-                             stats_zt )
-       call stat_update_var( iterm_wprtp2_explicit, term_wprtp2_explicit, &
-                             stats_zt )
-       call stat_update_var( icoef_wpthlp2_implicit, coef_wpthlp2_implicit, &
-                             stats_zt )
-       call stat_update_var( iterm_wpthlp2_explicit, term_wpthlp2_explicit, &
-                             stats_zt )
-       call stat_update_var( icoef_wprtpthlp_implicit, &
-                             coef_wprtpthlp_implicit, stats_zt )
-       call stat_update_var( iterm_wprtpthlp_explicit, &
-                             term_wprtpthlp_explicit, stats_zt )
+       call stat_update_var( icoef_wprtp2_implicit, coef_wprtp2_implicit, & ! intent(in)
+                             stats_zt )                                     ! intent(inout)
+       call stat_update_var( iterm_wprtp2_explicit, term_wprtp2_explicit, & ! intent(in)
+                             stats_zt )                                     ! intent(in)
+       call stat_update_var( icoef_wpthlp2_implicit, coef_wpthlp2_implicit, & ! intent(in)
+                             stats_zt ) ! intent(inout)
+       call stat_update_var( iterm_wpthlp2_explicit, term_wpthlp2_explicit, & ! intent(in)
+                             stats_zt ) ! intent(inout)
+       call stat_update_var( icoef_wprtpthlp_implicit, coef_wprtpthlp_implicit, & ! intent(in)
+                             stats_zt ) ! intent(inout)
+       call stat_update_var( iterm_wprtpthlp_explicit, term_wprtpthlp_explicit, & ! intent(in)
+                             stats_zt ) ! intent(inout)
     endif ! l_stats_samp
     
     return

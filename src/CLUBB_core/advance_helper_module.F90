@@ -93,8 +93,9 @@ module advance_helper_module
   contains
 
   !---------------------------------------------------------------------------
-  subroutine set_boundary_conditions_lhs( diag_index, low_bound, high_bound, lhs, &
-                                      diag_index2, low_bound2, high_bound2 )
+  subroutine set_boundary_conditions_lhs( diag_index, low_bound, high_bound, &
+                                          lhs, &
+                                          diag_index2, low_bound2, high_bound2 )
 
   ! Description:
   !   Sets the boundary conditions for a left-hand side LAPACK matrix.
