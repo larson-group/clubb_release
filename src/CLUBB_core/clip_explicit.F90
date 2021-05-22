@@ -950,7 +950,8 @@ module clip_explicit
   end subroutine clip_variance_level
 
   !=============================================================================
-  subroutine clip_skewness( dt, sfc_elevation, wp2_zt, wp3 )
+  subroutine clip_skewness( dt, sfc_elevation, wp2_zt, &
+                            wp3 )
 
     ! Description:
     ! Clipping the value of w'^3 based on the skewness of w, Sk_w.
