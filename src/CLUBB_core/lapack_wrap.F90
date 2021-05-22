@@ -291,7 +291,8 @@ module lapack_wrap
 
 !-----------------------------------------------------------------------
   subroutine band_solvex( solve_type, nsup, nsub, ndim, nrhs,  & 
-                          lhs, rhs, solution, rcond )
+                          lhs, rhs, &
+                          solution, rcond )
 ! Description:
 !   Restructure and then solve a band diagonal system, with
 !   diagnostic output
@@ -493,8 +494,9 @@ module lapack_wrap
   end subroutine band_solvex
 
 !-----------------------------------------------------------------------
-  subroutine band_solve( solve_type, nsup, nsub, ndim, nrhs,  & 
-                          lhs, rhs, solution )
+  subroutine band_solve( solve_type, nsup, nsub, ndim, nrhs, lhs,  & 
+                          rhs, &
+                          solution )
 ! Description:
 !   Restructure and then solve a band diagonal system
 

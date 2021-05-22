@@ -13,7 +13,8 @@ module pos_definite_module
 !-----------------------------------------------------------------------
   subroutine pos_definite_adj & 
             ( dt, field_grid, field_np1,  & 
-              flux_np1, field_n, field_pd, flux_pd )
+              flux_np1, field_n, &
+              field_pd, flux_pd )
 ! Description:
 !   Applies a  flux conservative positive definite scheme to a variable
 

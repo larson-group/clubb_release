@@ -31,10 +31,10 @@ module mono_flux_limiter
                                              xp2, wm_zt, xm_forcing, &
                                              rho_ds_zm, rho_ds_zt, &
                                              invrs_rho_ds_zm, invrs_rho_ds_zt, &
-                                             xp2_threshold, l_implemented, &
+                                             xp2_threshold, xm_tol, l_implemented, &
                                              low_lev_effect, high_lev_effect, &
                                              l_upwind_xm_ma, &
-                                             xm, xm_tol, wpxp )
+                                             xm, wpxp )
 
     ! Description:
     ! Limits the value of w'x' and corrects the value of xm when the xm turbulent
