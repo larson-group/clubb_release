@@ -381,6 +381,9 @@ external code.
     Try using a command like `grep` if you’re uncertain if your variable
     is a semi-unique string.
 
+17b. When you name a subroutine, include a verb in the name, e.g., `advance_clubb_core` rather than `clubb_core`.
+     Verbs are appropriate parts of subroutine names because subroutines are operators that do things.
+
 18. Do not use magic numbers, i.e. undefined numbers rather than
     variables. Use of magic numbers makes it harder to read the code and
     to change the value parameters, e.g. grav = 9.8, consistently
