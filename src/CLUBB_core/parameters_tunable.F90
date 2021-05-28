@@ -124,8 +124,10 @@ module parameters_tunable
     alpha_corr = 0.15_core_rknd   ! Coef. for the corr. diagnosis algorithm  [-]
 
 !$omp threadprivate(alpha_corr)
-
-  real( kind = core_rknd ), private :: & 
+  
+  ! Changed to public since private variables in a namelist would require that the 
+  ! namelist itself be private too, see clubb issues #900 #928
+  real( kind = core_rknd ), public :: &
     nu1   = 20.00000_core_rknd, & ! Bg. Coef. Eddy Diffusion: wp2        [m^2/s]
     nu2   = 1.000000_core_rknd, & ! Bg. Coef. Eddy Diffusion: xp2        [m^2/s]
     nu6   = 5.000000_core_rknd, & ! Bg. Coef. Eddy Diffusion: wpxp       [m^2/s]
@@ -156,7 +158,9 @@ module parameters_tunable
 
 !$omp threadprivate(beta)
 
-  real( kind = core_rknd ), private :: &
+  ! Changed to public since private variables in a namelist would require that the 
+  ! namelist itself be private too, see clubb issues #900 #928
+  real( kind = core_rknd ), public :: &
     lmin_coef = 0.500000_core_rknd   ! Coefficient of lmin    [-]
 
 !$omp threadprivate(lmin_coef)
