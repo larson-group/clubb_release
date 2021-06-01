@@ -567,7 +567,7 @@ external code.
 
 29. For the sake of consistency and code readability, always use a 2
     column indent after all directives. Also, indent continuation lines
-    by 2 columns. E.g.\
+    by enough columns to line up lists. E.g.\
     `module dynamics`\
     `  ` <span>2 column indent within the scope of `module`</span>\
     ``\
@@ -578,8 +578,8 @@ external code.
     `  subroutine`` advect_2D( ... )`\
     `    use`` grid, only: & ` <span>2+2 columns within the scope of
     `dynamics/advect_2D`</span>\
-    `      nzmax,`` & ` <span>2+2+2 columns since we’re continuing the
-    `use` statement</span>\
+    `      nzmax,`` & ` <span>2+2+4 columns since we’re continuing the
+    `use` statement, and use has 3 letters plus a space</span>\
     `      nx`\
     ``\
     `    if`` ( l_do_something ) then`\
