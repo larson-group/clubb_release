@@ -689,7 +689,7 @@ module advance_helper_module
 
     ! Result Variable
     real( kind = core_rknd ), dimension(gr%nz) :: &
-      Lscale_width_vert_avg ! Vertically averaged profile (on momentum levels)
+      Lscale_width_vert_avg_output ! Vertically averaged profile (on momentum levels)
 
     ! Local Variables
     integer :: &
@@ -820,7 +820,7 @@ module advance_helper_module
 
         end do
 
-        Lscale_width_vert_avg(k) = numer_integral / denom_integral
+        Lscale_width_vert_avg_output(k) = numer_integral / denom_integral
 
     end do
 
