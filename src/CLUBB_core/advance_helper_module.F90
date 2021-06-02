@@ -662,7 +662,8 @@ module advance_helper_module
   !----------------------------------------------------------------------
 
   !----------------------------------------------------------------------
-  function Lscale_width_vert_avg( var_profile, Lscale_zm, rho_ds_zm, var_below_ground_value )
+  function Lscale_width_vert_avg( var_profile, Lscale_zm, rho_ds_zm, var_below_ground_value )&
+  result (Lscale_width_vert_avg_output)
 
   ! Description:
   !   Averages a profile with a running mean of width Lscale_zm
