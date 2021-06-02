@@ -16,7 +16,7 @@ module new_hybrid_pdf_main
 
   public :: new_hybrid_pdf_driver    ! Procedure(s)
 
-  private :: calc_responder_var, & ! Procedure(s)
+  private :: calc_responder_var_lev, & ! Procedure(s)
              calc_F_w_zeta_w
 
   private
@@ -350,7 +350,7 @@ module new_hybrid_pdf_main
     endif
 
     ! Calculate the PDF parameters for responder variable rt.
-    call calc_responder_var( rtm, rtp2, wprtp, wp2, & ! In
+    call calc_responder_var_lev( rtm, rtp2, wprtp, wp2, & ! In
                              mixt_frac, F_w,        & ! In
                              Skrt,                  & ! In/Out
                              mu_rt_1, mu_rt_2,      & ! Out
@@ -360,7 +360,7 @@ module new_hybrid_pdf_main
                              coef_sigma_rt_2_sqd    ) ! Out
 
     ! Calculate the PDF parameters for responder variable thl.
-    call calc_responder_var( thlm, thlp2, wpthlp, wp2, & ! In
+    call calc_responder_var_lev( thlm, thlp2, wpthlp, wp2, & ! In
                              mixt_frac, F_w,           & ! In
                              Skthl,                    & ! In/Out
                              mu_thl_1, mu_thl_2,       & ! Out
@@ -370,7 +370,7 @@ module new_hybrid_pdf_main
                              coef_sigma_thl_2_sqd      ) ! Out
 
     ! Calculate the PDF parameters for responder variable u.
-    call calc_responder_var( um, up2, upwp, wp2, & ! In
+    call calc_responder_var_lev( um, up2, upwp, wp2, & ! In
                              mixt_frac, F_w,     & ! In
                              Sku,                & ! In/Out
                              mu_u_1, mu_u_2,     & ! Out
@@ -380,7 +380,7 @@ module new_hybrid_pdf_main
                              coef_sigma_u_2_sqd  ) ! Out
 
     ! Calculate the PDF parameters for responder variable v.
-    call calc_responder_var( vm, vp2, vpwp, wp2, & ! In
+    call calc_responder_var_lev( vm, vp2, vpwp, wp2, & ! In
                              mixt_frac, F_w,     & ! In
                              Skv,                & ! In/Out
                              mu_v_1, mu_v_2,     & ! Out
@@ -401,7 +401,7 @@ module new_hybrid_pdf_main
              Sksclrj(k) = Sksclr(k,j)
           enddo ! k = 1, gr%nz, 1
 
-          call calc_responder_var( sclrjm, sclrjp2, wpsclrjp, wp2, & ! In
+          call calc_responder_var_lev( sclrjm, sclrjp2, wpsclrjp, wp2, & ! In
                                    mixt_frac, F_w,                 & ! In
                                    Sksclrj,                        & ! In/Out
                                    mu_sclrj_1, mu_sclrj_2,         & ! Out
@@ -659,7 +659,7 @@ module new_hybrid_pdf_main
   end subroutine new_hybrid_pdf_driver
 
   !=============================================================================
-  elemental subroutine calc_responder_var( xm, xp2, wpxp, wp2, & ! In
+  elemental subroutine calc_responder_var_lev( xm, xp2, wpxp, wp2, & ! In
                                            mixt_frac, F_w,     & ! In
                                            Skx,                & ! In/Out
                                            mu_x_1, mu_x_2,     & ! Out
@@ -800,7 +800,7 @@ module new_hybrid_pdf_main
 
     return
 
-  end subroutine calc_responder_var
+  end subroutine calc_responder_var_lev
 
   !=============================================================================
   elemental subroutine calc_F_w_zeta_w( Skw, wprtp, wpthlp, upwp, vpwp, & ! In

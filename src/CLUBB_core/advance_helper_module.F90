@@ -662,7 +662,8 @@ module advance_helper_module
   !----------------------------------------------------------------------
 
   !----------------------------------------------------------------------
-  function Lscale_width_vert_avg( var_profile, Lscale_zm, rho_ds_zm, var_below_ground_value )
+  function Lscale_width_vert_avg( var_profile, Lscale_zm, rho_ds_zm, var_below_ground_value )&
+  result (Lscale_width_vert_avg_output)
 
   ! Description:
   !   Averages a profile with a running mean of width Lscale_zm
@@ -689,7 +690,7 @@ module advance_helper_module
 
     ! Result Variable
     real( kind = core_rknd ), dimension(gr%nz) :: &
-      Lscale_width_vert_avg ! Vertically averaged profile (on momentum levels)
+      Lscale_width_vert_avg_output ! Vertically averaged profile (on momentum levels)
 
     ! Local Variables
     integer :: &
@@ -820,7 +821,7 @@ module advance_helper_module
 
         end do
 
-        Lscale_width_vert_avg(k) = numer_integral / denom_integral
+        Lscale_width_vert_avg_output(k) = numer_integral / denom_integral
 
     end do
 

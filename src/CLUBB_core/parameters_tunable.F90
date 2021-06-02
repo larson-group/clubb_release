@@ -26,8 +26,6 @@ module parameters_tunable
 
   use parameter_indices, only: nparams ! Variable(s)
 
-  use grid_class, only: gr ! Variable(s)
-
   use clubb_precision, only: &
       core_rknd ! Variable(s)
 
@@ -522,6 +520,7 @@ module parameters_tunable
     ! None
     !-----------------------------------------------------------------------
 
+
     use constants_clubb, only: &
         three,   & ! Variable(s)
         one,     &
@@ -843,6 +842,7 @@ module parameters_tunable
     !   and/or time.  This occurs, for example, when CLUBB is
     !   implemented in WRF.  --ldgrant Jul 2010
     !----------------------------------------------------------------------
+    use grid_class, only: gr
 
     use constants_clubb, only: &
       fstderr ! Constant(s)
