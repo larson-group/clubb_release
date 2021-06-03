@@ -231,7 +231,7 @@ module advance_helper_module
   end subroutine set_boundary_conditions_rhs
 
   !===============================================================================
-  function calc_stability_correction( thlm, Lscale, em, exner, rtm, rcm, &
+  function calc_stability_correction(  gr, thlm, Lscale, em, exner, rtm, rcm, &
                                       p_in_Pa, thvm, ice_supersat_frac, &
                                       l_brunt_vaisala_freq_moist, &
                                       l_use_thvm_in_bv_freq ) &
@@ -251,13 +251,15 @@ module advance_helper_module
       zero    ! Constant(s)
 
     use grid_class, only:  &
-      gr, & ! Variable(s)
+        grid, &
       zt2zm    ! Procedure(s)
 
     use clubb_precision, only:  &
       core_rknd ! Variable(s)
 
     implicit none
+
+    type (grid), target, intent(in) :: gr
 
     ! Input Variables
     real( kind = core_rknd ), intent(in), dimension(gr%nz) :: &
@@ -289,7 +291,7 @@ module advance_helper_module
       lambda0_stability
 
     !------------ Begin Code --------------
-    call calc_brunt_vaisala_freq_sqd(  thlm, exner, rtm, rcm, p_in_Pa, thvm, & ! intent(in)
+    call calc_brunt_vaisala_freq_sqd( gr,   thlm, exner, rtm, rcm, p_in_Pa, thvm, & ! intent(in)
                                       ice_supersat_frac, &                     ! intent(in)
                                       l_brunt_vaisala_freq_moist, &            ! intent(in)
                                       l_use_thvm_in_bv_freq, &                 ! intent(in)
@@ -309,7 +311,7 @@ module advance_helper_module
   end function calc_stability_correction
 
   !===============================================================================
-  subroutine calc_brunt_vaisala_freq_sqd(  thlm, exner, rtm, rcm, p_in_Pa, thvm, &
+  subroutine calc_brunt_vaisala_freq_sqd(   gr, thlm, exner, rtm, rcm, p_in_Pa, thvm, &
                                            ice_supersat_frac, &
                                            l_brunt_vaisala_freq_moist, &
                                            l_use_thvm_in_bv_freq, &
@@ -338,7 +340,7 @@ module advance_helper_module
       T0 ! Variable! 
 
     use grid_class, only: &
-      gr,     & ! Variable
+        grid, &
       ddzt,   &  ! Procedure(s)
       zt2zm
 
@@ -349,6 +351,8 @@ module advance_helper_module
       sat_mixrat_liq ! Procedure
 
     implicit none
+
+    type (grid), target, intent(in) :: gr
 
     ! Input Variables
     real( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
@@ -479,7 +483,7 @@ module advance_helper_module
   end subroutine calc_brunt_vaisala_freq_sqd
 
 !===============================================================================
-  subroutine compute_Cx_fnc_Richardson( thlm, um, vm, em, Lscale, exner, rtm, &
+  subroutine compute_Cx_fnc_Richardson(  gr, thlm, um, vm, em, Lscale, exner, rtm, &
                                         rcm, p_in_Pa, thvm, rho_ds_zm, &
                                         ice_supersat_frac, &
                                         l_brunt_vaisala_freq_moist, &
@@ -498,7 +502,7 @@ module advance_helper_module
       core_rknd  ! Konstant
 
     use grid_class, only: &
-      gr,   & ! Variable
+        grid, &
       ddzt, & ! Procedure(s)
       zt2zm
 
@@ -525,6 +529,8 @@ module advance_helper_module
       stat_update_var      ! Procedure
 
     implicit none
+
+    type (grid), target, intent(in) :: gr
 
     ! Constant Parameters
     real( kind = core_rknd ), parameter :: &
@@ -586,7 +592,7 @@ module advance_helper_module
 
     !----- Begin Code -----
 
-    call calc_brunt_vaisala_freq_sqd( thlm, exner, rtm, rcm, p_in_Pa, thvm, & ! intent(in)
+    call calc_brunt_vaisala_freq_sqd( gr,  thlm, exner, rtm, rcm, p_in_Pa, thvm, & ! intent(in)
                                       ice_supersat_frac, &                    ! intent(in)
                                       l_brunt_vaisala_freq_moist, &           ! intent(in)
                                       l_use_thvm_in_bv_freq, &                ! intent(in)
@@ -632,7 +638,7 @@ module advance_helper_module
       ! Clip below-min values of Richardson_num
       Richardson_num = max( Richardson_num, Richardson_num_min )
 
-      Richardson_num = Lscale_width_vert_avg( Richardson_num, Lscale_zm, rho_ds_zm, &
+      Richardson_num = Lscale_width_vert_avg( gr,  Richardson_num, Lscale_zm, rho_ds_zm, &
                                               Richardson_num_max )
     end if
 
@@ -644,7 +650,7 @@ module advance_helper_module
                     - Richardson_num_min )  * invrs_min_max_diff, Cx_max, Cx_min )
 
     if ( l_Cx_fnc_Richardson_vert_avg ) then
-      Cx_fnc_Richardson = Lscale_width_vert_avg( Cx_fnc_Richardson, Lscale_zm, rho_ds_zm, &
+      Cx_fnc_Richardson = Lscale_width_vert_avg( gr,  Cx_fnc_Richardson, Lscale_zm, rho_ds_zm, &
                                                  Cx_fnc_Richardson_below_ground_value )
     end if
 
@@ -662,7 +668,7 @@ module advance_helper_module
   !----------------------------------------------------------------------
 
   !----------------------------------------------------------------------
-  function Lscale_width_vert_avg( var_profile, Lscale_zm, rho_ds_zm, var_below_ground_value )&
+  function Lscale_width_vert_avg(  gr, var_profile, Lscale_zm, rho_ds_zm, var_below_ground_value )&
   result (Lscale_width_vert_avg_output)
 
   ! Description:
@@ -675,9 +681,11 @@ module advance_helper_module
       core_rknd ! Precision
 
     use grid_class, only: &
-      gr ! Variable
+        grid
 
     implicit none
+
+    type (grid), target, intent(in) :: gr
 
     ! Input Variables
     real( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
@@ -950,7 +958,7 @@ module advance_helper_module
   end subroutine term_wp3_splat
 
 !===============================================================================
-  function smooth_min_zm_sclr_array( input_var1, input_var2 ) &
+  function smooth_min_zm_sclr_array(  gr, input_var1, input_var2 ) &
   result( output_var )
 
   ! Description:
@@ -967,9 +975,11 @@ module advance_helper_module
   use grid_class, only:  &
     zt2zm, &                      ! Procedure
     zm2zt, &
-    gr
+        grid
 
   implicit none
+
+    type (grid), target, intent(in) :: gr
 
   ! Input Variables
   real ( kind = core_rknd ), intent(in) :: &
@@ -990,7 +1000,7 @@ module advance_helper_module
   end function smooth_min_zm_sclr_array
 
 !===============================================================================
-  function smooth_min_zm_array_sclr( input_var1, input_var2 ) &
+  function smooth_min_zm_array_sclr(  gr, input_var1, input_var2 ) &
   result( output_var )
 
   ! Description:
@@ -1007,9 +1017,11 @@ module advance_helper_module
   use grid_class, only:  &
     zt2zm, &                      ! Procedure
     zm2zt, &
-    gr
+        grid
 
   implicit none
+
+    type (grid), target, intent(in) :: gr
 
   ! Input Variables
   real ( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
@@ -1030,7 +1042,7 @@ module advance_helper_module
   end function smooth_min_zm_array_sclr
 
 !===============================================================================
-  function smooth_min_zm_arrays( input_var1, input_var2 ) &
+  function smooth_min_zm_arrays(  gr, input_var1, input_var2 ) &
   result( output_var )
 
   ! Description:
@@ -1047,9 +1059,11 @@ module advance_helper_module
   use grid_class, only:  &
     zt2zm, &                      ! Procedure
     zm2zt, &
-    gr
+        grid
 
   implicit none
+
+    type (grid), target, intent(in) :: gr
 
   ! Input Variables
   real ( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
@@ -1068,7 +1082,7 @@ module advance_helper_module
   end function smooth_min_zm_arrays
 
 !===============================================================================
-  function smooth_min_zt_sclr_array( input_var1, input_var2 ) &
+  function smooth_min_zt_sclr_array(  gr, input_var1, input_var2 ) &
   result( output_var )
 
   ! Description:
@@ -1085,9 +1099,11 @@ module advance_helper_module
   use grid_class, only:  &
     zt2zm, &                      ! Procedure
     zm2zt, &
-    gr
+        grid
 
   implicit none
+
+    type (grid), target, intent(in) :: gr
 
   ! Input Variables
   real ( kind = core_rknd ), intent(in) :: &
@@ -1108,7 +1124,7 @@ module advance_helper_module
   end function smooth_min_zt_sclr_array
 
 !===============================================================================
-  function smooth_min_zt_array_sclr( input_var1, input_var2 ) &
+  function smooth_min_zt_array_sclr(  gr, input_var1, input_var2 ) &
   result( output_var )
 
   ! Description:
@@ -1125,9 +1141,11 @@ module advance_helper_module
   use grid_class, only:  &
     zt2zm, &                      ! Procedure
     zm2zt, &
-    gr
+        grid
 
   implicit none
+
+    type (grid), target, intent(in) :: gr
 
   ! Input Variables
   real ( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
@@ -1148,7 +1166,7 @@ module advance_helper_module
   end function smooth_min_zt_array_sclr
 
 !===============================================================================
-  function smooth_min_zt_arrays( input_var1, input_var2 ) &
+  function smooth_min_zt_arrays(  gr, input_var1, input_var2 ) &
   result( output_var )
 
   ! Description:
@@ -1165,9 +1183,11 @@ module advance_helper_module
   use grid_class, only:  &
     zt2zm, &                      ! Procedure
     zm2zt, &
-    gr
+        grid
 
   implicit none
+
+    type (grid), target, intent(in) :: gr
 
   ! Input Variables
   real ( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
@@ -1186,7 +1206,7 @@ module advance_helper_module
   end function smooth_min_zt_arrays
 
 !===============================================================================
-  function smooth_max_zm_sclr_array( input_var1, input_var2 ) &
+  function smooth_max_zm_sclr_array(  gr, input_var1, input_var2 ) &
   result( output_var )
 
   ! Description:
@@ -1203,9 +1223,11 @@ module advance_helper_module
   use grid_class, only:  &
     zt2zm, &                      ! Procedure
     zm2zt, &
-    gr
+        grid
 
   implicit none
+
+    type (grid), target, intent(in) :: gr
 
   ! Input Variables
   real ( kind = core_rknd ), intent(in) :: &
@@ -1226,7 +1248,7 @@ module advance_helper_module
   end function smooth_max_zm_sclr_array
 
 !===============================================================================
-  function smooth_max_zm_array_sclr( input_var1, input_var2 ) &
+  function smooth_max_zm_array_sclr(  gr, input_var1, input_var2 ) &
   result( output_var )
 
   ! Description:
@@ -1243,9 +1265,11 @@ module advance_helper_module
   use grid_class, only:  &
     zt2zm, &                      ! Procedure
     zm2zt, &
-    gr
+        grid
 
   implicit none
+
+    type (grid), target, intent(in) :: gr
 
   ! Input Variables
   real ( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
@@ -1266,7 +1290,7 @@ module advance_helper_module
   end function smooth_max_zm_array_sclr
 
 !===============================================================================
-  function smooth_max_zm_arrays( input_var1, input_var2 ) &
+  function smooth_max_zm_arrays(  gr, input_var1, input_var2 ) &
   result( output_var )
 
   ! Description:
@@ -1283,9 +1307,11 @@ module advance_helper_module
   use grid_class, only:  &
     zt2zm, &                      ! Procedure
     zm2zt, &
-    gr
+        grid
 
   implicit none
+
+    type (grid), target, intent(in) :: gr
 
   ! Input Variables
   real ( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
@@ -1304,7 +1330,7 @@ module advance_helper_module
   end function smooth_max_zm_arrays
 
 !===============================================================================
-  function smooth_max_zt_sclr_array( input_var1, input_var2 ) &
+  function smooth_max_zt_sclr_array(  gr, input_var1, input_var2 ) &
   result( output_var )
 
   ! Description:
@@ -1321,9 +1347,11 @@ module advance_helper_module
   use grid_class, only:  &
     zt2zm, &                      ! Procedure
     zm2zt, &
-    gr
+        grid
 
   implicit none
+
+    type (grid), target, intent(in) :: gr
 
   ! Input Variables
   real ( kind = core_rknd ), intent(in) :: &
@@ -1344,7 +1372,7 @@ module advance_helper_module
   end function smooth_max_zt_sclr_array
 
 !===============================================================================
-  function smooth_max_zt_array_sclr( input_var1, input_var2 ) &
+  function smooth_max_zt_array_sclr(  gr, input_var1, input_var2 ) &
   result( output_var )
 
   ! Description:
@@ -1361,9 +1389,11 @@ module advance_helper_module
   use grid_class, only:  &
     zt2zm, &                      ! Procedure
     zm2zt, &
-    gr
+        grid
 
   implicit none
+
+    type (grid), target, intent(in) :: gr
 
   ! Input Variables
   real ( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
@@ -1384,7 +1414,7 @@ module advance_helper_module
   end function smooth_max_zt_array_sclr
 
 !===============================================================================
-  function smooth_max_zt_arrays( input_var1, input_var2 ) &
+  function smooth_max_zt_arrays(  gr, input_var1, input_var2 ) &
   result( output_var )
 
   ! Description:
@@ -1401,9 +1431,11 @@ module advance_helper_module
   use grid_class, only:  &
     zt2zm, &                      ! Procedure
     zm2zt, &
-    gr
+        grid
 
   implicit none
+
+    type (grid), target, intent(in) :: gr
 
   ! Input Variables
   real ( kind = core_rknd ), dimension(gr%nz), intent(in) :: &

@@ -26,7 +26,7 @@ module advance_xp3_module
   contains
 
   !=============================================================================
-  subroutine advance_xp3( dt, rtm, thlm, rtp2, thlp2, wprtp,         & ! Intent(in)
+  subroutine advance_xp3(  gr, dt, rtm, thlm, rtp2, thlp2, wprtp,         & ! Intent(in)
                           wpthlp, wprtp2, wpthlp2, rho_ds_zm,        & ! Intent(in)
                           invrs_rho_ds_zt, invrs_tau_zt, tau_max_zt, & ! Intent(in)
                           sclrm, sclrp2, wpsclrp, wpsclrp2,          & ! Intent(in)
@@ -43,7 +43,7 @@ module advance_xp3_module
     !-----------------------------------------------------------------------
 
     use grid_class, only: &
-        gr    ! Variable Type
+        grid
 
     use constants_clubb, only: &
         rt_tol,  & ! Variable(s)
@@ -57,6 +57,8 @@ module advance_xp3_module
         core_rknd    ! Variable(s)
 
     implicit none
+
+    type (grid), target, intent(in) :: gr
 
     ! Input Variables
     real( kind = core_rknd ), intent(in) :: &
@@ -99,7 +101,7 @@ module advance_xp3_module
 
     ! Advance <rt'^3> one model timestep or calculate <rt'^3> using a
     ! steady-state approximation.
-    call advance_xp3_simplified( xp3_rtp3, dt, rtm,        & ! Intent(in)
+    call advance_xp3_simplified( gr,  xp3_rtp3, dt, rtm,        & ! Intent(in)
                                  rtp2, wprtp,              & ! Intent(in)
                                  wprtp2, rho_ds_zm,        & ! Intent(in)
                                  invrs_rho_ds_zt,          & ! Intent(in)
@@ -109,7 +111,7 @@ module advance_xp3_module
 
     ! Advance <thl'^3> one model timestep or calculate <thl'^3> using a
     ! steady-state approximation.
-    call advance_xp3_simplified( xp3_thlp3, dt, thlm,      & ! Intent(in)
+    call advance_xp3_simplified( gr,  xp3_thlp3, dt, thlm,      & ! Intent(in)
                                  thlp2, wpthlp,            & ! Intent(in)
                                  wpthlp2, rho_ds_zm,       & ! Intent(in)
                                  invrs_rho_ds_zt,          & ! Intent(in)
@@ -121,7 +123,7 @@ module advance_xp3_module
     ! steady-state approximation.
     do i = 1, sclr_dim, 1
 
-       call advance_xp3_simplified( xp3_sclrp3, dt, sclrm(:,i),  & ! In
+       call advance_xp3_simplified( gr,  xp3_sclrp3, dt, sclrm(:,i),  & ! In
                                     sclrp2(:,i), wpsclrp(:,i),   & ! In
                                     wpsclrp2(:,i), rho_ds_zm,    & ! In
                                     invrs_rho_ds_zt,             & ! In
@@ -137,7 +139,7 @@ module advance_xp3_module
   end subroutine advance_xp3
 
   !=============================================================================
-  subroutine advance_xp3_simplified( solve_type, dt, xm,       & ! Intent(in)
+  subroutine advance_xp3_simplified(  gr, solve_type, dt, xm,       & ! Intent(in)
                                      xp2, wpxp,                & ! Intent(in)
                                      wpxp2, rho_ds_zm,         & ! Intent(in)
                                      invrs_rho_ds_zt,          & ! Intent(in)
@@ -245,7 +247,7 @@ module advance_xp3_module
     !-----------------------------------------------------------------------
 
     use grid_class, only: &
-        gr,    & ! Variable Type
+        grid, &
         zm2zt, & ! Procedure(s)
         zt2zm
 
@@ -275,6 +277,8 @@ module advance_xp3_module
         core_rknd    ! Variable(s)
 
     implicit none
+
+    type (grid), target, intent(in) :: gr
 
     ! Input Variables
     integer, intent(in) :: &
@@ -355,7 +359,7 @@ module advance_xp3_module
        end select ! solve_type
 
        if ( l_predict_xp3 ) then
-          call stat_begin_update( ixp3_bt, xp3 / dt, & ! Intent(in)
+          call stat_begin_update( gr,  ixp3_bt, xp3 / dt, & ! Intent(in)
                                   stats_zt           ) ! Intent(inout)
        endif ! l_predict_xp3
 
@@ -422,7 +426,7 @@ module advance_xp3_module
                              stats_zt )
 
        if ( l_predict_xp3 ) then
-          call stat_end_update( ixp3_bt, xp3 / dt, & ! Intent(in)
+          call stat_end_update( gr,  ixp3_bt, xp3 / dt, & ! Intent(in)
                                 stats_zt           ) ! Intent(inout)
        endif ! l_predict_xp3
 

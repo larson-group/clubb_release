@@ -27,7 +27,7 @@ module mean_adv
   contains
 
   !=============================================================================
-  pure subroutine term_ma_zt_lhs( wm_zt, invrs_dzt, invrs_dzm, & ! Intent(in)
+  pure subroutine term_ma_zt_lhs(  gr, wm_zt, invrs_dzt, invrs_dzm, & ! Intent(in)
                                   l_upwind_xm_ma,              & ! Intent(in)
                                   lhs_ma                       ) ! Intent(out)
 
@@ -173,7 +173,7 @@ module mean_adv
     !-----------------------------------------------------------------------
 
     use grid_class, only: & 
-        gr ! Variable(s)
+        grid
 
     use constants_clubb, only: &
         one,  & ! Constant(s)
@@ -183,6 +183,8 @@ module mean_adv
         core_rknd ! Variable(s)
 
     implicit none
+
+    type (grid), target, intent(in) :: gr
 
     ! Constant parameters
     integer, parameter :: & 
@@ -363,7 +365,7 @@ module mean_adv
   end subroutine term_ma_zt_lhs
 
   !=============================================================================
-  pure subroutine term_ma_zm_lhs( wm_zm, invrs_dzm, & 
+  pure subroutine term_ma_zm_lhs(  gr, wm_zm, invrs_dzm, & 
                                   lhs_ma )
 
     ! Description:
@@ -418,7 +420,7 @@ module mean_adv
     !-----------------------------------------------------------------------
 
     use grid_class, only: & 
-        gr ! Variable(s)
+        grid
 
     use constants_clubb, only: &
         zero ! Constant(s)
@@ -427,6 +429,8 @@ module mean_adv
         core_rknd ! Variable(s)
 
     implicit none
+
+    type (grid), target, intent(in) :: gr
 
     ! Constant parameters
     integer, parameter :: & 

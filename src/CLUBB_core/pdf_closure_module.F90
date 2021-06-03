@@ -36,7 +36,7 @@ module pdf_closure_module
   ! and GFDL.
   !#######################################################################
   !#######################################################################
-  subroutine pdf_closure( hydromet_dim, p_in_Pa, exner, thv_ds,     &
+  subroutine pdf_closure(  gr, hydromet_dim, p_in_Pa, exner, thv_ds,     &
                           wm, wp2, wp3, sigma_sqd_w,                &
                           Skw, Skthl_in, Skrt_in, Sku_in, Skv_in,   &
                           rtm, rtp2, wprtp,                         &
@@ -90,7 +90,7 @@ module pdf_closure_module
     !----------------------------------------------------------------------
 
     use grid_class, only: &
-        gr    ! Variable type(s)
+        grid
 
     use constants_clubb, only: &  ! Constants
         three,          & ! 3
@@ -170,6 +170,8 @@ module pdf_closure_module
         clubb_fatal_error              ! Constant
 
     implicit none
+
+    type (grid), target, intent(in) :: gr
 
     intrinsic :: sqrt, exp, min, max, abs, present
 
@@ -500,7 +502,7 @@ module pdf_closure_module
     ! theta-l, and passive scalar variables.
     if ( iiPDF_type == iiPDF_ADG1 ) then ! use ADG1
 
-       call ADG1_pdf_driver( wm, rtm, thlm, um, vm,                             & ! In
+       call ADG1_pdf_driver( gr,  wm, rtm, thlm, um, vm,                             & ! In
                              wp2, rtp2, thlp2, up2, vp2,                        & ! In
                              Skw, wprtp, wpthlp, upwp, vpwp, sqrt_wp2,          & ! In
                              sigma_sqd_w, mixt_frac_max_mag,                    & ! In
@@ -522,7 +524,7 @@ module pdf_closure_module
 
     elseif ( iiPDF_type == iiPDF_ADG2 ) then ! use ADG2
 
-       call ADG2_pdf_driver( wm, rtm, thlm, wp2, rtp2, thlp2,                   & ! In
+       call ADG2_pdf_driver( gr,  wm, rtm, thlm, wp2, rtp2, thlp2,                   & ! In
                              Skw, wprtp, wpthlp, sqrt_wp2,                      & ! In
                              sclrm, sclrp2, wpsclrp, l_scalar_calc,             & ! In
                              pdf_params%w_1(1,:), pdf_params%w_2(1,:),                    & ! Out
@@ -538,7 +540,7 @@ module pdf_closure_module
 
     elseif ( iiPDF_type == iiPDF_3D_Luhar ) then ! use 3D Luhar
 
-       call Luhar_3D_pdf_driver( &
+       call Luhar_3D_pdf_driver( gr,  &
                            wm, rtm, thlm, wp2, rtp2, thlp2,                             & ! In
                            Skw, Skrt, Skthl, wprtp, wpthlp,                             & ! In
                            pdf_params%w_1(1,:), pdf_params%w_2(1,:),                    & ! Out
@@ -551,7 +553,7 @@ module pdf_closure_module
 
     elseif ( iiPDF_type == iiPDF_new ) then ! use new PDF
 
-       call new_pdf_driver( wm, rtm, thlm, wp2, rtp2, thlp2, Skw,               & ! In
+       call new_pdf_driver( gr,  wm, rtm, thlm, wp2, rtp2, thlp2, Skw,               & ! In
                             wprtp, wpthlp, rtpthlp,                             & ! In
                             Skrt, Skthl,                                        & ! In/Out
                             pdf_params%w_1(1,:), pdf_params%w_2(1,:),                     & ! Out
@@ -567,7 +569,7 @@ module pdf_closure_module
 
     elseif ( iiPDF_type == iiPDF_TSDADG ) then
 
-       call tsdadg_pdf_driver( &
+       call tsdadg_pdf_driver( gr,  &
                           wm, rtm, thlm, wp2, rtp2, thlp2,                                & ! In
                           Skw, Skrt, Skthl, wprtp, wpthlp,                                & ! In
                           pdf_params%w_1(1,:), pdf_params%w_2(1,:),                       & ! Out
@@ -580,7 +582,7 @@ module pdf_closure_module
 
     elseif ( iiPDF_type == iiPDF_LY93 ) then ! use LY93
 
-       call LY93_driver( wm, rtm, thlm, wp2, rtp2,                          & ! In
+       call LY93_driver( gr,  wm, rtm, thlm, wp2, rtp2,                          & ! In
                          thlp2, Skw, Skrt, Skthl,                           & ! In
                          pdf_params%w_1(1,:), pdf_params%w_2(1,:),                    & ! Out
                          pdf_params%rt_1(1,:), pdf_params%rt_2(1,:),                  & ! Out
@@ -592,7 +594,7 @@ module pdf_closure_module
 
     elseif ( iiPDF_type == iiPDF_new_hybrid ) then ! use new hybrid PDF
 
-       call new_hybrid_pdf_driver( wm, rtm, thlm, um, vm,              & ! In
+       call new_hybrid_pdf_driver( gr,  wm, rtm, thlm, um, vm,              & ! In
                                    wp2, rtp2, thlp2, up2, vp2,         & ! In
                                    Skw, wprtp, wpthlp, upwp, vpwp,     & ! In
                                    sclrm, sclrp2, wpsclrp,             & ! In
@@ -727,14 +729,14 @@ endif
 
 
     ! Compute higher order moments (these are interactive)
-    wp2rtp = calc_wp2xp_pdf( wm, rtm, pdf_params%w_1(1,:), pdf_params%w_2(1,:),           &
+    wp2rtp = calc_wp2xp_pdf( gr,  wm, rtm, pdf_params%w_1(1,:), pdf_params%w_2(1,:),           &
                              pdf_params%rt_1(1,:), pdf_params%rt_2(1,:),                  &
                              pdf_params%varnce_w_1(1,:), pdf_params%varnce_w_2(1,:),      &
                              pdf_params%varnce_rt_1(1,:), pdf_params%varnce_rt_2(1,:),    &
                              pdf_params%corr_w_rt_1(1,:), pdf_params%corr_w_rt_2(1,:),    &
                              pdf_params%mixt_frac(1,:) )
 
-    wp2thlp = calc_wp2xp_pdf( wm, thlm, pdf_params%w_1(1,:), pdf_params%w_2(1,:),             &
+    wp2thlp = calc_wp2xp_pdf( gr,  wm, thlm, pdf_params%w_1(1,:), pdf_params%w_2(1,:),             &
                               pdf_params%thl_1(1,:), pdf_params%thl_2(1,:),                   &
                               pdf_params%varnce_w_1(1,:), pdf_params%varnce_w_2(1,:),         &
                               pdf_params%varnce_thl_1(1,:), pdf_params%varnce_thl_2(1,:),     &
@@ -742,26 +744,26 @@ endif
                               pdf_params%mixt_frac(1,:) )
 
     ! Compute higher order moments (these may be interactive)
-    wp2up2 = calc_wp2xp2_pdf( wm, um, pdf_params%w_1, pdf_params%w_2, &
+    wp2up2 = calc_wp2xp2_pdf( gr,  wm, um, pdf_params%w_1, pdf_params%w_2, &
                               u_1, u_2, &
                               pdf_params%varnce_w_1, pdf_params%varnce_w_2, &
                               varnce_u_1, varnce_u_2, &
                               corr_u_w_1, corr_u_w_2, &
                               pdf_params%mixt_frac )
 
-    wp2vp2 = calc_wp2xp2_pdf( wm, vm, pdf_params%w_1, pdf_params%w_2, &
+    wp2vp2 = calc_wp2xp2_pdf( gr,  wm, vm, pdf_params%w_1, pdf_params%w_2, &
                               v_1, v_2, &
                               pdf_params%varnce_w_1, pdf_params%varnce_w_2, &
                               varnce_v_1, varnce_v_2, &
                               corr_v_w_1, corr_v_w_2, &
                               pdf_params%mixt_frac )
 
-    wp4 = calc_wp4_pdf( wm, pdf_params%w_1(1,:), pdf_params%w_2(1,:),              &
+    wp4 = calc_wp4_pdf( gr,  wm, pdf_params%w_1(1,:), pdf_params%w_2(1,:),              &
                         pdf_params%varnce_w_1(1,:), pdf_params%varnce_w_2(1,:),    &
                         pdf_params%mixt_frac(1,:) )
 
     if ( l_explicit_turbulent_adv_xpyp .or. iwprtp2 > 0 ) then
-       wprtp2 = calc_wpxp2_pdf( wm, rtm, pdf_params%w_1(1,:), pdf_params%w_2(1,:),        &
+       wprtp2 = calc_wpxp2_pdf( gr,  wm, rtm, pdf_params%w_1(1,:), pdf_params%w_2(1,:),        &
                                 pdf_params%rt_1(1,:), pdf_params%rt_2(1,:),               &
                                 pdf_params%varnce_w_1(1,:), pdf_params%varnce_w_2(1,:),   &
                                 pdf_params%varnce_rt_1(1,:), pdf_params%varnce_rt_2(1,:), &
@@ -770,7 +772,7 @@ endif
     endif
 
     if ( l_explicit_turbulent_adv_xpyp .or. iwpthlp2 > 0 ) then
-       wpthlp2 = calc_wpxp2_pdf( wm, thlm, pdf_params%w_1(1,:), pdf_params%w_2(1,:),          &
+       wpthlp2 = calc_wpxp2_pdf( gr,  wm, thlm, pdf_params%w_1(1,:), pdf_params%w_2(1,:),          &
                                  pdf_params%thl_1(1,:), pdf_params%thl_2(1,:),                &
                                  pdf_params%varnce_w_1(1,:), pdf_params%varnce_w_2(1,:),      &
                                  pdf_params%varnce_thl_1(1,:), pdf_params%varnce_thl_2(1,:),  &
@@ -779,7 +781,7 @@ endif
     endif
 
     if ( l_explicit_turbulent_adv_xpyp .or. iwprtpthlp > 0 ) then
-       wprtpthlp = calc_wpxpyp_pdf( wm, rtm, thlm, pdf_params%w_1(1,:), pdf_params%w_2(1,:),      &
+       wprtpthlp = calc_wpxpyp_pdf( gr,  wm, rtm, thlm, pdf_params%w_1(1,:), pdf_params%w_2(1,:),      &
                                     pdf_params%rt_1(1,:), pdf_params%rt_2(1,:),                   &
                                     pdf_params%thl_1(1,:), pdf_params%thl_2(1,:),                 &
                                     pdf_params%varnce_w_1(1,:), pdf_params%varnce_w_2(1,:),       &
@@ -798,7 +800,7 @@ endif
        do i = 1, sclr_dim
 
           wp2sclrp(:,i) &
-          = calc_wp2xp_pdf( wm, sclrm(:,i), pdf_params%w_1(1,:), pdf_params%w_2(1,:),             &
+          = calc_wp2xp_pdf( gr,  wm, sclrm(:,i), pdf_params%w_1(1,:), pdf_params%w_2(1,:),             &
                             sclr1(:,i), sclr2(:,i),                                     &
                             pdf_params%varnce_w_1(1,:), pdf_params%varnce_w_2(1,:),               &
                             varnce_sclr1(:,i), varnce_sclr2(:,i),                       &
@@ -806,7 +808,7 @@ endif
                             pdf_params%mixt_frac(1,:) )
 
           wpsclrp2(:,i) &
-          = calc_wpxp2_pdf( wm, sclrm(:,i), pdf_params%w_1(1,:), pdf_params%w_2(1,:), &
+          = calc_wpxp2_pdf( gr,  wm, sclrm(:,i), pdf_params%w_1(1,:), pdf_params%w_2(1,:), &
                             sclr1(:,i), sclr2(:,i),                         &
                             pdf_params%varnce_w_1(1,:), pdf_params%varnce_w_2(1,:),   &
                             varnce_sclr1(:,i), varnce_sclr2(:,i),           &
@@ -814,7 +816,7 @@ endif
                             pdf_params%mixt_frac(1,:) )
 
           wpsclrprtp(:,i) &
-          = calc_wpxpyp_pdf( wm, sclrm(:,i), rtm, pdf_params%w_1(1,:), pdf_params%w_2(1,:),       &
+          = calc_wpxpyp_pdf( gr,  wm, sclrm(:,i), rtm, pdf_params%w_1(1,:), pdf_params%w_2(1,:),       &
                              sclr1(:,i), sclr2(:,i),                                    &
                              pdf_params%rt_1(1,:), pdf_params%rt_2(1,:),                          &
                              pdf_params%varnce_w_1(1,:), pdf_params%varnce_w_2(1,:),              &
@@ -826,7 +828,7 @@ endif
                              pdf_params%mixt_frac(1,:) )
 
           wpsclrpthlp(:,i) &
-          = calc_wpxpyp_pdf( wm, sclrm(:,i), thlm, pdf_params%w_1(1,:), pdf_params%w_2(1,:),  &
+          = calc_wpxpyp_pdf( gr,  wm, sclrm(:,i), thlm, pdf_params%w_1(1,:), pdf_params%w_2(1,:),  &
                              sclr1(:,i), sclr2(:,i),                                &
                              pdf_params%thl_1(1,:), pdf_params%thl_2(1,:),                    &
                              pdf_params%varnce_w_1(1,:), pdf_params%varnce_w_2(1,:),          &
@@ -908,7 +910,7 @@ endif
 #endif
 
 
-    call transform_pdf_chi_eta_component( &
+    call transform_pdf_chi_eta_component( gr,  &
                               tl1, pdf_params%rsatl_1(1,:), pdf_params%rt_1(1,:), exner,  & ! In
                               pdf_params%varnce_thl_1(1,:), pdf_params%varnce_rt_1(1,:),  & ! In
                               pdf_params%corr_rt_thl_1(1,:), pdf_params%chi_1(1,:),       & ! In
@@ -918,7 +920,7 @@ endif
                               pdf_params%corr_chi_eta_1(1,:) )                              ! Out
     
     ! Calculate cloud fraction component for pdf 1
-    call calc_liquid_cloud_frac_component( &
+    call calc_liquid_cloud_frac_component( gr,  &
                                 pdf_params%chi_1(1,:), pdf_params%stdev_chi_1(1,:),    & ! In
                                 pdf_params%cloud_frac_1(1,:), pdf_params%rc_1(1,:) )     ! Out
 
@@ -951,7 +953,7 @@ endif
     end if
 
     
-    call transform_pdf_chi_eta_component( &
+    call transform_pdf_chi_eta_component( gr,  &
                                 tl2, pdf_params%rsatl_2(1,:), pdf_params%rt_2(1,:), exner,  & ! In
                                 pdf_params%varnce_thl_2(1,:), pdf_params%varnce_rt_2(1,:),  & ! In
                                 pdf_params%corr_rt_thl_2(1,:), pdf_params%chi_2(1,:),       & ! In
@@ -962,7 +964,7 @@ endif
 
     
     ! Calculate cloud fraction component for pdf 2
-    call calc_liquid_cloud_frac_component( &
+    call calc_liquid_cloud_frac_component( gr,  &
                                     pdf_params%chi_2(1,:), pdf_params%stdev_chi_2(1,:),    & ! In
                                     pdf_params%cloud_frac_2(1,:), pdf_params%rc_2(1,:) )     ! Out
 
@@ -1080,7 +1082,7 @@ endif
     
     ! Calculate the contributions to <w'rc'>, <w'^2 rc'>, <rt'rc'>, and
     ! <thl'rc'> from the 1st PDF component.
-    call calc_xprcp_component(wm, rtm, thlm, um, vm, rcm,                          & ! In
+    call calc_xprcp_component( gr, wm, rtm, thlm, um, vm, rcm,                          & ! In
                               pdf_params%w_1(1,:), pdf_params%rt_1(1,:),                     & ! In
                               pdf_params%thl_1(1,:), u_1, v_1,                          & ! In
                               pdf_params%varnce_w_1(1,:), pdf_params%chi_1(1,:),             & ! In
@@ -1093,7 +1095,7 @@ endif
                               rtprcp_contrib_comp_1, thlprcp_contrib_comp_1,       & ! Out
                               uprcp_contrib_comp_1, vprcp_contrib_comp_1 )           ! Out
 
-    call calc_xprcp_component(wm, rtm, thlm, um, vm, rcm,                          & ! In
+    call calc_xprcp_component( gr, wm, rtm, thlm, um, vm, rcm,                          & ! In
                               pdf_params%w_2(1,:), pdf_params%rt_2(1,:),                     & ! In
                               pdf_params%thl_2(1,:), u_2, v_2,                          & ! In
                               pdf_params%varnce_w_2(1,:), pdf_params%chi_2(1,:),             & ! In
@@ -1211,7 +1213,7 @@ endif
     if ( clubb_at_least_debug_level( 2 ) ) then
 
       call pdf_closure_check & 
-           ( wp4, wprtp2, wp2rtp, wpthlp2, & 
+           ( gr, wp4, wprtp2, wp2rtp, wpthlp2, & 
              wp2thlp, cloud_frac, rcm, wpthvp, wp2thvp, & 
              rtpthvp, thlpthvp, wprcp, wp2rcp, & 
              rtprcp, thlprcp, rcp2, wprtpthlp, & 
@@ -1499,7 +1501,7 @@ endif
   end subroutine pdf_closure
 
   !===============================================================================================
-  subroutine transform_pdf_chi_eta_component( tl, rsatl, rt, exner,     & ! In
+  subroutine transform_pdf_chi_eta_component(  gr, tl, rsatl, rt, exner,     & ! In
                                               varnce_thl, varnce_rt,    & ! In
                                               corr_rt_thl, chi,         & ! In
                                               crt, cthl,                & ! Out
@@ -1507,7 +1509,7 @@ endif
                                               covar_chi_eta,            & ! Out
                                               corr_chi_eta )              ! Out
     use grid_class, only: &
-        gr    ! Variable type(s)
+        grid
 
     use clubb_precision, only: &
         core_rknd ! Variable(s)
@@ -1520,6 +1522,8 @@ endif
         max_mag_correlation
 
     implicit none
+
+    type (grid), target, intent(in) :: gr
 
     ! ----------- Input Variables -----------
     real( kind = core_rknd ), dimension(gr%nz), intent(in) ::  &
@@ -1629,7 +1633,7 @@ endif
   end subroutine transform_pdf_chi_eta_component
   
   !=============================================================================
-  function calc_wp4_pdf( wm, w_1, w_2,              &
+  function calc_wp4_pdf(  gr, wm, w_1, w_2,              &
                          varnce_w_1, varnce_w_2,    &
                          mixt_frac ) &
   result( wp4 )
@@ -1659,7 +1663,7 @@ endif
     !-----------------------------------------------------------------------
 
     use grid_class, only: &
-        gr    ! Variable type(s)
+        grid
 
     use constants_clubb, only: &
         six,   & ! Variable(s)
@@ -1670,6 +1674,8 @@ endif
         core_rknd    ! Variable(s)
 
     implicit none
+
+    type (grid), target, intent(in) :: gr
 
     ! Input Variables
     real( kind = core_rknd ), dimension(gr%nz), intent(in) ::  &
@@ -1699,7 +1705,7 @@ endif
   end function calc_wp4_pdf
 
   !=============================================================================
-  function calc_wp2xp2_pdf( wm, xm, w_1,             &
+  function calc_wp2xp2_pdf(  gr, wm, xm, w_1,             &
                             w_2, x_1, x_2,           &
                             varnce_w_1, varnce_w_2,  &
                             varnce_x_1, varnce_x_2,  &
@@ -1748,7 +1754,7 @@ endif
     !-----------------------------------------------------------------------
 
     use grid_class, only: &
-        gr    ! Variable type(s)
+        grid
 
     use constants_clubb, only: &
         one,   & ! Variable(s)
@@ -1758,6 +1764,8 @@ endif
         core_rknd    ! Variable(s)
 
     implicit none
+
+    type (grid), target, intent(in) :: gr
 
     ! Input Variables
     real( kind = core_rknd ), dimension(gr%nz), intent(in) ::  &
@@ -1795,7 +1803,7 @@ endif
   end function calc_wp2xp2_pdf
 
   !=============================================================================
-  function calc_wp2xp_pdf( wm, xm, w_1, w_2,        &
+  function calc_wp2xp_pdf(  gr, wm, xm, w_1, w_2,        &
                            x_1, x_2,                &
                            varnce_w_1, varnce_w_2,  &
                            varnce_x_1, varnce_x_2,  &
@@ -1838,7 +1846,7 @@ endif
     !-----------------------------------------------------------------------
 
     use grid_class, only: &
-        gr    ! Variable type(s)
+        grid
 
     use constants_clubb, only: &
         two,   & ! Variable(s)
@@ -1848,6 +1856,8 @@ endif
         core_rknd    ! Variable(s)
 
     implicit none
+
+    type (grid), target, intent(in) :: gr
 
     ! Input Variables
     real( kind = core_rknd ), dimension(gr%nz), intent(in) ::  &
@@ -1886,7 +1896,7 @@ endif
   end function calc_wp2xp_pdf
 
   !=============================================================================
-  function calc_wpxp2_pdf( wm, xm, w_1,             &
+  function calc_wpxp2_pdf(  gr, wm, xm, w_1,             &
                            w_2, x_1, x_2,           &
                            varnce_w_1, varnce_w_2,  &
                            varnce_x_1, varnce_x_2,  &
@@ -1929,7 +1939,7 @@ endif
     !-----------------------------------------------------------------------
 
     use grid_class, only: &
-        gr    ! Variable type(s)
+        grid
 
     use constants_clubb, only: &
         two,   & ! Variable(s)
@@ -1939,6 +1949,8 @@ endif
         core_rknd    ! Variable(s)
 
     implicit none
+
+    type (grid), target, intent(in) :: gr
 
     ! Input Variables
     real( kind = core_rknd ), dimension(gr%nz), intent(in) ::  &
@@ -1977,7 +1989,7 @@ endif
   end function calc_wpxp2_pdf
 
   !=============================================================================
-  function calc_wpxpyp_pdf( wm, xm, ym, w_1, w_2,   &
+  function calc_wpxpyp_pdf(  gr, wm, xm, ym, w_1, w_2,   &
                             x_1, x_2,               &
                             y_1, y_2,               &
                             varnce_w_1, varnce_w_2, &
@@ -2036,7 +2048,7 @@ endif
     !-----------------------------------------------------------------------
 
     use grid_class, only: &
-        gr    ! Variable type(s)
+        grid
 
     use constants_clubb, only: &
         one    ! Variable(s)
@@ -2045,6 +2057,8 @@ endif
         core_rknd    ! Variable(s)
 
     implicit none
+
+    type (grid), target, intent(in) :: gr
 
     ! Input Variables
     real( kind = core_rknd ), dimension(gr%nz), intent(in) ::  &
@@ -2095,7 +2109,7 @@ endif
   end function calc_wpxpyp_pdf
 
   !=============================================================================
-  subroutine calc_liquid_cloud_frac_component( mean_chi, stdev_chi, &
+  subroutine calc_liquid_cloud_frac_component(  gr, mean_chi, stdev_chi, &
                                                cloud_frac, rc )
     ! Description:
     ! Calculates the PDF component cloud water mixing ratio, rc_i, and cloud
@@ -2152,7 +2166,7 @@ endif
     !----------------------------------------------------------------------
 
     use grid_class, only: &
-        gr
+        grid
 
     use constants_clubb, only: &
         chi_tol,        & ! Tolerance for pdf parameter chi       [kg/kg]
@@ -2168,6 +2182,8 @@ endif
         core_rknd     ! Precision
 
     implicit none
+
+    type (grid), target, intent(in) :: gr
 
     !----------- Input Variables -----------
     real( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
@@ -2387,7 +2403,7 @@ endif
   end subroutine calc_cloud_frac_component
 
   !=============================================================================
-  subroutine calc_xprcp_component( wm, rtm, thlm, um, vm, rcm,                      & ! In
+  subroutine calc_xprcp_component(  gr, wm, rtm, thlm, um, vm, rcm,                      & ! In
                                    w_i, rt_i,                                       & ! In
                                    thl_i, u_i, v_i,                                 & ! In
                                    varnce_w_i, chi_i,                               & ! In
@@ -2757,7 +2773,7 @@ endif
     !-----------------------------------------------------------------------
 
     use grid_class, only: &
-        gr    ! Variable type(s)
+        grid
 
     use constants_clubb, only: &
         sqrt_2pi,       & ! Variable(s)
@@ -2769,6 +2785,8 @@ endif
         core_rknd    ! Variable(s)
 
     implicit none
+
+    type (grid), target, intent(in) :: gr
 
     ! Input Variables
     real( kind = core_rknd ), dimension(gr%nz), intent(in) :: &

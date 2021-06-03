@@ -27,7 +27,7 @@ module mono_flux_limiter
   contains
 
   !=============================================================================
-  subroutine monotonic_turbulent_flux_limit( solve_type, dt, xm_old, &
+  subroutine monotonic_turbulent_flux_limit(  gr, solve_type, dt, xm_old, &
                                              xp2, wm_zt, xm_forcing, &
                                              rho_ds_zm, rho_ds_zt, &
                                              invrs_rho_ds_zm, invrs_rho_ds_zt, &
@@ -283,7 +283,7 @@ module mono_flux_limiter
     !-----------------------------------------------------------------------
 
     use grid_class, only: & 
-        gr,  & ! Variable(s)
+        grid, &
         zm2zt  ! Procedure(s)
 
     use constants_clubb, only: &    
@@ -341,6 +341,8 @@ module mono_flux_limiter
         l_stats_samp
 
     implicit none
+
+    type (grid), target, intent(in) :: gr
 
     ! Constant Parameters
 
@@ -464,8 +466,8 @@ module mono_flux_limiter
 
 
     if ( l_stats_samp ) then
-       call stat_begin_update( iwpxp_mfl, wpxp / dt, stats_zm )
-       call stat_begin_update( ixm_mfl, xm / dt, stats_zt )
+       call stat_begin_update( gr,  iwpxp_mfl, wpxp / dt, stats_zm )
+       call stat_begin_update( gr,  ixm_mfl, xm / dt, stats_zt )
     endif
     if ( l_stats_samp .and. solve_type == mono_flux_thlm ) then
        call stat_update_var( ithlm_enter_mfl, xm, stats_zt )
@@ -726,16 +728,16 @@ module mono_flux_limiter
           ! values of xm at timestep index (t+1).
 
           ! Set up the left-hand side of the tridiagonal matrix equation.
-          call mfl_xm_lhs( dt, wm_zt, l_implemented, l_upwind_xm_ma, &
+          call mfl_xm_lhs( gr,  dt, wm_zt, l_implemented, l_upwind_xm_ma, &
                            lhs_mfl_xm )
 
           ! Set up the right-hand side of tridiagonal matrix equation.
-          call mfl_xm_rhs( dt, xm_old, wpxp, xm_forcing, &
+          call mfl_xm_rhs( gr,  dt, xm_old, wpxp, xm_forcing, &
                            rho_ds_zm, invrs_rho_ds_zt, &
                            rhs_mfl_xm )
 
           ! Solve the tridiagonal matrix equation.
-          call mfl_xm_solve( solve_type, lhs_mfl_xm, rhs_mfl_xm,  &
+          call mfl_xm_solve( gr,  solve_type, lhs_mfl_xm, rhs_mfl_xm,  &
                              xm )
 
           ! Check for errors
@@ -840,9 +842,9 @@ module mono_flux_limiter
 
     if ( l_stats_samp ) then
 
-       call stat_end_update( iwpxp_mfl, wpxp / dt, stats_zm )
+       call stat_end_update( gr,  iwpxp_mfl, wpxp / dt, stats_zm )
 
-       call stat_end_update( ixm_mfl, xm / dt, stats_zt )
+       call stat_end_update( gr,  ixm_mfl, xm / dt, stats_zt )
 
        if ( solve_type == mono_flux_thlm ) then
           call stat_update_var( ithlm_exit_mfl, xm, stats_zt )
@@ -859,7 +861,7 @@ module mono_flux_limiter
   end subroutine monotonic_turbulent_flux_limit
 
   !=============================================================================
-  subroutine mfl_xm_lhs( dt, wm_zt, l_implemented, l_upwind_xm_ma, &
+  subroutine mfl_xm_lhs(  gr, dt, wm_zt, l_implemented, l_upwind_xm_ma, &
                          lhs )
 
     ! Description:
@@ -874,7 +876,7 @@ module mono_flux_limiter
     ! Subroutine mfl_xm_lhs sets up the left-hand side of the matrix equation.
 
     use grid_class, only: & 
-        gr  ! Variable(s)
+        grid
 
     use mean_adv, only: & 
         term_ma_zt_lhs ! Procedure(s)
@@ -883,6 +885,8 @@ module mono_flux_limiter
         core_rknd ! Variable(s)
 
     implicit none
+
+    type (grid), target, intent(in) :: gr
 
     ! Constant parameters
     integer, parameter :: & 
@@ -926,7 +930,7 @@ module mono_flux_limiter
     ! LHS xm mean advection (ma) term.
     if ( .not. l_implemented ) then
 
-       call term_ma_zt_lhs( wm_zt, gr%invrs_dzt, gr%invrs_dzm, &
+       call term_ma_zt_lhs( gr,  wm_zt, gr%invrs_dzt, gr%invrs_dzm, &
                             l_upwind_xm_ma, &
                             lhs )
 
@@ -955,7 +959,7 @@ module mono_flux_limiter
   end subroutine mfl_xm_lhs
 
   !=============================================================================
-  subroutine mfl_xm_rhs( dt, xm_old, wpxp, xm_forcing, &
+  subroutine mfl_xm_rhs(  gr, dt, xm_old, wpxp, xm_forcing, &
                          rho_ds_zm, invrs_rho_ds_zt, &
                          rhs )
 
@@ -971,12 +975,14 @@ module mono_flux_limiter
     ! Subroutine mfl_xm_rhs sets up the right-hand side of the matrix equation.
 
     use grid_class, only: & 
-        gr  ! Variable(s)
+        grid
 
     use clubb_precision, only:  & 
         core_rknd ! Variable(s)
 
     implicit none
+
+    type (grid), target, intent(in) :: gr
 
     ! Input Variables
     real( kind = core_rknd ), intent(in) ::  &
@@ -1051,7 +1057,7 @@ module mono_flux_limiter
   end subroutine mfl_xm_rhs
 
   !=============================================================================
-  subroutine mfl_xm_solve( solve_type, lhs, rhs,  &
+  subroutine mfl_xm_solve(  gr, solve_type, lhs, rhs,  &
                            xm )
 
     ! Description:
@@ -1067,7 +1073,7 @@ module mono_flux_limiter
     ! timestep index (t+1).
 
     use grid_class, only: &
-        gr  ! Variable(s)
+        grid
 
     use lapack_wrap, only:  & 
         tridag_solve  ! Procedure(s)
@@ -1081,6 +1087,8 @@ module mono_flux_limiter
         clubb_fatal_error              ! Constant
 
     implicit none
+
+    type (grid), target, intent(in) :: gr
 
     ! Constant parameters
     integer, parameter :: & 
@@ -1135,7 +1143,7 @@ module mono_flux_limiter
   end subroutine mfl_xm_solve
 
   !=============================================================================
-  subroutine calc_turb_adv_range( dt, w_1_zm, w_2_zm, varnce_w_1_zm, varnce_w_2_zm, &
+  subroutine calc_turb_adv_range(  gr, dt, w_1_zm, w_2_zm, varnce_w_1_zm, varnce_w_2_zm, &
                                   mixt_frac_zm, &
                                   low_lev_effect, high_lev_effect )
 
@@ -1169,12 +1177,14 @@ module mono_flux_limiter
     !-----------------------------------------------------------------------
     
     use grid_class, only:  &
-        gr  ! Variable(s)
+        grid
 
     use clubb_precision, only:  & 
         core_rknd ! Variable(s)
 
     implicit none
+
+    type (grid), target, intent(in) :: gr
    
     ! Constant parameters 
     logical, parameter ::  &
@@ -1316,7 +1326,7 @@ module mono_flux_limiter
        ! vertical velocity.
        ! Note:  A level that has all vertical wind moving downwards will have a
        !        vert_vel_up value that is 0, and vice versa.
-       call mean_vert_vel_up_down( w_1_zm, w_2_zm, varnce_w_1_zm, varnce_w_2_zm, & !  In
+       call mean_vert_vel_up_down( gr,  w_1_zm, w_2_zm, varnce_w_1_zm, varnce_w_2_zm, & !  In
                                    mixt_frac_zm, 0.0_core_rknd, w_min, & ! In
                                    vert_vel_down, vert_vel_up )
 
@@ -1493,7 +1503,7 @@ module mono_flux_limiter
   end subroutine calc_turb_adv_range
 
   !=============================================================================
-  subroutine mean_vert_vel_up_down( w_1_zm, w_2_zm, varnce_w_1_zm, varnce_w_2_zm, &
+  subroutine mean_vert_vel_up_down(  gr, w_1_zm, w_2_zm, varnce_w_1_zm, varnce_w_2_zm, &
                                     mixt_frac_zm, w_ref, w_min, &
                                     mean_w_down, mean_w_up )
 
@@ -1688,7 +1698,7 @@ module mono_flux_limiter
     !-----------------------------------------------------------------------
 
     use grid_class, only:  &
-        gr   ! Variable(s)
+        grid
 
     use stats_type_utilities, only:  &
         stat_update_var  ! Procedure(s)
@@ -1703,6 +1713,8 @@ module mono_flux_limiter
       core_rknd ! Variable(s)
 
     implicit none
+
+    type (grid), target, intent(in) :: gr
 
     ! Input Variables
     real( kind = core_rknd ), dimension(gr%nz), intent(in) ::  &
@@ -1730,11 +1742,11 @@ module mono_flux_limiter
 
     ! ---- Begin Code ----
 
-    call calc_mean_w_up_down_component( w_1_zm, varnce_w_1_zm, &
+    call calc_mean_w_up_down_component( gr,  w_1_zm, varnce_w_1_zm, &
                                         w_ref, w_min, &
                                         mean_w_down_1st, mean_w_up_1st )
 
-    call calc_mean_w_up_down_component( w_2_zm, varnce_w_2_zm, &
+    call calc_mean_w_up_down_component( gr,  w_2_zm, varnce_w_2_zm, &
                                         w_ref, w_min, &
                                         mean_w_down_2nd, mean_w_up_2nd )
 
@@ -1759,7 +1771,7 @@ module mono_flux_limiter
   end subroutine mean_vert_vel_up_down
 
   !=============================================================================
-  subroutine calc_mean_w_up_down_component( w_i_zm, varnce_w_i, &
+  subroutine calc_mean_w_up_down_component(  gr, w_i_zm, varnce_w_i, &
                                             w_ref, w_min, &
                                             mean_w_down_i, mean_w_up_i )
 
@@ -1785,7 +1797,7 @@ module mono_flux_limiter
     !-----------------------------------------------------------------------
 
       use grid_class, only:  &
-          gr  ! Variable(s)
+        grid
 
       use constants_clubb, only: &
           sqrt_2pi, &  ! Constant(s)
@@ -1800,6 +1812,8 @@ module mono_flux_limiter
         core_rknd ! Variable(s)
 
       implicit none
+
+    type (grid), target, intent(in) :: gr
 
       ! Input Variables
       real( kind = core_rknd ), dimension(gr%nz), intent(in) ::  &

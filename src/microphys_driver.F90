@@ -486,7 +486,7 @@ module microphys_driver
             + lh_sample_point_weights(1,1) + real( X_mixt_comp_all_levs(1,1) )
         endif
 #endif /* SILHS */
-        call stats_accumulate_lh_tend( hydromet_mc, Ncm_mc, &
+        call stats_accumulate_lh_tend( gr, hydromet_mc, Ncm_mc, &
                                        thlm_mc, rvm_mc, rcm_mc, &
                                        lh_AKm, AKm, AKstd, AKstd_cld, &
                                        lh_rcm_avg, AKm_rcm, AKm_rcc )
@@ -580,7 +580,7 @@ module microphys_driver
         error stop "Subgrid Importance Latin Hypercube was not enabled at compile time"
 #endif /* SILHS */
 
-        call stats_accumulate_lh_tend( hydromet_mc, Ncm_mc, &
+        call stats_accumulate_lh_tend( gr, hydromet_mc, Ncm_mc, &
                                        thlm_mc, rvm_mc, rcm_mc, &
                                        lh_AKm, AKm, AKstd, AKstd_cld, &
                                        lh_rcm_avg, AKm_rcm, AKm_rcc )
@@ -672,7 +672,7 @@ module microphys_driver
 
         ! Save the initial Ncm mc value for the Ncm_act term
         if ( l_stats_samp ) then
-          call stat_begin_update( iNcm_act, Ncm_mc, stats_zt )
+          call stat_begin_update( gr, iNcm_act, Ncm_mc, stats_zt )
         endif
 
         call aer_act_clubb_quadrature_Gauss( pdf_params, p_in_Pa, &
@@ -711,7 +711,7 @@ module microphys_driver
 
         ! Update the Ncm_act term
         if( l_stats_samp ) then
-          call stat_end_update( iNcm_act, Ncm_mc, stats_zt )
+          call stat_end_update( gr, iNcm_act, Ncm_mc, stats_zt )
         endif
 
       else

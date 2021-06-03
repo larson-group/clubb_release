@@ -1363,7 +1363,7 @@ module clubb_driver
     ! setup grid, setup constants, and setup flags
 
     call setup_clubb_core                                     & ! Intent(in)
-         ( nzmax, T0, ts_nudge,                               & ! Intent(in)
+         ( gr, nzmax, T0, ts_nudge,                               & ! Intent(in)
            hydromet_dim, sclr_dim,                            & ! Intent(in)
            sclr_tol(1:sclr_dim), edsclr_dim, params,          & ! Intent(in)
            l_host_applies_sfc_fluxes,                         & ! Intent(in)
@@ -2075,12 +2075,12 @@ module clubb_driver
         ! this helps restrict the skewness of wp3_on_wp2
         if( l_input_wp3 ) then
           wp2_zt = max( zm2zt( wp2 ), w_tol_sqd ) ! Positive definite quantity
-          call clip_skewness_core( sfc_elevation, wp2_zt, wp3 )
+          call clip_skewness_core( gr, sfc_elevation, wp2_zt, wp3 )
         end if
       end if
 
       ! Check for NaN values in the model arrays
-      if ( invalid_model_arrays( um, vm, rtm, wprtp, thlm, wpthlp, &
+      if ( invalid_model_arrays( gr, um, vm, rtm, wprtp, thlm, wpthlp, &
                                  rtp2, thlp2, rtpthlp, wp2, wp3, &
                                  wp2thvp, rtpthvp, thlpthvp, &
                                  hydromet, sclrm, edsclrm ) ) then
@@ -2163,7 +2163,7 @@ module clubb_driver
       
       ! Call the parameterization one timestep
       call advance_clubb_core &
-           ( l_implemented, dt_main, fcor, sfc_elevation, hydromet_dim, & ! Intent(in)
+           ( gr, l_implemented, dt_main, fcor, sfc_elevation, hydromet_dim, & ! Intent(in)
              thlm_forcing, rtm_forcing, um_forcing, vm_forcing, & ! Intent(in)
              sclrm_forcing, edsclrm_forcing, wprtp_forcing, &     ! Intent(in)
              wpthlp_forcing, rtp2_forcing, thlp2_forcing, &       ! Intent(in)
@@ -2210,7 +2210,7 @@ module clubb_driver
       if ( .not. trim( microphys_scheme ) == "none" ) then
 
          !!! Setup the PDF parameters.
-         call setup_pdf_parameters_api( gr%nz, pdf_dim, dt_main,                    & ! Intent(in)
+         call setup_pdf_parameters_api( gr, gr%nz, pdf_dim, dt_main,                    & ! Intent(in)
                         Nc_in_cloud, rcm(1,:), cloud_frac, Kh_zm,                   & ! Intent(in)
                         ice_supersat_frac, hydromet, wphydrometp,                   & ! Intent(in)
                         corr_array_n_cloud, corr_array_n_below,                     & ! Intent(in)
@@ -2389,7 +2389,7 @@ module clubb_driver
       ! Calculate Skw_zm for use in advance_microphys.
       ! This field is smoothed by interpolating to thermodynamic levels and then
       ! interpolating back to momentum levels.
-      Skw_zm = zt2zm( zm2zt( Skx_func( wp2, zt2zm( wp3 ), w_tol ) ) )
+      Skw_zm = zt2zm( zm2zt( Skx_func( gr, wp2, zt2zm( wp3 ), w_tol ) ) )
 
       ! Advance predictive microphysics fields one model timestep.
       call advance_microphys( dt_main, time_current, wm_zt, wp2,          & ! In
@@ -2957,37 +2957,37 @@ module clubb_driver
 
     ! Initialize damping
     if ( thlm_sponge_damp_settings%l_sponge_damping ) then
-      call initialize_tau_sponge_damp( dt_main, gr%zt,            & ! Intent(in)
+      call initialize_tau_sponge_damp( gr, dt_main, gr%zt,            & ! Intent(in)
                                        thlm_sponge_damp_settings, & ! Intent(in)
                                        thlm_sponge_damp_profile )   ! Intent(out)
     endif
 
     if ( rtm_sponge_damp_settings%l_sponge_damping ) then
-      call initialize_tau_sponge_damp( dt_main, gr%zt,           & ! Intent(in)
+      call initialize_tau_sponge_damp( gr, dt_main, gr%zt,           & ! Intent(in)
                                        rtm_sponge_damp_settings, & ! Intent(in)
                                        rtm_sponge_damp_profile )   ! Intent(out)
     endif
 
     if ( uv_sponge_damp_settings%l_sponge_damping ) then
-      call initialize_tau_sponge_damp( dt_main, gr%zt,          & ! Intent(in)
+      call initialize_tau_sponge_damp( gr, dt_main, gr%zt,          & ! Intent(in)
                                        uv_sponge_damp_settings, & ! Intent(in)
                                        uv_sponge_damp_profile )   ! Intent(out)
     endif
 
     if ( wp2_sponge_damp_settings%l_sponge_damping ) then
-      call initialize_tau_sponge_damp( dt_main, gr%zm,           & ! Intent(in)
+      call initialize_tau_sponge_damp( gr, dt_main, gr%zm,           & ! Intent(in)
                                        wp2_sponge_damp_settings, & ! Intent(in)
                                        wp2_sponge_damp_profile )   ! Intent(out)
     endif
 
     if ( wp3_sponge_damp_settings%l_sponge_damping ) then
-      call initialize_tau_sponge_damp( dt_main, gr%zt,           & ! Intent(in)
+      call initialize_tau_sponge_damp( gr, dt_main, gr%zt,           & ! Intent(in)
                                        wp3_sponge_damp_settings, & ! Intent(in)
                                        wp3_sponge_damp_profile )   ! Intent(out)
     endif
 
     if ( up2_vp2_sponge_damp_settings%l_sponge_damping ) then
-      call initialize_tau_sponge_damp( dt_main, gr%zm,           & ! Intent(in)
+      call initialize_tau_sponge_damp( gr, dt_main, gr%zm,           & ! Intent(in)
                                    up2_vp2_sponge_damp_settings, & ! Intent(in)
                                    up2_vp2_sponge_damp_profile )   ! Intent(out)
     endif
@@ -5274,7 +5274,7 @@ module clubb_driver
         end if
 
         ! Check for impossible negative values
-        call rad_check( thlm, rcm, rtm, rim, &               ! Intent(in)
+        call rad_check( gr, thlm, rcm, rtm, rim, &               ! Intent(in)
                         cloud_frac, p_in_Pa, exner, rho_zm ) ! Intent(in)
 
       end if  ! clubb_at_least_debug_level( 0 )

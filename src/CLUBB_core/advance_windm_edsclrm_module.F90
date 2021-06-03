@@ -31,7 +31,7 @@ module advance_windm_edsclrm_module
 
   !=============================================================================
   subroutine advance_windm_edsclrm &
-             ( dt, wm_zt, Km_zm, Kmh_zm, ug, vg, um_ref, vm_ref, &
+             (  gr, dt, wm_zt, Km_zm, Kmh_zm, ug, vg, um_ref, vm_ref, &
                wp2, up2, vp2, um_forcing, vm_forcing, &
                edsclrm_forcing, &
                rho_ds_zm, invrs_rho_ds_zt, &
@@ -60,7 +60,7 @@ module advance_windm_edsclrm_module
     !-----------------------------------------------------------------------
 
     use grid_class, only:  &
-        gr  ! Variables(s)
+        grid
 
     use parameters_model, only:  &
         ts_nudge,  & ! Variable(s)
@@ -108,6 +108,8 @@ module advance_windm_edsclrm_module
         sponge_damp_xm     ! Procedure(s)
 
     implicit none
+
+    type (grid), target, intent(in) :: gr
 
     ! External
     intrinsic :: real
@@ -229,13 +231,13 @@ module advance_windm_edsclrm_module
 
        ! Compute Coriolis, geostrophic, and other prescribed wind forcings
        ! for um.
-       call compute_uv_tndcy( windm_edsclrm_um, fcor, vm, vg, & ! In
+       call compute_uv_tndcy( gr,  windm_edsclrm_um, fcor, vm, vg, & ! In
                               um_forcing, l_implemented,      & ! In
                               um_tndcy )                        ! Out
 
        ! Compute Coriolis, geostrophic, and other prescribed wind forcings
        ! for vm.
-       call compute_uv_tndcy( windm_edsclrm_vm, fcor, um, ug, & ! In
+       call compute_uv_tndcy( gr,  windm_edsclrm_vm, fcor, um, ug, & ! In
                               vm_forcing, l_implemented,      & ! In
                               vm_tndcy )                        ! Out
 
@@ -251,7 +253,7 @@ module advance_windm_edsclrm_module
 
        ! Compute the explicit portion of the um equation.
        ! Build the right-hand side vector.
-       call windm_edsclrm_rhs( windm_edsclrm_um, dt, nu10_vert_res_dep, & ! In
+       call windm_edsclrm_rhs( gr,  windm_edsclrm_um, dt, nu10_vert_res_dep, & ! In
                                Km_zm, um, um_tndcy,                     & ! In
                                rho_ds_zm, invrs_rho_ds_zt,              & ! In
                                l_imp_sfc_momentum_flux, upwp(1),        & ! In
@@ -259,7 +261,7 @@ module advance_windm_edsclrm_module
 
        ! Compute the explicit portion of the vm equation.
        ! Build the right-hand side vector.
-       call windm_edsclrm_rhs( windm_edsclrm_vm, dt, nu10_vert_res_dep, & ! In
+       call windm_edsclrm_rhs( gr,  windm_edsclrm_vm, dt, nu10_vert_res_dep, & ! In
                                Km_zm, vm, vm_tndcy,                     & ! In
                                rho_ds_zm, invrs_rho_ds_zt,              & ! In
                                l_imp_sfc_momentum_flux, vpwp(1),        & ! In
@@ -296,7 +298,7 @@ module advance_windm_edsclrm_module
 
        ! Compute the implicit portion of the um and vm equations.
        ! Build the left-hand side matrix.
-       call windm_edsclrm_lhs( dt, nu10_vert_res_dep, wm_zt, Km_zm,    & ! In
+       call windm_edsclrm_lhs( gr,  dt, nu10_vert_res_dep, wm_zt, Km_zm,    & ! In
                                wind_speed, u_star_sqd,                 & ! In
                                rho_ds_zm, invrs_rho_ds_zt,             & ! In
                                l_implemented, l_imp_sfc_momentum_flux, & ! In
@@ -305,7 +307,7 @@ module advance_windm_edsclrm_module
 
        ! Decompose and back substitute for um and vm
        nrhs = 2
-       call windm_edsclrm_solve( nrhs, iwindm_matrix_condt_num, & ! In
+       call windm_edsclrm_solve( gr,  nrhs, iwindm_matrix_condt_num, & ! In
                                  lhs, rhs, &                      ! In/out
                                  solution )                       ! Out
 
@@ -330,9 +332,9 @@ module advance_windm_edsclrm_module
        if ( l_stats_samp ) then
 
           ! Implicit contributions to um and vm
-          call windm_edsclrm_implicit_stats( windm_edsclrm_um, um ) ! intent(in)
+          call windm_edsclrm_implicit_stats( gr,  windm_edsclrm_um, um ) ! intent(in)
 
-          call windm_edsclrm_implicit_stats( windm_edsclrm_vm, vm ) ! intent(in)
+          call windm_edsclrm_implicit_stats( gr,  windm_edsclrm_vm, vm ) ! intent(in)
 
        endif ! l_stats_samp
     
@@ -353,22 +355,22 @@ module advance_windm_edsclrm_module
        if ( uv_sponge_damp_settings%l_sponge_damping ) then
 
           if ( l_stats_samp ) then
-             call stat_begin_update( ium_sdmp, um / dt, & ! intent(in)
+             call stat_begin_update( gr,  ium_sdmp, um / dt, & ! intent(in)
                                      stats_zt )           ! intent(inout)
-             call stat_begin_update( ivm_sdmp, vm / dt, & ! intent(in)
+             call stat_begin_update( gr,  ivm_sdmp, vm / dt, & ! intent(in)
                                      stats_zt )           ! intent(inout)
           endif
 
-          um(1:gr%nz) = sponge_damp_xm( dt, gr%zt, um_ref(1:gr%nz), &
+          um(1:gr%nz) = sponge_damp_xm( gr,  dt, gr%zt, um_ref(1:gr%nz), &
                                         um(1:gr%nz), uv_sponge_damp_profile )
 
-          vm(1:gr%nz) = sponge_damp_xm( dt, gr%zt, vm_ref(1:gr%nz), &
+          vm(1:gr%nz) = sponge_damp_xm( gr,  dt, gr%zt, vm_ref(1:gr%nz), &
                                         vm(1:gr%nz), uv_sponge_damp_profile )
 
           if ( l_stats_samp ) then
-             call stat_end_update( ium_sdmp, um / dt, & ! intent(in) 
+             call stat_end_update( gr,  ium_sdmp, um / dt, & ! intent(in) 
                                    stats_zt )           ! intent(inout)
-             call stat_end_update( ivm_sdmp, vm / dt, & ! intent(in)
+             call stat_end_update( gr,  ivm_sdmp, vm / dt, & ! intent(in)
                                    stats_zt )           ! intent(inout)
           endif
 
@@ -397,9 +399,9 @@ module advance_windm_edsclrm_module
 
           ! Reflect nudging in budget
           if ( l_stats_samp ) then
-             call stat_begin_update( ium_ndg, um / dt, & ! intent(in)
+             call stat_begin_update( gr,  ium_ndg, um / dt, & ! intent(in)
                                      stats_zt )          ! intent(inout)
-             call stat_begin_update( ivm_ndg, vm / dt, & ! intent(in)
+             call stat_begin_update( gr,  ivm_ndg, vm / dt, & ! intent(in)
                                      stats_zt )          ! intent(inout)
           endif
       
@@ -409,9 +411,9 @@ module advance_windm_edsclrm_module
           = vm(1:gr%nz) - ( ( vm(1:gr%nz) - vm_ref(1:gr%nz) ) * (dt/ts_nudge) )
 
           if ( l_stats_samp ) then
-             call stat_end_update( ium_ndg, um / dt, & ! intent(in)
+             call stat_end_update( gr,  ium_ndg, um / dt, & ! intent(in)
                                    stats_zt )          ! intent(inout)
-             call stat_end_update( ivm_ndg, vm / dt, & ! intent(in)
+             call stat_end_update( gr,  ivm_ndg, vm / dt, & ! intent(in)
                                    stats_zt )          ! intent(inout)
           endif
       
@@ -440,7 +442,7 @@ module advance_windm_edsclrm_module
           ! This is the third instance of u'w' clipping.
           l_first_clip_ts = .false.
           l_last_clip_ts = .true.
-          call clip_covar( clip_upwp, l_first_clip_ts,      & ! intent(in)
+          call clip_covar( gr,  clip_upwp, l_first_clip_ts,      & ! intent(in)
                            l_last_clip_ts, dt, wp2, up2,    & ! intent(in)
                            l_predict_upwp_vpwp,             & ! intent(in)
                            upwp, upwp_chnge )                 ! intent(inout)
@@ -459,7 +461,7 @@ module advance_windm_edsclrm_module
           ! This is the third instance of v'w' clipping.
           l_first_clip_ts = .false.
           l_last_clip_ts = .true.
-          call clip_covar( clip_vpwp, l_first_clip_ts,      & ! intent(in)
+          call clip_covar( gr,  clip_vpwp, l_first_clip_ts,      & ! intent(in)
                            l_last_clip_ts, dt, wp2, vp2,    & ! intent(in)
                            l_predict_upwp_vpwp,             & ! intent(in)
                            vpwp, vpwp_chnge )                 ! intent(inout)
@@ -471,12 +473,12 @@ module advance_windm_edsclrm_module
           ! interact with any other variables.
           l_first_clip_ts = .false.
           l_last_clip_ts = .true.
-          call clip_covar( clip_upwp, l_first_clip_ts,      & ! intent(in)
+          call clip_covar( gr,  clip_upwp, l_first_clip_ts,      & ! intent(in)
                            l_last_clip_ts, dt, wp2, wp2,    & ! intent(in)
                            l_predict_upwp_vpwp,             & ! intent(in)
                            upwp, upwp_chnge )                 ! intent(inout)
 
-          call clip_covar( clip_vpwp, l_first_clip_ts,      & ! intent(in)
+          call clip_covar( gr,  clip_vpwp, l_first_clip_ts,      & ! intent(in)
                            l_last_clip_ts, dt, wp2, wp2,    & ! intent(in)
                            l_predict_upwp_vpwp,             & ! intent(in)
                            vpwp, vpwp_chnge )                 ! intent(inout)
@@ -505,7 +507,7 @@ module advance_windm_edsclrm_module
       ! -dschanen 7 Oct 2008
 !HPF$ INDEPENDENT
       do i = 1, edsclr_dim
-        call windm_edsclrm_rhs( windm_edsclrm_scalar, dt, dummy_nu,      & ! In
+        call windm_edsclrm_rhs( gr,  windm_edsclrm_scalar, dt, dummy_nu,      & ! In
                                 Kmh_zm, edsclrm(:,i), edsclrm_forcing,   & ! In
                                 rho_ds_zm, invrs_rho_ds_zt,              & ! In
                                 l_imp_sfc_momentum_flux, wpedsclrp(1,i), & ! In
@@ -537,7 +539,7 @@ module advance_windm_edsclrm_module
 
       ! Compute the implicit portion of the xm (eddy-scalar) equations.
       ! Build the left-hand side matrix.
-      call windm_edsclrm_lhs( dt, dummy_nu, wm_zt, Kmh_zm,            & ! In
+      call windm_edsclrm_lhs( gr,  dt, dummy_nu, wm_zt, Kmh_zm,            & ! In
                               wind_speed, u_star_sqd,                 & ! In
                               rho_ds_zm, invrs_rho_ds_zt,             & ! In
                               l_implemented, l_imp_sfc_momentum_flux, & ! In
@@ -545,7 +547,7 @@ module advance_windm_edsclrm_module
                               lhs )                                     ! Out
 
       ! Decompose and back substitute for all eddy-scalar variables
-      call windm_edsclrm_solve( edsclr_dim, 0, &     ! in
+      call windm_edsclrm_solve( gr,  edsclr_dim, 0, &     ! in
                                 lhs, rhs, &          ! in/out
                                 solution )           ! out
 
@@ -640,7 +642,7 @@ module advance_windm_edsclrm_module
   end subroutine advance_windm_edsclrm
 
   !=============================================================================
-  subroutine windm_edsclrm_solve( nrhs, ixm_matrix_condt_num, &
+  subroutine windm_edsclrm_solve(  gr, nrhs, ixm_matrix_condt_num, &
                                   lhs, rhs, solution )
 
     ! Note:  In the "Description" section of this subroutine, the variable
@@ -1139,7 +1141,7 @@ module advance_windm_edsclrm_module
     !-----------------------------------------------------------------------
 
     use grid_class, only: & 
-      gr ! Variable(s)
+        grid
 
     use lapack_wrap, only:  & 
       tridag_solve, & ! Procedure(s)
@@ -1156,6 +1158,8 @@ module advance_windm_edsclrm_module
       core_rknd ! Variable(s)
 
     implicit none
+
+    type (grid), target, intent(in) :: gr
 
     ! Constant parameters
 
@@ -1206,7 +1210,7 @@ module advance_windm_edsclrm_module
   end subroutine windm_edsclrm_solve
 
   !=============================================================================
-  subroutine windm_edsclrm_implicit_stats( solve_type, xm )
+  subroutine windm_edsclrm_implicit_stats(  gr, solve_type, xm )
 
     ! Description:
     ! Compute implicit contributions to um and vm
@@ -1236,9 +1240,11 @@ module advance_windm_edsclrm_module
       core_rknd
 
     use grid_class, only: &
-      gr ! Derived type variable
+        grid
 
     implicit none
+
+    type (grid), target, intent(in) :: gr
 
     ! Input variables
     integer, intent(in) :: & 
@@ -1320,7 +1326,7 @@ module advance_windm_edsclrm_module
   end subroutine windm_edsclrm_implicit_stats
 
   !=============================================================================
-  subroutine compute_uv_tndcy( solve_type, fcor, perp_wind_m, perp_wind_g, xm_forcing, &
+  subroutine compute_uv_tndcy(  gr, solve_type, fcor, perp_wind_m, perp_wind_g, xm_forcing, &
                                l_implemented, xm_tndcy )
 
     ! Description:
@@ -1351,7 +1357,7 @@ module advance_windm_edsclrm_module
     !-----------------------------------------------------------------------
 
     use grid_class, only: & 
-        gr
+        grid
 
     use stats_type_utilities, only: & 
         stat_update_var
@@ -1370,6 +1376,8 @@ module advance_windm_edsclrm_module
       core_rknd ! Variable(s)
 
     implicit none
+
+    type (grid), target, intent(in) :: gr
 
     ! Input Variables
     integer, intent(in) ::  &
@@ -1470,7 +1478,7 @@ module advance_windm_edsclrm_module
   end subroutine compute_uv_tndcy
 
 !======================================================================================
-  subroutine windm_edsclrm_lhs( dt, nu, wm_zt, Km_zm, wind_speed, u_star_sqd,  &
+  subroutine windm_edsclrm_lhs(  gr, dt, nu, wm_zt, Km_zm, wind_speed, u_star_sqd,  &
                                 rho_ds_zm, invrs_rho_ds_zt,  &
                                 l_implemented, l_imp_sfc_momentum_flux,  &
                                 l_upwind_xm_ma, &
@@ -1495,7 +1503,7 @@ module advance_windm_edsclrm_module
     !----------------------------------------------------------------------------------
 
     use grid_class, only:  & 
-        gr  ! Variable(s)
+        grid
 
     use constants_clubb, only: &
         zero    ! Procedure(s)
@@ -1523,6 +1531,8 @@ module advance_windm_edsclrm_module
         l_stats_samp
 
     implicit none
+
+    type (grid), target, intent(in) :: gr
 
     integer, parameter :: &
       kp1_tdiag = 1, & ! Thermodynamic superdiagonal index.
@@ -1582,7 +1592,7 @@ module advance_windm_edsclrm_module
     invrs_dt = 1.0_core_rknd / dt
 
     ! Calculate diffusion terms
-    call diffusion_zt_lhs( K_zm(:), nu(:),  &                  ! intent(in)
+    call diffusion_zt_lhs( gr,  K_zm(:), nu(:),  &                  ! intent(in)
                            gr%invrs_dzm(:), gr%invrs_dzt(:), & ! intent(in)
                            lhs_diff(:,:) )                     ! intent(out)
 
@@ -1624,7 +1634,7 @@ module advance_windm_edsclrm_module
     ! LHS mean advection term.
     if ( .not. l_implemented ) then
 
-        call term_ma_zt_lhs( wm_zt(:), gr%invrs_dzt(:), gr%invrs_dzm(:), & ! intent(in)
+        call term_ma_zt_lhs( gr,  wm_zt(:), gr%invrs_dzt(:), gr%invrs_dzm(:), & ! intent(in)
                              l_upwind_xm_ma, &                             ! intent(in)
                              lhs_ma_zt(:,:) )                              ! intent(out)
 
@@ -1692,7 +1702,7 @@ module advance_windm_edsclrm_module
   end subroutine windm_edsclrm_lhs
 
   !=============================================================================
-  subroutine windm_edsclrm_rhs( solve_type, dt, nu, Km_zm, xm, xm_tndcy,  &
+  subroutine windm_edsclrm_rhs(  gr, solve_type, dt, nu, Km_zm, xm, xm_tndcy,  &
                                 rho_ds_zm, invrs_rho_ds_zt,  &
                                 l_imp_sfc_momentum_flux, xpwp_sfc, &
                                 rhs )
@@ -1740,9 +1750,11 @@ module advance_windm_edsclrm_module
         stat_modify_pt
 
     use grid_class, only:  & 
-        gr  ! Variable(s)
+        grid
 
     implicit none
+
+    type (grid), target, intent(in) :: gr
 
     ! External
     intrinsic :: max, min, real, trim
@@ -1808,7 +1820,7 @@ module advance_windm_edsclrm_module
     K_zm(1:gr%nz) = rho_ds_zm(1:gr%nz) * Km_zm(1:gr%nz)   ! Calculate coefs of eddy diffusivity
     
     ! RHS turbulent advection term, for grid level 3 - gr%nz
-    call diffusion_zt_lhs( K_zm(1:gr%nz), nu(1:gr%nz),                   & ! Intent(in)
+    call diffusion_zt_lhs( gr,  K_zm(1:gr%nz), nu(1:gr%nz),                   & ! Intent(in)
                            gr%invrs_dzm(1:gr%nz), gr%invrs_dzt(1:gr%nz), & ! Intent(in)
                            lhs_diff(1:3,1:gr%nz)                         ) ! Intent(out)
 

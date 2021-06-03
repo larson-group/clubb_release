@@ -14,7 +14,7 @@ module mixing_length
   contains
 
   !=============================================================================
-  subroutine compute_mixing_length( thvm, thlm, &
+  subroutine compute_mixing_length(  gr, thvm, thlm, &
                              rtm, em, Lscale_max, p_in_Pa, &
                              exner, thv_ds, mu, l_implemented, &
                              Lscale, Lscale_up, Lscale_down )
@@ -119,7 +119,7 @@ module mixing_length
         lmin    ! Minimum value for Lscale                         [m]
 
     use grid_class, only:  &
-        gr,  & ! Variable(s)
+        grid, &
         zm2zt ! Procedure(s)
 
     use numerical_check, only:  &
@@ -134,6 +134,8 @@ module mixing_length
         clubb_fatal_error              ! Constant
 
     implicit none
+
+    type (grid), target, intent(in) :: gr
 
     ! External
     intrinsic :: min, max, sqrt
@@ -752,7 +754,7 @@ module mixing_length
     ! Ensure that no Lscale values are NaN
     if ( clubb_at_least_debug_level( 1 ) ) then
 
-        call length_check( Lscale, Lscale_up, Lscale_down )
+        call length_check( gr, Lscale, Lscale_up, Lscale_down )
 
         if ( err_code == clubb_fatal_error ) then
 
@@ -877,7 +879,7 @@ module mixing_length
 
 
 !===============================================================================
-  subroutine calc_Lscale_directly ( l_implemented, p_in_Pa, exner, rtm,        &
+  subroutine calc_Lscale_directly (  gr, l_implemented, p_in_Pa, exner, rtm,        &
                   thlm, thvm, newmu, rtp2, thlp2, rtpthlp,                     &
                   pdf_params, em, thv_ds_zt, Lscale_max,                       &
                   l_Lscale_plume_centered,                                     &
@@ -894,7 +896,7 @@ module mixing_length
         Lscale_pert_coef
 
     use grid_class, only: &
-        gr   ! Variable(s)
+        grid
 
     use clubb_precision, only: &
         core_rknd
@@ -922,6 +924,8 @@ module mixing_length
         fstderr  ! Variable(s)
 
     implicit none
+
+    type (grid), target, intent(in) :: gr
 
     intrinsic :: sqrt, min, max, exp, real
 
@@ -1020,12 +1024,12 @@ module mixing_length
          mu_pert_2   = newmu * Lscale_mu_coef
 
 
-         call compute_mixing_length( thvm, thlm_pert_1,                   &!intent(in)
+         call compute_mixing_length( gr,  thvm, thlm_pert_1,                   &!intent(in)
                               rtm_pert_1, em, Lscale_max, p_in_Pa,        & !intent(in)
                               exner, thv_ds_zt, mu_pert_1, l_implemented, & !intent(in)
                               Lscale_pert_1, Lscale_up, Lscale_down ) !intent(out)
 
-         call compute_mixing_length( thvm, thlm_pert_2,                   & !intent(in)
+         call compute_mixing_length( gr,  thvm, thlm_pert_2,                   & !intent(in)
                               rtm_pert_2, em, Lscale_max, p_in_Pa,        & !intent(in)
                               exner, thv_ds_zt, mu_pert_2, l_implemented, & !intent(in)
                               Lscale_pert_2, Lscale_up, Lscale_down ) !intent(out)
@@ -1063,12 +1067,12 @@ module mixing_length
         mu_pert_neg_rt  = newmu * Lscale_mu_coef
 
         ! Call length with perturbed values of thl and rt
-        call compute_mixing_length( thvm, thlm_pert_pos_rt,                    & !intent(in)
+        call compute_mixing_length( gr,  thvm, thlm_pert_pos_rt,                    & !intent(in)
                            rtm_pert_pos_rt, em, Lscale_max, p_in_Pa,           & !intent(in)
                            exner, thv_ds_zt, mu_pert_pos_rt, l_implemented,    & !intent(in)
                            Lscale_pert_1, Lscale_up, Lscale_down ) !intent(out)
 
-        call compute_mixing_length( thvm, thlm_pert_neg_rt,                    & !intent(in)
+        call compute_mixing_length( gr,  thvm, thlm_pert_neg_rt,                    & !intent(in)
                            rtm_pert_neg_rt, em, Lscale_max, p_in_Pa,           & !intent(in)
                            exner, thv_ds_zt, mu_pert_neg_rt, l_implemented,    & !intent(in)
                            Lscale_pert_2, Lscale_up, Lscale_down ) !intent(out)
@@ -1094,7 +1098,7 @@ module mixing_length
       ! rather than the mean length scale.
 
       ! Diagnose CLUBB's turbulent mixing length scale.
-      call compute_mixing_length( thvm, thlm,                         & !intent(in)
+      call compute_mixing_length( gr,  thvm, thlm,                         & !intent(in)
                            rtm, em, Lscale_max, p_in_Pa,              & !intent(in)
                            exner, thv_ds_zt, newmu, l_implemented,    & !intent(in)
                            Lscale, Lscale_up, Lscale_down ) !intent(out)
@@ -1123,7 +1127,7 @@ module mixing_length
 
 !===============================================================================
 
- subroutine diagnose_Lscale_from_tau( &
+ subroutine diagnose_Lscale_from_tau(  gr, &
                         upwp_sfc, vpwp_sfc, um, vm, & !intent in
                         exner, p_in_Pa, & !intent in
                         rtm, thlm, thvm, & !intent in
@@ -1164,7 +1168,7 @@ module mixing_length
 
 
   use grid_class, only: &
-    gr,    &
+        grid, &
     zt2zm, &
     zm2zt, &
     ddzt
@@ -1187,6 +1191,8 @@ module mixing_length
     altitude_threshold
 
   implicit none
+
+    type (grid), target, intent(in) :: gr
 
   real( kind = core_rknd ), intent(in) :: &
     upwp_sfc,      &
@@ -1256,7 +1262,7 @@ module mixing_length
 
 
 !-----------------------------------Begin Code---------------------------------------------------!
-  call calc_brunt_vaisala_freq_sqd( zm2zt( zt2zm( thlm )), exner, rtm, rcm, p_in_Pa, thvm, &
+  call calc_brunt_vaisala_freq_sqd( gr,  zm2zt( zt2zm( thlm )), exner, rtm, rcm, p_in_Pa, thvm, &
                                           ice_supersat_frac, &
                                           l_brunt_vaisala_freq_moist, &
                                           l_use_thvm_in_bv_freq, &

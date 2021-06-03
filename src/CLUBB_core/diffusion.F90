@@ -31,7 +31,7 @@ module diffusion
   contains
 
   !=============================================================================
-  pure subroutine diffusion_zt_lhs( K_zm, nu, invrs_dzm, invrs_dzt, & ! In
+  pure subroutine diffusion_zt_lhs(  gr, K_zm, nu, invrs_dzm, invrs_dzt, & ! In
                                     lhs )                             ! Out
 
     ! Description:
@@ -248,7 +248,7 @@ module diffusion
     !-----------------------------------------------------------------------
 
     use grid_class, only: & 
-        gr    ! Variable type(s)
+        grid
 
     use constants_clubb, only: &
         zero    ! Constant(s)
@@ -257,6 +257,8 @@ module diffusion
         core_rknd ! Variable(s)
 
     implicit none
+
+    type (grid), target, intent(in) :: gr
 
     ! Constant parameters
     integer, parameter :: & 
@@ -332,7 +334,7 @@ module diffusion
 
   !=============================================================================
   pure function diffusion_cloud_frac_zt_lhs &
-                ( K_zm, K_zmm1, cloud_frac_zt, cloud_frac_ztm1, &
+                (  gr, K_zm, K_zmm1, cloud_frac_zt, cloud_frac_ztm1, &
                   cloud_frac_ztp1, cloud_frac_zm, &
                   cloud_frac_zmm1, &
                   nu, invrs_dzmm1, invrs_dzm, invrs_dzt, level ) &
@@ -348,12 +350,14 @@ module diffusion
   !-----------------------------------------------------------------------------
 
    use grid_class, only: & 
-     gr ! Variable(s)
+        grid
 
    use clubb_precision, only: &
      core_rknd ! Variable(s)
 
     implicit none
+
+    type (grid), target, intent(in) :: gr
 
     ! External
     intrinsic :: min
@@ -500,7 +504,7 @@ module diffusion
   end function diffusion_cloud_frac_zt_lhs
 
   !=============================================================================
-  pure subroutine diffusion_zm_lhs( K_zt, nu, invrs_dzt, invrs_dzm, & ! In
+  pure subroutine diffusion_zm_lhs(  gr, K_zt, nu, invrs_dzt, invrs_dzm, & ! In
                                     lhs )                             ! Out
 
     ! Description:
@@ -717,7 +721,7 @@ module diffusion
     !-----------------------------------------------------------------------
 
     use grid_class, only: & 
-        gr       ! Variable type(s)
+        grid
 
     use constants_clubb, only: &
         zero    ! Constant(s)
@@ -726,6 +730,8 @@ module diffusion
         core_rknd ! Variable(s)
 
     implicit none
+
+    type (grid), target, intent(in) :: gr
 
     ! Constant parameters
     integer, parameter :: & 

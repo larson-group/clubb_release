@@ -118,7 +118,7 @@ module hydrostatic_module
     integer :: k
 
     ! Calculate pressure and exner on both thermodynamic and momentum levels.
-    call init_pressure( thvm, p_sfc, &
+    call init_pressure( gr, thvm, p_sfc, &
                         p_in_Pa, exner, p_in_Pa_zm, exner_zm )
 
     ! Interpolate thvm from thermodynamic to momentum levels.  Linear
