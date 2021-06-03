@@ -526,7 +526,7 @@ contains
   ! advance_clubb_core - Advances the model one timestep.
   !================================================================================================
 
-  subroutine advance_clubb_core_api(  gr, &
+  subroutine advance_clubb_core_api( &
     l_implemented, dt, fcor, sfc_elevation, hydromet_dim, & ! intent(in)
     thlm_forcing, rtm_forcing, um_forcing, vm_forcing, &    ! intent(in)
     sclrm_forcing, edsclrm_forcing, wprtp_forcing, &        ! intent(in)
@@ -571,7 +571,7 @@ contains
     rcm_in_layer, cloud_cover, invrs_tau_zm )               ! intent(out)
 
     use advance_clubb_core_module, only : advance_clubb_core
-    use grid_class, only: grid
+    use grid_class, only: gr
 
     use pdf_parameter_module, only: &
         implicit_coefs_terms    ! Variable Type(s)
@@ -585,7 +585,6 @@ contains
 
     implicit none
 
-    type (grid), target, intent(in) :: gr
       !!! Input Variables
     logical, intent(in) ::  &
       l_implemented ! Is this part of a larger host model (T/F) ?
@@ -822,7 +821,7 @@ contains
   ! setup_clubb_core - Sets up the model for execution.
   !================================================================================================
 
-  subroutine setup_clubb_core_api(  gr, &
+  subroutine setup_clubb_core_api( &
     nzmax, T0_in, ts_nudge_in,                          & ! intent(in)
     hydromet_dim_in, sclr_dim_in,                       & ! intent(in)
     sclr_tol_in, edsclr_dim_in, params,                 & ! intent(in)
@@ -847,7 +846,7 @@ contains
     err_code_api )                                        ! intent(out) 
 
     use advance_clubb_core_module, only : setup_clubb_core
-    use grid_class, only: grid
+    use grid_class, only: gr
 
     use parameter_indices, only:  &
       nparams ! Variable(s)
@@ -862,7 +861,6 @@ contains
 
       implicit none
 
-    type (grid), target, intent(in) :: gr
 
     ! Input Variables
 
@@ -1163,7 +1161,7 @@ contains
   ! fill_holes_driver - Fills holes between same-phase hydrometeors(i.e. for frozen hydrometeors).
   !================================================================================================
 
-  subroutine fill_holes_driver_api(  gr, &
+  subroutine fill_holes_driver_api( &
     nz, dt, hydromet_dim,        & ! Intent(in)
     l_fill_holes_hm,             & ! Intent(in)
     rho_ds_zm, rho_ds_zt, exner, & ! Intent(in)
@@ -1173,8 +1171,6 @@ contains
     use grid_class, only: grid
 
     implicit none
-
-    type (grid), target, intent(in) :: gr
 
     intrinsic :: trim
 
@@ -1212,17 +1208,15 @@ contains
   ! fill_holes_vertical - clips values of 'field' that are below 'threshold' as much as possible.
   !================================================================================================
 
-  subroutine fill_holes_vertical_api(  gr, &
+  subroutine fill_holes_vertical_api( &
     num_pts, threshold, field_grid, &
     rho_ds, rho_ds_zm, &
     field )
 
     use fill_holes, only : fill_holes_vertical
-    use grid_class, only: grid
+    use grid_class, only: gr
 
     implicit none
-
-    type (grid), target, intent(in) :: gr
 
     ! Input variables
     integer, intent(in) :: &
@@ -1465,7 +1459,7 @@ contains
   ! setup_parameters - Sets up model parameters.
   !================================================================================================
 
-  subroutine setup_parameters_api(  gr, &
+  subroutine setup_parameters_api( &
     deltaz, params, nzmax, &
     grid_type, momentum_heights, thermodynamic_heights, &
     l_prescribed_avg_deltaz, &
@@ -1473,14 +1467,13 @@ contains
 
     use parameters_tunable, only: &
       setup_parameters
-    use grid_class, only: grid
+
+    use grid_class, only: gr
 
     use parameter_indices, only:  &
       nparams ! Variable(s)
 
     implicit none
-
-    type (grid), target, intent(in) :: gr
 
     ! Input Variables
     real( kind = core_rknd ), intent(in) ::  &
@@ -1535,17 +1528,15 @@ contains
   ! adj_low_res_nu - Adjusts values of background eddy diffusivity based on vertical grid spacing.
   !================================================================================================
 
-  subroutine adj_low_res_nu_api(  gr, &
+  subroutine adj_low_res_nu_api( &
     nzmax, grid_type, deltaz, & ! Intent(in)
     momentum_heights, thermodynamic_heights, & ! Intent(in)
     l_prescribed_avg_deltaz )  ! Intent(in)
 
     use parameters_tunable, only : adj_low_res_nu
-    use grid_class, only: grid
+    use grid_class, only: gr
 
     implicit none
-
-    type (grid), target, intent(in) :: gr
 
     ! Input Variables
 
@@ -1888,7 +1879,7 @@ contains
   ! setup_pdf_parameters
   !================================================================================================
 
-  subroutine setup_pdf_parameters_api_single_col(  gr, &
+  subroutine setup_pdf_parameters_api_single_col( &
     nz, pdf_dim, dt, &                      ! Intent(in)
     Nc_in_cloud, rcm, cloud_frac, Kh_zm, &      ! Intent(in)
     ice_supersat_frac, hydromet, wphydrometp, & ! Intent(in)
@@ -1908,7 +1899,8 @@ contains
     corr_cholesky_mtx_1, corr_cholesky_mtx_2, & ! Intent(out)
     precip_fracs,  &                            ! Intent(out)
     hydromet_pdf_params )                       ! Intent(out)
-    use grid_class, only: grid
+    
+   use grid_class, only: gr
 
     use setup_clubb_pdf_params, only : setup_pdf_parameters
 
@@ -1920,8 +1912,6 @@ contains
         clubb_fatal_error   ! Constant
 
     implicit none
-
-    type (grid), target, intent(in) :: gr
 
     ! Input Variables
     integer, intent(in) :: &
@@ -2084,8 +2074,9 @@ contains
     end if
 
   end subroutine setup_pdf_parameters_api_single_col
+!==============================================================================!
   
-  subroutine setup_pdf_parameters_api_multi_col(  gr, &
+  subroutine setup_pdf_parameters_api_multi_col( &
     nz, ngrdcol, pdf_dim, dt, &                 ! Intent(in)
     Nc_in_cloud, rcm, cloud_frac, Kh_zm, &      ! Intent(in)
     ice_supersat_frac, hydromet, wphydrometp, & ! Intent(in)
@@ -2105,7 +2096,8 @@ contains
     corr_cholesky_mtx_1, corr_cholesky_mtx_2, & ! Intent(out)
     precip_fracs, &                             ! Intent(out)
     hydromet_pdf_params )                       ! Intent(out)
-    use grid_class, only: grid
+    
+    use grid_class, only: gr
 
     use setup_clubb_pdf_params, only : setup_pdf_parameters
 
@@ -2117,8 +2109,6 @@ contains
         clubb_fatal_error   ! Constant
 
     implicit none
-
-    type (grid), target, intent(in) :: gr
 
     ! Input Variables
     integer, intent(in) :: &
@@ -2376,15 +2366,14 @@ contains
   ! stats_accumulate_hydromet - Computes stats related the hydrometeors.
   !================================================================================================
 
-  subroutine stats_accumulate_hydromet_api(  gr, &
+  subroutine stats_accumulate_hydromet_api( &
     hydromet, rho_ds_zt )
 
     use stats_clubb_utilities, only : stats_accumulate_hydromet
-    use grid_class, only: grid
+    
+    use grid_class, only: gr
 
     implicit none
-
-    type (grid), target, intent(in) :: gr
 
     ! Input Variables
     real( kind = core_rknd ), dimension(gr%nz,hydromet_dim), intent(in) :: &
@@ -3456,17 +3445,16 @@ contains
   !================================================================================================
   ! initialize_tau_sponge_damp
   !================================================================================================
-  subroutine initialize_tau_sponge_damp_api(  gr, dt, z, settings, damping_profile )
+  subroutine initialize_tau_sponge_damp_api( dt, z, settings, damping_profile )
 
     use sponge_layer_damping, only: &
         sponge_damp_settings,       & ! Variable(s)
         sponge_damp_profile,        &
         initialize_tau_sponge_damp    ! Procedure(s)
-    use grid_class, only: grid
+    
+    use grid_class, only: gr
 
     implicit none
-
-    type (grid), target, intent(in) :: gr
 
     ! Input Variable(s)
     real( kind = core_rknd ), intent(in) :: &
@@ -3482,7 +3470,7 @@ contains
     type(sponge_damp_profile), intent(out) :: &
       damping_profile
 
-    call initialize_tau_sponge_damp( gr,  dt, z, settings, damping_profile )
+    call initialize_tau_sponge_damp( gr, dt, z, settings, damping_profile )
 
   end subroutine initialize_tau_sponge_damp_api
 
